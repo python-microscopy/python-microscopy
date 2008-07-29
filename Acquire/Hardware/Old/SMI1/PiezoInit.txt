@@ -1,0 +1,6 @@
+// Initialisierungs-Kommandos für Piezo-Steuerung am SMI I
+// ========================================================
+
+PortNr = 2;
+
+Controller= E500.00;
