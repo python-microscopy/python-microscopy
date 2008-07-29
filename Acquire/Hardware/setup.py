@@ -4,7 +4,7 @@ def configuration(parent_package = '', top_path = None):
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
     config = Configuration('Hardware', parent_package, top_path)
     
-    config.add_subpackage('AndorIxon')
+    config.add_subpackage('AndorIXon')
     config.add_subpackage('DigiData')
     config.add_subpackage('Simulator')
     config.add_subpackage('Old')
