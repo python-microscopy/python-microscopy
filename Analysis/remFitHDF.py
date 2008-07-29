@@ -1,8 +1,10 @@
 from PYME.ParallelTasks import taskDef
+from PYME.ParallelTasks.relativeFiles import getFullFilename
 import ofind
 #import matplotlib
 #import read_kdf
 import numpy
+
 #import tables
 
 tables= None
@@ -92,7 +94,9 @@ class fitTask(taskDef.Task):
     def __call__(self, gui=False):
         global h5File, h5Filename, h5Buffer, tables
         
-        tables = __import__('tables')
+        self.filename = getFullFilename(self.filename) #generate ourselves a full file name from the relative filename
+
+        tables = __import__('tables') #dodgy workaround for bug in pytables when using Pyro under windows
 
         
         fitMod = __import__('PYME.Analysis.FitFactories.' + self.fitModule, fromlist=['PYME', 'Analysis','FitFactories']) #import our fitting module

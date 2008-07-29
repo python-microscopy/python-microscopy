@@ -7,7 +7,9 @@ from PYME.Analysis import MetaData
 
 tq = Pyro.core.getProxyForURI('PYRONAME://taskQueue')
 
-seriesName = h5file.filename
+from PYME.ParallelTasks.relativeFiles import getRelFilename
+
+seriesName = getRelFilename(h5file.filename)
 
 def pushImages(startingAt=0, detThresh = .9):
     for i in range(startingAt, ds.shape[0]):
