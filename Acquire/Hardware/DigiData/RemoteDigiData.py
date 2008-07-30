@@ -8,8 +8,7 @@ class RemoteDigiData(DigiData, Pyro.core.ObjBase):
         DigiData.__init__(self)
         Pyro.core.ObjBase.__init__(self)
 
-def getDDClient(): #for client machine
-    return Pyro.core.getProxyForURI('PYRONAME://DigiData')
+
 
 if __name__ == '__main__':
 
