@@ -23,8 +23,8 @@ import funcs
 import PYME.DSView.dsviewer as dsviewer
 import chanfr
 
-def create(parent):
-    return smiMainFrame(parent)
+def create(parent, options = None):
+    return smiMainFrame(parent, options)
 
 [wxID_SMIMAINFRAME, wxID_SMIMAINFRAMENOTEBOOK1, wxID_SMIMAINFRAMEPANEL1, 
  wxID_SMIMAINFRAMESTATUSBAR1, wxID_SMIMAINFRAMETEXTCTRL1, 
@@ -182,8 +182,8 @@ class smiMainFrame(wx.Frame):
         self.textCtrl1.Enable(False)
         self.textCtrl1.Center(wx.BOTH)
 
-    def __init__(self, parent):
-
+    def __init__(self, parent, options = None):
+        self.options = options
         self._init_ctrls(parent)
 
         wx.EVT_CLOSE(self, self.OnCloseWindow)        
@@ -209,8 +209,11 @@ class smiMainFrame(wx.Frame):
         self.scope = funcs.microscope()
         self.time1.Start(500)
         #self.sh.shell.runfile('init.py')
+        initFile = 'init.py'
+        if not self.options == None and not self.options.initFile == None:
+            initFile = self.options.initFile
         self.sh.run('import ExecTools')
-        self.sh.run('ExecTools.execFile("init.py", locals(), globals())')
+        self.sh.run('ExecTools.execFile("%s", locals(), globals())' % initFile)
                 
         if (self.scope.cam.CamReady() and ('chaninfo' in self.scope.__dict__)):
             self.scope.livepreview(Notebook = self.notebook1)
