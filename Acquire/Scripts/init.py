@@ -43,3 +43,7 @@ dsc.Show()
 #    tq.postTask(t)
 
 #scope.pa.WantFrameNotification.append(postTask)
+
+import HDFSpoolFrame
+frs = HDFSpoolFrame.FrSpool(None, scope, 'd:\\%(username)s\\%(day)d-%(month)d-%(year)d\\')
+frs.Show()

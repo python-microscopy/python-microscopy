@@ -1,8 +1,8 @@
 import os
-import logparser
+#import logparser
 import datetime
 import tables
-import cSMI
+from PYME import cSMI
 
 import time
 
