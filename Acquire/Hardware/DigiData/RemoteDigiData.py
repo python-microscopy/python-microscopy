@@ -8,6 +8,9 @@ class RemoteDigiData(DigiData, Pyro.core.ObjBase):
         DigiData.__init__(self)
         Pyro.core.ObjBase.__init__(self)
 
+def getDDClient(): #for client machine
+    return Pyro.core.getProxyForURI('PYRONAME://DigiData')
+
 if __name__ == '__main__':
 
 	Pyro.config.PYRO_MOBILE_CODE = 1
@@ -23,3 +26,4 @@ if __name__ == '__main__':
 		daemon.requestLoop()
 	finally:
 		daemon.shutdown(True)
+
