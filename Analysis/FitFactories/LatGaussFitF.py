@@ -99,7 +99,7 @@ class GaussianFitFactory:
         dataROI = self.data[xslice, yslice, zslice]
 
         #average in z
-        dataMean = dataROI.mean(2)
+        dataMean = dataROI.mean(2) - self.metadata.CCD.ADOffset
 
         #generate grid to evaluate function on
         #X,Y = scipy.mgrid[xslice, yslice]

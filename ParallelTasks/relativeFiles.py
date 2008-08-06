@@ -1,8 +1,17 @@
 import os
-import string
+#import string
+import re
+
+seps = re.compile('[\\\\/]')
 
 def translateSeparators(filename):
-    return string.translate(filename, string.maketrans('\\/', os.sep + os.sep))
+    #return string.translate(filename, string.maketrans('\\/', os.sep + os.sep))
+    #print seps.split(filename)
+    fn = os.path.join(*seps.split(filename))
+    if filename[0] == '/': #replace leading /, if present
+        fn = '/' + fn
+
+    return fn
 
 def getFullFilename(relFilename):
     ''' returns a fully resolved filename given a filename relative to 

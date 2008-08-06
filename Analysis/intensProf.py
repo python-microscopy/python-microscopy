@@ -1,5 +1,5 @@
 from scipy import *
-from read_kdf import *
+from PYME.FileUtils.read_kdf import *
 import wx
 from pylab import *
 
@@ -59,13 +59,13 @@ def doTraceDisp(prof, lOn, dt):
     T = arange(len(prof))*dt
 
     clf()
-    a1 = axes([.1, .4,.8,.5])
+    a1 = axes([.1, .3,.8,.6])
     a1.plot(T, prof)
     a1.grid()
     a1.set_ylabel('Fluorescence Intensity [a.u.]')
     
 
-    a2 = axes([.1, .1,.8,.2], sharex=a1)
+    a2 = axes([.1, .1,.8,.1], sharex=a1)
     a2.plot(T, lOn)
     a2.set_ylim(-.1, 1.1)
     a2.set_xlabel('Time [s]')
@@ -250,3 +250,11 @@ def traceModelDE1(p, Ton, Toff, dt, len_trace, sc):
     res = (sc*res[Toff[0]:Toff[-1]] + bg).ravel() #just return the bit we know about
     #print res.shape
     return res
+
+def mod1pk(p, t, pow=2, sc=1, bg=0, Nd0 = 0):
+    No0 = 1
+    #Nd0 = 0
+    aod,aob, ado, Nd0, pow = p
+    res = lNofcnDE(t, t[0], No0, Nd0**2, aod, aob, ado, pow)
+
+    return (sc*res + bg).ravel()
