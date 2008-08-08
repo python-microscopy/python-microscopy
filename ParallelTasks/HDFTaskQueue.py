@@ -1,33 +1,80 @@
 import tables
+from taskQueue import *
+from PYME.Acquire.remFitBuf import fitTask
 
-class HDFTaskQueue(TaskQueue):
-	def __init__(self, name, dataFilename = None, resultsFilename=None, onEmpty = doNix, fTaskToPop = popZero):
-		#Pyro.core.ObjBase.__init__(self)
-		#self.name = name
-		self.queueID = name
-		
+import MetaData
+
+import os
+
+def genDataFilename(name):
+	fn = os.g
+
+
+class HDFResultsTaskQueue(TaskQueue):
+	'''Task queue which saves it's results to a HDF file'''
+	def __init__(self, name, resultsFilename, initialTasks=[], onEmpty = doNix, fTaskToPop = popZero):
+		TaskQueue.__init__(self, name, initialTasks, onEmpty, fTaskToPop)
+		self.resultsFilename = resultsFilename	
+                
+		self.numClosedTasks = 0
+                self.h5ResultsFile = tables.openFile(self.dataFilename, 'w')
+                
+                self.prepResultsFile()
+                
+                
+	def prepResultsFile(self):
+            pass
+	
+
+        def getCompletedTask(self):
+            return None
+
+	
+
+	def getNumberTasksCompleted(self):
+		return self.numClosedTasks
+
+	def purge(self):
+		self.openTasks = []
+		self.numClosedTasks = 0
+		self.tasksInProgress = []
+
+        def cleanup(self):
+            #self.h5DataFile.close()
+            self.h5ResultsFile.close()
+
+        def fileResult(self, res):            
+            if not self.h5ResultsFile._contains_('/FitResults'):
+                self.h5ResultsFile.createTable(h5ResultsFile.root, 'FitResults', res.results, filters=tables.Filters(complevel=5, shuffle=True))
+            else:
+                self.h5ResultsFile.root.FitResults.append(res.results)
+
+	    self.numClosedTasks += 1
+
+                                      
+
+class HDFTaskQueue(HDFResultsTaskQueue):
+	''' task queue which, when initialised with an hdf image filename, automatically generated tasks - should also (eventually) include support for dynamically adding to data file for on the fly analysis'''
+	def __init__(self, name, fitParams, dataFilename = None, resultsFilename=None, onEmpty = doNix, fTaskToPop = popZero, startAt = 0):		
                 if dataFilename == None:
                    self.dataFilename = genDataFilename(name)
                 else: 
                     self.dataFilename = dataFilename
 
                 if resultsFilename == None:
-                    self.resultsFilename = genResultsFilename(self.dataFilename)
+                    resultsFilename = genResultsFilename(self.dataFilename)
                 else:
-                    self.resultsFilename = resultsFilename
-
-                #self.openTasks = list(initialTasks)
-		self.numClosedTasks = 0
-		self.tasksInProgress = []
-		self.onEmpty = onEmpty #function to call when queue is empty
-		self.fTaskToPop = fTaskToPop #function to call to decide which task to give a worker (useful if the workers need to have share information with, e.g., previous tasks as this can improve eficiency of per worker buffering of said info).
+                    resultsFilename = resultsFilename  
+		
                 
 		self.h5DataFile = tables.openFile(self.dataFilename, 'r')
-                self.h5ResultsFile = tables.openFile(self.dataFilename, 'w')
-                
-                self.prepResultsFile()
-                
-                self.openTasks = list(range(self.h5DataFile.root.ImageData.shape[0]))
+                initialTasks = list(range(self.h5DataFile.root.ImageData.shape[0]))
+
+		HDFResultsTaskQueue.__init__(self, name, resultsFilename, initialTasks, onEmpty, fTaskToPop):
+
+		self.metaData = MetaData.genMetaDataFromHDF(self.h5DataFile)
+
+		self.fitParams = fitParams
                 
 	def prepResultsFile(self):
             pass
@@ -48,7 +95,7 @@ class HDFTaskQueue(TaskQueue):
 
 		taskNum = self.openTasks.pop(self.fTaskToPop(workerN, NWorkers, len(self.openTasks)))
 
-		task = HDFQueueTask(taskNum)
+		task = fitTask(taskNum, self.fitParams['threshold'], metadata, self.fitParams['fitModule'], bgindices =range(max(taskNum, 0), taskNum), SNThreshold = True)
 
                 task.queueID = self.queueID
 		task.initializeWorkerTimeout(time.clock())
@@ -56,17 +103,7 @@ class HDFTaskQueue(TaskQueue):
 		
 		return task
 
-	def returnCompletedTask(self, taskResult):
-		for it in self.tasksInProgress:
-			if (it.taskID == taskResult.taskID):
-				self.tasksInProgress.remove(it)
-		
-                self.fileResult(taskResult)
-                self.numClosedTasks += 1
-
-		if (len(self.openTasks) + len(self.tasksInProgress)) == 0: #no more tasks
-			self.onEmpty(self)
-
+	
 	def checkTimeouts(self):
 		curTime = time.clock()
 		for it in self.tasksInProgress:
@@ -75,32 +112,18 @@ class HDFTaskQueue(TaskQueue):
 					self.openTasks.insert(0, it.taskNum)
 					self.tasksInProgress.remove(it)
 
-        def getCompletedTask(self):
-            return None
-
-	
-
-	def getNumberTasksCompleted(self):
-		return self.numClosedTasks
-
-	def purge(self):
-		self.openTasks = []
-		self.numClosedTasks = 0
-		self.tasksInProgress = []
-
-        def getData(self, sliceNum):
-            return self.h5DataFile.root.ImageData[sliceNum, :,:]
 
         def cleanup(self):
             self.h5DataFile.close()
             self.h5ResultsFile.close()
 
-        def fileResult(self, res):            
-            if not self.h5ResultsFile._contains_('/FitResults'):
-                self.h5ResultsFile.createTable(h5ResultsFile.root, 'FitResults', res.results, filters=tables.Filters(complevel=5, shuffle=True))
-            else:
-                self.h5ResultsFile.root.FitResults.append(res.results)
 
-                                      
-
-
+	def getQueueData(self, fieldName, *args):
+		'''Get data, defined by fieldName and potntially additional arguments,  ascociated with queue'''
+		if fieldName == 'ImageShape':
+			return self.h5DataFile.ImageData.shape[1:]
+		elif fieldName == 'ImageData':
+			sliceNum, = args
+			return self.h5DataFile.root.ImageData[sliceNum, :,:]
+		else:
+			return None
