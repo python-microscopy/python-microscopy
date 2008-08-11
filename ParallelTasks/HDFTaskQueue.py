@@ -1,8 +1,8 @@
 import tables
 from taskQueue import *
-from PYME.Acquire.remFitBuf import fitTask
+from PYME.Analysis.remFitBuf import fitTask
 
-import MetaData
+from PYME.Analysis import MetaData
 
 import os
 
@@ -13,11 +13,15 @@ def genDataFilename(name):
 class HDFResultsTaskQueue(TaskQueue):
 	'''Task queue which saves it's results to a HDF file'''
 	def __init__(self, name, resultsFilename, initialTasks=[], onEmpty = doNix, fTaskToPop = popZero):
+		if os.path.exists(resultsFilename): #bail if output file already exists
+			raise 'Output file already exists'
+
 		TaskQueue.__init__(self, name, initialTasks, onEmpty, fTaskToPop)
 		self.resultsFilename = resultsFilename	
                 
 		self.numClosedTasks = 0
-                self.h5ResultsFile = tables.openFile(self.dataFilename, 'w')
+
+                self.h5ResultsFile = tables.openFile(self.resultsFilename, 'w')
                 
                 self.prepResultsFile()
                 
@@ -44,10 +48,12 @@ class HDFResultsTaskQueue(TaskQueue):
             self.h5ResultsFile.close()
 
         def fileResult(self, res):            
-            if not self.h5ResultsFile._contains_('/FitResults'):
-                self.h5ResultsFile.createTable(h5ResultsFile.root, 'FitResults', res.results, filters=tables.Filters(complevel=5, shuffle=True))
+            if not self.h5ResultsFile.__contains__('/FitResults'):
+                self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'FitResults', res.results, filters=tables.Filters(complevel=5, shuffle=True))
             else:
                 self.h5ResultsFile.root.FitResults.append(res.results)
+
+	    self.h5ResultsFile.flush()
 
 	    self.numClosedTasks += 1
 
@@ -70,7 +76,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
 		self.h5DataFile = tables.openFile(self.dataFilename, 'r')
                 initialTasks = list(range(self.h5DataFile.root.ImageData.shape[0]))
 
-		HDFResultsTaskQueue.__init__(self, name, resultsFilename, initialTasks, onEmpty, fTaskToPop):
+		HDFResultsTaskQueue.__init__(self, name, resultsFilename, initialTasks, onEmpty, fTaskToPop)
 
 		self.metaData = MetaData.genMetaDataFromHDF(self.h5DataFile)
 

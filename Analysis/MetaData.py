@@ -20,3 +20,11 @@ class MetaData:
 
 #FIXME - THIS SHOULD ALL BE EXTRACTED FROM LOG FILES OR THE LIKE
 TIRFDefault = MetaData(VoxelSize(0.07, 0.07, 0.2), CCDMetaDataIXonDefault())
+
+def genMetaDataFromHDF(h5File):
+	md = TIRFDefault
+
+	#once we start putting everything into data file properly,
+	#grab the relavant bits here
+
+	return md

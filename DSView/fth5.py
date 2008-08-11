@@ -8,19 +8,21 @@ from PYME.Analysis import MetaData
 tq = Pyro.core.getProxyForURI('PYRONAME://taskQueue')
 
 from PYME.ParallelTasks.relativeFiles import getRelFilename
+from PYME.FileUtils.nameUtils import genResultFileName
 
 seriesName = getRelFilename(h5file.filename)
 
 def pushImages(startingAt=0, detThresh = .9):
+    tq.createQueue('HDFResultsTaskQueue', seriesName, genResultFileName(seriesName))
     for i in range(startingAt, ds.shape[0]):
-        tq.postTask(remFitHDF.fitTask(seriesName,i, detThresh, MetaData.TIRFDefault, 'LatGaussFitF', bgindices=range(max(i-10, 0),i), SNThreshold=True), queueName=seriesName)
+        tq.postTask(remFitHDF.fitTask(seriesName,i, detThresh, MetaData.TIRFDefault, 'LatGaussFitFR', bgindices=range(max(i-10, 0),i), SNThreshold=True), queueName=seriesName)
 
 
 def testFrame(detThresh = 0.9):
-    ft = remFitHDF.fitTask(seriesName,vp.zp, detThresh, MetaData.TIRFDefault, 'LatGaussFitF', bgindices=range(max(vp.zp-10, 0),vp.zp), SNThreshold=True)
+    ft = remFitHDF.fitTask(seriesName,vp.zp, detThresh, MetaData.TIRFDefault, 'LatGaussFitFR', bgindices=range(max(vp.zp-10, 0),vp.zp), SNThreshold=True)
     return ft(True)
 
-import fitIO
+#import fitIO
 
 
 

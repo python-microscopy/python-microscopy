@@ -14,5 +14,5 @@ else:
 
 while 1:
     #print 'Geting Task ...'
-    tq.returnCompletedTask(tq.getTask()(), name)
+    tq.returnCompletedTask(tq.getTask()(taskQueue=tq), name)
     #print 'Completed Task'

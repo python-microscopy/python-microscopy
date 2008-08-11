@@ -33,12 +33,12 @@ def cpuCount():
 
 
 #get rid of any previously started queues etc...
-os.system('killall taskServerM.py')
-os.system('killall taskWorkerM.py')
-os.system('killall fitMon.py')
+#os.system('killall taskServerM.py')
+#os.system('killall taskWorkerM.py')
+#os.system('killall fitMon.py')
 
 #launch pyro name server
-os.system('pyro-nsd start')
+#os.system('pyro-nsd start')
 
 
 #get number of processors 

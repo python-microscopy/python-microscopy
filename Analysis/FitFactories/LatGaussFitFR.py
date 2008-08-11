@@ -5,11 +5,11 @@ import scipy.ndimage as ndimage
 import copy_reg
 import numpy
 
-from cModels.gauss_app import *
+from PYME.Analysis.cModels.gauss_app import *
 
 #from scipy import weave
 
-from _fithelpers import *
+from PYME.Analysis._fithelpers import *
 
 def pickleSlice(slice):
         return unpickleSlice, (slice.start, slice.stop, slice.step)
@@ -79,7 +79,7 @@ def replNoneWith1(n):
 
 fresultdtype=[('tIndex', '<i4'),('fitResults', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('background', '<f4'),('bx', '<f4'),('by', '<f4')]),('fitError', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('background', '<f4'),('bx', '<f4'),('by', '<f4')]), ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
 
-def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None, tIndex = -1):
+def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None):
 	if slicesUsed == None:
 		slicesUsed = ((-1,-1,-1),(-1,-1,-1),(-1,-1,-1))
 	else: 		
@@ -90,7 +90,7 @@ def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fit
 
 	#print slicesUsed
 
-	
+	tIndex = metadata.tIndex
 
 
 	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, slicesUsed)], dtype=fresultdtype) 
@@ -115,7 +115,7 @@ class GaussianFitFactory:
         dataROI = self.data[xslice, yslice, zslice]
 
         #average in z
-        dataMean = dataROI.mean(2)
+        dataMean = dataROI.mean(2) - self.metadata.CCD.ADOffset
 
         #generate grid to evaluate function on
         #X,Y = scipy.mgrid[xslice, yslice]

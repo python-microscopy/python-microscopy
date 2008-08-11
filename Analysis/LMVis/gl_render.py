@@ -152,13 +152,13 @@ class myGLCanvas(GLCanvas):
         b = scipy.vstack((xs[:,0] - xs[:,2], ys[:,0] - ys[:,2])).T
 
         #area of triangle
-        c = 0.5*scipy.sqrt((b*b).sum(1) - ((a*b).sum(1)**2)/(a*a).sum(1))*scipy.sqrt((a*a).sum(1))
+        #c = 0.5*scipy.sqrt((b*b).sum(1) - ((a*b).sum(1)**2)/(a*a).sum(1))*scipy.sqrt((a*a).sum(1))
 
-        #c = scipy.maximum(((b*b).sum(1)),((a*a).sum(1)))
+        c = scipy.maximum(((b*b).sum(1)),((a*a).sum(1)))
 
-        c_neighbours = c[T.triangle_neighbors].sum(1)
-        c = 1.0/(c + c_neighbours + 1)
-        #c = 1.0/(c + 1)
+        #c_neighbours = c[T.triangle_neighbors].sum(1)
+        #c = 1.0/(c + c_neighbours + 1)
+        c = 1.0/(c + 1)
 
         self.c = scipy.vstack((c,c,c)).T.ravel()
         
@@ -332,8 +332,9 @@ class myGLCanvas(GLCanvas):
             #zoom in
             self.setView(xp - view_size_x/4, xp + view_size_x/4,yp - view_size_y/4, yp + view_size_y/4 )
 
-    def saveSnapshot(self, filename):
-        pass
+    def getSnapshot(self, mode = GL_LUMINANCE):
+        return glReadPixelsf(0,0,self.Size[0],self.size[1], mode)
+        
         
 
         

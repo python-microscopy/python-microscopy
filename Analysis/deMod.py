@@ -50,7 +50,7 @@ def flFpow(N,t, argS):
     Na,Nd = N
     Ab,Aad,Ada,I, pow = argS
 
-    dNa = -(Ab + Aad)*I*Na**pow + Ada*Nd
-    dNd = Aad*I*Na**2 - Ada*Nd
+    dNa = - Aad*I*Na**pow -Ab*I*Na + Ada*Nd
+    dNd = Aad*I*Na**pow - Ada*Nd
     #print dNa
     return array([dNa, dNd])
