@@ -39,7 +39,7 @@ resultsdirPattern = '%(homeDir)s/analysis/%(dday)d-%(dmonth)d-%(dyear)d'
 resultsdirPatternShort = '%(homeDir)s/analysis/'
 
 def genHDFDataFilepath(name, create=True):
-    p =  os.path.join(*sep.split(datadirPattern % dateDict))
+    p =  os.path.join(*sep.split(datadirPattern)) % dateDict
     if create and not os.path.exists(p): #create the necessary directories
         os.makedirs(p)
 
@@ -47,8 +47,8 @@ def genHDFDataFilepath(name, create=True):
 
 def genResultFileName(dataFileName, create=True):
     fn, ext = os.path.splitext(dataFileName) #remove extension
-
-    p = os.path.join(*seps.split(resultsdirPatternShort % dateDict), *seps.split(fn)[-2:])
+    #print os.path.join(*seps.split(resultsdirPatternShort)) % dateDict
+    p = os.path.join(*(seps.split(resultsdirPatternShort) + seps.split(fn)[-2:])) %dateDict
 
     if create and not os.path.exists(os.path.split(p)[0]): #create the necessary directories
         os.makedirs(os.path.split(p)[0])
