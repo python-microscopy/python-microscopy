@@ -10,7 +10,7 @@ import Image
 
 name = 'ball_glut'
 
-class myGLCanvas(GLCanvas):
+class LMGLCanvas(GLCanvas):
     def __init__(self, parent):
 	GLCanvas.__init__(self, parent,-1)
 	wx.EVT_PAINT(self, self.OnPaint)
@@ -333,10 +333,12 @@ class myGLCanvas(GLCanvas):
             self.setView(xp - view_size_x/4, xp + view_size_x/4,yp - view_size_y/4, yp + view_size_y/4 )
 
     def getSnapshot(self, mode = GL_LUMINANCE):
-        return glReadPixelsf(0,0,self.Size[0],self.size[1], mode)
+        return glReadPixelsf(0,0,self.Size[0],self.Size[1], mode)
         
         
-
+class LMGLFrame(wx.Frame):
+    def __init__(self):
+        pass
         
 
 def main():

@@ -40,7 +40,7 @@ resultsdirPatternShort = '%(homeDir)s/analysis/'
 
 def genHDFDataFilepath(name, create=True):
     p =  os.path.join(*sep.split(datadirPattern % dateDict))
-    if create: #create the necessary directories
+    if create and not os.path.exists(p): #create the necessary directories
         os.makedirs(p)
 
     return os.path.join(p, name)
@@ -50,7 +50,7 @@ def genResultFileName(dataFileName, create=True):
 
     p = os.path.join(resultsdirPatternShort % dateDict, *seps.split(fn)[-2:])
 
-    if create: #create the necessary directories
+    if create and not os.path.exists(os.path.split(p)[0]): #create the necessary directories
         os.makedirs(os.path.split(p)[0])
 
     return p + '.h5r'
