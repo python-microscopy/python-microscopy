@@ -3,6 +3,7 @@
 
 
 import wx
+import sys
 
 #redefine wxFrame with a version that hides when someone tries to close it
 #dirty trick, but lets the Boa gui builder still work with frames we do this to
@@ -23,7 +24,11 @@ class LaserSliders(wx.Frame):
         sizer_2 = wx.BoxSizer(wx.VERTICAL)
 
         for c in range(len(self.cam.laserPowers)):
-            sl = wx.Slider(self.panel_1, -1, self.cam.laserPowers[c], 0, 1000, size=wx.Size(800,50),style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
+            if sys.platform == 'darwin': #sliders are subtly broken on MacOS, requiring workaround
+                sl = wx.Slider(self, -1, self.cam.laserPowers[c], 0, 1000, size=wx.Size(800,50),style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
+            else: #sane OS's
+                sl = wx.Slider(self.panel_1, -1, self.cam.laserPowers[c], 0, 1000, size=wx.Size(800,50),style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
+
             #sl.SetSize((800,20))
             sl.SetTickFreq(100,1)
             sz = wx.StaticBoxSizer(wx.StaticBox(self.panel_1, -1, self.laserNames[c] + " [mW]"), wx.HORIZONTAL)

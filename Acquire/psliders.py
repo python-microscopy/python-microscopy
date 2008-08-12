@@ -3,6 +3,7 @@
 
 import wx
 import noclosefr
+import sys
 
 class PiezoSliders(noclosefr.noCloseFrame):
     def __init__(self, piezos, parent=None, winid=-1, title="Piezo Control"):
@@ -18,7 +19,10 @@ class PiezoSliders(noclosefr.noCloseFrame):
         sizer_2 = wx.BoxSizer(wx.VERTICAL)
 
         for p in self.piezos:
-            sl = wx.Slider(self.panel_1, -1, 100*p[0].GetPos(p[1]), 100*p[0].GetMin(p[1]), 100*p[0].GetMax(p[1]), size=wx.Size(800,50), style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
+            if sys.platform == 'darwin': #sliders are subtly broken on MacOS, requiring workaround
+                sl = wx.Slider(self, -1, 100*p[0].GetPos(p[1]), 100*p[0].GetMin(p[1]), 100*p[0].GetMax(p[1]), size=wx.Size(800,50), style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
+            else:
+                sl = wx.Slider(self.panel_1, -1, 100*p[0].GetPos(p[1]), 100*p[0].GetMin(p[1]), 100*p[0].GetMax(p[1]), size=wx.Size(800,50), style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
             #sl.SetSize((800,20))
 	    if 'minorTick' in dir(p):
             	sl.SetTickFreq(100, p.minorTick)

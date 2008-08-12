@@ -20,7 +20,7 @@ def cpuCount():
             num = int(os.popen('sysctl -n hw.ncpu').read())
         except ValueError:
             num = 0
-    else:
+    else: #assuming unix
         try:
             num = os.sysconf('SC_NPROCESSORS_ONLN')
         except (ValueError, OSError, AttributeError):

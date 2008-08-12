@@ -6,7 +6,9 @@ import wx
 
 #redefine wxFrame with a version that hides when someone tries to close it
 #dirty trick, but lets the Boa gui builder still work with frames we do this to
-from noclosefr import * 
+from noclosefr import *
+
+import sys 
 
 class IntegrationSliders(wxFrame):
     def __init__(self, chaninfo, parent=None, winid=-1, title="Integration Time"):
@@ -22,7 +24,11 @@ class IntegrationSliders(wxFrame):
         sizer_2 = wx.BoxSizer(wx.VERTICAL)
 
         for c in range(len(self.chaninfo.itimes)):
-            sl = wx.Slider(self.panel_1, -1, self.chaninfo.itimes[c], 1, 10000, size=wx.Size(800,50),style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
+            if not sys.platform == 'darwin':
+                sl = wx.Slider(self.panel_1, -1, self.chaninfo.itimes[c], 1, 10000, size=wx.Size(800,50),style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
+            else:#workaround for broken mouse event handling (and hence sliders) on MacOS
+                sl = wx.Slider(self, -1, self.chaninfo.itimes[c], 1, 10000, size=wx.Size(800,50),style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
+ 
             #sl.SetSize((800,20))
             sl.SetTickFreq(100,1)
             sz = wx.StaticBoxSizer(wx.StaticBox(self.panel_1, -1, self.chaninfo.names[c] + " (ms)"), wx.HORIZONTAL)
