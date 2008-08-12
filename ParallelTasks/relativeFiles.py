@@ -1,5 +1,5 @@
 import os
-#import string
+import string
 import re
 
 seps = re.compile('[\\\\/]')
@@ -7,9 +7,10 @@ seps = re.compile('[\\\\/]')
 def translateSeparators(filename):
     #return string.translate(filename, string.maketrans('\\/', os.sep + os.sep))
     #print seps.split(filename)
-    fn = os.path.join(*seps.split(filename))
-    if filename[0] == '/': #replace leading /, if present
-        fn = '/' + fn
+    #fn = os.path.join(*seps.split(filename))
+    #if filename[0] == '/': #replace leading /, if present
+    #    fn = '/' + fn
+    fn = string.join(seps.split(filename), os.sep)
 
     return fn
 
@@ -28,12 +29,14 @@ def getFullFilename(relFilename):
 def getRelFilename(filename):
     '''returns the tail of filename'''
     filename = translateSeparators(filename)
+    #print filename
     
     #first make sure we have an absolute path
     filename = os.path.expanduser(filename)
     if not os.path.isabs(filename):
         filename= os.path.abspath(filename)
 
+    #print filename
     if 'PYMEDATADIR' in os.environ.keys():
         dataDir = os.environ['PYMEDATADIR']
         if not dataDir[-1] in [os.sep, os.altsep]:
