@@ -48,7 +48,7 @@ def genHDFDataFilepath(name, create=True):
 def genResultFileName(dataFileName, create=True):
     fn, ext = os.path.splitext(dataFileName) #remove extension
 
-    p = os.path.join(resultsdirPatternShort % dateDict, *seps.split(fn)[-2:])
+    p = os.path.join(*seps.split(resultsdirPatternShort % dateDict), *seps.split(fn)[-2:])
 
     if create and not os.path.exists(os.path.split(p)[0]): #create the necessary directories
         os.makedirs(os.path.split(p)[0])
