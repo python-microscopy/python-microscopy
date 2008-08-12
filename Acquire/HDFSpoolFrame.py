@@ -3,7 +3,8 @@
 import wx
 import datetime
 import HDFSpooler
-import win32api
+#import win32api
+from PYME.FileUtils import nameUtils
 import os
 
 def create(parent):
@@ -112,10 +113,10 @@ class FrSpool(wx.Frame):
         
         dtn = datetime.datetime.now()
         
-        dateDict = {'username' : win32api.GetUserName(), 'day' : dtn.day, 'month' : dtn.month, 'year':dtn.year}
+        #dateDict = {'username' : win32api.GetUserName(), 'day' : dtn.day, 'month' : dtn.month, 'year':dtn.year}
         
-        self.dirname = defDir % dateDict
-        self.seriesStub = defSeries % dateDict
+        self.dirname = defDir % nameUtils.dateDict
+        self.seriesStub = defSeries % nameUtils.dateDict
 
         self.seriesCounter = 0
         self.seriesName = self._GenSeriesName()
