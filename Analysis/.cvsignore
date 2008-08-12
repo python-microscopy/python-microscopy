@@ -1,0 +1,15 @@
+LatGaussFit.py
+LatGaussFit.pyc
+LatGaussFitF.py
+LatGaussFitF.pyc
+MetaData.pyc
+__init__.pyc
+_fithelpers.pyc
+deMod.pyc
+driftCorrTools.pyc
+fitIO.pyc
+intensProf.pyc
+ofind.pyc
+remFitBuf.pyc
+remFitHDF.pyc
+setup.pyc
