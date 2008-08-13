@@ -7,7 +7,7 @@ def configuration(parent_package = '', top_path = None):
     config.add_extension('_cSMI',
         sources=["cSMI.i","DataStack.cpp","BaseRenderer.cpp","LUTRGBRenderer.cpp","DisplayParams.cpp","DisplayOpts.cpp","LineProfile.cpp"],
         include_dirs = [get_numpy_include_dirs(), '.'],
-	extra_compile_args = ['-O3', '-march=nocona'])
+	extra_compile_args = ['-O3'])
 
     return config
 
