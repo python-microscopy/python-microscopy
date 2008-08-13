@@ -24,6 +24,8 @@ class HDFResultsTaskQueue(TaskQueue):
                 self.h5ResultsFile = tables.openFile(self.resultsFilename, 'w')
                 
                 self.prepResultsFile()
+
+                self.fileResultsLock = threading.Lock()
                 
                 
 	def prepResultsFile(self):
@@ -47,13 +49,20 @@ class HDFResultsTaskQueue(TaskQueue):
             #self.h5DataFile.close()
             self.h5ResultsFile.close()
 
-        def fileResult(self, res):            
+        def fileResult(self, res):
+            if res.results == []: #if we had a dud frame
+                return 
+
+            self.fileResultsLock.acquire() #get a lock
+            
             if not self.h5ResultsFile.__contains__('/FitResults'):
                 self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'FitResults', res.results, filters=tables.Filters(complevel=5, shuffle=True))
             else:
                 self.h5ResultsFile.root.FitResults.append(res.results)
 
 	    self.h5ResultsFile.flush()
+
+	    self.fileResultsLock.release() #release lock
 
 	    self.numClosedTasks += 1
 

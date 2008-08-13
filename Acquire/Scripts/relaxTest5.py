@@ -11,7 +11,9 @@ l.TurnOn()
 time.sleep(10)
 
 onTime = 10
-offTimes = 20*ones(10)
+#offTimes = 20*ones(10)
+offTimes = [0.2,0.5,1, 2,5, 10, 20, 50, 100, 50, 20, 10, 5, 2, 0.5, 1,0.2]
+#offTimes = [10, 20, 50,100,200,500,1000,500,200,100, 20, 10]
 
 for offT in offTimes:
     l.TurnOff()
