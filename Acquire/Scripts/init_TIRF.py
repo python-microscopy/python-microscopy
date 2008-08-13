@@ -52,5 +52,12 @@ from Hardware import LaserControlFrame
 lcf = LaserControlFrame.LaserControl(scope.lasers)
 lcf.Show()
 
+from PYME import cSMI
+import time
 
+Is = []
 
+def calcSum(caller):
+    Is.append(cSMI.CDataStack_AsArray(caller.ds, 0).sum())
+
+scope.pa.WantFrameNotification.append(calcSum)

@@ -47,3 +47,15 @@ dsc.Show()
 import HDFSpoolFrame
 frs = HDFSpoolFrame.FrSpool(None, scope, 'd:\\%(username)s\\%(day)d-%(month)d-%(year)d\\')
 frs.Show()
+
+
+from PYME import cSMI
+import time
+
+Is = []
+
+def calcSum(caller):
+    Is.append(cSMI.CDataStack_AsArray(caller.ds, 0).sum())
+
+scope.pa.WantFrameNotification.append(calcSum)
+

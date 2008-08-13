@@ -7,6 +7,7 @@ import sys,math
 import sys
 import scipy
 import Image
+from scikits import delaunay
 
 name = 'ball_glut'
 
@@ -174,6 +175,71 @@ class LMGLCanvas(GLCanvas):
 
         self.nVertices = vs.shape[0]
         self.setColour(self.IScale)
+
+    def setVoronoi(self, T):
+        xs_ = None
+        ys_ = None
+        c_ = None
+        
+        for i in range(len(T.x)):
+            #get triangles around point
+            impingentTriangs = scipy.where(T.triangle_nodes == i)[0]
+            if len(impingentTriangs >= 3):
+
+                circumcenters = T.circumcenters[impingentTriangs] #get their circumcenters
+
+                #add current point - to deal with edge cases
+                newPts = scipy.array(list(circumcenters) + [[T.x[i], T.y[i]]])
+
+                #re-triangulate (we could try and sort the triangles somehow, but this is easier)
+                T2 = delaunay.Triangulation(newPts[:,0],newPts[:,1] )
+
+
+                #now do the same as for the standard triangulation
+                xs = T2.x[T2.triangle_nodes]
+                ys = T2.y[T2.triangle_nodes]
+
+                a = scipy.vstack((xs[:,0] - xs[:,1], ys[:,0] - ys[:,1])).T
+                b = scipy.vstack((xs[:,0] - xs[:,2], ys[:,0] - ys[:,2])).T
+
+                #area of triangle
+                c = 0.5*scipy.sqrt((b*b).sum(1) - ((a*b).sum(1)**2)/(a*a).sum(1))*scipy.sqrt((a*a).sum(1))
+
+                #c = scipy.maximum(((b*b).sum(1)),((a*a).sum(1)))
+
+                #c_neighbours = c[T.triangle_neighbors].sum(1)
+                #c = 1.0/(c + c_neighbours + 1)
+                c = c.sum()*scipy.ones(c.shape)
+                c = 1.0/(c + 1)
+
+                #print xs.shape
+                #print c.shape
+
+                if xs_ == None:
+                    xs_ = xs
+                    ys_ = ys
+                    c_ = c
+                else:
+                    xs_ = scipy.vstack((xs_, xs))
+                    ys_ = scipy.vstack((ys_, ys))
+                    c_ = scipy.hstack((c_, c))
+
+        
+        self.c = scipy.vstack((c_,c_,c_)).T.ravel()
+        
+        vs = scipy.vstack((xs_.ravel(), ys_.ravel()))
+        vs = vs.T.ravel().reshape(len(xs_.ravel()), 2)
+        self.vs_ = glVertexPointerf(vs)
+
+        #cs = scipy.minimum(scipy.vstack((self.IScale[0]*c,self.IScale[1]*c,self.IScale[2]*c)), 1).astype('f')
+        #cs = cs.T.ravel().reshape(len(c), 3)
+        #cs_ = glColorPointerf(cs)
+
+        self.mode = 'triang'
+
+        self.nVertices = vs.shape[0]
+        self.setColour(self.IScale)
+
 
     def setTriangEdges(self, T):
         xs = T.x[T.edge_db]
