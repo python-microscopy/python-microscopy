@@ -29,6 +29,7 @@ class PreviewAquisator(wx.Timer):
         self.WantStopNotification = []
         self.tLastFrame=0
         self.tThisFrame=0
+	self.nFrames = 0
         self.tl=0
 
 	#will be needed to allow the display load to be minimised by, e.g. only updating display once per poll rather than once per frame
