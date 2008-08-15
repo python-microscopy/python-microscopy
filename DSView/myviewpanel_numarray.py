@@ -284,6 +284,7 @@ class MyViewPanel(viewpanel.ViewPanel):
     def OnPaint(self,event):
         DC = wx.PaintDC(self.imagepanel)
         self.imagepanel.PrepareDC(DC)
+        
         s = self.imagepanel.GetVirtualSize()
         MemBitmap = wx.EmptyBitmap(s.GetWidth(), s.GetHeight())
         #del DC
@@ -291,6 +292,7 @@ class MyViewPanel(viewpanel.ViewPanel):
         OldBitmap = MemDC.SelectObject(MemBitmap)
         try:
             DC.BeginDrawing()
+            DC.Clear()
             #Perform(WM_ERASEBKGND, MemDC, MemDC);
             #Message.DC := MemDC;
             self.DoPaint(MemDC);

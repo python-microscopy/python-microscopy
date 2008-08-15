@@ -36,7 +36,7 @@ class ViewPanel(wx.Panel):
 
     def __set_properties(self):
         # begin wxGlade: ViewPanel.__set_properties
-        self.imagepanel.SetSize((504, 521))
+        #self.imagepanel.SetSize((504, 521))
         self.imagepanel.SetScrollRate(10, 10)
         self.bShowOpts.SetSize((7, -1))
         self.cbRedChan.SetSize((80, -1))
