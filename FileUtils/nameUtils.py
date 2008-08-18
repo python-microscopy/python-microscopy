@@ -13,7 +13,8 @@ def getUsername():
         import win32api
         return win32api.GetUserName()
     else: #linux, _should_ hopefully also work for mac
-        return os.getlogin()
+        #return os.getlogin() #broken when not runing from command line
+        return os.environ['USERNAME']
         
     
 
