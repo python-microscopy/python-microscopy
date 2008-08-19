@@ -6,6 +6,7 @@ import fluor
 import wormlike2
 import pylab
 import scipy
+import os
 
 def create(parent):
     return dSimControl(parent)
@@ -261,10 +262,26 @@ class dSimControl(wx.Dialog):
         #event.Skip()
 
     def OnBLoadPointsButton(self, event):
-        event.Skip()
+        fn = wx.FileSelector('Read point positions from file')
+        if fn == None:
+            print 'No file selected'
+            return
+
+        self.points = pylab.load(fn)
+
+        self.stCurObjPoints.SetLabel('Current object has %d points' % len(self.points))
+        #event.Skip()
 
     def OnBSavePointsButton(self, event):
-        event.Skip()
+        fn = wx.SaveFileSelector('Save point positions to file', '.txt')
+        if fn == None:
+            print 'No file selected'
+            return
+
+        #self.points = pylab.load(fn)
+        pylab.save(fn, scipy.array(self.points))
+        #self.stCurObjPoints.SetLabel('Current object has %d points' % len(self.points))
+        #event.Skip()
 
     def OnBGenFloursButton(self, event):
         transTens = self.getTensorFromGrids()
