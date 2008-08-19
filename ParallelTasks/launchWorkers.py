@@ -46,7 +46,7 @@ numProcessors = cpuCount()
 
 subprocess.Popen('python ./taskServerM.py', shell=True)
 
-time.sleep(1)
+time.sleep(3)
 
 subprocess.Popen('python ./fitMon.py', shell=True)
 
