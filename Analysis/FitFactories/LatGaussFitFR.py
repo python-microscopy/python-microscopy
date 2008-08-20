@@ -97,7 +97,7 @@ def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fit
 		
 
 class GaussianFitFactory:
-    def __init__(self, data, metadata, fitfcn=f_gauss2dF):
+    def __init__(self, data, metadata, fitfcn=f_gauss2d):
         '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in 
         metadata. '''
         self.data = data
@@ -140,6 +140,10 @@ class GaussianFitFactory:
         nSlices = dataROI.shape[2]
         #sigma = (4 + scipy.sqrt(dataMean))/sqrt(nSlices)
         sigma = scipy.sqrt(self.metadata.CCD.ReadNoise**2 + (self.metadata.CCD.noiseFactor**2)*self.metadata.CCD.electronsPerCount*dataMean/nSlices)/self.metadata.CCD.electronsPerCount
+	
+	print sigma.mean(), sigma.max(), sigma.min()
+	print 'data:', dataMean.min(), dataMean.max()
+
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
         (res, cov_x, infodict, mesg, resCode) = FitModelWeighted(self.fitfcn, startParameters, dataMean, sigma, X, Y)
