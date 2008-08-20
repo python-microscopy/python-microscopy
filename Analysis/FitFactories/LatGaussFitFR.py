@@ -141,8 +141,8 @@ class GaussianFitFactory:
         #sigma = (4 + scipy.sqrt(dataMean))/sqrt(nSlices)
         sigma = scipy.sqrt(self.metadata.CCD.ReadNoise**2 + (self.metadata.CCD.noiseFactor**2)*self.metadata.CCD.electronsPerCount*dataMean/nSlices)/self.metadata.CCD.electronsPerCount
 	
-	print sigma.mean(), sigma.max(), sigma.min()
-	print 'data:', dataMean.min(), dataMean.max()
+	#print sigma.mean(), sigma.max(), sigma.min()
+	#print 'data:', dataMean.min(), dataMean.max()
 
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
