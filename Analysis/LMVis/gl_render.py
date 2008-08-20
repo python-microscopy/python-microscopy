@@ -11,6 +11,17 @@ from scikits import delaunay
 
 name = 'ball_glut'
 
+class cmap_mult:
+    def __init__(self, gains, zeros):
+        self.gains = gains
+        self.zeros = zeros
+
+    def __call__(self, cvals):
+        return scipy.minimum(scipy.vstack((self.gains[0]*cvals - self.zeros[0],self.gains[1]*cvals - self.zeros[1],self.gains[2]*cvals - self.zeros[2])), 1).astype('f')
+
+cm_hot = cmap_mult(8.0*scipy.ones(3)/3, [0, 3.0/8, 6.0/8])
+cm_grey = cmap_mult(scipy.ones(3), [0, 0, 0])
+
 class LMGLCanvas(GLCanvas):
     def __init__(self, parent):
 	GLCanvas.__init__(self, parent,-1)
@@ -20,6 +31,9 @@ class LMGLCanvas(GLCanvas):
 	self.init = 0
         self.nVertices = 0
         self.IScale = [1.0, 1.0, 1.0]
+        self.zeroPt = [0, 1.0/3, 2.0/3]
+        self.cmap = cm_hot
+        self.clim = [0,1]
 
         self.xmin =0
         self.xmax = 20000
@@ -38,7 +52,7 @@ class LMGLCanvas(GLCanvas):
         self.LUTDraw = True
         self.mode = 'triang'
 
-        self.drawModes = {'triang':GL_TRIANGLES, 'quads':GL_QUADS, 'edges':GL_LINES}
+        self.drawModes = {'triang':GL_TRIANGLES, 'quads':GL_QUADS, 'edges':GL_LINES, 'points':GL_POINTS}
 
         self.c = scipy.array([1,1,1])
 	return
@@ -174,7 +188,26 @@ class LMGLCanvas(GLCanvas):
         self.mode = 'triang'
 
         self.nVertices = vs.shape[0]
-        self.setColour(self.IScale)
+        self.setColour(self.IScale, self.zeroPt)
+
+    def setPoints(self, x, y, c = None):
+        if c == None:
+            self.c = scipy.ones(x.shape).ravel()
+        else: 
+            self.c = c
+        
+        vs = scipy.vstack((x.ravel(), y.ravel()))
+        vs = vs.T.ravel().reshape(len(x.ravel()), 2)
+        self.vs_ = glVertexPointerf(vs)
+
+        #cs = scipy.minimum(scipy.vstack((self.IScale[0]*c,self.IScale[1]*c,self.IScale[2]*c)), 1).astype('f')
+        #cs = cs.T.ravel().reshape(len(c), 3)
+        #cs_ = glColorPointerf(cs)
+
+        self.mode = 'points'
+
+        self.nVertices = vs.shape[0]
+        self.setColour(self.IScale, self.zeroPt)
 
     def setVoronoi(self, T):
         xs_ = None
@@ -238,7 +271,7 @@ class LMGLCanvas(GLCanvas):
         self.mode = 'triang'
 
         self.nVertices = vs.shape[0]
-        self.setColour(self.IScale)
+        self.setColour(self.IScale, self.zeroPt)
 
 
     def setTriangEdges(self, T):
@@ -253,8 +286,8 @@ class LMGLCanvas(GLCanvas):
 
         c = ((a*a).sum(1))
 
-        c_neighbours = c[T.triangle_neighbors].sum(1)
-        c = 1.0/(c + c_neighbours + 1)
+        #c_neighbours = c[T.triangle_neighbors].sum(1)
+        c = 1.0/(c + 1)
 
         self.c = scipy.vstack((c,c,c)).T.ravel()
         
@@ -269,7 +302,7 @@ class LMGLCanvas(GLCanvas):
         self.mode = 'edges'
 
         self.nVertices = vs.shape[0]
-        self.setColour(self.IScale)
+        self.setColour(self.IScale, self.zeroPt)
 
     def setQuads(self, qt, maxDepth = 100):
         lvs = qt.getLeaves(maxDepth)
@@ -299,16 +332,32 @@ class LMGLCanvas(GLCanvas):
         self.mode = 'quads'
 
         self.nVertices = vs.shape[0]
-        self.setColour(self.IScale)
+        self.setColour(self.IScale, self.zeroPt)
 
-    def setColour(self, IScale):
-        self.IScale = IScale
+    def setColour(self, IScale=None, zeroPt=None):
+        #self.IScale = IScale
+        #self.zeroPt = zeroPt
 
-        cs = scipy.minimum(scipy.vstack((IScale[0]*self.c,IScale[1]*self.c,IScale[2]*self.c)), 1).astype('f')
+        #cs = scipy.minimum(scipy.vstack((IScale[0]*self.c - zeroPt[0],IScale[1]*self.c - zeroPt[1],IScale[2]*self.c - zeroPt[2])), 1).astype('f')
+
+        cs = self.cmap((self.c - self.clim[0])/(self.clim[1] - self.clim[0]))
         cs = cs.T.ravel().reshape(len(self.c), 3)
         self.cs_ = glColorPointerf(cs)
 
         self.Refresh()
+
+    def setCMap(self, cmap):
+        self.cmap = cmap
+        self.setColour()
+
+    def setCLim(self, clim):
+        self.clim = clim
+        self.setColour()
+
+    def setPercentileCLim(self, pctile):
+        '''set clim based on a certain percentile'''
+        clim_upper = self.c[scipy.argsort(self.c)[len(self.c)*pctile]]
+        self.setCLim([0, clim_upper])
 
         
     def setView(self, xmin, xmax, ymin, ymax):
@@ -355,12 +404,15 @@ class LMGLCanvas(GLCanvas):
 
             lb_len = lb_ur_y - lb_lr_y
 
-            sc = mx*scipy.array(self.IScale)
+            #sc = mx*scipy.array(self.IScale)
+            #zp = scipy.array(self.zeroPt)
+            #sc = mx
 
             glBegin(GL_QUAD_STRIP)
 
             for i in scipy.arange(0,1, .001):
-                glColor3fv(i*sc)
+                #glColor3fv(i*sc - zp)
+                glColor3fv(self.cmap((i*mx - self.clim[0])/(self.clim[1] - self.clim[0])))
                 glVertex2f(lb_ul_x, lb_lr_y + i*lb_len)
                 glVertex2f(lb_ur_x, lb_lr_y + i*lb_len)
             
@@ -402,9 +454,11 @@ class LMGLCanvas(GLCanvas):
         return glReadPixelsf(0,0,self.Size[0],self.Size[1], mode)
         
         
-class LMGLFrame(wx.Frame):
-    def __init__(self):
-        pass
+def showGLFrame():
+    f = wx.Frame(None, size=(800,800))
+    c = LMGLCanvas(f)
+    f.Show()
+    return c
         
 
 def main():
