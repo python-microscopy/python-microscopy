@@ -108,10 +108,10 @@ static PyObject * genGauss(PyObject *self, PyObject *args, PyObject *keywds)
         
     for (iy = 0; iy < size[1]; iy++)
       {            
-	byY = b_y*pYvals[iy] + b;
+	byY = b_y*(pYvals[iy]- y0) + b;
 	for (ix = 0; ix < size[0]; ix++)
 	  {
-	    *res = A*exp(-(((pXvals[ix] - x0) * (pXvals[ix] - x0)) + ((pYvals[iy]-y0) * (pYvals[iy]-y0)))/ts2) + b_x*pXvals[ix] + byY;
+	    *res = A*exp(-(((pXvals[ix] - x0) * (pXvals[ix] - x0)) + ((pYvals[iy]-y0) * (pYvals[iy]-y0)))/ts2) + b_x*(pXvals[ix]-y0) + byY;
 	    //*res = 1.0;
 	    res++;
             
@@ -207,10 +207,10 @@ static PyObject * genGaussF(PyObject *self, PyObject *args, PyObject *keywds)
         
     for (iy = 0; iy < size[1]; iy++)
       {            
-	byY = b_y*pYvals[iy] + b;
+	byY = b_y*(pYvals[iy]-y0) + b;
 	for (ix = 0; ix < size[0]; ix++)
 	  {
-	    *res = A*EXP(-(((pXvals[ix] - x0) * (pXvals[ix] - x0)) + ((pYvals[iy]-y0) * (pYvals[iy]-y0)))/ts2) + b_x*pXvals[ix] + byY;
+	    *res = A*EXP(-(((pXvals[ix] - x0) * (pXvals[ix] - x0)) + ((pYvals[iy]-y0) * (pYvals[iy]-y0)))/ts2) + b_x*(pXvals[ix]-x0) + byY;
 	    //*res = 1.0;
 	    res++;
             
@@ -524,10 +524,10 @@ static PyObject * genGaussAF(PyObject *self, PyObject *args, PyObject *keywds)
         
     for (iy = 0; iy < size[1]; iy++)
       {            
-	byY = b_y*pYvals[iy] + b;
+	byY = b_y*(pYvals[iy] - y0) + b;
 	for (ix = 0; ix < size[0]; ix++)
 	  {
-	    *res = A*EXP(-(((pXvals[ix] - x0) * (pXvals[ix] - x0))/tsx2 + ((pYvals[iy]-y0) * (pYvals[iy]-y0))/tsy2)) + b_x*pXvals[ix] + byY;
+	    *res = A*EXP(-(((pXvals[ix] - x0) * (pXvals[ix] - x0))/tsx2 + ((pYvals[iy]-y0) * (pYvals[iy]-y0))/tsy2)) + b_x*(pXvals[ix] - x0) + byY;
 	    //*res = 1.0;
 	    res++;
             
