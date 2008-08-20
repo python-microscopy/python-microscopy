@@ -33,7 +33,7 @@ def f_gauss2dF(p, X, Y):
     #return A*scipy.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2)) + b + b_x*X + b_y*Y
     r = genGaussF(X,Y,A,x0,y0,s,b,b_x,b_y)
     r.strides = r.strides #Really dodgy hack to get around something which numpy is not doing right ....
-    return r
+    return r.T
 
 
 class GaussianFitResult:
