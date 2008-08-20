@@ -1,33 +1,26 @@
 import math
 import datetime
 from previewaquisator import PreviewAquisator
-
 class TimeSequenceAquisitor(PreviewAquisator):
     # 'Constants'
         
-
-
-    def __init__(self,chans, cam, _log={}):
-        PreviewAquisator.__init__(self, chans, cam, None)
+    def __init__(self,chans, cam, shutters,_log={}):
+        PreviewAquisator.__init__(self, chans, cam,shutters, None)
         #self.piezos = _piezos
         self.log = _log
         
         
         self.SeqLength = 100  
         self.TimeStep = 0.1            
-
     def getNextDsSlice(self):
         return self.ds.nextZ()
-
     def SetSeqLength(self,iLength):
         self.SeqLength = iLength
-
     def GetSeqLength(self):
         return self.SeqLength
     
     def SetTimeStep(self,iLength):
         self.TimeStep = iLength
-
     def GetTimeStep(self):
         return self.TimeStep
     
@@ -36,7 +29,6 @@ class TimeSequenceAquisitor(PreviewAquisator):
            
     def Verify(self):
         return (True,) 
-
     def doStartLog(self):
         if not 'GENERAL' in self.log.keys():
             self.log['GENERAL'] = {}
@@ -106,10 +98,8 @@ class TimeSequenceAquisitor(PreviewAquisator):
         
         self.log['GENERAL']['Date'] = '%d/%d/%d' % (dt.day, dt.month, dt.year)
         self.log['GENERAL']['StartTime'] = '%d:%d:%d' % (dt.hour, dt.minute, dt.second)
-
         #m_pDoc->LogData.SaveSeqROIMode(m_pDoc->Camera.GetROIMode());
         #pass
-
     def doStopLog(self):
         self.log['GENERAL']['Depth'] = self.ds.getDepth()
         #self.log['PIEZOS']['EndPos'] = self.GetEndPos()
@@ -119,6 +109,5 @@ class TimeSequenceAquisitor(PreviewAquisator):
         
         dt = datetime.datetime.now()
         self.log['GENERAL']['EndTime'] = '%d:%d:%d' % (dt.hour, dt.minute, dt.second)
-
   
    

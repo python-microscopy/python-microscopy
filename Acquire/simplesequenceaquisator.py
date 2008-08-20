@@ -2,7 +2,6 @@ import math
 import datetime
 from previewaquisator import PreviewAquisator
 import time
-
 class SimpleSequenceAquisitor(PreviewAquisator):
     # 'Constants'
     PHASE = 1
@@ -12,10 +11,8 @@ class SimpleSequenceAquisitor(PreviewAquisator):
     FORWARDS = 1
     BACKWARDS = -1
         
-
-
-    def __init__(self,chans, cam, _piezos, _log={}):
-        PreviewAquisator.__init__(self, chans, cam, None)
+    def __init__(self,chans, cam, shutters,_piezos, _log={}):
+        PreviewAquisator.__init__(self, chans, cam, shutters, None)
         self.piezos = _piezos
         self.log = _log
         
@@ -28,7 +25,6 @@ class SimpleSequenceAquisitor(PreviewAquisator):
         
         self.direction = self.FORWARDS
         
-
     def doPiezoStep(self):
         if(self.GetStepSize() > 0):
             #self.piezos[self.GetScanChannel()][0].MoveTo(self.piezos[self.GetScanChannel()][1], self.piezos[self.GetScanChannel()][0].GetPos(self.piezos[self.GetScanChannel()][1]) + 
@@ -39,59 +35,41 @@ class SimpleSequenceAquisitor(PreviewAquisator):
             #print self.GetDirection()*self.GetStepSize()*(self.ds.getZPos() +1)
             #print self.startPosRef
             #print self.GetScanChannel()
-
-
     def piezoReady(self):
         return not ((self.GetStepSize() > 0) and
             (self.piezos[self.GetScanChannel()][0].GetControlReady() == False))
-
-
     def setPiezoStartPos(self):
         " Used internally to move the piezo at the beginning of the aquisition "
         #self.curpos = self.piezos[self.GetScanChannel()][0].GetPos(self.piezos[self.GetScanChannel()][1])
-
         self.SetPrevPos(self._CurPos()) # aktuelle Position der Piezotische merken
-
         self.startPosRef = self.GetStartPos()       
         self.piezos[self.GetScanChannel()][0].MoveTo(self.piezos[self.GetScanChannel()][1], self.GetStartPos(), False)
             
-
     def getNextDsSlice(self):
         return self.ds.nextZ()
-
     def GetScanChannel(self):
         return self.ScanChan
-
     def piezoGoHome(self):
         self.piezos[self.GetScanChannel()][0].MoveTo(self.piezos[self.GetScanChannel()][1],self.GetPrevPos(),False)
-
     def SetScanChannel(self,iMode):
         self.ScanChan = iMode
-
     def SetSeqLength(self,iLength):
         self.SeqLength = iLength
-
     def GetSeqLength(self):
         if (self.StartMode == 0):
             return self.SeqLength
         else:
             return int(math.ceil(abs(self.GetEndPos() - self.GetStartPos())/self.GetStepSize()))
-
     def SetStartMode(self, iMode):
         self.StartMode = iMode
-
     def GetStartMode(self):
         return self.StartMode
-
     def SetStepSize(self, fSize):
         self.StepSize = fSize
-
     def GetStepSize(self):
         return self.StepSize
-
     def SetStartPos(self, sPos):
         self.startPos = sPos
-
     def GetStartPos(self):
         if (self.GetStartMode() == 0):
             return self._CurPos() - (self.GetStepSize()*self.GetSeqLength()*self.GetDirection()/2)
@@ -99,10 +77,8 @@ class SimpleSequenceAquisitor(PreviewAquisator):
             if not ("startPos" in dir(self)):
                 raise Exception, "Please call SetStartPos first !!"
             return self.startPos
-
     def SetEndPos(self, ePos):
         self.endPos = ePos
-
     def GetEndPos(self):
         if (self.GetStartMode() == 0):
             return self._CurPos() + (self.GetStepSize()*self.GetSeqLength()*self.GetDirection()/2)
@@ -110,19 +86,15 @@ class SimpleSequenceAquisitor(PreviewAquisator):
             if not ("endPos" in dir(self)):
                 raise Exception, "Please call SetEndPos first !!"
             return self.endPos
-
     def SetPrevPos(self, sPos):
         self.prevPos = sPos
-
     def GetPrevPos(self):
         if not ("prevPos" in dir(self)):
             raise Exception, "Please call SetPrevPos first !!"
         return self.prevPos
-
     def SetDirection(self, dir):
         " Fowards = 1, backwards = -1 "
         self.direction = dir
-
     def GetDirection(self):
         if (self.GetStartMode() == 0):
             if (self.direction > 0.1):
@@ -144,7 +116,6 @@ class SimpleSequenceAquisitor(PreviewAquisator):
         
         if (self.GetStartPos() > self.piezos[self.GetScanChannel()][0].GetMax(self.piezos[self.GetScanChannel()][1])):
             return (False, 'StartPos', 'StartPos is larger than piezo maximum',self.piezos[self.GetScanChannel()][0].GetMax(self.piezos[self.GetScanChannel()][1])) 
-
         if (self.GetEndPos() < self.piezos[self.GetScanChannel()][0].GetMin(self.piezos[self.GetScanChannel()][1])):
             return (False, 'EndPos', 'EndPos is smaller than piezo minimum',self.piezos[self.GetScanChannel()][0].GetMin(self.piezos[self.GetScanChannel()][1])) 
         
@@ -153,7 +124,6 @@ class SimpleSequenceAquisitor(PreviewAquisator):
         
         if (self.GetEndPos() < self.GetStartPos()):
             return (False, 'EndPos', 'EndPos is before Startpos',self.GetStartPos()) 
-
         #stepsize limits are at present arbitrary == not really restricted to sensible values
         if (self.GetStepSize() < 0.001):
             return (False, 'StepSize', 'StepSize is smaller than piezo minimum',0.001) 
@@ -162,7 +132,6 @@ class SimpleSequenceAquisitor(PreviewAquisator):
         #    return (False, 'StepSize', 'Simplesequenceaquisator StepSize is larger than piezo maximum',90)
         
         return (True,) 
-
     def doStartLog(self):
         if not 'GENERAL' in self.log.keys():
             self.log['GENERAL'] = {}
@@ -232,10 +201,8 @@ class SimpleSequenceAquisitor(PreviewAquisator):
         
         self.log['GENERAL']['Date'] = '%d/%d/%d' % (dt.day, dt.month, dt.year)
         self.log['GENERAL']['StartTime'] = '%d:%d:%d' % (dt.hour, dt.minute, dt.second)
-
         #m_pDoc->LogData.SaveSeqROIMode(m_pDoc->Camera.GetROIMode());
         #pass
-
     def doStopLog(self):
         self.log['GENERAL']['Depth'] = self.ds.getDepth()
         self.log['PIEZOS']['EndPos'] = self.GetEndPos()
@@ -245,6 +212,5 @@ class SimpleSequenceAquisitor(PreviewAquisator):
         
         dt = datetime.datetime.now()
         self.log['GENERAL']['EndTime'] = '%d:%d:%d' % (dt.hour, dt.minute, dt.second)
-
   
    

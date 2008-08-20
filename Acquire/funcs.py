@@ -136,7 +136,7 @@ class microscope:
     def aquireStack(self,piezo, startpos, endpos, stepsize, channel = 1):
         self.pa.stop()
 
-        self.sa = simplesequenceaquisator.SimpleSequenceAquisitor(self.chaninfo, self.cam, piezo)
+        self.sa = simplesequenceaquisator.SimpleSequenceAquisitor(self.chaninfo, self.cam, self.shutters, piezo)
         self.sa.SetStartMode(self.sa.START_AND_END)
 
         self.sa.SetStepSize(stepsize)
