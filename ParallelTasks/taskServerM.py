@@ -151,7 +151,7 @@ class TaskQueueSet(Pyro.core.ObjBase):
 
 if __name__ == '__main__':
 
-	Pyro.config.PYRO_MOBILE_CODE = 1
+	Pyro.config.PYRO_MOBILE_CODE = 0
 	Pyro.core.initServer()
 	ns=Pyro.naming.NameServerLocator().getNS()
 	daemon=Pyro.core.Daemon()
