@@ -17,7 +17,7 @@ class cmap_mult:
         self.zeros = zeros
 
     def __call__(self, cvals):
-        return scipy.minimum(scipy.vstack((self.gains[0]*cvals - self.zeros[0],self.gains[1]*cvals - self.zeros[1],self.gains[2]*cvals - self.zeros[2])), 1).astype('f')
+        return scipy.minimum(scipy.vstack((self.gains[0]*cvals - self.zeros[0],self.gains[1]*cvals - self.zeros[1],self.gains[2]*cvals - self.zeros[2])), 1).astype('f').T
 
 cm_hot = cmap_mult(8.0*scipy.ones(3)/3, [0, 3.0/8, 6.0/8])
 cm_grey = cmap_mult(scipy.ones(3), [0, 0, 0])
@@ -34,6 +34,8 @@ class LMGLCanvas(GLCanvas):
         self.zeroPt = [0, 1.0/3, 2.0/3]
         self.cmap = cm_hot
         self.clim = [0,1]
+
+        self.pointSize=5 #default point size = 5nm
 
         self.xmin =0
         self.xmax = 20000
@@ -91,6 +93,9 @@ class LMGLCanvas(GLCanvas):
         #print self.drawModes[self.mode]
 
         #glClear(GL_ACCUM_BUFFER_BIT)
+
+        if self.mode == 'points':
+            glPointSize(self.pointSize*(float(self.Size[0])/(self.xmax - self.xmin)))
         for i in range(self.numBlurSamples):
             #glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
             glPushMatrix ()
@@ -341,7 +346,9 @@ class LMGLCanvas(GLCanvas):
         #cs = scipy.minimum(scipy.vstack((IScale[0]*self.c - zeroPt[0],IScale[1]*self.c - zeroPt[1],IScale[2]*self.c - zeroPt[2])), 1).astype('f')
 
         cs = self.cmap((self.c - self.clim[0])/(self.clim[1] - self.clim[0]))
-        cs = cs.T.ravel().reshape(len(self.c), 3)
+        print cs.shape
+        cs = cs[:, :3] #if we have an alpha component chuck it
+        cs = cs.ravel().reshape(len(self.c), 3)
         self.cs_ = glColorPointerf(cs)
 
         self.Refresh()
@@ -412,7 +419,7 @@ class LMGLCanvas(GLCanvas):
 
             for i in scipy.arange(0,1, .001):
                 #glColor3fv(i*sc - zp)
-                glColor3fv(self.cmap((i*mx - self.clim[0])/(self.clim[1] - self.clim[0])))
+                glColor3fv(self.cmap((i*mx - self.clim[0])/(self.clim[1] - self.clim[0]))[:3])
                 glVertex2f(lb_ul_x, lb_lr_y + i*lb_len)
                 glVertex2f(lb_ur_x, lb_lr_y + i*lb_len)
             
