@@ -1,8 +1,9 @@
 class VoxelSize:
-	def __init__(self, x, y, z):
+	def __init__(self, x, y, z, unit='um'):
 		self.x = x
 		self.y = y
 		self.z = z
+		self.unit = unit
 
 class CCDMetaDataIXonDefault:
 	#all at 10Mhz, e.m. amplifier
