@@ -37,8 +37,10 @@ def calcTs(prof, thresh):
 
     T = arange(len(dlOn))
     Ton = T[dlOn > 0.5]
-    Ton = Ton[1:] #remove the initial turn on of laser - we're interested in subsequent cycles
+    
     Toff = T[dlOn < -0.5]
+    if len(Ton) > len(Toff):
+        Ton = Ton[1:] #remove the initial turn on of laser - we're interested in subsequent cycles
 
     Ibefore = prof[Toff - 1]
     Iafter = prof[Ton+2]
@@ -53,6 +55,10 @@ def eMod(p, t):
 def eMod2(p, t):
     A, tau , b = p
     return A*(1 - b*exp(-t/tau))
+
+def eMod3(p, t):
+    A, tau , m = p
+    return A*(1 - exp(-t/tau)) + m*t
     
 
 def doTraceDisp(prof, lOn, dt):
@@ -265,3 +271,51 @@ def pkmod_onestate(p, t):
     Nd0 = 0
     t0,aod, aob, ado, sc = p 
     return sc*lNofcn(t, t0, No0, Nd0, aod, aob, ado)
+
+
+def doTraceDispdl(prof, lOn, dt, Ton, Toff, Ibefore, Iafter, r):
+    T = arange(len(prof))*dt
+
+    clf()
+    a1 = axes([.1, .3,.5,.6])
+    a1.plot(T, prof, 'k')
+    a1.grid()
+    a1.set_ylabel('Fluorescence Intensity [a.u.]')
+    a1.set_xlabel('Time [s]')
+
+    a2 = axes([.1, .1,.5,.1], sharex=a1)
+    a2.plot(T, lOn,'k')
+    a2.set_ylim(-.1, 1.1)
+    
+    #a2.set_ylabel('Illumination')
+    a2.set_axis_off()
+
+    a1.set_xlim(0, T.max())
+
+    il = a2.text(-290, -0.35, 'Illumination')
+    il.set_rotation('vertical')
+
+    a3 = axes([.7, .55, .25,.35])
+    midPeak = prof[(Ton[6] - 400):(Toff[7] + 400)]
+    a3.plot((arange(len(midPeak)) - 400)*dt, midPeak,'k')
+    a3.set_xlabel('Time [s]')
+    a3.set_ylabel('Fluorescence Intensity [a.u.]')
+    a3.set_xlim(-2,12)
+
+    a4 = axes([.7, .1, .25, .35])
+    a4.plot(((Ton - Toff)*dt)[:7], (Iafter - Ibefore
+)[:7]/r[0][0], 'xk')
+    a4.plot(((Ton - Toff)*dt)[7:], (Iafter - Ibefore
+)[7:]/r[0][0], '+k')
+    a4.plot(arange(1200), eMod2(r[0], arange(1200))/r[0][0], 'k')
+    a4.set_xlabel('Time [s]')
+    a4.set_ylabel('Normalised fluorescence recovery')
+
+
+    f = gcf()
+    f.text(0.05, .89, 'a', fontsize=14, fontweight='bold')
+    f.text(0.63, .89, 'b', fontsize=14, fontweight='bold')
+    f.text(0.63, .44, 'c', fontsize=14, fontweight='bold')
+
+    show()
+    return (a1, a2, a3, a4, il)
