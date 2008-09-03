@@ -256,7 +256,7 @@ static PyObject * genGaussFJac(PyObject *self, PyObject *args, PyObject *keywds)
     /*End paramters*/
 
     double ts2;
-    double byY;
+    //double byY;
     double A_s2;
     double g_;
 
@@ -341,6 +341,255 @@ static PyObject * genGaussFJac(PyObject *self, PyObject *args, PyObject *keywds)
 }
 
 
+static PyObject * genGaussJac(PyObject *self, PyObject *args, PyObject *keywds) 
+{
+    double *res = 0;  
+    int ix,iy; 
+    int size[3];
+    
+    PyObject *oX =0;
+    PyObject *oY=0;
+    
+    PyArrayObject* Xvals;
+    PyArrayObject* Yvals;
+    
+    PyArrayObject* out;
+    
+    double *pXvals;
+    double *pYvals;
+    
+    /*parameters*/
+    double A = 1;
+    double x0 = 0;
+    double y0 = 0;
+    double sigma = 1;
+    double b = 0;
+    double b_x = 0;
+    double b_y = 0;
+
+    /*End paramters*/
+
+    double ts2;
+    //double byY;
+    double A_s2;
+    double g_;
+
+      
+    
+    static char *kwlist[] = {"X", "Y", "A","x0", "y0","sigma","b","b_x","b_y", NULL};
+    
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "OO|ddddddd", kwlist, 
+         &oX, &oY, &A, &x0, &y0, &sigma, &b, &b_x, &b_y))
+        return NULL; 
+
+    /* Do the calculations */ 
+        
+    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, PyArray_DOUBLE, 0, 1);
+    if (Xvals == NULL) 
+    {
+      PyErr_Format(PyExc_RuntimeError, "Bad X");   
+      return NULL;
+    }
+    
+    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, PyArray_DOUBLE, 0, 1);
+    if (Yvals == NULL)
+    {
+        Py_DECREF(Xvals);
+        PyErr_Format(PyExc_RuntimeError, "Bad Y");
+        return NULL;
+    }
+    
+    
+    
+    pXvals = (double*)Xvals->data;
+    pYvals = (double*)Yvals->data;
+    
+    size[1] = PyArray_Size((PyObject*)Xvals);
+    size[2] = PyArray_Size((PyObject*)Yvals);
+    size[0] = 7;
+        
+    out = (PyArrayObject*) PyArray_FromDims(3,size,PyArray_DOUBLE);
+    
+    //fix strides
+    out->strides[0] = sizeof(double);
+    out->strides[1] = sizeof(double)*size[0];
+    out->strides[2] = sizeof(double)*size[0]*size[1];
+    
+    res = (double*) out->data;
+    
+    ts2 = 1/(2*sigma*sigma);
+    A_s2 = A/(sigma*sigma);
+        
+    for (ix = 0; ix < size[1]; ix++)
+      {            
+	//byY = b_y*pYvals[iy] + b;
+	for (iy = 0; iy < size[2]; iy++)
+	  {
+	    g_ = exp(-(((pXvals[ix] - x0) * (pXvals[ix] - x0)) + ((pYvals[iy]-y0) * (pYvals[iy]-y0)))*ts2);
+	    *res = g_; // d/dA
+	    res++;
+	    g_ *= A_s2;
+	    *res = (pXvals[ix] - x0)*g_; // d/dx0
+	    res++;
+	    *res = (pYvals[iy] - y0)*g_; // d/dx0
+	    res++;
+	    *res = (((pXvals[ix] - x0) * (pXvals[ix] - x0)) + ((pYvals[iy]-y0) * (pYvals[iy]-y0)))*g_/sigma; // d/dsigma
+	    res++;
+	    *res = 1.0;
+	    res++;
+	    *res = pXvals[ix];
+	    res++;
+	    *res = pYvals[iy];
+	    //*res = 1.0;
+	    res++;
+            
+	  }
+        
+      }
+    
+    
+    Py_DECREF(Xvals);
+    Py_DECREF(Yvals);
+    
+    return (PyObject*) out;
+}
+
+static PyObject * genGaussJacW(PyObject *self, PyObject *args, PyObject *keywds) 
+{
+    double *res = 0;  
+    int ix,iy; 
+    int size[3];
+    
+    PyObject *oX =0;
+    PyObject *oY=0;
+    PyObject *oW=0;
+    
+    PyArrayObject* Xvals;
+    PyArrayObject* Yvals;
+    PyArrayObject* weights;
+    
+    PyArrayObject* out;
+    
+    double *pXvals;
+    double *pYvals;
+    double *pWeights;
+    
+    /*parameters*/
+    double A = 1;
+    double x0 = 0;
+    double y0 = 0;
+    double sigma = 1;
+    double b = 0;
+    double b_x = 0;
+    double b_y = 0;
+
+    /*End paramters*/
+
+    double ts2;
+    //double byY;
+    double A_s2;
+    double g_;
+    double w;
+      
+    
+    static char *kwlist[] = {"X", "Y", "W", "A","x0", "y0","sigma","b","b_x","b_y", NULL};
+    
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "OOO|ddddddd", kwlist, 
+				     &oX, &oY, &oW, &A, &x0, &y0, &sigma, &b, &b_x, &b_y))
+        return NULL; 
+
+    /* Do the calculations */ 
+        
+    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, PyArray_DOUBLE, 0, 1);
+    if (Xvals == NULL) 
+    {
+      PyErr_Format(PyExc_RuntimeError, "Bad X");   
+      return NULL;
+    }
+    
+    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, PyArray_DOUBLE, 0, 1);
+    if (Yvals == NULL)
+    {
+        Py_DECREF(Xvals);
+        PyErr_Format(PyExc_RuntimeError, "Bad Y");
+        return NULL;
+    }
+    
+    weights = (PyArrayObject *) PyArray_ContiguousFromObject(oW, PyArray_DOUBLE, 0, 1);
+    if (weights == NULL)
+    {
+        Py_DECREF(Xvals);
+	Py_DECREF(Yvals);
+        PyErr_Format(PyExc_RuntimeError, "Bad weights");
+        return NULL;
+    }
+    
+    pXvals = (double*)Xvals->data;
+    pYvals = (double*)Yvals->data;
+    pWeights = (double*)weights->data;
+    
+    size[1] = PyArray_Size((PyObject*)Xvals);
+    size[2] = PyArray_Size((PyObject*)Yvals);
+    size[0] = 7;
+
+    if (!PyArray_Size((PyObject*)weights) == size[1]*size[2])
+    {
+        Py_DECREF(Xvals);
+	Py_DECREF(Yvals);
+	Py_DECREF(weights);
+        PyErr_Format(PyExc_RuntimeError, "size of weights does not match that of data");
+        return NULL;
+    }
+        
+        
+    out = (PyArrayObject*) PyArray_FromDims(3,size,PyArray_DOUBLE);
+    
+    //fix strides
+    out->strides[0] = sizeof(double);
+    out->strides[1] = sizeof(double)*size[0];
+    out->strides[2] = sizeof(double)*size[0]*size[1];
+    
+    res = (double*) out->data;
+    
+    ts2 = 1/(2*sigma*sigma);
+    A_s2 = A/(sigma*sigma);
+        
+    for (ix = 0; ix < size[1]; ix++)
+      {            
+	//byY = b_y*pYvals[iy] + b;
+	for (iy = 0; iy < size[2]; iy++)
+	  {
+	    w = *pWeights;
+	    g_ = w*exp(-(((pXvals[ix] - x0) * (pXvals[ix] - x0)) + ((pYvals[iy]-y0) * (pYvals[iy]-y0)))*ts2);
+	    *res = g_; // d/dA
+	    res++;
+	    g_ *= A_s2;
+	    *res = (pXvals[ix] - x0)*g_; // d/dx0
+	    res++;
+	    *res = (pYvals[iy] - y0)*g_; // d/dx0
+	    res++;
+	    *res = (((pXvals[ix] - x0) * (pXvals[ix] - x0)) + ((pYvals[iy]-y0) * (pYvals[iy]-y0)))*g_/sigma; // d/dsigma
+	    res++;
+	    *res = w;
+	    res++;
+	    *res = w*pXvals[ix];
+	    res++;
+	    *res = w*pYvals[iy];
+	    //*res = 1.0;
+	    res++;
+
+	    pWeights++;
+	  }
+        
+      }
+    
+    
+    Py_DECREF(Xvals);
+    Py_DECREF(Yvals);
+    Py_DECREF(weights);
+    
+    return (PyObject*) out;
+}
 
 //Double Gaussian
 static PyObject * genGaussA(PyObject *self, PyObject *args, PyObject *keywds) 
@@ -545,14 +794,18 @@ static PyObject * genGaussAF(PyObject *self, PyObject *args, PyObject *keywds)
 static PyMethodDef gauss_appMethods[] = {
     {"genGauss",  genGauss, METH_VARARGS | METH_KEYWORDS,
     "Generate a (fast) Gaussian.\n. Arguments are: 'X', 'Y', 'A'=1,'x0'=0, 'y0'=0,sigma=0,b=0,b_x=0,b_y=0"},
-    {"genGaussF",  genGaussF, METH_VARARGS | METH_KEYWORDS,
+    {"genGaussJac",  genGaussJac, METH_VARARGS | METH_KEYWORDS,
+    "Generate jacobian for Gaussian.\n. Arguments are: 'X', 'Y', 'A'=1,'x0'=0, 'y0'=0,sigma=0,b=0,b_x=0,b_y=0"},
+    {"genGaussJacW",  genGaussJacW, METH_VARARGS | METH_KEYWORDS,
+    "Generate jacobian for a weighted Gaussian.\n. Arguments are: 'X', 'Y', 'W','A'=1,'x0'=0, 'y0'=0,sigma=0,b=0,b_x=0,b_y=0"},
+    /*{"genGaussF",  genGaussF, METH_VARARGS | METH_KEYWORDS,
     "Generate a (fast) Gaussian using dodgy exponential approx.\n. Arguments are: 'X', 'Y', 'A'=1,'x0'=0, 'y0'=0,sigma=0,b=0,b_x=0,b_y=0"},
     {"genGaussFJac",  genGaussFJac, METH_VARARGS | METH_KEYWORDS,
-    "Generate jacobian for Gaussian using dodgy exponential approx.\n. Arguments are: 'X', 'Y', 'A'=1,'x0'=0, 'y0'=0,sigma=0,b=0,b_x=0,b_y=0"},
+    "Generate jacobian for Gaussian using dodgy exponential approx.\n. Arguments are: 'X', 'Y', 'A'=1,'x0'=0, 'y0'=0,sigma=0,b=0,b_x=0,b_y=0"},*/
     {"genGaussA",  genGaussA, METH_VARARGS | METH_KEYWORDS,
     "Generate a (fast) astigmatic Gaussian.\n. Arguments are: 'X', 'Y', 'A'=1,'x0'=0, 'y0'=0,sigma_x=1, sigma_y = 1,b=0,b_x=0,b_y=0"},
-    {"genGaussAF",  genGaussAF, METH_VARARGS | METH_KEYWORDS,
-    "Generate a (fast) astigmatic Gaussian using dodgy exponential approx.\n. Arguments are: 'X', 'Y', 'A'=1,'x0'=0, 'y0'=0,'sigma_x'=1, 'sigma_y'=1,b=0,b_x=0,b_y=0"},
+    /*{"genGaussAF",  genGaussAF, METH_VARARGS | METH_KEYWORDS,
+      "Generate a (fast) astigmatic Gaussian using dodgy exponential approx.\n. Arguments are: 'X', 'Y', 'A'=1,'x0'=0, 'y0'=0,'sigma_x'=1, 'sigma_y'=1,b=0,b_x=0,b_y=0"},*/
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 

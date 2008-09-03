@@ -26,11 +26,21 @@ def weightedMissfitF(p, fcn, data, weights, *args):
     #print sigmas.shape
     return (data - mod)*weights  
 
+def weightedJacF(p, fcn, data, weights, *args):
+    """Helper function which evaluates a model function (fcn) with parameters (p) and additional arguments
+    (*args) and compares this with measured data (data), scaling with precomputed weights corresponding to the errors in the measured data (weights)"""
+    r = -fcn.D(p, *args).ravel()
+    #r = r.reshape((len(weights), -1))
+    for  i in range(r.shape[1]):
+	r[:, i] *= weights
+    return r
+    
+
 def FitModel(modelFcn, startParameters, data, *args):
     return optimize.leastsq(missfit, startParameters, (modelFcn, data.ravel()) + args, full_output=1)
 
 def FitModelWeighted(modelFcn, startParameters, data, sigmas, *args):
-    return optimize.leastsq(weightedMissfitF, startParameters, (modelFcn, data.ravel(), (1.0/sigmas).ravel()) + args, full_output=1)
+    return optimize.leastsq(weightedMissfitF, startParameters, (modelFcn, data.ravel(), (1.0/sigmas).astype('f').ravel()) + args, full_output=1)
 
-def FitModelWeightedJac(modelFcn, jacFcn, startParameters, data, sigmas, *args):
-    return optimize.leastsq(weightedMissfitF, startParameters, (modelFcn, data.ravel(), (1.0/sigmas).ravel()) + args, Dfun = jacFcn, full_output=1)
+def FitModelWeightedJac(modelFcn, startParameters, data, sigmas, *args):
+    return optimize.leastsq(weightedMissfitF, startParameters, (modelFcn[0], data.ravel(), (1.0/sigmas).astype('d').ravel()) + args, Dfun = modelFcn[1], full_output=1, col_deriv = 1)

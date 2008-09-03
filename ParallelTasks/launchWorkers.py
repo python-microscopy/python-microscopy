@@ -44,11 +44,26 @@ def cpuCount():
 #get number of processors 
 numProcessors = cpuCount()
 
-subprocess.Popen('python ./taskServerM.py', shell=True)
+if sys.platform == 'win32':
+    subprocess.Popen('python ./taskServerM.py', shell=True)
 
-time.sleep(3)
+    time.sleep(3)
 
-subprocess.Popen('python ./fitMon.py', shell=True)
+    subprocess.Popen('python ./fitMon.py', shell=True)
 
-for i in range(numProcessors):
-    subprocess.Popen('python ./taskWorkerM.py', shell=True)
+    for i in range(numProcessors):
+        subprocess.Popen('python ./taskWorkerM.py', shell=True)
+else: #operating systems which can launch python scripts directly
+    #get rid of any previously started queues etc...
+    os.system('killall taskServerM.py')
+    os.system('killall taskWorkerM.py')
+    os.system('killall fitMon.py')
+
+    subprocess.Popen('./taskServerM.py', shell=True)
+
+    time.sleep(3)
+
+    subprocess.Popen('./fitMon.py', shell=True)
+
+    for i in range(numProcessors):
+        subprocess.Popen('./taskWorkerM.py', shell=True)

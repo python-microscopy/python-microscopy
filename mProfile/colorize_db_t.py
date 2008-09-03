@@ -255,7 +255,7 @@ def colorize_file(times, file=None, outstream=sys.stdout, standalone=True):
             sourcefile = open(file)
             filename = basename(file)
         except IOError:
-            raise SystemExit("File %s unknown." % file)
+            raise "File %s unknown." % file
     else:
         sourcefile = sys.stdin
         filename = 'STDIN'

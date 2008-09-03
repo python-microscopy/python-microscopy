@@ -4,6 +4,7 @@ import scipy.ndimage as ndimage
 #from pylab import *
 import copy_reg
 import numpy
+import types
 
 from PYME.Analysis.cModels.gauss_app import *
 
@@ -30,10 +31,28 @@ def f_gauss2d(p, X, Y):
 def f_gauss2dF(p, X, Y):
     """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sigma, background, lin_x, lin_y] - uses fast exponential approx"""
     A, x0, y0, s, b, b_x, b_y = p
-    #return A*scipy.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2)) + b + b_x*X + b_y*Y
     r = genGaussF(X,Y,A,x0,y0,s,b,b_x,b_y)
     r.strides = r.strides #Really dodgy hack to get around something which numpy is not doing right ....
     return r
+
+def f_j_gauss2d(p,func, d, w, X,Y):
+    '''generate the jacobian for a 2d Gaussian'''
+    A, x0, y0, s, b, b_x, b_y = p
+    #r = genGaussJac(X,Y,A,x0,y0,s,b,b_x,b_y)
+    r = genGaussJacW(X,Y,w,A,x0,y0,s,b,b_x,b_y)
+    r = -r.ravel().reshape((-1,7))
+    #for  i in range(7):
+	#r[:, i] = r[:, i]*w
+    return r.T
+
+def f_J_gauss2d(p,X,Y):
+    '''generate the jacobian for a 2d Gaussian - for use with _fithelpers.weightedJacF'''
+    A, x0, y0, s, b, b_x, b_y = p
+    r = genGaussJac(X,Y,A,x0,y0,s,b,b_x,b_y)
+    r = r.reshape((-1, 7))
+    return r.T
+
+f_gauss2d.D = f_J_gauss2d
 
 
 class GaussianFitResult:
@@ -103,10 +122,12 @@ class GaussianFitFactory:
         self.data = data
         self.metadata = metadata
 	self.fitfcn = fitfcn #allow model function to be specified (to facilitate changing between accurate and fast exponential approwimations)
-        #self.ccdReadNoise = ccdReadNoise #readout noise in electrons
-        #self.noiseFactor = noiseFactor #EM noise factor
-        #self.electronsPerCount = electronsPerCount
-
+	if type(fitfcn) == types.FunctionType: #single function provided - use numerically estimated jacobian
+		self.solver = FitModelWeighted
+	else: #should be a tuple containing the fit function and its jacobian
+		self.solver = FitModelWeightedJac
+		
+        
     def __getitem__(self, key):
         #print key
         xslice, yslice, zslice = key
@@ -117,42 +138,31 @@ class GaussianFitFactory:
         #average in z
         dataMean = dataROI.mean(2) - self.metadata.CCD.ADOffset
 
-        #generate grid to evaluate function on
-        #X,Y = scipy.mgrid[xslice, yslice]
-        #X = scipy.mgrid[xslice]
-        #Y = scipy.mgrid[yslice]
+        #generate grid to evaluate function on        
 	X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[xslice]
         Y = 1e3*self.metadata.voxelsize.y*scipy.mgrid[yslice]
 
         #estimate some start parameters...
         A = dataMean.max() - dataMean.min() #amplitude
-        #x0 =  (xslice.start + xslice.stop - 1)/2
-        #y0 =  (yslice.start + yslice.stop - 1)/2
+        
 	x0 =  X.mean()
         y0 =  Y.mean()
 
         startParameters = [A, x0, y0, 250/2.35, dataMean.min(), .001, .001]
 
-	#print dataMean.shape
-	#print X.shape
-
+	
         #estimate errors in data
         nSlices = dataROI.shape[2]
-        #sigma = (4 + scipy.sqrt(dataMean))/sqrt(nSlices)
+        
         sigma = scipy.sqrt(self.metadata.CCD.ReadNoise**2 + (self.metadata.CCD.noiseFactor**2)*self.metadata.CCD.electronsPerCount*dataMean/nSlices)/self.metadata.CCD.electronsPerCount
 	
-	#print sigma.mean(), sigma.max(), sigma.min()
-	#print 'data:', dataMean.min(), dataMean.max()
-
+	
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
-        (res, cov_x, infodict, mesg, resCode) = FitModelWeighted(self.fitfcn, startParameters, dataMean, sigma, X, Y)
+        #(res, cov_x, infodict, mesg, resCode) = FitModelWeighted(self.fitfcn, startParameters, dataMean, sigma, X, Y)
+	(res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataMean, sigma, X, Y)
 
-        #print cov_x
-        #print infodict['fjac']
-        #print mesg
-        #print resCode
-        #return GaussianFitResult(res, self.metadata, (xslice, yslice, zslice), resCode)
+        
         fitErrors=None
         try:       
             fitErrors = scipy.sqrt(scipy.diag(cov_x))
