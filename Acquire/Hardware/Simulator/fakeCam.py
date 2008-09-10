@@ -40,7 +40,11 @@ class compThread(threading.Thread):
 
     def run(self):
         #self.im = self.noiseMaker.noisify(rend_im.simPalmIm(self.XVals, self.YVals, self.zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
-        self.im = self.noiseMaker.noisify(rend_im.simPalmImF(self.XVals, self.YVals, self.zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
+
+        if not self.fluors == None and not 'spec' in self.fluors.fl.dtype.fields.keys():
+            self.im = self.noiseMaker.noisify(rend_im.simPalmImF(self.XVals, self.YVals, self.zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
+        else:
+            self.im = self.noiseMaker.noisify(rend_im.simPalmImFSpec(self.XVals, self.YVals, self.zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
 
         
 class FakeCamera:

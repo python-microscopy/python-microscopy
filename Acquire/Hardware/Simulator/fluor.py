@@ -99,3 +99,20 @@ class fluors:
             nch *= (1 - ch) 
         
         return (self.fl['state'] == self.activeState)*(self.fl['exc'][:,0]*c0 + self.fl['exc'][:,1]*c1)
+
+
+class specFluors(fluors):
+    def __init__(self,x, y, z,  transitionProbablilities, excitationCrossections, thetas = [0,0], spectralSig = [1,0], initialState=states.caged, activeState=states.active):
+        self.fl = zeros(len(x), [('x', 'f'),('y', 'f'),('z', 'f'),('exc', '2f'), ('abcosthetas', '2f'),('state', 'i'), ('spec', '2f')])
+        self.fl['x'] = x
+        self.fl['y'] = y
+        self.fl['z'] = z
+        #fl['exc'][:] = abs(cos(thetas))
+        self.fl['exc'][:] = excitationCrossections 
+        self.fl['abcosthetas'][:] = abs(cos(thetas))
+        self.fl['state'][:] = initialState
+        self.fl['spec'][:] = spectralSig
+
+        self.transitionTensor = transitionProbablilities
+        self.activeState = activeState
+    

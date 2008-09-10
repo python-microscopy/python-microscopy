@@ -237,6 +237,8 @@ class dSimControl(wx.Dialog):
             
         self.fillGrids(startVals)
         
+        self.spectralSignatures = scipy.array([[1, 0.3], [0, 1]])
+
         self.scope=scope
         self.points = []
         self.tRefresh.Start(200)
@@ -254,9 +256,9 @@ class dSimControl(wx.Dialog):
         self.points = []
         for i in range(len(wc.xp)):
             if not self.cbFlatten.GetValue():
-                self.points.append((wc.xp[i],wc.yp[i],wc.zp[i]))
+                self.points.append((wc.xp[i],wc.yp[i],wc.zp[i], float(i > len(wc.xp)/2)))
             else:
-                self.points.append((wc.xp[i],wc.yp[i],0))
+                self.points.append((wc.xp[i],wc.yp[i],0,float(i > len(wc.xp)/2)))
         
         self.stCurObjPoints.SetLabel('Current object has %d points' % len(self.points))
         #event.Skip()
@@ -291,7 +293,19 @@ class dSimControl(wx.Dialog):
         x = points_a[:,0]
         y = points_a[:,1]
         z = points_a[:,2]
-        fluors = fluor.fluors(x, y, z, transTens, exCrosses, activeState=self.activeState)
+        #fluors = fluor.fluors(x, y, z, transTens, exCrosses, activeState=self.activeState)
+
+        if points_a.shape[1] == 4: #4th entry is index into spectrum table
+            c = points_a[:,3].astype('i')
+            spec_sig = scipy.ones((len(x), 2))
+            spec_sig[:,0] = self.spectralSignatures[c, 0]
+            spec_sig[:,1] = self.spectralSignatures[c, 1]            
+        
+            fluors = fluor.specFluors(x, y, z, transTens, exCrosses, activeState=self.activeState, spectralSig=spec_sig)
+        else:
+            fluors = fluor.fluors(x, y, z, transTens, exCrosses, activeState=self.activeState)
+
+        
         self.scope.cam.fluors=fluors
         
         pylab.figure(1)
