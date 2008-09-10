@@ -17,6 +17,10 @@ CDisplayOpts::CDisplayOpts(void)
 	disp1off = 0;
 	disp2off = 0;
 	disp3off = 0;
+	
+	flip[0] = 0;
+	flip[1] = 0;
+	flip[2] = 0;
 
 	orientation = UPRIGHT;
 	slice = SLICE_XY;

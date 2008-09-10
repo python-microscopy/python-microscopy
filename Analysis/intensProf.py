@@ -273,6 +273,132 @@ def pkmod_onestate(p, t):
     return sc*lNofcn(t, t0, No0, Nd0, aod, aob, ado)
 
 
+def recolor( obj, col ):
+    try: obj.set_color( col )
+    except: pass
+    try: obj.set_facecolor( col )
+    except: pass
+    try: obj.set_edgecolor( col )
+    except: pass
+    try:
+        ch = obj.get_children()
+        for c in ch:
+            recolor( c, col )
+    except: pass 
+
+
+def doTraceDispdl2(prof, lOn, dt, Ton, Toff, Ibefore, Iafter, r, ipm, dt_ipm, dat, slx, sly, slt_init, slt_ss):
+    T = arange(len(prof))*dt
+
+    clf()
+    a1 = axes([.1, .1,.5,.35])
+    #a1.plot(T, prof, 'k')
+
+    for i in range(len(Ton)/2 + 1):
+        rt = dt*(Ton[i] - Toff[i])
+        a1.plot(dt*(arange(Toff[i+1] - Ton[i] + 400) - 200) + 4*i + 0.0*rt,prof[(Ton[i] - 200):(Toff[i+1] + 200)] + 2*i + .00*rt, 'k')
+        a1.text(4*i + 0.0*rt + dt*(Toff[i+1] - Ton[i] + .3e3),  2*i + 0.0*rt, '%d s' % (round(rt/10)*10), va='center', fontsize=10)
+    #a1.grid()
+    a1.set_ylabel('Fluorescence Intensity')
+    a1.set_xlabel('Time [s]').set_x(.22)
+    a1.set_frame_on(False)
+    a1.set_xticks([0, 10])
+    a1.set_yticks([])
+    a1.plot([0, 30],[0,15], 'k:')
+    a1.set_ylim(-2, 30)
+    #a1.set_xlim(-1, 40)
+
+
+    #a2 = axes([.1, .1,.5,.1], sharex=a1)
+    #a2.plot(T, lOn,'k')
+    #a2.set_ylim(-.1, 1.1)
+    
+    #a2.set_ylabel('Illumination')
+    #a2.set_axis_off()
+
+    #a1.set_xlim(0, T.max())
+
+    #il = a2.text(-290, -0.35, 'Illumination')
+    #il.set_rotation('vertical')
+
+    a3 = axes([.1, .55, .5,.35])
+    #midPeak = prof[(Ton[6] - 400):(Toff[7] + 400)]
+    a3.plot((arange(len(ipm[:1000]))-85)*dt_ipm, ipm[:1000],'k')
+
+    a3.plot((array(slt_init) -85)*dt_ipm, [-1, -1], 'k',lw=2)
+    a3.text((slt_init[1] - 85)*dt_ipm + 0.15, -1,'I', va='center') 
+
+    a3.plot((array(slt_ss) - 85)*dt_ipm, [-1, -1], 'k',lw=2)
+    a3.text((slt_ss[1] - 85)*dt_ipm + 0.15, -1,'II', va='center') 
+    
+    a3.set_xlabel('Time [s]')
+    a3.set_ylabel('Fluorescence Intensity [a.u.]')
+    a3.set_xlim(-1,10)
+    
+    a3_2 = twiny(a3)
+    #midPeak_z = prof[(Ton[6] - 50):(Ton[6] + 200)]
+    a3_2.plot((arange(len(ipm[85:120])))*dt_ipm, ipm[85:120],':.', color=[.5,.5,.5])
+
+    a3_2.plot((array(slt_init) -85)*dt_ipm, [24, 24], color=[.5,.5,.5] , lw=2)
+    a3_2.text((slt_init[1] - 85)*dt_ipm + 0.01, 24,'I', va='center',color=[.5,.5,.5])
+    #a3_2.plot((array(slt_ss) - 85)*dt_ipm, [24, 24],color=[.5,.5,.5] , lw=2)
+    a3_2.set_xlim(-.03, .3)
+    #a3_2.set_xlabel('Time [s]')
+
+    recolor(a3_2.xaxis, [.5,.5,.5])
+
+    a3.set_ylim(-2, 25)
+    
+
+    #a4 = axes([.7, .1, .25, .35])
+    #a4.plot(((Ton - Toff)*dt)[:7], (Iafter - Ibefore)[:7]/r[0][0], 'xk')
+    #a4.plot(((Ton - Toff)*dt)[7:], (Iafter - Ibefore)[7:]/r[0][0], '+k')
+    #a4.plot(arange(1200), eMod(r[0], arange(1200))/r[0][0], 'k')
+    #a4.set_xlabel('Time [s]')
+    #a4.set_ylabel('Normalised fluorescence recovery')
+
+    a4 = axes([.65, .1, .14, .8])
+    d_c = dat[slt_init[0]:slt_init[1], slx[0]:(slx[1] + 1), sly[0]:sly[1]]
+    d_c[:,slx[1] - slx[0], :] = d_c.max()
+    
+    a4.imshow(d_c.reshape(-1,sly[1] - sly[0] ), interpolation='nearest', cmap=cm.gray)
+    a4.set_axis_off()
+    a4.text(25, -7, 'I', ha='center', va='center')
+
+    a5 = axes([.8, .1, .14, .8])
+    d_c2 = dat[slt_ss[0]:slt_ss[1], slx[0]:(slx[1] + 1), sly[0]:sly[1]]
+    d_c2[:,slx[1] - slx[0], :] = d_c2.max()
+
+    d_c2[0, 3:5, (50-3 - 14):(50-3)] = d_c2.max()
+
+    a5.imshow(d_c2.reshape(-1,sly[1] - sly[0]) , interpolation='nearest', cmap=cm.gray)
+    
+    #a5.plot((50 - 4) - array([2.86, 0]), [2,2] , 'w', lw=2)
+
+    a5.set_axis_off()
+    a5.text(25, -7, 'II', ha='center', va='center')
+
+    
+    a6 = axes([.15, .32, .2, .1])
+    a6.plot(prof[(Toff[0] - 1e3):(Toff[1])], color=[0.5,0.5,0.5])
+    a6.set_frame_on(False)
+    a6.set_axis_off()
+    a6.set_ylim(-.1, 7)
+
+    a6.text((Ton[0] -Toff[0])/2 + 1e3, 2, '$\Delta t$', ha='center', va='center')
+    #a6.arrow(((Ton[0] -Toff[0])/4 + 1e3),2,-(Ton[0] -Toff[0])/4,0) 
+    #a6.set_xlim(0, 5e4)
+
+
+    f = gcf()
+    f.text(0.05, .89, 'a', fontsize=14, fontweight='bold')
+    f.text(0.05, .44, 'c', fontsize=14, fontweight='bold')
+    f.text(0.63, .89, 'b', fontsize=14, fontweight='bold')
+
+    show()
+    return (a1, a3, a3_2)
+
+
 def doTraceDispdl(prof, lOn, dt, Ton, Toff, Ibefore, Iafter, r):
     T = arange(len(prof))*dt
 

@@ -144,6 +144,7 @@ class CDisplayParams(_object):
     def getDisp2Off(*args): return _cSMI.CDisplayParams_getDisp2Off(*args)
     def getDisp3Off(*args): return _cSMI.CDisplayParams_getDisp3Off(*args)
     def getOrientation(*args): return _cSMI.CDisplayParams_getOrientation(*args)
+    def getFlip(*args): return _cSMI.CDisplayParams_getFlip(*args)
     def getSliceAxis(*args): return _cSMI.CDisplayParams_getSliceAxis(*args)
 CDisplayParams_swigregister = _cSMI.CDisplayParams_swigregister
 CDisplayParams_swigregister(CDisplayParams)
@@ -182,6 +183,8 @@ class CDisplayOpts(CDisplayParams):
     def setDisp2Off(*args): return _cSMI.CDisplayOpts_setDisp2Off(*args)
     def setDisp3Off(*args): return _cSMI.CDisplayOpts_setDisp3Off(*args)
     def setOrientation(*args): return _cSMI.CDisplayOpts_setOrientation(*args)
+    def getFlip(*args): return _cSMI.CDisplayOpts_getFlip(*args)
+    def setFlip(*args): return _cSMI.CDisplayOpts_setFlip(*args)
     def getSliceAxis(*args): return _cSMI.CDisplayOpts_getSliceAxis(*args)
     def setSliceAxis(*args): return _cSMI.CDisplayOpts_setSliceAxis(*args)
     def Optimise(*args): return _cSMI.CDisplayOpts_Optimise(*args)

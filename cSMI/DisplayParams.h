@@ -24,7 +24,9 @@ public:
     virtual int getDisp1Off()=0;
     virtual int getDisp2Off()=0;
     virtual int getDisp3Off()=0;
-	virtual int getOrientation()=0;
+    virtual int getOrientation()=0;
+
+    virtual int getFlip(int chan) = 0;
 	
     virtual Slice getSliceAxis(){return SLICE_XY;}
 };

@@ -5379,6 +5379,49 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_CDisplayParams_getFlip(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  CDisplayParams *arg1 = (CDisplayParams *) 0 ;
+  int arg2 ;
+  int result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:CDisplayParams_getFlip",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_CDisplayParams, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CDisplayParams_getFlip" "', argument " "1"" of type '" "CDisplayParams *""'"); 
+  }
+  arg1 = reinterpret_cast< CDisplayParams * >(argp1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "CDisplayParams_getFlip" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  {
+    try {
+      result = (int)(arg1)->getFlip(arg2);
+    } catch(IndexOutOfBounds) {
+      SWIG_exception(SWIG_IndexError, "Index out of bounds");
+    } catch(MemoryAllocError e) {
+      SWIG_exception(SWIG_MemoryError, e.desc.c_str());
+    } catch(FileIOError e) {
+      SWIG_exception(SWIG_IOError, e.desc.c_str());
+    } catch(...) {
+      SWIG_exception(SWIG_RuntimeError,"Unknown Exception");
+    }
+  }
+  resultobj = SWIG_From_int(static_cast< int >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_CDisplayParams_getSliceAxis(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   CDisplayParams *arg1 = (CDisplayParams *) 0 ;
@@ -6239,6 +6282,100 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_CDisplayOpts_getFlip(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  CDisplayOpts *arg1 = (CDisplayOpts *) 0 ;
+  int arg2 ;
+  int result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:CDisplayOpts_getFlip",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_CDisplayOpts, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CDisplayOpts_getFlip" "', argument " "1"" of type '" "CDisplayOpts *""'"); 
+  }
+  arg1 = reinterpret_cast< CDisplayOpts * >(argp1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "CDisplayOpts_getFlip" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  {
+    try {
+      result = (int)(arg1)->getFlip(arg2);
+    } catch(IndexOutOfBounds) {
+      SWIG_exception(SWIG_IndexError, "Index out of bounds");
+    } catch(MemoryAllocError e) {
+      SWIG_exception(SWIG_MemoryError, e.desc.c_str());
+    } catch(FileIOError e) {
+      SWIG_exception(SWIG_IOError, e.desc.c_str());
+    } catch(...) {
+      SWIG_exception(SWIG_RuntimeError,"Unknown Exception");
+    }
+  }
+  resultobj = SWIG_From_int(static_cast< int >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_CDisplayOpts_setFlip(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  CDisplayOpts *arg1 = (CDisplayOpts *) 0 ;
+  int arg2 ;
+  int arg3 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  int val3 ;
+  int ecode3 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOO:CDisplayOpts_setFlip",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_CDisplayOpts, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CDisplayOpts_setFlip" "', argument " "1"" of type '" "CDisplayOpts *""'"); 
+  }
+  arg1 = reinterpret_cast< CDisplayOpts * >(argp1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "CDisplayOpts_setFlip" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  ecode3 = SWIG_AsVal_int(obj2, &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "CDisplayOpts_setFlip" "', argument " "3"" of type '" "int""'");
+  } 
+  arg3 = static_cast< int >(val3);
+  {
+    try {
+      (arg1)->setFlip(arg2,arg3);
+    } catch(IndexOutOfBounds) {
+      SWIG_exception(SWIG_IndexError, "Index out of bounds");
+    } catch(MemoryAllocError e) {
+      SWIG_exception(SWIG_MemoryError, e.desc.c_str());
+    } catch(FileIOError e) {
+      SWIG_exception(SWIG_IOError, e.desc.c_str());
+    } catch(...) {
+      SWIG_exception(SWIG_RuntimeError,"Unknown Exception");
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_CDisplayOpts_getSliceAxis(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   CDisplayOpts *arg1 = (CDisplayOpts *) 0 ;
@@ -6865,6 +7002,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"CDisplayParams_getDisp2Off", _wrap_CDisplayParams_getDisp2Off, METH_VARARGS, NULL},
 	 { (char *)"CDisplayParams_getDisp3Off", _wrap_CDisplayParams_getDisp3Off, METH_VARARGS, NULL},
 	 { (char *)"CDisplayParams_getOrientation", _wrap_CDisplayParams_getOrientation, METH_VARARGS, NULL},
+	 { (char *)"CDisplayParams_getFlip", _wrap_CDisplayParams_getFlip, METH_VARARGS, NULL},
 	 { (char *)"CDisplayParams_getSliceAxis", _wrap_CDisplayParams_getSliceAxis, METH_VARARGS, NULL},
 	 { (char *)"CDisplayParams_swigregister", CDisplayParams_swigregister, METH_VARARGS, NULL},
 	 { (char *)"new_CDisplayOpts", _wrap_new_CDisplayOpts, METH_VARARGS, NULL},
@@ -6889,6 +7027,8 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"CDisplayOpts_setDisp2Off", _wrap_CDisplayOpts_setDisp2Off, METH_VARARGS, NULL},
 	 { (char *)"CDisplayOpts_setDisp3Off", _wrap_CDisplayOpts_setDisp3Off, METH_VARARGS, NULL},
 	 { (char *)"CDisplayOpts_setOrientation", _wrap_CDisplayOpts_setOrientation, METH_VARARGS, NULL},
+	 { (char *)"CDisplayOpts_getFlip", _wrap_CDisplayOpts_getFlip, METH_VARARGS, NULL},
+	 { (char *)"CDisplayOpts_setFlip", _wrap_CDisplayOpts_setFlip, METH_VARARGS, NULL},
 	 { (char *)"CDisplayOpts_getSliceAxis", _wrap_CDisplayOpts_getSliceAxis, METH_VARARGS, NULL},
 	 { (char *)"CDisplayOpts_setSliceAxis", _wrap_CDisplayOpts_setSliceAxis, METH_VARARGS, NULL},
 	 { (char *)"CDisplayOpts_Optimise", _wrap_CDisplayOpts_Optimise, METH_VARARGS, NULL},
