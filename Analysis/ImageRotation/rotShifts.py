@@ -1,3 +1,18 @@
+from numpy import *
+from pylab import *
+
+def rotMod(p, x1,y1):
+    dx,dy,xc, yc, theta = p
+    #dx = 0
+    #dy = 0
+    
+    sx,sy = rotVects(x1,y1,xc,yc,theta)
+
+    #plot(hstack((sx + dx, sy + dy)))
+    quiver(x1, y1, sx+dx, sy+dy)
+    return hstack((sx + dx, sy + dy))
+
+
 def rotVects(x1,y1, xc, yc, theta):
     dx = xc - x1
     dy = yc - y1

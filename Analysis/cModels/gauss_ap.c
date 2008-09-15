@@ -226,6 +226,9 @@ static PyObject * genGaussF(PyObject *self, PyObject *args, PyObject *keywds)
 }
 
 
+
+
+
 //generate jacobian
 static PyObject * genGaussFJac(PyObject *self, PyObject *args, PyObject *keywds) 
 {

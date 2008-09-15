@@ -256,9 +256,11 @@ class dSimControl(wx.Dialog):
         self.points = []
         for i in range(len(wc.xp)):
             if not self.cbFlatten.GetValue():
-                self.points.append((wc.xp[i],wc.yp[i],wc.zp[i], float(i > len(wc.xp)/2)))
+                #self.points.append((wc.xp[i],wc.yp[i],wc.zp[i], float(i > len(wc.xp)/2)))
+                self.points.append((wc.xp[i],wc.yp[i],wc.zp[i]))
             else:
-                self.points.append((wc.xp[i],wc.yp[i],0,float(i > len(wc.xp)/2)))
+                #self.points.append((wc.xp[i],wc.yp[i],0,float(i > len(wc.xp)/2)))
+                self.points.append((wc.xp[i],wc.yp[i],0))
         
         self.stCurObjPoints.SetLabel('Current object has %d points' % len(self.points))
         #event.Skip()
