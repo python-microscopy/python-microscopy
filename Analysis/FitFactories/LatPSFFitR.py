@@ -1,4 +1,5 @@
 import scipy
+import numpy
 from scipy.signal import interpolate
 import scipy.ndimage as ndimage
 from pylab import *
