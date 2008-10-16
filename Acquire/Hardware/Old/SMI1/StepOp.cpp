@@ -5,8 +5,8 @@
 // * 18. Änderung am 25. Juli      2002                                      *
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-#include "stdafx.h"
-#include "stdafx.h"
+//#include "stdafx.h"
+//#include "stdafx.h"
 // #include "SMIProjectDoc.h"
 #include "StepOp.h"
 #include "MsgStep.h"

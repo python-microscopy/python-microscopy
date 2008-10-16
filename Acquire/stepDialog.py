@@ -36,12 +36,12 @@ class stepDialog(wx.Frame):
         self.tYPos = wx.TextCtrl(id=wxID_STEPDIALOGTYPOS, name='tYPos',
               parent=self, pos=wx.Point(16, 72), size=wx.Size(48, 24), style=0,
               value='0')
-        self.tYPos.Enable(False)
+        self.tYPos.Enable(True)
 
         self.tZPos = wx.TextCtrl(id=wxID_STEPDIALOGTZPOS, name='tZPos',
               parent=self, pos=wx.Point(16, 120), size=wx.Size(48, 24), style=0,
               value='0')
-        self.tZPos.Enable(False)
+        self.tZPos.Enable(True)
 
         self.staticBox2 = wx.StaticBox(id=wxID_STEPDIALOGSTATICBOX2,
               label='ZPos', name='staticBox2', parent=self, pos=wx.Point(8, 104),
@@ -50,7 +50,7 @@ class stepDialog(wx.Frame):
         self.tXPos = wx.TextCtrl(id=wxID_STEPDIALOGTXPOS, name='tXPos',
               parent=self, pos=wx.Point(16, 24), size=wx.Size(48, 24), style=0,
               value='0')
-        self.tXPos.Enable(False)
+        self.tXPos.Enable(True)
 
         self.staticBox3 = wx.StaticBox(id=wxID_STEPDIALOGSTATICBOX3,
               label='XPos', name='staticBox3', parent=self, pos=wx.Point(8, 8),
@@ -60,7 +60,7 @@ class stepDialog(wx.Frame):
               '9', '10'], id=wxID_STEPDIALOGCHSPEED, name='chSpeed',
               parent=self, pos=wx.Point(96, 40), size=wx.Size(56, 21), style=0)
         self.chSpeed.SetSelection(0)
-        EVT_CHOICE(self.chSpeed, wxID_STEPDIALOGCHSPEED, self.OnChoiceSpeed)
+        self.chSpeed.Bind(wx.EVT_CHOICE, self.OnChoiceSpeed)
 
         self.staticBox4 = wx.StaticBox(id=wxID_STEPDIALOGSTATICBOX4,
               label='Speed', name='staticBox4', parent=self, pos=wx.Point(88,
@@ -68,7 +68,7 @@ class stepDialog(wx.Frame):
 
         self.bOn = wx.Button(id=wxID_STEPDIALOGBON, label='On', name='bOn',
               parent=self, pos=wx.Point(96, 80), size=wx.Size(56, 23), style=0)
-        EVT_BUTTON(self.bOn, wxID_STEPDIALOGBON, self.OnButtonOn)
+        self.bOn.Bind(wx.EVT_BUTTON, self.OnButtonOn)
 
         self.staticBox5 = wx.StaticBox(id=wxID_STEPDIALOGSTATICBOX5,
               label='Joystick', name='staticBox5', parent=self, pos=wx.Point(80,
@@ -77,12 +77,12 @@ class stepDialog(wx.Frame):
         self.bGoto = wx.Button(id=wxID_STEPDIALOGBGOTO, label='Goto',
               name='bGoto', parent=self, pos=wx.Point(8, 160), size=wx.Size(64,
               23), style=0)
-        EVT_BUTTON(self.bGoto, wxID_STEPDIALOGBGOTO, self.OnBGotoButton)
+        self.bGoto.Bind(wx.EVT_BUTTON, self.OnBGotoButton)
 
         self.bGotoXY = wx.Button(id=wxID_STEPDIALOGBGOTOXY, label='Goto XY',
               name='bGotoXY', parent=self, pos=wx.Point(88, 120), size=wx.Size(75,
               23), style=0)
-        EVT_BUTTON(self.bGotoXY, wxID_STEPDIALOGBGOTOXY, self.OnBGotoXYButton)
+        self.bGotoXY.Bind(wx.EVT_BUTTON, self.OnBGotoXYButton)
 
     def __init__(self, parent, scope):
         self._init_ctrls(parent)

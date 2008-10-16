@@ -5,8 +5,8 @@
 // * 50. Änderung am 20. Oktober   2002                                      *
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-#include "stdafx.h"
-#include "stdafx.h"
+//#include "stdafx.h"
+//#include "stdafx.h"
 #include "SerialOp.h"
 #include <windows.h>
 

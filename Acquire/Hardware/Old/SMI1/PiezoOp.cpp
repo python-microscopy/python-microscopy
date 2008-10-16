@@ -5,8 +5,8 @@
 // * 10. Änderung am 26. September 2001                                      *
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-#include "stdafx.h"
-#include "stdafx.h"
+//#include "stdafx.h"
+//#include "stdafx.h"
 // #include "SMIProjectDoc.h"
 #include "PiezoOp.h"
 #include "MsgPiezo.h"
