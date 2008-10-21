@@ -326,7 +326,21 @@ class smiMainFrame(wx.Frame):
             self.mCam.SetLabel(wxID_SMIMAINFRAMEMCAMROI, 'Set ROI')
             self.roi_on = False
         else:
-            self.scope.cam.SetROI(self.scope.vp.selection_begin_x, self.scope.vp.selection_begin_y, self.scope.vp.selection_end_x, self.scope.vp.selection_end_y)
+            x1 = self.scope.vp.selection_begin_x
+            y1 = self.scope.vp.selection_begin_y
+            x2 = self.scope.vp.selection_end_x
+            y2 = self.scope.vp.selection_end_y
+
+            #if we're splitting colours/focal planes across the ccd, then only allow symetric ROIs
+            if 'splitting' in dir(self.scope):
+                if self.scope.splitting.lower() == 'left_right':
+                    x1 = min(x1, self.scope.cam.GetCCDWidth() - x2)
+                    x2 = max(x2, self.scope.cam.GetCCDWidth() - x1)
+                if self.scope.splitting.lower() == 'up_down':
+                    y1 = min(y1, self.scope.cam.GetCCDHeight() - y2)
+                    y2 = max(y2, self.scope.cam.GetCCDHeight() - y1)
+                    
+            self.scope.cam.SetROI(x1,y1,x2,y2)
             self.mCam.SetLabel(wxID_SMIMAINFRAMEMCAMROI, 'Clear ROI')
             self.roi_on = True
             
