@@ -20,6 +20,16 @@ def read_bead_data(filename):
 
     return (g,r)
 
+def read_h5f_cols(h5f, slice):
+    '''extracts colours from a h5 slice - file should be open!'''
+    d1 = h5f.root.ImageData[slice]
+
+    g = d1[:, :256]
+    r = d1[:, 256:]
+    r = np.fliplr(r)
+
+    return (g,r)
+
 
 def genRGBImage(g,r, gsat = 1, rsat= 1):
     g_ = g.astype('f') - g.min()

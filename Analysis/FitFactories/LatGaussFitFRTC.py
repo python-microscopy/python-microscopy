@@ -33,7 +33,7 @@ def f_gauss2d2c(p, Xg, Yg, Xr, Yr):
     g = genGauss(Xg,Yg,Ag,x0,y0,s,bG,b_x,b_y)
     g.strides = g.strides #Really dodgy hack to get around something which numpy is not doing right ....
     
-    return numpy.concatenate((g,r))
+    return numpy.concatenate((g.reshape(g.shape + (1,)),r.reshape(g.shape + (1,))), 2)
 
 
         
@@ -61,7 +61,11 @@ def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fit
 
 	#print fitResults.dtype
 	#print fitErr.dtype
-	print tIndex
+	#print fitResults
+	#print fitErr
+	#print tIndex
+	#print slicesUsed
+	#print resultCode
 
 
 	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, slicesUsed)], dtype=fresultdtype) 
@@ -99,7 +103,11 @@ class GaussianFitFactory:
 	#varying we should be able to set Xr = Xg + delta_x(\bar{Xr}) and 
 	#similarly for y. For slowly varying shifts the following should be 
 	#equivalent to this. For rapidly varying shifts all bets are off ...
-	Xr, Yr = twoColour.getCorrection(Xg, Yg, self.metadata.chroma.dx,self.metadata.chroma.dy)  
+
+	DeltaX, DeltaY = twoColour.getCorrection(Xg.mean(), Yg.mean(), self.metadata.chroma.dx,self.metadata.chroma.dy)  
+
+	Xr = Xg - DeltaX
+	Yr = Yg - DeltaY
 
         #estimate some start parameters...
         Ag = dataROI[:,:,0].max() - dataROI[:,:,0].min() #amplitude
@@ -114,7 +122,7 @@ class GaussianFitFactory:
         #estimate errors in data
         nSlices = 1#dataROI.shape[2]
         
-        sigma = scipy.sqrt(self.metadata.CCD.ReadNoise**2 + (self.metadata.CCD.noiseFactor**2)*self.metadata.CCD.electronsPerCount*dataROI/nSlices)/self.metadata.CCD.electronsPerCount
+        sigma = scipy.sqrt(self.metadata.CCD.ReadNoise**2 + (self.metadata.CCD.noiseFactor**2)*self.metadata.CCD.electronsPerCount*self.metadata.CCD.EMGain*dataROI/nSlices)/self.metadata.CCD.electronsPerCount
 	
 	
         #do the fit
@@ -130,7 +138,7 @@ class GaussianFitFactory:
         except Exception, e:
             pass
 
-	print res, fitErrors, resCode
+	#print res, fitErrors, resCode
         return GaussianFitResultR(res, self.metadata, (xslice, yslice, zslice), resCode, fitErrors)
 
     def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
@@ -141,7 +149,7 @@ class GaussianFitFactory:
 	y = round(y)
 	
         return self[max((x - roiHalfSize), 0):min((x + roiHalfSize + 1),self.data.shape[0]), 
-                    max((y - roiHalfSize), 0):min((y + roiHalfSize + 1), self.data.shape[1]), :]
+                    max((y - roiHalfSize), 0):min((y + roiHalfSize + 1), self.data.shape[1]), 0:2]
         
 
 #so that fit tasks know which class to use
