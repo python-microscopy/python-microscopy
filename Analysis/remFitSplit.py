@@ -51,7 +51,7 @@ class fitTask(taskDef.Task):
 
 
     def __call__(self, gui=False):
-        fitMod = __import__(self.fitModule) #import our fitting module
+        fitMod = __import__('PYME.Analysis.FitFactories.' + self.fitModule, fromlist=['PYME', 'Analysis','FitFactories']) #import our fitting module
         
 
         #when camera buffer overflows, empty pictures are produced - deal with these here
