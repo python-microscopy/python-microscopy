@@ -112,8 +112,10 @@ class GaussianFitFactory:
         A = dataMean.max() - dataMean.min() #amplitude
         #x0 =  (xslice.start + xslice.stop - 1)/2
         #y0 =  (yslice.start + yslice.stop - 1)/2
-	x0 =  X.mean()
-        y0 =  Y.mean()
+	x_m, y_m = scipy.where(dataMean == dataMean.max())
+
+	x0 =  X[x_m]
+        y0 =  Y[y_m]
 
         startParameters = [A, x0, y0, 250/2.35, dataMean.min(), .001, .001]
 
