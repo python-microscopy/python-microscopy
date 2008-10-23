@@ -1,4 +1,4 @@
-from PYME.RemoteTasks import taskDef
+from PYME.ParallelTasks import taskDef
 import ofind
 import matplotlib
 import numpy
