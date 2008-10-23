@@ -96,7 +96,7 @@ class fitTask(taskDef.Task):
                 p = self.ofd[i]
                 self.res[i] = fitFac.FromPoint(round(p.x), round(p.y))
         else:
-            self.res  = [[fitFacTop.FromPoint(round(p.x), round(p.y), roiHalfSize=7) for p in self.ofd],[fitFacBottom.FromPoint(min(round(p.x + self.horizOffset), (top.shape[0] - 10)), round(p.y),roiHalfSize=7) for p in self.ofd] ]
+            self.res  = [[fitFacTop.FromPoint(round(p.x), round(p.y), roiHalfSize=10) for p in self.ofd],[fitFacBottom.FromPoint(min(round(p.x + self.horizOffset), (top.shape[0] - 10)), round(p.y),roiHalfSize=10) for p in self.ofd] ]
 
         return fitResult(self, self.res )
 
