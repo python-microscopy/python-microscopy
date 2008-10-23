@@ -1,4 +1,4 @@
-import taskDef
+from PYME.RemoteTasks import taskDef
 import ofind
 import matplotlib
 import numpy
