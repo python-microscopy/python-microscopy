@@ -81,7 +81,7 @@ class GaussianFitResult:
 
 
 class GaussianFitFactory:
-    def __init__(self, data, metadata, fitfcn=f_gauss2dF):
+    def __init__(self, data, metadata, fitfcn=f_gauss2d):
         '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in 
         metadata. '''
         self.data = data
