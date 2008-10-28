@@ -36,6 +36,25 @@ from Hardware import frZStage
 frz = frZStage.frZStepper(None, scope.zStage)
 frz.Show()
 
+#3-axis piezo
+from Hardware import thorlabsPiezo
+
+#check to see what we've got attached
+piezoSerialNums = thorlabsPiezo.EnumeratePiezos()
+if len(piezoSerialNums) == 3: #expect to see 3 piezos
+    scope.pzx = thorlabsPiezo.TLPiezo(91814461, 'X Axis')
+    scope.pzy = thorlabsPiezo.TLPiezo(91814462, 'Y Axis')
+    scope.pzz = thorlabsPiezo.TLPiezo(91814463, 'Z Axis')
+
+    scope.piezos.append((scope.pzx, 1, 'X Piezo'))
+    scope.piezos.append((scope.pzy, 1, 'Y Piezo'))
+    scope.piezos.append((scope.pzz, 1, 'Z Piezo'))
+
+    #centre the piezos
+    scope.pzx.MoveTo(0,50)
+    scope.pzy.MoveTo(0,50)
+    scope.pzz.MoveTo(0,40)
+    
 
 #DigiData
 from Hardware.DigiData import DigiDataClient
@@ -60,4 +79,4 @@ Is = []
 def calcSum(caller):
     Is.append(cSMI.CDataStack_AsArray(caller.ds, 0).sum())
 
-scope.pa.WantFrameNotification.append(calcSum)
+#scope.pa.WantFrameNotification.append(calcSum)

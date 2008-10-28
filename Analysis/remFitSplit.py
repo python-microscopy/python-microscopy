@@ -50,7 +50,7 @@ class fitTask(taskDef.Task):
         self.horizOffset = horizOffset
 
 
-    def __call__(self, gui=False):
+    def __call__(self, gui=False, taskQueue=None):
         fitMod = __import__('PYME.Analysis.FitFactories.' + self.fitModule, fromlist=['PYME', 'Analysis','FitFactories']) #import our fitting module
         
 

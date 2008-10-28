@@ -49,7 +49,7 @@ class TaskQueue:
 		if (len(self.openTasks) + len(self.tasksInProgress)) == 0: #no more tasks
 			self.onEmpty(self)
 
-	def fileResult(taskResult):
+	def fileResult(self,taskResult):
 		self.closedTasks.append(taskResult)
 
 	def getCompletedTask(self):
