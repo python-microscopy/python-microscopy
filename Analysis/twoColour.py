@@ -148,7 +148,9 @@ def genShiftVectorFieldMC(nx,ny, nsx, nsy, p, Nsamp):
     
 def getCorrection(x,y,x_sv, y_sv):
     '''looks up correction in calculated vector fields'''
-    return (x_sv[sp.round_(x/100).astype('i'), sp.round_(y/100).astype('i')],y_sv[sp.round_(x/100).astype('i'), sp.round_(y/100).astype('i')])
+    xi = max(min(sp.round_(x/100).astype('i'), x_sv.shape[0]),0)
+    yi = max(min(sp.round_(y/100).astype('i'), x_sv.shape[1]),0)
+    return (x_sv[xi, yi],y_sv[xi, yi])
 
 
 def calcCorrections(filenames):

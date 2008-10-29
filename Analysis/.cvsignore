@@ -14,6 +14,7 @@ intensProf.pyc
 ofind.pyc
 remFitBuf.pyc
 remFitHDF.pyc
+remFitHDF_dc.pyc
 setup.pyc
 twoColDep.pyc
 twoColour.pyc

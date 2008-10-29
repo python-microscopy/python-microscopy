@@ -1,10 +1,13 @@
-import taskDef
+from PYME.ParallelTasks import taskDef
+from PYME.ParallelTasks.relativeFiles import getFullFilename
 import ofind
 import matplotlib
-import read_kdf
+#import read_kdf
 import numpy
-import tables
-#import pointQT
+
+#import tables
+
+tables= None
 
 h5File = None
 h5Filename = None
@@ -17,6 +20,8 @@ pointsLast = None
 
 #matplotlib.interactive(False)
 from pylab import *
+
+import copy
 
 def tqPopFcn(workerN, NWorkers, NTasks):
     return workerN * NTasks/NWorkers #let each task work on its own chunk of data ->
@@ -89,9 +94,16 @@ class fitTask(taskDef.Task):
         self.SNThreshold = SNThreshold
 
 
-    def __call__(self, gui=False):
-        global h5File, h5Filename, h5Buffer, lastIndex, pointsLast 
-        fitMod = __import__(self.fitModule) #import our fitting module
+    def __call__(self, gui=False, taskQueue=None):
+        global h5File, h5Filename, h5Buffer, tables
+        
+        self.filename = getFullFilename(self.filename) #generate ourselves a full file name from the relative filename
+        #print self.filename
+
+        tables = __import__('tables') #dodgy workaround for bug in pytables when using Pyro under windows
+
+        
+        fitMod = __import__('PYME.Analysis.FitFactories.' + self.fitModule, fromlist=['PYME', 'Analysis','FitFactories']) #import our fitting module
 
         #read the data
         #self.data = read_kdf.ReadKdfData(self.filename)
@@ -118,6 +130,10 @@ class fitTask(taskDef.Task):
         #self.data = self.data.reshape((self.data.shape[0], self.data.shape[1],self.data.shape[2]))
         self.data = self.data.reshape((self.data.shape[0], self.data.shape[1],1))
         
+        g = self.data[:, :(self.data.shape[1]/2)]
+        r = self.data[:, (self.data.shape[1]/2):]
+        r = np.fliplr(r)
+        
         #calculate background
         self.bg = 0
         if not len(self.bgindices) == 0:
@@ -135,13 +151,19 @@ class fitTask(taskDef.Task):
         #self.ofd = ofind.ObjectIdentifier(self.data.astype('f') - self.bg)
         #self.ofd.FindObjects(self.calcThreshold(),0)
 
-        self.ofd = self.findObjects(self.data.astype('f') - self.bg, self.calcThreshold())
+        dat_bg = self.data.astype('f') - self.bg
+        
+        g_ = dat_bg[:, :(self.data.shape[1]/2)]
+        r_ = dat_bg[:, (self.data.shape[1]/2):]
+        r_ = np.fliplr(r_)
 
-        if lastIndex == (self.index - 1):
-            prevPoints = pointsLast
-        else:
-            d_l = h5Buffer.getSlice(self.index - 1).reshape(self.data.shape).astype('f')
-            prevPoints = self.findObjects(d_l, self.calcThreshold(d_l))
+        self.ofd = self.findObjects(g_ + r_, self.calcThreshold(g + r))
+
+        #if lastIndex == (self.index - 1):
+        #    prevPoints = pointsLast
+        #else:
+        #    d_l = h5Buffer.getSlice(self.index - 1).reshape(self.data.shape).astype('f')
+        #    prevPoints = self.findObjects(d_l, self.calcThreshold(d_l))
         
         #If we're running under a gui - display found objects
         if gui:
@@ -154,7 +176,12 @@ class fitTask(taskDef.Task):
             show()
 
         #Create a fit 'factory'
-        fitFac = fitMod.FitFactory(self.data, self.md)
+        md = copy.copy(self.md)
+        md.tIndex = self.index
+
+        fitFac = fitMod.FitFactory(np.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2), md)
+
+        #print 'Have Fit Factory'
         
         #perform fit for each point that we detected
         if 'FitResultsDType' in dir(fitMod):
@@ -170,15 +197,16 @@ class fitTask(taskDef.Task):
 
         return fitResult(self, self.res )
 
-    def findObjects(data,threshold):
+    def findObjects(self,data,threshold):
         #Find objects
         ofd = ofind.ObjectIdentifier(data)
-        ofd.FindObjects(threshold(),0)
+        ofd.FindObjects(threshold,0)
 
         return ofd
 
-    def calcThreshold(self, data = self.data):
+    def calcThreshold(self, data):
         if self.SNThreshold:
-            return numpy.sqrt(numpy.maximum(data.mean(2) - self.md.CCD.ADOffset, 1))*self.threshold
+            fudgeFactor = 0.25 #to account for the fact that the blurring etc... in ofind doesn't preserve intensities - at the moment completely arbitrary so a threshold setting of 1 results in reasonable detection.
+            return numpy.sqrt(numpy.maximum(self.md.CCD.electronsPerCount*(data.astype('f').mean(2) - 2*self.md.CCD.ADOffset)/self.md.CCD.EMGain, 1))*self.md.CCD.electronsPerCount*fudgeFactor*self.threshold
         else:
             return self.threshold

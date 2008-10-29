@@ -1,7 +1,7 @@
 import scipy
 from scipy.signal import interpolate
 import scipy.ndimage as ndimage
-#from pylab import *
+from pylab import *
 import copy_reg
 import numpy
 import types
@@ -106,12 +106,21 @@ class GaussianFitFactory:
 
 	DeltaX, DeltaY = twoColour.getCorrection(Xg.mean(), Yg.mean(), self.metadata.chroma.dx,self.metadata.chroma.dy)  
 
-	Xr = Xg - DeltaX
-	Yr = Yg - DeltaY
+	Xr = Xg + DeltaX
+	Yr = Yg + DeltaY
+
+	#print DeltaX
+	#print DeltaY
 
         #estimate some start parameters...
         Ag = dataROI[:,:,0].max() - dataROI[:,:,0].min() #amplitude
 	Ar = dataROI[:,:,1].max() - dataROI[:,:,1].min() #amplitude
+
+	#figure()
+	#imshow(dataROI[:,:,1], interpolation='nearest')
+	
+	#print Ag
+	#print Ar
         
 	x0 =  Xg.mean()
         y0 =  Yg.mean()
