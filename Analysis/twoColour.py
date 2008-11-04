@@ -6,6 +6,7 @@ from PYME.Analysis.FitFactories.LatGaussFitFR import FitFactory, FitResultsDType
 import MetaData
 from rbf import Rbf
 from scikits import delaunay
+import tables
 
 #from PYME.Analysis.FitFactories import LatGaussFitFRTC
 
@@ -135,21 +136,26 @@ def genShiftVectorFieldMC(nx,ny, nsx, nsy, p, Nsamp):
     dx = np.zeros(X.shape)
     dy = np.zeros(X.shape)
 
+    nIt = 0
+
     for i in range(Nsamp):
         r_ind = (sp.rand(len(nx)) < p)
+        
+        if r_ind.sum() > 2:
 
-        rbx = Rbf(nx[r_ind], ny[r_ind], nsx[r_ind], epsilon=1)
-        rby = Rbf(nx[r_ind], ny[r_ind], nsy[r_ind], epsilon=1)
+            rbx = Rbf(nx[r_ind], ny[r_ind], nsx[r_ind], epsilon=1)
+            rby = Rbf(nx[r_ind], ny[r_ind], nsy[r_ind], epsilon=1)
 
-        dx = dx + rbx(X,Y)
-        dy = dy + rby(X,Y)
+            dx = dx + rbx(X,Y)
+            dy = dy + rby(X,Y)
+            nIt += 1
 
-    return dx.T/Nsamp, dy.T/Nsamp
+    return dx.T/nIt, dy.T/nIt
     
 def getCorrection(x,y,x_sv, y_sv):
     '''looks up correction in calculated vector fields'''
-    xi = max(min(sp.round_(x/100).astype('i'), x_sv.shape[0]),0)
-    yi = max(min(sp.round_(y/100).astype('i'), x_sv.shape[1]),0)
+    xi = np.maximum(np.minimum(sp.round_(x/100).astype('i'), x_sv.shape[0]),0)
+    yi = np.maximum(np.minimum(sp.round_(y/100).astype('i'), x_sv.shape[1]),0)
     return (x_sv[xi, yi],y_sv[xi, yi])
 
 
@@ -167,7 +173,12 @@ def calcCorrections(filenames):
     Ars = []
 
     for fn in filenames:
-        g,r = read_bead_data(fn)
+        if fn.split('.')[-1] == 'kdf':
+            g,r = read_bead_data(fn)
+        else:
+            h5f = tables.openFile(fn)
+            g,r = read_h5f_cols(h5f, 0)
+            h5f.close()
 
         res_g, res_r = res_g, res_r = fitIndep(g,r,6)
 
