@@ -1,32 +1,42 @@
 #Boa:Frame:AndorFrame
 
+
+
 import wx
 
+
+
 def create(parent):
+
     return AndorFrame(parent)
+
+
 
 [wxID_ANDORFRAME, wxID_ANDORFRAMEBSETGAIN, wxID_ANDORFRAMEBSETTEMP, 
  wxID_ANDORFRAMEBUPDATEINT, wxID_ANDORFRAMECBFRAMETRANSFER, 
- wxID_ANDORFRAMECHHORIZCLOCK, wxID_ANDORFRAMECHVERTCLOCK, 
- wxID_ANDORFRAMEPANEL1, wxID_ANDORFRAMERBCONTIN, wxID_ANDORFRAMERBSINGLESHOT, 
- wxID_ANDORFRAMESTATICBOX1, wxID_ANDORFRAMESTATICBOX2, 
- wxID_ANDORFRAMESTATICBOX3, wxID_ANDORFRAMESTATICBOX4, 
- wxID_ANDORFRAMESTATICTEXT1, wxID_ANDORFRAMESTATICTEXT2, 
- wxID_ANDORFRAMESTATICTEXT3, wxID_ANDORFRAMESTATICTEXT4, 
- wxID_ANDORFRAMESTATICTEXT5, wxID_ANDORFRAMESTATICTEXT6, 
- wxID_ANDORFRAMETCCDTEMP, wxID_ANDORFRAMETEMGAIN, 
-] = [wx.NewId() for _init_ctrls in range(22)]
+ wxID_ANDORFRAMECBSHUTTER, wxID_ANDORFRAMECHHORIZCLOCK, 
+ wxID_ANDORFRAMECHVERTCLOCK, wxID_ANDORFRAMEPANEL1, wxID_ANDORFRAMERBCONTIN, 
+ wxID_ANDORFRAMERBSINGLESHOT, wxID_ANDORFRAMESTATICBOX1, 
+ wxID_ANDORFRAMESTATICBOX2, wxID_ANDORFRAMESTATICBOX3, 
+ wxID_ANDORFRAMESTATICBOX4, wxID_ANDORFRAMESTATICTEXT1, 
+ wxID_ANDORFRAMESTATICTEXT2, wxID_ANDORFRAMESTATICTEXT3, 
+ wxID_ANDORFRAMESTATICTEXT4, wxID_ANDORFRAMESTATICTEXT5, 
+ wxID_ANDORFRAMESTATICTEXT6, wxID_ANDORFRAMETCCDTEMP, wxID_ANDORFRAMETEMGAIN, 
+] = [wx.NewId() for _init_ctrls in range(23)]
+
+
 
 class AndorFrame(wx.Frame):
+
     def _init_ctrls(self, prnt):
         # generated method, don't edit
         wx.Frame.__init__(self, id=wxID_ANDORFRAME, name='AndorFrame',
-              parent=prnt, pos=wx.Point(490, 266), size=wx.Size(252, 336),
+              parent=prnt, pos=wx.Point(490, 266), size=wx.Size(252, 362),
               style=wx.DEFAULT_FRAME_STYLE, title='Andor Camera Properties')
-        self.SetClientSize(wx.Size(244, 309))
+        self.SetClientSize(wx.Size(244, 335))
 
         self.panel1 = wx.Panel(id=wxID_ANDORFRAMEPANEL1, name='panel1',
-              parent=self, pos=wx.Point(0, 0), size=wx.Size(244, 309),
+              parent=self, pos=wx.Point(0, 0), size=wx.Size(244, 335),
               style=wx.TAB_TRAVERSAL)
 
         self.staticBox1 = wx.StaticBox(id=wxID_ANDORFRAMESTATICBOX1,
@@ -135,94 +145,201 @@ class AndorFrame(wx.Frame):
               self.OnCbFrameTransferCheckbox,
               id=wxID_ANDORFRAMECBFRAMETRANSFER)
 
+        self.cbShutter = wx.CheckBox(id=wxID_ANDORFRAMECBSHUTTER,
+              label=u'Camera Shutter Open', name=u'cbShutter',
+              parent=self.panel1, pos=wx.Point(16, 312), size=wx.Size(160, 13),
+              style=0)
+        self.cbShutter.SetValue(True)
+        self.cbShutter.Bind(wx.EVT_CHECKBOX, self.OnCbShutterCheckbox,
+              id=wxID_ANDORFRAMECBSHUTTER)
+
     def __init__(self, parent, cam, scope):
+
         self._init_ctrls(parent)
+
         
+
         self.cam = cam
+
         self.scope = scope
+
         
+
         self.tCCDTemp.ChangeValue(repr(self.cam.GetCCDTempSetPoint()))
+
         self.tEMGain.ChangeValue(repr(self.cam.GetEMGain()))
+
         
+
         self._PopulateSpeeds()
 
+
+
     def OnBSetTempButton(self, event):
+
         self.scope.pa.stop()
+
         self.cam.SetCCDTemp(int(self.tCCDTemp.GetValue()))
+
         self.scope.pa.start()
+
+
 
     def OnBSetGainButton(self, event):
+
         self.scope.pa.stop()
+
         self.cam.SetEMGain(int(self.tEMGain.GetValue()))
+
         self.scope.pa.start()
+
+
 
     def OnBStartSpoolingButton(self, event):
+
         #event.Skip()
+
         fname = wx.FileSelector('Save Images as ... (image # and .dat will be appended to filename)')
+
         
+
         if not fname == None:
+
             self.scope.pa.stop()
+
         
+
             self.cam.SpoolOn(fname)
+
             
+
             wx.MessageBox('Click cancel to stop spooling', 'Spooling to disk', wx.CANCEL)
+
             
+
             self.cam.SpoolOff()
+
             
+
             self.scope.pa.start()
+
+
 
     def OnBUpdateIntButton(self, event):
+
         #event.Skip()
+
         self.scope.pa.stop()
+
         self.scope.pa.start()
+
+
 
     def OnRbSingleShotRadiobutton(self, event):
+
         #event.Skip()
+
         if self.cam.contMode:
+
             self.scope.pa.stop()
+
             self.cam.SetAcquisitionMode(self.cam.MODE_SINGLE_SHOT)
+
             self.bUpdateInt.Enable(False)
+
             self.scope.pa.start()
+
+
 
     def OnRbContinRadiobutton(self, event):
+
         #event.Skip()
+
         if not self.cam.contMode:
+
             self.scope.pa.stop()
+
             self.cam.SetAcquisitionMode(self.cam.MODE_CONTINUOUS)
+
             self.bUpdateInt.Enable(True)
+
             self.scope.pa.start()
 
+
+
     def OnChHorizClockChoice(self, event):
+
         #event.Skip()
+
         self.scope.pa.stop()
+
         self.cam.SetHorizShiftSpeed(self.chHorizClock.GetSelection())
+
         self.scope.pa.start()
+
+
 
     def OnChVertClockChoice(self, event):
+
         #event.Skip()
+
         self.scope.pa.stop()
+
         self.cam.SetVerticalShiftSpeed(self.chVertClock.GetSelection())
+
         self.scope.pa.start()
+
+
 
     def OnCbFrameTransferCheckbox(self, event):
+
         #event.Skip()
+
         self.scope.pa.stop()
+
         self.cam.SetFrameTransfer(self.cbFrameTransfer.GetValue())
+
         self.scope.pa.start()
 
+
+
     def _PopulateSpeeds(self):
+
         for hs in self.cam.HorizShiftSpeeds[0][0]:
+
             self.chHorizClock.Append('%f' % hs)
+
             
+
         self.chHorizClock.SetSelection(self.cam.HSSpeed)
+
             
+
         for i in range(len(self.cam.vertShiftSpeeds)):
+
             if i < self.cam.fastestRecVSInd:
+
                 self.chVertClock.Append('[%2.2f]' % self.cam.vertShiftSpeeds[i])
+
             else:
+
                 self.chVertClock.Append('%2.2f' % self.cam.vertShiftSpeeds[i])
+
                 
+
         self.chVertClock.SetSelection(self.cam.VSSpeed)
+
         
+
         self.cbFrameTransfer.SetValue(self.cam.frameTransferMode)
+
+    def OnCbShutterCheckbox(self, event):
+        self.scope.pa.stop()
+
+        self.cam.SetShutter(self.cbShutter.GetValue())
+
+        self.scope.pa.start()
+        
+        event.Skip()
+
             
