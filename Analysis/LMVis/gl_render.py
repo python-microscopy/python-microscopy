@@ -54,6 +54,8 @@ class LMGLCanvas(GLCanvas):
         self.LUTDraw = True
         self.mode = 'triang'
 
+        self.colouring = 'area'
+
         self.drawModes = {'triang':GL_TRIANGLES, 'quads':GL_QUADS, 'edges':GL_LINES, 'points':GL_POINTS}
 
         self.c = scipy.array([1,1,1])
@@ -214,10 +216,15 @@ class LMGLCanvas(GLCanvas):
         self.nVertices = vs.shape[0]
         self.setColour(self.IScale, self.zeroPt)
 
-    def setVoronoi(self, T):
+    def setVoronoi(self, T, cp=None):
         xs_ = None
         ys_ = None
         c_ = None
+
+        area_colouring= True
+
+        if not cp == None:
+            area_colouring=False
         
         for i in range(len(T.x)):
             #get triangles around point
@@ -249,6 +256,9 @@ class LMGLCanvas(GLCanvas):
                 #c = 1.0/(c + c_neighbours + 1)
                 c = c.sum()*scipy.ones(c.shape)
                 c = 1.0/(c + 1)
+
+                if not area_colouring:
+                    c = cp[i]*scipy.ones(c.shape)
 
                 #print xs.shape
                 #print c.shape
@@ -467,6 +477,33 @@ def showGLFrame():
     f.Show()
     return c
         
+
+def genMapColouring(T):
+    '''Assigns a colour to each of the underlying points of a triangulation (T)
+    such that no neighbours have the same colour. To keep complexity down, does
+    not do any juggling to reduce the number of colours used to the theoretical
+    4. For use with the voronoi diagram visualisation to illustrate the voronoi
+    domains (use a colour map with plenty of colours & not too much intensity 
+    variation - e.g. hsv).'''
+
+    cols = scipy.zeros(T.x.shape)
+
+    for i in range(len(cols)):
+        cand = 1 #candidate colour
+
+        #find neighbouring points
+        ix, iy = scipy.where(T.edge_db == i)
+        neighb = T.edge_db[ix, (1-iy)]
+
+        #if one of our neighbours already has the candidate colour, increment
+        while cand in cols[neighb]:
+            cand +=1
+        
+        #else assign candidate as new point colour
+        cols[i] = cand
+
+    return cols
+
 
 def main():
     app = wx.PySimpleApp()

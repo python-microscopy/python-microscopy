@@ -20,6 +20,24 @@ def rendQT(ax, qt, maxDepth=-1, cmap=cm.hot, maxIsc = 1):
 
     show()
 
+def rendQTe(ax, qt, maxDepth=-1, cmap=cm.hot, maxIsc = 1):
+    ax.cla()
+    ax.set_xlim(qt.x0,qt.x1)
+    ax.set_ylim(qt.y0, qt.y1)
+
+    lvs = qt.getLeaves(maxDepth)
+
+    Is = [float(l.numRecords)*2**(2*l.depth) for l in lvs]
+
+    maxI = max(Is)
+    print maxI
+
+    for l in lvs:
+        c = cmap((float(l.numRecords)*2**(2*l.depth))/(maxI*maxIsc))
+        ax.add_patch(matplotlib.patches.Rectangle((l.x0,l.y0), l.x1- l.x0, l.y1 - l.y0, fc=[1 1 1], ec = 'k'))
+
+    show()
+
 def rendQTa(ar, qt, maxDepth=100):
     (sX, sY) = ar.shape    
     

@@ -59,6 +59,10 @@ def eMod2(p, t):
 def eMod3(p, t):
     A, tau , m = p
     return A*(1 - exp(-t/tau)) + m*t
+
+def eMod4(p, t):
+    A, tau1, tau2, r = p
+    return A*r*(1 - exp(-t/tau1)) + A*(1-r)*(1 - exp(-t/tau2)) 
     
 
 def doTraceDisp(prof, lOn, dt):

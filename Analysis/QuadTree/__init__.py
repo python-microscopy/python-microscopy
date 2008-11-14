@@ -1,2 +1,2 @@
 from pointQT import * 
-from rendQT import * 
+from QTrend import * 

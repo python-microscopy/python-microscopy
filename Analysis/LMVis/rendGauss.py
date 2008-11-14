@@ -11,7 +11,7 @@ from PYME.Analysis.cModels.gauss_app import *
 #    return (A/(s*sqrt(2*pi)))*(exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2)))
 
 def Gauss2D(Xv,Yv, A,x0,y0,s):
-    r = genGaussF(Xv,Yv,A,x0,y0,s,0,0,0)
+    r = genGauss(Xv,Yv,A,x0,y0,s,0,0,0)
     r.strides = r.strides #Really dodgy hack to get around something which numpy is not doing right ....
     return r
 
