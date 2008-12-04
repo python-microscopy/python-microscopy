@@ -449,3 +449,35 @@ def doTraceDispdl(prof, lOn, dt, Ton, Toff, Ibefore, Iafter, r):
 
     show()
     return (a1, a2, a3, a4, il)
+
+def eth_mod2(p, t):
+    A, b, aod, ado, aob, dt = p
+    theta = arange(-pi/2, pi/2, 0.1)
+    return A*array([ethet3(theta, ti,aod, ado, aob).sum() + ethet3(theta, ti+1,aod, ado, aob).sum() for ti in t+dt])*0.1/(2*pi) + b
+
+
+def ethet3(theta,t, aod, ado, aob):
+    return lNofcn(t, 0, 1,0,aod*cos(theta)**2, aob*cos(theta)**2, ado)
+
+
+def bf_int(func, lb, ub, *args, **kwargs):
+    step = 0.1
+    #step = kwargs['step']
+    x = arange(lb,ub,step)
+    v = func(x[0], *args)
+    for xi in x[1:]:
+        v = v + func(xi, *args)
+    return v*step
+
+def eth_mod3(p, t):                            
+    A, b, aod, ado, aob, dt = p;
+    return A*(bf_int(ethet3, -pi/2, pi/2, t + dt,aod, ado, aob) + bf_int(ethet3, -pi/2, pi/2, t+1 + dt,aod, ado, aob))/(2*pi) + b
+
+
+def gt(theta, ot, offt, No, Nd, aod, aob, ado, dt, l):
+    return genTraces(ot,offt, No, Nd, aod*cos(theta)**2, aob*cos(theta)**2, ado, dt, l)
+
+
+def gt_mod(p, t, ot, offt, dt):
+    A, b, No, Nd, aod, aob, ado = p    
+    return A*(bf_int(gt, -pi/2,pi/2, ot, offt, No, Nd, aod, aob, ado, dt, len(t)) + bf_int(gt, -pi/2,pi/2, ot+1, offt+1, No, Nd, aod, aob, ado, dt, len(t)))/(2*pi) + b

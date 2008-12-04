@@ -2,7 +2,7 @@ QT_MAXRECORDS = 10 #maximum number of records in a leaf
 QT_MAXDEPTH = 100 #let leaves grow larger if a maximum depth is exceeded (to prevent infinite recursion)
 
 
-
+from math import floor, ceil
 
 class qtNode:
     def __init__(self,x0,x1, y0, y1, depth=0):
@@ -186,3 +186,14 @@ class qtRoot(qtNode):
 
 def getInRadius(qt, x, y, radius):
     return [r for r in qt.get(x - radius, x + radius, y - radius, y + radius) if ((r.x - x)**2 + (r.y - y)**2) < radius**2]
+
+
+def createQT(x,y):
+    ''' creates a quad tree from a list of x,y positions'''
+
+    qt = qtRoot(100*floor(x.min()/100), 100*ceil(x.max()/100),100*floor(y.min()/100), 100*ceil(y.max()/100))
+
+    for xi, yi in zip(x,y):
+        qt.insert(qtRec(xi,yi, None))
+
+    return qt

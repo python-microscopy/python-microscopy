@@ -12,6 +12,7 @@ driftCorrTools.pyc
 fitIO.pyc
 intensProf.pyc
 ofind.pyc
+remFit6.pyc
 remFitBuf.pyc
 remFitHDF.pyc
 remFitHDF_dc.pyc

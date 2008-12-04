@@ -172,18 +172,27 @@ class LMGLCanvas(GLCanvas):
 
         a = scipy.vstack((xs[:,0] - xs[:,1], ys[:,0] - ys[:,1])).T
         b = scipy.vstack((xs[:,0] - xs[:,2], ys[:,0] - ys[:,2])).T
+        b2 = scipy.vstack((xs[:,1] - xs[:,2], ys[:,1] - ys[:,2])).T
 
         #area of triangle
         #c = 0.5*scipy.sqrt((b*b).sum(1) - ((a*b).sum(1)**2)/(a*a).sum(1))*scipy.sqrt((a*a).sum(1))
 
-        c = scipy.maximum(((b*b).sum(1)),((a*a).sum(1)))
+        #c = 0.5*scipy.sqrt((b*b).sum(1)*(a*a).sum(1) - ((a*b).sum(1)**2))
 
+        #c = scipy.maximum(((b*b).sum(1)),((a*a).sum(1)))
+        c = scipy.median([(b*b).sum(1), (a*a).sum(1), (b2*b2).sum(1)])
+        
+        a_ = ((a*a).sum(1))
+        b_ = ((b*b).sum(1))
+        b2_ = ((b2*b2).sum(1))
         #c_neighbours = c[T.triangle_neighbors].sum(1)
         #c = 1.0/(c + c_neighbours + 1)
         c = 1.0/(c + 1)
 
         self.c = scipy.vstack((c,c,c)).T.ravel()
+        #self.c = scipy.vstack((1.0/(a_*b_ + 1),1.0/(a_*b2_ + 1),1.0/(b_*b2_ + 1))).T.ravel()
         
+        #self.c = scipy.sqrt(self.c)
         vs = scipy.vstack((xs.ravel(), ys.ravel()))
         vs = vs.T.ravel().reshape(len(xs.ravel()), 2)
         self.vs_ = glVertexPointerf(vs)
@@ -217,6 +226,17 @@ class LMGLCanvas(GLCanvas):
         self.setColour(self.IScale, self.zeroPt)
 
     def setVoronoi(self, T, cp=None):
+        tdb = []
+        for i in range(len(T.x)):
+            tdb.append([])
+
+        for i in range(len(T.triangle_nodes)):
+            nds = T.triangle_nodes[i]
+            for n in nds:
+                tdb[n].append(i)
+            
+            
+
         xs_ = None
         ys_ = None
         c_ = None
@@ -228,8 +248,8 @@ class LMGLCanvas(GLCanvas):
         
         for i in range(len(T.x)):
             #get triangles around point
-            impingentTriangs = scipy.where(T.triangle_nodes == i)[0]
-            if len(impingentTriangs >= 3):
+            impingentTriangs = tdb[i] #scipy.where(T.triangle_nodes == i)[0]
+            if len(impingentTriangs) >= 3:
 
                 circumcenters = T.circumcenters[impingentTriangs] #get their circumcenters
 
@@ -304,7 +324,7 @@ class LMGLCanvas(GLCanvas):
         #c_neighbours = c[T.triangle_neighbors].sum(1)
         c = 1.0/(c + 1)
 
-        self.c = scipy.vstack((c,c,c)).T.ravel()
+        self.c = scipy.vstack((c,c)).T.ravel()
         
         vs = scipy.vstack((xs.ravel(), ys.ravel()))
         vs = vs.T.ravel().reshape(len(xs.ravel()), 2)
@@ -319,7 +339,113 @@ class LMGLCanvas(GLCanvas):
         self.nVertices = vs.shape[0]
         self.setColour(self.IScale, self.zeroPt)
 
-    def setQuads(self, qt, maxDepth = 100):
+    def setIntTriang(self, T):
+        #make ourselves a quicker way of getting at edge info.
+        edb = []
+        for i in range(len(T.x)):
+            edb.append(([],[]))
+
+        for i in range(len(T.edge_db)):
+            e = T.edge_db[i]
+            edb[e[0]][0].append(i)
+            edb[e[0]][1].append(e[1])
+            edb[e[1]][0].append(i)
+            edb[e[1]][1].append(e[0])
+
+
+
+        #gen colour array
+        cs = scipy.zeros(T.x.shape)
+
+        for i in range(len(T.x)):
+            incidentEdges = T.edge_db[edb[i][0]]
+            #neighbourPoints = edb[i][1]
+            
+            #incidentEdges = T.edge_db[edb[neighbourPoints[0]][0]]
+            #for j in range(1, len(neighbourPoints)):
+            #    incidentEdges = scipy.vstack((incidentEdges, T.edge_db[edb[neighbourPoints[j]][0]]))
+            dx = scipy.diff(T.x[incidentEdges])
+            dy = scipy.diff(T.y[incidentEdges])
+            
+            dist = (dx**2 + dy**2)
+
+            di = scipy.mean(scipy.sqrt(dist))
+
+            
+            neighbourPoints = edb[i][1]
+            
+            incidentEdges = T.edge_db[edb[neighbourPoints[0]][0]]
+            for j in range(1, len(neighbourPoints)):
+                incidentEdges = scipy.vstack((incidentEdges, T.edge_db[edb[neighbourPoints[j]][0]]))
+            dx = scipy.diff(T.x[incidentEdges])
+            dy = scipy.diff(T.y[incidentEdges])
+            
+            dist = (dx**2 + dy**2)
+            
+            din = scipy.mean(scipy.sqrt(dist))
+            
+            #cs[i] = scipy.absolute(5 + di - 4*di/din)
+            cs[i] = di
+
+        cs = 1.0/cs**2
+
+
+        xs = T.x[T.triangle_nodes]
+        ys = T.y[T.triangle_nodes]
+
+        #a = scipy.vstack((xs[:,0] - xs[:,1], ys[:,0] - ys[:,1])).T
+        #b = scipy.vstack((xs[:,0] - xs[:,2], ys[:,0] - ys[:,2])).T
+
+        #b2 = scipy.vstack((xs[:,1] - xs[:,2], ys[:,1] - ys[:,2])).T
+
+        #area of triangle
+        #c = 0.5*scipy.sqrt((b*b).sum(1) - ((a*b).sum(1)**2)/(a*a).sum(1))*scipy.sqrt((a*a).sum(1))
+
+        #c = 0.5*scipy.sqrt((b*b).sum(1)*(a*a).sum(1) - ((a*b).sum(1)**2))
+
+        #c = scipy.maximum(((b*b).sum(1)),((a*a).sum(1)))
+        #c = scipy.median([(b*b).sum(1), (a*a).sum(1), (b2*b2).sum(1)])
+        
+        #a_ = ((a*a).sum(1))
+        #b_ = ((b*b).sum(1))
+        #b2_ = ((b2*b2).sum(1))
+        #c_neighbours = c[T.triangle_neighbors].sum(1)
+        #c = 1.0/(c + c_neighbours + 1)
+        #c = 1.0/(c + 1)
+
+        #self.c = scipy.vstack((c,c,c)).T.ravel()
+        #self.c = scipy.vstack((1.0/(a_*b_ + 1),1.0/(a_*b2_ + 1),1.0/(b_*b2_ + 1))).T.ravel()
+
+        c = cs[T.triangle_nodes]
+
+        c = c.mean(1)
+
+        #area of triangle
+        #c = 0.5*scipy.sqrt((b*b).sum(1) - ((a*b).sum(1)**2)/(a*a).sum(1))*scipy.sqrt((a*a).sum(1))
+
+        #c = scipy.maximum(((b*b).sum(1)),((a*a).sum(1)))
+
+        #c_neighbours = c[T.triangle_neighbors].sum(1)
+        #c = 1.0/(c + c_neighbours + 1)
+        #c = 1.0/(c + 1)
+
+        #self.c = c.ravel()
+        self.c = scipy.vstack((c,c,c)).T.ravel()
+        
+        vs = scipy.vstack((xs.ravel(), ys.ravel()))
+        vs = vs.T.ravel().reshape(len(xs.ravel()), 2)
+        self.vs_ = glVertexPointerf(vs)
+
+        #cs = scipy.minimum(scipy.vstack((self.IScale[0]*c,self.IScale[1]*c,self.IScale[2]*c)), 1).astype('f')
+        #cs = cs.T.ravel().reshape(len(c), 3)
+        #cs_ = glColorPointerf(cs)
+
+        self.mode = 'triang'
+
+        self.nVertices = vs.shape[0]
+        self.setColour(self.IScale, self.zeroPt)
+
+    def setQuads(self, qt, maxDepth = 100, mdscale=False):
         lvs = qt.getLeaves(maxDepth)
         
         xs = scipy.zeros((len(lvs), 4))
@@ -336,8 +462,9 @@ class LMGLCanvas(GLCanvas):
             i +=1
             maxdepth = max(maxdepth, l.depth)
 
-        
-        c = c/(2**(2*maxdepth))
+        if not mdscale:
+            c = c/(2**(2*maxdepth))
+
         self.c = scipy.vstack((c,c,c,c)).T.ravel()
         
         vs = scipy.vstack((xs.ravel(), ys.ravel()))
