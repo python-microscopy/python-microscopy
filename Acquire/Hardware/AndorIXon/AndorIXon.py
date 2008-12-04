@@ -989,6 +989,9 @@ class iXonCamera:
 
     def SetShutter(self, state):
         ac.SetShutter(int(state), 1, 0,0)
+        
+    def SetBaselineClamp(self, state):
+        ac.SetBaselineClamp(int(state))
 
 
 

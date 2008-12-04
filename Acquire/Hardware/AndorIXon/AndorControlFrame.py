@@ -13,16 +13,17 @@ def create(parent):
 
 
 [wxID_ANDORFRAME, wxID_ANDORFRAMEBSETGAIN, wxID_ANDORFRAMEBSETTEMP, 
- wxID_ANDORFRAMEBUPDATEINT, wxID_ANDORFRAMECBFRAMETRANSFER, 
- wxID_ANDORFRAMECBSHUTTER, wxID_ANDORFRAMECHHORIZCLOCK, 
- wxID_ANDORFRAMECHVERTCLOCK, wxID_ANDORFRAMEPANEL1, wxID_ANDORFRAMERBCONTIN, 
- wxID_ANDORFRAMERBSINGLESHOT, wxID_ANDORFRAMESTATICBOX1, 
- wxID_ANDORFRAMESTATICBOX2, wxID_ANDORFRAMESTATICBOX3, 
- wxID_ANDORFRAMESTATICBOX4, wxID_ANDORFRAMESTATICTEXT1, 
- wxID_ANDORFRAMESTATICTEXT2, wxID_ANDORFRAMESTATICTEXT3, 
- wxID_ANDORFRAMESTATICTEXT4, wxID_ANDORFRAMESTATICTEXT5, 
- wxID_ANDORFRAMESTATICTEXT6, wxID_ANDORFRAMETCCDTEMP, wxID_ANDORFRAMETEMGAIN, 
-] = [wx.NewId() for _init_ctrls in range(23)]
+ wxID_ANDORFRAMEBUPDATEINT, wxID_ANDORFRAMECBBASELINECLAMP, 
+ wxID_ANDORFRAMECBFRAMETRANSFER, wxID_ANDORFRAMECBSHUTTER, 
+ wxID_ANDORFRAMECHHORIZCLOCK, wxID_ANDORFRAMECHVERTCLOCK, 
+ wxID_ANDORFRAMEPANEL1, wxID_ANDORFRAMERBCONTIN, wxID_ANDORFRAMERBSINGLESHOT, 
+ wxID_ANDORFRAMESTATICBOX1, wxID_ANDORFRAMESTATICBOX2, 
+ wxID_ANDORFRAMESTATICBOX3, wxID_ANDORFRAMESTATICBOX4, 
+ wxID_ANDORFRAMESTATICTEXT1, wxID_ANDORFRAMESTATICTEXT2, 
+ wxID_ANDORFRAMESTATICTEXT3, wxID_ANDORFRAMESTATICTEXT4, 
+ wxID_ANDORFRAMESTATICTEXT5, wxID_ANDORFRAMESTATICTEXT6, 
+ wxID_ANDORFRAMETCCDTEMP, wxID_ANDORFRAMETEMGAIN, 
+] = [wx.NewId() for _init_ctrls in range(24)]
 
 
 
@@ -31,12 +32,12 @@ class AndorFrame(wx.Frame):
     def _init_ctrls(self, prnt):
         # generated method, don't edit
         wx.Frame.__init__(self, id=wxID_ANDORFRAME, name='AndorFrame',
-              parent=prnt, pos=wx.Point(490, 266), size=wx.Size(252, 362),
+              parent=prnt, pos=wx.Point(490, 266), size=wx.Size(252, 354),
               style=wx.DEFAULT_FRAME_STYLE, title='Andor Camera Properties')
-        self.SetClientSize(wx.Size(244, 335))
+        self.SetClientSize(wx.Size(244, 327))
 
         self.panel1 = wx.Panel(id=wxID_ANDORFRAMEPANEL1, name='panel1',
-              parent=self, pos=wx.Point(0, 0), size=wx.Size(244, 335),
+              parent=self, pos=wx.Point(0, 0), size=wx.Size(244, 327),
               style=wx.TAB_TRAVERSAL)
 
         self.staticBox1 = wx.StaticBox(id=wxID_ANDORFRAMESTATICBOX1,
@@ -101,7 +102,7 @@ class AndorFrame(wx.Frame):
 
         self.staticBox4 = wx.StaticBox(id=wxID_ANDORFRAMESTATICBOX4,
               label='Readout Settings', name='staticBox4', parent=self.panel1,
-              pos=wx.Point(8, 192), size=wx.Size(232, 108), style=0)
+              pos=wx.Point(8, 192), size=wx.Size(232, 104), style=0)
 
         self.staticText2 = wx.StaticText(id=wxID_ANDORFRAMESTATICTEXT2,
               label='Horizontal Clock:', name='staticText2', parent=self.panel1,
@@ -137,8 +138,8 @@ class AndorFrame(wx.Frame):
               pos=wx.Point(199, 243), size=wx.Size(11, 13), style=0)
 
         self.cbFrameTransfer = wx.CheckBox(id=wxID_ANDORFRAMECBFRAMETRANSFER,
-              label='Frame Transfer Mode', name='cbFrameTransfer',
-              parent=self.panel1, pos=wx.Point(24, 272), size=wx.Size(136, 13),
+              label=u'Frame Transfer', name='cbFrameTransfer',
+              parent=self.panel1, pos=wx.Point(24, 272), size=wx.Size(96, 13),
               style=0)
         self.cbFrameTransfer.SetValue(False)
         self.cbFrameTransfer.Bind(wx.EVT_CHECKBOX,
@@ -147,11 +148,20 @@ class AndorFrame(wx.Frame):
 
         self.cbShutter = wx.CheckBox(id=wxID_ANDORFRAMECBSHUTTER,
               label=u'Camera Shutter Open', name=u'cbShutter',
-              parent=self.panel1, pos=wx.Point(16, 312), size=wx.Size(160, 13),
+              parent=self.panel1, pos=wx.Point(16, 304), size=wx.Size(160, 13),
               style=0)
         self.cbShutter.SetValue(True)
         self.cbShutter.Bind(wx.EVT_CHECKBOX, self.OnCbShutterCheckbox,
               id=wxID_ANDORFRAMECBSHUTTER)
+
+        self.cbBaselineClamp = wx.CheckBox(id=wxID_ANDORFRAMECBBASELINECLAMP,
+              label=u'Baseline Clamp', name=u'cbBaselineClamp',
+              parent=self.panel1, pos=wx.Point(136, 272), size=wx.Size(96, 13),
+              style=0)
+        self.cbBaselineClamp.SetValue(False)
+        self.cbBaselineClamp.Bind(wx.EVT_CHECKBOX,
+              self.OnCbBaselineClampCheckbox,
+              id=wxID_ANDORFRAMECBBASELINECLAMP)
 
     def __init__(self, parent, cam, scope):
 
@@ -340,6 +350,14 @@ class AndorFrame(wx.Frame):
 
         self.scope.pa.start()
         
-        event.Skip()
+        #event.Skip()
+
+    def OnCbBaselineClampCheckbox(self, event):
+        #event.Skip()
+        self.scope.pa.stop()
+
+        self.cam.SetBaselineClamp(self.cbShutter.GetValue())
+
+        self.scope.pa.start()
 
             

@@ -22,7 +22,7 @@
 	#define max(a,b)   (((a) > (b)) ? (a) : (b))
 	#define min(a,b)   (((a) < (b)) ? (a) : (b))
 #endif
-
+/*
 //==============================================================================================
 // FUNCTION: ABFU_GetTempFileName
 // PURPOSE:  Gets a temporary file name in the directory pointed to by the %TEMP% environment
@@ -45,7 +45,7 @@ UINT WINAPI ABFU_GetTempFileName(LPCSTR szPrefix, UINT uUnique, LPSTR lpTempName
 
 //   tmpnam (lpTempName);
 //	return 1;
-//}
+//}*/
 
 //===============================================================================================
 // FUNCTION: ABFU_ReadFile
