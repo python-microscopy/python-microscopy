@@ -175,6 +175,7 @@ class fitTask(taskDef.Task):
 
     def calcThreshold(self):
         if self.SNThreshold:
-            return numpy.sqrt(numpy.maximum(self.data.mean(2) - self.md.CCD.ADOffset, 1))*self.threshold
+            fudgeFactor = 1 #to account for the fact that the blurring etc... in ofind doesn't preserve intensities - at the moment completely arbitrary so a threshold setting of 1 results in reasonable detection.
+            return (numpy.sqrt(self.md.CCD.ReadNoise**2 + numpy.maximum(self.md.CCD.electronsPerCount*(self.data.astype('f').mean(2) - self.md.CCD.ADOffset)*self.md.CCD.EMGain, 1))/self.md.CCD.electronsPerCount)*fudgeFactor*self.threshold
         else:
             return self.threshold

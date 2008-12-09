@@ -154,7 +154,7 @@ class GaussianFitFactory:
         #estimate errors in data
         nSlices = dataROI.shape[2]
         
-        sigma = scipy.sqrt(self.metadata.CCD.ReadNoise**2 + (self.metadata.CCD.noiseFactor**2)*self.metadata.CCD.electronsPerCount*dataMean/nSlices)/self.metadata.CCD.electronsPerCount
+        sigma = scipy.sqrt(self.metadata.CCD.ReadNoise**2 + (self.metadata.CCD.noiseFactor**2)*self.metadata.CCD.electronsPerCount*self.metadata.CCD.EMGain*dataMean/nSlices)/self.metadata.CCD.electronsPerCount
 	
 	
         #do the fit
