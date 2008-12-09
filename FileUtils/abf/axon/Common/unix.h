@@ -10,6 +10,7 @@
 #define FILE_NULL NULL
 #define IDS_ENOMESSAGESTR               4
 
+#undef _WINDOWS
 
 #ifdef _WINDOWS
 #include <windows.h>

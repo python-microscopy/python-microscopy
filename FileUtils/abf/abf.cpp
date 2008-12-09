@@ -7,6 +7,8 @@
 
 #include "numpy/arrayobject.h"
 
+#include <stdio.h>
+
 typedef struct
 {
   PyObject_HEAD
@@ -140,13 +142,28 @@ static PyObject * abfFile_GetData(abfFile* self, PyObject * args)
 		       EpisodeNum,(float*)PyArray_DATA(data),&NumSamplesRead,
 		       &nError))
     {
-      PyErr_SetString(PyExc_TypeError, "Error reading samples");
+      switch (nError)
+	{
+	case ABF_EBADFILEINDEX:
+	    PyErr_SetString(PyExc_TypeError, "Error reading samples: Invalid File Handle");
+	    break;
+	case ABF_EWRITEONLYFILE:
+	    PyErr_SetString(PyExc_TypeError, "Error reading samples: Write-only file");
+	    break;
+	case ABF_EINVALIDCHANNEL:
+	    PyErr_SetString(PyExc_TypeError, "Error reading samples: Invalid Channel Number");
+	    break;
+	default:
+	    PyErr_SetString(PyExc_TypeError, "Error reading samples: unkown error");
+	    printf("Error code: %d", nError);
+	    break;
+	};
       return NULL;
     }
 
   if (NumSamples!=NumSamplesRead) 
     {
-      PyErr_SetString(PyExc_TypeError, "Error reading samples");
+      PyErr_SetString(PyExc_TypeError, "Number of smaples read not equal to number of samples");
       return NULL;
     }
     

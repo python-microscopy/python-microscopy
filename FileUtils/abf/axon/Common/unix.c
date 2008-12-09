@@ -1,6 +1,8 @@
 #include "../Common/axodefn.h"
 #include <string.h>
 
+#undef _WINDOWS
+
 int cdecl AXODBG_printf( char *lpsz, ... ) {printf(lpsz);return 0;}
 /*********************************************************************
  *           CloseW32Handle (KERNEL.474)
