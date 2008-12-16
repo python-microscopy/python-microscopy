@@ -191,7 +191,8 @@ def getInRadius(qt, x, y, radius):
 def createQT(x,y):
     ''' creates a quad tree from a list of x,y positions'''
 
-    qt = qtRoot(100*floor(x.min()/100), 100*ceil(x.max()/100),100*floor(y.min()/100), 100*ceil(y.max()/100))
+    di = max(x.max() - x.min(), y.max() - y.min())
+    qt = qtRoot(100*floor(x.min()/100), 100*ceil((x.min()+di)/100),100*floor(y.min()/100), 100*ceil((y.min()+di)/100))
 
     for xi, yi in zip(x,y):
         qt.insert(qtRec(xi,yi, None))

@@ -4,10 +4,12 @@ import wx
 from OpenGL.GLU import *
 from OpenGL.GL import *
 import sys,math
-import sys
+#import sys
 import scipy
 import Image
 from scikits import delaunay
+from PYME.Analysis.QuadTree import pointQT
+import numpy
 
 name = 'ball_glut'
 
@@ -596,6 +598,59 @@ class LMGLCanvas(GLCanvas):
 
     def getSnapshot(self, mode = GL_LUMINANCE):
         return glReadPixelsf(0,0,self.Size[0],self.Size[1], mode)
+
+    def jitMCT(self,x,y,jsig, mcp):
+        Imc = scipy.rand(len(x)) < mcp
+        if type(jsig) == numpy.ndarray:
+            jsig = jsig[Imc]
+        T = delaunay.Triangulation(x[Imc] +  jsig*scipy.randn(Imc.sum()), y[Imc] +  jsig*scipy.randn(Imc.sum()))    
+        self.setTriang(T)
+
+
+    def jitMCQ(self,x,y,jsig, mcp):
+        Imc = scipy.rand(len(x)) < mcp
+        qt = pointQT.qtRoot(-250,250, 0, 500)
+        if type(jsig) == numpy.ndarray:
+            jsig = jsig[Imc]
+        for xi, yi in zip(x[Imc] +  jsig*scipy.randn(Imc.sum()), y[Imc] +  jsig*scipy.randn(Imc.sum())):
+            qt.insert(pointQT.qtRec(xi, yi, None))    
+        self.setQuads(qt, 100, True)
+
+    def genJitQim(self,n, x,y,jsig, mcp):
+        self.jitMCQ(x,y,jsig, mcp)
+        self.setPercentileCLim(.99)
+        self.GetParent().Raise()
+        self.OnDraw()
+        
+        h_ = self.getSnapshot(GL_RGB)
+        
+        for i in range(n - 1):
+            self.jitMCQ(x,y,jsig, mcp) 
+            self.OnDraw()
+            h_ += self.getSnapshot(GL_RGB)
+        
+        return h_/n
+
+    def genJitTim(self,n, x,y,jsig, mcp):
+        #turn LUT and scalebar off
+        sbl = self.scaleBarLength
+        self.scaleBarLength = None
+        ld = self.LUTDraw
+        ld = False
+
+        self.jitMCT(x,y,jsig, mcp)
+        self.setPercentileCLim(.95)
+        self.GetParent().Raise()
+        self.OnDraw()
+        h_ = self.getSnapshot(GL_RGB)
+        for i in range(n - 1):
+            self.jitMCT(x,y,jsig, mcp) 
+            self.OnDraw()
+            h_ += self.getSnapshot(GL_RGB)
+        
+        self.scaleBarLength = sbl
+
+        return h_/n
         
         
 def showGLFrame():
@@ -630,6 +685,7 @@ def genMapColouring(T):
         cols[i] = cand
 
     return cols
+
 
 
 def main():

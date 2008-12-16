@@ -25,7 +25,7 @@ class microscope:
         #self.WantEventNotification = []
  
         #self.windows = []
-
+        self.StatusCallbacks = [] #list of functions which provide status information
     #preview
     
     
@@ -53,6 +53,9 @@ class microscope:
 
             if 'GetBufferSize' in dir(self.cam):
 				stext = stext + '    Buffer Level: %d of %d' % (self.cam.GetNumImsBuffered(), self.cam.GetBufferSize())
+        
+        for sic in self.StatusCallbacks:
+                stext = stext + '    ' + sic()       
         return stext
 
     def livepreview(self, Parent=None, Notebook = None):

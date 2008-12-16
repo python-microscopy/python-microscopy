@@ -12,8 +12,11 @@ class FocusCorrector(wx.Timer):
         self.tolerance = tolerance #set a position tolerance (default 200nm)
         
         self.Tracking = False #we're not locked at the start
-        self.SlopeEst = 0.5 #pretty arbitray - 200nm/pixel - will be refined as algorithm runs
+        #self.SlopeEst = 1 #pretty arbitray
+
         self.TargetPos = None
+
+        self.cumShift=0
         
         self.EstimateSlope = estSlopeDyn
 
@@ -77,12 +80,22 @@ class FocusCorrector(wx.Timer):
                 
                 corr = round(0.8*corr/.05)*.05
                 
+                #don't make more than 1um correction in any one step
+                corr = min(max(corr, -1), 1)
                 print corr
                 
                 self.LastPos = currPos
                 self.piezo.MoveTo(0,self.piezo.GetPos(0) + corr)
                 
                 self.LastStep = corr
+
+                self.cumShift += corr #increment cumulative shift
+
+                #we've moved a lot - lock obviously broken
+                if abs(self.cumShift) > 5: 
+                    self.Tracking = False #turn tracking off to stop runnaway
+            else:
+                self.cumShift = 0 #reset cumulative shift
                 
     
     def DoSlopeEst(self):
@@ -107,9 +120,49 @@ class FocusCorrector(wx.Timer):
         self.piezo.MoveTo(0,curPzPos)
 
         
+    def GetStatus(self):
+        p = self.posFcn() - self.TargetPos
+        if 'SlopeEst' in dir(self):
+            stext = 'Focus: %3.2f[%3.3fum]' % (p, self.SlopeEst*p)
+        else: #we haven't estimated the slope yet
+            stext = 'Focus: %3.2f' % (p,)
+
+        if self.Tracking:
+            stext += ' [locked]'
+
+    def TOn(self, event=None):
+        self.TrackOn(False)
+
+    def TOnCalc(self, event=None):
+        self.TrackOn(True)
+
+    def TOff(self, event=None):
+        self.TrackOff()
+
+    def addMenuItems(self,parentWindow, menu):
+        '''Add menu items and keyboard accelerators for LED control
+        to the specified menu & parent window'''
+        #Create IDs
+        self.ID_TRACK_ON = wx.NewId()
+        self.ID_TRACK_ON_CALC = wx.NewId()
+        self.ID_TRACK_OFF = wx.NewId()
         
-                
-                
-                
-            
+        mTracking = wx.Menu(title = 'Autofocus')
+
+        #Add menu items
+        mTracking.Append(helpString='', id=self.ID_TRACK_ON,
+              item='Tracking ON', kind=wx.ITEM_NORMAL)
         
+        mTracking.Append(helpString='', id=self.ID_TRACK_ON_CALC,
+              item='Tracking ON (Recalc)', kind=wx.ITEM_NORMAL)
+        mTracking.Append(helpString='', id=self.ID_LED_OFF,
+              item='Tracking OFF', kind=wx.ITEM_NORMAL)
+
+
+        menu.Append(mTracking, title = 'Autofocus')
+
+        
+        #Handle clicking on the menu items
+        wx.EVT_MENU(parentWindow, self.ID_TRACK_ON, self.TOn)
+        wx.EVT_MENU(parentWindow, self.ID_TRACK_ON_CALC, self.TOnCalc)
+        wx.EVT_MENU(parentWindow, self.ID_TRACK_OFF, self.TOff)

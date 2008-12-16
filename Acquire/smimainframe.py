@@ -188,6 +188,9 @@ class smiMainFrame(wx.Frame):
 
         wx.EVT_CLOSE(self, self.OnCloseWindow)        
         
+        self.MainFrame = self #reference to this window for use in scripts etc...
+        self.MainMenu = self.menuBar1
+
         self.sh = wx.py.shell.Shell(id=-1,
               parent=self.notebook1, pos=wx.Point(0, 0), size=wx.Size(618, 451), style=0, locals=self.__dict__, 
               introText='Python SMI bindings - note that help, license etc below is for Python, not PySMI\n\n')
