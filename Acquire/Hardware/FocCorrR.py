@@ -1,6 +1,7 @@
 import wx
 import time
 import Pyro.core
+import eventLog
 
 class FocusCorrector(wx.Timer):
     def __init__(self, piezo, tolerance=0.2, estSlopeDyn=False, recDrift=False, axis='X', guideLaser=None):
@@ -74,6 +75,8 @@ class FocusCorrector(wx.Timer):
                 self.Errors.append(posErr)
                 self.PiezoPoss.append(self.piezo.GetPos(0))
                 self.slopeEsts.append(self.SlopeEst)
+
+            eventLog.logEvent('Focus Position', '%f, %f, %f' % (currPos, posErr,self.SlopeEst ))
             
             if abs(posErr) > abs(self.tolerance*self.SlopeEst): #needs correction
                 corr = posErr/self.SlopeEst
