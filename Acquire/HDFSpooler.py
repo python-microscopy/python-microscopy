@@ -28,6 +28,7 @@ class EventLogger:
       ev['Time'] = time.time()
 
       ev.append()
+      self.evts.flush()
 
 class Spooler:
    def __init__(self, scope, filename, acquisator, parent=None, complevel=6, complib='zlib'):
