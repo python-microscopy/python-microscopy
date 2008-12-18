@@ -13,6 +13,8 @@ class DataWrap: #permit indexing with more dimensions larger than len(shape)
         self.shape = data.shape + (1,1,1,1,1)
         self.oldData = None
         self.oldSlice = None #buffer last lookup
+        self.dim_1_is_z = False
+
         if data.__class__ == tables.EArray:
              self.dim_1_is_z = True
              self.shape = self.shape[1:3] + (self.shape[0],) + self.shape[3:]
@@ -308,9 +310,9 @@ class MyViewPanel(viewpanel.ViewPanel):
             self.do.Gains[2]=(float(self.tRedGain.GetValue()))
             self.do.Gains[1]=(float(self.tGreenGain.GetValue()))
             self.do.Gains[0]=(float(self.tBlueGain.GetValue()))
-            self.do.Offs[2]=(int(self.tRedOff.GetValue()))
-            self.do.Offs[1]=(int(self.tGreenOff.GetValue()))
-            self.do.Offs[0]=(int(self.tBlueOff.GetValue()))
+            self.do.Offs[2]=(float(self.tRedOff.GetValue()))
+            self.do.Offs[1]=(float(self.tGreenOff.GetValue()))
+            self.do.Offs[0]=(float(self.tBlueOff.GetValue()))
             if (self.cbSlice.GetSelection() == 0):
                 self.do.slice =(self.do.SLICE_XY)
                 self.do.orientation = (self.do.UPRIGHT)
