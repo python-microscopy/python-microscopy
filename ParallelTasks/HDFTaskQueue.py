@@ -6,13 +6,18 @@ from PYME.Analysis import MetaData
 
 import os
 
-def genDataFilename(name):
-	fn = os.g
+from PYME.FileUtils.nameUtils import genResultFileName
+
+#def genDataFilename(name):
+#	fn = os.g
 
 
 class HDFResultsTaskQueue(TaskQueue):
 	'''Task queue which saves it's results to a HDF file'''
 	def __init__(self, name, resultsFilename, initialTasks=[], onEmpty = doNix, fTaskToPop = popZero):
+		if resultsFilename == None:
+			resultsFilename = genResultFilename(name)
+
 		if os.path.exists(resultsFilename): #bail if output file already exists
 			raise 'Output file already exists'
 

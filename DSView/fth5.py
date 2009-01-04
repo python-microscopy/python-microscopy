@@ -9,7 +9,7 @@ from pylab import *
 tq = Pyro.core.getProxyForURI('PYRONAME://taskQueue')
 
 from PYME.ParallelTasks.relativeFiles import getRelFilename
-from PYME.FileUtils.nameUtils import genResultFileName
+#from PYME.FileUtils.nameUtils import genResultFileName
 
 seriesName = getRelFilename(h5file.filename)
 
@@ -34,7 +34,7 @@ if h5file.root.MetaData.Camera._v_attrs.EMGain == 150: #gain register setting
 
 
 def pushImages(startingAt=0, detThresh = .9):
-    tq.createQueue('HDFResultsTaskQueue', seriesName, genResultFileName(seriesName))
+    tq.createQueue('HDFResultsTaskQueue', seriesName, None)
     for i in range(startingAt, ds.shape[0]):
         tq.postTask(remFitHDF.fitTask(seriesName,i, detThresh, md, 'LatGaussFitFR', bgindices=range(max(i-10, tLon),i), SNThreshold=True), queueName=seriesName)
 
