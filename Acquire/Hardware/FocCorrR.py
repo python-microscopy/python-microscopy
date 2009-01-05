@@ -15,7 +15,7 @@ class FocusCorrector(wx.Timer):
         self.Tracking = False #we're not locked at the start
         #self.SlopeEst = 1 #pretty arbitray
 
-        self.TargetPos = None
+        self.TargetPos = 0
 
         self.cumShift=0
         
@@ -126,12 +126,14 @@ class FocusCorrector(wx.Timer):
     def GetStatus(self):
         p = self.posFcn() - self.TargetPos
         if 'SlopeEst' in dir(self):
-            stext = 'Focus: %3.2f[%3.3fum]' % (p, self.SlopeEst*p)
+            stext = 'Focus: %3.2f[%3.3fum]' % (p, p/self.SlopeEst)
         else: #we haven't estimated the slope yet
             stext = 'Focus: %3.2f' % (p,)
 
         if self.Tracking:
             stext += ' [locked]'
+
+        return stext
 
     def TOn(self, event=None):
         self.TrackOn(False)
@@ -150,16 +152,16 @@ class FocusCorrector(wx.Timer):
         self.ID_TRACK_ON_CALC = wx.NewId()
         self.ID_TRACK_OFF = wx.NewId()
         
-        mTracking = wx.Menu(title = 'Autofocus')
+        mTracking = wx.Menu(title = '')
 
         #Add menu items
-        mTracking.Append(helpString='', id=self.ID_TRACK_ON,
-              item='Tracking ON', kind=wx.ITEM_NORMAL)
+        mTracking.Append(self.ID_TRACK_ON,
+              'Tracking ON', kind=wx.ITEM_NORMAL)
         
-        mTracking.Append(helpString='', id=self.ID_TRACK_ON_CALC,
-              item='Tracking ON (Recalc)', kind=wx.ITEM_NORMAL)
-        mTracking.Append(helpString='', id=self.ID_LED_OFF,
-              item='Tracking OFF', kind=wx.ITEM_NORMAL)
+        mTracking.Append(self.ID_TRACK_ON_CALC,
+              'Tracking ON (Recalc)', kind=wx.ITEM_NORMAL)
+        mTracking.Append(self.ID_TRACK_OFF,
+              'Tracking OFF', kind=wx.ITEM_NORMAL)
 
 
         menu.Append(mTracking, title = 'Autofocus')

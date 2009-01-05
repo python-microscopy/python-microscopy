@@ -2,6 +2,7 @@
 #import time
 import win32com.client
 nik = win32com.client.Dispatch("Nikon.TE2000.Microscope")
+
 #from math import *
 import eventLog
 
@@ -15,7 +16,6 @@ class zDrive:
         
     def MoveTo(self, iChannel, fPos, bTimeOut=True):
         stepPos = round(fPos/self.stepsize)
-
         if (stepPos >= self.hardMin):
             if (fPos < self.max_travel):
                 nik.ZDrive.Position = stepPos
@@ -25,24 +25,19 @@ class zDrive:
             nik.ZDrive.Position = self.hardMin
             
         eventLog.logEvent('Focus Change', 'New z-pos = %f' % stepPos)
-
     def GetPos(self, iChannel=1):
         return nik.ZDrive.Position.RawValue*self.stepsize
-
     def GetControlReady(self):
         return True
-
     def GetChannelObject(self):
         return 1
-
     def GetChannelPhase(self):
         return 1
-
     def GetMin(self,iChan=1):
-        #return self.hardMin*self.stepsize
-        return 3500
+        return self.hardMin*self.stepsize
+        #return 3500
 	#return round((self.GetPos() - 50)/50)*50
-
+    
     def GetMax(self, iChan=1):
         return self.max_travel
 	#return round((self.GetPos() + 50)/50)*50

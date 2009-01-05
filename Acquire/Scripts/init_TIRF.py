@@ -7,7 +7,7 @@ from Hardware import fakeShutters
 
 scope.cam = AndorIXon.iXonCamera()
 
-acf = AndorControlFrame.AndorFrame(None, scope.cam, scope)
+acf = AndorControlFrame.AndorFrame(MainFrame, scope.cam, scope)
 acf.Show()
 
 
@@ -23,7 +23,7 @@ scope.chaninfo = chaninfo
 scope.shutters = fakeShutters
 
 import HDFSpoolFrame
-frs = HDFSpoolFrame.FrSpool(None, scope, 'd:\\%(username)s\\%(day)d-%(month)d-%(year)d\\')
+frs = HDFSpoolFrame.FrSpool(MainFrame, scope, 'd:\\%(username)s\\%(day)d-%(month)d-%(year)d\\')
 frs.Show()
 
 
@@ -33,7 +33,7 @@ scope.zStage = NikonTE2000.zDrive()
 scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
 
 from Hardware import frZStage
-frz = frZStage.frZStepper(None, scope.zStage)
+frz = frZStage.frZStepper(MainFrame, scope.zStage)
 frz.Show()
 
 #3-axis piezo
@@ -68,8 +68,14 @@ l473 = lasers.DigiDataSwitchedAnalogLaser('473',dd,0)
 scope.lasers = [l488,l405,l473]
 
 from Hardware import LaserControlFrame
-lcf = LaserControlFrame.LaserControl(scope.lasers)
+lcf = LaserControlFrame.LaserControl(MainFrame,scope.lasers)
 lcf.Show()
+
+from Hardware import FocCorrR
+fc = FocCorrR.FocusCorrector(scope.zStage, tolerance=0.20000000000000001, estSlopeDyn=False, recDrift=False, axis='Y', guideLaser=l488)
+scope.StatusCallbacks.append(fc.GetStatus)
+fc.addMenuItems(MainFrame, MainMenu)
+fc.Start(2000)
 
 from PYME import cSMI
 import time
