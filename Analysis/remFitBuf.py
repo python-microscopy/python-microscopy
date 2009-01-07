@@ -9,6 +9,8 @@ bufferMisses = 0
 
 from pylab import *
 
+import copy
+
 def tqPopFcn(workerN, NWorkers, NTasks):
     return workerN * NTasks/NWorkers #let each task work on its own chunk of data ->
     
@@ -81,6 +83,8 @@ class fitTask(taskDef.Task):
         self.fitModule = fitModule
         self.SNThreshold = SNThreshold
 
+        self.queueID = None
+
 
     def __call__(self, gui=False, taskQueue=None):
         global dBuffer, queueID
@@ -127,7 +131,13 @@ class fitTask(taskDef.Task):
             show()
 
         #Create a fit 'factory'
-        fitFac = fitMod.FitFactory(self.data, self.md)
+        md = copy.copy(self.md)
+        md = copy.copy(self.md)
+        md.tIndex = self.index
+
+        fitFac = fitMod.FitFactory(self.data, md)
+
+        #print 'Have Fit Factory'
         
         #perform fit for each point that we detected
         if 'FitResultsDType' in dir(fitMod):
@@ -142,6 +152,7 @@ class fitTask(taskDef.Task):
 
     def calcThreshold(self):
         if self.SNThreshold:
-            return numpy.sqrt(numpy.maximum(self.data.mean(2) - self.md.CCD.ADOffset, 1))*self.threshold
+            fudgeFactor = 1 #to account for the fact that the blurring etc... in ofind doesn't preserve intensities - at the moment completely arbitrary so a threshold setting of 1 results in reasonable detection.
+            return (numpy.sqrt(self.md.CCD.ReadNoise**2 + numpy.maximum(self.md.CCD.electronsPerCount*(self.data.astype('f').mean(2) - self.md.CCD.ADOffset)*self.md.CCD.EMGain, 1))/self.md.CCD.electronsPerCount)*fudgeFactor*self.threshold
         else:
             return self.threshold

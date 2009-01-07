@@ -10,6 +10,8 @@ import wx.aui
 import sys
 sys.path.append('.')
 
+from PYME.misc.auiFloatBook import AuiNotebookWithFloatingPages
+
 #import example
 import PYME.cSMI as example
 
@@ -168,7 +170,10 @@ class smiMainFrame(wx.Frame):
         #self.notebook1 = wx.Notebook(id=wxID_SMIMAINFRAMENOTEBOOK1,
         #      name='notebook1', parent=self, pos=wx.Point(0, 0), size=wx.Size(618,
         #      450), style=0)
-        self.notebook1 = wx.aui.AuiNotebook(id=wxID_SMIMAINFRAMENOTEBOOK1, parent=self, pos=wx.Point(0, 0), size=wx.Size(618,
+        #self.notebook1 = wx.aui.AuiNotebook(id=wxID_SMIMAINFRAMENOTEBOOK1, parent=self, pos=wx.Point(0, 0), size=wx.Size(618,
+        #      450), style=wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_TAB_SPLIT)
+
+        self.notebook1 = AuiNotebookWithFloatingPages(id=wxID_SMIMAINFRAMENOTEBOOK1, parent=self, pos=wx.Point(0, 0), size=wx.Size(618,
               450), style=wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_TAB_SPLIT)
 
         self.panel1 = wx.Panel(id=wxID_SMIMAINFRAMEPANEL1, name='panel1',
@@ -220,7 +225,8 @@ class smiMainFrame(wx.Frame):
                 
         if (self.scope.cam.CamReady() and ('chaninfo' in self.scope.__dict__)):
             self.scope.livepreview(Notebook = self.notebook1)
-            
+            self.notebook1.Split(0, wx.BOTTOM)
+
             self.int_sl = intsliders.IntegrationSliders(self.scope.chaninfo,self)
             self.int_sl.Show()
             self.tseq_d = timeseqdialog.seqDialog(self, self.scope)
