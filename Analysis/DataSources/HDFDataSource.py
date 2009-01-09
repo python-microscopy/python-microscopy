@@ -1,9 +1,10 @@
+from PYME.ParallelTasks.relativeFiles import getFullFilename
 import tables
 
 class DataSource:
-    def __init__(self, h5Filename):
-        self.h5Filename = h5Filename
-        self.h5File = tables.openFile(h5Filename)
+    def __init__(self, h5Filename, taskQueue):
+        self.h5Filename = getFullFilename(h5Filename)#convert relative path to full path
+        self.h5File = tables.openFile(self.h5Filename)
 
     def getSlice(self, ind):
         if ind >= self.h5File.root.ImageData.shape[0]:

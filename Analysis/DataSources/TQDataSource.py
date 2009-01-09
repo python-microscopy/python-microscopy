@@ -1,10 +1,10 @@
-class remoteDataSource:
-    def __init__(self, taskQueue, queueName):
+class DataSource:
+    def __init__(self, queueName, taskQueue):
         self.taskQueue = taskQueue
         self.queueName = queueName
 
     def getSlice(self, ind):
-        return self.taskQueue.getQueueData(self.QueueName, 'ImageData',ind)
+        return self.taskQueue.getQueueData(self.queueName, 'ImageData',ind)
 
     def getSliceShape(self):
-        return self.taskQueue.getQueueData(self.QueueName, 'ImageShape')
+        return self.taskQueue.getQueueData(self.queueName, 'ImageShape')
