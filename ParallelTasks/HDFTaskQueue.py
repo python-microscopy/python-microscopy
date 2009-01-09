@@ -7,6 +7,7 @@ from PYME.Analysis import MetaData
 import os
 
 from PYME.FileUtils.nameUtils import genResultFileName
+from PYME.ParallelTasks.relativeFiles import getFullFilename
 
 #def genDataFilename(name):
 #	fn = os.g
@@ -16,7 +17,7 @@ class HDFResultsTaskQueue(TaskQueue):
 	'''Task queue which saves it's results to a HDF file'''
 	def __init__(self, name, resultsFilename, initialTasks=[], onEmpty = doNix, fTaskToPop = popZero):
 		if resultsFilename == None:
-			resultsFilename = genResultFilename(name)
+			resultsFilename = genResultFileName(name)
 
 		if os.path.exists(resultsFilename): #bail if output file already exists
 			raise 'Output file already exists'
@@ -75,26 +76,37 @@ class HDFResultsTaskQueue(TaskQueue):
 
 class HDFTaskQueue(HDFResultsTaskQueue):
 	''' task queue which, when initialised with an hdf image filename, automatically generated tasks - should also (eventually) include support for dynamically adding to data file for on the fly analysis'''
-	def __init__(self, name, fitParams, dataFilename = None, resultsFilename=None, onEmpty = doNix, fTaskToPop = popZero, startAt = 0):		
+	def __init__(self, name, fitParams, dataFilename = None, resultsFilename=None, onEmpty = doNix, fTaskToPop = popZero, startAt = -1):		
                 if dataFilename == None:
                    self.dataFilename = genDataFilename(name)
                 else: 
                     self.dataFilename = dataFilename
 
                 if resultsFilename == None:
-                    resultsFilename = genResultsFilename(self.dataFilename)
+                    resultsFilename = genResultFileName(self.dataFilename)
                 else:
                     resultsFilename = resultsFilename  
 		
                 
-		self.h5DataFile = tables.openFile(self.dataFilename, 'r')
-                initialTasks = list(range(self.h5DataFile.root.ImageData.shape[0]))
+		self.h5DataFile = tables.openFile(getFullFilename(self.dataFilename), 'r')
+		self.metaData = MetaData.genMetaDataFromHDF(self.h5DataFile)
+		print self.metaData.CCD.ADOffset
+
+		if startAt == -1: #calculate a suitable starting value
+			tLon = self.metaData.EstimatedLaserOnFrameNo
+			if tLon == 0:
+				startAt = 0
+			else:
+				startAt = tLon + 10
+
+                initialTasks = list(range(startAt, self.h5DataFile.root.ImageData.shape[0]))
 
 		HDFResultsTaskQueue.__init__(self, name, resultsFilename, initialTasks, onEmpty, fTaskToPop)
 
-		self.metaData = MetaData.genMetaDataFromHDF(self.h5DataFile)
+		self.queueID = name
 
 		self.fitParams = fitParams
+		self.dataFileLock = threading.Lock()
                 
 	def prepResultsFile(self):
             pass
@@ -115,7 +127,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
 
 		taskNum = self.openTasks.pop(self.fTaskToPop(workerN, NWorkers, len(self.openTasks)))
 
-		task = fitTask(taskNum, self.fitParams['threshold'], metadata, self.fitParams['fitModule'], bgindices =range(max(taskNum, 0), taskNum), SNThreshold = True)
+		task = fitTask(self.queueID, taskNum, self.fitParams['threshold'], self.metaData, self.fitParams['fitModule'], 'TQDataSource', bgindices =range(max(taskNum,self.metaData.EstimatedLaserOnFrameNo), taskNum), SNThreshold = True)
 
                 task.queueID = self.queueID
 		task.initializeWorkerTimeout(time.clock())
@@ -141,9 +153,15 @@ class HDFTaskQueue(HDFResultsTaskQueue):
 	def getQueueData(self, fieldName, *args):
 		'''Get data, defined by fieldName and potntially additional arguments,  ascociated with queue'''
 		if fieldName == 'ImageShape':
-			return self.h5DataFile.ImageData.shape[1:]
+			self.dataFileLock.acquire()
+			res = self.h5DataFile.root.ImageData.shape[1:]
+			self.dataFileLock.release()
+			return res
 		elif fieldName == 'ImageData':
 			sliceNum, = args
-			return self.h5DataFile.root.ImageData[sliceNum, :,:]
+			self.dataFileLock.acquire()
+			res = self.h5DataFile.root.ImageData[sliceNum, :,:]
+			self.dataFileLock.release()
+			return res
 		else:
 			return None
