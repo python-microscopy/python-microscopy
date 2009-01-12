@@ -76,7 +76,7 @@ class HDFResultsTaskQueue(TaskQueue):
 
 class HDFTaskQueue(HDFResultsTaskQueue):
 	''' task queue which, when initialised with an hdf image filename, automatically generated tasks - should also (eventually) include support for dynamically adding to data file for on the fly analysis'''
-	def __init__(self, name, fitParams, dataFilename = None, resultsFilename=None, onEmpty = doNix, fTaskToPop = popZero, startAt = 'guestimate'):		
+	def __init__(self, name, fitParams, dataFilename = None, resultsFilename=None, onEmpty = doNix, fTaskToPop = popZero, startAt = 'guestimate', frameSize=(-1,-1), complevel=6, complib='zlib'):		
                 if dataFilename == None:
                    self.dataFilename = genDataFilename(name)
                 else: 
@@ -87,22 +87,38 @@ class HDFTaskQueue(HDFResultsTaskQueue):
                 else:
                     resultsFilename = resultsFilename  
 		
-                
-		self.h5DataFile = tables.openFile(getFullFilename(self.dataFilename), 'r')
-		self.metaData = MetaData.genMetaDataFromHDF(self.h5DataFile)
-		print self.metaData.CCD.ADOffset
+		ffn = getFullFilename(self.dataFilename)
+		
+		self.acceptNewTasks = False
+		self.releaseNewTasks = False
+		
 
-		if startAt == 'guestimate': #calculate a suitable starting value
-			tLon = self.metaData.EstimatedLaserOnFrameNo
-			if tLon == 0:
-				startAt = 0
-			else:
-				startAt = tLon + 10
+		if os.path.exists(ffn): #file already exists - read from it
+			self.h5DataFile = tables.openFile(ffn, 'r')
+			self.metaData = MetaData.genMetaDataFromHDF(self.h5DataFile)
+		
+
+			if startAt == 'guestimate': #calculate a suitable starting value
+				tLon = self.metaData.EstimatedLaserOnFrameNo
+				if tLon == 0:
+					startAt = 0
+				else:
+					startAt = tLon + 10
 				
-		if startAt == 'notYet':
-			initialTasks = []
-		else:
-			initialTasks = list(range(startAt, self.h5DataFile.root.ImageData.shape[0]))
+			if startAt == 'notYet':
+				initialTasks = []
+			else:
+				initialTasks = list(range(startAt, self.h5DataFile.root.ImageData.shape[0]))
+		else: #make ourselves a new file
+			self.h5DataFile = tables.openFile(ffn, 'w')
+			filt = tables.Filters(complevel, complib, shuffle=True)
+
+			self.imageData = self.h5File.createEArray(self.h5File.root, 'ImageData', tables.UInt16Atom(), (0,)+tuple(frameSize), filters=filt)
+			self.imNum=0
+			self.acceptNewTasks = True
+			
+			
+		
 
 		HDFResultsTaskQueue.__init__(self, name, resultsFilename, initialTasks, onEmpty, fTaskToPop)
 
@@ -116,7 +132,17 @@ class HDFTaskQueue(HDFResultsTaskQueue):
 
         def postTask(self,task):
 		#self.openTasks.append(task)
-		print 'posting tasks not implemented yet'
+		#print 'posting tasks not implemented yet'
+		if self.acceptNewTasks:
+			self.imageData.append(task)
+			self.h5File.flush()
+
+			if self.releaseNewTasks:
+				self.openTasks.append(self.imNum)
+			self.imNum += 1
+		else:
+			print "can't post new tasks"
+			
 
 	def postTasks(self,tasks):
 		#self.openTasks += tasks
