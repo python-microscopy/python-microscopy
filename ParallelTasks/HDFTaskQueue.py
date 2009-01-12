@@ -76,7 +76,7 @@ class HDFResultsTaskQueue(TaskQueue):
 
 class HDFTaskQueue(HDFResultsTaskQueue):
 	''' task queue which, when initialised with an hdf image filename, automatically generated tasks - should also (eventually) include support for dynamically adding to data file for on the fly analysis'''
-	def __init__(self, name, fitParams, dataFilename = None, resultsFilename=None, onEmpty = doNix, fTaskToPop = popZero, startAt = -1):		
+	def __init__(self, name, fitParams, dataFilename = None, resultsFilename=None, onEmpty = doNix, fTaskToPop = popZero, startAt = 'guestimate'):		
                 if dataFilename == None:
                    self.dataFilename = genDataFilename(name)
                 else: 
@@ -92,14 +92,17 @@ class HDFTaskQueue(HDFResultsTaskQueue):
 		self.metaData = MetaData.genMetaDataFromHDF(self.h5DataFile)
 		print self.metaData.CCD.ADOffset
 
-		if startAt == -1: #calculate a suitable starting value
+		if startAt == 'guestimate': #calculate a suitable starting value
 			tLon = self.metaData.EstimatedLaserOnFrameNo
 			if tLon == 0:
 				startAt = 0
 			else:
 				startAt = tLon + 10
-
-                initialTasks = list(range(startAt, self.h5DataFile.root.ImageData.shape[0]))
+				
+		if startAt == 'notYet':
+			initialTasks = []
+		else:
+			initialTasks = list(range(startAt, self.h5DataFile.root.ImageData.shape[0]))
 
 		HDFResultsTaskQueue.__init__(self, name, resultsFilename, initialTasks, onEmpty, fTaskToPop)
 
@@ -127,7 +130,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
 
 		taskNum = self.openTasks.pop(self.fTaskToPop(workerN, NWorkers, len(self.openTasks)))
 
-		task = fitTask(self.queueID, taskNum, self.fitParams['threshold'], self.metaData, self.fitParams['fitModule'], 'TQDataSource', bgindices =range(max(taskNum,self.metaData.EstimatedLaserOnFrameNo), taskNum), SNThreshold = True)
+		task = fitTask(self.queueID, taskNum, self.fitParams['threshold'], self.metaData, self.fitParams['fitModule'], 'TQDataSource', bgindices =range(max(taskNum - 10,self.metaData.EstimatedLaserOnFrameNo), taskNum), SNThreshold = True)
 
                 task.queueID = self.queueID
 		task.initializeWorkerTimeout(time.clock())

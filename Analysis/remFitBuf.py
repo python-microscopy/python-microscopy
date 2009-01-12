@@ -94,7 +94,7 @@ class fitTask(taskDef.Task):
         
         #squash 4th dimension
         self.data = self.data.reshape((self.data.shape[0], self.data.shape[1],1))
-        
+        print self.bgindices
         #calculate background
         self.bg = 0
         if not len(self.bgindices) == 0:
