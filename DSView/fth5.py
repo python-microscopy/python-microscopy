@@ -26,7 +26,15 @@ def testFrame(detThresh = 0.9):
     ft = remFitBuf.fitTask(seriesName,vp.zp, detThresh, md, 'LatGaussFitFR', bgindices=range(max(vp.zp-10, md.EstimatedLaserOnFrameNo),vp.zp), SNThreshold=True)
     return ft(True)
 
+def pushImagesD(startingAt=0, detThresh = .9):
+    tq.createQueue('HDFResultsTaskQueue', seriesName, None)
+    for i in range(startingAt, ds.shape[0]):
+        tq.postTask(remFitBuf.fitTask(seriesName,i, detThresh, md, 'LatGaussFitFR', bgindices=range(max(i-10,md.EstimatedLaserOnFrameNo ),i), SNThreshold=True,driftEstInd=range(max(i-5, md.EstimatedLaserOnFrameNo),min(i + 5, ds.shape[0]))), queueName=seriesName)
 
+
+def testFrameD(detThresh = 0.9):
+    ft = remFitBuf.fitTask(seriesName,vp.zp, detThresh, md, 'LatGaussFitFR', bgindices=range(max(vp.zp-10, md.EstimatedLaserOnFrameNo),vp.zp), SNThreshold=True,driftEstInd=range(max(vp.zp-5, md.EstimatedLaserOnFrameNo),min(vp.zp + 5, ds.shape[0])))
+    return ft(True)
 
 #import fitIO
 

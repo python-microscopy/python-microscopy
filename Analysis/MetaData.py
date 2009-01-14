@@ -35,11 +35,14 @@ def genMetaDataFromHDF(h5File):
 	dI = numpy.diff(h5File.root.ImageData[:200, :,:].mean(2).mean(1))
 	
 	tLon = numpy.argmax(dI)
+	print tLon
 	dIm = dI[tLon]
 
 	#Now do some sanity checks ... 
-	#expect magnitude of differential to be much larger at turn on than later ...
-	if not dIm > 10*dI[(tLon + 50):(tLon + 100)].max():
+	if tLon > 100: #shouldn't bee this late
+		tLon = 0
+        #expect magnitude of differential to be much larger at turn on than later ...
+	elif not dIm > 10*dI[(tLon + 50):(tLon + 100)].max():
 		tLon = 0 # assume laser was already on
 	#also expect the intensity to be decreasing after the initial peak faster than later on in the piece
 	elif not dI[(tLon + 5):(tLon + 15)].mean() < -abs(dI[(tLon + 50):(tLon + 100)].mean()):

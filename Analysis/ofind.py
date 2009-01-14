@@ -144,10 +144,10 @@ class ObjectIdentifier(list):
             maskedFilteredData = filteredData
 
         #manually mask the edge pixels
-        maskedFilteredData[0:5, 0:5] = 0
-        maskedFilteredData[0:5, -5:] = 0
-        maskedFilteredData[-5:, -5:] = 0
-        maskedFilteredData[-5:, 0:5] = 0
+        maskedFilteredData[:, :5] = 0
+        maskedFilteredData[:, -5:] = 0
+        maskedFilteredData[-5:, :] = 0
+        maskedFilteredData[:5, :] = 0
         
         if self.numThresholdSteps > 0:
             #determine (approximate) mode

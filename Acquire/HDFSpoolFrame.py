@@ -121,6 +121,11 @@ class FrSpool(wx.Frame):
         self.seriesCounter = 0
         self.seriesName = self._GenSeriesName()
         
+        #if we've had to quit for whatever reason start where we left off
+        while os.path.exists(os.path.join(self.dirname, self.seriesName + '.h5')):
+            self.seriesCounter +=1
+            self.seriesName = self._GenSeriesName()
+        
         self.stSpoolDirName.SetLabel(self.dirname)
         self.tcSpoolFile.SetValue(self.seriesName)
 
@@ -193,6 +198,12 @@ class FrSpool(wx.Frame):
         if not ndir == '':
             self.dirname = ndir + os.sep
             self.stSpoolDirName.SetLabel(self.dirname)
+
+            #if we've had to quit for whatever reason start where we left off
+            while os.path.exists(os.path.join(self.dirname, self.seriesName + '.h5' )):
+                self.seriesCounter +=1
+                self.seriesName = self._GenSeriesName()
+                self.tcSpoolFile.SetValue(self.seriesName)
 
     def OnTcSpoolFileText(self, event):
         event.Skip()

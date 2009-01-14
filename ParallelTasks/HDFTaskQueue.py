@@ -56,15 +56,22 @@ class HDFResultsTaskQueue(TaskQueue):
             self.h5ResultsFile.close()
 
         def fileResult(self, res):
-            if res.results == []: #if we had a dud frame
+            if res.results == [] and res.driftResults == []: #if we had a dud frame
                 return 
 
             self.fileResultsLock.acquire() #get a lock
             
-            if not self.h5ResultsFile.__contains__('/FitResults'):
-                self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'FitResults', res.results, filters=tables.Filters(complevel=5, shuffle=True))
-            else:
-                self.h5ResultsFile.root.FitResults.append(res.results)
+	    if not res.results == []:
+		    if not self.h5ResultsFile.__contains__('/FitResults'):
+			self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'FitResults', res.results, filters=tables.Filters(complevel=5, shuffle=True))
+		    else:
+			self.h5ResultsFile.root.FitResults.append(res.results)
+
+	    if not res.driftResults == []:
+		    if not self.h5ResultsFile.__contains__('/DriftResults'):
+			self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'DriftResults', res.driftResults, filters=tables.Filters(complevel=5, shuffle=True))
+		    else:
+			self.h5ResultsFile.root.DriftResults.append(res.driftResults)
 
 	    self.h5ResultsFile.flush()
 

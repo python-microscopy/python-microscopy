@@ -2,6 +2,7 @@ import sys
 import time
 import os
 import colorize_db_t
+import webbrowser
 
 #tPrev = time.time()
 
@@ -21,6 +22,7 @@ lPrev = mydictn()
 
 filenames = []
 files = {}
+fullfilenames = {}
 
 class mydict(dict):
     def __init__(self, *args):
@@ -60,11 +62,17 @@ def te(frame, event, arg):
         return te
     if event == 'line':
         if fn in filenames:
+            fullfilenames[fn] = frame.f_code.co_filename
             lPrev[funcName] = (fn,frame.f_lineno)
             tPrev[funcName] = time.time()
 
 
 
 def report():
+    if not os.path.exists('/tmp/mProf'):
+        os.makedirs('/tmp/mProf')
+
     for f in filenames:
-        colorize_db_t.colorize_file(files[f], f,open('/tmp/mProf/' + f + '.html', 'w'))
+        colorize_db_t.colorize_file(files[f], fullfilenames[f],open('/tmp/mProf/' + f + '.html', 'w'))
+        webbrowser.open('/tmp/mProf/' + f + '.html', 2)
+        
