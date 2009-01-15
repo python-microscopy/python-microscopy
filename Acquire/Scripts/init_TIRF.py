@@ -55,6 +55,16 @@ if len(piezoSerialNums) == 3: #expect to see 3 piezos
     scope.pzy.MoveTo(0,50)
     scope.pzz.MoveTo(0,40)
     
+from Hardware.FilterWheel import WFilter, FiltFrame
+filtList = [WFilter(1, 'EMPTY', 'EMPTY', 0),
+    WFilter(2, 'ND.5' , 'UVND 0.5', 0.5),
+    WFilter(3, 'ND1'  , 'UVND 1'  , 1),
+    WFilter(4, 'ND1.5', 'UVND 1.5', 1.5),
+    WFilter(5, 'ND2'  , 'UVND 2'  , 2),
+    WFilter(6, 'ND3'  , 'UVND 3'  , 3)]
+
+scope.filterWheel = FiltFrame(MainFrame, filtList)
+scope.filterWheel.Show()
 
 #DigiData
 from Hardware.DigiData import DigiDataClient

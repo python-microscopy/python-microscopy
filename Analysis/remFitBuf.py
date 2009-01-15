@@ -8,7 +8,7 @@ dataSourceID = None
 
 bufferMisses = 0
 
-from pylab import *
+#from pylab import *
 
 import copy
 
@@ -142,6 +142,7 @@ class fitTask(taskDef.Task):
         
         #If we're running under a gui - display found objects
         if gui:
+            from pylab import *
             clf()
             imshow(self.ofd.filteredData.T, cmap=cm.hot, hold=False)
             plot([p.x for p in self.ofd], [p.y for p in self.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
