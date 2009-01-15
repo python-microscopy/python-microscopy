@@ -142,16 +142,16 @@ class fitTask(taskDef.Task):
         
         #If we're running under a gui - display found objects
         if gui:
-            from pylab import *
-            clf()
-            imshow(self.ofd.filteredData.T, cmap=cm.hot, hold=False)
-            plot([p.x for p in self.ofd], [p.y for p in self.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
+            import pylab
+            pylab.clf()
+            pylab.imshow(self.ofd.filteredData.T, cmap=cm.hot, hold=False)
+            pylab.plot([p.x for p in self.ofd], [p.y for p in self.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
             if self.driftEst:
-                 plot([p.x for p in self.ofdDr], [p.y for p in self.ofdDr], 'o', mew=2, mec='b', mfc='none', ms=9)
+                 pylab.plot([p.x for p in self.ofdDr], [p.y for p in self.ofdDr], 'o', mew=2, mec='b', mfc='none', ms=9)
             #axis('image')
             #gca().set_ylim([255,0])
-            colorbar()
-            show()
+            pylab.colorbar()
+            pylab.show()
 
         #Create a fit 'factory'
         md = copy.copy(self.md)

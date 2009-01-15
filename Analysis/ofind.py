@@ -1,6 +1,6 @@
 import scipy
 import scipy.ndimage as ndimage
-import pylab
+#import pylab
 
 class OfindPoint:
     def __init__(self, x, y, z=None, detectionThreshold=None):
