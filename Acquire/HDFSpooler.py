@@ -2,6 +2,7 @@ import os
 #import logparser
 import datetime
 import tables
+import MetaDataHandler
 from PYME import cSMI
 
 import time
@@ -58,6 +59,8 @@ class Spooler:
        self.acq.WantFrameNotification.append(self.Tick)
        
        self.spoolOn = True
+
+       self.md = MetaDataHandler.HDFMDHandler(self.h5File)
        
    def StopSpool(self):
        self.acq.WantFrameNotification.remove(self.Tick)
@@ -80,7 +83,7 @@ class Spooler:
          self.parent.Tick()
 
    def doStartLog(self):
-      md = self.h5File.createGroup(self.h5File.root, 'MetaData')
+      #md = self.h5File.createGroup(self.h5File.root, 'MetaData')
 
       dt = datetime.datetime.now()
         
@@ -88,19 +91,24 @@ class Spooler:
 
       #self.log['GENERAL']['Date'] = '%d/%d/%d' % (dt.day, dt.month, dt.year)
       #self.log['GENERAL']['StartTime'] = '%d:%d:%d' % (dt.hour, dt.minute, dt.second)
-      md._v_attrs.StartTime = time.time()
+      #md._v_attrs.StartTime = time.time()
+      self.md.setEntry('StartTime', time.time())
       
-      self.h5File.createGroup(self.h5File.root.MetaData, 'Camera')
-      self.scope.cam.GetStatus()
+      #self.h5File.createGroup(self.h5File.root.MetaData, 'Camera')
+      #self.scope.cam.GetStatus()
 
-      if 'tKin' in dir(self.scope.cam): #check for Andor cam
-         md.Camera._v_attrs.IntegrationTime = self.scope.cam.tExp
-         md.Camera._v_attrs.CycleTime = self.scope.cam.tKin
-         md.Camera._v_attrs.EMGain = self.scope.cam.GetEMGain()
+      #if 'tKin' in dir(self.scope.cam): #check for Andor cam
+      #   md.Camera._v_attrs.IntegrationTime = self.scope.cam.tExp
+      #   md.Camera._v_attrs.CycleTime = self.scope.cam.tKin
+      #   md.Camera._v_attrs.EMGain = self.scope.cam.GetEMGain()
 
-      md.Camera._v_attrs.ROIPosX = self.scope.cam.GetROIX1()
-      md.Camera._v_attrs.ROIPosY = self.scope.cam.GetROIY1()
-      md.Camera._v_attrs.StartCCDTemp = self.scope.cam.GetCCDTemp()
+      #md.Camera._v_attrs.ROIPosX = self.scope.cam.GetROIX1()
+      #md.Camera._v_attrs.ROIPosY = self.scope.cam.GetROIY1()
+      #md.Camera._v_attrs.StartCCDTemp = self.scope.cam.GetCCDTemp()
+
+      #loop over all providers of metadata
+      for mdgen in MetaDataHandler.provideStartMetadata:
+         mdgen(self.md)
       
    
    def doStartLoog(self):
@@ -179,14 +187,18 @@ class Spooler:
    def doStopLog(self):
         #self.log['GENERAL']['Depth'] = self.ds.getDepth()
         #self.log['PIEZOS']['EndPos'] = self.GetEndPos()
-        self.scope.cam.GetStatus()
+        #self.scope.cam.GetStatus()
         #self.log['CAMERA']['EndCCDTemp'] = self.scope.cam.GetCCDTemp()
         #self.log['CAMERA']['EndElectrTemp'] = self.scope.cam.GetElectrTemp()
         
         dt = datetime.datetime.now()
         #self.log['GENERAL']['EndTime'] = '%d:%d:%d' % (dt.hour, dt.minute, dt.second)
-        self.h5File.root.MetaData._v_attrs.EndTime = time.time()
-        #self.log['GENERAL']['NumImages'] = '%d' % self.imNum   
+        self.md.setEntry('EndTime', time.time())
+        #self.log['GENERAL']['NumImages'] = '%d' % self.imNum
+
+        #loop over all providers of metadata
+        for mdgen in MetaDataHandler.provideStopMetadata:
+           mdgen(self.md)
         
    def writeLog_(self):
         lw = logparser.logwriter()

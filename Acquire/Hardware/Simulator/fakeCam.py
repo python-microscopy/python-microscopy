@@ -221,3 +221,20 @@ class FakeCamera:
     
     def GetBufferSize(self):
         return 10
+
+    def GenStartMetadata(self, mdh):
+        self.GetStatus()
+
+        mdh.setEntry('Camera.Name', 'Simulated Standard CCD Camera')
+
+        mdh.setEntry('Camera.IntegrationTime', self.GetIntegTime())
+        mdh.setEntry('Camera.CycleTime', self.GetIntegTime())
+        mdh.setEntry('Camera.EMGain', self.noisemaker.EMGain)
+
+        mdh.setEntry('Camera.ROIPosX', self.GetROIX1())
+        mdh.setEntry('Camera.ROIPosY',  self.GetROIY1())
+        #mdh.setEntry('Camera.StartCCDTemp',  self.GetCCDTemp())
+
+        mdh.setEntry('Camera.ReadNoise', self.noiseMaker.readoutNoise)
+        mdh.setEntry('Camera.NoiseFactor', 1)
+        mdh.setEntry('Camera.ElectronsPerCount', self.noiseMaker.ADGain)

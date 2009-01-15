@@ -82,6 +82,49 @@ class h5rSource:
         self.h5f.close()
 
 
+class h5rDSource:
+    def __init__(self, h5fFilename):
+        ''' Data source for use with h5r files as saved by the PYME analysis 
+        component'''
+        
+        self.h5f = tables.openFile(h5fFilename)
+        
+        if not 'DriftResults' in dir(self.h5f.root):
+            raise 'Was expecting to find a "DriftResults" table'
+
+        #allow access using unnested original names
+        self._keys = unNestNames(self.h5f.root.DriftResults.description._v_nestedNames)
+        #or shorter aliases
+        self.transkeys = {'A' : 'fitResults_A', 'x' : 'fitResults_x0',
+                          'y' : 'fitResults_y0', 'sig' : 'fitResults_sigma', 
+                          'error_x' : 'fitError_x0'}
+
+
+    def keys(self):
+        return self._keys + self.transkeys.keys()
+
+    def __getitem__(self, key):
+        #if we're using an alias replace with actual key
+        if key in self.transkeys.keys():
+            key = self.transkeys[key]
+
+        if not key in self._keys:
+            raise 'Key not found'
+
+        k = key.split('_')
+        
+        if len(k) == 1:
+            return self.h5f.root.DriftResults[:][k[0]]
+        elif len(k) == 2:
+            return self.h5f.root.DriftResults[:][k[0]][k[1]]
+        elif len(k) == 3:
+            return self.h5f.root.DriftResults[:][k[0]][k[1]][k[2]]
+        else:
+            raise "Don't know about deeper nesting yet"
+        
+
+    def close(self):
+        self.h5f.close()
 
 class textfileSource:
     def __init__(self, filename, columnnames, delimiter=None):

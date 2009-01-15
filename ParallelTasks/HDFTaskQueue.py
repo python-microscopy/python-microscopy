@@ -185,6 +185,8 @@ class HDFTaskQueue(HDFResultsTaskQueue):
             self.h5DataFile.close()
             self.h5ResultsFile.close()
 
+	def setFileMetaData(self, fieldName, value):
+		pass
 
 	def getQueueData(self, fieldName, *args):
 		'''Get data, defined by fieldName and potntially additional arguments,  ascociated with queue'''
