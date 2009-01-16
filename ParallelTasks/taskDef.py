@@ -3,8 +3,9 @@ import random
 class Task:
     def __init__(self):
         self.taskID = repr(random.random())
+        self.timeout = 10 #seconds
     def initializeWorkerTimeout(self, curtime):
-        pass
+        self.workerTimeout = curtime + self.timeout
 
 class TaskResult:
     def __init__(self, task):

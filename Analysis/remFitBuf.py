@@ -143,6 +143,7 @@ class fitTask(taskDef.Task):
         #If we're running under a gui - display found objects
         if gui:
             import pylab
+            cm = pylab.cm
             pylab.clf()
             pylab.imshow(self.ofd.filteredData.T, cmap=cm.hot, hold=False)
             pylab.plot([p.x for p in self.ofd], [p.y for p in self.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)

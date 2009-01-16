@@ -176,7 +176,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
 		curTime = time.clock()
 		for it in self.tasksInProgress:
 			if 'workerTimeout' in dir(it):
-				if curTime > workerTimeout:
+				if curTime > it.workerTimeout:
 					self.openTasks.insert(0, it.taskNum)
 					self.tasksInProgress.remove(it)
 
