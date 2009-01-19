@@ -38,11 +38,15 @@ def unNestNames(nameList, parent=''):
 
 
 class h5rSource:
-    def __init__(self, h5fFilename):
+    def __init__(self, h5fFile):
         ''' Data source for use with h5r files as saved by the PYME analysis 
-        component'''
-        
-        self.h5f = tables.openFile(h5fFilename)
+        component. Takes either an open h5r file or a string filename to be
+        opened.'''
+
+        if type(h5fFile) == tables.file.File:
+            self.h5f = h5fFile
+        else:
+            self.h5f = tables.openFile(h5fFile)
         
         if not 'FitResults' in dir(self.h5f.root):
             raise 'Was expecting to find a "FitResults" table'

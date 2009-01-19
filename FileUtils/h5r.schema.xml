@@ -1,0 +1,54 @@
+<gconfschemafile>
+    <schemalist>
+
+        <schema>
+            <key>/schemas/desktop/gnome/thumbnailers/application@x-extension-h5/enable</key>
+            <applyto>/desktop/gnome/thumbnailers/application@x-extension-h5/enable</applyto>
+            <owner>thumbnailer</owner>
+            <type>bool</type>
+            <default>true</default>
+            <locale name="C">
+                <short>Enable thumbnailing of PYME raw data</short>
+                <long>Enable thumbnailing of PYME raw data</long>
+            </locale>
+        </schema>
+
+        <schema>
+            <key>/schemas/desktop/gnome/thumbnailers/application@x-extension-h5/command</key>
+            <applyto>/desktop/gnome/thumbnailers/application@x-extension-h5/command</applyto>
+            <owner>thumbnailer</owner>
+            <type>string</type>
+            <default>/home/david/bin/h5-thumbnailer %u %o %s</default>
+            <locale name="C">
+                <short>Create thumbnail for PYME raw data</short>
+                <long>Create thumbnail for PYME raw data</long>
+            </locale>
+        </schema>
+
+
+	<schema>
+            <key>/schemas/desktop/gnome/thumbnailers/application@x-extension-h5r/enable</key>
+            <applyto>/desktop/gnome/thumbnailers/application@x-extension-h5r/enable</applyto>
+            <owner>thumbnailer</owner>
+            <type>bool</type>
+            <default>true</default>
+            <locale name="C">
+                <short>Enable thumbnailing of PYME results</short>
+                <long>Enable thumbnailing of PYME results</long>
+            </locale>
+        </schema>
+
+        <schema>
+            <key>/schemas/desktop/gnome/thumbnailers/application@x-extension-h5r/command</key>
+            <applyto>/desktop/gnome/thumbnailers/application@x-extension-h5r/command</applyto>
+            <owner>thumbnailer</owner>
+            <type>string</type>
+            <default>/home/david/bin/h5r-thumbnailer %u %o %s</default>
+            <locale name="C">
+                <short>Create thumbnail for PYME results</short>
+                <long>Create thumbnail for PYME results</long>
+            </locale>
+        </schema>
+
+    </schemalist>
+</gconfschemafile>
