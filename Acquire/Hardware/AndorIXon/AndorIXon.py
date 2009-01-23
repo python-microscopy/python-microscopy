@@ -21,6 +21,9 @@ class iXonCamera:
     def __init__(self):
         self.initialised = False
 
+        #register as a provider of metadata
+        MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
+
         #initialise the camera - n.b. this take ~2s
         ret = ac.Initialize('.')
 
@@ -130,8 +133,7 @@ class iXonCamera:
             #raise 'Error setting shutter: %s' % ac.errorCodes[ret]
             print 'Error setting shutter: %s' % ac.errorCodes[ret]
 
-        #register as a provider of metadata
-        MetaDataHandler.provideStartMetaData.append(self.GenStartMetadata)
+        
 
 
     def _InitSpeedInfo(self):

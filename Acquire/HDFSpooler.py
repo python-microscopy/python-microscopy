@@ -51,6 +51,9 @@ class Spooler:
 
        self.imNum=0
        self.log = {}
+
+       self.md = MetaDataHandler.HDFMDHandler(self.h5File)
+
        self.doStartLog()
 
        self.evtLogger = EventLogger(scope, self.h5File)
@@ -60,7 +63,7 @@ class Spooler:
        
        self.spoolOn = True
 
-       self.md = MetaDataHandler.HDFMDHandler(self.h5File)
+       
        
    def StopSpool(self):
        self.acq.WantFrameNotification.remove(self.Tick)

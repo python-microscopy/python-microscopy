@@ -1,7 +1,7 @@
-from Hardware.AndorIXon import AndorIXon
-from Hardware.AndorIXon import AndorControlFrame
+from PYME.Acquire.Hardware.AndorIXon import AndorIXon
+from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
 
-from Hardware import fakeShutters
+from PYME.Acquire.Hardware import fakeShutters
 
 #from PYME import cSMI
 
@@ -28,16 +28,16 @@ frs.Show()
 
 
 #Z stage
-from Hardware import NikonTE2000
+from PYME.Acquire.Hardware import NikonTE2000
 scope.zStage = NikonTE2000.zDrive()
 scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
 
-from Hardware import frZStage
+from PYME.Acquire.Hardware import frZStage
 frz = frZStage.frZStepper(MainFrame, scope.zStage)
 frz.Show()
 
 #3-axis piezo
-from Hardware import thorlabsPiezo
+from PYME.Acquire.Hardware import thorlabsPiezo
 
 #check to see what we've got attached
 piezoSerialNums = thorlabsPiezo.EnumeratePiezos()
@@ -55,7 +55,7 @@ if len(piezoSerialNums) == 3: #expect to see 3 piezos
     scope.pzy.MoveTo(0,50)
     scope.pzz.MoveTo(0,40)
     
-from Hardware.FilterWheel import WFilter, FiltFrame
+from PYME.Acquire.Hardware.FilterWheel import WFilter, FiltFrame
 filtList = [WFilter(1, 'EMPTY', 'EMPTY', 0),
     WFilter(2, 'ND.5' , 'UVND 0.5', 0.5),
     WFilter(3, 'ND1'  , 'UVND 1'  , 1),
@@ -67,21 +67,21 @@ scope.filterWheel = FiltFrame(MainFrame, filtList)
 scope.filterWheel.Show()
 
 #DigiData
-from Hardware.DigiData import DigiDataClient
+from PYME.Acquire.Hardware.DigiData import DigiDataClient
 dd = DigiDataClient.getDDClient()
 
-from Hardware import lasers
+from PYME.Acquire.Hardware import lasers
 l488 = lasers.DigiDataSwitchedLaser('488',dd,1)
 l405 = lasers.DigiDataSwitchedLaserInvPol('405',dd,0)
 l473 = lasers.DigiDataSwitchedAnalogLaser('473',dd,0)
 
 scope.lasers = [l488,l405,l473]
 
-from Hardware import LaserControlFrame
+from PYME.Acquire.Hardware import LaserControlFrame
 lcf = LaserControlFrame.LaserControl(MainFrame,scope.lasers)
 lcf.Show()
 
-from Hardware import FocCorrR
+from PYME.Acquire.Hardware import FocCorrR
 fc = FocCorrR.FocusCorrector(scope.zStage, tolerance=0.20000000000000001, estSlopeDyn=False, recDrift=False, axis='Y', guideLaser=l488)
 scope.StatusCallbacks.append(fc.GetStatus)
 fc.addMenuItems(MainFrame, MainMenu)

@@ -30,7 +30,7 @@ class HDFMDHandler:
         if self.h5file.__contains__('/MetaData'):
             self.md = self.h5file.root.MetaData
         else:
-            self.md = self.h5File.createGroup(self.h5File.root, 'MetaData')
+            self.md = self.h5file.createGroup(self.h5file.root, 'MetaData')
 
         if not mdToCopy == None:
             for en in mdToCopy.getEntryNames:

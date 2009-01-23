@@ -145,7 +145,7 @@ class fitTask(taskDef.Task):
             import pylab
             cm = pylab.cm
             pylab.clf()
-            pylab.imshow(self.ofd.filteredData.T, cmap=cm.hot, hold=False)
+            pylab.imshow(self.ofd.filteredData.T, cmap=pylab.cm.hot, hold=False)
             pylab.plot([p.x for p in self.ofd], [p.y for p in self.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
             if self.driftEst:
                  pylab.plot([p.x for p in self.ofdDr], [p.y for p in self.ofdDr], 'o', mew=2, mec='b', mfc='none', ms=9)
