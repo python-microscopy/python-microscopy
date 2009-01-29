@@ -2,7 +2,7 @@ import os
 #import logparser
 import datetime
 import tables
-import MetaDataHandler
+from PYME.Acquire import MetaDataHandler
 from PYME import cSMI
 
 import time
