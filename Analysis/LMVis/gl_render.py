@@ -104,7 +104,7 @@ class LMGLCanvas(GLCanvas):
             #glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
             glPushMatrix ()
 
-            glTranslatef (self.blurSigma*scipy.randn(), self.blurSigma*scipy.randn(),0.0)
+            #glTranslatef (self.blurSigma*scipy.randn(), self.blurSigma*scipy.randn(),0.0)
             
             glDrawArrays(self.drawModes[self.mode], 0, self.nVertices)
       
@@ -616,7 +616,7 @@ class LMGLCanvas(GLCanvas):
             qt.insert(pointQT.qtRec(xi, yi, None))    
         self.setQuads(qt, 100, True)
 
-    def genJitQim(self,n, x,y,jsig, mcp):
+    def genJitQim(self,n, x,y,jsig, mcp, pixelSize=None):
         self.jitMCQ(x,y,jsig, mcp)
         self.setPercentileCLim(.99)
         self.GetParent().Raise()
@@ -631,7 +631,7 @@ class LMGLCanvas(GLCanvas):
         
         return h_/n
 
-    def genJitTim(self,n, x,y,jsig, mcp):
+    def genJitTim(self,n, x,y,jsig, mcp, pixelSize=None):
         #turn LUT and scalebar off
         sbl = self.scaleBarLength
         self.scaleBarLength = None
@@ -641,16 +641,75 @@ class LMGLCanvas(GLCanvas):
         self.jitMCT(x,y,jsig, mcp)
         self.setPercentileCLim(.95)
         self.GetParent().Raise()
-        self.OnDraw()
-        h_ = self.getSnapshot(GL_RGB)
+        #self.OnDraw()
+        #h_ = self.getSnapshot(GL_RGB)
+        h_ = self.getIm(pixelSize)
         for i in range(n - 1):
             self.jitMCT(x,y,jsig, mcp) 
-            self.OnDraw()
-            h_ += self.getSnapshot(GL_RGB)
+            #self.OnDraw()
+            #h_ += self.getSnapshot(GL_RGB)
+            h_ += self.getIm(pixelSize)
         
         self.scaleBarLength = sbl
 
         return h_/n
+
+    def getIm(self, pixelSize=None):
+        if pixelSize == None: #use current pixel size
+            self.OnDraw()
+            return self.getSnapshot(GL_RGB)
+        else:
+            #save a copy of the viewport
+            minx, maxx, miny, maxy  = (self.xmin, self.xmax, self.ymin, self.ymax)
+            #and scalebar and LUT settings
+            lutD = self.LUTDraw
+            self.LUTDraw = False
+
+            scaleB = self.scaleBarLength
+            self.scaleBarLength = None
+
+            sx, sy = self.Size
+            dx, dy = (maxx - minx, maxy-miny)
+
+            nx = dx/pixelSize #number of x pixels
+            ny = dy/pixelSize #  "    "  y   "
+
+            sxn = pixelSize*sx
+            syn = pixelSize*sy
+
+            #initialise array to hold tiled image
+            h = numpy.zeros((ny,nx,3))
+
+            #do the tiling
+            for x0 in range(minx, maxx, sxn):
+                self.xmin = x0
+                self.xmax = x0 + sxn
+
+                xp = x0/pixelSize
+                xd = min(xp+sx, nx) - xp 
+
+                for y0 in range(miny, maxy, syn):
+                    self.ymin = y0
+                    self.ymax = y0 + syn
+
+                    yp = y0/pixelSize
+                    yd = min(yp+sy, ny) - yp
+
+                    self.OnDraw()
+                    tile = self.getSnapshot(GL_RGB)
+                    
+                    h[yp:(yp + yd), xp:(xp + xd), :] = tile[:yd, :xd, :]
+
+            #restore viewport
+            self.xmin, self.xmax, self.ymin, self.ymax = (minx, maxx, miny, maxy)
+            self.LUTDraw = lutD
+            self.scaleBarLength = scaleB
+
+            self.Refresh()
+            return h
+                    
+            
+            
         
         
 def showGLFrame():
