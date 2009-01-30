@@ -39,10 +39,12 @@ class LMGLCanvas(GLCanvas):
 
         self.pointSize=5 #default point size = 5nm
 
+        self.pixelsize = 10
+
         self.xmin =0
-        self.xmax = 20000
+        self.xmax = self.pixelsize*self.Size[0]
         self.ymin = 0
-        self.ymax = 20000
+        self.ymax = self.pixelsize*self.Size[1]
 
         self.scaleBarLength = 200
 
@@ -74,6 +76,10 @@ class LMGLCanvas(GLCanvas):
 
     def OnSize(self, event):
         glViewport(0,0, self.Size[0], self.Size[1])
+
+        self.xmax = self.xmin + self.Size[0]*self.pixelsize
+        self.ymax = self.ymin + self.Size[1]*self.pixelsize
+        
 
     def OnDraw(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -589,11 +595,14 @@ class LMGLCanvas(GLCanvas):
 
         if rot < 0:
             #zoom out
+            self.pixelsize *=2.
             self.setView(xp - view_size_x, xp + view_size_x,yp - view_size_y, yp + view_size_y )
+            
             
 
         if rot > 0:
             #zoom in
+            self.pixelsize /=2.
             self.setView(xp - view_size_x/4, xp + view_size_x/4,yp - view_size_y/4, yp + view_size_y/4 )
 
     def getSnapshot(self, mode = GL_LUMINANCE):

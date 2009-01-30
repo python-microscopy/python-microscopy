@@ -7,6 +7,7 @@ import numpy as np
 import tables
 
 class randomSource:
+    _name = "Random Source"
     def __init__(self, xmax, ymax, nsamps):
         '''Uniform random source, for testing and as an example'''
         self.x = xmax*np.rand(nsamps)
@@ -26,6 +27,9 @@ class randomSource:
         elif key == 'y':
             return self.y
 
+    def getInfo(self):
+        return 'Random Data Source\n\n %d points' % len(self.x)
+
 
 def unNestNames(nameList, parent=''):
     unList = []
@@ -38,6 +42,7 @@ def unNestNames(nameList, parent=''):
 
 
 class h5rSource:
+    _name = "h5r Data Source"
     def __init__(self, h5fFile):
         ''' Data source for use with h5r files as saved by the PYME analysis 
         component. Takes either an open h5r file or a string filename to be
@@ -85,14 +90,21 @@ class h5rSource:
     def close(self):
         self.h5f.close()
 
+    def getInfo(self):
+        return 'PYME h5r Data Source\n\n %d points' % self.h5f.root.FitResults.shape[0]
+
 
 class h5rDSource:
+    _name = "h5r Drift Source"
     def __init__(self, h5fFilename):
         ''' Data source for use with h5r files as saved by the PYME analysis 
         component'''
         
-        self.h5f = tables.openFile(h5fFilename)
-        
+        if type(h5fFile) == tables.file.File:
+            self.h5f = h5fFile
+        else:
+            self.h5f = tables.openFile(h5fFile)
+
         if not 'DriftResults' in dir(self.h5f.root):
             raise 'Was expecting to find a "DriftResults" table'
 
@@ -130,7 +142,11 @@ class h5rDSource:
     def close(self):
         self.h5f.close()
 
+    def getInfo(self):
+        return 'PYME h5r Drift Data Source\n\n %d points' % self.h5f.root.DriftResults.shape[0]
+
 class textfileSource:
+    _name = "Text File Source"
     def __init__(self, filename, columnnames, delimiter=None):
         ''' Input filter for use with delimited text data. Defaults
         to whitespace delimiter. need to provide a list of variable names
@@ -154,7 +170,10 @@ class textfileSource:
 
        
         return self.res[key]
-       
+
+    
+    def getInfo(self):
+        return 'Text Data Source\n\n %d points' % len(self.res['x'])
         
 
 class resultsFilter:

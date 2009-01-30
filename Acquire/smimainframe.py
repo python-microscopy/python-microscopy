@@ -3,7 +3,7 @@
 #from wxPython.wx import *
 import wx
 #from wxPython.stc import *
-import wx.stc
+#import wx.stc
 import wx.py.shell
 import wx.aui
 
