@@ -201,6 +201,8 @@ class VisGUIFrame(wx.Frame):
 
         #item = self._pnl.AddFoldPanel("Filters", False, foldIcons=self.Images)
         item = self._pnl.AddFoldPanel("Visualisation", False, foldIcons=self.Images)
+        wx.LayoutAlgorithm().LayoutWindow(self, self.glCanvas)
+        self.glCanvas.Refresh()
 
 
     def GenDataSourcePanel(self):
@@ -268,11 +270,11 @@ class VisGUIFrame(wx.Frame):
             self.Bind(wx.EVT_MENU, self.OnFilterDelete, id=self.ID_FILT_DELETE)
             self.Bind(wx.EVT_MENU, self.OnFilterEdit, id=self.ID_FILT_EDIT)
 
-            # for wxMSW
-            self.lFiltKeys.Bind(wx.EVT_COMMAND_RIGHT_CLICK, self.OnFilterListRightClick)
+        # for wxMSW
+        self.lFiltKeys.Bind(wx.EVT_COMMAND_RIGHT_CLICK, self.OnFilterListRightClick)
 
-            # for wxGTK
-            self.lFiltKeys.Bind(wx.EVT_RIGHT_UP, self.OnFilterListRightClick)
+        # for wxGTK
+        self.lFiltKeys.Bind(wx.EVT_RIGHT_UP, self.OnFilterListRightClick)
         
     def OnFilterListRightClick(self, event):
 
