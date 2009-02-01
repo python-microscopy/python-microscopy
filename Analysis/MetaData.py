@@ -60,6 +60,8 @@ def genMetaDataFromHDF(h5File):
 		         and fudging ADOffset Estimation'''
 
         #Quick hack for approximate EMGain for gain register settings of 150 & 200
+        
+
         #FIXME to use a proper calibration
 	if 'EMGain' in dir(h5File.root.MetaData.Camera._v_attrs):
 		if h5File.root.MetaData.Camera._v_attrs.EMGain == 200: #gain register setting
@@ -69,5 +71,12 @@ def genMetaDataFromHDF(h5File):
 	else: #early file, or from camera without EMGain - assume early file - gain was usually 150
 		md.CCD.EMGain = 20
 
+
+	if 'Name' in h5File.root.MetaData.Camera._v_attrs: #new improved metadata
+		md.CCD.electronsPerCount = h5File.root.MetaData.Camera._v_attrs.ElectronsPerCount
+		md.CCD.noiseFactor = h5File.root.MetaData.Camera._v_attrs.NoiseFactor
+		md.CCD.ReadNoise = h5File.root.MetaData.Camera._v_attrs.ReadNoise
+		if h5File.root.MetaData.Camera._v_attrs.Name == 'Simulated Standard CCD Camera': #em gain for simulated camera is _real_ em gain rather than gain register setting
+			md.CCD.EMGain = h5File.root.MetaData.Camera._v_attrs.EMGain
 
 	return md

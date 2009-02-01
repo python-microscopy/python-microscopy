@@ -55,4 +55,11 @@ def genResultFileName(dataFileName, create=True):
         os.makedirs(os.path.split(p)[0])
 
     return p + '.h5r'
+
+def genResultDirectoryPath():
+    
+    #print os.path.join(*seps.split(resultsdirPatternShort)) % dateDict
+    p = os.path.join(*(seps.split(resultsdirPatternShort) )) %dateDict
+
+    return p 
     

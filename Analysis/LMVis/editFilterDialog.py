@@ -10,7 +10,7 @@ class FilterEditDialog(wx.Dialog):
         
         sizer2.Add(wx.StaticText(self, -1, 'Key:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
         
-        self.cbKey = wx.ComboBox(self, -1, value=key, choices=possibleKeys, style=wx.CB_DROPDOWN, size=(100, -1))
+        self.cbKey = wx.ComboBox(self, -1, value=key, choices=possibleKeys, style=wx.CB_DROPDOWN, size=(150, -1))
 
         if not mode == 'new':
             self.cbKey.Enable(False)

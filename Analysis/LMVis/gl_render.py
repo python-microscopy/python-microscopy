@@ -508,8 +508,8 @@ class LMGLCanvas(GLCanvas):
 
     def setPercentileCLim(self, pctile):
         '''set clim based on a certain percentile'''
-        clim_upper = self.c[scipy.argsort(self.c)[len(self.c)*pctile]]
-        self.setCLim([0, clim_upper])
+        clim_upper = float(self.c[scipy.argsort(self.c)[len(self.c)*pctile]])
+        self.setCLim([0.0, clim_upper])
 
         
     def setView(self, xmin, xmax, ymin, ymax):
@@ -517,6 +517,8 @@ class LMGLCanvas(GLCanvas):
         self.xmax = xmax
         self.ymin = ymin
         self.ymax = ymax
+
+        self.pixelsize = (xmax - xmin)*1./self.Size[0]
 
         self.Refresh()
 
@@ -606,7 +608,11 @@ class LMGLCanvas(GLCanvas):
             self.setView(xp - view_size_x/4, xp + view_size_x/4,yp - view_size_y/4, yp + view_size_y/4 )
 
     def getSnapshot(self, mode = GL_LUMINANCE):
-        return glReadPixelsf(0,0,self.Size[0],self.Size[1], mode)
+        snap =  glReadPixelsf(0,0,self.Size[0],self.Size[1], mode)
+
+        snap.strides = (12,12*snap.shape[0], 4) 
+
+        return snap
 
     def jitMCT(self,x,y,jsig, mcp):
         Imc = scipy.rand(len(x)) < mcp
@@ -680,34 +686,51 @@ class LMGLCanvas(GLCanvas):
             sx, sy = self.Size
             dx, dy = (maxx - minx, maxy-miny)
 
-            nx = dx/pixelSize #number of x pixels
-            ny = dy/pixelSize #  "    "  y   "
+            #print dx
+            #print dy
+
+            nx = numpy.ceil(dx/pixelSize) #number of x pixels
+            ny = numpy.ceil(dy/pixelSize) #  "    "  y   "
+
+            #print nx
+            #print ny
 
             sxn = pixelSize*sx
             syn = pixelSize*sy
 
+            #print sxn
+            #print syn
+
             #initialise array to hold tiled image
-            h = numpy.zeros((ny,nx,3))
+            h = numpy.zeros((nx,ny))
 
             #do the tiling
-            for x0 in range(minx, maxx, sxn):
+            for x0 in numpy.arange(minx, maxx, sxn):
                 self.xmin = x0
                 self.xmax = x0 + sxn
 
-                xp = x0/pixelSize
+                #print x0
+
+                xp = numpy.floor((x0 - minx)/pixelSize)
                 xd = min(xp+sx, nx) - xp 
 
-                for y0 in range(miny, maxy, syn):
+                #print 'xp = %3.2f, xd = %3.2f' %(xp, xd)
+
+                for y0 in numpy.arange(miny, maxy, syn):
                     self.ymin = y0
                     self.ymax = y0 + syn
 
-                    yp = y0/pixelSize
+                    yp = numpy.floor((y0 - miny)/pixelSize)
                     yd = min(yp+sy, ny) - yp
 
                     self.OnDraw()
-                    tile = self.getSnapshot(GL_RGB)
+                    tile = self.getSnapshot(GL_RGB)[:,:,0].squeeze()
+
+                    #print tile.shape
+                    #print h[xp:(xp + xd), yp:(yp + yd)].shape
+                    #print tile[:xd, :yd].shape
                     
-                    h[yp:(yp + yd), xp:(xp + xd), :] = tile[:yd, :xd, :]
+                    h[xp:(xp + xd), yp:(yp + yd)] = tile[:xd, :yd]
 
             #restore viewport
             self.xmin, self.xmax, self.ymin, self.ymax = (minx, maxx, miny, maxy)

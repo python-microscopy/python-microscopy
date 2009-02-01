@@ -4,6 +4,18 @@ import gl_render
 import sys
 import inpFilt
 import editFilterDialog
+import pylab
+from PYME.FileUtils import nameUtils
+import os
+from scikits import delaunay
+
+from PYME.Analysis.QuadTree import pointQT, QTrend
+import Image
+
+import genImageDialog
+import visHelpers
+import imageView
+
 
 # ----------------------------------------------------------------------------
 # Visualisation of analysed localisation microscopy data
@@ -13,6 +25,34 @@ import editFilterDialog
 # Some of the code in this file borrowed from the wxPython examples
 # ----------------------------------------------------------------------------
 
+class ImageBounds:
+    def __init__(self, x0, y0, x1, y1):
+        self.x0 = x0
+        self.y0 = y0
+        self.x1 = x1
+        self.y1 = y1
+
+    @classmethod
+    def estimateFromSource(cls, ds):
+        return cls(ds['x'].min(),ds['y'].min(),ds['x'].max(), ds['y'].max() )
+
+    def width(self):
+        return self.x1 - self.x0
+
+    def height(self):
+        return self.y1 - self.y0
+
+class GeneratedImage:
+    def __init__(self, img, imgBounds, pixelSize):
+        self.img = img.squeeze()
+        self.imgBounds = imgBounds
+
+        self.pixelSize = pixelSize
+
+    def save(self, filename):
+        #save using PIL - because we're using float pretty much only tif will work
+        Image.fromarray(self.img.astype('f'), 'F').save(filename)
+        
 
 def GetCollapsedIconData():
     return \
@@ -110,6 +150,7 @@ class VisGUIFrame(wx.Frame):
         #self.remainingSpace = wx.Panel(self, -1, style=wx.SUNKEN_BORDER)
         #self.glCanvas = gl_render.LMGLCanvas(self.remainingSpace)
         self.glCanvas = gl_render.LMGLCanvas(self)
+        self.glCanvas.cmap = pylab.cm.hot
 
         self.ID_WINDOW_TOP = 100
         self.ID_WINDOW_LEFT1 = 101
@@ -121,13 +162,31 @@ class VisGUIFrame(wx.Frame):
         self.Bind(wx.EVT_SIZE, self.OnSize)
 
         
+        self._pc_clim_change = False
+
+        self.filesToClose = []
+        self.generatedImages = []
+
         self.dataSources = []
         self.selectedDataSource = None
         self.filterKeys = {'error_x': (0,30), 'A':(0,30), 'sig' : (150/2.35, 350/2.35)}
 
         self.filter = None
+        self.imageBounds = ImageBounds(0,0,0,0)
 
-        self.CreateFoldPanel(fpb.FPB_SINGLE_FOLD)
+        #generated Quad-tree will allow visualisations with pixel sizes of self.QTGoalPixelSize*2^N for any N
+        self.QTGoalPixelSize = 5 #nm
+
+        self.scaleBarLengths = {'<None>':None, '50nm':50,'200nm':200, '500nm':500, '1um':1000, '5um':5000}
+
+
+        self.viewMode = 'points' #one of points, triangles, quads, or voronoi
+        self.Triangles = None
+        self.GeneratedMeasures = {}
+        self.Quads = None
+        self.pointColour = None
+
+        self.CreateFoldPanel()
         
 
     def OnSize(self, event):
@@ -137,6 +196,8 @@ class VisGUIFrame(wx.Frame):
         
 
     def OnQuit(self, event):
+        while len(self.filesToClose) > 0:
+            self.filesToClose.pop().close()
  
         self.Destroy()
 
@@ -178,7 +239,7 @@ class VisGUIFrame(wx.Frame):
         event.Skip()
         
 
-    def CreateFoldPanel(self, fpb_flags):
+    def CreateFoldPanel(self):
 
         # delete earlier panel
         self._leftWindow1.DestroyChildren()
@@ -186,7 +247,7 @@ class VisGUIFrame(wx.Frame):
         # recreate the foldpanelbar
 
         self._pnl = fpb.FoldPanelBar(self._leftWindow1, -1, wx.DefaultPosition,
-                                     wx.Size(-1,-1), fpb.FPB_DEFAULT_STYLE, fpb_flags)
+                                     wx.Size(-1,-1), fpb.FPB_DEFAULT_STYLE,0)
 
         self.Images = wx.ImageList(16,16)
         self.Images.Add(GetExpandedIconBitmap())
@@ -195,12 +256,18 @@ class VisGUIFrame(wx.Frame):
         self.GenDataSourcePanel()
         self.GenFilterPanel()
 
+        self.GenDisplayPanel()
         
+        if self.viewMode == 'quads':
+            self.GenQuadTreePanel()
+
+        if self.viewMode == 'points':
+            self.GenPointsPanel()
 
        
 
         #item = self._pnl.AddFoldPanel("Filters", False, foldIcons=self.Images)
-        item = self._pnl.AddFoldPanel("Visualisation", False, foldIcons=self.Images)
+        #item = self._pnl.AddFoldPanel("Visualisation", False, foldIcons=self.Images)
         wx.LayoutAlgorithm().LayoutWindow(self, self.glCanvas)
         self.glCanvas.Refresh()
 
@@ -214,30 +281,183 @@ class VisGUIFrame(wx.Frame):
             rbid = wx.NewId()
             self.dsRadioIds.append(rbid)
             rb = wx.RadioButton(item, rbid, ds._name)
-            rb.setValue(ds == self.selectedDataSource)
+            rb.SetValue(ds == self.selectedDataSource)
 
             rb.Bind(wx.EVT_RADIOBUTTON, self.OnSourceChange)
             self._pnl.AddFoldPanelWindow(item, rb, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10) 
 
-
-    def GenDisplayPanel(self):
-        item = self._pnl.AddFoldPanel("Display", collapsed=True,
-                                      foldIcons=self.Images)
-        
-        self.dsRadioIds = []
-        for ds in self.dataSources:
-            rbid = wx.NewId()
-            self.dsRadioIds.append(rbid)
-            rb = wx.RadioButton(item, rbid, ds._name)
-            rb.setValue(ds == self.selectedDataSource)
-
-            rb.Bind(wx.EVT_RADIOBUTTON, self.OnSourceChange)
-            self._pnl.AddFoldPanelWindow(item, rb, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10) 
 
     def OnSourceChange(self, event):
         dsind = self.dsRadioIds.index(event.GetID())
         self.selectedDataSource = self.dataSources[dsind]
         self.RegenFilter()
+
+    def GenDisplayPanel(self):
+        item = self._pnl.AddFoldPanel("Display", collapsed=False,
+                                      foldIcons=self.Images)
+        
+
+        #Colourmap
+        cmapnames = pylab.cm.cmapnames
+
+        curCMapName = self.glCanvas.cmap.name
+
+        cmapReversed = False
+        
+        if curCMapName[-2:] == '_r':
+            cmapReversed = True
+            curCMapName = curCMapName[:-2]
+
+        cmInd = cmapnames.index(curCMapName)
+
+
+        ##
+        pan = wx.Panel(item, -1)
+
+        box = wx.StaticBox(pan, -1, 'Colourmap:')
+        bsizer = wx.StaticBoxSizer(box)
+        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.cColourmap = wx.Choice(pan, -1, choices=cmapnames)
+        self.cColourmap.SetSelection(cmInd)
+
+        hsizer.Add(self.cColourmap, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        self.cbCmapReverse = wx.CheckBox(pan, -1, 'Invert')
+        self.cbCmapReverse.SetValue(cmapReversed)
+
+        hsizer.Add(self.cbCmapReverse, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        bsizer.Add(hsizer, 0, wx.ALL, 0)
+
+        bdsizer = wx.BoxSizer()
+        bdsizer.Add(bsizer, 1, wx.EXPAND|wx.ALL, 0)
+
+        pan.SetSizer(bdsizer)
+        bdsizer.Fit(pan)
+
+        
+        self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+
+        self.cColourmap.Bind(wx.EVT_CHOICE, self.OnCMapChange)
+        self.cbCmapReverse.Bind(wx.EVT_CHECKBOX, self.OnCMapChange)
+        
+        
+        #CLim
+        pan = wx.Panel(item, -1)
+
+        box = wx.StaticBox(pan, -1, 'CLim:')
+        bsizer = wx.StaticBoxSizer(box, wx.VERTICAL)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        hsizer.Add(wx.StaticText(pan, -1, 'Min: '), 0, wx.LEFT|wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        self.tCLimMin = wx.TextCtrl(pan, -1, '%3.2f' % self.glCanvas.clim[0], size=(40,-1))
+        hsizer.Add(self.tCLimMin, 0,wx.RIGHT|wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        hsizer.Add(wx.StaticText(pan, -1, '  Max: '), 0, wx.LEFT|wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        self.tCLimMax = wx.TextCtrl(pan, -1, '%3.2f' % self.glCanvas.clim[1], size=(40,-1))
+        hsizer.Add(self.tCLimMax, 0, wx.RIGHT|wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL, 5)
+ 
+        bsizer.Add(hsizer, 0, wx.ALL, 0)
+
+        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.tPercentileCLim = wx.TextCtrl(pan, -1, '.95', size=(40,-1))
+        hsizer.Add(self.tPercentileCLim, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        
+        bPercentile = wx.Button(pan, -1, 'Set Percentile')
+        hsizer.Add(bPercentile, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+ 
+        bsizer.Add(hsizer, 0, wx.ALL, 0)
+
+        bdsizer = wx.BoxSizer()
+        bdsizer.Add(bsizer, 1, wx.EXPAND|wx.ALL, 0)
+
+        pan.SetSizer(bdsizer)
+        bdsizer.Fit(pan)
+
+        
+        self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+
+        self.tCLimMin.Bind(wx.EVT_TEXT, self.OnCLimChange)
+        self.tCLimMax.Bind(wx.EVT_TEXT, self.OnCLimChange)
+
+        bPercentile.Bind(wx.EVT_BUTTON, self.OnPercentileCLim)
+        
+        #self._pnl.AddFoldPanelSeparator(item)
+
+
+        #LUT
+        cbLUTDraw = wx.CheckBox(item, -1, 'Show LUT')
+        cbLUTDraw.SetValue(self.glCanvas.LUTDraw)
+        self._pnl.AddFoldPanelWindow(item, cbLUTDraw, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+
+        cbLUTDraw.Bind(wx.EVT_CHECKBOX, self.OnLUTDrawCB)
+
+        
+        #Scale Bar
+        pan = wx.Panel(item, -1)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        hsizer.Add(wx.StaticText(pan, -1, 'Scale Bar: '), 0, wx.LEFT|wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL, 5)
+
+
+        chInd = self.scaleBarLengths.values().index(self.glCanvas.scaleBarLength)
+        
+        chScaleBar = wx.Choice(pan, -1, choices = self.scaleBarLengths.keys())
+        chScaleBar.SetSelection(chInd)
+        hsizer.Add(chScaleBar, 0,wx.RIGHT|wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        pan.SetSizer(hsizer)
+        hsizer.Fit(pan)
+        
+        self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+
+        chScaleBar.Bind(wx.EVT_CHOICE, self.OnChangeScaleBar)
+
+        
+    def OnCMapChange(self, event):
+        cmapname = pylab.cm.cmapnames[self.cColourmap.GetSelection()]
+        if self.cbCmapReverse.GetValue():
+            cmapname += '_r'
+
+        self.glCanvas.setCMap(pylab.cm.__dict__[cmapname])
+
+    def OnLUTDrawCB(self, event):
+        self.glCanvas.LUTDraw = event.IsChecked()
+        self.glCanvas.Refresh()
+        
+    def OnChangeScaleBar(self, event):
+        self.glCanvas.scaleBarLength = self.scaleBarLengths[event.GetString()]
+        self.glCanvas.Refresh()
+
+    def OnCLimChange(self, event):
+        if self._pc_clim_change: #avoid setting CLim twice
+            self._pc_clim_change = False #clear flag
+        else:
+            cmin = float(self.tCLimMin.GetValue())
+            cmax = float(self.tCLimMax.GetValue())
+
+            self.glCanvas.setCLim((cmin, cmax))
+        
+
+    def OnPercentileCLim(self, event):
+        pc = float(self.tPercentileCLim.GetValue())
+
+        self.glCanvas.setPercentileCLim(pc)
+
+        self._pc_clim_change = True
+        self.tCLimMax.SetValue('%3.2f' % self.glCanvas.clim[1])
+        self._pc_clim_change = True
+        self.tCLimMin.SetValue('%3.2f' % self.glCanvas.clim[0])
+
+        
+        
             
     def GenFilterPanel(self):
         item = self._pnl.AddFoldPanel("Filter", collapsed=True,
@@ -326,7 +546,7 @@ class VisGUIFrame(wx.Frame):
             minVal = float(dlg.tMin.GetValue())
             maxVal = float(dlg.tMax.GetValue())
 
-            key = dlg.cbKey.GetValue()
+            key = dlg.cbKey.GetValue().encode()
 
             if key == "":
                 return
@@ -336,6 +556,8 @@ class VisGUIFrame(wx.Frame):
             ind = self.lFiltKeys.InsertStringItem(sys.maxint, key)
             self.lFiltKeys.SetStringItem(ind,1, '%3.2f' % minVal)
             self.lFiltKeys.SetStringItem(ind,2, '%3.2f' % maxVal)
+
+        dlg.Destroy()
 
         self.RegenFilter()
 
@@ -361,11 +583,117 @@ class VisGUIFrame(wx.Frame):
 
             self.lFiltKeys.SetStringItem(self.currentFilterItem,1, '%3.2f' % minVal)
             self.lFiltKeys.SetStringItem(self.currentFilterItem,2, '%3.2f' % maxVal)
+
+        dlg.Destroy()
         self.RegenFilter()
 
-    def RegenFilter(self):
-        if not self.selectedDataSource == None:
-            self.filter = inpFilt.resultsFilter(self.selectedDataSource, **self.filterKeys)
+    
+    def GenQuadTreePanel(self):
+        item = self._pnl.AddFoldPanel("QuadTree", collapsed=False,
+                                      foldIcons=self.Images)
+
+        pan = wx.Panel(item, -1)
+        bsizer = wx.BoxSizer(wx.VERTICAL)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(pan, -1, 'Leaf Size:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        self.tQTLeafSize = wx.TextCtrl(pan, -1, '%d' % pointQT.QT_MAXRECORDS)
+        hsizer.Add(self.tQTLeafSize, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        bsizer.Add(hsizer, 0, wx.ALL, 0)
+
+        self.stQTSNR = wx.StaticText(pan, -1, 'Effective SNR = %3.2f' % pylab.sqrt(pointQT.QT_MAXRECORDS/2.0))
+        bsizer.Add(self.stQTSNR, 0, wx.ALL, 5)
+
+        #hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        #hsizer.Add(wx.StaticText(pan, -1, 'Goal pixel size [nm]:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        #self.tQTSize = wx.TextCtrl(pan, -1, '20000')
+        #hsizer.Add(self.tQTLeafSize, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        #bsizer.Add(hsizer, 0, wx.ALL, 0)
+        
+        pan.SetSizer(bsizer)
+        bsizer.Fit(pan)
+
+        
+        self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+
+        self.tQTLeafSize.Bind(wx.EVT_TEXT, self.OnQTLeafChange)
+
+    
+
+    def OnQTLeafChange(self, event):
+        leafSize = int(self.tQTLeafSize.GetValue())
+        if not leafSize >= 1:
+            raise 'QuadTree leaves must be able to contain at least 1 item'
+
+        pointQT.QT_MAXRECORDS = leafSize
+        self.stQTSNR.SetLabel('Effective SNR = %3.2f' % pylab.sqrt(pointQT.QT_MAXRECORDS/2.0))
+
+        self.Quads = None
+        self.RefreshView()
+
+
+    def GenPointsPanel(self):
+        item = self._pnl.AddFoldPanel("Points", collapsed=False,
+                                      foldIcons=self.Images)
+
+        pan = wx.Panel(item, -1)
+        bsizer = wx.BoxSizer(wx.VERTICAL)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(pan, -1, 'Size [nm]:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        self.tPointSize = wx.TextCtrl(pan, -1, '%3.2f' % self.glCanvas.pointSize)
+        hsizer.Add(self.tPointSize, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        bsizer.Add(hsizer, 0, wx.ALL, 0)
+
+        
+        colData = ['<None>']
+
+        if not self.filter == None:
+            colData += self.filter.keys()
+
+        colData += self.GeneratedMeasures.keys()
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(pan, -1, 'Colour:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        self.chPointColour = wx.Choice(pan, -1, choices=colData, size=(100, -1))
+        hsizer.Add(self.chPointColour, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        bsizer.Add(hsizer, 0, wx.ALL, 0)
+        
+        pan.SetSizer(bsizer)
+        bsizer.Fit(pan)
+
+        
+        self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+
+        self.tPointSize.Bind(wx.EVT_TEXT, self.OnPointSizeChange)
+        self.chPointColour.Bind(wx.EVT_CHOICE, self.OnChangePointColour)
+
+    def OnPointSizeChange(self, event):
+        self.glCanvas.pointSize = float(self.tPointSize.GetValue())
+        self.glCanvas.Refresh()
+
+    def OnChangePointColour(self, event):
+        colData = event.GetString()
+
+        if colData == '<None>':
+            self.pointColour = None
+        elif not self.filter == None:
+            if colData in self.filter.keys():
+                self.pointColour = self.filter[colData]
+        elif colData in self.GeneratedMeasures.keys():
+            self.pointColour = self.GeneratedMeasures[colData]
+        else:
+            self.pointColour = None
+        
+        self.RefreshView()
 
     def CreateMenuBar(self):
 
@@ -374,6 +702,14 @@ class VisGUIFrame(wx.Frame):
 
         ID_OPEN = wx.NewId()
         ID_QUIT = wx.NewId()
+
+        ID_VIEW_POINTS = wx.NewId()
+        ID_VIEW_TRIANGS = wx.NewId()
+        ID_VIEW_QUADS = wx.NewId()
+
+        ID_VIEW_VORONOI = wx.NewId()
+
+        ID_VIEW_FIT = wx.NewId()
         
         ID_GEN_JIT_TRI = wx.NewId()
         ID_GEN_QUADS = wx.NewId()
@@ -394,6 +730,29 @@ class VisGUIFrame(wx.Frame):
         
         file_menu.Append(ID_QUIT, "&Exit")
 
+        self.view_menu = wx.Menu()
+
+        try: #stop us bombing on Mac
+            self.view_menu.AppendRadioItem(ID_VIEW_POINTS, '&Points')
+            self.view_menu.AppendRadioItem(ID_VIEW_TRIANGS, '&Triangles')
+            self.view_menu.AppendRadioItem(ID_VIEW_QUADS, '&Quad Tree')
+            self.view_menu.AppendRadioItem(ID_VIEW_VORONOI, '&Voronoi')
+        except:
+            self.view_menu.Append(ID_VIEW_POINTS, '&Points')
+            self.view_menu.Append(ID_VIEW_TRIANGS, '&Triangles')
+            self.view_menu.Append(ID_VIEW_QUADS, '&Quad Tree')
+            self.view_menu.Append(ID_VIEW_VORONOI, '&Voronoi')
+
+        self.view_menu.Check(ID_VIEW_POINTS, True)
+        #self.view_menu.Enable(ID_VIEW_QUADS, False)
+
+        self.view_menu.AppendSeparator()
+        self.view_menu.Append(ID_VIEW_FIT, '&Fit')
+
+        self.view_menu.AppendSeparator()
+        self.view_menu.AppendCheckItem(ID_TOGGLE_SETTINGS, "Show Settings")
+        self.view_menu.Check(ID_TOGGLE_SETTINGS, True)
+
         gen_menu = wx.Menu()
         gen_menu.Append(ID_GEN_CURRENT, "&Current")
         
@@ -405,10 +764,6 @@ class VisGUIFrame(wx.Frame):
         gen_menu.Append(ID_GEN_JIT_TRI, "&Triangulation")
         gen_menu.Append(ID_GEN_QUADS, "&QuadTree")
         
-        view_menu = wx.Menu()
-        view_menu.AppendCheckItem(ID_TOGGLE_SETTINGS, "Show Settings")
-        view_menu.Check(ID_TOGGLE_SETTINGS, True)
-        
 
         help_menu = wx.Menu()
         help_menu.Append(ID_ABOUT, "&About")
@@ -416,8 +771,9 @@ class VisGUIFrame(wx.Frame):
         menu_bar = wx.MenuBar()
 
         menu_bar.Append(file_menu, "&File")
+        menu_bar.Append(self.view_menu, "&View")
         menu_bar.Append(gen_menu, "&Generate Image")
-        menu_bar.Append(view_menu, "&View")
+       
         
 
             
@@ -427,10 +783,359 @@ class VisGUIFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnQuit, id=ID_QUIT)
         self.Bind(wx.EVT_MENU, self.OnToggleWindow, id=ID_TOGGLE_SETTINGS)
 
+        self.Bind(wx.EVT_MENU, self.OnOpenFile, id=ID_OPEN)
+
+        self.Bind(wx.EVT_MENU, self.OnViewPoints, id=ID_VIEW_POINTS)
+        self.Bind(wx.EVT_MENU, self.OnViewTriangles, id=ID_VIEW_TRIANGS)
+        self.Bind(wx.EVT_MENU, self.OnViewQuads, id=ID_VIEW_QUADS)
+        self.Bind(wx.EVT_MENU, self.OnViewVoronoi, id=ID_VIEW_VORONOI)
+
+        self.Bind(wx.EVT_MENU, self.SetFit, id=ID_VIEW_FIT)
+
+        self.Bind(wx.EVT_MENU, self.OnGenCurrent, id=ID_GEN_CURRENT)
+        self.Bind(wx.EVT_MENU, self.OnGenTriangles, id=ID_GEN_JIT_TRI)
+        self.Bind(wx.EVT_MENU, self.OnGenGaussian, id=ID_GEN_GAUSS)
+        self.Bind(wx.EVT_MENU, self.OnGenHistogram, id=ID_GEN_HIST)
+        self.Bind(wx.EVT_MENU, self.OnGenQuadTree, id=ID_GEN_QUADS)
 
         return menu_bar
 
+    def OnViewPoints(self,event):
+        self.viewMode = 'points'
+        self.RefreshView()
+        self.CreateFoldPanel()
+        self.OnPercentileCLim(None)
 
+    def OnViewTriangles(self,event):
+        self.viewMode = 'triangles'
+        self.RefreshView()
+        self.CreateFoldPanel()
+        self.OnPercentileCLim(None)
+
+    def OnViewQuads(self,event):
+        self.viewMode = 'quads'
+        self.RefreshView()
+        self.CreateFoldPanel()
+        self.OnPercentileCLim(None)
+
+    def OnViewVoronoi(self,event):
+        self.viewMode = 'voronoi'
+        self.RefreshView()
+        self.CreateFoldPanel()
+        self.OnPercentileCLim(None)
+
+    def OnGenCurrent(self, event):
+        dlg = genImageDialog.GenImageDialog(self, mode='current')
+
+        ret = dlg.ShowModal()
+
+        if ret == wx.ID_OK:
+            pixelSize = dlg.getPixelSize()
+            
+            bCurr = wx.BusyCursor()
+
+            oldcmap = self.glCanvas.cmap 
+            self.glCanvas.setCMap(pylab.cm.gray)
+
+            self.statusbar.SetStatusText("Tiling image ...", 1)
+            im = self.glCanvas.getIm(pixelSize)
+            self.statusbar.SetStatusText("", 1)
+
+            imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.xmax,self.glCanvas.ymin,self.glCanvas.ymax)
+
+            self.generatedImages.append(GeneratedImage(im,imb, pixelSize ))
+            imf = imageView.ImageViewFrame(self,self.generatedImages[-1], self.glCanvas)
+            imf.Show()
+
+            self.glCanvas.setCMap(oldcmap)
+            self.RefreshView()
+
+        dlg.Destroy()
+
+    def genNeighbourDists(self):
+        bCurr = wx.BusyCursor()
+
+        if self.Triangles == None:
+                self.statusbar.SetStatusText("Generating Triangulation ...", 1)
+                self.Triangles = delaunay.Triangulation(self.filter['x'], self.filter['y'])
+                self.statusbar.SetStatusText("", 1)
+
+        self.statusbar.SetStatusText("Calculating mean neighbour distances ...", 1)
+        self.GeneratedMeasures['neighbourDistances'] = pylab.array(visHelpers.calcNeighbourDists(self.Triangles))
+        self.statusbar.SetStatusText("", 1)
+
+    def OnGenTriangles(self, event): 
+        jitVars = ['1.0']
+
+        if not 'neighbourDistances' in self.GeneratedMeasures.keys():
+            self.genNeighbourDists()
+
+        genMeas = self.GeneratedMeasures.keys()
+
+        jitVars += genMeas
+        jitVars += self.filter.keys()
+        
+        dlg = genImageDialog.GenImageDialog(self, mode='triangles', jitterVariables = jitVars, jitterVarDefault=genMeas.index('neighbourDistances')+1)
+
+        ret = dlg.ShowModal()
+
+        if ret == wx.ID_OK:
+            bCurr = wx.BusyCursor()
+            pixelSize = dlg.getPixelSize()
+            jitParamName = dlg.getJitterVariable()
+            jitScale = dlg.getJitterScale()
+            
+            if jitParamName == '1.0':
+                jitVals = 1.0
+            elif jitParamName in self.filter.keys():
+                jitVals = self.filter[jitParamName]
+            elif jitParamName in self.GeneratedMeasures.keys():
+                jitVals = self.GeneratedMeasures[jitParamName]
+        
+            #print jitScale
+            #print jitVals
+            jitVals = jitScale*jitVals
+
+            oldcmap = self.glCanvas.cmap 
+            self.glCanvas.setCMap(pylab.cm.gray)
+
+            imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
+
+            self.statusbar.SetStatusText("Generating Image ...", 1)
+            im = self.glCanvas.genJitTim(dlg.getNumSamples(),self.filter['x'],self.filter['y'], jitVals, dlg.getMCProbability(),pixelSize)
+            self.statusbar.SetStatusText("", 1)
+
+            self.generatedImages.append(GeneratedImage(im,imb, pixelSize ))
+            imf = imageView.ImageViewFrame(self,self.generatedImages[-1], self.glCanvas)
+            imf.Show()
+
+            self.glCanvas.setCMap(oldcmap)
+            self.RefreshView()
+
+        dlg.Destroy()
+
+    def OnGenGaussian(self, event):
+        bCurr = wx.BusyCursor()
+        jitVars = ['1.0']
+
+        jitVars += self.filter.keys()        
+        jitVars += self.GeneratedMeasures.keys()
+        
+        dlg = genImageDialog.GenImageDialog(self, mode='gaussian', jitterVariables = jitVars, jitterVarDefault=self.filter.keys().index('error_x')+1)
+
+        ret = dlg.ShowModal()
+
+        if ret == wx.ID_OK:
+            pixelSize = dlg.getPixelSize()
+            jitParamName = dlg.getJitterVariable()
+            jitScale = dlg.getJitterScale()
+            
+            if jitParamName == '1.0':
+                jitVals = 1.0
+            elif jitParamName in self.filter.keys():
+                jitVals = self.filter[jitParamName]
+            elif jitParamName in self.GeneratedMeasures.keys():
+                jitVals = self.GeneratedMeasures[jitParamName]
+        
+            #print jitScale
+            #print jitVals
+            jitVals = jitScale*jitVals
+
+            self.statusbar.SetStatusText("Generating Image ...", 1)
+
+            imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
+
+            im = visHelpers.rendGauss(self.filter['x'],self.filter['y'], jitVals, imb, pixelSize)
+            self.statusbar.SetStatusText("", 1)
+
+            
+
+            self.generatedImages.append(GeneratedImage(im,imb, pixelSize ))
+            imf = imageView.ImageViewFrame(self,self.generatedImages[-1], self.glCanvas)
+            imf.Show()
+            
+
+        dlg.Destroy()
+
+    def OnGenHistogram(self, event): 
+        bCurr = wx.BusyCursor()
+        dlg = genImageDialog.GenImageDialog(self, mode='histogram')
+
+        ret = dlg.ShowModal()
+
+        if ret == wx.ID_OK:
+            pixelSize = dlg.getPixelSize()
+            
+
+            self.statusbar.SetStatusText("Generating Image ...", 1)
+
+            imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
+
+            im = visHelpers.rendHist(self.filter['x'],self.filter['y'], imb, pixelSize)
+            self.statusbar.SetStatusText("", 1)
+
+            self.generatedImages.append(GeneratedImage(im,imb, pixelSize ))
+            imf = imageView.ImageViewFrame(self,self.generatedImages[-1], self.glCanvas)
+            imf.Show()
+            
+
+        dlg.Destroy()
+
+    def OnGenQuadTree(self, event):
+        bCurr = wx.BusyCursor() 
+        dlg = genImageDialog.GenImageDialog(self, mode='quadtree')
+
+        ret = dlg.ShowModal()
+
+        if ret == wx.ID_OK:
+            pixelSize = dlg.getPixelSize()
+            
+
+            self.statusbar.SetStatusText("Generating Image ...", 1)
+
+            imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
+
+            if not pylab.mod(pylab.log2(pixelSize/self.QTGoalPixelSize), 1) == 0:#recalculate QuadTree to get right pixel size
+                self.QTGoalPixelSize = pixelSize
+                self.Quads = None
+            
+            if self.Quads == None:
+                self.GenQuads()
+
+            qtWidth = self.Quads.x1 - self.Quads.x0
+
+            qtWidthPixels = pylab.ceil(qtWidth/pixelSize)
+
+            im = pylab.zeros((qtWidthPixels, qtWidthPixels))
+
+            QTrend.rendQTa(im, self.Quads)
+
+            im = im[(imb.x0/pixelSize):(imb.x1/pixelSize),(imb.y0/pixelSize):(imb.y1/pixelSize)]
+            self.statusbar.SetStatusText("", 1)
+
+            self.generatedImages.append(GeneratedImage(im,imb, pixelSize ))
+
+            imf = imageView.ImageViewFrame(self,self.generatedImages[-1], self.glCanvas)
+            imf.Show()
+
+        dlg.Destroy()
+
+
+    def OnOpenFile(self, event):
+        filename = wx.FileSelector("Choose a file to open", nameUtils.genResultDirectoryPath(), default_extension='h5r', wildcard='PYME Results Files (*.h5r)|*.h5r|Tab formatted test (*.txt)|*.txt')
+
+        #print filename
+        if not filename == '':
+            self.OpenFile(filename)
+
+    def OpenFile(self, filename):
+        while len(self.filesToClose) > 0:
+            self.filesToClose.pop().close()
+        
+        self.dataSources = []
+        self.filter = None
+        print os.path.splitext(filename)[1]
+        if os.path.splitext(filename)[1] == '.h5r':
+                self.selectedDataSource = inpFilt.h5rSource(filename)
+                self.dataSources.append(self.selectedDataSource)
+
+                self.filesToClose.append(self.selectedDataSource.h5f)
+                
+                if 'DriftResults' in self.selectedDataSource.h5f.root:
+                    self.dataSources.append(inpFilt.h5rDSource(self.selectedDataSource.h5f))
+
+                #once we get around to storing the some metadata with the results
+                if 'MetaData' in self.selectedDataSource.h5f.root: 
+                    mdh = MetaDataHandler(self.selectedDataSource.h5f)
+                    x0 = mdh.getEntry('ImageShape.x0_nm')
+                    y0 = mdh.getEntry('ImageShape.y0_nm')
+                    x1 = mdh.getEntry('ImageShape.x1_nm')
+                    y1 = mdh.getEntry('ImageShape.y1_nm')
+
+                    self.imageBounds = ImageBounds(x0, y0, x1, y1)
+
+                else:
+                    self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
+        else: #assume it's a text file
+            pass
+
+        self.SetTitle('PYME Visualise - ' + filename)
+        self.RegenFilter()
+        self.CreateFoldPanel()
+        self.SetFit()
+        
+
+    def RegenFilter(self):
+        if not self.selectedDataSource == None:
+            self.filter = inpFilt.resultsFilter(self.selectedDataSource, **self.filterKeys)
+
+        self.Triangles = None
+        self.GeneratedMeasures = {}
+        self.Quads = None
+
+        self.RefreshView()
+
+
+    def RefreshView(self):
+        if self.filter == None:
+            return #get out of here
+
+        bCurr = wx.BusyCursor()
+
+        if self.viewMode == 'points':
+            self.glCanvas.setPoints(self.filter['x'], self.filter['y'], self.pointColour)
+        elif self.viewMode == 'triangles':
+            if self.Triangles == None:
+                self.statusbar.SetStatusText("Generating Triangulation ...", 1)
+                self.Triangles = delaunay.Triangulation(self.filter['x'], self.filter['y'])
+                self.statusbar.SetStatusText("", 1)
+            self.glCanvas.setTriang(self.Triangles)
+
+        elif self.viewMode == 'voronoi':
+            if self.Triangles == None:
+                self.statusbar.SetStatusText("Generating Triangulation ...", 1)
+                self.Triangles = delaunay.Triangulation(self.filter['x'], self.filter['y'])
+                self.statusbar.SetStatusText("", 1)
+
+            self.statusbar.SetStatusText("Generating Voronoi Diagram ... ", 1)
+            self.glCanvas.setVoronoi(self.Triangles)
+            self.statusbar.SetStatusText("", 1)
+
+        elif self.viewMode == 'quads':
+            if self.Quads == None:
+                self.statusbar.SetStatusText("Generating QuadTree ...", 1)
+                self.GenQuads()
+                self.statusbar.SetStatusText("", 1)
+
+            self.glCanvas.setQuads(self.Quads)
+
+
+    def GenQuads(self):
+        di = max(self.imageBounds.x1 - self.imageBounds.x0, self.imageBounds.y1 - self.imageBounds.y0)
+
+        np = di/self.QTGoalPixelSize
+
+        di = self.QTGoalPixelSize*2**pylab.ceil(pylab.log2(np))
+
+        
+        self.Quads = pointQT.qtRoot(self.imageBounds.x0, self.imageBounds.x0+di, self.imageBounds.y0, self.imageBounds.y0 + di)
+
+        for xi, yi in zip(self.filter['x'],self.filter['y']):
+            self.Quads.insert(pointQT.qtRec(xi,yi, None))
+
+    def SetFit(self,event = None):
+        xsc = self.imageBounds.width()*1./self.glCanvas.Size[0]
+        ysc = self.imageBounds.height()*1./self.glCanvas.Size[1]
+
+        #print xsc
+        #print ysc
+
+        if xsc > ysc:
+            self.glCanvas.setView(self.imageBounds.x0, self.imageBounds.x1, self.imageBounds.y0, self.imageBounds.y0 + xsc*self.glCanvas.Size[1])
+        else:
+            self.glCanvas.setView(self.imageBounds.x0, self.imageBounds.x0 + ysc*self.glCanvas.Size[0], self.imageBounds.y0, self.imageBounds.y1)
+            
+        
 
 
 

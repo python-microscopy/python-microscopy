@@ -2,6 +2,8 @@ import rend_im
 import PYME.cSMI as example
 import scipy
 
+from PYME.Acquire import MetaDataHandler
+
 import pylab
 
 import threading
@@ -66,6 +68,9 @@ class FakeCamera:
         self.zOffset = zOffset
         self.compTCur = None #thread which is currently being computed
         self.compTOld = None #finished thread holding image (c.f. camera buffer)
+
+        #register as a provider of metadata
+        MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
 
     def setFluors(self, fluors):
         self.fluors = fluors
@@ -229,7 +234,7 @@ class FakeCamera:
 
         mdh.setEntry('Camera.IntegrationTime', self.GetIntegTime())
         mdh.setEntry('Camera.CycleTime', self.GetIntegTime())
-        mdh.setEntry('Camera.EMGain', self.noisemaker.EMGain)
+        mdh.setEntry('Camera.EMGain', self.noiseMaker.EMGain)
 
         mdh.setEntry('Camera.ROIPosX', self.GetROIX1())
         mdh.setEntry('Camera.ROIPosY',  self.GetROIY1())
