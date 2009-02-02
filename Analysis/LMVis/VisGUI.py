@@ -302,7 +302,7 @@ class VisGUIFrame(wx.Frame):
 
 
     def OnSourceChange(self, event):
-        dsind = self.dsRadioIds.index(event.GetID())
+        dsind = self.dsRadioIds.index(event.GetId())
         self.selectedDataSource = self.dataSources[dsind]
         self.RegenFilter()
 

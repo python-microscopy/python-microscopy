@@ -96,7 +96,7 @@ class h5rSource:
 
 class h5rDSource:
     _name = "h5r Drift Source"
-    def __init__(self, h5fFilename):
+    def __init__(self, h5fFile):
         ''' Data source for use with h5r files as saved by the PYME analysis 
         component'''
         
