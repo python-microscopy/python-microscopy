@@ -15,6 +15,7 @@ import Image
 import genImageDialog
 import visHelpers
 import imageView
+import time
 
 
 # ----------------------------------------------------------------------------
@@ -42,6 +43,9 @@ class ImageBounds:
     def height(self):
         return self.y1 - self.y0
 
+class dummy:
+    pass
+
 class GeneratedImage:
     def __init__(self, img, imgBounds, pixelSize):
         self.img = img.squeeze()
@@ -51,7 +55,14 @@ class GeneratedImage:
 
     def save(self, filename):
         #save using PIL - because we're using float pretty much only tif will work
-        Image.fromarray(self.img.astype('f'), 'F').save(filename)
+        im = Image.fromarray(self.img.astype('f'), 'F')
+        
+        im.tag = dummy()
+        #set up resolution data - unfortunately in cm as TIFF standard only supports cm and inches
+        res_ = int(1e-2/(self.pixelSize*1e-9))
+        im.tag.tagdata={296:(3,), 282:(res_,1), 283:(res_,1)}
+
+        im.save(filename)
         
 
 def GetCollapsedIconData():
@@ -119,7 +130,7 @@ def GetExpandedIconImage():
 
 class VisGUIFrame(wx.Frame):
     
-    def __init__(self, parent, id=wx.ID_ANY, title="PYME Visualise", pos=wx.DefaultPosition,
+    def __init__(self, parent, filename=None, id=wx.ID_ANY, title="PYME Visualise", pos=wx.DefaultPosition,
                  size=(700,650), style=wx.DEFAULT_FRAME_STYLE):
 
         wx.Frame.__init__(self, parent, id, title, pos, size, style)
@@ -187,6 +198,9 @@ class VisGUIFrame(wx.Frame):
         self.pointColour = None
 
         self.CreateFoldPanel()
+
+        if not filename==None:
+            self.OpenFile(filename)
         
 
     def OnSize(self, event):
@@ -1140,35 +1154,43 @@ class VisGUIFrame(wx.Frame):
 
 
 class VisGuiApp(wx.App):
-    def __init__(self, options, *args):
-        self.options = options
+    def __init__(self, filename, *args):
+        self.filename = filename
         wx.App.__init__(self, *args)
         
         
     def OnInit(self):
         wx.InitAllImageHandlers()
-        self.main = VisGUIFrame(None)#, self.options)
+        self.main = VisGUIFrame(None, self.filename)
         self.main.Show()
         self.SetTopWindow(self.main)
         return True
 
 
-def main():
-    from optparse import OptionParser
+def main(filename):
+    #from optparse import OptionParser
 
-    parser = OptionParser()
-    parser.add_option("-i", "--init-file", dest="initFile", help="Read initialisation from file [defaults to init.py]", metavar="FILE")
+    #parser = OptionParser()
+    #parser.add_option("-i", "--init-file", dest="initFile", help="Read initialisation from file [defaults to init.py]", metavar="FILE")
         
-    (options, args) = parser.parse_args()
+    #(options, args) = parser.parse_args()
+
     
-    application = VisGuiApp(options, 0)
+    
+    application = VisGuiApp(filename, 0)
     application.MainLoop()
 
 if __name__ == '__main__':
-    if False: #not '__IPYTHON__' in dir(__builtins__):
-        main()
-    else:
 
-        visFr = VisGUIFrame(None)
+    filename = None
+
+    if len(sys.argv) > 1:
+        filename = sys.argv[1]
+
+    if not '__IPYTHON__' in dir(__builtins__):
+        main(filename)
+    else:
+        #time.sleep(1)
+        visFr = VisGUIFrame(None, filename)
         visFr.Show()
 

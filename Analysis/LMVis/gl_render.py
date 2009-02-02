@@ -25,7 +25,7 @@ cm_hot = cmap_mult(8.0*scipy.ones(3)/3, [0, 3.0/8, 6.0/8])
 cm_grey = cmap_mult(scipy.ones(3), [0, 0, 0])
 
 class LMGLCanvas(GLCanvas):
-    def __init__(self, parent):
+    def __init__(self, parent, slaves = []):
 	GLCanvas.__init__(self, parent,-1)
 	wx.EVT_PAINT(self, self.OnPaint)
         wx.EVT_SIZE(self, self.OnSize)
@@ -36,6 +36,8 @@ class LMGLCanvas(GLCanvas):
         self.zeroPt = [0, 1.0/3, 2.0/3]
         self.cmap = cm_hot
         self.clim = [0,1]
+
+        self.slaves = slaves
 
         self.pointSize=5 #default point size = 5nm
 
