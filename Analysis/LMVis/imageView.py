@@ -19,41 +19,7 @@ class ImageViewPanel(wx.Panel):
 
         wx.EVT_PAINT(self, self.OnPaint)
 
-    def CreateMenuBar(self):
-        def CreateMenuBar(self):
-
-        # Make a menubar
-        file_menu = wx.Menu()
-
-        ID_SAVE = wx.NewId()
-        #ID_CLOSE = wx.NewId()        
-        
-        file_menu.Append(ID_SAVE, "&Save")
-        
-        file_menu.AppendSeparator()
-        
-        file_menu.Append(wx.ID_CLOSE, "&Close")
-
-        self.view_menu = wx.Menu()
-
-
-        menu_bar = wx.MenuBar()
-
-        menu_bar.Append(file_menu, "&File")
-
-        self.Bind(wx.EVT_MENU, self.OnSave, id=ID_SAVE)
-        self.Bind(wx.EVT_MENU, self.OnClose, id=wx.ID_CLOSE)
-
-        return menu_bar
-
-    def OnSave(self, event):
-        fname = wx.FileSelector('Save Image ...', default_extension='.tif', wildcard="TIFF files (*.tif)|*.tif", flags = wx.FD_SAVE, wx.FD_OVERWRITE_PROMPT)
-
-        if not fname = "":
-            self.image.save(fname)
-
-    def OnClose(self, event):
-        self.Destroy()
+    
 
 
     def DoPaint(self, dc):
@@ -141,5 +107,44 @@ class ImageViewFrame(wx.Frame):
 
         self.ivp = ImageViewPanel(self, image, glCanvas)
 
+        self.SetMenuBar(self.CreateMenuBar())
+
+
+    def CreateMenuBar(self):
+        
+        # Make a menubar
+        file_menu = wx.Menu()
+
+        ID_SAVE = wx.NewId()
+        #ID_CLOSE = wx.NewId()        
+        
+        file_menu.Append(ID_SAVE, "&Save")
+        
+        file_menu.AppendSeparator()
+        
+        file_menu.Append(wx.ID_CLOSE, "&Close")
+
+        self.view_menu = wx.Menu()
+
+
+        menu_bar = wx.MenuBar()
+
+        menu_bar.Append(file_menu, "&File")
+
+        self.Bind(wx.EVT_MENU, self.OnSave, id=ID_SAVE)
+        self.Bind(wx.EVT_MENU, self.OnClose, id=wx.ID_CLOSE)
+
+        return menu_bar
+
+
+    def OnSave(self, event):
+        fname = wx.FileSelector('Save Image ...', default_extension='.tif', wildcard="TIFF files (*.tif)|*.tif", flags = wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+
+        if not fname == "":
+            self.ivp.image.save(fname)
+
+
+    def OnClose(self, event):
+        self.Destroy()
 
     

@@ -1,10 +1,11 @@
 #!/usr/bin/python
 # -*- coding: iso-8859-1 -*-
 """
-    MoinMoin - Python source parser and colorizer
+    mProfile syntax highlighting and profile results display
 """
-
-# Based on the code from Jürgen Herman, the following changes where made:
+# Based on the MoinMoin python source coloriser
+#
+# which is in turn based on the code from Jürgen Herman, to which the following changes where made:
 #
 # Mike Brown <http://skew.org/~mike/>:
 # - make script callable as a CGI and a Apache handler for .py files.
@@ -14,15 +15,17 @@
 # - use class tags and style sheet instead of <style> tags
 # - when called as a script, add HTML header and footer
 #
-# TODO:
-#
-# - parse script encoding and allow output in any encoding by using unicode
-#   as intermediate
+# #
+# 
+# David Baddeley david_baddeley <at> yahoo.com.au
+# converted to display mProfile output:
+# - added code to display line times, line numbers, and to highlight the expensive lines
+# - may have broken some of the original features
 
-__version__ = '0.3'
-__date__ = '2005-07-04'
+_version__ = '0.1'
+__date__ = '2009-01-22'
 __license__ = 'GPL'
-__author__ = 'Jürgen Hermann, Mike Brown, Christopher Arndt'
+__author__ = 'Jürgen Hermann, Mike Brown, Christopher Arndt, David Baddeley'
 
 
 # Imports
@@ -31,7 +34,7 @@ import keyword, token, tokenize
 
 
 #############################################################################
-### Python Source Parser (does Hilighting)
+### Python Source Parser (does Highlighting)
 #############################################################################
 
 _KEYWORD = token.NT_OFFSET + 1
@@ -270,14 +273,14 @@ def colorize_file(times, file=None, outstream=sys.stdout, standalone=True):
     if file:
         sourcefile.close()
 
-if __name__ == "__main__":
-    import os
-    if os.environ.get('PATH_TRANSLATED'):
-        filepath = os.environ.get('PATH_TRANSLATED')
-        print 'Content-Type: text/html; charset="iso-8859-1"\n'
-        colorize_file(filepath)
-    elif len(sys.argv) > 1:
-        filepath = sys.argv[1]
-        colorize_file(filepath)
-    else:
-        colorize_file()
+#if __name__ == "__main__":
+#    import os
+#    if os.environ.get('PATH_TRANSLATED'):
+#        filepath = os.environ.get('PATH_TRANSLATED')
+#        print 'Content-Type: text/html; charset="iso-8859-1"\n'
+#        colorize_file(filepath)
+#    elif len(sys.argv) > 1:
+#        filepath = sys.argv[1]
+#        colorize_file(filepath)
+#    else:
+#        colorize_file()
