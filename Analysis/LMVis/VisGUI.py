@@ -891,7 +891,7 @@ class VisGUIFrame(wx.Frame):
             
             im = self.glCanvas.getIm(pixelSize)
 
-            imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.xmax,self.glCanvas.ymin,self.glCanvas.ymax)
+            imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
 
             img = GeneratedImage(im,imb, pixelSize )
             imf = imageView.ImageViewFrame(self,img, self.glCanvas)
