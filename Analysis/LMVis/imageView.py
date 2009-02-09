@@ -186,6 +186,8 @@ class ImageViewFrame(wx.Frame):
         if not fname == "":
             self.ivp.image.save(fname)
 
+        self.SetTitle(fname)
+
 
     def OnClose(self, event):
         self.parent.generatedImages.remove(self)
