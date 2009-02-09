@@ -1,5 +1,12 @@
 __init__.pyc
-gl_render.pyc
-inpFilt.pyc
-rendGauss.pyc
+statusLog.pyc
 tcHist.pyc
+genImageDialog.pyc
+importTextDialog.pyc
+inpFilt.pyc
+histLimits.pyc
+visHelpers.pyc
+editFilterDialog.pyc
+imageView.pyc
+rendGauss.pyc
+gl_render.pyc

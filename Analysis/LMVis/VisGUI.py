@@ -1,4 +1,5 @@
-import  wx
+import os.path
+import wx
 import wx.lib.foldpanelbar as fpb
 import gl_render
 import sys
@@ -13,9 +14,18 @@ from PYME.Analysis.QuadTree import pointQT, QTrend
 import Image
 
 import genImageDialog
+import importTextDialog
 import visHelpers
 import imageView
+import histLimits
 import time
+
+import tables
+from PYME.Analysis import MetaData
+
+import threading
+
+import statusLog
 
 
 # ----------------------------------------------------------------------------
@@ -48,7 +58,7 @@ class dummy:
 
 class GeneratedImage:
     def __init__(self, img, imgBounds, pixelSize):
-        self.img = img.squeeze()
+        self.img = img
         self.imgBounds = imgBounds
 
         self.pixelSize = pixelSize
@@ -140,10 +150,10 @@ class VisGUIFrame(wx.Frame):
         #self.SetIcon(GetMondrianIcon())
         self.SetMenuBar(self.CreateMenuBar())
 
-        self.statusbar = self.CreateStatusBar(2, wx.ST_SIZEGRIP)
-        self.statusbar.SetStatusWidths([-4, -4])
+        self.statusbar = self.CreateStatusBar(1, wx.ST_SIZEGRIP)
+        #self.statusbar.SetStatusWidths([-4, -4])
         self.statusbar.SetStatusText("", 0)
-        self.statusbar.SetStatusText("", 1)
+        #self.statusbar.SetStatusText("", 1)
 
         self._leftWindow1 = wx.SashLayoutWindow(self, 101, wx.DefaultPosition,
                                                 wx.Size(200, 1000), wx.NO_BORDER |
@@ -180,7 +190,7 @@ class VisGUIFrame(wx.Frame):
 
         self.dataSources = []
         self.selectedDataSource = None
-        self.filterKeys = {'error_x': (0,30), 'A':(0,30), 'sig' : (150/2.35, 350/2.35)}
+        self.filterKeys = {'error_x': (0,30), 'A':(5,200), 'sig' : (150/2.35, 350/2.35)}
 
         self.filter = None
         self.imageBounds = ImageBounds(0,0,0,0)
@@ -197,9 +207,12 @@ class VisGUIFrame(wx.Frame):
         self.Quads = None
         self.pointColour = None
 
+        statusLog.SetStatusDispFcn(self.SetStatus)
+
         self.CreateFoldPanel()
 
         if not filename==None:
+            #self.glCanvas.OnPaint(None)
             self.OpenFile(filename)
         
 
@@ -377,6 +390,9 @@ class VisGUIFrame(wx.Frame):
  
         bsizer.Add(hsizer, 0, wx.ALL, 0)
 
+        self.hlCLim = histLimits.HistLimitPanel(pan, -1, self.glCanvas.c, self.glCanvas.clim[0], self.glCanvas.clim[1], size=(150, 100))
+        bsizer.Add(self.hlCLim, 0, wx.ALL|wx.EXPAND, 5)
+
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -394,11 +410,14 @@ class VisGUIFrame(wx.Frame):
         pan.SetSizer(bdsizer)
         bdsizer.Fit(pan)
 
-        
+        #self.hlCLim.Refresh()
+
         self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
 
         self.tCLimMin.Bind(wx.EVT_TEXT, self.OnCLimChange)
         self.tCLimMax.Bind(wx.EVT_TEXT, self.OnCLimChange)
+
+        self.hlCLim.Bind(histLimits.EVT_LIMIT_CHANGE, self.OnCLimHistChange)
 
         bPercentile.Bind(wx.EVT_BUTTON, self.OnPercentileCLim)
         
@@ -441,6 +460,7 @@ class VisGUIFrame(wx.Frame):
             cmapname += '_r'
 
         self.glCanvas.setCMap(pylab.cm.__dict__[cmapname])
+        self.OnGLViewChanged()
 
     def OnLUTDrawCB(self, event):
         self.glCanvas.LUTDraw = event.IsChecked()
@@ -458,7 +478,13 @@ class VisGUIFrame(wx.Frame):
             cmax = float(self.tCLimMax.GetValue())
 
             self.glCanvas.setCLim((cmin, cmax))
-        
+
+    def OnCLimHistChange(self, event):
+        self.glCanvas.setCLim((event.lower, event.upper))
+        self._pc_clim_change = True
+        self.tCLimMax.SetValue('%3.2f' % self.glCanvas.clim[1])
+        self._pc_clim_change = True
+        self.tCLimMin.SetValue('%3.2f' % self.glCanvas.clim[0])
 
     def OnPercentileCLim(self, event):
         pc = float(self.tPercentileCLim.GetValue())
@@ -469,6 +495,8 @@ class VisGUIFrame(wx.Frame):
         self.tCLimMax.SetValue('%3.2f' % self.glCanvas.clim[1])
         self._pc_clim_change = True
         self.tCLimMin.SetValue('%3.2f' % self.glCanvas.clim[0])
+
+        self.hlCLim.SetValue(self.glCanvas.clim)
 
         
         
@@ -509,6 +537,10 @@ class VisGUIFrame(wx.Frame):
 
         # for wxGTK
         self.lFiltKeys.Bind(wx.EVT_RIGHT_UP, self.OnFilterListRightClick)
+
+        self.lFiltKeys.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnFilterItemSelected)
+        self.lFiltKeys.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.OnFilterItemDeselected)
+        self.lFiltKeys.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnFilterEdit)
         
     def OnFilterListRightClick(self, event):
 
@@ -585,13 +617,14 @@ class VisGUIFrame(wx.Frame):
     def OnFilterEdit(self, event):
         key = self.lFiltKeys.GetItem(self.currentFilterItem).GetText()
 
-        dlg = editFilterDialog.FilterEditDialog(self, mode='edit', possibleKeys=[], key=key, minVal=self.filterKeys[key][0], maxVal=self.filterKeys[key][1])
-
+        #dlg = editFilterDialog.FilterEditDialog(self, mode='edit', possibleKeys=[], key=key, minVal=self.filterKeys[key][0], maxVal=self.filterKeys[key][1])
+        dlg = histLimits.HistLimitDialog(self, self.selectedDataSource[key], self.filterKeys[key][0], self.filterKeys[key][1], title=key)
         ret = dlg.ShowModal()
 
         if ret == wx.ID_OK:
-            minVal = float(dlg.tMin.GetValue())
-            maxVal = float(dlg.tMax.GetValue())
+            #minVal = float(dlg.tMin.GetValue())
+            #maxVal = float(dlg.tMax.GetValue())
+            minVal, maxVal = dlg.GetLimits()
 
             self.filterKeys[key] = (minVal, maxVal)
 
@@ -714,8 +747,10 @@ class VisGUIFrame(wx.Frame):
         # Make a menubar
         file_menu = wx.Menu()
 
-        ID_OPEN = wx.NewId()
-        ID_QUIT = wx.NewId()
+        ID_OPEN = wx.ID_OPEN
+        ID_QUIT = wx.ID_EXIT
+
+        ID_OPEN_RAW = wx.NewId()
 
         ID_VIEW_POINTS = wx.NewId()
         ID_VIEW_TRIANGS = wx.NewId()
@@ -735,10 +770,11 @@ class VisGUIFrame(wx.Frame):
 
         ID_TOGGLE_SETTINGS = wx.NewId()
 
-        ID_ABOUT = wx.NewId()
+        ID_ABOUT = wx.ID_ABOUT
         
         
         file_menu.Append(ID_OPEN, "&Open")
+        file_menu.Append(ID_OPEN_RAW, "Open &Raw/Prebleach Data")
         
         file_menu.AppendSeparator()
         
@@ -798,6 +834,7 @@ class VisGUIFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnToggleWindow, id=ID_TOGGLE_SETTINGS)
 
         self.Bind(wx.EVT_MENU, self.OnOpenFile, id=ID_OPEN)
+        self.Bind(wx.EVT_MENU, self.OnOpenRaw, id=ID_OPEN_RAW)
 
         self.Bind(wx.EVT_MENU, self.OnViewPoints, id=ID_VIEW_POINTS)
         self.Bind(wx.EVT_MENU, self.OnViewTriangles, id=ID_VIEW_TRIANGS)
@@ -851,14 +888,14 @@ class VisGUIFrame(wx.Frame):
             oldcmap = self.glCanvas.cmap 
             self.glCanvas.setCMap(pylab.cm.gray)
 
-            self.statusbar.SetStatusText("Tiling image ...", 1)
+            
             im = self.glCanvas.getIm(pixelSize)
-            self.statusbar.SetStatusText("", 1)
 
             imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.xmax,self.glCanvas.ymin,self.glCanvas.ymax)
 
-            self.generatedImages.append(GeneratedImage(im,imb, pixelSize ))
-            imf = imageView.ImageViewFrame(self,self.generatedImages[-1], self.glCanvas)
+            img = GeneratedImage(im,imb, pixelSize )
+            imf = imageView.ImageViewFrame(self,img, self.glCanvas)
+            self.generatedImages.append(imf)
             imf.Show()
 
             self.glCanvas.setCMap(oldcmap)
@@ -870,13 +907,12 @@ class VisGUIFrame(wx.Frame):
         bCurr = wx.BusyCursor()
 
         if self.Triangles == None:
-                self.statusbar.SetStatusText("Generating Triangulation ...", 1)
+                statTri = statusLog.StatusLogger("Generating Triangulation ...")
                 self.Triangles = delaunay.Triangulation(self.filter['x'], self.filter['y'])
-                self.statusbar.SetStatusText("", 1)
 
-        self.statusbar.SetStatusText("Calculating mean neighbour distances ...", 1)
+        statNeigh = statusLog.StatusLogger("Calculating mean neighbour distances ...")
         self.GeneratedMeasures['neighbourDistances'] = pylab.array(visHelpers.calcNeighbourDists(self.Triangles))
-        self.statusbar.SetStatusText("", 1)
+        
 
     def OnGenTriangles(self, event): 
         jitVars = ['1.0']
@@ -915,12 +951,13 @@ class VisGUIFrame(wx.Frame):
 
             imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
 
-            self.statusbar.SetStatusText("Generating Image ...", 1)
+            status = statusLog.StatusLogger('Generating Triangulated Image ...')
             im = self.glCanvas.genJitTim(dlg.getNumSamples(),self.filter['x'],self.filter['y'], jitVals, dlg.getMCProbability(),pixelSize)
-            self.statusbar.SetStatusText("", 1)
+            
 
-            self.generatedImages.append(GeneratedImage(im,imb, pixelSize ))
-            imf = imageView.ImageViewFrame(self,self.generatedImages[-1], self.glCanvas)
+            img = GeneratedImage(im,imb, pixelSize )
+            imf = imageView.ImageViewFrame(self,img, self.glCanvas)
+            self.generatedImages.append(imf)
             imf.Show()
 
             self.glCanvas.setCMap(oldcmap)
@@ -955,17 +992,15 @@ class VisGUIFrame(wx.Frame):
             #print jitVals
             jitVals = jitScale*jitVals
 
-            self.statusbar.SetStatusText("Generating Image ...", 1)
+            status = statusLog.StatusLogger('Generating Gaussian Image ...')
 
             imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
 
             im = visHelpers.rendGauss(self.filter['x'],self.filter['y'], jitVals, imb, pixelSize)
-            self.statusbar.SetStatusText("", 1)
 
-            
-
-            self.generatedImages.append(GeneratedImage(im,imb, pixelSize ))
-            imf = imageView.ImageViewFrame(self,self.generatedImages[-1], self.glCanvas)
+            img = GeneratedImage(im,imb, pixelSize )
+            imf = imageView.ImageViewFrame(self,img, self.glCanvas)
+            self.generatedImages.append(imf)
             imf.Show()
             
 
@@ -979,17 +1014,16 @@ class VisGUIFrame(wx.Frame):
 
         if ret == wx.ID_OK:
             pixelSize = dlg.getPixelSize()
+
+            status = statusLog.StatusLogger('Generating Histogram Image ...')
             
-
-            self.statusbar.SetStatusText("Generating Image ...", 1)
-
             imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
 
             im = visHelpers.rendHist(self.filter['x'],self.filter['y'], imb, pixelSize)
-            self.statusbar.SetStatusText("", 1)
-
-            self.generatedImages.append(GeneratedImage(im,imb, pixelSize ))
-            imf = imageView.ImageViewFrame(self,self.generatedImages[-1], self.glCanvas)
+            
+            img = GeneratedImage(im,imb, pixelSize )
+            imf = imageView.ImageViewFrame(self,img, self.glCanvas)
+            self.generatedImages.append(imf)
             imf.Show()
             
 
@@ -1003,10 +1037,9 @@ class VisGUIFrame(wx.Frame):
 
         if ret == wx.ID_OK:
             pixelSize = dlg.getPixelSize()
+
+            status = statusLog.StatusLogger('Generating QuadTree Image ...')
             
-
-            self.statusbar.SetStatusText("Generating Image ...", 1)
-
             imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
 
             if not pylab.mod(pylab.log2(pixelSize/self.QTGoalPixelSize), 1) == 0:#recalculate QuadTree to get right pixel size
@@ -1025,18 +1058,17 @@ class VisGUIFrame(wx.Frame):
             QTrend.rendQTa(im, self.Quads)
 
             im = im[(imb.x0/pixelSize):(imb.x1/pixelSize),(imb.y0/pixelSize):(imb.y1/pixelSize)]
-            self.statusbar.SetStatusText("", 1)
-
-            self.generatedImages.append(GeneratedImage(im,imb, pixelSize ))
-
-            imf = imageView.ImageViewFrame(self,self.generatedImages[-1], self.glCanvas)
+            
+            img = GeneratedImage(im,imb, pixelSize )
+            imf = imageView.ImageViewFrame(self,img, self.glCanvas)
+            self.generatedImages.append(imf)
             imf.Show()
 
         dlg.Destroy()
 
 
     def OnOpenFile(self, event):
-        filename = wx.FileSelector("Choose a file to open", nameUtils.genResultDirectoryPath(), default_extension='h5r', wildcard='PYME Results Files (*.h5r)|*.h5r|Tab formatted test (*.txt)|*.txt')
+        filename = wx.FileSelector("Choose a file to open", nameUtils.genResultDirectoryPath(), default_extension='h5r', wildcard='PYME Results Files (*.h5r)|*.h5r|Tab Formatted Text (*.txt)|*.txt')
 
         #print filename
         if not filename == '':
@@ -1071,13 +1103,74 @@ class VisGUIFrame(wx.Frame):
                 else:
                     self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
         else: #assume it's a text file
-            pass
+            dlg = importTextDialog.ImportTextDialog(self)
+
+            ret = dlg.ShowModal()
+
+            if not ret == wx.ID_OK:
+                return #we cancelled
+
+            #try:
+            print dlg.GetFieldNames()
+            ds = inpFilt.textfileSource(filename, dlg.GetFieldNames())
+            self.selectedDataSource = ds
+            self.dataSources.append(ds)
+
+            self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
 
         self.SetTitle('PYME Visualise - ' + filename)
         self.RegenFilter()
         self.CreateFoldPanel()
         self.SetFit()
-        
+
+    def OnOpenRaw(self, event):
+        filename = wx.FileSelector("Choose a file to open", nameUtils.genResultDirectoryPath(), default_extension='h5', wildcard='PYME Spool Files (*.h5)|*.h5|Khoros Data Format (*.kdf)|*.kdf')
+
+        #print filename
+        if not filename == '':
+            self.OpenRaw(filename)
+
+    def OpenRaw(self, filename):
+        ext = os.path.splitext(filename)[-1]
+        if ext == '.kdf': #KDF file
+            from PYME.FileUtils import read_kdf
+            im = read_kdf.ReadKdfData(filename).squeeze()
+
+            dlg = wx.TextEntryDialog(self, 'Pixel Size [nm]:', 'Please enter the x-y pixel size', '70')
+            dlg.ShowModal()
+
+            pixelSize = float(dlg.GetValue())
+
+            imb = ImageBounds(0,0,pixelSize*im.shape[0],pixelSize*im.shape[1])
+            
+            img = GeneratedImage(im,imb, pixelSize )
+            imf = imageView.ImageViewFrame(self,img, self.glCanvas, title=filename)
+            self.generatedImages.append(imf)
+            imf.Show()
+        elif ext == '.h5': #h5 spool
+            h5f = tables.openFile(filename)
+
+            md = MetaData.genMetaDataFromHDF(h5f)
+
+            #im = h5f.root.ImageData[min(md.EstimatedLaserOnFrameNo+10,(h5f.root.ImageData.shape[0]-1)) , :,:].squeeze().astype('f')
+            im = h5f.root.ImageData
+            #im = im - min(md.CCD.ADOffset, im.min())
+
+            #h5f.close()
+
+            self.filesToClose.append(h5f)
+            
+            pixelSize = md.voxelsize.x*1e3
+
+            imb = ImageBounds(0,0,pixelSize*im.shape[1],pixelSize*im.shape[2])
+
+            img = GeneratedImage(im,imb, pixelSize )
+            imf = imageView.ImageViewFrame(self,img, self.glCanvas, title=filename,zp=min(md.EstimatedLaserOnFrameNo+10,(h5f.root.ImageData.shape[0]-1)))
+            self.generatedImages.append(imf)
+            imf.Show()
+        else:
+            raise 'Unrecognised Data Format'
+
 
     def RegenFilter(self):
         if not self.selectedDataSource == None:
@@ -1094,34 +1187,43 @@ class VisGUIFrame(wx.Frame):
         if self.filter == None:
             return #get out of here
 
+        if len(self.filter['x']) == 0:
+            wx.MessageBox('No data points - try adjusting the filter', "len(filter['x']) ==0")
+            return
+
+        if self.glCanvas.init == 0: #glcanvas is not initialised
+            return
+
         bCurr = wx.BusyCursor()
 
         if self.viewMode == 'points':
             self.glCanvas.setPoints(self.filter['x'], self.filter['y'], self.pointColour)
         elif self.viewMode == 'triangles':
             if self.Triangles == None:
-                self.statusbar.SetStatusText("Generating Triangulation ...", 1)
+                status = statusLog.StatusLogger("Generating Triangulation ...")
                 self.Triangles = delaunay.Triangulation(self.filter['x'], self.filter['y'])
-                self.statusbar.SetStatusText("", 1)
+                
             self.glCanvas.setTriang(self.Triangles)
 
         elif self.viewMode == 'voronoi':
             if self.Triangles == None:
-                self.statusbar.SetStatusText("Generating Triangulation ...", 1)
+                status = statusLog.StatusLogger("Generating Triangulation ...")
                 self.Triangles = delaunay.Triangulation(self.filter['x'], self.filter['y'])
-                self.statusbar.SetStatusText("", 1)
+                
 
-            self.statusbar.SetStatusText("Generating Voronoi Diagram ... ", 1)
+            status = statusLog.StatusLogger("Generating Voronoi Diagram ... ")
             self.glCanvas.setVoronoi(self.Triangles)
-            self.statusbar.SetStatusText("", 1)
+            
 
         elif self.viewMode == 'quads':
             if self.Quads == None:
-                self.statusbar.SetStatusText("Generating QuadTree ...", 1)
+                status = statusLog.StatusLogger("Generating QuadTree ...")
                 self.GenQuads()
-                self.statusbar.SetStatusText("", 1)
+                
 
             self.glCanvas.setQuads(self.Quads)
+
+        self.hlCLim.SetData(self.glCanvas.c, self.glCanvas.clim[0], self.glCanvas.clim[1])
 
 
     def GenQuads(self):
@@ -1148,9 +1250,13 @@ class VisGUIFrame(wx.Frame):
             self.glCanvas.setView(self.imageBounds.x0, self.imageBounds.x1, self.imageBounds.y0, self.imageBounds.y0 + xsc*self.glCanvas.Size[1])
         else:
             self.glCanvas.setView(self.imageBounds.x0, self.imageBounds.x0 + ysc*self.glCanvas.Size[0], self.imageBounds.y0, self.imageBounds.y1)
-            
-        
 
+    def OnGLViewChanged(self):
+        for genI in self.generatedImages:
+            genI.Refresh()
+
+    def SetStatus(self, statusText):
+        self.statusbar.SetStatusText(statusText, 0)
 
 
 class VisGuiApp(wx.App):
@@ -1187,10 +1293,11 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         filename = sys.argv[1]
 
-    if not '__IPYTHON__' in dir(__builtins__):
+    if wx.GetApp() == None: #check to see if there's already a wxApp instance (running from ipython -pylab or -wthread)
         main(filename)
     else:
         #time.sleep(1)
         visFr = VisGUIFrame(None, filename)
         visFr.Show()
+        visFr.RefreshView()
 

@@ -19,7 +19,7 @@ from myviewpanel_numarray import MyViewPanel
 
 class DSViewFrame(wx.Frame):
     def __init__(self, parent=None, title='', dstack = None, log = None, filename = None):
-        wx.Frame.__init__(self,parent, -1, title,size=wx.Size(626, 516))
+        wx.Frame.__init__(self,parent, -1, title,size=wx.Size(626,500))
 
         self.ds = dstack
         self.log = log
@@ -61,6 +61,7 @@ class DSViewFrame(wx.Frame):
 
         self.notebook1.AddPage(page=self.vp, select=True, caption='Data')
         self.notebook1.AddPage(page=self.sh, select=False, caption='Console')
+        #self.notebook1.Split(0, wx.TOP)
         
 
         self.sizer = wx.BoxSizer(wx.VERTICAL)

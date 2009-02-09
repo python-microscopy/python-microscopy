@@ -5,7 +5,7 @@ class GenImageDialog(wx.Dialog):
     def __init__(self, parent, mode='current', defaultPixelSize=5.0, jitterVariables = [], jitterVarDefault=0, mcProbDefault = 1.0):
         wx.Dialog.__init__(self, parent, title='Edit Filter ...')
 
-        pixelSzs = ['%3.2f' % defaultPixelSize*2**n for n in range(6)]
+        pixelSzs = ['%3.2f' % (defaultPixelSize*2**n) for n in range(6)]
 
         jitterPhrase = 'Jitter [nm]:'
         if mode == 'gaussian':

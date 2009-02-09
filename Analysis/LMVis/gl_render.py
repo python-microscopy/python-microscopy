@@ -11,6 +11,8 @@ from scikits import delaunay
 from PYME.Analysis.QuadTree import pointQT
 import numpy
 
+import statusLog
+
 name = 'ball_glut'
 
 class cmap_mult:
@@ -25,19 +27,20 @@ cm_hot = cmap_mult(8.0*scipy.ones(3)/3, [0, 3.0/8, 6.0/8])
 cm_grey = cmap_mult(scipy.ones(3), [0, 0, 0])
 
 class LMGLCanvas(GLCanvas):
-    def __init__(self, parent, slaves = []):
-	GLCanvas.__init__(self, parent,-1)
-	wx.EVT_PAINT(self, self.OnPaint)
+    def __init__(self, parent):
+        GLCanvas.__init__(self, parent,-1)
+        wx.EVT_PAINT(self, self.OnPaint)
         wx.EVT_SIZE(self, self.OnSize)
         wx.EVT_MOUSEWHEEL(self, self.OnWheel)
-	self.init = 0
+
+        self.init = 0
         self.nVertices = 0
         self.IScale = [1.0, 1.0, 1.0]
         self.zeroPt = [0, 1.0/3, 2.0/3]
         self.cmap = cm_hot
         self.clim = [0,1]
 
-        self.slaves = slaves
+        self.parent = parent
 
         self.pointSize=5 #default point size = 5nm
 
@@ -65,23 +68,23 @@ class LMGLCanvas(GLCanvas):
         self.drawModes = {'triang':GL_TRIANGLES, 'quads':GL_QUADS, 'edges':GL_LINES, 'points':GL_POINTS}
 
         self.c = scipy.array([1,1,1])
-	return
+        return
 
     def OnPaint(self,event):
-	dc = wx.PaintDC(self)
-	self.SetCurrent()
-	if not self.init:
-	    self.InitGL()
-	    self.init = 1
-	self.OnDraw()
-	return
+        dc = wx.PaintDC(self)
+        self.SetCurrent()
+        if not self.init:
+            self.InitGL()
+            self.init = 1
+        self.OnDraw()
+        return
 
     def OnSize(self, event):
         glViewport(0,0, self.Size[0], self.Size[1])
 
         self.xmax = self.xmin + self.Size[0]*self.pixelsize
         self.ymax = self.ymin + self.Size[1]*self.pixelsize
-        
+
 
     def OnDraw(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -90,9 +93,9 @@ class LMGLCanvas(GLCanvas):
         glOrtho(self.xmin,self.xmax,self.ymin,self.ymax,-1,1)
 
         #glPushMatrix()
-	#color = [1.0,0.,0.,1.]
-	#glMaterialfv(GL_FRONT,GL_DIFFUSE,color)
-	#glutSolidSphere(2,20,20)
+        #color = [1.0,0.,0.,1.]
+        #glMaterialfv(GL_FRONT,GL_DIFFUSE,color)
+        #glutSolidSphere(2,20,20)
         #glColor3f(1,0,0)
 
         #glBegin(GL_POLYGON)
@@ -101,7 +104,7 @@ class LMGLCanvas(GLCanvas):
         #glVertex2f(1,1)
         #glVertex2f(0,1)
         #glEnd()
-        
+
         #print self.drawModes[self.mode]
 
         #glClear(GL_ACCUM_BUFFER_BIT)
@@ -113,9 +116,9 @@ class LMGLCanvas(GLCanvas):
             glPushMatrix ()
 
             #glTranslatef (self.blurSigma*scipy.randn(), self.blurSigma*scipy.randn(),0.0)
-            
+
             glDrawArrays(self.drawModes[self.mode], 0, self.nVertices)
-      
+
             glPopMatrix ()
             #glAccum(GL_ACCUM, 1.0/self.numBlurSamples)
 
@@ -134,10 +137,10 @@ class LMGLCanvas(GLCanvas):
         self.drawLUT()
 
         glFlush()
-	#glPopMatrix()
+        #glPopMatrix()
         self.SwapBuffers()
         return
-	
+
     def InitGL(self):
         #glutInit(sys.argv)
         # set viewing projection
@@ -190,8 +193,11 @@ class LMGLCanvas(GLCanvas):
         #c = 0.5*scipy.sqrt((b*b).sum(1)*(a*a).sum(1) - ((a*b).sum(1)**2))
 
         #c = scipy.maximum(((b*b).sum(1)),((a*a).sum(1)))
-        c = scipy.median([(b*b).sum(1), (a*a).sum(1), (b2*b2).sum(1)])
-        
+        if numpy.version.version > '1.2':
+            c = scipy.median([(b * b).sum(1), (a * a).sum(1), (b2 * b2).sum(1)], 0)
+        else:
+            c = scipy.median([(b * b).sum(1), (a * a).sum(1), (b2 * b2).sum(1)])
+
         a_ = ((a*a).sum(1))
         b_ = ((b*b).sum(1))
         b2_ = ((b2*b2).sum(1))
@@ -201,7 +207,7 @@ class LMGLCanvas(GLCanvas):
 
         self.c = scipy.vstack((c,c,c)).T.ravel()
         #self.c = scipy.vstack((1.0/(a_*b_ + 1),1.0/(a_*b2_ + 1),1.0/(b_*b2_ + 1))).T.ravel()
-        
+
         #self.c = scipy.sqrt(self.c)
         vs = scipy.vstack((xs.ravel(), ys.ravel()))
         vs = vs.T.ravel().reshape(len(xs.ravel()), 2)
@@ -219,9 +225,9 @@ class LMGLCanvas(GLCanvas):
     def setPoints(self, x, y, c = None):
         if c == None:
             self.c = scipy.ones(x.shape).ravel()
-        else: 
+        else:
             self.c = c
-        
+
         vs = scipy.vstack((x.ravel(), y.ravel()))
         vs = vs.T.ravel().reshape(len(x.ravel()), 2)
         self.vs_ = glVertexPointerf(vs)
@@ -244,8 +250,8 @@ class LMGLCanvas(GLCanvas):
             nds = T.triangle_nodes[i]
             for n in nds:
                 tdb[n].append(i)
-            
-            
+
+
 
         xs_ = None
         ys_ = None
@@ -255,7 +261,7 @@ class LMGLCanvas(GLCanvas):
 
         if not cp == None:
             area_colouring=False
-        
+
         for i in range(len(T.x)):
             #get triangles around point
             impingentTriangs = tdb[i] #scipy.where(T.triangle_nodes == i)[0]
@@ -302,9 +308,9 @@ class LMGLCanvas(GLCanvas):
                     ys_ = scipy.vstack((ys_, ys))
                     c_ = scipy.hstack((c_, c))
 
-        
+
         self.c = scipy.vstack((c_,c_,c_)).T.ravel()
-        
+
         vs = scipy.vstack((xs_.ravel(), ys_.ravel()))
         vs = vs.T.ravel().reshape(len(xs_.ravel()), 2)
         self.vs_ = glVertexPointerf(vs)
@@ -335,7 +341,7 @@ class LMGLCanvas(GLCanvas):
         c = 1.0/(c + 1)
 
         self.c = scipy.vstack((c,c)).T.ravel()
-        
+
         vs = scipy.vstack((xs.ravel(), ys.ravel()))
         vs = vs.T.ravel().reshape(len(xs.ravel()), 2)
         self.vs_ = glVertexPointerf(vs)
@@ -370,30 +376,30 @@ class LMGLCanvas(GLCanvas):
         for i in range(len(T.x)):
             incidentEdges = T.edge_db[edb[i][0]]
             #neighbourPoints = edb[i][1]
-            
+
             #incidentEdges = T.edge_db[edb[neighbourPoints[0]][0]]
             #for j in range(1, len(neighbourPoints)):
             #    incidentEdges = scipy.vstack((incidentEdges, T.edge_db[edb[neighbourPoints[j]][0]]))
             dx = scipy.diff(T.x[incidentEdges])
             dy = scipy.diff(T.y[incidentEdges])
-            
+
             dist = (dx**2 + dy**2)
 
             di = scipy.mean(scipy.sqrt(dist))
 
-            
+
             neighbourPoints = edb[i][1]
-            
+
             incidentEdges = T.edge_db[edb[neighbourPoints[0]][0]]
             for j in range(1, len(neighbourPoints)):
                 incidentEdges = scipy.vstack((incidentEdges, T.edge_db[edb[neighbourPoints[j]][0]]))
             dx = scipy.diff(T.x[incidentEdges])
             dy = scipy.diff(T.y[incidentEdges])
-            
+
             dist = (dx**2 + dy**2)
-            
+
             din = scipy.mean(scipy.sqrt(dist))
-            
+
             #cs[i] = scipy.absolute(5 + di - 4*di/din)
             cs[i] = di
 
@@ -415,7 +421,7 @@ class LMGLCanvas(GLCanvas):
 
         #c = scipy.maximum(((b*b).sum(1)),((a*a).sum(1)))
         #c = scipy.median([(b*b).sum(1), (a*a).sum(1), (b2*b2).sum(1)])
-        
+
         #a_ = ((a*a).sum(1))
         #b_ = ((b*b).sum(1))
         #b2_ = ((b2*b2).sum(1))
@@ -441,7 +447,7 @@ class LMGLCanvas(GLCanvas):
 
         #self.c = c.ravel()
         self.c = scipy.vstack((c,c,c)).T.ravel()
-        
+
         vs = scipy.vstack((xs.ravel(), ys.ravel()))
         vs = vs.T.ravel().reshape(len(xs.ravel()), 2)
         self.vs_ = glVertexPointerf(vs)
@@ -457,7 +463,7 @@ class LMGLCanvas(GLCanvas):
 
     def setQuads(self, qt, maxDepth = 100, mdscale=False):
         lvs = qt.getLeaves(maxDepth)
-        
+
         xs = scipy.zeros((len(lvs), 4))
         ys = scipy.zeros((len(lvs), 4))
         c = scipy.zeros(len(lvs))
@@ -476,7 +482,7 @@ class LMGLCanvas(GLCanvas):
             c = c/(2**(2*maxdepth))
 
         self.c = scipy.vstack((c,c,c,c)).T.ravel()
-        
+
         vs = scipy.vstack((xs.ravel(), ys.ravel()))
         vs = vs.T.ravel().reshape(len(xs.ravel()), 2)
         vs_ = glVertexPointerf(vs)
@@ -493,7 +499,9 @@ class LMGLCanvas(GLCanvas):
         #cs = scipy.minimum(scipy.vstack((IScale[0]*self.c - zeroPt[0],IScale[1]*self.c - zeroPt[1],IScale[2]*self.c - zeroPt[2])), 1).astype('f')
 
         cs = self.cmap((self.c - self.clim[0])/(self.clim[1] - self.clim[0]))
-        print cs.shape
+        #print cs.shape
+        #print cs.shape
+        #print cs.strides
         cs = cs[:, :3] #if we have an alpha component chuck it
         cs = cs.ravel().reshape(len(self.c), 3)
         self.cs_ = glColorPointerf(cs)
@@ -513,7 +521,7 @@ class LMGLCanvas(GLCanvas):
         clim_upper = float(self.c[scipy.argsort(self.c)[len(self.c)*pctile]])
         self.setCLim([0.0, clim_upper])
 
-        
+
     def setView(self, xmin, xmax, ymin, ymax):
         self.xmin = xmin
         self.xmax = xmax
@@ -523,6 +531,8 @@ class LMGLCanvas(GLCanvas):
         self.pixelsize = (xmax - xmin)*1./self.Size[0]
 
         self.Refresh()
+        if 'OnGLViewChanged' in dir(self.parent):
+            self.parent.OnGLViewChanged()
 
     def pan(self, dx, dy):
         self.setView(self.xmin + dx, self.xmax + dx, self.ymin + dy, self.ymax + dy)
@@ -571,19 +581,19 @@ class LMGLCanvas(GLCanvas):
                 glColor3fv(self.cmap((i*mx - self.clim[0])/(self.clim[1] - self.clim[0]))[:3])
                 glVertex2f(lb_ul_x, lb_lr_y + i*lb_len)
                 glVertex2f(lb_ur_x, lb_lr_y + i*lb_len)
-            
+
             glEnd()
 
             glBegin(GL_LINE_LOOP)
             glColor3f(.5,.5,0)
             glVertex2f(lb_ul_x, lb_lr_y)
-            glVertex2f(lb_ur_x, lb_lr_y)          
+            glVertex2f(lb_ur_x, lb_lr_y)
             glVertex2f(lb_ur_x, lb_ur_y)
             glVertex2f(lb_ul_x, lb_ur_y)
             glEnd()
 
-            
-        
+
+
 
     def OnWheel(self, event):
         rot = event.GetWheelRotation()
@@ -596,13 +606,19 @@ class LMGLCanvas(GLCanvas):
 
         #print xp
         #print yp
+        
+        self.WheelZoom(rot, xp, yp)
+
+    def WheelZoom(self, rot, xp, yp):
+        view_size_x = self.xmax - self.xmin
+        view_size_y = self.ymax - self.ymin
 
         if rot < 0:
             #zoom out
             self.pixelsize *=2.
             self.setView(xp - view_size_x, xp + view_size_x,yp - view_size_y, yp + view_size_y )
-            
-            
+
+
 
         if rot > 0:
             #zoom in
@@ -612,7 +628,7 @@ class LMGLCanvas(GLCanvas):
     def getSnapshot(self, mode = GL_LUMINANCE):
         snap =  glReadPixelsf(0,0,self.Size[0],self.Size[1], mode)
 
-        snap.strides = (12,12*snap.shape[0], 4) 
+        snap.strides = (12,12*snap.shape[0], 4)
 
         return snap
 
@@ -620,7 +636,7 @@ class LMGLCanvas(GLCanvas):
         Imc = scipy.rand(len(x)) < mcp
         if type(jsig) == numpy.ndarray:
             jsig = jsig[Imc]
-        T = delaunay.Triangulation(x[Imc] +  jsig*scipy.randn(Imc.sum()), y[Imc] +  jsig*scipy.randn(Imc.sum()))    
+        T = delaunay.Triangulation(x[Imc] +  jsig*scipy.randn(Imc.sum()), y[Imc] +  jsig*scipy.randn(Imc.sum()))
         self.setTriang(T)
 
 
@@ -630,7 +646,7 @@ class LMGLCanvas(GLCanvas):
         if type(jsig) == numpy.ndarray:
             jsig = jsig[Imc]
         for xi, yi in zip(x[Imc] +  jsig*scipy.randn(Imc.sum()), y[Imc] +  jsig*scipy.randn(Imc.sum())):
-            qt.insert(pointQT.qtRec(xi, yi, None))    
+            qt.insert(pointQT.qtRec(xi, yi, None))
         self.setQuads(qt, 100, True)
 
     def genJitQim(self,n, x,y,jsig, mcp, pixelSize=None):
@@ -638,17 +654,18 @@ class LMGLCanvas(GLCanvas):
         self.setPercentileCLim(.99)
         self.GetParent().Raise()
         self.OnDraw()
-        
+
         h_ = self.getSnapshot(GL_RGB)
-        
+
         for i in range(n - 1):
-            self.jitMCQ(x,y,jsig, mcp) 
+            self.jitMCQ(x,y,jsig, mcp)
             self.OnDraw()
             h_ += self.getSnapshot(GL_RGB)
-        
+
         return h_/n
 
     def genJitTim(self,n, x,y,jsig, mcp, pixelSize=None):
+        status = statusLog.StatusLogger('Jittering image ...')
         #turn LUT and scalebar off
         sbl = self.scaleBarLength
         self.scaleBarLength = None
@@ -662,11 +679,12 @@ class LMGLCanvas(GLCanvas):
         #h_ = self.getSnapshot(GL_RGB)
         h_ = self.getIm(pixelSize)
         for i in range(n - 1):
-            self.jitMCT(x,y,jsig, mcp) 
+            status.setStatus('Jittering image - permutation %d of %d' %(i+2, n))
+            self.jitMCT(x,y,jsig, mcp)
             #self.OnDraw()
             #h_ += self.getSnapshot(GL_RGB)
             h_ += self.getIm(pixelSize)
-        
+
         self.scaleBarLength = sbl
 
         return h_/n
@@ -676,6 +694,7 @@ class LMGLCanvas(GLCanvas):
             self.OnDraw()
             return self.getSnapshot(GL_RGB)
         else:
+            status = statusLog.StatusLogger('Tiling image ...')
             #save a copy of the viewport
             minx, maxx, miny, maxy  = (self.xmin, self.xmax, self.ymin, self.ymax)
             #and scalebar and LUT settings
@@ -714,11 +733,12 @@ class LMGLCanvas(GLCanvas):
                 #print x0
 
                 xp = numpy.floor((x0 - minx)/pixelSize)
-                xd = min(xp+sx, nx) - xp 
+                xd = min(xp+sx, nx) - xp
 
                 #print 'xp = %3.2f, xd = %3.2f' %(xp, xd)
 
                 for y0 in numpy.arange(miny, maxy, syn):
+                    status.setStatus('Tiling Image at %3.2f, %3.2f' %(x0, y0))
                     self.ymin = y0
                     self.ymax = y0 + syn
 
@@ -731,7 +751,7 @@ class LMGLCanvas(GLCanvas):
                     #print tile.shape
                     #print h[xp:(xp + xd), yp:(yp + yd)].shape
                     #print tile[:xd, :yd].shape
-                    
+
                     h[xp:(xp + xd), yp:(yp + yd)] = tile[:xd, :yd]
 
             #restore viewport
@@ -741,24 +761,24 @@ class LMGLCanvas(GLCanvas):
 
             self.Refresh()
             return h
-                    
-            
-            
-        
-        
+
+
+
+
+
 def showGLFrame():
     f = wx.Frame(None, size=(800,800))
     c = LMGLCanvas(f)
     f.Show()
     return c
-        
+
 
 def genMapColouring(T):
     '''Assigns a colour to each of the underlying points of a triangulation (T)
     such that no neighbours have the same colour. To keep complexity down, does
     not do any juggling to reduce the number of colours used to the theoretical
     4. For use with the voronoi diagram visualisation to illustrate the voronoi
-    domains (use a colour map with plenty of colours & not too much intensity 
+    domains (use a colour map with plenty of colours & not too much intensity
     variation - e.g. hsv).'''
 
     cols = scipy.zeros(T.x.shape)
@@ -773,7 +793,7 @@ def genMapColouring(T):
         #if one of our neighbours already has the candidate colour, increment
         while cand in cols[neighb]:
             cand +=1
-        
+
         #else assign candidate as new point colour
         cols[i] = cand
 

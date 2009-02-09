@@ -121,6 +121,8 @@ class MyViewPanel(viewpanel.ViewPanel):
         #self.imagepanel.PrepareDC(dc)
         #dc.BeginDrawing()
         #mdc = wx.MemoryDC(dc)
+
+        dc.Clear()
         
         s = self.CalcImSize()
         im = wx.EmptyImage(s[0],s[1])

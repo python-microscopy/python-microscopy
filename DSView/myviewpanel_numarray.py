@@ -168,6 +168,7 @@ class MyViewPanel(viewpanel.ViewPanel):
         #im = wx.EmptyImage(s[0],s[1])
         #bmp = im.GetDataBuffer()
         #self.rend.pyRender(bmp,self.ds)
+        dc.Clear()
                                      
         im = self.Render()
         

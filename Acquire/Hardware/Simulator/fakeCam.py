@@ -202,7 +202,6 @@ class FakeCamera:
         raise Exception, 'Not implemented yet!!'
     
     def ExtractColor(self, chSlice, mode): 
-        #raise Exception, 'Not implemented yet - FIXME!!'
         #im = self.noiseMaker.noisify(rend_im.simPalmIm(self.XVals, self.YVals, self.zPiezo.GetPos() - self.zOffset,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime*1e-3))[:,:].astype('uint16')
         
         #chSlice[:,:] = self.noiseMaker.noisify(rend_im.simPalmIm(self.XVals, self.YVals, (self.zPiezo.GetPos() - self.zOffset)*1e3,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime*1e-3))[:,:].astype('uint16')
