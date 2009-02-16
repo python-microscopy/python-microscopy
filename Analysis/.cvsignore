@@ -8,6 +8,7 @@ MetaData.pyc
 __init__.pyc
 _fithelpers.pyc
 deMod.pyc
+driftCorrProc.pyc
 driftCorrTools.pyc
 fitIO.pyc
 intensProf.pyc

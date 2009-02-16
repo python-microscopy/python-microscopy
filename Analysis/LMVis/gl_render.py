@@ -1,11 +1,11 @@
 from wx.glcanvas import GLCanvas
 import wx
 #from OpenGL.GLUT import *
-from OpenGL.GLU import *
+#from OpenGL.GLU import *
 from OpenGL.GL import *
 import sys,math
 #import sys
-import scipy
+import numpy
 import Image
 from scikits import delaunay
 from PYME.Analysis.QuadTree import pointQT
@@ -21,10 +21,10 @@ class cmap_mult:
         self.zeros = zeros
 
     def __call__(self, cvals):
-        return scipy.minimum(scipy.vstack((self.gains[0]*cvals - self.zeros[0],self.gains[1]*cvals - self.zeros[1],self.gains[2]*cvals - self.zeros[2])), 1).astype('f').T
+        return numpy.minimum(numpy.vstack((self.gains[0]*cvals - self.zeros[0],self.gains[1]*cvals - self.zeros[1],self.gains[2]*cvals - self.zeros[2])), 1).astype('f').T
 
-cm_hot = cmap_mult(8.0*scipy.ones(3)/3, [0, 3.0/8, 6.0/8])
-cm_grey = cmap_mult(scipy.ones(3), [0, 0, 0])
+cm_hot = cmap_mult(8.0*numpy.ones(3)/3, [0, 3.0/8, 6.0/8])
+cm_grey = cmap_mult(numpy.ones(3), [0, 0, 0])
 
 class LMGLCanvas(GLCanvas):
     def __init__(self, parent):
@@ -67,7 +67,7 @@ class LMGLCanvas(GLCanvas):
 
         self.drawModes = {'triang':GL_TRIANGLES, 'quads':GL_QUADS, 'edges':GL_LINES, 'points':GL_POINTS}
 
-        self.c = scipy.array([1,1,1])
+        self.c = numpy.array([1,1,1])
         return
 
     def OnPaint(self,event):
@@ -115,7 +115,7 @@ class LMGLCanvas(GLCanvas):
             #glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
             glPushMatrix ()
 
-            #glTranslatef (self.blurSigma*scipy.randn(), self.blurSigma*scipy.randn(),0.0)
+            #glTranslatef (self.blurSigma*numpy.randn(), self.blurSigma*numpy.randn(),0.0)
 
             glDrawArrays(self.drawModes[self.mode], 0, self.nVertices)
 
@@ -163,8 +163,8 @@ class LMGLCanvas(GLCanvas):
         glEnableClientState(GL_VERTEX_ARRAY)
         glEnableClientState(GL_COLOR_ARRAY)
 
-        self.vs = glVertexPointerf(scipy.array([[5, 5],[10000, 10000], [10000, 5]]).astype('f'))
-        self.cs = glColorPointerf(scipy.ones((3,3)).astype('f'))
+        self.vs = glVertexPointerf(numpy.array([[5, 5],[10000, 10000], [10000, 5]]).astype('f'))
+        self.cs = glColorPointerf(numpy.ones((3,3)).astype('f'))
 
         self.nVertices = 3
 
@@ -183,20 +183,20 @@ class LMGLCanvas(GLCanvas):
         xs = T.x[T.triangle_nodes]
         ys = T.y[T.triangle_nodes]
 
-        a = scipy.vstack((xs[:,0] - xs[:,1], ys[:,0] - ys[:,1])).T
-        b = scipy.vstack((xs[:,0] - xs[:,2], ys[:,0] - ys[:,2])).T
-        b2 = scipy.vstack((xs[:,1] - xs[:,2], ys[:,1] - ys[:,2])).T
+        a = numpy.vstack((xs[:,0] - xs[:,1], ys[:,0] - ys[:,1])).T
+        b = numpy.vstack((xs[:,0] - xs[:,2], ys[:,0] - ys[:,2])).T
+        b2 = numpy.vstack((xs[:,1] - xs[:,2], ys[:,1] - ys[:,2])).T
 
         #area of triangle
-        #c = 0.5*scipy.sqrt((b*b).sum(1) - ((a*b).sum(1)**2)/(a*a).sum(1))*scipy.sqrt((a*a).sum(1))
+        #c = 0.5*numpy.sqrt((b*b).sum(1) - ((a*b).sum(1)**2)/(a*a).sum(1))*numpy.sqrt((a*a).sum(1))
 
-        #c = 0.5*scipy.sqrt((b*b).sum(1)*(a*a).sum(1) - ((a*b).sum(1)**2))
+        #c = 0.5*numpy.sqrt((b*b).sum(1)*(a*a).sum(1) - ((a*b).sum(1)**2))
 
-        #c = scipy.maximum(((b*b).sum(1)),((a*a).sum(1)))
+        #c = numpy.maximum(((b*b).sum(1)),((a*a).sum(1)))
         if numpy.version.version > '1.2':
-            c = scipy.median([(b * b).sum(1), (a * a).sum(1), (b2 * b2).sum(1)], 0)
+            c = numpy.median([(b * b).sum(1), (a * a).sum(1), (b2 * b2).sum(1)], 0)
         else:
-            c = scipy.median([(b * b).sum(1), (a * a).sum(1), (b2 * b2).sum(1)])
+            c = numpy.median([(b * b).sum(1), (a * a).sum(1), (b2 * b2).sum(1)])
 
         a_ = ((a*a).sum(1))
         b_ = ((b*b).sum(1))
@@ -205,15 +205,15 @@ class LMGLCanvas(GLCanvas):
         #c = 1.0/(c + c_neighbours + 1)
         c = 1.0/(c + 1)
 
-        self.c = scipy.vstack((c,c,c)).T.ravel()
-        #self.c = scipy.vstack((1.0/(a_*b_ + 1),1.0/(a_*b2_ + 1),1.0/(b_*b2_ + 1))).T.ravel()
+        self.c = numpy.vstack((c,c,c)).T.ravel()
+        #self.c = numpy.vstack((1.0/(a_*b_ + 1),1.0/(a_*b2_ + 1),1.0/(b_*b2_ + 1))).T.ravel()
 
-        #self.c = scipy.sqrt(self.c)
-        vs = scipy.vstack((xs.ravel(), ys.ravel()))
+        #self.c = numpy.sqrt(self.c)
+        vs = numpy.vstack((xs.ravel(), ys.ravel()))
         vs = vs.T.ravel().reshape(len(xs.ravel()), 2)
         self.vs_ = glVertexPointerf(vs)
 
-        #cs = scipy.minimum(scipy.vstack((self.IScale[0]*c,self.IScale[1]*c,self.IScale[2]*c)), 1).astype('f')
+        #cs = numpy.minimum(numpy.vstack((self.IScale[0]*c,self.IScale[1]*c,self.IScale[2]*c)), 1).astype('f')
         #cs = cs.T.ravel().reshape(len(c), 3)
         #cs_ = glColorPointerf(cs)
 
@@ -224,15 +224,15 @@ class LMGLCanvas(GLCanvas):
 
     def setPoints(self, x, y, c = None):
         if c == None:
-            self.c = scipy.ones(x.shape).ravel()
+            self.c = numpy.ones(x.shape).ravel()
         else:
             self.c = c
 
-        vs = scipy.vstack((x.ravel(), y.ravel()))
+        vs = numpy.vstack((x.ravel(), y.ravel()))
         vs = vs.T.ravel().reshape(len(x.ravel()), 2)
         self.vs_ = glVertexPointerf(vs)
 
-        #cs = scipy.minimum(scipy.vstack((self.IScale[0]*c,self.IScale[1]*c,self.IScale[2]*c)), 1).astype('f')
+        #cs = numpy.minimum(numpy.vstack((self.IScale[0]*c,self.IScale[1]*c,self.IScale[2]*c)), 1).astype('f')
         #cs = cs.T.ravel().reshape(len(c), 3)
         #cs_ = glColorPointerf(cs)
 
@@ -264,13 +264,13 @@ class LMGLCanvas(GLCanvas):
 
         for i in range(len(T.x)):
             #get triangles around point
-            impingentTriangs = tdb[i] #scipy.where(T.triangle_nodes == i)[0]
+            impingentTriangs = tdb[i] #numpy.where(T.triangle_nodes == i)[0]
             if len(impingentTriangs) >= 3:
 
                 circumcenters = T.circumcenters[impingentTriangs] #get their circumcenters
 
                 #add current point - to deal with edge cases
-                newPts = scipy.array(list(circumcenters) + [[T.x[i], T.y[i]]])
+                newPts = numpy.array(list(circumcenters) + [[T.x[i], T.y[i]]])
 
                 #re-triangulate (we could try and sort the triangles somehow, but this is easier)
                 T2 = delaunay.Triangulation(newPts[:,0],newPts[:,1] )
@@ -280,21 +280,21 @@ class LMGLCanvas(GLCanvas):
                 xs = T2.x[T2.triangle_nodes]
                 ys = T2.y[T2.triangle_nodes]
 
-                a = scipy.vstack((xs[:,0] - xs[:,1], ys[:,0] - ys[:,1])).T
-                b = scipy.vstack((xs[:,0] - xs[:,2], ys[:,0] - ys[:,2])).T
+                a = numpy.vstack((xs[:,0] - xs[:,1], ys[:,0] - ys[:,1])).T
+                b = numpy.vstack((xs[:,0] - xs[:,2], ys[:,0] - ys[:,2])).T
 
                 #area of triangle
-                c = 0.5*scipy.sqrt((b*b).sum(1) - ((a*b).sum(1)**2)/(a*a).sum(1))*scipy.sqrt((a*a).sum(1))
+                c = 0.5*numpy.sqrt((b*b).sum(1) - ((a*b).sum(1)**2)/(a*a).sum(1))*numpy.sqrt((a*a).sum(1))
 
-                #c = scipy.maximum(((b*b).sum(1)),((a*a).sum(1)))
+                #c = numpy.maximum(((b*b).sum(1)),((a*a).sum(1)))
 
                 #c_neighbours = c[T.triangle_neighbors].sum(1)
                 #c = 1.0/(c + c_neighbours + 1)
-                c = c.sum()*scipy.ones(c.shape)
+                c = c.sum()*numpy.ones(c.shape)
                 c = 1.0/(c + 1)
 
                 if not area_colouring:
-                    c = cp[i]*scipy.ones(c.shape)
+                    c = cp[i]*numpy.ones(c.shape)
 
                 #print xs.shape
                 #print c.shape
@@ -304,18 +304,18 @@ class LMGLCanvas(GLCanvas):
                     ys_ = ys
                     c_ = c
                 else:
-                    xs_ = scipy.vstack((xs_, xs))
-                    ys_ = scipy.vstack((ys_, ys))
-                    c_ = scipy.hstack((c_, c))
+                    xs_ = numpy.vstack((xs_, xs))
+                    ys_ = numpy.vstack((ys_, ys))
+                    c_ = numpy.hstack((c_, c))
 
 
-        self.c = scipy.vstack((c_,c_,c_)).T.ravel()
+        self.c = numpy.vstack((c_,c_,c_)).T.ravel()
 
-        vs = scipy.vstack((xs_.ravel(), ys_.ravel()))
+        vs = numpy.vstack((xs_.ravel(), ys_.ravel()))
         vs = vs.T.ravel().reshape(len(xs_.ravel()), 2)
         self.vs_ = glVertexPointerf(vs)
 
-        #cs = scipy.minimum(scipy.vstack((self.IScale[0]*c,self.IScale[1]*c,self.IScale[2]*c)), 1).astype('f')
+        #cs = numpy.minimum(numpy.vstack((self.IScale[0]*c,self.IScale[1]*c,self.IScale[2]*c)), 1).astype('f')
         #cs = cs.T.ravel().reshape(len(c), 3)
         #cs_ = glColorPointerf(cs)
 
@@ -329,24 +329,24 @@ class LMGLCanvas(GLCanvas):
         xs = T.x[T.edge_db]
         ys = T.y[T.edge_db]
 
-        a = scipy.vstack((xs[:,0] - xs[:,1], ys[:,0] - ys[:,1])).T
-        #b = scipy.vstack((xs[:,0] - xs[:,2], ys[:,0] - ys[:,2])).T
+        a = numpy.vstack((xs[:,0] - xs[:,1], ys[:,0] - ys[:,1])).T
+        #b = numpy.vstack((xs[:,0] - xs[:,2], ys[:,0] - ys[:,2])).T
 
         #area of triangle
-        #c = 0.5*scipy.sqrt((b*b).sum(1) - ((a*b).sum(1)**2)/(a*a).sum(1))*scipy.sqrt((a*a).sum(1))
+        #c = 0.5*numpy.sqrt((b*b).sum(1) - ((a*b).sum(1)**2)/(a*a).sum(1))*numpy.sqrt((a*a).sum(1))
 
         c = ((a*a).sum(1))
 
         #c_neighbours = c[T.triangle_neighbors].sum(1)
         c = 1.0/(c + 1)
 
-        self.c = scipy.vstack((c,c)).T.ravel()
+        self.c = numpy.vstack((c,c)).T.ravel()
 
-        vs = scipy.vstack((xs.ravel(), ys.ravel()))
+        vs = numpy.vstack((xs.ravel(), ys.ravel()))
         vs = vs.T.ravel().reshape(len(xs.ravel()), 2)
         self.vs_ = glVertexPointerf(vs)
 
-        #cs = scipy.minimum(scipy.vstack((self.IScale[0]*c,self.IScale[1]*c,self.IScale[2]*c)), 1).astype('f')
+        #cs = numpy.minimum(numpy.vstack((self.IScale[0]*c,self.IScale[1]*c,self.IScale[2]*c)), 1).astype('f')
         #cs = cs.T.ravel().reshape(len(c), 3)
         #cs_ = glColorPointerf(cs)
 
@@ -371,7 +371,7 @@ class LMGLCanvas(GLCanvas):
 
 
         #gen colour array
-        cs = scipy.zeros(T.x.shape)
+        cs = numpy.zeros(T.x.shape)
 
         for i in range(len(T.x)):
             incidentEdges = T.edge_db[edb[i][0]]
@@ -379,28 +379,28 @@ class LMGLCanvas(GLCanvas):
 
             #incidentEdges = T.edge_db[edb[neighbourPoints[0]][0]]
             #for j in range(1, len(neighbourPoints)):
-            #    incidentEdges = scipy.vstack((incidentEdges, T.edge_db[edb[neighbourPoints[j]][0]]))
-            dx = scipy.diff(T.x[incidentEdges])
-            dy = scipy.diff(T.y[incidentEdges])
+            #    incidentEdges = numpy.vstack((incidentEdges, T.edge_db[edb[neighbourPoints[j]][0]]))
+            dx = numpy.diff(T.x[incidentEdges])
+            dy = numpy.diff(T.y[incidentEdges])
 
             dist = (dx**2 + dy**2)
 
-            di = scipy.mean(scipy.sqrt(dist))
+            di = numpy.mean(numpy.sqrt(dist))
 
 
             neighbourPoints = edb[i][1]
 
             incidentEdges = T.edge_db[edb[neighbourPoints[0]][0]]
             for j in range(1, len(neighbourPoints)):
-                incidentEdges = scipy.vstack((incidentEdges, T.edge_db[edb[neighbourPoints[j]][0]]))
-            dx = scipy.diff(T.x[incidentEdges])
-            dy = scipy.diff(T.y[incidentEdges])
+                incidentEdges = numpy.vstack((incidentEdges, T.edge_db[edb[neighbourPoints[j]][0]]))
+            dx = numpy.diff(T.x[incidentEdges])
+            dy = numpy.diff(T.y[incidentEdges])
 
             dist = (dx**2 + dy**2)
 
-            din = scipy.mean(scipy.sqrt(dist))
+            din = numpy.mean(numpy.sqrt(dist))
 
-            #cs[i] = scipy.absolute(5 + di - 4*di/din)
+            #cs[i] = numpy.absolute(5 + di - 4*di/din)
             cs[i] = di
 
         cs = 1.0/cs**2
@@ -409,18 +409,18 @@ class LMGLCanvas(GLCanvas):
         xs = T.x[T.triangle_nodes]
         ys = T.y[T.triangle_nodes]
 
-        #a = scipy.vstack((xs[:,0] - xs[:,1], ys[:,0] - ys[:,1])).T
-        #b = scipy.vstack((xs[:,0] - xs[:,2], ys[:,0] - ys[:,2])).T
+        #a = numpy.vstack((xs[:,0] - xs[:,1], ys[:,0] - ys[:,1])).T
+        #b = numpy.vstack((xs[:,0] - xs[:,2], ys[:,0] - ys[:,2])).T
 
-        #b2 = scipy.vstack((xs[:,1] - xs[:,2], ys[:,1] - ys[:,2])).T
+        #b2 = numpy.vstack((xs[:,1] - xs[:,2], ys[:,1] - ys[:,2])).T
 
         #area of triangle
-        #c = 0.5*scipy.sqrt((b*b).sum(1) - ((a*b).sum(1)**2)/(a*a).sum(1))*scipy.sqrt((a*a).sum(1))
+        #c = 0.5*numpy.sqrt((b*b).sum(1) - ((a*b).sum(1)**2)/(a*a).sum(1))*numpy.sqrt((a*a).sum(1))
 
-        #c = 0.5*scipy.sqrt((b*b).sum(1)*(a*a).sum(1) - ((a*b).sum(1)**2))
+        #c = 0.5*numpy.sqrt((b*b).sum(1)*(a*a).sum(1) - ((a*b).sum(1)**2))
 
-        #c = scipy.maximum(((b*b).sum(1)),((a*a).sum(1)))
-        #c = scipy.median([(b*b).sum(1), (a*a).sum(1), (b2*b2).sum(1)])
+        #c = numpy.maximum(((b*b).sum(1)),((a*a).sum(1)))
+        #c = numpy.median([(b*b).sum(1), (a*a).sum(1), (b2*b2).sum(1)])
 
         #a_ = ((a*a).sum(1))
         #b_ = ((b*b).sum(1))
@@ -429,30 +429,30 @@ class LMGLCanvas(GLCanvas):
         #c = 1.0/(c + c_neighbours + 1)
         #c = 1.0/(c + 1)
 
-        #self.c = scipy.vstack((c,c,c)).T.ravel()
-        #self.c = scipy.vstack((1.0/(a_*b_ + 1),1.0/(a_*b2_ + 1),1.0/(b_*b2_ + 1))).T.ravel()
+        #self.c = numpy.vstack((c,c,c)).T.ravel()
+        #self.c = numpy.vstack((1.0/(a_*b_ + 1),1.0/(a_*b2_ + 1),1.0/(b_*b2_ + 1))).T.ravel()
 
         c = cs[T.triangle_nodes]
 
         c = c.mean(1)
 
         #area of triangle
-        #c = 0.5*scipy.sqrt((b*b).sum(1) - ((a*b).sum(1)**2)/(a*a).sum(1))*scipy.sqrt((a*a).sum(1))
+        #c = 0.5*numpy.sqrt((b*b).sum(1) - ((a*b).sum(1)**2)/(a*a).sum(1))*numpy.sqrt((a*a).sum(1))
 
-        #c = scipy.maximum(((b*b).sum(1)),((a*a).sum(1)))
+        #c = numpy.maximum(((b*b).sum(1)),((a*a).sum(1)))
 
         #c_neighbours = c[T.triangle_neighbors].sum(1)
         #c = 1.0/(c + c_neighbours + 1)
         #c = 1.0/(c + 1)
 
         #self.c = c.ravel()
-        self.c = scipy.vstack((c,c,c)).T.ravel()
+        self.c = numpy.vstack((c,c,c)).T.ravel()
 
-        vs = scipy.vstack((xs.ravel(), ys.ravel()))
+        vs = numpy.vstack((xs.ravel(), ys.ravel()))
         vs = vs.T.ravel().reshape(len(xs.ravel()), 2)
         self.vs_ = glVertexPointerf(vs)
 
-        #cs = scipy.minimum(scipy.vstack((self.IScale[0]*c,self.IScale[1]*c,self.IScale[2]*c)), 1).astype('f')
+        #cs = numpy.minimum(numpy.vstack((self.IScale[0]*c,self.IScale[1]*c,self.IScale[2]*c)), 1).astype('f')
         #cs = cs.T.ravel().reshape(len(c), 3)
         #cs_ = glColorPointerf(cs)
 
@@ -464,9 +464,9 @@ class LMGLCanvas(GLCanvas):
     def setQuads(self, qt, maxDepth = 100, mdscale=False):
         lvs = qt.getLeaves(maxDepth)
 
-        xs = scipy.zeros((len(lvs), 4))
-        ys = scipy.zeros((len(lvs), 4))
-        c = scipy.zeros(len(lvs))
+        xs = numpy.zeros((len(lvs), 4))
+        ys = numpy.zeros((len(lvs), 4))
+        c = numpy.zeros(len(lvs))
 
         i = 0
 
@@ -481,9 +481,9 @@ class LMGLCanvas(GLCanvas):
         if not mdscale:
             c = c/(2**(2*maxdepth))
 
-        self.c = scipy.vstack((c,c,c,c)).T.ravel()
+        self.c = numpy.vstack((c,c,c,c)).T.ravel()
 
-        vs = scipy.vstack((xs.ravel(), ys.ravel()))
+        vs = numpy.vstack((xs.ravel(), ys.ravel()))
         vs = vs.T.ravel().reshape(len(xs.ravel()), 2)
         vs_ = glVertexPointerf(vs)
 
@@ -496,7 +496,7 @@ class LMGLCanvas(GLCanvas):
         #self.IScale = IScale
         #self.zeroPt = zeroPt
 
-        #cs = scipy.minimum(scipy.vstack((IScale[0]*self.c - zeroPt[0],IScale[1]*self.c - zeroPt[1],IScale[2]*self.c - zeroPt[2])), 1).astype('f')
+        #cs = numpy.minimum(numpy.vstack((IScale[0]*self.c - zeroPt[0],IScale[1]*self.c - zeroPt[1],IScale[2]*self.c - zeroPt[2])), 1).astype('f')
 
         cs = self.cmap((self.c - self.clim[0])/(self.clim[1] - self.clim[0]))
         #print cs.shape
@@ -518,7 +518,7 @@ class LMGLCanvas(GLCanvas):
 
     def setPercentileCLim(self, pctile):
         '''set clim based on a certain percentile'''
-        clim_upper = float(self.c[scipy.argsort(self.c)[len(self.c)*pctile]])
+        clim_upper = float(self.c[numpy.argsort(self.c)[len(self.c)*pctile]])
         self.setCLim([0.0, clim_upper])
 
 
@@ -570,13 +570,13 @@ class LMGLCanvas(GLCanvas):
 
             lb_len = lb_ur_y - lb_lr_y
 
-            #sc = mx*scipy.array(self.IScale)
-            #zp = scipy.array(self.zeroPt)
+            #sc = mx*numpy.array(self.IScale)
+            #zp = numpy.array(self.zeroPt)
             #sc = mx
 
             glBegin(GL_QUAD_STRIP)
 
-            for i in scipy.arange(0,1, .001):
+            for i in numpy.arange(0,1, .001):
                 #glColor3fv(i*sc - zp)
                 glColor3fv(self.cmap((i*mx - self.clim[0])/(self.clim[1] - self.clim[0]))[:3])
                 glVertex2f(lb_ul_x, lb_lr_y + i*lb_len)
@@ -633,19 +633,19 @@ class LMGLCanvas(GLCanvas):
         return snap
 
     def jitMCT(self,x,y,jsig, mcp):
-        Imc = scipy.rand(len(x)) < mcp
+        Imc = numpy.rand(len(x)) < mcp
         if type(jsig) == numpy.ndarray:
             jsig = jsig[Imc]
-        T = delaunay.Triangulation(x[Imc] +  jsig*scipy.randn(Imc.sum()), y[Imc] +  jsig*scipy.randn(Imc.sum()))
+        T = delaunay.Triangulation(x[Imc] +  jsig*numpy.randn(Imc.sum()), y[Imc] +  jsig*numpy.randn(Imc.sum()))
         self.setTriang(T)
 
 
     def jitMCQ(self,x,y,jsig, mcp):
-        Imc = scipy.rand(len(x)) < mcp
+        Imc = numpy.rand(len(x)) < mcp
         qt = pointQT.qtRoot(-250,250, 0, 500)
         if type(jsig) == numpy.ndarray:
             jsig = jsig[Imc]
-        for xi, yi in zip(x[Imc] +  jsig*scipy.randn(Imc.sum()), y[Imc] +  jsig*scipy.randn(Imc.sum())):
+        for xi, yi in zip(x[Imc] +  jsig*numpy.randn(Imc.sum()), y[Imc] +  jsig*numpy.randn(Imc.sum())):
             qt.insert(pointQT.qtRec(xi, yi, None))
         self.setQuads(qt, 100, True)
 
@@ -781,13 +781,13 @@ def genMapColouring(T):
     domains (use a colour map with plenty of colours & not too much intensity
     variation - e.g. hsv).'''
 
-    cols = scipy.zeros(T.x.shape)
+    cols = numpy.zeros(T.x.shape)
 
     for i in range(len(cols)):
         cand = 1 #candidate colour
 
         #find neighbouring points
-        ix, iy = scipy.where(T.edge_db == i)
+        ix, iy = numpy.where(T.edge_db == i)
         neighb = T.edge_db[ix, (1-iy)]
 
         #if one of our neighbours already has the candidate colour, increment
