@@ -123,6 +123,7 @@ class MyViewPanel(viewpanel.ViewPanel):
         wx.EVT_BUTTON(self, self.bShowOpts.GetId(), self.ShowOpts)
         wx.EVT_ERASE_BACKGROUND(self.imagepanel, self.DoNix)
         wx.EVT_ERASE_BACKGROUND(self, self.DoNix)
+        
     def SetDataStack(self, ds):
         self.ds = DataWrap(ds)
         self.imagepanel.SetVirtualSize(wx.Size(self.ds.getWidth(),self.ds.getHeight()))
@@ -158,6 +159,7 @@ class MyViewPanel(viewpanel.ViewPanel):
         self.SetOpts()
         self.Layout()
         self.Refresh()
+        
     def DoPaint(self, dc):
         #dc = wx.PaintDC(self.imagepanel)
         #self.imagepanel.PrepareDC(dc)
@@ -233,6 +235,7 @@ class MyViewPanel(viewpanel.ViewPanel):
                 dc.DrawRectangle(ly*sc,lx*sc, (hy-ly)*sc,(hx-lx)*sc)
             dc.SetPen(wx.NullPen)
             dc.SetBrush(wx.NullBrush)
+            
     def OnPaint(self,event):
         DC = wx.PaintDC(self.imagepanel)
         self.imagepanel.PrepareDC(DC)
@@ -256,6 +259,7 @@ class MyViewPanel(viewpanel.ViewPanel):
             #MemDC.SelectObject(OldBitmap)
             del MemDC
             del MemBitmap
+            
     def OnWheel(self, event):
         rot = event.GetWheelRotation()
         if rot < 0:
@@ -303,6 +307,7 @@ class MyViewPanel(viewpanel.ViewPanel):
         else:
             self.cbSlice.SetSelection(3)
         self.cbScale.SetSelection(self.scale)
+        
     def GetOpts(self,event=None):
         if (self.updating == 0):
             self.do.Chans[2]=(self.cbRedChan.GetSelection() - 1)
@@ -331,12 +336,14 @@ class MyViewPanel(viewpanel.ViewPanel):
             s = self.CalcImSize()
             self.imagepanel.SetVirtualSize(wx.Size(s[0]*sc,s[1]*sc))
             self.imagepanel.Refresh()
+            
     def Optim(self, event = None):
         self.do.Optimise(self.ds, self.zp)
         self.updating=1
         self.SetOpts()
         self.Refresh()
         self.updating=0
+        
     def CalcImSize(self):
         if (self.do.slice == self.do.SLICE_XY):
             if (self.do.orientation == self.do.UPRIGHT):
@@ -347,8 +354,10 @@ class MyViewPanel(viewpanel.ViewPanel):
             return (self.ds.shape[0],self.ds.shape[2])
         else:
             return(self.ds.shape[1],self.ds.shape[2] )
+        
     def DoNix(self, event):
         pass
+    
     def ShowOpts(self, event):
         if (self.showOptsPanel == 1):
             self.showOptsPanel = 0
@@ -358,6 +367,7 @@ class MyViewPanel(viewpanel.ViewPanel):
             self.showOptsPanel = 1
             self.GetSizer().Show(self.optionspanel, 1)
             self.Layout()
+            
     def OnLeftClick(self,event):
         dc = wx.ClientDC(self.imagepanel)
         self.imagepanel.PrepareDC(dc)
@@ -393,6 +403,7 @@ class MyViewPanel(viewpanel.ViewPanel):
         elif (self.do.slice == self.do.SLICE_YZ):
             self.selection_begin_y = int(pos[0]/sc)
             self.selection_begin_z = int(pos[1]/sc)
+            
     def OnRightUp(self,event):
         dc = wx.ClientDC(self.imagepanel)
         self.imagepanel.PrepareDC(dc)
@@ -430,6 +441,7 @@ class MyViewPanel(viewpanel.ViewPanel):
         self.selection_end_x = e_x
         self.selection_end_y = e_y
         self.selection_end_z = e_z
+        
     def Render(self):
         #XY
         if self.do.slice == DisplayOpts.SLICE_XY:

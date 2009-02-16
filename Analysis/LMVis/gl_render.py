@@ -9,7 +9,7 @@ import numpy
 import Image
 from scikits import delaunay
 from PYME.Analysis.QuadTree import pointQT
-import numpy
+import scipy
 
 import statusLog
 
@@ -115,7 +115,7 @@ class LMGLCanvas(GLCanvas):
             #glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
             glPushMatrix ()
 
-            #glTranslatef (self.blurSigma*numpy.randn(), self.blurSigma*numpy.randn(),0.0)
+            #glTranslatef (self.blurSigma*scipy.randn(), self.blurSigma*scipy.randn(),0.0)
 
             glDrawArrays(self.drawModes[self.mode], 0, self.nVertices)
 
@@ -633,19 +633,19 @@ class LMGLCanvas(GLCanvas):
         return snap
 
     def jitMCT(self,x,y,jsig, mcp):
-        Imc = numpy.rand(len(x)) < mcp
+        Imc = scipy.rand(len(x)) < mcp
         if type(jsig) == numpy.ndarray:
             jsig = jsig[Imc]
-        T = delaunay.Triangulation(x[Imc] +  jsig*numpy.randn(Imc.sum()), y[Imc] +  jsig*numpy.randn(Imc.sum()))
+        T = delaunay.Triangulation(x[Imc] +  jsig*scipy.randn(Imc.sum()), y[Imc] +  jsig*scipy.randn(Imc.sum()))
         self.setTriang(T)
 
 
     def jitMCQ(self,x,y,jsig, mcp):
-        Imc = numpy.rand(len(x)) < mcp
+        Imc = scipy.rand(len(x)) < mcp
         qt = pointQT.qtRoot(-250,250, 0, 500)
         if type(jsig) == numpy.ndarray:
             jsig = jsig[Imc]
-        for xi, yi in zip(x[Imc] +  jsig*numpy.randn(Imc.sum()), y[Imc] +  jsig*numpy.randn(Imc.sum())):
+        for xi, yi in zip(x[Imc] +  jsig*scipy.randn(Imc.sum()), y[Imc] +  jsig*scipy.randn(Imc.sum())):
             qt.insert(pointQT.qtRec(xi, yi, None))
         self.setQuads(qt, 100, True)
 

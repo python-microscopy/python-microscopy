@@ -77,6 +77,8 @@ class DSViewFrame(wx.Frame):
         self.notebook1 = AuiNotebookWithFloatingPages(id=-1, parent=self, pos=wx.Point(0, 0), size=wx.Size(618,
               450), style=wx.aui.AUI_NB_TAB_SPLIT)
 
+        self.notebook1.update = self.update
+
 
         self.vp = MyViewPanel(self.notebook1, self.ds)
         self.sh = wx.py.shell.Shell(id=-1,

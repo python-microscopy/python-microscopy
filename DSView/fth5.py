@@ -5,10 +5,11 @@ from PYME.Analysis import remFitBuf
 import os
 from PYME.Analysis import MetaData
 from pylab import *
+import matplotlib
 
-from PYME.Acquire import execTools
+from PYME.Acquire import ExecTools
 
-execTools.execBG("tq = Pyro.core.getProxyForURI('PYRONAME://taskQueue')", locals(), globals())
+ExecTools.execBG("tq = Pyro.core.getProxyForURI('PYRONAME://taskQueue')", locals(), globals())
 
 from PYME.ParallelTasks.relativeFiles import getRelFilename
 #from PYME.FileUtils.nameUtils import genResultFileName
@@ -43,6 +44,8 @@ def testFrameD(detThresh = 0.9):
 
 
 def testFrames(detThresh = 0.9, offset = 0):
+    close('all')
+    matplotlib.interactive(False)
     clf()
     sq = min(md.EstimatedLaserOnFrameNo + 1000, ds.shape[0]/4)
     zps = array(range(md.EstimatedLaserOnFrameNo + 20, md.EstimatedLaserOnFrameNo + 24)  + range(sq, sq + 4) + range(ds.shape[0]/2, ds.shape[0]/2+4))
@@ -55,7 +58,7 @@ def testFrames(detThresh = 0.9, offset = 0):
         #print xp, yp
         axes((xp,yp, 1./6,1./4.5))
         d = ds[zps[i], :,:].squeeze().T
-        imshow(d, cmap=cm.hot, interpolation='nearest', hold=False, clim=(median(d), d.max()))
+        imshow(d, cmap=cm.hot, interpolation='nearest', hold=False, clim=(median(d.ravel()), d.max()))
         title('Frame %d' % zps[i])
         xlim(0, d.shape[1])
         ylim(0, d.shape[0])
@@ -67,7 +70,7 @@ def testFrames(detThresh = 0.9, offset = 0):
         axes((xp,yp, 1./6,1./4.5))
         d = ft.ofd.filteredData.T
         #d = ft.data.squeeze().T
-        imshow(d, cmap=cm.hot, interpolation='nearest', hold=False, clim=(median(d), d.max()))
+        imshow(d, cmap=cm.hot, interpolation='nearest', hold=False, clim=(median(d.ravel()), d.max()))
         plot([p.x for p in ft.ofd], [p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
         if ft.driftEst:
              plot([p.x for p in ft.ofdDr], [p.y for p in ft.ofdDr], 'o', mew=2, mec='b', mfc='none', ms=9)
@@ -77,6 +80,7 @@ def testFrames(detThresh = 0.9, offset = 0):
         xticks([])
         yticks([])
     show()
+    matplotlib.interactive(True)
 
 
 #import fitIO
