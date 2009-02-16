@@ -22,7 +22,7 @@ class NoiseMaker:
         self.floor = floor
 
     def noisify(self, im):
-        return self.floor + scipy.random.poisson((im + self.background)*self.QE*self.EMGain)/self.ADGain + self.readoutNoise*scipy.random.standard_normal(im.shape)
+        return self.floor + scipy.random.poisson((im + self.background)*self.QE*self.EMGain)/self.ADGain + self.readoutNoise*scipy.random.standard_normal(im.shape)/self.ADGain
 
 
 

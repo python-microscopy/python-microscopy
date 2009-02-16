@@ -20,74 +20,74 @@ def unpickleSlice(start, stop, step):
 
 copy_reg.pickle(slice, pickleSlice, unpickleSlice)
 
-def f_gauss2d(p, X, Y):
-    """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sigma, background, lin_x, lin_y]"""
-    A, x0, y0, s, b, b_x, b_y = p
-    #return A*scipy.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2)) + b + b_x*X + b_y*Y
-    r = genGauss(X,Y,A,x0,y0,s,b,b_x,b_y)
-    r.strides = r.strides #Really dodgy hack to get around something which numpy is not doing right ....
-    return r
+#def f_gauss2d(p, X, Y):
+#    """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sigma, background, lin_x, lin_y]"""
+#    A, x0, y0, s, b, b_x, b_y = p
+#    #return A*scipy.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2)) + b + b_x*X + b_y*Y
+#    r = genGauss(X,Y,A,x0,y0,s,b,b_x,b_y)
+#    r.strides = r.strides #Really dodgy hack to get around something which numpy is not doing right ....
+#    return r
+#
+#def f_gauss2dF(p, X, Y):
+#    """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sigma, background, lin_x, lin_y] - uses fast exponential approx"""
+#    A, x0, y0, s, b, b_x, b_y = p
+#    r = genGaussF(X,Y,A,x0,y0,s,b,b_x,b_y)
+#    r.strides = r.strides #Really dodgy hack to get around something which numpy is not doing right ....
+#    return r
+#
+#def f_j_gauss2d(p,func, d, w, X,Y):
+#    '''generate the jacobian for a 2d Gaussian'''
+#    A, x0, y0, s, b, b_x, b_y = p
+#    #r = genGaussJac(X,Y,A,x0,y0,s,b,b_x,b_y)
+#    r = genGaussJacW(X,Y,w,A,x0,y0,s,b,b_x,b_y)
+#    r = -r.ravel().reshape((-1,7))
+#    #for  i in range(7):
+#	#r[:, i] = r[:, i]*w
+#    return r.T
+#
+#def f_J_gauss2d(p,X,Y):
+#    '''generate the jacobian for a 2d Gaussian - for use with _fithelpers.weightedJacF'''
+#    A, x0, y0, s, b, b_x, b_y = p
+#    r = genGaussJac(X,Y,A,x0,y0,s,b,b_x,b_y)
+#    r = r.reshape((-1, 7))
+#    return r.T
+#
+#f_gauss2d.D = f_J_gauss2d
 
-def f_gauss2dF(p, X, Y):
-    """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sigma, background, lin_x, lin_y] - uses fast exponential approx"""
-    A, x0, y0, s, b, b_x, b_y = p
-    r = genGaussF(X,Y,A,x0,y0,s,b,b_x,b_y)
-    r.strides = r.strides #Really dodgy hack to get around something which numpy is not doing right ....
-    return r
 
-def f_j_gauss2d(p,func, d, w, X,Y):
-    '''generate the jacobian for a 2d Gaussian'''
-    A, x0, y0, s, b, b_x, b_y = p
-    #r = genGaussJac(X,Y,A,x0,y0,s,b,b_x,b_y)
-    r = genGaussJacW(X,Y,w,A,x0,y0,s,b,b_x,b_y)
-    r = -r.ravel().reshape((-1,7))
-    #for  i in range(7):
-	#r[:, i] = r[:, i]*w
-    return r.T
-
-def f_J_gauss2d(p,X,Y):
-    '''generate the jacobian for a 2d Gaussian - for use with _fithelpers.weightedJacF'''
-    A, x0, y0, s, b, b_x, b_y = p
-    r = genGaussJac(X,Y,A,x0,y0,s,b,b_x,b_y)
-    r = r.reshape((-1, 7))
-    return r.T
-
-f_gauss2d.D = f_J_gauss2d
-
-
-class GaussianFitResult:
-    def __init__(self, fitResults, metadata, slicesUsed=None, resultCode=None, fitErr=None):
-        self.fitResults = fitResults
-        self.metadata = metadata
-        self.slicesUsed = slicesUsed
-        self.resultCode=resultCode
-        self.fitErr = fitErr
-    
-    def A(self):
-        return self.fitResults[0]
-
-    def x0(self):
-        return self.fitResults[1]
-
-    def y0(self):
-        return self.fitResults[2]
-
-    def sigma(self):
-        return self.fitResults[3]
-
-    def background(self):
-        return self.fitResults[4]
-
-    def FWHMnm(self):
-        return FWHM_CONV_FACTOR*self.fitResults[3]*self.metadata.voxelsize.x*1e3
-
-    def correctedFWHM(self, FWHM_PSF):
-        return scipy.sqrt(self.FWHMnm()**2 - self.FWHM_PSF**2)
-
-    def renderFit(self):
-	X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[self.slicesUsed[0]]
-        Y = 1e3*self.metadata.voxelsize.y*scipy.mgrid[self.slicesUsed[1]]
-        return f_gauss2d(self.fitResults, X, Y)
+#class GaussianFitResult:
+#    def __init__(self, fitResults, metadata, slicesUsed=None, resultCode=None, fitErr=None):
+#        self.fitResults = fitResults
+#        self.metadata = metadata
+#        self.slicesUsed = slicesUsed
+#        self.resultCode=resultCode
+#        self.fitErr = fitErr
+#
+#    def A(self):
+#        return self.fitResults[0]
+#
+#    def x0(self):
+#        return self.fitResults[1]
+#
+#    def y0(self):
+#        return self.fitResults[2]
+#
+#    def sigma(self):
+#        return self.fitResults[3]
+#
+#    def background(self):
+#        return self.fitResults[4]
+#
+#    def FWHMnm(self):
+#        return FWHM_CONV_FACTOR*self.fitResults[3]*self.metadata.voxelsize.x*1e3
+#
+#    def correctedFWHM(self, FWHM_PSF):
+#        return scipy.sqrt(self.FWHMnm()**2 - self.FWHM_PSF**2)
+#
+#    def renderFit(self):
+#	X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[self.slicesUsed[0]]
+#        Y = 1e3*self.metadata.voxelsize.y*scipy.mgrid[self.slicesUsed[1]]
+#        return f_gauss2d(self.fitResults, X, Y)
         
 def replNoneWith1(n):
 	if n == None:
@@ -116,7 +116,7 @@ def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fit
 		
 
 class GaussianFitFactory:
-    def __init__(self, data, metadata, fitfcn=f_gauss2d):
+    def __init__(self, data, metadata, fitfcn=None):
         '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in 
         metadata. '''
         self.data = data
@@ -160,15 +160,15 @@ class GaussianFitFactory:
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
         #(res, cov_x, infodict, mesg, resCode) = FitModelWeighted(self.fitfcn, startParameters, dataMean, sigma, X, Y)
-	(res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataMean, sigma, X, Y)
+	#(res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataMean, sigma, X, Y)
 
         
         fitErrors=None
-        try:       
-            fitErrors = scipy.sqrt(scipy.diag(cov_x)*(infodict['fvec']*infodict['fvec']).sum()/(len(dataMean.ravel())- len(res)))
-        except Exception, e:
-            pass
-        return GaussianFitResultR(res, self.metadata, (xslice, yslice, zslice), resCode, fitErrors)
+        #try:
+        #    fitErrors = scipy.sqrt(scipy.diag(cov_x)*(infodict['fvec']*infodict['fvec']).sum()/(len(dataMean.ravel())- len(res)))
+        #except Exception, e:
+        #    pass
+        return GaussianFitResultR(scipy.array(startParameters), self.metadata, (xslice, yslice, zslice), 0, fitErrors)
 
     def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
         if (z == None): # use position of maximum intensity

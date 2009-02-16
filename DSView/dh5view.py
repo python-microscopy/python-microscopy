@@ -1,4 +1,9 @@
 #!/usr/bin/python
+#from PYME import mProfile
 
-import dsviewer_npy
-dsviewer_npy.main()
+#mProfile.profileOn(['dsviewer_npy.py', 'fth5.py'])
+
+import dsviewer_npy_nb
+dsviewer_npy_nb.main()
+
+#mProfile.report()

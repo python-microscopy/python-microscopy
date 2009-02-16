@@ -8,7 +8,7 @@ dataSourceID = None
 
 bufferMisses = 0
 
-#from pylab import *
+from pylab import *
 
 import copy
 
@@ -27,13 +27,16 @@ class dataBuffer: #buffer our io to avoid decompressing multiple times
         self.bLen = bLen
         self.buffer = numpy.zeros((bLen,) + dataSource.getSliceShape(), 'uint16')
         self.insertAt = 0
-        self.bufferedSlices = list(-1*numpy.ones((bLen,), 'i'))
+        self.bufferedSlices = -1*numpy.ones((bLen,), 'i')
         self.dataSource = dataSource
         
     def getSlice(self,ind):
         global bufferMisses
+        #print self.bufferedSlices, self.insertAt, ind
+        #return self.dataSource.getSlice(ind)
         if ind in self.bufferedSlices: #return from buffer
-            return self.buffer[self.bufferedSlices.index(ind),:,:]
+            #print int(numpy.where(self.bufferedSlices == ind)[0])
+            return self.buffer[int(numpy.where(self.bufferedSlices == ind)[0]),:,:]
         else: #get from our data source and store in buffer
             sl = self.dataSource.getSlice(ind)
             self.bufferedSlices[self.insertAt] = ind
@@ -42,7 +45,7 @@ class dataBuffer: #buffer our io to avoid decompressing multiple times
             self.insertAt %=self.bLen
 
             bufferMisses += 1
-            
+
             return sl
         
 
@@ -110,14 +113,15 @@ class fitTask(taskDef.Task):
         if not len(self.bgindices) == 0:
             self.bg = numpy.zeros(self.data.shape, 'f')
             for bgi in self.bgindices:
-                bs = dBuffer.getSlice(bgi)
+                bs = dBuffer.getSlice(bgi).astype('f')
                 bs = bs.reshape(self.data.shape)
-                self.bg = self.bg + bs.astype('f')
+                self.bg = self.bg + bs
 
             self.bg *= 1.0/len(self.bgindices)
 
         #Find objects
-        self.ofd = ofind.ObjectIdentifier(self.data.astype('f') - self.bg)
+        bgd = self.data.astype('f') - self.bg
+        self.ofd = ofind.ObjectIdentifier(bgd*(bgd > 0))
         self.ofd.FindObjects(self.calcThreshold(),0)
 
         if self.driftEst: #do the same for objects which are on the whole time

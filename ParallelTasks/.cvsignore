@@ -1,6 +1,8 @@
 HDFTaskQueue.pyc
 Pyro_NS_URI
 __init__.pyc
+build
+dist
 relativeFiles.pyc
 taskDef.pyc
 taskQueue.pyc

@@ -137,7 +137,7 @@ class GaussianFitFactory:
         #return GaussianFitResult(res, self.metadata, (xslice, yslice, zslice), resCode)
         fitErrors=None
         try:       
-            fitErrors = scipy.sqrt(scipy.diag(cov_x))
+            fitErrors = scipy.sqrt(scipy.diag(cov_x)*(infodict['fvec']*infodict['fvec']).sum()/(len(dataMean.ravel())- len(res)))
         except Exception, e:
             pass
         return GaussianFitResult(res, self.metadata, (xslice, yslice, zslice), resCode, fitErrors)

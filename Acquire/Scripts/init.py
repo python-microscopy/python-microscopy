@@ -57,5 +57,5 @@ Is = []
 def calcSum(caller):
     Is.append(cSMI.CDataStack_AsArray(caller.ds, 0).sum())
 
-scope.pa.WantFrameNotification.append(calcSum)
+#scope.pa.WantFrameNotification.append(calcSum)
 

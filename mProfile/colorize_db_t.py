@@ -5,7 +5,7 @@
 """
 # Based on the MoinMoin python source coloriser
 #
-# which is in turn based on the code from Jürgen Herman, to which the following changes where made:
+# which is in turn based on the code from Jï¿½rgen Herman, to which the following changes where made:
 #
 # Mike Brown <http://skew.org/~mike/>:
 # - make script callable as a CGI and a Apache handler for .py files.
@@ -22,10 +22,10 @@
 # - added code to display line times, line numbers, and to highlight the expensive lines
 # - may have broken some of the original features
 
-_version__ = '0.1'
+__version__ = '0.1'
 __date__ = '2009-01-22'
 __license__ = 'GPL'
-__author__ = 'Jürgen Hermann, Mike Brown, Christopher Arndt, David Baddeley'
+__author__ = 'Jï¿½rgen Hermann, Mike Brown, Christopher Arndt, David Baddeley'
 
 
 # Imports
