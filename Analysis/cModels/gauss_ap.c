@@ -111,7 +111,7 @@ static PyObject * genGauss(PyObject *self, PyObject *args, PyObject *keywds)
 	byY = b_y*(pYvals[iy]- y0) + b;
 	for (ix = 0; ix < size[0]; ix++)
 	  {
-	    *res = A*exp(-(((pXvals[ix] - x0) * (pXvals[ix] - x0)) + ((pYvals[iy]-y0) * (pYvals[iy]-y0)))/ts2) + b_x*(pXvals[ix]-y0) + byY;
+	    *res = A*exp(-(((pXvals[ix] - x0) * (pXvals[ix] - x0)) + ((pYvals[iy]-y0) * (pYvals[iy]-y0)))/ts2) + b_x*(pXvals[ix]-x0) + byY;
 	    //*res = 1.0;
 	    res++;
             

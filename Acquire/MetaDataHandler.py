@@ -33,8 +33,7 @@ class HDFMDHandler:
             self.md = self.h5file.createGroup(self.h5file.root, 'MetaData')
 
         if not mdToCopy == None:
-            for en in mdToCopy.getEntryNames:
-                self.setEntry(en, mdToCopy.getEntry(en))
+            self.copyEntriesFrom(mdToCopy)
 
 
     def setEntry(self,entryName, value):
@@ -62,5 +61,9 @@ class HDFMDHandler:
             entryNames.extend(['.'.join(a._v_pathname.split('/')[2:] +[ i]) for i in a._v_attrs._f_list()])
 
         return entryNames
+
+    def copyEntriesFrom(self, mdToCopy):
+        for en in mdToCopy.getEntryNames:
+            self.setEntry(en, mdToCopy.getEntry(en))
         
        

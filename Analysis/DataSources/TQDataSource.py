@@ -8,3 +8,6 @@ class DataSource:
 
     def getSliceShape(self):
         return self.taskQueue.getQueueData(self.queueName, 'ImageShape')
+
+    def getNumSlices(self):
+        return self.taskQueue.getQueueData(self.queueName, 'NumSlices')

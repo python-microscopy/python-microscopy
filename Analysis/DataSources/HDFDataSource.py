@@ -16,6 +16,9 @@ class DataSource:
     def getSliceShape(self):
         return self.h5File.root.ImageData.shape[1:3]
 
+    def getNumSlices(self):
+        return self.h5File.root.ImageData.shape[0]
+
     def release(self):
         self.h5File.close()
 

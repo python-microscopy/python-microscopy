@@ -3,6 +3,7 @@ from taskQueue import *
 from PYME.Analysis.remFitBuf import fitTask
 
 from PYME.Analysis import MetaData
+from PYME.Acquire import MetaDataHandler
 
 import os
 
@@ -27,21 +28,30 @@ class HDFResultsTaskQueue(TaskQueue):
                 
 		self.numClosedTasks = 0
 
-                self.h5ResultsFile = tables.openFile(self.resultsFilename, 'w')
+        self.h5ResultsFile = tables.openFile(self.resultsFilename, 'w')
                 
-                self.prepResultsFile()
+        self.prepResultsFile()
 
-                self.fileResultsLock = threading.Lock()
+        self.fileResultsLock = threading.Lock()
+        
+        self.resultsMDH = MetaDataHandler.HDFMDHandler(self.h5ResultsFile)
                 
                 
 	def prepResultsFile(self):
-            pass
+        pass
 	
 
-        def getCompletedTask(self):
-            return None
+    def getCompletedTask(self):
+        return None
 
-	
+	def setQueueMetaData(self, fieldName, value):
+        self.resultsMDH.setEntry(fieldName, value)
+
+    def getQueueMetaData(self, fieldName, value):
+		self.resultsMDH.getEntry(fieldName)
+
+    def getQueueMetaDataKeys(self):
+		self.resultsMDH.getEntryNames()
 
 	def getNumberTasksCompleted(self):
 		return self.numClosedTasks
@@ -129,6 +139,9 @@ class HDFTaskQueue(HDFResultsTaskQueue):
 
 		HDFResultsTaskQueue.__init__(self, name, resultsFilename, initialTasks, onEmpty, fTaskToPop)
 
+        self.dataMDH = MetaDataHandler.HDFMDHandler(self.h5DataFile)
+        
+
 		self.queueID = name
 
 		self.fitParams = fitParams
@@ -185,8 +198,10 @@ class HDFTaskQueue(HDFResultsTaskQueue):
             self.h5DataFile.close()
             self.h5ResultsFile.close()
 
-	def setFileMetaData(self, fieldName, value):
-		pass
+	def setQueueMetaData(self, fieldName, value):
+		self.dataMDH.setEntry(fieldName, value)
+        HDFResultsTaskQueue.setQueueMetaData(self, fieldName, value)
+
 
 	def getQueueData(self, fieldName, *args):
 		'''Get data, defined by fieldName and potntially additional arguments,  ascociated with queue'''
