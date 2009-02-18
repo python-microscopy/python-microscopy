@@ -46,11 +46,11 @@ class HDFResultsTaskQueue(TaskQueue):
     def setQueueMetaData(self, fieldName, value):
         self.resultsMDH.setEntry(fieldName, value)
 
-    def getQueueMetaData(self, fieldName, value):
-		self.resultsMDH.getEntry(fieldName)
+    def getQueueMetaData(self, fieldName):
+		return self.resultsMDH.getEntry(fieldName)
 
     def getQueueMetaDataKeys(self):
-		self.resultsMDH.getEntryNames()
+		return self.resultsMDH.getEntryNames()
 
     def getNumberTasksCompleted(self):
 		return self.numClosedTasks
@@ -145,8 +145,9 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         HDFResultsTaskQueue.__init__(self, name, resultsFilename, initialTasks, onEmpty, fTaskToPop)
 
         self.dataMDH = MetaDataHandler.HDFMDHandler(self.h5DataFile)
+        self.dataMDH.mergeEntriesFrom(MetaData.TIRFDefault)
         self.resultsMDH.copyEntriesFrom(self.dataMDH)
-        self.resultsMDH.mergeEntriesFrom(MetaData.TIRFDefault)
+        
 
         self.metaData = None #MetaDataHandler.NestedClassMDHandler(self.resultsMDH)
         self.metaDataStale = True
@@ -175,20 +176,21 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         #self.openTasks += tasks
         print 'posting tasks not implemented yet'
 
-	def getTask(self, workerN = 0, NWorkers = 1):
-		"""get task from front of list, blocks"""
-		#print 'Task requested'
-		while len(self.openTasks) < 1:
-			time.sleep(0.01)
+    def getTask(self, workerN = 0, NWorkers = 1):
+        """get task from front of list, blocks"""
+        #print 'Task requested'
+        while len(self.openTasks) < 1:
+            time.sleep(0.01)
 
         if self.metaDataStale:
             self.metaData = MetaDataHandler.NestedClassMDHandler(self.resultsMDH)
             self.metaDataStale = False
-
+        
+        
         taskNum = self.openTasks.pop(self.fTaskToPop(workerN, NWorkers, len(self.openTasks)))
-
+        
         task = fitTask(self.queueID, taskNum, self.metaData.Analysis.DetectionThreshold, self.metaData, self.metaData.Analysis.FitModule, 'TQDataSource', bgindices =range(max(taskNum - 10,self.metaData.EstimatedLaserOnFrameNo), taskNum), SNThreshold = True)
-
+        
         task.queueID = self.queueID
         task.initializeWorkerTimeout(time.clock())
         self.tasksInProgress.append(task)
@@ -209,28 +211,31 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         self.h5DataFile.close()
         self.h5ResultsFile.close()
 
-	def setQueueMetaData(self, fieldName, value):
-		self.dataMDH.setEntry(fieldName, value)
+    def setQueueMetaData(self, fieldName, value):
+        self.dataMDH.setEntry(fieldName, value)
         HDFResultsTaskQueue.setQueueMetaData(self, fieldName, value)
         self.metaDataStale = True
         
-
-
-	def getQueueData(self, fieldName, *args):
-		'''Get data, defined by fieldName and potntially additional arguments,  ascociated with queue'''
-		if fieldName == 'ImageShape':
-			self.dataFileLock.acquire()
-			res = self.h5DataFile.root.ImageData.shape[1:]
-			self.dataFileLock.release()
-			return res
-		elif fieldName == 'ImageData':
-			sliceNum, = args
-			self.dataFileLock.acquire()
-			res = self.h5DataFile.root.ImageData[sliceNum, :,:]
-			self.dataFileLock.release()
-			return res
-		else:
-			return None
+    def getQueueData(self, fieldName, *args):
+        '''Get data, defined by fieldName and potntially additional arguments,  ascociated with queue'''
+        if fieldName == 'ImageShape':
+            self.dataFileLock.acquire()
+            res = self.h5DataFile.root.ImageData.shape[1:]
+            self.dataFileLock.release()
+            return res
+        elif fieldName == 'ImageData':
+            sliceNum, = args
+            self.dataFileLock.acquire()
+            res = self.h5DataFile.root.ImageData[sliceNum, :,:]
+            self.dataFileLock.release()
+            return res
+        elif fieldName == 'NumSlices':
+            self.dataFileLock.acquire()
+            res = self.h5DataFile.root.ImageData.shape[0]
+            self.dataFileLock.release()
+            return res
+        else:
+            return None
 
     def logQueueEvent(self, event):
         eventName, eventDescr, evtTime = event
@@ -244,6 +249,6 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         self.events.flush()
 
 
-    def ReleaseTasks(self, startingAt = 0):
+    def releaseTasks(self, startingAt = 0):
         self.openTasks += range(startingAt, self.imNum)
         self.releaseNewTasks = True

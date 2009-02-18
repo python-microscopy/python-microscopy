@@ -155,7 +155,7 @@ def fillInBlanks(md, dataSource):
             md.setEntry('EstimatedLaserOnFrameNo', tLon)
 
     if not 'Camera.ADOffset' in md.getEntryNames():
-        tLon = md.EstimatedLaserOnFrameNo
+        tLon = md.getEntry('EstimatedLaserOnFrameNo')
         #Estimate the offset during the dark time before laser was turned on
         #N.B. this will not work if other lights (e.g. room lights, arc lamp etc... are on
         if not tLon == 0:
@@ -171,12 +171,12 @@ def fillInBlanks(md, dataSource):
 
     #FIXME to use a proper calibration
 	if 'Camera.EMGain' in md.getEntryNames():
-		if md.Camera.EMGain == 200: #gain register setting
+		if md.getEntry('Camera.EMGain') == 200: #gain register setting
 			md.setEntry('Camera.TrueEMGain', 100) #real gain @ -50C - from curve in performance book - need proper calibration
-		elif md.Camera.EMGain == 150: #gain register setting
+		elif md.getEntry('Camera.EMGain') == 150: #gain register setting
 			md.setEntry('Camera.TrueEMGain', 20) #real gain @ -50C - need proper calibration
 
 
 	if 'Camera.Name' in md.getEntryNames(): #new improved metadata
-		if md.Camera.Name == 'Simulated Standard CCD Camera': #em gain for simulated camera is _real_ em gain rather than gain register setting
-			md.Camera.TrueEMGain = md.Camera.EMGain
+		if md.getEntry('Camera.Name') == 'Simulated Standard CCD Camera': #em gain for simulated camera is _real_ em gain rather than gain register setting
+			md.setEntry('Camera.TrueEMGain', md.getEntry('Camera.EMGain'))

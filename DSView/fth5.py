@@ -4,7 +4,7 @@ import sys
 from PYME.Analysis import remFitBuf
 import os
 from PYME.Analysis import MetaData
-#from PYME.Acquire import MetaDataHandler
+from PYME.Acquire import MetaDataHandler
 from pylab import *
 import matplotlib
 
@@ -30,18 +30,21 @@ if not 'tq' in locals():
 
 #dataSource = DataSource(h5file.filename, None)
 
-md = MetaData.genMetaDataFromSourceAndMDH(dataSource, mdh)
+#md = MetaData.genMetaDataFromSourceAndMDH(dataSource, mdh)
 
-vp.zp = md.EstimatedLaserOnFrameNo
+MetaData.fillInBlanks(mdh, dataSource)
+
+md = MetaDataHandler.NestedClassMDHandler(mdh)
+
+vp.zp = mdh.getEntry(EstimatedLaserOnFrameNo)
 
 vp.Refresh()
 
 def pushImages(startingAt=0, detThresh = .9):
-    tq.createQueue('HDFResultsTaskQueue', seriesName, None)
-    mdhQ = MetaDataHandler.QueueMDHandler('HDFResultsTaskQueue', seriesName, mdh)
-    mdhQ.setEntry('Analysis.DetectionThreshold', detThresh)
-    for i in range(startingAt, ds.shape[0]):
-        tq.postTask(remFitBuf.fitTask(seriesName,i, detThresh, md, 'LatGaussFitFR', bgindices=range(max(i-10,md.EstimatedLaserOnFrameNo ),i), SNThreshold=True), queueName=seriesName, dataSourceModule=dataSource.moduleName)
+    if dataSource.moduleName == 'HDFDataSource':
+        pushImagesHDF(startingAt, detThresh)
+    else:
+        pushImagesQueue(startingAt, detThresh)
 
 def pushImagesHDF(startingAt=0, detThresh = .9):
     tq.createQueue('HDFResultsTaskQueue', seriesName, None)
@@ -51,15 +54,19 @@ def pushImagesHDF(startingAt=0, detThresh = .9):
         tq.postTask(remFitBuf.fitTask(seriesName,i, detThresh, md, 'LatGaussFitFR', bgindices=range(max(i-10,md.EstimatedLaserOnFrameNo ),i), SNThreshold=True), queueName=seriesName, dataSourceModule=dataSource.moduleName)
 
 def pushImagesQueue(startingAt=0, detThresh = .9):
-    tq.createQueue('HDFResultsTaskQueue', seriesName, None)
     mdh.setEntry('Analysis.DetectionThreshold', detThresh)
-    for i in range(startingAt, ds.shape[0]):
-        tq.postTask(remFitBuf.fitTask(seriesName,i, detThresh, md, 'LatGaussFitFR', bgindices=range(max(i-10,md.EstimatedLaserOnFrameNo ),i), SNThreshold=True), queueName=seriesName, dataSourceModule=dataSource.moduleName)
-
+    mdh.setEntry('Analysis.FitModule', 'LatGaussFitFR')
+    #if not 'Camera.TrueEMGain' in mdh.getEntryNames():
+    #    MetaData.fillInBlanks(mdh, dataSource)
+    tq.releaseTasks(seriesName, startingAt)
 
 def testFrame(detThresh = 0.9):
     ft = remFitBuf.fitTask(seriesName,vp.zp, detThresh, md, 'LatGaussFitFR', bgindices=range(max(vp.zp-10, md.EstimatedLaserOnFrameNo),vp.zp), SNThreshold=True)
     return ft(True)
+
+def testFrameTQ(detThresh = 0.9):
+    ft = remFitBuf.fitTask(seriesName,vp.zp, detThresh, md, 'LatGaussFitFR', 'TQDataSource', bgindices=range(max(vp.zp-10, md.EstimatedLaserOnFrameNo),vp.zp), SNThreshold=True)
+    return ft(True, tq)
 
 def pushImagesD(startingAt=0, detThresh = .9):
     tq.createQueue('HDFResultsTaskQueue', seriesName, None)

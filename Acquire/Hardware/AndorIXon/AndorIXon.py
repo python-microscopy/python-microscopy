@@ -561,6 +561,8 @@ class iXonCamera:
 
         mdh.setEntry('Camera.ROIPosX', self.GetROIX1())
         mdh.setEntry('Camera.ROIPosY',  self.GetROIY1())
+        mdh.setEntry('Camera.ROIWidth', self.GetROIX2() - self.GetROIX1())
+        mdh.setEntry('Camera.ROIHeight',  self.GetROIY2() - self.GetROIY1())
         mdh.setEntry('Camera.StartCCDTemp',  self.GetCCDTemp())
 
         #these should really be read from a configuration file

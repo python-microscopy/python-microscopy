@@ -186,6 +186,7 @@ class fitTask(taskDef.Task):
             else:
                 self.drRes  = [fitFac.FromPoint(round(p.x), round(p.y)) for p in self.ofd[:nToFit]]    
 
+        #print fitResult(self, self.res, self.drRes)
         return fitResult(self, self.res, self.drRes)
 
     def calcThreshold(self):

@@ -24,6 +24,7 @@ import time
 
 import tables
 from PYME.Analysis import MetaData
+from PYME.Acquire import MetaDataHandler
 
 import threading
 
@@ -1034,14 +1035,19 @@ class VisGUIFrame(wx.Frame):
                     self.dataSources.append(inpFilt.h5rDSource(self.selectedDataSource.h5f))
 
                 #once we get around to storing the some metadata with the results
-                if 'MetaData' in self.selectedDataSource.h5f.root: 
-                    mdh = MetaDataHandler(self.selectedDataSource.h5f)
-                    x0 = mdh.getEntry('ImageShape.x0_nm')
-                    y0 = mdh.getEntry('ImageShape.y0_nm')
-                    x1 = mdh.getEntry('ImageShape.x1_nm')
-                    y1 = mdh.getEntry('ImageShape.y1_nm')
+                if 'MetaData' in self.selectedDataSource.h5f.root:
+                    mdh = MetaDataHandler.HDFMDHandler(self.selectedDataSource.h5f)
 
-                    self.imageBounds = ImageBounds(x0, y0, x1, y1)
+                    if 'Camera.ROIWidth' in mdh.getEntryNames():
+                        x0 = 0
+                        y0 = 0
+
+                        x1 = mdh.getEntry('Camera.ROIWidth')*1e3*mdh.getEntry('voxelsize.x')
+                        y1 = mdh.getEntry('Camera.ROIHeight')*1e3*mdh.getEntry('voxelsize.y')
+
+                        self.imageBounds = ImageBounds(x0, y0, x1, y1)
+                    else:
+                        self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
 
                 else:
                     self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)

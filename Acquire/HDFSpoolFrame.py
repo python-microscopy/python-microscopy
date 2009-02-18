@@ -7,6 +7,7 @@ import QueueSpooler
 #import win32api
 from PYME.FileUtils import nameUtils
 import os
+import subprocess
 
 def create(parent):
     return FrSpool(parent)
@@ -72,10 +73,18 @@ class FrSpool(wx.Frame):
 
         self.bStopSpooling = wx.Button(id=wxID_FRSPOOLBSTOPSPOOLING,
               label='Stop', name='bStopSpooling', parent=self.panel1,
-              pos=wx.Point(105, 188), size=wx.Size(75, 23), style=0)
+              pos=wx.Point(55, 188), size=wx.Size(75, 23), style=0)
         self.bStopSpooling.Enable(False)
+
         self.bStopSpooling.Bind(wx.EVT_BUTTON, self.OnBStopSpoolingButton,
               id=wxID_FRSPOOLBSTOPSPOOLING)
+
+        self.bAnalyse = wx.Button(id = -1,
+              label='Analyse', name='bAnalyse', parent=self.panel1,
+              pos=wx.Point(160, 188), size=wx.Size(75, 23), style=0)
+        self.bAnalyse.Enable(False)
+
+        self.bAnalyse.Bind(wx.EVT_BUTTON, self.OnBAnalyse)
 
         self.staticBox2 = wx.StaticBox(id=wxID_FRSPOOLSTATICBOX2,
               label='Spool Directory', name='staticBox2', parent=self.panel1,
@@ -174,7 +183,9 @@ class FrSpool(wx.Frame):
             compLevel = 0
 
         if self.cbQueue.GetValue():
-            self.spooler = QueueSpooler.Spooler(self.scope, self.dirname + fn + '.h5', self.scope.pa, self, complevel=compLevel)
+            self.queueName = self.dirname + fn + '.h5'
+            self.spooler = QueueSpooler.Spooler(self.scope, self.queueName, self.scope.pa, self, complevel=compLevel)
+            self.bAnalyse.Enable(True)
         else:
             self.spooler = HDFSpooler.Spooler(self.scope, self.dirname + fn + '.h5', self.scope.pa, self, complevel=compLevel)
         self.bStartSpool.Enable(False)
@@ -195,6 +206,9 @@ class FrSpool(wx.Frame):
         self.seriesCounter +=1
         self.seriesName = self._GenSeriesName() 
         self.tcSpoolFile.SetValue(self.seriesName)
+
+    def OnBAnalyse(self, event):
+        subprocess.Popen('../DSView/dh5view.py QUEUE://%s' % self.queueName, shell=True)
         
     def Tick(self):
         dtn = datetime.datetime.now()

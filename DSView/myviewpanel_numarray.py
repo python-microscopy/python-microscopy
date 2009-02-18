@@ -17,6 +17,7 @@ class DataWrap: #permit indexing with more dimensions larger than len(shape)
         if not data.__class__ == numpy.ndarray and not data.__class__ == tables.EArray: # is a data source
             self.type = 'DataSource'
             self.shape = data.getSliceShape() + (data.getNumSlices(),)
+            print self.shape
             self.data.shape = self.shape
             self.dim_1_is_z = True
         

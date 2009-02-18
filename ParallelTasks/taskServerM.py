@@ -162,6 +162,10 @@ class TaskQueueSet(Pyro.core.ObjBase):
         '''Report an event ot a queue'''
         return self.taskQueues[queueName].logQueueEvent(*args)
 
+    def releaseTasks(self, queueName, *args):
+        '''Release held tasks'''
+        return self.taskQueues[queueName].releaseTasks(*args)
+
     def createQueue(self, queueType, queueName, *args, **kwargs):
         if queueName in self.taskQueues.keys():
             raise 'queue with same name already present'
@@ -172,24 +176,24 @@ class TaskQueueSet(Pyro.core.ObjBase):
 
 if __name__ == '__main__':
 
-	Pyro.config.PYRO_MOBILE_CODE = 0
-	Pyro.core.initServer()
-	ns=Pyro.naming.NameServerLocator().getNS()
-	daemon=Pyro.core.Daemon()
-	daemon.useNameServer(ns)
+    Pyro.config.PYRO_MOBILE_CODE = 0
+    Pyro.core.initServer()
+    ns=Pyro.naming.NameServerLocator().getNS()
+    daemon=Pyro.core.Daemon()
+    daemon.useNameServer(ns)
 
-	#get rid of any previous queue
-	try:
-                ns.unregister('taskQueue')
-        except Pyro.errors.NamingError:
-                pass
+    #get rid of any previous queue
+    try:
+        ns.unregister('taskQueue')
+    except Pyro.errors.NamingError:
+        pass
 
-	tq = TaskQueueSet()
-	uri=daemon.connect(tq,"taskQueue")
+    tq = TaskQueueSet()
+    uri=daemon.connect(tq,"taskQueue")
 
-	tw = TaskWatcher(tq)
-	tw.start()
-	try:
-		daemon.requestLoop()
-	finally:
-		daemon.shutdown(True)
+    tw = TaskWatcher(tq)
+    tw.start()
+    try:
+        daemon.requestLoop()
+    finally:
+        daemon.shutdown(True)

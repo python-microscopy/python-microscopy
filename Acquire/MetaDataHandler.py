@@ -87,11 +87,11 @@ class QueueMDHandler:
 
 
     def getEntry(self,entryName):
-        self.tq.getQueueMetaData(self.queueName, entryName)
+        return self.tq.getQueueMetaData(self.queueName, entryName)
 
 
     def getEntryNames(self):
-        self.tq.getQueueMetaDataKeys(self.queueName)
+        return self.tq.getQueueMetaDataKeys(self.queueName)
         
 
     def copyEntriesFrom(self, mdToCopy):
@@ -122,7 +122,7 @@ class NestedClassMDHandler:
 
 
     def getEntry(self,entryName):
-        eval('self.'+entryName)
+        return eval('self.'+entryName)
 
 
     def getEntryNames(self):
