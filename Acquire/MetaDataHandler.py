@@ -51,8 +51,8 @@ class HDFMDHandler:
         en = entPath[-1]
         ep = entPath[:-1]
 
-        currGroup = self.h5file.getNode('/'.join(['', 'MetaData']+ ep))
-        currGroup._f_getAttr(en)
+        return self.h5file.getNodeAttr('/'.join(['', 'MetaData']+ ep), en)
+        
 
 
     def getEntryNames(self):
@@ -63,7 +63,85 @@ class HDFMDHandler:
         return entryNames
 
     def copyEntriesFrom(self, mdToCopy):
-        for en in mdToCopy.getEntryNames:
+        for en in mdToCopy.getEntryNames():
             self.setEntry(en, mdToCopy.getEntry(en))
+
+    def mergeEntriesFrom(self, mdToCopy):
+        #only copies values if not already defined
+        for en in mdToCopy.getEntryNames():
+            if not en in self.getEntryNames():
+                self.setEntry(en, mdToCopy.getEntry(en))
+
+class QueueMDHandler:
+    def __init__(self, tq, queueName, mdToCopy=None):
+        self.tq = tq
+        self.queueName = queueName
+        self.md = None
+
+        if not mdToCopy == None:
+            self.copyEntriesFrom(mdToCopy)
+
+
+    def setEntry(self,entryName, value):
+        self.tq.setQueueMetaData(self.queueName, entryName, value)
+
+
+    def getEntry(self,entryName):
+        self.tq.getQueueMetaData(self.queueName, entryName)
+
+
+    def getEntryNames(self):
+        self.tq.getQueueMetaDataKeys(self.queueName)
         
-       
+
+    def copyEntriesFrom(self, mdToCopy):
+        for en in mdToCopy.getEntryNames():
+            self.setEntry(en, mdToCopy.getEntry(en))
+
+    def mergeEntriesFrom(self, mdToCopy):
+        #only copies values if not already defined
+        for en in mdToCopy.getEntryNames():
+            if not en in self.getEntryNames():
+                self.setEntry(en, mdToCopy.getEntry(en))
+
+
+class NestedClassMDHandler:
+    def __init__(self, mdToCopy=None):
+        if not mdToCopy == None:
+            self.copyEntriesFrom(mdToCopy)
+
+
+    def setEntry(self,entryName, value):
+        entPath = entryName.split('.')
+        if len(entPath) == 1: #direct child of this node
+            self.__dict__[entPath[0]] = value
+        else:
+            if not entPath[0] in dir(self):
+                self.__dict__[entPath[0]] = NestedClassMDHandler()
+            self.__dict__[entPath[0]].setEntry('.'.join(entPath[1:]), value)
+
+
+    def getEntry(self,entryName):
+        eval('self.'+entryName)
+
+
+    def getEntryNames(self):
+        en = []
+        for k in self.__dict__.keys():
+            if self.__dict__[k].__class__ == NestedClassMDHandler:
+                en += [k + '.' + kp for kp in self.__dict__[k].getEntryNames()]
+            else:
+                en.append(k)
+
+        return en
+
+
+    def copyEntriesFrom(self, mdToCopy):
+        for en in mdToCopy.getEntryNames():
+            self.setEntry(en, mdToCopy.getEntry(en))
+
+    def mergeEntriesFrom(self, mdToCopy):
+        #only copies values if not already defined
+        for en in mdToCopy.getEntryNames():
+            if not en in self.getEntryNames():
+                self.setEntry(en, mdToCopy.getEntry(en))

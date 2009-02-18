@@ -26,126 +26,147 @@ class TaskWatcher(threading.Thread):
 
 
 class TaskQueueSet(Pyro.core.ObjBase):
-	def __init__(self):
-		Pyro.core.ObjBase.__init__(self)
-		self.taskQueues = {}
-		self.numTasksProcessed = 0
-		self.numTasksProcByWorker = {}
-		self.lastTaskByWorker = {}
-		self.activeWorkers = []
-		self.activeTimeout = 10
-		
-
-	def postTask(self, task, queueName='Default'):
-		#print queueName
-		if not queueName in self.taskQueues.keys():
-			self.taskQueues[queueName] = TaskQueue(queueName)
-
-		self.taskQueues[queueName].postTask(task)
-
-	def postTasks(self, tasks, queueName='Default'):
-		if not queueName in self.taskQueues.keys():
-			self.taskQueues[queueName] = TaskQueue(queueName)
-
-		self.taskQueues[queueName].postTasks(tasks)
-
-	def getTask(self, workerName='Unspecified'):
-		"""get task from front of list, blocks"""
-		#print 'Task requested'
-		while self.getNumberOpenTasks() < 1:
-			time.sleep(0.01)
-		
-		if not workerName in self.activeWorkers:
-			self.activeWorkers.append(workerName)
-		queuesWithOpenTasks = [q for q in self.taskQueues.values() if q.getNumberOpenTasks() > 0]	
-
-		return queuesWithOpenTasks[int(numpy.round(len(queuesWithOpenTasks)*numpy.random.rand() - 0.5))].getTask(self.activeWorkers.index(workerName), len(self.activeWorkers))
+    def __init__(self):
+        Pyro.core.ObjBase.__init__(self)
+        self.taskQueues = {}
+        self.numTasksProcessed = 0
+        self.numTasksProcByWorker = {}
+        self.lastTaskByWorker = {}
+        self.activeWorkers = []
+        self.activeTimeout = 10
 
 
-	def returnCompletedTask(self, taskResult, workerName='Unspecified'):
-		self.taskQueues[taskResult.queueID].returnCompletedTask(taskResult)
-		self.numTasksProcessed += 1
-		if not workerName in self.numTasksProcByWorker.keys():
-			self.numTasksProcByWorker[workerName] = 0
+    def postTask(self, task, queueName='Default'):
+        #print queueName
+        if not queueName in self.taskQueues.keys():
+            self.taskQueues[queueName] = TaskQueue(queueName)
 
-		self.numTasksProcByWorker[workerName] += 1
-		self.lastTaskByWorker[workerName] = time.time()
+        self.taskQueues[queueName].postTask(task)
 
-	def getCompletedTask(self, queueName = 'Default'):
-		if not queueName in self.taskQueues.keys():
-			return None
-		else:
-			return self.taskQueues[queueName].getCompletedTask()
+    def postTasks(self, tasks, queueName='Default'):
+        if not queueName in self.taskQueues.keys():
+            self.taskQueues[queueName] = TaskQueue(queueName)
 
-	def checkTimeouts(self):
-		for q in self.taskQueues.values():
-			q.checkTimeouts()
+        self.taskQueues[queueName].postTasks(tasks)
 
-		t = time.time()
-		for w in self.activeWorkers:
-			if self.lastTaskByWorker.has_key(w) and self.lastTaskByWorker[w] < (t - self.activeTimeout):
-				self.activeWorkers.remove(w)
+    def getTask(self, workerName='Unspecified'):
+        """get task from front of list, blocks"""
+        #print 'Task requested'
+        while self.getNumberOpenTasks() < 1:
+            time.sleep(0.01)
 
-	def getNumberOpenTasks(self, queueName = None):
-		#print queueName
-		if queueName == None:
-			nO = 0
-			for q in self.taskQueues.values():
-				nO += q.getNumberOpenTasks()
-			return nO
-		else:
-			return self.taskQueues[queueName].getNumberOpenTasks()
+        if not workerName in self.activeWorkers:
+            self.activeWorkers.append(workerName)
+            
+        queuesWithOpenTasks = [q for q in self.taskQueues.values() if q.getNumberOpenTasks() > 0]
 
-	def getNumberTasksInProgress(self, queueName = None):
-		if queueName == None:
-			nP = 0
-			for q in self.taskQueues.values():
-				nP += q.getNumberTasksInProgress()
-			return nP
-		else:
-			return self.taskQueues[queueName].getNumberTasksInProgress()
+        return queuesWithOpenTasks[int(numpy.round(len(queuesWithOpenTasks)*numpy.random.rand() - 0.5))].getTask(self.activeWorkers.index(workerName), len(self.activeWorkers))
 
-	def getNumberTasksCompleted(self, queueName = None):
-		if queueName == None:
-			nC = 0
-			for q in self.taskQueues.values():
-				nC += q.getNumberTasksCompleted()
-			return nC
-		else:
-			return self.taskQueues[queueName].getNumberTasksCompleted()
 
-	def purge(self, queueName = 'Default'):
-		if queueName in self.taskQueues.keys():
-			self.taskQueues[queueName].purge()
+    def returnCompletedTask(self, taskResult, workerName='Unspecified'):
+        self.taskQueues[taskResult.queueID].returnCompletedTask(taskResult)
+        self.numTasksProcessed += 1
+        if not workerName in self.numTasksProcByWorker.keys():
+            self.numTasksProcByWorker[workerName] = 0
 
-	def removeQueue(self, queueName):
-		self.taskQueues[queueName].cleanup()
-		self.taskQueues.pop(queueName)
-	
-	def getNumTasksProcessed(self, workerName = None):
-		if workerName == None:
-			return self.numTasksProcessed
-		else:
-			return self.numTasksProcByWorker[workerName]
+        self.numTasksProcByWorker[workerName] += 1
+        self.lastTaskByWorker[workerName] = time.time()
 
-	def getWorkerNames(self):
-		return self.numTasksProcByWorker.keys()
+    def getCompletedTask(self, queueName = 'Default'):
+        if not queueName in self.taskQueues.keys():
+            return None
+        else:
+            return self.taskQueues[queueName].getCompletedTask()
 
-	def getQueueNames(self):
-		return self.taskQueues.keys()
+    def checkTimeouts(self):
+        for q in self.taskQueues.values():
+            q.checkTimeouts()
 
-	def setPopFcn(self, queueName, fcn):
-		self.taskQueues[queueName].setPopFcn(fcn)
+        t = time.time()
+        for w in self.activeWorkers:
+            if self.lastTaskByWorker.has_key(w) and self.lastTaskByWorker[w] < (t - self.activeTimeout):
+                self.activeWorkers.remove(w)
 
-	def getQueueData(self, queueName, *args):
-		'''Get data ascociated with queue - for cases when you might not want to send data with task every time e.g. to allow client side buffering of image data'''
-		return self.taskQueues[queueName].getQueueData(*args)
+    def getNumberOpenTasks(self, queueName = None):
+        #print queueName
+        if queueName == None:
+            nO = 0
+            for q in self.taskQueues.values():
+                nO += q.getNumberOpenTasks()
+            return nO
+        else:
+            return self.taskQueues[queueName].getNumberOpenTasks()
 
-	def createQueue(self, queueType, queueName, *args, **kwargs):
-		if queueName in self.taskQueues.keys():
-			raise 'queue with same name already present'
+    def getNumberTasksInProgress(self, queueName = None):
+        if queueName == None:
+            nP = 0
+            for q in self.taskQueues.values():
+                nP += q.getNumberTasksInProgress()
+            return nP
+        else:
+            return self.taskQueues[queueName].getNumberTasksInProgress()
 
-		self.taskQueues[queueName] = eval(queueType)(queueName, *args, **kwargs)	
+    def getNumberTasksCompleted(self, queueName = None):
+        if queueName == None:
+            nC = 0
+            for q in self.taskQueues.values():
+                nC += q.getNumberTasksCompleted()
+            return nC
+        else:
+            return self.taskQueues[queueName].getNumberTasksCompleted()
+
+    def purge(self, queueName = 'Default'):
+        if queueName in self.taskQueues.keys():
+            self.taskQueues[queueName].purge()
+
+    def removeQueue(self, queueName):
+        self.taskQueues[queueName].cleanup()
+        self.taskQueues.pop(queueName)
+
+    def getNumTasksProcessed(self, workerName = None):
+        if workerName == None:
+            return self.numTasksProcessed
+        else:
+            return self.numTasksProcByWorker[workerName]
+
+    def getWorkerNames(self):
+        return self.numTasksProcByWorker.keys()
+
+    def getQueueNames(self):
+        return self.taskQueues.keys()
+
+    def setPopFcn(self, queueName, fcn):
+        self.taskQueues[queueName].setPopFcn(fcn)
+
+    def getQueueData(self, queueName, *args):
+        '''Get data ascociated with queue - for cases when you might not want to send data with task every time e.g. to allow client side buffering of image data'''
+        return self.taskQueues[queueName].getQueueData(*args)
+
+    def setQueueData(self, queueName, *args):
+        '''Set data ascociated with queue'''
+        self.taskQueues[queueName].setQueueData(*args)
+
+    def getQueueMetaData(self, queueName, *args):
+        '''Get meta-data ascociated with queue'''
+        return self.taskQueues[queueName].getQueueMetaData(*args)
+
+    def setQueueMetaData(self, queueName, *args):
+        '''Set meta-data ascociated with queue'''
+        self.taskQueues[queueName].setQueueMetaData(*args)
+
+    def getQueueMetaDataKeys(self, queueName, *args):
+        '''Get meta-data keys ascociated with queue'''
+        return self.taskQueues[queueName].getQueueMetaDataKeys(*args)
+
+    def logQueueEvent(self, queueName, *args):
+        '''Report an event ot a queue'''
+        return self.taskQueues[queueName].logQueueEvent(*args)
+
+    def createQueue(self, queueType, queueName, *args, **kwargs):
+        if queueName in self.taskQueues.keys():
+            raise 'queue with same name already present'
+
+        self.taskQueues[queueName] = eval(queueType)(queueName, *args, **kwargs)
 		
 			
 

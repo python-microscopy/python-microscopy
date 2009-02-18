@@ -21,6 +21,9 @@ import wx.py.crust
 import pylab
 
 from myviewpanel_numarray import MyViewPanel
+from PYME.Acquire import MetaDataHandler
+from PYME.Analysis.DataSources import HDFDataSource
+from PYME.Analysis.DataSources import TQDataSource
 
 class DSViewFrame(wx.Frame):
     def __init__(self, parent=None, title='', dstack = None, log = None, filename = None):
@@ -39,14 +42,36 @@ class DSViewFrame(wx.Frame):
                 if (succ == wx.ID_OK):
                     #self.ds = example.CDataStack(fdialog.GetPath().encode())
                     #self.ds = 
-                    self.h5file = tables.openFile(fdialog.GetPath())
-                    self.ds = self.h5file.root.ImageData
-                    self.SetTitle(fdialog.GetFilename())
-                    self.saved = True
+                    filename = fdialog.GetPath()
+                    
                     #fn =
-            else:
-                self.h5file = tables.openFile(filename)
-                self.ds = self.h5file.root.ImageData
+            if not filename == None:
+                #self.h5file = tables.openFile(filename)
+                #self.ds = self.h5file.root.ImageData
+                if filename.startswith('QUEUE://'):
+                    import Pyro.core
+                    self.tq = Pyro.core.getProxyForURI('PYRONAME://taskQueue')
+
+                    self.seriesName = filename[len('QUEUE://'):]
+
+                    self.dataSource = TQDataSource.DataSource(self.seriesName, self.tq)
+                    
+                    self.mdh = MetaDataHandler.QueueMDHandler(self.tq, self.seriesName)
+                else:
+                    self.dataSource = HDFDataSource.DataSource(filename, None)
+                    if 'MetaData' in self.dataSource.h5File.root: #should be true the whole time
+                        self.mdh = MetaDataHandler.HDFMDHandler(self.dataSource.h5File)
+                    else:
+                        self.mdh = None
+                        wx.MessageBox("Carrying on with defaults - no gaurantees it'll work well", 'ERROR: No metadata fond in file ...', wx.ERROR|wx.OK)
+                        print "ERROR: No metadata fond in file ... Carrying on with defaults - no gaurantees it'll work well"
+
+                    from PYME.ParallelTasks.relativeFiles import getRelFilename
+                    self.seriesName = getRelFilename(filename)
+
+                    
+
+                self.ds = self.dataSource
                 self.SetTitle(filename)
                 self.saved = True
                 #self.ds = example.CDataStack(filename)

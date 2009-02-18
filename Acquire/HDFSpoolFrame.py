@@ -3,6 +3,7 @@
 import wx
 import datetime
 import HDFSpooler
+import QueueSpooler
 #import win32api
 from PYME.FileUtils import nameUtils
 import os
@@ -11,11 +12,11 @@ def create(parent):
     return FrSpool(parent)
 
 [wxID_FRSPOOL, wxID_FRSPOOLBSETSPOOLDIR, wxID_FRSPOOLBSTARTSPOOL, 
- wxID_FRSPOOLBSTOPSPOOLING, wxID_FRSPOOLCBCOMPRESS, wxID_FRSPOOLPANEL1, 
- wxID_FRSPOOLSTATICBOX1, wxID_FRSPOOLSTATICBOX2, wxID_FRSPOOLSTATICTEXT1, 
- wxID_FRSPOOLSTNIMAGES, wxID_FRSPOOLSTSPOOLDIRNAME, wxID_FRSPOOLSTSPOOLINGTO, 
- wxID_FRSPOOLTCSPOOLFILE, 
-] = [wx.NewId() for _init_ctrls in range(13)]
+ wxID_FRSPOOLBSTOPSPOOLING, wxID_FRSPOOLCBCOMPRESS, wxID_FRSPOOLCBQUEUE, 
+ wxID_FRSPOOLPANEL1, wxID_FRSPOOLSTATICBOX1, wxID_FRSPOOLSTATICBOX2, 
+ wxID_FRSPOOLSTATICTEXT1, wxID_FRSPOOLSTNIMAGES, wxID_FRSPOOLSTSPOOLDIRNAME, 
+ wxID_FRSPOOLSTSPOOLINGTO, wxID_FRSPOOLTCSPOOLFILE, 
+] = [wx.NewId() for _init_ctrls in range(14)]
 
 def baseconvert(number,todigits):
         x = number
@@ -103,9 +104,15 @@ class FrSpool(wx.Frame):
               pos=wx.Point(11, 72), size=wx.Size(66, 13), style=0)
 
         self.cbCompress = wx.CheckBox(id=wxID_FRSPOOLCBCOMPRESS,
-              label='Enable Compression', name='cbCompress', parent=self.panel1,
-              pos=wx.Point(20, 97), size=wx.Size(124, 13), style=0)
+              label=u'Enable Compression', name='cbCompress',
+              parent=self.panel1, pos=wx.Point(148, 97), size=wx.Size(124, 13),
+              style=0)
         self.cbCompress.SetValue(False)
+
+        self.cbQueue = wx.CheckBox(id=wxID_FRSPOOLCBQUEUE,
+              label=u'Save to Queue', name=u'cbQueue', parent=self.panel1,
+              pos=wx.Point(12, 97), size=wx.Size(124, 13), style=0)
+        self.cbQueue.SetValue(False)
 
     def __init__(self, parent, scope, defDir, defSeries='%(day)d_%(month)d_series'):
         self._init_ctrls(parent)
@@ -166,7 +173,10 @@ class FrSpool(wx.Frame):
         else:
             compLevel = 0
 
-        self.spooler = HDFSpooler.Spooler(self.scope, self.dirname + fn + '.h5', self.scope.pa, self, complevel=compLevel)
+        if self.cbQueue.GetValue():
+            self.spooler = QueueSpooler.Spooler(self.scope, self.dirname + fn + '.h5', self.scope.pa, self, complevel=compLevel)
+        else:
+            self.spooler = HDFSpooler.Spooler(self.scope, self.dirname + fn + '.h5', self.scope.pa, self, complevel=compLevel)
         self.bStartSpool.Enable(False)
         self.bStopSpooling.Enable(True)
         self.stSpoolingTo.Enable(True)

@@ -10,17 +10,32 @@ import tables
 class DataWrap: #permit indexing with more dimensions larger than len(shape)
     def __init__(self, data):
         self.data = data
-        self.shape = data.shape + (1,1,1,1,1)
+        self.type = 'Array'
+
+        self.dim_1_is_z = False
+
+        if not data.__class__ == numpy.ndarray and not data.__class__ == tables.EArray: # is a data source
+            self.type = 'DataSource'
+            self.shape = data.getSliceShape() + (data.getNumSlices(),)
+            self.data.shape = self.shape
+            self.dim_1_is_z = True
+        
+        self.shape = data.shape + (1, 1, 1, 1, 1)
         self.oldData = None
         self.oldSlice = None #buffer last lookup
-        self.dim_1_is_z = False
 
         if data.__class__ == tables.EArray:
              self.dim_1_is_z = True
              self.shape = self.shape[1:3] + (self.shape[0],) + self.shape[3:]
+
     def __getattr__(self, name):
-        return getattr(self.data, name) 
+        return getattr(self.data, name)
+    
     def __getitem__(self, keys):
+        keys = list(keys)
+        for i in range(len(keys)):
+            if not keys[i].__class__ == slice:
+                keys[i] = slice(keys[i],keys[i] + 1)
         if keys == self.oldSlice:
             return self.oldData
         self.oldSlice = keys
@@ -29,9 +44,14 @@ class DataWrap: #permit indexing with more dimensions larger than len(shape)
             #print keys[:len(self.data.shape)]
             keys = keys[:len(self.data.shape)]
         if self.dim_1_is_z:
-            keys = (keys[2],) + keys[:2] + keys[3:]
+            keys = [keys[2]] + keys[:2] + keys[3:]
         #print keys
-        r = self.data.__getitem__(keys)
+        if self.type == 'Array':
+            r = self.data.__getitem__(keys)
+        else:
+            #print keys[0]
+            #print numpy.mgrid[keys[0]]
+            r = numpy.array([self.data.getSlice(i)[keys[1], keys[2]] for i in numpy.mgrid[keys[0]]])
         if self.dim_1_is_z and keys[0].__class__ == slice:
             r = r.T
         self.oldData = r

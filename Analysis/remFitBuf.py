@@ -72,7 +72,7 @@ class fitTask(taskDef.Task):
 
         self.bgindices = bgindices
 
-	self.md = metadata
+        self.md = metadata
         
         self.fitModule = fitModule
         self.dataSourceModule = dataSourceModule
@@ -191,6 +191,6 @@ class fitTask(taskDef.Task):
     def calcThreshold(self):
         if self.SNThreshold:
             fudgeFactor = 1 #to account for the fact that the blurring etc... in ofind doesn't preserve intensities - at the moment completely arbitrary so a threshold setting of 1 results in reasonable detection.
-            return (numpy.sqrt(self.md.CCD.ReadNoise**2 + numpy.maximum(self.md.CCD.electronsPerCount*(self.md.CCD.noiseFactor**2)*(self.data.astype('f').mean(2) - self.md.CCD.ADOffset)*self.md.CCD.EMGain, 1))/self.md.CCD.electronsPerCount)*fudgeFactor*self.threshold
+            return (numpy.sqrt(self.md.Camera.ReadNoise**2 + numpy.maximum(self.md.Camera.ElectronsPerCount*(self.md.Camera.NoiseFactor**2)*(self.data.astype('f').mean(2) - self.md.Camera.ADOffset)*self.md.Camera.TrueEMGain, 1))/self.md.Camera.ElectronsPerCount)*fudgeFactor*self.threshold
         else:
             return self.threshold

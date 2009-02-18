@@ -1,4 +1,5 @@
 class DataSource:
+    moduleName = 'TQDataSource'
     def __init__(self, queueName, taskQueue):
         self.taskQueue = taskQueue
         self.queueName = queueName

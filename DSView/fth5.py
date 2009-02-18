@@ -4,19 +4,33 @@ import sys
 from PYME.Analysis import remFitBuf
 import os
 from PYME.Analysis import MetaData
+#from PYME.Acquire import MetaDataHandler
 from pylab import *
 import matplotlib
 
 from PYME.Acquire import ExecTools
+#from PYME.Analysis.DataSources.HDFDataSource import DataSource
 
-ExecTools.execBG("tq = Pyro.core.getProxyForURI('PYRONAME://taskQueue')", locals(), globals())
+if not 'tq' in locals():
+    ExecTools.execBG("tq = Pyro.core.getProxyForURI('PYRONAME://taskQueue')", locals(), globals())
 
-from PYME.ParallelTasks.relativeFiles import getRelFilename
+#from PYME.ParallelTasks.relativeFiles import getRelFilename
 #from PYME.FileUtils.nameUtils import genResultFileName
 
-seriesName = getRelFilename(h5file.filename)
+#seriesName = getRelFilename(dataSource.h5File.filename)
 
-md = MetaData.genMetaDataFromHDF(h5file)
+#if 'MetaData' in h5file.root: #should be true the whole time
+#    mdh = MetaDataHandler.HDFMDHandler(h5file)
+#else:
+#    mdh = None
+#    import wx
+#    if not None == wx.GetApp():
+#        wx.MessageBox("Carrying on with defaults - no gaurantees it'll work well", 'ERROR: No metadata fond in file ...', wx.ERROR|wx.OK)
+#    print "ERROR: No metadata fond in file ... Carrying on with defaults - no gaurantees it'll work well"
+
+#dataSource = DataSource(h5file.filename, None)
+
+md = MetaData.genMetaDataFromSourceAndMDH(dataSource, mdh)
 
 vp.zp = md.EstimatedLaserOnFrameNo
 
@@ -24,8 +38,23 @@ vp.Refresh()
 
 def pushImages(startingAt=0, detThresh = .9):
     tq.createQueue('HDFResultsTaskQueue', seriesName, None)
+    mdhQ = MetaDataHandler.QueueMDHandler('HDFResultsTaskQueue', seriesName, mdh)
+    mdhQ.setEntry('Analysis.DetectionThreshold', detThresh)
     for i in range(startingAt, ds.shape[0]):
-        tq.postTask(remFitBuf.fitTask(seriesName,i, detThresh, md, 'LatGaussFitFR', bgindices=range(max(i-10,md.EstimatedLaserOnFrameNo ),i), SNThreshold=True), queueName=seriesName)
+        tq.postTask(remFitBuf.fitTask(seriesName,i, detThresh, md, 'LatGaussFitFR', bgindices=range(max(i-10,md.EstimatedLaserOnFrameNo ),i), SNThreshold=True), queueName=seriesName, dataSourceModule=dataSource.moduleName)
+
+def pushImagesHDF(startingAt=0, detThresh = .9):
+    tq.createQueue('HDFResultsTaskQueue', seriesName, None)
+    mdhQ = MetaDataHandler.QueueMDHandler('HDFResultsTaskQueue', seriesName, mdh)
+    mdhQ.setEntry('Analysis.DetectionThreshold', detThresh)
+    for i in range(startingAt, ds.shape[0]):
+        tq.postTask(remFitBuf.fitTask(seriesName,i, detThresh, md, 'LatGaussFitFR', bgindices=range(max(i-10,md.EstimatedLaserOnFrameNo ),i), SNThreshold=True), queueName=seriesName, dataSourceModule=dataSource.moduleName)
+
+def pushImagesQueue(startingAt=0, detThresh = .9):
+    tq.createQueue('HDFResultsTaskQueue', seriesName, None)
+    mdh.setEntry('Analysis.DetectionThreshold', detThresh)
+    for i in range(startingAt, ds.shape[0]):
+        tq.postTask(remFitBuf.fitTask(seriesName,i, detThresh, md, 'LatGaussFitFR', bgindices=range(max(i-10,md.EstimatedLaserOnFrameNo ),i), SNThreshold=True), queueName=seriesName, dataSourceModule=dataSource.moduleName)
 
 
 def testFrame(detThresh = 0.9):
@@ -34,8 +63,10 @@ def testFrame(detThresh = 0.9):
 
 def pushImagesD(startingAt=0, detThresh = .9):
     tq.createQueue('HDFResultsTaskQueue', seriesName, None)
+    mdhQ = MetaDataHandler.QueueMDHandler('HDFResultsTaskQueue', seriesName, mdh)
+    mdhQ.setEntry('Analysis.DetectionThreshold', detThresh)
     for i in range(startingAt, ds.shape[0]):
-        tq.postTask(remFitBuf.fitTask(seriesName,i, detThresh, md, 'LatGaussFitFR', bgindices=range(max(i-10,md.EstimatedLaserOnFrameNo ),i), SNThreshold=True,driftEstInd=range(max(i-5, md.EstimatedLaserOnFrameNo),min(i + 5, ds.shape[0]))), queueName=seriesName)
+        tq.postTask(remFitBuf.fitTask(seriesName,i, detThresh, md, 'LatGaussFitFR', bgindices=range(max(i-10,md.EstimatedLaserOnFrameNo ),i), SNThreshold=True,driftEstInd=range(max(i-5, md.EstimatedLaserOnFrameNo),min(i + 5, ds.shape[0]))), queueName=seriesName, dataSourceModule=dataSource.moduleName)
 
 
 def testFrameD(detThresh = 0.9):
@@ -47,8 +78,8 @@ def testFrames(detThresh = 0.9, offset = 0):
     close('all')
     matplotlib.interactive(False)
     clf()
-    sq = min(md.EstimatedLaserOnFrameNo + 1000, ds.shape[0]/4)
-    zps = array(range(md.EstimatedLaserOnFrameNo + 20, md.EstimatedLaserOnFrameNo + 24)  + range(sq, sq + 4) + range(ds.shape[0]/2, ds.shape[0]/2+4))
+    sq = min(md.EstimatedLaserOnFrameNo + 1000, dataSource.getNumSlices()/4)
+    zps = array(range(md.EstimatedLaserOnFrameNo + 20, md.EstimatedLaserOnFrameNo + 24)  + range(sq, sq + 4) + range(dataSource.getNumSlices()/2,dataSource.getNumSlices() /2+4))
     zps += offset
     for i in range(12):
         ft = remFitBuf.fitTask(seriesName, zps[i], detThresh, md, 'LatObjFindFR', bgindices=range(max(zps[i] -10, md.EstimatedLaserOnFrameNo), zps[i]), SNThreshold=True)
@@ -57,7 +88,8 @@ def testFrames(detThresh = 0.9, offset = 0):
         yp = (3 - i%4)/4.
         #print xp, yp
         axes((xp,yp, 1./6,1./4.5))
-        d = ds[zps[i], :,:].squeeze().T
+        #d = ds[zps[i], :,:].squeeze().T
+        d = dataSource.getSlice(zps[i]).T
         imshow(d, cmap=cm.hot, interpolation='nearest', hold=False, clim=(median(d.ravel()), d.max()))
         title('Frame %d' % zps[i])
         xlim(0, d.shape[1])
