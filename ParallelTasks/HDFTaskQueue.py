@@ -188,19 +188,19 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         pass
 
     def postTask(self,task):
-		#self.openTasks.append(task)
-		#print 'posting tasks not implemented yet'
-		if self.acceptNewTasks:
+        #self.openTasks.append(task)
+        #print 'posting tasks not implemented yet'
+        if self.acceptNewTasks:
             self.dataFileLock.acquire()
             self.imageData.append(task)
             self.h5DataFile.flush()
             self.dataFileLock.release()
 
-			if self.releaseNewTasks:
-				self.openTasks.append(self.imNum)
-			self.imNum += 1
-		else:
-			print "can't post new tasks"
+            if self.releaseNewTasks:
+                self.openTasks.append(self.imNum)
+            self.imNum += 1
+        else:
+            print "can't post new tasks"
 			
 
     def postTasks(self,tasks):
