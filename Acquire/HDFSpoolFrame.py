@@ -6,6 +6,7 @@ import HDFSpooler
 import QueueSpooler
 #import win32api
 from PYME.FileUtils import nameUtils
+from PYME.ParallelTasks.relativeFiles import getRelFilename
 import os
 import subprocess
 
@@ -183,7 +184,7 @@ class FrSpool(wx.Frame):
             compLevel = 0
 
         if self.cbQueue.GetValue():
-            self.queueName = self.dirname + fn + '.h5'
+            self.queueName = getRelFilename(self.dirname + fn + '.h5')
             self.spooler = QueueSpooler.Spooler(self.scope, self.queueName, self.scope.pa, self, complevel=compLevel)
             self.bAnalyse.Enable(True)
         else:
