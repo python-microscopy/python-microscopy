@@ -191,8 +191,10 @@ class HDFTaskQueue(HDFResultsTaskQueue):
 		#self.openTasks.append(task)
 		#print 'posting tasks not implemented yet'
 		if self.acceptNewTasks:
+            self.dataFileLock.acquire()
 			self.imageData.append(task)
 			self.h5DataFile.flush()
+            self.dataFileLock.release()
 
 			if self.releaseNewTasks:
 				self.openTasks.append(self.imNum)
