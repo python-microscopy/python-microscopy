@@ -45,7 +45,8 @@ dsc.Show()
 #scope.pa.WantFrameNotification.append(postTask)
 
 import HDFSpoolFrame
-frs = HDFSpoolFrame.FrSpool(None, scope, 'd:\\%(username)s\\%(day)d-%(month)d-%(year)d\\')
+from PYME.FileUtils import nameUtils
+frs = HDFSpoolFrame.FrSpool(None, scope, nameUtils.genHDFDataFilepath())
 frs.Show()
 
 
