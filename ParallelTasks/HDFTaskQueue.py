@@ -87,6 +87,17 @@ class HDFResultsTaskQueue(TaskQueue):
         self.fileResultsLock.release() #release lock
 
         self.numClosedTasks += 1
+        
+    def getQueueData(self, fieldName, *args):
+        '''Get data, defined by fieldName and potntially additional arguments,  ascociated with queue'''
+        if fieldName == 'FitResults':
+            startingAt, = args
+            self.fileResultsLock.acquire()
+            res = self.h5ResultsFile.root.FitResults[startingAt:]
+            self.fileResultsLock.release()
+            return res
+        else:
+            return None
 
 class SpoolEvent(tables.IsDescription):
    EventName = tables.StringCol(32)
@@ -235,7 +246,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
             self.dataFileLock.release()
             return res
         else:
-            return None
+            return HDFResultsTaskQueue.getQueueData(self, fieldName, *args)
 
     def logQueueEvent(self, event):
         eventName, eventDescr, evtTime = event

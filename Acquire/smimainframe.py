@@ -225,7 +225,7 @@ class smiMainFrame(wx.Frame):
                 
         if (self.scope.cam.CamReady() and ('chaninfo' in self.scope.__dict__)):
             self.scope.livepreview(Notebook = self.notebook1)
-            self.notebook1.Split(0, wx.BOTTOM)
+            #self.notebook1.Split(0, wx.BOTTOM)
 
             self.int_sl = intsliders.IntegrationSliders(self.scope.chaninfo,self)
             self.int_sl.Show()

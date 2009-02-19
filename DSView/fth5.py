@@ -36,7 +36,7 @@ MetaData.fillInBlanks(mdh, dataSource)
 
 md = MetaDataHandler.NestedClassMDHandler(mdh)
 
-vp.zp = mdh.getEntry(EstimatedLaserOnFrameNo)
+vp.zp = mdh.getEntry('EstimatedLaserOnFrameNo')
 
 vp.Refresh()
 
@@ -59,6 +59,7 @@ def pushImagesQueue(startingAt=0, detThresh = .9):
     #if not 'Camera.TrueEMGain' in mdh.getEntryNames():
     #    MetaData.fillInBlanks(mdh, dataSource)
     tq.releaseTasks(seriesName, startingAt)
+    
 
 def testFrame(detThresh = 0.9):
     ft = remFitBuf.fitTask(seriesName,vp.zp, detThresh, md, 'LatGaussFitFR', bgindices=range(max(vp.zp-10, md.EstimatedLaserOnFrameNo),vp.zp), SNThreshold=True)

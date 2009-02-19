@@ -17,7 +17,7 @@ class DataWrap: #permit indexing with more dimensions larger than len(shape)
         if not data.__class__ == numpy.ndarray and not data.__class__ == tables.EArray: # is a data source
             self.type = 'DataSource'
             self.shape = data.getSliceShape() + (data.getNumSlices(),)
-            print self.shape
+            #print self.shape
             self.data.shape = self.shape
             self.dim_1_is_z = True
         
@@ -147,7 +147,7 @@ class MyViewPanel(viewpanel.ViewPanel):
         
     def SetDataStack(self, ds):
         self.ds = DataWrap(ds)
-        self.imagepanel.SetVirtualSize(wx.Size(self.ds.getWidth(),self.ds.getHeight()))
+        self.imagepanel.SetVirtualSize(wx.Size(self.ds.shape[0],self.ds.shape[1]))
         
         #if len(self.ds.shape) == 2:
         #    self.ds = self.ds.reshape(self.ds.shape + (1,))

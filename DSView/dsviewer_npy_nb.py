@@ -13,8 +13,9 @@ import sys
 
 #import viewpanel
 import PYME.cSMI as example
-import dCrop
-import logparser
+#import dCrop
+#import logparser
+import numpy
 
 import tables
 import wx.py.crust
@@ -24,6 +25,7 @@ from myviewpanel_numarray import MyViewPanel
 from PYME.Acquire import MetaDataHandler
 from PYME.Analysis.DataSources import HDFDataSource
 from PYME.Analysis.DataSources import TQDataSource
+from PYME.Acquire.mytimer import mytimer
 
 class DSViewFrame(wx.Frame):
     def __init__(self, parent=None, title='', dstack = None, log = None, filename = None):
@@ -32,7 +34,15 @@ class DSViewFrame(wx.Frame):
         self.ds = dstack
         self.log = log
 
-        self.saved = True		
+        self.saved = True
+
+        #a timer object to update for us
+        self.timer = mytimer()
+        self.timer.Start(1000)
+
+        self.numAnalysed = 0
+        self.numEvents = 0
+        self.fitResults = []
 
         if (dstack == None):
             if (filename == None):
@@ -57,10 +67,11 @@ class DSViewFrame(wx.Frame):
                     self.dataSource = TQDataSource.DataSource(self.seriesName, self.tq)
                     
                     self.mdh = MetaDataHandler.QueueMDHandler(self.tq, self.seriesName)
+                    self.timer.WantNotification.append(self.dsRefresh)
                 else:
                     self.dataSource = HDFDataSource.DataSource(filename, None)
                     if 'MetaData' in self.dataSource.h5File.root: #should be true the whole time
-                        self.mdh = MetaDataHandler.HDFMDHandler(self.dataSource.h5File)
+                        self.mdh = MetaDataHandler.NestedClassMDHandler(MetaDataHandler.HDFMDHandler(self.dataSource.h5File))
                     else:
                         self.mdh = None
                         wx.MessageBox("Carrying on with defaults - no gaurantees it'll work well", 'ERROR: No metadata fond in file ...', wx.ERROR|wx.OK)
@@ -113,6 +124,8 @@ class DSViewFrame(wx.Frame):
 
         self.notebook1.AddPage(page=self.vp, select=True, caption='Data')
         self.notebook1.AddPage(page=self.sh, select=False, caption='Console')
+
+        
         #self.notebook1.Split(0, wx.TOP)
         
 
@@ -238,6 +251,22 @@ class DSViewFrame(wx.Frame):
         else:
             self.sh.run('pushImagesD(%d, %f)' % (startAt, threshold))
 
+        from PYME.Analysis.LMVis import gl_render
+        self.glCanvas = gl_render.LMGLCanvas(self.notebook1)
+        self.glCanvas.cmap = pylab.cm.hsv
+
+        self.notebook1.AddPage(page=self.glCanvas, select=True, caption='VisLite')
+
+        xsc = self.ds.shape[0]*1.0e3*self.mdh.getEntry('voxelsize.x')/self.glCanvas.Size[0]
+        ysc = self.ds.shape[1]*1.0e3*self.mdh.getEntry('voxelsize.y')/ self.glCanvas.Size[1]
+
+        if xsc > ysc:
+            self.glCanvas.setView(0, xsc*self.glCanvas.Size[0], 0, xsc*self.glCanvas.Size[1])
+        else:
+            self.glCanvas.setView(0, ysc*self.glCanvas.Size[0], 0, ysc*self.glCanvas.Size[1])
+
+        self.timer.WantNotification.append(self.analRefresh)
+
     def GenPointFindingPanel(self):
         item = self._pnl.AddFoldPanel("Point Finding", collapsed=False,
                                       foldIcons=self.Images)
@@ -274,7 +303,7 @@ class DSViewFrame(wx.Frame):
 
     def update(self):
         self.vp.imagepanel.Refresh()
-        self.statusbar.SetStatusText('Slice No: (%d/%d)' % (self.vp.zp, self.vp.ds.shape[2]))
+        self.statusbar.SetStatusText('Slice No: (%d/%d)\tFrames Analysed: %d\tEvents detected: %d' % (self.vp.zp, self.vp.ds.shape[2], self.numAnalysed, self.numEvents))
 
     def saveStack(self, event=None):
         fdialog = wx.FileDialog(None, 'Save Data Stack as ...',
@@ -323,6 +352,30 @@ class DSViewFrame(wx.Frame):
             ds2 = example.CDataStack(self.ds, cd.x1, cd.y1, cd.z1, cd.x2, cd.y2, cd.z2, cd.chs)
             dvf = DSViewFrame(self.GetParent(), '--cropped--', ds2)
             dvf.Show()
+
+    def dsRefresh(self):
+        self.vp.SetDataStack(self.ds)
+        self.update()
+
+    def analRefresh(self):
+        newNumAnalysed = self.tq.getNumberTasksCompleted(self.seriesName)
+        if newNumAnalysed > self.numAnalysed:
+            self.numAnalysed = newNumAnalysed
+            newResults = self.tq.getQueueData(self.seriesName, 'FitResults', len(self.fitResults))
+            if len(newResults) > 0:
+                if len(self.fitResults) == 0:
+                    self.fitResults = newResults
+                else:
+                    self.fitResults = numpy.concatenate((self.fitResults, newResults))
+
+                self.numEvents = len(self.fitResults)
+                self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],self.fitResults['tIndex'].astype('f'))
+                self.glCanvas.setCLim((0, self.numAnalysed))
+
+            if (self.tq.getNumberOpenTasks(self.seriesName) + self.tq.getNumberTasksInProgress(self.seriesName)) == 0 and 'SpoolingFinished' in self.mdh.getEntryNames():
+                self.statusbar.SetBackgroundColour(wx.GREEN)
+            self.update()
+
 
 
 
