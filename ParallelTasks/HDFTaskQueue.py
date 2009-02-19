@@ -44,13 +44,21 @@ class HDFResultsTaskQueue(TaskQueue):
         return None
 
     def setQueueMetaData(self, fieldName, value):
+        self.fileResultsLock.acquire()
         self.resultsMDH.setEntry(fieldName, value)
+        self.fileResultsLock.release()
 
     def getQueueMetaData(self, fieldName):
-		return self.resultsMDH.getEntry(fieldName)
+        self.fileResultsLock.acquire()
+        res = self.resultsMDH.getEntry(fieldName)
+        self.fileResultsLock.release()
+        return res
 
     def getQueueMetaDataKeys(self):
-		return self.resultsMDH.getEntryNames()
+        self.fileResultsLock.acquire()
+        res = self.resultsMDH.getEntryNames()
+        self.fileResultsLock.release()
+        return res
 
     def getNumberTasksCompleted(self):
 		return self.numClosedTasks
@@ -223,7 +231,9 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         self.h5ResultsFile.close()
 
     def setQueueMetaData(self, fieldName, value):
+        self.dataFileLock.acquire()
         self.dataMDH.setEntry(fieldName, value)
+        self.dataFileLock.release()
         HDFResultsTaskQueue.setQueueMetaData(self, fieldName, value)
         self.metaDataStale = True
         
@@ -256,8 +266,10 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         ev['EventDescr'] = eventDescr
         ev['Time'] = evtTime
 
+        self.dataFileLock.acquire()
         ev.append()
         self.events.flush()
+        self.dataFileLock.release()
 
 
     def releaseTasks(self, startingAt = 0):
