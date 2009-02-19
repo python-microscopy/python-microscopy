@@ -55,9 +55,12 @@ class HDFResultsTaskQueue(TaskQueue):
         self.fileResultsLock.release()
 
     def getQueueMetaData(self, fieldName):
+        res  = None
         self.fileResultsLock.acquire()
-        res = self.resultsMDH.getEntry(fieldName)
-        self.fileResultsLock.release()
+        try:
+            res = self.resultsMDH.getEntry(fieldName)
+        finally:
+            self.fileResultsLock.release()
         return res
 
     def getQueueMetaDataKeys(self):
