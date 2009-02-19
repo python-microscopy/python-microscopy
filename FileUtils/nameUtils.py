@@ -29,6 +29,7 @@ if 'USERPROFILE' in os.environ.keys(): #windows
 datadir = '/media/data/'
 if 'PYMEDATADIR' in os.environ.keys():
     datadir = os.environ['PYMEDATADIR']
+
         
 
 dateDict = {'username' : getUsername(), 'day' : dtn.day, 'month' : dtn.month, 'year':dtn.year, 'sep' : os.sep, 'dataDir' : datadir, 'homeDir': homedir}
@@ -46,7 +47,7 @@ def genHDFDataFilepath(create=True):
     if create and not os.path.exists(p): #create the necessary directories
         os.makedirs(p)
 
-    return p
+    return os.path.normpath(p)
 
 def genResultFileName(dataFileName, create=True):
     fn, ext = os.path.splitext(dataFileName) #remove extension
