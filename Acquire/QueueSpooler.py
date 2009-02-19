@@ -3,6 +3,7 @@ import os
 import datetime
 import tables
 from PYME.Acquire import MetaDataHandler
+from PYME.ParallelTasks.relativeFiles import genRelFilename
 from PYME import cSMI
 import Pyro.core
 
@@ -28,6 +29,9 @@ class EventLogger:
 class Spooler:
    def __init__(self, scope, filename, acquisator, parent=None, complevel=6, complib='zlib'):
        self.scope = scope
+
+       filename = genRelFilename(filename)
+
        self.filename=filename
        self.acq = acquisator
        self.parent = parent 
