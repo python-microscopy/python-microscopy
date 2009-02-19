@@ -13,6 +13,11 @@ from PYME.ParallelTasks.relativeFiles import getFullFilename
 #def genDataFilename(name):
 #	fn = os.g
 
+#global lock for all calls into HDF library - on linux you seem to be able to
+#get away with locking separately for each file (or maybe not locking at all -
+#is linux hdf5 threadsafe?)
+tablesLock = threading.Lock()
+
 
 class HDFResultsTaskQueue(TaskQueue):
     '''Task queue which saves it's results to a HDF file'''
@@ -32,7 +37,8 @@ class HDFResultsTaskQueue(TaskQueue):
 
         self.prepResultsFile()
 
-        self.fileResultsLock = threading.Lock()
+        #self.fileResultsLock = threading.Lock()
+        self.fileResultsLock = tablesLock
 
         self.resultsMDH = MetaDataHandler.HDFMDHandler(self.h5ResultsFile)
 
@@ -172,7 +178,8 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         self.metaDataStale = True
         self.queueID = name
 
-        self.dataFileLock = threading.Lock()
+        #self.dataFileLock = threading.Lock()
+        self.dataFileLock = tablesLock
                 
     def prepResultsFile(self):
         pass
