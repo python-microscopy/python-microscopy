@@ -210,6 +210,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
     def getTask(self, workerN = 0, NWorkers = 1):
         """get task from front of list, blocks"""
         #print 'Task requested'
+        self.dataFileLock.acquire()
         while len(self.openTasks) < 1:
             time.sleep(0.01)
 
@@ -225,6 +226,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         task.queueID = self.queueID
         task.initializeWorkerTimeout(time.clock())
         self.tasksInProgress.append(task)
+        self.dataFileLock.release()
 
         return task
 

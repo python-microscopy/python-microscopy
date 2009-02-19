@@ -303,7 +303,7 @@ class DSViewFrame(wx.Frame):
 
     def update(self):
         self.vp.imagepanel.Refresh()
-        self.statusbar.SetStatusText('Slice No: (%d/%d)\tFrames Analysed: %d\tEvents detected: %d' % (self.vp.zp, self.vp.ds.shape[2], self.numAnalysed, self.numEvents))
+        self.statusbar.SetStatusText('Slice No: (%d/%d)    Frames Analysed: %d    Events detected: %d' % (self.vp.zp, self.vp.ds.shape[2], self.numAnalysed, self.numEvents))
 
     def saveStack(self, event=None):
         fdialog = wx.FileDialog(None, 'Save Data Stack as ...',
@@ -374,6 +374,7 @@ class DSViewFrame(wx.Frame):
 
             if (self.tq.getNumberOpenTasks(self.seriesName) + self.tq.getNumberTasksInProgress(self.seriesName)) == 0 and 'SpoolingFinished' in self.mdh.getEntryNames():
                 self.statusbar.SetBackgroundColour(wx.GREEN)
+                self.statusbar.Refresh()
             self.update()
 
 
