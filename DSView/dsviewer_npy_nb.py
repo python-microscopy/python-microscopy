@@ -23,6 +23,7 @@ import pylab
 
 from myviewpanel_numarray import MyViewPanel
 from PYME.Acquire import MetaDataHandler
+from PYME.Analysis import MetaData
 from PYME.Analysis.DataSources import HDFDataSource
 from PYME.Analysis.DataSources import TQDataSource
 from PYME.Acquire.mytimer import mytimer
@@ -71,7 +72,8 @@ class DSViewFrame(wx.Frame):
                 else:
                     self.dataSource = HDFDataSource.DataSource(filename, None)
                     if 'MetaData' in self.dataSource.h5File.root: #should be true the whole time
-                        self.mdh = MetaDataHandler.NestedClassMDHandler(MetaDataHandler.HDFMDHandler(self.dataSource.h5File))
+                        self.mdh = MetaData.TIRFDefault
+                        self.mdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(self.dataSource.h5File))
                     else:
                         self.mdh = None
                         wx.MessageBox("Carrying on with defaults - no gaurantees it'll work well", 'ERROR: No metadata fond in file ...', wx.ERROR|wx.OK)

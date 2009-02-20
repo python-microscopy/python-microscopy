@@ -48,10 +48,10 @@ def pushImages(startingAt=0, detThresh = .9):
 
 def pushImagesHDF(startingAt=0, detThresh = .9):
     tq.createQueue('HDFResultsTaskQueue', seriesName, None)
-    mdhQ = MetaDataHandler.QueueMDHandler('HDFResultsTaskQueue', seriesName, mdh)
+    mdhQ = MetaDataHandler.QueueMDHandler(tq, seriesName, mdh)
     mdhQ.setEntry('Analysis.DetectionThreshold', detThresh)
-    for i in range(startingAt, ds.shape[0]):
-        tq.postTask(remFitBuf.fitTask(seriesName,i, detThresh, md, 'LatGaussFitFR', bgindices=range(max(i-10,md.EstimatedLaserOnFrameNo ),i), SNThreshold=True), queueName=seriesName, dataSourceModule=dataSource.moduleName)
+    for i in range(startingAt, ds.shape[2]):
+        tq.postTask(remFitBuf.fitTask(seriesName,i, detThresh, md, 'LatGaussFitFR', bgindices=range(max(i-10,md.EstimatedLaserOnFrameNo ),i), SNThreshold=True), queueName=seriesName)
 
 def pushImagesQueue(startingAt=0, detThresh = .9):
     mdh.setEntry('Analysis.DetectionThreshold', detThresh)
@@ -71,10 +71,10 @@ def testFrameTQ(detThresh = 0.9):
 
 def pushImagesD(startingAt=0, detThresh = .9):
     tq.createQueue('HDFResultsTaskQueue', seriesName, None)
-    mdhQ = MetaDataHandler.QueueMDHandler('HDFResultsTaskQueue', seriesName, mdh)
+    mdhQ = MetaDataHandler.QueueMDHandler(tq, seriesName, mdh)
     mdhQ.setEntry('Analysis.DetectionThreshold', detThresh)
     for i in range(startingAt, ds.shape[0]):
-        tq.postTask(remFitBuf.fitTask(seriesName,i, detThresh, md, 'LatGaussFitFR', bgindices=range(max(i-10,md.EstimatedLaserOnFrameNo ),i), SNThreshold=True,driftEstInd=range(max(i-5, md.EstimatedLaserOnFrameNo),min(i + 5, ds.shape[0]))), queueName=seriesName, dataSourceModule=dataSource.moduleName)
+        tq.postTask(remFitBuf.fitTask(seriesName,i, detThresh, md, 'LatGaussFitFR', bgindices=range(max(i-10,md.EstimatedLaserOnFrameNo ),i), SNThreshold=True,driftEstInd=range(max(i-5, md.EstimatedLaserOnFrameNo),min(i + 5, ds.shape[0])), dataSourceModule=dataSource.moduleName), queueName=seriesName)
 
 
 def testFrameD(detThresh = 0.9):
