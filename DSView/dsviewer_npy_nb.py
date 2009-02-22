@@ -26,11 +26,12 @@ from PYME.Acquire import MetaDataHandler
 from PYME.Analysis import MetaData
 from PYME.Analysis.DataSources import HDFDataSource
 from PYME.Analysis.DataSources import TQDataSource
+from PYME.Analysis.LMVis import progGraph
 from PYME.Acquire.mytimer import mytimer
 
 class DSViewFrame(wx.Frame):
     def __init__(self, parent=None, title='', dstack = None, log = None, filename = None):
-        wx.Frame.__init__(self,parent, -1, title,size=wx.Size(800,500))
+        wx.Frame.__init__(self,parent, -1, title,size=wx.Size(800,800))
 
         self.ds = dstack
         self.log = log
@@ -97,7 +98,7 @@ class DSViewFrame(wx.Frame):
         self.ID_WINDOW_BOTTOM = 103
 
         self._leftWindow1 = wx.SashLayoutWindow(self, 101, wx.DefaultPosition,
-                                                wx.Size(200, 1000), wx.NO_BORDER |
+                                                wx.Size(250, 1000), wx.NO_BORDER |
                                                 wx.SW_3D | wx.CLIP_CHILDREN)
 
         self._leftWindow1.SetDefaultSize(wx.Size(180, 1000))
@@ -205,7 +206,7 @@ class DSViewFrame(wx.Frame):
 
         self.GenPointFindingPanel()
         self.GenAnalysisPanel()
-
+        self.GenFitStatusPanel()
 
 
         #item = self._pnl.AddFoldPanel("Filters", False, foldIcons=self.Images)
@@ -303,6 +304,24 @@ class DSViewFrame(wx.Frame):
         #else:
         #    self.sh.run('pushImagesD(%d, %f)' % (startAt, threshold)
 
+    def GenFitStatusPanel(self):
+        item = self._pnl.AddFoldPanel("Fit Status", collapsed=False,
+                                      foldIcons=self.Images)
+
+        pan = wx.Panel(item, -1, size = (150, 300))
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.progPan = progGraph.progPanel(pan, self.fitResults, size=(150, 300))
+
+        hsizer.Add(self.progPan, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        pan.SetSizer(hsizer)
+        hsizer.Fit(pan)
+        
+        self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+
+
     def update(self):
         self.vp.imagepanel.Refresh()
         self.statusbar.SetStatusText('Slice No: (%d/%d)    Frames Analysed: %d    Events detected: %d' % (self.vp.zp, self.vp.ds.shape[2], self.numAnalysed, self.numEvents))
@@ -369,6 +388,7 @@ class DSViewFrame(wx.Frame):
                     self.fitResults = newResults
                 else:
                     self.fitResults = numpy.concatenate((self.fitResults, newResults))
+                self.progPan.fitResults = self.fitResults
 
                 self.numEvents = len(self.fitResults)
                 self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],self.fitResults['tIndex'].astype('f'))
@@ -377,6 +397,7 @@ class DSViewFrame(wx.Frame):
             if (self.tq.getNumberOpenTasks(self.seriesName) + self.tq.getNumberTasksInProgress(self.seriesName)) == 0 and 'SpoolingFinished' in self.mdh.getEntryNames():
                 self.statusbar.SetBackgroundColour(wx.GREEN)
                 self.statusbar.Refresh()
+            self.progPan.draw()
             self.update()
 
 

@@ -183,6 +183,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
 
         #self.dataFileLock = threading.Lock()
         self.dataFileLock = tablesLock
+        #self.getTaskLock = threading.Lock()
                 
     def prepResultsFile(self):
         pass
@@ -210,7 +211,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
     def getTask(self, workerN = 0, NWorkers = 1):
         """get task from front of list, blocks"""
         #print 'Task requested'
-        self.dataFileLock.acquire()
+        #self.getTaskLock.acquire()
         while len(self.openTasks) < 1:
             time.sleep(0.01)
 
@@ -226,18 +227,18 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         task.queueID = self.queueID
         task.initializeWorkerTimeout(time.clock())
         self.tasksInProgress.append(task)
-        self.dataFileLock.release()
+        #self.getTaskLock.release()
 
         return task
 
 	
-	def checkTimeouts(self):
-		curTime = time.clock()
-		for it in self.tasksInProgress:
-			if 'workerTimeout' in dir(it):
-				if curTime > it.workerTimeout:
-					self.openTasks.insert(0, it.taskNum)
-					self.tasksInProgress.remove(it)
+    def checkTimeouts(self):
+        curTime = time.clock()
+        for it in self.tasksInProgress:
+            if 'workerTimeout' in dir(it):
+                if curTime > it.workerTimeout:
+                    self.openTasks.insert(0, it.taskNum)
+                    self.tasksInProgress.remove(it)
 
 
     def cleanup(self):

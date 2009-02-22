@@ -177,6 +177,6 @@ def fillInBlanks(md, dataSource):
 			md.setEntry('Camera.TrueEMGain', 20) #real gain @ -50C - need proper calibration
 
 
-	if 'Camera.Name' in md.getEntryNames(): #new improved metadata
-		if md.getEntry('Camera.Name') == 'Simulated Standard CCD Camera': #em gain for simulated camera is _real_ em gain rather than gain register setting
+	if 'Camera.name' in md.getEntryNames(): #new improved metadata
+		if md.getEntry('Camera.name') == 'Simulated Standard CCD Camera': #em gain for simulated camera is _real_ em gain rather than gain register setting
 			md.setEntry('Camera.TrueEMGain', md.getEntry('Camera.EMGain'))

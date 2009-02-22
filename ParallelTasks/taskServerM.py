@@ -35,6 +35,8 @@ class TaskQueueSet(Pyro.core.ObjBase):
         self.activeWorkers = []
         self.activeTimeout = 10
 
+        self.getTaskLock = threading.Lock()
+
 
     def postTask(self, task, queueName='Default'):
         #print queueName
@@ -52,6 +54,7 @@ class TaskQueueSet(Pyro.core.ObjBase):
     def getTask(self, workerName='Unspecified'):
         """get task from front of list, blocks"""
         #print 'Task requested'
+        self.getTaskLock.acquire()
         while self.getNumberOpenTasks() < 1:
             time.sleep(0.01)
 
@@ -60,8 +63,9 @@ class TaskQueueSet(Pyro.core.ObjBase):
             
         queuesWithOpenTasks = [q for q in self.taskQueues.values() if q.getNumberOpenTasks() > 0]
 
-        return queuesWithOpenTasks[int(numpy.round(len(queuesWithOpenTasks)*numpy.random.rand() - 0.5))].getTask(self.activeWorkers.index(workerName), len(self.activeWorkers))
-
+        ret = queuesWithOpenTasks[int(numpy.round(len(queuesWithOpenTasks)*numpy.random.rand() - 0.5))].getTask(self.activeWorkers.index(workerName), len(self.activeWorkers))
+        self.getTaskLock.release()
+        return res
 
     def returnCompletedTask(self, taskResult, workerName='Unspecified'):
         self.taskQueues[taskResult.queueID].returnCompletedTask(taskResult)

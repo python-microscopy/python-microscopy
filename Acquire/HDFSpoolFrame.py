@@ -173,6 +173,9 @@ class FrSpool(wx.Frame):
         if not os.path.exists(self.dirname):
             os.makedirs(self.dirname)
 
+        if not self.dirname[-1] == os.sep:
+            self.dirname += os.sep
+
         if (fn + '.h5') in os.listdir(self.dirname): #check to see if data with the same name exists
             ans = wx.MessageBox('A series with the same name already exists ... overwrite?', 'Warning', wx.YES_NO)
             if ans == wx.NO:

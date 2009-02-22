@@ -26,7 +26,7 @@ homedir = os.path.expanduser('~') #unix & possibly others ...
 if 'USERPROFILE' in os.environ.keys(): #windows
     homedir = os.environ['USERPROFILE']
 
-datadir = '/media/data/'
+datadir = '/home/david/simul'
 if 'PYMEDATADIR' in os.environ.keys():
     datadir = os.environ['PYMEDATADIR']
 
