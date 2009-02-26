@@ -3,7 +3,11 @@ import Pyro.core
 import os
 import sys
 
-Pyro.config.PYRO_MOBILE_CODE=1
+from PYME.mProfile import mProfile
+
+mProfile.profileOn(['remFitBuf.py', 'taskWorkerP.py'])
+
+Pyro.config.PYRO_MOBILE_CODE=0
 
 tq = Pyro.core.getProxyForURI("PYRONAME://taskQueue")
 
@@ -14,5 +18,10 @@ else:
 
 for i in range(1000):
     #print 'Geting Task ...'
-    tq.returnCompletedTask(tq.getTask()(taskQueue=tq), name)
+    task = tq.getTask()
+    ret = task(taskQueue=tq)
+    tq.returnCompletedTask(ret, name)
+    #tq.returnCompletedTask(tq.getTask()(taskQueue=tq), name)
     #print 'Completed Task'
+
+mProfile.report()
