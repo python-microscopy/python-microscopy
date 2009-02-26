@@ -81,10 +81,10 @@ class fitTask(taskDef.Task):
         self.driftEst = not len(self.driftEstInd) == 0
         self.calObjThresh = calObjThresh
                  
-        self.bufferLen = 12
+        self.bufferLen = 50 #12
         if self.driftEst: 
             #increase the buffer length as we're going to look forward as well
-            self.bufferLen = 17
+            self.bufferLen = 50 #17
 
 
     def __call__(self, gui=False, taskQueue=None):

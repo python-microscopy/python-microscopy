@@ -312,7 +312,7 @@ class dSimControl(wx.Dialog):
         
         pylab.figure(1)
         pylab.plot([p[0] for p in self.points],[p[1] for p in self.points], '.', hold=False)
-        pylab.gca().set_ylim(self.scope.cam.YVals[-1], self.scope.cam.YVals[0])
+        pylab.gca().set_ylim(self.scope.cam.YVals[0], self.scope.cam.YVals[-1])
         pylab.gca().set_xlim(self.scope.cam.XVals[0], self.scope.cam.XVals[-1])
         pylab.show()
         #event.Skip()

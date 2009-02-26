@@ -158,6 +158,9 @@ class VisGUIFrame(wx.Frame):
         if not filename==None:
             #self.glCanvas.OnPaint(None)
             self.OpenFile(filename)
+
+        #wx.LayoutAlgorithm().LayoutWindow(self, self.glCanvas)
+        self.Refresh()
         
 
     def OnSize(self, event):

@@ -173,6 +173,7 @@ class DSViewFrame(wx.Frame):
 
     def OnSize(self, event):
         wx.LayoutAlgorithm().LayoutWindow(self, self.notebook1)
+        self.Refresh()
         event.Skip()
 
     def OnFoldPanelBarDrag(self, event):
