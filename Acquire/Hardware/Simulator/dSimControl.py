@@ -13,18 +13,18 @@ def create(parent):
 
 [wxID_DSIMCONTROL, wxID_DSIMCONTROLBGENFLOURS, wxID_DSIMCONTROLBGENWORMLIKE, 
  wxID_DSIMCONTROLBLOADPOINTS, wxID_DSIMCONTROLBPAUSE, 
- wxID_DSIMCONTROLBSAVEPOINTS, wxID_DSIMCONTROLCBFLATTEN, 
- wxID_DSIMCONTROLGPROBE, wxID_DSIMCONTROLGSPONTAN, wxID_DSIMCONTROLGSWITCH, 
- wxID_DSIMCONTROLNTRANSITIONTENSOR, wxID_DSIMCONTROLSTATICBOX1, 
- wxID_DSIMCONTROLSTATICBOX2, wxID_DSIMCONTROLSTATICBOX3, 
- wxID_DSIMCONTROLSTATICBOX4, wxID_DSIMCONTROLSTATICBOX5, 
- wxID_DSIMCONTROLSTATICTEXT1, wxID_DSIMCONTROLSTATICTEXT2, 
- wxID_DSIMCONTROLSTATICTEXT3, wxID_DSIMCONTROLSTATICTEXT4, 
- wxID_DSIMCONTROLSTATICTEXT5, wxID_DSIMCONTROLSTCUROBJPOINTS, 
- wxID_DSIMCONTROLSTSTATUS, wxID_DSIMCONTROLTEXPROBE, 
- wxID_DSIMCONTROLTEXSWITCH, wxID_DSIMCONTROLTKBP, 
+ wxID_DSIMCONTROLBSAVEPOINTS, wxID_DSIMCONTROLCBCOLOUR, 
+ wxID_DSIMCONTROLCBFLATTEN, wxID_DSIMCONTROLGPROBE, wxID_DSIMCONTROLGSPONTAN, 
+ wxID_DSIMCONTROLGSWITCH, wxID_DSIMCONTROLNTRANSITIONTENSOR, 
+ wxID_DSIMCONTROLSTATICBOX1, wxID_DSIMCONTROLSTATICBOX2, 
+ wxID_DSIMCONTROLSTATICBOX3, wxID_DSIMCONTROLSTATICBOX4, 
+ wxID_DSIMCONTROLSTATICBOX5, wxID_DSIMCONTROLSTATICTEXT1, 
+ wxID_DSIMCONTROLSTATICTEXT2, wxID_DSIMCONTROLSTATICTEXT3, 
+ wxID_DSIMCONTROLSTATICTEXT4, wxID_DSIMCONTROLSTATICTEXT5, 
+ wxID_DSIMCONTROLSTCUROBJPOINTS, wxID_DSIMCONTROLSTSTATUS, 
+ wxID_DSIMCONTROLTEXPROBE, wxID_DSIMCONTROLTEXSWITCH, wxID_DSIMCONTROLTKBP, 
  wxID_DSIMCONTROLTNUMFLUOROPHORES, 
-] = [wx.NewId() for _init_ctrls in range(27)]
+] = [wx.NewId() for _init_ctrls in range(28)]
 
 [wxID_DSIMCONTROLTREFRESH] = [wx.NewId() for _init_utils in range(1)]
 
@@ -32,11 +32,11 @@ class dSimControl(wx.Dialog):
     def _init_coll_nTransitionTensor_Pages(self, parent):
         # generated method, don't edit
 
-        parent.AddPage(imageId=-1, page=self.gSpontan, select=False,
+        parent.AddPage(imageId=-1, page=self.gSpontan, select=True,
               text='Spontaneous')
         parent.AddPage(imageId=-1, page=self.gSwitch, select=False,
               text='Switching Laser')
-        parent.AddPage(imageId=-1, page=self.gProbe, select=True,
+        parent.AddPage(imageId=-1, page=self.gProbe, select=False,
               text='Probe Laser')
 
     def _init_utils(self):
@@ -48,14 +48,14 @@ class dSimControl(wx.Dialog):
     def _init_ctrls(self, prnt):
         # generated method, don't edit
         wx.Dialog.__init__(self, id=wxID_DSIMCONTROL, name='dSimControl',
-              parent=prnt, pos=wx.Point(688, 108), size=wx.Size(441, 605),
+              parent=prnt, pos=wx.Point(623, 174), size=wx.Size(442, 637),
               style=wx.DEFAULT_DIALOG_STYLE, title='PALM Sim Monitor')
         self._init_utils()
-        self.SetClientSize(wx.Size(433, 578))
+        self.SetClientSize(wx.Size(434, 610))
 
         self.staticBox1 = wx.StaticBox(id=wxID_DSIMCONTROLSTATICBOX1,
               label='Fluorophore Postions', name='staticBox1', parent=self,
-              pos=wx.Point(10, 8), size=wx.Size(414, 100), style=0)
+              pos=wx.Point(10, 8), size=wx.Size(414, 128), style=0)
 
         self.tNumFluorophores = wx.TextCtrl(id=wxID_DSIMCONTROLTNUMFLUOROPHORES,
               name='tNumFluorophores', parent=self, pos=wx.Point(22, 31),
@@ -82,27 +82,27 @@ class dSimControl(wx.Dialog):
 
         self.bLoadPoints = wx.Button(id=wxID_DSIMCONTROLBLOADPOINTS,
               label='Load From File', name='bLoadPoints', parent=self,
-              pos=wx.Point(32, 66), size=wx.Size(75, 23), style=0)
+              pos=wx.Point(160, 98), size=wx.Size(75, 23), style=0)
         self.bLoadPoints.Bind(wx.EVT_BUTTON, self.OnBLoadPointsButton,
               id=wxID_DSIMCONTROLBLOADPOINTS)
 
         self.bSavePoints = wx.Button(id=wxID_DSIMCONTROLBSAVEPOINTS,
               label='Save To File', name='bSavePoints', parent=self,
-              pos=wx.Point(142, 66), size=wx.Size(75, 23), style=0)
+              pos=wx.Point(30, 98), size=wx.Size(75, 23), style=0)
         self.bSavePoints.Bind(wx.EVT_BUTTON, self.OnBSavePointsButton,
               id=wxID_DSIMCONTROLBSAVEPOINTS)
 
         self.staticBox2 = wx.StaticBox(id=wxID_DSIMCONTROLSTATICBOX2,
               label='Generate Virtual Fluorophores', name='staticBox2',
-              parent=self, pos=wx.Point(8, 120), size=wx.Size(416, 344),
+              parent=self, pos=wx.Point(8, 144), size=wx.Size(416, 344),
               style=0)
 
         self.staticBox3 = wx.StaticBox(id=wxID_DSIMCONTROLSTATICBOX3,
               label='Transition Tensor', name='staticBox3', parent=self,
-              pos=wx.Point(16, 144), size=wx.Size(400, 216), style=0)
+              pos=wx.Point(16, 168), size=wx.Size(400, 216), style=0)
 
         self.nTransitionTensor = wx.Notebook(id=wxID_DSIMCONTROLNTRANSITIONTENSOR,
-              name='nTransitionTensor', parent=self, pos=wx.Point(24, 160),
+              name='nTransitionTensor', parent=self, pos=wx.Point(24, 184),
               size=wx.Size(384, 184), style=0)
         self.nTransitionTensor.SetLabel('Transition Probabilites')
 
@@ -120,57 +120,62 @@ class dSimControl(wx.Dialog):
 
         self.staticBox4 = wx.StaticBox(id=wxID_DSIMCONTROLSTATICBOX4,
               label='Excitation Crossections', name='staticBox4', parent=self,
-              pos=wx.Point(18, 362), size=wx.Size(398, 53), style=0)
+              pos=wx.Point(18, 392), size=wx.Size(398, 48), style=0)
 
         self.bGenFlours = wx.Button(id=wxID_DSIMCONTROLBGENFLOURS, label='Go',
-              name='bGenFlours', parent=self, pos=wx.Point(184, 424),
+              name='bGenFlours', parent=self, pos=wx.Point(184, 448),
               size=wx.Size(75, 23), style=0)
         self.bGenFlours.Bind(wx.EVT_BUTTON, self.OnBGenFloursButton,
               id=wxID_DSIMCONTROLBGENFLOURS)
 
         self.staticText3 = wx.StaticText(id=wxID_DSIMCONTROLSTATICTEXT3,
               label='Switching Laser:', name='staticText3', parent=self,
-              pos=wx.Point(32, 387), size=wx.Size(78, 13), style=0)
+              pos=wx.Point(32, 411), size=wx.Size(78, 13), style=0)
 
         self.tExSwitch = wx.TextCtrl(id=wxID_DSIMCONTROLTEXSWITCH,
-              name='tExSwitch', parent=self, pos=wx.Point(124, 383),
+              name='tExSwitch', parent=self, pos=wx.Point(116, 407),
               size=wx.Size(44, 21), style=0, value='5')
 
         self.staticText4 = wx.StaticText(id=wxID_DSIMCONTROLSTATICTEXT4,
               label='/mWs       Probe Laser:', name='staticText4', parent=self,
-              pos=wx.Point(175, 387), size=wx.Size(109, 13), style=0)
+              pos=wx.Point(175, 411), size=wx.Size(109, 13), style=0)
 
         self.tExProbe = wx.TextCtrl(id=wxID_DSIMCONTROLTEXPROBE,
-              name='tExProbe', parent=self, pos=wx.Point(292, 383),
+              name='tExProbe', parent=self, pos=wx.Point(284, 407),
               size=wx.Size(44, 21), style=0, value='10')
 
         self.staticText5 = wx.StaticText(id=wxID_DSIMCONTROLSTATICTEXT5,
               label='/mWs', name='staticText5', parent=self, pos=wx.Point(344,
-              387), size=wx.Size(32, 13), style=0)
+              411), size=wx.Size(32, 13), style=0)
 
         self.staticBox5 = wx.StaticBox(id=wxID_DSIMCONTROLSTATICBOX5,
               label='Status', name='staticBox5', parent=self, pos=wx.Point(8,
-              472), size=wx.Size(416, 100), style=0)
+              496), size=wx.Size(416, 100), style=0)
 
         self.stStatus = wx.StaticText(id=wxID_DSIMCONTROLSTSTATUS,
               label='hello\nworld', name='stStatus', parent=self,
-              pos=wx.Point(24, 488), size=wx.Size(304, 80), style=0)
+              pos=wx.Point(24, 512), size=wx.Size(304, 80), style=0)
 
         self.bPause = wx.Button(id=wxID_DSIMCONTROLBPAUSE, label='Pause',
-              name='bPause', parent=self, pos=wx.Point(340, 537),
+              name='bPause', parent=self, pos=wx.Point(340, 561),
               size=wx.Size(75, 23), style=0)
         self.bPause.Bind(wx.EVT_BUTTON, self.OnBPauseButton,
               id=wxID_DSIMCONTROLBPAUSE)
 
         self.stCurObjPoints = wx.StaticText(id=wxID_DSIMCONTROLSTCUROBJPOINTS,
               label='Current object has 0 points', name='stCurObjPoints',
-              parent=self, pos=wx.Point(248, 84), size=wx.Size(131, 13),
+              parent=self, pos=wx.Point(280, 108), size=wx.Size(131, 13),
               style=0)
 
         self.cbFlatten = wx.CheckBox(id=wxID_DSIMCONTROLCBFLATTEN,
               label='flatten (set z to 0)', name='cbFlatten', parent=self,
-              pos=wx.Point(248, 62), size=wx.Size(136, 13), style=0)
+              pos=wx.Point(24, 70), size=wx.Size(136, 13), style=0)
         self.cbFlatten.SetValue(False)
+
+        self.cbColour = wx.CheckBox(id=wxID_DSIMCONTROLCBCOLOUR,
+              label=u'colourful', name=u'cbColour', parent=self,
+              pos=wx.Point(240, 70), size=wx.Size(136, 13), style=0)
+        self.cbColour.SetValue(False)
 
         self._init_coll_nTransitionTensor_Pages(self.nTransitionTensor)
 
@@ -256,11 +261,15 @@ class dSimControl(wx.Dialog):
         self.points = []
         for i in range(len(wc.xp)):
             if not self.cbFlatten.GetValue():
-                #self.points.append((wc.xp[i],wc.yp[i],wc.zp[i], float(i > len(wc.xp)/2)))
-                self.points.append((wc.xp[i],wc.yp[i],wc.zp[i]))
+                if self.cbColour.GetValue():
+                    self.points.append((wc.xp[i],wc.yp[i],wc.zp[i], float(i > len(wc.xp)/2)))
+                else:
+                    self.points.append((wc.xp[i],wc.yp[i],wc.zp[i]))
             else:
-                #self.points.append((wc.xp[i],wc.yp[i],0,float(i > len(wc.xp)/2)))
-                self.points.append((wc.xp[i],wc.yp[i],0))
+                if self.cbColour.GetValue():
+                    self.points.append((wc.xp[i],wc.yp[i],0,float(i > len(wc.xp)/2)))
+                else:
+                    self.points.append((wc.xp[i],wc.yp[i],0))
         
         self.stCurObjPoints.SetLabel('Current object has %d points' % len(self.points))
         #event.Skip()

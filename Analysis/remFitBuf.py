@@ -107,7 +107,12 @@ class fitTask(taskDef.Task):
         
         #squash 4th dimension
         self.data = self.data.reshape((self.data.shape[0], self.data.shape[1],1))
-        #print self.bgindices
+
+        if self.fitModule == 'LatGaussFitFRTC':
+            g = self.data[:, :(self.data.shape[1]/2)]
+            r = self.data[:, (self.data.shape[1]/2):]
+            r = np.fliplr(r)
+
         #calculate background
         self.bg = 0
         if not len(self.bgindices) == 0:
@@ -121,6 +126,14 @@ class fitTask(taskDef.Task):
 
         #Find objects
         bgd = self.data.astype('f') - self.bg
+
+        if self.fitModule == 'LatGaussFitFRTC':
+            g_ = bgd[:, :(self.data.shape[1]/2)]
+            r_ = bgd[:, (self.data.shape[1]/2):]
+            r_ = np.fliplr(r_)
+
+            bgd = g_ + r_
+
         self.ofd = ofind.ObjectIdentifier(bgd*(bgd > 0))
         self.ofd.FindObjects(self.calcThreshold(),0)
 
@@ -141,8 +154,6 @@ class fitTask(taskDef.Task):
                  thres = thres * max(2, len(self.ofdDr)/5)
                  self.ofdDr.FindObjects(thres,0)
                  
-
-             
         
         #If we're running under a gui - display found objects
         if gui:
@@ -162,7 +173,10 @@ class fitTask(taskDef.Task):
         md = copy.copy(self.md)
         md.tIndex = self.index
 
-        fitFac = fitMod.FitFactory(self.data, md)
+        if self.fitModule == 'LatGaussFitFRTC':
+            fitFac = fitMod.FitFactory(numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2), md)
+        else:
+            fitFac = fitMod.FitFactory(self.data, md)
 
         #print 'Have Fit Factory'
         
