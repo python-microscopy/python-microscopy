@@ -1,12 +1,13 @@
+#!/usr/bin/python
 import os.path
 import wx
 import wx.lib.foldpanelbar as fpb
 from PYME.misc.fbpIcons import *
 
-import gl_render
+from PYME.Analysis.LMVis import gl_render
 import sys
-import inpFilt
-import editFilterDialog
+from PYME.Analysis.LMVis import inpFilt
+from PYME.Analysis.LMVis import editFilterDialog
 import pylab
 from PYME.FileUtils import nameUtils
 import os
@@ -15,11 +16,11 @@ from scikits import delaunay
 from PYME.Analysis.QuadTree import pointQT, QTrend
 import Image
 
-import genImageDialog
-import importTextDialog
-import visHelpers
-import imageView
-import histLimits
+from PYME.Analysis.LMVis import genImageDialog
+from PYME.Analysis.LMVis import importTextDialog
+from PYME.Analysis.LMVis import visHelpers
+from PYME.Analysis.LMVis import imageView
+from PYME.Analysis.LMVis import histLimits
 import time
 
 import tables
@@ -28,7 +29,7 @@ from PYME.Acquire import MetaDataHandler
 
 import threading
 
-import statusLog
+from PYME.Analysis.LMVis import statusLog
 
 
 # ----------------------------------------------------------------------------
@@ -238,6 +239,8 @@ class VisGUIFrame(wx.Frame):
         if self.viewMode == 'points':
             self.GenPointsPanel()
 
+        if self.viewMode == 'interp_triangles':
+            self.GenPointsPanel('Vertex Colours')
        
 
         #item = self._pnl.AddFoldPanel("Filters", False, foldIcons=self.Images)
@@ -630,8 +633,8 @@ class VisGUIFrame(wx.Frame):
         self.RefreshView()
 
 
-    def GenPointsPanel(self):
-        item = self._pnl.AddFoldPanel("Points", collapsed=False,
+    def GenPointsPanel(self, title='Points'):
+        item = self._pnl.AddFoldPanel(title, collapsed=False,
                                       foldIcons=self.Images)
 
         pan = wx.Panel(item, -1)
@@ -682,10 +685,10 @@ class VisGUIFrame(wx.Frame):
         elif not self.filter == None:
             if colData in self.filter.keys():
                 self.pointColour = self.filter[colData]
-        elif colData in self.GeneratedMeasures.keys():
-            self.pointColour = self.GeneratedMeasures[colData]
-        else:
-            self.pointColour = None
+            elif colData in self.GeneratedMeasures.keys():
+                self.pointColour = self.GeneratedMeasures[colData]
+            else:
+                self.pointColour = None
         
         self.RefreshView()
 
@@ -704,6 +707,7 @@ class VisGUIFrame(wx.Frame):
         ID_VIEW_QUADS = wx.NewId()
 
         ID_VIEW_VORONOI = wx.NewId()
+        ID_VIEW_INTERP_TRIANGS = wx.NewId()
 
         ID_VIEW_FIT = wx.NewId()
         
@@ -734,11 +738,13 @@ class VisGUIFrame(wx.Frame):
             self.view_menu.AppendRadioItem(ID_VIEW_TRIANGS, '&Triangles')
             self.view_menu.AppendRadioItem(ID_VIEW_QUADS, '&Quad Tree')
             self.view_menu.AppendRadioItem(ID_VIEW_VORONOI, '&Voronoi')
+            self.view_menu.AppendRadioItem(ID_VIEW_INTERP_TRIANGS, '&Interpolated Triangles')
         except:
             self.view_menu.Append(ID_VIEW_POINTS, '&Points')
             self.view_menu.Append(ID_VIEW_TRIANGS, '&Triangles')
             self.view_menu.Append(ID_VIEW_QUADS, '&Quad Tree')
             self.view_menu.Append(ID_VIEW_VORONOI, '&Voronoi')
+            self.view_menu.Append(ID_VIEW_INTERP_TRIANGS, '&Interpolated Triangles')
 
         self.view_menu.Check(ID_VIEW_POINTS, True)
         #self.view_menu.Enable(ID_VIEW_QUADS, False)
@@ -787,6 +793,7 @@ class VisGUIFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnViewTriangles, id=ID_VIEW_TRIANGS)
         self.Bind(wx.EVT_MENU, self.OnViewQuads, id=ID_VIEW_QUADS)
         self.Bind(wx.EVT_MENU, self.OnViewVoronoi, id=ID_VIEW_VORONOI)
+        self.Bind(wx.EVT_MENU, self.OnViewInterpTriangles, id=ID_VIEW_INTERP_TRIANGS)
 
         self.Bind(wx.EVT_MENU, self.SetFit, id=ID_VIEW_FIT)
 
@@ -818,6 +825,12 @@ class VisGUIFrame(wx.Frame):
 
     def OnViewVoronoi(self,event):
         self.viewMode = 'voronoi'
+        self.RefreshView()
+        self.CreateFoldPanel()
+        self.OnPercentileCLim(None)
+
+    def OnViewInterpTriangles(self,event):
+        self.viewMode = 'interp_triangles'
         self.RefreshView()
         self.CreateFoldPanel()
         self.OnPercentileCLim(None)
@@ -1174,6 +1187,13 @@ class VisGUIFrame(wx.Frame):
                 
 
             self.glCanvas.setQuads(self.Quads)
+
+        elif self.viewMode == 'interp_triangles':
+            if self.Triangles == None:
+                status = statusLog.StatusLogger("Generating Triangulation ...")
+                self.Triangles = delaunay.Triangulation(self.filter['x'], self.filter['y'])
+
+            self.glCanvas.setIntTriang(self.Triangles, self.pointColour)
 
         self.hlCLim.SetData(self.glCanvas.c, self.glCanvas.clim[0], self.glCanvas.clim[1])
 

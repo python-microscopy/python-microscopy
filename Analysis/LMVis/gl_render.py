@@ -179,7 +179,7 @@ class LMGLCanvas(GLCanvas):
         #          0.0, 1.0, 0.0)
         return
 
-    def setTriang(self, T):
+    def setTriang(self, T, c = None):
         xs = T.x[T.triangle_nodes]
         ys = T.y[T.triangle_nodes]
 
@@ -193,10 +193,12 @@ class LMGLCanvas(GLCanvas):
         #c = 0.5*numpy.sqrt((b*b).sum(1)*(a*a).sum(1) - ((a*b).sum(1)**2))
 
         #c = numpy.maximum(((b*b).sum(1)),((a*a).sum(1)))
-        if numpy.version.version > '1.2':
-            c = numpy.median([(b * b).sum(1), (a * a).sum(1), (b2 * b2).sum(1)], 0)
-        else:
-            c = numpy.median([(b * b).sum(1), (a * a).sum(1), (b2 * b2).sum(1)])
+
+        if c == None:
+            if numpy.version.version > '1.2':
+                c = numpy.median([(b * b).sum(1), (a * a).sum(1), (b2 * b2).sum(1)], 0)
+            else:
+                c = numpy.median([(b * b).sum(1), (a * a).sum(1), (b2 * b2).sum(1)])
 
         a_ = ((a*a).sum(1))
         b_ = ((b*b).sum(1))
@@ -355,55 +357,57 @@ class LMGLCanvas(GLCanvas):
         self.nVertices = vs.shape[0]
         self.setColour(self.IScale, self.zeroPt)
 
-    def setIntTriang(self, T):
-        #make ourselves a quicker way of getting at edge info.
-        edb = []
-        for i in range(len(T.x)):
-            edb.append(([],[]))
+    def setIntTriang(self, T, cs= None):
 
-        for i in range(len(T.edge_db)):
-            e = T.edge_db[i]
-            edb[e[0]][0].append(i)
-            edb[e[0]][1].append(e[1])
-            edb[e[1]][0].append(i)
-            edb[e[1]][1].append(e[0])
+        if cs == None:
+            #make ourselves a quicker way of getting at edge info.
+            edb = []
+            for i in range(len(T.x)):
+                edb.append(([],[]))
 
-
-
-        #gen colour array
-        cs = numpy.zeros(T.x.shape)
-
-        for i in range(len(T.x)):
-            incidentEdges = T.edge_db[edb[i][0]]
-            #neighbourPoints = edb[i][1]
-
-            #incidentEdges = T.edge_db[edb[neighbourPoints[0]][0]]
-            #for j in range(1, len(neighbourPoints)):
-            #    incidentEdges = numpy.vstack((incidentEdges, T.edge_db[edb[neighbourPoints[j]][0]]))
-            dx = numpy.diff(T.x[incidentEdges])
-            dy = numpy.diff(T.y[incidentEdges])
-
-            dist = (dx**2 + dy**2)
-
-            di = numpy.mean(numpy.sqrt(dist))
+            for i in range(len(T.edge_db)):
+                e = T.edge_db[i]
+                edb[e[0]][0].append(i)
+                edb[e[0]][1].append(e[1])
+                edb[e[1]][0].append(i)
+                edb[e[1]][1].append(e[0])
 
 
-            neighbourPoints = edb[i][1]
 
-            incidentEdges = T.edge_db[edb[neighbourPoints[0]][0]]
-            for j in range(1, len(neighbourPoints)):
-                incidentEdges = numpy.vstack((incidentEdges, T.edge_db[edb[neighbourPoints[j]][0]]))
-            dx = numpy.diff(T.x[incidentEdges])
-            dy = numpy.diff(T.y[incidentEdges])
+            #gen colour array
+            cs = numpy.zeros(T.x.shape)
 
-            dist = (dx**2 + dy**2)
+            for i in range(len(T.x)):
+                incidentEdges = T.edge_db[edb[i][0]]
+                #neighbourPoints = edb[i][1]
 
-            din = numpy.mean(numpy.sqrt(dist))
+                #incidentEdges = T.edge_db[edb[neighbourPoints[0]][0]]
+                #for j in range(1, len(neighbourPoints)):
+                #    incidentEdges = numpy.vstack((incidentEdges, T.edge_db[edb[neighbourPoints[j]][0]]))
+                dx = numpy.diff(T.x[incidentEdges])
+                dy = numpy.diff(T.y[incidentEdges])
 
-            #cs[i] = numpy.absolute(5 + di - 4*di/din)
-            cs[i] = di
+                dist = (dx**2 + dy**2)
 
-        cs = 1.0/cs**2
+                di = numpy.mean(numpy.sqrt(dist))
+
+
+                neighbourPoints = edb[i][1]
+
+                incidentEdges = T.edge_db[edb[neighbourPoints[0]][0]]
+                for j in range(1, len(neighbourPoints)):
+                    incidentEdges = numpy.vstack((incidentEdges, T.edge_db[edb[neighbourPoints[j]][0]]))
+                dx = numpy.diff(T.x[incidentEdges])
+                dy = numpy.diff(T.y[incidentEdges])
+
+                dist = (dx**2 + dy**2)
+
+                din = numpy.mean(numpy.sqrt(dist))
+
+                #cs[i] = numpy.absolute(5 + di - 4*di/din)
+                cs[i] = di
+
+            cs = 1.0/cs**2
 
 
         xs = T.x[T.triangle_nodes]

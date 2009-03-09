@@ -93,8 +93,11 @@ class HistLimitPanel(wx.Panel):
         event.Skip()
 
     def GenHist(self):
-        self.hmin = min(self.limit_lower, self.lower_pctile)
-        self.hmax = max(self.limit_upper, self.upper_pctile)
+        #self.hmin = min(self.limit_lower, self.lower_pctile)
+        #self.hmax = max(self.limit_upper, self.upper_pctile)
+
+        self.hmin = self.limit_lower
+        self.hmax = self.limit_upper
         hmid = (self.hmin + self.hmax)/2.0
 
         #expand shown range to twice current range
@@ -112,7 +115,7 @@ class HistLimitPanel(wx.Panel):
         dc.SetFont(wx.NORMAL_FONT)
         self.textSize = dc.GetTextExtent('test')[1] + 4
 
-        h = (self.Size[1] - self.textSize - 2)*(1.0-(self.h/(1.0*self.h.max()))) + 2
+        h = (self.Size[1] - self.textSize - 2)*(1.0-(self.h/(1.0*self.h[1:-1].max()))) + 2
 
         maxy = self.Size[1] - self.textSize
         pointlist = [(i,h_i) for i, h_i in zip(range(len(h)), h)]
