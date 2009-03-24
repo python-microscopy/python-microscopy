@@ -3,7 +3,11 @@ dictionaries which can be looked up to yield the desired data. The visualisation
 routines expect at least 'x' and 'y' to be defined as keys, and may also 
 understand additional values, e.g. 'error_x' 
 '''
+import types
 import numpy as np
+
+from numpy import * #to allow the use of sin cos etc in mappings
+
 import tables
 
 class randomSource:
@@ -61,7 +65,7 @@ class h5rSource:
         #or shorter aliases
         self.transkeys = {'A' : 'fitResults_A', 'x' : 'fitResults_x0',
                           'y' : 'fitResults_y0', 'sig' : 'fitResults_sigma', 
-                          'error_x' : 'fitError_x0'}
+                          'error_x' : 'fitError_x0', 't':'tIndex'}
 
 
     def keys(self):
@@ -113,7 +117,7 @@ class h5rDSource:
         #or shorter aliases
         self.transkeys = {'A' : 'fitResults_A', 'x' : 'fitResults_x0',
                           'y' : 'fitResults_y0', 'sig' : 'fitResults_sigma', 
-                          'error_x' : 'fitError_x0'}
+                          'error_x' : 'fitError_x0', 't':'tIndex'}
 
 
     def keys(self):
@@ -208,4 +212,65 @@ class resultsFilter:
 
     def keys(self):
         return self.resultsSource.keys()
+
+
+class mappingFilter:
+    def __init__(self, resultsSource, **kwargs):
+        '''Class to permit transformations (e.g. drift correction) of fit results
+        - masquarades as a dictionary. Takes mappings as keyword arguments, eg:
+        f = resultsFliter(source, xp='x + a*tIndex', yp=compile('y + b*tIndex', '/tmp/test1', 'eval'), a=1, b=2)
+        will return an object that behaves like source, but has additional members
+        xp and yp.
+
+        the mappings should either be code objects, strings (which will be compiled into code objects),
+        or something else (which will be turned into a local variable - eg constants in above example)
+
+        '''
+
+        self.resultsSource = resultsSource
+
+        self.mappings = {}
+
+        for k in kwargs.keys():
+            v = kwargs[k]
+            self.setMapping(k,v)
+
+
+    def __getitem__(self, key):
+        if key in self.mappings.keys():
+            return self.getMappedResults(key)
+        else:
+            return self.resultsSource[key]
+
+    def keys(self):
+        return self.resultsSource.keys() + self.mappings.keys()
+
+    def setMapping(self, key, mapping):
+        if type(mapping) == types.CodeType:
+            self.mappings[key] = mapping
+        elif type(mapping) == types.StringType:
+            self.mappings[key] = compile(mapping, '/tmp/test1', 'eval')
+        else:
+            self.__dict__[key] = mapping
+
+    def getMappedResults(self, key):
+        map = self.mappings[key]
+
+        #get all the variables needed for evaluation into local namespace
+        varnames = map.co_names
+        for vname in varnames:
+            if vname in globals():
+                pass
+            if vname in self.resultsSource.keys(): #look at original results first
+                locals()[vname] = self.resultsSource[vname]
+            elif vname in dir(self): #look for constants
+                locals()[vname] = self.__dict__[vname]
+            elif vname in self.mappings.keys(): #finally try other mappings
+                #try to prevent infinite recursion here if mappings have circular references
+                if not vname == key and not key in self.mappings[vname].co_names:
+                    locals()[vname] = self.getMappedResult(vname)
+                else:
+                    raise 'Circular reference detected in mapping'
+
+        return eval(map)
     

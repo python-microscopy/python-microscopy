@@ -21,6 +21,9 @@ from PYME.Analysis.LMVis import importTextDialog
 from PYME.Analysis.LMVis import visHelpers
 from PYME.Analysis.LMVis import imageView
 from PYME.Analysis.LMVis import histLimits
+
+from PYME.Analysis import intelliFit
+
 import time
 
 import tables
@@ -138,6 +141,14 @@ class VisGUIFrame(wx.Frame):
         self.filterKeys = {'error_x': (0,30), 'A':(5,200), 'sig' : (150/2.35, 350/2.35)}
 
         self.filter = None
+        self.mapping = None
+
+        self.driftCorrParams = {}
+        self.driftCorrFcn = None
+        self.optimiseFcn = 'fmin'
+        self.driftExprX = 'x + a*t'
+        self.driftExprY = 'y + b*t'
+
         self.imageBounds = ImageBounds(0,0,0,0)
 
         #generated Quad-tree will allow visualisations with pixel sizes of self.QTGoalPixelSize*2^N for any N
@@ -230,6 +241,8 @@ class VisGUIFrame(wx.Frame):
             
         self.GenDataSourcePanel()
         self.GenFilterPanel()
+
+        self.GenDriftPanel()
 
         self.GenDisplayPanel()
         
@@ -491,6 +504,13 @@ class VisGUIFrame(wx.Frame):
         self.lFiltKeys.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnFilterItemSelected)
         self.lFiltKeys.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.OnFilterItemDeselected)
         self.lFiltKeys.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnFilterEdit)
+
+        self.stFilterNumPoints = wx.StaticText(item, -1, '')
+
+        if not self.filter == None:
+            self.stFilterNumPoints.SetLabel('%d of %d events' % (len(self.filter['x']), len(self.selectedDataSource['x'])))
+
+        self._pnl.AddFoldPanelWindow(item, self.stFilterNumPoints, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
         
     def OnFilterListRightClick(self, event):
 
@@ -682,15 +702,143 @@ class VisGUIFrame(wx.Frame):
 
         if colData == '<None>':
             self.pointColour = None
-        elif not self.filter == None:
-            if colData in self.filter.keys():
-                self.pointColour = self.filter[colData]
+        elif not self.mapping == None:
+            if colData in self.mapping.keys():
+                self.pointColour = self.mapping[colData]
             elif colData in self.GeneratedMeasures.keys():
                 self.pointColour = self.GeneratedMeasures[colData]
             else:
                 self.pointColour = None
         
         self.RefreshView()
+
+    def GenDriftPanel(self):
+        item = self._pnl.AddFoldPanel("Drift Correction", collapsed=True,
+                                      foldIcons=self.Images)
+
+        pan = wx.Panel(item, -1)
+        bsizer = wx.BoxSizer(wx.VERTICAL)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(pan, -1, "x' = "), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        self.tXExpr = wx.TextCtrl(pan, -1, self.driftExprX, size=(130, -1))
+        hsizer.Add(self.tXExpr, 2,wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5)
+
+        bsizer.Add(hsizer, 0, wx.ALL, 0)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(pan, -1, "y' = "), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        self.tYExpr = wx.TextCtrl(pan, -1, self.driftExprY, size=(130,-1))
+        hsizer.Add(self.tYExpr, 2,wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5)
+
+        bsizer.Add(hsizer, 0, wx.ALL, 0)
+
+        pan.SetSizer(bsizer)
+        bsizer.Fit(pan)
+
+
+        self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+
+        self.tXExpr.Bind(wx.EVT_TEXT, self.OnDriftExprChange)
+        self.tYExpr.Bind(wx.EVT_TEXT, self.OnDriftExprChange)
+
+
+        self.lDriftParams = wx.ListCtrl(item, -1, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.SUNKEN_BORDER, size=(-1, 100))
+
+        self._pnl.AddFoldPanelWindow(item, self.lDriftParams, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+
+        self.lDriftParams.InsertColumn(0, 'Parameter')
+        self.lDriftParams.InsertColumn(1, 'Value')
+
+        #self.RefreshDriftParameters()
+
+        self.OnDriftExprChange()
+
+        pan = wx.Panel(item, -1)
+        #bsizer = wx.BoxSizer(wx.VERTICAL)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        bFit = wx.Button(pan, -1, 'Fit', size=(30,-1))
+        hsizer.Add(bFit, 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        bPlot = wx.Button(pan, -1, 'Plt', size=(30,-1))
+        hsizer.Add(bPlot, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        bApply = wx.Button(pan, -1, 'Apply', size=(50,-1))
+        hsizer.Add(bApply, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        bRevert = wx.Button(pan, -1, 'Revert', size=(50,-1))
+        hsizer.Add(bRevert, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        pan.SetSizer(hsizer)
+        hsizer.Fit(pan)
+
+
+        self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+
+        bFit.Bind(wx.EVT_BUTTON, self.OnDriftFit)
+        bApply.Bind(wx.EVT_BUTTON, self.OnDriftApply)
+        bRevert.Bind(wx.EVT_BUTTON, self.OnDriftRevert)
+        bPlot.Bind(wx.EVT_BUTTON, self.OnDriftPlot)
+
+    def OnDriftFit(self, event):
+        self.driftCorrParams = intelliFit.doFitT(self.driftCorrFcn, self.driftCorrParams, self.filter, self.optimiseFcn)
+        self.RefreshDriftParameters()
+
+    def OnDriftApply(self, event):
+        self.mapping.setMapping('x', self.driftCorrFcn[2])
+        self.mapping.setMapping('y', self.driftCorrFcn[3])
+        self.mapping.__dict__.update(self.driftCorrParams)
+
+        self.Triangles = None
+        self.GeneratedMeasures = {}
+        self.Quads = None
+        
+        self.RefreshView()
+
+    def OnDriftRevert(self, event):
+        self.mapping.mappings.pop('x')
+        self.mapping.mappings.pop('y')
+
+        self.Triangles = None
+        self.GeneratedMeasures = {}
+        self.Quads = None
+
+        self.RefreshView()
+
+    def OnDriftPlot(self, event):
+        intelliFit.plotDriftResultT(self.driftCorrFcn, self.driftCorrParams, self.filter)
+
+    def OnDriftExprChange(self, event=None):
+        self.driftExprX = self.tXExpr.GetValue()
+        self.driftExprY = self.tYExpr.GetValue()
+        if self.filter == None:
+            filtKeys = []
+        else:
+            filtKeys = self.filter.keys()
+
+        self.driftCorrFcn = intelliFit.genFcnCodeT(self.driftExprX,self.driftExprY, filtKeys)
+
+        #self.driftCorrParams = {}
+        for p in self.driftCorrFcn[0]:
+            if not p in self.driftCorrParams.keys():
+                self.driftCorrParams[p] = 0
+
+        self.RefreshDriftParameters()
+
+    def RefreshDriftParameters(self):
+        parameterNames = self.driftCorrFcn[0]
+
+        self.lDriftParams.DeleteAllItems()
+
+        for pn in parameterNames:
+            ind = self.lDriftParams.InsertStringItem(sys.maxint, pn)
+            self.lDriftParams.SetStringItem(ind,1, '%1.3g' % self.driftCorrParams[pn])
+
+        self.lDriftParams.SetColumnWidth(0, 80)
+        self.lDriftParams.SetColumnWidth(1, 80)
 
     def CreateMenuBar(self):
 
@@ -868,7 +1016,7 @@ class VisGUIFrame(wx.Frame):
 
         if self.Triangles == None:
                 statTri = statusLog.StatusLogger("Generating Triangulation ...")
-                self.Triangles = delaunay.Triangulation(self.filter['x'], self.filter['y'])
+                self.Triangles = delaunay.Triangulation(self.mapping['x'], self.mapping['y'])
 
         statNeigh = statusLog.StatusLogger("Calculating mean neighbour distances ...")
         self.GeneratedMeasures['neighbourDistances'] = pylab.array(visHelpers.calcNeighbourDists(self.Triangles))
@@ -883,7 +1031,7 @@ class VisGUIFrame(wx.Frame):
         genMeas = self.GeneratedMeasures.keys()
 
         jitVars += genMeas
-        jitVars += self.filter.keys()
+        jitVars += self.mapping.keys()
         
         dlg = genImageDialog.GenImageDialog(self, mode='triangles', jitterVariables = jitVars, jitterVarDefault=genMeas.index('neighbourDistances')+1)
 
@@ -897,8 +1045,8 @@ class VisGUIFrame(wx.Frame):
             
             if jitParamName == '1.0':
                 jitVals = 1.0
-            elif jitParamName in self.filter.keys():
-                jitVals = self.filter[jitParamName]
+            elif jitParamName in self.mapping.keys():
+                jitVals = self.mapping[jitParamName]
             elif jitParamName in self.GeneratedMeasures.keys():
                 jitVals = self.GeneratedMeasures[jitParamName]
         
@@ -912,7 +1060,7 @@ class VisGUIFrame(wx.Frame):
             imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
 
             status = statusLog.StatusLogger('Generating Triangulated Image ...')
-            im = self.glCanvas.genJitTim(dlg.getNumSamples(),self.filter['x'],self.filter['y'], jitVals, dlg.getMCProbability(),pixelSize)
+            im = self.glCanvas.genJitTim(dlg.getNumSamples(),self.mapping['x'],self.mapping['y'], jitVals, dlg.getMCProbability(),pixelSize)
             
 
             img = GeneratedImage(im,imb, pixelSize )
@@ -929,10 +1077,10 @@ class VisGUIFrame(wx.Frame):
         bCurr = wx.BusyCursor()
         jitVars = ['1.0']
 
-        jitVars += self.filter.keys()        
+        jitVars += self.mapping.keys()
         jitVars += self.GeneratedMeasures.keys()
         
-        dlg = genImageDialog.GenImageDialog(self, mode='gaussian', jitterVariables = jitVars, jitterVarDefault=self.filter.keys().index('error_x')+1)
+        dlg = genImageDialog.GenImageDialog(self, mode='gaussian', jitterVariables = jitVars, jitterVarDefault=self.mapping.keys().index('error_x')+1)
 
         ret = dlg.ShowModal()
 
@@ -943,8 +1091,8 @@ class VisGUIFrame(wx.Frame):
             
             if jitParamName == '1.0':
                 jitVals = 1.0
-            elif jitParamName in self.filter.keys():
-                jitVals = self.filter[jitParamName]
+            elif jitParamName in self.mapping.keys():
+                jitVals = self.mapping[jitParamName]
             elif jitParamName in self.GeneratedMeasures.keys():
                 jitVals = self.GeneratedMeasures[jitParamName]
         
@@ -956,7 +1104,7 @@ class VisGUIFrame(wx.Frame):
 
             imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
 
-            im = visHelpers.rendGauss(self.filter['x'],self.filter['y'], jitVals, imb, pixelSize)
+            im = visHelpers.rendGauss(self.mapping['x'],self.mapping['y'], jitVals, imb, pixelSize)
 
             img = GeneratedImage(im,imb, pixelSize )
             imf = imageView.ImageViewFrame(self,img, self.glCanvas)
@@ -979,7 +1127,7 @@ class VisGUIFrame(wx.Frame):
             
             imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
 
-            im = visHelpers.rendHist(self.filter['x'],self.filter['y'], imb, pixelSize)
+            im = visHelpers.rendHist(self.mapping['x'],self.mapping['y'], imb, pixelSize)
             
             img = GeneratedImage(im,imb, pixelSize )
             imf = imageView.ImageViewFrame(self,img, self.glCanvas)
@@ -1040,6 +1188,7 @@ class VisGUIFrame(wx.Frame):
         
         self.dataSources = []
         self.filter = None
+        self.mapping = None
         print os.path.splitext(filename)[1]
         if os.path.splitext(filename)[1] == '.h5r':
                 self.selectedDataSource = inpFilt.h5rSource(filename)
@@ -1140,6 +1289,9 @@ class VisGUIFrame(wx.Frame):
     def RegenFilter(self):
         if not self.selectedDataSource == None:
             self.filter = inpFilt.resultsFilter(self.selectedDataSource, **self.filterKeys)
+            self.mapping = inpFilt.mappingFilter(self.filter)
+
+        self.stFilterNumPoints.SetLabel('%d of %d events' % (len(self.filter['x']), len(self.selectedDataSource['x'])))
 
         self.Triangles = None
         self.GeneratedMeasures = {}
@@ -1149,10 +1301,10 @@ class VisGUIFrame(wx.Frame):
 
 
     def RefreshView(self):
-        if self.filter == None:
+        if self.mapping == None:
             return #get out of here
 
-        if len(self.filter['x']) == 0:
+        if len(self.mapping['x']) == 0:
             wx.MessageBox('No data points - try adjusting the filter', "len(filter['x']) ==0")
             return
 
@@ -1162,18 +1314,18 @@ class VisGUIFrame(wx.Frame):
         bCurr = wx.BusyCursor()
 
         if self.viewMode == 'points':
-            self.glCanvas.setPoints(self.filter['x'], self.filter['y'], self.pointColour)
+            self.glCanvas.setPoints(self.mapping['x'], self.mapping['y'], self.pointColour)
         elif self.viewMode == 'triangles':
             if self.Triangles == None:
                 status = statusLog.StatusLogger("Generating Triangulation ...")
-                self.Triangles = delaunay.Triangulation(self.filter['x'], self.filter['y'])
+                self.Triangles = delaunay.Triangulation(self.mapping['x'], self.mapping['y'])
                 
             self.glCanvas.setTriang(self.Triangles)
 
         elif self.viewMode == 'voronoi':
             if self.Triangles == None:
                 status = statusLog.StatusLogger("Generating Triangulation ...")
-                self.Triangles = delaunay.Triangulation(self.filter['x'], self.filter['y'])
+                self.Triangles = delaunay.Triangulation(self.mapping['x'], self.mapping['y'])
                 
 
             status = statusLog.StatusLogger("Generating Voronoi Diagram ... ")
@@ -1191,7 +1343,7 @@ class VisGUIFrame(wx.Frame):
         elif self.viewMode == 'interp_triangles':
             if self.Triangles == None:
                 status = statusLog.StatusLogger("Generating Triangulation ...")
-                self.Triangles = delaunay.Triangulation(self.filter['x'], self.filter['y'])
+                self.Triangles = delaunay.Triangulation(self.mapping['x'], self.mapping['y'])
 
             self.glCanvas.setIntTriang(self.Triangles, self.pointColour)
 
@@ -1208,7 +1360,7 @@ class VisGUIFrame(wx.Frame):
         
         self.Quads = pointQT.qtRoot(self.imageBounds.x0, self.imageBounds.x0+di, self.imageBounds.y0, self.imageBounds.y0 + di)
 
-        for xi, yi in zip(self.filter['x'],self.filter['y']):
+        for xi, yi in zip(self.mapping['x'],self.mapping['y']):
             self.Quads.insert(pointQT.qtRec(xi,yi, None))
 
     def SetFit(self,event = None):
