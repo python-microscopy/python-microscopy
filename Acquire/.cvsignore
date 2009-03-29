@@ -2,6 +2,7 @@ ExecTools.pyc
 HDFSpoolFrame.pyc
 HDFSpooler.pyc
 MetaDataHandler.pyc
+QueueSpooler.pyc
 __init__.pyc
 chanedit.pyc
 chanfr.pyc

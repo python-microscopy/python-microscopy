@@ -24,13 +24,15 @@ from PYME.Analysis.LMVis import histLimits
 
 from PYME.Analysis import intelliFit
 
-import time
+#import time
 
 import tables
 from PYME.Analysis import MetaData
 from PYME.Acquire import MetaDataHandler
 
-import threading
+#import threading
+
+from PYME.misc import editList
 
 from PYME.Analysis.LMVis import statusLog
 
@@ -745,16 +747,20 @@ class VisGUIFrame(wx.Frame):
         self.tYExpr.Bind(wx.EVT_TEXT, self.OnDriftExprChange)
 
 
-        self.lDriftParams = wx.ListCtrl(item, -1, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.SUNKEN_BORDER, size=(-1, 100))
+        self.lDriftParams = editList.EditListCtrl(item, -1, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.SUNKEN_BORDER, size=(-1, 100))
 
         self._pnl.AddFoldPanelWindow(item, self.lDriftParams, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
 
         self.lDriftParams.InsertColumn(0, 'Parameter')
         self.lDriftParams.InsertColumn(1, 'Value')
 
+        self.lDriftParams.makeColumnEditable(1)
+
         #self.RefreshDriftParameters()
 
         self.OnDriftExprChange()
+
+        self.lDriftParams.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnDriftParameterChange)
 
         pan = wx.Panel(item, -1)
         #bsizer = wx.BoxSizer(wx.VERTICAL)
@@ -827,6 +833,13 @@ class VisGUIFrame(wx.Frame):
                 self.driftCorrParams[p] = 0
 
         self.RefreshDriftParameters()
+
+    def OnDriftParameterChange(self, event=None):
+        parameterNames = self.driftCorrFcn[0]
+
+        pn = parameterNames[event.m_itemIndex]
+
+        self.driftCorrParams[pn] = float(event.m_item.GetText())
 
     def RefreshDriftParameters(self):
         parameterNames = self.driftCorrFcn[0]
@@ -1191,13 +1204,22 @@ class VisGUIFrame(wx.Frame):
         self.mapping = None
         print os.path.splitext(filename)[1]
         if os.path.splitext(filename)[1] == '.h5r':
-                self.selectedDataSource = inpFilt.h5rSource(filename)
-                self.dataSources.append(self.selectedDataSource)
+                try:
+                    self.selectedDataSource = inpFilt.h5rSource(filename)
+                    self.dataSources.append(self.selectedDataSource)
 
-                self.filesToClose.append(self.selectedDataSource.h5f)
-                
-                if 'DriftResults' in self.selectedDataSource.h5f.root:
-                    self.dataSources.append(inpFilt.h5rDSource(self.selectedDataSource.h5f))
+                    self.filesToClose.append(self.selectedDataSource.h5f)
+
+                    if 'DriftResults' in self.selectedDataSource.h5f.root:
+                        self.dataSources.append(inpFilt.h5rDSource(self.selectedDataSource.h5f))
+
+                        if len(self.selectedDataSource['x']) == 0:
+                            self.selectedDataSource = self.dataSources[-1]
+                except:
+                    self.selectedDataSource = inpFilt.h5rDSource(filename)
+                    self.dataSources.append(self.selectedDataSource)
+                    
+                    self.filesToClose.append(self.selectedDataSource.h5f)
 
                 #once we get around to storing the some metadata with the results
                 if 'MetaData' in self.selectedDataSource.h5f.root:

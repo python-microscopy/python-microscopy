@@ -11,6 +11,7 @@ deMod.pyc
 driftCorrProc.pyc
 driftCorrTools.pyc
 fitIO.pyc
+intelliFit.pyc
 intensProf.pyc
 ofind.pyc
 ofind3d.pyc
