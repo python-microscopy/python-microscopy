@@ -16,14 +16,12 @@ def create(parent):
  wxID_SEQDIALOGTNUMSLICES, wxID_SEQDIALOGTSTEPSIZE, wxID_SEQDIALOGTSTPOS, 
 ] = map(lambda _init_ctrls: wx.NewId(), range(18))
 
-class seqDialog(wxFrame):
+class seqPanel(wx.Panel):
     def _init_ctrls(self, prnt):
         # generated method, don't edit
-        wx.Frame.__init__(self, id=wxID_SEQDIALOG, name='seqDialog', parent=prnt,
-              pos=wx.Point(374, 265), size=wx.Size(356, 194),
-              style=wx.DEFAULT_FRAME_STYLE, title='Sequence')
-        self.SetClientSize(wx.Size(348, 167))
-        self.SetBackgroundColour(wx.Colour(209, 208, 203))
+        wx.Panel.__init__(self, id=wxID_SEQDIALOG, parent=prnt,size=wx.Size(356, 194))
+        #self.SetClientSize(wx.Size(348, 167))
+        #self.SetBackgroundColour(wx.Colour(209, 208, 203))
         self.chPiezo = wx.Choice(choices=[], id=wxID_SEQDIALOGCHPIEZO,
               name='chPiezo', parent=self, pos=wx.Point(136, 16), size=wx.Size(85,
               21), style=0)
@@ -82,7 +80,7 @@ class seqDialog(wxFrame):
               pos=wx.Point(248, 0), size=wx.Size(88, 56), style=0)
         self.tStepSize = wx.TextCtrl(id=wxID_SEQDIALOGTSTEPSIZE,
               name='tStepSize', parent=self, pos=wx.Point(256, 16),
-              size=wx.Size(64, 24), style=0, value='0.04')
+              size=wx.Size(64, 24), style=0, value='0.2')
         wx.EVT_KILL_FOCUS(self.tStepSize, self.OnTStepSizeKillFocus)
         self.bStart = wx.Button(id=wxID_SEQDIALOGBSTART, label='Go, Go, Go !!! ',
               name='bStart', parent=self, pos=wx.Point(128, 136), size=wx.Size(75,
