@@ -63,6 +63,7 @@ class LaserPanel(wx.Panel):
         
     def OnBPulse(self, event):
         self.laser.PulseBG(float(self.tcPulse.GetValue()))
+        
 class LaserControl(wx.Frame):
     def __init__(self, parent, lasers = None, winid=-1, title="Laser Control"):
         # begin wxGlade: MyFrame1.__init__

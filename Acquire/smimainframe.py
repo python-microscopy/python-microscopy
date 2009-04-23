@@ -201,6 +201,8 @@ class smiMainFrame(wx.Frame):
         self.MainFrame = self #reference to this window for use in scripts etc...
         self.MainMenu = self.menuBar1
 
+        self.toolPanels = []
+
         self.sh = wx.py.shell.Shell(id=-1,
               parent=self.notebook1, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
               introText='Python SMI bindings - note that help, license etc below is for Python, not PySMI\n\n')
@@ -265,6 +267,10 @@ class smiMainFrame(wx.Frame):
             self.step_d.Show()
         
         self.time1.WantNotification.append(self.StatusBarUpdate)
+
+        for t in self.toolPanels:
+            print t
+            self.AddTool(*t)
 
     def CreateToolPanel(self):
 

@@ -23,8 +23,8 @@ scope.chaninfo = chaninfo
 
 scope.shutters = fakeShutters
 
-lsf = lasersliders.LaserSliders(scope.cam)
-lsf.Show()
+lsf = lasersliders.LaserSliders(toolPanel, scope.cam)
+toolPanels.append((lsf, 'Laser Powers'))
 
 dsc = dSimControl.dSimControl(None, scope)
 dsc.Show()

@@ -9,47 +9,45 @@ import sys
 #dirty trick, but lets the Boa gui builder still work with frames we do this to
 #from noclosefr import * 
 
-class LaserSliders(wx.Frame):
-    def __init__(self, cam, laserNames=['405', '488'], parent=None, winid=-1, title="Laser Power"):
+class LaserSliders(wx.Panel):
+    def __init__(self, parent, cam, laserNames=['405', '488'], winid=-1):
         # begin wxGlade: MyFrame1.__init__
         #kwds["style"] = wx.DEFAULT_FRAME_STYLE
-        wx.Frame.__init__(self, parent, winid, title)
+        wx.Panel.__init__(self, parent, winid)
 
         self.cam = cam
         self.laserNames=laserNames
-        self.panel_1 = wx.Panel(self, -1)
+        
         self.sliders = []
         #self.SetTitle("Piezo Control")
-        sizer_1 = wx.BoxSizer(wx.VERTICAL)
+        
         sizer_2 = wx.BoxSizer(wx.VERTICAL)
 
         for c in range(len(self.cam.laserPowers)):
-            if sys.platform == 'darwin': #sliders are subtly broken on MacOS, requiring workaround
-                sl = wx.Slider(self, -1, self.cam.laserPowers[c], 0, 1000, size=wx.Size(300,-1),style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
-            else: #sane OS's
-                sl = wx.Slider(self.panel_1, -1, self.cam.laserPowers[c], 0, 1000, size=wx.Size(300,-1),style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
+            #if sys.platform == 'darwin': #sliders are subtly broken on MacOS, requiring workaround
+            sl = wx.Slider(self, -1, self.cam.laserPowers[c], 0, 1000, size=wx.Size(150,-1),style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
+            #else: #sane OS's
+            #    sl = wx.Slider(self, -1, self.cam.laserPowers[c], 0, 1000, size=wx.Size(300,-1),style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
 
             #sl.SetSize((800,20))
             sl.SetTickFreq(100,1)
-            sz = wx.StaticBoxSizer(wx.StaticBox(self.panel_1, -1, self.laserNames[c] + " [mW]"), wx.HORIZONTAL)
-            sz.Add(sl, 0, wx.ALL, 5)
-            sizer_2.Add(sz,1,0,0)
+            sz = wx.StaticBoxSizer(wx.StaticBox(self, -1, self.laserNames[c] + " [mW]"), wx.HORIZONTAL)
+            sz.Add(sl, 1, wx.ALL|wx.EXPAND, 5)
+            sizer_2.Add(sz,1,wx.EXPAND,0)
 
             self.sliders.append(sl)
+
+        sizer_2.AddSpacer(5)
 
         wx.EVT_SCROLL(self,self.onSlide)
                 
        
-        self.panel_1.SetAutoLayout(1)
-        self.panel_1.SetSizer(sizer_2)
-        sizer_2.Fit(self.panel_1)
-        sizer_2.SetSizeHints(self.panel_1)
-        sizer_1.Add(self.panel_1, 1, wx.EXPAND, 0)
-        self.SetAutoLayout(1)
-        self.SetSizer(sizer_1)
-        sizer_1.Fit(self)
-        sizer_1.SetSizeHints(self)
-        self.Layout()
+        #self.SetAutoLayout(1)
+        self.SetSizer(sizer_2)
+        sizer_2.Fit(self)
+        #sizer_2.SetSizeHints(self)
+        
+        #self.Layout()
         # end wxGlade
 
     def onSlide(self, event):

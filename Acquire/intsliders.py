@@ -32,19 +32,20 @@ class IntegrationSliders(wx.Panel):
             sl.SetTickFreq(100,1)
             sz = wx.StaticBoxSizer(wx.StaticBox(self, -1, self.chaninfo.names[c] + " (ms)"), wx.HORIZONTAL)
             sz.Add(sl, 1, wx.ALL|wx.EXPAND, 5)
-            sizer_2.Add(sz,1,0,0)
+            sizer_2.Add(sz,1,wx.EXPAND,0)
 
             self.sliders.append(sl)
 
+        sizer_2.AddSpacer(5)
         wx.EVT_SCROLL_CHANGED(self,self.onSlide)
                 
        
-        self.SetAutoLayout(1)
+        #self.SetAutoLayout(1)
         self.SetSizer(sizer_2)
         sizer_2.Fit(self)
-        sizer_2.SetSizeHints(self)
+        #sizer_2.SetSizeHints(self)
         
-        self.Layout()
+        #self.Layout()
         # end wxGlade
 
     def onSlide(self, event):

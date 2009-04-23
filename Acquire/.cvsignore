@@ -3,6 +3,7 @@ HDFSpoolFrame.pyc
 HDFSpooler.pyc
 MetaDataHandler.pyc
 QueueSpooler.pyc
+Spooler.pyc
 __init__.pyc
 chanedit.pyc
 chanfr.pyc
@@ -14,6 +15,7 @@ mytimer.pyc
 noclosefr.pyc
 previewaquisator.pyc
 prevviewer.pyc
+protocol.pyc
 psliders.pyc
 seqdialog.pyc
 setup.pyc
