@@ -259,8 +259,9 @@ class smiMainFrame(wx.Frame):
 
             #self.time1.WantNotification.append(self.piezo_sl.update)
 
-            self.seq_d = seqdialog.seqDialog(self, self.scope)
-            self.seq_d.Show()
+            self.seq_d = seqdialog.seqPanel(self, self.scope)
+            self.AddAqTool(self.seq_d, 'Z-Stack')
+            #self.seq_d.Show()
             
         if 'step' in self.scope.__dict__:
             self.step_d = stepDialog.stepDialog(self, self.scope)

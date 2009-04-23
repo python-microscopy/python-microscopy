@@ -28,7 +28,7 @@ def create(parent):
 
 [wxID_DSIMCONTROLTREFRESH] = [wx.NewId() for _init_utils in range(1)]
 
-class dSimControl(wx.Dialog):
+class dSimControl(wx.Panel):
     def _init_coll_nTransitionTensor_Pages(self, parent):
         # generated method, don't edit
 
@@ -40,6 +40,7 @@ class dSimControl(wx.Dialog):
               text='Probe Laser')
 
     def _init_utils(self):
+        #pass
         # generated method, don't edit
         self.tRefresh = wx.Timer(id=wxID_DSIMCONTROLTREFRESH, owner=self)
         self.Bind(wx.EVT_TIMER, self.OnTRefreshTimer,
@@ -47,11 +48,9 @@ class dSimControl(wx.Dialog):
 
     def _init_ctrls(self, prnt):
         # generated method, don't edit
-        wx.Dialog.__init__(self, id=wxID_DSIMCONTROL, name='dSimControl',
-              parent=prnt, pos=wx.Point(623, 174), size=wx.Size(442, 637),
-              style=wx.DEFAULT_DIALOG_STYLE, title='PALM Sim Monitor')
+        wx.Panel.__init__(self, id=-1, parent=prnt, size=wx.Size(442, 637))
         self._init_utils()
-        self.SetClientSize(wx.Size(434, 610))
+        #self.SetClientSize(wx.Size(434, 610))
 
         self.staticBox1 = wx.StaticBox(id=wxID_DSIMCONTROLSTATICBOX1,
               label='Fluorophore Postions', name='staticBox1', parent=self,

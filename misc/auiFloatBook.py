@@ -54,9 +54,10 @@ class AuiNotebookWithFloatingPages(wx.aui.AuiNotebook):
 
     def FloatPage(self, pageIndex):
         pageTitle = self.GetPageText(pageIndex)
-        frame = wx.MiniFrame(self, title=pageTitle,
-            style=wx.DEFAULT_FRAME_STYLE|wx.FRAME_TOOL_WINDOW)
         pageContents = self.GetPage(pageIndex)
+        frame = wx.MiniFrame(self, title=pageTitle,
+            style=wx.DEFAULT_FRAME_STYLE)#|wx.FRAME_TOOL_WINDOW)
+        frame.SetClientSize(pageContents.GetEffectiveMinSize())
         pageContents.Reparent(frame)
         self.RemovePage(pageIndex)
         frame.Bind(wx.EVT_CLOSE, self.onCloseFloatingPage)

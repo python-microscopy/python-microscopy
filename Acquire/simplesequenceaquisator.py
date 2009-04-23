@@ -19,7 +19,7 @@ class SimpleSequenceAquisitor(PreviewAquisator):
         self.ScanChan  = 0
         self.StartMode = self.CENTRE_AND_LENGTH
         self.SeqLength = 100  
-        self.StepSize  = 0.04
+        self.StepSize  = 0.2
         self.startPos = 0
         self.endPos = 0
         

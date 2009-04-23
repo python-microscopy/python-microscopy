@@ -23,11 +23,20 @@ scope.chaninfo = chaninfo
 
 scope.shutters = fakeShutters
 
-lsf = lasersliders.LaserSliders(toolPanel, scope.cam)
-toolPanels.append((lsf, 'Laser Powers'))
 
-dsc = dSimControl.dSimControl(None, scope)
-dsc.Show()
+
+#import wx
+#f = wx.Frame(None, -1, 'Simulation Settings')
+dsc = dSimControl.dSimControl(notebook1, scope)
+#f.Show()
+#toolPanels.append((dsc, 'Simulation'))
+notebook1.AddPage(page=dsc, select=False, caption='Simulation Settings')
+#dsc.Show()
+
+#f = wx.Frame(None, -1, 'Simulation Settings')
+lsf = lasersliders.LaserSliders(toolPanel, scope.cam)
+#MainFrame.AddTool(lsf, 'Laser Powers')
+toolPanels.append((lsf, 'Laser Powers'))
 
 #import remFitPSF
 #import Pyro

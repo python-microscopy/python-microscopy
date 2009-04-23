@@ -1,5 +1,7 @@
 __init__.pyc
 auiFloatBook.pyc
+editList.pyc
 fbpIcons.pyc
+listctrlMixins.pyc
 ricsSim.pyc
 wxPlotPanel.pyc

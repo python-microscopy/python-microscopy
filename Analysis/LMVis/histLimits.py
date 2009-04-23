@@ -95,9 +95,12 @@ class HistLimitPanel(wx.Panel):
     def GenHist(self):
         #self.hmin = min(self.limit_lower, self.lower_pctile)
         #self.hmax = max(self.limit_upper, self.upper_pctile)
-
+        if not self.limit_upper >= (self.limit_lower + 1):
+            self.limit_upper += 1
+            
         self.hmin = self.limit_lower
         self.hmax = self.limit_upper
+        
         hmid = (self.hmin + self.hmax)/2.0
 
         #expand shown range to twice current range
@@ -106,10 +109,14 @@ class HistLimitPanel(wx.Panel):
 
         self.hstep = (self.hmax - self.hmin)/self.Size[0]
 
+        #print self.hmin, self.hmax, self.hstep
+
+        
         self.h, self.edges = numpy.histogram(self.data, numpy.arange(self.hmin, self.hmax, self.hstep))
 
         if self.log:
             self.h = numpy.log10(self.h+.01) - numpy.log10(.01)
+        
 
     def DoPaint(self, dc):
         dc.SetFont(wx.NORMAL_FONT)
