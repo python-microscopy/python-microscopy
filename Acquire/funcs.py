@@ -8,7 +8,14 @@ import previewaquisator
 import simplesequenceaquisator
 import prevviewer
 import PYME.DSView.dsviewer as dsviewer
-import PYME.DSView.myviewpanel as myviewpanel
+#import PYME.DSView.myviewpanel as viewpanel
+import PYME.DSView.viewpanellite as viewpanel
+import PYME.DSView.displaySettingsPanel as disppanel
+
+import PYME.Acquire.protocol as protocol
+
+from PYME.cSMI import CDataStack_AsArray
+from math import exp
 #import piezo_e662
 #import piezo_e816
 
@@ -26,8 +33,13 @@ class microscope:
  
         #self.windows = []
         self.StatusCallbacks = [] #list of functions which provide status information
-    #preview
-    
+        #preview
+        self.saturationThreshold = 16383 #14 bit
+        self.lastFrameSaturated = False
+        #self.cam.saturationIntervened = False
+        self.saturatedMessage = ''
+
+        protocol.scope = self
     
 
     def pr_refr(self, source):
@@ -36,13 +48,72 @@ class microscope:
     def pr_refr2(self, source):
         self.vp.imagepanel.Refresh()
 
+    def satCheck(self, source): # check for saturation
+        im = CDataStack_AsArray(source.ds, 0)
+        IMax = im.max()
+
+        if (IMax >= self.saturationThreshold): #is saturated
+
+            source.cam.StopAq()
+
+
+            if self.lastFrameSaturated: #last frame was also saturated - our intervention obviously didn't work - close the shutter
+                if 'SetShutter' in dir(source.cam):
+                    source.cam.SetShutter(False)
+                source.cam.StartAq()
+                self.saturatedMessage = 'Sat - Camera shutter was closed'
+                self.lastFrameSaturated = True
+                self.cam.saturationIntervened = True
+                return
+
+            fracPixelsSat = (im > self.saturationThreshold).sum().astype('f')/im.size
+
+            #try turning the e.m. gain off
+            if 'SetEMGain' in dir(source.cam) and not source.cam.GetEMGain() == 0:
+                self.oldEMGain = source.cam.GetEMGain()
+                source.cam.SetEMGain(0)
+                if self.oldEMGain  < 50: #poor chance of resolving by turning EMGain down alone
+                    if 'SetShutter' in dir(source.cam):
+                        source.cam.SetShutter(False)
+                        self.saturatedMessage = 'Sat - Camera shutter was closed'
+                else:
+                    self.saturatedMessage = 'Sat - EM Gain turned down'
+                    
+                source.cam.StartAq()
+
+                self.lastFrameSaturated = True
+                self.cam.saturationIntervened = True
+                return
+            else:
+                if 'SetShutter' in dir(source.cam):
+                    source.cam.SetShutter(False)
+                source.cam.StartAq()
+                self.saturatedMessage = 'Sat - Camera shutter was closed'
+                self.lastFrameSaturated = True
+                self.cam.saturationIntervened = True
+                return
+
+            self.lastFrameSaturated = True
+
+        else:
+            self.lastFrameSaturated = False
+
+
+
+
+
+
     def genStatus(self):
         stext = ''
         if self.cam.CamReady():
             self.cam.GetStatus()
-            stext = 'CCD Temp: %d   Electro Temp: %d' % (self.cam.GetCCDTemp(), self.cam.GetElectrTemp())
+            stext = 'CCD Temp: %d' % self.cam.GetCCDTemp()
         else:
             stext = '<Camera ERROR>'
+        if self.lastFrameSaturated:
+            stext = stext + '    Camera Saturated!!'
+        if self.cam.saturationIntervened:
+            stext = stext + '    ' + self.saturatedMessage
         if 'step' in dir(self):
             stext = stext + '   Stepper: (XPos: %1.2f  YPos: %1.2f  ZPos: %1.2f)' % (self.step.GetPosX(), self.step.GetPosY(), self.step.GetPosZ())
         if self.pa.isRunning():
@@ -68,11 +139,22 @@ class microscope:
             self.prev_fr.genStatusText = self.genStatus
             self.prev_fr.Show()
         else:
-             self.vp = myviewpanel.MyViewPanel(Notebook, self.pa.ds)
+             self.vp = viewpanel.MyViewPanel(Notebook, self.pa.ds)
              self.vp.crosshairs = False
+
+             self.vsp = disppanel.dispSettingsPanel(Notebook, self.vp)
+
              self.pa.WantFrameGroupNotification.append(self.pr_refr2)
+             self.pa.WantFrameGroupNotification.append(self.satCheck)
+             self.pa.WantFrameGroupNotification.append(self.vsp.RefrData)
              #Notebook.AddPage(imageId=-1, page=self.vp, select=True,text='Preview')
              Notebook.AddPage(page=self.vp, select=True,caption='Preview')
+
+             Parent.AddTool(self.vsp, 'Display')
+#             Notebook.AddPage(page=self.vsp, select=False,caption='Display')
+#             Notebook.Split(3, wx.RIGHT)
+#             Notebook.SetSelection(2)
+#             Notebook.SetSelection(3)
              
         self.pa.start()
 

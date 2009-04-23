@@ -44,10 +44,10 @@ dsc.Show()
 
 #scope.pa.WantFrameNotification.append(postTask)
 
-import HDFSpoolFrame
-from PYME.FileUtils import nameUtils
-frs = HDFSpoolFrame.FrSpool(None, scope, nameUtils.genHDFDataFilepath())
-frs.Show()
+#import HDFSpoolFrame
+#from PYME.FileUtils import nameUtils
+#frs = HDFSpoolFrame.FrSpool(None, scope, nameUtils.genHDFDataFilepath())
+#frs.Show()
 
 
 from PYME import cSMI

@@ -5,47 +5,43 @@ import wx
 import noclosefr
 import sys
 
-class PiezoSliders(noclosefr.noCloseFrame):
-    def __init__(self, piezos, parent=None, winid=-1, title="Piezo Control"):
+class PiezoSliders(wx.Panel):
+    def __init__(self, piezos, parent=None, winid=-1):
         # begin wxGlade: MyFrame1.__init__
         #kwds["style"] = wx.DEFAULT_FRAME_STYLE
-        noclosefr.noCloseFrame.__init__(self, parent, winid, title)
+        wx.Panel.__init__(self, parent, winid)
 
         self.piezos = piezos
-        self.panel_1 = wx.Panel(self, -1)
+        #self.panel_1 = wx.Panel(self, -1)
         self.sliders = []
         #self.SetTitle("Piezo Control")
-        sizer_1 = wx.BoxSizer(wx.VERTICAL)
+        #sizer_1 = wx.BoxSizer(wx.VERTICAL)
         sizer_2 = wx.BoxSizer(wx.VERTICAL)
 
         for p in self.piezos:
-            if sys.platform == 'darwin': #sliders are subtly broken on MacOS, requiring workaround
-                sl = wx.Slider(self, -1, 100*p[0].GetPos(p[1]), 100*p[0].GetMin(p[1]), 100*p[0].GetMax(p[1]), size=wx.Size(800,50), style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
-            else:
-                sl = wx.Slider(self.panel_1, -1, 100*p[0].GetPos(p[1]), 100*p[0].GetMin(p[1]), 100*p[0].GetMax(p[1]), size=wx.Size(800,50), style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
+            #if sys.platform == 'darwin': #sliders are subtly broken on MacOS, requiring workaround
+            sl = wx.Slider(self, -1, 100*p[0].GetPos(p[1]), 100*p[0].GetMin(p[1]), 100*p[0].GetMax(p[1]), size=wx.Size(200,-1), style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
+            #else:
+            #    sl = wx.Slider(self.panel_1, -1, 100*p[0].GetPos(p[1]), 100*p[0].GetMin(p[1]), 100*p[0].GetMax(p[1]), size=wx.Size(300,-1), style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
             #sl.SetSize((800,20))
-	    if 'minorTick' in dir(p):
-            	sl.SetTickFreq(100, p.minorTick)
-	    else:
-		sl.SetTickFreq(100, 1)
-            sz = wx.StaticBoxSizer(wx.StaticBox(self.panel_1, -1, p[2] + " (10nm step)"), wx.HORIZONTAL)
+            if 'minorTick' in dir(p):
+                sl.SetTickFreq(100, p.minorTick)
+            else:
+                sl.SetTickFreq(100, 1)
+            sz = wx.StaticBoxSizer(wx.StaticBox(self, -1, p[2] + " (10nm step)"), wx.HORIZONTAL)
             sz.Add(sl, 0, wx.ALL, 5)
             sizer_2.Add(sz,1,0,0)
 
             self.sliders.append(sl)
 
         wx.EVT_SCROLL(self,self.onSlide)
-                
-       
-        self.panel_1.SetAutoLayout(1)
-        self.panel_1.SetSizer(sizer_2)
-        sizer_2.Fit(self.panel_1)
-        sizer_2.SetSizeHints(self.panel_1)
-        sizer_1.Add(self.panel_1, 1, wx.EXPAND, 0)
+
+
         self.SetAutoLayout(1)
-        self.SetSizer(sizer_1)
-        sizer_1.Fit(self)
-        sizer_1.SetSizeHints(self)
+        self.SetSizer(sizer_2)
+        sizer_2.Fit(self)
+        sizer_2.SetSizeHints(self)
+
         self.Layout()
         # end wxGlade
 

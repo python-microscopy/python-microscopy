@@ -25,9 +25,9 @@ class LaserSliders(wx.Frame):
 
         for c in range(len(self.cam.laserPowers)):
             if sys.platform == 'darwin': #sliders are subtly broken on MacOS, requiring workaround
-                sl = wx.Slider(self, -1, self.cam.laserPowers[c], 0, 1000, size=wx.Size(800,50),style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
+                sl = wx.Slider(self, -1, self.cam.laserPowers[c], 0, 1000, size=wx.Size(300,-1),style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
             else: #sane OS's
-                sl = wx.Slider(self.panel_1, -1, self.cam.laserPowers[c], 0, 1000, size=wx.Size(800,50),style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
+                sl = wx.Slider(self.panel_1, -1, self.cam.laserPowers[c], 0, 1000, size=wx.Size(300,-1),style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
 
             #sl.SetSize((800,20))
             sl.SetTickFreq(100,1)

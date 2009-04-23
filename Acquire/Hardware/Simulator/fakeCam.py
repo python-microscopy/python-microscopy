@@ -182,6 +182,12 @@ class FakeCamera:
     def SetCOC(*args): 
         pass
 
+    def StartAq(self):
+        pass
+
+    def StopAq(self):
+        pass
+
     def StartExposure(self):
         self.compTOld = self.compTCur
         self.compTCur = compThread(self.XVals, self.YVals, (self.zPiezo.GetPos() - self.zOffset)*1e3,self.fluors, self.noiseMaker, laserPowers=self.laserPowers, intTime=self.intTime*1e-3)

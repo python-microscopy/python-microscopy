@@ -68,6 +68,9 @@ class LMGLCanvas(GLCanvas):
         self.drawModes = {'triang':GL_TRIANGLES, 'quads':GL_QUADS, 'edges':GL_LINES, 'points':GL_POINTS}
 
         self.c = numpy.array([1,1,1])
+        self.zmin = -1
+        self.zmax = 1
+        self.ang = 0
         return
 
     def OnPaint(self,event):
@@ -90,8 +93,9 @@ class LMGLCanvas(GLCanvas):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         glLoadIdentity()
-        glOrtho(self.xmin,self.xmax,self.ymin,self.ymax,-1,1)
+        glOrtho(self.xmin,self.xmax,self.ymin,self.ymax,self.zmin,self.zmax)
 
+        #glRotatef(self.ang, 0, 1, 0)
         #glPushMatrix()
         #color = [1.0,0.,0.,1.]
         #glMaterialfv(GL_FRONT,GL_DIFFUSE,color)
@@ -232,6 +236,25 @@ class LMGLCanvas(GLCanvas):
 
         vs = numpy.vstack((x.ravel(), y.ravel()))
         vs = vs.T.ravel().reshape(len(x.ravel()), 2)
+        self.vs_ = glVertexPointerf(vs)
+
+        #cs = numpy.minimum(numpy.vstack((self.IScale[0]*c,self.IScale[1]*c,self.IScale[2]*c)), 1).astype('f')
+        #cs = cs.T.ravel().reshape(len(c), 3)
+        #cs_ = glColorPointerf(cs)
+
+        self.mode = 'points'
+
+        self.nVertices = vs.shape[0]
+        self.setColour(self.IScale, self.zeroPt)
+
+    def setPoints3d(self, x, y, z, c = None):
+        if c == None:
+            self.c = numpy.ones(x.shape).ravel()
+        else:
+            self.c = c
+
+        vs = numpy.vstack((x.ravel(), y.ravel(), z.ravel()))
+        vs = vs.T.ravel().reshape(len(x.ravel()), 3)
         self.vs_ = glVertexPointerf(vs)
 
         #cs = numpy.minimum(numpy.vstack((self.IScale[0]*c,self.IScale[1]*c,self.IScale[2]*c)), 1).astype('f')

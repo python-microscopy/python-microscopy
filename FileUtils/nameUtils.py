@@ -26,7 +26,7 @@ if 'USERPROFILE' in os.environ.keys(): #windows
     homedir = os.environ['USERPROFILE']
 
 datadir = '/home/david/simul'
-if 'PYMEDATADIR' in os.environ.keys():
+if 'PYMEDATADIR' in os.environ.keys() and os.access(os.environ['PYMEDATADIR'], os.W_OK):
     datadir = os.environ['PYMEDATADIR']
 
         

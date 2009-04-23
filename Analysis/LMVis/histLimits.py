@@ -202,7 +202,8 @@ class HistLimitPanel(wx.Panel):
     def SetValue(self, val):
         self.limit_lower = val[0]
         self.limit_upper = val[1]
-        
+
+        self.GenHist()
         self.Refresh()
 
     def GetValue(self):

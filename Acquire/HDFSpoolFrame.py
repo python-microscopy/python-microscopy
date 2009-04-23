@@ -7,7 +7,12 @@ import QueueSpooler
 #import win32api
 from PYME.FileUtils import nameUtils
 from PYME.ParallelTasks.relativeFiles import getRelFilename
+
+import PYME.Acquire.Protocols
+import PYME.Acquire.protocol as prot
+
 import os
+import glob
 import subprocess
 
 def create(parent):
@@ -38,91 +43,124 @@ def baseconvert(number,todigits):
 
 
 class FrSpool(wx.Frame):
-    def _init_ctrls(self, prnt):
-        # generated method, don't edit
-        wx.Frame.__init__(self, id=wxID_FRSPOOL, name='FrSpool', parent=prnt,
+    def __init__(self, parent, scope, defDir, defSeries='%(day)d_%(month)d_series'):
+        wx.Frame.__init__(self, id=wxID_FRSPOOL, name='FrSpool', parent=parent,
               pos=wx.Point(543, 403), size=wx.Size(285, 253),
               style=wx.DEFAULT_FRAME_STYLE, title='Spooling')
-        self.SetClientSize(wx.Size(277, 226))
+        #self.SetClientSize(wx.Size(277, 226))
 
-        self.panel1 = wx.Panel(id=wxID_FRSPOOLPANEL1, name='panel1',
-              parent=self, pos=wx.Point(0, 0), size=wx.Size(277, 226),
-              style=wx.TAB_TRAVERSAL)
+        vsizer = wx.BoxSizer(wx.VERTICAL)
 
-        self.bStartSpool = wx.Button(id=wxID_FRSPOOLBSTARTSPOOL,
-              label='Start Spooling', name='bStartSpool', parent=self.panel1,
-              pos=wx.Point(186, 67), size=wx.Size(88, 23), style=0)
-        self.bStartSpool.Bind(wx.EVT_BUTTON, self.OnBStartSpoolButton,
-              id=wxID_FRSPOOLBSTARTSPOOL)
+        self.spPan = PanSpool(self, scope, defDir, defSeries='%(day)d_%(month)d_series')
 
-        self.staticBox1 = wx.StaticBox(id=wxID_FRSPOOLSTATICBOX1,
-              label='Spooling Progress', name='staticBox1', parent=self.panel1,
-              pos=wx.Point(7, 116), size=wx.Size(265, 104), style=0)
-        self.staticBox1.Enable(False)
+        vsizer.Add(self.spPan, 0, wx.ALL, 0)
+        self.SetSizer(vsizer)
+        vsizer.Fit(self)
 
-        self.stSpoolingTo = wx.StaticText(id=wxID_FRSPOOLSTSPOOLINGTO,
-              label='Spooling to .....', name='stSpoolingTo',
-              parent=self.panel1, pos=wx.Point(26, 140), size=wx.Size(76, 13),
-              style=0)
-        self.stSpoolingTo.Enable(False)
+    
 
-        self.stNImages = wx.StaticText(id=wxID_FRSPOOLSTNIMAGES,
-              label='NNNNN images spooled in MM minutes', name='stNImages',
-              parent=self.panel1, pos=wx.Point(26, 164), size=wx.Size(181, 13),
-              style=0)
-        self.stNImages.Enable(False)
+class PanSpool(wx.Panel):
+    def _init_ctrls(self, prnt):
+        wx.Panel.__init__(self, parent=prnt, style=wx.TAB_TRAVERSAL)
 
-        self.bStopSpooling = wx.Button(id=wxID_FRSPOOLBSTOPSPOOLING,
-              label='Stop', name='bStopSpooling', parent=self.panel1,
-              pos=wx.Point(55, 188), size=wx.Size(75, 23), style=0)
-        self.bStopSpooling.Enable(False)
+        vsizer = wx.BoxSizer(wx.VERTICAL)
 
-        self.bStopSpooling.Bind(wx.EVT_BUTTON, self.OnBStopSpoolingButton,
-              id=wxID_FRSPOOLBSTOPSPOOLING)
+        ### Aquisition Protocol
+        sbAP = wx.StaticBox(self, -1,'Aquisition Protocol')
+        APSizer = wx.StaticBoxSizer(sbAP, wx.HORIZONTAL)
 
-        self.bAnalyse = wx.Button(id = -1,
-              label='Analyse', name='bAnalyse', parent=self.panel1,
-              pos=wx.Point(160, 188), size=wx.Size(75, 23), style=0)
-        self.bAnalyse.Enable(False)
+        self.stAqProtocol = wx.StaticText(self, -1,'<None>', size=wx.Size(136, -1))
+        APSizer.Add(self.stAqProtocol, 5,wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5)
 
-        self.bAnalyse.Bind(wx.EVT_BUTTON, self.OnBAnalyse)
+        self.bSetAP = wx.Button(self, -1, 'Set', size=wx.Size(40, 23))
+        self.bSetAP.Bind(wx.EVT_BUTTON, self.OnBSetAqProtocolButton)
 
-        self.staticBox2 = wx.StaticBox(id=wxID_FRSPOOLSTATICBOX2,
-              label='Spool Directory', name='staticBox2', parent=self.panel1,
-              pos=wx.Point(8, 8), size=wx.Size(264, 48), style=0)
+        APSizer.Add(self.bSetAP, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
-        self.stSpoolDirName = wx.StaticText(id=wxID_FRSPOOLSTSPOOLDIRNAME,
-              label='Save images in: Blah Blah', name='stSpoolDirName',
-              parent=self.panel1, pos=wx.Point(21, 28), size=wx.Size(136, 13),
-              style=0)
+        vsizer.Add(APSizer, 0, wx.ALL|wx.EXPAND, 5)
+        
+        ###Spool directory
+        sbSpoolDir = wx.StaticBox(self, -1,'Spool Directory')
+        spoolDirSizer = wx.StaticBoxSizer(sbSpoolDir, wx.HORIZONTAL)
 
-        self.bSetSpoolDir = wx.Button(id=wxID_FRSPOOLBSETSPOOLDIR, label='Set',
-              name='bSetSpoolDir', parent=self.panel1, pos=wx.Point(222, 23),
-              size=wx.Size(40, 23), style=0)
-        self.bSetSpoolDir.SetThemeEnabled(False)
-        self.bSetSpoolDir.Bind(wx.EVT_BUTTON, self.OnBSetSpoolDirButton,
-              id=wxID_FRSPOOLBSETSPOOLDIR)
+        self.stSpoolDirName = wx.StaticText(self, -1,'Save images in: Blah Blah', size=wx.Size(136, -1))
+        spoolDirSizer.Add(self.stSpoolDirName, 5,wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5)
 
-        self.tcSpoolFile = wx.TextCtrl(id=wxID_FRSPOOLTCSPOOLFILE,
-              name='tcSpoolFile', parent=self.panel1, pos=wx.Point(81, 68),
-              size=wx.Size(100, 21), style=0, value='dd_mm_series_a')
-        self.tcSpoolFile.Bind(wx.EVT_TEXT, self.OnTcSpoolFileText,
-              id=wxID_FRSPOOLTCSPOOLFILE)
+        self.bSetSpoolDir = wx.Button(self, -1, 'Set', size=wx.Size(40, 23))
+        self.bSetSpoolDir.Bind(wx.EVT_BUTTON, self.OnBSetSpoolDirButton)
+        
+        spoolDirSizer.Add(self.bSetSpoolDir, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
-        self.staticText1 = wx.StaticText(id=wxID_FRSPOOLSTATICTEXT1,
-              label='Series name:', name='staticText1', parent=self.panel1,
-              pos=wx.Point(11, 72), size=wx.Size(66, 13), style=0)
+        vsizer.Add(spoolDirSizer, 0, wx.ALL|wx.EXPAND, 5)
 
-        self.cbCompress = wx.CheckBox(id=wxID_FRSPOOLCBCOMPRESS,
-              label=u'Enable Compression', name='cbCompress',
-              parent=self.panel1, pos=wx.Point(148, 97), size=wx.Size(124, 13),
-              style=0)
+        ### Series Name & start button
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        hsizer.Add(wx.StaticText(self, -1, 'Series: '), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        self.tcSpoolFile = wx.TextCtrl(self, -1, 'dd_mm_series_a', size=wx.Size(100, -1))
+        self.tcSpoolFile.Bind(wx.EVT_TEXT, self.OnTcSpoolFileText)
+
+        hsizer.Add(self.tcSpoolFile, 5,wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5)
+
+        self.bStartSpool = wx.Button(self,-1,'Start Spooling')
+        self.bStartSpool.Bind(wx.EVT_BUTTON, self.OnBStartSpoolButton)
+        hsizer.Add(self.bStartSpool, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        vsizer.Add(hsizer, 0, wx.LEFT|wx.RIGHT|wx.EXPAND, 5)
+        
+        ### Queue & Compression
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.cbQueue = wx.CheckBox(self, -1,'Save to Queue')
+        self.cbQueue.SetValue(False)
+
+        hsizer.Add(self.cbQueue, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        self.cbCompress = wx.CheckBox(self, -1, 'Enable Compression')
         self.cbCompress.SetValue(False)
 
-        self.cbQueue = wx.CheckBox(id=wxID_FRSPOOLCBQUEUE,
-              label=u'Save to Queue', name=u'cbQueue', parent=self.panel1,
-              pos=wx.Point(12, 97), size=wx.Size(124, 13), style=0)
-        self.cbQueue.SetValue(False)
+        hsizer.Add(self.cbCompress, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        
+        vsizer.Add(hsizer, 0, wx.LEFT|wx.RIGHT|wx.EXPAND, 5)
+
+        ### Spooling Progress
+
+        self.sbSpoolProgress = wx.StaticBox(self, -1, 'Spooling Progress')
+        self.sbSpoolProgress.Enable(False)
+
+        spoolProgSizer = wx.StaticBoxSizer(self.sbSpoolProgress, wx.VERTICAL)
+
+        self.stSpoolingTo = wx.StaticText(self, -1, 'Spooling to .....')
+        self.stSpoolingTo.Enable(False)
+
+        spoolProgSizer.Add(self.stSpoolingTo, 0, wx.ALL, 0)
+
+        self.stNImages = wx.StaticText(self, -1, 'NNNNN images spooled in MM minutes')
+        self.stNImages.Enable(False)
+
+        spoolProgSizer.Add(self.stNImages, 0, wx.ALL, 0)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.bStopSpooling = wx.Button(self, -1, 'Stop')
+        self.bStopSpooling.Enable(False)
+        self.bStopSpooling.Bind(wx.EVT_BUTTON, self.OnBStopSpoolingButton)
+
+        hsizer.Add(self.bStopSpooling, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        self.bAnalyse = wx.Button(self, -1, 'Analyse')
+        self.bAnalyse.Enable(False)
+        self.bAnalyse.Bind(wx.EVT_BUTTON, self.OnBAnalyse)
+
+        hsizer.Add(self.bAnalyse, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        spoolProgSizer.Add(hsizer, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 0)
+
+        vsizer.Add(spoolProgSizer, 0, wx.ALL|wx.EXPAND, 5)
+
+        self.SetSizer(vsizer)
+        vsizer.Fit(self)
 
     def __init__(self, parent, scope, defDir, defSeries='%(day)d_%(month)d_series'):
         self._init_ctrls(parent)
@@ -137,6 +175,8 @@ class FrSpool(wx.Frame):
 
         self.seriesCounter = 0
         self.seriesName = self._GenSeriesName()
+
+        self.protocol = prot.NullProtocol
         
         #if we've had to quit for whatever reason start where we left off
         while os.path.exists(os.path.join(self.dirname, self.seriesName + '.h5')):
@@ -188,10 +228,10 @@ class FrSpool(wx.Frame):
 
         if self.cbQueue.GetValue():
             self.queueName = getRelFilename(self.dirname + fn + '.h5')
-            self.spooler = QueueSpooler.Spooler(self.scope, self.queueName, self.scope.pa, self, complevel=compLevel)
+            self.spooler = QueueSpooler.Spooler(self.scope, self.queueName, self.scope.pa, self.protocol, self, complevel=compLevel)
             self.bAnalyse.Enable(True)
         else:
-            self.spooler = HDFSpooler.Spooler(self.scope, self.dirname + fn + '.h5', self.scope.pa, self, complevel=compLevel)
+            self.spooler = HDFSpooler.Spooler(self.scope, self.dirname + fn + '.h5', self.scope.pa, self.protocol, self, complevel=compLevel)
         self.bStartSpool.Enable(False)
         self.bStopSpooling.Enable(True)
         self.stSpoolingTo.Enable(True)
@@ -232,6 +272,25 @@ class FrSpool(wx.Frame):
                 self.seriesCounter +=1
                 self.seriesName = self._GenSeriesName()
                 self.tcSpoolFile.SetValue(self.seriesName)
+
+    def OnBSetAqProtocolButton(self, event):
+        protocolList = glob.glob(PYME.Acquire.Protocols.__path__[0] + '/[a-zA-Z]*.py')
+        protocolList = ['<None>',] + [os.path.split(p)[-1] for p in protocolList]
+        pDlg = wx.SingleChoiceDialog(self, '', 'Select Protocol', protocolList)
+
+        if pDlg.ShowModal() == wx.ID_OK:
+            pname = pDlg.GetStringSelection()
+            self.stAqProtocol.SetLabel(pname)
+
+            if pname == '<None>':
+                self.protocol = prot.NullProtocol
+            else:
+                pmod = __import__('PYME.Acquire.Protocols.' + pname.split('.')[0],fromlist=['PYME', 'Acquire','Protocols'])
+                reload(pmod) #force module to be reloaded so that changes in the protocol will be recognised
+
+                self.protocol = pmod.PROTOCOL
+
+        pDlg.Destroy()
 
     def OnTcSpoolFileText(self, event):
         event.Skip()

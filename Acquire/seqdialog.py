@@ -5,6 +5,7 @@ import simplesequenceaquisator
 #dirty trick, but lets the Boa gui builder still work with frames we do this to
 #NB must come after 'from wx.... import *' !!!
 from noclosefr import * 
+
 def create(parent):
     return seqDialog(parent)
 [wxID_SEQDIALOG, wxID_SEQDIALOGBENDHERE, wxID_SEQDIALOGBMID_NUM, 
@@ -14,6 +15,7 @@ def create(parent):
  wxID_SEQDIALOGSTATICBOX6, wxID_SEQDIALOGSTMEMORY, wxID_SEQDIALOGTENDPOS, 
  wxID_SEQDIALOGTNUMSLICES, wxID_SEQDIALOGTSTEPSIZE, wxID_SEQDIALOGTSTPOS, 
 ] = map(lambda _init_ctrls: wx.NewId(), range(18))
+
 class seqDialog(wxFrame):
     def _init_ctrls(self, prnt):
         # generated method, don't edit

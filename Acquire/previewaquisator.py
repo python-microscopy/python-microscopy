@@ -276,7 +276,10 @@ class PreviewAquisator(wx.Timer):
         self.ds.setZPos(0) #go to start of data stack
         
         #set the shutters up for the first frame
-        self.shutters.setShutterStates(self.hwChans[self.looppos]) 
+        self.shutters.setShutterStates(self.hwChans[self.looppos])
+
+        #clear saturation intervened flag
+        self.cam.saturationIntervened = False
 
         #move piezo to starting position
         self.setPiezoStartPos()

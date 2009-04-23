@@ -10,45 +10,40 @@ from noclosefr import *
 
 import sys 
 
-class IntegrationSliders(wxFrame):
-    def __init__(self, chaninfo, parent=None, winid=-1, title="Integration Time"):
+class IntegrationSliders(wx.Panel):
+    def __init__(self, chaninfo, parent, winid=-1):
         # begin wxGlade: MyFrame1.__init__
         #kwds["style"] = wx.DEFAULT_FRAME_STYLE
-        wxFrame.__init__(self, parent, winid, title)
+        wx.Panel.__init__(self, parent, winid)
 
         self.chaninfo = chaninfo
-        self.panel_1 = wx.Panel(self, -1)
         self.sliders = []
         #self.SetTitle("Piezo Control")
-        sizer_1 = wx.BoxSizer(wx.VERTICAL)
+        
         sizer_2 = wx.BoxSizer(wx.VERTICAL)
 
         for c in range(len(self.chaninfo.itimes)):
-            if not sys.platform == 'darwin':
-                sl = wx.Slider(self.panel_1, -1, self.chaninfo.itimes[c], 1, 10000, size=wx.Size(800,50),style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
-            else:#workaround for broken mouse event handling (and hence sliders) on MacOS
-                sl = wx.Slider(self, -1, self.chaninfo.itimes[c], 1, 10000, size=wx.Size(800,50),style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
+            #if not sys.platform == 'darwin':
+            sl = wx.Slider(self, -1, self.chaninfo.itimes[c], 1, min(5*self.chaninfo.itimes[c], 10000), size=wx.Size(200,-1),style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
+            #else:#workaround for broken mouse event handling (and hence sliders) on MacOS
+            #    sl = wx.Slider(self, -1, self.chaninfo.itimes[c], 1, min(5*self.chaninfo.itimes[c], 10000), size=wx.Size(300,-1),style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
  
             #sl.SetSize((800,20))
             sl.SetTickFreq(100,1)
-            sz = wx.StaticBoxSizer(wx.StaticBox(self.panel_1, -1, self.chaninfo.names[c] + " (ms)"), wx.HORIZONTAL)
-            sz.Add(sl, 0, wx.ALL, 5)
+            sz = wx.StaticBoxSizer(wx.StaticBox(self, -1, self.chaninfo.names[c] + " (ms)"), wx.HORIZONTAL)
+            sz.Add(sl, 1, wx.ALL|wx.EXPAND, 5)
             sizer_2.Add(sz,1,0,0)
 
             self.sliders.append(sl)
 
-        wx.EVT_SCROLL(self,self.onSlide)
+        wx.EVT_SCROLL_CHANGED(self,self.onSlide)
                 
        
-        self.panel_1.SetAutoLayout(1)
-        self.panel_1.SetSizer(sizer_2)
-        sizer_2.Fit(self.panel_1)
-        sizer_2.SetSizeHints(self.panel_1)
-        sizer_1.Add(self.panel_1, 1, wx.EXPAND, 0)
         self.SetAutoLayout(1)
-        self.SetSizer(sizer_1)
-        sizer_1.Fit(self)
-        sizer_1.SetSizeHints(self)
+        self.SetSizer(sizer_2)
+        sizer_2.Fit(self)
+        sizer_2.SetSizeHints(self)
+        
         self.Layout()
         # end wxGlade
 
@@ -58,10 +53,12 @@ class IntegrationSliders(wxFrame):
         self.sl = sl
         self.ind = ind
         self.chaninfo.itimes[ind] = sl.GetValue()
+        self.sliders[ind].SetRange(1, min(5*self.chaninfo.itimes[ind], 10000))
 
     def update(self):
         for ind in range(len(self.piezos)):
             self.sliders[ind].SetValue(self.chaninfo.itimes[ind])
+            self.sliders[ind].SetRange(1, min(5*self.chaninfo.itimes[ind], 10000))
 
             
 

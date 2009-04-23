@@ -7,6 +7,9 @@ import wx
 import wx.py.shell
 import wx.aui
 
+import wx.lib.foldpanelbar as fpb
+from PYME.misc.fbpIcons import *
+
 import sys
 sys.path.append('.')
 
@@ -24,6 +27,8 @@ import stepDialog
 import funcs
 import PYME.DSView.dsviewer as dsviewer
 import chanfr
+import HDFSpoolFrame
+from PYME.FileUtils import nameUtils
 
 def create(parent, options = None):
     return smiMainFrame(parent, options)
@@ -157,10 +162,10 @@ class smiMainFrame(wx.Frame):
     def _init_ctrls(self, prnt):
         # generated method, don't edit
         wx.Frame.__init__(self, id=wxID_SMIMAINFRAME, name='smiMainFrame',
-              parent=prnt, pos=wx.Point(55, 392), size=wx.Size(626, 516),
-              style=wx.DEFAULT_FRAME_STYLE, title='PySMI')
+              parent=prnt, pos=wx.Point(55, 392), size=wx.Size(1000, 800),
+              style=wx.DEFAULT_FRAME_STYLE, title='PYME Acquire')
         self._init_utils()
-        self.SetClientSize(wx.Size(618, 489))
+        self.SetClientSize(wx.Size(1000, 800))
         self.SetMenuBar(self.menuBar1)
 
         self.statusBar1 = wx.StatusBar(id=wxID_SMIMAINFRAMESTATUSBAR1,
@@ -173,19 +178,19 @@ class smiMainFrame(wx.Frame):
         #self.notebook1 = wx.aui.AuiNotebook(id=wxID_SMIMAINFRAMENOTEBOOK1, parent=self, pos=wx.Point(0, 0), size=wx.Size(618,
         #      450), style=wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_TAB_SPLIT)
 
-        self.notebook1 = AuiNotebookWithFloatingPages(id=wxID_SMIMAINFRAMENOTEBOOK1, parent=self, pos=wx.Point(0, 0), size=wx.Size(618,
-              450), style=wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_TAB_SPLIT)
+        self.notebook1 = AuiNotebookWithFloatingPages(id=wxID_SMIMAINFRAMENOTEBOOK1, parent=self, pos=wx.Point(0, 0), size=wx.Size(1000,
+              -1), style=wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_TAB_SPLIT)
 
-        self.panel1 = wx.Panel(id=wxID_SMIMAINFRAMEPANEL1, name='panel1',
-              parent=self.notebook1, pos=wx.Point(0, 0), size=wx.Size(610, 425),
-              style=wx.TAB_TRAVERSAL)
-
-        self.textCtrl1 = wx.TextCtrl(id=wxID_SMIMAINFRAMETEXTCTRL1,
-              name='textCtrl1', parent=self.panel1, pos=wx.Point(121, 56),
-              size=wx.Size(368, 312), style=0,
-              value='PySMI    Version 0.5   KIP Heidelberg')
-        self.textCtrl1.Enable(False)
-        self.textCtrl1.Center(wx.BOTH)
+#        self.panel1 = wx.Panel(id=wxID_SMIMAINFRAMEPANEL1, name='panel1',
+#              parent=self.notebook1, pos=wx.Point(0, 0), size=wx.Size(-1, -1),
+#              style=wx.TAB_TRAVERSAL)
+#
+#        self.textCtrl1 = wx.TextCtrl(id=wxID_SMIMAINFRAMETEXTCTRL1,
+#              name='textCtrl1', parent=self.panel1, pos=wx.Point(121, 56),
+#              size=wx.Size(368, 312), style=0,
+#              value='PySMI    Version 0.5   KIP Heidelberg')
+#        self.textCtrl1.Enable(False)
+#        self.textCtrl1.Center(wx.BOTH)
 
     def __init__(self, parent, options = None):
         self.options = options
@@ -197,14 +202,17 @@ class smiMainFrame(wx.Frame):
         self.MainMenu = self.menuBar1
 
         self.sh = wx.py.shell.Shell(id=-1,
-              parent=self.notebook1, pos=wx.Point(0, 0), size=wx.Size(618, 451), style=0, locals=self.__dict__, 
+              parent=self.notebook1, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
               introText='Python SMI bindings - note that help, license etc below is for Python, not PySMI\n\n')
         
         #self.notebook1.AddPage(imageId=-1, page=self.sh, select=True, text='Console')
         #self.notebook1.AddPage(imageId=-1, page=self.panel1, select=False, text='About')
         
         self.notebook1.AddPage(page=self.sh, select=True, caption='Console')
-        self.notebook1.AddPage( page=self.panel1, select=False, caption='About')
+#        self.notebook1.AddPage( page=self.panel1, select=False, caption='About')
+
+        self.CreateToolPanel()
+        
         
         self.sizer = wx.BoxSizer()
         self.sizer.Add(self.notebook1, 1, wx.EXPAND)
@@ -224,16 +232,28 @@ class smiMainFrame(wx.Frame):
         self.sh.run('ExecTools.execFile("%s", locals(), globals())' % initFile)
                 
         if (self.scope.cam.CamReady() and ('chaninfo' in self.scope.__dict__)):
-            self.scope.livepreview(Notebook = self.notebook1)
-            #self.notebook1.Split(0, wx.BOTTOM)
+            self.scope.livepreview(self, Notebook = self.notebook1)
+            
 
             self.int_sl = intsliders.IntegrationSliders(self.scope.chaninfo,self)
-            self.int_sl.Show()
+            self.AddTool(self.int_sl, 'Integration Time')
+            #self.notebook1.AddPage( page=self.int_sl, select=False, caption='Integration Time')
+            #self.notebook1.Split(self.notebook1.GetPageCount() -1, wx.DOWN)
+            #self.int_sl.Show()
+
             self.tseq_d = timeseqdialog.seqDialog(self, self.scope)
+
+            self.pan_spool = HDFSpoolFrame.PanSpool(self, self.scope, nameUtils.genHDFDataFilepath())
+            self.AddAqTool(self.pan_spool, 'Spooling')
 
         if len(self.scope.piezos) > 0.5:
             self.piezo_sl = psliders.PiezoSliders(self.scope.piezos, self)
-            self.piezo_sl.Show()
+
+            self.AddTool(self.piezo_sl, 'Piezo Control')
+
+            #self.notebook1.AddPage( page=self.piezo_sl, select=False, caption='Piezo Control')
+            #self.notebook1.Split(self.notebook1.GetPageCount() -1, wx.DOWN)
+            #self.piezo_sl.Show()
 
             #self.time1.WantNotification.append(self.piezo_sl.update)
 
@@ -245,6 +265,69 @@ class smiMainFrame(wx.Frame):
             self.step_d.Show()
         
         self.time1.WantNotification.append(self.StatusBarUpdate)
+
+    def CreateToolPanel(self):
+
+        # delete earlier panel
+        #self._leftWindow1.DestroyChildren()
+
+        # recreate the foldpanelbar
+        self.Images = wx.ImageList(16,16)
+        self.Images.Add(GetExpandedIconBitmap())
+        self.Images.Add(GetCollapsedIconBitmap())
+
+        self._leftWindow1 = wx.SashLayoutWindow(self, 101, wx.DefaultPosition,
+                                                wx.Size(300, 1000), wx.NO_BORDER |
+                                                wx.SW_3D | wx.CLIP_CHILDREN)
+
+        self._leftWindow1.SetDefaultSize(wx.Size(220, 1000))
+        self._leftWindow1.SetOrientation(wx.LAYOUT_VERTICAL)
+        self._leftWindow1.SetAlignment(wx.LAYOUT_LEFT)
+        self._leftWindow1.SetSashVisible(wx.SASH_RIGHT, True)
+        self._leftWindow1.SetExtraBorderSize(10)
+
+
+        self.toolPanel = fpb.FoldPanelBar(self._leftWindow1, -1, wx.DefaultPosition,
+                                     wx.Size(300,1000), fpb.FPB_DEFAULT_STYLE,0)
+
+        
+
+        self.notebook1.AddPage(page=self._leftWindow1, select=False, caption='Settings')
+        self.notebook1.Split(self.notebook1.GetPageCount() -1, wx.RIGHT)
+
+        self._rightWindow1 = wx.SashLayoutWindow(self, 101, wx.DefaultPosition,
+                                                wx.Size(300, 1000), wx.NO_BORDER |
+                                                wx.SW_3D | wx.CLIP_CHILDREN)
+
+        self._rightWindow1.SetDefaultSize(wx.Size(300, 1000))
+        self._rightWindow1.SetOrientation(wx.LAYOUT_VERTICAL)
+        self._rightWindow1.SetAlignment(wx.LAYOUT_LEFT)
+        self._rightWindow1.SetSashVisible(wx.SASH_RIGHT, True)
+        self._rightWindow1.SetExtraBorderSize(10)
+
+
+        self.aqPanel = fpb.FoldPanelBar(self._rightWindow1, -1, wx.DefaultPosition,
+                                     wx.Size(300,1000), fpb.FPB_DEFAULT_STYLE,0)
+
+
+
+        self.notebook1.AddPage(page=self._rightWindow1, select=False, caption='Acquisition')
+        #self.notebook1.Split(self.notebook1.GetPageCount() -2, wx.RIGHT)
+        #self.notebook1.Split(self.notebook1.GetPageCount() -2, wx.RIGHT)
+
+        self.notebook1.SetSelection(0)
+
+    def AddTool(self, panel, title):
+        item = self.toolPanel.AddFoldPanel(title, collapsed=False, foldIcons=self.Images)
+        panel.Reparent(item)
+        self.toolPanel.AddFoldPanelWindow(item, panel, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+        #wx.LayoutAlgorithm().LayoutWindow(self, self._leftWindow1)
+
+    def AddAqTool(self, panel, title):
+        item = self.aqPanel.AddFoldPanel(title, collapsed=False, foldIcons=self.Images)
+        panel.Reparent(item)
+        self.aqPanel.AddFoldPanelWindow(item, panel, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+        #wx.LayoutAlgorithm().LayoutWindow(self, self._leftWindow1)
 
     def OnFileOpenStack(self, event):
         self.dv = dsviewer.DSViewFrame(self)
