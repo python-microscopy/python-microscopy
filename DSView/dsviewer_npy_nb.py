@@ -40,7 +40,7 @@ class DSViewFrame(wx.Frame):
 
         #a timer object to update for us
         self.timer = mytimer()
-        self.timer.Start(1000)
+        self.timer.Start(5000)
 
         self.numAnalysed = 0
         self.numEvents = 0
@@ -399,6 +399,7 @@ class DSViewFrame(wx.Frame):
                 self.statusbar.SetBackgroundColour(wx.GREEN)
                 self.statusbar.Refresh()
             self.progPan.draw()
+            self.Refresh()
             self.update()
 
 

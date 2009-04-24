@@ -33,6 +33,8 @@ import time
 import os
 import colorize_db_t
 import webbrowser
+import tempfile
+import threading
 
 #tPrev = time.time()
 
@@ -75,15 +77,17 @@ def profileOn(fnames):
 
     #tPrev = time.time()
     sys.settrace(te)
+    threading.settrace(te)
 
 def profileOff():
     sys.settrace(None)
+    treading.settrace(None)
 
 def te(frame, event, arg):
     global tPrev, filenames, files, lPrev
     fn = frame.f_code.co_filename.split(os.sep)[-1]
     funcName = fn + ' ' + frame.f_code.co_name 
-    #print funcName
+    #print fn
     if fn in filenames and not lPrev[funcName] == None:
         t = time.time()
         files[lPrev[funcName][0]][lPrev[funcName][1]] += (t - tPrev[funcName])
@@ -99,10 +103,12 @@ def te(frame, event, arg):
 
 
 def report():
-    if not os.path.exists('/tmp/mProf'):
-        os.makedirs('/tmp/mProf')
+    tpath = os.path.join(tempfile.gettempdir(), 'mProf')
+    if not os.path.exists(tpath):
+        os.makedirs(tpath)
 
     for f in filenames:
-        colorize_db_t.colorize_file(files[f], fullfilenames[f],open('/tmp/mProf/' + f + '.html', 'w'))
-        webbrowser.open('/tmp/mProf/' + f + '.html', 2)
+        tfn = os.path.join(tpath,  f + '.html')
+        colorize_db_t.colorize_file(files[f], fullfilenames[f],open(tfn, 'w'))
+        webbrowser.open(tfn, 2)
         

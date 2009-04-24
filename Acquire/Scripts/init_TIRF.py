@@ -7,9 +7,9 @@ from PYME.Acquire.Hardware import fakeShutters
 
 scope.cam = AndorIXon.iXonCamera()
 
-acf = AndorControlFrame.AndorFrame(MainFrame, scope.cam, scope)
-acf.Show()
-
+acf = AndorControlFrame.AndorPanel(MainFrame, scope.cam, scope)
+#acf.Show()
+toolPanels.append((acf, 'Andor EMCCD Properties'))
 
 
 #setup for the channels to aquire - b/w camera, no shutters
@@ -22,19 +22,26 @@ class chaninfo:
 scope.chaninfo = chaninfo
 scope.shutters = fakeShutters
 
-import HDFSpoolFrame
-frs = HDFSpoolFrame.FrSpool(MainFrame, scope, 'd:\\%(username)s\\%(day)d-%(month)d-%(year)d\\')
-frs.Show()
+#import HDFSpoolFrame
+#frs = HDFSpoolFrame.FrSpool(MainFrame, scope, 'd:\\%(username)s\\%(day)d-%(month)d-%(year)d\\')
+#frs.Show()
 
+#PIFoc
+from PYME.Acquire.Hardware.Piezos import piezo_e816
+scope.piFoc = piezo_e816.piezo_e816('COM2', 400)
+scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
+
+from PYME.Acquire.Hardware import focusKeys
+fk = focusKeys.FocusKeys(MainFrame, mControls, scope.piezos[-1])
 
 #Z stage
 from PYME.Acquire.Hardware import NikonTE2000
 scope.zStage = NikonTE2000.zDrive()
-scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
+#scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
 
-from PYME.Acquire.Hardware import frZStage
-frz = frZStage.frZStepper(MainFrame, scope.zStage)
-frz.Show()
+#from PYME.Acquire.Hardware import frZStage
+#frz = frZStage.frZStepper(MainFrame, scope.zStage)
+#frz.Show()
 
 #3-axis piezo
 from PYME.Acquire.Hardware import thorlabsPiezo
@@ -64,22 +71,25 @@ filtList = [WFilter(1, 'EMPTY', 'EMPTY', 0),
     WFilter(6, 'ND3'  , 'UVND 3'  , 3)]
 
 scope.filterWheel = FiltFrame(MainFrame, filtList)
-scope.filterWheel.Show()
+#scope.filterWheel.Show()
+toolPanels.append((scope.filterWheel, 'Filter Wheel'))
 
 #DigiData
 from PYME.Acquire.Hardware.DigiData import DigiDataClient
 dd = DigiDataClient.getDDClient()
 
 from PYME.Acquire.Hardware import lasers
-l488 = lasers.DigiDataSwitchedLaser('488',dd,1)
+l488 = lasers.DigiDataSwitchedLaser('all',dd,1)
 l405 = lasers.DigiDataSwitchedLaserInvPol('405',dd,0)
-l473 = lasers.DigiDataSwitchedAnalogLaser('473',dd,0)
+l543 = lasers.DigiDataSwitchedAnalogLaser('543',dd,0)
+l671 = lasers.DigiDataSwitchedAnalogLaser('671',dd,1)
 
-scope.lasers = [l488,l405,l473]
+scope.lasers = [l488,l405,l543,l671]
 
 from PYME.Acquire.Hardware import LaserControlFrame
 lcf = LaserControlFrame.LaserControl(MainFrame,scope.lasers)
-lcf.Show()
+#lcf.Show()
+toolPanels.append((lcf, 'Laser Control'))
 
 from PYME.Acquire.Hardware import FocCorrR
 fc = FocCorrR.FocusCorrector(scope.zStage, tolerance=0.20000000000000001, estSlopeDyn=False, recDrift=False, axis='Y', guideLaser=l488)

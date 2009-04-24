@@ -122,7 +122,7 @@ class Parser:
         self.times = times
 
         self.totTime = sum(times.values())
-        self.maxTime = max(times.values())
+        self.maxTime = max(max(times.values()), 1e-3)
         self.cover_flag = False
         self.line_flag = False
         self.thresholdT = thresholdT

@@ -162,7 +162,7 @@ class smiMainFrame(wx.Frame):
     def _init_ctrls(self, prnt):
         # generated method, don't edit
         wx.Frame.__init__(self, id=wxID_SMIMAINFRAME, name='smiMainFrame',
-              parent=prnt, pos=wx.Point(55, 392), size=wx.Size(1000, 800),
+              parent=prnt, pos=wx.Point(20, 20), size=wx.Size(1000, 800),
               style=wx.DEFAULT_FRAME_STYLE, title='PYME Acquire')
         self._init_utils()
         self.SetClientSize(wx.Size(1000, 800))
@@ -250,6 +250,7 @@ class smiMainFrame(wx.Frame):
 
         if len(self.scope.piezos) > 0.5:
             self.piezo_sl = psliders.PiezoSliders(self.scope.piezos, self)
+            self.time1.WantNotification.append(self.piezo_sl.update)
 
             self.AddTool(self.piezo_sl, 'Piezo Control')
 

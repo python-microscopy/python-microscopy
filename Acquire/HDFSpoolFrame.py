@@ -12,7 +12,9 @@ import PYME.Acquire.Protocols
 import PYME.Acquire.protocol as prot
 
 import os
+import sys
 import glob
+
 import subprocess
 
 def create(parent):
@@ -252,7 +254,10 @@ class PanSpool(wx.Panel):
         self.tcSpoolFile.SetValue(self.seriesName)
 
     def OnBAnalyse(self, event):
-        subprocess.Popen('../DSView/dh5view.py QUEUE://%s' % self.queueName, shell=True)
+        if sys.platform == 'win32':
+            subprocess.Popen('..\\DSView\\dh5view.cmd QUEUE://%s' % self.queueName, shell=True)
+        else:
+            subprocess.Popen('../DSView/dh5view.py QUEUE://%s' % self.queueName, shell=True)
         
     def Tick(self):
         dtn = datetime.datetime.now()

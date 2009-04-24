@@ -1,3 +1,12 @@
 __init__.pyc
 fakeShutters.pyc
 setup.pyc
+NikonTE2000.pyc
+thorlabsPiezo.pyc
+FilterWheel.pyc
+FocCorrR.pyc
+frZStage.pyc
+fw102.pyc
+LaserControlFrame.pyc
+lasers.pyc
+focusKeys.pyc

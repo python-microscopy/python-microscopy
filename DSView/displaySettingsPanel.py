@@ -21,17 +21,19 @@ class dispSettingsPanel(wx.Panel):
 
         vsizer = wx.BoxSizer(wx.VERTICAL)
 
-        self.ds = vp.ds
-        self.dsa = cSMI.CDataStack_AsArray(self.ds, 0)[:,:,0].ravel()
-        
-        self.do = vp.do
         self.vp = vp
+
+        #self.ds = vp.ds
+        self.dsa = cSMI.CDataStack_AsArray(self.vp.ds, 0)[:,:,0].ravel()
+        
+        #self.do = vp.do
+        
 
         self.scale = 2
 
-        self.do.Optimise(self.ds)
+        self.vp.do.Optimise(self.vp.ds)
 
-        self.hlDispMapping = histLimits.HistLimitPanel(self, -1, self.dsa, self.do.getDisp1Off(), self.do.getDisp1Off() + 255./self.do.getDisp1Gain(), True, size=(200, 100))
+        self.hlDispMapping = histLimits.HistLimitPanel(self, -1, self.dsa, self.vp.do.getDisp1Off(), self.vp.do.getDisp1Off() + 255./self.vp.do.getDisp1Gain(), True, size=(200, 100))
         self.hlDispMapping.Bind(histLimits.EVT_LIMIT_CHANGE, self.OnMappingChange)
 
         vsizer.Add(self.hlDispMapping, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL|wx.ALL, 5)
@@ -67,13 +69,13 @@ class dispSettingsPanel(wx.Panel):
         off = 1.*(lower)
         gain = 255./(upper - lower)
 
-        self.do.setDisp3Gain(gain)
-        self.do.setDisp2Gain(gain)
-        self.do.setDisp1Gain(gain)
+        self.vp.do.setDisp3Gain(gain)
+        self.vp.do.setDisp2Gain(gain)
+        self.vp.do.setDisp1Gain(gain)
 
-        self.do.setDisp3Off(off)
-        self.do.setDisp2Off(off)
-        self.do.setDisp1Off(off)
+        self.vp.do.setDisp3Off(off)
+        self.vp.do.setDisp2Off(off)
+        self.vp.do.setDisp1Off(off)
 
         self.vp.Refresh()
 
@@ -83,16 +85,16 @@ class dispSettingsPanel(wx.Panel):
         self.vp.SetScale(self.scale)
 
     def OnBOptimise(self, event):
-        self.do.Optimise(self.ds)
+        self.vp.do.Optimise(self.vp.ds)
 
-        self.hlDispMapping.SetValue((self.do.getDisp1Off(), self.do.getDisp1Off() + 255./self.do.getDisp1Gain()))
+        self.hlDispMapping.SetValue((self.vp.do.getDisp1Off(), self.vp.do.getDisp1Off() + 255./self.vp.do.getDisp1Gain()))
         self.vp.Refresh()
 
     #def OnCBAutoOpt(self, event):
 
     def RefrData(self, caller=None):
         #if self.hlDispMapping.dragging == None:
-        self.dsa = cSMI.CDataStack_AsArray(self.ds, 0)[:,:,0].ravel()
+        self.dsa = cSMI.CDataStack_AsArray(self.vp.ds, 0)[:,:,0].ravel()
         self.hlDispMapping.SetData(self.dsa, self.hlDispMapping.limit_lower, self.hlDispMapping.limit_upper)
 
         if self.cbAutoOptimise.GetValue():

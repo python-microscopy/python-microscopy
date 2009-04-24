@@ -17,8 +17,8 @@ class HistLimitPanel(wx.Panel):
         
         dSort = numpy.argsort(data)
         
-        self.upper_pctile = float(data[dSort[len(data)*.95]])
-        self.lower_pctile = float(data[dSort[len(data)*.05]])
+        self.upper_pctile = float(data[dSort[len(data)*.99]])
+        self.lower_pctile = float(data[dSort[len(data)*.01]])
 
         self.limit_lower = limit_lower
         self.limit_upper = limit_upper
@@ -41,8 +41,8 @@ class HistLimitPanel(wx.Panel):
 
         dSort = numpy.argsort(data)
 
-        self.upper_pctile = float(data[dSort[len(data)*.95]])
-        self.lower_pctile = float(data[dSort[len(data)*.05]])
+        self.upper_pctile = float(data[dSort[len(data)*.99]])
+        self.lower_pctile = float(data[dSort[len(data)*.01]])
 
         self.limit_lower = lower
         self.limit_upper = upper

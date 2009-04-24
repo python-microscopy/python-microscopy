@@ -6,6 +6,7 @@ from PYME.Analysis import MetaData
 from PYME.Acquire import MetaDataHandler
 
 import os
+import sys
 
 from PYME.FileUtils.nameUtils import genResultFileName
 from PYME.ParallelTasks.relativeFiles import getFullFilename
@@ -16,7 +17,23 @@ from PYME.ParallelTasks.relativeFiles import getFullFilename
 #global lock for all calls into HDF library - on linux you seem to be able to
 #get away with locking separately for each file (or maybe not locking at all -
 #is linux hdf5 threadsafe?)
+
 tablesLock = threading.Lock()
+
+class myLock:
+    def __init__(self):
+        self.lock = threading.Lock()
+
+    def acquire(self):
+        self.lock.acquire()
+        fr = sys._getframe()
+        print 'Acquired Lock - ' + fr.f_back.f_code.co_name + ' %d' % fr.f_back.f_lineno
+
+    def release(self):
+        print 'Released Lock'
+        self.lock.release()
+
+#tablesLock = myLock()
 
 
 class HDFResultsTaskQueue(TaskQueue):
@@ -82,18 +99,23 @@ class HDFResultsTaskQueue(TaskQueue):
         self.h5ResultsFile.close()
 
     def fileResult(self, res):
+        #print res, res.results, res.driftResults, self.h5ResultsFile
+        if res == None:
+            print 'res == None'
+            
         if res.results == [] and res.driftResults == []: #if we had a dud frame
             return
 
         self.fileResultsLock.acquire() #get a lock
             
-        if not res.results == []:
+        if not len(res.results) == 0:
+            #print res.results, res.results == []
             if not self.h5ResultsFile.__contains__('/FitResults'):
                 self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'FitResults', res.results, filters=tables.Filters(complevel=5, shuffle=True))
             else:
                 self.h5ResultsFile.root.FitResults.append(res.results)
 
-        if not res.driftResults == []:
+        if not len(res.driftResults) == 0:
             if not self.h5ResultsFile.__contains__('/DriftResults'):
                 self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'DriftResults', res.driftResults, filters=tables.Filters(complevel=5, shuffle=True))
             else:
@@ -110,7 +132,10 @@ class HDFResultsTaskQueue(TaskQueue):
         if fieldName == 'FitResults':
             startingAt, = args
             self.fileResultsLock.acquire()
-            res = self.h5ResultsFile.root.FitResults[startingAt:]
+            if self.h5ResultsFile.__contains__('/FitResults'):
+                res = self.h5ResultsFile.root.FitResults[startingAt:]
+            else:
+                res = []
             self.fileResultsLock.release()
             return res
         else:

@@ -27,14 +27,13 @@ def create(parent):
 
 
 
-class AndorFrame(wx.Frame):
+class AndorPanel(wx.Panel):
 
     def _init_ctrls(self, prnt):
         # generated method, don't edit
-        wx.Frame.__init__(self, id=wxID_ANDORFRAME, name='AndorFrame',
-              parent=prnt, pos=wx.Point(490, 266), size=wx.Size(252, 354),
-              style=wx.DEFAULT_FRAME_STYLE, title='Andor Camera Properties')
-        self.SetClientSize(wx.Size(244, 327))
+        wx.Panel.__init__(self, id=wxID_ANDORFRAME,
+              parent=prnt, size=wx.Size(252, 327))
+        #self.SetClientSize(wx.Size(244, 327))
 
         self.panel1 = wx.Panel(id=wxID_ANDORFRAMEPANEL1, name='panel1',
               parent=self, pos=wx.Point(0, 0), size=wx.Size(244, 327),

@@ -7,16 +7,25 @@ import threading
 import numpy
 from taskQueue import *
 from HDFTaskQueue import *
+
+#from PYME.mProfile import mProfile
+#mProfile.profileOn(['taskServerM.py', 'HDFTaskQueue.py'])
 	
 class TaskWatcher(threading.Thread):
 	def __init__(self, tQueue):
 		threading.Thread.__init__(self)
 		self.tQueue = tQueue
+		self.alive = True
 
 	def run(self):
-		while True:
+		while self.alive:
 			self.tQueue.checkTimeouts()
 			#print '%d tasks in queue' % self.tQueue.getNumberOpenTasks()
+			#try:
+                        #        mProfile.report()
+                        #finally:
+                        #        pass
+                        print mProfile.files
 			time.sleep(10)
 
 
@@ -179,6 +188,9 @@ class TaskQueueSet(Pyro.core.ObjBase):
 			
 
 if __name__ == '__main__':
+    #if True:
+    #from PYME.mProfile import mProfile
+    #mProfile.profileOn(['taskServerM.py', 'HDFTaskQueue.py'])
 
     Pyro.config.PYRO_MOBILE_CODE = 0
     Pyro.core.initServer()
@@ -196,8 +208,10 @@ if __name__ == '__main__':
     uri=daemon.connect(tq,"taskQueue")
 
     tw = TaskWatcher(tq)
-    tw.start()
+    #tw.start()
     try:
         daemon.requestLoop()
     finally:
         daemon.shutdown(True)
+        tw.alive = False
+        #mProfile.report()

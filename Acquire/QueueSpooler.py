@@ -35,7 +35,6 @@ class Spooler(sp.Spooler):
        self.evtLogger = EventLogger(scope, self.tq, self.seriesName)
 
        sp.Spooler.__init__(self, scope, filename, acquisator, protocol, parent)
-
    
    def Tick(self, caller):
       self.tq.postTask(cSMI.CDataStack_AsArray(caller.ds, 0).reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()), self.seriesName)

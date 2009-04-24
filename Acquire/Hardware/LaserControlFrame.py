@@ -64,11 +64,11 @@ class LaserPanel(wx.Panel):
     def OnBPulse(self, event):
         self.laser.PulseBG(float(self.tcPulse.GetValue()))
         
-class LaserControl(wx.Frame):
-    def __init__(self, parent, lasers = None, winid=-1, title="Laser Control"):
+class LaserControl(wx.Panel):
+    def __init__(self, parent, lasers = None, winid=-1):
         # begin wxGlade: MyFrame1.__init__
         #kwds["style"] = wx.DEFAULT_FRAME_STYLE
-        wx.Frame.__init__(self, parent, winid, title)
+        wx.Panel.__init__(self, parent, winid)
         self.lasers = lasers
         
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
