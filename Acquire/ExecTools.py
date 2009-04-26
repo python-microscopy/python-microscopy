@@ -22,6 +22,25 @@ if os.path.exists(localScriptPath):
 execPath.append(os.path.join(os.path.dirname(__file__), 'Scripts'))
 sys.path.append(os.path.join(os.path.dirname(__file__), 'Scripts'))
 
+global defGlobals
+global defLocals
+defGlobals = {}
+defLocals = {}
+
+bgInitThreads = []
+#bgInitStatus = {}
+
+class HWNotPresent(Exception):
+    pass
+
+
+def setDefaultNamespace(locals, globals):
+    global defGlobals
+    global defLocals
+
+    defLocals = locals
+    defGlobals = globals
+
 def checkFilename(filename):
     #try and find filename in our script directories
     if os.path.exists(filename):
@@ -35,22 +54,52 @@ def checkFilename(filename):
     return filename #give up and let exec throw its normal error message
 
 
-def _exec(codeObj, localVars, globalVars):
+def _exec(codeObj, localVars = None, globalVars = None):
     exec codeObj in localVars,globalVars
 
-def execBG(codeObj, localVars, globalVars):
+def execBG(codeObj, localVars = defLocals, globalVars = defGlobals):
     threading.Thread(target=_exec, args = (codeObj, localVars, globalVars)).start()
-def execFile(filename, localVars, globalVars):    
+
+def execFile(filename, localVars = defLocals, globalVars = defGlobals):
     #fid = open(checkFilename(filename))
     #code = fid.read()
     #fid.close()
 
     execfile(checkFilename(filename), localVars, globalVars)
 
-def execFileBG(filename, localVars, globalVars):
+def execFileBG(filename, localVars = defLocals, globalVars = defGlobals):
     #fid = open(checkFilename(filename))
     #code = fid.read()
     #fid.close()
 
     #execBG(checkFilename(filename), localVars, globalVars)
     threading.Thread(target=execfile, args = (checkFilename(filename), localVars, globalVars)).start()
+
+def _bginit(name, codeObj):
+    global defGlobals
+    global defLocals
+    _exec("splash.SetMessage('%s', 'Initialising %s ...')" % (name,name), defGlobals, defLocals)
+    try:
+        _exec(codeObj, defGlobals, defLocals)
+        _exec("splash.SetMessage('%s', 'Initialising %s ... DONE')" % (name,name), defGlobals, defLocals)
+    except HWNotPresent:
+        _exec("splash.SetMessage('%s', 'Initialising %s ... NOT PRESENT')" % (name,name), defGlobals, defLocals)
+    except Exception, e:
+        _exec("splash.SetMessage('%s', 'Initialising %s ... FAIL')" % (name,name), defGlobals, defLocals)
+        raise e
+
+
+def InitBG(name, codeObj):
+    t = threading.Thread(target=_bginit, args = (name,codeObj))
+    t.start()
+    bgInitThreads.append(t)
+    return t
+    
+
+def joinBGInit():
+    for t in bgInitThreads:
+        print t
+        t.join()
+
+def InitGUI(code):
+    defLocals['postInit'].append(code)

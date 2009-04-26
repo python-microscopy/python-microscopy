@@ -22,12 +22,16 @@ import wx.py.crust
 import pylab
 
 from myviewpanel_numarray import MyViewPanel
+import eventLogViewer
+
 from PYME.Acquire import MetaDataHandler
 from PYME.Analysis import MetaData
 from PYME.Analysis.DataSources import HDFDataSource
 from PYME.Analysis.DataSources import TQDataSource
 from PYME.Analysis.LMVis import progGraph
 from PYME.Acquire.mytimer import mytimer
+
+from PYME.Analysis import piecewiseMapping
 
 class DSViewFrame(wx.Frame):
     def __init__(self, parent=None, title='', dstack = None, log = None, filename = None):
@@ -127,6 +131,13 @@ class DSViewFrame(wx.Frame):
 
         self.notebook1.AddPage(page=self.vp, select=True, caption='Data')
         self.notebook1.AddPage(page=self.sh, select=False, caption='Console')
+
+        self.elv = eventLogViewer.eventLogPanel(self.notebook1, self.ds.getEvents(), self.mdh, [0, self.ds.getNumSlices()]);
+        self.notebook1.AddPage(self.elv, 'Events')
+
+        if 'ProtocolFocus' in self.elv.evKeyNames:
+            pm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.md.Camera.CycleTime*1e-3, self.md.StartTime, self.md.Protocol.PiezoStartPos)
+            self.elv.SetCharts([('Focus [um]', pm, 'ProtocolFocus'),])
 
         
         #self.notebook1.Split(0, wx.TOP)
@@ -377,6 +388,13 @@ class DSViewFrame(wx.Frame):
 
     def dsRefresh(self):
         self.vp.SetDataStack(self.ds)
+        self.elv.SetEventSource(self.ds.getEvents())
+        self.elv.SetRange([0, self.ds.getNumSlices()])
+        
+        if 'ProtocolFocus' in self.elv.evKeyNames:
+            self.zm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.md.Camera.CycleTime*1e-3, self.md.StartTime, self.md.Protocol.PiezoStartPos)
+            self.elv.SetCharts([('Focus [um]', self.zm, 'ProtocolFocus'),])
+
         self.update()
 
     def analRefresh(self):
@@ -392,8 +410,13 @@ class DSViewFrame(wx.Frame):
                 self.progPan.fitResults = self.fitResults
 
                 self.numEvents = len(self.fitResults)
-                self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],self.fitResults['tIndex'].astype('f'))
-                self.glCanvas.setCLim((0, self.numAnalysed))
+                if 'zm' in dir(self): #we have z info
+                    z = self.zm(self.fitResults['tIndex'].astype('f')).astype('f')
+                    self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],z)
+                    self.glCanvas.setCLim((z.min(), z.max()))
+                else:
+                    self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],self.fitResults['tIndex'].astype('f'))
+                    self.glCanvas.setCLim((0, self.numAnalysed))
 
             if (self.tq.getNumberOpenTasks(self.seriesName) + self.tq.getNumberTasksInProgress(self.seriesName)) == 0 and 'SpoolingFinished' in self.mdh.getEntryNames():
                 self.statusbar.SetBackgroundColour(wx.GREEN)

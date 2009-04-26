@@ -126,7 +126,10 @@ def genMetaDataFromSourceAndMDH(dataSource, mdh=None):
 
 
 def fillInBlanks(md, dataSource):
-    if not 'EstimatedLaserOnFrameNo' in md.getEntryNames():
+    if 'Protocol.DataStartsAt' in md.getEntryNames():
+        md.setEntry('EstimatedLaserOnFrameNo', md.getEntry('Protocol.DataStartsAt'))
+        
+    if not 'Protocol.DataStartsAt' in md.getEntryNames() and not 'EstimatedLaserOnFrameNo' in md.getEntryNames():
         #Guestimate when the laser was turned on
 
         if dataSource.getNumSlices() < 200: #not long enough to bother
@@ -155,15 +158,19 @@ def fillInBlanks(md, dataSource):
             md.setEntry('EstimatedLaserOnFrameNo', tLon)
 
     if not 'Camera.ADOffset' in md.getEntryNames():
-        tLon = md.getEntry('EstimatedLaserOnFrameNo')
-        #Estimate the offset during the dark time before laser was turned on
-        #N.B. this will not work if other lights (e.g. room lights, arc lamp etc... are on
-        if not tLon == 0:
-            md.setEntry('Camera.ADOffset', numpy.median(numpy.array([dataSource.getSlice(i) for i in range(0, max(tLon - 1, 1))]).ravel()))
-        else: #if laser was on to start with our best estimate is at maximal bleaching where the few molecules that are still on will hopefully have little influence on the median
-            md.setEntry('Camera.ADOffset',numpy.median(numpy.array([dataSource.getSlice(i) for i in range(dataSource.getNumSlices()-5, dataSource.getNumSlices())]).ravel()))
-            print '''WARNING: No clear laser turn on signature found - assuming laser was already on
-                     and fudging ADOffset Estimation'''
+        if 'Protocol.DarkFrameRange' in md.getEntryNames(): #prefered way
+            darkFrStart, darkFrStop = md.getEntry('Protocol.DarkFrameRange')
+            md.setEntry('Camera.ADOffset', numpy.median(numpy.array([dataSource.getSlice(i) for i in range(darkFrStart,darkFrStop)]).ravel()))
+        else: #use hueristics
+            tLon = md.getEntry('EstimatedLaserOnFrameNo')
+            #Estimate the offset during the dark time before laser was turned on
+            #N.B. this will not work if other lights (e.g. room lights, arc lamp etc... are on
+            if not tLon == 0:
+                md.setEntry('Camera.ADOffset', numpy.median(numpy.array([dataSource.getSlice(i) for i in range(0, max(tLon - 1, 1))]).ravel()))
+            else: #if laser was on to start with our best estimate is at maximal bleaching where the few molecules that are still on will hopefully have little influence on the median
+                md.setEntry('Camera.ADOffset',numpy.median(numpy.array([dataSource.getSlice(i) for i in range(dataSource.getNumSlices()-5, dataSource.getNumSlices())]).ravel()))
+                print '''WARNING: No clear laser turn on signature found - assuming laser was already on
+                         and fudging ADOffset Estimation'''
 
 
 

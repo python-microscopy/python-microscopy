@@ -12,3 +12,6 @@ class DataSource:
 
     def getNumSlices(self):
         return self.taskQueue.getQueueData(self.queueName, 'NumSlices')
+
+    def getEvents(self):
+        return self.taskQueue.getQueueData(self.queueName, 'Events')

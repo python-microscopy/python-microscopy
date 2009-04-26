@@ -19,7 +19,7 @@ class dispSettingsPanel(wx.Panel):
     def __init__(self, parent, vp):
         wx.Panel.__init__(self, parent)
 
-        vsizer = wx.BoxSizer(wx.VERTICAL)
+        #vsizer = wx.BoxSizer(wx.VERTICAL)
 
         self.vp = vp
 
@@ -33,35 +33,44 @@ class dispSettingsPanel(wx.Panel):
 
         self.vp.do.Optimise(self.vp.ds)
 
-        self.hlDispMapping = histLimits.HistLimitPanel(self, -1, self.dsa, self.vp.do.getDisp1Off(), self.vp.do.getDisp1Off() + 255./self.vp.do.getDisp1Gain(), True, size=(200, 100))
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.hlDispMapping = histLimits.HistLimitPanel(self, -1, self.dsa, self.vp.do.getDisp1Off(), self.vp.do.getDisp1Off() + 255./self.vp.do.getDisp1Gain(), True, size=(100, 80))
         self.hlDispMapping.Bind(histLimits.EVT_LIMIT_CHANGE, self.OnMappingChange)
 
-        vsizer.Add(self.hlDispMapping, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL|wx.ALL, 5)
+        hsizer.Add(self.hlDispMapping, 1, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
 
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.bOptimise = wx.Button(self, -1, 'Optimise')
+        vsizer2 = wx.BoxSizer(wx.VERTICAL)
+        self.bOptimise = wx.Button(self, -1, 'Optimise', style=wx.BU_EXACTFIT)
         self.bOptimise.Bind(wx.EVT_BUTTON, self.OnBOptimise)
-        hsizer.Add(self.bOptimise, 0, wx.ALIGN_CENTER_VERTICAL|wx.TOP|wx.BOTTOM|wx.RIGHT, 5)
+        vsizer2.Add(self.bOptimise, 0, wx.ALIGN_CENTER_HORIZONTAL, 5)
+
 
         self.cbAutoOptimise = wx.CheckBox(self, -1, 'Auto')
         #self.cbAutoOptimise.Bind(wx.EVT_CHECKBOX, self.OnCbAutoOpt)
-        hsizer.Add(self.cbAutoOptimise, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        vsizer2.Add(self.cbAutoOptimise, 0, wx.ALIGN_CENTER_HORIZONTAL, 5)
+        vsizer2.Add((0,0), 1, 0, 0)
 
+        #hsizer.Add(vsizer2, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        #vsizer.Add(hsizer, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL|wx.ALL, 5)
         
+        #hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        scaleSizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Scale"), wx.HORIZONTAL)
-        self.cbScale = wx.ComboBox(self, -1, choices=["1:4", "1:2", "1:1", "2:1", "4:1"], style=wx.CB_DROPDOWN|wx.CB_READONLY, size=(80, -1))
+        #scaleSizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Scale"), wx.HORIZONTAL)
+        self.cbScale = wx.ComboBox(self, -1, choices=["1:4", "1:2", "1:1", "2:1", "4:1"], style=wx.CB_DROPDOWN|wx.CB_READONLY, size=(55, -1))
         self.cbScale.Bind(wx.EVT_COMBOBOX, self.OnScaleChanged)
         self.cbScale.SetSelection(self.scale)
 
-        scaleSizer.Add(self.cbScale, 0, wx.ALL, 5)
+        #scaleSizer.Add(self.cbScale, 0, wx.ALL, 5)
+        #hsizer.Add(wx.StaticText(self, -1, 'Scale: '), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        vsizer2.Add(self.cbScale, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.EXPAND, 5)
 
-        hsizer.Add(scaleSizer, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.ALL, 5)
+        hsizer.Add(vsizer2, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
 
-        vsizer.Add(hsizer, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.ALL, 5)
+        #vsizer.Add(hsizer, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.ALL, 5)
 
-        self.SetSizer(vsizer)
-        vsizer.Fit(self)
+        self.SetSizer(hsizer)
+        hsizer.Fit(self)
 
     def OnMappingChange(self, event):
         lower, upper = self.hlDispMapping.GetValue()

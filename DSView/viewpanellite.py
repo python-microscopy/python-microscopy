@@ -46,6 +46,7 @@ class MyViewPanel(wx.ScrolledWindow):
         
 
         wx.EVT_PAINT(self, self.OnPaint)
+        wx.EVT_SIZE(self, self.OnSize)
 
         wx.EVT_RIGHT_DOWN(self, self.OnRightDown)
         wx.EVT_RIGHT_UP(self, self.OnRightUp)
@@ -153,8 +154,8 @@ class MyViewPanel(wx.ScrolledWindow):
             del MemDC
             del MemBitmap
 
-    
-   
+    def OnSize(self,event):
+        self.Refresh()
         
   
 
@@ -164,6 +165,10 @@ class MyViewPanel(wx.ScrolledWindow):
         sc = pow(2.0,(self.scale-2))
         s = self.CalcImSize()
         self.SetVirtualSize(wx.Size(s[0]*sc,s[1]*sc))
+        #self.SetSize(wx.Size(s[0]*sc,s[1]*sc))
+
+        self.Layout()
+        self.GetParent().Layout()
 
         self.Refresh()
 

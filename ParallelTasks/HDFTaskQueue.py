@@ -35,6 +35,11 @@ class myLock:
 
 #tablesLock = myLock()
 
+class SpoolEvent(tables.IsDescription):
+   EventName = tables.StringCol(32)
+   Time = tables.Time64Col()
+   EventDescr = tables.StringCol(256)
+
 
 class HDFResultsTaskQueue(TaskQueue):
     '''Task queue which saves it's results to a HDF file'''
@@ -58,6 +63,8 @@ class HDFResultsTaskQueue(TaskQueue):
         self.fileResultsLock = tablesLock
 
         self.resultsMDH = MetaDataHandler.HDFMDHandler(self.h5ResultsFile)
+
+        self.resultsEvents = self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'Events', SpoolEvent,filters=tables.Filters(complevel=5, shuffle=True))
 
     def prepResultsFile(self):
         pass
@@ -141,10 +148,7 @@ class HDFResultsTaskQueue(TaskQueue):
         else:
             return None
 
-class SpoolEvent(tables.IsDescription):
-   EventName = tables.StringCol(32)
-   Time = tables.Time64Col()
-   EventDescr = tables.StringCol(256)
+
 
 class HDFTaskQueue(HDFResultsTaskQueue):
     ''' task queue which, when initialised with an hdf image filename, automatically generated tasks - should also (eventually) include support for dynamically adding to data file for on the fly analysis'''
@@ -200,7 +204,10 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         self.dataMDH = MetaDataHandler.HDFMDHandler(self.h5DataFile)
         self.dataMDH.mergeEntriesFrom(MetaData.TIRFDefault)
         self.resultsMDH.copyEntriesFrom(self.dataMDH)
-        
+
+        #copy events to results file
+        if len (self.h5DataFile.root.Events) > 0:
+            self.resultsEvents.append(self.h5DataFile.root.Events[:])
 
         self.metaData = None #MetaDataHandler.NestedClassMDHandler(self.resultsMDH)
         self.metaDataStale = True
@@ -295,6 +302,11 @@ class HDFTaskQueue(HDFResultsTaskQueue):
             res = self.h5DataFile.root.ImageData.shape[0]
             self.dataFileLock.release()
             return res
+        elif fieldName == 'Events':
+            self.dataFileLock.acquire()
+            res = self.h5DataFile.root.Events[:]
+            self.dataFileLock.release()
+            return res
         else:
             return HDFResultsTaskQueue.getQueueData(self, fieldName, *args)
 
@@ -310,6 +322,20 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         ev.append()
         self.events.flush()
         self.dataFileLock.release()
+
+        ev = self.resultsEvents.row
+
+        ev['EventName'] = eventName
+        ev['EventDescr'] = eventDescr
+        ev['Time'] = evtTime
+
+        self.fileResultsLock.acquire()
+        #print len(self.events)
+        ev.append()
+        self.resultsEvents.flush()
+        self.fileResultsLock.release()
+
+        #self.dataFileLock.release()
 
 
     def releaseTasks(self, startingAt = 0):

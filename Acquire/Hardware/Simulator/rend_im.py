@@ -2,6 +2,9 @@ from PYME.PSFGen import *
 from scipy import *
 import fluor
 
+#import threading
+#tLock = threading.Lock()
+
 def renderIm(X, Y, z, points, roiSize, A):
     #X = mgrid[xImSlice]
     #Y = mgrid[yImSlice]
@@ -50,8 +53,12 @@ def simPalmImF(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=10, laserPowe
     
     A = zeros(len(fluors.fl))
 
+    #tLock.acquire()
+
     for n  in range(numSubSteps): 
         A += fluors.illuminate(laserPowers,intTime/numSubSteps)
+
+    #tLock.release()
 
     flOn = where(A > 0)[0]
     

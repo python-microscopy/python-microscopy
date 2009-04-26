@@ -39,7 +39,7 @@ class MyFrame(wx.Frame):
 
     def __set_properties(self):
         # begin wxGlade: MyFrame.__set_properties
-        self.SetTitle("Fit Task Monitor")
+        self.SetTitle("PYME TaskMon")
         self.gQueues.CreateGrid(0, 3)
         self.gQueues.EnableEditing(0)
         self.gQueues.SetColLabelValue(0, "Name")

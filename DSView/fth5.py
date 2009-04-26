@@ -36,7 +36,10 @@ MetaData.fillInBlanks(mdh, dataSource)
 
 md = MetaDataHandler.NestedClassMDHandler(mdh)
 
-vp.zp = mdh.getEntry('EstimatedLaserOnFrameNo')
+if 'Protocol.DataStartsAt' in mdh.getEntyNames():
+    vp.zp = mdh.getEntry('Protocol.DataStartsAt')
+else:
+    vp.zp = mdh.getEntry('EstimatedLaserOnFrameNo')
 
 vp.Refresh()
 

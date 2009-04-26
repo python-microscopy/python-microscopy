@@ -40,6 +40,7 @@ class microscope:
         self.saturatedMessage = ''
 
         protocol.scope = self
+        self.initDone = False
     
 
     def pr_refr(self, source):
@@ -146,11 +147,11 @@ class microscope:
 
              self.pa.WantFrameGroupNotification.append(self.pr_refr2)
              self.pa.WantFrameGroupNotification.append(self.satCheck)
-             self.pa.WantFrameGroupNotification.append(self.vsp.RefrData)
+             Parent.time1.WantNotification.append(self.vsp.RefrData)
              #Notebook.AddPage(imageId=-1, page=self.vp, select=True,text='Preview')
              Notebook.AddPage(page=self.vp, select=True,caption='Preview')
 
-             Parent.AddTool(self.vsp, 'Display')
+             Parent.AddCamTool(self.vsp, 'Display')
 #             Notebook.AddPage(page=self.vsp, select=False,caption='Display')
 #             Notebook.Split(3, wx.RIGHT)
 #             Notebook.SetSelection(2)
@@ -238,3 +239,7 @@ class microscope:
         self.sa.start()
 
         self.pb = wx.ProgressDialog('Aquisition in progress ...', 'Slice 1 of %d' % self.sa.ds.getDepth(), self.sa.ds.getDepth(), style = wx.PD_APP_MODAL|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
+
+    def turnAllLasersOff(self):
+        for l in self.lasers:
+            l.TurnOff()

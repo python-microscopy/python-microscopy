@@ -117,4 +117,35 @@ class DigiDataSwitchedAnalogLaser(Laser):
         return self.power
 
 
+#laser which is attached to a DigiData analog io channel
+class FakeLaser(Laser):
+    def __init__(self,name, cam, chan, turnOn=False, initPower=1):
+        self.cam = cam
+        self.chan = chan
+        self.power = initPower
 
+        Laser.__init__(self,name,turnOn)
+
+        self.powerControlable = True
+        self.isOn = turnOn
+
+    def IsOn(self):
+        return self.isOn
+
+    def TurnOn(self):
+        self.cam.compT.laserPowers[self.chan] = self.power
+        self.cam.laserPowers[self.chan] = self.power
+        self.isOn = True
+
+    def TurnOff(self):
+        self.cam.compT.laserPowers[self.chan] = 0
+        self.cam.laserPowers[self.chan] = 0
+        self.isOn = False
+
+    def SetPower(self, power):
+        self.power = power
+        if self.isOn:
+            self.TurnOn() #turning on actually sets power
+
+    def GetPower(self):
+        return self.power

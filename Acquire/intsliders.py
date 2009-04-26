@@ -11,13 +11,14 @@ from noclosefr import *
 import sys 
 
 class IntegrationSliders(wx.Panel):
-    def __init__(self, chaninfo, parent, winid=-1):
+    def __init__(self, chaninfo, parent, scope, winid=-1):
         # begin wxGlade: MyFrame1.__init__
         #kwds["style"] = wx.DEFAULT_FRAME_STYLE
         wx.Panel.__init__(self, parent, winid)
 
         self.chaninfo = chaninfo
         self.sliders = []
+        self.scope = scope
         #self.SetTitle("Piezo Control")
         
         sizer_2 = wx.BoxSizer(wx.VERTICAL)
@@ -55,6 +56,8 @@ class IntegrationSliders(wx.Panel):
         self.ind = ind
         self.chaninfo.itimes[ind] = sl.GetValue()
         self.sliders[ind].SetRange(1, min(5*self.chaninfo.itimes[ind], 10000))
+        self.scope.pa.stop()
+        self.scope.pa.start()
 
     def update(self):
         for ind in range(len(self.piezos)):

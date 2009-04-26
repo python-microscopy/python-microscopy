@@ -294,6 +294,7 @@ class PanSpool(wx.Panel):
                 reload(pmod) #force module to be reloaded so that changes in the protocol will be recognised
 
                 self.protocol = pmod.PROTOCOL
+                self.protocol.filename = pname
 
         pDlg.Destroy()
 

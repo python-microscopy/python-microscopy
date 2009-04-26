@@ -3,14 +3,21 @@
 import scipy
 from Hardware.Simulator import fakeCam, fakePiezo, lasersliders, dSimControl
 from Hardware import fakeShutters
+import time
 
 #import PYME.cSMI as example
 
+pz = InitBG('Fake Piezo', '''
 scope.fakePiezo = fakePiezo.FakePiezo(100)
 scope.piezos.append((scope.fakePiezo, 1, 'Fake z-piezo'))
+#time.sleep(1)
+''')
 
+pz.join() #piezo must be there before we start camera
+cm = InitBG('Fake Camera', '''
 scope.cam = fakeCam.FakeCamera(70*scipy.arange(-128.0, 128.0), 70*scipy.arange(-128.0, 128.0), fakeCam.NoiseMaker(), scope.fakePiezo)
-
+#time.sleep(1)
+''')
 
 #setup for the channels to aquire - b/w camera, no shutters
 class chaninfo:
@@ -23,44 +30,50 @@ scope.chaninfo = chaninfo
 
 scope.shutters = fakeShutters
 
+#InitBG('Should Fail', '''
+#raise Exception, 'test error'
+#time.sleep(1)
+#''')
+#
+#InitBG('Should not be there', '''
+#raise HWNotPresent, 'test error'
+#time.sleep(1)
+#''')
 
 
-#import wx
-#f = wx.Frame(None, -1, 'Simulation Settings')
+#Gui stuff can't be done in background
+InitGUI('''
 dsc = dSimControl.dSimControl(notebook1, scope)
-#f.Show()
-#toolPanels.append((dsc, 'Simulation'))
 notebook1.AddPage(page=dsc, select=False, caption='Simulation Settings')
-#dsc.Show()
+''')
 
-#f = wx.Frame(None, -1, 'Simulation Settings')
-lsf = lasersliders.LaserSliders(toolPanel, scope.cam)
-#MainFrame.AddTool(lsf, 'Laser Powers')
+cm.join()
+from PYME.Acquire.Hardware import lasers
+scope.l488 = lasers.FakeLaser('488',scope.cam,1, initPower=50)
+scope.l405 = lasers.FakeLaser('405',scope.cam,0, initPower=10)
+
+scope.lasers = [scope.l405, scope.l488]
+
+InitGUI('''
+from PYME.Acquire.Hardware import LaserControlFrame
+lcf = LaserControlFrame.LaserControlLight(MainFrame,scope.lasers)
+time1.WantNotification.append(lcf.refresh)
+#lcf.Show()
+toolPanels.append((lcf, 'Laser Control'))
+''')
+
+InitGUI('''
+lsf = lasersliders.LaserSliders(toolPanel, scope.lasers)
 toolPanels.append((lsf, 'Laser Powers'))
+''')
 
-#import remFitPSF
-#import Pyro
-#tq = Pyro.core.getProxyForURI('PYRONAME://taskQueue')
 
-#import MetaData
-
-#md = MetaData.MetaData(MetaData.VoxelSize(0.07,0.07,0.2))
-
-#def postTask(hi=None):
-#    im = example.CDataStack_AsArray(scope.pa.ds,0)[:,:,0]
-#    t = remFitPSF.fitTask(im, 10,md)
-#    tq.postTask(t)
-
-#scope.pa.WantFrameNotification.append(postTask)
-
-#import HDFSpoolFrame
-#from PYME.FileUtils import nameUtils
-#frs = HDFSpoolFrame.FrSpool(None, scope, nameUtils.genHDFDataFilepath())
-#frs.Show()
-
+InitGUI('''
+from PYME.Acquire.Hardware import focusKeys
+fk = focusKeys.FocusKeys(MainFrame, mControls, scope.piezos[-1])
+''')
 
 from PYME import cSMI
-import time
 
 Is = []
 
@@ -69,3 +82,9 @@ def calcSum(caller):
 
 #scope.pa.WantFrameNotification.append(calcSum)
 
+
+
+#must be here!!!
+joinBGInit() #wait for anyhting which was being done in a separate thread
+time.sleep(.5)
+scope.initDone = True

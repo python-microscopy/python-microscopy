@@ -30,6 +30,10 @@ import chanfr
 import HDFSpoolFrame
 from PYME.FileUtils import nameUtils
 
+import splashScreen
+
+import PYME.Acquire.protocol as protocol
+
 def create(parent, options = None):
     return smiMainFrame(parent, options)
 
@@ -200,8 +204,17 @@ class smiMainFrame(wx.Frame):
         
         self.MainFrame = self #reference to this window for use in scripts etc...
         self.MainMenu = self.menuBar1
+        protocol.MainFrame = self
 
         self.toolPanels = []
+        self.camPanels = []
+        self.postInit = []
+
+        self.initDone = False
+
+        self.splash = splashScreen.SplashScreen(self)
+        self.splash.Show()
+        
 
         self.sh = wx.py.shell.Shell(id=-1,
               parent=self.notebook1, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
@@ -226,19 +239,42 @@ class smiMainFrame(wx.Frame):
         self.time1 = mytimer.mytimer()
         self.scope = funcs.microscope()
         self.time1.Start(500)
+
+        self.time1.WantNotification.append(self.runInitScript)
+        self.time1.WantNotification.append(self.checkInitDone)
+        self.time1.WantNotification.append(self.splash.Tick)
+
+    def runInitScript(self):
+        self.time1.WantNotification.remove(self.runInitScript)
         #self.sh.shell.runfile('init.py')
         initFile = 'init.py'
         if not self.options == None and not self.options.initFile == None:
             initFile = self.options.initFile
         self.sh.run('import ExecTools')
-        self.sh.run('ExecTools.execFile("%s", locals(), globals())' % initFile)
-                
+        self.sh.run('ExecTools.setDefaultNamespace(locals(), globals())')
+        self.sh.run('from ExecTools import InitBG, joinBGInit, InitGUI, HWNotPresent')
+        #self.sh.run('''def InitGUI(code):\n\tpostInit.append(code)\n\n\n''')
+        self.sh.run('ExecTools.execFileBG("%s", locals(), globals())' % initFile)
+
+        
+
+    def checkInitDone(self):
+        if self.scope.initDone == True and self.checkInitDone in self.time1.WantNotification:
+            self.time1.WantNotification.remove(self.checkInitDone)
+            #self.time1.WantNotification.remove(self.splash.Tick)
+            self.doPostInit()
+
+    def doPostInit(self):
+        for cm in self.postInit:
+            for cl in cm.split('\n'):
+                self.sh.run(cl)
+
         if (self.scope.cam.CamReady() and ('chaninfo' in self.scope.__dict__)):
             self.scope.livepreview(self, Notebook = self.notebook1)
             
 
-            self.int_sl = intsliders.IntegrationSliders(self.scope.chaninfo,self)
-            self.AddTool(self.int_sl, 'Integration Time')
+            self.int_sl = intsliders.IntegrationSliders(self.scope.chaninfo,self, self.scope)
+            self.AddCamTool(self.int_sl, 'Integration Time')
             #self.notebook1.AddPage( page=self.int_sl, select=False, caption='Integration Time')
             #self.notebook1.Split(self.notebook1.GetPageCount() -1, wx.DOWN)
             #self.int_sl.Show()
@@ -274,6 +310,13 @@ class smiMainFrame(wx.Frame):
             print t
             self.AddTool(*t)
 
+        for t in self.camPanels:
+            print t
+            self.AddCamTool(*t)
+
+        #self.splash.Destroy()
+        self.initDone = True
+
     def CreateToolPanel(self):
 
         # delete earlier panel
@@ -284,42 +327,49 @@ class smiMainFrame(wx.Frame):
         self.Images.Add(GetExpandedIconBitmap())
         self.Images.Add(GetCollapsedIconBitmap())
 
-        self._leftWindow1 = wx.SashLayoutWindow(self, 101, wx.DefaultPosition,
-                                                wx.Size(300, 1000), wx.NO_BORDER |
-                                                wx.SW_3D | wx.CLIP_CHILDREN)
+#        self._leftWindow1 = wx.SashLayoutWindow(self, 101, wx.DefaultPosition,
+#                                                wx.Size(300, 1000), wx.NO_BORDER |
+#                                                wx.SW_3D | wx.CLIP_CHILDREN)
+#
+#        self._leftWindow1.SetDefaultSize(wx.Size(220, 1000))
+#        self._leftWindow1.SetOrientation(wx.LAYOUT_VERTICAL)
+#        self._leftWindow1.SetAlignment(wx.LAYOUT_LEFT)
+#        self._leftWindow1.SetSashVisible(wx.SASH_RIGHT, True)
+#        self._leftWindow1.SetExtraBorderSize(10)
 
-        self._leftWindow1.SetDefaultSize(wx.Size(220, 1000))
-        self._leftWindow1.SetOrientation(wx.LAYOUT_VERTICAL)
-        self._leftWindow1.SetAlignment(wx.LAYOUT_LEFT)
-        self._leftWindow1.SetSashVisible(wx.SASH_RIGHT, True)
-        self._leftWindow1.SetExtraBorderSize(10)
-
-
-        self.toolPanel = fpb.FoldPanelBar(self._leftWindow1, -1, wx.DefaultPosition,
+        self.camPanel = fpb.FoldPanelBar(self.notebook1, -1, wx.DefaultPosition,
                                      wx.Size(300,1000), fpb.FPB_DEFAULT_STYLE,0)
 
-        
-
-        self.notebook1.AddPage(page=self._leftWindow1, select=False, caption='Settings')
+        self.notebook1.AddPage(page=self.camPanel, select=False, caption='Camera')
         self.notebook1.Split(self.notebook1.GetPageCount() -1, wx.RIGHT)
 
-        self._rightWindow1 = wx.SashLayoutWindow(self, 101, wx.DefaultPosition,
-                                                wx.Size(300, 1000), wx.NO_BORDER |
-                                                wx.SW_3D | wx.CLIP_CHILDREN)
-
-        self._rightWindow1.SetDefaultSize(wx.Size(300, 1000))
-        self._rightWindow1.SetOrientation(wx.LAYOUT_VERTICAL)
-        self._rightWindow1.SetAlignment(wx.LAYOUT_LEFT)
-        self._rightWindow1.SetSashVisible(wx.SASH_RIGHT, True)
-        self._rightWindow1.SetExtraBorderSize(10)
 
 
-        self.aqPanel = fpb.FoldPanelBar(self._rightWindow1, -1, wx.DefaultPosition,
+        self.toolPanel = fpb.FoldPanelBar(self.notebook1, -1, wx.DefaultPosition,
+                                     wx.Size(300,1000), fpb.FPB_DEFAULT_STYLE,0)
+        
+        self.notebook1.AddPage(page=self.toolPanel, select=False, caption='Hardware')
+        self.notebook1.Split(self.notebook1.GetPageCount() -1, wx.RIGHT)   
+
+#        self._rightWindow1 = wx.SashLayoutWindow(self, 101, wx.DefaultPosition,
+#                                                wx.Size(300, 1000), wx.NO_BORDER |
+#                                                wx.SW_3D | wx.CLIP_CHILDREN)
+#
+#        self._rightWindow1.SetDefaultSize(wx.Size(300, 1000))
+#        self._rightWindow1.SetOrientation(wx.LAYOUT_VERTICAL)
+#        self._rightWindow1.SetAlignment(wx.LAYOUT_LEFT)
+#        self._rightWindow1.SetSashVisible(wx.SASH_RIGHT, True)
+#        self._rightWindow1.SetExtraBorderSize(10)
+
+
+        self.aqPanel = fpb.FoldPanelBar(self.notebook1, -1, wx.DefaultPosition,
                                      wx.Size(300,1000), fpb.FPB_DEFAULT_STYLE,0)
 
 
 
-        self.notebook1.AddPage(page=self._rightWindow1, select=False, caption='Acquisition')
+        self.notebook1.AddPage(page=self.aqPanel, select=False, caption='Acquisition')
+        self.notebook1.Split(self.notebook1.GetPageCount() -1, wx.RIGHT)
+        #self.notebook1.Split(self.notebook1.GetPageCount() -1, wx.RIGHT)
         #self.notebook1.Split(self.notebook1.GetPageCount() -2, wx.RIGHT)
         #self.notebook1.Split(self.notebook1.GetPageCount() -2, wx.RIGHT)
 
@@ -330,6 +380,11 @@ class smiMainFrame(wx.Frame):
         panel.Reparent(item)
         self.toolPanel.AddFoldPanelWindow(item, panel, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
         #wx.LayoutAlgorithm().LayoutWindow(self, self._leftWindow1)
+
+    def AddCamTool(self, panel, title):
+        item = self.camPanel.AddFoldPanel(title, collapsed=False, foldIcons=self.Images)
+        panel.Reparent(item)
+        self.camPanel.AddFoldPanelWindow(item, panel, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
 
     def AddAqTool(self, panel, title):
         item = self.aqPanel.AddFoldPanel(title, collapsed=False, foldIcons=self.Images)

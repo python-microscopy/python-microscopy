@@ -316,12 +316,15 @@ class dSimControl(wx.Panel):
             fluors = fluor.fluors(x, y, z, transTens, exCrosses, activeState=self.activeState)
 
         
-        self.scope.cam.fluors=fluors
+        self.scope.cam.setFluors(fluors)
         
         pylab.figure(1)
-        pylab.plot([p[0] for p in self.points],[p[1] for p in self.points], '.', hold=False)
+        pylab.clf()
+        pylab.scatter([p[0] for p in self.points],[p[1] for p in self.points], c = [p[2] for p in self.points], cmap=pylab.cm.gist_rainbow, hold=False)
         pylab.gca().set_ylim(self.scope.cam.YVals[0], self.scope.cam.YVals[-1])
         pylab.gca().set_xlim(self.scope.cam.XVals[0], self.scope.cam.XVals[-1])
+        pylab.axis('equal')
+        pylab.colorbar()
         pylab.show()
         #event.Skip()
 

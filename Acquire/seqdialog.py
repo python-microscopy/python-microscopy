@@ -19,76 +19,96 @@ def create(parent):
 class seqPanel(wx.Panel):
     def _init_ctrls(self, prnt):
         # generated method, don't edit
-        wx.Panel.__init__(self, id=wxID_SEQDIALOG, parent=prnt,size=wx.Size(356, 194))
+        wx.Panel.__init__(self, id=wxID_SEQDIALOG, parent=prnt)
         #self.SetClientSize(wx.Size(348, 167))
         #self.SetBackgroundColour(wx.Colour(209, 208, 203))
-        self.chPiezo = wx.Choice(choices=[], id=wxID_SEQDIALOGCHPIEZO,
-              name='chPiezo', parent=self, pos=wx.Point(136, 16), size=wx.Size(85,
-              21), style=0)
+
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        sPiezo = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Piezo Channel'), wx.HORIZONTAL)
+
+        self.chPiezo = wx.Choice(self, -1, choices=[], size=(-1,-1))
         wx.EVT_CHOICE(self.chPiezo, wxID_SEQDIALOGCHPIEZO, self.OnChPiezoChoice)
-        self.staticBox1 = wx.StaticBox(id=wxID_SEQDIALOGSTATICBOX1, label='Type',
-              name='staticBox1', parent=self, pos=wx.Point(8, 0),
-              size=wx.Size(112, 56), style=0)
-        self.bSt_end = wx.RadioButton(id=wxID_SEQDIALOGBST_END,
-              label='Start and End', name='bSt_end', parent=self,
-              pos=wx.Point(16, 16), size=wx.Size(88, 13), style=0)
+
+        sPiezo.Add(self.chPiezo, 1,wx.ALIGN_CENTER_VERTICAL,0)
+        hsizer.Add(sPiezo, 1, wx.EXPAND|wx.RIGHT, 5)
+
+
+        sType = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Type'), wx.VERTICAL)
+
+        self.bSt_end = wx.RadioButton(self, -1,'Start and End', size=(-1,-1))
         self.bSt_end.SetValue(True)
-        wx.EVT_RADIOBUTTON(self.bSt_end, wxID_SEQDIALOGBST_END,
-              self.OnBSt_endRadiobutton)
-        self.bMid_num = wx.RadioButton(id=wxID_SEQDIALOGBMID_NUM,
-              label='Middle and #', name='bMid_num', parent=self,
-              pos=wx.Point(16, 32), size=wx.Size(79, 13), style=0)
+        self.bSt_end.Bind(wx.EVT_RADIOBUTTON, self.OnBSt_endRadiobutton)
+
+        sType.Add(self.bSt_end, 1,0,0)
+
+        self.bMid_num = wx.RadioButton(self, -1, 'Middle and #', size=(-1,-1))
         self.bMid_num.SetValue(False)
-        wx.EVT_RADIOBUTTON(self.bMid_num, wxID_SEQDIALOGBMID_NUM,
-              self.OnBMid_numRadiobutton)
-        self.staticBox2 = wx.StaticBox(id=wxID_SEQDIALOGSTATICBOX2,
-              label='Piezo Channel', name='staticBox2', parent=self,
-              pos=wx.Point(128, 0), size=wx.Size(112, 56), style=0)
-        self.staticBox3 = wx.StaticBox(id=wxID_SEQDIALOGSTATICBOX3,
-              label='Stop Pos (um)', name='staticBox3', parent=self,
-              pos=wx.Point(128, 56), size=wx.Size(112, 48), style=0)
-        self.tEndPos = wx.TextCtrl(id=wxID_SEQDIALOGTENDPOS, name='tEndPos',
-              parent=self, pos=wx.Point(136, 72), size=wx.Size(56, 21), style=0,
-              value='60')
-        wx.EVT_KILL_FOCUS(self.tEndPos, self.OnTEndPosKillFocus)
-        self.bEndHere = wx.Button(id=wxID_SEQDIALOGBENDHERE, label='Here',
-              name='bEndHere', parent=self, pos=wx.Point(200, 72),
-              size=wx.Size(32, 23), style=0)
-        wx.EVT_BUTTON(self.bEndHere, wxID_SEQDIALOGBENDHERE, self.OnBEndHereButton)
-        self.staticBox4 = wx.StaticBox(id=wxID_SEQDIALOGSTATICBOX4,
-              label='Start Pos (um)', name='staticBox4', parent=self,
-              pos=wx.Point(8, 56), size=wx.Size(112, 48), style=0)
-        self.bStartHere = wx.Button(id=wxID_SEQDIALOGBSTARTHERE, label='Here',
-              name='bStartHere', parent=self, pos=wx.Point(80, 72),
-              size=wx.Size(32, 23), style=0)
-        wx.EVT_BUTTON(self.bStartHere, wxID_SEQDIALOGBSTARTHERE,
-              self.OnBStartHereButton)
-        self.tStPos = wx.TextCtrl(id=wxID_SEQDIALOGTSTPOS, name='tStPos',
-              parent=self, pos=wx.Point(16, 72), size=wx.Size(56, 21), style=0,
-              value='40')
-        wx.EVT_KILL_FOCUS(self.tStPos, self.OnTStPosKillFocus)
-        self.staticBox5 = wx.StaticBox(id=wxID_SEQDIALOGSTATICBOX5,
-              label='# Slices', name='staticBox5', parent=self, pos=wx.Point(248,
-              56), size=wx.Size(88, 48), style=0)
-        self.tNumSlices = wx.TextCtrl(id=wxID_SEQDIALOGTNUMSLICES,
-              name='tNumSlices', parent=self, pos=wx.Point(256, 72),
-              size=wx.Size(64, 24), style=0, value='100')
-        self.tNumSlices.Enable(False)
-        wx.EVT_KILL_FOCUS(self.tNumSlices, self.OnTNumSlicesKillFocus)
-        self.staticBox6 = wx.StaticBox(id=wxID_SEQDIALOGSTATICBOX6,
-              label=' Stepsize (um)', name='staticBox6', parent=self,
-              pos=wx.Point(248, 0), size=wx.Size(88, 56), style=0)
-        self.tStepSize = wx.TextCtrl(id=wxID_SEQDIALOGTSTEPSIZE,
-              name='tStepSize', parent=self, pos=wx.Point(256, 16),
-              size=wx.Size(64, 24), style=0, value='0.2')
-        wx.EVT_KILL_FOCUS(self.tStepSize, self.OnTStepSizeKillFocus)
-        self.bStart = wx.Button(id=wxID_SEQDIALOGBSTART, label='Go, Go, Go !!! ',
-              name='bStart', parent=self, pos=wx.Point(128, 136), size=wx.Size(75,
-              23), style=0)
+        self.bMid_num.Bind(wx.EVT_RADIOBUTTON, self.OnBMid_numRadiobutton)
+
+        sType.Add(self.bMid_num, 1,0,0)
+        hsizer.Add(sType, 1, wx.EXPAND, 0)
+
+        vsizer.Add(hsizer, 1, wx.EXPAND, 0)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        sStart = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Start Pos [um]'), wx.HORIZONTAL)
+
+        self.tStPos = wx.TextCtrl(self, -1, value='40', size=(40,-1))
+        self.tStPos.Bind(wx.EVT_KILL_FOCUS, self.OnTStPosKillFocus)
+        sStart.Add(self.tStPos, 2, wx.RIGHT, 5)
+
+        self.bStartHere = wx.Button(self, -1,'Here', size=(10,10))
+        self.bStartHere.Bind(wx.EVT_BUTTON, self.OnBStartHereButton)
+        sStart.Add(self.bStartHere, 1, wx.EXPAND, 0)
+
+        hsizer.Add(sStart, 1, wx.RIGHT, 5)
+
+
+        sEnd = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'End Pos [um]'), wx.HORIZONTAL)
+
+        self.tEndPos = wx.TextCtrl(self, -1, value='40', size=(40,-1))
+        self.tEndPos.Bind(wx.EVT_KILL_FOCUS, self.OnTEndPosKillFocus)
+        sEnd.Add(self.tEndPos, 2, wx.RIGHT, 5)
+
+        self.bEndHere = wx.Button(self, -1,'Here', size=(10,10))
+        self.bEndHere.Bind(wx.EVT_BUTTON, self.OnBEndHereButton)
+        sEnd.Add(self.bEndHere, 1, wx.EXPAND, 0)
+
+        hsizer.Add(sEnd, 1, 0, 0)
+        vsizer.Add(hsizer, 0, wx.EXPAND, 0)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+
+        sStep = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Step Size [um]'), wx.HORIZONTAL)
+
+        self.tStepSize = wx.TextCtrl(self, -1, value='0.2', size=(40,-1))
+        self.tStepSize.Bind(wx.EVT_KILL_FOCUS, self.OnTStepSizeKillFocus)
+        sStep.Add(self.tStepSize, 1, 0, 0)
+
+        hsizer.Add(sStep, 1, wx.RIGHT, 5)
+
+
+        sNSlices = wx.StaticBoxSizer(wx.StaticBox(self, -1, '# Slices'), wx.HORIZONTAL)
+
+        self.tNumSlices = wx.TextCtrl(self, -1, value='100', size=(40,-1))
+        self.tNumSlices.Bind(wx.EVT_KILL_FOCUS, self.OnTNumSlicesKillFocus)
+        sNSlices.Add(self.tNumSlices, 1, 0, 0)
+
+        hsizer.Add(sNSlices, 1, 0, 0)
+        vsizer.Add(hsizer, 0, wx.EXPAND, 0)
+
+        self.stMemory = wx.StaticText(self, -1, '')
+        vsizer.Add(self.stMemory, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.TOP|wx.BOTTOM, 5)
+        
+
+        self.bStart = wx.Button(self, -1, 'Go, Go, Go !!!')
         wx.EVT_BUTTON(self.bStart, wxID_SEQDIALOGBSTART, self.OnBStartButton)
-        self.stMemory = wx.StaticText(id=wxID_SEQDIALOGSTMEMORY,
-              label='staticText1', name='stMemory', parent=self, pos=wx.Point(48,
-              112), size=wx.Size(264, 13), style=0)
+        vsizer.Add(self.bStart, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.TOP|wx.BOTTOM, 5, 0)
+
+        self.SetSizerAndFit(vsizer)
+        
     def __init__(self, parent, scope):
         self.scope = scope
         self._init_ctrls(parent)

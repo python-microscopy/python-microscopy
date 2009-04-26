@@ -7,6 +7,9 @@ from PYME import cSMI
 
 import time
 
+global timeFcn
+timeFcn = time.time
+
 from PYME.Acquire import eventLog
 from PYME.Acquire import protocol as p
 
@@ -19,6 +22,7 @@ class EventLogger:
 
 class Spooler:
    def __init__(self, scope, filename, acquisator, protocol = p.NullProtocol, parent=None):
+       global timeFcn
        self.scope = scope
        self.filename=filename
        self.acq = acquisator
@@ -32,7 +36,12 @@ class Spooler:
        self.acq.WantFrameNotification.append(self.Tick)
 
        self.imNum = 0
-       self.protocol.Init()
+
+       #if we've got a fake camera - the cycle time will be wrong - fake our time sig to make up for this
+       if scope.cam.__class__.__name__ == 'FakeCamera':
+           timeFcn = self.fakeTime
+
+       self.protocol.Init(self)
        self.spoolOn = True
 
        
@@ -55,8 +64,10 @@ class Spooler:
       dt = datetime.datetime.now()
 
       self.dtStart = dt
+
+      self.tStart = time.time()
       
-      self.md.setEntry('StartTime', time.time())
+      self.md.setEntry('StartTime', self.tStart)
 
       #loop over all providers of metadata
       for mdgen in MetaDataHandler.provideStartMetadata:
@@ -69,6 +80,9 @@ class Spooler:
         #loop over all providers of metadata
         for mdgen in MetaDataHandler.provideStopMetadata:
            mdgen(self.md)
+
+   def fakeTime(self):
+       return self.tStart + self.imNum*1.e-3*self.scope.cam.GetIntegTime()
         
         
    def __del__(self):

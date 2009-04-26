@@ -2,15 +2,15 @@ from PYME.Acquire.Hardware.AndorIXon import AndorIXon
 from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
 
 from PYME.Acquire.Hardware import fakeShutters
+import time
 
-#from PYME import cSMI
-
+InitBG('EMCCD Camera', '''
 scope.cam = AndorIXon.iXonCamera()
-
+''')
+InitGUI('''
 acf = AndorControlFrame.AndorPanel(MainFrame, scope.cam, scope)
-#acf.Show()
 toolPanels.append((acf, 'Andor EMCCD Properties'))
-
+''')
 
 #setup for the channels to aquire - b/w camera, no shutters
 class chaninfo:
@@ -22,28 +22,32 @@ class chaninfo:
 scope.chaninfo = chaninfo
 scope.shutters = fakeShutters
 
-#import HDFSpoolFrame
-#frs = HDFSpoolFrame.FrSpool(MainFrame, scope, 'd:\\%(username)s\\%(day)d-%(month)d-%(year)d\\')
-#frs.Show()
 
 #PIFoc
+InitBG('PIFoc', '''
 from PYME.Acquire.Hardware.Piezos import piezo_e816
 scope.piFoc = piezo_e816.piezo_e816('COM2', 400)
 scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
+''')
 
+InitGUI('''
 from PYME.Acquire.Hardware import focusKeys
 fk = focusKeys.FocusKeys(MainFrame, mControls, scope.piezos[-1])
+''')
 
 #Z stage
+InitBG('Nikon Z-Stage', '''
 from PYME.Acquire.Hardware import NikonTE2000
 scope.zStage = NikonTE2000.zDrive()
 #scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
+''')
 
 #from PYME.Acquire.Hardware import frZStage
 #frz = frZStage.frZStepper(MainFrame, scope.zStage)
 #frz.Show()
 
 #3-axis piezo
+InitBG('Thorlabs Piezo', '''
 from PYME.Acquire.Hardware import thorlabsPiezo
 
 #check to see what we've got attached
@@ -61,6 +65,10 @@ if len(piezoSerialNums) == 3: #expect to see 3 piezos
     scope.pzx.MoveTo(0,50)
     scope.pzy.MoveTo(0,50)
     scope.pzz.MoveTo(0,40)
+else:
+    raise HWNotPresent
+
+''')
     
 from PYME.Acquire.Hardware.FilterWheel import WFilter, FiltFrame
 filtList = [WFilter(1, 'EMPTY', 'EMPTY', 0),
@@ -70,13 +78,16 @@ filtList = [WFilter(1, 'EMPTY', 'EMPTY', 0),
     WFilter(5, 'ND2'  , 'UVND 2'  , 2),
     WFilter(6, 'ND3'  , 'UVND 3'  , 3)]
 
+InitGUI('''
 scope.filterWheel = FiltFrame(MainFrame, filtList)
-#scope.filterWheel.Show()
 toolPanels.append((scope.filterWheel, 'Filter Wheel'))
+''')
 
 #DigiData
+InitBG('DigiData', '''
 from PYME.Acquire.Hardware.DigiData import DigiDataClient
 dd = DigiDataClient.getDDClient()
+''')
 
 from PYME.Acquire.Hardware import lasers
 l488 = lasers.DigiDataSwitchedLaser('all',dd,1)
@@ -86,23 +97,34 @@ l671 = lasers.DigiDataSwitchedAnalogLaser('671',dd,1)
 
 scope.lasers = [l488,l405,l543,l671]
 
+InitGUI('''
 from PYME.Acquire.Hardware import LaserControlFrame
 lcf = LaserControlFrame.LaserControl(MainFrame,scope.lasers)
 #lcf.Show()
 toolPanels.append((lcf, 'Laser Control'))
+''')
 
+#Focus tracking
 from PYME.Acquire.Hardware import FocCorrR
+InitBG('Focus Corrector', '''
 fc = FocCorrR.FocusCorrector(scope.zStage, tolerance=0.20000000000000001, estSlopeDyn=False, recDrift=False, axis='Y', guideLaser=l488)
 scope.StatusCallbacks.append(fc.GetStatus)
+''')
+InitGUI('''
 fc.addMenuItems(MainFrame, MainMenu)
 fc.Start(2000)
+''')
 
 from PYME import cSMI
-import time
+
 
 Is = []
 
 def calcSum(caller):
     Is.append(cSMI.CDataStack_AsArray(caller.ds, 0).sum())
 
-#scope.pa.WantFrameNotification.append(calcSum)
+
+#must be here!!!
+joinBGInit() #wait for anyhting which was being done in a separate thread
+time.sleep(.5)
+scope.initDone = True

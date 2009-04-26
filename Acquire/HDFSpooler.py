@@ -3,7 +3,7 @@ import tables
 from PYME.Acquire import MetaDataHandler
 from PYME import cSMI
 
-import time
+#import time
 
 #from PYME.Acquire import eventLog
 import PYME.Acquire.Spooler as sp
@@ -26,7 +26,7 @@ class EventLogger:
 
       ev['EventName'] = eventName
       ev['EventDescr'] = eventDescr
-      ev['Time'] = time.time()
+      ev['Time'] = sp.timeFcn()
 
       ev.append()
       self.evts.flush()

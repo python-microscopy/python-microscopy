@@ -286,7 +286,7 @@ class PreviewAquisator(wx.Timer):
 
         self.doStartLog()
 
-        self.Wait(1000)  # Warten, so dass Piezotisch wieder in Ruhe
+        #self.Wait(1000)  # Warten, so dass Piezotisch wieder in Ruhe
 
         if ('itimes' in dir(self.chans)): #maintain compatibility with old versions
             self.cam.SetIntegTime(self.chans.itimes[self.looppos])

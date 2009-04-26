@@ -10,22 +10,23 @@ import sys
 #from noclosefr import * 
 
 class LaserSliders(wx.Panel):
-    def __init__(self, parent, cam, laserNames=['405', '488'], winid=-1):
+    def __init__(self, parent, lasers, winid=-1):
         # begin wxGlade: MyFrame1.__init__
         #kwds["style"] = wx.DEFAULT_FRAME_STYLE
         wx.Panel.__init__(self, parent, winid)
 
-        self.cam = cam
-        self.laserNames=laserNames
+        #self.cam = cam
+        self.lasers = lasers
+        self.laserNames=[l.GetName() for l in lasers]
         
         self.sliders = []
         #self.SetTitle("Piezo Control")
         
         sizer_2 = wx.BoxSizer(wx.VERTICAL)
 
-        for c in range(len(self.cam.laserPowers)):
+        for c in range(len(self.lasers)):
             #if sys.platform == 'darwin': #sliders are subtly broken on MacOS, requiring workaround
-            sl = wx.Slider(self, -1, self.cam.laserPowers[c], 0, 1000, size=wx.Size(150,-1),style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
+            sl = wx.Slider(self, -1, self.lasers[c].GetPower(), 0, 1000, size=wx.Size(150,-1),style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
             #else: #sane OS's
             #    sl = wx.Slider(self, -1, self.cam.laserPowers[c], 0, 1000, size=wx.Size(300,-1),style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
 
@@ -55,7 +56,7 @@ class LaserSliders(wx.Panel):
         ind = self.sliders.index(sl)
         self.sl = sl
         self.ind = ind
-        self.cam.laserPowers[ind] = sl.GetValue()
+        self.lasers[ind].SetPower(sl.GetValue())
 
     def update(self):
         for ind in range(len(self.piezos)):

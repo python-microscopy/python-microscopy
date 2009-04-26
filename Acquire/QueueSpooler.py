@@ -2,6 +2,7 @@ import tables
 from PYME.Acquire import MetaDataHandler
 from PYME import cSMI
 import Pyro.core
+#import time
 
 import PYME.Acquire.Spooler as sp
 from PYME.Acquire import protocol as p
@@ -20,7 +21,7 @@ class EventLogger:
       self.queueName = queueName
 
    def logEvent(self, eventName, eventDescr = ''):
-      self.tq.logQueueEvent(self,queueName, (eventName, eventDescr, time.time()))
+      self.tq.logQueueEvent(self.queueName, (eventName, eventDescr, sp.timeFcn()))
       
 
 class Spooler(sp.Spooler):

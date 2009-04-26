@@ -7,6 +7,8 @@ from PYME.Acquire import MetaDataHandler
 import pylab
 
 import threading
+#import processing
+import time
 
 class CDataStack(example.CDataStack):
     def getCurrentChannelSlice(self, curMemChn):
@@ -30,23 +32,88 @@ class NoiseMaker:
 
 #calculate image in a separate thread to maintain GUI reponsiveness
 class compThread(threading.Thread):
-    def __init__(self,XVals, YVals,zPos, fluors, noisemaker, laserPowers, intTime):
+#class compThread(processing.Process):
+    def __init__(self,XVals, YVals,zPiezo, zOffset, fluors, noisemaker, laserPowers, intTime, contMode = True, bufferlength=20):
         threading.Thread.__init__(self)
         self.XVals = XVals
         self.YVals = YVals
         self.fluors = fluors
-        self.zPos = zPos
+        #self.zPos = zPos
         self.laserPowers = laserPowers
         self.intTime = intTime
         self.noiseMaker = noisemaker
+        self.contMode = contMode
+        self.bufferlength = bufferlength
+        self.buffer = pylab.zeros((len(XVals), len(YVals), bufferlength), 'uint16')
+        self.bufferWritePos = 0
+        self.bufferReadPos = 0
+        self.numBufferedImages = 0
+
+        self.zPiezo = zPiezo
+        self.zOffset = zOffset
+
+        self.kill = False
+        self.aqRunning = False
+
+        print laserPowers
+        print intTime
+
+        #self.frameLock = threading.Lock()
+        #self.frameLock.acquire()
+
 
     def run(self):
         #self.im = self.noiseMaker.noisify(rend_im.simPalmIm(self.XVals, self.YVals, self.zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
 
-        if not self.fluors == None and not 'spec' in self.fluors.fl.dtype.fields.keys():
-            self.im = self.noiseMaker.noisify(rend_im.simPalmImF(self.XVals, self.YVals, self.zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
-        else:
-            self.im = self.noiseMaker.noisify(rend_im.simPalmImFSpec(self.XVals, self.YVals, self.zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
+        while not self.kill:
+            #self.frameLock.acquire()
+            while ((not self.aqRunning) or (self.numBufferedImages > self.bufferlength/2.)) and (not self.kill) :
+                time.sleep(.01)
+
+            zPos = (self.zPiezo.GetPos() - self.zOffset)*1e3
+                
+            if not self.fluors == None and not 'spec' in self.fluors.fl.dtype.fields.keys():
+                self.im = self.noiseMaker.noisify(rend_im.simPalmImF(self.XVals, self.YVals, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
+            else:
+                self.im = self.noiseMaker.noisify(rend_im.simPalmImFSpec(self.XVals, self.YVals, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
+
+            self.buffer[:,:,self.bufferWritePos] = self.im
+            self.bufferWritePos +=1
+            if self.bufferWritePos >= self.bufferlength: #wrap around
+                self.bufferWritePos = 0
+
+            self.numBufferedImages = min(self.numBufferedImages +1, self.bufferlength)
+
+
+            if not self.contMode:
+                self.aqRunning = False
+            #self.frameLock.release()
+
+    def numFramesBuffered(self):
+        return self.numBufferedImages
+
+    def StartExp(self):
+        self.aqRunning = True
+        #self.frameLock.release()
+
+    def getIm(self):
+        im = self.buffer[:,:,self.bufferReadPos]
+        self.numBufferedImages -= 1
+        self.bufferReadPos +=1
+        if self.bufferReadPos >= self.bufferlength: #wrap around
+            self.bufferReadPos = 0
+
+        return im
+
+    def StopAq(self):
+        self.aqRunning = False
+        self.bufferWritePos = 0
+        self.bufferReadPos = 0
+        self.numBufferedImages = 0
+        
+
+
+
 
         
 class FakeCamera:
@@ -66,14 +133,29 @@ class FakeCamera:
 
         self.intTime=100
         self.zOffset = zOffset
-        self.compTCur = None #thread which is currently being computed
-        self.compTOld = None #finished thread holding image (c.f. camera buffer)
+        self.compT = None #thread which is currently being computed
+        #self.compT = None #finished thread holding image (c.f. camera buffer)
+
+        self.compT = compThread(self.XVals[self.ROIx[0]:self.ROIx[1]], self.YVals[self.ROIy[0]:self.ROIy[1]], self.zPiezo, self.zOffset,self.fluors, self.noiseMaker, laserPowers=self.laserPowers, intTime=self.intTime*1e-3)
+        self.compT.start()
+
+        self.contMode = True
 
         #register as a provider of metadata
         MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
 
     def setFluors(self, fluors):
         self.fluors = fluors
+
+        running = self.compT.aqRunning
+
+        self.compT.kill = True
+
+        self.compT = compThread(self.XVals[self.ROIx[0]:self.ROIx[1]], self.YVals[self.ROIy[0]:self.ROIy[1]], self.zPiezo, self.zOffset,self.fluors, self.noiseMaker, laserPowers=self.compT.laserPowers, intTime=self.intTime*1e-3)
+        self.compT.start()
+
+        self.compT.aqRunning = running
+        
 
     def GetCamType(*args): 
         raise Exception, 'Not implemented yet!!'
@@ -104,6 +186,7 @@ class FakeCamera:
     
     def SetIntegTime(self, iTime): 
         self.intTime=iTime
+        self.compT.intTime = iTime*1e-3
     def GetIntegTime(self): 
         return self.intTime
     
@@ -153,8 +236,26 @@ class FakeCamera:
     def GetPicHeight(self): 
         return self.ROIy[1] - self.ROIy[0]
 
-    def SetROI(*args): 
-        raise Exception, 'Not implemented yet!!'
+    def SetROI(self, x1, y1, x2, y2):
+        self.ROIx = (x1, x2)
+        self.ROIy = (y1, y2)
+
+        running = self.compT.aqRunning
+
+        self.compT.kill = True
+        while self.compT.isAlive():
+            time.sleep(0.01)
+
+        print (self.fluors.fl['state'] == 2).sum()
+        print running
+        print self.compT.laserPowers
+
+        self.compT = compThread(self.XVals[self.ROIx[0]:self.ROIx[1]], self.YVals[self.ROIy[0]:self.ROIy[1]], self.zPiezo, self.zOffset, self.fluors, self.noiseMaker, laserPowers=self.compT.laserPowers, intTime=self.intTime*1e-3)
+        self.compT.start()
+
+        print (self.fluors.fl['state'] == 2).sum()
+
+        self.compT.aqRunning = running
     
     def GetROIX1(self):
         return self.ROIx[0]
@@ -183,15 +284,18 @@ class FakeCamera:
         pass
 
     def StartAq(self):
-        pass
+        self.compT.aqRunning = True
+        #pass
 
     def StopAq(self):
-        pass
+        self.compT.StopAq()
+        #pass
 
     def StartExposure(self):
-        self.compTOld = self.compTCur
-        self.compTCur = compThread(self.XVals, self.YVals, (self.zPiezo.GetPos() - self.zOffset)*1e3,self.fluors, self.noiseMaker, laserPowers=self.laserPowers, intTime=self.intTime*1e-3)
-        self.compTCur.start()
+        self.compT.StartExp()
+        #self.compTOld = self.compTCur
+        #self.compTCur = compThread(self.XVals, self.YVals, (self.zPiezo.GetPos() - self.zOffset)*1e3,self.fluors, self.noiseMaker, laserPowers=self.laserPowers, intTime=self.intTime*1e-3)
+        #self.compTCur.start()
         return 0
 
     def StartLifePreview(*args): 
@@ -200,7 +304,8 @@ class FakeCamera:
         raise Exception, 'Not implemented yet!!'
 
     def ExpReady(self):
-        return not self.compTCur.isAlive() #thread has finished -> a picture is available
+        #return not self.compTCur.isAlive() #thread has finished -> a picture is available
+        return self.compT.numFramesBuffered() > 0
         #return True
         #raise Exception, 'Not implemented yet!!'
 
@@ -212,8 +317,8 @@ class FakeCamera:
         
         #chSlice[:,:] = self.noiseMaker.noisify(rend_im.simPalmIm(self.XVals, self.YVals, (self.zPiezo.GetPos() - self.zOffset)*1e3,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime*1e-3))[:,:].astype('uint16')
 	try:
-	    chSlice[:,:] = self.compTOld.im #grab image from completed computation thread
-	    self.compTOld = None #set computation thread to None such that we get an error if we try and obtain the same result twice
+	    chSlice[:,:] = self.compT.getIm() #grab image from completed computation thread
+	    #self.compTOld = None #set computation thread to None such that we get an error if we try and obtain the same result twice
 	except AttributeError:  # triggered if called with None
 	    print "Grabbing problem: probably called with 'None' thread"
         #pylab.figure(2)
@@ -227,10 +332,10 @@ class FakeCamera:
 
     #new fcns for Andor compatibility
     def GetNumImsBuffered(self):
-        return 1
+        return self.compT.numFramesBuffered()
     
     def GetBufferSize(self):
-        return 10
+        return self.compT.bufferlength
 
     def GenStartMetadata(self, mdh):
         self.GetStatus()
@@ -251,3 +356,9 @@ class FakeCamera:
         mdh.setEntry('Camera.NoiseFactor', 1)
         mdh.setEntry('Camera.ElectronsPerCount', self.noiseMaker.ADGain)
         mdh.setEntry('Camera.ADOffset', self.noiseMaker.floor)
+
+        #mdh.setEntry('Simulation.Fluorophores', self.fluors.fl)
+        #mdh.setEntry('Simulation.LaserPowers', self.laserPowers)
+
+    def __del__(self):
+        self.compT.kill = True

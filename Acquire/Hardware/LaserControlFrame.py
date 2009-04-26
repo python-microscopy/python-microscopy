@@ -82,3 +82,51 @@ class LaserControl(wx.Panel):
         sizer_1.SetSizeHints(self)
         self.Layout()
         # end wxGlade
+
+
+class LaserControlLight(wx.Panel):
+    def __init__(self, parent, lasers = None, winid=-1):
+        # begin wxGlade: MyFrame1.__init__
+        #kwds["style"] = wx.DEFAULT_FRAME_STYLE
+        wx.Panel.__init__(self, parent, winid)
+        self.lasers = lasers
+
+        sizer_1 = wx.BoxSizer(wx.VERTICAL)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        n = 1
+
+        self.cBoxes = []
+
+        for l in lasers:
+            cb = wx.CheckBox(self, -1, l.GetName())
+            cb.SetValue(l.IsOn())
+            cb.Bind(wx.EVT_CHECKBOX, self.OnCbOn)
+            self.cBoxes.append(cb)
+            hsizer.Add(cb,1, wx.EXPAND, 0)
+            n += 1
+            if (n % 3) == 0:
+                sizer_1.Add(hsizer,0, wx.EXPAND, 0)
+                hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        sizer_1.Add(hsizer,0, wx.EXPAND, 0)
+
+
+        self.SetAutoLayout(1)
+        self.SetSizer(sizer_1)
+        sizer_1.Fit(self)
+        sizer_1.SetSizeHints(self)
+        self.Layout()
+        # end wxGlade
+
+    def OnCbOn(self, event):
+        cb = event.GetEventObject()
+        ind = self.cBoxes.index(cb)
+
+        if cb.GetValue():
+            self.lasers[ind].TurnOn()
+        else:
+            self.lasers[ind].TurnOff()
+
+    def refresh(self):
+        for l, cb in zip(self.lasers, self.cBoxes):
+            cb.SetValue(l.IsOn())
