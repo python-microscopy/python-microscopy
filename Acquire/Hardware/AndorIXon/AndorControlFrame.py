@@ -52,7 +52,7 @@ class AndorPanel(wx.Panel):
               style=0, value='0')
 
         self.staticText1 = wx.StaticText(id=wxID_ANDORFRAMESTATICTEXT1,
-              label='deg C', name='staticText1', parent=self.panel1,
+              label=u'\N{DEGREE SIGN}C', name='staticText1', parent=self.panel1,
               pos=wx.Point(87, 34), size=wx.Size(28, 13), style=0)
 
         self.bSetTemp = wx.Button(id=wxID_ANDORFRAMEBSETTEMP, label='Set',
@@ -78,7 +78,7 @@ class AndorPanel(wx.Panel):
         self.rbSingleShot = wx.RadioButton(id=wxID_ANDORFRAMERBSINGLESHOT,
               label='Single Shot', name='rbSingleShot', parent=self.panel1,
               pos=wx.Point(24, 127), size=wx.Size(81, 13), style=0)
-        self.rbSingleShot.SetValue(True)
+        self.rbSingleShot.SetValue(False)
         self.rbSingleShot.SetToolTipString('Allows multiple channels with different integration times and good shutter synchronisation')
         self.rbSingleShot.Bind(wx.EVT_RADIOBUTTON,
               self.OnRbSingleShotRadiobutton, id=wxID_ANDORFRAMERBSINGLESHOT)
@@ -86,18 +86,18 @@ class AndorPanel(wx.Panel):
         self.rbContin = wx.RadioButton(id=wxID_ANDORFRAMERBCONTIN,
               label='Continuous', name='rbContin', parent=self.panel1,
               pos=wx.Point(24, 151), size=wx.Size(81, 13), style=0)
-        self.rbContin.SetValue(False)
+        self.rbContin.SetValue(True)
         self.rbContin.SetToolTipString('Allows fastest speeds, albeit without good syncronisation (fixable) or integration time flexibility')
         self.rbContin.Bind(wx.EVT_RADIOBUTTON, self.OnRbContinRadiobutton,
               id=wxID_ANDORFRAMERBCONTIN)
 
-        self.bUpdateInt = wx.Button(id=wxID_ANDORFRAMEBUPDATEINT,
-              label='Update Integration Time', name='bUpdateInt',
-              parent=self.panel1, pos=wx.Point(104, 147), size=wx.Size(128, 23),
-              style=0)
-        self.bUpdateInt.Enable(False)
-        self.bUpdateInt.Bind(wx.EVT_BUTTON, self.OnBUpdateIntButton,
-              id=wxID_ANDORFRAMEBUPDATEINT)
+        #self.bUpdateInt = wx.Button(id=wxID_ANDORFRAMEBUPDATEINT,
+        #      label='Update Integration Time', name='bUpdateInt',
+        #      parent=self.panel1, pos=wx.Point(104, 147), size=wx.Size(128, 23),
+        #      style=0)
+        #self.bUpdateInt.Enable(False)
+        #self.bUpdateInt.Bind(wx.EVT_BUTTON, self.OnBUpdateIntButton,
+        #      id=wxID_ANDORFRAMEBUPDATEINT)
 
         self.staticBox4 = wx.StaticBox(id=wxID_ANDORFRAMESTATICBOX4,
               label='Readout Settings', name='staticBox4', parent=self.panel1,
@@ -140,7 +140,7 @@ class AndorPanel(wx.Panel):
               label=u'Frame Transfer', name='cbFrameTransfer',
               parent=self.panel1, pos=wx.Point(24, 272), size=wx.Size(96, 13),
               style=0)
-        self.cbFrameTransfer.SetValue(False)
+        self.cbFrameTransfer.SetValue(True)
         self.cbFrameTransfer.Bind(wx.EVT_CHECKBOX,
               self.OnCbFrameTransferCheckbox,
               id=wxID_ANDORFRAMECBFRAMETRANSFER)
@@ -254,7 +254,7 @@ class AndorPanel(wx.Panel):
 
             self.cam.SetAcquisitionMode(self.cam.MODE_SINGLE_SHOT)
 
-            self.bUpdateInt.Enable(False)
+            #self.bUpdateInt.Enable(False)
 
             self.scope.pa.start()
 
@@ -270,7 +270,7 @@ class AndorPanel(wx.Panel):
 
             self.cam.SetAcquisitionMode(self.cam.MODE_CONTINUOUS)
 
-            self.bUpdateInt.Enable(True)
+            #self.bUpdateInt.Enable(True)
 
             self.scope.pa.start()
 

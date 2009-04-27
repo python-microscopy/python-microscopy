@@ -50,7 +50,7 @@ class iXonCamera:
             raise 'Error getting Temperature range: %s' % ac.errorCodes[ret]
 
         self.tRange = (tMin.value,tMax.value)
-        self.tempSet = -20 #default temperature setpoint
+        self.tempSet = -50 #default temperature setpoint
 
         ret = ac.SetTemperature(max(tMin.value, self.tempSet)) #fixme so that default T is read in
         if not ret == ac.DRV_SUCCESS:
@@ -68,12 +68,12 @@ class iXonCamera:
         #These settings will hopefully be able to be changed with methods/ read from
         #a file later.
 
-        #take single images
-        ret = ac.SetAcquisitionMode(1)
+        #continuous acquisition
+        ret = ac.SetAcquisitionMode(self.MODE_CONTINUOUS)
         if not ret == ac.DRV_SUCCESS:
             raise 'Error setting aq mode: %s' % ac.errorCodes[ret]
 
-        self.contMode = False #we are in single shot mode
+        self.contMode = True #we are in single shot mode
 
         ret = ac.SetReadMode(4) #readout as image rather than doing any fancy stuff
         if not ret == ac.DRV_SUCCESS:
@@ -124,7 +124,8 @@ class iXonCamera:
             raise 'Error setting EM Gain: %s' % ac.errorCodes[ret]
 
         self.CCDTemp = -999
-        self.frameTransferMode = False
+        self.SetFrameTransfer(True)
+        #self.frameTransferMode = False
 
         #set the shutter to be open (for most applications we're going to be shuttering
         #the excitation anyway - no use in wearing the internal shutter out).
