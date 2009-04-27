@@ -34,7 +34,7 @@ from PYME.Acquire.mytimer import mytimer
 from PYME.Analysis import piecewiseMapping
 
 class DSViewFrame(wx.Frame):
-    def __init__(self, parent=None, title='', dstack = None, log = None, filename = None):
+    def __init__(self, parent=None, title='', dstack = None, log = None, filename = None, queueURI = None):
         wx.Frame.__init__(self,parent, -1, title,size=wx.Size(800,800))
 
         self.ds = dstack
@@ -66,7 +66,10 @@ class DSViewFrame(wx.Frame):
                 #self.ds = self.h5file.root.ImageData
                 if filename.startswith('QUEUE://'):
                     import Pyro.core
-                    self.tq = Pyro.core.getProxyForURI('PYRONAME://taskQueue')
+                    if queueURI == None:
+                        self.tq = Pyro.core.getProxyForURI('PYRONAME://taskQueue')
+                    else:
+                        self.tq = Pyro.core.getProxyForURI(queueURI)
 
                     self.seriesName = filename[len('QUEUE://'):]
 
@@ -431,8 +434,10 @@ class DSViewFrame(wx.Frame):
 class MyApp(wx.App):
     def OnInit(self):
         #wx.InitAllImageHandlers()
-        if (len(sys.argv) > 1):
+        if (len(sys.argv) == 2):
             vframe = DSViewFrame(None, sys.argv[1], filename=sys.argv[1])
+        elif (len(sys.argv) == 3):
+            vframe = DSViewFrame(None, sys.argv[1], filename=sys.argv[1], queueURI=sys.argv[2])
         else:
             vframe = DSViewFrame(None, '')           
 

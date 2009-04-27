@@ -255,9 +255,9 @@ class PanSpool(wx.Panel):
 
     def OnBAnalyse(self, event):
         if sys.platform == 'win32':
-            subprocess.Popen('..\\DSView\\dh5view.cmd QUEUE://%s' % self.queueName, shell=True)
+            subprocess.Popen('..\\DSView\\dh5view.cmd QUEUE://%s %s' % (self.queueName, self.spooler.tq.URI), shell=True)
         else:
-            subprocess.Popen('../DSView/dh5view.py QUEUE://%s' % self.queueName, shell=True)
+            subprocess.Popen('../DSView/dh5view.py QUEUE://%s %s' % (self.queueName, self.spooler.tq.URI), shell=True)
         
     def Tick(self):
         dtn = datetime.datetime.now()
