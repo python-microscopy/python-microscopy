@@ -48,7 +48,7 @@ class dispSettingsPanel(wx.Panel):
 
         self.cbAutoOptimise = wx.CheckBox(self, -1, 'Auto')
         #self.cbAutoOptimise.Bind(wx.EVT_CHECKBOX, self.OnCbAutoOpt)
-        vsizer2.Add(self.cbAutoOptimise, 0, wx.ALIGN_CENTER_HORIZONTAL, 5)
+        vsizer2.Add(self.cbAutoOptimise, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.TOP, 3)
         vsizer2.Add((0,0), 1, 0, 0)
 
         #hsizer.Add(vsizer2, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)

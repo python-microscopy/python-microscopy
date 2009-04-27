@@ -93,7 +93,7 @@ class LaserControlLight(wx.Panel):
 
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        n = 1
+        n = 0
 
         self.cBoxes = []
 

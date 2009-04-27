@@ -149,3 +149,43 @@ class FakeLaser(Laser):
 
     def GetPower(self):
         return self.power
+
+
+#port to allow bit-banging on parallel port
+class PPort:
+    def __init__(self,port=0, initVal = 0):
+        import parallel
+        self.port = parallel.Parallel(port)
+        self.val = initVal
+        self.port.setData(self.val)
+
+    def setPin(self, pinNo, on):
+        if on:
+            self.val = self.val | 2**pinNo
+        else:
+            self.val = self.val & ~(2**pinNo)
+            
+        self.port.setData(self.val)
+
+    def getPin(self, pinNo):
+        return self.val & 2**pinNo
+
+
+
+#laser which is attached to a DigiData digital io channel
+class ParallelSwitchedLaser(Laser):
+    def __init__(self, name, pport, pinNo, turnOn=False):
+        self.pport = pport
+        self.pinNo = pinNo  
+
+        Laser.__init__(self,name,turnOn)
+
+    def IsOn(self):
+        return self.pport.getPin(self.pinNo)
+
+    def TurnOn(self):
+        self.pport.setPin(self.pinNo, True)
+
+    def TurnOff(self):
+        self.pport.setPin(self.pinNo, False)
+

@@ -74,7 +74,7 @@ class PanSpool(wx.Panel):
         self.stAqProtocol = wx.StaticText(self, -1,'<None>', size=wx.Size(136, -1))
         APSizer.Add(self.stAqProtocol, 5,wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5)
 
-        self.bSetAP = wx.Button(self, -1, 'Set', size=wx.Size(40, 23))
+        self.bSetAP = wx.Button(self, -1, 'Set', style=wx.BU_EXACTFIT)
         self.bSetAP.Bind(wx.EVT_BUTTON, self.OnBSetAqProtocolButton)
 
         APSizer.Add(self.bSetAP, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
@@ -88,7 +88,7 @@ class PanSpool(wx.Panel):
         self.stSpoolDirName = wx.StaticText(self, -1,'Save images in: Blah Blah', size=wx.Size(136, -1))
         spoolDirSizer.Add(self.stSpoolDirName, 5,wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5)
 
-        self.bSetSpoolDir = wx.Button(self, -1, 'Set', size=wx.Size(40, 23))
+        self.bSetSpoolDir = wx.Button(self, -1, 'Set', style=wx.BU_EXACTFIT)
         self.bSetSpoolDir.Bind(wx.EVT_BUTTON, self.OnBSetSpoolDirButton)
         
         spoolDirSizer.Add(self.bSetSpoolDir, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
@@ -105,7 +105,7 @@ class PanSpool(wx.Panel):
 
         hsizer.Add(self.tcSpoolFile, 5,wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5)
 
-        self.bStartSpool = wx.Button(self,-1,'Start Spooling')
+        self.bStartSpool = wx.Button(self,-1,'Start',style=wx.BU_EXACTFIT)
         self.bStartSpool.Bind(wx.EVT_BUTTON, self.OnBStartSpoolButton)
         hsizer.Add(self.bStartSpool, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
@@ -145,13 +145,13 @@ class PanSpool(wx.Panel):
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.bStopSpooling = wx.Button(self, -1, 'Stop')
+        self.bStopSpooling = wx.Button(self, -1, 'Stop',style=wx.BU_EXACTFIT)
         self.bStopSpooling.Enable(False)
         self.bStopSpooling.Bind(wx.EVT_BUTTON, self.OnBStopSpoolingButton)
 
         hsizer.Add(self.bStopSpooling, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
-        self.bAnalyse = wx.Button(self, -1, 'Analyse')
+        self.bAnalyse = wx.Button(self, -1, 'Analyse',style=wx.BU_EXACTFIT)
         self.bAnalyse.Enable(False)
         self.bAnalyse.Bind(wx.EVT_BUTTON, self.OnBAnalyse)
 

@@ -72,7 +72,7 @@ class SplashScreen(wx.Frame):
                          style=wx.SUNKEN_BORDER|wx.STAY_ON_TOP)
         self.SetSize((400, 300))
 
-        self.panel = SplashPanel(self)
+        self.panel = SplashPanel(self, size=self.GetSize())
         self.parent = parent
 
     def Tick(self):

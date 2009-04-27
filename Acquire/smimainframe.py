@@ -368,7 +368,7 @@ class smiMainFrame(wx.Frame):
 
 
         self.notebook1.AddPage(page=self.aqPanel, select=False, caption='Acquisition')
-        self.notebook1.Split(self.notebook1.GetPageCount() -1, wx.RIGHT)
+        #self.notebook1.Split(self.notebook1.GetPageCount() -2, wx.DOWN)
         #self.notebook1.Split(self.notebook1.GetPageCount() -1, wx.RIGHT)
         #self.notebook1.Split(self.notebook1.GetPageCount() -2, wx.RIGHT)
         #self.notebook1.Split(self.notebook1.GetPageCount() -2, wx.RIGHT)
@@ -523,9 +523,9 @@ class smiMainFrame(wx.Frame):
     def OnCloseWindow(self, event):   
         self.scope.pa.stop()
         self.time1.Stop()
-        self.int_sl.Destroy()
-        self.piezo_sl.Destroy()
-        self.seq_d.Destroy()
+        #self.int_sl.Destroy()
+        #self.piezo_sl.Destroy()
+        #self.seq_d.Destroy()
         #self.Close()
         self.Destroy()
         wx.Exit()

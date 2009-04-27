@@ -9,7 +9,7 @@ scope.cam = AndorIXon.iXonCamera()
 ''')
 InitGUI('''
 acf = AndorControlFrame.AndorPanel(MainFrame, scope.cam, scope)
-toolPanels.append((acf, 'Andor EMCCD Properties'))
+camPanels.append((acf, 'Andor EMCCD Properties'))
 ''')
 
 #setup for the channels to aquire - b/w camera, no shutters
@@ -79,40 +79,51 @@ filtList = [WFilter(1, 'EMPTY', 'EMPTY', 0),
     WFilter(6, 'ND3'  , 'UVND 3'  , 3)]
 
 InitGUI('''
-scope.filterWheel = FiltFrame(MainFrame, filtList)
-toolPanels.append((scope.filterWheel, 'Filter Wheel'))
+try:
+    scope.filterWheel = FiltFrame(MainFrame, filtList)
+    toolPanels.append((scope.filterWheel, 'Filter Wheel'))
+except:
+    print 'Error starting filter wheel ...'
 ''')
 
+
 #DigiData
+#scope.lasers = []
 InitBG('DigiData', '''
 from PYME.Acquire.Hardware.DigiData import DigiDataClient
 dd = DigiDataClient.getDDClient()
-''')
+
 
 from PYME.Acquire.Hardware import lasers
-l488 = lasers.DigiDataSwitchedLaser('all',dd,1)
-l405 = lasers.DigiDataSwitchedLaserInvPol('405',dd,0)
-l543 = lasers.DigiDataSwitchedAnalogLaser('543',dd,0)
-l671 = lasers.DigiDataSwitchedAnalogLaser('671',dd,1)
+scope.l488 = lasers.DigiDataSwitchedLaser('all',dd,1)
+scope.l405 = lasers.DigiDataSwitchedLaserInvPol('405',dd,0)
+scope.l543 = lasers.DigiDataSwitchedAnalogLaser('543',dd,0)
+#scope.l671 = lasers.DigiDataSwitchedAnalogLaser('671',dd,1)
 
-scope.lasers = [l488,l405,l543,l671]
+pport = lasers.PPort()
+scope.l671 = lasers.ParallelSwitchedLaser('671',pport,0)
+
+scope.lasers = [scope.l488,scope.l405,scope.l543,scope.l671]
+''')
 
 InitGUI('''
-from PYME.Acquire.Hardware import LaserControlFrame
-lcf = LaserControlFrame.LaserControl(MainFrame,scope.lasers)
-#lcf.Show()
-toolPanels.append((lcf, 'Laser Control'))
+if 'lasers'in dir(scope):
+    from PYME.Acquire.Hardware import LaserControlFrame
+    lcf = LaserControlFrame.LaserControlLight(MainFrame,scope.lasers)
+    time1.WantNotification.append(lcf.refresh)
+    toolPanels.append((lcf, 'Laser Control'))
 ''')
 
 #Focus tracking
 from PYME.Acquire.Hardware import FocCorrR
 InitBG('Focus Corrector', '''
-fc = FocCorrR.FocusCorrector(scope.zStage, tolerance=0.20000000000000001, estSlopeDyn=False, recDrift=False, axis='Y', guideLaser=l488)
+scope.fc = FocCorrR.FocusCorrector(scope.zStage, tolerance=0.20000000000000001, estSlopeDyn=False, recDrift=False, axis='Y', guideLaser=l488)
 scope.StatusCallbacks.append(fc.GetStatus)
 ''')
 InitGUI('''
-fc.addMenuItems(MainFrame, MainMenu)
-fc.Start(2000)
+if 'fc' in dir(scope):
+    scope.fc.addMenuItems(MainFrame, MainMenu)
+    scope.fc.Start(2000)
 ''')
 
 from PYME import cSMI
