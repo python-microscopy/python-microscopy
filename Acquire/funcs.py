@@ -67,16 +67,24 @@ class microscope:
         MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
 
     def _OpenSettingsDB(self):
-        create =  not os.path.exists('PYMESettings.db')
+        #create =  not os.path.exists('PYMESettings.db')
 
         self.settingsDB = sqlite3.connect('PYMESettings.db', detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
         self.settingsDB.isolation_level = None
 
-        if create:
+        tableNames = [a[0] for a in self.settingsDB.execute('SELECT name FROM sqlite_master WHERE type="table"').fetchall()]
+
+        if not 'CCDCalibration' in tableNames:
             self.settingsDB.execute("CREATE TABLE CCDCalibration (time timestamp, temperature integer, nominalGains ndarray, trueGains ndarray)")
+        if not 'VoxelSizes' in tableNames:
             self.settingsDB.execute("CREATE TABLE VoxelSizes (ID INTEGER PRIMARY KEY, x REAL, y REAL, name TEXT)")
+        if not 'VoxelSizeHistory' in tableNames:
             self.settingsDB.execute("CREATE TABLE VoxelSizeHistory (time timestamp, sizeID INTEGER)")
-            self.settingsDB.commit()
+        if not 'StartupTimes' in tableNames:
+            self.settingsDB.execute("CREATE TABLE StartupTimes (component TEXT, time REAL)")
+            self.settingsDB.execute("INSERT INTO StartupTimes VALUES ('total', 5)")
+            
+        self.settingsDB.commit()
 
     def GenStartMetadata(self, mdh):
         currVoxelSizeID = self.settingsDB.execute("SELECT sizeID FROM VoxelSizeHistory ORDER BY time DESC").fetchone()

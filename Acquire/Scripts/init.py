@@ -10,13 +10,13 @@ import time
 pz = InitBG('Fake Piezo', '''
 scope.fakePiezo = fakePiezo.FakePiezo(100)
 scope.piezos.append((scope.fakePiezo, 1, 'Fake z-piezo'))
-#time.sleep(1)
+#time.sleep(5)
 ''')
 
 pz.join() #piezo must be there before we start camera
 cm = InitBG('Fake Camera', '''
 scope.cam = fakeCam.FakeCamera(70*scipy.arange(-128.0, 128.0), 70*scipy.arange(-128.0, 128.0), fakeCam.NoiseMaker(), scope.fakePiezo)
-#time.sleep(1)
+#time.sleep(5)
 ''')
 
 #setup for the channels to aquire - b/w camera, no shutters

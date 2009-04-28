@@ -31,6 +31,7 @@ import HDFSpoolFrame
 from PYME.FileUtils import nameUtils
 
 import splashScreen
+import time
 
 import PYME.Acquire.protocol as protocol
 
@@ -212,7 +213,9 @@ class smiMainFrame(wx.Frame):
 
         self.initDone = False
 
-        self.splash = splashScreen.SplashScreen(self)
+        self.scope = funcs.microscope()
+
+        self.splash = splashScreen.SplashScreen(self, self.scope)
         self.splash.Show()
         
 
@@ -237,7 +240,7 @@ class smiMainFrame(wx.Frame):
         self.bin_on = False
         
         self.time1 = mytimer.mytimer()
-        self.scope = funcs.microscope()
+        
         self.time1.Start(500)
 
         self.time1.WantNotification.append(self.runInitScript)
@@ -315,6 +318,7 @@ class smiMainFrame(wx.Frame):
             self.AddCamTool(*t)
 
         #self.splash.Destroy()
+        
         self.initDone = True
 
     def CreateToolPanel(self):
@@ -504,6 +508,8 @@ class smiMainFrame(wx.Frame):
         self.scope.pa.Prepare()
         self.scope.vp.SetDataStack(self.scope.pa.ds)
         self.scope.pa.start()
+        self.scope.vp.Refresh()
+        self.scope.vp.GetParent().Refresh()
         #event.Skip()
 
     def OnMDisplayClearSel(self, event):
