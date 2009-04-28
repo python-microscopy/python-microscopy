@@ -14,7 +14,7 @@ import PYME.DSView.displaySettingsPanel as disppanel
 
 import PYME.Acquire.protocol as protocol
 from PYME.Acquire import MetaDataHandler
-from PYME.Hardware import ccdCalibrator
+from PYME.Acquire.Hardware import ccdCalibrator
 
 from PYME.cSMI import CDataStack_AsArray
 from math import exp
@@ -22,7 +22,7 @@ import sqlite3
 import cPickle as pickle
 import os
 from numpy import ndarray
-imort datetime
+import datetime
 #import piezo_e662
 #import piezo_e816
 
@@ -73,9 +73,9 @@ class microscope:
         self.settingsDB.isolation_level = None
 
         if create:
-            self.settingsDB.execute("CREATE TABLE CCDCalibration (time timestamp, temperature integer, nominalGains ndarray, trueGains ndarray ")
-            self.settingsDB.execute("CREATE TABLE VoxelSizes (ID INTEGER PRIMARY KEY, x REAL, y REAL, name TEXT")
-            self.settingsDB.execute("CREATE TABLE VoxelSizeHistory (time timestamp, sizeID INTEGER")
+            self.settingsDB.execute("CREATE TABLE CCDCalibration (time timestamp, temperature integer, nominalGains ndarray, trueGains ndarray)")
+            self.settingsDB.execute("CREATE TABLE VoxelSizes (ID INTEGER PRIMARY KEY, x REAL, y REAL, name TEXT)")
+            self.settingsDB.execute("CREATE TABLE VoxelSizeHistory (time timestamp, sizeID INTEGER)")
             self.settingsDB.commit()
 
     def GenStartMetadata(self, mdh):
@@ -87,12 +87,12 @@ class microscope:
             mdh.setEntry('voxelsize.units', 'um')
 
     def AddVoxelSizeSetting(self, name, x, y):
-        self.settingsDB.execute("INSERT INTO VoxelSizes VALUES (?, ?, ?)", (name, x, y))
+        self.settingsDB.execute("INSERT INTO VoxelSizes (name, x, y) VALUES (?, ?, ?)", (name, x, y))
         self.settingsDB.commit()
         
 
     def SetVoxelSize(self, voxelsizename):
-        voxelSizeID = self.settingsDB.execute("SELECT ID FROM VoxelSizes WHERE name=?", voxelsizename).fetchone()[0]
+        voxelSizeID = self.settingsDB.execute("SELECT ID FROM VoxelSizes WHERE name=?", (voxelsizename,)).fetchone()[0]
         self.settingsDB.execute("INSERT INTO VoxelSizeHistory VALUES (?, ?)", (datetime.datetime.now(), voxelSizeID))
         self.settingsDB.commit()
 
@@ -296,3 +296,6 @@ class microscope:
     def turnAllLasersOff(self):
         for l in self.lasers:
             l.TurnOff()
+
+    def __del__(self):
+        self.settingsDB.close()

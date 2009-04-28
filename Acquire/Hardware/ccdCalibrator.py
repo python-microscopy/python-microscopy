@@ -1,7 +1,7 @@
 from PYME import cSMI
 import numpy as np
 import wx
-from pylab import *
+import pylab
 import datetime
 
 global scope
@@ -12,7 +12,7 @@ def setScope(sc):
     scope = sc
 
 def getCalibratedCCDGain(nomGain, temperature):
-    ret = scope.settingsDB.execute("SELECT nominalGains, trueGains FROM CCDCalibration WHERE temperature=? ORDER BY time DESC", temperature).fetchone()
+    ret = scope.settingsDB.execute("SELECT nominalGains, trueGains FROM CCDCalibration WHERE temperature=? ORDER BY time DESC", (temperature,)).fetchone()
     if ret == None:
         return None
     else:
@@ -61,7 +61,7 @@ class ccdCalibrator:
 
         self.cam.SetBaselineClamp(True) #otherwise baseline changes with em gain
 
-        self.pd = wx.ProgressDialog('CCD Gain Calibration', 'Callibrating CCD Gain', len(self.gains))
+        self.pd = wx.ProgressDialog('CCD Gain Calibration', 'Calibrating CCD Gain', len(self.gains))
         #self.pd.Show()
         self.pa.start()
 
@@ -77,8 +77,10 @@ class ccdCalibrator:
 
         self.realGains = self.realGains/self.realGains[0]
 
-        figure()
-        plot(self.gains, self.realGains)
+        pylab.figure()
+        pylab.plot(self.gains, self.realGains)
+        pylab.xlabel('EMGain Setting')
+        pylab.ylabel('EMGain')
 
         self._saveCalibration()
 
