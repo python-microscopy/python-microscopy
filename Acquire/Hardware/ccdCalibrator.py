@@ -2,6 +2,21 @@ from PYME import cSMI
 import numpy as np
 import wx
 from pylab import *
+import datetime
+
+global scope
+scope = None
+
+def setScope(sc):
+    global scope
+    scope = sc
+
+def getCalibratedCCDGain(nomGain, temperature):
+    ret = scope.settingsDB.execute("SELECT nominalGains, trueGains FROM CCDCalibration WHERE temperature=? ORDER BY time DESC", temperature).fetchone()
+    if ret == None:
+        return None
+    else:
+        return np.interp(nomGain, ret[0], ret[1])
 
 class ccdCalibrator:
     ''' class for calibrating the ccd
@@ -19,15 +34,20 @@ class ccdCalibrator:
       from PYME.Hardware import ccdCalibrator
       ccdCal = ccdCalibrator.ccdCalibrator(scope.pa, scope.cam)
     '''
-    def __init__(self, pa, cam, gains = np.arange(0, 220, 5)):
-        self.pa = pa
-        self.cam = cam
+    def __init__(self, gains = np.arange(0, 220, 5)):
+        global scope
+        self.pa = scope.pa
+        self.cam = scope.cam
 
         self.gains = gains
         self.pos = -1
 
         self.contMode = self.cam.contMode
         self.emgain = self.cam.GetEMGain()
+
+        if abs(self.cam.GetCCDTemp() - self.cam.GetCCDTempSetPoint()) >=2:
+            wx.MessageBox('Error ...', 'CCD Temperature has not settled', wx.OK|wx.ICON_HAND)
+            return()
 
         self.realGains = np.zeros(len(gains))
 
@@ -60,6 +80,8 @@ class ccdCalibrator:
         figure()
         plot(self.gains, self.realGains)
 
+        self._saveCalibration()
+
         #self.pa.start()
 
     def tick(self, caller):
@@ -79,5 +101,12 @@ class ccdCalibrator:
             self.finish()
 
         self.pa.start()
+
+
+    def _saveCalibration(self):
+        scope.settingsDB.execute("INSERT INTO CCDCalibration VALUES (?, ?, ?, ?)", (datetime.datetime.now(), self.cam.GetCCDTempSetPoint(), self.gains,self.realGains))
+        scope.settingsDB.commit()
+
+
             
             

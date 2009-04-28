@@ -13,11 +13,30 @@ import PYME.DSView.viewpanellite as viewpanel
 import PYME.DSView.displaySettingsPanel as disppanel
 
 import PYME.Acquire.protocol as protocol
+from PYME.Acquire import MetaDataHandler
+from PYME.Hardware import ccdCalibrator
 
 from PYME.cSMI import CDataStack_AsArray
 from math import exp
+import sqlite3
+import cPickle as pickle
+import os
+from numpy import ndarray
+imort datetime
 #import piezo_e662
 #import piezo_e816
+
+#teach sqlite about numpy arrays
+def adapt_numarray(array):
+    return sqlite3.Binary(array.dumps())
+
+def convert_numarray(s):
+    return pickle.loads(s)
+
+sqlite3.register_adapter(ndarray, adapt_numarray)
+sqlite3.register_converter("ndarray", convert_numarray)
+
+
 
 class microscope:
     def __init__(self):
@@ -40,8 +59,42 @@ class microscope:
         self.saturatedMessage = ''
 
         protocol.scope = self
+        ccdCalibrator.setScope(self)
         self.initDone = False
-    
+
+        self._OpenSettingsDB()
+
+        MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
+
+    def _OpenSettingsDB(self):
+        create =  not os.path.exists('PYMESettings.db')
+
+        self.settingsDB = sqlite3.connect('PYMESettings.db', detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+        self.settingsDB.isolation_level = None
+
+        if create:
+            self.settingsDB.execute("CREATE TABLE CCDCalibration (time timestamp, temperature integer, nominalGains ndarray, trueGains ndarray ")
+            self.settingsDB.execute("CREATE TABLE VoxelSizes (ID INTEGER PRIMARY KEY, x REAL, y REAL, name TEXT")
+            self.settingsDB.execute("CREATE TABLE VoxelSizeHistory (time timestamp, sizeID INTEGER")
+            self.settingsDB.commit()
+
+    def GenStartMetadata(self, mdh):
+        currVoxelSizeID = self.settingsDB.execute("SELECT sizeID FROM VoxelSizeHistory ORDER BY time DESC").fetchone()
+        if not currVoxelSizeID == None:
+            voxx, voxy = self.settingsDB.execute("SELECT x,y FROM VoxelSizes WHERE ID=?", currVoxelSizeID).fetchone()
+            mdh.setEntry('voxelsize.x', voxx)
+            mdh.setEntry('voxelsize.y', voxy)
+            mdh.setEntry('voxelsize.units', 'um')
+
+    def AddVoxelSizeSetting(self, name, x, y):
+        self.settingsDB.execute("INSERT INTO VoxelSizes VALUES (?, ?, ?)", (name, x, y))
+        self.settingsDB.commit()
+        
+
+    def SetVoxelSize(self, voxelsizename):
+        voxelSizeID = self.settingsDB.execute("SELECT ID FROM VoxelSizes WHERE name=?", voxelsizename).fetchone()[0]
+        self.settingsDB.execute("INSERT INTO VoxelSizeHistory VALUES (?, ?)", (datetime.datetime.now(), voxelSizeID))
+        self.settingsDB.commit()
 
     def pr_refr(self, source):
         self.prev_fr.update()

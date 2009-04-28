@@ -2,6 +2,7 @@ import AndorCam as ac
 from ctypes import *
 import time
 from PYME.Acquire import MetaDataHandler
+from PYME.Hardware import ccdCalibrator
 
 #import example
 #import scipy
@@ -572,6 +573,10 @@ class iXonCamera:
         mdh.setEntry('Camera.ReadNoise', 109.8)
         mdh.setEntry('Camera.NoiseFactor', 1.41)
         mdh.setEntry('Camera.ElectronsPerCount', 27.32)
+
+        realEMGain = ccdCalibrator.getCalibratedCCDGain(self.GetEMGain(), self.GetCCDTempSetPoint())
+        if not realEMGain == None:
+            mdh.setEntry('Camera.TrueEMGain', realEMGain)
 
     def __del__(self):
         if self.initialised:
