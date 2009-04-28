@@ -355,7 +355,7 @@ class AndorPanel(wx.Panel):
         #event.Skip()
         self.scope.pa.stop()
 
-        self.cam.SetBaselineClamp(self.cbShutter.GetValue())
+        self.cam.SetBaselineClamp(self.cbBaselineClamp.GetValue())
 
         self.scope.pa.start()
 
