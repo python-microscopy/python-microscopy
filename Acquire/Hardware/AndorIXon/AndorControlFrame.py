@@ -3,6 +3,7 @@
 
 
 import wx
+from PYME.Acquire.Hardware import ccdCalibrator
 
 
 
@@ -56,6 +57,7 @@ class AndorPanel(wx.Panel):
         hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
 
         self.tEMGain = wx.TextCtrl(self, -1, '')
+        self.tEMGain.Bind(wx.EVT_TEXT, self.OnEMGainTextChange)
         hsizer2.Add(self.tEMGain, 1, wx.EXPAND|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.bSetGain = wx.Button(self, -1, 'Set', style=wx.BU_EXACTFIT)
@@ -153,10 +155,12 @@ class AndorPanel(wx.Panel):
         self.tEMGain.ChangeValue(repr(self.cam.GetEMGain()))
 
         self._PopulateSpeeds()
+        self.OnEMGainTextChange(None)
 
     def OnBSetTempButton(self, event):
         self.scope.pa.stop()
         self.cam.SetCCDTemp(int(self.tCCDTemp.GetValue()))
+        self.OnEMGainTextChange(None)
         self.scope.pa.start()
 
     def OnBSetGainButton(self, event):
@@ -233,7 +237,7 @@ class AndorPanel(wx.Panel):
     def OnCbShutterCheckbox(self, event):
         self.scope.pa.stop()
         self.cam.SetShutter(self.cbShutter.GetValue())
-        self.scope.pa.start       
+        self.scope.pa.start()
         #event.Skip()
 
     def OnCbBaselineClampCheckbox(self, event):
@@ -241,5 +245,16 @@ class AndorPanel(wx.Panel):
         self.scope.pa.stop()
         self.cam.SetBaselineClamp(self.cbBaselineClamp.GetValue())
         self.scope.pa.start()
+
+    def OnEMGainTextChange(self, event):
+        calEMGain = ccdCalibrator.getCalibratedCCDGain(float(self.tEMGain.GetValue()), self.cam.GetCCDTempSetPoint())
+        if calEMGain == None:
+            self.stTrueEMGain.SetLabel('True Gain = ????')
+            self.stTrueEMGain.SetForegroundColour(wx.RED)
+        else:
+            self.stTrueEMGain.SetLabel('True Gain = %3.2f' % calEMGain)
+            self.stTrueEMGain.SetForegroundColour(wx.BLUE)
+
+
 
             

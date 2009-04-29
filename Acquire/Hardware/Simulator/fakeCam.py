@@ -33,7 +33,7 @@ class NoiseMaker:
 #calculate image in a separate thread to maintain GUI reponsiveness
 class compThread(threading.Thread):
 #class compThread(processing.Process):
-    def __init__(self,XVals, YVals,zPiezo, zOffset, fluors, noisemaker, laserPowers, intTime, contMode = True, bufferlength=20):
+    def __init__(self,XVals, YVals,zPiezo, zOffset, fluors, noisemaker, laserPowers, intTime, contMode = True, bufferlength=20, shutterOpen=True):
         threading.Thread.__init__(self)
         self.XVals = XVals
         self.YVals = YVals
@@ -54,6 +54,7 @@ class compThread(threading.Thread):
 
         self.kill = False
         self.aqRunning = False
+        self.shutterOpen = shutterOpen
 
         print laserPowers
         print intTime
@@ -73,9 +74,9 @@ class compThread(threading.Thread):
             zPos = (self.zPiezo.GetPos() - self.zOffset)*1e3
                 
             if not self.fluors == None and not 'spec' in self.fluors.fl.dtype.fields.keys():
-                self.im = self.noiseMaker.noisify(rend_im.simPalmImF(self.XVals, self.YVals, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
+                self.im = self.noiseMaker.noisify(int(self.shutterOpen)*rend_im.simPalmImF(self.XVals, self.YVals, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
             else:
-                self.im = self.noiseMaker.noisify(rend_im.simPalmImFSpec(self.XVals, self.YVals, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
+                self.im = self.noiseMaker.noisify(int(self.shutterOpen)*rend_im.simPalmImFSpec(self.XVals, self.YVals, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
 
             self.buffer[:,:,self.bufferWritePos] = self.im
             self.bufferWritePos +=1
@@ -93,6 +94,9 @@ class compThread(threading.Thread):
         return self.numBufferedImages
 
     def StartExp(self):
+        self.bufferWritePos = 0
+        self.bufferReadPos = 0
+        self.numBufferedImages = 0
         self.aqRunning = True
         #self.frameLock.release()
 
@@ -110,6 +114,7 @@ class compThread(threading.Thread):
         self.bufferWritePos = 0
         self.bufferReadPos = 0
         self.numBufferedImages = 0
+
         
 
 
@@ -142,6 +147,7 @@ class FakeCamera:
         self.compT.start()
 
         self.contMode = True
+        self.shutterOpen = True
 
         #let us work with andor dialog
         self.HorizShiftSpeeds = [[[10]]]
@@ -161,7 +167,7 @@ class FakeCamera:
 
         self.compT.kill = True
 
-        self.compT = compThread(self.XVals[self.ROIx[0]:self.ROIx[1]], self.YVals[self.ROIy[0]:self.ROIy[1]], self.zPiezo, self.zOffset,self.fluors, self.noiseMaker, laserPowers=self.compT.laserPowers, intTime=self.intTime*1e-3)
+        self.compT = compThread(self.XVals[self.ROIx[0]:self.ROIx[1]], self.YVals[self.ROIy[0]:self.ROIy[1]], self.zPiezo, self.zOffset,self.fluors, self.noiseMaker, laserPowers=self.compT.laserPowers, intTime=self.intTime*1e-3, shutterOpen=self.shutterOpen)
         self.compT.start()
 
         self.compT.aqRunning = running
@@ -260,7 +266,7 @@ class FakeCamera:
         print running
         print self.compT.laserPowers
 
-        self.compT = compThread(self.XVals[self.ROIx[0]:self.ROIx[1]], self.YVals[self.ROIy[0]:self.ROIy[1]], self.zPiezo, self.zOffset, self.fluors, self.noiseMaker, laserPowers=self.compT.laserPowers, intTime=self.intTime*1e-3)
+        self.compT = compThread(self.XVals[self.ROIx[0]:self.ROIx[1]], self.YVals[self.ROIy[0]:self.ROIy[1]], self.zPiezo, self.zOffset, self.fluors, self.noiseMaker, laserPowers=self.compT.laserPowers, intTime=self.intTime*1e-3, shutterOpen=self.shutterOpen)
         self.compT.start()
 
         print (self.fluors.fl['state'] == 2).sum()
@@ -294,7 +300,7 @@ class FakeCamera:
         pass
 
     def StartAq(self):
-        self.compT.aqRunning = True
+        self.compT.StartExp()
         #pass
 
     def StopAq(self):
@@ -386,6 +392,13 @@ class FakeCamera:
     def SetAquisitionMode(self, mode):
         self.contMode = mode
         self.compT.contMode = mode
+
+    def SetShutter(self, mode):
+        self.shutterOpen = mode
+        self.compT.shutterOpen = mode
+
+    def SetBaselineClamp(self, mode):
+        pass
 
 
     def __del__(self):
