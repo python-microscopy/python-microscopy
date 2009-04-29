@@ -47,6 +47,12 @@ dsc = dSimControl.dSimControl(notebook1, scope)
 notebook1.AddPage(page=dsc, select=False, caption='Simulation Settings')
 ''')
 
+InitGUI('''
+from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
+acf = AndorControlFrame.AndorPanel(MainFrame, scope.cam, scope)
+camPanels.append((acf, 'Andor EMCCD Properties'))
+''')
+
 cm.join()
 from PYME.Acquire.Hardware import lasers
 scope.l488 = lasers.FakeLaser('488',scope.cam,1, initPower=50)

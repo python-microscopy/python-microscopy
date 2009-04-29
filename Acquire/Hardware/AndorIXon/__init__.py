@@ -1,1 +1,4 @@
-from AndorIXon import *
+try:
+    from AndorIXon import *
+except:
+    pass

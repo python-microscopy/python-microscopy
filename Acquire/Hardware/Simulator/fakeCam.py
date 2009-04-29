@@ -118,6 +118,8 @@ class compThread(threading.Thread):
         
 class FakeCamera:
     numpy_frames=1
+    MODE_CONTINUOUS=True
+    MODE_SINGLE_SHOT=False
     def __init__(self, XVals, YVals, noiseMaker, zPiezo, zOffset=50.0, fluors=None, laserPowers=[0,50]):
         self.XVals = XVals
         self.YVals = YVals
@@ -140,6 +142,14 @@ class FakeCamera:
         self.compT.start()
 
         self.contMode = True
+
+        #let us work with andor dialog
+        self.HorizShiftSpeeds = [[[10]]]
+        self.vertShiftSpeeds = [1]
+        self.fastestRecVSInd = 0
+        self.frameTransferMode = False
+        self.HSSpeed = 0
+        self.VSSpeed = 0
 
         #register as a provider of metadata
         MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
@@ -359,6 +369,24 @@ class FakeCamera:
 
         #mdh.setEntry('Simulation.Fluorophores', self.fluors.fl)
         #mdh.setEntry('Simulation.LaserPowers', self.laserPowers)
+
+    #functions to make us look more like andor camera
+    def GetEMGain(self):
+        return 0
+
+    def GetCCDTempSetPoint(self):
+        return self.GetCCDTemp()
+
+    def SetCCDTemp(self):
+        pass
+
+    def SetEMGain(self, gain):
+        pass
+
+    def SetAquisitionMode(self, mode):
+        self.contMode = mode
+        self.compT.contMode = mode
+
 
     def __del__(self):
         self.compT.kill = True
