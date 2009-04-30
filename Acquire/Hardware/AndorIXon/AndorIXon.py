@@ -2,7 +2,7 @@ import AndorCam as ac
 from ctypes import *
 import time
 from PYME.Acquire import MetaDataHandler
-from PYME.Hardware import ccdCalibrator
+from PYME.Acquire.Hardware import ccdCalibrator
 
 #import example
 #import scipy

@@ -45,9 +45,9 @@ class ccdCalibrator:
         self.contMode = self.cam.contMode
         self.emgain = self.cam.GetEMGain()
 
-        if abs(self.cam.GetCCDTemp() - self.cam.GetCCDTempSetPoint()) >=2:
+        if abs(self.cam.GetCCDTemp() - self.cam.GetCCDTempSetPoint()) >=4:
             wx.MessageBox('Error ...', 'CCD Temperature has not settled', wx.OK|wx.ICON_HAND)
-            return()
+            return 
 
         self.realGains = np.zeros(len(gains))
 

@@ -32,7 +32,8 @@ scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
 
 InitGUI('''
 from PYME.Acquire.Hardware import focusKeys
-fk = focusKeys.FocusKeys(MainFrame, mControls, scope.piezos[-1])
+fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[-1])
+time1.WantNotification.append(fk.refresh)
 ''')
 
 #Z stage
