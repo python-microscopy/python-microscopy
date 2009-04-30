@@ -2,9 +2,11 @@ ExecTools.pyc
 HDFSpoolFrame.pyc
 HDFSpooler.pyc
 MetaDataHandler.pyc
+PYMESettings.db
 QueueSpooler.pyc
 Spooler.pyc
 __init__.pyc
+ccdCalibrator.pyc
 chanedit.pyc
 chanfr.pyc
 chanpanel.pyc
@@ -21,6 +23,7 @@ seqdialog.pyc
 setup.pyc
 simplesequenceaquisator.pyc
 smimainframe.pyc
+splashScreen.pyc
 stepDialog.pyc
 timeseqdialog.pyc
 timesequenceaquisator.pyc

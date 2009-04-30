@@ -20,6 +20,11 @@ class iXonCamera:
     MODE_SINGLE_SHOT = 1
 
     def __init__(self):
+        self.defaultProps = {
+        'ReadNoise' : 109.8,
+        'ElectronsPerCount' : 27.32,
+        'NGainStages' : 536
+        }
         self.initialised = False
 
         #register as a provider of metadata
@@ -300,8 +305,8 @@ class iXonCamera:
         return self.CCDTemp
 
     def _GetCCDTemp(self):
-        t = c_int()
-        ret = ac.GetTemperature(byref(t))
+        t = c_float()
+        ret = ac.GetTemperatureF(byref(t))
         #print ret
         self.tempStable = (ret == ac.DRV_TEMP_STABILIZED)
         self.CCDTemp = int(t.value)
@@ -577,6 +582,12 @@ class iXonCamera:
         realEMGain = ccdCalibrator.getCalibratedCCDGain(self.GetEMGain(), self.GetCCDTempSetPoint())
         if not realEMGain == None:
             mdh.setEntry('Camera.TrueEMGain', realEMGain)
+
+    def __getattr__(self, name):
+        if name in self.noiseProps.keys():
+            return self.noiseProps[name]
+        else:  raise AttributeError, name  # <<< DON'T FORGET THIS LINE !!
+
 
     def __del__(self):
         if self.initialised:

@@ -4,6 +4,7 @@ displaySettingsPanel.pyc
 dsviewer.pyc
 dsviewer_npy.pyc
 dsviewer_npy_nb.pyc
+eventLogViewer.pyc
 fth5.pyc
 logparser.pyc
 myviewpanel.pyc

@@ -13,7 +13,7 @@ def setScope(sc):
 
 def getCalibratedCCDGain(nomGain, temperature):
     ret = scope.settingsDB.execute("SELECT nominalGains, trueGains FROM CCDCalibration WHERE temperature=? ORDER BY time DESC", (temperature,)).fetchone()
-    if ret == None or nomGain > ret[0].max():
+    if ret == None or np.max(nomGain) > ret[0].max():
         return None
     else:
         return np.interp(nomGain, ret[0], ret[1])
