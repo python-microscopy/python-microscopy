@@ -20,8 +20,8 @@ class HistLimitPanel(wx.Panel):
         self.upper_pctile = float(data[dSort[len(data)*.99]])
         self.lower_pctile = float(data[dSort[len(data)*.01]])
 
-        self.limit_lower = limit_lower
-        self.limit_upper = limit_upper
+        self.limit_lower = float(limit_lower)
+        self.limit_upper = float(limit_upper)
 
         self.textSize = 10
         self.log = log
@@ -44,8 +44,8 @@ class HistLimitPanel(wx.Panel):
         self.upper_pctile = float(data[dSort[len(data)*.99]])
         self.lower_pctile = float(data[dSort[len(data)*.01]])
 
-        self.limit_lower = lower
-        self.limit_upper = upper
+        self.limit_lower = float(lower)
+        self.limit_upper = float(upper)
 
         self.GenHist()
         self.Refresh()
@@ -95,8 +95,8 @@ class HistLimitPanel(wx.Panel):
     def GenHist(self):
         #self.hmin = min(self.limit_lower, self.lower_pctile)
         #self.hmax = max(self.limit_upper, self.upper_pctile)
-        if not self.limit_upper >= (self.limit_lower + 1):
-            self.limit_upper += 1
+        if not self.limit_upper >= (self.limit_lower + 1e-9):
+            self.limit_upper += 1e-9
             
         self.hmin = self.limit_lower
         self.hmax = self.limit_upper
@@ -190,8 +190,8 @@ class HistLimitPanel(wx.Panel):
             self.GenHist()
             self.Refresh()
         elif event.GetKeyCode() == 77: #M - set min-max
-            self.limit_lower = self.data.min()
-            self.limit_upper = self.data.max()
+            self.limit_lower = float(self.data.min())
+            self.limit_upper = float(self.data.max())
             self.GenHist()
             self.Refresh()
             evt = LimitChangeEvent(self.GetId(), upper=self.limit_upper, lower=self.limit_lower)
@@ -207,8 +207,8 @@ class HistLimitPanel(wx.Panel):
             event.Skip()
 
     def SetValue(self, val):
-        self.limit_lower = val[0]
-        self.limit_upper = val[1]
+        self.limit_lower = float(val[0])
+        self.limit_upper = float(val[1])
 
         self.GenHist()
         self.Refresh()

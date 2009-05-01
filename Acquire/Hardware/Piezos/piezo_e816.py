@@ -6,6 +6,9 @@ class piezo_e816:
         self.ser_port = serial.Serial(portname, 115200, rtscts=1, timeout=2, writeTimeout=2)
         self.ser_port.write('SVO A1\n')
         self.lastPos = self.GetPos()
+    def ReInit(self):
+        self.ser_port.write('SVO A1\n')
+        self.lastPos = self.GetPos() 
         
     def MoveTo(self, iChannel, fPos, bTimeOut=True):
         if (fPos >= 0):

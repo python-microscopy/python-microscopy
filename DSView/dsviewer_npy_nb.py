@@ -395,7 +395,7 @@ class DSViewFrame(wx.Frame):
         self.elv.SetRange([0, self.ds.getNumSlices()])
         
         if 'ProtocolFocus' in self.elv.evKeyNames:
-            self.zm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.md.Camera.CycleTime*1e-3, self.md.StartTime, self.md.Protocol.PiezoStartPos)
+            self.zm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.md.Camera.CycleTime, self.md.StartTime, self.md.Protocol.PiezoStartPos)
             self.elv.SetCharts([('Focus [um]', self.zm, 'ProtocolFocus'),])
 
         self.update()

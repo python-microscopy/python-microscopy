@@ -56,7 +56,7 @@ class PiezoSliders(wx.Panel):
 
     def update(self):
         for ind in range(len(self.piezos)):
-            self.sliders[ind].SetValue(100*self.piezos[ind][0].GetPos(self.piezos[ind][1]))
+            self.sliders[ind].SetValue(100*self.piezos[ind][0].lastPos)
 	    self.sliders[ind].SetMin(100*self.piezos[ind][0].GetMin(self.piezos[ind][1]))
 	    self.sliders[ind].SetMax(100*self.piezos[ind][0].GetMax(self.piezos[ind][1]))
 

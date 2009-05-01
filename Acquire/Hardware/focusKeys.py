@@ -48,7 +48,7 @@ class FocusKeys:
             self.focusIncrement *= 2.
 
     def refresh(self):
-        self.mbar.SetMenuLabel(self.mpos, 'Focus = %3.2f, Inc = %3.2f' %(self.piezo[0].GetPos(self.piezo[1]), self.focusIncrement))
+        self.mbar.SetMenuLabel(self.mpos, 'Focus = %3.2f, Inc = %3.2f' %(self.piezo[0].lastPos, self.focusIncrement))
 
 
         

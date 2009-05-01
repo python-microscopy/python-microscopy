@@ -53,7 +53,7 @@ class eventLogPanel(wx.Panel):
 
         frameLabelSize = max(dc.GetTextExtent('%3.4g' % self.frameRange[1])[0], dc.GetTextExtent('N')[0])
 
-        tPerFrame = self.metaData.getEntry('Camera.CycleTime')*1e-3
+        tPerFrame = self.metaData.getEntry('Camera.CycleTime')
 
         maxT = tPerFrame*self.frameRange[1]
         minT = tPerFrame*self.frameRange[0]
