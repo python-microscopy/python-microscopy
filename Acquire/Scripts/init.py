@@ -76,7 +76,7 @@ toolPanels.append((lsf, 'Laser Powers'))
 
 InitGUI('''
 from PYME.Acquire.Hardware import focusKeys
-fk = focusKeys.FocusKeys(MainFrame, mControls, scope.piezos[-1])
+fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[-1])
 ''')
 
 from PYME import cSMI

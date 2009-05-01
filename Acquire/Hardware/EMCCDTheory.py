@@ -10,3 +10,9 @@ def FSquared(M, N):
 
 def SNR(S, ReadNoise, M, N):
     return S/sqrt((ReadNoise/M)**2 + FSquared(M, N)*S)
+
+def M(V, Vbr, T, N, n=2):
+    '''em gain as a function of voltage (V), breakdown voltage, temperature (T), and
+       number of gain stages (N). 2 < n < 6 is an emperical exponent.'''
+
+    return (1./(1. - (V/(Vbr*(((T + 273.)/300.)**0.2)))**n))**N

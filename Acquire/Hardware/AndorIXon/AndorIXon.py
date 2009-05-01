@@ -23,7 +23,8 @@ class iXonCamera:
         self.defaultProps = {
         'ReadNoise' : 109.8,
         'ElectronsPerCount' : 27.32,
-        'NGainStages' : 536
+        'NGainStages' : 536,
+        'ADOffset' : 971
         }
         self.initialised = False
 
@@ -135,6 +136,7 @@ class iXonCamera:
 
         #set the shutter to be open (for most applications we're going to be shuttering
         #the excitation anyway - no use in wearing the internal shutter out).
+        self.shutterOpen = True
         ret = ac.SetShutter(1,1,0,0) #only the 2nd parameter is important as we're leaving the shutter open
         if not ret == ac.DRV_SUCCESS:
             #raise 'Error setting shutter: %s' % ac.errorCodes[ret]
@@ -553,6 +555,7 @@ class iXonCamera:
 
     def SetShutter(self, state):
         ac.SetShutter(int(state), 1, 0,0)
+        self.shutterOpen = state
         
     def SetBaselineClamp(self, state):
         ac.SetBaselineClamp(int(state))

@@ -114,7 +114,9 @@ class microscope:
         im = CDataStack_AsArray(source.ds, 0)
         IMax = im.max()
 
-        if (IMax >= self.saturationThreshold): #is saturated
+        if not self.cam.shutterOpen:
+            self.cam.ADOffset = im.mean()
+        elif (IMax >= self.saturationThreshold): #is saturated
 
             source.cam.StopAq()
 

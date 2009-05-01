@@ -20,6 +20,9 @@ class HistLimitPanel(wx.Panel):
         self.upper_pctile = float(data[dSort[len(data)*.99]])
         self.lower_pctile = float(data[dSort[len(data)*.01]])
 
+        self.dmin = data[dSort[0]]
+        self.dmax = data[dSort[1]]
+
         self.limit_lower = float(limit_lower)
         self.limit_upper = float(limit_upper)
 
@@ -116,6 +119,8 @@ class HistLimitPanel(wx.Panel):
 
         if self.log:
             self.h = numpy.log10(self.h+.01) - numpy.log10(.01)
+
+        self.dmean = self.data.mean()
         
 
     def DoPaint(self, dc):

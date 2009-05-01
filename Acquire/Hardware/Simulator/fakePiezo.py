@@ -29,3 +29,8 @@ class FakePiezo:
 
     def GetMax(self, iChan=1):
         return self.max_travel
+
+    def __getattr__(self, name):
+        if name == 'lastPos':
+            return self.curpos
+        else: raise AttributeError, name  # <<< DON'T FORGET THIS LINE !!

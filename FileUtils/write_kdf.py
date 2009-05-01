@@ -144,7 +144,7 @@ def WriteKhorosData(fname, d):
         TypeString = 'Float' 
     elif (d.dtype == 'd'):      
         TypeString = 'Double' 
-    elif (d.dtype == 'w'):      
+    elif (d.dtype == 'H'):
         TypeString = 'Unsigned Short'
     else:
         fid.close()

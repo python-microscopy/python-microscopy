@@ -109,3 +109,8 @@ class dispSettingsPanel(wx.Panel):
         if self.cbAutoOptimise.GetValue():
             self.OnBOptimise(None)
 
+    def __getattr__(self, name):
+        if name in dir(self.hlDispMapping):
+            return self.hlDispMapping.__dict__[name]
+        else:  raise AttributeError, name  # <<< DON'T FORGET THIS LINE !!
+

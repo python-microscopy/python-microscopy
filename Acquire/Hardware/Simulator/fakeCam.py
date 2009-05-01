@@ -10,21 +10,29 @@ import threading
 #import processing
 import time
 
+from PYME.Acquire.Hardware import EMCCDTheory
+
 class CDataStack(example.CDataStack):
     def getCurrentChannelSlice(self, curMemChn):
         return example.CDataStack_AsArray(self, curMemChn)[:,:,self.getZPos()]
 
 class NoiseMaker:
-    def __init__(self, QE=.5, ADGain=2, readoutNoise=4, EMGain=1, background=10, floor=30):
+    def __init__(self, QE=.8, ADGain=27.32, readoutNoise=109.8, EMGain=0, background=10., floor=967, shutterOpen = True, numGainElements=536, vbreakdown=6.6, temperature = -70.):
         self.QE = QE
-        self.ADGain = ADGain
-        self.readoutNoise=4
-        self.EMGain=1
+        self.ElectronsPerCount = ADGain
+        self.ReadoutNoise=readoutNoise
+        self.EMGain=EMGain
         self.background = background
-        self.floor = floor
+        self.ADOffset = floor
+        self.NGainElements = numGainElements
+        self.vbreakdown = vbreakdown
+        self.temperature = temperature
+        self.shutterOpen = shutterOpen
 
     def noisify(self, im):
-        return self.floor + scipy.random.poisson((im + self.background)*self.QE*self.EMGain)/self.ADGain + self.readoutNoise*scipy.random.standard_normal(im.shape)/self.ADGain
+        M = EMCCDTheory.M((80. + self.EMGain)/(255 + 80.), self.vbreakdown, self.temperature, self.NGainElements, 2.2)
+        F2 = EMCCDTheory.FSquared(M, self.NGainElements)
+        return self.ADOffset + M*scipy.random.poisson(int(self.shutterOpen)*(im + self.background)*self.QE*F2)/(self.ElectronsPerCount*scipy.sqrt(F2)) + self.readoutNoise*scipy.random.standard_normal(im.shape)/self.ElectronsPerCount
 
 
 
@@ -33,7 +41,7 @@ class NoiseMaker:
 #calculate image in a separate thread to maintain GUI reponsiveness
 class compThread(threading.Thread):
 #class compThread(processing.Process):
-    def __init__(self,XVals, YVals,zPiezo, zOffset, fluors, noisemaker, laserPowers, intTime, contMode = True, bufferlength=20, shutterOpen=True):
+    def __init__(self,XVals, YVals,zPiezo, zOffset, fluors, noisemaker, laserPowers, intTime, contMode = True, bufferlength=20):
         threading.Thread.__init__(self)
         self.XVals = XVals
         self.YVals = YVals
@@ -54,7 +62,8 @@ class compThread(threading.Thread):
 
         self.kill = False
         self.aqRunning = False
-        self.shutterOpen = shutterOpen
+        self.stopAq = False
+        self.startAq = False
 
         print laserPowers
         print intTime
@@ -74,9 +83,9 @@ class compThread(threading.Thread):
             zPos = (self.zPiezo.GetPos() - self.zOffset)*1e3
                 
             if not self.fluors == None and not 'spec' in self.fluors.fl.dtype.fields.keys():
-                self.im = self.noiseMaker.noisify(int(self.shutterOpen)*rend_im.simPalmImF(self.XVals, self.YVals, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
+                self.im = self.noiseMaker.noisify(rend_im.simPalmImF(self.XVals, self.YVals, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
             else:
-                self.im = self.noiseMaker.noisify(int(self.shutterOpen)*rend_im.simPalmImFSpec(self.XVals, self.YVals, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
+                self.im = self.noiseMaker.noisify(rend_im.simPalmImFSpec(self.XVals, self.YVals, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
 
             self.buffer[:,:,self.bufferWritePos] = self.im
             self.bufferWritePos +=1
@@ -88,6 +97,18 @@ class compThread(threading.Thread):
 
             if not self.contMode:
                 self.aqRunning = False
+
+            if self.stopAq:
+                self.aqRunning = False
+                self.bufferWritePos = 0
+                self.bufferReadPos = 0
+                self.numBufferedImages = 0
+                self.stopAq = False
+
+            if self.startAq:
+                self.aqRunning = True
+                self.startAq = False
+
             #self.frameLock.release()
 
     def numFramesBuffered(self):
@@ -98,6 +119,7 @@ class compThread(threading.Thread):
         self.bufferReadPos = 0
         self.numBufferedImages = 0
         self.aqRunning = True
+        self.startAq = True
         #self.frameLock.release()
 
     def getIm(self):
@@ -110,10 +132,11 @@ class compThread(threading.Thread):
         return im
 
     def StopAq(self):
-        self.aqRunning = False
-        self.bufferWritePos = 0
-        self.bufferReadPos = 0
-        self.numBufferedImages = 0
+        self.stopAq = True
+#        self.aqRunning = False
+#        self.bufferWritePos = 0
+#        self.bufferReadPos = 0
+#        self.numBufferedImages = 0
 
         
 
@@ -167,7 +190,7 @@ class FakeCamera:
 
         self.compT.kill = True
 
-        self.compT = compThread(self.XVals[self.ROIx[0]:self.ROIx[1]], self.YVals[self.ROIy[0]:self.ROIy[1]], self.zPiezo, self.zOffset,self.fluors, self.noiseMaker, laserPowers=self.compT.laserPowers, intTime=self.intTime*1e-3, shutterOpen=self.shutterOpen)
+        self.compT = compThread(self.XVals[self.ROIx[0]:self.ROIx[1]], self.YVals[self.ROIy[0]:self.ROIy[1]], self.zPiezo, self.zOffset,self.fluors, self.noiseMaker, laserPowers=self.compT.laserPowers, intTime=self.intTime*1e-3)
         self.compT.start()
 
         self.compT.aqRunning = running
@@ -241,8 +264,8 @@ class FakeCamera:
     
     def GetElectrTemp(*args): 
         return 25
-    def GetCCDTemp(*args): 
-        return -11
+    def GetCCDTemp(self):
+        return self.noiseMaker.temperature
     
     def CamReady(*args): 
         return True
@@ -266,7 +289,7 @@ class FakeCamera:
         print running
         print self.compT.laserPowers
 
-        self.compT = compThread(self.XVals[self.ROIx[0]:self.ROIx[1]], self.YVals[self.ROIy[0]:self.ROIy[1]], self.zPiezo, self.zOffset, self.fluors, self.noiseMaker, laserPowers=self.compT.laserPowers, intTime=self.intTime*1e-3, shutterOpen=self.shutterOpen)
+        self.compT = compThread(self.XVals[self.ROIx[0]:self.ROIx[1]], self.YVals[self.ROIy[0]:self.ROIy[1]], self.zPiezo, self.zOffset, self.fluors, self.noiseMaker, laserPowers=self.compT.laserPowers, intTime=self.intTime*1e-3)
         self.compT.start()
 
         print (self.fluors.fl['state'] == 2).sum()
@@ -356,11 +379,11 @@ class FakeCamera:
     def GenStartMetadata(self, mdh):
         self.GetStatus()
 
-        mdh.setEntry('Camera.Name', 'Simulated Standard CCD Camera')
+        mdh.setEntry('Camera.Name', 'Simulated EM CCD Camera')
 
         mdh.setEntry('Camera.IntegrationTime', self.GetIntegTime())
         mdh.setEntry('Camera.CycleTime', self.GetIntegTime())
-        mdh.setEntry('Camera.EMGain', self.noiseMaker.EMGain)
+        mdh.setEntry('Camera.EMGain', self.GetEMGain())
 
         mdh.setEntry('Camera.ROIPosX', self.GetROIX1())
         mdh.setEntry('Camera.ROIPosY',  self.GetROIY1())
@@ -369,7 +392,7 @@ class FakeCamera:
         #mdh.setEntry('Camera.StartCCDTemp',  self.GetCCDTemp())
 
         mdh.setEntry('Camera.ReadNoise', self.noiseMaker.readoutNoise)
-        mdh.setEntry('Camera.NoiseFactor', 1)
+        mdh.setEntry('Camera.NoiseFactor', 1.41)
         mdh.setEntry('Camera.ElectronsPerCount', self.noiseMaker.ADGain)
         mdh.setEntry('Camera.ADOffset', self.noiseMaker.floor)
 
@@ -378,16 +401,18 @@ class FakeCamera:
 
     #functions to make us look more like andor camera
     def GetEMGain(self):
-        return 0
+        return self.noiseMaker.EMGain
 
     def GetCCDTempSetPoint(self):
         return self.GetCCDTemp()
 
-    def SetCCDTemp(self):
-        pass
+    def SetCCDTemp(self, temp):
+        self.noiseMaker.temperature = temp
+        #pass
 
     def SetEMGain(self, gain):
-        pass
+        self.noiseMaker.EMGain = gain
+        #pass
 
     def SetAquisitionMode(self, mode):
         self.contMode = mode
@@ -395,11 +420,15 @@ class FakeCamera:
 
     def SetShutter(self, mode):
         self.shutterOpen = mode
-        self.compT.shutterOpen = mode
+        self.noiseMaker.shutterOpen = mode
 
     def SetBaselineClamp(self, mode):
         pass
 
-
+    def __getattr__(self, name):
+        if name in dir(self.noiseMaker):
+            return self.noiseMaker.__dict__[name]
+        else:  raise AttributeError, name  # <<< DON'T FORGET THIS LINE !!
+        
     def __del__(self):
         self.compT.kill = True

@@ -23,6 +23,7 @@ from PYME.Analysis.LMVis import imageView
 from PYME.Analysis.LMVis import histLimits
 
 from PYME.Analysis import intelliFit
+from PYME.Analysis import piecewiseMapping
 
 #import time
 
@@ -1200,6 +1201,8 @@ class VisGUIFrame(wx.Frame):
             self.filesToClose.pop().close()
         
         self.dataSources = []
+        if 'zm' in dir(self):
+            del self.zm
         self.filter = None
         self.mapping = None
         print os.path.splitext(filename)[1]
@@ -1223,14 +1226,14 @@ class VisGUIFrame(wx.Frame):
 
                 #once we get around to storing the some metadata with the results
                 if 'MetaData' in self.selectedDataSource.h5f.root:
-                    mdh = MetaDataHandler.HDFMDHandler(self.selectedDataSource.h5f)
+                    self.mdh = MetaDataHandler.HDFMDHandler(self.selectedDataSource.h5f)
 
-                    if 'Camera.ROIWidth' in mdh.getEntryNames():
+                    if 'Camera.ROIWidth' in self.mdh.getEntryNames():
                         x0 = 0
                         y0 = 0
 
-                        x1 = mdh.getEntry('Camera.ROIWidth')*1e3*mdh.getEntry('voxelsize.x')
-                        y1 = mdh.getEntry('Camera.ROIHeight')*1e3*mdh.getEntry('voxelsize.y')
+                        x1 = self.mdh.getEntry('Camera.ROIWidth')*1e3*self.mdh.getEntry('voxelsize.x')
+                        y1 = self.mdh.getEntry('Camera.ROIHeight')*1e3*self.mdh.getEntry('voxelsize.y')
 
                         self.imageBounds = ImageBounds(x0, y0, x1, y1)
                     else:
@@ -1238,6 +1241,17 @@ class VisGUIFrame(wx.Frame):
 
                 else:
                     self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
+
+                if 'Events' in self.selectedDataSource.h5f.root:
+                    self.events = self.selectedDataSource.h5f.root.Events[:]
+
+                    evKeyNames = set()
+                    for e in self.events:
+                        evKeyNames.add(e['EventName'])
+
+                    if 'ProtocolFocus' in evKeyNames:
+                        self.zm = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh.getEntry('Camera.CycleTime'), self.mdh.getEntry('StartTime'), self.mdh.getEntry('Protocol.PiezoStartPos'))
+                        
         else: #assume it's a text file
             dlg = importTextDialog.ImportTextDialog(self)
 
@@ -1317,6 +1331,8 @@ class VisGUIFrame(wx.Frame):
 
         self.Triangles = None
         self.GeneratedMeasures = {}
+        if 'zm' in dir(self):
+            self.GeneratedMeasures['focusPos'] = self.zm(self.mapping['tIndex'].astype('f'))
         self.Quads = None
 
         self.RefreshView()
