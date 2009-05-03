@@ -21,7 +21,7 @@ class HistLimitPanel(wx.Panel):
         self.lower_pctile = float(data[dSort[len(data)*.01]])
 
         self.dmin = data[dSort[0]]
-        self.dmax = data[dSort[1]]
+        self.dmax = data[dSort[-1]]
 
         self.limit_lower = float(limit_lower)
         self.limit_upper = float(limit_upper)
@@ -46,6 +46,9 @@ class HistLimitPanel(wx.Panel):
 
         self.upper_pctile = float(data[dSort[len(data)*.99]])
         self.lower_pctile = float(data[dSort[len(data)*.01]])
+
+        self.dmin = data[dSort[0]]
+        self.dmax = data[dSort[-1]]
 
         self.limit_lower = float(lower)
         self.limit_upper = float(upper)

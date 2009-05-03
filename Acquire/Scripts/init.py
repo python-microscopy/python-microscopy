@@ -50,7 +50,18 @@ notebook1.AddPage(page=dsc, select=False, caption='Simulation Settings')
 InitGUI('''
 from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
 acf = AndorControlFrame.AndorPanel(MainFrame, scope.cam, scope)
-camPanels.append((acf, 'Andor EMCCD Properties'))
+camPanels.append((acf, 'EMCCD Properties'))
+''')
+
+InitGUI('''
+from PYME.Acquire.Hardware import ccdAdjPanel
+#import wx
+#f = wx.Frame(None)
+snrPan = ccdAdjPanel.sizedCCDPanel(notebook1, scope, acf)
+notebook1.AddPage(page=snrPan, select=False, caption='Image SNR')
+#camPanels.append((snrPan, 'SNR etc ...'))
+#f.Show()
+#time1.WantNotification.append(snrPan.draw)
 ''')
 
 cm.join()

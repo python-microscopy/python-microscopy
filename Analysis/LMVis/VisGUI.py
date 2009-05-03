@@ -1269,6 +1269,14 @@ class VisGUIFrame(wx.Frame):
             self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
 
         self.SetTitle('PYME Visualise - ' + filename)
+        #for k in self.filterKeys.keys():
+
+        #if we've done a 3d fit
+        print self.selectedDataSource.keys()
+        if 'fitResults_z0' in self.selectedDataSource.keys():
+            self.filterKeys.pop('sig')
+
+        print self.filterKeys
         self.RegenFilter()
         self.CreateFoldPanel()
         self.SetFit()

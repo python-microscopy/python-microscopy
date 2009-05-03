@@ -85,7 +85,7 @@ def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=N
 
 class PSFFitFactory:
     def __init__(self, data, metadata):
-        self.data = data - metadata.CCD.ADOffset
+        self.data = data - metadata.Camera.ADOffset
         self.metadata = metadata
 
     def __getitem__(self, key):
@@ -117,7 +117,7 @@ class PSFFitFactory:
 
         #estimate errors in data
         #sigma = (4 + scipy.sqrt(2*dataROI)/2)
-        sigma = scipy.sqrt(self.metadata.CCD.ReadNoise**2 + (self.metadata.CCD.noiseFactor**2)*self.metadata.CCD.electronsPerCount*dataROI)/self.metadata.CCD.electronsPerCount
+        sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*scipy.maximum(dataROI, 1))/self.metadata.Camera.ElectronsPerCount
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
         #print X
@@ -144,6 +144,9 @@ class PSFFitFactory:
     def FromPoint(self, x, y, z=None, roiHalfSize=8, axialHalfSize=5):
         if (z == None): # use position of maximum intensity
             z = self.data[x,y,:].argmax()
+
+        x = round(x)
+        y = round(y)
 
         return self[max((x - roiHalfSize), 0):min((x + roiHalfSize + 1),self.data.shape[0]), 
                     max((y - roiHalfSize), 0):min((y + roiHalfSize + 1), self.data.shape[1]), 

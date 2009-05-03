@@ -116,7 +116,7 @@ class microscope:
 
         if not self.cam.shutterOpen:
             self.cam.ADOffset = im.mean()
-        elif (IMax >= self.saturationThreshold): #is saturated
+        elif (IMax >= self.cam.SaturationThreshold): #is saturated
 
             source.cam.StopAq()
 

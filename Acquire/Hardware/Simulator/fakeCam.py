@@ -11,6 +11,7 @@ import threading
 import time
 
 from PYME.Acquire.Hardware import EMCCDTheory
+from PYME.Acquire.Hardware import ccdCalibrator
 
 class CDataStack(example.CDataStack):
     def getCurrentChannelSlice(self, curMemChn):
@@ -32,7 +33,7 @@ class NoiseMaker:
     def noisify(self, im):
         M = EMCCDTheory.M((80. + self.EMGain)/(255 + 80.), self.vbreakdown, self.temperature, self.NGainElements, 2.2)
         F2 = EMCCDTheory.FSquared(M, self.NGainElements)
-        return self.ADOffset + M*scipy.random.poisson(int(self.shutterOpen)*(im + self.background)*self.QE*F2)/(self.ElectronsPerCount*scipy.sqrt(F2)) + self.readoutNoise*scipy.random.standard_normal(im.shape)/self.ElectronsPerCount
+        return self.ADOffset + M*scipy.random.poisson(int(self.shutterOpen)*(im + self.background)*self.QE*F2)/(self.ElectronsPerCount*scipy.sqrt(F2)) + self.ReadoutNoise*scipy.random.standard_normal(im.shape)/self.ElectronsPerCount
 
 
 
@@ -41,7 +42,7 @@ class NoiseMaker:
 #calculate image in a separate thread to maintain GUI reponsiveness
 class compThread(threading.Thread):
 #class compThread(processing.Process):
-    def __init__(self,XVals, YVals,zPiezo, zOffset, fluors, noisemaker, laserPowers, intTime, contMode = True, bufferlength=20):
+    def __init__(self,XVals, YVals,zPiezo, zOffset, fluors, noisemaker, laserPowers, intTime, contMode = True, bufferlength=20, biplane = True, biplane_z = 500):
         threading.Thread.__init__(self)
         self.XVals = XVals
         self.YVals = YVals
@@ -56,6 +57,9 @@ class compThread(threading.Thread):
         self.bufferWritePos = 0
         self.bufferReadPos = 0
         self.numBufferedImages = 0
+
+        self.biplane = biplane
+        self.deltaZ = biplane_z
 
         self.zPiezo = zPiezo
         self.zOffset = zOffset
@@ -83,7 +87,10 @@ class compThread(threading.Thread):
             zPos = (self.zPiezo.GetPos() - self.zOffset)*1e3
                 
             if not self.fluors == None and not 'spec' in self.fluors.fl.dtype.fields.keys():
-                self.im = self.noiseMaker.noisify(rend_im.simPalmImF(self.XVals, self.YVals, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
+                if self.biplane:
+                    self.im = self.noiseMaker.noisify(rend_im.simPalmImFBP(self.XVals, self.YVals, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime, deltaZ = self.deltaZ))[:,:].astype('uint16')
+                else:
+                    self.im = self.noiseMaker.noisify(rend_im.simPalmImF(self.XVals, self.YVals, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
             else:
                 self.im = self.noiseMaker.noisify(rend_im.simPalmImFSpec(self.XVals, self.YVals, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
 
@@ -159,14 +166,16 @@ class FakeCamera:
         self.fluors=fluors
         self.noiseMaker=noiseMaker
 
+        self.SaturationThreshold = (2**16) - 1
+
         self.laserPowers=laserPowers
 
-        self.intTime=100
+        self.intTime=0.1
         self.zOffset = zOffset
         self.compT = None #thread which is currently being computed
         #self.compT = None #finished thread holding image (c.f. camera buffer)
 
-        self.compT = compThread(self.XVals[self.ROIx[0]:self.ROIx[1]], self.YVals[self.ROIy[0]:self.ROIy[1]], self.zPiezo, self.zOffset,self.fluors, self.noiseMaker, laserPowers=self.laserPowers, intTime=self.intTime*1e-3)
+        self.compT = compThread(self.XVals[self.ROIx[0]:self.ROIx[1]], self.YVals[self.ROIy[0]:self.ROIy[1]], self.zPiezo, self.zOffset,self.fluors, self.noiseMaker, laserPowers=self.laserPowers, intTime=self.intTime)
         self.compT.start()
 
         self.contMode = True
@@ -190,7 +199,7 @@ class FakeCamera:
 
         self.compT.kill = True
 
-        self.compT = compThread(self.XVals[self.ROIx[0]:self.ROIx[1]], self.YVals[self.ROIy[0]:self.ROIy[1]], self.zPiezo, self.zOffset,self.fluors, self.noiseMaker, laserPowers=self.compT.laserPowers, intTime=self.intTime*1e-3)
+        self.compT = compThread(self.XVals[self.ROIx[0]:self.ROIx[1]], self.YVals[self.ROIy[0]:self.ROIy[1]], self.zPiezo, self.zOffset,self.fluors, self.noiseMaker, laserPowers=self.compT.laserPowers, intTime=self.intTime)
         self.compT.start()
 
         self.compT.aqRunning = running
@@ -224,7 +233,7 @@ class FakeCamera:
         raise Exception, 'Not implemented yet!!'
     
     def SetIntegTime(self, iTime): 
-        self.intTime=iTime
+        self.intTime=iTime*1e-3
         self.compT.intTime = iTime*1e-3
     def GetIntegTime(self): 
         return self.intTime
@@ -391,13 +400,17 @@ class FakeCamera:
         mdh.setEntry('Camera.ROIHeight',  self.GetROIY2() - self.GetROIY1())
         #mdh.setEntry('Camera.StartCCDTemp',  self.GetCCDTemp())
 
-        mdh.setEntry('Camera.ReadNoise', self.noiseMaker.readoutNoise)
+        mdh.setEntry('Camera.ReadNoise', self.noiseMaker.ReadoutNoise)
         mdh.setEntry('Camera.NoiseFactor', 1.41)
-        mdh.setEntry('Camera.ElectronsPerCount', self.noiseMaker.ADGain)
-        mdh.setEntry('Camera.ADOffset', self.noiseMaker.floor)
+        mdh.setEntry('Camera.ElectronsPerCount', self.noiseMaker.ElectronsPerCount)
+        mdh.setEntry('Camera.ADOffset', self.noiseMaker.ADOffset)
 
         #mdh.setEntry('Simulation.Fluorophores', self.fluors.fl)
         #mdh.setEntry('Simulation.LaserPowers', self.laserPowers)
+
+        realEMGain = ccdCalibrator.getCalibratedCCDGain(self.GetEMGain(), self.GetCCDTempSetPoint())
+        if not realEMGain == None:
+            mdh.setEntry('Camera.TrueEMGain', realEMGain)
 
     #functions to make us look more like andor camera
     def GetEMGain(self):

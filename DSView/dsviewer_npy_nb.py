@@ -20,6 +20,7 @@ import numpy
 import tables
 import wx.py.crust
 import pylab
+import glob
 
 from myviewpanel_numarray import MyViewPanel
 import eventLogViewer
@@ -235,16 +236,44 @@ class DSViewFrame(wx.Frame):
                                       foldIcons=self.Images)
 
         pan = wx.Panel(item, -1)
+        
+        #find out what fit factories we have
+        import PYME.Analysis.FitFactories
+        fitFactoryList = glob.glob(PYME.Analysis.FitFactories.__path__[0] + '/[a-zA-Z]*.py')
+        fitFactoryList = [os.path.split(p)[-1][:-3] for p in fitFactoryList]
+
+        self.fitFactories = []
+        for ff in fitFactoryList:
+            try:
+                fm = __import__('PYME.Analysis.FitFactories.' + ff, fromlist=['PYME', 'Analysis', 'FitFactories'])
+                if 'FitResultsDType' in dir(fm):
+                    self.fitFactories.append(ff)
+            except:
+                pass
+
+        #print fitFactoryList
+        #print self.fitFactories
+
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        hsizer.Add(wx.StaticText(pan, -1, 'Type:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.cFitType = wx.Choice(pan, -1, choices = self.fitFactories, size=(120, -1))
+        self.cFitType.SetSelection(self.fitFactories.index('LatGaussFitFR'))
+
+        hsizer.Add(self.cFitType, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        vsizer.Add(hsizer, 0,wx.ALL, 0)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
         hsizer.Add(wx.StaticText(pan, -1, 'Start at:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-        self.tStartAt = wx.TextCtrl(pan, -1, value='0', size=(40, -1))
+        self.tStartAt = wx.TextCtrl(pan, -1, value='%d' % self.vp.zp, size=(40, -1))
         
         hsizer.Add(self.tStartAt, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        vsizer.Add(hsizer, 0,wx.ALL, 0)
         
-        pan.SetSizer(hsizer)
-        hsizer.Fit(pan)
+        pan.SetSizer(vsizer)
+        vsizer.Fit(pan)
 
         self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
 
@@ -263,9 +292,10 @@ class DSViewFrame(wx.Frame):
         threshold = float(self.tThreshold.GetValue())
         startAt = int(self.tStartAt.GetValue())
         driftEst = self.cbDrift.GetValue()
+        fitMod = self.cFitType.GetStringSelection()
 
         if not driftEst:
-            self.sh.run('pushImages(%d, %f)' % (startAt, threshold))
+            self.sh.run('pushImages(%d, %f, "%s")' % (startAt, threshold, fitMod))
         else:
             self.sh.run('pushImagesD(%d, %f)' % (startAt, threshold))
 

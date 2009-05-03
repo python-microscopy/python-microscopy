@@ -82,7 +82,7 @@ class Spooler:
            mdgen(self.md)
 
    def fakeTime(self):
-       return self.tStart + self.imNum*1.e-3*self.scope.cam.GetIntegTime()
+       return self.tStart + self.imNum*self.scope.cam.GetIntegTime()
         
         
    def __del__(self):

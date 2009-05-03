@@ -8,8 +8,8 @@ def FSquared(M, N):
 
     return 2*(M-1)*M**(-(float(N)+1)/float(N)) + 1/M
 
-def SNR(S, ReadNoise, M, N):
-    return S/sqrt((ReadNoise/M)**2 + FSquared(M, N)*S)
+def SNR(S, ReadNoise, M, N, B = 0):
+    return (S-B)/sqrt((ReadNoise/M)**2 + FSquared(M, N)*S)
 
 def M(V, Vbr, T, N, n=2):
     '''em gain as a function of voltage (V), breakdown voltage, temperature (T), and

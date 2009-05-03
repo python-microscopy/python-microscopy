@@ -4,7 +4,7 @@ import scipy as sp
 import ofind
 from PYME.Analysis.FitFactories.LatGaussFitFR import FitFactory, FitResultsDType
 import MetaData
-from rbf import Rbf
+from scipy.interpolate import Rbf
 from scikits import delaunay
 import tables
 
