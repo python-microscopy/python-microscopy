@@ -301,7 +301,7 @@ class DSViewFrame(wx.Frame):
 
         from PYME.Analysis.LMVis import gl_render
         self.glCanvas = gl_render.LMGLCanvas(self.notebook1)
-        self.glCanvas.cmap = pylab.cm.hsv
+        self.glCanvas.cmap = pylab.cm.gist_rainbow
 
         self.notebook1.AddPage(page=self.glCanvas, select=True, caption='VisLite')
 
