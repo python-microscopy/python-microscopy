@@ -11,6 +11,7 @@ from PYME.Analysis.LMVis import editFilterDialog
 import pylab
 from PYME.FileUtils import nameUtils
 import os
+import delaunay as delny
 from scikits import delaunay
 
 from PYME.Analysis.QuadTree import pointQT, QTrend
@@ -21,6 +22,7 @@ from PYME.Analysis.LMVis import importTextDialog
 from PYME.Analysis.LMVis import visHelpers
 from PYME.Analysis.LMVis import imageView
 from PYME.Analysis.LMVis import histLimits
+from PYME.Analysis.LMVis import gen3DTriangs
 
 from PYME.Analysis import intelliFit
 from PYME.Analysis import piecewiseMapping
@@ -36,6 +38,9 @@ from PYME.Acquire import MetaDataHandler
 from PYME.misc import editList
 
 from PYME.Analysis.LMVis import statusLog
+from IPython.frontend.wx.wx_frontend import WxController
+from IPython.kernel.core.interpreter import Interpreter
+
 
 
 # ----------------------------------------------------------------------------
@@ -99,6 +104,7 @@ class VisGUIFrame(wx.Frame):
         self._flags = 0
         
         #self.SetIcon(GetMondrianIcon())
+        
         self.SetMenuBar(self.CreateMenuBar())
 
         self.statusbar = self.CreateStatusBar(1, wx.ST_SIZEGRIP)
@@ -121,6 +127,7 @@ class VisGUIFrame(wx.Frame):
         # will occupy the space not used by the Layout Algorithm
         #self.remainingSpace = wx.Panel(self, -1, style=wx.SUNKEN_BORDER)
         #self.glCanvas = gl_render.LMGLCanvas(self.remainingSpace)
+        #self.glCanvas = wx.Panel(self, -1, style=wx.SUNKEN_BORDER)
         self.glCanvas = gl_render.LMGLCanvas(self)
         self.glCanvas.cmap = pylab.cm.hot
 
@@ -152,6 +159,10 @@ class VisGUIFrame(wx.Frame):
         self.driftExprX = 'x + a*t'
         self.driftExprY = 'y + b*t'
 
+        self.objThreshold = 100
+        self.objMinSize = 3
+        self.objects = None
+
         self.imageBounds = ImageBounds(0,0,0,0)
 
         #generated Quad-tree will allow visualisations with pixel sizes of self.QTGoalPixelSize*2^N for any N
@@ -174,8 +185,27 @@ class VisGUIFrame(wx.Frame):
             #self.glCanvas.OnPaint(None)
             self.OpenFile(filename)
 
-        #wx.LayoutAlgorithm().LayoutWindow(self, self.glCanvas)
+        wx.LayoutAlgorithm().LayoutWindow(self, self.glCanvas)
         self.Refresh()
+
+#        namespace = dict()
+#
+#        namespace['visFr'] = self
+#        namespace['filter'] = self.filter
+#        namespace['mapping'] = self.mapping
+#        namespace['GeneratedMeasures'] = self.GeneratedMeasures
+#
+#        #namespace['Testfunc'] = Testfunc
+#        self.interp = Interpreter(user_ns=namespace)
+#
+#        self.f = wx.Frame(self, -1, 'IPython Console', size=(600, 500), pos=(700, 100))
+#        self.sh = WxController(self.f, wx.ID_ANY, shell=self.interp)
+#        self.sh.SetSize((600,500))
+#        sizer = wx.BoxSizer(wx.VERTICAL)
+#        sizer.Add(self.sh, 1, wx.EXPAND)
+#        self.f.SetSizer(sizer)
+#        self.f.Show()
+
         
 
     def OnSize(self, event):
@@ -255,6 +285,9 @@ class VisGUIFrame(wx.Frame):
         if self.viewMode == 'points':
             self.GenPointsPanel()
 
+        if self.viewMode == 'blobs':
+            self.GenBlobPanel()
+
         if self.viewMode == 'interp_triangles':
             self.GenPointsPanel('Vertex Colours')
        
@@ -294,6 +327,7 @@ class VisGUIFrame(wx.Frame):
         cmapnames = pylab.cm.cmapnames
 
         curCMapName = self.glCanvas.cmap.name
+        #curCMapName = 'hot'
 
         cmapReversed = False
         
@@ -514,6 +548,11 @@ class VisGUIFrame(wx.Frame):
             self.stFilterNumPoints.SetLabel('%d of %d events' % (len(self.filter['x']), len(self.selectedDataSource['x'])))
 
         self._pnl.AddFoldPanelWindow(item, self.stFilterNumPoints, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+
+        self.bClipToSelection = wx.Button(item, -1, 'Clip to selection')
+        self._pnl.AddFoldPanelWindow(item, self.bClipToSelection, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+
+        self.bClipToSelection.Bind(wx.EVT_BUTTON, self.OnFilterClipToSelection)
         
     def OnFilterListRightClick(self, event):
 
@@ -549,6 +588,32 @@ class VisGUIFrame(wx.Frame):
         self.currentFilterItem = None
 
         event.Skip()
+
+    def OnFilterClipToSelection(self, event):
+        x0, y0 = self.glCanvas.selectionStart
+        x1, y1 = self.glCanvas.selectionFinish
+
+        if not 'x' in self.filterKeys.keys():
+            indx = self.lFiltKeys.InsertStringItem(sys.maxint, 'x')
+        else:
+            indx = [self.lFiltKeys.GetItemText(i) for i in range(self.lFiltKeys.GetItemCount())].index('x')
+
+        if not 'y' in self.filterKeys.keys():
+            indy = self.lFiltKeys.InsertStringItem(sys.maxint, 'y')
+        else:
+            indy = [self.lFiltKeys.GetItemText(i) for i in range(self.lFiltKeys.GetItemCount())].index('y')
+
+
+        self.filterKeys['x'] = (min(x0, x1), max(x0, x1))
+        self.filterKeys['y'] = (min(y0, y1), max(y0,y1))
+
+        self.lFiltKeys.SetStringItem(indx,1, '%3.2f' % min(x0, x1))
+        self.lFiltKeys.SetStringItem(indx,2, '%3.2f' % max(x0, x1))
+
+        self.lFiltKeys.SetStringItem(indy,1, '%3.2f' % min(y0, y1))
+        self.lFiltKeys.SetStringItem(indy,2, '%3.2f' % max(y0, y1))
+
+        self.RegenFilter()
 
     def OnFilterAdd(self, event):
         #key = self.lFiltKeys.GetItem(self.currentFilterItem).GetText()
@@ -653,6 +718,48 @@ class VisGUIFrame(wx.Frame):
         self.stQTSNR.SetLabel('Effective SNR = %3.2f' % pylab.sqrt(pointQT.QT_MAXRECORDS/2.0))
 
         self.Quads = None
+        self.RefreshView()
+
+
+    def GenBlobPanel(self):
+        item = self._pnl.AddFoldPanel("Objects", collapsed=False,
+                                      foldIcons=self.Images)
+
+        pan = wx.Panel(item, -1)
+        bsizer = wx.BoxSizer(wx.VERTICAL)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(pan, -1, 'Threshold [nm]:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        self.tBlobDist = wx.TextCtrl(pan, -1, '%3.0f' % self.objThreshold,size=(40,-1))
+        hsizer.Add(self.tBlobDist, 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        bsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(pan, -1, 'Min Size [events]:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        self.tMinObjSize = wx.TextCtrl(pan, -1, '%d' % self.objMinSize, size=(40, -1))
+        hsizer.Add(self.tMinObjSize, 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        bsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
+
+        self.bApplyThreshold = wx.Button(pan, -1, 'Apply')
+        bsizer.Add(self.bApplyThreshold, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5)
+
+        pan.SetSizer(bsizer)
+        bsizer.Fit(pan)
+
+
+        self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+
+        self.bApplyThreshold.Bind(wx.EVT_BUTTON, self.OnObjApplyThreshold)
+
+    def OnObjApplyThreshold(self, event):
+        self.objects = None
+        self.objThreshold = float(self.tBlobDist.GetValue())
+        self.objMinSize = int(self.tMinObjSize.GetValue())
+
         self.RefreshView()
 
 
@@ -868,6 +975,8 @@ class VisGUIFrame(wx.Frame):
         ID_VIEW_TRIANGS = wx.NewId()
         ID_VIEW_QUADS = wx.NewId()
 
+        ID_VIEW_BLOBS = wx.NewId()
+
         ID_VIEW_VORONOI = wx.NewId()
         ID_VIEW_INTERP_TRIANGS = wx.NewId()
 
@@ -901,12 +1010,14 @@ class VisGUIFrame(wx.Frame):
             self.view_menu.AppendRadioItem(ID_VIEW_QUADS, '&Quad Tree')
             self.view_menu.AppendRadioItem(ID_VIEW_VORONOI, '&Voronoi')
             self.view_menu.AppendRadioItem(ID_VIEW_INTERP_TRIANGS, '&Interpolated Triangles')
+            self.view_menu.AppendRadioItem(ID_VIEW_BLOBS, '&Blobs')
         except:
             self.view_menu.Append(ID_VIEW_POINTS, '&Points')
             self.view_menu.Append(ID_VIEW_TRIANGS, '&Triangles')
             self.view_menu.Append(ID_VIEW_QUADS, '&Quad Tree')
             self.view_menu.Append(ID_VIEW_VORONOI, '&Voronoi')
             self.view_menu.Append(ID_VIEW_INTERP_TRIANGS, '&Interpolated Triangles')
+            self.view_menu.Append(ID_VIEW_BLOBS, '&Blobs')
 
         self.view_menu.Check(ID_VIEW_POINTS, True)
         #self.view_menu.Enable(ID_VIEW_QUADS, False)
@@ -957,6 +1068,8 @@ class VisGUIFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnViewVoronoi, id=ID_VIEW_VORONOI)
         self.Bind(wx.EVT_MENU, self.OnViewInterpTriangles, id=ID_VIEW_INTERP_TRIANGS)
 
+        self.Bind(wx.EVT_MENU, self.OnViewBlobs, id=ID_VIEW_BLOBS)
+
         self.Bind(wx.EVT_MENU, self.SetFit, id=ID_VIEW_FIT)
 
         self.Bind(wx.EVT_MENU, self.OnGenCurrent, id=ID_GEN_CURRENT)
@@ -972,6 +1085,12 @@ class VisGUIFrame(wx.Frame):
         self.RefreshView()
         self.CreateFoldPanel()
         self.OnPercentileCLim(None)
+
+    def OnViewBlobs(self,event):
+        self.viewMode = 'blobs'
+        self.RefreshView()
+        self.CreateFoldPanel()
+        #self.OnPercentileCLim(None)
 
     def OnViewTriangles(self,event):
         self.viewMode = 'triangles'
@@ -1338,6 +1457,7 @@ class VisGUIFrame(wx.Frame):
         self.stFilterNumPoints.SetLabel('%d of %d events' % (len(self.filter['x']), len(self.selectedDataSource['x'])))
 
         self.Triangles = None
+        self.objects = None
         self.GeneratedMeasures = {}
         if 'zm' in dir(self):
             self.GeneratedMeasures['focusPos'] = self.zm(self.mapping['tIndex'].astype('f'))
@@ -1392,6 +1512,20 @@ class VisGUIFrame(wx.Frame):
                 self.Triangles = delaunay.Triangulation(self.mapping['x'], self.mapping['y'])
 
             self.glCanvas.setIntTriang(self.Triangles, self.pointColour)
+
+        elif self.viewMode == 'blobs':
+            if self.objects == None:
+                #check to see that we don't have too many points
+                if len(self.mapping['x']) > 10e3:
+                    goAhead = wx.MessageBox('You have %d events in the selected ROI;\nThis could take a LONG time ...' % len(self.mapping['x']), 'Continue with blob detection', wx.YES_NO|wx.ICON_EXCLAMATION)
+
+                    if not goAhead == wx.YES:
+                        return
+
+                T = delny.Triangulation(pylab.array([self.mapping['x'] + 0.1*pylab.randn(len(self.mapping['x'])), self.mapping['y']+ 0.1*pylab.randn(len(self.mapping['x']))]).T)
+                self.objects = gen3DTriangs.segment(T, self.objThreshold, self.objMinSize)
+
+            self.glCanvas.setBlobs(self.objects, self.objThreshold)
 
         self.hlCLim.SetData(self.glCanvas.c, self.glCanvas.clim[0], self.glCanvas.clim[1])
 

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+   <mime-type type="application/x-extension-h5">
+     <comment>PYME Raw Data Files</comment>
+     <glob pattern="*.h5"/>
+   </mime-type>
+   <mime-type type="application/x-extension-h5r">
+     <comment>PYME Results Files</comment>
+     <glob pattern="*.h5r"/>
+   </mime-type>
+</mime-info>
+

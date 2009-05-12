@@ -163,6 +163,57 @@ def gen3DTriangsTF(T, sizeCutoff = inf):
 
     return (P, A, N, triInds)
 
+def gen2DTriangsTF(T, sizeCutoff = inf):
+    iarray = array(T.indices)
+
+    va = array(T.set)
+
+
+    s_01 = va[iarray[:, 0]] - va[iarray[:, 1]]
+    s01 = (s_01**2).sum(1)
+    s_12 = va[iarray[:, 1]] - va[iarray[:, 2]]
+    s12 = (s_12**2).sum(1)
+    
+    s_02 = va[iarray[:, 0]] - va[iarray[:, 2]]
+    s02 = (s_02**2).sum(1)
+    
+
+
+    #A = median([s01, s12, s02], 0)
+    A = maximum(s01, s12, s02)
+
+    cutInd = A < sizeCutoff**2
+
+    #print cutInd
+
+    iarray = iarray[cutInd, : ]
+
+    triInds = iarray[:,:]
+    triInds.sort(1)
+
+    surfInds = triInds[:,0] > -1
+
+    #for triI in triInds:
+    #   matches = (triInds == triI).prod(1)
+    #   if matches.sum() > 1:
+    #       surfInds*=(matches == 0) #remove triangles
+
+    #triInds = triInds[surfInds,:]
+
+
+    P = array(T.set)[triInds.ravel(), :]
+
+    A = A[cutInd]
+
+    A = vstack((A,A,A)).T.ravel()
+    #s_01 = s_01[cutInd]
+    #s_12 = s_12[cutInd]
+
+    #s_02 = s_02[cutInd]
+    
+
+    return (P, A, triInds)
+
 def trianglesEqual(T1, T2):
     eq = True
     i = 0
@@ -254,25 +305,36 @@ def collectConnected(T, v, verts, va, lenThresh):
 #            else:
 #                i += 1
 
-        i = int(argwhere((va[:,0] == v2[0])*(va[:,1] == v2[1])*(va[:,2] == v2[2])))
-        #print i
+        if ((v - v2)**2).sum() < lenThresh**2:
 
-        if i in verts: #we haven't already done this vertex
-            #print ((v - v2)**2).sum()
-            #print lenThresh**2
-            if ((v - v2)**2).sum() < lenThresh**2:
+            if len(v2) == 3:
+                i = int(argwhere((va[:, 0] == v2[0]) * (va[:, 1] == v2[1]) * (va[:, 2] == v2[2])))
+            else:
+                i = int(argwhere((va[:, 0] == v2[0]) * (va[:, 1] == v2[1])))
+            #print i
+
+            #if i in verts: #we haven't already done this vertex
+                #print ((v - v2)**2).sum()
+                #print lenThresh**2
+                #if ((v - v2)**2).sum() < lenThresh**2:
                 #print 'test'
+            try:
                 verts.remove(i)
                 connected.append(v2)
                 connected += collectConnected(T, v2, verts, va, lenThresh)
+            except ValueError:
+                pass
 
     return connected
 
 
-def segment(T, lenThresh):
+def segment(T, lenThresh, minSize=None):
     objects = []
     verts = list(range(len(T.set)))
     va = array(T.set)
+
+    if minSize == None:
+        minSize = va.shape[1] + 1 #only return objects which have enough points to be a volume
 
     while len(verts) > 0:
         v = va[verts.pop(0), :]
@@ -280,7 +342,7 @@ def segment(T, lenThresh):
 
         obj += collectConnected(T, v, verts, va, lenThresh)
 
-        if len(obj) > (va.shape[1] + 1): #only return objects which have enough points to be a volume
+        if len(obj) > minSize:
             objects.append(array(obj))
 
     return objects
@@ -305,6 +367,29 @@ def blobify(objects, sizeCutoff):
         A_.append(A)
 
     return (vstack(P_), hstack(A_), vstack(N_))
+
+def blobify2D(objects, sizeCutoff):
+    P_ = []
+    
+    A_ = []
+
+    for o, i in zip(objects, range(len(objects))):
+        T = delaunay.Triangulation(o.ravel(),2)
+        P, A, triI = gen2DTriangsTF(T, sizeCutoff)
+
+        #P, A, N = removeInternalFaces(P, A, N)
+
+        #colour by object
+        A = ones(A.shape)*i
+        
+
+        #print P.shape
+
+        P_.append(P)
+        
+        A_.append(A)
+
+    return (vstack(P_), hstack(A_))
 
 def gen3DBlobs(x,y,z, sizeCutoff=inf):
     T = delaunay.Triangulation(array([x,y,z]).T.ravel(),3)

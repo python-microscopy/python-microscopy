@@ -1,8 +1,9 @@
-HDFTaskQueue.pyc
-Pyro_NS_URI
 __init__.pyc
-build
-dist
-relativeFiles.pyc
+Pyro_NS_URI
 taskDef.pyc
+setup.pyc
+HDFTaskQueue.pyc
+relativeFiles.pyc
+build
 taskQueue.pyc
+dist

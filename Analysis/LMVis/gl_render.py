@@ -32,6 +32,9 @@ class LMGLCanvas(GLCanvas):
         wx.EVT_PAINT(self, self.OnPaint)
         wx.EVT_SIZE(self, self.OnSize)
         wx.EVT_MOUSEWHEEL(self, self.OnWheel)
+        wx.EVT_LEFT_DOWN(self, self.OnLeftDown)
+        wx.EVT_LEFT_UP(self, self.OnLeftUp)
+        wx.EVT_MOTION(self, self.OnMouseMove)
 
         self.init = 0
         self.nVertices = 0
@@ -71,10 +74,14 @@ class LMGLCanvas(GLCanvas):
         self.zmin = -1
         self.zmax = 1
         self.ang = 0
-        return
+
+        self.selectionDragging = False
+        self.selectionStart = (0,0)
+        self.selectionFinish = (0,0)
+        self.selection = False
 
     def OnPaint(self,event):
-        dc = wx.PaintDC(self)
+        #dc = wx.PaintDC(self)
         self.SetCurrent()
         if not self.init:
             self.InitGL()
@@ -139,6 +146,7 @@ class LMGLCanvas(GLCanvas):
 
         self.drawScaleBar()
         self.drawLUT()
+        self.drawSelection()
 
         glFlush()
         #glPopMatrix()
@@ -380,6 +388,25 @@ class LMGLCanvas(GLCanvas):
         self.nVertices = vs.shape[0]
         self.setColour(self.IScale, self.zeroPt)
 
+
+    def setBlobs(self, objects, sizeCutoff):
+        import gen3DTriangs
+
+        vs, self.c = gen3DTriangs.blobify2D(objects, sizeCutoff)
+
+        #vs = vs.ravel()
+        self.vs_ = glVertexPointerf(vs)
+
+        #cs = numpy.minimum(numpy.vstack((self.IScale[0]*c,self.IScale[1]*c,self.IScale[2]*c)), 1).astype('f')
+        #cs = cs.T.ravel().reshape(len(c), 3)
+        #cs_ = glColorPointerf(cs)
+
+        self.mode = 'triang'
+
+        self.nVertices = vs.shape[0]
+        self.setColour(self.IScale, self.zeroPt)
+        self.setCLim((0, len(objects)))
+
     def setIntTriang(self, T, cs= None):
 
         if cs == None:
@@ -581,6 +608,26 @@ class LMGLCanvas(GLCanvas):
             glVertex2f(sb_ur_x - self.scaleBarLength, sb_ur_y)
             glEnd()
 
+    def drawSelection(self):
+        if self.selection:
+            #view_size_x = self.xmax - self.xmin
+            #view_size_y = self.ymax - self.ymin
+
+            #sb_ur_x = self.xmax - self.scaleBarOffset[0]*view_size_x/self.Size[0]
+            #sb_ur_y = self.ymax - self.scaleBarOffset[1]*view_size_y/self.Size[1]
+            #sb_depth = self.scaleBarDepth*view_size_y/self.Size[1]
+
+            x0,y0 = self.selectionStart
+            x1, y1 = self.selectionFinish
+
+            glColor3fv(self.scaleBarColour)
+            glBegin(GL_LINE_LOOP)
+            glVertex2f(x0, y0)
+            glVertex2f(x1, y0)
+            glVertex2f(x1, y1)
+            glVertex2f(x0, y1)
+            glEnd()
+
     def drawLUT(self):
         if self.LUTDraw == True:
             mx = self.c.max()
@@ -620,7 +667,67 @@ class LMGLCanvas(GLCanvas):
             glEnd()
 
 
+    def OnLeftDown(self, event):
+        view_size_x = self.xmax - self.xmin
+        view_size_y = self.ymax - self.ymin
 
+        #get translated coordinates
+        xp = event.GetX()*view_size_x/self.Size[0] + self.xmin
+        yp = (self.Size[1] - event.GetY())*view_size_y/self.Size[1] + self.ymin
+
+        self.selectionDragging = True
+        self.selection = True
+
+        self.selectionStart = (xp, yp)
+        self.selectionFinish = (xp, yp)
+
+        event.Skip()
+
+    def OnLeftUp(self, event):
+        if self.selectionDragging:
+            view_size_x = self.xmax - self.xmin
+            view_size_y = self.ymax - self.ymin
+
+            #get translated coordinates
+            xp = event.GetX()*view_size_x/self.Size[0] + self.xmin
+            yp = (self.Size[1] - event.GetY())*view_size_y/self.Size[1] + self.ymin
+
+            
+
+            #self.selectionStart = (xp, yp)
+            self.selectionFinish = (xp, yp)
+            #x = event.GetX()
+            #y = event.GetY()
+            
+
+            self.selectionDragging=False
+            
+            self.Refresh()
+            
+        event.Skip()
+
+    def OnMouseMove(self, event):
+        if self.selectionDragging:
+            view_size_x = self.xmax - self.xmin
+            view_size_y = self.ymax - self.ymin
+
+            #get translated coordinates
+            xp = event.GetX()*view_size_x/self.Size[0] + self.xmin
+            yp = (self.Size[1] - event.GetY())*view_size_y/self.Size[1] + self.ymin
+
+
+
+            #self.selectionStart = (xp, yp)
+            self.selectionFinish = (xp, yp)
+            #x = event.GetX()
+            #y = event.GetY()
+
+
+            #self.selectionDragging=False
+
+            self.Refresh()
+
+        event.Skip()
 
     def OnWheel(self, event):
         rot = event.GetWheelRotation()
@@ -831,7 +938,7 @@ def genMapColouring(T):
 def main():
     app = wx.PySimpleApp()
     frame = wx.Frame(None,-1,'ball_wx',wx.DefaultPosition,wx.Size(400,400))
-    canvas = myGLCanvas(frame)
+    canvas = LMGLCanvas(frame)
     frame.Show()
     app.MainLoop()
 

@@ -81,7 +81,7 @@ def profileOn(fnames):
 
 def profileOff():
     sys.settrace(None)
-    treading.settrace(None)
+    threading.settrace(None)
 
 def te(frame, event, arg):
     global tPrev, filenames, files, lPrev
