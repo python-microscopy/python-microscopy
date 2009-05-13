@@ -1,13 +1,14 @@
 __init__.pyc
-genImageDialog.pyc
 tcHist.pyc
+genImageDialog.pyc
 inpFilt.pyc
-visHelpers.pyc
 histLimits.pyc
+visHelpers.pyc
 editFilterDialog.pyc
 imageView.pyc
 rendGauss.pyc
 gl_render.pyc
+objectMeasure.pyc
 VisGUI.pyc
 progGraph.pyc
 statusLog.pyc

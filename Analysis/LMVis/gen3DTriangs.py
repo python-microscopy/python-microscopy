@@ -184,6 +184,9 @@ def gen2DTriangsTF(T, sizeCutoff = inf):
 
     cutInd = A < sizeCutoff**2
 
+    #area
+    A = 0.5*sqrt((s_01*s_01).sum(1)*(s_12*s_12).sum(1) - ((s_01*s_12).sum(1)**2))
+
     #print cutInd
 
     iarray = iarray[cutInd, : ]
@@ -254,6 +257,31 @@ def removeInternalFaces(P, A, N):
     N = array(N_).reshape(-1, 3)
 
     return (P, A, N)
+
+def getExternalEdges(triInds):
+    Edges = vstack((triInds[:, :2], triInds[:, 1:], triInds[:, (0,2)]))
+
+    Edges.sort(1)
+
+    Edges = Edges[lexsort(Edges.T), :]
+
+    edgeInd = ones(Edges.shape[0])
+
+    for i, e in enumerate(Edges[:-1, :]):
+        if (Edges[i+1] == e).all():
+            edgeInd[i:i+2] = 0
+       #matches = (Edges == e).prod(1)
+       #if matches.sum() > 1:
+       #    edgeInd*=(matches == 0) #remove triangles
+
+    return Edges[edgeInd > 0, :]
+
+def getPerimeter(extEdges, T):
+    verts = array(T.set)
+
+    edVecs = verts[extEdges[:,0], :] - verts[extEdges[:,1], :]
+
+    return sqrt((edVecs**2).sum(1)).sum()
 
 def averageNormals(P,N):
     i_s = range(P.shape[0])
