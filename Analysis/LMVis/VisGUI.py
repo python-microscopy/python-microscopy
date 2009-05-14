@@ -36,10 +36,11 @@ from PYME.Acquire import MetaDataHandler
 #import threading
 
 from PYME.misc import editList
+from PYME.misc.auiFloatBook import AuiNotebookWithFloatingPages
 
 from PYME.Analysis.LMVis import statusLog
-from IPython.frontend.wx.wx_frontend import WxController
-from IPython.kernel.core.interpreter import Interpreter
+#from IPython.frontend.wx.wx_frontend import WxController
+#from IPython.kernel.core.interpreter import Interpreter
 
 
 
@@ -128,7 +129,10 @@ class VisGUIFrame(wx.Frame):
         #self.remainingSpace = wx.Panel(self, -1, style=wx.SUNKEN_BORDER)
         #self.glCanvas = gl_render.LMGLCanvas(self.remainingSpace)
         #self.glCanvas = wx.Panel(self, -1, style=wx.SUNKEN_BORDER)
-        self.glCanvas = gl_render.LMGLCanvas(self)
+        self.notebook = AuiNotebookWithFloatingPages(id=-1, parent=self, style=wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_TAB_SPLIT)
+
+        self.glCanvas = gl_render.LMGLCanvas(self.notebook)
+        self.notebook.AddPage(page=self.glCanvas, select=True, caption='View')
         self.glCanvas.cmap = pylab.cm.hot
 
         self.ID_WINDOW_TOP = 100
@@ -139,6 +143,7 @@ class VisGUIFrame(wx.Frame):
         self._leftWindow1.Bind(wx.EVT_SASH_DRAGGED_RANGE, self.OnFoldPanelBarDrag,
                                id=100, id2=103)
         self.Bind(wx.EVT_SIZE, self.OnSize)
+        self.Bind(wx.EVT_MOVE, self.OnMove)
 
         
         self._pc_clim_change = False
@@ -185,7 +190,7 @@ class VisGUIFrame(wx.Frame):
             #self.glCanvas.OnPaint(None)
             self.OpenFile(filename)
 
-        wx.LayoutAlgorithm().LayoutWindow(self, self.glCanvas)
+        wx.LayoutAlgorithm().LayoutWindow(self, self.notebook)
         self.Refresh()
 
 #        namespace = dict()
@@ -210,7 +215,12 @@ class VisGUIFrame(wx.Frame):
 
     def OnSize(self, event):
 
-        wx.LayoutAlgorithm().LayoutWindow(self, self.glCanvas)
+        wx.LayoutAlgorithm().LayoutWindow(self, self.notebook)
+        event.Skip()
+
+    def OnMove(self, event):
+        #pass
+        self.Refresh()
         event.Skip()
         
 
@@ -236,7 +246,7 @@ class VisGUIFrame(wx.Frame):
         
         self._leftWindow1.Show(not self._leftWindow1.IsShown())
         # Leaves bits of itself behind sometimes
-        wx.LayoutAlgorithm().LayoutWindow(self, self.glCanvas)
+        wx.LayoutAlgorithm().LayoutWindow(self, self.notebook)
         self.glCanvas.Refresh()
 
         event.Skip()
@@ -252,7 +262,7 @@ class VisGUIFrame(wx.Frame):
 
 
         # Leaves bits of itself behind sometimes
-        wx.LayoutAlgorithm().LayoutWindow(self, self.glCanvas)
+        wx.LayoutAlgorithm().LayoutWindow(self, self.notebook)
         self.glCanvas.Refresh()
 
         event.Skip()
@@ -294,7 +304,7 @@ class VisGUIFrame(wx.Frame):
 
         #item = self._pnl.AddFoldPanel("Filters", False, foldIcons=self.Images)
         #item = self._pnl.AddFoldPanel("Visualisation", False, foldIcons=self.Images)
-        wx.LayoutAlgorithm().LayoutWindow(self, self.glCanvas)
+        wx.LayoutAlgorithm().LayoutWindow(self, self.notebook)
         self.glCanvas.Refresh()
 
 

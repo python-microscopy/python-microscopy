@@ -35,6 +35,8 @@ class LMGLCanvas(GLCanvas):
         wx.EVT_LEFT_DOWN(self, self.OnLeftDown)
         wx.EVT_LEFT_UP(self, self.OnLeftUp)
         wx.EVT_MOTION(self, self.OnMouseMove)
+        wx.EVT_ERASE_BACKGROUND(self, self.OnEraseBackground)
+        wx.EVT_IDLE(self, self.OnIdle)
 
         self.init = 0
         self.nVertices = 0
@@ -88,6 +90,13 @@ class LMGLCanvas(GLCanvas):
             self.init = 1
         self.OnDraw()
         return
+
+    def OnEraseBackground(self, event):
+        pass
+
+    def OnIdle(self, event):
+        pass
+        #self.Refresh()
 
     def OnSize(self, event):
         glViewport(0,0, self.Size[0], self.Size[1])
