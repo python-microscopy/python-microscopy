@@ -1116,6 +1116,7 @@ class VisGUIFrame(wx.Frame):
 
     def OnViewPoints(self,event):
         self.viewMode = 'points'
+        #self.glCanvas.cmap = pylab.cm.hsv
         self.RefreshView()
         self.CreateFoldPanel()
         self.OnPercentileCLim(None)
