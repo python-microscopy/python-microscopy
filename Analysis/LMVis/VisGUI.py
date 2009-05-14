@@ -23,6 +23,8 @@ from PYME.Analysis.LMVis import visHelpers
 from PYME.Analysis.LMVis import imageView
 from PYME.Analysis.LMVis import histLimits
 from PYME.Analysis.LMVis import gen3DTriangs
+from PYME.Analysis.LMVis import recArrayView
+from PYME.Analysis.LMVis import objectMeasure
 
 from PYME.Analysis import intelliFit
 from PYME.Analysis import piecewiseMapping
@@ -32,6 +34,8 @@ from PYME.Analysis import piecewiseMapping
 import tables
 from PYME.Analysis import MetaData
 from PYME.Acquire import MetaDataHandler
+
+from PYME.DSView import eventLogViewer
 
 #import threading
 
@@ -134,6 +138,9 @@ class VisGUIFrame(wx.Frame):
         self.glCanvas = gl_render.LMGLCanvas(self.notebook)
         self.notebook.AddPage(page=self.glCanvas, select=True, caption='View')
         self.glCanvas.cmap = pylab.cm.hot
+
+        self.elv = None
+        self.rav = None
 
         self.ID_WINDOW_TOP = 100
         self.ID_WINDOW_LEFT1 = 101
@@ -757,6 +764,10 @@ class VisGUIFrame(wx.Frame):
         self.bApplyThreshold = wx.Button(pan, -1, 'Apply')
         bsizer.Add(self.bApplyThreshold, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5)
 
+        self.bObjMeasure = wx.Button(pan, -1, 'Measure')
+        #self.bObjMeasure.Enable(False)
+        bsizer.Add(self.bObjMeasure, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5)
+
         pan.SetSizer(bsizer)
         bsizer.Fit(pan)
 
@@ -764,11 +775,24 @@ class VisGUIFrame(wx.Frame):
         self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
 
         self.bApplyThreshold.Bind(wx.EVT_BUTTON, self.OnObjApplyThreshold)
+        self.bObjMeasure.Bind(wx.EVT_BUTTON, self.OnObjMeasure)
 
     def OnObjApplyThreshold(self, event):
         self.objects = None
         self.objThreshold = float(self.tBlobDist.GetValue())
         self.objMinSize = int(self.tMinObjSize.GetValue())
+
+        #self.bObjMeasure.Enable(True)
+
+        self.RefreshView()
+
+    def OnObjMeasure(self, event):
+        self.objectMeasures = objectMeasure.measureObjects(self.objects, self.objThreshold)
+        if self.rav == None:
+            self.rav = recArrayView.recArrayPanel(visFr.notebook, self.objectMeasures)
+            self.notebook.AddPage(self.rav, 'Measurements')
+        else:
+            self.rav.grid.SetData(self.objectMeasures)
 
         self.RefreshView()
 
@@ -1371,8 +1395,21 @@ class VisGUIFrame(wx.Frame):
                 else:
                     self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
 
+                if not self.elv == None: #remove previous event viewer
+                    i = 0
+                    found = False
+                    while not found and i < self.notebook.GetPageCount():
+                        if self.notebook.GetPage(i) == self.elv:
+                            self.notebook.DeletePage(i)
+                            found = True
+                        else:
+                            i += 1
+
                 if 'Events' in self.selectedDataSource.h5f.root:
                     self.events = self.selectedDataSource.h5f.root.Events[:]
+
+                    self.elv = eventLogViewer.eventLogPanel(self.notebook, self.events, self.mdh, [0, self.selectedDataSource['tIndex'].max()]);
+                    self.notebook.AddPage(self.elv, 'Events')
 
                     evKeyNames = set()
                     for e in self.events:
@@ -1380,6 +1417,7 @@ class VisGUIFrame(wx.Frame):
 
                     if 'ProtocolFocus' in evKeyNames:
                         self.zm = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh.getEntry('Camera.CycleTime'), self.mdh.getEntry('StartTime'), self.mdh.getEntry('Protocol.PiezoStartPos'))
+                        self.elv.SetCharts([('Focus [um]', self.zm, 'ProtocolFocus'),])
                         
         else: #assume it's a text file
             dlg = importTextDialog.ImportTextDialog(self)
@@ -1468,6 +1506,7 @@ class VisGUIFrame(wx.Frame):
 
         self.Triangles = None
         self.objects = None
+
         self.GeneratedMeasures = {}
         if 'zm' in dir(self):
             self.GeneratedMeasures['focusPos'] = self.zm(self.mapping['tIndex'].astype('f'))
@@ -1488,6 +1527,22 @@ class VisGUIFrame(wx.Frame):
             return
 
         bCurr = wx.BusyCursor()
+
+
+        if self.objects == None:
+#            if 'bObjMeasure' in dir(self):
+#                self.bObjMeasure.Enable(False)
+            self.objectMeasures = None
+
+            if not self.rav == None: #remove previous event viewer
+                i = 0
+                found = False
+                while not found and i < self.notebook.GetPageCount():
+                    if self.notebook.GetPage(i) == self.rav:
+                        self.notebook.DeletePage(i)
+                        found = True
+                    else:
+                        i += 1
 
         if self.viewMode == 'points':
             self.glCanvas.setPoints(self.mapping['x'], self.mapping['y'], self.pointColour)
@@ -1534,6 +1589,9 @@ class VisGUIFrame(wx.Frame):
 
                 T = delny.Triangulation(pylab.array([self.mapping['x'] + 0.1*pylab.randn(len(self.mapping['x'])), self.mapping['y']+ 0.1*pylab.randn(len(self.mapping['x']))]).T)
                 self.objects = gen3DTriangs.segment(T, self.objThreshold, self.objMinSize)
+
+#                if 'bObjMeasure' in dir(self):
+#                    self.bObjMeasure.Enable(True)
 
             self.glCanvas.setBlobs(self.objects, self.objThreshold)
 
