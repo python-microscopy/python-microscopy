@@ -38,8 +38,11 @@ dateDict = {'username' : getUsername(), 'day' : dtn.day, 'month' : dtn.month, 'y
 datadirPattern = '%(dataDir)s/%(username)s/%(day)d-%(month)d-%(year)d'
 filePattern = '%(day)d_%(month)d_series'
 
-resultsdirPattern = '%(homeDir)s/analysis/%(dday)d-%(dmonth)d-%(dyear)d'
-resultsdirPatternShort = '%(homeDir)s/analysis/'
+#resultsdirPattern = '%(homeDir)s/analysis/%(dday)d-%(dmonth)d-%(dyear)d'
+#resultsdirPatternShort = '%(homeDir)s/analysis/'
+
+resultsdirPattern = '%(dataDir)s/%(username)s/analysis/%(dday)d-%(dmonth)d-%(dyear)d'
+resultsdirPatternShort = '%(dataDir)s/%(username)s/analysis/'
 
 def genHDFDataFilepath(create=True):
     p =  os.path.join(*seps.split(datadirPattern)) % dateDict
