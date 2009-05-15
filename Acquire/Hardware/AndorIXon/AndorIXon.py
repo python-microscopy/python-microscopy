@@ -20,11 +20,12 @@ class iXonCamera:
     MODE_SINGLE_SHOT = 1
 
     def __init__(self):
-        self.defaultProps = {
+        self.noiseProps = {
         'ReadNoise' : 109.8,
         'ElectronsPerCount' : 27.32,
         'NGainStages' : 536,
-        'ADOffset' : 971
+        'ADOffset' : 971,
+        'SaturationThreshold' : (2**14 -1)
         }
         self.initialised = False
 
