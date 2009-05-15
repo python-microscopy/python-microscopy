@@ -11,7 +11,10 @@ from PYME.Analysis.LMVis import editFilterDialog
 import pylab
 from PYME.FileUtils import nameUtils
 import os
-import delaunay as delny
+try:
+    import delaunay as delny
+except:
+    pass
 from scikits import delaunay
 
 from PYME.Analysis.QuadTree import pointQT, QTrend
@@ -22,9 +25,12 @@ from PYME.Analysis.LMVis import importTextDialog
 from PYME.Analysis.LMVis import visHelpers
 from PYME.Analysis.LMVis import imageView
 from PYME.Analysis.LMVis import histLimits
-from PYME.Analysis.LMVis import gen3DTriangs
-from PYME.Analysis.LMVis import recArrayView
-from PYME.Analysis.LMVis import objectMeasure
+try:
+    from PYME.Analysis.LMVis import gen3DTriangs
+    from PYME.Analysis.LMVis import recArrayView
+    from PYME.Analysis.LMVis import objectMeasure
+except:
+    pass
 
 from PYME.Analysis import intelliFit
 from PYME.Analysis import piecewiseMapping

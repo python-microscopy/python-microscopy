@@ -16,5 +16,6 @@ if __name__ == '__main__':
 Provides viewers for PYME's internal representation, kdf, and PYME hdf5 files
 ''',
           license = "Proprietary",
+          data_files = ['dh5view.cmd']
           **configuration(top_path='').todict()
           )
