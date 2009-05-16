@@ -10,6 +10,7 @@ import Image
 from scikits import delaunay
 from PYME.Analysis.QuadTree import pointQT
 import scipy
+import pylab
 
 from gen3DTriangs import gen3DTriangs, gen3DBlobs, testObj
 
@@ -42,7 +43,7 @@ class LMGLCanvas(GLCanvas):
         self.nVertices = 0
         self.IScale = [1.0, 1.0, 1.0]
         self.zeroPt = [0, 1.0/3, 2.0/3]
-        self.cmap = cm_hot
+        self.cmap = pylab.cm.hsv
         self.clim = [0,1]
         self.alim = [0,1]
 
@@ -152,25 +153,29 @@ class LMGLCanvas(GLCanvas):
     def InitGL(self):
         
         # set viewing projection
-        light_diffuse = [0.1, 0.1, 0.1, 1.0]
-        light_position = [200.0, 200.00, -200.0, 0.0]
+        light_diffuse = [0.5, 0.5, 0.5, 1.0]
+        light_position = [20.0, 20.00, -20.0, 0.0]
 
-        glLightModelfv(GL_LIGHT_MODEL_AMBIENT, [0.5, 0.5, 0.5, 1.0]);
+        #glLightModelfv(GL_LIGHT_MODEL_AMBIENT, [0.5, 0.5, 0.5, 1.0]);
+        #glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE)
 
         glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse)
-        glLightfv(GL_LIGHT0, GL_SPECULAR, [0.1,0.1,0.1,1.0])
+        glLightfv(GL_LIGHT0, GL_SPECULAR, [0.3,0.3,0.3,1.0])
         glLightfv(GL_LIGHT0, GL_POSITION, light_position)
 
         glEnable(GL_LIGHTING)
         glEnable(GL_LIGHT0)
         glEnable(GL_DEPTH_TEST)
+        glEnable(GL_NORMALIZE)
 
-        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, [0.2, 0.2, 0.2, 1])
+        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, [0.3, 0.3, 0.3, 1])
         glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, 50)
 
 
         glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE)
         glEnable(GL_COLOR_MATERIAL)
+
+        glShadeModel(GL_SMOOTH)
 
         glLoadIdentity()
         glOrtho(self.xmin,self.xmax,self.ymin,self.ymax,self.zmin,self.zmax)
@@ -179,7 +184,7 @@ class LMGLCanvas(GLCanvas):
 
 
         glEnableClientState(GL_VERTEX_ARRAY)
-        #glEnableClientState(GL_COLOR_ARRAY)
+        glEnableClientState(GL_COLOR_ARRAY)
         glEnableClientState(GL_NORMAL_ARRAY)
         glEnable (GL_BLEND)
         glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
@@ -189,7 +194,7 @@ class LMGLCanvas(GLCanvas):
 
         #self.nVertices = 3
 
-        self.setTriang(*testObj())
+        self.setBlob(*testObj())
 
         #glMatrixMode(GL_PROJECTION)
         #glLoadIdentity()
@@ -212,16 +217,17 @@ class LMGLCanvas(GLCanvas):
         self.yc = y.mean()#*self.scale
         self.zc = z.mean()#*self.scale
 
-        self.c = 1./A
+        self.c = A
         vs = P
         
         self.vs_ = glVertexPointerf(vs)
-        self.n_ = glNormalPointerf(vs)
+        self.n_ = glNormalPointerf(N)
         
         self.mode = 'triang'
 
         self.nVertices = vs.shape[0]
         self.setColour(self.IScale, self.zeroPt)
+        self.setCLim((self.c.min(), self.c.max()), (-1,-1))
 
     def setTriang(self, x,y,z, sizeCutoff=1000., zrescale=1):
         P, A, N = gen3DTriangs(x,y,z/zrescale, sizeCutoff)
@@ -237,12 +243,14 @@ class LMGLCanvas(GLCanvas):
         vs = P
 
         self.vs_ = glVertexPointerf(vs)
-        self.n_ = glNormalPointerf(vs)
+        self.n_ = glNormalPointerf(N)
 
         self.mode = 'triang'
 
         self.nVertices = vs.shape[0]
+
         self.setColour(self.IScale, self.zeroPt)
+        self.setCLim((self.c.min(), self.c.max()), (0,0))
 
     def setPoints(self, x, y, z, c = None):
         if c == None:
@@ -253,6 +261,7 @@ class LMGLCanvas(GLCanvas):
         vs = numpy.vstack((x.ravel(), y.ravel(), z.ravel()))
         vs = vs.T.ravel().reshape(len(x.ravel()), 3)
         self.vs_ = glVertexPointerf(vs)
+        self.n_ = glNormalPointerf(0.69*numpy.ones(vs.shape))
 
         #cs = numpy.minimum(numpy.vstack((self.IScale[0]*c,self.IScale[1]*c,self.IScale[2]*c)), 1).astype('f')
         #cs = cs.T.ravel().reshape(len(c), 3)
@@ -262,6 +271,7 @@ class LMGLCanvas(GLCanvas):
 
         self.nVertices = vs.shape[0]
         self.setColour(self.IScale, self.zeroPt)
+        self.setCLim((self.c.min(), self.c.max()), (0,0))
 
 
     def setTriangEdges(self, T):
@@ -309,7 +319,7 @@ class LMGLCanvas(GLCanvas):
         #print cs.strides
         #cs = cs[:, :3] #if we have an alpha component chuck it
         cs = cs.ravel().reshape(len(self.c), 4)
-        #self.cs_ = glColorPointerf(cs)
+        self.cs_ = glColorPointerf(cs)
 
         self.Refresh()
 
@@ -457,7 +467,7 @@ def showGLFrame():
 
 def main():
     app = wx.PySimpleApp()
-    frame = wx.Frame(None,-1,'ball_wx',wx.DefaultPosition,wx.Size(400,400))
+    frame = wx.Frame(None,-1,'ball_wx',wx.DefaultPosition,wx.Size(800,800))
     canvas = LMGLCanvas(frame)
     frame.Show()
     app.MainLoop()

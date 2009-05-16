@@ -125,11 +125,11 @@ class PSFFitFactory:
         #print Z
 
         #fit with start values above current position        
-        (res1, cov_x1, infodict1, mesg1, resCode1) = FitModelWeighted(f_PSF3d, startParameters1, dataROI, sigma, X, Y, Z, P, 2*scipy.pi/525, 1.47, 10e3)
+        (res1, cov_x1, infodict1, mesg1, resCode1) = FitModelWeighted(f_PSF3d, startParameters1, dataROI, sigma, X, Y, Z, P, 2*scipy.pi/488, 1.47, 50e3)
         misfit1 = (infodict1['fvec']**2).sum()
 
         #fit with start values below current position        
-        (res2, cov_x2, infodict2, mesg2, resCode2) = FitModelWeighted(f_PSF3d, startParameters2, dataROI, sigma, X, Y, Z, P, 2*scipy.pi/525, 1.47, 10e3)
+        (res2, cov_x2, infodict2, mesg2, resCode2) = FitModelWeighted(f_PSF3d, startParameters2, dataROI, sigma, X, Y, Z, P, 2*scipy.pi/488, 1.47, 50e3)
         misfit2 = (infodict2['fvec']**2).sum()
         
         print 'Misfit above = %f, Misfit below = %f' % (misfit1, misfit2)

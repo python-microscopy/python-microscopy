@@ -33,8 +33,8 @@ class ImageViewPanel(wx.Panel):
     def DoPaint(self, dc):
         pixelsize = self.glCanvas.pixelsize
 
-        self.centreX = (self.glCanvas.xmin + self.glCanvas.xmax)/2
-        self.centreY = (self.glCanvas.ymin + self.glCanvas.ymax)/2
+        self.centreX = (self.glCanvas.xmin + self.glCanvas.xmax)/2.
+        self.centreY = (self.glCanvas.ymin + self.glCanvas.ymax)/2.
         #print centreX
 
         width = self.Size[0]*pixelsize
@@ -84,7 +84,7 @@ class ImageViewPanel(wx.Panel):
 
         dc.Clear()
         
-        dc.DrawBitmap(wx.BitmapFromImage(imw),(self.centreX - x1 + width/2)/pixelsize,(self.centreY - y1 + height/2)/pixelsize)
+        dc.DrawBitmap(wx.BitmapFromImage(imw),(-self.centreX + x0 + width/2)/pixelsize,(self.centreY - y1 + height/2)/pixelsize)
             
         
     def OnPaint(self,event):

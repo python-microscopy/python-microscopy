@@ -1,5 +1,9 @@
 #!/usr/bin/python
 
+import logging
+LOG_FILENAME = '/tmp/h5r-thumbnailer.log'
+logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG,)
+
 import sys
 import gnomevfs
 
@@ -7,18 +11,16 @@ from PYME.Analysis.LMVis import inpFilt
 from scipy import histogram2d, arange, minimum
 import Image
 
-#import logging
-#LOG_FILENAME = '/tmp/h5r-thumbnailer.log'
-#logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG,)
+
 
 
 inputFile = gnomevfs.get_local_path_from_uri(sys.argv[1])
 outputFile = sys.argv[2]
 thumbSize = int(sys.argv[3])
 
-#logging.debug('Input File: %s\n' % inputFile)
-#logging.debug('Ouput File: %s\n' % outputFile)
-#logging.debug('Thumb Size: %s\n' % thumbSize)
+logging.debug('Input File: %s\n' % inputFile)
+logging.debug('Ouput File: %s\n' % outputFile)
+logging.debug('Thumb Size: %s\n' % thumbSize)
 
 f1 = inpFilt.h5rSource(inputFile)
 f2 = inpFilt.resultsFilter(f1, error_x=[0,30], A=[5, 1e5], sig=[100/2.35, 350/2.35])

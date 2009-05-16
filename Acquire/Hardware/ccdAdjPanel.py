@@ -47,7 +47,7 @@ class ccdPlotPanel(wxPlotPanel.PlotPanel):
                 return
 
             matplotlib.interactive(False)
-            
+
             if not hasattr( self, 'spEMGain' ):
                 self.spEMSNR = self.figure.add_axes([.15,.55,.7,.3])
                 self.spEMHeadroom = self.figure.add_axes([.15,.55,.7,.3], axisbg=None, frameon=False, label='headroom')
@@ -91,7 +91,7 @@ class ccdPlotPanel(wxPlotPanel.PlotPanel):
             self.spEMHeadroom.yaxis.set_label_position('right')
             self.spEMHeadroom.xaxis.tick_top()
             self.spEMHeadroom.xaxis.set_label_position('top')
-            
+
             self.spEMHeadroom.semilogy(np.log10(emGains), np.maximum((self.scope.cam.SaturationThreshold - off)/((Imax - off)*emGains/currEMGain), 1), color='r', lw=2)
             #self.spEMHeadroom.xaxis.tick_top()
             xticks = [0, 50, 100, 150, 200]

@@ -113,11 +113,46 @@ def gen3DTriangsTF(T, sizeCutoff = inf):
     cutInd = A < sizeCutoff**2
 
     #print cutInd
+    A = A[cutInd]
+    A = vstack((A,A,A)).T.ravel()
 
     iarray = iarray[cutInd, : ]
 
+    #print len(iarray)
+
+    if len(iarray) == 0:
+        return ([], [], [], [])
+
+#    s_01 = s_01[cutInd]
+#    s_12 = s_12[cutInd]
+#    s_23 = s_23[cutInd]
+#    s_02 = s_02[cutInd]
+#    s_03 = s_03[cutInd]
+#    s_13 = s_13[cutInd]
+#
+#    n1 = cross(s_01, s_02)
+#    n1 = n1*(sign((n1*s_03).sum(1))/sqrt((n1**2).sum(1))).T[:,newaxis]
+#
+#    n2 = cross(s_12, s_13)
+#    n2 = -n2*(sign((n2*s_03).sum(1))/sqrt((n2**2).sum(1))).T[:,newaxis]
+#
+#    n3 = cross(s_02, s_03)
+#    n3 = n3*(sign((n3*s_01).sum(1))/sqrt((n3**2).sum(1))).T[:,newaxis]
+#
+#    n4 = cross(s_01, s_03)
+#    n4 = n4*(sign((n4*s_02).sum(1))/sqrt((n4**2).sum(1))).T[:,newaxis]
+#
+#    N = vstack((n1, n2, n3, n4))
+#
+#    N = repeat(N, 3, 0)
+
     triInds = vstack((iarray[:,:3], iarray[:,1:], iarray[:, (0, 2, 3)], iarray[:,(0, 1, 3)]))
     triInds.sort(1)
+
+    nInds = hstack((iarray[:,3], iarray[:,0], iarray[:, 1], iarray[:,2]))
+
+    #print triInds.shape
+    #print nInds.shape
 
     surfInds = triInds[:,0] > -1
 
@@ -128,40 +163,48 @@ def gen3DTriangsTF(T, sizeCutoff = inf):
 
     triInds = triInds[surfInds,:]
 
+    nInds = nInds[surfInds]
+    #print nInds.shape
 
-    P = array(T.set)[triInds.ravel(), :]
+    s_01 = va[triInds[:,0]] - va[triInds[:,1]]
+    s01 = (s_01**2).sum(1)
+    s_02 = va[triInds[:,0]] - va[triInds[:,2]]
+    s02 = (s_02**2).sum(1)
+    s_12 = va[triInds[:,1]] - va[triInds[:,2]]
+    s12 = (s_12**2).sum(1)
 
-    A = A[cutInd]
+    sback = va[triInds[:,0]] - va[nInds]
+    #print sback.shape
 
-    A = vstack((A,A,A)).T.ravel()
-    s_01 = s_01[cutInd]
-    s_12 = s_12[cutInd]
-    s_23 = s_23[cutInd]
-    s_02 = s_02[cutInd]
-    s_03 = s_03[cutInd]
-    s_13 = s_13[cutInd]
+    N = cross(s_01, s_02)
+
+    #print N.shape
+    N = N*(sign((N*sback).sum(1))/sqrt((N**2).sum(1))).T[:,newaxis]
+    N = repeat(N, 3, 0)
+
+    P = va[triInds.ravel(), :]
+
+    A = mean([s01, s12,s02], 0)
+
+    A = repeat(A, 3, 0)
+#    s_01 = s_01[cutInd]
+#    s_12 = s_12[cutInd]
+#    s_23 = s_23[cutInd]
+#    s_02 = s_02[cutInd]
+#    s_03 = s_03[cutInd]
+#    s_13 = s_13[cutInd]
 
       
             
-    n1 = cross(s_01, s_02)
-    n1 = -n1*(sign((n1*s_03).sum(1))/sqrt((n1**2).sum(1))).T[:,newaxis]
+    
 
-    n2 = cross(s_12, s_13)
-    n2 = -n2*(sign((n2*s_03).sum(1))/sqrt((n2**2).sum(1))).T[:,newaxis]
+    #A = hstack((A,A, A, A))
 
-    n3 = cross(s_02, s_03)
-    n3 = -n2*(sign((n3*s_01).sum(1))/sqrt((n3**2).sum(1))).T[:,newaxis]
+    #print 'P', P.shape
+    #print N.shape
+    #print A.shape
 
-    n4 = cross(s_01, s_03)
-    n4 = -n4*(sign((n4*s_02).sum(1))/sqrt((n4**2).sum(1))).T[:,newaxis]
-
-    N = vstack((n1, n2, n3, n4))
-
-    N = repeat(N, 3, 0)
-
-    A = hstack((A,A, A, A))
-
-    return (P, A, N, triInds)
+    return (P, A, N, triInds.ravel())
 
 def gen2DTriangsTF(T, sizeCutoff = inf):
     iarray = array(T.indices)
@@ -215,7 +258,7 @@ def gen2DTriangsTF(T, sizeCutoff = inf):
     #s_02 = s_02[cutInd]
     
 
-    return (P, A, triInds)
+    return (P, A, triInds.ravel())
 
 def trianglesEqual(T1, T2):
     eq = True
@@ -303,17 +346,33 @@ def averageNormals(P,N):
         N[vInds, :] = ns.mean(0)
 
 def averageNormalsF(P,N, triI):
+    #print triI.shape
+    #print N.shape
+
+    #print N
+
     triS = triI.argsort()
+    #triS = lexsort(triI.T)
     #i_s = range(P.shape[0])
 
+    #print triI[triS]
+
+    #print len(triS)
+
     sp = 0
-    v = triS[0]
+    v = triI[triS[0]]
+    #print 'v = ', v
 
     for i in range(len(triS)):
-        if not (triS[i] ==v).all():
+        #print triI[triS[i]]
+        if not (triI[triS[i]] == v).all():
+            #print sp
+            #print i
             N[triS[sp:i], :] = N[triS[sp:i], :].mean(0)
             sp = i
-            v = triS[i]
+            v = triI[triS[i]]
+
+    #print N[triS,:]
 
 
 
@@ -381,18 +440,25 @@ def blobify(objects, sizeCutoff):
     N_ = []
     A_ = []
 
-    for o in objects:
+    for i, o in enumerate(objects):
         T = delaunay.Triangulation(o.ravel(),3)
         P, A, N, triI = gen3DTriangsTF(T, sizeCutoff)
 
         #P, A, N = removeInternalFaces(P, A, N)
-        averageNormalsF(P, N,triI)
+        if not P == []:
+            averageNormalsF(P, N,triI)
 
-        #print P.shape
+            #triS = triI.argsort()
 
-        P_.append(P)
-        N_.append(N)
-        A_.append(A)
+            #print P[triS,:]
+            #print N[triS,:]
+
+            #print P.shape
+            A = ones(A.shape)*i
+
+            P_.append(P)
+            N_.append(N)
+            A_.append(A)
 
     return (vstack(P_), hstack(A_), vstack(N_))
 

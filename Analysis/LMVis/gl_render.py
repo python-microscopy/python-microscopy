@@ -596,6 +596,8 @@ class LMGLCanvas(GLCanvas):
         self.Refresh()
         if 'OnGLViewChanged' in dir(self.parent):
             self.parent.OnGLViewChanged()
+        elif 'OnGLViewChanged' in dir(self.parent.GetParent()):
+            self.parent.GetParent().OnGLViewChanged()
 
     def pan(self, dx, dy):
         self.setView(self.xmin + dx, self.xmax + dx, self.ymin + dy, self.ymax + dy)
