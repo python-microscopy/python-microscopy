@@ -73,7 +73,13 @@ class LMGLCanvas(GLCanvas):
         self.c = numpy.array([1,1,1])
         self.zmin = -10
         self.zmax = 10
-        self.angy = 0
+
+        self.angup = 0
+        self.angright = 0
+
+        self.vecUp = numpy.array([0,1,0])
+        self.vecRight = numpy.array([1,0,0])
+        self.vecBack = numpy.array([0,0,1])
 
         self.xc = 0
         self.yc = 0
@@ -81,7 +87,6 @@ class LMGLCanvas(GLCanvas):
 
         self.scale = 1
         
-        self.angx = 0
         self.dragging = False
 
         return
@@ -108,8 +113,12 @@ class LMGLCanvas(GLCanvas):
         glLoadIdentity()
         glOrtho(-10,10,-10,10,-1000,1000)
 
-        glRotatef(self.angy, 0, 1, 0)
-        glRotatef(self.angx, 1, 0, 0)
+        #glRotatef(self.angup, *self.vecUp)
+        #glRotatef(self.angright, *self.vecRight)
+
+        #glTranslatef(-self.xcc, -self.ycc, -self.zcc)
+
+        glMultMatrixf(numpy.array([numpy.hstack((self.vecRight, 0)), numpy.hstack((self.vecUp, 0)), numpy.hstack((self.vecBack, 0)), [0,0,0, 1]]))
 
         glScalef(self.scale, self.scale, self.scale)
 
@@ -258,6 +267,10 @@ class LMGLCanvas(GLCanvas):
         else:
             self.c = c
 
+        self.xc = x.mean()#*self.scale
+        self.yc = y.mean()#*self.scale
+        self.zc = z.mean()#*self.scale
+
         vs = numpy.vstack((x.ravel(), y.ravel(), z.ravel()))
         vs = vs.T.ravel().reshape(len(x.ravel()), 3)
         self.vs_ = glVertexPointerf(vs)
@@ -391,8 +404,14 @@ class LMGLCanvas(GLCanvas):
     def WheelZoom(self, rot, xp, yp):
         #print xp, yp
         #print self.xc, self.scale, self.scale*xp
-        self.xc += 20*xp/self.scale
-        self.yc += 20*yp/self.scale
+        #self.xc += 20*xp/self.scale
+        #self.yc += 20*yp/self.scale
+
+        posCh = 20*xp*self.vecRight/self.scale + 20*yp*self.vecUp/self.scale
+
+        self.xc += posCh[0]
+        self.yc += posCh[1]
+        self.zc -= posCh[2]
 
         if rot > 0:
             #zoom out
@@ -413,8 +432,8 @@ class LMGLCanvas(GLCanvas):
         self.xDragStart = event.GetX()
         self.yDragStart = event.GetY()
 
-        self.angyst = self.angy
-        self.angxst = self.angx
+        self.angyst = self.angup
+        self.angxst = self.angright
 
         self.dragging = True
 
@@ -427,6 +446,7 @@ class LMGLCanvas(GLCanvas):
 
         self.dragging=False
         
+        
         #self.Refresh()
         event.Skip()
 
@@ -435,8 +455,29 @@ class LMGLCanvas(GLCanvas):
             x = event.GetX()
             y = event.GetY()
 
-            self.angy = self.angyst + x - self.xDragStart
-            self.angx = self.angxst + y - self.yDragStart
+            #self.angup = self.angyst + x - self.xDragStart
+            #self.angright = self.angxst + y - self.yDragStart
+
+            angx = -numpy.pi*(x - self.xDragStart)/180
+
+            vecRightN = numpy.cos(angx) * self.vecRight + numpy.sin(angx) * self.vecBack
+            vecBackN = numpy.cos(angx) * self.vecBack - numpy.sin(angx) * self.vecRight
+
+            self.vecRight = vecRightN
+            self.vecBack = vecBackN
+
+            angy = numpy.pi*(y - self.yDragStart)/180
+
+            vecUpN = numpy.cos(angy) * self.vecUp + numpy.sin(angy) * self.vecBack
+            vecBackN = numpy.cos(angy) * self.vecBack - numpy.sin(angy) * self.vecUp
+
+            self.vecUp = vecUpN
+            self.vecBack = vecBackN
+
+            #print self.vecUp, self.vecRight, self.vecBack
+
+            self.xDragStart = x
+            self.yDragStart = y
 
             self.Refresh()
 
