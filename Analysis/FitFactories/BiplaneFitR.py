@@ -24,6 +24,96 @@ def unpickleSlice(start, stop, step):
 
 copy_reg.pickle(slice, pickleSlice, unpickleSlice)
 
+
+IntXVals = None
+IntYVals = None
+IntZVals = None
+
+interpModel = None
+
+dx = None
+dy = None
+dz = None
+
+def genTheoreticalModel(md):
+    global IntXVals, IntYVals, IntZVals, interpModel, dx, dy, dz
+
+    if not dx == md.voxelsize.x*1e3 and not dy == md.voxelsize.y*1e3 and not dz == md.voxelsize.z*1e3:
+
+        IntXVals = 1e3*md.voxelsize.x*scipy.mgrid[-20:20]
+        IntYVals = 1e3*md.voxelsize.y*scipy.mgrid[-20:20]
+        IntZVals = 1e3*md.voxelsize.z*scipy.mgrid[-20:20]
+
+        dx = md.voxelsize.x*1e3
+        dy = md.voxelsize.y*1e3
+        dz = md.voxelsize.z*1e3
+
+        P = scipy.arange(0,1.01,.01)
+
+        interpModel = genWidefieldPSF(IntXVals, IntYVals, IntZVals, P,1e3, 0, 0, 0, 2*scipy.pi/525, 1.47, 10e3)
+
+        interpModel = interpModel/interpModel.max() #normalise to 1
+
+def interp(X, Y, Z):
+    X = scipy.array(X).reshape(-1)
+    Y = scipy.array(Y).reshape(-1)
+    Z = scipy.array(Z).reshape(-1)
+
+    ox = X[0]
+    oy = Y[0]
+    oz = Z[0]
+
+    rx = (ox % dx)/dx
+    ry = (oy % dy)/dy
+    rz = (oz % dz)/dz
+
+    fx = 20 + int(ox/dx)
+    fy = 20 + int(oy/dy)
+    fz = 20 + int(oz/dz)
+
+    #print fx
+    #print rx, ry, rz
+
+    xl = len(X)
+    yl = len(Y)
+    zl = len(Z)
+
+    #print xl
+
+    m000 = interpModel[fx:(fx+xl),fy:(fy+yl),fz:(fz+zl)]
+    m100 = interpModel[(fx+1):(fx+xl+1),fy:(fy+yl),fz:(fz+zl)]
+    m010 = interpModel[fx:(fx+xl),(fy + 1):(fy+yl+1),fz:(fz+zl)]
+    m110 = interpModel[(fx+1):(fx+xl+1),(fy+1):(fy+yl+1),fz:(fz+zl)]
+
+    m001 = interpModel[fx:(fx+xl),fy:(fy+yl),(fz+1):(fz+zl+1)]
+    m101 = interpModel[(fx+1):(fx+xl+1),fy:(fy+yl),(fz+1):(fz+zl+1)]
+    m011 = interpModel[fx:(fx+xl),(fy + 1):(fy+yl+1),(fz+1):(fz+zl+1)]
+    m111 = interpModel[(fx+1):(fx+xl+1),(fy+1):(fy+yl+1),(fz+1):(fz+zl+1)]
+
+    #print m000.shape
+
+#    m = scipy.sum([((1-rx)*(1-ry)*(1-rz))*m000, ((rx)*(1-ry)*(1-rz))*m100, ((1-rx)*(ry)*(1-rz))*m010, ((rx)*(ry)*(1-rz))*m110,
+#        ((1-rx)*(1-ry)*(rz))*m001, ((rx)*(1-ry)*(rz))*m101, ((1-rx)*(ry)*(rz))*m011, ((rx)*(ry)*(rz))*m111], 0)
+
+    m = ((1-rx)*(1-ry)*(1-rz))*m000 + ((rx)*(1-ry)*(1-rz))*m100 + ((1-rx)*(ry)*(1-rz))*m010 + ((rx)*(ry)*(1-rz))*m110+((1-rx)*(1-ry)*(rz))*m001+ ((rx)*(1-ry)*(rz))*m101+ ((1-rx)*(ry)*(rz))*m011+ ((rx)*(ry)*(rz))*m111
+    #print m.shape
+    return m
+
+def f_Interp3dBP(p, X1, Y1, X2,Y2, Z, P, *args):
+    """3D PSF model function with constant background - parameter vector [A, x0, y0, z0, background]"""
+    A, x0, y0, z0, b = p
+    #return A*scipy.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2)) + b
+    
+    x0 = min(max(x0, X1[0]), X1[-1])
+    y0 = min(max(y0, Y1[0]), Y1[-1])
+    z0 = min(max(z0, -2e3), 2e3)
+
+    g1 = interp(X1 - x0, Y1 - y0, Z[0] - z0)*A + b
+    g2 = interp(X2 - x0, Y2 - y0, Z[1] - z0)*A + b
+
+    return numpy.concatenate((g1.reshape(g1.shape + (1,)),g2.reshape(g1.shape + (1,))), 2)
+
+
 def f_PSF3dBP(p, X1, Y1, X2,Y2, Z, P, *args):
     """3D PSF model function with constant background - parameter vector [A, x0, y0, z0, background]"""
     A, x0, y0, z0, b = p
@@ -94,16 +184,18 @@ def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=N
 		
 
 class BiplaneFitFactory:
-    def __init__(self, data, metadata, fitfcn=f_PSF3dBP):
-        '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in 
+    def __init__(self, data, metadata, fitfcn=f_Interp3dBP):
+        '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
         metadata. '''
         self.data = data
         self.metadata = metadata
-	self.fitfcn = fitfcn #allow model function to be specified (to facilitate changing between accurate and fast exponential approwimations)
-	if type(fitfcn) == types.FunctionType: #single function provided - use numerically estimated jacobian
-		self.solver = FitModelWeighted
-	else: #should be a tuple containing the fit function and its jacobian
-		self.solver = FitModelWeightedJac
+        self.fitfcn = fitfcn #allow model function to be specified (to facilitate changing between accurate and fast exponential approwimations)
+        if type(fitfcn) == types.FunctionType: #single function provided - use numerically estimated jacobian
+            self.solver = FitModelWeighted
+        else: #should be a tuple containing the fit function and its jacobian
+            self.solver = FitModelWeightedJac
+        if fitfcn == f_Interp3dBP:
+            genTheoreticalModel(metadata)
 		
         
     def __getitem__(self, key):
@@ -134,7 +226,7 @@ class BiplaneFitFactory:
         Xr = Xg
         Yr = Yg
 
-        Z = array([0, self.metadata.Splitter.zOffset])
+        Z = array([0, self.metadata.Splitter.zOffset]).astype('f')
         P = scipy.arange(0,1.01,.01)
 
         #print DeltaX
@@ -151,7 +243,7 @@ class BiplaneFitFactory:
 
         x0 =  Xg.mean()
         y0 =  Yg.mean()
-        z0 = 0.
+        z0 = 250.0
 
         startParameters = [A, x0, y0, z0, dataROI.min()]
 
@@ -165,13 +257,14 @@ class BiplaneFitFactory:
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
         #(res, cov_x, infodict, mesg, resCode) = FitModelWeighted(self.fitfcn, startParameters, dataMean, sigma, X, Y)
-        (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, Xg, Yg, Xr, Yr, Z, P)
+        (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, Xg, Yg, Xr, Yr, Z, P, 2*scipy.pi/525, 1.47, 10e3)
 
-
+        #print cov_x
+        #print mesg
 
         fitErrors=None
         try:
-            fitErrors = scipy.sqrt(scipy.diag(cov_x)*(infodict['fvec']*infodict['fvec']).sum()/(len(dataROI.ravel())- len(res)))
+            fitErrors = scipy.sqrt(scipy.diag(cov_x) * (infodict['fvec'] * infodict['fvec']).sum() / (len(dataROI.ravel())- len(res)))
         except Exception, e:
             pass
 

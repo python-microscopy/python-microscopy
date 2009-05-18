@@ -134,7 +134,7 @@ class fitTask(taskDef.Task):
 
             bgd = g_ + r_
 
-        self.data = numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2)
+            self.data = numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2)
 
         self.ofd = ofind.ObjectIdentifier(bgd*(bgd > 0))
         self.ofd.FindObjects(self.calcThreshold(),0)

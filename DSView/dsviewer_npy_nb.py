@@ -358,7 +358,7 @@ class DSViewFrame(wx.Frame):
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.progPan = progGraphC.progPanel(pan, self.fitResults, size=(150, 300))
+        self.progPan = progGraph.progPanel(pan, self.fitResults, size=(150, 300))
 
         hsizer.Add(self.progPan, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
