@@ -1,6 +1,6 @@
 __init__.pyc
 nameUtils.pyc
-readTiff.pyc
-read_kdf.pyc
-setup.pyc
 write_kdf.pyc
+setup.pyc
+read_kdf.pyc
+readTiff.pyc

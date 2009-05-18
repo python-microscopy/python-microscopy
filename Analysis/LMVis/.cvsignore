@@ -8,6 +8,7 @@ editFilterDialog.pyc
 imageView.pyc
 rendGauss.pyc
 gl_render.pyc
+progGraphC.pyc
 objectMeasure.pyc
 VisGUI.pyc
 progGraph.pyc
@@ -15,3 +16,4 @@ statusLog.pyc
 importTextDialog.pyc
 gen3DTriangs.pyc
 recArrayView.pyc
+gl_render3D.pyc

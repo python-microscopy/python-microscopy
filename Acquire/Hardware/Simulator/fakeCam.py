@@ -42,7 +42,7 @@ class NoiseMaker:
 #calculate image in a separate thread to maintain GUI reponsiveness
 class compThread(threading.Thread):
 #class compThread(processing.Process):
-    def __init__(self,XVals, YVals,zPiezo, zOffset, fluors, noisemaker, laserPowers, intTime, contMode = True, bufferlength=20, biplane = False, biplane_z = 500):
+    def __init__(self,XVals, YVals,zPiezo, zOffset, fluors, noisemaker, laserPowers, intTime, contMode = True, bufferlength=20, biplane = True, biplane_z = 500):
         threading.Thread.__init__(self)
         self.XVals = XVals
         self.YVals = YVals

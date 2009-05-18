@@ -3,7 +3,7 @@ import wx
 import sys
 sys.path.append(".")
 import viewpanel
-import PYME.cSMI as example
+#import PYME.cSMI as example
 import numpy
 import scipy
 import tables
@@ -507,7 +507,9 @@ class MyViewPanel(viewpanel.ViewPanel):
                 b = (self.do.Gains[2]*(self.ds[int(self.xp),:,:, self.do.Chans[2]] - self.do.Offs[2])).astype('uint8').squeeze().T
             else:
                 b = numpy.zeros((ds.shape[1], ds.shape[2]), 'uint8'.T)
-        
+        r = r.T
+        g = g.T
+        b = b.T
         r = r.reshape(r.shape + (1,))
         g = g.reshape(g.shape + (1,))
         b = b.reshape(b.shape + (1,))

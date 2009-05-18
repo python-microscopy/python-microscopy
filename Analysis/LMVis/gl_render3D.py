@@ -163,7 +163,7 @@ class LMGLCanvas(GLCanvas):
         
         # set viewing projection
         light_diffuse = [0.5, 0.5, 0.5, 1.0]
-        light_position = [20.0, 20.00, -20.0, 0.0]
+        light_position = [20.0, 20.00, 20.0, 0.0]
 
         #glLightModelfv(GL_LIGHT_MODEL_AMBIENT, [0.5, 0.5, 0.5, 1.0]);
         #glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE)

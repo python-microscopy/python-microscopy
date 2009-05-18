@@ -17,7 +17,7 @@ import PYME.cSMI as example
 #import logparser
 import numpy
 
-import tables
+#import tables
 import wx.py.crust
 import pylab
 import glob
@@ -314,6 +314,7 @@ class DSViewFrame(wx.Frame):
             self.glCanvas.setView(0, ysc*self.glCanvas.Size[0], 0, ysc*self.glCanvas.Size[1])
 
         self.timer.WantNotification.append(self.analRefresh)
+        self.bGo.Enable(False)
 
     def GenPointFindingPanel(self):
         item = self._pnl.AddFoldPanel("Point Finding", collapsed=False,
@@ -357,7 +358,7 @@ class DSViewFrame(wx.Frame):
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.progPan = progGraph.progPanel(pan, self.fitResults, size=(150, 300))
+        self.progPan = progGraphC.progPanel(pan, self.fitResults, size=(150, 300))
 
         hsizer.Add(self.progPan, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
@@ -420,7 +421,9 @@ class DSViewFrame(wx.Frame):
             dvf.Show()
 
     def dsRefresh(self):
+        zp = self.vp.zp #save z -position
         self.vp.SetDataStack(self.ds)
+        self.vp.zp = zp #restore z position
         self.elv.SetEventSource(self.ds.getEvents())
         self.elv.SetRange([0, self.ds.getNumSlices()])
         

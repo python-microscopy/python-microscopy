@@ -6,13 +6,15 @@ import os
 from PYME.Analysis import MetaData
 from PYME.Acquire import MetaDataHandler
 from pylab import *
-import matplotlib
+#import matplotlib
 
 from PYME.Acquire import ExecTools
 #from PYME.Analysis.DataSources.HDFDataSource import DataSource
 
 if not 'tq' in locals():
-    ExecTools.execBG("tq = Pyro.core.getProxyForURI('PYRONAME://taskQueue')", locals(), globals())
+    #ExecTools.execBG("tq = Pyro.core.getProxyForURI('PYRONAME://taskQueue')", locals(), globals())
+    tq = Pyro.core.getProxyForURI('PYRONAME://taskQueue')
+    #pass
 
 #from PYME.ParallelTasks.relativeFiles import getRelFilename
 #from PYME.FileUtils.nameUtils import genResultFileName
@@ -67,7 +69,7 @@ def pushImagesQueue(startingAt=0, detThresh = .9, fitFcn='LatGaussFitFR'):
     
 
 def testFrame(detThresh = 0.9):
-    ft = remFitBuf.fitTask(seriesName,vp.zp, detThresh, md, 'LatGaussFitFR', bgindices=range(max(vp.zp-10, md.EstimatedLaserOnFrameNo),vp.zp), SNThreshold=True)
+    ft = remFitBuf.fitTask(seriesName,vp.zp, detThresh, md, cFitType.GetString(cFitType.GetSelection()), bgindices=range(max(vp.zp-10, md.EstimatedLaserOnFrameNo),vp.zp), SNThreshold=True)
     return ft(True)
 
 def testFrameTQ(detThresh = 0.9):
