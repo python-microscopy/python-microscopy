@@ -45,6 +45,8 @@ def measure(object, sizeCutoff, measurements = zeros(1, dtype=measureDType)):
     if not len(P) == 0:
         measurements['Area'] = A.sum()
 
+        #print triI
+
         extEdges = gen3DTriangs.getExternalEdges(triI)
 
         measurements['Perimeter'] = gen3DTriangs.getPerimeter(extEdges, T)

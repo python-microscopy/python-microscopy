@@ -29,7 +29,7 @@ from PYME.Acquire import MetaDataHandler
 from PYME.Analysis import MetaData
 from PYME.Analysis.DataSources import HDFDataSource
 from PYME.Analysis.DataSources import TQDataSource
-from PYME.Analysis.LMVis import progGraph
+from PYME.Analysis.LMVis import progGraphC as progGraph
 from PYME.Acquire.mytimer import mytimer
 
 from PYME.Analysis import piecewiseMapping

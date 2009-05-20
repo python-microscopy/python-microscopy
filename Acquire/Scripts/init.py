@@ -54,10 +54,10 @@ camPanels.append((acf, 'EMCCD Properties'))
 ''')
 
 InitGUI('''
-from PYME.Acquire.Hardware import ccdAdjPanel
+from PYME.Acquire.Hardware import ccdAdjPanelC
 #import wx
 #f = wx.Frame(None)
-snrPan = ccdAdjPanel.sizedCCDPanel(notebook1, scope, acf)
+snrPan = ccdAdjPanelC.sizedCCDPanel(notebook1, scope, acf)
 notebook1.AddPage(page=snrPan, select=False, caption='Image SNR')
 #camPanels.append((snrPan, 'SNR etc ...'))
 #f.Show()

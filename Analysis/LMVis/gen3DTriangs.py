@@ -258,7 +258,7 @@ def gen2DTriangsTF(T, sizeCutoff = inf):
     #s_02 = s_02[cutInd]
     
 
-    return (P, A, triInds.ravel())
+    return (P, A, triInds)
 
 def trianglesEqual(T1, T2):
     eq = True

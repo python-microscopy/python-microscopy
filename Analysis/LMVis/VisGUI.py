@@ -1,6 +1,8 @@
 #!/usr/bin/python
 import os.path
 import wx
+import wx.py.shell
+
 import wx.lib.foldpanelbar as fpb
 from PYME.misc.fbpIcons import *
 
@@ -140,6 +142,12 @@ class VisGUIFrame(wx.Frame):
         #self.glCanvas = gl_render.LMGLCanvas(self.remainingSpace)
         #self.glCanvas = wx.Panel(self, -1, style=wx.SUNKEN_BORDER)
         self.notebook = AuiNotebookWithFloatingPages(id=-1, parent=self, style=wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_TAB_SPLIT)
+
+        self.sh = wx.py.shell.Shell(id=-1,
+              parent=self.notebook, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
+              introText='Python SMI bindings - note that help, license etc below is for Python, not PySMI\n\n')
+
+        self.notebook.AddPage(page=self.sh, select=True, caption='Console')
 
         self.glCanvas = gl_render.LMGLCanvas(self.notebook)
         self.notebook.AddPage(page=self.glCanvas, select=True, caption='View')
@@ -795,7 +803,7 @@ class VisGUIFrame(wx.Frame):
     def OnObjMeasure(self, event):
         self.objectMeasures = objectMeasure.measureObjects(self.objects, self.objThreshold)
         if self.rav == None:
-            self.rav = recArrayView.recArrayPanel(visFr.notebook, self.objectMeasures)
+            self.rav = recArrayView.recArrayPanel(self.notebook, self.objectMeasures)
             self.notebook.AddPage(self.rav, 'Measurements')
         else:
             self.rav.grid.SetData(self.objectMeasures)
@@ -1550,6 +1558,8 @@ class VisGUIFrame(wx.Frame):
                         found = True
                     else:
                         i += 1
+                        
+                self.rav = None
 
         if self.viewMode == 'points':
             self.glCanvas.setPoints(self.mapping['x'], self.mapping['y'], self.pointColour)

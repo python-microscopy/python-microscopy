@@ -1,4 +1,5 @@
 #from PYME.misc import wxPlotPanel
+import wx
 from enthought.chaco.api import HPlotContainer, create_line_plot
 from enthought.enable.wx_backend.api import Window
 
