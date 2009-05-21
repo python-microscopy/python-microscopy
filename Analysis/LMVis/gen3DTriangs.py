@@ -376,11 +376,11 @@ def averageNormalsF(P,N, triI):
 
 
 
-def collectConnected(T, v, verts, va, lenThresh):
+def collectConnected(T, v, verts, va, lenThresh, objInd):
     connected = []
 
-    for v2 in T.neighbours[tuple(v)]:
-        v2 = array(v2)
+    for v2_ in T.neighbours[tuple(v)]:
+        v2 = array(v2_)
         #find index
 #        i = 0
 #        found = False
@@ -394,10 +394,12 @@ def collectConnected(T, v, verts, va, lenThresh):
 
         if ((v - v2)**2).sum() < lenThresh**2:
 
-            if len(v2) == 3:
-                i = int(argwhere((va[:, 0] == v2[0]) * (va[:, 1] == v2[1]) * (va[:, 2] == v2[2])))
-            else:
-                i = int(argwhere((va[:, 0] == v2[0]) * (va[:, 1] == v2[1])))
+#            if len(v2) == 3:
+#                i = int(argwhere((va[:, 0] == v2[0]) * (va[:, 1] == v2[1]) * (va[:, 2] == v2[2])))
+#            else:
+#                i = int(argwhere((va[:, 0] == v2[0]) * (va[:, 1] == v2[1])))
+
+            i = objInd[v2_]
             #print i
 
             #if i in verts: #we haven't already done this vertex
@@ -405,17 +407,58 @@ def collectConnected(T, v, verts, va, lenThresh):
                 #print lenThresh**2
                 #if ((v - v2)**2).sum() < lenThresh**2:
                 #print 'test'
-            try:
-                verts.remove(i)
+            #try:
+                #verts.remove(i)
+            if verts[i] == 1:
+                verts[i] = 0
                 connected.append(v2)
-                connected += collectConnected(T, v2, verts, va, lenThresh)
-            except ValueError:
-                pass
+                connected += collectConnected(T, v2, verts, va, lenThresh, objInd)
+            #except ValueError:
+            #    pass
 
     return connected
 
 
 def segment(T, lenThresh, minSize=None):
+    objects = []
+    #verts = list(range(len(T.set)))
+    verts = ones(len(T.set))
+    va = array(T.set)
+
+    objInd = {}
+
+    #dictionary mapping vertices to indicex
+    for i in range(len(T.set)):
+        objInd[tuple(T.set[i])] = i
+
+    if minSize == None:
+        minSize = va.shape[1] + 1 #only return objects which have enough points to be a volume
+
+    j = 0
+
+    while verts.sum() > 0:
+        while verts[j]  == 0 and j < verts.shape[0]:
+            j += 1
+
+        #print j
+
+        verts[j] = 0
+        v = va[j, :]
+        obj = [v]
+
+        con = collectConnected(T, v, verts, va, lenThresh, objInd)
+
+        obj += con
+
+        if len(obj) > minSize:
+            objects.append(array(obj))
+
+    return objects
+
+#def vertInd():
+
+def segmentNR(T, lenThresh, minSize=None):
+    #non-recursive version of segmentation
     objects = []
     verts = list(range(len(T.set)))
     va = array(T.set)
