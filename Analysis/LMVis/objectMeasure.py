@@ -43,7 +43,7 @@ def measure(object, sizeCutoff, measurements = zeros(1, dtype=measureDType)):
     P, A, triI = gen3DTriangs.gen2DTriangsTF(T, sizeCutoff)
 
     if not len(P) == 0:
-        measurements['Area'] = A.sum()
+        measurements['Area'] = A.sum()/3
 
         #print triI
 

@@ -429,7 +429,8 @@ def segment(T, lenThresh, minSize=None):
 
     #dictionary mapping vertices to indicex
     for i in range(len(T.set)):
-        objInd[tuple(T.set[i])] = i
+        #print tuple(T.set[i])
+        objInd[tuple(va[i, :])] = i
 
     if minSize == None:
         minSize = va.shape[1] + 1 #only return objects which have enough points to be a volume

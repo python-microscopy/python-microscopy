@@ -633,7 +633,7 @@ class TextEditMixin:
         # post wxEVT_COMMAND_LIST_END_LABEL_EDIT
         # Event can be vetoed. It doesn't has SetEditCanceled(), what would 
         # require passing extra argument to CloseEditor() 
-        evt = wx.ListEvent(wx.wxEVT_LIST_END_LABEL_EDIT, self.GetId())
+        evt = wx.ListEvent(wx.EVT_LIST_END_LABEL_EDIT.evtType[0], self.GetId())
         evt.m_itemIndex = self.curRow
         evt.m_col = self.curCol
         item = self.GetItem(self.curRow, self.curCol)
