@@ -54,14 +54,14 @@ camPanels.append((acf, 'EMCCD Properties'))
 ''')
 
 InitGUI('''
-from PYME.Acquire.Hardware import ccdAdjPanelC
+from PYME.Acquire.Hardware import ccdAdjPanel
 #import wx
 #f = wx.Frame(None)
-snrPan = ccdAdjPanelC.sizedCCDPanel(notebook1, scope, acf)
+snrPan = ccdAdjPanel.sizedCCDPanel(notebook1, scope, acf)
 notebook1.AddPage(page=snrPan, select=False, caption='Image SNR')
 #camPanels.append((snrPan, 'SNR etc ...'))
 #f.Show()
-#time1.WantNotification.append(snrPan.draw)
+#time1.WantNotification.append(snrPan.ccdPan.draw)
 ''')
 
 cm.join()
@@ -99,9 +99,14 @@ def calcSum(caller):
 
 #scope.pa.WantFrameNotification.append(calcSum)
 
-
-
 #must be here!!!
 joinBGInit() #wait for anyhting which was being done in a separate thread
+
+import numpy
+psf = numpy.load('/home/david/psf488.npy')
+psf = numpy.maximum(psf, 0.)
+from PYME.Analysis import MetaData
+fakeCam.rend_im.setModel(psf, MetaData.TIRFDefault)
+
 time.sleep(.5)
 scope.initDone = True
