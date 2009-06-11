@@ -104,7 +104,7 @@ class seqPanel(wx.Panel):
         
 
         self.bStart = wx.Button(self, -1, 'Go, Go, Go !!!')
-        wx.EVT_BUTTON(self.bStart, wxID_SEQDIALOGBSTART, self.OnBStartButton)
+        self.bStart.Bind(wx.EVT_BUTTON, self.OnBStartButton)
         vsizer.Add(self.bStart, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.TOP|wx.BOTTOM, 5, 0)
 
         self.SetSizerAndFit(vsizer)

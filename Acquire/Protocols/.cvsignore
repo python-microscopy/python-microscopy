@@ -1,3 +1,9 @@
 __init__.pyc
 darkThenOn.pyc
 simulPA.pyc
+standard488.pyc
+standard671.pyc
+ZStack488.pyc
+ZStack671.pyc
+ZStack.pyc
+simulPAZStack.pyc

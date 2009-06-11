@@ -113,7 +113,7 @@ class HistLimitPanel(wx.Panel):
         self.hmin = hmid - 1.5*(hmid-self.hmin)
         self.hmax = hmid + 1.5*(self.hmax-hmid)
 
-        self.hstep = (self.hmax - self.hmin)/self.Size[0]
+        self.hstep = (self.hmax - self.hmin)/max(self.Size[0], 1)
 
         #print self.hmin, self.hmax, self.hstep
 
@@ -127,6 +127,8 @@ class HistLimitPanel(wx.Panel):
         
 
     def DoPaint(self, dc):
+        if self.Size[0] < 1 or self.Size[1] < 1: #nothing to do
+            return
         dc.SetFont(wx.NORMAL_FONT)
         self.textSize = dc.GetTextExtent('test')[1] + 4
 
