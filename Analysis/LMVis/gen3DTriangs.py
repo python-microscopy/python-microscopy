@@ -478,14 +478,35 @@ def segmentNR(T, lenThresh, minSize=None):
 
     return objects
 
+xi = (1. + sqrt(5.))/2
 
-def blobify(objects, sizeCutoff):
+xs = array([0, 0, 0, 0, 1, 1, -1, -1, xi, xi, -xi, -xi,0]).astype('f')/2.
+ys = array([1, 1, -1, -1, xi, -xi, xi, -xi, 0, 0, 0, 0,0]).astype('f')/2.
+zs = array([xi, -xi, xi, -xi, 0, 0, 0, 0, 1, -1, 1, -1,0]).astype('f')/2.
+
+
+def blobify(objects, sizeCutoff, sm=False, sc=[10, 10, 10]):
     P_ = []
     N_ = []
     A_ = []
 
     for i, o in enumerate(objects):
+        if sm:
+            #print o.shape
+            x = o[:,0][:,None] + sc[0]*xs[None, :]
+            y = o[:,1][:,None] + sc[1]*ys[None, :]
+            z = o[:,2][:,None] + sc[2]*zs[None, :]
+
+            #o = o + (sc[0]/10.)*random.normal(size=o.shape)
+
+            o = vstack((x.ravel(), y.ravel(), z.ravel())).T
+            #print o.shape
+
+
         T = delaunay.Triangulation(o.ravel(),3)
+        #print T.indices
+        #for ti in T.indices:
+        #    print len(ti)
         P, A, N, triI = gen3DTriangsTF(T, sizeCutoff)
 
         #P, A, N = removeInternalFaces(P, A, N)
@@ -529,12 +550,12 @@ def blobify2D(objects, sizeCutoff):
 
     return (vstack(P_), hstack(A_))
 
-def gen3DBlobs(x,y,z, sizeCutoff=inf):
+def gen3DBlobs(x,y,z, sizeCutoff=inf, sm=False, sc=[10, 10, 10]):
     T = delaunay.Triangulation(array([x,y,z]).T.ravel(),3)
 
     objects = segment(T, sizeCutoff)
 
-    return blobify(objects, sizeCutoff)
+    return blobify(objects, sizeCutoff, sm, sc)
 
 
 

@@ -203,7 +203,7 @@ class LMGLCanvas(GLCanvas):
 
         #self.nVertices = 3
 
-        self.setBlob(*testObj())
+        self.setBlob(*testObj(), smScale=[1e3,1e3,1e3])
 
         #glMatrixMode(GL_PROJECTION)
         #glLoadIdentity()
@@ -216,8 +216,8 @@ class LMGLCanvas(GLCanvas):
         #          0.0, 1.0, 0.0)
         return
 
-    def setBlob(self, x,y,z, sizeCutoff=1000., zrescale=1):
-        P, A, N = gen3DBlobs(x,y,z/zrescale, sizeCutoff)
+    def setBlob(self, x,y,z, sizeCutoff=1000., zrescale=1, smooth=False, smScale=[10,10,10]):
+        P, A, N = gen3DBlobs(x,y,z/zrescale, sizeCutoff, smooth, smScale)
         P[:,2] = P[:,2]*zrescale
 
         self.scale = 10./(x.max() - x.min())

@@ -2,18 +2,33 @@ from numpy import *
 import delaunay
 import gen3DTriangs
 
+def getPrincipalAxis(obj_c, numIters=10):
+    '''PCA via e.m. (ala wikipedia)'''
+    X = obj_c.T
+    p = random.rand(2)
+    
+    for i in range(numIters):
+        t = (dot(p, X) * X).sum(1)
+        p = t / linalg.norm(t)
+
+    return p
+
 def measureAligned(object, measurements = {}):
     obj_c = (object - mean(object, 0))
 
     A = matrix(obj_c[:,0]).T
     b = matrix(obj_c[:,1]).T
 
-    majorAxisGradient = float((linalg.inv(A.T*A)*A.T)*b)
+    #majorAxisGradient = float((linalg.inv(A.T*A)*A.T)*b)
 
-    measurements['majorAxisAngle'] = arctan(majorAxisGradient)
+    #measurements['majorAxisAngle'] = arctan(majorAxisGradient)
 
-    majorAxis = array([1, majorAxisGradient])
-    majorAxis = majorAxis/linalg.norm(majorAxis)
+    #majorAxis = array([1, majorAxisGradient])
+    #majorAxis = majorAxis/linalg.norm(majorAxis)
+
+    majorAxis = getPrincipalAxis(obj_c)
+
+    measurements['majorAxisAngle'] = arccos(majorAxis[0])
 
     minorAxis = majorAxis[::-1]*array([-1, 1])
 
