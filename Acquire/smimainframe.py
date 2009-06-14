@@ -71,7 +71,7 @@ class smiMainFrame(wx.Frame):
         # generated method, don't edit
 
         parent.Append(wxID_SMIMAINFRAMEMCAMROI,
-              'Set ROI', kind=wx.ITEM_NORMAL)
+              'Set ROI\tF8', kind=wx.ITEM_NORMAL)
         parent.Append(wxID_SMIMAINFRAMEMCAMBIN,
               'Turn Binning on', kind=wx.ITEM_CHECK)
         parent.Append(wxID_SMIMAINFRAMEMCAMCHANS,
@@ -84,8 +84,8 @@ class smiMainFrame(wx.Frame):
         # generated method, don't edit
 
         parent.Append(menu=self.mFile, title='&File')
-        parent.Append(menu=self.mControls, title='Controls')
-        parent.Append(menu=self.mAquire, title='Aquire')
+        parent.Append(menu=self.mControls, title='&Controls')
+        parent.Append(menu=self.mAquire, title='&Aquire')
 
     def _init_coll_mDisplay_Items(self, parent):
         # generated method, don't edit
@@ -481,8 +481,13 @@ class smiMainFrame(wx.Frame):
         #print (self.scope.vp.selection_begin_x, self.scope.vp.selection_begin_y, self.scope.vp.selection_end_x, self.scope.vp.selection_end_y)
         
         if (self.roi_on):
+            x1 = self.scope.cam.GetROIX1()
+            y1 = self.scope.cam.GetROIY1()
+            x2 = self.scope.cam.GetROIX2()
+            y2 = self.scope.cam.GetROIY2()
+
             self.scope.cam.SetROI(0,0, self.scope.cam.GetCCDWidth(), self.scope.cam.GetCCDHeight())
-            self.mCam.SetLabel(wxID_SMIMAINFRAMEMCAMROI, 'Set ROI')
+            self.mCam.SetLabel(wxID_SMIMAINFRAMEMCAMROI, 'Set ROI\tF8')
             self.roi_on = False
         else:
             x1 = self.scope.vp.selection_begin_x
@@ -500,13 +505,25 @@ class smiMainFrame(wx.Frame):
                     y2 = max(y2, self.scope.cam.GetCCDHeight() - y1)
                     
             self.scope.cam.SetROI(x1,y1,x2,y2)
-            self.mCam.SetLabel(wxID_SMIMAINFRAMEMCAMROI, 'Clear ROI')
+            self.mCam.SetLabel(wxID_SMIMAINFRAMEMCAMROI, 'Clear ROI\tF8')
             self.roi_on = True
+
+            x1 = 0
+            y1 = 0
+            x2 = self.scope.cam.GetPicWidth()
+            y2 = self.scope.cam.GetPicHeight()
+
             
         self.scope.cam.SetCOC()
         self.scope.cam.GetStatus()
         self.scope.pa.Prepare()
         self.scope.vp.SetDataStack(self.scope.pa.ds)
+        
+        self.scope.vp.selection_begin_x = x1
+        self.scope.vp.selection_begin_y = y1
+        self.scope.vp.selection_end_x = x2
+        self.scope.vp.selection_end_y = y2
+
         self.scope.pa.start()
         self.scope.vp.Refresh()
         self.scope.vp.GetParent().Refresh()

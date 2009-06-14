@@ -84,10 +84,15 @@ lsf = lasersliders.LaserSliders(toolPanel, scope.lasers)
 toolPanels.append((lsf, 'Laser Powers'))
 ''')
 
+InitGUI('''
+from PYME.Acquire import sarcSpacing
+ssp = sarcSpacing.SarcomereChecker(MainFrame, menuBar1, scope)
+''')
 
 InitGUI('''
 from PYME.Acquire.Hardware import focusKeys
 fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[-1])
+time1.WantNotification.append(fk.refresh)
 ''')
 
 from PYME import cSMI
