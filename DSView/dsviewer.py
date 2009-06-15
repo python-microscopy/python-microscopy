@@ -8,12 +8,18 @@ import PYME.cSMI as example
 import dCrop
 import logparser
 from myviewpanel import MyViewPanel
+import os
+
+from PYME import cSMI
+import Image
+
 class DSViewFrame(wx.Frame):
-    def __init__(self, parent=None, title='', dstack = None, log = None, filename = None):
+    def __init__(self, parent=None, title='', dstack = None, log = None, filename = None, filedir=""):
         wx.Frame.__init__(self,parent, -1, title)
         self.ds = dstack
         self.log = log
-        self.saved = False		
+        self.saved = False
+        self.filedir = filedir
         if (dstack == None):
             if (filename == None):
                 fdialog = wx.FileDialog(None, 'Please select Data Stack to open ...',
@@ -64,11 +70,25 @@ class DSViewFrame(wx.Frame):
         self.vp.imagepanel.Refresh()
         self.statusbar.SetStatusText('Slice No: (%d/%d)    x: %d  y: %d' % (self.ds.getZPos(), self.ds.getDepth(), self.ds.getXPos(), self.ds.getYPos()))
     def saveStack(self, event=None):
-        fdialog = wx.FileDialog(None, 'Save Data Stack as ...',
-            wildcard='*.kdf', style=wx.SAVE|wx.HIDE_READONLY)
+        fdialog = wx.FileDialog(None, 'Save Data Stack as ...', defaultDir=self.filedir,
+            wildcard='KDF (*.kdf)|*.kdf|TIFF (*.tif)|*.tif', style=wx.SAVE|wx.HIDE_READONLY)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
-            self.ds.SaveToFile(fdialog.GetPath().encode())
+            fpath = fdialog.GetPath()
+            if os.path.splitext(fpath)[1] == 'kdf':
+                self.ds.SaveToFile(fdialog.GetPath().encode())
+            else:
+                #save using PIL
+                if self.ds.getNumChannels() == 1:
+                    im = Image.fromarray(cSMI.CDataStack_AsArray(self.ds, 0), 'I;16')
+                    im.save(fpath)
+                else:
+                    fst, ext = os.path.splitext(fpath)
+                    for i in range(self.ds.getNumChannels()):
+                        im = Image.fromarray(cSMI.CDataStack_AsArray(self.ds, i), 'I;16')
+                        im.save(fst + '_%d'%i + ext)
+
+
             if not (self.log == None):
                 lw = logparser.logwriter()
                 s = lw.write(self.log)
