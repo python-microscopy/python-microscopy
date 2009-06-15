@@ -72,6 +72,7 @@ class MyViewPanel(wx.ScrolledWindow):
         self.ResetSelection()
 
         self.Layout()
+        self.GetParent().Layout()
         self.Refresh()
 
 

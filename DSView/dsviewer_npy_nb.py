@@ -282,10 +282,10 @@ class DSViewFrame(wx.Frame):
 
         self._pnl.AddFoldPanelWindow(item, self.cbDrift, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
         
-        bGo = wx.Button(item, -1, 'Go')
+        self.bGo = wx.Button(item, -1, 'Go')
             
 
-        bGo.Bind(wx.EVT_BUTTON, self.OnGo)
+        self.bGo.Bind(wx.EVT_BUTTON, self.OnGo)
         self._pnl.AddFoldPanelWindow(item, bGo, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
 
     def OnGo(self, event):

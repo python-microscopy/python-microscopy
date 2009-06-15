@@ -5,6 +5,7 @@ def configuration(parent_package = '', top_path = None):
     config = Configuration('Acquire', parent_package, top_path)
     
     config.add_subpackage('Hardware')
+    config.add_subpackage('Protocols')
     config.add_data_dir('Scripts')
 
     return config
