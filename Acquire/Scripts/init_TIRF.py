@@ -31,6 +31,11 @@ scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
 ''')
 
 InitGUI('''
+from PYME.Acquire import sarcSpacing
+ssp = sarcSpacing.SarcomereChecker(MainFrame, menuBar1, scope)
+''')
+
+InitGUI('''
 from PYME.Acquire.Hardware import focusKeys
 fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[-1])
 time1.WantNotification.append(fk.refresh)
