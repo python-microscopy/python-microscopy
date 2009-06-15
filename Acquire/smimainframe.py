@@ -131,7 +131,7 @@ class smiMainFrame(wx.Frame):
         # generated method, don't edit
 
         parent.Append(wxID_SMIMAINFRAMEMAQUIREONE_PIC,
-              '1 Pic', kind=wx.ITEM_NORMAL)
+              '1 Pic\tF5', kind=wx.ITEM_NORMAL)
         parent.Append(wxID_SMIMAINFRAMEMAQUIRESTACK,
               '3D Stack', kind=wx.ITEM_NORMAL)
         parent.AppendSeparator()
