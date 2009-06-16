@@ -286,7 +286,7 @@ class DSViewFrame(wx.Frame):
             
 
         self.bGo.Bind(wx.EVT_BUTTON, self.OnGo)
-        self._pnl.AddFoldPanelWindow(item, bGo, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+        self._pnl.AddFoldPanelWindow(item, self.bGo, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
 
     def OnGo(self, event):
         threshold = float(self.tThreshold.GetValue())
@@ -454,12 +454,14 @@ class DSViewFrame(wx.Frame):
                     self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],self.fitResults['tIndex'].astype('f'))
                     self.glCanvas.setCLim((0, self.numAnalysed))
 
-            if (self.tq.getNumberOpenTasks(self.seriesName) + self.tq.getNumberTasksInProgress(self.seriesName)) == 0 and 'SpoolingFinished' in self.mdh.getEntryNames():
-                self.statusbar.SetBackgroundColour(wx.GREEN)
-                self.statusbar.Refresh()
-            self.progPan.draw()
-            self.Refresh()
-            self.update()
+        if (self.tq.getNumberOpenTasks(self.seriesName) + self.tq.getNumberTasksInProgress(self.seriesName)) == 0 and 'SpoolingFinished' in self.mdh.getEntryNames():
+            self.statusbar.SetBackgroundColour(wx.GREEN)
+            self.statusbar.Refresh()
+
+        self.progPan.draw()
+        self.progPan.Refresh()
+        self.Refresh()
+        self.update()
 
 
 
