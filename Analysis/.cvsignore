@@ -8,8 +8,8 @@ remFitHDF.pyc
 fitIO.pyc
 deMod.pyc
 remFitBuf.pyc
-setup.pyc
 piecewiseMapping.pyc
+setup.pyc
 intelliFit.pyc
 ryrify.pyc
 __init__.pyc
@@ -21,8 +21,9 @@ ofind3d.pyc
 multiGaussDist.pyc
 driftCorrProc.pyc
 LatGaussFitFR.py
+simCluster.pyc
 twoColour.pyc
 LatGaussFitF.py
+remFitSplit.pyc
 intensProf.pyc
 remFitHDF_dc.pyc
-remFitSplit.pyc
