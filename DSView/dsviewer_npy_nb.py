@@ -47,6 +47,10 @@ class DSViewFrame(wx.Frame):
         self.timer = mytimer()
         self.timer.Start(5000)
 
+        #timer for playback
+        self.tPlay = mytimer()
+        self.tPlay.WantNotification.append(self.OnFrame)
+
         self.numAnalysed = 0
         self.numEvents = 0
         self.fitResults = []
@@ -220,6 +224,7 @@ class DSViewFrame(wx.Frame):
         self.Images.Add(GetExpandedIconBitmap())
         self.Images.Add(GetCollapsedIconBitmap())
 
+        self.GenPlayPanel()
         self.GenPointFindingPanel()
         self.GenAnalysisPanel()
         self.GenFitStatusPanel()
@@ -230,6 +235,78 @@ class DSViewFrame(wx.Frame):
         wx.LayoutAlgorithm().LayoutWindow(self, self.notebook1)
         self.Refresh()
         self.notebook1.Refresh()
+
+    def GenPlayPanel(self):
+        item = self._pnl.AddFoldPanel("Playback", collapsed=False,
+                                      foldIcons=self.Images)
+
+        pan = wx.Panel(item, -1)
+
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        hsizer.Add(wx.StaticText(pan, -1, 'Pos:'), 0,wx.ALIGN_CENTER_VERTICAL|wx.LEFT,0)
+
+        self.slPlayPos = wx.Slider(pan, -1, 0, 0, 100, style=wx.SL_HORIZONTAL)
+        self.slPlayPos.Bind(wx.EVT_SCROLL_CHANGED, self.OnPlayPosChanged)
+        hsizer.Add(self.slPlayPos, 1,wx.ALIGN_CENTER_VERTICAL)
+
+        vsizer.Add(hsizer, 0,wx.ALL|wx.EXPAND, 0)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.bSeekStart = wx.BitmapButton(pan, -1, wx.Bitmap('icons/media-skip-backward.png'))
+        hsizer.Add(self.bSeekStart, 0,wx.ALIGN_CENTER_VERTICAL,0)
+        self.bSeekStart.Bind(wx.EVT_BUTTON, self.OnSeekStart)
+
+        self.bmPlay = wx.Bitmap('icons/media-playback-start.png')
+        self.bmPause = wx.Bitmap('icons/media-playback-pause.png')
+        self.bPlay = wx.BitmapButton(pan, -1, self.bmPlay)
+        self.bPlay.Bind(wx.EVT_BUTTON, self.OnPlay)
+        hsizer.Add(self.bPlay, 0,wx.ALIGN_CENTER_VERTICAL,0)
+
+#        self.bSeekEnd = wx.BitmapButton(pan, -1, wx.Bitmap('icons/media-skip-forward.png'))
+#        hsizer.Add(self.bSeekEnd, 0,wx.ALIGN_CENTER_VERTICAL,0)
+
+        hsizer.Add(wx.StaticText(pan, -1, 'FPS:'), 0,wx.ALIGN_CENTER_VERTICAL|wx.LEFT,4)
+
+        self.slPlaySpeed = wx.Slider(pan, -1, 5, 1, 50, style=wx.SL_HORIZONTAL)
+        self.slPlaySpeed.Bind(wx.EVT_SCROLL_CHANGED, self.OnPlaySpeedChanged)
+        hsizer.Add(self.slPlaySpeed, 1,wx.ALIGN_CENTER_VERTICAL)
+
+        vsizer.Add(hsizer, 0,wx.TOP|wx.BOTTOM|wx.EXPAND, 4)
+        pan.SetSizer(vsizer)
+        vsizer.Fit(pan)
+
+        self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+
+    def OnPlay(self, event):
+        if not self.tPlay.IsRunning():
+            self.tPlay.Start(1000./self.slPlaySpeed.GetValue())
+            self.bPlay.SetBitmapLabel(self.bmPause)
+        else:
+            self.tPlay.Stop()
+            self.bPlay.SetBitmapLabel(self.bmPlay)
+
+    def OnFrame(self):
+        self.vp.zp +=1
+        if self.vp.zp >= self.ds.shape[2]:
+            self.vp.zp = 0
+
+        self.update()
+
+    def OnSeekStart(self, event):
+        self.vp.zp = 0
+        self.update()
+
+    def OnPlaySpeedChanged(self, event):
+        if self.tPlay.IsRunning():
+            self.tPlay.Stop()
+            self.tPlay.Start(1000./self.slPlaySpeed.GetValue())
+
+    def OnPlayPosChanged(self, event):
+        self.vp.zp = int((self.ds.shape[2]-1)*self.slPlayPos.GetValue()/100.)
+        self.update()
+
 
     def GenAnalysisPanel(self):
         item = self._pnl.AddFoldPanel("Analysis", collapsed=False,
@@ -371,6 +448,7 @@ class DSViewFrame(wx.Frame):
     def update(self):
         self.vp.imagepanel.Refresh()
         self.statusbar.SetStatusText('Slice No: (%d/%d)    Frames Analysed: %d    Events detected: %d' % (self.vp.zp, self.vp.ds.shape[2], self.numAnalysed, self.numEvents))
+        self.slPlayPos.SetValue((100*self.vp.zp)/(self.vp.ds.shape[2]-1))
 
     def saveStack(self, event=None):
         fdialog = wx.FileDialog(None, 'Save Data Stack as ...',
