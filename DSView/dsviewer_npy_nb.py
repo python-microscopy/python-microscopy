@@ -29,6 +29,8 @@ from PYME.Acquire import MetaDataHandler
 from PYME.Analysis import MetaData
 from PYME.Analysis.DataSources import HDFDataSource
 from PYME.Analysis.DataSources import TQDataSource
+#from PYME.Analysis.DataSources import TiffDataSource
+from PYME.FileUtils import readTiff
 from PYME.Analysis.LMVis import progGraph as progGraph
 from PYME.Acquire.mytimer import mytimer
 
@@ -42,6 +44,8 @@ class DSViewFrame(wx.Frame):
         self.log = log
 
         self.saved = True
+
+        self.mode = 'LM'
 
         #a timer object to update for us
         self.timer = mytimer()
@@ -58,7 +62,7 @@ class DSViewFrame(wx.Frame):
         if (dstack == None):
             if (filename == None):
                 fdialog = wx.FileDialog(None, 'Please select Data Stack to open ...',
-                    wildcard='*.h5', style=wx.OPEN|wx.HIDE_READONLY)
+                    wildcard='PYME Data|*.h5|TIFF files|*.tif', style=wx.OPEN)
                 succ = fdialog.ShowModal()
                 if (succ == wx.ID_OK):
                     #self.ds = example.CDataStack(fdialog.GetPath().encode())
@@ -82,7 +86,7 @@ class DSViewFrame(wx.Frame):
                     
                     self.mdh = MetaDataHandler.QueueMDHandler(self.tq, self.seriesName)
                     self.timer.WantNotification.append(self.dsRefresh)
-                else:
+                elif filename.endswith('.h5'):
                     self.dataSource = HDFDataSource.DataSource(filename, None)
                     if 'MetaData' in self.dataSource.h5File.root: #should be true the whole time
                         self.mdh = MetaData.TIRFDefault
@@ -95,6 +99,15 @@ class DSViewFrame(wx.Frame):
                     from PYME.ParallelTasks.relativeFiles import getRelFilename
                     self.seriesName = getRelFilename(filename)
 
+                else: #try tiff
+                    #self.dataSource = TiffDataSource.DataSource(filename, None)
+                    self.dataSource = readTiff.read3DTiff(filename)
+                    self.mdh = MetaData.ConfocDefault
+
+                    from PYME.ParallelTasks.relativeFiles import getRelFilename
+                    self.seriesName = getRelFilename(filename)
+
+                    self.mode = 'blob'
                     
 
                 self.ds = self.dataSource
@@ -135,17 +148,20 @@ class DSViewFrame(wx.Frame):
         self.sh = wx.py.shell.Shell(id=-1,
               parent=self.notebook1, pos=wx.Point(0, 0), size=wx.Size(618, 451), style=0, locals=self.__dict__, 
               introText='Python SMI bindings - note that help, license etc below is for Python, not PySMI\n\n')
-        self.sh.runfile(os.path.join(os.path.dirname(__file__),'fth5.py'))
+
+        if self.mode == 'LM':
+            self.sh.runfile(os.path.join(os.path.dirname(__file__),'fth5.py'))
 
         self.notebook1.AddPage(page=self.vp, select=True, caption='Data')
         self.notebook1.AddPage(page=self.sh, select=False, caption='Console')
 
-        self.elv = eventLogViewer.eventLogPanel(self.notebook1, self.ds.getEvents(), self.mdh, [0, self.ds.getNumSlices()]);
-        self.notebook1.AddPage(self.elv, 'Events')
+        if self.mode == 'LM':
+            self.elv = eventLogViewer.eventLogPanel(self.notebook1, self.ds.getEvents(), self.mdh, [0, self.ds.getNumSlices()]);
+            self.notebook1.AddPage(self.elv, 'Events')
 
-        if 'ProtocolFocus' in self.elv.evKeyNames:
-            pm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.md.Camera.CycleTime*1e-3, self.md.StartTime, self.md.Protocol.PiezoStartPos)
-            self.elv.SetCharts([('Focus [um]', pm, 'ProtocolFocus'),])
+            if 'ProtocolFocus' in self.elv.evKeyNames:
+                pm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.md.Camera.CycleTime*1e-3, self.md.StartTime, self.md.Protocol.PiezoStartPos)
+                self.elv.SetCharts([('Focus [um]', pm, 'ProtocolFocus'),])
 
         
         #self.notebook1.Split(0, wx.TOP)
@@ -225,9 +241,12 @@ class DSViewFrame(wx.Frame):
         self.Images.Add(GetCollapsedIconBitmap())
 
         self.GenPlayPanel()
-        self.GenPointFindingPanel()
-        self.GenAnalysisPanel()
-        self.GenFitStatusPanel()
+        if self.mode == 'LM':
+            self.GenPointFindingPanel()
+            self.GenAnalysisPanel()
+            self.GenFitStatusPanel()
+        else:
+            self.GenBlobFindingPanel()
 
 
         #item = self._pnl.AddFoldPanel("Filters", False, foldIcons=self.Images)
@@ -254,12 +273,16 @@ class DSViewFrame(wx.Frame):
         vsizer.Add(hsizer, 0,wx.ALL|wx.EXPAND, 0)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.bSeekStart = wx.BitmapButton(pan, -1, wx.Bitmap('icons/media-skip-backward.png'))
+        import os
+
+        dirname = os.path.dirname(__file__)
+
+        self.bSeekStart = wx.BitmapButton(pan, -1, wx.Bitmap(os.path.join(dirname, 'icons/media-skip-backward.png')))
         hsizer.Add(self.bSeekStart, 0,wx.ALIGN_CENTER_VERTICAL,0)
         self.bSeekStart.Bind(wx.EVT_BUTTON, self.OnSeekStart)
 
-        self.bmPlay = wx.Bitmap('icons/media-playback-start.png')
-        self.bmPause = wx.Bitmap('icons/media-playback-pause.png')
+        self.bmPlay = wx.Bitmap(os.path.join(dirname,'icons/media-playback-start.png'))
+        self.bmPause = wx.Bitmap(os.path.join(dirname,'icons/media-playback-pause.png'))
         self.bPlay = wx.BitmapButton(pan, -1, self.bmPlay)
         self.bPlay.Bind(wx.EVT_BUTTON, self.OnPlay)
         hsizer.Add(self.bPlay, 0,wx.ALIGN_CENTER_VERTICAL,0)
@@ -416,6 +439,46 @@ class DSViewFrame(wx.Frame):
 
         bTest.Bind(wx.EVT_BUTTON, self.OnTest)
         self._pnl.AddFoldPanelWindow(item, bTest, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+
+    def GenBlobFindingPanel(self):
+        item = self._pnl.AddFoldPanel("Object Finding", collapsed=False,
+                                      foldIcons=self.Images)
+
+        pan = wx.Panel(item, -1)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        hsizer.Add(wx.StaticText(pan, -1, 'Threshold:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tThreshold = wx.TextCtrl(pan, -1, value='50', size=(40, -1))
+
+        hsizer.Add(self.tThreshold, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        pan.SetSizer(hsizer)
+        hsizer.Fit(pan)
+
+        self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+
+        bFindObjects = wx.Button(item, -1, 'Find')
+
+
+        bFindObjects.Bind(wx.EVT_BUTTON, self.OnFindObjects)
+        self._pnl.AddFoldPanelWindow(item, bFindObjects, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+
+    def OnFindObjects(self, event):
+        threshold = float(self.tThreshold.GetValue())
+
+        from PYME.Analysis.ofind3d import ObjectIdentifier
+
+        if not 'ofd' in dir(self):
+            #create an object identifier
+            self.ofd = ObjectIdentifier(self.dataSource)
+
+        #and identify objects ...
+        self.ofd.FindObjects(threshold)
+        
+        self.vp.points = numpy.array([[p.x, p.y, p.z] for p in self.ofd])
+        self.update()
+
 
     def OnTest(self, event):
         threshold = float(self.tThreshold.GetValue())

@@ -2,15 +2,15 @@
 '''Script to find and measure small objects in a 3D confocal data set. Call as follows: pointFitConfoc.py inFile threshold outFile'''
 from PYME.FileUtils import readTiff
 from PYME.Analysis import MetaData
-from PYME.Analysis.ofind import ObjectIdentifier
-from PYME.Analysis.FitFactories.LatGaussFitF import FitFactory
+from PYME.Analysis.ofind3d import ObjectIdentifier
+from PYME.Analysis.FitFactories.Gauss3DFitR import FitFactory
 
 import os
 import sys
 from numpy import sqrt
 
 #set up parameters
-md = MetaData.TIRFDefault
+md = MetaData.ConfocDefault
 
 #Voxel sizes - alter as appropriate, in um
 md.voxelsize.x = 0.09
@@ -20,7 +20,7 @@ md.voxelsize.z = 0.20
 #Hack the 'ccd' so we don't have to worry about the ADOffset preventing
 #fits from working. FIXME: find sensible values for all parameter for confocal
 #imaging so we can get error estimates.
-md.CCD.ADOffset=0
+md.Camera.ADOffset=0
 
 
 #set this to the measured PSF FWHM. The correct way measure the PSF 
@@ -31,7 +31,9 @@ scopeFWHM = 250 #in nm
 
 #'default' threshold value for object identification- you probably want to 
 #enter this on the command line instead
-ofindThreshold = 20e3
+ofindThreshold = 100
+
+md.tIndex=0
 
 ####################################
 #End of user-modifiable parameters #
@@ -73,14 +75,14 @@ if __name__ == '__main__':
     ff = FitFactory(ima, md)
 
     #iterate over found objects, fitting at each point
-    res = [ff.FromPoint(p.x, p.y) for p in ofd]
+    res = [ff.FromPoint(p.x, p.y, p.z) for p in ofd]
 
     of = open(outFilename, 'w')
 
     of.write('ID\tx\ty\tA\tsigma\tcorrectedFWHM\n')
 
     for r, i in zip(res, range(len(res))):
-        of.write('%d\t%3.2f\t%3.2f\t%3.2f\t%3.2f\t%3.0f\n' % (i, r.x0()/1e3, r.y0()/1e3, r.A(), r.sigma(), sqrt((2.35*r.sigma())**2 - scopeFWHM**2)))
+        of.write('%d\t%3.2f\t%3.2f\t%3.2f\t%3.2f\t%3.0f\n' % (i, r['fitResults']['x0']/1e3, r['fitResults']['y0']/1e3, r['fitResults']['A'], r['fitResults']['sigma'], sqrt((2.35*r['fitResults']['sigma'])**2 - scopeFWHM**2)))
 
     of.close()
     

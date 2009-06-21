@@ -40,6 +40,24 @@ TIRFDefault.setEntry('Camera.NoiseFactor',1.41)
 TIRFDefault.setEntry('Camera.ElectronsPerCount',27.32)
 TIRFDefault.setEntry('Camera.TrueEMGain',20) #mostly use gain register setting of 150 - this will hopefully be overwitten
 
+ConfocDefault = NestedClassMDHandler()
+
+#voxelsize
+ConfocDefault.setEntry('voxelsize.x',0.09)
+ConfocDefault.setEntry('voxelsize.y',0.09)
+ConfocDefault.setEntry('voxelsize.z',0.2)
+ConfocDefault.setEntry('voxelsize.units','um')
+
+#camera properties - placeholder values - real vlaues will depend on gain etc...
+ConfocDefault.setEntry('Camera.ReadNoise',0)
+ConfocDefault.setEntry('Camera.NoiseFactor',1)
+ConfocDefault.setEntry('Camera.ElectronsPerCount',1)
+ConfocDefault.setEntry('Camera.TrueEMGain',1)
+ConfocDefault.setEntry('Camera.ADOffset',0)
+
+ConfocDefault.setEntry('tIndex',0)
+
+
 #def genMetaDataFromHDF(h5File):
 #    md = TIRFDefault
 #

@@ -48,7 +48,7 @@ class DataWrap: #permit indexing with more dimensions larger than len(shape)
             keys = [keys[2]] + keys[:2] + keys[3:]
         #print keys
         if self.type == 'Array':
-            r = self.data.__getitem__(keys)
+            r = self.data.__getitem__(keys).T
         else:
             #print keys[0]
             #print numpy.mgrid[keys[0]]
@@ -103,6 +103,8 @@ class MyViewPanel(viewpanel.ViewPanel):
             if (self.ds.shape[3] >=3):
                 self.do.Chans[2] = 2
         self.do.Optimise(self.ds, self.zp)
+
+        self.points =[]
         
         
         #self.rend = example.CLUT_RGBRenderer()
@@ -254,6 +256,55 @@ class MyViewPanel(viewpanel.ViewPanel):
                 dc.DrawRectangle(lx*sc,ly*sc, (hx-lx)*sc,(hy-ly)*sc)
             else:
                 dc.DrawRectangle(ly*sc,lx*sc, (hy-ly)*sc,(hx-lx)*sc)
+            dc.SetPen(wx.NullPen)
+            dc.SetBrush(wx.NullBrush)
+
+        if len(self.points) > 0:
+            if(self.do.slice == self.do.SLICE_XY):
+                pFoc = self.points[abs(self.points[:,2] - self.zp) < 1]
+                pNFoc = self.points[abs(self.points[:,2] - self.zp) < 5]
+
+
+                dc.SetBrush(wx.TRANSPARENT_BRUSH)
+
+                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('BLUE'),0))
+                for p in pNFoc:
+                    dc.DrawRectangle(sc*p[0]-2*sc,sc*p[1] - 2*sc, 4*sc,4*sc)
+
+                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),0))
+                for p in pFoc:
+                    dc.DrawRectangle(sc*p[0]-2*sc,sc*p[1] - 2*sc, 4*sc,4*sc)
+
+            elif(self.do.slice == self.do.SLICE_XZ):
+                pFoc = self.points[abs(self.points[:,1] - self.yp) < 1]
+                pNFoc = self.points[abs(self.points[:,1] - self.yp) < 5]
+
+
+                dc.SetBrush(wx.TRANSPARENT_BRUSH)
+
+                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('BLUE'),0))
+                for p in pNFoc:
+                    dc.DrawRectangle(sc*p[0]-2*sc,sc*p[2] - 2*sc, 4*sc,4*sc)
+
+                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),0))
+                for p in pFoc:
+                    dc.DrawRectangle(sc*p[0]-2*sc,sc*p[2] - 2*sc, 4*sc,4*sc)
+
+            else:#(self.do.slice == self.do.SLICE_YZ):
+                pFoc = self.points[abs(self.points[:,0] - self.xp) < 1]
+                pNFoc = self.points[abs(self.points[:,0] - self.xp) < 5]
+
+
+                dc.SetBrush(wx.TRANSPARENT_BRUSH)
+
+                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('BLUE'),0))
+                for p in pNFoc:
+                    dc.DrawRectangle(sc*p[1]-2*sc,sc*p[2] - 2*sc, 4*sc,4*sc)
+
+                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),0))
+                for p in pFoc:
+                    dc.DrawRectangle(sc*p[1]-2*sc,sc*p[2] - 2*sc, 4*sc,4*sc)
+            
             dc.SetPen(wx.NullPen)
             dc.SetBrush(wx.NullBrush)
             

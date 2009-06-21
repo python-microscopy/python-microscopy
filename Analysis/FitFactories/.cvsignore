@@ -1,14 +1,15 @@
 __init__.pyc
 LatGaussFitFJ.pyc
 LatGaussFitF.pyc
-LatGaussFit.pyc
 SMIAxialFit.pyc
+LatGaussFit.pyc
 LatGaussFitFR.pyc
 LatPSFFit.pyc
 LatGaussFitFRTC.pyc
 LatGaussFitlmR.pyc
+Gauss3DFitR.pyc
+PsfFitIR.pyc
 BiplaneFitR.pyc
 LatObjFindFR.pyc
 LatPSFFitR.pyc
 LatGaussFitAF.pyc
-PsfFitIR.pyc
