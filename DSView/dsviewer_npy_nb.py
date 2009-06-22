@@ -23,6 +23,7 @@ import pylab
 import glob
 
 from myviewpanel_numarray import MyViewPanel
+from PYME.Analysis.LMVis import recArrayView
 import eventLogViewer
 
 from PYME.Acquire import MetaDataHandler
@@ -46,6 +47,8 @@ class DSViewFrame(wx.Frame):
         self.saved = True
 
         self.mode = 'LM'
+        self.vObjPos = None
+        self.vObjFit = None
 
         #a timer object to update for us
         self.timer = mytimer()
@@ -180,7 +183,12 @@ class DSViewFrame(wx.Frame):
         tmp_menu = wx.Menu()
         #F_SAVE = wx.NewId()
         #F_CLOSE = wx.NewId()
+        F_SAVE_POSITIONS = wx.NewId()
+        F_SAVE_FITS = wx.NewId()
         #tmp_menu.Append(wx.ID_SAVEAS, "Save As", "", wx.ITEM_NORMAL)
+        if self.mode == 'blob':
+            tmp_menu.Append(F_SAVE_POSITIONS, "Save &Positions", "", wx.ITEM_NORMAL)
+            tmp_menu.Append(F_SAVE_FITS, "Save &Fit Results", "", wx.ITEM_NORMAL)
         tmp_menu.Append(wx.ID_CLOSE, "Close", "", wx.ITEM_NORMAL)
         self.menubar.Append(tmp_menu, "File")
 
@@ -192,7 +200,9 @@ class DSViewFrame(wx.Frame):
         #self.menubar.Append(mEdit, "Edit")
 
         # Menu Bar end
-        wx.EVT_MENU(self, wx.ID_SAVEAS, self.saveStack)
+        #wx.EVT_MENU(self, wx.ID_SAVEAS, self.saveStack)
+        wx.EVT_MENU(self, F_SAVE_POSITIONS, self.savePositions)
+        wx.EVT_MENU(self, F_SAVE_FITS, self.saveFits)
         #wx.EVT_MENU(self, wx.ID_CLOSE, self.menuClose)
         #wx.EVT_MENU(self, EDIT_CLEAR_SEL, self.clearSel)
         #wx.EVT_MENU(self, EDIT_CROP, self.crop)
@@ -247,6 +257,7 @@ class DSViewFrame(wx.Frame):
             self.GenFitStatusPanel()
         else:
             self.GenBlobFindingPanel()
+            self.GenBlobFitPanel()
 
 
         #item = self._pnl.AddFoldPanel("Filters", False, foldIcons=self.Images)
@@ -458,6 +469,11 @@ class DSViewFrame(wx.Frame):
 
         self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
 
+        self.cbSNThreshold = wx.CheckBox(item, -1, 'SNR Threshold')
+        self.cbSNThreshold.SetValue(False)
+
+        self._pnl.AddFoldPanelWindow(item, self.cbSNThreshold, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+
         bFindObjects = wx.Button(item, -1, 'Find')
 
 
@@ -474,11 +490,70 @@ class DSViewFrame(wx.Frame):
             self.ofd = ObjectIdentifier(self.dataSource)
 
         #and identify objects ...
-        self.ofd.FindObjects(threshold)
+        if self.cbSNThreshold.GetValue(): #don't detect objects in poisson noise
+            fudgeFactor = 1 #to account for the fact that the blurring etc... in ofind doesn't preserve intensities - at the moment completely arbitrary so a threshold setting of 1 results in reasonable detection.
+            threshold =  (numpy.sqrt(self.mdh.Camera.ReadNoise**2 + numpy.maximum(self.mdh.Camera.ElectronsPerCount*(self.mdh.Camera.NoiseFactor**2)*(self.dataSource.astype('f') - self.mdh.Camera.ADOffset)*self.mdh.Camera.TrueEMGain, 1))/self.mdh.Camera.ElectronsPerCount)*fudgeFactor*threshold
+            self.ofd.FindObjects(threshold, 0)
+        else:
+            self.ofd.FindObjects(threshold)
         
         self.vp.points = numpy.array([[p.x, p.y, p.z] for p in self.ofd])
+
+        self.objPosRA = numpy.rec.fromrecords(self.vp.points, names='x,y,z')
+
+        if self.vObjPos == None:
+            self.vObjPos = recArrayView.recArrayPanel(self.notebook1, self.objPosRA)
+            self.notebook1.AddPage(self.vObjPos, 'Object Positions')
+        else:
+            self.vObjPos.grid.SetData(self.objPosRA)
+
         self.update()
 
+    def GenBlobFitPanel(self):
+        item = self._pnl.AddFoldPanel("Object Fitting", collapsed=False,
+                                      foldIcons=self.Images)
+
+        #pan = wx.Panel(item, -1)
+
+#        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+#
+#        hsizer.Add(wx.StaticText(pan, -1, 'Threshold:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+#        self.tThreshold = wx.TextCtrl(pan, -1, value='50', size=(40, -1))
+#
+#        hsizer.Add(self.tThreshold, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+#
+#        pan.SetSizer(hsizer)
+#        hsizer.Fit(pan)
+#
+#        self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+
+        bFitObjects = wx.Button(item, -1, 'Fit')
+
+
+        bFitObjects.Bind(wx.EVT_BUTTON, self.OnFitObjects)
+        self._pnl.AddFoldPanelWindow(item, bFitObjects, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+
+    def OnFitObjects(self, event):
+        import PYME.Analysis.FitFactories.Gauss3DFitR as fitMod
+
+        fitFac = fitMod.FitFactory(self.dataSource, self.mdh)
+
+        self.objFitRes = numpy.empty(len(self.ofd), fitMod.FitResultsDType)
+        for i in range(len(self.ofd)):
+            p = self.ofd[i]
+            try:
+                self.objFitRes[i] = fitFac.FromPoint(round(p.x), round(p.y), round(p.z))
+            except:
+                pass
+
+
+        if self.vObjFit == None:
+            self.vObjFit = recArrayView.recArrayPanel(self.notebook1, self.objFitRes['fitResults'])
+            self.notebook1.AddPage(self.vObjFit, 'Fitted Positions')
+        else:
+            self.vObjFit.grid.SetData(self.objFitRes)
+
+        self.update()
 
     def OnTest(self, event):
         threshold = float(self.tThreshold.GetValue())
@@ -528,6 +603,42 @@ class DSViewFrame(wx.Frame):
                 
             self.SetTitle(fdialog.GetFilename())
             self.saved = True
+
+    def savePositions(self, event=None):
+        fdialog = wx.FileDialog(None, 'Save Positions ...',
+            wildcard='Tab formatted text|*.txt', defaultFile=os.path.splitext(self.seriesName)[0] + '_pos.txt', style=wx.SAVE|wx.HIDE_READONLY)
+        succ = fdialog.ShowModal()
+        if (succ == wx.ID_OK):
+            outFilename = fdialog.GetPath().encode()
+
+            of = open(outFilename, 'w')
+            of.write('\t'.join(self.objPosRA.dtype.names) + '\n')
+
+            for obj in self.objPosRA:
+                of.write('\t'.join([repr(v) for v in obj]) + '\n')
+            of.close()
+
+            npFN = os.path.splitext(outFilename)[0] + '.npy'
+
+            numpy.save(npFN, self.objPosRA)
+            
+    def saveFits(self, event=None):
+        fdialog = wx.FileDialog(None, 'Save Fit Results ...',
+            wildcard='Tab formatted text|*.txt', defaultFile=os.path.splitext(self.seriesName)[0] + '_fits.txt', style=wx.SAVE|wx.HIDE_READONLY)
+        succ = fdialog.ShowModal()
+        if (succ == wx.ID_OK):
+            outFilename = fdialog.GetPath().encode()
+
+            of = open(outFilename, 'w')
+            of.write('\t'.join(self.objFitRes['fitResults'].dtype.names) + '\n')
+
+            for obj in self.objFitRes['fitResults']:
+                of.write('\t'.join([repr(v) for v in obj]) + '\n')
+            of.close()
+
+            npFN = os.path.splitext(outFilename)[0] + '.npy'
+
+            numpy.save(npFN, self.objFitRes)
 
     def menuClose(self, event):
         self.Close()

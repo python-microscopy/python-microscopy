@@ -133,8 +133,8 @@ class ObjectIdentifier(list):
             maskedFilteredData[0:5, -5:,:] = 0
             maskedFilteredData[-5:, -5:,:] = 0
             maskedFilteredData[-5:, 0:5,:] = 0
-            maskedFilteredData[:,:,:5] = 0
-            maskedFilteredData[:,:,-5:] = 0
+            maskedFilteredData[:,:,:3] = 0
+            maskedFilteredData[:,:,-3:] = 0
         else:
             maskedFilteredData[0:5, 0:5] = 0
             maskedFilteredData[0:5, -5:] = 0
