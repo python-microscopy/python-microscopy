@@ -189,7 +189,7 @@ def fillInBlanks(md, dataSource):
                 md.setEntry('Camera.ADOffset', numpy.median(numpy.array([dataSource.getSlice(i) for i in range(0, 10)]).ravel()))
                 import wx
                 if not wx.GetApp() == None:
-                    ado = wx.MessageBox("ADOffset fudged as %d and probably wrong\nTo change ADOffset, execute the following in the console:\nmd.setEntry('Camera.ADOffset', newValue)\nmdh.setEntry('Camera.ADOffset', newValue)" % md.getEntry('Camera.ADOffset'),'Did not find laser turn on signature', style=wx.OK|wx.ICON_EXCLAMATION)
+                    wx.MessageBox("ADOffset fudged as %d and probably wrong\nTo change ADOffset, execute the following in the console:\nmd.setEntry('Camera.ADOffset', newValue)\nmdh.setEntry('Camera.ADOffset', newValue)" % md.getEntry('Camera.ADOffset'),'Did not find laser turn on signature', style=wx.OK|wx.ICON_EXCLAMATION)
 
 
                 #md.setEntry('Camera.ADOffset',numpy.median(numpy.array([dataSource.getSlice(i) for i in range(dataSource.getNumSlices()-5, dataSource.getNumSlices())]).ravel()))
