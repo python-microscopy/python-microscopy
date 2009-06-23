@@ -186,7 +186,13 @@ def fillInBlanks(md, dataSource):
             if not tLon == 0:
                 md.setEntry('Camera.ADOffset', numpy.median(numpy.array([dataSource.getSlice(i) for i in range(0, max(tLon - 1, 1))]).ravel()))
             else: #if laser was on to start with our best estimate is at maximal bleaching where the few molecules that are still on will hopefully have little influence on the median
-                md.setEntry('Camera.ADOffset',numpy.median(numpy.array([dataSource.getSlice(i) for i in range(dataSource.getNumSlices()-5, dataSource.getNumSlices())]).ravel()))
+                md.setEntry('Camera.ADOffset', numpy.median(numpy.array([dataSource.getSlice(i) for i in range(0, 10)]).ravel()))
+                import wx
+                if not wx.GetApp() == None:
+                    ado = wx.MessageBox("ADOffset fudged as %d and probably wrong\nTo change ADOffset, execute the following in the console:\nmd.setEntry('Camera.ADOffset', newValue)\nmdh.setEntry('Camera.ADOffset', newValue)" % md.getEntry('Camera.ADOffset'),'Did not find laser turn on signature', style=wx.OK|wx.ICON_EXCLAMATION)
+
+
+                #md.setEntry('Camera.ADOffset',numpy.median(numpy.array([dataSource.getSlice(i) for i in range(dataSource.getNumSlices()-5, dataSource.getNumSlices())]).ravel()))
                 print '''WARNING: No clear laser turn on signature found - assuming laser was already on
                          and fudging ADOffset Estimation'''
 
