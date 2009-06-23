@@ -697,6 +697,8 @@ class DSViewFrame(wx.Frame):
                     self.fitResults = numpy.concatenate((self.fitResults, newResults))
                 self.progPan.fitResults = self.fitResults
 
+                self.vp.points = numpy.vstack((self.fitResults['fitResults']['x0'], self.fitResults['fitResults']['y0'], self.fitResults['tIndex'])).T
+
                 self.numEvents = len(self.fitResults)
                 if 'zm' in dir(self): #we have z info
                     z = self.zm(self.fitResults['tIndex'].astype('f')).astype('f')
