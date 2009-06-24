@@ -1,5 +1,5 @@
 #!/usr/bin/python
-from PYME import mProfile
+#from PYME import mProfile
 
 #mProfile.profileOn(['dsviewer_npy_nb.py', 'myviewpanel_numarray.py'])
 

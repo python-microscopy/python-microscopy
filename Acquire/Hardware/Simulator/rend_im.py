@@ -168,7 +168,7 @@ def simPalmImF(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=10, laserPowe
     return im
 
 
-def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=20, laserPowers = [.1,1]):
+def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=15, laserPowers = [.1,1]):
     im = zeros((len(X), len(Y)), 'f')
 
     if fluors == None:

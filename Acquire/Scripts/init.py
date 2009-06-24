@@ -107,11 +107,11 @@ def calcSum(caller):
 #must be here!!!
 joinBGInit() #wait for anyhting which was being done in a separate thread
 
-import numpy
-psf = numpy.load('/home/david/psf488.npy')
-psf = numpy.maximum(psf, 0.)
-from PYME.Analysis import MetaData
-fakeCam.rend_im.setModel(psf, MetaData.TIRFDefault)
+#import numpy
+#psf = numpy.load(r'd:\psf647.npy')
+#psf = numpy.maximum(psf, 0.)
+#from PYME.Analysis import MetaData
+#fakeCam.rend_im.setModel(psf, MetaData.TIRFDefault)
 
 time.sleep(.5)
 scope.initDone = True

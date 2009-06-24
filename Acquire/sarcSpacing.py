@@ -25,7 +25,7 @@ class SarcomereChecker:
         voxy = 0.07
         
         im = cSMI.CDataStack_AsArray(self.scope.pa.ds, 0)
-        F = log10(abs(fftshift(fftn(im - im.mean()))) + 1e-2).squeeze()
+        F = (abs(fftshift(fftn(im - im.mean()))) + 1e-2).squeeze()
 
         currVoxelSizeID = self.scope.settingsDB.execute("SELECT sizeID FROM VoxelSizeHistory ORDER BY time DESC").fetchone()
         if not currVoxelSizeID == None:
@@ -37,8 +37,10 @@ class SarcomereChecker:
         xd = F.shape[0]/2.
         yd = F.shape[1]/2.
 
-        F[xd,yd] = F.mean()
-        imshow(F.T, interpolation='nearest', cmap=cm.gray)
+        cd = xd*2*voxx/5
+        #kill central spike
+        F[(xd-cd):(xd+cd),(yd-cd):(yd+cd)] = F.mean()
+        imshow(F.T, interpolation='nearest', cmap=cm.hot)
 
         xd = F.shape[0]/2.
         yd = F.shape[1]/2.

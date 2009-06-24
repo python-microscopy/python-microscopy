@@ -27,15 +27,16 @@ cm_hot = cmap_mult(8.0*numpy.ones(3)/3, [0, 3.0/8, 6.0/8])
 cm_grey = cmap_mult(numpy.ones(3), [0, 0, 0])
 
 class LMGLCanvas(GLCanvas):
-    def __init__(self, parent):
+    def __init__(self, parent, trackSelection=True):
         GLCanvas.__init__(self, parent,-1)
         wx.EVT_PAINT(self, self.OnPaint)
         wx.EVT_SIZE(self, self.OnSize)
         wx.EVT_MOUSEWHEEL(self, self.OnWheel)
         wx.EVT_LEFT_DOWN(self, self.OnLeftDown)
         wx.EVT_LEFT_UP(self, self.OnLeftUp)
-        wx.EVT_MOTION(self, self.OnMouseMove)
-        wx.EVT_ERASE_BACKGROUND(self, self.OnEraseBackground)
+        if trackSelection:
+            wx.EVT_MOTION(self, self.OnMouseMove)
+        #wx.EVT_ERASE_BACKGROUND(self, self.OnEraseBackground)
         #wx.EVT_IDLE(self, self.OnIdle)
 
         self.init = 0
@@ -718,6 +719,7 @@ class LMGLCanvas(GLCanvas):
         event.Skip()
 
     def OnMouseMove(self, event):
+        #print 'mm'
         if self.selectionDragging:
             view_size_x = self.xmax - self.xmin
             view_size_y = self.ymax - self.ymin

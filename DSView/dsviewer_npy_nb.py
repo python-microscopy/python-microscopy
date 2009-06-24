@@ -411,7 +411,7 @@ class DSViewFrame(wx.Frame):
             self.sh.run('pushImagesD(%d, %f)' % (startAt, threshold))
 
         from PYME.Analysis.LMVis import gl_render
-        self.glCanvas = gl_render.LMGLCanvas(self.notebook1)
+        self.glCanvas = gl_render.LMGLCanvas(self.notebook1, False)
         self.glCanvas.cmap = pylab.cm.gist_rainbow
 
         self.notebook1.AddPage(page=self.glCanvas, select=True, caption='VisLite')

@@ -4,6 +4,7 @@ import sys
 def configuration(parent_package = '', top_path = None):
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
     config = Configuration('DSView', parent_package, top_path)
+    config.add_data_dir('icons')
 
 #    if sys.platform == 'win32':
 #        config.add_scripts('dh5view.cmd')
@@ -20,6 +21,5 @@ if __name__ == '__main__':
 Provides viewers for PYME's internal representation, kdf, and PYME hdf5 files
 ''',
           license = "Proprietary",
-          #data_files = ['dh5view.cmd']
           **configuration(top_path='').todict()
           )
