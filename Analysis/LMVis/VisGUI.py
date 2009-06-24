@@ -38,6 +38,7 @@ from PYME.Analysis import intelliFit
 from PYME.Analysis import piecewiseMapping
 
 #import time
+import numpy as np
 
 import tables
 from PYME.Analysis import MetaData
@@ -185,8 +186,8 @@ class VisGUIFrame(wx.Frame):
         self.driftExprX = 'x + a*t'
         self.driftExprY = 'y + b*t'
 
-        self.objThreshold = 100
-        self.objMinSize = 3
+        self.objThreshold = 30
+        self.objMinSize = 10
         self.objects = None
 
         self.imageBounds = ImageBounds(0,0,0,0)
@@ -1015,6 +1016,7 @@ class VisGUIFrame(wx.Frame):
         file_menu = wx.Menu()
 
         ID_OPEN = wx.ID_OPEN
+        ID_SAVE_MEASUREMENTS = wx.ID_SAVE
         ID_QUIT = wx.ID_EXIT
 
         ID_OPEN_RAW = wx.NewId()
@@ -1046,6 +1048,9 @@ class VisGUIFrame(wx.Frame):
         file_menu.Append(ID_OPEN, "&Open")
         file_menu.Append(ID_OPEN_RAW, "Open &Raw/Prebleach Data")
         
+        file_menu.AppendSeparator()
+        file_menu.Append(ID_SAVE_MEASUREMENTS, "&Save Measurements")
+
         file_menu.AppendSeparator()
         
         file_menu.Append(ID_QUIT, "&Exit")
@@ -1109,6 +1114,8 @@ class VisGUIFrame(wx.Frame):
 
         self.Bind(wx.EVT_MENU, self.OnOpenFile, id=ID_OPEN)
         self.Bind(wx.EVT_MENU, self.OnOpenRaw, id=ID_OPEN_RAW)
+
+        self.Bind(wx.EVT_MENU, self.OnSaveMeasurements, id=ID_SAVE_MEASUREMENTS)
 
         self.Bind(wx.EVT_MENU, self.OnViewPoints, id=ID_VIEW_POINTS)
         self.Bind(wx.EVT_MENU, self.OnViewTriangles, id=ID_VIEW_TRIANGS)
@@ -1355,6 +1362,14 @@ class VisGUIFrame(wx.Frame):
             imf.Show()
 
         dlg.Destroy()
+
+    def OnSaveMeasurements(self, event):
+        fdialog = wx.FileDialog(None, 'Save measurements ...',
+            wildcard='Numpy array|*.npy', style=wx.SAVE|wx.HIDE_READONLY)
+        succ = fdialog.ShowModal()
+        if (succ == wx.ID_OK):
+            outFilename = fdialog.GetPath().encode()
+            np.save(outFilename, self.objectMeasures)
 
 
     def OnOpenFile(self, event):
