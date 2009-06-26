@@ -297,8 +297,10 @@ class VisGUIFrame(wx.Frame):
 
         # recreate the foldpanelbar
 
+        s = self._leftWindow.GetBestSize()
+
         self._pnl = fpb.FoldPanelBar(self._leftWindow1, -1, wx.DefaultPosition,
-                                     wx.Size(-1,-1), fpb.FPB_DEFAULT_STYLE,0)
+                                     s, fpb.FPB_DEFAULT_STYLE,0)
 
         self.Images = wx.ImageList(16,16)
         self.Images.Add(GetExpandedIconBitmap())
