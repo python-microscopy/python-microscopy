@@ -84,7 +84,7 @@ class LMGLCanvas(GLCanvas):
         self.selection = False
 
     def OnPaint(self,event):
-        #dc = wx.PaintDC(self)
+        dc = wx.PaintDC(self)
         self.SetCurrent()
         if not self.init:
             self.InitGL()
