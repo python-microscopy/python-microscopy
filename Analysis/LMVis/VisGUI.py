@@ -297,7 +297,7 @@ class VisGUIFrame(wx.Frame):
 
         # recreate the foldpanelbar
 
-        s = self._leftWindow.GetBestSize()
+        s = self._leftWindow1.GetBestSize()
 
         self._pnl = fpb.FoldPanelBar(self._leftWindow1, -1, wx.DefaultPosition,
                                      s, fpb.FPB_DEFAULT_STYLE,0)
