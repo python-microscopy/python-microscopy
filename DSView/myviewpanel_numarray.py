@@ -105,6 +105,9 @@ class MyViewPanel(viewpanel.ViewPanel):
         self.do.Optimise(self.ds, self.zp)
 
         self.points =[]
+        self.pointsR = []
+        self.pointMode = 'confoc'
+        self.pointTolNFoc = {'confoc' : (5,5,5), 'lm' : (2, 5, 5)}
         
         
         #self.rend = example.CLUT_RGBRenderer()
@@ -205,13 +208,14 @@ class MyViewPanel(viewpanel.ViewPanel):
         #dc.DrawBitmap(wx.BitmapFromImage(im),wx.Point(0,0))
 
         x0,y0 = self.imagepanel.CalcUnscrolledPosition(0,0)
-        dc.DrawBitmap(wx.BitmapFromImage(im),x0,y0)
+        dc.DrawBitmap(wx.BitmapFromImage(im),0,0)
         #mdc.SelectObject(wx.BitmapFromImage(self.im))
         #mdc.DrawBitmap(wx.BitmapFromImage(self.im),wx.Point(0,0))
         #dc.Blit(0,0,im.GetWidth(), im.GetHeight(),mdc,0,0)
         #dc.EndDrawing()
 
-        sX, sY = self.imagepanel.GetVirtualSize()
+        #sX, sY = self.imagepanel.GetVirtualSize()
+        sX, sY = im.GetWidth(), im.GetHeight()
 
         if self.crosshairs:
             dc.SetPen(wx.Pen(wx.CYAN,0))
@@ -228,11 +232,11 @@ class MyViewPanel(viewpanel.ViewPanel):
             #dc.DrawLine((0, ly*sc), (im.GetWidth(), ly*sc))
             #dc.DrawLine((lx*sc, 0), (lx*sc, im.GetHeight()))
             if (self.do.orientation == self.do.UPRIGHT):
-                dc.DrawLine(0, ly*sc, sX, ly*sc)
-                dc.DrawLine(lx*sc, 0, lx*sc, sY)
+                dc.DrawLine(0, ly*sc - y0, sX, ly*sc - y0)
+                dc.DrawLine(lx*sc - x0, 0, lx*sc - x0, sY)
             else:
-                dc.DrawLine(0, lx*sc, sX, lx*sc)
-                dc.DrawLine(ly*sc, 0, ly*sc, sY)
+                dc.DrawLine(0, lx*sc - y0, sX, lx*sc - y0)
+                dc.DrawLine(ly*sc - x0, 0, ly*sc - x0, sY)
             dc.SetPen(wx.NullPen)
             
         if self.selection:
@@ -261,57 +265,70 @@ class MyViewPanel(viewpanel.ViewPanel):
             
             #(lx*sc,ly*sc, (hx-lx)*sc,(hy-ly)*sc)
             if (self.do.orientation == self.do.UPRIGHT):
-                dc.DrawRectangle(lx*sc,ly*sc, (hx-lx)*sc,(hy-ly)*sc)
+                dc.DrawRectangle(lx*sc - x0,ly*sc - y0, (hx-lx)*sc,(hy-ly)*sc)
             else:
-                dc.DrawRectangle(ly*sc,lx*sc, (hy-ly)*sc,(hx-lx)*sc)
+                dc.DrawRectangle(ly*sc - x0,lx*sc - y0, (hy-ly)*sc,(hx-lx)*sc)
             dc.SetPen(wx.NullPen)
             dc.SetBrush(wx.NullBrush)
 
         if len(self.points) > 0:
+            #if self.pointsMode == 'confoc':
+            pointTol = self.pointTolNFoc[self.pointMode]
             if(self.do.slice == self.do.SLICE_XY):
-                pFoc = self.points[abs(self.points[:,2] - self.zp) < 1]
-                pNFoc = self.points[abs(self.points[:,2] - self.zp) < 5]
-
-
-                dc.SetBrush(wx.TRANSPARENT_BRUSH)
-
-                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('BLUE'),0))
-                for p in pNFoc:
-                    dc.DrawRectangle(sc*p[0]-2*sc,sc*p[1] - 2*sc, 4*sc,4*sc)
-
-                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),0))
-                for p in pFoc:
-                    dc.DrawRectangle(sc*p[0]-2*sc,sc*p[1] - 2*sc, 4*sc,4*sc)
+                pFoc = self.points[abs(self.points[:,2] - self.zp) < 1][:,:2]
+                pNFoc = self.points[abs(self.points[:,2] - self.zp) < pointTol[0]][:,:2]
 
             elif(self.do.slice == self.do.SLICE_XZ):
-                pFoc = self.points[abs(self.points[:,1] - self.yp) < 1]
-                pNFoc = self.points[abs(self.points[:,1] - self.yp) < 5]
-
-
-                dc.SetBrush(wx.TRANSPARENT_BRUSH)
-
-                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('BLUE'),0))
-                for p in pNFoc:
-                    dc.DrawRectangle(sc*p[0]-2*sc,sc*p[2] - 2*sc, 4*sc,4*sc)
-
-                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),0))
-                for p in pFoc:
-                    dc.DrawRectangle(sc*p[0]-2*sc,sc*p[2] - 2*sc, 4*sc,4*sc)
+                pFoc = self.points[abs(self.points[:,1] - self.yp) < 1][:, ::2]
+                pNFoc = self.points[abs(self.points[:,1] - self.yp) < pointTol[1]][:,::2]
 
             else:#(self.do.slice == self.do.SLICE_YZ):
-                pFoc = self.points[abs(self.points[:,0] - self.xp) < 1]
-                pNFoc = self.points[abs(self.points[:,0] - self.xp) < 5]
+                pFoc = self.points[abs(self.points[:,0] - self.xp) < 1][:, 1:]
+                pNFoc = self.points[abs(self.points[:,0] - self.xp) < pointTol[2]][:,1:]
+
+            #pFoc = numpy.atleast_1d(pFoc)
+            #pNFoc = numpy.atleast_1d(pNFoc)
 
 
-                dc.SetBrush(wx.TRANSPARENT_BRUSH)
+            dc.SetBrush(wx.TRANSPARENT_BRUSH)
 
-                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('BLUE'),0))
-                for p in pNFoc:
-                    dc.DrawRectangle(sc*p[1]-2*sc,sc*p[2] - 2*sc, 4*sc,4*sc)
+            dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('BLUE'),0))
+            for p in pNFoc:
+                dc.DrawRectangle(sc*p[0]-2*sc - x0,sc*p[1] - 2*sc - y0, 4*sc,4*sc)
 
-                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),0))
-                for p in pFoc:
-                    dc.DrawRectangle(sc*p[1]-2*sc,sc*p[2] - 2*sc, 4*sc,4*sc)
+            dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),0))
+            for p in pFoc:
+                dc.DrawRectangle(sc*p[0]-2*sc - x0,sc*p[1] - 2*sc - y0, 4*sc,4*sc)
+
+#            elif(self.do.slice == self.do.SLICE_XZ):
+#                pFoc = self.points[abs(self.points[:,1] - self.yp) < 1]
+#                pNFoc = self.points[abs(self.points[:,1] - self.yp) < pointTol[1]]
+#
+#
+#                dc.SetBrush(wx.TRANSPARENT_BRUSH)
+#
+#                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('BLUE'),0))
+#                for p in pNFoc:
+#                    dc.DrawRectangle(sc*p[0]-2*sc,sc*p[2] - 2*sc, 4*sc,4*sc)
+#
+#                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),0))
+#                for p in pFoc:
+#                    dc.DrawRectangle(sc*p[0]-2*sc,sc*p[2] - 2*sc, 4*sc,4*sc)
+#
+#            else:#(self.do.slice == self.do.SLICE_YZ):
+#                pFoc = self.points[abs(self.points[:,0] - self.xp) < 1]
+#                pNFoc = self.points[abs(self.points[:,0] - self.xp) < pointTol[2] ]
+#
+#
+#                dc.SetBrush(wx.TRANSPARENT_BRUSH)
+#
+#                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('BLUE'),0))
+#                for p in pNFoc:
+#                    dc.DrawRectangle(sc*p[1]-2*sc,sc*p[2] - 2*sc, 4*sc,4*sc)
+#
+#                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),0))
+#                for p in pFoc:
+#                    dc.DrawRectangle(sc*p[1]-2*sc,sc*p[2] - 2*sc, 4*sc,4*sc)
             
             dc.SetPen(wx.NullPen)
             dc.SetBrush(wx.NullBrush)
@@ -319,8 +336,11 @@ class MyViewPanel(viewpanel.ViewPanel):
     def OnPaint(self,event):
         DC = wx.PaintDC(self.imagepanel)
         self.imagepanel.PrepareDC(DC)
+
+        x0,y0 = self.imagepanel.CalcUnscrolledPosition(0,0)
         
-        s = self.imagepanel.GetVirtualSize()
+        #s = self.imagepanel.GetVirtualSize()
+        s = self.imagepanel.GetClientSize()
         MemBitmap = wx.EmptyBitmap(s.GetWidth(), s.GetHeight())
         #del DC
         MemDC = wx.MemoryDC()
@@ -333,7 +353,7 @@ class MyViewPanel(viewpanel.ViewPanel):
             self.DoPaint(MemDC);
             #Message.DC := 0;
             #DC.BlitXY(0, 0, s.GetWidth(), s.GetHeight(), MemDC, 0, 0)
-            DC.Blit(0, 0, s.GetWidth(), s.GetHeight(), MemDC, 0, 0)
+            DC.Blit(x0, y0, s.GetWidth(), s.GetHeight(), MemDC, 0, 0)
             DC.EndDrawing()
         finally:
             #MemDC.SelectObject(OldBitmap)
@@ -360,6 +380,30 @@ class MyViewPanel(viewpanel.ViewPanel):
                 self.imagepanel.Refresh()
         elif event.GetKeyCode() == wx.WXK_NEXT:
             self.zp = (self.zp + 1)
+            if ('update' in dir(self.GetParent())):
+                self.GetParent().update()
+            else:
+                self.imagepanel.Refresh()
+        elif event.GetKeyCode() == 74:
+            self.xp = (self.xp - 1)
+            if ('update' in dir(self.GetParent())):
+                self.GetParent().update()
+            else:
+                self.imagepanel.Refresh()
+        elif event.GetKeyCode() == 76:
+            self.xp +=1
+            if ('update' in dir(self.GetParent())):
+                self.GetParent().update()
+            else:
+                self.imagepanel.Refresh()
+        elif event.GetKeyCode() == 73:
+            self.yp += 1
+            if ('update' in dir(self.GetParent())):
+                self.GetParent().update()
+            else:
+                self.imagepanel.Refresh()
+        elif event.GetKeyCode() == 75:
+            self.yp -= 1
             if ('update' in dir(self.GetParent())):
                 self.GetParent().update()
             else:

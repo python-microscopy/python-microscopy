@@ -608,7 +608,7 @@ class DSViewFrame(wx.Frame):
 
     def update(self):
         self.vp.imagepanel.Refresh()
-        self.statusbar.SetStatusText('Slice No: (%d/%d)    Frames Analysed: %d    Events detected: %d' % (self.vp.zp, self.vp.ds.shape[2], self.numAnalysed, self.numEvents))
+        self.statusbar.SetStatusText('Slice No: (%d/%d)    x: %d    y: %d    Frames Analysed: %d    Events detected: %d' % (self.vp.zp, self.vp.ds.shape[2], self.vp.xp, self.vp.yp, self.numAnalysed, self.numEvents))
         self.slPlayPos.SetValue((100*self.vp.zp)/(self.vp.ds.shape[2]-1))
 
     def saveStack(self, event=None):
