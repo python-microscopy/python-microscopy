@@ -17,7 +17,7 @@ import PYME.cSMI as example
 #import logparser
 import numpy
 
-#import tables
+import tables
 import wx.py.crust
 import pylab
 import glob
@@ -102,6 +102,23 @@ class DSViewFrame(wx.Frame):
                     from PYME.ParallelTasks.relativeFiles import getRelFilename
                     self.seriesName = getRelFilename(filename)
 
+                    #try and find a previously performed analysis
+                    fns = filename.split(os.path.sep)
+                    #print fns
+                    #print fns[:-2]
+                    #print fns[-2:]
+                    cand = os.path.sep.join(fns[:-2] + ['analysis',] + fns[-2:]) + 'r'
+                    print cand
+                    if os.path.exists(cand):
+                        #print 'Found Analysis'
+                        h5Results = tables.openFile(cand)
+
+                        if 'FitResults' in dir(h5Results.root):
+                            self.fitResults = h5Results.root.FitResults[:]
+
+                       
+
+
                 else: #try tiff
                     #self.dataSource = TiffDataSource.DataSource(filename, None)
                     self.dataSource = readTiff.read3DTiff(filename)
@@ -166,7 +183,13 @@ class DSViewFrame(wx.Frame):
                 pm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.md.Camera.CycleTime*1e-3, self.md.StartTime, self.md.Protocol.PiezoStartPos)
                 self.elv.SetCharts([('Focus [um]', pm, 'ProtocolFocus'),])
 
-        
+        if 'fitResults' in dir(self):
+            #print self.fitResults.shape
+            #print self.fitResults[0].dtype
+            voxx = 1e3*self.mdh.getEntry('voxelsize.x')
+            voxy = 1e3*self.mdh.getEntry('voxelsize.y')
+            self.vp.points = numpy.vstack((self.fitResults['fitResults']['x0']/voxx, self.fitResults['fitResults']['y0']/voxy, self.fitResults['tIndex'])).T
+
         #self.notebook1.Split(0, wx.TOP)
         
 
