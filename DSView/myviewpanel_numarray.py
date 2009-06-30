@@ -52,8 +52,8 @@ class DataWrap: #permit indexing with more dimensions larger than len(shape)
         else:
             #print keys[0]
             #print numpy.mgrid[keys[0]]
-            r = numpy.array([self.data.getSlice(i)[keys[1], keys[2]] for i in numpy.mgrid[keys[0]]])
-        if self.dim_1_is_z and keys[0].__class__ == slice:
+            r = numpy.array([self.data.getSlice(i)[keys[1], keys[2]] for i in numpy.mgrid[keys[0]] if i < self.data.getNumSlices()])
+        if self.dim_1_is_z and len(numpy.mgrid[keys[0]]) == 1: #and keys[0].__class__ == slice
             r = r.T
         self.oldData = r
         return r
@@ -193,6 +193,9 @@ class MyViewPanel(viewpanel.ViewPanel):
         #im = wx.EmptyImage(s[0],s[1])
         #bmp = im.GetDataBuffer()
         #self.rend.pyRender(bmp,self.ds)
+
+        #print self.imagepanel.CalcUnscrolledPosition(0,0)
+
         dc.Clear()
                                      
         im = self.Render()
@@ -200,11 +203,16 @@ class MyViewPanel(viewpanel.ViewPanel):
         sc = pow(2.0,(self.scale-2))
         im.Rescale(im.GetWidth()*sc,im.GetHeight()*sc) 
         #dc.DrawBitmap(wx.BitmapFromImage(im),wx.Point(0,0))
-        dc.DrawBitmap(wx.BitmapFromImage(im),0,0)
+
+        x0,y0 = self.imagepanel.CalcUnscrolledPosition(0,0)
+        dc.DrawBitmap(wx.BitmapFromImage(im),x0,y0)
         #mdc.SelectObject(wx.BitmapFromImage(self.im))
         #mdc.DrawBitmap(wx.BitmapFromImage(self.im),wx.Point(0,0))
         #dc.Blit(0,0,im.GetWidth(), im.GetHeight(),mdc,0,0)
         #dc.EndDrawing()
+
+        sX, sY = self.imagepanel.GetVirtualSize()
+
         if self.crosshairs:
             dc.SetPen(wx.Pen(wx.CYAN,0))
             if(self.do.slice == self.do.SLICE_XY):
@@ -220,11 +228,11 @@ class MyViewPanel(viewpanel.ViewPanel):
             #dc.DrawLine((0, ly*sc), (im.GetWidth(), ly*sc))
             #dc.DrawLine((lx*sc, 0), (lx*sc, im.GetHeight()))
             if (self.do.orientation == self.do.UPRIGHT):
-                dc.DrawLine(0, ly*sc, im.GetWidth(), ly*sc)
-                dc.DrawLine(lx*sc, 0, lx*sc, im.GetHeight())
+                dc.DrawLine(0, ly*sc, sX, ly*sc)
+                dc.DrawLine(lx*sc, 0, lx*sc, sY)
             else:
-                dc.DrawLine(0, lx*sc, im.GetWidth(), lx*sc)
-                dc.DrawLine(ly*sc, 0, ly*sc, im.GetHeight())
+                dc.DrawLine(0, lx*sc, sX, lx*sc)
+                dc.DrawLine(ly*sc, 0, ly*sc, sY)
             dc.SetPen(wx.NullPen)
             
         if self.selection:
@@ -407,10 +415,32 @@ class MyViewPanel(viewpanel.ViewPanel):
             sc = pow(2.0,(self.scale-2))
             s = self.CalcImSize()
             self.imagepanel.SetVirtualSize(wx.Size(s[0]*sc,s[1]*sc))
+
+            if not event == None and event.GetId() in [self.cbSlice.GetId(), self.cbScale.GetId()]:
+                #recenter the view
+                if(self.do.slice == self.do.SLICE_XY):
+                    lx = self.xp
+                    ly = self.yp
+                elif(self.do.slice == self.do.SLICE_XZ):
+                    lx = self.xp
+                    ly = self.zp
+                elif(self.do.slice == self.do.SLICE_YZ):
+                    lx = self.yp
+                    ly = self.zp
+
+                sx,sy =self.imagepanel.GetClientSize()
+
+                #self.imagepanel.SetScrollbars(20,20,s[0]*sc/20,s[1]*sc/20,min(0, lx*sc - sx/2)/20, min(0,ly*sc - sy/2)/20)
+                ppux, ppuy = self.imagepanel.GetScrollPixelsPerUnit()
+                #self.imagepanel.SetScrollPos(wx.HORIZONTAL, max(0, lx*sc - sx/2)/ppux)
+                #self.imagepanel.SetScrollPos(wx.VERTICAL, max(0, ly*sc - sy/2)/ppuy)
+                self.imagepanel.Scroll(max(0, lx*sc - sx/2)/ppux, max(0, ly*sc - sy/2)/ppuy)
+
             self.imagepanel.Refresh()
+            #self.Refresh()
             
     def Optim(self, event = None):
-        self.do.Optimise(self.ds, self.zp)
+        self.do.Optimise(self.ds, int(self.zp))
         self.updating=1
         self.SetOpts()
         self.Refresh()
@@ -515,47 +545,56 @@ class MyViewPanel(viewpanel.ViewPanel):
         self.selection_end_z = e_z
         
     def Render(self):
+        x0,y0 = self.imagepanel.CalcUnscrolledPosition(0,0)
+        sX, sY = self.imagepanel.Size
+
+        sc = pow(2.0,(self.scale-2))
+        sX_ = int(sX/sc)
+        sY_ = int(sY/sc)
+        x0_ = int(x0/sc)
+        y0_ = int(y0/sc)
+        
         #XY
         if self.do.slice == DisplayOpts.SLICE_XY:
             if self.do.Chans[0] < self.ds.shape[3]:
-                r = (self.do.Gains[0]*(self.ds[:,:,int(self.zp), self.do.Chans[0]] - self.do.Offs[0])).astype('uint8').squeeze().T
+                r = (self.do.Gains[0]*(self.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.zp), self.do.Chans[0]] - self.do.Offs[0])).astype('uint8').squeeze().T
             else:
                 r = numpy.zeros(ds.shape[:2], 'uint8').T
             if self.do.Chans[1] < self.ds.shape[3]:
-                g = (self.do.Gains[1]*(self.ds[:,:,int(self.zp), self.do.Chans[1]] - self.do.Offs[1])).astype('uint8').squeeze().T
+                g = (self.do.Gains[1]*(self.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.zp), self.do.Chans[1]] - self.do.Offs[1])).astype('uint8').squeeze().T
             else:
                 g = numpy.zeros(ds.shape[:2], 'uint8').T
             if self.do.Chans[2] < self.ds.shape[3]:
-                b = (self.do.Gains[2]*(self.ds[:,:,int(self.zp), self.do.Chans[2]] - self.do.Offs[2])).astype('uint8').squeeze().T
+                b = (self.do.Gains[2]*(self.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.zp), self.do.Chans[2]] - self.do.Offs[2])).astype('uint8').squeeze().T
             else:
                 b = numpy.zeros(ds.shape[:2], 'uint8').T
         #XZ
         elif self.do.slice == DisplayOpts.SLICE_XZ:
             if self.do.Chans[0] < self.ds.shape[3]:
-                r = (self.do.Gains[0]*(self.ds[:,int(self.yp),:, self.do.Chans[0]] - self.do.Offs[0])).astype('uint8').squeeze().T
+                r = (self.do.Gains[0]*(self.ds[x0_:(x0_+sX_),int(self.yp),y0_:(y0_+sY_), self.do.Chans[0]] - self.do.Offs[0])).astype('uint8').squeeze().T
             else:
                 r = numpy.zeros((ds.shape[0], ds.shape[2]), 'uint8').T
             if self.do.Chans[1] < self.ds.shape[3]:
-                g = (self.do.Gains[1]*(self.ds[:,int(self.yp),:, self.do.Chans[1]] - self.do.Offs[1])).astype('uint8').squeeze().T
+                g = (self.do.Gains[1]*(self.ds[x0_:(x0_+sX_),int(self.yp),y0_:(y0_+sY_), self.do.Chans[1]] - self.do.Offs[1])).astype('uint8').squeeze().T
             else:
                 g = numpy.zeros((ds.shape[0], ds.shape[2]), 'uint8').T
             if self.do.Chans[2] < self.ds.shape[3]:
-                b = (self.do.Gains[2]*(self.ds[:,int(self.yp),:, self.do.Chans[2]] - self.do.Offs[2])).astype('uint8').squeeze().T
+                b = (self.do.Gains[2]*(self.ds[x0_:(x0_+sX_),int(self.yp),y0_:(y0_+sY_), self.do.Chans[2]] - self.do.Offs[2])).astype('uint8').squeeze().T
             else:
                 b = numpy.zeros((ds.shape[0], ds.shape[2]), 'uint8'.T)
         
         #YZ
         elif self.do.slice == DisplayOpts.SLICE_YZ:
             if self.do.Chans[0] < self.ds.shape[3]:
-                r = (self.do.Gains[0]*(self.ds[int(self.xp),:,:, self.do.Chans[0]] - self.do.Offs[0])).astype('uint8').squeeze().T
+                r = (self.do.Gains[0]*(self.ds[int(self.xp),x0_:(x0_+sX_),y0_:(y0_+sY_), self.do.Chans[0]] - self.do.Offs[0])).astype('uint8').squeeze().T
             else:
                 r = numpy.zeros((ds.shape[1], ds.shape[2]), 'uint8').T
             if self.do.Chans[1] < self.ds.shape[3]:
-                g = (self.do.Gains[1]*(self.ds[int(self.xp),:,:, self.do.Chans[1]] - self.do.Offs[1])).astype('uint8').squeeze().T
+                g = (self.do.Gains[1]*(self.ds[int(self.xp),x0_:(x0_+sX_),y0_:(y0_+sY_), self.do.Chans[1]] - self.do.Offs[1])).astype('uint8').squeeze().T
             else:
                 g = numpy.zeros((ds.shape[1], ds.shape[2]), 'uint8').T
             if self.do.Chans[2] < self.ds.shape[3]:
-                b = (self.do.Gains[2]*(self.ds[int(self.xp),:,:, self.do.Chans[2]] - self.do.Offs[2])).astype('uint8').squeeze().T
+                b = (self.do.Gains[2]*(self.ds[int(self.xp),x0_:(x0_+sX_),y0_:(y0_+sY_), self.do.Chans[2]] - self.do.Offs[2])).astype('uint8').squeeze().T
             else:
                 b = numpy.zeros((ds.shape[1], ds.shape[2]), 'uint8'.T)
         r = r.T

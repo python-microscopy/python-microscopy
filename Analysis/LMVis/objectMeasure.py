@@ -82,3 +82,31 @@ def measureObjects(objects, sizeCutoff):
 
     return measurements
 
+def calcEdgeDists(objects, objMeasures):
+    T = delaunay.Triangulation(array([objMeasures['xPos'], objMeasures['yPos']]).T,2)
+
+    va = array(T.set)
+    objInd = {}
+
+    #dictionary mapping vertices to indicex
+    for i in range(len(T.set)):
+        #print tuple(T.set[i])
+        objInd[tuple(va[i, :])] = i
+
+    minEdgeDists = []
+
+    for o, m in zip(objects, va):
+        ed = 1e50
+        for N in T.neighbours[tuple(m)]:
+            iN = objInd[N]
+            dx = o[:,0][:,None] - objects[iN][:,0][None,:]
+            dy = o[:,1][:,None] - objects[iN][:,1][None,:]
+
+            d = sqrt(dx**2 + dy**2)
+
+            ed = min(ed, d.min())
+
+        minEdgeDists.append(ed)
+
+    return array(minEdgeDists)
+
