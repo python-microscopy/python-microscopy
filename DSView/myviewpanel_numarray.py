@@ -7,6 +7,8 @@ import viewpanel
 import numpy
 import scipy
 import tables
+import time
+
 class DataWrap: #permit indexing with more dimensions larger than len(shape)
     def __init__(self, data):
         self.data = data
@@ -108,6 +110,8 @@ class MyViewPanel(viewpanel.ViewPanel):
         self.pointsR = []
         self.pointMode = 'confoc'
         self.pointTolNFoc = {'confoc' : (5,5,5), 'lm' : (2, 5, 5)}
+
+        self.lastUpdateTime = 0
         
         
         #self.rend = example.CLUT_RGBRenderer()
@@ -127,6 +131,10 @@ class MyViewPanel(viewpanel.ViewPanel):
         self.SetOpts()
         self.updating = 0
         self.showOptsPanel = 1
+
+        self.refrTimer = wx.Timer(self)
+        self.Bind(wx.EVT_TIMER, self.OnRefrTimer)
+
         wx.EVT_PAINT(self.imagepanel, self.OnPaint)
         wx.EVT_MOUSEWHEEL(self, self.OnWheel)
         wx.EVT_KEY_DOWN(self.imagepanel, self.OnKeyPress)
@@ -149,6 +157,9 @@ class MyViewPanel(viewpanel.ViewPanel):
         wx.EVT_BUTTON(self, self.bShowOpts.GetId(), self.ShowOpts)
         wx.EVT_ERASE_BACKGROUND(self.imagepanel, self.DoNix)
         wx.EVT_ERASE_BACKGROUND(self, self.DoNix)
+
+    def OnRefrTimer(self, event):
+        self.Refresh()
         
     def SetDataStack(self, ds):
         self.ds = DataWrap(ds)
@@ -208,7 +219,7 @@ class MyViewPanel(viewpanel.ViewPanel):
         #dc.DrawBitmap(wx.BitmapFromImage(im),wx.Point(0,0))
 
         x0,y0 = self.imagepanel.CalcUnscrolledPosition(0,0)
-        dc.DrawBitmap(wx.BitmapFromImage(im),0,0)
+        dc.DrawBitmap(wx.BitmapFromImage(im),-sc/2,-sc/2)
         #mdc.SelectObject(wx.BitmapFromImage(self.im))
         #mdc.DrawBitmap(wx.BitmapFromImage(self.im),wx.Point(0,0))
         #dc.Blit(0,0,im.GetWidth(), im.GetHeight(),mdc,0,0)
@@ -335,6 +346,10 @@ class MyViewPanel(viewpanel.ViewPanel):
             
     def OnPaint(self,event):
         DC = wx.PaintDC(self.imagepanel)
+        if not time.time() > (self.lastUpdateTime + 1e-3): #avoid paint floods
+            if not self.refrTimer.IsRunning():
+                self.refrTimer.Start(0.5, True) #make sure we do get a refresh after disposing of flood
+            return
         self.imagepanel.PrepareDC(DC)
 
         x0,y0 = self.imagepanel.CalcUnscrolledPosition(0,0)
@@ -359,6 +374,8 @@ class MyViewPanel(viewpanel.ViewPanel):
             #MemDC.SelectObject(OldBitmap)
             del MemDC
             del MemBitmap
+
+        self.lastUpdateTime = time.time()
             
     def OnWheel(self, event):
         rot = event.GetWheelRotation()
@@ -521,14 +538,14 @@ class MyViewPanel(viewpanel.ViewPanel):
         #print pos
         sc = pow(2.0,(self.scale-2))
         if (self.do.slice == self.do.SLICE_XY):
-            self.xp =(pos[0]/sc)
-            self.yp = (pos[1]/sc)
+            self.xp =int(pos[0]/sc)
+            self.yp = int(pos[1]/sc)
         elif (self.do.slice == self.do.SLICE_XZ):
-            self.xp =(pos[0]/sc)
-            self.zp =(pos[1]/sc)
+            self.xp =int(pos[0]/sc)
+            self.zp =int(pos[1]/sc)
         elif (self.do.slice == self.do.SLICE_YZ):
-            self.yp =(pos[0]/sc)
-            self.zp =(pos[1]/sc)
+            self.yp =int(pos[0]/sc)
+            self.zp =int(pos[1]/sc)
         if ('update' in dir(self.GetParent())):
              self.GetParent().update()
         else:
@@ -649,4 +666,46 @@ class MyViewPanel(viewpanel.ViewPanel):
         b = b.reshape(b.shape + (1,))
         ima = numpy.concatenate((r,g,b), 2)
         return wx.ImageFromData(ima.shape[1], ima.shape[0], ima.ravel())
+
+    def GetProfile(self,halfLength=10,axis = 2, pos=None, roi=[2,2], background=None):
+        if not pos == None:
+            px, py, pz = pos
+        else:
+            px, py, pz = self.xp, self.yp, self.zp
+
+        points = self.points
+        d = None
+        pts = None
+
+        if axis == 2: #z
+            p = self.ds[(px - roi[0]):(px + roi[0]),(py - roi[1]):(py + roi[1]),(pz - halfLength):(pz + halfLength)].mean(2).mean(1)
+            x = numpy.mgrid[(pz - halfLength):(pz + halfLength)]
+            if len(points) > 0:
+                d = numpy.array([((abs(points[:,0] - px) < 2*roi[0])*(abs(points[:,1] - py) < 2*roi[1])*(points[:,2] == z)).sum() for z in x])
+
+                pts = numpy.where((abs(points[:,0] - px) < 2*roi[0])*(abs(points[:,1] - py) < 2*roi[1])*(abs(points[:,2] - pz) < halfLength))
+            #print p.shape
+            #p = p.mean(1).mean(0)
+            if not background == None:
+                p -= self.ds[(px - background[0]):(px + background[0]),(py - background[1]):(py + background[1]),(pz - halfLength):(pz + halfLength)].mean(2).mean(1)
+        elif axis == 1: #y
+            p = self.ds[(px - roi[0]):(px + roi[0]),(py - halfLength):(py + halfLength),(pz - roi[1]):(pz + roi[1])].mean(1).mean(0)
+            x = numpy.mgrid[(py - halfLength):(py + halfLength)]
+            if len(points) > 0:
+                d = numpy.array([((abs(points[:,1] - py) < 2*roi[0])*(abs(points[:,2] - pz) < 2*roi[1])*(points[:,0] == z)).sum() for z in x])
+
+                pts = numpy.where((abs(points[:,0] - px) < 2*roi[0])*(abs(points[:,1] - py) < halfLength)*(abs(points[:,2] - pz) < 2*roi[1]))
+            if not background == None:
+                p -= self.ds[(px - background[0]):(px + background[0]),(py - halfLength):(py + halfLength),(pz - background[1]):(pz + background[1]),(pz - halfLength):(pz + halfLength)].mean(1).mean(0)
+        elif axis == 0: #x
+            p = self.ds[(px - halfLength):(px + halfLength), (py - roi[0]):(py + roi[0]),(pz - roi[1]):(pz + roi[1])].mean(2).mean(0)
+            x = numpy.mgrid[(px - halfLength):(px + halfLength)]
+            if len(points) > 0:
+                d = numpy.array([((abs(points[:,0] - px) < 2*roi[0])*(abs(points[:,2] - pz) < 2*roi[1])*(points[:,1] == z)).sum() for z in x])
+
+                pts = numpy.where((abs(points[:,0] - px) < halfLength)*(abs(points[:,1] - py) < 2*roi[0])*(abs(points[:,2] - pz) < 2*roi[1]))
+            if not background == None:
+                p -= self.ds[(px - halfLength):(px + halfLength),(py - background[0]):(py + background[0]),(pz - background[1]):(pz + background[1])].mean(2).mean(0)
+
+        return x,p,d, pts
 # end of class ViewPanel

@@ -186,9 +186,30 @@ class DSViewFrame(wx.Frame):
         if 'fitResults' in dir(self):
             #print self.fitResults.shape
             #print self.fitResults[0].dtype
+            self.vp.pointMode = 'lm'
+            
             voxx = 1e3*self.mdh.getEntry('voxelsize.x')
             voxy = 1e3*self.mdh.getEntry('voxelsize.y')
             self.vp.points = numpy.vstack((self.fitResults['fitResults']['x0']/voxx, self.fitResults['fitResults']['y0']/voxy, self.fitResults['tIndex'])).T
+
+            from PYME.Analysis.LMVis import gl_render
+            self.glCanvas = gl_render.LMGLCanvas(self.notebook1, False, vp = self.vp, vpVoxSize = voxx)
+            self.glCanvas.cmap = pylab.cm.gist_rainbow
+
+            self.notebook1.AddPage(page=self.glCanvas, select=False, caption='VisLite')
+
+            xsc = self.ds.shape[0]*1.0e3*self.mdh.getEntry('voxelsize.x')/self.glCanvas.Size[0]
+            ysc = self.ds.shape[1]*1.0e3*self.mdh.getEntry('voxelsize.y')/ self.glCanvas.Size[1]
+
+            if xsc > ysc:
+                self.glCanvas.setView(0, xsc*self.glCanvas.Size[0], 0, xsc*self.glCanvas.Size[1])
+            else:
+                self.glCanvas.setView(0, ysc*self.glCanvas.Size[0], 0, ysc*self.glCanvas.Size[1])
+
+            #self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],self.fitResults['tIndex'].astype('f'))
+            #self.glCanvas.setCLim((0, self.numAnalysed))
+            self.timer.WantNotification.append(self.AddPointsToVis)
+
 
         #self.notebook1.Split(0, wx.TOP)
         
@@ -238,6 +259,12 @@ class DSViewFrame(wx.Frame):
         self.Layout()
         self.update()
 
+    def AddPointsToVis(self):
+        self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],self.fitResults['tIndex'].astype('f'))
+        self.glCanvas.setCLim((0, self.fitResults['tIndex'].max()))
+
+        self.timer.WantNotification.remove(self.AddPointsToVis)
+
 
     def OnSize(self, event):
         wx.LayoutAlgorithm().LayoutWindow(self, self.notebook1)
@@ -274,6 +301,7 @@ class DSViewFrame(wx.Frame):
         self.Images.Add(GetCollapsedIconBitmap())
 
         self.GenPlayPanel()
+        self.GenProfilePanel()
         if self.mode == 'LM':
             self.GenPointFindingPanel()
             self.GenAnalysisPanel()
@@ -587,6 +615,58 @@ class DSViewFrame(wx.Frame):
         self.sh.run('testFrames(%f)' % (threshold))
         #else:
         #    self.sh.run('pushImagesD(%d, %f)' % (startAt, threshold)
+
+    def GenProfilePanel(self):
+        item = self._pnl.AddFoldPanel("Intensity Profile", collapsed=False,
+                                      foldIcons=self.Images)
+
+        bPlotProfile = wx.Button(item, -1, 'Plot')
+
+        bPlotProfile.Bind(wx.EVT_BUTTON, self.OnPlotProfile)
+        self._pnl.AddFoldPanelWindow(item, bPlotProfile, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+
+        
+    def OnPlotProfile(self, event):
+        x,p,d, pi = self.vp.GetProfile(50, background=[7,7])
+
+        pylab.figure(1)
+        pylab.clf()
+        pylab.step(x,p)
+        pylab.step(x, 10*d - 30)
+        pylab.ylim(-35,pylab.ylim()[1])
+
+        pylab.xlim(x.min(), x.max())
+
+        pylab.xlabel('Time [%3.2f ms frames]' % (1e3*self.mdh.getEntry('Camera.CycleTime')))
+        pylab.ylabel('Intensity [counts]')
+
+        fr = self.fitResults[pi]
+
+        if not len(fr) == 0:
+            pylab.figure(2)
+            pylab.clf()
+            
+            pylab.subplot(211)
+            pylab.errorbar(fr['tIndex'], fr['fitResults']['x0'] - self.vp.xp*1e3*self.mdh.getEntry('voxelsize.x'), fr['fitError']['x0'], fmt='xb')
+            pylab.xlim(x.min(), x.max())
+            pylab.xlabel('Time [%3.2f ms frames]' % (1e3*self.mdh.getEntry('Camera.CycleTime')))
+            pylab.ylabel('x offset [nm]')
+
+            pylab.subplot(212)
+            pylab.errorbar(fr['tIndex'], fr['fitResults']['y0'] - self.vp.yp*1e3*self.mdh.getEntry('voxelsize.y'), fr['fitError']['y0'], fmt='xg')
+            pylab.xlim(x.min(), x.max())
+            pylab.xlabel('Time [%3.2f ms frames]' % (1e3*self.mdh.getEntry('Camera.CycleTime')))
+            pylab.ylabel('y offset [nm]')
+
+            pylab.figure(3)
+            pylab.clf()
+
+            pylab.errorbar(fr['fitResults']['x0'] - self.vp.xp*1e3*self.mdh.getEntry('voxelsize.x'),fr['fitResults']['y0'] - self.vp.yp*1e3*self.mdh.getEntry('voxelsize.y'), fr['fitError']['x0'], fr['fitError']['y0'], fmt='xb')
+            #pylab.xlim(x.min(), x.max())
+            pylab.xlabel('x offset [nm]')
+            pylab.ylabel('y offset [nm]')
+
+
 
     def GenFitStatusPanel(self):
         item = self._pnl.AddFoldPanel("Fit Status", collapsed=False,

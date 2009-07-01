@@ -27,7 +27,7 @@ cm_hot = cmap_mult(8.0*numpy.ones(3)/3, [0, 3.0/8, 6.0/8])
 cm_grey = cmap_mult(numpy.ones(3), [0, 0, 0])
 
 class LMGLCanvas(GLCanvas):
-    def __init__(self, parent, trackSelection=True):
+    def __init__(self, parent, trackSelection=True, vp = None, vpVoxSize = None):
         GLCanvas.__init__(self, parent,-1)
         wx.EVT_PAINT(self, self.OnPaint)
         wx.EVT_SIZE(self, self.OnSize)
@@ -48,6 +48,9 @@ class LMGLCanvas(GLCanvas):
 
         self.parent = parent
 
+        self.vp = vp
+        self.vpVoxSize = vpVoxSize
+
         self.pointSize=5 #default point size = 5nm
 
         self.pixelsize = 10
@@ -62,6 +65,8 @@ class LMGLCanvas(GLCanvas):
         self.scaleBarOffset = (20.0, 20.0) #pixels from corner
         self.scaleBarDepth = 10.0 #pixels
         self.scaleBarColour = [1,1,0]
+
+        self.crosshairColour = [0,1,1]
 
         self.numBlurSamples = 1
         self.blurSigma = 0.0
@@ -157,6 +162,7 @@ class LMGLCanvas(GLCanvas):
         self.drawScaleBar()
         self.drawLUT()
         self.drawSelection()
+        self.drawCrosshairs()
 
         glFlush()
         #glPopMatrix()
@@ -640,6 +646,22 @@ class LMGLCanvas(GLCanvas):
             glVertex2f(x0, y1)
             glEnd()
 
+    def drawCrosshairs(self):
+        if not self.vp == None:
+            x = self.vp.xp*self.vpVoxSize
+            y = self.vp.yp*self.vpVoxSize
+
+            glColor3fv(self.crosshairColour)
+            glBegin(GL_LINES)
+            glVertex2f(x, self.ymin)
+            glVertex2f(x, self.ymax)
+            glEnd()
+
+            glBegin(GL_LINES)
+            glVertex2f(self.xmin, y)
+            glVertex2f(self.xmax, y)
+            glEnd()
+
     def drawLUT(self):
         if self.LUTDraw == True:
             mx = self.c.max()
@@ -687,11 +709,17 @@ class LMGLCanvas(GLCanvas):
         xp = event.GetX()*view_size_x/self.Size[0] + self.xmin
         yp = (self.Size[1] - event.GetY())*view_size_y/self.Size[1] + self.ymin
 
-        self.selectionDragging = True
-        self.selection = True
+        if self.vp == None:
+            self.selectionDragging = True
+            self.selection = True
 
-        self.selectionStart = (xp, yp)
-        self.selectionFinish = (xp, yp)
+            self.selectionStart = (xp, yp)
+            self.selectionFinish = (xp, yp)
+        else:
+            self.vp.xp = xp/self.vpVoxSize
+            self.vp.yp = yp/self.vpVoxSize
+
+            self.Refresh()
 
         event.Skip()
 
