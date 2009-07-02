@@ -785,6 +785,16 @@ class VisGUIFrame(wx.Frame):
         #self.bObjMeasure.Enable(False)
         bsizer.Add(self.bObjMeasure, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5)
 
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(pan, -1, 'Object Colour:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        self.cBlobColour = wx.Choice(pan, -1, choices=['Index'])
+        self.cBlobColour.SetSelection(0)
+        self.cBlobColour.Bind(wx.EVT_CHOICE, self.OnSetBlobColour)
+
+        hsizer.Add(self.cBlobColour, 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        bsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
+
         pan.SetSizer(bsizer)
         bsizer.Fit(pan)
 
@@ -793,6 +803,20 @@ class VisGUIFrame(wx.Frame):
 
         self.bApplyThreshold.Bind(wx.EVT_BUTTON, self.OnObjApplyThreshold)
         self.bObjMeasure.Bind(wx.EVT_BUTTON, self.OnObjMeasure)
+
+    def OnSetBlobColour(self, event):
+        bcolour = self.cBlobColour.GetStringSelection()
+
+        if bcolour == 'Index':
+            c = self.objCInd.astype('f')
+        else:
+            c = self.objectMeasures[bcolour][self.objCInd.astype('i')]
+
+        self.glCanvas.c = c
+        self.glCanvas.setColour()
+        self.OnGLViewChanged()
+        
+        self.hlCLim.SetData(self.glCanvas.c, self.glCanvas.clim[0], self.glCanvas.clim[1])
 
     def OnObjApplyThreshold(self, event):
         self.objects = None
@@ -810,6 +834,12 @@ class VisGUIFrame(wx.Frame):
             self.notebook.AddPage(self.rav, 'Measurements')
         else:
             self.rav.grid.SetData(self.objectMeasures)
+
+        self.cBlobColour.Clear()
+        self.cBlobColour.Append('Index')
+
+        for n in self.objectMeasures.dtype.names:
+            self.cBlobColour.Append(n)
 
         self.RefreshView()
 
@@ -1628,6 +1658,7 @@ class VisGUIFrame(wx.Frame):
 #                    self.bObjMeasure.Enable(True)
 
             self.glCanvas.setBlobs(self.objects, self.objThreshold)
+            self.objCInd = self.glCanvas.c
 
         self.hlCLim.SetData(self.glCanvas.c, self.glCanvas.clim[0], self.glCanvas.clim[1])
 
