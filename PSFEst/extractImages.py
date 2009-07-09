@@ -71,5 +71,9 @@ def getPSF(ims, points, zvals, zis):
         #print ifftn(F*exp(-2j*pi*(kx*-p[0] + ky*-p[1]))).real.shape
         d[:,:,zis[i]] = d[:,:,zis[i]] + ifftn(F*exp(-2j*pi*(kx*-p[0] + ky*-p[1]))).real
 
-    return d/(points[:,2].sum())
+    d = len(zvals)*d/(points[:,2].sum())
+    d = d - d.min(1).min(0)[None,None,:]
+    d = d/d.sum(1).sum(0)[None,None,:]
+
+    return d
 
