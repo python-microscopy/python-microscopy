@@ -33,6 +33,7 @@ from PYME.Analysis.DataSources import TQDataSource
 #from PYME.Analysis.DataSources import TiffDataSource
 from PYME.FileUtils import readTiff
 from PYME.Analysis.LMVis import progGraph as progGraph
+from PYME.Analysis.LMVis import inpFilt
 from PYME.Acquire.mytimer import mytimer
 
 from PYME.Analysis import piecewiseMapping
@@ -115,6 +116,7 @@ class DSViewFrame(wx.Frame):
 
                         if 'FitResults' in dir(h5Results.root):
                             self.fitResults = h5Results.root.FitResults[:]
+                            self.resultsSource = inpFilt.h5rSource(h5Results)
 
                        
 
@@ -180,10 +182,12 @@ class DSViewFrame(wx.Frame):
             self.notebook1.AddPage(self.elv, 'Events')
 
             if 'ProtocolFocus' in self.elv.evKeyNames:
-                pm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.md.Camera.CycleTime*1e-3, self.md.StartTime, self.md.Protocol.PiezoStartPos)
-                self.elv.SetCharts([('Focus [um]', pm, 'ProtocolFocus'),])
+                self.zm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.md.Camera.CycleTime, self.md.StartTime, self.md.Protocol.PiezoStartPos)
+                self.elv.SetCharts([('Focus [um]', self.zm, 'ProtocolFocus'),])
 
-        if 'fitResults' in dir(self):
+                
+
+        if len(self.fitResults) > 0:
             #print self.fitResults.shape
             #print self.fitResults[0].dtype
             self.vp.pointMode = 'lm'
