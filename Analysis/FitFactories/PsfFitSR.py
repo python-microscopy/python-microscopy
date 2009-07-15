@@ -235,11 +235,12 @@ def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=N
 		
 
 class PSFFitFactory:
-    def __init__(self, data, metadata, fitfcn=f_Interp3d):
+    def __init__(self, data, metadata, fitfcn=f_Interp3d, background=None):
         '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
         metadata. '''
         self.data = data
         self.metadata = metadata
+        self.background = background
         self.fitfcn = fitfcn #allow model function to be specified (to facilitate changing between accurate and fast exponential approwimations)
         if type(fitfcn) == types.FunctionType: #single function provided - use numerically estimated jacobian
             self.solver = FitModelWeighted

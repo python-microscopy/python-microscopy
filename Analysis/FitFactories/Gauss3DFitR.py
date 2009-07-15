@@ -87,9 +87,10 @@ def Gauss3dFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitE
 	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, slicesUsed)], dtype=fresultdtype) 
 
 class Gauss3dFitFactory:
-    def __init__(self, data, metadata):
+    def __init__(self, data, metadata, background=None):
         self.data = data - metadata.Camera.ADOffset
         self.metadata = metadata
+        self.background = background
 
     def __getitem__(self, key):
         #print key
