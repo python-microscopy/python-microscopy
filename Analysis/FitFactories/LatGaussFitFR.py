@@ -116,10 +116,11 @@ def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fit
 		
 
 class GaussianFitFactory:
-    def __init__(self, data, metadata, fitfcn=f_gauss2d):
+    def __init__(self, data, metadata, fitfcn=f_gauss2d, background=None):
         '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in 
         metadata. '''
         self.data = data
+        self.background = background
         self.metadata = metadata
 	self.fitfcn = fitfcn #allow model function to be specified (to facilitate changing between accurate and fast exponential approwimations)
 	if type(fitfcn) == types.FunctionType: #single function provided - use numerically estimated jacobian
@@ -139,28 +140,36 @@ class GaussianFitFactory:
         dataMean = dataROI.mean(2) - self.metadata.Camera.ADOffset
 
         #generate grid to evaluate function on        
-	X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[xslice]
+        X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[xslice]
         Y = 1e3*self.metadata.voxelsize.y*scipy.mgrid[yslice]
 
         #estimate some start parameters...
         A = dataMean.max() - dataMean.min() #amplitude
         
-	x0 =  X.mean()
+        x0 =  X.mean()
         y0 =  Y.mean()
-
-        startParameters = [A, x0, y0, 250/2.35, dataMean.min(), .001, .001]
 
 	
         #estimate errors in data
         nSlices = dataROI.shape[2]
         
         sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*scipy.maximum(dataMean, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
+
+        if not self.background == None:
+            bgROI = self.background[xslice, yslice, zslice]
+
+            #average in z
+            bgMean = bgROI.mean(2) - self.metadata.Camera.ADOffset
+            
+            dataMean = dataMean - bgMean
+
+        startParameters = [A, x0, y0, 250/2.35, dataMean.min(), .001, .001]
 	
 
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
         #(res, cov_x, infodict, mesg, resCode) = FitModelWeighted(self.fitfcn, startParameters, dataMean, sigma, X, Y)
-	(res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataMean, sigma, X, Y)
+        (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataMean, sigma, X, Y)
 
         
         fitErrors=None

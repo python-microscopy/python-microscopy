@@ -9,6 +9,9 @@ def getPSFSlice(datasource, resultsSource, metadata, zm=None):
     ims, pts, zvals, zis = extractIms(datasource, f1, metadata, zm)
     return getPSF(ims, pts, zvals, zis)
 
+#def getPointPoss(dataSource, zm, zmid):
+#    for i in range()
+
 def extractIms(dataSource, results, metadata, zm =None, roiSize=10, nmax = 1000):
     ims = zeros((2*roiSize, 2*roiSize, len(results['x'])))
     points = (array([results['x']/(metadata.voxelsize.x *1e3), results['y']/(metadata.voxelsize.y *1e3), results['A']]).T)

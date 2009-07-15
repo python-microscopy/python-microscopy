@@ -178,7 +178,7 @@ class fitTask(taskDef.Task):
         #if self.fitModule == 'LatGaussFitFRTC'  or self.fitModule == 'BiplaneFitR':
         #    fitFac = fitMod.FitFactory(numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2), md)
         #else:
-        fitFac = fitMod.FitFactory(self.data, md)
+        fitFac = fitMod.FitFactory(self.data, md, background = bg)
 
         #print 'Have Fit Factory'
         
