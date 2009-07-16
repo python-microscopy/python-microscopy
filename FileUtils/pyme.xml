@@ -8,5 +8,9 @@
      <comment>PYME Results Files</comment>
      <glob pattern="*.h5r"/>
    </mime-type>
+   <mime-type type="application/x-extension-kdf">
+     <comment>SMI kdf Files</comment>
+     <glob pattern="*.kdf"/>
+   </mime-type>
 </mime-info>
 

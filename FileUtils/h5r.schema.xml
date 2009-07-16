@@ -50,5 +50,29 @@
             </locale>
         </schema>
 
+        <schema>
+            <key>/schemas/desktop/gnome/thumbnailers/application@x-extension-kdf/enable</key>
+            <applyto>/desktop/gnome/thumbnailers/application@x-extension-kdf/enable</applyto>
+            <owner>thumbnailer</owner>
+            <type>bool</type>
+            <default>true</default>
+            <locale name="C">
+                <short>Enable thumbnailing of kdf data</short>
+                <long>Enable thumbnailing of kdf data</long>
+            </locale>
+        </schema>
+
+        <schema>
+            <key>/schemas/desktop/gnome/thumbnailers/application@x-extension-kdf/command</key>
+            <applyto>/desktop/gnome/thumbnailers/application@x-extension-kdf/command</applyto>
+            <owner>thumbnailer</owner>
+            <type>string</type>
+            <default>/home/david/bin/kdf-thumbnailer %u %o %s</default>
+            <locale name="C">
+                <short>Create thumbnail for kdf data</short>
+                <long>Create thumbnail for kdf data</long>
+            </locale>
+        </schema>
+
     </schemalist>
 </gconfschemafile>
