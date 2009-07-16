@@ -41,7 +41,7 @@ else:
 
 size = (int(xsize*zoom), int(ysize*zoom))
 
-im = im.T - im.min()
+im = im - im.min()
 
 im = maximum(minimum(1*(255*im)/im.max(), 255), 0)
 
