@@ -17,11 +17,12 @@ class progPanel(wxPlotPanel.PlotPanel):
                 self.subplot2 = self.figure.add_subplot( 212 )
 
             a, ed = numpy.histogram(self.fitResults['tIndex'], self.Size[0]/2)
+            print float(numpy.diff(ed[:2]))
 
             self.subplot1.cla()
-            self.subplot1.plot(ed[:-1], a, color='b' )
+            self.subplot1.plot(ed[:-1], a/float(numpy.diff(ed[:2])), color='b' )
             self.subplot1.set_xticks([0, ed.max()])
-            self.subplot1.set_yticks([0, a.max()])
+            self.subplot1.set_yticks([0, numpy.floor(a.max()/float(numpy.diff(ed[:2])))])
             self.subplot2.cla()
             self.subplot2.plot(ed[:-1], numpy.cumsum(a), color='g' )
             self.subplot2.set_xticks([0, ed.max()])

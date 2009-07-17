@@ -7,6 +7,7 @@ import wx.aui
 from PYME.misc.auiFloatBook import AuiNotebookWithFloatingPages
 import wx.lib.foldpanelbar as fpb
 from PYME.misc.fbpIcons import *
+from PYME.FileUtils import h5ExFrames
 
 import os
 import sys
@@ -233,7 +234,7 @@ class DSViewFrame(wx.Frame):
         #F_CLOSE = wx.NewId()
         F_SAVE_POSITIONS = wx.NewId()
         F_SAVE_FITS = wx.NewId()
-        #tmp_menu.Append(wx.ID_SAVEAS, "Save As", "", wx.ITEM_NORMAL)
+        tmp_menu.Append(wx.ID_SAVEAS, "Extract Frames", "", wx.ITEM_NORMAL)
         if self.mode == 'blob':
             tmp_menu.Append(F_SAVE_POSITIONS, "Save &Positions", "", wx.ITEM_NORMAL)
             tmp_menu.Append(F_SAVE_FITS, "Save &Fit Results", "", wx.ITEM_NORMAL)
@@ -248,7 +249,7 @@ class DSViewFrame(wx.Frame):
         #self.menubar.Append(mEdit, "Edit")
 
         # Menu Bar end
-        #wx.EVT_MENU(self, wx.ID_SAVEAS, self.saveStack)
+        wx.EVT_MENU(self, wx.ID_SAVEAS, self.extractFrames)
         wx.EVT_MENU(self, F_SAVE_POSITIONS, self.savePositions)
         wx.EVT_MENU(self, F_SAVE_FITS, self.saveFits)
         #wx.EVT_MENU(self, wx.ID_CLOSE, self.menuClose)
@@ -710,6 +711,25 @@ class DSViewFrame(wx.Frame):
                 
             self.SetTitle(fdialog.GetFilename())
             self.saved = True
+
+    def extractFrames(self, event=None):
+        dlg = wx.TextEntryDialog(self, 'Enter the range of frames to extract ...',
+                'Extract Frames', '0:%d' % self.ds.getNumSlices())
+
+        if dlg.ShowModal() == wx.ID_OK:
+            st, fin = dlg.GetValue().split(':')
+
+            start = int(st)
+            finish = int(fin)
+            
+            fdialog = wx.FileDialog(None, 'Save Extracted Frames as ...',
+                wildcard='*.h5', style=wx.SAVE|wx.HIDE_READONLY)
+            succ = fdialog.ShowModal()
+            if (succ == wx.ID_OK):
+                h5ExFrames.extractFrames(self.ds, self.mdh, self.seriesName, fdialog.GetPath(), start, finish)
+
+            fdialog.Destroy()
+        dlg.Destroy()
 
     def savePositions(self, event=None):
         fdialog = wx.FileDialog(None, 'Save Positions ...',

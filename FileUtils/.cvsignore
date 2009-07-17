@@ -3,5 +3,6 @@ nameUtils.pyc
 write_kdf.pyc
 setup.pyc
 saveTiffStack.pyc
+h5ExFrames.pyc
 read_kdf.pyc
 readTiff.pyc

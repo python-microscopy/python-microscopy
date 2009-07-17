@@ -346,9 +346,9 @@ class MyViewPanel(viewpanel.ViewPanel):
             
     def OnPaint(self,event):
         DC = wx.PaintDC(self.imagepanel)
-        if not time.time() > (self.lastUpdateTime + 2e-1): #avoid paint floods
+        if not time.time() > (self.lastUpdateTime + 2e-3): #avoid paint floods
             if not self.refrTimer.IsRunning():
-                self.refrTimer.Start(.5, True) #make sure we do get a refresh after disposing of flood
+                self.refrTimer.Start(.2, True) #make sure we do get a refresh after disposing of flood
             return
         self.imagepanel.PrepareDC(DC)
 
