@@ -263,6 +263,34 @@ class HDFTaskQueue(HDFResultsTaskQueue):
 
         return task
 
+    def getTasks(self, workerN = 0, NWorkers = 1):
+        """get task from front of list, blocks"""
+        #print 'Task requested'
+        #self.getTaskLock.acquire()
+        while len(self.openTasks) < 1:
+            time.sleep(0.01)
+
+        if self.metaDataStale:
+            self.metaData = MetaDataHandler.NestedClassMDHandler(self.resultsMDH)
+            self.metaDataStale = False
+
+        tasks = []
+
+        for i in range(min(10,len(self.openTasks))):
+
+            taskNum = self.openTasks.pop(self.fTaskToPop(workerN, NWorkers, len(self.openTasks)))
+
+            task = fitTask(self.queueID, taskNum, self.metaData.Analysis.DetectionThreshold, self.metaData, self.metaData.Analysis.FitModule, 'TQDataSource', bgindices =range(max(taskNum - 10,self.metaData.EstimatedLaserOnFrameNo), taskNum), SNThreshold = True)
+
+            task.queueID = self.queueID
+            task.initializeWorkerTimeout(time.clock())
+            self.tasksInProgress.append(task)
+            #self.getTaskLock.release()
+
+            tasks.append(task)
+
+        return tasks
+
 	
     def checkTimeouts(self):
         curTime = time.clock()

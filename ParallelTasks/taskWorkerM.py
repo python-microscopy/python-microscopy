@@ -14,5 +14,8 @@ else:
 
 while 1:
     #print 'Geting Task ...'
-    tq.returnCompletedTask(tq.getTask()(taskQueue=tq), name)
+    #tq.returnCompletedTask(tq.getTask()(taskQueue=tq), name)
+    tasks = tq.getTasks()
+    results = [task(taskQueue=tq) for task in tasks]
+    tq.returnCompletedTasks(results, name)
     #print 'Completed Task'
