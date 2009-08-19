@@ -20,6 +20,26 @@ from PYME.ParallelTasks.relativeFiles import getFullFilename
 
 tablesLock = threading.Lock()
 
+#class TaskWatcher(threading.Thread):
+#	def __init__(self, tQueue):
+#		threading.Thread.__init__(self)
+#		self.tQueue = tQueue
+#		self.alive = True
+#
+#	def run(self):
+#		while self.alive:
+#			self.tQueue.checkTimeouts()
+#			#print '%d tasks in queue' % self.tQueue.getNumberOpenTasks()
+#			#try:
+#                        #        mProfile.report()
+#                        #finally:
+#                        #        pass
+#                        print mProfile.files
+#			time.sleep(10)
+#
+#tw = TaskWatcher(tq)
+#    #tw.start()
+
 class myLock:
     def __init__(self):
         self.lock = threading.Lock()
@@ -168,6 +188,8 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         self.acceptNewTasks = False
         self.releaseNewTasks = False
 
+        self.postTaskBuffer = []
+
         initialTasks = []
 
 
@@ -221,6 +243,8 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         pass
 
     def postTask(self,task):
+        #self.postTaskBuffer = []
+
         #self.openTasks.append(task)
         #print 'posting tasks not implemented yet'
         if self.acceptNewTasks:

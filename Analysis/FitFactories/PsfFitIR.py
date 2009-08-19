@@ -173,6 +173,8 @@ def f_Interp3d(p, X, Y, Z, P, *args):
     y0 = min(max(y0, Y[0]), Y[-1])
     z0 = min(max(z0, -1.8e3), 1.8e3)
 
+    print x0, y0, z0
+
     #print Z[0] - z0
 
     g1 = interp(X - x0 + 1, Y - y0 + 1, Z[0] - z0)*A + b
@@ -301,7 +303,7 @@ class PSFFitFactory:
 
         x0 =  X.mean()
         y0 =  Y.mean()
-        z0 = 10.0
+        z0 = 200.0
 
         startParameters = [A, x0, y0, z0, dataROI.min()]
 
@@ -311,14 +313,39 @@ class PSFFitFactory:
 
         sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*dataROI)/self.metadata.Camera.ElectronsPerCount
 
+        figure(4)
+        clf()
+        imshow(dataROI.squeeze())
+        colorbar()
+
+        figure(5)
+        clf()
+        imshow(self.fitfcn(startParameters, X, Y, Z, P).squeeze())
+        colorbar()
+
+        figure(6)
+        clf()
+        imshow(sigma.squeeze())
+        colorbar()
 
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
         #(res, cov_x, infodict, mesg, resCode) = FitModelWeighted(self.fitfcn, startParameters, dataMean, sigma, X, Y)
         (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, X, Y, Z, P, 2*scipy.pi/525, 1.47, 10e3)
 
+        print infodict
         #print cov_x
-        #print mesg
+        print mesg
+
+        figure(7)
+        clf()
+        imshow(infodict['fjac'].reshape([len(X), len(Y), -1]).reshape([len(X), -1] ) == 0, interpolation='nearest')
+        colorbar()
+
+        figure(8)
+        clf()
+        imshow(infodict['fvec'].reshape([len(X), len(Y)]), interpolation='nearest')
+        colorbar()
 
         fitErrors=None
         try:
@@ -329,7 +356,7 @@ class PSFFitFactory:
         #print res, fitErrors, resCode
         return PSFFitResultR(res, self.metadata, (xslice, yslice, zslice), resCode, fitErrors)
 
-    def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
+    def FromPoint(self, x, y, z=None, roiHalfSize=15, axialHalfSize=15):
         #if (z == None): # use position of maximum intensity
         #    z = self.data[x,y,:].argmax()
 
