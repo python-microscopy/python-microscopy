@@ -168,12 +168,18 @@ def f_Interp3d(p, X, Y, Z, P, *args):
     """3D PSF model function with constant background - parameter vector [A, x0, y0, z0, background]"""
     A, x0, y0, z0, b = p
     #return A*scipy.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2)) + b
-    
-    x0 = min(max(x0, X[0]), X[-1])
-    y0 = min(max(y0, Y[0]), Y[-1])
+
+    dx = (interpModel.shape[0] - len(X))/2
+    xm = len(X)/2
+
+    dy = (interpModel.shape[1] - len(Y))/2
+    ym = len(Y)/2
+
+    x0 = min(max(x0, X[xm - dx]), X[dx + xm])
+    y0 = min(max(y0, Y[ym - dy]), Y[dy + ym])
     z0 = min(max(z0, -1.8e3), 1.8e3)
 
-    print x0, y0, z0
+    #print X[0] - x0, Y[0] - y0, Z[0] - z0
 
     #print Z[0] - z0
 
@@ -261,7 +267,7 @@ class PSFFitFactory:
         self.background = background
         self.fitfcn = fitfcn #allow model function to be specified (to facilitate changing between accurate and fast exponential approwimations)
         if type(fitfcn) == types.FunctionType: #single function provided - use numerically estimated jacobian
-            self.solver = FitModelWeighted
+            self.solver = FitModelWeighted_
         else: #should be a tuple containing the fit function and its jacobian
             self.solver = FitModelWeightedJac
         if fitfcn == f_Interp3d:
@@ -313,39 +319,39 @@ class PSFFitFactory:
 
         sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*dataROI)/self.metadata.Camera.ElectronsPerCount
 
-        figure(4)
-        clf()
-        imshow(dataROI.squeeze())
-        colorbar()
-
-        figure(5)
-        clf()
-        imshow(self.fitfcn(startParameters, X, Y, Z, P).squeeze())
-        colorbar()
-
-        figure(6)
-        clf()
-        imshow(sigma.squeeze())
-        colorbar()
+#        figure(4)
+#        clf()
+#        imshow(dataROI.squeeze())
+#        colorbar()
+#
+#        figure(5)
+#        clf()
+#        imshow(self.fitfcn(startParameters, X, Y, Z, P).squeeze())
+#        colorbar()
+#
+#        figure(6)
+#        clf()
+#        imshow(sigma.squeeze())
+#        colorbar()
 
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
         #(res, cov_x, infodict, mesg, resCode) = FitModelWeighted(self.fitfcn, startParameters, dataMean, sigma, X, Y)
         (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, X, Y, Z, P, 2*scipy.pi/525, 1.47, 10e3)
 
-        print infodict
+        #print infodict
         #print cov_x
-        print mesg
+        #print mesg
 
-        figure(7)
-        clf()
-        imshow(infodict['fjac'].reshape([len(X), len(Y), -1]).reshape([len(X), -1] ) == 0, interpolation='nearest')
-        colorbar()
-
-        figure(8)
-        clf()
-        imshow(infodict['fvec'].reshape([len(X), len(Y)]), interpolation='nearest')
-        colorbar()
+#        figure(7)
+#        clf()
+#        imshow(infodict['fjac'].reshape([len(X), len(Y), -1]).reshape([len(X), -1] ) == 0, interpolation='nearest')
+#        colorbar()
+#
+#        figure(8)
+#        clf()
+#        imshow(infodict['fvec'].reshape([len(X), len(Y)]), interpolation='nearest')
+#        colorbar()
 
         fitErrors=None
         try:

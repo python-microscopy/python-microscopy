@@ -46,7 +46,7 @@ def FitModelWeighted(modelFcn, startParameters, data, sigmas, *args):
     return optimize.leastsq(weightedMissfitF, startParameters, (modelFcn, data.ravel(), (1.0/sigmas).astype('f').ravel()) + args, full_output=1)
 
 def FitModelWeighted_(modelFcn, startParameters, data, sigmas, *args):
-    return optimize.leastsq(weightedMissfitF, startParameters, (modelFcn, data.ravel(), (1.0/sigmas).astype('f').ravel()) + args, full_output=1, epsfcn=1e-9)
+    return optimize.leastsq(weightedMissfitF, startParameters, (modelFcn, data.ravel(), (1.0/sigmas).astype('f').ravel()) + args, full_output=1, epsfcn=1e-4)
 
 
 def FitModelWeightedJac(modelFcn, startParameters, data, sigmas, *args):
