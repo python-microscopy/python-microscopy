@@ -7,9 +7,10 @@ MetaData.pyc
 remFitHDF.pyc
 fitIO.pyc
 deMod.pyc
+twist.pyc
 remFitBuf.pyc
-piecewiseMapping.pyc
 setup.pyc
+piecewiseMapping.pyc
 intelliFit.pyc
 ryrify.pyc
 __init__.pyc

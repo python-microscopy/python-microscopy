@@ -6,6 +6,8 @@ import copy_reg
 import numpy
 import types
 
+from PYME.Analysis import twist
+
 import PYME.Analysis.twoColour as twoColour
 
 #from PYME.Analysis.cModels.gauss_app import *
@@ -73,6 +75,8 @@ def setModel(modName, md):
         interpModel = mod
 
         interpModel = interpModel/interpModel.max() #normalise to 1
+
+        twist.twistCal(interpModel, IntXVals, IntYVals, IntZVals)
 
 #def interp(X, Y, Z):
 #    X = scipy.array(X).reshape(-1)
@@ -169,21 +173,23 @@ def f_Interp3d(p, X, Y, Z, P, *args):
     A, x0, y0, z0, b = p
     #return A*scipy.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2)) + b
 
-    dx = (interpModel.shape[0] - len(X))/2
+    dx = (interpModel.shape[0] - len(X))/2 - 2
     xm = len(X)/2
 
-    dy = (interpModel.shape[1] - len(Y))/2
+    dy = (interpModel.shape[1] - len(Y))/2 - 2
     ym = len(Y)/2
+
+    #print X[0] - x0, Y[0] - y0, Z[0] - z0 , 'o', IntZVals[3]
 
     x0 = min(max(x0, X[xm - dx]), X[dx + xm])
     y0 = min(max(y0, Y[ym - dy]), Y[dy + ym])
-    z0 = min(max(z0, -1.8e3), 1.8e3)
+    z0 = min(max(z0, Z[0] + IntZVals[2]), Z[0] + IntZVals[-2])
 
     #print X[0] - x0, Y[0] - y0, Z[0] - z0
 
     #print Z[0] - z0
 
-    g1 = interp(X - x0 + 1, Y - y0 + 1, Z[0] - z0)*A + b
+    g1 = interp(X - x0 + 1, Y - y0 + 1, Z[0] - z0 + 1)*A + b
 
     #print g1.shape
 
@@ -310,6 +316,11 @@ class PSFFitFactory:
         x0 =  X.mean()
         y0 =  Y.mean()
         z0 = 200.0
+
+        ta = twist.calcTwist(dataROI, X-x0, Y - y0)
+        z0 = -twist.getZ(ta)
+
+        #print z0
 
         startParameters = [A, x0, y0, z0, dataROI.min()]
 
