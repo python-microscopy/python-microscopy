@@ -89,7 +89,7 @@ class ObjectIdentifier(list):
 
         self.lamb = lamb
 
-        preparePSF(PSFFilename, data.shape)
+        preparePSF(PSFFilename, data.shape[:2])
 
     def __FilterData2D(self,data):
         #lowpass filter to suppress noise
@@ -98,7 +98,7 @@ class ObjectIdentifier(list):
         #lowpass filter again to find background
         b = ndimage.gaussian_filter(a, self.filterRadiusHighpass)
 
-        return a - b
+        return 24*(a - b)
 
     
     def __FilterDataFast(self):
