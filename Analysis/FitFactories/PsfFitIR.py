@@ -320,7 +320,7 @@ class PSFFitFactory:
         ta = twist.calcTwist(dataROI, X-x0, Y - y0)
         z0 = -twist.getZ(ta)
 
-        #print z0
+        print x0, y0, z0
 
         startParameters = [A, x0, y0, z0, dataROI.min()]
 
@@ -330,20 +330,20 @@ class PSFFitFactory:
 
         sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*dataROI)/self.metadata.Camera.ElectronsPerCount
 
-#        figure(4)
-#        clf()
-#        imshow(dataROI.squeeze())
-#        colorbar()
-#
-#        figure(5)
-#        clf()
-#        imshow(self.fitfcn(startParameters, X, Y, Z, P).squeeze())
-#        colorbar()
-#
-#        figure(6)
-#        clf()
-#        imshow(sigma.squeeze())
-#        colorbar()
+        figure(4)
+        clf()
+        imshow(dataROI.squeeze())
+        colorbar()
+
+        figure(5)
+        clf()
+        imshow(self.fitfcn(startParameters, X, Y, Z, P).squeeze())
+        colorbar()
+
+        figure(6)
+        clf()
+        imshow(sigma.squeeze())
+        colorbar()
 
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
@@ -354,15 +354,15 @@ class PSFFitFactory:
         #print cov_x
         #print mesg
 
-#        figure(7)
-#        clf()
-#        imshow(infodict['fjac'].reshape([len(X), len(Y), -1]).reshape([len(X), -1] ) == 0, interpolation='nearest')
-#        colorbar()
-#
-#        figure(8)
-#        clf()
-#        imshow(infodict['fvec'].reshape([len(X), len(Y)]), interpolation='nearest')
-#        colorbar()
+        figure(7)
+        clf()
+        imshow(infodict['fjac'].reshape([len(X), len(Y), -1]).reshape([len(X), -1] ) == 0, interpolation='nearest')
+        colorbar()
+
+        figure(8)
+        clf()
+        imshow(infodict['fvec'].reshape([len(X), len(Y)]), interpolation='nearest')
+        colorbar()
 
         fitErrors=None
         try:

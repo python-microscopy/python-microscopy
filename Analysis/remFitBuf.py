@@ -1,6 +1,7 @@
 from PYME.ParallelTasks import taskDef
 import ofind
 #import ofind_nofilt #use for drift estimation - faster
+import ofind_xcorr
 import numpy
 
 dBuffer = None
@@ -136,7 +137,11 @@ class fitTask(taskDef.Task):
 
             self.data = numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2)
 
-        self.ofd = ofind.ObjectIdentifier(bgd*(bgd > 0))
+        if not 'PSFFile' in self.md.getEntryNames():
+            self.ofd = ofind.ObjectIdentifier(bgd * (bgd > 0))
+        else: #if we've got a PSF then use cross-correlation object identification
+            self.ofd = ofind_xcorr.ObjectIdentifier(bgd * (bgd > 0), self.md.getEntry('PSFFile'), 7, 5e-2)
+            
         self.ofd.FindObjects(self.calcThreshold(),0)
 
         if self.driftEst: #do the same for objects which are on the whole time
