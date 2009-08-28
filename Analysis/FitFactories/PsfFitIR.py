@@ -173,11 +173,11 @@ def f_Interp3d(p, X, Y, Z, P, *args):
     A, x0, y0, z0, b = p
     #return A*scipy.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2)) + b
 
-    dx = (interpModel.shape[0] - len(X))/2 - 2
     xm = len(X)/2
+    dx = min((interpModel.shape[0] - len(X))/2, xm) - 2
 
-    dy = (interpModel.shape[1] - len(Y))/2 - 2
     ym = len(Y)/2
+    dy = min((interpModel.shape[1] - len(Y))/2, ym) - 2  
 
     #print X[0] - x0, Y[0] - y0, Z[0] - z0 , 'o', IntZVals[3]
 
@@ -244,9 +244,9 @@ def replNoneWith1(n):
 		return n
 
 
-fresultdtype=[('tIndex', '<i4'),('fitResults', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('background', '<f4')]),('fitError', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('background', '<f4')]), ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
+fresultdtype=[('tIndex', '<i4'),('fitResults', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('background', '<f4')]),('fitError', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('background', '<f4')]), ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])]), ('startParams', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('background', '<f4')])]
 
-def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None):
+def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None, startParams=None):
 	if slicesUsed == None:
 		slicesUsed = ((-1,-1,-1),(-1,-1,-1),(-1,-1,-1))
 	else:
@@ -255,12 +255,15 @@ def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=N
 	if fitErr == None:
 		fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
 
+	if startParams == None:
+		startParams = -5e3*numpy.ones(fitResults.shape, 'f')
+
 	#print slicesUsed
 
 	tIndex = metadata.tIndex
 
 
-	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, slicesUsed)], dtype=fresultdtype)
+	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, slicesUsed, startParams.astype('f'))], dtype=fresultdtype)
 
 		
 
@@ -317,10 +320,10 @@ class PSFFitFactory:
         y0 =  Y.mean()
         z0 = 200.0
 
-        ta = twist.calcTwist(dataROI, X-x0, Y - y0)
-        z0 = -twist.getZ(ta)
+        #ta = twist.calcTwist(dataROI, X-x0, Y - y0)
+        #z0 = -twist.getZ(ta)
 
-        print x0, y0, z0
+        #print x0, y0, z0
 
         startParameters = [A, x0, y0, z0, dataROI.min()]
 
@@ -371,7 +374,7 @@ class PSFFitFactory:
             pass
 
         #print res, fitErrors, resCode
-        return PSFFitResultR(res, self.metadata, (xslice, yslice, zslice), resCode, fitErrors)
+        return PSFFitResultR(res, self.metadata, (xslice, yslice, zslice), resCode, fitErrors, numpy.array(startParameters))
 
     def FromPoint(self, x, y, z=None, roiHalfSize=15, axialHalfSize=15):
         #if (z == None): # use position of maximum intensity

@@ -91,18 +91,21 @@ class LMGLCanvas(GLCanvas):
     def OnPaint(self,event):
         dc = wx.PaintDC(self)
         self.SetCurrent()
+        #print 'OnPaint'
         if not self.init:
             self.InitGL()
             self.init = 1
+            
         self.OnDraw()
-        return
+        #return
 
-    def OnEraseBackground(self, event):
-        pass
+    #def OnEraseBackground(self, event):
+    #    pass
 
-    def OnIdle(self, event):
-        pass
-        #self.Refresh()
+    #def OnIdle(self, event):
+    #    self.GetParent().GetParent().ProcessPendingEvents()
+    #    pass
+    #    #self.Refresh()
 
     def OnSize(self, event):
         glViewport(0,0, self.Size[0], self.Size[1])
@@ -112,6 +115,8 @@ class LMGLCanvas(GLCanvas):
 
 
     def OnDraw(self):
+        #self.GetParent().ProcessPendingEvents()
+        print 'OnDraw'
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         glLoadIdentity()

@@ -12,11 +12,18 @@ from PYME.Analysis.QuadTree import pointQT
 import scipy
 import pylab
 
-from gen3DTriangs import gen3DTriangs, gen3DBlobs, testObj
+#from gen3DTriangs import gen3DTriangs, gen3DBlobs, testObj
 
 import statusLog
 
 name = 'ball_glut'
+
+def testObj():
+    x = 5e3*((numpy.arange(270)%27)/9 + 0.1*numpy.random.randn(270))
+    y = 5e3*((numpy.arange(270)%9)/3 + 0.1*numpy.random.randn(270))
+    z = 5e3*(numpy.arange(270)%3 + 0.1*numpy.random.randn(270))
+
+    return x, y, z
 
 class cmap_mult:
     def __init__(self, gains, zeros):
@@ -203,7 +210,10 @@ class LMGLCanvas(GLCanvas):
 
         #self.nVertices = 3
 
-        self.setBlob(*testObj(), smScale=[1e3,1e3,1e3])
+        to = testObj()
+
+        #self.setBlob(to[0], to[1], to[2], smScale=[1e3,1e3,1e3])
+        self.setPoints(to[0], to[1], to[2], to[2])
 
         #glMatrixMode(GL_PROJECTION)
         #glLoadIdentity()

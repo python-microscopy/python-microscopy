@@ -32,7 +32,7 @@ class DSViewFrame(wx.Frame):
                     #fn =
             else:
                 self.ds = example.CDataStack(filename)
-                self.SetTitle(fdialog.GetFilename())
+                self.SetTitle(filename)
                 self.saved = True
         self.vp = MyViewPanel(self, self.ds)
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -75,7 +75,7 @@ class DSViewFrame(wx.Frame):
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
             fpath = fdialog.GetPath()
-            if os.path.splitext(fpath)[1] == 'kdf':
+            if os.path.splitext(fpath)[1] == '.kdf':
                 self.ds.SaveToFile(fdialog.GetPath().encode())
             else:
                 #save using PIL
@@ -127,11 +127,13 @@ class DSViewFrame(wx.Frame):
             ds2 = example.CDataStack(self.ds, cd.x1, cd.y1, cd.z1, cd.x2, cd.y2, cd.z2, cd.chs)
             dvf = DSViewFrame(self.GetParent(), '--cropped--', ds2)
             dvf.Show()
+
 class MyApp(wx.App):
     def OnInit(self):
         #wx.InitAllImageHandlers()
+        print sys.argv
         if (len(sys.argv) > 1):
-            vframe = DSViewFrame(None, sys.argv[1], filename=sys.argv[0].split('\\')[-1])
+            vframe = DSViewFrame(None, sys.argv[1], filename=sys.argv[1])
         else:
             vframe = DSViewFrame(None, '')           
         self.SetTopWindow(vframe)

@@ -41,7 +41,7 @@ from PYME.Analysis import piecewiseMapping
 
 class DSViewFrame(wx.Frame):
     def __init__(self, parent=None, title='', dstack = None, log = None, filename = None, queueURI = None):
-        wx.Frame.__init__(self,parent, -1, title,size=wx.Size(800,800))
+        wx.Frame.__init__(self,parent, -1, title,size=wx.Size(800,800), pos=(1100, 300))
 
         self.ds = dstack
         self.log = log

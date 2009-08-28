@@ -4,7 +4,7 @@ import numpy
 from PYME.Analysis.LMVis import inpFilt
 
 def getPSFSlice(datasource, resultsSource, metadata, zm=None):
-    f1 = inpFilt.resultsFilter(resultsSource, error_x=[1,15], A=[50, 500], sig=(150/2.35, 350/2.35))
+    f1 = inpFilt.resultsFilter(resultsSource, error_x=[1,30], A=[10, 500], sig=(150/2.35, 900/2.35))
 
     ims, pts, zvals, zis = extractIms(datasource, f1, metadata, zm)
     return getPSF(ims, pts, zvals, zis)
@@ -35,11 +35,11 @@ def extractIms(dataSource, results, metadata, zm =None, roiSize=10, nmax = 1000)
         zvals.sort()
 
         zv = zm(ts.astype('f'))
-        print zvals
-        print zv
+        #print zvals
+        #print zv
 
         zis = array([numpy.argmin(numpy.abs(zvals - z)) for z in zv])
-        print zis
+        #print zis
     else:
         zvals = array([0])
         zis = 0.*ts
