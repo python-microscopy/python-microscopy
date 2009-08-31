@@ -26,7 +26,7 @@ scope.shutters = fakeShutters
 #PIFoc
 InitBG('PIFoc', '''
 from PYME.Acquire.Hardware.Piezos import piezo_e816
-scope.piFoc = piezo_e816.piezo_e816('COM2', 400)
+scope.piFoc = piezo_e816.piezo_e816('COM2', 400, -0.399)
 scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
 ''')
 
@@ -52,29 +52,29 @@ scope.zStage = NikonTE2000.zDrive()
 #frz = frZStage.frZStepper(MainFrame, scope.zStage)
 #frz.Show()
 
-#3-axis piezo
-InitBG('Thorlabs Piezo', '''
-from PYME.Acquire.Hardware import thorlabsPiezo
-
-#check to see what we've got attached
-piezoSerialNums = thorlabsPiezo.EnumeratePiezos()
-if len(piezoSerialNums) == 3: #expect to see 3 piezos
-    scope.pzx = thorlabsPiezo.TLPiezo(91814461, 'X Axis')
-    scope.pzy = thorlabsPiezo.TLPiezo(91814462, 'Y Axis')
-    scope.pzz = thorlabsPiezo.TLPiezo(91814463, 'Z Axis')
-
-    scope.piezos.append((scope.pzx, 1, 'X Piezo'))
-    scope.piezos.append((scope.pzy, 1, 'Y Piezo'))
-    scope.piezos.append((scope.pzz, 1, 'Z Piezo'))
-
-    #centre the piezos
-    scope.pzx.MoveTo(0,50)
-    scope.pzy.MoveTo(0,50)
-    scope.pzz.MoveTo(0,40)
-else:
-    raise HWNotPresent
-
-''')
+##3-axis piezo
+#InitBG('Thorlabs Piezo', '''
+#from PYME.Acquire.Hardware import thorlabsPiezo
+#
+##check to see what we've got attached
+#piezoSerialNums = thorlabsPiezo.EnumeratePiezos()
+#if len(piezoSerialNums) == 3: #expect to see 3 piezos
+#    scope.pzx = thorlabsPiezo.TLPiezo(91814461, 'X Axis')
+#    scope.pzy = thorlabsPiezo.TLPiezo(91814462, 'Y Axis')
+#    scope.pzz = thorlabsPiezo.TLPiezo(91814463, 'Z Axis')
+#
+#    scope.piezos.append((scope.pzx, 1, 'X Piezo'))
+#    scope.piezos.append((scope.pzy, 1, 'Y Piezo'))
+#    scope.piezos.append((scope.pzz, 1, 'Z Piezo'))
+#
+#    #centre the piezos
+#    scope.pzx.MoveTo(0,50)
+#    scope.pzy.MoveTo(0,50)
+#    scope.pzz.MoveTo(0,40)
+#else:
+#    raise HWNotPresent
+#
+#''')
     
 from PYME.Acquire.Hardware.FilterWheel import WFilter, FiltFrame
 filtList = [WFilter(1, 'EMPTY', 'EMPTY', 0),
@@ -121,17 +121,17 @@ if 'lasers'in dir(scope):
     toolPanels.append((lcf, 'Laser Control'))
 ''')
 
-#Focus tracking
-from PYME.Acquire.Hardware import FocCorrR
-InitBG('Focus Corrector', '''
-scope.fc = FocCorrR.FocusCorrector(scope.zStage, tolerance=0.20000000000000001, estSlopeDyn=False, recDrift=False, axis='Y', guideLaser=l488)
-scope.StatusCallbacks.append(fc.GetStatus)
-''')
-InitGUI('''
-if 'fc' in dir(scope):
-    scope.fc.addMenuItems(MainFrame, MainMenu)
-    scope.fc.Start(2000)
-''')
+##Focus tracking
+#from PYME.Acquire.Hardware import FocCorrR
+#InitBG('Focus Corrector', '''
+#scope.fc = FocCorrR.FocusCorrector(scope.zStage, tolerance=0.20000000000000001, estSlopeDyn=False, recDrift=False, axis='Y', guideLaser=l488)
+#scope.StatusCallbacks.append(fc.GetStatus)
+#''')
+#InitGUI('''
+#if 'fc' in dir(scope):
+#    scope.fc.addMenuItems(MainFrame, MainMenu)
+#    scope.fc.Start(2000)
+#''')
 
 from PYME import cSMI
 

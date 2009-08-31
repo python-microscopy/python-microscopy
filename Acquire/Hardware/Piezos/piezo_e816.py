@@ -1,9 +1,11 @@
 import serial;
 import time
 class piezo_e816:    
-    def __init__(self, portname='COM1', maxtravel = 12.00):
+    def __init__(self, portname='COM1', maxtravel = 12.00, Osen=None):
         self.max_travel = maxtravel
         self.ser_port = serial.Serial(portname, 115200, rtscts=1, timeout=2, writeTimeout=2)
+        if not Osen == None:
+            self.ser_port.write('SVA A8 %3.4f\n' % Osen)
         self.ser_port.write('SVO A1\n')
         self.lastPos = self.GetPos()
     def ReInit(self):

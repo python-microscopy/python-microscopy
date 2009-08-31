@@ -67,7 +67,7 @@ class DSViewFrame(wx.Frame):
         if (dstack == None):
             if (filename == None):
                 fdialog = wx.FileDialog(None, 'Please select Data Stack to open ...',
-                    wildcard='PYME Data|*.h5|TIFF files|*.tif', style=wx.OPEN)
+                    wildcard='PYME Data|*.h5|TIFF files|*.tif|KDF files|*.kdf', style=wx.OPEN)
                 succ = fdialog.ShowModal()
                 if (succ == wx.ID_OK):
                     #self.ds = example.CDataStack(fdialog.GetPath().encode())
@@ -122,6 +122,16 @@ class DSViewFrame(wx.Frame):
                        
 
 
+                elif filename.endswith('.kdf'): #kdf
+                    import PYME.cSMI as cSMI
+                    self.dataSource = cSMI.CDataStack_AsArray(cSMI.CDataStack(filename), 0).squeeze()
+                    self.mdh = MetaData.TIRFDefault
+
+                    from PYME.ParallelTasks.relativeFiles import getRelFilename
+                    self.seriesName = getRelFilename(filename)
+
+                    self.mode = 'psf'
+                    self.PSFLocs = []
                 else: #try tiff
                     #self.dataSource = TiffDataSource.DataSource(filename, None)
                     self.dataSource = readTiff.read3DTiff(filename)
@@ -311,9 +321,11 @@ class DSViewFrame(wx.Frame):
             self.GenPointFindingPanel()
             self.GenAnalysisPanel()
             self.GenFitStatusPanel()
-        else:
+        elif self.mode == 'blob':
             self.GenBlobFindingPanel()
             self.GenBlobFitPanel()
+        else:
+            self.GenPSFPanel()
 
 
         #item = self._pnl.AddFoldPanel("Filters", False, foldIcons=self.Images)
@@ -535,6 +547,42 @@ class DSViewFrame(wx.Frame):
 
         bFindObjects.Bind(wx.EVT_BUTTON, self.OnFindObjects)
         self._pnl.AddFoldPanelWindow(item, bFindObjects, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+
+    def GenPSFPanel(self):
+        item = self._pnl.AddFoldPanel("PSF Extraction", collapsed=False,
+                                      foldIcons=self.Images)
+
+        #pan = wx.Panel(item, -1)
+
+#        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+#
+#        hsizer.Add(wx.StaticText(pan, -1, 'Threshold:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+#        self.tThreshold = wx.TextCtrl(pan, -1, value='50', size=(40, -1))
+#
+#        hsizer.Add(self.tThreshold, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+#
+#        pan.SetSizer(hsizer)
+#        hsizer.Fit(pan)
+#
+#        self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+#
+#        self.cbSNThreshold = wx.CheckBox(item, -1, 'SNR Threshold')
+#        self.cbSNThreshold.SetValue(False)
+#
+#        self._pnl.AddFoldPanelWindow(item, self.cbSNThreshold, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+
+        bTagPSF = wx.Button(item, -1, 'Tag')
+
+
+        bTagPSF.Bind(wx.EVT_BUTTON, self.OnTagPSF)
+        self._pnl.AddFoldPanelWindow(item, bTagPSF, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+
+    def OnTagPSF(self, event):
+        from PYME.PSFEst import extractImages
+        dx, dy, dz = extractImages.getIntCenter(self.dataSource[(self.vp.xp-30):(self.vp.xp+31),(self.vp.yp-30):(self.vp.yp+31), :])
+        self.PSFLocs.append((self.vp.xp + dx, self.vp.yp + dy, dz))
+        self.vp.psfROIs = self.PSFLocs
+        self.vp.Refresh()
 
     def OnFindObjects(self, event):
         threshold = float(self.tThreshold.GetValue())

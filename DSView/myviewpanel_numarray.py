@@ -111,6 +111,9 @@ class MyViewPanel(viewpanel.ViewPanel):
         self.pointMode = 'confoc'
         self.pointTolNFoc = {'confoc' : (5,5,5), 'lm' : (2, 5, 5)}
 
+        self.psfROIs = []
+        self.psfROISize=30
+
         self.lastUpdateTime = 0
         
         
@@ -281,6 +284,12 @@ class MyViewPanel(viewpanel.ViewPanel):
                 dc.DrawRectangle(ly*sc - x0,lx*sc - y0, (hy-ly)*sc,(hx-lx)*sc)
             dc.SetPen(wx.NullPen)
             dc.SetBrush(wx.NullBrush)
+
+        if (len(self.psfROIs) > 0) and (self.do.slice == self.do.SLICE_XY):
+            dc.SetBrush(wx.TRANSPARENT_BRUSH)
+            dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),0))
+            for p in self.psfROIs:
+                dc.DrawRectangle(sc*p[0]-self.psfROISize*sc - x0,sc*p[1] - self.psfROISize*sc - y0, 2*self.psfROISize*sc,2*self.psfROISize*sc)
 
         if len(self.points) > 0:
             #if self.pointsMode == 'confoc':

@@ -80,3 +80,28 @@ def getPSF(ims, points, zvals, zis):
 
     return d
 
+def getIntCenter(im):
+    X, Y, Z = ogrid[0:im.shape[0], 0:im.shape[1], 0:im.shape[2]]
+
+    from pylab import *
+    imshow(im.max(2))
+
+    X = X.astype('f') - X.mean()
+    Y = Y.astype('f') - Y.mean()
+    Z = Z.astype('f')
+
+    im2 = im - im.min()
+    im2 = im2 - 0.5*im2.max()
+    im2 = im2*(im2 > 0)
+
+    ims = im2.sum()
+
+    x = (im2*X).sum()/ims
+    y = (im2*Y).sum()/ims
+    z = (im2*Z).sum()/ims
+
+    print x, y, z
+
+    return x, y, z
+
+

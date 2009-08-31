@@ -15,7 +15,7 @@ def calcTwist(im, X, Y):
     ar = an.ravel()[I]
     imr = im.ravel()[I]
 
-    imrs = scipy.ndimage.gaussian_filter(imr, 100, 0, mode='wrap')
+    imrs = scipy.ndimage.gaussian_filter(imr*(imr > (imr.max()/2.)), 100, 0, mode='wrap')
 
     #plot(ar, imrs)
 
