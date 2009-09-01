@@ -127,6 +127,17 @@ class DSViewFrame(wx.Frame):
                     self.dataSource = cSMI.CDataStack_AsArray(cSMI.CDataStack(filename), 0).squeeze()
                     self.mdh = MetaData.TIRFDefault
 
+                    try: #try and get metadata from the .log file
+                        lf = open(os.path.splitext(filename)[0] + '.log')
+                        from PYME.DSView import logparser
+                        lp = logparser.logparser()
+                        log = lp.parse(lf.read())
+                        lf.close()
+
+                        self.mdh.setEntry('voxelsize.z', log['PIEZOS']['Stepsize'])
+                    except:
+                        pass
+
                     from PYME.ParallelTasks.relativeFiles import getRelFilename
                     self.seriesName = getRelFilename(filename)
 
@@ -473,6 +484,19 @@ class DSViewFrame(wx.Frame):
         driftEst = self.cbDrift.GetValue()
         fitMod = self.cFitType.GetStringSelection()
 
+        if fitMod.startswith('PsfFit') and not 'PSFFile' in self.mdh.getEntryNames():
+            fdialog = wx.FileDialog(None, 'Please select PSF to use ...',
+                    wildcard='PSF files|*.psf', style=wx.OPEN)
+            succ = fdialog.ShowModal()
+            if (succ == wx.ID_OK):
+                #self.ds = example.CDataStack(fdialog.GetPath().encode())
+                #self.ds =
+                psfFilename = fdialog.GetPath()
+                self.mdh.setEntry('PSFFile', psfFilename)
+                self.md.setEntry('PSFFile', psfFilename)
+            else:
+                return
+
         if not driftEst:
             self.sh.run('pushImages(%d, %f, "%s")' % (startAt, threshold, fitMod))
         else:
@@ -552,37 +576,90 @@ class DSViewFrame(wx.Frame):
         item = self._pnl.AddFoldPanel("PSF Extraction", collapsed=False,
                                       foldIcons=self.Images)
 
-        #pan = wx.Panel(item, -1)
+        pan = wx.Panel(item, -1)
 
-#        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
 #
 #        hsizer.Add(wx.StaticText(pan, -1, 'Threshold:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 #        self.tThreshold = wx.TextCtrl(pan, -1, value='50', size=(40, -1))
 #
-#        hsizer.Add(self.tThreshold, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-#
-#        pan.SetSizer(hsizer)
-#        hsizer.Fit(pan)
-#
-#        self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+        bTagPSF = wx.Button(pan, -1, 'Tag', style=wx.BU_EXACTFIT)
+        bTagPSF.Bind(wx.EVT_BUTTON, self.OnTagPSF)
+        hsizer.Add(bTagPSF, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        bClearTagged = wx.Button(pan, -1, 'Clear', style=wx.BU_EXACTFIT)
+        bClearTagged.Bind(wx.EVT_BUTTON, self.OnClearTags)
+        hsizer.Add(bClearTagged, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        vsizer.Add(hsizer, 0,wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(pan, -1, 'ROI Size:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        self.tPSFROI = wx.TextCtrl(pan, -1, value='30,30,30', size=(40, -1))
+        hsizer.Add(self.tPSFROI, 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        vsizer.Add(hsizer, 0,wx.EXPAND|wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 0)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(pan, -1, 'Blur:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        self.tPSFBlur = wx.TextCtrl(pan, -1, value='.5,.5,1', size=(40, -1))
+        hsizer.Add(self.tPSFBlur, 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        vsizer.Add(hsizer, 0,wx.EXPAND|wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 0)
+
+        bExtract = wx.Button(pan, -1, 'Extract', style=wx.BU_EXACTFIT)
+        bExtract.Bind(wx.EVT_BUTTON, self.OnExtractPSF)
+        vsizer.Add(bExtract, 0,wx.ALL|wx.ALIGN_RIGHT, 5)
+
+        pan.SetSizer(vsizer)
+        vsizer.Fit(pan)
+
+        self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
 #
 #        self.cbSNThreshold = wx.CheckBox(item, -1, 'SNR Threshold')
 #        self.cbSNThreshold.SetValue(False)
 #
 #        self._pnl.AddFoldPanelWindow(item, self.cbSNThreshold, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
 
-        bTagPSF = wx.Button(item, -1, 'Tag')
-
-
-        bTagPSF.Bind(wx.EVT_BUTTON, self.OnTagPSF)
-        self._pnl.AddFoldPanelWindow(item, bTagPSF, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
-
+        
     def OnTagPSF(self, event):
         from PYME.PSFEst import extractImages
         dx, dy, dz = extractImages.getIntCenter(self.dataSource[(self.vp.xp-30):(self.vp.xp+31),(self.vp.yp-30):(self.vp.yp+31), :])
         self.PSFLocs.append((self.vp.xp + dx, self.vp.yp + dy, dz))
         self.vp.psfROIs = self.PSFLocs
         self.vp.Refresh()
+
+    def OnClearTags(self, event):
+        self.PSFLocs = []
+        self.vp.psfROIs = self.PSFLocs
+        self.vp.Refresh()
+
+    def OnExtractPSF(self, event):
+        if (len(self.PSFLocs) > 0):
+            from PYME.PSFEst import extractImages
+
+            psfROISize = [int(s) for s in self.tPSFROI.GetValue().split(',')]
+            psfBlur = [float(s) for s in self.tPSFBlur.GetValue().split(',')]
+            #print psfROISize
+            psf = extractImages.getPSF3D(self.dataSource, self.PSFLocs, psfROISize, psfBlur)
+
+            from pylab import *
+            import cPickle
+            imshow(psf.max(2))
+
+            fdialog = wx.FileDialog(None, 'Save PSF as ...',
+                wildcard='PSF file (*.psf)|*.psf', style=wx.SAVE|wx.HIDE_READONLY)
+            succ = fdialog.ShowModal()
+            if (succ == wx.ID_OK):
+                fpath = fdialog.GetPath()
+                #save as a pickle containing the data and voxelsize
+
+                fid = open(fpath, 'wb')
+                cPickle.dump((psf, self.mdh.voxelsize), fid, 2)
+                fid.close()
 
     def OnFindObjects(self, event):
         threshold = float(self.tThreshold.GetValue())

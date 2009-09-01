@@ -5,6 +5,7 @@ from pylab import *
 import copy_reg
 import numpy
 import types
+import cPickle
 
 from PYME.Analysis import twist
 
@@ -61,16 +62,22 @@ def setModel(modName, md):
     global IntXVals, IntYVals, IntZVals, interpModel, interpModelName, dx, dy, dz
 
     if not modName == interpModelName:
-        mod = numpy.load(modName)
+        mf = open(modName, 'rb')
+        mod, voxelsize = cPickle.load(mf)
+        mf.close()
+        
         interpModelName = modName
 
-        IntXVals = 1e3*md.voxelsize.x*mgrid[-(mod.shape[0]/2.):(mod.shape[0]/2.)]
-        IntYVals = 1e3*md.voxelsize.y*mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]
-        IntZVals = 1e3*md.voxelsize.z*mgrid[-(mod.shape[2]/2.):(mod.shape[2]/2.)]
+        if not voxelsize.x == md.voxelsize.x:
+            raise RuntimeError("PSF and Image voxel sizes don't match")
 
-        dx = md.voxelsize.x*1e3
-        dy = md.voxelsize.y*1e3
-        dz = md.voxelsize.z*1e3
+        IntXVals = 1e3*voxelsize.x*mgrid[-(mod.shape[0]/2.):(mod.shape[0]/2.)]
+        IntYVals = 1e3*voxelsize.y*mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]
+        IntZVals = 1e3*voxelsize.z*mgrid[-(mod.shape[2]/2.):(mod.shape[2]/2.)]
+
+        dx = voxelsize.x*1e3
+        dy = voxelsize.y*1e3
+        dz = voxelsize.z*1e3
 
         interpModel = mod
 

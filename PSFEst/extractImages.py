@@ -2,6 +2,8 @@ from numpy import *
 from numpy.fft import *
 import numpy
 from PYME.Analysis.LMVis import inpFilt
+import scipy.ndimage
+
 
 def getPSFSlice(datasource, resultsSource, metadata, zm=None):
     f1 = inpFilt.resultsFilter(resultsSource, error_x=[1,30], A=[10, 500], sig=(150/2.35, 900/2.35))
@@ -83,8 +85,8 @@ def getPSF(ims, points, zvals, zis):
 def getIntCenter(im):
     X, Y, Z = ogrid[0:im.shape[0], 0:im.shape[1], 0:im.shape[2]]
 
-    from pylab import *
-    imshow(im.max(2))
+    #from pylab import *
+    #imshow(im.max(2))
 
     X = X.astype('f') - X.mean()
     Y = Y.astype('f') - Y.mean()
@@ -100,8 +102,34 @@ def getIntCenter(im):
     y = (im2*Y).sum()/ims
     z = (im2*Z).sum()/ims
 
-    print x, y, z
+    #print x, y, z
 
     return x, y, z
 
 
+def getPSF3D(im, points, PSshape = [30,30,30], blur=[.5, .5, 1]):
+    sx, sy, sz = PSshape
+    height, width, depth = 2*array(PSshape) + 1
+    kx,ky,kz = mgrid[:height,:width,:depth]#,:self.sliceShape[2]]
+
+    kx = fftshift(kx - height/2.)/height
+    ky = fftshift(ky - width/2.)/width
+    kz = fftshift(kz - depth/2.)/depth
+
+
+    d = zeros((height, width, depth))
+    print d.shape
+
+    for px,py,pz in points:
+        print px, py, pz
+        imi = im[(px-sx):(px+sx+1),(py-sy):(py+sy+1),(pz-sz):(pz+sz+1)]
+        print imi.shape
+        dx, dy, dz = getIntCenter(imi)
+        dz -= sz
+        F = fftn(imi)
+        d = d + ifftn(F*exp(-2j*pi*(kx*-dx + ky*-dy + kz*-dz))).real
+
+    d = d - d.min()
+    d = d/d.max()
+
+    return scipy.ndimage.gaussian_filter(d, blur)
