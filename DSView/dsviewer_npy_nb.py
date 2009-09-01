@@ -142,7 +142,7 @@ class DSViewFrame(wx.Frame):
                     self.seriesName = getRelFilename(filename)
 
                     self.mode = 'psf'
-                    self.PSFLocs = []
+                    
                 else: #try tiff
                     #self.dataSource = TiffDataSource.DataSource(filename, None)
                     self.dataSource = readTiff.read3DTiff(filename)
@@ -152,7 +152,8 @@ class DSViewFrame(wx.Frame):
                     self.seriesName = getRelFilename(filename)
 
                     self.mode = 'blob'
-                    
+
+                self.PSFLocs = []
 
                 self.ds = self.dataSource
                 self.SetTitle(filename)
@@ -335,6 +336,7 @@ class DSViewFrame(wx.Frame):
         elif self.mode == 'blob':
             self.GenBlobFindingPanel()
             self.GenBlobFitPanel()
+            self.GenPSFPanel()
         else:
             self.GenPSFPanel()
 
@@ -599,6 +601,7 @@ class DSViewFrame(wx.Frame):
 
         self.tPSFROI = wx.TextCtrl(pan, -1, value='30,30,30', size=(40, -1))
         hsizer.Add(self.tPSFROI, 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tPSFROI.Bind(wx.EVT_TEXT, self.OnPSFROI)
 
         vsizer.Add(hsizer, 0,wx.EXPAND|wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 0)
 
@@ -627,7 +630,8 @@ class DSViewFrame(wx.Frame):
         
     def OnTagPSF(self, event):
         from PYME.PSFEst import extractImages
-        dx, dy, dz = extractImages.getIntCenter(self.dataSource[(self.vp.xp-30):(self.vp.xp+31),(self.vp.yp-30):(self.vp.yp+31), :])
+        rsx, rsy, rsz = [int(s) for s in self.tPSFROI.GetValue().split(',')]
+        dx, dy, dz = extractImages.getIntCenter(self.dataSource[(self.vp.xp-rsx):(self.vp.xp+rsx + 1),(self.vp.yp-rsy):(self.vp.yp+rsy+1), :])
         self.PSFLocs.append((self.vp.xp + dx, self.vp.yp + dy, dz))
         self.vp.psfROIs = self.PSFLocs
         self.vp.Refresh()
@@ -636,6 +640,14 @@ class DSViewFrame(wx.Frame):
         self.PSFLocs = []
         self.vp.psfROIs = self.PSFLocs
         self.vp.Refresh()
+
+    def OnPSFROI(self, event):
+        try:
+            psfROISize = [int(s) for s in self.tPSFROI.GetValue().split(',')]
+            self.vp.psfROISize = psfROISize
+            self.vp.Refresh()
+        except:
+            pass
 
     def OnExtractPSF(self, event):
         if (len(self.PSFLocs) > 0):

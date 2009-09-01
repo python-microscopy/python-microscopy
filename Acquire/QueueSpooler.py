@@ -15,12 +15,15 @@ class SpoolEvent(tables.IsDescription):
    EventDescr = tables.StringCol(256)
 
 class EventLogger:
-   def __init__(self, scope, tq, queueName):
+   def __init__(self, spool, scope, tq, queueName):
+      self.spooler = spool
       self.scope = scope
       self.tq = tq
       self.queueName = queueName
 
    def logEvent(self, eventName, eventDescr = ''):
+      if eventName == 'StartAq':
+          eventDescr = '%d' % self.spooler.imNum
       self.tq.logQueueEvent(self.queueName, (eventName, eventDescr, sp.timeFcn()))
       
 
@@ -33,7 +36,7 @@ class Spooler(sp.Spooler):
        self.tq.createQueue('HDFTaskQueue',self.seriesName, filename, frameSize = (scope.cam.GetPicWidth(), scope.cam.GetPicHeight()))
 
        self.md = MetaDataHandler.QueueMDHandler(self.tq, self.seriesName)
-       self.evtLogger = EventLogger(scope, self.tq, self.seriesName)
+       self.evtLogger = EventLogger(self, scope, self.tq, self.seriesName)
 
        sp.Spooler.__init__(self, scope, filename, acquisator, protocol, parent)
    

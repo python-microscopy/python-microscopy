@@ -3,6 +3,7 @@ import PYME.cSMI as example
 import scipy
 
 from PYME.Acquire import MetaDataHandler
+from PYME.Acquire import eventLog
 
 import pylab
 
@@ -340,6 +341,7 @@ class FakeCamera:
         #pass
 
     def StartExposure(self):
+        eventLog.logEvent('StartAq', '')
         self.compT.StartExp()
         #self.compTOld = self.compTCur
         #self.compTCur = compThread(self.XVals, self.YVals, (self.zPiezo.GetPos() - self.zOffset)*1e3,self.fluors, self.noiseMaker, laserPowers=self.laserPowers, intTime=self.intTime*1e-3)

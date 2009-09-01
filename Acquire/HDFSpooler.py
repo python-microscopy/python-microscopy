@@ -15,13 +15,17 @@ class SpoolEvent(tables.IsDescription):
    EventDescr = tables.StringCol(256)
 
 class EventLogger:
-   def __init__(self, scope, hdf5File):
+   def __init__(self, spool, scope, hdf5File):
+      self.spooler = spool
       self.scope = scope
       self.hdf5File = hdf5File
 
       self.evts = self.hdf5File.createTable(hdf5File.root, 'Events', SpoolEvent)
 
    def logEvent(self, eventName, eventDescr = ''):
+      if eventName == 'StartAq':
+          eventDescr = '%d' % self.spooler.imNum
+          
       ev = self.evts.row
 
       ev['EventName'] = eventName
@@ -39,7 +43,7 @@ class Spooler(sp.Spooler):
 
        self.imageData = self.h5File.createEArray(self.h5File.root, 'ImageData', tables.UInt16Atom(), (0,scope.cam.GetPicWidth(),scope.cam.GetPicHeight()), filters=filt)
        self.md = MetaDataHandler.HDFMDHandler(self.h5File)
-       self.evtLogger = EventLogger(scope, self.h5File)
+       self.evtLogger = EventLogger(self, scope, self.h5File)
 
        sp.Spooler.__init__(self, scope, filename, acquisator, protocol, parent)
 

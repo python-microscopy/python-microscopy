@@ -3,7 +3,7 @@ from PYME.cSMI import CDataStack, CDataStack_AsArray
 
 import time
 
-import eventLog
+from PYME.Acquire import eventLog
 
 class PreviewAquisator(wx.Timer):
     BW = 1

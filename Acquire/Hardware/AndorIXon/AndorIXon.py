@@ -9,6 +9,8 @@ from PYME.Acquire.Hardware import ccdCalibrator
 
 #import pylab
 
+from PYME.Acquire import eventLog
+
 #import threading
 
 class iXonCamera:
@@ -400,6 +402,8 @@ class iXonCamera:
         self._GetCCDTemp()
         self._GetAcqTimings()
         self._GetBufferSize()
+
+        eventLog.logEvent('StartAq', '')
         ret = ac.StartAcquisition()
         if not ret == ac.DRV_SUCCESS:
             raise 'Error starting acquisition: %s' % ac.errorCodes[ret]
