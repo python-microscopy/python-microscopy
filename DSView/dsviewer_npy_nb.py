@@ -26,6 +26,7 @@ import glob
 from myviewpanel_numarray import MyViewPanel
 from PYME.Analysis.LMVis import recArrayView
 import eventLogViewer
+import fitInfo
 
 from PYME.Acquire import MetaDataHandler
 from PYME.Analysis import MetaData
@@ -236,6 +237,9 @@ class DSViewFrame(wx.Frame):
             #self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],self.fitResults['tIndex'].astype('f'))
             #self.glCanvas.setCLim((0, self.numAnalysed))
             self.timer.WantNotification.append(self.AddPointsToVis)
+
+            self.fitInf = fitInfo.FitInfoPanel(self, self.fitResults, self.mdh)
+            self.notebook1.AddPage(page=self.fitInf, select=False, caption='Fit Info')
 
 
         #self.notebook1.Split(0, wx.TOP)
@@ -832,6 +836,9 @@ class DSViewFrame(wx.Frame):
         self.vp.imagepanel.Refresh()
         self.statusbar.SetStatusText('Slice No: (%d/%d)    x: %d    y: %d    Frames Analysed: %d    Events detected: %d' % (self.vp.zp, self.vp.ds.shape[2], self.vp.xp, self.vp.yp, self.numAnalysed, self.numEvents))
         self.slPlayPos.SetValue((100*self.vp.zp)/(self.vp.ds.shape[2]-1))
+
+        if 'fitInf' in dir(self):
+            self.fitInf.UpdateDisp(self.vp.PointsHitTest())
 
     def saveStack(self, event=None):
         fdialog = wx.FileDialog(None, 'Save Data Stack as ...',

@@ -567,6 +567,26 @@ class MyViewPanel(viewpanel.ViewPanel):
              self.GetParent().update()
         else:
             self.imagepanel.Refresh()
+
+    def PointsHitTest(self):
+        if len(self.points) > 0:
+            iCand = numpy.where((abs(self.points[:,2] - self.zp) < 1)*(abs(self.points[:,0] - self.xp) < 3)*(abs(self.points[:,1] - self.yp) < 3))[0]
+
+            if len(iCand) == 0:
+                return None
+            elif len(iCand) == 1:
+                return iCand
+            else:
+                pCand = self.points[iCand, :]
+
+                iNearest = numpy.argmin((pCand[:,0] - self.xp)**2 + (pCand[:,1] - self.yp)**2)
+
+                return iCand[iNearest]
+        else:
+            return None
+
+
+
             
     def OnRightDown(self,event):
         dc = wx.ClientDC(self.imagepanel)

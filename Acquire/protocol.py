@@ -23,6 +23,14 @@ class TaskListTask:
 
 T = TaskListTask #to save typing in protocols
 
+def Ex(str):
+    exec(str)
+
+def SetEMGain(emGain):
+    scope.pa.stop()
+    scope.cam.SetEMGain(emGain)
+    scope.pa.start()
+
 class TaskListProtocol(Protocol):
     def __init__(self, taskList, metadataEntries = []):
         self.taskList = taskList
@@ -47,8 +55,7 @@ class TaskListProtocol(Protocol):
             eventLog.logEvent('ProtocolTask', '%d, %s, ' % (frameNum, t.what.func_name) + ', '.join(['%s' % p for p in t.params]))
             self.listPos += 1
 
-def Ex(str):
-    exec(str)
+
 
 class ZStackTaskListProtocol(TaskListProtocol):
     def __init__(self, taskList, startFrame, dwellTime, metadataEntries = [], randomise = False):
