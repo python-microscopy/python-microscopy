@@ -5,7 +5,10 @@ class piezo_e816:
         self.max_travel = maxtravel
         self.ser_port = serial.Serial(portname, 115200, rtscts=1, timeout=2, writeTimeout=2)
         if not Osen == None:
-            self.ser_port.write('SVA A8 %3.4f\n' % Osen)
+            #self.ser_port.write('SPA A8 %3.4f\n' % Osen)
+            self.osen = Osen
+        else:
+            self.osen = 0
         self.ser_port.write('SVO A1\n')
         self.lastPos = self.GetPos()
     def ReInit(self):
@@ -30,7 +33,7 @@ class piezo_e816:
         self.ser_port.flushOutput()
         time.sleep(0.05)
         res = self.ser_port.readline()
-        return float(res)
+        return float(res) + self.osen
     def GetControlReady(self):
         return True
     def GetChannelObject(self):

@@ -153,8 +153,10 @@ class fitTask(taskDef.Task):
                  self.mIm = self.mIm*numpy.maximum(bs.astype('f') - numpy.median(bs.ravel()), 1)
 
              #self.mIm = numpy.absolute(self.mIm)
-
-             self.ofdDr = ofind.ObjectIdentifier(self.mIm)
+             if not 'PSFFile' in self.md.getEntryNames():
+                 self.ofdDr = ofind.ObjectIdentifier(self.mIm)
+             else:
+                 self.ofdDr = ofind_xcorr.ObjectIdentifier(self.mIm, self.md.getEntry('PSFFile'), 7, 5e-2)
              thres = self.calObjThresh**10
              self.ofdDr.FindObjects(thres,0)
              while len(self.ofdDr) >= 10: #just go for the brightest ones

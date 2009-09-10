@@ -277,8 +277,13 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         
         
         taskNum = self.openTasks.pop(self.fTaskToPop(workerN, NWorkers, len(self.openTasks)))
+
+        if 'Analysis.NumBGFrames' in self.metaData.getEntryNames():
+            bgi = range(max(taskNum - self.metaData.Analysis.NumBGFrames,self.metaData.EstimatedLaserOnFrameNo), taskNum)
+        else:
+            bgi = range(max(taskNum - 10,self.metaData.EstimatedLaserOnFrameNo), taskNum)
         
-        task = fitTask(self.queueID, taskNum, self.metaData.Analysis.DetectionThreshold, self.metaData, self.metaData.Analysis.FitModule, 'TQDataSource', bgindices =range(max(taskNum - 10,self.metaData.EstimatedLaserOnFrameNo), taskNum), SNThreshold = True)
+        task = fitTask(self.queueID, taskNum, self.metaData.Analysis.DetectionThreshold, self.metaData, self.metaData.Analysis.FitModule, 'TQDataSource', bgindices = bgi, SNThreshold = True)
         
         task.queueID = self.queueID
         task.initializeWorkerTimeout(time.clock())

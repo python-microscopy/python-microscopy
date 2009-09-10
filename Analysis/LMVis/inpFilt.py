@@ -82,11 +82,11 @@ class h5rSource:
         k = key.split('_')
         
         if len(k) == 1:
-            return self.h5f.root.FitResults[:][k[0]]
+            return self.h5f.root.FitResults[:][k[0]].astype('f')
         elif len(k) == 2:
-            return self.h5f.root.FitResults[:][k[0]][k[1]]
+            return self.h5f.root.FitResults[:][k[0]][k[1]].astype('f')
         elif len(k) == 3:
-            return self.h5f.root.FitResults[:][k[0]][k[1]][k[2]]
+            return self.h5f.root.FitResults[:][k[0]][k[1]][k[2]].astype('f')
         else:
             raise "Don't know about deeper nesting yet"
         
@@ -134,11 +134,11 @@ class h5rDSource:
         k = key.split('_')
         
         if len(k) == 1:
-            return self.h5f.root.DriftResults[:][k[0]]
+            return self.h5f.root.DriftResults[:][k[0]].astype('f')
         elif len(k) == 2:
-            return self.h5f.root.DriftResults[:][k[0]][k[1]]
+            return self.h5f.root.DriftResults[:][k[0]][k[1]].astype('f')
         elif len(k) == 3:
-            return self.h5f.root.DriftResults[:][k[0]][k[1]][k[2]]
+            return self.h5f.root.DriftResults[:][k[0]][k[1]][k[2]].astype('f')
         else:
             raise "Don't know about deeper nesting yet"
         

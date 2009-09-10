@@ -58,7 +58,11 @@ def pushImagesHDF(startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
     mdhQ = MetaDataHandler.QueueMDHandler(tq, seriesName, mdh)
     mdhQ.setEntry('Analysis.DetectionThreshold', detThresh)
     for i in range(startingAt, ds.shape[2]):
-        tq.postTask(remFitBuf.fitTask(seriesName,i, detThresh, md, fitFcn, bgindices=range(max(i-10,md.EstimatedLaserOnFrameNo ),i), SNThreshold=True), queueName=seriesName)
+        if 'Analysis.NumBGFrames' in md.getEntryNames():
+            bgi = range(max(i - md.Analysis.NumBGFrames,md.EstimatedLaserOnFrameNo), i)
+        else:
+            bgi = range(max(i - 10,md.EstimatedLaserOnFrameNo), i)
+        tq.postTask(remFitBuf.fitTask(seriesName,i, detThresh, md, fitFcn, bgindices=bgi, SNThreshold=True), queueName=seriesName)
 
 def pushImagesQueue(startingAt=0, detThresh = .9, fitFcn='LatGaussFitFR'):
     mdh.setEntry('Analysis.DetectionThreshold', detThresh)
@@ -99,7 +103,11 @@ def testFrames(detThresh = 0.9, offset = 0):
     zps = array(range(md.EstimatedLaserOnFrameNo + 20, md.EstimatedLaserOnFrameNo + 24)  + range(sq, sq + 4) + range(dataSource.getNumSlices()/2,dataSource.getNumSlices() /2+4))
     zps += offset
     for i in range(12):
-        ft = remFitBuf.fitTask(seriesName, zps[i], detThresh, md, 'LatObjFindFR', bgindices=range(max(zps[i] -10, md.EstimatedLaserOnFrameNo), zps[i]), SNThreshold=True)
+        if 'Analysis.NumBGFrames' in md.getEntryNames():
+            bgi = range(max(zps[i] - md.Analysis.NumBGFrames,md.EstimatedLaserOnFrameNo), zps[i])
+        else:
+            bgi = range(max(zps[i] - 10,md.EstimatedLaserOnFrameNo), zps[i])
+        ft = remFitBuf.fitTask(seriesName, zps[i], detThresh, md, 'LatObjFindFR', bgindices=bgi, SNThreshold=True)
         res = ft()
         xp = floor(i/4)/3.
         yp = (3 - i%4)/4.

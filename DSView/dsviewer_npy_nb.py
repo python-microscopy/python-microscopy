@@ -756,6 +756,20 @@ class DSViewFrame(wx.Frame):
         threshold = float(self.tThreshold.GetValue())
         startAt = int(self.tStartAt.GetValue())
         driftEst = self.cbDrift.GetValue()
+        fitMod = self.cFitType.GetStringSelection()
+
+        if fitMod.startswith('PsfFit') and not 'PSFFile' in self.mdh.getEntryNames():
+            fdialog = wx.FileDialog(None, 'Please select PSF to use ...',
+                    wildcard='PSF files|*.psf', style=wx.OPEN)
+            succ = fdialog.ShowModal()
+            if (succ == wx.ID_OK):
+                #self.ds = example.CDataStack(fdialog.GetPath().encode())
+                #self.ds =
+                psfFilename = fdialog.GetPath()
+                self.mdh.setEntry('PSFFile', psfFilename)
+                self.md.setEntry('PSFFile', psfFilename)
+            else:
+                return
 
         #if not driftEst:
         self.sh.run('testFrames(%f)' % (threshold))
@@ -975,6 +989,10 @@ class DSViewFrame(wx.Frame):
                     z = self.zm(self.fitResults['tIndex'].astype('f')).astype('f')
                     self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],z)
                     self.glCanvas.setCLim((z.min(), z.max()))
+                elif 'z0' in self.fitResults['fitResults'].dtype.fields:
+                    z = self.fitResults['fitResults']['z0']
+                    self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],z)
+                    self.glCanvas.setCLim((-1e3, 1e3))
                 else:
                     self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],self.fitResults['tIndex'].astype('f'))
                     self.glCanvas.setCLim((0, self.numAnalysed))

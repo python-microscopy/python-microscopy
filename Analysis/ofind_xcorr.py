@@ -2,43 +2,34 @@ import scipy
 import scipy.signal
 import scipy.ndimage as ndimage
 import numpy
-
+import cPickle
 from scipy.fftpack import fftn, ifftn, ifftshift
-
 from PYME import pad
 #import pylab
-
 PSFFileName = None
 cachedPSF = None
 cachedOTF2 = None
 cachedOTFH = None
 autocorr = None
-
-
 def preparePSF(PSFFilename, PSSize):
     global PSFFileName, cachedPSF, cachedOTF2, cachedOTFH, autocorr
-
     if (not (PSFFileName == PSFFilename)) or (not (cachedPSF.shape == PSSize)):
-        ps = numpy.load(PSFFilename).max(2)
+        fid = open(PSFFilename, 'rb')
+        ps, vox = cPickle.load(fid)
+        fid.close()
+        ps = ps.max(2)
         ps = ps - ps.min()
         #ps = ps*(ps > 0)
         ps = ps*scipy.signal.hanning(ps.shape[0])[:,None]*scipy.signal.hanning(ps.shape[1])[None,:]
         ps = ps/ps.sum()
-
         PSFFileName = PSFFilename
-
         pw = (numpy.array(PSSize) - ps.shape)/2.
-
         pw1 = numpy.floor(pw)
         pw2 = numpy.ceil(pw)
-
         cachedPSF = pad.with_constant(ps, ((pw2[0], pw1[0]), (pw2[1], pw1[1])), (0,))
         cachedOTFH = ifftn(cachedPSF)*cachedPSF.size
         cachedOTF2 = cachedOTFH*fftn(cachedPSF)
-
-        autocorr = ifftshift(ifftn(cachedOTF2)).real
-
-
+        #autocorr = ifftshift(ifftn(cachedOTF2)).real
 class OfindPoint:
     def __init__(self, x, y, z=None, detectionThreshold=None):
         """Creates a point object, potentially with an undefined z-value."""
@@ -46,16 +37,13 @@ class OfindPoint:
         self.y = y
         self.z = z
         self.detectionThreshold = detectionThreshold
-
 #a hack so we'll be able to do something like ObjectIdentifier.x[i]
 class PseudoPointList:
     def __init__(self,parent, varName):
         self.parent = parent
         self.varName = varName
-
     def __len__(self):
         return len(self.parent)
-
     def __getitem__(self, key):
         tmp = self.parent[key]
         if not '__len__' in dir(tmp):
@@ -65,17 +53,14 @@ class PseudoPointList:
             for it in tmp:
                 tm2.append(it.__dict__[self.varName])
             return tm2
-
     #def __iter__(self):
     #    self.curpos = -1
     #    return self
-
     #def next(self):
     #    curpos += 1
     #    if (curpos >= len(self)):
     #        raise StopIteration
     #    return self[self.curpos]
-
 class ObjectIdentifier(list):
     def __init__(self, data, PSFFilename, filterRadiusHighpass=5, lamb = 5e-5):
         """Creates an Identifier object to be used for object finding, takes a 2D or 3D slice
@@ -83,23 +68,17 @@ class ObjectIdentifier(list):
         where "fast" performs a z-projection and then filters, wheras "good" filters in 3D before 
         projecting. The parameters filterRadiusLowpass and filterRadiusHighpass control the bandpass filter
         used to identify 'point-like' features. filterRadiusZ is the radius used for the axial smoothing filter"""
-
         self.data = data
         self.filterRadiusHighpass = filterRadiusHighpass
-
         self.lamb = lamb
-
         preparePSF(PSFFilename, data.shape[:2])
-
     def __FilterData2D(self,data):
         #lowpass filter to suppress noise
         #a = ndimage.gaussian_filter(data.astype('f'), self.filterRadiusLowpass)
         a = ifftshift(ifftn((fftn(data.astype('f'))*cachedOTFH)*(self.lamb**2 + cachedOTF2.mean())/(self.lamb**2 + cachedOTF2))).real
         #lowpass filter again to find background
         b = ndimage.gaussian_filter(a, self.filterRadiusHighpass)
-
         return 24*(a - b)
-
     
     def __FilterDataFast(self):
         #project data
@@ -107,7 +86,6 @@ class ObjectIdentifier(list):
             projData = self.data
         else:
             projData = self.data.max(2) 
-
         return self.__FilterData2D(projData)
         
     def __FilterData(self):
@@ -118,8 +96,6 @@ class ObjectIdentifier(list):
             self.filteredData = self.__FilterDataFast()
             self.filteredData *= (self.filteredData > 0)
             return self.filteredData
-
-
     def FindObjects(self, thresholdFactor, numThresholdSteps="default", blurRadius=1.5, mask=None):
         """Finds point-like objects by subjecting the data to a band-pass filtering (as defined when 
         creating the identifier) followed by z-projection and a thresholding procedure where the 
@@ -133,7 +109,6 @@ class ObjectIdentifier(list):
         This allows the detection of objects which are relatively close together and spread over a 
         large range of intenstities. A binary mask [mask] may be applied to the image to specify a region
         (e.g. a cell) in which objects are to be detected.
-
         A copy of the filtered image is saved such that subsequent calls to FindObjects with, e.g., a
         different thresholdFactor are faster."""
         
@@ -151,7 +126,6 @@ class ObjectIdentifier(list):
             
         self.blurRadius = blurRadius
         self.mask = mask
-
         #clear the list of previously found points
         del self[:]
         
@@ -163,7 +137,6 @@ class ObjectIdentifier(list):
             maskedFilteredData = filteredData*self.mask
         else:
             maskedFilteredData = filteredData
-
         #manually mask the edge pixels
         maskedFilteredData[:, :5] = 0
         maskedFilteredData[:, -5:] = 0
@@ -175,12 +148,10 @@ class ObjectIdentifier(list):
             N, bins = scipy.histogram(maskedFilteredData, bins=200)
             posMax = N.argmax() #find bin with maximum number of counts
             modeApp = bins[posMax:(posMax+1)].mean() #bins contains left-edges - find middle of most frequent bin
-
             #catch the corner case where the mode could be zero - this is highly unlikely, but if it were
             #to occur one would no longer be able to influence the threshold with threshFactor
             if (abs(modeApp) < 1): 
                 modeApp = 1
-
             #calc thresholds
             self.lowerThreshold = modeApp*self.thresholdFactor
             self.upperThreshold = maskedFilteredData.max()/2
@@ -190,7 +161,6 @@ class ObjectIdentifier(list):
                 self.lowerThreshold = self.thresholdFactor*scipy.sqrt(scipy.median(self.data.ravel()))
             else:
                 self.lowerThreshold = self.thresholdFactor
-
         
         X,Y = scipy.mgrid[0:maskedFilteredData.shape[0], 0:maskedFilteredData.shape[1]]
     
@@ -210,30 +180,23 @@ class ObjectIdentifier(list):
                 #and add to list
                 self.append(OfindPoint(x,y,detectionThreshold=self.lowerThreshold))
         else: #do threshold scan (default)
-
             #generate threshold range - note slightly awkard specification of lowwer and upper bounds as the stop bound is excluded from arange
             self.thresholdRange = scipy.arange(self.upperThreshold, self.lowerThreshold - (self.upperThreshold - self.lowerThreshold)/(self.numThresholdSteps -1), - (self.upperThreshold - self.lowerThreshold)/(self.numThresholdSteps))
-
             #get a working copy of the filtered data
             im = maskedFilteredData.copy()
-
         
-
             #use for quickly deterimining the number of pixels in a slice (there must be a better way)
             corrWeightRef = scipy.ones(im.shape)
             
-
         
             for threshold in self.thresholdRange:
                 #apply threshold and label regions
                 (labeledPoints, nLabeled) = ndimage.label(im > threshold)
-
                 #initialise correction weighting mask
                 corrWeights = scipy.zeros(im.shape, 'f')
             
                 #get 'adress' of each object
                 objSlices = ndimage.find_objects(labeledPoints)
-
                 #loop over objects
                 for i in range(1, nLabeled):
                     #measure position
@@ -244,32 +207,24 @@ class ObjectIdentifier(list):
                     y = (Y[objSlices[i]]*imO).sum()/imO.sum()
                     #and add to list
                     self.append(OfindPoint(x,y,detectionThreshold=threshold))
-
                     #now work out weights for correction image (N.B. this is somewhat emperical)
                     corrWeights[objSlices[i]] = 1.0/scipy.sqrt(nPixels)
-
                 #calculate correction matrix
                 corr = ndimage.gaussian_filter(2*self.blurRadius*scipy.sqrt(2*scipy.pi)*1.7*im*corrWeights, self.blurRadius)
-
                 #subtract from working image
                 im -= corr
-
                 #pylab.figure()
                 #pylab.imshow(corr)
                 #pylab.colorbar()
-
                 #pylab.figure()
                 #pylab.imshow(im)
                 #pylab.colorbar()
-
                 #clip border pixels again
                 im[0:5, 0:5] = 0
                 im[0:5, -5:] = 0
                 im[-5:, -5:] = 0
                 im[-5:, 0:5] = 0
-
                 print len(self)
-
         #create pseudo lists to allow indexing along the lines of self.x[i]
         self.x = PseudoPointList(self, 'x')
         self.y = PseudoPointList(self, 'y')
