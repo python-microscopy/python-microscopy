@@ -102,7 +102,7 @@ def f_Interp3d(p, X, Y, Z, *args):
     y1 = (Y - y0)/dy + len(IntYVals)/2.
     z1 = (Z- z0)/dz + len(IntZVals)/2.
 
-    g1 = ndimage.interpolation.map_coordinates(interpModel, [x1, y1, z1], mode='nearest')
+    g1 = ndimage.interpolation.map_coordinates(interpModel, [x1, y1, z1], mode='nearest').squeeze()
 
     #print g1.shape
 
