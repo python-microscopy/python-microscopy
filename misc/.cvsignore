@@ -1,7 +1,9 @@
 __init__.pyc
+wxPlotPanel.pyc
 auiFloatBook.pyc
-editList.pyc
+ricsSim.pyc
+colorsys.pyc
+facsPlot.pyc
 fbpIcons.pyc
 listctrlMixins.pyc
-ricsSim.pyc
-wxPlotPanel.pyc
+editList.pyc

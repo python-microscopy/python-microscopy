@@ -1052,6 +1052,7 @@ class VisGUIFrame(wx.Frame):
         ID_QUIT = wx.ID_EXIT
 
         ID_OPEN_RAW = wx.NewId()
+        ID_OPEN_CHANNEL = wx.NewId()
 
         ID_VIEW_POINTS = wx.NewId()
         ID_VIEW_TRIANGS = wx.NewId()
@@ -1079,6 +1080,7 @@ class VisGUIFrame(wx.Frame):
         
         file_menu.Append(ID_OPEN, "&Open")
         file_menu.Append(ID_OPEN_RAW, "Open &Raw/Prebleach Data")
+        file_menu.Append(ID_OPEN_CHANNEL, "Open Extra &Channel")
         
         file_menu.AppendSeparator()
         file_menu.Append(ID_SAVE_MEASUREMENTS, "&Save Measurements")
@@ -1145,6 +1147,7 @@ class VisGUIFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnToggleWindow, id=ID_TOGGLE_SETTINGS)
 
         self.Bind(wx.EVT_MENU, self.OnOpenFile, id=ID_OPEN)
+        self.Bind(wx.EVT_MENU, self.OnOpenChannel, id=ID_OPEN_CHANNEL)
         self.Bind(wx.EVT_MENU, self.OnOpenRaw, id=ID_OPEN_RAW)
 
         self.Bind(wx.EVT_MENU, self.OnSaveMeasurements, id=ID_SAVE_MEASUREMENTS)
@@ -1510,6 +1513,106 @@ class VisGUIFrame(wx.Frame):
         self.CreateFoldPanel()
         self.SetFit()
 
+    def OnOpenChannel(self, event):
+        filename = wx.FileSelector("Choose a file to open", nameUtils.genResultDirectoryPath(), default_extension='h5r', wildcard='PYME Results Files (*.h5r)|*.h5r|Tab Formatted Text (*.txt)|*.txt')
+
+        #print filename
+        if not filename == '':
+            self.OpenChannel(filename)
+
+    def OpenChannel(self, filename):
+        self.filter = None
+        self.mapping = None
+        print os.path.splitext(filename)[1]
+        if os.path.splitext(filename)[1] == '.h5r':
+                try:
+                    self.selectedDataSource = inpFilt.h5rSource(filename)
+                    self.dataSources.append(self.selectedDataSource)
+
+                    self.filesToClose.append(self.selectedDataSource.h5f)
+
+                    if 'DriftResults' in self.selectedDataSource.h5f.root:
+                        self.dataSources.append(inpFilt.h5rDSource(self.selectedDataSource.h5f))
+
+                        if len(self.selectedDataSource['x']) == 0:
+                            self.selectedDataSource = self.dataSources[-1]
+                except:
+                    self.selectedDataSource = inpFilt.h5rDSource(filename)
+                    self.dataSources.append(self.selectedDataSource)
+
+                    self.filesToClose.append(self.selectedDataSource.h5f)
+
+                #once we get around to storing the some metadata with the results
+#                if 'MetaData' in self.selectedDataSource.h5f.root:
+#                    self.mdh = MetaDataHandler.HDFMDHandler(self.selectedDataSource.h5f)
+#
+#                    if 'Camera.ROIWidth' in self.mdh.getEntryNames():
+#                        x0 = 0
+#                        y0 = 0
+#
+#                        x1 = self.mdh.getEntry('Camera.ROIWidth')*1e3*self.mdh.getEntry('voxelsize.x')
+#                        y1 = self.mdh.getEntry('Camera.ROIHeight')*1e3*self.mdh.getEntry('voxelsize.y')
+#
+#                        self.imageBounds = ImageBounds(x0, y0, x1, y1)
+#                    else:
+#                        self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
+#
+#                else:
+#                    self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
+#
+#                if not self.elv == None: #remove previous event viewer
+#                    i = 0
+#                    found = False
+#                    while not found and i < self.notebook.GetPageCount():
+#                        if self.notebook.GetPage(i) == self.elv:
+#                            self.notebook.DeletePage(i)
+#                            found = True
+#                        else:
+#                            i += 1
+#
+#                if 'Events' in self.selectedDataSource.h5f.root:
+#                    self.events = self.selectedDataSource.h5f.root.Events[:]
+#
+#                    self.elv = eventLogViewer.eventLogPanel(self.notebook, self.events, self.mdh, [0, self.selectedDataSource['tIndex'].max()]);
+#                    self.notebook.AddPage(self.elv, 'Events')
+#
+#                    evKeyNames = set()
+#                    for e in self.events:
+#                        evKeyNames.add(e['EventName'])
+#
+#                    if 'ProtocolFocus' in evKeyNames:
+#                        self.zm = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh.getEntry('Camera.CycleTime'), self.mdh.getEntry('StartTime'), self.mdh.getEntry('Protocol.PiezoStartPos'))
+#                        self.elv.SetCharts([('Focus [um]', self.zm, 'ProtocolFocus'),])
+
+        else: #assume it's a text file
+            dlg = importTextDialog.ImportTextDialog(self)
+
+            ret = dlg.ShowModal()
+
+            if not ret == wx.ID_OK:
+                return #we cancelled
+
+            #try:
+            print dlg.GetFieldNames()
+            ds = inpFilt.textfileSource(filename, dlg.GetFieldNames())
+            self.selectedDataSource = ds
+            self.dataSources.append(ds)
+
+            #self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
+
+        #self.SetTitle('PYME Visualise - ' + filename)
+        #for k in self.filterKeys.keys():
+
+        #if we've done a 3d fit
+#        print self.selectedDataSource.keys()
+#        if 'fitResults_z0' in self.selectedDataSource.keys():
+#            self.filterKeys.pop('sig')
+
+        print self.filterKeys
+        self.RegenFilter()
+        self.CreateFoldPanel()
+        self.SetFit()
+
     def OnOpenRaw(self, event):
         filename = wx.FileSelector("Choose a file to open", nameUtils.genResultDirectoryPath(), default_extension='h5', wildcard='PYME Spool Files (*.h5)|*.h5|Khoros Data Format (*.kdf)|*.kdf')
 
@@ -1557,6 +1660,8 @@ class VisGUIFrame(wx.Frame):
             imf.Show()
         else:
             raise 'Unrecognised Data Format'
+
+
 
 
     def RegenFilter(self):
