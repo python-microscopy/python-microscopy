@@ -477,6 +477,11 @@ class DSViewFrame(wx.Frame):
         self.cbDrift.SetValue(False)
 
         self._pnl.AddFoldPanelWindow(item, self.cbDrift, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+
+        self.cbSubtractBackground = wx.CheckBox(item, -1, 'Subtract background in fit')
+        self.cbSubtractBackground.SetValue(True)
+
+        self._pnl.AddFoldPanelWindow(item, self.cbSubtractBackground, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
         
         self.bGo = wx.Button(item, -1, 'Go')
             
@@ -489,6 +494,9 @@ class DSViewFrame(wx.Frame):
         startAt = int(self.tStartAt.GetValue())
         driftEst = self.cbDrift.GetValue()
         fitMod = self.cFitType.GetStringSelection()
+
+        self.mdh.setEntry('Analysis.subtractBackground', self.cbSubtractBackground.GetValue())
+        self.md.setEntry('Analysis.subtractBackground', self.cbSubtractBackground.GetValue())
 
         if fitMod.startswith('PsfFit') and not 'PSFFile' in self.mdh.getEntryNames():
             fdialog = wx.FileDialog(None, 'Please select PSF to use ...',
