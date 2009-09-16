@@ -155,7 +155,7 @@ class GaussianFitFactory:
         
         sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*scipy.maximum(dataMean, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
 
-        if not self.background == None and not (self.metadata.hasEntry('Analysis.subtractBackground') and self.metadata.Analysis.subtractBackground == False):
+        if not self.background == None and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
             bgROI = self.background[xslice, yslice, zslice]
 
             #average in z
