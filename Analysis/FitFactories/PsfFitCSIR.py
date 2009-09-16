@@ -105,6 +105,7 @@ def f_Interp3d(p, X, Y, Z, *args):
     g1 = ndimage.interpolation.map_coordinates(interpModel, [x1, y1, z1], mode='nearest').squeeze()
 
     #print g1.shape
+    #print X.shape
 
     return A*g1 + b
     
@@ -211,7 +212,7 @@ class PSFFitFactory:
         #dataMean = dataROI.mean(2) - self.metadata.CCD.ADOffset
 
         #generate grid to evaluate function on
-        X,Y,Z = scipy.mgrid[xslice, yslice, :0]
+        X,Y,Z = scipy.mgrid[xslice, yslice, :1]
         #X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[xslice]
         #Y = 1e3*self.metadata.voxelsize.y*scipy.mgrid[yslice]
         #Z = array([0]).astype('f')
