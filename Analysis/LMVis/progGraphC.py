@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# progGraphC.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 #from PYME.misc import wxPlotPanel
 import wx
 from enthought.chaco.api import HPlotContainer, create_line_plot

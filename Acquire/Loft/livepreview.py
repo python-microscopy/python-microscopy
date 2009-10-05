@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# livepreview.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 #major point to note is that aquisition can be subsequently stopped / started using
 # pa.stop() & pa.start()    NB LOWERCASE!!!
 

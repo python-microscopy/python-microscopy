@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# protocol.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 from math import floor
 import numpy as np
 from PYME.Acquire import eventLog

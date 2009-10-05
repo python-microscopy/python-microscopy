@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# smimainframe.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 #Boa:Frame:smiMainFrame
 
 #from wxPython.wx import *
@@ -304,8 +316,9 @@ class smiMainFrame(wx.Frame):
             #self.seq_d.Show()
             
         if 'step' in self.scope.__dict__:
-            self.step_d = stepDialog.stepDialog(self, self.scope)
-            self.step_d.Show()
+            self.step_d = stepDialog.stepPanel(self, self.scope)
+            #self.step_d.Show()
+            self.AddTool(self.step_d, 'Stepper Motors')
         
         self.time1.WantNotification.append(self.StatusBarUpdate)
 

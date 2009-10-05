@@ -10,22 +10,23 @@ class piezo_e255:
         self.ser_port.write('2DO17\r\n')
         self.ser_port.write('2DG16705\r\n')
         self.ser_port.write('2SO0\r\n')
-        self.dummy = 0;
+        #self.dummy = 0;
+        self.lastPos = 0
                                 
     def MoveTo(self, iChannel, fPos, bTimeOut=True):
         if (fPos >= 0):
             if (fPos <= self.max_travel):
                 self.ser_port.write('2SO%05.0f\r\n' % (100.0*fPos))
-                self.dummy = fPos
+                self.lastPos = fPos
             else:
                 self.ser_port.write('2SO%05.0f\r\n' % (100.0*self.max_travel))
-                self.dummy = self.max_travel
+                self.lastPos = self.max_travel
         else:
             self.ser_port.write('2SO%05.0f\r\n' % 0.0)
-            self.dummy = 0
+            self.lastPos = 0
 
     def GetPos(self, iChannel=1):
-        return self.dummy
+        return self.lastPos
     
     def GetControlReady(self):
         return True

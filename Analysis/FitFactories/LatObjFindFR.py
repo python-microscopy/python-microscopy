@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# LatObjFindFR.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 import scipy
 from scipy.signal import interpolate
 import scipy.ndimage as ndimage

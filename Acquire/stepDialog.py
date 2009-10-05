@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# stepDialog.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 #Boa:Dialog:stepDialog
 
 #from wxPython.wx. import *
@@ -20,14 +32,13 @@ def create(parent):
  wxID_STEPDIALOGTYPOS, wxID_STEPDIALOGTZPOS, 
 ] = map(lambda _init_ctrls: wx.NewId(), range(13))
 
-class stepDialog(wx.Frame):
+class stepPanel(wx.Panel):
     def _init_ctrls(self, prnt):
         # generated method, don't edit
-        wx.Frame.__init__(self, id=wxID_STEPDIALOG, name='stepDialog',
-              parent=prnt, pos=wx.Point(462, 253), size=wx.Size(183, 222),
-              style=wx.DEFAULT_DIALOG_STYLE, title='Stepper Motors')
+        wx.Panel.__init__(self, id=wxID_STEPDIALOG,
+              parent=prnt, size=wx.Size(183, 222))
         self.SetClientSize(wx.Size(175, 195))
-        self.SetBackgroundColour(wx.Colour(209, 208, 203))
+        #self.SetBackgroundColour(wx.Colour(209, 208, 203))
 
         self.staticBox1 = wx.StaticBox(id=wxID_STEPDIALOGSTATICBOX1,
               label='YPos', name='staticBox1', parent=self, pos=wx.Point(8, 56),

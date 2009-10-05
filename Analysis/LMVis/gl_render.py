@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# gl_render.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 from wx.glcanvas import GLCanvas
 import wx
 #from OpenGL.GLUT import *
@@ -88,6 +100,8 @@ class LMGLCanvas(GLCanvas):
         self.selectionFinish = (0,0)
         self.selection = False
 
+        #self.InitGL()
+
     def OnPaint(self,event):
         dc = wx.PaintDC(self)
         self.SetCurrent()
@@ -108,7 +122,8 @@ class LMGLCanvas(GLCanvas):
     #    #self.Refresh()
 
     def OnSize(self, event):
-        glViewport(0,0, self.Size[0], self.Size[1])
+        if self.init:
+            glViewport(0,0, self.Size[0], self.Size[1])
 
         self.xmax = self.xmin + self.Size[0]*self.pixelsize
         self.ymax = self.ymin + self.Size[1]*self.pixelsize
@@ -258,6 +273,10 @@ class LMGLCanvas(GLCanvas):
         self.setColour(self.IScale, self.zeroPt)
 
     def setPoints(self, x, y, c = None):
+        #if not self.init:
+        #    self.InitGL()
+        #    self.init = 1
+
         if c == None:
             self.c = numpy.ones(x.shape).ravel()
         else:

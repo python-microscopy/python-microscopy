@@ -12,7 +12,7 @@ to facilitate easy loading & saving.
 //#include <stdio.h>
 //#include <fstream.h>
 #include <string>
-#include <stdlibq.h>
+#include <stdlib.h>
 //#include <vcl/dstring.h>
 
 

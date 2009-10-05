@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# focusKeys.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 import wx
 
 class FocusKeys:
@@ -31,13 +43,20 @@ class FocusKeys:
 
     def OnFocDown(self,event):
         #p = self.piezo[0].GetPos(self.piezo[1])
-        p = self.piezo[0].lastPos
-        self.piezo[0].MoveTo(self.piezo[1], p - self.focusIncrement)
+        if 'lastPos' in dir(self.piezo[0]):
+            p = self.piezo[0].lastPos
+        else:
+            p = self.piezo[0].GetPos(self.piezo[1])
+            
+        self.piezo[0].MoveTo(self.piezo[1], p - self.focusIncrement, False)
 
     def OnFocUp(self,event):
-        #p = self.piezo[0].GetPos(self.piezo[1])
-        p = self.piezo[0].lastPos
-        self.piezo[0].MoveTo(self.piezo[1], p + self.focusIncrement)
+        if 'lastPos' in dir(self.piezo[0]):
+            p = self.piezo[0].lastPos
+        else:
+            p = self.piezo[0].GetPos(self.piezo[1])
+            
+        self.piezo[0].MoveTo(self.piezo[1], p + self.focusIncrement, False)
 
     def OnSensDown(self,event):
         if self.focusIncrement > 0.05:
@@ -48,7 +67,12 @@ class FocusKeys:
             self.focusIncrement *= 2.
 
     def refresh(self):
-        self.mbar.SetMenuLabel(self.mpos, 'Focus = %3.2f, Inc = %3.2f' %(self.piezo[0].lastPos, self.focusIncrement))
+        if 'lastPos' in dir(self.piezo[0]):
+            p = self.piezo[0].lastPos
+        else:
+            p = self.piezo[0].GetPos(self.piezo[1])
+            
+        self.mbar.SetMenuLabel(self.mpos, 'Focus = %3.2f, Inc = %3.2f' %(p, self.focusIncrement))
 
 
         

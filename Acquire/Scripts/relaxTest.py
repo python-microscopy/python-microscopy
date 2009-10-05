@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# relaxTest.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 #scope.pa.start()
 time.sleep(0.1)
 l488.TurnOn()

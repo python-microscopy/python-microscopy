@@ -1,4 +1,16 @@
 #!/usr/bin/python
+
+##################
+# RemoteDigiData.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
+#!/usr/bin/python
 from DigiData import *
 import Pyro.core
 import Pyro.naming

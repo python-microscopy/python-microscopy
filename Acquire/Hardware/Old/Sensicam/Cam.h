@@ -87,6 +87,7 @@ public:
   int GetROIMode()    {return m_iROIMode;}
   void SetCamMode     (int im){iMode=im;}
   int GetCamMode()	  {return iMode;}
+  void SetCamModeEx   (bool lowLight, bool continuous);
 
   void SetBoardNum    (int boardN){boardNum = boardN;}
   int GetBoardNum()  {return boardNum;}
@@ -128,6 +129,8 @@ public:
   int GetElectrTemp() {return m_iElectrTemp;}
   int GetCCDTemp()    {return m_iCCDTemp;}
   BOOL CamReady()     {return m_bCamOK;}
+
+  float GetCycleTime();
   
  
 
@@ -171,7 +174,7 @@ public:
   BOOL CheckCoordinates(int iPosX, int iPosY, int iWidth, int iHeight);
                                        // Übergabewerte überprüfen
 
- 
+  bool contMode;
 private:
   int GetPicFromCam();
   // Hilfsfunktionen:
@@ -246,6 +249,7 @@ private:
   int ROIX1,ROIX2,ROIY1,ROIY2;
   
   int iMode;  //Camera operation mode (for SET_COC)
+  
 
   // ACHTUNG!: Die Variablen m_iCCDWidth/Height, m_iROIPosX/Y, m_iROIWidth/
   //           Height, m_iPicWidth/Height bezeichnen die entsprechenden Größen

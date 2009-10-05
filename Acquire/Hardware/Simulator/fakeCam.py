@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# fakeCam.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 import rend_im
 import PYME.cSMI as example
 import scipy

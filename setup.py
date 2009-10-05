@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# setup.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration

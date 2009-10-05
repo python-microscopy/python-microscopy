@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# read_kdf.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 import scipy
 
 if int(scipy.version.version.split('.')[1]) > 5: 

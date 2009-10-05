@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# phase_stack.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 pa.stop()
 
 sa = simplesequenceaquisator.SimpleSequenceAquisitor(chaninfo, cam, pphase)

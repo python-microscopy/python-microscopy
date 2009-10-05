@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# remFitBuf.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 from PYME.ParallelTasks import taskDef
 import ofind
 #import ofind_nofilt #use for drift estimation - faster

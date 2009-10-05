@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# init_TIRF.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 from PYME.Acquire.Hardware.AndorIXon import AndorIXon
 from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
 

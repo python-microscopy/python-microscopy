@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# ZStack671.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 #import all the stuff to make this work
 from PYME.Acquire.protocol import *
 import numpy

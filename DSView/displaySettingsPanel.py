@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# displaySettingsPanel.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 import wx
 from PYME.Analysis.LMVis import histLimits
 from PYME import cSMI
@@ -25,7 +37,8 @@ class dispSettingsPanel(wx.Panel):
 
         #self.ds = vp.ds
         self.dsa = cSMI.CDataStack_AsArray(self.vp.ds, 0)[:,:,0].ravel()
-        
+
+        print self.dsa.size
         #self.do = vp.do
         
 
@@ -104,6 +117,12 @@ class dispSettingsPanel(wx.Panel):
     def RefrData(self, caller=None):
         #if self.hlDispMapping.dragging == None:
         self.dsa = cSMI.CDataStack_AsArray(self.vp.ds, 0)[:,:,0].ravel()
+
+        #only perform histogramming on a subset of data points to improve performance
+        ##note that this may result in strange behaviour of auto-optimise
+        if self.dsa.size > 1000:
+            self.dsa = self.dsa[::(int(self.dsa.size/1000))]
+
         self.hlDispMapping.SetData(self.dsa, self.hlDispMapping.limit_lower, self.hlDispMapping.limit_upper)
 
         if self.cbAutoOptimise.GetValue():

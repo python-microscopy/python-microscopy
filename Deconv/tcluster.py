@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# tcluster.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 import threading
 import scipy.cow
 import scipy.cow.sync_cluster

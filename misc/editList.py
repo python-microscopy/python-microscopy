@@ -1,3 +1,14 @@
+#!/usr/bin/python
+##################
+# editList.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 import wx
 import PYME.misc.listctrlMixins  as  listmix
 

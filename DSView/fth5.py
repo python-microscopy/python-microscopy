@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# fth5.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 import Pyro.core
 import sys
 #sys.path.append('/home/david/pysmi_simulator/py_fit')

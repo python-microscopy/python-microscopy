@@ -145,14 +145,20 @@ int CCamera::Init()
 	iErr = SET_BOARD(boardNum);
 	DisplayError(iErr);
 	if (iErr < 0) return iErr;
+	
+//	printf("boardnum set: %d, %d\n", iErr, m_bCamOK);
 
 	iErr = SET_INIT(1);
 	DisplayError(iErr);
 	if (iErr < 0) return iErr; 
+	
+//	printf("boardnum set: %d, %d\n", iErr, m_bCamOK);
 	 
 	iErr = GET_CCD_SIZE(&iSize);
 	DisplayError(iErr);
 	if (iErr < 0) return iErr;
+
+//	printf("boardnum set: %d, %d\n", iErr, m_bCamOK);
 
 	switch (iSize)
 	{
@@ -174,10 +180,14 @@ int CCamera::Init()
 	};
 	  
 	InitParameters();  // Parameter auf voreingestellte Werte setzen
+
+	//printf("boardnum set: %d, %d\n", iErr, m_bCamOK);
       
 	iErr = SetCOC();       // Hardware mit Parametern programmieren
 	DisplayError(iErr);
 	if(iErr < 0) return iErr;
+
+//	printf("boardnum set: %d, %d\n", iErr, m_bCamOK);
 
 	iErr = GetStatus();
 	if(iErr < 0) return iErr;
@@ -205,7 +215,9 @@ int CCamera::InitParameters(){
   m_iBinningX      = 1;
   m_iBinningY      = 1;
 
-  int iMode = 0;  // 0 = sequentiell, 65536 = parallel
+  //iMode = 768;  // 0 = sequentiell, 65536 = parallel
+  iMode = 66304;
+  contMode = TRUE;
 
   SetROI(0,0,CCDWidth,CCDHeight);
 
@@ -271,6 +283,7 @@ int CCamera::SetCOC(){
   }//endif
 
   int  iErr = SET_BOARD(boardNum + 0x100);
+//  printf("boardnum set: %d, %d\n", iErr, m_bCamOK);
 
   //int iMode = 0;  // 0 = sequentiell, 65536 = parallel
   int iTrig = 0;  // Auto Start, Auto Frame
@@ -283,20 +296,25 @@ int CCamera::SetCOC(){
   int iVBin  = m_iBinningY;
   
   char pTable[50];
-  sprintf(pTable,"%7d,%7d,-1,1",m_iDelayTime,m_iIntegTime);
+  sprintf(pTable,"0,%7d,-1,-1",m_iIntegTime);
 
   
   /*char rstring[255];
   sprintf(rstring,"%d  %d  %d  %d  %d  %d",ROIX1, ROIX2, ROIY1, ROIY2, CCDWidth, CCDHeight);
   MessageBox(NULL,rstring,"ROI",MB_OK);*/
 
+//  printf("COC: %d, %d, %d, %d, %d, %d, %d, %d, %s, %d\n", iMode, iTrig, ROIX1/32 + 1, ROIX2/32, ROIY1/32 + 1, ROIY2/32, iHBin,
+//    iVBin, pTable, GetIntegTime());
+
   iErr = SET_COC(iMode, iTrig, ROIX1/32 + 1, ROIX2/32, ROIY1/32 + 1, ROIY2/32, iHBin,
     iVBin, pTable);
+//  printf("COC set: %d, %d\n", iErr, m_bCamOK);
 
   DisplayError(iErr);
 
   iErr = GET_IMAGE_SIZE(&picWidth, &picHeight);
   DisplayError(iErr);
+//  printf("image size got: %d, %d\n", iErr, m_bCamOK);
 
   return iErr;
 }
@@ -409,6 +427,16 @@ void CCamera::SetROI(int x1, int y1, int x2, int y2)
   
 }
 
+void CCamera::SetCamModeEx(bool lowLight, bool continuous)
+{
+    iMode = 3*(int)lowLight*256 + (int)continuous*65536;
+    contMode = continuous;
+}
+
+float CCamera::GetCycleTime()
+{
+    return GET_COCTIME()*1000;
+}
 
 // ---------------------------------------------------- Einzel-Aufnahme starten
 int CCamera::StartExposure(){
@@ -425,9 +453,19 @@ int CCamera::StartExposure(){
     // Interface-Board-Puffer leeren.
   DisplayError(iErr);
   if(m_bCamOK == FALSE) return iErr;
-    
-  iErr = RUN_COC(4);   // 4 => Einzelaufnahme starten
+
+  iErr = STOP_COC(0);
   DisplayError(iErr);
+
+  if (contMode == FALSE)
+  {
+      iErr = RUN_COC(4);   // 4 => Einzelaufnahme starten
+      DisplayError(iErr);
+  } else
+  {
+      iErr = RUN_COC(0);   // 0 => Kontinuierliche Aufnahme starten
+      DisplayError(iErr);
+  }
 
   return iErr;
 }

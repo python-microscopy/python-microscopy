@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# previewaquisator.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 import wx
 from PYME.cSMI import CDataStack, CDataStack_AsArray
 
@@ -210,7 +222,10 @@ class PreviewAquisator(wx.Timer):
             bufferOverflowed = False
 
             while(self.cam.ExpReady()): #changed to deal with multiple frames being ready
-                bufferOverflowing  = self.cam.GetNumImsBuffered() >= (self.cam.GetBufferSize() - 1)
+                if 'GetNumImsBuffered' in dir(self.cam):
+                    bufferOverflowing  = self.cam.GetNumImsBuffered() >= (self.cam.GetBufferSize() - 1)
+                else:
+                    bufferOverflowing = False
                 if bufferOverflowing:
                     bufferOverflowed = True
                     print 'Warning: Camera buffer overflowing - purging buffer'
@@ -231,7 +246,7 @@ class PreviewAquisator(wx.Timer):
                 #the buffer has enough storage for ~3s when running flat out,
                 #we're polling at ~5hz, and we should be able to get more frames than would be expected during the polling intervall to
                 #allow us to catch up following glitches of one form or another, although not too many more.
-                if (nFrames > self.cam.GetBufferSize()/6):
+                if ('GetNumImsBuffered' in dir(self.cam)) and (nFrames > self.cam.GetBufferSize()/6):
                     print 'Warning: not keeping up with camera, giving up with %d frames still in buffer' % self.cam.GetNumImsBuffered()
                     break
 

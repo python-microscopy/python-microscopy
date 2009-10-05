@@ -1,4 +1,16 @@
 #!/usr/bin/python
+
+##################
+# taskServerM.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
+#!/usr/bin/python
 import Pyro.core
 import Pyro.naming
 import time
@@ -7,6 +19,12 @@ import threading
 import numpy
 from taskQueue import *
 from HDFTaskQueue import *
+
+import os
+
+if 'PYRO_NS_HOSTNAME' in os.environ.keys():
+    Pyro.config.PYRO_NS_HOSTNAME=os.environ['PYRO_NS_HOSTNAME']
+    print Pyro.config.PYRO_NS_HOSTNAME
 
 #from PYME.mProfile import mProfile
 #mProfile.profileOn(['taskServerM.py', 'HDFTaskQueue.py'])

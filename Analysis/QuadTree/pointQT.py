@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# pointQT.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 QT_MAXRECORDS = 10 #maximum number of records in a leaf
 QT_MAXDEPTH = 100 #let leaves grow larger if a maximum depth is exceeded (to prevent infinite recursion)
 

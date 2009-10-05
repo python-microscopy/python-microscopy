@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# simplesequenceaquisator_f.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 import math
 import datetime
 from previewaquisator_f import PreviewAquisator

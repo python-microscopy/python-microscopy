@@ -1,4 +1,16 @@
 #!/usr/bin/python
+
+##################
+# pointFitConfoc.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
+#!/usr/bin/python
 '''Script to find and measure small objects in a 3D confocal data set. Call as follows: pointFitConfoc.py inFile threshold outFile'''
 from PYME.FileUtils import readTiff
 from PYME.Analysis import MetaData

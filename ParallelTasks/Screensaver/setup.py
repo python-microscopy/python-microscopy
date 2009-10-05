@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# setup.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 from distutils.core import setup
 import py2exe
 import os

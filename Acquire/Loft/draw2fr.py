@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# draw2fr.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 #Boa:Frame:wxFrame1
 
 from wxPython.wx import *

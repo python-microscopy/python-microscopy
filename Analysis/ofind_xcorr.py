@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# ofind_xcorr.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 import scipy
 import scipy.signal
 import scipy.ndimage as ndimage

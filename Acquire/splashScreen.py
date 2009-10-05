@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# splashScreen.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 import wx
 import time
 
@@ -17,6 +29,8 @@ class SplashPanel(wx.Panel):
             self.times[ti[0]] = ti[1]
         
         wx.EVT_PAINT(self, self.OnPaint)
+
+        self.bmLogo = wx.Bitmap('logo.png', wx.BITMAP_TYPE_PNG)
         
     def DoPaint(self, dc):
         elapsedTime = time.time() - self.startTime
@@ -48,7 +62,13 @@ class SplashPanel(wx.Panel):
             dc.DrawText(msg, 30, yp)
             yp += ts[1]
 
-        self.drawProgBar(dc, 30, self.Size[1]- 30, self.Size[0] - 60, 10, elapsedTime/self.times['total'])        
+        self.drawProgBar(dc, 30, self.Size[1]- 30 - self.bmLogo.GetHeight(), self.Size[0] - 60, 10, elapsedTime/self.times['total'])
+
+        dc.DrawText('Biophysics & Biophotonics Group', 10, self.Size[1] - self.bmLogo.GetHeight() - 10)
+        dc.DrawText('Dept. of Physiology', 10, self.Size[1] - self.bmLogo.GetHeight() - 10 + ts[1])
+        dc.DrawText('University of Auckland', 10, self.Size[1] - self.bmLogo.GetHeight() - 10 + 2*ts[1])
+
+        dc.DrawBitmap(self.bmLogo, self.Size[0] - self.bmLogo.GetWidth() - 10, self.Size[1] - self.bmLogo.GetHeight() - 10)
 
         dc.SetTextForeground(wx.BLACK)
 

@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# inpFilt.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 ''' import filters for localisation microscopy results. These masquerade as 
 dictionaries which can be looked up to yield the desired data. The visualisation
 routines expect at least 'x' and 'y' to be defined as keys, and may also 
@@ -178,6 +190,39 @@ class textfileSource:
     
     def getInfo(self):
         return 'Text Data Source\n\n %d points' % len(self.res['x'])
+
+class matfileSource:
+    _name = "Matlab Source"
+    def __init__(self, filename, columnnames, varName='Orte'):
+        ''' Input filter for use with matlab data. Need to provide a variable name
+        and a list of column names
+        in the order that they appear in the file. Using 'x', 'y' and 'error_x'
+        for the position data and it's error should ensure that this functions
+        with the visualisation backends'''
+
+        import scipy.io
+
+        self.res = scipy.io.loadmat(filename)[varName].astype('f4')
+        
+        self.res = np.rec.fromarrays(self.res.T, dtype={'names' : columnnames,  'formats' :  ['f4' for i in range(len(columnnames))]})
+
+        self._keys = list(columnnames)
+
+
+
+    def keys(self):
+        return self._keys
+
+    def __getitem__(self, key):
+        if not key in self._keys:
+            raise RuntimeError('Key not found')
+
+
+        return self.res[key]
+
+
+    def getInfo(self):
+        return 'Text Data Source\n\n %d points' % len(self.res['x'])
         
 
 class resultsFilter:
@@ -198,11 +243,11 @@ class resultsFilter:
 
         for k in kwargs.keys():
             if not k in self.resultsSource.keys():
-                raise 'Requested key not present'
+                raise RuntimeError('Requested key not present: ' + k)
 
             range = kwargs[k]
             if not len(range) == 2:
-                raise 'Expected an iterable of length 2'
+                raise RuntimeError('Expected an iterable of length 2')
 
             self.Index *= (self.resultsSource[k] > range[0])*(self.resultsSource[k] < range[1])
                 
@@ -270,7 +315,7 @@ class mappingFilter:
                 if not vname == key and not key in self.mappings[vname].co_names:
                     locals()[vname] = self.getMappedResult(vname)
                 else:
-                    raise 'Circular reference detected in mapping'
+                    raise RuntimeError('Circular reference detected in mapping')
 
         return eval(map)
     

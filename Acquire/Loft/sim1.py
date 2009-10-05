@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# sim1.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 import wormlike2
 wc = wormlike2.wormlikeChain(2000)
 

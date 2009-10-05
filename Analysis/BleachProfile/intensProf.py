@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# intensProf.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 from scipy import *
 from PYME.FileUtils.read_kdf import *
 import wx

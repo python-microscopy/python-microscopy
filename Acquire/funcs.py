@@ -1,4 +1,16 @@
 #!/usr/bin/python
+
+##################
+# funcs.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
+#!/usr/bin/python
 #import sys
 #sys.path.append(".")
 
@@ -174,10 +186,11 @@ class microscope:
             stext = 'CCD Temp: %d' % self.cam.GetCCDTemp()
         else:
             stext = '<Camera ERROR>'
-        if self.lastFrameSaturated:
-            stext = stext + '    Camera Saturated!!'
-        if self.cam.saturationIntervened:
-            stext = stext + '    ' + self.saturatedMessage
+        if 'saturationIntervened' in dir(self.cam):
+            if self.lastFrameSaturated:
+                stext = stext + '    Camera Saturated!!'
+            if self.cam.saturationIntervened:
+                stext = stext + '    ' + self.saturatedMessage
         if 'step' in dir(self):
             stext = stext + '   Stepper: (XPos: %1.2f  YPos: %1.2f  ZPos: %1.2f)' % (self.step.GetPosX(), self.step.GetPosY(), self.step.GetPosZ())
         if self.pa.isRunning():
@@ -186,7 +199,7 @@ class microscope:
             else:
                 stext = stext + '    FPS = %2.2f' % self.pa.getFPS()
 
-            if 'GetBufferSize' in dir(self.cam):
+            if 'GetNumImsBuffered' in dir(self.cam):
 				stext = stext + '    Buffer Level: %d of %d' % (self.cam.GetNumImsBuffered(), self.cam.GetBufferSize())
         
         for sic in self.StatusCallbacks:
@@ -209,7 +222,8 @@ class microscope:
              self.vsp = disppanel.dispSettingsPanel(Notebook, self.vp)
 
              self.pa.WantFrameGroupNotification.append(self.pr_refr2)
-             self.pa.WantFrameGroupNotification.append(self.satCheck)
+             if 'shutterOpen' in dir(self.cam):
+                self.pa.WantFrameGroupNotification.append(self.satCheck)
              Parent.time1.WantNotification.append(self.vsp.RefrData)
              #Notebook.AddPage(imageId=-1, page=self.vp, select=True,text='Preview')
              Notebook.AddPage(page=self.vp, select=True,caption='Preview')

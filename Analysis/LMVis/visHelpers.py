@@ -1,4 +1,16 @@
 #!/usr/bin/python
+
+##################
+# visHelpers.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
+#!/usr/bin/python
 import scipy
 import numpy
 from PYME.Analysis.cModels.gauss_app import *

@@ -1,4 +1,16 @@
 #!/usr/bin/python
+
+##################
+# VisGUI.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
+#!/usr/bin/python
 import os.path
 import wx
 import wx.py.shell
@@ -13,10 +25,13 @@ from PYME.Analysis.LMVis import editFilterDialog
 import pylab
 from PYME.FileUtils import nameUtils
 import os
+
+
 try:
     import delaunay as delny
 except:
     pass
+
 from scikits import delaunay
 
 from PYME.Analysis.QuadTree import pointQT, QTrend
@@ -54,7 +69,6 @@ from PYME.misc.auiFloatBook import AuiNotebookWithFloatingPages
 from PYME.Analysis.LMVis import statusLog
 #from IPython.frontend.wx.wx_frontend import WxController
 #from IPython.kernel.core.interpreter import Interpreter
-
 
 
 # ----------------------------------------------------------------------------
@@ -175,7 +189,7 @@ class VisGUIFrame(wx.Frame):
 
         self.dataSources = []
         self.selectedDataSource = None
-        self.filterKeys = {'error_x': (0,30), 'A':(5,200), 'sig' : (150/2.35, 350/2.35)}
+        self.filterKeys = {'error_x': (0,30), 'A':(5,2000), 'sig' : (150/2.35, 350/2.35)}
 
         self.filter = None
         self.mapping = None
@@ -213,6 +227,8 @@ class VisGUIFrame(wx.Frame):
             self.OpenFile(filename)
 
         wx.LayoutAlgorithm().LayoutWindow(self, self.notebook)
+
+        print 'about to refresh'
         self.Refresh()
 
 #        namespace = dict()
@@ -1408,7 +1424,7 @@ class VisGUIFrame(wx.Frame):
 
 
     def OnOpenFile(self, event):
-        filename = wx.FileSelector("Choose a file to open", nameUtils.genResultDirectoryPath(), default_extension='h5r', wildcard='PYME Results Files (*.h5r)|*.h5r|Tab Formatted Text (*.txt)|*.txt')
+        filename = wx.FileSelector("Choose a file to open", nameUtils.genResultDirectoryPath(), default_extension='h5r', wildcard='PYME Results Files (*.h5r)|*.h5r|Tab Formatted Text (*.txt)|*.txt|Matlab data (*.mat)|*.mat')
 
         #print filename
         if not filename == '':
@@ -1484,6 +1500,24 @@ class VisGUIFrame(wx.Frame):
                         self.zm = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh.getEntry('Camera.CycleTime'), self.mdh.getEntry('StartTime'), self.mdh.getEntry('Protocol.PiezoStartPos'))
                         self.elv.SetCharts([('Focus [um]', self.zm, 'ProtocolFocus'),])
                         
+        elif os.path.splitext(filename)[1] == '.mat': #matlab file
+            from scipy.io import loadmat
+            mf = loadmat(filename)
+
+            dlg = importTextDialog.ImportMatDialog(self, [k for k in mf.keys() if not k.startswith('__')])
+
+            ret = dlg.ShowModal()
+
+            if not ret == wx.ID_OK:
+                return #we cancelled
+
+            #try:
+            #print dlg.GetFieldNames()
+            ds = inpFilt.matfileSource(filename, dlg.GetFieldNames(), dlg.GetVarName())
+            self.selectedDataSource = ds
+            self.dataSources.append(ds)
+
+            self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
         else: #assume it's a text file
             dlg = importTextDialog.ImportTextDialog(self)
 
@@ -1505,7 +1539,7 @@ class VisGUIFrame(wx.Frame):
 
         #if we've done a 3d fit
         print self.selectedDataSource.keys()
-        if 'fitResults_z0' in self.selectedDataSource.keys():
+        if not 'sig' in self.selectedDataSource.keys():
             self.filterKeys.pop('sig')
 
         print self.filterKeys

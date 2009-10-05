@@ -1,4 +1,15 @@
 #!/usr/bin/python
+##################
+# fbpIcons.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
+#!/usr/bin/python
 __author__="david"
 __date__ ="$15/02/2009 00:02:07$"
 

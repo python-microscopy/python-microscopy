@@ -1,7 +1,22 @@
 #!/usr/bin/python
+
+##################
+# taskWorkerM.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
+#!/usr/bin/python
 import Pyro.core
 import os
 import sys
+
+if 'PYRO_NS_HOSTNAME' in os.environ.keys():
+    Pyro.config.PYRO_NS_HOSTNAME=os.environ['PYRO_NS_HOSTNAME']
 
 Pyro.config.PYRO_MOBILE_CODE=1
 

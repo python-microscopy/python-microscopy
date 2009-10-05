@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# fakePiezo.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 class FakePiezo:
     def __init__(self, maxtravel = 100.00):
         self.max_travel = maxtravel

@@ -1,4 +1,16 @@
 #!/usr/bin/python
+
+##################
+# ExecTools.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
+#!/usr/bin/python
 '''defines a few neat things to allow scripts to be executed in background & to
 allow a user script directory'''
 import threading

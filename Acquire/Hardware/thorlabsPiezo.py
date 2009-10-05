@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# thorlabsPiezo.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 import win32com.client
 from wx.lib import activexwrapper
 import wx

@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# logview.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 #Boa:FramePanel:wxPanel1
 
 from wxPython.wx import *

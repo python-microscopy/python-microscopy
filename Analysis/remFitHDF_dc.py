@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# remFitHDF_dc.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 from PYME.ParallelTasks import taskDef
 from PYME.ParallelTasks.relativeFiles import getFullFilename
 import ofind

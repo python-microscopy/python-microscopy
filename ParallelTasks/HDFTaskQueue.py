@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# HDFTaskQueue.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 import tables
 from taskQueue import *
 from PYME.Analysis.remFitBuf import fitTask
@@ -68,7 +80,7 @@ class HDFResultsTaskQueue(TaskQueue):
             resultsFilename = genResultFileName(name)
 
         if os.path.exists(resultsFilename): #bail if output file already exists
-            raise 'Output file already exists'
+            raise RuntimeError('Output file already exists: ' + resultsFilename)
 
         TaskQueue.__init__(self, name, initialTasks, onEmpty, fTaskToPop)
         self.resultsFilename = resultsFilename
