@@ -17,7 +17,8 @@ def writeTiff(im, outfile):
     command = ["tiffcp"]
     # add options here, if any (e.g. for compression)
 
-    im = im.astype('uint16')
+    #im = im.astype('uint16')
+    im = im.astype('>u2').astype('<u2')
 
     for i in range(im.shape[2]):
         framefile = "/tmp/frame%d.tif" % i

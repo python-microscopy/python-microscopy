@@ -12,15 +12,15 @@
 
 import scipy
 
-if int(scipy.version.version.split('.')[1]) > 5: 
-  from scipy.io.fopen import *
-  from scipy.io.numpyio import *
-else:
-  from scipy.io import *
-  class fopen:
+#if int(scipy.version.version.split('.')[1]) > 5:
+#  from scipy.io.fopen import *
+from scipy.io.numpyio import *
+#else:
+  #from scipy.io import *
+class fopen:
     def __init__(self, fname, mode='r'):
       self.fid = open(fname, mode)
-    
+
     def fread(self, *args):
       return fread(self.fid, *args)
     def close(self):

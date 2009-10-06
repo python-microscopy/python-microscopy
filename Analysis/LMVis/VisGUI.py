@@ -1668,7 +1668,7 @@ class VisGUIFrame(wx.Frame):
             imb = ImageBounds(0,0,pixelSize*im.shape[0],pixelSize*im.shape[1])
             
             img = GeneratedImage(im,imb, pixelSize )
-            imf = imageView.ImageViewFrame(self,img, self.glCanvas, title=filename)
+            imf = imageView.ImageViewFrame(self,img, self.glCanvas, title=filename,zdim=2)
             self.generatedImages.append(imf)
             imf.Show()
         elif ext == '.h5': #h5 spool

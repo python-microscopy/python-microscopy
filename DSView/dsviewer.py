@@ -19,6 +19,7 @@ sys.path.append(".")
 import PYME.cSMI as example
 import dCrop
 import logparser
+from PYME.FileUtils import saveTiffStack
 from myviewpanel import MyViewPanel
 import os
 
@@ -92,13 +93,18 @@ class DSViewFrame(wx.Frame):
             else:
                 #save using PIL
                 if self.ds.getNumChannels() == 1:
-                    im = Image.fromarray(cSMI.CDataStack_AsArray(self.ds, 0), 'I;16')
-                    im.save(fpath)
+                    #im = Image.fromarray(cSMI.CDataStack_AsArray(self.ds, 0), 'I;16')
+                    #im.save(fpath)
+                    im = cSMI.CDataStack_AsArray(self.ds, 0).squeeze()
+                    saveTiffStack.writeTiff(im, fpath)
                 else:
                     fst, ext = os.path.splitext(fpath)
                     for i in range(self.ds.getNumChannels()):
-                        im = Image.fromarray(cSMI.CDataStack_AsArray(self.ds, i), 'I;16')
-                        im.save(fst + '_%d'%i + ext)
+                        #im = Image.fromarray(cSMI.CDataStack_AsArray(self.ds, i), 'I;16')
+                        #im.save(fst + '_%d'%i + ext)
+
+                        im = cSMI.CDataStack_AsArray(self.ds, i).squeeze()
+                        saveTiffStack.writeTiff(im, fst + '_%d'%i + ext)
 
 
             if not (self.log == None):

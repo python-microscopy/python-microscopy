@@ -18,17 +18,20 @@ import wx
 import histLimits
 
 class ImageViewPanel(wx.Panel):
-    def __init__(self, parent, image, glCanvas, zp=0):
+    def __init__(self, parent, image, glCanvas, zp=0, zdim=0):
         wx.Panel.__init__(self, parent, -1, size=parent.Size)
 
         self.image = image
         self.glCanvas = glCanvas
         self.zp = zp
+        self.zdim = zdim
 
         if len(self.image.img.shape) == 2:
             c = self.image.img.ravel()
-        else:
+        elif self.zdim == 0:
             c = self.image.img[self.zp, :,:].ravel()
+        else:
+            c = self.image.img[:,:,self.zp].ravel()
 
         #clim_upper = float(c[numpy.argsort(c)[len(c)*.95]])
         clim_upper = c.max()
@@ -77,8 +80,10 @@ class ImageViewPanel(wx.Panel):
 
         if len(self.image.img.shape) == 2:
             im = numpy.flipud(self.image.img[int(x0_ / self.image.pixelSize):int(x1_ / self.image.pixelSize):step, int(y0_ / self.image.pixelSize):int(y1_ / self.image.pixelSize):step].astype('f').T)
-        else:
+        elif self.zdim ==0:
             im = numpy.flipud(self.image.img[self.zp,int(x0_ / self.image.pixelSize):int(x1_ / self.image.pixelSize):step, int(y0_ / self.image.pixelSize):int(y1_ / self.image.pixelSize):step].astype('f').T)
+        else:
+            im = numpy.flipud(self.image.img[int(x0_ / self.image.pixelSize):int(x1_ / self.image.pixelSize):step, int(y0_ / self.image.pixelSize):int(y1_ / self.image.pixelSize):step, self.zp].astype('f').T)
 
         im = im - self.clim[0]
         im = im/(self.clim[1] - self.clim[0])
@@ -97,6 +102,17 @@ class ImageViewPanel(wx.Panel):
         dc.Clear()
         
         dc.DrawBitmap(wx.BitmapFromImage(imw),(-self.centreX + x0 + width/2)/pixelsize,(self.centreY - y1 + height/2)/pixelsize)
+
+        print self.glCanvas.centreCross
+
+        if self.glCanvas.centreCross:
+            print 'drawing crosshair'
+            dc.SetPen(wx.Pen(wx.GREEN, 2))
+
+            dc.DrawLine(.5*self.Size[0], 0, .5*self.Size[0], self.Size[1])
+            dc.DrawLine(0, .5*self.Size[1], self.Size[0], .5*self.Size[1])
+
+            dc.SetPen(wx.NullPen)
             
         
     def OnPaint(self,event):
@@ -147,10 +163,10 @@ class ImageViewPanel(wx.Panel):
         
 
 class ImageViewFrame(wx.Frame):
-    def __init__(self, parent, image, glCanvas, title='Generated Image',zp=0):
+    def __init__(self, parent, image, glCanvas, title='Generated Image',zp=0, zdim=0):
         wx.Frame.__init__(self, parent, -1, title=title, size=(800,800))
 
-        self.ivp = ImageViewPanel(self, image, glCanvas, zp=zp)
+        self.ivp = ImageViewPanel(self, image, glCanvas, zp=zp, zdim=zdim)
         self.parent = parent
         
         self.hlCLim = None

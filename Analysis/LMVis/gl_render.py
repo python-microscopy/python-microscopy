@@ -79,6 +79,7 @@ class LMGLCanvas(GLCanvas):
         self.scaleBarColour = [1,1,0]
 
         self.crosshairColour = [0,1,1]
+        self.centreCross=False
 
         self.numBlurSamples = 1
         self.blurSigma = 0.0
@@ -674,6 +675,20 @@ class LMGLCanvas(GLCanvas):
         if not self.vp == None:
             x = self.vp.xp*self.vpVoxSize
             y = self.vp.yp*self.vpVoxSize
+
+            glColor3fv(self.crosshairColour)
+            glBegin(GL_LINES)
+            glVertex2f(x, self.ymin)
+            glVertex2f(x, self.ymax)
+            glEnd()
+
+            glBegin(GL_LINES)
+            glVertex2f(self.xmin, y)
+            glVertex2f(self.xmax, y)
+            glEnd()
+        elif self.centreCross:
+            x = .5*(self.xmin+self.xmax)
+            y = .5*(self.ymin+self.ymax)
 
             glColor3fv(self.crosshairColour)
             glBegin(GL_LINES)
