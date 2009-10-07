@@ -79,47 +79,7 @@ from PYME.Analysis.LMVis import statusLog
 # Some of the code in this file borrowed from the wxPython examples
 # ----------------------------------------------------------------------------
 
-class ImageBounds:
-    def __init__(self, x0, y0, x1, y1):
-        self.x0 = x0
-        self.y0 = y0
-        self.x1 = x1
-        self.y1 = y1
-
-    @classmethod
-    def estimateFromSource(cls, ds):
-        return cls(ds['x'].min(),ds['y'].min(),ds['x'].max(), ds['y'].max() )
-
-    def width(self):
-        return self.x1 - self.x0
-
-    def height(self):
-        return self.y1 - self.y0
-
-class dummy:
-    pass
-
-class GeneratedImage:
-    def __init__(self, img, imgBounds, pixelSize):
-        self.img = img
-        self.imgBounds = imgBounds
-
-        self.pixelSize = pixelSize
-
-    def save(self, filename):
-        #save using PIL - because we're using float pretty much only tif will work
-        im = Image.fromarray(self.img.astype('f'), 'F')
-        
-        im.tag = dummy()
-        #set up resolution data - unfortunately in cm as TIFF standard only supports cm and inches
-        res_ = int(1e-2/(self.pixelSize*1e-9))
-        im.tag.tagdata={296:(3,), 282:(res_,1), 283:(res_,1)}
-
-        im.save(filename)
-        
-
-
-
+from PYME.Analysis.LMVis.visHelpers import ImageBounds, GeneratedImage
 
 
 class VisGUIFrame(wx.Frame):
@@ -202,6 +162,7 @@ class VisGUIFrame(wx.Frame):
 
         self.objThreshold = 30
         self.objMinSize = 10
+        self.blobJitter = 0
         self.objects = None
 
         self.imageBounds = ImageBounds(0,0,0,0)
@@ -794,6 +755,14 @@ class VisGUIFrame(wx.Frame):
 
         bsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
 
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(pan, -1, 'Jittering:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        self.tObjJitter = wx.TextCtrl(pan, -1, '%d' % self.blobJitter, size=(40, -1))
+        hsizer.Add(self.tObjJitter, 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        bsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
+
         self.bApplyThreshold = wx.Button(pan, -1, 'Apply')
         bsizer.Add(self.bApplyThreshold, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5)
 
@@ -838,6 +807,7 @@ class VisGUIFrame(wx.Frame):
         self.objects = None
         self.objThreshold = float(self.tBlobDist.GetValue())
         self.objMinSize = int(self.tMinObjSize.GetValue())
+        self.blobJitter = int(self.tObjJitter.GetValue())
 
         #self.bObjMeasure.Enable(True)
 
@@ -1789,9 +1759,17 @@ class VisGUIFrame(wx.Frame):
 
                     if not goAhead == wx.YES:
                         return
+                if self.blobJitter == 0:
+                    T = delny.Triangulation(pylab.array([self.mapping['x'] + 0.1*pylab.randn(len(self.mapping['x'])), self.mapping['y']+ 0.1*pylab.randn(len(self.mapping['x']))]).T)
+                    self.objects = gen3DTriangs.segment(T, self.objThreshold, self.objMinSize)
+                else:
+                    if not 'neighbourDistances' in self.GeneratedMeasures.keys():
+                        self.genNeighbourDists()
+                    x_ = pylab.hstack([self.mapping['x'] + 0.5*self.GeneratedMeasures['neighbourDistances']*pylab.randn(len(self.mapping['x'])) for i in range(self.blobJitter)])
+                    y_ = pylab.hstack([self.mapping['y'] + 0.5*self.GeneratedMeasures['neighbourDistances']*pylab.randn(len(self.mapping['x'])) for i in range(self.blobJitter)])
 
-                T = delny.Triangulation(pylab.array([self.mapping['x'] + 0.1*pylab.randn(len(self.mapping['x'])), self.mapping['y']+ 0.1*pylab.randn(len(self.mapping['x']))]).T)
-                self.objects = gen3DTriangs.segment(T, self.objThreshold, self.objMinSize)
+                    T = delny.Triangulation(pylab.array([x_, y_]).T)
+                    self.objects = gen3DTriangs.segment(T, self.objThreshold, self.objMinSize)
 
 #                if 'bObjMeasure' in dir(self):
 #                    self.bObjMeasure.Enable(True)

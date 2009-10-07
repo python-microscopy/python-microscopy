@@ -132,7 +132,7 @@ class LMGLCanvas(GLCanvas):
 
     def OnDraw(self):
         #self.GetParent().ProcessPendingEvents()
-        print 'OnDraw'
+        #print 'OnDraw'
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         glLoadIdentity()
@@ -887,7 +887,7 @@ class LMGLCanvas(GLCanvas):
         ld = False
 
         self.jitMCT(x,y,jsig, mcp)
-        self.setPercentileCLim(.95)
+        self.setPercentileCLim(.995)
         self.GetParent().Raise()
         #self.OnDraw()
         #h_ = self.getSnapshot(GL_RGB)

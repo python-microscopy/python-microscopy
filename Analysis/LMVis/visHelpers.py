@@ -15,6 +15,48 @@ import scipy
 import numpy
 from PYME.Analysis.cModels.gauss_app import *
 
+class ImageBounds:
+    def __init__(self, x0, y0, x1, y1):
+        self.x0 = x0
+        self.y0 = y0
+        self.x1 = x1
+        self.y1 = y1
+
+    @classmethod
+    def estimateFromSource(cls, ds):
+        return cls(ds['x'].min(),ds['y'].min(),ds['x'].max(), ds['y'].max() )
+
+    def width(self):
+        return self.x1 - self.x0
+
+    def height(self):
+        return self.y1 - self.y0
+
+
+class dummy:
+    pass
+
+class GeneratedImage:
+    def __init__(self, img, imgBounds, pixelSize):
+        self.img = img
+        self.imgBounds = imgBounds
+
+        self.pixelSize = pixelSize
+
+    def save(self, filename):
+        import Image
+        #save using PIL - because we're using float pretty much only tif will work
+        im = Image.fromarray(self.img.astype('f'), 'F')
+
+        im.tag = dummy()
+        #set up resolution data - unfortunately in cm as TIFF standard only supports cm and inches
+        res_ = int(1e-2/(self.pixelSize*1e-9))
+        im.tag.tagdata={296:(3,), 282:(res_,1), 283:(res_,1)}
+
+        im.save(filename)
+
+        
+
 def genEdgeDB(T):
     #make ourselves a quicker way of getting at edge info.
     edb = []

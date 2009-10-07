@@ -62,6 +62,7 @@ class ImportMatDialog(wx.Dialog):
         sizer2 = wx.BoxSizer(wx.HORIZONTAL)
         sizer2.Add(wx.StaticText(self, -1, 'Matlab variable name:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
         self.cbVarNames = wx.ComboBox(self, -1, choices=varnames)
+        self.cbVarNames.SetSelection(0)
 
         sizer2.Add(self.cbVarNames, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
