@@ -140,7 +140,7 @@ class fitTask(taskDef.Task):
         #Find objects
         bgd = self.data.astype('f') - self.bg
 
-        if self.fitModule == 'LatGaussFitFRTC'  or self.fitModule == 'BiplaneFitR':
+        if self.fitModule in ['LatGaussFitFRTC', 'BiplaneFitR', 'SplitterShiftEstFR']:
             g_ = bgd[:, :(self.data.shape[1]/2)]
             r_ = bgd[:, (self.data.shape[1]/2):]
             r_ = np.fliplr(r_)
