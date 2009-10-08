@@ -79,6 +79,10 @@ class h5rSource:
                           'y' : 'fitResults_y0', 'sig' : 'fitResults_sigma', 
                           'error_x' : 'fitError_x0', 't':'tIndex'}
 
+        for k in self.transkeys.keys():
+            if not self.transkeys[k] in self._keys:
+                self.transkeys.pop(k)
+
 
     def keys(self):
         return self._keys + self.transkeys.keys()

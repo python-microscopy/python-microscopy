@@ -1509,8 +1509,9 @@ class VisGUIFrame(wx.Frame):
 
         #if we've done a 3d fit
         print self.selectedDataSource.keys()
-        if not 'sig' in self.selectedDataSource.keys():
-            self.filterKeys.pop('sig')
+        for k in self.filterKeys.keys():
+            if not k in self.selectedDataSource.keys():
+                self.filterKeys.pop(k)
 
         print self.filterKeys
         self.RegenFilter()
