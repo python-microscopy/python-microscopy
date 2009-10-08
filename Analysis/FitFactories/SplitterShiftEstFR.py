@@ -56,7 +56,7 @@ def replNoneWith1(n):
 		return n
 
 
-fresultdtype=[('tIndex', '<i4'),('fitResults', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('background_g', '<f4'),('background_r', '<f4'),('bx', '<f4'),('by', '<f4')]),('fitError', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('background_g', '<f4'),('background_r', '<f4'),('bx', '<f4'),('by', '<f4')]), ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
+fresultdtype=[('tIndex', '<i4'),('fitResults', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('background_g', '<f4'),('background_r', '<f4'),('dx', '<f4'),('dy', '<f4')]),('fitError', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('background_g', '<f4'),('background_r', '<f4'),('dx', '<f4'),('dy', '<f4')]), ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
 
 def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None):
 	if slicesUsed == None:
@@ -84,7 +84,7 @@ def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fit
 		
 
 class GaussianFitFactory:
-    def __init__(self, data, metadata, fitfcn=f_gauss2d2c):
+    def __init__(self, data, metadata, fitfcn=f_gauss2d2c, background=None):
         '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in 
         metadata. '''
         self.data = data
@@ -101,7 +101,7 @@ class GaussianFitFactory:
         xslice, yslice, zslice = key
 
         #cut region out of data stack
-        dataROI = self.data[xslice, yslice, zslice] - self.metadata.CCD.ADOffset
+        dataROI = self.data[xslice, yslice, zslice] - self.metadata.Camera.ADOffset
 
         #average in z
         #dataMean = dataROI.mean(2) - self.metadata.CCD.ADOffset
@@ -128,8 +128,13 @@ class GaussianFitFactory:
         Ag = dataROI[:,:,0].max() - dataROI[:,:,0].min() #amplitude
         Ar = dataROI[:,:,1].max() - dataROI[:,:,1].min() #amplitude
 
-        #figure()
-        #imshow(dataROI[:,:,1], interpolation='nearest')
+#        figure(2)
+#        clf()
+#        subplot(121)
+#        imshow(dataROI[:,:,0], interpolation='nearest')
+#
+#        subplot(122)
+#        imshow(dataROI[:,:,1], interpolation='nearest')
 
         #print Ag
         #print Ar
@@ -139,12 +144,13 @@ class GaussianFitFactory:
 
         startParameters = [Ag, Ar, x0, y0, 250/2.35, dataROI[:,:,0].min(),dataROI[:,:,1].min(), .001, .001]
 
-	
+	#print startParameters
+
         #estimate errors in data
         nSlices = 1#dataROI.shape[2]
         
-        sigma = scipy.sqrt(self.metadata.CCD.ReadNoise**2 + (self.metadata.CCD.noiseFactor**2)*self.metadata.CCD.electronsPerCount*self.metadata.CCD.EMGain*dataROI)/self.metadata.CCD.electronsPerCount
-	
+        #sigma = scipy.sqrt(self.metadata.CCD.ReadNoise**2 + (self.metadata.CCD.noiseFactor**2)*self.metadata.CCD.electronsPerCount*self.metadata.CCD.EMGain*dataROI)/self.metadata.CCD.electronsPerCount
+	sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*scipy.maximum(dataROI, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
 	
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
@@ -155,14 +161,14 @@ class GaussianFitFactory:
 
         fitErrors=None
         try:       
-            fitErrors = scipy.sqrt(scipy.diag(cov_x)*(infodict['fvec']*infodict['fvec']).sum()/(len(dataMean.ravel())- len(res)))
+            fitErrors = scipy.sqrt(scipy.diag(cov_x)*(infodict['fvec']*infodict['fvec']).sum()/(len(dataROI.ravel())- len(res)))
         except Exception, e:
             pass
 
         #print res, fitErrors, resCode
         return GaussianFitResultR(res, self.metadata, (xslice, yslice, zslice), resCode, fitErrors)
 
-    def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
+    def FromPoint(self, x, y, z=None, roiHalfSize=7, axialHalfSize=15):
         #if (z == None): # use position of maximum intensity
         #    z = self.data[x,y,:].argmax()
 	

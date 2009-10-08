@@ -22,6 +22,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('ParallelTasks')
     config.add_subpackage('FileUtils')
     config.add_subpackage('misc')
+    config.add_subpackage('pad')
     
     #config.make_svn_version_py()  # installs __svn_version__.py
     #config.make_config_py()

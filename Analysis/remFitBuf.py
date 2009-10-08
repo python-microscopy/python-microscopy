@@ -15,6 +15,7 @@ import ofind
 #import ofind_nofilt #use for drift estimation - faster
 import ofind_xcorr
 import numpy
+import numpy as np
 
 dBuffer = None
 dataSourceID = None
@@ -121,7 +122,7 @@ class fitTask(taskDef.Task):
         #squash 4th dimension
         self.data = self.data.reshape((self.data.shape[0], self.data.shape[1],1))
 
-        if self.fitModule == 'LatGaussFitFRTC' or self.fitModule == 'BiplaneFitR':
+        if self.fitModule in ['LatGaussFitFRTC', 'BiplaneFitR', 'SplitterShiftEstFR']:
             g = self.data[:, :(self.data.shape[1]/2)]
             r = self.data[:, (self.data.shape[1]/2):]
             r = np.fliplr(r)
