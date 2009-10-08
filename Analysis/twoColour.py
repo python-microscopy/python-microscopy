@@ -16,7 +16,7 @@ import scipy as sp
 import ofind
 from PYME.Analysis.FitFactories.LatGaussFitFR import FitFactory, FitResultsDType
 import MetaData
-from scipy.interpolate import Rbf
+from scipy.interpolate import Rbf, SmoothBivariateSpline
 from scikits import delaunay
 import tables
 
@@ -137,6 +137,18 @@ def genShiftVectorField(nx,ny, nsx, nsy):
     dy = rby(X,Y)
 
     return (dx.T, dy.T, rbx, rby)
+
+def genShiftVectorFieldSpline(nx,ny, nsx, nsy, err_sx, err_sy):
+    '''interpolates shift vectors using radial basis functions'''
+    spx = SmoothBivariateSpline(nx, ny, nsx, 1./err_sx)
+    spy = SmoothBivariateSpline(nx, ny, nsy, 1./err_sy)
+
+    X, Y = np.meshgrid(np.arange(0, 512*70, 100), np.arange(0, 256*70, 100))
+
+    dx = spx.ev(X.ravel(),Y.ravel()).reshape(X.shape)
+    dy = spy.ev(X.ravel(),Y.ravel()).reshape(X.shape)
+
+    return (dx.T, dy.T, spx, spy)
 
 
 def genShiftVectorFieldMC(nx,ny, nsx, nsy, p, Nsamp):
