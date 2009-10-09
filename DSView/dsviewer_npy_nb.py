@@ -286,6 +286,15 @@ class DSViewFrame(wx.Frame):
         #mEdit.Append(EDIT_CROP, "Crop", "", wx.ITEM_NORMAL)
         #self.menubar.Append(mEdit, "Edit")
 
+        mTasks = wx.Menu()
+        TASKS_STANDARD_2D = wx.NewId()
+        TASKS_CALIBRATE_SPLITTER = wx.NewId()
+        #TASKS_FI = wx.NewId()
+        mTasks.Append(TASKS_STANDARD_2D, "Normal 2D analysis", "", wx.ITEM_NORMAL)
+        mTasks.Append(TASKS_CALIBRATE_SPLITTER, "Calibrating the splitter", "", wx.ITEM_NORMAL)
+        #mEdit.Append(EDIT_CROP, "Crop", "", wx.ITEM_NORMAL)
+        self.menubar.Append(mTasks, "Set defaults for")
+
         # Menu Bar end
         wx.EVT_MENU(self, wx.ID_SAVEAS, self.extractFrames)
         wx.EVT_MENU(self, F_SAVE_POSITIONS, self.savePositions)
@@ -294,6 +303,9 @@ class DSViewFrame(wx.Frame):
         #wx.EVT_MENU(self, EDIT_CLEAR_SEL, self.clearSel)
         #wx.EVT_MENU(self, EDIT_CROP, self.crop)
         wx.EVT_CLOSE(self, self.OnCloseWindow)
+
+        wx.EVT_MENU(self, TASKS_CALIBRATE_SPLITTER, self.OnCalibrateSplitter)
+        wx.EVT_MENU(self, TASKS_STANDARD_2D, self.OnStandard2D)
 		
         self.statusbar = self.CreateStatusBar(1, wx.ST_SIZEGRIP)
 
@@ -480,6 +492,14 @@ class DSViewFrame(wx.Frame):
         
         hsizer.Add(self.tStartAt, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
         vsizer.Add(hsizer, 0,wx.ALL, 0)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        hsizer.Add(wx.StaticText(pan, -1, 'Background:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tBackgroundFrames = wx.TextCtrl(pan, -1, value='10', size=(40, -1))
+
+        hsizer.Add(self.tBackgroundFrames, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        vsizer.Add(hsizer, 0,wx.ALL, 0)
         
         pan.SetSizer(vsizer)
         vsizer.Fit(pan)
@@ -507,9 +527,13 @@ class DSViewFrame(wx.Frame):
         startAt = int(self.tStartAt.GetValue())
         driftEst = self.cbDrift.GetValue()
         fitMod = self.cFitType.GetStringSelection()
+        bgFrames = int(self.tBackgroundFrames.GetValue())
 
         self.mdh.setEntry('Analysis.subtractBackground', self.cbSubtractBackground.GetValue())
         self.md.setEntry('Analysis.subtractBackground', self.cbSubtractBackground.GetValue())
+
+        self.mdh.setEntry('Analysis.NumBGFrames', bgFrames)
+        self.md.setEntry('Analysis.NumBGFrames', bgFrames)
 
         if fitMod.startswith('PsfFit') and not 'PSFFile' in self.mdh.getEntryNames():
             fdialog = wx.FileDialog(None, 'Please select PSF to use ...',
@@ -1027,6 +1051,17 @@ class DSViewFrame(wx.Frame):
         self.Refresh()
         self.update()
 
+    def OnCalibrateSplitter(self, event):
+        self.cFitType.SetSelection(self.fitFactories.index('SplitterShiftEstFR'))
+        self.tBackgroundFrames.SetValue('0')
+        self.cbSubtractBackground.SetValue(False)
+        self.tThreshold.SetValue('2')
+
+    def OnStandard2D(self, event):
+        self.cFitType.SetSelection(self.fitFactories.index('LatGaussFitFR'))
+        self.tBackgroundFrames.SetValue('10')
+        self.cbSubtractBackground.SetValue(True)
+        self.tThreshold.SetValue('0.6')
 
 
 

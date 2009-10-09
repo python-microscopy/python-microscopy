@@ -74,5 +74,29 @@
             </locale>
         </schema>
 
+        <schema>
+            <key>/schemas/desktop/gnome/thumbnailers/application@x-extension-sf/enable</key>
+            <applyto>/desktop/gnome/thumbnailers/application@x-extension-sf/enable</applyto>
+            <owner>thumbnailer</owner>
+            <type>bool</type>
+            <default>true</default>
+            <locale name="C">
+                <short>Enable thumbnailing of shift fields</short>
+                <long>Enable thumbnailing of shift fields</long>
+            </locale>
+        </schema>
+
+        <schema>
+            <key>/schemas/desktop/gnome/thumbnailers/application@x-extension-sf/command</key>
+            <applyto>/desktop/gnome/thumbnailers/application@x-extension-sf/command</applyto>
+            <owner>thumbnailer</owner>
+            <type>string</type>
+            <default>/home/david/bin/sf-thumbnailer %u %o %s</default>
+            <locale name="C">
+                <short>Create thumbnail for shift field</short>
+                <long>Create thumbnail for shift field</long>
+            </locale>
+        </schema>
+
     </schemalist>
 </gconfschemafile>

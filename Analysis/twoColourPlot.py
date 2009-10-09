@@ -12,11 +12,19 @@
 
 from pylab import *
 
-def Plot
+def PlotShiftField(dx, dy, spx, spy):
+    figure()
+    #subplot(221)
+    axes([.05, .7, .4, .25])
+    imshow(dx.T)
+    axis('image')
+    axes([.55, .7, .4, .25])
+    imshow(dy.T)
+    axis('image')
 
+    axes([.05, .05, .9, .6])
     xin, yin = meshgrid(arange(0, 512*70, 500), arange(0, 256*70, 1000))
-    clf()
     xin = xin.ravel()
     yin = yin.ravel()
-    quiver(xin, yin, ix.ev(xin, yin), i.ev(xin, yin), scale=1e4)
+    quiver(xin, yin, spx.ev(xin, yin), spy.ev(xin, yin), scale=1e4)
     axis('image')

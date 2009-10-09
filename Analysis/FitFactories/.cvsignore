@@ -6,11 +6,13 @@ LatGaussFit.pyc
 LatGaussFitFR.pyc
 LatPSFFit.pyc
 LatGaussFitFRTC.pyc
+SplitterObjFindR.pyc
 LatGaussFitlmR.pyc
 Gauss3DFitR.pyc
 PsfFitIR.pyc
 BiplaneFitR.pyc
 LatObjFindFR.pyc
+SplitterShiftEstFR.pyc
 PsfFitSR.pyc
 LatPSFFitR.pyc
 LatGaussFitAF.pyc

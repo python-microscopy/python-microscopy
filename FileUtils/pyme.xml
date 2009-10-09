@@ -12,5 +12,9 @@
      <comment>SMI kdf Files</comment>
      <glob pattern="*.kdf"/>
    </mime-type>
+   <mime-type type="application/x-extension-sf">
+     <comment>PYME Shift Field</comment>
+     <glob pattern="*.sf"/>
+   </mime-type>
 </mime-info>
 

@@ -114,12 +114,17 @@ def testFrames(detThresh = 0.9, offset = 0):
     sq = min(md.EstimatedLaserOnFrameNo + 1000, dataSource.getNumSlices()/4)
     zps = array(range(md.EstimatedLaserOnFrameNo + 20, md.EstimatedLaserOnFrameNo + 24)  + range(sq, sq + 4) + range(dataSource.getNumSlices()/2,dataSource.getNumSlices() /2+4))
     zps += offset
+    fitMod = cFitType.GetStringSelection()
+    bgFrames = int(tBackgroundFrames.GetValue())
     for i in range(12):
-        if 'Analysis.NumBGFrames' in md.getEntryNames():
-            bgi = range(max(zps[i] - md.Analysis.NumBGFrames,md.EstimatedLaserOnFrameNo), zps[i])
+        #if 'Analysis.NumBGFrames' in md.getEntryNames():
+        bgi = range(max(zps[i] - bgFrames,md.EstimatedLaserOnFrameNo), zps[i])
+        #else:
+        #    bgi = range(max(zps[i] - 10,md.EstimatedLaserOnFrameNo), zps[i])
+        if 'Splitter' in fitMod:
+            ft = remFitBuf.fitTask(seriesName, zps[i], detThresh, md, 'SplitterObjFindR', bgindices=bgi, SNThreshold=True)
         else:
-            bgi = range(max(zps[i] - 10,md.EstimatedLaserOnFrameNo), zps[i])
-        ft = remFitBuf.fitTask(seriesName, zps[i], detThresh, md, 'LatObjFindFR', bgindices=bgi, SNThreshold=True)
+            ft = remFitBuf.fitTask(seriesName, zps[i], detThresh, md, 'LatObjFindFR', bgindices=bgi, SNThreshold=True)
         res = ft()
         xp = floor(i/4)/3.
         yp = (3 - i%4)/4.

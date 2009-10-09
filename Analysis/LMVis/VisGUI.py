@@ -1061,6 +1061,8 @@ class VisGUIFrame(wx.Frame):
 
         ID_TOGGLE_SETTINGS = wx.NewId()
 
+        ID_GEN_SHIFTMAP = wx.NewId()
+
         ID_ABOUT = wx.ID_ABOUT
         
         
@@ -1112,7 +1114,9 @@ class VisGUIFrame(wx.Frame):
         gen_menu.AppendSeparator()
         gen_menu.Append(ID_GEN_JIT_TRI, "&Triangulation")
         gen_menu.Append(ID_GEN_QUADS, "&QuadTree")
-        
+
+        special_menu = wx.Menu()
+        special_menu.Append(ID_GEN_SHIFTMAP, "Calculate &Shiftmap")
 
         help_menu = wx.Menu()
         help_menu.Append(ID_ABOUT, "&About")
@@ -1122,6 +1126,7 @@ class VisGUIFrame(wx.Frame):
         menu_bar.Append(file_menu, "&File")
         menu_bar.Append(self.view_menu, "&View")
         menu_bar.Append(gen_menu, "&Generate Image")
+        menu_bar.Append(special_menu, "&Extras")
        
         
 
@@ -1153,6 +1158,8 @@ class VisGUIFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnGenGaussian, id=ID_GEN_GAUSS)
         self.Bind(wx.EVT_MENU, self.OnGenHistogram, id=ID_GEN_HIST)
         self.Bind(wx.EVT_MENU, self.OnGenQuadTree, id=ID_GEN_QUADS)
+
+        self.Bind(wx.EVT_MENU, self.OnGenShiftmap, id=ID_GEN_SHIFTMAP)
 
         return menu_bar
 
@@ -1383,6 +1390,24 @@ class VisGUIFrame(wx.Frame):
             imf.Show()
 
         dlg.Destroy()
+
+    def OnGenShiftmap(self, event):
+        from PYME.Analysis import twoColour, twoColourPlot
+        dx, dy, spx, spy = twoColour.genShiftVectorFieldSpline(self.filter['x'], self.filter['y'], self.filter['fitResults_dx'], self.filter['fitResults_dy'], self.filter['fitError_dx'], self.filter['fitError_dy'])
+        twoColourPlot.PlotShiftField(dx, dy, spx, spy)
+
+        import cPickle
+
+        fdialog = wx.FileDialog(None, 'Save shift field as ...',
+            wildcard='Shift Field file (*.sf)|*.sf', style=wx.SAVE|wx.HIDE_READONLY)
+        succ = fdialog.ShowModal()
+        if (succ == wx.ID_OK):
+            fpath = fdialog.GetPath()
+            #save as a pickle containing the data and voxelsize
+
+            fid = open(fpath, 'wb')
+            cPickle.dump((spx, spy), fid, 2)
+            fid.close()
 
     def OnSaveMeasurements(self, event):
         fdialog = wx.FileDialog(None, 'Save measurements ...',

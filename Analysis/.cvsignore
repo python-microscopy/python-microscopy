@@ -9,8 +9,8 @@ fitIO.pyc
 deMod.pyc
 twist.pyc
 remFitBuf.pyc
-piecewiseMapping.pyc
 setup.pyc
+piecewiseMapping.pyc
 intelliFit.pyc
 ryrify.pyc
 ofind_xcorr.pyc
@@ -23,9 +23,10 @@ ofind3d.pyc
 multiGaussDist.pyc
 driftCorrProc.pyc
 LatGaussFitFR.py
-twoColour.pyc
 simCluster.pyc
+twoColour.pyc
 LatGaussFitF.py
+twoColourPlot.pyc
 remFitSplit.pyc
 intensProf.pyc
 remFitHDF_dc.pyc

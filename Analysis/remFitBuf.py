@@ -22,6 +22,8 @@ dataSourceID = None
 
 bufferMisses = 0
 
+splitterFitModules = ['LatGaussFitFRTC', 'BiplaneFitR', 'SplitterShiftEstFR', 'SplitterObjFindR']
+
 from pylab import *
 
 import copy
@@ -122,7 +124,7 @@ class fitTask(taskDef.Task):
         #squash 4th dimension
         self.data = self.data.reshape((self.data.shape[0], self.data.shape[1],1))
 
-        if self.fitModule in ['LatGaussFitFRTC', 'BiplaneFitR', 'SplitterShiftEstFR']:
+        if self.fitModule in splitterFitModules:
             g = self.data[:, :(self.data.shape[1]/2)]
             r = self.data[:, (self.data.shape[1]/2):]
             r = np.fliplr(r)
@@ -141,7 +143,7 @@ class fitTask(taskDef.Task):
         #Find objects
         bgd = self.data.astype('f') - self.bg
 
-        if self.fitModule in ['LatGaussFitFRTC', 'BiplaneFitR', 'SplitterShiftEstFR']:
+        if self.fitModule in splitterFitModules:
             g_ = bgd[:, :(self.data.shape[1]/2)]
             r_ = bgd[:, (self.data.shape[1]/2):]
             r_ = np.fliplr(r_)
