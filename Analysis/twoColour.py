@@ -124,6 +124,34 @@ def genShiftVectors(res_g, res_r):
 
     return (nx, ny, nsx, nsy)
 
+def findWonkyVectors(x, y,dx,dy, tol=100):
+    from PYME.Analysis.LMVis.visHelpers import genEdgeDB
+    T = delaunay.Triangulation(x,y)
+
+    edb = genEdgeDB(T)
+
+    wonkyVecs = np.zeros(len(x))
+
+
+    #remove any shifts which are markedly different from their neighbours
+    for i in range(len(x)):
+        incidentEdges = T.edge_db[edb[i][0]]
+
+#        d_x = np.diff(T.x[incidentEdges])
+#        d_y = np.diff(T.y[incidentEdges])
+#
+#        dist = (d_x**2 + d_y**2)
+#
+#        di = np.mean(np.sqrt(dist))
+
+        neighb = incidentEdges.ravel()
+        neighb = neighb[(neighb == i) < .5]
+
+        if (abs(dx[i] - np.median(dx[neighb])) > tol) or (abs(dy[i] - np.median(dy[neighb])) > tol):
+            wonkyVecs[i] = 1
+
+    return wonkyVecs > .5
+
 
 def genShiftVectorField(nx,ny, nsx, nsy):
     '''interpolates shift vectors using radial basis functions'''
@@ -139,9 +167,14 @@ def genShiftVectorField(nx,ny, nsx, nsy):
     return (dx.T, dy.T, rbx, rby)
 
 def genShiftVectorFieldSpline(nx,ny, nsx, nsy, err_sx, err_sy):
-    '''interpolates shift vectors using radial basis functions'''
-    spx = SmoothBivariateSpline(nx, ny, nsx, 1./err_sx)
-    spy = SmoothBivariateSpline(nx, ny, nsy, 1./err_sy)
+    '''interpolates shift vectors using smoothing splines'''
+    wonky = findWonkyVectors(nx, ny, nsx, nsy, tol=2*err_sx.mean())
+    good = wonky == 0
+
+    print '%d wonky vectors found and discarded' % wonky.sum()
+
+    spx = SmoothBivariateSpline(nx[good], ny[good], nsx[good], 1./err_sx[good])
+    spy = SmoothBivariateSpline(nx[good], ny[good], nsy[good], 1./err_sy[good])
 
     X, Y = np.meshgrid(np.arange(0, 512*70, 100), np.arange(0, 256*70, 100))
 
