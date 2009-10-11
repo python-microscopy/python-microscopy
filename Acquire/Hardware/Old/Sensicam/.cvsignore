@@ -1,0 +1,14 @@
+PYMESettings.db
+__init__.py
+__init__.pyc
+_senntcam.dll
+_sensicam.pyd
+_sensicam.pyd
+build
+sensicam.i
+sensicam.py
+sensicam.pyc
+sensicamMetadata.pyc
+sensicam_wrap.c
+sensicam_wrap.cpp
+setup.py

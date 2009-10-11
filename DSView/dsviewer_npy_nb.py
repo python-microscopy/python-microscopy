@@ -894,7 +894,7 @@ class DSViewFrame(wx.Frame):
     def update(self):
         self.vp.imagepanel.Refresh()
         self.statusbar.SetStatusText('Slice No: (%d/%d)    x: %d    y: %d    Frames Analysed: %d    Events detected: %d' % (self.vp.zp, self.vp.ds.shape[2], self.vp.xp, self.vp.yp, self.numAnalysed, self.numEvents))
-        self.slPlayPos.SetValue((100*self.vp.zp)/(self.vp.ds.shape[2]-1))
+        self.slPlayPos.SetValue((100*self.vp.zp)/max(1,self.vp.ds.shape[2]-1))
 
         if 'fitInf' in dir(self):
             self.fitInf.UpdateDisp(self.vp.PointsHitTest())

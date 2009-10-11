@@ -1,8 +1,9 @@
+KdfStackToHdf5.pyc
 __init__.pyc
-nameUtils.pyc
-write_kdf.pyc
-setup.pyc
-saveTiffStack.pyc
 h5ExFrames.pyc
-read_kdf.pyc
+nameUtils.pyc
 readTiff.pyc
+read_kdf.pyc
+saveTiffStack.pyc
+setup.pyc
+write_kdf.pyc

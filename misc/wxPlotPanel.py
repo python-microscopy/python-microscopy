@@ -12,7 +12,7 @@ John Bender, CWRU, 10 Sep 08
 
 import matplotlib
 matplotlib.interactive( True )
-matplotlib.use( 'WXAgg' )
+#matplotlib.use( 'WXAgg' )
 
 import numpy as num
 import wx

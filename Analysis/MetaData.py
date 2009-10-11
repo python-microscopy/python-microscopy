@@ -70,6 +70,25 @@ ConfocDefault.setEntry('Camera.ADOffset',0)
 ConfocDefault.setEntry('tIndex',0)
 
 
+#PCO default metadata
+PCODefault = NestedClassMDHandler()
+
+#voxelsize
+PCODefault.setEntry('voxelsize.x',0.07)
+PCODefault.setEntry('voxelsize.y',0.07)
+PCODefault.setEntry('voxelsize.z',0.2)
+PCODefault.setEntry('voxelsize.units','um')
+
+#camera properties - for Andor camera - see above
+#TIRFDefault.setEntry('Camera.ADOffset',1100)
+PCODefault.setEntry('Camera.ReadNoise',4)
+PCODefault.setEntry('Camera.NoiseFactor',1)
+PCODefault.setEntry('Camera.ElectronsPerCount',2)
+PCODefault.setEntry('Camera.TrueEMGain',1) #mostly use gain register setting of 150 - this will hopefully be overwitten
+
+
+
+
 #def genMetaDataFromHDF(h5File):
 #    md = TIRFDefault
 #
