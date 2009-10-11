@@ -41,7 +41,7 @@ fid = open(inputFile)
 spx, spy = cPickle.load(fid)
 fid.close()
 
-f = figure(figsize=(thumbSize/dpi, thumbSize/dpi))
+f = figure(figsize=(thumbSize/dpi, 0.5*thumbSize/dpi))
 
 axes([0, 0, 1, 1])
 xin, yin = meshgrid(arange(0, 512*70, 4000), arange(0, 256*70, 4000))
