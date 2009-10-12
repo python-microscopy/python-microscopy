@@ -84,16 +84,16 @@ def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fit
 		
 
 class GaussianFitFactory:
-    def __init__(self, data, metadata, fitfcn=f_gauss2d2c):
+    def __init__(self, data, metadata, fitfcn=f_gauss2d2c, background=None):
         '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in 
         metadata. '''
         self.data = data
         self.metadata = metadata
-	self.fitfcn = fitfcn #allow model function to be specified (to facilitate changing between accurate and fast exponential approwimations)
-	if type(fitfcn) == types.FunctionType: #single function provided - use numerically estimated jacobian
-		self.solver = FitModelWeighted
-	else: #should be a tuple containing the fit function and its jacobian
-		self.solver = FitModelWeightedJac
+        self.fitfcn = fitfcn #allow model function to be specified (to facilitate changing between accurate and fast exponential approwimations)
+        if type(fitfcn) == types.FunctionType: #single function provided - use numerically estimated jacobian
+            self.solver = FitModelWeighted
+        else: #should be a tuple containing the fit function and its jacobian
+            self.solver = FitModelWeightedJac
 		
         
     def __getitem__(self, key):
@@ -101,40 +101,44 @@ class GaussianFitFactory:
         xslice, yslice, zslice = key
 
         #cut region out of data stack
-        dataROI = self.data[xslice, yslice, zslice] - self.metadata.CCD.ADOffset
+        dataROI = self.data[xslice, yslice, zslice] - self.metadata.Camera.ADOffset
 
         #average in z
         #dataMean = dataROI.mean(2) - self.metadata.CCD.ADOffset
 
         #generate grid to evaluate function on        
-	Xg = 1e3*self.metadata.voxelsize.x*scipy.mgrid[xslice]
+        Xg = 1e3*self.metadata.voxelsize.x*scipy.mgrid[xslice]
         Yg = 1e3*self.metadata.voxelsize.y*scipy.mgrid[yslice]
 
-	#generate a corrected grid for the red channel
-	#note that we're cheating a little here - for shifts which are slowly
-	#varying we should be able to set Xr = Xg + delta_x(\bar{Xr}) and 
-	#similarly for y. For slowly varying shifts the following should be 
-	#equivalent to this. For rapidly varying shifts all bets are off ...
+        #generate a corrected grid for the red channel
+        #note that we're cheating a little here - for shifts which are slowly
+        #varying we should be able to set Xr = Xg + delta_x(\bar{Xr}) and
+        #similarly for y. For slowly varying shifts the following should be
+        #equivalent to this. For rapidly varying shifts all bets are off ...
 
-	DeltaX, DeltaY = twoColour.getCorrection(Xg.mean(), Yg.mean(), self.metadata.chroma.dx,self.metadata.chroma.dy)  
+        #DeltaX, DeltaY = twoColour.getCorrection(Xg.mean(), Yg.mean(), self.metadata.chroma.dx,self.metadata.chroma.dy)
+        x_ = Xg.mean() + (self.metadata.Camera.ROIPosX - 1)*1e3*self.metadata.voxelsize.x
+        y_ = Yg.mean() + (self.metadata.Camera.ROIPosY - 1)*1e3*self.metadata.voxelsize.y
+        DeltaX = self.metadata.chroma.dx.ev(x_, y_)
+        DeltaY = self.metadata.chroma.dy.ev(x_, y_)
 
-	Xr = Xg + DeltaX
-	Yr = Yg + DeltaY
+        Xr = Xg + DeltaX
+        Yr = Yg + DeltaY
 
-	#print DeltaX
-	#print DeltaY
+        #print DeltaX
+        #print DeltaY
 
         #estimate some start parameters...
         Ag = dataROI[:,:,0].max() - dataROI[:,:,0].min() #amplitude
-	Ar = dataROI[:,:,1].max() - dataROI[:,:,1].min() #amplitude
+        Ar = dataROI[:,:,1].max() - dataROI[:,:,1].min() #amplitude
 
-	#figure()
-	#imshow(dataROI[:,:,1], interpolation='nearest')
-	
-	#print Ag
-	#print Ar
-        
-	x0 =  Xg.mean()
+        #figure()
+        #imshow(dataROI[:,:,1], interpolation='nearest')
+
+        #print Ag
+        #print Ar
+
+        x0 =  Xg.mean()
         y0 =  Yg.mean()
 
         startParameters = [Ag, Ar, x0, y0, 250/2.35, dataROI[:,:,0].min(),dataROI[:,:,1].min(), .001, .001]
@@ -143,31 +147,31 @@ class GaussianFitFactory:
         #estimate errors in data
         nSlices = 1#dataROI.shape[2]
         
-        sigma = scipy.sqrt(self.metadata.CCD.ReadNoise**2 + (self.metadata.CCD.noiseFactor**2)*self.metadata.CCD.electronsPerCount*self.metadata.CCD.EMGain*dataROI)/self.metadata.CCD.electronsPerCount
-	
+        #sigma = scipy.sqrt(self.metadata.CCD.ReadNoise**2 + (self.metadata.CCD.noiseFactor**2)*self.metadata.CCD.electronsPerCount*self.metadata.CCD.EMGain*dataROI)/self.metadata.CCD.electronsPerCount
+        sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*scipy.maximum(dataROI, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
 	
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
         #(res, cov_x, infodict, mesg, resCode) = FitModelWeighted(self.fitfcn, startParameters, dataMean, sigma, X, Y)
-	(res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, Xg, Yg, Xr, Yr)
+        (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, Xg, Yg, Xr, Yr)
 
         
 
         fitErrors=None
         try:       
-            fitErrors = scipy.sqrt(scipy.diag(cov_x)*(infodict['fvec']*infodict['fvec']).sum()/(len(dataMean.ravel())- len(res)))
+            fitErrors = scipy.sqrt(scipy.diag(cov_x)*(infodict['fvec']*infodict['fvec']).sum()/(len(dataROI.ravel())- len(res)))
         except Exception, e:
             pass
 
 	#print res, fitErrors, resCode
         return GaussianFitResultR(res, self.metadata, (xslice, yslice, zslice), resCode, fitErrors)
 
-    def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
+    def FromPoint(self, x, y, z=None, roiHalfSize=7, axialHalfSize=15):
         #if (z == None): # use position of maximum intensity
         #    z = self.data[x,y,:].argmax()
 	
-	x = round(x)
-	y = round(y)
+        x = round(x)
+        y = round(y)
 	
         return self[max((x - roiHalfSize), 0):min((x + roiHalfSize + 1),self.data.shape[0]), 
                     max((y - roiHalfSize), 0):min((y + roiHalfSize + 1), self.data.shape[1]), 0:2]
