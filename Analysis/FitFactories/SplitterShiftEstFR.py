@@ -11,14 +11,14 @@
 ##################
 
 import scipy
-from scipy.signal import interpolate
-import scipy.ndimage as ndimage
+#from scipy.signal import interpolate
+#import scipy.ndimage as ndimage
 from pylab import *
 import copy_reg
 import numpy
 import types
 
-import PYME.Analysis.twoColour as twoColour
+#import PYME.Analysis.twoColour as twoColour
 
 from PYME.Analysis.cModels.gauss_app import *
 
@@ -144,13 +144,13 @@ class GaussianFitFactory:
 
         startParameters = [Ag, Ar, x0, y0, 250/2.35, dataROI[:,:,0].min(),dataROI[:,:,1].min(), .001, .001]
 
-	#print startParameters
+        #print startParameters
 
         #estimate errors in data
         nSlices = 1#dataROI.shape[2]
         
         #sigma = scipy.sqrt(self.metadata.CCD.ReadNoise**2 + (self.metadata.CCD.noiseFactor**2)*self.metadata.CCD.electronsPerCount*self.metadata.CCD.EMGain*dataROI)/self.metadata.CCD.electronsPerCount
-	sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*scipy.maximum(dataROI, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
+        sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*scipy.maximum(dataROI, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
 	
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)

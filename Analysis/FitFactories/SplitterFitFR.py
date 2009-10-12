@@ -11,14 +11,14 @@
 ##################
 
 import scipy
-from scipy.signal import interpolate
-import scipy.ndimage as ndimage
+#from scipy.signal import interpolate
+#import scipy.ndimage as ndimage
 from pylab import *
 import copy_reg
 import numpy
 import types
 
-import PYME.Analysis.twoColour as twoColour
+#import PYME.Analysis.twoColour as twoColour
 
 from PYME.Analysis.cModels.gauss_app import *
 
@@ -122,8 +122,8 @@ class GaussianFitFactory:
         DeltaX = self.metadata.chroma.dx.ev(x_, y_)
         DeltaY = self.metadata.chroma.dy.ev(x_, y_)
 
-        Xr = Xg + DeltaX
-        Yr = Yg + DeltaY
+        Xr = Xg - DeltaX
+        Yr = Yg - DeltaY
 
         #print DeltaX
         #print DeltaY
