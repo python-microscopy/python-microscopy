@@ -1448,6 +1448,7 @@ class VisGUIFrame(wx.Frame):
 
                         if len(self.selectedDataSource['x']) == 0:
                             self.selectedDataSource = self.dataSources[-1]
+
                 except:
                     self.selectedDataSource = inpFilt.h5rDSource(filename)
                     self.dataSources.append(self.selectedDataSource)
@@ -1495,6 +1496,11 @@ class VisGUIFrame(wx.Frame):
                     if 'ProtocolFocus' in evKeyNames:
                         self.zm = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh.getEntry('Camera.CycleTime'), self.mdh.getEntry('StartTime'), self.mdh.getEntry('Protocol.PiezoStartPos'))
                         self.elv.SetCharts([('Focus [um]', self.zm, 'ProtocolFocus'),])
+
+                if 'fitResults_Ag' in self.selectedDataSource.keys():
+                    #if we used the splitter set up a mapping so we can filter on total amplitude and ratio
+                    self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource, A='fitResults_Ag + fitResults_Ar', gFrac='fitResults_Ag/(fitResults_Ag + fitResults_Ar)')
+                    self.dataSources.append(self.selectedDataSource)
                         
         elif os.path.splitext(filename)[1] == '.mat': #matlab file
             from scipy.io import loadmat

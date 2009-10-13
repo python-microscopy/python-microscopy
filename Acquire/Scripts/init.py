@@ -107,6 +107,11 @@ fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[-1])
 time1.WantNotification.append(fk.refresh)
 ''')
 
+InitGUI('''
+from PYME.Acquire.Hardware import splitter
+fk = splitter.Splitter(MainFrame, mControls, scope)
+''')
+
 from PYME import cSMI
 
 Is = []

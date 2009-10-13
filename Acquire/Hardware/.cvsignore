@@ -1,9 +1,9 @@
 __init__.pyc
-NikonTE2000.pyc
 EMCCDTheory.pyc
+NikonTE2000.pyc
 lasers.pyc
-ccdCalibrator.pyc
 frZStage.pyc
+ccdCalibrator.pyc
 ccdAdjPanel.pyc
 FilterWheel.pyc
 focusKeys.pyc
@@ -12,4 +12,5 @@ fakeShutters.pyc
 setup.pyc
 LaserControlFrame.pyc
 fw102.pyc
+splitter.pyc
 thorlabsPiezo.pyc

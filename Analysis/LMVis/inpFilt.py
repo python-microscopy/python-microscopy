@@ -230,6 +230,7 @@ class matfileSource:
         
 
 class resultsFilter:
+    _name = "Results Filter"
     def __init__(self, resultsSource, **kwargs):
         '''Class to permit filtering of fit results - masquarades 
         as a dictionary. Takes item ranges as keyword arguments, eg:
@@ -262,8 +263,49 @@ class resultsFilter:
     def keys(self):
         return self.resultsSource.keys()
 
+class cachingResultsFilter:
+    _name = "Caching Results Filter"
+    def __init__(self, resultsSource, **kwargs):
+        '''Class to permit filtering of fit results - masquarades
+        as a dictionary. Takes item ranges as keyword arguments, eg:
+        f = resultsFliter(source, x=[0,10], error_x=[0,5]) will return
+        an object that behaves like source, but with only those points with
+        an x value in the range [0, 10] and a x error in the range [0, 5].
+
+        The filter class does not have any explicit knowledge of the keys
+        supported by the underlying data source.'''
+
+        self.resultsSource = resultsSource
+        self.cache = {}
+
+        #by default select everything
+        self.Index = np.ones(self.resultsSource[resultsSource.keys()[0]].shape) >  0.5
+
+        for k in kwargs.keys():
+            if not k in self.resultsSource.keys():
+                raise RuntimeError('Requested key not present: ' + k)
+
+            range = kwargs[k]
+            if not len(range) == 2:
+                raise RuntimeError('Expected an iterable of length 2')
+
+            self.Index *= (self.resultsSource[k] > range[0])*(self.resultsSource[k] < range[1])
+
+
+    def __getitem__(self, key):
+        if key in self.cache.keys():
+            return self.cache[key]
+        else:
+            res = self.resultsSource[key][self.Index]
+            self.cache[key] = res
+            return res
+
+    def keys(self):
+        return self.resultsSource.keys()
+
 
 class mappingFilter:
+    _name = "Mapping Filter"
     def __init__(self, resultsSource, **kwargs):
         '''Class to permit transformations (e.g. drift correction) of fit results
         - masquarades as a dictionary. Takes mappings as keyword arguments, eg:
@@ -323,3 +365,21 @@ class mappingFilter:
 
         return eval(map)
     
+class cloneSource:
+    _name = "Cloned Source"
+    def __init__(self, resultsSource):
+        '''Creates an in memory copy of a (filtered) data source'''
+
+        resultsSource
+        self.cache = {}
+
+        for k in resultsSource.keys():
+            self.cache[k] = resultsSource[k]
+
+
+
+    def __getitem__(self, key):
+        return self.cache[key]
+
+    def keys(self):
+        return self.cache.keys()
