@@ -23,6 +23,7 @@ import sys
 from PYME.Analysis.LMVis import inpFilt
 from PYME.Analysis.LMVis import editFilterDialog
 import pylab
+from PYME.misc import extraCMaps
 from PYME.FileUtils import nameUtils
 import os
 

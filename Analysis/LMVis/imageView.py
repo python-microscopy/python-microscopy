@@ -16,6 +16,7 @@ import os
 import sys
 import wx
 import histLimits
+import pylab
 
 class ImageViewPanel(wx.Panel):
     def __init__(self, parent, image, glCanvas, zp=0, zdim=0):
@@ -25,6 +26,7 @@ class ImageViewPanel(wx.Panel):
         self.glCanvas = glCanvas
         self.zp = zp
         self.zdim = zdim
+        self.cmap = pylab.cm.hot
 
         if len(self.image.img.shape) == 2:
             c = self.image.img.ravel()
@@ -88,7 +90,7 @@ class ImageViewPanel(wx.Panel):
         im = im - self.clim[0]
         im = im/(self.clim[1] - self.clim[0])
 
-        im = (255*self.glCanvas.cmap(im)[:,:,:3]).astype('b')
+        im = (255*self.cmap(im)[:,:,:3]).astype('b')
 
         #print im.shape
             
@@ -170,6 +172,7 @@ class ImageViewFrame(wx.Frame):
         self.parent = parent
         
         self.hlCLim = None
+        self.cmn = 'hot'
 
         self.SetMenuBar(self.CreateMenuBar())
         wx.EVT_CLOSE(self, self.OnClose)
@@ -184,6 +187,7 @@ class ImageViewFrame(wx.Frame):
         ID_EXPORT = wx.NewId()
 
         ID_VIEW_COLOURLIM = wx.NewId()
+        self.ID_VIEW_CMAP_INVERT = wx.NewId()
         
         file_menu.Append(wx.ID_SAVE, "&Save")
         file_menu.Append(ID_EXPORT, "E&xport Current View")
@@ -195,6 +199,24 @@ class ImageViewFrame(wx.Frame):
         view_menu = wx.Menu()
         view_menu.AppendCheckItem(ID_VIEW_COLOURLIM, "&Colour Scaling")
 
+        self.cmap_menu = wx.Menu()
+
+        self.cmap_menu.AppendCheckItem(self.ID_VIEW_CMAP_INVERT, "&Invert")
+        self.cmap_menu.AppendSeparator()
+
+        cmapnames = pylab.cm.cmapnames
+        cmapnames.sort()
+        self.cmapIDs = {}
+        for cmn in cmapnames:
+            cmmId = wx.NewId()
+            self.cmapIDs[cmmId] = cmn
+            self.cmap_menu.AppendRadioItem(cmmId, cmn)
+            if cmn == self.ivp.cmap.name:
+                self.cmap_menu.Check(cmmId, True)
+            self.Bind(wx.EVT_MENU, self.OnChangeLUT, id=cmmId)
+
+        view_menu.AppendMenu(-1,'&LUT', self.cmap_menu)
+
         menu_bar = wx.MenuBar()
 
         menu_bar.Append(file_menu, "&File")
@@ -204,6 +226,7 @@ class ImageViewFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnClose, id=wx.ID_CLOSE)
         self.Bind(wx.EVT_MENU, self.OnExport, id=ID_EXPORT)
         self.Bind(wx.EVT_MENU, self.OnViewCLim, id=ID_VIEW_COLOURLIM)
+        self.Bind(wx.EVT_MENU, self.OnCMapInvert, id=self.ID_VIEW_CMAP_INVERT)
 
         return menu_bar
 
@@ -253,6 +276,22 @@ class ImageViewFrame(wx.Frame):
 
     def OnCLimChanged(self, event):
         self.ivp.clim = (event.lower, event.upper)
+        self.ivp.Refresh()
+
+    def OnChangeLUT(self, event):
+        #print event
+        self.cmn = self.cmapIDs[event.GetId()]
+        cmn = self.cmn
+        if self.cmap_menu.IsChecked(self.ID_VIEW_CMAP_INVERT):
+            cmn = cmn + '_r'
+        self.ivp.cmap = pylab.cm.__getattribute__(cmn)
+        self.ivp.Refresh()
+
+    def OnCMapInvert(self, event):
+        cmn = self.cmn
+        if self.cmap_menu.IsChecked(self.ID_VIEW_CMAP_INVERT):
+            cmn = cmn + '_r'
+        self.ivp.cmap = pylab.cm.__getattribute__(cmn)
         self.ivp.Refresh()
 
     
