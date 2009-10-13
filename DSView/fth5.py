@@ -57,7 +57,7 @@ else:
 
 vp.Refresh()
 
-md = MetaDataHandler.NestedClassMDHandler(mdh)
+#md = MetaDataHandler.NestedClassMDHandler(mdh)
 
 def pushImages(startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
     if dataSource.moduleName == 'HDFDataSource':
@@ -70,11 +70,11 @@ def pushImagesHDF(startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
     mdhQ = MetaDataHandler.QueueMDHandler(tq, seriesName, mdh)
     mdhQ.setEntry('Analysis.DetectionThreshold', detThresh)
     for i in range(startingAt, ds.shape[2]):
-        if 'Analysis.NumBGFrames' in md.getEntryNames():
-            bgi = range(max(i - md.Analysis.NumBGFrames,md.EstimatedLaserOnFrameNo), i)
+        if 'Analysis.NumBGFrames' in mdh.getEntryNames():
+            bgi = range(max(i - mdh.getEntry('Analysis.NumBGFrames'),mdh.getEntry('EstimatedLaserOnFrameNo')), i)
         else:
-            bgi = range(max(i - 10,md.EstimatedLaserOnFrameNo), i)
-        tq.postTask(remFitBuf.fitTask(seriesName,i, detThresh, md, fitFcn, bgindices=bgi, SNThreshold=True), queueName=seriesName)
+            bgi = range(max(i - 10,mdh.getEntry('EstimatedLaserOnFrameNo')), i)
+        tq.postTask(remFitBuf.fitTask(seriesName,i, detThresh, MetaDataHandler.NestedClassMDHandler(mdh), fitFcn, bgindices=bgi, SNThreshold=True), queueName=seriesName)
 
 def pushImagesQueue(startingAt=0, detThresh = .9, fitFcn='LatGaussFitFR'):
     mdh.setEntry('Analysis.DetectionThreshold', detThresh)
@@ -85,11 +85,11 @@ def pushImagesQueue(startingAt=0, detThresh = .9, fitFcn='LatGaussFitFR'):
     
 
 def testFrame(detThresh = 0.9):
-    ft = remFitBuf.fitTask(seriesName,vp.zp, detThresh, md, cFitType.GetString(cFitType.GetSelection()), bgindices=range(max(vp.zp-10, md.EstimatedLaserOnFrameNo),vp.zp), SNThreshold=True)
+    ft = remFitBuf.fitTask(seriesName,vp.zp, detThresh, mdh, cFitType.GetString(cFitType.GetSelection()), bgindices=range(max(vp.zp-10, mdh.getEntry('EstimatedLaserOnFrameNo')),vp.zp), SNThreshold=True)
     return ft(True)
 
 def testFrameTQ(detThresh = 0.9):
-    ft = remFitBuf.fitTask(seriesName,vp.zp, detThresh, md, 'LatGaussFitFR', 'TQDataSource', bgindices=range(max(vp.zp-10, md.EstimatedLaserOnFrameNo),vp.zp), SNThreshold=True)
+    ft = remFitBuf.fitTask(seriesName,vp.zp, detThresh, mdh, 'LatGaussFitFR', 'TQDataSource', bgindices=range(max(vp.zp-10, mdh.getEntry('EstimatedLaserOnFrameNo')),vp.zp), SNThreshold=True)
     return ft(True, tq)
 
 def pushImagesD(startingAt=0, detThresh = .9):
@@ -97,34 +97,34 @@ def pushImagesD(startingAt=0, detThresh = .9):
     mdhQ = MetaDataHandler.QueueMDHandler(tq, seriesName, mdh)
     mdhQ.setEntry('Analysis.DetectionThreshold', detThresh)
     for i in range(startingAt, ds.shape[0]):
-        tq.postTask(remFitBuf.fitTask(seriesName,i, detThresh, md, 'LatGaussFitFR', bgindices=range(max(i-10,md.EstimatedLaserOnFrameNo ),i), SNThreshold=True,driftEstInd=range(max(i-5, md.EstimatedLaserOnFrameNo),min(i + 5, ds.shape[0])), dataSourceModule=dataSource.moduleName), queueName=seriesName)
+        tq.postTask(remFitBuf.fitTask(seriesName,i, detThresh, MetaDataHandler.NestedClassMDHandler(mdh), 'LatGaussFitFR', bgindices=range(max(i-10,mdh.getEntry('EstimatedLaserOnFrameNo') ),i), SNThreshold=True,driftEstInd=range(max(i-5, mdh.getEntry('EstimatedLaserOnFrameNo')),min(i + 5, ds.shape[0])), dataSourceModule=dataSource.moduleName), queueName=seriesName)
 
 #def testFrameD(detThresh = 0.9):
 #    ft = remFitBuf.fitTask(seriesName,vp.zp, detThresh, md, 'LatGaussFitFR', bgindices=range(max(vp.zp-10, md.EstimatedLaserOnFrameNo),vp.zp), SNThreshold=True,driftEstInd=range(max(vp.zp-5, md.EstimatedLaserOnFrameNo),min(vp.zp + 5, ds.shape[0])))
 #    return ft(True)
 
 def testFrameD(detThresh = 0.9):
-    ft = remFitBuf.fitTask(seriesName,vp.zp, detThresh, md, 'LatGaussFitFR', bgindices=range(max(vp.zp-10, md.EstimatedLaserOnFrameNo),vp.zp), SNThreshold=True,driftEstInd=range(max(vp.zp-5, md.EstimatedLaserOnFrameNo),min(vp.zp + 5, ds.shape[0])))
+    ft = remFitBuf.fitTask(seriesName,vp.zp, detThresh, mdh, 'LatGaussFitFR', bgindices=range(max(vp.zp-10, md.EstimatedLaserOnFrameNo),vp.zp), SNThreshold=True,driftEstInd=range(max(vp.zp-5, md.EstimatedLaserOnFrameNo),min(vp.zp + 5, ds.shape[0])))
     return ft(True)
 
 def testFrames(detThresh = 0.9, offset = 0):
     close('all')
     matplotlib.interactive(False)
     clf()
-    sq = min(md.EstimatedLaserOnFrameNo + 1000, dataSource.getNumSlices()/4)
-    zps = array(range(md.EstimatedLaserOnFrameNo + 20, md.EstimatedLaserOnFrameNo + 24)  + range(sq, sq + 4) + range(dataSource.getNumSlices()/2,dataSource.getNumSlices() /2+4))
+    sq = min(mdh.getEntry('EstimatedLaserOnFrameNo') + 1000, dataSource.getNumSlices()/4)
+    zps = array(range(mdh.getEntry('EstimatedLaserOnFrameNo') + 20, mdh.getEntry('EstimatedLaserOnFrameNo') + 24)  + range(sq, sq + 4) + range(dataSource.getNumSlices()/2,dataSource.getNumSlices() /2+4))
     zps += offset
     fitMod = cFitType.GetStringSelection()
     bgFrames = int(tBackgroundFrames.GetValue())
     for i in range(12):
         #if 'Analysis.NumBGFrames' in md.getEntryNames():
-        bgi = range(max(zps[i] - bgFrames,md.EstimatedLaserOnFrameNo), zps[i])
+        bgi = range(max(zps[i] - bgFrames,mdh.getEntry('EstimatedLaserOnFrameNo')), zps[i])
         #else:
         #    bgi = range(max(zps[i] - 10,md.EstimatedLaserOnFrameNo), zps[i])
         if 'Splitter' in fitMod:
-            ft = remFitBuf.fitTask(seriesName, zps[i], detThresh, md, 'SplitterObjFindR', bgindices=bgi, SNThreshold=True)
+            ft = remFitBuf.fitTask(seriesName, zps[i], detThresh, mdh, 'SplitterObjFindR', bgindices=bgi, SNThreshold=True)
         else:
-            ft = remFitBuf.fitTask(seriesName, zps[i], detThresh, md, 'LatObjFindFR', bgindices=bgi, SNThreshold=True)
+            ft = remFitBuf.fitTask(seriesName, zps[i], detThresh, mdh, 'LatObjFindFR', bgindices=bgi, SNThreshold=True)
         res = ft()
         xp = floor(i/4)/3.
         yp = (3 - i%4)/4.

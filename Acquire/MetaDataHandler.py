@@ -84,6 +84,10 @@ class HDFMDHandler:
             if not en in self.getEntryNames():
                 self.setEntry(en, mdToCopy.getEntry(en))
 
+    def __repr__(self):
+        s = ['%s: %s' % (en, self.getEntry(en)) for en in self.getEntryNames()]
+        return '<%s>:\n\n' % self.__class__.__name__ + '\n'.join(s)
+
 class QueueMDHandler:
     def __init__(self, tq, queueName, mdToCopy=None):
         self.tq = tq
@@ -115,6 +119,10 @@ class QueueMDHandler:
         for en in mdToCopy.getEntryNames():
             if not en in self.getEntryNames():
                 self.setEntry(en, mdToCopy.getEntry(en))
+
+    def __repr__(self):
+        s = ['%s: %s' % (en, self.getEntry(en)) for en in self.getEntryNames()]
+        return '<%s>:\n\n' % self.__class__.__name__ + '\n'.join(s)
 
 
 class NestedClassMDHandler:
@@ -160,4 +168,4 @@ class NestedClassMDHandler:
 
     def __repr__(self):
         s = ['%s: %s' % (en, self.getEntry(en)) for en in self.getEntryNames()]
-        return '\n'.join(s)
+        return '<%s>:\n\n' % self.__class__.__name__ + '\n'.join(s)

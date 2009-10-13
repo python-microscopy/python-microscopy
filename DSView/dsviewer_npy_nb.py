@@ -42,6 +42,7 @@ import fitInfo
 
 from PYME.Acquire import MetaDataHandler
 from PYME.Analysis import MetaData
+from PYME.Analysis import MetadataTree
 from PYME.Analysis.DataSources import HDFDataSource
 from PYME.Analysis.DataSources import TQDataSource
 #from PYME.Analysis.DataSources import TiffDataSource
@@ -213,12 +214,15 @@ class DSViewFrame(wx.Frame):
         self.notebook1.AddPage(page=self.vp, select=True, caption='Data')
         self.notebook1.AddPage(page=self.sh, select=False, caption='Console')
 
+        self.mdv = MetadataTree.MetadataPanel(self.notebook1, self.mdh)
+        self.notebook1.AddPage(page=self.mdv, select=False, caption='Metadata')
+
         if self.mode == 'LM':
             self.elv = eventLogViewer.eventLogPanel(self.notebook1, self.ds.getEvents(), self.mdh, [0, self.ds.getNumSlices()]);
             self.notebook1.AddPage(self.elv, 'Events')
 
             if 'ProtocolFocus' in self.elv.evKeyNames:
-                self.zm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.md.Camera.CycleTime, self.md.StartTime, self.md.Protocol.PiezoStartPos)
+                self.zm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh.getEntry('Camera.CycleTime'), self.mdh.getEntry('StartTime'), self.mdh.getEntry('Protocol.PiezoStartPos'))
                 self.elv.SetCharts([('Focus [um]', self.zm, 'ProtocolFocus'),])
 
                 
@@ -530,10 +534,10 @@ class DSViewFrame(wx.Frame):
         bgFrames = int(self.tBackgroundFrames.GetValue())
 
         self.mdh.setEntry('Analysis.subtractBackground', self.cbSubtractBackground.GetValue())
-        self.md.setEntry('Analysis.subtractBackground', self.cbSubtractBackground.GetValue())
+        #self.md.setEntry('Analysis.subtractBackground', self.cbSubtractBackground.GetValue())
 
         self.mdh.setEntry('Analysis.NumBGFrames', bgFrames)
-        self.md.setEntry('Analysis.NumBGFrames', bgFrames)
+        #self.md.setEntry('Analysis.NumBGFrames', bgFrames)
 
         if fitMod.startswith('PsfFit') and not 'PSFFile' in self.mdh.getEntryNames():
             fdialog = wx.FileDialog(None, 'Please select PSF to use ...',
@@ -544,7 +548,7 @@ class DSViewFrame(wx.Frame):
                 #self.ds =
                 psfFilename = fdialog.GetPath()
                 self.mdh.setEntry('PSFFile', psfFilename)
-                self.md.setEntry('PSFFile', psfFilename)
+                #self.md.setEntry('PSFFile', psfFilename)
             else:
                 return
 
@@ -812,7 +816,7 @@ class DSViewFrame(wx.Frame):
                 #self.ds =
                 psfFilename = fdialog.GetPath()
                 self.mdh.setEntry('PSFFile', psfFilename)
-                self.md.setEntry('PSFFile', psfFilename)
+                #self.md.setEntry('PSFFile', psfFilename)
             else:
                 return
 
@@ -1010,7 +1014,7 @@ class DSViewFrame(wx.Frame):
         self.elv.SetRange([0, self.ds.getNumSlices()])
         
         if 'ProtocolFocus' in self.elv.evKeyNames:
-            self.zm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.md.Camera.CycleTime, self.md.StartTime, self.md.Protocol.PiezoStartPos)
+            self.zm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh.getEntry('Camera.CycleTime'), self.mdh.getEntry('StartTime'), self.mdh.getEntry('Protocol.PiezoStartPos'))
             self.elv.SetCharts([('Focus [um]', self.zm, 'ProtocolFocus'),])
 
         self.update()
