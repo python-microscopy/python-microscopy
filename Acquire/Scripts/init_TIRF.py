@@ -53,6 +53,12 @@ fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[-1])
 time1.WantNotification.append(fk.refresh)
 ''')
 
+#splitter
+InitGUI('''
+from PYME.Acquire.Hardware import splitter
+fk = splitter.Splitter(MainFrame, mControls, scope)
+''')
+
 #Z stage
 InitBG('Nikon Z-Stage', '''
 from PYME.Acquire.Hardware import NikonTE2000
