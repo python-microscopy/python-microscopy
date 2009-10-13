@@ -157,3 +157,7 @@ class NestedClassMDHandler:
         for en in mdToCopy.getEntryNames():
             if not en in self.getEntryNames():
                 self.setEntry(en, mdToCopy.getEntry(en))
+
+    def __repr__(self):
+        s = ['%s: %s' % (en, self.getEntry(en)) for en in self.getEntryNames()]
+        return '\n'.join(s)
