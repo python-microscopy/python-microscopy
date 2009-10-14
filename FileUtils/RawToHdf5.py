@@ -54,8 +54,10 @@ def convertFile(pathToData, outFile, frameSize = [256,256], pixelsize=None, comp
         imageData = outF.createEArray(outF.root, 'ImageData', tables.UInt16Atom(), (0,xSize,ySize), filters=filt, expectedrows=nFrames)
 
         for i in range(nFrames):
-            d1 = numpy.fromfile(f1, '>u2', xSize*ySize)
+            d1 = numpy.fromfile(f1, '>u2', xSize*ySize) >> 4
             imageData.append(d1.reshape(1, xSize, ySize))
+            if i % 100 == 0:
+                print '%d of %d frames' % (i, nFrames)
 
         f1.close()
 

@@ -774,7 +774,7 @@ class VisGUIFrame(wx.Frame):
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(pan, -1, 'Object Colour:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
-        self.cBlobColour = wx.Choice(pan, -1, choices=['Index'])
+        self.cBlobColour = wx.Choice(pan, -1, choices=['Index', 'Random'])
         self.cBlobColour.SetSelection(0)
         self.cBlobColour.Bind(wx.EVT_CHOICE, self.OnSetBlobColour)
 
@@ -795,6 +795,9 @@ class VisGUIFrame(wx.Frame):
 
         if bcolour == 'Index':
             c = self.objCInd.astype('f')
+        elif bcolour == 'Random':
+            r = pylab.rand(self.objCInd.max() + 1)
+            c = r[self.objCInd.astype('i')]
         else:
             c = self.objectMeasures[bcolour][self.objCInd.astype('i')]
 
