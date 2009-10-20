@@ -122,8 +122,8 @@ class GaussianFitFactory:
         DeltaX = self.metadata.chroma.dx.ev(x_, y_)
         DeltaY = self.metadata.chroma.dy.ev(x_, y_)
 
-        Xr = Xg - DeltaX
-        Yr = Yg - DeltaY
+        Xr = Xg + DeltaX
+        Yr = Yg + DeltaY
 
         #print DeltaX
         #print DeltaY
