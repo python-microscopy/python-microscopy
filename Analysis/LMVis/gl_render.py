@@ -254,6 +254,7 @@ class LMGLCanvas(GLCanvas):
         b2_ = ((b2*b2).sum(1))
         #c_neighbours = c[T.triangle_neighbors].sum(1)
         #c = 1.0/(c + c_neighbours + 1)
+        #c = numpy.maximum(c, self.pixelsize**2)
         c = 1.0/(c + 1)
 
         self.c = numpy.vstack((c,c,c)).T.ravel()
@@ -887,7 +888,8 @@ class LMGLCanvas(GLCanvas):
         ld = False
 
         self.jitMCT(x,y,jsig, mcp)
-        self.setPercentileCLim(.995)
+        #self.setPercentileCLim(.995)
+        self.setCLim((0, 1./pixelSize**2))
         self.GetParent().Raise()
         #self.OnDraw()
         #h_ = self.getSnapshot(GL_RGB)

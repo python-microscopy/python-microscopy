@@ -1,11 +1,12 @@
+wxPlotPanel.pyc
 __init__.pyc
+glassModel.pyc
 auiFloatBook.pyc
+ricsSim.pyc
 colorsys.pyc
-editList.pyc
-extraCMaps.pyc
 facsPlot.pyc
 fbpIcons.pyc
+extraCMaps.pyc
 listctrlMixins.pyc
-ricsSim.pyc
-wxPlotPanel.pyc
+editList.pyc
 wxThread.pyc

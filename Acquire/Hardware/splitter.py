@@ -52,6 +52,30 @@ class Splitter:
         else:
             self.scope.vp.do.setFlip(self.flipChan, 0)
 
+    def Unmix(self, mixingMatrix, offset):
+        import scipy.linalg
+        from PYME import cSMI
+        from pylab import *
+
+        umm = scipy.linalg.inv(mixingMatrix)
+
+        dsa = cSMI.CDataStack_AsArray(self.scope.pa.ds, 0) - offset
+
+        g_ = dsa[:, :(dsa.shape[1]/2)]
+        r_ = dsa[:, (dsa.shape[1]/2):]
+        r_ = fliplr(r_)
+
+        g = umm[0,0]*g_ + umm[0,1]*r_
+        r = umm[1,0]*g_ + umm[1,1]*r_
+
+        figure()
+        subplot(211)
+        imshow(g, cmap=cm.hot)
+
+        subplot(212)
+        imshow(r, cmap=cm.hot)
+
+
 
    
     

@@ -17,6 +17,7 @@ import sys
 import wx
 import histLimits
 import pylab
+import scipy.misc
 
 class ImageViewPanel(wx.Panel):
     def __init__(self, parent, image, glCanvas, zp=0, zdim=0):
@@ -162,6 +163,103 @@ class ImageViewPanel(wx.Panel):
         else:
             event.Skip()
 
+class ColourImageViewPanel(ImageViewPanel):
+    def __init__(self, parent, glCanvas):
+        wx.Panel.__init__(self, parent, -1, size=parent.Size)
+
+        self.images = []
+        self.clims = []
+        self.cmaps = []
+
+        self.glCanvas = glCanvas
+
+        wx.EVT_PAINT(self, self.OnPaint)
+        wx.EVT_SIZE(self, self.OnSize)
+        wx.EVT_MOUSEWHEEL(self, self.OnWheel)
+        wx.EVT_KEY_DOWN(self, self.OnKeyPress)
+
+    def DoPaint(self, dc):
+        pixelsize = self.glCanvas.pixelsize
+
+        self.centreX = (self.glCanvas.xmin + self.glCanvas.xmax)/2.
+        self.centreY = (self.glCanvas.ymin + self.glCanvas.ymax)/2.
+        #print centreX
+
+        width = self.Size[0]*pixelsize
+        height = self.Size[1]*pixelsize
+
+        im_ = numpy.zeros((width, height, 3), 'uint8')
+
+        for img, clim, cmap in zip(self.images, self.clims, self.cmaps):
+            x0 = max(self.centreX  - width/2, img.imgBounds.x0)
+            x1 = min(self.centreX  + width/2, img.imgBounds.x1)
+            y0 = max(self.centreY  - height/2, img.imgBounds.y0)
+            y1 = min(self.centreY  + height/2, img.imgBounds.y1)
+
+            x0_ = x0 - img.imgBounds.x0
+            x1_ = x1 - img.imgBounds.x0
+            y0_ = y0 - img.imgBounds.y0
+            y1_ = y1 - img.imgBounds.y0
+
+            sc = float(img.pixelSize/pixelsize)
+
+            if sc >= 1:
+                step = 1
+            else:
+                step = 2**(-numpy.ceil(numpy.log2(sc)))
+                sc = sc*step
+
+            #print sc
+
+            #print (x0_/self.image.pixelSize),(x1_/self.image.pixelSize),step
+            #print (y0_/self.image.pixelSize),(y1_/self.image.pixelSize),step
+
+            if len(img.img.shape) == 2:
+                im = numpy.flipud(img.img[int(x0_ / img.pixelSize):int(x1_ / img.pixelSize):step, int(y0_ / img.pixelSize):int(y1_ / img.pixelSize):step].astype('f').T)
+            elif self.zdim ==0:
+                im = numpy.flipud(img.img[self.zp,int(x0_ / img.pixelSize):int(x1_ / img.pixelSize):step, int(y0_ / img.pixelSize):int(y1_ / img.pixelSize):step].astype('f').T)
+            else:
+                im = numpy.flipud(img.img[int(x0_ / img.pixelSize):int(x1_ / img.pixelSize):step, int(y0_ / img.pixelSize):int(y1_ / img.pixelSize):step, self.zp].astype('f').T)
+
+            im = im - clim[0]
+            im = im/(clim[1] - clim[0])
+            print im.shape, sc
+
+            im = scipy.misc.imresize(im, sc)
+
+            im = (255*cmap(im)[:,:,:3])
+
+            dx, dy = (-self.centreX + x0 + width/2)/pixelsize,(self.centreY - y1 + height/2)/pixelsize
+
+            im_[dx:(im.shape[0] + dx), dy:(im.shape[1] + dy), :] = im_[dx:(im.shape[0] + dx), dy:(im.shape[1] + dy), :] + im
+
+            #print im.shape
+
+        im_ = numpy.minimum(im_, 255).astype('b')
+        print im_.shape
+
+        imw =  wx.ImageFromData(im_.shape[1], im_.shape[0], im_.ravel())
+        print imw.GetWidth()
+
+        #imw.Rescale(imw.GetWidth()*sc,imw.GetHeight()*sc)
+            #print imw.Size
+        self.curIm = imw
+
+        dc.Clear()
+
+        #dc.DrawBitmap(wx.BitmapFromImage(imw),(-self.centreX + x0 + width/2)/pixelsize,(self.centreY - y1 + height/2)/pixelsize)
+        dc.DrawBitmap(wx.BitmapFromImage(imw), 0,0)
+
+        #print self.glCanvas.centreCross
+
+        if self.glCanvas.centreCross:
+            print 'drawing crosshair'
+            dc.SetPen(wx.Pen(wx.GREEN, 2))
+
+            dc.DrawLine(.5*self.Size[0], 0, .5*self.Size[0], self.Size[1])
+            dc.DrawLine(0, .5*self.Size[1], self.Size[0], .5*self.Size[1])
+
+            dc.SetPen(wx.NullPen)
         
 
 class ImageViewFrame(wx.Frame):
@@ -242,6 +340,133 @@ class ImageViewFrame(wx.Frame):
 
     def OnClose(self, event):
         self.parent.generatedImages.remove(self)
+        self.Destroy()
+
+    def OnExport(self, event):
+        fname = wx.FileSelector('Save Current View', default_extension='.tif', wildcard="Supported Image Files (*.tif, *.bmp, *.gif, *.jpg, *.png)|*.tif, *.bmp, *.gif, *.jpg, *.png", flags = wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+
+        if not fname == "":
+            ext = os.path.splitext(fname)[-1]
+            if ext == '.tif':
+                self.ivp.curIm.SaveFile(fname, wx.BITMAP_TYPE_TIF)
+            elif ext == '.png':
+                self.ivp.curIm.SaveFile(fname, wx.BITMAP_TYPE_PNG)
+            elif ext == '.jpg':
+                self.ivp.curIm.SaveFile(fname, wx.BITMAP_TYPE_JPG)
+            elif ext == '.gif':
+                self.ivp.curIm.SaveFile(fname, wx.BITMAP_TYPE_GIF)
+            elif ext == '.bmp':
+                self.ivp.curIm.SaveFile(fname, wx.BITMAP_TYPE_BMP)
+
+    def OnViewCLim(self, event):
+        if self.hlCLim == None:
+            if len(self.ivp.image.img.shape) == 2:
+                c = self.ivp.image.img.ravel()
+            else:
+                c = self.ivp.image.img[self.ivp.zp, :,:].ravel()
+            #ID = histLimits.ShowHistLimitFrame(self, 'Colour Scaling', c, self.ivp.clim[0], self.ivp.clim[1], size=(200, 100), log=True)
+            self.hlCLim = histLimits.HistLimitPanel(self, -1, c, self.ivp.clim[0], self.ivp.clim[1], size=(200, 100), pos=(self.Size[0] - 200, 0), log=True)
+
+            self.hlCLim.Bind(histLimits.EVT_LIMIT_CHANGE, self.OnCLimChanged)
+        else:
+            self.hlCLim.Destroy()
+            self.hlCLim = None
+
+    def OnCLimChanged(self, event):
+        self.ivp.clim = (event.lower, event.upper)
+        self.ivp.Refresh()
+
+    def OnChangeLUT(self, event):
+        #print event
+        self.cmn = self.cmapIDs[event.GetId()]
+        cmn = self.cmn
+        if self.cmap_menu.IsChecked(self.ID_VIEW_CMAP_INVERT):
+            cmn = cmn + '_r'
+        self.ivp.cmap = pylab.cm.__getattribute__(cmn)
+        self.ivp.Refresh()
+
+    def OnCMapInvert(self, event):
+        cmn = self.cmn
+        if self.cmap_menu.IsChecked(self.ID_VIEW_CMAP_INVERT):
+            cmn = cmn + '_r'
+        self.ivp.cmap = pylab.cm.__getattribute__(cmn)
+        self.ivp.Refresh()
+
+class ColourImageViewFrame(wx.Frame):
+    def __init__(self, parent, glCanvas, title='Generated Image',zp=0, zdim=0):
+        wx.Frame.__init__(self, parent, -1, title=title, size=(800,800))
+
+        self.ivp = ColourImageViewPanel(self, glCanvas)
+        self.parent = parent
+
+        #self.SetMenuBar(self.CreateMenuBar())
+        wx.EVT_CLOSE(self, self.OnClose)
+
+    def CreateMenuBar(self):
+
+        # Make a menubar
+        file_menu = wx.Menu()
+
+        #ID_SAVE = wx.NewId()
+        #ID_CLOSE = wx.NewId()
+        ID_EXPORT = wx.NewId()
+
+        ID_VIEW_COLOURLIM = wx.NewId()
+        self.ID_VIEW_CMAP_INVERT = wx.NewId()
+
+        #file_menu.Append(wx.ID_SAVE, "&Save")
+        file_menu.Append(ID_EXPORT, "E&xport Current View")
+
+        file_menu.AppendSeparator()
+
+        file_menu.Append(wx.ID_CLOSE, "&Close")
+
+        view_menu = wx.Menu()
+        view_menu.AppendCheckItem(ID_VIEW_COLOURLIM, "&Colour Scaling")
+
+        self.cmap_menu = wx.Menu()
+
+        self.cmap_menu.AppendCheckItem(self.ID_VIEW_CMAP_INVERT, "&Invert")
+        self.cmap_menu.AppendSeparator()
+
+        cmapnames = pylab.cm.cmapnames
+        cmapnames.sort()
+        self.cmapIDs = {}
+        for cmn in cmapnames:
+            cmmId = wx.NewId()
+            self.cmapIDs[cmmId] = cmn
+            self.cmap_menu.AppendRadioItem(cmmId, cmn)
+            if cmn == self.ivp.cmap.name:
+                self.cmap_menu.Check(cmmId, True)
+            self.Bind(wx.EVT_MENU, self.OnChangeLUT, id=cmmId)
+
+        view_menu.AppendMenu(-1,'&LUT', self.cmap_menu)
+
+        menu_bar = wx.MenuBar()
+
+        menu_bar.Append(file_menu, "&File")
+        menu_bar.Append(view_menu, "&View")
+
+        self.Bind(wx.EVT_MENU, self.OnSave, id=wx.ID_SAVE)
+        self.Bind(wx.EVT_MENU, self.OnClose, id=wx.ID_CLOSE)
+        self.Bind(wx.EVT_MENU, self.OnExport, id=ID_EXPORT)
+        self.Bind(wx.EVT_MENU, self.OnViewCLim, id=ID_VIEW_COLOURLIM)
+        self.Bind(wx.EVT_MENU, self.OnCMapInvert, id=self.ID_VIEW_CMAP_INVERT)
+
+        return menu_bar
+
+
+    def OnSave(self, event):
+        fname = wx.FileSelector('Save Image ...', default_extension='.tif', wildcard="TIFF files (*.tif)|*.tif", flags = wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+
+        if not fname == "":
+            self.ivp.image.save(fname)
+
+        self.SetTitle(fname)
+
+
+    def OnClose(self, event):
+        #self.parent.generatedImages.remove(self)
         self.Destroy()
 
     def OnExport(self, event):
