@@ -20,11 +20,15 @@ class Splitter:
 
         scope.splitting='none'
 
+        self.offset = 0
+        self.mixMatrix = [[1,0],[0,1]]
+
         self.constrainROI = False
         self.flipView = False
 
         idConstROI = wx.NewId()
         idFlipView = wx.NewId()
+        idUnmix = wx.NewId()
 
         self.menu = wx.Menu(title = '')
 
@@ -33,6 +37,8 @@ class Splitter:
 
         self.menu.AppendCheckItem(idFlipView, 'Flip view')
         wx.EVT_MENU(parent, idFlipView, self.OnFlipView)
+        self.menu.Append(idUnmix, 'Unmix\tF7')
+        wx.EVT_MENU(parent, idUnmix, self.OnUnmix)
 
         menu.AppendSeparator()
         menu.AppendMenu(-1, '&Splitter', self.menu)
@@ -52,6 +58,9 @@ class Splitter:
         else:
             self.scope.vp.do.setFlip(self.flipChan, 0)
 
+    def OnUnmix(self,event):
+        self.Unmix(self.mixMatrix, self.offset)
+
     def Unmix(self, mixingMatrix, offset):
         import scipy.linalg
         from PYME import cSMI
@@ -59,7 +68,7 @@ class Splitter:
 
         umm = scipy.linalg.inv(mixingMatrix)
 
-        dsa = cSMI.CDataStack_AsArray(self.scope.pa.ds, 0) - offset
+        dsa = cSMI.CDataStack_AsArray(self.scope.pa.ds, 0).squeeze() - offset
 
         g_ = dsa[:, :(dsa.shape[1]/2)]
         r_ = dsa[:, (dsa.shape[1]/2):]
@@ -68,12 +77,15 @@ class Splitter:
         g = umm[0,0]*g_ + umm[0,1]*r_
         r = umm[1,0]*g_ + umm[1,1]*r_
 
+        g = g*(g > 0)
+        r = r*(r > 0)
+
         figure()
         subplot(211)
-        imshow(g, cmap=cm.hot)
+        imshow(g.T, cmap=cm.hot)
 
         subplot(212)
-        imshow(r, cmap=cm.hot)
+        imshow(r.T, cmap=cm.hot)
 
 
 

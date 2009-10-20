@@ -539,6 +539,21 @@ class DSViewFrame(wx.Frame):
         self.mdh.setEntry('Analysis.NumBGFrames', bgFrames)
         #self.md.setEntry('Analysis.NumBGFrames', bgFrames)
 
+        if fitMod.startswith('SplitterFit') and not 'chroma' in self.mdh.getEntryNames():
+            fdialog = wx.FileDialog(None, 'Please select shift field to use ...',
+                    wildcard='Shift fields|*.sf', style=wx.OPEN)
+            succ = fdialog.ShowModal()
+            if (succ == wx.ID_OK):
+                #self.ds = example.CDataStack(fdialog.GetPath().encode())
+                #self.ds =
+                sfFilename = fdialog.GetPath()
+                dx, dy = numpy.load(sfFilename)
+                self.mdh.setEntry('chroma.dx', dx)
+                self.mdh.setEntry('chroma.dy', dy)
+                #self.md.setEntry('PSFFile', psfFilename)
+            else:
+                return
+
         if fitMod.startswith('PsfFit') and not 'PSFFile' in self.mdh.getEntryNames():
             fdialog = wx.FileDialog(None, 'Please select PSF to use ...',
                     wildcard='PSF files|*.psf', style=wx.OPEN)

@@ -109,7 +109,7 @@ time1.WantNotification.append(fk.refresh)
 
 InitGUI('''
 from PYME.Acquire.Hardware import splitter
-fk = splitter.Splitter(MainFrame, mControls, scope)
+splt = splitter.Splitter(MainFrame, mControls, scope)
 ''')
 
 from PYME import cSMI

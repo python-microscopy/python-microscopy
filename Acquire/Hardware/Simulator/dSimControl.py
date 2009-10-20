@@ -253,7 +253,7 @@ class dSimControl(wx.Panel):
             
         self.fillGrids(startVals)
         
-        self.spectralSignatures = scipy.array([[1, 0.3], [0, 1]])
+        self.spectralSignatures = scipy.array([[1, 0.3], [.7, .7], [0.2, 1]])
 
         self.scope=scope
         self.points = []
@@ -273,12 +273,12 @@ class dSimControl(wx.Panel):
         for i in range(len(wc.xp)):
             if not self.cbFlatten.GetValue():
                 if self.cbColour.GetValue():
-                    self.points.append((wc.xp[i],wc.yp[i],wc.zp[i], float(i > len(wc.xp)/2)))
+                    self.points.append((wc.xp[i],wc.yp[i],wc.zp[i], float(i/((len(wc.xp) + 1)/3))))
                 else:
                     self.points.append((wc.xp[i],wc.yp[i],wc.zp[i]))
             else:
                 if self.cbColour.GetValue():
-                    self.points.append((wc.xp[i],wc.yp[i],0,float(i > len(wc.xp)/2)))
+                    self.points.append((wc.xp[i],wc.yp[i],0,float(i/((len(wc.xp)+1)/3))))
                 else:
                     self.points.append((wc.xp[i],wc.yp[i],0))
         

@@ -2,6 +2,9 @@ import matplotlib.colors as colors
 #import matplotlib as mpl
 import pylab
 
+if not 'cmapnames' in dir(pylab.cm):
+    pylab.cm.cmapnames = pylab.cm._cmapnames
+
 _r = {'red':((0.,0.,0.), (1.,1.,1.)), 'green':((0.,0,0), (1.,0.,0.)), 'blue':((0.,0.,0.), (1.,0.,0.))}
 _g = {'green':((0.,0.,0.), (1.,1.,1.)), 'red':((0.,0,0), (1.,0.,0.)), 'blue':((0.,0.,0.), (1.,0.,0.))}
 _b = {'blue':((0.,0.,0.), (1.,1.,1.)), 'green':((0.,0,0), (1.,0.,0.)), 'red':((0.,0.,0.), (1.,0.,0.))}
@@ -16,3 +19,6 @@ for cmapname in ncmapnames:
     cmapdat_r = pylab.cm.revcmap(ndat[cmapname])
     ndat[cmapname_r] = cmapdat_r
     pylab.cm.__dict__[cmapname_r] = colors.LinearSegmentedColormap(cmapname_r, cmapdat_r, pylab.cm.LUTSIZE)
+
+
+pylab.cm.cmapnames.sort()

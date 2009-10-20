@@ -85,11 +85,11 @@ def pushImagesQueue(startingAt=0, detThresh = .9, fitFcn='LatGaussFitFR'):
     
 
 def testFrame(detThresh = 0.9):
-    ft = remFitBuf.fitTask(seriesName,vp.zp, detThresh, mdh, cFitType.GetString(cFitType.GetSelection()), bgindices=range(max(vp.zp-10, mdh.getEntry('EstimatedLaserOnFrameNo')),vp.zp), SNThreshold=True)
+    ft = remFitBuf.fitTask(seriesName,vp.zp, detThresh, MetaDataHandler.NestedClassMDHandler(mdh), cFitType.GetString(cFitType.GetSelection()), bgindices=range(max(vp.zp-10, mdh.getEntry('EstimatedLaserOnFrameNo')),vp.zp), SNThreshold=True)
     return ft(True)
 
 def testFrameTQ(detThresh = 0.9):
-    ft = remFitBuf.fitTask(seriesName,vp.zp, detThresh, mdh, 'LatGaussFitFR', 'TQDataSource', bgindices=range(max(vp.zp-10, mdh.getEntry('EstimatedLaserOnFrameNo')),vp.zp), SNThreshold=True)
+    ft = remFitBuf.fitTask(seriesName,vp.zp, detThresh, MetaDataHandler.NestedClassMDHandler(mdh), 'LatGaussFitFR', 'TQDataSource', bgindices=range(max(vp.zp-10, mdh.getEntry('EstimatedLaserOnFrameNo')),vp.zp), SNThreshold=True)
     return ft(True, tq)
 
 def pushImagesD(startingAt=0, detThresh = .9):
@@ -104,7 +104,7 @@ def pushImagesD(startingAt=0, detThresh = .9):
 #    return ft(True)
 
 def testFrameD(detThresh = 0.9):
-    ft = remFitBuf.fitTask(seriesName,vp.zp, detThresh, mdh, 'LatGaussFitFR', bgindices=range(max(vp.zp-10, md.EstimatedLaserOnFrameNo),vp.zp), SNThreshold=True,driftEstInd=range(max(vp.zp-5, md.EstimatedLaserOnFrameNo),min(vp.zp + 5, ds.shape[0])))
+    ft = remFitBuf.fitTask(seriesName,vp.zp, detThresh, MetaDataHandler.NestedClassMDHandler(mdh), 'LatGaussFitFR', bgindices=range(max(vp.zp-10, md.EstimatedLaserOnFrameNo),vp.zp), SNThreshold=True,driftEstInd=range(max(vp.zp-5, md.EstimatedLaserOnFrameNo),min(vp.zp + 5, ds.shape[0])))
     return ft(True)
 
 def testFrames(detThresh = 0.9, offset = 0):
@@ -122,9 +122,9 @@ def testFrames(detThresh = 0.9, offset = 0):
         #else:
         #    bgi = range(max(zps[i] - 10,md.EstimatedLaserOnFrameNo), zps[i])
         if 'Splitter' in fitMod:
-            ft = remFitBuf.fitTask(seriesName, zps[i], detThresh, mdh, 'SplitterObjFindR', bgindices=bgi, SNThreshold=True)
+            ft = remFitBuf.fitTask(seriesName, zps[i], detThresh, MetaDataHandler.NestedClassMDHandler(mdh) , 'SplitterObjFindR', bgindices=bgi, SNThreshold=True)
         else:
-            ft = remFitBuf.fitTask(seriesName, zps[i], detThresh, mdh, 'LatObjFindFR', bgindices=bgi, SNThreshold=True)
+            ft = remFitBuf.fitTask(seriesName, zps[i], detThresh, MetaDataHandler.NestedClassMDHandler(mdh), 'LatObjFindFR', bgindices=bgi, SNThreshold=True)
         res = ft()
         xp = floor(i/4)/3.
         yp = (3 - i%4)/4.

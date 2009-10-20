@@ -110,6 +110,10 @@ class LMGLCanvas(GLCanvas):
         if not self.init:
             self.InitGL()
             self.init = 1
+#            if 'OnGLViewChanged' in dir(self.parent):
+#                self.parent.OnGLViewChanged()
+            if 'RefreshView' in dir(self.parent.GetParent()):
+                self.parent.GetParent().RefreshView()
             
         self.OnDraw()
         #return

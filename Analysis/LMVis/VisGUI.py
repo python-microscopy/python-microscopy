@@ -178,7 +178,8 @@ class VisGUIFrame(wx.Frame):
         self.Triangles = None
         self.GeneratedMeasures = {}
         self.Quads = None
-        self.pointColour = None
+        #self.pointColour = None
+        self.colData = '<None>'
 
         statusLog.SetStatusDispFcn(self.SetStatus)
 
@@ -191,6 +192,7 @@ class VisGUIFrame(wx.Frame):
         wx.LayoutAlgorithm().LayoutWindow(self, self.notebook)
 
         print 'about to refresh'
+        self.RefreshView()
         self.Refresh()
 
 #        namespace = dict()
@@ -488,6 +490,8 @@ class VisGUIFrame(wx.Frame):
         else:
             cmin = float(self.tCLimMin.GetValue())
             cmax = float(self.tCLimMax.GetValue())
+
+            self.hlCLim.SetValue((cmin, cmax))
 
             self.glCanvas.setCLim((cmin, cmax))
 
@@ -861,6 +865,8 @@ class VisGUIFrame(wx.Frame):
         hsizer.Add(wx.StaticText(pan, -1, 'Colour:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.chPointColour = wx.Choice(pan, -1, choices=colData, size=(100, -1))
+        if self.colData in colData:
+            self.chPointColour.SetSelection(colData.index(self.colData))
         hsizer.Add(self.chPointColour, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
         bsizer.Add(hsizer, 0, wx.ALL, 0)
@@ -879,19 +885,24 @@ class VisGUIFrame(wx.Frame):
         self.glCanvas.Refresh()
 
     def OnChangePointColour(self, event):
-        colData = event.GetString()
-
-        if colData == '<None>':
-            self.pointColour = None
-        elif not self.mapping == None:
-            if colData in self.mapping.keys():
-                self.pointColour = self.mapping[colData]
-            elif colData in self.GeneratedMeasures.keys():
-                self.pointColour = self.GeneratedMeasures[colData]
-            else:
-                self.pointColour = None
+        self.colData = event.GetString()
         
         self.RefreshView()
+
+    def pointColour(self):
+        pointColour = None
+        
+        if self.colData == '<None>':
+            pointColour = None
+        elif not self.mapping == None:
+            if self.colData in self.mapping.keys():
+                pointColour = self.mapping[self.colData]
+            elif self.colData in self.GeneratedMeasures.keys():
+                pointColour = self.GeneratedMeasures[self.colData]
+            else:
+                pointColour = None
+
+        return pointColour
 
     def GenDriftPanel(self):
         item = self._pnl.AddFoldPanel("Drift Correction", collapsed=True,
@@ -1754,7 +1765,7 @@ class VisGUIFrame(wx.Frame):
                 self.rav = None
 
         if self.viewMode == 'points':
-            self.glCanvas.setPoints(self.mapping['x'], self.mapping['y'], self.pointColour)
+            self.glCanvas.setPoints(self.mapping['x'], self.mapping['y'], self.pointColour())
         elif self.viewMode == 'triangles':
             if self.Triangles == None:
                 status = statusLog.StatusLogger("Generating Triangulation ...")
@@ -1785,7 +1796,7 @@ class VisGUIFrame(wx.Frame):
                 status = statusLog.StatusLogger("Generating Triangulation ...")
                 self.Triangles = delaunay.Triangulation(self.mapping['x'], self.mapping['y'])
 
-            self.glCanvas.setIntTriang(self.Triangles, self.pointColour)
+            self.glCanvas.setIntTriang(self.Triangles, self.pointColour())
 
         elif self.viewMode == 'blobs':
             if self.objects == None:
