@@ -122,7 +122,7 @@ def testFrames(detThresh = 0.9, offset = 0):
         #else:
         #    bgi = range(max(zps[i] - 10,md.EstimatedLaserOnFrameNo), zps[i])
         if 'Splitter' in fitMod:
-            ft = remFitBuf.fitTask(seriesName, zps[i], detThresh, MetaDataHandler.NestedClassMDHandler(mdh) , 'SplitterObjFindR', bgindices=bgi, SNThreshold=True)
+            ft = remFitBuf.fitTask(seriesName, zps[i], detThresh, MetaDataHandler.NestedClassMDHandler(mdh), 'SplitterObjFindR', bgindices=bgi, SNThreshold=True)
         else:
             ft = remFitBuf.fitTask(seriesName, zps[i], detThresh, MetaDataHandler.NestedClassMDHandler(mdh), 'LatObjFindFR', bgindices=bgi, SNThreshold=True)
         res = ft()
