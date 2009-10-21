@@ -19,6 +19,7 @@ import types
 import numpy as np
 
 from numpy import * #to allow the use of sin cos etc in mappings
+from PYME.Analysis.piecewise import * #allow piecewise linear mappings
 
 import tables
 
@@ -72,6 +73,8 @@ class h5rSource:
         if not 'FitResults' in dir(self.h5f.root):
             raise 'Was expecting to find a "FitResults" table'
 
+        self.fitResults = self.h5f.root.FitResults[:]
+
         #allow access using unnested original names
         self._keys = unNestNames(self.h5f.root.FitResults.description._v_nestedNames)
         #or shorter aliases
@@ -98,11 +101,11 @@ class h5rSource:
         k = key.split('_')
         
         if len(k) == 1:
-            return self.h5f.root.FitResults[:][k[0]].astype('f')
+            return self.fitResults[k[0]].astype('f')
         elif len(k) == 2:
-            return self.h5f.root.FitResults[:][k[0]][k[1]].astype('f')
+            return self.fitResults[k[0]][k[1]].astype('f')
         elif len(k) == 3:
-            return self.h5f.root.FitResults[:][k[0]][k[1]][k[2]].astype('f')
+            return self.fitResults[k[0]][k[1]][k[2]].astype('f')
         else:
             raise "Don't know about deeper nesting yet"
         

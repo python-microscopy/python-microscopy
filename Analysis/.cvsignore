@@ -11,6 +11,7 @@ twist.pyc
 remFitBuf.pyc
 setup.pyc
 piecewiseMapping.pyc
+driftAutocorr.pyc
 intelliFit.pyc
 ryrify.pyc
 ofind_xcorr.pyc
@@ -21,11 +22,12 @@ ofind.pyc
 _fithelpers.pyc
 ofind3d.pyc
 multiGaussDist.pyc
-driftCorrProc.pyc
 LatGaussFitFR.py
+driftCorrProc.pyc
 simCluster.pyc
 twoColour.pyc
 LatGaussFitF.py
+piecewise.pyc
 twoColourPlot.pyc
 remFitSplit.pyc
 intensProf.pyc
