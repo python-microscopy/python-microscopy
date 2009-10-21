@@ -65,7 +65,7 @@ flag, and the actual resizing of the figure is triggered by an Idle event."""
             self._SetSize()
 
     def _SetSize( self ):
-        pixels = tuple( self.parent.GetClientSize() )
+        pixels = tuple( self.GetClientSize() )
         self.SetSize( pixels )
         self.canvas.SetSize( pixels )
         self.figure.set_size_inches( float( pixels[0] )/self.figure.get_dpi(),

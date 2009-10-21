@@ -286,7 +286,7 @@ class EditableTreeList(gizmos.TreeListCtrl, TextEditMixin):
 
 
 class MetadataPanel(wx.Panel):
-    def __init__(self, parent, mdh):
+    def __init__(self, parent, mdh, editable=True):
         self.mdh=mdh
         wx.Panel.__init__(self, parent, -1)
         self.Bind(wx.EVT_SIZE, self.OnSize)
@@ -319,7 +319,10 @@ class MetadataPanel(wx.Panel):
         nmdh = NestedClassMDHandler(mdh)
         self.addEntries(nmdh, self.root)
 
-        self.editableCols = [1]
+        if editable:
+            self.editableCols = [1]
+        else:
+            self.editableCols = []
 
         #entryNames = self.mdh.getEntryNames()
         

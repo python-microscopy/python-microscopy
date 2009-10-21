@@ -43,6 +43,7 @@ from PYME.Analysis.LMVis import importTextDialog
 from PYME.Analysis.LMVis import visHelpers
 from PYME.Analysis.LMVis import imageView
 from PYME.Analysis.LMVis import histLimits
+from PYME.Analysis.LMVis import colourPanel
 try:
     from PYME.Analysis.LMVis import gen3DTriangs
     from PYME.Analysis.LMVis import recArrayView
@@ -52,6 +53,7 @@ except:
 
 from PYME.Analysis import intelliFit
 from PYME.Analysis import piecewiseMapping
+from PYME.Analysis import MetadataTree
 
 #import time
 import numpy as np
@@ -130,6 +132,8 @@ class VisGUIFrame(wx.Frame):
         self.glCanvas.cmap = pylab.cm.hot
 
         self.elv = None
+        self.colp = None
+        self.mdp = None
         self.rav = None
 
         self.ID_WINDOW_TOP = 100
@@ -160,6 +164,8 @@ class VisGUIFrame(wx.Frame):
         self.optimiseFcn = 'fmin'
         self.driftExprX = 'x + a*t'
         self.driftExprY = 'y + b*t'
+
+        self.fluorSpecies = {}
 
         self.objThreshold = 30
         self.objMinSize = 10
@@ -1515,6 +1521,32 @@ class VisGUIFrame(wx.Frame):
                     #if we used the splitter set up a mapping so we can filter on total amplitude and ratio
                     self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource, A='fitResults_Ag + fitResults_Ar', gFrac='fitResults_Ag/(fitResults_Ag + fitResults_Ar)')
                     self.dataSources.append(self.selectedDataSource)
+
+                    if not self.colp == None: #remove previous colour viewer
+                        i = 0
+                        found = False
+                        while not found and i < self.notebook.GetPageCount():
+                            if self.notebook.GetPage(i) == self.colp:
+                                self.notebook.DeletePage(i)
+                                found = True
+                            else:
+                                i += 1
+
+                    self.colp = colourPanel.colourPanel(self.notebook, self)
+                    self.notebook.AddPage(self.colp, 'Colour')
+
+                if not self.mdp == None: #remove previous colour viewer
+                    i = 0
+                    found = False
+                    while not found and i < self.notebook.GetPageCount():
+                        if self.notebook.GetPage(i) == self.mdp:
+                            self.notebook.DeletePage(i)
+                            found = True
+                        else:
+                            i += 1
+
+                self.mdp = MetadataTree.MetadataPanel(self.notebook, self.mdh, editable=False)
+                self.notebook.AddPage(self.mdp, 'Metadata')
                         
         elif os.path.splitext(filename)[1] == '.mat': #matlab file
             from scipy.io import loadmat
@@ -1825,6 +1857,9 @@ class VisGUIFrame(wx.Frame):
             self.objCInd = self.glCanvas.c
 
         self.hlCLim.SetData(self.glCanvas.c, self.glCanvas.clim[0], self.glCanvas.clim[1])
+
+        if not self.colp == None:
+            self.colp.refresh()
 
 
     def GenQuads(self):
