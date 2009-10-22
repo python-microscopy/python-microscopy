@@ -166,6 +166,8 @@ class VisGUIFrame(wx.Frame):
         self.driftExprY = 'y + b*t'
 
         self.fluorSpecies = {}
+        self.t_p_dye = 0.2
+        self.t_p_other = 0.02
 
         self.objThreshold = 30
         self.objMinSize = 10
@@ -862,8 +864,8 @@ class VisGUIFrame(wx.Frame):
         
         colData = ['<None>']
 
-        if not self.filter == None:
-            colData += self.filter.keys()
+        if not self.mapping == None:
+            colData += self.mapping.keys()
 
         colData += self.GeneratedMeasures.keys()
 
@@ -885,6 +887,22 @@ class VisGUIFrame(wx.Frame):
 
         self.tPointSize.Bind(wx.EVT_TEXT, self.OnPointSizeChange)
         self.chPointColour.Bind(wx.EVT_CHOICE, self.OnChangePointColour)
+
+    def UpdatePointColourChoices(self):
+        if self.viewMode == 'points': #only change if we are in points mode
+            colData = ['<None>']
+
+            if not self.mapping == None:
+                colData += self.mapping.keys()
+
+            colData += self.GeneratedMeasures.keys()
+
+            self.chPointColour.Clear()
+            for cd in colData:
+                self.chPointColour.Append(cd)
+
+            if self.colData in colData:
+                self.chPointColour.SetSelection(colData.index(self.colData))
 
     def OnPointSizeChange(self, event):
         self.glCanvas.pointSize = float(self.tPointSize.GetValue())
@@ -1519,7 +1537,7 @@ class VisGUIFrame(wx.Frame):
 
                 if 'fitResults_Ag' in self.selectedDataSource.keys():
                     #if we used the splitter set up a mapping so we can filter on total amplitude and ratio
-                    self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource, A='fitResults_Ag + fitResults_Ar', gFrac='fitResults_Ag/(fitResults_Ag + fitResults_Ar)')
+                    self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource, A='fitResults_Ag + fitResults_Ar', gFrac='fitResults_Ag/(fitResults_Ag + fitResults_Ar)', error_gFrac = 'sqrt((fitError_Ag/fitResults_Ag)**2 + (fitError_Ag**2 + fitError_Ar**2)/(fitResults_Ag + fitResults_Ar)**2)*fitResults_Ag/(fitResults_Ag + fitResults_Ar)')
                     self.dataSources.append(self.selectedDataSource)
 
                     if not self.colp == None: #remove previous colour viewer
@@ -1750,7 +1768,10 @@ class VisGUIFrame(wx.Frame):
     def RegenFilter(self):
         if not self.selectedDataSource == None:
             self.filter = inpFilt.resultsFilter(self.selectedDataSource, **self.filterKeys)
-            self.mapping = inpFilt.mappingFilter(self.filter)
+            if self.mapping:
+                self.mapping.resultsSource = self.filter
+            else:
+                self.mapping = inpFilt.mappingFilter(self.filter)
 
         self.stFilterNumPoints.SetLabel('%d of %d events' % (len(self.filter['x']), len(self.selectedDataSource['x'])))
 

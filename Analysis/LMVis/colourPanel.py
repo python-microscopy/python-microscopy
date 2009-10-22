@@ -31,7 +31,7 @@ class colourPlotPanel(wxPlotPanel.PlotPanel):
                 return
             
             if not hasattr( self, 'subplot1' ):
-                self.subplot1 = self.figure.add_axes([.12, .12, .87, .87])
+                self.subplot1 = self.figure.add_axes([.1, .1, .89, .89])
                 #self.subplot2 = self.figure.add_subplot( 122 )
 
 
@@ -41,11 +41,37 @@ class colourPlotPanel(wxPlotPanel.PlotPanel):
             x, y = self.visFrame.filter['fitResults_Ag'], self.visFrame.filter['fitResults_Ar']
 
             #facsPlot.facsPlotContour(x, y, 100)
-            self.subplot1.scatter(x, y, s=1, c='b', edgecolor='none')
+
+            c = -5e3*numpy.ones(x.shape)
+#            print (c < -1).sum(), c.min()
+
+            for k, v in self.visFrame.fluorSpecies.items():
+                p_dye = self.visFrame.mapping['p_%s' % k]
+
+                p_other = numpy.zeros(x.shape)
+
+                for k2 in self.visFrame.fluorSpecies.keys():
+                    if not k2 ==k:
+                        p_other = numpy.maximum(p_other, self.visFrame.mapping['p_%s' % k2])
+
+                c[(p_dye > self.visFrame.t_p_dye)*(p_other < self.visFrame.t_p_other)] = v
+
+            cs = 0.75*cm.jet_r(c.copy())[:,:3]
+            
+            cs[c < -1, :] = (0.3*numpy.ones(cs.shape))[c < -1, :]
+
+#            print (c < -1).sum(), c.min()
+#            print (c < -1).sum(), cs[c < -1, :].shape
+
+
+
+
+            self.subplot1.scatter(x, y, s=2, c=cs, edgecolor='none')
+            #self.subplot1.plot(x, y, '.', ms=1, c=cs)
 
             n, xedge, yedge = numpy.histogram2d(x, y, bins = [100,100], range=[(x.min(), x.max()), (y.min(), y.max())])
 
-            self.subplot1.contour((xedge[:-1] + xedge[1:])/2, (yedge[:-1] + yedge[1:])/2, numpy.log(n.T + .1), 5, cmap = cm.copper_r, linewidths=2)
+            self.subplot1.contour((xedge[:-1] + xedge[1:])/2, (yedge[:-1] + yedge[1:])/2, numpy.log2(n.T + .5), 7, cmap = cm.copper_r, linewidths=2)
             self.subplot1.axis('image')
             self.subplot1.set_xlabel('Channel 1')
             self.subplot1.set_ylabel('Channel 2')
@@ -53,15 +79,15 @@ class colourPlotPanel(wxPlotPanel.PlotPanel):
             x.sort()
             y.sort()
 
-            xl = x[.999*len(x)]
-            yl = y[.999*len(x)]
+            xl = x[.997*len(x)]
+            yl = y[.997*len(x)]
 
             self.subplot1.set_xlim((0, xl))
             self.subplot1.set_ylim((0, yl))
 
 
             for k, v in self.visFrame.fluorSpecies.items():
-                self.subplot1.plot([0,xl], [0, (v/(1-v))*xl], lw=2, c=cm.gist_rainbow(v))
+                self.subplot1.plot([0,xl], [0, ((1-v)/v)*xl], lw=2, c=cm.jet_r(v))
 
 #            self.subplot1.plot(ed[:-1], a/float(numpy.diff(ed[:2])), color='b' )
 #            self.subplot1.set_xticks([0, ed.max()])
@@ -74,7 +100,7 @@ class colourPlotPanel(wxPlotPanel.PlotPanel):
 class colourPanel(wx.Panel):
     def __init__(self, parent, visFrame, id=-1):
         wx.Panel.__init__(self, parent, id)
-        bsizer = wx.BoxSizer(wx.HORIZONTAL)
+        bsizer = wx.BoxSizer(wx.VERTICAL)
 
         self.visFr = visFrame
 
@@ -97,18 +123,22 @@ class colourPanel(wx.Panel):
 #
 #        bsizer.Add(hsizer, 0, wx.ALL, 0)
 
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
         vsizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Fluorophores'), wx.VERTICAL)
 
-        self.lFluorSpecies = editList.EditListCtrl(self, -1, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.SUNKEN_BORDER, size=(150, 150))
+        self.lFluorSpecies = editList.EditListCtrl(self, -1, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.SUNKEN_BORDER, size=(200, 150))
         vsizer.Add(self.lFluorSpecies, 0, wx.ALL, 5)
 
-        self.lFluorSpecies.InsertColumn(0, 'Name', width=50)
+        self.lFluorSpecies.InsertColumn(0, 'Name')
         self.lFluorSpecies.InsertColumn(1, 'Ag/(Ag + Ar)')
         self.lFluorSpecies.makeColumnEditable(1)
 
         for key, value in self.visFr.fluorSpecies.items():
             ind = self.lFluorSpecies.InsertStringItem(sys.maxint, key)
             self.lFluorSpecies.SetStringItem(ind,1, '%3.2f' % value)
+            self.lFluorSpecies.SetItemTextColour(ind, wx.Colour(*((128*numpy.array(cm.jet_r(value)))[:3])))
+            
             
 
 #        self.lFluorSpecies.SetColumnWidth(0, wx.LIST_AUTOSIZE)
@@ -136,12 +166,42 @@ class colourPanel(wx.Panel):
 
         self.lFluorSpecies.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnSpecChange)
 
-        bsizer.Add(vsizer, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(vsizer, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        vsizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Channel Assignment '), wx.VERTICAL)
+
+        hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer2.Add(wx.StaticText(self, -1, 'p_dye:   '), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        self.tPBelong = wx.TextCtrl(self, -1, '%3.3f' % self.visFr.t_p_dye)
+        hsizer2.Add(self.tPBelong, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tPBelong.Bind(wx.EVT_TEXT, self.OnChangePDye)
+
+        vsizer.Add(hsizer2, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+
+        hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer2.Add(wx.StaticText(self, -1, 'p_other:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        self.tPOther = wx.TextCtrl(self, -1, '%3.3f' % self.visFr.t_p_other)
+        hsizer2.Add(self.tPOther, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tPOther.Bind(wx.EVT_TEXT, self.OnChangePOther)
+
+        vsizer.Add(hsizer2, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+
+        hsizer.Add(vsizer, 0, wx.ALL, 5)
+
+        bsizer.Add(hsizer, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.SetSizer(bsizer)
         bsizer.Fit(self)
 
+    def OnChangePDye(self, event):
+        self.visFr.t_p_dye = float(self.tPBelong.GetValue())
+        self.refresh()
 
+    def OnChangePOther(self, event):
+        self.visFr.t_p_other = float(self.tPOther.GetValue())
+        self.refresh()
 
     def OnSpecListRightClick(self, event):
 
@@ -189,6 +249,13 @@ class colourPanel(wx.Panel):
 
             ind = self.lFluorSpecies.InsertStringItem(sys.maxint, key)
             self.lFluorSpecies.SetStringItem(ind,1, '%3.2f' % val)
+            #print val, (255*numpy.array(cm.gist_rainbow(val)))[:3]
+            self.lFluorSpecies.SetItemTextColour(ind, wx.Colour(*((128*numpy.array(cm.jet_r(val)))[:3])))
+
+            #self.visFr.mapping.setMapping('p_%s' % key, 'exp(-(%f*A - fitResults_Ag)**2/(2*fitError_Ag**2))*exp(-(%f*A - fitResults_Ar)**2/(2*fitError_Ar**2))' % (1- val, val))
+            self.visFr.mapping.setMapping('p_%s' % key, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))' % (val))
+
+            self.visFr.UpdatePointColourChoices()
             
 
         dlg.Destroy()
@@ -200,12 +267,20 @@ class colourPanel(wx.Panel):
         self.lFluorSpecies.DeleteItem(self.currentFilterItem)
         self.visFr.fluorSpecies.pop(it.GetText())
 
+        self.visFr.mapping.mappings.pop('p_%s' % it.GetText())
+
         self.refresh()
 
     def OnSpecChange(self, event=None):
         it = self.lFluorSpecies.GetItem(event.m_itemIndex)
 
-        self.visFr.fluorSpecies[it.GetText()] = float(event.m_item.GetText())
+        val = float(event.m_item.GetText())
+
+        self.visFr.fluorSpecies[it.GetText()] = val
+        self.lFluorSpecies.SetItemTextColour(event.m_itemIndex, wx.Colour(*((128*numpy.array(cm.jet_r(val)))[:3])))
+
+        #self.visFr.mapping.setMapping('p_%s' % it.GetText(), 'exp(-(%f*A - fitResults_Ag)**2/(4*fitError_Ag**2 + 2*fitError_Ar**2))*exp(-(%f*A - fitResults_Ar)**2/(2*fitError_Ag**2 +4*fitError_Ar**2))' % (1- val, val))
+        self.visFr.mapping.setMapping('p_%s' % it.GetText(), 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))' % (val))
 
         self.refresh()
 
