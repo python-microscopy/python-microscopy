@@ -1298,7 +1298,13 @@ class VisGUIFrame(wx.Frame):
             
             im = self.glCanvas.getIm(pixelSize)
 
-            imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
+            x0 = max(self.glCanvas.xmin, self.imageBounds.x0)
+            y0 = max(self.glCanvas.ymin, self.imageBounds.y0)
+            x1 = min(self.glCanvas.xmax, self.imageBounds.x1)
+            y1 = min(self.glCanvas.ymax, self.imageBounds.y1)
+
+            #imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
+            imb = ImageBounds(x0, y0, x1, y1)
 
             img = GeneratedImage(im,imb, pixelSize )
             imf = imageView.ImageViewFrame(self,img, self.glCanvas)
@@ -1347,7 +1353,13 @@ class VisGUIFrame(wx.Frame):
             oldcmap = self.glCanvas.cmap 
             self.glCanvas.setCMap(pylab.cm.gray)
 
-            imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
+            x0 = max(self.glCanvas.xmin, self.imageBounds.x0)
+            y0 = max(self.glCanvas.ymin, self.imageBounds.y0)
+            x1 = min(self.glCanvas.xmax, self.imageBounds.x1)
+            y1 = min(self.glCanvas.ymax, self.imageBounds.y1)
+
+            #imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
+            imb = ImageBounds(x0, y0, x1, y1)
 
             status = statusLog.StatusLogger('Generating Triangulated Image ...')
 
@@ -1408,8 +1420,14 @@ class VisGUIFrame(wx.Frame):
             
 
             status = statusLog.StatusLogger('Generating Gaussian Image ...')
-            
-            imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
+
+            x0 = max(self.glCanvas.xmin, self.imageBounds.x0)
+            y0 = max(self.glCanvas.ymin, self.imageBounds.y0)
+            x1 = min(self.glCanvas.xmax, self.imageBounds.x1)
+            y1 = min(self.glCanvas.ymax, self.imageBounds.y1)
+
+            #imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
+            imb = ImageBounds(x0, y0, x1, y1)
 
             colours =  dlg.getColour()
             oldC = self.colourFilter.currentColour
@@ -1453,8 +1471,14 @@ class VisGUIFrame(wx.Frame):
             pixelSize = dlg.getPixelSize()
 
             status = statusLog.StatusLogger('Generating Histogram Image ...')
-            
-            imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
+
+            x0 = max(self.glCanvas.xmin, self.imageBounds.x0)
+            y0 = max(self.glCanvas.ymin, self.imageBounds.y0)
+            x1 = min(self.glCanvas.xmax, self.imageBounds.x1)
+            y1 = min(self.glCanvas.ymax, self.imageBounds.y1)
+
+            #imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
+            imb = ImageBounds(x0, y0, x1, y1)
 
             colours =  dlg.getColour()
             oldC = self.colourFilter.currentColour
@@ -1483,8 +1507,15 @@ class VisGUIFrame(wx.Frame):
             pixelSize = dlg.getPixelSize()
 
             status = statusLog.StatusLogger('Generating QuadTree Image ...')
+
+            x0 = max(self.glCanvas.xmin, self.imageBounds.x0)
+            y0 = max(self.glCanvas.ymin, self.imageBounds.y0)
+            x1 = min(self.glCanvas.xmax, self.imageBounds.x1)
+            y1 = min(self.glCanvas.ymax, self.imageBounds.y1)
+
+            #imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
+            imb = ImageBounds(x0, y0, x1, y1)
             
-            imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
 
             if not pylab.mod(pylab.log2(pixelSize/self.QTGoalPixelSize), 1) == 0:#recalculate QuadTree to get right pixel size
                 self.QTGoalPixelSize = pixelSize
