@@ -69,6 +69,7 @@ def pushImagesHDF(startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
     tq.createQueue('HDFResultsTaskQueue', seriesName, None)
     mdhQ = MetaDataHandler.QueueMDHandler(tq, seriesName, mdh)
     mdhQ.setEntry('Analysis.DetectionThreshold', detThresh)
+    mdhQ.setEntry('Analysis.FitModule', fitFcn)
     for i in range(startingAt, ds.shape[2]):
         if 'Analysis.NumBGFrames' in mdh.getEntryNames():
             bgi = range(max(i - mdh.getEntry('Analysis.NumBGFrames'),mdh.getEntry('EstimatedLaserOnFrameNo')), i)
