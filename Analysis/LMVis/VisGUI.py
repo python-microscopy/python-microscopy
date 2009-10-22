@@ -158,6 +158,7 @@ class VisGUIFrame(wx.Frame):
 
         self.filter = None
         self.mapping = None
+        self.colourFilter = None
 
         self.driftCorrParams = {}
         self.driftCorrFcn = None
@@ -299,6 +300,8 @@ class VisGUIFrame(wx.Frame):
 
         self.GenDriftPanel()
 
+        self.GenColourFilterPanel()
+
         self.GenDisplayPanel()
         
         if self.viewMode == 'quads':
@@ -319,6 +322,46 @@ class VisGUIFrame(wx.Frame):
         wx.LayoutAlgorithm().LayoutWindow(self, self.notebook)
         self.glCanvas.Refresh()
 
+    def GenColourFilterPanel(self):
+        item = self._pnl.AddFoldPanel("Colour", collapsed=False,
+                                      foldIcons=self.Images)
+
+        cnames = ['Everything']
+
+        if self.colourFilter:
+            cnames += self.colourFilter.getColourChans()
+
+        self.chColourFilterChan = wx.Choice(item, -1, choices=cnames, size=(170, -1))
+
+        if self.colourFilter and self.colourFilter.currentColour in cnames:
+            self.chColourFilterChan.SetSelection(cnames.index(self.colourFilter.currentColour))
+        else:
+            self.chColourFilterChan.SetSelection(0)
+
+        self.chColourFilterChan.Bind(wx.EVT_CHOICE, self.OnColourFilterChange)
+        self._pnl.AddFoldPanelWindow(item, self.chColourFilterChan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+
+
+    def UpdateColourFilterChoices(self):
+        cnames = ['Everything']
+
+        if self.colourFilter:
+            cnames += self.colourFilter.getColourChans()
+            
+        self.chColourFilterChan.Clear()
+        for cn in cnames:
+            self.chColourFilterChan.Append(cn)
+
+        if self.colourFilter and self.colourFilter.currentColour in cnames:
+            self.chColourFilterChan.SetSelection(cnames.index(self.colourFilter.currentColour))
+        else:
+            self.chColourFilterChan.SetSelection(0)
+
+
+    def OnColourFilterChange(self, event):
+        self.colourFilter.setColour(event.GetString())
+
+        self.RefreshView()
 
     def GenDataSourcePanel(self):
         item = self._pnl.AddFoldPanel("Data Source", collapsed=True,
@@ -864,8 +907,8 @@ class VisGUIFrame(wx.Frame):
         
         colData = ['<None>']
 
-        if not self.mapping == None:
-            colData += self.mapping.keys()
+        if not self.colourFilter == None:
+            colData += self.colourFilter.keys()
 
         colData += self.GeneratedMeasures.keys()
 
@@ -892,8 +935,8 @@ class VisGUIFrame(wx.Frame):
         if self.viewMode == 'points': #only change if we are in points mode
             colData = ['<None>']
 
-            if not self.mapping == None:
-                colData += self.mapping.keys()
+            if not self.colourFilter == None:
+                colData += self.colourFilter.keys()
 
             colData += self.GeneratedMeasures.keys()
 
@@ -918,9 +961,9 @@ class VisGUIFrame(wx.Frame):
         
         if self.colData == '<None>':
             pointColour = None
-        elif not self.mapping == None:
-            if self.colData in self.mapping.keys():
-                pointColour = self.mapping[self.colData]
+        elif not self.colourFilter == None:
+            if self.colData in self.colourFilter.keys():
+                pointColour = self.colourFilter[self.colData]
             elif self.colData in self.GeneratedMeasures.keys():
                 pointColour = self.GeneratedMeasures[self.colData]
             else:
@@ -1272,7 +1315,7 @@ class VisGUIFrame(wx.Frame):
 
         if self.Triangles == None:
                 statTri = statusLog.StatusLogger("Generating Triangulation ...")
-                self.Triangles = delaunay.Triangulation(self.mapping['x'], self.mapping['y'])
+                self.Triangles = delaunay.Triangulation(self.colourFilter['x'], self.colourFilter['y'])
 
         statNeigh = statusLog.StatusLogger("Calculating mean neighbour distances ...")
         self.GeneratedMeasures['neighbourDistances'] = pylab.array(visHelpers.calcNeighbourDists(self.Triangles))
@@ -1287,7 +1330,7 @@ class VisGUIFrame(wx.Frame):
         genMeas = self.GeneratedMeasures.keys()
 
         jitVars += genMeas
-        jitVars += self.mapping.keys()
+        jitVars += self.colourFilter.keys()
         
         dlg = genImageDialog.GenImageDialog(self, mode='triangles', jitterVariables = jitVars, jitterVarDefault=genMeas.index('neighbourDistances')+1)
 
@@ -1301,8 +1344,8 @@ class VisGUIFrame(wx.Frame):
             
             if jitParamName == '1.0':
                 jitVals = 1.0
-            elif jitParamName in self.mapping.keys():
-                jitVals = self.mapping[jitParamName]
+            elif jitParamName in self.colourFilter.keys():
+                jitVals = self.colourFilter[jitParamName]
             elif jitParamName in self.GeneratedMeasures.keys():
                 jitVals = self.GeneratedMeasures[jitParamName]
         
@@ -1316,7 +1359,7 @@ class VisGUIFrame(wx.Frame):
             imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
 
             status = statusLog.StatusLogger('Generating Triangulated Image ...')
-            im = self.glCanvas.genJitTim(dlg.getNumSamples(),self.mapping['x'],self.mapping['y'], jitVals, dlg.getMCProbability(),pixelSize)
+            im = self.glCanvas.genJitTim(dlg.getNumSamples(),self.colourFilter['x'],self.colourFilter['y'], jitVals, dlg.getMCProbability(),pixelSize)
             
 
             img = GeneratedImage(im,imb, pixelSize )
@@ -1333,10 +1376,10 @@ class VisGUIFrame(wx.Frame):
         bCurr = wx.BusyCursor()
         jitVars = ['1.0']
 
-        jitVars += self.mapping.keys()
+        jitVars += self.colourFilter.keys()
         jitVars += self.GeneratedMeasures.keys()
         
-        dlg = genImageDialog.GenImageDialog(self, mode='gaussian', jitterVariables = jitVars, jitterVarDefault=self.mapping.keys().index('error_x')+1)
+        dlg = genImageDialog.GenImageDialog(self, mode='gaussian', jitterVariables = jitVars, jitterVarDefault=self.colourFilter.keys().index('error_x')+1)
 
         ret = dlg.ShowModal()
 
@@ -1347,8 +1390,8 @@ class VisGUIFrame(wx.Frame):
             
             if jitParamName == '1.0':
                 jitVals = 1.0
-            elif jitParamName in self.mapping.keys():
-                jitVals = self.mapping[jitParamName]
+            elif jitParamName in self.colourFilter.keys():
+                jitVals = self.colourFilter[jitParamName]
             elif jitParamName in self.GeneratedMeasures.keys():
                 jitVals = self.GeneratedMeasures[jitParamName]
         
@@ -1360,7 +1403,7 @@ class VisGUIFrame(wx.Frame):
 
             imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
 
-            im = visHelpers.rendGauss(self.mapping['x'],self.mapping['y'], jitVals, imb, pixelSize)
+            im = visHelpers.rendGauss(self.colourFilter['x'],self.colourFilter['y'], jitVals, imb, pixelSize)
 
             img = GeneratedImage(im,imb, pixelSize )
             imf = imageView.ImageViewFrame(self,img, self.glCanvas)
@@ -1383,7 +1426,7 @@ class VisGUIFrame(wx.Frame):
             
             imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
 
-            im = visHelpers.rendHist(self.mapping['x'],self.mapping['y'], imb, pixelSize)
+            im = visHelpers.rendHist(self.colourFilter['x'],self.colourFilter['y'], imb, pixelSize)
             
             img = GeneratedImage(im,imb, pixelSize )
             imf = imageView.ImageViewFrame(self,img, self.glCanvas)
@@ -1473,6 +1516,7 @@ class VisGUIFrame(wx.Frame):
             del self.zm
         self.filter = None
         self.mapping = None
+        self.colourFilter = None
         print os.path.splitext(filename)[1]
         if os.path.splitext(filename)[1] == '.h5r':
                 try:
@@ -1503,6 +1547,9 @@ class VisGUIFrame(wx.Frame):
 
                         x1 = self.mdh.getEntry('Camera.ROIWidth')*1e3*self.mdh.getEntry('voxelsize.x')
                         y1 = self.mdh.getEntry('Camera.ROIHeight')*1e3*self.mdh.getEntry('voxelsize.y')
+
+                        if 'Splitter' in self.mdh.getEntry('Analysis.FitModule'):
+                            y1 = y1/2
 
                         self.imageBounds = ImageBounds(x0, y0, x1, y1)
                     else:
@@ -1612,6 +1659,8 @@ class VisGUIFrame(wx.Frame):
         print self.filterKeys
         self.RegenFilter()
         self.CreateFoldPanel()
+        if not self.colp == None:
+            self.colp.refresh()
         self.SetFit()
 
     def OnOpenChannel(self, event):
@@ -1624,6 +1673,7 @@ class VisGUIFrame(wx.Frame):
     def OpenChannel(self, filename):
         self.filter = None
         self.mapping = None
+        self.colourFilter = None
         print os.path.splitext(filename)[1]
         if os.path.splitext(filename)[1] == '.h5r':
                 try:
@@ -1712,6 +1762,8 @@ class VisGUIFrame(wx.Frame):
         print self.filterKeys
         self.RegenFilter()
         self.CreateFoldPanel()
+        if not self.colp == None:
+            self.colp.refresh()
         self.SetFit()
 
     def OnOpenRaw(self, event):
@@ -1773,6 +1825,9 @@ class VisGUIFrame(wx.Frame):
             else:
                 self.mapping = inpFilt.mappingFilter(self.filter)
 
+            if not self.colourFilter:
+                self.colourFilter = inpFilt.colourFilter(self.mapping, self)
+
         self.stFilterNumPoints.SetLabel('%d of %d events' % (len(self.filter['x']), len(self.selectedDataSource['x'])))
 
         self.Triangles = None
@@ -1780,17 +1835,17 @@ class VisGUIFrame(wx.Frame):
 
         self.GeneratedMeasures = {}
         if 'zm' in dir(self):
-            self.GeneratedMeasures['focusPos'] = self.zm(self.mapping['tIndex'].astype('f'))
+            self.GeneratedMeasures['focusPos'] = self.zm(self.colourFilter['tIndex'].astype('f'))
         self.Quads = None
 
         self.RefreshView()
 
 
     def RefreshView(self):
-        if self.mapping == None:
+        if self.colourFilter == None:
             return #get out of here
 
-        if len(self.mapping['x']) == 0:
+        if len(self.colourFilter['x']) == 0:
             wx.MessageBox('No data points - try adjusting the filter', "len(filter['x']) ==0")
             return
 
@@ -1818,18 +1873,18 @@ class VisGUIFrame(wx.Frame):
                 self.rav = None
 
         if self.viewMode == 'points':
-            self.glCanvas.setPoints(self.mapping['x'], self.mapping['y'], self.pointColour())
+            self.glCanvas.setPoints(self.colourFilter['x'], self.colourFilter['y'], self.pointColour())
         elif self.viewMode == 'triangles':
             if self.Triangles == None:
                 status = statusLog.StatusLogger("Generating Triangulation ...")
-                self.Triangles = delaunay.Triangulation(self.mapping['x'], self.mapping['y'])
+                self.Triangles = delaunay.Triangulation(self.colourFilter['x'], self.colourFilter['y'])
                 
             self.glCanvas.setTriang(self.Triangles)
 
         elif self.viewMode == 'voronoi':
             if self.Triangles == None:
                 status = statusLog.StatusLogger("Generating Triangulation ...")
-                self.Triangles = delaunay.Triangulation(self.mapping['x'], self.mapping['y'])
+                self.Triangles = delaunay.Triangulation(self.colourFilter['x'], self.colourFilter['y'])
                 
 
             status = statusLog.StatusLogger("Generating Voronoi Diagram ... ")
@@ -1847,26 +1902,26 @@ class VisGUIFrame(wx.Frame):
         elif self.viewMode == 'interp_triangles':
             if self.Triangles == None:
                 status = statusLog.StatusLogger("Generating Triangulation ...")
-                self.Triangles = delaunay.Triangulation(self.mapping['x'], self.mapping['y'])
+                self.Triangles = delaunay.Triangulation(self.colourFilter['x'], self.colourFilter['y'])
 
             self.glCanvas.setIntTriang(self.Triangles, self.pointColour())
 
         elif self.viewMode == 'blobs':
             if self.objects == None:
                 #check to see that we don't have too many points
-                if len(self.mapping['x']) > 10e3:
-                    goAhead = wx.MessageBox('You have %d events in the selected ROI;\nThis could take a LONG time ...' % len(self.mapping['x']), 'Continue with blob detection', wx.YES_NO|wx.ICON_EXCLAMATION)
+                if len(self.colourFilter['x']) > 10e3:
+                    goAhead = wx.MessageBox('You have %d events in the selected ROI;\nThis could take a LONG time ...' % len(self.colourFilter['x']), 'Continue with blob detection', wx.YES_NO|wx.ICON_EXCLAMATION)
 
                     if not goAhead == wx.YES:
                         return
                 if self.blobJitter == 0:
-                    T = delny.Triangulation(pylab.array([self.mapping['x'] + 0.1*pylab.randn(len(self.mapping['x'])), self.mapping['y']+ 0.1*pylab.randn(len(self.mapping['x']))]).T)
+                    T = delny.Triangulation(pylab.array([self.colourFilter['x'] + 0.1*pylab.randn(len(self.colourFilter['x'])), self.colourFilter['y']+ 0.1*pylab.randn(len(self.colourFilter['x']))]).T)
                     self.objects = gen3DTriangs.segment(T, self.objThreshold, self.objMinSize)
                 else:
                     if not 'neighbourDistances' in self.GeneratedMeasures.keys():
                         self.genNeighbourDists()
-                    x_ = pylab.hstack([self.mapping['x'] + 0.5*self.GeneratedMeasures['neighbourDistances']*pylab.randn(len(self.mapping['x'])) for i in range(self.blobJitter)])
-                    y_ = pylab.hstack([self.mapping['y'] + 0.5*self.GeneratedMeasures['neighbourDistances']*pylab.randn(len(self.mapping['x'])) for i in range(self.blobJitter)])
+                    x_ = pylab.hstack([self.colourFilter['x'] + 0.5*self.GeneratedMeasures['neighbourDistances']*pylab.randn(len(self.colourFilter['x'])) for i in range(self.blobJitter)])
+                    y_ = pylab.hstack([self.colourFilter['y'] + 0.5*self.GeneratedMeasures['neighbourDistances']*pylab.randn(len(self.colourFilter['x'])) for i in range(self.blobJitter)])
 
                     T = delny.Triangulation(pylab.array([x_, y_]).T)
                     self.objects = gen3DTriangs.segment(T, self.objThreshold, self.objMinSize)
@@ -1879,7 +1934,7 @@ class VisGUIFrame(wx.Frame):
 
         self.hlCLim.SetData(self.glCanvas.c, self.glCanvas.clim[0], self.glCanvas.clim[1])
 
-        if not self.colp == None:
+        if not self.colp == None and self.colp.IsShown():
             self.colp.refresh()
 
 
@@ -1893,7 +1948,7 @@ class VisGUIFrame(wx.Frame):
         
         self.Quads = pointQT.qtRoot(self.imageBounds.x0, self.imageBounds.x0+di, self.imageBounds.y0, self.imageBounds.y0 + di)
 
-        for xi, yi in zip(self.mapping['x'],self.mapping['y']):
+        for xi, yi in zip(self.colourFilter['x'],self.colourFilter['y']):
             self.Quads.insert(pointQT.qtRec(xi,yi, None))
 
     def SetFit(self,event = None):

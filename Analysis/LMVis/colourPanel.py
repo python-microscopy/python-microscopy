@@ -89,6 +89,8 @@ class colourPlotPanel(wxPlotPanel.PlotPanel):
             for k, v in self.visFrame.fluorSpecies.items():
                 self.subplot1.plot([0,xl], [0, ((1-v)/v)*xl], lw=2, c=cm.jet_r(v))
 
+            self.canvas.draw()
+
 #            self.subplot1.plot(ed[:-1], a/float(numpy.diff(ed[:2])), color='b' )
 #            self.subplot1.set_xticks([0, ed.max()])
 #            self.subplot1.set_yticks([0, numpy.floor(a.max()/float(numpy.diff(ed[:2])))])
@@ -195,6 +197,8 @@ class colourPanel(wx.Panel):
         self.SetSizer(bsizer)
         bsizer.Fit(self)
 
+        self.Bind(wx.EVT_SHOW, self.OnShow)
+
     def OnChangePDye(self, event):
         self.visFr.t_p_dye = float(self.tPBelong.GetValue())
         self.refresh()
@@ -256,6 +260,7 @@ class colourPanel(wx.Panel):
             self.visFr.mapping.setMapping('p_%s' % key, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))' % (val))
 
             self.visFr.UpdatePointColourChoices()
+            self.visFr.UpdateColourFilterChoices()
             
 
         dlg.Destroy()
@@ -268,6 +273,9 @@ class colourPanel(wx.Panel):
         self.visFr.fluorSpecies.pop(it.GetText())
 
         self.visFr.mapping.mappings.pop('p_%s' % it.GetText())
+
+        self.visFr.UpdatePointColourChoices()
+        self.visFr.UpdateColourFilterChoices()
 
         self.refresh()
 
@@ -284,9 +292,12 @@ class colourPanel(wx.Panel):
 
         self.refresh()
 
+    def OnShow(self, event):
+        self.refresh()
+
     def refresh(self):
         self.colPlotPan.draw()
-        self.colPlotPan._SetSize()
+        #self.colPlotPan._SetSize()
         #self.colPlotPan.Refresh()
 
 

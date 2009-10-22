@@ -367,6 +367,47 @@ class mappingFilter:
                     raise RuntimeError('Circular reference detected in mapping')
 
         return eval(map)
+
+class colourFilter:
+    _name = "Colour Filter"
+    def __init__(self, resultsSource, visFr, currentColour=None):
+        '''Class to permit filtering by colour
+        '''
+
+        self.resultsSource = resultsSource
+        self.currentColour = currentColour
+
+        self.visFr = visFr
+
+
+    def __getitem__(self, key):
+        colChans = self.getColourChans()
+
+        if not self.currentColour in colChans:
+            return self.resultsSource[key]
+        else:
+            p_dye = self.resultsSource['p_%s' % self.currentColour]
+
+            p_other = 0*p_dye
+
+            for k in colChans:
+                if not self.currentColour == k:
+                    p_other = np.maximum(p_other, self.resultsSource['p_%s' % k])
+
+            ind = (p_dye > self.visFr.t_p_dye)*(p_other < self.visFr.t_p_other)
+
+            return self.resultsSource[key][ind]
+
+    def getColourChans(self):
+        return [k[2:] for k in self.keys() if k.startswith('p_')]
+
+    def setColour(self, colour):
+        self.currentColour = colour
+
+    def keys(self):
+        return self.resultsSource.keys()
+
+    
     
 class cloneSource:
     _name = "Cloned Source"
