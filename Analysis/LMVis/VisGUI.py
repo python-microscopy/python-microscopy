@@ -1332,7 +1332,7 @@ class VisGUIFrame(wx.Frame):
         jitVars += genMeas
         jitVars += self.colourFilter.keys()
         
-        dlg = genImageDialog.GenImageDialog(self, mode='triangles', jitterVariables = jitVars, jitterVarDefault=genMeas.index('neighbourDistances')+1)
+        dlg = genImageDialog.GenImageDialog(self, mode='triangles', jitterVariables = jitVars, jitterVarDefault=genMeas.index('neighbourDistances')+1, colours=self.fluorSpecies.keys())
 
         ret = dlg.ShowModal()
 
@@ -1342,16 +1342,7 @@ class VisGUIFrame(wx.Frame):
             jitParamName = dlg.getJitterVariable()
             jitScale = dlg.getJitterScale()
             
-            if jitParamName == '1.0':
-                jitVals = 1.0
-            elif jitParamName in self.colourFilter.keys():
-                jitVals = self.colourFilter[jitParamName]
-            elif jitParamName in self.GeneratedMeasures.keys():
-                jitVals = self.GeneratedMeasures[jitParamName]
-        
-            #print jitScale
-            #print jitVals
-            jitVals = jitScale*jitVals
+            
 
             oldcmap = self.glCanvas.cmap 
             self.glCanvas.setCMap(pylab.cm.gray)
@@ -1359,13 +1350,39 @@ class VisGUIFrame(wx.Frame):
             imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
 
             status = statusLog.StatusLogger('Generating Triangulated Image ...')
-            im = self.glCanvas.genJitTim(dlg.getNumSamples(),self.colourFilter['x'],self.colourFilter['y'], jitVals, dlg.getMCProbability(),pixelSize)
-            
 
-            img = GeneratedImage(im,imb, pixelSize )
-            imf = imageView.ImageViewFrame(self,img, self.glCanvas)
-            self.generatedImages.append(imf)
-            imf.Show()
+            colours =  dlg.getColour()
+            oldC = self.colourFilter.currentColour
+
+            ims = []
+
+            for c in  colours:
+                self.colourFilter.setColour(c)
+
+                if jitParamName == '1.0':
+                    jitVals = 1.0
+                elif jitParamName in self.colourFilter.keys():
+                    jitVals = self.colourFilter[jitParamName]
+                elif jitParamName in self.GeneratedMeasures.keys():
+                    if jitParamName == 'neighbourDistances':
+                        self.genNeighbourDists()
+                    jitVals = self.GeneratedMeasures[jitParamName]
+
+                #print jitScale
+                #print jitVals
+                jitVals = jitScale*jitVals
+
+                im = self.glCanvas.genJitTim(dlg.getNumSamples(),self.colourFilter['x'],self.colourFilter['y'], jitVals, dlg.getMCProbability(),pixelSize)
+
+                ims.append(im)
+
+            for im in ims:
+                img = GeneratedImage(im,imb, pixelSize )
+                imf = imageView.ImageViewFrame(self,img, self.glCanvas)
+                self.generatedImages.append(imf)
+                imf.Show()
+
+            self.colourFilter.setColour(oldC)
 
             self.glCanvas.setCMap(oldcmap)
             self.RefreshView()
@@ -1379,7 +1396,7 @@ class VisGUIFrame(wx.Frame):
         jitVars += self.colourFilter.keys()
         jitVars += self.GeneratedMeasures.keys()
         
-        dlg = genImageDialog.GenImageDialog(self, mode='gaussian', jitterVariables = jitVars, jitterVarDefault=self.colourFilter.keys().index('error_x')+1)
+        dlg = genImageDialog.GenImageDialog(self, mode='gaussian', jitterVariables = jitVars, jitterVarDefault=self.colourFilter.keys().index('error_x')+1, colours=self.fluorSpecies.keys())
 
         ret = dlg.ShowModal()
 
@@ -1388,34 +1405,47 @@ class VisGUIFrame(wx.Frame):
             jitParamName = dlg.getJitterVariable()
             jitScale = dlg.getJitterScale()
             
-            if jitParamName == '1.0':
-                jitVals = 1.0
-            elif jitParamName in self.colourFilter.keys():
-                jitVals = self.colourFilter[jitParamName]
-            elif jitParamName in self.GeneratedMeasures.keys():
-                jitVals = self.GeneratedMeasures[jitParamName]
-        
-            #print jitScale
-            #print jitVals
-            jitVals = jitScale*jitVals
+            
 
             status = statusLog.StatusLogger('Generating Gaussian Image ...')
-
+            
             imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
 
-            im = visHelpers.rendGauss(self.colourFilter['x'],self.colourFilter['y'], jitVals, imb, pixelSize)
+            colours =  dlg.getColour()
+            oldC = self.colourFilter.currentColour
 
-            img = GeneratedImage(im,imb, pixelSize )
-            imf = imageView.ImageViewFrame(self,img, self.glCanvas)
-            self.generatedImages.append(imf)
-            imf.Show()
+
+            for c in  colours:
+                self.colourFilter.setColour(c)
+
+                if jitParamName == '1.0':
+                    jitVals = 1.0
+                elif jitParamName in self.colourFilter.keys():
+                    jitVals = self.colourFilter[jitParamName]
+                elif jitParamName in self.GeneratedMeasures.keys():
+                    if jitParamName == 'neighbourDistances':
+                        self.genNeighbourDists()
+                    jitVals = self.GeneratedMeasures[jitParamName]
+
+                #print jitScale
+                #print jitVals
+                jitVals = jitScale*jitVals
+
+                im = visHelpers.rendGauss(self.colourFilter['x'],self.colourFilter['y'], jitVals, imb, pixelSize)
+
+                img = GeneratedImage(im,imb, pixelSize )
+                imf = imageView.ImageViewFrame(self,img, self.glCanvas)
+                self.generatedImages.append(imf)
+                imf.Show()
+            
+            self.colourFilter.setColour(oldC)
             
 
         dlg.Destroy()
 
     def OnGenHistogram(self, event): 
         bCurr = wx.BusyCursor()
-        dlg = genImageDialog.GenImageDialog(self, mode='histogram')
+        dlg = genImageDialog.GenImageDialog(self, mode='histogram', colours=self.fluorSpecies.keys())
 
         ret = dlg.ShowModal()
 
@@ -1426,19 +1456,26 @@ class VisGUIFrame(wx.Frame):
             
             imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
 
-            im = visHelpers.rendHist(self.colourFilter['x'],self.colourFilter['y'], imb, pixelSize)
-            
-            img = GeneratedImage(im,imb, pixelSize )
-            imf = imageView.ImageViewFrame(self,img, self.glCanvas)
-            self.generatedImages.append(imf)
-            imf.Show()
+            colours =  dlg.getColour()
+            oldC = self.colourFilter.currentColour
+
+            for c in  colours:
+                self.colourFilter.setColour(c)
+                im = visHelpers.rendHist(self.colourFilter['x'],self.colourFilter['y'], imb, pixelSize)
+
+                img = GeneratedImage(im,imb, pixelSize )
+                imf = imageView.ImageViewFrame(self,img, self.glCanvas)
+                self.generatedImages.append(imf)
+                imf.Show()
+
+            self.colourFilter.setColour(oldC)
             
 
         dlg.Destroy()
 
     def OnGenQuadTree(self, event):
         bCurr = wx.BusyCursor() 
-        dlg = genImageDialog.GenImageDialog(self, mode='quadtree')
+        dlg = genImageDialog.GenImageDialog(self, mode='quadtree', colours=self.fluorSpecies.keys())
 
         ret = dlg.ShowModal()
 
@@ -1460,16 +1497,24 @@ class VisGUIFrame(wx.Frame):
 
             qtWidthPixels = pylab.ceil(qtWidth/pixelSize)
 
-            im = pylab.zeros((qtWidthPixels, qtWidthPixels))
+            colours =  dlg.getColour()
+            oldC = self.colourFilter.currentColour
 
-            QTrend.rendQTa(im, self.Quads)
+            for c in  colours:
+                self.colourFilter.setColour(c)
 
-            im = im[(imb.x0/pixelSize):(imb.x1/pixelSize),(imb.y0/pixelSize):(imb.y1/pixelSize)]
-            
-            img = GeneratedImage(im,imb, pixelSize )
-            imf = imageView.ImageViewFrame(self,img, self.glCanvas)
-            self.generatedImages.append(imf)
-            imf.Show()
+                im = pylab.zeros((qtWidthPixels, qtWidthPixels))
+
+                QTrend.rendQTa(im, self.Quads)
+
+                im = im[(imb.x0/pixelSize):(imb.x1/pixelSize),(imb.y0/pixelSize):(imb.y1/pixelSize)]
+
+                img = GeneratedImage(im,imb, pixelSize )
+                imf = imageView.ImageViewFrame(self,img, self.glCanvas)
+                self.generatedImages.append(imf)
+                imf.Show()
+                
+            self.colourFilter.setColour(oldC)
 
         dlg.Destroy()
 

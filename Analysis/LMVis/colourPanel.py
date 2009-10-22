@@ -129,7 +129,7 @@ class colourPanel(wx.Panel):
 
         vsizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Fluorophores'), wx.VERTICAL)
 
-        self.lFluorSpecies = editList.EditListCtrl(self, -1, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.SUNKEN_BORDER, size=(200, 150))
+        self.lFluorSpecies = editList.EditListCtrl(self, -1, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.SUNKEN_BORDER, size=(200, 100))
         vsizer.Add(self.lFluorSpecies, 0, wx.ALL, 5)
 
         self.lFluorSpecies.InsertColumn(0, 'Name')
@@ -168,7 +168,11 @@ class colourPanel(wx.Panel):
 
         self.lFluorSpecies.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnSpecChange)
 
-        hsizer.Add(vsizer, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.bGuess = wx.Button(self, -1, 'Guess')
+        self.bGuess.Bind(wx.EVT_BUTTON, self.OnSpecGuess)
+        vsizer.Add(self.bGuess, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5)
+
+        hsizer.Add(vsizer, 0, wx.ALL, 5)
 
         vsizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Channel Assignment '), wx.VERTICAL)
 
@@ -291,6 +295,31 @@ class colourPanel(wx.Panel):
         self.visFr.mapping.setMapping('p_%s' % it.GetText(), 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))' % (val))
 
         self.refresh()
+
+    def OnSpecGuess(self, event):
+        import scipy.cluster
+        
+        #count number of peaks in gFrac histogram
+        n = (numpy.diff(numpy.sign(numpy.diff(numpy.histogram(self.visFr.filter['gFrac'], numpy.linspace(0, 1, 20))[0]))) < 0).sum()
+
+        guesses = scipy.cluster.vq.kmeans(self.visFr.filter['gFrac'], n)[0]
+
+        for g, i in zip(guesses, range(n)):
+            key = '%c' % (65 + i)
+            self.visFr.fluorSpecies[key] = g
+            ind = self.lFluorSpecies.InsertStringItem(sys.maxint, key)
+            self.lFluorSpecies.SetStringItem(ind,1, '%3.3f' % g)
+            self.lFluorSpecies.SetItemTextColour(ind, wx.Colour(*((128*numpy.array(cm.jet_r(g)))[:3])))
+
+            #self.visFr.mapping.setMapping('p_%s' % key, 'exp(-(%f*A - fitResults_Ag)**2/(2*fitError_Ag**2))*exp(-(%f*A - fitResults_Ar)**2/(2*fitError_Ar**2))' % (1- val, val))
+            self.visFr.mapping.setMapping('p_%s' % key, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))' % (g))
+
+        self.visFr.UpdatePointColourChoices()
+        self.visFr.UpdateColourFilterChoices()
+
+        self.refresh()
+
+        
 
     def OnShow(self, event):
         self.refresh()

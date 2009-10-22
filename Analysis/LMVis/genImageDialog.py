@@ -14,7 +14,7 @@ import wx
 
 
 class GenImageDialog(wx.Dialog):
-    def __init__(self, parent, mode='current', defaultPixelSize=5.0, jitterVariables = [], jitterVarDefault=0, mcProbDefault = 1.0):
+    def __init__(self, parent, mode='current', defaultPixelSize=5.0, jitterVariables = [], jitterVarDefault=0, mcProbDefault = 1.0, colours = []):
         wx.Dialog.__init__(self, parent, title='Edit Filter ...')
 
         pixelSzs = ['%3.2f' % (defaultPixelSize*2**n) for n in range(6)]
@@ -69,6 +69,21 @@ class GenImageDialog(wx.Dialog):
         
             sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
 
+        #multiple colour channels
+        if len(colours) > 0:
+            sizer2 = wx.BoxSizer(wx.HORIZONTAL)
+            sizer2.Add(wx.StaticText(self, -1, 'Colour[s]:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+
+            self.colours = ['Everything'] + colours
+
+            self.lColour = wx.ListBox(self, -1, choices=self.colours, size=(150, -1), style=wx.LB_MULTIPLE)
+
+            for n in range(1, len(self.colours)):
+                self.lColour.SetSelection(n)
+
+            sizer2.Add(self.lColour, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+            sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL|wx.EXPAND, 5)
+
         
         btSizer = wx.StdDialogButtonSizer()
 
@@ -102,3 +117,9 @@ class GenImageDialog(wx.Dialog):
 
     def getNumSamples(self):
         return int(self.tNumSamps.GetValue())
+
+    def getColour(self):
+        if 'colours' in dir(self):
+            return [self.lColour.GetString(n).encode() for n in self.lColour.GetSelections()]
+        else:
+            return [None]
