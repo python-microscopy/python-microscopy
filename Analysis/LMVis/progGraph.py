@@ -40,3 +40,5 @@ class progPanel(wxPlotPanel.PlotPanel):
             self.subplot2.set_xticks([0, ed.max()])
             self.subplot2.set_yticks([0, a.sum()])
 
+            self.canvas.draw()
+
