@@ -119,7 +119,7 @@ class VisGUIFrame(wx.Frame):
         #self.remainingSpace = wx.Panel(self, -1, style=wx.SUNKEN_BORDER)
         #self.glCanvas = gl_render.LMGLCanvas(self.remainingSpace)
         #self.glCanvas = wx.Panel(self, -1, style=wx.SUNKEN_BORDER)
-        self.notebook = AuiNotebookWithFloatingPages(id=-1, parent=self, style=wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_TAB_SPLIT)
+        self.notebook = AuiNotebookWithFloatingPages(id=-1, parent=self, style=wx.aui.AUI_NB_TAB_SPLIT)
 
         self.sh = wx.py.shell.Shell(id=-1,
               parent=self.notebook, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
@@ -1386,13 +1386,12 @@ class VisGUIFrame(wx.Frame):
 
                 im = self.glCanvas.genJitTim(dlg.getNumSamples(),self.colourFilter['x'],self.colourFilter['y'], jitVals, dlg.getMCProbability(),pixelSize)
 
-                ims.append(im)
+                ims.append(GeneratedImage(im,imb, pixelSize ))
 
-            for im in ims:
-                img = GeneratedImage(im,imb, pixelSize )
-                imf = imageView.ImageViewFrame(self,img, self.glCanvas)
-                self.generatedImages.append(imf)
-                imf.Show()
+            imfc = imageView.MultiChannelImageViewFrame(self, self.glCanvas, ims, colours, title='Jittered Triangulation - %3.1fnm bins' % pixelSize)
+
+            self.generatedImages.append(imfc)
+            imfc.Show()
 
             self.colourFilter.setColour(oldC)
 
@@ -1432,6 +1431,8 @@ class VisGUIFrame(wx.Frame):
             colours =  dlg.getColour()
             oldC = self.colourFilter.currentColour
 
+            ims = []
+
 
             for c in  colours:
                 self.colourFilter.setColour(c)
@@ -1451,10 +1452,12 @@ class VisGUIFrame(wx.Frame):
 
                 im = visHelpers.rendGauss(self.colourFilter['x'],self.colourFilter['y'], jitVals, imb, pixelSize)
 
-                img = GeneratedImage(im,imb, pixelSize )
-                imf = imageView.ImageViewFrame(self,img, self.glCanvas)
-                self.generatedImages.append(imf)
-                imf.Show()
+                ims.append(GeneratedImage(im,imb, pixelSize ))
+                
+            imfc = imageView.MultiChannelImageViewFrame(self, self.glCanvas, ims, colours, title='Gaussian Rendering - %3.1fnm bins' % pixelSize)
+
+            self.generatedImages.append(imfc)
+            imfc.Show()
             
             self.colourFilter.setColour(oldC)
             
@@ -1483,17 +1486,30 @@ class VisGUIFrame(wx.Frame):
             colours =  dlg.getColour()
             oldC = self.colourFilter.currentColour
 
+            ims = []
+
             for c in  colours:
                 self.colourFilter.setColour(c)
                 im = visHelpers.rendHist(self.colourFilter['x'],self.colourFilter['y'], imb, pixelSize)
 
-                img = GeneratedImage(im,imb, pixelSize )
-                imf = imageView.ImageViewFrame(self,img, self.glCanvas)
-                self.generatedImages.append(imf)
-                imf.Show()
+                ims.append(GeneratedImage(im,imb, pixelSize ))
+
+            #imfc = imageView.ColourImageViewFrame(self, self.glCanvas)
+
+#            for im in ims:
+#                img = GeneratedImage(im,imb, pixelSize )
+#                imf = imageView.ImageViewFrame(self,img, self.glCanvas)
+#                self.generatedImages.append(imf)
+#                imf.Show()
+#
+#                imfc.ivp.ivps.append(imf.ivp)
+
+            imfc = imageView.MultiChannelImageViewFrame(self, self.glCanvas, ims, colours, title='Generated Histogram - %3.1fnm bins' % pixelSize)
+
+            self.generatedImages.append(imfc)
+            imfc.Show()
 
             self.colourFilter.setColour(oldC)
-            
 
         dlg.Destroy()
 
@@ -1521,18 +1537,26 @@ class VisGUIFrame(wx.Frame):
                 self.QTGoalPixelSize = pixelSize
                 self.Quads = None
             
-            if self.Quads == None:
-                self.GenQuads()
-
-            qtWidth = self.Quads.x1 - self.Quads.x0
-
-            qtWidthPixels = pylab.ceil(qtWidth/pixelSize)
+#            if self.Quads == None:
+#                self.GenQuads()
+#
+#            qtWidth = self.Quads.x1 - self.Quads.x0
+#
+#            qtWidthPixels = pylab.ceil(qtWidth/pixelSize)
 
             colours =  dlg.getColour()
             oldC = self.colourFilter.currentColour
 
+            ims = []
+
             for c in  colours:
                 self.colourFilter.setColour(c)
+
+                self.GenQuads()
+
+                qtWidth = self.Quads.x1 - self.Quads.x0
+
+                qtWidthPixels = pylab.ceil(qtWidth/pixelSize)
 
                 im = pylab.zeros((qtWidthPixels, qtWidthPixels))
 
@@ -1540,10 +1564,12 @@ class VisGUIFrame(wx.Frame):
 
                 im = im[(imb.x0/pixelSize):(imb.x1/pixelSize),(imb.y0/pixelSize):(imb.y1/pixelSize)]
 
-                img = GeneratedImage(im,imb, pixelSize )
-                imf = imageView.ImageViewFrame(self,img, self.glCanvas)
-                self.generatedImages.append(imf)
-                imf.Show()
+                ims.append(GeneratedImage(im,imb, pixelSize ))
+
+            imfc = imageView.MultiChannelImageViewFrame(self, self.glCanvas, ims, colours, title='Generated QuadTree - %3.1fnm bins' % pixelSize)
+
+            self.generatedImages.append(imfc)
+            imfc.Show()
                 
             self.colourFilter.setColour(oldC)
 
