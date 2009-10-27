@@ -362,7 +362,7 @@ class mappingFilter:
             elif vname in self.mappings.keys(): #finally try other mappings
                 #try to prevent infinite recursion here if mappings have circular references
                 if not vname == key and not key in self.mappings[vname].co_names:
-                    locals()[vname] = self.getMappedResult(vname)
+                    locals()[vname] = self.getMappedResults(vname)
                 else:
                     raise RuntimeError('Circular reference detected in mapping')
 

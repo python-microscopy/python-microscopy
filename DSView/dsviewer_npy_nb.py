@@ -1050,9 +1050,17 @@ class DSViewFrame(wx.Frame):
 
                 self.numEvents = len(self.fitResults)
                 if 'zm' in dir(self): #we have z info
-                    z = self.zm(self.fitResults['tIndex'].astype('f')).astype('f')
-                    self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],z)
-                    self.glCanvas.setCLim((z.min(), z.max()))
+                    if 'z0' in self.fitResults['fitResults'].dtype.fields:
+                        z = 1e3*self.zm(self.fitResults['tIndex'].astype('f')).astype('f')
+                        z_min = z.min() - 500
+                        z_max = z.max() + 500
+                        z = z + self.fitResults['fitResults']['z0']
+                        self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],z)
+                        self.glCanvas.setCLim((z_min, z_max))
+                    else:
+                        z = self.zm(self.fitResults['tIndex'].astype('f')).astype('f')
+                        self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],z)
+                        self.glCanvas.setCLim((z.min(), z.max()))
                 elif 'z0' in self.fitResults['fitResults'].dtype.fields:
                     z = self.fitResults['fitResults']['z0']
                     self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],z)

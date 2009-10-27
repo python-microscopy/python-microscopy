@@ -165,6 +165,7 @@ class VisGUIFrame(wx.Frame):
         self.optimiseFcn = 'fmin'
         self.driftExprX = 'x + a*t'
         self.driftExprY = 'y + b*t'
+        self.driftExprZ = 'z0'
 
         self.fluorSpecies = {}
         self.t_p_dye = 0.2
@@ -993,6 +994,14 @@ class VisGUIFrame(wx.Frame):
         hsizer.Add(self.tYExpr, 2,wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5)
 
         bsizer.Add(hsizer, 0, wx.ALL, 0)
+
+#        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+#        hsizer.Add(wx.StaticText(pan, -1, "z' = "), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+#
+#        self.tZExpr = wx.TextCtrl(pan, -1, self.driftExprZ, size=(130,-1))
+#        hsizer.Add(self.tZExpr, 2,wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5)
+#
+#        bsizer.Add(hsizer, 0, wx.ALL, 0)
 
         pan.SetSizer(bsizer)
         bsizer.Fit(pan)
@@ -1926,6 +1935,20 @@ class VisGUIFrame(wx.Frame):
                 self.mapping.resultsSource = self.filter
             else:
                 self.mapping = inpFilt.mappingFilter(self.filter)
+
+                if 'zm' in dir(self):
+                    self.mapping.zm = self.zm
+                    self.mapping.setMapping('focus', '1e3*zm(t)')
+
+                if 'fitResults_z0' in self.filter.keys():
+                    if 'zm' in dir(self):
+                        self.mapping.setMapping('z0', 'fitResults_z0 + focus')
+                    else:
+                        self.mapping.setMapping('z0', 'fitResults_z0')
+                elif 'zm' in dir(self):
+                    self.mapping.setMapping('z0', 'fitResults_z0 + focus')
+                else:
+                    self.mapping.setMapping('z0', '0*t')
 
             if not self.colourFilter:
                 self.colourFilter = inpFilt.colourFilter(self.mapping, self)
