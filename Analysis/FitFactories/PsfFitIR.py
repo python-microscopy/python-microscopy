@@ -284,6 +284,30 @@ def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=N
 
 	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, slicesUsed, startParams.astype('f'))], dtype=fresultdtype)
 
+def genFitImage(fitResults, metadata, fitfcn=f_Interp3d):
+    if fitfcn == f_Interp3d:
+        if 'PSFFile' in metadata.getEntryNames():
+            setModel(metadata.getEntry('PSFFile'), metadata)
+        else:
+            genTheoreticalModel(metadata)
+
+    xslice = slice(*fitResults['slicesUsed']['x'])
+    yslice = slice(*fitResults['slicesUsed']['y'])
+
+    X = 1e3*metadata.getEntry('voxelsize.x')*scipy.mgrid[xslice]
+    Y = 1e3*metadata.getEntry('voxelsize.y')*scipy.mgrid[yslice]
+    Z = array([0]).astype('f')
+    P = scipy.arange(0,1.01,.01)
+
+    im = fitfcn(fitResults['fitResults'], X, Y, Z, P).reshape(len(X), len(Y))
+
+    return im
+
+def getDataErrors(im, metadata):
+    dataROI = im - metadata.getEntry('Camera.ADOffset')
+
+    return scipy.sqrt(metadata.getEntry('Camera.ReadNoise')**2 + (metadata.getEntry('Camera.NoiseFactor')**2)*metadata.getEntry('Camera.ElectronsPerCount')*metadata.getEntry('Camera.TrueEMGain')*dataROI)/metadata.getEntry('Camera.ElectronsPerCount')
+
 		
 
 class PSFFitFactory:

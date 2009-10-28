@@ -12,10 +12,14 @@
 
 import wx
 import math
+import pylab
 #import numpy
 
+from PYME.misc import wxPlotPanel
+#from PYME.Acquire.MetaDataHandler import NestedClassMDHandler
+
 class FitInfoPanel(wx.Panel):
-    def __init__(self, parent, fitResults, mdh, id=-1):
+    def __init__(self, parent, fitResults, mdh, ds=None, id=-1):
         wx.Panel.__init__(self, id=id, parent=parent)
 
         self.fitResults = fitResults
@@ -46,6 +50,9 @@ class FitInfoPanel(wx.Panel):
             sPhotons.Add(self.stPhotons, 0, wx.EXPAND|wx.TOP|wx.BOTTOM, 5)
 
             vsizer.Add(sPhotons, 0, wx.EXPAND|wx.LEFT|wx.TOP|wx.BOTTOM|wx.RIGHT, 5)
+
+        self.fitViewPan = fitDispPanel(self, fitResults, mdh, ds, size=(300, 800))
+        vsizer.Add(self.fitViewPan, 1, wx.EXPAND|wx.ALL, 5)
 
 
         self.SetSizerAndFit(vsizer)
@@ -111,3 +118,60 @@ class FitInfoPanel(wx.Panel):
         self.stFitRes.SetLabel(self.genResultsText(index))
         if self.mdh.getEntry('Analysis.FitModule') == 'LatGaussFitFR':
             self.stPhotons.SetLabel(self.genGaussPhotonStats(index))
+
+        self.fitViewPan.draw(index)
+
+
+class fitDispPanel(wxPlotPanel.PlotPanel):
+    def __init__(self, parent, fitResults, mdh, ds, **kwargs ):
+        self.fitResults = fitResults
+        self.mdh = mdh
+        self.ds = ds
+
+        wxPlotPanel.PlotPanel.__init__( self, parent, **kwargs )
+
+    def draw( self, i = None):
+            """Draw data."""
+            if len(self.fitResults) == 0:
+                return
+
+            if not hasattr( self, 'subplot1' ):
+                self.subplot1 = self.figure.add_subplot( 311 )
+                self.subplot2 = self.figure.add_subplot( 312 )
+                self.subplot3 = self.figure.add_subplot( 313 )
+
+#            a, ed = numpy.histogram(self.fitResults['tIndex'], self.Size[0]/2)
+#            print float(numpy.diff(ed[:2]))
+
+            self.subplot1.cla()
+            self.subplot2.cla()
+            self.subplot3.cla()
+#            self.subplot1.plot(ed[:-1], a/float(numpy.diff(ed[:2])), color='b' )
+#            self.subplot1.set_xticks([0, ed.max()])
+#            self.subplot1.set_yticks([0, numpy.floor(a.max()/float(numpy.diff(ed[:2])))])
+            if i:
+                fri = self.fitResults[i][0]
+                #print fri
+                #print fri['tIndex'], slice(*fri['slicesUsed']['x']), slice(*fri['slicesUsed']['y'])
+                #print self.ds[slice(*fri['slicesUsed']['x']), slice(*fri['slicesUsed']['y']), int(fri['tIndex'])].shape
+                imd = self.ds[slice(*fri['slicesUsed']['x']), slice(*fri['slicesUsed']['y']), int(fri['tIndex'])].squeeze()
+
+                self.subplot1.imshow(imd, interpolation='nearest', cmap=pylab.cm.hot)
+
+                fitMod = __import__('PYME.Analysis.FitFactories.' + self.mdh.getEntry('Analysis.FitModule'), fromlist=['PYME', 'Analysis','FitFactories']) #import our fitting module
+                #print dir()
+
+                if 'genFitImage' in dir(fitMod):
+                    imf = fitMod.genFitImage(fri, self.mdh).T
+
+                    self.subplot2.imshow(imf, interpolation='nearest', cmap=pylab.cm.hot)
+                    self.subplot3.imshow(imd - imf, interpolation='nearest', cmap=pylab.cm.hot)
+
+
+
+            
+#            self.subplot2.plot(ed[:-1], numpy.cumsum(a), color='g' )
+#            self.subplot2.set_xticks([0, ed.max()])
+#            self.subplot2.set_yticks([0, a.sum()])
+
+            self.canvas.draw()

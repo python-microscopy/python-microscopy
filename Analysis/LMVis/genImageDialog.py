@@ -11,10 +11,11 @@
 ##################
 
 import wx
+import histLimits
 
 
 class GenImageDialog(wx.Dialog):
-    def __init__(self, parent, mode='current', defaultPixelSize=5.0, jitterVariables = [], jitterVarDefault=0, mcProbDefault = 1.0, colours = []):
+    def __init__(self, parent, mode='current', defaultPixelSize=5.0, jitterVariables = [], jitterVarDefault=0, mcProbDefault = 1.0, colours = [], zvals=None):
         wx.Dialog.__init__(self, parent, title='Edit Filter ...')
 
         pixelSzs = ['%3.2f' % (defaultPixelSize*2**n) for n in range(6)]
@@ -67,6 +68,22 @@ class GenImageDialog(wx.Dialog):
             self.tNumSamps = wx.TextCtrl(self, -1, '10', size=(60, -1))
             sizer2.Add(self.tNumSamps, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
         
+            sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+
+        if mode == '3Dhistogram':
+            sizer2 = wx.BoxSizer(wx.HORIZONTAL)
+            sizer2.Add(wx.StaticText(self, -1, 'Z slice thickness [nm]:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+
+            self.tZThickness = wx.TextCtrl(self, -1, '100', size=(60, -1))
+            sizer2.Add(self.tZThickness, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+            sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+
+            sizer2 = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Z range:'), wx.VERTICAL)
+
+            self.hZRange = histLimits.HistLimitPanel(self, -1, zvals[::(len(zvals)/1e4)], zvals.min(), zvals.max(), size=(150, 80))
+
+            sizer2.Add(self.hZRange, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL|wx.EXPAND, 5)
+
             sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
 
         #multiple colour channels
@@ -123,3 +140,9 @@ class GenImageDialog(wx.Dialog):
             return [self.lColour.GetString(n).encode() for n in self.lColour.GetSelections()]
         else:
             return [None]
+
+    def getZSliceThickness(self):
+        return float(self.tZThickness.GetValue())
+
+    def getZBounds(self):
+        return self.hZRange.GetValue()

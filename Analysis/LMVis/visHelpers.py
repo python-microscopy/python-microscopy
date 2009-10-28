@@ -14,13 +14,16 @@
 import scipy
 import numpy
 from PYME.Analysis.cModels.gauss_app import *
+import subprocess
 
 class ImageBounds:
-    def __init__(self, x0, y0, x1, y1):
+    def __init__(self, x0, y0, x1, y1, z0=0, z1=0):
         self.x0 = x0
         self.y0 = y0
         self.x1 = x1
         self.y1 = y1
+        self.z0 = z0
+        self.z1 = z1
 
     @classmethod
     def estimateFromSource(cls, ds):
@@ -37,13 +40,20 @@ class dummy:
     pass
 
 class GeneratedImage:
-    def __init__(self, img, imgBounds, pixelSize):
+    def __init__(self, img, imgBounds, pixelSize, sliceSize=0):
         self.img = img
         self.imgBounds = imgBounds
 
         self.pixelSize = pixelSize
+        self.sliceSize = sliceSize
 
     def save(self, filename):
+        if len(self.img.shape) == 2:
+            self.save2D(filename)
+        else:
+            self.save3D(filename)
+
+    def save2D(self, filename):
         import Image
         #save using PIL - because we're using float pretty much only tif will work
         im = Image.fromarray(self.img.astype('f'), 'F')
@@ -54,6 +64,27 @@ class GeneratedImage:
         im.tag.tagdata={296:(3,), 282:(res_,1), 283:(res_,1)}
 
         im.save(filename)
+
+    def save3D(self, filename):
+        import Image
+        command = ["tiffcp"]
+        # add options here, if any (e.g. for compression)
+
+        #im = im.astype('uint16')
+        #im = im.astype('>u2').astype('<u2')
+
+        for i in range(self.img.shape[2]):
+            framefile = "/tmp/frame%d.tif" % i
+
+            im = Image.fromarray(self.img[:,:,i].astype('f'), 'F')
+            im.save(framefile)
+            command.append(framefile)
+
+        command.append(filename)
+        subprocess.call(command)
+
+        # remove frame files here
+        subprocess.call('rm /tmp/frame*.tif', shell=True)
 
         
 
@@ -138,5 +169,14 @@ def rendHist(x,y, imageBounds, pixelSize):
     Y = numpy.arange(imageBounds.y0,imageBounds.y1, pixelSize)
     
     im, edx, edy = scipy.histogram2d(x,y, bins=(X,Y))
+
+    return im
+
+def rendHist3D(x,y,z, imageBounds, pixelSize, zb,sliceSize=100):
+    X = numpy.arange(imageBounds.x0,imageBounds.x1, pixelSize)
+    Y = numpy.arange(imageBounds.y0,imageBounds.y1, pixelSize)
+    Z = numpy.arange(zb[0], zb[1], sliceSize)
+
+    im, ed = scipy.histogramdd([x,y, z], bins=(X,Y,Z))
 
     return im

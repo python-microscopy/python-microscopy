@@ -254,7 +254,7 @@ class DSViewFrame(wx.Frame):
             #self.glCanvas.setCLim((0, self.numAnalysed))
             self.timer.WantNotification.append(self.AddPointsToVis)
 
-            self.fitInf = fitInfo.FitInfoPanel(self, self.fitResults, self.mdh)
+            self.fitInf = fitInfo.FitInfoPanel(self, self.fitResults, self.mdh, self.vp.ds)
             self.notebook1.AddPage(page=self.fitInf, select=False, caption='Fit Info')
 
 

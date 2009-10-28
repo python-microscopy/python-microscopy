@@ -20,6 +20,8 @@ import pylab
 import scipy.misc
 import subprocess
 
+from PYME.DSView.myviewpanel_numarray import MyViewPanel
+
 from PYME.misc.auiFloatBook import AuiNotebookWithFloatingPages
 
 class ImageViewPanel(wx.Panel):
@@ -158,10 +160,10 @@ class ImageViewPanel(wx.Panel):
 
     def OnKeyPress(self, event):
         if event.GetKeyCode() == wx.WXK_PRIOR:
-            self.zp =(self.zp - 1)
+            self.zp =max(self.zp - 1, 0)
             self.Refresh()
         elif event.GetKeyCode() == wx.WXK_NEXT:
-            self.zp = (self.zp + 1)
+            self.zp = min(self.zp + 1, self.image.img.shape[self.zdim] - 1)
             self.Refresh()
         else:
             event.Skip()
@@ -547,7 +549,7 @@ class ColourImageViewFrame(wx.Frame):
         
 
 class MultiChannelImageViewFrame(wx.Frame):
-    def __init__(self, parent, glCanvas, images, names=['Image'], title='Generated Image',zp=0, zdim=0):
+    def __init__(self, parent, glCanvas, images, names=['Image'], title='Generated Image',zp=0, zdim=2):
         wx.Frame.__init__(self, parent, -1, title=title, size=(800,800))
 
         self.glCanvas = glCanvas
@@ -567,6 +569,9 @@ class MultiChannelImageViewFrame(wx.Frame):
                 self.ivps[-1].cmap = cmaps.pop(0)
 
             self.notebook.AddPage(page=self.ivps[-1], select=True, caption=name)
+
+            if len(img.img.shape) > 2:
+               self.notebook.AddPage(page=MyViewPanel(self.notebook, img.img), select=False, caption=name + '_slices')
 
         if len(self.images) > 1:
             self.civp = ColourImageViewPanel(self, glCanvas)

@@ -24,7 +24,7 @@ from PYME.Analysis.QuadTree import pointQT
 import scipy
 import pylab
 
-#from gen3DTriangs import gen3DTriangs, gen3DBlobs, testObj
+from gen3DTriangs import gen3DTriangs, gen3DBlobs, testObj
 
 import statusLog
 
@@ -68,7 +68,7 @@ class LMGLCanvas(GLCanvas):
 
         self.parent = parent
 
-        self.pointSize=5 #default point size = 5nm
+        self.pointSize=30 #default point size = 5nm
 
         self.pixelsize = 5./800
 
@@ -90,6 +90,7 @@ class LMGLCanvas(GLCanvas):
         self.drawModes = {'triang':GL_TRIANGLES, 'quads':GL_QUADS, 'edges':GL_LINES, 'points':GL_POINTS}
 
         self.c = numpy.array([1,1,1])
+        self.a = numpy.array([1,1,1])
         self.zmin = -10
         self.zmax = 10
 
@@ -161,7 +162,10 @@ class LMGLCanvas(GLCanvas):
         
 
         if self.mode == 'points':
-            glPointSize(self.pointSize*(float(self.Size[0])/(self.xmax - self.xmin)))
+            glDisable(GL_LIGHTING)
+            glPointSize(self.pointSize*(self.scale*float(self.Size[0])/(self.xmax - self.xmin)))
+        else:
+            glEnable(GL_LIGHTING)
 
         #glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glPushMatrix ()
@@ -182,6 +186,7 @@ class LMGLCanvas(GLCanvas):
         
         # set viewing projection
         light_diffuse = [0.5, 0.5, 0.5, 1.0]
+        #light_diffuse = [1., 1., 1., 1.0]
         light_position = [20.0, 20.00, 20.0, 0.0]
 
         #glLightModelfv(GL_LIGHT_MODEL_AMBIENT, [0.5, 0.5, 0.5, 1.0]);
@@ -249,6 +254,7 @@ class LMGLCanvas(GLCanvas):
         self.zc = z.mean()#*self.scale
 
         self.c = A
+        self.a = self.c
         vs = P
         
         self.vs_ = glVertexPointerf(vs)
@@ -271,6 +277,7 @@ class LMGLCanvas(GLCanvas):
         self.zc = z.mean()#*self.scale
 
         self.c = 1./A
+        self.a = self.c
         vs = P
 
         self.vs_ = glVertexPointerf(vs)
@@ -283,20 +290,27 @@ class LMGLCanvas(GLCanvas):
         self.setColour(self.IScale, self.zeroPt)
         self.setCLim((self.c.min(), self.c.max()), (0,0))
 
-    def setPoints(self, x, y, z, c = None):
+    def setPoints(self, x, y, z, c = None, a = None):
         if c == None:
             self.c = numpy.ones(x.shape).ravel()
         else:
             self.c = c
 
+        if a:
+            self.a = a
+        else:
+            self.a = numpy.ones(x.shape).ravel()
+
         self.xc = x.mean()#*self.scale
         self.yc = y.mean()#*self.scale
         self.zc = z.mean()#*self.scale
 
+        self.scale = 10./(x.max() - x.min())
+
         vs = numpy.vstack((x.ravel(), y.ravel(), z.ravel()))
         vs = vs.T.ravel().reshape(len(x.ravel()), 3)
         self.vs_ = glVertexPointerf(vs)
-        self.n_ = glNormalPointerf(0.69*numpy.ones(vs.shape))
+        self.n_ = glNormalPointerf(-0.69*numpy.ones(vs.shape))
 
         #cs = numpy.minimum(numpy.vstack((self.IScale[0]*c,self.IScale[1]*c,self.IScale[2]*c)), 1).astype('f')
         #cs = cs.T.ravel().reshape(len(c), 3)
@@ -325,6 +339,7 @@ class LMGLCanvas(GLCanvas):
         c = 1.0/(c + 1)
 
         self.c = numpy.vstack((c,c)).T.ravel()
+        self.a = self.c
 
         vs = numpy.vstack((xs.ravel(), ys.ravel()))
         vs = vs.T.ravel().reshape(len(xs.ravel()), 2)
@@ -346,7 +361,9 @@ class LMGLCanvas(GLCanvas):
 
         #cs = numpy.minimum(numpy.vstack((IScale[0]*self.c - zeroPt[0],IScale[1]*self.c - zeroPt[1],IScale[2]*self.c - zeroPt[2])), 1).astype('f')
         cs_ = ((self.c - self.clim[0])/(self.clim[1] - self.clim[0]))
-        csa_ = ((self.c - self.alim[0])/(self.alim[1] - self.alim[0]))
+        csa_ = ((self.a - self.alim[0])/(self.alim[1] - self.alim[0]))
+        csa_ = numpy.minimum(csa_, 1.)
+        csa_ = numpy.maximum(csa_, 0.)
         cs = self.cmap(cs_)
         cs[:,3] = csa_
         #print cs.shape

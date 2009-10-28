@@ -1148,6 +1148,8 @@ class VisGUIFrame(wx.Frame):
         ID_GEN_GAUSS = wx.NewId()
         ID_GEN_HIST = wx.NewId()
 
+        ID_GEN_3DHIST = wx.NewId()
+
         ID_GEN_CURRENT = wx.NewId()
 
         ID_TOGGLE_SETTINGS = wx.NewId()
@@ -1206,6 +1208,9 @@ class VisGUIFrame(wx.Frame):
         gen_menu.Append(ID_GEN_JIT_TRI, "&Triangulation")
         gen_menu.Append(ID_GEN_QUADS, "&QuadTree")
 
+        gen_menu.AppendSeparator()
+        gen_menu.Append(ID_GEN_3DHIST, "3D Histogram")
+
         special_menu = wx.Menu()
         special_menu.Append(ID_GEN_SHIFTMAP, "Calculate &Shiftmap")
 
@@ -1249,6 +1254,8 @@ class VisGUIFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnGenGaussian, id=ID_GEN_GAUSS)
         self.Bind(wx.EVT_MENU, self.OnGenHistogram, id=ID_GEN_HIST)
         self.Bind(wx.EVT_MENU, self.OnGenQuadTree, id=ID_GEN_QUADS)
+
+        self.Bind(wx.EVT_MENU, self.OnGen3DHistogram, id=ID_GEN_3DHIST)
 
         self.Bind(wx.EVT_MENU, self.OnGenShiftmap, id=ID_GEN_SHIFTMAP)
 
@@ -1514,6 +1521,55 @@ class VisGUIFrame(wx.Frame):
 #                imfc.ivp.ivps.append(imf.ivp)
 
             imfc = imageView.MultiChannelImageViewFrame(self, self.glCanvas, ims, colours, title='Generated Histogram - %3.1fnm bins' % pixelSize)
+
+            self.generatedImages.append(imfc)
+            imfc.Show()
+
+            self.colourFilter.setColour(oldC)
+
+        dlg.Destroy()
+
+    def OnGen3DHistogram(self, event):
+        bCurr = wx.BusyCursor()
+        dlg = genImageDialog.GenImageDialog(self, mode='3Dhistogram', colours=self.fluorSpecies.keys(), zvals = self.mapping['z'])
+
+        ret = dlg.ShowModal()
+
+        if ret == wx.ID_OK:
+            pixelSize = dlg.getPixelSize()
+
+            status = statusLog.StatusLogger('Generating Histogram Image ...')
+
+            x0 = max(self.glCanvas.xmin, self.imageBounds.x0)
+            y0 = max(self.glCanvas.ymin, self.imageBounds.y0)
+            x1 = min(self.glCanvas.xmax, self.imageBounds.x1)
+            y1 = min(self.glCanvas.ymax, self.imageBounds.y1)
+
+            #imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
+            imb = ImageBounds(x0, y0, x1, y1)
+
+            colours =  dlg.getColour()
+            oldC = self.colourFilter.currentColour
+
+            ims = []
+
+            for c in  colours:
+                self.colourFilter.setColour(c)
+                im = visHelpers.rendHist3D(self.colourFilter['x'],self.colourFilter['y'], self.colourFilter['z'], imb, pixelSize, dlg.getZBounds(), dlg.getZSliceThickness())
+
+                ims.append(GeneratedImage(im,imb, pixelSize ))
+
+            #imfc = imageView.ColourImageViewFrame(self, self.glCanvas)
+
+#            for im in ims:
+#                img = GeneratedImage(im,imb, pixelSize )
+#                imf = imageView.ImageViewFrame(self,img, self.glCanvas)
+#                self.generatedImages.append(imf)
+#                imf.Show()
+#
+#                imfc.ivp.ivps.append(imf.ivp)
+
+            imfc = imageView.MultiChannelImageViewFrame(self, self.glCanvas, ims, colours, title='Generated 3D Histogram - %3.1fnm bins' % pixelSize)
 
             self.generatedImages.append(imfc)
             imfc.Show()
@@ -1942,13 +1998,15 @@ class VisGUIFrame(wx.Frame):
 
                 if 'fitResults_z0' in self.filter.keys():
                     if 'zm' in dir(self):
-                        self.mapping.setMapping('z0', 'fitResults_z0 + focus')
+                        if not 'foreShort' in dir(self.mapping):
+                            self.mapping.foreShort = 1.
+                        self.mapping.setMapping('z', 'fitResults_z0 + foreShort*focus')
                     else:
-                        self.mapping.setMapping('z0', 'fitResults_z0')
+                        self.mapping.setMapping('z', 'fitResults_z0')
                 elif 'zm' in dir(self):
-                    self.mapping.setMapping('z0', 'fitResults_z0 + focus')
+                    self.mapping.setMapping('z', 'focus')
                 else:
-                    self.mapping.setMapping('z0', '0*t')
+                    self.mapping.setMapping('z', '0*t')
 
             if not self.colourFilter:
                 self.colourFilter = inpFilt.colourFilter(self.mapping, self)
