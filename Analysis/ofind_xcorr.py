@@ -17,16 +17,19 @@ import numpy
 import cPickle
 from scipy.fftpack import fftn, ifftn, ifftshift
 from PYME import pad
+from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
+
 #import pylab
 PSFFileName = None
 cachedPSF = None
 cachedOTF2 = None
 cachedOTFH = None
 autocorr = None
+
 def preparePSF(PSFFilename, PSSize):
     global PSFFileName, cachedPSF, cachedOTF2, cachedOTFH, autocorr
     if (not (PSFFileName == PSFFilename)) or (not (cachedPSF.shape == PSSize)):
-        fid = open(PSFFilename, 'rb')
+        fid = open(getFullExistingFilename(PSFFilename), 'rb')
         ps, vox = cPickle.load(fid)
         fid.close()
         ps = ps.max(2)
@@ -91,6 +94,15 @@ class ObjectIdentifier(list):
         #lowpass filter again to find background
         b = ndimage.gaussian_filter(a, self.filterRadiusHighpass)
         return 24*(a - b)
+
+    def __FilterThresh2D(self,data):
+        #lowpass filter to suppress noise
+        #a = ndimage.gaussian_filter(data.astype('f'), self.filterRadiusLowpass)
+        a = ifftshift(ifftn((fftn(data.astype('f'))*cachedOTFH))).real
+        #a = ifftshift(ifftn((fftn(data.astype('f'))*cachedOTFH)*(self.lamb**2 + cachedOTF2.mean())/(self.lamb**2 + cachedOTF2))).real
+        #lowpass filter again to find background
+        #b = ndimage.gaussian_filter(a, self.filterRadiusHighpass)
+        return a
     
     def __FilterDataFast(self):
         #project data
@@ -172,7 +184,10 @@ class ObjectIdentifier(list):
             if self.estSN:
                 self.lowerThreshold = self.thresholdFactor*scipy.sqrt(scipy.median(self.data.ravel()))
             else:
-                self.lowerThreshold = self.thresholdFactor
+                if type(self.thresholdFactor) == float:
+                    self.lowerThreshold = self.thresholdFactor
+                else:
+                    self.lowerThreshold = scipy.absolute(self.__FilterThresh2D(self.thresholdFactor))
         
         X,Y = scipy.mgrid[0:maskedFilteredData.shape[0], 0:maskedFilteredData.shape[1]]
     

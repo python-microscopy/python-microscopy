@@ -37,6 +37,19 @@ def getFullFilename(relFilename):
     else:
         return relFilename
 
+def getFullExistingFilename(relFilename):
+    ''' returns a fully resolved filename given a filename relative to
+    the environment variable PYMEDATADIR. If environment variable not defined,
+    assumes path is absolute.'''
+
+    if os.path.exists(relFilename):
+        return relFilename
+    else:
+        if relFilename.startswith('d:\\') or relFilename.startswith('D:\\'):
+            relFilename = relFilename[3:]
+
+        return getFullFilename(relFilename)
+
 
 def getRelFilename(filename):
     '''returns the tail of filename'''

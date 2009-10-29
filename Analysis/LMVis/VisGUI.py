@@ -1777,8 +1777,9 @@ class VisGUIFrame(wx.Frame):
                         else:
                             i += 1
 
-                self.mdp = MetadataTree.MetadataPanel(self.notebook, self.mdh, editable=False)
-                self.notebook.AddPage(self.mdp, 'Metadata')
+                if 'mdh' in dir(self):
+                    self.mdp = MetadataTree.MetadataPanel(self.notebook, self.mdh, editable=False)
+                    self.notebook.AddPage(self.mdp, 'Metadata')
                         
         elif os.path.splitext(filename)[1] == '.mat': #matlab file
             from scipy.io import loadmat

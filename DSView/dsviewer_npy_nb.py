@@ -52,6 +52,7 @@ from PYME.Analysis.LMVis import inpFilt
 from PYME.Acquire.mytimer import mytimer
 
 from PYME.Analysis import piecewiseMapping
+from PYME.ParallelTasks.relativeFiles import getRelFilename
 
 class DSViewFrame(wx.Frame):
     def __init__(self, parent=None, title='', dstack = None, log = None, filename = None, queueURI = None):
@@ -562,7 +563,7 @@ class DSViewFrame(wx.Frame):
                 #self.ds = example.CDataStack(fdialog.GetPath().encode())
                 #self.ds =
                 psfFilename = fdialog.GetPath()
-                self.mdh.setEntry('PSFFile', psfFilename)
+                self.mdh.setEntry('PSFFile', getRelFilename(psfFilename))
                 #self.md.setEntry('PSFFile', psfFilename)
             else:
                 return
@@ -830,7 +831,7 @@ class DSViewFrame(wx.Frame):
                 #self.ds = example.CDataStack(fdialog.GetPath().encode())
                 #self.ds =
                 psfFilename = fdialog.GetPath()
-                self.mdh.setEntry('PSFFile', psfFilename)
+                self.mdh.setEntry('PSFFile', getRelFilename(psfFilename))
                 #self.md.setEntry('PSFFile', psfFilename)
             else:
                 return

@@ -51,7 +51,7 @@ class FitInfoPanel(wx.Panel):
 
             vsizer.Add(sPhotons, 0, wx.EXPAND|wx.LEFT|wx.TOP|wx.BOTTOM|wx.RIGHT, 5)
 
-        self.fitViewPan = fitDispPanel(self, fitResults, mdh, ds, size=(300, 800))
+        self.fitViewPan = fitDispPanel(self, fitResults, mdh, ds, size=(300, 700))
         vsizer.Add(self.fitViewPan, 1, wx.EXPAND|wx.ALL, 5)
 
 
@@ -65,15 +65,21 @@ class FitInfoPanel(wx.Panel):
 
         #print nl
 
-        if not index == None:
+        if index:
+            index = int(index)
             r = self.fitResults[index]
-
-
+            #print r
 
             for n in ns:
                 #\u00B1 is the plus-minus sign
                 s += u'%s %8.2f \u00B1 %3.2f\n' % ((n + ':').ljust(nl+1), r['fitResults'][n], r['fitError'][n])
-            s = s[:-1]
+            #s = s[:-1]
+            s += '\nresultCode: %d' % r['resultCode']
+            
+            if 'startParams' in r.dtype.names:
+                s += '\n\nStart Params:\n%s' % str(r['startParams'])
+            if 'nchi2' in r.dtype.names:
+                s += u'\n\u03A7\u00B2/\u03BD: %3.2f' % r['nchi2']
         else:    
             for n in ns:
                 s += u'%s:\n' % (n)
@@ -150,13 +156,14 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
 #            self.subplot1.set_xticks([0, ed.max()])
 #            self.subplot1.set_yticks([0, numpy.floor(a.max()/float(numpy.diff(ed[:2])))])
             if i:
-                fri = self.fitResults[i][0]
+                fri = self.fitResults[i]
                 #print fri
                 #print fri['tIndex'], slice(*fri['slicesUsed']['x']), slice(*fri['slicesUsed']['y'])
                 #print self.ds[slice(*fri['slicesUsed']['x']), slice(*fri['slicesUsed']['y']), int(fri['tIndex'])].shape
                 imd = self.ds[slice(*fri['slicesUsed']['x']), slice(*fri['slicesUsed']['y']), int(fri['tIndex'])].squeeze()
 
                 self.subplot1.imshow(imd, interpolation='nearest', cmap=pylab.cm.hot)
+                self.subplot1.set_title('Data')
 
                 fitMod = __import__('PYME.Analysis.FitFactories.' + self.mdh.getEntry('Analysis.FitModule'), fromlist=['PYME', 'Analysis','FitFactories']) #import our fitting module
                 #print dir()
@@ -165,7 +172,9 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
                     imf = fitMod.genFitImage(fri, self.mdh).T
 
                     self.subplot2.imshow(imf, interpolation='nearest', cmap=pylab.cm.hot)
+                    self.subplot2.set_title('Fit')
                     self.subplot3.imshow(imd - imf, interpolation='nearest', cmap=pylab.cm.hot)
+                    self.subplot3.set_title('Residuals')
 
 
 

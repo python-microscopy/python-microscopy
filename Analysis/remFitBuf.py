@@ -171,7 +171,7 @@ class fitTask(taskDef.Task):
              if not 'PSFFile' in self.md.getEntryNames():
                  self.ofdDr = ofind.ObjectIdentifier(self.mIm)
              else:
-                 self.ofdDr = ofind_xcorr.ObjectIdentifier(self.mIm, self.md.getEntry('PSFFile'), 7, 5e-2)
+                 self.ofdDr = ofind_xcorr.ObjectIdentifier(self.mIm, self.md.getEntry('PSFFile'), 7, 3e-2)
              thres = self.calObjThresh**10
              self.ofdDr.FindObjects(thres,0)
              while len(self.ofdDr) >= 10: #just go for the brightest ones

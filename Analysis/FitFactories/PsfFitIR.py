@@ -25,6 +25,7 @@ import PYME.Analysis.twoColour as twoColour
 
 #from PYME.Analysis.cModels.gauss_app import *
 from PYME.PSFGen.ps_app import *
+from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
 
 
 #from scipy import weave
@@ -74,7 +75,7 @@ def setModel(modName, md):
     global IntXVals, IntYVals, IntZVals, interpModel, interpModelName, dx, dy, dz
 
     if not modName == interpModelName:
-        mf = open(modName, 'rb')
+        mf = open(getFullExistingFilename(modName), 'rb')
         mod, voxelsize = cPickle.load(mf)
         mf.close()
         
@@ -263,9 +264,9 @@ def replNoneWith1(n):
 		return n
 
 
-fresultdtype=[('tIndex', '<i4'),('fitResults', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('background', '<f4')]),('fitError', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('background', '<f4')]), ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])]), ('startParams', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('background', '<f4')])]
+fresultdtype=[('tIndex', '<i4'),('fitResults', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('background', '<f4')]),('fitError', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('background', '<f4')]), ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])]), ('startParams', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('background', '<f4')]), ('nchi2', '<f4')]
 
-def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None, startParams=None):
+def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None, startParams=None, nchi2=-1):
 	if slicesUsed == None:
 		slicesUsed = ((-1,-1,-1),(-1,-1,-1),(-1,-1,-1))
 	else:
@@ -277,12 +278,13 @@ def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=N
 	if startParams == None:
 		startParams = -5e3*numpy.ones(fitResults.shape, 'f')
 
+
 	#print slicesUsed
 
 	tIndex = metadata.tIndex
 
 
-	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, slicesUsed, startParams.astype('f'))], dtype=fresultdtype)
+	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, slicesUsed, startParams.astype('f'), nchi2)], dtype=fresultdtype)
 
 def genFitImage(fitResults, metadata, fitfcn=f_Interp3d):
     if fitfcn == f_Interp3d:
@@ -416,8 +418,11 @@ class PSFFitFactory:
         except Exception, e:
             pass
 
+        #normalised Chi-squared
+        nchi2 = (infodict['fvec']**2).sum()/(dataROI.size - res.size)
+
         #print res, fitErrors, resCode
-        return PSFFitResultR(res, self.metadata, (xslice, yslice, zslice), resCode, fitErrors, numpy.array(startParameters))
+        return PSFFitResultR(res, self.metadata, (xslice, yslice, zslice), resCode, fitErrors, numpy.array(startParameters), nchi2)
 
     def FromPoint(self, x, y, z=None, roiHalfSize=15, axialHalfSize=15):
         #if (z == None): # use position of maximum intensity

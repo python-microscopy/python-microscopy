@@ -587,7 +587,7 @@ class MyViewPanel(viewpanel.ViewPanel):
             if len(iCand) == 0:
                 return None
             elif len(iCand) == 1:
-                return iCand
+                return iCand[0]
             else:
                 pCand = self.points[iCand, :]
 

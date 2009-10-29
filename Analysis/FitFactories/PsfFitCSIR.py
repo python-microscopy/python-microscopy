@@ -25,6 +25,7 @@ from PYME.Analysis import twist
 
 #from PYME.Analysis.cModels.gauss_app import *
 from PYME.PSFGen.ps_app import *
+from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
 
 
 #from scipy import weave
@@ -74,7 +75,7 @@ def setModel(modName, md):
     global IntXVals, IntYVals, IntZVals, interpModel, interpModelName, dx, dy, dz
 
     if not modName == interpModelName:
-        mf = open(modName, 'rb')
+        mf = open(getFullExistingFilename(modName), 'rb')
         mod, voxelsize = cPickle.load(mf)
         mf.close()
         
