@@ -180,3 +180,49 @@ def rendHist3D(x,y,z, imageBounds, pixelSize, zb,sliceSize=100):
     im, ed = scipy.histogramdd([x,y, z], bins=(X,Y,Z))
 
     return im
+
+
+def Gauss3d(X, Y, Z, x0, y0, z0, wxy, wz):
+    """3D PSF model function with constant background - parameter vector [A, x0, y0, z0, background]"""
+    #A, x0, y0, z0, wxy, wz, b = p
+    #return A*scipy.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2)) + b
+
+    #print X.shape
+
+    return scipy.exp(-((X[:,None]-x0)**2 + (Y[None,:] - y0)**2)/(2*wxy**2) - ((Z-z0)**2)/(2*wz**2))/((2*scipy.pi*wxy**2)*scipy.sqrt(2*scipy.pi*wz**2))
+
+def rendGauss3D(x,y, z, sx, sz, imageBounds, pixelSize, zb, sliceSize=100):
+    fuzz = 3*scipy.median(sx)
+    roiSize = fuzz/pixelSize
+
+    #print imageBounds.x0
+    #print imageBounds.x1
+    #print fuzz
+
+    #print pixelSize
+
+    X = numpy.arange(imageBounds.x0 - fuzz,imageBounds.x1 + fuzz, pixelSize)
+    Y = numpy.arange(imageBounds.y0 - fuzz,imageBounds.y1 + fuzz, pixelSize)
+    Z = numpy.arange(zb[0], zb[1], sliceSize)
+
+    #print X
+
+    im = scipy.zeros((len(X), len(Y), len(Z)), 'f')
+
+    #record our image resolution so we can plot pts with a minimum size equal to res (to avoid missing small pts)
+    delX = scipy.absolute(X[1] - X[0])
+
+    for zn in range(len(Z)):
+        for i in range(len(x)):
+            ix = scipy.absolute(X - x[i]).argmin()
+            iy = scipy.absolute(Y - y[i]).argmin()
+
+
+            imp = Gauss3d(X[(ix - roiSize):(ix + roiSize + 1)], Y[(iy - roiSize):(iy + roiSize + 1)],Z[zn], x[i],y[i],z[i], max(sx[i], delX),max(sz[i], sliceSize))
+            #print imp.shape
+            #print im[(ix - roiSize):(ix + roiSize + 1), (iy - roiSize):(iy + roiSize + 1), zn].shape
+            im[(ix - roiSize):(ix + roiSize + 1), (iy - roiSize):(iy + roiSize + 1), zn] += imp
+
+    im = im[roiSize:-roiSize, roiSize:-roiSize, :]
+
+    return im

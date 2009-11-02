@@ -15,13 +15,13 @@ import histLimits
 
 
 class GenImageDialog(wx.Dialog):
-    def __init__(self, parent, mode='current', defaultPixelSize=5.0, jitterVariables = [], jitterVarDefault=0, mcProbDefault = 1.0, colours = [], zvals=None):
+    def __init__(self, parent, mode='current', defaultPixelSize=5.0, jitterVariables = [], jitterVarDefault=0, mcProbDefault = 1.0, colours = [], zvals=None, jitterVarDefaultZ=0):
         wx.Dialog.__init__(self, parent, title='Edit Filter ...')
 
         pixelSzs = ['%3.2f' % (defaultPixelSize*2**n) for n in range(6)]
 
         jitterPhrase = 'Jitter [nm]:'
-        if mode == 'gaussian':
+        if mode in ['gaussian', '3Dgaussian']:
             jitterPhrase = 'Std. Dev. [nm]:'
         
         sizer1 = wx.BoxSizer(wx.VERTICAL)
@@ -38,7 +38,7 @@ class GenImageDialog(wx.Dialog):
         
 
         #jitter parameter for gaussian and triangles
-        if mode == 'gaussian' or mode == 'triangles':
+        if mode in ['gaussian', 'triangles', '3Dgaussian']:
             sizer2 = wx.BoxSizer(wx.HORIZONTAL)
             sizer2.Add(wx.StaticText(self, -1, jitterPhrase), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
@@ -51,6 +51,22 @@ class GenImageDialog(wx.Dialog):
             self.cJitterVariable.SetSelection(jitterVarDefault)
             sizer2.Add(self.cJitterVariable, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
         
+            sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+
+        #jitter parameter for gaussian in z
+        if mode == '3Dgaussian':
+            sizer2 = wx.BoxSizer(wx.HORIZONTAL)
+            sizer2.Add(wx.StaticText(self, -1, 'Z Std. Dev. [nm]:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+
+            self.tJitterScaleZ = wx.TextCtrl(self, -1, '1.0', size=(60, -1))
+            sizer2.Add(self.tJitterScaleZ, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+
+            sizer2.Add(wx.StaticText(self, -1, 'x'), 0, wx.ALIGN_CENTER_VERTICAL | wx.TOP|wx.BOTTOM, 5)
+
+            self.cJitterVariableZ = wx.Choice(self, -1, choices=jitterVariables, size=(150, -1))
+            self.cJitterVariableZ.SetSelection(jitterVarDefaultZ)
+            sizer2.Add(self.cJitterVariableZ, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+
             sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
 
         #MC subsampling parameter for triangles
@@ -70,7 +86,7 @@ class GenImageDialog(wx.Dialog):
         
             sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
 
-        if mode == '3Dhistogram':
+        if mode in ['3Dhistogram', '3Dgaussian']:
             sizer2 = wx.BoxSizer(wx.HORIZONTAL)
             sizer2.Add(wx.StaticText(self, -1, 'Z slice thickness [nm]:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
@@ -80,7 +96,7 @@ class GenImageDialog(wx.Dialog):
 
             sizer2 = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Z range:'), wx.VERTICAL)
 
-            self.hZRange = histLimits.HistLimitPanel(self, -1, zvals[::(len(zvals)/1e4)], zvals.min(), zvals.max(), size=(150, 80))
+            self.hZRange = histLimits.HistLimitPanel(self, -1, zvals[::max(len(zvals)/1e4, 1)], zvals.min(), zvals.max(), size=(150, 80))
 
             sizer2.Add(self.hZRange, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL|wx.EXPAND, 5)
 
@@ -128,6 +144,12 @@ class GenImageDialog(wx.Dialog):
 
     def getJitterScale(self):
         return float(self.tJitterScale.GetValue())
+
+    def getJitterVariableZ(self):
+        return self.cJitterVariableZ.GetStringSelection()
+
+    def getJitterScaleZ(self):
+        return float(self.tJitterScaleZ.GetValue())
 
     def getMCProbability(self):
         return float(self.tMCProb.GetValue())

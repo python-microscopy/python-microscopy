@@ -39,6 +39,11 @@ class colourPlotPanel(wxPlotPanel.PlotPanel):
             self.subplot1.cla()
 
             x, y = self.visFrame.filter['fitResults_Ag'], self.visFrame.filter['fitResults_Ar']
+            n, xedge, yedge = numpy.histogram2d(x, y, bins = [100,100], range=[(x.min(), x.max()), (y.min(), y.max())])
+
+            l_x = len(x)
+            x = x[::(l_x/1e4)]
+            y = y[::(l_x/1e4)]
 
             #facsPlot.facsPlotContour(x, y, 100)
 
@@ -46,13 +51,13 @@ class colourPlotPanel(wxPlotPanel.PlotPanel):
 #            print (c < -1).sum(), c.min()
 
             for k, v in self.visFrame.fluorSpecies.items():
-                p_dye = self.visFrame.mapping['p_%s' % k]
+                p_dye = self.visFrame.mapping['p_%s' % k][::(l_x/1e4)]
 
                 p_other = numpy.zeros(x.shape)
 
                 for k2 in self.visFrame.fluorSpecies.keys():
                     if not k2 ==k:
-                        p_other = numpy.maximum(p_other, self.visFrame.mapping['p_%s' % k2])
+                        p_other = numpy.maximum(p_other, self.visFrame.mapping['p_%s' % k2][::(l_x/1e4)])
 
                 c[(p_dye > self.visFrame.t_p_dye)*(p_other < self.visFrame.t_p_other)] = v
 
@@ -69,7 +74,7 @@ class colourPlotPanel(wxPlotPanel.PlotPanel):
             self.subplot1.scatter(x, y, s=2, c=cs, edgecolor='none')
             #self.subplot1.plot(x, y, '.', ms=1, c=cs)
 
-            n, xedge, yedge = numpy.histogram2d(x, y, bins = [100,100], range=[(x.min(), x.max()), (y.min(), y.max())])
+            #n, xedge, yedge = numpy.histogram2d(x, y, bins = [100,100], range=[(x.min(), x.max()), (y.min(), y.max())])
 
             self.subplot1.contour((xedge[:-1] + xedge[1:])/2, (yedge[:-1] + yedge[1:])/2, numpy.log2(n.T + .5), 7, cmap = cm.copper_r, linewidths=2)
             self.subplot1.axis('image')

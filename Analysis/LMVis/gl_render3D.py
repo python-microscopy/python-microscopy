@@ -137,8 +137,10 @@ class LMGLCanvas(GLCanvas):
         #glRotatef(self.angright, *self.vecRight)
 
         #glTranslatef(-self.xcc, -self.ycc, -self.zcc)
+        trafMatrix = numpy.array([numpy.hstack((self.vecRight, 0)), numpy.hstack((self.vecUp, 0)), numpy.hstack((self.vecBack, 0)), [0,0,0, 1]])
+        self.drawAxes(trafMatrix)
 
-        glMultMatrixf(numpy.array([numpy.hstack((self.vecRight, 0)), numpy.hstack((self.vecUp, 0)), numpy.hstack((self.vecBack, 0)), [0,0,0, 1]]))
+        glMultMatrixf(trafMatrix)
 
         glScalef(self.scale, self.scale, self.scale)
 
@@ -242,6 +244,32 @@ class LMGLCanvas(GLCanvas):
         #          0.0, 0.0, 0.0,
         #          0.0, 1.0, 0.0)
         return
+
+    def drawAxes(self,trafMatrix):
+        glPushMatrix ()
+
+        glTranslatef(8, -8.5, 0)
+        glMultMatrixf(trafMatrix)
+
+        glColor3fv([1,.5,.5])
+        glBegin(GL_LINES)
+        glVertex3f(0,0,0)
+        glVertex3f(1,0,0)
+        glEnd()
+
+        glColor3fv([.5,1,.5])
+        glBegin(GL_LINES)
+        glVertex3f(0,0,0)
+        glVertex3f(0,1,0)
+        glEnd()
+
+        glColor3fv([.5,.5,1])
+        glBegin(GL_LINES)
+        glVertex3f(0,0,0)
+        glVertex3f(0,0,1)
+        glEnd()
+
+        glPopMatrix ()
 
     def setBlob(self, x,y,z, sizeCutoff=1000., zrescale=1, smooth=False, smScale=[10,10,10]):
         P, A, N = gen3DBlobs(x,y,z/zrescale, sizeCutoff, smooth, smScale)
@@ -450,7 +478,7 @@ class LMGLCanvas(GLCanvas):
 
         self.xc += posCh[0]
         self.yc += posCh[1]
-        self.zc -= posCh[2]
+        self.zc += posCh[2]
 
         if rot > 0:
             #zoom out
@@ -498,17 +526,22 @@ class LMGLCanvas(GLCanvas):
             #self.angright = self.angxst + y - self.yDragStart
 
             angx = -numpy.pi*(x - self.xDragStart)/180
-
-            vecRightN = numpy.cos(angx) * self.vecRight + numpy.sin(angx) * self.vecBack
-            vecBackN = numpy.cos(angx) * self.vecBack - numpy.sin(angx) * self.vecRight
-
-            self.vecRight = vecRightN
-            self.vecBack = vecBackN
-
             angy = numpy.pi*(y - self.yDragStart)/180
 
-            vecUpN = numpy.cos(angy) * self.vecUp + numpy.sin(angy) * self.vecBack
-            vecBackN = numpy.cos(angy) * self.vecBack - numpy.sin(angy) * self.vecUp
+            #vecRightN = numpy.cos(angx) * self.vecRight + numpy.sin(angx) * self.vecBack
+            #vecBackN = numpy.cos(angx) * self.vecBack - numpy.sin(angx) * self.vecRight
+            rMat1 = numpy.matrix([[numpy.cos(angx), 0, numpy.sin(angx)], [0,1,0], [-numpy.sin(angx), 0, numpy.cos(angx)]])
+            rMat = rMat1*numpy.matrix([[1,0,0],[0,numpy.cos(angy), numpy.sin(angy)], [0,-numpy.sin(angy), numpy.cos(angy)]])
+
+            vecRightN = numpy.array(rMat*numpy.matrix(self.vecRight).T).squeeze()
+            vecUpN = numpy.array(rMat*numpy.matrix(self.vecUp).T).squeeze()
+            vecBackN = numpy.array(rMat*numpy.matrix(self.vecBack).T).squeeze()
+
+            self.vecRight = vecRightN
+            #self.vecBack = vecBackN
+
+            #vecUpN = numpy.cos(angy) * self.vecUp + numpy.sin(angy) * self.vecBack
+            #vecBackN = numpy.cos(angy) * self.vecBack - numpy.sin(angy) * self.vecUp
 
             self.vecUp = vecUpN
             self.vecBack = vecBackN
