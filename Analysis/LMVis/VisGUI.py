@@ -1341,6 +1341,7 @@ class VisGUIFrame(wx.Frame):
                 self.notebook.AddPage(page=self.glCanvas3D, select=True, caption='3D')
 
             self.glCanvas3D.setPoints(self.colourFilter['x'], self.colourFilter['y'], self.colourFilter['z'], self.pointColour())
+            self.glCanvas3D.setCLim(self.glCanvas.clim, (-5e5, -5e5))
 
     def OnGenCurrent(self, event):
         dlg = genImageDialog.GenImageDialog(self, mode='current')
