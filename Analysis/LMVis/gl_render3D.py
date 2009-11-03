@@ -18,15 +18,15 @@ from OpenGL.GL import *
 import sys,math
 #import sys
 import numpy
-import Image
-from scikits import delaunay
-from PYME.Analysis.QuadTree import pointQT
-import scipy
+#import Image
+#from scikits import delaunay
+#from PYME.Analysis.QuadTree import pointQT
+#import scipy
 import pylab
 
 from gen3DTriangs import gen3DTriangs, gen3DBlobs, testObj
 
-import statusLog
+#import statusLog
 
 name = 'ball_glut'
 
@@ -140,11 +140,15 @@ class LMGLCanvas(GLCanvas):
         trafMatrix = numpy.array([numpy.hstack((self.vecRight, 0)), numpy.hstack((self.vecUp, 0)), numpy.hstack((self.vecBack, 0)), [0,0,0, 1]])
         self.drawAxes(trafMatrix)
 
+        glTranslatef(-self.xc, -self.yc, -self.zc)
+
+        #print self.xc, self.yc, self.zc
+
         glMultMatrixf(trafMatrix)
 
         glScalef(self.scale, self.scale, self.scale)
 
-        glTranslatef(-self.xc, -self.yc, -self.zc)
+        #glTranslatef(-self.xc, -self.yc, -self.zc)
 
         
 
@@ -232,6 +236,7 @@ class LMGLCanvas(GLCanvas):
         to = testObj()
 
         #self.setBlob(to[0], to[1], to[2], smScale=[1e3,1e3,1e3])
+        #self.setTriang(to[0], to[1], to[2])
         self.setPoints(to[0], to[1], to[2], to[2])
 
         #glMatrixMode(GL_PROJECTION)
@@ -272,14 +277,26 @@ class LMGLCanvas(GLCanvas):
         glPopMatrix ()
 
     def setBlob(self, x,y,z, sizeCutoff=1000., zrescale=1, smooth=False, smScale=[10,10,10]):
+        #center data
+        x = x - x.mean()
+        y = y - y.mean()
+        z = z - z.mean()
+
         P, A, N = gen3DBlobs(x,y,z/zrescale, sizeCutoff, smooth, smScale)
         P[:,2] = P[:,2]*zrescale
 
         self.scale = 10./(x.max() - x.min())
 
-        self.xc = x.mean()#*self.scale
-        self.yc = y.mean()#*self.scale
-        self.zc = z.mean()#*self.scale
+#        self.xc = x.mean()#*self.scale
+#        self.yc = y.mean()#*self.scale
+#        self.zc = z.mean()#*self.scale
+        self.xc = 0
+        self.yc = 0
+        self.zc = 0
+
+        self.vecUp = numpy.array([0,1,0])
+        self.vecRight = numpy.array([1,0,0])
+        self.vecBack = numpy.array([0,0,1])
 
         self.c = A
         self.a = self.c
@@ -294,18 +311,35 @@ class LMGLCanvas(GLCanvas):
         self.setColour(self.IScale, self.zeroPt)
         self.setCLim((self.c.min(), self.c.max()), (-1,-1))
 
-    def setTriang(self, x,y,z, sizeCutoff=1000., zrescale=1):
+    def setTriang(self, x,y,z, c = None, sizeCutoff=1000., zrescale=1):
+        #center data
+        x = x - x.mean()
+        y = y - y.mean()
+        z = z - z.mean()
+
         P, A, N = gen3DTriangs(x,y,z/zrescale, sizeCutoff)
         P[:,2] = P[:,2]*zrescale
 
         self.scale = 10./(x.max() - x.min())
 
-        self.xc = x.mean()#*self.scale
-        self.yc = y.mean()#*self.scale
-        self.zc = z.mean()#*self.scale
+#        self.xc = x.mean()#*self.scale
+#        self.yc = y.mean()#*self.scale
+#        self.zc = z.mean()#*self.scale
 
-        self.c = 1./A
-        self.a = self.c
+        self.xc = 0
+        self.yc = 0
+        self.zc = 0
+
+        self.vecUp = numpy.array([0,1,0])
+        self.vecRight = numpy.array([1,0,0])
+        self.vecBack = numpy.array([0,0,1])
+
+        if c:
+            self.c = c
+        else:
+            self.c = 1./A
+            
+        self.a = 1./A
         vs = P
 
         self.vs_ = glVertexPointerf(vs)
@@ -319,6 +353,11 @@ class LMGLCanvas(GLCanvas):
         self.setCLim((self.c.min(), self.c.max()), (0,0))
 
     def setPoints(self, x, y, z, c = None, a = None):
+        #center data
+        x = x - x.mean()
+        y = y - y.mean()
+        z = z - z.mean()
+
         if c == None:
             self.c = numpy.ones(x.shape).ravel()
         else:
@@ -329,9 +368,18 @@ class LMGLCanvas(GLCanvas):
         else:
             self.a = numpy.ones(x.shape).ravel()
 
-        self.xc = x.mean()#*self.scale
-        self.yc = y.mean()#*self.scale
-        self.zc = z.mean()#*self.scale
+#        self.xc = x.mean()#*self.scale
+#        self.yc = y.mean()#*self.scale
+#        self.zc = z.mean()#*self.scale
+
+        self.xc = 0
+        self.yc = 0
+        self.zc = 0
+
+        self.vecUp = numpy.array([0,1,0])
+        self.vecRight = numpy.array([1,0,0])
+        self.vecBack = numpy.array([0,0,1])
+
 
         self.scale = 10./(x.max() - x.min())
 
@@ -351,36 +399,36 @@ class LMGLCanvas(GLCanvas):
         self.setCLim((self.c.min(), self.c.max()), (0,0))
 
 
-    def setTriangEdges(self, T):
-        xs = T.x[T.edge_db]
-        ys = T.y[T.edge_db]
-
-        a = numpy.vstack((xs[:,0] - xs[:,1], ys[:,0] - ys[:,1])).T
-        #b = numpy.vstack((xs[:,0] - xs[:,2], ys[:,0] - ys[:,2])).T
-
-        #area of triangle
-        #c = 0.5*numpy.sqrt((b*b).sum(1) - ((a*b).sum(1)**2)/(a*a).sum(1))*numpy.sqrt((a*a).sum(1))
-
-        c = ((a*a).sum(1))
-
-        #c_neighbours = c[T.triangle_neighbors].sum(1)
-        c = 1.0/(c + 1)
-
-        self.c = numpy.vstack((c,c)).T.ravel()
-        self.a = self.c
-
-        vs = numpy.vstack((xs.ravel(), ys.ravel()))
-        vs = vs.T.ravel().reshape(len(xs.ravel()), 2)
-        self.vs_ = glVertexPointerf(vs)
-
-        #cs = numpy.minimum(numpy.vstack((self.IScale[0]*c,self.IScale[1]*c,self.IScale[2]*c)), 1).astype('f')
-        #cs = cs.T.ravel().reshape(len(c), 3)
-        #cs_ = glColorPointerf(cs)
-
-        self.mode = 'edges'
-
-        self.nVertices = vs.shape[0]
-        self.setColour(self.IScale, self.zeroPt)
+#    def setTriangEdges(self, T):
+#        xs = T.x[T.edge_db]
+#        ys = T.y[T.edge_db]
+#
+#        a = numpy.vstack((xs[:,0] - xs[:,1], ys[:,0] - ys[:,1])).T
+#        #b = numpy.vstack((xs[:,0] - xs[:,2], ys[:,0] - ys[:,2])).T
+#
+#        #area of triangle
+#        #c = 0.5*numpy.sqrt((b*b).sum(1) - ((a*b).sum(1)**2)/(a*a).sum(1))*numpy.sqrt((a*a).sum(1))
+#
+#        c = ((a*a).sum(1))
+#
+#        #c_neighbours = c[T.triangle_neighbors].sum(1)
+#        c = 1.0/(c + 1)
+#
+#        self.c = numpy.vstack((c,c)).T.ravel()
+#        self.a = self.c
+#
+#        vs = numpy.vstack((xs.ravel(), ys.ravel()))
+#        vs = vs.T.ravel().reshape(len(xs.ravel()), 2)
+#        self.vs_ = glVertexPointerf(vs)
+#
+#        #cs = numpy.minimum(numpy.vstack((self.IScale[0]*c,self.IScale[1]*c,self.IScale[2]*c)), 1).astype('f')
+#        #cs = cs.T.ravel().reshape(len(c), 3)
+#        #cs_ = glColorPointerf(cs)
+#
+#        self.mode = 'edges'
+#
+#        self.nVertices = vs.shape[0]
+#        self.setColour(self.IScale, self.zeroPt)
 
     
     def setColour(self, IScale=None, zeroPt=None):
@@ -474,24 +522,27 @@ class LMGLCanvas(GLCanvas):
         #self.xc += 20*xp/self.scale
         #self.yc += 20*yp/self.scale
 
-        posCh = 20*xp*self.vecRight/self.scale + 20*yp*self.vecUp/self.scale
+        #posCh = 20*xp*self.vecRight/self.scale + 20*yp*self.vecUp/self.scale
 
-        self.xc += posCh[0]
-        self.yc += posCh[1]
-        self.zc += posCh[2]
+        #self.xc += posCh[0]
+        #self.yc += posCh[1]
+        #self.zc += posCh[2]
+
+        self.xc += 20*xp
+        self.yc += 20*yp
 
         if rot > 0:
             #zoom out
             self.scale *=2.
-            #self.xc*=2
-            #self.yc*=2
+            self.xc*=2
+            self.yc*=2
 
 
         if rot < 0:
             #zoom in
             self.scale /=2.
-            #self.xc/=2
-            #self.yc/=2
+            self.xc/=2
+            self.yc/=2
             
 
 
@@ -525,8 +576,8 @@ class LMGLCanvas(GLCanvas):
             #self.angup = self.angyst + x - self.xDragStart
             #self.angright = self.angxst + y - self.yDragStart
 
-            angx = -numpy.pi*(x - self.xDragStart)/180
-            angy = numpy.pi*(y - self.yDragStart)/180
+            angx = numpy.pi*(x - self.xDragStart)/180
+            angy = -numpy.pi*(y - self.yDragStart)/180
 
             #vecRightN = numpy.cos(angx) * self.vecRight + numpy.sin(angx) * self.vecBack
             #vecBackN = numpy.cos(angx) * self.vecBack - numpy.sin(angx) * self.vecRight

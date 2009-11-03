@@ -42,8 +42,8 @@ class colourPlotPanel(wxPlotPanel.PlotPanel):
             n, xedge, yedge = numpy.histogram2d(x, y, bins = [100,100], range=[(x.min(), x.max()), (y.min(), y.max())])
 
             l_x = len(x)
-            x = x[::(l_x/1e4)]
-            y = y[::(l_x/1e4)]
+            x = x[::max(l_x/1e4, 1)]
+            y = y[::max(l_x/1e4, 1)]
 
             #facsPlot.facsPlotContour(x, y, 100)
 
@@ -51,13 +51,13 @@ class colourPlotPanel(wxPlotPanel.PlotPanel):
 #            print (c < -1).sum(), c.min()
 
             for k, v in self.visFrame.fluorSpecies.items():
-                p_dye = self.visFrame.mapping['p_%s' % k][::(l_x/1e4)]
+                p_dye = self.visFrame.mapping['p_%s' % k][::max(l_x/1e4, 1)]
 
                 p_other = numpy.zeros(x.shape)
 
                 for k2 in self.visFrame.fluorSpecies.keys():
                     if not k2 ==k:
-                        p_other = numpy.maximum(p_other, self.visFrame.mapping['p_%s' % k2][::(l_x/1e4)])
+                        p_other = numpy.maximum(p_other, self.visFrame.mapping['p_%s' % k2][::max(l_x/1e4, 1)])
 
                 c[(p_dye > self.visFrame.t_p_dye)*(p_other < self.visFrame.t_p_other)] = v
 

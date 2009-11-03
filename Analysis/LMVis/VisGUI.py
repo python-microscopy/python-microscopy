@@ -30,6 +30,7 @@ import os
 
 try:
     import delaunay as delny
+    import gl_render3D
 except:
     pass
 
@@ -1158,6 +1159,12 @@ class VisGUIFrame(wx.Frame):
         ID_GEN_SHIFTMAP = wx.NewId()
 
         ID_ABOUT = wx.ID_ABOUT
+
+        ID_VIEW_3D_POINTS = wx.NewId()
+        ID_VIEW_3D_TRIANGS = wx.NewId()
+        ID_VIEW_3D_BLOBS = wx.NewId()
+
+        ID_VIEW_BLOBS = wx.NewId()
         
         
         file_menu.Append(ID_OPEN, "&Open")
@@ -1198,6 +1205,22 @@ class VisGUIFrame(wx.Frame):
         self.view_menu.AppendCheckItem(ID_TOGGLE_SETTINGS, "Show Settings")
         self.view_menu.Check(ID_TOGGLE_SETTINGS, True)
 
+        self.view3d_menu = wx.Menu()
+
+#        try: #stop us bombing on Mac
+#            self.view3d_menu.AppendRadioItem(ID_VIEW_3D_POINTS, '&Points')
+#            self.view3d_menu.AppendRadioItem(ID_VIEW_3D_TRIANGS, '&Triangles')
+#            self.view3d_menu.AppendRadioItem(ID_VIEW_3D_BLOBS, '&Blobs')
+#        except:
+        self.view3d_menu.Append(ID_VIEW_3D_POINTS, '&Points')
+        self.view3d_menu.Append(ID_VIEW_3D_TRIANGS, '&Triangles')
+        self.view3d_menu.Append(ID_VIEW_3D_BLOBS, '&Blobs')
+
+        self.view3d_menu.Enable(ID_VIEW_3D_TRIANGS, False)
+        self.view3d_menu.Enable(ID_VIEW_3D_BLOBS, False)
+
+        #self.view_menu.Check(ID_VIEW_3D_POINTS, True)
+
         gen_menu = wx.Menu()
         gen_menu.Append(ID_GEN_CURRENT, "&Current")
         
@@ -1225,6 +1248,7 @@ class VisGUIFrame(wx.Frame):
         menu_bar.Append(self.view_menu, "&View")
         menu_bar.Append(gen_menu, "&Generate Image")
         menu_bar.Append(special_menu, "&Extras")
+        menu_bar.Append(self.view3d_menu, "View &3D")
        
         
 
@@ -1261,6 +1285,10 @@ class VisGUIFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnGen3DGaussian, id=ID_GEN_3DGAUSS)
 
         self.Bind(wx.EVT_MENU, self.OnGenShiftmap, id=ID_GEN_SHIFTMAP)
+
+        self.Bind(wx.EVT_MENU, self.OnView3DPoints, id=ID_VIEW_3D_POINTS)
+        #self.Bind(wx.EVT_MENU, self.OnView3DTriangles, id=ID_VIEW_3D_TRIANGS)
+        #self.Bind(wx.EVT_MENU, self.OnView3DBlobs, id=ID_VIEW_3D_BLOBS)
 
         return menu_bar
 
@@ -1300,6 +1328,19 @@ class VisGUIFrame(wx.Frame):
         self.RefreshView()
         self.CreateFoldPanel()
         self.OnPercentileCLim(None)
+
+    def OnView3DPoints(self,event):
+        #self.viewMode = 'points'
+        #self.glCanvas.cmap = pylab.cm.hsv
+        #self.RefreshView()
+        #self.CreateFoldPanel()
+        #self.OnPercentileCLim(None)
+        if 'z' in self.colourFilter.keys():
+            if not 'glCanvas3D' in dir(self):
+                self.glCanvas3D = gl_render3D.LMGLCanvas(self.notebook)
+                self.notebook.AddPage(page=self.glCanvas3D, select=True, caption='3D')
+
+            self.glCanvas3D.setPoints(self.colourFilter['x'], self.colourFilter['y'], self.colourFilter['z'], self.pointColour())
 
     def OnGenCurrent(self, event):
         dlg = genImageDialog.GenImageDialog(self, mode='current')

@@ -38,10 +38,16 @@ f1 = inpFilt.h5rSource(inputFile)
 
 threeD = False
 stack = False
+split = False
 
 print f1.keys()
 
-if 'fitResults_sigma' in f1.keys():
+if 'fitResults_Ag' in f1.keys():
+    #if we used the splitter set up a mapping so we can filter on total amplitude and ratio
+    f1_ = inpFilt.mappingFilter(f1, A='fitResults_Ag + fitResults_Ar', gFrac='fitResults_Ag/(fitResults_Ag + fitResults_Ar)')
+    f2 = inpFilt.resultsFilter(f1_, error_x=[0,30], A=[5, 1e5], sig=[100/2.35, 350/2.35])
+    split = True
+elif 'fitResults_sigma' in f1.keys():
     f2 = inpFilt.resultsFilter(f1, error_x=[0,30], A=[5, 1e5], sig=[100/2.35, 350/2.35])
 else:
     f2 = inpFilt.resultsFilter(f1, error_x=[0,30], A=[5, 1e5])
@@ -83,5 +89,9 @@ if stack:
 
 if threeD:
     im[-10:, -10:, 1] = 180
+
+if split:
+    im[-10:-5, :10, 1] = 210
+    im[-5:, :10, 0] = 210
 
 Image.fromarray(im.astype('uint8')).save(outputFile, 'PNG')

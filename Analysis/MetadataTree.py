@@ -308,7 +308,8 @@ class MetadataPanel(wx.Panel):
         self.tree.AddColumn("Value")
         
         self.tree.SetMainColumn(0) # the one with the tree in it...
-        self.tree.SetColumnWidth(0, 400)
+        self.tree.SetColumnWidth(0, 300)
+        self.tree.SetColumnWidth(1, 300)
 
 
         self.root = self.tree.AddRoot("Metadata")
