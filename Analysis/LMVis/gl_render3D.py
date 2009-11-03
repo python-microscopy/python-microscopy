@@ -24,7 +24,10 @@ import numpy
 #import scipy
 import pylab
 
-from gen3DTriangs import gen3DTriangs, gen3DBlobs, testObj
+try:
+    from gen3DTriangs import gen3DTriangs, gen3DBlobs, testObj
+except:
+    pass
 
 #import statusLog
 

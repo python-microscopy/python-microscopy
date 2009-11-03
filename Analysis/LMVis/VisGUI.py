@@ -27,10 +27,10 @@ from PYME.misc import extraCMaps
 from PYME.FileUtils import nameUtils
 import os
 
+import gl_render3D
 
 try:
     import delaunay as delny
-    import gl_render3D
 except:
     pass
 
