@@ -11,6 +11,7 @@
 ##################
 
 from wx.glcanvas import GLCanvas
+import wx.glcanvas
 import wx
 #from OpenGL.GLUT import *
 #from OpenGL.GLU import *
@@ -40,7 +41,9 @@ cm_grey = cmap_mult(numpy.ones(3), [0, 0, 0])
 
 class LMGLCanvas(GLCanvas):
     def __init__(self, parent, trackSelection=True, vp = None, vpVoxSize = None):
-        GLCanvas.__init__(self, parent,-1)
+        attriblist = [wx.glcanvas.WX_GL_RGBA, wx.glcanvas.WX_GL_DOUBLEBUFFER, 0]
+        GLCanvas.__init__(self, parent,-1, attribList = attriblist)
+        #GLCanvas.__init__(self, parent,-1)
         wx.EVT_PAINT(self, self.OnPaint)
         wx.EVT_SIZE(self, self.OnSize)
         wx.EVT_MOUSEWHEEL(self, self.OnWheel)
