@@ -161,22 +161,22 @@ class LMGLCanvas(GLCanvas):
 
         #print self.drawModes[self.mode]
 
-        #glClear(GL_ACCUM_BUFFER_BIT)
+        glClear(GL_ACCUM_BUFFER_BIT)
 
         if self.mode == 'points':
             glPointSize(self.pointSize*(float(self.Size[0])/(self.xmax - self.xmin)))
         for i in range(self.numBlurSamples):
-            #glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
             glPushMatrix ()
 
-            #glTranslatef (self.blurSigma*scipy.randn(), self.blurSigma*scipy.randn(),0.0)
+            glTranslatef (self.blurSigma*scipy.randn(), self.blurSigma*scipy.randn(),0.0)
 
             glDrawArrays(self.drawModes[self.mode], 0, self.nVertices)
 
             glPopMatrix ()
-            #glAccum(GL_ACCUM, 1.0/self.numBlurSamples)
+            glAccum(GL_ACCUM, 1.0)#/self.numBlurSamples)
 
-        #glAccum (GL_RETURN, 1.0);
+        glAccum (GL_RETURN, 1.0);
 
         #glDrawArrays(self.drawModes[self.mode], 0, self.nVertices)
         #glDrawArrays(GL_LINES, 0, self.nVertices)
@@ -605,7 +605,7 @@ class LMGLCanvas(GLCanvas):
         #print cs.shape
         #print cs.shape
         #print cs.strides
-        cs = cs[:, :3] #if we have an alpha component chuck it
+        cs = cs[:, :3]/self.numBlurSamples #if we have an alpha component chuck it
         cs = cs.ravel().reshape(len(self.c), 3)
         self.cs_ = glColorPointerf(cs)
 
