@@ -21,10 +21,10 @@ def testObj():
 
     return x, y, z
 
-def gen3DTriangs(x,y,z, sizeCutoff=inf):
+def gen3DTriangs(x,y,z, sizeCutoff=inf, internalCull=False):
     T = delaunay.Triangulation(array([x,y,z]).T.ravel(),3)
 
-    return gen3DTriangsTF(T, sizeCutoff)[:3]
+    return gen3DTriangsTF(T, sizeCutoff, internalCull)[:3]
 
 def gen3DTriangsT(T, sizeCutoff=inf):
     #T = delaunay.Triangulation(array([x,y,z]).T.ravel(),3)
@@ -100,7 +100,14 @@ def gen3DTriangsT(T, sizeCutoff=inf):
 
     return (P, A, N)
 
-def gen3DTriangsTF(T, sizeCutoff = inf):
+class emptyListDict(dict):
+    def __getitem__(self, key):
+        if key in self.keys():
+            return dict.__getitem__(self, key)
+        else:
+            return []
+
+def gen3DTriangsTF(T, sizeCutoff = inf, internalCull=False):
     iarray = array(T.indices)
     
     va = array(T.set)
@@ -168,10 +175,26 @@ def gen3DTriangsTF(T, sizeCutoff = inf):
 
     surfInds = triInds[:,0] > -1
 
-    for triI in triInds:
-       matches = (triInds == triI).prod(1)
-       if matches.sum() > 1:
-           surfInds*=(matches == 0) #remove triangles
+#    #internal face culling
+
+#    for triI in triInds:
+#       matches = (triInds == triI).prod(1)
+#       if matches.sum() > 1:
+#           surfInds*=(matches == 0) #remove triangles
+    if internalCull:
+        fcs = {} #emptyListDict()
+        for i, triI in zip(range(len(triInds)), triInds):
+            t_t = tuple(triI)
+            if t_t in fcs.keys():
+                surfInds[fcs[t_t]] = 0
+                surfInds[i] = 0
+            else:
+                fcs[t_t] = i
+
+#    for triI in triInds:
+#        t_t = tuple(triI)
+#        if len(fcs[t_t]) > 1:
+#            surfInds[fcs[t_t]] = 0
 
     triInds = triInds[surfInds,:]
 
@@ -388,11 +411,11 @@ def averageNormalsF(P,N, triI):
 
 
 
-def collectConnected(T, v, verts, va, lenThresh, objInd):
+def collectConnected(T, v, verts, va, lenThresh2, objInd):
     connected = []
 
     for v2_ in T.neighbours[tuple(v)]:
-        v2 = array(v2_)
+        v2 = array(v2_, 'd')
         #find index
 #        i = 0
 #        found = False
@@ -404,7 +427,7 @@ def collectConnected(T, v, verts, va, lenThresh, objInd):
 #            else:
 #                i += 1
 
-        if ((v - v2)**2).sum() < lenThresh**2:
+        if ((v - v2)**2).sum() < lenThresh2:
 
 #            if len(v2) == 3:
 #                i = int(argwhere((va[:, 0] == v2[0]) * (va[:, 1] == v2[1]) * (va[:, 2] == v2[2])))
@@ -424,7 +447,7 @@ def collectConnected(T, v, verts, va, lenThresh, objInd):
             if verts[i] == 1:
                 verts[i] = 0
                 connected.append(v2)
-                connected += collectConnected(T, v2, verts, va, lenThresh, objInd)
+                connected += collectConnected(T, v2, verts, va, lenThresh2, objInd)
             #except ValueError:
             #    pass
 
@@ -438,6 +461,8 @@ def segment(T, lenThresh, minSize=None):
     va = array(T.set)
 
     objInd = {}
+
+    lenThresh2 = lenThresh**2
 
     #dictionary mapping vertices to indicex
     for i in range(len(T.set)):
@@ -459,7 +484,7 @@ def segment(T, lenThresh, minSize=None):
         v = va[j, :]
         obj = [v]
 
-        con = collectConnected(T, v, verts, va, lenThresh, objInd)
+        con = collectConnected(T, v, verts, va, lenThresh2, objInd)
 
         obj += con
 
@@ -519,7 +544,7 @@ def blobify(objects, sizeCutoff, sm=False, sc=[10, 10, 10]):
         #print T.indices
         #for ti in T.indices:
         #    print len(ti)
-        P, A, N, triI = gen3DTriangsTF(T, sizeCutoff)
+        P, A, N, triI = gen3DTriangsTF(T, sizeCutoff, internalCull=True)
 
         #P, A, N = removeInternalFaces(P, A, N)
         if not P == []:

@@ -1,3 +1,5 @@
 __init__.pyc
-ps_app.pyd
 setup.pyc
+ps_app.pyd
+setup.pyo
+__init__.pyo

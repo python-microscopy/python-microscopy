@@ -1,4 +1,8 @@
 __init__.pyc
+HDFDataSource.pyo
+__init__.pyo
 TQDataSource.pyc
+TiffDataSource.pyo
 HDFDataSource.pyc
 TiffDataSource.pyc
+TQDataSource.pyo

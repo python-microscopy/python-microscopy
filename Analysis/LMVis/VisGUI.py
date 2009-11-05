@@ -1216,7 +1216,7 @@ class VisGUIFrame(wx.Frame):
         self.view3d_menu.Append(ID_VIEW_3D_TRIANGS, '&Triangles')
         self.view3d_menu.Append(ID_VIEW_3D_BLOBS, '&Blobs')
 
-        self.view3d_menu.Enable(ID_VIEW_3D_TRIANGS, False)
+        #self.view3d_menu.Enable(ID_VIEW_3D_TRIANGS, False)
         self.view3d_menu.Enable(ID_VIEW_3D_BLOBS, False)
 
         #self.view_menu.Check(ID_VIEW_3D_POINTS, True)
@@ -1287,7 +1287,7 @@ class VisGUIFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnGenShiftmap, id=ID_GEN_SHIFTMAP)
 
         self.Bind(wx.EVT_MENU, self.OnView3DPoints, id=ID_VIEW_3D_POINTS)
-        #self.Bind(wx.EVT_MENU, self.OnView3DTriangles, id=ID_VIEW_3D_TRIANGS)
+        self.Bind(wx.EVT_MENU, self.OnView3DTriangles, id=ID_VIEW_3D_TRIANGS)
         #self.Bind(wx.EVT_MENU, self.OnView3DBlobs, id=ID_VIEW_3D_BLOBS)
 
         return menu_bar
@@ -1342,6 +1342,20 @@ class VisGUIFrame(wx.Frame):
 
             self.glCanvas3D.setPoints(self.colourFilter['x'], self.colourFilter['y'], self.colourFilter['z'], self.pointColour())
             self.glCanvas3D.setCLim(self.glCanvas.clim, (-5e5, -5e5))
+
+    def OnView3DTriangles(self,event):
+        #self.viewMode = 'points'
+        #self.glCanvas.cmap = pylab.cm.hsv
+        #self.RefreshView()
+        #self.CreateFoldPanel()
+        #self.OnPercentileCLim(None)
+        if 'z' in self.colourFilter.keys():
+            if not 'glCanvas3D' in dir(self):
+                self.glCanvas3D = gl_render3D.LMGLCanvas(self.notebook)
+                self.notebook.AddPage(page=self.glCanvas3D, select=True, caption='3D')
+
+            self.glCanvas3D.setTriang(self.colourFilter['x'], self.colourFilter['y'], self.colourFilter['z'], 'z', sizeCutoff=self.glCanvas3D.edgeThreshold)
+            self.glCanvas3D.setCLim(self.glCanvas3D.clim, (0, 5e-5))
 
     def OnGenCurrent(self, event):
         dlg = genImageDialog.GenImageDialog(self, mode='current')
@@ -2124,17 +2138,20 @@ class VisGUIFrame(wx.Frame):
                     self.mapping.zm = self.zm
                     self.mapping.setMapping('focus', '1e3*zm(t)')
 
+                if not 'dz_dt' in dir(self.mapping):
+                    self.mapping.dz_dt = 0.
+
                 if 'fitResults_z0' in self.filter.keys():
                     if 'zm' in dir(self):
                         if not 'foreShort' in dir(self.mapping):
                             self.mapping.foreShort = 1.
-                        self.mapping.setMapping('z', 'fitResults_z0 + foreShort*focus')
+                        self.mapping.setMapping('z', 'fitResults_z0 + foreShort*focus + dz_dt*t')
                     else:
-                        self.mapping.setMapping('z', 'fitResults_z0')
+                        self.mapping.setMapping('z', 'fitResults_z0+ dz_dt*t')
                 elif 'zm' in dir(self):
-                    self.mapping.setMapping('z', 'focus')
+                    self.mapping.setMapping('z', 'focus + dz_dt*t')
                 else:
-                    self.mapping.setMapping('z', '0*t')
+                    self.mapping.setMapping('z', 'dz_dt*t')
 
             if not self.colourFilter:
                 self.colourFilter = inpFilt.colourFilter(self.mapping, self)
@@ -2310,6 +2327,8 @@ def main(filename):
     application.MainLoop()
 
 if __name__ == '__main__':
+#    from PYME import mProfile
+#    mProfile.profileOn(['gen3DTriangs.py', 'visHelpers.py'])
 
     filename = None
 
@@ -2323,4 +2342,6 @@ if __name__ == '__main__':
         visFr = VisGUIFrame(None, filename)
         visFr.Show()
         visFr.RefreshView()
+
+#    mProfile.report()
 

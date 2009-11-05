@@ -11,6 +11,7 @@
 ##################
 
 from wx.glcanvas import GLCanvas
+import wx.glcanvas
 import wx
 #from OpenGL.GLUT import *
 #from OpenGL.GLU import *
@@ -53,7 +54,8 @@ cm_grey = cmap_mult(numpy.ones(3), [0, 0, 0])
 
 class LMGLCanvas(GLCanvas):
     def __init__(self, parent):
-        GLCanvas.__init__(self, parent,-1)
+        attriblist = [wx.glcanvas.WX_GL_RGBA, wx.glcanvas.WX_GL_DOUBLEBUFFER, 0]
+        GLCanvas.__init__(self, parent,-1, attribList = attriblist)
         wx.EVT_PAINT(self, self.OnPaint)
         wx.EVT_SIZE(self, self.OnSize)
         wx.EVT_MOUSEWHEEL(self, self.OnWheel)
@@ -112,6 +114,8 @@ class LMGLCanvas(GLCanvas):
         
         self.dragging = False
 
+        self.edgeThreshold = 100
+
         return
 
     def OnPaint(self,event):
@@ -135,6 +139,11 @@ class LMGLCanvas(GLCanvas):
 
         glLoadIdentity()
         glOrtho(-10,10,-10,10,-1000,1000)
+
+#        light_position = [5., 5., 0., 0.0]
+#        glLightfv(GL_LIGHT0, GL_POSITION, light_position)
+
+        self.setupLights()
 
         #glRotatef(self.angup, *self.vecUp)
         #glRotatef(self.angright, *self.vecRight)
@@ -170,11 +179,12 @@ class LMGLCanvas(GLCanvas):
 
         
 
-        if self.mode == 'points':
+        if self.mode in  ['points']:
             glDisable(GL_LIGHTING)
             glPointSize(self.pointSize*(self.scale*float(self.Size[0])/(self.xmax - self.xmin)))
         else:
-            glEnable(GL_LIGHTING)
+            pass
+            #glEnable(GL_LIGHTING)
 
         #glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glPushMatrix ()
@@ -191,15 +201,14 @@ class LMGLCanvas(GLCanvas):
         self.SwapBuffers()
         return
 
-    def InitGL(self):
-        
+    def setupLights(self):
         # set viewing projection
-        light_diffuse = [0.5, 0.5, 0.5, 1.0]
+        light_diffuse = [0.8, 0.8, 0.8, 1.0]
         #light_diffuse = [1., 1., 1., 1.0]
         light_position = [20.0, 20.00, 20.0, 0.0]
 
-        #glLightModelfv(GL_LIGHT_MODEL_AMBIENT, [0.5, 0.5, 0.5, 1.0]);
-        #glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE)
+        glLightModelfv(GL_LIGHT_MODEL_AMBIENT, [0.5, 0.5, 0.5, 1.0]);
+        glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE)
 
         glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse)
         glLightfv(GL_LIGHT0, GL_SPECULAR, [0.3,0.3,0.3,1.0])
@@ -207,6 +216,23 @@ class LMGLCanvas(GLCanvas):
 
         glEnable(GL_LIGHTING)
         glEnable(GL_LIGHT0)
+
+    def InitGL(self):
+        
+#        # set viewing projection
+#        light_diffuse = [0.5, 0.5, 0.5, 1.0]
+#        #light_diffuse = [1., 1., 1., 1.0]
+#        light_position = [20.0, 20.00, 20.0, 0.0]
+#
+#        #glLightModelfv(GL_LIGHT_MODEL_AMBIENT, [0.5, 0.5, 0.5, 1.0]);
+#        glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE)
+#
+#        glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse)
+#        glLightfv(GL_LIGHT0, GL_SPECULAR, [0.3,0.3,0.3,1.0])
+#        glLightfv(GL_LIGHT0, GL_POSITION, light_position)
+#
+#        glEnable(GL_LIGHTING)
+#        glEnable(GL_LIGHT0)
         glEnable(GL_DEPTH_TEST)
         glEnable(GL_NORMALIZE)
 
@@ -238,9 +264,9 @@ class LMGLCanvas(GLCanvas):
 
         to = testObj()
 
-        #self.setBlob(to[0], to[1], to[2], smScale=[1e3,1e3,1e3])
+        self.setBlob(to[0], to[1], to[2], smScale=[1e3,1e3,1e3])
         #self.setTriang(to[0], to[1], to[2])
-        self.setPoints(to[0], to[1], to[2], to[2])
+        #self.setPoints(to[0], to[1], to[2], to[2])
 
         #glMatrixMode(GL_PROJECTION)
         #glLoadIdentity()
@@ -337,8 +363,8 @@ class LMGLCanvas(GLCanvas):
         self.vecRight = numpy.array([1,0,0])
         self.vecBack = numpy.array([0,0,1])
 
-        if c:
-            self.c = c
+        if c == 'z':
+            self.c = P[:,2]
         else:
             self.c = 1./A
             

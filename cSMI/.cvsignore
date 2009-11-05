@@ -1,5 +1,8 @@
-__init__.pyc
-build
-_cSMI.pyd
 cSMI.pyc
+__init__.pyc
+cSMI.pyo
+_cSMI.pyd
+setup.pyo
+__init__.pyo
 setup.pyc
+build
