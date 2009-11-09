@@ -1,2 +1,7 @@
-DigiDataClient.pyc
 __init__.pyc
+DigiDataClient.pyc
+__init__.pyo
+DigiData.pyo
+axDD132x.pyo
+RemoteDigiData.pyo
+DigiDataClient.pyo

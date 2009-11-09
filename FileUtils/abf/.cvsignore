@@ -1,6 +1,8 @@
 __init__.pyc
-abf.c
 abflib.cpp
 abflib.h
-build
+setup.pyo
+__init__.pyo
 setup.pyc
+build
+abf.c
