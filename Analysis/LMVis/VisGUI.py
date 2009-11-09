@@ -986,15 +986,22 @@ class VisGUIFrame(wx.Frame):
         self.tXExpr = wx.TextCtrl(pan, -1, self.driftExprX, size=(130, -1))
         hsizer.Add(self.tXExpr, 2,wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5)
 
-        bsizer.Add(hsizer, 0, wx.ALL, 0)
+        bsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(pan, -1, "y' = "), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.tYExpr = wx.TextCtrl(pan, -1, self.driftExprY, size=(130,-1))
         hsizer.Add(self.tYExpr, 2,wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5)
+        bsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
 
-        bsizer.Add(hsizer, 0, wx.ALL, 0)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(pan, -1, "Presets:"), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        self.cDriftPresets = wx.Choice(pan, -1, choices=['', 'Linear', 'Piecewise Linear'], size=(120,-1))
+        hsizer.Add(self.cDriftPresets, 2,wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5)
+
+        bsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
 
 #        hsizer = wx.BoxSizer(wx.HORIZONTAL)
 #        hsizer.Add(wx.StaticText(pan, -1, "z' = "), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
@@ -1012,6 +1019,7 @@ class VisGUIFrame(wx.Frame):
 
         self.tXExpr.Bind(wx.EVT_TEXT, self.OnDriftExprChange)
         self.tYExpr.Bind(wx.EVT_TEXT, self.OnDriftExprChange)
+        self.cDriftPresets.Bind(wx.EVT_CHOICE, self.OnDriftPreset)
 
 
         self.lDriftParams = editList.EditListCtrl(item, -1, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.SUNKEN_BORDER, size=(-1, 100))
@@ -1059,6 +1067,50 @@ class VisGUIFrame(wx.Frame):
     def OnDriftFit(self, event):
         self.driftCorrParams = intelliFit.doFitT(self.driftCorrFcn, self.driftCorrParams, self.filter, self.optimiseFcn)
         self.RefreshDriftParameters()
+
+    def OnDriftPreset(self, event):
+        sel = self.cDriftPresets.GetStringSelection()
+        driftExprX = self.driftExprX
+        driftExprY = self.driftExprY
+
+        if sel == 'Linear':
+            driftExprX = 'x + a*t'
+            driftExprY = 'y + b*t'
+        elif sel == 'Piecewise Linear':
+            dlg = wx.TextEntryDialog(self, 'Please enter number of segments', 'Piecewise Linear', '5')
+            if dlg.ShowModal() == wx.ID_OK:
+                nSegs = int(dlg.GetValue())
+
+                #generate segments evenly spaced in point density
+                t = self.colourFilter['t'].copy()
+                t.sort()
+                tvals = t[np.linspace(0, len(t)-1, nSegs+1).astype('i')][1:-1]
+
+                stvals = '[' + ', '.join(['%1.1e' % tv for tv in tvals]) + ']'
+                sgxvals = '[' + ', '.join(['a%d' % i for i in range(nSegs)]) + ']'
+                sgyvals = '[' + ', '.join(['b%d' % i for i in range(nSegs)]) + ']'
+
+                driftExprX = 'x + piecewiseLinear(t, %s, %s)' % (stvals, sgxvals)
+                driftExprY = 'y + piecewiseLinear(t, %s, %s)' % (stvals, sgyvals)
+
+        self.tXExpr.SetValue(driftExprX)
+        self.tYExpr.SetValue(driftExprY)
+
+        self.cDriftPresets.SetSelection(0)
+
+#        if self.filter == None:
+#            filtKeys = []
+#        else:
+#            filtKeys = self.filter.keys()
+#
+#        self.driftCorrFcn = intelliFit.genFcnCodeT(self.driftExprX,self.driftExprY, filtKeys)
+#
+#        #self.driftCorrParams = {}
+#        for p in self.driftCorrFcn[0]:
+#            if not p in self.driftCorrParams.keys():
+#                self.driftCorrParams[p] = 0
+#
+#        self.RefreshDriftParameters()
 
     def OnDriftApply(self, event):
         self.mapping.setMapping('x', self.driftCorrFcn[2])
