@@ -1038,7 +1038,10 @@ class VisGUIFrame(wx.Frame):
         self.lDriftParams.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnDriftParameterChange)
 
         pan = wx.Panel(item, -1)
-        #bsizer = wx.BoxSizer(wx.VERTICAL)
+        bsizer = wx.BoxSizer(wx.VERTICAL)
+
+        bZero = wx.Button(pan, -1, 'Zero Parameters', style=wx.BU_EXACTFIT)
+        bsizer.Add(bZero, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 0)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         bFit = wx.Button(pan, -1, 'Fit', size=(30,-1))
@@ -1053,8 +1056,12 @@ class VisGUIFrame(wx.Frame):
         bRevert = wx.Button(pan, -1, 'Revert', size=(50,-1))
         hsizer.Add(bRevert, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
-        pan.SetSizer(hsizer)
-        hsizer.Fit(pan)
+        bsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
+
+        
+
+        pan.SetSizer(bsizer)
+        bsizer.Fit(pan)
 
 
         self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
@@ -1063,9 +1070,16 @@ class VisGUIFrame(wx.Frame):
         bApply.Bind(wx.EVT_BUTTON, self.OnDriftApply)
         bRevert.Bind(wx.EVT_BUTTON, self.OnDriftRevert)
         bPlot.Bind(wx.EVT_BUTTON, self.OnDriftPlot)
+        bZero.Bind(wx.EVT_BUTTON, self.OnDriftZeroParams)
 
     def OnDriftFit(self, event):
         self.driftCorrParams = intelliFit.doFitT(self.driftCorrFcn, self.driftCorrParams, self.filter, self.optimiseFcn)
+        self.RefreshDriftParameters()
+
+    def OnDriftZeroParams(self, event):
+        for p in self.driftCorrFcn[0]:
+            self.driftCorrParams[p] = 0
+        
         self.RefreshDriftParameters()
 
     def OnDriftPreset(self, event):
