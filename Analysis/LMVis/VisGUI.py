@@ -2023,7 +2023,7 @@ class VisGUIFrame(wx.Frame):
 
             self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
         else: #assume it's a text file
-            dlg = importTextDialog.ImportTextDialog(self)
+            dlg = importTextDialog.ImportTextDialog(self, filename)
 
             ret = dlg.ShowModal()
 

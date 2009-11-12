@@ -180,7 +180,7 @@ class textfileSource:
         self.res = np.loadtxt(filename, dtype={'names' : columnnames, 
                                                'formats' :  ['f4' for i in range(len(columnnames))]}, delimiter = delimiter)
         
-        self._keys = columnnames
+        self._keys = list(columnnames)
        
 
 
