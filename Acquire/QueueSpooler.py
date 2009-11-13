@@ -44,7 +44,7 @@ class Spooler(sp.Spooler):
    def __init__(self, scope, filename, acquisator, protocol = p.NullProtocol, parent=None, complevel=6, complib='zlib'):
        if 'PYME_TASKQUEUENAME' in os.environ.keys():
             taskQueueName = os.environ['PYME_TASKQUEUENAME']
-        else:
+       else:
             taskQueueName = 'taskQueue'
        self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
 
