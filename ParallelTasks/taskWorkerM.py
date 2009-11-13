@@ -20,7 +20,12 @@ if 'PYRO_NS_HOSTNAME' in os.environ.keys():
 
 Pyro.config.PYRO_MOBILE_CODE=1
 
-tq = Pyro.core.getProxyForURI("PYRONAME://taskQueue")
+if 'PYME_TASKQUEUENAME' in os.environ.keys():
+    taskQueueName = os.environ['PYME_TASKQUEUENAME']
+else:
+    taskQueueName = 'taskQueue'
+
+tq = Pyro.core.getProxyForURI("PYRONAME://" + taskQueueName)
 
 if sys.platform == 'win32':
     name = os.environ['COMPUTERNAME'] + ' - PID:%d' % os.getpid()

@@ -28,6 +28,11 @@ if 'PYRO_NS_HOSTNAME' in os.environ.keys():
 
 #from PYME.mProfile import mProfile
 #mProfile.profileOn(['taskServerM.py', 'HDFTaskQueue.py'])
+
+if 'PYME_TASKQUEUENAME' in os.environ.keys():
+    taskQueueName = os.environ['PYME_TASKQUEUENAME']
+else:
+    taskQueueName = 'taskQueue'
 	
 class TaskWatcher(threading.Thread):
 	def __init__(self, tQueue):
@@ -243,12 +248,12 @@ if __name__ == '__main__':
 
     #get rid of any previous queue
     try:
-        ns.unregister('taskQueue')
+        ns.unregister(taskQueueName)
     except Pyro.errors.NamingError:
         pass
 
     tq = TaskQueueSet()
-    uri=daemon.connect(tq,"taskQueue")
+    uri=daemon.connect(tq,taskQueueName)
 
     tw = TaskWatcher(tq)
     #tw.start()

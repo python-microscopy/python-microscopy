@@ -14,6 +14,7 @@ import tables
 from PYME.Acquire import MetaDataHandler
 from PYME import cSMI
 import Pyro.core
+import os
 #import time
 
 import PYME.Acquire.Spooler as sp
@@ -41,7 +42,11 @@ class EventLogger:
 
 class Spooler(sp.Spooler):
    def __init__(self, scope, filename, acquisator, protocol = p.NullProtocol, parent=None, complevel=6, complib='zlib'):
-       self.tq = Pyro.core.getProxyForURI('PYRONAME://taskQueue')
+       if 'PYME_TASKQUEUENAME' in os.environ.keys():
+            taskQueueName = os.environ['PYME_TASKQUEUENAME']
+        else:
+            taskQueueName = 'taskQueue'
+       self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
 
        self.seriesName = filename
 

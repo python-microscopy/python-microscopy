@@ -96,7 +96,11 @@ class DSViewFrame(wx.Frame):
                 if filename.startswith('QUEUE://'):
                     import Pyro.core
                     if queueURI == None:
-                        self.tq = Pyro.core.getProxyForURI('PYRONAME://taskQueue')
+                        if 'PYME_TASKQUEUENAME' in os.environ.keys():
+                            taskQueueName = os.environ['PYME_TASKQUEUENAME']
+                        else:
+                            taskQueueName = 'taskQueue'
+                        self.tq = Pyro.core.getProxyForURI('PYRONAME://taskQueueName')
                     else:
                         self.tq = Pyro.core.getProxyForURI(queueURI)
 

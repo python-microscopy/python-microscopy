@@ -109,6 +109,9 @@ class ObjectIdentifier(list):
             return self.filteredData
 
     def __Debounce(self, xs, ys, radius=4):
+        if len(xs) < 2:
+            return xs, ys
+        
         kdt = kdtree.KDTree(scipy.array([xs,ys]).T)
 
         xsd = []

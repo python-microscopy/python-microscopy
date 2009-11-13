@@ -24,8 +24,12 @@ from PYME.Acquire import ExecTools
 #from PYME.Analysis.DataSources.HDFDataSource import DataSource
 
 if not 'tq' in locals():
+    if 'PYME_TASKQUEUENAME' in os.environ.keys():
+        taskQueueName = os.environ['PYME_TASKQUEUENAME']
+    else:
+        taskQueueName = 'taskQueue'
     #ExecTools.execBG("tq = Pyro.core.getProxyForURI('PYRONAME://taskQueue')", locals(), globals())
-    tq = Pyro.core.getProxyForURI('PYRONAME://taskQueue')
+    tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
     #pass
 
 #from PYME.ParallelTasks.relativeFiles import getRelFilename

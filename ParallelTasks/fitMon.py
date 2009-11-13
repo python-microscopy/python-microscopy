@@ -24,6 +24,11 @@ import os
 if 'PYRO_NS_HOSTNAME' in os.environ.keys():
     Pyro.config.PYRO_NS_HOSTNAME=os.environ['PYRO_NS_HOSTNAME']
 
+if 'PYME_TASKQUEUENAME' in os.environ.keys():
+    taskQueueName = os.environ['PYME_TASKQUEUENAME']
+else:
+    taskQueueName = 'taskQueue'
+
 class MyFrame(wx.Frame):
     def __init__(self, *args, **kwds):
         # begin wxGlade: MyFrame.__init__
@@ -41,7 +46,7 @@ class MyFrame(wx.Frame):
         self.__do_layout()
         # end wxGlade
 
-        self.tq = Pyro.core.getProxyForURI("PYRONAME://taskQueue")
+        self.tq = Pyro.core.getProxyForURI("PYRONAME://" + taskQueueName)
         self.workerProc = {}
         self.tLast = 0
         self.gQueues.SetRowLabelSize(0)
