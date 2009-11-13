@@ -18,6 +18,7 @@ import cPickle
 from scipy.fftpack import fftn, ifftn, ifftshift
 from PYME import pad
 from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
+from scipy.spatial import kdtree
 
 #import pylab
 PSFFileName = None
@@ -52,13 +53,16 @@ class OfindPoint:
         self.y = y
         self.z = z
         self.detectionThreshold = detectionThreshold
+
 #a hack so we'll be able to do something like ObjectIdentifier.x[i]
 class PseudoPointList:
     def __init__(self,parent, varName):
         self.parent = parent
         self.varName = varName
+
     def __len__(self):
         return len(self.parent)
+
     def __getitem__(self, key):
         tmp = self.parent[key]
         if not '__len__' in dir(tmp):
@@ -68,14 +72,17 @@ class PseudoPointList:
             for it in tmp:
                 tm2.append(it.__dict__[self.varName])
             return tm2
+
     #def __iter__(self):
     #    self.curpos = -1
     #    return self
+
     #def next(self):
     #    curpos += 1
     #    if (curpos >= len(self)):
     #        raise StopIteration
     #    return self[self.curpos]
+
 class ObjectIdentifier(list):
     def __init__(self, data, PSFFilename, filterRadiusHighpass=5, lamb = 5e-5):
         """Creates an Identifier object to be used for object finding, takes a 2D or 3D slice
@@ -120,7 +127,36 @@ class ObjectIdentifier(list):
             self.filteredData = self.__FilterDataFast()
             self.filteredData *= (self.filteredData > 0)
             return self.filteredData
-    def FindObjects(self, thresholdFactor, numThresholdSteps="default", blurRadius=1.5, mask=None):
+
+    def __Debounce(self, xs, ys, radius=4):
+        kdt = kdtree.KDTree(scipy.array([xs,ys]).T)
+
+        xsd = []
+        ysd = []
+
+        for xi, yi in zip(xs, ys):
+            neigh = kdt.query_ball_point([xi,yi], radius)
+
+            if len(neigh) > 1:
+                Ii = self.filteredData[xi,yi]
+
+                In = self.filteredData[xs[neigh].astype('i'),ys[neigh].astype('i')].max()
+
+                if not Ii < In:
+                    xsd.append(xi)
+                    ysd.append(yi)
+
+            else:
+                xsd.append(xi)
+                ysd.append(yi)
+
+        return xsd, ysd
+
+
+
+
+
+    def FindObjects(self, thresholdFactor, numThresholdSteps="default", blurRadius=1.5, mask=None, splitter=None, debounceRadius=4):
         """Finds point-like objects by subjecting the data to a band-pass filtering (as defined when 
         creating the identifier) followed by z-projection and a thresholding procedure where the 
         threshold is progressively decreased from a maximum value (half the maximum intensity in the image) to a 
@@ -191,6 +227,11 @@ class ObjectIdentifier(list):
         
         X,Y = scipy.mgrid[0:maskedFilteredData.shape[0], 0:maskedFilteredData.shape[1]]
     
+        #store x, y, and thresholds
+        xs = []
+        ys = []
+        ts = []
+
         if (self.numThresholdSteps == 0): #don't do threshold scan - just use lower threshold (faster)
             im = maskedFilteredData
             (labeledPoints, nLabeled) = ndimage.label(im > self.lowerThreshold)
@@ -204,8 +245,12 @@ class ObjectIdentifier(list):
                 imO = im[objSlices[i]]
                 x = (X[objSlices[i]]*imO).sum()/imO.sum()
                 y = (Y[objSlices[i]]*imO).sum()/imO.sum()
+
                 #and add to list
-                self.append(OfindPoint(x,y,detectionThreshold=self.lowerThreshold))
+                #self.append(OfindPoint(x,y,detectionThreshold=self.lowerThreshold))
+                xs.append(x)
+                ys.append(y)
+                ts.append(self.lowerThreshold)
         else: #do threshold scan (default)
             #generate threshold range - note slightly awkard specification of lowwer and upper bounds as the stop bound is excluded from arange
             self.thresholdRange = scipy.arange(self.upperThreshold, self.lowerThreshold - (self.upperThreshold - self.lowerThreshold)/(self.numThresholdSteps -1), - (self.upperThreshold - self.lowerThreshold)/(self.numThresholdSteps))
@@ -233,7 +278,11 @@ class ObjectIdentifier(list):
                     x = (X[objSlices[i]]*imO).sum()/imO.sum()
                     y = (Y[objSlices[i]]*imO).sum()/imO.sum()
                     #and add to list
-                    self.append(OfindPoint(x,y,detectionThreshold=threshold))
+                    #self.append(OfindPoint(x,y,detectionThreshold=threshold))
+                    xs.append(x)
+                    ys.append(y)
+                    ts.append(threshold)
+
                     #now work out weights for correction image (N.B. this is somewhat emperical)
                     corrWeights[objSlices[i]] = 1.0/scipy.sqrt(nPixels)
                 #calculate correction matrix
@@ -251,7 +300,21 @@ class ObjectIdentifier(list):
                 im[0:5, -5:] = 0
                 im[-5:, -5:] = 0
                 im[-5:, 0:5] = 0
-                print len(self)
+
+                print len(xs)
+
+        xs = scipy.array(xs)
+        ys = scipy.array(ys)
+
+        if splitter:
+            ys = ys + (ys > im.shape[1]/2)*(im.shape[1] - 2*ys)
+
+        xs, ys = self.__Debounce(xs, ys, debounceRadius)
+
+        for x, y, t in zip(xs, ys, ts):
+            self.append(OfindPoint(x,y,t))
+
+
         #create pseudo lists to allow indexing along the lines of self.x[i]
         self.x = PseudoPointList(self, 'x')
         self.y = PseudoPointList(self, 'y')

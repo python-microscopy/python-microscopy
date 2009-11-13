@@ -149,6 +149,8 @@ def testFrames(detThresh = 0.9, offset = 0):
         plot([p.x for p in ft.ofd], [p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
         if ft.driftEst:
              plot([p.x for p in ft.ofdDr], [p.y for p in ft.ofdDr], 'o', mew=2, mec='b', mfc='none', ms=9)
+        if ft.fitModule in remFitBuf.splitterFitModules:
+                plot([p.x for p in ft.ofd], [d.shape[0] - p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
         #axis('tight')
         xlim(0, d.shape[1])
         ylim(0, d.shape[0])

@@ -88,6 +88,7 @@ class GaussianFitFactory:
         '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in 
         metadata. '''
         self.data = data
+        self.background = background
         self.metadata = metadata
         self.fitfcn = fitfcn #allow model function to be specified (to facilitate changing between accurate and fast exponential approwimations)
         if type(fitfcn) == types.FunctionType: #single function provided - use numerically estimated jacobian
@@ -141,7 +142,7 @@ class GaussianFitFactory:
         x0 =  Xg.mean()
         y0 =  Yg.mean()
 
-        startParameters = [Ag, Ar, x0, y0, 250/2.35, dataROI[:,:,0].min(),dataROI[:,:,1].min(), .001, .001]
+        #startParameters = [Ag, Ar, x0, y0, 250/2.35, dataROI[:,:,0].min(),dataROI[:,:,1].min(), .001, .001]
 
 	
         #estimate errors in data
@@ -149,6 +150,14 @@ class GaussianFitFactory:
         
         #sigma = scipy.sqrt(self.metadata.CCD.ReadNoise**2 + (self.metadata.CCD.noiseFactor**2)*self.metadata.CCD.electronsPerCount*self.metadata.CCD.EMGain*dataROI)/self.metadata.CCD.electronsPerCount
         sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*scipy.maximum(dataROI, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
+
+
+        if not self.background == None and len(numpy.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
+            bgROI = self.background[xslice, yslice, zslice] - self.metadata.Camera.ADOffset
+
+            dataROI = dataROI - bgROI
+
+        startParameters = [Ag, Ar, x0, y0, 250/2.35, dataROI[:,:,0].min(),dataROI[:,:,1].min(), .001, .001]
 	
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)

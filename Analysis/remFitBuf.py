@@ -143,21 +143,32 @@ class fitTask(taskDef.Task):
         #Find objects
         bgd = self.data.astype('f') - self.bg
 
-        if self.fitModule in splitterFitModules:
-            g_ = bgd[:, :(self.data.shape[1]/2)]
-            r_ = bgd[:, (self.data.shape[1]/2):]
-            r_ = np.fliplr(r_)
-
-            bgd = g_ + r_
-
-            self.data = numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2)
+#        if self.fitModule in splitterFitModules:
+##            g_ = bgd[:, :(self.data.shape[1]/2)]
+##            r_ = bgd[:, (self.data.shape[1]/2):]
+##            r_ = np.fliplr(r_)
+##
+##            bgd = g_ + r_
+#
+#            self.data = numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2)
 
         if not 'PSFFile' in self.md.getEntryNames():
             self.ofd = ofind.ObjectIdentifier(bgd * (bgd > 0))
         else: #if we've got a PSF then use cross-correlation object identification
             self.ofd = ofind_xcorr.ObjectIdentifier(bgd * (bgd > 0), self.md.getEntry('PSFFile'), 7, 5e-2)
             
-        self.ofd.FindObjects(self.calcThreshold(),0)
+        self.ofd.FindObjects(self.calcThreshold(),0, splitter=(self.fitModule in splitterFitModules))
+
+        if self.fitModule in splitterFitModules:
+            self.data = numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2)
+
+            g_ = self.bg[:, :(self.bg.shape[1]/2)]
+            r_ = self.bg[:, (self.bg.shape[1]/2):]
+            r_ = np.fliplr(r_)
+
+            #print g.shape, r.shape, g_.shape, r_.shape
+
+            self.bg = numpy.concatenate((g_.reshape(g.shape[0], -1, 1), r_.reshape(g.shape[0], -1, 1)),2)
 
         if self.driftEst: #do the same for objects which are on the whole time
              self.mIm = numpy.ones(self.data.shape, 'f')
@@ -186,6 +197,11 @@ class fitTask(taskDef.Task):
             pylab.clf()
             pylab.imshow(self.ofd.filteredData.T, cmap=pylab.cm.hot, hold=False)
             pylab.plot([p.x for p in self.ofd], [p.y for p in self.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
+
+            if self.fitModule in splitterFitModules:
+                pylab.plot([p.x for p in self.ofd], [bgd.shape[1] - p.y for p in self.ofd], 'o', mew=2, mec='r', mfc='none', ms=9)
+
+
             if self.driftEst:
                  pylab.plot([p.x for p in self.ofdDr], [p.y for p in self.ofdDr], 'o', mew=2, mec='b', mfc='none', ms=9)
             #axis('image')
