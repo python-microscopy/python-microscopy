@@ -161,7 +161,7 @@ class LMGLCanvas(GLCanvas):
 
         #print self.drawModes[self.mode]
 
-        glClear(GL_ACCUM_BUFFER_BIT)
+        #glClear(GL_ACCUM_BUFFER_BIT)
 
         if self.mode == 'points':
             glPointSize(self.pointSize*(float(self.Size[0])/(self.xmax - self.xmin)))
@@ -174,9 +174,9 @@ class LMGLCanvas(GLCanvas):
             glDrawArrays(self.drawModes[self.mode], 0, self.nVertices)
 
             glPopMatrix ()
-            glAccum(GL_ACCUM, 1.0)#/self.numBlurSamples)
+            #glAccum(GL_ACCUM, 1.0)#/self.numBlurSamples)
 
-        glAccum (GL_RETURN, 1.0);
+        #glAccum (GL_RETURN, 1.0);
 
         #glDrawArrays(self.drawModes[self.mode], 0, self.nVertices)
         #glDrawArrays(GL_LINES, 0, self.nVertices)
