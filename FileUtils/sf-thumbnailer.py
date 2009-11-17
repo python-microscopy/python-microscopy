@@ -37,6 +37,7 @@ thumbSize = int(sys.argv[3])
 #logging.debug('Ouput File: %s\n' % outputFile)
 #logging.debug('Thumb Size: %s\n' % thumbSize)
 
+#def generateThumbnail(inputFile, thumbsize):
 fid = open(inputFile)
 spx, spy = cPickle.load(fid)
 fid.close()

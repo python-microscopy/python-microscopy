@@ -169,6 +169,7 @@ def genShiftVectorField(nx,ny, nsx, nsy):
 def genShiftVectorFieldSpline(nx,ny, nsx, nsy, err_sx, err_sy):
     '''interpolates shift vectors using smoothing splines'''
     wonky = findWonkyVectors(nx, ny, nsx, nsy, tol=2*err_sx.mean())
+    #wonky = findWonkyVectors(nx, ny, nsx, nsy, tol=100)
     good = wonky == 0
 
     print '%d wonky vectors found and discarded' % wonky.sum()

@@ -1852,7 +1852,8 @@ class VisGUIFrame(wx.Frame):
 
     def OnGenShiftmap(self, event):
         from PYME.Analysis import twoColour, twoColourPlot
-        dx, dy, spx, spy = twoColour.genShiftVectorFieldSpline(self.filter['x'], self.filter['y'], self.filter['fitResults_dx'], self.filter['fitResults_dy'], self.filter['fitError_dx'], self.filter['fitError_dy'])
+        lx = len(self.filter['x'])
+        dx, dy, spx, spy = twoColour.genShiftVectorFieldSpline(self.filter['x']+.1*pylab.randn(lx), self.filter['y']+.1*pylab.randn(lx), self.filter['fitResults_dx'], self.filter['fitResults_dy'], self.filter['fitError_dx'], self.filter['fitError_dy'])
         twoColourPlot.PlotShiftField(dx, dy, spx, spy)
 
         import cPickle
