@@ -2,6 +2,7 @@ import os.path
 from django.http import HttpResponse
 from django.shortcuts import render_to_response
 import os
+import sys
 import glob
 from PYME.misc.dirSize import getDirectorySize
 import numpy
@@ -26,8 +27,11 @@ def findAnalysis(filename):
         fileparts = filename.split('/')
 
         cand = '/'.join(fileparts[:-2] + ['analysis',] + fileparts[-2:]) + 'r'
+        #print cand
 
         if os.path.exists(cand):
+            if not cand.startswith('/'):
+                cand = '/' + cand
             return cand
         else:
             return None
@@ -35,10 +39,15 @@ def findAnalysis(filename):
 def viewdir(request, dirname):
     if dirname.endswith('/'):
         dirname = dirname[:-1]
-    dirname1 = '/' + dirname
+    if not sys.platform == 'win32':
+        dirname1 = '/' + dirname
+    else:
+        dirname1 = dirname
     if os.path.exists(dirname1):
         #return HttpResponse("Thumbnail for %s." % filename)
         children = glob.glob(dirname1 + '/*')
+
+        children = ['/'.join(c.split('\\')) for c in children]
 
         files = [{'name':os.path.split(f)[1], 'size': '%.2f MB' % (os.path.getsize(f)/1024.**2), 'analysis':findAnalysis(f)} for f in children if os.path.isfile(f)]
         dirs = [{'name':os.path.split(f)[1], 'size': '%.2f GB' % (getDirectorySize(f)/1024.**3), 'sizef': MINSIZE + numpy.sqrt(ONEGSIZE*getDirectorySize(f)/1024.**3)} for f in children if os.path.isdir(f)]

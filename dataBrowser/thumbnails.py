@@ -1,10 +1,12 @@
 from django.http import HttpResponse
 import os
+import sys
 import Image
 from PYME.FileUtils import thumbnailDatabase
 
 def thumb(request, filename, size=200):
-    filename = '/' + filename
+    if not sys.platform == 'win32':
+        filename = '/' + filename
     if os.path.exists(filename):
         #return HttpResponse("Thumbnail for %s." % filename)
         
