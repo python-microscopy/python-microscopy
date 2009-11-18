@@ -16,4 +16,5 @@ urlpatterns = patterns('',
     # (r'^admin/(.*)', admin.site.root),
     (r'^thumbnails/(?P<filename>.*)$', 'dataBrowser.thumbnails.thumb'),
     (r'^browse/(?P<dirname>.*)$', 'dataBrowser.dirView.viewdir'),
+    (r'^open/(?P<filename>.*)$', 'dataBrowser.open.openFile'),
 )
