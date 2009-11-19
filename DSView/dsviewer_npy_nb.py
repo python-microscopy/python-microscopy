@@ -736,15 +736,37 @@ class DSViewFrame(wx.Frame):
             imshow(psf.max(2))
 
             fdialog = wx.FileDialog(None, 'Save PSF as ...',
-                wildcard='PSF file (*.psf)|*.psf', style=wx.SAVE|wx.HIDE_READONLY)
+                wildcard='PSF file (*.psf)|*.psf|H5P file (*.h5p)|*.h5p', style=wx.SAVE|wx.HIDE_READONLY)
             succ = fdialog.ShowModal()
             if (succ == wx.ID_OK):
                 fpath = fdialog.GetPath()
                 #save as a pickle containing the data and voxelsize
 
-                fid = open(fpath, 'wb')
-                cPickle.dump((psf, self.mdh.voxelsize), fid, 2)
-                fid.close()
+                if fpath.endswith('.psf'):
+                    fid = open(fpath, 'wb')
+                    cPickle.dump((psf, self.mdh.voxelsize), fid, 2)
+                    fid.close()
+                else:
+                    import tables
+                    h5out = tables.openFile(fpath,'w')
+                    filters=tables.Filters(5,'zlib',shuffle=True)
+
+                    xSize, ySize, nFrames = psf.shape
+
+                    ims = h5out.createEArray(h5out.root,'PSFData',tables.Float32Atom(),(0,xSize,ySize), filters=filters, expectedrows=nFrames)
+                    for frameN in range(nFrames):
+                        ims.append(psf[:,:,frameN][None, :,:])
+                        ims.flush()
+
+                    outMDH = MetaDataHandler.HDFMDHandler(h5out)
+
+                    outMDH.copyEntriesFrom(self.mdh)
+                    outMDH.setEntry('psf.originalFile', self.seriesName)
+
+                    h5out.flush()
+                    h5out.close()
+                    
+
 
     def OnFindObjects(self, event):
         threshold = float(self.tThreshold.GetValue())
