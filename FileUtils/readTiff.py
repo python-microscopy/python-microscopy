@@ -20,8 +20,8 @@ def read3DTiff(filename):
     im.seek(0)
     #print im.size
 
-    ima = np.array(im.getdata(), 'int16').newbyteorder('BE')
-    #ima = np.array(im)
+    #ima = np.array(im.getdata(), 'int16').newbyteorder('BE')
+    ima = np.array(im).newbyteorder('BE')
 
     print ima.dtype
     
@@ -36,7 +36,8 @@ def read3DTiff(filename):
             pos += 1
             im.seek(pos)
 
-            ima = np.concatenate((ima, np.array(im.getdata(), 'int16').newbyteorder('BE').reshape((im.size[1], im.size[0], 1))), 2)
+            #ima = np.concatenate((ima, np.array(im.getdata(), 'int16').newbyteorder('BE').reshape((im.size[1], im.size[0], 1))), 2)
+            ima = np.concatenate((ima, np.array(im).newbyteorder('BE').reshape((im.size[1], im.size[0], 1))), 2)
 
     except EOFError:
         pass
