@@ -233,6 +233,65 @@ class dec_4pi(dec):
         
         d = real(d);
         return ravel(d)
+
+class dec_conv(dec):
+    def psf_calc(self, psf, data_size):
+        g = psf;
+
+        self.height = data_size[0]
+        self.width  = data_size[1]
+        self.depth  = data_size[2]
+
+        (x,y,z) = mgrid[-floor(self.height/2.0):(ceil(self.height/2.0)), -floor(self.width/2.0):(ceil(self.width/2.0)), -floor(self.depth/2.0):(ceil(self.depth/2.0))]
+
+        gs = shape(g);
+
+        g = g[int(floor((gs[0] - self.height)/2)):int(self.height + floor((gs[0] - self.height)/2)), int(floor((gs[1] - self.width)/2)):int(self.width + floor((gs[1] - self.width)/2)), int(floor((gs[2] - self.depth)/2)):int(self.depth + floor((gs[2] - self.depth)/2))]
+
+        #g = abs(ifftshift(ifftn(abs(fftn(g)))));
+        g = (g/sum(sum(sum(g))));
+
+        self.g = g;
+
+        #%g = circshift(g, [0, -1]);
+        self.H = cast['f'](fftn(g));
+        self.Ht = cast['f'](ifftn(g));
+
+
+    def Lfunc(self, f):
+        fs = reshape(f, (self.height, self.width, self.depth))
+        a = -6*fs
+
+        a[:,:,0:-1] += fs[:,:,1:]
+        a[:,:,1:] += fs[:,:,0:-1]
+
+        a[:,0:-1,:] += fs[:,1:,:]
+        a[:,1:,:] += fs[:,0:-1,:]
+
+        a[0:-1,:,:] += fs[1:,:,:]
+        a[1:,:,:] += fs[0:-1,:,:]
+
+        return ravel(cast['f'](a))
+
+    Lhfunc=Lfunc
+
+    def Afunc(self, f):
+        fs = reshape(f, (self.height, self.width, self.depth))
+
+        F = fftn(fs)
+
+        d = ifftshift(ifftn(F*self.H));
+
+        d = real(d);
+        return ravel(d)
+
+    def Ahfunc(self, f):
+        fs = reshape(f, (self.height, self.width, self.depth))
+
+        F = fftn(fs)
+        d = ifftshift(ifftn(F*self.Ht));
+        d = real(d);
+        return ravel(d)
     
 class dec_4pi_c(dec_4pi):
     def prepare(self):
