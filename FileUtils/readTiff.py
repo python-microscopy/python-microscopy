@@ -18,10 +18,16 @@ def read3DTiff(filename):
     im = Image.open(filename)
 
     im.seek(0)
-    #print im.size
+
+    #PIL's endedness support is subtly broken - try to fix it
+    #NB this is untested for floating point tiffs
+    endedness = 'LE'
+    if im.ifd.prefix =='MM':
+        endedness = 'BE'
+    
 
     #ima = np.array(im.getdata(), 'int16').newbyteorder('BE')
-    ima = np.array(im).newbyteorder('BE')
+    ima = np.array(im).newbyteorder(endedness)
 
     print ima.dtype
     
@@ -37,7 +43,7 @@ def read3DTiff(filename):
             im.seek(pos)
 
             #ima = np.concatenate((ima, np.array(im.getdata(), 'int16').newbyteorder('BE').reshape((im.size[1], im.size[0], 1))), 2)
-            ima = np.concatenate((ima, np.array(im).newbyteorder('BE').reshape((im.size[1], im.size[0], 1))), 2)
+            ima = np.concatenate((ima, np.array(im).newbyteorder(endedness).reshape((im.size[1], im.size[0], 1))), 2)
 
     except EOFError:
         pass
