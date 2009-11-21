@@ -11,9 +11,12 @@
 ##################
 
 from scipy import * 
-from scipy.linalg import * 
-import weave
-import cDec
+from scipy.linalg import *
+from scipy.fftpack import fftn, ifftn, fftshift, ifftshift
+#import weave
+#import cDec
+from PYME import pad
+import numpy
 
 class dec:
     def subsearch(self, f0, res, fdef, Afunc, Lfunc, lam, S):
@@ -236,20 +239,56 @@ class dec_4pi(dec):
 
 class dec_conv(dec):
     def psf_calc(self, psf, data_size):
+        pw = (numpy.array(data_size) - psf.shape)/2.
+        pw1 = numpy.floor(pw)
+        pw2 = numpy.ceil(pw)
+
         g = psf;
+
+        if pw1[0] < 0:
+            if pw2[0] < 0:
+                g = g[-pw1[0]:pw2[0]]
+            else:
+                g = g[-pw1[0]:]
+
+            pw1[0] = 0
+            pw2[0] = 0
+
+        if pw1[1] < 0:
+            if pw2[1] < 0:
+                g = g[-pw1[1]:pw2[1]]
+            else:
+                g = g[-pw1[1]:]
+
+            pw1[1] = 0
+            pw2[1] = 0
+
+        if pw1[2] < 0:
+            if pw2[2] < 0:
+                g = g[-pw1[2]:pw2[2]]
+            else:
+                g = g[-pw1[2]:]
+
+            pw1[2] = 0
+            pw2[2] = 0
+
+
+        g = pad.with_constant(g, ((pw2[0], pw1[0]), (pw2[1], pw1[1]),(pw2[2], pw1[2])), (0,))
 
         self.height = data_size[0]
         self.width  = data_size[1]
         self.depth  = data_size[2]
 
-        (x,y,z) = mgrid[-floor(self.height/2.0):(ceil(self.height/2.0)), -floor(self.width/2.0):(ceil(self.width/2.0)), -floor(self.depth/2.0):(ceil(self.depth/2.0))]
-
-        gs = shape(g);
-
-        g = g[int(floor((gs[0] - self.height)/2)):int(self.height + floor((gs[0] - self.height)/2)), int(floor((gs[1] - self.width)/2)):int(self.width + floor((gs[1] - self.width)/2)), int(floor((gs[2] - self.depth)/2)):int(self.depth + floor((gs[2] - self.depth)/2))]
-
-        #g = abs(ifftshift(ifftn(abs(fftn(g)))));
-        g = (g/sum(sum(sum(g))));
+        self.shape = data_size
+#
+#        (x,y,z) = mgrid[-floor(self.height/2.0):(ceil(self.height/2.0)), -floor(self.width/2.0):(ceil(self.width/2.0)), -floor(self.depth/2.0):(ceil(self.depth/2.0))]
+#
+#        gs = shape(g);
+#
+#        g = g[int(floor((gs[0] - self.height)/2)):int(self.height + floor((gs[0] - self.height)/2)), int(floor((gs[1] - self.width)/2)):int(self.width + floor((gs[1] - self.width)/2)), int(floor((gs[2] - self.depth)/2)):int(self.depth + floor((gs[2] - self.depth)/2))]
+#
+#        #g = abs(ifftshift(ifftn(abs(fftn(g)))));
+#        g = (g/sum(sum(sum(g))));
 
         self.g = g;
 

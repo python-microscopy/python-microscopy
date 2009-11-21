@@ -109,3 +109,20 @@ class TaskQueue:
     def setPopFcn(self, fcn):
         ''' sets the function which determines which task to give a worker'''
         self.fTaskToPop = fcn
+
+
+class TaskQueueWithData(TaskQueue):
+    def __init__(self, name, initialTasks=[], onEmpty = doNix, fTaskToPop = popZero):
+        TaskQueue.__init__(self, name, initialTasks, onEmpty, fTaskToPop)
+
+        self.data = {}
+
+    def getQueueData(self, fieldName, *args):
+        '''Get data, defined by fieldName and potntially additional arguments,  ascociated with queue'''
+
+        return self.data[fieldName]
+
+   def setQueueData(self, fieldName, value):
+        '''Get data, defined by fieldName and potntially additional arguments,  ascociated with queue'''
+
+        self.data[fieldName] = value
