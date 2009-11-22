@@ -141,7 +141,8 @@ def getPSF3D(im, points, PSshape = [30,30,30], blur=[.5, .5, 1]):
         F = fftn(imi)
         d = d + ifftn(F*exp(-2j*pi*(kx*-dx + ky*-dy + kz*-dz))).real
 
+    d = scipy.ndimage.gaussian_filter(d, blur)
     d = d - d.min()
     d = d/d.max()
 
-    return scipy.ndimage.gaussian_filter(d, blur)
+    return d
