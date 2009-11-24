@@ -162,13 +162,14 @@ class fitTask(taskDef.Task):
         if self.fitModule in splitterFitModules:
             self.data = numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2)
 
-            g_ = self.bg[:, :(self.bg.shape[1]/2)]
-            r_ = self.bg[:, (self.bg.shape[1]/2):]
-            r_ = np.fliplr(r_)
+            if not len(self.bgindices) == 0:
+                g_ = self.bg[:, :(self.bg.shape[1]/2)]
+                r_ = self.bg[:, (self.bg.shape[1]/2):]
+                r_ = np.fliplr(r_)
 
-            #print g.shape, r.shape, g_.shape, r_.shape
+                #print g.shape, r.shape, g_.shape, r_.shape
 
-            self.bg = numpy.concatenate((g_.reshape(g.shape[0], -1, 1), r_.reshape(g.shape[0], -1, 1)),2)
+                self.bg = numpy.concatenate((g_.reshape(g.shape[0], -1, 1), r_.reshape(g.shape[0], -1, 1)),2)
 
         if self.driftEst: #do the same for objects which are on the whole time
              self.mIm = numpy.ones(self.data.shape, 'f')
