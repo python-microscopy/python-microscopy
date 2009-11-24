@@ -419,13 +419,13 @@ class MyViewPanel(viewpanel.ViewPanel):
     
     def OnKeyPress(self, event):
         if event.GetKeyCode() == wx.WXK_PRIOR:
-            self.zp =(self.zp - 1)
+            self.zp = max(0, self.zp - 1)
             if ('update' in dir(self.GetParent())):
                 self.GetParent().update()
             else:
                 self.imagepanel.Refresh()
         elif event.GetKeyCode() == wx.WXK_NEXT:
-            self.zp = (self.zp + 1)
+            self.zp = min(self.zp + 1, self.ds.shape[2] - 1)
             if ('update' in dir(self.GetParent())):
                 self.GetParent().update()
             else:
