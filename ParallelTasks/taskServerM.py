@@ -207,6 +207,10 @@ class TaskQueueSet(Pyro.core.ObjBase):
         '''Set data ascociated with queue'''
         self.taskQueues[queueName].setQueueData(*args)
 
+    def addQueueEvents(self, queueName, *args):
+        '''Set data ascociated with queue'''
+        self.taskQueues[queueName].addQueueEvents(*args)
+
     def getQueueMetaData(self, queueName, *args):
         '''Get meta-data ascociated with queue'''
         return self.taskQueues[queueName].getQueueMetaData(*args)

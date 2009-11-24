@@ -74,6 +74,9 @@ def pushImagesHDF(startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
     mdhQ = MetaDataHandler.QueueMDHandler(tq, seriesName, mdh)
     mdhQ.setEntry('Analysis.DetectionThreshold', detThresh)
     mdhQ.setEntry('Analysis.FitModule', fitFcn)
+    evts = dataSource.getEvents()
+    if len(evts) > 0:
+        tq.addQueueEvents(seriesName, evts)
     for i in range(startingAt, ds.shape[2]):
         if 'Analysis.NumBGFrames' in mdh.getEntryNames():
             bgi = range(max(i - mdh.getEntry('Analysis.NumBGFrames'),mdh.getEntry('EstimatedLaserOnFrameNo')), i)

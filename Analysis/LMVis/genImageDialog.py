@@ -16,7 +16,7 @@ import histLimits
 
 class GenImageDialog(wx.Dialog):
     def __init__(self, parent, mode='current', defaultPixelSize=5.0, jitterVariables = [], jitterVarDefault=0, mcProbDefault = 1.0, colours = [], zvals=None, jitterVarDefaultZ=0):
-        wx.Dialog.__init__(self, parent, title='Edit Filter ...')
+        wx.Dialog.__init__(self, parent, title='Generate Image ...')
 
         pixelSzs = ['%3.2f' % (defaultPixelSize*2**n) for n in range(6)]
 

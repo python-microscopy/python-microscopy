@@ -119,6 +119,14 @@ class HDFResultsTaskQueue(TaskQueue):
             self.fileResultsLock.release()
         return res
 
+    def addQueueEvents(self, events):
+        self.fileResultsLock.acquire()
+        try:
+            self.resultsEvents.append(events)
+        finally:
+            self.fileResultsLock.release()
+
+
     def getQueueMetaDataKeys(self):
         self.fileResultsLock.acquire()
         res = self.resultsMDH.getEntryNames()
