@@ -11,6 +11,7 @@
 ##################
 
 import Image
+from PYME.misc import TiffImagePlugin #monkey patch PIL with improved tiff support from Priithon
 import subprocess
 
 def writeTiff(im, outfile):
@@ -31,3 +32,37 @@ def writeTiff(im, outfile):
 
     # remove frame files here
     subprocess.call('rm /tmp/frame*.tif', shell=True)
+
+
+#Adapted to use 3rd dimension as z from priithons 'useful.py'
+def saveTiffMultipage(arr, fn, **params):
+    if arr.ndim != 3:
+        raise ValueError, "can only save 3d arrays"
+
+    fp = open(fn, 'w+b')
+
+    ifd_offsets=[]
+
+    params["_debug_multipage"] = True
+    for z in range(arr.shape[2]):
+        ii = Image.fromarray(arr[:,:,z].astype('f'), 'F')
+
+        fp.seek(0,2) # go to end of file
+        if z==0:
+            # ref. PIL  TiffImagePlugin
+            # PIL always starts the first IFD at offset 8
+            ifdOffset = 8
+        else:
+            ifdOffset = fp.tell()
+
+        ii.save(fp, format="TIFF", **params)
+
+        if z>0: # correct "next" entry of previous ifd -- connect !
+            ifdo = ifd_offsets[-1]
+            fp.seek(ifdo)
+            ifdLength = ii._debug_multipage.i16(fp.read(2))
+            fp.seek(ifdLength*12,1) # go to "next" field near end of ifd
+            fp.write(ii._debug_multipage.o32( ifdOffset ))
+
+        ifd_offsets.append(ifdOffset)
+    fp.close()

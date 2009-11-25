@@ -4,11 +4,11 @@ facsPlot.pyo
 congrid.pyo
 auiFloatBook.pyc
 ricsSim.pyc
-wxPlotPanel.pyo
 colorsys.pyc
+wxPlotPanel.pyo
 __init__.pyo
-extraCMaps.pyc
 wxThread.pyo
+extraCMaps.pyc
 editList.pyc
 deMod.pyo
 glassModel.pyo
@@ -17,6 +17,7 @@ glassModel.pyc
 auiFloatBook.pyo
 colorsys.pyo
 fbpIcons.pyc
+TiffImagePlugin.pyc
 fbpIcons.pyo
 listctrlMixins.pyc
 editList.pyo

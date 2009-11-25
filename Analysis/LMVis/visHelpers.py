@@ -66,25 +66,29 @@ class GeneratedImage:
         im.save(filename)
 
     def save3D(self, filename):
-        import Image
-        command = ["tiffcp"]
-        # add options here, if any (e.g. for compression)
+#        import Image
+#        command = ["tiffcp"]
+#        # add options here, if any (e.g. for compression)
+#
+#        #im = im.astype('uint16')
+#        #im = im.astype('>u2').astype('<u2')
+#
+#        for i in range(self.img.shape[2]):
+#            framefile = "/tmp/frame%d.tif" % i
+#
+#            im = Image.fromarray(self.img[:,:,i].astype('f'), 'F')
+#            im.save(framefile)
+#            command.append(framefile)
+#
+#        command.append(filename)
+#        subprocess.call(command)
+#
+#        # remove frame files here
+#        subprocess.call('rm /tmp/frame*.tif', shell=True)
 
-        #im = im.astype('uint16')
-        #im = im.astype('>u2').astype('<u2')
+        from PYME.FileUtils import saveTiffStack
 
-        for i in range(self.img.shape[2]):
-            framefile = "/tmp/frame%d.tif" % i
-
-            im = Image.fromarray(self.img[:,:,i].astype('f'), 'F')
-            im.save(framefile)
-            command.append(framefile)
-
-        command.append(filename)
-        subprocess.call(command)
-
-        # remove frame files here
-        subprocess.call('rm /tmp/frame*.tif', shell=True)
+        saveTiffStack.saveTiffMultipage(self.img, filename)
 
         
 
