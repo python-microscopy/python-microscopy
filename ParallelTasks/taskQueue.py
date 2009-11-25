@@ -122,7 +122,7 @@ class TaskQueueWithData(TaskQueue):
 
         return self.data[fieldName]
 
-   def setQueueData(self, fieldName, value):
+    def setQueueData(self, fieldName, value):
         '''Get data, defined by fieldName and potntially additional arguments,  ascociated with queue'''
 
         self.data[fieldName] = value

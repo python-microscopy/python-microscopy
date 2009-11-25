@@ -264,9 +264,9 @@ class LMGLCanvas(GLCanvas):
 
         to = testObj()
 
-        self.setBlob(to[0], to[1], to[2], smScale=[1e3,1e3,1e3])
+        #self.setBlob(to[0], to[1], to[2], smScale=[1e3,1e3,1e3])
         #self.setTriang(to[0], to[1], to[2])
-        #self.setPoints(to[0], to[1], to[2], to[2])
+        self.setPoints(to[0], to[1], to[2], to[2])
 
         #glMatrixMode(GL_PROJECTION)
         #glLoadIdentity()
