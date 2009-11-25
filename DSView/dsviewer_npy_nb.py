@@ -167,6 +167,16 @@ class DSViewFrame(wx.Frame):
                     self.dataSource = readTiff.read3DTiff(filename)
                     self.mdh = MetaData.ConfocDefault
 
+                    from PYME.DSView.voxSizeDialog import VoxSizeDialog
+
+                    dlg = VoxSizeDialog(self)
+                    dlg.ShowModal()
+
+                    self.mdh.setEntry('voxelsize.x', dlg.GetVoxX())
+                    self.mdh.setEntry('voxelsize.y', dlg.GetVoxY())
+                    self.mdh.setEntry('voxelsize.z', dlg.GetVoxZ())
+
+
                     from PYME.ParallelTasks.relativeFiles import getRelFilename
                     self.seriesName = getRelFilename(filename)
 
