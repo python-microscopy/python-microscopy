@@ -1715,7 +1715,12 @@ class VisGUIFrame(wx.Frame):
         jitVars += self.colourFilter.keys()
         jitVars += self.GeneratedMeasures.keys()
 
-        dlg = genImageDialog.GenImageDialog(self, mode='3Dgaussian', colours=self.fluorSpecies.keys(), zvals = self.mapping['z'], jitterVariables = jitVars, jitterVarDefault=jitVars.index('error_x'), jitterVarDefaultZ=jitVars.index('fitError_z0'))
+        if 'fitError_z0' in jitVars:
+            jvzi = jitVars.index('fitError_z0')
+        else:
+            jvzi = 0
+
+        dlg = genImageDialog.GenImageDialog(self, mode='3Dgaussian', colours=self.fluorSpecies.keys(), zvals = self.mapping['z'], jitterVariables = jitVars, jitterVarDefault=jitVars.index('error_x'), jitterVarDefaultZ=jvzi)
 
         ret = dlg.ShowModal()
 
