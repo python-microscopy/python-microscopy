@@ -219,6 +219,9 @@ class DSViewFrame(wx.Frame):
 
 
         self.vp = MyViewPanel(self.notebook1, self.ds)
+
+        self.mainWind = self
+
         self.sh = wx.py.shell.Shell(id=-1,
               parent=self.notebook1, pos=wx.Point(0, 0), size=wx.Size(618, 451), style=0, locals=self.__dict__, 
               introText='Python SMI bindings - note that help, license etc below is for Python, not PySMI\n\n')
@@ -314,6 +317,14 @@ class DSViewFrame(wx.Frame):
         #mEdit.Append(EDIT_CROP, "Crop", "", wx.ITEM_NORMAL)
         self.menubar.Append(mTasks, "Set defaults for")
 
+        mDeconvolution = wx.Menu()
+        DECONV_ICTM = wx.NewId()
+        DECONV_SAVE = wx.NewId()
+        mDeconvolution.Append(DECONV_ICTM, "ICTM", "", wx.ITEM_NORMAL)
+        mDeconvolution.AppendSeparator()
+        mDeconvolution.Append(DECONV_SAVE, "Save", "", wx.ITEM_NORMAL)
+        self.menubar.Append(mDeconvolution, "Deconvolution")
+
         # Menu Bar end
         wx.EVT_MENU(self, wx.ID_SAVEAS, self.extractFrames)
         wx.EVT_MENU(self, F_SAVE_POSITIONS, self.savePositions)
@@ -325,6 +336,9 @@ class DSViewFrame(wx.Frame):
 
         wx.EVT_MENU(self, TASKS_CALIBRATE_SPLITTER, self.OnCalibrateSplitter)
         wx.EVT_MENU(self, TASKS_STANDARD_2D, self.OnStandard2D)
+
+        wx.EVT_MENU(self, DECONV_ICTM, self.OnDeconvICTM)
+        wx.EVT_MENU(self, DECONV_SAVE, self.saveDeconvolution)
 		
         self.statusbar = self.CreateStatusBar(1, wx.ST_SIZEGRIP)
 
@@ -775,6 +789,59 @@ class DSViewFrame(wx.Frame):
 
                     h5out.flush()
                     h5out.close()
+
+    def OnDeconvICTM(self, event):
+        from PYME.Deconv.deconvDialogs import DeconvSettingsDialog,DeconvProgressDialog
+
+        dlg = DeconvSettingsDialog(self)
+        if dlg.ShowModal() == wx.ID_OK:
+            from PYME.Deconv import dec, decThread
+            nIter = dlg.GetNumIterationss()
+            regLambda = dlg.GetRegularisationLambda()
+
+            self.dlgDeconProg = DeconvProgressDialog(self, nIter)
+            self.dlgDeconProg.Show()
+
+            psf, vs = numpy.load(dlg.GetPSFFilename())
+
+            self.dec = dec.dec_conv()
+            self.dec.psf_calc(psf, self.ds.shape)
+
+            self.decT = decThread.decThread(self.dec, self.ds.ravel(), regLambda, nIter)
+            self.decT.start()
+
+            self.deconTimer = mytimer()
+            self.deconTimer.WantNotification.append(self.OnDeconTimer)
+
+            self.deconTimer.Start(100)
+
+
+    def OnDeconEnd(self, sucess):
+        self.dlgDeconProg.Destroy()
+        if sucess:
+            if 'decvp' in dir(self):
+                for pNum in range(self.notebook1.GetPageCount()):
+                    if self.notebook1.GetPage(pNum) == self.decvp:
+                        self.notebook1.DeletePage(pNum)
+            self.decvp = MyViewPanel(self.notebook1, self.decT.res)
+            self.notebook1.AddPage(page=self.decvp, select=True, caption='Deconvolved')
+
+
+
+
+    def OnDeconTimer(self, caller=None):
+        if self.decT.isAlive():
+            if not self.dlgDeconProg.Tick(self.dec):
+                self.decT.kill()
+                self.OnDeconEnd(False)
+        else:
+            self.deconTimer.Stop()
+            self.OnDeconEnd(True)
+
+            
+
+
+            
                     
 
 
@@ -955,6 +1022,9 @@ class DSViewFrame(wx.Frame):
         if 'fitInf' in dir(self):
             self.fitInf.UpdateDisp(self.vp.PointsHitTest())
 
+        if 'decvp' in dir(self):
+            self.decvp.imagepanel.Refresh()
+
     def saveStack(self, event=None):
         fdialog = wx.FileDialog(None, 'Save Data Stack as ...',
             wildcard='*.kdf', style=wx.SAVE|wx.HIDE_READONLY)
@@ -1007,6 +1077,21 @@ class DSViewFrame(wx.Frame):
             npFN = os.path.splitext(outFilename)[0] + '.npy'
 
             numpy.save(npFN, self.objPosRA)
+
+    def saveDeconvolution(self, event=None):
+        fdialog = wx.FileDialog(None, 'Save Positions ...',
+            wildcard='TIFF Files|*.tif', defaultFile=os.path.splitext(self.seriesName)[0] + '_dec.tif', style=wx.SAVE|wx.HIDE_READONLY)
+        succ = fdialog.ShowModal()
+        if (succ == wx.ID_OK):
+            outFilename = fdialog.GetPath()
+
+            from PYME.FileUtils import saveTiffStack
+
+            saveTiffStack.saveTiffMultipage(self.dec.res, outFilename)
+
+            
+
+            
             
     def saveFits(self, event=None):
         fdialog = wx.FileDialog(None, 'Save Fit Results ...',

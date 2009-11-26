@@ -19,6 +19,11 @@ from PYME import pad
 import numpy
 
 class dec:
+    def __init__(self):
+        self.tests=[]
+        self.ress = []
+        self.prefs = []
+        
     def subsearch(self, f0, res, fdef, Afunc, Lfunc, lam, S):
         nsrch = size(S,1)
         pref = Lfunc(f0-fdef)
@@ -84,6 +89,9 @@ class dec:
             test = 1 - abs(dot(S[:,0], S[:,1])/(norm(S[:,0])*norm(S[:,1])))
 
             print 'Test Statistic %f\n' % (test,)
+            self.tests.append(test)
+            self.ress.append(norm(res))
+            self.prefs.append(norm(pref))
 
             (fnew, cpred, spred) = self.subsearch(f, res, fdef, self.Afunc, self.Lfunc, lamb, S[:, 0:nsrch])
 
@@ -243,7 +251,7 @@ class dec_conv(dec):
         pw1 = numpy.floor(pw)
         pw2 = numpy.ceil(pw)
 
-        g = psf;
+        g = psf#/psf.sum();
 
         if pw1[0] < 0:
             if pw2[0] < 0:

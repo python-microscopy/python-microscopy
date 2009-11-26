@@ -1964,19 +1964,7 @@ class VisGUIFrame(wx.Frame):
                         else:
                             i += 1
 
-                if 'Events' in self.selectedDataSource.h5f.root:
-                    self.events = self.selectedDataSource.h5f.root.Events[:]
-
-                    self.elv = eventLogViewer.eventLogPanel(self.notebook, self.events, self.mdh, [0, self.selectedDataSource['tIndex'].max()]);
-                    self.notebook.AddPage(self.elv, 'Events')
-
-                    evKeyNames = set()
-                    for e in self.events:
-                        evKeyNames.add(e['EventName'])
-
-                    if 'ProtocolFocus' in evKeyNames:
-                        self.zm = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh.getEntry('Camera.CycleTime'), self.mdh.getEntry('StartTime'), self.mdh.getEntry('Protocol.PiezoStartPos'))
-                        self.elv.SetCharts([('Focus [um]', self.zm, 'ProtocolFocus'),])
+                
 
                 if 'fitResults_Ag' in self.selectedDataSource.keys():
                     #if we used the splitter set up a mapping so we can filter on total amplitude and ratio
@@ -1995,6 +1983,28 @@ class VisGUIFrame(wx.Frame):
 
                     self.colp = colourPanel.colourPanel(self.notebook, self)
                     self.notebook.AddPage(self.colp, 'Colour')
+                else:
+                    self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource)
+                    self.dataSources.append(self.selectedDataSource)
+                    
+                    
+
+                if 'Events' in self.selectedDataSource.resultsSource.h5f.root:
+                    self.events = self.selectedDataSource.resultsSource.h5f.root.Events[:]
+
+                    self.elv = eventLogViewer.eventLogPanel(self.notebook, self.events, self.mdh, [0, self.selectedDataSource['tIndex'].max()]);
+                    self.notebook.AddPage(self.elv, 'Events')
+
+                    evKeyNames = set()
+                    for e in self.events:
+                        evKeyNames.add(e['EventName'])
+
+                    if 'ProtocolFocus' in evKeyNames:
+                        self.zm = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh.getEntry('Camera.CycleTime'), self.mdh.getEntry('StartTime'), self.mdh.getEntry('Protocol.PiezoStartPos'))
+                        self.elv.SetCharts([('Focus [um]', self.zm, 'ProtocolFocus'),])
+
+                        self.selectedDataSource.zm = self.zm
+                        self.selectedDataSource.setMapping('focus', '1e3*zm(t)')
 
                 if not self.mdp == None: #remove previous colour viewer
                     i = 0
@@ -2222,9 +2232,9 @@ class VisGUIFrame(wx.Frame):
             else:
                 self.mapping = inpFilt.mappingFilter(self.filter)
 
-                if 'zm' in dir(self):
-                    self.mapping.zm = self.zm
-                    self.mapping.setMapping('focus', '1e3*zm(t)')
+#                if 'zm' in dir(self):
+#                    self.mapping.zm = self.zm
+#                    self.mapping.setMapping('focus', '1e3*zm(t)')
 
                 if not 'dz_dt' in dir(self.mapping):
                     self.mapping.dz_dt = 0.
@@ -2250,8 +2260,8 @@ class VisGUIFrame(wx.Frame):
         self.objects = None
 
         self.GeneratedMeasures = {}
-        if 'zm' in dir(self):
-            self.GeneratedMeasures['focusPos'] = self.zm(self.colourFilter['tIndex'].astype('f'))
+#        if 'zm' in dir(self):
+#            self.GeneratedMeasures['focusPos'] = self.zm(self.colourFilter['tIndex'].astype('f'))
         self.Quads = None
 
         self.RefreshView()

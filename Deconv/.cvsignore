@@ -1,8 +1,11 @@
 __init__.pyc
 tcluster.pyo
 block_dec.pyo
+deconvSettingsDialog.pyc
 read_kdf.pyo
-write_kdf.pyo
 dec.pyc
+deconvDialogs.pyc
+write_kdf.pyo
 dec_test.pyo
+decThread.pyc
 dec.pyo
