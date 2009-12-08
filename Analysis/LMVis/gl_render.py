@@ -42,7 +42,7 @@ cm_grey = cmap_mult(numpy.ones(3), [0, 0, 0])
 class LMGLCanvas(GLCanvas):
     def __init__(self, parent, trackSelection=True, vp = None, vpVoxSize = None):
         attriblist = [wx.glcanvas.WX_GL_RGBA, wx.glcanvas.WX_GL_DOUBLEBUFFER, 0]
-        GLCanvas.__init__(self, parent,-1, attribList = attriblist)
+        GLCanvas.__init__(self, parent,-1)#, attribList = attriblist)
         #GLCanvas.__init__(self, parent,-1)
         wx.EVT_PAINT(self, self.OnPaint)
         wx.EVT_SIZE(self, self.OnSize)
@@ -974,8 +974,12 @@ class LMGLCanvas(GLCanvas):
                     #print tile.shape
                     #print h[xp:(xp + xd), yp:(yp + yd)].shape
                     #print tile[:xd, :yd].shape
+                    #print syn
 
                     h[xp:(xp + xd), yp:(yp + yd)] = tile[:xd, :yd]
+                    #h[xp:(xp + xd), yp:(yp + yd)] = y0 #tile[:xd, :yd]
+
+
 
             #restore viewport
             self.xmin, self.xmax, self.ymin, self.ymax = (minx, maxx, miny, maxy)
