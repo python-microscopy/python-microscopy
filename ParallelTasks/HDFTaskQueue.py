@@ -282,7 +282,22 @@ class HDFTaskQueue(HDFResultsTaskQueue):
 
     def postTasks(self,tasks):
         #self.openTasks += tasks
-        print 'posting tasks not implemented yet'
+        if self.acceptNewTasks:
+            self.dataFileLock.acquire()
+            for task in tasks:
+                self.imageData.append(task)
+                #self.h5DataFile.flush()
+                #self.dataFileLock.release()
+
+                if self.releaseNewTasks:
+                    self.openTasks.append(self.imNum)
+                self.imNum += 1
+
+            self.h5DataFile.flush()
+            self.dataFileLock.release()
+        else:
+            print "can't post new tasks"
+        #print 'posting tasks not implemented yet'
 
     def getTask(self, workerN = 0, NWorkers = 1):
         """get task from front of list, blocks"""

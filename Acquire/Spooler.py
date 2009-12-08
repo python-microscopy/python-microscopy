@@ -61,6 +61,7 @@ class Spooler:
    def StopSpool(self):
        self.acq.WantFrameNotification.remove(self.Tick)
        eventLog.WantEventNotification.remove(self.evtLogger)
+       self.FlushBuffer()
        self.doStopLog()
        #self.writeLog()
        
@@ -95,6 +96,9 @@ class Spooler:
 
    def fakeTime(self):
        return self.tStart + self.imNum*self.scope.cam.GetIntegTime()
+
+   def FlushBuffer(self):
+       pass
         
         
    def __del__(self):

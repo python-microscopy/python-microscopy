@@ -49,6 +49,8 @@ class Spooler(sp.Spooler):
        self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
 
        self.seriesName = filename
+       self.buffer = []
+       self.buflen = 30
 
        self.tq.createQueue('HDFTaskQueue',self.seriesName, filename, frameSize = (scope.cam.GetPicWidth(), scope.cam.GetPicHeight()))
 
@@ -58,9 +60,18 @@ class Spooler(sp.Spooler):
        sp.Spooler.__init__(self, scope, filename, acquisator, protocol, parent)
    
    def Tick(self, caller):
-      self.tq.postTask(cSMI.CDataStack_AsArray(caller.ds, 0).reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()), self.seriesName)
+      #self.tq.postTask(cSMI.CDataStack_AsArray(caller.ds, 0).reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()), self.seriesName)
+      self.buffer.append(cSMI.CDataStack_AsArray(caller.ds, 0).reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()))
+
+      if len(self.buffer) >= buflen:
+          self.FlushBuffer()
 
       sp.Spooler.Tick(self, caller)
+      
+   def FlushBuffer(self):
+      self.tq.postTasks(self.buffer, self.seriesName)
+      self.buffer = []
+
 
 
    
