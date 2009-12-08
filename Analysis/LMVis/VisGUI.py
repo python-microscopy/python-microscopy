@@ -1502,8 +1502,8 @@ class VisGUIFrame(wx.Frame):
             x1 = min(self.glCanvas.xmax, self.imageBounds.x1)
             y1 = min(self.glCanvas.ymax, self.imageBounds.y1)
 
-            #imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
-            imb = ImageBounds(x0, y0, x1, y1)
+            imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
+            #imb = ImageBounds(x0, y0, x1, y1)
 
             status = statusLog.StatusLogger('Generating Triangulated Image ...')
 
