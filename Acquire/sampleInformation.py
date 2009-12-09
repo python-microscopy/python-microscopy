@@ -30,13 +30,13 @@ class SampleInfoDialog(wx.Dialog):
 
         sizer2.Add(wx.StaticText(self, -1, 'Creator:'), 0, wx.ALL, 5)
 
-        self.tCreator = wx.TextCtrl(self, -1, '')
+        self.tCreator = wx.TextCtrl(self, -1, lastCreator)
         self.tCreator.SetToolTip(wx.ToolTip('This should be the person who mounted the slide & should have details about the slide ref in their lab book'))
         sizer2.Add(self.tCreator, 1, wx.ALL, 5)
 
         sizer2.Add(wx.StaticText(self, -1, 'Slide Ref:'), 0, wx.ALL, 5)
 
-        self.tSlideRef = wx.TextCtrl(self, -1, '')
+        self.tSlideRef = wx.TextCtrl(self, -1, lastSlideRef)
         self.tSlideRef.SetToolTip(wx.ToolTip('This should be the reference #/code which is on the slide and in lab book'))
         sizer2.Add(self.tSlideRef, 0, wx.ALL, 5)
 
@@ -89,12 +89,26 @@ class SampleInfoDialog(wx.Dialog):
 
     def PopulateMetadata(self, mdh):
         global lastCreator, lastSlideRef
-        lastCreator = self.tCreator.GetValue()
-        lastSlideRef = self.tSlideRef.GetValue()
+
+        creator = self.tCreator.GetValue()
+        slideRef = self.tSlideRef.GetValue()
+        notes = self.tNotes.GetValue()
+
+        lastCreator = creator
+        lastSlideRef = slideRef
+
+        if len(creator) == 0:
+            creator = '<none>'
+
+        if len(slideRef) == 0:
+            slideRef = '<none>'
+
+        if len(notes) == 0:
+            notes = '<none>'
         
-        mdh.setEntry('Sample.Creator', u'' + str(self.tCreator.GetValue()))
-        mdh.setEntry('Sample.SlideRef', u'' +str(self.tSlideRef.GetValue()))
-        mdh.setEntry('Sample.Notes', u'' +str(self.tNotes.GetValue()))
+        mdh.setEntry('Sample.Creator', creator)
+        mdh.setEntry('Sample.SlideRef', slideRef)
+        mdh.setEntry('Sample.Notes', notes)
 
         labels = []
         for i in range(self.gLabelling.GetNumberRows()):

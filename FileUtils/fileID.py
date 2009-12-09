@@ -45,6 +45,10 @@ def genResultsFileID(filename):
     return hash(ds)
 
 def genFileID(filename):
+    '''generate database ids for files. Where we know about the file type an ID
+    is generated from the data which should be persistant over copies of the file,
+    otherwise a hash of the filename is used.
+    '''
     ext = os.path.splitext(filename)[1]
 
     if ext == 'h5':
@@ -52,7 +56,7 @@ def genFileID(filename):
     elif ext == 'h5r':
         return genResultsFileID(filename)
     else:
-        return None
+        return hash(filename)
 
 
 def getImageID(filename):

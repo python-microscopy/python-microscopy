@@ -286,10 +286,12 @@ class EditableTreeList(gizmos.TreeListCtrl, TextEditMixin):
 
 
 class MetadataPanel(wx.Panel):
-    def __init__(self, parent, mdh, editable=True):
+    def __init__(self, parent, mdh, editable=True, refreshable=True):
         self.mdh=mdh
         wx.Panel.__init__(self, parent, -1)
-        self.Bind(wx.EVT_SIZE, self.OnSize)
+        #self.Bind(wx.EVT_SIZE, self.OnSize)
+
+        sizer1 = wx.BoxSizer(wx.VERTICAL)
 
         self.tree = gizmos.TreeListCtrl(self, -1, style =
                                         wx.TR_DEFAULT_STYLE
@@ -341,6 +343,16 @@ class MetadataPanel(wx.Panel):
         self.tree.Bind(wx.EVT_TREE_BEGIN_LABEL_EDIT, self.OnBeginEdit)
         #self.tree.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnActivate)
 
+        sizer1.Add(self.tree, 1, wx.EXPAND, 0)
+
+        if refreshable == True:
+            bRefresh = wx.Button(self, -1, 'Refresh')
+            bRefresh.Bind(wx.EVT_BUTTON, self.rebuild)
+
+            sizer1.Add(bRefresh, 0, wx.ALL|wx.ALIGN_RIGHT, 5)
+
+        self.SetSizerAndFit(sizer1)
+
     def addEntries(self, mdh, node, entrypath=''):
         #en = []
         for k in mdh.__dict__.keys():
@@ -351,6 +363,17 @@ class MetadataPanel(wx.Panel):
             else:
                 self.tree.SetItemText(child, str(mdh.getEntry(k)), 1)
                 self.paths[child] = '.'.join((entrypath, k))
+
+    def rebuild(self, event=None):
+        self.tree.DeleteRoot()
+
+        self.root = self.tree.AddRoot("Metadata")
+        self.tree.SetItemText(self.root, "root", 0)
+
+        nmdh = NestedClassMDHandler(self.mdh)
+        self.addEntries(nmdh, self.root)
+        
+        self.tree.ExpandAll(self.root)
 
 
     #def OnActivate(self, evt):
