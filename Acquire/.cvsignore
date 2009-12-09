@@ -1,10 +1,10 @@
-chanedit.pyo
 prevviewer.pyo
-HDFSpoolFrame.pyo
-timesequenceaquisator.pyc
+chanedit.pyo
 ExecTools.pyc
-Spooler.pyc
+timesequenceaquisator.pyc
+HDFSpoolFrame.pyo
 chanfr.pyo
+Spooler.pyc
 setup.pyo
 eventLog.pyo
 prevviewer.pyc
@@ -14,10 +14,10 @@ timesequenceaquisator.pyo
 seqdialog_.pyo
 smiApp.pyo
 __init__.pyo
-setup.pyc
 simplesequenceaquisator.pyc
-Spooler.pyo
+setup.pyc
 chanfr.pyc
+Spooler.pyo
 chanedit.pyc
 __init__.pyc
 MetaDataHandler.pyc
@@ -31,6 +31,7 @@ mytimer.pyo
 HDFSpooler.pyo
 protocol.pyc
 intsliders.pyc
+sampleInformation.pyc
 timeseqdialog.pyo
 ccdCalibrator.pyo
 ccdCalibrator.pyc
@@ -48,8 +49,8 @@ seqdialog.pyo
 KDFSpooler.pyo
 seqdialog.pyc
 smimainframe.pyo
-sarcSpacing.pyo
 simplesequenceaquisator.pyo
+sarcSpacing.pyo
 QueueSpooler.pyo
 psliders.pyc
 noclosefr.pyc
@@ -60,5 +61,5 @@ chanpanel.pyo
 HDFSpooler.pyc
 psliders.pyo
 splashScreen.pyc
-noclosefr.pyo
 stepDialog.pyc
+noclosefr.pyo

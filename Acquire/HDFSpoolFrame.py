@@ -16,6 +16,7 @@ import wx
 import datetime
 import HDFSpooler
 import QueueSpooler
+import sampleInformation
 #import win32api
 from PYME.FileUtils import nameUtils
 from PYME.ParallelTasks.relativeFiles import getRelFilename
@@ -252,6 +253,8 @@ class PanSpool(wx.Panel):
         self.stNImages.Enable(True)
         self.stSpoolingTo.SetLabel('Spooling to ' + fn)
         self.stNImages.SetLabel('0 images spooled in 0 minutes')
+
+        sampleInformation.getSampleData(self, self.spooler.md)
         
 
     def OnBStopSpoolingButton(self, event):

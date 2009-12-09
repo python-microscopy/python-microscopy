@@ -49,7 +49,7 @@ def genFileID(filename):
 
     if ext == 'h5':
         return genDataFileID(filename)
-    elif ext = 'h5r':
+    elif ext == 'h5r':
         return genResultsFileID(filename)
     else:
         return None
@@ -60,7 +60,7 @@ def getImageID(filename):
 
     if ext == 'h5':
         return genDataFileID(filename)
-    elif ext = 'h5r':
+    elif ext == 'h5r':
         h5f = tables.openFile(filename)
         md = MetaDataHandler.HDFMDHandler(h5f)
         
@@ -80,7 +80,7 @@ def guessH5RImageID(filename):
     print cand
     if os.path.exists(cand):
         #print 'Found Analysis'
-        return genResultsFileID(cand)
+        return genDataFileID(cand)
     else:
         return None
 
