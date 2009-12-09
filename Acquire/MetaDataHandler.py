@@ -103,6 +103,7 @@ class QueueMDHandler:
 
 
     def getEntry(self,entryName):
+        print entryName
         return self.tq.getQueueMetaData(self.queueName, entryName)
 
 

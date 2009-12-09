@@ -22,7 +22,7 @@ def genDataFileID(filename):
     h5f.close()
 
     ds = ds - ds.mean()
-    dss = ''.join(['%c' % (int(di + 128)) for di in ds])
+    dss = ''.join(['%c' % (int(di + 128)%255) for di in ds])
 
     return hash(dss)
 
@@ -31,7 +31,7 @@ def genDataSourceID(datasource):
     ds = datasource.getSlice(0)[:,:20].ravel()
 
     ds = ds - ds.mean()
-    dss = ''.join(['%c' % (int(di + 128)) for di in ds])
+    dss = ''.join(['%c' % (int(di + 128)%255) for di in ds])
 
     return hash(dss)
 
