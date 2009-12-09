@@ -92,9 +92,9 @@ class SampleInfoDialog(wx.Dialog):
         lastCreator = self.tCreator.GetValue()
         lastSlideRef = self.tSlideRef.GetValue()
         
-        mdh.setEntry('Sample.Creator', self.tCreator.GetValue())
-        mdh.setEntry('Sample.SlideRef', self.tSlideRef.GetValue())
-        mdh.setEntry('Sample.Notes', self.tNotes.GetValue())
+        mdh.setEntry('Sample.Creator', u'' + str(self.tCreator.GetValue()))
+        mdh.setEntry('Sample.SlideRef', u'' +str(self.tSlideRef.GetValue()))
+        mdh.setEntry('Sample.Notes', u'' +str(self.tNotes.GetValue()))
 
         labels = []
         for i in range(self.gLabelling.GetNumberRows()):
