@@ -13,6 +13,7 @@ import os.path
 
 import tables
 import os
+from PYME.Acquire import MetaDataHandler
 
 def genDataFileID(filename):
     h5f = tables.openFile(filename)
@@ -49,31 +50,38 @@ def genFileID(filename):
     is generated from the data which should be persistant over copies of the file,
     otherwise a hash of the filename is used.
     '''
+
+    if os.path.exists(filename):
+        ext = os.path.splitext(filename)[1]
+        if ext == '.h5':
+            return genDataFileID(filename)
+        elif ext == '.h5r':
+            return genResultsFileID(filename)
+    
+    
+    return hash(filename)
+
+
+def genImageID(filename, guess=False):
     ext = os.path.splitext(filename)[1]
+    #print ext
 
-    if ext == 'h5':
+    if ext == '.h5':
         return genDataFileID(filename)
-    elif ext == 'h5r':
-        return genResultsFileID(filename)
-    else:
-        return hash(filename)
-
-
-def getImageID(filename):
-    ext = os.path.splitext(filename)[1]
-
-    if ext == 'h5':
-        return genDataFileID(filename)
-    elif ext == 'h5r':
+    elif ext == '.h5r':
         h5f = tables.openFile(filename)
         md = MetaDataHandler.HDFMDHandler(h5f)
         
         if 'Analysis.DataFileID' in md.getEntryNames():
-            return md.getEntry('Analysis.DataFileID')
+            ret = md.getEntry('Analysis.DataFileID')
+        elif guess:
+            ret = guessH5RImageID(filename)
         else:
-            return None
+            ret = None
+        #print guess, ret
 
         h5f.close()
+        return ret
     else:
         return None
 
@@ -81,12 +89,23 @@ def guessH5RImageID(filename):
     #try and find the original data
     fns = filename.split(os.path.sep)
     cand = os.path.sep.join(fns[:-3]  + fns[-2:])[:-1]
-    print cand
+    #print cand
     if os.path.exists(cand):
         #print 'Found Analysis'
         return genDataFileID(cand)
     else:
         return None
+
+def guessUserID(filename):
+    fns = filename.split(os.path.sep)
+
+    ext = os.path.splitext(filename)[1]
+    if ext == '.h5':
+        return fns[-3]
+    elif ext == '.h5r':
+        return fns[-4]
+
+
 
 
 
