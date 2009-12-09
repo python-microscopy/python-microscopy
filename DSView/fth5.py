@@ -18,6 +18,7 @@ import os
 from PYME.Analysis import MetaData
 from PYME.Acquire import MetaDataHandler
 from pylab import *
+from PYME.FileUtils import fileID
 #import matplotlib
 
 from PYME.Acquire import ExecTools
@@ -74,6 +75,7 @@ def pushImagesHDF(startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
     mdhQ = MetaDataHandler.QueueMDHandler(tq, seriesName, mdh)
     mdhQ.setEntry('Analysis.DetectionThreshold', detThresh)
     mdhQ.setEntry('Analysis.FitModule', fitFcn)
+    mdhQ.setEntry('Analysis.DataFileID', fileID.genDataSourceID(dataSource))
     evts = dataSource.getEvents()
     if len(evts) > 0:
         tq.addQueueEvents(seriesName, evts)
@@ -87,6 +89,7 @@ def pushImagesHDF(startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
 def pushImagesQueue(startingAt=0, detThresh = .9, fitFcn='LatGaussFitFR'):
     mdh.setEntry('Analysis.DetectionThreshold', detThresh)
     mdh.setEntry('Analysis.FitModule', fitFcn)
+    mdh.setEntry('Analysis.DataFileID', fileID.genDataSourceID(dataSource))
     #if not 'Camera.TrueEMGain' in mdh.getEntryNames():
     #    MetaData.fillInBlanks(mdh, dataSource)
     tq.releaseTasks(seriesName, startingAt)
