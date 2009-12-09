@@ -53,11 +53,13 @@ def genFileID(filename):
 
     if os.path.exists(filename):
         ext = os.path.splitext(filename)[1]
-        if ext == '.h5':
-            return genDataFileID(filename)
-        elif ext == '.h5r':
-            return genResultsFileID(filename)
-    
+        try:
+            if ext == '.h5':
+                return genDataFileID(filename)
+            elif ext == '.h5r':
+                return genResultsFileID(filename)
+        except:
+            pass
     
     return hash(filename)
 
@@ -66,23 +68,26 @@ def genImageID(filename, guess=False):
     ext = os.path.splitext(filename)[1]
     #print ext
 
-    if ext == '.h5':
-        return genDataFileID(filename)
-    elif ext == '.h5r':
-        h5f = tables.openFile(filename)
-        md = MetaDataHandler.HDFMDHandler(h5f)
-        
-        if 'Analysis.DataFileID' in md.getEntryNames():
-            ret = md.getEntry('Analysis.DataFileID')
-        elif guess:
-            ret = guessH5RImageID(filename)
-        else:
-            ret = None
-        #print guess, ret
+    try:
+        if ext == '.h5':
+            return genDataFileID(filename)
+        elif ext == '.h5r':
+            h5f = tables.openFile(filename)
+            md = MetaDataHandler.HDFMDHandler(h5f)
 
-        h5f.close()
-        return ret
-    else:
+            if 'Analysis.DataFileID' in md.getEntryNames():
+                ret = md.getEntry('Analysis.DataFileID')
+            elif guess:
+                ret = guessH5RImageID(filename)
+            else:
+                ret = None
+            #print guess, ret
+
+            h5f.close()
+            return ret
+        else:
+            return None
+    except:
         return None
 
 def guessH5RImageID(filename):

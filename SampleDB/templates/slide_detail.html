@@ -40,7 +40,12 @@ and open the template in the editor.
     <table>
     {% for im in images %}
     <tr class="{% cycle 'odd' 'even' %}">
-    <td><a href="/images/{{ im }}">{{ im }}</a></td>
+    <td><a href="/images/{{ im.imageID }}">Image {{ im.imageID }}:</a></td>
+    <td>
+    {%for f in im.files.all %}
+    {{f.filename}}<br>
+    {%endfor%}
+    </td>
     </tr>
     {% endfor %}
     </table>
