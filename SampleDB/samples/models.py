@@ -1,5 +1,5 @@
-import os
 from django.db import models
+import datetime
 
 # Create your models here.
 class Slide(models.Model):
@@ -40,6 +40,7 @@ class Image(models.Model):
     imageID = models.IntegerField(primary_key=True)
     slideID = models.ForeignKey(Slide, related_name='images')
     comments = models.TextField()
+    timestamp = models.DateTimeField()
     userID = models.CharField(max_length=200)
 
     def Tag(self, tagName):
@@ -52,7 +53,7 @@ class Image(models.Model):
         return u'Image %d: %s' % (self.imageID, ', '.join([n.filename for n in self.files.all()]))
 
     @classmethod
-    def GetOrCreate(cls, imageID, userGuess='N/A', slideID=None):
+    def GetOrCreate(cls, imageID, userGuess='N/A', slideID=None, timestamp=0):
         '''trys to find a matching tag in the database, otherwise
         creates and returns a new one.
         '''
@@ -62,7 +63,7 @@ class Image(models.Model):
         except:
             if slideID == None:
                 slideID = Slide.GetOrCreate('N/A', 'N/A')
-            im = cls(imageID=imageID, userID=userGuess, slideID=slideID)
+            im = cls(imageID=imageID, userID=userGuess, slideID=slideID, timestamp=datetime.datetime.fromtimestamp(timestamp))
             im.save()
 
         return im
@@ -100,7 +101,7 @@ class File(models.Model):
 
             if not imageID == None:
                 #force an image to be created if one doesn't exist already
-                im = Image.GetOrCreate(imageID, userGuess=file_ID.guessUserID(filename))
+                im = Image.GetOrCreate(imageID, userGuess=file_ID.guessUserID(filename), timestamp=file_ID.genImageTime(filename))
             else:
                 im = None
                     

@@ -9,14 +9,14 @@ def slide_detail(request, slideID):
     except Slide.DoesNotExist:
         raise Http404
 
-    images = sl.images.all()
+    images = sl.images.order_by('timestamp')
     labels = sl.labelling.all()
     #print files
 
-    return render_to_response('templates/slide_detail.html', {'slide':sl, 'images':images, 'labels':labels})
+    return render_to_response('samples/slide_detail.html', {'slide':sl, 'images':images, 'labels':labels})
 
 def slide_index(request):
     sl = Slide.objects.all()
 
-    return render_to_response('templates/slide_index.html', {'slides':sl})
+    return render_to_response('samples/slide_list.html', {'slides':sl})
     

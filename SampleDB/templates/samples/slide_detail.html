@@ -38,9 +38,13 @@ and open the template in the editor.
     <h3>Images</h3>
 
     <table>
+    <thead>
+    <tr><th>ID</th><th>Date</th><th>Files</th></tr>
+    </thead>
     {% for im in images %}
     <tr class="{% cycle 'odd' 'even' %}">
-    <td><a href="/images/{{ im.imageID }}">Image {{ im.imageID }}:</a></td>
+    <td><a href="/images/{{ im.imageID }}">{{ im.imageID }}</a></td>
+    <td>{{im.timestamp.date}}</td>
     <td>
     {%for f in im.files.all %}
     {{f.filename}}<br>

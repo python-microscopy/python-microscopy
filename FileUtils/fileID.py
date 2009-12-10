@@ -90,6 +90,25 @@ def genImageID(filename, guess=False):
     except:
         return None
 
+def genImageTime(filename):
+    ext = os.path.splitext(filename)[1]
+    #print ext
+
+    try:
+        if ext in ['.h5', '.h5r']:
+            h5f = tables.openFile(filename)
+            md = MetaDataHandler.HDFMDHandler(h5f)
+
+            ret = md.getEntry('StartTime')
+            #print guess, ret
+
+            h5f.close()
+            return ret
+        else:
+            return 0
+    except:
+        return 0
+
 def guessH5RImageID(filename):
     #try and find the original data
     fns = filename.split(os.path.sep)
