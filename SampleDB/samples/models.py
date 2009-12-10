@@ -13,7 +13,7 @@ class Slide(models.Model):
         SlideTags.Add(label)
 
     def Tag(self, tagName):
-        SlideTags.AddTag(self, tagName)
+        SlideTag.AddTag(self, tagName)
 
     def __unicode__(self):
         return u'Slide %d: %s, %s' % (self.slideID, self.creator, self.reference)
@@ -44,7 +44,7 @@ class Image(models.Model):
     userID = models.CharField(max_length=200)
 
     def Tag(self, tagName):
-        ImageTags.AddTag(self, tagName)
+        ImageTag.AddTag(self, tagName)
 
     def AddFile(self, filename, fileID=None):
         f = File.GetOrCreate(filename, fileID=fileID, imageID=self)
@@ -74,7 +74,7 @@ class File(models.Model):
     filename = models.CharField(max_length=200)
 
     def Tag(self, tagName):
-        FileTags.AddTag(self, tagName)
+        FileTag.AddTag(self, tagName)
 
     def __unicode__(self):
         return u'File %d: %s' % (self.fileID, self.filename)
