@@ -5,7 +5,7 @@ and open the template in the editor.
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
   <head>
-    <title>PYME Sample Information - {{object}}</title>
+    <title>PYME Sample Information - Image Index</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta http-equiv="content-style-type" content="text/css">
   </head>
@@ -15,41 +15,24 @@ and open the template in the editor.
     }
 
     tr.odd{
-        background-color: #C4D9FC;
+        background-color: #94A9FC;
     }
 
     tr.even{
-        background-color: #D4E9FC;
+        background-color: #A4B9FC;
     }
 
   </style>
   <body>
-    <div class="slide">
-    <h2>Slide {{object.slideID}}:</h2>
-    <p><b>Creator:</b> {{object.creator}}</p>
-    <p><b>Reference:</b> {{object.reference}}</p>
-
-    <h3>Labelling</h3>
-    <table>
-    {% for lab in object.labelling.all %}
-    <tr class="{% cycle 'odd' 'even' %}">
-    <td>{{ lab.structure }}</td><td>{{ lab.label }}</td>
-    </tr>
-    {% endfor %}
-    </table>
-
-    </div>
-    
-
     <h3>Images</h3>
 
     <table>
     <thead>
     <tr><th>ID</th><th>Date</th><th>Files</th></tr>
     </thead>
-    {% for im in object.images.all|dictsort:"timestamp" %}
+    {% for im in object_list|dictsort:"timestamp" %}
     <tr class="{% cycle 'odd' 'even' %}">
-    <td><a href="/images/{{ im.imageID }}">{{ im.imageID }}</a></td>
+    <td><a href="/images/{{ im.imageID }}"><img src="/barcode/{{ im.imageID }}" width="80" height="20"/></a></td>
     <td>{{im.timestamp.date}}</td>
     <td>
     {%for f in im.files.all %}

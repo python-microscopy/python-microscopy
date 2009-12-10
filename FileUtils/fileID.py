@@ -13,28 +13,35 @@ import os.path
 
 import tables
 import os
+import numpy as np
 from PYME.Acquire import MetaDataHandler
 
 def genDataFileID(filename):
     h5f = tables.openFile(filename)
 
-    ds = h5f.root.ImageData[0, :,:20].ravel()
+    ds = h5f.root.ImageData[0, :65, 0].ravel().astype('i')
 
     h5f.close()
+    #print ds
 
-    ds = ds - ds.mean()
-    dss = ''.join(['%c' % (int(di + 128)%255) for di in ds])
+    ds = np.diff(np.diff(ds))
+    
+    #print ds
 
-    return hash(dss)
+    ds = ds > 0
+    #print ds.shape
+    print ds.sum()
+
+    return ((2*ds)**np.arange(63)).sum()
 
 
 def genDataSourceID(datasource):
-    ds = datasource.getSlice(0)[:,:20].ravel()
+    ds = datasource.getSlice(0)[:65, 0].ravel().astype('i')
 
-    ds = ds - ds.mean()
-    dss = ''.join(['%c' % (int(di + 128)%255) for di in ds])
+    ds = np.diff(np.diff(ds)) > 0
+    #print ds.shape
 
-    return hash(dss)
+    return ((2*ds)**np.arange(63)).sum()
 
 def genResultsFileID(filename):
     h5f = tables.openFile(filename)

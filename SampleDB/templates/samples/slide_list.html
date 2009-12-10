@@ -27,7 +27,7 @@ and open the template in the editor.
     <h3>Slides</h3>
 
     <table>
-    {% for sl in slides %}
+    {% for sl in object_list %}
     <tr class="{% cycle 'odd' 'even' %}">
     <td><a href="/slides/{{ sl.slideID }}">{{ sl }}</a></td>
     </tr>

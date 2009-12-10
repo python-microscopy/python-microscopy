@@ -11,9 +11,16 @@ urlpatterns = patterns('',
     #(r'^data/$', 'SampleDB.samples.views.slide_index'),
     #(r'^slides/$', 'SampleDB.samples.views.slide_index'),
     (r'^slides/$', 'django.views.generic.list_detail.object_list', {'queryset' : Slide.objects.all()}),
-    (r'^slides/(?P<slideID>.*)$', 'SampleDB.samples.views.slide_detail'),
+    #(r'^slides/(?P<slideID>.*)$', 'SampleDB.samples.views.slide_detail'),
+    (r'^slides/(?P<object_id>.*)$', 'django.views.generic.list_detail.object_detail', {'queryset' : Slide.objects.all()}),
     #(r'^images/$', 'django.views.generic.list_detail.object_list', {'queryset' : Image.objects.all()}),
     #(r'^images/(?P<imageID>.*)$', 'SampleDB.samples.views.slide_detail'),
+
+    (r'^images/$', 'django.views.generic.list_detail.object_list', {'queryset' : Image.objects.all()}),
+    (r'^images/(?P<object_id>.*)$', 'django.views.generic.list_detail.object_detail', {'queryset' : Image.objects.all()}),
+
+    (r'^thumbnails/(?P<filename>.*)$', 'PYME.dataBrowser.thumbnails.thumb'),
+    (r'^barcode/(?P<idNum>.*)$', 'SampleDB.samples.barcode.barcode2d'),
 
     # Uncomment the admin/doc line below and add 'django.contrib.admindocs' 
     # to INSTALLED_APPS to enable admin documentation:

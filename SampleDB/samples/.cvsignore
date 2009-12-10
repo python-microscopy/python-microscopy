@@ -1,4 +1,5 @@
 __init__.pyc
+barcode.pyc
 admin.pyc
 views.pyc
 models.pyc
