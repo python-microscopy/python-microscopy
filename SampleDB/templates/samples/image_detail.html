@@ -28,6 +28,29 @@ and open the template in the editor.
         background-color: #FFDDAA;
     }
 
+    div.autocomplete {
+      position:absolute;
+      width:250px;
+      background-color:white;
+      /*border:1px solid #888;*/
+      margin:0;
+      padding:0;
+    }
+    div.autocomplete ul {
+      list-style-type:none;
+      margin:0;
+      padding:0;
+    }
+    div.autocomplete ul li.selected { background-color: #ffb;}
+    div.autocomplete ul li {
+      list-style-type:none;
+      display:block;
+      margin:0;
+      padding:2px;
+      height:32px;
+      cursor:pointer;
+    }
+
   </style>
   <body>
     <div class="main">
@@ -57,6 +80,18 @@ and open the template in the editor.
     {%for t in object.tags.all %}
     {{t.tag}}, 
     {%endfor%}
+    <div class="tagbar">
+       <form action="/images/{{object.imageID}}/tag" method="post">
+        <input type="text" name="tag" id="tag" value="" />
+
+        <input type="submit" value="Tag" />
+        </form>
+        <div id="hint"></div>
+        <script type="text/javascript">
+        new Ajax.Autocompleter(”tag”,”hint”,”/hint/tag”);
+        </script>
+
+    </div>
 
 
     <h3>Files</h3>
@@ -72,17 +107,7 @@ and open the template in the editor.
 
     </div>
 
-    <div class="tagbar">
-       <form action="/images/{{object.imageID}}/tag" method="post">
-        <input type="text" name="tag" id="tag" value="" />
-        <div id="hint"   ></div>
-        <script type="text/javascript">
-        new Ajax.Autocompleter(”tag”,”hint”,”/hint/tag”);
-        </script>
-        <input type="submit" value="Tag" />
-        </form>
-
-    </div>
+    
 
   </body>
 </html>

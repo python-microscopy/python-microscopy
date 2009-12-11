@@ -28,7 +28,7 @@ class SampleInfoDialog(wx.Dialog):
         sizer1 = wx.BoxSizer(wx.VERTICAL)
         sizer2 = wx.BoxSizer(wx.HORIZONTAL)
 
-        sizer2.Add(wx.StaticText(self, -1, 'Creator:'), 0, wx.ALL, 5)
+        sizer2.Add(wx.StaticText(self, -1, 'Slide Creator:'), 0, wx.ALL, 5)
 
         self.tCreator = wx.TextCtrl(self, -1, lastCreator)
         self.tCreator.SetToolTip(wx.ToolTip('This should be the person who mounted the slide & should have details about the slide ref in their lab book'))
@@ -74,9 +74,9 @@ class SampleInfoDialog(wx.Dialog):
 
         btSizer.AddButton(btn)
 
-        btn = wx.Button(self, wx.ID_CANCEL)
+        #btn = wx.Button(self, wx.ID_CANCEL)
 
-        btSizer.AddButton(btn)
+        #btSizer.AddButton(btn)
 
         btSizer.Realize()
 
