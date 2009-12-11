@@ -61,7 +61,7 @@ class Spooler(sp.Spooler):
    
    def Tick(self, caller):
       #self.tq.postTask(cSMI.CDataStack_AsArray(caller.ds, 0).reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()), self.seriesName)
-      self.buffer.append(cSMI.CDataStack_AsArray(caller.ds, 0).copy().reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()))
+      self.buffer.append(cSMI.CDataStack_AsArray(caller.ds, 0).reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()).copy())
 
       if len(self.buffer) >= self.buflen:
           self.FlushBuffer()
