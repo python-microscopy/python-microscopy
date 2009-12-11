@@ -16,10 +16,12 @@ import os
 import numpy as np
 from PYME.Acquire import MetaDataHandler
 
+from PYME.misc.hash32 import hashString32
+
 def genDataFileID(filename):
     h5f = tables.openFile(filename)
 
-    ds = h5f.root.ImageData[0, :65, 0].ravel().astype('i')
+    ds = h5f.root.ImageData[0, :33, 0].ravel().astype('i')
 
     h5f.close()
     #print ds
@@ -32,16 +34,16 @@ def genDataFileID(filename):
     #print ds.shape
     print ds.sum()
 
-    return ((2*ds)**np.arange(63)).sum()
+    return ((2*ds)**np.arange(31)).sum()
 
 
 def genDataSourceID(datasource):
-    ds = datasource.getSlice(0)[:65, 0].ravel().astype('i')
+    ds = datasource.getSlice(0)[:33, 0].ravel().astype('i')
 
     ds = np.diff(np.diff(ds)) > 0
     #print ds.shape
 
-    return ((2*ds)**np.arange(63)).sum()
+    return ((2*ds)**np.arange(31)).sum()
 
 def genResultsFileID(filename):
     h5f = tables.openFile(filename)
@@ -50,7 +52,7 @@ def genResultsFileID(filename):
 
     h5f.close()
 
-    return hash(ds)
+    return hashString32(ds)
 
 def genFileID(filename):
     '''generate database ids for files. Where we know about the file type an ID
@@ -68,7 +70,7 @@ def genFileID(filename):
         except:
             pass
     
-    return hash(filename)
+    return hashString32(filename)
 
 
 def genImageID(filename, guess=False):

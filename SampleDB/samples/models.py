@@ -1,6 +1,8 @@
 from django.db import models
 import datetime
 
+from PYME.misc.hash32 import hashString32
+
 # Create your models here.
 class Slide(models.Model):
     slideID = models.IntegerField(primary_key=True)
@@ -25,7 +27,8 @@ class Slide(models.Model):
         '''trys to find a matching slide in the database, otherwise
         creates and returns a new slide entry.
         '''
-        id = hash(creator + reference)
+        id = hashString32(creator + reference)
+        #print id
 
         try:
             sl = cls.objects.get(slideID=id)
@@ -63,6 +66,7 @@ class Image(models.Model):
         except:
             if slideID == None:
                 slideID = Slide.GetOrCreate('N/A', 'N/A')
+                #print slideID
             im = cls(imageID=imageID, userID=userGuess, slideID=slideID, timestamp=datetime.datetime.fromtimestamp(timestamp))
             im.save()
 

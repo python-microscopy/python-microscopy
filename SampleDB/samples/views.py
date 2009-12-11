@@ -22,7 +22,8 @@ def slide_index(request):
     return render_to_response('samples/slide_list.html', {'slides':sl})
 
 def tag_hint(request):
-    hints = TagNames.objects.filter(name__startswith=request.POST['tag'])
+    hints = TagName.objects.filter(name__startswith=request.REQUEST['tag'])
+    #print request.REQUEST['tag'], hints
 
     return render_to_response('samples/autocomplete.html', {'hints':hints})
 
