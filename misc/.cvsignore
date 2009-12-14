@@ -5,11 +5,11 @@ congrid.pyo
 hash32.pyc
 auiFloatBook.pyc
 ricsSim.pyc
-wxPlotPanel.pyo
 colorsys.pyc
+wxPlotPanel.pyo
 __init__.pyo
-extraCMaps.pyc
 wxThread.pyo
+extraCMaps.pyc
 editList.pyc
 deMod.pyo
 glassModel.pyo
@@ -27,4 +27,5 @@ extraCMaps.pyo
 facsPlot.pyc
 dirSize.pyc
 ricsSim.pyo
+TextCtrlAutoComplete.pyc
 listctrlMixins.pyo

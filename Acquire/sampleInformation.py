@@ -14,6 +14,10 @@ import wx
 import wx.grid
 
 from PYME.FileUtils import nameUtils
+from PYME.misc import TextCtrlAutoComplete
+
+from PYME.SampleDB import populate #just to setup the Django environment
+from PYME.SampleDB.samples import models
 
 lastCreator = nameUtils.getUsername()
 lastSlideRef = ''
@@ -30,13 +34,17 @@ class SampleInfoDialog(wx.Dialog):
 
         sizer2.Add(wx.StaticText(self, -1, 'Slide Creator:'), 0, wx.ALL, 5)
 
-        self.tCreator = wx.TextCtrl(self, -1, lastCreator)
+        #self.tCreator = wx.TextCtrl(self, -1, lastCreator)
+        self.tCreator = TextCtrlAutoComplete.TextCtrlAutoComplete(self, value=lastCreator, choices=[lastCreator])
+        self.tCreator.SetEntryCallback(self.setCreatorChoices)
         self.tCreator.SetToolTip(wx.ToolTip('This should be the person who mounted the slide & should have details about the slide ref in their lab book'))
         sizer2.Add(self.tCreator, 1, wx.ALL, 5)
 
         sizer2.Add(wx.StaticText(self, -1, 'Slide Ref:'), 0, wx.ALL, 5)
 
-        self.tSlideRef = wx.TextCtrl(self, -1, lastSlideRef)
+        #self.tSlideRef = wx.TextCtrl(self, -1, lastSlideRef)
+        self.tSlideRef = TextCtrlAutoComplete.TextCtrlAutoComplete(self, value=lastSlideRef, choices=[lastSlideRef])
+        self.tSlideRef.SetEntryCallback(self.setSlideChoices)
         self.tSlideRef.SetToolTip(wx.ToolTip('This should be the reference #/code which is on the slide and in lab book'))
         sizer2.Add(self.tSlideRef, 0, wx.ALL, 5)
 
@@ -86,6 +94,33 @@ class SampleInfoDialog(wx.Dialog):
 
     def OnAddLabel(self, event):
         self.gLabelling.AppendRows(1)
+
+    def setCreatorChoices(self):
+        cname = self.tCreator.GetValue()
+        slref = self.tSlideRef.GetValue()
+        current_choices = self.tCreator.GetChoices()
+
+        if slref == '' or len(models.Slide.objects.filter(reference=slref)) ==0:
+            choices = [e.creator for e in models.Slide.objects.filter(creator__startswith=cname)]
+        else:
+            choices = [e.creator for e in models.Slide.objects.filter(creator__startswith=cname, reference=slref)]
+            
+        if choices != current_choices:
+            self.tCreator.SetChoices(choices)
+        
+
+    def setSlideChoices(self):
+        cname = self.tCreator.GetValue()
+        slref = self.tSlideRef.GetValue()
+        current_choices = self.tSlideRef.GetChoices()
+
+        if cname == '' or (len(models.Slide.objects.filter(creator=cname)) == 0):
+            choices = [e.reference for e in models.Slide.objects.filter(reference__startswith=slref)]
+        else:
+            choices = [e.reference for e in models.Slide.objects.filter(reference__startswith=slref, creator=cname)]
+
+        if choices != current_choices:
+            self.tSlideRef.SetChoices(choices)
 
     def PopulateMetadata(self, mdh):
         global lastCreator, lastSlideRef

@@ -19,15 +19,40 @@ from PYME.Acquire import MetaDataHandler
 from PYME.misc.hash32 import hashString32
 
 def genDataFileID(filename):
+#    h5f = tables.openFile(filename)
+#
+#    ds = h5f.root.ImageData[0, :33, 0].ravel().astype('i')
+#
+#    h5f.close()
+#    #print ds
+#
+#    ds = np.diff(np.diff(ds))
+#
+#    #print ds
+#
+#    ds = ds > 0
+#    #print ds.shape
+#    print ds.sum()
+#
+#    return ((2*ds)**np.arange(31)).sum()
     h5f = tables.openFile(filename)
 
-    ds = h5f.root.ImageData[0, :33, 0].ravel().astype('i')
+    ds = h5f.root.ImageData[0, :, :]
 
     h5f.close()
+
+    return genFrameID(ds)
+
+def genFrameID(frame):
+    #h5f = tables.openFile(filename)
+
+    ds = frame[:33, 0].ravel().astype('i')
+
+    #h5f.close()
     #print ds
 
     ds = np.diff(np.diff(ds))
-    
+
     #print ds
 
     ds = ds > 0
@@ -38,12 +63,13 @@ def genDataFileID(filename):
 
 
 def genDataSourceID(datasource):
-    ds = datasource.getSlice(0)[:33, 0].ravel().astype('i')
-
-    ds = np.diff(np.diff(ds)) > 0
-    #print ds.shape
-
-    return ((2*ds)**np.arange(31)).sum()
+#    ds = datasource.getSlice(0)[:33, 0].ravel().astype('i')
+#
+#    ds = np.diff(np.diff(ds)) > 0
+#    #print ds.shape
+#
+#    return ((2*ds)**np.arange(31)).sum()
+    return genFrameID(datasource.getSlice(0))
 
 def genResultsFileID(filename):
     h5f = tables.openFile(filename)

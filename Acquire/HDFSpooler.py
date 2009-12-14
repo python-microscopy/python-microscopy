@@ -21,6 +21,8 @@ from PYME import cSMI
 import PYME.Acquire.Spooler as sp
 from PYME.Acquire import protocol as p
 
+from PYME.FileUtils import fileID
+
 class SpoolEvent(tables.IsDescription):
    EventName = tables.StringCol(32)
    Time = tables.Time64Col()
@@ -70,6 +72,9 @@ class Spooler(sp.Spooler):
    def Tick(self, caller):      
       self.imageData.append(cSMI.CDataStack_AsArray(caller.ds, 0).reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()))
       self.h5File.flush()
+
+      if self.imNum == 0: #first frame
+          self.md.setEntry('imageID', fileID.genFrameID(self.imageData[0,:,:]))
 
       sp.Spooler.Tick(self, caller)
         
