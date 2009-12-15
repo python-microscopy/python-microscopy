@@ -269,13 +269,21 @@ def traceModelDE1(p, Ton, Toff, dt, len_trace, sc):
     #print res.shape
     return res
 
-def mod1pk(p, t, pow=2, sc=1, bg=0, No0 = 1,Nd0 = 0):
+def mod1pk(p, t, bg=0):
+    #No0 = 1
+    #Nd0 = 0
+    aod,aob, ado, No0, Nd0 = p
+    res = lNofcn(t, 0, No0, Nd0, aod, aob, ado)
+
+    return (res + bg).ravel()
+
+def mod1pk2(p, t, bg=0, No0 = 1,Nd0 = 0):
     #No0 = 1
     #Nd0 = 0
     aod,aob, ado, pow, t0 = p
-    res = lNofcnDE(t, t0, No0, Nd0**2, aod, aob, ado, pow)
+    res = lNofcn(t, t0, No0, Nd0**2, aod, aob, ado, pow)
 
-    return (sc*res + bg).ravel()
+    return (res + bg).ravel()
 
 
 def pkmod_onestate(p, t):

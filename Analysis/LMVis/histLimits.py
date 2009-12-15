@@ -26,6 +26,7 @@ class HistLimitPanel(wx.Panel):
         self.data = data.ravel()
 
         self.dragging = None
+        self.binSize=None
         
         dSort = numpy.argsort(data)
         
@@ -152,6 +153,23 @@ class HistLimitPanel(wx.Panel):
 
         dc.Clear()
 
+        #when being used to determine histogram bins
+        if not self.binSize == None:
+            binEdges = numpy.arange(self.limit_lower, self.limit_upper + self.binSize, self.binSize)
+
+            for i in range(len(binEdges) -1):
+                llx = math.floor((binEdges[i] - self.hmin)/self.hstep)
+                ulx = math.ceil((binEdges[i+1] - self.hmin)/self.hstep)
+
+                dc.SetPen(wx.TRANSPARENT_PEN)
+
+                if i % 2 == 0: #even
+                    dc.SetBrush(wx.Brush(wx.Colour(0xC0, 0xC0, 0xFF)))
+                else:
+                    dc.SetBrush(wx.Brush(wx.Colour(0xA0, 0xA0, 0xFF)))
+
+                dc.DrawRectangle(llx, 0, ulx - llx, maxy)
+
         dc.SetPen(wx.BLACK_PEN)
         dc.SetBrush(wx.BLACK_BRUSH)
         dc.DrawPolygon(pointlist)
@@ -177,6 +195,11 @@ class HistLimitPanel(wx.Panel):
         lab = '%1.3G' % self.limit_upper
         labSize = dc.GetTextExtent(lab)
         dc.DrawText(lab, min(ulx - labSize[0]/2, self.Size[0] - labSize[0]), maxy + 2)
+
+        
+
+
+
 
         dc.SetPen(wx.NullPen)
         dc.SetBrush(wx.NullBrush)

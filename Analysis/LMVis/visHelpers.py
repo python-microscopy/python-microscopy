@@ -179,7 +179,7 @@ def rendHist(x,y, imageBounds, pixelSize):
 def rendHist3D(x,y,z, imageBounds, pixelSize, zb,sliceSize=100):
     X = numpy.arange(imageBounds.x0,imageBounds.x1, pixelSize)
     Y = numpy.arange(imageBounds.y0,imageBounds.y1, pixelSize)
-    Z = numpy.arange(zb[0], zb[1], sliceSize)
+    Z = numpy.arange(zb[0], zb[1] + sliceSize, sliceSize)
 
     im, ed = scipy.histogramdd([x,y, z], bins=(X,Y,Z))
 
