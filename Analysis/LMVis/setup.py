@@ -11,7 +11,7 @@
 ##################
 
 import sys
-if sys.platform == 'win32'
+if sys.platform == 'win32':
     from distutils.core import setup
     import py2exe
     import os
