@@ -20,7 +20,7 @@ import sys,math
 #import sys
 import numpy
 #import Image
-#from scikits import delaunay
+#from matplotlib import delaunay
 #from PYME.Analysis.QuadTree import pointQT
 #import scipy
 import pylab

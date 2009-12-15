@@ -34,7 +34,7 @@ try:
 except:
     pass
 
-from scikits import delaunay
+from matplotlib import delaunay
 
 from PYME.Analysis.QuadTree import pointQT, QTrend
 import Image
