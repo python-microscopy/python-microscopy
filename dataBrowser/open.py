@@ -25,4 +25,5 @@ def openFile(request, filename):
     if not filename.startswith('/'):
         filename = '/' + filename
         
-    return HttpResponseRedirect('/browse' + '/'.join(filename.split('/')[:-1]))
+    #return HttpResponseRedirect('/browse' + '/'.join(filename.split('/')[:-1]))
+    return HttpResponseRedirect(request.META['HTTP_REFERER'])
