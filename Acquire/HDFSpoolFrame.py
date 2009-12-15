@@ -128,12 +128,12 @@ class PanSpool(wx.Panel):
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
         self.cbQueue = wx.CheckBox(self, -1,'Save to Queue')
-        self.cbQueue.SetValue(False)
+        self.cbQueue.SetValue(True)
 
         hsizer.Add(self.cbQueue, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.cbCompress = wx.CheckBox(self, -1, 'Enable Compression')
-        self.cbCompress.SetValue(False)
+        self.cbCompress.SetValue(True)
 
         hsizer.Add(self.cbCompress, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
         
