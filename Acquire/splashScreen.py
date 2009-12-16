@@ -133,5 +133,7 @@ class SplashScreen(wx.Frame):
 
     def SetMessage(self, key, msg):
         self.panel.messages[key] = msg
-        
+
+
+
 

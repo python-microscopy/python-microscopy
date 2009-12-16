@@ -499,6 +499,7 @@ class iXonCamera:
         ac.GetTemperature(byref(t))
 
         while (t.value < -50): #wait fro temp to get above -50
+            print 'Waiting for the camera to warm up - current temperature = %3.2f' % t.value
             time.sleep(1)
             ac.GetTemperature(byref(t))
 
