@@ -15,6 +15,7 @@ import scipy
 import numpy
 from PYME.Analysis.cModels.gauss_app import *
 import subprocess
+from PYME.FileUtils import saveTiffStack
 
 class ImageBounds:
     def __init__(self, x0, y0, x1, y1, z0=0, z1=0):
@@ -86,7 +87,7 @@ class GeneratedImage:
 #        # remove frame files here
 #        subprocess.call('rm /tmp/frame*.tif', shell=True)
 
-        from PYME.FileUtils import saveTiffStack
+        #from PYME.FileUtils import saveTiffStack
 
         saveTiffStack.saveTiffMultipage(self.img, filename)
 
