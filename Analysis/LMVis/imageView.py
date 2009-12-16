@@ -662,23 +662,30 @@ class MultiChannelImageViewFrame(wx.Frame):
         fname = wx.FileSelector('Save Image ...', default_extension='.tif', wildcard="TIFF files (*.tif)|*.tif", flags = wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
 
         if not fname == "":
-            command = ["tiffcp"]
+            #command = ["tiffcp"]
             # add options here, if any (e.g. for compression)
 
             #im = im.astype('uint16')
             #im = im.astype('>u2').astype('<u2')
 
-            for img, i in zip(self.images, range(len(self.images))):
-                framefile = "/tmp/frame%d.tif" % i
+#            for img, i in zip(self.images, range(len(self.images))):
+#                framefile = "/tmp/frame%d.tif" % i
+#
+#                img.save(framefile)
+#                command.append(framefile)
+#
+#            command.append(fname)
+#            subprocess.call(command)
+#
+#            # remove frame files here
+#            subprocess.call('rm /tmp/frame*.tif', shell=True)
+            img = numpy.array([im.img.astype('f') for im in self.images])
 
-                img.save(framefile)
-                command.append(framefile)
+            from PYME.FileUtils import saveTiffStack
 
-            command.append(fname)
-            subprocess.call(command)
+            saveTiffStack.saveTiffMultipage(img, filename)
 
-            # remove frame files here
-            subprocess.call('rm /tmp/frame*.tif', shell=True)
+
             
 
             #ivp.image.save(fname)
