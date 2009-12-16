@@ -338,6 +338,10 @@ class FakeCamera:
     def Init(*args): 
         pass
 
+    def Shutdown(self):
+        self.compT.kill = True
+        #pass
+
     def GetStatus(*args): 
         pass
     
@@ -458,4 +462,5 @@ class FakeCamera:
         else:  raise AttributeError, name  # <<< DON'T FORGET THIS LINE !!
         
     def __del__(self):
-        self.compT.kill = True
+        self.Shutdown()
+        #self.compT.kill = True

@@ -72,7 +72,7 @@ class iXonCamera:
             raise 'Error getting Temperature range: %s' % ac.errorCodes[ret]
 
         self.tRange = (tMin.value,tMax.value)
-        self.tempSet = -50 #default temperature setpoint
+        self.tempSet = -70 #default temperature setpoint
 
         ret = ac.SetTemperature(max(tMin.value, self.tempSet)) #fixme so that default T is read in
         if not ret == ac.DRV_SUCCESS:
@@ -493,6 +493,7 @@ class iXonCamera:
             raise 'Error waiting for acquisition: %s' % ac.errorCodes[ret]
 
     def Shutdown(self):
+        self.SetShutter(False)
         ac.CoolerOFF()
         t = c_int(-100)
         ac.GetTemperature(byref(t))

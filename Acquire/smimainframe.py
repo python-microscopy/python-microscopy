@@ -559,6 +559,7 @@ class smiMainFrame(wx.Frame):
     def OnCloseWindow(self, event):   
         self.scope.pa.stop()
         self.time1.Stop()
+        self.scope.cam.Shutdown()
         #self.int_sl.Destroy()
         #self.piezo_sl.Destroy()
         #self.seq_d.Destroy()
