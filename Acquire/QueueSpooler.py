@@ -65,7 +65,7 @@ class Spooler(sp.Spooler):
       self.buffer.append(cSMI.CDataStack_AsArray(caller.ds, 0).reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()).copy())
 
       if self.imNum == 0: #first frame
-          self.md.setEntry('imageID', fileID.genFrameID(self.buffer[-1]))
+          self.md.setEntry('imageID', fileID.genFrameID(self.buffer[-1].squeeze()))
 
       if len(self.buffer) >= self.buflen:
           self.FlushBuffer()

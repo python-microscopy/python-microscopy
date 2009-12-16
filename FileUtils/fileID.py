@@ -49,7 +49,7 @@ def genFrameID(frame):
     ds = frame[:33, 0].ravel().astype('i')
 
     #h5f.close()
-    #print ds
+    print ds.shape
 
     ds = np.diff(np.diff(ds))
 
