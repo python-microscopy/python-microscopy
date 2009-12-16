@@ -8,6 +8,7 @@ class Slide(models.Model):
     slideID = models.IntegerField(primary_key=True)
     creator = models.CharField(max_length=200)
     reference = models.CharField(max_length=200)
+    #notes = models.TextField()
 
     def AddLabel(self, structure, label):
         lb = Labelling(slideID=self, structure=structure, label=label)
