@@ -22,9 +22,10 @@ T(-1, scope.turnAllLasersOff),
 T(0, SetEMGain(0)),
 T(1, scope.l671.TurnOn),
 T(60, scope.l671.TurnOff),
-T(61, SetEMGain(150))
-T(80, scope.l671.TurnOn)
-T(90, MainFrame.pan_spool.OnBAnalyse, None)
+T(61, SetEMGain(150)),
+T(80, scope.l671.TurnOn),
+T(90, MainFrame.pan_spool.OnBAnalyse, None),
+T(maxint, scope.turnAllLasersOff),
 ]
 
 #optional - metadata entries

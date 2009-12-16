@@ -21,7 +21,8 @@ taskList = [
 T(-1, scope.turnAllLasersOff),
 T(20, scope.l488.TurnOn),
 T(20, scope.lFibre.TurnOn),
-T(30, MainFrame.pan_spool.OnBAnalyse, None)
+T(30, MainFrame.pan_spool.OnBAnalyse, None),
+T(maxint, scope.turnAllLasersOff),
 ]
 
 #optional - metadata entries

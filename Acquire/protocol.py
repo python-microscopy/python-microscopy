@@ -14,6 +14,8 @@ from math import floor
 import numpy as np
 from PYME.Acquire import eventLog
 
+from sys import maxint
+
 #minimal protocol which does nothing
 class Protocol:
     def __init__(self):
@@ -23,6 +25,9 @@ class Protocol:
         pass
     
     def OnFrame(self, frameNum):
+        pass
+
+    def OnFinish(self):
         pass
 
 NullProtocol = Protocol()
@@ -67,11 +72,20 @@ class TaskListProtocol(Protocol):
             eventLog.logEvent('ProtocolTask', '%d, %s, ' % (frameNum, t.what.func_name) + ', '.join(['%s' % p for p in t.params]))
             self.listPos += 1
 
+    def OnFinish(self):
+        while not  self.listPos >= len(self.taskList):
+            t = self.taskList[self.listPos]
+            t.what(*t.params)
+            eventLog.logEvent('ProtocolTask', '%s, ' % ( t.what.func_name,) + ', '.join(['%s' % p for p in t.params]))
+            self.listPos += 1
+
+
+
 
 
 class ZStackTaskListProtocol(TaskListProtocol):
-    def __init__(self, taskList, startFrame, dwellTime, metadataEntries = [], randomise = False):
-        TaskListProtocol.__init__(self, taskList, metadataEntries)
+    def __init__(self, taskList, startFrame, dwellTime, metadataEntries = [], finalTasks=None, randomise = False):
+        TaskListProtocol.__init__(self, taskList, metadataEntries, finalTasks)
         
         self.startFrame = startFrame
         self.dwellTime = dwellTime

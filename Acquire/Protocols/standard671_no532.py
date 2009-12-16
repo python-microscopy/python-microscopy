@@ -10,7 +10,8 @@ T(-1, scope.turnAllLasersOff),
 #T(0, scope.l543.TurnOn),
 T(20, scope.l671.TurnOn),
 #T(20, scope.lFibre.TurnOn),
-T(30, MainFrame.pan_spool.OnBAnalyse, None)
+T(30, MainFrame.pan_spool.OnBAnalyse, None),
+T(maxint, scope.turnAllLasersOff),
 ]
 
 #optional - metadata entries
