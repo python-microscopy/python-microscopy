@@ -134,11 +134,12 @@ class colourPanel(wx.Panel):
 
         vsizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Fluorophores'), wx.VERTICAL)
 
-        self.lFluorSpecies = editList.EditListCtrl(self, -1, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.SUNKEN_BORDER, size=(200, 100))
+        self.lFluorSpecies = editList.EditListCtrl(self, -1, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.SUNKEN_BORDER, size=(250, 100))
         vsizer.Add(self.lFluorSpecies, 0, wx.ALL, 5)
 
         self.lFluorSpecies.InsertColumn(0, 'Name')
         self.lFluorSpecies.InsertColumn(1, 'Ag/(Ag + Ar)')
+        self.lFluorSpecies.InsertColumn(2, '# Events')
         self.lFluorSpecies.makeColumnEditable(1)
 
         for key, value in self.visFr.fluorSpecies.items():
@@ -331,6 +332,20 @@ class colourPanel(wx.Panel):
 
     def refresh(self):
         self.colPlotPan.draw()
+
+        for key in self.visFr.fluorSpecies.keys():
+            ind = self.lFluorSpecies.FindItem(-1,key)
+            p_dye = self.visFr.mapping['p_%s' % key]
+
+            p_other = numpy.zeros(p_dye.shape)
+
+            for k2 in self.visFr.fluorSpecies.keys():
+                if not k2 ==key:
+                    p_other = numpy.maximum(p_other, self.visFr.mapping['p_%s' % k2])
+
+            self.lFluorSpecies.SetStringItem(ind,2, '%d' % ((p_dye > self.visFr.t_p_dye)*(p_other < self.visFr.t_p_other)).sum())
+
+
         #self.colPlotPan._SetSize()
         #self.colPlotPan.Refresh()
 

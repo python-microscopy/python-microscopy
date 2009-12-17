@@ -280,6 +280,7 @@ class SampleInfoDialog(wx.Dialog):
         creator = self.tCreator.GetValue()
         slideRef = self.tSlideRef.GetValue()
         notes = self.tNotes.GetValue()
+        sampleNotes = self.tSlideNotes.GetValue()
 
         lastCreator = creator
         lastSlideRef = slideRef
@@ -292,10 +293,14 @@ class SampleInfoDialog(wx.Dialog):
 
         if len(notes) == 0:
             notes = '<none>'
+
+        if len(sampleNotes) == 0:
+            sampleNotes = '<none>'
         
         mdh.setEntry('Sample.Creator', creator)
         mdh.setEntry('Sample.SlideRef', slideRef)
-        mdh.setEntry('Sample.Notes', notes)
+        mdh.setEntry('Sample.Notes', sampleNotes)
+        mdh.setEntry('Notes', notes)
 
 #        labels = []
 #        for i in range(self.gLabelling.GetNumberRows()):
@@ -308,9 +313,13 @@ class SampleInfoDialog(wx.Dialog):
         if not self.slideExists:
             for struct, label in self.labels:
                 l = models.Labelling(slideID=slide, structure=struct, label=label)
+                l.notes = sampleNotes
                 l.save()
 
         im = models.Image.GetOrCreate(mdh.getEntry('imageID'), nameUtils.getUsername(), slide, mdh.getEntry('StartTime'))
+        im.comments = notes
+        im.save()
+
 
 
 def getSampleData(parent, mdh):
