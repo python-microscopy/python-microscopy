@@ -191,11 +191,14 @@ class SampleInfoDialog(wx.Dialog):
             self.tStructure.Enable(False)
             self.tDye.Enable(False)
             self.bAddLabel.Enable(False)
+            self.tSampleNotes.SetValue(slide.notes)
+            self.tSampleNotes.Enable(False)
         else:
             self.slideExists = False
             self.tStructure.Enable(True)
             self.tDye.Enable(True)
             self.bAddLabel.Enable(True)
+            self.tSampleNotes.Enable(True)
 
         self.PopulateLabelList()
 
