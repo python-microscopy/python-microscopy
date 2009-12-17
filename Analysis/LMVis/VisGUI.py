@@ -1465,7 +1465,7 @@ class VisGUIFrame(wx.Frame):
 
         if self.Triangles == None:
                 statTri = statusLog.StatusLogger("Generating Triangulation ...")
-                self.Triangles = delaunay.Triangulation(self.colourFilter['x'], self.colourFilter['y'])
+                self.Triangles = delaunay.Triangulation(self.colourFilter['x'] + .1*np.random.normal(size=len(self.colourFilter['x'])), self.colourFilter['y']+ .1*np.random.normal(size=len(self.colourFilter['x'])))
 
         statNeigh = statusLog.StatusLogger("Calculating mean neighbour distances ...")
         self.GeneratedMeasures['neighbourDistances'] = pylab.array(visHelpers.calcNeighbourDists(self.Triangles))
@@ -2303,14 +2303,14 @@ class VisGUIFrame(wx.Frame):
         elif self.viewMode == 'triangles':
             if self.Triangles == None:
                 status = statusLog.StatusLogger("Generating Triangulation ...")
-                self.Triangles = delaunay.Triangulation(self.colourFilter['x'], self.colourFilter['y'])
+                self.Triangles = delaunay.Triangulation(self.colourFilter['x'] + 0.1*np.random.normal(size=self.colourFilter['x'].shape), self.colourFilter['y'] + 0.1*np.random.normal(size=self.colourFilter['x'].shape))
                 
             self.glCanvas.setTriang(self.Triangles)
 
         elif self.viewMode == 'voronoi':
             if self.Triangles == None:
                 status = statusLog.StatusLogger("Generating Triangulation ...")
-                self.Triangles = delaunay.Triangulation(self.colourFilter['x'], self.colourFilter['y'])
+                self.Triangles = delaunay.Triangulation(self.colourFilter['x']+ 0.1*np.random.normal(size=self.colourFilter['x'].shape), self.colourFilter['y']+ 0.1*np.random.normal(size=self.colourFilter['x'].shape))
                 
 
             status = statusLog.StatusLogger("Generating Voronoi Diagram ... ")
@@ -2328,7 +2328,7 @@ class VisGUIFrame(wx.Frame):
         elif self.viewMode == 'interp_triangles':
             if self.Triangles == None:
                 status = statusLog.StatusLogger("Generating Triangulation ...")
-                self.Triangles = delaunay.Triangulation(self.colourFilter['x'], self.colourFilter['y'])
+                self.Triangles = delaunay.Triangulation(self.colourFilter['x']+ 0.1*np.random.normal(size=self.colourFilter['x'].shape), self.colourFilter['y']+ 0.1*np.random.normal(size=self.colourFilter['x'].shape))
 
             self.glCanvas.setIntTriang(self.Triangles, self.pointColour())
 

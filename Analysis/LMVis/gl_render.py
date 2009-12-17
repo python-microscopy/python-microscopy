@@ -857,6 +857,7 @@ class LMGLCanvas(GLCanvas):
     def jitMCT(self,x,y,jsig, mcp):
         Imc = scipy.rand(len(x)) < mcp
         if type(jsig) == numpy.ndarray:
+            #print jsig.shape, Imc.shape
             jsig = jsig[Imc]
         T = delaunay.Triangulation(x[Imc] +  jsig*scipy.randn(Imc.sum()), y[Imc] +  jsig*scipy.randn(Imc.sum()))
         self.setTriang(T)
