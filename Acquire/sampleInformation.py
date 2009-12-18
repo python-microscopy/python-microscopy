@@ -311,6 +311,8 @@ class SampleInfoDialog(wx.Dialog):
 
         mdh.setEntry('Sample.Labelling', self.labels)
 
+        mdh.setEntry('AcquiringUser', nameUtils.getUsername())
+
         slide = models.Slide.GetOrCreate(creator, slideRef)
 
         if not self.slideExists:

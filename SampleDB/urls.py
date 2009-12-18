@@ -18,9 +18,11 @@ urlpatterns = patterns('',
     #(r'^images/$', 'django.views.generic.list_detail.object_list', {'queryset' : Image.objects.all()}),
     #(r'^images/(?P<imageID>.*)$', 'SampleDB.samples.views.slide_detail'),
 
-    (r'^images/$', 'django.views.generic.list_detail.object_list', {'queryset' : Image.objects.all()}),
+    #(r'^images/$', 'django.views.generic.list_detail.object_list', {'queryset' : Image.objects.all()}),
+    (r'^images/$', 'SampleDB.samples.views.image_list'),
     (r'^images/(?P<image_id>.*)/tag$', 'SampleDB.samples.views.tag_image'),
     (r'^images/(?P<object_id>.*)$', 'django.views.generic.list_detail.object_detail', {'queryset' : Image.objects.all()}),
+    
 
     (r'^thumbnails/(?P<filename>.*)$', 'PYME.dataBrowser.thumbnails.thumb'),
     (r'^barcode/(?P<idNum>.*)$', 'SampleDB.samples.barcode.barcode2d'),

@@ -32,11 +32,21 @@ and open the template in the editor.
     </thead>
     {% for im in object_list|dictsort:"timestamp" %}
     <tr class="{% cycle 'odd' 'even' %}">
-    <td><a href="/images/{{ im.imageID }}"><img src="/barcode/{{ im.imageID }}" width="80" height="20"/></a></td>
+    <td><a href="/images/{{ im.imageID }}">{{im.imageID}}</a></td>
     <td>{{im.timestamp.date}}</td>
     <td>
     {%for f in im.files.all %}
     {{f.filename}}<br>
+    {%endfor%}
+    </td>
+    <td>
+    {%for t in im.tags.all %}
+    {{t.tag}},
+    {%endfor%}
+    {%for f in im.files.all %}
+    {%for t in f.tags.all %}
+    {{t.tag}}, 
+    {%endfor%}
     {%endfor%}
     </td>
     </tr>

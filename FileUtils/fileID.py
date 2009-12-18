@@ -49,7 +49,7 @@ def genFrameID(frame):
     ds = frame[:33, 0].ravel().astype('i')
 
     #h5f.close()
-    print ds.shape
+    #print ds.shape
 
     ds = np.diff(np.diff(ds))
 
@@ -57,7 +57,7 @@ def genFrameID(frame):
 
     ds = ds > 0
     #print ds.shape
-    print ds.sum()
+    #print ds.sum()
 
     return ((2*ds)**np.arange(31)).sum()
 
@@ -164,7 +164,71 @@ def guessUserID(filename):
     elif ext == '.h5r':
         return fns[-4]
 
+def getFileMetadata(filename):
+    ext = os.path.splitext(filename)[1]
+    #print ext
 
+    mdh = MetaDataHandler.NestedClassMDHandler()
+
+    try:
+        if ext in ['.h5', '.h5r']:
+            h5f = tables.openFile(filename)
+            md = MetaDataHandler.HDFMDHandler(h5f)
+
+            mdh = MetaDataHandler.NestedClassMDHandler(md)
+            #print guess, ret
+
+            h5f.close()
+    except:
+        pass
+
+    return mdh
+
+def getImageTags(filename):
+    ext = os.path.splitext(filename)[1]
+    #print ext
+
+    tags = []
+
+    try:
+        if ext in ['.h5', '.h5r']:
+            h5f = tables.openFile(filename)
+            if 'Events' in dir(h5f.root):
+                events = h5f.root.Events[:]
+
+                evKeyNames = set()
+                for e in events:
+                    evKeyNames.add(e['EventName'])
+
+                if 'ProtocolFocus' in evKeyNames:
+                    tags.append('Z-Stack')
+
+            md = MetaDataHandler.HDFMDHandler(h5f)
+
+            if 'Protocol.Filename' in md.getEntryNames():
+                tags.append('Protocol_%s' % md.getEntry('Protocol.Filename'))
+            
+
+            h5f.close()
+    except:
+        pass
+
+    return tags
+
+
+def getFileTags(filename, md):
+    ext = os.path.splitext(filename)[1]
+    #print ext
+
+    tags = []
+
+    if ext in ['.h5r']:
+        if 'Analysis.FitModule' in md.getEntryNames():
+            tags.append('FitModule_%s' % md.getEntry('Analysis.FitModule'))
+
+
+
+    return tags
 
 
 

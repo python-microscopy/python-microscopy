@@ -12,6 +12,8 @@
 
 import Image
 import numpy as np
+from PYME.misc import TiffImagePlugin #monkey patch PIL with improved tiff support from Priithon
+
 
 
 def read3DTiff(filename):

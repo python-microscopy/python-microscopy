@@ -3,6 +3,7 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.http import HttpResponseRedirect, HttpResponse
 from SampleDB.samples.models import *
 from django.http import Http404
+from datetime import datetime
 
 def slide_detail(request, slideID):
     try:
@@ -20,6 +21,27 @@ def slide_index(request):
     sl = Slide.objects.all()
 
     return render_to_response('samples/slide_list.html', {'slides':sl})
+
+def image_list(request):
+    filters = {}
+    print request.REQUEST.items()
+    #print datetime(*([int(s) for s in request.REQUEST['start_date'].split('/')][::-1]))
+
+    if 'start_date' in request.REQUEST:
+        #print datetime(*([int(s) for s in request.REQUEST['start_date'].split('/')][::-1]))
+        filters['timestamp__gte'] = datetime(*([int(s) for s in request.REQUEST['start_date'].split('/')][::-1]))
+
+    if 'end_date' in request.REQUEST:
+        #print datetime(*([int(s) for s in request.REQUEST['start_date'].split('/')][::-1]))
+        filters['timestamp__lte'] = datetime(*([int(s) for s in request.REQUEST['end_date'].split('/')][::-1]))
+
+    if 'users' in request.REQUEST:
+        filters['userID__in'] = request.REQUEST['users'].split(',')
+
+    imgs = Image.objects.filter(**filters)
+
+    return render_to_response('samples/image_list.html', {'object_list':imgs})
+
 
 def tag_hint(request):
     hints = TagName.objects.filter(name__startswith=request.REQUEST['tag'])

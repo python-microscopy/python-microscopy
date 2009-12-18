@@ -94,24 +94,49 @@ class File(models.Model):
             tn = cls.objects.get(filename=filename)
         except:
             import PYME.FileUtils.fileID as file_ID
+
+            mdh = file_ID.getFileMetadata(filename)
             
             if fileID ==None:
                 fileID = file_ID.genFileID(filename)
 
             #print repr(imageID)
             if imageID == None:
-                imageID = file_ID.genImageID(filename, guess=True)
+                if 'imageID' in mdh.getEntryNames():
+                    imageID = mdh.imageID
+                else:
+                    imageID = file_ID.genImageID(filename, guess=True)
 
             #print repr(imageID)
 
             if not imageID == None:
                 #force an image to be created if one doesn't exist already
-                im = Image.GetOrCreate(imageID, userGuess=file_ID.guessUserID(filename), timestamp=file_ID.genImageTime(filename))
+                if 'AcquiringUser' in mdh.getEntryNames():
+                    userGuess = mdh.AcquiringUser
+                else:
+                    userGuess=file_ID.guessUserID(filename)
+
+                if 'Sample.Creator' in mdh.getEntryNames():
+                    slide = Slide.GetOrCreate(mdh.Sample.Creator, mdh.Sample.SlideRef)
+
+                    if len(slide.labelling.all()) == 0 and 'Sample.Labelling' in mdh.getEntryNames():
+                        for struct, label in mdh.Sample.Labelling:
+                            l = Labelling(slideID=slide, structure=struct, label=label)
+                            l.save()
+
+                else:
+                    slide=None
+
+                im = Image.GetOrCreate(imageID, userGuess=userGuess, timestamp=file_ID.genImageTime(filename), slideID=slide)
+                for t in file_ID.getImageTags(filename):
+                    im.Tag(t)
             else:
                 im = None
                     
-            tn = cls(filename=filename, fileID=fileID, imageID=im)
+            tn = cls(filename=filename, fileID=fileID, imageID=im)    
             tn.save()
+            for t in file_ID.getFileTags(filename, mdh):
+                tn.Tag(t)
 
         return tn
 
@@ -149,8 +174,12 @@ class ImageTag(models.Model):
 
     @classmethod
     def AddTag(cls, imageID, tagName):
-        sl = cls(image=imageID, tag=TagName.GetOrCreate(tagName))
-        sl.save()
+        tag=TagName.GetOrCreate(tagName)
+        try:
+            sl = cls.objects.get(image=imageID, tag=tag)
+        except:
+            sl = cls(image=imageID, tag=tag)
+            sl.save()
 
         return sl
 
@@ -160,8 +189,14 @@ class FileTag(models.Model):
 
     @classmethod
     def AddTag(cls, file, tagName):
-        sl = cls(file=file, tag=TagName.GetOrCreate(tagName))
-        sl.save()
+        tag=TagName.GetOrCreate(tagName)
+        #print file, tag
+        try:
+            sl = cls.objects.get(file=file, tag=tag)
+        except:
+            sl = cls(file=file, tag=tag)
+            #print sl.file_id, sl.tag_id
+            sl.save()
 
         return sl
 
@@ -171,8 +206,12 @@ class SlideTag(models.Model):
 
     @classmethod
     def AddTag(cls, slide, tagName):
-        sl = cls(slide=slide, tag=TagName.GetOrCreate(tagName))
-        sl.save()
+        tag=TagName.GetOrCreate(tagName)
+        try:
+            sl = cls.objects.get(slide=slide, tag=tag)
+        except:
+            sl = cls(slide=slide, tag=tag)
+            sl.save()
 
         return sl
 

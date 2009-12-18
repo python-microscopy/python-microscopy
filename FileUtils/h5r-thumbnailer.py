@@ -74,7 +74,7 @@ def generateThumbnail(inputFile, thumbSize):
 
     f1.close()
 
-    im = minimum(2*(255*im)/im.max(), 255)
+    im = minimum(2*(255*im)/im.max(), 255).T
 
 
     im = concatenate((im[:,:,newaxis], im[:,:,newaxis], im[:,:,newaxis]), 2)

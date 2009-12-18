@@ -28,6 +28,10 @@ and open the template in the editor.
         background-color: #FFDDAA;
     }
 
+    div.tagbar{
+        background-color: #AADDAA;
+    }
+
     div.autocomplete {
       position:absolute;
       width:250px;
@@ -73,15 +77,23 @@ and open the template in the editor.
     {% endfor %}
     </table>
 
+    <h4>Slide Tags</h4>
+
+    {%for t in object.slideID.tags.all %}
+    {{t.tag}},
+    {%endfor%}
+    <br>
+
 
     </div>
 
-    <h3>Tags</h3>
+    <div class="tagbar">
+    <h4>Image Tags</h4>
 
     {%for t in object.tags.all %}
     {{t.tag}}, 
     {%endfor%}
-    <div class="tagbar">
+    
        <form action="/images/{{object.imageID}}/tag" method="post">
         <input type="text" name="tag" id="tag" value="" />
 
@@ -103,6 +115,11 @@ and open the template in the editor.
     <tr class="{% cycle 'odd' 'even' %}">
     <td><img src="/thumbnails/{{ f.filename }}" float="left"/></td>
     <td>{{f.filename}}</td>
+    <td>
+        {%for t in f.tags.all %}
+        {{t.tag}},
+        {%endfor%}
+    </td>
     </tr>
     {%endfor%}
     </table>
