@@ -3,6 +3,7 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.http import HttpResponseRedirect, HttpResponse
 from SampleDB.samples.models import *
 from django.http import Http404
+from django import forms
 from datetime import datetime
 
 def slide_detail(request, slideID):
@@ -22,9 +23,11 @@ def slide_index(request):
 
     return render_to_response('samples/slide_list.html', {'slides':sl})
 
+#class ImageFilterForm(forms.Form):
+
+
 def image_list(request):
     filters = {}
-    print request.REQUEST.items()
     #print datetime(*([int(s) for s in request.REQUEST['start_date'].split('/')][::-1]))
 
     if 'start_date' in request.REQUEST:
@@ -35,8 +38,11 @@ def image_list(request):
         #print datetime(*([int(s) for s in request.REQUEST['start_date'].split('/')][::-1]))
         filters['timestamp__lte'] = datetime(*([int(s) for s in request.REQUEST['end_date'].split('/')][::-1]))
 
-    if 'users' in request.REQUEST:
-        filters['userID__in'] = request.REQUEST['users'].split(',')
+
+    users = [i[0].split('_')[1] for i in request.REQUEST.items() if i[0].startswith('user_') and i[1] == '1']
+    #print users
+    if len(users) >  0:
+        filters['userID__in'] = users
 
     imgs = Image.objects.filter(**filters)
 

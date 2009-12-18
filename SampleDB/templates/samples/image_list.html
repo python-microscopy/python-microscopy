@@ -15,25 +15,30 @@ and open the template in the editor.
     }
 
     tr.odd{
-        background-color: #94A9FC;
+        background-color: #B4C9FC;
     }
 
     tr.even{
-        background-color: #A4B9FC;
+        background-color: #94A9FC;
     }
+
+
+
 
   </style>
   <body>
     <h3>Images</h3>
+    {% load extra_filters %}
 
     <table>
     <thead>
-    <tr><th>ID</th><th>Date</th><th>Files</th></tr>
+    <tr><th>ID</th><th>Date</th><th>Files</th><th>Tags</th></tr>
     </thead>
     {% for im in object_list|dictsort:"timestamp" %}
-    <tr class="{% cycle 'odd' 'even' %}">
+    {#<tr class="{% cycle 'odd' 'even' %}">#}
+    <tr class="{{im.timestamp.date|is_changed}}">
     <td><a href="/images/{{ im.imageID }}">{{im.imageID}}</a></td>
-    <td>{{im.timestamp.date}}</td>
+    <td>{{im.timestamp.date}}{{im.timestamp.tzinfo}}</td>
     <td>
     {%for f in im.files.all %}
     {{f.filename}}<br>
