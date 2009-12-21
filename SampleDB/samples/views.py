@@ -4,6 +4,7 @@ from django.http import HttpResponseRedirect, HttpResponse
 from SampleDB.samples.models import *
 from django.http import Http404
 from django import forms
+from PYME.SampleDB.samples.models import tag
 from datetime import datetime
 
 def slide_detail(request, slideID):
@@ -26,8 +27,15 @@ def slide_index(request):
 #class ImageFilterForm(forms.Form):
 
 
+class userInfo:
+    def __init__(self, name, disp):
+        self.name = name
+        self.disp=disp
+
 def image_list(request):
     filters = {}
+    startNum = 0
+    numResults = 50
     #print datetime(*([int(s) for s in request.REQUEST['start_date'].split('/')][::-1]))
 
     if 'start_date' in request.REQUEST:
@@ -38,15 +46,32 @@ def image_list(request):
         #print datetime(*([int(s) for s in request.REQUEST['start_date'].split('/')][::-1]))
         filters['timestamp__lte'] = datetime(*([int(s) for s in request.REQUEST['end_date'].split('/')][::-1]))
 
+    if 'start_num' in request.REQUEST:
+        startNum = int(request.REQUEST['start_num'])
+
+    if 'num_results' in request.REQUEST:
+        numResults = int(request.REQUEST['num_results'])
+
+    usernames = set([i.userID for i in Image.objects.all()])
+    usernames = [u for u in usernames if (u.find('-') == -1) and (u.find(' ') ==-1)]
 
     users = [i[0].split('_')[1] for i in request.REQUEST.items() if i[0].startswith('user_') and i[1] == '1']
     #print users
     if len(users) >  0:
         filters['userID__in'] = users
 
-    imgs = Image.objects.filter(**filters)
+    user_info = [userInfo(u, u in users) for u in usernames]
 
-    return render_to_response('samples/image_list.html', {'object_list':imgs})
+    imgs = Image.objects.filter(**filters).order_by('timestamp')
+
+    start_date = imgs[0].timestamp
+    end_date = imgs[-1].timestamp
+
+    totalResultsNum = len(imgs)
+    numResults = min(totalResultsNum, startNum + numResults) - startNum
+    imgs = imgs[startNum:(startNum + numResults)]
+
+    return render_to_response('samples/image_list.html', {'object_list':imgs, 'user_info':user_info, 'startNum':startNum, 'endNum':(startNum + numResults), 'totalNum':totalResultsNum, 'start_date':start_date, 'end_date':end_date })
 
 
 def tag_hint(request):

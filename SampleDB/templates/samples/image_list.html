@@ -22,6 +22,11 @@ and open the template in the editor.
         background-color: #94A9FC;
     }
 
+    span.user{
+        background-color: #D4D9FC;
+        margin-right: .5em;
+    }
+
 
 
 
@@ -30,6 +35,31 @@ and open the template in the editor.
     <h3>Images</h3>
     {% load extra_filters %}
 
+    <form action="/images/" method="get">
+        
+    <p>
+        <b>User:</b>
+    {%for ui in user_info%}
+        <span class="user">
+        <label for="user_{{ui.name}}">{{ui.name}}</label>
+        <input type="checkbox" name="user_{{ui.name}}" id="user_{{ui.name}}" value="1" {%if ui.disp%} checked="checked"{%endif%}/>
+        </span>
+    {%endfor%}
+    </p>
+    <p>
+        <b>Date:</b>
+        <label for="start_date">Start</label>
+        <input type="text" name="start_date" id="start_date" value="1/1/1970"/>
+        <label for="end_date">End</label>
+        <input type="text" name="end_date" id="end_date" value="{%now "d/m/Y"%}"/>
+    </p>
+                
+
+
+        <input type="submit" value="Filter" />
+    </form>
+
+    <p>Displaying results {{startNum}} to {{endNum}} of {{totalNum}}</p>
     <table>
     <thead>
     <tr><th>ID</th><th>Date</th><th>Files</th><th>Tags</th></tr>
@@ -38,7 +68,7 @@ and open the template in the editor.
     {#<tr class="{% cycle 'odd' 'even' %}">#}
     <tr class="{{im.timestamp.date|is_changed}}">
     <td><a href="/images/{{ im.imageID }}">{{im.imageID}}</a></td>
-    <td>{{im.timestamp.date}}{{im.timestamp.tzinfo}}</td>
+    <td>{{im.timestamp.date}}</td>
     <td>
     {%for f in im.files.all %}
     {{f.filename}}<br>
