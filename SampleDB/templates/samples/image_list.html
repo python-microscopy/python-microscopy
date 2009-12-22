@@ -8,7 +8,10 @@ and open the template in the editor.
     <title>PYME Sample Information - Image Index</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta http-equiv="content-style-type" content="text/css">
-  </head>
+
+    <script src="{{MEDIA_URL}}javascript/prototype.js" type="text/javascript"></script>
+ <script src="{{MEDIA_URL}}javascript/scriptaculous.js" type="text/javascript"></script>
+  
   <style>
     body {
         font-family: arial, helvetica, sans-serif;
@@ -27,10 +30,15 @@ and open the template in the editor.
         margin-right: .5em;
     }
 
+    div.slider { width:1000px; margin:10px 0; background-color:#ccc; height:10px; position: relative; }
+    div.slider div.handle { width:10px; height:11px; background-color:#f00; cursor:move; position: absolute; }
 
 
 
-  </style>
+
+
+</style>
+</head>
   <body>
     <h3>Images</h3>
     {% load extra_filters %}
@@ -47,17 +55,62 @@ and open the template in the editor.
     {%endfor%}
     </p>
     <p>
-        <b>Date:</b>
+        <table>
+            <tr>
+        <td><b>Date:</b></td>
+        <td>
+        <img src="/datehist/?{{query}}"/><br>
+        
+        <div id="date_slider" class="slider">
+        <div class="handle" style="background-color: #0A0;"></div>
+        <div class="handle" style="background-color: #0A0;"></div>
+        </div>
         <label for="start_date">Start</label>
-        <input type="text" name="start_date" id="start_date" value="1/1/1970"/>
+        <input type="text" name="start_date" id="start_date" value="{{start_date|date:"d/m/Y"}}"/>
         <label for="end_date">End</label>
-        <input type="text" name="end_date" id="end_date" value="{%now "d/m/Y"%}"/>
+        <input type="text" name="end_date" id="end_date" value="{{end_date|date:"d/m/Y"}}"/>
+        <input type="button" value="Clear" onclick="$('start_date').value='none';$('end_date').value='none';"/>
+        </td>
+        </tr>
+        </table>
     </p>
-                
-
+        <table>
+            <tr>
+            <td><b>Tags:</b></td>
+            <td></td>
+            </tr>
+        </table>
 
         <input type="submit" value="Filter" />
     </form>
+
+    <script type="text/javascript">
+  (function() {
+    var date_slider = $('date_slider');
+    var start_d = new Date({{start_date.year}}, {{start_date.month}}, {{start_date.day}}, 0, 0, 0, 0);
+    var end_d = new Date({{end_date.year}}, {{end_date.month}}, {{end_date.day}}, 0, 0, 0);
+
+    new Control.Slider(date_slider.select('.handle'), date_slider, {
+      range: $R(0, 1.),
+      sliderValue: [0,1.],
+      onSlide: function(value) {
+        //box.setStyle({ width: value + 'px', height: value + 'px' });
+        var new_s = new Date(start_d.getTime() + value[0]*(end_d.getTime() - start_d.getTime()));
+        var new_e = new Date(start_d.getTime() + value[1]*(end_d.getTime() - start_d.getTime()));
+        $('start_date').value = new_s.getDate() + '/' + (new_s.getMonth() + 1) + '/' + new_s.getFullYear();
+        $('end_date').value = new_e.getDate() + '/' + (new_e.getMonth() + 1) + '/' + new_e.getFullYear();
+      },
+      onChange: function(value) {
+        var new_s = new Date(start_d.getTime() + value[0]*(end_d.getTime() - start_d.getTime()));
+        var new_e = new Date(start_d.getTime() + value[1]*(end_d.getTime() - start_d.getTime()));
+        $('start_date').value = new_s.getDate() + '/' + (new_s.getMonth() + 1) + '/' + new_s.getFullYear();
+        $('end_date').value = new_e.getDate() + '/' + (new_e.getMonth() + 1) + '/' + new_e.getFullYear();
+      }
+    });
+
+    
+  })();
+  </script>
 
     <p>Displaying results {{startNum}} to {{endNum}} of {{totalNum}}</p>
     <table>
@@ -68,7 +121,7 @@ and open the template in the editor.
     {#<tr class="{% cycle 'odd' 'even' %}">#}
     <tr class="{{im.timestamp.date|is_changed}}">
     <td><a href="/images/{{ im.imageID }}">{{im.imageID}}</a></td>
-    <td>{{im.timestamp.date}}</td>
+    <td>{{im.timestamp.date|date:"d/m/y"}}</td>
     <td>
     {%for f in im.files.all %}
     {{f.filename}}<br>

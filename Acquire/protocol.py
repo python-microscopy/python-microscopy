@@ -84,8 +84,8 @@ class TaskListProtocol(Protocol):
 
 
 class ZStackTaskListProtocol(TaskListProtocol):
-    def __init__(self, taskList, startFrame, dwellTime, metadataEntries = [], finalTasks=None, randomise = False):
-        TaskListProtocol.__init__(self, taskList, metadataEntries, finalTasks)
+    def __init__(self, taskList, startFrame, dwellTime, metadataEntries = [], randomise = False):
+        TaskListProtocol.__init__(self, taskList, metadataEntries)
         
         self.startFrame = startFrame
         self.dwellTime = dwellTime
