@@ -27,6 +27,32 @@ def dategraph(request):
     if len(users) >  0:
         filters['userID__in'] = users
 
+    tagnames = [t.name for t in TagName.objects.all()]
+
+    tags = [i[0].split('__')[1] for i in request.REQUEST.items() if i[0].startswith('tag__') and i[1] == '1']
+    #print users
+#    if len(tags) >  0:
+#        filters['userID__in'] = users
+
+    #tag_info = [userInfo(t, t in tags) for t in tagnames]
+
+    ImageIDs = []
+    for t in tags:
+        print t
+        try:
+            tn = TagName.objects.get(name=t)
+            print tn
+            ImageIDs += [i.image.imageID for i in ImageTag.objects.filter(tag=tn)]
+            ImageIDs += [f.file.ImageID.imageID for f in FileTag.objects.filter(tag=tn)]
+            for s in SlideTag.objects.filter(tag=tn):
+                for i in s.slide.images.all():
+                    ImageIDs += [i.image.imageID for i in ImageTag.objects.filter(tag=tn)]
+        except:
+            pass
+
+    if len(tags) > 0:
+        filters['imageID__in'] = ImageIDs
+
     imgs = Image.objects.filter(**filters).order_by('timestamp')
 
     #print imgs[1]

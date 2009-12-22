@@ -50,6 +50,28 @@ class Image(models.Model):
     def Tag(self, tagName):
         ImageTag.AddTag(self, tagName)
 
+    def GetAllTags(self):
+        tags = set()
+        for t in self.tags.all():
+            tags.add(t.tag.name)
+
+        for t in self.slideID.tags.all():
+            tags.add(t.tag.name)
+
+        for f in self.files.all():
+            for t in f.tags.all():
+                #print t
+                tags.add(t.tag.name)
+
+        return list(tags)
+
+    def HasTags(self, tags):
+        ownTags = self.GetAllTags()
+        for t in tags:
+            if not t in ownTags:
+                return False
+        return True
+
     def AddFile(self, filename, fileID=None):
         f = File.GetOrCreate(filename, fileID=fileID, imageID=self)
 

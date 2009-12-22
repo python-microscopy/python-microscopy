@@ -28,7 +28,7 @@ def slide_index(request):
 #class ImageFilterForm(forms.Form):
 
 
-class userInfo:
+class userInfo(object):
     def __init__(self, name, disp):
         self.name = name
         self.disp=disp
@@ -65,7 +65,46 @@ def image_list(request):
 
     user_info = [userInfo(u, u in users) for u in usernames]
 
+#    tagnames = set()
+#    for i in Image.objects.all():
+#        for t in i.GetAllTags():
+#            tagnames.add(t)
+#
+#    tagnames = list(tagnames)
+
+    tagnames = [t.name for t in TagName.objects.all()]
+
+    tags = [i[0].split('__')[1] for i in request.REQUEST.items() if i[0].startswith('tag__') and i[1] == '1']
+    #print users
+#    if len(tags) >  0:
+#        filters['userID__in'] = users
+
+    tag_info = [userInfo(t, t in tags) for t in tagnames]
+
+    ImageIDs = []
+    for t in tags:
+        print t
+        try:
+            tn = TagName.objects.get(name=t)
+            print tn
+            ImageIDs += [i.image.imageID for i in ImageTag.objects.filter(tag=tn)]
+            ImageIDs += [f.file.ImageID.imageID for f in FileTag.objects.filter(tag=tn)]
+            for s in SlideTag.objects.filter(tag=tn):
+                for i in s.slide.images.all():
+                    ImageIDs += [i.image.imageID for i in ImageTag.objects.filter(tag=tn)]
+        except:
+            pass
+
+    if len(tags) > 0:
+        filters['imageID__in'] = ImageIDs
+
+    #print len(ImageIDs)
+
     imgs = Image.objects.filter(**filters).order_by('timestamp')
+
+    #if len(tags) > 0:
+    #    imgs = [i for i in imgs if i.HasTags(tags)]
+
 
     start_date = imgs[0].timestamp
     end_date = imgs[len(imgs)-1].timestamp
@@ -76,7 +115,7 @@ def image_list(request):
     numResults = min(totalResultsNum, startNum + numResults) - startNum
     imgs = imgs[startNum:(startNum + numResults)]
 
-    return render_to_response('samples/image_list.html', {'object_list':imgs, 'user_info':user_info, 'startNum':startNum, 'endNum':(startNum + numResults), 'totalNum':totalResultsNum, 'start_date':start_date, 'end_date':end_date, 'query': request.META['QUERY_STRING']},context_instance=RequestContext(request))
+    return render_to_response('samples/image_list.html', {'object_list':imgs, 'user_info':user_info, 'tag_info':tag_info, 'startNum':startNum, 'endNum':(startNum + numResults), 'totalNum':totalResultsNum, 'start_date':start_date, 'end_date':end_date, 'query': request.META['QUERY_STRING']},context_instance=RequestContext(request))
 
 
 def tag_hint(request):
