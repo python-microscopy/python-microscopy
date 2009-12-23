@@ -1,40 +1,28 @@
-<!--
-To change this template, choose Tools | Templates
-and open the template in the editor.
--->
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html>
-  <head>
-    <title>PYME Sample Information - Slide Index</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <meta http-equiv="content-style-type" content="text/css">
-  </head>
-  <style>
-    body {
-        font-family: arial, helvetica, sans-serif;
-    }
+{% extends "samples/sample_main.html" %}
 
-    tr.odd{
-        background-color: #94A9FC;
-    }
-
-    tr.even{
-        background-color: #A4B9FC;
-    }
-
-  </style>
-  <body>
+{% block content%}
     <h3>Slides</h3>
 
     <table>
+        <thead><th>ID</th><th>Creator</th><th>Reference</th><th>Labelling</th></thead>
     {% for sl in object_list %}
     <tr class="{% cycle 'odd' 'even' %}">
-    <td><a href="/slides/{{ sl.slideID }}">{{ sl }}</a></td>
+    <td><a href="/slides/{{ sl.slideID }}">{{ sl.slideID }}</a></td>
+    <td width="100px">{{sl.creator}}</td>
+    <td width="100px">{{sl.reference}}</td>
+    <td>
+    <table>
+    {%for lab in sl.labelling.all%}
+    <tr>
+        <td width="100px">{{lab.structure}}</td><td>{{lab.label}}</td>
+    </tr>
+    {%endfor%}
+    </table>
+    </td>
     </tr>
     {% endfor %}
     </table>
 
 
 
-  </body>
-</html>
+{% endblock %}

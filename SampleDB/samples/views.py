@@ -83,12 +83,14 @@ def image_list(request):
 
     ImageIDs = []
     for t in tags:
-        print t
+        #print t
         try:
             tn = TagName.objects.get(name=t)
-            print tn
+            #print tn
             ImageIDs += [i.image.imageID for i in ImageTag.objects.filter(tag=tn)]
-            ImageIDs += [f.file.ImageID.imageID for f in FileTag.objects.filter(tag=tn)]
+            #print [f.file.imageID for f in FileTag.objects.filter(tag=tn)]
+            #print [f.file.imageID_id for f in FileTag.objects.filter(tag=tn)]
+            ImageIDs += [f.file.imageID_id for f in FileTag.objects.filter(tag=tn)]
             for s in SlideTag.objects.filter(tag=tn):
                 for i in s.slide.images.all():
                     ImageIDs += [i.image.imageID for i in ImageTag.objects.filter(tag=tn)]
@@ -105,17 +107,35 @@ def image_list(request):
     #if len(tags) > 0:
     #    imgs = [i for i in imgs if i.HasTags(tags)]
 
-
-    start_date = imgs[0].timestamp
-    end_date = imgs[len(imgs)-1].timestamp
-
-    #print request.META['QUERY_STRING']
-
     totalResultsNum = len(imgs)
+    startNums = range(0,totalResultsNum, numResults)
     numResults = min(totalResultsNum, startNum + numResults) - startNum
-    imgs = imgs[startNum:(startNum + numResults)]
 
-    return render_to_response('samples/image_list.html', {'object_list':imgs, 'user_info':user_info, 'tag_info':tag_info, 'startNum':startNum, 'endNum':(startNum + numResults), 'totalNum':totalResultsNum, 'start_date':start_date, 'end_date':end_date, 'query': request.META['QUERY_STRING']},context_instance=RequestContext(request))
+    if not totalResultsNum == 0:
+        start_date = imgs[0].timestamp
+        end_date = imgs[len(imgs)-1].timestamp
+
+        imgs = imgs[startNum:(startNum + numResults)]
+    else:
+        start_date = datetime(*([int(s) for s in request.REQUEST['start_date'].split('/')][::-1]))
+        end_date = datetime(*([int(s) for s in request.REQUEST['end_date'].split('/')][::-1]))
+
+    if (startNum + numResults) < totalResultsNum:
+        nextStartNum = startNum + numResults
+    else:
+        nextStartNum = 0
+
+
+    query = request.META['QUERY_STRING']
+    query = '&'.join([q for q in query.split('&') if not q.startswith('start_num')])
+
+    return render_to_response('samples/image_list.html', {'object_list':imgs, 
+                'user_info':user_info, 'tag_info':tag_info,
+                'prevStartNum': max(0, startNum-numResults), 'nextStartNum':nextStartNum,
+                'startNum':startNum, 'endNum':(startNum + numResults), 'totalNum':totalResultsNum,
+                'startNums':startNums,
+                'start_date':start_date, 'end_date':end_date, 'query': query},
+                context_instance=RequestContext(request))
 
 
 def tag_hint(request):
@@ -130,4 +150,8 @@ def tag_image(request, image_id):
     im.Tag(request.POST['tag'])
 
     return HttpResponseRedirect('/images/%d' % image_id)
+
+def default(request):
+
+    return render_to_response('samples/sample_main.html', {})
     

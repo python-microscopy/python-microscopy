@@ -1,35 +1,13 @@
-<!--
-To change this template, choose Tools | Templates
-and open the template in the editor.
--->
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html>
-  <head>
-    <title>PYME Sample Information - {{object}}</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <meta http-equiv="content-style-type" content="text/css">
-  </head>
-  <style>
-    body {
-        font-family: arial, helvetica, sans-serif;
-    }
+{% extends "samples/sample_main.html" %}
+{% load extra_filters %}
 
-    tr.odd{
-        background-color: #C4D9FC;
-    }
-
-    tr.even{
-        background-color: #D4E9FC;
-    }
-
-  </style>
-  <body>
+{% block content%}
     <div class="slide">
-    <h2>Slide {{object.slideID}}:</h2>
+    <h3>Slide {{object.slideID}}:</h3>
     <p><b>Creator:</b> {{object.creator}}</p>
     <p><b>Reference:</b> {{object.reference}}</p>
 
-    <h3>Labelling</h3>
+    <h4>Labelling</h4>
     <table>
     {% for lab in object.labelling.all %}
     <tr class="{% cycle 'odd' 'even' %}">
@@ -38,29 +16,64 @@ and open the template in the editor.
     {% endfor %}
     </table>
 
+    <h4>Slide Tags</h4>
+
+    {%for t in object.tags.all %}
+    {{t.tag}},
+    {%endfor%}
+    <br>
+
+    <h4>Slide Notes</h4>
+    {{object.slideID.notes}}
+    <br>
+
     </div>
+    
     
 
     <h3>Images</h3>
 
     <table>
     <thead>
-    <tr><th>ID</th><th>Date</th><th>Files</th></tr>
+    <tr><th>ID</th><th>Date</th><th>Files</th><th>Tags</th></tr>
     </thead>
     {% for im in object.images.all|dictsort:"timestamp" %}
-    <tr class="{% cycle 'odd' 'even' %}">
-    <td><a href="/images/{{ im.imageID }}">{{ im.imageID }}</a></td>
-    <td>{{im.timestamp.date}}</td>
+    {#<tr class="{% cycle 'odd' 'even' %}">#}
+    <tr class="{{im.timestamp.date|is_changed}}">
+    <td><a href="/images/{{ im.imageID }}">{{im.imageID}}</a></td>
+    <td>{{im.timestamp.date|date:"d/m/y"}}</td>
     <td>
+        <table>
+            <tr>
+                <td>
+    {%for f in im.files.all|dictsort:"filename" %}
+    {%if forloop.last%}
+    <img src="/thumbnails/{{f.filename}}?size=100" float="left"/>
+    {%endif%}
+    {%endfor%}
+                </td>
+                <td>
     {%for f in im.files.all %}
     {{f.filename}}<br>
+    {%endfor%}
+                </td>
+            </tr>
+    </table>
+    </td>
+    <td>
+    {%for t in im.tags.all %}
+    {{t.tag|tagify}},
+    {%endfor%}
+    {%for f in im.files.all %}
+    {%for t in f.tags.all %}
+    {{t.tag|tagify}},
+    {%endfor%}
     {%endfor%}
     </td>
     </tr>
     {% endfor %}
     </table>
 
+{%endblock%}
 
-
-  </body>
-</html>
+  

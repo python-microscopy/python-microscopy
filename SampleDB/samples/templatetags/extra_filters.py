@@ -1,4 +1,7 @@
 from django import template
+from django.utils.html import conditional_escape
+from django.utils.safestring import mark_safe
+from django.template.defaultfilters import stringfilter
 
 register = template.Library()
 
@@ -29,7 +32,26 @@ def sum(value, arg):
     #print value
     for v in value:
         s += v.__getattribute__(arg)
-        print s
+        #print s
 
     return s
+
+@register.filter
+@stringfilter
+def tagify(value, autoescape=None):
+    if autoescape:
+        esc = conditional_escape
+    else:
+        esc = lambda x: x
+        
+    s = value
+    if value.startswith('Protocol_'):
+        s = '<b>P</b> %s' % esc(value.split('_')[1])
+
+    if value.startswith('FitModule_'):
+        s = '<b>F</b> %s' % esc(value.split('_')[1])
+
+    return mark_safe(s)
+
+tagify.needs_autoescape=True
     

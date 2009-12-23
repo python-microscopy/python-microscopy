@@ -38,28 +38,32 @@ def dategraph(request):
 
     ImageIDs = []
     for t in tags:
-        print t
+        #print t
         try:
             tn = TagName.objects.get(name=t)
-            print tn
+            #print tn
             ImageIDs += [i.image.imageID for i in ImageTag.objects.filter(tag=tn)]
-            ImageIDs += [f.file.ImageID.imageID for f in FileTag.objects.filter(tag=tn)]
+            #print [f.file.imageID for f in FileTag.objects.filter(tag=tn)]
+            #print [f.file.imageID_id for f in FileTag.objects.filter(tag=tn)]
+            ImageIDs += [f.file.imageID_id for f in FileTag.objects.filter(tag=tn)]
             for s in SlideTag.objects.filter(tag=tn):
                 for i in s.slide.images.all():
                     ImageIDs += [i.image.imageID for i in ImageTag.objects.filter(tag=tn)]
         except:
             pass
+    
 
     if len(tags) > 0:
         filters['imageID__in'] = ImageIDs
 
     imgs = Image.objects.filter(**filters).order_by('timestamp')
 
-    #print imgs[1]
+    #print len(imgs)
+    #print imgs[4]
     start_date = imgs[0].timestamp
     end_date = imgs[len(imgs)-1].timestamp
 
-    nbins = min((end_date - start_date).days, 100)
+    nbins = min((end_date - start_date).days+2, 100)
 
 
     #print start_date, end_date
@@ -70,6 +74,8 @@ def dategraph(request):
 
 
     dates = [time.mktime(im.timestamp.timetuple()) for im in imgs]
+    print dates
+    print nbins, dates[-1]
     N, bins = histogram(dates, linspace(dates[0], dates[-1], nbins))
 
     bar(bins[:-1], N,bins[1] - bins[0])

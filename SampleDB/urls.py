@@ -25,6 +25,8 @@ urlpatterns = patterns('',
     
 
     (r'^thumbnails/(?P<filename>.*)$', 'PYME.dataBrowser.thumbnails.thumb'),
+    (r'^open/(?P<filename>.*)$', 'PYME.dataBrowser.open.openFile'),
+    #(r'^thumbnails/(?P<filename>.*)$', 'PYME.dataBrowser.thumbnails.thumb'),
     (r'^barcode/(?P<idNum>.*)$', 'SampleDB.samples.barcode.barcode2d'),
     (r'^datehist/$', 'SampleDB.samples.dategraph.dategraph'),
 
@@ -38,5 +40,6 @@ urlpatterns = patterns('',
 
     # Uncomment the next line to enable the admin:
      (r'^admin/(.*)', admin.site.root),
+     (r'^$','SampleDB.samples.views.default'),
 
 )
