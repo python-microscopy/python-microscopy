@@ -494,6 +494,7 @@ class iXonCamera:
 
     def Shutdown(self):
         self.SetShutter(False)
+        self.SetEMGain(0)
         ac.CoolerOFF()
         t = c_int(-100)
         ac.GetTemperature(byref(t))

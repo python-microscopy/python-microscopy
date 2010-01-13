@@ -154,15 +154,15 @@ class fitTask(taskDef.Task):
 
         if not 'PSFFile' in self.md.getEntryNames():
             self.ofd = ofind.ObjectIdentifier(bgd * (bgd > 0))
-        else: #if we've got a PSF then use cross-correlation object identification
-            if 'Analysis.DebounceRadius' in self.md.getEntryNames():
-                debounce = self.md.getEntry('Analysis.DebounceRadius')
-            else:
-                debounce = 5
-                
-            self.ofd = ofind_xcorr.ObjectIdentifier(bgd * (bgd > 0), self.md.getEntry('PSFFile'), 7, 5e-2, debounceRadius=debounce)
+        else: #if we've got a PSF then use cross-correlation object identificatio      
+            self.ofd = ofind_xcorr.ObjectIdentifier(bgd * (bgd > 0), self.md.getEntry('PSFFile'), 7, 5e-2)
             
-        self.ofd.FindObjects(self.calcThreshold(),0, splitter=(self.fitModule in splitterFitModules))
+
+        if 'Analysis.DebounceRadius' in self.md.getEntryNames():
+            debounce = self.md.getEntry('Analysis.DebounceRadius')
+        else:
+            debounce = 5
+        self.ofd.FindObjects(self.calcThreshold(),0, splitter=(self.fitModule in splitterFitModules), debounceRadius=debounce)
 
         if self.fitModule in splitterFitModules:
             self.data = numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2)
