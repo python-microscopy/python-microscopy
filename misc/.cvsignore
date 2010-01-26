@@ -5,12 +5,13 @@ congrid.pyo
 hash32.pyc
 auiFloatBook.pyc
 ricsSim.pyc
-colorsys.pyc
 wxPlotPanel.pyo
+colorsys.pyc
 __init__.pyo
-wxThread.pyo
 extraCMaps.pyc
+wxThread.pyo
 editList.pyc
+binAvg.pyc
 deMod.pyo
 glassModel.pyo
 __init__.pyc
