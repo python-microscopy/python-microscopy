@@ -51,8 +51,12 @@ class dec:
 
         return (fnew, cpred, wpred)
 
+    def startGuess(self, data):
+        return data
+
 
     def deconv(self, data, lamb, num_iters=10, alpha = None):#, Afunc=self.Afunc, Ahfunc=self.Ahfunc, Lfunc=self.Lfunc, Lhfunc=self.Lhfunc):
+        self.dataShape = data.shape
 
         #lamb = 2e-2
         if (not alpha == None):
@@ -60,10 +64,14 @@ class dec:
             self.e1 = fftshift(exp(1j*self.alpha))
             self.e2 = fftshift(exp(2j*self.alpha))
 
-        fdef = zeros(shape(data), 'f')
-        f = data
+        self.f = self.startGuess(data)
 
-        S = zeros((size(f), 3), 'f')
+        self.f = self.f.ravel()
+        data = data.ravel()
+
+        fdef = zeros(self.f.shape, 'f')
+
+        S = zeros((size(self.f), 3), 'f')
     
         #print type(S)
         #print shape(S)
@@ -73,15 +81,15 @@ class dec:
         nsrch = 2
 
         for loopcount in range(num_iters):
-            pref = self.Lfunc(f - fdef);
-            res = data - self.Afunc(f);
+            pref = self.Lfunc(self.f - fdef);
+            self.res = data - self.Afunc(self.f);
         
             #print type(Afunc(res))
             #print shape(Afunc(res))
             
             #print pref.typecode()
             
-            S[:,0] = cast['f'](self.Ahfunc(res))
+            S[:,0] = cast['f'](self.Ahfunc(self.res))
             S[:,1] = cast['f'](-self.Lhfunc(pref))
 
             #print S
@@ -90,19 +98,19 @@ class dec:
 
             print 'Test Statistic %f\n' % (test,)
             self.tests.append(test)
-            self.ress.append(norm(res))
+            self.ress.append(norm(self.res))
             self.prefs.append(norm(pref))
 
-            (fnew, cpred, spred) = self.subsearch(f, res, fdef, self.Afunc, self.Lfunc, lamb, S[:, 0:nsrch])
+            (fnew, cpred, spred) = self.subsearch(self.f, self.res, fdef, self.Afunc, self.Lfunc, lamb, S[:, 0:nsrch])
 
             fnew = cast['f'](fnew*(fnew > 0))
 
-            S[:,2] = cast['f'](fnew - f)
+            S[:,2] = cast['f'](fnew - self.f)
             nsrch = 3
 
-            f = fnew
+            self.f = fnew
 
-        return real(f)
+        return real(self.f)
         
     def sim_pic(self,data,alpha):
         self.alpha = alpha
@@ -302,7 +310,7 @@ class dec_conv(dec):
 
         #%g = circshift(g, [0, -1]);
         self.H = cast['f'](fftn(g));
-        self.Ht = cast['f'](ifftn(g));
+        self.Ht = g.size*cast['f'](ifftn(g));
 
 
     def Lfunc(self, f):
