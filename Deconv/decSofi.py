@@ -58,16 +58,17 @@ class dec_sofi(dec):
 #        #g = abs(ifftshift(ifftn(abs(fftn(g)))));
 #        g = (g/sum(sum(sum(g))));
 
-        self.g = g;
+        self.g = g.astype('float32');
 
         #%g = circshift(g, [0, -1]);
         self.H = []
         self.Ht = []
         for i in range(self.nOrders):
-            gp = g**(self.orders[i])
+            gp = self.g**(self.orders[i])
             gp = gp/sum(gp)
-            self.H.append(cast['f'](fftn(gp)))
-            self.Ht.append(cast['f'](gp.size*ifftn(gp)))
+            print gp.dtype
+            self.H.append((fftn(gp)))
+            self.Ht.append((gp.size*ifftn(gp)))
 
     def startGuess(self, data):
         guess = zeros(data.shape[:3])
@@ -201,7 +202,8 @@ class dec_sofi(dec):
         for i in range(self.nOrders):
             F = fftn(fs[:,:,:,i])
             d = ifftshift(ifftn(F*self.Ht[i])).real
-            d = sign(d)*abs(d)**(1./self.orders[i])
+            #d = sign(d)*abs(d)**(1./self.orders[i])
+            d = d/abs(d).max()
             #print d.shape
             ds.append(d*self.weights[i])
 
