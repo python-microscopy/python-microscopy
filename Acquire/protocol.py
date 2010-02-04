@@ -92,7 +92,7 @@ class ZStackTaskListProtocol(TaskListProtocol):
         self.randomise = randomise
 
     def Init(self, spooler):
-        self.zPoss = np.arange(scope.sa.GetStartPos(), scope.sa.GetEndPos()+scope.sa.GetStepSize(),scope.sa.GetStepSize())
+        self.zPoss = np.arange(scope.sa.GetStartPos(), scope.sa.GetEndPos()+.95*scope.sa.GetStepSize(),scope.sa.GetStepSize())
 
         if self.randomise:
             self.zPoss = self.zPoss[np.argsort(np.random.rand(len(self.zPoss)))]
@@ -100,6 +100,7 @@ class ZStackTaskListProtocol(TaskListProtocol):
         piezo = scope.sa.piezos[scope.sa.GetScanChannel()]
         self.piezo = piezo[0]
         self.piezoChan = piezo[1]
+        self.startPos = self.piezo.GetPos(self.piezoChan)
         self.pos = 0
 
         spooler.md.setEntry('Protocol.PiezoStartPos', self.piezo.GetPos(self.piezoChan))
@@ -115,3 +116,9 @@ class ZStackTaskListProtocol(TaskListProtocol):
                 eventLog.logEvent('ProtocolFocus', '%d, %3.3f' % (frameNum, self.zPoss[self.pos]))
                 
         TaskListProtocol.OnFrame(self, frameNum)
+
+    def OnFinish(self):
+        #return piezo to start position
+        self.piezo.MoveTo(self.piezoChan, self.startPos)
+
+        TaskListProtocol.OnFinish(self)

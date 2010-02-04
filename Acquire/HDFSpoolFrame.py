@@ -269,10 +269,16 @@ class PanSpool(wx.Panel):
         self.tcSpoolFile.SetValue(self.seriesName)
 
     def OnBAnalyse(self, event):
-        if sys.platform == 'win32':
-            subprocess.Popen('..\\DSView\\dh5view.cmd QUEUE://%s %s' % (self.queueName, self.spooler.tq.URI), shell=True)
-        else:
-            subprocess.Popen('../DSView/dh5view.py QUEUE://%s %s' % (self.queueName, self.spooler.tq.URI), shell=True)
+        if self.cbQueue.GetValue(): #queue or not
+            if sys.platform == 'win32':
+                subprocess.Popen('..\\DSView\\dh5view.cmd QUEUE://%s %s' % (self.queueName, self.spooler.tq.URI), shell=True)
+            else:
+                subprocess.Popen('../DSView/dh5view.py QUEUE://%s %s' % (self.queueName, self.spooler.tq.URI), shell=True)
+#        else:
+#            if sys.platform == 'win32':
+#                subprocess.Popen('..\\DSView\\dh5view.cmd %s' % self.spooler.filename, shell=True)
+#            else:
+#                subprocess.Popen('../DSView/dh5view.py %s' % self.spooler.filename, shell=True)
         
     def Tick(self):
         dtn = datetime.datetime.now()

@@ -84,7 +84,7 @@ class SimpleSequenceAquisitor(PreviewAquisator):
         self.startPos = sPos
     def GetStartPos(self):
         if (self.GetStartMode() == 0):
-            return self._CurPos() - (self.GetStepSize()*self.GetSeqLength()*self.GetDirection()/2)
+            return self._CurPos() - (self.GetStepSize()*(self.GetSeqLength() - 1)*self.GetDirection()/2)
         else: 
             if not ("startPos" in dir(self)):
                 raise Exception, "Please call SetStartPos first !!"
@@ -93,7 +93,7 @@ class SimpleSequenceAquisitor(PreviewAquisator):
         self.endPos = ePos
     def GetEndPos(self):
         if (self.GetStartMode() == 0):
-            return self._CurPos() + (self.GetStepSize()*self.GetSeqLength()*self.GetDirection()/2)
+            return self._CurPos() + (self.GetStepSize()*(self.GetSeqLength() - 1)*self.GetDirection()/2)
         else: 
             if not ("endPos" in dir(self)):
                 raise Exception, "Please call SetEndPos first !!"
