@@ -32,10 +32,20 @@ def unpickleSlice(start, stop, step):
 
 copy_reg.pickle(slice, pickleSlice, unpickleSlice)
 
+def f_gauss2dSlow(p, X, Y):
+    """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sigma, background, lin_x, lin_y]"""
+    A, x0, y0, s, b, b_x, b_y = p
+    return A*scipy.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2)) + b + b_x*X + b_y*Y
+    #print X.shape
+    #r = genGauss(X,Y,A,x0,y0,s,b,b_x,b_y)
+    #r.strides = r.strides #Really dodgy hack to get around something which numpy is not doing right ....
+    #return r
+
 def f_gauss2d(p, X, Y):
     """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sigma, background, lin_x, lin_y]"""
     A, x0, y0, s, b, b_x, b_y = p
     #return A*scipy.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2)) + b + b_x*X + b_y*Y
+    #print X.shape
     r = genGauss(X,Y,A,x0,y0,s,b,b_x,b_y)
     r.strides = r.strides #Really dodgy hack to get around something which numpy is not doing right ....
     return r

@@ -14,6 +14,9 @@ from PYME.PSFGen import *
 from scipy import *
 import fluor
 from PYME.Analysis import MetaData
+import cPickle
+
+from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
 
 #import threading
 #tLock = threading.Lock()
@@ -69,16 +72,39 @@ def genTheoreticalModel(md):
 
 genTheoreticalModel(MetaData.TIRFDefault)
 
-def setModel(mod, md):
-    global IntXVals, IntYVals, IntZVals, interpModel, dx, dy, dz 
+#def setModel(mod, md):
+#    global IntXVals, IntYVals, IntZVals, interpModel, dx, dy, dz
+#
+#    IntXVals = 1e3*md.voxelsize.x*mgrid[-(mod.shape[0]/2.):(mod.shape[0]/2.)]
+#    IntYVals = 1e3*md.voxelsize.y*mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]
+#    IntZVals = 1e3*md.voxelsize.z*mgrid[-(mod.shape[2]/2.):(mod.shape[2]/2.)]
+#
+#    dx = md.voxelsize.x*1e3
+#    dy = md.voxelsize.y*1e3
+#    dz = md.voxelsize.z*1e3
+#
+#    interpModel = mod
+#
+#    interpModel = interpModel/interpModel.max() #normalise to 1
 
-    IntXVals = 1e3*md.voxelsize.x*mgrid[-(mod.shape[0]/2.):(mod.shape[0]/2.)]
-    IntYVals = 1e3*md.voxelsize.y*mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]
-    IntZVals = 1e3*md.voxelsize.z*mgrid[-(mod.shape[2]/2.):(mod.shape[2]/2.)]
+def setModel(modName, md):
+    global IntXVals, IntYVals, IntZVals, interpModel, dx, dy, dz
 
-    dx = md.voxelsize.x*1e3
-    dy = md.voxelsize.y*1e3
-    dz = md.voxelsize.z*1e3
+    
+    mf = open(getFullExistingFilename(modName), 'rb')
+    mod, voxelsize = cPickle.load(mf)
+    mf.close()
+
+    if not voxelsize.x == md.voxelsize.x:
+        raise RuntimeError("PSF and Image voxel sizes don't match")
+
+    IntXVals = 1e3*voxelsize.x*mgrid[-(mod.shape[0]/2.):(mod.shape[0]/2.)]
+    IntYVals = 1e3*voxelsize.y*mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]
+    IntZVals = 1e3*voxelsize.z*mgrid[-(mod.shape[2]/2.):(mod.shape[2]/2.)]
+
+    dx = voxelsize.x*1e3
+    dy = voxelsize.y*1e3
+    dz = voxelsize.z*1e3
 
     interpModel = mod
 

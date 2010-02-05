@@ -19,6 +19,7 @@ import wormlike2
 import pylab
 import scipy
 import os
+import rend_im
 
 def create(parent):
     return dSimControl(parent)
@@ -138,6 +139,11 @@ class dSimControl(wx.Panel):
               size=wx.Size(75, 23), style=0)
         self.bGenFlours.Bind(wx.EVT_BUTTON, self.OnBGenFloursButton,
               id=wxID_DSIMCONTROLBGENFLOURS)
+
+        self.bSetPSF = wx.Button(id=wxID_DSIMCONTROLBGENFLOURS, label='Set PSF',
+              parent=self, pos=wx.Point(100, 448),
+              size=wx.Size(75, 23), style=0)
+        self.bSetPSF.Bind(wx.EVT_BUTTON, self.OnBSetPSF)
 
         self.staticText3 = wx.StaticText(id=wxID_DSIMCONTROLSTATICTEXT3,
               label='Switching Laser:', name='staticText3', parent=self,
@@ -305,6 +311,15 @@ class dSimControl(wx.Panel):
         #self.points = pylab.load(fn)
         pylab.save(fn, scipy.array(self.points))
         #self.stCurObjPoints.SetLabel('Current object has %d points' % len(self.points))
+        #event.Skip()
+
+    def OnBSetPSF(self, event):
+        fn = wx.FileSelector('Read PSF from file', default_extension='psf', wildcard='PYME PSF Files (*.psf)|*.psf')
+        if fn == None:
+            rend_im.genTheoreticalModel(rend_im.MetaData.TIRFDefault)
+            return
+        else:
+            rend_im.setModel(fn, rend_im.MetaData.TIRFDefault)
         #event.Skip()
 
     def OnBGenFloursButton(self, event):

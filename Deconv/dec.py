@@ -309,8 +309,8 @@ class dec_conv(dec):
         self.g = g;
 
         #%g = circshift(g, [0, -1]);
-        self.H = cast['f'](fftn(g));
-        self.Ht = g.size*cast['f'](ifftn(g));
+        self.H = (fftn(g));
+        self.Ht = g.size*(ifftn(g));
 
 
     def Lfunc(self, f):
