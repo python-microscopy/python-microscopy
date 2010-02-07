@@ -138,7 +138,8 @@ def Gauss2D(Xv,Yv, A,x0,y0,s):
 
 def rendGauss(x,y, sx, imageBounds, pixelSize):
     fuzz = 3*scipy.median(sx)
-    roiSize = fuzz/pixelSize
+    roiSize = int(fuzz/pixelSize)
+    fuzz = pixelSize*roiSize
 
     #print imageBounds.x0
     #print imageBounds.x1
