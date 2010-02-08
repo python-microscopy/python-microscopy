@@ -199,7 +199,8 @@ def Gauss3d(X, Y, Z, x0, y0, z0, wxy, wz):
 
 def rendGauss3D(x,y, z, sx, sz, imageBounds, pixelSize, zb, sliceSize=100):
     fuzz = 3*scipy.median(sx)
-    roiSize = fuzz/pixelSize
+    roiSize = int(fuzz/pixelSize)
+    fuzz = pixelSize*roiSize
 
     #print imageBounds.x0
     #print imageBounds.x1

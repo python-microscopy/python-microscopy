@@ -568,7 +568,7 @@ class DSViewFrame(wx.Frame):
         self.mdh.setEntry('Analysis.NumBGFrames', bgFrames)
         #self.md.setEntry('Analysis.NumBGFrames', bgFrames)
 
-        if fitMod.startswith('SplitterFit') and not 'chroma' in self.mdh.getEntryNames():
+        if fitMod.startswith('SplitterFit') and not 'chroma.dx' in self.mdh.getEntryNames():
             fdialog = wx.FileDialog(None, 'Please select shift field to use ...',
                     wildcard='Shift fields|*.sf', style=wx.OPEN)
             succ = fdialog.ShowModal()
