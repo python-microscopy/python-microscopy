@@ -74,8 +74,8 @@ def dategraph(request):
 
 
     dates = [time.mktime(im.timestamp.timetuple()) for im in imgs]
-    print dates
-    print nbins, dates[-1]
+    #print dates
+    #print nbins, dates[-1]
     N, bins = histogram(dates, linspace(dates[0], dates[-1], nbins))
 
     bar(bins[:-1], N,bins[1] - bins[0])
