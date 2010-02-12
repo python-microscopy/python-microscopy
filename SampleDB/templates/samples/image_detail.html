@@ -62,7 +62,7 @@
     <table>
     {%for f in object.files.all %}
     <tr class="{% cycle 'odd' 'even' %}">
-    <td><a href="/open{{f.filename}}"><img src="/thumbnails/{{ f.filename }}" float="left"/></a></td>
+    <td><a href="/open{{f.filename}}.pmu"><img src="/thumbnails/{{ f.filename }}" float="left"/></a></td>
     <td>{{f.filename}}</td>
     <td>
         {%for t in f.tags.all %}

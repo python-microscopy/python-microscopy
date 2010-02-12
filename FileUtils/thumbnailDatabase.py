@@ -44,7 +44,16 @@ if not 'Thumbnails' in tableNames:
 
 
 def getThumbnail(filename):
+    #strip extra leading / (inserted for some reason by test server)
+    if filename.startswith('//'):
+        filename = filename[1:]
+
     ret = thumbDB.execute("SELECT thumbnail FROM Thumbnails WHERE filename=?", (filename,)).fetchone()
+
+    if ret == None:
+        #cludge around old entries with extra /
+        ret = thumbDB.execute("SELECT thumbnail FROM Thumbnails WHERE filename=?", ('/' + filename,)).fetchone()
+
 
     if ret == None:
         ext = os.path.splitext(filename)[-1]

@@ -16,5 +16,9 @@
      <comment>PYME Shift Field</comment>
      <glob pattern="*.sf"/>
    </mime-type>
+   <mime-type type="application/x-pyme-url">
+     <comment>PYME URL</comment>
+     <glob pattern="*.pmu"/>
+   </mime-type>
 </mime-info>
 
