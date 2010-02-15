@@ -1889,11 +1889,21 @@ class VisGUIFrame(wx.Frame):
 
     def OnSaveMeasurements(self, event):
         fdialog = wx.FileDialog(None, 'Save measurements ...',
-            wildcard='Numpy array|*.npy', style=wx.SAVE|wx.HIDE_READONLY)
+            wildcard='Numpy array|*.npy|Tab formatted text|*.txt', style=wx.SAVE|wx.HIDE_READONLY)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
             outFilename = fdialog.GetPath().encode()
-            np.save(outFilename, self.objectMeasures)
+
+            if outFilename.endswith('.txt'):
+                of = open(outFilename, 'w')
+                of.write('\t'.join(self.objectMeasures.dtype.names) + '\n')
+
+                for obj in self.objectMeasures:
+                    of.write('\t'.join([repr(v) for v in obj]) + '\n')
+                of.close()
+
+            else:
+                np.save(outFilename, self.objectMeasures)
 
 
     def OnOpenFile(self, event):
