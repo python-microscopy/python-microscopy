@@ -154,19 +154,35 @@
             </tr>
     </table>
     </td>
-    <td>
+    <td width="170">
     {%for t in im.tags.all %}
-    {{t.tag|tagify}},
+    {{t.tag|tagify}}<br>
     {%endfor%}
     {%for f in im.files.all %}
     {%for t in f.tags.all %}
-    {{t.tag|tagify}},
+    {{t.tag|tagify}}<br>
     {%endfor%}
     {%endfor%}
     </td>
     </tr>
     {% endfor %}
     </table>
+
+    <p>Displaying results {{startNum}} to {{endNum}} of {{totalNum}}<br>
+    {% if startNum %}
+    <a href="/images/?{{query}}&start_num={{prevStartNum}}">&lt</a>
+    {% endif %}
+    {%for sn in startNums%}
+    {%ifequal sn startNum%}
+    {{forloop.counter}}
+    {%else%}
+    <a href="/images/?{{query}}&start_num={{sn}}">{{forloop.counter}}</a>
+    {%endifequal%}
+    {%endfor%}
+    {% if nextStartNum %}
+    <a href="/images/?{{query}}&start_num={{nextStartNum}}">&gt</a>
+    {% endif %}
+    </p>
 
 
 

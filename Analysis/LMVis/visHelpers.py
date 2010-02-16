@@ -219,16 +219,20 @@ def rendGauss3D(x,y, z, sx, sz, imageBounds, pixelSize, zb, sliceSize=100):
     #record our image resolution so we can plot pts with a minimum size equal to res (to avoid missing small pts)
     delX = scipy.absolute(X[1] - X[0])
 
-    for zn in range(len(Z)):
-        for i in range(len(x)):
-            ix = scipy.absolute(X - x[i]).argmin()
-            iy = scipy.absolute(Y - y[i]).argmin()
+    #for zn in range(len(Z)):
+    for i in range(len(x)):
+        ix = scipy.absolute(X - x[i]).argmin()
+        iy = scipy.absolute(Y - y[i]).argmin()
+        iz = scipy.absolute(Z - z[i]).argmin()
+
+        iz_min = max(iz - 3, 0)
+        iz_max = min(iz + 4, len(Z))
 
 
-            imp = Gauss3d(X[(ix - roiSize):(ix + roiSize + 1)], Y[(iy - roiSize):(iy + roiSize + 1)],Z[zn], x[i],y[i],z[i], max(sx[i], delX),max(sz[i], sliceSize))
-            #print imp.shape
-            #print im[(ix - roiSize):(ix + roiSize + 1), (iy - roiSize):(iy + roiSize + 1), zn].shape
-            im[(ix - roiSize):(ix + roiSize + 1), (iy - roiSize):(iy + roiSize + 1), zn] += imp
+        imp = genGauss3D(X[(ix - roiSize):(ix + roiSize + 1)], Y[(iy - roiSize):(iy + roiSize + 1)],Z[iz_min:iz_max], 1.,x[i],y[i],z[i], max(sx[i], delX),max(sz[i], sliceSize))
+        #print imp.shape
+        #print im[(ix - roiSize):(ix + roiSize + 1), (iy - roiSize):(iy + roiSize + 1), zn].shape
+        im[(ix - roiSize):(ix + roiSize + 1), (iy - roiSize):(iy + roiSize + 1), iz_min:iz_max] += imp
 
     im = im[roiSize:-roiSize, roiSize:-roiSize, :]
 

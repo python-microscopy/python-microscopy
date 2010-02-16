@@ -376,6 +376,7 @@ class colourFilter:
 
         self.resultsSource = resultsSource
         self.currentColour = currentColour
+        #self.shifts = {}
 
         self.visFr = visFr
 
@@ -396,7 +397,12 @@ class colourFilter:
 
             ind = (p_dye > self.visFr.t_p_dye)*(p_other < self.visFr.t_p_other)
 
-            return self.resultsSource[key][ind]
+            #chromatic shift correction
+            #print self.currentColour
+            if self.currentColour in self.visFr.chromaticShifts.keys() and key in self.visFr.chromaticShifts[self.currentColour].keys():
+                return self.resultsSource[key][ind] + self.visFr.chromaticShifts[self.currentColour][key]
+            else:
+                return self.resultsSource[key][ind]
 
     def getColourChans(self):
         return [k[2:] for k in self.keys() if k.startswith('p_')]

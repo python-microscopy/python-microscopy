@@ -29,6 +29,8 @@ static union
 #define EXP_C 60801 /* see text for choice of c values */
 #define EXP(y) (eco.n.i = EXP_A*(y) + (1072693248 - EXP_C), eco.d)
 
+#define TDNORM 15.75
+
 //end eponential approx
 
 static PyObject * genGauss(PyObject *self, PyObject *args, PyObject *keywds) 
@@ -123,6 +125,125 @@ static PyObject * genGauss(PyObject *self, PyObject *args, PyObject *keywds)
     Py_DECREF(Xvals);
     Py_DECREF(Yvals);
     
+    return (PyObject*) out;
+}
+
+static PyObject * genGauss3D(PyObject *self, PyObject *args, PyObject *keywds)
+{
+    double *res = 0;
+    int ix,iy,iz;
+    int size[3];
+
+    PyObject *oX =0;
+    PyObject *oY=0;
+    PyObject *oZ=0;
+
+    PyArrayObject* Xvals;
+    PyArrayObject* Yvals;
+    PyArrayObject* Zvals;
+
+    PyArrayObject* out;
+
+    double *pXvals;
+    double *pYvals;
+    double *pZvals;
+
+    /*parameters*/
+    double A = 1;
+    double x0 = 0;
+    double y0 = 0;
+    double z0 = 0;
+    double sigma = 1;
+    double sigma_z = 1;
+    double b = 0;
+    //double b_x = 0;
+    //double b_y = 0;
+
+    /*End paramters*/
+
+    double ts2, tsz2;
+    //double byY;
+
+
+
+    static char *kwlist[] = {"X", "Y", "Z", "A","x0", "y0", "z0","sigma", "sigma_z", "b", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "OOO|ddddddd", kwlist,
+         &oX, &oY, &oZ, &A, &x0, &y0, &z0, &sigma, &sigma_z, &b))
+        return NULL;
+
+    /* Do the calculations */
+
+    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, PyArray_DOUBLE, 0, 1);
+    if (Xvals == NULL)
+    {
+      PyErr_Format(PyExc_RuntimeError, "Bad X");
+      return NULL;
+    }
+
+    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, PyArray_DOUBLE, 0, 1);
+    if (Yvals == NULL)
+    {
+        Py_DECREF(Xvals);
+        PyErr_Format(PyExc_RuntimeError, "Bad Y");
+        return NULL;
+    }
+
+    Zvals = (PyArrayObject *) PyArray_ContiguousFromObject(oZ, PyArray_DOUBLE, 0, 1);
+    if (Zvals == NULL)
+    {
+        Py_DECREF(Xvals);
+        Py_DECREF(Yvals);
+        PyErr_Format(PyExc_RuntimeError, "Bad Z");
+        return NULL;
+    }
+
+
+
+    pXvals = (double*)Xvals->data;
+    pYvals = (double*)Yvals->data;
+    pZvals = (double*)Zvals->data;
+
+
+    size[0] = PyArray_Size((PyObject*)Xvals);
+    size[1] = PyArray_Size((PyObject*)Yvals);
+    size[2] = PyArray_Size((PyObject*)Zvals);
+
+    out = (PyArrayObject*) PyArray_FromDims(3,size,PyArray_DOUBLE);
+
+    //fix strides
+    out->strides[0] = sizeof(double);
+    out->strides[1] = sizeof(double)*size[0];
+    out->strides[2] = sizeof(double)*size[0]*size[1];
+
+    res = (double*) out->data;
+
+    ts2 = 2*sigma*sigma;
+    tsz2 = 2*sigma_z*sigma_z;
+
+    A = A/(sigma*sigma*sigma_z*TDNORM);
+
+    for (iz = 0; iz < size[2]; iz ++)
+    {
+        for (iy = 0; iy < size[1]; iy++)
+          {
+            //byY = b_y*(pYvals[iy]- y0) + b;
+            for (ix = 0; ix < size[0]; ix++)
+              {
+                *res = A*exp(-(((pXvals[ix] - x0) * (pXvals[ix] - x0)) + ((pYvals[iy]-y0) * (pYvals[iy]-y0)))/ts2 - (((pZvals[iz] - z0) * (pZvals[iz] - z0)) )/tsz2) + b;
+                //*res = 1.0;
+                res++;
+
+              }
+
+          }
+    }
+
+
+    Py_DECREF(Xvals);
+    Py_DECREF(Yvals);
+    Py_DECREF(Zvals);
+
     return (PyObject*) out;
 }
 
@@ -809,6 +930,8 @@ static PyMethodDef gauss_appMethods[] = {
     "Generate a (fast) astigmatic Gaussian.\n. Arguments are: 'X', 'Y', 'A'=1,'x0'=0, 'y0'=0,sigma_x=1, sigma_y = 1,b=0,b_x=0,b_y=0"},
     /*{"genGaussAF",  genGaussAF, METH_VARARGS | METH_KEYWORDS,
       "Generate a (fast) astigmatic Gaussian using dodgy exponential approx.\n. Arguments are: 'X', 'Y', 'A'=1,'x0'=0, 'y0'=0,'sigma_x'=1, 'sigma_y'=1,b=0,b_x=0,b_y=0"},*/
+    {"genGauss3D",  genGauss3D, METH_VARARGS | METH_KEYWORDS,
+    "Generate a (fast) 3D Gaussian.\n. Arguments are: 'X', 'Y', 'Z', 'A'=1,'x0'=0, 'y0'=0, 'z0'=0,sigma=0, sigma_z=1, b=0"},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 

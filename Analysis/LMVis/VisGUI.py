@@ -169,6 +169,7 @@ class VisGUIFrame(wx.Frame):
         self.driftExprZ = 'z0'
 
         self.fluorSpecies = {}
+        self.chromaticShifts = {}
         self.t_p_dye = 0.2
         self.t_p_other = 0.02
 

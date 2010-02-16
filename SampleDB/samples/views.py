@@ -5,7 +5,7 @@ from SampleDB.samples.models import *
 from django.http import Http404
 from django import forms
 from django.template import RequestContext
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 def slide_detail(request, slideID):
@@ -36,7 +36,7 @@ class userInfo(object):
 def image_list(request):
     filters = {}
     startNum = 0
-    numResults = 50
+    numResults = 20
     #print datetime(*([int(s) for s in request.REQUEST['start_date'].split('/')][::-1]))
 
     if 'start_date' in request.REQUEST:
@@ -113,7 +113,7 @@ def image_list(request):
 
     if not totalResultsNum == 0:
         start_date = imgs[0].timestamp
-        end_date = imgs[len(imgs)-1].timestamp
+        end_date = imgs[len(imgs)-1].timestamp + timedelta(1)
 
         imgs = imgs[startNum:(startNum + numResults)]
     else:

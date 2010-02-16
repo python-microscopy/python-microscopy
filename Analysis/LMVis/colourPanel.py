@@ -134,13 +134,19 @@ class colourPanel(wx.Panel):
 
         vsizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Fluorophores'), wx.VERTICAL)
 
-        self.lFluorSpecies = editList.EditListCtrl(self, -1, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.SUNKEN_BORDER, size=(250, 100))
+        self.lFluorSpecies = editList.EditListCtrl(self, -1, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.SUNKEN_BORDER, size=(450, 100))
         vsizer.Add(self.lFluorSpecies, 0, wx.ALL, 5)
 
         self.lFluorSpecies.InsertColumn(0, 'Name')
         self.lFluorSpecies.InsertColumn(1, 'Ag/(Ag + Ar)')
         self.lFluorSpecies.InsertColumn(2, '# Events')
+        self.lFluorSpecies.InsertColumn(3, 'dx')
+        self.lFluorSpecies.InsertColumn(4, 'dy')
+        self.lFluorSpecies.InsertColumn(5, 'dz')
         self.lFluorSpecies.makeColumnEditable(1)
+        self.lFluorSpecies.makeColumnEditable(3)
+        self.lFluorSpecies.makeColumnEditable(4)
+        self.lFluorSpecies.makeColumnEditable(5)
 
         for key, value in self.visFr.fluorSpecies.items():
             ind = self.lFluorSpecies.InsertStringItem(sys.maxint, key)
@@ -149,8 +155,10 @@ class colourPanel(wx.Panel):
             
             
 
-#        self.lFluorSpecies.SetColumnWidth(0, wx.LIST_AUTOSIZE)
-#        self.lFluorSpecies.SetColumnWidth(1, wx.LIST_AUTOSIZE)
+        self.lFluorSpecies.SetColumnWidth(3, 60)
+        self.lFluorSpecies.SetColumnWidth(4, 60)
+        self.lFluorSpecies.SetColumnWidth(5, 60)
+
 
         ## only do this part the first time so the events are only bound once
         #if not hasattr(self, "ID_FILT_ADD"):
@@ -294,13 +302,24 @@ class colourPanel(wx.Panel):
 
         val = float(event.m_item.GetText())
 
-        self.visFr.fluorSpecies[it.GetText()] = val
-        self.lFluorSpecies.SetItemTextColour(event.m_itemIndex, wx.Colour(*((128*numpy.array(cm.jet_r(val)))[:3])))
+        col = event.GetColumn()
 
-        #self.visFr.mapping.setMapping('p_%s' % it.GetText(), 'exp(-(%f*A - fitResults_Ag)**2/(4*fitError_Ag**2 + 2*fitError_Ar**2))*exp(-(%f*A - fitResults_Ar)**2/(2*fitError_Ag**2 +4*fitError_Ar**2))' % (1- val, val))
-        self.visFr.mapping.setMapping('p_%s' % it.GetText(), 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))' % (val))
+        if col == 1: #frac
+            self.visFr.fluorSpecies[it.GetText()] = val
+            self.lFluorSpecies.SetItemTextColour(event.m_itemIndex, wx.Colour(*((128*numpy.array(cm.jet_r(val)))[:3])))
 
-        self.refresh()
+            #self.visFr.mapping.setMapping('p_%s' % it.GetText(), 'exp(-(%f*A - fitResults_Ag)**2/(4*fitError_Ag**2 + 2*fitError_Ar**2))*exp(-(%f*A - fitResults_Ar)**2/(2*fitError_Ag**2 +4*fitError_Ar**2))' % (1- val, val))
+            self.visFr.mapping.setMapping('p_%s' % it.GetText(), 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))' % (val))
+
+            self.refresh()
+        else: #shift
+            axis = ['x', 'y', 'z'][col-3]
+            specName = it.GetText()
+            if not specName in self.visFr.chromaticShifts.keys():
+                self.visFr.chromaticShifts[specName] = {}
+
+            self.visFr.chromaticShifts[specName][axis] = val
+            self.visFr.RefreshView()
 
     def OnSpecGuess(self, event):
         import scipy.cluster
