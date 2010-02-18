@@ -48,6 +48,10 @@ def getThumbnail(filename):
     if filename.startswith('//'):
         filename = filename[1:]
 
+    #if missing leading /, add
+    if not filename.startswith('/'):
+        filename = '/' + filename
+
     ret = thumbDB.execute("SELECT thumbnail FROM Thumbnails WHERE filename=?", (filename,)).fetchone()
 
     if ret == None:
@@ -59,9 +63,11 @@ def getThumbnail(filename):
         ext = os.path.splitext(filename)[-1]
 
         if ext in thumbnailers.keys():
+            #print ext
             try:
                 #thumbMod = __import__(thumbnailers[ext])
                 thumbMod = __import__('PYME.FileUtils.' + thumbnailers[ext], fromlist=['PYME', 'FileUtils'])
+
                 ret = thumbMod.generateThumbnail(filename, THUMBSIZE)
 
                 thumbDB.execute("INSERT INTO Thumbnails VALUES (?, ?)", (filename, ret))

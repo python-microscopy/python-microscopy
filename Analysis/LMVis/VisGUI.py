@@ -1475,10 +1475,12 @@ class VisGUIFrame(wx.Frame):
     def OnGenTriangles(self, event): 
         jitVars = ['1.0']
 
-        if not 'neighbourDistances' in self.GeneratedMeasures.keys():
-            self.genNeighbourDists()
+        #if not 'neighbourDistances' in self.GeneratedMeasures.keys():
+        #    self.genNeighbourDists()
 
         genMeas = self.GeneratedMeasures.keys()
+        if not 'neighbourDistances' in genMeas:
+            genMeas.append('neighbourDistances')
 
         jitVars += genMeas
         jitVars += self.colourFilter.keys()
@@ -1520,7 +1522,7 @@ class VisGUIFrame(wx.Frame):
                     jitVals = 1.0
                 elif jitParamName in self.colourFilter.keys():
                     jitVals = self.colourFilter[jitParamName]
-                elif jitParamName in self.GeneratedMeasures.keys():
+                elif jitParamName in genMeas:
                     if jitParamName == 'neighbourDistances':
                         self.genNeighbourDists()
                     jitVals = self.GeneratedMeasures[jitParamName]

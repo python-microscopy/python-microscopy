@@ -35,7 +35,7 @@ def generateThumbnail(inputFile, thumbSize):
     stack = False
     split = False
 
-    print f1.keys()
+    #print f1.keys()
 
     if 'fitResults_Ag' in f1.keys():
         #if we used the splitter set up a mapping so we can filter on total amplitude and ratio
