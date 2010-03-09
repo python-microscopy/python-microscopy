@@ -18,7 +18,7 @@ from PYME.Analysis.cModels.gauss_app import *
 from PYME.FileUtils import saveTiffStack
 from matplotlib import delaunay
 
-from edgeDB import genEdgeDB#, calcNeighbourDists
+#from edgeDB import genEdgeDB#, calcNeighbourDists
 
 multiProc = False
 
@@ -109,25 +109,25 @@ class GeneratedImage:
 
         
 
-#def genEdgeDB(T):
-#    #make ourselves a quicker way of getting at edge info.
-#    edb = []
-#    #edb = numpy.zeros((len(T.x), 2), dtype='O')
-#    for i in range(len(T.x)):
-#        edb.append(([],[]))
-#        #edb[i] = ([],[])
-#
-#    for i in range(len(T.edge_db)):
-#        e0, e1 = T.edge_db[i]
-#        edbe0 = edb[e0]
-#        edbe1 = edb[e1]
-#        edbe0[0].append(i)
-#        edbe0[1].append(e1)
-#        edbe1[0].append(i)
-#        edbe1[1].append(e0)
-#
-#
-#    return edb
+def genEdgeDB(T):
+    #make ourselves a quicker way of getting at edge info.
+    edb = []
+    #edb = numpy.zeros((len(T.x), 2), dtype='O')
+    for i in range(len(T.x)):
+        edb.append(([],[]))
+        #edb[i] = ([],[])
+
+    for i in range(len(T.edge_db)):
+        e0, e1 = T.edge_db[i]
+        edbe0 = edb[e0]
+        edbe1 = edb[e1]
+        edbe0[0].append(i)
+        edbe0[1].append(e1)
+        edbe1[0].append(i)
+        edbe1[1].append(e0)
+
+
+    return edb
 
 def calcNeighbourDistPart(arg):
     global T
