@@ -86,6 +86,14 @@ class GenImageDialog(wx.Dialog):
         
             sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
 
+            sizer2 = wx.BoxSizer(wx.HORIZONTAL)
+            #sizer2.Add(wx.StaticText(self, -1, 'Use software rendereing:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+
+            self.cbTriangSoftRender = wx.CheckBox(self, -1, 'Use software rendering')
+            sizer2.Add(self.cbTriangSoftRender, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+
+            sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+
         if mode in ['3Dhistogram', '3Dgaussian']:
             sizer2 = wx.BoxSizer(wx.HORIZONTAL)
             sizer2.Add(wx.StaticText(self, -1, 'Z slice thickness [nm]:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
@@ -175,3 +183,6 @@ class GenImageDialog(wx.Dialog):
 
     def getZBounds(self):
         return self.hZRange.GetValue()
+
+    def getSoftRender(self):
+        return self.cbTriangSoftRender.GetValue()

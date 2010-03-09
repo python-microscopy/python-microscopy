@@ -14,8 +14,9 @@
 import scipy
 import numpy
 from PYME.Analysis.cModels.gauss_app import *
-import subprocess
+#import subprocess
 from PYME.FileUtils import saveTiffStack
+from matplotlib import delaunay
 
 class ImageBounds:
     def __init__(self, x0, y0, x1, y1, z0=0, z1=0):
@@ -96,8 +97,10 @@ class GeneratedImage:
 def genEdgeDB(T):
     #make ourselves a quicker way of getting at edge info.
     edb = []
+    #edb = numpy.zeros((len(T.x), 2), dtype='O')
     for i in range(len(T.x)):
         edb.append(([],[]))
+        #edb[i] = ([],[])
 
     for i in range(len(T.edge_db)):
         e = T.edge_db[i]
@@ -168,6 +171,83 @@ def rendGauss(x,y, sx, imageBounds, pixelSize):
     im = im[roiSize:-roiSize, roiSize:-roiSize]
 
     return im
+
+def rendTri(T, imageBounds, pixelSize, c=None, im=None):
+    from PYME.Analysis.SoftRend import drawTriang, drawTriangles
+    xs = T.x[T.triangle_nodes]
+    ys = T.y[T.triangle_nodes]
+
+    a = numpy.vstack((xs[:,0] - xs[:,1], ys[:,0] - ys[:,1])).T
+    b = numpy.vstack((xs[:,0] - xs[:,2], ys[:,0] - ys[:,2])).T
+    b2 = numpy.vstack((xs[:,1] - xs[:,2], ys[:,1] - ys[:,2])).T
+
+    #area of triangle
+    #c = 0.5*numpy.sqrt((b*b).sum(1) - ((a*b).sum(1)**2)/(a*a).sum(1))*numpy.sqrt((a*a).sum(1))
+
+    #c = 0.5*numpy.sqrt((b*b).sum(1)*(a*a).sum(1) - ((a*b).sum(1)**2))
+
+    #c = numpy.maximum(((b*b).sum(1)),((a*a).sum(1)))
+
+    if c == None:
+        if numpy.version.version > '1.2':
+            c = numpy.median([(b * b).sum(1), (a * a).sum(1), (b2 * b2).sum(1)], 0)
+        else:
+            c = numpy.median([(b * b).sum(1), (a * a).sum(1), (b2 * b2).sum(1)])
+
+    a_ = ((a*a).sum(1))
+    b_ = ((b*b).sum(1))
+    b2_ = ((b2*b2).sum(1))
+    #c_neighbours = c[T.triangle_neighbors].sum(1)
+    #c = 1.0/(c + c_neighbours + 1)
+    #c = numpy.maximum(c, self.pixelsize**2)
+    c = 1.0/(c + 1)
+
+    sizeX = (imageBounds.x1 - imageBounds.x0)/pixelSize
+    sizeY = (imageBounds.y1 - imageBounds.y0)/pixelSize
+
+    xs = (xs - imageBounds.x0)/pixelSize
+    ys = (ys - imageBounds.y0)/pixelSize
+
+    if im == None:
+        im = numpy.zeros((sizeX, sizeY))
+
+#    for i in range(xs.shape[0]):
+#        xi = xs[i, :]
+#        yi = ys[i, :]
+#
+#        #if (xi > 0).all() and (xi< (sizeX - 1)).all() and (yi > 0).all() and (yi< (sizeY-1)).all():
+#        drawTriang(im, xi[0], yi[0], xi[1], yi[1], xi[2], yi[2], c[i])
+
+#    import threading
+#    N = xs.shape[0]
+#    t1 = threading.Thread(target=drawTriangles, args = (im, xs[:(N/2),:], ys[:(N/2),:], c[:(N/2)]))
+#    t2 = threading.Thread(target=drawTriangles, args = (im, xs[(N/2):,:], ys[(N/2):,:], c[(N/2):]))
+#
+#    t1.start()
+#    t2.start()
+#
+#    t1.join()
+#    t2.join()
+    drawTriangles(im, xs, ys, c)
+
+    return im
+
+def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize):
+    sizeX = (imageBounds.x1 - imageBounds.x0)/pixelSize
+    sizeY = (imageBounds.y1 - imageBounds.y0)/pixelSize
+
+    im = numpy.zeros((sizeX, sizeY))
+
+    for i in range(n):
+        Imc = scipy.rand(len(x)) < mcp
+        if type(jsig) == numpy.ndarray:
+            #print jsig.shape, Imc.shape
+            jsig = jsig[Imc]
+        T = delaunay.Triangulation(x[Imc] +  jsig*scipy.randn(Imc.sum()), y[Imc] +  jsig*scipy.randn(Imc.sum()))
+        rendTri(T, imageBounds, pixelSize, im=im)
+        
+    return im/n
+
 
 
 def rendHist(x,y, imageBounds, pixelSize):

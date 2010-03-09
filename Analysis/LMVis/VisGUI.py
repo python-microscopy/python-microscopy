@@ -1531,7 +1531,11 @@ class VisGUIFrame(wx.Frame):
                 #print jitVals
                 jitVals = jitScale*jitVals
 
-                im = self.glCanvas.genJitTim(dlg.getNumSamples(),self.colourFilter['x'],self.colourFilter['y'], jitVals, dlg.getMCProbability(),pixelSize)
+                if dlg.getSoftRender():
+                    status = statusLog.StatusLogger("Rendering triangles ...")
+                    im = visHelpers.rendJitTriang(self.colourFilter['x'],self.colourFilter['y'], dlg.getNumSamples(), jitVals, dlg.getMCProbability(),imb, pixelSize)
+                else:
+                    im = self.glCanvas.genJitTim(dlg.getNumSamples(),self.colourFilter['x'],self.colourFilter['y'], jitVals, dlg.getMCProbability(),pixelSize)
 
                 ims.append(GeneratedImage(im,imb, pixelSize ))
 
