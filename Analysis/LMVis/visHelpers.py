@@ -18,6 +18,21 @@ from PYME.Analysis.cModels.gauss_app import *
 from PYME.FileUtils import saveTiffStack
 from matplotlib import delaunay
 
+from edgeDB import genEdgeDB#, calcNeighbourDists
+
+multiProc = False
+
+try:
+    import multiprocessing
+    multiProc = True
+except:
+    try:
+        import processing as multiprocessing
+        multiProc = True
+    except:
+        multiProc = False
+
+
 class ImageBounds:
     def __init__(self, x0, y0, x1, y1, z0=0, z1=0):
         self.x0 = x0
@@ -94,44 +109,88 @@ class GeneratedImage:
 
         
 
-def genEdgeDB(T):
-    #make ourselves a quicker way of getting at edge info.
-    edb = []
-    #edb = numpy.zeros((len(T.x), 2), dtype='O')
-    for i in range(len(T.x)):
-        edb.append(([],[]))
-        #edb[i] = ([],[])
+#def genEdgeDB(T):
+#    #make ourselves a quicker way of getting at edge info.
+#    edb = []
+#    #edb = numpy.zeros((len(T.x), 2), dtype='O')
+#    for i in range(len(T.x)):
+#        edb.append(([],[]))
+#        #edb[i] = ([],[])
+#
+#    for i in range(len(T.edge_db)):
+#        e0, e1 = T.edge_db[i]
+#        edbe0 = edb[e0]
+#        edbe1 = edb[e1]
+#        edbe0[0].append(i)
+#        edbe0[1].append(e1)
+#        edbe1[0].append(i)
+#        edbe1[1].append(e0)
+#
+#
+#    return edb
 
-    for i in range(len(T.edge_db)):
-        e0, e1 = T.edge_db[i]
-        edb[e0][0].append(i)
-        edb[e0][1].append(e1)
-        edb[e1][0].append(i)
-        edb[e1][1].append(e0)
+def calcNeighbourDistPart(arg):
+    global T
+    global edb
+    nStart, nEnd = arg
+    di = scipy.zeros(nEnd - nStart)
 
-
-    return edb
-
-def calcNeighbourDists(T):
-    edb = genEdgeDB(T)
-
-    di = scipy.zeros(T.x.shape)
-
-    for i in range(len(T.x)):
+    for i in range(nStart, nEnd):
         incidentEdges = T.edge_db[edb[i][0]]
         #neighbourPoints = edb[i][1]
 
         #incidentEdges = T.edge_db[edb[neighbourPoints[0]][0]]
         #for j in range(1, len(neighbourPoints)):
         #    incidentEdges = scipy.vstack((incidentEdges, T.edge_db[edb[neighbourPoints[j]][0]]))
-        dx = scipy.diff(T.x[incidentEdges])
-        dy = scipy.diff(T.y[incidentEdges])
+        #dx = scipy.diff(T.x[incidentEdges])
+        #dy = scipy.diff(T.y[incidentEdges])
+
+        xv = T.x[incidentEdges]
+        dx = xv[:,1] - xv[:,0]
+        yv = T.y[incidentEdges]
+        dy = yv[:,1] - yv[:,0]
 
         dist = (dx**2 + dy**2)
 
-        di[i] = scipy.mean(scipy.sqrt(dist))
+        dist = scipy.sqrt(dist)
+
+        #di[i] = scipy.mean(scipy.sqrt(dist))
+        di[i - nStart] = scipy.mean(dist)
 
     return di
+
+
+if multiProc:
+    def calcNeighbourDists(Ta):
+        global T
+        global edb
+
+        T = Ta
+        edb = genEdgeDB(T)
+
+        N = len(T.x)
+
+        pool = multiprocessing.Pool()
+
+        taskSize = max(N/(2*multiprocessing.cpu_count()), 100)
+        taskEdges = range(0,N, taskSize) + [N]
+        print taskEdges
+
+        tasks = [(taskEdges[i], taskEdges[i+1]) for i in range(len(taskEdges)-1)]
+
+        ret = numpy.hstack(pool.map(calcNeighbourDistPart, tasks))
+        pool.close()
+
+        return ret
+else:
+    def calcNeighbourDists_(T):
+        edb = genEdgeDB(T)
+
+        N = T.x.shape
+
+        return calcNeighbourDistPart((T, edb, 0, N))
+
+
 
 
 def Gauss2D(Xv,Yv, A,x0,y0,s):
@@ -232,21 +291,69 @@ def rendTri(T, imageBounds, pixelSize, c=None, im=None):
 
     return im
 
-def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize):
-    sizeX = (imageBounds.x1 - imageBounds.x0)/pixelSize
-    sizeY = (imageBounds.y1 - imageBounds.y0)/pixelSize
+jParms = {}
 
-    im = numpy.zeros((sizeX, sizeY))
+def gJitTriang(n):
+    #global jParms
+    #locals().update(jParms)
+    x = jParms['x']
+    y = jParms['y']
+    jsig = jParms['jsig']
+    mcp = jParms['mcp']
+    
+    Imc = scipy.rand(len(x)) < mcp
+    if type(jsig) == numpy.ndarray:
+        #print jsig.shape, Imc.shape
+        jsig = jsig[Imc]
+    T = delaunay.Triangulation(x[Imc] +  jsig*scipy.randn(Imc.sum()), y[Imc] +  jsig*scipy.randn(Imc.sum()))
 
-    for i in range(n):
-        Imc = scipy.rand(len(x)) < mcp
-        if type(jsig) == numpy.ndarray:
-            #print jsig.shape, Imc.shape
-            jsig = jsig[Imc]
-        T = delaunay.Triangulation(x[Imc] +  jsig*scipy.randn(Imc.sum()), y[Imc] +  jsig*scipy.randn(Imc.sum()))
-        rendTri(T, imageBounds, pixelSize, im=im)
-        
-    return im/n
+    return T
+
+
+
+
+if multiProc:
+    def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize):
+        import threading
+        sizeX = (imageBounds.x1 - imageBounds.x0)/pixelSize
+        sizeY = (imageBounds.y1 - imageBounds.y0)/pixelSize
+
+        im = numpy.zeros((sizeX, sizeY))
+
+        jParms['x'] = x
+        jParms['y'] = y
+        jParms['jsig'] = jsig
+        jParms['mcp'] = mcp
+
+        pool = multiprocessing.Pool()
+
+        Ts = pool.map(gJitTriang, range(n))
+
+        threads = [threading.Thread(target = rendTri, args=(T, imageBounds, pixelSize), kwargs={'im':im}) for T in Ts]
+
+        for th in threads:
+            th.start()
+
+        for th in threads:
+            th.join()
+
+        return im/n
+else:
+    def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize):
+        sizeX = (imageBounds.x1 - imageBounds.x0)/pixelSize
+        sizeY = (imageBounds.y1 - imageBounds.y0)/pixelSize
+
+        im = numpy.zeros((sizeX, sizeY))
+
+        for i in range(n):
+            Imc = scipy.rand(len(x)) < mcp
+            if type(jsig) == numpy.ndarray:
+                #print jsig.shape, Imc.shape
+                jsig = jsig[Imc]
+            T = delaunay.Triangulation(x[Imc] +  jsig*scipy.randn(Imc.sum()), y[Imc] +  jsig*scipy.randn(Imc.sum()))
+            rendTri(T, imageBounds, pixelSize, im=im)
+
+        return im/n
 
 
 
