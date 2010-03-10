@@ -13,6 +13,8 @@
 #!/usr/bin/python
 import scipy
 import numpy
+import numpy.ctypeslib
+
 from PYME.Analysis.cModels.gauss_app import *
 #import subprocess
 from PYME.FileUtils import saveTiffStack
@@ -26,13 +28,17 @@ multiProc = False
 
 try:
     import multiprocessing
-    multiProc = True
+    import multiprocessing.sharedctypes
+    multiProc = False
 except:
-    try:
-        import processing as multiprocessing
-        multiProc = True
-    except:
-        multiProc = False
+    multiProc = False
+
+def as_mp_shared(x):
+    a = multiprocessing.sharedctypes.RawArray('d', x.size)
+    a2 = numpy.ctypeslib.as_array(a)
+    a2[:] = x[:]
+    return a
+
 
 if sys.platform == 'win32':
     multiProc = False
@@ -137,9 +143,9 @@ def genEdgeDB(T):
 mpT = {}
 
 def calcNeighbourDistPart(arg):
-    T = mpT['T']
-    edb = mpT['edb']
-    nStart, nEnd = arg
+    #global T
+    #global edb
+    T, edb, nStart, nEnd = arg
     di = scipy.zeros(nEnd - nStart)
 
     for i in range(nStart, nEnd):
@@ -168,18 +174,15 @@ def calcNeighbourDistPart(arg):
 
 
 if multiProc:
-    def calcNeighbourDists(T):
+    def calcNeighbourDists(T):       
         edb = genEdgeDB(T)
-
-        mpT['T'] = T
-        mpT['edb'] = edb
 
         N = len(T.x)
 
         pool = multiprocessing.Pool()
 
         taskSize = max(N/(2*multiprocessing.cpu_count()), 100)
-        taskEdges = range(0,N, taskSize) + [N]
+        taskEdges = range(T, edb, 0,N, taskSize) + [N]
         print taskEdges
 
         tasks = [(taskEdges[i], taskEdges[i+1]) for i in range(len(taskEdges)-1)]
@@ -192,12 +195,10 @@ else:
     def calcNeighbourDists(T):
         edb = genEdgeDB(T)
 
-        mpT['T'] = T
-        mpT['edb'] = edb
 
         N = len(T.x)
 
-        return calcNeighbourDistPart((0, N))
+        return calcNeighbourDistPart((T, edb, 0, N))
 
 
 
@@ -302,13 +303,9 @@ def rendTri(T, imageBounds, pixelSize, c=None, im=None):
 
 jParms = {}
 
-def gJitTriang(n):
+def gJitTriang(x, y, jsig, mcp):
     #global jParms
     #locals().update(jParms)
-    x = jParms['x']
-    y = jParms['y']
-    jsig = jParms['jsig']
-    mcp = jParms['mcp']
     
     Imc = scipy.rand(len(x)) < mcp
     if type(jsig) == numpy.ndarray:
@@ -329,10 +326,9 @@ if multiProc:
 
         im = numpy.zeros((sizeX, sizeY))
 
-        jParms['x'] = x
-        jParms['y'] = y
-        jParms['jsig'] = jsig
-        jParms['mcp'] = mcp
+        x = as_mp_shared(x)
+        y = as_mp_shared(x)
+        jsig = as_mp_shared(jsig)
 
         pool = multiprocessing.Pool()
 
