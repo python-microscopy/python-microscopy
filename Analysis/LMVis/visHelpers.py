@@ -18,6 +18,8 @@ from PYME.Analysis.cModels.gauss_app import *
 from PYME.FileUtils import saveTiffStack
 from matplotlib import delaunay
 
+import sys
+
 #from edgeDB import genEdgeDB#, calcNeighbourDists
 
 multiProc = False
@@ -31,6 +33,9 @@ except:
         multiProc = True
     except:
         multiProc = False
+
+if sys.platform == 'win32':
+    multiProc = False
 
 
 class ImageBounds:
@@ -129,9 +134,11 @@ def genEdgeDB(T):
 
     return edb
 
+mpT = {}
+
 def calcNeighbourDistPart(arg):
-    global T
-    global edb
+    T = mpT['T']
+    edb = mpT['edb']
     nStart, nEnd = arg
     di = scipy.zeros(nEnd - nStart)
 
@@ -161,12 +168,11 @@ def calcNeighbourDistPart(arg):
 
 
 if multiProc:
-    def calcNeighbourDists(Ta):
-        global T
-        global edb
-
-        T = Ta
+    def calcNeighbourDists(T):
         edb = genEdgeDB(T)
+
+        mpT['T'] = T
+        mpT['edb'] = edb
 
         N = len(T.x)
 
@@ -183,12 +189,15 @@ if multiProc:
 
         return ret
 else:
-    def calcNeighbourDists_(T):
+    def calcNeighbourDists(T):
         edb = genEdgeDB(T)
 
-        N = T.x.shape
+        mpT['T'] = T
+        mpT['edb'] = edb
 
-        return calcNeighbourDistPart((T, edb, 0, N))
+        N = len(T.x)
+
+        return calcNeighbourDistPart((0, N))
 
 
 
