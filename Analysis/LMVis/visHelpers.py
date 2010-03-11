@@ -29,7 +29,8 @@ multiProc = False
 try:
     import multiprocessing
     import multiprocessing.sharedctypes
-    multiProc = False
+    from PYME.shmarray import shmarray
+    multiProc = True
 except:
     multiProc = False
 
@@ -40,8 +41,8 @@ def as_mp_shared(x):
     return a
 
 
-if sys.platform == 'win32':
-    multiProc = False
+#if sys.platform == 'win32':
+#    multiProc = False
 
 
 class ImageBounds:
@@ -173,7 +174,7 @@ def calcNeighbourDistPart(arg):
     return di
 
 
-if multiProc:
+if False:#multiProc:
     def calcNeighbourDists(T):       
         edb = genEdgeDB(T)
 
@@ -303,7 +304,7 @@ def rendTri(T, imageBounds, pixelSize, c=None, im=None):
 
 jParms = {}
 
-def gJitTriang(x, y, jsig, mcp):
+def rendJitTri(im, x, y, jsig, mcp, imageBounds, pixelSize):
     #global jParms
     #locals().update(jParms)
     
@@ -313,7 +314,8 @@ def gJitTriang(x, y, jsig, mcp):
         jsig = jsig[Imc]
     T = delaunay.Triangulation(x[Imc] +  jsig*scipy.randn(Imc.sum()), y[Imc] +  jsig*scipy.randn(Imc.sum()))
 
-    return T
+    #return T
+    rendTri(T, imageBounds, pixelSize, im=im)
 
 
 
@@ -321,26 +323,27 @@ def gJitTriang(x, y, jsig, mcp):
 if multiProc:
     def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize):
         import threading
-        sizeX = (imageBounds.x1 - imageBounds.x0)/pixelSize
-        sizeY = (imageBounds.y1 - imageBounds.y0)/pixelSize
+        sizeX = int((imageBounds.x1 - imageBounds.x0)/pixelSize)
+        sizeY = int((imageBounds.y1 - imageBounds.y0)/pixelSize)
 
-        im = numpy.zeros((sizeX, sizeY))
+        im = shmarray.zeros((sizeX, sizeY))
 
-        x = as_mp_shared(x)
-        y = as_mp_shared(x)
-        jsig = as_mp_shared(jsig)
+        x = shmarray.create_copy(x)
+        y = shmarray.create_copy(y)
+        if type(jsig) == numpy.ndarray:
+            jsig = shmarray.create_copy(jsig)
 
-        pool = multiprocessing.Pool()
+        #pool = multiprocessing.Pool()
 
-        Ts = pool.map(gJitTriang, range(n))
+        #Ts = pool.map(gJitTriang, range(n))
 
-        threads = [threading.Thread(target = rendTri, args=(T, imageBounds, pixelSize), kwargs={'im':im}) for T in Ts]
+        processes = [multiprocessing.Process(target = rendJitTri, args=(im, x, y, jsig, mcp, imageBounds, pixelSize)) for i in range(n)]
 
-        for th in threads:
-            th.start()
+        for p in processes:
+            p.start()
 
-        for th in threads:
-            th.join()
+        for p in processes:
+            p.join()
 
         return im/n
 else:
