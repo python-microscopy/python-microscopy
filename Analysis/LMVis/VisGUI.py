@@ -25,6 +25,9 @@ from PYME.Analysis.LMVis import editFilterDialog
 import pylab
 from PYME.misc import extraCMaps
 from PYME.FileUtils import nameUtils
+
+from PYME.Analysis.EdgeDB import edges
+
 import os
 
 import gl_render3D
@@ -188,6 +191,7 @@ class VisGUIFrame(wx.Frame):
 
         self.viewMode = 'points' #one of points, triangles, quads, or voronoi
         self.Triangles = None
+        self.edb = None
         self.GeneratedMeasures = {}
         self.Quads = None
         #self.pointColour = None
@@ -1133,6 +1137,7 @@ class VisGUIFrame(wx.Frame):
         self.mapping.__dict__.update(self.driftCorrParams)
 
         self.Triangles = None
+        self.edb = None
         self.GeneratedMeasures = {}
         self.Quads = None
         
@@ -1143,6 +1148,7 @@ class VisGUIFrame(wx.Frame):
         self.mapping.mappings.pop('y')
 
         self.Triangles = None
+        self.edb = None
         self.GeneratedMeasures = {}
         self.Quads = None
 
@@ -2274,6 +2280,7 @@ class VisGUIFrame(wx.Frame):
         self.stFilterNumPoints.SetLabel('%d of %d events' % (len(self.filter['x']), len(self.selectedDataSource['x'])))
 
         self.Triangles = None
+        self.edb = None
         self.objects = None
 
         self.GeneratedMeasures = {}
@@ -2352,14 +2359,27 @@ class VisGUIFrame(wx.Frame):
         elif self.viewMode == 'blobs':
             if self.objects == None:
                 #check to see that we don't have too many points
-                if len(self.colourFilter['x']) > 10e3:
+                if len(self.colourFilter['x']) > 1e5:
                     goAhead = wx.MessageBox('You have %d events in the selected ROI;\nThis could take a LONG time ...' % len(self.colourFilter['x']), 'Continue with blob detection', wx.YES_NO|wx.ICON_EXCLAMATION)
 
                     if not goAhead == wx.YES:
                         return
+
+                if self.Triangles == None:
+                    status = statusLog.StatusLogger("Generating Triangulation ...")
+                    self.Triangles = delaunay.Triangulation(self.colourFilter['x']+ 0.1*np.random.normal(size=self.colourFilter['x'].shape), self.colourFilter['y']+ 0.1*np.random.normal(size=self.colourFilter['x'].shape))
+
+                if self.edb == None:
+                    self.edb = edges.EdgeDB(self.Triangles)
+
                 if self.blobJitter == 0:
-                    T = delny.Triangulation(pylab.array([self.colourFilter['x'] + 0.1*pylab.randn(len(self.colourFilter['x'])), self.colourFilter['y']+ 0.1*pylab.randn(len(self.colourFilter['x']))]).T)
-                    self.objects = gen3DTriangs.segment(T, self.objThreshold, self.objMinSize)
+                    #T = delny.Triangulation(pylab.array([self.colourFilter['x'] + 0.1*pylab.randn(len(self.colourFilter['x'])), self.colourFilter['y']+ 0.1*pylab.randn(len(self.colourFilter['x']))]).T)
+
+                    #self.objects = gen3DTriangs.segment(T, self.objThreshold, self.objMinSize)
+
+                    #edb = edges.EdgeDB(self.Triangles)
+                    objIndices = edges.objectIndices(self.edb.segment(self.objThreshold), self.objMinSize)
+                    self.objects = [pylab.vstack((self.Triangles.x[oi], self.Triangles.y[oi])).T for oi in objIndices]
                 else:
                     if not 'neighbourDistances' in self.GeneratedMeasures.keys():
                         self.genNeighbourDists()
@@ -2442,8 +2462,8 @@ def main(filename):
     application.MainLoop()
 
 if __name__ == '__main__':
-#    from PYME import mProfile
-#    mProfile.profileOn(['gen3DTriangs.py', 'visHelpers.py'])
+    #from PYME import mProfile
+    #mProfile.profileOn([ 'edges.py', 'VisGUI.py', 'gl_render.py', 'gen3DTriangs.py'])
 
     filename = None
 
@@ -2458,5 +2478,5 @@ if __name__ == '__main__':
         visFr.Show()
         visFr.RefreshView()
 
-#    mProfile.report()
+    #mProfile.report()
 

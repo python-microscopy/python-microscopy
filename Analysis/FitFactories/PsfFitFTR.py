@@ -96,6 +96,9 @@ def setModel(modName, md):
     if not modName == interpModelName:
         mf = open(getFullExistingFilename(modName), 'rb')
         mod, voxelsize = cPickle.load(mf)
+
+        mod = mod[15:-15, 15:-15, :]
+
         mf.close()
 
         interpModelName = modName
@@ -376,7 +379,7 @@ class PSFFitFactory:
         fitResults=-5e3*numpy.ones(5, 'f')
         fitResults[:2] = res_z
         fitResults[2:4] = res_x
-        fitResults[4] = aFData[0]
+        fitResults[4] = abs(aFData[0,0])
 
         fitErrors=-5e3*numpy.ones(fitResults.shape, 'f')
         try:
@@ -386,9 +389,9 @@ class PSFFitFactory:
             pass
 
         #print res, fitErrors, resCode
-        return PSFFitResultR(res, self.metadata, (xslice, yslice, zslice), resCode, fitErrors)
+        return PSFFitResultR(fitResults, self.metadata, (xslice, yslice, zslice), resCode_z + 100*resCode_x, fitErrors)
 
-    def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
+    def FromPoint(self, x, y, z=None, roiHalfSize=15, axialHalfSize=15):
         #if (z == None): # use position of maximum intensity
         #    z = self.data[x,y,:].argmax()
 

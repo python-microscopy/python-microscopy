@@ -14,10 +14,10 @@
 
 def configuration(parent_package = '', top_path = None):
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
-    config = Configuration('DistHist', parent_package, top_path)
+    config = Configuration('EdgeDB', parent_package, top_path)
 
-    config.add_extension('distHist',
-        sources=['distHist.c'],
+    config.add_extension('edgeDB',
+        sources=['edgeDB.c'],
         include_dirs = [get_numpy_include_dirs()],
 	extra_compile_args = ['-O3', '-fno-exceptions'])
 

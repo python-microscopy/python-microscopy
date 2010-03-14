@@ -10,4 +10,4 @@
 #
 ##################
 
-from distHist import *
+from edges import *

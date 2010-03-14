@@ -27,7 +27,7 @@ class shmarray(numpy.ndarray):
         self.ctypesArray = getattr(obj, 'ctypesArray', None)
 
     def __reduce_ex__(self, protocol):
-        return shmarray, (self.ctypesArray, self.shape, self.dtype, self.strides)
+        return shmarray, (self.ctypesArray, self.shape, self.dtype, self.strides, self.offset, self.order)
 
     def __reduce__(self):
         return __reduce_ex__(self, 0)
@@ -36,7 +36,7 @@ class shmarray(numpy.ndarray):
 def zeros(shape, dtype='d'):
     '''Create a shared array initialised to zeros. Avoid object arrays, as these
     will almost certainly break'''
-    shape = numpy.atleast_1d(shape)
+    shape = numpy.atleast_1d(shape).astype('i')
 
     #we're going to use a flat ctypes array
     N = numpy.prod(shape)
@@ -44,26 +44,32 @@ def zeros(shape, dtype='d'):
 
     #if the dtype's relatively simple create the corresponding ctypes array
     #otherwise create a suitably sized byte array
-    print dtype, N
+    #print dtype, N
 
     if type(dtype) == numpy.dtype:
         dtc = dtype.char
     else:
         dtc = dtype
 
-    print dtc
+    #print dtc
     if dtc in sharedctypes.typecode_to_type.keys():
         dt = dtc
     else:
         dt = 'b'
         N *= numpy.dtype(dtype).itemsize
 
-    print dt, N
+    #print dt, N
 
     dtype = numpy.dtype(dtype)
     a = sharedctypes.RawArray(dt, N)
 
-    return shmarray(a, shape, dtype)
+    sa =  shmarray(a, shape, dtype)
+
+    #contrary to the documentation, sharedctypes.RawArray does NOT always return
+    #an array which is initialised to zero - do it ourselves
+    #http://code.google.com/p/python-multiprocessing/issues/detail?id=25
+    sa[:] = numpy.zeros(1, dtype)
+    return sa
 
 def create_copy(a):
     '''create a a shared copy of an array'''

@@ -12,6 +12,7 @@
 
 import delaunay
 from numpy import *
+#import matplotlib.delaunay
 
 
 def testObj():
@@ -571,6 +572,7 @@ def blobify2D(objects, sizeCutoff):
 
     for o, i in zip(objects, range(len(objects))):
         T = delaunay.Triangulation(o.ravel(),2)
+        #T2 = matplotlib.delaunay.Triangulation(o[:, 0], o[:,1])
         P, A, triI = gen2DTriangsTF(T, sizeCutoff)
 
         #P, A, N = removeInternalFaces(P, A, N)
