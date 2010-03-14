@@ -27,7 +27,7 @@ class shmarray(numpy.ndarray):
         self.ctypesArray = getattr(obj, 'ctypesArray', None)
 
     def __reduce_ex__(self, protocol):
-        return shmarray, (self.ctypesArray, self.shape, self.dtype, self.strides, self.offset, self.order)
+        return shmarray, (self.ctypesArray, self.shape, self.dtype, self.strides)#, self.offset, self.order)
 
     def __reduce__(self):
         return __reduce_ex__(self, 0)

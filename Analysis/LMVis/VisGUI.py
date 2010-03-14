@@ -2386,8 +2386,12 @@ class VisGUIFrame(wx.Frame):
                     x_ = pylab.hstack([self.colourFilter['x'] + 0.5*self.GeneratedMeasures['neighbourDistances']*pylab.randn(len(self.colourFilter['x'])) for i in range(self.blobJitter)])
                     y_ = pylab.hstack([self.colourFilter['y'] + 0.5*self.GeneratedMeasures['neighbourDistances']*pylab.randn(len(self.colourFilter['x'])) for i in range(self.blobJitter)])
 
-                    T = delny.Triangulation(pylab.array([x_, y_]).T)
-                    self.objects = gen3DTriangs.segment(T, self.objThreshold, self.objMinSize)
+                    #T = delny.Triangulation(pylab.array([x_, y_]).T)
+                    T = delaunay.Triangulation(x_, y_)
+                    #self.objects = gen3DTriangs.segment(T, self.objThreshold, self.objMinSize)
+                    edb = edges.EdgeDB(T)
+                    objIndices = edges.objectIndices(edb.segment(self.objThreshold), self.objMinSize)
+                    self.objects = [pylab.vstack((T.x[oi], T.y[oi])).T for oi in objIndices]
 
 #                if 'bObjMeasure' in dir(self):
 #                    self.bObjMeasure.Enable(True)
