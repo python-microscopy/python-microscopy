@@ -24,7 +24,7 @@ class SpoolEvent(tables.IsDescription):
    Time = tables.Time64Col()
    EventDescr = tables.StringCol(256)
 
-def extractFrames(dataSource, metadata, origName, outFile, start, end, complib='zlib', complevel=5):
+def extractFrames(dataSource, metadata, origName, outFile, start, end, subsamp=1, complib='zlib', complevel=5):
     
     h5out = tables.openFile(outFile,'w')
     filters=tables.Filters(complevel,complib,shuffle=True)
@@ -33,8 +33,11 @@ def extractFrames(dataSource, metadata, origName, outFile, start, end, complib='
     xSize, ySize = dataSource.getSliceShape()
 
     ims = h5out.createEArray(h5out.root,'ImageData',tables.UInt16Atom(),(0,xSize,ySize), filters=filters, expectedrows=nframes)
-    for frameN in range(start,end):
-        ims.append(dataSource.getSlice(frameN)[None, :,:])
+    for frameN in range(start,end, subsamp):
+        im = dataSource.getSlice(frameN)[None, :,:]
+        for fN in range(frameN+1, frameN+subsamp):
+            im += dataSource.getSlice(fN)[None, :,:]
+        ims.append(im)
         ims.flush()
 
     outMDH = MetaDataHandler.HDFMDHandler(h5out)

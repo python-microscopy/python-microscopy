@@ -1046,16 +1046,21 @@ class DSViewFrame(wx.Frame):
                 'Extract Frames', '0:%d' % self.ds.getNumSlices())
 
         if dlg.ShowModal() == wx.ID_OK:
-            st, fin = dlg.GetValue().split(':')
+            ret = dlg.GetValue().split(':')
 
-            start = int(st)
-            finish = int(fin)
+            start = int(ret[0])
+            finish = int(ret[1])
+
+            if len(ret) == 3:
+                subsamp = int(ret[2])
+            else:
+                subsamp = 1
             
             fdialog = wx.FileDialog(None, 'Save Extracted Frames as ...',
                 wildcard='*.h5', style=wx.SAVE|wx.HIDE_READONLY)
             succ = fdialog.ShowModal()
             if (succ == wx.ID_OK):
-                h5ExFrames.extractFrames(self.ds, self.mdh, self.seriesName, fdialog.GetPath(), start, finish)
+                h5ExFrames.extractFrames(self.ds, self.mdh, self.seriesName, fdialog.GetPath(), start, finish, subsamp)
 
             fdialog.Destroy()
         dlg.Destroy()
