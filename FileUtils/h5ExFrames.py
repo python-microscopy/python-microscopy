@@ -45,7 +45,12 @@ def extractFrames(dataSource, metadata, origName, outFile, start, end, subsamp=1
     outMDH.copyEntriesFrom(metadata)
     outMDH.setEntry('cropping.originalFile', origName)
     outMDH.setEntry('cropping.start', start)
-    outMDH.setEntry('cropping.end', start)
+    outMDH.setEntry('cropping.end', end)
+    outMDH.setEntry('cropping.averaging', subsamp)
+
+    if 'Camera.ADOffset' in metadata.getEntryNames():
+        outMDH.setEntry('Camera.ADOffset', subsamp*metadata.getEntry('Camera.ADOffset'))
+
 
     outEvents = h5out.createTable(h5out.root, 'Events', SpoolEvent,filters=tables.Filters(complevel=5, shuffle=True))
 
