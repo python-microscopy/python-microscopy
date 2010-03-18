@@ -11,41 +11,35 @@
 ##################
 
 import tables
-#import type
 import numpy as np
 
-assigned = []
 
-def findConnected(i, fr, f_ind):
-    global assigned
-    #print i
-    r = fr[i]
+def findConnected(i, t,x,y,delta_x, frameIndices, assigned, clumpNum, nFrames=5):
+    #get the indices of all the points in the next n frames
+    neighbour_inds = np.arange((i+1), min(frameIndices[int(t[i] + nFrames)], len(t)), dtype='int32')
+    #print neighbour_inds
+    
+    #keep only those which haven't already been asigned to a clump
+    neighbour_inds = neighbour_inds[assigned[neighbour_inds] == 0]
 
-    #print r['tIndex']
+    #get the actual neighbour information
+    #neighbours = fitResults[neighbour_inds]
+    
+    #calculate the square distances to the neighbours
+    dis = (x[neighbour_inds] - x[i])**2 + (y[neighbour_inds] - y[i])**2
 
-    #print (i + 1), f_ind[int(r['tIndex'] + 1)]
+    #find the indices of those neighbours which are within twice the localisation precision
+    #note that we're relying on the fact that the x and y localisaiton precisions are
+    #typically practically the same
+    sig_n = neighbour_inds[dis < (2*delta_x[i])**2]
 
-    neigh = fr[(i + 1):f_ind[int(r['tIndex'] + 5)]]
-    neigh = neigh[assigned[(i + 1):f_ind[int(r['tIndex'] + 5)]] == 0]
+    #add them to the clump
+    assigned[sig_n] = clumpNum
 
-    #print len(neigh)
-
-    dis = (neigh['fitResults']['x0'] - r['fitResults']['x0'])**2 + (neigh['fitResults']['y0'] - r['fitResults']['y0'])**2
-
-    sig_n = i + 1 + np.where((dis < (2*r['fitError']['x0'])**2) * (neigh['fitError']['x0'] > 0))[0]
-    assigned[sig_n] = 1
-
-    neigh_neigh = []
-
-    #print len(sig_n)
-
+    #and add their neighbours to the clump
     for n in sig_n:
-        #print n
-        neigh_neigh += findConnected(n, fr, f_ind)
+        findConnected(n, t,x,y,delta_x, frameIndices, assigned, clumpNum, nFrames)
 
-    #print len(neigh_neigh)
-
-    return list(sig_n) + neigh_neigh
 
 def deClumpedDType(arr):
     dt = arr.dtype.descr
@@ -80,38 +74,58 @@ def deClumpf(h5fFile):
     
     return deClump(fr)
 
-def deClump(fr):
-    global assigned
-    #make sure the results are sorted in frame order
-    I = fr['tIndex'].argsort()
-    fr = fr[I]
+def findClumps(t, x, y, delta_x):
+    '''Finds clumps (or single particle trajectories) of data points in a series.
+    fitRsults MUST be sorted in increasing time order.
+    '''
 
-    #generate a lookup table fro frame numbers
-    f_ind = (len(fr['tIndex']) + 2)*np.ones(fr['tIndex'].max() + 10)
+    nRes = len(t)
 
-    for t, i in zip(fr['tIndex'], range(len(fr['tIndex']))):
-        f_ind[:(t+1)] = np.minimum(f_ind[:(t+1)], i)
+    #there may be a different number of points in each frame; generate a lookup
+    #table for frame numbers so we can index into our list of results to get
+    #all the points within a certain range of frames
+    frameIndices = (nRes + 2)*np.ones(t.max() + 10, 'int32')
+
+    for t_i, i in zip(t, range(nRes)):
+        frameIndices[:(t_i+1)] = np.minimum(frameIndices[:(t_i+1)], i)
+
+    #print frameIndices
+    
+    #record whether a point has already been asigned to a clump
+    assigned = np.zeros(nRes, 'int32')
+
+    clumpNum = 1
+
+    for i in range(nRes): #loop over all the points
+        if assigned[i] == 0:
+            #if a point hasn't already been assigned to a clump, start a new
+            #clump from that point.
+            assigned[i] = clumpNum
+        
+            #find all the points which are connected to this one
+            findConnected(i, t,x,y,delta_x, frameIndices, assigned, clumpNum)
+
+            #next pass will be a new clump
+            clumpNum +=1
+
+    return assigned
+
+
+def coalesceClumps(fitResults, assigned):
+    '''Agregates clumps to a single event'''
+    NClumps = assigned.max()
+
+    #work out what the data type for our declumped data should be
+    dt = deClumpedDType(fitResults)
 
     filtered_res = []
 
-    assigned = np.zeros(len(I))
-
-    dt = deClumpedDType(fr)
-    #print dt
-
-    for i in range(len(I)):
-        if not assigned[i]:
-            assigned[i] = 1
-            #r = fr[i]
-            conn = findConnected(i, fr, f_ind)
-
-            vals = fr[[i] + conn]
+    for i in range(1, NClumps+1):
+            #coalesce the connected ponts into one
+            vals = fitResults[assigned == i]
 
             vn = np.zeros(1,dtype=dt)
-
-            #print vn
-            #print vals
-            
+                        
             vn['tIndex'] = vals['tIndex'].min()
 
             vn['fitResults'], vn['fitError'] = weightedAverage(vals['fitResults'], vals['fitError'])
@@ -124,6 +138,23 @@ def deClump(fr):
 
     return np.hstack(filtered_res)
 
+
+def deClump(fitResults):
+    #select those points which fitted and have a reasonable fit error
+    fitResults = fitResults[(fitResults['fitError']['x0'] > 0)*(fitResults['fitError']['x0'] < 60)]
+
+    #make sure the results are sorted in frame order
+    I = fitResults['tIndex'].argsort()
+    fitResults = fitResults[I]
+
+    t = fitResults['tIndex']
+    x = fitResults['fitResults']['x0']
+    y = fitResults['fitResults']['y0']
+    delta_x = fitResults['fitError']['x0']
+
+    assigned = findClumps(t, x, y, delta_x)
+
+    return coalesceClumps(fitResults, assigned)
 
             
 
