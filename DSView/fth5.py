@@ -80,7 +80,9 @@ def pushImagesHDF(startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
     if len(evts) > 0:
         tq.addQueueEvents(seriesName, evts)
     for i in range(startingAt, ds.shape[2]):
-        if 'Analysis.NumBGFrames' in mdh.getEntryNames():
+        if 'Analysis.BGRange' in mdh.getEntryNames():
+            bgi = range(max(i + mdh.getEntry('Analysis.BGRange')[0],mdh.getEntry('EstimatedLaserOnFrameNo')), max(i + mdh.getEntry('Analysis.BGRange')[1],mdh.getEntry('EstimatedLaserOnFrameNo')))
+        elif 'Analysis.NumBGFrames' in mdh.getEntryNames():
             bgi = range(max(i - mdh.getEntry('Analysis.NumBGFrames'),mdh.getEntry('EstimatedLaserOnFrameNo')), i)
         else:
             bgi = range(max(i - 10,mdh.getEntry('EstimatedLaserOnFrameNo')), i)
@@ -126,10 +128,12 @@ def testFrames(detThresh = 0.9, offset = 0):
     zps = array(range(mdh.getEntry('EstimatedLaserOnFrameNo') + 20, mdh.getEntry('EstimatedLaserOnFrameNo') + 24)  + range(sq, sq + 4) + range(dataSource.getNumSlices()/2,dataSource.getNumSlices() /2+4))
     zps += offset
     fitMod = cFitType.GetStringSelection()
-    bgFrames = int(tBackgroundFrames.GetValue())
+    #bgFrames = int(tBackgroundFrames.GetValue())
+    bgFrames = [int(v) for v in self.tBackgroundFrames.GetValue().split(':')]
     for i in range(12):
         #if 'Analysis.NumBGFrames' in md.getEntryNames():
         bgi = range(max(zps[i] - bgFrames,mdh.getEntry('EstimatedLaserOnFrameNo')), zps[i])
+        bgi = range(max(zps[i] + bgFrames[0],mdh.getEntry('EstimatedLaserOnFrameNo')), max(zps[i] + bgFrames[1],mdh.getEntry('EstimatedLaserOnFrameNo')))
         #else:
         #    bgi = range(max(zps[i] - 10,md.EstimatedLaserOnFrameNo), zps[i])
         if 'Splitter' in fitMod:

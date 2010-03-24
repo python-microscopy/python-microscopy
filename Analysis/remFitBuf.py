@@ -18,6 +18,7 @@ import numpy
 import numpy as np
 
 dBuffer = None
+bBuffer = None
 dataSourceID = None
 
 bufferMisses = 0
@@ -64,8 +65,31 @@ class dataBuffer: #buffer our io to avoid decompressing multiple times
 
             return sl
         
+class backgroundBuffer:
+    def __init__(self, dataBuffer):
+        self.dataBuffer = dataBuffer
+        self.curFrames = set()
+        self.curBG = numpy.zeros(dataBuffer.dataSource.getSliceShape(), 'f4')
 
-    
+    def getBackground(self, bgindices):
+        bgi = set(bgindices)
+
+        #subtract frames we're currently holding but don't need
+        for fi in self.curFrames.difference(bgi):
+            self.curBG[:] = (self.curBG - self.dataBuffer.getSlice(fi))[:]
+
+        #add frames we don't already have
+        for fi in bgi.difference(self.curFrames):
+            if fi >= self.dataBuffer.dataSource.getNumSlices():
+                #drop frames which run over the end of our data
+                bgi.remove(fi)
+            else:
+                self.curBG[:] = (self.curBG + self.dataBuffer.getSlice(fi))[:]
+
+        self.curFrames = bgi
+
+        return self.curBG/len(bgi)
+
         
 
 class fitTask(taskDef.Task):
@@ -104,7 +128,7 @@ class fitTask(taskDef.Task):
 
 
     def __call__(self, gui=False, taskQueue=None):
-        global dBuffer, dataSourceID
+        global dBuffer, bBuffer, dataSourceID
                         
         fitMod = __import__('PYME.Analysis.FitFactories.' + self.fitModule, fromlist=['PYME', 'Analysis','FitFactories']) #import our fitting module
 
@@ -113,6 +137,7 @@ class fitTask(taskDef.Task):
         #read the data
         if not dataSourceID == self.dataSourceID: #avoid unnecessary opening and closing of 
             dBuffer = dataBuffer(DataSource(self.dataSourceID, taskQueue), self.bufferLen)
+            bBuffer = backgroundBuffer(dBuffer)
             dataSourceID = self.dataSourceID
         
         self.data = dBuffer.getSlice(self.index)
@@ -132,13 +157,14 @@ class fitTask(taskDef.Task):
         #calculate background
         self.bg = 0
         if not len(self.bgindices) == 0:
-            self.bg = numpy.zeros(self.data.shape, 'f')
-            for bgi in self.bgindices:
-                bs = dBuffer.getSlice(bgi).astype('f')
-                bs = bs.reshape(self.data.shape)
-                self.bg = self.bg + bs
-
-            self.bg *= 1.0/len(self.bgindices)
+#            self.bg = numpy.zeros(self.data.shape, 'f')
+#            for bgi in self.bgindices:
+#                bs = dBuffer.getSlice(bgi).astype('f')
+#                bs = bs.reshape(self.data.shape)
+#                self.bg = self.bg + bs
+#
+#            self.bg *= 1.0/len(self.bgindices)
+            self.bg = bBuffer.getBackground(self.bgindices).reshape(self.data.shape)
 
         #Find objects
         bgd = self.data.astype('f') - self.bg
