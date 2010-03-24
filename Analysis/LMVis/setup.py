@@ -25,8 +25,8 @@ if sys.platform == 'win32':
     setup(console=['VisGUI.py'],
           options={'py2exe':{'excludes':['pyreadline', 'Tkconstants','Tkinter','tcl', '_imagingtk','PIL._imagingtk', 'ImageTK', 'PIL.ImageTK', 'FixTk'], 'includes':['OpenGL.platform.win32'], 'optimize':0}},
           data_files=matplotlib.get_py2exe_datafiles(),
-          cmdclass = {'build_ext': build_ext},
-          ext_modules = ext_modules
+          #cmdclass = {'build_ext': build_ext},
+          #ext_modules = ext_modules
           )
 
 else:

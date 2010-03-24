@@ -21,6 +21,8 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('DataSources')
     config.add_subpackage('SoftRend')
     config.add_subpackage('DistHist')
+    config.add_subpackage('DeClump')
+    config.add_subpackage('EdgeDB')
     
     #config.make_svn_version_py()  # installs __svn_version__.py
     #config.make_config_py()
