@@ -129,10 +129,10 @@ def testFrames(detThresh = 0.9, offset = 0):
     zps += offset
     fitMod = cFitType.GetStringSelection()
     #bgFrames = int(tBackgroundFrames.GetValue())
-    bgFrames = [int(v) for v in self.tBackgroundFrames.GetValue().split(':')]
+    bgFrames = [int(v) for v in tBackgroundFrames.GetValue().split(':')]
     for i in range(12):
         #if 'Analysis.NumBGFrames' in md.getEntryNames():
-        bgi = range(max(zps[i] - bgFrames,mdh.getEntry('EstimatedLaserOnFrameNo')), zps[i])
+        #bgi = range(max(zps[i] - bgFrames,mdh.getEntry('EstimatedLaserOnFrameNo')), zps[i])
         bgi = range(max(zps[i] + bgFrames[0],mdh.getEntry('EstimatedLaserOnFrameNo')), max(zps[i] + bgFrames[1],mdh.getEntry('EstimatedLaserOnFrameNo')))
         #else:
         #    bgi = range(max(zps[i] - 10,md.EstimatedLaserOnFrameNo), zps[i])
