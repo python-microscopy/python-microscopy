@@ -23,6 +23,8 @@ import sys
 from PYME.FileUtils.nameUtils import genResultFileName
 from PYME.ParallelTasks.relativeFiles import getFullFilename
 
+CHUNKSIZE = 50
+
 #def genDataFilename(name):
 #	fn = os.g
 
@@ -342,7 +344,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
 
         tasks = []
 
-        for i in range(min(10,len(self.openTasks))):
+        for i in range(min(CHUNKSIZE,len(self.openTasks))):
 
             taskNum = self.openTasks.pop(self.fTaskToPop(workerN, NWorkers, len(self.openTasks)))
 
