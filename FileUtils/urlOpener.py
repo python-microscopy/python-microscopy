@@ -56,7 +56,7 @@ def openFile(url):
         
 
 if __name__ == '__main__':
-    f = open(sys.argv[1])
+    f = open(' '.join(sys.argv[1:]))
     url = f.readline().strip()
     f.close()
     #print url
