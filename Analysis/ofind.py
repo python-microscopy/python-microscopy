@@ -15,7 +15,7 @@ import numpy
 import math
 from scipy import ndimage
 from scipy.ndimage import _nd_image, _ni_support
-from scipy.spatial import kdtree
+from scipy.spatial import ckdtree
 #import pylab
 
 def calc_gauss_weights(sigma):
@@ -44,6 +44,8 @@ filtRadHighpass = 3
 #precompute our filter weights
 weightsLowpass = calc_gauss_weights(filtRadLowpass)
 weightsHighpass = calc_gauss_weights(filtRadHighpass)
+
+#print weightsLowpass.dtype
 
 class OfindPoint:
     def __init__(self, x, y, z=None, detectionThreshold=None):
@@ -111,18 +113,18 @@ class ObjectIdentifier(list):
     def __FilterData2D(self,data):
         mode = _ni_support._extend_mode_to_code("reflect")
         #lowpass filter to suppress noise
-        #a = ndimage.gaussian_filter(data.astype('f4'), self.filterRadiusLowpass)
+        a = ndimage.gaussian_filter(data.astype('f4'), self.filterRadiusLowpass)
 
-        output, a = _ni_support._get_output(None, data)
-        _nd_image.correlate1d(data, weightsLowpass, 0, output, mode, 0,0)
-        _nd_image.correlate1d(data, weightsLowpass, 1, output, mode, 0,0)
+#        output, a = _ni_support._get_output(None, data)
+#        _nd_image.correlate1d(data, weightsLowpass, 0, output, mode, 0,0)
+#        _nd_image.correlate1d(data, weightsLowpass, 1, output, mode, 0,0)
 
         #lowpass filter again to find background
-        #b = ndimage.gaussian_filter(a, self.filterRadiusHighpass)
+        b = ndimage.gaussian_filter(a, self.filterRadiusHighpass)
 
-        output, b = _ni_support._get_output(None, data)
-        _nd_image.correlate1d(data, weightsHighpass, 0, output, mode, 0,0)
-        _nd_image.correlate1d(data, weightsHighpass, 1, output, mode, 0,0)
+#        output, b = _ni_support._get_output(None, data)
+#        _nd_image.correlate1d(data, weightsHighpass, 0, output, mode, 0,0)
+#        _nd_image.correlate1d(data, weightsHighpass, 1, output, mode, 0,0)
 
         return a - b
 
@@ -164,13 +166,16 @@ class ObjectIdentifier(list):
         if len(xs) < 2:
             return xs, ys
         
-        kdt = kdtree.KDTree(numpy.array([xs,ys]).T)
+        kdt = ckdtree.cKDTree(numpy.array([xs,ys]).T)
 
         xsd = []
         ysd = []
 
         for xi, yi in zip(xs, ys):
-            neigh = kdt.query_ball_point([xi,yi], radius)
+            #neigh = kdt.query_ball_point([xi,yi], radius)
+            dn, neigh = kdt.query(numpy.array([xi,yi]), 5)
+
+            neigh = neigh[dn < radius]
 
             if len(neigh) > 1:
                 Ii = self.filteredData[xi,yi]
