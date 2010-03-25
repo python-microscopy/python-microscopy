@@ -10,10 +10,40 @@
 #
 ##################
 
-import scipy
-import scipy.ndimage as ndimage
+#import scipy
+import numpy
+import math
+from scipy import ndimage
+from scipy.ndimage import _nd_image, _ni_support
 from scipy.spatial import kdtree
 #import pylab
+
+def calc_gauss_weights(sigma):
+    '''calculate a gaussian filter kernel (adapted from scipy.ndimage.filters.gaussian_filter1d)'''
+    sd = float(sigma)
+    # make the length of the filter equal to 4 times the standard
+    # deviations:
+    lw = int(4.0 * sd + 0.5)
+    weights = numpy.zeros(2 * lw + 1, 'float64')
+    weights[lw] = 1.0
+    sum = 1.0
+    sd = sd * sd
+    # calculate the kernel:
+    for ii in range(1, lw + 1):
+        tmp = math.exp(-0.5 * float(ii * ii) / sd)
+        weights[lw + ii] = tmp
+        weights[lw - ii] = tmp
+        sum += 2.0 * tmp
+
+    return weights/sum
+
+#default filter sizes
+filtRadLowpass = 1
+filtRadHighpass = 3
+
+#precompute our filter weights
+weightsLowpass = calc_gauss_weights(filtRadLowpass)
+weightsHighpass = calc_gauss_weights(filtRadHighpass)
 
 class OfindPoint:
     def __init__(self, x, y, z=None, detectionThreshold=None):
@@ -59,6 +89,7 @@ class ObjectIdentifier(list):
         where "fast" performs a z-projection and then filters, wheras "good" filters in 3D before 
         projecting. The parameters filterRadiusLowpass and filterRadiusHighpass control the bandpass filter
         used to identify 'point-like' features. filterRadiusZ is the radius used for the axial smoothing filter"""
+        global filtRadLowpass, filtRadHighpass, weightsLowpass, weightsHighpass
 
         self.data = data
         self.filterMode = filterMode
@@ -66,11 +97,32 @@ class ObjectIdentifier(list):
         self.filterRadiusHighpass = filterRadiusHighpass
         self.filterRadiusZ = filterRadiusZ
 
+        if not filterRadiusLowpass == filtRadLowpass:
+            #recompute weights for different filter size
+            filtRadLowpass = filterRadiusLowpass
+            weightsLowpass = calc_gauss_weights(filtRadLowpass)
+
+        if not filterRadiusHighpass == filtRadHighpass:
+            #recompute weights for different filter size
+            filtRadHighpass = filterRadiusHighpass
+            weightsHighpass = calc_guass_weights(filtRadHighpass)
+
+
     def __FilterData2D(self,data):
+        mode = _ni_support._extend_mode_to_code("reflect")
         #lowpass filter to suppress noise
-        a = ndimage.gaussian_filter(data.astype('f'), self.filterRadiusLowpass)
+        #a = ndimage.gaussian_filter(data.astype('f4'), self.filterRadiusLowpass)
+
+        output, a = _ni_support._get_output(None, data)
+        _nd_image.correlate1d(data, weightsLowpass, 0, output, mode, 0,0)
+        _nd_image.correlate1d(data, weightsLowpass, 1, output, mode, 0,0)
+
         #lowpass filter again to find background
-        b = ndimage.gaussian_filter(a, self.filterRadiusHighpass)
+        #b = ndimage.gaussian_filter(a, self.filterRadiusHighpass)
+
+        output, b = _ni_support._get_output(None, data)
+        _nd_image.correlate1d(data, weightsHighpass, 0, output, mode, 0,0)
+        _nd_image.correlate1d(data, weightsHighpass, 1, output, mode, 0,0)
 
         return a - b
 
@@ -112,7 +164,7 @@ class ObjectIdentifier(list):
         if len(xs) < 2:
             return xs, ys
         
-        kdt = kdtree.KDTree(scipy.array([xs,ys]).T)
+        kdt = kdtree.KDTree(numpy.array([xs,ys]).T)
 
         xsd = []
         ysd = []
@@ -194,7 +246,7 @@ class ObjectIdentifier(list):
         
         if self.numThresholdSteps > 0:
             #determine (approximate) mode
-            N, bins = scipy.histogram(maskedFilteredData, bins=200)
+            N, bins = numpy.histogram(maskedFilteredData, bins=200)
             posMax = N.argmax() #find bin with maximum number of counts
             modeApp = bins[posMax:(posMax+1)].mean() #bins contains left-edges - find middle of most frequent bin
 
@@ -209,12 +261,12 @@ class ObjectIdentifier(list):
             
         else:
             if self.estSN:
-                self.lowerThreshold = self.thresholdFactor*scipy.sqrt(scipy.median(self.data.ravel()))
+                self.lowerThreshold = self.thresholdFactor*numpy.sqrt(numpy.median(self.data.ravel()))
             else:
                 self.lowerThreshold = self.thresholdFactor
 
         
-        X,Y = scipy.mgrid[0:maskedFilteredData.shape[0], 0:maskedFilteredData.shape[1]]
+        X,Y = numpy.mgrid[0:maskedFilteredData.shape[0], 0:maskedFilteredData.shape[1]]
 
         #store x, y, and thresholds
         xs = []
@@ -243,7 +295,7 @@ class ObjectIdentifier(list):
         else: #do threshold scan (default)
 
             #generate threshold range - note slightly awkard specification of lowwer and upper bounds as the stop bound is excluded from arange
-            self.thresholdRange = scipy.arange(self.upperThreshold, self.lowerThreshold - (self.upperThreshold - self.lowerThreshold)/(self.numThresholdSteps -1), - (self.upperThreshold - self.lowerThreshold)/(self.numThresholdSteps))
+            self.thresholdRange = numpy.arange(self.upperThreshold, self.lowerThreshold - (self.upperThreshold - self.lowerThreshold)/(self.numThresholdSteps -1), - (self.upperThreshold - self.lowerThreshold)/(self.numThresholdSteps))
 
             #get a working copy of the filtered data
             im = maskedFilteredData.copy()
@@ -251,7 +303,7 @@ class ObjectIdentifier(list):
         
 
             #use for quickly deterimining the number of pixels in a slice (there must be a better way)
-            corrWeightRef = scipy.ones(im.shape)
+            corrWeightRef = numpy.ones(im.shape)
             
 
         
@@ -260,7 +312,7 @@ class ObjectIdentifier(list):
                 (labeledPoints, nLabeled) = ndimage.label(im > threshold)
 
                 #initialise correction weighting mask
-                corrWeights = scipy.zeros(im.shape, 'f')
+                corrWeights = numpy.zeros(im.shape, 'f')
             
                 #get 'adress' of each object
                 objSlices = ndimage.find_objects(labeledPoints)
@@ -280,10 +332,10 @@ class ObjectIdentifier(list):
                     ts.append(threshold)
 
                     #now work out weights for correction image (N.B. this is somewhat emperical)
-                    corrWeights[objSlices[i]] = 1.0/scipy.sqrt(nPixels)
+                    corrWeights[objSlices[i]] = 1.0/numpy.sqrt(nPixels)
 
                 #calculate correction matrix
-                corr = ndimage.gaussian_filter(2*self.blurRadius*scipy.sqrt(2*scipy.pi)*1.7*im*corrWeights, self.blurRadius)
+                corr = ndimage.gaussian_filter(2*self.blurRadius*numpy.sqrt(2*numpy.pi)*1.7*im*corrWeights, self.blurRadius)
 
                 #subtract from working image
                 im -= corr
@@ -304,8 +356,8 @@ class ObjectIdentifier(list):
 
                 print len(xs)
 
-        xs = scipy.array(xs)
-        ys = scipy.array(ys)
+        xs = numpy.array(xs)
+        ys = numpy.array(ys)
 
         if splitter:
             ys = ys + (ys > im.shape[1]/2)*(im.shape[1] - 2*ys)

@@ -16,7 +16,7 @@ import os
 import sys
 
 from PYME.mProfile import mProfile
-mProfile.profileOn(['remFitBuf.py', 'taskWorkerP.py'])
+mProfile.profileOn(['remFitBuf.py', 'ofind.py', 'filters.py'])
 
 if 'PYRO_NS_HOSTNAME' in os.environ.keys():
     Pyro.config.PYRO_NS_HOSTNAME=os.environ['PYRO_NS_HOSTNAME']
