@@ -113,18 +113,21 @@ class ObjectIdentifier(list):
     def __FilterData2D(self,data):
         mode = _ni_support._extend_mode_to_code("reflect")
         #lowpass filter to suppress noise
-        a = ndimage.gaussian_filter(data.astype('f4'), self.filterRadiusLowpass)
+        #a = ndimage.gaussian_filter(data.astype('f4'), self.filterRadiusLowpass)
+        #print data.shape
 
-#        output, a = _ni_support._get_output(None, data)
-#        _nd_image.correlate1d(data, weightsLowpass, 0, output, mode, 0,0)
-#        _nd_image.correlate1d(data, weightsLowpass, 1, output, mode, 0,0)
+        output, a = _ni_support._get_output(None, data)
+        _nd_image.correlate1d(data, weightsLowpass, 0, output, mode, 0,0)
+        _nd_image.correlate1d(output, weightsLowpass, 1, output, mode, 0,0)
+
+        #print numpy.absolute(a - a_).mean()
 
         #lowpass filter again to find background
-        b = ndimage.gaussian_filter(a, self.filterRadiusHighpass)
+        #b = ndimage.gaussian_filter(a, self.filterRadiusHighpass)
 
-#        output, b = _ni_support._get_output(None, data)
-#        _nd_image.correlate1d(data, weightsHighpass, 0, output, mode, 0,0)
-#        _nd_image.correlate1d(data, weightsHighpass, 1, output, mode, 0,0)
+        output, b = _ni_support._get_output(None, data)
+        _nd_image.correlate1d(data, weightsHighpass, 0, output, mode, 0,0)
+        _nd_image.correlate1d(output, weightsHighpass, 1, output, mode, 0,0)
 
         return a - b
 
