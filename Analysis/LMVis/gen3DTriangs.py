@@ -14,6 +14,33 @@ import delaunay
 from numpy import *
 #import matplotlib.delaunay
 
+from PYME.Analysis import SoftRend
+
+def calcMeanEdge(f):
+    #f = array(T.facets)
+    e = sqrt(((f[:,0,:] - f[:,1,:])**2).sum(1))
+    e[:] = e[:] +  sqrt(((f[:,0,:] - f[:,2,:])**2).sum(1))
+    e[:] = e[:] +  sqrt(((f[:,0,:] - f[:,3,:])**2).sum(1))
+    e[:] = e[:] +  sqrt(((f[:,1,:] - f[:,2,:])**2).sum(1))
+    e[:] = e[:] +  sqrt(((f[:,1,:] - f[:,3,:])**2).sum(1))
+    e[:] = e[:] +  sqrt(((f[:,2,:] - f[:,3,:])**2).sum(1))
+
+    return e/6.0
+
+
+def renderTetrahedra(im, x, y, z, scale = [1,1,1], pixelsize=[5,5,5]):
+    T = delaunay.Triangulation(array([x/scale[0],y/scale[1],z/scale[2]]).T.ravel(),3)
+
+    f = array(T.facets)
+
+    x_ = scale[0]*f[:,:,0]/pixelsize[0]
+    y_ = scale[1]*f[:,:,1]/pixelsize[1]
+    z_ = scale[2]*f[:,:,2]/pixelsize[2]
+
+    v = 1./calcMeanEdge(f)
+
+    SoftRend.drawTetrahedra(im, z_, x_, y_, v)
+
 
 def testObj():
     x = 5e3*((arange(270)%27)/9 + 0.1*random.randn(270))
