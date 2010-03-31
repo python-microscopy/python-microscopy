@@ -93,18 +93,16 @@ void drawTetrahedron (double* pImage, int sizeX, int sizeY, int sizeZ, double x0
     if (z1 > z3) { tmp=x1; x1=x3; x3=tmp; tmp=y1; y1=y3; y3=tmp; tmp=z1; z1=z3; z3=tmp;}
     if (z2 > z3) { tmp=x2; x2=x3; x3=tmp; tmp=y2; y2=y3; y3=tmp; tmp=z2; z2=z3; z3=tmp;}
 
-/*
-    if ((x0 < 0.0) || (x1 < 0.0) || (x2 < 0.0) || (x3 < 0.0)
-            || (y0 < 0.0) || (y1 < 0.0) || (y2 < 0.0) || (y3 < 0.0)
-            || (z0 < 0.0) || (z1 < 0.0) || (z2 < 0.0) || (z3 < 0.0)
-            || (x0 >= (double)sizeX) || (x1 >= (double)sizeX) || (x2 >= (double)sizeX) || (x3 >= (double)sizeX)
-            || (y0 >= (double)sizeY) || (y1 >= (double)sizeY) || (y2 >= (double)sizeY) || (y3 >= (double)sizeY)
+    if (//(x0 < 0.0) || (x1 < 0.0) || (x2 < 0.0) || (x3 < 0.0)
+            //|| (y0 < 0.0) || (y1 < 0.0) || (y2 < 0.0) || (y3 < 0.0)
+            (z0 < 0.0) || (z1 < 0.0) || (z2 < 0.0) || (z3 < 0.0)
+            //|| (x0 >= (double)sizeX) || (x1 >= (double)sizeX) || (x2 >= (double)sizeX) || (x3 >= (double)sizeX)
+            //|| (y0 >= (double)sizeY) || (y1 >= (double)sizeY) || (y2 >= (double)sizeY) || (y3 >= (double)sizeY)
             || (z0 >= (double)sizeZ) || (z1 >= (double)sizeZ) || (y2 >= (double)sizeZ) || (z3 >= (double)sizeZ)
             )
     {
         return; //drop any triangles which extend over the boundaries
     }
-*/
 
 
     //calculate gradient
@@ -134,7 +132,7 @@ void drawTetrahedron (double* pImage, int sizeX, int sizeY, int sizeZ, double x0
     y23 = y2;
     x23 = x2;
 
-    printf("z; %f, %f, %f, %f\n", z0, z1, z2, z3);
+    //printf("z; %f, %f, %f, %f\n", z0, z1, z2, z3);
 
     // Draw triangles
     for (z = (int)z0; z < (int)z1; z++)

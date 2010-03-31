@@ -14,12 +14,13 @@
 import wx
 import sys
 sys.path.append(".")
-import viewpanel
+import viewpanelN
 #import PYME.cSMI as example
 import numpy
 import scipy
 import tables
 import time
+from matplotlib import cm
 
 class DataWrap: #permit indexing with more dimensions larger than len(shape)
     def __init__(self, data):
@@ -48,6 +49,7 @@ class DataWrap: #permit indexing with more dimensions larger than len(shape)
     
     def __getitem__(self, keys):
         keys = list(keys)
+        #print keys
         for i in range(len(keys)):
             if not keys[i].__class__ == slice:
                 keys[i] = slice(keys[i],keys[i] + 1)
@@ -70,48 +72,60 @@ class DataWrap: #permit indexing with more dimensions larger than len(shape)
         if self.dim_1_is_z and len(numpy.mgrid[keys[0]]) == 1: #and keys[0].__class__ == slice
             r = r.T
         self.oldData = r
+        #print r.max()
         return r
         
 class DisplayOpts:
     UPRIGHT, ROT90 = range(2)
     SLICE_XY, SLICE_XZ, SLICE_YZ = range(3)
+    
     def __init__(self):
-        self.Chans = [0,0,0]
-	self.Gains = [1,1,1]
-	self.Offs = [0,0,0]
-	self.orientation = self.UPRIGHT
-	self.slice = self.SLICE_XY 
+        self.Chans = [0]
+        self.Gains = [1]
+        self.Offs = [0]
+        self.cmaps = [viewpanelN.fast_grey]
+        self.orientation = self.UPRIGHT
+        self.slice = self.SLICE_XY
+    
     def Optimise(self,data, zp = 0):
         if len(data.shape) == 2:
-            self.Offs = numpy.ones((3,), 'f')*data.min()
-            self.Gains =numpy.ones((3,), 'f')* 255.0/(data.max()- data.min())
+            self.Offs[0] = 1.*data.min()
+            self.Gains[0] =1./(data.max()- data.min())
         elif len(data.shape) ==3:
-            self.Offs = numpy.ones((3,), 'f')*data[:,:,zp].min()
-            self.Gains =numpy.ones((3,), 'f')* 255.0/(data[:,:,zp].max()- data[:,:,zp].min())
+            self.Offs[0] = 1.*data[:,:,zp].min()
+            self.Gains[0] =1./(data[:,:,zp].max()- data[:,:,zp].min())
         else:
-            for i in range(3):
+            for i in range(len(self.Chans)):
                 self.Offs[i] = data[:,:,zp,self.Chans[i]].min()
-                self.Gains[i] = 255.0/(data[:,:,zp,self.Chans[i]].max() - self.Offs[i])
+                self.Gains[i] = 1.0/(data[:,:,zp,self.Chans[i]].max() - self.Offs[i])
             
-class MyViewPanel(viewpanel.ViewPanel):
+class MyViewPanel(viewpanelN.ViewPanel):
     def __init__(self, parent, dstack = None):
-        viewpanel.ViewPanel.__init__(self, parent, -1)        
+        
         if (dstack == None):
-            #self.ds = example.CDataStack("test.kdf")
             scipy.zeros(10,10)
         else:
             self.ds = dstack
-        #if len(self.ds.shape) == 2:
-        #    self.ds = self.ds.reshape(self.ds.shape + (1,))
-        
-        #if len(self.ds.shape) == 3:
-        #    self.ds = self.ds.reshape(self.ds.shape + (1,))
-        self.ds = DataWrap(self.ds)
-        self.imagepanel.SetVirtualSize(wx.Size(self.ds.shape[0],self.ds.shape[1]))
+
         self.xp = 0
         self.yp=0
         self.zp=0
-        self.do =DisplayOpts()
+        
+        self.ds = DataWrap(self.ds)
+        self.do = DisplayOpts()
+
+        if (len(self.ds.shape) >3) and (self.ds.shape[3] >= 2):
+            self.do.Chans[1] = 1
+            if (self.ds.shape[3] >=3):
+                self.do.Chans[2] = 2
+        self.do.Optimise(self.ds, self.zp)
+
+        viewpanelN.ViewPanel.__init__(self, parent, -1)
+
+        self.imagepanel.SetVirtualSize(wx.Size(self.ds.shape[0],self.ds.shape[1]))
+        #self.imagepanel.SetSize(wx.Size(self.ds.shape[0],self.ds.shape[1]))
+        
+        
         if (len(self.ds.shape) >3) and (self.ds.shape[3] >= 2):
             self.do.Chans[1] = 1
             if (self.ds.shape[3] >=3):
@@ -127,23 +141,15 @@ class MyViewPanel(viewpanel.ViewPanel):
         self.psfROISize=[30,30,30]
 
         self.lastUpdateTime = 0
-        
-        
-        #self.rend = example.CLUT_RGBRenderer()
-        #self.rend.setDispOpts(self.do)
-        self.cbRedChan.Append("<none>")
-        self.cbGreenChan.Append("<none>")
-        self.cbBlueChan.Append("<none>")
-        for i in range(self.ds.shape[3]):
-            self.cbRedChan.Append('%i' % i)
-            self.cbGreenChan.Append('%i' % i)
-            self.cbBlueChan.Append('%i' % i)
+        self.lastFrameTime = 2e-3
+
         self.scale = 2
         self.crosshairs = True
         self.selection = True
         
         self.ResetSelection()
-        self.SetOpts()
+        #self.SetOpts()
+        self.optionspanel.RefreshHists()
         self.updating = 0
         self.showOptsPanel = 1
 
@@ -157,18 +163,18 @@ class MyViewPanel(viewpanel.ViewPanel):
         
         wx.EVT_RIGHT_DOWN(self.imagepanel, self.OnRightDown)
         wx.EVT_RIGHT_UP(self.imagepanel, self.OnRightUp)
-        wx.EVT_COMBOBOX(self,self.cbRedChan.GetId(), self.GetOpts)
-        wx.EVT_COMBOBOX(self,self.cbGreenChan.GetId(), self.GetOpts)
-        wx.EVT_COMBOBOX(self,self.cbBlueChan.GetId(), self.GetOpts)
-        wx.EVT_COMBOBOX(self,self.cbSlice.GetId(), self.GetOpts)
-        wx.EVT_COMBOBOX(self,self.cbScale.GetId(), self.GetOpts)
-        wx.EVT_TEXT(self,self.tRedGain.GetId(), self.GetOpts)
-        wx.EVT_TEXT(self,self.tRedOff.GetId(), self.GetOpts)
-        wx.EVT_TEXT(self,self.tGreenGain.GetId(), self.GetOpts)
-        wx.EVT_TEXT(self,self.tGreenOff.GetId(), self.GetOpts)
-        wx.EVT_TEXT(self,self.tBlueGain.GetId(), self.GetOpts)
-        wx.EVT_TEXT(self,self.tBlueOff.GetId(), self.GetOpts)
-        wx.EVT_BUTTON(self, self.bOptimise.GetId(), self.Optim)
+#        wx.EVT_COMBOBOX(self,self.cbRedChan.GetId(), self.GetOpts)
+#        wx.EVT_COMBOBOX(self,self.cbGreenChan.GetId(), self.GetOpts)
+#        wx.EVT_COMBOBOX(self,self.cbBlueChan.GetId(), self.GetOpts)
+#        wx.EVT_COMBOBOX(self,self.cbSlice.GetId(), self.GetOpts)
+#        wx.EVT_COMBOBOX(self,self.cbScale.GetId(), self.GetOpts)
+#        wx.EVT_TEXT(self,self.tRedGain.GetId(), self.GetOpts)
+#        wx.EVT_TEXT(self,self.tRedOff.GetId(), self.GetOpts)
+#        wx.EVT_TEXT(self,self.tGreenGain.GetId(), self.GetOpts)
+#        wx.EVT_TEXT(self,self.tGreenOff.GetId(), self.GetOpts)
+#        wx.EVT_TEXT(self,self.tBlueGain.GetId(), self.GetOpts)
+#        wx.EVT_TEXT(self,self.tBlueOff.GetId(), self.GetOpts)
+#        wx.EVT_BUTTON(self, self.bOptimise.GetId(), self.Optim)
         wx.EVT_BUTTON(self, self.bShowOpts.GetId(), self.ShowOpts)
         wx.EVT_ERASE_BACKGROUND(self.imagepanel, self.DoNix)
         wx.EVT_ERASE_BACKGROUND(self, self.DoNix)
@@ -208,7 +214,8 @@ class MyViewPanel(viewpanel.ViewPanel):
         
             
         self.ResetSelection()
-        self.SetOpts()
+        #self.SetOpts()
+
         self.Layout()
         self.Refresh()
         
@@ -228,6 +235,8 @@ class MyViewPanel(viewpanel.ViewPanel):
         dc.Clear()
                                      
         im = self.Render()
+
+        #print im.max()
         
         sc = pow(2.0,(self.scale-2))
         im.Rescale(im.GetWidth()*sc,im.GetHeight()*sc) 
@@ -375,10 +384,12 @@ class MyViewPanel(viewpanel.ViewPanel):
             
     def OnPaint(self,event):
         DC = wx.PaintDC(self.imagepanel)
-        if not time.time() > (self.lastUpdateTime + 2e-3): #avoid paint floods
+        if not time.time() > (self.lastUpdateTime + 5*self.lastFrameTime): #avoid paint floods
             if not self.refrTimer.IsRunning():
                 self.refrTimer.Start(.2, True) #make sure we do get a refresh after disposing of flood
             return
+
+        frameStartTime = time.time()
         self.imagepanel.PrepareDC(DC)
 
         x0,y0 = self.imagepanel.CalcUnscrolledPosition(0,0)
@@ -405,6 +416,8 @@ class MyViewPanel(viewpanel.ViewPanel):
             del MemBitmap
 
         self.lastUpdateTime = time.time()
+        self.lastFrameTime = self.lastUpdateTime - frameStartTime
+        #print self.lastFrameTime
             
     def OnWheel(self, event):
         rot = event.GetWheelRotation()
@@ -422,12 +435,14 @@ class MyViewPanel(viewpanel.ViewPanel):
             self.zp = max(0, self.zp - 1)
             if ('update' in dir(self.GetParent())):
                 self.GetParent().update()
+                self.optionspanel.RefreshHists()
             else:
                 self.imagepanel.Refresh()
         elif event.GetKeyCode() == wx.WXK_NEXT:
             self.zp = min(self.zp + 1, self.ds.shape[2] - 1)
             if ('update' in dir(self.GetParent())):
                 self.GetParent().update()
+                self.optionspanel.RefreshHists()
             else:
                 self.imagepanel.Refresh()
         elif event.GetKeyCode() == 74:
@@ -457,66 +472,66 @@ class MyViewPanel(viewpanel.ViewPanel):
         else:
             event.Skip()
         
-    def SetOpts(self,event=None):
-        self.cbRedChan.SetSelection(self.do.Chans[2] + 1)
-        self.cbGreenChan.SetSelection(self.do.Chans[1] + 1)
-        self.cbBlueChan.SetSelection(self.do.Chans[0] + 1)
-        self.tRedGain.SetValue(self.do.Gains[2].__str__())
-        self.tGreenGain.SetValue(self.do.Gains[1].__str__())
-        self.tBlueGain.SetValue(self.do.Gains[0].__str__())
-        self.tRedOff.SetValue(self.do.Offs[2].__str__())
-        self.tGreenOff.SetValue(self.do.Offs[1].__str__())
-        self.tBlueOff.SetValue(self.do.Offs[0].__str__())
-        if (self.do.slice == self.do.SLICE_XY):
-            if (self.do.orientation == self.do.UPRIGHT):
-                self.cbSlice.SetSelection(0)
-            else:
-                self.cbSlice.SetSelection(1)
-        elif (self.do.slice == self.do.SLICE_XZ):
-            self.cbSlice.SetSelection(2)
-        else:
-            self.cbSlice.SetSelection(3)
-        self.cbScale.SetSelection(self.scale)
+#    def SetOpts(self,event=None):
+#        self.cbRedChan.SetSelection(self.do.Chans[2] + 1)
+#        self.cbGreenChan.SetSelection(self.do.Chans[1] + 1)
+#        self.cbBlueChan.SetSelection(self.do.Chans[0] + 1)
+#        self.tRedGain.SetValue(self.do.Gains[2].__str__())
+#        self.tGreenGain.SetValue(self.do.Gains[1].__str__())
+#        self.tBlueGain.SetValue(self.do.Gains[0].__str__())
+#        self.tRedOff.SetValue(self.do.Offs[2].__str__())
+#        self.tGreenOff.SetValue(self.do.Offs[1].__str__())
+#        self.tBlueOff.SetValue(self.do.Offs[0].__str__())
+#        if (self.do.slice == self.do.SLICE_XY):
+#            if (self.do.orientation == self.do.UPRIGHT):
+#                self.cbSlice.SetSelection(0)
+#            else:
+#                self.cbSlice.SetSelection(1)
+#        elif (self.do.slice == self.do.SLICE_XZ):
+#            self.cbSlice.SetSelection(2)
+#        else:
+#            self.cbSlice.SetSelection(3)
+#        self.cbScale.SetSelection(self.scale)
         
     def GetOpts(self,event=None):
         if (self.updating == 0):
-            self.do.Chans[2]=(self.cbRedChan.GetSelection() - 1)
-            self.do.Chans[1]=(self.cbGreenChan.GetSelection() - 1)
-            self.do.Chans[0]=(self.cbBlueChan.GetSelection() - 1)
-            self.do.Gains[2]=(float(self.tRedGain.GetValue()))
-            self.do.Gains[1]=(float(self.tGreenGain.GetValue()))
-            self.do.Gains[0]=(float(self.tBlueGain.GetValue()))
-            self.do.Offs[2]=(float(self.tRedOff.GetValue()))
-            self.do.Offs[1]=(float(self.tGreenOff.GetValue()))
-            self.do.Offs[0]=(float(self.tBlueOff.GetValue()))
-            if (self.cbSlice.GetSelection() == 0):
-                self.do.slice =(self.do.SLICE_XY)
-                self.do.orientation = (self.do.UPRIGHT)
-            elif (self.cbSlice.GetSelection() == 1):
-                self.do.slice = (self.do.SLICE_XY)
-                self.do.orientation = (self.do.ROT90)
-            elif (self.cbSlice.GetSelection() == 2):
-                self.do.slice =(self.do.SLICE_XZ)
-                self.do.orientation=(self.do.UPRIGHT)
-            elif (self.cbSlice.GetSelection() == 3):
-                self.do.slice =(self.do.SLICE_YZ)
-                self.do.orientation  =self.do.UPRIGHT   
-            self.scale = self.cbScale.GetSelection()
+#            self.do.Chans[2]=(self.cbRedChan.GetSelection() - 1)
+#            self.do.Chans[1]=(self.cbGreenChan.GetSelection() - 1)
+#            self.do.Chans[0]=(self.cbBlueChan.GetSelection() - 1)
+#            self.do.Gains[2]=(float(self.tRedGain.GetValue()))
+#            self.do.Gains[1]=(float(self.tGreenGain.GetValue()))
+#            self.do.Gains[0]=(float(self.tBlueGain.GetValue()))
+#            self.do.Offs[2]=(float(self.tRedOff.GetValue()))
+#            self.do.Offs[1]=(float(self.tGreenOff.GetValue()))
+#            self.do.Offs[0]=(float(self.tBlueOff.GetValue()))
+#            if (self.cbSlice.GetSelection() == 0):
+#                self.do.slice =(self.do.SLICE_XY)
+#                self.do.orientation = (self.do.UPRIGHT)
+#            elif (self.cbSlice.GetSelection() == 1):
+#                self.do.slice = (self.do.SLICE_XY)
+#                self.do.orientation = (self.do.ROT90)
+#            elif (self.cbSlice.GetSelection() == 2):
+#                self.do.slice =(self.do.SLICE_XZ)
+#                self.do.orientation=(self.do.UPRIGHT)
+#            elif (self.cbSlice.GetSelection() == 3):
+#                self.do.slice =(self.do.SLICE_YZ)
+#                self.do.orientation  =self.do.UPRIGHT
+            #self.scale = self.cbScale.GetSelection()
             sc = pow(2.0,(self.scale-2))
             s = self.CalcImSize()
             self.imagepanel.SetVirtualSize(wx.Size(s[0]*sc,s[1]*sc))
 
-            if not event == None and event.GetId() in [self.cbSlice.GetId(), self.cbScale.GetId()]:
-                #recenter the view
-                if(self.do.slice == self.do.SLICE_XY):
-                    lx = self.xp
-                    ly = self.yp
-                elif(self.do.slice == self.do.SLICE_XZ):
-                    lx = self.xp
-                    ly = self.zp
-                elif(self.do.slice == self.do.SLICE_YZ):
-                    lx = self.yp
-                    ly = self.zp
+            #if not event == None and event.GetId() in [self.cbSlice.GetId(), self.cbScale.GetId()]:
+            #recenter the view
+            if(self.do.slice == self.do.SLICE_XY):
+                lx = self.xp
+                ly = self.yp
+            elif(self.do.slice == self.do.SLICE_XZ):
+                lx = self.xp
+                ly = self.zp
+            elif(self.do.slice == self.do.SLICE_YZ):
+                lx = self.yp
+                ly = self.zp
 
                 sx,sy =self.imagepanel.GetClientSize()
 
@@ -532,7 +547,8 @@ class MyViewPanel(viewpanel.ViewPanel):
     def Optim(self, event = None):
         self.do.Optimise(self.ds, int(self.zp))
         self.updating=1
-        self.SetOpts()
+        #self.SetOpts()
+        self.optionspanel.RefreshHists()
         self.Refresh()
         self.updating=0
         
@@ -654,6 +670,68 @@ class MyViewPanel(viewpanel.ViewPanel):
         self.selection_end_y = e_y
         self.selection_end_z = e_z
         
+#    def Render(self):
+#        x0,y0 = self.imagepanel.CalcUnscrolledPosition(0,0)
+#        sX, sY = self.imagepanel.Size
+#
+#        sc = pow(2.0,(self.scale-2))
+#        sX_ = int(sX/sc)
+#        sY_ = int(sY/sc)
+#        x0_ = int(x0/sc)
+#        y0_ = int(y0/sc)
+#
+#        #XY
+#        if self.do.slice == DisplayOpts.SLICE_XY:
+#            if self.do.Chans[0] < self.ds.shape[3]:
+#                r = (self.do.Gains[0]*(self.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.zp), self.do.Chans[0]] - self.do.Offs[0])).astype('uint8').squeeze().T
+#            else:
+#                r = numpy.zeros(ds.shape[:2], 'uint8').T
+#            if self.do.Chans[1] < self.ds.shape[3]:
+#                g = (self.do.Gains[1]*(self.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.zp), self.do.Chans[1]] - self.do.Offs[1])).astype('uint8').squeeze().T
+#            else:
+#                g = numpy.zeros(ds.shape[:2], 'uint8').T
+#            if self.do.Chans[2] < self.ds.shape[3]:
+#                b = (self.do.Gains[2]*(self.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.zp), self.do.Chans[2]] - self.do.Offs[2])).astype('uint8').squeeze().T
+#            else:
+#                b = numpy.zeros(ds.shape[:2], 'uint8').T
+#        #XZ
+#        elif self.do.slice == DisplayOpts.SLICE_XZ:
+#            if self.do.Chans[0] < self.ds.shape[3]:
+#                r = (self.do.Gains[0]*(self.ds[x0_:(x0_+sX_),int(self.yp),y0_:(y0_+sY_), self.do.Chans[0]] - self.do.Offs[0])).astype('uint8').squeeze().T
+#            else:
+#                r = numpy.zeros((ds.shape[0], ds.shape[2]), 'uint8').T
+#            if self.do.Chans[1] < self.ds.shape[3]:
+#                g = (self.do.Gains[1]*(self.ds[x0_:(x0_+sX_),int(self.yp),y0_:(y0_+sY_), self.do.Chans[1]] - self.do.Offs[1])).astype('uint8').squeeze().T
+#            else:
+#                g = numpy.zeros((ds.shape[0], ds.shape[2]), 'uint8').T
+#            if self.do.Chans[2] < self.ds.shape[3]:
+#                b = (self.do.Gains[2]*(self.ds[x0_:(x0_+sX_),int(self.yp),y0_:(y0_+sY_), self.do.Chans[2]] - self.do.Offs[2])).astype('uint8').squeeze().T
+#            else:
+#                b = numpy.zeros((ds.shape[0], ds.shape[2]), 'uint8'.T)
+#
+#        #YZ
+#        elif self.do.slice == DisplayOpts.SLICE_YZ:
+#            if self.do.Chans[0] < self.ds.shape[3]:
+#                r = (self.do.Gains[0]*(self.ds[int(self.xp),x0_:(x0_+sX_),y0_:(y0_+sY_), self.do.Chans[0]] - self.do.Offs[0])).astype('uint8').squeeze().T
+#            else:
+#                r = numpy.zeros((ds.shape[1], ds.shape[2]), 'uint8').T
+#            if self.do.Chans[1] < self.ds.shape[3]:
+#                g = (self.do.Gains[1]*(self.ds[int(self.xp),x0_:(x0_+sX_),y0_:(y0_+sY_), self.do.Chans[1]] - self.do.Offs[1])).astype('uint8').squeeze().T
+#            else:
+#                g = numpy.zeros((ds.shape[1], ds.shape[2]), 'uint8').T
+#            if self.do.Chans[2] < self.ds.shape[3]:
+#                b = (self.do.Gains[2]*(self.ds[int(self.xp),x0_:(x0_+sX_),y0_:(y0_+sY_), self.do.Chans[2]] - self.do.Offs[2])).astype('uint8').squeeze().T
+#            else:
+#                b = numpy.zeros((ds.shape[1], ds.shape[2]), 'uint8'.T)
+#        r = r.T
+#        g = g.T
+#        b = b.T
+#        r = r.reshape(r.shape + (1,))
+#        g = g.reshape(g.shape + (1,))
+#        b = b.reshape(b.shape + (1,))
+#        ima = numpy.concatenate((r,g,b), 2)
+#        return wx.ImageFromData(ima.shape[1], ima.shape[0], ima.ravel())
+
     def Render(self):
         x0,y0 = self.imagepanel.CalcUnscrolledPosition(0,0)
         sX, sY = self.imagepanel.Size
@@ -663,57 +741,76 @@ class MyViewPanel(viewpanel.ViewPanel):
         sY_ = int(sY/sc)
         x0_ = int(x0/sc)
         y0_ = int(y0/sc)
-        
+
         #XY
+        #ima = numpy.zeros((sX_, sY_, 3), 'uint8')
+
         if self.do.slice == DisplayOpts.SLICE_XY:
-            if self.do.Chans[0] < self.ds.shape[3]:
-                r = (self.do.Gains[0]*(self.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.zp), self.do.Chans[0]] - self.do.Offs[0])).astype('uint8').squeeze().T
-            else:
-                r = numpy.zeros(ds.shape[:2], 'uint8').T
-            if self.do.Chans[1] < self.ds.shape[3]:
-                g = (self.do.Gains[1]*(self.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.zp), self.do.Chans[1]] - self.do.Offs[1])).astype('uint8').squeeze().T
-            else:
-                g = numpy.zeros(ds.shape[:2], 'uint8').T
-            if self.do.Chans[2] < self.ds.shape[3]:
-                b = (self.do.Gains[2]*(self.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.zp), self.do.Chans[2]] - self.do.Offs[2])).astype('uint8').squeeze().T
-            else:
-                b = numpy.zeros(ds.shape[:2], 'uint8').T
+            ima = numpy.zeros((min(sY_, self.ds.shape[1]), min(sX_, self.ds.shape[0]), 3), 'uint8')
+            #ima = numpy.zeros((self.ds.shape[1], self.ds.shape[0], 3), 'uint8')
+#            if self.do.Chans[0] < self.ds.shape[3]:
+#                r = (self.do.Gains[0]*(self.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.zp), self.do.Chans[0]] - self.do.Offs[0])).astype('uint8').squeeze().T
+#            else:
+#                r = numpy.zeros(ds.shape[:2], 'uint8').T
+#            if self.do.Chans[1] < self.ds.shape[3]:
+#                g = (self.do.Gains[1]*(self.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.zp), self.do.Chans[1]] - self.do.Offs[1])).astype('uint8').squeeze().T
+#            else:
+#                g = numpy.zeros(ds.shape[:2], 'uint8').T
+#            if self.do.Chans[2] < self.ds.shape[3]:
+#                b = (self.do.Gains[2]*(self.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.zp), self.do.Chans[2]] - self.do.Offs[2])).astype('uint8').squeeze().T
+#            else:
+#                b = numpy.zeros(ds.shape[:2], 'uint8').T
+            for chan, offset, gain, cmap in zip(self.do.Chans, self.do.Offs, self.do.Gains, self.do.cmaps):
+                #print ima.shape, cmap(gain*self.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.zp), chan].squeeze() - offset)[:,:,:3].shape
+                #print (gain*(self.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.zp), chan] - offset).max()
+                ima[:] = ima[:] + 255*cmap(gain*(self.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.zp), chan].squeeze() - offset))[:,:,:3][:]
         #XZ
         elif self.do.slice == DisplayOpts.SLICE_XZ:
-            if self.do.Chans[0] < self.ds.shape[3]:
-                r = (self.do.Gains[0]*(self.ds[x0_:(x0_+sX_),int(self.yp),y0_:(y0_+sY_), self.do.Chans[0]] - self.do.Offs[0])).astype('uint8').squeeze().T
-            else:
-                r = numpy.zeros((ds.shape[0], ds.shape[2]), 'uint8').T
-            if self.do.Chans[1] < self.ds.shape[3]:
-                g = (self.do.Gains[1]*(self.ds[x0_:(x0_+sX_),int(self.yp),y0_:(y0_+sY_), self.do.Chans[1]] - self.do.Offs[1])).astype('uint8').squeeze().T
-            else:
-                g = numpy.zeros((ds.shape[0], ds.shape[2]), 'uint8').T
-            if self.do.Chans[2] < self.ds.shape[3]:
-                b = (self.do.Gains[2]*(self.ds[x0_:(x0_+sX_),int(self.yp),y0_:(y0_+sY_), self.do.Chans[2]] - self.do.Offs[2])).astype('uint8').squeeze().T
-            else:
-                b = numpy.zeros((ds.shape[0], ds.shape[2]), 'uint8'.T)
-        
+            ima = numpy.zeros((min(sY_, self.ds.shape[2]), min(sX_, self.ds.shape[0]), 3), 'uint8')
+            #ima = numpy.zeros((self.ds.shape[0], self.ds.shape[2], 3), 'uint8')
+#            if self.do.Chans[0] < self.ds.shape[3]:
+#                r = (self.do.Gains[0]*(self.ds[x0_:(x0_+sX_),int(self.yp),y0_:(y0_+sY_), self.do.Chans[0]] - self.do.Offs[0])).astype('uint8').squeeze().T
+#            else:
+#                r = numpy.zeros((ds.shape[0], ds.shape[2]), 'uint8').T
+#            if self.do.Chans[1] < self.ds.shape[3]:
+#                g = (self.do.Gains[1]*(self.ds[x0_:(x0_+sX_),int(self.yp),y0_:(y0_+sY_), self.do.Chans[1]] - self.do.Offs[1])).astype('uint8').squeeze().T
+#            else:
+#                g = numpy.zeros((ds.shape[0], ds.shape[2]), 'uint8').T
+#            if self.do.Chans[2] < self.ds.shape[3]:
+#                b = (self.do.Gains[2]*(self.ds[x0_:(x0_+sX_),int(self.yp),y0_:(y0_+sY_), self.do.Chans[2]] - self.do.Offs[2])).astype('uint8').squeeze().T
+#            else:
+#                b = numpy.zeros((ds.shape[0], ds.shape[2]), 'uint8'.T)
+
+            for chan, offset, gain, cmap in zip(self.do.Chans, self.do.Offs, self.do.Gains, self.do.cmaps):
+                ima[:] = ima[:] + 255*cmap(gain*(self.ds[x0_:(x0_+sX_),int(self.yp),y0_:(y0_+sY_), chan].squeeze() - offset))[:,:,:3][:]
+
         #YZ
         elif self.do.slice == DisplayOpts.SLICE_YZ:
-            if self.do.Chans[0] < self.ds.shape[3]:
-                r = (self.do.Gains[0]*(self.ds[int(self.xp),x0_:(x0_+sX_),y0_:(y0_+sY_), self.do.Chans[0]] - self.do.Offs[0])).astype('uint8').squeeze().T
-            else:
-                r = numpy.zeros((ds.shape[1], ds.shape[2]), 'uint8').T
-            if self.do.Chans[1] < self.ds.shape[3]:
-                g = (self.do.Gains[1]*(self.ds[int(self.xp),x0_:(x0_+sX_),y0_:(y0_+sY_), self.do.Chans[1]] - self.do.Offs[1])).astype('uint8').squeeze().T
-            else:
-                g = numpy.zeros((ds.shape[1], ds.shape[2]), 'uint8').T
-            if self.do.Chans[2] < self.ds.shape[3]:
-                b = (self.do.Gains[2]*(self.ds[int(self.xp),x0_:(x0_+sX_),y0_:(y0_+sY_), self.do.Chans[2]] - self.do.Offs[2])).astype('uint8').squeeze().T
-            else:
-                b = numpy.zeros((ds.shape[1], ds.shape[2]), 'uint8'.T)
-        r = r.T
-        g = g.T
-        b = b.T
-        r = r.reshape(r.shape + (1,))
-        g = g.reshape(g.shape + (1,))
-        b = b.reshape(b.shape + (1,))
-        ima = numpy.concatenate((r,g,b), 2)
+            ima = numpy.zeros((min(sY_, self.ds.shape[2]), min(sX_, self.ds.shape[1]), 3), 'uint8')
+            #ima = numpy.zeros((self.ds.shape[1], self.ds.shape[2], 3), 'uint8')
+#            if self.do.Chans[0] < self.ds.shape[3]:
+#                r = (self.do.Gains[0]*(self.ds[int(self.xp),x0_:(x0_+sX_),y0_:(y0_+sY_), self.do.Chans[0]] - self.do.Offs[0])).astype('uint8').squeeze().T
+#            else:
+#                r = numpy.zeros((ds.shape[1], ds.shape[2]), 'uint8').T
+#            if self.do.Chans[1] < self.ds.shape[3]:
+#                g = (self.do.Gains[1]*(self.ds[int(self.xp),x0_:(x0_+sX_),y0_:(y0_+sY_), self.do.Chans[1]] - self.do.Offs[1])).astype('uint8').squeeze().T
+#            else:
+#                g = numpy.zeros((ds.shape[1], ds.shape[2]), 'uint8').T
+#            if self.do.Chans[2] < self.ds.shape[3]:
+#                b = (self.do.Gains[2]*(self.ds[int(self.xp),x0_:(x0_+sX_),y0_:(y0_+sY_), self.do.Chans[2]] - self.do.Offs[2])).astype('uint8').squeeze().T
+#            else:
+#                b = numpy.zeros((ds.shape[1], ds.shape[2]), 'uint8'.T)
+
+            for chan, offset, gain, cmap in zip(self.do.Chans, self.do.Offs, self.do.Gains, self.do.cmaps):
+                ima[:] = ima[:] + 255*cmap(gain*(self.ds[int(self.xp),x0_:(x0_+sX_),y0_:(y0_+sY_), chan].squeeze() - offset))[:,:,:3][:]
+#        r = r.T
+#        g = g.T
+#        b = b.T
+#        r = r.reshape(r.shape + (1,))
+#        g = g.reshape(g.shape + (1,))
+#        b = b.reshape(b.shape + (1,))
+#        ima = numpy.concatenate((r,g,b), 2)
+        #print ima.max()
         return wx.ImageFromData(ima.shape[1], ima.shape[0], ima.ravel())
 
     def GetProfile(self,halfLength=10,axis = 2, pos=None, roi=[2,2], background=None):

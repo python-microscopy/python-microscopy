@@ -97,7 +97,7 @@ class DSViewFrame(wx.Frame):
 
     def update(self):
         self.vp.imagepanel.Refresh()
-        self.statusbar.SetStatusText('Slice No: (%d/%d)' % (self.vp.zp, self.vp.ds.shape[2]))
+        self.statusbar.SetStatusText('Slice No: (%d/%d)  x: %d  y: %d' % (self.vp.zp, self.vp.ds.shape[2], self.vp.xp, self.vp.yp))
 
     def saveStack(self, event=None):
         fdialog = wx.FileDialog(None, 'Save Data Stack as ...',
@@ -146,6 +146,12 @@ class DSViewFrame(wx.Frame):
             dvf = DSViewFrame(self.GetParent(), '--cropped--', ds2)
             dvf.Show()
 
+
+
+def View3D(data):
+    dvf = DSViewFrame(dstack = data)
+    dvf.Show()
+    return dvf
 
 
 class MyApp(wx.App):

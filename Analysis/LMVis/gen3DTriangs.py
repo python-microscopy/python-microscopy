@@ -27,6 +27,11 @@ def calcMeanEdge(f):
 
     return e/6.0
 
+def calcTetVolume(f):
+    f2 = f[:,:3,:] - f[:,3:,:]
+
+    return absolute((f2[:,0,:]*cross(f2[:,1,:], f2[:,2,:])).sum(1))/6.0
+
 
 def renderTetrahedra(im, x, y, z, scale = [1,1,1], pixelsize=[5,5,5]):
     T = delaunay.Triangulation(array([x/scale[0],y/scale[1],z/scale[2]]).T.ravel(),3)
@@ -37,9 +42,10 @@ def renderTetrahedra(im, x, y, z, scale = [1,1,1], pixelsize=[5,5,5]):
     y_ = scale[1]*f[:,:,1]/pixelsize[1]
     z_ = scale[2]*f[:,:,2]/pixelsize[2]
 
-    v = 1./calcMeanEdge(f)
+    #v = 1./(calcMeanEdge(f)**2)
+    v = 1./(1 + calcTetVolume(f))
 
-    SoftRend.drawTetrahedra(im, z_, x_, y_, v)
+    SoftRend.drawTetrahedra(im, x_, y_, z_, v)
 
 
 def testObj():
