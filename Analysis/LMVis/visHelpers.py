@@ -20,6 +20,8 @@ from PYME.Analysis.cModels.gauss_app import *
 from PYME.FileUtils import saveTiffStack
 from matplotlib import delaunay
 
+from math import floor
+
 import sys
 
 from PYME.Analysis import EdgeDB
@@ -36,11 +38,11 @@ try:
 except:
     multiProc = False
 
-def as_mp_shared(x):
-    a = multiprocessing.sharedctypes.RawArray('d', x.size)
-    a2 = numpy.ctypeslib.as_array(a)
-    a2[:] = x[:]
-    return a
+#def as_mp_shared(x):
+#    a = multiprocessing.sharedctypes.RawArray('d', x.size)
+#    a2 = numpy.ctypeslib.as_array(a)
+#    a2[:] = x[:]
+#    return a
 
 
 #if sys.platform == 'win32':
@@ -399,6 +401,35 @@ else:
 
         return im/n
 
+
+def rendJitTet(x,y,z,n,jsig, jsigz, mcp, imageBounds, pixelSize, zb,sliceSize=100):
+    import gen3DTriangs
+
+    sizeX = (imageBounds.x1 - imageBounds.x0)/pixelSize
+    sizeY = (imageBounds.y1 - imageBounds.y0)/pixelSize
+
+    x = (x - imageBounds.x0)/pixelSize
+    y = (y - imageBounds.y0)/pixelSize
+
+    jsig = jsig/pixelSize
+    jsigz = jsigz/sliceSize
+
+    z = (z - zb[0])/sliceSize
+
+    sizeZ  = floor((zb[1] + sliceSize - zb[0])/sliceSize)
+
+    im = numpy.zeros((sizeX, sizeY, sizeZ), order='F')
+
+    for i in range(n):
+        Imc = scipy.rand(len(x)) < mcp
+        if type(jsig) == numpy.ndarray:
+            #print jsig.shape, Imc.shape
+            jsig = jsig[Imc]
+            jsigz = jsigz[Imc]
+
+        gen3DTriangs.renderTetrahedra(im, x[Imc]+ jsig*scipy.randn(Imc.sum()), y[Imc]+ jsig*scipy.randn(Imc.sum()), z[Imc]+ jsigz*scipy.randn(Imc.sum()), scale = [1,1,1], pixelsize=[1,1,1])
+
+    return im/n
 
 
 def rendHist(x,y, imageBounds, pixelSize):

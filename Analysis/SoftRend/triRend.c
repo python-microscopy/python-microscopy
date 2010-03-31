@@ -93,14 +93,16 @@ void drawTetrahedron (double* pImage, int sizeX, int sizeY, int sizeZ, double x0
     if (z1 > z3) { tmp=x1; x1=x3; x3=tmp; tmp=y1; y1=y3; y3=tmp; tmp=z1; z1=z3; z3=tmp;}
     if (z2 > z3) { tmp=x2; x2=x3; x3=tmp; tmp=y2; y2=y3; y3=tmp; tmp=z2; z2=z3; z3=tmp;}
 
+
     if (//(x0 < 0.0) || (x1 < 0.0) || (x2 < 0.0) || (x3 < 0.0)
             //|| (y0 < 0.0) || (y1 < 0.0) || (y2 < 0.0) || (y3 < 0.0)
             (z0 < 0.0) || (z1 < 0.0) || (z2 < 0.0) || (z3 < 0.0)
             //|| (x0 >= (double)sizeX) || (x1 >= (double)sizeX) || (x2 >= (double)sizeX) || (x3 >= (double)sizeX)
             //|| (y0 >= (double)sizeY) || (y1 >= (double)sizeY) || (y2 >= (double)sizeY) || (y3 >= (double)sizeY)
-            || (z0 >= (double)sizeZ) || (z1 >= (double)sizeZ) || (y2 >= (double)sizeZ) || (z3 >= (double)sizeZ)
+            || (z0 >= (double)sizeZ) || (z1 >= (double)sizeZ) || (z2 >= (double)sizeZ) || (z3 >= (double)sizeZ)
             )
     {
+        //printf("drop: %f, %f, %f, %f\n", z0, z1, z2, z3);
         return; //drop any triangles which extend over the boundaries
     }
 
@@ -440,9 +442,9 @@ static PyObject * drawTetrahedra(PyObject *self, PyObject *args, PyObject *keywd
     }
 */
 
-    if (!PyArray_Check(odata) || !PyArray_ISCONTIGUOUS(odata))
+    if (!PyArray_Check(odata) || !PyArray_ISFORTRAN(odata))
     {
-        PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array");
+        PyErr_Format(PyExc_RuntimeError, "Expecting a fortran contiguous numpy array");
         return NULL;
     }
 
@@ -488,13 +490,13 @@ static PyObject * drawTetrahedra(PyObject *self, PyObject *args, PyObject *keywd
 
     //dims = PyArray_DIMS(odata);
 
-    sizeX = PyArray_DIM(odata, 0);
-    sizeY = PyArray_DIM(odata, 1);
+    sizeX = PyArray_DIM(odata, 1);
+    sizeY = PyArray_DIM(odata, 0);
     sizeZ = PyArray_DIM(odata, 2);
 
     N = PyArray_DIM(axs, 0);
 
-    //printf("dims: %d, %d\n", N, PyArray_DIM(axs, 1));
+    //printf("size: %d, %d, %d\n", sizeX, sizeY,sizeZ);
 
     //fix strides
     //out->strides[0] = sizeof(double);

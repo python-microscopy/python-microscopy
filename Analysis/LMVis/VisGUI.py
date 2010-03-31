@@ -1224,6 +1224,7 @@ class VisGUIFrame(wx.Frame):
 
         ID_GEN_3DHIST = wx.NewId()
         ID_GEN_3DGAUSS = wx.NewId()
+        ID_GEN_3DTRI = wx.NewId()
 
         ID_GEN_CURRENT = wx.NewId()
 
@@ -1309,6 +1310,7 @@ class VisGUIFrame(wx.Frame):
         gen_menu.AppendSeparator()
         gen_menu.Append(ID_GEN_3DHIST, "3D Histogram")
         gen_menu.Append(ID_GEN_3DGAUSS, "3D Gaussian")
+        gen_menu.Append(ID_GEN_3DTRI, "3D Triangulation")
 
         special_menu = wx.Menu()
         special_menu.Append(ID_GEN_SHIFTMAP, "Calculate &Shiftmap")
@@ -1358,6 +1360,7 @@ class VisGUIFrame(wx.Frame):
 
         self.Bind(wx.EVT_MENU, self.OnGen3DHistogram, id=ID_GEN_3DHIST)
         self.Bind(wx.EVT_MENU, self.OnGen3DGaussian, id=ID_GEN_3DGAUSS)
+        self.Bind(wx.EVT_MENU, self.OnGen3DTriangles, id=ID_GEN_3DTRI)
 
         self.Bind(wx.EVT_MENU, self.OnGenShiftmap, id=ID_GEN_SHIFTMAP)
         self.Bind(wx.EVT_MENU, self.OnCalcCorrDrift, id=ID_CORR_DRIFT)
@@ -1784,6 +1787,97 @@ class VisGUIFrame(wx.Frame):
                 jitValsZ = jitScaleZ*jitValsZ
 
                 im = visHelpers.rendGauss3D(self.colourFilter['x'],self.colourFilter['y'], self.colourFilter['z'], jitVals, jitValsZ, imb, pixelSize, dlg.getZBounds(), dlg.getZSliceThickness())
+
+                ims.append(GeneratedImage(im,imb, pixelSize ))
+
+            #imfc = imageView.ColourImageViewFrame(self, self.glCanvas)
+
+#            for im in ims:
+#                img = GeneratedImage(im,imb, pixelSize )
+#                imf = imageView.ImageViewFrame(self,img, self.glCanvas)
+#                self.generatedImages.append(imf)
+#                imf.Show()
+#
+#                imfc.ivp.ivps.append(imf.ivp)
+
+            imfc = imageView.MultiChannelImageViewFrame(self, self.glCanvas, ims, colours, title='Generated 3D Histogram - %3.1fnm bins' % pixelSize)
+
+            self.generatedImages.append(imfc)
+            imfc.Show()
+
+            self.colourFilter.setColour(oldC)
+
+        dlg.Destroy()
+
+    def OnGen3DTriangles(self, event):
+        bCurr = wx.BusyCursor()
+
+        jitVars = ['1.0']
+
+        jitVars += self.colourFilter.keys()
+        jitVars += self.GeneratedMeasures.keys()
+        jitVars += ['neighbourDistances']
+
+        if 'fitError_z0' in jitVars:
+            jvzi = jitVars.index('fitError_z0')
+        else:
+            jvzi = 0
+
+        dlg = genImageDialog.GenImageDialog(self, mode='3Dtriangles', colours=self.fluorSpecies.keys(), zvals = self.mapping['z'], jitterVariables = jitVars, jitterVarDefault=jitVars.index('neighbourDistances'), jitterVarDefaultZ=jvzi)
+
+        ret = dlg.ShowModal()
+
+        if ret == wx.ID_OK:
+            pixelSize = dlg.getPixelSize()
+            jitParamName = dlg.getJitterVariable()
+            jitScale = dlg.getJitterScale()
+            jitParamNameZ = dlg.getJitterVariableZ()
+            jitScaleZ = dlg.getJitterScaleZ()
+
+            status = statusLog.StatusLogger('Generating 3D Gaussian Image ...')
+
+            x0 = max(self.glCanvas.xmin, self.imageBounds.x0)
+            y0 = max(self.glCanvas.ymin, self.imageBounds.y0)
+            x1 = min(self.glCanvas.xmax, self.imageBounds.x1)
+            y1 = min(self.glCanvas.ymax, self.imageBounds.y1)
+
+            #imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
+            imb = ImageBounds(x0, y0, x1, y1)
+
+            colours =  dlg.getColour()
+            oldC = self.colourFilter.currentColour
+
+            ims = []
+
+            for c in  colours:
+                self.colourFilter.setColour(c)
+
+                if jitParamName == '1.0':
+                    jitVals = np.ones(self.colourFilter['x'].shape)
+                elif jitParamName in self.colourFilter.keys():
+                    jitVals = self.colourFilter[jitParamName]
+                else:
+                    if jitParamName == 'neighbourDistances':
+                        self.genNeighbourDists()
+
+                    if jitParamName in self.GeneratedMeasures.keys():
+                        jitVals = self.GeneratedMeasures[jitParamName]
+
+                if jitParamNameZ == '1.0':
+                    jitValsZ = np.ones(self.colourFilter['x'].shape)
+                elif jitParamNameZ in self.colourFilter.keys():
+                    jitValsZ = self.colourFilter[jitParamName]
+                else:
+                    if jitParamNameZ == 'neighbourDistances':
+                            self.genNeighbourDists()
+                            
+                    if jitParamNameZ in self.GeneratedMeasures.keys():
+                        jitValsZ = self.GeneratedMeasures[jitParamName]
+
+                jitVals = jitScale*jitVals
+                jitValsZ = jitScaleZ*jitValsZ
+
+                im = visHelpers.rendJitTet(self.colourFilter['x'],self.colourFilter['y'], self.colourFilter['z'], dlg.getNumSamples(), jitVals, jitValsZ, dlg.getMCProbability(), imb, pixelSize, dlg.getZBounds(), dlg.getZSliceThickness())
 
                 ims.append(GeneratedImage(im,imb, pixelSize ))
 

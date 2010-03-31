@@ -383,8 +383,9 @@ class MyViewPanel(viewpanelN.ViewPanel):
             dc.SetBrush(wx.NullBrush)
             
     def OnPaint(self,event):
+        self.painting = True
         DC = wx.PaintDC(self.imagepanel)
-        if not time.time() > (self.lastUpdateTime + 5*self.lastFrameTime): #avoid paint floods
+        if not time.time() > (self.lastUpdateTime + 2*self.lastFrameTime): #avoid paint floods
             if not self.refrTimer.IsRunning():
                 self.refrTimer.Start(.2, True) #make sure we do get a refresh after disposing of flood
             return
@@ -417,6 +418,8 @@ class MyViewPanel(viewpanelN.ViewPanel):
 
         self.lastUpdateTime = time.time()
         self.lastFrameTime = self.lastUpdateTime - frameStartTime
+
+        self.painting = False
         #print self.lastFrameTime
             
     def OnWheel(self, event):
@@ -433,18 +436,30 @@ class MyViewPanel(viewpanelN.ViewPanel):
     def OnKeyPress(self, event):
         if event.GetKeyCode() == wx.WXK_PRIOR:
             self.zp = max(0, self.zp - 1)
+            self.optionspanel.RefreshHists()
             if ('update' in dir(self.GetParent())):
                 self.GetParent().update()
-                self.optionspanel.RefreshHists()
             else:
-                self.imagepanel.Refresh()
+                if not self.painting:
+                    self.imagepanel.Refresh()
+                else:
+                    if not self.refrTimer.IsRunning():
+                        self.refrTimer.Start(.2, True)
+
         elif event.GetKeyCode() == wx.WXK_NEXT:
             self.zp = min(self.zp + 1, self.ds.shape[2] - 1)
+            self.optionspanel.RefreshHists()
             if ('update' in dir(self.GetParent())):
                 self.GetParent().update()
-                self.optionspanel.RefreshHists()
+                print 'upd'
             else:
-                self.imagepanel.Refresh()
+#                if not self.painting:
+#                    self.imagepanel.Refresh()
+#                else:
+                if not self.refrTimer.IsRunning():
+                    print 'upt'
+                    self.refrTimer.Start(.2, True)
+                
         elif event.GetKeyCode() == 74:
             self.xp = (self.xp - 1)
             if ('update' in dir(self.GetParent())):
@@ -763,7 +778,7 @@ class MyViewPanel(viewpanelN.ViewPanel):
             for chan, offset, gain, cmap in zip(self.do.Chans, self.do.Offs, self.do.Gains, self.do.cmaps):
                 #print ima.shape, cmap(gain*self.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.zp), chan].squeeze() - offset)[:,:,:3].shape
                 #print (gain*(self.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.zp), chan] - offset).max()
-                ima[:] = ima[:] + 255*cmap(gain*(self.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.zp), chan].squeeze() - offset))[:,:,:3][:]
+                ima[:] = ima[:] + (255*cmap(gain*(self.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.zp), chan].squeeze() - offset))[:,:,:3]).astype('b')[:]
         #XZ
         elif self.do.slice == DisplayOpts.SLICE_XZ:
             ima = numpy.zeros((min(sY_, self.ds.shape[2]), min(sX_, self.ds.shape[0]), 3), 'uint8')

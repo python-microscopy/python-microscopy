@@ -38,7 +38,7 @@ class GenImageDialog(wx.Dialog):
         
 
         #jitter parameter for gaussian and triangles
-        if mode in ['gaussian', 'triangles', '3Dgaussian']:
+        if mode in ['gaussian', 'triangles', '3Dgaussian', '3Dtriangles']:
             sizer2 = wx.BoxSizer(wx.HORIZONTAL)
             sizer2.Add(wx.StaticText(self, -1, jitterPhrase), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
@@ -54,7 +54,7 @@ class GenImageDialog(wx.Dialog):
             sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
 
         #jitter parameter for gaussian in z
-        if mode == '3Dgaussian':
+        if mode in  ['3Dgaussian', '3Dtriangles']:
             sizer2 = wx.BoxSizer(wx.HORIZONTAL)
             sizer2.Add(wx.StaticText(self, -1, 'Z Std. Dev. [nm]:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
@@ -70,7 +70,7 @@ class GenImageDialog(wx.Dialog):
             sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
 
         #MC subsampling parameter for triangles
-        if mode == 'triangles':
+        if mode in ['triangles', '3Dtriangles']:
             sizer2 = wx.BoxSizer(wx.HORIZONTAL)
             sizer2.Add(wx.StaticText(self, -1, 'MC subsampling probability:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
@@ -89,13 +89,14 @@ class GenImageDialog(wx.Dialog):
             sizer2 = wx.BoxSizer(wx.HORIZONTAL)
             #sizer2.Add(wx.StaticText(self, -1, 'Use software rendereing:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
+        if mode in ['triangles']:
             self.cbTriangSoftRender = wx.CheckBox(self, -1, 'Use software rendering')
             self.cbTriangSoftRender.SetValue(True)
             sizer2.Add(self.cbTriangSoftRender, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
             sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
 
-        if mode in ['3Dhistogram', '3Dgaussian']:
+        if mode in ['3Dhistogram', '3Dgaussian', '3Dtriangles']:
             sizer2 = wx.BoxSizer(wx.HORIZONTAL)
             sizer2.Add(wx.StaticText(self, -1, 'Z slice thickness [nm]:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
