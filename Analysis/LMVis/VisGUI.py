@@ -1879,7 +1879,7 @@ class VisGUIFrame(wx.Frame):
 
                 im = visHelpers.rendJitTet(self.colourFilter['x'],self.colourFilter['y'], self.colourFilter['z'], dlg.getNumSamples(), jitVals, jitValsZ, dlg.getMCProbability(), imb, pixelSize, dlg.getZBounds(), dlg.getZSliceThickness())
 
-                ims.append(GeneratedImage(im,imb, pixelSize ))
+                ims.append(GeneratedImage(im,imb, pixelSize,  dlg.getZSliceThickness()))
 
             #imfc = imageView.ColourImageViewFrame(self, self.glCanvas)
 

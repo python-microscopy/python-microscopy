@@ -86,6 +86,7 @@ class DisplayOpts:
         self.cmaps = [viewpanelN.fast_grey]
         self.orientation = self.UPRIGHT
         self.slice = self.SLICE_XY
+        self.aspects = [1.,1.,1.]
     
     def Optimise(self,data, zp = 0):
         if len(data.shape) == 2:
@@ -100,7 +101,7 @@ class DisplayOpts:
                 self.Gains[i] = 1.0/(data[:,:,zp,self.Chans[i]].max() - self.Offs[i])
             
 class MyViewPanel(viewpanelN.ViewPanel):
-    def __init__(self, parent, dstack = None):
+    def __init__(self, parent, dstack = None, aspect=None):
         
         if (dstack == None):
             scipy.zeros(10,10)
@@ -110,9 +111,17 @@ class MyViewPanel(viewpanelN.ViewPanel):
         self.xp = 0
         self.yp=0
         self.zp=0
+
+        self.aspect = 1.0
         
         self.ds = DataWrap(self.ds)
         self.do = DisplayOpts()
+
+        if not aspect == None:
+            if scipy.isscalar(aspect):
+                self.do.aspects[2] = aspect
+            elif len(aspect) == 3:
+                self.do.aspects = aspect
 
         if (len(self.ds.shape) >3) and (self.ds.shape[3] >= 2):
             self.do.Chans[1] = 1
@@ -239,7 +248,7 @@ class MyViewPanel(viewpanelN.ViewPanel):
         #print im.max()
         
         sc = pow(2.0,(self.scale-2))
-        im.Rescale(im.GetWidth()*sc,im.GetHeight()*sc) 
+        im.Rescale(im.GetWidth()*sc,im.GetHeight()*sc*self.aspect)
         #dc.DrawBitmap(wx.BitmapFromImage(im),wx.Point(0,0))
 
         x0,y0 = self.imagepanel.CalcUnscrolledPosition(0,0)
@@ -267,7 +276,7 @@ class MyViewPanel(viewpanelN.ViewPanel):
             #dc.DrawLine((0, ly*sc), (im.GetWidth(), ly*sc))
             #dc.DrawLine((lx*sc, 0), (lx*sc, im.GetHeight()))
             if (self.do.orientation == self.do.UPRIGHT):
-                dc.DrawLine(0, ly*sc - y0, sX, ly*sc - y0)
+                dc.DrawLine(0, ly*sc*self.aspect - y0, sX, ly*sc*self.aspect - y0)
                 dc.DrawLine(lx*sc - x0, 0, lx*sc - x0, sY)
             else:
                 dc.DrawLine(0, lx*sc - y0, sX, lx*sc - y0)
@@ -300,7 +309,7 @@ class MyViewPanel(viewpanelN.ViewPanel):
             
             #(lx*sc,ly*sc, (hx-lx)*sc,(hy-ly)*sc)
             if (self.do.orientation == self.do.UPRIGHT):
-                dc.DrawRectangle(lx*sc - x0,ly*sc - y0, (hx-lx)*sc,(hy-ly)*sc)
+                dc.DrawRectangle(lx*sc - x0,ly*sc*self.aspect - y0, (hx-lx)*sc,(hy-ly)*sc*self.aspect)
             else:
                 dc.DrawRectangle(ly*sc - x0,lx*sc - y0, (hy-ly)*sc,(hx-lx)*sc)
             dc.SetPen(wx.NullPen)
@@ -314,10 +323,10 @@ class MyViewPanel(viewpanelN.ViewPanel):
                     dc.DrawRectangle(sc*p[0]-self.psfROISize[0]*sc - x0,sc*p[1] - self.psfROISize[1]*sc - y0, 2*self.psfROISize[0]*sc,2*self.psfROISize[1]*sc)
             elif(self.do.slice == self.do.SLICE_XZ):
                 for p in self.psfROIs:
-                    dc.DrawRectangle(sc*p[0]-self.psfROISize[0]*sc - x0,sc*p[2] - self.psfROISize[2]*sc - y0, 2*self.psfROISize[0]*sc,2*self.psfROISize[2]*sc)
+                    dc.DrawRectangle(sc*p[0]-self.psfROISize[0]*sc - x0,sc*p[2]*self.aspect - self.psfROISize[2]*sc*self.aspect - y0, 2*self.psfROISize[0]*sc,2*self.psfROISize[2]*sc*self.aspect)
             elif(self.do.slice == self.do.SLICE_YZ):
                 for p in self.psfROIs:
-                    dc.DrawRectangle(sc*p[1]-self.psfROISize[1]*sc - x0,sc*p[2] - self.psfROISize[2]*sc - y0, 2*self.psfROISize[1]*sc,2*self.psfROISize[2]*sc)
+                    dc.DrawRectangle(sc*p[1]-self.psfROISize[1]*sc - x0,sc*p[2]*self.aspect - self.psfROISize[2]*sc*self.aspect - y0, 2*self.psfROISize[1]*sc,2*self.psfROISize[2]*sc*self.aspect)
 
 
         if len(self.points) > 0:
@@ -343,11 +352,11 @@ class MyViewPanel(viewpanelN.ViewPanel):
 
             dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('BLUE'),0))
             for p in pNFoc:
-                dc.DrawRectangle(sc*p[0]-2*sc - x0,sc*p[1] - 2*sc - y0, 4*sc,4*sc)
+                dc.DrawRectangle(sc*p[0]-2*sc - x0,sc*p[1]*self.aspect - 2*sc*self.aspect - y0, 4*sc,4*sc*self.aspect)
 
             dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),0))
             for p in pFoc:
-                dc.DrawRectangle(sc*p[0]-2*sc - x0,sc*p[1] - 2*sc - y0, 4*sc,4*sc)
+                dc.DrawRectangle(sc*p[0]-2*sc - x0,sc*p[1]*self.aspect - 2*sc*self.aspect - y0, 4*sc,4*sc*self.aspect)
 
 #            elif(self.do.slice == self.do.SLICE_XZ):
 #                pFoc = self.points[abs(self.points[:,1] - self.yp) < 1]
@@ -541,20 +550,23 @@ class MyViewPanel(viewpanelN.ViewPanel):
             if(self.do.slice == self.do.SLICE_XY):
                 lx = self.xp
                 ly = self.yp
+                self.aspect = self.do.aspects[1]/self.do.aspects[0]
             elif(self.do.slice == self.do.SLICE_XZ):
                 lx = self.xp
                 ly = self.zp
+                self.aspect = self.do.aspects[2]/self.do.aspects[0]
             elif(self.do.slice == self.do.SLICE_YZ):
                 lx = self.yp
                 ly = self.zp
+                self.aspect = self.do.aspects[2]/self.do.aspects[1]
 
-                sx,sy =self.imagepanel.impanel.GetClientSize()
+            sx,sy =self.imagepanel.impanel.GetClientSize()
 
-                #self.imagepanel.SetScrollbars(20,20,s[0]*sc/20,s[1]*sc/20,min(0, lx*sc - sx/2)/20, min(0,ly*sc - sy/2)/20)
-                ppux, ppuy = self.imagepanel.GetScrollPixelsPerUnit()
-                #self.imagepanel.SetScrollPos(wx.HORIZONTAL, max(0, lx*sc - sx/2)/ppux)
-                #self.imagepanel.SetScrollPos(wx.VERTICAL, max(0, ly*sc - sy/2)/ppuy)
-                self.imagepanel.Scroll(max(0, lx*sc - sx/2)/ppux, max(0, ly*sc - sy/2)/ppuy)
+            #self.imagepanel.SetScrollbars(20,20,s[0]*sc/20,s[1]*sc/20,min(0, lx*sc - sx/2)/20, min(0,ly*sc - sy/2)/20)
+            ppux, ppuy = self.imagepanel.GetScrollPixelsPerUnit()
+            #self.imagepanel.SetScrollPos(wx.HORIZONTAL, max(0, lx*sc - sx/2)/ppux)
+            #self.imagepanel.SetScrollPos(wx.VERTICAL, max(0, ly*sc - sy/2)/ppuy)
+            self.imagepanel.Scroll(max(0, lx*sc - sx/2)/ppux, max(0, ly*sc*self.aspect - sy/2)/ppuy)
 
             self.imagepanel.impanel.Refresh()
             #self.Refresh()
@@ -599,13 +611,13 @@ class MyViewPanel(viewpanelN.ViewPanel):
         sc = pow(2.0,(self.scale-2))
         if (self.do.slice == self.do.SLICE_XY):
             self.xp =int(pos[0]/sc)
-            self.yp = int(pos[1]/sc)
+            self.yp = int(pos[1]/(sc*self.aspect))
         elif (self.do.slice == self.do.SLICE_XZ):
             self.xp =int(pos[0]/sc)
-            self.zp =int(pos[1]/sc)
+            self.zp =int(pos[1]/(sc*self.aspect))
         elif (self.do.slice == self.do.SLICE_YZ):
             self.yp =int(pos[0]/sc)
-            self.zp =int(pos[1]/sc)
+            self.zp =int(pos[1]/(sc*self.aspect))
         if ('update' in dir(self.GetParent())):
              self.GetParent().update()
         else:
@@ -639,13 +651,13 @@ class MyViewPanel(viewpanelN.ViewPanel):
         sc = pow(2.0,(self.scale-2))
         if (self.do.slice == self.do.SLICE_XY):
             self.selection_begin_x = int(pos[0]/sc)
-            self.selection_begin_y = int(pos[1]/sc)
+            self.selection_begin_y = int(pos[1]/(sc*self.aspect))
         elif (self.do.slice == self.do.SLICE_XZ):
             self.selection_begin_x = int(pos[0]/sc)
-            self.selection_begin_z = int(pos[1]/sc)
+            self.selection_begin_z = int(pos[1]/(sc*self.aspect))
         elif (self.do.slice == self.do.SLICE_YZ):
             self.selection_begin_y = int(pos[0]/sc)
-            self.selection_begin_z = int(pos[1]/sc)
+            self.selection_begin_z = int(pos[1]/(sc*self.aspect))
             
     def OnRightUp(self,event):
         dc = wx.ClientDC(self.imagepanel.impanel)
@@ -655,13 +667,13 @@ class MyViewPanel(viewpanelN.ViewPanel):
         sc = pow(2.0,(self.scale-2))
         if (self.do.slice == self.do.SLICE_XY):
             self.selection_end_x = int(pos[0]/sc)
-            self.selection_end_y = int(pos[1]/sc)
+            self.selection_end_y = int(pos[1]/(sc*self.aspect))
         elif (self.do.slice == self.do.SLICE_XZ):
             self.selection_end_x = int(pos[0]/sc)
-            self.selection_end_z = int(pos[1]/sc)
+            self.selection_end_z = int(pos[1]/(sc*self.aspect))
         elif (self.do.slice == self.do.SLICE_YZ):
             self.selection_end_y = int(pos[0]/sc)
-            self.selection_end_z = int(pos[1]/sc)
+            self.selection_end_z = int(pos[1]/(sc*self.aspect))
         if ('update' in dir(self.GetParent())):
              self.GetParent().update()
         else:
@@ -753,9 +765,9 @@ class MyViewPanel(viewpanelN.ViewPanel):
 
         sc = pow(2.0,(self.scale-2))
         sX_ = int(sX/sc)
-        sY_ = int(sY/sc)
+        sY_ = int(sY/(sc*self.aspect))
         x0_ = int(x0/sc)
-        y0_ = int(y0/sc)
+        y0_ = int(y0/(sc*self.aspect))
 
         #XY
         #ima = numpy.zeros((sX_, sY_, 3), 'uint8')

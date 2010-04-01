@@ -258,7 +258,7 @@ class ScrolledImagePanel(wx.Panel):
 #        pass
 
     def GetScrollPixelsPerUnit(self):
-        return 1
+        return (1,1)
 
     def OnScrollX(self,event):
         self.xOff = event.GetPosition()
