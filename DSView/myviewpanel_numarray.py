@@ -440,11 +440,11 @@ class MyViewPanel(viewpanelN.ViewPanel):
             if ('update' in dir(self.GetParent())):
                 self.GetParent().update()
             else:
-                if not self.painting:
-                    self.imagepanel.impanel.Refresh()
-                else:
-                    if not self.refrTimer.IsRunning():
-                        self.refrTimer.Start(.2, True)
+                #if not self.painting:
+                self.imagepanel.impanel.Refresh()
+                #else:
+                #    if not self.refrTimer.IsRunning():
+                #        self.refrTimer.Start(.2, True)
 
         elif event.GetKeyCode() == wx.WXK_NEXT:
             self.zp = min(self.zp + 1, self.ds.shape[2] - 1)
@@ -453,12 +453,12 @@ class MyViewPanel(viewpanelN.ViewPanel):
                 self.GetParent().update()
                 #print 'upd'
             else:
-                if not self.painting:
-                    self.imagepanel.impanel.Refresh()
-                else:
-                    if not self.refrTimer.IsRunning():
+                #if not self.painting:
+                self.imagepanel.impanel.Refresh()
+                #else:
+                #    if not self.refrTimer.IsRunning():
                         #print 'upt'
-                        self.refrTimer.Start(.2, True)
+                #        self.refrTimer.Start(.2, True)
                 
         elif event.GetKeyCode() == 74:
             self.xp = (self.xp - 1)
