@@ -121,10 +121,6 @@ class OptionsPanel(wx.Panel):
         ind = self.cIds.index(event.GetId())
 
         cmn = event.GetString()
-
-#        if self.cmap_menu.IsChecked(self.cbIds[ind]):
-#            cmn = cmn + '_r'
-
         if cmn == 'fastGrey':
             self.parent.do.cmaps[ind] = fast_grey
         else:
@@ -141,292 +137,35 @@ class OptionsPanel(wx.Panel):
 
 
 class ImagePanel(wx.Panel):
-    def __init__(self, *args, **kwargs):
-        wx.Panel.__init__(self, *args, **kwargs)
+    def __init__(self, parent, *args, **kwargs):
+        wx.Panel.__init__(self, parent, *args, **kwargs)
 
-        #wx.EVT_ERASE_BACKGROUND(self, self.doNix)
-        #wx.EVT_PAINT(self, self.doNix)
-
-        gridSizer = wx.FlexGridSizer(2)
-
-        self.impanel = wx.Panel(self, -1)
-        gridSizer.append(self.impanel, 1, wx.EXPAND, 0)
-
-        self.scrollY = wx.ScrollBar(self, -1)
-        gridSizer.append(self.scrollY, 1, wx.EXPAND, 0)
-
-        self.scrollX = wx.ScrollBar(self, -1)
-        gridSizer.append(self.scrollX, 1, wx.EXPAND, 0)
+        self.parent = parent
 
 
-    def doNix(self, event):
+        wx.EVT_PAINT(self, self.OnPaint)
+        wx.EVT_ERASE_BACKGROUND(self, self.DoNix)
+
+    def DoNix(self, event):
         pass
-
-    def CalcUnscrolledPosition(self, x, y):
-        pass
-
-    def SetVirtualSize(size):
-        pass
-
-    def Render(self):
-        x0,y0 = self.imagepanel.CalcUnscrolledPosition(0,0)
-        sX, sY = self.imagepanel.Size
-
-        sc = pow(2.0,(self.scale-2))
-        sX_ = int(sX/sc)
-        sY_ = int(sY/sc)
-        x0_ = int(x0/sc)
-        y0_ = int(y0/sc)
-
-        #XY
-        #ima = numpy.zeros((sX_, sY_, 3), 'uint8')
-
-        if self.do.slice == DisplayOpts.SLICE_XY:
-            ima = numpy.zeros((min(sY_, self.ds.shape[1]), min(sX_, self.ds.shape[0]), 3), 'uint8')
-            #ima = numpy.zeros((self.ds.shape[1], self.ds.shape[0], 3), 'uint8')
-#            if self.do.Chans[0] < self.ds.shape[3]:
-#                r = (self.do.Gains[0]*(self.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.zp), self.do.Chans[0]] - self.do.Offs[0])).astype('uint8').squeeze().T
-#            else:
-#                r = numpy.zeros(ds.shape[:2], 'uint8').T
-#            if self.do.Chans[1] < self.ds.shape[3]:
-#                g = (self.do.Gains[1]*(self.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.zp), self.do.Chans[1]] - self.do.Offs[1])).astype('uint8').squeeze().T
-#            else:
-#                g = numpy.zeros(ds.shape[:2], 'uint8').T
-#            if self.do.Chans[2] < self.ds.shape[3]:
-#                b = (self.do.Gains[2]*(self.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.zp), self.do.Chans[2]] - self.do.Offs[2])).astype('uint8').squeeze().T
-#            else:
-#                b = numpy.zeros(ds.shape[:2], 'uint8').T
-            for chan, offset, gain, cmap in zip(self.do.Chans, self.do.Offs, self.do.Gains, self.do.cmaps):
-                #print ima.shape, cmap(gain*self.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.zp), chan].squeeze() - offset)[:,:,:3].shape
-                #print (gain*(self.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.zp), chan] - offset).max()
-                ima[:] = ima[:] + (255*cmap(gain*(self.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.zp), chan].squeeze() - offset))[:,:,:3]).astype('b')[:]
-        #XZ
-        elif self.do.slice == DisplayOpts.SLICE_XZ:
-            ima = numpy.zeros((min(sY_, self.ds.shape[2]), min(sX_, self.ds.shape[0]), 3), 'uint8')
-            #ima = numpy.zeros((self.ds.shape[0], self.ds.shape[2], 3), 'uint8')
-#            if self.do.Chans[0] < self.ds.shape[3]:
-#                r = (self.do.Gains[0]*(self.ds[x0_:(x0_+sX_),int(self.yp),y0_:(y0_+sY_), self.do.Chans[0]] - self.do.Offs[0])).astype('uint8').squeeze().T
-#            else:
-#                r = numpy.zeros((ds.shape[0], ds.shape[2]), 'uint8').T
-#            if self.do.Chans[1] < self.ds.shape[3]:
-#                g = (self.do.Gains[1]*(self.ds[x0_:(x0_+sX_),int(self.yp),y0_:(y0_+sY_), self.do.Chans[1]] - self.do.Offs[1])).astype('uint8').squeeze().T
-#            else:
-#                g = numpy.zeros((ds.shape[0], ds.shape[2]), 'uint8').T
-#            if self.do.Chans[2] < self.ds.shape[3]:
-#                b = (self.do.Gains[2]*(self.ds[x0_:(x0_+sX_),int(self.yp),y0_:(y0_+sY_), self.do.Chans[2]] - self.do.Offs[2])).astype('uint8').squeeze().T
-#            else:
-#                b = numpy.zeros((ds.shape[0], ds.shape[2]), 'uint8'.T)
-
-            for chan, offset, gain, cmap in zip(self.do.Chans, self.do.Offs, self.do.Gains, self.do.cmaps):
-                ima[:] = ima[:] + 255*cmap(gain*(self.ds[x0_:(x0_+sX_),int(self.yp),y0_:(y0_+sY_), chan].squeeze() - offset))[:,:,:3][:]
-
-        #YZ
-        elif self.do.slice == DisplayOpts.SLICE_YZ:
-            ima = numpy.zeros((min(sY_, self.ds.shape[2]), min(sX_, self.ds.shape[1]), 3), 'uint8')
-            #ima = numpy.zeros((self.ds.shape[1], self.ds.shape[2], 3), 'uint8')
-#            if self.do.Chans[0] < self.ds.shape[3]:
-#                r = (self.do.Gains[0]*(self.ds[int(self.xp),x0_:(x0_+sX_),y0_:(y0_+sY_), self.do.Chans[0]] - self.do.Offs[0])).astype('uint8').squeeze().T
-#            else:
-#                r = numpy.zeros((ds.shape[1], ds.shape[2]), 'uint8').T
-#            if self.do.Chans[1] < self.ds.shape[3]:
-#                g = (self.do.Gains[1]*(self.ds[int(self.xp),x0_:(x0_+sX_),y0_:(y0_+sY_), self.do.Chans[1]] - self.do.Offs[1])).astype('uint8').squeeze().T
-#            else:
-#                g = numpy.zeros((ds.shape[1], ds.shape[2]), 'uint8').T
-#            if self.do.Chans[2] < self.ds.shape[3]:
-#                b = (self.do.Gains[2]*(self.ds[int(self.xp),x0_:(x0_+sX_),y0_:(y0_+sY_), self.do.Chans[2]] - self.do.Offs[2])).astype('uint8').squeeze().T
-#            else:
-#                b = numpy.zeros((ds.shape[1], ds.shape[2]), 'uint8'.T)
-
-            for chan, offset, gain, cmap in zip(self.do.Chans, self.do.Offs, self.do.Gains, self.do.cmaps):
-                ima[:] = ima[:] + 255*cmap(gain*(self.ds[int(self.xp),x0_:(x0_+sX_),y0_:(y0_+sY_), chan].squeeze() - offset))[:,:,:3][:]
-#        r = r.T
-#        g = g.T
-#        b = b.T
-#        r = r.reshape(r.shape + (1,))
-#        g = g.reshape(g.shape + (1,))
-#        b = b.reshape(b.shape + (1,))
-#        ima = numpy.concatenate((r,g,b), 2)
-        #print ima.max()
-        return wx.ImageFromData(ima.shape[1], ima.shape[0], ima.ravel())
-
-    def DoPaint(self, dc):
-        #dc = wx.PaintDC(self.imagepanel)
-        #self.imagepanel.PrepareDC(dc)
-        #dc.BeginDrawing()
-        #mdc = wx.MemoryDC(dc)
-
-        #s = self.CalcImSize()
-        #im = wx.EmptyImage(s[0],s[1])
-        #bmp = im.GetDataBuffer()
-        #self.rend.pyRender(bmp,self.ds)
-
-        #print self.imagepanel.CalcUnscrolledPosition(0,0)
-
-        dc.Clear()
-
-        im = self.Render()
-
-        #print im.max()
-
-        sc = pow(2.0,(self.scale-2))
-        im.Rescale(im.GetWidth()*sc,im.GetHeight()*sc)
-        #dc.DrawBitmap(wx.BitmapFromImage(im),wx.Point(0,0))
-
-        x0,y0 = self.imagepanel.CalcUnscrolledPosition(0,0)
-        dc.DrawBitmap(wx.BitmapFromImage(im),-sc/2,-sc/2)
-        #mdc.SelectObject(wx.BitmapFromImage(self.im))
-        #mdc.DrawBitmap(wx.BitmapFromImage(self.im),wx.Point(0,0))
-        #dc.Blit(0,0,im.GetWidth(), im.GetHeight(),mdc,0,0)
-        #dc.EndDrawing()
-
-        #sX, sY = self.imagepanel.GetVirtualSize()
-        sX, sY = im.GetWidth(), im.GetHeight()
-
-        if self.crosshairs:
-            dc.SetPen(wx.Pen(wx.CYAN,0))
-            if(self.do.slice == self.do.SLICE_XY):
-                lx = self.xp
-                ly = self.yp
-            elif(self.do.slice == self.do.SLICE_XZ):
-                lx = self.xp
-                ly = self.zp
-            elif(self.do.slice == self.do.SLICE_YZ):
-                lx = self.yp
-                ly = self.zp
-
-            #dc.DrawLine((0, ly*sc), (im.GetWidth(), ly*sc))
-            #dc.DrawLine((lx*sc, 0), (lx*sc, im.GetHeight()))
-            if (self.do.orientation == self.do.UPRIGHT):
-                dc.DrawLine(0, ly*sc - y0, sX, ly*sc - y0)
-                dc.DrawLine(lx*sc - x0, 0, lx*sc - x0, sY)
-            else:
-                dc.DrawLine(0, lx*sc - y0, sX, lx*sc - y0)
-                dc.DrawLine(ly*sc - x0, 0, ly*sc - x0, sY)
-            dc.SetPen(wx.NullPen)
-
-        if self.selection:
-            dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('YELLOW'),0))
-            dc.SetBrush(wx.TRANSPARENT_BRUSH)
-            if(self.do.slice == self.do.SLICE_XY):
-                lx = self.selection_begin_x
-                ly = self.selection_begin_y
-                hx = self.selection_end_x
-                hy = self.selection_end_y
-            elif(self.do.slice == self.do.SLICE_XZ):
-                lx = self.selection_begin_x
-                ly = self.selection_begin_z
-                hx = self.selection_end_x
-                hy = self.selection_end_z
-            elif(self.do.slice == self.do.SLICE_YZ):
-                lx = self.selection_begin_y
-                ly = self.selection_begin_z
-                hx = self.selection_end_y
-                hy = self.selection_end_z
-
-            #dc.DrawLine((0, ly*sc), (im.GetWidth(), ly*sc))
-            #dc.DrawLine((lx*sc, 0), (lx*sc, im.GetHeight()))
-            #dc.DrawLine(lx, ly*sc, im.GetWidth(), ly*sc)
-            #dc.DrawLine(lx*sc, 0, lx*sc, im.GetHeight())
-
-            #(lx*sc,ly*sc, (hx-lx)*sc,(hy-ly)*sc)
-            if (self.do.orientation == self.do.UPRIGHT):
-                dc.DrawRectangle(lx*sc - x0,ly*sc - y0, (hx-lx)*sc,(hy-ly)*sc)
-            else:
-                dc.DrawRectangle(ly*sc - x0,lx*sc - y0, (hy-ly)*sc,(hx-lx)*sc)
-            dc.SetPen(wx.NullPen)
-            dc.SetBrush(wx.NullBrush)
-
-        if (len(self.psfROIs) > 0):
-            dc.SetBrush(wx.TRANSPARENT_BRUSH)
-            dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),0))
-            if(self.do.slice == self.do.SLICE_XY):
-                for p in self.psfROIs:
-                    dc.DrawRectangle(sc*p[0]-self.psfROISize[0]*sc - x0,sc*p[1] - self.psfROISize[1]*sc - y0, 2*self.psfROISize[0]*sc,2*self.psfROISize[1]*sc)
-            elif(self.do.slice == self.do.SLICE_XZ):
-                for p in self.psfROIs:
-                    dc.DrawRectangle(sc*p[0]-self.psfROISize[0]*sc - x0,sc*p[2] - self.psfROISize[2]*sc - y0, 2*self.psfROISize[0]*sc,2*self.psfROISize[2]*sc)
-            elif(self.do.slice == self.do.SLICE_YZ):
-                for p in self.psfROIs:
-                    dc.DrawRectangle(sc*p[1]-self.psfROISize[1]*sc - x0,sc*p[2] - self.psfROISize[2]*sc - y0, 2*self.psfROISize[1]*sc,2*self.psfROISize[2]*sc)
-
-
-        if len(self.points) > 0:
-            #if self.pointsMode == 'confoc':
-            pointTol = self.pointTolNFoc[self.pointMode]
-            if(self.do.slice == self.do.SLICE_XY):
-                pFoc = self.points[abs(self.points[:,2] - self.zp) < 1][:,:2]
-                pNFoc = self.points[abs(self.points[:,2] - self.zp) < pointTol[0]][:,:2]
-
-            elif(self.do.slice == self.do.SLICE_XZ):
-                pFoc = self.points[abs(self.points[:,1] - self.yp) < 1][:, ::2]
-                pNFoc = self.points[abs(self.points[:,1] - self.yp) < pointTol[1]][:,::2]
-
-            else:#(self.do.slice == self.do.SLICE_YZ):
-                pFoc = self.points[abs(self.points[:,0] - self.xp) < 1][:, 1:]
-                pNFoc = self.points[abs(self.points[:,0] - self.xp) < pointTol[2]][:,1:]
-
-            #pFoc = numpy.atleast_1d(pFoc)
-            #pNFoc = numpy.atleast_1d(pNFoc)
-
-
-            dc.SetBrush(wx.TRANSPARENT_BRUSH)
-
-            dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('BLUE'),0))
-            for p in pNFoc:
-                dc.DrawRectangle(sc*p[0]-2*sc - x0,sc*p[1] - 2*sc - y0, 4*sc,4*sc)
-
-            dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),0))
-            for p in pFoc:
-                dc.DrawRectangle(sc*p[0]-2*sc - x0,sc*p[1] - 2*sc - y0, 4*sc,4*sc)
-
-#            elif(self.do.slice == self.do.SLICE_XZ):
-#                pFoc = self.points[abs(self.points[:,1] - self.yp) < 1]
-#                pNFoc = self.points[abs(self.points[:,1] - self.yp) < pointTol[1]]
-#
-#
-#                dc.SetBrush(wx.TRANSPARENT_BRUSH)
-#
-#                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('BLUE'),0))
-#                for p in pNFoc:
-#                    dc.DrawRectangle(sc*p[0]-2*sc,sc*p[2] - 2*sc, 4*sc,4*sc)
-#
-#                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),0))
-#                for p in pFoc:
-#                    dc.DrawRectangle(sc*p[0]-2*sc,sc*p[2] - 2*sc, 4*sc,4*sc)
-#
-#            else:#(self.do.slice == self.do.SLICE_YZ):
-#                pFoc = self.points[abs(self.points[:,0] - self.xp) < 1]
-#                pNFoc = self.points[abs(self.points[:,0] - self.xp) < pointTol[2] ]
-#
-#
-#                dc.SetBrush(wx.TRANSPARENT_BRUSH)
-#
-#                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('BLUE'),0))
-#                for p in pNFoc:
-#                    dc.DrawRectangle(sc*p[1]-2*sc,sc*p[2] - 2*sc, 4*sc,4*sc)
-#
-#                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),0))
-#                for p in pFoc:
-#                    dc.DrawRectangle(sc*p[1]-2*sc,sc*p[2] - 2*sc, 4*sc,4*sc)
-
-            dc.SetPen(wx.NullPen)
-            dc.SetBrush(wx.NullBrush)
 
     def OnPaint(self,event):
-        self.painting = True
-        DC = wx.PaintDC(self.imagepanel)
-        if not time.time() > (self.lastUpdateTime + 2*self.lastFrameTime): #avoid paint floods
-            if not self.refrTimer.IsRunning():
-                self.refrTimer.Start(.2, True) #make sure we do get a refresh after disposing of flood
-            return
+        
+        #self.painting = True
+        DC = wx.PaintDC(self)
+#        if not time.time() > (self.lastUpdateTime + 2*self.lastFrameTime): #avoid paint floods
+#            if not self.refrTimer.IsRunning():
+#                self.refrTimer.Start(.2, True) #make sure we do get a refresh after disposing of flood
+#            return
 
-        frameStartTime = time.time()
-        self.imagepanel.PrepareDC(DC)
+        #frameStartTime = time.time()
 
-        x0,y0 = self.imagepanel.CalcUnscrolledPosition(0,0)
+        self.PrepareDC(DC)
+
+        #x0,y0 = self.parent.CalcUnscrolledPosition(0,0)
 
         #s = self.imagepanel.GetVirtualSize()
-        s = self.imagepanel.GetClientSize()
+        s = self.GetClientSize()
         MemBitmap = wx.EmptyBitmap(s.GetWidth(), s.GetHeight())
         #del DC
         MemDC = wx.MemoryDC()
@@ -436,21 +175,111 @@ class ImagePanel(wx.Panel):
             #DC.Clear()
             #Perform(WM_ERASEBKGND, MemDC, MemDC);
             #Message.DC := MemDC;
-            self.DoPaint(MemDC);
+            self.parent.parent.DoPaint(MemDC);
             #Message.DC := 0;
             #DC.BlitXY(0, 0, s.GetWidth(), s.GetHeight(), MemDC, 0, 0)
-            DC.Blit(x0, y0, s.GetWidth(), s.GetHeight(), MemDC, 0, 0)
+            DC.Blit(0, 0, s.GetWidth(), s.GetHeight(), MemDC, 0, 0)
             DC.EndDrawing()
         finally:
             #MemDC.SelectObject(OldBitmap)
             del MemDC
             del MemBitmap
 
-        self.lastUpdateTime = time.time()
-        self.lastFrameTime = self.lastUpdateTime - frameStartTime
+        #self.lastUpdateTime = time.time()
+        #self.lastFrameTime = self.lastUpdateTime - frameStartTime
 
-        self.painting = False
+        #self.painting = False
 
+
+
+
+class ScrolledImagePanel(wx.Panel):
+    def __init__(self, parent, *args, **kwargs):
+        wx.Panel.__init__(self, parent, *args, **kwargs)
+
+        self.parent = parent
+        
+        self.imSize = (0,0)
+        self.xOff = 0
+        self.yOff = 0
+
+        self.scrollRangeX = 0
+        self.scrollRangeY = 0
+
+        gridSizer = wx.FlexGridSizer(2)
+
+        self.impanel = ImagePanel(self, -1, size = self.Size)
+        gridSizer.Add(self.impanel, 1, wx.EXPAND, 0)
+
+        self.scrollY = wx.ScrollBar(self, -1, style=wx.SB_VERTICAL)
+        gridSizer.Add(self.scrollY, 0, wx.EXPAND, 0)
+
+        self.scrollX = wx.ScrollBar(self, -1)
+        gridSizer.Add(self.scrollX, 0, wx.EXPAND, 0)
+
+        gridSizer.AddGrowableRow(0)
+        gridSizer.AddGrowableCol(0)
+
+        self.SetSizerAndFit(gridSizer)
+
+        self.scrollX.Bind(wx.EVT_COMMAND_SCROLL, self.OnScrollX)
+        self.scrollY.Bind(wx.EVT_COMMAND_SCROLL, self.OnScrollY)
+
+        wx.EVT_SIZE(self, self.OnSize)
+
+
+    def CalcUnscrolledPosition(self, x, y):
+        return x + self.xOff, y + self.yOff
+
+    def SetVirtualSize(self,size):
+        self.imSize = size
+        
+        self.RefreshScrollbars()
+
+
+    def RefreshScrollbars(self):
+        self.scrollRangeX = max(0, self.imSize[0] - self.impanel.Size[0])
+        self.xOff = min(self.xOff, self.scrollRangeX)
+        self.scrollX.SetScrollbar(self.xOff, max(1,  self.scrollRangeX*self.impanel.Size[0]/max(1, self.imSize[0])), self.scrollRangeX, 10)
+
+        self.scrollRangeY = max(0, self.imSize[1] - self.impanel.Size[1])
+        self.yOff = min(self.yOff, self.scrollRangeY)
+        self.scrollY.SetScrollbar(self.yOff, max(1,  self.scrollRangeY*self.impanel.Size[1]/max(1, self.imSize[1])), self.scrollRangeY, 10)
+
+#        if self.imSize[0] < self.impanel.Size[0]: #don't need scrollbar
+#            self.scrollX.Hide()
+#        else:
+#            self.scrollX.Show()
+
+        self.impanel.Refresh()
+
+#    def GetClientSize(self):
+#        return self.impanel.Get
+#        pass
+
+    def GetScrollPixelsPerUnit(self):
+        return 1
+
+    def OnScrollX(self,event):
+        self.xOff = event.GetPosition()
+
+        self.impanel.Refresh()
+
+    def OnScrollY(self,event):
+        self.yOff = event.GetPosition()
+        print self.yOff
+
+        self.impanel.Refresh()
+
+    def OnSize(self, event):
+        self.RefreshScrollbars()
+        event.Skip()
+
+    def Scroll(self, dx, dy):
+        self.xOff += dx
+        self.yOff += dy
+
+        self.RefreshScrollbars()
 
 
 class ViewPanel(wx.Panel):
@@ -460,15 +289,16 @@ class ViewPanel(wx.Panel):
 
         vpsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.imagepanel = ImagePanel(self, -1, size=(self.ds.shape[0],self.ds.shape[1]), style=wx.SUNKEN_BORDER|wx.TAB_TRAVERSAL)
-        self.imagepanel.SetScrollRate(10, 10)
+        self.imagepanel = ScrolledImagePanel(self, -1, style=wx.SUNKEN_BORDER|wx.TAB_TRAVERSAL)
+        #self.imagepanel.SetMinSize((50,50))
+        #self.imagepanel.SetScrollRate(10, 10)
         vpsizer.Add(self.imagepanel, 1, wx.EXPAND, 0)
 
         self.bShowOpts = wx.Button(self, -1, "", size=wx.Size(7,-1))
         vpsizer.Add(self.bShowOpts, 0, wx.EXPAND, 0)
         
-        #self.optionspanel = OptionsPanel(self, -1)
-        self.optionspanel = wx.ScrolledWindow(self, -1)
+        self.optionspanel = OptionsPanel(self, -1)
+        #self.optionspanel = wx.ScrolledWindow(self, -1)
         #self.optionspanel.SetScrollRate(10, 10)
         vpsizer.Add(self.optionspanel, 0, wx.EXPAND, 0)
 

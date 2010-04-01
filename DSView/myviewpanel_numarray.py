@@ -156,13 +156,13 @@ class MyViewPanel(viewpanelN.ViewPanel):
         self.refrTimer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.OnRefrTimer)
 
-        wx.EVT_PAINT(self.imagepanel, self.OnPaint)
+        #wx.EVT_PAINT(self.imagepanel.impanel, self.OnPaint)
         wx.EVT_MOUSEWHEEL(self, self.OnWheel)
-        wx.EVT_KEY_DOWN(self.imagepanel, self.OnKeyPress)
-        wx.EVT_LEFT_UP(self.imagepanel, self.OnLeftClick)
+        wx.EVT_KEY_DOWN(self.imagepanel.impanel, self.OnKeyPress)
+        wx.EVT_LEFT_UP(self.imagepanel.impanel, self.OnLeftClick)
         
-        wx.EVT_RIGHT_DOWN(self.imagepanel, self.OnRightDown)
-        wx.EVT_RIGHT_UP(self.imagepanel, self.OnRightUp)
+        wx.EVT_RIGHT_DOWN(self.imagepanel.impanel, self.OnRightDown)
+        wx.EVT_RIGHT_UP(self.imagepanel.impanel, self.OnRightUp)
 #        wx.EVT_COMBOBOX(self,self.cbRedChan.GetId(), self.GetOpts)
 #        wx.EVT_COMBOBOX(self,self.cbGreenChan.GetId(), self.GetOpts)
 #        wx.EVT_COMBOBOX(self,self.cbBlueChan.GetId(), self.GetOpts)
@@ -176,7 +176,7 @@ class MyViewPanel(viewpanelN.ViewPanel):
 #        wx.EVT_TEXT(self,self.tBlueOff.GetId(), self.GetOpts)
 #        wx.EVT_BUTTON(self, self.bOptimise.GetId(), self.Optim)
         wx.EVT_BUTTON(self, self.bShowOpts.GetId(), self.ShowOpts)
-        wx.EVT_ERASE_BACKGROUND(self.imagepanel, self.DoNix)
+        wx.EVT_ERASE_BACKGROUND(self.imagepanel.impanel, self.DoNix)
         wx.EVT_ERASE_BACKGROUND(self, self.DoNix)
 
     def OnRefrTimer(self, event):
@@ -391,12 +391,12 @@ class MyViewPanel(viewpanelN.ViewPanel):
             return
 
         frameStartTime = time.time()
-        self.imagepanel.PrepareDC(DC)
+        self.imagepanel.impanel.PrepareDC(DC)
 
         x0,y0 = self.imagepanel.CalcUnscrolledPosition(0,0)
         
         #s = self.imagepanel.GetVirtualSize()
-        s = self.imagepanel.GetClientSize()
+        s = self.imagepanel.impanel.GetClientSize()
         MemBitmap = wx.EmptyBitmap(s.GetWidth(), s.GetHeight())
         #del DC
         MemDC = wx.MemoryDC()
@@ -431,7 +431,7 @@ class MyViewPanel(viewpanelN.ViewPanel):
         if ('update' in dir(self.GetParent())):
              self.GetParent().update()
         else:
-            self.imagepanel.Refresh()
+            self.imagepanel.impanel.Refresh()
     
     def OnKeyPress(self, event):
         if event.GetKeyCode() == wx.WXK_PRIOR:
@@ -441,7 +441,7 @@ class MyViewPanel(viewpanelN.ViewPanel):
                 self.GetParent().update()
             else:
                 if not self.painting:
-                    self.imagepanel.Refresh()
+                    self.imagepanel.impanel.Refresh()
                 else:
                     if not self.refrTimer.IsRunning():
                         self.refrTimer.Start(.2, True)
@@ -451,39 +451,39 @@ class MyViewPanel(viewpanelN.ViewPanel):
             self.optionspanel.RefreshHists()
             if ('update' in dir(self.GetParent())):
                 self.GetParent().update()
-                print 'upd'
+                #print 'upd'
             else:
-#                if not self.painting:
-#                    self.imagepanel.Refresh()
-#                else:
-                if not self.refrTimer.IsRunning():
-                    print 'upt'
-                    self.refrTimer.Start(.2, True)
+                if not self.painting:
+                    self.imagepanel.impanel.Refresh()
+                else:
+                    if not self.refrTimer.IsRunning():
+                        #print 'upt'
+                        self.refrTimer.Start(.2, True)
                 
         elif event.GetKeyCode() == 74:
             self.xp = (self.xp - 1)
             if ('update' in dir(self.GetParent())):
                 self.GetParent().update()
             else:
-                self.imagepanel.Refresh()
+                self.imagepanel.impanel.Refresh()
         elif event.GetKeyCode() == 76:
             self.xp +=1
             if ('update' in dir(self.GetParent())):
                 self.GetParent().update()
             else:
-                self.imagepanel.Refresh()
+                self.imagepanel.impanel.Refresh()
         elif event.GetKeyCode() == 73:
             self.yp += 1
             if ('update' in dir(self.GetParent())):
                 self.GetParent().update()
             else:
-                self.imagepanel.Refresh()
+                self.imagepanel.impanel.Refresh()
         elif event.GetKeyCode() == 75:
             self.yp -= 1
             if ('update' in dir(self.GetParent())):
                 self.GetParent().update()
             else:
-                self.imagepanel.Refresh()
+                self.imagepanel.impanel.Refresh()
         else:
             event.Skip()
         
@@ -548,7 +548,7 @@ class MyViewPanel(viewpanelN.ViewPanel):
                 lx = self.yp
                 ly = self.zp
 
-                sx,sy =self.imagepanel.GetClientSize()
+                sx,sy =self.imagepanel.impanel.GetClientSize()
 
                 #self.imagepanel.SetScrollbars(20,20,s[0]*sc/20,s[1]*sc/20,min(0, lx*sc - sx/2)/20, min(0,ly*sc - sy/2)/20)
                 ppux, ppuy = self.imagepanel.GetScrollPixelsPerUnit()
@@ -556,7 +556,7 @@ class MyViewPanel(viewpanelN.ViewPanel):
                 #self.imagepanel.SetScrollPos(wx.VERTICAL, max(0, ly*sc - sy/2)/ppuy)
                 self.imagepanel.Scroll(max(0, lx*sc - sx/2)/ppux, max(0, ly*sc - sy/2)/ppuy)
 
-            self.imagepanel.Refresh()
+            self.imagepanel.impanel.Refresh()
             #self.Refresh()
             
     def Optim(self, event = None):
@@ -592,8 +592,8 @@ class MyViewPanel(viewpanelN.ViewPanel):
             self.Layout()
             
     def OnLeftClick(self,event):
-        dc = wx.ClientDC(self.imagepanel)
-        self.imagepanel.PrepareDC(dc)
+        dc = wx.ClientDC(self.imagepanel.impanel)
+        self.imagepanel.impanel.PrepareDC(dc)
         pos = event.GetLogicalPosition(dc)
         #print pos
         sc = pow(2.0,(self.scale-2))
@@ -609,7 +609,7 @@ class MyViewPanel(viewpanelN.ViewPanel):
         if ('update' in dir(self.GetParent())):
              self.GetParent().update()
         else:
-            self.imagepanel.Refresh()
+            self.imagepanel.impanel.Refresh()
 
     def PointsHitTest(self):
         if len(self.points) > 0:
@@ -632,8 +632,8 @@ class MyViewPanel(viewpanelN.ViewPanel):
 
             
     def OnRightDown(self,event):
-        dc = wx.ClientDC(self.imagepanel)
-        self.imagepanel.PrepareDC(dc)
+        dc = wx.ClientDC(self.imagepanel.impanel)
+        self.imagepanel.impanel.PrepareDC(dc)
         pos = event.GetLogicalPosition(dc)
         print pos
         sc = pow(2.0,(self.scale-2))
@@ -648,8 +648,8 @@ class MyViewPanel(viewpanelN.ViewPanel):
             self.selection_begin_z = int(pos[1]/sc)
             
     def OnRightUp(self,event):
-        dc = wx.ClientDC(self.imagepanel)
-        self.imagepanel.PrepareDC(dc)
+        dc = wx.ClientDC(self.imagepanel.impanel)
+        self.imagepanel.impanel.PrepareDC(dc)
         pos = event.GetLogicalPosition(dc)
         print pos
         sc = pow(2.0,(self.scale-2))
@@ -665,7 +665,7 @@ class MyViewPanel(viewpanelN.ViewPanel):
         if ('update' in dir(self.GetParent())):
              self.GetParent().update()
         else:
-            self.imagepanel.Refresh()
+            self.imagepanel.impanel.Refresh()
             
     def ResetSelection(self):
         self.selection_begin_x = 0
@@ -749,7 +749,7 @@ class MyViewPanel(viewpanelN.ViewPanel):
 
     def Render(self):
         x0,y0 = self.imagepanel.CalcUnscrolledPosition(0,0)
-        sX, sY = self.imagepanel.Size
+        sX, sY = self.imagepanel.impanel.Size
 
         sc = pow(2.0,(self.scale-2))
         sX_ = int(sX/sc)

@@ -1208,13 +1208,13 @@ class DSViewFrame(wx.Frame):
 
     def OnCalibrateSplitter(self, event):
         self.cFitType.SetSelection(self.fitFactories.index('SplitterShiftEstFR'))
-        self.tBackgroundFrames.SetValue('0')
+        self.tBackgroundFrames.SetValue('0:0')
         self.cbSubtractBackground.SetValue(False)
         self.tThreshold.SetValue('2')
 
     def OnStandard2D(self, event):
         self.cFitType.SetSelection(self.fitFactories.index('LatGaussFitFR'))
-        self.tBackgroundFrames.SetValue('10')
+        self.tBackgroundFrames.SetValue('-10:0')
         self.cbSubtractBackground.SetValue(True)
         self.tThreshold.SetValue('0.6')
 

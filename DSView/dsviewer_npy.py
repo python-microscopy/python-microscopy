@@ -28,8 +28,8 @@ import wx.py.crust
 from myviewpanel_numarray import MyViewPanel
 
 class DSViewFrame(wx.Frame):
-    def __init__(self, parent=None, title='', dstack = None, log = None, filename = None):
-        wx.Frame.__init__(self,parent, -1, title)
+    def __init__(self, parent=None, title='', dstack = None, log = None, filename = None, size = (-1,-1)):
+        wx.Frame.__init__(self,parent, -1, title, size=size)
 
         self.ds = dstack
         self.log = log
@@ -149,7 +149,8 @@ class DSViewFrame(wx.Frame):
 
 
 def View3D(data):
-    dvf = DSViewFrame(dstack = data)
+    dvf = DSViewFrame(dstack = data, size=(500, 500))
+    dvf.SetSize((500,500))
     dvf.Show()
     return dvf
 
