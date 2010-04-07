@@ -533,6 +533,14 @@ class DSViewFrame(wx.Frame):
 
         hsizer.Add(self.tBackgroundFrames, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
         vsizer.Add(hsizer, 0,wx.ALL, 0)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        hsizer.Add(wx.StaticText(pan, -1, 'Debounce r:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tDebounceRadius = wx.TextCtrl(pan, -1, value='4', size=(50, -1))
+
+        hsizer.Add(self.tDebounceRadius, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        vsizer.Add(hsizer, 0,wx.ALL, 0)
         
         pan.SetSizer(vsizer)
         vsizer.Fit(pan)
@@ -568,6 +576,8 @@ class DSViewFrame(wx.Frame):
         #self.mdh.setEntry('Analysis.NumBGFrames', bgFrames)
         self.mdh.setEntry('Analysis.BGRange', bgFrames)
         #self.md.setEntry('Analysis.NumBGFrames', bgFrames)
+
+        self.mdh.setEntry('DebounceRadius', int(self.tDebounceRadius.GetValue()))
 
         if fitMod.startswith('SplitterFit') and not 'chroma.dx' in self.mdh.getEntryNames():
             fdialog = wx.FileDialog(None, 'Please select shift field to use ...',
@@ -926,6 +936,8 @@ class DSViewFrame(wx.Frame):
         startAt = int(self.tStartAt.GetValue())
         driftEst = self.cbDrift.GetValue()
         fitMod = self.cFitType.GetStringSelection()
+
+        self.mdh.setEntry('DebounceRadius', int(self.tDebounceRadius.GetValue()))
 
         if fitMod.startswith('PsfFit') and not 'PSFFile' in self.mdh.getEntryNames():
             fdialog = wx.FileDialog(None, 'Please select PSF to use ...',
