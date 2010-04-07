@@ -577,7 +577,7 @@ class DSViewFrame(wx.Frame):
         self.mdh.setEntry('Analysis.BGRange', bgFrames)
         #self.md.setEntry('Analysis.NumBGFrames', bgFrames)
 
-        self.mdh.setEntry('DebounceRadius', int(self.tDebounceRadius.GetValue()))
+        self.mdh.setEntry('Analysis.DebounceRadius', int(self.tDebounceRadius.GetValue()))
 
         if fitMod.startswith('SplitterFit') and not 'chroma.dx' in self.mdh.getEntryNames():
             fdialog = wx.FileDialog(None, 'Please select shift field to use ...',
@@ -937,7 +937,7 @@ class DSViewFrame(wx.Frame):
         driftEst = self.cbDrift.GetValue()
         fitMod = self.cFitType.GetStringSelection()
 
-        self.mdh.setEntry('DebounceRadius', int(self.tDebounceRadius.GetValue()))
+        self.mdh.setEntry('Analysis.DebounceRadius', int(self.tDebounceRadius.GetValue()))
 
         if fitMod.startswith('PsfFit') and not 'PSFFile' in self.mdh.getEntryNames():
             fdialog = wx.FileDialog(None, 'Please select PSF to use ...',
