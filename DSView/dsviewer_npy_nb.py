@@ -1162,9 +1162,9 @@ class DSViewFrame(wx.Frame):
             dvf.Show()
 
     def dsRefresh(self):
-        zp = self.vp.zp #save z -position
-        self.vp.SetDataStack(self.ds)
-        self.vp.zp = zp #restore z position
+        #zp = self.vp.zp #save z -position
+        self.vp.ResetDataStack(self.ds)
+        #self.vp.zp = zp #restore z position
         self.elv.SetEventSource(self.ds.getEvents())
         self.elv.SetRange([0, self.ds.getNumSlices()])
         

@@ -16,36 +16,108 @@ import scipy.ndimage as ndimage
 import numpy
 import cPickle
 from scipy.fftpack import fftn, ifftn, ifftshift
+
+import fftw3f
+
 from PYME import pad
 from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
 from scipy.spatial import kdtree
 
 #import pylab
 PSFFileName = None
-cachedPSF = None
-cachedOTF2 = None
-cachedOTFH = None
-autocorr = None
+PSFSize = None
 
-def preparePSF(PSFFilename, PSSize):
-    global PSFFileName, cachedPSF, cachedOTF2, cachedOTFH, autocorr
-    if (not (PSFFileName == PSFFilename)) or (not (cachedPSF.shape == PSSize)):
+FTW = None
+#cachedPSF = None
+#cachedOTF2 = None
+#cachedOTFH = None
+#autocorr = None
+
+class fftwWeiner:
+    def __init__(self, PSFFilename, PSSize):
         fid = open(getFullExistingFilename(PSFFilename), 'rb')
         ps, vox = cPickle.load(fid)
         fid.close()
         ps = ps.max(2)
         ps = ps - ps.min()
-        #ps = ps*(ps > 0)
+
         ps = ps*scipy.signal.hanning(ps.shape[0])[:,None]*scipy.signal.hanning(ps.shape[1])[None,:]
         ps = ps/ps.sum()
-        PSFFileName = PSFFilename
+        #PSFFileName = PSFFilename
+
         pw = (numpy.array(PSSize) - ps.shape)/2.
         pw1 = numpy.floor(pw)
         pw2 = numpy.ceil(pw)
-        cachedPSF = pad.with_constant(ps, ((pw2[0], pw1[0]), (pw2[1], pw1[1])), (0,))
-        cachedOTFH = ifftn(cachedPSF)*cachedPSF.size
-        cachedOTF2 = cachedOTFH*fftn(cachedPSF)
-        #autocorr = ifftshift(ifftn(cachedOTF2)).real
+
+        self.cachedPSF = pad.with_constant(ps, ((pw2[0], pw1[0]), (pw2[1], pw1[1])), (0,))
+        self.cachedOTFH = (ifftn(self.cachedPSF)*self.cachedPSF.size).astype('complex64')
+        self.cachedOTF2 = (self.cachedOTFH*fftn(self.cachedPSF)).astype('complex64')
+
+        self.weinerFT = fftw3f.create_aligned_array(self.cachedOTFH.shape, 'complex64')
+        self.weinerR = fftw3f.create_aligned_array(self.cachedOTFH.shape, 'float32')
+
+        self.planForward = fftw3f.Plan(self.weinerR, self.weinerFT)
+        self.planInverse = fftw3f.Plan(self.weinerFT, self.weinerR, direction='reverse')
+        
+        self.otf2mean = self.cachedOTF2.mean()
+
+    def filter(self, data, lamb):
+        l2 = lamb**2
+        self.weinerR[:] = data.astype('float32')
+
+        self.planForward()
+
+        self.weinerFT[:] = self.weinerFT[:]*self.cachedOTFH*(l2 + self.otf2mean)/(l2 + self.cachedOTF2)
+
+        self.planInverse()
+
+        return ifftshift(self.weinerR)
+
+    def correlate(self, data):
+        self.weinerR[:] = data.astype('float32')
+
+        self.planForward()
+
+        self.weinerFT[:] = self.weinerFT[:]*self.cachedOTFH
+
+        self.planInverse()
+
+        return ifftshift(self.weinerR)
+
+
+
+#def preparePSF(PSFFilename, PSSize):
+#    global PSFFileName, cachedPSF, cachedOTF2, cachedOTFH, autocorr
+#    if (not (PSFFileName == PSFFilename)) or (not (cachedPSF.shape == PSSize)):
+#        fid = open(getFullExistingFilename(PSFFilename), 'rb')
+#        ps, vox = cPickle.load(fid)
+#        fid.close()
+#        ps = ps.max(2)
+#        ps = ps - ps.min()
+#        #ps = ps*(ps > 0)
+#        ps = ps*scipy.signal.hanning(ps.shape[0])[:,None]*scipy.signal.hanning(ps.shape[1])[None,:]
+#        ps = ps/ps.sum()
+#        PSFFileName = PSFFilename
+#        pw = (numpy.array(PSSize) - ps.shape)/2.
+#        pw1 = numpy.floor(pw)
+#        pw2 = numpy.ceil(pw)
+#        cachedPSF = pad.with_constant(ps, ((pw2[0], pw1[0]), (pw2[1], pw1[1])), (0,))
+#        #cachedOTFH = fftw3.create_aligned_array(cachedPSF.shape, 'complex64')
+#        cachedOTFH = ifftn(cachedPSF)*cachedPSF.size
+#        #cachedOTF2 = fftw3.create_aligned_array(cachedPSF.shape, 'complex64')
+#        cachedOTF2 = cachedOTFH*fftn(cachedPSF)
+#        #autocorr = ifftshift(ifftn(cachedOTF2)).real
+        
+def preparePSF(PSFFilename, PSSize):
+    global PSFFileName, PSFSize, FTW
+    if (not (PSFFileName == PSFFilename)) or (not (PSFSize == PSSize)):
+        FTW = fftwWeiner(PSFFilename, PSSize)
+
+        PSFFileName = PSFFilename
+        PSFSize = PSSize
+
+
+
 class OfindPoint:
     def __init__(self, x, y, z=None, detectionThreshold=None):
         """Creates a point object, potentially with an undefined z-value."""
@@ -98,7 +170,7 @@ class ObjectIdentifier(list):
     def __FilterData2D(self,data):
         #lowpass filter to suppress noise
         #a = ndimage.gaussian_filter(data.astype('f'), self.filterRadiusLowpass)
-        a = ifftshift(ifftn((fftn(data.astype('f'))*cachedOTFH)*(self.lamb**2 + cachedOTF2.mean())/(self.lamb**2 + cachedOTF2))).real
+        a = FTW.filter(data, self.lamb)
         #lowpass filter again to find background
         b = ndimage.gaussian_filter(a, self.filterRadiusHighpass)
         return 24*(a - b)
@@ -106,11 +178,11 @@ class ObjectIdentifier(list):
     def __FilterThresh2D(self,data):
         #lowpass filter to suppress noise
         #a = ndimage.gaussian_filter(data.astype('f'), self.filterRadiusLowpass)
-        a = ifftshift(ifftn((fftn(data.astype('f'))*cachedOTFH))).real
+        #a = ifftshift(ifftn((fftn(data.astype('f'))*cachedOTFH))).real
         #a = ifftshift(ifftn((fftn(data.astype('f'))*cachedOTFH)*(self.lamb**2 + cachedOTF2.mean())/(self.lamb**2 + cachedOTF2))).real
         #lowpass filter again to find background
         #b = ndimage.gaussian_filter(a, self.filterRadiusHighpass)
-        return a
+        return FTW.correlate(data)
     
     def __FilterDataFast(self):
         #project data
@@ -309,6 +381,8 @@ class ObjectIdentifier(list):
 
         xs = scipy.array(xs)
         ys = scipy.array(ys)
+
+        print len(xs)
 
         if splitter:
             ys = ys + (ys > im.shape[1]/2)*(im.shape[1] - 2*ys)

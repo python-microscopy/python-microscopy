@@ -210,22 +210,15 @@ class MyViewPanel(viewpanelN.ViewPanel):
         self.zp=0
         self.do.Optimise(self.ds, self.zp)
         
-        self.cbRedChan.Clear()
-        self.cbGreenChan.Clear()
-        self.cbBlueChan.Clear()
-        self.cbRedChan.Append("<none>")
-        self.cbGreenChan.Append("<none>")
-        self.cbBlueChan.Append("<none>")
-        for i in range(self.ds.shape[3]):
-            self.cbRedChan.Append('%i' % i)
-            self.cbGreenChan.Append('%i' % i)
-            self.cbBlueChan.Append('%i' % i)
-        
             
         self.ResetSelection()
         #self.SetOpts()
 
         self.Layout()
+        self.Refresh()
+
+    def ResetDataStack(self, ds):
+        self.ds = DataWrap(ds)
         self.Refresh()
         
     def DoPaint(self, dc):
