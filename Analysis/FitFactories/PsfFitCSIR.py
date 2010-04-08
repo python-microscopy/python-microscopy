@@ -71,6 +71,9 @@ def genTheoreticalModel(md):
 
         interpModel = interpModel/interpModel.max() #normalise to 1
 
+         #do the spline filtering here rather than in interpolation
+        interpModel = ndimage.spline_filter(interpModel)
+
 def setModel(modName, md):
     global IntXVals, IntYVals, IntZVals, interpModel, interpModelName, dx, dy, dz
 
@@ -96,6 +99,9 @@ def setModel(modName, md):
 
         interpModel = interpModel/interpModel.max() #normalise to 1
 
+        #do the spline filtering here rather than in interpolation
+        interpModel = ndimage.spline_filter(interpModel)
+
         twist.twistCal(interpModel, IntXVals, IntYVals, IntZVals)
 
 
@@ -115,7 +121,7 @@ def f_Interp3d(p, X, Y, Z, *args):
     y1 = (Y - y0)/dy + len(IntYVals)/2.
     z1 = (Z- z0)/dz + len(IntZVals)/2.
 
-    g1 = ndimage.interpolation.map_coordinates(interpModel, [x1, y1, z1], mode='nearest').squeeze()
+    g1 = ndimage.interpolation.map_coordinates(interpModel, [x1, y1, z1], mode='nearest', prefilter=False).squeeze()
 
     #print g1.shape
     #print X.shape
