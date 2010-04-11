@@ -1704,7 +1704,7 @@ class VisGUIFrame(wx.Frame):
                 self.colourFilter.setColour(c)
                 im = visHelpers.rendHist3D(self.colourFilter['x'],self.colourFilter['y'], self.colourFilter['z'], imb, pixelSize, dlg.getZBounds(), dlg.getZSliceThickness())
 
-                ims.append(GeneratedImage(im,imb, pixelSize ))
+                ims.append(GeneratedImage(im,imb, pixelSize,  dlg.getZSliceThickness()))
 
             #imfc = imageView.ColourImageViewFrame(self, self.glCanvas)
 
@@ -1790,7 +1790,7 @@ class VisGUIFrame(wx.Frame):
 
                 im = visHelpers.rendGauss3D(self.colourFilter['x'],self.colourFilter['y'], self.colourFilter['z'], jitVals, jitValsZ, imb, pixelSize, dlg.getZBounds(), dlg.getZSliceThickness())
 
-                ims.append(GeneratedImage(im,imb, pixelSize ))
+                ims.append(GeneratedImage(im,imb, pixelSize,  dlg.getZSliceThickness()))
 
             #imfc = imageView.ColourImageViewFrame(self, self.glCanvas)
 
