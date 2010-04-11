@@ -1470,10 +1470,10 @@ class VisGUIFrame(wx.Frame):
 
         dlg.Destroy()
 
-    def genNeighbourDists(self):
+    def genNeighbourDists(self, forceRetriang = False):
         bCurr = wx.BusyCursor()
 
-        if self.Triangles == None:
+        if self.Triangles == None or forceRetriang:
                 statTri = statusLog.StatusLogger("Generating Triangulation ...")
                 self.Triangles = delaunay.Triangulation(self.colourFilter['x'] + .1*np.random.normal(size=len(self.colourFilter['x'])), self.colourFilter['y']+ .1*np.random.normal(size=len(self.colourFilter['x'])))
 
@@ -1533,12 +1533,14 @@ class VisGUIFrame(wx.Frame):
                     jitVals = self.colourFilter[jitParamName]
                 elif jitParamName in genMeas:
                     if jitParamName == 'neighbourDistances':
-                        self.genNeighbourDists()
+                        self.genNeighbourDists(True)
                     jitVals = self.GeneratedMeasures[jitParamName]
 
                 #print jitScale
                 #print jitVals
                 jitVals = jitScale*jitVals
+
+                print jitParamName, len(jitVals), len(self.colourFilter['x'])
 
                 if dlg.getSoftRender():
                     status = statusLog.StatusLogger("Rendering triangles ...")

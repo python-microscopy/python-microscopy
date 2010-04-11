@@ -17,7 +17,7 @@ import numpy
 import cPickle
 from scipy.fftpack import fftn, ifftn, ifftshift
 
-import fftw3f
+import fftw3
 
 from PYME import pad
 from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
@@ -50,20 +50,20 @@ class fftwWeiner:
         pw2 = numpy.ceil(pw)
 
         self.cachedPSF = pad.with_constant(ps, ((pw2[0], pw1[0]), (pw2[1], pw1[1])), (0,))
-        self.cachedOTFH = (ifftn(self.cachedPSF)*self.cachedPSF.size).astype('complex64')
-        self.cachedOTF2 = (self.cachedOTFH*fftn(self.cachedPSF)).astype('complex64')
+        self.cachedOTFH = (ifftn(self.cachedPSF)*self.cachedPSF.size).astype('complex')
+        self.cachedOTF2 = (self.cachedOTFH*fftn(self.cachedPSF)).astype('complex')
 
-        self.weinerFT = fftw3f.create_aligned_array(self.cachedOTFH.shape, 'complex64')
-        self.weinerR = fftw3f.create_aligned_array(self.cachedOTFH.shape, 'float32')
+        self.weinerFT = fftw3.create_aligned_array(self.cachedOTFH.shape, 'complex')
+        self.weinerR = fftw3.create_aligned_array(self.cachedOTFH.shape, 'float')
 
-        self.planForward = fftw3f.Plan(self.weinerR, self.weinerFT)
-        self.planInverse = fftw3f.Plan(self.weinerFT, self.weinerR, direction='reverse')
+        self.planForward = fftw3.Plan(self.weinerR, self.weinerFT)
+        self.planInverse = fftw3.Plan(self.weinerFT, self.weinerR, direction='reverse')
         
         self.otf2mean = self.cachedOTF2.mean()
 
     def filter(self, data, lamb):
         l2 = lamb**2
-        self.weinerR[:] = data.astype('float32')
+        self.weinerR[:] = data.astype('float')
 
         self.planForward()
 
@@ -74,7 +74,7 @@ class fftwWeiner:
         return ifftshift(self.weinerR)
 
     def correlate(self, data):
-        self.weinerR[:] = data.astype('float32')
+        self.weinerR[:] = data.astype('float')
 
         self.planForward()
 
@@ -302,6 +302,8 @@ class ObjectIdentifier(list):
                     self.lowerThreshold = scipy.absolute(self.__FilterThresh2D(self.thresholdFactor))
         
         X,Y = scipy.mgrid[0:maskedFilteredData.shape[0], 0:maskedFilteredData.shape[1]]
+        X = X.astype('f')
+        Y = Y.astype('f')
     
         #store x, y, and thresholds
         xs = []
