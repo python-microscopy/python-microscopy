@@ -67,6 +67,8 @@ class DSViewFrame(wx.Frame):
         self.vObjPos = None
         self.vObjFit = None
 
+        self.analDispMode = 'z'
+
         #a timer object to update for us
         self.timer = mytimer()
         self.timer.Start(10000)
@@ -1015,16 +1017,29 @@ class DSViewFrame(wx.Frame):
 
         pan = wx.Panel(item, -1, size = (150, 300))
 
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(pan, -1, 'Point colour:'), 0, wx.ALL, 5)
+
+        self.chProgDispColour = wx.Choice(pan, -1, choices = ['z', 'gFrac', 't'], size=(120, -1))
+        self.chProgDispColour.Bind(wx.EVT_CHOICE, self.OnProgDispColourChange)
+        hsizer.Add(self.chProgDispColour, 1, wx.ALL, 5)
+
+        vsizer.Add(hsizer, 0,wx.ALL|wx.EXPAND, 5)
 
         self.progPan = progGraph.progPanel(pan, self.fitResults, size=(150, 300))
 
-        hsizer.Add(self.progPan, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        vsizer.Add(self.progPan, 0,wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5)
 
-        pan.SetSizer(hsizer)
-        hsizer.Fit(pan)
+        pan.SetSizer(vsizer)
+        vsizer.Fit(pan)
         
         self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+
+    def OnProgDispColourChange(self, event):
+        self.progDispMode = self.chProgDispColour.GetValue()
+        self.analRefresh()
 
 
     def update(self):
@@ -1189,23 +1204,34 @@ class DSViewFrame(wx.Frame):
                 self.vp.points = numpy.vstack((self.fitResults['fitResults']['x0'], self.fitResults['fitResults']['y0'], self.fitResults['tIndex'])).T
 
                 self.numEvents = len(self.fitResults)
-                if 'zm' in dir(self): #we have z info
-                    if 'z0' in self.fitResults['fitResults'].dtype.fields:
-                        z = 1e3*self.zm(self.fitResults['tIndex'].astype('f')).astype('f')
-                        z_min = z.min() - 500
-                        z_max = z.max() + 500
-                        z = z + self.fitResults['fitResults']['z0']
+
+                if self.analDispMode == 'z' and (('zm' in dir(self)) or ('z0' in self.fitResults['fitResults'].dtype.fields)):
+                    #display z as colour
+                    if 'zm' in dir(self): #we have z info
+                        if 'z0' in self.fitResults['fitResults'].dtype.fields:
+                            z = 1e3*self.zm(self.fitResults['tIndex'].astype('f')).astype('f')
+                            z_min = z.min() - 500
+                            z_max = z.max() + 500
+                            z = z + self.fitResults['fitResults']['z0']
+                            self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],z)
+                            self.glCanvas.setCLim((z_min, z_max))
+                        else:
+                            z = self.zm(self.fitResults['tIndex'].astype('f')).astype('f')
+                            self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],z)
+                            self.glCanvas.setCLim((z.min(), z.max()))
+                    elif 'z0' in self.fitResults['fitResults'].dtype.fields:
+                        z = self.fitResults['fitResults']['z0']
                         self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],z)
-                        self.glCanvas.setCLim((z_min, z_max))
-                    else:
-                        z = self.zm(self.fitResults['tIndex'].astype('f')).astype('f')
-                        self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],z)
-                        self.glCanvas.setCLim((z.min(), z.max()))
-                elif 'z0' in self.fitResults['fitResults'].dtype.fields:
-                    z = self.fitResults['fitResults']['z0']
-                    self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],z)
-                    self.glCanvas.setCLim((-1e3, 1e3))
+                        self.glCanvas.setCLim((-1e3, 1e3))
+
+                elif self.analDispMode == 'gFrac' and 'Ag' in self.fitResults['fitResults'].dtype.fields:
+                    #display ratio of colour channels as point colour
+                    c = self.fitResults['fitResults']['Ag']/(self.fitResults['fitResults']['Ag'] + self.fitResults['fitResults']['Ar'])
+                    self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],c)
+                    self.glCanvas.setCLim((0, 1))
+
                 else:
+                    #default to time
                     self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],self.fitResults['tIndex'].astype('f'))
                     self.glCanvas.setCLim((0, self.numAnalysed))
 

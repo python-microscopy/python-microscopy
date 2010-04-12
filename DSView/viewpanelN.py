@@ -47,7 +47,7 @@ class OptionsPanel(wx.Panel):
             id = wx.NewId()
             self.hIds.append(id)
             c = self.parent.ds[:,:,self.parent.zp,do.Chans[i]].ravel()
-            hClim = histLimits.HistLimitPanel(self, id, c[::(len(c)/1e4)], do.Offs[i], do.Offs[i] + 1./do.Gains[i], size=(120, 80), log=True)
+            hClim = histLimits.HistLimitPanel(self, id, c[::max(1, len(c)/1e4)], do.Offs[i], do.Offs[i] + 1./do.Gains[i], size=(120, 80), log=True)
 
             hClim.Bind(histLimits.EVT_LIMIT_CHANGE, self.OnCLimChanged)
             self.hcs.append(hClim)
@@ -133,7 +133,7 @@ class OptionsPanel(wx.Panel):
         do = self.parent.do
         for i in range(len(do.Chans)):
             c = self.parent.ds[:,:,self.parent.zp,do.Chans[i]].ravel()
-            self.hcs[i].SetData(c[::(len(c)/1e4)], do.Offs[i], do.Offs[i] + 1./do.Gains[i])
+            self.hcs[i].SetData(c[::max(1, len(c)/1e4)], do.Offs[i], do.Offs[i] + 1./do.Gains[i])
 
 
 
