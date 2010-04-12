@@ -22,6 +22,27 @@ import tables
 import time
 from matplotlib import cm
 
+class ListWrap:
+    def __init__(self, dataList):
+        self.dataList = dataList
+        self.wrapList = [DataWrap(d) for d in dataList]
+
+        self.listDim = self.wrapList[0].nTrueDims
+
+        self.shape = self.wrapList[0].shape[:self.listDim] + (len(self.wrapList), 1, 1, 1)
+
+    def __getattr__(self, name):
+        return getattr(self.wrapList[0], name)
+
+    def __getitem__(self, keys):
+        keys = list(keys)
+        #print keys
+
+        kL = keys[self.listDim]
+
+        return self.wrapList[kL].__getitem__(keys[:self.listDim])
+
+
 class DataWrap: #permit indexing with more dimensions larger than len(shape)
     def __init__(self, data):
         self.data = data
@@ -36,9 +57,11 @@ class DataWrap: #permit indexing with more dimensions larger than len(shape)
             self.data.shape = self.shape
             self.dim_1_is_z = True
         
+        self.nTrueDims = len(data.shape)
         self.shape = data.shape + (1, 1, 1, 1, 1)
         self.oldData = None
         self.oldSlice = None #buffer last lookup
+
 
         if data.__class__ == tables.EArray:
              self.dim_1_is_z = True
@@ -79,11 +102,27 @@ class DisplayOpts:
     UPRIGHT, ROT90 = range(2)
     SLICE_XY, SLICE_XZ, SLICE_YZ = range(3)
     
-    def __init__(self):
-        self.Chans = [0]
-        self.Gains = [1]
-        self.Offs = [0]
-        self.cmaps = [viewpanelN.fast_grey]
+    def __init__(self, nchans=1):
+        if nchans ==1:
+            self.Chans = [0]
+            self.Gains = [1]
+            self.Offs = [0]
+            self.cmaps = [viewpanelN.fast_grey]
+        else:
+            self.Chans = []
+            self.Gains = []
+            self.Offs = []
+            self.cmaps = []
+
+            cms = [cm.r, cm.g, cm.b]
+
+            for i in range(nchans):
+                self.Chans.append(i)
+                self.Gains.append(1.)
+                self.Offs.append(0.)
+                self.cmaps.append(cms[i%len(cms)])
+
+
         self.orientation = self.UPRIGHT
         self.slice = self.SLICE_XY
         self.aspects = [1.,1.,1.]
@@ -114,8 +153,12 @@ class MyViewPanel(viewpanelN.ViewPanel):
 
         self.aspect = 1.0
         
-        self.ds = DataWrap(self.ds)
-        self.do = DisplayOpts()
+        if type(self.ds ==list):
+            self.ds = ListWrap(self.ds)
+        else:
+            self.ds = DataWrap(self.ds)
+
+        self.do = DisplayOpts(self.ds.shape[3])
 
         if not aspect == None:
             if scipy.isscalar(aspect):

@@ -570,13 +570,20 @@ class MultiChannelImageViewFrame(wx.Frame):
 
             self.notebook.AddPage(page=self.ivps[-1], select=True, caption=name)
 
-            if len(img.img.shape) > 2:
-               self.notebook.AddPage(page=MyViewPanel(self.notebook, img.img, aspect = img.sliceSize/img.pixelSize), select=False, caption=name + '_slices')
 
-        if len(self.images) > 1:
+        if len(img.img.shape) > 2:
+            #for img, name in zip(self.images, self.names)
+            asp = self.images[0].sliceSize/self.images[0].pixelSize
+            if asp == 0:
+                asp = 1
+            self.notebook.AddPage(page=MyViewPanel(self.notebook, [img.img for img in self.images], aspect = asp), select=False, caption='Slices')
+            
+        elif len(self.images) > 1:
             self.civp = ColourImageViewPanel(self, glCanvas)
             self.civp.ivps = self.ivps
             self.notebook.AddPage(page=self.civp, select=True, caption='Composite')
+
+        
 
         self.SetMenuBar(self.CreateMenuBar())
 

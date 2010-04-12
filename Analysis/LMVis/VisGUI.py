@@ -131,6 +131,9 @@ class VisGUIFrame(wx.Frame):
 
         self.notebook.AddPage(page=self.sh, select=True, caption='Console')
 
+        self.sh.Execute('from pylab import *')
+        self.sh.Execute('from PYME.DSView.dsviewer_npy import View3D')
+
         self.glCanvas = gl_render.LMGLCanvas(self.notebook)
         self.notebook.AddPage(page=self.glCanvas, select=True, caption='View')
         self.glCanvas.cmap = pylab.cm.hot
@@ -2120,10 +2123,11 @@ class VisGUIFrame(wx.Frame):
 
                     if 'ProtocolFocus' in evKeyNames:
                         self.zm = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh.getEntry('Camera.CycleTime'), self.mdh.getEntry('StartTime'), self.mdh.getEntry('Protocol.PiezoStartPos'))
+                        self.z_focus = 1.e3*self.zm(self.selectedDataSource['t'])
                         self.elv.SetCharts([('Focus [um]', self.zm, 'ProtocolFocus'),])
 
-                        self.selectedDataSource.zm = self.zm
-                        self.selectedDataSource.setMapping('focus', '1e3*zm(t)')
+                        self.selectedDataSource.z_focus = self.z_focus
+                        self.selectedDataSource.setMapping('focus', 'z_focus')
 
                 if not self.mdp == None: #remove previous colour viewer
                     i = 0
