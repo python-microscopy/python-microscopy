@@ -596,7 +596,7 @@ class DSViewFrame(wx.Frame):
             else:
                 return
 
-        if fitMod.startswith('PsfFit') and not 'PSFFile' in self.mdh.getEntryNames():
+        if 'Psf' in fitMod and not 'PSFFile' in self.mdh.getEntryNames():
             fdialog = wx.FileDialog(None, 'Please select PSF to use ...',
                     wildcard='PSF files|*.psf', style=wx.OPEN)
             succ = fdialog.ShowModal()
@@ -941,7 +941,7 @@ class DSViewFrame(wx.Frame):
 
         self.mdh.setEntry('Analysis.DebounceRadius', int(self.tDebounceRadius.GetValue()))
 
-        if fitMod.startswith('PsfFit') and not 'PSFFile' in self.mdh.getEntryNames():
+        if 'Psf' in fitMod and not 'PSFFile' in self.mdh.getEntryNames():
             fdialog = wx.FileDialog(None, 'Please select PSF to use ...',
                     wildcard='PSF files|*.psf', style=wx.OPEN)
             succ = fdialog.ShowModal()
