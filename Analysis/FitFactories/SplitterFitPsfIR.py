@@ -349,7 +349,7 @@ class PSFFitFactory:
 
         Xr = Xg + DeltaX
         Yr = Yg + DeltaY
-        Zr = Zg + self.metadata.AnalysisAxialShift
+        Zr = Zg + self.metadata.Analysis.AxialShift
 
         #print DeltaX
         #print DeltaY
