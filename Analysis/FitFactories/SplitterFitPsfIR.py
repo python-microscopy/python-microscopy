@@ -97,7 +97,7 @@ def setModel(modName, md):
 
         interpModel = interpModel/interpModel.max() #normalise to 1
 
-        twist.twistCal(interpModel, IntXVals, IntYVals, IntZVals)
+        #twist.twistCal(interpModel, IntXVals, IntYVals, IntZVals)
 
 #def interp(X, Y, Z):
 #    X = scipy.array(X).reshape(-1)
