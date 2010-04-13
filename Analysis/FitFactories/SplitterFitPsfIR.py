@@ -214,9 +214,9 @@ def f_Interp3d2c(p, Xg, Yg, Zg, Xr, Yr, Zr, *args):
     g = interp(Xg - x0 + 1, Yg - y0 + 1, Zg[0] - z0 + 1)*Ag + bG
     r = interp(Xr - x0 + 1, Yr - y0 + 1, Zr[0] - z0 + 1)*Ar + bR
 
-    print g.shape
+    #print g.shape
 
-    return numpy.concatenate((g.reshape(g.shape + (1,)),r.reshape(g.shape + (1,))), 2)
+    return numpy.concatenate((g,r), 2)
 
 
 def f_PSF3d(p, X, Y, Z, P, *args):
