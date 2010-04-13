@@ -195,17 +195,17 @@ def f_Interp3d2c(p, Xg, Yg, Zg, Xr, Yr, Zr, *args):
     Ag, Ar, x0, y0, z0, bG, bR = p
     #return A*scipy.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2)) + b
 
-    xm = len(X)/2
-    dx = min((interpModel.shape[0] - len(X))/2, xm) - 2
+    xm = len(Xg)/2
+    dx = min((interpModel.shape[0] - len(Xg))/2, xm) - 2
 
-    ym = len(Y)/2
-    dy = min((interpModel.shape[1] - len(Y))/2, ym) - 2
+    ym = len(Yg)/2
+    dy = min((interpModel.shape[1] - len(Yg))/2, ym) - 2
 
     #print X[0] - x0, Y[0] - y0, Z[0] - z0 , 'o', IntZVals[3]
 
-    x0 = min(max(x0, X[xm - dx]), X[dx + xm])
-    y0 = min(max(y0, Y[ym - dy]), Y[dy + ym])
-    z0 = min(max(z0, Z[0] + IntZVals[2]), Z[0] + IntZVals[-2])
+    x0 = min(max(x0, Xg[xm - dx]), Xg[dx + xm])
+    y0 = min(max(y0, Yg[ym - dy]), Yg[dy + ym])
+    z0 = min(max(z0, Zg[0] + IntZVals[2]), Zg[0] + IntZVals[-2])
 
     #print X[0] - x0, Y[0] - y0, Z[0] - z0
 
