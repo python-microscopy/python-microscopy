@@ -153,7 +153,8 @@ class MyViewPanel(viewpanelN.ViewPanel):
 
         self.aspect = 1.0
         
-        if type(self.ds ==list):
+        #print self.ds.__class__
+        if self.ds.__class__ ==list:
             self.ds = ListWrap(self.ds)
         else:
             self.ds = DataWrap(self.ds)

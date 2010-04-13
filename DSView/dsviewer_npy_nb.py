@@ -1038,7 +1038,7 @@ class DSViewFrame(wx.Frame):
         self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
 
     def OnProgDispColourChange(self, event):
-        self.progDispMode = self.chProgDispColour.GetValue()
+        self.analDispMode = self.chProgDispColour.GetValue()
         self.analRefresh()
 
 
