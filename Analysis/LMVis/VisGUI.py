@@ -1863,7 +1863,7 @@ class VisGUIFrame(wx.Frame):
                     jitVals = self.colourFilter[jitParamName]
                 else:
                     if jitParamName == 'neighbourDistances':
-                        self.genNeighbourDists()
+                        self.genNeighbourDists(True)
 
                     if jitParamName in self.GeneratedMeasures.keys():
                         jitVals = self.GeneratedMeasures[jitParamName]
@@ -1874,7 +1874,7 @@ class VisGUIFrame(wx.Frame):
                     jitValsZ = self.colourFilter[jitParamName]
                 else:
                     if jitParamNameZ == 'neighbourDistances':
-                            self.genNeighbourDists()
+                            self.genNeighbourDists(True)
                             
                     if jitParamNameZ in self.GeneratedMeasures.keys():
                         jitValsZ = self.GeneratedMeasures[jitParamName]
