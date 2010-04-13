@@ -205,18 +205,23 @@ def f_Interp3d2c(p, Xg, Yg, Zg, Xr, Yr, Zr, *args):
 
     x0 = min(max(x0, Xg[xm - dx]), Xg[dx + xm])
     y0 = min(max(y0, Yg[ym - dy]), Yg[dy + ym])
-    z0 = min(max(z0, Zg[0] + IntZVals[2]), Zg[0] + IntZVals[-2])
+    z0 = min(max(z0, max(Zg[0], Zr[0]) + IntZVals[2]), min(Zg[0], Zr[0]) + IntZVals[-2])
 
     #print X[0] - x0, Y[0] - y0, Z[0] - z0
 
-    #print Z[0] - z0
+    #print Zr[0] - z0
 
     g = interp(Xg - x0 + 1, Yg - y0 + 1, Zg[0] - z0 + 1)*Ag + bG
     r = interp(Xr - x0 + 1, Yr - y0 + 1, Zr[0] - z0 + 1)*Ar + bR
 
-    #print g.shape
+    #print g.shape, r.shape
 
-    return numpy.concatenate((g,r), 2)
+    ret = numpy.concatenate((g,r), 2)
+
+    #print ret.shape
+
+    return ret
+    
 
 
 def f_PSF3d(p, X, Y, Z, P, *args):
@@ -267,7 +272,7 @@ def replNoneWith1(n):
 		return n
 
 
-fresultdtype=[('tIndex', '<i4'),('fitResults', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('backgroundG', '<f4'),('backgroundR', '<f4')]),('fitError', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('backgroundG', '<f4'),('backgroundR', '<f4')]), ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])]),('startParams', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('background', '<f4')]), ('nchi2', '<f4')]
+fresultdtype=[('tIndex', '<i4'),('fitResults', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('backgroundG', '<f4'),('backgroundR', '<f4')]),('fitError', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('backgroundG', '<f4'),('backgroundR', '<f4')]), ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])]),('startParams', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('background', '<f4')]), ('nchi2', '<f4')]
 
 def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None, startParams=None, nchi2=-1):
 	if slicesUsed == None:
@@ -384,6 +389,8 @@ class PSFFitFactory:
             dataROI = dataROI - bgROI
 
         startParameters = [Ag, Ar, x0, y0, z0, dataROI[:,:,0].min(),dataROI[:,:,1].min()]
+
+        #print dataROI.shape
 	
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
