@@ -11,7 +11,7 @@
 ##################
 from distutils.core import setup
 from distutils.extension import Extension
-from Cython.Distutils import build_ext
+#from Cython.Distutils import build_ext
 
 ext_modules = [Extension("edgeDB", ["edgeDB.pyx"])]
 
@@ -31,7 +31,7 @@ if sys.platform == 'win32':
 
 else:
     setup(
-      cmdclass = {'build_ext': build_ext},
-      ext_modules = ext_modules
+      #cmdclass = {'build_ext': build_ext},
+      #ext_modules = ext_modules
     )
 

@@ -105,7 +105,7 @@ class compThread(threading.Thread):
                 else:
                     self.im = self.noiseMaker.noisify(rend_im.simPalmImFI(self.XVals, self.YVals, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
             else:
-                self.im = self.noiseMaker.noisify(rend_im.simPalmImFSpec(self.XVals, self.YVals, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
+                self.im = self.noiseMaker.noisify(rend_im.simPalmImFSpecI(self.XVals, self.YVals, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
 
             self.buffer[:,:,self.bufferWritePos] = self.im
             self.bufferWritePos +=1

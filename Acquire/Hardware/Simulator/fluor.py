@@ -18,7 +18,7 @@ class states:
 
 ALL_TRANS, FROM_ONLY, TO_ONLY = range(3)
 
-def createSimpleTransitionMatrix(pPA=[0,.1,0] , pOnDark=[0,0,.1], pDarkOn=[.1,0,0], pOnBleach=[0,0,.01]):
+def createSimpleTransitionMatrix(pPA=[1e6,.1,0] , pOnDark=[0,0,.1], pDarkOn=[.1,0,0], pOnBleach=[0,0,.01]):
     M = zeros((states.n,states.n,len(pPA)), 'f')
     M[states.caged, states.active, :] = pPA
     M[states.active, states.blinked, :] = pOnDark

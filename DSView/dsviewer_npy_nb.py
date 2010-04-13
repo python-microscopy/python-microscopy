@@ -609,6 +609,18 @@ class DSViewFrame(wx.Frame):
             else:
                 return
 
+        if 'Psf' in fitMod  and 'Splitter' in fitMod and not 'Analysis.AxialShift' in self.mdh.getEntryNames():
+            dlg = wx.TextEntryDialog(self, 'What is the axial chromatic shift between splitter halves [nm]?',
+                'Axial Shift', '300')
+
+            if dlg.ShowModal() == wx.ID_OK:
+                self.mdh.setEntry('Analysis.AxialShift', float(dlg.GetValue()))
+            else:
+                self.mdh.setEntry('Analysis.AxialShift', 0.)
+
+
+            dlg.Destroy()
+
         if not driftEst:
             self.sh.run('pushImages(%d, %f, "%s")' % (startAt, threshold, fitMod))
         else:
@@ -1020,9 +1032,9 @@ class DSViewFrame(wx.Frame):
         vsizer = wx.BoxSizer(wx.VERTICAL)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(pan, -1, 'Point colour:'), 0, wx.ALL, 5)
+        hsizer.Add(wx.StaticText(pan, -1, 'Colour:'), 0, wx.ALL, 5)
 
-        self.chProgDispColour = wx.Choice(pan, -1, choices = ['z', 'gFrac', 't'], size=(120, -1))
+        self.chProgDispColour = wx.Choice(pan, -1, choices = ['z', 'gFrac', 't'], size=(60, -1))
         self.chProgDispColour.Bind(wx.EVT_CHOICE, self.OnProgDispColourChange)
         hsizer.Add(self.chProgDispColour, 1, wx.ALL, 5)
 
@@ -1038,7 +1050,8 @@ class DSViewFrame(wx.Frame):
         self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
 
     def OnProgDispColourChange(self, event):
-        self.analDispMode = self.chProgDispColour.GetValue()
+        #print 'foo'
+        self.analDispMode = self.chProgDispColour.GetStringSelection()
         self.analRefresh()
 
 
