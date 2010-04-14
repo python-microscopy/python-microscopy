@@ -154,6 +154,11 @@ class UnMixFrame(wx.Frame):
         #self.Layout()
         #self.update()
         wx.EVT_CLOSE(self, self.OnCloseWindow)
+        #wx.EVT_SIZE(self, self.OnSize)
+
+        #self.statusbar = self.CreateStatusBar(1, wx.ST_SIZEGRIP)
+
+        #self.Layout()
         
         self.splitter.scope.pa.WantFrameGroupNotification.append(self.update)
 
@@ -170,6 +175,10 @@ class UnMixFrame(wx.Frame):
     def OnCloseWindow(self, event):
         self.splitter.scope.pa.WantFrameGroupNotification.remove(self.update)
         self.Destroy()
+
+    def OnSize(self, event):
+        self.Layout()
+        event.Skip()
 
 
    
