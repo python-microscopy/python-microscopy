@@ -262,7 +262,12 @@ class MyViewPanel(viewpanelN.ViewPanel):
         self.Refresh()
 
     def ResetDataStack(self, ds):
-        self.ds = DataWrap(ds)
+        #print ds.__class__
+        if ds.__class__ ==list:
+            self.ds = ListWrap(ds)
+        else:
+            self.ds = DataWrap(ds)
+        #self.ds = DataWrap(ds)
         self.Refresh()
         
     def DoPaint(self, dc):
