@@ -142,6 +142,10 @@ class UnMixFrame(wx.Frame):
         bsizer.Add(self.tOffset, 1, wx.ALL, 0)
         psizer.Add(bsizer, 0, wx.ALL|wx.EXPAND, 5)
 
+        self.bUpdate = wx.Button(pan, -1, 'Update')
+        psizer.Add(self.bUpdate, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5)
+        self.bUpdate.Bind(wx.EVT_BUTTON, self.OnUpdateMix)
+
         pan.SetSizerAndFit(psizer)
 
         sizer.Add(pan, 0, 0, 0)
@@ -163,11 +167,12 @@ class UnMixFrame(wx.Frame):
         self.splitter.scope.pa.WantFrameGroupNotification.append(self.update)
 
     def update(self, caller=None):
-        self.splitter.mixMatrix[0,0]= float(self.tMM00.GetValue())
-        self.splitter.mixMatrix[0,1]= float(self.tMM01.GetValue())
-        self.splitter.mixMatrix[1,0]= float(self.tMM10.GetValue())
-        self.splitter.mixMatrix[1,1]= float(self.tMM11.GetValue())
-        self.splitter.offset= float(self.tOffset.GetValue())
+        #print self.tMM00.GetValue(), self.tMM01.GetValue()
+#        self.splitter.mixMatrix[0,0]= float(self.tMM00.GetValue())
+#        self.splitter.mixMatrix[0,1]= float(self.tMM01.GetValue())
+#        self.splitter.mixMatrix[1,0]= float(self.tMM10.GetValue())
+#        self.splitter.mixMatrix[1,1]= float(self.tMM11.GetValue())
+#        self.splitter.offset= float(self.tOffset.GetValue())
 
         self.vp.ResetDataStack(self.splitter.Unmix())
         self.vp.imagepanel.Refresh()
@@ -175,6 +180,17 @@ class UnMixFrame(wx.Frame):
     def OnCloseWindow(self, event):
         self.splitter.scope.pa.WantFrameGroupNotification.remove(self.update)
         self.Destroy()
+
+    def OnUpdateMix(self, event):
+        self.splitter.mixMatrix[0,0]= float(self.tMM00.GetValue())
+        self.splitter.mixMatrix[0,1]= float(self.tMM01.GetValue())
+        self.splitter.mixMatrix[1,0]= float(self.tMM10.GetValue())
+        self.splitter.mixMatrix[1,1]= float(self.tMM11.GetValue())
+        self.splitter.offset= float(self.tOffset.GetValue())
+
+        print self.splitter.mixMatrix
+
+        self.update()
 
     def OnSize(self, event):
         self.Layout()
