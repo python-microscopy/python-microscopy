@@ -140,9 +140,16 @@ class GaussianFitFactory:
 		self.solver = FitModelWeightedJac
 		
         
-    def __getitem__(self, key):
-        #print key
-        xslice, yslice, zslice = key
+    def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
+        if (z == None): # use position of maximum intensity
+            z = self.data[x,y,:].argmax()
+	
+        x_ = round(x)
+        y_ = round(y)
+	
+        xslice = slice(max((x_ - roiHalfSize), 0),min((x_ + roiHalfSize + 1),self.data.shape[0]))
+        xslice = slice(max((y_ - roiHalfSize), 0),min((y_ + roiHalfSize + 1), self.data.shape[1]))
+        zslice = slice(max((z - axialHalfSize), 0),min((z + axialHalfSize + 1), self.data.shape[2]))
 
         #cut region out of data stack
         dataROI = self.data[xslice, yslice, zslice]
@@ -150,48 +157,17 @@ class GaussianFitFactory:
         #average in z
         dataMean = dataROI.mean(2) - self.metadata.Camera.ADOffset
 
-        #generate grid to evaluate function on        
-	X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[xslice]
-        Y = 1e3*self.metadata.voxelsize.y*scipy.mgrid[yslice]
-
         #estimate some start parameters...
         A = dataMean.max() - dataMean.min() #amplitude
         
-	x0 =  X.mean()
-        y0 =  Y.mean()
+        x0 =  x
+        y0 =  y
 
         startParameters = [A, x0, y0, 250/2.35, dataMean.min(), .001, .001]
-
-	
-        #estimate errors in data
-        nSlices = dataROI.shape[2]
-        
-        sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*scipy.maximum(dataMean, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
-	
-	
-        #do the fit
-        #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
-        #(res, cov_x, infodict, mesg, resCode) = FitModelWeighted(self.fitfcn, startParameters, dataMean, sigma, X, Y)
-	#(res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataMean, sigma, X, Y)
-
         
         fitErrors=None
-        #try:
-        #    fitErrors = scipy.sqrt(scipy.diag(cov_x)*(infodict['fvec']*infodict['fvec']).sum()/(len(dataMean.ravel())- len(res)))
-        #except Exception, e:
-        #    pass
+        
         return GaussianFitResultR(scipy.array(startParameters), self.metadata, (xslice, yslice, zslice), 0, fitErrors)
-
-    def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
-        if (z == None): # use position of maximum intensity
-            z = self.data[x,y,:].argmax()
-	
-	x = round(x)
-	y = round(y)
-	
-        return self[max((x - roiHalfSize), 0):min((x + roiHalfSize + 1),self.data.shape[0]), 
-                    max((y - roiHalfSize), 0):min((y + roiHalfSize + 1), self.data.shape[1]), 
-                    max((z - axialHalfSize), 0):min((z + axialHalfSize + 1), self.data.shape[2])]
         
 
 #so that fit tasks know which class to use

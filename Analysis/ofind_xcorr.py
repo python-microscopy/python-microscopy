@@ -230,8 +230,8 @@ class ObjectIdentifier(list):
                     self.lowerThreshold = scipy.absolute(self.__FilterThresh2D(self.thresholdFactor))
         
         X,Y = scipy.mgrid[0:maskedFilteredData.shape[0], 0:maskedFilteredData.shape[1]]
-        X = X.astype('f')
-        Y = Y.astype('f')
+        #X = X.astype('f')
+        #Y = Y.astype('f')
     
         #store x, y, and thresholds
         xs = []

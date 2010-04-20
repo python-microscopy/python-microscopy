@@ -275,8 +275,8 @@ class ObjectIdentifier(list):
 
         
         X,Y = numpy.mgrid[0:maskedFilteredData.shape[0], 0:maskedFilteredData.shape[1]]
-        X = X.astype('f')
-        Y = Y.astype('f')
+        #X = X.astype('f')
+        #Y = Y.astype('f')
 
         #store x, y, and thresholds
         xs = []
