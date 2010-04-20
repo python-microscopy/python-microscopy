@@ -43,7 +43,7 @@ def f_Interp3d(p, interpolator, X, Y, Z, *args):
 
     x0 = min(max(x0, X[xm - dx]), X[dx + xm])
     y0 = min(max(y0, Y[ym - dy]), Y[dy + ym])
-    z0 = min(max(z0, Z[0] + IntZVals[2]), Z[0] + IntZVals[-2])
+    z0 = min(max(z0, Z[0] + interpolator.IntZVals[2]), Z[0] + interpolator.IntZVals[-2])
 
     return interpolator.interp(X - x0 + 1, Y - y0 + 1, Z[0] - z0 + 1)*A + b
 
