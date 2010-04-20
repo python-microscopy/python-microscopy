@@ -120,7 +120,7 @@ class PSFFitFactory:
                 genTheoreticalModel(metadata)
 
         interpModule = metadata.Analysis.InterpModule
-        self.interpolator = __import__('PYME.Analysis.FitFactories.Interpolators.' + interpModule + '.interpolator', fromlist=['PYME', 'Analysis','FitFactories', 'Interpolators', interpModule]))
+        self.interpolator = __import__('PYME.Analysis.FitFactories.Interpolators.' + interpModule + '.interpolator', fromlist=['PYME', 'Analysis','FitFactories', 'Interpolators', interpModule])
 		
         
     def __getitem__(self, key):
