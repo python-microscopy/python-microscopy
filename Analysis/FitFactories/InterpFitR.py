@@ -113,14 +113,16 @@ class PSFFitFactory:
             self.solver = FitModelWeighted_
         else: #should be a tuple containing the fit function and its jacobian
             self.solver = FitModelWeightedJac
-        if fitfcn == f_Interp3d:
-            if 'PSFFile' in metadata.getEntryNames():
-                setModel(metadata.PSFFile, metadata)
-            else:
-                genTheoreticalModel(metadata)
+        
 
         interpModule = metadata.Analysis.InterpModule
         self.interpolator = __import__('PYME.Analysis.FitFactories.Interpolators.' + interpModule + '.interpolator', fromlist=['PYME', 'Analysis','FitFactories', 'Interpolators', interpModule])
+
+        if fitfcn == f_Interp3d:
+            if 'PSFFile' in metadata.getEntryNames():
+                self.interpolator.setModel(metadata.PSFFile, metadata)
+            else:
+                self.interpolator.genTheoreticalModel(metadata)
 		
         
     def __getitem__(self, key):
