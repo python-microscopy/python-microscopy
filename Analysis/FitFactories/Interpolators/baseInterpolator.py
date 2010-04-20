@@ -56,7 +56,7 @@ class __interpolator:
 
             P = arange(0,1.01,.01)
 
-            interpModel = genWidefieldPSF(self.IntXVals, self.IntYVals, self.IntZVals, P,1e3, 0, 0, 0, 2*scipy.pi/525, 1.47, 10e3)
+            interpModel = genWidefieldPSF(self.IntXVals, self.IntYVals, self.IntZVals, P,1e3, 0, 0, 0, 2*pi/525, 1.47, 10e3)
 
             self.interpModel = interpModel/interpModel.max() #normalise to 1
 
