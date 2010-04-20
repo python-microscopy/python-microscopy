@@ -60,7 +60,7 @@ class __interpolator:
 
             self.interpModel = interpModel/interpModel.max() #normalise to 1
 
-            self.shape = mod.shape
+            self.shape = interpModel.shape
 
             self._precompute()
 
