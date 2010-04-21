@@ -86,9 +86,9 @@ class Splitter:
 
     def _deshift(self, red_chan):
         if 'X2' in dir(self):
-            x1 = self.scope.cam.GetROIX1()
+            x1 = self.scope.cam.GetROIX1() - 1
             x2 = self.scope.cam.GetROIX2()
-            y1 = self.scope.cam.GetROIY1()
+            y1 = self.scope.cam.GetROIY1() - 1
 
             Xn = self.X2[x1:x2, y1:(y1 + red_chan.shape[1])] - x1
             Yn = self.Y2[x1:x2, y1:(y1 + red_chan.shape[1])] - y1
