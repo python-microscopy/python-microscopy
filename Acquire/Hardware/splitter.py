@@ -32,6 +32,7 @@ class Splitter:
         idConstROI = wx.NewId()
         idFlipView = wx.NewId()
         idUnmix = wx.NewId()
+        idShiftfield = wx.NewId()
 
         self.menu = wx.Menu(title = '')
 
@@ -42,6 +43,9 @@ class Splitter:
         wx.EVT_MENU(parent, idFlipView, self.OnFlipView)
         self.menu.Append(idUnmix, 'Unmix\tF7')
         wx.EVT_MENU(parent, idUnmix, self.OnUnmix)
+
+        self.menu.Append(idShiftfield, 'Set Shift Field')
+        wx.EVT_MENU(parent, idShiftfield, self.OnSetShiftField)
 
         menu.AppendSeparator()
         menu.AppendMenu(-1, '&Splitter', self.menu)
@@ -67,6 +71,37 @@ class Splitter:
         f.SetSize((800,500))
         f.Show()
 
+    def OnSetShiftField(self, event):
+        fdialog = wx.FileDialog(None, 'Select shift field',
+            wildcard='*.sf', style=wx.OPEN)
+        succ = fdialog.ShowModal()
+        if (succ == wx.ID_OK):
+            self.SetShiftField(numpy.load(fdialog.GetPath().encode()))
+
+    def SetShiftField(self, shiftField):
+        #self.shiftField = shiftField
+        X, Y = numpy.ogrid[:512, :256]
+        self.X2 = numpy.round(X + shiftField[0](X*70., Y*70.)/70.).astype('i')
+        self.Y2 = numpy.round(Y + shiftField[1](X*70., Y*70.)/70.).astype('i')
+
+    def _deshift(self, red_chan):
+        if 'X2' in dir(self):
+            x1 = self.scope.cam.GetROIX1()
+            x2 = self.scope.cam.GetROIX2()
+            y1 = self.scope.cam.GetROIY1()
+
+            Xn = self.X2[x1:x2, y1:(y1 + red_chan.shape[1])] - x1
+            Yn = self.Y2[x1:x2, y1:(y1 + red_chan.shape[1])] - y1
+
+            Xn = numpy.maximum(numpy.minimum(Xn, red_chan.shape[0]-1), 0)
+            Yn = numpy.maximum(numpy.minimum(Yn, red_chan.shape[1]-1), 0)
+
+            return red_chan[Xn, Yn]
+
+        else:
+            return red_chan
+
+
     def Unmix(self):
         import scipy.linalg
         from PYME import cSMI
@@ -79,7 +114,10 @@ class Splitter:
 
         g_ = dsa[:, :(dsa.shape[1]/2)]
         r_ = dsa[:, (dsa.shape[1]/2):]
-        r_ = fliplr(r_)
+        r_ = self._deshift(fliplr(r_))
+
+        #print g_.shape
+        #print r_.shape
 
         g = umm[0,0]*g_ + umm[0,1]*r_
         r = umm[1,0]*g_ + umm[1,1]*r_

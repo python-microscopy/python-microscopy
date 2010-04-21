@@ -140,6 +140,9 @@ class DSViewFrame(wx.Frame):
                             self.fitResults = h5Results.root.FitResults[:]
                             self.resultsSource = inpFilt.h5rSource(h5Results)
 
+                            self.resultsMdh = MetaData.TIRFDefault
+                            self.resultsMdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(h5Results))
+
                        
 
 
@@ -274,7 +277,7 @@ class DSViewFrame(wx.Frame):
             #self.glCanvas.setCLim((0, self.numAnalysed))
             self.timer.WantNotification.append(self.AddPointsToVis)
 
-            self.fitInf = fitInfo.FitInfoPanel(self, self.fitResults, self.mdh, self.vp.ds)
+            self.fitInf = fitInfo.FitInfoPanel(self, self.fitResults, self.resultsMdh, self.vp.ds)
             self.notebook1.AddPage(page=self.fitInf, select=False, caption='Fit Info')
 
 
@@ -507,6 +510,17 @@ class DSViewFrame(wx.Frame):
             except:
                 pass
 
+        interpolatorList = glob.glob(PYME.Analysis.FitFactories.__path__[0] + '/Interpolators/[a-zA-Z]*.py')
+        interpolatorList = [os.path.split(p)[-1][:-3] for p in interpolatorList]
+        #print interpolatorList
+        interpolatorList.remove('baseInterpolator')
+        interpolatorList.sort()
+
+        self.interpolators = interpolatorList
+
+        #ditch the 'Interpolator' at the end of the module name for display
+        interpolatorList = [i[:-12] for i in interpolatorList]
+
         #print fitFactoryList
         #print self.fitFactories
 
@@ -514,10 +528,25 @@ class DSViewFrame(wx.Frame):
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
         hsizer.Add(wx.StaticText(pan, -1, 'Type:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-        self.cFitType = wx.Choice(pan, -1, choices = self.fitFactories, size=(120, -1))
-        self.cFitType.SetSelection(self.fitFactories.index('LatGaussFitFR'))
+        self.cFitType = wx.Choice(pan, -1, choices = self.fitFactories, size=(110, -1))
+
+        if 'Camera.ROIPosY' in self.mdh.getEntryNames() and (self.mdh.getEntry('Camera.ROIHeight') + 1 + 2*(self.mdh.getEntry('Camera.ROIPosY')-1)) == 512:
+            #we have a symetrical ROI about the centre - most likely want to analyse using splitter
+            self.cFitType.SetSelection(self.fitFactories.index('SplitterFitFR'))
+        else:
+            self.cFitType.SetSelection(self.fitFactories.index('LatGaussFitFR'))
 
         hsizer.Add(self.cFitType, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        vsizer.Add(hsizer, 0,wx.ALL, 0)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        hsizer.Add(wx.StaticText(pan, -1, 'Interp:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.cInterpType = wx.Choice(pan, -1, choices = interpolatorList, size=(100, -1))
+
+        self.cInterpType.SetSelection(interpolatorList.index('Linear'))
+
+        hsizer.Add(self.cInterpType, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
         vsizer.Add(hsizer, 0,wx.ALL, 0)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
