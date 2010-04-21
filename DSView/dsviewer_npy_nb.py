@@ -167,6 +167,25 @@ class DSViewFrame(wx.Frame):
 
                     self.mode = 'psf'
                     
+                elif filename.endswith('.psf'): #psf
+                    #self.dataSource = TiffDataSource.DataSource(filename, None)
+                    self.dataSource, vox = numpy.load(filename)
+                    self.mdh = MetaData.ConfocDefault
+
+                    #from PYME.DSView.voxSizeDialog import VoxSizeDialog
+
+                    #dlg = VoxSizeDialog(self)
+                    #dlg.ShowModal()
+
+                    self.mdh.setEntry('voxelsize.x', vox.x)
+                    self.mdh.setEntry('voxelsize.y', vox.y)
+                    self.mdh.setEntry('voxelsize.z', vox.z)
+
+
+                    from PYME.ParallelTasks.relativeFiles import getRelFilename
+                    self.seriesName = getRelFilename(filename)
+
+                    self.mode = 'psf'
                 else: #try tiff
                     #self.dataSource = TiffDataSource.DataSource(filename, None)
                     self.dataSource = readTiff.read3DTiff(filename)
