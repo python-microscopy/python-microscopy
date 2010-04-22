@@ -61,9 +61,12 @@ class Spooler:
    def StopSpool(self):
        self.acq.WantFrameNotification.remove(self.Tick)
        eventLog.WantEventNotification.remove(self.evtLogger)
-       self.protocol.OnFinish()
-       self.FlushBuffer()
-       self.doStopLog()
+       try:
+           self.protocol.OnFinish()
+           self.FlushBuffer()
+           self.doStopLog()
+       except:
+           pass
        #self.writeLog()
        
        self.spoolOn = False

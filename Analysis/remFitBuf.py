@@ -150,9 +150,14 @@ class fitTask(taskDef.Task):
         self.data = self.data.reshape((self.data.shape[0], self.data.shape[1],1))
 
         if self.fitModule in splitterFitModules:
+#            if (self.md.getEntry('Camera.ROIHeight') + 1 + 2*(self.md.getEntry('Camera.ROIPosY')-1)) == 512:
+            #was setup correctly for the splitter
             g = self.data[:, :(self.data.shape[1]/2)]
             r = self.data[:, (self.data.shape[1]/2):]
             r = np.fliplr(r)
+#            else:
+#                #someone bodged something
+#                print 'Warning - splitter incorrectly set - '
 
         #calculate background
         self.bg = 0

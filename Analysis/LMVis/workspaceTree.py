@@ -1,6 +1,30 @@
 import wx
 import wx.gizmos
 from wx.lib.mixins.treemixin import VirtualTree
+from pylab import cm, array
+
+class WorkWrap:
+    def __init__(self, dict):
+        self.dict = dict
+        self.keysToReport = []
+        self.keyColours = {}
+        self.nColours = 0
+
+    def addKey(self, keyName, colour=None):
+        self.keysToReport.append(keyName)
+        if not colour == None:
+            self.keyColours[keyName] = colour
+
+    def newColour(self):
+        ret =  self.nColours
+        self.nColours += 1
+        return ret
+
+    def keys(self):
+        return self.keysToReport
+
+    def __getitem__(self, key):
+        return self.dict[key]
 
 class WorkspaceTree(VirtualTree, wx.gizmos.TreeListCtrl):
     def __init__(self, *args, **kwargs):
@@ -152,6 +176,19 @@ class WorkspaceTree(VirtualTree, wx.gizmos.TreeListCtrl):
                 return self.fldropenidx
             else:
                 return self.fileidx
+
+#    def OnGetItemBackgroundColour(self, index):
+#        name =  self._getChildName(self.workspace, index[0])
+#        if 'keyColours' in dir(self.workspace) and name in self.workspace.keyColours.keys():
+#            c = float(self.workspace.keyColours[name])/self.workspace.nColours
+#            #print c
+#            c = ((127*array(cm.hsv(c)) + 128)[:3]).astype('i')
+#            #print c
+#            return wx.Colour(*c)
+#        else:
+#            return wx.NullColour
+
+        
 
     def OnRightUp(self, evt):
         pos = evt.GetPosition()

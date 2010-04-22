@@ -72,7 +72,7 @@ class ImageBounds:
 class dummy:
     pass
 
-class GeneratedImage:
+class GeneratedImage(object):
     def __init__(self, img, imgBounds, pixelSize, sliceSize=0):
         self.img = img
         self.imgBounds = imgBounds

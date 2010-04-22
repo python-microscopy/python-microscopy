@@ -20,6 +20,7 @@ import wx.lib.foldpanelbar as fpb
 from PYME.misc.fbpIcons import *
 
 from PYME.Analysis.LMVis import gl_render
+from PYME.Analysis.LMVis import workspaceTree
 import sys
 from PYME.Analysis.LMVis import inpFilt
 from PYME.Analysis.LMVis import editFilterDialog
@@ -130,33 +131,12 @@ class VisGUIFrame(wx.Frame):
         #      parent=self.notebook, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
         #      introText='Python SMI bindings - note that help, license etc below is for Python, not PySMI\n\n')
 
-        self.MainWindow = self #so we can access from shell
-
-        self.sh = WxController(self.notebook)
-
-        self.notebook.AddPage(page=self.sh, select=True, caption='Console')
-
-        self.sh.execute_command('from pylab import *', hidden=True)
-        self.sh.execute_command('from PYME.DSView.dsviewer_npy import View3D', hidden=True)
-
-        self.glCanvas = gl_render.LMGLCanvas(self.notebook)
-        self.notebook.AddPage(page=self.glCanvas, select=True, caption='View')
-        self.glCanvas.cmap = pylab.cm.hot
+        
 
         self.elv = None
         self.colp = None
         self.mdp = None
         self.rav = None
-
-        self.ID_WINDOW_TOP = 100
-        self.ID_WINDOW_LEFT1 = 101
-        self.ID_WINDOW_RIGHT1 = 102
-        self.ID_WINDOW_BOTTOM = 103
-    
-        self._leftWindow1.Bind(wx.EVT_SASH_DRAGGED_RANGE, self.OnFoldPanelBarDrag,
-                               id=100, id2=103)
-        self.Bind(wx.EVT_SIZE, self.OnSize)
-        self.Bind(wx.EVT_MOVE, self.OnMove)
 
         
         self._pc_clim_change = False
@@ -204,6 +184,60 @@ class VisGUIFrame(wx.Frame):
         self.Quads = None
         #self.pointColour = None
         self.colData = '<None>'
+
+
+        self.MainWindow = self #so we can access from shell
+
+        self.sh = WxController(self.notebook)
+        #print self.sh.shell.user_ns
+        #self.__dict__.update(self.sh.shell.user_ns)
+        #self.sh.shell.user_ns = self.__dict__
+
+        self.notebook.AddPage(page=self.sh, select=True, caption='Console')
+
+        self.sh.execute_command('from pylab import *', hidden=True)
+        self.sh.execute_command('from PYME.DSView.dsviewer_npy import View3D', hidden=True)
+
+        self.workspace = workspaceTree.WorkWrap(self.__dict__)
+
+        ##### Make certain things visible in the workspace tree
+
+        #components of the pipeline
+        col = self.workspace.newColour()
+        self.workspace.addKey('dataSources', col)
+        self.workspace.addKey('selectedDataSource', col)
+        self.workspace.addKey('filter', col)
+        self.workspace.addKey('mapping', col)
+        self.workspace.addKey('colourFilter', col)
+
+        #Generated stuff
+        col = self.workspace.newColour()
+        self.workspace.addKey('GeneratedMeasures', col)
+        self.workspace.addKey('generatedImages', col)
+        self.workspace.addKey('objects', col)
+
+        #main window, so we can get everything else if needed
+        col = self.workspace.newColour()
+        self.workspace.addKey('MainWindow', col)
+
+        ######
+
+        self.workspaceView = workspaceTree.WorkspaceTree(self.notebook, workspace=self.workspace, shell=self.sh)
+        self.notebook.AddPage(page=self.workspaceView, select=False, caption='Workspace')
+
+        self.glCanvas = gl_render.LMGLCanvas(self.notebook)
+        self.notebook.AddPage(page=self.glCanvas, select=True, caption='View')
+        self.glCanvas.cmap = pylab.cm.hot
+
+        self.ID_WINDOW_TOP = 100
+        self.ID_WINDOW_LEFT1 = 101
+        self.ID_WINDOW_RIGHT1 = 102
+        self.ID_WINDOW_BOTTOM = 103
+
+        self._leftWindow1.Bind(wx.EVT_SASH_DRAGGED_RANGE, self.OnFoldPanelBarDrag,
+                               id=100, id2=103)
+        self.Bind(wx.EVT_SIZE, self.OnSize)
+        self.Bind(wx.EVT_MOVE, self.OnMove)
 
         statusLog.SetStatusDispFcn(self.SetStatus)
 
@@ -2510,6 +2544,7 @@ class VisGUIFrame(wx.Frame):
             self.colp.refresh()
 
         self.sh.shell.user_ns.update(self.__dict__)
+        self.workspaceView.RefreshItems()
 
 
     def GenQuads(self):
