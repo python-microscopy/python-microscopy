@@ -1088,6 +1088,15 @@ class DSViewFrame(wx.Frame):
 
         vsizer.Add(hsizer, 0,wx.ALL|wx.EXPAND, 5)
 
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(pan, -1, 'CMap:'), 0, wx.ALL, 5)
+
+        self.chProgDispCMap = wx.Choice(pan, -1, choices = ['gist_rainbow', 'RdYlGn'], size=(60, -1))
+        self.chProgDispCMap.Bind(wx.EVT_CHOICE, self.OnProgDispCMapChange)
+        hsizer.Add(self.chProgDispCMap, 1, wx.ALL, 5)
+
+        vsizer.Add(hsizer, 0,wx.ALL|wx.EXPAND, 5)
+
         self.progPan = progGraph.progPanel(pan, self.fitResults, size=(150, 300))
 
         vsizer.Add(self.progPan, 0,wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5)
@@ -1101,6 +1110,11 @@ class DSViewFrame(wx.Frame):
         #print 'foo'
         self.analDispMode = self.chProgDispColour.GetStringSelection()
         self.analRefresh()
+
+    def OnProgDispCMapChange(self, event):
+        #print 'foo'
+        self.glCanvas.setCMap(pylab.cm.__getattribute__(self.chProgDispColour.GetStringSelection()))
+
 
 
     def update(self):
