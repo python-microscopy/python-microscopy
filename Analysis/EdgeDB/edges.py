@@ -41,12 +41,12 @@ class EdgeDB:
             taskEdges = range(0,N, taskSize) + [N]
 
             tasks = [(taskEdges[i], taskEdges[i+1]) for i in range(len(taskEdges)-1)]
-            print tasks
+            #print tasks
 
             threads = [threading.Thread(target = calcEdgeLengths, args=(self.edgeArray, coords,  t[0], t[1])) for t in tasks]
             
             for p in threads:
-                print p
+                #print p
                 p.start()
 
             for p in threads:

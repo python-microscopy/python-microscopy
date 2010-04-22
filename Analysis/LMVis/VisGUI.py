@@ -14,6 +14,7 @@
 import os.path
 import wx
 import wx.py.shell
+from IPython.frontend.wx.wx_frontend import WxController
 
 import wx.lib.foldpanelbar as fpb
 from PYME.misc.fbpIcons import *
@@ -125,14 +126,18 @@ class VisGUIFrame(wx.Frame):
         #self.glCanvas = wx.Panel(self, -1, style=wx.SUNKEN_BORDER)
         self.notebook = AuiNotebookWithFloatingPages(id=-1, parent=self, style=wx.aui.AUI_NB_TAB_SPLIT)
 
-        self.sh = wx.py.shell.Shell(id=-1,
-              parent=self.notebook, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
-              introText='Python SMI bindings - note that help, license etc below is for Python, not PySMI\n\n')
+        #self.sh = wx.py.shell.Shell(id=-1,
+        #      parent=self.notebook, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
+        #      introText='Python SMI bindings - note that help, license etc below is for Python, not PySMI\n\n')
+
+        self.MainWindow = self #so we can access from shell
+
+        self.sh = WxController(self.notebook)
 
         self.notebook.AddPage(page=self.sh, select=True, caption='Console')
 
-        self.sh.Execute('from pylab import *')
-        self.sh.Execute('from PYME.DSView.dsviewer_npy import View3D')
+        self.sh.execute_command('from pylab import *', hidden=True)
+        self.sh.execute_command('from PYME.DSView.dsviewer_npy import View3D', hidden=True)
 
         self.glCanvas = gl_render.LMGLCanvas(self.notebook)
         self.notebook.AddPage(page=self.glCanvas, select=True, caption='View')
@@ -1543,7 +1548,7 @@ class VisGUIFrame(wx.Frame):
                 #print jitVals
                 jitVals = jitScale*jitVals
 
-                print jitParamName, len(jitVals), len(self.colourFilter['x'])
+                #print jitParamName, len(jitVals), len(self.colourFilter['x'])
 
                 if dlg.getSoftRender():
                     status = statusLog.StatusLogger("Rendering triangles ...")
@@ -2035,7 +2040,7 @@ class VisGUIFrame(wx.Frame):
         self.filter = None
         self.mapping = None
         self.colourFilter = None
-        print os.path.splitext(filename)[1]
+        #print os.path.splitext(filename)[1]
         if os.path.splitext(filename)[1] == '.h5r':
                 try:
                     self.selectedDataSource = inpFilt.h5rSource(filename)
@@ -2170,7 +2175,7 @@ class VisGUIFrame(wx.Frame):
                 return #we cancelled
 
             #try:
-            print dlg.GetFieldNames()
+            #print dlg.GetFieldNames()
             ds = inpFilt.textfileSource(filename, dlg.GetFieldNames())
             self.selectedDataSource = ds
             self.dataSources.append(ds)
@@ -2181,12 +2186,12 @@ class VisGUIFrame(wx.Frame):
         #for k in self.filterKeys.keys():
 
         #if we've done a 3d fit
-        print self.selectedDataSource.keys()
+        #print self.selectedDataSource.keys()
         for k in self.filterKeys.keys():
             if not k in self.selectedDataSource.keys():
                 self.filterKeys.pop(k)
 
-        print self.filterKeys
+        #print self.filterKeys
         self.RegenFilter()
         self.CreateFoldPanel()
         if not self.colp == None:
@@ -2274,7 +2279,7 @@ class VisGUIFrame(wx.Frame):
                 return #we cancelled
 
             #try:
-            print dlg.GetFieldNames()
+            #print dlg.GetFieldNames()
             ds = inpFilt.textfileSource(filename, dlg.GetFieldNames())
             self.selectedDataSource = ds
             self.dataSources.append(ds)
@@ -2289,7 +2294,7 @@ class VisGUIFrame(wx.Frame):
 #        if 'fitResults_z0' in self.selectedDataSource.keys():
 #            self.filterKeys.pop('sig')
 
-        print self.filterKeys
+        #print self.filterKeys
         self.RegenFilter()
         self.CreateFoldPanel()
         if not self.colp == None:
@@ -2503,6 +2508,8 @@ class VisGUIFrame(wx.Frame):
 
         if not self.colp == None and self.colp.IsShown():
             self.colp.refresh()
+
+        self.sh.shell.user_ns.update(self.__dict__)
 
 
     def GenQuads(self):
