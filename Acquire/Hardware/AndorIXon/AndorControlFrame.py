@@ -68,8 +68,10 @@ class AndorPanel(wx.Panel):
         sbEMGain = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'EM Gain', size=(30, -1)), wx.VERTICAL)
         hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.tEMGain = wx.TextCtrl(self, -1, '')
+        self.tEMGain = wx.ComboBox(self, -1, '0', choices=['0', '150'], size=[30,-1])
         self.tEMGain.Bind(wx.EVT_TEXT, self.OnEMGainTextChange)
+        self.tEMGain.Bind(wx.EVT_TEXT_ENTER, self.OnBSetGainButton)
+        self.tEMGain.Bind(wx.EVT_COMBOBOX, self.OnBSetGainButton)
         hsizer2.Add(self.tEMGain, 1, wx.EXPAND|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.bSetGain = wx.Button(self, -1, 'Set', style=wx.BU_EXACTFIT)
@@ -164,7 +166,7 @@ class AndorPanel(wx.Panel):
         self.scope = scope
 
         self.tCCDTemp.ChangeValue(repr(self.cam.GetCCDTempSetPoint()))
-        self.tEMGain.ChangeValue(repr(self.cam.GetEMGain()))
+        self.tEMGain.SetValue(repr(self.cam.GetEMGain()))
 
         self._PopulateSpeeds()
         self.OnEMGainTextChange(None)
