@@ -56,7 +56,7 @@ class TaskQueue:
         return [self.getTask(workerN, NWorkers)]
 
 	def returnCompletedTask(self, taskResult):
-		for it in self.tasksInProgress:
+		for it in self.tasksInProgress[:]:
 			if (it.taskID == taskResult.taskID):
 				self.tasksInProgress.remove(it)
 		self.fileResult(taskResult)
@@ -66,7 +66,7 @@ class TaskQueue:
 
     def returnCompletedTasks(self, taskResults):
         for taskResult in taskResults:
-            for it in self.tasksInProgress:
+            for it in self.tasksInProgress[:]:
                 if (it.taskID == taskResult.taskID):
                     self.tasksInProgress.remove(it)
 
