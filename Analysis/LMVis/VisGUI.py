@@ -161,8 +161,8 @@ class VisGUIFrame(wx.Frame):
 
         self.fluorSpecies = {}
         self.chromaticShifts = {}
-        self.t_p_dye = 0.2
-        self.t_p_other = 0.02
+        self.t_p_dye = 0.1
+        self.t_p_other = 0.1
 
         self.objThreshold = 30
         self.objMinSize = 10
@@ -2143,6 +2143,8 @@ class VisGUIFrame(wx.Frame):
                                 i += 1
 
                     self.colp = colourPanel.colourPanel(self.notebook, self)
+#                    if 'Sample.Labelling' in self.mdh.getEntryNames():
+#                        self.colp.SpecFromMetadata(self.mdh)
                     self.notebook.AddPage(self.colp, 'Colour')
                 else:
                     self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource)
@@ -2227,9 +2229,13 @@ class VisGUIFrame(wx.Frame):
 
         #print self.filterKeys
         self.RegenFilter()
+
         self.CreateFoldPanel()
         if not self.colp == None:
-            self.colp.refresh()
+            if 'Sample.Labelling' in self.mdh.getEntryNames():
+                self.colp.SpecFromMetadata(self.mdh)
+            else:
+                self.colp.refresh()
         self.SetFit()
 
     def OnOpenChannel(self, event):

@@ -20,7 +20,7 @@ import os
 LimitChangeEvent, EVT_LIMIT_CHANGE = wx.lib.newevent.NewCommandEvent()
 
 class HistLimitPanel(wx.Panel):
-    def __init__(self, parent, id, data, limit_lower, limit_upper, log=False, size =(200, 100), pos=(0,0)):
+    def __init__(self, parent, id, data, limit_lower, limit_upper, log=False, size =(200, 100), pos=(0,0), threshMode= False):
         wx.Panel.__init__(self, parent, id, size=size, pos=pos, style=wx.BORDER_SUNKEN)
         
         self.data = data.ravel()
@@ -41,6 +41,13 @@ class HistLimitPanel(wx.Panel):
 
         self.textSize = 10
         self.log = log
+
+        self.threshMode = threshMode
+
+        if self.threshMode:
+            thresh =  0.5*(self.limit_lower + self.limit_upper)
+            self.limit_lower = thresh
+            self.limit_upper = thresh
 
         self.GenHist()
 
@@ -66,6 +73,11 @@ class HistLimitPanel(wx.Panel):
         self.limit_lower = float(lower)
         self.limit_upper = float(upper)
 
+        if self.threshMode:
+            thresh =  0.5*(self.limit_lower + self.limit_upper)
+            self.limit_lower = thresh
+            self.limit_upper = thresh
+
         self.GenHist()
         self.Refresh()
 
@@ -76,7 +88,10 @@ class HistLimitPanel(wx.Panel):
         #hit test the limits
         llx = (self.limit_lower - self.hmin)/self.hstep
         ulx = (self.limit_upper - self.hmin)/self.hstep
-        if abs(llx - x) < 3:
+
+        if self.threshMode and abs(llx - x) < 3:
+            self.dragging = 'thresh'
+        elif abs(llx - x) < 3:
             self.dragging = 'lower'
         elif abs(ulx - x) < 3:
             self.dragging = 'upper'
@@ -102,7 +117,10 @@ class HistLimitPanel(wx.Panel):
         
         xt = self.hmin + x*self.hstep
 
-        if self.dragging == 'lower' and not xt >= self.limit_upper:
+        if self.dragging == 'thresh':
+            self.limit_lower = xt
+            self.limit_upper = xt
+        elif self.dragging == 'lower' and not xt >= self.limit_upper:
             self.limit_lower = xt
         elif self.dragging == 'upper' and not xt <= self.limit_lower:
             self.limit_upper = xt
@@ -125,6 +143,11 @@ class HistLimitPanel(wx.Panel):
         #expand shown range to twice current range
         self.hmin = hmid - 1.5*(hmid-self.hmin)
         self.hmax = hmid + 1.5*(self.hmax-hmid)
+
+        #go from 0 if in threshold mode
+        if self.threshMode:
+            self.hmin = 0.
+            self.hmax = 2*hmid
 
         self.hstep = (self.hmax - self.hmin)/max(self.Size[0], 1)
 
@@ -155,7 +178,7 @@ class HistLimitPanel(wx.Panel):
 
         #when being used to determine histogram bins
         if not self.binSize == None:
-            binEdges = numpy.arange(self.limit_lower, self.limit_upper + self.binSize, self.binSize)
+            binEdges = numpy.arange(self.hmin, self.hmax + self.binSize, self.binSize)
 
             for i in range(len(binEdges) -1):
                 llx = math.floor((binEdges[i] - self.hmin)/self.hstep)
@@ -179,26 +202,26 @@ class HistLimitPanel(wx.Panel):
         else:
             dc.SetPen(wx.Pen(wx.RED, 2))
 
+        #print self.limit_lower
+
         llx = (self.limit_lower - self.hmin)/self.hstep
         dc.DrawLine(llx, 0, llx, maxy)
         lab = '%1.3G' % self.limit_lower
         labSize = dc.GetTextExtent(lab)
         dc.DrawText(lab, max(llx - labSize[0]/2, 0), maxy + 2)
 
-        if self.dragging == 'upper':
-            dc.SetPen(wx.Pen(wx.GREEN, 2))
-        else:
-            dc.SetPen(wx.Pen(wx.RED, 2))
-            
-        ulx = (self.limit_upper - self.hmin)/self.hstep
-        dc.DrawLine(ulx, 0, ulx, maxy)
-        lab = '%1.3G' % self.limit_upper
-        labSize = dc.GetTextExtent(lab)
-        dc.DrawText(lab, min(ulx - labSize[0]/2, self.Size[0] - labSize[0]), maxy + 2)
 
-        
+        if not self.threshMode:
+            if self.dragging == 'upper':
+                dc.SetPen(wx.Pen(wx.GREEN, 2))
+            else:
+                dc.SetPen(wx.Pen(wx.RED, 2))
 
-
+            ulx = (self.limit_upper - self.hmin)/self.hstep
+            dc.DrawLine(ulx, 0, ulx, maxy)
+            lab = '%1.3G' % self.limit_upper
+            labSize = dc.GetTextExtent(lab)
+            dc.DrawText(lab, min(ulx - labSize[0]/2, self.Size[0] - labSize[0]), maxy + 2)
 
 
         dc.SetPen(wx.NullPen)
@@ -248,15 +271,64 @@ class HistLimitPanel(wx.Panel):
             self.Refresh()
             evt = LimitChangeEvent(self.GetId(), upper=self.limit_upper, lower=self.limit_lower)
             wx.PostEvent(self, evt)
+        elif event.GetKeyCode() == 84: #T - toggle threshold mode
+            self.threshMode = not self.threshMode
+            if self.threshMode:
+                self.oldLimits = (self.limit_lower, self.limit_upper)
+
+                thresh =  0.5*(self.limit_lower + self.limit_upper)
+                self.limit_lower = thresh
+                self.limit_upper = thresh
+            elif 'oldLimits' in dir(self):
+                self.limit_lower, self.limit_upper = self.oldLimits
+            else: #when coming out of threshold mode - min max scale
+                self.limit_lower = float(self.data.min())
+                self.limit_upper = float(self.data.max())
+
+            self.GenHist()
+            self.Refresh()
+            evt = LimitChangeEvent(self.GetId(), upper=self.limit_upper, lower=self.limit_lower)
+            wx.PostEvent(self, evt)
         else:
             event.Skip()
+
+    def SetThresholdMode(self, tMode):
+        if not self.threshMode == tMode:
+            self.threshMode = tMode
+            if self.threshMode:
+                self.oldLimits = (self.limit_lower, self.limit_upper)
+
+                thresh =  0.5*(self.limit_lower + self.limit_upper)
+                self.limit_lower = thresh
+                self.limit_upper = thresh
+            elif 'oldLimits' in dir(self):
+                self.limit_lower, self.limit_upper = self.oldLimits
+            else: #when coming out of threshold mode - min max scale
+                self.limit_lower = float(self.data.min())
+                self.limit_upper = float(self.data.max())
+
+            self.GenHist()
+            self.Refresh()
+            evt = LimitChangeEvent(self.GetId(), upper=self.limit_upper, lower=self.limit_lower)
+            wx.PostEvent(self, evt)
 
     def SetValue(self, val):
         self.limit_lower = float(val[0])
         self.limit_upper = float(val[1])
 
+        if self.threshMode:
+            thresh =  0.5*(self.limit_lower + self.limit_upper)
+            self.limit_lower = thresh
+            self.limit_upper = thresh
+
         self.GenHist()
         self.Refresh()
+
+    def SetValueAndFire(self, val):
+        self.SetValue(val)
+        evt = LimitChangeEvent(self.GetId(), upper=self.limit_upper, lower=self.limit_lower)
+        wx.PostEvent(self, evt)
+
 
     def GetValue(self):
         return (self.limit_lower, self.limit_upper)

@@ -20,6 +20,8 @@ import pylab
 import scipy.misc
 import subprocess
 
+from PYME.Analysis import thresholding
+
 from PYME.DSView.myviewpanel_numarray import MyViewPanel
 
 from PYME.misc.auiFloatBook import AuiNotebookWithFloatingPages
@@ -782,6 +784,7 @@ class DispSettingsFrame(wx.MiniFrame):
         self.hIds = []
         self.cIds = []
         self.cbIds = []
+        self.hClims = []
 
         cmapnames = pylab.cm.cmapnames# + [n + '_r' for n in pylab.cm.cmapnames]
         #cmapnames.sort()
@@ -793,6 +796,7 @@ class DispSettingsFrame(wx.MiniFrame):
             self.hIds.append(id)
             c = ivp.image.img.ravel()
             hClim = histLimits.HistLimitPanel(self, id, c[::(len(c)/1e4)], ivp.clim[0], ivp.clim[1], size=(150, 80), log=True)
+            self.hClims.append(hClim)
 
             hClim.Bind(histLimits.EVT_LIMIT_CHANGE, self.OnCLimChanged)
 
@@ -807,7 +811,52 @@ class DispSettingsFrame(wx.MiniFrame):
 
             vsizer.Add(ssizer, 0, wx.ALL, 5)
 
+        ssizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Segmentation'), wx.VERTICAL)
+
+        self.cbShowThreshold = wx.CheckBox(self, -1, 'Threshold mode')
+        self.cbShowThreshold.Bind(wx.EVT_CHECKBOX, self.OnShowThreshold)
+        ssizer.Add(self.cbShowThreshold, 0, wx.ALL, 5)
+
+        self.bIsodataThresh = wx.Button(self, -1, 'Isodata')
+        self.bIsodataThresh.Bind(wx.EVT_BUTTON, self.OnIsodataThresh)
+        self.bIsodataThresh.Enable(False)
+        ssizer.Add(self.bIsodataThresh, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5)
+
+
+        hsizer=wx.BoxSizer(wx.HORIZONTAL)
+        self.tPercThresh = wx.TextCtrl(self, -1, '.80', size=[30, -1])
+        self.tPercThresh.Enable(False)
+        hsizer.Add(self.tPercThresh, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 1)
+        self.bPercThresh = wx.Button(self, -1, 'Signal Fraction')
+        self.bPercThresh.Bind(wx.EVT_BUTTON, self.OnSignalFracThresh)
+        self.bPercThresh.Enable(False)
+        hsizer.Add(self.bPercThresh, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 1)
+        ssizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 5)
+
+        vsizer.Add(ssizer, 0, wx.ALL|wx.EXPAND, 5)
+
         self.SetSizerAndFit(vsizer)
+
+    def OnShowThreshold(self, event):
+        tMode = self.cbShowThreshold.GetValue()
+        for hClim in self.hClims:
+            hClim.SetThresholdMode(tMode)
+
+        self.bIsodataThresh.Enable(tMode)
+        self.tPercThresh.Enable(tMode)
+        self.bPercThresh.Enable(tMode)
+
+
+    def OnIsodataThresh(self, event):
+        for ivp, hClim in zip(self.parent.ivps, self.hClims):
+            t = thresholding.isodata_f(ivp.image.img)
+            hClim.SetValueAndFire((t,t))
+
+    def OnSignalFracThresh(self, event):
+        frac = max(0., min(1., float(self.tPercThresh.GetValue())))
+        for ivp, hClim in zip(self.parent.ivps, self.hClims):
+            t = thresholding.signalFraction(ivp.image.img, frac)
+            hClim.SetValueAndFire((t,t))
 
     def OnCLimChanged(self, event):
         #print event.GetId()

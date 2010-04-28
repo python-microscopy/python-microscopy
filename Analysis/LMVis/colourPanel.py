@@ -17,6 +17,7 @@ import numpy
 import wx
 from pylab import cm
 import sys
+import dyeRatios
 
 class colourPlotPanel(wxPlotPanel.PlotPanel):
     def __init__(self, parent, visFrame, **kwargs ):
@@ -338,6 +339,27 @@ class colourPanel(wx.Panel):
 
             #self.visFr.mapping.setMapping('p_%s' % key, 'exp(-(%f*A - fitResults_Ag)**2/(2*fitError_Ag**2))*exp(-(%f*A - fitResults_Ar)**2/(2*fitError_Ar**2))' % (1- val, val))
             self.visFr.mapping.setMapping('p_%s' % key, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))' % (g))
+
+        self.visFr.UpdatePointColourChoices()
+        self.visFr.UpdateColourFilterChoices()
+
+        self.refresh()
+
+
+    def SpecFromMetadata(self, mdh):
+        labels = mdh.getEntry('Sample.Labelling')
+
+        for structure, dye in labels:
+            ratio = dyeRatios.getRatio(dye)
+
+            if not ratio == None:
+                self.visFr.fluorSpecies[structure] = ratio
+                ind = self.lFluorSpecies.InsertStringItem(sys.maxint, structure)
+                self.lFluorSpecies.SetStringItem(ind,1, '%3.3f' % ratio)
+                self.lFluorSpecies.SetItemTextColour(ind, wx.Colour(*((128*numpy.array(cm.jet_r(ratio)))[:3])))
+
+                #self.visFr.mapping.setMapping('p_%s' % key, 'exp(-(%f*A - fitResults_Ag)**2/(2*fitError_Ag**2))*exp(-(%f*A - fitResults_Ar)**2/(2*fitError_Ar**2))' % (1- val, val))
+                self.visFr.mapping.setMapping('p_%s' % structure, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))' % (ratio))
 
         self.visFr.UpdatePointColourChoices()
         self.visFr.UpdateColourFilterChoices()
