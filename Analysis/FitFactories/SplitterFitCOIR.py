@@ -148,7 +148,7 @@ class COIFitFactory:
         Ar = Ag.sum()  #amplitude
 
 	
-        res = [Ag, Ar, x0, y0, sig_xl, sig_xr, sig_yu, sig_yd]
+        res = numpy.array([Ag, Ar, x0, y0, sig_xl, sig_xr, sig_yu, sig_yd])
         
         return COIFitResultR(res, self.metadata, (xslice, yslice, zslice))
 

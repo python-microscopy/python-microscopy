@@ -23,7 +23,7 @@ dataSourceID = None
 
 bufferMisses = 0
 
-splitterFitModules = ['SplitterFitFR', 'BiplaneFitR', 'SplitterShiftEstFR', 'SplitterObjFindR', 'SplitterFitPsfIR']
+splitterFitModules = ['SplitterFitFR','SplitterFitCOIR', 'BiplaneFitR', 'SplitterShiftEstFR', 'SplitterObjFindR', 'SplitterFitPsfIR']
 
 from pylab import *
 
