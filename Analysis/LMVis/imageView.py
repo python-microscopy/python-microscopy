@@ -751,6 +751,30 @@ class MultiChannelImageViewFrame(wx.Frame):
             c = mlab.contour3d(im.img, contours=[pylab.mean(ivp.clim)], color = pylab.cm.gist_rainbow(float(i)/len(self.images))[:3])
             c.mlab_source.dataset.spacing = (1. ,1., asp)
 
+    def GetChannel(self, chan):
+        if not type(chan) == int:
+            chan = self.names.index(chan)
+
+        return self.images[chan].img
+
+    def GetChannelMask(self, chan):
+        if not type(chan) == int:
+            chan = self.names.index(chan)
+
+        return self.images[chan].img > numpy.mean(self.ivps[chan].clim)
+
+    def GetChannelVoxSize(self, chan):
+        if not type(chan) == int:
+            chan = self.names.index(chan)
+
+        if self.images[chan].img.ndim == 2:
+            return self.images[chan].img.pixelSize, self.images[chan].pixelSize
+        else:
+            #3D
+            return self.images[chan].pixelSize, self.images[chan].pixelSize, self.images[chan].sliceSize
+
+
+
 
 #    def OnCLimChanged(self, event):
 #        self.ivp.clim = (event.lower, event.upper)

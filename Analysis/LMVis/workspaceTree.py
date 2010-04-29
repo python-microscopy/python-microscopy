@@ -106,7 +106,10 @@ class WorkspaceTree(VirtualTree, wx.gizmos.TreeListCtrl):
 
     def _getNumChildren(self, item):
         '''get the nth child of an item'''
-        if '__getitem__' in dir(item):
+        if type(item).__name__ in ['str', 'unicode', 'shmarray', 'ndarray']:
+            #special case for things we don't want to expand
+            return 0
+        elif '__getitem__' in dir(item):
             #either list like or dict like
             if '__len__' in dir(item):
                 #dict like
