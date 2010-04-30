@@ -136,7 +136,7 @@ class COIFitFactory:
         Ar = dataROI[:,:,1]
         
         x0 =  (Xg*Ag + Xr*Ar).sum()/(Ag.sum() + Ar.sum())
-        y0 =  (Yg*Ag + Yr*Ar).sum()/(Yg.sum() + Yr.sum())
+        y0 =  (Yg*Ag + Yr*Ar).sum()/(Ag.sum() + Ar.sum())
 
         sig_xl = (numpy.maximum(0, x0 - Xg)*Ag + numpy.maximum(0, x0 - Xr)*Ar).sum()/(Ag.sum() + Ar.sum())
         sig_xr = (numpy.maximum(0, Xg - x0)*Ag + numpy.maximum(0, Xr - x0)*Ar).sum()/(Ag.sum() + Ar.sum())
@@ -145,7 +145,7 @@ class COIFitFactory:
         sig_yd = (numpy.maximum(0, Yg - y0)*Ag + numpy.maximum(0, Yr - y0)*Ar).sum()/(Ag.sum() + Ar.sum())
 
         Ag = Ag.sum()  #amplitude
-        Ar = Ag.sum()  #amplitude
+        Ar = Ar.sum()  #amplitude
 
 	
         res = numpy.array([Ag, Ar, x0, y0, sig_xl, sig_xr, sig_yu, sig_yd])
