@@ -3,13 +3,14 @@ fth5.pyo
 myviewpanel.pyo
 logparser.pyo
 viewpanellite.pyc
+dsviewer_seq.pyo
+eventLogViewer.pyc
 dsviewer_npy_nb.pyc
 displaySettingsPanel.pyo
-eventLogViewer.pyc
-dsviewer_seq.pyo
 dsviewer.pyc
-myviewpanel_numarray.pyo
+dataExporter.pyc
 voxSizeDialog.pyc
+myviewpanel_numarray.pyo
 viewpanelN.pyc
 dh5view.pyc
 dCrop.pyo
@@ -24,8 +25,8 @@ dh5view.pyo
 dCrop.pyc
 dsviewer_npy_nb.pyo
 logparser.pyc
-ft.pyo
 __init__.pyc
+ft.pyo
 fitInfo.pyo
 dsviewer_npy.pyc
 viewpanel.pyo

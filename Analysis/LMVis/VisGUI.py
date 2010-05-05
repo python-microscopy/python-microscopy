@@ -1274,6 +1274,7 @@ class VisGUIFrame(wx.Frame):
 
         ID_GEN_SHIFTMAP = wx.NewId()
         ID_CORR_DRIFT = wx.NewId()
+        ID_TRACK_MOLECULES = wx.NewId()
 
         ID_ABOUT = wx.ID_ABOUT
 
@@ -1357,6 +1358,7 @@ class VisGUIFrame(wx.Frame):
         special_menu = wx.Menu()
         special_menu.Append(ID_GEN_SHIFTMAP, "Calculate &Shiftmap")
         special_menu.Append(ID_CORR_DRIFT, "Estimate drift using cross-correlation")
+        special_menu.Append(ID_TRACK_MOLECULES, "&Track single molecule trajectories")
 
         help_menu = wx.Menu()
         help_menu.Append(ID_ABOUT, "&About")
@@ -1406,6 +1408,7 @@ class VisGUIFrame(wx.Frame):
 
         self.Bind(wx.EVT_MENU, self.OnGenShiftmap, id=ID_GEN_SHIFTMAP)
         self.Bind(wx.EVT_MENU, self.OnCalcCorrDrift, id=ID_CORR_DRIFT)
+        self.Bind(wx.EVT_MENU, self.OnTrackMolecules, id=ID_TRACK_MOLECULES)
 
         self.Bind(wx.EVT_MENU, self.OnView3DPoints, id=ID_VIEW_3D_POINTS)
         self.Bind(wx.EVT_MENU, self.OnView3DTriangles, id=ID_VIEW_3D_TRIANGS)
@@ -2025,6 +2028,36 @@ class VisGUIFrame(wx.Frame):
             cPickle.dump((spx, spy), fid, 2)
             fid.close()
 
+    def OnTrackMolecules(self, event):
+        import PYME.Analysis.DeClump.deClumpGUI as deClumpGUI
+        import PYME.Analysis.DeClump.deClump as deClump
+
+        bCurr = wx.BusyCursor()
+        dlg = deClumpGUI.deClumpDialog(self)
+
+        ret = dlg.ShowModal()
+
+        if ret == wx.ID_OK:
+            nFrames = dlg.GetClumpTimeWindow()
+            rad_var = dlg.GetClumpRadiusVariable()
+            if rad_var == '1.0':
+                delta_x = 0*self.selectedDataSource['x'] + dlg.GetClumpRadiusMultiplier()
+            else:
+                delta_x = dlg.GetClumpRadiusMultiplier()*self.selectedDataSource[rad_var]
+
+        self.selectedDataSource.clumpIndices = deClump.findClumps(self.selectedDataSource['t'].astype('i'), self.selectedDataSource['x'].astype('f4'), self.selectedDataSource['y'].astype('f4'), delta_x.astype('f4'), nFrames)
+        numPerClump, b = np.histogram(self.selectedDataSource.clumpIndices, np.arange(self.selectedDataSource.clumpIndices.max() + 1.5) + .5)
+        print b
+        self.selectedDataSource.clumpSizes = numPerClump[self.selectedDataSource.clumpIndices - 1]
+
+        self.selectedDataSource.setMapping('clumpIndex', 'clumpIndices')
+        self.selectedDataSource.setMapping('clumpSize', 'clumpSizes')
+
+        self.RegenFilter()
+        self.CreateFoldPanel()
+
+        dlg.Destroy()
+
     def OnCalcCorrDrift(self, event):
         from PYME.Analysis import driftAutocorr
 
@@ -2554,7 +2587,9 @@ class VisGUIFrame(wx.Frame):
             self.colp.refresh()
 
         self.sh.shell.user_ns.update(self.__dict__)
+        wx.EndBusyCursor()
         self.workspaceView.RefreshItems()
+
 
 
     def GenQuads(self):

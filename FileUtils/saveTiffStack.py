@@ -36,16 +36,25 @@ def writeTiff(im, outfile):
 
 #Adapted to use 3rd dimension as z from priithons 'useful.py'
 def saveTiffMultipage(arr, fn, **params):
-    if arr.ndim != 3:
-        raise ValueError, "can only save 3d arrays"
+    if arr.ndim == 2:
+        #fake a 3rd dimension
+        #raise ValueError, "can only save 3d arrays"
+        arr = arr[:,:,None]
 
     fp = open(fn, 'w+b')
 
     ifd_offsets=[]
 
+    if arr.dtype == 'uint16':
+        nptype = 'uint16'
+        piltype = 'I;16'
+    else:
+        nptype = 'f'
+        piltype = 'F'
+
     params["_debug_multipage"] = True
     for z in range(arr.shape[2]):
-        ii = Image.fromarray(arr[:,:,z].astype('f'), 'F')
+        ii = Image.fromarray(arr[:,:,z].astype(nptype), piltype)
 
         fp.seek(0,2) # go to end of file
         if z==0:

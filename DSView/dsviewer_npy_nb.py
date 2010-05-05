@@ -314,11 +314,11 @@ class DSViewFrame(wx.Frame):
         self.menubar = wx.MenuBar()
         self.SetMenuBar(self.menubar)
         tmp_menu = wx.Menu()
-        #F_SAVE = wx.NewId()
+        #F_EXPORT = wx.NewId()
         #F_CLOSE = wx.NewId()
         F_SAVE_POSITIONS = wx.NewId()
         F_SAVE_FITS = wx.NewId()
-        tmp_menu.Append(wx.ID_SAVEAS, "Extract Frames", "", wx.ITEM_NORMAL)
+        tmp_menu.Append(wx.ID_SAVEAS, "Export", "", wx.ITEM_NORMAL)
         if self.mode == 'blob':
             tmp_menu.Append(F_SAVE_POSITIONS, "Save &Positions", "", wx.ITEM_NORMAL)
             tmp_menu.Append(F_SAVE_FITS, "Save &Fit Results", "", wx.ITEM_NORMAL)
@@ -350,7 +350,8 @@ class DSViewFrame(wx.Frame):
         self.menubar.Append(mDeconvolution, "Deconvolution")
 
         # Menu Bar end
-        wx.EVT_MENU(self, wx.ID_SAVEAS, self.extractFrames)
+        #wx.EVT_MENU(self, wx.ID_SAVEAS, self.extractFrames)
+        wx.EVT_MENU(self, wx.ID_SAVEAS, self.OnExport)
         wx.EVT_MENU(self, F_SAVE_POSITIONS, self.savePositions)
         wx.EVT_MENU(self, F_SAVE_FITS, self.saveFits)
         #wx.EVT_MENU(self, wx.ID_CLOSE, self.menuClose)
@@ -1167,6 +1168,16 @@ class DSViewFrame(wx.Frame):
 
             fdialog.Destroy()
         dlg.Destroy()
+
+    def OnExport(self, event=None):
+        import dataExporter
+
+        if 'getEvents' in dir(self.ds):
+            evts = self.ds.getEvents()
+        else:
+            evts = []
+
+        dataExporter.ExportData(self.vp, self.mdh, evts, self.seriesName)
 
     def savePositions(self, event=None):
         fdialog = wx.FileDialog(None, 'Save Positions ...',

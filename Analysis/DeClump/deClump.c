@@ -140,9 +140,14 @@ static PyObject * findClumps(PyObject *self, PyObject *args, PyObject *keywds)
 
 
     dims[0] = nPts;
+    printf("nPts = %d\n", nPts);
     assignedA = PyArray_SimpleNew(1, dims, PyArray_INT32);
     if (assignedA == NULL)
     {
+        Py_DECREF(tA);
+        Py_DECREF(xA);
+        Py_DECREF(yA);
+        Py_DECREF(delta_xA);
         PyErr_Format(PyExc_RuntimeError, "Error allocating array for objects");
         return NULL;
     }

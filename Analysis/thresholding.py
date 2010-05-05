@@ -37,11 +37,11 @@ def isodata(img, tol = 1e-3):
     tolerance indicates fraction of data range when delta is deemed not to have changed
     '''
 
-    imin=img.min()
-    imax= img.max()
+    imin = img.min()
+    imax = img.max()
 
     #initial delta is data range
-    delta = img.max() - img.min()
+    delta = imax - imin
 
     tol = tol*delta
 

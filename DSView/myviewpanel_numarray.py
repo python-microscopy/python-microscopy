@@ -87,13 +87,13 @@ class DataWrap: #permit indexing with more dimensions larger than len(shape)
             keys = [keys[2]] + keys[:2] + keys[3:]
         #print keys
         if self.type == 'Array':
-            r = self.data.__getitem__(keys).T
+            r = self.data.__getitem__(keys)
         else:
             #print keys[0]
             #print numpy.mgrid[keys[0]]
-            r = numpy.array([self.data.getSlice(i)[keys[1], keys[2]] for i in numpy.mgrid[keys[0]] if i < self.data.getNumSlices()])
-        if self.dim_1_is_z and len(numpy.mgrid[keys[0]]) == 1: #and keys[0].__class__ == slice
-            r = r.T
+            r = numpy.concatenate([self.data.getSlice(i)[keys[1], keys[2]][:,:,None] for i in numpy.mgrid[keys[0]] if i < self.data.getNumSlices()], 2)
+#        if self.dim_1_is_z and len(numpy.mgrid[keys[0]]) == 1: #and keys[0].__class__ == slice
+#            r = r.T
         self.oldData = r
         #print r.max()
         return r
@@ -832,7 +832,7 @@ class MyViewPanel(viewpanelN.ViewPanel):
             for chan, offset, gain, cmap in zip(self.do.Chans, self.do.Offs, self.do.Gains, self.do.cmaps):
                 #print ima.shape, cmap(gain*self.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.zp), chan].squeeze() - offset)[:,:,:3].shape
                 #print (gain*(self.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.zp), chan] - offset).max()
-                ima[:] = ima[:] + (255*cmap(gain*(self.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.zp), chan].squeeze() - offset))[:,:,:3]).astype('b')[:]
+                ima[:] = ima[:] + (255*cmap(gain*(self.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.zp), chan].squeeze().T - offset))[:,:,:3]).astype('b')[:]
         #XZ
         elif self.do.slice == DisplayOpts.SLICE_XZ:
             ima = numpy.zeros((min(sY_, self.ds.shape[2]), min(sX_, self.ds.shape[0]), 3), 'uint8')
@@ -851,7 +851,7 @@ class MyViewPanel(viewpanelN.ViewPanel):
 #                b = numpy.zeros((ds.shape[0], ds.shape[2]), 'uint8'.T)
 
             for chan, offset, gain, cmap in zip(self.do.Chans, self.do.Offs, self.do.Gains, self.do.cmaps):
-                ima[:] = ima[:] + 255*cmap(gain*(self.ds[x0_:(x0_+sX_),int(self.yp),y0_:(y0_+sY_), chan].squeeze() - offset))[:,:,:3][:]
+                ima[:] = ima[:] + 255*cmap(gain*(self.ds[x0_:(x0_+sX_),int(self.yp),y0_:(y0_+sY_), chan].squeeze().T - offset))[:,:,:3][:]
 
         #YZ
         elif self.do.slice == DisplayOpts.SLICE_YZ:
@@ -871,7 +871,7 @@ class MyViewPanel(viewpanelN.ViewPanel):
 #                b = numpy.zeros((ds.shape[1], ds.shape[2]), 'uint8'.T)
 
             for chan, offset, gain, cmap in zip(self.do.Chans, self.do.Offs, self.do.Gains, self.do.cmaps):
-                ima[:] = ima[:] + 255*cmap(gain*(self.ds[int(self.xp),x0_:(x0_+sX_),y0_:(y0_+sY_), chan].squeeze() - offset))[:,:,:3][:]
+                ima[:] = ima[:] + 255*cmap(gain*(self.ds[int(self.xp),x0_:(x0_+sX_),y0_:(y0_+sY_), chan].squeeze().T - offset))[:,:,:3][:]
 #        r = r.T
 #        g = g.T
 #        b = b.T
