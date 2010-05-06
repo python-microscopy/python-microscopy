@@ -1,2 +1,5 @@
 __init__.pyc
+build
 edges.pyc
+segment.pyc
+setup.pyc
