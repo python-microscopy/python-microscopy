@@ -170,3 +170,79 @@ class NestedClassMDHandler:
     def __repr__(self):
         s = ['%s: %s' % (en, self.getEntry(en)) for en in self.getEntryNames()]
         return '<%s>:\n\n' % self.__class__.__name__ + '\n'.join(s)
+
+from xml.dom.minidom import getDOMImplementation, parse
+
+class XMLMDHandler:
+    def __init__(self, filename = None, mdToCopy=None):
+        if not filename == None:
+            #loading an existing file
+            self.doc = parse(filename)
+            self.md = self.doc.documentElement.getElementsByTagName('MetaData')[0]
+        else:
+            #creating a new document
+            self.doc = getDOMImplementation().createDocument(None, 'PYMEImageData', None)
+            self.md = self.doc.createElement('MetaData')
+            self.doc.documentElement.appendChild(self.md)
+
+        if not mdToCopy == None:
+            self.copyEntriesFrom(mdToCopy)
+
+    def writeXML(self, filename):
+        f = open(filename, 'w')
+        f.write(self.doc.toprettyxml())
+        f.close()
+
+
+    def setEntry(self,entryName, value):
+        entPath = entryName.split('.')
+
+        node = self.md
+        while len(entPath) >= 1:
+            el = [e for e in node.childNodes if e.tagName == entPath[0]]
+            if len(el) == 0:
+                #need to create node
+                newNode = self.doc.createElement(entPath[0])
+                node.appendChild(newNode)
+                node = newNode
+            else:
+                node = el[0]
+
+            entPath.pop(0)
+
+        node.setAttribute('class', type(value).__name__)
+        node.setAttribute('value', repr(value))
+
+
+#    def getEntry(self,entryName):
+#        entPath = entryName.split('.')
+#        en = entPath[-1]
+#        ep = entPath[:-1]
+#
+#        return eval('self.'+entryName)
+
+
+#    def getEntryNames(self):
+#        en = []
+#        for k in self.__dict__.keys():
+#            if self.__dict__[k].__class__ == NestedClassMDHandler:
+#                en += [k + '.' + kp for kp in self.__dict__[k].getEntryNames()]
+#            else:
+#                en.append(k)
+#
+#        return en
+
+
+    def copyEntriesFrom(self, mdToCopy):
+        for en in mdToCopy.getEntryNames():
+            self.setEntry(en, mdToCopy.getEntry(en))
+
+#    def mergeEntriesFrom(self, mdToCopy):
+#        #only copies values if not already defined
+#        for en in mdToCopy.getEntryNames():
+#            if not en in self.getEntryNames():
+#                self.setEntry(en, mdToCopy.getEntry(en))
+#
+#    def __repr__(self):
+#        s = ['%s: %s' % (en, self.getEntry(en)) for en in self.getEntryNames()]
+#        return '<%s>:\n\n' % self.__class__.__name__ + '\n'.join(s)

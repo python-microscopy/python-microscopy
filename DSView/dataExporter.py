@@ -110,12 +110,20 @@ class TiffStackExporter(Exporter):
         if outFile == None:
             return
 
-        saveTiffStack.saveTiffMultipage(data[xslice, yslice, zslice], outFile)        
+        saveTiffStack.saveTiffMultipage(data[xslice, yslice, zslice], outFile)
+
+        if not metadata == None:
+            xmd = MetaDataHandler.XMLMDHandler(mdToCopy=metadata)
+            xmlFile = os.path.splitext(outFile)[0] + '.xml'
+            xmd.writeXML(xmlFile)
+
+
+
 
 
 @exporter
 class TiffSeriesExporter(Exporter):
-    extension = '*.tiff'
+    extension = '*.xml'
     descr = 'TIFF Series - .tif'
 
     def Export(self, data, xslice, yslice, zslice, metadata=None, events = None, origName=None):
@@ -138,6 +146,11 @@ class TiffSeriesExporter(Exporter):
             Image.fromarray(im.squeeze().astype('uint16'), 'I;16').save(os.path.join(outDir, 'frame_%03d.tif'%i))
             i += 1
 
+        if not metadata == None:
+            xmd = MetaDataHandler.XMLMDHandler(mdToCopy=metadata)
+            xmlFile = os.path.splitext(outFile)[0] + '.xml'
+            xmd.writeXML(xmlFile)
+
 
 
 @exporter
@@ -152,6 +165,11 @@ class NumpyExporter(Exporter):
             return
 
         numpy.save(outFile, data[xslice, yslice, zslice])
+
+        if not metadata == None:
+            xmd = MetaDataHandler.XMLMDHandler(mdToCopy=metadata)
+            xmlFile = os.path.splitext(outFile)[0] + '.xml'
+            xmd.writeXML(xmlFile)
 
 
 #exporters = {'PYME HDF - .h5': H5Exporter,

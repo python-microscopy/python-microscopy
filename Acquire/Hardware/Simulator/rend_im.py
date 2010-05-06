@@ -14,6 +14,7 @@ from PYME.PSFGen import *
 from scipy import *
 import fluor
 from PYME.Analysis import MetaData
+from PYME.Analysis import cInterp
 import cPickle
 
 from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
@@ -155,6 +156,86 @@ def interp(X, Y, Z):
     #print m.shape
     return m
 
+def interp2(X, Y, Z):
+    X = atleast_1d(X)
+    Y = atleast_1d(Y)
+    Z = atleast_1d(Z)
+
+    ox = X[0]
+    oy = Y[0]
+    oz = Z[0]
+
+    rx = (ox % dx)/dx
+    ry = (oy % dy)/dy
+    rz = (oz % dz)/dz
+
+    fx = int(len(IntXVals)/2) + int(ox/dx)
+    fy = int(len(IntYVals)/2) + int(oy/dy)
+    fz = int(len(IntZVals)/2) + int(oz/dz)
+
+    #print fx
+    #print rx, ry, rz
+
+    xl = len(X)
+    yl = len(Y)
+    zl = len(Z)
+
+    #print xl
+
+    m000 = interpModel[fx:(fx+xl),fy:(fy+yl),fz:(fz+zl)]
+    m100 = interpModel[(fx+1):(fx+xl+1),fy:(fy+yl),fz:(fz+zl)]
+    m010 = interpModel[fx:(fx+xl),(fy + 1):(fy+yl+1),fz:(fz+zl)]
+    m110 = interpModel[(fx+1):(fx+xl+1),(fy+1):(fy+yl+1),fz:(fz+zl)]
+
+    m001 = interpModel[fx:(fx+xl),fy:(fy+yl),(fz+1):(fz+zl+1)]
+    m101 = interpModel[(fx+1):(fx+xl+1),fy:(fy+yl),(fz+1):(fz+zl+1)]
+    m011 = interpModel[fx:(fx+xl),(fy + 1):(fy+yl+1),(fz+1):(fz+zl+1)]
+    m111 = interpModel[(fx+1):(fx+xl+1),(fy+1):(fy+yl+1),(fz+1):(fz+zl+1)]
+
+    #print m000.shape
+
+#    m = scipy.sum([((1-rx)*(1-ry)*(1-rz))*m000, ((rx)*(1-ry)*(1-rz))*m100, ((1-rx)*(ry)*(1-rz))*m010, ((rx)*(ry)*(1-rz))*m110,
+#        ((1-rx)*(1-ry)*(rz))*m001, ((rx)*(1-ry)*(rz))*m101, ((1-rx)*(ry)*(rz))*m011, ((rx)*(ry)*(rz))*m111], 0)
+
+    m = ((1-rx)*(1-ry)*(1-rz))*m000 + ((rx)*(1-ry)*(1-rz))*m100 + ((1-rx)*(ry)*(1-rz))*m010 + ((rx)*(ry)*(1-rz))*m110+((1-rx)*(1-ry)*(rz))*m001+ ((rx)*(1-ry)*(rz))*m101+ ((1-rx)*(ry)*(rz))*m011+ ((rx)*(ry)*(rz))*m111
+
+    r000 = ((1-rx)*(1-ry)*(1-rz))
+    r100 = ((rx)*(1-ry)*(1-rz))
+    r010 = ((1-rx)*(ry)*(1-rz))
+    r110 = ((rx)*(ry)*(1-rz))
+    r001 = ((1-rx)*(1-ry)*(rz))
+    r101 = ((1-rx)*(ry)*(rz))
+    r011 = ((1-rx)*(ry)*(rz))
+    r111 = ((rx)*(ry)*(rz))
+
+    m = r000*m000
+    m[:] = m[:] + r100*m100
+    m[:] = m[:] + r010*m010
+    m[:] = m[:] + r110*m110
+    m[:] = m[:] + r001*m001
+    m[:] = m[:] + r101*m101
+    m[:] = m[:] + r011*m011
+    m[:] = m[:] + r111*m111
+
+    m = r000*m000 + r100*m100 + r010*m010 + r110*m110 + r001*m001 + r101*m101 + r011*m011 + r111*m111
+    #print m.shape
+    return m
+
+def interp3(X, Y, Z):
+    X = atleast_1d(X)
+    Y = atleast_1d(Y)
+    Z = atleast_1d(Z)
+
+    ox = X[0]
+    oy = Y[0]
+    oz = Z[0]
+
+    xl = len(X)
+    yl = len(Y)
+    zl = len(Z)
+    
+    return cInterp.Interpolate(interpModel, ox,oy,oz,xl,yl,dx,dy,dz)[:,:,None]
+
 def PSFIllumFunction(fluors, position):
     xi = maximum(minimum(round_((fluors['x'] + position[0])/dx + interpModel.shape[0]/2).astype('i'), interpModel.shape[0]-1), 0)
     yi = maximum(minimum(round_((fluors['y'] + position[1])/dy + interpModel.shape[1]/2).astype('i'), interpModel.shape[1]-1), 0)
@@ -231,7 +312,7 @@ def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=15, laserPow
 
     #tLock.release()
 
-    flOn = where(A > 0)[0]
+    flOn = where(A > 0.1)[0]
 
     #print flOn
     dx = X[1] - X[0]
@@ -251,7 +332,7 @@ def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=15, laserPow
        if delX[ix] <  roiSize*dx and delY[iy] < roiSize*dy:
        #print ix, iy
 
-           imp =interp(X[max(ix - roiSize, 0):(ix + roiSize + 1)] - x, Y[max(iy - roiSize, 0):(iy + roiSize + 1)] - y, z - fluors.fl['z'][i])* A[i]
+           imp =interp3(X[max(ix - roiSize, 0):(ix + roiSize + 1)] - x, Y[max(iy - roiSize, 0):(iy + roiSize + 1)] - y, z - fluors.fl['z'][i])* A[i]
            #print imp.shape
            if not imp.shape[2] == 0:
                im[max(ix - roiSize, 0):(ix + roiSize + 1), max(iy - roiSize, 0):(iy + roiSize + 1)] += imp[:, :, 0]
