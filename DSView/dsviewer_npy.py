@@ -33,6 +33,7 @@ class DSViewFrame(wx.Frame):
 
         self.ds = dstack
         self.log = log
+        self.mdh = None
 
         self.saved = True		
 
@@ -84,7 +85,7 @@ class DSViewFrame(wx.Frame):
         self.menubar.Append(mEdit, "Edit")
 
         # Menu Bar end
-        wx.EVT_MENU(self, wx.ID_SAVEAS, self.saveStack)
+        wx.EVT_MENU(self, wx.ID_SAVEAS, self.OnExport)
         wx.EVT_MENU(self, wx.ID_CLOSE, self.menuClose)
         wx.EVT_MENU(self, EDIT_CLEAR_SEL, self.clearSel)
         wx.EVT_MENU(self, EDIT_CROP, self.crop)
@@ -114,6 +115,16 @@ class DSViewFrame(wx.Frame):
                 
             self.SetTitle(fdialog.GetFilename())
             self.saved = True
+
+    def OnExport(self, event=None):
+        import dataExporter
+
+        if 'getEvents' in dir(self.ds):
+            evts = self.ds.getEvents()
+        else:
+            evts = []
+
+        dataExporter.ExportData(self.vp, self.mdh, evts, self.seriesName)
 
     def menuClose(self, event):
         self.Close()
