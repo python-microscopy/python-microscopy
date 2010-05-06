@@ -46,7 +46,7 @@ def genDataFileID(filename):
 def genFrameID(frame):
     #h5f = tables.openFile(filename)
 
-    ds = frame[:33, 0].ravel().astype('i')
+    ds = frame.ravel()[:33].astype('i')
 
     #h5f.close()
     #print ds.shape

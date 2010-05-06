@@ -55,7 +55,7 @@ class NoiseMaker:
 #calculate image in a separate thread to maintain GUI reponsiveness
 class compThread(threading.Thread):
 #class compThread(processing.Process):
-    def __init__(self,XVals, YVals,zPiezo, zOffset, fluors, noisemaker, laserPowers, intTime, contMode = True, bufferlength=20, biplane = False, biplane_z = 500):
+    def __init__(self,XVals, YVals,zPiezo, zOffset, fluors, noisemaker, laserPowers, intTime, contMode = True, bufferlength=20, biplane = False, biplane_z = 500, xpiezo=None, ypiezo=None):
         threading.Thread.__init__(self)
         self.XVals = XVals
         self.YVals = YVals
@@ -76,6 +76,9 @@ class compThread(threading.Thread):
 
         self.zPiezo = zPiezo
         self.zOffset = zOffset
+
+        self.xPiezo = xpiezo
+        self.yPiezo = ypiezo
 
         self.kill = False
         self.aqRunning = False
@@ -98,12 +101,20 @@ class compThread(threading.Thread):
                 time.sleep(.01)
 
             zPos = (self.zPiezo.GetPos() - self.zOffset)*1e3
+
+            xp = 0
+            yp = 0
+            if not self.xPiezo == None:
+                xp = (self.xPiezo.GetPos() - self.xPiezo.max_travel/2)*1e3
+
+            if not self.xPiezo == None:
+                yp = (self.yPiezo.GetPos() - self.yPiezo.max_travel/2)*1e3
                 
             if not self.fluors == None and not 'spec' in self.fluors.fl.dtype.fields.keys():
                 if self.biplane:
                     self.im = self.noiseMaker.noisify(rend_im.simPalmImFBP(self.XVals, self.YVals, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime, deltaZ = self.deltaZ))[:,:].astype('uint16')
                 else:
-                    self.im = self.noiseMaker.noisify(rend_im.simPalmImFI(self.XVals, self.YVals, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
+                    self.im = self.noiseMaker.noisify(rend_im.simPalmImFI(self.XVals + xp, self.YVals + yp, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime, position=[xp,yp,zPos]))[:,:].astype('uint16')
             else:
                 self.im = self.noiseMaker.noisify(rend_im.simPalmImFSpecI(self.XVals, self.YVals, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
 
@@ -168,7 +179,7 @@ class FakeCamera:
     numpy_frames=1
     MODE_CONTINUOUS=True
     MODE_SINGLE_SHOT=False
-    def __init__(self, XVals, YVals, noiseMaker, zPiezo, zOffset=50.0, fluors=None, laserPowers=[0,50]):
+    def __init__(self, XVals, YVals, noiseMaker, zPiezo, zOffset=50.0, fluors=None, laserPowers=[0,50], xpiezo=None, ypiezo=None):
         self.XVals = XVals
         self.YVals = YVals
 
@@ -176,6 +187,8 @@ class FakeCamera:
         self.ROIy = (0,len(YVals))
 
         self.zPiezo=zPiezo
+        self.xPiezo = xpiezo
+        self.yPiezo = ypiezo
         self.fluors=fluors
         self.noiseMaker=noiseMaker
 
@@ -188,7 +201,7 @@ class FakeCamera:
         self.compT = None #thread which is currently being computed
         #self.compT = None #finished thread holding image (c.f. camera buffer)
 
-        self.compT = compThread(self.XVals[self.ROIx[0]:self.ROIx[1]], self.YVals[self.ROIy[0]:self.ROIy[1]], self.zPiezo, self.zOffset,self.fluors, self.noiseMaker, laserPowers=self.laserPowers, intTime=self.intTime)
+        self.compT = compThread(self.XVals[self.ROIx[0]:self.ROIx[1]], self.YVals[self.ROIy[0]:self.ROIy[1]], self.zPiezo, self.zOffset,self.fluors, self.noiseMaker, laserPowers=self.laserPowers, intTime=self.intTime, xpiezo=self.xPiezo, ypiezo=self.yPiezo)
         self.compT.start()
 
         self.contMode = True
@@ -212,7 +225,7 @@ class FakeCamera:
 
         self.compT.kill = True
 
-        self.compT = compThread(self.XVals[self.ROIx[0]:self.ROIx[1]], self.YVals[self.ROIy[0]:self.ROIy[1]], self.zPiezo, self.zOffset,self.fluors, self.noiseMaker, laserPowers=self.compT.laserPowers, intTime=self.intTime)
+        self.compT = compThread(self.XVals[self.ROIx[0]:self.ROIx[1]], self.YVals[self.ROIy[0]:self.ROIy[1]], self.zPiezo, self.zOffset,self.fluors, self.noiseMaker, laserPowers=self.compT.laserPowers, intTime=self.intTime, xpiezo=self.xPiezo, ypiezo=self.yPiezo)
         self.compT.start()
 
         self.compT.aqRunning = running
@@ -311,7 +324,7 @@ class FakeCamera:
         print running
         print self.compT.laserPowers
 
-        self.compT = compThread(self.XVals[self.ROIx[0]:self.ROIx[1]], self.YVals[self.ROIy[0]:self.ROIy[1]], self.zPiezo, self.zOffset, self.fluors, self.noiseMaker, laserPowers=self.compT.laserPowers, intTime=self.intTime*1e-3)
+        self.compT = compThread(self.XVals[self.ROIx[0]:self.ROIx[1]], self.YVals[self.ROIy[0]:self.ROIy[1]], self.zPiezo, self.zOffset, self.fluors, self.noiseMaker, laserPowers=self.compT.laserPowers, intTime=self.intTime*1e-3, xpiezo=self.xPiezo, ypiezo=self.yPiezo)
         self.compT.start()
 
         print (self.fluors.fl['state'] == 2).sum()

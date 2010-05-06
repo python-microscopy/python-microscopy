@@ -542,6 +542,44 @@ class smiMainFrame(wx.Frame):
         self.scope.vp.GetParent().Refresh()
         #event.Skip()
 
+    def SetCentredRoi(self, event=None, halfwidth=5):
+        self.scope.pa.stop()
+
+        #print (self.scope.vp.selection_begin_x, self.scope.vp.selection_begin_y, self.scope.vp.selection_end_x, self.scope.vp.selection_end_y)
+
+        w = self.scope.cam.GetCCDWidth()
+        h = self.scope.cam.GetCCDHeight()
+
+        x1 = w/2 - halfwidth
+        y1 = h/2 - halfwidth
+        x2 = w/2 + halfwidth
+        y2 = h/2 + halfwidth
+
+        self.scope.cam.SetROI(x1,y1,x2,y2)
+        self.mCam.SetLabel(wxID_SMIMAINFRAMEMCAMROI, 'Clear ROI\tF8')
+        self.roi_on = True
+
+        x1 = 0
+        y1 = 0
+        x2 = self.scope.cam.GetPicWidth()
+        y2 = self.scope.cam.GetPicHeight()
+
+
+        self.scope.cam.SetCOC()
+        self.scope.cam.GetStatus()
+        self.scope.pa.Prepare()
+        self.scope.vp.SetDataStack(self.scope.pa.ds)
+
+        self.scope.vp.selection_begin_x = x1
+        self.scope.vp.selection_begin_y = y1
+        self.scope.vp.selection_end_x = x2
+        self.scope.vp.selection_end_y = y2
+
+        self.scope.pa.start()
+        self.scope.vp.Refresh()
+        self.scope.vp.GetParent().Refresh()
+        #event.Skip()
+
     def OnMDisplayClearSel(self, event):
         self.vp.ResetSelection()
         #event.Skip()

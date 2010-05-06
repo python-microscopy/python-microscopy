@@ -18,6 +18,9 @@ class states:
 
 ALL_TRANS, FROM_ONLY, TO_ONLY = range(3)
 
+def ConstIllum(fluors, position):
+    return 1.0
+
 def createSimpleTransitionMatrix(pPA=[1e6,.1,0] , pOnDark=[0,0,.1], pDarkOn=[.1,0,0], pOnBleach=[0,0,.01]):
     M = zeros((states.n,states.n,len(pPA)), 'f')
     M[states.caged, states.active, :] = pPA
@@ -75,16 +78,19 @@ class fluors:
 
         self.transitionTensor = transitionProbablilities
         self.activeState = activeState
+        #self.illuminationFunction = illuminationFunction
 
     #return fl
 
-    def illuminate(self, laserPowers, expTime):
+    def illuminate(self, laserPowers, expTime, position=[0,0,0], illuminationFunction = ConstIllum):
         dose = concatenate(([1],laserPowers),0)*expTime
         #grab transition matrix
         transMat = self.transitionTensor[self.fl['state'],:,:].copy()
 
-        c0 = self.fl['abcosthetas'][:,0]*dose[1]
-        c1 = self.fl['abcosthetas'][:,1]*dose[2]
+        ilFrac = illuminationFunction(self.fl, position)
+
+        c0 = self.fl['abcosthetas'][:,0]*dose[1]*ilFrac
+        c1 = self.fl['abcosthetas'][:,1]*dose[2]*ilFrac
         #print c0.shape
         #print transMat.shape
         #print vstack((c0,c0, c0,c0)).shape

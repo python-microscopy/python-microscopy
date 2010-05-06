@@ -155,6 +155,14 @@ def interp(X, Y, Z):
     #print m.shape
     return m
 
+def PSFIllumFunction(fluors, position):
+    xi = maximum(minimum(round_((fluors['x'] + position[0])/dx + interpModel.shape[0]/2).astype('i'), interpModel.shape[0]-1), 0)
+    yi = maximum(minimum(round_((fluors['y'] + position[1])/dy + interpModel.shape[1]/2).astype('i'), interpModel.shape[1]-1), 0)
+    zi = maximum(minimum(round_((fluors['z'] + position[2])/dz + interpModel.shape[2]/2).astype('i'), interpModel.shape[2]-1), 0)
+
+    return interpModel[xi, yi, zi]
+
+
 def simPalmIm(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=10, laserPowers = [.1,1]):
     im = zeros((len(X), len(Y)), 'f')
 
@@ -206,7 +214,7 @@ def simPalmImF(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=10, laserPowe
     return im
 
 
-def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=15, laserPowers = [.1,1]):
+def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=15, laserPowers = [.1,1], position=[0,0,0]):
     im = zeros((len(X), len(Y)), 'f')
 
     if fluors == None:
@@ -219,22 +227,34 @@ def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=15, laserPow
     #tLock.acquire()
 
     for n  in range(numSubSteps):
-        A += fluors.illuminate(laserPowers,intTime/numSubSteps)
+        A += fluors.illuminate(laserPowers,intTime/numSubSteps, illuminationFunction=PSFIllumFunction, position=position)
 
     #tLock.release()
 
     flOn = where(A > 0)[0]
 
     #print flOn
+    dx = X[1] - X[0]
+    dy = Y[1] - Y[0]
+
 
     for i in flOn:
-       ix = abs(X - fluors.fl['x'][i]).argmin()
-       iy = abs(Y - fluors.fl['y'][i]).argmin()
+       x = fluors.fl['x'][i] + position[0]
+       y = fluors.fl['y'][i] + position[1]
 
-       imp =interp(X[(ix - roiSize):(ix + roiSize + 1)] - fluors.fl['x'][i], Y[(iy - roiSize):(iy + roiSize + 1)] - fluors.fl['y'][i], z - fluors.fl['z'][i])* A[i]
-       #print imp.shape
-       if not imp.shape[2] == 0:
-           im[(ix - roiSize):(ix + roiSize + 1), (iy - roiSize):(iy + roiSize + 1)] += imp[:, :, 0]
+       delX = abs(X - x)
+       delY = abs(Y - y)
+
+       ix = delX.argmin()
+       iy = delY.argmin()
+
+       if delX[ix] <  roiSize*dx and delY[iy] < roiSize*dy:
+       #print ix, iy
+
+           imp =interp(X[max(ix - roiSize, 0):(ix + roiSize + 1)] - x, Y[max(iy - roiSize, 0):(iy + roiSize + 1)] - y, z - fluors.fl['z'][i])* A[i]
+           #print imp.shape
+           if not imp.shape[2] == 0:
+               im[max(ix - roiSize, 0):(ix + roiSize + 1), max(iy - roiSize, 0):(iy + roiSize + 1)] += imp[:, :, 0]
 
     return im
 

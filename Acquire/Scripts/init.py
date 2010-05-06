@@ -19,15 +19,21 @@ import time
 
 #import PYME.cSMI as example
 
-pz = InitBG('Fake Piezo', '''
+pz = InitBG('Fake Piezo(s)', '''
 scope.fakePiezo = fakePiezo.FakePiezo(100)
 scope.piezos.append((scope.fakePiezo, 1, 'Fake z-piezo'))
+
+scope.fakeXPiezo = fakePiezo.FakePiezo(10)
+scope.piezos.append((scope.fakeXPiezo, 1, 'Fake x-piezo'))
+
+scope.fakeYPiezo = fakePiezo.FakePiezo(10)
+scope.piezos.append((scope.fakeYPiezo, 1, 'Fake y-piezo'))
 #time.sleep(5)
 ''')
 
 pz.join() #piezo must be there before we start camera
 cm = InitBG('Fake Camera', '''
-scope.cam = fakeCam.FakeCamera(70*scipy.arange(-128.0, 128.0), 70*scipy.arange(-128.0, 128.0), fakeCam.NoiseMaker(), scope.fakePiezo)
+scope.cam = fakeCam.FakeCamera(70*scipy.arange(-128.0, 128.0), 70*scipy.arange(-128.0, 128.0), fakeCam.NoiseMaker(), scope.fakePiezo, xpiezo = scope.fakeXPiezo, ypiezo = scope.fakeYPiezo)
 #time.sleep(5)
 ''')
 
@@ -132,3 +138,5 @@ joinBGInit() #wait for anyhting which was being done in a separate thread
 
 time.sleep(.5)
 scope.initDone = True
+
+
