@@ -114,6 +114,13 @@ class TiffStackExporter(Exporter):
 
         if not metadata == None:
             xmd = MetaDataHandler.XMLMDHandler(mdToCopy=metadata)
+            if not origName == None:
+                xmd.setEntry('cropping.originalFile', origName)
+
+            xmd.setEntry('cropping.xslice', xslice.indices(data.shape[0]))
+            xmd.setEntry('cropping.yslice', yslice.indices(data.shape[1]))
+            xmd.setEntry('cropping.zslice', zslice.indices(data.shape[2]))
+            
             xmlFile = os.path.splitext(outFile)[0] + '.xml'
             xmd.writeXML(xmlFile)
 
@@ -148,6 +155,13 @@ class TiffSeriesExporter(Exporter):
 
         if not metadata == None:
             xmd = MetaDataHandler.XMLMDHandler(mdToCopy=metadata)
+            if not origName == None:
+                xmd.setEntry('cropping.originalFile', origName)
+
+            xmd.setEntry('cropping.xslice', xslice.indices(data.shape[0]))
+            xmd.setEntry('cropping.yslice', yslice.indices(data.shape[1]))
+            xmd.setEntry('cropping.zslice', zslice.indices(data.shape[2]))
+
             xmlFile = os.path.splitext(outFile)[0] + '.xml'
             xmd.writeXML(xmlFile)
 
@@ -168,6 +182,13 @@ class NumpyExporter(Exporter):
 
         if not metadata == None:
             xmd = MetaDataHandler.XMLMDHandler(mdToCopy=metadata)
+            if not origName == None:
+                xmd.setEntry('cropping.originalFile', origName)
+
+            xmd.setEntry('cropping.xslice', xslice.indices(data.shape[0]))
+            xmd.setEntry('cropping.yslice', yslice.indices(data.shape[1]))
+            xmd.setEntry('cropping.zslice', zslice.indices(data.shape[2]))
+            
             xmlFile = os.path.splitext(outFile)[0] + '.xml'
             xmd.writeXML(xmlFile)
 
