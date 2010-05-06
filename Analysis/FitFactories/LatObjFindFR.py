@@ -148,7 +148,7 @@ class GaussianFitFactory:
         y_ = round(y)
 	
         xslice = slice(max((x_ - roiHalfSize), 0),min((x_ + roiHalfSize + 1),self.data.shape[0]))
-        xslice = slice(max((y_ - roiHalfSize), 0),min((y_ + roiHalfSize + 1), self.data.shape[1]))
+        yslice = slice(max((y_ - roiHalfSize), 0),min((y_ + roiHalfSize + 1), self.data.shape[1]))
         zslice = slice(max((z - axialHalfSize), 0),min((z + axialHalfSize + 1), self.data.shape[2]))
 
         #cut region out of data stack
