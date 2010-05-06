@@ -19,12 +19,33 @@ from PYME import pad
 import numpy
 
 class dec:
+    '''Base deconvolution class, implementing a variant of the ICTM algorithm.
+    ie. find f such that:
+       ||Af-d||^2 + lamb^2||L(f - fdef)||^2
+    is minimised
+    
+    Note that this is nominally for Gaussian distributed noise, although can be
+    adapted by adding a weighting to the misfit term.
+
+    Derived classed should additionally define the following methods:
+    AFunc - the forward mapping (computes Af)
+    AHFunc - conjugate transpose of forward mapping (computes \bar{A}^T f)
+    LFunc - the likelihood function
+    LHFunc - conj. transpose of likelihood function
+
+    see dec_conv for an implementation of conventional image deconvolution with a
+    measured, spatially invariant PSF
+    '''
     def __init__(self):
+        #allocate some empty lists to track our progress in
         self.tests=[]
         self.ress = []
         self.prefs = []
         
     def subsearch(self, f0, res, fdef, Afunc, Lfunc, lam, S):
+        '''minimise in subspace - this is the bit which gets called on each iteration
+        to work out what the next step is going to be. See Inverse Problems text for details.
+        '''
         nsrch = size(S,1)
         pref = Lfunc(f0-fdef)
         w0 = dot(pref, pref)
@@ -52,67 +73,96 @@ class dec:
         return (fnew, cpred, wpred)
 
     def startGuess(self, data):
+        '''starting guess for deconvolution - can be overridden in derived classes
+        but the data itself is usually a pretty good guess.
+        '''
         return data
 
 
-    def deconv(self, data, lamb, num_iters=10, alpha = None):#, Afunc=self.Afunc, Ahfunc=self.Ahfunc, Lfunc=self.Lfunc, Lhfunc=self.Lhfunc):
+    def deconv(self, data, lamb, num_iters=10, alpha = None):
+        '''This is what you actually call to do the deconvolution.
+        parameters are:
+
+        data - the raw data
+        lamb - the regularisation parameter
+        num_iters - number of iterations (note that the convergence is fast when
+                    compared to many algorithms - e.g Richardson-Lucy - and the
+                    default of 10 will usually already give a reasonable result)
+
+        alpha - PSF phase - hacked in for variable phase 4Pi deconvolution, should
+                really be refactored out into the dec_4pi classes.
+        '''
+        #remember what shape we are
         self.dataShape = data.shape
 
-        #lamb = 2e-2
+        #if doing 4Pi dec, do some phase related precomputation
+        #TODO move this to the 4Pi_dec classes
         if (not alpha == None):
             self.alpha = alpha
             self.e1 = fftshift(exp(1j*self.alpha))
             self.e2 = fftshift(exp(2j*self.alpha))
 
+        #guess a starting estimate for the object
         self.f = self.startGuess(data)
 
+        #make things 1 dimensional
         self.f = self.f.ravel()
         data = data.ravel()
 
+        #use 0 as the default solution - should probably be refactored like the starting guess
         fdef = zeros(self.f.shape, 'f')
 
+        #initial search directions
         S = zeros((size(self.f), 3), 'f')
-    
-        #print type(S)
-        #print shape(S)
 
-        #type(Afunc)
-
+        #number of search directions
         nsrch = 2
 
         for loopcount in range(num_iters):
+            #the direction our prior/ Liklihood function wants us to go
             pref = self.Lfunc(self.f - fdef);
-            self.res = data - self.Afunc(self.f);
-        
-            #print type(Afunc(res))
-            #print shape(Afunc(res))
+
+            #the residuals
+            #if you want to bodge non-gaussian noise you can multiply with
+            #a weighting function - eg: 1/sqrt(data + eps))
+            #note that 1/sqrt(data) by itself is not a good idea as it will give
+            #infinite weight to zeros. As most devices have some form of readout noise
+            #justifying the eps shouldn't be too tricky
+            self.res = data - self.Afunc(self.f       
             
-            #print pref.typecode()
-            
+            #resulting search directions
+            #note that the use of the Likelihood fuction/prior as a search direction
+            #is where this method departs from the classical conjugate gradient approach
             S[:,0] = cast['f'](self.Ahfunc(self.res))
             S[:,1] = cast['f'](-self.Lhfunc(pref))
 
-            #print S
-
+            #check to see if the two search directions are orthogonal
+            #this can be used as a measure of convergence and a stopping criteria
             test = 1 - abs(dot(S[:,0], S[:,1])/(norm(S[:,0])*norm(S[:,1])))
 
+            #print & log some statistics
             print 'Test Statistic %f\n' % (test,)
             self.tests.append(test)
             self.ress.append(norm(self.res))
             self.prefs.append(norm(pref))
 
+            #minimise along search directions to find new estimate
             (fnew, cpred, spred) = self.subsearch(self.f, self.res, fdef, self.Afunc, self.Lfunc, lamb, S[:, 0:nsrch])
 
+            #positivity constraint (not part of original algorithm & could be ommitted)
             fnew = cast['f'](fnew*(fnew > 0))
 
+            #add last step to search directions, as per classical conj. gradient
             S[:,2] = cast['f'](fnew - self.f)
             nsrch = 3
 
+            #set the current estimate to out new estimate
             self.f = fnew
 
         return real(self.f)
         
     def sim_pic(self,data,alpha):
+        '''Do the forward transform to simulate a picture. Currently with 4Pi cruft.'''
         self.alpha = alpha
         self.e1 = fftshift(exp(1j*self.alpha))
         self.e2 = fftshift(exp(2j*self.alpha))
@@ -122,12 +172,9 @@ class dec:
 
 
 class dec_4pi(dec):
+    '''Variable phase 4Pi deconvolution'''
     def psf_calc(self, psf, kz, data_size):
-        #x1 = arange(-floor(data_size[0]/2),(ceil(data_size[0]/2)))
-        #y1 = arange(-floor(data_size[1]/2),(ceil(data_size[1]/2)))
-        #z1 = arange(-floor(data_size[2]/2),(ceil(data_size[2]/2)))
-
-        #kz = 1.4661 1.4661*2*pi/(lambda*voxelsize.z);
+        '''Pre calculate OTFs etc ...'''
         g = psf;
 
         self.height = data_size[0]
@@ -136,55 +183,25 @@ class dec_4pi(dec):
 
         (x,y,z) = mgrid[-floor(self.height/2.0):(ceil(self.height/2.0)), -floor(self.width/2.0):(ceil(self.width/2.0)), -floor(self.depth/2.0):(ceil(self.depth/2.0))]
         
-        #print x
-        
-        #x = single(x);
-        #y = single(y);
-        #z = single(z);
-
-        #g = padarray(psf, [height - size(psf,1), width - size(psf,2), depth - size(psf,3)], 0, 'post');
-        
-        
-        #g = circshift(g, floor([(height - size(pssm,1))./2, (width - size(pssm,2))./2, (depth - size(pssm,3))./2]));
-	gs = shape(g);
-	
-	#print (gs[2] - self.depth)/2
-	#print (self.depth + floor((gs[2] - self.depth)/2))
+       
+        gs = shape(g);
         g = g[int(floor((gs[0] - self.height)/2)):int(self.height + floor((gs[0] - self.height)/2)), int(floor((gs[1] - self.width)/2)):int(self.width + floor((gs[1] - self.width)/2)), int(floor((gs[2] - self.depth)/2)):int(self.depth + floor((gs[2] - self.depth)/2))]
 	
-	#g2 = zeros(shape(g), 'f')
-	#g2[0:self.height, 0:self.width, 0:self.depth] = g
-
         g = abs(ifftshift(ifftn(abs(fftn(g)))));
         g = (g/sum(sum(sum(g))));
 	
-	self.g = g;
+        self.g = g;
         
-        #%g = circshift(g, [0, -1]);
         self.H = cast['f'](fftn(g));
         self.Ht = cast['f'](ifftn(g));
 
         tk = 2*kz*z
-        #t = g*sin(tk)
-        #self.Hs = fftn(t);    
-        #self.Hst = ifftn(t);
-        
-        #t = g*cos(tk)
-        #self.Hc = fftn(t);
-        #self.Hct = ifftn(t);
         
         t = g*exp(1j*tk)
         self.He = cast['F'](fftn(t));    
         self.Het = cast['F'](ifftn(t));
 
         tk = 2*tk
-        #t = g*sin(tk)
-        #self.Hs2 = fftn(t);
-        #self.Hs2t = ifftn(t);
-
-        #t = g*cos(tk)
-        #self.Hc2 = fftn(t);
-        #self.Hc2t = ifftn(t);
         
         t = g*exp(1j*tk)
         self.He2 = cast['F'](fftn(t));    
@@ -215,21 +232,12 @@ class dec_4pi(dec):
         F = fftn(fs)
 
         d_1 = ifftshift(ifftn(F*self.H));
-        #d_cos = ifftshift(ifftn(F*self.Hc));
-        #d_sin = ifftshift(ifftn(F*self.Hs));
-        d_e = ifftshift(ifftn(F*self.He));
-        #d_cos2 = ifftshift(ifftn(F*self.Hc2));
-        #d_sin2 = ifftshift(ifftn(F*self.Hs2));
-        d_e2 = ifftshift(ifftn(F*self.He2));
-
-        #d = (1.5*d_1 + 2*cos(self.alpha)*d_cos - 2*sin(self.alpha)*d_sin + 0.5*cos(2*self.alpha)*d_cos2 - 0.5*sin(2*self.alpha)*d_sin2);
-        #d = (1.5*d_1 + 2*real(d_e*exp(1j*self.alpha)) + 0.5*real(d_e2*exp(2*1j*self.alpha)));
-        d = (1.5*real(d_1) + 2*real(d_e*self.e1) + 0.5*real(d_e2*self.e2))
-        #e1 = self.e1
-        #e2 = self.e2
         
-        #d = d_1.copy()
-        #weave.blitz('d = (1.5*(d_1) + 2*(d_e*e1) + 0.5*(d_e2*e2))')
+        d_e = ifftshift(ifftn(F*self.He));
+        
+        d_e2 = ifftshift(ifftn(F*self.He2));
+        
+        d = (1.5*real(d_1) + 2*real(d_e*self.e1) + 0.5*real(d_e2*self.e2))
         
         d = real(d);
         return ravel(d)
@@ -240,27 +248,27 @@ class dec_4pi(dec):
         F = fftn(fs)
 
         d_1 = ifftshift(ifftn(F*self.Ht));
-        #d_cos = ifftshift(ifftn(F*self.Hct));
-        #d_sin = ifftshift(ifftn(F*self.Hst));
+
         d_e = ifftshift(ifftn(F*self.Het));
-        #d_cos2 = ifftshift(ifftn(F*self.Hc2t));
-        #d_sin2 = ifftshift(ifftn(F*self.Hs2t));
+
         d_e2 = ifftshift(ifftn(F*self.He2t));
 
-        #d = (1.5*d_1 + 2*cos(self.alpha)*d_cos - 2*sin(self.alpha)*d_sin + 0.5*cos(2*self.alpha)*d_cos2 - 0.5*sin(2*self.alpha)*d_sin2);
         d = (1.5*d_1 + 2*real(d_e*exp(1j*self.alpha)) + 0.5*real(d_e2*exp(2*1j*self.alpha)));
         
         d = real(d);
         return ravel(d)
 
 class dec_conv(dec):
+    '''Classical deconvolution with a stationary PSF'''
     def psf_calc(self, psf, data_size):
+        '''Precalculate the OTF etc...'''
         pw = (numpy.array(data_size) - psf.shape)/2.
         pw1 = numpy.floor(pw)
         pw2 = numpy.ceil(pw)
 
         g = psf#/psf.sum();
 
+        #work out how we're going to need to pad to get the PSF the same size as our data
         if pw1[0] < 0:
             if pw2[0] < 0:
                 g = g[-pw1[0]:pw2[0]]
@@ -289,31 +297,29 @@ class dec_conv(dec):
             pw2[2] = 0
 
 
+        #do the padding
         g = pad.with_constant(g, ((pw2[0], pw1[0]), (pw2[1], pw1[1]),(pw2[2], pw1[2])), (0,))
 
+
+        #keep track of our data shape
         self.height = data_size[0]
         self.width  = data_size[1]
         self.depth  = data_size[2]
 
         self.shape = data_size
-#
-#        (x,y,z) = mgrid[-floor(self.height/2.0):(ceil(self.height/2.0)), -floor(self.width/2.0):(ceil(self.width/2.0)), -floor(self.depth/2.0):(ceil(self.depth/2.0))]
-#
-#        gs = shape(g);
-#
-#        g = g[int(floor((gs[0] - self.height)/2)):int(self.height + floor((gs[0] - self.height)/2)), int(floor((gs[1] - self.width)/2)):int(self.width + floor((gs[1] - self.width)/2)), int(floor((gs[2] - self.depth)/2)):int(self.depth + floor((gs[2] - self.depth)/2))]
-#
-#        #g = abs(ifftshift(ifftn(abs(fftn(g)))));
-#        g = (g/sum(sum(sum(g))));
 
         self.g = g;
 
-        #%g = circshift(g, [0, -1]);
+        #calculate OTF and conjugate transformed OTF
         self.H = (fftn(g));
         self.Ht = g.size*(ifftn(g));
 
 
     def Lfunc(self, f):
+        '''convolve with an approximate 2nd derivative likelihood operator in 3D.
+        i.e. [[[0,0,0][0,1,0][0,0,0]],[[0,1,0][1,-6,1][0,1,0]],[[0,0,0][0,1,0][0,0,0]]]
+        '''
+        #make our data 3D again
         fs = reshape(f, (self.height, self.width, self.depth))
         a = -6*fs
 
@@ -326,11 +332,13 @@ class dec_conv(dec):
         a[0:-1,:,:] += fs[1:,:,:]
         a[1:,:,:] += fs[0:-1,:,:]
 
+        #flatten data again
         return ravel(cast['f'](a))
 
     Lhfunc=Lfunc
 
     def Afunc(self, f):
+        '''Forward transform - convolve with the PSF'''
         fs = reshape(f, (self.height, self.width, self.depth))
 
         F = fftn(fs)
@@ -341,6 +349,7 @@ class dec_conv(dec):
         return ravel(d)
 
     def Ahfunc(self, f):
+        '''Conjugate transform - convolve with conj. PSF'''
         fs = reshape(f, (self.height, self.width, self.depth))
 
         F = fftn(fs)
