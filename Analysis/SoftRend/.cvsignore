@@ -1,3 +1,4 @@
-__init__.pyc
-build
 setup.pyc
+__init__.pyc
+triRend.pyd
+build
