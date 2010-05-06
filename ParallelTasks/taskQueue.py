@@ -13,6 +13,8 @@
 import time
 import threading
 
+CHUNKSIZE = 50
+
 def doNix(taskQueue): #do nothing
 	pass
 
@@ -53,7 +55,7 @@ class TaskQueue:
         return task
 
     def getTasks(self, workerN = 0, NWorkers = 1):
-        return [self.getTask(workerN, NWorkers)]
+        return [self.getTask(workerN, NWorkers) for i in range(min(CHUNKSIZE,len(self.openTasks)))]
 
 	def returnCompletedTask(self, taskResult):
 		for it in self.tasksInProgress[:]:
