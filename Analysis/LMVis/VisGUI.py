@@ -2560,8 +2560,8 @@ class VisGUIFrame(wx.Frame):
                     #self.objects = gen3DTriangs.segment(T, self.objThreshold, self.objMinSize)
 
                     #edb = edges.EdgeDB(self.Triangles)
-                    objIndices = edges.objectIndices(self.edb.segment(self.objThreshold), self.objMinSize)
-                    self.objects = [pylab.vstack((self.Triangles.x[oi], self.Triangles.y[oi])).T for oi in objIndices]
+                    self.objIndices = edges.objectIndices(self.edb.segment(self.objThreshold), self.objMinSize)
+                    self.objects = [pylab.vstack((self.Triangles.x[oi], self.Triangles.y[oi])).T for oi in self.objIndices]
                 else:
                     if not 'neighbourDistances' in self.GeneratedMeasures.keys():
                         self.genNeighbourDists()

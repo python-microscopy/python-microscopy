@@ -81,8 +81,8 @@ class Splitter:
     def SetShiftField(self, shiftField):
         #self.shiftField = shiftField
         X, Y = numpy.ogrid[:512, :256]
-        self.X2 = numpy.round(X + shiftField[0](X*70., Y*70.)/70.).astype('i')
-        self.Y2 = numpy.round(Y + shiftField[1](X*70., Y*70.)/70.).astype('i')
+        self.X2 = numpy.round(X - shiftField[0](X*70., Y*70.)/70.).astype('i')
+        self.Y2 = numpy.round(Y - shiftField[1](X*70., Y*70.)/70.).astype('i')
 
     def _deshift(self, red_chan):
         if 'X2' in dir(self):
@@ -90,8 +90,12 @@ class Splitter:
             x2 = self.scope.cam.GetROIX2()
             y1 = self.scope.cam.GetROIY1() - 1
 
+            print self.X2.shape
+
             Xn = self.X2[x1:x2, y1:(y1 + red_chan.shape[1])] - x1
             Yn = self.Y2[x1:x2, y1:(y1 + red_chan.shape[1])] - y1
+
+            print Xn.shape
 
             Xn = numpy.maximum(numpy.minimum(Xn, red_chan.shape[0]-1), 0)
             Yn = numpy.maximum(numpy.minimum(Yn, red_chan.shape[1]-1), 0)
@@ -116,8 +120,7 @@ class Splitter:
         r_ = dsa[:, (dsa.shape[1]/2):]
         r_ = self._deshift(fliplr(r_))
 
-        #print g_.shape
-        #print r_.shape
+        print g_.shape, r_.shape
 
         g = umm[0,0]*g_ + umm[0,1]*r_
         r = umm[1,0]*g_ + umm[1,1]*r_
