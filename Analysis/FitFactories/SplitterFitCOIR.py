@@ -107,9 +107,10 @@ class COIFitFactory:
         #average in z
         #dataMean = dataROI.mean(2) - self.metadata.CCD.ADOffset
 
-        #generate grid to evaluate function on        
-        Xg = 1e3*self.metadata.voxelsize.x*scipy.mgrid[xslice]
-        Yg = 1e3*self.metadata.voxelsize.y*scipy.mgrid[yslice]
+        #generate grid to evaluate function on
+        Xg, Yg = scipy.mgrid[xslice, yslice]
+        Xg = 1e3*self.metadata.voxelsize.x*Xg
+        Yg = 1e3*self.metadata.voxelsize.y*Yg
 
         #generate a corrected grid for the red channel
         #note that we're cheating a little here - for shifts which are slowly
@@ -134,7 +135,8 @@ class COIFitFactory:
 
         Ag = dataROI[:,:,0]
         Ar = dataROI[:,:,1]
-        
+
+        #print Xg.shape, Ag.shape
         x0 =  (Xg*Ag + Xr*Ar).sum()/(Ag.sum() + Ar.sum())
         y0 =  (Yg*Ag + Yr*Ar).sum()/(Ag.sum() + Ar.sum())
 
