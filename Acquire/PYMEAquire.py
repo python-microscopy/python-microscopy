@@ -13,6 +13,7 @@
 #!/usr/bin/python
 import wx
 import smimainframe
+from PYME import mProfile
 
 
 class BoaApp(wx.App):
@@ -41,4 +42,6 @@ def main():
     application.MainLoop()
 
 if __name__ == '__main__':
+    #mProfile.profileOn(['rend_im.py', 'fluor.py', 'fakeCam.py'])
     main()
+    #mProfile.report()

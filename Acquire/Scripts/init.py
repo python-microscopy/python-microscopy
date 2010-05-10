@@ -109,7 +109,7 @@ ssp = sarcSpacing.SarcomereChecker(MainFrame, menuBar1, scope)
 
 InitGUI('''
 from PYME.Acquire.Hardware import focusKeys
-fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[-1])
+fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[0])
 time1.WantNotification.append(fk.refresh)
 ''')
 

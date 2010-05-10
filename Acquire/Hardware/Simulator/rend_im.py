@@ -236,6 +236,7 @@ def interp3(X, Y, Z):
     
     return cInterp.Interpolate(interpModel, ox,oy,oz,xl,yl,dx,dy,dz)[:,:,None]
 
+
 def PSFIllumFunction(fluors, position):
     xi = maximum(minimum(round_((fluors['x'] + position[0])/dx + interpModel.shape[0]/2).astype('i'), interpModel.shape[0]-1), 0)
     yi = maximum(minimum(round_((fluors['y'] + position[1])/dy + interpModel.shape[1]/2).astype('i'), interpModel.shape[1]-1), 0)
@@ -332,10 +333,17 @@ def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=15, laserPow
        if delX[ix] <  roiSize*dx and delY[iy] < roiSize*dy:
        #print ix, iy
 
-           imp =interp3(X[max(ix - roiSize, 0):(ix + roiSize + 1)] - x, Y[max(iy - roiSize, 0):(iy + roiSize + 1)] - y, z - fluors.fl['z'][i])* A[i]
+           ix0 = max(ix - roiSize, 0)
+           ix1 = min(ix + roiSize + 1, im.shape[0])
+           iy0 = max(iy - roiSize, 0)
+           iy1 = min(iy + roiSize + 1, im.shape[1])
+           #imp =interp3(X[max(ix - roiSize, 0):(ix + roiSize + 1)] - x, Y[max(iy - roiSize, 0):(iy + roiSize + 1)] - y, z - fluors.fl['z'][i])* A[i]
+           imp = cInterp.Interpolate(interpModel, X[ix0] - x, Y[iy0] - y, z - fluors.fl['z'][i], ix1-ix0, iy1-iy0,dx,dy,dz)* A[i]
            #print imp.shape
-           if not imp.shape[2] == 0:
-               im[max(ix - roiSize, 0):(ix + roiSize + 1), max(iy - roiSize, 0):(iy + roiSize + 1)] += imp[:, :, 0]
+           #if not imp.shape[2] == 0
+           if imp.min() < 0:
+               print ix0, ix1, iy0, iy1, (X[ix0] - x)/dx, (Y[iy0]-  y)/dx
+           im[ix0:ix1, iy0:iy1] += imp[:,:]
 
     return im
 
