@@ -263,9 +263,21 @@ class DSViewFrame(wx.Frame):
             self.elv = eventLogViewer.eventLogPanel(self.notebook1, self.ds.getEvents(), self.mdh, [0, self.ds.getNumSlices()]);
             self.notebook1.AddPage(self.elv, 'Events')
 
+            charts = []
+
             if 'ProtocolFocus' in self.elv.evKeyNames:
                 self.zm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh.getEntry('Camera.CycleTime'), self.mdh.getEntry('StartTime'), self.mdh.getEntry('Protocol.PiezoStartPos'))
-                self.elv.SetCharts([('Focus [um]', self.zm, 'ProtocolFocus'),])
+                charts.append(('Focus [um]', self.zm, 'ProtocolFocus'))
+
+            if 'ScannerXPos' in self.elv.evKeyNames:
+                self.xm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh.getEntry('Camera.CycleTime'), self.mdh.getEntry('StartTime'), 0, 'ScannerXPos', 0)
+                charts.append(('XPos [um]', self.xm, 'ScannerXPos'))
+
+            if 'ScannerYPos' in self.elv.evKeyNames:
+                self.ym = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh.getEntry('Camera.CycleTime'), self.mdh.getEntry('StartTime'), 0, 'ScannerYPos', 0)
+                charts.append(('YPos [um]', self.ym, 'ScannerYPos'))
+
+            self.elv.SetCharts(charts)
 
                 
 

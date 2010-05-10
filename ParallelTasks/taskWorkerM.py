@@ -37,9 +37,10 @@ while 1:
     #tq.returnCompletedTask(tq.getTask()(taskQueue=tq), name)
     tasks = tq.getTasks()
     results = []
-    for task in tasks:
+    while len(tasks) > 0:
+        task = tasks.pop()
         results.append(task(taskQueue=tq))
-        tasks.remove(task)
+        #tasks.remove(task)
         del task
         
     tq.returnCompletedTasks(results, name)

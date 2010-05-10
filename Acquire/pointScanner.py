@@ -1,6 +1,7 @@
 from PYME.DSView.dsviewer_npy import View3D
 from PYME import cSMI
 import numpy as np
+from PYME.Acquire import eventLog
 
 class PointScanner:
     def __init__(self, xpiezo, ypiezo, scope, pixels = 10, pixelSize=0.1, dwelltime = 1, background=0):
@@ -54,6 +55,8 @@ class PointScanner:
             callN = (self.callNum+1)/self.dwellTime
             self.xpiezo.MoveTo(0, self.xp[callN % self.ny])
             self.ypiezo.MoveTo(0, self.yp[(callN % (self.image.size))/self.nx])
+            eventLog.logEvent('ScannerXPos', '%3.3f' % self.xp[callN % self.ny])
+            eventLog.logEvent('ScannerYPos', '%3.3f' % self.yp[(callN % (self.image.size))/self.nx])
 
         self.callNum += 1
 

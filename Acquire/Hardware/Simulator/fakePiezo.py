@@ -9,7 +9,6 @@
 # This file may NOT be distributed without express permision from David Baddeley
 #
 ##################
-from PYME.Acquire import eventLog
 
 class FakePiezo:
     def __init__(self, maxtravel = 100.00):

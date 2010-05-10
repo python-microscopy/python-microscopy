@@ -171,6 +171,12 @@ class fitTask(taskDef.Task):
 #            self.bg *= 1.0/len(self.bgindices)
             self.bg = bBuffer.getBackground(self.bgindices).reshape(self.data.shape)
 
+        if self.fitModule == 'ConfocCOIR': #special case - no object finding
+            md = copy.copy(self.md)
+            md.tIndex = self.index
+            self.res = fitMod.ConfocCOI(self.data, md, background = self.bg)
+            return fitResult(self, self.res, [])
+
         #Find objects
         bgd = self.data.astype('f') - self.bg
 
