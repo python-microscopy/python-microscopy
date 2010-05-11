@@ -82,9 +82,9 @@ static PyObject * Interpolate(PyObject *self, PyObject *args, PyObject *keywds)
     fz = sizeZ/2 + z0/dz;
 
     ///avoid negatives by taking the mod of a large number
-    rx = fmodf(x0+1e4,dx)/dx;
-    ry = fmodf(y0+1e4,dy)/dy;
-    rz = fmodf(z0+1e4,dz)/dz;
+    rx = fmodf(x0+1e5,dx)/dx;
+    ry = fmodf(y0+1e5,dy)/dy;
+    rz = fmodf(z0+1e5,dz)/dz;
 
     r000 = ((1-rx)*(1-ry)*(1-rz));
     r100 = ((rx)*(1-ry)*(1-rz));

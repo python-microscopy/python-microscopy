@@ -179,10 +179,10 @@ class smiMainFrame(wx.Frame):
     def _init_ctrls(self, prnt):
         # generated method, don't edit
         wx.Frame.__init__(self, id=wxID_SMIMAINFRAME, name='smiMainFrame',
-              parent=prnt, pos=wx.Point(20, 20), size=wx.Size(1000, 800),
+              parent=prnt, pos=wx.Point(20, 20), size=wx.Size(600, 800),
               style=wx.DEFAULT_FRAME_STYLE, title='PYME Acquire')
         self._init_utils()
-        self.SetClientSize(wx.Size(1000, 800))
+        self.SetClientSize(wx.Size(600, 800))
         self.SetMenuBar(self.menuBar1)
 
         self.statusBar1 = wx.StatusBar(id=wxID_SMIMAINFRAMESTATUSBAR1,
@@ -242,11 +242,13 @@ class smiMainFrame(wx.Frame):
 #        self.notebook1.AddPage( page=self.panel1, select=False, caption='About')
 
         self.CreateToolPanel()
+        #self.SetSize((1000, 800))
         
         
         self.sizer = wx.BoxSizer()
         self.sizer.Add(self.notebook1, 1, wx.EXPAND)
         self.SetSizer(self.Sizer)
+        self.SetSize((1000, 800))
         
         self.roi_on = False
         self.bin_on = False
@@ -355,7 +357,7 @@ class smiMainFrame(wx.Frame):
 #        self._leftWindow1.SetExtraBorderSize(10)
 
         self.camPanel = fpb.FoldPanelBar(self.notebook1, -1, wx.DefaultPosition,
-                                     wx.Size(300,1000), fpb.FPB_DEFAULT_STYLE,0)
+                                     wx.Size(200,1000), fpb.FPB_DEFAULT_STYLE,0)
 
         self.notebook1.AddPage(page=self.camPanel, select=False, caption='Camera')
         self.notebook1.Split(self.notebook1.GetPageCount() -1, wx.RIGHT)
@@ -363,7 +365,7 @@ class smiMainFrame(wx.Frame):
 
 
         self.toolPanel = fpb.FoldPanelBar(self.notebook1, -1, wx.DefaultPosition,
-                                     wx.Size(300,1000), fpb.FPB_DEFAULT_STYLE,0)
+                                     wx.Size(200,1000), fpb.FPB_DEFAULT_STYLE,0)
         
         self.notebook1.AddPage(page=self.toolPanel, select=False, caption='Hardware')
         self.notebook1.Split(self.notebook1.GetPageCount() -1, wx.RIGHT)   

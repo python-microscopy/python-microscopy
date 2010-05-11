@@ -18,6 +18,14 @@ class states:
 
 ALL_TRANS, FROM_ONLY, TO_ONLY = range(3)
 
+
+illuminationFunctions = {}
+
+def registerIllumFcn(fcn):
+    illuminationFunctions[fcn.__name__] = fcn
+    return fcn
+
+@registerIllumFcn
 def ConstIllum(fluors, position):
     return 1.0
 
@@ -82,12 +90,12 @@ class fluors:
 
     #return fl
 
-    def illuminate(self, laserPowers, expTime, position=[0,0,0], illuminationFunction = ConstIllum):
+    def illuminate(self, laserPowers, expTime, position=[0,0,0], illuminationFunction = 'ConstIllum'):
         dose = concatenate(([1],laserPowers),0)*expTime
         #grab transition matrix
         transMat = self.transitionTensor[self.fl['state'],:,:].copy()
 
-        ilFrac = illuminationFunction(self.fl, position)
+        ilFrac = illuminationFunctions[illuminationFunction](self.fl, position)
 
         c0 = self.fl['abcosthetas'][:,0]*dose[1]*ilFrac
         c1 = self.fl['abcosthetas'][:,1]*dose[2]*ilFrac

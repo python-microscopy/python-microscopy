@@ -236,11 +236,11 @@ def interp3(X, Y, Z):
     
     return cInterp.Interpolate(interpModel, ox,oy,oz,xl,yl,dx,dy,dz)[:,:,None]
 
-
+@fluor.registerIllumFcn
 def PSFIllumFunction(fluors, position):
-    xi = maximum(minimum(round_((fluors['x'] + position[0])/dx + interpModel.shape[0]/2).astype('i'), interpModel.shape[0]-1), 0)
-    yi = maximum(minimum(round_((fluors['y'] + position[1])/dy + interpModel.shape[1]/2).astype('i'), interpModel.shape[1]-1), 0)
-    zi = maximum(minimum(round_((fluors['z'] + position[2])/dz + interpModel.shape[2]/2).astype('i'), interpModel.shape[2]-1), 0)
+    xi = maximum(minimum(round_((fluors['x'] - position[0])/dx + interpModel.shape[0]/2).astype('i'), interpModel.shape[0]-1), 0)
+    yi = maximum(minimum(round_((fluors['y'] - position[1])/dy + interpModel.shape[1]/2).astype('i'), interpModel.shape[1]-1), 0)
+    zi = maximum(minimum(round_((fluors['z'] - position[2])/dz + interpModel.shape[2]/2).astype('i'), interpModel.shape[2]-1), 0)
 
     return interpModel[xi, yi, zi]
 
@@ -296,7 +296,7 @@ def simPalmImF(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=10, laserPowe
     return im
 
 
-def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=15, laserPowers = [.1,1], position=[0,0,0]):
+def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=15, laserPowers = [.1,1], position=[0,0,0], illuminationFunction='ConstIllum'):
     im = zeros((len(X), len(Y)), 'f')
 
     if fluors == None:
@@ -309,8 +309,10 @@ def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=15, laserPow
     #tLock.acquire()
 
     for n  in range(numSubSteps):
-        A += fluors.illuminate(laserPowers,intTime/numSubSteps, illuminationFunction=PSFIllumFunction, position=position)
+        A += fluors.illuminate(laserPowers,intTime/numSubSteps, position=position, illuminationFunction=illuminationFunction)
 
+
+    #print position
     #tLock.release()
 
     flOn = where(A > 0.1)[0]
@@ -321,8 +323,8 @@ def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=15, laserPow
 
 
     for i in flOn:
-       x = fluors.fl['x'][i] + position[0]
-       y = fluors.fl['y'][i] + position[1]
+       x = fluors.fl['x'][i] #+ position[0]
+       y = fluors.fl['y'][i] #+ position[1]
 
        delX = abs(X - x)
        delY = abs(Y - y)
@@ -342,7 +344,7 @@ def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=15, laserPow
            #print imp.shape
            #if not imp.shape[2] == 0
            if imp.min() < 0:
-               print ix0, ix1, iy0, iy1, (X[ix0] - x)/dx, (Y[iy0]-  y)/dx
+               print ix0, ix1, iy0, iy1, (X[ix0] - x)/dx, (Y[iy0]-  y)/dx, A[i]
            im[ix0:ix1, iy0:iy1] += imp[:,:]
 
     return im
