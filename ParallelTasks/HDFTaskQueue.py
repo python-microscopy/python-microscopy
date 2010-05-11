@@ -217,11 +217,14 @@ class HDFTaskQueue(HDFResultsTaskQueue):
 
         if os.path.exists(ffn): #file already exists - read from it
             self.h5DataFile = tables.openFile(ffn, 'r')
-            self.metaData = MetaData.genMetaDataFromHDF(self.h5DataFile)
+            #self.metaData = MetaData.genMetaDataFromHDF(self.h5DataFile)
+            self.dataMDH = MetaDataHandler.NestedClassMDHandler(MetaDataHandler.HDFMDHandler(self.h5DataFile))
+            #self.dataMDH.mergeEntriesFrom(MetaData.TIRFDefault)
+            self.imageData = self.h5DataFile.root.ImageData
 
 
             if startAt == 'guestimate': #calculate a suitable starting value
-                tLon = self.metaData.EstimatedLaserOnFrameNo
+                tLon = self.dataMDH.EstimatedLaserOnFrameNo
                 if tLon == 0:
                     startAt = 0
                 else:
@@ -231,6 +234,9 @@ class HDFTaskQueue(HDFResultsTaskQueue):
                 initialTasks = []
             else:
                 initialTasks = list(range(startAt, self.h5DataFile.root.ImageData.shape[0]))
+
+            self.imNum = len(self.imageData)
+
         else: #make ourselves a new file
             self.h5DataFile = tables.openFile(ffn, 'w')
             filt = tables.Filters(complevel, complib, shuffle=True)
@@ -240,13 +246,13 @@ class HDFTaskQueue(HDFResultsTaskQueue):
             self.imNum=0
             self.acceptNewTasks = True
 
-
+            self.dataMDH = MetaDataHandler.HDFMDHandler(self.h5DataFile)
+            self.dataMDH.mergeEntriesFrom(MetaData.TIRFDefault)
 
 
         HDFResultsTaskQueue.__init__(self, name, resultsFilename, initialTasks, onEmpty, fTaskToPop)
 
-        self.dataMDH = MetaDataHandler.HDFMDHandler(self.h5DataFile)
-        self.dataMDH.mergeEntriesFrom(MetaData.TIRFDefault)
+        
         self.resultsMDH.copyEntriesFrom(self.dataMDH)
 
         #copy events to results file

@@ -72,9 +72,14 @@ class FitInfoPanel(wx.Panel):
 
             for n in ns:
                 #\u00B1 is the plus-minus sign
-                s += u'%s %8.2f \u00B1 %3.2f\n' % ((n + ':').ljust(nl+1), r['fitResults'][n], r['fitError'][n])
+                if 'fitError' in r.dtype.names:
+                    s += u'%s %8.2f \u00B1 %3.2f\n' % ((n + ':').ljust(nl+1), r['fitResults'][n], r['fitError'][n])
+                else:
+                    s += u'%s %8.2f\n' % ((n + ':').ljust(nl+1), r['fitResults'][n])
+
             #s = s[:-1]
-            s += '\nresultCode: %d' % r['resultCode']
+            if 'resultCode' in r.dtype.names:
+                s += '\nresultCode: %d' % r['resultCode']
             
             if 'startParams' in r.dtype.names:
                 s += '\n\nStart Params:\n%s' % str(r['startParams'])

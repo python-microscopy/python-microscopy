@@ -70,8 +70,29 @@ def pushImages(startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
     else:
         pushImagesQueue(startingAt, detThresh, fitFcn)
 
+#def pushImagesHDF(startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
+#    tq.createQueue('HDFResultsTaskQueue', seriesName, None)
+#    mdhQ = MetaDataHandler.QueueMDHandler(tq, seriesName, mdh)
+#    mdhQ.setEntry('Analysis.DetectionThreshold', detThresh)
+#    mdhQ.setEntry('Analysis.FitModule', fitFcn)
+#    mdhQ.setEntry('Analysis.DataFileID', fileID.genDataSourceID(dataSource))
+#    evts = dataSource.getEvents()
+#    if len(evts) > 0:
+#        tq.addQueueEvents(seriesName, evts)
+#    tasks = []
+#    for i in range(startingAt, ds.shape[2]):
+#        if 'Analysis.BGRange' in mdh.getEntryNames():
+#            bgi = range(max(i + mdh.getEntry('Analysis.BGRange')[0],mdh.getEntry('EstimatedLaserOnFrameNo')), max(i + mdh.getEntry('Analysis.BGRange')[1],mdh.getEntry('EstimatedLaserOnFrameNo')))
+#        elif 'Analysis.NumBGFrames' in mdh.getEntryNames():
+#            bgi = range(max(i - mdh.getEntry('Analysis.NumBGFrames'),mdh.getEntry('EstimatedLaserOnFrameNo')), i)
+#        else:
+#            bgi = range(max(i - 10,mdh.getEntry('EstimatedLaserOnFrameNo')), i)
+#        #tq.postTask(remFitBuf.fitTask(seriesName,i, detThresh, MetaDataHandler.NestedClassMDHandler(mdh), fitFcn, bgindices=bgi, SNThreshold=True), queueName=seriesName)
+#        tasks.append(remFitBuf.fitTask(seriesName,i, detThresh, MetaDataHandler.NestedClassMDHandler(mdh), fitFcn, bgindices=bgi, SNThreshold=True))
+#    tq.postTasks(tasks, queueName=seriesName)
+
 def pushImagesHDF(startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
-    tq.createQueue('HDFResultsTaskQueue', seriesName, None)
+    tq.createQueue('HDFTaskQueue', seriesName, dataFilename = seriesName, startAt = 'notYet')
     mdhQ = MetaDataHandler.QueueMDHandler(tq, seriesName, mdh)
     mdhQ.setEntry('Analysis.DetectionThreshold', detThresh)
     mdhQ.setEntry('Analysis.FitModule', fitFcn)
@@ -79,17 +100,19 @@ def pushImagesHDF(startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
     evts = dataSource.getEvents()
     if len(evts) > 0:
         tq.addQueueEvents(seriesName, evts)
-    tasks = []
-    for i in range(startingAt, ds.shape[2]):
-        if 'Analysis.BGRange' in mdh.getEntryNames():
-            bgi = range(max(i + mdh.getEntry('Analysis.BGRange')[0],mdh.getEntry('EstimatedLaserOnFrameNo')), max(i + mdh.getEntry('Analysis.BGRange')[1],mdh.getEntry('EstimatedLaserOnFrameNo')))
-        elif 'Analysis.NumBGFrames' in mdh.getEntryNames():
-            bgi = range(max(i - mdh.getEntry('Analysis.NumBGFrames'),mdh.getEntry('EstimatedLaserOnFrameNo')), i)
-        else:
-            bgi = range(max(i - 10,mdh.getEntry('EstimatedLaserOnFrameNo')), i)
-        #tq.postTask(remFitBuf.fitTask(seriesName,i, detThresh, MetaDataHandler.NestedClassMDHandler(mdh), fitFcn, bgindices=bgi, SNThreshold=True), queueName=seriesName)
-        tasks.append(remFitBuf.fitTask(seriesName,i, detThresh, MetaDataHandler.NestedClassMDHandler(mdh), fitFcn, bgindices=bgi, SNThreshold=True), queueName=seriesName)
-    tq.postTasks(tasks)
+#    tasks = []
+#    for i in range(startingAt, ds.shape[2]):
+#        if 'Analysis.BGRange' in mdh.getEntryNames():
+#            bgi = range(max(i + mdh.getEntry('Analysis.BGRange')[0],mdh.getEntry('EstimatedLaserOnFrameNo')), max(i + mdh.getEntry('Analysis.BGRange')[1],mdh.getEntry('EstimatedLaserOnFrameNo')))
+#        elif 'Analysis.NumBGFrames' in mdh.getEntryNames():
+#            bgi = range(max(i - mdh.getEntry('Analysis.NumBGFrames'),mdh.getEntry('EstimatedLaserOnFrameNo')), i)
+#        else:
+#            bgi = range(max(i - 10,mdh.getEntry('EstimatedLaserOnFrameNo')), i)
+#        #tq.postTask(remFitBuf.fitTask(seriesName,i, detThresh, MetaDataHandler.NestedClassMDHandler(mdh), fitFcn, bgindices=bgi, SNThreshold=True), queueName=seriesName)
+#        tasks.append(remFitBuf.fitTask(seriesName,i, detThresh, MetaDataHandler.NestedClassMDHandler(mdh), fitFcn, bgindices=bgi, SNThreshold=True))
+#    tq.postTasks(tasks, queueName=seriesName)
+    tq.releaseTasks(seriesName, startingAt)
+
 
 def pushImagesQueue(startingAt=0, detThresh = .9, fitFcn='LatGaussFitFR'):
     mdh.setEntry('Analysis.DetectionThreshold', detThresh)

@@ -31,15 +31,19 @@ class piecewiseMap:
         if not xpInFrames:
             xp = xp/self.secsPerFrame
         
-        y0 = self.y0
-        x0 = -inf
+#        y0 = self.y0
+#        x0 = -inf
+#
+#        for x, y in zip(self.xvals, self.yvals):
+#            yp += y0 * (xp >= x0) * (xp < x)
+#            x0, y0 = x, y
+#
+#        x  = +inf
+#        yp += y0 * (xp >= x0) * (xp < x)
 
-        for x, y in zip(self.xvals, self.yvals):
-            yp += y0 * (xp >= x0) * (xp < x)
-            x0, y0 = x, y
-
-        x  = +inf
-        yp += y0 * (xp >= x0) * (xp < x)
+        inds = self.xvals.searchsorted(xp)
+        yp  = self.yvals[maximum(inds-1, 0)]
+        yp[inds==0] = self.y0
 
         return yp
 

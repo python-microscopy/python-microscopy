@@ -83,7 +83,7 @@ def COIFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=N
 	return numpy.array([(tIndex, fitResults.astype('f'))], dtype=fresultdtype)
 		
 
-def ConfocCOI(data, metadata, thresh=4, background=None):
+def ConfocCOI(data, metadata, thresh=5, background=None):
     #print key
     #xslice, yslice, zslice = key
 
@@ -104,7 +104,7 @@ def ConfocCOI(data, metadata, thresh=4, background=None):
 
         dataROI = dataROI - bgROI
 
-    dataROI = dataROI*(dataROI > thresh) - thresh
+    dataROI = (dataROI*(dataROI > thresh) - thresh).astype('f')
 
 
     A = dataROI.sum()
@@ -122,7 +122,10 @@ def ConfocCOI(data, metadata, thresh=4, background=None):
     
     res = numpy.array([A, x0, y0, sig_xl, sig_xr, sig_yu, sig_yd])
 
-    return COIFitResultR(res, metadata)
+    if A > 0:
+        return COIFitResultR(res, metadata)
+    else:
+        return []
 
     
 
