@@ -44,8 +44,11 @@ class NoiseMaker:
         self.shutterOpen = shutterOpen
 
     def noisify(self, im):
+        #if im.min() < 0:
+        #    print im.min()
         M = EMCCDTheory.M((80. + self.EMGain)/(255 + 80.), self.vbreakdown, self.temperature, self.NGainElements, 2.2)
         F2 = EMCCDTheory.FSquared(M, self.NGainElements)
+        #print im.min(), F2, self.QE, self.background
         return self.ADOffset + M*scipy.random.poisson(int(self.shutterOpen)*(im + self.background)*self.QE*F2)/(self.ElectronsPerCount*scipy.sqrt(F2)) + self.ReadoutNoise*scipy.random.standard_normal(im.shape)/self.ElectronsPerCount
 
 
