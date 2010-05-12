@@ -124,7 +124,7 @@ class DSViewFrame(wx.Frame):
         else:
             evts = []
 
-        dataExporter.ExportData(self.vp, self.mdh, evts, self.seriesName)
+        dataExporter.ExportData(self.vp, self.mdh, evts)
 
     def menuClose(self, event):
         self.Close()

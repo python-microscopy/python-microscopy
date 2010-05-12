@@ -122,10 +122,10 @@ def ConfocCOI(data, metadata, thresh=5, background=None):
     
     res = numpy.array([A, x0, y0, sig_xl, sig_xr, sig_yu, sig_yd])
 
-    if A > 0:
-        return COIFitResultR(res, metadata)
-    else:
-        return []
+    #if A > 0:
+    return COIFitResultR(res, metadata)
+    #else:
+    #    return []
 
     
 
