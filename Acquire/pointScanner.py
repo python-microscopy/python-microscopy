@@ -47,15 +47,15 @@ class PointScanner:
         if (self.callNum % self.dwellTime) == 0:
             #record pixel in overview
             callN = self.callNum/self.dwellTime
-            self.image[callN % self.ny, (callN % (self.image.size))/self.nx] = self.ds.mean() - self.background
+            self.image[callN % self.nx, (callN % (self.image.size))/self.nx] = self.ds.mean() - self.background
             self.view.Refresh()
 
         if ((self.callNum +1) % self.dwellTime) == 0:
             #move piezo
             callN = (self.callNum+1)/self.dwellTime
-            self.xpiezo.MoveTo(0, self.xp[callN % self.ny])
+            self.xpiezo.MoveTo(0, self.xp[callN % self.nx])
             self.ypiezo.MoveTo(0, self.yp[(callN % (self.image.size))/self.nx])
-            eventLog.logEvent('ScannerXPos', '%3.3f' % self.xp[callN % self.ny])
+            eventLog.logEvent('ScannerXPos', '%3.3f' % self.xp[callN % self.nx])
             eventLog.logEvent('ScannerYPos', '%3.3f' % self.yp[(callN % (self.image.size))/self.nx])
 
         self.callNum += 1

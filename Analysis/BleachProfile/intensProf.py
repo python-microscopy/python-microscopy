@@ -288,6 +288,12 @@ def pkmod_onestate(p, t):
     t0,aod, aob, ado, sc = p 
     return sc*lNofcn(t, t0, No0, Nd0, aod, aob, ado)
 
+def decmod_onestate(p, t):
+    No0 = 1
+    Nd0 = 0
+    t0,aod, aob, ado, sc = p
+    return sc*lNofcn(t, t0, No0, Nd0, aod, aob, ado)
+
 
 def recolor( obj, col ):
     try: obj.set_color( col )
