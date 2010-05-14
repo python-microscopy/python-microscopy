@@ -51,7 +51,12 @@ class WorkspaceTree(VirtualTree, wx.gizmos.TreeListCtrl):
 
         self.GetMainWindow().Bind(wx.EVT_RIGHT_UP, self.OnRightUp)
 
-        self.ExpandAllChildren(self.GetRootItem())
+        try:
+            #this bails on windows - but also doesn't seem to be required
+            #under windows - so let it fail quietly
+            self.ExpandAllChildren(self.GetRootItem())
+        except:
+            pass
         self.RefreshItems()
 
         

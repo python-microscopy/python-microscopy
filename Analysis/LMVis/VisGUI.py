@@ -2682,6 +2682,8 @@ def main(filename):
     application.MainLoop()
 
 if __name__ == '__main__':
+    from multiprocessing import freeze_support
+    freeze_support()
     #from PYME import mProfile
     #mProfile.profileOn([ 'edges.py', 'VisGUI.py', 'gl_render.py', 'gen3DTriangs.py'])
 
