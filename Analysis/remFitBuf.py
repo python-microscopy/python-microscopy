@@ -268,9 +268,9 @@ class fitTask(taskDef.Task):
             self.res = numpy.empty(len(self.ofd), fitMod.FitResultsDType)
             for i in range(len(self.ofd)):
                 p = self.ofd[i]
-                self.res[i] = fitFac.FromPoint(round(p.x), round(p.y))
+                self.res[i] = fitFac.FromPoint(p.x, p.y)
         else:
-            self.res  = [fitFac.FromPoint(round(p.x), round(p.y)) for p in self.ofd]
+            self.res  = [fitFac.FromPoint(p.x, p.y) for p in self.ofd]
 
         self.drRes = []
         if self.driftEst:
@@ -279,9 +279,9 @@ class fitTask(taskDef.Task):
                 self.drRes = numpy.empty(nToFit, fitMod.FitResultsDType)
                 for i in range(nToFit):
                     p = self.ofdDr[i]
-                    self.drRes[i] = fitFac.FromPoint(round(p.x), round(p.y))
+                    self.drRes[i] = fitFac.FromPoint(p.x, p.y)
             else:
-                self.drRes  = [fitFac.FromPoint(round(p.x), round(p.y)) for p in self.ofd[:nToFit]]    
+                self.drRes  = [fitFac.FromPoint(p.x, p.y) for p in self.ofd[:nToFit]]    
 
         #print fitResult(self, self.res, self.drRes)
         return fitResult(self, self.res, self.drRes)
