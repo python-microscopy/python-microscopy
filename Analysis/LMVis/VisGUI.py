@@ -1275,6 +1275,7 @@ class VisGUIFrame(wx.Frame):
         ID_GEN_SHIFTMAP = wx.NewId()
         ID_CORR_DRIFT = wx.NewId()
         ID_TRACK_MOLECULES = wx.NewId()
+        ID_CALC_DECAYS = wx.NewId()
 
         ID_ABOUT = wx.ID_ABOUT
 
@@ -1359,6 +1360,7 @@ class VisGUIFrame(wx.Frame):
         special_menu.Append(ID_GEN_SHIFTMAP, "Calculate &Shiftmap")
         special_menu.Append(ID_CORR_DRIFT, "Estimate drift using cross-correlation")
         special_menu.Append(ID_TRACK_MOLECULES, "&Track single molecule trajectories")
+        special_menu.Append(ID_CALC_DECAYS, "Estimate decay lifetimes")
 
         help_menu = wx.Menu()
         help_menu.Append(ID_ABOUT, "&About")
@@ -1409,6 +1411,7 @@ class VisGUIFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnGenShiftmap, id=ID_GEN_SHIFTMAP)
         self.Bind(wx.EVT_MENU, self.OnCalcCorrDrift, id=ID_CORR_DRIFT)
         self.Bind(wx.EVT_MENU, self.OnTrackMolecules, id=ID_TRACK_MOLECULES)
+        self.Bind(wx.EVT_MENU, self.OnCalcDecays, id=ID_CALC_DECAYS)
 
         self.Bind(wx.EVT_MENU, self.OnView3DPoints, id=ID_VIEW_3D_POINTS)
         self.Bind(wx.EVT_MENU, self.OnView3DTriangles, id=ID_VIEW_3D_TRIANGS)
@@ -2032,6 +2035,13 @@ class VisGUIFrame(wx.Frame):
             fid = open(fpath, 'wb')
             cPickle.dump((spx, spy), fid, 2)
             fid.close()
+
+    def OnCalcDecays(self, event):
+        from PYME.Analysis.BleachProfile import kinModels
+        
+        kinModels.fitDecay(self.colourFilter, self.mdh)
+        kinModels.fitOnTimes(self.colourFilter, self.mdh)
+        kinModels.fitFluorBrightness(self.colourFilter, self.mdh)
 
     def OnTrackMolecules(self, event):
         import PYME.Analysis.DeClump.deClumpGUI as deClumpGUI
