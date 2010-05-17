@@ -287,6 +287,8 @@ class VisGUIFrame(wx.Frame):
     def OnQuit(self, event):
         while len(self.filesToClose) > 0:
             self.filesToClose.pop().close()
+
+        pylab.close('all')
  
         self.Destroy()
 

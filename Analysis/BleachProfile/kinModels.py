@@ -10,12 +10,13 @@ def eimod(p, n):
     return A*tau*(exp(-(n-1)/tau) - exp(-n/tau)) 
 
 def e2mod(p, t):
-    A, tau, b = p
-    return A*exp(-(t**.5)/tau) + b
+    A, tau, b, Dt, sT = p
+    N =  A*exp(-sqrt(t/tau)) + b**2
+    return N*(1 + erf((Dt - N)/sT))
 
 def fImod(p, N):
     A, Ndet, tauDet, tauI = p
-    return A*(1 + erf((sqrt(N)-Ndet)/tauDet))*exp(-N/tauI)
+    return A*(1 + erf((sqrt(N)-Ndet)/tauDet**2))*exp(-N/tauI)
 
 
 def fitDecayChan(colourFilter, metadata, channame='', i=0):
@@ -26,14 +27,14 @@ def fitDecayChan(colourFilter, metadata, channame='', i=0):
 
     b1 = bins[:-1]
 
-    res = FitModel(e2mod, [n[0], 5, 10], n, b1)
+    res = FitModel(e2mod, [n[1], 5, 10, n[1], n[1]/10], n[1:], b1[1:])
     bar(b1/60, n, width=(b1[1]-b1[0])/60, alpha=0.4, fc=colours[i])
     plot(b1/60, e2mod(res[0], b1), colours[i], lw=3)
     ylabel('Events')
     xlabel('Acquisition Time [mins]')
     title('Event Rate')
 
-    figtext(.4,.8 -.05*i, channame + '\t$\\tau = %3.2fs,\\;b = %3.2f$' % (res[0][1], res[0][2]/res[0][0]), size=18, color=colours[i])
+    figtext(.4,.8 -.05*i, channame + '\t$\\tau = %3.2fs,\\;b = %3.2f$' % (res[0][1], res[0][2]**2/res[0][0]), size=18, color=colours[i])
 
 def fitDecay(colourFilter, metadata):
     chans = colourFilter.getColourChans()
@@ -93,7 +94,7 @@ def fitOnTimes(colourFilter, metadata):
     figure()
 
     if len(chans) == 0:
-        fitDecayChan(colourFilter, metadata)
+        fitOnTimesChan(colourFilter, metadata)
     else:
         curChan = colourFilter.currentColour
 
@@ -112,11 +113,14 @@ def fitOnTimes(colourFilter, metadata):
         colourFilter.setColour(curChan)
 
 
-def fitFluorBrightnessChan(colourFilter, metadata, channame='', i=0):
+def fitFluorBrightnessChan(colourFilter, metadata, channame='', i=0, rng = None):
     nPh = (colourFilter['A']*2*math.pi*(colourFilter['sig']/(1e3*metadata.getEntry('voxelsize.x')))**2)
     nPh = nPh*metadata.getEntry('Camera.ElectronsPerCount')/metadata.getEntry('Camera.TrueEMGain')
     
-    n, bins = histogram(nPh, linspace(0, nPh.mean()*6, 100))
+    if rng == None:
+        rng = nPh.mean()*6
+        
+    n, bins = histogram(nPh, linspace(0, rng, 100))
 
     bins = bins[:-1]
 
@@ -142,8 +146,13 @@ def fitFluorBrightness(colourFilter, metadata):
     figure()
 
     if len(chans) == 0:
-        fitDecayChan(colourFilter, metadata)
+        fitFluorBrightnessChan(colourFilter, metadata)
     else:
+        nPh = (colourFilter['A']*2*math.pi*(colourFilter['sig']/(1e3*metadata.getEntry('voxelsize.x')))**2)
+        nPh = nPh*metadata.getEntry('Camera.ElectronsPerCount')/metadata.getEntry('Camera.TrueEMGain')
+        
+        rng = 6*nPh.mean()
+
         curChan = colourFilter.currentColour
 
         chanNames = chans[:]
@@ -157,5 +166,5 @@ def fitFluorBrightness(colourFilter, metadata):
 
         for ch, i in zip(chans, range(len(chans))):
             colourFilter.setColour(ch)
-            fitFluorBrightnessChan(colourFilter, metadata, chanNames[i], i)
+            fitFluorBrightnessChan(colourFilter, metadata, chanNames[i], i, rng)
         colourFilter.setColour(curChan)
