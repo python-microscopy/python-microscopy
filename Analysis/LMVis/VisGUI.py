@@ -411,6 +411,10 @@ class VisGUIFrame(wx.Frame):
 
     def OnColourFilterChange(self, event):
         self.colourFilter.setColour(event.GetString())
+        self.Triangles = None
+        self.edb = None
+        self.generatedMeasures = {}
+        self.objects = None
 
         self.RefreshView()
 
