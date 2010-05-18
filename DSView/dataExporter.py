@@ -41,7 +41,7 @@ class Exporter:
     def Export(self, data, xslice, yslice, zslice, metadata=None, events = None, origName=None):
         pass
 
-@exporter
+#@exporter
 class H5Exporter(Exporter):
     extension = '*.h5'
     descr = 'PYME HDF - .h5'
@@ -98,9 +98,10 @@ class H5Exporter(Exporter):
         h5out.flush()
         h5out.close()
 
+exporter(H5Exporter)
 
 
-@exporter
+#@exporter
 class TiffStackExporter(Exporter):
     extension = '*.tif'
     descr = 'TIFF (stack if 3D) - .tif'
@@ -124,11 +125,11 @@ class TiffStackExporter(Exporter):
             xmlFile = os.path.splitext(outFile)[0] + '.xml'
             xmd.writeXML(xmlFile)
 
+exporter(TiffStackExporter)
 
 
 
-
-@exporter
+#@exporter
 class TiffSeriesExporter(Exporter):
     extension = '*.xml'
     descr = 'TIFF Series - .tif'
@@ -165,9 +166,10 @@ class TiffSeriesExporter(Exporter):
             xmlFile = os.path.splitext(outFile)[0] + '.xml'
             xmd.writeXML(xmlFile)
 
+exporter(TiffSeriesExporter)
 
 
-@exporter
+#@exporter
 class NumpyExporter(Exporter):
     extension = '*.npy'
     descr = 'Pickled numpy ndarray - .npy'
@@ -192,7 +194,7 @@ class NumpyExporter(Exporter):
             xmlFile = os.path.splitext(outFile)[0] + '.xml'
             xmd.writeXML(xmlFile)
 
-
+exporter(NumpyExporter)
 #exporters = {'PYME HDF - .h5': H5Exporter,
 #            'TIFF (stack if 3D) - .tif' : TiffStackExporter,
 #            'TIFF (series if 3D) - .tif' : TiffSeriesExporter,
