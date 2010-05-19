@@ -11,6 +11,7 @@
 ##################
 
 from scipy import *
+from scipy.integrate import odeint
 
 def flF2(N,t, argS):
     Na,Nd, Nd2 = N
@@ -66,3 +67,14 @@ def flFpow(N,t, argS):
     dNd = Aad*I*Na**pow - Ada*Nd
     #print dNa
     return array([dNa, dNd])
+
+
+#Model with thiol binding
+def dBdt(B, t, kasc, kdis, kod, kdo, kbl, th, I):
+    dB0 = - kasc*B[0]*th + kdis*B[1]  - kbl*I(t)*B[0]
+    dB1 = kasc*B[0]*th - kdis*B[1] - kod*I(t)*B[1] + kdo*B[2]
+    dB2 = kod*I(t)*B[1] - kdo*B[2]
+    return[dB0, dB1, dB2]
+
+def thiolInt(t, B0, kasc, kdis, kod, kdo, kbl, th, I):
+    return odeint(dBdt, B0, t, args = (kasc, kdis, kod, kdo, kbl, th, I))

@@ -9,6 +9,7 @@ def eimod(p, n):
     A, tau = p
     return A*tau*(exp(-(n-1)/tau) - exp(-n/tau)) 
 
+#Decay of event numbers over time
 def e2mod(p, t):
     A, tau, b, Dt, sT = p
     N =  A*exp(-sqrt(t/tau)) + b**2
@@ -24,6 +25,7 @@ def e4mod(p, t, A):
     N =  A*exp(-sqrt(t/tau)) + b**2
     return N
 
+#Event amplitudes
 def fImod(p, N):
     A, Ndet, tauDet, tauI = p
     return A*(1 + erf((sqrt(N)-Ndet)/tauDet**2))*exp(-N/tauI)
