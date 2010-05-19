@@ -14,6 +14,16 @@ def e2mod(p, t):
     N =  A*exp(-sqrt(t/tau)) + b**2
     return N*(1 + erf((Dt - N)/sT))
 
+def e3mod(p, t):
+    A, tau, b = p
+    N =  A*exp(-sqrt(t/tau)) + b**2
+    return N
+
+def e4mod(p, t, A):
+    tau, b = p
+    N =  A*exp(-sqrt(t/tau)) + b**2
+    return N
+
 def fImod(p, N):
     A, Ndet, tauDet, tauI = p
     return A*(1 + erf((sqrt(N)-Ndet)/tauDet**2))*exp(-N/tauI)
@@ -61,7 +71,10 @@ def fitDecay(colourFilter, metadata):
         colourFilter.setColour(curChan)
 
 def fitOnTimesChan(colourFilter, metadata, channame='', i=0):
-    clumpIndices = deClump.findClumps(colourFilter['t'].astype('i'), colourFilter['x'].astype('f4'), colourFilter['y'].astype('f4'), colourFilter['error_x'].astype('f4'), 3)
+    if 'error_x' in colourFilter.keys():
+        clumpIndices = deClump.findClumps(colourFilter['t'].astype('i'), colourFilter['x'].astype('f4'), colourFilter['y'].astype('f4'), colourFilter['error_x'].astype('f4'), 3)
+    else:
+        clumpIndices = deClump.findClumps(colourFilter['t'].astype('i'), colourFilter['x'].astype('f4'), colourFilter['y'].astype('f4'), 30*ones(len(colourFilter['x'])).astype('f4'), 3)
     numPerClump, b = histogram(clumpIndices, arange(clumpIndices.max() + 1.5) + .5)
 
     n, bins = histogram(numPerClump, arange(20)+.001)

@@ -19,19 +19,25 @@ import numpy
 #additional arguments
 taskList = [
 T(-1, scope.turnAllLasersOff),
-T(0, SetEMGain(0)),
-T(1, scope.l671.TurnOn),
-T(60, scope.l671.TurnOff),
-T(61, SetEMGain(150)),
-T(80, scope.l671.TurnOn),
-T(90, MainFrame.pan_spool.OnBAnalyse, None),
+#T(-1, SetEMGain,150),
+T(20, scope.filterWheel.fw.setPos, 6),
+T(21, scope.l671.TurnOn),
+T(58, scope.l671.TurnOff),
+T(60, SetEMGain,0),
+T(61, scope.l671.TurnOn),
+T(61, scope.filterWheel.fw.setPos, 1),
+T(101, SetEMGain,150),
+T(110, MainFrame.pan_spool.OnBAnalyse, None),
 T(maxint, scope.turnAllLasersOff),
+T(maxint, scope.filterWheel.fw.setPos, 6),
 ]
 
 #optional - metadata entries
 metaData = [
-('Protocol.DarkFrameRange', (61, 80)),
-('Protocol.DataStartsAt', 91)
+('Protocol.DarkFrameRange', (0, 20)),
+('Protocol.DataStartsAt', 102),
+('Protocol.PrebleachFrames', (21, 58)),
+('Protocol.BleachFrames', (61,101)),
 ]
 
 #must be defined for protocol to be discovered

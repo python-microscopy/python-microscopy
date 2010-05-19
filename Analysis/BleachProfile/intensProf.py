@@ -64,6 +64,10 @@ def eMod(p, t):
     A, tau = p
     return A*(1 - exp(-t/tau))
 
+def eMod5(p, t):
+    A, t0, tau = p
+    return A*(1 - exp(-(t-t0)/tau))
+
 def eMod2(p, t):
     A, tau , b = p
     return A*(1 - b*exp(-t/tau))
