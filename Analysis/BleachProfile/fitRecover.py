@@ -4,8 +4,8 @@ from pylab import *
 from PYME.Analysis._fithelpers import *
 
 
-def FitTrace(ds, mdh):
-    tr = (ds - mdh.getEntry('Camera.ADOffset')).sum(1).sum(0)
+def FitTrace(tr, mdh):
+    #tr = (ds - mdh.getEntry('Camera.ADOffset')).sum(1).sum(0)
 
     cycTime = mdh.getEntry('Camera.CycleTime')
     t = cycTime*arange(len(tr))
