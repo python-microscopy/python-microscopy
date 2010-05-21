@@ -19,33 +19,26 @@ import numpy
 #additional arguments
 taskList = [
 T(-1, scope.turnAllLasersOff),
-T(-1, SetEMGain,150),
+#T(-1, SetEMGain,150),
 T(20, scope.filterWheel.fw.setPos, 6),
 T(21, scope.l671.TurnOn),
-T(40, SetEMGain,0),
-T(60, scope.filterWheel.fw.setPos, 1),
-T(80, scope.filterWheel.fw.setPos, 6),
-T(81, SetEMGain,150),
-T(90, MainFrame.pan_spool.OnBAnalyse, None),
-T(1500, scope.filterWheel.fw.setPos, 5),
-T(1600, scope.filterWheel.fw.setPos, 6),
-T(2500, scope.l671.TurnOff),
-T(2500, scope.filterWheel.fw.setPos, 3),
-T(2501, scope.l671.TurnOn),
-T(2600, scope.l671.TurnOff),
-T(2600, scope.filterWheel.fw.setPos, 6),
-T(2601, scope.l671.TurnOn),
-T(3500, scope.filterWheel.fw.setPos, 1),
-T(3600, scope.filterWheel.fw.setPos, 6),
+T(58, scope.l671.TurnOff),
+T(60, SetEMGain,0),
+T(61, scope.l671.TurnOn),
+T(61, scope.filterWheel.fw.setPos, 1),
+T(101, SetEMGain,150),
+T(110, MainFrame.pan_spool.OnBAnalyse, None),
 T(maxint, scope.turnAllLasersOff),
+T(maxint, scope.filterWheel.fw.setPos, 6),
 ]
 
 #optional - metadata entries
 metaData = [
 ('Protocol.DarkFrameRange', (0, 20)),
-('Protocol.DataStartsAt', 82)
+('Protocol.DataStartsAt', 102),
+('Protocol.PrebleachFrames', (21, 58)),
+('Protocol.BleachFrames', (61,101)),
 ]
 
 #must be defined for protocol to be discovered
-PROTOCOL = TaskListProtocol(taskList, metaData)
-PROTOCOL_STACK = ZStackTaskListProtocol(taskList, 20, 100, metaData, randomise = False)
+PROTOCOL = ZStackTaskListProtocol(taskList, 101, 100, metaData, randomise = False)

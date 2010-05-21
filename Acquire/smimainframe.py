@@ -286,21 +286,6 @@ class smiMainFrame(wx.Frame):
             for cl in cm.split('\n'):
                 self.sh.run(cl)
 
-        if (self.scope.cam.CamReady() and ('chaninfo' in self.scope.__dict__)):
-            self.scope.livepreview(self, Notebook = self.notebook1)
-            
-
-            self.int_sl = intsliders.IntegrationSliders(self.scope.chaninfo,self, self.scope)
-            self.AddCamTool(self.int_sl, 'Integration Time')
-            #self.notebook1.AddPage( page=self.int_sl, select=False, caption='Integration Time')
-            #self.notebook1.Split(self.notebook1.GetPageCount() -1, wx.DOWN)
-            #self.int_sl.Show()
-
-            self.tseq_d = timeseqdialog.seqDialog(self, self.scope)
-
-            self.pan_spool = HDFSpoolFrame.PanSpool(self, self.scope, nameUtils.genHDFDataFilepath())
-            self.AddAqTool(self.pan_spool, 'Spooling')
-
         if len(self.scope.piezos) > 0.5:
             self.piezo_sl = psliders.PiezoSliders(self.scope.piezos, self)
             self.time1.WantNotification.append(self.piezo_sl.update)
@@ -316,6 +301,23 @@ class smiMainFrame(wx.Frame):
             self.seq_d = seqdialog.seqPanel(self, self.scope)
             self.AddAqTool(self.seq_d, 'Z-Stack')
             #self.seq_d.Show()
+
+        if (self.scope.cam.CamReady() and ('chaninfo' in self.scope.__dict__)):
+            self.scope.livepreview(self, Notebook = self.notebook1)
+            
+
+            self.int_sl = intsliders.IntegrationSliders(self.scope.chaninfo,self, self.scope)
+            self.AddCamTool(self.int_sl, 'Integration Time')
+            #self.notebook1.AddPage( page=self.int_sl, select=False, caption='Integration Time')
+            #self.notebook1.Split(self.notebook1.GetPageCount() -1, wx.DOWN)
+            #self.int_sl.Show()
+
+            self.tseq_d = timeseqdialog.seqDialog(self, self.scope)
+
+            self.pan_spool = HDFSpoolFrame.PanSpool(self, self.scope, nameUtils.genHDFDataFilepath())
+            self.AddAqTool(self.pan_spool, 'Spooling')
+
+        
             
         if 'step' in self.scope.__dict__:
             self.step_d = stepDialog.stepPanel(self, self.scope)

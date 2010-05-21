@@ -146,7 +146,7 @@ class VisGUIFrame(wx.Frame):
 
         self.dataSources = []
         self.selectedDataSource = None
-        self.filterKeys = {'error_x': (0,30), 'A':(5,2000), 'sig' : (150/2.35, 350/2.35)}
+        self.filterKeys = {'error_x': (0,30), 'A':(5,2000), 'sig' : (95, 200)}
 
         self.filter = None
         self.mapping = None
@@ -222,8 +222,8 @@ class VisGUIFrame(wx.Frame):
 
         ######
 
-        self.workspaceView = workspaceTree.WorkspaceTree(self.notebook, workspace=self.workspace, shell=self.sh)
-        self.notebook.AddPage(page=self.workspaceView, select=False, caption='Workspace')
+        #self.workspaceView = workspaceTree.WorkspaceTree(self.notebook, workspace=self.workspace, shell=self.sh)
+        #self.notebook.AddPage(page=self.workspaceView, select=False, caption='Workspace')
 
         self.glCanvas = gl_render.LMGLCanvas(self.notebook)
         self.notebook.AddPage(page=self.glCanvas, select=True, caption='View')
@@ -2633,7 +2633,7 @@ class VisGUIFrame(wx.Frame):
 
         self.sh.shell.user_ns.update(self.__dict__)
         wx.EndBusyCursor()
-        self.workspaceView.RefreshItems()
+        #self.workspaceView.RefreshItems()
 
 
 

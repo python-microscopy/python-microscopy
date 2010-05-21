@@ -104,6 +104,7 @@ class ZStackTaskListProtocol(TaskListProtocol):
         self.pos = 0
 
         spooler.md.setEntry('Protocol.PiezoStartPos', self.piezo.GetPos(self.piezoChan))
+        spooler.md.setEntry('Protocol.ZStack', True)
 
         TaskListProtocol.Init(self,spooler)
 
@@ -122,3 +123,5 @@ class ZStackTaskListProtocol(TaskListProtocol):
         self.piezo.MoveTo(self.piezoChan, self.startPos)
 
         TaskListProtocol.OnFinish(self)
+
+NullZProtocol = ZStackTaskListProtocol([], 0, 100)

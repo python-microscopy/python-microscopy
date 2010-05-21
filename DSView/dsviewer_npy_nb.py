@@ -1126,7 +1126,7 @@ class DSViewFrame(wx.Frame):
 
     def OnProgDispCMapChange(self, event):
         #print 'foo'
-        self.glCanvas.setCMap(pylab.cm.__getattribute__(self.chProgDispColour.GetStringSelection()))
+        self.glCanvas.setCMap(pylab.cm.__getattribute__(self.chProgDispCMap.GetStringSelection()))
 
 
 

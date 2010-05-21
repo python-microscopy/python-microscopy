@@ -35,6 +35,7 @@ class Splitter:
         idShiftfield = wx.NewId()
 
         self.menu = wx.Menu(title = '')
+        self.f = None
 
         self.menu.AppendCheckItem(idConstROI, 'Constrain ROI')
         wx.EVT_MENU(parent, idConstROI, self.OnConstrainROI)
@@ -67,9 +68,12 @@ class Splitter:
 
     def OnUnmix(self,event):
         #self.Unmix()
-        f = UnMixFrame(self.parent, splitter = self)
-        f.SetSize((800,500))
-        f.Show()
+        if self.f == None:
+            self.f = UnMixFrame(self.parent, splitter = self)
+            self.f.SetSize((800,500))
+            self.f.Show()
+        else:
+            self.f.vp.Optim()
 
     def OnSetShiftField(self, event):
         fdialog = wx.FileDialog(None, 'Select shift field',
@@ -220,6 +224,7 @@ class UnMixFrame(wx.Frame):
 
     def OnCloseWindow(self, event):
         self.splitter.scope.pa.WantFrameGroupNotification.remove(self.update)
+        self.splitter.f = None
         self.Destroy()
 
     def OnUpdateMix(self, event):
