@@ -254,6 +254,7 @@ class PanSpool(wx.Panel):
 
         if stack:
             protocol = self.protocolZ
+            print protocol
         else:
             protocol = self.protocol
 
@@ -342,6 +343,7 @@ class PanSpool(wx.Panel):
                 self.protocol.filename = pname
                 
                 self.protocolZ = pmod.PROTOCOL_STACK
+                self.protocolZ.filename = pname
 
         pDlg.Destroy()
 

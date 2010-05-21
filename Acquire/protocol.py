@@ -125,3 +125,4 @@ class ZStackTaskListProtocol(TaskListProtocol):
         TaskListProtocol.OnFinish(self)
 
 NullZProtocol = ZStackTaskListProtocol([], 0, 100)
+NullZProtocol.filename = '<none>'
