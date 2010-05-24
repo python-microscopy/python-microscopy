@@ -231,9 +231,9 @@ class SampleInfoDialog(wx.Dialog):
         current_choices = self.tCreator.GetChoices()
 
         if slref == '' or len(models.Slide.objects.filter(reference=slref)) ==0:
-            choices = [e.creator for e in models.Slide.objects.filter(creator__startswith=cname)]
+            choices = list(set([e.creator for e in models.Slide.objects.filter(creator__startswith=cname)]))
         else:
-            choices = [e.creator for e in models.Slide.objects.filter(creator__startswith=cname, reference=slref)]
+            choices = list(set([e.creator for e in models.Slide.objects.filter(creator__startswith=cname, reference=slref)]))
             
         if choices != current_choices:
             self.tCreator.SetChoices(choices)
@@ -248,9 +248,9 @@ class SampleInfoDialog(wx.Dialog):
         current_choices = self.tSlideRef.GetChoices()
 
         if cname == '' or (len(models.Slide.objects.filter(creator=cname)) == 0):
-            choices = [e.reference for e in models.Slide.objects.filter(reference__startswith=slref)]
+            choices = list(set([e.reference for e in models.Slide.objects.filter(reference__startswith=slref)]))
         else:
-            choices = [e.reference for e in models.Slide.objects.filter(reference__startswith=slref, creator=cname)]
+            choices = list(set([e.reference for e in models.Slide.objects.filter(reference__startswith=slref, creator=cname)]))
 
         if choices != current_choices:
             self.tSlideRef.SetChoices(choices)
@@ -262,7 +262,7 @@ class SampleInfoDialog(wx.Dialog):
 
         current_choices = self.tStructure.GetChoices()
 
-        choices = [e.structure for e in models.Labelling.objects.filter(structure__startswith=sname)]
+        choices = list(set([e.structure for e in models.Labelling.objects.filter(structure__startswith=sname)]))
 
         if choices != current_choices:
             self.tStructure.SetChoices(choices)
@@ -272,7 +272,7 @@ class SampleInfoDialog(wx.Dialog):
 
         current_choices = self.tDye.GetChoices()
 
-        choices = [e.label for e in models.Labelling.objects.filter(label__startswith=dname)]
+        choices = list(set([e.label for e in models.Labelling.objects.filter(label__startswith=dname)]))
 
         if choices != current_choices:
             self.tDye.SetChoices(choices)
