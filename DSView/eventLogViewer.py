@@ -14,6 +14,7 @@ import wx
 import numpy as np
 import time
 import pylab
+from PYME.Analysis.piecewiseMapping import timeToFrames, framesToTime
 
 class eventLogPanel(wx.Panel):
     def __init__(self, parent, eventSource, metaData, frameRange, charts = [], size=(-1, -1)):
@@ -28,6 +29,8 @@ class eventLogPanel(wx.Panel):
         self.initialised = False
 
         self.SetEventSource(eventSource)
+
+        self.startTime = self.metaData.getEntry('StartTime')
 
 #        self.evKeyNames = set()
 #        for e in self.eventSource:
@@ -67,8 +70,10 @@ class eventLogPanel(wx.Panel):
 
         tPerFrame = self.metaData.getEntry('Camera.CycleTime')
 
-        maxT = tPerFrame*self.frameRange[1]
-        minT = tPerFrame*self.frameRange[0]
+        #maxT = tPerFrame*self.frameRange[1]
+        maxT = framesToTime(self.frameRange[1], self.eventSource, self.metaData) - self.startTime
+        #minT = tPerFrame*self.frameRange[0]
+        minT = framesToTime(self.frameRange[0], self.eventSource, self.metaData) - self.startTime
 
         timeLabelSize = max(dc.GetTextExtent('%3.4g' % maxT)[0], dc.GetTextExtent('[s]' % maxT)[0])
 
@@ -100,6 +105,7 @@ class eventLogPanel(wx.Panel):
         ##frame # ticks
         nFrames = self.frameRange[1] - self.frameRange[0]
         pixPerFrame = float(self.Size[1] - 3*textHeight)/nFrames
+        pixPerS = pixPerFrame/tPerFrame
 
         self.pixPerFrame = pixPerFrame
 
@@ -109,16 +115,17 @@ class eventLogPanel(wx.Panel):
         tickSpacing = round(tickSpacing/(10**np.floor(np.log10(tickSpacing))))*(10**np.floor(np.log10(tickSpacing)))
         tickStart = np.ceil(self.frameRange[0]/tickSpacing)*tickSpacing
         ticks = np.arange(tickStart, self.frameRange[1]+.01, tickSpacing)
+        tickTimes = framesToTime(ticks, self.eventSource, self.metaData) - self.startTime
 
-        for t in ticks:
-            y = (t -self.frameRange[0])*pixPerFrame + 2*textHeight
+        for t, tt in zip(ticks, tickTimes):
+            #y = (t -self.frameRange[0])*pixPerFrame + 2*textHeight
+            y = (tt -minT)*pixPerS + 2*textHeight
             dc.DrawText('%3.4g' % t, hpadding, y - 0.5*textHeight)
             dc.DrawLine(frameLabelSize + 2*hpadding - tickSize, y, frameLabelSize + 2*hpadding, y)
 
 
 #        #### Time # ticks
         tickSpacingTime = tPerFrame * tickSpacing
-        pixPerS = pixPerFrame/tPerFrame
         #round to 1sf
         tickSpacingTime = round(tickSpacingTime/(10**np.floor(np.log10(tickSpacingTime))))*(10**np.floor(np.log10(tickSpacingTime)))
         tickStartTime = np.ceil(minT/tickSpacingTime)*tickSpacingTime

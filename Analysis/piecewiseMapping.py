@@ -12,6 +12,35 @@
 
 from numpy import *
 
+def timeToFrames(t, events, mdh):
+    cycTime = mdh.getEntry('Camera.CycleTime')
+    startTime = mdh.getEntry('StartTime')
+
+    se = array([('0', 'start', startTime)], dtype=events.dtype)
+    #get events corresponding to aquisition starts
+    startEvents = hstack((se,events[events['EventName']=='StartAq']))
+
+    sfr = array([int(e['EventDescr']) for e in startEvents])
+
+    si = startEvents['Time'].searchsorted(t)
+    fr = sfr[si-1] + floor((t - startEvents['Time'][si-1])/cycTime)
+
+    return fr
+
+def framesToTime(fr, events, mdh):
+    cycTime = mdh.getEntry('Camera.CycleTime')
+    startTime = mdh.getEntry('StartTime')
+
+    se = array([('0', 'start', startTime)], dtype=events.dtype)
+    #get events corresponding to aquisition starts
+    startEvents = hstack((se,events[events['EventName']=='StartAq']))
+
+    sfr = array([int(e['EventDescr']) for e in startEvents])
+
+    si = sfr.searchsorted(fr)
+    return startEvents['Time'][si-1] + (fr - sfr[si-1])*cycTime
+    
+
 class piecewiseMap:
     def __init__(self, y0, xvals, yvals, secsPerFrame = 1, xIsSecs = True):
         self.y0 = y0
@@ -47,14 +76,16 @@ class piecewiseMap:
 
         return yp
 
-def GeneratePMFromEventList(events, secsPerFrame, x0, y0, eventName = 'ProtocolFocus', dataPos = 1):
+def GeneratePMFromEventList(events, metadata, x0, y0, eventName = 'ProtocolFocus', dataPos = 1):
     x = []
     y = []
 
-    for e in events:
-        if e['EventName'] == eventName:
-            x.append(e['Time'] - x0)
-            y.append(float(e['EventDescr'].split(', ')[dataPos]))
+    secsPerFrame = metadata.getEntry('Camera.CycleTime')
 
-    return piecewiseMap(y0, array(x), array(y), secsPerFrame)
+    for e in events[events['EventName'] == eventName]:
+        #if e['EventName'] == eventName:
+        x.append(e['Time'])
+        y.append(float(e['EventDescr'].split(', ')[dataPos]))
+
+    return piecewiseMap(y0, timeToFrames(array(x)), array(y), secsPerFrame, xIsSecs=False)
 
