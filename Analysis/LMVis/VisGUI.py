@@ -63,6 +63,7 @@ from PYME.Analysis import MetadataTree
 
 #import time
 import numpy as np
+import scipy.special
 
 import tables
 from PYME.Analysis import MetaData
@@ -163,6 +164,7 @@ class VisGUIFrame(wx.Frame):
         self.chromaticShifts = {}
         self.t_p_dye = 0.1
         self.t_p_other = 0.1
+        self.t_p_background = .01
 
         self.objThreshold = 30
         self.objMinSize = 10
@@ -2185,6 +2187,15 @@ class VisGUIFrame(wx.Frame):
                     #if we used the splitter set up a mapping so we can filter on total amplitude and ratio
                     if 'fitError_Ag' in self.selectedDataSource.keys():
                         self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource, A='fitResults_Ag + fitResults_Ar', gFrac='fitResults_Ag/(fitResults_Ag + fitResults_Ar)', error_gFrac = 'sqrt((fitError_Ag/fitResults_Ag)**2 + (fitError_Ag**2 + fitError_Ar**2)/(fitResults_Ag + fitResults_Ar)**2)*fitResults_Ag/(fitResults_Ag + fitResults_Ar)')
+                        sg = self.selectedDataSource['fitError_Ag']
+                        sr = self.selectedDataSource['fitError_Ar']
+                        g = self.selectedDataSource['fitResults_Ag']
+                        r = self.selectedDataSource['fitResults_Ar']
+                        I = self.selectedDataSource['A']
+                        self.selectedDataSource.colNorm = np.sqrt(2*np.pi)*sg*sr/(2*np.sqrt(sg**2 + sr**2)*I)*(
+                            scipy.special.erf((sg**2*r + sr**2*(I-g))/(np.sqrt(2)*sg*sr*np.sqrt(sg**2+sr**2)))
+                            - scipy.special.erf((sg**2*(r-I) - sr**2*g)/(np.sqrt(2)*sg*sr*np.sqrt(sg**2+sr**2))))
+                        self.selectedDataSource.setMapping('ColourNorm', '1.0*colNorm')
                     else:
                         self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource, A='fitResults_Ag + fitResults_Ar', gFrac='fitResults_Ag/(fitResults_Ag + fitResults_Ar)', error_gFrac = '0*x + 0.01')
 

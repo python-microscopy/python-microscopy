@@ -55,10 +55,16 @@ class colourPlotPanel(wxPlotPanel.PlotPanel):
                 p_dye = self.visFrame.mapping['p_%s' % k][::max(l_x/1e4, 1)]
 
                 p_other = numpy.zeros(x.shape)
+                #p_tot = numpy.zeros(p_dye.shape)
+                p_tot = self.visFrame.t_p_background*self.visFrame.mapping['ColourNorm'][::max(l_x/1e4, 1)]
 
                 for k2 in self.visFrame.fluorSpecies.keys():
+                    p_tot  += self.visFrame.mapping['p_%s' % k2][::max(l_x/1e4, 1)]
                     if not k2 ==k:
                         p_other = numpy.maximum(p_other, self.visFrame.mapping['p_%s' % k2][::max(l_x/1e4, 1)])
+
+                p_dye = p_dye/p_tot
+                p_other = p_other/p_tot
 
                 c[(p_dye > self.visFrame.t_p_dye)*(p_other < self.visFrame.t_p_other)] = v
 
@@ -276,7 +282,8 @@ class colourPanel(wx.Panel):
             self.lFluorSpecies.SetItemTextColour(ind, wx.Colour(*((128*numpy.array(cm.jet_r(val)))[:3])))
 
             #self.visFr.mapping.setMapping('p_%s' % key, 'exp(-(%f*A - fitResults_Ag)**2/(2*fitError_Ag**2))*exp(-(%f*A - fitResults_Ar)**2/(2*fitError_Ar**2))' % (1- val, val))
-            self.visFr.mapping.setMapping('p_%s' % key, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))' % (val))
+            #self.visFr.mapping.setMapping('p_%s' % key, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))' % (val))
+            self.visFr.mapping.setMapping('p_%s' % key, '(1.0/(ColourNorm*2*numpy.pi*fitError_Ag*fitError_Ar))*exp(-(fitResults_Ag - %f*A)**2/(2*fitError_Ag**2) - (fitResults_Ar - %f*A)**2/(2*fitError_Ar**2))' % (val, 1-val))
 
             self.visFr.UpdatePointColourChoices()
             self.visFr.UpdateColourFilterChoices()
@@ -310,7 +317,8 @@ class colourPanel(wx.Panel):
             self.lFluorSpecies.SetItemTextColour(event.m_itemIndex, wx.Colour(*((128*numpy.array(cm.jet_r(val)))[:3])))
 
             #self.visFr.mapping.setMapping('p_%s' % it.GetText(), 'exp(-(%f*A - fitResults_Ag)**2/(4*fitError_Ag**2 + 2*fitError_Ar**2))*exp(-(%f*A - fitResults_Ar)**2/(2*fitError_Ag**2 +4*fitError_Ar**2))' % (1- val, val))
-            self.visFr.mapping.setMapping('p_%s' % it.GetText(), 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))' % (val))
+            #self.visFr.mapping.setMapping('p_%s' % it.GetText(), 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))' % (val))
+            self.visFr.mapping.setMapping('p_%s' % it.GetText(), '(1.0/(ColourNorm*2*numpy.pi*fitError_Ag*fitError_Ar))*exp(-(fitResults_Ag - %f*A)**2/(2*fitError_Ag**2) - (fitResults_Ar - %f*A)**2/(2*fitError_Ar**2))' % (val, 1-val))
 
             self.refresh()
         else: #shift
@@ -338,7 +346,8 @@ class colourPanel(wx.Panel):
             self.lFluorSpecies.SetItemTextColour(ind, wx.Colour(*((128*numpy.array(cm.jet_r(g)))[:3])))
 
             #self.visFr.mapping.setMapping('p_%s' % key, 'exp(-(%f*A - fitResults_Ag)**2/(2*fitError_Ag**2))*exp(-(%f*A - fitResults_Ar)**2/(2*fitError_Ar**2))' % (1- val, val))
-            self.visFr.mapping.setMapping('p_%s' % key, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))' % (g))
+            #self.visFr.mapping.setMapping('p_%s' % key, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))' % (g))
+            self.visFr.mapping.setMapping('p_%s' % key, '(1.0/(ColourNorm*2*numpy.pi*fitError_Ag*fitError_Ar))*exp(-(fitResults_Ag - %f*A)**2/(2*fitError_Ag**2) - (fitResults_Ar - %f*A)**2/(2*fitError_Ar**2))' % (val, 1-val))
 
         self.visFr.UpdatePointColourChoices()
         self.visFr.UpdateColourFilterChoices()
@@ -359,7 +368,8 @@ class colourPanel(wx.Panel):
                 self.lFluorSpecies.SetItemTextColour(ind, wx.Colour(*((128*numpy.array(cm.jet_r(ratio)))[:3])))
 
                 #self.visFr.mapping.setMapping('p_%s' % key, 'exp(-(%f*A - fitResults_Ag)**2/(2*fitError_Ag**2))*exp(-(%f*A - fitResults_Ar)**2/(2*fitError_Ar**2))' % (1- val, val))
-                self.visFr.mapping.setMapping('p_%s' % structure, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))' % (ratio))
+                #self.visFr.mapping.setMapping('p_%s' % structure, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))' % (ratio))
+                self.visFr.mapping.setMapping('p_%s' % structure, '(1.0/(ColourNorm*2*numpy.pi*fitError_Ag*fitError_Ar))*exp(-(fitResults_Ag - %f*A)**2/(2*fitError_Ag**2) - (fitResults_Ar - %f*A)**2/(2*fitError_Ar**2))' % (ratio, 1-ratio))
 
         self.visFr.UpdatePointColourChoices()
         self.visFr.UpdateColourFilterChoices()
@@ -379,10 +389,16 @@ class colourPanel(wx.Panel):
             p_dye = self.visFr.mapping['p_%s' % key]
 
             p_other = numpy.zeros(p_dye.shape)
+            #p_tot = numpy.zeros(p_dye.shape)
+            p_tot = self.visFr.t_p_background*self.visFr.mapping['ColourNorm']
 
             for k2 in self.visFr.fluorSpecies.keys():
+                p_tot  += self.visFr.mapping['p_%s' % k2]
                 if not k2 ==key:
                     p_other = numpy.maximum(p_other, self.visFr.mapping['p_%s' % k2])
+
+            p_dye = p_dye/p_tot
+            p_other = p_other/p_tot
 
             self.lFluorSpecies.SetStringItem(ind,2, '%d' % ((p_dye > self.visFr.t_p_dye)*(p_other < self.visFr.t_p_other)).sum())
 

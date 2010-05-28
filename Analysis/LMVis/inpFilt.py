@@ -390,10 +390,15 @@ class colourFilter:
             p_dye = self.resultsSource['p_%s' % self.currentColour]
 
             p_other = 0*p_dye
+            p_tot = self.visFr.t_p_background*self.resultsSource['ColourNorm']
 
             for k in colChans:
+                p_tot  += self.resultsSource['p_%s' % k]
                 if not self.currentColour == k:
                     p_other = np.maximum(p_other, self.resultsSource['p_%s' % k])
+
+            p_dye = p_dye/p_tot
+            p_other = p_other/p_tot
 
             ind = (p_dye > self.visFr.t_p_dye)*(p_other < self.visFr.t_p_other)
 

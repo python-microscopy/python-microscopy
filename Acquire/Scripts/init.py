@@ -71,16 +71,16 @@ acf = AndorControlFrame.AndorPanel(MainFrame, scope.cam, scope)
 camPanels.append((acf, 'EMCCD Properties'))
 ''')
 
-InitGUI('''
-from PYME.Acquire.Hardware import ccdAdjPanel
-#import wx
-#f = wx.Frame(None)
-snrPan = ccdAdjPanel.sizedCCDPanel(notebook1, scope, acf)
-notebook1.AddPage(page=snrPan, select=False, caption='Image SNR')
-#camPanels.append((snrPan, 'SNR etc ...'))
-#f.Show()
-#time1.WantNotification.append(snrPan.ccdPan.draw)
-''')
+#InitGUI('''
+#from PYME.Acquire.Hardware import ccdAdjPanel
+##import wx
+##f = wx.Frame(None)
+#snrPan = ccdAdjPanel.sizedCCDPanel(notebook1, scope, acf)
+#notebook1.AddPage(page=snrPan, select=False, caption='Image SNR')
+##camPanels.append((snrPan, 'SNR etc ...'))
+##f.Show()
+##time1.WantNotification.append(snrPan.ccdPan.draw)
+#''')
 
 cm.join()
 from PYME.Acquire.Hardware import lasers
