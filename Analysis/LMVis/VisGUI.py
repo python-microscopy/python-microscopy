@@ -2234,7 +2234,7 @@ class VisGUIFrame(wx.Frame):
                     charts = []
 
                     if 'ProtocolFocus' in evKeyNames:
-                        self.zm = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh.getEntry('Camera.CycleTime'), self.mdh.getEntry('StartTime'), self.mdh.getEntry('Protocol.PiezoStartPos'))
+                        self.zm = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), self.mdh.getEntry('Protocol.PiezoStartPos'))
                         self.z_focus = 1.e3*self.zm(self.selectedDataSource['t'])
                         #self.elv.SetCharts([('Focus [um]', self.zm, 'ProtocolFocus'),])
                         charts.append(('Focus [um]', self.zm, 'ProtocolFocus'))
@@ -2243,7 +2243,7 @@ class VisGUIFrame(wx.Frame):
                         self.selectedDataSource.setMapping('focus', 'z_focus')
 
                     if 'ScannerXPos' in self.elv.evKeyNames:
-                        self.xm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh.getEntry('Camera.CycleTime'), self.mdh.getEntry('StartTime'), 0, 'ScannerXPos', 0)
+                        self.xm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), 0, 'ScannerXPos', 0)
                         charts.append(('XPos [um]', self.xm, 'ScannerXPos'))
 
                         self.selectedDataSource.scan_x = 1.e3*self.xm(self.selectedDataSource['t']-.01)
@@ -2251,7 +2251,7 @@ class VisGUIFrame(wx.Frame):
                         self.selectedDataSource.setMapping('x', 'x + scan_x')
 
                     if 'ScannerYPos' in self.elv.evKeyNames:
-                        self.ym = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh.getEntry('Camera.CycleTime'), self.mdh.getEntry('StartTime'), 0, 'ScannerYPos', 0)
+                        self.ym = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), 0, 'ScannerYPos', 0)
                         charts.append(('YPos [um]', self.ym, 'ScannerYPos'))
 
                         self.selectedDataSource.scan_y = 1.e3*self.ym(self.selectedDataSource['t']-.01)

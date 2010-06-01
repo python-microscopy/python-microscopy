@@ -99,8 +99,9 @@ def pushImagesHDF(startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
     dataFilename = seriesName
     resultsFilename = genResultFileName(seriesName)
     while os.path.exists(resultsFilename):
+        di, fn = os.path.split(resultsFilename)
         fdialog = wx.FileDialog(None, 'Analysis file already exists, please select a new filename',
-                    wildcard='H5R files|*.h5r', style=wx.SAVE)
+                    wildcard='H5R files|*.h5r', defaultDir=di, defaultFile=fn.splitext()[0] + '_1.h5r', style=wx.SAVE)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
             resultsFilename = fdialog.GetPath().encode()
