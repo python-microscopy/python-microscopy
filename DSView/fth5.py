@@ -95,6 +95,7 @@ def pushImages(startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
 #    tq.postTasks(tasks, queueName=seriesName)
 
 def pushImagesHDF(startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
+    global seriesName
     dataFilename = seriesName
     resultsFilename = genResultFileName(seriesName)
     while os.path.exists(resultsFilename):
