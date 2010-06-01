@@ -49,12 +49,12 @@ def f_gauss2d2c(p, Xg, Yg, Xr, Yr):
 
 def f_gauss2d2ccb(p, Xg, Yg, Xr, Yr):
     """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sigma, background, lin_x, lin_y]"""
-    Ag,Ar, x0, y0, s, bG, bR = p
+    Ag,Ar, x0, y0, s = p
     #return A*scipy.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2)) + b + b_x*X + b_y*Y
-    r = genGauss(Xr,Yr,Ar,x0,y0,s,bR = p)
+    r = genGauss(Xr,Yr,Ar,x0,y0,s,0,0,0)
     r.strides = r.strides #Really dodgy hack to get around something which numpy is not doing right ....
 
-    g = genGauss(Xg,Yg,Ag,x0,y0,s,bG = p)
+    g = genGauss(Xg,Yg,Ag,x0,y0,s,0,0,0)
     g.strides = g.strides #Really dodgy hack to get around something which numpy is not doing right ....
 
     return numpy.concatenate((g.reshape(g.shape + (1,)),r.reshape(g.shape + (1,))), 2)
@@ -68,7 +68,7 @@ def replNoneWith1(n):
 		return n
 
 
-fresultdtype=[('tIndex', '<i4'),('fitResults', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('backgroundG', '<f4'),('backgroundR', '<f4'),('bx', '<f4'),('by', '<f4')]),('fitError', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('backgroundG', '<f4'),('backgroundR', '<f4'),('bx', '<f4'),('by', '<f4')]), ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
+fresultdtype=[('tIndex', '<i4'),('fitResults', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4')]),('fitError', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4')]), ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
 
 def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None):
 	if slicesUsed == None:
@@ -96,7 +96,7 @@ def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fit
 		
 
 class GaussianFitFactory:
-    def __init__(self, data, metadata, fitfcn=f_gauss2d2c, background=None):
+    def __init__(self, data, metadata, fitfcn=f_gauss2d2ccb, background=None):
         '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in 
         metadata. '''
         self.data = data
@@ -169,7 +169,7 @@ class GaussianFitFactory:
 
             dataROI = dataROI - bgROI
 
-        startParameters = [Ag, Ar, x0, y0, 250/2.35, dataROI[:,:,0].min(),dataROI[:,:,1].min(), .001, .001]
+        startParameters = [Ag, Ar, x0, y0, 250/2.35]
 	
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
