@@ -87,5 +87,5 @@ def GeneratePMFromEventList(events, metadata, x0, y0, eventName = 'ProtocolFocus
         x.append(e['Time'])
         y.append(float(e['EventDescr'].split(', ')[dataPos]))
 
-    return piecewiseMap(y0, timeToFrames(array(x)), array(y), secsPerFrame, xIsSecs=False)
+    return piecewiseMap(y0, timeToFrames(array(x), events, metadata), array(y), secsPerFrame, xIsSecs=False)
 

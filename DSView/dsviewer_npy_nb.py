@@ -266,15 +266,15 @@ class DSViewFrame(wx.Frame):
             charts = []
 
             if 'ProtocolFocus' in self.elv.evKeyNames:
-                self.zm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh.getEntry('Camera.CycleTime'), self.mdh.getEntry('StartTime'), self.mdh.getEntry('Protocol.PiezoStartPos'))
+                self.zm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), self.mdh.getEntry('Protocol.PiezoStartPos'))
                 charts.append(('Focus [um]', self.zm, 'ProtocolFocus'))
 
             if 'ScannerXPos' in self.elv.evKeyNames:
-                self.xm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh.getEntry('Camera.CycleTime'), self.mdh.getEntry('StartTime'), 0, 'ScannerXPos', 0)
+                self.xm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), 0, 'ScannerXPos', 0)
                 charts.append(('XPos [um]', self.xm, 'ScannerXPos'))
 
             if 'ScannerYPos' in self.elv.evKeyNames:
-                self.ym = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh.getEntry('Camera.CycleTime'), self.mdh.getEntry('StartTime'), 0, 'ScannerYPos', 0)
+                self.ym = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), 0, 'ScannerYPos', 0)
                 charts.append(('YPos [um]', self.ym, 'ScannerYPos'))
 
             self.elv.SetCharts(charts)
@@ -426,7 +426,7 @@ class DSViewFrame(wx.Frame):
         self.Images.Add(GetCollapsedIconBitmap())
 
         self.GenPlayPanel()
-        self.GenProfilePanel()
+        #self.GenProfilePanel()
         if self.mode == 'LM':
             self.GenPointFindingPanel()
             self.GenAnalysisPanel()
@@ -559,72 +559,154 @@ class DSViewFrame(wx.Frame):
         vsizer = wx.BoxSizer(wx.VERTICAL)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        hsizer.Add(wx.StaticText(pan, -1, 'Type:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(wx.StaticText(pan, -1, 'Type:'), 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
         self.cFitType = wx.Choice(pan, -1, choices = self.fitFactories, size=(110, -1))
 
         if 'Camera.ROIPosY' in self.mdh.getEntryNames() and (self.mdh.getEntry('Camera.ROIHeight') + 1 + 2*(self.mdh.getEntry('Camera.ROIPosY')-1)) == 512:
             #we have a symetrical ROI about the centre - most likely want to analyse using splitter
             self.cFitType.SetSelection(self.fitFactories.index('SplitterFitFR'))
+            self.tThreshold.SetValue('0.5')
         else:
             self.cFitType.SetSelection(self.fitFactories.index('LatGaussFitFR'))
 
-        hsizer.Add(self.cFitType, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-        vsizer.Add(hsizer, 0,wx.ALL, 0)
+        hsizer.Add(self.cFitType, 1,wx.ALIGN_CENTER_VERTICAL, 0)
+        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 2)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        hsizer.Add(wx.StaticText(pan, -1, 'Interp:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(wx.StaticText(pan, -1, 'Interp:'), 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
         self.cInterpType = wx.Choice(pan, -1, choices = interpolatorList, size=(100, -1))
 
         self.cInterpType.SetSelection(interpolatorList.index('Linear'))
 
-        hsizer.Add(self.cInterpType, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-        vsizer.Add(hsizer, 0,wx.ALL, 0)
+        hsizer.Add(self.cInterpType, 1,wx.ALIGN_CENTER_VERTICAL, 0)
+        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 7)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        hsizer.Add(wx.StaticText(pan, -1, 'Start at:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-        self.tStartAt = wx.TextCtrl(pan, -1, value='%d' % self.vp.zp, size=(40, -1))
+        hsizer.Add(wx.StaticText(pan, -1, 'Start at:'), 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tStartAt = wx.TextCtrl(pan, -1, value='%d' % self.vp.zp, size=(50, -1))
         
-        hsizer.Add(self.tStartAt, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-        vsizer.Add(hsizer, 0,wx.ALL, 0)
+        hsizer.Add(self.tStartAt, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 2)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        hsizer.Add(wx.StaticText(pan, -1, 'Background:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-        self.tBackgroundFrames = wx.TextCtrl(pan, -1, value='-10:0', size=(50, -1))
+        hsizer.Add(wx.StaticText(pan, -1, 'Background:'), 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tBackgroundFrames = wx.TextCtrl(pan, -1, value='-30:0', size=(50, -1))
 
-        hsizer.Add(self.tBackgroundFrames, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-        vsizer.Add(hsizer, 0,wx.ALL, 0)
+        hsizer.Add(self.tBackgroundFrames, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 2)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        hsizer.Add(wx.StaticText(pan, -1, 'Debounce r:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(wx.StaticText(pan, -1, 'Debounce r:'), 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
         self.tDebounceRadius = wx.TextCtrl(pan, -1, value='4', size=(50, -1))
 
-        hsizer.Add(self.tDebounceRadius, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-        vsizer.Add(hsizer, 0,wx.ALL, 0)
+        hsizer.Add(self.tDebounceRadius, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 10)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        shiftFieldText = 'Shifts: <None>'
+        haveShiftField=False
+        if 'chroma.ShiftFilename' in self.mdh.getEntryNames():
+            #have new format shift field data
+            shiftFieldText = 'Shifts: ' + os.path.split(self.mdh.getEntry('chroma.ShiftFilename'))[1]
+            haveShiftField=True
+        elif 'chroma.dx' in self.mdh.getEntryNames():
+            #have shift field, but filename not recorded
+            shiftFieldText = 'Shifts: present'
+            haveShiftField=True
+
+        self.stShiftFieldName = wx.StaticText(pan, -1, shiftFieldText)
+        if haveShiftField:
+            self.stShiftFieldName.SetForegroundColour(wx.Colour(0, 128, 0))
+        hsizer.Add(self.stShiftFieldName, 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        bSetShiftField = wx.Button(pan, -1, 'Set', style=wx.BU_EXACTFIT)
+        bSetShiftField.Bind(wx.EVT_BUTTON, self.SetShiftField)
+        hsizer.Add(bSetShiftField, 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
+
+        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 2)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        psfFieldText = 'PSF: <None>'
+        havePSF = False
+
+        if 'PSFFile' in self.mdh.getEntryNames():
+            psfFieldText = 'PSF: ' + os.path.split(self.mdh.getEntry('PSFFile'))[1]
+            havePSF = True
+
+        self.stPSFFilename = wx.StaticText(pan, -1, psfFieldText)
+        if havePSF:
+            self.stPSFFilename.SetForegroundColour(wx.Colour(0, 128, 0))
+
+        hsizer.Add(self.stPSFFilename, 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        bSetPSF = wx.Button(pan, -1, 'Set', style=wx.BU_EXACTFIT)
+        bSetPSF.Bind(wx.EVT_BUTTON, self.SetPSF)
+        hsizer.Add(bSetPSF, 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
+
+        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 10)
         
         pan.SetSizer(vsizer)
         vsizer.Fit(pan)
 
-        self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+        self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, 5, 5)
 
         self.cbDrift = wx.CheckBox(item, -1, 'Estimate Drift')
         self.cbDrift.SetValue(False)
 
-        self._pnl.AddFoldPanelWindow(item, self.cbDrift, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+        self._pnl.AddFoldPanelWindow(item, self.cbDrift, fpb.FPB_ALIGN_WIDTH, 7, 5)
 
         self.cbSubtractBackground = wx.CheckBox(item, -1, 'Subtract background in fit')
         self.cbSubtractBackground.SetValue(True)
 
-        self._pnl.AddFoldPanelWindow(item, self.cbSubtractBackground, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+        self._pnl.AddFoldPanelWindow(item, self.cbSubtractBackground, fpb.FPB_ALIGN_WIDTH, 2, 5)
         
         self.bGo = wx.Button(item, -1, 'Go')
             
 
         self.bGo.Bind(wx.EVT_BUTTON, self.OnGo)
         self._pnl.AddFoldPanelWindow(item, self.bGo, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+
+        self.analysisPanel = item
+
+    def SetPSF(self, event=None):
+        fdialog = wx.FileDialog(None, 'Please select PSF to use ...',
+                    wildcard='PSF files|*.psf', style=wx.OPEN)
+        succ = fdialog.ShowModal()
+        if (succ == wx.ID_OK):
+            #self.ds = example.CDataStack(fdialog.GetPath().encode())
+            #self.ds =
+            psfFilename = fdialog.GetPath()
+            self.mdh.setEntry('PSFFile', getRelFilename(psfFilename))
+            #self.md.setEntry('PSFFile', psfFilename)
+            self.stPSFFilename.SetLabel('PSF: %s' % os.path.split(psfFilename)[1])
+            self.stPSFFilename.SetForegroundColour(wx.Colour(0, 128, 0))
+            return True
+        else:
+            return False
+
+    def SetShiftField(self, event=None):
+        fdialog = wx.FileDialog(None, 'Please select shift field to use ...',
+                    wildcard='Shift fields|*.sf', style=wx.OPEN)
+        succ = fdialog.ShowModal()
+        if (succ == wx.ID_OK):
+            #self.ds = example.CDataStack(fdialog.GetPath().encode())
+            #self.ds =
+            sfFilename = fdialog.GetPath()
+            self.mdh.setEntry('chroma.ShiftFilename', sfFilename)
+            dx, dy = numpy.load(sfFilename)
+            self.mdh.setEntry('chroma.dx', dx)
+            self.mdh.setEntry('chroma.dy', dy)
+            #self.md.setEntry('PSFFile', psfFilename)
+            self.stShiftFieldName.SetLabel('Shifts: %s' % os.path.split(sfFilename)[1])
+            self.stShiftFieldName.SetForegroundColour(wx.Colour(0, 128, 0))
+            return True
+        else:
+            return False
+
 
     def OnGo(self, event):
         threshold = float(self.tThreshold.GetValue())
@@ -643,31 +725,11 @@ class DSViewFrame(wx.Frame):
         self.mdh.setEntry('Analysis.DebounceRadius', int(self.tDebounceRadius.GetValue()))
 
         if fitMod.startswith('SplitterFit') and not 'chroma.dx' in self.mdh.getEntryNames():
-            fdialog = wx.FileDialog(None, 'Please select shift field to use ...',
-                    wildcard='Shift fields|*.sf', style=wx.OPEN)
-            succ = fdialog.ShowModal()
-            if (succ == wx.ID_OK):
-                #self.ds = example.CDataStack(fdialog.GetPath().encode())
-                #self.ds =
-                sfFilename = fdialog.GetPath()
-                dx, dy = numpy.load(sfFilename)
-                self.mdh.setEntry('chroma.dx', dx)
-                self.mdh.setEntry('chroma.dy', dy)
-                #self.md.setEntry('PSFFile', psfFilename)
-            else:
+            if not self.SetShiftField():
                 return
 
         if 'Psf' in fitMod and not 'PSFFile' in self.mdh.getEntryNames():
-            fdialog = wx.FileDialog(None, 'Please select PSF to use ...',
-                    wildcard='PSF files|*.psf', style=wx.OPEN)
-            succ = fdialog.ShowModal()
-            if (succ == wx.ID_OK):
-                #self.ds = example.CDataStack(fdialog.GetPath().encode())
-                #self.ds =
-                psfFilename = fdialog.GetPath()
-                self.mdh.setEntry('PSFFile', getRelFilename(psfFilename))
-                #self.md.setEntry('PSFFile', psfFilename)
-            else:
+            if not self.SetPSF():
                 return
 
         if 'Psf' in fitMod  and 'Splitter' in fitMod and not 'Analysis.AxialShift' in self.mdh.getEntryNames():
@@ -703,6 +765,7 @@ class DSViewFrame(wx.Frame):
 
         self.timer.WantNotification.append(self.analRefresh)
         self.bGo.Enable(False)
+        self._pnl.Collapse(self.analysisPanel)
 
     def GenPointFindingPanel(self):
         item = self._pnl.AddFoldPanel("Point Finding", collapsed=False,
@@ -712,21 +775,22 @@ class DSViewFrame(wx.Frame):
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        hsizer.Add(wx.StaticText(pan, -1, 'Threshold:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(wx.StaticText(pan, -1, 'Threshold:'), 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
         self.tThreshold = wx.TextCtrl(pan, -1, value='0.6', size=(40, -1))
 
-        hsizer.Add(self.tThreshold, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(self.tThreshold, 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        bTest = wx.Button(pan, -1, 'Test', style=wx.BU_EXACTFIT)
+        bTest.Bind(wx.EVT_BUTTON, self.OnTest)
+        hsizer.Add(bTest, 0,wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
 
         pan.SetSizer(hsizer)
         hsizer.Fit(pan)
 
         self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
 
-        bTest = wx.Button(item, -1, 'Test')
-
-
-        bTest.Bind(wx.EVT_BUTTON, self.OnTest)
-        self._pnl.AddFoldPanelWindow(item, bTest, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+       
+        #self._pnl.AddFoldPanelWindow(item, bTest, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
 
     def GenBlobFindingPanel(self):
         item = self._pnl.AddFoldPanel("Object Finding", collapsed=False,
@@ -1088,36 +1152,36 @@ class DSViewFrame(wx.Frame):
         item = self._pnl.AddFoldPanel("Fit Status", collapsed=False,
                                       foldIcons=self.Images)
 
-        pan = wx.Panel(item, -1, size = (150, 300))
+        pan = wx.Panel(item, -1, size = (160, 300))
 
         vsizer = wx.BoxSizer(wx.VERTICAL)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(pan, -1, 'Colour:'), 0, wx.ALL, 5)
+        hsizer.Add(wx.StaticText(pan, -1, 'Colour:'), 0, wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.chProgDispColour = wx.Choice(pan, -1, choices = ['z', 'gFrac', 't'], size=(60, -1))
         self.chProgDispColour.Bind(wx.EVT_CHOICE, self.OnProgDispColourChange)
-        hsizer.Add(self.chProgDispColour, 1, wx.ALL, 5)
+        hsizer.Add(self.chProgDispColour, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
 
-        vsizer.Add(hsizer, 0,wx.ALL|wx.EXPAND, 5)
+        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 2)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(pan, -1, 'CMap:'), 0, wx.ALL, 5)
+        hsizer.Add(wx.StaticText(pan, -1, 'CMap:'), 0, wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.chProgDispCMap = wx.Choice(pan, -1, choices = ['gist_rainbow', 'RdYlGn'], size=(60, -1))
         self.chProgDispCMap.Bind(wx.EVT_CHOICE, self.OnProgDispCMapChange)
-        hsizer.Add(self.chProgDispCMap, 1, wx.ALL, 5)
+        hsizer.Add(self.chProgDispCMap, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
 
-        vsizer.Add(hsizer, 0,wx.ALL|wx.EXPAND, 5)
+        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 7)
 
-        self.progPan = progGraph.progPanel(pan, self.fitResults, size=(150, 300))
+        self.progPan = progGraph.progPanel(pan, self.fitResults, size=(150, 250))
 
-        vsizer.Add(self.progPan, 0,wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5)
+        vsizer.Add(self.progPan, 0,wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 0)
 
         pan.SetSizer(vsizer)
         vsizer.Fit(pan)
         
-        self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+        self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 0)
 
     def OnProgDispColourChange(self, event):
         #print 'foo'

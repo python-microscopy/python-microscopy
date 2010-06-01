@@ -25,8 +25,8 @@ class progPanel(wxPlotPanel.PlotPanel):
                 return
             
             if not hasattr( self, 'subplot1' ):
-                self.subplot1 = self.figure.add_subplot( 211 )
-                self.subplot2 = self.figure.add_subplot( 212 )
+                self.subplot1 = self.figure.add_axes([.14,.55,.85,.44])#self.figure.add_subplot( 211 )
+                self.subplot2 = self.figure.add_axes([.14,.05,.85,.44])#self.figure.add_subplot( 212 )
 
             a, ed = numpy.histogram(self.fitResults['tIndex'], self.Size[0]/2)
             print float(numpy.diff(ed[:2]))
@@ -36,6 +36,7 @@ class progPanel(wxPlotPanel.PlotPanel):
             self.subplot1.set_xticks([0, ed.max()])
             self.subplot1.set_yticks([0, numpy.floor(a.max()/float(numpy.diff(ed[:2])))])
             self.subplot2.cla()
+            #cs =
             self.subplot2.plot(ed[:-1], numpy.cumsum(a), color='g' )
             self.subplot2.set_xticks([0, ed.max()])
             self.subplot2.set_yticks([0, a.sum()])

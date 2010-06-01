@@ -269,6 +269,7 @@ class PanSpool(wx.Panel):
         #    self.spooler.md.setEntry('ZStack', True)
 
         self.bStartSpool.Enable(False)
+        self.bStartStack.Enable(False)
         self.bStopSpooling.Enable(True)
         self.stSpoolingTo.Enable(True)
         self.stNImages.Enable(True)
@@ -284,6 +285,7 @@ class PanSpool(wx.Panel):
     def OnBStopSpoolingButton(self, event):
         self.spooler.StopSpool()
         self.bStartSpool.Enable(True)
+        self.bStartStack.Enable(True)
         self.bStopSpooling.Enable(False)
         self.stSpoolingTo.Enable(False)
         self.stNImages.Enable(False)
