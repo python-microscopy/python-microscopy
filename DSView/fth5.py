@@ -1,3 +1,4 @@
+import os.path
 #!/usr/bin/python
 
 ##################
@@ -19,9 +20,10 @@ from PYME.Analysis import MetaData
 from PYME.Acquire import MetaDataHandler
 from pylab import *
 from PYME.FileUtils import fileID
+from PYME.FileUtils.nameUtils import genResultFileName
 #import matplotlib
 
-from PYME.Acquire import ExecTools
+#from PYME.Acquire import ExecTools
 #from PYME.Analysis.DataSources.HDFDataSource import DataSource
 
 if not 'tq' in locals():
@@ -92,6 +94,10 @@ def pushImages(startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
 #    tq.postTasks(tasks, queueName=seriesName)
 
 def pushImagesHDF(startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
+    resultsFilename = genResultFileName(seriesName)
+    if os.path.exists(resultsFilename):
+        fdialog = wx.FileDialog(None, 'Analysis file already exists, please select a new filename',
+                    wildcard='H5R files|*.h5r', style=wx.SAVE)
     tq.createQueue('HDFTaskQueue', seriesName, dataFilename = seriesName, startAt = 'notYet')
     mdhQ = MetaDataHandler.QueueMDHandler(tq, seriesName, mdh)
     mdhQ.setEntry('Analysis.DetectionThreshold', detThresh)

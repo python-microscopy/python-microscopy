@@ -193,7 +193,7 @@ class HDFResultsTaskQueue(TaskQueue):
 
 
 class HDFTaskQueue(HDFResultsTaskQueue):
-    ''' task queue which, when initialised with an hdf image filename, automatically generated tasks - should also (eventually) include support for dynamically adding to data file for on the fly analysis'''
+    ''' task queue which, when initialised with an hdf image filename, automatically generates tasks - should also (eventually) include support for dynamically adding to data file for on the fly analysis'''
     def __init__(self, name, dataFilename = None, resultsFilename=None, onEmpty = doNix, fTaskToPop = popZero, startAt = 'guestimate', frameSize=(-1,-1), complevel=6, complib='zlib'):
         if dataFilename == None:
            self.dataFilename = genDataFilename(name)

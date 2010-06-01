@@ -19,6 +19,7 @@ import QueueSpooler
 import sampleInformation
 #import win32api
 from PYME.FileUtils import nameUtils
+from PYME.FileUtils.freeSpace import get_free_space
 from PYME.ParallelTasks.relativeFiles import getRelFilename
 
 import PYME.Acquire.Protocols
@@ -85,14 +86,14 @@ class PanSpool(wx.Panel):
         APSizer = wx.StaticBoxSizer(sbAP, wx.HORIZONTAL)
 
         self.stAqProtocol = wx.StaticText(self, -1,'<None>', size=wx.Size(136, -1))
-        APSizer.Add(self.stAqProtocol, 5,wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5)
+        APSizer.Add(self.stAqProtocol, 5,wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 2)
 
         self.bSetAP = wx.Button(self, -1, 'Set', style=wx.BU_EXACTFIT)
         self.bSetAP.Bind(wx.EVT_BUTTON, self.OnBSetAqProtocolButton)
 
-        APSizer.Add(self.bSetAP, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        APSizer.Add(self.bSetAP, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
 
-        vsizer.Add(APSizer, 0, wx.ALL|wx.EXPAND, 5)
+        vsizer.Add(APSizer, 0, wx.ALL|wx.EXPAND, 0)
         
         
 
@@ -114,8 +115,10 @@ class PanSpool(wx.Panel):
         self.bStartStack.Bind(wx.EVT_BUTTON, self.OnBStartStackButton)
         hsizer.Add(self.bStartStack, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
 
-        vsizer.Add(hsizer, 0, wx.LEFT|wx.RIGHT|wx.EXPAND, 5)
-        
+        vsizer.Add(hsizer, 0, wx.LEFT|wx.RIGHT|wx.EXPAND, 0)
+
+        self.stDiskSpace = wx.StaticText(self, -1, 'Free space:')
+        vsizer.Add(self.stDiskSpace, 0, wx.ALL|wx.EXPAND, 2)
         
 
         ### Spooling Progress
@@ -151,7 +154,7 @@ class PanSpool(wx.Panel):
 
         spoolProgSizer.Add(hsizer, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 0)
 
-        vsizer.Add(spoolProgSizer, 0, wx.ALL|wx.EXPAND, 5)
+        vsizer.Add(spoolProgSizer, 0, wx.ALL|wx.EXPAND, 0)
 
 
         ###Spool directory
@@ -166,7 +169,7 @@ class PanSpool(wx.Panel):
         
         spoolDirSizer.Add(self.bSetSpoolDir, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
-        vsizer.Add(spoolDirSizer, 0, wx.ALL|wx.EXPAND, 5)
+        vsizer.Add(spoolDirSizer, 0, wx.ALL|wx.EXPAND, 0)
 
         ### Queue & Compression
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -176,12 +179,12 @@ class PanSpool(wx.Panel):
 
         hsizer.Add(self.cbQueue, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
-        self.cbCompress = wx.CheckBox(self, -1, 'Enable Compression')
+        self.cbCompress = wx.CheckBox(self, -1, 'Compression')
         self.cbCompress.SetValue(True)
 
         hsizer.Add(self.cbCompress, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
-        vsizer.Add(hsizer, 0, wx.LEFT|wx.RIGHT|wx.EXPAND, 5)
+        vsizer.Add(hsizer, 0, wx.LEFT|wx.RIGHT|wx.EXPAND, 0)
 
         self.SetSizer(vsizer)
         vsizer.Fit(self)
@@ -211,12 +214,22 @@ class PanSpool(wx.Panel):
         
         self.stSpoolDirName.SetLabel(self.dirname)
         self.tcSpoolFile.SetValue(self.seriesName)
+        self.UpdateFreeSpace()
 
     def _GenSeriesName(self):
         return self.seriesStub + '_' + self._NumToAlph(self.seriesCounter)
 
     def _NumToAlph(self, num):
         return baseconvert(num, 'ABCDEFGHIJKLMNOPQRSTUVXWYZ')
+
+    def UpdateFreeSpace(self, event=None):
+        freeGB = get_free_space(self.dirname)/1e9
+        self.stDiskSpace.SetLabel('Free Space: %3.2f GB' % freeGB)
+        if freeGB < 5:
+            self.stDiskSpace.SetForegroundColour(wx.Colour(200, 0,0))
+        else:
+            self.stDiskSpace.SetForegroundColour(wx.BLACK)
+
         
 
     def OnBStartSpoolButton(self, event=None, stack=False):
@@ -293,6 +306,7 @@ class PanSpool(wx.Panel):
         self.seriesCounter +=1
         self.seriesName = self._GenSeriesName() 
         self.tcSpoolFile.SetValue(self.seriesName)
+        self.UpdateFreeSpace()
 
     def OnBAnalyse(self, event):
         if self.cbQueue.GetValue(): #queue or not
@@ -312,6 +326,7 @@ class PanSpool(wx.Panel):
         dtt = dtn - self.spooler.dtStart
         
         self.stNImages.SetLabel('%d images spooled in %d seconds' % (self.spooler.imNum, dtt.seconds))
+        self.UpdateFreeSpace()
 
     def OnBSetSpoolDirButton(self, event):
         ndir = wx.DirSelector()
@@ -324,6 +339,8 @@ class PanSpool(wx.Panel):
                 self.seriesCounter +=1
                 self.seriesName = self._GenSeriesName()
                 self.tcSpoolFile.SetValue(self.seriesName)
+
+            self.UpdateFreeSpace()
 
     def OnBSetAqProtocolButton(self, event):
         protocolList = glob.glob(PYME.Acquire.Protocols.__path__[0] + '/[a-zA-Z]*.py')
