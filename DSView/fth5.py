@@ -16,6 +16,7 @@ import sys
 #sys.path.append('/home/david/pysmi_simulator/py_fit')
 from PYME.Analysis import remFitBuf
 import os
+import wx
 from PYME.Analysis import MetaData
 from PYME.Acquire import MetaDataHandler
 from pylab import *
@@ -101,6 +102,8 @@ def pushImagesHDF(startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
             resultsFilename = fdialog.GetPath().encode()
+        else:
+            raise RuntimeError('Invalid results file - not running')
     tq.createQueue('HDFTaskQueue', resultsFilename, dataFilename = seriesName, resultsFilename=resultsFilename, startAt = 'notYet')
     mdhQ = MetaDataHandler.QueueMDHandler(tq, seriesName, mdh)
     mdhQ.setEntry('Analysis.DetectionThreshold', detThresh)
