@@ -278,7 +278,7 @@ class ExportDialog(wx.Dialog):
 
 
 def ExportData(vp, mdh=None, events=None, origName = None):
-    roi = [[vp.selection_begin_x, vp.selection_end_x],[vp.selection_begin_y, vp.selection_end_y], [0, vp.ds.shape[2]]]
+    roi = [[vp.selection_begin_x, vp.selection_end_x + 1],[vp.selection_begin_y, vp.selection_end_y +1], [0, vp.ds.shape[2]]]
     
     dlg = ExportDialog(None, roi)
     succ = dlg.ShowModal()
