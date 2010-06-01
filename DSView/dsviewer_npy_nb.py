@@ -290,6 +290,10 @@ class DSViewFrame(wx.Frame):
             voxy = 1e3*self.mdh.getEntry('voxelsize.y')
             self.vp.points = numpy.vstack((self.fitResults['fitResults']['x0']/voxx, self.fitResults['fitResults']['y0']/voxy, self.fitResults['tIndex'])).T
 
+            if 'Splitter' in self.mdh.getEntry('Analysis.FitModule'):
+                self.vp.pointMode = 'splitter'
+                self.vp.pointColours = self.fitResults['fitResults']['Ag'] > self.fitResults['fitResults']['Ar']
+
             from PYME.Analysis.LMVis import gl_render
             self.glCanvas = gl_render.LMGLCanvas(self.notebook1, False, vp = self.vp, vpVoxSize = voxx)
             self.glCanvas.cmap = pylab.cm.gist_rainbow

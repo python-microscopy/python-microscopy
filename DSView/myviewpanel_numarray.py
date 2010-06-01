@@ -188,7 +188,7 @@ class MyViewPanel(viewpanelN.ViewPanel):
         self.points =[]
         self.pointsR = []
         self.pointMode = 'confoc'
-        self.pointTolNFoc = {'confoc' : (5,5,5), 'lm' : (2, 5, 5)}
+        self.pointTolNFoc = {'confoc' : (5,5,5), 'lm' : (2, 5, 5), 'splitter' : (2,5,5)}
 
         self.psfROIs = []
         self.psfROISize=[30,30,30]
@@ -376,6 +376,8 @@ class MyViewPanel(viewpanelN.ViewPanel):
             pointTol = self.pointTolNFoc[self.pointMode]
             if(self.do.slice == self.do.SLICE_XY):
                 pFoc = self.points[abs(self.points[:,2] - self.zp) < 1][:,:2]
+                if self.pointMode == 'splitter':
+                    pCol = self.pointColours[abs(self.points[:,2] - self.zp) < 1]
                 pNFoc = self.points[abs(self.points[:,2] - self.zp) < pointTol[0]][:,:2]
 
             elif(self.do.slice == self.do.SLICE_XZ):
@@ -396,9 +398,26 @@ class MyViewPanel(viewpanelN.ViewPanel):
             for p in pNFoc:
                 dc.DrawRectangle(sc*p[0]-2*sc - x0,sc*p[1]*self.aspect - 2*sc*self.aspect - y0, 4*sc,4*sc*self.aspect)
 
-            dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),0))
-            for p in pFoc:
-                dc.DrawRectangle(sc*p[0]-2*sc - x0,sc*p[1]*self.aspect - 2*sc*self.aspect - y0, 4*sc,4*sc*self.aspect)
+                if self.pointMode == 'splitter' and self.do.slice == self.do.SLICE_XY:
+                    dc.DrawRectangle(sc*p[0]-2*sc - x0,sc*(self.ds.shape[1] - p[1])*self.aspect - 2*sc*self.aspect - y0, 4*sc,4*sc*self.aspect)
+
+
+            pGreen = wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),0)
+            pRed = wx.Pen(wx.TheColourDatabase.FindColour('RED'),0)
+            dc.SetPen(pGreen)
+            for p, c in zip(pFoc, pCol):
+                if self.pointMode == 'splitter' and self.do.slice == self.do.SLICE_XY:
+                    #pass:
+                    if c:
+                        dc.SetPen(pGreen)
+                    else:
+                        dc.SetPen(pRed)
+                    dc.DrawRectangle(sc*p[0]-2*sc - x0,sc*p[1]*self.aspect - 2*sc*self.aspect - y0, 4*sc,4*sc*self.aspect)
+                    dc.DrawRectangle(sc*p[0]-2*sc - x0,sc*(self.ds.shape[1] - p[1])*self.aspect - 2*sc*self.aspect - y0, 4*sc,4*sc*self.aspect)
+                else:
+                    dc.DrawRectangle(sc*p[0]-2*sc - x0,sc*p[1]*self.aspect - 2*sc*self.aspect - y0, 4*sc,4*sc*self.aspect)
+
+
 
 #            elif(self.do.slice == self.do.SLICE_XZ):
 #                pFoc = self.points[abs(self.points[:,1] - self.yp) < 1]
