@@ -95,6 +95,7 @@ def pushImages(startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
 #    tq.postTasks(tasks, queueName=seriesName)
 
 def pushImagesHDF(startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
+    dataFilename = seriesName
     resultsFilename = genResultFileName(seriesName)
     while os.path.exists(resultsFilename):
         fdialog = wx.FileDialog(None, 'Analysis file already exists, please select a new filename',
@@ -104,7 +105,8 @@ def pushImagesHDF(startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
             resultsFilename = fdialog.GetPath().encode()
         else:
             raise RuntimeError('Invalid results file - not running')
-    tq.createQueue('HDFTaskQueue', resultsFilename, dataFilename = seriesName, resultsFilename=resultsFilename, startAt = 'notYet')
+        seriesName = resultsFilename
+    tq.createQueue('HDFTaskQueue', seriesName, dataFilename = dataFilename, resultsFilename=resultsFilename, startAt = 'notYet')
     mdhQ = MetaDataHandler.QueueMDHandler(tq, seriesName, mdh)
     mdhQ.setEntry('Analysis.DetectionThreshold', detThresh)
     mdhQ.setEntry('Analysis.FitModule', fitFcn)
