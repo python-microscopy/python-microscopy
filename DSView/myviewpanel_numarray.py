@@ -405,16 +405,16 @@ class MyViewPanel(viewpanelN.ViewPanel):
             pGreen = wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),0)
             pRed = wx.Pen(wx.TheColourDatabase.FindColour('RED'),0)
             dc.SetPen(pGreen)
-            for p, c in zip(pFoc, pCol):
-                if self.pointMode == 'splitter' and self.do.slice == self.do.SLICE_XY:
-                    #pass:
+            if self.pointMode == 'splitter' and self.do.slice == self.do.SLICE_XY:
+                for p, c in zip(pFoc, pCol):
                     if c:
                         dc.SetPen(pGreen)
                     else:
                         dc.SetPen(pRed)
                     dc.DrawRectangle(sc*p[0]-2*sc - x0,sc*p[1]*self.aspect - 2*sc*self.aspect - y0, 4*sc,4*sc*self.aspect)
                     dc.DrawRectangle(sc*p[0]-2*sc - x0,sc*(self.ds.shape[1] - p[1])*self.aspect - 2*sc*self.aspect - y0, 4*sc,4*sc*self.aspect)
-                else:
+            else:
+                for p in pFoc:
                     dc.DrawRectangle(sc*p[0]-2*sc - x0,sc*p[1]*self.aspect - 2*sc*self.aspect - y0, 4*sc,4*sc*self.aspect)
 
 

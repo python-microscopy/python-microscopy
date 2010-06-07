@@ -1929,13 +1929,13 @@ class VisGUIFrame(wx.Frame):
                 if jitParamNameZ == '1.0':
                     jitValsZ = np.ones(self.colourFilter['x'].shape)
                 elif jitParamNameZ in self.colourFilter.keys():
-                    jitValsZ = self.colourFilter[jitParamName]
+                    jitValsZ = self.colourFilter[jitParamNameZ]
                 else:
                     if jitParamNameZ == 'neighbourDistances':
                             self.genNeighbourDists(True)
                             
                     if jitParamNameZ in self.GeneratedMeasures.keys():
-                        jitValsZ = self.GeneratedMeasures[jitParamName]
+                        jitValsZ = self.GeneratedMeasures[jitParamNameZ]
 
                 jitVals = jitScale*jitVals
                 jitValsZ = jitScaleZ*jitValsZ
