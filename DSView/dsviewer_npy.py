@@ -18,9 +18,9 @@ import os
 import sys
 
 #import viewpanel
-import PYME.cSMI as example
-import dCrop
-import logparser
+#import PYME.cSMI as example
+#import dCrop
+#import logparser
 
 import tables
 import wx.py.crust
@@ -100,21 +100,21 @@ class DSViewFrame(wx.Frame):
         self.vp.imagepanel.Refresh()
         self.statusbar.SetStatusText('Slice No: (%d/%d)  x: %d  y: %d' % (self.vp.zp, self.vp.ds.shape[2], self.vp.xp, self.vp.yp))
 
-    def saveStack(self, event=None):
-        fdialog = wx.FileDialog(None, 'Save Data Stack as ...',
-            wildcard='*.kdf', style=wx.SAVE|wx.HIDE_READONLY)
-        succ = fdialog.ShowModal()
-        if (succ == wx.ID_OK):
-            self.ds.SaveToFile(fdialog.GetPath().encode())
-            if not (self.log == None):
-                lw = logparser.logwriter()
-                s = lw.write(self.log)
-                log_f = file('%s.log' % fdialog.GetPath().split('.')[0], 'w')
-                log_f.write(s)
-                log_f.close()
-                
-            self.SetTitle(fdialog.GetFilename())
-            self.saved = True
+#    def saveStack(self, event=None):
+#        fdialog = wx.FileDialog(None, 'Save Data Stack as ...',
+#            wildcard='*.kdf', style=wx.SAVE|wx.HIDE_READONLY)
+#        succ = fdialog.ShowModal()
+#        if (succ == wx.ID_OK):
+#            self.ds.SaveToFile(fdialog.GetPath().encode())
+#            if not (self.log == None):
+#                lw = logparser.logwriter()
+#                s = lw.write(self.log)
+#                log_f = file('%s.log' % fdialog.GetPath().split('.')[0], 'w')
+#                log_f.write(s)
+#                log_f.close()
+#
+#            self.SetTitle(fdialog.GetFilename())
+#            self.saved = True
 
     def OnExport(self, event=None):
         import dataExporter
@@ -150,12 +150,12 @@ class DSViewFrame(wx.Frame):
         self.vp.ResetSelection()
         self.vp.Refresh()
         
-    def crop(self, event):
-        cd = dCrop.dCrop(self, self.vp)
-        if cd.ShowModal():
-            ds2 = example.CDataStack(self.ds, cd.x1, cd.y1, cd.z1, cd.x2, cd.y2, cd.z2, cd.chs)
-            dvf = DSViewFrame(self.GetParent(), '--cropped--', ds2)
-            dvf.Show()
+#    def crop(self, event):
+#        cd = dCrop.dCrop(self, self.vp)
+#        if cd.ShowModal():
+#            ds2 = example.CDataStack(self.ds, cd.x1, cd.y1, cd.z1, cd.x2, cd.y2, cd.z2, cd.chs)
+#            dvf = DSViewFrame(self.GetParent(), '--cropped--', ds2)
+#            dvf.Show()
 
 
 
