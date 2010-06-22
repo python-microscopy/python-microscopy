@@ -1794,12 +1794,17 @@ class VisGUIFrame(wx.Frame):
         jitVars += self.colourFilter.keys()
         jitVars += self.GeneratedMeasures.keys()
 
+        if 'error_x' in jitVars:
+            jvi = jitVars.index('error_x')
+        else:
+            jvi = 0
+
         if 'fitError_z0' in jitVars:
             jvzi = jitVars.index('fitError_z0')
         else:
             jvzi = 0
 
-        dlg = genImageDialog.GenImageDialog(self, mode='3Dgaussian', colours=self.fluorSpecies.keys(), zvals = self.mapping['z'], jitterVariables = jitVars, jitterVarDefault=jitVars.index('error_x'), jitterVarDefaultZ=jvzi)
+        dlg = genImageDialog.GenImageDialog(self, mode='3Dgaussian', colours=self.fluorSpecies.keys(), zvals = self.mapping['z'], jitterVariables = jitVars, jitterVarDefault=jvi, jitterVarDefaultZ=jvzi)
 
         ret = dlg.ShowModal()
 
@@ -2215,6 +2220,15 @@ class VisGUIFrame(wx.Frame):
 #                    if 'Sample.Labelling' in self.mdh.getEntryNames():
 #                        self.colp.SpecFromMetadata(self.mdh)
                     self.notebook.AddPage(self.colp, 'Colour')
+                elif 'fitResults_sigxl' in self.selectedDataSource.keys():
+                    self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource)
+                    self.dataSources.append(self.selectedDataSource)
+
+                    self.selectedDataSource.setMapping('sig', 'fitResults_sigxl + fitResults_sigyu')
+                    self.selectedDataSource.setMapping('sig_d', 'fitResults_sigxl - fitResults_sigyu')
+
+                    self.selectedDataSource.dsigd_dz = -30.
+                    self.selectedDataSource.setMapping('fitResults_z0', 'dsigd_dz*sig_d')
                 else:
                     self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource)
                     self.dataSources.append(self.selectedDataSource)
