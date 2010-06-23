@@ -19,6 +19,7 @@ import time
 InitBG('EMCCD Camera', '''
 scope.cam = AndorIXon.iXonCamera()
 ''')
+
 InitGUI('''
 acf = AndorControlFrame.AndorPanel(MainFrame, scope.cam, scope)
 camPanels.append((acf, 'Andor EMCCD Properties'))

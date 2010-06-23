@@ -12,6 +12,7 @@
 
 import serial;
 import time
+
 class piezo_e816:    
     def __init__(self, portname='COM1', maxtravel = 12.00, Osen=None):
         self.max_travel = maxtravel
