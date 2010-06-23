@@ -48,12 +48,15 @@ class zScanner:
         self.callNum += 1
         fn = floor(self.callNum) % len(self.zPoss)
 
-        self.piezo.MoveTo(self.piezoChan, self.zPoss[fn])
+        #self.piezo.MoveTo(self.piezoChan, self.zPoss[fn])
+        self._movePiezo(fn)
             
         self.view_xy.Refresh()
         self.view_xz.Refresh()
         self.view_yz.Refresh()
 
+    def _movePiezo(self, fn):
+        self.piezo.MoveTo(self.piezoChan, self.zPoss[fn])
 
     def destroy(self):
         self.scope.pa.WantFrameNotification.remove(self.tick)
@@ -61,6 +64,31 @@ class zScanner:
         self.view_xy.Destroy()
         self.view_xz.Destroy()
         self.view_yz.Destroy()
+
+class wavetableZScanner(zScanner):
+    def __init__(self, scope, triggered=False):
+        zScanner.__init__(self, scope)
+
+        self.piezo.PopulateWaveTable(self.piezoChan, self.zPoss)
+
+        self.scope.pa.stop()
+
+        if triggered:
+            #if we've got a hardware trigger rigged up, use it
+            self.piezo.StartWaveOutput(self.piezoChan)
+        else:
+            #otherwise fudge so that step time is nominally the same as exposure time
+            self.piezo.StartWaveOutput(self.piezoChan, scope.cam.tKin*1e3)
+
+        self.scope.pa.start()
+
+    def destroy(self):
+        self.piezo.StopWaveOutput()
+        zScanner.destroy(self)
+
+    def _movePiezo(self, fn):
+        pass
+
 
 
 
