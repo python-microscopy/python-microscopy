@@ -23,6 +23,7 @@ import wx.lib.foldpanelbar as fpb
 from PYME.misc.fbpIcons import *
 
 import sys
+import os
 sys.path.append('.')
 
 from PYME.misc.auiFloatBook import AuiNotebookWithFloatingPages
@@ -182,7 +183,7 @@ class smiMainFrame(wx.Frame):
               parent=prnt, pos=wx.Point(20, 20), size=wx.Size(600, 800),
               style=wx.DEFAULT_FRAME_STYLE, title='PYME Acquire')
         self._init_utils()
-        self.SetClientSize(wx.Size(600, 800))
+        self.SetClientSize(wx.Size(400, 800))
         self.SetMenuBar(self.menuBar1)
 
         self.statusBar1 = wx.StatusBar(id=wxID_SMIMAINFRAMESTATUSBAR1,
@@ -195,7 +196,7 @@ class smiMainFrame(wx.Frame):
         #self.notebook1 = wx.aui.AuiNotebook(id=wxID_SMIMAINFRAMENOTEBOOK1, parent=self, pos=wx.Point(0, 0), size=wx.Size(618,
         #      450), style=wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_TAB_SPLIT)
 
-        self.notebook1 = AuiNotebookWithFloatingPages(id=wxID_SMIMAINFRAMENOTEBOOK1, parent=self, pos=wx.Point(0, 0), size=wx.Size(1000,
+        self.notebook1 = AuiNotebookWithFloatingPages(id=wxID_SMIMAINFRAMENOTEBOOK1, parent=self, pos=wx.Point(0, 0), size=wx.Size(400,
               -1), style=wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_TAB_SPLIT)
 
 #        self.panel1 = wx.Panel(id=wxID_SMIMAINFRAMEPANEL1, name='panel1',
@@ -241,6 +242,7 @@ class smiMainFrame(wx.Frame):
         self.notebook1.AddPage(page=self.sh, select=True, caption='Console')
 #        self.notebook1.AddPage( page=self.panel1, select=False, caption='About')
 
+        self.SetSize((400, 800))
         self.CreateToolPanel()
         #self.SetSize((1000, 800))
         
@@ -338,6 +340,47 @@ class smiMainFrame(wx.Frame):
         
         self.initDone = True
 
+        #fudge to get layout right
+        panes = self.notebook1.GetAuiManager().AllPanes
+
+        self.paneNames = []
+
+        for p in panes:
+            self.paneNames.append(p.name)
+
+        #self.LoadPerspective()
+
+    def _getPerspectiveFilename(self):
+        #print __file__
+        fname = os.path.join(os.path.split(__file__)[0], 'GUILayout.txt')
+        return fname
+
+    def SavePerspective(self):
+        mgr = self.notebook1.GetAuiManager()
+        persp = mgr.SavePerspective()
+
+        for i, p in enumerate(self.paneNames):
+            persp = persp.replace(p, 'pane_%d' % i)
+            
+        f = open(self._getPerspectiveFilename(), 'w')
+        f.write(persp)
+        f.close()
+
+    def LoadPerspective(self):
+        pfname = self._getPerspectiveFilename()
+        if os.path.exists(pfname):
+            f = open(pfname)
+            pesp = f.read()
+            f.close()
+
+            for i, p in enumerate(self.paneNames):
+                persp = persp.replace('pane_%d' % i, p)
+
+            mgr = self.notebook1.GetAuiManager()
+            mgr.LoadPerspective(persp)
+            mgr.Update()
+
+
     def CreateToolPanel(self):
 
         # delete earlier panel
@@ -370,7 +413,8 @@ class smiMainFrame(wx.Frame):
                                      wx.Size(200,1000), fpb.FPB_DEFAULT_STYLE,0)
         
         self.notebook1.AddPage(page=self.toolPanel, select=False, caption='Hardware')
-        self.notebook1.Split(self.notebook1.GetPageCount() -1, wx.RIGHT)   
+        self.notebook1.Split(self.notebook1.GetPageCount() -1, wx.RIGHT)
+        #self.notebook1.Split(self.notebook1.GetPageCount() -2, wx.RIGHT)
 
 #        self._rightWindow1 = wx.SashLayoutWindow(self, 101, wx.DefaultPosition,
 #                                                wx.Size(300, 1000), wx.NO_BORDER |
@@ -389,8 +433,8 @@ class smiMainFrame(wx.Frame):
 
 
         self.notebook1.AddPage(page=self.aqPanel, select=False, caption='Acquisition')
-        #self.notebook1.Split(self.notebook1.GetPageCount() -2, wx.DOWN)
-        #self.notebook1.Split(self.notebook1.GetPageCount() -1, wx.RIGHT)
+        #self.notebook1.Split(self.notebook1.GetPageCount() -2, wx.RIGHT)
+        #self.notebook1.Split(self.notebook1.GetPageCount() -3, wx.RIGHT)
         #self.notebook1.Split(self.notebook1.GetPageCount() -2, wx.RIGHT)
         #self.notebook1.Split(self.notebook1.GetPageCount() -2, wx.RIGHT)
 
