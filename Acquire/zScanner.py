@@ -31,8 +31,10 @@ class zScanner:
         self.view_xy = View3D(self.image)
         self.view_xz = View3D(self.image)
         self.view_xz.vp.do.slice = 1
+        self.view_xz.vp.yp = self.ds.shape[1]/2
         self.view_yz = View3D(self.image)
         self.view_yz.vp.do.slice = 2
+        self.view_xz.vp.yp = self.ds.shape[1]/2
 
         self.piezo.MoveTo(self.piezoChan, self.zPoss[self.pos])
 
