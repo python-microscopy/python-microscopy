@@ -61,8 +61,10 @@ scope.shutters = fakeShutters
 
 #Gui stuff can't be done in background
 InitGUI('''
-dsc = dSimControl.dSimControl(notebook1, scope)
-notebook1.AddPage(page=dsc, select=False, caption='Simulation Settings')
+dsc = dSimControl.dSimControl(MainFrame, scope)
+#import wx
+#dsc = wx.TextCtrl(MainFrame, -1, 'foo')
+MainFrame.AddPage(page=dsc, select=False, caption='Simulation Settings')
 ''')
 
 InitGUI('''

@@ -227,6 +227,7 @@ class microscope:
              Parent.time1.WantNotification.append(self.vsp.RefrData)
              #Notebook.AddPage(imageId=-1, page=self.vp, select=True,text='Preview')
              Notebook.AddPage(page=self.vp, select=True,caption='Preview')
+             #Notebook._mgr.AddPane
 
              Parent.AddCamTool(self.vsp, 'Display')
 #             Notebook.AddPage(page=self.vsp, select=False,caption='Display')

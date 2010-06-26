@@ -26,7 +26,8 @@ import sys
 import os
 sys.path.append('.')
 
-from PYME.misc.auiFloatBook import AuiNotebookWithFloatingPages
+#from PYME.misc.auiFloatBook import AuiNotebookWithFloatingPages
+import wx.lib.agw.aui as aui
 
 #import example
 import PYME.cSMI as example
@@ -196,8 +197,8 @@ class smiMainFrame(wx.Frame):
         #self.notebook1 = wx.aui.AuiNotebook(id=wxID_SMIMAINFRAMENOTEBOOK1, parent=self, pos=wx.Point(0, 0), size=wx.Size(618,
         #      450), style=wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_TAB_SPLIT)
 
-        self.notebook1 = AuiNotebookWithFloatingPages(id=wxID_SMIMAINFRAMENOTEBOOK1, parent=self, pos=wx.Point(0, 0), size=wx.Size(400,
-              -1), style=wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_TAB_SPLIT)
+        ##self.notebook1 = AuiNotebookWithFloatingPages(id=wxID_SMIMAINFRAMENOTEBOOK1, parent=self, pos=wx.Point(0, 0), size=wx.Size(1000,
+        ##      -1), style=wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_TAB_SPLIT)
 
 #        self.panel1 = wx.Panel(id=wxID_SMIMAINFRAMEPANEL1, name='panel1',
 #              parent=self.notebook1, pos=wx.Point(0, 0), size=wx.Size(-1, -1),
@@ -211,8 +212,18 @@ class smiMainFrame(wx.Frame):
 #        self.textCtrl1.Center(wx.BOTH)
 
     def __init__(self, parent, options = None):
-        self.options = options
         self._init_ctrls(parent)
+        self.options = options
+
+        self._mgr = aui.AuiManager(agwFlags = aui.AUI_MGR_DEFAULT | aui.AUI_MGR_AUTONB_NO_CAPTION)
+
+        atabstyle = self._mgr.GetAutoNotebookStyle()
+        self._mgr.SetAutoNotebookStyle((atabstyle ^ aui.AUI_NB_BOTTOM) | aui.AUI_NB_TOP)
+
+        # tell AuiManager to manage this frame
+        self._mgr.SetManagedWindow(self)
+
+        
 
         wx.EVT_CLOSE(self, self.OnCloseWindow)        
         
@@ -232,14 +243,21 @@ class smiMainFrame(wx.Frame):
         self.splash.Show()
         
 
+#        self.sh = wx.py.shell.Shell(id=-1,
+#              parent=self.notebook1, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
+#              introText='Python SMI bindings - note that help, license etc below is for Python, not PySMI\n\n')
+#
         self.sh = wx.py.shell.Shell(id=-1,
-              parent=self.notebook1, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
+              parent=self, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
               introText='Python SMI bindings - note that help, license etc below is for Python, not PySMI\n\n')
+
         
         #self.notebook1.AddPage(imageId=-1, page=self.sh, select=True, text='Console')
         #self.notebook1.AddPage(imageId=-1, page=self.panel1, select=False, text='About')
         
-        self.notebook1.AddPage(page=self.sh, select=True, caption='Console')
+        #self.notebook1.AddPage(page=self.sh, select=True, caption='Console')
+        self._mgr.AddPane(self.sh, aui.AuiPaneInfo().
+                          Name("shell").Caption("Console").Centre().CloseButton(False))
 #        self.notebook1.AddPage( page=self.panel1, select=False, caption='About')
 
         self.SetSize((400, 800))
@@ -247,10 +265,11 @@ class smiMainFrame(wx.Frame):
         #self.SetSize((1000, 800))
         
         
-        self.sizer = wx.BoxSizer()
-        self.sizer.Add(self.notebook1, 1, wx.EXPAND)
-        self.SetSizer(self.Sizer)
+        #self.sizer = wx.BoxSizer()
+        #self.sizer.Add(self.notebook1, 1, wx.EXPAND)
+        #self.SetSizer(self.Sizer)
         self.SetSize((1000, 800))
+        #self._mgr.Update()
         
         self.roi_on = False
         self.bin_on = False
@@ -262,6 +281,19 @@ class smiMainFrame(wx.Frame):
         self.time1.WantNotification.append(self.runInitScript)
         self.time1.WantNotification.append(self.checkInitDone)
         self.time1.WantNotification.append(self.splash.Tick)
+
+    def AddPage(self, page=None, select=True,caption='Dummy'):
+        pn = self._mgr.GetPaneByName("shell")
+        if pn.IsNotebookPage():
+            self._mgr.AddPane(page, aui.AuiPaneInfo().
+                          Name(caption.replace(' ', '')).Caption(caption).CloseButton(False).NotebookPage(pn.notebook_id))
+        else:
+            self._mgr.AddPane(page, aui.AuiPaneInfo().
+                          Name(caption.replace(' ', '')).Caption(caption).CloseButton(False), target=pn)
+
+        #self._mgr.Update()
+        #self._mgr.AddPane(page, aui.AuiPaneInfo().
+        #                  Name(caption.replace(' ', '')).Caption(caption).CloseButton(False).Float())
 
     def runInitScript(self):
         self.time1.WantNotification.remove(self.runInitScript)
@@ -305,7 +337,7 @@ class smiMainFrame(wx.Frame):
             #self.seq_d.Show()
 
         if (self.scope.cam.CamReady() and ('chaninfo' in self.scope.__dict__)):
-            self.scope.livepreview(self, Notebook = self.notebook1)
+            self.scope.livepreview(self, Notebook = self)
             
 
             self.int_sl = intsliders.IntegrationSliders(self.scope.chaninfo,self, self.scope)
@@ -339,6 +371,7 @@ class smiMainFrame(wx.Frame):
         #self.splash.Destroy()
         
         self.initDone = True
+        self._mgr.Update()
 
         #fudge to get layout right
         panes = self.notebook1.GetAuiManager().AllPanes
@@ -401,20 +434,25 @@ class smiMainFrame(wx.Frame):
 #        self._leftWindow1.SetSashVisible(wx.SASH_RIGHT, True)
 #        self._leftWindow1.SetExtraBorderSize(10)
 
-        self.camPanel = fpb.FoldPanelBar(self.notebook1, -1, wx.DefaultPosition,
-                                     wx.Size(200,1000), fpb.FPB_DEFAULT_STYLE,0)
+        self.camPanel = fpb.FoldPanelBar(self, -1, wx.DefaultPosition,
+                                     wx.Size(250,1000))#, fpb.FPB_DEFAULT_STYLE,0)
 
-        self.notebook1.AddPage(page=self.camPanel, select=False, caption='Camera')
-        self.notebook1.Split(self.notebook1.GetPageCount() -1, wx.RIGHT)
+        self._mgr.AddPane(self.camPanel, aui.AuiPaneInfo().
+                          Name("camControls").Caption("Camera").Right().CloseButton(False))
+
+        #self.notebook1.AddPage(page=self.camPanel, select=False, caption='Camera')
+        #self.notebook1.Split(self.notebook1.GetPageCount() -1, wx.RIGHT)
 
 
 
-        self.toolPanel = fpb.FoldPanelBar(self.notebook1, -1, wx.DefaultPosition,
-                                     wx.Size(200,1000), fpb.FPB_DEFAULT_STYLE,0)
+        self.toolPanel = fpb.FoldPanelBar(self, -1, wx.DefaultPosition,
+                                     wx.Size(250,1000))#, fpb.FPB_DEFAULT_STYLE,0)
+
+        self._mgr.AddPane(self.toolPanel, aui.AuiPaneInfo().
+                          Name("hardwareControls").Caption("Hardware").Layer(1).Position(1).Right().CloseButton(False))
         
-        self.notebook1.AddPage(page=self.toolPanel, select=False, caption='Hardware')
-        self.notebook1.Split(self.notebook1.GetPageCount() -1, wx.RIGHT)
-        #self.notebook1.Split(self.notebook1.GetPageCount() -2, wx.RIGHT)
+        #self.notebook1.AddPage(page=self.toolPanel, select=False, caption='Hardware')
+        #self.notebook1.Split(self.notebook1.GetPageCount() -1, wx.RIGHT)
 
 #        self._rightWindow1 = wx.SashLayoutWindow(self, 101, wx.DefaultPosition,
 #                                                wx.Size(300, 1000), wx.NO_BORDER |
@@ -427,18 +465,22 @@ class smiMainFrame(wx.Frame):
 #        self._rightWindow1.SetExtraBorderSize(10)
 
 
-        self.aqPanel = fpb.FoldPanelBar(self.notebook1, -1, wx.DefaultPosition,
-                                     wx.Size(300,1000), fpb.FPB_DEFAULT_STYLE,0)
+        self.aqPanel = fpb.FoldPanelBar(self, -1, wx.DefaultPosition,
+                                     wx.Size(250,1000))#, fpb.FPB_DEFAULT_STYLE,0)
+
+        self._mgr.AddPane(self.aqPanel, aui.AuiPaneInfo().
+                          Name("aqControls").Caption("Acquisition").Layer(1).Position(0).Right().CloseButton(False))
 
 
 
-        self.notebook1.AddPage(page=self.aqPanel, select=False, caption='Acquisition')
+
+        #self.notebook1.AddPage(page=self.aqPanel, select=False, caption='Acquisition')
+        #self.notebook1.Split(self.notebook1.GetPageCount() -2, wx.DOWN)
+        #self.notebook1.Split(self.notebook1.GetPageCount() -1, wx.RIGHT)
         #self.notebook1.Split(self.notebook1.GetPageCount() -2, wx.RIGHT)
-        #self.notebook1.Split(self.notebook1.GetPageCount() -3, wx.RIGHT)
-        #self.notebook1.Split(self.notebook1.GetPageCount() -2, wx.RIGHT)
         #self.notebook1.Split(self.notebook1.GetPageCount() -2, wx.RIGHT)
 
-        self.notebook1.SetSelection(0)
+        #self.notebook1.SetSelection(0)
 
     def AddTool(self, panel, title):
         item = self.toolPanel.AddFoldPanel(title, collapsed=False, foldIcons=self.Images)
