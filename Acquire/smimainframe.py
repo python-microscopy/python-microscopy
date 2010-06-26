@@ -184,7 +184,7 @@ class smiMainFrame(wx.Frame):
               parent=prnt, pos=wx.Point(20, 20), size=wx.Size(600, 800),
               style=wx.DEFAULT_FRAME_STYLE, title='PYME Acquire')
         self._init_utils()
-        self.SetClientSize(wx.Size(400, 800))
+        self.SetClientSize(wx.Size(1020, 800))
         self.SetMenuBar(self.menuBar1)
 
         self.statusBar1 = wx.StatusBar(id=wxID_SMIMAINFRAMESTATUSBAR1,
@@ -260,7 +260,7 @@ class smiMainFrame(wx.Frame):
                           Name("shell").Caption("Console").Centre().CloseButton(False))
 #        self.notebook1.AddPage( page=self.panel1, select=False, caption='About')
 
-        self.SetSize((400, 800))
+        #self.SetSize((400, 800))
         self.CreateToolPanel()
         #self.SetSize((1000, 800))
         
@@ -268,7 +268,7 @@ class smiMainFrame(wx.Frame):
         #self.sizer = wx.BoxSizer()
         #self.sizer.Add(self.notebook1, 1, wx.EXPAND)
         #self.SetSizer(self.Sizer)
-        self.SetSize((1000, 800))
+        self.SetSize((1020, 800))
         #self._mgr.Update()
         
         self.roi_on = False
@@ -435,7 +435,7 @@ class smiMainFrame(wx.Frame):
 #        self._leftWindow1.SetExtraBorderSize(10)
 
         self.camPanel = fpb.FoldPanelBar(self, -1, wx.DefaultPosition,
-                                     wx.Size(250,1000))#, fpb.FPB_DEFAULT_STYLE,0)
+                                     wx.Size(240,1000))#, fpb.FPB_DEFAULT_STYLE,0)
 
         self._mgr.AddPane(self.camPanel, aui.AuiPaneInfo().
                           Name("camControls").Caption("Camera").Right().CloseButton(False))
@@ -445,11 +445,7 @@ class smiMainFrame(wx.Frame):
 
 
 
-        self.toolPanel = fpb.FoldPanelBar(self, -1, wx.DefaultPosition,
-                                     wx.Size(250,1000))#, fpb.FPB_DEFAULT_STYLE,0)
-
-        self._mgr.AddPane(self.toolPanel, aui.AuiPaneInfo().
-                          Name("hardwareControls").Caption("Hardware").Layer(1).Position(1).Right().CloseButton(False))
+        
         
         #self.notebook1.AddPage(page=self.toolPanel, select=False, caption='Hardware')
         #self.notebook1.Split(self.notebook1.GetPageCount() -1, wx.RIGHT)
@@ -466,12 +462,16 @@ class smiMainFrame(wx.Frame):
 
 
         self.aqPanel = fpb.FoldPanelBar(self, -1, wx.DefaultPosition,
-                                     wx.Size(250,1000))#, fpb.FPB_DEFAULT_STYLE,0)
+                                     wx.Size(240,600))#, fpb.FPB_DEFAULT_STYLE,0)
 
         self._mgr.AddPane(self.aqPanel, aui.AuiPaneInfo().
                           Name("aqControls").Caption("Acquisition").Layer(1).Position(0).Right().CloseButton(False))
 
+        self.toolPanel = fpb.FoldPanelBar(self, -1, wx.DefaultPosition,
+                                     wx.Size(240,200))#, fpb.FPB_DEFAULT_STYLE,0)
 
+        self._mgr.AddPane(self.toolPanel, aui.AuiPaneInfo().
+                          Name("hardwareControls").Caption("Hardware").Layer(1).Position(1).Right().CloseButton(False).BestSize(240, 250))
 
 
         #self.notebook1.AddPage(page=self.aqPanel, select=False, caption='Acquisition')
