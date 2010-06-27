@@ -1,3 +1,4 @@
+import os.path
 #!/usr/bin/python
 
 ##################
@@ -13,6 +14,109 @@
 import wx
 from PYME.DSView.myviewpanel_numarray import MyViewPanel
 import numpy
+import os
+
+def LoadShiftField(filename = None):
+    if not filename:
+        fdialog = wx.FileDialog(None, 'Select shift field',
+                wildcard='*.sf;*.h5;*.h5r', style=wx.OPEN)
+        succ = fdialog.ShowModal()
+        if (succ == wx.ID_OK):
+            filename = fdialog.GetPath().encode()
+        else:
+            return None
+
+    ext = os.path.splitext(filename)[1]
+
+    if ext in ['sf']:
+        return numpy.load(filename)
+    else:
+        #try and extract shiftfield from h5 / h5r file
+        try:
+            import tables
+            from PYME.Acquire.MetaDataHandler import HDFMDHandler
+            
+            h5file = tables.openFile(filename)
+            mdh = HDFMDHandler(h5file)
+
+            dx = mdh.getEntry('chroma.dx')
+            dy = mdh.getEntry('chroma.dy')
+
+            return [dx,dy]
+        except:
+            return None
+
+
+
+
+class Unmixer:
+    def __init__(self, shiftfield=None, pixelsize=70.):
+        self.pixelsize = pixelsize
+        if shiftfield:
+            self.SetShiftField(shiftField)
+
+    def SetShiftField(self, shiftField):
+        #self.shiftField = shiftField
+        X, Y = numpy.ogrid[:512, :256]
+
+        self.X2 = numpy.round(X - shiftField[0](X*70., Y*70.)/70.).astype('i')
+        self.Y2 = numpy.round(Y - shiftField[1](X*70., Y*70.)/70.).astype('i')
+
+    def _deshift(self, red_chan, ROI=[1,1,512, 512]):
+        if 'X2' in dir(self):
+            x1, y1, x2, y2 = ROI
+            x1 = x1 - 1
+            #x2 = self.scope.cam.GetROIX2()
+            y1 = y1 - 1
+
+            print self.X2.shape
+
+            Xn = self.X2[x1:x2, y1:(y1 + red_chan.shape[1])] - x1
+            Yn = self.Y2[x1:x2, y1:(y1 + red_chan.shape[1])] - y1
+
+            print Xn.shape
+
+            Xn = numpy.maximum(numpy.minimum(Xn, red_chan.shape[0]-1), 0)
+            Yn = numpy.maximum(numpy.minimum(Yn, red_chan.shape[1]-1), 0)
+
+            return red_chan[Xn, Yn]
+
+        else:
+            return red_chan
+
+
+    def Unmix(self, data, mixMatrix, offset, ROI=[1,1,512, 512]):
+        import scipy.linalg
+        from PYME import cSMI
+        from pylab import *
+        from PYME.DSView.dsviewer_npy import View3D
+
+        umm = scipy.linalg.inv(mixMatrix)
+
+        dsa = data.squeeze() - offset
+
+        g_ = dsa[:, :(dsa.shape[1]/2)]
+        r_ = dsa[:, (dsa.shape[1]/2):]
+        r_ = self._deshift(fliplr(r_), ROI)
+
+        print g_.shape, r_.shape
+
+        g = umm[0,0]*g_ + umm[0,1]*r_
+        r = umm[1,0]*g_ + umm[1,1]*r_
+
+        g = g*(g > 0)
+        r = r*(r > 0)
+
+#        figure()
+#        subplot(211)
+#        imshow(g.T, cmap=cm.hot)
+#
+#        subplot(212)
+#        imshow(r.T, cmap=cm.hot)
+
+        #View3D([r.reshape(r.shape + (1,)),g.reshape(r.shape + (1,))])
+        return [r.reshape(r.shape + (1,)),g.reshape(r.shape + (1,))]
+
 
 class Splitter:
     def __init__(self, parent, menu, scope, dir='up_down', flipChan=1):
@@ -20,6 +124,7 @@ class Splitter:
         self.scope = scope
         self.flipChan=flipChan
         self.parent = parent
+        self.unmixer = Unmixer()
 
         scope.splitting='none'
 
@@ -83,64 +188,16 @@ class Splitter:
             self.SetShiftField(numpy.load(fdialog.GetPath().encode()))
 
     def SetShiftField(self, shiftField):
-        #self.shiftField = shiftField
-        X, Y = numpy.ogrid[:512, :256]
-        self.X2 = numpy.round(X - shiftField[0](X*70., Y*70.)/70.).astype('i')
-        self.Y2 = numpy.round(Y - shiftField[1](X*70., Y*70.)/70.).astype('i')
-
-    def _deshift(self, red_chan):
-        if 'X2' in dir(self):
-            x1 = self.scope.cam.GetROIX1() - 1
-            x2 = self.scope.cam.GetROIX2()
-            y1 = self.scope.cam.GetROIY1() - 1
-
-            print self.X2.shape
-
-            Xn = self.X2[x1:x2, y1:(y1 + red_chan.shape[1])] - x1
-            Yn = self.Y2[x1:x2, y1:(y1 + red_chan.shape[1])] - y1
-
-            print Xn.shape
-
-            Xn = numpy.maximum(numpy.minimum(Xn, red_chan.shape[0]-1), 0)
-            Yn = numpy.maximum(numpy.minimum(Yn, red_chan.shape[1]-1), 0)
-
-            return red_chan[Xn, Yn]
-
-        else:
-            return red_chan
+        self.unmixer.SetShiftField(shiftField)
 
 
     def Unmix(self):
-        import scipy.linalg
         from PYME import cSMI
-        from pylab import *
-        from PYME.DSView.dsviewer_npy import View3D
 
-        umm = scipy.linalg.inv(self.mixMatrix)
+        dsa = cSMI.CDataStack_AsArray(self.scope.pa.ds, 0).squeeze()
 
-        dsa = cSMI.CDataStack_AsArray(self.scope.pa.ds, 0).squeeze() - self.offset
+        return self.unmixer.Unmix(dsa, self.mixMatrix, self.offset, ROI=[self.scope.cam.GetROIX1(),self.scope.cam.GetROIY1(),self.scope.cam.GetROIX2(), self.scope.cam.GetROIY2()])
 
-        g_ = dsa[:, :(dsa.shape[1]/2)]
-        r_ = dsa[:, (dsa.shape[1]/2):]
-        r_ = self._deshift(fliplr(r_))
-
-        print g_.shape, r_.shape
-
-        g = umm[0,0]*g_ + umm[0,1]*r_
-        r = umm[1,0]*g_ + umm[1,1]*r_
-
-        g = g*(g > 0)
-        r = r*(r > 0)
-
-#        figure()
-#        subplot(211)
-#        imshow(g.T, cmap=cm.hot)
-#
-#        subplot(212)
-#        imshow(r.T, cmap=cm.hot)
-
-        #View3D([r.reshape(r.shape + (1,)),g.reshape(r.shape + (1,))])
-        return [r.reshape(r.shape + (1,)),g.reshape(r.shape + (1,))]
 
 
 class UnMixFrame(wx.Frame):

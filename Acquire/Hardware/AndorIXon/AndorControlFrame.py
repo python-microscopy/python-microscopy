@@ -16,6 +16,7 @@
 
 import wx
 from PYME.Acquire.Hardware import ccdCalibrator
+from PYME.misc.autoFoldPanel import collapsingPane
 
 
 
@@ -41,6 +42,85 @@ def create(parent):
 
 
 class AndorPanel(wx.Panel):
+
+    def _createCollapsingPane(self):
+        #clp = collapsingPane(self, caption='Advanced')#|wx.CP_NO_TLW_RESIZE)
+
+        #clp.Expand()
+        #cp = clp.GetPane()
+
+        #cp = wx.Panel(clp, -1)
+        cp = clp = wx.Panel(self, -1)
+
+        vsizer=wx.BoxSizer(wx.VERTICAL)
+
+        sbAqMode = wx.StaticBoxSizer(wx.StaticBox(cp, -1, 'Acquisition Mode'), wx.HORIZONTAL)
+
+        self.rbSingleShot = wx.RadioButton(cp, -1, 'Single Shot')
+        self.rbSingleShot.SetValue(False)
+        self.rbSingleShot.SetToolTipString('Allows multiple channels with different integration times and good shutter synchronisation')
+        self.rbSingleShot.Bind(wx.EVT_RADIOBUTTON,self.OnRbSingleShotRadiobutton)
+        sbAqMode.Add(self.rbSingleShot, 1, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 0)
+
+        self.rbContin = wx.RadioButton(cp, -1, 'Continuous')
+        self.rbContin.SetValue(True)
+        self.rbContin.SetToolTipString('Allows fastest speeds, albeit without good syncronisation (fixable) or integration time flexibility')
+        self.rbContin.Bind(wx.EVT_RADIOBUTTON, self.OnRbContinRadiobutton)
+        sbAqMode.Add(self.rbContin, 1, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 0)
+
+        vsizer.Add(sbAqMode, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL|wx.TOP, 5)
+
+        #self.bUpdateInt = wx.Button(id=wxID_ANDORFRAMEBUPDATEINT,
+        #      label='Update Integration Time', name='bUpdateInt',
+        #      parent=self, pos=wx.Point(104, 147), size=wx.Size(128, 23),
+        #      style=0)
+        #self.bUpdateInt.Enable(False)
+        #self.bUpdateInt.Bind(wx.EVT_BUTTON, self.OnBUpdateIntButton,
+        #      id=wxID_ANDORFRAMEBUPDATEINT)
+
+        sbReadout = wx.StaticBoxSizer(wx.StaticBox(cp, -1, 'Readout Settings'), wx.VERTICAL)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        hsizer.Add(wx.StaticText(cp, -1, 'Horizontal Clock:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
+
+        self.chHorizClock = wx.Choice(cp, -1, choices=[])
+        self.chHorizClock.Bind(wx.EVT_CHOICE, self.OnChHorizClockChoice)
+        hsizer.Add(self.chHorizClock, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
+
+        hsizer.Add(wx.StaticText(cp, -1, 'MHz'), 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sbReadout.Add(hsizer, 0, 0, 0)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        hsizer.Add(wx.StaticText(cp, -1, 'Vertical Clock:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
+
+        self.chVertClock = wx.Choice(cp, -1, choices=[])
+        self.chVertClock.Bind(wx.EVT_CHOICE, self.OnChVertClockChoice)
+        hsizer.Add(self.chVertClock, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
+
+        hsizer.Add(wx.StaticText(cp, -1, u'\u03BCs'), 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sbReadout.Add(hsizer, 0, 0, 0)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.cbFrameTransfer = wx.ToggleButton(cp, -1, u'Frame Transfer')
+        self.cbFrameTransfer.SetValue(True)
+        self.cbFrameTransfer.Bind(wx.EVT_TOGGLEBUTTON, self.OnCbFrameTransferCheckbox)
+        hsizer.Add(self.cbFrameTransfer, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
+
+        self.cbBaselineClamp = wx.ToggleButton(cp, -1, u'Baseline Clamp')
+        self.cbBaselineClamp.SetValue(False)
+        self.cbBaselineClamp.Bind(wx.EVT_TOGGLEBUTTON, self.OnCbBaselineClampCheckbox)
+        hsizer.Add(self.cbBaselineClamp, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        sbReadout.Add(hsizer, 0, wx.TOP, 2)
+        vsizer.Add(sbReadout, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL|wx.TOP, 5)
+
+        cp.SetSizer(vsizer)
+
+        #clp.AddNewElement(cp)
+
+        return clp
 
     def _init_ctrls(self, prnt):
         # generated method, don't edit
@@ -87,73 +167,14 @@ class AndorPanel(wx.Panel):
         hsizer.Add(sbEMGain, 1, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 0)
         vsizer.Add(hsizer, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL, 0)
 
-
-        sbAqMode = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Acquisition Mode'), wx.HORIZONTAL)
-
-        self.rbSingleShot = wx.RadioButton(self, -1, 'Single Shot')
-        self.rbSingleShot.SetValue(False)
-        self.rbSingleShot.SetToolTipString('Allows multiple channels with different integration times and good shutter synchronisation')
-        self.rbSingleShot.Bind(wx.EVT_RADIOBUTTON,self.OnRbSingleShotRadiobutton)
-        sbAqMode.Add(self.rbSingleShot, 1, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 0)
-
-        self.rbContin = wx.RadioButton(self, -1, 'Continuous')
-        self.rbContin.SetValue(True)
-        self.rbContin.SetToolTipString('Allows fastest speeds, albeit without good syncronisation (fixable) or integration time flexibility')
-        self.rbContin.Bind(wx.EVT_RADIOBUTTON, self.OnRbContinRadiobutton)
-        sbAqMode.Add(self.rbContin, 1, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 0)
-
-        vsizer.Add(sbAqMode, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL|wx.TOP, 5)
-
-        #self.bUpdateInt = wx.Button(id=wxID_ANDORFRAMEBUPDATEINT,
-        #      label='Update Integration Time', name='bUpdateInt',
-        #      parent=self, pos=wx.Point(104, 147), size=wx.Size(128, 23),
-        #      style=0)
-        #self.bUpdateInt.Enable(False)
-        #self.bUpdateInt.Bind(wx.EVT_BUTTON, self.OnBUpdateIntButton,
-        #      id=wxID_ANDORFRAMEBUPDATEINT)
-
-        sbReadout = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Readout Settings'), wx.VERTICAL)
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        hsizer.Add(wx.StaticText(self, -1, 'Horizontal Clock:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
-
-        self.chHorizClock = wx.Choice(self, -1, choices=[])
-        self.chHorizClock.Bind(wx.EVT_CHOICE, self.OnChHorizClockChoice)
-        hsizer.Add(self.chHorizClock, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
-
-        hsizer.Add(wx.StaticText(self, -1, 'MHz'), 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        sbReadout.Add(hsizer, 0, 0, 0)
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        hsizer.Add(wx.StaticText(self, -1, 'Vertical Clock:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
-
-        self.chVertClock = wx.Choice(self, -1, choices=[])
-        self.chVertClock.Bind(wx.EVT_CHOICE, self.OnChVertClockChoice)
-        hsizer.Add(self.chVertClock, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
-
-        hsizer.Add(wx.StaticText(self, -1, u'\u03BCs'), 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        sbReadout.Add(hsizer, 0, 0, 0)
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        self.cbFrameTransfer = wx.CheckBox(self, -1, u'Frame Transfer')
-        self.cbFrameTransfer.SetValue(True)
-        self.cbFrameTransfer.Bind(wx.EVT_CHECKBOX, self.OnCbFrameTransferCheckbox)
-        hsizer.Add(self.cbFrameTransfer, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-
-        self.cbBaselineClamp = wx.CheckBox(self, -1, u'Baseline Clamp')
-        self.cbBaselineClamp.SetValue(False)
-        self.cbBaselineClamp.Bind(wx.EVT_CHECKBOX, self.OnCbBaselineClampCheckbox)
-        hsizer.Add(self.cbBaselineClamp, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-
-        sbReadout.Add(hsizer, 0, 0, 0)
-        vsizer.Add(sbReadout, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL|wx.TOP, 5)
-
         self.cbShutter = wx.CheckBox(self, -1, u'Camera Shutter Open')
         self.cbShutter.SetValue(True)
         self.cbShutter.Bind(wx.EVT_CHECKBOX, self.OnCbShutterCheckbox)
         vsizer.Add(self.cbShutter, 0, wx.ALIGN_CENTER_VERTICAL|wx.TOP, 5)
+
+        self.cp = self._createCollapsingPane()
+
+        vsizer.Add(self.cp, 0, wx.EXPAND|wx.TOP, 5)
 
         self.SetSizerAndFit(vsizer)
 

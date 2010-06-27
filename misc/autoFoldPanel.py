@@ -1,0 +1,526 @@
+import wx
+#from wx.lib.agw import aui
+import math
+from wx.lib.agw.aui.aui_utilities import BitmapFromBits
+
+def ColourFromStyle(col):
+    if type(col) in [str, unicode]:
+        col = wx.NamedColour(col)
+    else:
+        col = wx.Colour(*col)
+
+    return col
+
+class SizeReportCtrl(wx.PyControl):
+
+    def __init__(self, parent, id=wx.ID_ANY, pos=wx.DefaultPosition,
+                size=(300, 150), mgr=None):
+
+        wx.PyControl.__init__(self, parent, id, pos, size, style=wx.NO_BORDER)
+        self._mgr = mgr
+
+        self.Bind(wx.EVT_PAINT, self.OnPaint)
+        self.Bind(wx.EVT_ERASE_BACKGROUND, self.OnEraseBackground)
+        self.Bind(wx.EVT_SIZE, self.OnSize)
+
+        #self.SetSize(-1, 300)
+        #self.SetMinSize((300, 150))
+
+
+    def OnPaint(self, event):
+    
+        dc = wx.PaintDC(self)
+        size = self.GetClientSize()
+
+        s = "Size: %d x %d"%(size.x, size.y)
+
+        dc.SetFont(wx.NORMAL_FONT)
+        w, height = dc.GetTextExtent(s)
+        height += 3
+        dc.SetBrush(wx.WHITE_BRUSH)
+        dc.SetPen(wx.WHITE_PEN)
+        dc.DrawRectangle(0, 0, size.x, size.y)
+        dc.SetPen(wx.LIGHT_GREY_PEN)
+        dc.DrawLine(0, 0, size.x, size.y)
+        dc.DrawLine(0, size.y, size.x, 0)
+        dc.DrawText(s, (size.x-w)/2, (size.y-height*5)/2)
+
+        if self._mgr:
+        
+            pi = self._mgr.GetPane(self)
+
+            s = "Layer: %d"%pi.dock_layer
+            w, h = dc.GetTextExtent(s)
+            dc.DrawText(s, (size.x-w)/2, ((size.y-(height*5))/2)+(height*1))
+
+            s = "Dock: %d Row: %d"%(pi.dock_direction, pi.dock_row)
+            w, h = dc.GetTextExtent(s)
+            dc.DrawText(s, (size.x-w)/2, ((size.y-(height*5))/2)+(height*2))
+
+            s = "Position: %d"%pi.dock_pos
+            w, h = dc.GetTextExtent(s)
+            dc.DrawText(s, (size.x-w)/2, ((size.y-(height*5))/2)+(height*3))
+
+            s = "Proportion: %d"%pi.dock_proportion
+            w, h = dc.GetTextExtent(s)
+            dc.DrawText(s, (size.x-w)/2, ((size.y-(height*5))/2)+(height*4))
+
+        
+    def OnEraseBackground(self, event):
+
+        pass
+    
+
+    def OnSize(self, event):
+    
+        self.Refresh()
+        
+
+#stolen from aui
+pin_bits     = '\xff\xff\xff\xff\xff\xff\x1f\xfc\xdf\xfc\xdf\xfc\xdf\xfc\xdf\xfc' \
+               '\xdf\xfc\x0f\xf8\x7f\xff\x7f\xff\x7f\xff\xff\xff\xff\xff\xff\xff'
+""" Pin button bitmap for a pane. """
+
+DEFAULT_CAPTION_STYLE = {
+'HEIGHT'              : 20,
+'FONT_COLOUR'         : 'BLACK',
+#'FONT_WEIGHT' : wx.BOLD,
+'FONT_SIZE'           : 12,
+'CAPTION_INDENT'      : 5,
+'BACKGROUND_COLOUR_1' : (198, 198, 198), #default AUI caption colours
+'BACKGROUND_COLOUR_2' : (226, 226, 226),
+'INACTIVE_PIN_COLOUR' : (170, 170, 170),
+'ACTIVE_PIN_COLOUR'   : (0, 0, 0),
+'ELLIPSES_COLOUR'     : (170, 170, 170),
+'ELLIPSES_RADIUS'     : 2,
+}
+
+class CaptionBar(wx.Window):
+
+    def __init__(self, parent, id = wx.ID_ANY, pos=(-1,-1), caption="",
+                 foldIcons=None, cbstyle=DEFAULT_CAPTION_STYLE):
+
+        wx.Window.__init__(self, parent, id, pos=pos,
+                           size=(-1,cbstyle['HEIGHT']), style=wx.NO_BORDER)
+
+        self.style = cbstyle
+        self.parent = parent
+        self.caption = caption
+        self.foldIcons = foldIcons
+
+        self._inactive_pin_bitmap = BitmapFromBits(pin_bits, 16, 16, ColourFromStyle(self.style['INACTIVE_PIN_COLOUR']))
+        self._active_pin_bitmap = BitmapFromBits(pin_bits, 16, 16, ColourFromStyle(self.style['ACTIVE_PIN_COLOUR']))
+
+        self.pinButtonRect = (0,0,0,0)
+
+#        if foldIcons is None:
+#            foldIcons = wx.ImageList(16, 16)
+#
+#            bmp = ExpandedIcon.GetBitmap()
+#            foldIcons.Add(bmp)
+#            bmp = CollapsedIcon.GetBitmap()
+#            foldIcons.Add(bmp)
+#
+#        # set initial size
+#        if foldIcons:
+#            assert foldIcons.GetImageCount() > 1
+#            iconWidth, iconHeight = foldIcons.GetSize(0)
+
+
+        self.Bind(wx.EVT_PAINT, self.OnPaint)
+        self.Bind(wx.EVT_SIZE, self.OnSize)
+        self.Bind(wx.EVT_LEFT_UP, self.OnLeftClick)
+#        self.Bind(wx.EVT_CHAR, self.OnChar)
+
+
+    def OnPaint(self, event):
+        dc = wx.PaintDC(self)
+        gc = wx.GraphicsContext.Create(dc)
+
+        gc.PushState()
+
+        wndRect = self.GetRect()
+#        vertical = self.IsVertical()
+
+        #self.FillCaptionBackground(dc)
+        #barHeight = self.style['HEIGHT']
+
+        #gc.DrawRectangle(0,0, self.style['HEIGHT'],50,50,5)
+        col_1 = ColourFromStyle(self.style['BACKGROUND_COLOUR_1'])
+        col_2 = ColourFromStyle(self.style['BACKGROUND_COLOUR_2'])
+
+        brush = gc.CreateLinearGradientBrush(0,0,0,self.style['HEIGHT'], col_1, col_2)
+        gc.SetBrush(brush)
+
+        gc.DrawRectangle(*wndRect)
+
+
+        font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+        #print font.GetFaceName(), font.GetPointSize()
+        if 'FONT_WEIGHT' in self.style.keys():
+            font.SetWeight(self.style['FONT_WEIGHT'])
+        if 'FONT_SIZE' in self.style.keys():
+            font.SetPointSize(self.style['FONT_SIZE'])
+            
+        fc = ColourFromStyle(self.style['FONT_COLOUR'])
+        gc.SetFont(font, fc)
+
+        w,h = gc.GetTextExtent(self.caption)
+
+        y0 = self.style['HEIGHT']/2. - h/2.
+        gc.DrawText(self.caption, self.style['CAPTION_INDENT'], y0)
+
+
+        h = self._active_pin_bitmap.GetHeight()
+        w = self._active_pin_bitmap.GetWidth()
+
+        y0 = self.style['HEIGHT']/2. - h/2.
+
+        #print wndRect[2]
+
+        self.pinButtonRect = (wndRect[2] - h - y0, y0, w,h)
+
+        if self.parent.foldable:
+            if self.parent.pinnedOpen:
+                gc.DrawBitmap(self._active_pin_bitmap, *self.pinButtonRect)
+            else:
+                gc.DrawBitmap(self._inactive_pin_bitmap, *self.pinButtonRect)
+
+        if self.parent.folded and self.parent.foldable:
+            self.DrawEllipses(gc)
+
+        gc.PopState()
+
+    def DrawEllipses(self, gc):
+        gc.SetBrush(wx.Brush(ColourFromStyle(self.style['ELLIPSES_COLOUR'])))
+        path = gc.CreatePath()
+        path.AddCircle(0, 0, self.style['ELLIPSES_RADIUS'])
+        path.AddCircle(3*self.style['ELLIPSES_RADIUS'], 0, self.style['ELLIPSES_RADIUS'])
+        path.AddCircle(6*self.style['ELLIPSES_RADIUS'], 0, self.style['ELLIPSES_RADIUS'])
+
+        gc.PushState()
+        gc.Translate(self.pinButtonRect[0], self.pinButtonRect[1] + self.pinButtonRect[3])
+        bx = path.GetBox()
+        gc.Translate(-bx[2], -bx[3])
+
+        gc.FillPath(path)
+
+        gc.PopState()
+
+
+
+    def OnLeftClick(self, event):
+        if wx.Rect(*self.pinButtonRect).Inside(event.GetPosition()):
+            self.parent.TogglePin()
+
+
+    def OnSize(self, event):
+        rect = self.GetRect()
+        self.RefreshRect(rect)
+
+
+
+
+
+
+
+
+class foldElement:
+    def __init__(self, window, foldable=True, foldedWindow=None):
+        self.window = window
+        self.foldable = foldable
+        #if foldedWindow:
+        self.foldedWindow = foldedWindow
+#        elif self.foldable:
+#            self.foldedWindow = wx.StaticText(self.window.GetParent(), -1, '...')
+#            self.foldedWindow.Hide()
+
+class foldingPane(wx.Panel):
+    def __init__(self, *args, **kwargs):
+        try:
+            self.orientation = kwargs.pop('orientation')
+        except KeyError:
+            self.orientation = wx.VERTICAL
+
+        try:
+            self.padding = kwargs.pop('padding')
+        except KeyError:
+            self.padding = 5
+
+        try:
+            self.caption = kwargs.pop('caption')
+        except KeyError:
+            self.caption = None
+
+        try:
+            self.folded = kwargs.pop('folded')
+        except KeyError:
+            self.folded = True
+
+        try:
+            self.pinnedOpen = kwargs.pop('pinned')
+            if self.pinnedOpen:
+                self.folded = False
+        except KeyError:
+            self.pinnedOpen = False
+
+        
+        wx.Panel.__init__(self, * args, ** kwargs)
+
+        if self.orientation == wx.VERTICAL:
+            self.sizerflags = wx.EXPAND | wx.ALL
+        else:
+            self.sizerflags = wx.EXPAND | wx.RIGHT
+
+        self.elements = []
+
+        #without any elements, folding isn't going to do anything
+        self.foldable = False
+
+        self.sizer = wx.BoxSizer(self.orientation)
+
+        if self.caption:
+            #self.stCaption = wx.StaticText(self, -1, self.caption)
+            self.stCaption = CaptionBar(self, -1, caption=self.caption)
+            #self.stCaption.SetBackgroundColour(wx.TheColourDatabase.FindColour('SLATE BLUE'))
+            self.sizer.Add(self.stCaption, 0, wx.EXPAND, 0)
+
+        self.SetSizer(self.sizer)
+
+    def AddNewElement(self, window, foldable=True, foldedWindow=None):
+        self.AddElement(foldElement(window, foldable, foldedWindow))
+
+    def AddElement(self, element):
+        self.elements.append(element)
+        
+        self.sizer.Add(element.window, 0, self.sizerflags, self.padding)
+        if element.foldable:
+            self.foldable = True #we have at least one foldable element
+            if element.foldedWindow:
+                self.sizer.Add(element.foldedWindow, 0, self.sizerflags, self.padding)
+
+            if self.folded:
+                element.window.Hide()
+                if element.foldedWindow:
+                    element.foldedWindow.Show()
+            else:
+                element.window.Show()
+                if element.foldedWindow:
+                    element.foldedWindow.Hide()
+
+    def PinOpen(self):
+        self.Unfold()
+        self.pinnedOpen = True
+        self.stCaption.Refresh()
+
+    def UnPin(self):
+        self.pinnedOpen = False
+        self.stCaption.Refresh()
+
+    def TogglePin(self):
+        if self.pinnedOpen:
+            self.UnPin()
+        else:
+            self.PinOpen()
+
+    def Fold(self):
+        #print 'foo'
+        if not self.folded and not self.pinnedOpen:
+            for element in self.elements:
+                #print self.folded, 'foo'
+                if element.foldable:
+                    element.window.Hide()
+                    if element.foldedWindow:
+                        element.foldedWindow.Show()
+
+            self.folded = True
+
+            #self.Layout()
+
+    def Unfold(self):
+        #print 'bar'
+        if self.folded:
+            for element in self.elements:
+                #print 'bar'
+                if element.foldable:
+                    element.window.Show()
+                    if element.foldedWindow:
+                        element.foldedWindow.Hide()
+
+            self.folded = False
+
+            #self.Layout()
+
+class collapsingPane(foldingPane):
+    def __init__(self, *args, **kwargs):
+        try:
+            caption = kwargs.pop('caption')
+        except KeyError:
+            caption = None
+
+        #kwargs['folded'] = False
+
+        foldingPane.__init__(self, *args, **kwargs)
+
+        capPan = wx.Panel(self, -1)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.bFold = wx.Button(capPan, -1, 'Fold')
+
+        hsizer.Add(self.bFold, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        hsizer.Add(wx.StaticText(capPan, -1, caption), 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+
+        capPan.SetSizerAndFit(hsizer)
+        self.sizer.Add(capPan, 0, wx.EXPAND, 0)
+
+        self.bFold.Bind(wx.EVT_BUTTON, self.OnFold)
+
+    def OnFold(self, event):
+        print 'fold'
+        if self.folded:
+            self.Unfold()
+        else:
+            self.Fold()
+
+        #self.Layout()
+        #self.Fit()
+        self.GetParent().GetParent().Layout()
+
+
+
+
+
+class foldPanel(wx.Panel):
+    def __init__(self, *args, **kwargs):
+        try:
+            self.orientation = kwargs.pop('orientation')
+        except KeyError:
+            self.orientation = wx.VERTICAL
+
+        try:
+            self.padding = kwargs.pop('padding')
+        except KeyError:
+            self.padding = 5
+
+        wx.Panel.__init__(self, *args, **kwargs)
+
+        if self.orientation == wx.VERTICAL:
+            self.sizerflags = wx.EXPAND #| wx.BOTTOM
+        else:
+            self.sizerflags = wx.EXPAND #| wx.RIGHT
+
+        self.priorities = []
+        self.panes = []
+
+        self.sizer = wx.BoxSizer(self.orientation)
+        self.SetSizer(self.sizer)
+
+        #self.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseLeave)
+
+    def AddPane(self, window, priority=0):
+        self.panes.append(window)
+        self.priorities.append(priority)
+
+        window.Bind(wx.EVT_ENTER_WINDOW, self.OnMouseEnterPane)
+        window.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseLeavePane)
+
+        self.RegenSizer()
+
+    def RegenSizer(self):
+        self.sizer.Clear()
+
+        for pane, priority in zip(self.panes, self.priorities):
+            self.sizer.Add(pane, priority, self.sizerflags, self.padding)
+
+        self.sizer.AddStretchSpacer()
+
+        self.sizer.Layout()
+
+    def OnMouseEnterPane(self, event):
+        pane = event.GetEventObject()
+
+
+#        ind = self.panes.index(pane)
+#        print pane.GetMaxSize()
+#        if self.orientation == wx.VERTICAL:
+#            sc = float(pane.GetMaxSize()[1])/pane.GetSize()[1]
+#        else:
+#            sc = float(pane.GetMaxSize()[0])/pane.GetSize()[0]
+#
+#        print sc
+#
+#        self.priorities[ind] = math.ceil(sc)
+        
+        #if not pane.GetClientRect().Inside(event.GetPosition())
+        pane.Unfold()
+
+        #pane.Unfold()
+
+        #event.Skip()
+        self.Layout()
+        #self.RegenSizer()
+
+    def OnMouseLeavePane(self, event):
+        pane = event.GetEventObject()
+        #ind = self.panes.index(event.GetEventObject())
+        #self.priorities[ind] = 1
+        #print pane.GetClientRect()
+        if not pane.GetClientRect().Inside(event.GetPosition()):
+            pane.Fold()
+        #event.Skip()
+        self.Layout()
+
+    def OnMouseLeave(self, event):
+        pass #self.RegenSizer()
+
+if __name__ == "__main__":
+    app = wx.PySimpleApp(0)
+    wx.InitAllImageHandlers()
+    f = wx.Frame(None, -1, "fpTest", size=(300, 800))
+    p = foldPanel(f, -1)
+
+    #for i in range(4):
+    fi = foldingPane(p, -1, caption='Pane 1')
+    sr = SizeReportCtrl(fi)
+    sr.SetMinSize((300, 150))
+    #sr.SetMaxSize((300, 300))
+    fi.AddNewElement(sr)
+    p.AddPane(fi)
+
+    fi = foldingPane(p, -1, caption='pane 2')
+    sr = SizeReportCtrl(fi)
+    sr.SetMinSize((300, 150))
+    #sr.SetMaxSize((300, 300))
+    fi.AddNewElement(sr, foldable=False)
+    p.AddPane(fi)
+
+    fi = foldingPane(p, -1, caption='pane 3', pinned=True)
+    sr = SizeReportCtrl(fi)
+    sr.SetMinSize((300, 150))
+    #sr.SetMaxSize((300, 300))
+    fi.AddNewElement(sr)
+    p.AddPane(fi)
+
+    #for i in range(4):
+    fi = foldingPane(p, -1, caption='pane 4')
+    sr = SizeReportCtrl(fi)
+    sr.SetMinSize((300, 150))
+    #sr.SetMaxSize((300, 300))
+    fi.AddNewElement(sr)
+    p.AddPane(fi)
+
+    #for i in range(4):
+    fi = foldingPane(p, -1, caption='pane 5')
+    sr = SizeReportCtrl(fi)
+    sr.SetMinSize((300, 150))
+    #sr.SetMaxSize((300, 300))
+    fi.AddNewElement(sr)
+    p.AddPane(fi)
+
+    app.SetTopWindow(f)
+    f.Show()
+    app.MainLoop()
+
+
+
+        

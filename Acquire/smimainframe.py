@@ -20,6 +20,7 @@ import wx.py.shell
 import wx.aui
 
 import wx.lib.foldpanelbar as fpb
+import PYME.misc.autoFoldPanel as afp
 from PYME.misc.fbpIcons import *
 
 import sys
@@ -374,12 +375,12 @@ class smiMainFrame(wx.Frame):
         self._mgr.Update()
 
         #fudge to get layout right
-        panes = self.notebook1.GetAuiManager().AllPanes
-
-        self.paneNames = []
-
-        for p in panes:
-            self.paneNames.append(p.name)
+#        panes = self.notebook1.GetAuiManager().AllPanes
+#
+#        self.paneNames = []
+#
+#        for p in panes:
+#            self.paneNames.append(p.name)
 
         #self.LoadPerspective()
 
@@ -389,8 +390,8 @@ class smiMainFrame(wx.Frame):
         return fname
 
     def SavePerspective(self):
-        mgr = self.notebook1.GetAuiManager()
-        persp = mgr.SavePerspective()
+        #mgr = self.notebook1.GetAuiManager()
+        persp = self._mgr.SavePerspective()
 
         for i, p in enumerate(self.paneNames):
             persp = persp.replace(p, 'pane_%d' % i)
@@ -403,15 +404,14 @@ class smiMainFrame(wx.Frame):
         pfname = self._getPerspectiveFilename()
         if os.path.exists(pfname):
             f = open(pfname)
-            pesp = f.read()
+            persp = f.read()
             f.close()
 
             for i, p in enumerate(self.paneNames):
                 persp = persp.replace('pane_%d' % i, p)
 
-            mgr = self.notebook1.GetAuiManager()
-            mgr.LoadPerspective(persp)
-            mgr.Update()
+            self._mgr.LoadPerspective(persp)
+            self._mgr.Update()
 
 
     def CreateToolPanel(self):
@@ -434,11 +434,15 @@ class smiMainFrame(wx.Frame):
 #        self._leftWindow1.SetSashVisible(wx.SASH_RIGHT, True)
 #        self._leftWindow1.SetExtraBorderSize(10)
 
-        self.camPanel = fpb.FoldPanelBar(self, -1, wx.DefaultPosition,
-                                     wx.Size(240,1000))#, fpb.FPB_DEFAULT_STYLE,0)
+#        self.camPanel = fpb.FoldPanelBar(self, -1, wx.DefaultPosition,
+#                                     wx.Size(240,1000))#, fpb.FPB_DEFAULT_STYLE,0)
+        self.camPanel = afp.foldPanel(self, -1, wx.DefaultPosition,
+                                     wx.Size(240,1000))
 
-        self._mgr.AddPane(self.camPanel, aui.AuiPaneInfo().
-                          Name("camControls").Caption("Camera").Right().CloseButton(False))
+        cpinfo = aui.AuiPaneInfo().Name("camControls").Caption("Camera").Right().CloseButton(False)
+        #cpinfo.dock_proportion  = int(cpinfo.dock_proportion*1.6)
+        
+        self._mgr.AddPane(self.camPanel, cpinfo)
 
         #self.notebook1.AddPage(page=self.camPanel, select=False, caption='Camera')
         #self.notebook1.Split(self.notebook1.GetPageCount() -1, wx.RIGHT)
@@ -461,17 +465,24 @@ class smiMainFrame(wx.Frame):
 #        self._rightWindow1.SetExtraBorderSize(10)
 
 
-        self.aqPanel = fpb.FoldPanelBar(self, -1, wx.DefaultPosition,
-                                     wx.Size(240,600))#, fpb.FPB_DEFAULT_STYLE,0)
+#        self.aqPanel = fpb.FoldPanelBar(self, -1, wx.DefaultPosition,
+#                                     wx.Size(240,600))#, fpb.FPB_DEFAULT_STYLE,0)
+        self.aqPanel = afp.foldPanel(self, -1, wx.DefaultPosition,
+                                     wx.Size(240,1000))
 
-        self._mgr.AddPane(self.aqPanel, aui.AuiPaneInfo().
-                          Name("aqControls").Caption("Acquisition").Layer(1).Position(0).Right().CloseButton(False))
+        aqinfo = aui.AuiPaneInfo().Name("aqControls").Caption("Acquisition").Layer(1).Position(0).Right().CloseButton(False)
+        
+        self._mgr.AddPane(self.aqPanel, aqinfo)
 
-        self.toolPanel = fpb.FoldPanelBar(self, -1, wx.DefaultPosition,
-                                     wx.Size(240,200))#, fpb.FPB_DEFAULT_STYLE,0)
+        self.toolPanel = afp.foldPanel(self, -1, wx.DefaultPosition,
+                                     wx.Size(240,1000))
+#        self.toolPanel = fpb.FoldPanelBar(self, -1, wx.DefaultPosition,
+#                                     wx.Size(240,200))#, fpb.FPB_DEFAULT_STYLE,0)
 
         self._mgr.AddPane(self.toolPanel, aui.AuiPaneInfo().
                           Name("hardwareControls").Caption("Hardware").Layer(1).Position(1).Right().CloseButton(False).BestSize(240, 250))
+
+        aqinfo.dock_proportion  = int(aqinfo.dock_proportion*1.6)
 
 
         #self.notebook1.AddPage(page=self.aqPanel, select=False, caption='Acquisition')
@@ -483,20 +494,31 @@ class smiMainFrame(wx.Frame):
         #self.notebook1.SetSelection(0)
 
     def AddTool(self, panel, title):
-        item = self.toolPanel.AddFoldPanel(title, collapsed=False, foldIcons=self.Images)
+        item = afp.foldingPane(self.toolPanel, -1, caption=title, pinned = True)
         panel.Reparent(item)
-        self.toolPanel.AddFoldPanelWindow(item, panel, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+        item.AddNewElement(panel)
+        self.toolPanel.AddPane(item)
+#        item = self.toolPanel.AddFoldPanel(title, collapsed=False, foldIcons=self.Images)
+#        panel.Reparent(item)
+#        self.toolPanel.AddFoldPanelWindow(item, panel, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
         #wx.LayoutAlgorithm().LayoutWindow(self, self._leftWindow1)
 
     def AddCamTool(self, panel, title):
-        item = self.camPanel.AddFoldPanel(title, collapsed=False, foldIcons=self.Images)
+        #item = self.camPanel.AddFoldPanel(title, collapsed=False, foldIcons=self.Images)
+        item = afp.foldingPane(self.camPanel, -1, caption=title, pinned = True)
         panel.Reparent(item)
-        self.camPanel.AddFoldPanelWindow(item, panel, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+        item.AddNewElement(panel)
+        self.camPanel.AddPane(item)
+        #self.camPanel.AddFoldPanelWindow(item, panel, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
 
     def AddAqTool(self, panel, title):
-        item = self.aqPanel.AddFoldPanel(title, collapsed=False, foldIcons=self.Images)
+        item = afp.foldingPane(self.aqPanel, -1, caption=title, pinned = True)
         panel.Reparent(item)
-        self.aqPanel.AddFoldPanelWindow(item, panel, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+        item.AddNewElement(panel)
+        self.aqPanel.AddPane(item)
+        #item = self.aqPanel.AddFoldPanel(title, collapsed=False, foldIcons=self.Images)
+        #panel.Reparent(item)
+        #self.aqPanel.AddFoldPanelWindow(item, panel, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
         #wx.LayoutAlgorithm().LayoutWindow(self, self._leftWindow1)
 
     def OnFileOpenStack(self, event):

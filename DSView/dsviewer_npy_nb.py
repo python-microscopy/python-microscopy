@@ -423,7 +423,7 @@ class DSViewFrame(wx.Frame):
         # recreate the foldpanelbar
 
         self._pnl = fpb.FoldPanelBar(self._leftWindow1, -1, wx.DefaultPosition,
-                                     wx.Size(-1,-1), fpb.FPB_DEFAULT_STYLE,0)
+                                     wx.Size(-1,-1))#, fpb.FPB_DEFAULT_STYLE,0)
 
         self.Images = wx.ImageList(16,16)
         self.Images.Add(GetExpandedIconBitmap())
