@@ -224,10 +224,10 @@ class CaptionBar(wx.Window):
     def OnMouseEnterLeave(self, event):
         #event.ResumePropagation(2)
         #print event.ShouldPropagate()
+        event.SetEventObject(self.parent)
+        event.ResumePropagation(2)
         event.Skip()
-        ev = event.Clone()
-        # @type ev wx.MouseEvent
-        ev.SetEventObject
+        
 
 
 
@@ -345,6 +345,7 @@ class foldingPane(wx.Panel):
                         element.foldedWindow.Show()
 
             self.folded = True
+            self.stCaption.Refresh()
 
             #self.Layout()
 
@@ -359,6 +360,7 @@ class foldingPane(wx.Panel):
                         element.foldedWindow.Hide()
 
             self.folded = False
+            self.stCaption.Refresh()
 
             #self.Layout()
 
@@ -463,7 +465,7 @@ class foldPanel(wx.Panel):
 #        self.priorities[ind] = math.ceil(sc)
         
         #if not pane.GetClientRect().Inside(event.GetPosition())
-        print 'enter'
+        #print 'enter'
         pane.Unfold()
 
         #pane.Unfold()

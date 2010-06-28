@@ -28,12 +28,12 @@ import wx.py.crust
 from myviewpanel_numarray import MyViewPanel
 
 class DSViewFrame(wx.Frame):
-    def __init__(self, parent=None, title='', dstack = None, log = None, filename = None, size = (-1,-1)):
+    def __init__(self, parent=None, title='', dstack = None, log = None, filename = None, mdh = None, size = (-1,-1)):
         wx.Frame.__init__(self,parent, -1, title, size=size)
 
         self.ds = dstack
         self.log = log
-        self.mdh = None
+        self.mdh = mdh
 
         self.saved = True		
 

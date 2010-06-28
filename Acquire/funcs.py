@@ -19,7 +19,7 @@ import wx
 import previewaquisator
 import simplesequenceaquisator
 import prevviewer
-import PYME.DSView.dsviewer as dsviewer
+import PYME.DSView.dsviewer_npy as dsviewer
 #import PYME.DSView.myviewpanel as viewpanel
 import PYME.DSView.viewpanellite as viewpanel
 import PYME.DSView.displaySettingsPanel as disppanel
@@ -264,7 +264,7 @@ class microscope:
         self.pa.Prepare(True)
         self.pa.start()
 
-        self.dfr = dsviewer.DSViewFrame(None, "New Aquisition", self.sa.ds, self.sa.log) 
+        self.dfr = dsviewer.DSViewFrame(None, "New Aquisition", CDataStack_AsArray(self.sa.ds, 0), self.sa.log, mdh=self.sa.mdh)
         self.dfr.Show()
         self.sa.ds = None
 
@@ -293,7 +293,7 @@ class microscope:
         self.pa.Prepare(True)
         self.pa.start()
 
-        self.dfr = dsviewer.DSViewFrame(None, "New Aquisition", self.ta.ds, self.ta.log) 
+        self.dfr = dsviewer.DSViewFrame(None, "New Aquisition", CDataSatck_AsArray(self.ta.ds, 0), self.ta.log)
         self.dfr.Show()
         self.ta.ds = None
 

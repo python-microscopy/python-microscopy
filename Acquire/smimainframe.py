@@ -40,7 +40,9 @@ import seqdialog
 import timeseqdialog
 import stepDialog
 import funcs
-import PYME.DSView.dsviewer as dsviewer
+import PYME.DSView.dsviewer_npy as dsviewer
+from PYME.cSMI import CDataStack_AsArray
+from PYME.Acquire import MetaDataHandler
 import chanfr
 import HDFSpoolFrame
 from PYME.FileUtils import nameUtils
@@ -540,9 +542,19 @@ class smiMainFrame(wx.Frame):
 
     def OnMAquireOnePic(self, event):
         self.scope.pa.stop()
-        ds2 = example.CDataStack(self.scope.pa.ds)
+        ds2 = CDataStack_AsArray(self.scope.pa.ds, 0).copy()
 
-        df2 = dsviewer.DSViewFrame(self, '--new pic--', ds2)
+
+        #metadata handling
+        mdh = MetaDataHandler.NestedClassMDHandler()
+        mdh.setEntry('StartTime', time.time())
+        mdh.setEntry('AcquisitionType', 'SingleImage')
+
+        #loop over all providers of metadata
+        for mdgen in MetaDataHandler.provideStartMetadata:
+            mdgen(mdh)
+
+        df2 = dsviewer.DSViewFrame(self, '--new pic--', ds2, mdh=mdh)
         df2.Show()
         self.scope.pa.Prepare(True)
         self.scope.pa.start()

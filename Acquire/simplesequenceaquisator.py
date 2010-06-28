@@ -14,6 +14,8 @@ import math
 import datetime
 from previewaquisator import PreviewAquisator
 import time
+from PYME.Acquire import MetaDataHandler
+
 class SimpleSequenceAquisitor(PreviewAquisator):
     # 'Constants'
     PHASE = 1
@@ -27,6 +29,9 @@ class SimpleSequenceAquisitor(PreviewAquisator):
         PreviewAquisator.__init__(self, chans, cam, shutters, None)
         self.piezos = _piezos
         self.log = _log
+        self.mdh = MetaDataHandler.NestedClassMDHandler()
+        #register as a provider of metadata
+        MetaDataHandler.provideStartMetadata.append(self.ProvideStackMetadata)
         
         self.ScanChan  = 0
         self.StartMode = self.CENTRE_AND_LENGTH
@@ -144,7 +149,29 @@ class SimpleSequenceAquisitor(PreviewAquisator):
         #    return (False, 'StepSize', 'Simplesequenceaquisator StepSize is larger than piezo maximum',90)
         
         return (True,) 
+
+    
+    def ProvideStackMetadata(self, mdh):
+        mdh.setEntry('StackSettings.StartPos', self.GetStartPos())
+        mdh.setEntry('StackSettings.EndPos', self.GetEndPos())
+        mdh.setEntry('StackSettings.StepSize', self.GetStepSize())
+        mdh.setEntry('StackSettings.NumSlices', self.GetSeqLength())
+        mdh.setEntry('StackSettings.ScanMode', ['Middle and Number', 'Start and End'][self.GetStartMode()])
+        mdh.setEntry('StackSettings.ScanPiezo', self.piezos[self.GetScanChannel()][2])
+
+
     def doStartLog(self):
+        #new metadata handling
+        self.mdh.setEntry('StartTime', time.time())
+
+        self.mdh.setEntry('AcquisitionType', 'Stack')
+
+        #loop over all providers of metadata
+        for mdgen in MetaDataHandler.provideStartMetadata:
+            mdgen(self.mdh)
+
+        ##############################
+        #old log stuff follows (DEPRECATED!!!)
         if not 'GENERAL' in self.log.keys():
             self.log['GENERAL'] = {}
         if not 'PIEZOS' in self.log.keys():
@@ -215,6 +242,7 @@ class SimpleSequenceAquisitor(PreviewAquisator):
         self.log['GENERAL']['StartTime'] = '%d:%d:%d' % (dt.hour, dt.minute, dt.second)
         #m_pDoc->LogData.SaveSeqROIMode(m_pDoc->Camera.GetROIMode());
         #pass
+
     def doStopLog(self):
         self.log['GENERAL']['Depth'] = self.ds.getDepth()
         self.log['PIEZOS']['EndPos'] = self.GetEndPos()
