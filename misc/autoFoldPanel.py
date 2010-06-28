@@ -85,7 +85,7 @@ DEFAULT_CAPTION_STYLE = {
 'HEIGHT'              : 20,
 'FONT_COLOUR'         : 'BLACK',
 #'FONT_WEIGHT' : wx.BOLD,
-'FONT_SIZE'           : 12,
+#'FONT_SIZE'           : 12,
 'CAPTION_INDENT'      : 5,
 'BACKGROUND_COLOUR_1' : (198, 198, 198), #default AUI caption colours
 'BACKGROUND_COLOUR_2' : (226, 226, 226),
@@ -130,6 +130,9 @@ class CaptionBar(wx.Window):
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_LEFT_UP, self.OnLeftClick)
+        self.Bind(wx.EVT_ENTER_WINDOW, self.OnMouseEnterLeave)
+        self.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseEnterLeave)
+
 #        self.Bind(wx.EVT_CHAR, self.OnChar)
 
 
@@ -217,6 +220,14 @@ class CaptionBar(wx.Window):
     def OnSize(self, event):
         rect = self.GetRect()
         self.RefreshRect(rect)
+
+    def OnMouseEnterLeave(self, event):
+        #event.ResumePropagation(2)
+        #print event.ShouldPropagate()
+        event.Skip()
+        ev = event.Clone()
+        # @type ev wx.MouseEvent
+        ev.SetEventObject
 
 
 
@@ -415,7 +426,7 @@ class foldPanel(wx.Panel):
         self.sizer = wx.BoxSizer(self.orientation)
         self.SetSizer(self.sizer)
 
-        #self.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseLeave)
+        self.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseLeave)
 
     def AddPane(self, window, priority=0):
         self.panes.append(window)
@@ -452,6 +463,7 @@ class foldPanel(wx.Panel):
 #        self.priorities[ind] = math.ceil(sc)
         
         #if not pane.GetClientRect().Inside(event.GetPosition())
+        print 'enter'
         pane.Unfold()
 
         #pane.Unfold()
@@ -471,7 +483,8 @@ class foldPanel(wx.Panel):
         self.Layout()
 
     def OnMouseLeave(self, event):
-        pass #self.RegenSizer()
+        self.Layout()
+        #pass #self.RegenSizer()
 
 if __name__ == "__main__":
     app = wx.PySimpleApp(0)
