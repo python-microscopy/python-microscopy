@@ -29,6 +29,8 @@ class piezo_e816:
         self.ser_port.write('WTO A0\n')
         self.lastPos = self.GetPos()
 
+        self.driftCompensation = False
+
     def ReInit(self):
         self.ser_port.write('SVO A1\n')
         self.lastPos = self.GetPos() 
@@ -53,6 +55,16 @@ class piezo_e816:
         time.sleep(0.05)
         res = self.ser_port.readline()
         return float(res) + self.osen
+
+    def SetDriftCompensation(self, dc = True):
+        if dc:
+            self.ser_port.write('DCO A1\n')
+            self.ser_port.flushOutput()
+            self.driftCompensation = True
+        else:
+            self.ser_port.write('DCO A0\n')
+            self.ser_port.flushOutput()
+            self.driftCompensation = False
 
     def PopulateWaveTable(self,iChannel, data):
         '''Load wavetable data to piezo controller - data should be a sequence/array of positions
