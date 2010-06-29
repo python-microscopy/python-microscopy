@@ -17,7 +17,7 @@ import wx
 #from wxPython.stc import *
 #import wx.stc
 import wx.py.shell
-import wx.aui
+#import wx.aui
 
 import wx.lib.foldpanelbar as fpb
 import PYME.misc.autoFoldPanel as afp
@@ -441,7 +441,7 @@ class smiMainFrame(wx.Frame):
         self.camPanel = afp.foldPanel(self, -1, wx.DefaultPosition,
                                      wx.Size(240,1000))
 
-        cpinfo = aui.AuiPaneInfo().Name("camControls").Caption("Camera").Right().CloseButton(False)
+        cpinfo = aui.AuiPaneInfo().Name("camControls").Caption("Camera").Layer(1).Right().CloseButton(False)
         #cpinfo.dock_proportion  = int(cpinfo.dock_proportion*1.6)
         
         self._mgr.AddPane(self.camPanel, cpinfo)
@@ -472,7 +472,7 @@ class smiMainFrame(wx.Frame):
         self.aqPanel = afp.foldPanel(self, -1, wx.DefaultPosition,
                                      wx.Size(240,1000))
 
-        aqinfo = aui.AuiPaneInfo().Name("aqControls").Caption("Acquisition").Layer(1).Position(0).Right().CloseButton(False)
+        aqinfo = aui.AuiPaneInfo().Name("aqControls").Caption("Acquisition").Layer(2).Position(0).Right().CloseButton(False)
         
         self._mgr.AddPane(self.aqPanel, aqinfo)
 
@@ -482,7 +482,7 @@ class smiMainFrame(wx.Frame):
 #                                     wx.Size(240,200))#, fpb.FPB_DEFAULT_STYLE,0)
 
         self._mgr.AddPane(self.toolPanel, aui.AuiPaneInfo().
-                          Name("hardwareControls").Caption("Hardware").Layer(1).Position(1).Right().CloseButton(False).BestSize(240, 250))
+                          Name("hardwareControls").Caption("Hardware").Layer(2).Position(1).Right().CloseButton(False).BestSize(240, 250))
 
         aqinfo.dock_proportion  = int(aqinfo.dock_proportion*1.6)
 

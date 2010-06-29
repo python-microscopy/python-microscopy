@@ -44,13 +44,14 @@ def create(parent):
 class AndorPanel(wx.Panel):
 
     def _createCollapsingPane(self):
-        #clp = collapsingPane(self, caption='Advanced')#|wx.CP_NO_TLW_RESIZE)
+        clp = collapsingPane(self, caption='Advanced ...')#|wx.CP_NO_TLW_RESIZE)
+        #clp = wx.CollapsiblePane(self, label='Advanced ...', style = wx.CP_DEFAULT_STYLE)#|wx.CP_NO_TLW_RESIZE)
 
         #clp.Expand()
         #cp = clp.GetPane()
 
-        #cp = wx.Panel(clp, -1)
-        cp = clp = wx.Panel(self, -1)
+        cp = wx.Panel(clp, -1)
+        #cp = clp = wx.Panel(self, -1)
 
         vsizer=wx.BoxSizer(wx.VERTICAL)
 
@@ -118,7 +119,7 @@ class AndorPanel(wx.Panel):
 
         cp.SetSizer(vsizer)
 
-        #clp.AddNewElement(cp)
+        clp.AddNewElement(cp)
 
         return clp
 
@@ -174,9 +175,10 @@ class AndorPanel(wx.Panel):
 
         self.cp = self._createCollapsingPane()
 
-        vsizer.Add(self.cp, 0, wx.EXPAND|wx.TOP, 5)
+        vsizer.Add(self.cp, 0, wx.EXPAND|wx.TOP|wx.BOTTOM, 5)
+        vsizer.AddSpacer(5)
 
-        self.SetSizerAndFit(vsizer)
+        self.SetSizer(vsizer)
 
         
 

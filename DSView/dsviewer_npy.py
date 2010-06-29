@@ -25,41 +25,44 @@ import sys
 import tables
 import wx.py.crust
 
-from myviewpanel_numarray import MyViewPanel
+from arrayViewPanel import ArraySettingsAndViewPanel
 
 class DSViewFrame(wx.Frame):
-    def __init__(self, parent=None, title='', dstack = None, log = None, filename = None, mdh = None, size = (-1,-1)):
+    def __init__(self, parent=None, title='', dstack = None, log = None, filename = None, mdh = None, size = (400,300)):
         wx.Frame.__init__(self,parent, -1, title, size=size)
 
         self.ds = dstack
         self.log = log
         self.mdh = mdh
 
-        self.saved = True		
+        self.saved = False
 
-        if (dstack == None):
-            if (filename == None):
-                fdialog = wx.FileDialog(None, 'Please select Data Stack to open ...',
-                    wildcard='*.h5', style=wx.OPEN|wx.HIDE_READONLY)
-                succ = fdialog.ShowModal()
-                if (succ == wx.ID_OK):
-                    #self.ds = example.CDataStack(fdialog.GetPath().encode())
-                    #self.ds = 
-                    self.h5file = tables.openFile(fdialog.GetPath())
-                    self.ds = self.h5file.root.ImageData
-                    self.SetTitle(fdialog.GetFilename())
-                    self.saved = True
-                    #fn =
-            else:
-                self.h5file = tables.openFile(filename)
-                self.ds = self.h5file.root.ImageData
-                self.SetTitle(filename)
-                self.saved = True
-                #self.ds = example.CDataStack(filename)
-                #self.SetTitle(fdialog.GetFilename())
-                self.saved = True
+#        if (dstack == None):
+#            if (filename == None):
+#                fdialog = wx.FileDialog(None, 'Please select Data Stack to open ...',
+#                    wildcard='*.h5', style=wx.OPEN|wx.HIDE_READONLY)
+#                succ = fdialog.ShowModal()
+#                if (succ == wx.ID_OK):
+#                    #self.ds = example.CDataStack(fdialog.GetPath().encode())
+#                    #self.ds =
+#                    self.h5file = tables.openFile(fdialog.GetPath())
+#                    self.ds = self.h5file.root.ImageData
+#                    self.SetTitle(fdialog.GetFilename())
+#                    self.saved = True
+#                    #fn =
+#            else:
+#                self.h5file = tables.openFile(filename)
+#                self.ds = self.h5file.root.ImageData
+#                self.SetTitle(filename)
+#                self.saved = True
+#                #self.ds = example.CDataStack(filename)
+#                #self.SetTitle(fdialog.GetFilename())
+#                self.saved = True
 
-        self.vp = MyViewPanel(self, self.ds)
+        self.vp = ArraySettingsAndViewPanel(self, self.ds)
+        #grab a copy of the display options
+        self.do = self.vp.do
+
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.vp, 1,wx.EXPAND,0)
         self.SetAutoLayout(1)
@@ -71,9 +74,10 @@ class DSViewFrame(wx.Frame):
         self.menubar = wx.MenuBar()
         self.SetMenuBar(self.menubar)
         tmp_menu = wx.Menu()
-        #F_SAVE = wx.NewId()
+        F_EXPORT = wx.NewId()
         #F_CLOSE = wx.NewId()
-        tmp_menu.Append(wx.ID_SAVEAS, "Save As", "", wx.ITEM_NORMAL)
+        tmp_menu.Append(wx.ID_SAVEAS, "&Save As", "", wx.ITEM_NORMAL)
+        tmp_menu.Append(F_EXPORT, "&Export Cropped", "", wx.ITEM_NORMAL)
         tmp_menu.Append(wx.ID_CLOSE, "Close", "", wx.ITEM_NORMAL)
         self.menubar.Append(tmp_menu, "File")
 
@@ -81,11 +85,12 @@ class DSViewFrame(wx.Frame):
         EDIT_CLEAR_SEL = wx.NewId()
         EDIT_CROP = wx.NewId()
         mEdit.Append(EDIT_CLEAR_SEL, "Reset Selection", "", wx.ITEM_NORMAL)
-        mEdit.Append(EDIT_CROP, "Crop", "", wx.ITEM_NORMAL)
+        #mEdit.Append(EDIT_CROP, "Crop", "", wx.ITEM_NORMAL)
         self.menubar.Append(mEdit, "Edit")
 
         # Menu Bar end
-        wx.EVT_MENU(self, wx.ID_SAVEAS, self.OnExport)
+        wx.EVT_MENU(self, wx.ID_SAVEAS, self.OnSave)
+        wx.EVT_MENU(self, F_EXPORT, self.OnExport)
         wx.EVT_MENU(self, wx.ID_CLOSE, self.menuClose)
         wx.EVT_MENU(self, EDIT_CLEAR_SEL, self.clearSel)
         #wx.EVT_MENU(self, EDIT_CROP, self.crop)
@@ -97,24 +102,20 @@ class DSViewFrame(wx.Frame):
         self.update()
 
     def update(self):
-        self.vp.imagepanel.Refresh()
-        self.statusbar.SetStatusText('Slice No: (%d/%d)  x: %d  y: %d' % (self.vp.zp, self.vp.ds.shape[2], self.vp.xp, self.vp.yp))
+        self.vp.update()
+        self.statusbar.SetStatusText('Slice No: (%d/%d)  x: %d  y: %d' % (self.do.zp, self.do.ds.shape[2], self.do.xp, self.do.yp))
 
-#    def saveStack(self, event=None):
-#        fdialog = wx.FileDialog(None, 'Save Data Stack as ...',
-#            wildcard='*.kdf', style=wx.SAVE|wx.HIDE_READONLY)
-#        succ = fdialog.ShowModal()
-#        if (succ == wx.ID_OK):
-#            self.ds.SaveToFile(fdialog.GetPath().encode())
-#            if not (self.log == None):
-#                lw = logparser.logwriter()
-#                s = lw.write(self.log)
-#                log_f = file('%s.log' % fdialog.GetPath().split('.')[0], 'w')
-#                log_f.write(s)
-#                log_f.close()
-#
-#            self.SetTitle(fdialog.GetFilename())
-#            self.saved = True
+    def OnSave(self, event=None):
+        import dataExporter
+
+        if 'getEvents' in dir(self.ds):
+            evts = self.ds.getEvents()
+        else:
+            evts = []
+
+        dataExporter.ExportData(self.vp.do.ds, self.mdh, evts)
+
+        self.saved = True
 
     def OnExport(self, event=None):
         import dataExporter
@@ -124,7 +125,7 @@ class DSViewFrame(wx.Frame):
         else:
             evts = []
 
-        dataExporter.ExportData(self.vp, self.mdh, evts)
+        dataExporter.CropExportData(self.vp.view, self.mdh, evts)
 
     def menuClose(self, event):
         self.Close()
@@ -134,7 +135,7 @@ class DSViewFrame(wx.Frame):
             dialog = wx.MessageDialog(self, "Save data stack?", "pySMI", wx.YES_NO|wx.CANCEL)
             ans = dialog.ShowModal()
             if(ans == wx.ID_YES):
-                self.saveStack()
+                self.OnSave()
                 self.Destroy()
             elif (ans == wx.ID_NO):
                 self.Destroy()
@@ -159,8 +160,8 @@ class DSViewFrame(wx.Frame):
 
 
 
-def View3D(data):
-    dvf = DSViewFrame(dstack = data, size=(500, 500))
+def View3D(data, title='' ):
+    dvf = DSViewFrame(dstack = data, title=title, size=(500, 500))
     dvf.SetSize((500,500))
     dvf.Show()
     return dvf

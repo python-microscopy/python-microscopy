@@ -12,9 +12,10 @@ import os.path
 ##################
 
 import wx
-from PYME.DSView.myviewpanel_numarray import MyViewPanel
+from PYME.DSView.arrayViewPanel import ArrayViewPanel, OptionsPanel
 import numpy
 import os
+import wx.lib.agw.aui as aui
 
 def LoadShiftField(filename = None):
     if not filename:
@@ -69,12 +70,12 @@ class Unmixer:
             #x2 = self.scope.cam.GetROIX2()
             y1 = y1 - 1
 
-            print self.X2.shape
+            #print self.X2.shape
 
             Xn = self.X2[x1:x2, y1:(y1 + red_chan.shape[1])] - x1
             Yn = self.Y2[x1:x2, y1:(y1 + red_chan.shape[1])] - y1
 
-            print Xn.shape
+            #print Xn.shape
 
             Xn = numpy.maximum(numpy.minimum(Xn, red_chan.shape[0]-1), 0)
             Yn = numpy.maximum(numpy.minimum(Yn, red_chan.shape[1]-1), 0)
@@ -99,7 +100,7 @@ class Unmixer:
         r_ = dsa[:, (dsa.shape[1]/2):]
         r_ = self._deshift(fliplr(r_), ROI)
 
-        print g_.shape, r_.shape
+        #print g_.shape, r_.shape
 
         g = umm[0,0]*g_ + umm[0,1]*r_
         r = umm[1,0]*g_ + umm[1,1]*r_
@@ -174,11 +175,20 @@ class Splitter:
     def OnUnmix(self,event):
         #self.Unmix()
         if self.f == None:
-            self.f = UnMixFrame(self.parent, splitter = self)
-            self.f.SetSize((800,500))
-            self.f.Show()
+            self.f = UnMixPanel(self.parent, splitter = self, size=(-1, 260))
+            self.o = OptionsPanel(self.parent, self.f.vp.do, horizOrientation=True)
+            self.parent.AddCamTool(self.o, 'Unmixing Display')
+            #self.f.SetSize((800,500))
+            #self.f.Show()
+            cpinfo = aui.AuiPaneInfo().Name("unmixingDisplay").Caption("Unmixing").Bottom().CloseButton(True)
+            #cpinfo.dock_proportion  = int(cpinfo.dock_proportion*1.6)
+
+            self.parent._mgr.AddPane(self.f, cpinfo)
+            self.parent._mgr.Update()
+        elif not self.f.IsShown():
+            self.parent._mgr.ShowPane(self.f, True)
         else:
-            self.f.vp.Optim()
+            self.f.vp.do.Optimise()
 
     def OnSetShiftField(self, event):
         fdialog = wx.FileDialog(None, 'Select shift field',
@@ -200,9 +210,9 @@ class Splitter:
 
 
 
-class UnMixFrame(wx.Frame):
-    def __init__(self, parent=None, title='Unmixing', splitter = None, size=(800, 500)):
-        wx.Frame.__init__(self,parent, -1, title, size=size)
+class UnMixPanel(wx.Panel):
+    def __init__(self, parent=None, title='Unmixing', splitter = None, size=(-1, -1)):
+        wx.Panel.__init__(self,parent, -1, size=size)
 
         self.splitter = splitter
 
@@ -240,8 +250,10 @@ class UnMixFrame(wx.Frame):
 
         bsizer = wx.StaticBoxSizer(wx.StaticBox(pan, -1, 'Offset'), wx.HORIZONTAL)
         self.tOffset = wx.TextCtrl(pan, -1, '%1.2f'%(self.splitter.offset), size=(40,-1))
+        self.bGrabOffset = wx.Button(pan, -1, 'C', style = wx.BU_EXACTFIT)
 
         bsizer.Add(self.tOffset, 1, wx.ALL, 0)
+        bsizer.Add(self.bGrabOffset, 0, wx.LEFT, 5)
         psizer.Add(bsizer, 0, wx.ALL|wx.EXPAND, 5)
 
 #        self.bUpdate = wx.Button(pan, -1, 'Update')
@@ -252,21 +264,25 @@ class UnMixFrame(wx.Frame):
 
         sizer.Add(pan, 0, 0, 0)
 
-        self.vp = MyViewPanel(self, self.ds)
+        self.vp = ArrayViewPanel(self, self.ds)
         sizer.Add(self.vp, 1,wx.EXPAND,0)
-        self.SetAutoLayout(1)
-        self.SetSizerAndFit(sizer)
+        #self.SetAutoLayout(1)
+        self.SetSizer(sizer)
 
         #self.Layout()
         #self.update()
         wx.EVT_CLOSE(self, self.OnCloseWindow)
-        #wx.EVT_SIZE(self, self.OnSize)
+        wx.EVT_SIZE(self, self.OnSize)
+        wx.EVT_SHOW(self, self.OnShow)
+
+        self.bGrabOffset.Bind(wx.EVT_BUTTON, self.OnGrabOffsetFromCamera)
 
         #self.statusbar = self.CreateStatusBar(1, wx.ST_SIZEGRIP)
 
         #self.Layout()
         
         self.splitter.scope.pa.WantFrameGroupNotification.append(self.update)
+
 
     def update(self, caller=None):
         #print self.tMM00.GetValue(), self.tMM01.GetValue()
@@ -276,8 +292,10 @@ class UnMixFrame(wx.Frame):
         self.splitter.mixMatrix[1,1]= float(self.tMM11.GetValue())
         self.splitter.offset= float(self.tOffset.GetValue())
 
-        self.vp.ResetDataStack(self.splitter.Unmix())
-        self.vp.imagepanel.Refresh()
+
+        if self.IsShown():
+            self.vp.ResetDataStack(self.splitter.Unmix())
+            self.vp.imagepanel.Refresh()
 
     def OnCloseWindow(self, event):
         self.splitter.scope.pa.WantFrameGroupNotification.remove(self.update)
@@ -291,13 +309,21 @@ class UnMixFrame(wx.Frame):
         self.splitter.mixMatrix[1,1]= float(self.tMM11.GetValue())
         self.splitter.offset= float(self.tOffset.GetValue())
 
-        print self.splitter.mixMatrix
+        #print self.splitter.mixMatrix
 
         self.update()
+
+    def OnGrabOffsetFromCamera(self, event):
+        if 'ADOffset' in dir(self.splitter.scope.cam):
+            self.tOffset.SetValue('%3.2f' % self.splitter.scope.cam.ADOffset)
+            self.update()
 
     def OnSize(self, event):
         self.Layout()
         event.Skip()
+
+    def OnShow(self, event):
+        self.splitter.o.GetParent().Show(event.IsShown())
 
 
    

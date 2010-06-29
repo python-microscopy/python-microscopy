@@ -18,27 +18,29 @@ class SpoolEvent(tables.IsDescription):
 #            'Pickled numpy ndarray - .npy']
 
 exporters = {}
+exportersByExtension = {}
 
 def exporter(cls):
     exporters[cls.descr] = cls
+    exportersByExtension[cls.extension] = cls
     return cls
 
 class Exporter:
-    def _getFilename(self):
-        fdialog = wx.FileDialog(None, 'Save exported file as ...',
-                wildcard=self.extension, style=wx.SAVE|wx.HIDE_READONLY)
+#    def _getFilename(self):
+#        fdialog = wx.FileDialog(None, 'Save exported file as ...',
+#                wildcard=self.extension, style=wx.SAVE|wx.HIDE_READONLY)
+#
+#        succ = fdialog.ShowModal()
+#        if (succ == wx.ID_OK):
+#            fname = fdialog.GetPath()
+#        else:
+#            fname = None
+#
+#        fdialog.Destroy()
+#
+#        return fname
 
-        succ = fdialog.ShowModal()
-        if (succ == wx.ID_OK):
-            fname = fdialog.GetPath()
-        else:
-            fname = None
-
-        fdialog.Destroy()
-
-        return fname
-
-    def Export(self, data, xslice, yslice, zslice, metadata=None, events = None, origName=None):
+    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
         pass
 
 #@exporter
@@ -50,12 +52,7 @@ class H5Exporter(Exporter):
         self.complib = complib
         self.complevel = complevel
 
-    def Export(self, data, xslice, yslice, zslice, metadata=None, events = None, origName=None):
-        outFile = self._getFilename()
-
-        if outFile == None:
-            return
-
+    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
         h5out = tables.openFile(outFile,'w')
         filters=tables.Filters(self.complevel,self.complib,shuffle=True)
 
@@ -106,11 +103,7 @@ class TiffStackExporter(Exporter):
     extension = '*.tif'
     descr = 'TIFF (stack if 3D) - .tif'
 
-    def Export(self, data, xslice, yslice, zslice, metadata=None, events = None, origName=None):
-        outFile = self._getFilename()
-        if outFile == None:
-            return
-
+    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
         saveTiffStack.saveTiffMultipage(data[xslice, yslice, zslice], outFile)
 
         if not metadata == None:
@@ -132,14 +125,9 @@ exporter(TiffStackExporter)
 #@exporter
 class TiffSeriesExporter(Exporter):
     extension = '*.xml'
-    descr = 'TIFF Series - .tif'
+    descr = 'TIFF Series - .xml'
 
-    def Export(self, data, xslice, yslice, zslice, metadata=None, events = None, origName=None):
-        outFile = self._getFilename()
-
-        if outFile == None:
-            return
-
+    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
         #nframes = (zslice.stop - zslice.start)/zslice.step
 
         outDir = os.path.splitext(outFile)[0]
@@ -174,12 +162,7 @@ class NumpyExporter(Exporter):
     extension = '*.npy'
     descr = 'Pickled numpy ndarray - .npy'
 
-    def Export(self, data, xslice, yslice, zslice, metadata=None, events = None, origName=None):
-        outFile = self._getFilename()
-
-        if outFile == None:
-            return
-
+    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
         numpy.save(outFile, data[xslice, yslice, zslice])
 
         if not metadata == None:
@@ -208,15 +191,15 @@ class ExportDialog(wx.Dialog):
 
         vsizer = wx.BoxSizer(wx.VERTICAL)
 
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        hsizer.Add(wx.StaticText(self, -1, 'Format:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        self.cFormat = wx.Choice(self, -1, choices=exporters.keys())
-        self.cFormat.SetSelection(exporters.keys().index(H5Exporter.descr))
-        hsizer.Add(self.cFormat, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        vsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 5)
+#        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+#
+#        hsizer.Add(wx.StaticText(self, -1, 'Format:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+#
+#        self.cFormat = wx.Choice(self, -1, choices=exporters.keys())
+#        self.cFormat.SetSelection(exporters.keys().index(H5Exporter.descr))
+#        hsizer.Add(self.cFormat, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+#
+#        vsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 5)
 
         if not roi == None:
             bsizer=wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Cropping'), wx.VERTICAL)
@@ -277,16 +260,59 @@ class ExportDialog(wx.Dialog):
         return slice(int(self.tZStart.GetValue()), int(self.tZStop.GetValue()),int(self.tZStep.GetValue()))
 
 
-def ExportData(vp, mdh=None, events=None, origName = None):
-    roi = [[vp.selection_begin_x, vp.selection_end_x + 1],[vp.selection_begin_y, vp.selection_end_y +1], [0, vp.ds.shape[2]]]
+def _getFilename(defaultExt = '*.tif'):
+        wcs  = []
+
+        defIndex = 0
+
+        for i, e in enumerate(exporters.values()):
+            wcs.append(e.descr + '|' + e.extension)
+            if e.extension == defaultExt:
+                defIndex = i
+
+        fdialog = wx.FileDialog(None, 'Save file as ...',
+                wildcard='|'.join(wcs), style=wx.SAVE|wx.HIDE_READONLY)
+
+        fdialog.SetFilterIndex(defIndex)
+
+        succ = fdialog.ShowModal()
+        if (succ == wx.ID_OK):
+            fname = fdialog.GetPath().encode()
+        else:
+            fname = None
+
+        fdialog.Destroy()
+
+        return fname
+
+def CropExportData(vp, mdh=None, events=None, origName = None):
+    roi = [[vp.selection_begin_x, vp.selection_end_x + 1],[vp.selection_begin_y, vp.selection_end_y +1], [0, vp.do.ds.shape[2]]]
     
     dlg = ExportDialog(None, roi)
     succ = dlg.ShowModal()
 
     if (succ == wx.ID_OK):
-        exp = exporters[dlg.GetFormat()]()
+        filename = _getFilename()
 
-        exp.Export(vp.ds, dlg.GetXSlice(), dlg.GetYSlice(), dlg.GetZSlice(),mdh, events, origName)
+        if filename == None:
+            dlg.Destroy()
+            return
 
+        exp = exportersByExtension['*' + os.path.splitext(filename)[1]]()
+
+        exp.Export(vp.do.ds, filename, dlg.GetXSlice(), dlg.GetYSlice(), dlg.GetZSlice(),mdh, events, origName)
 
     dlg.Destroy()
+
+    
+
+
+def ExportData(ds, mdh=None, events=None, origName = None):
+    filename = _getFilename()
+    if filename == None:
+            return
+
+    exp = exportersByExtension['*' + os.path.splitext(filename)[1]]()
+
+    exp.Export(ds, filename, slice(0, ds.shape[0], 1), slice(0, ds.shape[1], 1), slice(0, ds.shape[2], 1),mdh, events, origName)
+

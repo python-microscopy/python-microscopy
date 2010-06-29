@@ -81,6 +81,9 @@ pin_bits     = '\xff\xff\xff\xff\xff\xff\x1f\xfc\xdf\xfc\xdf\xfc\xdf\xfc\xdf\xfc
                '\xdf\xfc\x0f\xf8\x7f\xff\x7f\xff\x7f\xff\xff\xff\xff\xff\xff\xff'
 """ Pin button bitmap for a pane. """
 
+
+
+
 DEFAULT_CAPTION_STYLE = {
 'HEIGHT'              : 20,
 'FONT_COLOUR'         : 'BLACK',
@@ -364,6 +367,37 @@ class foldingPane(wx.Panel):
 
             #self.Layout()
 
+
+r_arrow = '\xff\xff\xdf\xff\x9f\xff\x1f\xff\x5f\xfe\xdf\xfc\xdf\xf9\xdf\xf3\xdf' \
+            '\xf3\xdf\xf9\xdf\xfc\x5f\xfe\x1f\xff\x9f\xff\xdf\xff\xff\xff'
+
+d_arrow = '\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x01\x80\xf3\xcf\xe7\xe7\xcf' \
+            '\xf3\x9f\xf9\x3f\xfc\x7f\xfe\xff\xff\xff\xff\xff\xff\xff\xff'
+
+
+class foldButton(wx.Window):
+    def __init__(self, parent, id=-1):
+        wx.Window.__init__(self, parent, id, size=(16,16))
+
+        self.bmR = BitmapFromBits(r_arrow, 16, 16, ColourFromStyle('BLACK'))
+        self.bmD = BitmapFromBits(d_arrow, 16, 16, ColourFromStyle('BLACK'))
+
+        self.folded = True
+
+        self.Bind(wx.EVT_PAINT, self.OnPaint)
+
+    def OnPaint(self, event):
+        dc = wx.PaintDC(self)
+        if self.folded:
+            dc.DrawBitmap(self.bmR, 0, 0, True)
+        else:
+            dc.DrawBitmap(self.bmD, 0, 0, True)
+
+    def SetFolded(self, folded=True):
+        self.folded = folded
+        self.Refresh()
+
+
 class collapsingPane(foldingPane):
     def __init__(self, *args, **kwargs):
         try:
@@ -375,25 +409,31 @@ class collapsingPane(foldingPane):
 
         foldingPane.__init__(self, *args, **kwargs)
 
-        capPan = wx.Panel(self, -1)
+        self.stCaption = wx.Panel(self, -1)
+
+        self.bmR = BitmapFromBits(r_arrow, 16, 16, ColourFromStyle('BLACK'))
+        self.bmD = BitmapFromBits(d_arrow, 16, 16, ColourFromStyle('BLACK'))
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.bFold = wx.Button(capPan, -1, 'Fold')
+        #self.bFold = wx.BitmapButton(capPan, -1, bitmap=self.bmR, style = wx.NO_BORDER)
+        self.bFold = foldButton(self.stCaption, -1)
 
-        hsizer.Add(self.bFold, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
-        hsizer.Add(wx.StaticText(capPan, -1, caption), 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        hsizer.Add(self.bFold, 0, wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 2)
+        hsizer.Add(wx.StaticText(self.stCaption, -1, caption), 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
 
-        capPan.SetSizerAndFit(hsizer)
-        self.sizer.Add(capPan, 0, wx.EXPAND, 0)
+        self.stCaption.SetSizerAndFit(hsizer)
+        self.sizer.Add(self.stCaption, 0, 0, 0)
 
-        self.bFold.Bind(wx.EVT_BUTTON, self.OnFold)
+        self.bFold.Bind(wx.EVT_LEFT_UP, self.OnFold)
 
     def OnFold(self, event):
         print 'fold'
         if self.folded:
             self.Unfold()
+            self.bFold.SetFolded(False)
         else:
             self.Fold()
+            self.bFold.SetFolded(True)
 
         #self.Layout()
         #self.Fit()
@@ -518,10 +558,12 @@ if __name__ == "__main__":
 
     #for i in range(4):
     fi = foldingPane(p, -1, caption='pane 4')
-    sr = SizeReportCtrl(fi)
+    pi = collapsingPane(fi, -1, caption='foo')
+    sr = SizeReportCtrl(pi)
     sr.SetMinSize((300, 150))
+    pi.AddNewElement(sr)
     #sr.SetMaxSize((300, 300))
-    fi.AddNewElement(sr)
+    fi.AddNewElement(pi)
     p.AddPane(fi)
 
     #for i in range(4):

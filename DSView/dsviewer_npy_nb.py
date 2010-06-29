@@ -1257,7 +1257,7 @@ class DSViewFrame(wx.Frame):
         else:
             evts = []
 
-        dataExporter.ExportData(self.vp, self.mdh, evts, self.seriesName)
+        dataExporter.CropExportData(self.vp, self.mdh, evts, self.seriesName)
 
     def savePositions(self, event=None):
         fdialog = wx.FileDialog(None, 'Save Positions ...',
