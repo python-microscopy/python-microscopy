@@ -18,9 +18,11 @@ def PlotShiftField(dx, dy, spx, spy):
     axes([.05, .7, .4, .25])
     imshow(dx.T)
     axis('image')
+    colorbar()
     axes([.55, .7, .4, .25])
     imshow(dy.T)
     axis('image')
+    colorbar()
 
     axes([.05, .05, .9, .6])
     xin, yin = meshgrid(arange(0, 512*70, 500), arange(0, 256*70, 1000))
