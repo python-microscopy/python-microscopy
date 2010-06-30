@@ -57,7 +57,7 @@ time1.WantNotification.append(fk.refresh)
 #splitter
 InitGUI('''
 from PYME.Acquire.Hardware import splitter
-splt = splitter.Splitter(MainFrame, mControls, scope)
+splt = splitter.Splitter(MainFrame, mControls, scope, dichroic = 'FF741-Di01' , transLocOnCamera = 'Top')
 ''')
 
 #Z stage

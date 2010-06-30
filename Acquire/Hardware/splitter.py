@@ -16,6 +16,7 @@ from PYME.DSView.arrayViewPanel import ArrayViewPanel, OptionsPanel
 import numpy
 import os
 import wx.lib.agw.aui as aui
+from PYME.Acquire import MetaDataHandler
 
 def LoadShiftField(filename = None):
     if not filename:
@@ -120,12 +121,20 @@ class Unmixer:
 
 
 class Splitter:
-    def __init__(self, parent, menu, scope, dir='up_down', flipChan=1):
+    def __init__(self, parent, menu, scope, dir='up_down', flipChan=1, dichroic = 'Unspecified', transLocOnCamera = 'Top'):
         self.dir = dir
         self.scope = scope
         self.flipChan=flipChan
         self.parent = parent
         self.unmixer = Unmixer()
+
+        #which dichroic mirror is installed
+        self.dichroic = dichroic
+        #where is the transmitted image on the camera (one of 'Top', 'Bottom', 'Left', 'Right')
+        self.transLocOnCamera = transLocOnCamera
+
+        #register as a producer of metadata
+        MetaDataHandler.provideStartMetadata.append(self.ProvideMetadata)
 
         scope.splitting='none'
 
@@ -157,6 +166,10 @@ class Splitter:
         menu.AppendSeparator()
         menu.AppendMenu(-1, '&Splitter', self.menu)
         
+
+    def ProvideMetadata(self, mdh):
+        mdh.setEntry('Splitter.Dichroic', self.dichroic)
+        mdh.setEntry('Splitter.TransmittedPathPosition', self.transLocOnCamera)
 
     def OnConstrainROI(self,event):
         self.constrainROI = not self.constrainROI

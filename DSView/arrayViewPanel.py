@@ -301,9 +301,9 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
     def OnWheel(self, event):
         rot = event.GetWheelRotation()
         if rot < 0:
-            self.do.zp = (self.do.zp - 1)
+            self.do.zp = min(self.do.zp - 1, 0)
         if rot > 0:
-            self.do.zp = (self.do.zp + 1)
+            self.do.zp = max(self.do.zp + 1, self.do.ds.shape[2] -1)
         if ('update' in dir(self.GetParent())):
              self.GetParent().update()
         else:
