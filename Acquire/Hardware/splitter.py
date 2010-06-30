@@ -188,9 +188,10 @@ class Splitter:
     def OnUnmix(self,event):
         #self.Unmix()
         if self.f == None:
-            self.f = UnMixPanel(self.parent, splitter = self, size=(-1, 260))
-            self.o = OptionsPanel(self.parent, self.f.vp.do, horizOrientation=True)
-            self.parent.AddCamTool(self.o, 'Unmixing Display')
+            self.f = UnMixPanel(self.parent, splitter = self, size=(500, 300))
+            #self.o = OptionsPanel(self.parent, self.f.vp.do, horizOrientation=True)
+            self.o = UnMixSettingsPanel(self.parent, splitter = self, size=(500, 300))
+            self.parent.AddCamTool(self.o, 'Unmixing Settings')
             #self.f.SetSize((800,500))
             #self.f.Show()
             cpinfo = aui.AuiPaneInfo().Name("unmixingDisplay").Caption("Unmixing").Bottom().CloseButton(True)
@@ -222,6 +223,79 @@ class Splitter:
         return self.unmixer.Unmix(dsa, self.mixMatrix, self.offset, ROI=[self.scope.cam.GetROIX1(),self.scope.cam.GetROIY1(),self.scope.cam.GetROIX2(), self.scope.cam.GetROIY2()])
 
 
+class UnMixSettingsPanel(wx.Panel):
+    def __init__(self, parent, splitter = None, size=(-1, -1)):
+        wx.Panel.__init__(self,parent, -1, size=size)
+
+        self.splitter = splitter
+
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+
+        self.op = OptionsPanel(self, splitter.f.vp.do, horizOrientation=True)
+        vsizer.Add(self.op, 0, wx.ALL, 0)
+
+        psizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        bsizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Mix Matrix'), wx.VERTICAL)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.tMM00 = wx.TextCtrl(self, -1, '%1.2f'%(self.splitter.mixMatrix[0,0]), size=(40,-1))
+        hsizer.Add(self.tMM00, 1, wx.ALL,2 )
+
+        self.tMM01 = wx.TextCtrl(self, -1, '%1.2f'%(self.splitter.mixMatrix[0,1]), size=(40,-1))
+        hsizer.Add(self.tMM01, 1, wx.ALL,2 )
+
+        bsizer.Add(hsizer, 0, wx.ALL, 0)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.tMM10 = wx.TextCtrl(self, -1, '%1.2f'%(self.splitter.mixMatrix[1,0]), size=(40,-1))
+        hsizer.Add(self.tMM10, 1, wx.ALL,2 )
+
+        self.tMM11 = wx.TextCtrl(self, -1, '%1.2f'%(self.splitter.mixMatrix[1,1]), size=(40,-1))
+        hsizer.Add(self.tMM11, 1, wx.ALL,2 )
+
+        bsizer.Add(hsizer, 0, wx.ALL, 0)
+
+        psizer.Add(bsizer, 0, wx.ALL, 0)
+
+
+        bsizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Offset'), wx.HORIZONTAL)
+        self.tOffset = wx.TextCtrl(self, -1, '%1.2f'%(self.splitter.offset), size=(40,-1))
+        self.bGrabOffset = wx.Button(self, -1, 'C', style = wx.BU_EXACTFIT)
+
+        bsizer.Add(self.tOffset, 1, wx.ALL, 0)
+        bsizer.Add(self.bGrabOffset, 0, wx.LEFT, 5)
+        psizer.Add(bsizer, 1, wx.LEFT|wx.RIGHT, 5)
+
+#        self.bUpdate = wx.Button(self, -1, 'Update')
+#        vsizer.Add(self.bUpdate, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5)
+#        self.bUpdate.Bind(wx.EVT_BUTTON, self.OnUpdateMix)
+
+        vsizer.Add(psizer, 1, wx.ALL|wx.EXPAND, 0)
+        self.SetSizerAndFit(vsizer)
+
+        self.bGrabOffset.Bind(wx.EVT_BUTTON, self.OnGrabOffsetFromCamera)
+        self.splitter.scope.pa.WantFrameGroupNotification.append(self.OnUpdateMix)
+
+
+
+    def OnUpdateMix(self, event=None):
+        self.splitter.mixMatrix[0,0]= float(self.tMM00.GetValue())
+        self.splitter.mixMatrix[0,1]= float(self.tMM01.GetValue())
+        self.splitter.mixMatrix[1,0]= float(self.tMM10.GetValue())
+        self.splitter.mixMatrix[1,1]= float(self.tMM11.GetValue())
+        self.splitter.offset= float(self.tOffset.GetValue())
+
+    def OnGrabOffsetFromCamera(self, event):
+        if 'ADOffset' in dir(self.splitter.scope.cam):
+            self.tOffset.SetValue('%3.2f' % self.splitter.scope.cam.ADOffset)
+            self.update()
+
+
+
+
 
 class UnMixPanel(wx.Panel):
     def __init__(self, parent=None, title='Unmixing', splitter = None, size=(-1, -1)):
@@ -233,49 +307,49 @@ class UnMixPanel(wx.Panel):
         
         sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        pan = wx.Panel(self, -1)
-        psizer = wx.BoxSizer(wx.VERTICAL)
-
-        bsizer = wx.StaticBoxSizer(wx.StaticBox(pan, -1, 'Mix Matrix'), wx.VERTICAL)
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        self.tMM00 = wx.TextCtrl(pan, -1, '%1.2f'%(self.splitter.mixMatrix[0,0]), size=(40,-1))
-        hsizer.Add(self.tMM00, 1, wx.ALL,2 )
-
-        self.tMM01 = wx.TextCtrl(pan, -1, '%1.2f'%(self.splitter.mixMatrix[0,1]), size=(40,-1))
-        hsizer.Add(self.tMM01, 1, wx.ALL,2 )
-
-        bsizer.Add(hsizer, 0, wx.ALL, 0)
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        self.tMM10 = wx.TextCtrl(pan, -1, '%1.2f'%(self.splitter.mixMatrix[1,0]), size=(40,-1))
-        hsizer.Add(self.tMM10, 1, wx.ALL,2 )
-
-        self.tMM11 = wx.TextCtrl(pan, -1, '%1.2f'%(self.splitter.mixMatrix[1,1]), size=(40,-1))
-        hsizer.Add(self.tMM11, 1, wx.ALL,2 )
-
-        bsizer.Add(hsizer, 0, wx.ALL, 0)
-
-        psizer.Add(bsizer, 0, wx.ALL, 5)
-
-
-        bsizer = wx.StaticBoxSizer(wx.StaticBox(pan, -1, 'Offset'), wx.HORIZONTAL)
-        self.tOffset = wx.TextCtrl(pan, -1, '%1.2f'%(self.splitter.offset), size=(40,-1))
-        self.bGrabOffset = wx.Button(pan, -1, 'C', style = wx.BU_EXACTFIT)
-
-        bsizer.Add(self.tOffset, 1, wx.ALL, 0)
-        bsizer.Add(self.bGrabOffset, 0, wx.LEFT, 5)
-        psizer.Add(bsizer, 0, wx.ALL|wx.EXPAND, 5)
-
-#        self.bUpdate = wx.Button(pan, -1, 'Update')
-#        psizer.Add(self.bUpdate, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5)
-#        self.bUpdate.Bind(wx.EVT_BUTTON, self.OnUpdateMix)
-
-        pan.SetSizerAndFit(psizer)
-
-        sizer.Add(pan, 0, 0, 0)
+#        pan = wx.Panel(self, -1)
+#        psizer = wx.BoxSizer(wx.VERTICAL)
+#
+#        bsizer = wx.StaticBoxSizer(wx.StaticBox(pan, -1, 'Mix Matrix'), wx.VERTICAL)
+#
+#        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+#
+#        self.tMM00 = wx.TextCtrl(pan, -1, '%1.2f'%(self.splitter.mixMatrix[0,0]), size=(40,-1))
+#        hsizer.Add(self.tMM00, 1, wx.ALL,2 )
+#
+#        self.tMM01 = wx.TextCtrl(pan, -1, '%1.2f'%(self.splitter.mixMatrix[0,1]), size=(40,-1))
+#        hsizer.Add(self.tMM01, 1, wx.ALL,2 )
+#
+#        bsizer.Add(hsizer, 0, wx.ALL, 0)
+#
+#        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+#
+#        self.tMM10 = wx.TextCtrl(pan, -1, '%1.2f'%(self.splitter.mixMatrix[1,0]), size=(40,-1))
+#        hsizer.Add(self.tMM10, 1, wx.ALL,2 )
+#
+#        self.tMM11 = wx.TextCtrl(pan, -1, '%1.2f'%(self.splitter.mixMatrix[1,1]), size=(40,-1))
+#        hsizer.Add(self.tMM11, 1, wx.ALL,2 )
+#
+#        bsizer.Add(hsizer, 0, wx.ALL, 0)
+#
+#        psizer.Add(bsizer, 0, wx.ALL, 5)
+#
+#
+#        bsizer = wx.StaticBoxSizer(wx.StaticBox(pan, -1, 'Offset'), wx.HORIZONTAL)
+#        self.tOffset = wx.TextCtrl(pan, -1, '%1.2f'%(self.splitter.offset), size=(40,-1))
+#        self.bGrabOffset = wx.Button(pan, -1, 'C', style = wx.BU_EXACTFIT)
+#
+#        bsizer.Add(self.tOffset, 1, wx.ALL, 0)
+#        bsizer.Add(self.bGrabOffset, 0, wx.LEFT, 5)
+#        psizer.Add(bsizer, 0, wx.ALL|wx.EXPAND, 5)
+#
+##        self.bUpdate = wx.Button(pan, -1, 'Update')
+##        psizer.Add(self.bUpdate, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5)
+##        self.bUpdate.Bind(wx.EVT_BUTTON, self.OnUpdateMix)
+#
+#        pan.SetSizerAndFit(psizer)
+#
+#        sizer.Add(pan, 0, 0, 0)
 
         self.vp = ArrayViewPanel(self, self.ds)
         sizer.Add(self.vp, 1,wx.EXPAND,0)
@@ -288,7 +362,7 @@ class UnMixPanel(wx.Panel):
         wx.EVT_SIZE(self, self.OnSize)
         wx.EVT_SHOW(self, self.OnShow)
 
-        self.bGrabOffset.Bind(wx.EVT_BUTTON, self.OnGrabOffsetFromCamera)
+        #self.bGrabOffset.Bind(wx.EVT_BUTTON, self.OnGrabOffsetFromCamera)
 
         #self.statusbar = self.CreateStatusBar(1, wx.ST_SIZEGRIP)
 
@@ -299,11 +373,11 @@ class UnMixPanel(wx.Panel):
 
     def update(self, caller=None):
         #print self.tMM00.GetValue(), self.tMM01.GetValue()
-        self.splitter.mixMatrix[0,0]= float(self.tMM00.GetValue())
-        self.splitter.mixMatrix[0,1]= float(self.tMM01.GetValue())
-        self.splitter.mixMatrix[1,0]= float(self.tMM10.GetValue())
-        self.splitter.mixMatrix[1,1]= float(self.tMM11.GetValue())
-        self.splitter.offset= float(self.tOffset.GetValue())
+#        self.splitter.mixMatrix[0,0]= float(self.tMM00.GetValue())
+#        self.splitter.mixMatrix[0,1]= float(self.tMM01.GetValue())
+#        self.splitter.mixMatrix[1,0]= float(self.tMM10.GetValue())
+#        self.splitter.mixMatrix[1,1]= float(self.tMM11.GetValue())
+#        self.splitter.offset= float(self.tOffset.GetValue())
 
 
         if self.IsShown():
@@ -315,12 +389,12 @@ class UnMixPanel(wx.Panel):
         self.splitter.f = None
         self.Destroy()
 
-    def OnUpdateMix(self, event):
-        self.splitter.mixMatrix[0,0]= float(self.tMM00.GetValue())
-        self.splitter.mixMatrix[0,1]= float(self.tMM01.GetValue())
-        self.splitter.mixMatrix[1,0]= float(self.tMM10.GetValue())
-        self.splitter.mixMatrix[1,1]= float(self.tMM11.GetValue())
-        self.splitter.offset= float(self.tOffset.GetValue())
+#    def OnUpdateMix(self, event):
+#        self.splitter.mixMatrix[0,0]= float(self.tMM00.GetValue())
+#        self.splitter.mixMatrix[0,1]= float(self.tMM01.GetValue())
+#        self.splitter.mixMatrix[1,0]= float(self.tMM10.GetValue())
+#        self.splitter.mixMatrix[1,1]= float(self.tMM11.GetValue())
+#        self.splitter.offset= float(self.tOffset.GetValue())
 
         #print self.splitter.mixMatrix
 

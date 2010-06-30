@@ -26,25 +26,30 @@ class PiezoSliders(wx.Panel):
         self.piezos = piezos
         #self.panel_1 = wx.Panel(self, -1)
         self.sliders = []
+        self.sliderLabels = []
         #self.SetTitle("Piezo Control")
         #sizer_1 = wx.BoxSizer(wx.VERTICAL)
         sizer_2 = wx.BoxSizer(wx.VERTICAL)
 
         for p in self.piezos:
             #if sys.platform == 'darwin': #sliders are subtly broken on MacOS, requiring workaround
-            sl = wx.Slider(self, -1, 100*p[0].GetPos(p[1]), 100*p[0].GetMin(p[1]), 100*p[0].GetMax(p[1]), size=wx.Size(100,-1), style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
+            sl = wx.Slider(self, -1, 100*p[0].GetPos(p[1]), 100*p[0].GetMin(p[1]), 100*p[0].GetMax(p[1]), size=wx.Size(100,-1), style=wx.SL_HORIZONTAL)#|wx.SL_AUTOTICKS|wx.SL_LABELS)
             #else:
             #    sl = wx.Slider(self.panel_1, -1, 100*p[0].GetPos(p[1]), 100*p[0].GetMin(p[1]), 100*p[0].GetMax(p[1]), size=wx.Size(300,-1), style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
             #sl.SetSize((800,20))
-            if 'minorTick' in dir(p):
-                sl.SetTickFreq(100, p.minorTick)
-            else:
-                sl.SetTickFreq(100, 1)
-            sz = wx.StaticBoxSizer(wx.StaticBox(self, -1, p[2] + " (10nm step)"), wx.HORIZONTAL)
-            sz.Add(sl, 1, wx.ALL|wx.EXPAND, 5)
+            sLab = wx.StaticBox(self, -1, u'%s - %2.2f \u03BCm' % (p[2], p[0].GetPos(p[1])))
+
+#            if 'minorTick' in dir(p):
+#                sl.SetTickFreq(100, p.minorTick)
+#            else:
+#                sl.SetTickFreq(100, 1)
+            sz = wx.StaticBoxSizer(sLab, wx.HORIZONTAL)
+            sz.Add(sl, 1, wx.ALL|wx.EXPAND, 2)
+            #sz.Add(sLab, 0, wx.ALL|wx.EXPAND, 2)
             sizer_2.Add(sz,1,wx.EXPAND,0)
 
             self.sliders.append(sl)
+            self.sliderLabels.append(sLab)
 
         sizer_2.AddSpacer(5)
 
@@ -65,13 +70,16 @@ class PiezoSliders(wx.Panel):
         self.sl = sl
         self.ind = ind
         self.piezos[ind][0].MoveTo(self.piezos[ind][1], sl.GetValue()/100.0, False)
+        self.sliderLabels[ind].SetLabel(u'%s - %2.2f \u03BCm' % (self.piezos[ind][2],sl.GetValue()/100.0))
 
     def update(self):
         for ind in range(len(self.piezos)):
             if 'lastPos' in dir(self.piezos[ind]):
                 self.sliders[ind].SetValue(100*self.piezos[ind][0].lastPos)
+                self.sliderLabels[ind].SetLabel(u'%s - %2.2f \u03BCm' % (self.piezos[ind][2],self.piezos[ind][0].lastPos))
             else:
                 self.sliders[ind].SetValue(100*self.piezos[ind][0].GetPos(self.piezos[ind][1]))
+                self.sliderLabels[ind].SetLabel(u'%s - %2.2f \u03BCm' % (self.piezos[ind][2],self.piezos[ind][0].GetPos(self.piezos[ind][1])))
                 
     	    self.sliders[ind].SetMin(100*self.piezos[ind][0].GetMin(self.piezos[ind][1]))
     	    self.sliders[ind].SetMax(100*self.piezos[ind][0].GetMax(self.piezos[ind][1]))

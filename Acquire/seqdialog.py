@@ -120,7 +120,7 @@ class seqPanel(wx.Panel):
 
 
 
-        sStart = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Start Pos [um]'), wx.HORIZONTAL)
+        sStart = wx.StaticBoxSizer(wx.StaticBox(self, -1, u'Start Pos [\u03BCm]'), wx.HORIZONTAL)
 
 
 
@@ -146,7 +146,7 @@ class seqPanel(wx.Panel):
 
 
 
-        sEnd = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'End Pos [um]'), wx.HORIZONTAL)
+        sEnd = wx.StaticBoxSizer(wx.StaticBox(self, -1, u'End Pos [\u03BCm]'), wx.HORIZONTAL)
 
 
 
@@ -176,7 +176,7 @@ class seqPanel(wx.Panel):
 
 
 
-        sStep = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Step Size [um]'), wx.HORIZONTAL)
+        sStep = wx.StaticBoxSizer(wx.StaticBox(self, -1, u'Step Size [\u03BCm]'), wx.HORIZONTAL)
 
 
 
