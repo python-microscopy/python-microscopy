@@ -77,6 +77,10 @@ class PiezoSliders(wx.Panel):
             if 'lastPos' in dir(self.piezos[ind]):
                 self.sliders[ind].SetValue(100*self.piezos[ind][0].lastPos)
                 self.sliderLabels[ind].SetLabel(u'%s - %2.2f \u03BCm' % (self.piezos[ind][2],self.piezos[ind][0].lastPos))
+            elif 'GetLastPos' in dir(self.piezos[ind][0]):
+                lp = self.piezos[ind][0].GetLastPos(self.piezos[ind][1])
+                self.sliders[ind].SetValue(100*lp)
+                self.sliderLabels[ind].SetLabel(u'%s - %2.2f \u03BCm' % (self.piezos[ind][2],lp))
             else:
                 self.sliders[ind].SetValue(100*self.piezos[ind][0].GetPos(self.piezos[ind][1]))
                 self.sliderLabels[ind].SetLabel(u'%s - %2.2f \u03BCm' % (self.piezos[ind][2],self.piezos[ind][0].GetPos(self.piezos[ind][1])))

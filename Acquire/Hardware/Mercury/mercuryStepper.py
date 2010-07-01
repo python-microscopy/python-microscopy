@@ -10,126 +10,113 @@
 #
 ##################
 
-import serial;
+import Mercury as m
 import time
+import numpy  as np
 
-class piezo_e816:    
-    def __init__(self, portname='COM1', maxtravel = 12.00, Osen=None):
-        self.max_travel = maxtravel
-        self.waveData = None
-        self.numWavePoints = 0
+import threading
 
-        self.ser_port = serial.Serial(portname, 115200, rtscts=1, timeout=2, writeTimeout=2)
-        if not Osen == None:
-            #self.ser_port.write('SPA A8 %3.4f\n' % Osen)
-            self.osen = Osen
-        else:
-            self.osen = 0
-        self.ser_port.write('SVO A1\n')
-        self.ser_port.write('WTO A0\n')
-        self.lastPos = self.GetPos()
+class tPoll(threading.Thread):
+    def __init__(self, stepper):
+        self.stepper = stepper
+        self.kill = False
+        threading.Thread.__init__(self)
+        
+    def run(self):
+        while not self.kill:
+            self.stepper.RefreshPos()
+            time.sleep(.2)
 
-        self.driftCompensation = False
+
+class mercuryStepper:
+    def __init__(self, comPort=5, baud=9600, axes=['A', 'B'], steppers=['M-229.25S', 'M-229.25S']):
+        self.axes = axes
+        self.steppers = steppers
+
+        self.lock = threading.RLock()
+        
+        self.lock.acquire()
+
+        #connect to the controller
+        self.connID = m.ConnectRS232(comPort, baud)
+
+        if self.connID == -1:
+            raise RuntimeError('Could not connect to Mercury controller')
+
+        #tell the controller which stepper motors it's driving
+        m.CST(self.connID, ''.join(self.axes), '\n'.join(self.steppers))
+
+        #initialise axes
+        m.INI(self.connID, ''.join(self.axes))
+
+        #callibrate axes using reference switch
+        m.REF(self.connID, ''.join(self.axes))
+
+        while np.any(m.IsReferencing(self.connID, ''.join(self.axes))):
+            time.sleep(.5)
+
+        self.minTravel = m.qTMN(self.connID, ''.join(self.axes))
+        self.maxTravel = m.qTMX(self.connID, ''.join(self.axes))
+
+        self.last_poss = m.qPOS(self.connID, ''.join(self.axes))
+
+        self.lock.release()
+
+        self.poll = tPoll(self)
+        self.poll.start()
 
     def ReInit(self):
-        self.ser_port.write('SVO A1\n')
-        self.lastPos = self.GetPos() 
+        pass 
         
-    def MoveTo(self, iChannel, fPos, bTimeOut=True):
-        if (fPos >= 0):
-            if (fPos <= self.max_travel):
-                self.ser_port.write('MOV A%3.4f\n' % fPos)
-                self.lastPos = fPos
+    def MoveTo(self, iChan, fPos, timeout=False):
+        self.lock.acquire()
+        tgt = fPos
+        if (fPos >= self.minTravel[iChan]):
+            if (fPos <= self.maxTravel[iChan]):
+                tgt = fPos
             else:
-                self.ser_port.write('MOV A%3.4f\n' % self.max_travel)
-                self.lastPos = self.max_travel
+                tgt = self.maxTravel[iChan]
         else:
-            self.ser_port.write('MOV A%3.4f\n' % 0.0)
-            self.lastPos = 0.0
+            self.minTravel[iChan]
 
-    def GetPos(self, iChannel=0):
-        self.ser_port.flush()
-        time.sleep(0.05)
-        self.ser_port.write('POS? A\n')
-        self.ser_port.flushOutput()
-        time.sleep(0.05)
-        res = self.ser_port.readline()
-        return float(res) + self.osen
+        m.MOV(self.connID, self.axes[iChan], [tgt])
+        self.last_poss[iChan] = tgt
+        self.lock.release()
 
-    def SetDriftCompensation(self, dc = True):
-        if dc:
-            self.ser_port.write('DCO A1\n')
-            self.ser_port.flushOutput()
-            self.driftCompensation = True
-        else:
-            self.ser_port.write('DCO A0\n')
-            self.ser_port.flushOutput()
-            self.driftCompensation = False
+    def GetPos(self, iChan=0):
+        self.lock.acquire()
+        ret = m.qPOS(self.connID, self.axes[iChan])[0]
+        self.lock.release()
+        return ret
 
-    def PopulateWaveTable(self,iChannel, data):
-        '''Load wavetable data to piezo controller - data should be a sequence/array of positions
-        (in um)and should have at most 64 items'''
-        if len(data) > 64:
-            #wave table too big
-            raise RuntimeError('piezo_e816 - wave table must not have more than 64 entries')
+    def RefreshPos(self):
+        self.lock.acquire()
+        self.last_poss = m.qPOS(self.connID, ''.join(self.axes))
+        self.lock.release()
 
-        self.waveData = data
-        self.numWavePoints = len(data)
+    def GetLastPos(self, iChan=0):
+        return self.last_poss[iChan]
 
-        self.ser_port.flush()
-        time.sleep(0.05)
-
-        for i, v in zip(range(self.numWavePoints), data):
-            self.ser_port.write('SWT A%d %3.4f\n' % (i, v))
-            self.ser_port.flushOutput()
-            time.sleep(0.01)
-            res = self.ser_port.readline()
-            #print res
-
-    def GetWaveTable(self):
-        '''Read wavetable back from contoller'''
-
-        data = []
-
-        self.ser_port.flush()
-        time.sleep(0.05)
-
-        for i in range(64):
-            self.ser_port.write('SWT? A%d\n' %i)
-            self.ser_port.flushOutput()
-            time.sleep(0.05)
-            res = self.ser_port.readline()
-            data.append(float(res))
-
-        return data
-
-    def StartWaveOutput(self,iChannel=0, dwellTime=None):
-        '''Start wavetable output. dwellTime should be the desired dwell time in
-        microseconds, or None (default). If dwellTime is None then the external
-        wavetable trigger input (pin 9 on io connector) will be used.'''
-
-        if self.numWavePoints < 1:
-            raise RuntimeError('piezo_e816 - no wave table defined')
-
-        if dwellTime == None:
-            #triggered
-            self.ser_port.write('WTO A%d\n' % self.numWavePoints)
-        else:
-            self.ser_port.write('WTO A%d %3.4f\n' % (self.numWavePoints, dwellTime))
-            
-        self.ser_port.flushOutput()
-
-    def StopWaveOutput(self, iChannel=0):
-        self.ser_port.write('WTO A0\n')
-        self.ser_port.flushOutput()
+    def SetJoystick(self, on = True, chans=[0,1]):
+        self.lock.acquire()
+        jv = [on for c in chans]
+        m.JON(self.connID, [c + 1 for c in chans], jv)
+        self.lock.release()
 
     def GetControlReady(self):
         return True
     def GetChannelObject(self):
-        return 1
+        return 0
     def GetChannelPhase(self):
         return 1
-    def GetMin(self,iChan=1):
-        return 0
-    def GetMax(self, iChan=1):
-        return self.max_travel
+    def GetMin(self,iChan=0):
+        return self.minTravel[iChan]
+    def GetMax(self, iChan=0):
+        return self.maxTravel[iChan]
+
+    def Cleanup(self):
+        self.poll.kill = True
+        m.CloseConnection(self.connID)
+
+#    def __del__(self):
+#        m.CloseConnection(self.connID)

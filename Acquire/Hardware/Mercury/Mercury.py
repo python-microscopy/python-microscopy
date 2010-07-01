@@ -46,7 +46,7 @@ class ArraySetter(fcnWrap):
         in_args.append(len(arg))
 
         #print "%s(%s, '%s', '%s')" % (self.fcn.__name__, ID, szAxes, ','.join([repr(ia)for ia in in_args]))
-        succ = self.fcn(ID, szAxes, *in_args)
+        succ = self.fcn(ID, *in_args)
         if not succ:
             self.HandleError(ID)
 

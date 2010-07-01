@@ -43,6 +43,13 @@ scope.piFoc = piezo_e816.piezo_e816('COM2', 400, -0.399)
 scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
 ''')
 
+InitBG('Stage Stepper Motors', '''
+from PYME.Acquire.Hardware.Mercury import mercuryStepper
+scope.stage = mercuryStepper.mercuryStepper(comPort=5, axes=['A', 'B'], steppers=['M-229.25S', 'M-229.25S'])
+scope.piezos.append((scope.stage, 0, 'Stage X'))
+scope.piezos.append((scope.stage, 1, 'Stage Y'))
+''')
+
 InitGUI('''
 from PYME.Acquire import sarcSpacing
 ssp = sarcSpacing.SarcomereChecker(MainFrame, menuBar1, scope)
@@ -50,7 +57,7 @@ ssp = sarcSpacing.SarcomereChecker(MainFrame, menuBar1, scope)
 
 InitGUI('''
 from PYME.Acquire.Hardware import focusKeys
-fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[-1])
+fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[0])
 time1.WantNotification.append(fk.refresh)
 ''')
 
