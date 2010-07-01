@@ -48,6 +48,8 @@ scope.chaninfo = chaninfo
 
 scope.shutters = fakeShutters
 
+scope.EnableJoystick = 'foo'
+
 #InitBG('Should Fail', '''
 #raise Exception, 'test error'
 #time.sleep(1)

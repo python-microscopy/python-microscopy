@@ -324,10 +324,10 @@ class smiMainFrame(wx.Frame):
                 self.sh.run(cl)
 
         if len(self.scope.piezos) > 0.5:
-            self.piezo_sl = psliders.PiezoSliders(self.scope.piezos, self)
+            self.piezo_sl = psliders.PiezoSliders(self.scope.piezos, self, self.scope.EnableJoystick)
             self.time1.WantNotification.append(self.piezo_sl.update)
 
-            self.AddTool(self.piezo_sl, 'Piezo Control')
+            self.AddTool(self.piezo_sl, 'Positioning')
 
             #self.notebook1.AddPage( page=self.piezo_sl, select=False, caption='Piezo Control')
             #self.notebook1.Split(self.notebook1.GetPageCount() -1, wx.DOWN)
@@ -484,7 +484,7 @@ class smiMainFrame(wx.Frame):
         self._mgr.AddPane(self.toolPanel, aui.AuiPaneInfo().
                           Name("hardwareControls").Caption("Hardware").Layer(2).Position(1).Right().CloseButton(False).BestSize(240, 250))
 
-        aqinfo.dock_proportion  = int(aqinfo.dock_proportion*1.6)
+        aqinfo.dock_proportion  = int(aqinfo.dock_proportion*1.5)
 
 
         #self.notebook1.AddPage(page=self.aqPanel, select=False, caption='Acquisition')

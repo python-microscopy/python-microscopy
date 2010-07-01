@@ -18,12 +18,13 @@ import noclosefr
 import sys
 
 class PiezoSliders(wx.Panel):
-    def __init__(self, piezos, parent=None, winid=-1):
+    def __init__(self, piezos, parent, joystickEnableFcn = None, id=-1):
         # begin wxGlade: MyFrame1.__init__
         #kwds["style"] = wx.DEFAULT_FRAME_STYLE
-        wx.Panel.__init__(self, parent, winid)
+        wx.Panel.__init__(self, parent, id)
 
         self.piezos = piezos
+        self.joystickEnableFcn = joystickEnableFcn
         #self.panel_1 = wx.Panel(self, -1)
         self.sliders = []
         self.sliderLabels = []
@@ -51,7 +52,13 @@ class PiezoSliders(wx.Panel):
             self.sliders.append(sl)
             self.sliderLabels.append(sLab)
 
-        sizer_2.AddSpacer(5)
+
+        if not joystickEnableFcn == None:
+            self.cbJoystick = wx.CheckBox(self, -1, 'Enable Joystick')
+            sizer_2.Add(self.cbJoystick,0,wx.TOP|wx.BOTTOM,2)
+            self.cbJoystick.Bind(wx.EVT_CHECKBOX, self.OnJoystickEnable)
+
+        #sizer_2.AddSpacer(1)
 
         wx.EVT_SCROLL(self,self.onSlide)
 
@@ -63,6 +70,9 @@ class PiezoSliders(wx.Panel):
 
         #self.Layout()
         # end wxGlade
+
+    def OnJoystickEnable(self, event):
+        self.joystickEnableFcn(self.cbJoystick.IsChecked())
 
     def onSlide(self, event):
         sl = event.GetEventObject()

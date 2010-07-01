@@ -59,6 +59,7 @@ class microscope:
 
         #list of tuples  of form (class, chan, name) describing the instaled piezo channels
         self.piezos = []
+        self.EnableJoystick = None
 
         #self.WantEventNotification = []
  
