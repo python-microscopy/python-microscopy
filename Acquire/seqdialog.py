@@ -72,7 +72,7 @@ class seqPanel(wx.Panel):
 
         self.chPiezo = wx.Choice(self, -1, choices=[], size=(-1,-1))
 
-        wx.EVT_CHOICE(self.chPiezo, wxID_SEQDIALOGCHPIEZO, self.OnChPiezoChoice)
+        self.chPiezo.Bind(wx.EVT_CHOICE, self.OnChPiezoChoice)
 
 
 
