@@ -72,12 +72,15 @@ class AxesGetter(fcnWrap):
         if not succ:
             self.HandleError(ID)
         
+        if len(out_args) == 1:
+            out_args = out_args[0]
+
         return out_args
 
 class StringGetter(fcnWrap):
     def __call__(self, ID):
         buff = ctypes.create_string_buffer(500)
-        succ = self.fcn(ID, buff, len(buf))
+        succ = self.fcn(ID, buff, len(buff))
         if not succ:
             self.HandleError(ID)
 
@@ -86,7 +89,7 @@ class StringGetter(fcnWrap):
 class AxesStringGetter(fcnWrap):
     def __call__(self, ID, szAxes):
         buff = ctypes.create_string_buffer(500)
-        succ = self.fcn(ID, szAxes, buff, len(buf))
+        succ = self.fcn(ID, szAxes, buff, len(buff))
         if not succ:
             self.HandleError(ID)
 
