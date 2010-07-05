@@ -44,8 +44,6 @@ class Spooler:
        self.doStartLog()
 
        eventLog.WantEventNotification.append(self.evtLogger)
-       
-       self.acq.WantFrameNotification.append(self.Tick)
 
        self.imNum = 0
 
@@ -54,6 +52,8 @@ class Spooler:
            timeFcn = self.fakeTime
 
        self.protocol.Init(self)
+       
+       self.acq.WantFrameNotification.append(self.Tick)
        self.spoolOn = True
 
        

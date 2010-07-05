@@ -48,6 +48,7 @@ from PYME.Acquire.Hardware.Mercury import mercuryStepper
 scope.stage = mercuryStepper.mercuryStepper(comPort=5, axes=['A', 'B'], steppers=['M-229.25S', 'M-229.25S'])
 scope.piezos.append((scope.stage, 0, 'Stage X'))
 scope.piezos.append((scope.stage, 1, 'Stage Y'))
+scope.EnableJoystick = scope.stage.SetJoystick
 ''')
 
 InitGUI('''

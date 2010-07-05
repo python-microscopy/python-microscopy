@@ -271,7 +271,7 @@ class smiMainFrame(wx.Frame):
         #self.sizer = wx.BoxSizer()
         #self.sizer.Add(self.notebook1, 1, wx.EXPAND)
         #self.SetSizer(self.Sizer)
-        self.SetSize((1020, 800))
+        self.SetSize((1030, 895))
         #self._mgr.Update()
         
         self.roi_on = False
@@ -484,7 +484,7 @@ class smiMainFrame(wx.Frame):
         self._mgr.AddPane(self.toolPanel, aui.AuiPaneInfo().
                           Name("hardwareControls").Caption("Hardware").Layer(2).Position(1).Right().CloseButton(False).BestSize(240, 250))
 
-        aqinfo.dock_proportion  = int(aqinfo.dock_proportion*1.5)
+        aqinfo.dock_proportion  = int(aqinfo.dock_proportion*1.3)
 
 
         #self.notebook1.AddPage(page=self.aqPanel, select=False, caption='Acquisition')

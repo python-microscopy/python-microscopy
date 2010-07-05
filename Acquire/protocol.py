@@ -48,6 +48,11 @@ def SetEMGain(emGain):
     scope.cam.SetEMGain(emGain)
     scope.pa.start()
 
+def SetCameraShutter(open):
+    scope.pa.stop()
+    scope.cam.SetShutter(open)
+    scope.pa.start()
+
 class TaskListProtocol(Protocol):
     def __init__(self, taskList, metadataEntries = []):
         self.taskList = taskList

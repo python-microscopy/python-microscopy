@@ -59,6 +59,7 @@ class PreviewAquisator(wx.Timer):
             self.ds = None
             self.ds = CDataStack(self.cam.GetPicWidth(), self.cam.GetPicHeight(), 
                 self.GetSeqLength(),self.getReqMemChans(self.cols))
+            self.dsa = CDataStack_AsArray(self.ds, 0)
 
             i = 0
             for j in range(len(self.cols)):

@@ -117,6 +117,7 @@ class mercuryStepper:
     def Cleanup(self):
         self.poll.kill = True
         m.CloseConnection(self.connID)
+        
 
 #    def __del__(self):
 #        m.CloseConnection(self.connID)
