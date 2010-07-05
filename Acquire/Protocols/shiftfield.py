@@ -96,9 +96,9 @@ class ShiftfieldPreviewDialog(wx.Dialog):
 
     def OnTest(self, event):
         self.updatePointScanner()
-        print ps.pixels
+        #print ps.pixels
         ps.genCoords()
-        print ps.nx
+        #print ps.nx
         self.plotPan.draw()
         self.plotPan.Refresh()
 
@@ -106,11 +106,22 @@ class ShiftfieldPreviewDialog(wx.Dialog):
         self.updatePointScanner()
         self.EndModal(True)
 
+
+def stop():
+    ps.stop()
+    MainFrame.pan_spool.OnBStopSpoolingButton(None)
+
+stopTask = T(500, stop)
+
 def ShowSFDialog():
     ps.genCoords()
     dlg = ShiftfieldPreviewDialog()
     ret = dlg.ShowModal()
     dlg.Destroy()
+
+    #stop after one full scan
+    stopTask.when = 23 + 2*ps.imsize
+    print stopTask.when
 
 
 
@@ -122,16 +133,17 @@ def ShowSFDialog():
 taskList = [
 T(-1, ShowSFDialog),
 T(-1, SetCameraShutter,False),
-T(21, SetCameraShutter, True),
-T(22, MainFrame.pan_spool.OnBAnalyse, None),
-T(22, ps.start),
-T(maxint, ps.stop),
+T(11, SetCameraShutter, True),
+T(12, ps.start),
+T(30, MainFrame.pan_spool.OnBAnalyse, None),
+stopTask,
+#T(maxint, ps.stop),
 ]
 
 #optional - metadata entries
 metaData = [
-('Protocol.DarkFrameRange', (0, 20)),
-('Protocol.DataStartsAt', 22)
+('Protocol.DarkFrameRange', (0, 10)),
+('Protocol.DataStartsAt', 12)
 ]
 
 #must be defined for protocol to be discovered
