@@ -214,23 +214,46 @@ class XMLMDHandler:
         node.setAttribute('value', repr(value))
 
 
-#    def getEntry(self,entryName):
-#        entPath = entryName.split('.')
-#        en = entPath[-1]
-#        ep = entPath[:-1]
-#
-#        return eval('self.'+entryName)
+    def getEntry(self,entryName):
+        entPath = entryName.split('.')
+
+        node = self.md
+        while len(entPath) >= 1:
+            el = [e for e in node.childNodes if e.nodeName == entPath[0]]
+            if len(el) == 0:
+                #node not there
+                raise RuntimeError('Requested node not found')
+            else:
+                node = el[0]
+
+            entPath.pop(0)
+
+        cls = node.getAttribute('class')
+        val = node.getAttribute('value')
+
+        if cls == 'int':
+            val = int(val)
+        if cls == 'float':
+            val = float(val)
+
+        return val
 
 
-#    def getEntryNames(self):
-#        en = []
-#        for k in self.__dict__.keys():
-#            if self.__dict__[k].__class__ == NestedClassMDHandler:
-#                en += [k + '.' + kp for kp in self.__dict__[k].getEntryNames()]
-#            else:
-#                en.append(k)
-#
-#        return en
+    def getEntryNames(self):
+        elements = self.md.getElementsByTagName('*')
+
+        en = []
+
+        for e in elements:
+            if not e.hasChildNodes(): #we are at the end of the tree
+                n = e.nodeName #starting name
+                while not e.parentNode == self.md:
+                    e = e.parentNode
+                    n = '.'.join((e.nodeName, n))
+
+                en.append(n)        
+
+        return en
 
 
     def copyEntriesFrom(self, mdToCopy):

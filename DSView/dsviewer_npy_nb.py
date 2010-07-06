@@ -1,3 +1,4 @@
+import os.path
 #!/usr/bin/python
 
 ##################
@@ -55,15 +56,16 @@ from PYME.Analysis import piecewiseMapping
 from PYME.ParallelTasks.relativeFiles import getRelFilename
 
 class DSViewFrame(wx.Frame):
-    def __init__(self, parent=None, title='', dstack = None, log = None, filename = None, queueURI = None):
+    def __init__(self, parent=None, title='', dstack = None, log = None, mdh = None, filename = None, queueURI = None, mode='LM'):
         wx.Frame.__init__(self,parent, -1, title,size=wx.Size(800,800), pos=(1100, 300))
 
         self.ds = dstack
+        self.mdh = mdh
         self.log = log
 
         self.saved = True
 
-        self.mode = 'LM'
+        self.mode = mode
         self.vObjPos = None
         self.vObjFit = None
 
@@ -189,16 +191,21 @@ class DSViewFrame(wx.Frame):
                 else: #try tiff
                     #self.dataSource = TiffDataSource.DataSource(filename, None)
                     self.dataSource = readTiff.read3DTiff(filename)
-                    self.mdh = MetaData.ConfocDefault
 
-                    from PYME.DSView.voxSizeDialog import VoxSizeDialog
+                    xmlfn = os.path.splitext(filename)[0] + '.xml'
+                    if os.path.exists(xmlfn):
+                        self.mdh = MetaDataHandler.XMLMDHandler(xmlfn)
+                    else:
+                        self.mdh = MetaData.ConfocDefault
 
-                    dlg = VoxSizeDialog(self)
-                    dlg.ShowModal()
+                        from PYME.DSView.voxSizeDialog import VoxSizeDialog
 
-                    self.mdh.setEntry('voxelsize.x', dlg.GetVoxX())
-                    self.mdh.setEntry('voxelsize.y', dlg.GetVoxY())
-                    self.mdh.setEntry('voxelsize.z', dlg.GetVoxZ())
+                        dlg = VoxSizeDialog(self)
+                        dlg.ShowModal()
+
+                        self.mdh.setEntry('voxelsize.x', dlg.GetVoxX())
+                        self.mdh.setEntry('voxelsize.y', dlg.GetVoxY())
+                        self.mdh.setEntry('voxelsize.z', dlg.GetVoxZ())
 
 
                     from PYME.ParallelTasks.relativeFiles import getRelFilename

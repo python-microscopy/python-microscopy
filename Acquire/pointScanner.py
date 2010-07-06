@@ -4,7 +4,7 @@ import numpy as np
 from PYME.Acquire import eventLog
 
 class PointScanner:
-    def __init__(self, xpiezo, ypiezo, scope, pixels = 10, pixelsize=0.1, dwelltime = 1, background=0, avg=True):
+    def __init__(self, xpiezo, ypiezo, scope, pixels = 10, pixelsize=0.1, dwelltime = 1, background=0, avg=True, evtLog=False):
         self.scope = scope
         self.xpiezo = xpiezo
         self.ypiezo = ypiezo
@@ -14,6 +14,7 @@ class PointScanner:
         self.avg = avg
         self.pixels = pixels
         self.pixelsize = pixelsize
+        self.evtLog = evtLog
 
     def genCoords(self):
         if np.isscalar(self.pixels):
@@ -90,8 +91,9 @@ class PointScanner:
             callN = (self.callNum+1)/self.dwellTime
             self.xpiezo[0].MoveTo(self.xpiezo[1], self.xp[callN % self.nx])
             self.ypiezo[0].MoveTo(self.ypiezo[1], self.yp[(callN % (self.imsize))/self.nx])
-            eventLog.logEvent('ScannerXPos', '%3.3f' % self.xp[callN % self.nx])
-            eventLog.logEvent('ScannerYPos', '%3.3f' % self.yp[(callN % (self.imsize))/self.nx])
+            if self.evtLog:
+                eventLog.logEvent('ScannerXPos', '%3.3f' % self.xp[callN % self.nx])
+                eventLog.logEvent('ScannerYPos', '%3.3f' % self.yp[(callN % (self.imsize))/self.nx])
 
         self.callNum += 1
 

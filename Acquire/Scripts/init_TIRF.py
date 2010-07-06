@@ -46,6 +46,8 @@ scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
 InitBG('Stage Stepper Motors', '''
 from PYME.Acquire.Hardware.Mercury import mercuryStepper
 scope.stage = mercuryStepper.mercuryStepper(comPort=5, axes=['A', 'B'], steppers=['M-229.25S', 'M-229.25S'])
+scope.stage.SetSoftLimits(0, [1.06, 20.7])
+scope.stage.SetSoftLimits(1, [.8, 17.6])
 scope.piezos.append((scope.stage, 0, 'Stage X'))
 scope.piezos.append((scope.stage, 1, 'Stage Y'))
 scope.EnableJoystick = scope.stage.SetJoystick
@@ -60,6 +62,14 @@ InitGUI('''
 from PYME.Acquire.Hardware import focusKeys
 fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[0])
 time1.WantNotification.append(fk.refresh)
+''')
+
+InitGUI('''
+from PYME.Acquire import positionTracker
+pt = positionTracker.PositionTracker(scope, time1)
+pv = positionTracker.TrackerPlotPanel(MainFrame, pt)
+MainFrame.AddPage(page=pv, select=False, caption='Track')
+time1.WantNotification.append(pv.draw)
 ''')
 
 #splitter

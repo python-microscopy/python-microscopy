@@ -24,7 +24,10 @@ class tPoll(threading.Thread):
         
     def run(self):
         while not self.kill:
-            self.stepper.RefreshPos()
+            try:
+                self.stepper.RefreshPos()
+            except:
+                pass
             time.sleep(.2)
 
 
@@ -64,6 +67,11 @@ class mercuryStepper:
 
         self.poll = tPoll(self)
         self.poll.start()
+
+    def SetSoftLimits(self, axis, lims):
+        self.lock.acquire()
+        m.SPA(self.connID, self.axes[axis], [48, 21], lims, self.steppers[axis])
+        self.lock.release()
 
     def ReInit(self):
         pass 

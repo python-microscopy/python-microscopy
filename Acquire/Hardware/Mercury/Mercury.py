@@ -109,7 +109,7 @@ class ValGetter(fcnWrap):
 
 class NotImplemented(fcnWrap):
     def __call__(self, ID, *args):
-        self.HandleError(ID)
+        raise RuntimeError('Function not wrapped')
   
         
 ConnectRS232  = mc.ConnectRS232
