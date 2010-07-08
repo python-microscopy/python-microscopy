@@ -139,16 +139,16 @@ def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fit
 
 class GaussianFitFactory:
     def __init__(self, data, metadata, fitfcn=f_gauss2d, background=None):
-        '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in 
+        '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
         metadata. '''
         self.data = data
         self.background = background
         self.metadata = metadata
-	self.fitfcn = fitfcn #allow model function to be specified (to facilitate changing between accurate and fast exponential approwimations)
-	if type(fitfcn) == types.FunctionType: #single function provided - use numerically estimated jacobian
-		self.solver = FitModelWeighted
-	else: #should be a tuple containing the fit function and its jacobian
-		self.solver = FitModelWeightedJac
+        self.fitfcn = fitfcn #allow model function to be specified (to facilitate changing between accurate and fast exponential approwimations)
+        if 'D' in dir(fitfcn): #function has jacobian
+            self.solver = FitModelWeightedJac
+        else: 
+            self.solver = FitModelWeighted
 		
         
     def __getitem__(self, key):
