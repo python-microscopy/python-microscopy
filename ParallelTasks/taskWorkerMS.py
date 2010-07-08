@@ -15,9 +15,6 @@ import Pyro.core
 import os
 import sys
 
-from PYME.mProfile import mProfile
-mProfile.profileOn(['remFitBuf.py', 'ofind.py', 'SplitterFitFR.py', '_fithelpers.py'])
-
 if 'PYRO_NS_HOSTNAME' in os.environ.keys():
     Pyro.config.PYRO_NS_HOSTNAME=os.environ['PYRO_NS_HOSTNAME']
 
@@ -35,13 +32,18 @@ if sys.platform == 'win32':
 else:
     name = os.uname()[1] + ' - PID:%d' % os.getpid()
 
-for i in range(1):
+while 1:
     #print 'Geting Task ...'
     #tq.returnCompletedTask(tq.getTask()(taskQueue=tq), name)
     tasks = [tq.getTask()]
-    results = [task(taskQueue=tq) for task in tasks]
-    print len(results[0].results)
+    results = []
+    while len(tasks) > 0:
+        task = tasks.pop()
+        results.append(task(taskQueue=tq))
+        #tasks.remove(task)
+        del task
+        
     tq.returnCompletedTasks(results, name)
+    del tasks
+    del results
     #print 'Completed Task'
-
-mProfile.report()

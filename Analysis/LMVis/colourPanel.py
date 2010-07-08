@@ -359,7 +359,7 @@ class colourPanel(wx.Panel):
         labels = mdh.getEntry('Sample.Labelling')
 
         for structure, dye in labels:
-            ratio = dyeRatios.getRatio(dye)
+            ratio = dyeRatios.getRatio(dye, mdh)
 
             if not ratio == None:
                 self.visFr.fluorSpecies[structure] = ratio

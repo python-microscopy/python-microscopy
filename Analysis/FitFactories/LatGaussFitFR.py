@@ -72,7 +72,7 @@ def f_J_gauss2d(p,X,Y):
     A, x0, y0, s, b, b_x, b_y = p
     r = genGaussJac(X,Y,A,x0,y0,s,b,b_x,b_y)
     r = r.reshape((-1, 7))
-    return r.T
+    return r
 
 f_gauss2d.D = f_J_gauss2d
 
@@ -145,7 +145,7 @@ class GaussianFitFactory:
         self.background = background
         self.metadata = metadata
         self.fitfcn = fitfcn #allow model function to be specified (to facilitate changing between accurate and fast exponential approwimations)
-        if 'D' in dir(fitfcn): #function has jacobian
+        if False:#'D' in dir(fitfcn): #function has jacobian
             self.solver = FitModelWeightedJac
         else: 
             self.solver = FitModelWeighted

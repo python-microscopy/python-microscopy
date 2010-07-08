@@ -55,7 +55,7 @@ class MyFrame(wx.Frame):
 
         self.timer = wx.Timer(self, -1)
         self.Bind(wx.EVT_TIMER, self.onTimer)
-        self.timer.Start(2000)
+        self.timer.Start(10000)
 
 
     def __set_properties(self):

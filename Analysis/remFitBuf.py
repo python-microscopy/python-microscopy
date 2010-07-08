@@ -266,9 +266,15 @@ class fitTask(taskDef.Task):
         #perform fit for each point that we detected
         if 'FitResultsDType' in dir(fitMod):
             self.res = numpy.empty(len(self.ofd), fitMod.FitResultsDType)
-            for i in range(len(self.ofd)):
-                p = self.ofd[i]
-                self.res[i] = fitFac.FromPoint(p.x, p.y)
+            if 'Analysis.ROISize' in md.getEntryNames():
+                rs = 7#md.getEntry('Analysis.ROISize')
+                for i in range(len(self.ofd)):
+                    p = self.ofd[i]
+                    self.res[i] = fitFac.FromPoint(p.x, p.y, roiHalfSize=rs)
+            else:
+                for i in range(len(self.ofd)):
+                    p = self.ofd[i]
+                    self.res[i] = fitFac.FromPoint(p.x, p.y)
         else:
             self.res  = [fitFac.FromPoint(p.x, p.y) for p in self.ofd]
 

@@ -3,10 +3,13 @@ different splitter configurations.
 
 currently just uses values for the default splitter config'''
 
-ratios = {'A647':0.85, 'A680':0.85, 'A750': 0.11}
+ratios = {'A647':0.85, 'A680':0.87, 'A750': 0.11}
 
 def getRatio(dye, mdh=None):
     if dye in ratios.keys():
-        return ratios[dye]
+        if 'Splitter.TransmittedPathPosition' in mdh.getEntryNames() and mdh.getEntry('Splitter.TransmittedPathPosition') == 'Top':
+            return 1 - ratios[dye]
+        else:
+            return ratios[dye]
     else:
         return None

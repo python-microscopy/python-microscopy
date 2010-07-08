@@ -40,12 +40,25 @@ def f_gauss2d2c(p, Xg, Yg, Xr, Yr):
     Ag,Ar, x0, y0, s, bG, bR, b_x, b_y  = p
     #return A*scipy.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2)) + b + b_x*X + b_y*Y
     r = genGauss(Xr,Yr,Ar,x0,y0,s,bR,b_x,b_y)
-    r.strides = r.strides #Really dodgy hack to get around something which numpy is not doing right ....
+    #r.strides = r.strides #Really dodgy hack to get around something which numpy is not doing right ....
 
     g = genGauss(Xg,Yg,Ag,x0,y0,s,bG,b_x,b_y)
-    g.strides = g.strides #Really dodgy hack to get around something which numpy is not doing right ....
+    #g.strides = g.strides #Really dodgy hack to get around something which numpy is not doing right ....
     
     return numpy.concatenate((g.reshape(g.shape + (1,)),r.reshape(g.shape + (1,))), 2)
+
+def f_gauss2d2cA(p, Xg, Yg, Xr, Yr, Arr):
+    """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sigma, background, lin_x, lin_y]"""
+    Ag,Ar, x0, y0, s, bG, bR, b_x, b_y  = p
+    #return A*scipy.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2)) + b + b_x*X + b_y*Y
+    #genGaussInArray(Arr[:,:,0], Xr,Yr,Ar,x0,y0,s,bR,b_x,b_y)
+    #r.strides = r.strides #Really dodgy hack to get around something which numpy is not doing right ....
+
+    #genGaussInArray(Arr[:,:,1],Xg,Yg,Ag,x0,y0,s,bG,b_x,b_y)
+    genSplitGaussInArray(Arr,Xg, Yg,Xr,Yr,Ag, Ar,x0,y0,s,bG,b_x,b_y)
+    #g.strides = g.strides #Really dodgy hack to get around something which numpy is not doing right ....
+
+    return Arr #numpy.concatenate((g.reshape(g.shape + (1,)),r.reshape(g.shape + (1,))), 2)
 
 def f_gauss2d2ccb(p, Xg, Yg, Xr, Yr):
     """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sigma, background, lin_x, lin_y]"""
@@ -96,7 +109,7 @@ def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fit
 		
 
 class GaussianFitFactory:
-    def __init__(self, data, metadata, fitfcn=f_gauss2d2c, background=None):
+    def __init__(self, data, metadata, fitfcn=f_gauss2d2cA, background=None):
         '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in 
         metadata. '''
         self.data = data
@@ -138,6 +151,9 @@ class GaussianFitFactory:
         Xr = Xg + DeltaX
         Yr = Yg + DeltaY
 
+        #a buffer so we can avoid allocating memory each time we evaluate the model function
+        buf = numpy.zeros(dataROI.shape, order='F')
+
         #print DeltaX
         #print DeltaY
 
@@ -174,7 +190,7 @@ class GaussianFitFactory:
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
         #(res, cov_x, infodict, mesg, resCode) = FitModelWeighted(self.fitfcn, startParameters, dataMean, sigma, X, Y)
-        (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, Xg, Yg, Xr, Yr)
+        (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, Xg, Yg, Xr, Yr, buf)
 
         
 
