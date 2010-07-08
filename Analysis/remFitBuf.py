@@ -267,7 +267,7 @@ class fitTask(taskDef.Task):
         if 'FitResultsDType' in dir(fitMod):
             self.res = numpy.empty(len(self.ofd), fitMod.FitResultsDType)
             if 'Analysis.ROISize' in md.getEntryNames():
-                rs = 7#md.getEntry('Analysis.ROISize')
+                rs = 5#md.getEntry('Analysis.ROISize')
                 for i in range(len(self.ofd)):
                     p = self.ofd[i]
                     self.res[i] = fitFac.FromPoint(p.x, p.y, roiHalfSize=rs)

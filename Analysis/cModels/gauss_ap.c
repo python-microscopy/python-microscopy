@@ -412,15 +412,20 @@ static PyObject * genSplitGaussInArrayPVec(PyObject *self, PyObject *args, PyObj
 
     PyObject *oOut=0;
 
+    PyObject *oParameters = 0;
+
     PyArrayObject* Xvals;
     PyArrayObject* Yvals;
     PyArrayObject* X2vals;
     PyArrayObject* Y2vals;
 
+     PyArrayObject* pVals;
+
     //PyArrayObject* out;
 
     double *pXvals;
     double *pYvals;
+    double *ppVals;
 
     /*parameters*/
     double A = 1;
@@ -437,19 +442,43 @@ static PyObject * genSplitGaussInArrayPVec(PyObject *self, PyObject *args, PyObj
     double ts2;
     double byY;
 
+    int nParams=0;
 
 
-    static char *kwlist[] = {"out", "X", "Y", "X2", "Y2", "A", "A2","x0", "y0","sigma","b","b_x","b_y", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "OOOOO|dddddddd", kwlist,
-         &oOut, &oX, &oY, &oX2, &oY2, &A, &A2, &x0, &y0, &sigma, &b, &b_x, &b_y))
+    static char *kwlist[] = {"P", "X", "Y", "X2", "Y2","out", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "OOOOOO", kwlist,
+         &oParameters, &oX, &oY, &oX2, &oY2, &oOut))
         return NULL;
 
     /* Do the calculations */
 
+    pVals = (PyArrayObject *) PyArray_ContiguousFromObject(oParameters, PyArray_DOUBLE, 0, 1);
+    if (pVals == NULL)
+    {
+      PyErr_Format(PyExc_RuntimeError, "Bad X");
+      return NULL;
+    }
+
+    nParams = PyArray_DIM(pVals, 0);
+    ppVals = PyArray_DATA(pVals);
+
+    if (nParams >= 1) {A = ppVals[0];
+    if (nParams >= 2) {A2 = ppVals[1];
+    if (nParams >= 3) {x0 = ppVals[2];
+    if (nParams >= 4) {y0 = ppVals[3];
+    if (nParams >= 5) {sigma = ppVals[4];
+    if (nParams >= 6) {b = ppVals[5];
+    if (nParams >= 7) {b_x = ppVals[6];
+    if (nParams >= 8) b_y = ppVals[7];
+    }}}}}}}
+
+
     Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, PyArray_DOUBLE, 0, 1);
     if (Xvals == NULL)
     {
+      Py_DECREF(pVals);
       PyErr_Format(PyExc_RuntimeError, "Bad X");
       return NULL;
     }
@@ -458,6 +487,7 @@ static PyObject * genSplitGaussInArrayPVec(PyObject *self, PyObject *args, PyObj
     if (Yvals == NULL)
     {
         Py_DECREF(Xvals);
+        Py_DECREF(pVals);
         PyErr_Format(PyExc_RuntimeError, "Bad Y");
         return NULL;
     }
@@ -467,6 +497,7 @@ static PyObject * genSplitGaussInArrayPVec(PyObject *self, PyObject *args, PyObj
     {
       Py_DECREF(Xvals);
       Py_DECREF(Yvals);
+      Py_DECREF(pVals);
       PyErr_Format(PyExc_RuntimeError, "Bad X");
       return NULL;
     }
@@ -477,6 +508,7 @@ static PyObject * genSplitGaussInArrayPVec(PyObject *self, PyObject *args, PyObj
         Py_DECREF(Xvals);
         Py_DECREF(Yvals);
         Py_DECREF(X2vals);
+        Py_DECREF(pVals);
         PyErr_Format(PyExc_RuntimeError, "Bad Y");
         return NULL;
     }
@@ -488,6 +520,7 @@ static PyObject * genSplitGaussInArrayPVec(PyObject *self, PyObject *args, PyObj
         Py_DECREF(Yvals);
         Py_DECREF(X2vals);
         Py_DECREF(Y2vals);
+        Py_DECREF(pVals);
         PyErr_Format(PyExc_RuntimeError, "bad output array");
         return NULL;
     }
@@ -544,10 +577,229 @@ static PyObject * genSplitGaussInArrayPVec(PyObject *self, PyObject *args, PyObj
     Py_DECREF(Yvals);
     Py_DECREF(X2vals);
     Py_DECREF(Y2vals);
+    Py_DECREF(pVals);
 
-    //return oOut;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_INCREF(oOut);
+    return oOut;
+    //Py_INCREF(Py_None);
+    //return Py_None;
+}
+
+static PyObject *splitGaussArrayPVecWeightedMisfit(PyObject *self, PyObject *args, PyObject *keywds)
+{
+    double *res = 0;
+    double *data = 0;
+    double *weights = 0;
+    int ix,iy;
+    int size[2];
+
+    PyObject *oX =0;
+    PyObject *oY=0;
+
+    PyObject *oX2 =0;
+    PyObject *oY2=0;
+
+    PyObject *oOut=0;
+    PyObject *oData=0;
+    PyObject *oWeights=0;
+
+    PyObject *oParameters = 0;
+
+    PyArrayObject* Xvals;
+    PyArrayObject* Yvals;
+    PyArrayObject* X2vals;
+    PyArrayObject* Y2vals;
+
+     PyArrayObject* pVals;
+
+    //PyArrayObject* out;
+
+    double *pXvals;
+    double *pYvals;
+    double *ppVals;
+
+    /*parameters*/
+    double A = 1;
+    double A2 = 1;
+    double x0 = 0;
+    double y0 = 0;
+    double sigma = 1;
+    double b = 0;
+    double b_x = 0;
+    double b_y = 0;
+
+    /*End paramters*/
+
+    double ts2;
+    double byY;
+
+    int nParams=0;
+
+
+
+    static char *kwlist[] = {"P", "Data", "Weights","X", "Y", "X2", "Y2","out", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "OOOOOOOO", kwlist,
+         &oParameters, &oData, &oWeights, &oX, &oY, &oX2, &oY2, &oOut))
+        return NULL;
+
+    /* Do the calculations */
+
+    pVals = (PyArrayObject *) PyArray_ContiguousFromObject(oParameters, PyArray_DOUBLE, 0, 1);
+    if (pVals == NULL)
+    {
+      PyErr_Format(PyExc_RuntimeError, "Bad X");
+      return NULL;
+    }
+
+    nParams = PyArray_DIM(pVals, 0);
+    ppVals = PyArray_DATA(pVals);
+
+    if (nParams >= 1) {A = ppVals[0];
+    if (nParams >= 2) {A2 = ppVals[1];
+    if (nParams >= 3) {x0 = ppVals[2];
+    if (nParams >= 4) {y0 = ppVals[3];
+    if (nParams >= 5) {sigma = ppVals[4];
+    if (nParams >= 6) {b = ppVals[5];
+    if (nParams >= 7) {b_x = ppVals[6];
+    if (nParams >= 8) b_y = ppVals[7];
+    }}}}}}}
+
+
+    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, PyArray_DOUBLE, 0, 1);
+    if (Xvals == NULL)
+    {
+      Py_DECREF(pVals);
+      PyErr_Format(PyExc_RuntimeError, "Bad X");
+      return NULL;
+    }
+
+    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, PyArray_DOUBLE, 0, 1);
+    if (Yvals == NULL)
+    {
+        Py_DECREF(Xvals);
+        Py_DECREF(pVals);
+        PyErr_Format(PyExc_RuntimeError, "Bad Y");
+        return NULL;
+    }
+
+    X2vals = (PyArrayObject *) PyArray_ContiguousFromObject(oX2, PyArray_DOUBLE, 0, 1);
+    if (X2vals == NULL)
+    {
+      Py_DECREF(Xvals);
+      Py_DECREF(Yvals);
+      Py_DECREF(pVals);
+      PyErr_Format(PyExc_RuntimeError, "Bad X");
+      return NULL;
+    }
+
+    Y2vals = (PyArrayObject *) PyArray_ContiguousFromObject(oY2, PyArray_DOUBLE, 0, 1);
+    if (Y2vals == NULL)
+    {
+        Py_DECREF(Xvals);
+        Py_DECREF(Yvals);
+        Py_DECREF(X2vals);
+        Py_DECREF(pVals);
+        PyErr_Format(PyExc_RuntimeError, "Bad Y");
+        return NULL;
+    }
+
+    if (!PyArray_ISFORTRAN(oData) || PyArray_TYPE(oData) != PyArray_DOUBLE|| PyArray_DIM(oData,0) != PyArray_DIM(Xvals, 0) || PyArray_DIM(oData, 1) != PyArray_DIM(Yvals, 0))
+    {
+        Py_DECREF(Xvals);
+        Py_DECREF(Yvals);
+        Py_DECREF(X2vals);
+        Py_DECREF(Y2vals);
+        Py_DECREF(pVals);
+        PyErr_Format(PyExc_RuntimeError, "bad data array");
+        return NULL;
+    }
+
+    if (!PyArray_ISFORTRAN(oWeights) || PyArray_TYPE(oWeights) != PyArray_DOUBLE|| PyArray_DIM(oWeights,0) != PyArray_DIM(Xvals, 0) || PyArray_DIM(oWeights, 1) != PyArray_DIM(Yvals, 0))
+    {
+        Py_DECREF(Xvals);
+        Py_DECREF(Yvals);
+        Py_DECREF(X2vals);
+        Py_DECREF(Y2vals);
+        Py_DECREF(pVals);
+        PyErr_Format(PyExc_RuntimeError, "bad weights array");
+        return NULL;
+    }
+
+    if (PyArray_TYPE(oOut) != PyArray_DOUBLE|| PyArray_SIZE(oOut) != PyArray_SIZE(oData))
+    {
+        Py_DECREF(Xvals);
+        Py_DECREF(Yvals);
+        Py_DECREF(X2vals);
+        Py_DECREF(Y2vals);
+        Py_DECREF(pVals);
+        PyErr_Format(PyExc_RuntimeError, "bad output array");
+        return NULL;
+    }
+
+
+    pXvals = (double*)Xvals->data;
+    pYvals = (double*)Yvals->data;
+
+
+    size[0] = PyArray_Size((PyObject*)Xvals);
+    size[1] = PyArray_Size((PyObject*)Yvals);
+
+    //out = (PyArrayObject*) PyArray_FromDims(2,size,PyArray_DOUBLE);
+
+    //fix strides
+    //out->strides[0] = sizeof(double);
+    //out->strides[1] = sizeof(double)*size[0];
+
+    res = (double*) PyArray_DATA(oOut);
+    data = (double*) PyArray_DATA(oData);
+    weights = (double*) PyArray_DATA(oWeights);
+
+    ts2 = 2*sigma*sigma;
+
+    for (iy = 0; iy < size[1]; iy++)
+      {
+	byY = b_y*(pYvals[iy]- y0) + b;
+	for (ix = 0; ix < size[0]; ix++)
+	  {
+	    *res = (*weights)*(*data - A*exp(-(((pXvals[ix] - x0) * (pXvals[ix] - x0)) + ((pYvals[iy]-y0) * (pYvals[iy]-y0)))/ts2) + b_x*(pXvals[ix]-x0) + byY);
+	    //*res = 1.0;
+	    res++;
+            data++;
+            weights++;
+            
+	  }
+
+      }
+
+    pXvals = (double*)X2vals->data;
+    pYvals = (double*)Y2vals->data;
+
+    for (iy = 0; iy < size[1]; iy++)
+      {
+	byY = b_y*(pYvals[iy]- y0) + b;
+	for (ix = 0; ix < size[0]; ix++)
+	  {
+	    *res = (*weights)*(*data -A2*exp(-(((pXvals[ix] - x0) * (pXvals[ix] - x0)) + ((pYvals[iy]-y0) * (pYvals[iy]-y0)))/ts2) + b_x*(pXvals[ix]-x0) + byY);
+	    //*res = 1.0;
+	    res++;
+            data++;
+            weights++;
+	  }
+
+      }
+
+
+    Py_DECREF(Xvals);
+    Py_DECREF(Yvals);
+    Py_DECREF(X2vals);
+    Py_DECREF(Y2vals);
+    Py_DECREF(pVals);
+
+    Py_INCREF(oOut);
+    return oOut;
+    //Py_INCREF(Py_None);
+    //return Py_None;
 }
 
 static PyObject * genGauss3D(PyObject *self, PyObject *args, PyObject *keywds)
@@ -1357,6 +1609,10 @@ static PyMethodDef gauss_appMethods[] = {
     {"genGaussInArray",  genGaussInArray, METH_VARARGS | METH_KEYWORDS,
     "Generate a Gaussian in pre-allocated memory.\n. Arguments are: out, X, Y, A=1,x0=0, y0=0,sigma=0, b=0,b_x=0,b_y=0"},
     {"genSplitGaussInArray",  genSplitGaussInArray, METH_VARARGS | METH_KEYWORDS,
+    "Generate a double Gaussian in pre-allocated memory.\n. Arguments are: out, X, Y, X1, Y1, A=1, A1=1,x0=0, y0=0,sigma=0, b=0,b_x=0,b_y=0"},
+    {"genSplitGaussInArrayPVec",  genSplitGaussInArrayPVec, METH_VARARGS | METH_KEYWORDS,
+    "Generate a double Gaussian in pre-allocated memory.\n. Arguments are: out, X, Y, X1, Y1, A=1, A1=1,x0=0, y0=0,sigma=0, b=0,b_x=0,b_y=0"},
+     {"splitGaussWeightedMisfit",  splitGaussArrayPVecWeightedMisfit, METH_VARARGS | METH_KEYWORDS,
     "Generate a double Gaussian in pre-allocated memory.\n. Arguments are: out, X, Y, X1, Y1, A=1, A1=1,x0=0, y0=0,sigma=0, b=0,b_x=0,b_y=0"},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };

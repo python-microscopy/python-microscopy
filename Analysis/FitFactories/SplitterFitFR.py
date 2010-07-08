@@ -49,13 +49,14 @@ def f_gauss2d2c(p, Xg, Yg, Xr, Yr):
 
 def f_gauss2d2cA(p, Xg, Yg, Xr, Yr, Arr):
     """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sigma, background, lin_x, lin_y]"""
-    Ag,Ar, x0, y0, s, bG, bR, b_x, b_y  = p
+    #Ag,Ar, x0, y0, s, bG, bR, b_x, b_y  = p
     #return A*scipy.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2)) + b + b_x*X + b_y*Y
     #genGaussInArray(Arr[:,:,0], Xr,Yr,Ar,x0,y0,s,bR,b_x,b_y)
     #r.strides = r.strides #Really dodgy hack to get around something which numpy is not doing right ....
 
     #genGaussInArray(Arr[:,:,1],Xg,Yg,Ag,x0,y0,s,bG,b_x,b_y)
-    genSplitGaussInArray(Arr,Xg, Yg,Xr,Yr,Ag, Ar,x0,y0,s,bG,b_x,b_y)
+    #genSplitGaussInArray(Arr,Xg, Yg,Xr,Yr,Ag, Ar,x0,y0,s,bG,b_x,b_y)
+    genSplitGaussInArrayPVec(p,Xg, Yg,Xr,Yr,Arr)
     #g.strides = g.strides #Really dodgy hack to get around something which numpy is not doing right ....
 
     return Arr #numpy.concatenate((g.reshape(g.shape + (1,)),r.reshape(g.shape + (1,))), 2)
@@ -109,17 +110,18 @@ def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fit
 		
 
 class GaussianFitFactory:
-    def __init__(self, data, metadata, fitfcn=f_gauss2d2cA, background=None):
+    def __init__(self, data, metadata, fitfcn=genSplitGaussInArrayPVec, background=None):
         '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in 
         metadata. '''
         self.data = data
         self.background = background
         self.metadata = metadata
         self.fitfcn = fitfcn #allow model function to be specified (to facilitate changing between accurate and fast exponential approwimations)
-        if type(fitfcn) == types.FunctionType: #single function provided - use numerically estimated jacobian
-            self.solver = FitModelWeighted
-        else: #should be a tuple containing the fit function and its jacobian
+        
+        if False:#'D' in dir(fitfcn): #function has jacobian
             self.solver = FitModelWeightedJac
+        else:
+            self.solver = FitModelWeighted
 		
         
     def __getitem__(self, key):
@@ -152,7 +154,7 @@ class GaussianFitFactory:
         Yr = Yg + DeltaY
 
         #a buffer so we can avoid allocating memory each time we evaluate the model function
-        buf = numpy.zeros(dataROI.shape, order='F')
+        #buf = numpy.zeros(dataROI.shape, order='F')
 
         #print DeltaX
         #print DeltaY
@@ -185,12 +187,17 @@ class GaussianFitFactory:
 
             dataROI = dataROI - bgROI
 
-        startParameters = [Ag, Ar, x0, y0, 250/2.35, dataROI[:,:,0].min(),dataROI[:,:,1].min(), .001, .001]
+        startParameters = array([Ag, Ar, x0, y0, 250/2.35, dataROI[:,:,0].min(),dataROI[:,:,1].min(), .001, .001])
 	
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
         #(res, cov_x, infodict, mesg, resCode) = FitModelWeighted(self.fitfcn, startParameters, dataMean, sigma, X, Y)
-        (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, Xg, Yg, Xr, Yr, buf)
+        #(res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, Xg, Yg, Xr, Yr, buf)
+        buf = numpy.zeros(dataROI.size)
+        (res, cov_x, infodict, mesg, resCode) = FitWeightedMisfitFcn(splitGaussWeightedMisfit, startParameters, dataROI, sigma, Xg, Yg, Xr, Yr, buf)
+
+        print infodict['nfev']
+
 
         
 
@@ -199,6 +206,9 @@ class GaussianFitFactory:
             fitErrors = scipy.sqrt(scipy.diag(cov_x)*(infodict['fvec']*infodict['fvec']).sum()/(len(dataROI.ravel())- len(res)))
         except Exception, e:
             pass
+
+        #res = hstack([res, array([0,0])])
+        #fitErrors = hstack([fitErrors, array([0,0])])
 
 	#print res, fitErrors, resCode
         return GaussianFitResultR(res, self.metadata, (xslice, yslice, zslice), resCode, fitErrors)
