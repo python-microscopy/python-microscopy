@@ -12,14 +12,23 @@
 
 #!/usr/bin/env python
 
+import sys
+
 def configuration(parent_package = '', top_path = None):
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
     config = Configuration('cModels', parent_package, top_path)
 
-    config.add_extension('gauss_app',
-        sources=['gauss_ap.c'],
-        include_dirs = [get_numpy_include_dirs()],
-	extra_compile_args = ['-O3', '-fno-exceptions', '-ffast-math', '-march=native', '-mtune=native'])
+    
+    if sys.platform == 'darwin':
+        config.add_extension('gauss_app',
+                             sources=['gauss_ap.c'],
+                             include_dirs = [get_numpy_include_dirs()],
+                             extra_compile_args = ['-O3', '-fno-exceptions', '-ffast-math', '-march=i386'])
+    else:
+        config.add_extension('gauss_app',
+                             sources=['gauss_ap.c'],
+                             include_dirs = [get_numpy_include_dirs()],
+                             extra_compile_args = ['-O3', '-fno-exceptions', '-ffast-math', '-march=native', '-mtune=native'])
 
     return config
 
