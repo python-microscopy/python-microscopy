@@ -57,14 +57,14 @@ class TaskQueue:
     def getTasks(self, workerN = 0, NWorkers = 1):
         return [self.getTask(workerN, NWorkers) for i in range(min(CHUNKSIZE,len(self.openTasks)))]
 
-	def returnCompletedTask(self, taskResult):
-		for it in self.tasksInProgress[:]:
-			if (it.taskID == taskResult.taskID):
-				self.tasksInProgress.remove(it)
-		self.fileResult(taskResult)
+    def returnCompletedTask(self, taskResult):
+            for it in self.tasksInProgress[:]:
+                    if (it.taskID == taskResult.taskID):
+                            self.tasksInProgress.remove(it)
+            self.fileResult(taskResult)
 
-		if (len(self.openTasks) + len(self.tasksInProgress)) == 0: #no more tasks
-			self.onEmpty(self)
+            if (len(self.openTasks) + len(self.tasksInProgress)) == 0: #no more tasks
+                    self.onEmpty(self)
 
     def returnCompletedTasks(self, taskResults):
         for taskResult in taskResults:
