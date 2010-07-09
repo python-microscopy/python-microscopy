@@ -16,7 +16,12 @@ import wx
 import datetime
 import HDFSpooler
 import QueueSpooler
-import sampleInformation
+try:
+    import sampleInformation
+    sampInf = True
+except:
+    print 'Could not connect to the sample information database'
+    sampInf = False
 #import win32api
 from PYME.FileUtils import nameUtils
 from PYME.FileUtils.freeSpace import get_free_space
@@ -289,7 +294,8 @@ class PanSpool(wx.Panel):
         self.stSpoolingTo.SetLabel('Spooling to ' + fn)
         self.stNImages.SetLabel('0 images spooled in 0 minutes')
 
-        sampleInformation.getSampleData(self, self.spooler.md)
+        if sampInf:
+            sampleInformation.getSampleData(self, self.spooler.md)
 
     def OnBStartStackButton(self, event=None):
         self.OnBStartSpoolButton(stack=True)

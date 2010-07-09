@@ -108,7 +108,7 @@ class microscope:
             mdh.setEntry('voxelsize.units', 'um')
 
         for p in self.piezos:
-            mdh.setEntry('Positioning.%s' % p[2].replace(' ', '_'), p[0].GetPos(p[1]))
+            mdh.setEntry('Positioning.%s' % p[2].replace(' ', '_').replace('-', '_'), p[0].GetPos(p[1]))
 
     def AddVoxelSizeSetting(self, name, x, y):
         self.settingsDB.execute("INSERT INTO VoxelSizes (name, x, y) VALUES (?, ?, ?)", (name, x, y))
