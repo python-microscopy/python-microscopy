@@ -18,17 +18,10 @@ def configuration(parent_package = '', top_path = None):
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
     config = Configuration('cModels', parent_package, top_path)
 
-    
-    if sys.platform == 'darwin':
-        config.add_extension('gauss_app',
-                             sources=['gauss_ap.c'],
-                             include_dirs = [get_numpy_include_dirs()],
-                             extra_compile_args = ['-O3', '-fno-exceptions', '-ffast-math', '-march=i386'])
-    else:
-        config.add_extension('gauss_app',
-                             sources=['gauss_ap.c'],
-                             include_dirs = [get_numpy_include_dirs()],
-                             extra_compile_args = ['-O3', '-fno-exceptions', '-ffast-math', '-march=native', '-mtune=native'])
+    config.add_extension('gauss_app',
+        sources=['gauss_ap.c'],
+        include_dirs = [get_numpy_include_dirs()],
+	extra_compile_args = ['-O3', '-fno-exceptions', '-ffast-math', '-march=nocona', '-mtune=nocona'])
 
     return config
 
