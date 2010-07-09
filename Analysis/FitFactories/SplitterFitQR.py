@@ -94,6 +94,10 @@ def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fit
 
 	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, slicesUsed)], dtype=fresultdtype) 
 		
+def splWrap(*args):
+    #print ''
+    #args = args[:]
+    return splitGaussWeightedMisfit(*args).copy()
 
 class GaussianFitFactory:
     def __init__(self, data, metadata, fitfcn=f_gauss2d2ccb, background=None):
@@ -103,10 +107,11 @@ class GaussianFitFactory:
         self.background = background
         self.metadata = metadata
         self.fitfcn = fitfcn #allow model function to be specified (to facilitate changing between accurate and fast exponential approwimations)
-        if type(fitfcn) == types.FunctionType: #single function provided - use numerically estimated jacobian
-            self.solver = FitModelWeighted
-        else: #should be a tuple containing the fit function and its jacobian
+
+        if False:#'D' in dir(fitfcn): #function has jacobian
             self.solver = FitModelWeightedJac
+        else:
+            self.solver = FitModelWeighted
 		
         
     def __getitem__(self, key):
@@ -174,7 +179,10 @@ class GaussianFitFactory:
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
         #(res, cov_x, infodict, mesg, resCode) = FitModelWeighted(self.fitfcn, startParameters, dataMean, sigma, X, Y)
-        (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, Xg, Yg, Xr, Yr)
+        #(res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, Xg, Yg, Xr, Yr, buf)
+        buf = numpy.zeros(dataROI.size)
+        #(res, cov_x, infodict, mesg, resCode) = FitWeightedMisfitFcn(splitGaussWeightedMisfit, startParameters, dataROI, sigma, Xg, Yg, Xr, Yr)
+        (res, cov_x, infodict, mesg, resCode) = FitWeightedMisfitFcn(splWrap, startParameters, dataROI, sigma, Xg, Yg, Xr, Yr, buf)
 
         
 

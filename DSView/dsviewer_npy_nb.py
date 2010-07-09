@@ -575,7 +575,7 @@ class DSViewFrame(wx.Frame):
 
         if 'Camera.ROIPosY' in self.mdh.getEntryNames() and (self.mdh.getEntry('Camera.ROIHeight') + 1 + 2*(self.mdh.getEntry('Camera.ROIPosY')-1)) == 512:
             #we have a symetrical ROI about the centre - most likely want to analyse using splitter
-            self.cFitType.SetSelection(self.fitFactories.index('SplitterFitFR'))
+            self.cFitType.SetSelection(self.fitFactories.index('SplitterFitQR'))
             self.tThreshold.SetValue('0.5')
         else:
             self.cFitType.SetSelection(self.fitFactories.index('LatGaussFitFR'))

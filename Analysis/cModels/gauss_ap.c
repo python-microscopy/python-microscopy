@@ -592,6 +592,7 @@ static PyObject *splitGaussArrayPVecWeightedMisfit(PyObject *self, PyObject *arg
     double *weights = 0;
     int ix,iy;
     int size[2];
+    int dims[2];
 
     PyObject *oX =0;
     PyObject *oY=0;
@@ -625,6 +626,7 @@ static PyObject *splitGaussArrayPVecWeightedMisfit(PyObject *self, PyObject *arg
     double y0 = 0;
     double sigma = 1;
     double b = 0;
+    double b1 = 0;
     double b_x = 0;
     double b_y = 0;
 
@@ -637,7 +639,7 @@ static PyObject *splitGaussArrayPVecWeightedMisfit(PyObject *self, PyObject *arg
 
 
 
-    static char *kwlist[] = {"P", "Data", "Weights","X", "Y", "X2", "Y2","out", NULL};
+    static char *kwlist[] = {"P", "Data", "Weights","X", "Y", "X2", "Y2", "out", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, keywds, "OOOOOOOO", kwlist,
          &oParameters, &oData, &oWeights, &oX, &oY, &oX2, &oY2, &oOut))
@@ -661,9 +663,10 @@ static PyObject *splitGaussArrayPVecWeightedMisfit(PyObject *self, PyObject *arg
     if (nParams >= 4) {y0 = ppVals[3];
     if (nParams >= 5) {sigma = ppVals[4];
     if (nParams >= 6) {b = ppVals[5];
-    if (nParams >= 7) {b_x = ppVals[6];
-    if (nParams >= 8) b_y = ppVals[7];
-    }}}}}}}
+    if (nParams >= 6) {b1 = ppVals[6];
+    if (nParams >= 7) {b_x = ppVals[7];
+    if (nParams >= 8) b_y = ppVals[8];
+    }}}}}}}}
 
 
     Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, PyArray_DOUBLE, 0, 1);
@@ -726,6 +729,27 @@ static PyObject *splitGaussArrayPVecWeightedMisfit(PyObject *self, PyObject *arg
         return NULL;
     }
 
+
+/*
+    dims[0] = PyArray_SIZE(oData);
+    printf("trying to allocate arrya of size: %d\n", dims[0]);
+
+    oOut = PyArray_SimpleNew(1, dims, PyArray_DOUBLE);
+    
+    if (oOut == NULL)
+    {
+        Py_DECREF(Xvals);
+        Py_DECREF(Yvals);
+        Py_DECREF(X2vals);
+        Py_DECREF(Y2vals);
+        Py_DECREF(pVals);
+        PyErr_Format(PyExc_RuntimeError, "error allocating output array");
+        return NULL;
+    }
+*/
+
+
+
     if (PyArray_TYPE(oOut) != PyArray_DOUBLE|| PyArray_SIZE(oOut) != PyArray_SIZE(oData))
     {
         Py_DECREF(Xvals);
@@ -777,7 +801,7 @@ static PyObject *splitGaussArrayPVecWeightedMisfit(PyObject *self, PyObject *arg
 
     for (iy = 0; iy < size[1]; iy++)
       {
-	byY = b_y*(pYvals[iy]- y0) + b;
+	byY = b_y*(pYvals[iy]- y0) + b1;
 	for (ix = 0; ix < size[0]; ix++)
 	  {
 	    *res = (*weights)*(*data -A2*exp(-(((pXvals[ix] - x0) * (pXvals[ix] - x0)) + ((pYvals[iy]-y0) * (pYvals[iy]-y0)))/ts2) + b_x*(pXvals[ix]-x0) + byY);
