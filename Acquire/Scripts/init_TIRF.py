@@ -25,6 +25,12 @@ acf = AndorControlFrame.AndorPanel(MainFrame, scope.cam, scope)
 camPanels.append((acf, 'Andor EMCCD Properties'))
 ''')
 
+InitGUI('''
+import sampleInformation
+sampPan = sampleInformation.slidePanel(MainFrame)
+camPanels.append((sampPan, 'Current Slide'))
+''')
+
 #setup for the channels to aquire - b/w camera, no shutters
 class chaninfo:
     names = ['bw']

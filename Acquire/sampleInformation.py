@@ -24,6 +24,12 @@ from PYME.SampleDB.samples import models
 lastCreator = nameUtils.getUsername()
 lastSlideRef = ''
 
+WantSlideChangeNotification = []
+
+from PYME.Acquire.MetaDataHandler import NestedClassMDHandler
+
+slideMD = NestedClassMDHandler()
+
 class AutoWidthListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
     def __init__(self, parent, ID, pos=wx.DefaultPosition,
                  size=wx.DefaultSize, style=0):
@@ -277,7 +283,7 @@ class SampleInfoDialog(wx.Dialog):
         if choices != current_choices:
             self.tDye.SetChoices(choices)
 
-    def PopulateMetadata(self, mdh):
+    def PopulateMetadata(self, mdh, acquiring=True):
         global lastCreator, lastSlideRef
 
         creator = self.tCreator.GetValue()
@@ -285,8 +291,12 @@ class SampleInfoDialog(wx.Dialog):
         notes = self.tNotes.GetValue()
         sampleNotes = self.tSlideNotes.GetValue()
 
-        lastCreator = creator
-        lastSlideRef = slideRef
+        if not slideRef == lastSlideRef or not creator == lastCreator:
+            lastCreator = creator
+            lastSlideRef = slideRef
+
+            for f in WantSlideChangeNotification:
+                f()
 
         if len(creator) == 0:
             creator = '<none>'
@@ -303,7 +313,7 @@ class SampleInfoDialog(wx.Dialog):
         mdh.setEntry('Sample.Creator', creator)
         mdh.setEntry('Sample.SlideRef', slideRef)
         mdh.setEntry('Sample.Notes', sampleNotes)
-        mdh.setEntry('Notes', notes)
+        
 
 #        labels = []
 #        for i in range(self.gLabelling.GetNumberRows()):
@@ -321,10 +331,49 @@ class SampleInfoDialog(wx.Dialog):
                 l.notes = sampleNotes
                 l.save()
 
-        im = models.Image.GetOrCreate(mdh.getEntry('imageID'), nameUtils.getUsername(), slide, mdh.getEntry('StartTime'))
-        im.comments = notes
-        im.save()
 
+        if acquiring:
+            mdh.setEntry('Notes', notes)
+            im = models.Image.GetOrCreate(mdh.getEntry('imageID'), nameUtils.getUsername(), slide, mdh.getEntry('StartTime'))
+            im.comments = notes
+            im.save()
+
+
+
+class slidePanel(wx.Panel):
+    def __init__(self, *args, **kwargs):
+        wx.Panel.__init__(self, *args, **kwargs)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.stSlideName = wx.StaticText(self, -1, '')
+        hsizer.Add(self.stSlideName, 1, wx.EXPAND|wx.ALL, 2)
+
+        self.bSetSlide = wx.Button(self, -1, 'Set', style=wx.BU_EXACTFIT)
+        hsizer.Add(self.bSetSlide, 0, wx.EXPAND|wx.ALL, 2)
+
+        self.bSetSlide.Bind(wx.EVT_BUTTON, self.OnSetSlide)
+
+        self.SetSizerAndFit(hsizer)
+        WantSlideChangeNotification.append(self.update)
+
+    def OnSetSlide(self, event):
+        prefillSampleData(self.GetParent())
+        self.update()
+
+    def update(self):
+        self.stSlideName.SetLabel('%s - %s' % (lastCreator, lastSlideRef))
+
+
+
+
+def prefillSampleData(parent):
+    dlg = SampleInfoDialog(parent)
+
+    if dlg.ShowModal() == wx.ID_OK:
+        dlg.PopulateMetadata(slideMD, False)
+
+    dlg.Destroy()
 
 
 def getSampleData(parent, mdh):
