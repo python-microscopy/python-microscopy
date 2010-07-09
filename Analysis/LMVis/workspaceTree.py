@@ -3,6 +3,8 @@ import wx.gizmos
 from wx.lib.mixins.treemixin import VirtualTree
 from pylab import cm, array
 
+import inpFilt
+
 class WorkWrap:
     def __init__(self, dict):
         self.dict = dict
@@ -152,15 +154,21 @@ class WorkspaceTree(VirtualTree, wx.gizmos.TreeListCtrl):
             if column ==0:
                 return self._getChildName(curItem, index[-1])
             elif column == 1:
-                curItem = self._getChild(curItem, index[-1])
-                return curItem.__class__.__name__
+                if isinstance(curItem, inpFilt.inputFilter):
+                    return 'ndarray'
+                else:
+                    curItem = self._getChild(curItem, index[-1])
+                    return curItem.__class__.__name__
             elif column == 2:
-                curItem = self._getChild(curItem, index[-1])
-                r = repr(curItem)
-                if len(r) > 100:
-                    r = r[:100] + ' ...'
+                if isinstance(curItem, inpFilt.inputFilter):
+                    return ''
+                else:
+                    curItem = self._getChild(curItem, index[-1])
+                    r = repr(curItem)
+                    if len(r) > 100:
+                        r = r[:100] + ' ...'
 
-                return r
+                    return r
 
     def OnGetItemImage(self, index, which = 0, column=0):
         if not column == 0:

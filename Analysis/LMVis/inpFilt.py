@@ -23,7 +23,10 @@ from PYME.Analysis.piecewise import * #allow piecewise linear mappings
 
 import tables
 
-class randomSource:
+class inputFilter:
+    pass
+
+class randomSource(inputFilter):
     _name = "Random Source"
     def __init__(self, xmax, ymax, nsamps):
         '''Uniform random source, for testing and as an example'''
@@ -58,7 +61,7 @@ def unNestNames(nameList, parent=''):
     return unList
 
 
-class h5rSource:
+class h5rSource(inputFilter):
     _name = "h5r Data Source"
     def __init__(self, h5fFile):
         ''' Data source for use with h5r files as saved by the PYME analysis 
@@ -117,7 +120,7 @@ class h5rSource:
         return 'PYME h5r Data Source\n\n %d points' % self.h5f.root.FitResults.shape[0]
 
 
-class h5rDSource:
+class h5rDSource(inputFilter):
     _name = "h5r Drift Source"
     def __init__(self, h5fFile):
         ''' Data source for use with h5r files as saved by the PYME analysis 
@@ -168,7 +171,7 @@ class h5rDSource:
     def getInfo(self):
         return 'PYME h5r Drift Data Source\n\n %d points' % self.h5f.root.DriftResults.shape[0]
 
-class textfileSource:
+class textfileSource(inputFilter):
     _name = "Text File Source"
     def __init__(self, filename, columnnames, delimiter=None):
         ''' Input filter for use with delimited text data. Defaults
@@ -198,7 +201,7 @@ class textfileSource:
     def getInfo(self):
         return 'Text Data Source\n\n %d points' % len(self.res['x'])
 
-class matfileSource:
+class matfileSource(inputFilter):
     _name = "Matlab Source"
     def __init__(self, filename, columnnames, varName='Orte'):
         ''' Input filter for use with matlab data. Need to provide a variable name
@@ -232,7 +235,7 @@ class matfileSource:
         return 'Text Data Source\n\n %d points' % len(self.res['x'])
         
 
-class resultsFilter:
+class resultsFilter(inputFilter):
     _name = "Results Filter"
     def __init__(self, resultsSource, **kwargs):
         '''Class to permit filtering of fit results - masquarades 
@@ -266,7 +269,7 @@ class resultsFilter:
     def keys(self):
         return self.resultsSource.keys()
 
-class cachingResultsFilter:
+class cachingResultsFilter(inputFilter):
     _name = "Caching Results Filter"
     def __init__(self, resultsSource, **kwargs):
         '''Class to permit filtering of fit results - masquarades
@@ -307,7 +310,7 @@ class cachingResultsFilter:
         return self.resultsSource.keys()
 
 
-class mappingFilter:
+class mappingFilter(inputFilter):
     _name = "Mapping Filter"
     def __init__(self, resultsSource, **kwargs):
         '''Class to permit transformations (e.g. drift correction) of fit results
@@ -368,7 +371,7 @@ class mappingFilter:
 
         return eval(map)
 
-class colourFilter:
+class colourFilter(inputFilter):
     _name = "Colour Filter"
     def __init__(self, resultsSource, visFr, currentColour=None):
         '''Class to permit filtering by colour
@@ -420,7 +423,7 @@ class colourFilter:
 
     
     
-class cloneSource:
+class cloneSource(inputFilter):
     _name = "Cloned Source"
     def __init__(self, resultsSource):
         '''Creates an in memory copy of a (filtered) data source'''

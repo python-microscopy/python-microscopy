@@ -14,7 +14,7 @@
 import os.path
 import wx
 import wx.py.shell
-from IPython.frontend.wx.wx_frontend import WxController
+#from IPython.frontend.wx.wx_frontend import WxController
 
 import wx.lib.foldpanelbar as fpb
 from PYME.misc.fbpIcons import *
@@ -128,9 +128,10 @@ class VisGUIFrame(wx.Frame):
         #self.glCanvas = wx.Panel(self, -1, style=wx.SUNKEN_BORDER)
         self.notebook = AuiNotebookWithFloatingPages(id=-1, parent=self, style=wx.aui.AUI_NB_TAB_SPLIT)
 
-        #self.sh = wx.py.shell.Shell(id=-1,
-        #      parent=self.notebook, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
-        #      introText='Python SMI bindings - note that help, license etc below is for Python, not PySMI\n\n')
+        self.MainWindow = self #so we can access from shell
+        self.sh = wx.py.shell.Shell(id=-1,
+              parent=self.notebook, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
+              introText='Python SMI bindings - note that help, license etc below is for Python, not PySMI\n\n')
 
         
 
@@ -188,17 +189,20 @@ class VisGUIFrame(wx.Frame):
         self.colData = '<None>'
 
 
-        self.MainWindow = self #so we can access from shell
+        
 
-        self.sh = WxController(self.notebook)
+        #self.sh = WxController(self.notebook)
         #print self.sh.shell.user_ns
         #self.__dict__.update(self.sh.shell.user_ns)
         #self.sh.shell.user_ns = self.__dict__
 
         self.notebook.AddPage(page=self.sh, select=True, caption='Console')
 
-        self.sh.execute_command('from pylab import *', hidden=True)
-        self.sh.execute_command('from PYME.DSView.dsviewer_npy import View3D', hidden=True)
+        #self.sh.execute_command('from pylab import *', hidden=True)
+        #self.sh.execute_command('from PYME.DSView.dsviewer_npy import View3D', hidden=True)
+
+        self.sh.Execute('from pylab import *')
+        self.sh.Execute('from PYME.DSView.dsviewer_npy import View3D')
 
         self.workspace = workspaceTree.WorkWrap(self.__dict__)
 
@@ -2656,7 +2660,7 @@ class VisGUIFrame(wx.Frame):
         if not self.colp == None and self.colp.IsShown():
             self.colp.refresh()
 
-        self.sh.shell.user_ns.update(self.__dict__)
+        #self.sh.shell.user_ns.update(self.__dict__)
         wx.EndBusyCursor()
         self.workspaceView.RefreshItems()
 
