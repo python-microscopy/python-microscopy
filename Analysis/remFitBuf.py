@@ -180,7 +180,7 @@ class fitTask(taskDef.Task):
         #Find objects
         bgd = self.data.astype('f') - self.bg
 
-        if 'Splitter.TransmitedChannel' in self.md.getEntryNames():
+        if 'Splitter.TransmittedChannel' in self.md.getEntryNames():
             #don't find points in transmitted light channel
             transChan = mdh.getEntry('Splitter.TransmitedChannel')
             if transChan == 'Top':
