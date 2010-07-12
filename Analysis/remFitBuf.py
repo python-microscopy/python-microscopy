@@ -180,6 +180,12 @@ class fitTask(taskDef.Task):
         #Find objects
         bgd = self.data.astype('f') - self.bg
 
+        if 'Splitter.TransmitedChannel' in self.md.getEntryNames():
+            #don't find points in transmitted light channel
+            transChan = mdh.getEntry('Splitter.TransmitedChannel')
+            if transChan == 'Top':
+                bgd[:, :(self.data.shape[1]/2)] = 0 #set upper half of image to zero
+
 #        if self.fitModule in splitterFitModules:
 ##            g_ = bgd[:, :(self.data.shape[1]/2)]
 ##            r_ = bgd[:, (self.data.shape[1]/2):]
