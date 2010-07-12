@@ -1,5 +1,6 @@
 from django.db import models
 import datetime
+import os
 
 from PYME.misc.hash32 import hashString32
 
@@ -99,6 +100,7 @@ class File(models.Model):
     fileID = models.IntegerField()
     imageID = models.ForeignKey(Image, related_name='files')
     filename = models.CharField(max_length=200)
+    filesize = models.BigIntegerField(default=-1)
 
     def Tag(self, tagName):
         FileTag.AddTag(self, tagName)
@@ -117,6 +119,8 @@ class File(models.Model):
         except:
             import PYME.FileUtils.fileID as file_ID
 
+            print filename
+
             mdh = file_ID.getFileMetadata(filename)
             
             if fileID ==None:
@@ -127,7 +131,10 @@ class File(models.Model):
                 if 'imageID' in mdh.getEntryNames():
                     imageID = mdh.imageID
                 else:
+                    print 'guessing image id', filename
                     imageID = file_ID.genImageID(filename, guess=True)
+
+                #print imageID
 
             #print repr(imageID)
 
@@ -155,7 +162,7 @@ class File(models.Model):
             else:
                 im = None
                     
-            tn = cls(filename=filename, fileID=fileID, imageID=im)    
+            tn = cls(filename=filename, fileID=fileID, imageID=im, filesize=os.path.getsize(filename))
             tn.save()
             for t in file_ID.getFileTags(filename, mdh):
                 tn.Tag(t)

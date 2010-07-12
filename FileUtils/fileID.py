@@ -36,12 +36,11 @@ def genDataFileID(filename):
 #
 #    return ((2*ds)**np.arange(31)).sum()
     h5f = tables.openFile(filename)
-
     ds = h5f.root.ImageData[0, :, :]
-
     h5f.close()
+    ret  =  genFrameID(ds)
 
-    return genFrameID(ds)
+    return ret
 
 def genFrameID(frame):
     #h5f = tables.openFile(filename)
@@ -78,7 +77,7 @@ def genResultsFileID(filename):
 
     h5f.close()
 
-    return hashString32(ds)
+    return  hashString32(ds)
 
 def genFileID(filename):
     '''generate database ids for files. Where we know about the file type an ID
@@ -114,6 +113,7 @@ def genImageID(filename, guess=False):
                 ret = md.getEntry('Analysis.DataFileID')
             elif guess:
                 ret = guessH5RImageID(filename)
+                #print ret
             else:
                 ret = None
             #print guess, ret
@@ -121,9 +121,9 @@ def genImageID(filename, guess=False):
             h5f.close()
             return ret
         else:
-            return None
+            return hashString32(filename)
     except:
-        return None
+        return hashString32(filename)
 
 def genImageTime(filename):
     ext = os.path.splitext(filename)[1]

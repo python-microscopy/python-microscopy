@@ -80,4 +80,5 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.admin',
     'SampleDB.samples',
+    'south'
 )

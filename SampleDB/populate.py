@@ -19,8 +19,12 @@ def addFiles(directory, extensions=['.h5r', '.h5']):
         for file in files:
             if os.path.splitext(file)[1] in extensions:
                 filename = os.path.join(path, file)
-                print filename
+                #print filename
                 f = File.GetOrCreate(filename)
+
+                if f.filesize <=1: #was added before database updated
+                    f.filesize = os.path.getsize(filename)
+                    f.save()
 
 
 if __name__ == '__main__':
