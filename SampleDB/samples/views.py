@@ -37,6 +37,7 @@ def image_list(request):
     filters = {}
     startNum = 0
     numResults = 20
+    min_h5r_size = 0
     #print datetime(*([int(s) for s in request.REQUEST['start_date'].split('/')][::-1]))
 
     if 'start_date' in request.REQUEST:
@@ -54,6 +55,9 @@ def image_list(request):
 
     if 'num_results' in request.REQUEST:
         numResults = int(request.REQUEST['num_results'])
+
+    if 'min_h5r_size' in request.REQUEST:
+        min_h5r_size = int(request.REQUEST['min_h5r_size'])
 
     usernames = set([i.userID for i in Image.objects.all()])
     usernames = [u for u in usernames if (u.find('-') == -1) and (u.find(' ') ==-1)]
@@ -104,6 +108,12 @@ def image_list(request):
 
     imgs = Image.objects.filter(**filters).order_by('timestamp')
 
+    if min_h5r_size > 0:
+        ImageIDs = [f.imageID_id for f in File.objects.filter(filename__endswith='h5r').filter(filesize__gt=1e6*min_h5r_size)]
+        imgs = imgs.filter(imageID__in=ImageIDs)
+
+    #imgs = imgs.filter(files__filesize__gt=10e6)
+
     #if len(tags) > 0:
     #    imgs = [i for i in imgs if i.HasTags(tags)]
 
@@ -134,7 +144,7 @@ def image_list(request):
                 'prevStartNum': max(0, startNum-numResults), 'nextStartNum':nextStartNum,
                 'startNum':startNum, 'endNum':(startNum + numResults), 'totalNum':totalResultsNum,
                 'startNums':startNums,
-                'start_date':start_date, 'end_date':end_date, 'query': query},
+                'start_date':start_date, 'end_date':end_date, 'query': query, 'min_h5r_size' : min_h5r_size},
                 context_instance=RequestContext(request))
 
 

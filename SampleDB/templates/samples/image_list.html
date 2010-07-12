@@ -80,6 +80,11 @@
             </tr>
         </table>
 
+        <p>
+            <label for="min_h5r_size">Minimum results file size</label>
+        <input type="text" name= "min_h5r_size" id="min_h5r_size" size="5" value="{{min_h5r_size}}"/> MB
+        </p>
+
         <input type="submit" value="Apply Filter" />
     </form>
 
@@ -148,7 +153,11 @@
                 </td>
                 <td>
     {%for f in im.files.all %}
-    {{f.filename}}<br>
+    {{f.filename}}
+    {%if f.filesize > 0%}
+    [{{f.filesize|filesizeformat}}]
+    {%endif%}
+    <br>
     {%endfor%}
                 </td>
             </tr>

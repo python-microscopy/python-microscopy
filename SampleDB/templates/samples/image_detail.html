@@ -70,7 +70,9 @@
         {%endfor%}
     </td>
     <td>
-        {{f.filesize}}
+        {% if f.filesize > 0 %}
+        {{f.filesize|filesizeformat}}
+        {% endif %}
     </td>
     </tr>
     {%endfor%}
