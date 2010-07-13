@@ -14,12 +14,9 @@
 import os.path
 import wx
 import wx.py.shell
-#from IPython.frontend.wx.wx_frontend import WxController
 
-#import wx.lib.foldpanelbar as fpb
 import PYME.misc.autoFoldPanel as afp
 import wx.lib.agw.aui as aui
-#from PYME.misc.fbpIcons import *
 
 from PYME.Analysis.LMVis import gl_render
 from PYME.Analysis.LMVis import workspaceTree
@@ -33,18 +30,17 @@ from PYME.FileUtils import nameUtils
 from PYME.Analysis.EdgeDB import edges
 
 import os
-
 import gl_render3D
 
-try:
-    import delaunay as delny
-except:
-    pass
+#try:
+#    import delaunay as delny
+#except:
+#    pass
 
 from matplotlib import delaunay
 
 from PYME.Analysis.QuadTree import pointQT, QTrend
-import Image
+#import Image
 
 from PYME.Analysis.LMVis import genImageDialog
 from PYME.Analysis.LMVis import importTextDialog
@@ -53,7 +49,7 @@ from PYME.Analysis.LMVis import imageView
 from PYME.Analysis.LMVis import histLimits
 from PYME.Analysis.LMVis import colourPanel
 try:
-    from PYME.Analysis.LMVis import gen3DTriangs
+#    from PYME.Analysis.LMVis import gen3DTriangs
     from PYME.Analysis.LMVis import recArrayView
     from PYME.Analysis.LMVis import objectMeasure
 except:
@@ -79,23 +75,10 @@ from PYME.misc import editList
 from PYME.misc.auiFloatBook import AuiNotebookWithFloatingPages
 
 from PYME.Analysis.LMVis import statusLog
-#from IPython.frontend.wx.wx_frontend import WxController
-#from IPython.kernel.core.interpreter import Interpreter
-
-
-# ----------------------------------------------------------------------------
-# Visualisation of analysed localisation microscopy data
-#
-# David Baddeley 2009
-#
-# Some of the code in this file borrowed from the wxPython examples
-# ----------------------------------------------------------------------------
-
 from PYME.Analysis.LMVis.visHelpers import ImageBounds, GeneratedImage
 
 
-class VisGUIFrame(wx.Frame):
-    
+class VisGUIFrame(wx.Frame):    
     def __init__(self, parent, filename=None, id=wx.ID_ANY, title="PYME Visualise", pos=wx.DefaultPosition,
                  size=(700,650), style=wx.DEFAULT_FRAME_STYLE):
 
@@ -104,35 +87,16 @@ class VisGUIFrame(wx.Frame):
         self._mgr.SetManagedWindow(self)
 
         self._flags = 0
-        
-        #self.SetIcon(GetMondrianIcon())
-        
+               
         self.SetMenuBar(self.CreateMenuBar())
 
         self.statusbar = self.CreateStatusBar(1, wx.ST_SIZEGRIP)
         #self.statusbar.SetStatusWidths([-4, -4])
         self.statusbar.SetStatusText("", 0)
-        #self.statusbar.SetStatusText("", 1)
-
-#        self._leftWindow1 = wx.SashLayoutWindow(self, 101, wx.DefaultPosition,
-#                                                wx.Size(200, 1000), wx.NO_BORDER |
-#                                                wx.SW_3D | wx.CLIP_CHILDREN)
-#
-#        self._leftWindow1.SetDefaultSize(wx.Size(220, 1000))
-#        self._leftWindow1.SetOrientation(wx.LAYOUT_VERTICAL)
-#        self._leftWindow1.SetAlignment(wx.LAYOUT_LEFT)
-#        self._leftWindow1.SetSashVisible(wx.SASH_RIGHT, True)
-#        self._leftWindow1.SetExtraBorderSize(10)
-
-        self._leftWindow1 = wx.Panel(self, -1, size = wx.Size(220, 1000))
        
-
+        self._leftWindow1 = wx.Panel(self, -1, size = wx.Size(220, 1000))
         self._pnl = 0
-
-        # will occupy the space not used by the Layout Algorithm
-        #self.remainingSpace = wx.Panel(self, -1, style=wx.SUNKEN_BORDER)
-        #self.glCanvas = gl_render.LMGLCanvas(self.remainingSpace)
-        #self.glCanvas = wx.Panel(self, -1, style=wx.SUNKEN_BORDER)
+        
         self.notebook = AuiNotebookWithFloatingPages(id=-1, parent=self, style=wx.aui.AUI_NB_TAB_SPLIT)
 
         self.MainWindow = self #so we can access from shell
@@ -140,14 +104,11 @@ class VisGUIFrame(wx.Frame):
               parent=self.notebook, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
               introText='Python SMI bindings - note that help, license etc below is for Python, not PySMI\n\n')
 
-        
-
         self.elv = None
         self.colp = None
         self.mdp = None
         self.rav = None
 
-        
         self._pc_clim_change = False
 
         self.filesToClose = []
@@ -195,16 +156,12 @@ class VisGUIFrame(wx.Frame):
         #self.pointColour = None
         self.colData = '<None>'
 
-
-        
-
         #self.sh = WxController(self.notebook)
         #print self.sh.shell.user_ns
         #self.__dict__.update(self.sh.shell.user_ns)
         #self.sh.shell.user_ns = self.__dict__
 
         self.notebook.AddPage(page=self.sh, select=True, caption='Console')
-        
 
         #self.sh.execute_command('from pylab import *', hidden=True)
         #self.sh.execute_command('from PYME.DSView.dsviewer_npy import View3D', hidden=True)
@@ -243,13 +200,6 @@ class VisGUIFrame(wx.Frame):
         self.notebook.AddPage(page=self.glCanvas, select=True, caption='View')
         self.glCanvas.cmap = pylab.cm.hot
 
-#        self.ID_WINDOW_TOP = 100
-#        self.ID_WINDOW_LEFT1 = 101
-#        self.ID_WINDOW_RIGHT1 = 102
-#        self.ID_WINDOW_BOTTOM = 103
-
-        #self._leftWindow1.Bind(wx.EVT_SASH_DRAGGED_RANGE, self.OnFoldPanelBarDrag,
-        #                       id=100, id2=103)
         #self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_MOVE, self.OnMove)
 
@@ -268,31 +218,10 @@ class VisGUIFrame(wx.Frame):
             #self.glCanvas.OnPaint(None)
             self.OpenFile(filename)
 
-        #wx.LayoutAlgorithm().LayoutWindow(self, self.notebook)
 
         print 'about to refresh'
         self.RefreshView()
-        self.Refresh()
-
-#        namespace = dict()
-#
-#        namespace['visFr'] = self
-#        namespace['filter'] = self.filter
-#        namespace['mapping'] = self.mapping
-#        namespace['GeneratedMeasures'] = self.GeneratedMeasures
-#
-#        #namespace['Testfunc'] = Testfunc
-#        self.interp = Interpreter(user_ns=namespace)
-#
-#        self.f = wx.Frame(self, -1, 'IPython Console', size=(600, 500), pos=(700, 100))
-#        self.sh = WxController(self.f, wx.ID_ANY, shell=self.interp)
-#        self.sh.SetSize((600,500))
-#        sizer = wx.BoxSizer(wx.VERTICAL)
-#        sizer.Add(self.sh, 1, wx.EXPAND)
-#        self.f.SetSizer(sizer)
-#        self.f.Show()
-
-        
+        self.Refresh()      
 
     def OnSize(self, event):
 
@@ -310,12 +239,10 @@ class VisGUIFrame(wx.Frame):
             self.filesToClose.pop().close()
 
         pylab.close('all')
- 
         self.Destroy()
 
 
     def OnAbout(self, event):
-
         msg = "PYME Visualise\n\n Visualisation of localisation microscopy data\nDavid Baddeley 2009"
               
         dlg = wx.MessageDialog(self, msg, "About PYME Visualise",
@@ -324,65 +251,25 @@ class VisGUIFrame(wx.Frame):
         dlg.ShowModal()
         dlg.Destroy()
 
-
     def OnToggleWindow(self, event):
-        
-        self._leftWindow1.Show(not self._leftWindow1.IsShown())
-        # Leaves bits of itself behind sometimes
-        wx.LayoutAlgorithm().LayoutWindow(self, self.notebook)
-        self.glCanvas.Refresh()
-
-        event.Skip()
-        
-
-    def OnFoldPanelBarDrag(self, event):
-
-        if event.GetDragStatus() == wx.SASH_STATUS_OUT_OF_RANGE:
-            return
-
-        if event.GetId() == self.ID_WINDOW_LEFT1:
-            self._leftWindow1.SetDefaultSize(wx.Size(event.GetDragRect().width, 1000))
-
-
-        # Leaves bits of itself behind sometimes
-        wx.LayoutAlgorithm().LayoutWindow(self, self.notebook)
-        self.glCanvas.Refresh()
-
-        event.Skip()
-        
+        self._mgr.ShowPane(self._leftWindow1,not self._leftWindow1.IsShown())
+        self.glCanvas.Refresh()    
 
     def CreateFoldPanel(self):
-
         # delete earlier panel
         self._leftWindow1.DestroyChildren()
 
         # recreate the foldpanelbar
-
         hsizer = wx.BoxSizer(wx.VERTICAL)
 
         s = self._leftWindow1.GetBestSize()
 
-#        self._pnl = fpb.FoldPanelBar(self._leftWindow1, -1, wx.DefaultPosition,
-#                                     s)#, fpb.FPB_DEFAULT_STYLE,0)
-
-#        if self._pnl: #destroy old panel
-#            self._mgr.DetachPane(self._pnl)
-#            self._pnl.Destroy()
-
-
         self._pnl = afp.foldPanel(self._leftWindow1, -1, wx.DefaultPosition,s)
 
-#        self.Images = wx.ImageList(16,16)
-#        self.Images.Add(GetExpandedIconBitmap())
-#        self.Images.Add(GetCollapsedIconBitmap())
-            
         self.GenDataSourcePanel()
         self.GenFilterPanel()
-
         self.GenDriftPanel()
-
         self.GenColourFilterPanel()
-
         self.GenDisplayPanel()
         
         if self.viewMode == 'quads':
@@ -396,16 +283,10 @@ class VisGUIFrame(wx.Frame):
 
         if self.viewMode == 'interp_triangles':
             self.GenPointsPanel('Vertex Colours')
-       
-
-        #item = self._pnl.AddFoldPanel("Filters", False, foldIcons=self.Images)
-        #item = self._pnl.AddFoldPanel("Visualisation", False, foldIcons=self.Images)
 
         hsizer.Add(self._pnl, 1, wx.EXPAND, 0)
         self._leftWindow1.SetSizerAndFit(hsizer)
         
-
-        #wx.LayoutAlgorithm().LayoutWindow(self, self.notebook)
         self.glCanvas.Refresh()
 
     def GenColourFilterPanel(self):
@@ -2542,8 +2423,6 @@ class VisGUIFrame(wx.Frame):
 
     def OnOpenRaw(self, event):
         filename = wx.FileSelector("Choose a file to open", nameUtils.genResultDirectoryPath(), default_extension='h5', wildcard='PYME Spool Files (*.h5)|*.h5|Khoros Data Format (*.kdf)|*.kdf')
-
-        #print filename
         if not filename == '':
             self.OpenRaw(filename)
 
@@ -2569,12 +2448,9 @@ class VisGUIFrame(wx.Frame):
 
             md = MetaData.genMetaDataFromHDF(h5f)
 
-            #im = h5f.root.ImageData[min(md.EstimatedLaserOnFrameNo+10,(h5f.root.ImageData.shape[0]-1)) , :,:].squeeze().astype('f')
+            
             im = h5f.root.ImageData
-            #im = im - min(md.CCD.ADOffset, im.min())
-
-            #h5f.close()
-
+            
             self.filesToClose.append(h5f)
             
             pixelSize = md.voxelsize.x*1e3
@@ -2802,24 +2678,14 @@ class VisGuiApp(wx.App):
 
 
 def main(filename):
-    #from optparse import OptionParser
-
-    #parser = OptionParser()
-    #parser.add_option("-i", "--init-file", dest="initFile", help="Read initialisation from file [defaults to init.py]", metavar="FILE")
-        
-    #(options, args) = parser.parse_args()
-
-    
-    
     application = VisGuiApp(filename, 0)
     application.MainLoop()
+
 
 if __name__ == '__main__':
     from multiprocessing import freeze_support
     freeze_support()
-    #from PYME import mProfile
-    #mProfile.profileOn([ 'edges.py', 'VisGUI.py', 'gl_render.py', 'gen3DTriangs.py'])
-
+    
     filename = None
 
     if len(sys.argv) > 1:
@@ -2833,5 +2699,4 @@ if __name__ == '__main__':
         visFr.Show()
         visFr.RefreshView()
 
-    #mProfile.report()
 

@@ -15,14 +15,15 @@ import wx.glcanvas
 import wx
 #from OpenGL.GLUT import *
 #from OpenGL.GLU import *
+#from OpenGL import GL
 from OpenGL.GL import *
-import sys,math
+#import sys,math
 #import sys
 import numpy
-import Image
-from matplotlib import delaunay
-from PYME.Analysis.QuadTree import pointQT
-import scipy
+#import Image
+#from matplotlib import delaunay
+#from PYME.Analysis.QuadTree import pointQT
+#import numpy
 
 import statusLog
 
@@ -169,7 +170,7 @@ class LMGLCanvas(GLCanvas):
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
             glPushMatrix ()
 
-            glTranslatef (self.blurSigma*scipy.randn(), self.blurSigma*scipy.randn(),0.0)
+            glTranslatef (self.blurSigma*numpy.random.normal(), self.blurSigma*numpy.random.normal(),0.0)
 
             glDrawArrays(self.drawModes[self.mode], 0, self.nVertices)
 
@@ -324,6 +325,7 @@ class LMGLCanvas(GLCanvas):
         self.setColour(self.IScale, self.zeroPt)
 
     def setVoronoi(self, T, cp=None):
+        from matplotlib import delaunay
         tdb = []
         for i in range(len(T.x)):
             tdb.append([])
@@ -855,20 +857,22 @@ class LMGLCanvas(GLCanvas):
         return snap
 
     def jitMCT(self,x,y,jsig, mcp):
-        Imc = scipy.rand(len(x)) < mcp
+        from matplotlib import delaunay
+        Imc = numpy.rand(len(x)) < mcp
         if type(jsig) == numpy.ndarray:
             #print jsig.shape, Imc.shape
             jsig = jsig[Imc]
-        T = delaunay.Triangulation(x[Imc] +  jsig*scipy.randn(Imc.sum()), y[Imc] +  jsig*scipy.randn(Imc.sum()))
+        T = delaunay.Triangulation(x[Imc] +  jsig*numpy.random.normal(size=Imc.sum()), y[Imc] +  jsig*numpy.random.normal(size=Imc.sum()))
         self.setTriang(T)
 
 
     def jitMCQ(self,x,y,jsig, mcp):
-        Imc = scipy.rand(len(x)) < mcp
+        from PYME.Analysis.QuadTree import pointQT
+        Imc = numpy.rand(len(x)) < mcp
         qt = pointQT.qtRoot(-250,250, 0, 500)
         if type(jsig) == numpy.ndarray:
             jsig = jsig[Imc]
-        for xi, yi in zip(x[Imc] +  jsig*scipy.randn(Imc.sum()), y[Imc] +  jsig*scipy.randn(Imc.sum())):
+        for xi, yi in zip(x[Imc] +  jsig*numpy.random.normal(size=Imc.sum()), y[Imc] +  jsig*numpy.random.normal(size=Imc.sum())):
             qt.insert(pointQT.qtRec(xi, yi, None))
         self.setQuads(qt, 100, True)
 
