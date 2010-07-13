@@ -1,7 +1,7 @@
 import wx
 import wx.gizmos
 from wx.lib.mixins.treemixin import VirtualTree
-from pylab import cm, array
+#from pylab import cm, array
 
 import inpFilt
 
