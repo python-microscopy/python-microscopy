@@ -354,17 +354,19 @@ class VisGUIFrame(wx.Frame):
     def CreateFoldPanel(self):
 
         # delete earlier panel
-        self._leftWindow1.DestroyChildren()
+        #self._leftWindow1.DestroyChildren()
 
         # recreate the foldpanelbar
 
-        hsizer = wx.BoxSizer(wx.VERTICAL)
+        #hsizer = wx.BoxSizer(wx.VERTICAL)
 
-        s = self._leftWindow1.GetBestSize()
+        #s = self._leftWindow1.GetBestSize()
 
 #        self._pnl = fpb.FoldPanelBar(self._leftWindow1, -1, wx.DefaultPosition,
 #                                     s)#, fpb.FPB_DEFAULT_STYLE,0)
-        self._pnl = afp.foldPanel(self, -1, wx.DefaultPosition,s)
+
+
+        self._pnl = afp.foldPanel(self, -1, wx.DefaultPosition,(220, 1000))
 
 #        self.Images = wx.ImageList(16,16)
 #        self.Images.Add(GetExpandedIconBitmap())
