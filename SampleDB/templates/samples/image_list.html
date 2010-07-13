@@ -134,7 +134,7 @@
     </p>
     <table>
     <thead>
-    <tr><th>ID</th><th>Date</th><th>Files</th><th>Tags</th></tr>
+    <tr><th>ID</th><th>Date</th><th>Files</th><th>Tags</th><th>Labels</th></tr>
     </thead>
     {% for im in object_list|dictsort:"timestamp" %}
     {#<tr class="{% cycle 'odd' 'even' %}">#}
@@ -159,7 +159,7 @@
     {%endif%}
     <br>
     {%endfor%}
-                </td>
+                
             </tr>
     </table>
     </td>
@@ -171,6 +171,11 @@
     {%for t in f.tags.all %}
     {{t.tag|tagify}}<br>
     {%endfor%}
+    {%endfor%}
+    </td>
+    <td>
+    {%for lab in im.slideID.labelling.all%}
+    {{lab.structure}} {{lab.label}}<br>
     {%endfor%}
     </td>
     </tr>

@@ -19,7 +19,7 @@ import wx
 import wx.py.shell
 #import wx.aui
 
-import wx.lib.foldpanelbar as fpb
+#import wx.lib.foldpanelbar as fpb
 import PYME.misc.autoFoldPanel as afp
 from PYME.misc.fbpIcons import *
 

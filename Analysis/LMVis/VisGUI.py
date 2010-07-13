@@ -16,8 +16,10 @@ import wx
 import wx.py.shell
 #from IPython.frontend.wx.wx_frontend import WxController
 
-import wx.lib.foldpanelbar as fpb
-from PYME.misc.fbpIcons import *
+#import wx.lib.foldpanelbar as fpb
+import PYME.misc.autoFoldPanel as afp
+import wx.lib.agw.aui as aui
+#from PYME.misc.fbpIcons import *
 
 from PYME.Analysis.LMVis import gl_render
 from PYME.Analysis.LMVis import workspaceTree
@@ -98,6 +100,8 @@ class VisGUIFrame(wx.Frame):
                  size=(700,650), style=wx.DEFAULT_FRAME_STYLE):
 
         wx.Frame.__init__(self, parent, id, title, pos, size, style)
+        self._mgr = aui.AuiManager(agwFlags = aui.AUI_MGR_DEFAULT | aui.AUI_MGR_AUTONB_NO_CAPTION)
+        self._mgr.SetManagedWindow(self)
 
         self._flags = 0
         
@@ -110,15 +114,18 @@ class VisGUIFrame(wx.Frame):
         self.statusbar.SetStatusText("", 0)
         #self.statusbar.SetStatusText("", 1)
 
-        self._leftWindow1 = wx.SashLayoutWindow(self, 101, wx.DefaultPosition,
-                                                wx.Size(200, 1000), wx.NO_BORDER |
-                                                wx.SW_3D | wx.CLIP_CHILDREN)
+#        self._leftWindow1 = wx.SashLayoutWindow(self, 101, wx.DefaultPosition,
+#                                                wx.Size(200, 1000), wx.NO_BORDER |
+#                                                wx.SW_3D | wx.CLIP_CHILDREN)
+#
+#        self._leftWindow1.SetDefaultSize(wx.Size(220, 1000))
+#        self._leftWindow1.SetOrientation(wx.LAYOUT_VERTICAL)
+#        self._leftWindow1.SetAlignment(wx.LAYOUT_LEFT)
+#        self._leftWindow1.SetSashVisible(wx.SASH_RIGHT, True)
+#        self._leftWindow1.SetExtraBorderSize(10)
 
-        self._leftWindow1.SetDefaultSize(wx.Size(220, 1000))
-        self._leftWindow1.SetOrientation(wx.LAYOUT_VERTICAL)
-        self._leftWindow1.SetAlignment(wx.LAYOUT_LEFT)
-        self._leftWindow1.SetSashVisible(wx.SASH_RIGHT, True)
-        self._leftWindow1.SetExtraBorderSize(10)
+        self._leftWindow1 = wx.Panel(self, -1, size = wx.Size(220, 1000))
+       
 
         self._pnl = 0
 
@@ -197,6 +204,7 @@ class VisGUIFrame(wx.Frame):
         #self.sh.shell.user_ns = self.__dict__
 
         self.notebook.AddPage(page=self.sh, select=True, caption='Console')
+        
 
         #self.sh.execute_command('from pylab import *', hidden=True)
         #self.sh.execute_command('from PYME.DSView.dsviewer_npy import View3D', hidden=True)
@@ -235,25 +243,32 @@ class VisGUIFrame(wx.Frame):
         self.notebook.AddPage(page=self.glCanvas, select=True, caption='View')
         self.glCanvas.cmap = pylab.cm.hot
 
-        self.ID_WINDOW_TOP = 100
-        self.ID_WINDOW_LEFT1 = 101
-        self.ID_WINDOW_RIGHT1 = 102
-        self.ID_WINDOW_BOTTOM = 103
+#        self.ID_WINDOW_TOP = 100
+#        self.ID_WINDOW_LEFT1 = 101
+#        self.ID_WINDOW_RIGHT1 = 102
+#        self.ID_WINDOW_BOTTOM = 103
 
-        self._leftWindow1.Bind(wx.EVT_SASH_DRAGGED_RANGE, self.OnFoldPanelBarDrag,
-                               id=100, id2=103)
-        self.Bind(wx.EVT_SIZE, self.OnSize)
+        #self._leftWindow1.Bind(wx.EVT_SASH_DRAGGED_RANGE, self.OnFoldPanelBarDrag,
+        #                       id=100, id2=103)
+        #self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_MOVE, self.OnMove)
 
         statusLog.SetStatusDispFcn(self.SetStatus)
 
         self.CreateFoldPanel()
+        self._mgr.AddPane(self._leftWindow1, aui.AuiPaneInfo().
+                          Name("sidebar").Left().CloseButton(False))
+
+        self._mgr.AddPane(self.notebook, aui.AuiPaneInfo().
+                          Name("shell").Centre().CaptionVisible(False).CloseButton(False))
+
+        self._mgr.Update()
 
         if not filename==None:
             #self.glCanvas.OnPaint(None)
             self.OpenFile(filename)
 
-        wx.LayoutAlgorithm().LayoutWindow(self, self.notebook)
+        #wx.LayoutAlgorithm().LayoutWindow(self, self.notebook)
 
         print 'about to refresh'
         self.RefreshView()
@@ -281,7 +296,7 @@ class VisGUIFrame(wx.Frame):
 
     def OnSize(self, event):
 
-        wx.LayoutAlgorithm().LayoutWindow(self, self.notebook)
+        #wx.LayoutAlgorithm().LayoutWindow(self, self.notebook)
         event.Skip()
 
     def OnMove(self, event):
@@ -343,14 +358,17 @@ class VisGUIFrame(wx.Frame):
 
         # recreate the foldpanelbar
 
+        hsizer = wx.BoxSizer(wx.VERTICAL)
+
         s = self._leftWindow1.GetBestSize()
 
-        self._pnl = fpb.FoldPanelBar(self._leftWindow1, -1, wx.DefaultPosition,
-                                     s)#, fpb.FPB_DEFAULT_STYLE,0)
+#        self._pnl = fpb.FoldPanelBar(self._leftWindow1, -1, wx.DefaultPosition,
+#                                     s)#, fpb.FPB_DEFAULT_STYLE,0)
+        self._pnl = afp.foldPanel(self, -1, wx.DefaultPosition,s)
 
-        self.Images = wx.ImageList(16,16)
-        self.Images.Add(GetExpandedIconBitmap())
-        self.Images.Add(GetCollapsedIconBitmap())
+#        self.Images = wx.ImageList(16,16)
+#        self.Images.Add(GetExpandedIconBitmap())
+#        self.Images.Add(GetCollapsedIconBitmap())
             
         self.GenDataSourcePanel()
         self.GenFilterPanel()
@@ -376,12 +394,21 @@ class VisGUIFrame(wx.Frame):
 
         #item = self._pnl.AddFoldPanel("Filters", False, foldIcons=self.Images)
         #item = self._pnl.AddFoldPanel("Visualisation", False, foldIcons=self.Images)
+
+        hsizer.Add(self._pnl, 1, wx.EXPAND, 0)
+        self._leftWindow1.SetSizerAndFit(hsizer)
+
         wx.LayoutAlgorithm().LayoutWindow(self, self.notebook)
         self.glCanvas.Refresh()
 
     def GenColourFilterPanel(self):
-        item = self._pnl.AddFoldPanel("Colour", collapsed=False,
-                                      foldIcons=self.Images)
+        item = afp.foldingPane(self._pnl, -1, caption="Colour", pinned = True)
+        #panel.Reparent(item)
+        #item.AddNewElement(panel)
+        #self._pnl.AddPane(item)
+
+        #item = self._pnl.AddFoldPanel("Colour", collapsed=False,
+        #                              foldIcons=self.Images)
 
         cnames = ['Everything']
 
@@ -396,7 +423,10 @@ class VisGUIFrame(wx.Frame):
             self.chColourFilterChan.SetSelection(0)
 
         self.chColourFilterChan.Bind(wx.EVT_CHOICE, self.OnColourFilterChange)
-        self._pnl.AddFoldPanelWindow(item, self.chColourFilterChan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+        #self._pnl.AddFoldPanelWindow(item, self.chColourFilterChan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+        item.AddNewElement(self.chColourFilterChan)
+
+        self._pnl.AddPane(item)
 
 
     def UpdateColourFilterChoices(self):
@@ -425,8 +455,9 @@ class VisGUIFrame(wx.Frame):
         self.RefreshView()
 
     def GenDataSourcePanel(self):
-        item = self._pnl.AddFoldPanel("Data Source", collapsed=True,
-                                      foldIcons=self.Images)
+        item = afp.foldingPane(self._pnl, -1, caption="Data Source", pinned = False)
+        #item = self._pnl.AddFoldPanel("Data Source", collapsed=True,
+        #                              foldIcons=self.Images)
         
         self.dsRadioIds = []
         for ds in self.dataSources:
@@ -436,7 +467,10 @@ class VisGUIFrame(wx.Frame):
             rb.SetValue(ds == self.selectedDataSource)
 
             rb.Bind(wx.EVT_RADIOBUTTON, self.OnSourceChange)
-            self._pnl.AddFoldPanelWindow(item, rb, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10) 
+            item.AddNewElement(rb)
+            #self._pnl.AddFoldPanelWindow(item, rb, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+
+        self._pnl.AddPane(item)
 
 
     def OnSourceChange(self, event):
@@ -445,8 +479,9 @@ class VisGUIFrame(wx.Frame):
         self.RegenFilter()
 
     def GenDisplayPanel(self):
-        item = self._pnl.AddFoldPanel("Display", collapsed=False,
-                                      foldIcons=self.Images)
+        item = afp.foldingPane(self._pnl, -1, caption="Display", pinned = True)
+#        item = self._pnl.AddFoldPanel("Display", collapsed=False,
+#                                      foldIcons=self.Images)
         
 
         #Colourmap
@@ -491,7 +526,8 @@ class VisGUIFrame(wx.Frame):
         bdsizer.Fit(pan)
 
         
-        self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+        #self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+        item.AddNewElement(pan)
 
         self.cColourmap.Bind(wx.EVT_CHOICE, self.OnCMapChange)
         self.cbCmapReverse.Bind(wx.EVT_CHECKBOX, self.OnCMapChange)
@@ -538,7 +574,8 @@ class VisGUIFrame(wx.Frame):
 
         #self.hlCLim.Refresh()
 
-        self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+        item.AddNewElement(pan)
+        #self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
 
         self.tCLimMin.Bind(wx.EVT_TEXT, self.OnCLimChange)
         self.tCLimMax.Bind(wx.EVT_TEXT, self.OnCLimChange)
@@ -553,7 +590,8 @@ class VisGUIFrame(wx.Frame):
         #LUT
         cbLUTDraw = wx.CheckBox(item, -1, 'Show LUT')
         cbLUTDraw.SetValue(self.glCanvas.LUTDraw)
-        self._pnl.AddFoldPanelWindow(item, cbLUTDraw, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+        item.AddNewElement(cbLUTDraw)
+        #self._pnl.AddFoldPanelWindow(item, cbLUTDraw, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
 
         cbLUTDraw.Bind(wx.EVT_CHECKBOX, self.OnLUTDrawCB)
 
@@ -575,9 +613,12 @@ class VisGUIFrame(wx.Frame):
         pan.SetSizer(hsizer)
         hsizer.Fit(pan)
         
-        self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+        item.AddNewElement(pan)
+        #self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
 
         chScaleBar.Bind(wx.EVT_CHOICE, self.OnChangeScaleBar)
+
+        self._pnl.AddPane(item)
 
         
     def OnCMapChange(self, event):
@@ -630,12 +671,14 @@ class VisGUIFrame(wx.Frame):
         
             
     def GenFilterPanel(self):
-        item = self._pnl.AddFoldPanel("Filter", collapsed=True,
-                                      foldIcons=self.Images)
+        item = afp.foldingPane(self._pnl, -1, caption="Filter", pinned = False)
+#        item = self._pnl.AddFoldPanel("Filter", collapsed=True,
+#                                      foldIcons=self.Images)
 
         self.lFiltKeys = wx.ListCtrl(item, -1, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.SUNKEN_BORDER, size=(-1, 200))
 
-        self._pnl.AddFoldPanelWindow(item, self.lFiltKeys, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+        item.AddNewElement(self.lFiltKeys)
+        #self._pnl.AddFoldPanelWindow(item, self.lFiltKeys, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
 
         self.lFiltKeys.InsertColumn(0, 'Key')
         self.lFiltKeys.InsertColumn(1, 'Min')
@@ -675,12 +718,16 @@ class VisGUIFrame(wx.Frame):
         if not self.filter == None:
             self.stFilterNumPoints.SetLabel('%d of %d events' % (len(self.filter['x']), len(self.selectedDataSource['x'])))
 
-        self._pnl.AddFoldPanelWindow(item, self.stFilterNumPoints, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+        item.AddNewElement(self.stFilterNumPoints)
+        #self._pnl.AddFoldPanelWindow(item, self.stFilterNumPoints, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
 
         self.bClipToSelection = wx.Button(item, -1, 'Clip to selection')
-        self._pnl.AddFoldPanelWindow(item, self.bClipToSelection, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+        item.AddNewElement(self.bClipToSelection)
+        #self._pnl.AddFoldPanelWindow(item, self.bClipToSelection, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
 
         self.bClipToSelection.Bind(wx.EVT_BUTTON, self.OnFilterClipToSelection)
+
+        self._pnl.AddPane(item)
         
     def OnFilterListRightClick(self, event):
 
@@ -718,28 +765,46 @@ class VisGUIFrame(wx.Frame):
         event.Skip()
 
     def OnFilterClipToSelection(self, event):
-        x0, y0 = self.glCanvas.selectionStart
-        x1, y1 = self.glCanvas.selectionFinish
+        if 'x' in self.filterKeys.keys() or 'y' in self.filterKeys.keys():
+            if 'x' in self.filterKeys.keys():
+                i = 0
+                while not self.lFiltKeys.GetItemText(i) == 'x':
+                    i +=1
+                self.lFiltKeys.DeleteItem(i)
+                self.filterKeys.pop('x')
+            if 'y' in self.filterKeys.keys():
+                i = 0
+                while not self.lFiltKeys.GetItemText(i) == 'y':
+                    i +=1
+                self.lFiltKeys.DeleteItem(i)
+                self.filterKeys.pop('y')
 
-        if not 'x' in self.filterKeys.keys():
-            indx = self.lFiltKeys.InsertStringItem(sys.maxint, 'x')
+            self.bClipToSelection.SetLabel('Clip to Selection')
         else:
-            indx = [self.lFiltKeys.GetItemText(i) for i in range(self.lFiltKeys.GetItemCount())].index('x')
+            x0, y0 = self.glCanvas.selectionStart
+            x1, y1 = self.glCanvas.selectionFinish
 
-        if not 'y' in self.filterKeys.keys():
-            indy = self.lFiltKeys.InsertStringItem(sys.maxint, 'y')
-        else:
-            indy = [self.lFiltKeys.GetItemText(i) for i in range(self.lFiltKeys.GetItemCount())].index('y')
+            if not 'x' in self.filterKeys.keys():
+                indx = self.lFiltKeys.InsertStringItem(sys.maxint, 'x')
+            else:
+                indx = [self.lFiltKeys.GetItemText(i) for i in range(self.lFiltKeys.GetItemCount())].index('x')
+
+            if not 'y' in self.filterKeys.keys():
+                indy = self.lFiltKeys.InsertStringItem(sys.maxint, 'y')
+            else:
+                indy = [self.lFiltKeys.GetItemText(i) for i in range(self.lFiltKeys.GetItemCount())].index('y')
 
 
-        self.filterKeys['x'] = (min(x0, x1), max(x0, x1))
-        self.filterKeys['y'] = (min(y0, y1), max(y0,y1))
+            self.filterKeys['x'] = (min(x0, x1), max(x0, x1))
+            self.filterKeys['y'] = (min(y0, y1), max(y0,y1))
 
-        self.lFiltKeys.SetStringItem(indx,1, '%3.2f' % min(x0, x1))
-        self.lFiltKeys.SetStringItem(indx,2, '%3.2f' % max(x0, x1))
+            self.lFiltKeys.SetStringItem(indx,1, '%3.2f' % min(x0, x1))
+            self.lFiltKeys.SetStringItem(indx,2, '%3.2f' % max(x0, x1))
 
-        self.lFiltKeys.SetStringItem(indy,1, '%3.2f' % min(y0, y1))
-        self.lFiltKeys.SetStringItem(indy,2, '%3.2f' % max(y0, y1))
+            self.lFiltKeys.SetStringItem(indy,1, '%3.2f' % min(y0, y1))
+            self.lFiltKeys.SetStringItem(indy,2, '%3.2f' % max(y0, y1))
+
+            self.bClipToSelection.SetLabel('Clear Clipping ROI')
 
         self.RegenFilter()
 
@@ -802,8 +867,9 @@ class VisGUIFrame(wx.Frame):
 
     
     def GenQuadTreePanel(self):
-        item = self._pnl.AddFoldPanel("QuadTree", collapsed=False,
-                                      foldIcons=self.Images)
+        item = afp.foldingPane(self._pnl, -1, caption="QuadTree", pinned = True)
+#        item = self._pnl.AddFoldPanel("QuadTree", collapsed=False,
+#                                      foldIcons=self.Images)
 
         pan = wx.Panel(item, -1)
         bsizer = wx.BoxSizer(wx.VERTICAL)
@@ -831,9 +897,12 @@ class VisGUIFrame(wx.Frame):
         bsizer.Fit(pan)
 
         
-        self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+        item.AddNewElement(pan)
+        #self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
 
         self.tQTLeafSize.Bind(wx.EVT_TEXT, self.OnQTLeafChange)
+
+        self._pnl.AddPane(item)
 
     
 
@@ -850,8 +919,9 @@ class VisGUIFrame(wx.Frame):
 
 
     def GenBlobPanel(self):
-        item = self._pnl.AddFoldPanel("Objects", collapsed=False,
-                                      foldIcons=self.Images)
+#        item = self._pnl.AddFoldPanel("Objects", collapsed=False,
+#                                      foldIcons=self.Images)
+        item = afp.foldingPane(self._pnl, -1, caption="Objects", pinned = True)
 
         pan = wx.Panel(item, -1)
         bsizer = wx.BoxSizer(wx.VERTICAL)
@@ -901,10 +971,13 @@ class VisGUIFrame(wx.Frame):
         bsizer.Fit(pan)
 
 
-        self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+        #self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+        item.AddNewElement(pan)
 
         self.bApplyThreshold.Bind(wx.EVT_BUTTON, self.OnObjApplyThreshold)
         self.bObjMeasure.Bind(wx.EVT_BUTTON, self.OnObjMeasure)
+
+        self._pnl.AddPane(item)
 
     def OnSetBlobColour(self, event):
         bcolour = self.cBlobColour.GetStringSelection()
@@ -951,8 +1024,9 @@ class VisGUIFrame(wx.Frame):
 
 
     def GenPointsPanel(self, title='Points'):
-        item = self._pnl.AddFoldPanel(title, collapsed=False,
-                                      foldIcons=self.Images)
+        item = afp.foldingPane(self._pnl, -1, caption=title, pinned = True)
+#        item = self._pnl.AddFoldPanel(title, collapsed=False,
+#                                      foldIcons=self.Images)
 
         pan = wx.Panel(item, -1)
         bsizer = wx.BoxSizer(wx.VERTICAL)
@@ -986,11 +1060,13 @@ class VisGUIFrame(wx.Frame):
         pan.SetSizer(bsizer)
         bsizer.Fit(pan)
 
-        
-        self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+        item.AddNewElement(pan)
+        #self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
 
         self.tPointSize.Bind(wx.EVT_TEXT, self.OnPointSizeChange)
         self.chPointColour.Bind(wx.EVT_CHOICE, self.OnChangePointColour)
+
+        self._pnl.AddPane(item)
 
     def UpdatePointColourChoices(self):
         if self.viewMode == 'points': #only change if we are in points mode
@@ -1033,8 +1109,9 @@ class VisGUIFrame(wx.Frame):
         return pointColour
 
     def GenDriftPanel(self):
-        item = self._pnl.AddFoldPanel("Drift Correction", collapsed=True,
-                                      foldIcons=self.Images)
+        item = afp.foldingPane(self._pnl, -1, caption="Drift Correction", pinned = False)
+#        item = self._pnl.AddFoldPanel("Drift Correction", collapsed=True,
+#                                      foldIcons=self.Images)
 
         pan = wx.Panel(item, -1)
         bsizer = wx.BoxSizer(wx.VERTICAL)
@@ -1074,7 +1151,8 @@ class VisGUIFrame(wx.Frame):
         bsizer.Fit(pan)
 
 
-        self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+        item.AddNewElement(pan)
+        #self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
 
         self.tXExpr.Bind(wx.EVT_TEXT, self.OnDriftExprChange)
         self.tYExpr.Bind(wx.EVT_TEXT, self.OnDriftExprChange)
@@ -1083,7 +1161,8 @@ class VisGUIFrame(wx.Frame):
 
         self.lDriftParams = editList.EditListCtrl(item, -1, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.SUNKEN_BORDER, size=(-1, 100))
 
-        self._pnl.AddFoldPanelWindow(item, self.lDriftParams, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+        item.AddNewElement(self.lDriftParams)
+        #self._pnl.AddFoldPanelWindow(item, self.lDriftParams, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
 
         self.lDriftParams.InsertColumn(0, 'Parameter')
         self.lDriftParams.InsertColumn(1, 'Value')
@@ -1122,14 +1201,16 @@ class VisGUIFrame(wx.Frame):
         pan.SetSizer(bsizer)
         bsizer.Fit(pan)
 
-
-        self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+        item.AddNewElement(pan)
+        #self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
 
         bFit.Bind(wx.EVT_BUTTON, self.OnDriftFit)
         bApply.Bind(wx.EVT_BUTTON, self.OnDriftApply)
         bRevert.Bind(wx.EVT_BUTTON, self.OnDriftRevert)
         bPlot.Bind(wx.EVT_BUTTON, self.OnDriftPlot)
         bZero.Bind(wx.EVT_BUTTON, self.OnDriftZeroParams)
+
+        self._pnl.AddPane(item)
 
     def OnDriftFit(self, event):
         self.driftCorrParams = intelliFit.doFitT(self.driftCorrFcn, self.driftCorrParams, self.filter, self.optimiseFcn)
