@@ -257,7 +257,7 @@ class VisGUIFrame(wx.Frame):
 
         self.CreateFoldPanel()
         self._mgr.AddPane(self._leftWindow1, aui.AuiPaneInfo().
-                          Name("sidebar").Left().CloseButton(False))
+                          Name("sidebar").Left().CloseButton(False).CaptionVisible(False))
 
         self._mgr.AddPane(self.notebook, aui.AuiPaneInfo().
                           Name("shell").Centre().CaptionVisible(False).CloseButton(False))
@@ -403,8 +403,9 @@ class VisGUIFrame(wx.Frame):
 
         hsizer.Add(self._pnl, 1, wx.EXPAND, 0)
         self._leftWindow1.SetSizerAndFit(hsizer)
+        
 
-        wx.LayoutAlgorithm().LayoutWindow(self, self.notebook)
+        #wx.LayoutAlgorithm().LayoutWindow(self, self.notebook)
         self.glCanvas.Refresh()
 
     def GenColourFilterPanel(self):
