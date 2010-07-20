@@ -15,10 +15,14 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
     #x & y positions of each frame
     xps = xm(np.arange(numFrames))
     yps = ym(np.arange(numFrames))
+
+    #print xps
     
     #convert to pixels
-    xdp = ((xps - xps.min()) / 1e-3*mdh.getEntry('voxelsize.x')).round()
-    ydp = ((yps - yps.min()) / 1e-3*mdh.getEntry('voxelsize.x')).round()
+    xdp = ((xps - xps.min()) / (1e-3*mdh.getEntry('voxelsize.x'))).round()
+    ydp = ((yps - yps.min()) / (1e-3*mdh.getEntry('voxelsize.x'))).round()
+
+    #print xdp
 
     #work out how big our tiled image is going to be
     imageSizeX = np.ceil(xdp.max() + frameSizeX)
@@ -32,6 +36,8 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
 
     #calculate a weighting matrix (to allow feathering at the edges - TODO)
     weights = np.ones((frameSizeX, frameSizeY, nchans))
+    weights[:, :10, :] = 0 #avoid splitter edge artefacts
+    weights[:, -10:, :] = 0
 
     ROIX1 = mdh.getEntry('Camera.ROIPosX')
     ROIY1 = mdh.getEntry('Camera.ROIPosY')
