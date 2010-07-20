@@ -17,29 +17,35 @@ import wx
 
 from PYME.Acquire.pointScanner import PointScanner
 from PYME.misc.wxPlotPanel import PlotPanel
-from PYME.Analysis import ofind
+#from PYME.Analysis import ofind
 
-ps = PointScanner(scope.piezos[1], scope.piezos[2], scope, pixels = [10,10], pixelsize=0.001, dwelltime=2, avg=False)
+ps = PointScanner(scope.piezos[1], scope.piezos[2], scope, pixels = [10,10], pixelsize=numpy.array([0.03, .015]), dwelltime=2, avg=False, evtLog = True)
 
 class SFGenPlotPanel(PlotPanel):
     def draw(self):
         if not hasattr( self, 'subplot' ):
                 self.subplot = self.figure.add_subplot( 111 )
 
-        ofd = ofind.ObjectIdentifier(scope.pa.dsa.astype('f').squeeze().T)
-        ofd.FindObjects(70, 0, splitter=True)
+        #ofd = ofind.ObjectIdentifier(scope.pa.dsa.astype('f').squeeze().T)
+        #ofd.FindObjects(70, 0, splitter=True)
 
         #print len(ofd)
-        X = (((ps.xp - ps.currPos[0])/.00007)[:, None]*numpy.ones(ps.yp.shape)[None, :]).ravel()
-        Y = (((ps.yp - ps.currPos[1])/.00007)[None, :]*numpy.ones(ps.xp.shape)[:, None]).ravel()
+        ox = scope.pa.dsa.shape[0]*numpy.array([0,1,1,0,0])*.07
+        oy = scope.pa.dsa.shape[1]*numpy.array([0,0,1,1,0])*.07
+
+        if scope.splitting =='up_down':
+            oy *= .5
+
+        X = (((ps.xp - ps.currPos[0])*1e3)[:, None]*numpy.ones(ps.yp.shape)[None, :]).ravel()
+        Y = (((ps.yp - ps.currPos[1])*1e3)[None, :]*numpy.ones(ps.xp.shape)[:, None]).ravel()
 
         self.subplot.cla()
 
-        for i, o in enumerate(ofd):
-            self.subplot.scatter(o.x + X, o.y + Y, c=i*numpy.ones(X.shape), vmin=0, vmax=len(ofd))
+        for i in xrange(X.size):
+            self.subplot.plot(ox + X[i], oy + Y[i])#, c=i)
 
-        self.subplot.set_xlim(0, 512)
-        self.subplot.set_ylim(0, 256)
+        #self.subplot.set_xlim(0, 512)
+        #self.subplot.set_ylim(0, 256)
 
         self.canvas.draw()
 
@@ -54,9 +60,15 @@ class ShiftfieldPreviewDialog(wx.Dialog):
         vsizer = wx.BoxSizer(wx.VERTICAL)
 
         hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer2.Add(wx.StaticText(pan, -1, 'Step Size [mm]:'), 0, wx.ALL, 2)
-        self.tPixelSize = wx.TextCtrl(pan, -1, value='%3.4f' % ps.pixelsize[0])
-        hsizer2.Add(self.tPixelSize, 0, wx.ALL, 2)
+        hsizer2.Add(wx.StaticText(pan, -1, 'Step Size x[mm]:'), 0, wx.ALL, 2)
+        self.tPixelSizeX = wx.TextCtrl(pan, -1, value='%3.4f' % ps.pixelsize[0])
+        hsizer2.Add(self.tPixelSizeX, 0, wx.ALL, 2)
+        vsizer.Add(hsizer2)
+
+        hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer2.Add(wx.StaticText(pan, -1, 'Step Size y[mm]:'), 0, wx.ALL, 2)
+        self.tPixelSizeY = wx.TextCtrl(pan, -1, value='%3.4f' % ps.pixelsize[1])
+        hsizer2.Add(self.tPixelSizeY, 0, wx.ALL, 2)
         vsizer.Add(hsizer2)
 
         hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
@@ -82,7 +94,7 @@ class ShiftfieldPreviewDialog(wx.Dialog):
 
         hsizer.Add(vsizer, 0, 0, 0)
 
-        self.plotPan = SFGenPlotPanel(pan, size=(400,200))
+        self.plotPan = SFGenPlotPanel(pan, size=(400,400))
         hsizer.Add(self.plotPan, 1, wx.EXPAND, 0)
 
         pan.SetSizerAndFit(hsizer)
@@ -90,7 +102,8 @@ class ShiftfieldPreviewDialog(wx.Dialog):
         self.SetSizerAndFit(sizer1)
 
     def updatePointScanner(self):
-        ps.pixelsize = numpy.ones(2)*float(self.tPixelSize.GetValue())
+        ps.pixelsize[0] = float(self.tPixelSizeX.GetValue())
+        ps.pixelsize[1] = float(self.tPixelSizeY.GetValue())
         ps.pixels[0] = int(self.tXPixels.GetValue())
         ps.pixels[1] = int(self.tYPixels.GetValue())
 

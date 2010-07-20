@@ -14,18 +14,24 @@ class PointScanner:
         self.avg = avg
         self.pixels = pixels
         self.pixelsize = pixelsize
+
+        if np.isscalar(pixelsize):
+            self.pixelsize = np.array([pixelsize, pixelsize])
+
         self.evtLog = evtLog
 
     def genCoords(self):
         if np.isscalar(self.pixels):
             #constant - use as number of pixels
             #center on current piezo position
-            self.xp = self.pixelsize*np.arange(-self.pixels/2, self.pixels/2 +1) + self.xpiezo[0].GetPos(self.xpiezo[1])
-            self.yp = self.pixelsize*np.arange(-self.pixels/2, self.pixels/2 +1) + self.ypiezo[0].GetPos(self.ypiezo[1])
+            #print self.pixelsize[0]
+            self.xp = self.pixelsize[0]*np.arange(-self.pixels/2, self.pixels/2 +1) + self.xpiezo[0].GetPos(self.xpiezo[1])
+            self.yp = self.pixelsize[1]*np.arange(-self.pixels/2, self.pixels/2 +1) + self.ypiezo[0].GetPos(self.ypiezo[1])
         elif np.isscalar(self.pixels[0]):
             #a 1D array - numbers in either direction centered on piezo pos
-            self.xp = self.pixelsize*np.arange(-self.pixels[0]/2, self.pixels[0]/2 +1) + self.xpiezo[0].GetPos(self.xpiezo[1])
-            self.yp = self.pixelsize*np.arange(-self.pixels[1]/2, self.pixels[1]/2 +1) + self.ypiezo[0].GetPos(self.ypiezo[1])
+            #print self.pixelsize[0]
+            self.xp = self.pixelsize[0]*np.arange(-self.pixels[0]/2, self.pixels[0]/2 +1) + self.xpiezo[0].GetPos(self.xpiezo[1])
+            self.yp = self.pixelsize[1]*np.arange(-self.pixels[1]/2, self.pixels[1]/2 +1) + self.ypiezo[0].GetPos(self.ypiezo[1])
         else:
             #actual pixel positions
             self.xp = self.pixels[0]
