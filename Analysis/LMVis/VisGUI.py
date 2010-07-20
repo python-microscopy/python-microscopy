@@ -2230,7 +2230,10 @@ class VisGUIFrame(wx.Frame):
                         self.selectedDataSource.setMapping('focus', 'z_focus')
 
                     if 'ScannerXPos' in self.elv.evKeyNames:
-                        self.xm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), 0, 'ScannerXPos', 0)
+                        x0 = 0
+                        if 'Positioning.Stage_X' in self.mdh.getEntryNames():
+                            x0 = self.mdh.getEntry('Positioning.Stage_X')
+                        self.xm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), x0, 'ScannerXPos', 0)
                         charts.append(('XPos [um]', self.xm, 'ScannerXPos'))
 
                         self.selectedDataSource.scan_x = 1.e3*self.xm(self.selectedDataSource['t']-.01)
@@ -2238,7 +2241,10 @@ class VisGUIFrame(wx.Frame):
                         self.selectedDataSource.setMapping('x', 'x + scan_x')
 
                     if 'ScannerYPos' in self.elv.evKeyNames:
-                        self.ym = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), 0, 'ScannerYPos', 0)
+                        y0 = 0
+                        if 'Positioning.Stage_Y' in self.mdh.getEntryNames():
+                            y0 = self.mdh.getEntry('Positioning.Stage_Y')
+                        self.ym = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), y0, 'ScannerYPos', 0)
                         charts.append(('YPos [um]', self.ym, 'ScannerYPos'))
 
                         self.selectedDataSource.scan_y = 1.e3*self.ym(self.selectedDataSource['t']-.01)

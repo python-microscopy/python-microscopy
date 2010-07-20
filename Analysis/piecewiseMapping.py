@@ -18,12 +18,12 @@ def timeToFrames(t, events, mdh):
 
     se = array([('0', 'start', startTime)], dtype=events.dtype)
     #get events corresponding to aquisition starts
-    startEvents = hstack((se,events[events['EventName']=='StartAq']))
+    startEvents = hstack((se, events[events['EventName'] == 'StartAq']))
 
     sfr = array([int(e['EventDescr']) for e in startEvents])
 
     si = startEvents['Time'].searchsorted(t)
-    fr = sfr[si-1] + floor((t - startEvents['Time'][si-1])/cycTime)
+    fr = sfr[si-1] + floor((t - startEvents['Time'][si-1]) / cycTime)
 
     return fr
 
@@ -33,20 +33,20 @@ def framesToTime(fr, events, mdh):
 
     se = array([('0', 'start', startTime)], dtype=events.dtype)
     #get events corresponding to aquisition starts
-    startEvents = hstack((se,events[events['EventName']=='StartAq']))
+    startEvents = hstack((se, events[events['EventName'] == 'StartAq']))
 
     sfr = array([int(e['EventDescr']) for e in startEvents])
 
     si = sfr.searchsorted(fr)
-    return startEvents['Time'][si-1] + (fr - sfr[si-1])*cycTime
+    return startEvents['Time'][si-1] + (fr - sfr[si-1]) * cycTime
     
 
 class piecewiseMap:
-    def __init__(self, y0, xvals, yvals, secsPerFrame = 1, xIsSecs = True):
+    def __init__(self, y0, xvals, yvals, secsPerFrame=1, xIsSecs=True):
         self.y0 = y0
 
         if xIsSecs: #store in frame numbers
-            self.xvals = xvals/secsPerFrame
+            self.xvals = xvals / secsPerFrame
         else:
             self.xvals = xvals
         self.yvals = yvals
@@ -54,11 +54,11 @@ class piecewiseMap:
         self.secsPerFrame = secsPerFrame
         self.xIsSecs = xIsSecs
 
-    def __call__(self, xp, xpInFrames = True):
-        yp = 0*xp
+    def __call__(self, xp, xpInFrames=True):
+        yp = 0 * xp
 
         if not xpInFrames:
-            xp = xp/self.secsPerFrame
+            xp = xp / self.secsPerFrame
         
 #        y0 = self.y0
 #        x0 = -inf
@@ -72,11 +72,11 @@ class piecewiseMap:
 
         inds = self.xvals.searchsorted(xp)
         yp  = self.yvals[maximum(inds-1, 0)]
-        yp[inds==0] = self.y0
+        yp[inds == 0] = self.y0
 
         return yp
 
-def GeneratePMFromEventList(events, metadata, x0, y0, eventName = 'ProtocolFocus', dataPos = 1):
+def GeneratePMFromEventList(events, metadata, x0, y0, eventName='ProtocolFocus', dataPos=1):
     x = []
     y = []
 

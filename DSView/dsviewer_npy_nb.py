@@ -277,11 +277,17 @@ class DSViewFrame(wx.Frame):
                 charts.append(('Focus [um]', self.zm, 'ProtocolFocus'))
 
             if 'ScannerXPos' in self.elv.evKeyNames:
-                self.xm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), 0, 'ScannerXPos', 0)
+                x0 = 0
+                if 'Positioning.Stage_X' in self.mdh.getEntryNames():
+                    x0 = self.mdh.getEntry('Positioning.Stage_X')
+                self.xm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), x0, 'ScannerXPos', 0)
                 charts.append(('XPos [um]', self.xm, 'ScannerXPos'))
 
             if 'ScannerYPos' in self.elv.evKeyNames:
-                self.ym = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), 0, 'ScannerYPos', 0)
+                y0 = 0
+                if 'Positioning.Stage_Y' in self.mdh.getEntryNames():
+                    y0 = self.mdh.getEntry('Positioning.Stage_Y')
+                self.ym = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), y0, 'ScannerYPos', 0)
                 charts.append(('YPos [um]', self.ym, 'ScannerYPos'))
 
             self.elv.SetCharts(charts)
@@ -372,6 +378,11 @@ class DSViewFrame(wx.Frame):
         mDeconvolution.Append(DECONV_SAVE, "Save", "", wx.ITEM_NORMAL)
         self.menubar.Append(mDeconvolution, "Deconvolution")
 
+        mExtras = wx.Menu()
+        EXTRAS_TILE = wx.NewId()
+        mExtras.Append(EXTRAS_TILE, "&Tiling", "", wx.ITEM_NORMAL)
+        self.menubar.Append(mExtras, "&Extras")
+
         # Menu Bar end
         #wx.EVT_MENU(self, wx.ID_SAVEAS, self.extractFrames)
         wx.EVT_MENU(self, wx.ID_SAVEAS, self.OnExport)
@@ -387,6 +398,8 @@ class DSViewFrame(wx.Frame):
 
         wx.EVT_MENU(self, DECONV_ICTM, self.OnDeconvICTM)
         wx.EVT_MENU(self, DECONV_SAVE, self.saveDeconvolution)
+
+        wx.EVT_MENU(self, EXTRAS_TILE, self.OnTile)
 		
         self.statusbar = self.CreateStatusBar(1, wx.ST_SIZEGRIP)
 
@@ -406,6 +419,14 @@ class DSViewFrame(wx.Frame):
         wx.LayoutAlgorithm().LayoutWindow(self, self.notebook1)
         self.Refresh()
         event.Skip()
+
+    def OnTile(self, event):
+        from PYME.Analysis import deTile
+        from PYME.DSView.dsviewer_npy import View3D
+
+        dt = deTile.tile(self.vp.ds, self.xm, self.ym, self.mdh)
+        View3D([dt[:,:,0][:,:,None], dt[:,:,1][:,:,None]], 'Tiled Image')
+
 
     def OnFoldPanelBarDrag(self, event):
 
