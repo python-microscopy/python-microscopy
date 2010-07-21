@@ -102,7 +102,7 @@ class DSViewFrame(wx.Frame):
         self.update()
 
     def update(self):
-        self.vp.update()
+        #self.vp.update()
         self.statusbar.SetStatusText('Slice No: (%d/%d)  x: %d  y: %d' % (self.do.zp, self.do.ds.shape[2], self.do.xp, self.do.yp))
 
     def OnSave(self, event=None):

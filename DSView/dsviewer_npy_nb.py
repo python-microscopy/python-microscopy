@@ -423,8 +423,14 @@ class DSViewFrame(wx.Frame):
     def OnTile(self, event):
         from PYME.Analysis import deTile
         from PYME.DSView.dsviewer_npy import View3D
-
-        dt = deTile.tile(self.vp.ds, self.xm, self.ym, self.mdh)
+        
+        x0 = self.mdh.getEntry('Positioning.Stage_X')
+        xm = piecewiseMapping.GenerateBacklashCorrPMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), x0, 'ScannerXPos', 0, .0055)
+        
+        y0 = self.mdh.getEntry('Positioning.Stage_Y')
+        ym = piecewiseMapping.GenerateBacklashCorrPMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), y0, 'ScannerYPos', 0, .0035)
+        
+        dt = deTile.tile(self.vp.ds, xm, ym, self.mdh)
         View3D([dt[:,:,0][:,:,None], dt[:,:,1][:,:,None]], 'Tiled Image')
 
 

@@ -89,3 +89,28 @@ def GeneratePMFromEventList(events, metadata, x0, y0, eventName='ProtocolFocus',
 
     return piecewiseMap(y0, timeToFrames(array(x), events, metadata), array(y), secsPerFrame, xIsSecs=False)
 
+def GenerateBacklashCorrPMFromEventList(events, metadata, x0, y0, eventName='ProtocolFocus', dataPos=1, backlash=0):
+    x = []
+    y = []
+
+    secsPerFrame = metadata.getEntry('Camera.CycleTime')
+
+    for e in events[events['EventName'] == eventName]:
+        #if e['EventName'] == eventName:
+        x.append(e['Time'])
+        y.append(float(e['EventDescr'].split(', ')[dataPos]))
+
+    x = array(x)
+    y = array(y)
+
+    dy = diff(hstack(([y0], y)))
+
+    for i in range(1, len(dy)):
+        if dy[i] == 0:
+            dy[i] = dy[i-1]
+
+    y += backlash*(dy < 0)
+
+
+    return piecewiseMap(y0, timeToFrames(x, events, metadata), y, secsPerFrame, xIsSecs=False)
+

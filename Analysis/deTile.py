@@ -49,9 +49,13 @@ def calcCorrShift(im1, im2):
     #figure(1)
     #imshow(xct)
 
-    dx, dy =  ndimage.measurements.center_of_mass(xct)
+    #dx, dy =  ndimage.measurements.center_of_mass(xct)
 
-    return dx - im1.shape[0]/2, dy - im1.shape[1]/2
+    #print np.where(xct==xct.max())
+
+    dx, dy = np.where(xct==xct.max())
+
+    return dx[0] - im1.shape[0]/2, dy[0] - im1.shape[1]/2
 
 
 def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixmatrix=[[1.,0.],[0.,1.]], correlate=False):
@@ -67,6 +71,7 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
     #x & y positions of each frame
     xps = xm(np.arange(numFrames))
     yps = ym(np.arange(numFrames))
+
 
     #print xps
     
@@ -91,6 +96,12 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
     weights[:, :10, :] = 0 #avoid splitter edge artefacts
     weights[:, -10:, :] = 0
 
+    #print weights[:20, :].shape
+    weights[:30, :, :] *= linspace(0,1, 30)[:,None, None]
+    weights[-30:, :,:] *= linspace(1,0, 30)[:,None, None]
+    weights[:,10:40,:] *= linspace(0,1, 30)[None, :, None]
+    weights[:,-40:-10,:] *= linspace(1,0, 30)[None,:, None]
+
     ROIX1 = mdh.getEntry('Camera.ROIPosX')
     ROIY1 = mdh.getEntry('Camera.ROIPosY')
 
@@ -112,10 +123,29 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
             if split:
                 d = np.concatenate(unmux.Unmix(d, mixmatrix, offset, [ROIX1, ROIY1, ROIX2, ROIY2]), 2)
 
-            if correlate:
-                imr = (im[xdp[i]:(xdp[i]+frameSizeX), ydp[i]:(ydp[i]+frameSizeY), :]/occupancy[xdp[i]:(xdp[i]+frameSizeX), ydp[i]:(ydp[i]+frameSizeY), :]).sum(2)
-                alreadyThere = (weights*occupancy[xdp[i]:(xdp[i]+frameSizeX), ydp[i]:(ydp[i]+frameSizeY), :]).sum(2) > 0
+            imr = (im[xdp[i]:(xdp[i]+frameSizeX), ydp[i]:(ydp[i]+frameSizeY), :]/occupancy[xdp[i]:(xdp[i]+frameSizeX), ydp[i]:(ydp[i]+frameSizeY), :])
+            alreadyThere = (weights*occupancy[xdp[i]:(xdp[i]+frameSizeX), ydp[i]:(ydp[i]+frameSizeY), :]).sum(2) > 0
 
+            #d_ = d.sum(2)
+
+            r0 = imr[:,:,0][alreadyThere].sum()
+            r1 = imr[:,:,0][alreadyThere].sum()
+
+            if r0 == 0:
+                r0 = 1
+            else:
+                r0 = r0/ (d[:,:,0][alreadyThere]).sum()
+
+            if r1 == 0:
+                r1 = 1
+            else:
+                r1 = r1/ (d[:,:,1][alreadyThere]).sum()
+
+            r = array([r0, r1])
+
+            imr = imr.sum(2)
+
+            if correlate:
                 if (alreadyThere.sum() > 50):
                     dx = 0
                     dy = 0
@@ -123,13 +153,14 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
 
                     for r in rois:
                         x0,y0,x1,y1 = r
-                        print r
+                        #print r
                         dx_, dy_ = calcCorrShift(d.sum(2)[x0:x1, y0:y1], imr[x0:x1, y0:y1])
+                        print 'd_', dx_, dy_
                         dx += dx_
                         dy += dy_
                     
-                    dx = -np.round(dx/len(rois))
-                    dy = -np.round(dy/len(rois))
+                    dx = np.round(dx/len(rois))
+                    dy = np.round(dy/len(rois))
 
                     print dx, dy
 
@@ -137,11 +168,11 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
                 else:
                     dx, dy = (0,0)
 
-                im[(xdp[i]+dx):(xdp[i]+frameSizeX + dx), (ydp[i] + dy):(ydp[i]+frameSizeY + dy), :] += weights*d
+                im[(xdp[i]+dx):(xdp[i]+frameSizeX + dx), (ydp[i] + dy):(ydp[i]+frameSizeY + dy), :] += weights*d*r[None, None, :]
                 occupancy[(xdp[i] + dx):(xdp[i]+frameSizeX + dx), (ydp[i]+dy):(ydp[i]+frameSizeY + dy), :] += weights
                 
             else:
-                im[xdp[i]:(xdp[i]+frameSizeX), ydp[i]:(ydp[i]+frameSizeY), :] += weights*d
+                im[xdp[i]:(xdp[i]+frameSizeX), ydp[i]:(ydp[i]+frameSizeY), :] += weights*d*r[None, None, :]
                 occupancy[xdp[i]:(xdp[i]+frameSizeX), ydp[i]:(ydp[i]+frameSizeY), :] += weights
 
     ret =  (im/occupancy).squeeze()

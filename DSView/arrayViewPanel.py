@@ -678,11 +678,17 @@ class ArraySettingsAndViewPanel(wx.Panel):
 
 
         self.SetSizer(vpsizer)
+        self.updating = False
 
         wx.EVT_BUTTON(self, self.bShowOpts.GetId(), self.ShowOpts)
 
     def update(self):
-        self.view.Refresh()
+        if not self.updating:
+            self.updating = True
+            self.view.Refresh()
+            if ('update' in dir(self.GetParent())):
+                 self.GetParent().update()
+            self.updating = False
 
     def ShowOpts(self, event):
         if (self.showOptsPanel == 1):

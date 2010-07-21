@@ -124,11 +124,13 @@ class ScrolledImagePanel(wx.Panel):
     def RefreshScrollbars(self):
         self.scrollRangeX = max(0, self.imSize[0] - self.imagepanel.Size[0])
         self.xOff = min(self.xOff, self.scrollRangeX)
-        self.scrollX.SetScrollbar(self.xOff, max(1,  self.scrollRangeX*self.imagepanel.Size[0]/max(1, self.imSize[0])), self.scrollRangeX, 10)
+        #self.scrollX.SetScrollbar(self.xOff, max(1,  self.scrollRangeX*self.imagepanel.Size[0]/max(1, self.imSize[0])), self.scrollRangeX, 10)
+        self.scrollX.SetScrollbar(self.xOff, 1, self.scrollRangeX, 10)
 
         self.scrollRangeY = max(0, self.imSize[1] - self.imagepanel.Size[1])
         self.yOff = min(self.yOff, self.scrollRangeY)
-        self.scrollY.SetScrollbar(self.yOff, max(1,  self.scrollRangeY*self.imagepanel.Size[1]/max(1, self.imSize[1])), self.scrollRangeY, 10)
+        #self.scrollY.SetScrollbar(self.yOff, max(1,  self.scrollRangeY*self.imagepanel.Size[1]/max(1, self.imSize[1])), self.scrollRangeY, 10)
+        self.scrollY.SetScrollbar(self.yOff, 1, self.scrollRangeY, 10)
 
         if self.imSize[0] < self.imagepanel.Size[0]: #don't need scrollbar
             self.scrollX.Hide()
