@@ -98,8 +98,8 @@ class PointScanner:
             self.xpiezo[0].MoveTo(self.xpiezo[1], self.xp[callN % self.nx])
             self.ypiezo[0].MoveTo(self.ypiezo[1], self.yp[(callN % (self.imsize))/self.nx])
             if self.evtLog:
-                eventLog.logEvent('ScannerXPos', '%3.3f' % self.xp[callN % self.nx])
-                eventLog.logEvent('ScannerYPos', '%3.3f' % self.yp[(callN % (self.imsize))/self.nx])
+                eventLog.logEvent('ScannerXPos', '%3.6f' % self.xp[callN % self.nx])
+                eventLog.logEvent('ScannerYPos', '%3.6f' % self.yp[(callN % (self.imsize))/self.nx])
 
         self.callNum += 1
 

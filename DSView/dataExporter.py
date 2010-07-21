@@ -286,7 +286,11 @@ def _getFilename(defaultExt = '*.tif'):
         return fname
 
 def CropExportData(vp, mdh=None, events=None, origName = None):
-    roi = [[vp.selection_begin_x, vp.selection_end_x + 1],[vp.selection_begin_y, vp.selection_end_y +1], [0, vp.do.ds.shape[2]]]
+    if 'ds' in dir(vp.do):
+        ds = vp.do.ds
+    else:
+        ds= vp.ds
+    roi = [[vp.selection_begin_x, vp.selection_end_x + 1],[vp.selection_begin_y, vp.selection_end_y +1], [0, ds.shape[2]]]
     
     dlg = ExportDialog(None, roi)
     succ = dlg.ShowModal()
@@ -300,7 +304,7 @@ def CropExportData(vp, mdh=None, events=None, origName = None):
 
         exp = exportersByExtension['*' + os.path.splitext(filename)[1]]()
 
-        exp.Export(vp.do.ds, filename, dlg.GetXSlice(), dlg.GetYSlice(), dlg.GetZSlice(),mdh, events, origName)
+        exp.Export(ds, filename, dlg.GetXSlice(), dlg.GetYSlice(), dlg.GetZSlice(),mdh, events, origName)
 
     dlg.Destroy()
 

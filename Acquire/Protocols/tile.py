@@ -19,7 +19,7 @@ from PYME.Acquire.pointScanner import PointScanner
 from PYME.misc.wxPlotPanel import PlotPanel
 #from PYME.Analysis import ofind
 
-ps = PointScanner(scope.piezos[1], scope.piezos[2], scope, pixels = [10,10], pixelsize=numpy.array([0.03, .015]), dwelltime=2, avg=False, evtLog = True)
+ps = PointScanner(scope.piezos[1], scope.piezos[2], scope, pixels = [10,10], pixelsize=numpy.array([0.03, .015]), dwelltime=3, avg=False, evtLog = True)
 
 class SFGenPlotPanel(PlotPanel):
     def draw(self):
@@ -133,7 +133,7 @@ def ShowSFDialog():
     dlg.Destroy()
 
     #stop after one full scan
-    stopTask.when = 23 + 2*ps.imsize
+    stopTask.when = 23 + 3*ps.imsize
     print stopTask.when
 
 
