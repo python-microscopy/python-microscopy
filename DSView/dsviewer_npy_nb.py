@@ -194,7 +194,8 @@ class DSViewFrame(wx.Frame):
 
                     xmlfn = os.path.splitext(filename)[0] + '.xml'
                     if os.path.exists(xmlfn):
-                        self.mdh = MetaDataHandler.XMLMDHandler(xmlfn)
+                        self.mdh = MetaData.TIRFDefault
+                        self.mdh.copyEntriesFrom(MetaDataHandler.XMLMDHandler(xmlfn))
                     else:
                         self.mdh = MetaData.ConfocDefault
 

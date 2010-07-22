@@ -159,6 +159,8 @@ class SimpleSequenceAquisitor(PreviewAquisator):
         mdh.setEntry('StackSettings.ScanMode', ['Middle and Number', 'Start and End'][self.GetStartMode()])
         mdh.setEntry('StackSettings.ScanPiezo', self.piezos[self.GetScanChannel()][2])
 
+        mdh.setEntry('voxelsize.z', self.GetStepSize())
+
 
     def doStartLog(self):
         #new metadata handling
