@@ -57,8 +57,28 @@ def calcCorrShift(im1, im2):
 
     return dx[0] - im1.shape[0]/2, dy[0] - im1.shape[1]/2
 
+def genDark(ds, mdh, blur=2):
+    df = mdh.getEntry('Protocol.DarkFrameRange')
+    return ndimage.gaussian_filter(ds[:,:,df[0]:df[1]].mean(2), blur).reshape(list(ds.shape[:2]) + [1,])
 
-def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixmatrix=[[1.,0.],[0.,1.]], correlate=False):
+def guessFlat(ds, mdh, dark):
+    sf = mdh.getEntry('Protocol.DataStartsAt')
+    flt = ds[:,:,sf].astype('f')
+    n = 1
+
+    for i in range(sf, ds.shape[2]):
+        flt +=  ds[:,:,i]
+        n+=1
+
+    print flt.shape, dark.shape
+
+    flt = flt/n - dark
+    print flt.shape, flt.mean()
+    return np.minimum(flt.mean()/flt, 2.5)
+
+
+
+def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixmatrix=[[1.,0.],[0.,1.]], correlate=False, dark=None, flat=None):
     frameSizeX, frameSizeY, numFrames = ds.shape[:3]
 
     if split:
@@ -72,18 +92,18 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
     xps = xm(np.arange(numFrames))
     yps = ym(np.arange(numFrames))
 
-
-    #print xps
+    #give some room at the edges
+    bufSize = 0
+    if correlate:
+        bufSize = 300
     
     #convert to pixels
-    xdp = 300 + ((xps - xps.min()) / (1e-3*mdh.getEntry('voxelsize.x'))).round()
-    ydp = 300 + ((yps - yps.min()) / (1e-3*mdh.getEntry('voxelsize.y'))).round()
-
-    #print xdp
+    xdp = bufSize + ((xps - xps.min()) / (1e-3*mdh.getEntry('voxelsize.x'))).round()
+    ydp = bufSize + ((yps - yps.min()) / (1e-3*mdh.getEntry('voxelsize.y'))).round()
 
     #work out how big our tiled image is going to be
-    imageSizeX = np.ceil(xdp.max() + frameSizeX + 300)
-    imageSizeY = np.ceil(ydp.max() + frameSizeY + 300)
+    imageSizeX = np.ceil(xdp.max() + frameSizeX + bufSize)
+    imageSizeY = np.ceil(ydp.max() + frameSizeY + bufSize)
 
     #allocate an empty array for the image
     im = np.zeros([imageSizeX, imageSizeY, nchans])
@@ -97,10 +117,10 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
     weights[:, -10:, :] = 0
 
     #print weights[:20, :].shape
-    weights[:30, :, :] *= linspace(0,1, 30)[:,None, None]
-    weights[-30:, :,:] *= linspace(1,0, 30)[:,None, None]
-    weights[:,10:40,:] *= linspace(0,1, 30)[None, :, None]
-    weights[:,-40:-10,:] *= linspace(1,0, 30)[None,:, None]
+    weights[:100, :, :] *= linspace(0,1, 100)[:,None, None]
+    weights[-100:, :,:] *= linspace(1,0, 100)[:,None, None]
+    weights[:,10:110,:] *= linspace(0,1, 100)[None, :, None]
+    weights[:,-110:-10,:] *= linspace(1,0, 100)[None,:, None]
 
     ROIX1 = mdh.getEntry('Camera.ROIPosX')
     ROIY1 = mdh.getEntry('Camera.ROIPosY')
@@ -108,7 +128,10 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
     ROIX2 = ROIX1 + mdh.getEntry('Camera.ROIWidth')
     ROIY2 = ROIY1 + mdh.getEntry('Camera.ROIHeight')
 
-    offset = mdh.getEntry('Camera.ADOffset')
+    if dark == None:
+        offset = mdh.getEntry('Camera.ADOffset')
+    else:
+        offset = 0
 
 #    #get a sorted list of x and y values
 #    xvs = list(set(xdp))
@@ -120,6 +143,11 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
     for i in range(mdh.getEntry('Protocol.DataStartsAt'), numFrames):
         if xdp[i - 1] == xdp[i] or not skipMoveFrames:
             d = ds[:,:,i]
+            if not dark == None:
+                d = d - dark
+            if not flat == None:
+                d = d*flat
+
             if split:
                 d = np.concatenate(unmux.Unmix(d, mixmatrix, offset, [ROIX1, ROIY1, ROIX2, ROIY2]), 2)
 
@@ -141,7 +169,7 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
             else:
                 r1 = r1/ (d[:,:,1][alreadyThere]).sum()
 
-            r = array([r0, r1])
+            rt = array([r0, r1])
 
             imr = imr.sum(2)
 
@@ -168,11 +196,11 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
                 else:
                     dx, dy = (0,0)
 
-                im[(xdp[i]+dx):(xdp[i]+frameSizeX + dx), (ydp[i] + dy):(ydp[i]+frameSizeY + dy), :] += weights*d*r[None, None, :]
+                im[(xdp[i]+dx):(xdp[i]+frameSizeX + dx), (ydp[i] + dy):(ydp[i]+frameSizeY + dy), :] += weights*d*rt[None, None, :]
                 occupancy[(xdp[i] + dx):(xdp[i]+frameSizeX + dx), (ydp[i]+dy):(ydp[i]+frameSizeY + dy), :] += weights
                 
             else:
-                im[xdp[i]:(xdp[i]+frameSizeX), ydp[i]:(ydp[i]+frameSizeY), :] += weights*d*r[None, None, :]
+                im[xdp[i]:(xdp[i]+frameSizeX), ydp[i]:(ydp[i]+frameSizeY), :] += weights*d*rt[None, None, :]
                 occupancy[xdp[i]:(xdp[i]+frameSizeX), ydp[i]:(ydp[i]+frameSizeY), :] += weights
 
     ret =  (im/occupancy).squeeze()

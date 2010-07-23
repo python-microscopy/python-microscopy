@@ -257,30 +257,30 @@ class MyViewPanel(viewpanel.ViewPanel):
                 self.GetParent().update()
             else:
                 self.imagepanel.Refresh()
-	elif event.GetKeyCode() == 74:
-            self.ds.setXPos(self.ds.getXPos() - 1)
-            if ('update' in dir(self.GetParent())):
-                self.GetParent().update()
-            else:
-                self.imagepanel.Refresh()
-	elif event.GetKeyCode() == 76:
-            self.ds.setXPos(self.ds.getXPos() + 1)
-            if ('update' in dir(self.GetParent())):
-                self.GetParent().update()
-            else:
-                self.imagepanel.Refresh()
-	elif event.GetKeyCode() == 79:
-            self.ds.setYPos(self.ds.getYPos() + 1)
-            if ('update' in dir(self.GetParent())):
-                self.GetParent().update()
-            else:
-                self.imagepanel.Refresh()
-	elif event.GetKeyCode() == 77:
-            self.ds.setYPos(self.ds.getYPos() - 1)
-            if ('update' in dir(self.GetParent())):
-                self.GetParent().update()
-            else:
-                self.imagepanel.Refresh()
+        elif event.GetKeyCode() == 74:
+                self.ds.setXPos(self.ds.getXPos() - 1)
+                if ('update' in dir(self.GetParent())):
+                    self.GetParent().update()
+                else:
+                    self.imagepanel.Refresh()
+        elif event.GetKeyCode() == 76:
+                self.ds.setXPos(self.ds.getXPos() + 1)
+                if ('update' in dir(self.GetParent())):
+                    self.GetParent().update()
+                else:
+                    self.imagepanel.Refresh()
+        elif event.GetKeyCode() == 79:
+                self.ds.setYPos(self.ds.getYPos() + 1)
+                if ('update' in dir(self.GetParent())):
+                    self.GetParent().update()
+                else:
+                    self.imagepanel.Refresh()
+        elif event.GetKeyCode() == 77:
+                self.ds.setYPos(self.ds.getYPos() - 1)
+                if ('update' in dir(self.GetParent())):
+                    self.GetParent().update()
+                else:
+                    self.imagepanel.Refresh()
         else:
             event.Skip()
         

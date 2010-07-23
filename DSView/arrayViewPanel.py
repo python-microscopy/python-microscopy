@@ -593,7 +593,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         if self.do.slice == DisplayOpts.SLICE_XY:
             ima = numpy.zeros((min(sY_, self.do.ds.shape[1]), min(sX_, self.do.ds.shape[0]), 3), 'uint8')
             for chan, offset, gain, cmap in zip(self.do.Chans, self.do.Offs, self.do.Gains, self.do.cmaps):
-                ima[:] = ima[:] + (255*cmap(gain*(self.do.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.do.zp), chan].squeeze().T - offset))[:,:,:3]).astype('b')[:]
+                ima[:] = numpy.minimum(ima[:] + (255*cmap(gain*(self.do.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.do.zp), chan].squeeze().T - offset))[:,:,:3])[:], 255)
         #XZ
         elif self.do.slice == DisplayOpts.SLICE_XZ:
             ima = numpy.zeros((min(sY_, self.do.ds.shape[2]), min(sX_, self.do.ds.shape[0]), 3), 'uint8')

@@ -117,6 +117,7 @@ class ShiftfieldPreviewDialog(wx.Dialog):
 
     def OnGo(self, event):
         self.updatePointScanner()
+        ps.genCoords()
         self.EndModal(True)
 
 

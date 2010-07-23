@@ -104,7 +104,15 @@ class TiffStackExporter(Exporter):
     descr = 'TIFF (stack if 3D) - .tif'
 
     def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
-        saveTiffStack.saveTiffMultipage(data[xslice, yslice, zslice], outFile)
+        if data.shape[3] > 1: #have multiple colour channels
+            if data.shape[2] == 1: #2d image -> stack with chans
+                d = numpy.concatenate([data[xslice, yslice, 0, i] for i in range(data.shape[3])],2)
+                saveTiffStack.saveTiffMultipage(d, outFile)
+            else: #save each channel as it's own stack
+                for i in range(data.shape[3]):
+                    saveTiffStack.saveTiffMultipage(data[xslice, yslice, zslice, i], outFile + '_ch%d' % i)
+        else:
+            saveTiffStack.saveTiffMultipage(data[xslice, yslice, zslice], outFile)
 
         if not metadata == None:
             xmd = MetaDataHandler.XMLMDHandler(mdToCopy=metadata)
