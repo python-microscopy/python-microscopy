@@ -436,7 +436,7 @@ class DSViewFrame(wx.Frame):
 
         #print dark.shape, flat.shape
 
-        dt = deTile.tile(self.vp.ds, xm, ym, self.mdh, dark=dark, flat=flat, mixmatrix = [[.3, .7], [.7, .3]])
+        dt = deTile.tile(self.vp.ds, xm, ym, self.mdh, dark=dark, flat=flat)#, mixmatrix = [[.7, .3], [.3, .7]])
         View3D([dt[:,:,0][:,:,None], dt[:,:,1][:,:,None]], 'Tiled Image')
 
 
