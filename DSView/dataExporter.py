@@ -328,3 +328,5 @@ def ExportData(ds, mdh=None, events=None, origName = None):
 
     exp.Export(ds, filename, slice(0, ds.shape[0], 1), slice(0, ds.shape[1], 1), slice(0, ds.shape[2], 1),mdh, events, origName)
 
+    return filename
+

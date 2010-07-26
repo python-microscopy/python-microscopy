@@ -80,6 +80,11 @@ class PointScanner:
 
         self.xpiezo[0].MoveTo(self.xpiezo[1], self.xp[0])
         self.ypiezo[0].MoveTo(self.ypiezo[1], self.yp[0])
+        
+        if self.evtLog:
+                eventLog.logEvent('ScannerXPos', '%3.6f' % self.xp[0])
+                eventLog.logEvent('ScannerYPos', '%3.6f' % self.yp[0])
+
 
         self.scope.pa.WantFrameNotification.append(self.tick)
 
@@ -107,6 +112,10 @@ class PointScanner:
     #    self.scope.pa.WantFrameNotification.remove(self.tick)
     def stop(self):
         self.scope.pa.WantFrameNotification.remove(self.tick)
+        
+        self.xpiezo[0].MoveTo(self.xpiezo[1], self.currPos[0])
+        self.ypiezo[0].MoveTo(self.ypiezo[1], self.currPos[1])
+
 
 
 

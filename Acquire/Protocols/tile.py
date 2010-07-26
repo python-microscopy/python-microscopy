@@ -125,6 +125,7 @@ def stop():
     ps.stop()
     MainFrame.pan_spool.OnBStopSpoolingButton(None)
 
+
 stopTask = T(500, stop)
 
 def ShowSFDialog():
@@ -134,7 +135,7 @@ def ShowSFDialog():
     dlg.Destroy()
 
     #stop after one full scan
-    stopTask.when = 23 + 3*ps.imsize
+    stopTask.when = 40 + 3*ps.imsize
     print stopTask.when
 
 

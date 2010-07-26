@@ -113,7 +113,9 @@ class DSViewFrame(wx.Frame):
         else:
             evts = []
 
-        dataExporter.ExportData(self.vp.do.ds, self.mdh, evts)
+        fn = dataExporter.ExportData(self.vp.do.ds, self.mdh, evts)
+
+        self.SetTitle(fn)
 
         self.saved = True
 

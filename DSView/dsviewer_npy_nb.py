@@ -431,12 +431,15 @@ class DSViewFrame(wx.Frame):
         y0 = self.mdh.getEntry('Positioning.Stage_Y')
         ym = piecewiseMapping.GenerateBacklashCorrPMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), y0, 'ScannerYPos', 0, .0035)
         
-        dark = deTile.genDark(self.vp.ds, self.mdh)
+        #dark = deTile.genDark(self.vp.ds, self.mdh)
+        dark = self.mdh.getEntry('Camera.ADOffset')
         flat = deTile.guessFlat(self.vp.ds, self.mdh, dark)
+        #flat = numpy.load('d:/dbad004/23_7_flat.npy')
+        #flat = flat.reshape(list(flat.shape[:2]) + [1,])
 
         #print dark.shape, flat.shape
 
-        dt = deTile.tile(self.vp.ds, xm, ym, self.mdh, dark=dark, flat=flat)#, mixmatrix = [[.7, .3], [.3, .7]])
+        dt = deTile.tile(self.vp.ds, xm, ym, self.mdh, dark=dark, flat=flat)#, mixmatrix = [[.3, .7], [.7, .3]])
         View3D([dt[:,:,0][:,:,None], dt[:,:,1][:,:,None]], 'Tiled Image')
 
 
