@@ -6,7 +6,7 @@ import os
 micrDataDir = '/mnt/MicrData/'
 lDataDir = len(micrDataDir)
 nasDir = '/mnt/NasData/'
-backupDir = '/media/disk/Data/'
+backupDir = '/media/disk/LMNAS1/'
 
 def deleteFiles(directory):
     #dir_size = 0
