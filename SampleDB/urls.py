@@ -11,8 +11,8 @@ urlpatterns = patterns('',
     # Example:
     #(r'^SampleDB/', include('SampleDB.foo.urls')),
     #(r'^data/$', 'SampleDB.samples.views.slide_index'),
-    #(r'^slides/$', 'SampleDB.samples.views.slide_index'),
-    (r'^slides/$', 'django.views.generic.list_detail.object_list', {'queryset' : Slide.objects.all()}),
+    (r'^slides/$', 'SampleDB.samples.views.slide_index'),
+    #(r'^slides/$', 'django.views.generic.list_detail.object_list', {'queryset' : Slide.objects.all()}),
     #(r'^slides/(?P<slideID>.*)$', 'SampleDB.samples.views.slide_detail'),
     (r'^slides/(?P<object_id>.*)$', 'django.views.generic.list_detail.object_detail', {'queryset' : Slide.objects.all()}),
     #(r'^images/$', 'django.views.generic.list_detail.object_list', {'queryset' : Image.objects.all()}),
@@ -31,6 +31,8 @@ urlpatterns = patterns('',
     (r'^datehist/$', 'SampleDB.samples.dategraph.dategraph'),
 
     (r'^hint/tag$', 'SampleDB.samples.views.tag_hint'),
+
+    (r'^booking/$', 'SampleDB.samples.views.booking'),
 
     (r'^media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT }),
 

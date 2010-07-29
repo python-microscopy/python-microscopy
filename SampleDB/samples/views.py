@@ -21,9 +21,30 @@ def slide_detail(request, slideID):
     return render_to_response('samples/slide_detail.html', {'slide':sl, 'images':images, 'labels':labels})
 
 def slide_index(request):
-    sl = Slide.objects.all()
+    filters = {}
 
-    return render_to_response('samples/slide_list.html', {'slides':sl})
+    creatornames = set([s.creator for s in Slide.objects.all()])
+    creatornames = [u for u in creatornames if (u.find('-') == -1) and (u.find(' ') ==-1) and (u.find('.') ==-1)]
+
+    creator = [i[0].split('_')[1] for i in request.REQUEST.items() if i[0].startswith('creator_') and i[1] == '1']
+    #print users
+    if len(creator) >  0:
+        filters['creator__in'] = creator
+
+    creator_info = [userInfo(u, u in creator) for u in creatornames]
+
+    structures = set([l.structure for l in Labelling.objects.all()])
+
+    structure = [i[0].split('_')[1] for i in request.REQUEST.items() if i[0].startswith('structure_') and i[1] == '1']
+
+    if len(structure) >  0:
+        filters['labelling__structure__in'] = structure
+
+    structure_info = [userInfo(u, u in structure) for u in structures]
+
+    sl = Slide.objects.filter(**filters)
+
+    return render_to_response('samples/slide_list.html', {'slides':sl,'creator_info':creator_info,'structure_info':structure_info,})
 
 #class ImageFilterForm(forms.Form):
 
@@ -68,6 +89,15 @@ def image_list(request):
         filters['userID__in'] = users
 
     user_info = [userInfo(u, u in users) for u in usernames]
+
+    structures = set([l.structure for l in Labelling.objects.all()])
+
+    structure = [i[0].split('_')[1] for i in request.REQUEST.items() if i[0].startswith('structure_') and i[1] == '1']
+
+    if len(structure) >  0:
+        filters['slideID__labelling__structure__in'] = structure
+
+    structure_info = [userInfo(u, u in structure) for u in structures]
 
 #    tagnames = set()
 #    for i in Image.objects.all():
@@ -140,7 +170,7 @@ def image_list(request):
     query = '&'.join([q for q in query.split('&') if not q.startswith('start_num')])
 
     return render_to_response('samples/image_list.html', {'object_list':imgs, 
-                'user_info':user_info, 'tag_info':tag_info,
+                'user_info':user_info, 'tag_info':tag_info, 'structure_info': structure_info,
                 'prevStartNum': max(0, startNum-numResults), 'nextStartNum':nextStartNum,
                 'startNum':startNum, 'endNum':(startNum + numResults), 'totalNum':totalResultsNum,
                 'startNums':startNums,
@@ -164,4 +194,8 @@ def tag_image(request, image_id):
 def default(request):
 
     return render_to_response('samples/sample_main.html', {})
+
+def booking(request):
+
+    return render_to_response('samples/scope_booking.html', {})
     

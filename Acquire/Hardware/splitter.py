@@ -121,7 +121,7 @@ class Unmixer:
 
 
 class Splitter:
-    def __init__(self, parent, menu, scope, dir='up_down', flipChan=1, dichroic = 'Unspecified', transLocOnCamera = 'Top'):
+    def __init__(self, parent, menu, scope, dir='up_down', flipChan=1, dichroic = 'Unspecified', transLocOnCamera = 'Top', constrain=True):
         self.dir = dir
         self.scope = scope
         self.flipChan=flipChan
@@ -165,13 +165,17 @@ class Splitter:
 
         menu.AppendSeparator()
         menu.AppendMenu(-1, '&Splitter', self.menu)
+
+        if constrain:
+            self.OnConstrainROI()
+            self.menu.Check(idConstROI, True)
         
 
     def ProvideMetadata(self, mdh):
         mdh.setEntry('Splitter.Dichroic', self.dichroic)
         mdh.setEntry('Splitter.TransmittedPathPosition', self.transLocOnCamera)
 
-    def OnConstrainROI(self,event):
+    def OnConstrainROI(self,event=None):
         self.constrainROI = not self.constrainROI
         if self.constrainROI:
             self.scope.splitting = self.dir

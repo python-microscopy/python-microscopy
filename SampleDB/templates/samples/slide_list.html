@@ -1,11 +1,58 @@
 {% extends "samples/sample_main.html" %}
+{% load extra_filters %}
+
+{%block extra_style%}
+    span.user{
+        {%if creator_info|sum:"disp"%}
+        background-color: #8489AC;
+        {%else%}
+        background-color: #D4D9FC;
+        {%endif%}
+    }
+
+    span.structure{
+        {%if structure_info|sum:"disp"%}
+        background-color: #8489AC;
+        {%else%}
+        background-color: #D4D9FC;
+        {%endif%}
+    }
+
+    span.user_active, span.tag_active{
+        background-color: #D4D9FC;
+    }
+
+{%endblock%}
 
 {% block content%}
     <h3>Slides</h3>
 
+    <div class="filter">
+    <form action="/slides/" method="get">
+
+    <p>
+        <b>Creator:</b>
+    {%for ui in creator_info%}
+        <span class="user{%if ui.disp%}_active{%endif%}">
+        <label for="creator_{{ui.name}}">{{ui.name}}</label><input type="checkbox" name="creator_{{ui.name}}" id="creator_{{ui.name}}" value="1" {%if ui.disp%} checked="checked"{%endif%}/>
+        </span>
+    {%endfor%}
+    </p>
+    <p>
+        <b>Labelling:</b>
+    {%for ui in structure_info%}
+        <span class="user structure{%if ui.disp%}_active{%endif%}">
+        <label for="structure_{{ui.name}}">{{ui.name}}</label><input type="checkbox" name="structure_{{ui.name}}" id="structure_{{ui.name}}" value="1" {%if ui.disp%} checked="checked"{%endif%}/>
+        </span>
+    {%endfor%}
+    </p>
+        <input type="submit" value="Apply Filter" />
+    </form>
+    </div>
+
     <table>
-        <thead><th>ID</th><th>Creator</th><th>Reference</th><th>Labelling</th></thead>
-    {% for sl in object_list %}
+        <thead><th>ID</th><th>Creator</th><th>Reference</th><th>Labelling</th><th># Images</th></thead>
+    {% for sl in slides %}
     <tr class="{% cycle 'odd' 'even' %}">
     <td><a href="/slides/{{ sl.slideID }}">{{ sl.slideID }}</a></td>
     <td width="100px">{{sl.creator}}</td>
@@ -19,6 +66,7 @@
     {%endfor%}
     </table>
     </td>
+    <td>{{sl.images.count}}</td>
     </tr>
     {% endfor %}
     </table>
