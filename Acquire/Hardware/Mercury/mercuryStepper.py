@@ -35,6 +35,7 @@ class mercuryStepper:
     def __init__(self, comPort=5, baud=9600, axes=['A', 'B'], steppers=['M-229.25S', 'M-229.25S']):
         self.axes = axes
         self.steppers = steppers
+        self.joystickOn = False
 
         self.lock = threading.RLock()
         
@@ -109,6 +110,7 @@ class mercuryStepper:
         self.lock.acquire()
         jv = [on for c in chans]
         m.JON(self.connID, [c + 1 for c in chans], jv)
+        self.joystickOn = on
         self.lock.release()
 
     def GetControlReady(self):
