@@ -20,16 +20,16 @@ import numpy
 taskList = [
 T(-1, scope.turnAllLasersOff),
 #T(-1, SetEMGain,150),
-T(20, scope.filterWheel.fw.setPos, 6),
+T(20, scope.filterWheel.SetFilterPos, "ND4.5"),
 T(21, scope.l671.TurnOn),
 T(58, scope.l671.TurnOff),
 T(60, SetEMGain,0),
 T(61, scope.l671.TurnOn),
-T(61, scope.filterWheel.fw.setPos, 1),
+T(61, scope.filterWheel.SetFilterPos, "EMPTY"),
 T(101, SetEMGain,150),
 T(110, MainFrame.pan_spool.OnBAnalyse, None),
 T(maxint, scope.turnAllLasersOff),
-T(maxint, scope.filterWheel.fw.setPos, 6),
+T(maxint, scope.filterWheel.SetFilterPos, "ND4.5"),
 ]
 
 #optional - metadata entries
