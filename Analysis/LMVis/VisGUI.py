@@ -168,6 +168,7 @@ class VisGUIFrame(wx.Frame):
 
         self.sh.Execute('from pylab import *')
         self.sh.Execute('from PYME.DSView.dsviewer_npy import View3D')
+        self.sh.runfile(os.path.join(os.path.dirname(__file__),'driftutil.py'))
 
         self.workspace = workspaceTree.WorkWrap(self.__dict__)
 
@@ -1255,6 +1256,7 @@ class VisGUIFrame(wx.Frame):
 
         ID_GEN_SHIFTMAP = wx.NewId()
         ID_CORR_DRIFT = wx.NewId()
+        ID_EXT_DRIFT = wx.NewId()
         ID_TRACK_MOLECULES = wx.NewId()
         ID_CALC_DECAYS = wx.NewId()
 
@@ -1340,6 +1342,7 @@ class VisGUIFrame(wx.Frame):
         special_menu = wx.Menu()
         special_menu.Append(ID_GEN_SHIFTMAP, "Calculate &Shiftmap")
         special_menu.Append(ID_CORR_DRIFT, "Estimate drift using cross-correlation")
+        special_menu.Append(ID_EXT_DRIFT, "Plot externally calculated drift trajectory")
         special_menu.Append(ID_TRACK_MOLECULES, "&Track single molecule trajectories")
         special_menu.Append(ID_CALC_DECAYS, "Estimate decay lifetimes")
 
@@ -1391,6 +1394,7 @@ class VisGUIFrame(wx.Frame):
 
         self.Bind(wx.EVT_MENU, self.OnGenShiftmap, id=ID_GEN_SHIFTMAP)
         self.Bind(wx.EVT_MENU, self.OnCalcCorrDrift, id=ID_CORR_DRIFT)
+        self.Bind(wx.EVT_MENU, self.OnPlotExtDrift, id=ID_EXT_DRIFT)
         self.Bind(wx.EVT_MENU, self.OnTrackMolecules, id=ID_TRACK_MOLECULES)
         self.Bind(wx.EVT_MENU, self.OnCalcDecays, id=ID_CALC_DECAYS)
 
@@ -2071,6 +2075,18 @@ class VisGUIFrame(wx.Frame):
 
         dlg.Destroy()
 
+
+    def OnPlotExtDrift(self, event):
+        from PYME.Analysis import driftAutocorr
+        import PYME.misc.driftio as dio
+        filename = wx.FileSelector("File with drift trajectory data", nameUtils.genResultDirectoryPath(), default_extension='drift', wildcard='Drift File (*.drift)|*.drift')
+
+        #print filename
+        if not filename == '':
+            extX, extY, extoffs, extstep = dio.loadDriftFile(filename)
+            extdrift = np.vstack((extX,extY)).transpose()
+            extdrift = extdrift - extdrift[0, :] # make zero based at beginning
+            driftAutocorr.plotDrift(extdrift,step=extstep,offset=extoffs,driftExprX=self.driftExprX, driftExprY=self.driftExprY, driftMapping=self.mapping)
 
     def OnSaveMeasurements(self, event):
         fdialog = wx.FileDialog(None, 'Save measurements ...',
