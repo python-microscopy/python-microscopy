@@ -332,7 +332,9 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         
         task.queueID = self.queueID
         task.initializeWorkerTimeout(time.clock())
+        self.inProgressLock.acquire()
         self.tasksInProgress.append(task)
+        self.inProgressLock.release()
         #self.getTaskLock.release()
 
         return task
@@ -365,7 +367,9 @@ class HDFTaskQueue(HDFResultsTaskQueue):
 
             task.queueID = self.queueID
             task.initializeWorkerTimeout(time.clock())
+            self.inProgressLock.acquire()
             self.tasksInProgress.append(task)
+            self.inProgressLock.release()
             #self.getTaskLock.release()
 
             tasks.append(task)
@@ -374,12 +378,15 @@ class HDFTaskQueue(HDFResultsTaskQueue):
 
 	
     def checkTimeouts(self):
+        self.inProgressLock.acquire()
         curTime = time.clock()
         for it in self.tasksInProgress:
             if 'workerTimeout' in dir(it):
                 if curTime > it.workerTimeout:
                     self.openTasks.insert(0, it.taskNum)
                     self.tasksInProgress.remove(it)
+
+        self.inProgressLock.release()
 
 
     def cleanup(self):

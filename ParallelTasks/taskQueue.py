@@ -31,6 +31,7 @@ class TaskQueue:
         self.tasksInProgress = []
         self.onEmpty = onEmpty #function to call when queue is empty
         self.fTaskToPop = fTaskToPop #function to call to decide which task to give a worker (useful if the workers need to have share information with, e.g., previous tasks as this can improve eficiency of per worker buffering of said info).
+        self.inProgressLock = threading.Lock()
 
     def postTask(self,task):
         self.openTasks.append(task)
@@ -50,7 +51,9 @@ class TaskQueue:
 
         task.queueID = self.queueID
         task.initializeWorkerTimeout(time.clock())
+        self.inProgressLock.acquire()
         self.tasksInProgress.append(task)
+        self.inProgressLock.release()
         #print '[%s] - Task given to worker' % self.queueID
         return task
 
@@ -58,6 +61,7 @@ class TaskQueue:
         return [self.getTask(workerN, NWorkers) for i in range(min(CHUNKSIZE,len(self.openTasks)))]
 
     def returnCompletedTask(self, taskResult):
+            self.inProgressLock.acquire()
             for it in self.tasksInProgress[:]:
                     if (it.taskID == taskResult.taskID):
                             self.tasksInProgress.remove(it)
@@ -65,8 +69,10 @@ class TaskQueue:
 
             if (len(self.openTasks) + len(self.tasksInProgress)) == 0: #no more tasks
                     self.onEmpty(self)
+            self.inProgressLock.release()
 
     def returnCompletedTasks(self, taskResults):
+        self.inProgressLock.acquire()
         for taskResult in taskResults:
             for it in self.tasksInProgress[:]:
                 if (it.taskID == taskResult.taskID):
@@ -76,6 +82,7 @@ class TaskQueue:
 
         if (len(self.openTasks) + len(self.tasksInProgress)) == 0: #no more tasks
             self.onEmpty(self)
+        self.inProgressLock.release()
 
     def fileResult(self,taskResult):
         self.closedTasks.append(taskResult)
@@ -87,12 +94,14 @@ class TaskQueue:
             return self.closedTasks.pop(0)
 
     def checkTimeouts(self):
+        self.inProgressLock.acquire()
         curTime = time.clock()
         for it in self.tasksInProgress:
             if 'workerTimeout' in dir(it):
                 if curTime > it.workerTimeout:
                     self.openTasks.insert(0, it)
                     self.tasksInProgress.remove(it)
+        self.inProgressLock.release()
 
     def getNumberOpenTasks(self):
         return len(self.openTasks)
