@@ -17,7 +17,7 @@ def saveDriftFile(filename,x,y,offs=0,step=1):
     fi.close()
 
 def loadDriftFile(filename):
-    fi = open(filename,'r')
+    fi = open(filename,'rb')
     x, y, offs, step = cPickle.load(fi)
     fi.close()
     return x, y, offs, step
