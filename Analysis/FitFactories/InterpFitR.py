@@ -30,23 +30,29 @@ def unpickleSlice(start, stop, step):
 
 copy_reg.pickle(slice, pickleSlice, unpickleSlice)
 
-def f_Interp3d(p, interpolator, X, Y, Z, *args):
+def f_Interp3d(p, interpolator, X, Y, Z, safeRegion, *args):
     """3D PSF model function with constant background - parameter vector [A, x0, y0, z0, background]"""
     A, x0, y0, z0, b = p
 
     #make sure our model is big enough to stretch to our current position
-    xm = len(X)/2
-    dx = min((interpolator.shape[0] - len(X))/2, xm) - 2
+#    xm = len(X)/2
+#    dx = min((interpolator.shape[0] - len(X))/2, xm) - 2
+#
+#    ym = len(Y)/2
+#    dy = min((interpolator.shape[1] - len(Y))/2, ym) - 2
+#
+#
+#    x0 = min(max(x0, X[xm - dx]), X[dx + xm])
+#    y0 = min(max(y0, Y[ym - dy]), Y[dy + ym])
+#    z0 = min(max(z0, Z[0] + interpolator.IntZVals[2]), Z[0] + interpolator.IntZVals[-2])
 
-    ym = len(Y)/2
-    dy = min((interpolator.shape[1] - len(Y))/2, ym) - 2
+    #currently just come to a hard stop when the optimiser tries to leave the safe region
+    #prob. not ideal, for a number of reasons
+    x0 = min(max(x0, safeRegion[0][0]), safeRegion[0][1])
+    y0 = min(max(y0, safeRegion[1][0]), safeRegion[1][1])
+    z0 = min(max(z0, safeRegion[2][0]), safeRegion[2][1])
 
-
-    x0 = min(max(x0, X[xm - dx]), X[dx + xm])
-    y0 = min(max(y0, Y[ym - dy]), Y[dy + ym])
-    z0 = min(max(z0, Z[0] + interpolator.IntZVals[2]), Z[0] + interpolator.IntZVals[-2])
-
-    return interpolator.interp(X - x0 + 1, Y - y0 + 1, Z[0] - z0 + 1)*A + b
+    return interpolator.interp(X - x0 + 1, Y - y0 + 1, Z - z0 + 1)*A + b
 
 
 def replNoneWith1(n):
@@ -142,11 +148,13 @@ class PSFFitFactory:
             print 'model changed'
             astigEstimator.calibrate(interpolator, md)
 
-        X = 1e3*md.voxelsize.x*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
-        Y = 1e3*md.voxelsize.y*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
-        Z = array([0]).astype('f')
+        X, Y, Z, safeRegion = interpolator.getCoords(md, slice(-roiHalfSize,roiHalfSize + 1), slice(-roiHalfSize,roiHalfSize + 1), slice(0,1))
 
-        return f_Interp3d(params, interpolator, X, Y, Z)
+        #X = 1e3*md.voxelsize.x*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
+        #Y = 1e3*md.voxelsize.y*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
+        #Z = array([0]).astype('f')
+
+        return f_Interp3d(params, interpolator, X, Y, Z, safeRegion)
 
     def FromPoint(self, x, y, z=None, roiHalfSize=15, axialHalfSize=15):
         #if (z == None): # use position of maximum intensity
@@ -159,7 +167,7 @@ class PSFFitFactory:
 
         xslice = slice(max((x - roiHalfSize), 0),min((x + roiHalfSize + 1),self.data.shape[0]))
         yslice = slice(max((y - roiHalfSize), 0),min((y + roiHalfSize + 1), self.data.shape[1]))
-        zslice = slice(0,2)
+        zslice = slice(0,1)
 		
         
     #def __getitem__(self, key):
@@ -169,7 +177,8 @@ class PSFFitFactory:
         dataROI = self.data[xslice, yslice, zslice] - self.metadata.Camera.ADOffset
 
         #generate grid to evaluate function on        
-        X, Y, Z = self.interpolator.getCoords(self.metadata, xslice, yslice, zslice)
+        X, Y, Z, safeRegion = self.interpolator.getCoords(self.metadata, xslice, yslice, zslice)
+        #print safeRegion
 
         #estimate some start parameters...
 #        A = dataROI.max() - dataROI.min() #amplitude
@@ -197,7 +206,14 @@ class PSFFitFactory:
 
         #startParameters = [A, x0, y0, z0, dataROI.min()]
 
-        startParameters = astigEstimator.getStartParameters(dataROI, X, Y)
+        if len(X.shape) > 1: #X is a matrix
+            X_ = X[:, 0, 0]
+            Y_ = Y[0, :, 0]
+        else:
+            X_ = X
+            Y_ = Y
+
+        startParameters = astigEstimator.getStartParameters(dataROI, X_, Y_)
 
 
         #estimate errors in data
@@ -206,7 +222,7 @@ class PSFFitFactory:
         sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*dataROI)/self.metadata.Camera.ElectronsPerCount
 
         #do the fit
-        (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, self.interpolator, X, Y, Z)
+        (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, self.interpolator, X, Y, Z, safeRegion)
 
         fitErrors=None
         try:

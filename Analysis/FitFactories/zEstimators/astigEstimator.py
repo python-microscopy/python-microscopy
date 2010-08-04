@@ -1,5 +1,6 @@
 from scipy.interpolate import splprep, splev
 import numpy
+#from pylab import *
 
 splines = {}
 
@@ -7,14 +8,25 @@ splines = {}
 def calibrate(interpolator, md, roiSize=5):
     #global zvals, dWidth
     #generate grid to evaluate function on
-    X, Y, Z = interpolator.getCoords(md, slice(-roiSize,roiSize), slice(-roiSize,roiSize), 0)
+    X, Y, Z, safeRegion = interpolator.getCoords(md, slice(-roiSize,roiSize), slice(-roiSize,roiSize), slice(0, 2))
+    #print Z, safeRegion
+
+    if len(X.shape) > 1: #X is a matrix
+        X_ = X[:, 0, 0]
+        Y_ = Y[0, :, 0]
+    else:
+        X_ = X
+        Y_ = Y
 
     z = numpy.arange(-500, 500, 10)
     ps = []
 
-    for z0 in z:
+    for z0 in z:    
         d = interpolator.interp(X, Y, Z + z0)
-        ps.append(_calcParams(d, X, Y))
+#        if z0 % 100 == 0:
+#            figure()
+#            imshow(d)
+        ps.append(_calcParams(d, X_, Y_))
 
     ps = numpy.array(ps)
     A, xp, yp, dw = ps.T

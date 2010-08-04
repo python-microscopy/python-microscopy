@@ -168,7 +168,7 @@ class VisGUIFrame(wx.Frame):
 
         self.sh.Execute('from pylab import *')
         self.sh.Execute('from PYME.DSView.dsviewer_npy import View3D')
-        self.sh.runfile(os.path.join(os.path.dirname(__file__),'driftutil.py'))
+        #self.sh.runfile(os.path.join(os.path.dirname(__file__),'driftutil.py'))
 
         self.workspace = workspaceTree.WorkWrap(self.__dict__)
 
