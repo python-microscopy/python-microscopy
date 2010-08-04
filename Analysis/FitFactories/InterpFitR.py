@@ -20,6 +20,7 @@ import types
 import cPickle
 
 from PYME.Analysis._fithelpers import *
+from PYME.Analysis.FitFactories.zEstimators import astigEstimator
 
 def pickleSlice(slice):
         return unpickleSlice, (slice.start, slice.stop, slice.step)
@@ -56,7 +57,13 @@ def replNoneWith1(n):
 
 
 
-fresultdtype=[('tIndex', '<i4'),('fitResults', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('background', '<f4')]),('fitError', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('background', '<f4')]), ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])]), ('startParams', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('background', '<f4')]), ('nchi2', '<f4')]
+fresultdtype=[('tIndex', '<i4'),
+    ('fitResults', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('background', '<f4')]),
+    ('fitError', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('background', '<f4')]) ,
+    #('coiR', [('sxl', '<f4'),('sxr', '<f4'),('syu', '<f4'),('syd', '<f4')]),
+    ('resultCode', '<i4'),
+    ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])]),
+    ('startParams', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('background', '<f4')]), ('nchi2', '<f4')]
 
 def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None, startParams=None, nchi2=-1):
 	if slicesUsed == None:
@@ -120,13 +127,43 @@ class PSFFitFactory:
 
         if fitfcn == f_Interp3d:
             if 'PSFFile' in metadata.getEntryNames():
-                self.interpolator.setModel(metadata.PSFFile, metadata)
+                if self.interpolator.setModel(metadata.PSFFile, metadata):
+                    print 'model changed'
+                    astigEstimator.calibrate(self.interpolator, metadata)
             else:
                 self.interpolator.genTheoreticalModel(metadata)
+
+    @classmethod
+    def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):
+        #generate grid to evaluate function on
+        #setModel(md.PSFFile, md)
+        interpolator = __import__('PYME.Analysis.FitFactories.Interpolators.' + md.Analysis.InterpModule , fromlist=['PYME', 'Analysis','FitFactories', 'Interpolators']).interpolator
+        if interpolator.setModel(md.PSFFile, md):
+            print 'model changed'
+            astigEstimator.calibrate(interpolator, md)
+
+        X = 1e3*md.voxelsize.x*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
+        Y = 1e3*md.voxelsize.y*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
+        Z = array([0]).astype('f')
+
+        return f_Interp3d(params, interpolator, X, Y, Z)
+
+    def FromPoint(self, x, y, z=None, roiHalfSize=15, axialHalfSize=15):
+        #if (z == None): # use position of maximum intensity
+        #    z = self.data[x,y,:].argmax()
+
+        x0 = x
+        y0 = y
+        x = round(x)
+        y = round(y)
+
+        xslice = slice(max((x - roiHalfSize), 0),min((x + roiHalfSize + 1),self.data.shape[0]))
+        yslice = slice(max((y - roiHalfSize), 0),min((y + roiHalfSize + 1), self.data.shape[1]))
+        zslice = slice(0,2)
 		
         
-    def __getitem__(self, key):
-        xslice, yslice, zslice = key
+    #def __getitem__(self, key):
+        #xslice, yslice, zslice = key
 
         #cut region out of data stack
         dataROI = self.data[xslice, yslice, zslice] - self.metadata.Camera.ADOffset
@@ -135,15 +172,32 @@ class PSFFitFactory:
         X, Y, Z = self.interpolator.getCoords(self.metadata, xslice, yslice, zslice)
 
         #estimate some start parameters...
-        A = dataROI.max() - dataROI.min() #amplitude
+#        A = dataROI.max() - dataROI.min() #amplitude
+#
+#        #x0 =  1e3*self.metadata.voxelsize.x*x0
+#        #y0 =  1e3*self.metadata.voxelsize.y*y0
+#
+#        dr = numpy.maximum(dataROI - dataROI.min() - 0.5*A, 0).squeeze()
+#        drs = dr.sum()
+#
+#        x0 = (X[:,None]*dr).sum()/drs
+#        y0 = (Y[None, :]*dr).sum()/drs
+#
+#        sig_xl = (numpy.maximum(0, x0 - X)[:,None]*dr).sum()/(drs)
+#        sig_xr = (numpy.maximum(0, X - x0)[:,None]*dr).sum()/(drs)
+#
+#        sig_yu = (numpy.maximum(0, y0 - Y)[None, :]*dr).sum()/(drs)
+#        sig_yd = (numpy.maximum(0, Y - y0)[None, :]*dr).sum()/(drs)
+#
+#        #x0 =  X.mean()
+#        #y0 =  Y.mean()
+#        z0 = 200.0
 
-        
 
-        x0 =  X.mean()
-        y0 =  Y.mean()
-        z0 = 200.0
 
-        startParameters = [A, x0, y0, z0, dataROI.min()]
+        #startParameters = [A, x0, y0, z0, dataROI.min()]
+
+        startParameters = astigEstimator.getStartParameters(dataROI, X, Y)
 
 
         #estimate errors in data
@@ -164,14 +218,15 @@ class PSFFitFactory:
         nchi2 = (infodict['fvec']**2).sum()/(dataROI.size - res.size)
 
         #print res, fitErrors, resCode
-        return PSFFitResultR(res, self.metadata, (xslice, yslice, zslice), resCode, fitErrors, numpy.array(startParameters), nchi2)
+        #return PSFFitResultR(res, self.metadata, numpy.array((sig_xl, sig_xr, sig_yu, sig_yd)),(xslice, yslice, zslice), resCode, fitErrors, numpy.array(startParameters), nchi2)
+        return PSFFitResultR(res, self.metadata,(xslice, yslice, zslice), resCode, fitErrors, numpy.array(startParameters), nchi2)
 
-    def FromPoint(self, x, y, z=None, roiHalfSize=7, axialHalfSize=15):
-        x = round(x)
-        y = round(y)
-
-        return self[max((x - roiHalfSize), 0):min((x + roiHalfSize + 1),self.data.shape[0]),
-            max((y - roiHalfSize), 0):min((y + roiHalfSize + 1), self.data.shape[1]), 0:2]
+#    def FromPoint(self, x, y, z=None, roiHalfSize=7, axialHalfSize=15):
+#        x = round(x)
+#        y = round(y)
+#
+#        return self[max((x - roiHalfSize), 0):min((x + roiHalfSize + 1),self.data.shape[0]),
+#            max((y - roiHalfSize), 0):min((y + roiHalfSize + 1), self.data.shape[1]), 0:2]
         
 
 #so that fit tasks know which class to use

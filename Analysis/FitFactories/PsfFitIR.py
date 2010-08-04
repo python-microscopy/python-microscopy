@@ -329,11 +329,39 @@ class PSFFitFactory:
                 setModel(metadata.PSFFile, metadata)
             else:
                 genTheoreticalModel(metadata)
+
+    @classmethod
+    def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):
+        #generate grid to evaluate function on
+        setModel(md.PSFFile, md)
+
+        X = 1e3*md.voxelsize.x*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
+        Y = 1e3*md.voxelsize.y*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
+        Z = array([0]).astype('f')
+
+        return f_Interp3d(params, X, Y, Z, None)
+
+
+    def FromPoint(self, x, y, z=None, roiHalfSize=15, axialHalfSize=15):
+        #if (z == None): # use position of maximum intensity
+        #    z = self.data[x,y,:].argmax()
+
+        x0 = x
+        y0 = y
+        x = round(x)
+        y = round(y)
+
+        xslice = slice(max((x - roiHalfSize), 0),min((x + roiHalfSize + 1),self.data.shape[0]))
+        yslice = slice(max((y - roiHalfSize), 0),min((y + roiHalfSize + 1), self.data.shape[1]))
+        zslice = slice(0,2)
+
+#        return self[max((x - roiHalfSize), 0):min((x + roiHalfSize + 1),self.data.shape[0]),
+#            max((y - roiHalfSize), 0):min((y + roiHalfSize + 1), self.data.shape[1]), 0:2]
 		
         
-    def __getitem__(self, key):
+    #def __getitem__(self, key):
         #print key
-        xslice, yslice, zslice = key
+        #xslice, yslice, zslice = key
 
         #cut region out of data stack
         dataROI = self.data[xslice, yslice, zslice] - self.metadata.Camera.ADOffset
@@ -344,6 +372,9 @@ class PSFFitFactory:
         #generate grid to evaluate function on        
         X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[xslice]
         Y = 1e3*self.metadata.voxelsize.y*scipy.mgrid[yslice]
+
+        x0 =  1e3*self.metadata.voxelsize.x*x0
+        y0 =  1e3*self.metadata.voxelsize.y*y0
 
 
         Z = array([0]).astype('f')
@@ -361,8 +392,8 @@ class PSFFitFactory:
         #print Ag
         #print Ar
 
-        x0 =  X.mean()
-        y0 =  Y.mean()
+        #x0 =  X.mean()
+        #y0 =  Y.mean()
         z0 = 200.0
 
         #ta = twist.calcTwist(dataROI, X-x0, Y - y0)
@@ -424,15 +455,7 @@ class PSFFitFactory:
         #print res, fitErrors, resCode
         return PSFFitResultR(res, self.metadata, (xslice, yslice, zslice), resCode, fitErrors, numpy.array(startParameters), nchi2)
 
-    def FromPoint(self, x, y, z=None, roiHalfSize=15, axialHalfSize=15):
-        #if (z == None): # use position of maximum intensity
-        #    z = self.data[x,y,:].argmax()
-
-        x = round(x)
-        y = round(y)
-
-        return self[max((x - roiHalfSize), 0):min((x + roiHalfSize + 1),self.data.shape[0]),
-            max((y - roiHalfSize), 0):min((y + roiHalfSize + 1), self.data.shape[1]), 0:2]
+    
         
 
 #so that fit tasks know which class to use

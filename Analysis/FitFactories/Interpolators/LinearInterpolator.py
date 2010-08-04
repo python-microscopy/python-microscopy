@@ -17,11 +17,11 @@ class LinearInterpolator(__interpolator):
         ry = (oy % self.dy)/self.dy
         rz = (oz % self.dz)/self.dz
 
-        fx = int(len(self.IntXVals)/2) + int(ox/self.dx)
-        fy = int(len(self.IntYVals)/2) + int(oy/self.dy)
-        fz = int(len(self.IntZVals)/2) + int(oz/self.dz)
+        fx = floor(len(self.IntXVals)/2) + floor(ox/self.dx)
+        fy = floor(len(self.IntYVals)/2) + floor(oy/self.dy)
+        fz = floor(len(self.IntZVals)/2) + floor(oz/self.dz)
 
-        #print fx
+        #print fz
         #print rx, ry, rz
 
         xl = len(X)

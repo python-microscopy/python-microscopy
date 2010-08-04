@@ -107,7 +107,7 @@ class GaussianFitResult:
         return scipy.sqrt(self.FWHMnm()**2 - self.FWHM_PSF**2)
 
     def renderFit(self):
-	X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[self.slicesUsed[0]]
+        X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[self.slicesUsed[0]]
         Y = 1e3*self.metadata.voxelsize.y*scipy.mgrid[self.slicesUsed[1]]
         return f_gauss2d(self.fitResults, X, Y)
         
@@ -149,11 +149,28 @@ class GaussianFitFactory:
             self.solver = FitModelWeightedJac
         else: 
             self.solver = FitModelWeighted
+
+    def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
+        if (z == None): # use position of maximum intensity
+            z = self.data[x,y,:].argmax()
+
+        x0 = x
+        y0 = y
+        x = round(x)
+        y = round(y)
+
+        #return self[max((x - roiHalfSize), 0):min((x + roiHalfSize + 1),self.data.shape[0]),
+        #            max((y - roiHalfSize), 0):min((y + roiHalfSize + 1), self.data.shape[1]),
+        #            max((z - axialHalfSize), 0):min((z + axialHalfSize + 1), self.data.shape[2])]
+
+        xslice = slice(max((x - roiHalfSize), 0),min((x + roiHalfSize + 1),self.data.shape[0]))
+        yslice = slice(max((y - roiHalfSize), 0),min((y + roiHalfSize + 1), self.data.shape[1]))
+        zslice = slice(max((z - axialHalfSize), 0),min((z + axialHalfSize + 1), self.data.shape[2]))
 		
         
-    def __getitem__(self, key):
+    #def __getitem__(self, key):
         #print key
-        xslice, yslice, zslice = key
+        #xslice, yslice, zslice = key
 
         #cut region out of data stack
         dataROI = self.data[xslice, yslice, zslice]
@@ -167,9 +184,12 @@ class GaussianFitFactory:
 
         #estimate some start parameters...
         A = dataMean.max() - dataMean.min() #amplitude
+
+        x0 =  1e3*self.metadata.voxelsize.x*x0
+        y0 =  1e3*self.metadata.voxelsize.y*y0
         
-        x0 =  X.mean()
-        y0 =  Y.mean()
+        #x0 =  X.mean()
+        #y0 =  Y.mean()
 
 	
         #estimate errors in data
@@ -201,16 +221,16 @@ class GaussianFitFactory:
             pass
         return GaussianFitResultR(res, self.metadata, (xslice, yslice, zslice), resCode, fitErrors)
 
-    def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
-        if (z == None): # use position of maximum intensity
-            z = self.data[x,y,:].argmax()
-	
-	x = round(x)
-	y = round(y)
-	
-        return self[max((x - roiHalfSize), 0):min((x + roiHalfSize + 1),self.data.shape[0]), 
-                    max((y - roiHalfSize), 0):min((y + roiHalfSize + 1), self.data.shape[1]), 
-                    max((z - axialHalfSize), 0):min((z + axialHalfSize + 1), self.data.shape[2])]
+    @classmethod
+    def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):
+        #generate grid to evaluate function on
+        X = 1e3*md.voxelsize.x*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
+        Y = 1e3*md.voxelsize.y*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
+
+        return f_gauss2d(params, X, Y)
+
+
+   
         
 
 #so that fit tasks know which class to use

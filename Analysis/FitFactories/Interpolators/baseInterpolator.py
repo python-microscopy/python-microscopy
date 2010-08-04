@@ -1,4 +1,5 @@
 from numpy import *
+#import cPickle
 from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
 
 class __interpolator:
@@ -15,12 +16,13 @@ class __interpolator:
         self.dz = None
 
     def setModel(self, modName, md):
-        '''load the model from file'''
+        '''load the model from file - returns True if the model changed, False if
+        an existing model was reused'''
         #global IntXVals, IntYVals, IntZVals, interpModel, interpModelName, dx, dy, dz
 
         if not modName == self.interpModelName:
             mf = open(getFullExistingFilename(modName), 'rb')
-            mod, voxelsize = cPickle.load(mf)
+            mod, voxelsize = load(mf)
             mf.close()
 
             self.interpModelName = modName
@@ -40,6 +42,11 @@ class __interpolator:
             self.shape = mod.shape
 
             self._precompute()
+
+            #print 'model changed'
+            return True #model changed
+        else:
+            return False #model not changed
 
     def genTheoreticalModel(self, md):
         from PYME.PSFGen.ps_app import *
@@ -63,6 +70,10 @@ class __interpolator:
             self.shape = interpModel.shape
 
             self._precompute()
+
+            return True
+        else:
+            return False
 
     def _precompute(self):
         '''placeholder function which is called after model loading and can be
