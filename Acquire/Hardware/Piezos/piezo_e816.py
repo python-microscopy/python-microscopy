@@ -25,13 +25,16 @@ class piezo_e816:
             self.osen = Osen
         else:
             self.osen = 0
-        self.ser_port.write('SVO A1\n')
+
         self.ser_port.write('WTO A0\n')
+        self.ser_port.write('SVO A1\n')
+        
         self.lastPos = self.GetPos()
 
         self.driftCompensation = False
 
     def ReInit(self):
+        self.ser_port.write('WTO A0\n')
         self.ser_port.write('SVO A1\n')
         self.lastPos = self.GetPos() 
         
