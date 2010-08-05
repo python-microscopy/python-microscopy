@@ -19,6 +19,7 @@ from PYME.Analysis.cModels.gauss_app import *
 #import subprocess
 from PYME.FileUtils import saveTiffStack
 from matplotlib import delaunay
+from PYME.Analysis.qHull.triangWrap import RenderTetrahedra
 
 from math import floor
 
@@ -427,7 +428,10 @@ def rendJitTet(x,y,z,n,jsig, jsigz, mcp, imageBounds, pixelSize, zb,sliceSize=10
             jsig = jsig[Imc]
             jsigz = jsigz[Imc]
 
-        gen3DTriangs.renderTetrahedra(im, x[Imc]+ jsig*scipy.randn(Imc.sum()), y[Imc]+ jsig*scipy.randn(Imc.sum()), z[Imc]+ jsigz*scipy.randn(Imc.sum()), scale = [1,1,1], pixelsize=[1,1,1])
+        #gen3DTriangs.renderTetrahedra(im, x[Imc]+ jsig*scipy.randn(Imc.sum()), y[Imc]+ jsig*scipy.randn(Imc.sum()), z[Imc]+ jsigz*scipy.randn(Imc.sum()), scale = [1,1,1], pixelsize=[1,1,1])
+        p = numpy.hstack(((x[Imc]+ jsig*scipy.randn(Imc.sum()))[:, None], (y[Imc]+ jsig*scipy.randn(Imc.sum()))[:, None], (z[Imc]+ jsigz*scipy.randn(Imc.sum()))[:, None]))
+        print p.shape
+        RenderTetrahedra(p, im)
 
     return im/n
 

@@ -42,7 +42,7 @@ def renderTetrahedra(im, y, x, z, scale = [1,1,1], pixelsize=[5,5,5]):
     y_ = scale[1]*f[:,:,1]/pixelsize[1]
     z_ = scale[2]*f[:,:,2]/pixelsize[2]
 
-    v = 1./(calcMeanEdge(f)**2)
+    v = 1./(calcMeanEdge(f)**3)
     #v = 1./(1 + calcTetVolume(f))
 
     SoftRend.drawTetrahedra(im, x_, y_, z_, v)

@@ -17,7 +17,7 @@ def configuration(parent_package = '', top_path = None):
     config = Configuration('SoftRend', parent_package, top_path)
 
     config.add_extension('triRend',
-        sources=['triRend.c'],
+        sources=['triRend.c','drawTriang.c'],
         include_dirs = [get_numpy_include_dirs()],
 	extra_compile_args = ['-O3', '-fno-exceptions'])
 

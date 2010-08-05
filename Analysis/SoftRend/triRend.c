@@ -3,7 +3,9 @@
 #include <math.h>
 #include "numpy/arrayobject.h"
 #include <stdio.h>
+#include "drawTriang.h"
 
+/*
 void drawTriangle (double* pImage, int sizeX, int sizeY, double x0, double y0, double x1, double y1, double x2, double y2, float val)
 {
     double tmp;
@@ -183,6 +185,7 @@ void drawTetrahedron (double* pImage, int sizeX, int sizeY, int sizeZ, double x0
     }
 
 }
+*/
 
 
 static PyObject * drawTriang(PyObject *self, PyObject *args, PyObject *keywds)

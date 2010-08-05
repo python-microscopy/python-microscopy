@@ -8,7 +8,7 @@ def configuration(parent_package = '', top_path = None):
     config = Configuration('triangWrap', parent_package, top_path)
 
     config.add_extension('triangWrap',
-        sources=['triangWrap.c', 'triangLhood.c'] + qhullSources,
+        sources=['triangWrap.c', 'triangLhood.c', 'triangRend.c', '../SoftRend/drawTriang.c'] + qhullSources,
         include_dirs = get_numpy_include_dirs()+['qhull'],
 	extra_compile_args = ['-O3', '-fno-exceptions', '-ffast-math'])
 

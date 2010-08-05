@@ -69,12 +69,84 @@ static PyObject * PyCalcLHood(PyObject *self, PyObject *args, PyObject *keywds)
     return Py_BuildValue("d", lhood);
 }
 
+static PyObject * PyTetAndDraw(PyObject *self, PyObject *args, PyObject *keywds)
+{
+    PyObject *oPositions =0;
+    PyArrayObject* aPositions;
+
+    PyObject *odata =0;
+
+    double *data;
+
+    int dim, nPositions, sizeX, sizeY, sizeZ;
+    int iErr;
+    BOOL calc_area;
+
+    static char *kwlist[] = {"positions", "data", "calcArea", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "OO|I", kwlist,
+         &oPositions, &odata, &calc_area))
+        return NULL;
+
+    if (!PyArray_Check(odata) || !PyArray_ISFORTRAN(odata))
+    {
+        PyErr_Format(PyExc_RuntimeError, "Expecting a fortran contiguous numpy array");
+        return NULL;
+    }
+
+    if (PyArray_NDIM(odata) != 3)
+    {
+        PyErr_Format(PyExc_RuntimeError, "Expecting a 3 dimensional array");
+        return NULL;
+    }
+
+    aPositions = (PyArrayObject *) PyArray_ContiguousFromObject(oPositions, PyArray_DOUBLE, 2, 2);
+    if (aPositions == NULL)
+    {
+      PyErr_Format(PyExc_RuntimeError, "Bad position data");
+      return NULL;
+    }
+
+
+    dim = PyArray_DIM(aPositions, 1);
+    nPositions = PyArray_DIM(aPositions, 0);
+    
+    if (dim != 3)
+    {
+      PyErr_Format(PyExc_RuntimeError, "Expecting an Nx3 array of point positions");
+      Py_DECREF(aPositions);
+      return NULL;
+    }
+
+    sizeX = PyArray_DIM(odata, 1);
+    sizeY = PyArray_DIM(odata, 0);
+    sizeZ = PyArray_DIM(odata, 2);
+
+    data = (double*) PyArray_DATA(odata);
+
+    iErr = tetAndDraw((coordT *)PyArray_DATA(aPositions), nPositions, data, sizeX, sizeY, sizeZ, calc_area);
+    if (iErr)
+    {
+      PyErr_Format(PyExc_RuntimeError, "QHull error");
+      Py_DECREF(aPositions);
+      return NULL;
+    }
+
+    Py_DECREF(aPositions);
+
+    return Py_None;
+}
+
+
+
 
 
 
 static PyMethodDef triangWrapMethods[] = {
     {"CalcLHood",  PyCalcLHood, METH_VARARGS | METH_KEYWORDS,
-    "Generate a histogram of pairwise distances between two sets of points.\n. Arguments are: 'x1', 'y1', 'x2', 'y2', 'nBins'= 1e3, 'binSize' = 1"},
+    "Calculate the likelihood for a give set of point positions:\n Arguments: positions (an NxD array), mode"},
+    {"RenderTetrahedra",  PyTetAndDraw, METH_VARARGS | METH_KEYWORDS,
+    "Generate a tetrahedra from a set of points and render them into an image.\n Arguments: positions (an Nx3 array), image (a WxHxD 3D array with Fortran byte order)"},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
