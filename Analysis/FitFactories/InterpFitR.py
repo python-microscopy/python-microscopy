@@ -156,7 +156,7 @@ class PSFFitFactory:
 
         return f_Interp3d(params, interpolator, X, Y, Z, safeRegion)
 
-    def FromPoint(self, x, y, z=None, roiHalfSize=15, axialHalfSize=15):
+    def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
         #if (z == None): # use position of maximum intensity
         #    z = self.data[x,y,:].argmax()
 

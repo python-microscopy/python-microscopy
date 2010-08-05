@@ -760,6 +760,7 @@ class DSViewFrame(wx.Frame):
         startAt = int(self.tStartAt.GetValue())
         driftEst = self.cbDrift.GetValue()
         fitMod = self.cFitType.GetStringSelection()
+        interpolator = self.interpolators[self.cInterpType.GetSelection()]
         bgFrames = [int(v) for v in self.tBackgroundFrames.GetValue().split(':')]
 
         self.mdh.setEntry('Analysis.subtractBackground', self.cbSubtractBackground.GetValue())
@@ -768,6 +769,8 @@ class DSViewFrame(wx.Frame):
         #self.mdh.setEntry('Analysis.NumBGFrames', bgFrames)
         self.mdh.setEntry('Analysis.BGRange', bgFrames)
         #self.md.setEntry('Analysis.NumBGFrames', bgFrames)
+
+        self.mdh.setEntry('Analysis.InterpModule', interpolator)
 
         self.mdh.setEntry('Analysis.DebounceRadius', int(self.tDebounceRadius.GetValue()))
 
