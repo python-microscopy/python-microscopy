@@ -48,19 +48,31 @@ static PyObject * PyCalcLHood(PyObject *self, PyObject *args, PyObject *keywds)
     } else
     {
 
-        if (dim != 2)
+        if (dim == 2)
         {
-           PyErr_Format(PyExc_RuntimeError, "Expecting a list of 2D points");
+            iErr = calcLHood2D((coordT *)PyArray_DATA(aPositions),  nPositions, &lhood);
+            if (iErr)
+            {
+              PyErr_Format(PyExc_RuntimeError, "QHull error");
+              Py_DECREF(aPositions);
+              return NULL;
+            }
+        }
+        else if (dim == 3)
+        {
+            iErr = calcLHood3D((coordT *)PyArray_DATA(aPositions),  nPositions, &lhood);
+            if (iErr)
+            {
+              PyErr_Format(PyExc_RuntimeError, "QHull error");
+              Py_DECREF(aPositions);
+              return NULL;
+            }
+        }
+        else
+        {
+           PyErr_Format(PyExc_RuntimeError, "Expecting a list of 2D, or 3D points");
            Py_DECREF(aPositions);
            return NULL;
-        }
-
-        iErr = calcLHood2D((coordT *)PyArray_DATA(aPositions),  nPositions, &lhood);
-        if (iErr)
-        {
-          PyErr_Format(PyExc_RuntimeError, "QHull error");
-          Py_DECREF(aPositions);
-          return NULL;
         }
     }
 

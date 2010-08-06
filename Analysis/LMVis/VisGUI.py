@@ -127,7 +127,8 @@ class VisGUIFrame(wx.Frame):
         self.optimiseFcn = 'fmin'
         self.driftExprX = 'x + a*t'
         self.driftExprY = 'y + b*t'
-        self.driftExprZ = 'z0'
+        self.driftExprZ = 'z + c*t'
+        self.fitZDrift = False
 
         self.fluorSpecies = {}
         self.chromaticShifts = {}
@@ -1021,6 +1022,18 @@ class VisGUIFrame(wx.Frame):
         bsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(pan, -1, "z' = "), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        self.tZExpr = wx.TextCtrl(pan, -1, self.driftExprZ, size=(100,-1))
+        self.tZExpr.Enable(False)
+        hsizer.Add(self.tZExpr, 2,wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5)
+       
+        self.cbDriftFitZ = wx.CheckBox(pan, -1, 'Fit')
+        hsizer.Add(self.cbDriftFitZ, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+        bsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
+        
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(pan, -1, "Presets:"), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.cDriftPresets = wx.Choice(pan, -1, choices=['', 'Linear', 'Piecewise Linear'], size=(120,-1))
@@ -1028,13 +1041,7 @@ class VisGUIFrame(wx.Frame):
 
         bsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
 
-#        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-#        hsizer.Add(wx.StaticText(pan, -1, "z' = "), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-#
-#        self.tZExpr = wx.TextCtrl(pan, -1, self.driftExprZ, size=(130,-1))
-#        hsizer.Add(self.tZExpr, 2,wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5)
-#
-#        bsizer.Add(hsizer, 0, wx.ALL, 0)
+       
 
         pan.SetSizer(bsizer)
         bsizer.Fit(pan)
@@ -1045,6 +1052,8 @@ class VisGUIFrame(wx.Frame):
 
         self.tXExpr.Bind(wx.EVT_TEXT, self.OnDriftExprChange)
         self.tYExpr.Bind(wx.EVT_TEXT, self.OnDriftExprChange)
+        self.tZExpr.Bind(wx.EVT_TEXT, self.OnDriftExprChange)
+        self.cbDriftFitZ.Bind(wx.EVT_CHECKBOX, self.OnDriftZToggle)
         self.cDriftPresets.Bind(wx.EVT_CHOICE, self.OnDriftPreset)
 
 
@@ -1102,11 +1111,11 @@ class VisGUIFrame(wx.Frame):
         self._pnl.AddPane(item)
 
     def OnDriftFit(self, event):
-        self.driftCorrParams = intelliFit.doFitT(self.driftCorrFcn, self.driftCorrParams, self.filter, self.optimiseFcn)
+        self.driftCorrParams.update(intelliFit.doFitT(self.driftCorrFcn, self.driftCorrParams, self.filter, self.fitZDrift, self.optimiseFcn))
         self.RefreshDriftParameters()
 
     def OnDriftZeroParams(self, event):
-        for p in self.driftCorrFcn[0]:
+        for p in self.driftCorrFcn[0] + self.driftCorrFcn[-3]:
             self.driftCorrParams[p] = 0
         
         self.RefreshDriftParameters()
@@ -1158,6 +1167,10 @@ class VisGUIFrame(wx.Frame):
     def OnDriftApply(self, event):
         self.mapping.setMapping('x', self.driftCorrFcn[2])
         self.mapping.setMapping('y', self.driftCorrFcn[3])
+
+        if self.fitZDrift:
+            self.mapping.setMapping('z', self.driftCorrFcn[4])
+
         self.mapping.__dict__.update(self.driftCorrParams)
 
         self.Triangles = None
@@ -1170,6 +1183,8 @@ class VisGUIFrame(wx.Frame):
     def OnDriftRevert(self, event):
         self.mapping.mappings.pop('x')
         self.mapping.mappings.pop('y')
+        if 'z' in self.mapping.mappings.keys():
+            self.mapping.mappings.pop('z')
 
         self.Triangles = None
         self.edb = None
@@ -1181,32 +1196,37 @@ class VisGUIFrame(wx.Frame):
     def OnDriftPlot(self, event):
         intelliFit.plotDriftResultT(self.driftCorrFcn, self.driftCorrParams, self.filter)
 
+    def OnDriftZToggle(self, event=None):
+        self.fitZDrift = self.cbDriftFitZ.GetValue()
+        self.tZExpr.Enable(self.fitZDrift)
+
     def OnDriftExprChange(self, event=None):
         self.driftExprX = self.tXExpr.GetValue()
         self.driftExprY = self.tYExpr.GetValue()
+        self.driftExprZ = self.tZExpr.GetValue()
         if self.filter == None:
             filtKeys = []
         else:
             filtKeys = self.filter.keys()
 
-        self.driftCorrFcn = intelliFit.genFcnCodeT(self.driftExprX,self.driftExprY, filtKeys)
+        self.driftCorrFcn = intelliFit.genFcnCodeT(self.driftExprX,self.driftExprY,self.driftExprZ, filtKeys)
 
         #self.driftCorrParams = {}
-        for p in self.driftCorrFcn[0]:
+        for p in self.driftCorrFcn[0]+ self.driftCorrFcn[-3]:
             if not p in self.driftCorrParams.keys():
                 self.driftCorrParams[p] = 0
 
         self.RefreshDriftParameters()
 
     def OnDriftParameterChange(self, event=None):
-        parameterNames = self.driftCorrFcn[0]
+        parameterNames = self.driftCorrFcn[0] + self.driftCorrFcn[-3]
 
         pn = parameterNames[event.m_itemIndex]
 
         self.driftCorrParams[pn] = float(event.m_item.GetText())
 
     def RefreshDriftParameters(self):
-        parameterNames = self.driftCorrFcn[0]
+        parameterNames = self.driftCorrFcn[0] + self.driftCorrFcn[-3]
 
         self.lDriftParams.DeleteAllItems()
 
@@ -2221,7 +2241,7 @@ class VisGUIFrame(wx.Frame):
                 else:
                     self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource)
                     self.dataSources.append(self.selectedDataSource)
-                    
+    
                     
 
                 if 'Events' in self.selectedDataSource.resultsSource.h5f.root:
@@ -2271,6 +2291,17 @@ class VisGUIFrame(wx.Frame):
                         self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
 
                     self.elv.SetCharts(charts)
+
+                if not 'foreShort' in dir(self.selectedDataSource):
+                    self.selectedDataSource.foreShort = 1.
+
+                if not 'focus' in self.selectedDataSource.mappings.keys():
+                    self.selectedDataSource.focus=0
+                    
+                if 'fitResults_z0' in self.selectedDataSource.keys():
+                    self.selectedDataSource.setMapping('z', 'fitResults_z0 + foreShort*focus')
+                else:
+                    self.selectedDataSource.setMapping('z', 'foreShort*focus')
 
                 if not self.mdp == None: #remove previous colour viewer
                     i = 0
@@ -2501,20 +2532,20 @@ class VisGUIFrame(wx.Frame):
 #                    self.mapping.zm = self.zm
 #                    self.mapping.setMapping('focus', '1e3*zm(t)')
 
-                if not 'dz_dt' in dir(self.mapping):
-                    self.mapping.dz_dt = 0.
-
-                if 'fitResults_z0' in self.filter.keys():
-                    if 'zm' in dir(self):
-                        if not 'foreShort' in dir(self.mapping):
-                            self.mapping.foreShort = 1.
-                        self.mapping.setMapping('z', 'fitResults_z0 + foreShort*focus + dz_dt*t')
-                    else:
-                        self.mapping.setMapping('z', 'fitResults_z0+ dz_dt*t')
-                elif 'zm' in dir(self):
-                    self.mapping.setMapping('z', 'focus + dz_dt*t')
-                else:
-                    self.mapping.setMapping('z', 'dz_dt*t')
+#                if not 'dz_dt' in dir(self.mapping):
+#                    self.mapping.dz_dt = 0.
+#
+#                if 'fitResults_z0' in self.filter.keys():
+#                    if 'zm' in dir(self):
+#                        if not 'foreShort' in dir(self.mapping):
+#                            self.mapping.foreShort = 1.
+#                        self.mapping.setMapping('z', 'fitResults_z0 + foreShort*focus + dz_dt*t')
+#                    else:
+#                        self.mapping.setMapping('z', 'fitResults_z0+ dz_dt*t')
+#                elif 'zm' in dir(self):
+#                    self.mapping.setMapping('z', 'focus + dz_dt*t')
+#                else:
+#                    self.mapping.setMapping('z', 'dz_dt*t')
 
             if not self.colourFilter:
                 self.colourFilter = inpFilt.colourFilter(self.mapping, self)
