@@ -68,9 +68,9 @@ class FiltFrame(wx.Panel):
         '''Set filter by either name, position in list, or postion
         in filter wheel'''
         if not name == None:
-            id = [n for n, f in zip(range(len(self.installedFilters), self.installedFilters)) if f.name == name][0]
+            id = [n for n, f in zip(range(len(self.installedFilters)), self.installedFilters) if f.name == name][0]
         elif id == None:
-            id = [n for n, f in zip(range(len(self.installedFilters), self.installedFilters)) if f.pos == pos][0]
+            id = [n for n, f in zip(range(len(self.installedFilters)), self.installedFilters) if f.pos == pos][0]
             
         self.fw.setPos(self.installedFilters[id].pos)
         self.chFiltWheel.SetSelection(id)
