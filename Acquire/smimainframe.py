@@ -542,7 +542,7 @@ class smiMainFrame(wx.Frame):
 
     def OnMAquireOnePic(self, event):
         self.scope.pa.stop()
-        ds2 = CDataStack_AsArray(self.scope.pa.ds, 0).copy()
+        ds2 = CDataStack_AsArray(self.scope.pa.ds, 0).reshape(self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()).copy()
 
 
         #metadata handling

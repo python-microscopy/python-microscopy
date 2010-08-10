@@ -28,17 +28,17 @@ import time
 
             
 class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
-    def __init__(self, parent, dstack = None, aspect=None):
+    def __init__(self, parent, dstack = None, aspect=1):
         
         if (dstack == None):
             dstack = scipy.zeros(10,10)
 
-        self.do = DisplayOpts(dstack)
+        self.do = DisplayOpts(dstack, aspect=aspect)
         self.do.Optimise()
 
         scrolledImagePanel.ScrolledImagePanel.__init__(self, parent, self.DoPaint, style=wx.SUNKEN_BORDER|wx.TAB_TRAVERSAL)
 
-        self.do.WantChangeNotification.append(self.Refresh)
+        self.do.WantChangeNotification.append(self.GetOpts)
 
         self.SetVirtualSize(wx.Size(self.do.ds.shape[0],self.do.ds.shape[1]))
         #self.imagepanel.SetSize(wx.Size(self.do.ds.shape[0],self.do.ds.shape[1]))
@@ -60,6 +60,12 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         self.selection = True
 
         self.aspect = 1.
+
+#        if not aspect == None:
+#            if scipy.isscalar(aspect):
+#                self.do.aspects[2] = aspect
+#            elif len(aspect) == 3:
+#                self.do.aspects = aspect
 
         self.ResetSelection()
         #self.SetOpts()
@@ -301,9 +307,9 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
     def OnWheel(self, event):
         rot = event.GetWheelRotation()
         if rot < 0:
-            self.do.zp = min(self.do.zp - 1, 0)
+            self.do.zp = max(self.do.zp - 1, 0)
         if rot > 0:
-            self.do.zp = max(self.do.zp + 1, self.do.ds.shape[2] -1)
+            self.do.zp = min(self.do.zp + 1, self.do.ds.shape[2] -1)
         if ('update' in dir(self.GetParent())):
              self.GetParent().update()
         else:
@@ -377,15 +383,15 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             if(self.do.slice == self.do.SLICE_XY):
                 lx = self.do.xp
                 ly = self.do.yp
-                self.aspect = self.do.aspects[1]/self.do.aspects[0]
+                self.aspect = self.do.aspect[1]/self.do.aspect[0]
             elif(self.do.slice == self.do.SLICE_XZ):
                 lx = self.do.xp
                 ly = self.do.zp
-                self.aspect = self.do.aspects[2]/self.do.aspects[0]
+                self.aspect = self.do.aspect[2]/self.do.aspect[0]
             elif(self.do.slice == self.do.SLICE_YZ):
                 lx = self.do.yp
                 ly = self.do.zp
-                self.aspect = self.do.aspects[2]/self.do.aspects[1]
+                self.aspect = self.do.aspect[2]/self.do.aspect[1]
 
             sx,sy =self.imagepanel.GetClientSize()
 
@@ -393,10 +399,10 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             ppux, ppuy = self.GetScrollPixelsPerUnit()
             #self.imagepanel.SetScrollPos(wx.HORIZONTAL, max(0, lx*sc - sx/2)/ppux)
             #self.imagepanel.SetScrollPos(wx.VERTICAL, max(0, ly*sc - sy/2)/ppuy)
-            self.imagepanel.Scroll(max(0, lx*sc - sx/2)/ppux, max(0, ly*sc*self.aspect - sy/2)/ppuy)
+            self.Scroll(max(0, lx*sc - sx/2)/ppux, max(0, ly*sc*self.aspect - sy/2)/ppuy)
 
-            self.imagepanel.Refresh()
-            #self.Refresh()
+            #self.imagepanel.Refresh()
+            self.Refresh()
             
     def Optim(self, event = None):
         self.do.Optimise(self.do.ds, int(self.do.zp))
@@ -655,9 +661,10 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 # end of class ViewPanel
 
 class ArraySettingsAndViewPanel(wx.Panel):
-    def __init__(self, parent, dstack = None, aspect=None, horizOptions = False, **kwds):
+    def __init__(self, parent, dstack = None, aspect=1, horizOptions = False, **kwds):
         kwds["style"] = wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, parent, **kwds)
+        self.showOptsPanel = 1
 
         vpsizer = wx.BoxSizer(wx.HORIZONTAL)
 

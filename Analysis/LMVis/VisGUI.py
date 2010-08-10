@@ -1030,6 +1030,10 @@ class VisGUIFrame(wx.Frame):
        
         self.cbDriftFitZ = wx.CheckBox(pan, -1, 'Fit')
         hsizer.Add(self.cbDriftFitZ, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+        #bsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
+
+        bDriftBruteZ = wx.Button(pan, -1, 'BF', style=wx.BU_EXACTFIT)
+        hsizer.Add(bDriftBruteZ, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
         bsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
         
 
@@ -1107,11 +1111,17 @@ class VisGUIFrame(wx.Frame):
         bRevert.Bind(wx.EVT_BUTTON, self.OnDriftRevert)
         bPlot.Bind(wx.EVT_BUTTON, self.OnDriftPlot)
         bZero.Bind(wx.EVT_BUTTON, self.OnDriftZeroParams)
+        bDriftBruteZ.Bind(wx.EVT_BUTTON, self.OnDriftZBruteForce)
+
 
         self._pnl.AddPane(item)
 
     def OnDriftFit(self, event):
         self.driftCorrParams.update(intelliFit.doFitT(self.driftCorrFcn, self.driftCorrParams, self.filter, self.fitZDrift, self.optimiseFcn))
+        self.RefreshDriftParameters()
+
+    def OnDriftZBruteForce(self, event):
+        self.driftCorrParams.update(intelliFit.bruteForceZ(self.driftCorrFcn, self.driftCorrParams, self.filter))
         self.RefreshDriftParameters()
 
     def OnDriftZeroParams(self, event):
@@ -1168,7 +1178,7 @@ class VisGUIFrame(wx.Frame):
         self.mapping.setMapping('x', self.driftCorrFcn[2])
         self.mapping.setMapping('y', self.driftCorrFcn[3])
 
-        if self.fitZDrift:
+        if True: #self.fitZDrift:
             self.mapping.setMapping('z', self.driftCorrFcn[4])
 
         self.mapping.__dict__.update(self.driftCorrParams)

@@ -22,7 +22,8 @@ import subprocess
 
 from PYME.Analysis import thresholding
 
-from PYME.DSView.myviewpanel_numarray import MyViewPanel
+#from PYME.DSView.myviewpanel_numarray import MyViewPanel
+from PYME.DSView.arrayViewPanel import ArraySettingsAndViewPanel
 
 from PYME.misc.auiFloatBook import AuiNotebookWithFloatingPages
 
@@ -578,7 +579,7 @@ class MultiChannelImageViewFrame(wx.Frame):
             asp = self.images[0].sliceSize/self.images[0].pixelSize
             if asp == 0:
                 asp = 1
-            self.notebook.AddPage(page=MyViewPanel(self.notebook, [img.img for img in self.images], aspect = asp), select=False, caption='Slices')
+            self.notebook.AddPage(page=ArraySettingsAndViewPanel(self.notebook, [img.img for img in self.images], aspect = asp), select=False, caption='Slices')
             
         elif len(self.images) > 1:
             self.civp = ColourImageViewPanel(self, glCanvas)

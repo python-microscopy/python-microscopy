@@ -152,6 +152,11 @@ class ScrolledImagePanel(wx.Panel):
     def GetScrollPixelsPerUnit(self):
         return (1,1)
 
+    def Scroll(self, x, y):
+        self.scrollX.SetThumbPosition(x)
+        self.scrollY.SetThumbPosition(y)
+        self.imagepanel.Refresh()
+
     def OnScrollX(self,event):
         self.xOff = event.GetPosition()
 
