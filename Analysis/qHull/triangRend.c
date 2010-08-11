@@ -1,5 +1,5 @@
 #include "triangLhood.h"
-#include "../SoftRend/drawTriang.h"
+#include "drawTriang.h"
 
 #define DIST_(a, b, dim)\
     dist=0;for (dim_num=0;dim_num < dim; dim_num++){dist +=(a[dim_num] - b[dim_num])*(a[dim_num] - b[dim_num]);}
