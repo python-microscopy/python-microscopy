@@ -605,6 +605,7 @@ class MultiChannelImageViewFrame(wx.Frame):
         ID_SAVEALL = wx.NewId()
 
         ID_VIEW_COLOURLIM = wx.NewId()
+        ID_FILTER_GAUSS = wx.NewId()
         ID_3D_ISOSURF = wx.NewId()
         self.ID_VIEW_CMAP_INVERT = wx.NewId()
 
@@ -618,6 +619,10 @@ class MultiChannelImageViewFrame(wx.Frame):
 
         view_menu = wx.Menu()
         view_menu.AppendCheckItem(ID_VIEW_COLOURLIM, "&Colour Scaling")
+
+        proc_menu = wx.Menu()
+        proc_menu.Append(ID_FILTER_GAUSS, "&Gaussian Filter")
+
 
         td_menu = wx.Menu()
         td_menu.Append(ID_3D_ISOSURF, "&Isosurface")
@@ -644,6 +649,7 @@ class MultiChannelImageViewFrame(wx.Frame):
 
         menu_bar.Append(file_menu, "&File")
         menu_bar.Append(view_menu, "&View")
+        menu_bar.Append(proc_menu, "&Processing")
         menu_bar.Append(td_menu, "&3D")
 
         self.Bind(wx.EVT_MENU, self.OnSave, id=wx.ID_SAVE)
