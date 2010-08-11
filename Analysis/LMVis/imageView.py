@@ -658,6 +658,7 @@ class MultiChannelImageViewFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnExport, id=ID_EXPORT)
         self.Bind(wx.EVT_MENU, self.OnViewCLim, id=ID_VIEW_COLOURLIM)
         self.Bind(wx.EVT_MENU, self.On3DIsosurf, id=ID_3D_ISOSURF)
+        self.Bind(wx.EVT_MENU, self.OnGaussianFilter, id=ID_FILTER_GAUSS)
         #self.Bind(wx.EVT_MENU, self.OnCMapInvert, id=self.ID_VIEW_CMAP_INVERT)
 
         return menu_bar
@@ -757,6 +758,25 @@ class MultiChannelImageViewFrame(wx.Frame):
         for im, ivp, i in zip(self.images, self.ivps, range(len(self.images))):
             c = mlab.contour3d(im.img, contours=[pylab.mean(ivp.clim)], color = pylab.cm.gist_rainbow(float(i)/len(self.images))[:3])
             c.mlab_source.dataset.spacing = (1. ,1., asp)
+
+    def OnGaussianFilter(self, event):
+        from scipy.ndimage import gaussian_filter
+        from PYME.Analysis.LMVis.visHelpers import ImageBounds, GeneratedImage
+
+        dlg = wx.TextEntryDialog(self, 'Blur size [pixels]:', 'Gaussian Blur', '[1,1,1]')
+
+        if dlg.ShowModal() == wx.ID_OK:
+            sigmas = eval(dlg.GetValue())
+            #print sigmas
+            #print self.images[0].img.shape
+            filt_ims = [GeneratedImage(gaussian_filter(im.img, sigmas), im.imgBounds, im.pixelSize, im.sliceSize) for im in self.images]
+
+            imfc = MultiChannelImageViewFrame(self.parent, self.parent.glCanvas, filt_ims, self.names, title='Filtered Image - %3.1fnm bins' % self.images[0].pixelSize)
+
+            self.parent.generatedImages.append(imfc)
+            imfc.Show()
+
+        dlg.Destroy()
 
     def GetChannel(self, chan):
         if not type(chan) == int:

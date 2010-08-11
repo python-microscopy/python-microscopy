@@ -1269,6 +1269,7 @@ class VisGUIFrame(wx.Frame):
         ID_VIEW_INTERP_TRIANGS = wx.NewId()
 
         ID_VIEW_FIT = wx.NewId()
+        ID_VIEW_FIT_ROI = wx.NewId()
         
         ID_GEN_JIT_TRI = wx.NewId()
         ID_GEN_QUADS = wx.NewId()
@@ -1332,6 +1333,7 @@ class VisGUIFrame(wx.Frame):
 
         self.view_menu.AppendSeparator()
         self.view_menu.Append(ID_VIEW_FIT, '&Fit')
+        self.view_menu.Append(ID_VIEW_FIT_ROI, 'Fit &ROI')
 
         self.view_menu.AppendSeparator()
         self.view_menu.AppendCheckItem(ID_TOGGLE_SETTINGS, "Show Settings")
@@ -1411,6 +1413,7 @@ class VisGUIFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnViewBlobs, id=ID_VIEW_BLOBS)
 
         self.Bind(wx.EVT_MENU, self.SetFit, id=ID_VIEW_FIT)
+        self.Bind(wx.EVT_MENU, self.OnFitROI, id=ID_VIEW_FIT_ROI)
 
         self.Bind(wx.EVT_MENU, self.OnGenCurrent, id=ID_GEN_CURRENT)
         self.Bind(wx.EVT_MENU, self.OnGenTriangles, id=ID_GEN_JIT_TRI)
@@ -2717,6 +2720,28 @@ class VisGUIFrame(wx.Frame):
             self.glCanvas.setView(self.imageBounds.x0, self.imageBounds.x1, self.imageBounds.y0, self.imageBounds.y0 + xsc*self.glCanvas.Size[1])
         else:
             self.glCanvas.setView(self.imageBounds.x0, self.imageBounds.x0 + ysc*self.glCanvas.Size[0], self.imageBounds.y0, self.imageBounds.y1)
+
+    def OnFitROI(self,event = None):
+        if 'x' in self.filterKeys.keys():
+            xbounds = self.filterKeys['x']
+        else:
+            xbounds = (self.imageBounds.x0, self.imageBounds.x1)
+
+        if 'y' in self.filterKeys.keys():
+            ybounds = self.filterKeys['y']
+        else:
+            ybounds = (self.imageBounds.y0, self.imageBounds.y1)
+        
+        xsc = (xbounds[1] - xbounds[0])*1./self.glCanvas.Size[0]
+        ysc = (ybounds[1] - ybounds[0])*1./self.glCanvas.Size[1]
+
+        #print xsc
+        #print ysc
+
+        if xsc > ysc:
+            self.glCanvas.setView(xbounds[0], xbounds[1], ybounds[0], ybounds[0] + xsc*self.glCanvas.Size[1])
+        else:
+            self.glCanvas.setView(xbounds[0], xbounds[0] + ysc*self.glCanvas.Size[0], ybounds[0], ybounds[1])
 
     def OnGLViewChanged(self):
         for genI in self.generatedImages:
