@@ -65,6 +65,7 @@ class microscope:
  
         #self.windows = []
         self.StatusCallbacks = [] #list of functions which provide status information
+        self.CleanupFunctions = [] #list of functions to be called at exit
         #preview
         self.saturationThreshold = 16383 #14 bit
         self.lastFrameSaturated = False

@@ -722,6 +722,8 @@ class smiMainFrame(wx.Frame):
         self.scope.pa.stop()
         self.time1.Stop()
         self.scope.cam.Shutdown()
+        for f in self.scope.CleanupFunctions:
+            f()
         #self.int_sl.Destroy()
         #self.piezo_sl.Destroy()
         #self.seq_d.Destroy()
