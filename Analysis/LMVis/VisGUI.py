@@ -2309,7 +2309,7 @@ class VisGUIFrame(wx.Frame):
                     self.selectedDataSource.foreShort = 1.
 
                 if not 'focus' in self.selectedDataSource.mappings.keys():
-                    self.selectedDataSource.focus=0
+                    self.selectedDataSource.focus= np.zeros(self.selectedDataSource['x'].shape)
                     
                 if 'fitResults_z0' in self.selectedDataSource.keys():
                     self.selectedDataSource.setMapping('z', 'fitResults_z0 + foreShort*focus')

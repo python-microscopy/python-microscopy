@@ -607,6 +607,7 @@ class MultiChannelImageViewFrame(wx.Frame):
         ID_VIEW_COLOURLIM = wx.NewId()
         ID_FILTER_GAUSS = wx.NewId()
         ID_3D_ISOSURF = wx.NewId()
+        ID_3D_VOLUME = wx.NewId()
         self.ID_VIEW_CMAP_INVERT = wx.NewId()
 
         file_menu.Append(wx.ID_SAVE, "&Save Channel")
@@ -626,6 +627,7 @@ class MultiChannelImageViewFrame(wx.Frame):
 
         td_menu = wx.Menu()
         td_menu.Append(ID_3D_ISOSURF, "&Isosurface")
+        td_menu.Append(ID_3D_VOLUME, "&Volume")
 #
 #        self.cmap_menu = wx.Menu()
 #
@@ -658,6 +660,7 @@ class MultiChannelImageViewFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnExport, id=ID_EXPORT)
         self.Bind(wx.EVT_MENU, self.OnViewCLim, id=ID_VIEW_COLOURLIM)
         self.Bind(wx.EVT_MENU, self.On3DIsosurf, id=ID_3D_ISOSURF)
+        self.Bind(wx.EVT_MENU, self.On3DVolume, id=ID_3D_VOLUME)
         self.Bind(wx.EVT_MENU, self.OnGaussianFilter, id=ID_FILTER_GAUSS)
         #self.Bind(wx.EVT_MENU, self.OnCMapInvert, id=self.ID_VIEW_CMAP_INVERT)
 
@@ -758,6 +761,20 @@ class MultiChannelImageViewFrame(wx.Frame):
         for im, ivp, i in zip(self.images, self.ivps, range(len(self.images))):
             c = mlab.contour3d(im.img, contours=[pylab.mean(ivp.clim)], color = pylab.cm.gist_rainbow(float(i)/len(self.images))[:3])
             c.mlab_source.dataset.spacing = (1. ,1., asp)
+
+    def On3DVolume(self, event):
+        from enthought.mayavi import mlab
+
+        f = mlab.figure()
+
+        asp = self.images[0].sliceSize/self.images[0].pixelSize
+        if asp == 0:
+            asp = 1.
+
+        for im, ivp, i in zip(self.images, self.ivps, range(len(self.images))):
+            #c = mlab.contour3d(im.img, contours=[pylab.mean(ivp.clim)], color = pylab.cm.gist_rainbow(float(i)/len(self.images))[:3])
+            v = mlab.pipeline.volume(mlab.pipeline.scalar_field(numpy.minimum(255*im.img/ivp.clim[1], 254).astype('uint8')))
+            v.volume.scale = (1. ,1., asp)
 
     def OnGaussianFilter(self, event):
         from scipy.ndimage import gaussian_filter
