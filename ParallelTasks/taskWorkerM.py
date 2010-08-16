@@ -39,8 +39,11 @@ while 1:
     #results = []
     while len(tasks) > 0:
         task = tasks.pop()
-        res = task(taskQueue=tq)
-        tq.returnCompletedTask(res, name)
+        try:
+            res = task(taskQueue=tq)
+            tq.returnCompletedTask(res, name)
+        except:
+            pass
         #tasks.remove(task)
         del task
         

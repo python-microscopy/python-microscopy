@@ -57,7 +57,7 @@ scope.stage.SetSoftLimits(1, [.8, 17.6])
 scope.piezos.append((scope.stage, 0, 'Stage X'))
 scope.piezos.append((scope.stage, 1, 'Stage Y'))
 scope.EnableJoystick = scope.stage.SetJoystick
-scope.CleanupFunctions.Append(scope.stage.Cleanup)
+scope.CleanupFunctions.append(scope.stage.Cleanup)
 ''')
 
 InitGUI('''
