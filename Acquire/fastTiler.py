@@ -19,13 +19,16 @@ class fastTiler:
         #self.startPositions = []
         #self.endYPositions = []
         self.GenRunPositions()
+
+        View3D(self.data, title='tiled image')
         #self.GotoStart()
         self.scope.pa.WantFrameNotification.append(self.OnTick)
+        #self.scope.pa.WantFrameGroupNotification.append(self)
 
 
     def OnTick(self, caller=None):
         if self.i >=0 and self.i < (self.data.shape[1]+64) and self.scope.stage.IsMoving(1):
-            self.data[self.j:(self.j+64), self.i:(self.i + 64)] = self.scope.pa.dsa[:,:,0]
+            self.data[self.j:(self.j+64), self.i:(self.i + 63)] = self.scope.pa.dsa[:,1:,0][:,::-1]
             self.i += self.dir*self.ystep
         elif self.scope.stage.IsMoving(0) or self.scope.stage.IsMoving(1):
             # positioning for the start of a run - do nothing
@@ -39,7 +42,7 @@ class fastTiler:
                 self.scope.stage.MoveTo(1, nextY)
             else: #gone through all start positions -> we're done
                 self.scope.pa.WantFrameNotification.remove(self.OnTick)
-                View3D(self.data, title='tiled image')
+                #View3D(self.data, title='tiled image')
 
         else: #we've got to the next starting position - fire off next run
             xp = self.scope.stage.GetPos(0)
