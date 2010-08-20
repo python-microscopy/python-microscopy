@@ -579,13 +579,13 @@ class smiMainFrame(wx.Frame):
     def OnMCamBin(self, event):
         self.scope.pa.stop()
         if (self.bin_on):
-            self.scope.cam.SetHorizBin(0)
-            self.scope.cam.SetVertBin(0)
+            self.scope.cam.SetHorizBin(1)
+            self.scope.cam.SetVertBin(1)
             self.mCam.SetLabel(wxID_SMIMAINFRAMEMCAMBIN, 'Turn Binning On')
             self.bin_on = False
         else:
-            self.scope.cam.SetHorizBin(1)
-            self.scope.cam.SetVertBin(1)
+            self.scope.cam.SetHorizBin(8)
+            self.scope.cam.SetVertBin(8)
             self.mCam.SetLabel(wxID_SMIMAINFRAMEMCAMBIN, 'Turn Binning Off')
             self.bin_on = True
             

@@ -294,8 +294,13 @@ class iXonCamera:
     def GetCCDHeight(self):
         return self.CCDSize[1]
 
-    def SetHorizBin(*args):
-        raise Exception, 'Not implemented yet!!'
+    def SetHorizBin(self, val):
+        self.binX = val
+        
+        ret = ac.SetImage(self.binX,self.binY,self.ROIx[0],self.ROIx[1],self.ROIy[0],self.ROIy[1])
+        if not ret == ac.DRV_SUCCESS:
+            raise 'Error setting image size: %s' % ac.errorCodes[ret]
+        #raise Exception, 'Not implemented yet!!'
 
     def GetHorizBin(self):
         return self.binning
@@ -305,12 +310,21 @@ class iXonCamera:
         #raise Exception, 'Not implemented yet!!'
         return self.binX
 
-    def SetVertBin(*args):
-        raise Exception, 'Not implemented yet!!'
+    def SetVertBin(self, val):
+        self.binY = val
+
+        ret = ac.SetImage(self.binX,self.binY,self.ROIx[0],self.ROIx[1],self.ROIy[0],self.ROIy[1])
+        if not ret == ac.DRV_SUCCESS:
+            raise 'Error setting image size: %s' % ac.errorCodes[ret]
+        #raise Exception, 'Not implemented yet!!'
 
     def GetVertBin(*args):
         return 0
         #raise Exception, 'Not implemented yet!!'
+
+    def GetVertBinValue(*args):
+        #raise Exception, 'Not implemented yet!!'
+        return self.binY
 
     def GetNumberChannels(*args):
         raise Exception, 'Not implemented yet!!'
