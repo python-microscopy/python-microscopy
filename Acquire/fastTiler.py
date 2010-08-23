@@ -1,48 +1,67 @@
 import numpy as np
 from PYME.DSView.dsviewer_npy import View3D
+from math import floor
 
-PIXELSIZE = (8*1.5*.07)/1e3
+PIXELSIZE = (16*1.5*.072)/1e3
 
 class fastTiler:
-    def __init__(self, scope, ystep=8, pixelsize=PIXELSIZE):
+    def __init__(self, scope, ystep=10.5, pixelsize=PIXELSIZE):
         self.scope = scope
         self.i = -1
         self.j = 0
         self.dir = 1
         self.ystep = ystep
+        self.yspeed = ystep
         self.pixelsize = pixelsize
         self.runInProgress = True
 
         self.rect = self.GetBoundingRect()
-        self.data = np.zeros((self.rect[2]/pixelsize + 64, self.rect[3]/pixelsize + 64), 'uint16')
+        self.data = np.zeros((self.rect[2]/pixelsize + 32, self.rect[3]/pixelsize + 33), 'uint16')
 
         #self.startPositions = []
         #self.endYPositions = []
         self.GenRunPositions()
 
-        View3D(self.data, title='tiled image')
+        self.visfr = View3D(self.data, title='tiled image')
         #self.GotoStart()
         self.scope.pa.WantFrameNotification.append(self.OnTick)
-        #self.scope.pa.WantFrameGroupNotification.append(self)
+        self.scope.pa.WantFrameGroupNotification.append(self.updateView)
+
+    def updateView(self, caller=None):
+        self.visfr.vp.Refresh()
+
+    def detach(self):
+        self.scope.pa.WantFrameNotification.remove(self.OnTick)
+        self.scope.pa.WantFrameGroupNotification.remove(self.updateView)
 
 
     def OnTick(self, caller=None):
-        if self.i >=0 and self.i < (self.data.shape[1]+64) and self.scope.stage.IsMoving(1):
-            self.data[self.j:(self.j+64), self.i:(self.i + 63)] = self.scope.pa.dsa[:,1:,0][:,::-1]
-            self.i += self.dir*self.ystep
-        elif self.scope.stage.IsMoving(0) or self.scope.stage.IsMoving(1):
+        #if self.scope.stage.moving[0]:
+        #    print self.i
+        if self.runInProgress and self.i >=0 and self.i < (self.data.shape[1]-32):# and self.scope.stage.moving[1] and not self.scope.stage.moving[0]:
+            #print self.i, self.j
+            self.data[self.j:(self.j+32), floor(self.i):(floor(self.i) + 15)] = np.maximum(self.scope.pa.dsa[:,1:16,0] - (self.scope.cam.ADOffset), 0)
+            self.i += self.dir*self.yspeed
+            if self.yspeed < self.ystep:
+                self.yspeed += 1
+        elif self.scope.stage.moving[0] or self.scope.stage.moving[1]:
             # positioning for the start of a run - do nothing
             pass
         elif self.runInProgress: #we've got to the end of our run - position for the next
+            self.scope.pa.stop()
             self.runInProgress=False
+            self.i = -1
             print 'foo'
             if len(self.startPositions) > 0:
                 nextX, nextY = self.startPositions.pop(0)
                 self.scope.stage.MoveTo(0, nextX)
                 self.scope.stage.MoveTo(1, nextY)
+                self.scope.stage.moving = [1,1]
             else: #gone through all start positions -> we're done
                 self.scope.pa.WantFrameNotification.remove(self.OnTick)
+                self.scope.pa.WantFrameGroupNotification.remove(self.updateView)
                 #View3D(self.data, title='tiled image')
+            self.scope.pa.start()
 
         else: #we've got to the next starting position - fire off next run
             xp = self.scope.stage.GetPos(0)
@@ -51,6 +70,8 @@ class fastTiler:
             self.j = int((xp - self.rect[0])/self.pixelsize)
             self.i = int((yp - self.rect[1])/self.pixelsize)
 
+            print self.i, self.j, self.data.shape
+
             nextY = self.endYPositions.pop(0)
 
             if nextY > yp: #going forward
@@ -58,13 +79,22 @@ class fastTiler:
             else: #going backwards
                 self.dir = -1
 
+            self.yspeed = self.ystep
+
+            self.scope.pa.stop()
+            #self.scope.pa.start()
+            self.scope.pa.purge()
             self.scope.stage.MoveTo(1, nextY)
             self.runInProgress = True
+            self.scope.stage.moving = [1,1]
+            #self.scope.pa.stop()
+            self.scope.pa.start()
+
 
 
 
 class fastRectTiler(fastTiler):
-    def __init__(self, scope, rect, xstep = .00005, ystep=8, pixelsize=PIXELSIZE):
+    def __init__(self, scope, rect, xstep = .00005, ystep=10.5, pixelsize=PIXELSIZE):
         self.rect = rect
         self.xstep = xstep
         self.pixelsize = pixelsize
@@ -76,7 +106,7 @@ class fastRectTiler(fastTiler):
         return self.rect
 
     def GenRunPositions(self):
-        xposs = self.rect[0] + np.arange(0, self.rect[2], max(self.xstep, 64*self.pixelsize))
+        xposs = self.rect[0] + np.arange(0, self.rect[2], max(self.xstep, 32*self.pixelsize))
         yposs = [self.rect[1], self.rect[1] + self.rect[3]]
 
         self.startPositions = []

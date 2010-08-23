@@ -115,6 +115,13 @@ class PreviewAquisator(wx.Timer):
             self.cam.ExtractColor(getChanSlice(self.ds,self.curMemChn),3)
             self.curMemChn = self.curMemChn + 1
 
+    def purge(self):
+        while(self.cam.ExpReady()):
+            self.curMemChn = 0
+            self.getFrame(self.BW)
+            self.curMemChn = 0
+
+
 
     def onExpReady(self): 
         """ There is an exposure waiting in the Camera,

@@ -28,7 +28,7 @@ class tPoll(threading.Thread):
                 self.stepper.RefreshPos()
             except:
                 pass
-            time.sleep(.2)
+            time.sleep(.02)
 
 
 class mercuryStepper:
@@ -63,6 +63,7 @@ class mercuryStepper:
         self.maxTravel = m.qTMX(self.connID, ''.join(self.axes))
 
         self.last_poss = m.qPOS(self.connID, ''.join(self.axes))
+        self.moving = m.IsMoving(self.connID, ''.join(self.axes))
 
         self.lock.release()
 
@@ -107,6 +108,7 @@ class mercuryStepper:
     def RefreshPos(self):
         self.lock.acquire()
         self.last_poss = m.qPOS(self.connID, ''.join(self.axes))
+        self.moving = m.IsMoving(self.connID, ''.join(self.axes))
         self.lock.release()
 
     def GetLastPos(self, iChan=0):
@@ -118,6 +120,18 @@ class mercuryStepper:
         m.JON(self.connID, [c + 1 for c in chans], jv)
         self.joystickOn = on
         self.lock.release()
+
+    def GetVelocity(self, iChan=0):
+        self.lock.acquire()
+        ret = m.qVEL(self.connID, self.axes[iChan])[0]
+        self.lock.release()
+        return ret
+
+    def SetVelocity(self, iChan, velocity):
+        self.lock.acquire()
+        ret = m.VEL(self.connID, self.axes[iChan], [velocity])
+        self.lock.release()
+        return ret
 
     def GetControlReady(self):
         return True

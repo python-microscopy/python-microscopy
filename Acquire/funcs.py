@@ -141,7 +141,7 @@ class microscope:
             if self.lastFrameSaturated: #last frame was also saturated - our intervention obviously didn't work - close the shutter
                 if 'SetShutter' in dir(source.cam):
                     source.cam.SetShutter(False)
-                source.cam.StartAq()
+                source.cam.StartExposure()
                 self.saturatedMessage = 'Sat - Camera shutter was closed'
                 self.lastFrameSaturated = True
                 self.cam.saturationIntervened = True
@@ -160,7 +160,7 @@ class microscope:
                 else:
                     self.saturatedMessage = 'Sat - EM Gain turned down'
                     
-                source.cam.StartAq()
+                source.cam.StartExposure()
 
                 self.lastFrameSaturated = True
                 self.cam.saturationIntervened = True
@@ -168,7 +168,7 @@ class microscope:
             else:
                 if 'SetShutter' in dir(source.cam):
                     source.cam.SetShutter(False)
-                source.cam.StartAq()
+                source.cam.StartExposure()
                 self.saturatedMessage = 'Sat - Camera shutter was closed'
                 self.lastFrameSaturated = True
                 self.cam.saturationIntervened = True
