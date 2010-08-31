@@ -178,33 +178,9 @@ class PSFFitFactory:
 
         #generate grid to evaluate function on        
         X, Y, Z, safeRegion = self.interpolator.getCoords(self.metadata, xslice, yslice, zslice)
-        #print safeRegion
+
 
         #estimate some start parameters...
-#        A = dataROI.max() - dataROI.min() #amplitude
-#
-#        #x0 =  1e3*self.metadata.voxelsize.x*x0
-#        #y0 =  1e3*self.metadata.voxelsize.y*y0
-#
-#        dr = numpy.maximum(dataROI - dataROI.min() - 0.5*A, 0).squeeze()
-#        drs = dr.sum()
-#
-#        x0 = (X[:,None]*dr).sum()/drs
-#        y0 = (Y[None, :]*dr).sum()/drs
-#
-#        sig_xl = (numpy.maximum(0, x0 - X)[:,None]*dr).sum()/(drs)
-#        sig_xr = (numpy.maximum(0, X - x0)[:,None]*dr).sum()/(drs)
-#
-#        sig_yu = (numpy.maximum(0, y0 - Y)[None, :]*dr).sum()/(drs)
-#        sig_yd = (numpy.maximum(0, Y - y0)[None, :]*dr).sum()/(drs)
-#
-#        #x0 =  X.mean()
-#        #y0 =  Y.mean()
-#        z0 = 200.0
-
-
-
-        #startParameters = [A, x0, y0, z0, dataROI.min()]
 
         if len(X.shape) > 1: #X is a matrix
             X_ = X[:, 0, 0]
@@ -213,13 +189,15 @@ class PSFFitFactory:
             X_ = X
             Y_ = Y
 
-        startParameters = astigEstimator.getStartParameters(dataROI, X_, Y_)
+        
 
 
         #estimate errors in data
         nSlices = 1#dataROI.shape[2]
 
         sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*dataROI)/self.metadata.Camera.ElectronsPerCount
+
+        startParameters = astigEstimator.getStartParameters(dataROI, X_, Y_)
 
         #do the fit
         (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, self.interpolator, X, Y, Z, safeRegion)
@@ -237,13 +215,7 @@ class PSFFitFactory:
         #return PSFFitResultR(res, self.metadata, numpy.array((sig_xl, sig_xr, sig_yu, sig_yd)),(xslice, yslice, zslice), resCode, fitErrors, numpy.array(startParameters), nchi2)
         return PSFFitResultR(res, self.metadata,(xslice, yslice, zslice), resCode, fitErrors, numpy.array(startParameters), nchi2)
 
-#    def FromPoint(self, x, y, z=None, roiHalfSize=7, axialHalfSize=15):
-#        x = round(x)
-#        y = round(y)
-#
-#        return self[max((x - roiHalfSize), 0):min((x + roiHalfSize + 1),self.data.shape[0]),
-#            max((y - roiHalfSize), 0):min((y + roiHalfSize + 1), self.data.shape[1]), 0:2]
-        
+     
 
 #so that fit tasks know which class to use
 FitFactory = PSFFitFactory

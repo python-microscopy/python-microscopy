@@ -20,6 +20,7 @@ import types
 import cPickle
 
 from PYME.Analysis._fithelpers import *
+from PYME.Analysis.FitFactories.zEstimators import astigEstimator
 
 def pickleSlice(slice):
         return unpickleSlice, (slice.start, slice.stop, slice.step)
@@ -29,28 +30,31 @@ def unpickleSlice(start, stop, step):
 
 copy_reg.pickle(slice, pickleSlice, unpickleSlice)
 
-
-
-def f_Interp3d2c(p, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, *args):
+def f_Interp3d2c(p, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, *args):
     """3D PSF model function with constant background - parameter vector [A, x0, y0, z0, background]"""
     Ag, Ar, x0, y0, z0, bG, bR = p
 
     #make sure our model is big enough to stretch to our current position
-    xm = len(Xg)/2
-    dx = min((interpolator.shape[0] - len(Xg))/2, xm) - 2
+#    xm = len(Xg)/2
+#    dx = min((interpolator.shape[0] - len(Xg))/2, xm) - 2
+#
+#    ym = len(Yg)/2
+#    dy = min((interpolator.shape[1] - len(Yg))/2, ym) - 2
+#
+#    x0 = min(max(x0, Xg[xm - dx]), Xg[dx + xm])
+#    y0 = min(max(y0, Yg[ym - dy]), Yg[dy + ym])
+#    z0 = min(max(z0, max(Zg[0], Zr[0]) + interpolator.IntZVals[2]), min(Zg[0], Zr[0]) + interpolator.IntZVals[-2])
 
-    ym = len(Yg)/2
-    dy = min((interpolator.shape[1] - len(Yg))/2, ym) - 2
-    
-    x0 = min(max(x0, Xg[xm - dx]), Xg[dx + xm])
-    y0 = min(max(y0, Yg[ym - dy]), Yg[dy + ym])
-    z0 = min(max(z0, max(Zg[0], Zr[0]) + interpolator.IntZVals[2]), min(Zg[0], Zr[0]) + interpolator.IntZVals[-2])
+    #currently just come to a hard stop when the optimiser tries to leave the safe region
+    #prob. not ideal, for a number of reasons
+    x0 = min(max(x0, safeRegion[0][0]), safeRegion[0][1])
+    y0 = min(max(y0, safeRegion[1][0]), safeRegion[1][1])
+    z0 = min(max(z0, safeRegion[2][0]), safeRegion[2][1])
 
     g = interpolator.interp(Xg - x0 + 1, Yg - y0 + 1, Zg[0] - z0 + 1)*Ag + bG
     r = interpolator.interp(Xr - x0 + 1, Yr - y0 + 1, Zr[0] - z0 + 1)*Ar + bR
 
     return numpy.concatenate((g,r), 2)
-
 
 def replNoneWith1(n):
 	if n == None:
@@ -60,7 +64,13 @@ def replNoneWith1(n):
 
 
 
-fresultdtype=[('tIndex', '<i4'),('fitResults', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('backgroundG', '<f4'),('backgroundR', '<f4')]),('fitError', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('backgroundG', '<f4'),('backgroundR', '<f4')]), ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])]),('startParams', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('backgroundG', '<f4'), ('backgroundR', '<f4')]), ('nchi2', '<f4')]
+fresultdtype=[('tIndex', '<i4'),
+    ('fitResults', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('backgroundG', '<f4'),('backgroundR', '<f4')]),
+    ('fitError', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('backgroundG', '<f4'),('backgroundR', '<f4')]),
+    ('resultCode', '<i4'), 
+    ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])]),
+    ('startParams', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('backgroundG', '<f4'), ('backgroundR', '<f4')]),
+    ('nchi2', '<f4')]
 
 def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None, startParams=None, nchi2=-1):
 	if slicesUsed == None:
@@ -106,19 +116,51 @@ class PSFFitFactory:
 
         if fitfcn == f_Interp3d2c:
             if 'PSFFile' in metadata.getEntryNames():
-                self.interpolator.setModel(metadata.PSFFile, metadata)
+                if self.interpolator.setModel(metadata.PSFFile, metadata):
+                    print 'model changed'
+                    astigEstimator.calibrate(self.interpolator, metadata)
             else:
                 self.interpolator.genTheoreticalModel(metadata)
-		
+
+    @classmethod
+    def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):
+        #generate grid to evaluate function on
+        #setModel(md.PSFFile, md)
+        interpolator = __import__('PYME.Analysis.FitFactories.Interpolators.' + md.Analysis.InterpModule , fromlist=['PYME', 'Analysis','FitFactories', 'Interpolators']).interpolator
+        if interpolator.setModel(md.PSFFile, md):
+            print 'model changed'
+            astigEstimator.calibrate(interpolator, md)
+
+        X, Y, Z, safeRegion = interpolator.getCoords(md, slice(-roiHalfSize,roiHalfSize + 1), slice(-roiHalfSize,roiHalfSize + 1), slice(0,1))
+
+        #X = 1e3*md.voxelsize.x*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
+        #Y = 1e3*md.voxelsize.y*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
+        #Z = array([0]).astype('f')
+
+        return f_Interp3d2c(params, interpolator, X, Y, Z, safeRegion)
+
+    def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
+        #if (z == None): # use position of maximum intensity
+        #    z = self.data[x,y,:].argmax()
+
+        x0 = x
+        y0 = y
+        x = round(x)
+        y = round(y)
+
+        xslice = slice(max((x - roiHalfSize), 0),min((x + roiHalfSize + 1),self.data.shape[0]))
+        yslice = slice(max((y - roiHalfSize), 0),min((y + roiHalfSize + 1), self.data.shape[1]))
+        zslice = slice(0,1)
         
-    def __getitem__(self, key):
-        xslice, yslice, zslice = key
+
+    #def __getitem__(self, key):
+        #xslice, yslice, zslice = key
 
         #cut region out of data stack
         dataROI = self.data[xslice, yslice, zslice] - self.metadata.Camera.ADOffset
 
         #generate grid to evaluate function on        
-        Xg, Yg, Zg = self.interpolator.getCoords(self.metadata, xslice, yslice, zslice)
+        Xg, Yg, Zg, safeRegion = self.interpolator.getCoords(self.metadata, xslice, yslice, zslice)
 
 
         #generate a corrected grid for the red channel
@@ -144,11 +186,18 @@ class PSFFitFactory:
         Ag = dataROI[:,:,0].max() - dataROI[:,:,0].min() #amplitude
         Ar = dataROI[:,:,1].max() - dataROI[:,:,1].min() #amplitude
 
+        if len(Xg.shape) > 1: #X is a matrix
+            X_ = Xg[:, 0, 0]
+            Y_ = Yg[0, :, 0]
+        else:
+            X_ = Xg
+            Y_ = Yg
 
+        #x0 =  Xg.mean()
+        #y0 =  Yg.mean()
+        #z0 = 200.0
 
-        x0 =  Xg.mean()
-        y0 =  Yg.mean()
-        z0 = 200.0
+        
 
         #startParameters = [Ag, Ar, x0, y0, 250/2.35, dataROI[:,:,0].min(),dataROI[:,:,1].min(), .001, .001]
 
@@ -165,14 +214,16 @@ class PSFFitFactory:
 
             dataROI = dataROI - bgROI
 
-        startParameters = [Ag, Ar, x0, y0, z0, dataROI[:,:,0].min(),dataROI[:,:,1].min()]
+        startParams = astigEstimator.getStartParameters(dataROI.sum(2)[:,:,None], X_, Y_)
+
+        startParameters = [Ag*startParams[0]/(Ag + Ar), Ar*startParams[0]/(Ag + Ar), startParams[1], startParams[2], startParams[3], dataROI[:,:,0].min(),dataROI[:,:,1].min()]
 
         #print dataROI.shape
 	
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
         #(res, cov_x, infodict, mesg, resCode) = FitModelWeighted(self.fitfcn, startParameters, dataMean, sigma, X, Y)
-        (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, self.interpolator,Xg, Yg, Zg, Xr, Yr, Zr)
+        (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, self.interpolator,Xg, Yg, Zg, Xr, Yr, Zr, safeRegion)
 
         fitErrors=None
         try:       
@@ -186,14 +237,8 @@ class PSFFitFactory:
 	#print res, fitErrors, resCode
         return PSFFitResultR(res, self.metadata, (xslice, yslice, zslice), resCode, fitErrors, numpy.array(startParameters), nchi2)
 
-    def FromPoint(self, x, y, z=None, roiHalfSize=7, axialHalfSize=15):
-        x = round(x)
-        y = round(y)
-	
-        return self[max((x - roiHalfSize), 0):min((x + roiHalfSize + 1),self.data.shape[0]), 
-                    max((y - roiHalfSize), 0):min((y + roiHalfSize + 1), self.data.shape[1]), 0:2]
+   
         
-
 #so that fit tasks know which class to use
 FitFactory = PSFFitFactory
 FitResult = PSFFitResultR
