@@ -150,7 +150,7 @@ class PSFFitFactory:
 
         xslice = slice(max((x - roiHalfSize), 0),min((x + roiHalfSize + 1),self.data.shape[0]))
         yslice = slice(max((y - roiHalfSize), 0),min((y + roiHalfSize + 1), self.data.shape[1]))
-        zslice = slice(0,1)
+        zslice = slice(0,2)
         
 
     #def __getitem__(self, key):
@@ -158,6 +158,7 @@ class PSFFitFactory:
 
         #cut region out of data stack
         dataROI = self.data[xslice, yslice, zslice] - self.metadata.Camera.ADOffset
+        #print self.data.shape, dataROI.shape
 
         #generate grid to evaluate function on        
         Xg, Yg, Zg, safeRegion = self.interpolator.getCoords(self.metadata, xslice, yslice, zslice)
