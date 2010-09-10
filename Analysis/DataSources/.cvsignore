@@ -1,5 +1,6 @@
 __init__.pyc
 HDFDataSource.pyo
+FlatFieldDataSource.pyc
 __init__.pyo
 TQDataSource.pyc
 TiffDataSource.pyo
