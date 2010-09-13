@@ -431,6 +431,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         dc = wx.ClientDC(self.imagepanel)
         self.imagepanel.PrepareDC(dc)
         pos = event.GetLogicalPosition(dc)
+        pos = self.CalcUnscrolledPosition(*pos)
+
         #print pos
         sc = pow(2.0,(self.do.scale-2))
         if (self.do.slice == self.do.SLICE_XY):
@@ -471,6 +473,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         dc = wx.ClientDC(self.imagepanel)
         self.imagepanel.PrepareDC(dc)
         pos = event.GetLogicalPosition(dc)
+        pos = self.CalcUnscrolledPosition(*pos)
         print pos
         sc = pow(2.0,(self.do.scale-2))
         if (self.do.slice == self.do.SLICE_XY):
@@ -487,6 +490,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         dc = wx.ClientDC(self.imagepanel)
         self.imagepanel.PrepareDC(dc)
         pos = event.GetLogicalPosition(dc)
+        pos = self.CalcUnscrolledPosition(*pos)
         print pos
         sc = pow(2.0,(self.do.scale-2))
         if (self.do.slice == self.do.SLICE_XY):

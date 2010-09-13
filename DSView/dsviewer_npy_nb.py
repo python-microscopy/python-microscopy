@@ -36,7 +36,8 @@ import wx.py.crust
 import pylab
 import glob
 
-from myviewpanel_numarray import MyViewPanel
+#from myviewpanel_numarray import MyViewPanel
+from arrayViewPanel import ArraySettingsAndViewPanel
 from PYME.Analysis.LMVis import recArrayView
 import eventLogViewer
 import fitInfo
@@ -250,7 +251,8 @@ class DSViewFrame(wx.Frame):
         self.notebook1.update = self.update
 
 
-        self.vp = MyViewPanel(self.notebook1, self.ds)
+        #self.vp = MyViewPanel(self.notebook1, self.ds)
+        self.vp = ArraySettingsAndViewPanel(self.notebook1, self.ds)
 
         self.mainWind = self
 
@@ -259,6 +261,7 @@ class DSViewFrame(wx.Frame):
               introText='Python SMI bindings - note that help, license etc below is for Python, not PySMI\n\n')
 
         if self.mode == 'LM':
+            #pass
             self.sh.runfile(os.path.join(os.path.dirname(__file__),'fth5.py'))
 
         self.notebook1.AddPage(page=self.vp, select=True, caption='Data')
@@ -298,18 +301,18 @@ class DSViewFrame(wx.Frame):
         if len(self.fitResults) > 0:
             #print self.fitResults.shape
             #print self.fitResults[0].dtype
-            self.vp.pointMode = 'lm'
+            self.vp.view.pointMode = 'lm'
             
             voxx = 1e3*self.mdh.getEntry('voxelsize.x')
             voxy = 1e3*self.mdh.getEntry('voxelsize.y')
-            self.vp.points = numpy.vstack((self.fitResults['fitResults']['x0']/voxx, self.fitResults['fitResults']['y0']/voxy, self.fitResults['tIndex'])).T
+            self.vp.view.points = numpy.vstack((self.fitResults['fitResults']['x0']/voxx, self.fitResults['fitResults']['y0']/voxy, self.fitResults['tIndex'])).T
 
             if 'Splitter' in self.mdh.getEntry('Analysis.FitModule'):
-                self.vp.pointMode = 'splitter'
-                self.vp.pointColours = self.fitResults['fitResults']['Ag'] > self.fitResults['fitResults']['Ar']
+                self.vp.view.pointMode = 'splitter'
+                self.vp.view.pointColours = self.fitResults['fitResults']['Ag'] > self.fitResults['fitResults']['Ar']
 
             from PYME.Analysis.LMVis import gl_render
-            self.glCanvas = gl_render.LMGLCanvas(self.notebook1, False, vp = self.vp, vpVoxSize = voxx)
+            self.glCanvas = gl_render.LMGLCanvas(self.notebook1, False, vp = self.vp.do, vpVoxSize = voxx)
             self.glCanvas.cmap = pylab.cm.gist_rainbow
 
             self.notebook1.AddPage(page=self.glCanvas, select=True, caption='VisLite')
@@ -326,7 +329,7 @@ class DSViewFrame(wx.Frame):
             #self.glCanvas.setCLim((0, self.numAnalysed))
             self.timer.WantNotification.append(self.AddPointsToVis)
 
-            self.fitInf = fitInfo.FitInfoPanel(self, self.fitResults, self.resultsMdh, self.vp.ds)
+            self.fitInf = fitInfo.FitInfoPanel(self, self.fitResults, self.resultsMdh, self.vp.do.ds)
             self.notebook1.AddPage(page=self.fitInf, select=False, caption='Fit Info')
 
 
@@ -431,15 +434,15 @@ class DSViewFrame(wx.Frame):
         y0 = self.mdh.getEntry('Positioning.Stage_Y')
         ym = piecewiseMapping.GenerateBacklashCorrPMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), y0, 'ScannerYPos', 0, .0035)
         
-        #dark = deTile.genDark(self.vp.ds, self.mdh)
+        #dark = deTile.genDark(self.vp.do.ds, self.mdh)
         dark = self.mdh.getEntry('Camera.ADOffset')
-        flat = deTile.guessFlat(self.vp.ds, self.mdh, dark)
+        flat = deTile.guessFlat(self.vp.do.ds, self.mdh, dark)
         #flat = numpy.load('d:/dbad004/23_7_flat.npy')
         #flat = flat.reshape(list(flat.shape[:2]) + [1,])
 
         #print dark.shape, flat.shape
 
-        dt = deTile.tile(self.vp.ds, xm, ym, self.mdh, dark=dark, flat=flat)#, mixmatrix = [[.3, .7], [.7, .3]])
+        dt = deTile.tile(self.vp.do.ds, xm, ym, self.mdh, dark=dark, flat=flat)#, mixmatrix = [[.3, .7], [.7, .3]])
         View3D([dt[:,:,0][:,:,None], dt[:,:,1][:,:,None]], 'Tiled Image')
 
 
@@ -548,14 +551,14 @@ class DSViewFrame(wx.Frame):
             self.bPlay.SetBitmapLabel(self.bmPlay)
 
     def OnFrame(self):
-        self.vp.zp +=1
-        if self.vp.zp >= self.ds.shape[2]:
-            self.vp.zp = 0
+        self.vp.do.zp +=1
+        if self.vp.do.zp >= self.ds.shape[2]:
+            self.vp.do.zp = 0
 
         self.update()
 
     def OnSeekStart(self, event):
-        self.vp.zp = 0
+        self.vp.do.zp = 0
         self.update()
 
     def OnPlaySpeedChanged(self, event):
@@ -564,7 +567,7 @@ class DSViewFrame(wx.Frame):
             self.tPlay.Start(1000./self.slPlaySpeed.GetValue())
 
     def OnPlayPosChanged(self, event):
-        self.vp.zp = int((self.ds.shape[2]-1)*self.slPlayPos.GetValue()/100.)
+        self.vp.do.zp = int((self.ds.shape[2]-1)*self.slPlayPos.GetValue()/100.)
         self.update()
 
 
@@ -632,7 +635,7 @@ class DSViewFrame(wx.Frame):
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
         hsizer.Add(wx.StaticText(pan, -1, 'Start at:'), 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-        self.tStartAt = wx.TextCtrl(pan, -1, value='%d' % self.vp.zp, size=(50, -1))
+        self.tStartAt = wx.TextCtrl(pan, -1, value='%d' % self.vp.do.zp, size=(50, -1))
         
         hsizer.Add(self.tStartAt, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
         vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 2)
@@ -928,8 +931,8 @@ class DSViewFrame(wx.Frame):
     def OnTagPSF(self, event):
         from PYME.PSFEst import extractImages
         rsx, rsy, rsz = [int(s) for s in self.tPSFROI.GetValue().split(',')]
-        dx, dy, dz = extractImages.getIntCenter(self.dataSource[(self.vp.xp-rsx):(self.vp.xp+rsx + 1),(self.vp.yp-rsy):(self.vp.yp+rsy+1), :])
-        self.PSFLocs.append((self.vp.xp + dx, self.vp.yp + dy, dz))
+        dx, dy, dz = extractImages.getIntCenter(self.dataSource[(self.vp.do.xp-rsx):(self.vp.do.xp+rsx + 1),(self.vp.do.yp-rsy):(self.vp.do.yp+rsy+1), :])
+        self.PSFLocs.append((self.vp.do.xp + dx, self.vp.do.yp + dy, dz))
         self.vp.psfROIs = self.PSFLocs
         self.vp.Refresh()
 
@@ -1177,13 +1180,13 @@ class DSViewFrame(wx.Frame):
             pylab.clf()
             
             pylab.subplot(211)
-            pylab.errorbar(fr['tIndex'], fr['fitResults']['x0'] - self.vp.xp*1e3*self.mdh.getEntry('voxelsize.x'), fr['fitError']['x0'], fmt='xb')
+            pylab.errorbar(fr['tIndex'], fr['fitResults']['x0'] - self.vp.do.xp*1e3*self.mdh.getEntry('voxelsize.x'), fr['fitError']['x0'], fmt='xb')
             pylab.xlim(x.min(), x.max())
             pylab.xlabel('Time [%3.2f ms frames]' % (1e3*self.mdh.getEntry('Camera.CycleTime')))
             pylab.ylabel('x offset [nm]')
 
             pylab.subplot(212)
-            pylab.errorbar(fr['tIndex'], fr['fitResults']['y0'] - self.vp.yp*1e3*self.mdh.getEntry('voxelsize.y'), fr['fitError']['y0'], fmt='xg')
+            pylab.errorbar(fr['tIndex'], fr['fitResults']['y0'] - self.vp.do.yp*1e3*self.mdh.getEntry('voxelsize.y'), fr['fitError']['y0'], fmt='xg')
             pylab.xlim(x.min(), x.max())
             pylab.xlabel('Time [%3.2f ms frames]' % (1e3*self.mdh.getEntry('Camera.CycleTime')))
             pylab.ylabel('y offset [nm]')
@@ -1191,7 +1194,7 @@ class DSViewFrame(wx.Frame):
             pylab.figure(3)
             pylab.clf()
 
-            pylab.errorbar(fr['fitResults']['x0'] - self.vp.xp*1e3*self.mdh.getEntry('voxelsize.x'),fr['fitResults']['y0'] - self.vp.yp*1e3*self.mdh.getEntry('voxelsize.y'), fr['fitError']['x0'], fr['fitError']['y0'], fmt='xb')
+            pylab.errorbar(fr['fitResults']['x0'] - self.vp.do.xp*1e3*self.mdh.getEntry('voxelsize.x'),fr['fitResults']['y0'] - self.vp.do.yp*1e3*self.mdh.getEntry('voxelsize.y'), fr['fitError']['x0'], fr['fitError']['y0'], fmt='xb')
             #pylab.xlim(x.min(), x.max())
             pylab.xlabel('x offset [nm]')
             pylab.ylabel('y offset [nm]')
@@ -1245,12 +1248,16 @@ class DSViewFrame(wx.Frame):
 
 
     def update(self):
-        self.vp.imagepanel.Refresh()
-        self.statusbar.SetStatusText('Slice No: (%d/%d)    x: %d    y: %d    Frames Analysed: %d    Events detected: %d' % (self.vp.zp, self.vp.ds.shape[2], self.vp.xp, self.vp.yp, self.numAnalysed, self.numEvents))
-        self.slPlayPos.SetValue((100*self.vp.zp)/max(1,self.vp.ds.shape[2]-1))
+        #self.vp.imagepanel.Refresh()
+        self.vp.update()
+        self.statusbar.SetStatusText('Slice No: (%d/%d)    x: %d    y: %d    Frames Analysed: %d    Events detected: %d' % (self.vp.do.zp, self.vp.do.ds.shape[2], self.vp.do.xp, self.vp.do.yp, self.numAnalysed, self.numEvents))
+        self.slPlayPos.SetValue((100*self.vp.do.zp)/max(1,self.vp.do.ds.shape[2]-1))
 
         if 'fitInf' in dir(self) and not self.tPlay.IsRunning():
-            self.fitInf.UpdateDisp(self.vp.PointsHitTest())
+            self.fitInf.UpdateDisp(self.vp.view.PointsHitTest())
+
+        if not self.tPlay.IsRunning():
+            self.vp.optionspanel.RefreshHists()
 
         if 'decvp' in dir(self):
             self.decvp.imagepanel.Refresh()
@@ -1303,7 +1310,7 @@ class DSViewFrame(wx.Frame):
         else:
             evts = []
 
-        dataExporter.CropExportData(self.vp, self.mdh, evts, self.seriesName)
+        dataExporter.CropExportData(self.vp.view, self.mdh, evts, self.seriesName)
 
     def savePositions(self, event=None):
         fdialog = wx.FileDialog(None, 'Save Positions ...',
@@ -1389,9 +1396,9 @@ class DSViewFrame(wx.Frame):
             dvf.Show()
 
     def dsRefresh(self):
-        #zp = self.vp.zp #save z -position
+        #zp = self.vp.do.zp #save z -position
         self.vp.ResetDataStack(self.ds)
-        #self.vp.zp = zp #restore z position
+        #self.vp.do.zp = zp #restore z position
         self.elv.SetEventSource(self.ds.getEvents())
         self.elv.SetRange([0, self.ds.getNumSlices()])
         
