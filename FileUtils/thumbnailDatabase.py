@@ -64,16 +64,16 @@ def getThumbnail(filename):
 
         if ext in thumbnailers.keys():
             #print ext
-            try:
-                #thumbMod = __import__(thumbnailers[ext])
-                thumbMod = __import__('PYME.FileUtils.' + thumbnailers[ext], fromlist=['PYME', 'FileUtils'])
+            #try:
+            #thumbMod = __import__(thumbnailers[ext])
+            thumbMod = __import__('PYME.FileUtils.' + thumbnailers[ext], fromlist=['PYME', 'FileUtils'])
 
-                ret = thumbMod.generateThumbnail(filename, THUMBSIZE)
+            ret = thumbMod.generateThumbnail(filename, THUMBSIZE)
 
-                thumbDB.execute("INSERT INTO Thumbnails VALUES (?, ?)", (filename, ret))
-                thumbDB.commit()
-            except:
-                pass
+            thumbDB.execute("INSERT INTO Thumbnails VALUES (?, ?)", (filename, ret))
+            thumbDB.commit()
+            #except:
+            #    pass
     else:
         ret = ret[0]
 
