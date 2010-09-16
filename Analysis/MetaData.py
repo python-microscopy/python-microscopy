@@ -191,7 +191,7 @@ def fillInBlanks(md, dataSource):
             dI = numpy.diff(I_t)
 
             tLon = numpy.argmax(dI)
-            print tLon
+            #print tLon
             dIm = dI[tLon]
 
             #Now do some sanity checks ...
@@ -224,8 +224,8 @@ def fillInBlanks(md, dataSource):
 
 
                 #md.setEntry('Camera.ADOffset',numpy.median(numpy.array([dataSource.getSlice(i) for i in range(dataSource.getNumSlices()-5, dataSource.getNumSlices())]).ravel()))
-                print '''WARNING: No clear laser turn on signature found - assuming laser was already on
-                         and fudging ADOffset Estimation'''
+                #print '''WARNING: No clear laser turn on signature found - assuming laser was already on
+                #         and fudging ADOffset Estimation'''
 
 
 
