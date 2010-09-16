@@ -232,7 +232,7 @@ def fillInBlanks(md, dataSource):
     #Quick hack for approximate EMGain for gain register settings of 150 & 200
 
     #FIXME to use a proper calibration
-	if 'Camera.EMGain' in md.getEntryNames() and not 'Camera.TrueEMGain' in md.GetEntryNames():
+	if 'Camera.EMGain' in md.getEntryNames() and not 'Camera.TrueEMGain' in md.getEntryNames():
 		if md.getEntry('Camera.EMGain') == 200: #gain register setting
 			md.setEntry('Camera.TrueEMGain', 100) #real gain @ -50C - from curve in performance book - need proper calibration
 		elif md.getEntry('Camera.EMGain') == 150: #gain register setting
