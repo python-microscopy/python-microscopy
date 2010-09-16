@@ -30,7 +30,7 @@ sqlite3.register_adapter(ndarray, adapt_numarray)
 sqlite3.register_converter("ndarray", convert_numarray)
 
 
-thumbDB = sqlite3.connect('/home/david/PYME/PYME/SampleDB/PYMEThumbnails.db', detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+thumbDB = sqlite3.connect('/srv/PYME/PYMEThumbnails.db', detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 thumbDB.isolation_level = None
 
 #see what tables we've got defined

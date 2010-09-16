@@ -70,7 +70,9 @@ def _exec(codeObj, localVars = None, globalVars = None):
     exec codeObj in localVars,globalVars
 
 def execBG(codeObj, localVars = defLocals, globalVars = defGlobals):
-    threading.Thread(target=_exec, args = (codeObj, localVars, globalVars)).start()
+    t = threading.Thread(target=_exec, args = (codeObj, localVars, globalVars))
+    t.start()
+    return t
 
 def execFile(filename, localVars = defLocals, globalVars = defGlobals):
     #fid = open(checkFilename(filename))
