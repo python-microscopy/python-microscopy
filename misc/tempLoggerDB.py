@@ -5,7 +5,7 @@ import tempDB
 import subprocess
 
 #check to see if we're already running
-ps = subprocess.Popen(['ps', '-a'], stdout=subprocess.PIPE).communicate()[0]
+ps = subprocess.Popen(['ps', '-e'], stdout=subprocess.PIPE).communicate()[0]
 
 if ps.count('tempLoggerDB.py') == 1:
 
