@@ -1290,6 +1290,7 @@ class VisGUIFrame(wx.Frame):
         ID_EXT_DRIFT = wx.NewId()
         ID_TRACK_MOLECULES = wx.NewId()
         ID_CALC_DECAYS = wx.NewId()
+        ID_PLOT_TEMPERATURE = wx.NewId()
 
         ID_ABOUT = wx.ID_ABOUT
 
@@ -1377,6 +1378,7 @@ class VisGUIFrame(wx.Frame):
         special_menu.Append(ID_EXT_DRIFT, "Plot externally calculated drift trajectory")
         special_menu.Append(ID_TRACK_MOLECULES, "&Track single molecule trajectories")
         special_menu.Append(ID_CALC_DECAYS, "Estimate decay lifetimes")
+        special_menu.Append(ID_PLOT_TEMPERATURE, "Plot temperature record")
 
         help_menu = wx.Menu()
         help_menu.Append(ID_ABOUT, "&About")
@@ -1430,6 +1432,7 @@ class VisGUIFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnPlotExtDrift, id=ID_EXT_DRIFT)
         self.Bind(wx.EVT_MENU, self.OnTrackMolecules, id=ID_TRACK_MOLECULES)
         self.Bind(wx.EVT_MENU, self.OnCalcDecays, id=ID_CALC_DECAYS)
+        self.Bind(wx.EVT_MENU, self.OnPlotTemperature, id=ID_PLOT_TEMPERATURE)
 
         self.Bind(wx.EVT_MENU, self.OnView3DPoints, id=ID_VIEW_3D_POINTS)
         self.Bind(wx.EVT_MENU, self.OnView3DTriangles, id=ID_VIEW_3D_TRIANGS)
@@ -2065,6 +2068,19 @@ class VisGUIFrame(wx.Frame):
         kinModels.fitDecay(self.colourFilter, self.mdh)
         kinModels.fitOnTimes(self.colourFilter, self.mdh)
         kinModels.fitFluorBrightness(self.colourFilter, self.mdh)
+
+    def OnPlotTemperature(self, event):
+        from PYME.misc import tempDB
+        import pylab
+        t, tm = tempDB.getEntries(self.mdh.getEntry('StartTime'), self.mdh.getEntry('EndTime'))
+        t_, tm_ = tempDB.getEntries(self.mdh.getEntry('StartTime') - 3600, self.mdh.getEntry('EndTime'))
+
+        pylab.figure()
+        pylab.plot((t_ - self.mdh.getEntry('StartTime'))/60, tm_)
+        pylab.plot((t - self.mdh.getEntry('StartTime'))/60, tm, lw=2)
+        pylab.xlabel('Time [mins]')
+        pylab.ylabel('Temperature [C]')
+
 
     def OnTrackMolecules(self, event):
         import PYME.Analysis.DeClump.deClumpGUI as deClumpGUI
