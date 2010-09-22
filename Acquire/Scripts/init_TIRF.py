@@ -74,7 +74,7 @@ time1.WantNotification.append(fk.refresh)
 InitGUI('''
 from PYME.Acquire import positionTracker
 pt = positionTracker.PositionTracker(scope, time1)
-pv = positionTracker.TrackerPlotPanel(MainFrame, pt)
+pv = positionTracker.TrackerPanel(MainFrame, pt)
 MainFrame.AddPage(page=pv, select=False, caption='Track')
 time1.WantNotification.append(pv.draw)
 ''')
