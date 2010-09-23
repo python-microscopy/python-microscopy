@@ -17,7 +17,7 @@ from PYME.Acquire.Hardware import fakeShutters
 import time
 
 InitBG('EMCCD Camera', '''
-scope.cam = AndorIXon.iXonCamera()
+scope.cam = AndorIXon.iXonCamera(1)
 ''')
 
 InitGUI('''

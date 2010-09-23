@@ -24,7 +24,7 @@ def setScope(sc):
     scope = sc
 
 def getCalibratedCCDGain(nomGain, temperature):
-    ret = scope.settingsDB.execute("SELECT nominalGains, trueGains FROM CCDCalibration WHERE temperature=? ORDER BY time DESC", (temperature,)).fetchone()
+    ret = scope.settingsDB.execute("SELECT nominalGains, trueGains FROM CCDCalibration2 WHERE temperature=? AND serial=? ORDER BY time DESC", (temperature,scope.cam.GetSerialNumber())).fetchone()
     if ret == None or np.max(nomGain) > ret[0].max():
         return None
     else:
@@ -118,7 +118,7 @@ class ccdCalibrator:
 
 
     def _saveCalibration(self):
-        scope.settingsDB.execute("INSERT INTO CCDCalibration VALUES (?, ?, ?, ?)", (datetime.datetime.now(), self.cam.GetCCDTempSetPoint(), self.gains,self.realGains))
+        scope.settingsDB.execute("INSERT INTO CCDCalibration2 VALUES (?, ?, ?, ?, ?)", (datetime.datetime.now(), self.cam.GetCCDTempSetPoint(), self.cam.GetSerialNumber(), self.gains,self.realGains))
         scope.settingsDB.commit()
 
 

@@ -88,8 +88,8 @@ class microscope:
 
         tableNames = [a[0] for a in self.settingsDB.execute('SELECT name FROM sqlite_master WHERE type="table"').fetchall()]
 
-        if not 'CCDCalibration' in tableNames:
-            self.settingsDB.execute("CREATE TABLE CCDCalibration (time timestamp, temperature integer, nominalGains ndarray, trueGains ndarray)")
+        if not 'CCDCalibration2' in tableNames:
+            self.settingsDB.execute("CREATE TABLE CCDCalibration2 (time timestamp, temperature integer, serial integer, nominalGains ndarray, trueGains ndarray)")
         if not 'VoxelSizes' in tableNames:
             self.settingsDB.execute("CREATE TABLE VoxelSizes (ID INTEGER PRIMARY KEY, x REAL, y REAL, name TEXT)")
         if not 'VoxelSizeHistory' in tableNames:

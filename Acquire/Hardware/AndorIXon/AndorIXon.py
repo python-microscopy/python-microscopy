@@ -25,6 +25,23 @@ from PYME.Acquire import eventLog
 
 #import threading
 
+noiseProperties = {
+1823 : {
+        'ReadNoise' : 109.8,
+        'ElectronsPerCount' : 27.32,
+        'NGainStages' : 536,
+        'ADOffset' : 971,
+        'SaturationThreshold' : (2**14 -1)
+        },
+5414 : {
+        'ReadNoise' : 61.33,
+        'ElectronsPerCount' : 25.24,
+        'NGainStages' : 536,
+        'ADOffset' : 413,
+        'SaturationThreshold' : (2**14 -1)
+        }
+}
+
 class iXonCamera:
     #numpy_frames=1
 
@@ -33,15 +50,31 @@ class iXonCamera:
     MODE_CONTINUOUS = 5
     MODE_SINGLE_SHOT = 1
 
-    def __init__(self):
-        self.noiseProps = {
-        'ReadNoise' : 109.8,
-        'ElectronsPerCount' : 27.32,
-        'NGainStages' : 536,
-        'ADOffset' : 971,
-        'SaturationThreshold' : (2**14 -1)
-        }
+    def __selectCamera(self):
+        ret = ac.SetCurrentCamera(self.boardHandle)
+        if not ret == ac.DRV_SUCCESS:
+            raise RuntimeError('Error setting camera: %s' % ac.errorCodes[ret])
+
+
+    def __init__(self, boardNum=0):
+#        self.noiseProps = {
+#        'ReadNoise' : 109.8,
+#        'ElectronsPerCount' : 27.32,
+#        'NGainStages' : 536,
+#        'ADOffset' : 971,
+#        'SaturationThreshold' : (2**14 -1)
+#        }
         self.initialised = False
+
+        self.boardHandle = c_int()
+
+        ret = ac.GetCameraHandle(boardNum, byref(self.boardHandle))
+        if not ret == ac.DRV_SUCCESS:
+            raise RuntimeError('Error getting camera handle: %s' % ac.errorCodes[ret])
+
+        self.__selectCamera()
+
+        
 
         #register as a provider of metadata
         MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
@@ -50,9 +83,11 @@ class iXonCamera:
         ret = ac.Initialize('.')
 
         if not ret == ac.DRV_SUCCESS:
-            raise 'Error initialising camera: %s' % ac.errorCodes[ret]
+            raise RuntimeError('Error initialising camera: %s' % ac.errorCodes[ret])
         else:
             self.initialised = True
+
+        self.noiseProps = noiseProperties[self.GetSerialNumber()]
 
         #get the CCD size
         ccdWidth = c_int()
@@ -60,7 +95,7 @@ class iXonCamera:
 
         ret = ac.GetDetector(byref(ccdWidth),byref(ccdHeight))
         if not ret == ac.DRV_SUCCESS:
-            raise 'Error getting CCD size: %s' % ac.errorCodes[ret]
+            raise RuntimeError('Error getting CCD size: %s' % ac.errorCodes[ret])
 
         self.CCDSize=(ccdWidth.value, ccdHeight.value)
 
@@ -69,18 +104,18 @@ class iXonCamera:
 
         ret = ac.GetTemperatureRange(byref(tMin),byref(tMax))
         if not ret == ac.DRV_SUCCESS:
-            raise 'Error getting Temperature range: %s' % ac.errorCodes[ret]
+            raise RuntimeError('Error getting Temperature range: %s' % ac.errorCodes[ret])
 
         self.tRange = (tMin.value,tMax.value)
         self.tempSet = -70 #default temperature setpoint
 
         ret = ac.SetTemperature(max(tMin.value, self.tempSet)) #fixme so that default T is read in
         if not ret == ac.DRV_SUCCESS:
-            raise 'Error setting Temperature: %s' % ac.errorCodes[ret]
+            raise RuntimeError('Error setting Temperature: %s' % ac.errorCodes[ret])
 
         ret = ac.CoolerON()
         if not ret == ac.DRV_SUCCESS:
-            raise 'Error turnig cooler on: %s' % ac.errorCodes[ret]
+            raise RuntimeError('Error turnig cooler on: %s' % ac.errorCodes[ret])
 
         self.tempStable = False
 
@@ -93,23 +128,23 @@ class iXonCamera:
         #continuous acquisition
         ret = ac.SetAcquisitionMode(self.MODE_CONTINUOUS)
         if not ret == ac.DRV_SUCCESS:
-            raise 'Error setting aq mode: %s' % ac.errorCodes[ret]
+            raise RuntimeError('Error setting aq mode: %s' % ac.errorCodes[ret])
 
         self.contMode = True #we are in single shot mode
 
         ret = ac.SetReadMode(4) #readout as image rather than doing any fancy stuff
         if not ret == ac.DRV_SUCCESS:
-            raise 'Error setting readout mode: %s' % ac.errorCodes[ret]
+            raise RuntimeError('Error setting readout mode: %s' % ac.errorCodes[ret])
 
 
 
         #ret = ac.SetExposureTime(0.1)
         #if not ret == ac.DRV_SUCCESS:
-        #    raise 'Error setting exp time: %s' % ac.errorCodes[ret]
+        #    raise RuntimeError('Error setting exp time: %s' % ac.errorCodes[ret])
 
         ret = ac.SetTriggerMode(0) #use internal triggering
         if not ret == ac.DRV_SUCCESS:
-            raise 'Error setting trigger mode: %s' % ac.errorCodes[ret]
+            raise RuntimeError('Error setting trigger mode: %s' % ac.errorCodes[ret])
 
         self._InitSpeedInfo() #see what shift speeds the device is capable of
 
@@ -117,12 +152,12 @@ class iXonCamera:
         self.VSSpeed = self.fastestRecVSInd
         ret = ac.SetVSSpeed(self.VSSpeed)
         if not ret == ac.DRV_SUCCESS:
-            raise 'Error setting VS speed: %s' % ac.errorCodes[ret]
+            raise RuntimeError('Error setting VS speed: %s' % ac.errorCodes[ret])
 
         self.HSSpeed = 0
         ret = ac.SetHSSpeed(0,self.HSSpeed)
         if not ret == ac.DRV_SUCCESS:
-            raise 'Error setting HS speed: %s' % ac.errorCodes[ret]
+            raise RuntimeError('Error setting HS speed: %s' % ac.errorCodes[ret])
 
         #FIXME - do something about selecting A/D channel
 
@@ -134,16 +169,16 @@ class iXonCamera:
 
         ret = ac.SetImage(self.binX,self.binY,self.ROIx[0],self.ROIx[1],self.ROIy[0],self.ROIy[1])
         if not ret == ac.DRV_SUCCESS:
-            raise 'Error setting image size: %s' % ac.errorCodes[ret]
+            raise RuntimeError('Error setting image size: %s' % ac.errorCodes[ret])
 
         ret = ac.SetEMGainMode(0)
         if not ret == ac.DRV_SUCCESS:
-            raise 'Error setting EM Gain Mode: %s' % ac.errorCodes[ret]
+            raise RuntimeError('Error setting EM Gain Mode: %s' % ac.errorCodes[ret])
 
         self.EMGain = 0 #start with zero EM gain
         ret = ac.SetEMCCDGain(self.EMGain)
         if not ret == ac.DRV_SUCCESS:
-            raise 'Error setting EM Gain: %s' % ac.errorCodes[ret]
+            raise RuntimeError('Error setting EM Gain: %s' % ac.errorCodes[ret])
 
         self.CCDTemp = -999
         self.SetFrameTransfer(True)
@@ -154,7 +189,7 @@ class iXonCamera:
         self.shutterOpen = True
         ret = ac.SetShutter(1,1,0,0) #only the 2nd parameter is important as we're leaving the shutter open
         if not ret == ac.DRV_SUCCESS:
-            #raise 'Error setting shutter: %s' % ac.errorCodes[ret]
+            #raise RuntimeError('Error setting shutter: %s' % ac.errorCodes[ret])
             print 'Error setting shutter: %s' % ac.errorCodes[ret]
 
         
@@ -167,7 +202,7 @@ class iXonCamera:
 
         ret = ac.GetNumberVSSpeeds(byref(tNum))
         if not ret == ac.DRV_SUCCESS:
-            raise 'Error getting num VS Speeds: %s' % ac.errorCodes[ret]
+            raise RuntimeError('Error getting num VS Speeds: %s' % ac.errorCodes[ret])
 
         numVSSpeeds = tNum.value
 
@@ -175,12 +210,12 @@ class iXonCamera:
         for i in range(numVSSpeeds):
             ac.GetVSSpeed(i,byref(tmp))
             if not ret == ac.DRV_SUCCESS:
-                raise 'Error getting VS Speed %d: %s' % (i,ac.errorCodes[ret])
+                raise RuntimeError('Error getting VS Speed %d: %s' % (i,ac.errorCodes[ret]))
             self.vertShiftSpeeds.append(tmp.value)
 
         ret = ac.GetNumberAmp(byref(tNum))
         if not ret == ac.DRV_SUCCESS:
-            raise 'Error getting num Amps: %s' % ac.errorCodes[ret]
+            raise RuntimeError('Error getting num Amps: %s' % ac.errorCodes[ret])
 
         self.numAmps = int(tNum.value)
 
@@ -209,7 +244,7 @@ class iXonCamera:
 
         ret = ac.GetFastestRecommendedVSSpeed(byref(tNum), byref(tmp))
         if not ret == ac.DRV_SUCCESS:
-            raise 'Error getting fastest rec. VS Speed: %s' % ac.errorCodes[ret]
+            raise RuntimeError('Error getting fastest rec. VS Speed: %s' % ac.errorCodes[ret])
 
         self.fastestRecVSInd = int(tNum.value)
 
@@ -255,18 +290,20 @@ class iXonCamera:
 
 
     def SetIntegTime(self, iTime):
+        self.__selectCamera()
         ret = ac.SetExposureTime(iTime*1e-3)
         if not ret == ac.DRV_SUCCESS:
-            raise 'Error setting exp time: %s' % ac.errorCodes[ret]
+            raise RuntimeError('Error setting exp time: %s' % ac.errorCodes[ret])
 
     def GetIntegTime(self):
+        self.__selectCamera()
         exp = c_float()
         acc = c_float()
         kin = c_float()
 
         ret = ac.GetAcquisitionTimings(byref(exp),byref(acc),byref(kin))
         if not ret == ac.DRV_SUCCESS:
-            raise 'Error setting exp time: %s' % ac.errorCodes[ret]
+            raise RuntimeError('Error setting exp time: %s' % ac.errorCodes[ret])
 
         return float(exp.value)
 
@@ -295,11 +332,12 @@ class iXonCamera:
         return self.CCDSize[1]
 
     def SetHorizBin(self, val):
+        self.__selectCamera()
         self.binX = val
         
         ret = ac.SetImage(self.binX,self.binY,self.ROIx[0],self.ROIx[1],self.ROIy[0],self.ROIy[1])
         if not ret == ac.DRV_SUCCESS:
-            raise 'Error setting image size: %s' % ac.errorCodes[ret]
+            raise RuntimeError('Error setting image size: %s' % ac.errorCodes[ret])
         #raise Exception, 'Not implemented yet!!'
 
     def GetHorizBin(self):
@@ -311,11 +349,12 @@ class iXonCamera:
         return self.binX
 
     def SetVertBin(self, val):
+        self.__selectCamera()
         self.binY = val
 
         ret = ac.SetImage(self.binX,self.binY,self.ROIx[0],self.ROIx[1],self.ROIy[0],self.ROIy[1])
         if not ret == ac.DRV_SUCCESS:
-            raise 'Error setting image size: %s' % ac.errorCodes[ret]
+            raise RuntimeError('Error setting image size: %s' % ac.errorCodes[ret])
         #raise Exception, 'Not implemented yet!!'
 
     def GetVertBin(*args):
@@ -336,6 +375,7 @@ class iXonCamera:
         return self.CCDTemp
 
     def _GetCCDTemp(self):
+        self.__selectCamera()
         t = c_float()
         ret = ac.GetTemperatureF(byref(t))
         #print ret
@@ -343,6 +383,7 @@ class iXonCamera:
         self.CCDTemp = int(t.value)
 
     def _GetAcqTimings(self):
+        self.__selectCamera()
         exp = c_float()
         acc = c_float()
         kin = c_float()
@@ -361,7 +402,7 @@ class iXonCamera:
         #    tmp = c_int()
         #    ret = ac.GetStatus(tmp)
         #    if not ret == ac.DRV_SUCCESS:
-        #        raise 'Error getting camera status: %s' % ac.errorCodes[ret]
+        #        raise RuntimeError('Error getting camera status: %s' % ac.errorCodes[ret])
         #    return tmp == ac.DRV_IDLE
 
     def GetPicWidth(self):
@@ -373,13 +414,14 @@ class iXonCamera:
         #return self.CCDSize[1]
 
     def SetROI(self, x1,y1,x2,y2):
+        self.__selectCamera()
         #if coordinates are reversed, don't care
         if (x2 > x1):
             self.ROIx = (x1+1, x2)
         elif (x2 < x1):
             self.ROIx = (x2+1, x1)
         else: #x1 == x2 - BAD
-            raise 'Error Setting x ROI - Zero sized ROI'
+            raise RuntimeError('Error Setting x ROI - Zero sized ROI')
 
         if (y2 > y1):
             self.ROIy = (y1+1, y2)
@@ -388,11 +430,11 @@ class iXonCamera:
             self.ROIy = (y2+1, y1)
 
         else: #y1 == y2 - BAD
-            raise 'Error Setting y ROI - Zero sized ROI'
+            raise RuntimeError('Error Setting y ROI - Zero sized ROI')
 
         ret = ac.SetImage(self.binX,self.binY,self.ROIx[0],self.ROIx[1],self.ROIy[0],self.ROIy[1])
         if not ret == ac.DRV_SUCCESS:
-            raise 'Error setting image size: %s' % ac.errorCodes[ret]
+            raise RuntimeError('Error setting image size: %s' % ac.errorCodes[ret])
 
         #raise Exception, 'Not implemented yet!!'
 
@@ -425,6 +467,7 @@ class iXonCamera:
         pass
 
     def StartExposure(self):
+        self.__selectCamera()
         self._GetCCDTemp()
         self._GetAcqTimings()
         self._GetBufferSize()
@@ -432,7 +475,7 @@ class iXonCamera:
         eventLog.logEvent('StartAq', '')
         ret = ac.StartAcquisition()
         if not ret == ac.DRV_SUCCESS:
-            raise 'Error starting acquisition: %s' % ac.errorCodes[ret]
+            raise RuntimeError('Error starting acquisition: %s' % ac.errorCodes[ret])
         return 0
 
     def StartLifePreview(*args):
@@ -442,10 +485,11 @@ class iXonCamera:
         raise Exception, 'Not implemented yet!!'
 
     def ExpReady(self):
+        self.__selectCamera()
         tmp = c_int()
         ret = ac.GetStatus(byref(tmp))
         if not ret == ac.DRV_SUCCESS:
-            raise 'Error getting camera status: %s' % ac.errorCodes[ret]
+            raise RuntimeError('Error getting camera status: %s' % ac.errorCodes[ret])
 
         #print ac.errorCodes[tmp.value]
 
@@ -462,6 +506,7 @@ class iXonCamera:
         raise Exception, 'Not implemented yet!!'
 
     def ExtractColor(self, chSlice, mode):
+        self.__selectCamera()
         #print chSlice
         #pc = chSlice.split('_')[1]
         #ret = ac.GetAcquiredData16(cast(c_void_p(int(pc[6:8]+pc[4:6]+pc[2:4]+pc[0:2],16)), POINTER(c_ushort)), self.GetPicWidth()*self.GetPicHeight())
@@ -477,36 +522,41 @@ class iXonCamera:
         raise Exception, 'Not implemented yet!!'
 
     def StopAq(self):
+        self.__selectCamera()
         ac.AbortAcquisition()
 
     def SetCCDTemp(self, temp):
+        self.__selectCamera()
         if (temp < self.tRange[0]) or (temp > self.tRange[1]):
-            raise 'Temperature setpoint out of range ([%d,%d])' % self.tRange
+            raise RuntimeError('Temperature setpoint out of range ([%d,%d])' % self.tRange)
 
         self.tempSet = temp #temperature setpoint
 
         ret = ac.SetTemperature(self.tempSet) #fixme so that default T is read in
         if not ret == ac.DRV_SUCCESS:
-            raise 'Error setting Temperature: %s' % ac.errorCodes[ret]
+            raise RuntimeError('Error setting Temperature: %s' % ac.errorCodes[ret])
 
     def SetEMGain(self, gain):
+        self.__selectCamera()
         if (gain > 150): #150 is arbitrary, but seems like a reasomable enough boundary
             print 'WARNING: EM Gain of %d selected; overuse of high gains can lead to gain register aging' % gain
 
         self.EMGain = gain
         ret = ac.SetEMCCDGain(self.EMGain)
         if not ret == ac.DRV_SUCCESS:
-            raise 'Error setting EM Gain: %s' % ac.errorCodes[ret]
+            raise RuntimeError('Error setting EM Gain: %s' % ac.errorCodes[ret])
 
     def GetEMGain(self):
         return self.EMGain
 
     def WaitForExp(self):
+        self.__selectCamera()
         ret = ac.WaitForAcquisition() #block until aquisition is finished
         if not ret == ac.DRV_SUCCESS:
-            raise 'Error waiting for acquisition: %s' % ac.errorCodes[ret]
+            raise RuntimeError('Error waiting for acquisition: %s' % ac.errorCodes[ret])
 
     def Shutdown(self):
+        self.__selectCamera()
         self.SetShutter(False)
         self.SetEMGain(0)
         ac.CoolerOFF()
@@ -522,11 +572,13 @@ class iXonCamera:
         self.initialised = False
 
     def SpoolOn(self, filename):
+        self.__selectCamera()
         ac.SetAcquisitionMode(5)
         ac.SetSpool(1,2,filename,10)
         ac.StartAcquisition()
 
     def SpoolOff(self):
+        self.__selectCamera()
         ac.AbortAcquisition()
         ac.SetSpool(0,2,r'D:\spool\spt',10)
         ac.SetAcquisitionMode(1)
@@ -535,11 +587,13 @@ class iXonCamera:
         return self.tempSet
 
     def SetAcquisitionMode(self, aqMode):
+        self.__selectCamera()
         ac.AbortAcquisition()
         ac.SetAcquisitionMode(aqMode)
         self.contMode = not aqMode == 1
 
     def SetFrameTransfer(self, ftMode):
+        self.__selectCamera()
         self.frameTransferMode = ftMode
 
         if ftMode:
@@ -548,10 +602,11 @@ class iXonCamera:
             ac.SetFrameTransferMode(0)
             
     def SetVerticalShiftSpeed(self, speedIndex):
+        self.__selectCamera()
         self.VSSpeed = speedIndex
         ret = ac.SetVSSpeed(self.VSSpeed)
         if not ret == ac.DRV_SUCCESS:
-            raise 'Error setting VS speed: %s' % ac.errorCodes[ret]
+            raise RuntimeError('Error setting VS speed: %s' % ac.errorCodes[ret])
 
         #increase clock voltage to prevent smear if using fastest v.s. speed
         #THIS MAY NEED TWEAKING
@@ -561,15 +616,17 @@ class iXonCamera:
             ac.SetVSAmplitude(0)
             
     def SetHorizShiftSpeed(self, speedIndex):
+        self.__selectCamera()
         self.HSSpeed = 0
         ret = ac.SetHSSpeed(0,self.HSSpeed)
         if not ret == ac.DRV_SUCCESS:
-            raise 'Error setting HS speed: %s' % ac.errorCodes[ret]
+            raise RuntimeError('Error setting HS speed: %s' % ac.errorCodes[ret])
         
     def GetFPS(self):
         return 1.0/self.tKin
     
     def GetNumImsBuffered(self):
+        self.__selectCamera()
         first=c_int()
         last=c_int()
 
@@ -580,6 +637,7 @@ class iXonCamera:
         return last.value - first.value
     
     def _GetBufferSize(self):
+        self.__selectCamera()
         bs = c_int()
         ac.GetSizeOfCircularBuffer(byref(bs))
         self.bs = bs.value
@@ -588,16 +646,32 @@ class iXonCamera:
         return self.bs
 
     def SetShutter(self, state):
+        self.__selectCamera()
         ac.SetShutter(int(state), 1, 0,0)
         self.shutterOpen = state
         
     def SetBaselineClamp(self, state):
+        self.__selectCamera()
         ac.SetBaselineClamp(int(state))
+
+    def GetSerialNumber(self):
+        self.__selectCamera()
+        sn = c_int()
+        ac.GetCameraSerialNumber(byref(sn))
+        return sn.value
+
+    def GetHeadModel(self):
+        self.__selectCamera()
+        hm = create_string_buffer(255)
+        ac.GetHeadModel(hm)
+        return hm.value
 
     def GenStartMetadata(self, mdh):
         self.GetStatus()
 
         mdh.setEntry('Camera.Name', 'Andor IXon DV97')
+        mdh.setEntry('Camera.Model', self.GetHeadModel())
+        mdh.setEntry('Camera.SerialNumber', self.GetSerialNumber())
 
         mdh.setEntry('Camera.IntegrationTime', self.tExp)
         mdh.setEntry('Camera.CycleTime', self.tKin)
