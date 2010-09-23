@@ -1291,6 +1291,7 @@ class VisGUIFrame(wx.Frame):
         ID_TRACK_MOLECULES = wx.NewId()
         ID_CALC_DECAYS = wx.NewId()
         ID_PLOT_TEMPERATURE = wx.NewId()
+        ID_POINT_COLOC = wx.NewId()
 
         ID_ABOUT = wx.ID_ABOUT
 
@@ -1379,6 +1380,7 @@ class VisGUIFrame(wx.Frame):
         special_menu.Append(ID_TRACK_MOLECULES, "&Track single molecule trajectories")
         special_menu.Append(ID_CALC_DECAYS, "Estimate decay lifetimes")
         special_menu.Append(ID_PLOT_TEMPERATURE, "Plot temperature record")
+        special_menu.Append(ID_POINT_COLOC, "Pointwise Colocalisation")
 
         help_menu = wx.Menu()
         help_menu.Append(ID_ABOUT, "&About")
@@ -1433,6 +1435,7 @@ class VisGUIFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnTrackMolecules, id=ID_TRACK_MOLECULES)
         self.Bind(wx.EVT_MENU, self.OnCalcDecays, id=ID_CALC_DECAYS)
         self.Bind(wx.EVT_MENU, self.OnPlotTemperature, id=ID_PLOT_TEMPERATURE)
+        self.Bind(wx.EVT_MENU, self.OnPointwiseColoc, id=ID_POINT_COLOC)
 
         self.Bind(wx.EVT_MENU, self.OnView3DPoints, id=ID_VIEW_3D_POINTS)
         self.Bind(wx.EVT_MENU, self.OnView3DTriangles, id=ID_VIEW_3D_TRIANGS)
@@ -2080,6 +2083,14 @@ class VisGUIFrame(wx.Frame):
         pylab.plot((t - self.mdh.getEntry('StartTime'))/60, tm, lw=2)
         pylab.xlabel('Time [mins]')
         pylab.ylabel('Temperature [C]')
+
+    def OnPointwiseColoc(self, event):
+        from PYME.Analysis import distColoc
+        #A vs B
+        distColoc.calcDistCorr(self.colourFilter, *(self.colourFilter.getColourChans()[::1]))
+        #B vs A
+        distColoc.calcDistCorr(self.colourFilter, *(self.colourFilter.getColourChans()[::-1]))
+
 
 
     def OnTrackMolecules(self, event):
