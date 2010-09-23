@@ -26,7 +26,7 @@ def addEntries(vals, chan=1):
 def getEntries(startTime=0, endTime=1e20, chan=1):
     conn = getConn()
     cursor = conn.cursor ()
-    cursor.execute ("SELECT time, temp FROM temp WHERE chan=%s AND time > %s AND time < %s", (chan, startTime, endTime))
+    cursor.execute ("SELECT time, temp FROM temp WHERE chan=%s AND time > %s AND time < %s ORDER BY time", (chan, startTime, endTime))
     res = cursor.fetchall()
     cursor.close ()
     conn.close()

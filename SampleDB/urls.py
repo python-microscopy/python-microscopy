@@ -29,6 +29,8 @@ urlpatterns = patterns('',
     #(r'^thumbnails/(?P<filename>.*)$', 'PYME.dataBrowser.thumbnails.thumb'),
     (r'^barcode/(?P<idNum>.*)$', 'SampleDB.samples.barcode.barcode2d'),
     (r'^datehist/$', 'SampleDB.samples.dategraph.dategraph'),
+    (r'^tempgraph/(?P<numhours>.*)$', 'SampleDB.samples.tempgraph.tempgraph'),
+    (r'^temperature/$', 'SampleDB.samples.tempgraph.temprecord'),
 
     (r'^hint/tag$', 'SampleDB.samples.views.tag_hint'),
 
