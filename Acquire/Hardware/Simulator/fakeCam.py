@@ -238,6 +238,8 @@ class FakeCamera:
 
     def GetCamType(*args): 
         raise Exception, 'Not implemented yet!!'
+    def GetSerialNumber(self):
+        return 0
     def GetDataType(*args): 
         raise Exception, 'Not implemented yet!!'
     def GetADBits(*args): 

@@ -65,6 +65,7 @@ class iXonCamera:
 #        'SaturationThreshold' : (2**14 -1)
 #        }
         self.initialised = False
+        self.active = True
 
         self.boardHandle = c_int()
 
@@ -666,33 +667,38 @@ class iXonCamera:
         ac.GetHeadModel(hm)
         return hm.value
 
+    def SetActive(self, active=True):
+        '''flag the camera as active (or inactive) to dictate whether it writes it's metadata or not'''
+        self.active = active
+
     def GenStartMetadata(self, mdh):
-        self.GetStatus()
+        if self.active: #we are active -> write metadata
+            self.GetStatus()
 
-        mdh.setEntry('Camera.Name', 'Andor IXon DV97')
-        mdh.setEntry('Camera.Model', self.GetHeadModel())
-        mdh.setEntry('Camera.SerialNumber', self.GetSerialNumber())
+            mdh.setEntry('Camera.Name', 'Andor IXon DV97')
+            mdh.setEntry('Camera.Model', self.GetHeadModel())
+            mdh.setEntry('Camera.SerialNumber', self.GetSerialNumber())
 
-        mdh.setEntry('Camera.IntegrationTime', self.tExp)
-        mdh.setEntry('Camera.CycleTime', self.tKin)
-        mdh.setEntry('Camera.EMGain', self.GetEMGain())
+            mdh.setEntry('Camera.IntegrationTime', self.tExp)
+            mdh.setEntry('Camera.CycleTime', self.tKin)
+            mdh.setEntry('Camera.EMGain', self.GetEMGain())
 
-        mdh.setEntry('Camera.ROIPosX', self.GetROIX1())
-        mdh.setEntry('Camera.ROIPosY',  self.GetROIY1())
-        mdh.setEntry('Camera.ROIWidth', self.GetROIX2() - self.GetROIX1())
-        mdh.setEntry('Camera.ROIHeight',  self.GetROIY2() - self.GetROIY1())
-        mdh.setEntry('Camera.StartCCDTemp',  self.GetCCDTemp())
+            mdh.setEntry('Camera.ROIPosX', self.GetROIX1())
+            mdh.setEntry('Camera.ROIPosY',  self.GetROIY1())
+            mdh.setEntry('Camera.ROIWidth', self.GetROIX2() - self.GetROIX1())
+            mdh.setEntry('Camera.ROIHeight',  self.GetROIY2() - self.GetROIY1())
+            mdh.setEntry('Camera.StartCCDTemp',  self.GetCCDTemp())
 
-        #these should really be read from a configuration file
-        #hard code them here until I get around to it
-        #current values are at 10Mhz using e.m. amplifier
-        mdh.setEntry('Camera.ReadNoise', 109.8)
-        mdh.setEntry('Camera.NoiseFactor', 1.41)
-        mdh.setEntry('Camera.ElectronsPerCount', 27.32)
+            #these should really be read from a configuration file
+            #hard code them here until I get around to it
+            #current values are at 10Mhz using e.m. amplifier
+            mdh.setEntry('Camera.ReadNoise', 109.8)
+            mdh.setEntry('Camera.NoiseFactor', 1.41)
+            mdh.setEntry('Camera.ElectronsPerCount', 27.32)
 
-        realEMGain = ccdCalibrator.getCalibratedCCDGain(self.GetEMGain(), self.GetCCDTempSetPoint())
-        if not realEMGain == None:
-            mdh.setEntry('Camera.TrueEMGain', realEMGain)
+            realEMGain = ccdCalibrator.getCalibratedCCDGain(self.GetEMGain(), self.GetCCDTempSetPoint())
+            if not realEMGain == None:
+                mdh.setEntry('Camera.TrueEMGain', realEMGain)
 
     def __getattr__(self, name):
         if name in self.noiseProps.keys():

@@ -212,35 +212,54 @@ class microscope:
         return stext
 
     def livepreview(self, Parent=None, Notebook = None):
+#        if 'pa' in dir(self):
+#            self.pa.stop() #stop old acquisition
+
         self.pa = previewaquisator.PreviewAquisator(self.chaninfo,self.cam, self.shutters)
         self.pa.Prepare()
         
-        if (Notebook == None):
+        if 'vp' in dir(self):
+                self.vp.SetDataStack(self.pa.ds)
+        elif (Notebook == None):
             self.prev_fr = prevviewer.PrevViewFrame(Parent, "Live Preview", self.pa.ds)
             self.pa.WantFrameGroupNotification.append(self.pr_refr)
             self.prev_fr.genStatusText = self.genStatus
             self.prev_fr.Show()
         else:
-             self.vp = viewpanel.MyViewPanel(Notebook, self.pa.ds)
-             self.vp.crosshairs = False
+            self.vp = viewpanel.MyViewPanel(Notebook, self.pa.ds)
+            self.vp.crosshairs = False
 
-             self.vsp = disppanel.dispSettingsPanel(Notebook, self.vp)
+            self.vsp = disppanel.dispSettingsPanel(Notebook, self.vp)
 
-             self.pa.WantFrameGroupNotification.append(self.pr_refr2)
-             if 'shutterOpen' in dir(self.cam):
+            self.pa.WantFrameGroupNotification.append(self.pr_refr2)
+            if 'shutterOpen' in dir(self.cam):
                 self.pa.WantFrameGroupNotification.append(self.satCheck)
-             Parent.time1.WantNotification.append(self.vsp.RefrData)
-             #Notebook.AddPage(imageId=-1, page=self.vp, select=True,text='Preview')
-             Notebook.AddPage(page=self.vp, select=True,caption='Preview')
-             #Notebook._mgr.AddPane
+            Parent.time1.WantNotification.append(self.vsp.RefrData)
+            #Notebook.AddPage(imageId=-1, page=self.vp, select=True,text='Preview')
+            Notebook.AddPage(page=self.vp, select=True,caption='Preview')
+            #Notebook._mgr.AddPane
 
-             Parent.AddCamTool(self.vsp, 'Display')
-#             Notebook.AddPage(page=self.vsp, select=False,caption='Display')
-#             Notebook.Split(3, wx.RIGHT)
-#             Notebook.SetSelection(2)
-#             Notebook.SetSelection(3)
+            Parent.AddCamTool(self.vsp, 'Display')
+            #             Notebook.AddPage(page=self.vsp, select=False,caption='Display')
+            #             Notebook.Split(3, wx.RIGHT)
+            #             Notebook.SetSelection(2)
+            #             Notebook.SetSelection(3)
              
         self.pa.start()
+
+    def SetCamera(self, camName):
+        if 'pa' in dir(self):
+            self.pa.stop()
+
+        #deactivate cameras
+        for c in self.cameras.values():
+            c.SetActive(False)
+
+        self.cam = self.cameras[camName]
+
+        if 'pa' in dir(self):
+            self.livepreview()
+
 
     #aquisition
 
