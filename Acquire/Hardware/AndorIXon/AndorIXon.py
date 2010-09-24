@@ -648,7 +648,11 @@ class iXonCamera:
 
     def SetShutter(self, state):
         self.__selectCamera()
-        ac.SetShutter(int(state), 1, 0,0)
+        if self.GetSerialNumber() == 1823:
+            ac.SetShutter(int(state), 1, 0, 0)
+        else:
+            s2 = 2 - int(state)
+            ac.SetShutterEx(int(state), s2, 0, 0,s2)
         self.shutterOpen = state
         
     def SetBaselineClamp(self, state):

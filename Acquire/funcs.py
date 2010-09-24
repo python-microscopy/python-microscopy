@@ -61,6 +61,9 @@ class microscope:
         self.piezos = []
         self.EnableJoystick = None
 
+        self.cameras = {}
+        self.camControls = {}
+
         #self.WantEventNotification = []
  
         #self.windows = []
@@ -254,8 +257,14 @@ class microscope:
         #deactivate cameras
         for c in self.cameras.values():
             c.SetActive(False)
+            #c.SetShutter(False)
+
+        for k in self.cameras.keys():
+            self.camControls[k].Hide()#GetParent().UnPin()
 
         self.cam = self.cameras[camName]
+        self.camControls[camName].Show()#GetParent().PinOpen()
+        self.camControls[camName].GetParent().GetParent().Layout()
 
         if 'pa' in dir(self):
             self.livepreview()

@@ -16,13 +16,29 @@ from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
 from PYME.Acquire.Hardware import fakeShutters
 import time
 
-InitBG('EMCCD Camera', '''
-scope.cam = AndorIXon.iXonCamera(1)
+#scope.cameras = {}
+#scope.camControls = {}
+
+InitBG('EMCCD Cameras', '''
+scope.cameras['A'] = AndorIXon.iXonCamera(1)
+scope.cameras['B'] = AndorIXon.iXonCamera(0)
+scope.cameras['B'].SetShutter(False)
+scope.cameras['B'].SetActive(False)
+scope.cam = scope.cameras['A']
 ''')
 
+#InitBG('EMCCD Camera 2', '''
+#scope.cameras['B'] = AndorIXon.iXonCamera(0)
+#''')
+
 InitGUI('''
-acf = AndorControlFrame.AndorPanel(MainFrame, scope.cam, scope)
-camPanels.append((acf, 'Andor EMCCD Properties'))
+scope.camControls['A'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['A'], scope)
+camPanels.append((scope.camControls['A'], 'EMCCD A Properties'))
+
+scope.camControls['B'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['B'], scope)
+camPanels.append((scope.camControls['B'], 'EMCCD B Properties'))
+scope.camControls['B'].Hide()
+#scope.SetCamera('A')
 ''')
 
 InitGUI('''
@@ -188,5 +204,8 @@ def calcSum(caller):
 
 #must be here!!!
 joinBGInit() #wait for anyhting which was being done in a separate thread
+
+#scope.SetCamera('A')
+
 time.sleep(.5)
 scope.initDone = True
