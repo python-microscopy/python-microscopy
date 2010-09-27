@@ -721,7 +721,11 @@ class smiMainFrame(wx.Frame):
     def OnCloseWindow(self, event):   
         self.scope.pa.stop()
         self.time1.Stop()
-        self.scope.cam.Shutdown()
+        if 'cameras' in dir(self.scope):
+            for c in self.scope.cameras.values():
+                c.Shutdown()
+        else:
+            self.scope.cam.Shutdown()
         for f in self.scope.CleanupFunctions:
             f()
         #self.int_sl.Destroy()
