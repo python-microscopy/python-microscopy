@@ -22,5 +22,5 @@ if ps.count('tempLoggerDB.py') == 1:
 
         time.sleep(10)
 
-else:
-    print 'logger already running - exiting'
+#else:
+#    print 'logger already running - exiting'
