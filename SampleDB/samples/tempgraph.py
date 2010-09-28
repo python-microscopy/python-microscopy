@@ -60,6 +60,7 @@ def tempgraph(request, numhours):
     plot(times_3, temps_3)
     xlabel('Time')
     ylabel('Temperature')
+    legend(['Instrument Frame', 'Optical Table', 'AC control'])
     title('Last %d hours' % nhours)
     
     #xlim(bins[0], bins[-1])
