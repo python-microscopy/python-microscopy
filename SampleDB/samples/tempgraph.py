@@ -43,7 +43,7 @@ def tempgraph(request, numhours):
 
     temps_2 = np.ma.masked_array(temps_2, mask)
 
-    times_3, temps_2 = tempDB.getEntries(starttime, endtime, 3)
+    times_3, temps_3 = tempDB.getEntries(starttime, endtime, 3)
 
     mask = (temps_3 < 0)
     mask[:-1] += (diff(times_3) > 20)
