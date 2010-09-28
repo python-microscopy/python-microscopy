@@ -21,8 +21,8 @@ if ps.count('tempLoggerDB.py') == 1:
         #f.write('%3.2f\t%3.2f\n' % (time.time(), v))
         #f.flush()
         tempDB.addEntry(time.time(), v)
-        tempDB.addEntry(time.time(), v2, 2)
-        tempDB.addEntry(time.time(), v3, 3)
+        tempDB.addEntry(time.time(), v1, 2)
+        tempDB.addEntry(time.time(), v2, 3)
 
         time.sleep(10)
 
