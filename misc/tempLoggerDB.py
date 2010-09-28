@@ -16,8 +16,8 @@ if ps.count('tempLoggerDB.py') == 1:
 
     while True:
         v = dd.GetAIValue(1)*1000./2.**15 - 273.15
-        v1 = dd.GetAIValue(2)*1000./2.**15 - 273.15
-        v2 = dd.GetAIValue(3)*1000./2.**15 - 273.15
+        v1 = dd.GetAIValue(2)*1000./2.**15 - 273.15 - 1.48 #correction for difference between sensors
+        v2 = dd.GetAIValue(3)*1000./2.**15 - 273.15 - 0.20
         #f.write('%3.2f\t%3.2f\n' % (time.time(), v))
         #f.flush()
 	t = time.time()
