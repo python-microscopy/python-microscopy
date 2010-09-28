@@ -29,19 +29,35 @@ def tempgraph(request, numhours):
     endtime= time.time()
     starttime = endtime - 3600*nhours
 
-    times, temps = tempDB.getEntries(starttime, endtime)
+    times_1, temps_1 = tempDB.getEntries(starttime, endtime, 1)
 
-    mask = (temps < 0)
-    mask[:-1] += (diff(times) > 20)
+    mask = (temps_1 < 0)
+    mask[:-1] += (diff(times_1) > 20)
 
-    temps = np.ma.masked_array(temps, mask)
+    temps_1 = np.ma.masked_array(temps_1, mask)
+
+    times_2, temps_2 = tempDB.getEntries(starttime, endtime, 2)
+
+    mask = (temps_2 < 0)
+    mask[:-1] += (diff(times_2) > 20)
+
+    temps_2 = np.ma.masked_array(temps_2, mask)
+
+    times_3, temps_2 = tempDB.getEntries(starttime, endtime, 3)
+
+    mask = (temps_3 < 0)
+    mask[:-1] += (diff(times_3) > 20)
+
+    temps_3 = np.ma.masked_array(temps_3, mask)
 
     dpi=100.
     f = figure(figsize=(1000/dpi, 600/dpi))
     #axes((.05, .05, .9, .9))
 
 
-    plot(times, temps)
+    plot(times_1, temps_1)
+    plot(times_2, temps_2)
+    plot(times_3, temps_3)
     xlabel('Time')
     ylabel('Temperature')
     title('Last %d hours' % nhours)

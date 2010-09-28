@@ -16,9 +16,13 @@ if ps.count('tempLoggerDB.py') == 1:
 
     while True:
         v = dd.GetAIValue(1)*1000./2.**15 - 273.15
+        v1 = dd.GetAIValue(2)*1000./2.**15 - 273.15
+        v2 = dd.GetAIValue(3)*1000./2.**15 - 273.15
         #f.write('%3.2f\t%3.2f\n' % (time.time(), v))
         #f.flush()
         tempDB.addEntry(time.time(), v)
+        tempDB.addEntry(time.time(), v2, 2)
+        tempDB.addEntry(time.time(), v3, 3)
 
         time.sleep(10)
 
