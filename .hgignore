@@ -1,6 +1,8 @@
 syntax: glob
 *.pyc
 *.pyo
+*.pyd
 *.db
 *~
 */build/*
+build\*
