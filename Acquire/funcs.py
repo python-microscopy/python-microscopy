@@ -234,9 +234,7 @@ class microscope:
 
             self.vsp = disppanel.dispSettingsPanel(Notebook, self.vp)
 
-            self.pa.WantFrameGroupNotification.append(self.pr_refr2)
-            if 'shutterOpen' in dir(self.cam):
-                self.pa.WantFrameGroupNotification.append(self.satCheck)
+            
             Parent.time1.WantNotification.append(self.vsp.RefrData)
             #Notebook.AddPage(imageId=-1, page=self.vp, select=True,text='Preview')
             Notebook.AddPage(page=self.vp, select=True,caption='Preview')
@@ -247,7 +245,11 @@ class microscope:
             #             Notebook.Split(3, wx.RIGHT)
             #             Notebook.SetSelection(2)
             #             Notebook.SetSelection(3)
-             
+
+        self.pa.WantFrameGroupNotification.append(self.pr_refr2)
+        if 'shutterOpen' in dir(self.cam):
+            self.pa.WantFrameGroupNotification.append(self.satCheck)
+            
         self.pa.start()
 
     def SetCamera(self, camName):
