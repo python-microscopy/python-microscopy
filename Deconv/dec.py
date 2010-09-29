@@ -128,7 +128,7 @@ class dec:
             #note that 1/sqrt(data) by itself is not a good idea as it will give
             #infinite weight to zeros. As most devices have some form of readout noise
             #justifying the eps shouldn't be too tricky
-            self.res = data - self.Afunc(self.f       
+            self.res = data - self.Afunc(self.f);
             
             #resulting search directions
             #note that the use of the Likelihood fuction/prior as a search direction
