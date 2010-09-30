@@ -265,6 +265,7 @@ class microscope:
             self.camControls[k].Hide()#GetParent().UnPin()
 
         self.cam = self.cameras[camName]
+        self.cam.SetActive(True)
         self.camControls[camName].Show()#GetParent().PinOpen()
         self.camControls[camName].GetParent().GetParent().Layout()
 
