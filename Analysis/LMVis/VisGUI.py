@@ -277,7 +277,7 @@ class VisGUIFrame(wx.Frame):
         if self.viewMode == 'quads':
             self.GenQuadTreePanel()
 
-        if self.viewMode == 'points':
+        if self.viewMode == 'points' or self.viewMode == 'tracks':
             self.GenPointsPanel()
 
         if self.viewMode == 'blobs':
@@ -1267,6 +1267,7 @@ class VisGUIFrame(wx.Frame):
 
         ID_VIEW_VORONOI = wx.NewId()
         ID_VIEW_INTERP_TRIANGS = wx.NewId()
+        ID_VIEW_TRACKS = wx.NewId()
 
         ID_VIEW_FIT = wx.NewId()
         ID_VIEW_FIT_ROI = wx.NewId()
@@ -1322,6 +1323,7 @@ class VisGUIFrame(wx.Frame):
             self.view_menu.AppendRadioItem(ID_VIEW_VORONOI, '&Voronoi')
             self.view_menu.AppendRadioItem(ID_VIEW_INTERP_TRIANGS, '&Interpolated Triangles')
             self.view_menu.AppendRadioItem(ID_VIEW_BLOBS, '&Blobs')
+            self.view_menu.AppendRadioItem(ID_VIEW_TRACKS, '&Tracks')
         except:
             self.view_menu.Append(ID_VIEW_POINTS, '&Points')
             self.view_menu.Append(ID_VIEW_TRIANGS, '&Triangles')
@@ -1329,6 +1331,7 @@ class VisGUIFrame(wx.Frame):
             self.view_menu.Append(ID_VIEW_VORONOI, '&Voronoi')
             self.view_menu.Append(ID_VIEW_INTERP_TRIANGS, '&Interpolated Triangles')
             self.view_menu.Append(ID_VIEW_BLOBS, '&Blobs')
+            self.view_menu.Append(ID_VIEW_TRACKS, '&Tracks')
 
         self.view_menu.Check(ID_VIEW_POINTS, True)
         #self.view_menu.Enable(ID_VIEW_QUADS, False)
@@ -1415,6 +1418,7 @@ class VisGUIFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnViewInterpTriangles, id=ID_VIEW_INTERP_TRIANGS)
 
         self.Bind(wx.EVT_MENU, self.OnViewBlobs, id=ID_VIEW_BLOBS)
+        self.Bind(wx.EVT_MENU, self.OnViewTracks, id=ID_VIEW_TRACKS)
 
         self.Bind(wx.EVT_MENU, self.SetFit, id=ID_VIEW_FIT)
         self.Bind(wx.EVT_MENU, self.OnFitROI, id=ID_VIEW_FIT_ROI)
@@ -1445,6 +1449,13 @@ class VisGUIFrame(wx.Frame):
 
     def OnViewPoints(self,event):
         self.viewMode = 'points'
+        #self.glCanvas.cmap = pylab.cm.hsv
+        self.RefreshView()
+        self.CreateFoldPanel()
+        self.OnPercentileCLim(None)
+
+    def OnViewTracks(self,event):
+        self.viewMode = 'tracks'
         #self.glCanvas.cmap = pylab.cm.hsv
         self.RefreshView()
         self.CreateFoldPanel()
@@ -2650,6 +2661,8 @@ class VisGUIFrame(wx.Frame):
 
         if self.viewMode == 'points':
             self.glCanvas.setPoints(self.colourFilter['x'], self.colourFilter['y'], self.pointColour())
+        elif self.viewMode == 'tracks':
+            self.glCanvas.setTracks(self.colourFilter['x'], self.colourFilter['y'], self.colourFilter['clumpIndex'], self.pointColour())
         elif self.viewMode == 'triangles':
             if self.Triangles == None:
                 status = statusLog.StatusLogger("Generating Triangulation ...")

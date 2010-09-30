@@ -93,7 +93,7 @@ class LMGLCanvas(GLCanvas):
 
         self.colouring = 'area'
 
-        self.drawModes = {'triang':GL_TRIANGLES, 'quads':GL_QUADS, 'edges':GL_LINES, 'points':GL_POINTS}
+        self.drawModes = {'triang':GL_TRIANGLES, 'quads':GL_QUADS, 'edges':GL_LINES, 'points':GL_POINTS, 'tracks': GL_LINE_STRIP}
 
         self.c = numpy.array([1,1,1])
         self.zmin = -1
@@ -163,18 +163,25 @@ class LMGLCanvas(GLCanvas):
         #print self.drawModes[self.mode]
 
         #glClear(GL_ACCUM_BUFFER_BIT)
+        if self.mode =='tracks':
+            for i in range(self.cimax):
+                ns = self.clumpIndices[i]
+                nf = self.clumpIndices[i+1]
 
-        if self.mode == 'points':
-            glPointSize(self.pointSize*(float(self.Size[0])/(self.xmax - self.xmin)))
-        for i in range(self.numBlurSamples):
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-            glPushMatrix ()
+                if nf > ns:
+                    glDrawArrays(self.drawModes[self.mode], ns, nf-ns)
+        else:
+            if self.mode == 'points':
+                glPointSize(self.pointSize*(float(self.Size[0])/(self.xmax - self.xmin)))
+            for i in range(self.numBlurSamples):
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+                glPushMatrix ()
 
-            glTranslatef (self.blurSigma*numpy.random.normal(), self.blurSigma*numpy.random.normal(),0.0)
+                glTranslatef (self.blurSigma*numpy.random.normal(), self.blurSigma*numpy.random.normal(),0.0)
 
-            glDrawArrays(self.drawModes[self.mode], 0, self.nVertices)
+                glDrawArrays(self.drawModes[self.mode], 0, self.nVertices)
 
-            glPopMatrix ()
+                glPopMatrix ()
             #glAccum(GL_ACCUM, 1.0)#/self.numBlurSamples)
 
         #glAccum (GL_RETURN, 1.0);
@@ -301,6 +308,46 @@ class LMGLCanvas(GLCanvas):
         #cs_ = glColorPointerf(cs)
 
         self.mode = 'points'
+
+        self.nVertices = vs.shape[0]
+        self.setColour(self.IScale, self.zeroPt)
+
+    def setTracks(self, x, y, ci, c = None):
+        #if not self.init:
+        #    self.InitGL()
+        #    self.init = 1
+
+        I = ci.argsort()
+
+        if c == None:
+            self.c = numpy.ones(x.shape).ravel()
+        else:
+            self.c = c[I]
+
+        x = x[I]
+        y = y[I]
+        ci = ci[I]
+        
+        nPts = len(x)
+
+        #there may be a different number of points in each clump; generate a lookup
+        #table for clump numbers so we can index into our list of results to get
+        #all the points within a certain range of clumps
+        self.clumpIndices = (nPts + 2)*numpy.ones(ci.max() + 10, 'int32')
+        self.cimax = ci.max()
+
+        for c_i, i in zip(ci, range(nPts)):
+            self.clumpIndices[:(c_i+1)] = numpy.minimum(self.clumpIndices[:(c_i+1)], i)
+
+        vs = numpy.vstack((x.ravel(), y.ravel()))
+        vs = vs.T.ravel().reshape(len(x.ravel()), 2)
+        self.vs_ = glVertexPointerf(vs)
+
+        #cs = numpy.minimum(numpy.vstack((self.IScale[0]*c,self.IScale[1]*c,self.IScale[2]*c)), 1).astype('f')
+        #cs = cs.T.ravel().reshape(len(c), 3)
+        #cs_ = glColorPointerf(cs)
+
+        self.mode = 'tracks'
 
         self.nVertices = vs.shape[0]
         self.setColour(self.IScale, self.zeroPt)
