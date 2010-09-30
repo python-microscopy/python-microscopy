@@ -105,7 +105,7 @@ class blocking_deconv:
         self.tq.removeQueue(self.name)
         
     def push_deconv_tasks(self, lamb = 2e-2, num_iters = 10):
-        for block, blocknum in zip(self.blocks, range(len(self.blocks)):
+        for block, blocknum in zip(self.blocks, range(len(self.blocks))):
             task = decTask(self.name, block, blocknum, lamb=lamb, num_iters=num_iters)
             self.tq.postTask(task, self.name)
         #self.results = self.tc.loop_code('f = d4.deconv(ravel(a[0]), lamb, alpha=a[1], num_iters=num_it)', 'a', {'a':self.blocks, 'lamb':lamb, 'num_it':num_iters}, ('f',))

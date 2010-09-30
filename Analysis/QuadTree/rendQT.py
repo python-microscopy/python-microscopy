@@ -46,7 +46,7 @@ def rendQTe(ax, qt, maxDepth=-1, cmap=cm.hot, maxIsc = 1):
 
     for l in lvs:
         c = cmap((float(l.numRecords)*2**(2*l.depth))/(maxI*maxIsc))
-        ax.add_patch(matplotlib.patches.Rectangle((l.x0,l.y0), l.x1- l.x0, l.y1 - l.y0, fc=[1 1 1], ec = 'k'))
+        ax.add_patch(matplotlib.patches.Rectangle((l.x0,l.y0), l.x1- l.x0, l.y1 - l.y0, fc=[1, 1, 1], ec = 'k'))
 
     show()
 
