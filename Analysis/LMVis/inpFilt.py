@@ -78,6 +78,9 @@ class h5rSource(inputFilter):
 
         self.fitResults = self.h5f.root.FitResults[:]
 
+        #sort by time
+        self.fitResults.sort(order='tIndex')
+
         #allow access using unnested original names
         self._keys = unNestNames(self.h5f.root.FitResults.description._v_nestedNames)
         #or shorter aliases
