@@ -6,3 +6,5 @@ syntax: glob
 *~
 */build/*
 build\*
+*.so
+*.o
