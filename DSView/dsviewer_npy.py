@@ -162,8 +162,8 @@ class DSViewFrame(wx.Frame):
 
 
 
-def View3D(data, title='' ):
-    dvf = DSViewFrame(dstack = data, title=title, size=(500, 500))
+def View3D(data, title='', mdh = None ):
+    dvf = DSViewFrame(dstack = data, title=title, mdh=mdh, size=(500, 500))
     dvf.SetSize((500,500))
     dvf.Show()
     return dvf

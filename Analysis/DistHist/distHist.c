@@ -1,5 +1,6 @@
 #include "Python.h"
 #include <complex.h>
+#include <stdlib.h>
 #include <math.h>
 #include "numpy/arrayobject.h"
 #include <stdio.h>
@@ -161,12 +162,171 @@ static PyObject * distanceHistogram(PyObject *self, PyObject *args, PyObject *ke
     return (PyObject*) out;
 }
 
+static PyObject * meanSquareDistHist(PyObject *self, PyObject *args, PyObject *keywds)
+{
+    int *ndists = 0;
+    double *res = 0;
+    int i,j;
+    //int size[2];
+
+    int x_len;
+    npy_intp outDimensions[1];
+    int id;
+
+    PyObject *ox = 0;
+    PyObject *oy = 0;
+    PyObject *ot = 0;
+
+    PyArrayObject* ax;
+    PyArrayObject* ay;
+    PyArrayObject* at;
+
+    PyArrayObject* out;
+
+    double *px;
+    double *py;
+    double *pt;
+
+    double t_i, x_i, y_i, dx, dy, d, dt;
+
+    /*parameters*/
+    int nBins = 1000;
+    double binSize = 1;
+
+    /*End paramters*/
+
+
+
+
+    static char *kwlist[] = {"x", "y","t","nBins","binSize", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "OOO|id", kwlist,
+         &ox, &oy, &ot, &nBins, &binSize))
+        return NULL;
+
+    /* Do the calculations */
+
+    ax = (PyArrayObject *) PyArray_ContiguousFromObject(ox, PyArray_DOUBLE, 0, 1);
+    if (ax == NULL)
+    {
+      PyErr_Format(PyExc_RuntimeError, "Bad x");
+      return NULL;
+    }
+
+    ay = (PyArrayObject *) PyArray_ContiguousFromObject(oy, PyArray_DOUBLE, 0, 1);
+    if (ay == NULL)
+    {
+      Py_DECREF(ax);
+      PyErr_Format(PyExc_RuntimeError, "Bad y");
+      return NULL;
+    }
+
+    at = (PyArrayObject *) PyArray_ContiguousFromObject(ot, PyArray_DOUBLE, 0, 1);
+    if (at == NULL)
+    {
+      Py_DECREF(ax);
+      Py_DECREF(ay);
+      PyErr_Format(PyExc_RuntimeError, "Bad t");
+      return NULL;
+    }
+
+
+    px = (double*)PyArray_DATA(ax);
+    py = (double*)PyArray_DATA(ay);
+    pt = (double*)PyArray_DATA(at);
+
+    x_len = PyArray_Size((PyObject*)ax);
+
+    ndists = (int*)malloc(sizeof(int)*nBins);
+    if (ndists == NULL)
+    {
+      Py_DECREF(ax);
+      Py_DECREF(ay);
+      Py_DECREF(at);
+
+      PyErr_Format(PyExc_RuntimeError, "Error allocating working array");
+      return NULL;
+    }
+
+    outDimensions[0] = nBins;
+
+    out = (PyArrayObject*) PyArray_SimpleNew(1,outDimensions,PyArray_DOUBLE);
+    if (out == NULL)
+    {
+      Py_DECREF(ax);
+      Py_DECREF(ay);
+      Py_DECREF(at);
+   
+      PyErr_Format(PyExc_RuntimeError, "Error allocating output array");
+      return NULL;
+    }
+
+    //fix strides
+    //out->strides[0] = sizeof(double);
+    //out->strides[1] = sizeof(double)*size[0];
+
+    res = (double*) PyArray_DATA(out);
+
+    //Initialise our histogram
+    for (j =0; j < nBins; j++)
+    {
+        res[j] = 0;
+        ndists[j] = 0;
+    }
+
+
+    //pxo = px;
+    //pyo = py;
+
+    for (i = 0; i < x_len; i++)
+      {
+        t_i = pt[i];
+        x_i = px[i];
+        y_i = py[i];
+	for (j = 0; j < x_len; j++)
+	  {
+            dx = x_i - px[j];
+            dy = y_i - py[j];
+            d = dx*dx + dy*dy;
+
+            dt = abs(pt[j] - t_i);
+
+            id = (int)floor(dt/binSize);
+
+            if (id < nBins)
+            {
+                res[id] += d;
+                ndists[id] += 1;
+            }
+
+            //printf("d: %f\t id: %d\t ij: %d,%d\tt_i: %d\ttj: %d\t dt: %f\n", d, id, i, j, t_i, pt[j]);
+
+	  }
+      }
+
+    //Normalise the bins
+    for (j =0; j < nBins; j++)
+    {
+        res[j] /= ndists[j];
+    }
+
+    free(ndists);
+
+    Py_DECREF(ax);
+    Py_DECREF(ay);
+    Py_DECREF(at);
+
+    return (PyObject*) out;
+}
+
 
 
 
 static PyMethodDef distHistMethods[] = {
     {"distanceHistogram",  distanceHistogram, METH_VARARGS | METH_KEYWORDS,
     "Generate a histogram of pairwise distances between two sets of points.\n. Arguments are: 'x1', 'y1', 'x2', 'y2', 'nBins'= 1e3, 'binSize' = 1"},
+    {"msdHistogram",  meanSquareDistHist, METH_VARARGS | METH_KEYWORDS,
+    "calculate a histogram of msd vs time.\n. Arguments are: 'x', 'y', 't', 'nBins'= 1e3, 'binSize' = 1"},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
