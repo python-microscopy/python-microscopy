@@ -48,7 +48,7 @@ from PYME.Analysis import MetadataTree
 from PYME.Analysis.DataSources import HDFDataSource
 from PYME.Analysis.DataSources import TQDataSource
 #from PYME.Analysis.DataSources import TiffDataSource
-from PYME.FileUtils import readTiff
+from PYME.FileUtils import readTiff, nameUtils
 from PYME.Analysis.LMVis import progGraph as progGraph
 from PYME.Analysis.LMVis import inpFilt
 from PYME.Acquire.mytimer import mytimer
@@ -740,7 +740,7 @@ class DSViewFrame(wx.Frame):
 
     def SetShiftField(self, event=None):
         fdialog = wx.FileDialog(None, 'Please select shift field to use ...',
-                    wildcard='Shift fields|*.sf', style=wx.OPEN)
+                    wildcard='Shift fields|*.sf', style=wx.OPEN, defaultDir = nameUtils.genShiftFieldDirectoryPath())
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
             #self.ds = example.CDataStack(fdialog.GetPath().encode())

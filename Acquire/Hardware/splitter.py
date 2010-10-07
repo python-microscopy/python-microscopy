@@ -17,6 +17,7 @@ import numpy
 import os
 import wx.lib.agw.aui as aui
 from PYME.Acquire import MetaDataHandler
+from PYME.FileUtils import nameUtils
 
 def LoadShiftField(filename = None):
     if not filename:
@@ -217,7 +218,7 @@ class Splitter:
 
     def OnSetShiftField(self, event):
         fdialog = wx.FileDialog(None, 'Select shift field',
-            wildcard='*.sf', style=wx.OPEN)
+            wildcard='*.sf', style=wx.OPEN, defaultDir = nameUtils.genShiftFieldDirectoryPath())
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
             sfname = fdialog.GetPath().encode()
