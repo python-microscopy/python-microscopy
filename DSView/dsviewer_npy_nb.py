@@ -1397,7 +1397,7 @@ class DSViewFrame(wx.Frame):
 
     def dsRefresh(self):
         #zp = self.vp.do.zp #save z -position
-        self.vp.ResetDataStack(self.ds)
+        self.vp.do.SetDataStack(self.ds)
         #self.vp.do.zp = zp #restore z position
         self.elv.SetEventSource(self.ds.getEvents())
         self.elv.SetRange([0, self.ds.getNumSlices()])
