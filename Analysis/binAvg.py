@@ -2,18 +2,18 @@ import numpy as np
 from pylab import *
 
 def binAvg(binVar, indepVar, bins):
-    bm = []
-    bs = []
-    bn = []
+    bm = np.zeros(len(bins) - 1)
+    bs = np.zeros(len(bins) - 1)
+    bn = np.zeros(len(bins) - 1, dtype='i')
 
-    for el, er in zip(bins[:-1], bins[1:]):
+    for i, el, er in zip(range(len(bm)), bins[:-1], bins[1:]):
         v = indepVar[(binVar >= el)*(binVar < er)]
 
-        bn.append(len(v))
-        bm.append(v.mean())
-        bs.append(v.std())
+        bn[i] = len(v)
+        bm[i] = v.mean()
+        bs[i] = v.std()
 
-    return np.array(bn), np.array(bm), np.array(bs)
+    return bn, bm, bs
 
 
 def errorPlot(filter, bins):

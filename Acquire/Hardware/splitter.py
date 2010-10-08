@@ -17,6 +17,7 @@ import numpy
 import os
 import wx.lib.agw.aui as aui
 from PYME.Acquire import MetaDataHandler
+from PYME.FileUtils import nameUtils
 
 def LoadShiftField(filename = None):
     if not filename:
@@ -59,6 +60,7 @@ class Unmixer:
 
     def SetShiftField(self, shiftField):
         #self.shiftField = shiftField
+        #self.shiftFieldName = sfname
         X, Y = numpy.ogrid[:512, :256]
 
         self.X2 = numpy.round(X - shiftField[0](X*70., Y*70.)/70.).astype('i')
@@ -175,6 +177,12 @@ class Splitter:
         mdh.setEntry('Splitter.Dichroic', self.dichroic)
         mdh.setEntry('Splitter.TransmittedPathPosition', self.transLocOnCamera)
 
+        if 'shiftField' in dir(self):
+            mdh.setEntry('chroma.ShiftFilename', self.shiftFieldName)
+            dx, dy = self.shiftField
+            mdh.setEntry('chroma.dx', dx)
+            mdh.setEntry('chroma.dy', dy)
+
     def OnConstrainROI(self,event=None):
         self.constrainROI = not self.constrainROI
         if self.constrainROI:
@@ -210,13 +218,17 @@ class Splitter:
 
     def OnSetShiftField(self, event):
         fdialog = wx.FileDialog(None, 'Select shift field',
-            wildcard='*.sf', style=wx.OPEN)
+            wildcard='*.sf', style=wx.OPEN, defaultDir = nameUtils.genShiftFieldDirectoryPath())
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
-            self.SetShiftField(numpy.load(fdialog.GetPath().encode()))
+            sfname = fdialog.GetPath().encode()
+            
+            self.SetShiftField(sfname)
 
-    def SetShiftField(self, shiftField):
-        self.unmixer.SetShiftField(shiftField)
+    def SetShiftField(self, sfname):
+        self.shiftField = numpy.load(sfname)
+        self.shiftFieldName = sfname
+        self.unmixer.SetShiftField(self.shiftField)
 
 
     def Unmix(self):

@@ -79,4 +79,7 @@ def genResultDirectoryPath():
     p = os.path.join(*(seps.split(resultsdirPatternShort) )) %dateDict
 
     return p 
-    
+
+
+def genShiftFieldDirectoryPath():
+    return os.path.join(datadir, 'shiftmaps')

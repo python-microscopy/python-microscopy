@@ -11,7 +11,6 @@
 ##################
 
 #!/usr/bin/python
-import os.path
 import wx
 import wx.py.shell
 
@@ -2065,8 +2064,10 @@ class VisGUIFrame(wx.Frame):
 
         import cPickle
 
+        defFile = os.path.splitext(os.path.split(self.GetTitle())[-1]) + '.sf'
+
         fdialog = wx.FileDialog(None, 'Save shift field as ...',
-            wildcard='Shift Field file (*.sf)|*.sf', style=wx.SAVE|wx.HIDE_READONLY)
+            wildcard='Shift Field file (*.sf)|*.sf', style=wx.SAVE|wx.HIDE_READONLY, defaultDir = nameUtils.genShiftFieldDirectoryPath(), defaultFile=defFile)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
             fpath = fdialog.GetPath()
