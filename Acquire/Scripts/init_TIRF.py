@@ -72,7 +72,8 @@ scope.stage.SetSoftLimits(0, [1.06, 20.7])
 scope.stage.SetSoftLimits(1, [.8, 17.6])
 scope.piezos.append((scope.stage, 0, 'Stage X'))
 scope.piezos.append((scope.stage, 1, 'Stage Y'))
-scope.EnableJoystick = scope.stage.SetJoystick
+scope.joystick = scope.stage.joystick
+scope.joystick.Enable(True)
 scope.CleanupFunctions.append(scope.stage.Cleanup)
 ''')
 

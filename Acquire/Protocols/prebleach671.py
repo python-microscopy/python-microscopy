@@ -19,6 +19,7 @@ import numpy
 #additional arguments
 taskList = [
 T(-1, scope.turnAllLasersOff),
+T(-1, scope.joystick.Enable, False),
 #T(-1, SetEMGain,150),
 T(20, scope.filterWheel.SetFilterPos, "ND4.5"),
 T(21, scope.l671.TurnOn),
@@ -30,6 +31,7 @@ T(101, SetEMGain,150),
 T(110, MainFrame.pan_spool.OnBAnalyse, None),
 T(maxint, scope.turnAllLasersOff),
 T(maxint, scope.filterWheel.SetFilterPos, "ND4.5"),
+T(maxint, scope.joystick.Enable, True),
 ]
 
 #optional - metadata entries

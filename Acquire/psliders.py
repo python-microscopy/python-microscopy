@@ -18,13 +18,13 @@ import noclosefr
 import sys
 
 class PiezoSliders(wx.Panel):
-    def __init__(self, piezos, parent, joystickEnableFcn = None, id=-1):
+    def __init__(self, piezos, parent, joystic = None, id=-1):
         # begin wxGlade: MyFrame1.__init__
         #kwds["style"] = wx.DEFAULT_FRAME_STYLE
         wx.Panel.__init__(self, parent, id)
 
         self.piezos = piezos
-        self.joystickEnableFcn = joystickEnableFcn
+        self.joystick = joystick
         #self.panel_1 = wx.Panel(self, -1)
         self.sliders = []
         self.sliderLabels = []
@@ -53,7 +53,7 @@ class PiezoSliders(wx.Panel):
             self.sliderLabels.append(sLab)
 
 
-        if not joystickEnableFcn == None:
+        if not joystick == None:
             self.cbJoystick = wx.CheckBox(self, -1, 'Enable Joystick')
             sizer_2.Add(self.cbJoystick,0,wx.TOP|wx.BOTTOM,2)
             self.cbJoystick.Bind(wx.EVT_CHECKBOX, self.OnJoystickEnable)
@@ -72,7 +72,7 @@ class PiezoSliders(wx.Panel):
         # end wxGlade
 
     def OnJoystickEnable(self, event):
-        self.joystickEnableFcn(self.cbJoystick.IsChecked())
+        self.joystick.Enable(self.cbJoystick.IsChecked())
 
     def onSlide(self, event):
         sl = event.GetEventObject()
@@ -97,6 +97,9 @@ class PiezoSliders(wx.Panel):
                 
     	    self.sliders[ind].SetMin(100*self.piezos[ind][0].GetMin(self.piezos[ind][1]))
     	    self.sliders[ind].SetMax(100*self.piezos[ind][0].GetMax(self.piezos[ind][1]))
+
+        if not self.joystick == None:
+            self.cbJoystick.SetValue(self.joystick.IsEnabled())
 
             
 

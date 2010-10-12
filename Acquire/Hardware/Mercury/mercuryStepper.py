@@ -30,12 +30,25 @@ class tPoll(threading.Thread):
                 pass
             time.sleep(.02)
 
+class mecuryJoystick:
+    def __init__(self, stepper):
+        self.stepper = stepper
+
+    def Enable(self, enabled = True):
+        if not self.IsEnabled() == enabled:
+            self.stepper.SetJoystick(enabled)
+
+    def IsEnabled(self):
+        return self.stepper.joystickOn
+
 
 class mercuryStepper:
     def __init__(self, comPort=5, baud=9600, axes=['A', 'B'], steppers=['M-229.25S', 'M-229.25S']):
         self.axes = axes
         self.steppers = steppers
         self.joystickOn = False
+
+        self.joystick = mercuryJoystick(self)
 
         self.lock = threading.RLock()
         

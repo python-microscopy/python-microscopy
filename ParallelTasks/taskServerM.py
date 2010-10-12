@@ -48,7 +48,7 @@ class TaskWatcher(threading.Thread):
                         #        mProfile.report()
                         #finally:
                         #        pass
-                        print mProfile.files
+                        #print mProfile.files
 			time.sleep(10)
 
 
