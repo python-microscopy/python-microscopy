@@ -29,6 +29,7 @@ from PYME.ParallelTasks.relativeFiles import getRelFilename
 
 import PYME.Acquire.Protocols
 import PYME.Acquire.protocol as prot
+import preflight
 
 import os
 import sys
@@ -261,9 +262,14 @@ class PanSpool(wx.Panel):
             self.dirname += os.sep
 
         if (fn + '.h5') in os.listdir(self.dirname): #check to see if data with the same name exists
-            ans = wx.MessageBox('A series with the same name already exists ... overwrite?', 'Warning', wx.YES_NO)
-            if ans == wx.NO:
-                return #bail
+            ans = wx.MessageBox('A series with the same name already exists', 'Error', wx.OK)
+            #overwriting doesn't work ... so just bail
+            #increment the series counter first, though, so hopefully we don't get the same error on the next try
+            self.seriesCounter +=1
+            self.seriesName = self._GenSeriesName()
+            self.tcSpoolFile.SetValue(self.seriesName)
+            #if ans == wx.NO:
+            return #bail
             
         if self.cbCompress.GetValue():
             compLevel = 6
@@ -275,6 +281,9 @@ class PanSpool(wx.Panel):
             print protocol
         else:
             protocol = self.protocol
+
+        if not preflight.ShowPreflightResults(self, self.protocol.PreflightCheck()):
+            return #bail if we failed the pre flight check, and the user didn't choose to continue
 
         if self.cbQueue.GetValue():
             self.queueName = getRelFilename(self.dirname + fn + '.h5')
