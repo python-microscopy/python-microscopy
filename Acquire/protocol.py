@@ -27,8 +27,13 @@ class Protocol:
     def OnFrame(self, frameNum):
         pass
 
+    def PreflightCheck(self):
+        return []
+
     def OnFinish(self):
         pass
+
+
 
 NullProtocol = Protocol()
 
