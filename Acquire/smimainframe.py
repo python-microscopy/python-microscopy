@@ -324,7 +324,7 @@ class smiMainFrame(wx.Frame):
                 self.sh.run(cl)
 
         if len(self.scope.piezos) > 0.5:
-            self.piezo_sl = psliders.PiezoSliders(self.scope.piezos, self, self.scope.EnableJoystick)
+            self.piezo_sl = psliders.PiezoSliders(self.scope.piezos, self, self.scope.joystick)
             self.time1.WantNotification.append(self.piezo_sl.update)
 
             self.AddTool(self.piezo_sl, 'Positioning')

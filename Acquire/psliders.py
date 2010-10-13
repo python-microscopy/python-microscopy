@@ -18,7 +18,7 @@ import noclosefr
 import sys
 
 class PiezoSliders(wx.Panel):
-    def __init__(self, piezos, parent, joystic = None, id=-1):
+    def __init__(self, piezos, parent, joystick = None, id=-1):
         # begin wxGlade: MyFrame1.__init__
         #kwds["style"] = wx.DEFAULT_FRAME_STYLE
         wx.Panel.__init__(self, parent, id)
