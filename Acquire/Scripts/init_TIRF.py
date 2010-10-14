@@ -148,6 +148,7 @@ filtList = [WFilter(1, 'EMPTY', 'EMPTY', 0),
 InitGUI('''
 try:
     scope.filterWheel = FiltFrame(MainFrame, filtList)
+    scope.filterWheel.SetFilterPos("ND4.5")
     toolPanels.append((scope.filterWheel, 'Filter Wheel'))
 except:
     print 'Error starting filter wheel ...'
