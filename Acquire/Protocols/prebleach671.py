@@ -47,8 +47,8 @@ metaData = [
 #syntax: C(expression to evaluate (quoted, should have boolean return), message to display on failure),
 preflight = [
 C('scope.cam.GetEMGain() == 150', 'Was expecting an intial e.m. gain of 150'),
-C('scope.cam.GetROIX1() > 0', 'Looks like no ROI has been set'),
-C('scope.cam.GetIntegTime() <= 50', 'Camera integration time may be too long'),
+C('scope.cam.GetROIX1() > 1', 'Looks like no ROI has been set'),
+C('scope.cam.GetIntegTime() < .06', 'Camera integration time may be too long'),
 ]
 
 #must be defined for protocol to be discovered
