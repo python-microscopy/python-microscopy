@@ -255,6 +255,8 @@ class LMGLCanvas(GLCanvas):
         if image == None:
             self.backgroundImage = False
             return
+
+        image = image.T.reshape(*image.shape) #get our byte order right
         
         glBindTexture (GL_TEXTURE_2D, 1)
         glPixelStorei (GL_UNPACK_ALIGNMENT, 1)

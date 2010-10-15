@@ -2608,7 +2608,7 @@ class VisGUIFrame(wx.Frame):
             imb = ImageBounds(0,0,pixelSize*im.shape[0],pixelSize*im.shape[1])
 
             img = GeneratedImage(im,imb, pixelSize )
-            imf = imageView.ImageViewFrame(self,img, self.glCanvas, title=filename,zdim=2)
+            imf = imageView.MultiChannelImageViewFrame(self, self.glCanvas, [img], title=filename,zdim=2)
             self.generatedImages.append(imf)
             imf.Show()
         else:
