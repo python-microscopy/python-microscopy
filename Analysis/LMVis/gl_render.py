@@ -91,6 +91,8 @@ class LMGLCanvas(GLCanvas):
         self.LUTDraw = True
         self.mode = 'triang'
 
+        self.backgroundImage = False
+
         self.colouring = 'area'
 
         self.drawModes = {'triang':GL_TRIANGLES, 'quads':GL_QUADS, 'edges':GL_LINES, 'points':GL_POINTS, 'tracks': GL_LINE_STRIP}
@@ -162,6 +164,8 @@ class LMGLCanvas(GLCanvas):
 
         #print self.drawModes[self.mode]
 
+        self.drawBackground()
+
         #glClear(GL_ACCUM_BUFFER_BIT)
         if self.mode =='tracks':
             for i in range(self.cimax):
@@ -174,7 +178,7 @@ class LMGLCanvas(GLCanvas):
             if self.mode == 'points':
                 glPointSize(self.pointSize*(float(self.Size[0])/(self.xmax - self.xmin)))
             for i in range(self.numBlurSamples):
-                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+                #glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
                 glPushMatrix ()
 
                 glTranslatef (self.blurSigma*numpy.random.normal(), self.blurSigma*numpy.random.normal(),0.0)
@@ -242,6 +246,50 @@ class LMGLCanvas(GLCanvas):
         #          0.0, 0.0, 0.0,
         #          0.0, 1.0, 0.0)
         return
+
+    def setBackgroundImage(self, image, origin = (0,0), pixelSize=70):
+        if self.backgroundImage:
+            #if we already have a background image, free it
+            glDeleteTextures([1])
+
+        if image == None:
+            self.backgroundImage = False
+            return
+        
+        glBindTexture (GL_TEXTURE_2D, 1)
+        glPixelStorei (GL_UNPACK_ALIGNMENT, 1)
+        glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP)
+        glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP)
+        glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+        #glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+        #glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE)
+        glTexImage2D (GL_TEXTURE_2D, 0, 1, image.shape[0], image.shape[1], 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, image)
+
+        self.backgroundImage = True
+        self.backgroundOrigin = origin
+        self.backgroundExtent = (origin[0] + image.shape[0]*pixelSize, origin[1] + image.shape[1]*pixelSize)
+
+    def drawBackground(self):
+        if self.backgroundImage:
+            glEnable (GL_TEXTURE_2D) # enable texture mapping */
+            glBindTexture (GL_TEXTURE_2D, 1) # bind to our texture, has id of 1 */
+
+            #glColor3f(1.,0.,0.)
+            glBegin (GL_QUADS)
+            glTexCoord2f(0., 0.) # lower left corner of image */
+            glVertex3f(self.backgroundOrigin[0],self.backgroundOrigin[1], 0.0)
+            glTexCoord2f (1., 0.) # lower right corner of image */
+            glVertex3f (self.backgroundExtent[0],self.backgroundOrigin[1], 0.0)
+            glTexCoord2f (1.0, 1.0) # upper right corner of image */
+            glVertex3f (self.backgroundExtent[0],self.backgroundExtent[1], 0.0)
+            glTexCoord2f (0.0, 1.0) # upper left corner of image */
+            glVertex3f (self.backgroundOrigin[0],self.backgroundExtent[1], 0.0)
+            glEnd ();
+
+            glDisable (GL_TEXTURE_2D) # disable texture mapping */
+
 
     def setTriang(self, T, c = None):
         xs = T.x[T.triangle_nodes]

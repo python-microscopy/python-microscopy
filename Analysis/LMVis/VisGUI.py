@@ -2540,7 +2540,7 @@ class VisGUIFrame(wx.Frame):
         self.SetFit()
 
     def OnOpenRaw(self, event):
-        filename = wx.FileSelector("Choose a file to open", nameUtils.genResultDirectoryPath(), default_extension='h5', wildcard='PYME Spool Files (*.h5)|*.h5|Khoros Data Format (*.kdf)|*.kdf')
+        filename = wx.FileSelector("Choose a file to open", nameUtils.genResultDirectoryPath(), default_extension='h5', wildcard='PYME Spool Files (*.h5)|*.h5|Khoros Data Format (*.kdf)|*.kdf|Tiff (*.tif)|*.tif')
         if not filename == '':
             self.OpenRaw(filename)
 
@@ -2564,7 +2564,11 @@ class VisGUIFrame(wx.Frame):
         elif ext == '.h5': #h5 spool
             h5f = tables.openFile(filename)
 
-            md = MetaData.genMetaDataFromHDF(h5f)
+            if 'MetaData' in h5f.root: #should be true the whole time
+                md = MetaData.TIRFDefault
+                md.copyEntriesFrom(MetaDataHandler.HDFMDHandler(h5f))
+
+            #md = MetaData.genMetaDataFromHDF(h5f)
 
             
             im = h5f.root.ImageData
@@ -2577,6 +2581,34 @@ class VisGUIFrame(wx.Frame):
 
             img = GeneratedImage(im,imb, pixelSize )
             imf = imageView.ImageViewFrame(self,img, self.glCanvas, title=filename,zp=min(md.EstimatedLaserOnFrameNo+10,(h5f.root.ImageData.shape[0]-1)))
+            self.generatedImages.append(imf)
+            imf.Show()
+        elif ext == '.tif': #Tiff file
+            from PYME.FileUtils import readTiff
+            im = readTiff.read3DTiff(filename)[:,:,0].squeeze()
+
+            xmlfn = os.path.splitext(filename)[0] + '.xml'
+            if os.path.exists(xmlfn):
+                md = MetaData.TIRFDefault
+                md.copyEntriesFrom(MetaDataHandler.XMLMDHandler(xmlfn))
+            else:
+                md = MetaData.ConfocDefault
+
+                from PYME.DSView.voxSizeDialog import VoxSizeDialog
+
+                dlg = VoxSizeDialog(self)
+                dlg.ShowModal()
+
+                md.setEntry('voxelsize.x', dlg.GetVoxX())
+                md.setEntry('voxelsize.y', dlg.GetVoxY())
+                md.setEntry('voxelsize.z', dlg.GetVoxZ())
+
+            pixelSize = md.voxelsize.x*1e3
+
+            imb = ImageBounds(0,0,pixelSize*im.shape[0],pixelSize*im.shape[1])
+
+            img = GeneratedImage(im,imb, pixelSize )
+            imf = imageView.ImageViewFrame(self,img, self.glCanvas, title=filename,zdim=2)
             self.generatedImages.append(imf)
             imf.Show()
         else:
