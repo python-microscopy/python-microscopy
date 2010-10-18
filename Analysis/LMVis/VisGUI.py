@@ -2196,6 +2196,7 @@ class VisGUIFrame(wx.Frame):
         self.filter = None
         self.mapping = None
         self.colourFilter = None
+        self.filename = filename
         #print os.path.splitext(filename)[1]
         if os.path.splitext(filename)[1] == '.h5r':
                 try:
@@ -2540,7 +2541,12 @@ class VisGUIFrame(wx.Frame):
         self.SetFit()
 
     def OnOpenRaw(self, event):
-        filename = wx.FileSelector("Choose a file to open", nameUtils.genResultDirectoryPath(), default_extension='h5', wildcard='PYME Spool Files (*.h5)|*.h5|Khoros Data Format (*.kdf)|*.kdf|Tiff (*.tif)|*.tif')
+        #print self.filename
+        tmp = os.path.split(self.filename)[0].split(os.sep)
+        #print tmp
+        tgtDir = os.sep.join(tmp[:-2] + tmp[-1:])
+        print tgtDir
+        filename = wx.FileSelector("Choose a file to open", tgtDir, default_extension='h5', wildcard='PYME Spool Files (*.h5)|*.h5|Khoros Data Format (*.kdf)|*.kdf|Tiff (*.tif)|*.tif')
         if not filename == '':
             self.OpenRaw(filename)
 
