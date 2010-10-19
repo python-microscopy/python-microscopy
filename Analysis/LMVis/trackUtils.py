@@ -14,7 +14,7 @@ def calcTrackVelocity(x, y, ci):
     y = y[I]
     ci = ci[I]
 
-    dists = sqrt(numpy.diff(x)**2 + numpy.diff(y)**2)
+    dists = numpy.sqrt(numpy.diff(x)**2 + numpy.diff(y)**2)
 
     #now calculate a mask so that we only include distances from within the trace
     mask = numpy.diff(ci) < 1
@@ -34,6 +34,60 @@ def calcTrackVelocity(x, y, ci):
     v[I] = v
 
     return v
+
+def jumpDistProb(r, D, t):
+    return (1./(4*numpy.pi*D*t))*numpy.exp(-r**2/(4*D*t))*2*numpy.pi*r
+
+
+def jumpDistModel(p, r, N, t, dx):
+    fT = 0
+    res = 0
+
+    for i in range(len(p)/2):
+      D, f = p[(2*i):(2*i +2)]
+
+      res += f*jumpDistProb(r, D, t)
+      fT += f
+
+    res += (1 - fT)*jumpDistProb(r, p[-1], t)
+
+    return N*res*dx
+
+def FitJumpSizeDist(velocities, startParams, dT):
+    from pylab import *
+    from PYME.Analysis._fithelpers import *
+    
+    N = len(velocities)
+
+    figure()
+
+    h, b, p = hist(velocities, 200)
+    
+    x = b[1:]
+    dx = x[1] - x[0]
+
+    r = FitModel(jumpDistModel, startParams, h, x, N, dT, dx)
+
+    plot(x, jumpDistModel(r[0], x, N, dT, dx), lw=2)
+
+    fT = 0
+
+    for i in range(len(startParams)/2):
+      D, f = r[0][(2*i):(2*i +2)]
+
+      plot(x, N*f*jumpDistProb(x, D, dT)*dx, '--', lw=2, label='D = %3.2g, f=%3.2f' % (D, f))
+      fT += f
+
+    D = r[0][-1]
+    plot(x, N*(1 - fT)*jumpDistProb(x, D, dT)*dx, '--', lw=2, label='D = %3.2g, f=%3.2f' % (D, (1-fT)))
+
+    xlabel('Jump Size [nm]')
+    ylabel('Frequency')
+    legend()
+
+    return r
+
+
 
 
 

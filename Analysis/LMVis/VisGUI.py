@@ -2108,6 +2108,7 @@ class VisGUIFrame(wx.Frame):
     def OnTrackMolecules(self, event):
         import PYME.Analysis.DeClump.deClumpGUI as deClumpGUI
         import PYME.Analysis.DeClump.deClump as deClump
+        import trackUtils
 
         bCurr = wx.BusyCursor()
         dlg = deClumpGUI.deClumpDialog(self)
@@ -2118,17 +2119,28 @@ class VisGUIFrame(wx.Frame):
             nFrames = dlg.GetClumpTimeWindow()
             rad_var = dlg.GetClumpRadiusVariable()
             if rad_var == '1.0':
-                delta_x = 0*self.selectedDataSource['x'] + dlg.GetClumpRadiusMultiplier()
+                delta_x = 0*self.mapping['x'] + dlg.GetClumpRadiusMultiplier()
             else:
-                delta_x = dlg.GetClumpRadiusMultiplier()*self.selectedDataSource[rad_var]
+                delta_x = dlg.GetClumpRadiusMultiplier()*self.mapping[rad_var]
 
-        self.selectedDataSource.clumpIndices = deClump.findClumps(self.selectedDataSource['t'].astype('i'), self.selectedDataSource['x'].astype('f4'), self.selectedDataSource['y'].astype('f4'), delta_x.astype('f4'), nFrames)
-        numPerClump, b = np.histogram(self.selectedDataSource.clumpIndices, np.arange(self.selectedDataSource.clumpIndices.max() + 1.5) + .5)
-        print b
-        self.selectedDataSource.clumpSizes = numPerClump[self.selectedDataSource.clumpIndices - 1]
+        clumpIndices = deClump.findClumps(self.mapping['t'].astype('i'), self.mapping['x'].astype('f4'), self.mapping['y'].astype('f4'), delta_x.astype('f4'), nFrames)
+        numPerClump, b = np.histogram(clumpIndices, np.arange(clumpIndices.max() + 1.5) + .5)
+
+        trackVelocities = trackUtils.calcTrackVelocity(self.mapping['x'], self.mapping['y'], clumpIndices)
+        #print b
+
+        self.selectedDataSource.clumpIndices = -1*np.ones(len(self.selectedDataSource['x']))
+        self.selectedDataSource.clumpIndices[self.filter.Index] = clumpIndices
+
+        self.selectedDataSource.clumpSizes = np.zeros(self.selectedDataSource.clumpIndices.shape)
+        self.selectedDataSource.clumpSizes[self.filter.Index] = numPerClump[clumpIndices - 1]
+
+        self.selectedDataSource.trackVelocities = np.zeros(self.selectedDataSource.clumpIndices.shape)
+        self.selectedDataSource.trackVelocities[self.filter.Index] = trackVelocities
 
         self.selectedDataSource.setMapping('clumpIndex', 'clumpIndices')
         self.selectedDataSource.setMapping('clumpSize', 'clumpSizes')
+        self.selectedDataSource.setMapping('trackVelocity', 'trackVelocities')
 
         self.RegenFilter()
         self.CreateFoldPanel()
