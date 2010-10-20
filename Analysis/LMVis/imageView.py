@@ -605,6 +605,7 @@ class MultiChannelImageViewFrame(wx.Frame):
         ID_SAVEALL = wx.NewId()
 
         ID_VIEW_COLOURLIM = wx.NewId()
+        ID_VIEW_BACKGROUND = wx.NewId()
         ID_FILTER_GAUSS = wx.NewId()
         ID_3D_ISOSURF = wx.NewId()
         ID_3D_VOLUME = wx.NewId()
@@ -620,6 +621,7 @@ class MultiChannelImageViewFrame(wx.Frame):
 
         view_menu = wx.Menu()
         view_menu.AppendCheckItem(ID_VIEW_COLOURLIM, "&Colour Scaling")
+        view_menu.Append(ID_VIEW_BACKGROUND, "Set as visualisation &background")
 
         proc_menu = wx.Menu()
         proc_menu.Append(ID_FILTER_GAUSS, "&Gaussian Filter")
@@ -659,6 +661,7 @@ class MultiChannelImageViewFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnClose, id=wx.ID_CLOSE)
         self.Bind(wx.EVT_MENU, self.OnExport, id=ID_EXPORT)
         self.Bind(wx.EVT_MENU, self.OnViewCLim, id=ID_VIEW_COLOURLIM)
+        self.Bind(wx.EVT_MENU, self.OnViewBackground, id=ID_VIEW_BACKGROUND)
         self.Bind(wx.EVT_MENU, self.On3DIsosurf, id=ID_3D_ISOSURF)
         self.Bind(wx.EVT_MENU, self.On3DVolume, id=ID_3D_VOLUME)
         self.Bind(wx.EVT_MENU, self.OnGaussianFilter, id=ID_FILTER_GAUSS)
@@ -682,6 +685,16 @@ class MultiChannelImageViewFrame(wx.Frame):
         else:
             #wx.MessageBox('Saving composites not supported yet')
             self.OnSaveChannels(None)
+
+    def OnViewBackground(self, event):
+        ivp = self.notebook.GetPage(self.notebook.GetSelection())
+
+        if 'image' in dir(ivp): #is a single channel
+            img = numpy.minimum(255.*(ivp.image.img - ivp.clim[0])/(ivp.clim[1] - ivp.clim[0]), 255).astype('uint8')
+            self.glCanvas.setBackgroundImage(img, (ivp.image.imgBounds.x0, ivp.image.imgBounds.y0), pixelSize=ivp.image.pixelSize)
+
+        self.glCanvas.Refresh()
+
 
 
     def OnSaveChannels(self, event):

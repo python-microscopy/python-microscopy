@@ -269,6 +269,9 @@ class microscope:
         self.camControls[camName].Show()#GetParent().PinOpen()
         self.camControls[camName].GetParent().GetParent().Layout()
 
+        if 'sa' in dir(self):
+            self.sa.cam = self.cam
+
         if 'pa' in dir(self):
             self.livepreview()
 

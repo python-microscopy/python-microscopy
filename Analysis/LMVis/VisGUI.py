@@ -2108,6 +2108,7 @@ class VisGUIFrame(wx.Frame):
     def OnTrackMolecules(self, event):
         import PYME.Analysis.DeClump.deClumpGUI as deClumpGUI
         import PYME.Analysis.DeClump.deClump as deClump
+        import trackUtils
 
         bCurr = wx.BusyCursor()
         dlg = deClumpGUI.deClumpDialog(self)
@@ -2118,17 +2119,28 @@ class VisGUIFrame(wx.Frame):
             nFrames = dlg.GetClumpTimeWindow()
             rad_var = dlg.GetClumpRadiusVariable()
             if rad_var == '1.0':
-                delta_x = 0*self.selectedDataSource['x'] + dlg.GetClumpRadiusMultiplier()
+                delta_x = 0*self.mapping['x'] + dlg.GetClumpRadiusMultiplier()
             else:
-                delta_x = dlg.GetClumpRadiusMultiplier()*self.selectedDataSource[rad_var]
+                delta_x = dlg.GetClumpRadiusMultiplier()*self.mapping[rad_var]
 
-        self.selectedDataSource.clumpIndices = deClump.findClumps(self.selectedDataSource['t'].astype('i'), self.selectedDataSource['x'].astype('f4'), self.selectedDataSource['y'].astype('f4'), delta_x.astype('f4'), nFrames)
-        numPerClump, b = np.histogram(self.selectedDataSource.clumpIndices, np.arange(self.selectedDataSource.clumpIndices.max() + 1.5) + .5)
-        print b
-        self.selectedDataSource.clumpSizes = numPerClump[self.selectedDataSource.clumpIndices - 1]
+        clumpIndices = deClump.findClumps(self.mapping['t'].astype('i'), self.mapping['x'].astype('f4'), self.mapping['y'].astype('f4'), delta_x.astype('f4'), nFrames)
+        numPerClump, b = np.histogram(clumpIndices, np.arange(clumpIndices.max() + 1.5) + .5)
+
+        trackVelocities = trackUtils.calcTrackVelocity(self.mapping['x'], self.mapping['y'], clumpIndices)
+        #print b
+
+        self.selectedDataSource.clumpIndices = -1*np.ones(len(self.selectedDataSource['x']))
+        self.selectedDataSource.clumpIndices[self.filter.Index] = clumpIndices
+
+        self.selectedDataSource.clumpSizes = np.zeros(self.selectedDataSource.clumpIndices.shape)
+        self.selectedDataSource.clumpSizes[self.filter.Index] = numPerClump[clumpIndices - 1]
+
+        self.selectedDataSource.trackVelocities = np.zeros(self.selectedDataSource.clumpIndices.shape)
+        self.selectedDataSource.trackVelocities[self.filter.Index] = trackVelocities
 
         self.selectedDataSource.setMapping('clumpIndex', 'clumpIndices')
         self.selectedDataSource.setMapping('clumpSize', 'clumpSizes')
+        self.selectedDataSource.setMapping('trackVelocity', 'trackVelocities')
 
         self.RegenFilter()
         self.CreateFoldPanel()
@@ -2196,6 +2208,7 @@ class VisGUIFrame(wx.Frame):
         self.filter = None
         self.mapping = None
         self.colourFilter = None
+        self.filename = filename
         #print os.path.splitext(filename)[1]
         if os.path.splitext(filename)[1] == '.h5r':
                 try:
@@ -2540,7 +2553,12 @@ class VisGUIFrame(wx.Frame):
         self.SetFit()
 
     def OnOpenRaw(self, event):
-        filename = wx.FileSelector("Choose a file to open", nameUtils.genResultDirectoryPath(), default_extension='h5', wildcard='PYME Spool Files (*.h5)|*.h5|Khoros Data Format (*.kdf)|*.kdf')
+        #print self.filename
+        tmp = os.path.split(self.filename)[0].split(os.sep)
+        #print tmp
+        tgtDir = os.sep.join(tmp[:-2] + tmp[-1:])
+        print tgtDir
+        filename = wx.FileSelector("Choose a file to open", tgtDir, default_extension='h5', wildcard='PYME Spool Files (*.h5)|*.h5|Khoros Data Format (*.kdf)|*.kdf|Tiff (*.tif)|*.tif')
         if not filename == '':
             self.OpenRaw(filename)
 
@@ -2564,7 +2582,11 @@ class VisGUIFrame(wx.Frame):
         elif ext == '.h5': #h5 spool
             h5f = tables.openFile(filename)
 
-            md = MetaData.genMetaDataFromHDF(h5f)
+            if 'MetaData' in h5f.root: #should be true the whole time
+                md = MetaData.TIRFDefault
+                md.copyEntriesFrom(MetaDataHandler.HDFMDHandler(h5f))
+
+            #md = MetaData.genMetaDataFromHDF(h5f)
 
             
             im = h5f.root.ImageData
@@ -2577,6 +2599,34 @@ class VisGUIFrame(wx.Frame):
 
             img = GeneratedImage(im,imb, pixelSize )
             imf = imageView.ImageViewFrame(self,img, self.glCanvas, title=filename,zp=min(md.EstimatedLaserOnFrameNo+10,(h5f.root.ImageData.shape[0]-1)))
+            self.generatedImages.append(imf)
+            imf.Show()
+        elif ext == '.tif': #Tiff file
+            from PYME.FileUtils import readTiff
+            im = readTiff.read3DTiff(filename)[:,:,0].squeeze()
+
+            xmlfn = os.path.splitext(filename)[0] + '.xml'
+            if os.path.exists(xmlfn):
+                md = MetaData.TIRFDefault
+                md.copyEntriesFrom(MetaDataHandler.XMLMDHandler(xmlfn))
+            else:
+                md = MetaData.ConfocDefault
+
+                from PYME.DSView.voxSizeDialog import VoxSizeDialog
+
+                dlg = VoxSizeDialog(self)
+                dlg.ShowModal()
+
+                md.setEntry('voxelsize.x', dlg.GetVoxX())
+                md.setEntry('voxelsize.y', dlg.GetVoxY())
+                md.setEntry('voxelsize.z', dlg.GetVoxZ())
+
+            pixelSize = md.voxelsize.x*1e3
+
+            imb = ImageBounds(0,0,pixelSize*im.shape[0],pixelSize*im.shape[1])
+
+            img = GeneratedImage(im,imb, pixelSize )
+            imf = imageView.MultiChannelImageViewFrame(self, self.glCanvas, [img], title=filename,zdim=2)
             self.generatedImages.append(imf)
             imf.Show()
         else:
