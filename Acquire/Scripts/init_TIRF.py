@@ -183,6 +183,12 @@ if 'lasers'in dir(scope):
     toolPanels.append((lcf, 'Laser Control'))
 ''')
 
+from PYME.Acquire.Hardware import PM100USB
+
+scope.powerMeter = PM100USB.PowerMeter()
+scope.powerMeter.SetWavelength(671)
+scope.StatusCallbacks.append(scope.powerMeter.GetStatusText)
+
 ##Focus tracking
 #from PYME.Acquire.Hardware import FocCorrR
 #InitBG('Focus Corrector', '''
