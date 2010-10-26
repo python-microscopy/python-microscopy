@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# edtColoc.py
+#
+# Copyright David Baddeley, 2010
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 from scipy import ndimage
 import numpy
 import binAvg

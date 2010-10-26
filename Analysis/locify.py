@@ -1,3 +1,17 @@
+#!/usr/bin/python
+
+##################
+# locify.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+# Generates a series of point/fluorophore positions from a given grayscale image
+#
+##################
+
 from numpy.random import rand
 import numpy as np
 

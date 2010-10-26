@@ -8,6 +8,8 @@
 #
 # This file may NOT be distributed without express permision from David Baddeley
 #
+# Differential equation models for dye kinetics
+#
 ##################
 
 from scipy import *

@@ -1,3 +1,17 @@
+#!/usr/bin/python
+
+##################
+# deTile.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+# Utilities for tiling images to make a large area overview
+#
+##################
+
 import numpy as np
 from scipy import fftpack, ndimage
 from PYME.Acquire.Hardware import splitter

@@ -1,3 +1,17 @@
+#!/usr/bin/python
+
+##################
+# msd.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+# Mean Squared Displacement & Diffusion constant calculation
+#
+##################
+
 import numpy as np
 #from PYME.Analysis.binAvg import binAvg
 

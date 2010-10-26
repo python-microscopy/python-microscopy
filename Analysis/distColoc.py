@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# distColoc.py
+#
+# Copyright David Baddeley, 2010
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 import DistHist
 from pylab import *
 #from PYME.Acquire.ExecTools import execBG
