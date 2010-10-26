@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# tCluster.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 import numpy as np
 import sys
 from PYME.Analysis.LMVis.visHelpers import genEdgeDB
