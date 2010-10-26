@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# displayOptions.py
+#
+# Copyright David Baddeley, 2009
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 from matplotlib import cm
 import numpy as np
 import tables

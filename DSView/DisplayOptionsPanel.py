@@ -1,3 +1,15 @@
+#!/usr/bin/python
+
+##################
+# DisplayOptionsPanel.py
+#
+# Copyright David Baddeley, 2010
+# d.baddeley@auckland.ac.nz
+#
+# This file may NOT be distributed without express permision from David Baddeley
+#
+##################
+
 import wx
 import pylab
 from PYME.misc import extraCMaps
