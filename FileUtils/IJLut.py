@@ -8,9 +8,9 @@
 #
 # This file may NOT be distributed without express permision from David Baddeley
 #
+# Exports all pylab/matplotlib lookup tables as ImageJ lookup tables
+#
 ##################
-
-#! /usr/bin/python
 import pylab
 import numpy
 import sys
