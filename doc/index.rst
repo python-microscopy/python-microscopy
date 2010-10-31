@@ -11,9 +11,10 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   BasicAcquisition
    Installation
    ConfiguringPYMEAcquire
+   BasicAcquisition
+   VisGUI
 
 
 ..

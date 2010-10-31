@@ -112,7 +112,7 @@ Basic Configuration
 
 In addition to the setup detailed above, PYME has a couple of configuration options which are controlled by environment variables. These are:
 
-.. tabularcolumns:: |p{4.5cm}|p{10cm}|
+.. tabularcolumns:: |p{4.5cm}|p{11cm}|
 
 
 ==================    ======================================================

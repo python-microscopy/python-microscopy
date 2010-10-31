@@ -1,5 +1,5 @@
-VisGUI
-******
+Visualising Data - VisGUI
+*************************
 
 Installing the standalone viewer
 ================================
@@ -136,7 +136,7 @@ Our drift correction procedure assumes that the drift can be approximated with a
 - The colour limits set such that the colour map covers the entire range of *t*-values
 
 
-.. image:: /images/drift_colour_coded.png}
+.. image:: /images/drift_colour_coded.png
 
 With these settings it should be possible to see any drift as colour banding or streaking across objects. If the data contains a large number of events, it might also be wise to select a ROI (see Filter section) to accelerate the fitting process. If selecting a ROI, try to select a region with well defined structures, for which the drift is clearly visible in the coloured - points representation. After the drift has been estimated, the ROI can be cleared and the correction applied to the whole image.
 
@@ -144,7 +144,7 @@ Drift correction is controlled using the **Drift Correction** pane in the sideba
 
 The drift expressions automatically recognise variable names from the loaded data, as well as several mathematical functions and constants [#]_. Any remaining names are assigned as parameters to be fitted, and will appear in the parameters box. It is always a good idea to check that the desired parameters appear in the parameters box, and that nothing else does. Two drift expression presets, namely linear and piecewise linear are available from the presets drop down.
 
-.. [#] a list of functions/constants can be obtained by entering ``from PYME.Analysis import intelliFit;dir(intelliFit)`` in the console window. Note that there's quite a few functions defined which are likely to be irrelevant for the fitting.
+.. [#] a list of functions/constants can be obtained by entering ``from PYME.Analysis import intelliFit; dir(intelliFit)`` in the console window. Note that there's quite a few functions defined which are likely to be irrelevant for the fitting.
 
 Once a pair of drift expressions has been chosen, the parameters can be edited by left clicking on their value. This can be used to set start values for the fit(although this is not typically required for the simpler - linear, piecewise linear - fits), or to experiment manually as to the effect of altering the parameters on the image. Clicking **Fit** fits the parameters by maximisation of the previously discussed entropy measure. 
 
@@ -159,7 +159,7 @@ Validation
 
 To enable some form of validation of the drift estimates, we have included a second drift estimation function, based on binning frames together in time and performing a cross-correlation between the images obtained (by calculating a histogram of the point positions within each time bin) from the different bins.
 
-The disadvantage of this method is that the temporal and spatial bin sizes typically need extensive tweaking for each image, and as such the method is not currently particularly robust\footnote{although there may be some room for improvement here}. 
+The disadvantage of this method is that the temporal and spatial bin sizes typically need extensive tweaking for each image, and as such the method is not currently particularly robust (although there may be some room for improvement here). 
 
 This is accessible from the menu bar as ``Extras->Estimate`` drift using cross-correlation} and displays the dialog shown below. The bin size parameter determines the 2D histogram bin size used for creating the images, the window size is the number of frames to bin, and the time step dictates the time points at which the drift is to be estimates (if this is smaller than the window size, the windows at each time step will be overlapping).
 
@@ -169,7 +169,7 @@ After clicking on **OK**, the drift will be estimated and a graph such as that s
 
 
 .. image:: /images/drift_est_corr_graph.png 
-.. image:: /images/drift_est_corr_graph_2.png}\\
+.. image:: /images/drift_est_corr_graph_2.png
 
 
 Image Generation
@@ -226,11 +226,14 @@ Extras
 Console
 -------
 
-The console tab is a functional python console embedded within the program. The filter, mapping and colour components of the pipeline can be accessed under the names ``filter``, ``mapping`` and ``colourFilter`` respectively, and behave like dictionaries which understand the variable names as keys [#]_ }. A number of Matlab style plotting and basic numeric commands are accessible by executing :code:`from pylab import *` (see the matplotlib webpage for more docs). After importing pylab, one can, for example, plot a histogram of point amplitudes by executing :code:`hist(filter['A'])`.
+The console tab is a functional python console embedded within the program. The filter, mapping and colour components of the pipeline can be accessed under the names ``filter``, ``mapping`` and ``colourFilter`` respectively, and behave like dictionaries which understand the variable names as keys [#]_ . A number of Matlab style plotting and basic numeric commands are accessible by executing ``from pylab import *`` (see the matplotlib_ webpage for more docs). After importing pylab, one can, for example, plot a histogram of point amplitudes by executing ``hist(filter['A'])``.
+
+.. _matplotlib : http://matplotlib.sourceforge.net
 
 .. [#] a lot of other aspects of the program are callable/accesible from the console window, but are beyond the scope of this quick introduction
 
-\section{Metadata, Events}
+Metadata, Events
+----------------
 
 The Metadata and Events tabs show metadata and event data relating to the acquisition. This is only realy useful for files saved in .h5r format as default (and probably erroneous) values are used when loading from .txt or .mat.
 
