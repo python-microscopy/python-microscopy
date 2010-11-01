@@ -18,6 +18,8 @@ The ``scope`` Object
 
 ``scope`` is an object representing the microscope. It serves a a place to accumulate all the various hardware bits as well as being home to a few utility functions. By the end of the script, scope must have the following properties defined:
 
+.. tabularcolumns:: |p{4.5cm}|p{11cm}|
+
 ==================   ============================================================================================================
 ``scope.cam``        The camera object. (``scope.cameras`` is a dictionary of cameras used for multiple camera support, but can
                      safely be ignored unless you really need to drive two cameras on one rig)
