@@ -17,6 +17,8 @@ Contents:
    VisGUI
 
 
+test
+
 .. Indices and tables
    ==================
 
