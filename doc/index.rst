@@ -16,7 +16,6 @@ Contents:
    BasicAcquisition
    VisGUI
 
-testing12
 
 .. Indices and tables
    ==================
