@@ -17,9 +17,10 @@ Contents:
    VisGUI
 
 
-..
-  Indices and tables
-  ==================
+test
+
+.. Indices and tables
+   ==================
 
   * :ref:`genindex`
   * :ref:`modindex`
