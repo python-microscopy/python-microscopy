@@ -21,9 +21,9 @@ import time
 
 InitBG('EMCCD Cameras', '''
 scope.cameras['A'] = AndorIXon.iXonCamera(1)
-scope.cameras['B'] = AndorIXon.iXonCamera(0)
-scope.cameras['B'].SetShutter(False)
-scope.cameras['B'].SetActive(False)
+#scope.cameras['B'] = AndorIXon.iXonCamera(0)
+#scope.cameras['B'].SetShutter(False)
+#scope.cameras['B'].SetActive(False)
 scope.cam = scope.cameras['A']
 ''')
 
@@ -35,9 +35,9 @@ InitGUI('''
 scope.camControls['A'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['A'], scope)
 camPanels.append((scope.camControls['A'], 'EMCCD A Properties'))
 
-scope.camControls['B'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['B'], scope)
-camPanels.append((scope.camControls['B'], 'EMCCD B Properties'))
-scope.camControls['B'].Hide()
+#scope.camControls['B'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['B'], scope)
+#camPanels.append((scope.camControls['B'], 'EMCCD B Properties'))
+#scope.camControls['B'].Hide()
 #scope.SetCamera('A')
 ''')
 
@@ -72,8 +72,7 @@ scope.stage.SetSoftLimits(0, [1.06, 20.7])
 scope.stage.SetSoftLimits(1, [.8, 17.6])
 scope.piezos.append((scope.stage, 0, 'Stage X'))
 scope.piezos.append((scope.stage, 1, 'Stage Y'))
-scope.joystick = scope.stage.joystick
-scope.joystick.Enable(True)
+scope.EnableJoystick = scope.stage.SetJoystick
 scope.CleanupFunctions.append(scope.stage.Cleanup)
 ''')
 
@@ -148,7 +147,6 @@ filtList = [WFilter(1, 'EMPTY', 'EMPTY', 0),
 InitGUI('''
 try:
     scope.filterWheel = FiltFrame(MainFrame, filtList)
-    scope.filterWheel.SetFilterPos("ND4.5")
     toolPanels.append((scope.filterWheel, 'Filter Wheel'))
 except:
     print 'Error starting filter wheel ...'
@@ -182,12 +180,6 @@ if 'lasers'in dir(scope):
     time1.WantNotification.append(lcf.refresh)
     toolPanels.append((lcf, 'Laser Control'))
 ''')
-
-from PYME.Acquire.Hardware import PM100USB
-
-scope.powerMeter = PM100USB.PowerMeter()
-scope.powerMeter.SetWavelength(671)
-scope.StatusCallbacks.append(scope.powerMeter.GetStatusText)
 
 ##Focus tracking
 #from PYME.Acquire.Hardware import FocCorrR
