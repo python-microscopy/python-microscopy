@@ -154,7 +154,10 @@ class fitTask(taskDef.Task):
             #was setup correctly for the splitter
             g = self.data[:, :(self.data.shape[1]/2)]
             r = self.data[:, (self.data.shape[1]/2):]
-            r = np.fliplr(r)
+            if ('Splitter.Flip' in self.md.getEntryNames() and not self.md.getEntry('Splitter.Flip')):
+                pass
+            else:
+                r = np.fliplr(r)
 #            else:
 #                #someone bodged something
 #                print 'Warning - splitter incorrectly set - '
@@ -213,7 +216,11 @@ class fitTask(taskDef.Task):
             if not len(self.bgindices) == 0:
                 g_ = self.bg[:, :(self.bg.shape[1]/2)]
                 r_ = self.bg[:, (self.bg.shape[1]/2):]
-                r_ = np.fliplr(r_)
+
+                if ('Splitter.Flip' in self.md.getEntryNames() and not self.md.getEntry('Splitter.Flip')):
+                    pass
+                else:
+                    r_ = np.fliplr(r_)
 
                 #print g.shape, r.shape, g_.shape, r_.shape
 
