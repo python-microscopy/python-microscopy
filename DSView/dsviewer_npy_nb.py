@@ -933,18 +933,18 @@ class DSViewFrame(wx.Frame):
         rsx, rsy, rsz = [int(s) for s in self.tPSFROI.GetValue().split(',')]
         dx, dy, dz = extractImages.getIntCenter(self.dataSource[(self.vp.do.xp-rsx):(self.vp.do.xp+rsx + 1),(self.vp.do.yp-rsy):(self.vp.do.yp+rsy+1), :])
         self.PSFLocs.append((self.vp.do.xp + dx, self.vp.do.yp + dy, dz))
-        self.vp.psfROIs = self.PSFLocs
-        self.vp.Refresh()
+        self.vp.view.psfROIs = self.PSFLocs
+        self.vp.view.Refresh()
 
     def OnClearTags(self, event):
         self.PSFLocs = []
-        self.vp.psfROIs = self.PSFLocs
-        self.vp.Refresh()
+        self.vp.view.psfROIs = self.PSFLocs
+        self.vp.view.Refresh()
 
     def OnPSFROI(self, event):
         try:
             psfROISize = [int(s) for s in self.tPSFROI.GetValue().split(',')]
-            self.vp.psfROISize = psfROISize
+            self.vp.view.psfROISize = psfROISize
             self.vp.Refresh()
         except:
             pass

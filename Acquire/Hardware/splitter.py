@@ -53,8 +53,9 @@ def LoadShiftField(filename = None):
 
 
 class Unmixer:
-    def __init__(self, shiftfield=None, pixelsize=70.):
+    def __init__(self, shiftfield=None, pixelsize=70., flip=True):
         self.pixelsize = pixelsize
+        self.flip = flip
         if shiftfield:
             self.SetShiftField(shiftField)
 
@@ -101,7 +102,9 @@ class Unmixer:
 
         g_ = dsa[:, :(dsa.shape[1]/2)]
         r_ = dsa[:, (dsa.shape[1]/2):]
-        r_ = self._deshift(fliplr(r_), ROI)
+        if self.flip:
+            r_ = fliplr(r_)
+        r_ = self._deshift(r_, ROI)
 
         #print g_.shape, r_.shape
 

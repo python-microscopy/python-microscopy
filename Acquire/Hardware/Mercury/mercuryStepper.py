@@ -30,7 +30,7 @@ class tPoll(threading.Thread):
                 pass
             time.sleep(.02)
 
-class mecuryJoystick:
+class mercuryJoystick:
     def __init__(self, stepper):
         self.stepper = stepper
 

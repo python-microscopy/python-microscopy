@@ -27,8 +27,8 @@ T(58, scope.l671.TurnOff),
 T(60, SetEMGain,0),
 T(61, scope.l671.TurnOn),
 T(61, scope.filterWheel.SetFilterPos, "EMPTY"),
-T(101, SetEMGain,150),
-T(110, MainFrame.pan_spool.OnBAnalyse, None),
+T(150, SetEMGain,150),
+T(160, MainFrame.pan_spool.OnBAnalyse, None),
 T(maxint, scope.turnAllLasersOff),
 T(maxint, scope.filterWheel.SetFilterPos, "ND4.5"),
 T(maxint, scope.joystick.Enable, True),
@@ -37,9 +37,9 @@ T(maxint, scope.joystick.Enable, True),
 #optional - metadata entries
 metaData = [
 ('Protocol.DarkFrameRange', (0, 20)),
-('Protocol.DataStartsAt', 102),
+('Protocol.DataStartsAt', 151),
 ('Protocol.PrebleachFrames', (21, 58)),
-('Protocol.BleachFrames', (61,101)),
+('Protocol.BleachFrames', (61,150)),
 ]
 
 #optional - pre-flight check
@@ -47,8 +47,8 @@ metaData = [
 #syntax: C(expression to evaluate (quoted, should have boolean return), message to display on failure),
 preflight = [
 C('scope.cam.GetEMGain() == 150', 'Was expecting an intial e.m. gain of 150'),
-C('scope.cam.GetROIX1() > 0', 'Looks like no ROI has been set'),
-C('scope.cam.GetIntegTime() <= 50', 'Camera integration time may be too long'),
+C('scope.cam.GetROIX1() > 1', 'Looks like no ROI has been set'),
+C('scope.cam.GetIntegTime() < .06', 'Camera integration time may be too long'),
 ]
 
 #must be defined for protocol to be discovered
