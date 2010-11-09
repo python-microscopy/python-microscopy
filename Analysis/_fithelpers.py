@@ -16,7 +16,7 @@ import numpy as np
 
 FWHM_CONV_FACTOR = 2*scipy.sqrt(2*scipy.log(2))
 
-#EPS_FCN = 1e-4
+EPS_FCN = 1e-4
 
 def missfit(p, fcn, data, *args):
     """Helper function which evaluates a model function (fcn) with parameters (p) and additional arguments

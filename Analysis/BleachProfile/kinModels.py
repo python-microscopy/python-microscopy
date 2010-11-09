@@ -7,7 +7,16 @@ colours = ['r', 'g', 'b']
 
 def eimod(p, n):
     A, tau = p
-    return A*tau*(exp(-(n-1)/tau) - exp(-n/tau)) 
+    return A*tau*(exp(-(n-1)/tau) - exp(-n/tau))
+
+def ei2mod(p, n, dT, nAvg=30):
+    A, tau = p
+    #print A, tau
+    ret =  A*tau*(exp(-sqrt((n-dT)/tau)) - exp(-sqrt(n/tau)))*maximum(1 - n/(dT*nAvg), 0)
+    
+    #print n, sqrt((n-dT)/tau)
+
+    return ret
 
 #Decay of event numbers over time
 def e2mod(p, t):
@@ -73,28 +82,36 @@ def fitDecay(colourFilter, metadata):
         colourFilter.setColour(curChan)
 
 def fitOnTimesChan(colourFilter, metadata, channame='', i=0):
-    if 'error_x' in colourFilter.keys():
-        clumpIndices = deClump.findClumps(colourFilter['t'].astype('i'), colourFilter['x'].astype('f4'), colourFilter['y'].astype('f4'), colourFilter['error_x'].astype('f4'), 3)
-    else:
-        clumpIndices = deClump.findClumps(colourFilter['t'].astype('i'), colourFilter['x'].astype('f4'), colourFilter['y'].astype('f4'), 30*ones(len(colourFilter['x'])).astype('f4'), 3)
-    numPerClump, b = histogram(clumpIndices, arange(clumpIndices.max() + 1.5) + .5)
+    #if 'error_x' in colourFilter.keys():
+    #    clumpIndices = deClump.findClumps(colourFilter['t'].astype('i'), colourFilter['x'].astype('f4'), colourFilter['y'].astype('f4'), colourFilter['error_x'].astype('f4'), 3)
+    #else:
+    #    clumpIndices = deClump.findClumps(colourFilter['t'].astype('i'), colourFilter['x'].astype('f4'), colourFilter['y'].astype('f4'), 30*ones(len(colourFilter['x'])).astype('f4'), 3)
+
+    #numPerClump, b = histogram(clumpIndices, arange(clumpIndices.max() + 1.5) + .5)
+    
+    numPerClump = colourFilter['clumpSize']
 
     n, bins = histogram(numPerClump, arange(20)+.001)
+    n = n/arange(1, 20)
 
-    n = n[:10]
-    bins = bins[:10]
+    #n = n[:10]
+    #bins = bins[:10]
 
     cycTime = metadata.getEntry('Camera.CycleTime')
 
-    res = FitModel(eimod, [n[0], .05], n[:9], bins[1:]*cycTime)
+    semilogy()
+
+    bar(bins[:-1]*cycTime, n, width=cycTime, alpha=0.4, fc=colours[i])
+
+    #print (1./(sqrt(n) + 1))
+
+    res = FitModelWeighted(ei2mod, [n[0], .2], n[0:], 1./(sqrt(n[0:]) + 1), bins[1:]*cycTime, cycTime)
 
     #figure()
 
-    semilogy()
     
-    bar(bins*cycTime, n, width=cycTime, alpha=0.4, fc=colours[i])
 
-    plot(linspace(1, 10, 50)*cycTime, eimod(res[0], linspace(1, 10, 50)*cycTime), colours[i], lw=3)
+    plot(linspace(1, 20, 50)*cycTime, ei2mod(res[0], linspace(1, 20, 50)*cycTime, cycTime), colours[i], lw=3)
     ylabel('Events')
     xlabel('Event Duration [s]')
     ylim((1, ylim()[1]))
