@@ -722,7 +722,7 @@ class MultiChannelImageViewFrame(wx.Frame):
 
             from PYME.FileUtils import saveTiffStack
 
-            saveTiffStack.saveTiffMultipage(img, filename)
+            saveTiffStack.saveTiffMultipage(img, fname)
 
 
             

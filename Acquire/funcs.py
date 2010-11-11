@@ -140,14 +140,14 @@ class microscope:
 
             source.cam.StopAq()
 
-
             if self.lastFrameSaturated: #last frame was also saturated - our intervention obviously didn't work - close the shutter
                 if 'SetShutter' in dir(source.cam):
                     source.cam.SetShutter(False)
                 source.cam.StartExposure()
-                self.saturatedMessage = 'Sat - Camera shutter was closed'
+                self.saturatedMessage = 'Camera shutter has been closed'
                 self.lastFrameSaturated = True
                 self.cam.saturationIntervened = True
+                wx.MessageBox(self.saturatedMessage, "Saturation detected", wx.OK|wx.ICON_HAND)
                 return
 
             fracPixelsSat = (im > self.saturationThreshold).sum().astype('f')/im.size
@@ -159,22 +159,24 @@ class microscope:
                 if self.oldEMGain  < 50: #poor chance of resolving by turning EMGain down alone
                     if 'SetShutter' in dir(source.cam):
                         source.cam.SetShutter(False)
-                        self.saturatedMessage = 'Sat - Camera shutter was closed'
+                        self.saturatedMessage = 'Camera shutter closed'
                 else:
-                    self.saturatedMessage = 'Sat - EM Gain turned down'
+                    self.saturatedMessage = 'EM Gain turned down'
                     
                 source.cam.StartExposure()
 
                 self.lastFrameSaturated = True
                 self.cam.saturationIntervened = True
+                wx.MessageBox(self.saturatedMessage, "Saturation detected", wx.OK|wx.ICON_HAND)
                 return
             else:
                 if 'SetShutter' in dir(source.cam):
                     source.cam.SetShutter(False)
                 source.cam.StartExposure()
-                self.saturatedMessage = 'Sat - Camera shutter was closed'
+                self.saturatedMessage = 'Camera shutter closed'
                 self.lastFrameSaturated = True
                 self.cam.saturationIntervened = True
+                wx.MessageBox(self.saturatedMessage, "Saturation detected", wx.OK|wx.ICON_HAND)
                 return
 
             self.lastFrameSaturated = True
