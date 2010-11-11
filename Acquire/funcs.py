@@ -173,7 +173,7 @@ class microscope:
                 if 'SetShutter' in dir(source.cam):
                     source.cam.SetShutter(False)
                 source.cam.StartExposure()
-                self.saturatedMessage = 'Camera shutter was closed'
+                self.saturatedMessage = 'Camera shutter closed'
                 self.lastFrameSaturated = True
                 self.cam.saturationIntervened = True
                 wx.MessageBox(self.saturatedMessage, "Saturation detected", wx.OK|wx.ICON_HAND)
