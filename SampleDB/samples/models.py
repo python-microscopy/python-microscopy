@@ -244,3 +244,18 @@ class SlideTag(models.Model):
 
         return sl
 
+
+class EventStats(models.Model):
+    fileID = models.ForeignKey(File, related_name='event_stats')
+    label = models.CharField(max_length=200)
+    nEvents = models.BigIntegerField(default=0)
+    meanPhotons = models.FloatField()
+    tMax = models.FloatField() #maximum time == length of sequence
+    tMedian = models.FloatField() #median time == measure for speed of rundown
+
+    
+
+    def __unicode__(self):
+        return u'Stats for %s: %s\t%d\t%3.1f\t%3.2f\t%3.1f' % (self.fileID.filename, self.label, self.nEvents, self.meanPhotons, self.tMax, self.tMedian)
+
+    

@@ -5,6 +5,12 @@ from scipy.special import erf
 
 colours = ['r', 'g', 'b']
 
+def getPhotonNums(colourFilter, metadata):
+    nPh = (colourFilter['A']*2*math.pi*(colourFilter['sig']/(1e3*metadata.getEntry('voxelsize.x')))**2)
+    nPh = nPh*metadata.getEntry('Camera.ElectronsPerCount')/metadata.getEntry('Camera.TrueEMGain')
+
+    return nPh
+
 def eimod(p, n):
     A, tau = p
     return A*tau*(exp(-(n-1)/tau) - exp(-n/tau))
@@ -146,8 +152,9 @@ def fitOnTimes(colourFilter, metadata):
 
 
 def fitFluorBrightnessChan(colourFilter, metadata, channame='', i=0, rng = None):
-    nPh = (colourFilter['A']*2*math.pi*(colourFilter['sig']/(1e3*metadata.getEntry('voxelsize.x')))**2)
-    nPh = nPh*metadata.getEntry('Camera.ElectronsPerCount')/metadata.getEntry('Camera.TrueEMGain')
+    #nPh = (colourFilter['A']*2*math.pi*(colourFilter['sig']/(1e3*metadata.getEntry('voxelsize.x')))**2)
+    #nPh = nPh*metadata.getEntry('Camera.ElectronsPerCount')/metadata.getEntry('Camera.TrueEMGain')
+    nPh = getPhotonNums(colourFilter, metadata)
     
     if rng == None:
         rng = nPh.mean()*6
@@ -180,8 +187,9 @@ def fitFluorBrightness(colourFilter, metadata):
     if len(chans) == 0:
         fitFluorBrightnessChan(colourFilter, metadata)
     else:
-        nPh = (colourFilter['A']*2*math.pi*(colourFilter['sig']/(1e3*metadata.getEntry('voxelsize.x')))**2)
-        nPh = nPh*metadata.getEntry('Camera.ElectronsPerCount')/metadata.getEntry('Camera.TrueEMGain')
+        #nPh = (colourFilter['A']*2*math.pi*(colourFilter['sig']/(1e3*metadata.getEntry('voxelsize.x')))**2)
+        #nPh = nPh*metadata.getEntry('Camera.ElectronsPerCount')/metadata.getEntry('Camera.TrueEMGain')
+        nPh = getPhotonNums(colourFilter, metadata)
         
         rng = 6*nPh.mean()
 

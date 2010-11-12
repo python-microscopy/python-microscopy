@@ -1,5 +1,58 @@
+from PYME.Analysis.LMVis import inpFilt
 
-class visNoGui:
+from PYME.Analysis import piecewiseMapping
+
+#import time
+import numpy as np
+import scipy.special
+
+from PYME.Acquire import MetaDataHandler
+
+from PYME.Analysis.LMVis.visHelpers import ImageBounds
+from PYME.Analysis.LMVis import dyeRatios
+#from PYME.Analysis.BleachProfile.kinModels import getPhotonNums
+
+
+class Pipeline:
+    def __init__(self, filename=None):
+        self.dataSources = []
+        self.selectedDataSource = None
+        self.filterKeys = {'error_x': (0,30), 'A':(5,2000), 'sig' : (95, 200)}
+
+        self.filter = None
+        self.mapping = None
+        self.colourFilter = None
+
+        self.driftCorrParams = {}
+        self.driftCorrFcn = None
+        self.optimiseFcn = 'fmin'
+        self.driftExprX = 'x + a*t'
+        self.driftExprY = 'y + b*t'
+        self.driftExprZ = 'z + c*t'
+        self.fitZDrift = False
+
+        self.fluorSpecies = {}
+        self.fluorSpeciesDyes = {}
+        self.chromaticShifts = {}
+        self.t_p_dye = 0.1
+        self.t_p_other = 0.1
+        self.t_p_background = .01
+
+        self.objThreshold = 30
+        self.objMinSize = 10
+        self.blobJitter = 0
+        self.objects = None
+
+        self.imageBounds = ImageBounds(0,0,0,0)
+        
+        self.edb = None
+        self.GeneratedMeasures = {}
+
+        if not filename==None:
+            #self.glCanvas.OnPaint(None)
+            self.OpenFile(filename)
+
+
     def RegenFilter(self):
         if not self.selectedDataSource == None:
             self.filter = inpFilt.resultsFilter(self.selectedDataSource, **self.filterKeys)
@@ -111,7 +164,7 @@ class visNoGui:
                 self.selectedDataSource.z_focus = self.z_focus
                 self.selectedDataSource.setMapping('focus', 'z_focus')
 
-            if 'ScannerXPos' in self.elv.evKeyNames:
+            if 'ScannerXPos' in evKeyNames:
                 x0 = 0
                 if 'Positioning.Stage_X' in self.mdh.getEntryNames():
                     x0 = self.mdh.getEntry('Positioning.Stage_X')
@@ -122,7 +175,7 @@ class visNoGui:
                 self.selectedDataSource.setMapping('ScannerX', 'scan_x')
                 self.selectedDataSource.setMapping('x', 'x + scan_x')
 
-            if 'ScannerYPos' in self.elv.evKeyNames:
+            if 'ScannerYPos' in evKeyNames:
                 y0 = 0
                 if 'Positioning.Stage_Y' in self.mdh.getEntryNames():
                     y0 = self.mdh.getEntry('Positioning.Stage_Y')
@@ -133,7 +186,7 @@ class visNoGui:
                 self.selectedDataSource.setMapping('ScannerY', 'scan_y')
                 self.selectedDataSource.setMapping('y', 'y + scan_y')
 
-            if 'ScannerXPos' in self.elv.evKeyNames or 'ScannerYPos' in self.elv.evKeyNames:
+            if 'ScannerXPos' in evKeyNames or 'ScannerYPos' in evKeyNames:
                 self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
 
 
@@ -160,9 +213,23 @@ class visNoGui:
 
 
         if 'Sample.Labelling' in self.mdh.getEntryNames():
-            self.colp.SpecFromMetadata(self.mdh)
-        else:
-            self.colp.refresh()
+            self.SpecFromMetadata()
+
+
+    def SpecFromMetadata(self):
+        labels = self.mdh.getEntry('Sample.Labelling')
+
+        for structure, dye in labels:
+            ratio = dyeRatios.getRatio(dye, self.mdh)
+
+            if not ratio == None:
+                self.fluorSpecies[structure] = ratio
+                self.fluorSpeciesDyes[structure] = dye
+                self.mapping.setMapping('p_%s' % structure, '(1.0/(ColourNorm*2*numpy.pi*fitError_Ag*fitError_Ar))*exp(-(fitResults_Ag - %f*A)**2/(2*fitError_Ag**2) - (fitResults_Ar - %f*A)**2/(2*fitError_Ar**2))' % (ratio, 1-ratio))
+
+
+
+
 
 
 
