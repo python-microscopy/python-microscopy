@@ -233,7 +233,7 @@ class TaskQueueSet(Pyro.core.ObjBase):
 
     def createQueue(self, queueType, queueName, *args, **kwargs):
         if queueName in self.taskQueues.keys():
-            raise 'queue with same name already present'
+            raise RuntimeError('queue with same name already present')
 
         self.taskQueues[queueName] = eval(queueType)(queueName, *args, **kwargs)
 		

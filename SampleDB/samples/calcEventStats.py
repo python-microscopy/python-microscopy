@@ -14,7 +14,7 @@ def getStatsChan(pipeline, chanName, file):
     if 'Camera.CycleTime' in p.mdh.getEntryNames():
         t = p.colourFilter['t']*p.mdh.getEntry('Camera.CycleTime')
     else:
-        t = p.colourFilter['t']*p.mdh.getEntry('Camera.IntgrationTime')
+        t = p.colourFilter['t']*p.mdh.getEntry('Camera.IntegrationTime')
     nEvents = t.size
     tMax = t.max()
     tMedian = np.median(t)

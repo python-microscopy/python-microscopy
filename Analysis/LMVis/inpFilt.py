@@ -40,7 +40,7 @@ class randomSource(inputFilter):
 
     def __getitem__(self, key):
         if not key in self.keys:
-            raise 'Key not defined'
+            raise RuntimeError('Key not defined')
         
         if key == 'x':
             return self.x
@@ -74,7 +74,7 @@ class h5rSource(inputFilter):
             self.h5f = tables.openFile(h5fFile)
         
         if not 'FitResults' in dir(self.h5f.root):
-            raise 'Was expecting to find a "FitResults" table'
+            raise RuntimeError('Was expecting to find a "FitResults" table')
 
         self.fitResults = self.h5f.root.FitResults[:]
 
@@ -102,7 +102,7 @@ class h5rSource(inputFilter):
             key = self.transkeys[key]
 
         if not key in self._keys:
-            raise 'Key not found'
+            raise RuntimeError('Key not found')
 
         k = key.split('_')
         
@@ -135,7 +135,7 @@ class h5rDSource(inputFilter):
             self.h5f = tables.openFile(h5fFile)
 
         if not 'DriftResults' in dir(self.h5f.root):
-            raise 'Was expecting to find a "DriftResults" table'
+            raise RuntimeError('Was expecting to find a "DriftResults" table')
 
         #allow access using unnested original names
         self._keys = unNestNames(self.h5f.root.DriftResults.description._v_nestedNames)
@@ -154,7 +154,7 @@ class h5rDSource(inputFilter):
             key = self.transkeys[key]
 
         if not key in self._keys:
-            raise 'Key not found'
+            raise RuntimeError('Key not found')
 
         k = key.split('_')
         
@@ -195,7 +195,7 @@ class textfileSource(inputFilter):
 
     def __getitem__(self, key):
         if not key in self._keys:
-            raise 'Key not found'
+            raise RuntimeError('Key not found')
 
        
         return self.res[key]

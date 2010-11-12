@@ -18,7 +18,7 @@ import tables
 import MetaData
 
 if not len(sys.argv) == 4:
-    raise 'usage: hdfWatcher filename threshold poll_time'
+    raise RuntimeError('usage: hdfWatcher filename threshold poll_time')
 
 fname = sys.argv[1]
 thresh = float(sys.argv[2])

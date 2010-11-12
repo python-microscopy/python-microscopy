@@ -798,7 +798,7 @@ class VisGUIFrame(wx.Frame):
     def OnQTLeafChange(self, event):
         leafSize = int(self.tQTLeafSize.GetValue())
         if not leafSize >= 1:
-            raise 'QuadTree leaves must be able to contain at least 1 item'
+            raise RuntimeError('QuadTree leaves must be able to contain at least 1 item')
 
         pointQT.QT_MAXRECORDS = leafSize
         self.stQTSNR.SetLabel('Effective SNR = %3.2f' % pylab.sqrt(pointQT.QT_MAXRECORDS/2.0))
@@ -2630,7 +2630,7 @@ class VisGUIFrame(wx.Frame):
             self.generatedImages.append(imf)
             imf.Show()
         else:
-            raise 'Unrecognised Data Format'
+            raise RuntimeError('Unrecognised Data Format')
 
 
 

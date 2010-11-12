@@ -84,7 +84,7 @@ if __name__ == '__main__':
 	start = int(sys.argv[3])
 	end = int(sys.argv[4])
     else: 
-        raise 'Usage: Hdf5exframes.py inFile outFile startframe endframe'
+        raise RuntimeError('Usage: Hdf5exframes.py inFile outFile startframe endframe')
 
     extractFramesF(inFile, outFile, start, end)
 

@@ -120,7 +120,7 @@ class DigiDataSwitchedAnalogLaser(Laser):
 
     def SetPower(self, power):
         if power < 0 or power > 1:
-            raise 'Error setting laser power: Power must be between 0 and 1'
+            raise RuntimeError('Error setting laser power: Power must be between 0 and 1')
         self.power = power
         if self.isOn:
             self.TurnOn() #turning on actually sets power

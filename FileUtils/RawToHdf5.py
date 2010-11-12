@@ -86,7 +86,7 @@ if __name__ == '__main__':
     elif (len(sys.argv) == 2):
         inDir = sys.argv[1]
     else: 
-        raise 'Usage: KdfStacktoHdf5.py inFile [outFile]'
+        raise RuntimeError('Usage: KdfStacktoHdf5.py inFile [outFile]')
 
 #    if not (inDir[-1] == os.sep):
 #        inDir += os.sep #append a / to directroy name if necessary

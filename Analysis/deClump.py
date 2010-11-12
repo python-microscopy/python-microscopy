@@ -68,7 +68,7 @@ def deClumpf(h5fFile):
         h5f = tables.openFile(h5fFile)
 
     if not 'FitResults' in dir(h5f.root):
-        raise 'Was expecting to find a "FitResults" table'
+        raise RuntimeError('Was expecting to find a "FitResults" table')
 
     fr = h5f.root.FitResults[:]
     

@@ -55,7 +55,7 @@ if __name__ == '__main__':
     elif (len(sys.argv) == 2):
         inDir = sys.argv[1]
     else: 
-        raise 'Usage: KdfSeqtoHdf5.py inDir [outFile]'
+        raise RuntimeError('Usage: KdfSeqtoHdf5.py inDir [outFile]')
 
     if not (inDir[-1] == os.sep):
         inDir += os.sep #append a / to directroy name if necessary
