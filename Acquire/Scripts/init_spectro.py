@@ -18,19 +18,15 @@ from Hardware.Spectrometer import specCam
 from Hardware import fakeShutters
 import time
 
+from Hardware.OrielCornerstone import Cornerstone7400
 #import PYME.cSMI as example
 
-#pz = InitBG('Fake Piezo(s)', '''
-#scope.fakePiezo = fakePiezo.FakePiezo(100)
-#scope.piezos.append((scope.fakePiezo, 1, 'Fake z-piezo'))
-
-#scope.fakeXPiezo = fakePiezo.FakePiezo(10)
-#scope.piezos.append((scope.fakeXPiezo, 1, 'Fake x-piezo'))
-
-#scope.fakeYPiezo = fakePiezo.FakePiezo(10)
-#scope.piezos.append((scope.fakeYPiezo, 1, 'Fake y-piezo'))
-#time.sleep(5)
-#''')
+pz = InitBG('Monochromator', '''
+scope.monochromator = Cornerstone7400()
+scope.monochromator.MoveTo(0,500)
+scope.piezos.append((scope.monochromator, 1, 'Monochromator'))
+scope.lasers = [scope.monochromator]
+''')
 
 #pz.join() #piezo must be there before we start camera
 cm = InitBG('Spectrometer', '''
@@ -94,13 +90,13 @@ cm.join()
 
 #scope.lasers = [scope.l405, scope.l488]
 
-#InitGUI('''
-#from PYME.Acquire.Hardware import LaserControlFrame
-#lcf = LaserControlFrame.LaserControlLight(MainFrame,scope.lasers)
-#time1.WantNotification.append(lcf.refresh)
-#lcf.Show()
-#toolPanels.append((lcf, 'Laser Control'))
-#''')
+InitGUI('''
+from PYME.Acquire.Hardware import LaserControlFrame
+lcf = LaserControlFrame.LaserControlLight(MainFrame,scope.lasers)
+time1.WantNotification.append(lcf.refresh)
+lcf.Show()
+toolPanels.append((lcf, 'Laser Control'))
+''')
 
 #InitGUI('''
 #lsf = lasersliders.LaserSliders(toolPanel, scope.lasers)
