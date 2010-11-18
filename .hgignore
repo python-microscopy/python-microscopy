@@ -9,3 +9,4 @@ build\*
 */_build/*
 *.so
 *.o
+*.class
