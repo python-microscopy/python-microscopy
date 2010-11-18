@@ -19,7 +19,7 @@ import os
 if __name__ == "__main__":
 
     if not len(sys.argv) == 2:
-        raise 'expected a directory to save the luts to'
+        raise RuntimeError('expected a directory to save the luts to')
 
     outDir = sys.argv[1]
 

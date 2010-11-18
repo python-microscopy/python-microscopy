@@ -13,7 +13,7 @@
 import tables
 
 if not (len(sys.argv) in [2,3]):
-    raise 'Usage: kdfToImage infile [outfile]'
+    raise RuntimeError('Usage: kdfToImage infile [outfile]')
 
 inFile = sys.argv[1]
 

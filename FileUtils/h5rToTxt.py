@@ -39,7 +39,7 @@ if __name__ == '__main__':
     elif (len(sys.argv) == 2):
         inFile = sys.argv[1]
     else:
-        raise 'Usage: h5rToTxt.py inDir [outFile]'
+        raise RuntimeError('Usage: h5rToTxt.py inDir [outFile]')
 
     if (len(sys.argv) == 2): #generate an output file name
         outFile = os.path.splitext(inFile)[0] + '.txt'

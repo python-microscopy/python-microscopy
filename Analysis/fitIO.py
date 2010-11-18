@@ -51,7 +51,7 @@ def loadResults(fname = None):
     if fname == None:
         fname = wx.FileSelector('Please select pickled fit results', wildcard='Pickle objects|*.pik', default_extension='pik')
         if fname == '':
-            raise 'No file selected'
+            raise RuntimeError('No file selected')
 
     fid = open(fname, 'rb')
 

@@ -170,7 +170,7 @@ class DSViewFrame(wx.Frame):
             self.vp.ds = self.ds
             self.update()
         else:
-            raise 'invalid position'
+            raise RuntimeError('invalid position')
 
     def OnKeyPress(self, event):
         #print 'hi'
@@ -203,7 +203,7 @@ class MyApp(wx.App):
         if (len(sys.argv) > 1):
             fnms = os.listdir(sys.argv[1])
         else:
-            raise 'Must provide list of files on command line'
+            raise RuntimeError('Must provide list of files on command line')
 
         if (len(sys.argv) == 3):
             bg = read_kdf.ReadKdfData(sys.argv[2])[:,:,:,0]
