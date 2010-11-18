@@ -13,6 +13,8 @@ class Cornerstone7400(lasers.Laser):
         self.minW = minWave
         self.maxW = maxWave
 
+        self.isOn = self.getShutter()
+
     def _command(self, command):
         self.com.flush()
         time.sleep(0.05)
@@ -90,10 +92,12 @@ class Cornerstone7400(lasers.Laser):
     #'Laser' compatibility functions (to enable shutter)
 
     def IsOn(self):
-        return self.getShutter()
+        return self.isOn
 
     def TurnOn(self):
         self.setShutter(True)
+        self.isOn = True
 
     def TurnOff(self):
         self.setShutter(False)
+        self.isOn = False
