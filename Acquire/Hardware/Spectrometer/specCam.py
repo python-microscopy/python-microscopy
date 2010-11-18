@@ -58,7 +58,7 @@ class aqThread(threading.Thread):
             while ((not self.aqRunning) or (self.numBufferedImages > self.bufferlength/2.)) and (not self.kill) :
                 time.sleep(.01)
             
-            self.buffer[:,self.bufferWritePos] = self.spectrometer.getSpectrum().astype('uint16')
+            self.buffer[:,self.bufferWritePos] = self.spectrometer.getSpectrum().clip(0, 2e15).astype('uint16')
             self.bufferWritePos +=1
             if self.bufferWritePos >= self.bufferlength: #wrap around
                 self.bufferWritePos = 0
