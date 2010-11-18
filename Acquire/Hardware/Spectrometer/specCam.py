@@ -135,7 +135,7 @@ class SpecCamera:
         self.compT.start()
 
         self.contMode = True
-        self.shutterOpen = True
+        #self.shutterOpen = True
 
 #        #let us work with andor dialog
 #        self.HorizShiftSpeeds = [[[10]]]

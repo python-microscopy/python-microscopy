@@ -130,6 +130,9 @@ class microscope:
     def pr_refr2(self, source):
         self.vp.imagepanel.Refresh()
 
+    def pr_refr3(self, souce):
+        self.sp.refr()
+
     def satCheck(self, source): # check for saturation
         im = CDataStack_AsArray(source.ds, 0)
         IMax = im.max()
@@ -222,33 +225,58 @@ class microscope:
 
         self.pa = previewaquisator.PreviewAquisator(self.chaninfo,self.cam, self.shutters)
         self.pa.Prepare()
-        
-        if 'vp' in dir(self):
-                self.vp.SetDataStack(self.pa.ds)
-        elif (Notebook == None):
-            self.prev_fr = prevviewer.PrevViewFrame(Parent, "Live Preview", self.pa.ds)
-            self.pa.WantFrameGroupNotification.append(self.pr_refr)
-            self.prev_fr.genStatusText = self.genStatus
-            self.prev_fr.Show()
+
+        if self.cam.GetPicHeight() > 1:
+            if 'vp' in dir(self):
+                    self.vp.SetDataStack(self.pa.ds)
+            elif (Notebook == None):
+                self.prev_fr = prevviewer.PrevViewFrame(Parent, "Live Preview", self.pa.ds)
+                self.pa.WantFrameGroupNotification.append(self.pr_refr)
+                self.prev_fr.genStatusText = self.genStatus
+                self.prev_fr.Show()
+            else:
+                self.vp = viewpanel.MyViewPanel(Notebook, self.pa.ds)
+                self.vp.crosshairs = False
+
+                self.vsp = disppanel.dispSettingsPanel(Notebook, self.vp)
+
+
+                Parent.time1.WantNotification.append(self.vsp.RefrData)
+                #Notebook.AddPage(imageId=-1, page=self.vp, select=True,text='Preview')
+                Notebook.AddPage(page=self.vp, select=True,caption='Preview')
+                #Notebook._mgr.AddPane
+
+                Parent.AddCamTool(self.vsp, 'Display')
+                #             Notebook.AddPage(page=self.vsp, select=False,caption='Display')
+                #             Notebook.Split(3, wx.RIGHT)
+                #             Notebook.SetSelection(2)
+                #             Notebook.SetSelection(3)
+
+            self.pa.WantFrameGroupNotification.append(self.pr_refr2)
         else:
-            self.vp = viewpanel.MyViewPanel(Notebook, self.pa.ds)
-            self.vp.crosshairs = False
+            #1d data - use graph instead
+            from PYME.Analysis.LMVis import fastGraph
+            if 'sp' in dir(self):
+                    pass
+            elif (Notebook == None):
+                self.prev_fr = prevviewer.PrevViewFrame(Parent, "Preview", self.pa.ds)
+                self.pa.WantFrameGroupNotification.append(self.pr_refr)
+                self.prev_fr.genStatusText = self.genStatus
+                self.prev_fr.Show()
+            else:
+                self.sp = fastGraph.SpecGraphPanel(Notebook, self)
 
-            self.vsp = disppanel.dispSettingsPanel(Notebook, self.vp)
+                Notebook.AddPage(page=self.sp, select=True,caption='Preview')
+                #Notebook._mgr.AddPane
 
-            
-            Parent.time1.WantNotification.append(self.vsp.RefrData)
-            #Notebook.AddPage(imageId=-1, page=self.vp, select=True,text='Preview')
-            Notebook.AddPage(page=self.vp, select=True,caption='Preview')
-            #Notebook._mgr.AddPane
+                #Parent.AddCamTool(self.vsp, 'Display')
+                #             Notebook.AddPage(page=self.vsp, select=False,caption='Display')
+                #             Notebook.Split(3, wx.RIGHT)
+                #             Notebook.SetSelection(2)
+                #             Notebook.SetSelection(3)
 
-            Parent.AddCamTool(self.vsp, 'Display')
-            #             Notebook.AddPage(page=self.vsp, select=False,caption='Display')
-            #             Notebook.Split(3, wx.RIGHT)
-            #             Notebook.SetSelection(2)
-            #             Notebook.SetSelection(3)
+            self.pa.WantFrameGroupNotification.append(self.pr_refr3)
 
-        self.pa.WantFrameGroupNotification.append(self.pr_refr2)
         if 'shutterOpen' in dir(self.cam):
             self.pa.WantFrameGroupNotification.append(self.satCheck)
             

@@ -123,6 +123,13 @@ cm.join()
 #splt = splitter.Splitter(MainFrame, mControls, scope)
 #''')
 
+#InitGUI('''
+#from PYME.Analysis.LMVis import fastGraph
+#fg = fastGraph.SpecGraphPanel(MainFrame, scope)
+#MainFrame.AddPage(page=fg, select=False, caption='Spectrum')
+#time1.WantNotification.append(fg.refr)
+#''')
+
 from PYME import cSMI
 
 Is = []
