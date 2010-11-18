@@ -70,7 +70,7 @@ class H5Exporter(Exporter):
 
         nframes = (zslice.stop - zslice.start)/zslice.step
 
-        xSize, ySize = data[xslice, yslice, 0].squeeze().shape
+        xSize, ySize = data[xslice, yslice, 0].shape[:2]
 
         ims = h5out.createEArray(h5out.root,'ImageData',tables.UInt16Atom(),(0,xSize,ySize), filters=filters, expectedrows=nframes)
 

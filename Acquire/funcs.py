@@ -333,7 +333,7 @@ class microscope:
         self.pa.Prepare(True)
         self.pa.start()
 
-        self.dfr = dsviewer.DSViewFrame(None, "New Aquisition", CDataStack_AsArray(self.sa.ds, 0), self.sa.log, mdh=self.sa.mdh)
+        self.dfr = dsviewer.DSViewFrame(None, "New Aquisition", CDataStack_AsArray(self.sa.ds, 0).squeeze(), self.sa.log, mdh=self.sa.mdh)
         self.dfr.Show()
         self.sa.ds = None
 
