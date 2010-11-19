@@ -180,6 +180,13 @@ class SpecCamera:
     def SetIntegTime(self, iTime): 
         self.intTime=iTime
         self.compT.spectrometer.setIntegrationTime(iTime)
+
+    def SetAveraging(self, nAvg):
+        self.compT.spectrometer.setScansToAverage(nAvg)
+
+    def GetAveraging(self):
+        return self.compT.spectrometer.getScansToAverage()
+
     def GetIntegTime(self): 
         return self.intTime
     
@@ -336,6 +343,12 @@ class SpecCamera:
         mdh.setEntry('Camera.NoiseFactor', 1.41)
         mdh.setEntry('Camera.ElectronsPerCount', 1)
         mdh.setEntry('Camera.ADOffset', 0)
+
+        mdh.setEntry('Camera.Averaging', self.GetAveraging())
+        mdh.setEntry('Camera.ElectricDarkCorrect', self.compT.spectrometer.getCorrectForElectricalDark())
+        mdh.setEntry('Camera.NonlinearityCorrect', self.compT.spectrometer.getCorrectForDetectorNonlinearity())
+
+        mdh.setEntry('Spectrum.Wavelengths', self.XVals)
 
         #mdh.setEntry('Simulation.Fluorophores', self.fluors.fl)
         #mdh.setEntry('Simulation.LaserPowers', self.laserPowers)
