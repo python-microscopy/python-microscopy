@@ -81,11 +81,13 @@ class DataWrap: #permit indexing with more dimensions larger than len(shape)
             keys = keys[:len(self.data.shape)]
         if self.dim_1_is_z:
             keys = [keys[2]] + keys[:2] + keys[3:]
+
+        print keys
         
         if self.type == 'Array':
             r = self.data.__getitem__(keys)
         else:
-            r = np.concatenate([self.data.getSlice(i)[keys[1], keys[2]][:,:,None] for i in np.mgrid[keys[0]] if i < self.data.getNumSlices()], 2)
+            r = np.concatenate([np.atleast_2d(self.data.getSlice(i)[keys[1], keys[2]])[:,:,None] for i in range(*keys[0].indices(self.data.getNumSlices()))], 2)
         
         self.oldData = r
         
