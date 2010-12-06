@@ -1,4 +1,3 @@
-import os.path
 #!/usr/bin/python
 import sys
 import os
