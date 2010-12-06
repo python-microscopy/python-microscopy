@@ -72,7 +72,8 @@ The filter allows a valid range for each parameter to be specified, thus restric
 
 .. image:: /images/filter_panel.png
 
-The filter is controlled using the the filter pane of the sidebar(which can be expanded by clicking the icon in the right corner). Right clicking on the list gives you the option to add, and if a parameter is currently selected, edit or delete a parameter in the filter\footnote{on windows, you sometimes need to click the right mouse button 2-3 times before the menu pops up.}. Double clicking on a filter also allows the filter to be edited. Editing filters brings up a dialog as shown below. A histogram of the selected variable is displayed and the current bounds indicated by red vertical lines. These lines can be dragged with the mouse to change the filter. The filter editor (and all other histogram editors) also understand the following keys if they have focus:
+The filter is controlled using the the filter pane of the sidebar(which can be expanded by clicking the icon in the right corner). Right clicking on the list gives you the option to add, and if a parameter is currently selected, edit or delete a parameter in the filter\footnote{on windows, you sometimes need to click the right mouse button 2-3 times before the menu pops up.}. Double clicking on a filter also allows the filter to be edited. Editing filters brings up a dialog as shown below. A histogram of the selected variable is displayed and the current bounds indicated by red vertical lines. These lines can be dragged with the mouse to change the filter. The filter editor (and all other histogram editors) also understand the following keys if they have focus:
+
 
 .. image:: /images/filter_edit.png
 
@@ -111,7 +112,8 @@ In addition to the **Display** panel, each mode may display a panel with mode-sp
 **Triangles Mode**
   In this mode the point positions are triangulated and the triangles displayed with an intensity inversely proportional to their area. See also Image Generation.
 
-**Quad-Tree**  A quad tree is generated from the event data and each leaf is coloured with an intensity which is proportional to the number of points it contains, and inversely proportional to it's size. The leaf capacity (ie the size at which a leaf will be subdivided) can be adjusted. For more info see paper.
+**Quad-Tree**
+  A quad tree is generated from the event data and each leaf is coloured with an intensity which is proportional to the number of points it contains, and inversely proportional to it's size. The leaf capacity (ie the size at which a leaf will be subdivided) can be adjusted. For more info see paper.
 
 **Voronoi Diagram**
   Similar to triangulation but using the voronoi diagram of the points rather than the triangularisation. Much slower - would suggest only applying to a subset of the image data.
@@ -144,7 +146,7 @@ Drift correction is controlled using the **Drift Correction** pane in the sideba
 
 The drift expressions automatically recognise variable names from the loaded data, as well as several mathematical functions and constants [#]_. Any remaining names are assigned as parameters to be fitted, and will appear in the parameters box. It is always a good idea to check that the desired parameters appear in the parameters box, and that nothing else does. Two drift expression presets, namely linear and piecewise linear are available from the presets drop down.
 
-.. [#] a list of functions/constants can be obtained by entering ``from PYME.Analysis import intelliFit; dir(intelliFit)`` in the console window. Note that there's quite a few functions defined which are likely to be irrelevant for the fitting.
+.. [#] a list of functions/constants can be obtained by entering ``from PYME.Analysis.DriftCorrection import intelliFit; dir(intelliFit)`` in the console window. Note that there's quite a few functions defined which are likely to be irrelevant for the fitting.
 
 Once a pair of drift expressions has been chosen, the parameters can be edited by left clicking on their value. This can be used to set start values for the fit(although this is not typically required for the simpler - linear, piecewise linear - fits), or to experiment manually as to the effect of altering the parameters on the image. Clicking **Fit** fits the parameters by maximisation of the previously discussed entropy measure. 
 
@@ -169,7 +171,8 @@ After clicking on **OK**, the drift will be estimated and a graph such as that s
 
 
 .. image:: /images/drift_est_corr_graph.png 
-.. image:: /images/drift_est_corr_graph_2.png
+.. image:: /images/drift_est_corr_graph_2.png
+
 
 
 Image Generation

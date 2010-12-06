@@ -54,7 +54,14 @@ try:
 except:
     pass
 
-from PYME.Analysis import intelliFit
+#try importing our drift correction stuff
+HAVE_DRIFT_CORRECTION = False
+try:
+    from PYME.Analysis import intelliFit
+    HAVE_DRIFT_CORRECTION = True
+except:
+    pass
+
 from PYME.Analysis import piecewiseMapping
 from PYME.Analysis import MetadataTree
 
@@ -70,7 +77,7 @@ from PYME.DSView import eventLogViewer
 
 #import threading
 
-from PYME.misc import editList
+
 from PYME.misc.auiFloatBook import AuiNotebookWithFloatingPages
 
 from PYME.Analysis.LMVis import statusLog
@@ -121,13 +128,7 @@ class VisGUIFrame(wx.Frame):
         self.mapping = None
         self.colourFilter = None
 
-        self.driftCorrParams = {}
-        self.driftCorrFcn = None
-        self.optimiseFcn = 'fmin'
-        self.driftExprX = 'x + a*t'
-        self.driftExprY = 'y + b*t'
-        self.driftExprZ = 'z + c*t'
-        self.fitZDrift = False
+        
 
         self.fluorSpecies = {}
         self.chromaticShifts = {}
@@ -269,7 +270,10 @@ class VisGUIFrame(wx.Frame):
 
         self.GenDataSourcePanel()
         self.GenFilterPanel()
-        self.GenDriftPanel()
+
+        if HAVE_DRIFT_CORRECTION:
+            self.GenDriftPanel()
+            
         self.GenColourFilterPanel()
         self.GenDisplayPanel()
         
@@ -997,254 +1001,7 @@ class VisGUIFrame(wx.Frame):
 
         return pointColour
 
-    def GenDriftPanel(self):
-        item = afp.foldingPane(self._pnl, -1, caption="Drift Correction", pinned = False)
-#        item = self._pnl.AddFoldPanel("Drift Correction", collapsed=True,
-#                                      foldIcons=self.Images)
-
-        pan = wx.Panel(item, -1)
-        bsizer = wx.BoxSizer(wx.VERTICAL)
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(pan, -1, "x' = "), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        self.tXExpr = wx.TextCtrl(pan, -1, self.driftExprX, size=(130, -1))
-        hsizer.Add(self.tXExpr, 2,wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5)
-
-        bsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(pan, -1, "y' = "), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        self.tYExpr = wx.TextCtrl(pan, -1, self.driftExprY, size=(130,-1))
-        hsizer.Add(self.tYExpr, 2,wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5)
-        bsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(pan, -1, "z' = "), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        self.tZExpr = wx.TextCtrl(pan, -1, self.driftExprZ, size=(100,-1))
-        self.tZExpr.Enable(False)
-        hsizer.Add(self.tZExpr, 2,wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5)
-       
-        self.cbDriftFitZ = wx.CheckBox(pan, -1, 'Fit')
-        hsizer.Add(self.cbDriftFitZ, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
-        #bsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
-
-        bDriftBruteZ = wx.Button(pan, -1, 'BF', style=wx.BU_EXACTFIT)
-        hsizer.Add(bDriftBruteZ, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
-        bsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
-        
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(pan, -1, "Presets:"), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        self.cDriftPresets = wx.Choice(pan, -1, choices=['', 'Linear', 'Piecewise Linear'], size=(120,-1))
-        hsizer.Add(self.cDriftPresets, 2,wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5)
-
-        bsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
-
-       
-
-        pan.SetSizer(bsizer)
-        bsizer.Fit(pan)
-
-
-        item.AddNewElement(pan)
-        #self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
-
-        self.tXExpr.Bind(wx.EVT_TEXT, self.OnDriftExprChange)
-        self.tYExpr.Bind(wx.EVT_TEXT, self.OnDriftExprChange)
-        self.tZExpr.Bind(wx.EVT_TEXT, self.OnDriftExprChange)
-        self.cbDriftFitZ.Bind(wx.EVT_CHECKBOX, self.OnDriftZToggle)
-        self.cDriftPresets.Bind(wx.EVT_CHOICE, self.OnDriftPreset)
-
-
-        self.lDriftParams = editList.EditListCtrl(item, -1, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.SUNKEN_BORDER, size=(-1, 100))
-
-        item.AddNewElement(self.lDriftParams)
-        #self._pnl.AddFoldPanelWindow(item, self.lDriftParams, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
-
-        self.lDriftParams.InsertColumn(0, 'Parameter')
-        self.lDriftParams.InsertColumn(1, 'Value')
-
-        self.lDriftParams.makeColumnEditable(1)
-
-        #self.RefreshDriftParameters()
-
-        self.OnDriftExprChange()
-
-        self.lDriftParams.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnDriftParameterChange)
-
-        pan = wx.Panel(item, -1)
-        bsizer = wx.BoxSizer(wx.VERTICAL)
-
-        bZero = wx.Button(pan, -1, 'Zero Parameters', style=wx.BU_EXACTFIT)
-        bsizer.Add(bZero, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 0)
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        bFit = wx.Button(pan, -1, 'Fit', size=(30,-1))
-        hsizer.Add(bFit, 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        bPlot = wx.Button(pan, -1, 'Plt', size=(30,-1))
-        hsizer.Add(bPlot, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        bApply = wx.Button(pan, -1, 'Apply', size=(50,-1))
-        hsizer.Add(bApply, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        bRevert = wx.Button(pan, -1, 'Revert', size=(50,-1))
-        hsizer.Add(bRevert, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        bsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
-
-        
-
-        pan.SetSizer(bsizer)
-        bsizer.Fit(pan)
-
-        item.AddNewElement(pan)
-        #self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
-
-        bFit.Bind(wx.EVT_BUTTON, self.OnDriftFit)
-        bApply.Bind(wx.EVT_BUTTON, self.OnDriftApply)
-        bRevert.Bind(wx.EVT_BUTTON, self.OnDriftRevert)
-        bPlot.Bind(wx.EVT_BUTTON, self.OnDriftPlot)
-        bZero.Bind(wx.EVT_BUTTON, self.OnDriftZeroParams)
-        bDriftBruteZ.Bind(wx.EVT_BUTTON, self.OnDriftZBruteForce)
-
-
-        self._pnl.AddPane(item)
-
-    def OnDriftFit(self, event):
-        self.driftCorrParams.update(intelliFit.doFitT(self.driftCorrFcn, self.driftCorrParams, self.filter, self.fitZDrift, self.optimiseFcn))
-        self.RefreshDriftParameters()
-
-    def OnDriftZBruteForce(self, event):
-        self.driftCorrParams.update(intelliFit.bruteForceZ(self.driftCorrFcn, self.driftCorrParams, self.filter))
-        self.RefreshDriftParameters()
-
-    def OnDriftZeroParams(self, event):
-        for p in self.driftCorrFcn[0] + self.driftCorrFcn[-3]:
-            self.driftCorrParams[p] = 0
-        
-        self.RefreshDriftParameters()
-
-    def OnDriftPreset(self, event):
-        sel = self.cDriftPresets.GetStringSelection()
-        driftExprX = self.driftExprX
-        driftExprY = self.driftExprY
-
-        if sel == 'Linear':
-            driftExprX = 'x + a*t'
-            driftExprY = 'y + b*t'
-        elif sel == 'Piecewise Linear':
-            dlg = wx.TextEntryDialog(self, 'Please enter number of segments', 'Piecewise Linear', '5')
-            if dlg.ShowModal() == wx.ID_OK:
-                nSegs = int(dlg.GetValue())
-
-                #generate segments evenly spaced in point density
-                t = self.colourFilter['t'].copy()
-                t.sort()
-                tvals = t[np.linspace(0, len(t)-1, nSegs+1).astype('i')][1:-1]
-
-                stvals = '[' + ', '.join(['%1.1e' % tv for tv in tvals]) + ']'
-                sgxvals = '[' + ', '.join(['a%d' % i for i in range(nSegs)]) + ']'
-                sgyvals = '[' + ', '.join(['b%d' % i for i in range(nSegs)]) + ']'
-
-                driftExprX = 'x + piecewiseLinear(t, %s, %s)' % (stvals, sgxvals)
-                driftExprY = 'y + piecewiseLinear(t, %s, %s)' % (stvals, sgyvals)
-
-        self.tXExpr.SetValue(driftExprX)
-        self.tYExpr.SetValue(driftExprY)
-
-        self.cDriftPresets.SetSelection(0)
-
-#        if self.filter == None:
-#            filtKeys = []
-#        else:
-#            filtKeys = self.filter.keys()
-#
-#        self.driftCorrFcn = intelliFit.genFcnCodeT(self.driftExprX,self.driftExprY, filtKeys)
-#
-#        #self.driftCorrParams = {}
-#        for p in self.driftCorrFcn[0]:
-#            if not p in self.driftCorrParams.keys():
-#                self.driftCorrParams[p] = 0
-#
-#        self.RefreshDriftParameters()
-
-    def OnDriftApply(self, event):
-        self.mapping.setMapping('x', self.driftCorrFcn[2])
-        self.mapping.setMapping('y', self.driftCorrFcn[3])
-
-        if True: #self.fitZDrift:
-            self.mapping.setMapping('z', self.driftCorrFcn[4])
-
-        self.mapping.__dict__.update(self.driftCorrParams)
-
-        self.Triangles = None
-        self.edb = None
-        self.GeneratedMeasures = {}
-        self.Quads = None
-        
-        self.RefreshView()
-
-    def OnDriftRevert(self, event):
-        self.mapping.mappings.pop('x')
-        self.mapping.mappings.pop('y')
-        if 'z' in self.mapping.mappings.keys():
-            self.mapping.mappings.pop('z')
-
-        self.Triangles = None
-        self.edb = None
-        self.GeneratedMeasures = {}
-        self.Quads = None
-
-        self.RefreshView()
-
-    def OnDriftPlot(self, event):
-        intelliFit.plotDriftResultT(self.driftCorrFcn, self.driftCorrParams, self.filter)
-
-    def OnDriftZToggle(self, event=None):
-        self.fitZDrift = self.cbDriftFitZ.GetValue()
-        self.tZExpr.Enable(self.fitZDrift)
-
-    def OnDriftExprChange(self, event=None):
-        self.driftExprX = self.tXExpr.GetValue()
-        self.driftExprY = self.tYExpr.GetValue()
-        self.driftExprZ = self.tZExpr.GetValue()
-        if self.filter == None:
-            filtKeys = []
-        else:
-            filtKeys = self.filter.keys()
-
-        self.driftCorrFcn = intelliFit.genFcnCodeT(self.driftExprX,self.driftExprY,self.driftExprZ, filtKeys)
-
-        #self.driftCorrParams = {}
-        for p in self.driftCorrFcn[0]+ self.driftCorrFcn[-3]:
-            if not p in self.driftCorrParams.keys():
-                self.driftCorrParams[p] = 0
-
-        self.RefreshDriftParameters()
-
-    def OnDriftParameterChange(self, event=None):
-        parameterNames = self.driftCorrFcn[0] + self.driftCorrFcn[-3]
-
-        pn = parameterNames[event.m_itemIndex]
-
-        self.driftCorrParams[pn] = float(event.m_item.GetText())
-
-    def RefreshDriftParameters(self):
-        parameterNames = self.driftCorrFcn[0] + self.driftCorrFcn[-3]
-
-        self.lDriftParams.DeleteAllItems()
-
-        for pn in parameterNames:
-            ind = self.lDriftParams.InsertStringItem(sys.maxint, pn)
-            self.lDriftParams.SetStringItem(ind,1, '%1.3g' % self.driftCorrParams[pn])
-
-        self.lDriftParams.SetColumnWidth(0, 80)
-        self.lDriftParams.SetColumnWidth(1, 80)
+    
 
     def CreateMenuBar(self):
 
