@@ -1,5 +1,4 @@
 #!/usr/bin/python
-
 ##################
 # VisGUI.py
 #
@@ -10,7 +9,6 @@
 #
 ##################
 
-#!/usr/bin/python
 import wx
 import wx.py.shell
 

@@ -23,14 +23,6 @@ class Pipeline:
         self.mapping = None
         self.colourFilter = None
 
-        self.driftCorrParams = {}
-        self.driftCorrFcn = None
-        self.optimiseFcn = 'fmin'
-        self.driftExprX = 'x + a*t'
-        self.driftExprY = 'y + b*t'
-        self.driftExprZ = 'z + c*t'
-        self.fitZDrift = False
-
         self.fluorSpecies = {}
         self.fluorSpeciesDyes = {}
         self.chromaticShifts = {}
