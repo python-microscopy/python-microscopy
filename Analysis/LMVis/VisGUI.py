@@ -57,7 +57,7 @@ except:
 #try importing our drift correction stuff
 HAVE_DRIFT_CORRECTION = False
 try:
-    from PYME.Analysis import intelliFit
+    from PYME.Analysis.DriftCorrection.driftGUI import CreateDriftPane
     HAVE_DRIFT_CORRECTION = True
 except:
     pass
@@ -272,7 +272,8 @@ class VisGUIFrame(wx.Frame):
         self.GenFilterPanel()
 
         if HAVE_DRIFT_CORRECTION:
-            self.GenDriftPanel()
+            CreateDriftPane(self._pnl, self.mapping, self)
+            #self.GenDriftPanel()
             
         self.GenColourFilterPanel()
         self.GenDisplayPanel()
@@ -370,6 +371,14 @@ class VisGUIFrame(wx.Frame):
         dsind = self.dsRadioIds.index(event.GetId())
         self.selectedDataSource = self.dataSources[dsind]
         self.RegenFilter()
+
+    def ClearGenerated(self):
+        self.Triangles = None
+        self.edb = None
+        self.GeneratedMeasures = {}
+        self.Quads = None
+
+        self.RefreshView()
 
     def GenDisplayPanel(self):
         item = afp.foldingPane(self._pnl, -1, caption="Display", pinned = True)
