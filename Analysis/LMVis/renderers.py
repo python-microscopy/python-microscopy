@@ -123,6 +123,7 @@ class ColourRenderer(CurrentRenderer):
             imb = self._getImBounds()
             
             colours =  dlg.getColour()
+            print colours
             oldC = self.visFr.colourFilter.currentColour
 
             ims = []
@@ -138,6 +139,8 @@ class ColourRenderer(CurrentRenderer):
             imfc.Show()
 
             self.visFr.colourFilter.setColour(oldC)
+        else:
+            imfc = None
 
         dlg.Destroy()
         return imfc
@@ -197,7 +200,7 @@ class Gaussian3DRenderer(GaussianRenderer):
         jitScaleZ = dlg.getJitterScaleZ()
 
         jitVals = self._genJitVals(jitParamName, jitScale)
-        jitVals = self._genJitValsZ(jitParamNameZ, jitScaleZ)
+        jitValsZ = self._genJitVals(jitParamNameZ, jitScaleZ)
 
         return visHelpers.rendGauss3D(self.visFr.colourFilter['x'],self.visFr.colourFilter['y'],self.visFr.colourFilter['z'], jitVals, jitValsZ, imb, pixelSize, dlg.getZBounds(), dlg.getZSliceThickness())
 
@@ -212,10 +215,10 @@ class TriangleRenderer(ColourRenderer):
         pixelSize = dlg.getPixelSize()
         jitParamName = dlg.getJitterVariable()
         jitScale = dlg.getJitterScale()
-        #jitParamNameZ = dlg.getJitterVariableZ()
-        #jitScaleZ = dlg.getJitterScaleZ()
 
         jitVals = self._genJitVals(jitParamName, jitScale)
+
+        print dlg.getMCProbability(), dlg.getNumSamples(), len(self.visFr.colourFilter['x']), len(self.visFr.colourFilter['y']), len(jitVals)
 
         if dlg.getSoftRender():
             status = statusLog.StatusLogger("Rendering triangles ...")
@@ -237,6 +240,6 @@ class Triangle3DRenderer(TriangleRenderer):
         jitScaleZ = dlg.getJitterScaleZ()
 
         jitVals = self._genJitVals(jitParamName, jitScale)
-        jitVals = self._genJitValsZ(jitParamNameZ, jitScaleZ)
+        jitValsZ = self._genJitVals(jitParamNameZ, jitScaleZ)
 
-        return visHelpers.rendJitTet(self.visFr.colourFilter['x'],self.visFr.colourFilter['y'],self.visFr.colourFilter['z'], jitVals, jitValsZ, imb, pixelSize, dlg.getZBounds(), dlg.getZSliceThickness())
+        return visHelpers.rendJitTet(self.visFr.colourFilter['x'],self.visFr.colourFilter['y'],self.visFr.colourFilter['z'], dlg.getNumSamples(), jitVals, jitValsZ, dlg.getMCProbability(), imb, pixelSize, dlg.getZBounds(), dlg.getZSliceThickness())
