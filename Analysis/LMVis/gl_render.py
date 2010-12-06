@@ -955,7 +955,7 @@ class LMGLCanvas(GLCanvas):
 
     def jitMCT(self,x,y,jsig, mcp):
         from matplotlib import delaunay
-        Imc = numpy.rand(len(x)) < mcp
+        Imc = numpy.random.normal(size=len(x)) < mcp
         if type(jsig) == numpy.ndarray:
             #print jsig.shape, Imc.shape
             jsig = jsig[Imc]

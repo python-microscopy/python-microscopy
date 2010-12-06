@@ -181,7 +181,10 @@ class GenImageDialog(wx.Dialog):
             return [None]
 
     def getZSliceThickness(self):
-        return float(self.tZThickness.GetValue())
+        if 'tZThickness' in dir(self):
+            return float(self.tZThickness.GetValue())
+        else:
+            return 0
 
     def getZBounds(self):
         return self.hZRange.GetValue()

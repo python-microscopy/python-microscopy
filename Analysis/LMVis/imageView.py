@@ -733,7 +733,8 @@ class MultiChannelImageViewFrame(wx.Frame):
 
 
     def OnClose(self, event):
-        self.parent.generatedImages.remove(self)
+        if self in self.parent.generatedImages:
+            self.parent.generatedImages.remove(self)
         self.Destroy()
 
     def OnExport(self, event):
