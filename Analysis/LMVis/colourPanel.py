@@ -286,7 +286,7 @@ class colourPanel(wx.Panel):
             self.visFr.mapping.setMapping('p_%s' % key, '(1.0/(ColourNorm*2*numpy.pi*fitError_Ag*fitError_Ar))*exp(-(fitResults_Ag - %f*A)**2/(2*fitError_Ag**2) - (fitResults_Ar - %f*A)**2/(2*fitError_Ar**2))' % (val, 1-val))
 
             self.visFr.UpdatePointColourChoices()
-            self.visFr.UpdateColourFilterChoices()
+            self.visFr.colourFilterPane.UpdateColourFilterChoices()
             
 
         dlg.Destroy()
@@ -301,7 +301,7 @@ class colourPanel(wx.Panel):
         self.visFr.mapping.mappings.pop('p_%s' % it.GetText())
 
         self.visFr.UpdatePointColourChoices()
-        self.visFr.UpdateColourFilterChoices()
+        self.visFr.colourFilterPane.UpdateColourFilterChoices()
 
         self.refresh()
 
@@ -350,7 +350,7 @@ class colourPanel(wx.Panel):
             self.visFr.mapping.setMapping('p_%s' % key, '(1.0/(ColourNorm*2*numpy.pi*fitError_Ag*fitError_Ar))*exp(-(fitResults_Ag - %f*A)**2/(2*fitError_Ag**2) - (fitResults_Ar - %f*A)**2/(2*fitError_Ar**2))' % (val, 1-val))
 
         self.visFr.UpdatePointColourChoices()
-        self.visFr.UpdateColourFilterChoices()
+        self.visFr.colourFilterPane.UpdateColourFilterChoices()
 
         self.refresh()
 
@@ -372,7 +372,7 @@ class colourPanel(wx.Panel):
                 self.visFr.mapping.setMapping('p_%s' % structure, '(1.0/(ColourNorm*2*numpy.pi*fitError_Ag*fitError_Ar))*exp(-(fitResults_Ag - %f*A)**2/(2*fitError_Ag**2) - (fitResults_Ar - %f*A)**2/(2*fitError_Ar**2))' % (ratio, 1-ratio))
 
         self.visFr.UpdatePointColourChoices()
-        self.visFr.UpdateColourFilterChoices()
+        self.visFr.colourFilterPane.UpdateColourFilterChoices()
 
         self.refresh()
 

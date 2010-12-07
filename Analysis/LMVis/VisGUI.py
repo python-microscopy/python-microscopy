@@ -19,7 +19,7 @@ from PYME.Analysis.LMVis import gl_render
 from PYME.Analysis.LMVis import workspaceTree
 import sys
 from PYME.Analysis.LMVis import inpFilt
-from PYME.Analysis.LMVis import editFilterDialog
+
 import pylab
 from PYME.misc import extraCMaps
 from PYME.FileUtils import nameUtils
@@ -29,23 +29,17 @@ from PYME.Analysis.EdgeDB import edges
 import os
 import gl_render3D
 
-#try:
-#    import delaunay as delny
-#except:
-#    pass
-
 from matplotlib import delaunay
 
-from PYME.Analysis.QuadTree import pointQT, QTrend
+from PYME.Analysis.QuadTree import pointQT
 #import Image
 
-from PYME.Analysis.LMVis import genImageDialog
 from PYME.Analysis.LMVis import importTextDialog
 from PYME.Analysis.LMVis import visHelpers
 from PYME.Analysis.LMVis import imageView
-from PYME.Analysis.LMVis import histLimits
 from PYME.Analysis.LMVis import colourPanel
 from PYME.Analysis.LMVis import renderers
+
 try:
 #    from PYME.Analysis.LMVis import gen3DTriangs
     from PYME.Analysis.LMVis import recArrayView
@@ -60,6 +54,10 @@ try:
     HAVE_DRIFT_CORRECTION = True
 except:
     pass
+
+from PYME.Analysis.LMVis.colourFilterGUI import CreateColourFilterPane
+from PYME.Analysis.LMVis.displayPane import CreateDisplayPane
+from PYME.Analysis.LMVis.filterPane import CreateFilterPane
 
 from PYME.Analysis import piecewiseMapping
 from PYME.Analysis import MetadataTree
@@ -114,8 +112,6 @@ class VisGUIFrame(wx.Frame):
         self.mdp = None
         self.rav = None
 
-        self._pc_clim_change = False
-
         self.filesToClose = []
         self.generatedImages = []
 
@@ -126,8 +122,6 @@ class VisGUIFrame(wx.Frame):
         self.filter = None
         self.mapping = None
         self.colourFilter = None
-
-        
 
         self.fluorSpecies = {}
         self.chromaticShifts = {}
@@ -144,9 +138,6 @@ class VisGUIFrame(wx.Frame):
 
         #generated Quad-tree will allow visualisations with pixel sizes of self.QTGoalPixelSize*2^N for any N
         self.QTGoalPixelSize = 5 #nm
-
-        self.scaleBarLengths = {'<None>':None, '50nm':50,'200nm':200, '500nm':500, '1um':1000, '5um':5000}
-
 
         self.viewMode = 'points' #one of points, triangles, quads, or voronoi
         self.Triangles = None
@@ -268,14 +259,15 @@ class VisGUIFrame(wx.Frame):
         self._pnl = afp.foldPanel(self._leftWindow1, -1, wx.DefaultPosition,s)
 
         self.GenDataSourcePanel()
-        self.GenFilterPanel()
+        #self.GenFilterPanel()
+        self.filterPane = CreateFilterPane(self._pnl, self.filterKeys, self)
 
         if HAVE_DRIFT_CORRECTION:
             CreateDriftPane(self._pnl, self.mapping, self)
             #self.GenDriftPanel()
             
-        self.GenColourFilterPanel()
-        self.GenDisplayPanel()
+        self.colourFilterPane = CreateColourFilterPane(self._pnl, self.colourFilter, self)
+        self.displayPane = CreateDisplayPane(self._pnl, self.glCanvas, self)
         
         if self.viewMode == 'quads':
             self.GenQuadTreePanel()
@@ -294,64 +286,9 @@ class VisGUIFrame(wx.Frame):
         
         self.glCanvas.Refresh()
 
-    def GenColourFilterPanel(self):
-        item = afp.foldingPane(self._pnl, -1, caption="Colour", pinned = True)
-        #panel.Reparent(item)
-        #item.AddNewElement(panel)
-        #self._pnl.AddPane(item)
-
-        #item = self._pnl.AddFoldPanel("Colour", collapsed=False,
-        #                              foldIcons=self.Images)
-
-        cnames = ['Everything']
-
-        if self.colourFilter:
-            cnames += self.colourFilter.getColourChans()
-
-        self.chColourFilterChan = wx.Choice(item, -1, choices=cnames, size=(170, -1))
-
-        if self.colourFilter and self.colourFilter.currentColour in cnames:
-            self.chColourFilterChan.SetSelection(cnames.index(self.colourFilter.currentColour))
-        else:
-            self.chColourFilterChan.SetSelection(0)
-
-        self.chColourFilterChan.Bind(wx.EVT_CHOICE, self.OnColourFilterChange)
-        #self._pnl.AddFoldPanelWindow(item, self.chColourFilterChan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
-        item.AddNewElement(self.chColourFilterChan)
-
-        self._pnl.AddPane(item)
-
-
-    def UpdateColourFilterChoices(self):
-        cnames = ['Everything']
-
-        if self.colourFilter:
-            cnames += self.colourFilter.getColourChans()
-            
-        self.chColourFilterChan.Clear()
-        for cn in cnames:
-            self.chColourFilterChan.Append(cn)
-
-        if self.colourFilter and self.colourFilter.currentColour in cnames:
-            self.chColourFilterChan.SetSelection(cnames.index(self.colourFilter.currentColour))
-        else:
-            self.chColourFilterChan.SetSelection(0)
-
-
-    def OnColourFilterChange(self, event):
-        self.colourFilter.setColour(event.GetString())
-        self.Triangles = None
-        self.edb = None
-        self.generatedMeasures = {}
-        self.objects = None
-
-        self.RefreshView()
-
     def GenDataSourcePanel(self):
         item = afp.foldingPane(self._pnl, -1, caption="Data Source", pinned = False)
-        #item = self._pnl.AddFoldPanel("Data Source", collapsed=True,
-        #                              foldIcons=self.Images)
-        
+
         self.dsRadioIds = []
         for ds in self.dataSources:
             rbid = wx.NewId()
@@ -361,7 +298,6 @@ class VisGUIFrame(wx.Frame):
 
             rb.Bind(wx.EVT_RADIOBUTTON, self.OnSourceChange)
             item.AddNewElement(rb)
-            #self._pnl.AddFoldPanelWindow(item, rb, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
 
         self._pnl.AddPane(item)
 
@@ -378,394 +314,7 @@ class VisGUIFrame(wx.Frame):
         self.Quads = None
 
         self.RefreshView()
-
-    def GenDisplayPanel(self):
-        item = afp.foldingPane(self._pnl, -1, caption="Display", pinned = True)
-#        item = self._pnl.AddFoldPanel("Display", collapsed=False,
-#                                      foldIcons=self.Images)
         
-
-        #Colourmap
-        cmapnames = pylab.cm.cmapnames
-
-        curCMapName = self.glCanvas.cmap.name
-        #curCMapName = 'hot'
-
-        cmapReversed = False
-        
-        if curCMapName[-2:] == '_r':
-            cmapReversed = True
-            curCMapName = curCMapName[:-2]
-
-        cmInd = cmapnames.index(curCMapName)
-
-
-        ##
-        pan = wx.Panel(item, -1)
-
-        box = wx.StaticBox(pan, -1, 'Colourmap:')
-        bsizer = wx.StaticBoxSizer(box)
-        
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        self.cColourmap = wx.Choice(pan, -1, choices=cmapnames)
-        self.cColourmap.SetSelection(cmInd)
-
-        hsizer.Add(self.cColourmap, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        self.cbCmapReverse = wx.CheckBox(pan, -1, 'Invert')
-        self.cbCmapReverse.SetValue(cmapReversed)
-
-        hsizer.Add(self.cbCmapReverse, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        bsizer.Add(hsizer, 0, wx.ALL, 0)
-
-        bdsizer = wx.BoxSizer()
-        bdsizer.Add(bsizer, 1, wx.EXPAND|wx.ALL, 0)
-
-        pan.SetSizer(bdsizer)
-        bdsizer.Fit(pan)
-
-        
-        #self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
-        item.AddNewElement(pan)
-
-        self.cColourmap.Bind(wx.EVT_CHOICE, self.OnCMapChange)
-        self.cbCmapReverse.Bind(wx.EVT_CHECKBOX, self.OnCMapChange)
-        
-        
-        #CLim
-        pan = wx.Panel(item, -1)
-
-        box = wx.StaticBox(pan, -1, 'CLim:')
-        bsizer = wx.StaticBoxSizer(box, wx.VERTICAL)
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        hsizer.Add(wx.StaticText(pan, -1, 'Min: '), 0, wx.LEFT|wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        self.tCLimMin = wx.TextCtrl(pan, -1, '%3.2f' % self.glCanvas.clim[0], size=(40,-1))
-        hsizer.Add(self.tCLimMin, 0,wx.RIGHT|wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        hsizer.Add(wx.StaticText(pan, -1, '  Max: '), 0, wx.LEFT|wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        self.tCLimMax = wx.TextCtrl(pan, -1, '%3.2f' % self.glCanvas.clim[1], size=(40,-1))
-        hsizer.Add(self.tCLimMax, 0, wx.RIGHT|wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL, 5)
- 
-        bsizer.Add(hsizer, 0, wx.ALL, 0)
-
-        self.hlCLim = histLimits.HistLimitPanel(pan, -1, self.glCanvas.c, self.glCanvas.clim[0], self.glCanvas.clim[1], size=(150, 100))
-        bsizer.Add(self.hlCLim, 0, wx.ALL|wx.EXPAND, 5)
-
-        
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        self.tPercentileCLim = wx.TextCtrl(pan, -1, '.95', size=(40,-1))
-        hsizer.Add(self.tPercentileCLim, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-        
-        bPercentile = wx.Button(pan, -1, 'Set Percentile')
-        hsizer.Add(bPercentile, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
- 
-        bsizer.Add(hsizer, 0, wx.ALL, 0)
-
-        bdsizer = wx.BoxSizer()
-        bdsizer.Add(bsizer, 1, wx.EXPAND|wx.ALL, 0)
-
-        pan.SetSizer(bdsizer)
-        bdsizer.Fit(pan)
-
-        #self.hlCLim.Refresh()
-
-        item.AddNewElement(pan)
-        #self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
-
-        self.tCLimMin.Bind(wx.EVT_TEXT, self.OnCLimChange)
-        self.tCLimMax.Bind(wx.EVT_TEXT, self.OnCLimChange)
-
-        self.hlCLim.Bind(histLimits.EVT_LIMIT_CHANGE, self.OnCLimHistChange)
-
-        bPercentile.Bind(wx.EVT_BUTTON, self.OnPercentileCLim)
-        
-        #self._pnl.AddFoldPanelSeparator(item)
-
-
-        #LUT
-        cbLUTDraw = wx.CheckBox(item, -1, 'Show LUT')
-        cbLUTDraw.SetValue(self.glCanvas.LUTDraw)
-        item.AddNewElement(cbLUTDraw)
-        #self._pnl.AddFoldPanelWindow(item, cbLUTDraw, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
-
-        cbLUTDraw.Bind(wx.EVT_CHECKBOX, self.OnLUTDrawCB)
-
-        
-        #Scale Bar
-        pan = wx.Panel(item, -1)
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        hsizer.Add(wx.StaticText(pan, -1, 'Scale Bar: '), 0, wx.LEFT|wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL, 5)
-
-
-        chInd = self.scaleBarLengths.values().index(self.glCanvas.scaleBarLength)
-        
-        chScaleBar = wx.Choice(pan, -1, choices = self.scaleBarLengths.keys())
-        chScaleBar.SetSelection(chInd)
-        hsizer.Add(chScaleBar, 0,wx.RIGHT|wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        pan.SetSizer(hsizer)
-        hsizer.Fit(pan)
-        
-        item.AddNewElement(pan)
-        #self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
-
-        chScaleBar.Bind(wx.EVT_CHOICE, self.OnChangeScaleBar)
-
-        self._pnl.AddPane(item)
-
-        
-    def OnCMapChange(self, event):
-        cmapname = pylab.cm.cmapnames[self.cColourmap.GetSelection()]
-        if self.cbCmapReverse.GetValue():
-            cmapname += '_r'
-
-        self.glCanvas.setCMap(pylab.cm.__dict__[cmapname])
-        self.OnGLViewChanged()
-
-    def OnLUTDrawCB(self, event):
-        self.glCanvas.LUTDraw = event.IsChecked()
-        self.glCanvas.Refresh()
-        
-    def OnChangeScaleBar(self, event):
-        self.glCanvas.scaleBarLength = self.scaleBarLengths[event.GetString()]
-        self.glCanvas.Refresh()
-
-    def OnCLimChange(self, event):
-        if self._pc_clim_change: #avoid setting CLim twice
-            self._pc_clim_change = False #clear flag
-        else:
-            cmin = float(self.tCLimMin.GetValue())
-            cmax = float(self.tCLimMax.GetValue())
-
-            self.hlCLim.SetValue((cmin, cmax))
-
-            self.glCanvas.setCLim((cmin, cmax))
-
-    def OnCLimHistChange(self, event):
-        self.glCanvas.setCLim((event.lower, event.upper))
-        self._pc_clim_change = True
-        self.tCLimMax.SetValue('%3.2f' % self.glCanvas.clim[1])
-        self._pc_clim_change = True
-        self.tCLimMin.SetValue('%3.2f' % self.glCanvas.clim[0])
-
-    def OnPercentileCLim(self, event):
-        pc = float(self.tPercentileCLim.GetValue())
-
-        self.glCanvas.setPercentileCLim(pc)
-
-        self._pc_clim_change = True
-        self.tCLimMax.SetValue('%3.2f' % self.glCanvas.clim[1])
-        self._pc_clim_change = True
-        self.tCLimMin.SetValue('%3.2f' % self.glCanvas.clim[0])
-
-        self.hlCLim.SetValue(self.glCanvas.clim)
-
-        
-        
-            
-    def GenFilterPanel(self):
-        item = afp.foldingPane(self._pnl, -1, caption="Filter", pinned = False)
-#        item = self._pnl.AddFoldPanel("Filter", collapsed=True,
-#                                      foldIcons=self.Images)
-
-        self.lFiltKeys = wx.ListCtrl(item, -1, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.SUNKEN_BORDER, size=(-1, 200))
-
-        item.AddNewElement(self.lFiltKeys)
-        #self._pnl.AddFoldPanelWindow(item, self.lFiltKeys, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
-
-        self.lFiltKeys.InsertColumn(0, 'Key')
-        self.lFiltKeys.InsertColumn(1, 'Min')
-        self.lFiltKeys.InsertColumn(2, 'Max')
-
-        for key, value in self.filterKeys.items():
-            ind = self.lFiltKeys.InsertStringItem(sys.maxint, key)
-            self.lFiltKeys.SetStringItem(ind,1, '%3.2f' % value[0])
-            self.lFiltKeys.SetStringItem(ind,2, '%3.2f' % value[1])
-
-        self.lFiltKeys.SetColumnWidth(0, wx.LIST_AUTOSIZE)
-        self.lFiltKeys.SetColumnWidth(1, wx.LIST_AUTOSIZE)
-        self.lFiltKeys.SetColumnWidth(2, wx.LIST_AUTOSIZE)
-
-        # only do this part the first time so the events are only bound once
-        if not hasattr(self, "ID_FILT_ADD"):
-            self.ID_FILT_ADD = wx.NewId()
-            self.ID_FILT_DELETE = wx.NewId()
-            self.ID_FILT_EDIT = wx.NewId()
-           
-            self.Bind(wx.EVT_MENU, self.OnFilterAdd, id=self.ID_FILT_ADD)
-            self.Bind(wx.EVT_MENU, self.OnFilterDelete, id=self.ID_FILT_DELETE)
-            self.Bind(wx.EVT_MENU, self.OnFilterEdit, id=self.ID_FILT_EDIT)
-
-        # for wxMSW
-        self.lFiltKeys.Bind(wx.EVT_COMMAND_RIGHT_CLICK, self.OnFilterListRightClick)
-
-        # for wxGTK
-        self.lFiltKeys.Bind(wx.EVT_RIGHT_UP, self.OnFilterListRightClick)
-
-        self.lFiltKeys.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnFilterItemSelected)
-        self.lFiltKeys.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.OnFilterItemDeselected)
-        self.lFiltKeys.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnFilterEdit)
-
-        self.stFilterNumPoints = wx.StaticText(item, -1, '')
-
-        if not self.filter == None:
-            self.stFilterNumPoints.SetLabel('%d of %d events' % (len(self.filter['x']), len(self.selectedDataSource['x'])))
-
-        item.AddNewElement(self.stFilterNumPoints)
-        #self._pnl.AddFoldPanelWindow(item, self.stFilterNumPoints, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
-
-        self.bClipToSelection = wx.Button(item, -1, 'Clip to selection')
-        item.AddNewElement(self.bClipToSelection)
-        #self._pnl.AddFoldPanelWindow(item, self.bClipToSelection, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
-
-        self.bClipToSelection.Bind(wx.EVT_BUTTON, self.OnFilterClipToSelection)
-
-        self._pnl.AddPane(item)
-        
-    def OnFilterListRightClick(self, event):
-
-        x = event.GetX()
-        y = event.GetY()
-
-        item, flags = self.lFiltKeys.HitTest((x, y))
-
- 
-        # make a menu
-        menu = wx.Menu()
-        # add some items
-        menu.Append(self.ID_FILT_ADD, "Add")
-
-        if item != wx.NOT_FOUND and flags & wx.LIST_HITTEST_ONITEM:
-            self.currentFilterItem = item
-            self.lFiltKeys.Select(item)
-        
-            menu.Append(self.ID_FILT_DELETE, "Delete")
-            menu.Append(self.ID_FILT_EDIT, "Edit")
-
-        # Popup the menu.  If an item is selected then its handler
-        # will be called before PopupMenu returns.
-        self.PopupMenu(menu)
-        menu.Destroy()
-
-    def OnFilterItemSelected(self, event):
-        self.currentFilterItem = event.m_itemIndex
-
-        event.Skip()
-
-    def OnFilterItemDeselected(self, event):
-        self.currentFilterItem = None
-
-        event.Skip()
-
-    def OnFilterClipToSelection(self, event):
-        if 'x' in self.filterKeys.keys() or 'y' in self.filterKeys.keys():
-            if 'x' in self.filterKeys.keys():
-                i = 0
-                while not self.lFiltKeys.GetItemText(i) == 'x':
-                    i +=1
-                self.lFiltKeys.DeleteItem(i)
-                self.filterKeys.pop('x')
-            if 'y' in self.filterKeys.keys():
-                i = 0
-                while not self.lFiltKeys.GetItemText(i) == 'y':
-                    i +=1
-                self.lFiltKeys.DeleteItem(i)
-                self.filterKeys.pop('y')
-
-            self.bClipToSelection.SetLabel('Clip to Selection')
-        else:
-            x0, y0 = self.glCanvas.selectionStart
-            x1, y1 = self.glCanvas.selectionFinish
-
-            if not 'x' in self.filterKeys.keys():
-                indx = self.lFiltKeys.InsertStringItem(sys.maxint, 'x')
-            else:
-                indx = [self.lFiltKeys.GetItemText(i) for i in range(self.lFiltKeys.GetItemCount())].index('x')
-
-            if not 'y' in self.filterKeys.keys():
-                indy = self.lFiltKeys.InsertStringItem(sys.maxint, 'y')
-            else:
-                indy = [self.lFiltKeys.GetItemText(i) for i in range(self.lFiltKeys.GetItemCount())].index('y')
-
-
-            self.filterKeys['x'] = (min(x0, x1), max(x0, x1))
-            self.filterKeys['y'] = (min(y0, y1), max(y0,y1))
-
-            self.lFiltKeys.SetStringItem(indx,1, '%3.2f' % min(x0, x1))
-            self.lFiltKeys.SetStringItem(indx,2, '%3.2f' % max(x0, x1))
-
-            self.lFiltKeys.SetStringItem(indy,1, '%3.2f' % min(y0, y1))
-            self.lFiltKeys.SetStringItem(indy,2, '%3.2f' % max(y0, y1))
-
-            self.bClipToSelection.SetLabel('Clear Clipping ROI')
-
-        self.RegenFilter()
-
-    def OnFilterAdd(self, event):
-        #key = self.lFiltKeys.GetItem(self.currentFilterItem).GetText()
-
-        possibleKeys = []
-        if not self.selectedDataSource == None:
-            possibleKeys = self.selectedDataSource.keys()
-
-        dlg = editFilterDialog.FilterEditDialog(self, mode='new', possibleKeys=possibleKeys)
-
-        ret = dlg.ShowModal()
-
-        if ret == wx.ID_OK:
-            minVal = float(dlg.tMin.GetValue())
-            maxVal = float(dlg.tMax.GetValue())
-
-            key = dlg.cbKey.GetValue().encode()
-
-            if key == "":
-                return
-
-            self.filterKeys[key] = (minVal, maxVal)
-
-            ind = self.lFiltKeys.InsertStringItem(sys.maxint, key)
-            self.lFiltKeys.SetStringItem(ind,1, '%3.2f' % minVal)
-            self.lFiltKeys.SetStringItem(ind,2, '%3.2f' % maxVal)
-
-        dlg.Destroy()
-
-        self.RegenFilter()
-
-    def OnFilterDelete(self, event):
-        it = self.lFiltKeys.GetItem(self.currentFilterItem)
-        self.lFiltKeys.DeleteItem(self.currentFilterItem)
-        self.filterKeys.pop(it.GetText())
-
-        self.RegenFilter()
-        
-    def OnFilterEdit(self, event):
-        key = self.lFiltKeys.GetItem(self.currentFilterItem).GetText()
-
-        #dlg = editFilterDialog.FilterEditDialog(self, mode='edit', possibleKeys=[], key=key, minVal=self.filterKeys[key][0], maxVal=self.filterKeys[key][1])
-        dlg = histLimits.HistLimitDialog(self, self.selectedDataSource[key], self.filterKeys[key][0], self.filterKeys[key][1], title=key)
-        ret = dlg.ShowModal()
-
-        if ret == wx.ID_OK:
-            #minVal = float(dlg.tMin.GetValue())
-            #maxVal = float(dlg.tMax.GetValue())
-            minVal, maxVal = dlg.GetLimits()
-
-            self.filterKeys[key] = (minVal, maxVal)
-
-            self.lFiltKeys.SetStringItem(self.currentFilterItem,1, '%3.2f' % minVal)
-            self.lFiltKeys.SetStringItem(self.currentFilterItem,2, '%3.2f' % maxVal)
-
-        dlg.Destroy()
-        self.RegenFilter()
-
     
     def GenQuadTreePanel(self):
         item = afp.foldingPane(self._pnl, -1, caption="QuadTree", pinned = True)
@@ -1035,18 +584,6 @@ class VisGUIFrame(wx.Frame):
 
         ID_VIEW_FIT = wx.NewId()
         ID_VIEW_FIT_ROI = wx.NewId()
-        
-#        ID_GEN_JIT_TRI = wx.NewId()
-#        ID_GEN_QUADS = wx.NewId()
-#
-#        ID_GEN_GAUSS = wx.NewId()
-#        ID_GEN_HIST = wx.NewId()
-#
-#        ID_GEN_3DHIST = wx.NewId()
-#        ID_GEN_3DGAUSS = wx.NewId()
-#        ID_GEN_3DTRI = wx.NewId()
-#
-#        ID_GEN_CURRENT = wx.NewId()
 
         ID_TOGGLE_SETTINGS = wx.NewId()
 
@@ -1125,22 +662,6 @@ class VisGUIFrame(wx.Frame):
         #self.view_menu.Check(ID_VIEW_3D_POINTS, True)
 
         self.gen_menu = wx.Menu()
-#        self.gen_menu.Append(ID_GEN_CURRENT, "&Current")
-#
-#        self.gen_menu.AppendSeparator()
-#        self.gen_menu.Append(ID_GEN_GAUSS, "&Gaussian")
-#        self.gen_menu.Append(ID_GEN_HIST, "&Histogram")
-#
-#        self.gen_menu.AppendSeparator()
-#        self.gen_menu.Append(ID_GEN_JIT_TRI, "&Triangulation")
-#        self.gen_menu.Append(ID_GEN_QUADS, "&QuadTree")
-#
-#        self.gen_menu.AppendSeparator()
-#        self.gen_menu.Append(ID_GEN_3DHIST, "3D Histogram")
-#        self.gen_menu.Append(ID_GEN_3DGAUSS, "3D Gaussian")
-#        self.gen_menu.Append(ID_GEN_3DTRI, "3D Triangulation")
-#        self.gen_menu.AppendSeparator()
-
         renderers.init_renderers(self)
 
         special_menu = wx.Menu()
@@ -1189,16 +710,6 @@ class VisGUIFrame(wx.Frame):
 
         self.Bind(wx.EVT_MENU, self.SetFit, id=ID_VIEW_FIT)
         self.Bind(wx.EVT_MENU, self.OnFitROI, id=ID_VIEW_FIT_ROI)
-
-#        self.Bind(wx.EVT_MENU, self.OnGenCurrent, id=ID_GEN_CURRENT)
-#        self.Bind(wx.EVT_MENU, self.OnGenTriangles, id=ID_GEN_JIT_TRI)
-#        self.Bind(wx.EVT_MENU, self.OnGenGaussian, id=ID_GEN_GAUSS)
-#        self.Bind(wx.EVT_MENU, self.OnGenHistogram, id=ID_GEN_HIST)
-#        self.Bind(wx.EVT_MENU, self.OnGenQuadTree, id=ID_GEN_QUADS)
-#
-#        self.Bind(wx.EVT_MENU, self.OnGen3DHistogram, id=ID_GEN_3DHIST)
-#        self.Bind(wx.EVT_MENU, self.OnGen3DGaussian, id=ID_GEN_3DGAUSS)
-#        self.Bind(wx.EVT_MENU, self.OnGen3DTriangles, id=ID_GEN_3DTRI)
 
         self.Bind(wx.EVT_MENU, self.OnGenShiftmap, id=ID_GEN_SHIFTMAP)
         self.Bind(wx.EVT_MENU, self.OnCalcCorrDrift, id=ID_CORR_DRIFT)
@@ -1259,11 +770,6 @@ class VisGUIFrame(wx.Frame):
         self.OnPercentileCLim(None)
 
     def OnView3DPoints(self,event):
-        #self.viewMode = 'points'
-        #self.glCanvas.cmap = pylab.cm.hsv
-        #self.RefreshView()
-        #self.CreateFoldPanel()
-        #self.OnPercentileCLim(None)
         if 'z' in self.colourFilter.keys():
             if not 'glCanvas3D' in dir(self):
                 self.glCanvas3D = gl_render3D.LMGLCanvas(self.notebook)
@@ -1273,11 +779,6 @@ class VisGUIFrame(wx.Frame):
             self.glCanvas3D.setCLim(self.glCanvas.clim, (-5e5, -5e5))
 
     def OnView3DTriangles(self,event):
-        #self.viewMode = 'points'
-        #self.glCanvas.cmap = pylab.cm.hsv
-        #self.RefreshView()
-        #self.CreateFoldPanel()
-        #self.OnPercentileCLim(None)
         if 'z' in self.colourFilter.keys():
             if not 'glCanvas3D' in dir(self):
                 self.glCanvas3D = gl_render3D.LMGLCanvas(self.notebook)
@@ -1720,48 +1221,6 @@ class VisGUIFrame(wx.Frame):
 
                     self.filesToClose.append(self.selectedDataSource.h5f)
 
-                #once we get around to storing the some metadata with the results
-#                if 'MetaData' in self.selectedDataSource.h5f.root:
-#                    self.mdh = MetaDataHandler.HDFMDHandler(self.selectedDataSource.h5f)
-#
-#                    if 'Camera.ROIWidth' in self.mdh.getEntryNames():
-#                        x0 = 0
-#                        y0 = 0
-#
-#                        x1 = self.mdh.getEntry('Camera.ROIWidth')*1e3*self.mdh.getEntry('voxelsize.x')
-#                        y1 = self.mdh.getEntry('Camera.ROIHeight')*1e3*self.mdh.getEntry('voxelsize.y')
-#
-#                        self.imageBounds = ImageBounds(x0, y0, x1, y1)
-#                    else:
-#                        self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
-#
-#                else:
-#                    self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
-#
-#                if not self.elv == None: #remove previous event viewer
-#                    i = 0
-#                    found = False
-#                    while not found and i < self.notebook.GetPageCount():
-#                        if self.notebook.GetPage(i) == self.elv:
-#                            self.notebook.DeletePage(i)
-#                            found = True
-#                        else:
-#                            i += 1
-#
-#                if 'Events' in self.selectedDataSource.h5f.root:
-#                    self.events = self.selectedDataSource.h5f.root.Events[:]
-#
-#                    self.elv = eventLogViewer.eventLogPanel(self.notebook, self.events, self.mdh, [0, self.selectedDataSource['tIndex'].max()]);
-#                    self.notebook.AddPage(self.elv, 'Events')
-#
-#                    evKeyNames = set()
-#                    for e in self.events:
-#                        evKeyNames.add(e['EventName'])
-#
-#                    if 'ProtocolFocus' in evKeyNames:
-#                        self.zm = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh.getEntry('Camera.CycleTime'), self.mdh.getEntry('StartTime'), self.mdh.getEntry('Protocol.PiezoStartPos'))
-#                        self.elv.SetCharts([('Focus [um]', self.zm, 'ProtocolFocus'),])
-
         else: #assume it's a text file
             dlg = importTextDialog.ImportTextDialog(self)
 
@@ -1770,23 +1229,10 @@ class VisGUIFrame(wx.Frame):
             if not ret == wx.ID_OK:
                 return #we cancelled
 
-            #try:
-            #print dlg.GetFieldNames()
             ds = inpFilt.textfileSource(filename, dlg.GetFieldNames())
             self.selectedDataSource = ds
             self.dataSources.append(ds)
 
-            #self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
-
-        #self.SetTitle('PYME Visualise - ' + filename)
-        #for k in self.filterKeys.keys():
-
-        #if we've done a 3d fit
-#        print self.selectedDataSource.keys()
-#        if 'fitResults_z0' in self.selectedDataSource.keys():
-#            self.filterKeys.pop('sig')
-
-        #print self.filterKeys
         self.RegenFilter()
         self.CreateFoldPanel()
         if not self.colp == None:
@@ -1884,37 +1330,15 @@ class VisGUIFrame(wx.Frame):
             else:
                 self.mapping = inpFilt.mappingFilter(self.filter)
 
-#                if 'zm' in dir(self):
-#                    self.mapping.zm = self.zm
-#                    self.mapping.setMapping('focus', '1e3*zm(t)')
-
-#                if not 'dz_dt' in dir(self.mapping):
-#                    self.mapping.dz_dt = 0.
-#
-#                if 'fitResults_z0' in self.filter.keys():
-#                    if 'zm' in dir(self):
-#                        if not 'foreShort' in dir(self.mapping):
-#                            self.mapping.foreShort = 1.
-#                        self.mapping.setMapping('z', 'fitResults_z0 + foreShort*focus + dz_dt*t')
-#                    else:
-#                        self.mapping.setMapping('z', 'fitResults_z0+ dz_dt*t')
-#                elif 'zm' in dir(self):
-#                    self.mapping.setMapping('z', 'focus + dz_dt*t')
-#                else:
-#                    self.mapping.setMapping('z', 'dz_dt*t')
-
             if not self.colourFilter:
                 self.colourFilter = inpFilt.colourFilter(self.mapping, self)
 
-        self.stFilterNumPoints.SetLabel('%d of %d events' % (len(self.filter['x']), len(self.selectedDataSource['x'])))
+        self.filterPane.stFilterNumPoints.SetLabel('%d of %d events' % (len(self.filter['x']), len(self.selectedDataSource['x'])))
 
         self.Triangles = None
         self.edb = None
         self.objects = None
-
         self.GeneratedMeasures = {}
-#        if 'zm' in dir(self):
-#            self.GeneratedMeasures['focusPos'] = self.zm(self.colourFilter['tIndex'].astype('f'))
         self.Quads = None
 
         self.RefreshView()
@@ -2030,7 +1454,7 @@ class VisGUIFrame(wx.Frame):
             self.glCanvas.setBlobs(self.objects, self.objThreshold)
             self.objCInd = self.glCanvas.c
 
-        self.hlCLim.SetData(self.glCanvas.c, self.glCanvas.clim[0], self.glCanvas.clim[1])
+        self.displayPane.hlCLim.SetData(self.glCanvas.c, self.glCanvas.clim[0], self.glCanvas.clim[1])
 
         if not self.colp == None and self.colp.IsShown():
             self.colp.refresh()
