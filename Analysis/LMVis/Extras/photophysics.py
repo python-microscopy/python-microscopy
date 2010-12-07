@@ -13,8 +13,7 @@ import wx
 
 class DecayAnalyser:
     def __init__(self, visFr):
-        self.colourFilter = visFr.colourFilter
-        self.mdh = visFr.mdh
+        self.visFr = visFr
 
         ID_CALC_DECAYS = wx.NewId()
         self.visFr.extras_menu.Append(ID_CALC_DECAYS, "Estimate decay lifetimes")
@@ -23,9 +22,9 @@ class DecayAnalyser:
     def OnCalcDecays(self, event):
         from PYME.Analysis.BleachProfile import kinModels
 
-        kinModels.fitDecay(self.colourFilter, self.mdh)
-        kinModels.fitFluorBrightness(self.colourFilter, self.mdh)
-        kinModels.fitOnTimes(self.colourFilter, self.mdh)
+        kinModels.fitDecay(self.visFr.colourFilter, self.visFr.mdh)
+        kinModels.fitFluorBrightness(self.visFr.colourFilter, self.visFr.mdh)
+        kinModels.fitOnTimes(self.visFr.colourFilter, self.visFr.mdh)
         
 
 

@@ -14,7 +14,7 @@ import os
 
 class ShiftmapGenerator:
     def __init__(self, visFr):
-        self.filter = visFr.filter
+        self.visFr = visFr
 
         ID_GEN_SHIFTMAP = wx.NewId()
         visFr.extras_menu.Append(ID_GEN_SHIFTMAP, "Calculate &Shiftmap")
@@ -22,8 +22,8 @@ class ShiftmapGenerator:
 
     def OnGenShiftmap(self, event):
         from PYME.Analysis import twoColour, twoColourPlot
-        lx = len(self.filter['x'])
-        dx, dy, spx, spy = twoColour.genShiftVectorFieldSpline(self.filter['x']+.1*pylab.randn(lx), self.filter['y']+.1*pylab.randn(lx), self.filter['fitResults_dx'], self.filter['fitResults_dy'], self.filter['fitError_dx'], self.filter['fitError_dy'])
+        lx = len(self.visFr.filter['x'])
+        dx, dy, spx, spy = twoColour.genShiftVectorFieldSpline(self.visFr.filter['x']+.1*pylab.randn(lx), self.visFr.filter['y']+.1*pylab.randn(lx), self.visFr.filter['fitResults_dx'], self.visFr.filter['fitResults_dy'], self.visFr.filter['fitError_dx'], self.visFr.filter['fitError_dy'])
         twoColourPlot.PlotShiftField(dx, dy, spx, spy)
 
         import cPickle

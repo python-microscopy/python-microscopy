@@ -10,7 +10,7 @@
 ##################
 
 import wx
-import os
+import numpy as np
 
 class ParticleTracker:
     def __init__(self, visFr):

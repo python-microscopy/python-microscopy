@@ -587,12 +587,6 @@ class VisGUIFrame(wx.Frame):
 
         ID_TOGGLE_SETTINGS = wx.NewId()
 
-        ID_CORR_DRIFT = wx.NewId()
-        ID_EXT_DRIFT = wx.NewId()
-        
-        
-        ID_POINT_COLOC = wx.NewId()
-
         ID_ABOUT = wx.ID_ABOUT
 
         ID_VIEW_3D_POINTS = wx.NewId()
@@ -663,11 +657,8 @@ class VisGUIFrame(wx.Frame):
         renderers.init_renderers(self)
 
         self.extras_menu = wx.Menu()
-        self.extras_menu.Append(ID_CORR_DRIFT, "Estimate drift using cross-correlation")
-        self.extras_menu.Append(ID_EXT_DRIFT, "Plot externally calculated drift trajectory")
-        
-        
-        self.extras_menu.Append(ID_POINT_COLOC, "Pointwise Colocalisation")
+        import Extras
+        Extras.InitPlugins(self)
 
         help_menu = wx.Menu()
         help_menu.Append(ID_ABOUT, "&About")
@@ -703,13 +694,6 @@ class VisGUIFrame(wx.Frame):
 
         self.Bind(wx.EVT_MENU, self.SetFit, id=ID_VIEW_FIT)
         self.Bind(wx.EVT_MENU, self.OnFitROI, id=ID_VIEW_FIT_ROI)
-
-        self.Bind(wx.EVT_MENU, self.OnCalcCorrDrift, id=ID_CORR_DRIFT)
-        self.Bind(wx.EVT_MENU, self.OnPlotExtDrift, id=ID_EXT_DRIFT)
-        
-        
-        
-        self.Bind(wx.EVT_MENU, self.OnPointwiseColoc, id=ID_POINT_COLOC)
 
         self.Bind(wx.EVT_MENU, self.OnView3DPoints, id=ID_VIEW_3D_POINTS)
         self.Bind(wx.EVT_MENU, self.OnView3DTriangles, id=ID_VIEW_3D_TRIANGS)
@@ -788,50 +772,7 @@ class VisGUIFrame(wx.Frame):
 
         statNeigh = statusLog.StatusLogger("Calculating mean neighbour distances ...")
         self.GeneratedMeasures['neighbourDistances'] = pylab.array(visHelpers.calcNeighbourDists(self.Triangles))
-        
-
     
-
-    
-
-    
-
-    def OnPointwiseColoc(self, event):
-        from PYME.Analysis import distColoc
-        #A vs B
-        distColoc.calcDistCorr(self.colourFilter, *(self.colourFilter.getColourChans()[::1]))
-        #B vs A
-        distColoc.calcDistCorr(self.colourFilter, *(self.colourFilter.getColourChans()[::-1]))
-
-
-
-    
-
-    def OnCalcCorrDrift(self, event):
-        from PYME.Analysis import driftAutocorr
-
-        dlg = driftAutocorr.CorrDriftDialog(self)
-
-        if dlg.ShowModal() == wx.ID_OK:
-            shifts = driftAutocorr.calcCorrDrift(self.filter, step = dlg.GetStep(), window=dlg.GetWindow(), binsize = dlg.GetBinSize())
-
-            driftAutocorr.plotDrift(shifts, step=dlg.GetStep(), driftExprX=self.driftExprX, driftExprY=self.driftExprY, driftMapping=self.mapping)
-
-        dlg.Destroy()
-
-
-    def OnPlotExtDrift(self, event):
-        from PYME.Analysis import driftAutocorr
-        import PYME.misc.driftio as dio
-        filename = wx.FileSelector("File with drift trajectory data", nameUtils.genResultDirectoryPath(), default_extension='drift', wildcard='Drift File (*.drift)|*.drift')
-
-        #print filename
-        if not filename == '':
-            extX, extY, extoffs, extstep = dio.loadDriftFile(filename)
-            extdrift = np.vstack((extX,extY)).transpose()
-            extdrift = extdrift - extdrift[0, :] # make zero based at beginning
-            driftAutocorr.plotDrift(extdrift,step=extstep,offset=extoffs,driftExprX=self.driftExprX, driftExprY=self.driftExprY, driftMapping=self.mapping)
-
     def OnSaveMeasurements(self, event):
         fdialog = wx.FileDialog(None, 'Save measurements ...',
             wildcard='Numpy array|*.npy|Tab formatted text|*.txt', style=wx.SAVE|wx.HIDE_READONLY)
