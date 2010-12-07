@@ -35,7 +35,7 @@ try:
     import multiprocessing
     #import multiprocessing.sharedctypes
     from PYME.shmarray import shmarray
-    #multiProc = True
+    multiProc = True
 except:
     multiProc = False
 

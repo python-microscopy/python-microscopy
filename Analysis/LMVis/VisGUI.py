@@ -45,6 +45,7 @@ from PYME.Analysis.LMVis import visHelpers
 from PYME.Analysis.LMVis import imageView
 from PYME.Analysis.LMVis import histLimits
 from PYME.Analysis.LMVis import colourPanel
+from PYME.Analysis.LMVis import renderers
 try:
 #    from PYME.Analysis.LMVis import gen3DTriangs
     from PYME.Analysis.LMVis import recArrayView
@@ -1035,17 +1036,17 @@ class VisGUIFrame(wx.Frame):
         ID_VIEW_FIT = wx.NewId()
         ID_VIEW_FIT_ROI = wx.NewId()
         
-        ID_GEN_JIT_TRI = wx.NewId()
-        ID_GEN_QUADS = wx.NewId()
-
-        ID_GEN_GAUSS = wx.NewId()
-        ID_GEN_HIST = wx.NewId()
-
-        ID_GEN_3DHIST = wx.NewId()
-        ID_GEN_3DGAUSS = wx.NewId()
-        ID_GEN_3DTRI = wx.NewId()
-
-        ID_GEN_CURRENT = wx.NewId()
+#        ID_GEN_JIT_TRI = wx.NewId()
+#        ID_GEN_QUADS = wx.NewId()
+#
+#        ID_GEN_GAUSS = wx.NewId()
+#        ID_GEN_HIST = wx.NewId()
+#
+#        ID_GEN_3DHIST = wx.NewId()
+#        ID_GEN_3DGAUSS = wx.NewId()
+#        ID_GEN_3DTRI = wx.NewId()
+#
+#        ID_GEN_CURRENT = wx.NewId()
 
         ID_TOGGLE_SETTINGS = wx.NewId()
 
@@ -1123,21 +1124,24 @@ class VisGUIFrame(wx.Frame):
 
         #self.view_menu.Check(ID_VIEW_3D_POINTS, True)
 
-        gen_menu = wx.Menu()
-        gen_menu.Append(ID_GEN_CURRENT, "&Current")
-        
-        gen_menu.AppendSeparator()
-        gen_menu.Append(ID_GEN_GAUSS, "&Gaussian")
-        gen_menu.Append(ID_GEN_HIST, "&Histogram")
+        self.gen_menu = wx.Menu()
+#        self.gen_menu.Append(ID_GEN_CURRENT, "&Current")
+#
+#        self.gen_menu.AppendSeparator()
+#        self.gen_menu.Append(ID_GEN_GAUSS, "&Gaussian")
+#        self.gen_menu.Append(ID_GEN_HIST, "&Histogram")
+#
+#        self.gen_menu.AppendSeparator()
+#        self.gen_menu.Append(ID_GEN_JIT_TRI, "&Triangulation")
+#        self.gen_menu.Append(ID_GEN_QUADS, "&QuadTree")
+#
+#        self.gen_menu.AppendSeparator()
+#        self.gen_menu.Append(ID_GEN_3DHIST, "3D Histogram")
+#        self.gen_menu.Append(ID_GEN_3DGAUSS, "3D Gaussian")
+#        self.gen_menu.Append(ID_GEN_3DTRI, "3D Triangulation")
+#        self.gen_menu.AppendSeparator()
 
-        gen_menu.AppendSeparator()
-        gen_menu.Append(ID_GEN_JIT_TRI, "&Triangulation")
-        gen_menu.Append(ID_GEN_QUADS, "&QuadTree")
-
-        gen_menu.AppendSeparator()
-        gen_menu.Append(ID_GEN_3DHIST, "3D Histogram")
-        gen_menu.Append(ID_GEN_3DGAUSS, "3D Gaussian")
-        gen_menu.Append(ID_GEN_3DTRI, "3D Triangulation")
+        renderers.init_renderers(self)
 
         special_menu = wx.Menu()
         special_menu.Append(ID_GEN_SHIFTMAP, "Calculate &Shiftmap")
@@ -1155,7 +1159,7 @@ class VisGUIFrame(wx.Frame):
 
         menu_bar.Append(file_menu, "&File")
         menu_bar.Append(self.view_menu, "&View")
-        menu_bar.Append(gen_menu, "&Generate Image")
+        menu_bar.Append(self.gen_menu, "&Generate Image")
         menu_bar.Append(special_menu, "&Extras")
         menu_bar.Append(self.view3d_menu, "View &3D")
        
@@ -1186,15 +1190,15 @@ class VisGUIFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.SetFit, id=ID_VIEW_FIT)
         self.Bind(wx.EVT_MENU, self.OnFitROI, id=ID_VIEW_FIT_ROI)
 
-        self.Bind(wx.EVT_MENU, self.OnGenCurrent, id=ID_GEN_CURRENT)
-        self.Bind(wx.EVT_MENU, self.OnGenTriangles, id=ID_GEN_JIT_TRI)
-        self.Bind(wx.EVT_MENU, self.OnGenGaussian, id=ID_GEN_GAUSS)
-        self.Bind(wx.EVT_MENU, self.OnGenHistogram, id=ID_GEN_HIST)
-        self.Bind(wx.EVT_MENU, self.OnGenQuadTree, id=ID_GEN_QUADS)
-
-        self.Bind(wx.EVT_MENU, self.OnGen3DHistogram, id=ID_GEN_3DHIST)
-        self.Bind(wx.EVT_MENU, self.OnGen3DGaussian, id=ID_GEN_3DGAUSS)
-        self.Bind(wx.EVT_MENU, self.OnGen3DTriangles, id=ID_GEN_3DTRI)
+#        self.Bind(wx.EVT_MENU, self.OnGenCurrent, id=ID_GEN_CURRENT)
+#        self.Bind(wx.EVT_MENU, self.OnGenTriangles, id=ID_GEN_JIT_TRI)
+#        self.Bind(wx.EVT_MENU, self.OnGenGaussian, id=ID_GEN_GAUSS)
+#        self.Bind(wx.EVT_MENU, self.OnGenHistogram, id=ID_GEN_HIST)
+#        self.Bind(wx.EVT_MENU, self.OnGenQuadTree, id=ID_GEN_QUADS)
+#
+#        self.Bind(wx.EVT_MENU, self.OnGen3DHistogram, id=ID_GEN_3DHIST)
+#        self.Bind(wx.EVT_MENU, self.OnGen3DGaussian, id=ID_GEN_3DGAUSS)
+#        self.Bind(wx.EVT_MENU, self.OnGen3DTriangles, id=ID_GEN_3DTRI)
 
         self.Bind(wx.EVT_MENU, self.OnGenShiftmap, id=ID_GEN_SHIFTMAP)
         self.Bind(wx.EVT_MENU, self.OnCalcCorrDrift, id=ID_CORR_DRIFT)
@@ -1282,40 +1286,6 @@ class VisGUIFrame(wx.Frame):
             self.glCanvas3D.setTriang(self.colourFilter['x'], self.colourFilter['y'], self.colourFilter['z'], 'z', sizeCutoff=self.glCanvas3D.edgeThreshold)
             self.glCanvas3D.setCLim(self.glCanvas3D.clim, (0, 5e-5))
 
-    def OnGenCurrent(self, event):
-        dlg = genImageDialog.GenImageDialog(self, mode='current')
-
-        ret = dlg.ShowModal()
-
-        if ret == wx.ID_OK:
-            pixelSize = dlg.getPixelSize()
-            
-            bCurr = wx.BusyCursor()
-
-            oldcmap = self.glCanvas.cmap 
-            self.glCanvas.setCMap(pylab.cm.gray)
-
-            
-            im = self.glCanvas.getIm(pixelSize)
-
-            x0 = max(self.glCanvas.xmin, self.imageBounds.x0)
-            y0 = max(self.glCanvas.ymin, self.imageBounds.y0)
-            x1 = min(self.glCanvas.xmax, self.imageBounds.x1)
-            y1 = min(self.glCanvas.ymax, self.imageBounds.y1)
-
-            #imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
-            imb = ImageBounds(x0, y0, x1, y1)
-
-            img = GeneratedImage(im,imb, pixelSize )
-            imf = imageView.ImageViewFrame(self,img, self.glCanvas)
-            self.generatedImages.append(imf)
-            imf.Show()
-
-            self.glCanvas.setCMap(oldcmap)
-            self.RefreshView()
-
-        dlg.Destroy()
-
     def genNeighbourDists(self, forceRetriang = False):
         bCurr = wx.BusyCursor()
 
@@ -1326,499 +1296,6 @@ class VisGUIFrame(wx.Frame):
         statNeigh = statusLog.StatusLogger("Calculating mean neighbour distances ...")
         self.GeneratedMeasures['neighbourDistances'] = pylab.array(visHelpers.calcNeighbourDists(self.Triangles))
         
-
-    def OnGenTriangles(self, event): 
-        jitVars = ['1.0']
-
-        #if not 'neighbourDistances' in self.GeneratedMeasures.keys():
-        #    self.genNeighbourDists()
-
-        genMeas = self.GeneratedMeasures.keys()
-        if not 'neighbourDistances' in genMeas:
-            genMeas.append('neighbourDistances')
-
-        jitVars += genMeas
-        jitVars += self.colourFilter.keys()
-        
-        dlg = genImageDialog.GenImageDialog(self, mode='triangles', jitterVariables = jitVars, jitterVarDefault=genMeas.index('neighbourDistances')+1, colours=self.fluorSpecies.keys())
-
-        ret = dlg.ShowModal()
-
-        if ret == wx.ID_OK:
-            bCurr = wx.BusyCursor()
-            pixelSize = dlg.getPixelSize()
-            jitParamName = dlg.getJitterVariable()
-            jitScale = dlg.getJitterScale()
-            
-            
-
-            oldcmap = self.glCanvas.cmap 
-            self.glCanvas.setCMap(pylab.cm.gray)
-
-            x0 = max(self.glCanvas.xmin, self.imageBounds.x0)
-            y0 = max(self.glCanvas.ymin, self.imageBounds.y0)
-            x1 = min(self.glCanvas.xmax, self.imageBounds.x1)
-            y1 = min(self.glCanvas.ymax, self.imageBounds.y1)
-
-            imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
-            #imb = ImageBounds(x0, y0, x1, y1)
-
-            status = statusLog.StatusLogger('Generating Triangulated Image ...')
-
-            colours =  dlg.getColour()
-            oldC = self.colourFilter.currentColour
-
-            ims = []
-
-            for c in  colours:
-                self.colourFilter.setColour(c)
-
-                if jitParamName == '1.0':
-                    jitVals = 1.0
-                elif jitParamName in self.colourFilter.keys():
-                    jitVals = self.colourFilter[jitParamName]
-                elif jitParamName in genMeas:
-                    if jitParamName == 'neighbourDistances':
-                        self.genNeighbourDists(True)
-                    jitVals = self.GeneratedMeasures[jitParamName]
-
-                #print jitScale
-                #print jitVals
-                jitVals = jitScale*jitVals
-
-                #print jitParamName, len(jitVals), len(self.colourFilter['x'])
-
-                if dlg.getSoftRender():
-                    status = statusLog.StatusLogger("Rendering triangles ...")
-                    im = visHelpers.rendJitTriang(self.colourFilter['x'],self.colourFilter['y'], dlg.getNumSamples(), jitVals, dlg.getMCProbability(),imb, pixelSize)
-                else:
-                    im = self.glCanvas.genJitTim(dlg.getNumSamples(),self.colourFilter['x'],self.colourFilter['y'], jitVals, dlg.getMCProbability(),pixelSize)
-
-                ims.append(GeneratedImage(im,imb, pixelSize ))
-
-            imfc = imageView.MultiChannelImageViewFrame(self, self.glCanvas, ims, colours, title='Jittered Triangulation - %3.1fnm bins' % pixelSize)
-
-            self.generatedImages.append(imfc)
-            imfc.Show()
-
-            self.colourFilter.setColour(oldC)
-
-            self.glCanvas.setCMap(oldcmap)
-            self.RefreshView()
-
-        dlg.Destroy()
-
-    def OnGenGaussian(self, event):
-        bCurr = wx.BusyCursor()
-        jitVars = ['1.0']
-
-        jitVars += self.colourFilter.keys()
-        jitVars += self.GeneratedMeasures.keys()
-
-        if 'error_x' in self.colourFilter.keys():
-            jvd = self.colourFilter.keys().index('error_x')+1
-        else:
-            jvd = 0
-        
-        dlg = genImageDialog.GenImageDialog(self, mode='gaussian', jitterVariables = jitVars, jitterVarDefault=jvd, colours=self.fluorSpecies.keys())
-
-        ret = dlg.ShowModal()
-
-        if ret == wx.ID_OK:
-            pixelSize = dlg.getPixelSize()
-            jitParamName = dlg.getJitterVariable()
-            jitScale = dlg.getJitterScale()
-            
-            
-
-            status = statusLog.StatusLogger('Generating Gaussian Image ...')
-
-            x0 = max(self.glCanvas.xmin, self.imageBounds.x0)
-            y0 = max(self.glCanvas.ymin, self.imageBounds.y0)
-            x1 = min(self.glCanvas.xmax, self.imageBounds.x1)
-            y1 = min(self.glCanvas.ymax, self.imageBounds.y1)
-
-            #imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
-            imb = ImageBounds(x0, y0, x1, y1)
-
-            colours =  dlg.getColour()
-            oldC = self.colourFilter.currentColour
-
-            ims = []
-
-
-            for c in  colours:
-                self.colourFilter.setColour(c)
-
-                if jitParamName == '1.0':
-                    jitVals = 1.0
-                elif jitParamName in self.colourFilter.keys():
-                    jitVals = self.colourFilter[jitParamName]
-                elif jitParamName in self.GeneratedMeasures.keys():
-                    if jitParamName == 'neighbourDistances':
-                        self.genNeighbourDists()
-                    jitVals = self.GeneratedMeasures[jitParamName]
-
-                #print jitScale
-                #print jitVals
-                jitVals = jitScale*jitVals
-
-                im = visHelpers.rendGauss(self.colourFilter['x'],self.colourFilter['y'], jitVals, imb, pixelSize)
-
-                ims.append(GeneratedImage(im,imb, pixelSize ))
-                
-            imfc = imageView.MultiChannelImageViewFrame(self, self.glCanvas, ims, colours, title='Gaussian Rendering - %3.1fnm bins' % pixelSize)
-
-            self.generatedImages.append(imfc)
-            imfc.Show()
-            
-            self.colourFilter.setColour(oldC)
-            
-
-        dlg.Destroy()
-
-    def OnGenHistogram(self, event): 
-        bCurr = wx.BusyCursor()
-        dlg = genImageDialog.GenImageDialog(self, mode='histogram', colours=self.fluorSpecies.keys())
-
-        ret = dlg.ShowModal()
-
-        if ret == wx.ID_OK:
-            pixelSize = dlg.getPixelSize()
-
-            status = statusLog.StatusLogger('Generating Histogram Image ...')
-
-            x0 = max(self.glCanvas.xmin, self.imageBounds.x0)
-            y0 = max(self.glCanvas.ymin, self.imageBounds.y0)
-            x1 = min(self.glCanvas.xmax, self.imageBounds.x1)
-            y1 = min(self.glCanvas.ymax, self.imageBounds.y1)
-
-            #imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
-            imb = ImageBounds(x0, y0, x1, y1)
-
-            colours =  dlg.getColour()
-            oldC = self.colourFilter.currentColour
-
-            ims = []
-
-            for c in  colours:
-                self.colourFilter.setColour(c)
-                im = visHelpers.rendHist(self.colourFilter['x'],self.colourFilter['y'], imb, pixelSize)
-
-                ims.append(GeneratedImage(im,imb, pixelSize ))
-
-            #imfc = imageView.ColourImageViewFrame(self, self.glCanvas)
-
-#            for im in ims:
-#                img = GeneratedImage(im,imb, pixelSize )
-#                imf = imageView.ImageViewFrame(self,img, self.glCanvas)
-#                self.generatedImages.append(imf)
-#                imf.Show()
-#
-#                imfc.ivp.ivps.append(imf.ivp)
-
-            imfc = imageView.MultiChannelImageViewFrame(self, self.glCanvas, ims, colours, title='Generated Histogram - %3.1fnm bins' % pixelSize)
-
-            self.generatedImages.append(imfc)
-            imfc.Show()
-
-            self.colourFilter.setColour(oldC)
-
-        dlg.Destroy()
-
-    def OnGen3DHistogram(self, event):
-        bCurr = wx.BusyCursor()
-
-        dlg = genImageDialog.GenImageDialog(self, mode='3Dhistogram', colours=self.fluorSpecies.keys(), zvals = self.mapping['z'])
-
-        ret = dlg.ShowModal()
-
-        if ret == wx.ID_OK:
-            pixelSize = dlg.getPixelSize()
-
-            status = statusLog.StatusLogger('Generating Histogram Image ...')
-
-            x0 = max(self.glCanvas.xmin, self.imageBounds.x0)
-            y0 = max(self.glCanvas.ymin, self.imageBounds.y0)
-            x1 = min(self.glCanvas.xmax, self.imageBounds.x1)
-            y1 = min(self.glCanvas.ymax, self.imageBounds.y1)
-
-            #imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
-            imb = ImageBounds(x0, y0, x1, y1)
-
-            colours =  dlg.getColour()
-            oldC = self.colourFilter.currentColour
-
-            ims = []
-
-            for c in  colours:
-                self.colourFilter.setColour(c)
-                im = visHelpers.rendHist3D(self.colourFilter['x'],self.colourFilter['y'], self.colourFilter['z'], imb, pixelSize, dlg.getZBounds(), dlg.getZSliceThickness())
-
-                ims.append(GeneratedImage(im,imb, pixelSize,  dlg.getZSliceThickness()))
-
-            #imfc = imageView.ColourImageViewFrame(self, self.glCanvas)
-
-#            for im in ims:
-#                img = GeneratedImage(im,imb, pixelSize )
-#                imf = imageView.ImageViewFrame(self,img, self.glCanvas)
-#                self.generatedImages.append(imf)
-#                imf.Show()
-#
-#                imfc.ivp.ivps.append(imf.ivp)
-
-            imfc = imageView.MultiChannelImageViewFrame(self, self.glCanvas, ims, colours, title='Generated 3D Histogram - %3.1fnm bins' % pixelSize)
-
-            self.generatedImages.append(imfc)
-            imfc.Show()
-
-            self.colourFilter.setColour(oldC)
-
-        dlg.Destroy()
-
-    def OnGen3DGaussian(self, event):
-        bCurr = wx.BusyCursor()
-
-        jitVars = ['1.0']
-
-        jitVars += self.colourFilter.keys()
-        jitVars += self.GeneratedMeasures.keys()
-
-        if 'error_x' in jitVars:
-            jvi = jitVars.index('error_x')
-        else:
-            jvi = 0
-
-        if 'fitError_z0' in jitVars:
-            jvzi = jitVars.index('fitError_z0')
-        else:
-            jvzi = 0
-
-        dlg = genImageDialog.GenImageDialog(self, mode='3Dgaussian', colours=self.fluorSpecies.keys(), zvals = self.mapping['z'], jitterVariables = jitVars, jitterVarDefault=jvi, jitterVarDefaultZ=jvzi)
-
-        ret = dlg.ShowModal()
-
-        if ret == wx.ID_OK:
-            pixelSize = dlg.getPixelSize()
-            jitParamName = dlg.getJitterVariable()
-            jitScale = dlg.getJitterScale()
-            jitParamNameZ = dlg.getJitterVariableZ()
-            jitScaleZ = dlg.getJitterScaleZ()
-
-            status = statusLog.StatusLogger('Generating 3D Gaussian Image ...')
-
-            x0 = max(self.glCanvas.xmin, self.imageBounds.x0)
-            y0 = max(self.glCanvas.ymin, self.imageBounds.y0)
-            x1 = min(self.glCanvas.xmax, self.imageBounds.x1)
-            y1 = min(self.glCanvas.ymax, self.imageBounds.y1)
-
-            #imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
-            imb = ImageBounds(x0, y0, x1, y1)
-
-            colours =  dlg.getColour()
-            oldC = self.colourFilter.currentColour
-
-            ims = []
-
-            for c in  colours:
-                self.colourFilter.setColour(c)
-
-                if jitParamName == '1.0':
-                    jitVals = np.ones(self.colourFilter['x'].shape)
-                elif jitParamName in self.colourFilter.keys():
-                    jitVals = self.colourFilter[jitParamName]
-                elif jitParamName in self.GeneratedMeasures.keys():
-                    if jitParamName == 'neighbourDistances':
-                        self.genNeighbourDists()
-                    jitVals = self.GeneratedMeasures[jitParamName]
-
-                if jitParamNameZ == '1.0':
-                    jitValsZ = np.ones(self.colourFilter['x'].shape)
-                elif jitParamNameZ in self.colourFilter.keys():
-                    jitValsZ = self.colourFilter[jitParamName]
-                elif jitParamNameZ in self.GeneratedMeasures.keys():
-                    if jitParamNameZ == 'neighbourDistances':
-                        self.genNeighbourDists()
-                    jitValsZ = self.GeneratedMeasures[jitParamName]
-
-                jitVals = jitScale*jitVals
-                jitValsZ = jitScaleZ*jitValsZ
-
-                im = visHelpers.rendGauss3D(self.colourFilter['x'],self.colourFilter['y'], self.colourFilter['z'], jitVals, jitValsZ, imb, pixelSize, dlg.getZBounds(), dlg.getZSliceThickness())
-
-                ims.append(GeneratedImage(im,imb, pixelSize,  dlg.getZSliceThickness()))
-
-            #imfc = imageView.ColourImageViewFrame(self, self.glCanvas)
-
-#            for im in ims:
-#                img = GeneratedImage(im,imb, pixelSize )
-#                imf = imageView.ImageViewFrame(self,img, self.glCanvas)
-#                self.generatedImages.append(imf)
-#                imf.Show()
-#
-#                imfc.ivp.ivps.append(imf.ivp)
-
-            imfc = imageView.MultiChannelImageViewFrame(self, self.glCanvas, ims, colours, title='Generated 3D Histogram - %3.1fnm bins' % pixelSize)
-
-            self.generatedImages.append(imfc)
-            imfc.Show()
-
-            self.colourFilter.setColour(oldC)
-
-        dlg.Destroy()
-
-    def OnGen3DTriangles(self, event):
-        bCurr = wx.BusyCursor()
-
-        jitVars = ['1.0']
-
-        jitVars += self.colourFilter.keys()
-        jitVars += self.GeneratedMeasures.keys()
-        jitVars += ['neighbourDistances']
-
-        if 'fitError_z0' in jitVars:
-            jvzi = jitVars.index('fitError_z0')
-        else:
-            jvzi = 0
-
-        dlg = genImageDialog.GenImageDialog(self, mode='3Dtriangles', colours=self.fluorSpecies.keys(), zvals = self.mapping['z'], jitterVariables = jitVars, jitterVarDefault=jitVars.index('neighbourDistances'), jitterVarDefaultZ=jvzi)
-
-        ret = dlg.ShowModal()
-
-        if ret == wx.ID_OK:
-            pixelSize = dlg.getPixelSize()
-            jitParamName = dlg.getJitterVariable()
-            jitScale = dlg.getJitterScale()
-            jitParamNameZ = dlg.getJitterVariableZ()
-            jitScaleZ = dlg.getJitterScaleZ()
-
-            status = statusLog.StatusLogger('Generating 3D Gaussian Image ...')
-
-            x0 = max(self.glCanvas.xmin, self.imageBounds.x0)
-            y0 = max(self.glCanvas.ymin, self.imageBounds.y0)
-            x1 = min(self.glCanvas.xmax, self.imageBounds.x1)
-            y1 = min(self.glCanvas.ymax, self.imageBounds.y1)
-
-            #imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
-            imb = ImageBounds(x0, y0, x1, y1)
-
-            colours =  dlg.getColour()
-            oldC = self.colourFilter.currentColour
-
-            ims = []
-
-            for c in  colours:
-                self.colourFilter.setColour(c)
-
-                if jitParamName == '1.0':
-                    jitVals = np.ones(self.colourFilter['x'].shape)
-                elif jitParamName in self.colourFilter.keys():
-                    jitVals = self.colourFilter[jitParamName]
-                else:
-                    if jitParamName == 'neighbourDistances':
-                        self.genNeighbourDists(True)
-
-                    if jitParamName in self.GeneratedMeasures.keys():
-                        jitVals = self.GeneratedMeasures[jitParamName]
-
-                if jitParamNameZ == '1.0':
-                    jitValsZ = np.ones(self.colourFilter['x'].shape)
-                elif jitParamNameZ in self.colourFilter.keys():
-                    jitValsZ = self.colourFilter[jitParamNameZ]
-                else:
-                    if jitParamNameZ == 'neighbourDistances':
-                            self.genNeighbourDists(True)
-                            
-                    if jitParamNameZ in self.GeneratedMeasures.keys():
-                        jitValsZ = self.GeneratedMeasures[jitParamNameZ]
-
-                jitVals = jitScale*jitVals
-                jitValsZ = jitScaleZ*jitValsZ
-
-                im = visHelpers.rendJitTet(self.colourFilter['x'],self.colourFilter['y'], self.colourFilter['z'], dlg.getNumSamples(), jitVals, jitValsZ, dlg.getMCProbability(), imb, pixelSize, dlg.getZBounds(), dlg.getZSliceThickness())
-
-                ims.append(GeneratedImage(im,imb, pixelSize,  dlg.getZSliceThickness()))
-
-            #imfc = imageView.ColourImageViewFrame(self, self.glCanvas)
-
-#            for im in ims:
-#                img = GeneratedImage(im,imb, pixelSize )
-#                imf = imageView.ImageViewFrame(self,img, self.glCanvas)
-#                self.generatedImages.append(imf)
-#                imf.Show()
-#
-#                imfc.ivp.ivps.append(imf.ivp)
-
-            imfc = imageView.MultiChannelImageViewFrame(self, self.glCanvas, ims, colours, title='Generated 3D Histogram - %3.1fnm bins' % pixelSize)
-
-            self.generatedImages.append(imfc)
-            imfc.Show()
-
-            self.colourFilter.setColour(oldC)
-
-        dlg.Destroy()
-
-    def OnGenQuadTree(self, event):
-        bCurr = wx.BusyCursor() 
-        dlg = genImageDialog.GenImageDialog(self, mode='quadtree', colours=self.fluorSpecies.keys())
-
-        ret = dlg.ShowModal()
-
-        if ret == wx.ID_OK:
-            pixelSize = dlg.getPixelSize()
-
-            status = statusLog.StatusLogger('Generating QuadTree Image ...')
-
-            x0 = max(self.glCanvas.xmin, self.imageBounds.x0)
-            y0 = max(self.glCanvas.ymin, self.imageBounds.y0)
-            x1 = min(self.glCanvas.xmax, self.imageBounds.x1)
-            y1 = min(self.glCanvas.ymax, self.imageBounds.y1)
-
-            #imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
-            imb = ImageBounds(x0, y0, x1, y1)
-            
-
-            if not pylab.mod(pylab.log2(pixelSize/self.QTGoalPixelSize), 1) == 0:#recalculate QuadTree to get right pixel size
-                self.QTGoalPixelSize = pixelSize
-                self.Quads = None
-            
-#            if self.Quads == None:
-#                self.GenQuads()
-#
-#            qtWidth = self.Quads.x1 - self.Quads.x0
-#
-#            qtWidthPixels = pylab.ceil(qtWidth/pixelSize)
-
-            colours =  dlg.getColour()
-            oldC = self.colourFilter.currentColour
-
-            ims = []
-
-            for c in  colours:
-                self.colourFilter.setColour(c)
-
-                self.GenQuads()
-
-                qtWidth = self.Quads.x1 - self.Quads.x0
-
-                qtWidthPixels = pylab.ceil(qtWidth/pixelSize)
-
-                im = pylab.zeros((qtWidthPixels, qtWidthPixels))
-
-                QTrend.rendQTa(im, self.Quads)
-
-                im = im[(imb.x0/pixelSize):(imb.x1/pixelSize),(imb.y0/pixelSize):(imb.y1/pixelSize)]
-
-                ims.append(GeneratedImage(im,imb, pixelSize ))
-
-            imfc = imageView.MultiChannelImageViewFrame(self, self.glCanvas, ims, colours, title='Generated QuadTree - %3.1fnm bins' % pixelSize)
-
-            self.generatedImages.append(imfc)
-            imfc.Show()
-                
-            self.colourFilter.setColour(oldC)
-
-        dlg.Destroy()
 
     def OnGenShiftmap(self, event):
         from PYME.Analysis import twoColour, twoColourPlot

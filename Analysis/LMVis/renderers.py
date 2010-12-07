@@ -14,8 +14,10 @@ from PYME.Analysis.LMVis import visHelpers
 from PYME.Analysis.LMVis import imageView
 from PYME.Analysis.LMVis import statusLog
 
+from PYME.Analysis.QuadTree import QTrend
+
 import wx
-#import pylab
+import pylab
 import numpy as np
 
 class CurrentRenderer:
@@ -32,7 +34,10 @@ class CurrentRenderer:
         self._addMenuItems()
 
     def _addMenuItems(self):
-        pass
+        ID = wx.NewId()
+        self.visFr.gen_menu.Append(ID, self.name)
+
+        self.visFr.Bind(wx.EVT_MENU, self.Generate, id=ID)
 
     def _getImBounds(self):
         x0 = max(self.visFr.glCanvas.xmin, self.visFr.imageBounds.x0)
@@ -80,8 +85,8 @@ class CurrentRenderer:
 
             im = self.genIm(dlg, imb)
             img = GeneratedImage(im,imb, pixelSize )
-            imf = imageView.ImageViewFrame(self,img, self.visFr.glCanvas)
-            #self.generatedImages.append(imf)
+            imf = imageView.ImageViewFrame(self.visFr,img, self.visFr.glCanvas)
+            self.visFr.generatedImages.append(imf)
             imf.Show()
 
             self.visFr.RefreshView()
@@ -123,7 +128,6 @@ class ColourRenderer(CurrentRenderer):
             imb = self._getImBounds()
             
             colours =  dlg.getColour()
-            print colours
             oldC = self.visFr.colourFilter.currentColour
 
             ims = []
@@ -135,7 +139,7 @@ class ColourRenderer(CurrentRenderer):
 
             imfc = imageView.MultiChannelImageViewFrame(self.visFr, self.visFr.glCanvas, ims, colours, title='Generated %s - %3.1fnm bins' % (self.name, pixelSize))
 
-            #self.generatedImages.append(imfc)
+            self.visFr.generatedImages.append(imfc)
             imfc.Show()
 
             self.visFr.colourFilter.setColour(oldC)
@@ -162,8 +166,8 @@ class Histogram3DRenderer(HistogramRenderer):
     mode = '3Dhistogram'
 
     def genIm(self, dlg, imb):
-        return visHelpers.rendHist(self.visFr.colourFilter['x'],self.visFr.colourFilter['y'], imb, dlg.getPixelSize())
-
+        return visHelpers.rendHist3D(self.visFr.colourFilter['x'],self.visFr.colourFilter['y'], self.visFr.colourFilter['z'], imb, dlg.getPixelSize(), dlg.getZBounds(), dlg.getZSliceThickness())
+    
 
 class GaussianRenderer(ColourRenderer):
     '''2D Gaussian rendering'''
@@ -218,8 +222,6 @@ class TriangleRenderer(ColourRenderer):
 
         jitVals = self._genJitVals(jitParamName, jitScale)
 
-        print dlg.getMCProbability(), dlg.getNumSamples(), len(self.visFr.colourFilter['x']), len(self.visFr.colourFilter['y']), len(jitVals)
-
         if dlg.getSoftRender():
             status = statusLog.StatusLogger("Rendering triangles ...")
             return visHelpers.rendJitTriang(self.visFr.colourFilter['x'],self.visFr.colourFilter['y'], dlg.getNumSamples(), jitVals, dlg.getMCProbability(),imb, pixelSize)
@@ -243,3 +245,35 @@ class Triangle3DRenderer(TriangleRenderer):
         jitValsZ = self._genJitVals(jitParamNameZ, jitScaleZ)
 
         return visHelpers.rendJitTet(self.visFr.colourFilter['x'],self.visFr.colourFilter['y'],self.visFr.colourFilter['z'], dlg.getNumSamples(), jitVals, jitValsZ, dlg.getMCProbability(), imb, pixelSize, dlg.getZBounds(), dlg.getZSliceThickness())
+
+class QuadTreeRenderer(ColourRenderer):
+    '''2D quadtree rendering'''
+
+    name = 'QuadTree'
+    mode = 'quadtree'
+
+    def genIm(self, dlg, imb):
+        pixelSize = dlg.getPixelSize()
+
+        if not pylab.mod(pylab.log2(pixelSize/self.visFr.QTGoalPixelSize), 1) == 0:#recalculate QuadTree to get right pixel size
+                self.visFr.QTGoalPixelSize = pixelSize
+                self.visFr.Quads = None
+
+        self.visFr.GenQuads()
+
+        qtWidth = self.visFr.Quads.x1 - self.visFr.Quads.x0
+        qtWidthPixels = pylab.ceil(qtWidth/pixelSize)
+
+        im = pylab.zeros((qtWidthPixels, qtWidthPixels))
+        QTrend.rendQTa(im, self.visFr.Quads)
+
+        return im[(imb.x0/pixelSize):(imb.x1/pixelSize),(imb.y0/pixelSize):(imb.y1/pixelSize)]
+
+
+RENDERER_GROUPS = ((CurrentRenderer,),(HistogramRenderer, GaussianRenderer, TriangleRenderer, QuadTreeRenderer), (Histogram3DRenderer, Gaussian3DRenderer, Triangle3DRenderer))
+
+def init_renderers(visFr):
+    for g in RENDERER_GROUPS:
+        for r in g:
+            r(visFr)
+        visFr.gen_menu.AppendSeparator()
