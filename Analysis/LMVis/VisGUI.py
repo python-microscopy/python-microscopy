@@ -587,12 +587,10 @@ class VisGUIFrame(wx.Frame):
 
         ID_TOGGLE_SETTINGS = wx.NewId()
 
-        ID_GEN_SHIFTMAP = wx.NewId()
         ID_CORR_DRIFT = wx.NewId()
         ID_EXT_DRIFT = wx.NewId()
-        ID_TRACK_MOLECULES = wx.NewId()
-        ID_CALC_DECAYS = wx.NewId()
-        ID_PLOT_TEMPERATURE = wx.NewId()
+        
+        
         ID_POINT_COLOC = wx.NewId()
 
         ID_ABOUT = wx.ID_ABOUT
@@ -664,14 +662,12 @@ class VisGUIFrame(wx.Frame):
         self.gen_menu = wx.Menu()
         renderers.init_renderers(self)
 
-        special_menu = wx.Menu()
-        special_menu.Append(ID_GEN_SHIFTMAP, "Calculate &Shiftmap")
-        special_menu.Append(ID_CORR_DRIFT, "Estimate drift using cross-correlation")
-        special_menu.Append(ID_EXT_DRIFT, "Plot externally calculated drift trajectory")
-        special_menu.Append(ID_TRACK_MOLECULES, "&Track single molecule trajectories")
-        special_menu.Append(ID_CALC_DECAYS, "Estimate decay lifetimes")
-        special_menu.Append(ID_PLOT_TEMPERATURE, "Plot temperature record")
-        special_menu.Append(ID_POINT_COLOC, "Pointwise Colocalisation")
+        self.extras_menu = wx.Menu()
+        self.extras_menu.Append(ID_CORR_DRIFT, "Estimate drift using cross-correlation")
+        self.extras_menu.Append(ID_EXT_DRIFT, "Plot externally calculated drift trajectory")
+        
+        
+        self.extras_menu.Append(ID_POINT_COLOC, "Pointwise Colocalisation")
 
         help_menu = wx.Menu()
         help_menu.Append(ID_ABOUT, "&About")
@@ -681,11 +677,8 @@ class VisGUIFrame(wx.Frame):
         menu_bar.Append(file_menu, "&File")
         menu_bar.Append(self.view_menu, "&View")
         menu_bar.Append(self.gen_menu, "&Generate Image")
-        menu_bar.Append(special_menu, "&Extras")
+        menu_bar.Append(self.extras_menu, "&Extras")
         menu_bar.Append(self.view3d_menu, "View &3D")
-       
-        
-
             
         menu_bar.Append(help_menu, "&Help")
 
@@ -711,12 +704,11 @@ class VisGUIFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.SetFit, id=ID_VIEW_FIT)
         self.Bind(wx.EVT_MENU, self.OnFitROI, id=ID_VIEW_FIT_ROI)
 
-        self.Bind(wx.EVT_MENU, self.OnGenShiftmap, id=ID_GEN_SHIFTMAP)
         self.Bind(wx.EVT_MENU, self.OnCalcCorrDrift, id=ID_CORR_DRIFT)
         self.Bind(wx.EVT_MENU, self.OnPlotExtDrift, id=ID_EXT_DRIFT)
-        self.Bind(wx.EVT_MENU, self.OnTrackMolecules, id=ID_TRACK_MOLECULES)
-        self.Bind(wx.EVT_MENU, self.OnCalcDecays, id=ID_CALC_DECAYS)
-        self.Bind(wx.EVT_MENU, self.OnPlotTemperature, id=ID_PLOT_TEMPERATURE)
+        
+        
+        
         self.Bind(wx.EVT_MENU, self.OnPointwiseColoc, id=ID_POINT_COLOC)
 
         self.Bind(wx.EVT_MENU, self.OnView3DPoints, id=ID_VIEW_3D_POINTS)
@@ -798,45 +790,11 @@ class VisGUIFrame(wx.Frame):
         self.GeneratedMeasures['neighbourDistances'] = pylab.array(visHelpers.calcNeighbourDists(self.Triangles))
         
 
-    def OnGenShiftmap(self, event):
-        from PYME.Analysis import twoColour, twoColourPlot
-        lx = len(self.filter['x'])
-        dx, dy, spx, spy = twoColour.genShiftVectorFieldSpline(self.filter['x']+.1*pylab.randn(lx), self.filter['y']+.1*pylab.randn(lx), self.filter['fitResults_dx'], self.filter['fitResults_dy'], self.filter['fitError_dx'], self.filter['fitError_dy'])
-        twoColourPlot.PlotShiftField(dx, dy, spx, spy)
+    
 
-        import cPickle
+    
 
-        defFile = os.path.splitext(os.path.split(self.GetTitle())[-1])[0] + '.sf'
-
-        fdialog = wx.FileDialog(None, 'Save shift field as ...',
-            wildcard='Shift Field file (*.sf)|*.sf', style=wx.SAVE|wx.HIDE_READONLY, defaultDir = nameUtils.genShiftFieldDirectoryPath(), defaultFile=defFile)
-        succ = fdialog.ShowModal()
-        if (succ == wx.ID_OK):
-            fpath = fdialog.GetPath()
-            #save as a pickle containing the data and voxelsize
-
-            fid = open(fpath, 'wb')
-            cPickle.dump((spx, spy), fid, 2)
-            fid.close()
-
-    def OnCalcDecays(self, event):
-        from PYME.Analysis.BleachProfile import kinModels
-        
-        kinModels.fitDecay(self.colourFilter, self.mdh)
-        kinModels.fitOnTimes(self.colourFilter, self.mdh)
-        kinModels.fitFluorBrightness(self.colourFilter, self.mdh)
-
-    def OnPlotTemperature(self, event):
-        from PYME.misc import tempDB
-        import pylab
-        t, tm = tempDB.getEntries(self.mdh.getEntry('StartTime'), self.mdh.getEntry('EndTime'))
-        t_, tm_ = tempDB.getEntries(self.mdh.getEntry('StartTime') - 3600, self.mdh.getEntry('EndTime'))
-
-        pylab.figure()
-        pylab.plot((t_ - self.mdh.getEntry('StartTime'))/60, tm_)
-        pylab.plot((t - self.mdh.getEntry('StartTime'))/60, tm, lw=2)
-        pylab.xlabel('Time [mins]')
-        pylab.ylabel('Temperature [C]')
+    
 
     def OnPointwiseColoc(self, event):
         from PYME.Analysis import distColoc
@@ -847,47 +805,7 @@ class VisGUIFrame(wx.Frame):
 
 
 
-    def OnTrackMolecules(self, event):
-        import PYME.Analysis.DeClump.deClumpGUI as deClumpGUI
-        import PYME.Analysis.DeClump.deClump as deClump
-        import trackUtils
-
-        bCurr = wx.BusyCursor()
-        dlg = deClumpGUI.deClumpDialog(self)
-
-        ret = dlg.ShowModal()
-
-        if ret == wx.ID_OK:
-            nFrames = dlg.GetClumpTimeWindow()
-            rad_var = dlg.GetClumpRadiusVariable()
-            if rad_var == '1.0':
-                delta_x = 0*self.mapping['x'] + dlg.GetClumpRadiusMultiplier()
-            else:
-                delta_x = dlg.GetClumpRadiusMultiplier()*self.mapping[rad_var]
-
-        clumpIndices = deClump.findClumps(self.mapping['t'].astype('i'), self.mapping['x'].astype('f4'), self.mapping['y'].astype('f4'), delta_x.astype('f4'), nFrames)
-        numPerClump, b = np.histogram(clumpIndices, np.arange(clumpIndices.max() + 1.5) + .5)
-
-        trackVelocities = trackUtils.calcTrackVelocity(self.mapping['x'], self.mapping['y'], clumpIndices)
-        #print b
-
-        self.selectedDataSource.clumpIndices = -1*np.ones(len(self.selectedDataSource['x']))
-        self.selectedDataSource.clumpIndices[self.filter.Index] = clumpIndices
-
-        self.selectedDataSource.clumpSizes = np.zeros(self.selectedDataSource.clumpIndices.shape)
-        self.selectedDataSource.clumpSizes[self.filter.Index] = numPerClump[clumpIndices - 1]
-
-        self.selectedDataSource.trackVelocities = np.zeros(self.selectedDataSource.clumpIndices.shape)
-        self.selectedDataSource.trackVelocities[self.filter.Index] = trackVelocities
-
-        self.selectedDataSource.setMapping('clumpIndex', 'clumpIndices')
-        self.selectedDataSource.setMapping('clumpSize', 'clumpSizes')
-        self.selectedDataSource.setMapping('trackVelocity', 'trackVelocities')
-
-        self.RegenFilter()
-        self.CreateFoldPanel()
-
-        dlg.Destroy()
+    
 
     def OnCalcCorrDrift(self, event):
         from PYME.Analysis import driftAutocorr
