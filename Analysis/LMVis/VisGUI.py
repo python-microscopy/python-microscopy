@@ -444,7 +444,7 @@ class VisGUIFrame(wx.Frame):
         self.glCanvas.setColour()
         self.OnGLViewChanged()
         
-        self.hlCLim.SetData(self.glCanvas.c, self.glCanvas.clim[0], self.glCanvas.clim[1])
+        self.displayPane.hlCLim.SetData(self.glCanvas.c, self.glCanvas.clim[0], self.glCanvas.clim[1])
 
     def OnObjApplyThreshold(self, event):
         self.objects = None
