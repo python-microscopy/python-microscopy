@@ -315,8 +315,10 @@ class HDFTaskQueue(HDFResultsTaskQueue):
             time.sleep(0.01)
 
         if self.metaDataStale:
+            self.dataFileLock.acquire()
             self.metaData = MetaDataHandler.NestedClassMDHandler(self.resultsMDH)
             self.metaDataStale = False
+            self.dataFileLock.release()
         
         
         taskNum = self.openTasks.pop(self.fTaskToPop(workerN, NWorkers, len(self.openTasks)))
@@ -347,8 +349,10 @@ class HDFTaskQueue(HDFResultsTaskQueue):
             time.sleep(0.01)
 
         if self.metaDataStale:
+            self.dataFileLock.acquire()
             self.metaData = MetaDataHandler.NestedClassMDHandler(self.resultsMDH)
             self.metaDataStale = False
+            self.dataFileLock.release()
 
         tasks = []
 
