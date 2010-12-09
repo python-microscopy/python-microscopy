@@ -46,6 +46,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
         self.points =[]
         self.pointsR = []
+        self.showPoints = True
         self.pointMode = 'confoc'
         self.pointTolNFoc = {'confoc' : (5,5,5), 'lm' : (2, 5, 5), 'splitter' : (2,5,5)}
 
@@ -183,7 +184,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                     dc.DrawRectangle(sc*p[1]-self.psfROISize[1]*sc - x0,sc*p[2]*self.aspect - self.psfROISize[2]*sc*self.aspect - y0, 2*self.psfROISize[1]*sc,2*self.psfROISize[2]*sc*self.aspect)
 
 
-        if len(self.points) > 0:
+        if len(self.points) > 0 and self.showPoints:
             #if self.pointsMode == 'confoc':
             pointTol = self.pointTolNFoc[self.pointMode]
             if(self.do.slice == self.do.SLICE_XY):

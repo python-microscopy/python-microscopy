@@ -33,7 +33,7 @@ class DecayAnalyser:
 
     def OnRetrieveIntensitySteps(self, event):
         from PYME.Analysis import piecewiseMapping
-        fw = piecewiseMapping.GeneratePMFromProtocolEvents(self.visFr.events, self.visFr.mdh, self.visFr.mdh.getEntry('StartTime'), 3)
+        fw = piecewiseMapping.GeneratePMFromProtocolEvents(self.visFr.events, self.visFr.mdh, self.visFr.mdh.getEntry('StartTime'), 10)
         self.visFr.selectedDataSource.fw = fw(self.visFr.selectedDataSource['t'])
         self.visFr.selectedDataSource.setMapping('filter', 'fw')
         self.visFr.selectedDataSource.setMapping('ColourNorm', '0.0*t')
