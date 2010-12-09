@@ -24,6 +24,15 @@ def ei2mod(p, n, dT, nAvg=30):
 
     return ret
 
+def ei3mod(p, n, dT, nAvg=30, nDet = 0.7, tDet = .1):#,nDet=.7, tDet = .2):
+    A, tau = p
+    #print A, tau
+    ret =  A*tau*(exp(-sqrt((n-dT)/tau)) - exp(-sqrt(n/tau)))*(1 + erf((sqrt(maximum(1 - n/(dT*nAvg), 0)) - nDet))/tDet)
+
+    #print n, sqrt((n-dT)/tau)
+
+    return ret
+
 #Decay of event numbers over time
 def e2mod(p, t):
     A, tau, b, Dt, sT = p
@@ -113,6 +122,8 @@ def fitOnTimesChan(colourFilter, metadata, channame='', i=0):
 
     res = FitModelWeighted(ei2mod, [n[0], .2], n[1:], 1./(sqrt(n[1:]) + 1), bins[2:]*cycTime, cycTime)
 
+    #print res[0]
+
     #figure()
 
     
@@ -175,6 +186,7 @@ def fitFluorBrightnessChan(colourFilter, metadata, channame='', i=0, rng = None)
     xlabel('Intensity [photons]')
     #ylim((1, ylim()[1]))
     title('Event Intensity - CAUTION - unreliable if evt. duration $>\\sim$ exposure time')
+    #print res[0][2]
 
     figtext(.4,.8 -.05*i, channame + '\t$N_{det} = %3.0f\\;\\lambda = %3.0f$' % (res[0][1], res[0][3]), size=18, color=colours[i])
 

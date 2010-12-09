@@ -58,7 +58,7 @@ class aqThread(threading.Thread):
             while ((not self.aqRunning) or (self.numBufferedImages > self.bufferlength/2.)) and (not self.kill) :
                 time.sleep(.01)
             
-            self.buffer[:,self.bufferWritePos] = self.spectrometer.getSpectrum().astype('uint16')
+            self.buffer[:,self.bufferWritePos] = self.spectrometer.getSpectrum().clip(0, 2**15).astype('uint16')
             self.bufferWritePos +=1
             if self.bufferWritePos >= self.bufferlength: #wrap around
                 self.bufferWritePos = 0
@@ -135,7 +135,7 @@ class SpecCamera:
         self.compT.start()
 
         self.contMode = True
-        self.shutterOpen = True
+        #self.shutterOpen = True
 
 #        #let us work with andor dialog
 #        self.HorizShiftSpeeds = [[[10]]]
@@ -180,6 +180,13 @@ class SpecCamera:
     def SetIntegTime(self, iTime): 
         self.intTime=iTime
         self.compT.spectrometer.setIntegrationTime(iTime)
+
+    def SetAveraging(self, nAvg):
+        self.compT.spectrometer.setScansToAverage(nAvg)
+
+    def GetAveraging(self):
+        return self.compT.spectrometer.getScansToAverage()
+
     def GetIntegTime(self): 
         return self.intTime
     
@@ -336,6 +343,12 @@ class SpecCamera:
         mdh.setEntry('Camera.NoiseFactor', 1.41)
         mdh.setEntry('Camera.ElectronsPerCount', 1)
         mdh.setEntry('Camera.ADOffset', 0)
+
+        mdh.setEntry('Camera.Averaging', self.GetAveraging())
+        mdh.setEntry('Camera.ElectricDarkCorrect', self.compT.spectrometer.getCorrectForElectricalDark())
+        mdh.setEntry('Camera.NonlinearityCorrect', self.compT.spectrometer.getCorrectForDetectorNonlinearity())
+
+        mdh.setEntry('Spectrum.Wavelengths', self.XVals)
 
         #mdh.setEntry('Simulation.Fluorophores', self.fluors.fl)
         #mdh.setEntry('Simulation.LaserPowers', self.laserPowers)

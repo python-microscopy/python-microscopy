@@ -76,6 +76,22 @@ class piecewiseMap:
 
         return yp
 
+def GeneratePMFromProtocolEvents(events, metadata, x0, y0, id='setPos', idPos = 1, dataPos=2):
+    x = []
+    y = []
+
+    secsPerFrame = metadata.getEntry('Camera.CycleTime')
+
+    for e in events[events['EventName'] == 'ProtocolTask']:
+        #if e['EventName'] == eventName:
+        ed = e['EventDescr'].split(', ')
+        if ed[idPos] == id:
+            x.append(e['Time'])
+            y.append(float(ed[dataPos]))
+
+    return piecewiseMap(y0, timeToFrames(array(x), events, metadata), array(y), secsPerFrame, xIsSecs=False)
+
+
 def GeneratePMFromEventList(events, metadata, x0, y0, eventName='ProtocolFocus', dataPos=1):
     x = []
     y = []
