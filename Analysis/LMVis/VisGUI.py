@@ -706,14 +706,14 @@ class VisGUIFrame(wx.Frame):
         #self.glCanvas.cmap = pylab.cm.hsv
         self.RefreshView()
         self.CreateFoldPanel()
-        self.OnPercentileCLim(None)
+        self.dispPanel.OnPercentileCLim(None)
 
     def OnViewTracks(self,event):
         self.viewMode = 'tracks'
         #self.glCanvas.cmap = pylab.cm.hsv
         self.RefreshView()
         self.CreateFoldPanel()
-        self.OnPercentileCLim(None)
+        self.dispPanel.OnPercentileCLim(None)
 
     def OnViewBlobs(self,event):
         self.viewMode = 'blobs'
@@ -725,25 +725,25 @@ class VisGUIFrame(wx.Frame):
         self.viewMode = 'triangles'
         self.RefreshView()
         self.CreateFoldPanel()
-        self.OnPercentileCLim(None)
+        self.dispPanel.OnPercentileCLim(None)
 
     def OnViewQuads(self,event):
         self.viewMode = 'quads'
         self.RefreshView()
         self.CreateFoldPanel()
-        self.OnPercentileCLim(None)
+        self.dispPanel.OnPercentileCLim(None)
 
     def OnViewVoronoi(self,event):
         self.viewMode = 'voronoi'
         self.RefreshView()
         self.CreateFoldPanel()
-        self.OnPercentileCLim(None)
+        self.dispPanel.OnPercentileCLim(None)
 
     def OnViewInterpTriangles(self,event):
         self.viewMode = 'interp_triangles'
         self.RefreshView()
         self.CreateFoldPanel()
-        self.OnPercentileCLim(None)
+        self.dispPanel.OnPercentileCLim(None)
 
     def OnView3DPoints(self,event):
         if 'z' in self.colourFilter.keys():

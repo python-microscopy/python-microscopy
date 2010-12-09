@@ -24,7 +24,7 @@ class deClumpDialog(wx.Dialog):
 
         hsizer.Add(wx.StaticText(self, -1, 'Clump Radius: '), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
-        self.tClumpRadMult = wx.TextCtrl(self, -1, '1.0', size=[30,-1])
+        self.tClumpRadMult = wx.TextCtrl(self, -1, '2.0', size=[30,-1])
         hsizer.Add(self.tClumpRadMult, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
         hsizer.Add(wx.StaticText(self, -1, 'X'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)

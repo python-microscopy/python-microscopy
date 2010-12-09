@@ -43,7 +43,8 @@ while 1:
             res = task(taskQueue=tq)
             tq.returnCompletedTask(res, name)
         except:
-            pass
+            import traceback
+            traceback.print_exc()
         #tasks.remove(task)
         del task
         

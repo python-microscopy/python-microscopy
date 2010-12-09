@@ -111,7 +111,7 @@ def fitOnTimesChan(colourFilter, metadata, channame='', i=0):
 
     #print (1./(sqrt(n) + 1))
 
-    res = FitModelWeighted(ei2mod, [n[0], .2], n[0:], 1./(sqrt(n[0:]) + 1), bins[1:]*cycTime, cycTime)
+    res = FitModelWeighted(ei2mod, [n[0], .2], n[1:], 1./(sqrt(n[1:]) + 1), bins[2:]*cycTime, cycTime)
 
     #figure()
 
