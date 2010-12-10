@@ -82,7 +82,7 @@ class DataWrap: #permit indexing with more dimensions larger than len(shape)
         if self.dim_1_is_z:
             keys = [keys[2]] + keys[:2] + keys[3:]
 
-        print keys
+        #print keys
         
         if self.type == 'Array':
             r = self.data.__getitem__(keys)
@@ -121,7 +121,7 @@ class DisplayOpts:
     def SetDataStack(self, datasource):
         if datasource.__class__ ==list:
             datasource = ListWrap(datasource)
-        else:
+        elif not datasource.__class__ in [DataWrap, ListWrap]: #only if not already wrapped
             datasource = DataWrap(datasource)
 
         self.ds = datasource

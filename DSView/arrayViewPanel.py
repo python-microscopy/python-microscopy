@@ -47,6 +47,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         self.points =[]
         self.pointsR = []
         self.showPoints = True
+        self.showTracks = True
         self.pointMode = 'confoc'
         self.pointTolNFoc = {'confoc' : (5,5,5), 'lm' : (2, 5, 5), 'splitter' : (2,5,5)}
 
@@ -184,22 +185,75 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                     dc.DrawRectangle(sc*p[1]-self.psfROISize[1]*sc - x0,sc*p[2]*self.aspect - self.psfROISize[2]*sc*self.aspect - y0, 2*self.psfROISize[1]*sc,2*self.psfROISize[2]*sc*self.aspect)
 
 
-        if len(self.points) > 0 and self.showPoints:
-            #if self.pointsMode == 'confoc':
-            pointTol = self.pointTolNFoc[self.pointMode]
+        if self.showTracks and 'filter' in dir(self):
             if(self.do.slice == self.do.SLICE_XY):
-                pFoc = self.points[abs(self.points[:,2] - self.do.zp) < 1][:,:2]
-                if self.pointMode == 'splitter':
-                    pCol = self.pointColours[abs(self.points[:,2] - self.do.zp) < 1]
-                pNFoc = self.points[abs(self.points[:,2] - self.do.zp) < pointTol[0]][:,:2]
-
+                IFoc = (abs(self.filter['t'] - self.do.zp) < 1)
+                               
             elif(self.do.slice == self.do.SLICE_XZ):
-                pFoc = self.points[abs(self.points[:,1] - self.do.yp) < 1][:, ::2]
-                pNFoc = self.points[abs(self.points[:,1] - self.do.yp) < pointTol[1]][:,::2]
+                IFoc = (abs(self.filter['y'] - self.do.yp*self.vox_y) < 3*self.vox_y)*(self.filter['t'] > y0/sc)*(self.filter['t'] < (y0 +sY)/sc)      
 
             else:#(self.do.slice == self.do.SLICE_YZ):
-                pFoc = self.points[abs(self.points[:,0] - self.do.xp) < 1][:, 1:]
-                pNFoc = self.points[abs(self.points[:,0] - self.do.xp) < pointTol[2]][:,1:]
+                IFoc = (abs(self.filter['x'] - self.do.xp*self.vox_x) < 3*self.vox_x)*(self.filter['t'] > y0/sc)*(self.filter['t'] < (y0 +sY)/sc)
+
+            tFoc = list(set(self.filter['clumpIndex'][IFoc]))
+
+            dc.SetBrush(wx.TRANSPARENT_BRUSH)
+
+            pGreen = wx.Pen(wx.TheColourDatabase.FindColour('RED'),2)
+            #pRed = wx.Pen(wx.TheColourDatabase.FindColour('RED'),0)
+            dc.SetPen(pGreen)
+
+            for tN in tFoc:
+                IFoc = (self.filter['clumpIndex'] == tN)
+                if(self.do.slice == self.do.SLICE_XY):
+                    pFoc = numpy.vstack((sc*self.filter['x'][IFoc]/self.vox_x - x0, sc*self.filter['y'][IFoc]/self.vox_y - y0)).T
+
+                elif(self.do.slice == self.do.SLICE_XZ):
+                    pFoc = numpy.vstack((sc*self.filter['x'][IFoc]/self.vox_x - x0, sc*self.filter['t'][IFoc] - y0)).T
+
+                else:#(self.do.slice == self.do.SLICE_YZ):
+                    pFoc = numpy.vstack((sc*self.filter['y'][IFoc]/self.vox_y - y0, sc*self.filter['t'][IFoc] - y0)).T
+
+                dc.DrawLines(pFoc)
+
+                
+
+        if self.showPoints and ('filter' in dir(self) or len(self.points) > 0):
+            if 'filter' in dir(self):
+                #pointTol = self.pointTolNFoc[self.pointMode]
+
+                if(self.do.slice == self.do.SLICE_XY):
+                    IFoc = (abs(self.filter['t'] - self.do.zp) < 1)
+                    pFoc = numpy.vstack((self.filter['x'][IFoc]/self.vox_x, self.filter['y'][IFoc]/self.vox_y)).T
+
+                elif(self.do.slice == self.do.SLICE_XZ):
+                    IFoc = (abs(self.filter['y'] - self.do.yp*self.vox_y) < 3*self.vox_y)*(self.filter['t'] > y0/sc)*(self.filter['t'] < (y0 +sY)/sc)
+                    pFoc = numpy.vstack((self.filter['x'][IFoc]/self.vox_x, self.filter['t'][IFoc])).T
+
+                else:#(self.do.slice == self.do.SLICE_YZ):
+                    IFoc = (abs(self.filter['x'] - self.do.xp*self.vox_x) < 3*self.vox_x)*(self.filter['t'] > y0/sc)*(self.filter['t'] < (y0 +sY)/sc)
+                    pFoc = numpy.vstack((self.filter['y'][IFoc]/self.vox_y, self.filter['t'][IFoc])).T
+
+                #pFoc = numpy.vstack((self.filter['x'][IFoc]/self.vox_x, self.filter['y'][IFoc]/self.vox_y, self.filter['t'][IFoc])).T
+                pNFoc = []
+
+            elif len(self.points) > 0 and self.showPoints:
+                #if self.pointsMode == 'confoc':
+                pointTol = self.pointTolNFoc[self.pointMode]
+                if(self.do.slice == self.do.SLICE_XY):
+                    pFoc = self.points[abs(self.points[:,2] - self.do.zp) < 1][:,:2]
+                    if self.pointMode == 'splitter':
+                        pCol = self.pointColours[abs(self.points[:,2] - self.do.zp) < 1]
+                    pNFoc = self.points[abs(self.points[:,2] - self.do.zp) < pointTol[0]][:,:2]
+
+                elif(self.do.slice == self.do.SLICE_XZ):
+                    pFoc = self.points[abs(self.points[:,1] - self.do.yp) < 1][:, ::2]
+                    pNFoc = self.points[abs(self.points[:,1] - self.do.yp) < pointTol[1]][:,::2]
+
+                else:#(self.do.slice == self.do.SLICE_YZ):
+                    pFoc = self.points[abs(self.points[:,0] - self.do.xp) < 1][:, 1:]
+                    pNFoc = self.points[abs(self.points[:,0] - self.do.xp) < pointTol[2]][:,1:]
+
 
             #pFoc = numpy.atleast_1d(pFoc)
             #pNFoc = numpy.atleast_1d(pNFoc)

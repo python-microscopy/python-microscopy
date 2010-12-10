@@ -66,7 +66,7 @@ from PYME.Analysis import MetadataTree
 import numpy as np
 import scipy.special
 
-import tables
+#import tables
 from PYME.Analysis import MetaData
 from PYME.Acquire import MetaDataHandler
 
@@ -1126,7 +1126,11 @@ class VisGUIFrame(wx.Frame):
             self.generatedImages.append(imf)
             imf.Show()
         elif ext == '.h5': #h5 spool
-            h5f = tables.openFile(filename)
+            from PYME.Analysis.DataSources import HDFDataSource
+            from PYME.DSView.arrayViewPanel import ArraySettingsAndViewPanel
+            dataSource = HDFDataSource.DataSource(filename, None)
+            h5f = dataSource.h5File
+            #h5f = tables.openFile(filename)
 
             if 'MetaData' in h5f.root: #should be true the whole time
                 md = MetaData.TIRFDefault
@@ -1145,8 +1149,21 @@ class VisGUIFrame(wx.Frame):
 
             img = GeneratedImage(im,imb, pixelSize )
             imf = imageView.ImageViewFrame(self,img, self.glCanvas, title=filename,zp=min(md.EstimatedLaserOnFrameNo+10,(h5f.root.ImageData.shape[0]-1)))
+            #imf = imageView.MultiChannelImageViewFrame(self, self.glCanvas, [img], title=filename, zdim=0, zp=min(md.EstimatedLaserOnFrameNo+10,(h5f.root.ImageData.shape[0]-1)))
+
             self.generatedImages.append(imf)
             imf.Show()
+
+            vp = ArraySettingsAndViewPanel(self.notebook, dataSource)
+            self.notebook.AddPage(page=vp, select=True, caption=filename)
+            vp.view.pointMode = 'lm'
+            vp.view.vox_x = 1e3*md.getEntry('voxelsize.x')
+            vp.view.vox_y = 1e3*md.getEntry('voxelsize.y')
+            vp.view.filter = self.colourFilter
+            #vp.view.points = np.vstack((self.colourFilter['x']/voxx, self.colourFilter['y']/voxy, self.colourFilter['t'])).T
+
+            self.vp = vp
+
         elif ext == '.tif': #Tiff file
             from PYME.FileUtils import readTiff
             im = readTiff.read3DTiff(filename)[:,:,0].squeeze()
