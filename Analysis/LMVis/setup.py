@@ -33,8 +33,22 @@ if sys.platform == 'win32':
         setup()
 
 else:
-    setup(
+    #try:
+    from cx_Freeze import setup, Executable
+    import matplotlib
+    setup(executables=[Executable('VisGUI.py')],
+        options= {'build_exe' : {
+          'excludes' : ['pyreadline', 'Tkconstants', 'Tkinter', 'tcl', '_imagingtk', 'PIL._imagingtk', 'ImageTK', 'PIL.ImageTK', 'FixTk'],
+          'packages' : ['OpenGL', 'OpenGL.platform', 'OpenGL.arrays']}},
+        
+        #data_files=matplotlib.get_py2exe_datafiles(),
       #cmdclass = {'build_ext': build_ext},
       #ext_modules = ext_modules
-    )
+      )
+
+    #except:
+    #    setup(
+          #cmdclass = {'build_ext': build_ext},
+          #ext_modules = ext_modules
+    #    )
 

@@ -194,6 +194,7 @@ class VisGUIFrame(wx.Frame):
 
         #self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_MOVE, self.OnMove)
+        self.Bind(wx.EVT_CLOSE, self.OnQuit)
 
         statusLog.SetStatusDispFcn(self.SetStatus)
 
