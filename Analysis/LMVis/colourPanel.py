@@ -358,7 +358,11 @@ class colourPanel(wx.Panel):
     def SpecFromMetadata(self, mdh):
         labels = mdh.getEntry('Sample.Labelling')
 
+        structures = []
         for structure, dye in labels:
+            if structure in structures: #duplicate structure
+                structure += ' A'
+            structures.append(structure)
             ratio = dyeRatios.getRatio(dye, mdh)
 
             if not ratio == None:

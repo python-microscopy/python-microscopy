@@ -13,7 +13,7 @@ def qsToRecarray(qs):
     for f in fields:
         fmt = np.array(f.to_python('1')).dtype.str
         if fmt == '|S1':
-            fmt = '|S50'
+            fmt = '|S80'
         formats.append(fmt)
         names.append(f.name)
 
