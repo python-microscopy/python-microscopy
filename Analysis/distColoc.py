@@ -43,6 +43,8 @@ def calcDistCorr(cfilter, colourA, colourB, nbins=100, binsize=10):
 
     hAA = DistHist.distanceHistogram(xA, yA, xA, yA, nbins, binsize)
     hAB = DistHist.distanceHistogram(xA, yA, xB, yB, nbins, binsize)
+    hBB = DistHist.distanceHistogram(xB, yB, xB, yB, nbins, binsize)
+    hBA = DistHist.distanceHistogram(xB, yB, xA, yA, nbins, binsize)
 
     hAR = DistHist.distanceHistogram(xA, yA, xR, yR, nbins, binsize)
     hBR = DistHist.distanceHistogram(xB, yB, xR, yR, nbins, binsize)
@@ -51,13 +53,24 @@ def calcDistCorr(cfilter, colourA, colourB, nbins=100, binsize=10):
 
     figure()
     #subplot(211)
-    plot(d, hAA/hAA.sum()-hAR/hAR.sum(), label='%s' % (colourA,))
-    plot(d, hAB/hAB.sum()-hBR/hBR.sum(), label='%s' % (colourB,))
-    plot(d, hAA/hAA.sum()-hAB/hAB.sum(), '--',label='%s - %s' % (colourA, colourB))
+    plot(d, hAA/hAA.sum()-hAR/hAR.sum(), label='%s' % (colourA,), lw=2)
+    plot(d, hAB/hAB.sum()-hBR/hBR.sum(), label='%s' % (colourB,), lw=2)
+    plot(d, hAA/hAA.sum()-hAB/hAB.sum(), '--',label='%s - %s' % (colourA, colourB), lw=2)
 
     grid()
     legend()
     xlabel('Radius [nm] from %s' % colourA)
+    ylabel('Excess Labelling')
+
+    figure()
+    #subplot(211)
+    plot(d, hBB/hBB.sum()-hBR/hBR.sum(), label='%s' % (colourB,), lw=2)
+    plot(d, hBA/hBA.sum()-hAR/hAR.sum(), label='%s' % (colourA,), lw=2)
+    plot(d, hBB/hBB.sum()-hBA/hBA.sum(), '--',label='%s - %s' % (colourB, colourA), lw=2)
+
+    grid()
+    legend()
+    xlabel('Radius [nm] from %s' % colourB)
     ylabel('Excess Labelling')
 
     #subplot(212)
@@ -73,6 +86,19 @@ def calcDistCorr(cfilter, colourA, colourB, nbins=100, binsize=10):
     grid()
     ylabel('Correlation Factor')
     xlabel('Radius [nm] from %s' % colourA)
+
+    figure()
+
+    corr = 1 - abs(hBA/hBA.sum()-hBB/hBB.sum()).sum()/abs(hBB/hBB.sum()-hBR/hBR.sum()).sum()
+
+    print 'Correlation Factor: %3.2f' % corr
+
+    ccorr = 1 - cumsum(abs(hBA/hBA.sum()-hBB/hBB.sum()))/cumsum(abs(hBB/hBB.sum()-hBR/hBR.sum()))
+    plot(d,ccorr)
+    ylim(-1,1)
+    grid()
+    ylabel('Correlation Factor')
+    xlabel('Radius [nm] from %s' % colourB)
 
     #title('%s vs %s  - Correlation Factor = %3.2f' % (colourB, colourA, corr))
 

@@ -38,7 +38,8 @@ def drawChannelGraphs(chan):
 
     figure(2)
     n, b = histogram(r['meanPhotons'], linspace(0, 6e3, 30))
-    errorbar((b[:-1] + b[1:])/2., n/float(len(r)), sqrt(n)/float(len(r)), lw=2, label=chan)#, where='pre')
+    #errorbar((b[:-1] + b[1:])/2., n/float(len(r)), sqrt(n)/float(len(r)), lw=2, label=chan)#, where='pre')
+    plot((b[:-1] + b[1:])/2., n/float(len(r)), lw=2, label=chan)
     xlabel('Mean Photon #')
     ylabel('Frequency')
     legend()
@@ -59,7 +60,7 @@ def drawChannelGraphs(chan):
 
     figure(6)
     n, b = histogram(r['tMedian'], linspace(0, 1e3, 20))
-    step((b[:-1] + b[1:])/2., n/float(len(r)), sqrt(n)/float(len(r)), lw=2, label=chan, where='mid')#, where='pre')
+    step((b[:-1] + b[1:])/2., n/float(len(r)), lw=2, label=chan, where='mid')#, where='pre')
     xlabel('Median decay time')
     ylabel('Frequency')
     legend()
@@ -106,11 +107,18 @@ def drawPairwiseGraphs(chan1, chan2):
 
 def drawGraphs():
     close('all')
-    for c in CHANNELS:
-        drawChannelGraphs(c)
+    #for c in CHANNELS:
+    #    drawChannelGraphs(c)
 
-    for cp in PAIRS:
-        drawPairwiseGraphs(*cp)
+    #for cp in PAIRS:
+    #    drawPairwiseGraphs(*cp)
+
+    figure(8)
+    N = [getChannel(c)['meanPhotons'] for c in CHANNELS]
+    hist(N, linspace(0, 6e3, 30), normed=1)
+    xlabel('Mean Photon #')
+    ylabel('Frequency')
+    #legend()
 
 
 

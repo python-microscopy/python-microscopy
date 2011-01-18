@@ -607,6 +607,7 @@ class MultiChannelImageViewFrame(wx.Frame):
         ID_VIEW_COLOURLIM = wx.NewId()
         ID_VIEW_BACKGROUND = wx.NewId()
         ID_FILTER_GAUSS = wx.NewId()
+        ID_COLOC = wx.NewId()
         ID_3D_ISOSURF = wx.NewId()
         ID_3D_VOLUME = wx.NewId()
         self.ID_VIEW_CMAP_INVERT = wx.NewId()
@@ -625,6 +626,7 @@ class MultiChannelImageViewFrame(wx.Frame):
 
         proc_menu = wx.Menu()
         proc_menu.Append(ID_FILTER_GAUSS, "&Gaussian Filter")
+        proc_menu.Append(ID_COLOC, "&Colocalisation")
 
 
         td_menu = wx.Menu()
@@ -665,6 +667,7 @@ class MultiChannelImageViewFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.On3DIsosurf, id=ID_3D_ISOSURF)
         self.Bind(wx.EVT_MENU, self.On3DVolume, id=ID_3D_VOLUME)
         self.Bind(wx.EVT_MENU, self.OnGaussianFilter, id=ID_FILTER_GAUSS)
+        self.Bind(wx.EVT_MENU, self.OnColoc, id=ID_COLOC)
         #self.Bind(wx.EVT_MENU, self.OnCMapInvert, id=self.ID_VIEW_CMAP_INVERT)
 
         return menu_bar
@@ -808,6 +811,60 @@ class MultiChannelImageViewFrame(wx.Frame):
             imfc.Show()
 
         dlg.Destroy()
+
+    def OnColoc(self, event):
+        from PYME.Analysis import correlationCoeffs, edtColoc
+
+        #assume we have exactly 2 channels #FIXME - add a selector
+        #grab image data
+        imA = self.images[0].img
+        imB = self.images[1].img
+        #assume threshold is half the colour bounds - good if using threshold mode
+        tA = pylab.mean(self.ivps[0].clim)
+        tB = pylab.mean(self.ivps[0].clim)
+
+        nameA = self.names[0]
+        nameB = self.names[1]
+
+        voxelsize = [self.images[0].pixelSize, self.images[0].pixelSize, self.images[0].sliceSize]
+        voxelsize = voxelsize[:imA.ndim] #trunctate to number of dimensions
+
+        pearson = correlationCoeffs.pearson(imA, imB)
+        MA, MB = correlationCoeffs.thresholdedManders(imA, imB, tA, tB)
+
+        bnA, bmA, binsA = edtColoc.imageDensityAtDistance(imB, imA > tA, voxelsize)
+        bnB, bmB, binsB = edtColoc.imageDensityAtDistance(imA, imB > tB, voxelsize)
+
+        pylab.figure()
+        pylab.figtext(.1, .95, 'Pearson: %2.2f   M1: %2.2f M2: %2.2f' % (pearson, MA, MB))
+        pylab.subplot(211)
+        #bn, bm, bins = edtColoc.imageDensityAtDistance(imB, imA > tA, voxelsize)
+        pylab.bar(binsA[:-1], bmA, binsA[1] - binsA[0])
+        pylab.xlabel('Distance from edge of %s [nm]' % nameA)
+        pylab.ylabel('Density of %s' % nameB)
+
+        pylab.subplot(212)
+        #bn, bm, bins = edtColoc.imageDensityAtDistance(imA, imB > tB, voxelsize)
+        pylab.bar(binsB[:-1], bmB, binsB[1] - binsB[0])
+        pylab.xlabel('Distance from edge of %s [nm]' % nameB)
+        pylab.ylabel('Density of %s' % nameA)
+
+        pylab.figure()
+        pylab.figtext(.1, .95, 'Pearson: %2.2f   M1: %2.2f M2: %2.2f' % (pearson, MA, MB))
+        pylab.subplot(211)
+        #bn, bm, bins = edtColoc.imageDensityAtDistance(imB, imA > tA, voxelsize)
+        pylab.bar(binsA[:-1], bmA*bnA, binsA[1] - binsA[0])
+        pylab.xlabel('Distance from edge of %s [nm]' % nameA)
+        pylab.ylabel('Fraction of %s' % nameB)
+
+        pylab.subplot(212)
+        #bn, bm, bins = edtColoc.imageDensityAtDistance(imA, imB > tB, voxelsize)
+        pylab.bar(binsB[:-1], bmB*bnB, binsB[1] - binsB[0])
+        pylab.xlabel('Distance from edge of %s [nm]' % nameB)
+        pylab.ylabel('Fraction of %s' % nameA)
+
+
+        
 
     def GetChannel(self, chan):
         if not type(chan) == int:

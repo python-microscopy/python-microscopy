@@ -30,6 +30,22 @@ def convertFile(inFile, outFile):
     of.close()
 
 
+def saveFilter(ds, outFile, keys = None):
+    if keys == None:
+        keys = ds.keys()
+
+    #nRecords = len(ds[keys[0]])
+
+    of = open(outFile, 'w')
+
+    of.write('#' + '\t'.join(['%s' % k for k in keys]) + '\n')
+
+    for row in zip(*[ds[k] for k in keys]):
+        of.write('\t'.join(['%e' % c for c in row]) + '\n')
+
+    of.close()
+
+
 
 if __name__ == '__main__':
 

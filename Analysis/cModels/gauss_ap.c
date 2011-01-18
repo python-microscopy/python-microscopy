@@ -22,7 +22,7 @@
 #define LITTLEENDIAN
 
 
-//Fast approximation to exponential
+//Really dodgy fast approximation to exponential
 static union
 {
   double d;

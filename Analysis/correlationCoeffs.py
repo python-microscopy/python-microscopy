@@ -11,14 +11,15 @@
 # Computes the standard correlation/colocalisation coeficients
 #
 ##################
+import numpy as np
 
 def pearson(X, Y):
     X = X - X.mean()
     Y = Y-Y.mean()
-    return (X*Y).sum()/sqrt((X*X).sum()*(Y*Y).sum())
+    return (X*Y).sum()/np.sqrt((X*X).sum()*(Y*Y).sum())
 
 def overlap(X, Y):
-    return (X*Y).sum()/sqrt((X*X).sum()*(Y*Y).sum())
+    return (X*Y).sum()/np.sqrt((X*X).sum()*(Y*Y).sum())
 
 
 def thresholdedManders(A, B, tA, tB):
