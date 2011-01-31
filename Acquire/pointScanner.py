@@ -1,10 +1,11 @@
+import time
 from PYME.DSView.dsviewer_npy import View3D
 from PYME import cSMI
 import numpy as np
 from PYME.Acquire import eventLog
 
 class PointScanner:
-    def __init__(self, xpiezo, ypiezo, scope, pixels = 10, pixelsize=0.1, dwelltime = 1, background=0, avg=True, evtLog=False):
+    def __init__(self, xpiezo, ypiezo, scope, pixels = 10, pixelsize=0.1, dwelltime = 1, background=0, avg=True, evtLog=False, sync=False):
         self.scope = scope
         self.xpiezo = xpiezo
         self.ypiezo = ypiezo
@@ -19,6 +20,7 @@ class PointScanner:
             self.pixelsize = np.array([pixelsize, pixelsize])
 
         self.evtLog = evtLog
+        self.sync = sync
 
     def genCoords(self):
         if np.isscalar(self.pixels):
@@ -80,6 +82,10 @@ class PointScanner:
 
         self.xpiezo[0].MoveTo(self.xpiezo[1], self.xp[0])
         self.ypiezo[0].MoveTo(self.ypiezo[1], self.yp[0])
+
+        #if self.sync:
+        #    while not self.xpiezo[0].IsOnTarget(): #wait for stage to move
+        #        time.sleep(.05)
         
         if self.evtLog:
                 eventLog.logEvent('ScannerXPos', '%3.6f' % self.xp[0])
@@ -87,6 +93,12 @@ class PointScanner:
 
 
         self.scope.pa.WantFrameNotification.append(self.tick)
+        
+        if self.sync:
+            self.scope.pa.HardwareChecks.append(self.onTarget)
+
+    def onTarget(self):
+        return self.xpiezo[0].onTarget
 
     def tick(self, caller=None):
         #print self.callNum
@@ -106,15 +118,23 @@ class PointScanner:
                 eventLog.logEvent('ScannerXPos', '%3.6f' % self.xp[callN % self.nx])
                 eventLog.logEvent('ScannerYPos', '%3.6f' % self.yp[(callN % (self.imsize))/self.nx])
 
+#            if self.sync:
+#                while not self.xpiezo[0].IsOnTarget(): #wait for stage to move
+#                    time.sleep(.05)
+
         self.callNum += 1
 
     #def __del__(self):
     #    self.scope.pa.WantFrameNotification.remove(self.tick)
     def stop(self):
-        self.scope.pa.WantFrameNotification.remove(self.tick)
-        
         self.xpiezo[0].MoveTo(self.xpiezo[1], self.currPos[0])
         self.ypiezo[0].MoveTo(self.ypiezo[1], self.currPos[1])
+        
+        self.scope.pa.WantFrameNotification.remove(self.tick)
+        if self.sync:
+            self.scope.pa.HardwareChecks.remove(self.onTarget)
+        
+        
 
 
 
