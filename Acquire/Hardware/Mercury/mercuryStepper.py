@@ -77,6 +77,7 @@ class mercuryStepper:
 
         self.last_poss = m.qPOS(self.connID, ''.join(self.axes))
         self.moving = m.IsMoving(self.connID, ''.join(self.axes))
+        self.onTarget = sum(m.qONT(self.connID, ''.join(self.axes))) == len(self.axes)
 
         self.lock.release()
 
@@ -118,10 +119,17 @@ class mercuryStepper:
         self.lock.release()
         return ret
 
+    def IsOnTarget(self):
+        self.lock.acquire()
+        ret = sum(m.qONT(self.connID, ''.join(self.axes))) == len(self.axes)
+        self.lock.release()
+        return ret
+
     def RefreshPos(self):
         self.lock.acquire()
         self.last_poss = m.qPOS(self.connID, ''.join(self.axes))
         self.moving = m.IsMoving(self.connID, ''.join(self.axes))
+        self.onTarget = sum(m.qONT(self.connID, ''.join(self.axes))) == len(self.axes)
         self.lock.release()
 
     def GetLastPos(self, iChan=0):

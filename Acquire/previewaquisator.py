@@ -39,6 +39,11 @@ class PreviewAquisator(wx.Timer):
         #lists of functions to call on a new frame, and when the aquisition ends
         self.WantFrameNotification = []
         self.WantStopNotification = []
+        #list of functions to call to see if we ought to wait on any hardware
+        self.HardwareChecks = []
+        #should we start a new exposure on the next timer check?
+        self.needExposureStart = False
+
         self.tLastFrame=0
         self.tThisFrame=0
 	self.nFrames = 0
@@ -162,7 +167,9 @@ class PreviewAquisator(wx.Timer):
         finally:
         
             if not contMode:
-                    self.cam.StartExposure()
+                #flag the need to start a new exposure
+                self.needExposureStart = True
+                #self.cam.StartExposure()
 
 
             if (self.looppos >= self.numHWChans):
@@ -259,7 +266,11 @@ class PreviewAquisator(wx.Timer):
                     break
 
             if bufferOverflowed:
+                self.needExposureStart = True
+
+            if self.needExposureStart and self.checkHardware():
                 self.cam.StartExposure() #restart aquisition - this should purge buffer
+                self.needExposureStart = False
 
             if nFrames > 0:
                 self.tLastFrame = self.tThisFrame
@@ -270,6 +281,13 @@ class PreviewAquisator(wx.Timer):
                 	a(self)
         else:
              self._stop()
+
+    def checkHardware(self):
+        for callback in self.HardwareChecks:
+            if not callback():
+                return False
+
+        return True
 
     def stop(self):
         "Stop sequence aquisition"
