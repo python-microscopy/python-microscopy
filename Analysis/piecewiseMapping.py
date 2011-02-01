@@ -25,7 +25,7 @@ def timeToFrames(t, events, mdh):
     sfr = array([int(e['EventDescr']) for e in startEvents])
 
     si = startEvents['Time'].searchsorted(t, side='right')
-    fr = minimum(sfr[si-1] + floor((t - startEvents['Time'][si-1]) / cycTime), sfr[i])
+    fr = minimum(sfr[si-1] + floor((t - startEvents['Time'][si-1]) / cycTime), sfr[si])
 
     return fr
 
