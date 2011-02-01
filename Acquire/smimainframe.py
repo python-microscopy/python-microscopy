@@ -633,11 +633,11 @@ class smiMainFrame(wx.Frame):
             y2 = self.scope.vp.selection_end_y
 
             #if we're splitting colours/focal planes across the ccd, then only allow symetric ROIs
-            if 'splitting' in dir(self.scope):
-                if self.scope.splitting.lower() == 'left_right':
+            if 'splitting' in dir(self.scope.cam):
+                if self.scope.cam.splitting.lower() == 'left_right':
                     x1 = min(x1, self.scope.cam.GetCCDWidth() - x2)
                     x2 = max(x2, self.scope.cam.GetCCDWidth() - x1)
-                if self.scope.splitting.lower() == 'up_down':
+                if self.scope.cam.splitting.lower() == 'up_down':
                     y1 = min(y1, self.scope.cam.GetCCDHeight() - y2)
                     y2 = max(y2, self.scope.cam.GetCCDHeight() - y1)
                     

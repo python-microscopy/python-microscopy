@@ -65,6 +65,20 @@ def SetCameraShutter(open):
     scope.cam.SetShutter(open)
     scope.pa.start()
 
+def SetContinuousMode(contMode):
+    if not (scope.cam.contMode == contMode):
+        if contMode:
+            scope.pa.stop()
+            scope.cam.SetAcquisitionMode(scope.cam.MODE_CONTINOUS)
+            #self.bUpdateInt.Enable(False)
+            scope.pa.start()
+        else:
+            scope.pa.stop()
+            scope.cam.SetAcquisitionMode(scope.cam.MODE_SINGLE_SHOT)
+            #self.bUpdateInt.Enable(False)
+            scope.pa.start()
+
+
 class TaskListProtocol(Protocol):
     def __init__(self, taskList, metadataEntries = [], preflightList=[]):
         self.taskList = taskList

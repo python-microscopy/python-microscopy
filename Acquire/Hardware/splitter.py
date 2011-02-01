@@ -126,9 +126,10 @@ class Unmixer:
 
 
 class Splitter:
-    def __init__(self, parent, menu, scope, dir='up_down', flipChan=1, dichroic = 'Unspecified', transLocOnCamera = 'Top', constrain=True):
+    def __init__(self, parent, menu, scope, cam, dir='up_down', flipChan=1, dichroic = 'Unspecified', transLocOnCamera = 'Top', constrain=True):
         self.dir = dir
         self.scope = scope
+        self.cam = cam
         self.flipChan=flipChan
         self.parent = parent
         self.unmixer = Unmixer()
@@ -141,7 +142,7 @@ class Splitter:
         #register as a producer of metadata
         MetaDataHandler.provideStartMetadata.append(self.ProvideMetadata)
 
-        scope.splitting='none'
+        cam.splitting='none'
 
         self.offset = 0
         self.mixMatrix = numpy.array([[1.,0.],[0.,1.]])
@@ -177,21 +178,22 @@ class Splitter:
         
 
     def ProvideMetadata(self, mdh):
-        mdh.setEntry('Splitter.Dichroic', self.dichroic)
-        mdh.setEntry('Splitter.TransmittedPathPosition', self.transLocOnCamera)
+        if self.scope.cam == self.cam:#only if the currently selected camera is being split
+            mdh.setEntry('Splitter.Dichroic', self.dichroic)
+            mdh.setEntry('Splitter.TransmittedPathPosition', self.transLocOnCamera)
 
-        if 'shiftField' in dir(self):
-            mdh.setEntry('chroma.ShiftFilename', self.shiftFieldName)
-            dx, dy = self.shiftField
-            mdh.setEntry('chroma.dx', dx)
-            mdh.setEntry('chroma.dy', dy)
+            if 'shiftField' in dir(self):
+                mdh.setEntry('chroma.ShiftFilename', self.shiftFieldName)
+                dx, dy = self.shiftField
+                mdh.setEntry('chroma.dx', dx)
+                mdh.setEntry('chroma.dy', dy)
 
     def OnConstrainROI(self,event=None):
         self.constrainROI = not self.constrainROI
         if self.constrainROI:
-            self.scope.splitting = self.dir
+            self.cam.splitting = self.dir
         else:
-            self.scope.splitting = 'none'
+            self.cam.splitting = 'none'
 
     def OnFlipView(self,event):
         self.flipView = not self.flipView

@@ -103,6 +103,7 @@ class mercuryStepper:
         else:
             self.minTravel[iChan]
 
+        self.onTarget = False
         m.MOV(self.connID, self.axes[iChan], [tgt])
         self.last_poss[iChan] = tgt
         self.lock.release()

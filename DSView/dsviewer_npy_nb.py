@@ -294,6 +294,13 @@ class DSViewFrame(wx.Frame):
                 self.ym = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), y0, 'ScannerYPos', 0)
                 charts.append(('YPos [um]', self.ym, 'ScannerYPos'))
 
+            if 'ScannerZPos' in self.elv.evKeyNames:
+                z0 = 0
+                if 'Positioning.PIFoc' in self.mdh.getEntryNames():
+                    z0 = self.mdh.getEntry('Positioning.PIFoc')
+                self.zm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), z0, 'ScannerZPos', 0)
+                charts.append(('ZPos [um]', self.zm, 'ScannerZPos'))
+
             self.elv.SetCharts(charts)
 
                 
@@ -442,8 +449,13 @@ class DSViewFrame(wx.Frame):
 
         #print dark.shape, flat.shape
 
-        dt = deTile.tile(self.vp.do.ds, xm, ym, self.mdh, dark=dark, flat=flat)#, mixmatrix = [[.3, .7], [.7, .3]])
-        View3D([dt[:,:,0][:,:,None], dt[:,:,1][:,:,None]], 'Tiled Image')
+        split = False
+
+        dt = deTile.tile(self.vp.do.ds, xm, ym, self.mdh, split=split, skipMoveFrames=False, dark=dark, flat=flat)#, mixmatrix = [[.3, .7], [.7, .3]])
+        if dt.ndim > 2:
+            View3D([dt[:,:,0][:,:,None], dt[:,:,1][:,:,None]], 'Tiled Image')
+        else:
+            View3D(dt, 'Tiled Image')
 
 
     def OnFoldPanelBarDrag(self, event):

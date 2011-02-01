@@ -95,16 +95,21 @@ class microscope:
             self.settingsDB.execute("CREATE TABLE CCDCalibration2 (time timestamp, temperature integer, serial integer, nominalGains ndarray, trueGains ndarray)")
         if not 'VoxelSizes' in tableNames:
             self.settingsDB.execute("CREATE TABLE VoxelSizes (ID INTEGER PRIMARY KEY, x REAL, y REAL, name TEXT)")
-        if not 'VoxelSizeHistory' in tableNames:
-            self.settingsDB.execute("CREATE TABLE VoxelSizeHistory (time timestamp, sizeID INTEGER)")
+        if not 'VoxelSizeHistory2' in tableNames:
+            self.settingsDB.execute("CREATE TABLE VoxelSizeHistory2 (time timestamp, sizeID INTEGER, camSerial INTEGER)")
         if not 'StartupTimes' in tableNames:
             self.settingsDB.execute("CREATE TABLE StartupTimes (component TEXT, time REAL)")
             self.settingsDB.execute("INSERT INTO StartupTimes VALUES ('total', 5)")
             
         self.settingsDB.commit()
 
+    def GetPixelSize(self):
+        currVoxelSizeID = self.settingsDB.execute("SELECT sizeID FROM VoxelSizeHistory2 WHERE camSerial=? ORDER BY time DESC", (self.cam.GetSerialNumber(),)).fetchone()
+        if not currVoxelSizeID == None:
+            return self.settingsDB.execute("SELECT x,y FROM VoxelSizes WHERE ID=?", currVoxelSizeID).fetchone()
+
     def GenStartMetadata(self, mdh):
-        currVoxelSizeID = self.settingsDB.execute("SELECT sizeID FROM VoxelSizeHistory ORDER BY time DESC").fetchone()
+        currVoxelSizeID = self.settingsDB.execute("SELECT sizeID FROM VoxelSizeHistory2 WHERE camSerial=? ORDER BY time DESC", (self.cam.GetSerialNumber(),)).fetchone()
         if not currVoxelSizeID == None:
             voxx, voxy = self.settingsDB.execute("SELECT x,y FROM VoxelSizes WHERE ID=?", currVoxelSizeID).fetchone()
             mdh.setEntry('voxelsize.x', voxx)
@@ -119,9 +124,14 @@ class microscope:
         self.settingsDB.commit()
         
 
-    def SetVoxelSize(self, voxelsizename):
+    def SetVoxelSize(self, voxelsizename, camName=None):
+        if camName == None:
+            cam = self.cam
+        else:
+            cam = self.cameras[camName]
+            
         voxelSizeID = self.settingsDB.execute("SELECT ID FROM VoxelSizes WHERE name=?", (voxelsizename,)).fetchone()[0]
-        self.settingsDB.execute("INSERT INTO VoxelSizeHistory VALUES (?, ?)", (datetime.datetime.now(), voxelSizeID))
+        self.settingsDB.execute("INSERT INTO VoxelSizeHistory2 VALUES (?, ?, ?)", (datetime.datetime.now(), voxelSizeID, cam.GetSerialNumber()))
         self.settingsDB.commit()
 
     def pr_refr(self, source):

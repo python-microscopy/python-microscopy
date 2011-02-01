@@ -164,28 +164,41 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
 
             if split:
                 d = np.concatenate(unmux.Unmix(d, mixmatrix, offset, [ROIX1, ROIY1, ROIX2, ROIY2]), 2)
+            #else:
+                #d = d.reshape(list(d.shape) + [1])
 
             imr = (im[xdp[i]:(xdp[i]+frameSizeX), ydp[i]:(ydp[i]+frameSizeY), :]/occupancy[xdp[i]:(xdp[i]+frameSizeX), ydp[i]:(ydp[i]+frameSizeY), :])
             alreadyThere = (weights*occupancy[xdp[i]:(xdp[i]+frameSizeX), ydp[i]:(ydp[i]+frameSizeY), :]).sum(2) > 0
 
             #d_ = d.sum(2)
 
-            r0 = imr[:,:,0][alreadyThere].sum()
-            r1 = imr[:,:,0][alreadyThere].sum()
+            if split:
+                r0 = imr[:,:,0][alreadyThere].sum()
+                r1 = imr[:,:,1][alreadyThere].sum()
 
-            if r0 == 0:
-                r0 = 1
+                if r0 == 0:
+                    r0 = 1
+                else:
+                    r0 = r0/ (d[:,:,0][alreadyThere]).sum()
+
+                if r1 == 0:
+                    r1 = 1
+                else:
+                    r1 = r1/ (d[:,:,1][alreadyThere]).sum()
+
+                rt = array([r0, r1])
+
+                imr = imr.sum(2)
             else:
-                r0 = r0/ (d[:,:,0][alreadyThere]).sum()
+                rt = imr[:,:,0][alreadyThere].sum()
+                if rt ==0:
+                    rt = 1
+                else:
+                    rt = rt/ (d[:,:,0][alreadyThere]).sum()
 
-            if r1 == 0:
-                r1 = 1
-            else:
-                r1 = r1/ (d[:,:,1][alreadyThere]).sum()
+                rt = array([rt])
 
-            rt = array([r0, r1])
-
-            imr = imr.sum(2)
+            #print rt
 
             if correlate:
                 if (alreadyThere.sum() > 50):
@@ -214,10 +227,12 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
                 occupancy[(xdp[i] + dx):(xdp[i]+frameSizeX + dx), (ydp[i]+dy):(ydp[i]+frameSizeY + dy), :] += weights
                 
             else:
+                #print weights.shape, rt.shape, d.shape
                 im[xdp[i]:(xdp[i]+frameSizeX), ydp[i]:(ydp[i]+frameSizeY), :] += weights*d*rt[None, None, :]
                 occupancy[xdp[i]:(xdp[i]+frameSizeX), ydp[i]:(ydp[i]+frameSizeY), :] += weights
 
     ret =  (im/occupancy).squeeze()
-    ret[occupancy == 0] = 0 #fix up /0s
+    #print ret.shape, occupancy.shape
+    ret[occupancy.squeeze() == 0] = 0 #fix up /0s
 
     return ret

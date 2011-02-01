@@ -15,7 +15,7 @@ from PYME.Acquire.protocol import *
 import numpy
 import wx
 
-from PYME.Acquire.pointScanner import PointScanner
+from PYME.Acquire.pointScanner import PointScanner3D
 from PYME.misc.wxPlotPanel import PlotPanel
 #from PYME.Analysis import ofind
 
@@ -27,7 +27,7 @@ tsy = vsy*scope.cam.GetPicHeight()*1e-3
 if 'splitting'in dir(scope.cam) and scope.cam.splitting =='up_down':
     tsy *= 0.5
     
-ps = PointScanner(scope.piezos[1], scope.piezos[2], scope, pixels = [10,10], pixelsize=numpy.array([tsx*.7, tsy*.7]), dwelltime=1, avg=False, evtLog = True, sync=True)
+ps = PointScanner3D(scope.piezos[1], scope.piezos[2], scope.piezos[0], scope, pixels = [10,10], pixelsize=numpy.array([tsx*.7, tsy*.7]), dwelltime=1, avg=False, evtLog = True, sync=True)
 
 class SFGenPlotPanel(PlotPanel):
     def draw(self):
