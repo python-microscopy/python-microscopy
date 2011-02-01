@@ -37,11 +37,8 @@ def framesToTime(fr, events, mdh):
 
     sfr = array([int(e['EventDescr']) for e in startEvents])
 
-    si = sfr.searchsorted(fr)
-    if si < len(sfr) and sfr[si] == fr: #we are at a frame where a restart occurs
-        return startEvents['Time'][si]
-    else:
-        return startEvents['Time'][si-1] + (fr - sfr[si-1]) * cycTime
+    si = sfr.searchsorted(fr, side = 'right')
+    return startEvents['Time'][si-1] + (fr - sfr[si-1]) * cycTime
     
 
 class piecewiseMap:
