@@ -11,13 +11,14 @@
 ##################
 
 from numpy import *
+import sys
 
 def timeToFrames(t, events, mdh):
     cycTime = mdh.getEntry('Camera.CycleTime')
     startTime = mdh.getEntry('StartTime')
 
     se = array([('0', 'start', startTime)], dtype=events.dtype)
-    sf = array([('1e100', 'start', startTime)], dtype=events.dtype)
+    sf = array([('%d' % sys.maxint, 'start', 1e100)], dtype=events.dtype)
     #get events corresponding to aquisition starts
     startEvents = hstack((se, events[events['EventName'] == 'StartAq'], sf))
 
