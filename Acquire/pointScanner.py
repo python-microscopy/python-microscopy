@@ -158,6 +158,9 @@ class PointScanner3D:
         self.evtLog = evtLog
         self.sync = sync
 
+        self.ix_o = -1
+        self.iy_o = -1
+
     def genCoords(self):
         if np.isscalar(self.pixels):
             #constant - use as number of pixels
@@ -224,6 +227,9 @@ class PointScanner3D:
         self.ypiezo[0].MoveTo(self.ypiezo[1], self.yp[0])
         self.zpiezo[0].MoveTo(self.zpiezo[1], self.zp[0])
 
+        self.ix_o = 0
+        self.iy_o = 0
+
         #if self.sync:
         #    while not self.xpiezo[0].IsOnTarget(): #wait for stage to move
         #        time.sleep(.05)
@@ -268,12 +274,22 @@ class PointScanner3D:
             iy = (callN/(self.nz*self.nx)) % self.ny
 
             self.zpiezo[0].MoveTo(self.zpiezo[1], self.zp[iz])
-            self.xpiezo[0].MoveTo(self.xpiezo[1], self.xp[ix])
-            self.ypiezo[0].MoveTo(self.ypiezo[1], self.yp[iy])
             if self.evtLog:
-                eventLog.logEvent('ScannerXPos', '%3.6f' % self.xp[ix])
-                eventLog.logEvent('ScannerYPos', '%3.6f' % self.yp[iy])
                 eventLog.logEvent('ScannerZPos', '%3.6f' % self.zp[iz])
+
+            if not ix == self.ix_o:
+                self.xpiezo[0].MoveTo(self.xpiezo[1], self.xp[ix])
+                self.ix_o = ix
+                if self.evtLog:
+                    eventLog.logEvent('ScannerXPos', '%3.6f' % self.xp[ix])
+                    
+            if not iy == self.iy_o:
+                self.ypiezo[0].MoveTo(self.ypiezo[1], self.yp[iy])
+                self.iy_o = iy
+                if self.evtLog:
+                    eventLog.logEvent('ScannerYPos', '%3.6f' % self.yp[iy])
+
+                        
 
 #            if self.sync:
 #                while not self.xpiezo[0].IsOnTarget(): #wait for stage to move
