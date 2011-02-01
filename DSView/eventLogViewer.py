@@ -424,12 +424,13 @@ class eventLogTPanel(wx.Panel):
         ##frame # ticks
         nFrames = maxF - minF
         pixPerS = float(self.Size[1] - 3*textHeight)/(maxT - minT)
+        self.pixPerS = pixPerS
         #pixPerS = pixPerFrame/tPerFrame
 
         #self.pixPerFrame = pixPerFrame
 
-        nTicksTarget = self.Size[1]/(7.5*textHeight)
-        tickSpacing = nFrames/nTicksTarget
+        nTicksTarget = self.Size[1]/(5.5*textHeight)
+        tickSpacing = np.floor(nFrames/nTicksTarget)
         #round to 1sf
         #tickSpacing = round(tickSpacing/(10**np.floor(np.log10(tickSpacing))))*(10**np.floor(np.log10(tickSpacing)))
         tickStart = np.ceil(minF/tickSpacing)*tickSpacing
@@ -613,18 +614,18 @@ class eventLogTPanel(wx.Panel):
 
         #get translated coordinates
         #xp = event.GetX()*view_size_x/self.Size[0] + self.xmin
-        yp = self.frameRange[0] + (float(event.GetY() - 2*self.textHeight)/self.pixPerFrame)
+        yp = self.timeRange[0] + (float(event.GetY() - 2*self.textHeight)/self.pixPerS)
         #print yp
 
-        nFrames = self.frameRange[1] - self.frameRange[0]
+        dT = self.timeRange[1] - self.timeRange[0]
 
         if rot < 0: #zoom out
-            nMin = max(yp - nFrames, self.maxRange[0])
-            nMax = min(yp + nFrames, self.maxRange[1])
+            nMin = max(yp - dT, self.maxRange[0])
+            nMax = min(yp + dT, self.maxRange[1])
 
         elif rot > 0: #zoom in
-            nMin = max(yp - nFrames/4, self.maxRange[0])
-            nMax = min(yp + nFrames/4, self.maxRange[1])
+            nMin = max(yp - dT/4, self.maxRange[0])
+            nMax = min(yp + dT/4, self.maxRange[1])
             if not nMax > (nMin + 2):
                 nMax += 1
 
@@ -633,7 +634,7 @@ class eventLogTPanel(wx.Panel):
         else:
             self.autoRange = False
 
-        self.frameRange = (nMin, nMax)
+        self.timeRange = (nMin, nMax)
         self.Refresh()
 
     def SetEventSource(self, eventSource):

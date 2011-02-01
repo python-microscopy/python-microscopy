@@ -17,13 +17,14 @@ def timeToFrames(t, events, mdh):
     startTime = mdh.getEntry('StartTime')
 
     se = array([('0', 'start', startTime)], dtype=events.dtype)
+    sf = array([('1e100', 'start', startTime)], dtype=events.dtype)
     #get events corresponding to aquisition starts
-    startEvents = hstack((se, events[events['EventName'] == 'StartAq']))
+    startEvents = hstack((se, events[events['EventName'] == 'StartAq'], sf))
 
     sfr = array([int(e['EventDescr']) for e in startEvents])
 
     si = startEvents['Time'].searchsorted(t, side='right')
-    fr = sfr[si-1] + floor((t - startEvents['Time'][si-1]) / cycTime)
+    fr = minimum(sfr[si-1] + floor((t - startEvents['Time'][si-1]) / cycTime), sfr[i])
 
     return fr
 
