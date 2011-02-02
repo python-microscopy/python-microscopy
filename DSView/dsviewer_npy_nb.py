@@ -271,7 +271,14 @@ class DSViewFrame(wx.Frame):
         self.notebook1.AddPage(page=self.mdv, select=False, caption='Metadata')
 
         if self.mode == 'LM':
-            self.elv = eventLogViewer.eventLogPanel(self.notebook1, self.ds.getEvents(), self.mdh, [0, self.ds.getNumSlices()]);
+            #self.elv = eventLogViewer.eventLogPanel(self.notebook1, self.ds.getEvents(), self.mdh, [0, self.ds.getNumSlices()]);
+            events = self.ds.getEvents()
+            st = self.mdh.getEntry('StartTime')
+            if 'EndTime' in self.mdh.getEntryNames():
+                et = self.mdh.getEntry('EndTime')
+            else:
+                et = piecewiseMapping.framesToTime(self.ds.getNumSlices(), events, self.mdh)
+            self.elv = eventLogViewer.eventLogTPanel(self.notebook1, events, self.mdh, [0, et-st]);
             self.notebook1.AddPage(self.elv, 'Events')
 
             charts = []
