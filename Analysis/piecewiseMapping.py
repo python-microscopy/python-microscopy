@@ -24,8 +24,8 @@ def timeToFrames(t, events, mdh):
 
     sfr = array([int(e['EventDescr']) for e in startEvents])
 
-    si = startEvents['Time'].searchsorted(t, side='left')
-    fr = minimum(sfr[si-1] + floor((t - startEvents['Time'][si-1]) / cycTime), sfr[si])
+    si = startEvents['Time'].searchsorted(t, side='right')
+    fr = minimum(sfr[si-1] + floor((t - startEvents['Time'][si-1]) / cycTime), sfr[si]) -1
 
     return fr
 
@@ -104,6 +104,8 @@ def GeneratePMFromEventList(events, metadata, x0, y0, eventName='ProtocolFocus',
         #if e['EventName'] == eventName:
         x.append(e['Time'])
         y.append(float(e['EventDescr'].split(', ')[dataPos]))
+
+    print array(x) - metadata.getEntry('StartTime'), timeToFrames(array(x), events, metadata)
 
     return piecewiseMap(y0, timeToFrames(array(x), events, metadata), array(y), secsPerFrame, xIsSecs=False)
 

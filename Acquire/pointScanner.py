@@ -214,7 +214,7 @@ class PointScanner3D:
 
         self.genCoords()
 
-        self.callNum = 0
+        self.callNum = -1
 
         if self.avg:
             self.image = np.zeros((self.nx, self.ny, self.nz))
@@ -251,7 +251,7 @@ class PointScanner3D:
     def tick(self, caller=None):
         #print self.callNum
         
-        if (self.callNum % self.dwellTime) == 0:
+        if self.callNum > 0  and (self.callNum % self.dwellTime) == 0:
             #record pixel in overview
             callN = self.callNum/self.dwellTime
 

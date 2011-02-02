@@ -530,7 +530,7 @@ class eventLogTPanel(wx.Panel):
 
             dc.DrawText(cname, x4 + chartWidth/2 - dc.GetTextExtent(cname)[0]/2, 0)
 
-            xv = np.array([minF,] + [x for x in cmapping.xvals if x > minF and x < maxF] + [maxF,])
+            xv = np.array([max(minF, 0),] + [x for x in cmapping.xvals if x > minF and x < maxF] + [maxF,])
             vv = cmapping(xv)
 
             vmin = vv.min()
@@ -626,8 +626,8 @@ class eventLogTPanel(wx.Panel):
         elif rot > 0: #zoom in
             nMin = max(yp - dT/4, self.maxRange[0])
             nMax = min(yp + dT/4, self.maxRange[1])
-            if not nMax > (nMin + 2):
-                nMax += 1
+            if not nMax > (nMin + .1):
+                nMax += .1
 
         if nMin == self.maxRange[0] and nMax == self.maxRange[1]:
             self.autoRange = True
