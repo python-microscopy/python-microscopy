@@ -18,7 +18,7 @@ def timeToFrames(t, events, mdh):
     startTime = mdh.getEntry('StartTime')
 
     se = array([('0', 'start', startTime)], dtype=events.dtype)
-    sf = array([('%d' % sys.maxint, 'start', 1e100)], dtype=events.dtype)
+    sf = array([('%d' % iinfo(int32).max, 'start', 1e100)], dtype=events.dtype)
     #get events corresponding to aquisition starts
     startEvents = hstack((se, events[events['EventName'] == 'StartAq'], sf))
 
