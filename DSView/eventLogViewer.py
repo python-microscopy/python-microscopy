@@ -392,10 +392,31 @@ class eventLogTPanel(wx.Panel):
         #tPerFrame = self.metaData.getEntry('Camera.CycleTime')
         minT, maxT = self.timeRange
 
+        pixPerS = float(self.Size[1] - 3*textHeight)/(maxT - minT)
+        self.pixPerS = pixPerS
+
         maxF = timeToFrames(maxT+ self.startTime, self.eventSource, self.metaData) #- self.startTime
         minF = timeToFrames(minT+ self.startTime, self.eventSource, self.metaData) #- self.startTime
 
-        print minF, maxF
+        #print minF, maxF
+
+        if (maxF < minF) < 30: #show when camera was actually recording
+            fTimes = framesToTime(np.arange(minF, maxF + .1), self.eventSource, self.metaData) - self.startTime
+            tPerFrame = self.metaData.getEntry('Camera.CycleTime')
+
+            old_pen = dc.GetPen()
+            dc.SetPen(wx.TRANSPARENT_PEN)
+            dc.SetBrush(wx.TheBrushList.FindOrCreateBrush(wx.Colour(220, 255, 200)))
+
+            for ft in fTimes:
+                y0 = (ft -minT)*pixPerS + 2*textHeight
+                bh = tPerFrame*pixPerS
+
+                dc.DrawRectangle(0, y0, self.Size[0], bh)
+
+            dc.SetPen(old_pen)
+
+
 
         frameLabelSize = max(dc.GetTextExtent('%3.4g' % maxF)[0], dc.GetTextExtent('[s]' % maxF)[0])
 
@@ -423,8 +444,7 @@ class eventLogTPanel(wx.Panel):
 
         ##frame # ticks
         nFrames = maxF - minF
-        pixPerS = float(self.Size[1] - 3*textHeight)/(maxT - minT)
-        self.pixPerS = pixPerS
+        
         #pixPerS = pixPerFrame/tPerFrame
 
         #self.pixPerFrame = pixPerFrame
@@ -437,12 +457,12 @@ class eventLogTPanel(wx.Panel):
         ticks = np.arange(tickStart, maxF+.01, tickSpacing)
         tickTimes = framesToTime(ticks, self.eventSource, self.metaData) - self.startTime
 
-        print minT, maxT,nFrames, nTicksTarget, tickStart, tickSpacing
+        #print minT, maxT,nFrames, nTicksTarget, tickStart, tickSpacing
 
         for t, tt in zip(ticks, tickTimes):
             #y = (t -self.frameRange[0])*pixPerFrame + 2*textHeight
             y = (tt -minT)*pixPerS + 2*textHeight
-            print t, hpadding, y - 0.5*textHeight
+            #print t, hpadding, y - 0.5*textHeight
             dc.DrawText('%3.4g' % t, hpadding, y - 0.5*textHeight)
             dc.DrawLine(frameLabelSize + 2*hpadding - tickSize, y, frameLabelSize + 2*hpadding, y)
 
@@ -454,7 +474,7 @@ class eventLogTPanel(wx.Panel):
         tickStartTime = np.ceil(minT/tickSpacingTime)*tickSpacingTime
         ticks = np.arange(tickStartTime, maxT+.0001, tickSpacingTime)
 #
-        print minT, maxT, tickSpacingTime
+        #print minT, maxT, tickSpacingTime
 #
         for t in ticks:
             y = (t -minT)*pixPerS + 2*textHeight
@@ -473,46 +493,66 @@ class eventLogTPanel(wx.Panel):
 
         numSkipped = 0
 
-        for e in self.eventSource:
-            t = e['Time'] - startT
-            if t > minT and t < maxT:
-                y = (t -minT)*pixPerS + 2*textHeight
-                dc.SetPen(wx.Pen(self.lineColours[e['EventName']]))
-                dc.SetTextForeground(self.lineColours[e['EventName']])
-                if y < (lastEvY + 2) or (numSkipped > 0 and y < (lastEvY + 1.2*textHeight)): #no room - skip
-                    if ((tTickPositions - y)**2).min() < (0.3*textHeight)**2:
-                        dc.DrawLine(x0, y, x0 + barWidth, y)
-                        dc.DrawLine(x1 - 2*hpadding, y, x1 - 2*(1 + 1*numSkipped), y)
-                    else:
-                        dc.DrawLine(x0, y, x1 - 2*(1 + 1*numSkipped), y)
-                    dc.DrawLine(x1- 2*(1 + 1*numSkipped), y, x1- 2*(1 + 1*numSkipped), lastEvY + 0.5*textHeight + 1 + 2*numSkipped)
-                    dc.DrawLine(x1- 2*(1 + 1*numSkipped),lastEvY + 0.5*textHeight + 1 + 2*numSkipped, x3 + 200, lastEvY+ 0.5*textHeight + 1 + 2*numSkipped)
-                    numSkipped +=1
+        evts = self.eventSource[(self.eventSource['Time'] > (minT + self.startTime))*(self.eventSource['Time'] < (maxT + self.startTime))]
+        ets = evts['Time'] - self.startTime
+        eys = (ets -minT)*pixPerS + 2*textHeight
+        dys = np.hstack([np.diff(eys), [100]])
+
+        #special hack for co-incident events
+        for i in range(len(dys)):
+            if dys[i] == 0:
+                j = i+1
+                while dys[j] == 0: #find the next non-zero step
+                    j += 1
+
+                if dys[j] > 1.2*textHeight: #we have room to expand
+                    dys[i] += 1.2*textHeight
+                    dys[j] -= 1.2*textHeight
+
+        lastLineY = 0
+
+        for i, e in enumerate(evts):
+            y = eys[i]
+            t = ets[i]
+            #print y
+            dc.SetPen(wx.Pen(self.lineColours[e['EventName']]))
+            dc.SetTextForeground(self.lineColours[e['EventName']])
+            if (y < (lastLineY + 2)  or (numSkipped > 0 and y < (lastLineY + 1.2*textHeight))) and dys[i] < (1.2*textHeight + 2*numSkipped): #no room - skip
+                if ((tTickPositions - y)**2).min() < (0.3*textHeight)**2:
+                    dc.DrawLine(x0, y, x0 + barWidth, y)
+                    dc.DrawLine(x1 - 2*hpadding, y, x1 - 2*(1 + 1*numSkipped), y)
                 else:
-                    if ((tTickPositions - y)**2).min() < (0.3*textHeight)**2:
-                        dc.DrawLine(x0, y, x0 + barWidth, y)
-                        dc.DrawLine(x1 - 2*hpadding, y, x1, y)
-                    else:
-                        dc.DrawLine(x0, y, x1, y)
-                    if y < (lastEvY + 1.2*textHeight):
-                        dc.DrawLine(x1, y, x1, lastEvY + 1.2*textHeight)
-                        y = lastEvY + 1.2*textHeight
+                    dc.DrawLine(x0, y, x1 - 2*(1 + 1*numSkipped), y)
+                dc.DrawLine(x1- 2*(1 + 1*numSkipped), y, x1- 2*(1 + 1*numSkipped), lastEvY + 0.5*textHeight + 1 + 2*numSkipped)
+                dc.DrawLine(x1- 2*(1 + 1*numSkipped),lastEvY + 0.5*textHeight + 1 + 2*numSkipped, x3 + 200, lastEvY+ 0.5*textHeight + 1 + 2*numSkipped)
+                numSkipped +=1
+                lastLineY += 2
+            else:
+                if ((tTickPositions - y)**2).min() < (0.3*textHeight)**2:
+                    dc.DrawLine(x0, y, x0 + barWidth, y)
+                    dc.DrawLine(x1 - 2*hpadding, y, x1- 2*(1 + 1*numSkipped), y)
+                else:
+                    dc.DrawLine(x0, y, x1- 2*(1 + 1*numSkipped), y)
+                if y < (lastLineY + 1.2*textHeight):
+                    dc.DrawLine(x1- 2*(1 + 1*numSkipped), y, x1- 2*(1 + 1*numSkipped), lastLineY + 1.2*textHeight)
+                    y = lastLineY + 1.2*textHeight
 
-                    dc.DrawLine(x1, y, x2, y)
-                    eventText = '%6.2fs\t' % t + '%(EventName)s\t%(EventDescr)s' % e
+                dc.DrawLine(x1- 2*(1 + 1*numSkipped), y, x2, y)
+                eventText = '%6.2fs\t' % t + '%(EventName)s\t%(EventDescr)s' % e
 
-                    etw = dc.GetTextExtent(eventText)[0]
+                etw = dc.GetTextExtent(eventText)[0]
 
-                    etwMax = self.Size[0] - (x3 + 2*hpadding + 80*len(self.charts))
+                etwMax = self.Size[0] - (x3 + 2*hpadding + 80*len(self.charts))
 
-                    if etw >  etwMax:
-                        newLen = int((float(etwMax)/etw)*len(eventText))
-                        eventText = eventText[:(newLen - 4)] + ' ...'
+                if etw >  etwMax:
+                    newLen = int((float(etwMax)/etw)*len(eventText))
+                    eventText = eventText[:(newLen - 4)] + ' ...'
 
-                    eventTextWidth = max(eventTextWidth, dc.GetTextExtent(eventText)[0])
-                    dc.DrawText(eventText, x3, y - 0.5*textHeight)
-                    lastEvY = y
-                    numSkipped = 0
+                eventTextWidth = max(eventTextWidth, dc.GetTextExtent(eventText)[0])
+                dc.DrawText(eventText, x3, y - 0.5*textHeight)
+                lastEvY = y
+                lastLineY = y
+                numSkipped = 0
 
         dc.SetTextForeground(wx.BLACK)
         dc.SetPen(wx.BLACK_PEN)
@@ -535,17 +575,25 @@ class eventLogTPanel(wx.Panel):
 
             vmin = vv.min()
             vmax = vv.max()
+
+            ml = dc.GetTextExtent('%3.2f'% vmin)[0]/2
+            mr = dc.GetTextExtent('%3.2f'% vmax)[0]/2
+
+            chartWidthInternal = chartWidth - ml - mr
+
             if vmax == vmin:
                 vsc = 0
             else:
-                vsc = chartWidth/float(vmax - vmin)
+                vsc = chartWidthInternal/float(vmax - vmin)
 
-            dc.DrawText('%3.2f'% vmin, x4 - dc.GetTextExtent('%3.2f'% vmin)[0]/2, 1*textHeight)
-            dc.DrawText('%3.2f'% vmax, x4 + chartWidth - dc.GetTextExtent('%3.2f'% vmax)[0]/2, 1*textHeight)
+            
+
+            dc.DrawText('%3.2f'% vmin, x4 , 1*textHeight)
+            dc.DrawText('%3.2f'% vmax, x4 + chartWidth - 2*mr, 1*textHeight)
 
             dc.SetPen(wx.BLACK_PEN)
-            dc.DrawLine(x4, 2*textHeight, x4, 2*textHeight + tickSize)
-            dc.DrawLine(x4 + chartWidth, 2*textHeight, x4 + chartWidth, 2*textHeight + tickSize)
+            dc.DrawLine(x4 + ml, 2*textHeight, x4 + ml, 2*textHeight + tickSize)
+            dc.DrawLine(x4 + chartWidth - mr, 2*textHeight, x4 + chartWidth - mr, 2*textHeight + tickSize)
 
             #dc.SetPen(wx.Pen(wx.BLUE, 2))
             dc.SetPen(wx.Pen(self.lineColours[sourceEv],2))
@@ -556,18 +604,18 @@ class eventLogTPanel(wx.Panel):
             v_0 = vv[0]
 
             yp_ = (x_0 -minT)*pixPerS + 2*textHeight
-            xp_ = x4 + (v_0 - vmin)*vsc
+            xp_ = x4  + ml + (v_0 - vmin)*vsc
 
             for x,v in zip(xvt[1:-1], vv[1:-1]):
                 yp = (x -minT)*pixPerS + 2*textHeight
-                xp = x4 + (v - vmin)*vsc
+                xp = x4 + ml + (v - vmin)*vsc
                 dc.DrawLine(xp_, yp_, xp_, yp)
                 dc.DrawLine(xp_, yp, xp, yp)
                 xp_ = xp
                 yp_ = yp
 
             yp = (xvt[-1] -minT)*pixPerS + 2*textHeight
-            xp = x4 + (vv[-1] - vmin)*vsc
+            xp = x4 + ml + (vv[-1] - vmin)*vsc
             dc.DrawLine(xp_, yp_, xp_, yp)
 
             x4 = x4 + chartWidth + hpadding
