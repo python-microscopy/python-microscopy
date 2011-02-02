@@ -15,7 +15,7 @@
 
 #mProfile.profileOn(['dsviewer_npy_nb.py', 'myviewpanel_numarray.py'])
 
-import dsviewer_npy_nb
+from PYME.DSView import dsviewer_npy_nb
 dsviewer_npy_nb.main()
 
 #mProfile.report()
