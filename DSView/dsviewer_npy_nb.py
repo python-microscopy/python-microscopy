@@ -25,10 +25,7 @@ from PYME.FileUtils import h5ExFrames
 import os
 import sys
 
-#import viewpanel
 import PYME.cSMI as example
-#import dCrop
-#import logparser
 import numpy
 
 import tables
@@ -36,7 +33,6 @@ import wx.py.crust
 import pylab
 import glob
 
-#from myviewpanel_numarray import MyViewPanel
 from arrayViewPanel import ArraySettingsAndViewPanel
 from PYME.Analysis.LMVis import recArrayView
 import eventLogViewer
