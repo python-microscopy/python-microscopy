@@ -119,10 +119,6 @@ class DSViewFrame(wx.Frame):
               parent=self.notebook1, pos=wx.Point(0, 0), size=wx.Size(618, 451), style=0, locals=self.__dict__, 
               introText='Python SMI bindings - note that help, license etc below is for Python, not PySMI\n\n')
 
-        if self.mode == 'LM':
-            pass
-            #self.sh.runfile(os.path.join(os.path.dirname(__file__),'fth5.py'))
-
         self.notebook1.AddPage(page=self.vp, select=True, caption='Data')
         self.notebook1.AddPage(page=self.sh, select=False, caption='Console')
 
@@ -221,6 +217,8 @@ class DSViewFrame(wx.Frame):
             self.mdh = MetaData.TIRFDefault
             wx.MessageBox("Carrying on with defaults - no gaurantees it'll work well", 'ERROR: No metadata found in file ...', wx.OK)
             print "ERROR: No metadata fond in file ... Carrying on with defaults - no gaurantees it'll work well"
+
+        MetaData.fillInBlanks(self.mdh, self.dataSource)
 
         from PYME.ParallelTasks.relativeFiles import getRelFilename
         self.seriesName = getRelFilename(filename)
@@ -328,8 +326,15 @@ class DSViewFrame(wx.Frame):
             self.saved = True
 
     def InitLMMode(self):
+        if 'Protocol.DataStartsAt' in self.mdh.getEntryNames():
+            self.vp.zp = self.mdh.getEntry('Protocol.DataStartsAt')
+        else:
+            self.vp.zp = self.mdh.getEntry('EstimatedLaserOnFrameNo')
+
+        self.vp.Refresh()
+
         self.sh.runfile(os.path.join(os.path.dirname(__file__),'fth5.py'))
-        self.mdv.rebuild()
+        #self.mdv.rebuild()
         #self.elv = eventLogViewer.eventLogPanel(self.notebook1, self.ds.getEvents(), self.mdh, [0, self.ds.getNumSlices()]);
         events = self.ds.getEvents()
         st = self.mdh.getEntry('StartTime')
@@ -370,8 +375,6 @@ class DSViewFrame(wx.Frame):
         self.elv.SetCharts(charts)
 
         if len(self.fitResults) > 0:
-            #print self.fitResults.shape
-            #print self.fitResults[0].dtype
             self.vp.view.pointMode = 'lm'
 
             voxx = 1e3*self.mdh.getEntry('voxelsize.x')
@@ -396,8 +399,7 @@ class DSViewFrame(wx.Frame):
             else:
                 self.glCanvas.setView(0, ysc*self.glCanvas.Size[0], 0, ysc*self.glCanvas.Size[1])
 
-            #self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],self.fitResults['tIndex'].astype('f'))
-            #self.glCanvas.setCLim((0, self.numAnalysed))
+            #we have to wait for the gui to be there before we start changing stuff in the GL view
             self.timer.WantNotification.append(self.AddPointsToVis)
 
             self.fitInf = fitInfo.FitInfoPanel(self, self.fitResults, self.resultsMdh, self.vp.do.ds)
@@ -1486,10 +1488,6 @@ class MyApp(wx.App):
         self.SetTopWindow(vframe)
         vframe.Show(1)
 
-        #crFrame = wx.py.shell.ShellFrame(parent = vframe, locals = vframe.__dict__)
-        #crFrame.Show()
-        #print __file__
-        #crFrame.shell.runfile(os.path.join(os.path.dirname(__file__),'fth5.py'))
         return 1
 
 # end of class MyApp

@@ -12,60 +12,21 @@ import os.path
 ##################
 
 import Pyro.core
-import sys
-#sys.path.append('/home/david/pysmi_simulator/py_fit')
 from PYME.Analysis import remFitBuf
 import os
 import wx
-from PYME.Analysis import MetaData
 from PYME.Acquire import MetaDataHandler
 from pylab import *
 from PYME.FileUtils import fileID
 from PYME.FileUtils.nameUtils import genResultFileName
-#import matplotlib
-
-#from PYME.Acquire import ExecTools
-#from PYME.Analysis.DataSources.HDFDataSource import DataSource
 
 if not 'tq' in locals():
     if 'PYME_TASKQUEUENAME' in os.environ.keys():
         taskQueueName = os.environ['PYME_TASKQUEUENAME']
     else:
         taskQueueName = 'taskQueue'
-    #ExecTools.execBG("tq = Pyro.core.getProxyForURI('PYRONAME://taskQueue')", locals(), globals())
     tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
-    #pass
 
-#from PYME.ParallelTasks.relativeFiles import getRelFilename
-#from PYME.FileUtils.nameUtils import genResultFileName
-
-#seriesName = getRelFilename(dataSource.h5File.filename)
-
-#if 'MetaData' in h5file.root: #should be true the whole time
-#    mdh = MetaDataHandler.HDFMDHandler(h5file)
-#else:
-#    mdh = None
-#    import wx
-#    if not None == wx.GetApp():
-#        wx.MessageBox("Carrying on with defaults - no gaurantees it'll work well", 'ERROR: No metadata fond in file ...', wx.ERROR|wx.OK)
-#    print "ERROR: No metadata fond in file ... Carrying on with defaults - no gaurantees it'll work well"
-
-#dataSource = DataSource(h5file.filename, None)
-
-#md = MetaData.genMetaDataFromSourceAndMDH(dataSource, mdh)
-
-MetaData.fillInBlanks(mdh, dataSource)
-
-
-
-if 'Protocol.DataStartsAt' in mdh.getEntryNames():
-    vp.zp = mdh.getEntry('Protocol.DataStartsAt')
-else:
-    vp.zp = mdh.getEntry('EstimatedLaserOnFrameNo')
-
-vp.Refresh()
-
-#md = MetaDataHandler.NestedClassMDHandler(mdh)
 
 def pushImages(startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
     if dataSource.moduleName == 'HDFDataSource':
