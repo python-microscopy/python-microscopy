@@ -60,7 +60,7 @@ class DSViewFrame(wx.Frame):
         self.mdh = mdh
         self.log = log
 
-        self.saved = True
+        self.saved = False
 
         self.mode = mode
         self.vObjPos = None
@@ -81,145 +81,8 @@ class DSViewFrame(wx.Frame):
         self.fitResults = []
 
         if (dstack == None):
-            if (filename == None):
-                fdialog = wx.FileDialog(None, 'Please select Data Stack to open ...',
-                    wildcard='PYME Data|*.h5|TIFF files|*.tif|KDF files|*.kdf', style=wx.OPEN)
-                succ = fdialog.ShowModal()
-                if (succ == wx.ID_OK):
-                    #self.ds = example.CDataStack(fdialog.GetPath().encode())
-                    #self.ds = 
-                    filename = fdialog.GetPath()
-                    
-                    #fn =
-            if not filename == None:
-                #self.h5file = tables.openFile(filename)
-                #self.ds = self.h5file.root.ImageData
-                if filename.startswith('QUEUE://'):
-                    import Pyro.core
-                    if queueURI == None:
-                        if 'PYME_TASKQUEUENAME' in os.environ.keys():
-                            taskQueueName = os.environ['PYME_TASKQUEUENAME']
-                        else:
-                            taskQueueName = 'taskQueue'
-                        self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
-                    else:
-                        self.tq = Pyro.core.getProxyForURI(queueURI)
-
-                    self.seriesName = filename[len('QUEUE://'):]
-
-                    self.dataSource = TQDataSource.DataSource(self.seriesName, self.tq)
-                    
-                    self.mdh = MetaDataHandler.QueueMDHandler(self.tq, self.seriesName)
-                    self.timer.WantNotification.append(self.dsRefresh)
-                elif filename.endswith('.h5'):
-                    self.dataSource = HDFDataSource.DataSource(filename, None)
-                    if 'MetaData' in self.dataSource.h5File.root: #should be true the whole time
-                        self.mdh = MetaData.TIRFDefault
-                        self.mdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(self.dataSource.h5File))
-                    else:
-                        self.mdh = MetaData.TIRFDefault
-                        wx.MessageBox("Carrying on with defaults - no gaurantees it'll work well", 'ERROR: No metadata found in file ...', wx.OK)
-                        print "ERROR: No metadata fond in file ... Carrying on with defaults - no gaurantees it'll work well"
-
-                    from PYME.ParallelTasks.relativeFiles import getRelFilename
-                    self.seriesName = getRelFilename(filename)
-
-                    #try and find a previously performed analysis
-                    fns = filename.split(os.path.sep)
-                    #print fns
-                    #print fns[:-2]
-                    #print fns[-2:]
-                    cand = os.path.sep.join(fns[:-2] + ['analysis',] + fns[-2:]) + 'r'
-                    print cand
-                    if os.path.exists(cand):
-                        #print 'Found Analysis'
-                        h5Results = tables.openFile(cand)
-
-                        if 'FitResults' in dir(h5Results.root):
-                            self.fitResults = h5Results.root.FitResults[:]
-                            self.resultsSource = inpFilt.h5rSource(h5Results)
-
-                            self.resultsMdh = MetaData.TIRFDefault
-                            self.resultsMdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(h5Results))
-
-                       
-
-
-                elif filename.endswith('.kdf'): #kdf
-                    import PYME.cSMI as cSMI
-                    self.dataSource = cSMI.CDataStack_AsArray(cSMI.CDataStack(filename), 0).squeeze()
-                    self.mdh = MetaData.TIRFDefault
-
-                    try: #try and get metadata from the .log file
-                        lf = open(os.path.splitext(filename)[0] + '.log')
-                        from PYME.DSView import logparser
-                        lp = logparser.logparser()
-                        log = lp.parse(lf.read())
-                        lf.close()
-
-                        self.mdh.setEntry('voxelsize.z', log['PIEZOS']['Stepsize'])
-                    except:
-                        pass
-
-                    from PYME.ParallelTasks.relativeFiles import getRelFilename
-                    self.seriesName = getRelFilename(filename)
-
-                    self.mode = 'psf'
-                    
-                elif filename.endswith('.psf'): #psf
-                    #self.dataSource = TiffDataSource.DataSource(filename, None)
-                    self.dataSource, vox = numpy.load(filename)
-                    self.mdh = MetaData.ConfocDefault
-
-                    #from PYME.DSView.voxSizeDialog import VoxSizeDialog
-
-                    #dlg = VoxSizeDialog(self)
-                    #dlg.ShowModal()
-
-                    self.mdh.setEntry('voxelsize.x', vox.x)
-                    self.mdh.setEntry('voxelsize.y', vox.y)
-                    self.mdh.setEntry('voxelsize.z', vox.z)
-
-
-                    from PYME.ParallelTasks.relativeFiles import getRelFilename
-                    self.seriesName = getRelFilename(filename)
-
-                    self.mode = 'psf'
-                else: #try tiff
-                    #self.dataSource = TiffDataSource.DataSource(filename, None)
-                    self.dataSource = readTiff.read3DTiff(filename)
-
-                    xmlfn = os.path.splitext(filename)[0] + '.xml'
-                    if os.path.exists(xmlfn):
-                        self.mdh = MetaData.TIRFDefault
-                        self.mdh.copyEntriesFrom(MetaDataHandler.XMLMDHandler(xmlfn))
-                    else:
-                        self.mdh = MetaData.ConfocDefault
-
-                        from PYME.DSView.voxSizeDialog import VoxSizeDialog
-
-                        dlg = VoxSizeDialog(self)
-                        dlg.ShowModal()
-
-                        self.mdh.setEntry('voxelsize.x', dlg.GetVoxX())
-                        self.mdh.setEntry('voxelsize.y', dlg.GetVoxY())
-                        self.mdh.setEntry('voxelsize.z', dlg.GetVoxZ())
-
-
-                    from PYME.ParallelTasks.relativeFiles import getRelFilename
-                    self.seriesName = getRelFilename(filename)
-
-                    self.mode = 'blob'
-
-                self.PSFLocs = []
-
-                self.ds = self.dataSource
-                self.SetTitle(filename)
-                self.saved = True
-                #self.ds = example.CDataStack(filename)
-                #self.SetTitle(fdialog.GetFilename())
-                self.saved = True
-
+            self.Load(filename)
+                
         self.ID_WINDOW_TOP = 100
         self.ID_WINDOW_LEFT1 = 101
         self.ID_WINDOW_RIGHT1 = 102
@@ -257,8 +120,8 @@ class DSViewFrame(wx.Frame):
               introText='Python SMI bindings - note that help, license etc below is for Python, not PySMI\n\n')
 
         if self.mode == 'LM':
-            #pass
-            self.sh.runfile(os.path.join(os.path.dirname(__file__),'fth5.py'))
+            pass
+            #self.sh.runfile(os.path.join(os.path.dirname(__file__),'fth5.py'))
 
         self.notebook1.AddPage(page=self.vp, select=True, caption='Data')
         self.notebook1.AddPage(page=self.sh, select=False, caption='Console')
@@ -267,98 +130,13 @@ class DSViewFrame(wx.Frame):
         self.notebook1.AddPage(page=self.mdv, select=False, caption='Metadata')
 
         if self.mode == 'LM':
-            #self.elv = eventLogViewer.eventLogPanel(self.notebook1, self.ds.getEvents(), self.mdh, [0, self.ds.getNumSlices()]);
-            events = self.ds.getEvents()
-            st = self.mdh.getEntry('StartTime')
-            if 'EndTime' in self.mdh.getEntryNames():
-                et = self.mdh.getEntry('EndTime')
-            else:
-                et = piecewiseMapping.framesToTime(self.ds.getNumSlices(), events, self.mdh)
-            self.elv = eventLogViewer.eventLogTPanel(self.notebook1, events, self.mdh, [0, et-st]);
-            self.notebook1.AddPage(self.elv, 'Events')
-
-            charts = []
-
-            if 'ProtocolFocus' in self.elv.evKeyNames:
-                self.zm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), self.mdh.getEntry('Protocol.PiezoStartPos'))
-                charts.append(('Focus [um]', self.zm, 'ProtocolFocus'))
-
-            if 'ScannerXPos' in self.elv.evKeyNames:
-                x0 = 0
-                if 'Positioning.Stage_X' in self.mdh.getEntryNames():
-                    x0 = self.mdh.getEntry('Positioning.Stage_X')
-                self.xm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), x0, 'ScannerXPos', 0)
-                charts.append(('XPos [um]', self.xm, 'ScannerXPos'))
-
-            if 'ScannerYPos' in self.elv.evKeyNames:
-                y0 = 0
-                if 'Positioning.Stage_Y' in self.mdh.getEntryNames():
-                    y0 = self.mdh.getEntry('Positioning.Stage_Y')
-                self.ym = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), y0, 'ScannerYPos', 0)
-                charts.append(('YPos [um]', self.ym, 'ScannerYPos'))
-
-            if 'ScannerZPos' in self.elv.evKeyNames:
-                z0 = 0
-                if 'Positioning.PIFoc' in self.mdh.getEntryNames():
-                    z0 = self.mdh.getEntry('Positioning.PIFoc')
-                self.zm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), z0, 'ScannerZPos', 0)
-                charts.append(('ZPos [um]', self.zm, 'ScannerZPos'))
-
-            self.elv.SetCharts(charts)
-
-                
-
-        if len(self.fitResults) > 0:
-            #print self.fitResults.shape
-            #print self.fitResults[0].dtype
-            self.vp.view.pointMode = 'lm'
-            
-            voxx = 1e3*self.mdh.getEntry('voxelsize.x')
-            voxy = 1e3*self.mdh.getEntry('voxelsize.y')
-            self.vp.view.points = numpy.vstack((self.fitResults['fitResults']['x0']/voxx, self.fitResults['fitResults']['y0']/voxy, self.fitResults['tIndex'])).T
-
-            if 'Splitter' in self.mdh.getEntry('Analysis.FitModule'):
-                self.vp.view.pointMode = 'splitter'
-                self.vp.view.pointColours = self.fitResults['fitResults']['Ag'] > self.fitResults['fitResults']['Ar']
-
-            from PYME.Analysis.LMVis import gl_render
-            self.glCanvas = gl_render.LMGLCanvas(self.notebook1, False, vp = self.vp.do, vpVoxSize = voxx)
-            self.glCanvas.cmap = pylab.cm.gist_rainbow
-
-            self.notebook1.AddPage(page=self.glCanvas, select=True, caption='VisLite')
-
-            xsc = self.ds.shape[0]*1.0e3*self.mdh.getEntry('voxelsize.x')/self.glCanvas.Size[0]
-            ysc = self.ds.shape[1]*1.0e3*self.mdh.getEntry('voxelsize.y')/ self.glCanvas.Size[1]
-
-            if xsc > ysc:
-                self.glCanvas.setView(0, xsc*self.glCanvas.Size[0], 0, xsc*self.glCanvas.Size[1])
-            else:
-                self.glCanvas.setView(0, ysc*self.glCanvas.Size[0], 0, ysc*self.glCanvas.Size[1])
-
-            #self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],self.fitResults['tIndex'].astype('f'))
-            #self.glCanvas.setCLim((0, self.numAnalysed))
-            self.timer.WantNotification.append(self.AddPointsToVis)
-
-            self.fitInf = fitInfo.FitInfoPanel(self, self.fitResults, self.resultsMdh, self.vp.do.ds)
-            self.notebook1.AddPage(page=self.fitInf, select=False, caption='Fit Info')
-
-
-        #self.notebook1.Split(0, wx.TOP)
-        
-
-        #self.sizer = wx.BoxSizer(wx.VERTICAL)
-        #self.sizer.Add(self.notebook1, 1,wx.EXPAND,0)
-        #self.SetAutoLayout(1)
-        #self.SetSizer(self.sizer)
-        #sizer.Fit(self)
-        #sizer.SetSizeHints(self)
+            self.InitLMMode()
 
         # Menu Bar
         self.menubar = wx.MenuBar()
         self.SetMenuBar(self.menubar)
         tmp_menu = wx.Menu()
-        #F_EXPORT = wx.NewId()
-        #F_CLOSE = wx.NewId()
+        
         F_SAVE_POSITIONS = wx.NewId()
         F_SAVE_FITS = wx.NewId()
         tmp_menu.Append(wx.ID_SAVEAS, "Export", "", wx.ITEM_NORMAL)
@@ -368,12 +146,6 @@ class DSViewFrame(wx.Frame):
         tmp_menu.Append(wx.ID_CLOSE, "Close", "", wx.ITEM_NORMAL)
         self.menubar.Append(tmp_menu, "File")
 
-        #mEdit = wx.Menu()
-        #EDIT_CLEAR_SEL = wx.NewId()
-        #EDIT_CROP = wx.NewId()
-        #mEdit.Append(EDIT_CLEAR_SEL, "Reset Selection", "", wx.ITEM_NORMAL)
-        #mEdit.Append(EDIT_CROP, "Crop", "", wx.ITEM_NORMAL)
-        #self.menubar.Append(mEdit, "Edit")
 
         mTasks = wx.Menu()
         TASKS_STANDARD_2D = wx.NewId()
@@ -421,6 +193,215 @@ class DSViewFrame(wx.Frame):
 
         self.Layout()
         self.update()
+
+    def LoadQueue(self, filename):
+        import Pyro.core
+        if queueURI == None:
+            if 'PYME_TASKQUEUENAME' in os.environ.keys():
+                taskQueueName = os.environ['PYME_TASKQUEUENAME']
+            else:
+                taskQueueName = 'taskQueue'
+            self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
+        else:
+            self.tq = Pyro.core.getProxyForURI(queueURI)
+
+        self.seriesName = filename[len('QUEUE://'):]
+
+        self.dataSource = TQDataSource.DataSource(self.seriesName, self.tq)
+
+        self.mdh = MetaDataHandler.QueueMDHandler(self.tq, self.seriesName)
+        self.timer.WantNotification.append(self.dsRefresh)
+
+    def Loadh5(self, filename):
+        self.dataSource = HDFDataSource.DataSource(filename, None)
+        if 'MetaData' in self.dataSource.h5File.root: #should be true the whole time
+            self.mdh = MetaData.TIRFDefault
+            self.mdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(self.dataSource.h5File))
+        else:
+            self.mdh = MetaData.TIRFDefault
+            wx.MessageBox("Carrying on with defaults - no gaurantees it'll work well", 'ERROR: No metadata found in file ...', wx.OK)
+            print "ERROR: No metadata fond in file ... Carrying on with defaults - no gaurantees it'll work well"
+
+        from PYME.ParallelTasks.relativeFiles import getRelFilename
+        self.seriesName = getRelFilename(filename)
+
+        #try and find a previously performed analysis
+        fns = filename.split(os.path.sep)
+        cand = os.path.sep.join(fns[:-2] + ['analysis',] + fns[-2:]) + 'r'
+        print cand
+        if os.path.exists(cand):
+            h5Results = tables.openFile(cand)
+
+            if 'FitResults' in dir(h5Results.root):
+                self.fitResults = h5Results.root.FitResults[:]
+                self.resultsSource = inpFilt.h5rSource(h5Results)
+
+                self.resultsMdh = MetaData.TIRFDefault
+                self.resultsMdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(h5Results))
+
+    def LoadKdf(self, filename):
+        import PYME.cSMI as cSMI
+        self.dataSource = cSMI.CDataStack_AsArray(cSMI.CDataStack(filename), 0).squeeze()
+        self.mdh = MetaData.TIRFDefault
+
+        try: #try and get metadata from the .log file
+            lf = open(os.path.splitext(filename)[0] + '.log')
+            from PYME.DSView import logparser
+            lp = logparser.logparser()
+            log = lp.parse(lf.read())
+            lf.close()
+
+            self.mdh.setEntry('voxelsize.z', log['PIEZOS']['Stepsize'])
+        except:
+            pass
+
+        from PYME.ParallelTasks.relativeFiles import getRelFilename
+        self.seriesName = getRelFilename(filename)
+
+        self.mode = 'psf'
+
+    def LoadPSF(self, filename):
+        self.dataSource, vox = numpy.load(filename)
+        self.mdh = MetaData.ConfocDefault
+
+        self.mdh.setEntry('voxelsize.x', vox.x)
+        self.mdh.setEntry('voxelsize.y', vox.y)
+        self.mdh.setEntry('voxelsize.z', vox.z)
+
+
+        from PYME.ParallelTasks.relativeFiles import getRelFilename
+        self.seriesName = getRelFilename(filename)
+
+        self.mode = 'psf'
+
+    def LoadTiff(self, filename):
+        #self.dataSource = TiffDataSource.DataSource(filename, None)
+        self.dataSource = readTiff.read3DTiff(filename)
+
+        xmlfn = os.path.splitext(filename)[0] + '.xml'
+        if os.path.exists(xmlfn):
+            self.mdh = MetaData.TIRFDefault
+            self.mdh.copyEntriesFrom(MetaDataHandler.XMLMDHandler(xmlfn))
+        else:
+            self.mdh = MetaData.ConfocDefault
+
+            from PYME.DSView.voxSizeDialog import VoxSizeDialog
+
+            dlg = VoxSizeDialog(self)
+            dlg.ShowModal()
+
+            self.mdh.setEntry('voxelsize.x', dlg.GetVoxX())
+            self.mdh.setEntry('voxelsize.y', dlg.GetVoxY())
+            self.mdh.setEntry('voxelsize.z', dlg.GetVoxZ())
+
+
+        from PYME.ParallelTasks.relativeFiles import getRelFilename
+        self.seriesName = getRelFilename(filename)
+
+        self.mode = 'blob'
+
+    def Load(self, filename=None):
+        if (filename == None):
+            fdialog = wx.FileDialog(None, 'Please select Data Stack to open ...',
+                wildcard='PYME Data|*.h5|TIFF files|*.tif|KDF files|*.kdf', style=wx.OPEN)
+            succ = fdialog.ShowModal()
+            if (succ == wx.ID_OK):
+                filename = fdialog.GetPath()
+
+        if not filename == None:
+            if filename.startswith('QUEUE://'):
+                self.LoadQueue(filename)
+            elif filename.endswith('.h5'):
+                self.Loadh5(filename)
+            elif filename.endswith('.kdf'):
+                self.LoadKdf(filename)
+            elif filename.endswith('.psf'): #psf
+                self.LoadPSF(filename)
+            else: #try tiff
+                self.LoadTiff(filename)
+
+
+            self.PSFLocs = []
+
+            self.ds = self.dataSource
+            self.SetTitle(filename)
+            self.saved = True
+
+    def InitLMMode(self):
+        self.sh.runfile(os.path.join(os.path.dirname(__file__),'fth5.py'))
+        self.mdv.rebuild()
+        #self.elv = eventLogViewer.eventLogPanel(self.notebook1, self.ds.getEvents(), self.mdh, [0, self.ds.getNumSlices()]);
+        events = self.ds.getEvents()
+        st = self.mdh.getEntry('StartTime')
+        if 'EndTime' in self.mdh.getEntryNames():
+            et = self.mdh.getEntry('EndTime')
+        else:
+            et = piecewiseMapping.framesToTime(self.ds.getNumSlices(), events, self.mdh)
+        self.elv = eventLogViewer.eventLogTPanel(self.notebook1, events, self.mdh, [0, et-st]);
+        self.notebook1.AddPage(self.elv, 'Events')
+
+        charts = []
+
+        if 'ProtocolFocus' in self.elv.evKeyNames:
+            self.zm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), self.mdh.getEntry('Protocol.PiezoStartPos'))
+            charts.append(('Focus [um]', self.zm, 'ProtocolFocus'))
+
+        if 'ScannerXPos' in self.elv.evKeyNames:
+            x0 = 0
+            if 'Positioning.Stage_X' in self.mdh.getEntryNames():
+                x0 = self.mdh.getEntry('Positioning.Stage_X')
+            self.xm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), x0, 'ScannerXPos', 0)
+            charts.append(('XPos [um]', self.xm, 'ScannerXPos'))
+
+        if 'ScannerYPos' in self.elv.evKeyNames:
+            y0 = 0
+            if 'Positioning.Stage_Y' in self.mdh.getEntryNames():
+                y0 = self.mdh.getEntry('Positioning.Stage_Y')
+            self.ym = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), y0, 'ScannerYPos', 0)
+            charts.append(('YPos [um]', self.ym, 'ScannerYPos'))
+
+        if 'ScannerZPos' in self.elv.evKeyNames:
+            z0 = 0
+            if 'Positioning.PIFoc' in self.mdh.getEntryNames():
+                z0 = self.mdh.getEntry('Positioning.PIFoc')
+            self.zm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), z0, 'ScannerZPos', 0)
+            charts.append(('ZPos [um]', self.zm, 'ScannerZPos'))
+
+        self.elv.SetCharts(charts)
+
+        if len(self.fitResults) > 0:
+            #print self.fitResults.shape
+            #print self.fitResults[0].dtype
+            self.vp.view.pointMode = 'lm'
+
+            voxx = 1e3*self.mdh.getEntry('voxelsize.x')
+            voxy = 1e3*self.mdh.getEntry('voxelsize.y')
+            self.vp.view.points = numpy.vstack((self.fitResults['fitResults']['x0']/voxx, self.fitResults['fitResults']['y0']/voxy, self.fitResults['tIndex'])).T
+
+            if 'Splitter' in self.mdh.getEntry('Analysis.FitModule'):
+                self.vp.view.pointMode = 'splitter'
+                self.vp.view.pointColours = self.fitResults['fitResults']['Ag'] > self.fitResults['fitResults']['Ar']
+
+            from PYME.Analysis.LMVis import gl_render
+            self.glCanvas = gl_render.LMGLCanvas(self.notebook1, False, vp = self.vp.do, vpVoxSize = voxx)
+            self.glCanvas.cmap = pylab.cm.gist_rainbow
+
+            self.notebook1.AddPage(page=self.glCanvas, select=True, caption='VisLite')
+
+            xsc = self.ds.shape[0]*1.0e3*self.mdh.getEntry('voxelsize.x')/self.glCanvas.Size[0]
+            ysc = self.ds.shape[1]*1.0e3*self.mdh.getEntry('voxelsize.y')/ self.glCanvas.Size[1]
+
+            if xsc > ysc:
+                self.glCanvas.setView(0, xsc*self.glCanvas.Size[0], 0, xsc*self.glCanvas.Size[1])
+            else:
+                self.glCanvas.setView(0, ysc*self.glCanvas.Size[0], 0, ysc*self.glCanvas.Size[1])
+
+            #self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],self.fitResults['tIndex'].astype('f'))
+            #self.glCanvas.setCLim((0, self.numAnalysed))
+            self.timer.WantNotification.append(self.AddPointsToVis)
+
+            self.fitInf = fitInfo.FitInfoPanel(self, self.fitResults, self.resultsMdh, self.vp.do.ds)
+            self.notebook1.AddPage(page=self.fitInf, select=False, caption='Fit Info')
 
     def AddPointsToVis(self):
         self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],self.fitResults['tIndex'].astype('f'))
