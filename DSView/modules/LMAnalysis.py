@@ -19,8 +19,12 @@ from PYME.FileUtils.nameUtils import genResultFileName
 from PYME.Analysis.LMVis import progGraph as progGraph
 from PYME.ParallelTasks.relativeFiles import getRelFilename
 import glob
+import numpy
+import pylab
 from PYME.FileUtils import nameUtils
 import PYME.misc.autoFoldPanel as afp
+from PYME.Acquire.mytimer import mytimer
+from PYME.DSView import fitInfo
 
 class LMAnalyser:
     def __init__(self, dsviewer):
@@ -31,9 +35,12 @@ class LMAnalyser:
             self.tq = None
 
         self.dataSource = dsviewer.dataSource
+        self.ds = dsviewer.ds
         self.mdh = dsviewer.mdh
         self.seriesName = dsviewer.seriesName
         self.vp = dsviewer.vp
+        self.fitResults = dsviewer.fitResults
+        self.resultsMdh = dsviewer.resultsMdh
 
         mTasks = wx.Menu()
         TASKS_STANDARD_2D = wx.NewId()
@@ -44,6 +51,55 @@ class LMAnalyser:
         
         wx.EVT_MENU(self.dsviewer, TASKS_CALIBRATE_SPLITTER, self.OnCalibrateSplitter)
         wx.EVT_MENU(self.dsviewer, TASKS_STANDARD_2D, self.OnStandard2D)
+
+        #a timer object to update for us
+        self.timer = mytimer()
+        self.timer.Start(10000)
+
+        self.analDispMode = 'z'
+
+        self.numAnalysed = 0
+        self.numEvents = 0
+        
+        if len(self.fitResults) > 0:
+            self.GenResultsView()
+
+    def GenResultsView(self):
+        self.vp.view.pointMode = 'lm'
+
+        voxx = 1e3*self.mdh.getEntry('voxelsize.x')
+        voxy = 1e3*self.mdh.getEntry('voxelsize.y')
+        self.vp.view.points = numpy.vstack((self.fitResults['fitResults']['x0']/voxx, self.fitResults['fitResults']['y0']/voxy, self.fitResults['tIndex'])).T
+
+        if 'Splitter' in self.mdh.getEntry('Analysis.FitModule'):
+            self.vp.view.pointMode = 'splitter'
+            self.vp.view.pointColours = self.fitResults['fitResults']['Ag'] > self.fitResults['fitResults']['Ar']
+
+        from PYME.Analysis.LMVis import gl_render
+        self.glCanvas = gl_render.LMGLCanvas(self.dsviewer.notebook1, False, vp = self.vp.do, vpVoxSize = voxx)
+        self.glCanvas.cmap = pylab.cm.gist_rainbow
+
+        self.dsviewer.notebook1.AddPage(page=self.glCanvas, select=True, caption='VisLite')
+
+        xsc = self.ds.shape[0]*1.0e3*self.mdh.getEntry('voxelsize.x')/self.glCanvas.Size[0]
+        ysc = self.ds.shape[1]*1.0e3*self.mdh.getEntry('voxelsize.y')/ self.glCanvas.Size[1]
+
+        if xsc > ysc:
+            self.glCanvas.setView(0, xsc*self.glCanvas.Size[0], 0, xsc*self.glCanvas.Size[1])
+        else:
+            self.glCanvas.setView(0, ysc*self.glCanvas.Size[0], 0, ysc*self.glCanvas.Size[1])
+
+        #we have to wait for the gui to be there before we start changing stuff in the GL view
+        self.timer.WantNotification.append(self.AddPointsToVis)
+
+        self.fitInf = fitInfo.FitInfoPanel(self.dsviewer, self.fitResults, self.resultsMdh, self.vp.do.ds)
+        self.dsviewer.notebook1.AddPage(page=self.fitInf, select=False, caption='Fit Info')
+
+    def AddPointsToVis(self):
+        self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],self.fitResults['tIndex'].astype('f'))
+        self.glCanvas.setCLim((0, self.fitResults['tIndex'].max()))
+
+        self.timer.WantNotification.remove(self.AddPointsToVis)
 
     def GenAnalysisPanel(self, _pnl):
 #        item = _pnl.AddFoldPanel("Analysis", collapsed=False,
@@ -382,9 +438,10 @@ class LMAnalyser:
 
         vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 7)
 
-        self.progPan = progGraph.progPanel(pan, self.dsviewer.fitResults, size=(150, 250))
+        self.progPan = progGraph.progPanel(pan, self.dsviewer.fitResults, size=(220, 250))
+        self.progPan.draw()
 
-        vsizer.Add(self.progPan, 0,wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        vsizer.Add(self.progPan, 1,wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.EXPAND, 0)
 
         pan.SetSizer(vsizer)
         vsizer.Fit(pan)
@@ -413,6 +470,65 @@ class LMAnalyser:
         self.tBackgroundFrames.SetValue('-10:0')
         self.cbSubtractBackground.SetValue(True)
         self.tThreshold.SetValue('0.6')
+
+    def analRefresh(self):
+        newNumAnalysed = self.tq.getNumberTasksCompleted(self.seriesName)
+        if newNumAnalysed > self.numAnalysed:
+            self.numAnalysed = newNumAnalysed
+            newResults = self.tq.getQueueData(self.seriesName, 'FitResults', len(self.fitResults))
+            if len(newResults) > 0:
+                if len(self.fitResults) == 0:
+                    self.fitResults = newResults
+                else:
+                    self.fitResults = numpy.concatenate((self.fitResults, newResults))
+                self.progPan.fitResults = self.fitResults
+
+                self.vp.points = numpy.vstack((self.fitResults['fitResults']['x0'], self.fitResults['fitResults']['y0'], self.fitResults['tIndex'])).T
+
+                self.numEvents = len(self.fitResults)
+
+                if self.analDispMode == 'z' and (('zm' in dir(self)) or ('z0' in self.fitResults['fitResults'].dtype.fields)):
+                    #display z as colour
+                    if 'zm' in dir(self): #we have z info
+                        if 'z0' in self.fitResults['fitResults'].dtype.fields:
+                            z = 1e3*self.zm(self.fitResults['tIndex'].astype('f')).astype('f')
+                            z_min = z.min() - 500
+                            z_max = z.max() + 500
+                            z = z + self.fitResults['fitResults']['z0']
+                            self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],z)
+                            self.glCanvas.setCLim((z_min, z_max))
+                        else:
+                            z = self.zm(self.fitResults['tIndex'].astype('f')).astype('f')
+                            self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],z)
+                            self.glCanvas.setCLim((z.min(), z.max()))
+                    elif 'z0' in self.fitResults['fitResults'].dtype.fields:
+                        z = self.fitResults['fitResults']['z0']
+                        self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],z)
+                        self.glCanvas.setCLim((-1e3, 1e3))
+
+                elif self.analDispMode == 'gFrac' and 'Ag' in self.fitResults['fitResults'].dtype.fields:
+                    #display ratio of colour channels as point colour
+                    c = self.fitResults['fitResults']['Ag']/(self.fitResults['fitResults']['Ag'] + self.fitResults['fitResults']['Ar'])
+                    self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],c)
+                    self.glCanvas.setCLim((0, 1))
+
+                else:
+                    #default to time
+                    self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],self.fitResults['tIndex'].astype('f'))
+                    self.glCanvas.setCLim((0, self.numAnalysed))
+
+        if (self.tq.getNumberOpenTasks(self.seriesName) + self.tq.getNumberTasksInProgress(self.seriesName)) == 0 and 'SpoolingFinished' in self.mdh.getEntryNames():
+            self.dsviewer.statusbar.SetBackgroundColour(wx.GREEN)
+            self.dsviewer.statusbar.Refresh()
+
+        self.progPan.draw()
+        self.progPan.Refresh()
+        self.dsviewer.Refresh()
+        self.dsviewer.update()
+
+    def update(self):
+        if 'fitInf' in dir(self) and not self.dsviewer.player.tPlay.IsRunning():
+            self.fitInf.UpdateDisp(self.vp.view.PointsHitTest())
 
 
     #from fth5.py
