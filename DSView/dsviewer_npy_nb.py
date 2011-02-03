@@ -25,6 +25,7 @@ import numpy
 import tables
 import wx.py.crust
 import pylab
+import modules
 
 from arrayViewPanel import ArraySettingsAndViewPanel
 from PYME.Analysis.LMVis import recArrayView
@@ -38,7 +39,7 @@ from PYME.Analysis.DataSources import TQDataSource
 #from PYME.Analysis.DataSources import TiffDataSource
 from PYME.FileUtils import readTiff
 from PYME.Analysis.LMVis import inpFilt
-
+from PYME.Acquire.mytimer import mytimer
 from PYME.Analysis import piecewiseMapping
 
 
@@ -48,11 +49,13 @@ class DSViewFrame(wx.Frame):
 
         self.ds = dstack
         self.mdh = mdh
+        self.queueURI = queueURI
         #self.log = log
 
         self.saved = False
 
         self.mode = mode
+        self.paneHooks = []
 
         self.timer = mytimer()
         self.timer.Start(10000)
@@ -114,14 +117,7 @@ class DSViewFrame(wx.Frame):
         self.statusbar = self.CreateStatusBar(1, wx.ST_SIZEGRIP)
 
         self.InitEvents()
-
-        if self.mode == 'LM':
-            from modules import LMAnalysis
-            self.LMAnalyser = LMAnalysis.LMAnalyser(self)
-
-        from modules import deconvolution, tiling
-        self.deconvolver = deconvolution.deconvolver(self)
-        self.tiler = tiling.tiler(self)
+        modules.load(self.mode, self)
 
         self._leftWindow1 = wx.Panel(self, -1, size = wx.Size(180, 1000))
         self._pnl = 0
@@ -147,14 +143,14 @@ class DSViewFrame(wx.Frame):
 
     def LoadQueue(self, filename):
         import Pyro.core
-        if queueURI == None:
+        if self.queueURI == None:
             if 'PYME_TASKQUEUENAME' in os.environ.keys():
                 taskQueueName = os.environ['PYME_TASKQUEUENAME']
             else:
                 taskQueueName = 'taskQueue'
             self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
         else:
-            self.tq = Pyro.core.getProxyForURI(queueURI)
+            self.tq = Pyro.core.getProxyForURI(self.queueURI)
 
         self.seriesName = filename[len('QUEUE://'):]
 
@@ -323,9 +319,6 @@ class DSViewFrame(wx.Frame):
 
 
     def CreateFoldPanel(self):
-        from modules import playback
-        self.player = playback.player(self)
-
         # delete earlier panel
         self._leftWindow1.DestroyChildren()
 
@@ -336,23 +329,8 @@ class DSViewFrame(wx.Frame):
 
         self._pnl = afp.foldPanel(self._leftWindow1, -1, wx.DefaultPosition,s)
 
-        self.player.GenPlayPanel(self._pnl)
-        #self.GenProfilePanel()
-        if self.mode == 'LM':
-            self.LMAnalyser.GenPointFindingPanel(self._pnl)
-            self.LMAnalyser.GenAnalysisPanel(self._pnl)
-            self.LMAnalyser.GenFitStatusPanel(self._pnl)
-        else:
-            if self.mode == 'blob':
-                from modules import blobFinding
-                self.blobFinder = blobFinding.blobFinder(self)
-                self.blobFinder.GenBlobFindingPanel()
-                self.blobFinder.GenBlobFitPanel()
-
-            from modules import psfExtraction
-            self.psfExtractor = psfExtraction.psfExtractor(self)
-            self.psfExtractor.GenPSFPanel()
-
+        for genFcn in self.paneHooks:
+            genFcn(self._pnl)
 
         hsizer.Add(self._pnl, 1, wx.EXPAND, 0)
         self._leftWindow1.SetSizerAndFit(hsizer)
@@ -365,7 +343,7 @@ class DSViewFrame(wx.Frame):
 
     def update(self):
         self.vp.update()
-        self.statusbar.SetStatusText('Slice No: (%d/%d)    x: %d    y: %d    Frames Analysed: %d    Events detected: %d' % (self.vp.do.zp, self.vp.do.ds.shape[2], self.vp.do.xp, self.vp.do.yp, self.numAnalysed, self.numEvents))
+        self.statusbar.SetStatusText('Slice No: (%d/%d)    x: %d    y: %d    Frames Analysed: %d    Events detected: %d' % (self.vp.do.zp, self.vp.do.ds.shape[2], self.vp.do.xp, self.vp.do.yp, self.LMAnalyser.numAnalysed, self.LMAnalyser.numEvents))
         self.player.update()
 
         if 'LMAnalyser' in dir(self):

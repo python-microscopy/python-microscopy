@@ -10,7 +10,6 @@
 ##################
 
 import wx
-from PYME.Acquire.mytimer import mytimer
 
 class tiler:
     def __init__(self, dsviewer):
@@ -18,7 +17,8 @@ class tiler:
 
         self.dataSource = dsviewer.dataSource
         self.mdh = dsviewer.mdh
-        self.ds = dsviewer.ds
+        self.vp = dsviewer.vp
+        self.eventSource = dsviewer.events
 
         EXTRAS_TILE = wx.NewId()
         dsviewer.mExtras.Append(EXTRAS_TILE, "&Tiling", "", wx.ITEM_NORMAL)
@@ -29,10 +29,10 @@ class tiler:
         from PYME.DSView.dsviewer_npy import View3D
 
         x0 = self.mdh.getEntry('Positioning.Stage_X')
-        xm = piecewiseMapping.GenerateBacklashCorrPMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), x0, 'ScannerXPos', 0, .0055)
+        xm = piecewiseMapping.GenerateBacklashCorrPMFromEventList(self.eventSource, self.mdh, self.mdh.getEntry('StartTime'), x0, 'ScannerXPos', 0, .0055)
 
         y0 = self.mdh.getEntry('Positioning.Stage_Y')
-        ym = piecewiseMapping.GenerateBacklashCorrPMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), y0, 'ScannerYPos', 0, .0035)
+        ym = piecewiseMapping.GenerateBacklashCorrPMFromEventList(self.eventSource, self.mdh, self.mdh.getEntry('StartTime'), y0, 'ScannerYPos', 0, .0035)
 
         #dark = deTile.genDark(self.vp.do.ds, self.mdh)
         dark = self.mdh.getEntry('Camera.ADOffset')

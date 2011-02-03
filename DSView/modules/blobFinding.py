@@ -32,6 +32,9 @@ class blobFinder:
         wx.EVT_MENU(dsviewer, F_SAVE_POSITIONS, self.savePositions)
         wx.EVT_MENU(dsviewer, F_SAVE_FITS, self.saveFits)
 
+        dsviewer.paneHooks.append(self.GenBlobFindingPanel)
+        dsviewer.paneHooks.append(self.GenBlobFitPanel)
+
     def GenBlobFindingPanel(self, _pnl):
         item = afp.foldingPane(_pnl, -1, caption="Object Finding", pinned = True)
 
@@ -91,7 +94,7 @@ class blobFinder:
 
         self.dsviewer.update()
 
-    def GenBlobFitPanel(self):
+    def GenBlobFitPanel(self, _pnl):
         item = afp.foldingPane(_pnl, -1, caption="Object Fitting", pinned = True)
 #        item = _pnl.AddFoldPanel("Object Fitting", collapsed=False,
 #                                      foldIcons=self.Images)

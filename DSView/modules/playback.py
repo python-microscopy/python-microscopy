@@ -20,6 +20,8 @@ class player:
         #timer for playback
         self.tPlay = mytimer()
         self.tPlay.WantNotification.append(self.OnFrame)
+
+        dsviewer.paneHooks.append(self.GenPlayPanel)
         
     def GenPlayPanel(self, _pnl):
         item = afp.foldingPane(_pnl, -1, caption="Playback", pinned = True)

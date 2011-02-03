@@ -19,6 +19,8 @@ class psfExtractor:
 
         self.PSFLocs = []
 
+        dsviewer.paneHooks.append(self.GenPSFPanel)
+
     def GenPSFPanel(self, _pnl):
         item = afp.foldingPane(_pnl, -1, caption="PSF Extraction", pinned = True)
 

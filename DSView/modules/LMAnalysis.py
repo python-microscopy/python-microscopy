@@ -60,6 +60,10 @@ class LMAnalyser:
 
         self.numAnalysed = 0
         self.numEvents = 0
+
+        dsviewer.paneHooks.append(self.GenPointFindingPanel)
+        dsviewer.paneHooks.append(self.GenAnalysisPanel)
+        dsviewer.paneHooks.append(self.GenFitStatusPanel)
         
         if len(self.fitResults) > 0:
             self.GenResultsView()

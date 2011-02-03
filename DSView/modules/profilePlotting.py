@@ -21,6 +21,8 @@ class profiler:
         self.mdh = dsviewer.mdh
         self.ds = dsviewer.ds
 
+        dsviewer.paneHooks.append(self.GenProfilePanel)
+
     def GenProfilePanel(self, _pnl):
         item = afp.foldingPane(_pnl, -1, caption="Intensity Profile", pinned = True)
 #        item = self._pnl.AddFoldPanel("Intensity Profile", collapsed=False,
