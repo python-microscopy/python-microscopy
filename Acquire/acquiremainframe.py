@@ -10,28 +10,19 @@
 #
 ##################
 
-#Boa:Frame:smiMainFrame
-
-#from wxPython.wx import *
 import wx
-#from wxPython.stc import *
-#import wx.stc
 import wx.py.shell
-#import wx.aui
 
-#import wx.lib.foldpanelbar as fpb
 import PYME.misc.autoFoldPanel as afp
-from PYME.misc.fbpIcons import *
+#from PYME.misc.fbpIcons import *
 
 import sys
 import os
 sys.path.append('.')
 
-#from PYME.misc.auiFloatBook import AuiNotebookWithFloatingPages
 import wx.lib.agw.aui as aui
 
-#import example
-import PYME.cSMI as example
+#import PYME.cSMI as example
 
 import mytimer
 import psliders

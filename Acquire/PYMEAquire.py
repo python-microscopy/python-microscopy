@@ -12,8 +12,8 @@
 
 #!/usr/bin/python
 import wx
-import smimainframe
-from PYME import mProfile
+import acquiremainframe
+#from PYME import mProfile
 
 
 class BoaApp(wx.App):
@@ -24,7 +24,7 @@ class BoaApp(wx.App):
         
     def OnInit(self):
         wx.InitAllImageHandlers()
-        self.main = smimainframe.create(None, self.options)
+        self.main = acquiremainframe.create(None, self.options)
         self.main.Show()
         self.SetTopWindow(self.main)
         return True
