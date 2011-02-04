@@ -73,30 +73,33 @@ class DSViewFrame(wx.Frame):
         self._mgr.SetManagedWindow(self)
 
                 
-        self.notebook1 = AuiNotebookWithFloatingPages(id=-1, parent=self, pos=wx.Point(0, 0), size=wx.Size(618,
-              450), style=wx.aui.AUI_NB_TAB_SPLIT)
-        self.notebook1.update = self.update
+        #self.notebook1 = AuiNotebookWithFloatingPages(id=-1, parent=self, pos=wx.Point(0, 0), size=wx.Size(618,
+        #      450), style=wx.aui.AUI_NB_TAB_SPLIT)
+        #self.notebook1.update = self.update
 
-        self.vp = ArraySettingsAndViewPanel(self.notebook1, self.ds)
+        self.vp = ArraySettingsAndViewPanel(self, self.ds)
+        self._mgr.AddPane(self.vp, aui.AuiPaneInfo().
+                          Name("Data").Caption("Data").Centre().CloseButton(False))
 
         self.mainWind = self
 
         self.sh = wx.py.shell.Shell(id=-1,
-              parent=self.notebook1, pos=wx.Point(0, 0), size=wx.Size(618, 451), style=0, locals=self.__dict__, 
+              parent=self, pos=wx.Point(0, 0), size=wx.Size(618, 451), style=0, locals=self.__dict__, 
               introText='Python SMI bindings - note that help, license etc below is for Python, not PySMI\n\n')
 
-        self.notebook1.AddPage(page=self.vp, select=True, caption='Data')
-        self.notebook1.AddPage(page=self.sh, select=False, caption='Console')
+        #self.AddPage(page=self.vp, select=True, caption='Data')
+        self.AddPage(page=self.sh, select=False, caption='Console')
 
-        self.mdv = MetadataTree.MetadataPanel(self.notebook1, self.mdh)
-        self.notebook1.AddPage(page=self.mdv, select=False, caption='Metadata')
+        self.mdv = MetadataTree.MetadataPanel(self, self.mdh)
+        self.AddPage(page=self.mdv, select=False, caption='Metadata')
 
         
         # Menu Bar
         self.menubar = wx.MenuBar()
         self.SetMenuBar(self.menubar)
         tmp_menu = wx.Menu()
-        tmp_menu.Append(wx.ID_SAVEAS, "Export", "", wx.ITEM_NORMAL)
+        tmp_menu.Append(wx.ID_SAVE, "&Save As", "", wx.ITEM_NORMAL)
+        tmp_menu.Append(wx.ID_SAVEAS, "&Export Cropped", "", wx.ITEM_NORMAL)
 
         #a submenu for modules to hook and install saving functions into
         self.save_menu = wx.Menu()
@@ -110,7 +113,7 @@ class DSViewFrame(wx.Frame):
         self.menubar.Append(self.mExtras, "&Extras")
 
         # Menu Bar end
-        #wx.EVT_MENU(self, wx.ID_SAVEAS, self.extractFrames)
+        wx.EVT_MENU(self, wx.ID_SAVE, self.OnSave)
         wx.EVT_MENU(self, wx.ID_SAVEAS, self.OnExport)
         wx.EVT_CLOSE(self, self.OnCloseWindow)
 
@@ -120,15 +123,10 @@ class DSViewFrame(wx.Frame):
         self.InitEvents()
         modules.load(self.mode, self)
 
-        #self._leftWindow1 = wx.Panel(self, -1, size = wx.Size(180, 1000))
-        self._pnl = 0
         self.CreateFoldPanel()
         
-        #self._mgr.AddPane(self._leftWindow1, aui.AuiPaneInfo().
-        #                  Name("sidebar").Left().CloseButton(False).CaptionVisible(False))
-
-        self._mgr.AddPane(self.notebook1, aui.AuiPaneInfo().
-                          Name("shell").Centre().CaptionVisible(False).CloseButton(False))
+#        self._mgr.AddPane(self.notebook1, aui.AuiPaneInfo().
+#                          Name("shell").Centre().CaptionVisible(False).CloseButton(False))
 
         self._mgr.Update()
 
@@ -138,6 +136,26 @@ class DSViewFrame(wx.Frame):
 
         self.vp.Refresh()
         self.update()
+
+    def AddPage(self, page=None, select=True,caption='Dummy'):
+        self._mgr.Update()
+        pn = self._mgr.GetPaneByName("Data")
+        if pn.IsNotebookPage():
+            print pn.notebook_id
+            nbs = self._mgr.GetNotebooks()
+            if len(nbs) > pn.notebook_id:
+                currPage = nbs[pn.notebook_id].GetSelection()
+            self._mgr.AddPane(page, aui.AuiPaneInfo().
+                          Name(caption.replace(' ', '')).Caption(caption).CloseButton(False).NotebookPage(pn.notebook_id))
+            if (not select) and len(nbs) > pn.notebook_id:
+                nbs[pn.notebook_id].SetSelection(currPage)
+        else:
+            self._mgr.AddPane(page, aui.AuiPaneInfo().
+                          Name(caption.replace(' ', '')).Caption(caption).CloseButton(False), target=pn)
+            #nb = self._mgr.GetNotebooks()[0]
+            #if not select:
+            #    nb.SetSelection(0)
+
 
     def LoadQueue(self, filename):
         import Pyro.core
@@ -283,8 +301,8 @@ class DSViewFrame(wx.Frame):
                 et = self.mdh.getEntry('EndTime')
             else:
                 et = piecewiseMapping.framesToTime(self.ds.getNumSlices(), self.events, self.mdh)
-            self.elv = eventLogViewer.eventLogTPanel(self.notebook1, self.events, self.mdh, [0, et-st]);
-            self.notebook1.AddPage(self.elv, 'Events')
+            self.elv = eventLogViewer.eventLogTPanel(self, self.events, self.mdh, [0, et-st]);
+            self.AddPage(self.elv, False, 'Events')
 
             charts = []
 
@@ -337,7 +355,7 @@ class DSViewFrame(wx.Frame):
 
         self._mgr.Update()
         self.Refresh()
-        self.notebook1.Refresh()
+        #self.notebook1.Refresh()
 
 
     def update(self):
@@ -400,6 +418,20 @@ class DSViewFrame(wx.Frame):
 #            fdialog.Destroy()
 #        dlg.Destroy()
 
+    def OnSave(self, event=None):
+        import dataExporter
+
+        if 'getEvents' in dir(self.ds):
+            evts = self.ds.getEvents()
+        else:
+            evts = []
+
+        fn = dataExporter.ExportData(self.vp.do.ds, self.mdh, evts)
+
+        self.SetTitle(fn)
+
+        self.saved = True
+
     def OnExport(self, event=None):
         import dataExporter
 
@@ -416,10 +448,10 @@ class DSViewFrame(wx.Frame):
     def OnCloseWindow(self, event):
         pylab.close('all')
         if (not self.saved):
-            dialog = wx.MessageDialog(self, "Save data stack?", "pySMI", wx.YES_NO|wx.CANCEL)
+            dialog = wx.MessageDialog(self, "Save data stack?", "PYME", wx.YES_NO|wx.CANCEL)
             ans = dialog.ShowModal()
             if(ans == wx.ID_YES):
-                self.saveStack()
+                self.OnSave()
                 self.Destroy()
             elif (ans == wx.ID_NO):
                 self.Destroy()
