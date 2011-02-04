@@ -14,12 +14,12 @@ import wx.lib.agw.aui as aui
 
 import PYME.misc.autoFoldPanel as afp
 from PYME.misc.auiFloatBook import AuiNotebookWithFloatingPages
-from PYME.FileUtils import h5ExFrames
+#from PYME.FileUtils import h5ExFrames
 
 import os
 import sys
 
-import PYME.cSMI as example
+#import PYME.cSMI as example
 import numpy
 
 import tables
@@ -28,7 +28,6 @@ import pylab
 import modules
 
 from arrayViewPanel import ArraySettingsAndViewPanel
-from PYME.Analysis.LMVis import recArrayView
 import eventLogViewer
 
 from PYME.Acquire import MetaDataHandler
@@ -56,6 +55,8 @@ class DSViewFrame(wx.Frame):
 
         self.mode = mode
         self.paneHooks = []
+        self.updateHooks = []
+        self.statusHooks = []
 
         self.timer = mytimer()
         self.timer.Start(10000)
@@ -133,10 +134,7 @@ class DSViewFrame(wx.Frame):
 
         self.Layout()
 
-        if 'Protocol.DataStartsAt' in self.mdh.getEntryNames():
-            self.vp.zp = self.mdh.getEntry('Protocol.DataStartsAt')
-        else:
-            self.vp.zp = self.mdh.getEntry('EstimatedLaserOnFrameNo')
+        
 
         self.vp.Refresh()
         self.update()
@@ -321,36 +319,44 @@ class DSViewFrame(wx.Frame):
     def CreateFoldPanel(self):
         # delete earlier panel
         self._leftWindow1.DestroyChildren()
-
-        # recreate the foldpanelbar
         hsizer = wx.BoxSizer(wx.VERTICAL)
 
-        s = self._leftWindow1.GetBestSize()
+        if len(self.paneHooks) > 0:
+            # recreate the foldpanelbar
+            s = self._leftWindow1.GetBestSize()
 
-        self._pnl = afp.foldPanel(self._leftWindow1, -1, wx.DefaultPosition,s)
+            self._pnl = afp.foldPanel(self._leftWindow1, -1, wx.DefaultPosition,s)
 
-        for genFcn in self.paneHooks:
-            genFcn(self._pnl)
+            for genFcn in self.paneHooks:
+                genFcn(self._pnl)
 
-        hsizer.Add(self._pnl, 1, wx.EXPAND, 0)
-        self._leftWindow1.SetSizerAndFit(hsizer)
+            hsizer.Add(self._pnl, 1, wx.EXPAND, 0)
+
+        self._leftWindow1.SetSizerAndFit(hsizer)    
+
         self.Refresh()
         self.notebook1.Refresh()
-  
-
-    
 
 
     def update(self):
         self.vp.update()
-        self.statusbar.SetStatusText('Slice No: (%d/%d)    x: %d    y: %d    Frames Analysed: %d    Events detected: %d' % (self.vp.do.zp, self.vp.do.ds.shape[2], self.vp.do.xp, self.vp.do.yp, self.LMAnalyser.numAnalysed, self.LMAnalyser.numEvents))
-        self.player.update()
+        statusText = 'Slice No: (%d/%d)    x: %d    y: %d' % (self.vp.do.zp, self.vp.do.ds.shape[2], self.vp.do.xp, self.vp.do.yp)
+        #grab status from modules which supply it
+        for sCallback in self.statusHooks:
+            statusText += '\t' + sCallback() #'Frames Analysed: %d    Events detected: %d' % (self.vp.do.zp, self.vp.do.ds.shape[2], self.vp.do.xp, self.vp.do.yp, self.LMAnalyser.numAnalysed, self.LMAnalyser.numEvents)
+        self.statusbar.SetStatusText(statusText)
 
-        if 'LMAnalyser' in dir(self):
-            self.LMAnalyser.update()
-
-        if 'deconvolver' in dir(self):
-            self.deconvolver.update()
+        #update any modules which require it
+        for uCallback in self.updateHooks:
+            uCallback()
+        
+#        self.player.update()
+#
+#        if 'LMAnalyser' in dir(self):
+#            self.LMAnalyser.update()
+#
+#        if 'deconvolver' in dir(self):
+#            self.deconvolver.update()
 
 #    def saveStack(self, event=None):
 #        fdialog = wx.FileDialog(None, 'Save Data Stack as ...',

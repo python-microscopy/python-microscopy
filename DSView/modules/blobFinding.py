@@ -11,6 +11,7 @@
 
 import wx
 import PYME.misc.autoFoldPanel as afp
+from PYME.Analysis.LMVis import recArrayView
 
 
 class blobFinder:

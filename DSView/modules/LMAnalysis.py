@@ -40,7 +40,8 @@ class LMAnalyser:
         self.seriesName = dsviewer.seriesName
         self.vp = dsviewer.vp
         self.fitResults = dsviewer.fitResults
-        self.resultsMdh = dsviewer.resultsMdh
+        if 'resultsMdh' in dir(dsviewer):
+            self.resultsMdh = dsviewer.resultsMdh
 
         mTasks = wx.Menu()
         TASKS_STANDARD_2D = wx.NewId()
@@ -64,6 +65,14 @@ class LMAnalyser:
         dsviewer.paneHooks.append(self.GenPointFindingPanel)
         dsviewer.paneHooks.append(self.GenAnalysisPanel)
         dsviewer.paneHooks.append(self.GenFitStatusPanel)
+
+        dsviewer.updateHooks.append(self.update)
+        dsviewer.statusHooks.append(self.GetStatusText)
+
+        if 'Protocol.DataStartsAt' in self.mdh.getEntryNames():
+            self.vp.zp = self.mdh.getEntry('Protocol.DataStartsAt')
+        else:
+            self.vp.zp = self.mdh.getEntry('EstimatedLaserOnFrameNo')
         
         if len(self.fitResults) > 0:
             self.GenResultsView()
@@ -104,6 +113,9 @@ class LMAnalyser:
         self.glCanvas.setCLim((0, self.fitResults['tIndex'].max()))
 
         self.timer.WantNotification.remove(self.AddPointsToVis)
+
+    def GetStatusText(self):
+        return 'Frames Analysed: %d    Events detected: %d' % (self.numAnalysed, self.numEvents)
 
     def GenAnalysisPanel(self, _pnl):
 #        item = _pnl.AddFoldPanel("Analysis", collapsed=False,

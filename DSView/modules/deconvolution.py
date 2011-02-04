@@ -30,6 +30,8 @@ class deconvolver:
         wx.EVT_MENU(dsviewer, DECONV_ICTM, self.OnDeconvICTM)
         wx.EVT_MENU(dsviewer, DECONV_SAVE, self.saveDeconvolution)
 
+        dsviewer.updateHooks.append(self.update)
+
     def OnDeconvICTM(self, event):
         from PYME.Deconv.deconvDialogs import DeconvSettingsDialog,DeconvProgressDialog
 
