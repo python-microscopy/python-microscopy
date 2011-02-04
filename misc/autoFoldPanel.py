@@ -489,6 +489,14 @@ class foldPanel(wx.Panel):
 
         self.sizer.Layout()
 
+    def Clear(self):
+        self.priorities = []
+        for p in self.panes:
+            p.Destroy()
+        self.panes = []
+
+        self.RegenSizer()
+
     def OnMouseEnterPane(self, event):
         pane = event.GetEventObject()
 

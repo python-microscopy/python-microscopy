@@ -413,9 +413,9 @@ class smiMainFrame(wx.Frame):
         #self._leftWindow1.DestroyChildren()
 
         # recreate the foldpanelbar
-        self.Images = wx.ImageList(16,16)
-        self.Images.Add(GetExpandedIconBitmap())
-        self.Images.Add(GetCollapsedIconBitmap())
+#        self.Images = wx.ImageList(16,16)
+#        self.Images.Add(GetExpandedIconBitmap())
+#        self.Images.Add(GetCollapsedIconBitmap())
 
 #        self._leftWindow1 = wx.SashLayoutWindow(self, 101, wx.DefaultPosition,
 #                                                wx.Size(300, 1000), wx.NO_BORDER |

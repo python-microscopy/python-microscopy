@@ -120,12 +120,12 @@ class DSViewFrame(wx.Frame):
         self.InitEvents()
         modules.load(self.mode, self)
 
-        self._leftWindow1 = wx.Panel(self, -1, size = wx.Size(180, 1000))
+        #self._leftWindow1 = wx.Panel(self, -1, size = wx.Size(180, 1000))
         self._pnl = 0
         self.CreateFoldPanel()
         
-        self._mgr.AddPane(self._leftWindow1, aui.AuiPaneInfo().
-                          Name("sidebar").Left().CloseButton(False).CaptionVisible(False))
+        #self._mgr.AddPane(self._leftWindow1, aui.AuiPaneInfo().
+        #                  Name("sidebar").Left().CloseButton(False).CaptionVisible(False))
 
         self._mgr.AddPane(self.notebook1, aui.AuiPaneInfo().
                           Name("shell").Centre().CaptionVisible(False).CloseButton(False))
@@ -317,23 +317,25 @@ class DSViewFrame(wx.Frame):
 
 
     def CreateFoldPanel(self):
-        # delete earlier panel
-        self._leftWindow1.DestroyChildren()
-        hsizer = wx.BoxSizer(wx.VERTICAL)
+        pinfo = self._mgr.GetPaneByName('sidePanel')
+        if pinfo.IsOk(): #we already have a sidepanel, clear
+            self.sidePanel.Clear()
+        else:
+            self.sidePanel = afp.foldPanel(self, -1, wx.DefaultPosition,size = wx.Size(180, 1000))
+            pinfo = aui.AuiPaneInfo().Name("sidePanel").Left().CloseButton(False).CaptionVisible(False)
 
+            self._mgr.AddPane(self.sidePanel, pinfo)
+            
         if len(self.paneHooks) > 0:
-            # recreate the foldpanelbar
-            s = self._leftWindow1.GetBestSize()
-
-            self._pnl = afp.foldPanel(self._leftWindow1, -1, wx.DefaultPosition,s)
+            pinfo.Show()
 
             for genFcn in self.paneHooks:
-                genFcn(self._pnl)
+                genFcn(self.sidePanel)
+        else:
+            pinfo.Hide()
+            
 
-            hsizer.Add(self._pnl, 1, wx.EXPAND, 0)
-
-        self._leftWindow1.SetSizerAndFit(hsizer)    
-
+        self._mgr.Update()
         self.Refresh()
         self.notebook1.Refresh()
 
