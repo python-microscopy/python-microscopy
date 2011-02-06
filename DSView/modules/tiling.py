@@ -50,4 +50,8 @@ class tiler:
         else:
             View3D(dt, 'Tiled Image')
 
+
+def Plug(dsviewer):
+    dsviewer.tiler = tiler(dsviewer)
+
     

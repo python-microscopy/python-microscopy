@@ -75,4 +75,8 @@ class profiler:
             #pylab.xlim(x.min(), x.max())
             pylab.xlabel('x offset [nm]')
             pylab.ylabel('y offset [nm]')
+
+
+def Plug(dsviewer):
+    dsviewer.profilePlotter = profiler(dsviewer)
     

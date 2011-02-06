@@ -93,3 +93,5 @@ class deconvolver:
         if 'decvp' in dir(self):
             self.decvp.imagepanel.Refresh()
 
+def Plug(dsviewer):
+    dsviewer.devoncolver = deconvolver(dsviewer)

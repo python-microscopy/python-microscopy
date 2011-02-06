@@ -88,11 +88,14 @@ class LMAnalyser:
             self.vp.view.pointMode = 'splitter'
             self.vp.view.pointColours = self.fitResults['fitResults']['Ag'] > self.fitResults['fitResults']['Ar']
 
+        self.fitInf = fitInfo.FitInfoPanel(self.dsviewer, self.fitResults, self.resultsMdh, self.vp.do.ds)
+        self.dsviewer.AddPage(page=self.fitInf, select=False, caption='Fit Info')
+
         from PYME.Analysis.LMVis import gl_render
-        self.glCanvas = gl_render.LMGLCanvas(self.dsviewer.notebook1, False, vp = self.vp.do, vpVoxSize = voxx)
+        self.glCanvas = gl_render.LMGLCanvas(self.dsviewer, False, vp = self.vp.do, vpVoxSize = voxx)
         self.glCanvas.cmap = pylab.cm.gist_rainbow
 
-        self.dsviewer.notebook1.AddPage(page=self.glCanvas, select=True, caption='VisLite')
+        self.dsviewer.AddPage(page=self.glCanvas, select=True, caption='VisLite')
 
         xsc = self.ds.shape[0]*1.0e3*self.mdh.getEntry('voxelsize.x')/self.glCanvas.Size[0]
         ysc = self.ds.shape[1]*1.0e3*self.mdh.getEntry('voxelsize.y')/ self.glCanvas.Size[1]
@@ -105,8 +108,7 @@ class LMAnalyser:
         #we have to wait for the gui to be there before we start changing stuff in the GL view
         self.timer.WantNotification.append(self.AddPointsToVis)
 
-        self.fitInf = fitInfo.FitInfoPanel(self.dsviewer, self.fitResults, self.resultsMdh, self.vp.do.ds)
-        self.dsviewer.notebook1.AddPage(page=self.fitInf, select=False, caption='Fit Info')
+        
 
     def AddPointsToVis(self):
         self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],self.fitResults['tIndex'].astype('f'))
@@ -668,4 +670,7 @@ class LMAnalyser:
             yticks([])
         show()
         matplotlib.interactive(True)
+
+def Plug(dsviewer):
+    dsviewer.LMAnalyser = LMAnalyser(dsviewer)
 

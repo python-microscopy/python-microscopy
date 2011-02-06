@@ -104,3 +104,6 @@ class player:
 
         if not self.tPlay.IsRunning():
             self.vp.optionspanel.RefreshHists()
+
+def Plug(dsviewer):
+    dsviewer.player = player(dsviewer)

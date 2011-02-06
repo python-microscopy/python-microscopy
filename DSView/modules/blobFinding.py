@@ -165,3 +165,7 @@ class blobFinder:
             npFN = os.path.splitext(outFilename)[0] + '.npy'
 
             numpy.save(npFN, self.objFitRes)
+
+
+def Plug(dsviewer):
+    dsviewer.blobFinder = blobFinder(dsviewer)

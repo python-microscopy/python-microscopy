@@ -12,39 +12,23 @@
 import wx
 import wx.lib.agw.aui as aui
 
-import PYME.misc.autoFoldPanel as afp
-from PYME.misc.auiFloatBook import AuiNotebookWithFloatingPages
-#from PYME.FileUtils import h5ExFrames
-
 import os
-import sys
-
-#import PYME.cSMI as example
 import numpy
-
-import tables
-import wx.py.crust
 import pylab
 import modules
 
-from arrayViewPanel import ArraySettingsAndViewPanel
-import eventLogViewer
-
+import PYME.misc.autoFoldPanel as afp
+from PYME.DSView.arrayViewPanel import ArraySettingsAndViewPanel
 from PYME.Acquire import MetaDataHandler
 from PYME.Analysis import MetaData
-from PYME.Analysis import MetadataTree
-from PYME.Analysis.DataSources import HDFDataSource
-from PYME.Analysis.DataSources import TQDataSource
-#from PYME.Analysis.DataSources import TiffDataSource
-from PYME.FileUtils import readTiff
-from PYME.Analysis.LMVis import inpFilt
+
 from PYME.Acquire.mytimer import mytimer
 from PYME.Analysis import piecewiseMapping
 
 
 class DSViewFrame(wx.Frame):
-    def __init__(self, parent=None, title='', dstack = None, log = None, mdh = None, filename = None, queueURI = None, mode='LM'):
-        wx.Frame.__init__(self,parent, -1, title,size=wx.Size(800,800), pos=(1100, 300))
+    def __init__(self, parent=None, title='', dstack = None, mdh = None, filename = None, queueURI = None, mode='LM', size = (800,800)):
+        wx.Frame.__init__(self,parent, -1, title,size=size, pos=(1100, 300))
 
         self.ds = dstack
         self.mdh = mdh
@@ -57,6 +41,7 @@ class DSViewFrame(wx.Frame):
         self.paneHooks = []
         self.updateHooks = []
         self.statusHooks = []
+        self.installedModules = []
 
         self.timer = mytimer()
         self.timer.Start(10000)
@@ -72,27 +57,11 @@ class DSViewFrame(wx.Frame):
         # tell AuiManager to manage this frame
         self._mgr.SetManagedWindow(self)
 
-                
-        #self.notebook1 = AuiNotebookWithFloatingPages(id=-1, parent=self, pos=wx.Point(0, 0), size=wx.Size(618,
-        #      450), style=wx.aui.AUI_NB_TAB_SPLIT)
-        #self.notebook1.update = self.update
-
         self.vp = ArraySettingsAndViewPanel(self, self.ds)
         self._mgr.AddPane(self.vp, aui.AuiPaneInfo().
-                          Name("Data").Caption("Data").Centre().CloseButton(False))
+                          Name("Data").Caption("Data").Centre().CloseButton(False).CaptionVisible(False))
 
-        self.mainWind = self
-
-        self.sh = wx.py.shell.Shell(id=-1,
-              parent=self, pos=wx.Point(0, 0), size=wx.Size(618, 451), style=0, locals=self.__dict__, 
-              introText='Python SMI bindings - note that help, license etc below is for Python, not PySMI\n\n')
-
-        #self.AddPage(page=self.vp, select=True, caption='Data')
-        self.AddPage(page=self.sh, select=False, caption='Console')
-
-        self.mdv = MetadataTree.MetadataPanel(self, self.mdh)
-        self.AddPage(page=self.mdv, select=False, caption='Metadata')
-
+        self.mainFrame = self
         
         # Menu Bar
         self.menubar = wx.MenuBar()
@@ -120,19 +89,12 @@ class DSViewFrame(wx.Frame):
 		
         self.statusbar = self.CreateStatusBar(1, wx.ST_SIZEGRIP)
 
-        self.InitEvents()
-        modules.load(self.mode, self)
+        modules.loadMode(self.mode, self)
+        self.CreateModuleMenu()
 
         self.CreateFoldPanel()
-        
-#        self._mgr.AddPane(self.notebook1, aui.AuiPaneInfo().
-#                          Name("shell").Centre().CaptionVisible(False).CloseButton(False))
-
         self._mgr.Update()
-
         self.Layout()
-
-        
 
         self.vp.Refresh()
         self.update()
@@ -159,6 +121,8 @@ class DSViewFrame(wx.Frame):
 
     def LoadQueue(self, filename):
         import Pyro.core
+        from PYME.Analysis.DataSources import TQDataSource
+
         if self.queueURI == None:
             if 'PYME_TASKQUEUENAME' in os.environ.keys():
                 taskQueueName = os.environ['PYME_TASKQUEUENAME']
@@ -178,6 +142,10 @@ class DSViewFrame(wx.Frame):
         self.events = self.dataSource.getEvents()
 
     def Loadh5(self, filename):
+        import tables
+        from PYME.Analysis.DataSources import HDFDataSource
+        from PYME.Analysis.LMVis import inpFilt
+        
         self.dataSource = HDFDataSource.DataSource(filename, None)
         if 'MetaData' in self.dataSource.h5File.root: #should be true the whole time
             self.mdh = MetaData.TIRFDefault
@@ -244,6 +212,9 @@ class DSViewFrame(wx.Frame):
         self.mode = 'psf'
 
     def LoadTiff(self, filename):
+        from PYME.FileUtils import readTiff
+        #from PYME.Analysis.DataSources import TiffDataSource
+        
         #self.dataSource = TiffDataSource.DataSource(filename, None)
         self.dataSource = readTiff.read3DTiff(filename)
 
@@ -294,44 +265,32 @@ class DSViewFrame(wx.Frame):
             self.SetTitle(filename)
             self.saved = True
 
-    def InitEvents(self):
-        if 'events' in dir(self):
-            st = self.mdh.getEntry('StartTime')
-            if 'EndTime' in self.mdh.getEntryNames():
-                et = self.mdh.getEntry('EndTime')
-            else:
-                et = piecewiseMapping.framesToTime(self.ds.getNumSlices(), self.events, self.mdh)
-            self.elv = eventLogViewer.eventLogTPanel(self, self.events, self.mdh, [0, et-st]);
-            self.AddPage(self.elv, False, 'Events')
+    def CreateModuleMenu(self):
+        self.modMenuIds = {}
+        self.mModules = wx.Menu()
+        for mn in modules.allmodules:
+            id = wx.NewId()
+            self.mModules.AppendCheckItem(id, mn)
+            self.modMenuIds[id] = mn
+            if mn in self.installedModules:
+                self.mModules.Check(id, True)
 
-            charts = []
+            wx.EVT_MENU(self, id, self.OnToggleModule)
+            
+        self.menubar.Append(self.mModules, "&Modules")
 
-            if 'ProtocolFocus' in self.elv.evKeyNames:
-                self.zm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), self.mdh.getEntry('Protocol.PiezoStartPos'))
-                charts.append(('Focus [um]', self.zm, 'ProtocolFocus'))
+    def OnToggleModule(self, event):
+        id = event.GetId()
+        mn = self.modMenuIds[id]
+        if self.mModules.IsChecked(id):
+            modules.loadModule(mn, self)
 
-            if 'ScannerXPos' in self.elv.evKeyNames:
-                x0 = 0
-                if 'Positioning.Stage_X' in self.mdh.getEntryNames():
-                    x0 = self.mdh.getEntry('Positioning.Stage_X')
-                self.xm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), x0, 'ScannerXPos', 0)
-                charts.append(('XPos [um]', self.xm, 'ScannerXPos'))
+        if mn in self.installedModules:
+            self.mModules.Check(id, True)
 
-            if 'ScannerYPos' in self.elv.evKeyNames:
-                y0 = 0
-                if 'Positioning.Stage_Y' in self.mdh.getEntryNames():
-                    y0 = self.mdh.getEntry('Positioning.Stage_Y')
-                self.ym = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), y0, 'ScannerYPos', 0)
-                charts.append(('YPos [um]', self.ym, 'ScannerYPos'))
+        self.CreateFoldPanel()
+        self._mgr.Update()
 
-            if 'ScannerZPos' in self.elv.evKeyNames:
-                z0 = 0
-                if 'Positioning.PIFoc' in self.mdh.getEntryNames():
-                    z0 = self.mdh.getEntry('Positioning.PIFoc')
-                self.zm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), z0, 'ScannerZPos', 0)
-                charts.append(('ZPos [um]', self.zm, 'ScannerZPos'))
-
-            self.elv.SetCharts(charts)
 
 
     def CreateFoldPanel(self):
@@ -355,7 +314,6 @@ class DSViewFrame(wx.Frame):
 
         self._mgr.Update()
         self.Refresh()
-        #self.notebook1.Refresh()
 
 
     def update(self):
@@ -370,53 +328,6 @@ class DSViewFrame(wx.Frame):
         for uCallback in self.updateHooks:
             uCallback()
         
-#        self.player.update()
-#
-#        if 'LMAnalyser' in dir(self):
-#            self.LMAnalyser.update()
-#
-#        if 'deconvolver' in dir(self):
-#            self.deconvolver.update()
-
-#    def saveStack(self, event=None):
-#        fdialog = wx.FileDialog(None, 'Save Data Stack as ...',
-#            wildcard='*.kdf', style=wx.SAVE|wx.HIDE_READONLY)
-#        succ = fdialog.ShowModal()
-#        if (succ == wx.ID_OK):
-#            self.ds.SaveToFile(fdialog.GetPath().encode())
-#            if not (self.log == None):
-#                lw = logparser.logwriter()
-#                s = lw.write(self.log)
-#                log_f = file('%s.log' % fdialog.GetPath().split('.')[0], 'w')
-#                log_f.write(s)
-#                log_f.close()
-#
-#            self.SetTitle(fdialog.GetFilename())
-#            self.saved = True
-
-#    def extractFrames(self, event=None):
-#        dlg = wx.TextEntryDialog(self, 'Enter the range of frames to extract ...',
-#                'Extract Frames', '0:%d' % self.ds.getNumSlices())
-#
-#        if dlg.ShowModal() == wx.ID_OK:
-#            ret = dlg.GetValue().split(':')
-#
-#            start = int(ret[0])
-#            finish = int(ret[1])
-#
-#            if len(ret) == 3:
-#                subsamp = int(ret[2])
-#            else:
-#                subsamp = 1
-#
-#            fdialog = wx.FileDialog(None, 'Save Extracted Frames as ...',
-#                wildcard='*.h5', style=wx.SAVE|wx.HIDE_READONLY)
-#            succ = fdialog.ShowModal()
-#            if (succ == wx.ID_OK):
-#                h5ExFrames.extractFrames(self.ds, self.mdh, self.seriesName, fdialog.GetPath(), start, finish, subsamp)
-#
-#            fdialog.Destroy()
-#        dlg.Destroy()
 
     def OnSave(self, event=None):
         import dataExporter
@@ -442,8 +353,6 @@ class DSViewFrame(wx.Frame):
 
         dataExporter.CropExportData(self.vp.view, self.mdh, evts, self.seriesName)
 
-#    def menuClose(self, event):
-#        self.Close()
 
     def OnCloseWindow(self, event):
         pylab.close('all')
@@ -462,17 +371,6 @@ class DSViewFrame(wx.Frame):
                     event.Veto()
         else:
             self.Destroy()
-			
-#    def clearSel(self, event):
-#        self.vp.ResetSelection()
-#        self.vp.Refresh()
-#
-#    def crop(self, event):
-#        cd = dCrop.dCrop(self, self.vp)
-#        if cd.ShowModal():
-#            ds2 = example.CDataStack(self.ds, cd.x1, cd.y1, cd.z1, cd.x2, cd.y2, cd.z2, cd.chs)
-#            dvf = DSViewFrame(self.GetParent(), '--cropped--', ds2)
-#            dvf.Show()
 
     def dsRefresh(self):
         #zp = self.vp.do.zp #save z -position
@@ -490,6 +388,7 @@ class DSViewFrame(wx.Frame):
 
 class MyApp(wx.App):
     def OnInit(self):
+        import sys
         #wx.InitAllImageHandlers()
         if (len(sys.argv) == 2):
             vframe = DSViewFrame(None, sys.argv[1], filename=sys.argv[1])
@@ -512,3 +411,10 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+def View3D(data, title='', mdh = None, mode='lite'):
+    dvf = DSViewFrame(dstack = data, title=title, mdh=mdh, mode=mode, size=(500, 500))
+    dvf.SetSize((500,500))
+    dvf.Show()
+    return dvf

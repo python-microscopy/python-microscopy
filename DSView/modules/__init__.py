@@ -1,26 +1,35 @@
 __author__="david"
 __date__ ="$3/02/2011 9:42:00 PM$"
 
-def load(mode, dsviewer):
+import glob
+import os
+
+allmodules = [os.path.splitext(os.path.split(p)[-1])[0] for p in glob.glob(__path__[0] + '/[a-zA-Z]*.py')]
+
+
+basemodules = ['shell', 'metadataView', 'eventView', 'playback', 'deconvolution', 'tiling']
+
+modeModules = {
+'lite': [],
+'LM' : basemodules + ['LMAnalysis'],
+'blob' : basemodules + ['blobFinding', 'psfExtraction'],
+'default' : basemodules + ['psfExtraction'],
+}
+
+def loadModule(modName, dsviewer):
+    mod = __import__('PYME.DSView.modules.' + modName, fromlist=['PYME', 'DSView', 'modules'])
+    mod.Plug(dsviewer)
+
+    dsviewer.installedModules.append(modName)
+
+
+def loadMode(mode, dsviewer):
     '''install the relevant modules for a particular mode'''
 
-    if mode == 'lite': #don't load any modules
-        return
-    
-    #always load the playback, deconvolution & tiling modules
-    import playback, deconvolution, tiling
-    dsviewer.player = playback.player(dsviewer)
-    dsviewer.deconvolver = deconvolution.deconvolver(dsviewer)
-    dsviewer.tiler = tiling.tiler(dsviewer)
-
-    if mode == 'LM':
-        #load the localisation module
-        import LMAnalysis
-        dsviewer.LMAnalyser = LMAnalysis.LMAnalyser(dsviewer)
+    if mode in modeModules.keys():
+        mods = modeModules[mode]
     else:
-        if mode == 'blob':
-            import blobFinding
-            dsviewer.blobFinder = blobFinding.blobFinder(dsviewer)
+        mods = modeModules['default']
 
-        import psfExtraction
-        dsviewer.psfExtractor = psfExtraction.psfExtractor(dsviewer)
+    for m in mods:
+        loadModule(m, dsviewer)

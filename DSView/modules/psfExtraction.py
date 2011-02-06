@@ -15,7 +15,7 @@ class psfExtractor:
     def __init__(self, dsviewer):
         self.dsviewer = dsviewer
         self.vp = dsviewer.vp
-        self.dataSource = dsviewer.dataSource
+        self.ds = dsviewer.ds
 
         self.PSFLocs = []
 
@@ -79,7 +79,7 @@ class psfExtractor:
     def OnTagPSF(self, event):
         from PYME.PSFEst import extractImages
         rsx, rsy, rsz = [int(s) for s in self.tPSFROI.GetValue().split(',')]
-        dx, dy, dz = extractImages.getIntCenter(self.dataSource[(self.vp.do.xp-rsx):(self.vp.do.xp+rsx + 1),(self.vp.do.yp-rsy):(self.vp.do.yp+rsy+1), :])
+        dx, dy, dz = extractImages.getIntCenter(self.ds[(self.vp.do.xp-rsx):(self.vp.do.xp+rsx + 1),(self.vp.do.yp-rsy):(self.vp.do.yp+rsy+1), :])
         self.PSFLocs.append((self.vp.do.xp + dx, self.vp.do.yp + dy, dz))
         self.vp.view.psfROIs = self.PSFLocs
         self.vp.view.Refresh()
@@ -104,7 +104,7 @@ class psfExtractor:
             psfROISize = [int(s) for s in self.tPSFROI.GetValue().split(',')]
             psfBlur = [float(s) for s in self.tPSFBlur.GetValue().split(',')]
             #print psfROISize
-            psf = extractImages.getPSF3D(self.dataSource, self.PSFLocs, psfROISize, psfBlur)
+            psf = extractImages.getPSF3D(self.ds, self.PSFLocs, psfROISize, psfBlur)
 
             from pylab import *
             import cPickle
@@ -141,5 +141,6 @@ class psfExtractor:
                     h5out.flush()
                     h5out.close()
 
-
+def Plug(dsviewer):
+    dsviewer.psfExtractor = psfExtractor(dsviewer)
 
