@@ -33,14 +33,16 @@ class LMAnalyser:
             self.tq = dsviewer.tq
         else:
             self.tq = None
-
-        self.dataSource = dsviewer.dataSource
-        self.ds = dsviewer.ds
-        self.mdh = dsviewer.mdh
-        self.seriesName = dsviewer.seriesName
+        
+        self.image = dsviewer.image
         self.vp = dsviewer.vp
-        self.fitResults = dsviewer.fitResults
-        if 'resultsMdh' in dir(dsviewer):
+
+        if 'fitResults' in dir(self.image):
+            self.fitResults = self.image.fitResults
+        else:
+            self.fitResults = []
+        
+        if 'resultsMdh' in dir(self.image):
             self.resultsMdh = dsviewer.resultsMdh
 
         mTasks = wx.Menu()
@@ -69,10 +71,10 @@ class LMAnalyser:
         dsviewer.updateHooks.append(self.update)
         dsviewer.statusHooks.append(self.GetStatusText)
 
-        if 'Protocol.DataStartsAt' in self.mdh.getEntryNames():
-            self.vp.zp = self.mdh.getEntry('Protocol.DataStartsAt')
+        if 'Protocol.DataStartsAt' in self.image.mdh.getEntryNames():
+            self.vp.zp = self.image.mdh.getEntry('Protocol.DataStartsAt')
         else:
-            self.vp.zp = self.mdh.getEntry('EstimatedLaserOnFrameNo')
+            self.vp.zp = self.image.mdh.getEntry('EstimatedLaserOnFrameNo')
         
         if len(self.fitResults) > 0:
             self.GenResultsView()
@@ -80,11 +82,11 @@ class LMAnalyser:
     def GenResultsView(self):
         self.vp.view.pointMode = 'lm'
 
-        voxx = 1e3*self.mdh.getEntry('voxelsize.x')
-        voxy = 1e3*self.mdh.getEntry('voxelsize.y')
+        voxx = 1e3*self.image.mdh.getEntry('voxelsize.x')
+        voxy = 1e3*self.image.mdh.getEntry('voxelsize.y')
         self.vp.view.points = numpy.vstack((self.fitResults['fitResults']['x0']/voxx, self.fitResults['fitResults']['y0']/voxy, self.fitResults['tIndex'])).T
 
-        if 'Splitter' in self.mdh.getEntry('Analysis.FitModule'):
+        if 'Splitter' in self.image.mdh.getEntry('Analysis.FitModule'):
             self.vp.view.pointMode = 'splitter'
             self.vp.view.pointColours = self.fitResults['fitResults']['Ag'] > self.fitResults['fitResults']['Ar']
 
@@ -97,8 +99,8 @@ class LMAnalyser:
 
         self.dsviewer.AddPage(page=self.glCanvas, select=True, caption='VisLite')
 
-        xsc = self.ds.shape[0]*1.0e3*self.mdh.getEntry('voxelsize.x')/self.glCanvas.Size[0]
-        ysc = self.ds.shape[1]*1.0e3*self.mdh.getEntry('voxelsize.y')/ self.glCanvas.Size[1]
+        xsc = self.image.data.shape[0]*1.0e3*self.image.mdh.getEntry('voxelsize.x')/self.glCanvas.Size[0]
+        ysc = self.image.data.shape[1]*1.0e3*self.image.mdh.getEntry('voxelsize.y')/ self.glCanvas.Size[1]
 
         if xsc > ysc:
             self.glCanvas.setView(0, xsc*self.glCanvas.Size[0], 0, xsc*self.glCanvas.Size[1])
@@ -161,7 +163,7 @@ class LMAnalyser:
         hsizer.Add(wx.StaticText(pan, -1, 'Type:'), 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
         self.cFitType = wx.Choice(pan, -1, choices = self.fitFactories, size=(110, -1))
 
-        if 'Camera.ROIPosY' in self.mdh.getEntryNames() and (self.mdh.getEntry('Camera.ROIHeight') + 1 + 2*(self.mdh.getEntry('Camera.ROIPosY')-1)) == 512:
+        if 'Camera.ROIPosY' in self.image.mdh.getEntryNames() and (self.image.mdh.getEntry('Camera.ROIHeight') + 1 + 2*(self.image.mdh.getEntry('Camera.ROIPosY')-1)) == 512:
             #we have a symetrical ROI about the centre - most likely want to analyse using splitter
             self.cFitType.SetSelection(self.fitFactories.index('SplitterFitQR'))
             self.tThreshold.SetValue('0.5')
@@ -208,11 +210,11 @@ class LMAnalyser:
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         shiftFieldText = 'Shifts: <None>'
         haveShiftField=False
-        if 'chroma.ShiftFilename' in self.mdh.getEntryNames():
+        if 'chroma.ShiftFilename' in self.image.mdh.getEntryNames():
             #have new format shift field data
-            shiftFieldText = 'Shifts: ' + os.path.split(self.mdh.getEntry('chroma.ShiftFilename'))[1]
+            shiftFieldText = 'Shifts: ' + os.path.split(self.image.mdh.getEntry('chroma.ShiftFilename'))[1]
             haveShiftField=True
-        elif 'chroma.dx' in self.mdh.getEntryNames():
+        elif 'chroma.dx' in self.image.mdh.getEntryNames():
             #have shift field, but filename not recorded
             shiftFieldText = 'Shifts: present'
             haveShiftField=True
@@ -232,8 +234,8 @@ class LMAnalyser:
         psfFieldText = 'PSF: <None>'
         havePSF = False
 
-        if 'PSFFile' in self.mdh.getEntryNames():
-            psfFieldText = 'PSF: ' + os.path.split(self.mdh.getEntry('PSFFile'))[1]
+        if 'PSFFile' in self.image.mdh.getEntryNames():
+            psfFieldText = 'PSF: ' + os.path.split(self.image.mdh.getEntry('PSFFile'))[1]
             havePSF = True
 
         self.stPSFFilename = wx.StaticText(pan, -1, psfFieldText)
@@ -285,7 +287,7 @@ class LMAnalyser:
             #self.ds = example.CDataStack(fdialog.GetPath().encode())
             #self.ds =
             psfFilename = fdialog.GetPath()
-            self.mdh.setEntry('PSFFile', getRelFilename(psfFilename))
+            self.image.mdh.setEntry('PSFFile', getRelFilename(psfFilename))
             #self.md.setEntry('PSFFile', psfFilename)
             self.stPSFFilename.SetLabel('PSF: %s' % os.path.split(psfFilename)[1])
             self.stPSFFilename.SetForegroundColour(wx.Colour(0, 128, 0))
@@ -301,10 +303,10 @@ class LMAnalyser:
             #self.ds = example.CDataStack(fdialog.GetPath().encode())
             #self.ds =
             sfFilename = fdialog.GetPath()
-            self.mdh.setEntry('chroma.ShiftFilename', sfFilename)
+            self.image.mdh.setEntry('chroma.ShiftFilename', sfFilename)
             dx, dy = numpy.load(sfFilename)
-            self.mdh.setEntry('chroma.dx', dx)
-            self.mdh.setEntry('chroma.dy', dy)
+            self.image.mdh.setEntry('chroma.dx', dx)
+            self.image.mdh.setEntry('chroma.dy', dy)
             #self.md.setEntry('PSFFile', psfFilename)
             self.stShiftFieldName.SetLabel('Shifts: %s' % os.path.split(sfFilename)[1])
             self.stShiftFieldName.SetForegroundColour(wx.Colour(0, 128, 0))
@@ -321,33 +323,33 @@ class LMAnalyser:
         interpolator = self.interpolators[self.cInterpType.GetSelection()]
         bgFrames = [int(v) for v in self.tBackgroundFrames.GetValue().split(':')]
 
-        self.mdh.setEntry('Analysis.subtractBackground', self.cbSubtractBackground.GetValue())
+        self.image.mdh.setEntry('Analysis.subtractBackground', self.cbSubtractBackground.GetValue())
         #self.md.setEntry('Analysis.subtractBackground', self.cbSubtractBackground.GetValue())
 
-        #self.mdh.setEntry('Analysis.NumBGFrames', bgFrames)
-        self.mdh.setEntry('Analysis.BGRange', bgFrames)
+        #self.image.mdh.setEntry('Analysis.NumBGFrames', bgFrames)
+        self.image.mdh.setEntry('Analysis.BGRange', bgFrames)
         #self.md.setEntry('Analysis.NumBGFrames', bgFrames)
 
-        self.mdh.setEntry('Analysis.InterpModule', interpolator)
+        self.image.mdh.setEntry('Analysis.InterpModule', interpolator)
 
-        self.mdh.setEntry('Analysis.DebounceRadius', int(self.tDebounceRadius.GetValue()))
+        self.image.mdh.setEntry('Analysis.DebounceRadius', int(self.tDebounceRadius.GetValue()))
 
-        if fitMod.startswith('SplitterFit') and not 'chroma.dx' in self.mdh.getEntryNames():
+        if fitMod.startswith('SplitterFit') and not 'chroma.dx' in self.image.mdh.getEntryNames():
             if not self.SetShiftField():
                 return
 
-        if 'Psf' in fitMod and not 'PSFFile' in self.mdh.getEntryNames():
+        if 'Psf' in fitMod and not 'PSFFile' in self.image.mdh.getEntryNames():
             if not self.SetPSF():
                 return
 
-        if 'Psf' in fitMod  and 'Splitter' in fitMod and not 'Analysis.AxialShift' in self.mdh.getEntryNames():
+        if 'Psf' in fitMod  and 'Splitter' in fitMod and not 'Analysis.AxialShift' in self.image.mdh.getEntryNames():
             dlg = wx.TextEntryDialog(self, 'What is the axial chromatic shift between splitter halves [nm]?',
                 'Axial Shift', '300')
 
             if dlg.ShowModal() == wx.ID_OK:
-                self.mdh.setEntry('Analysis.AxialShift', float(dlg.GetValue()))
+                self.image.mdh.setEntry('Analysis.AxialShift', float(dlg.GetValue()))
             else:
-                self.mdh.setEntry('Analysis.AxialShift', 0.)
+                self.image.mdh.setEntry('Analysis.AxialShift', 0.)
 
 
             dlg.Destroy()
@@ -358,13 +360,13 @@ class LMAnalyser:
             self.sh.run('pushImagesD(%d, %f)' % (startAt, threshold))
 
         from PYME.Analysis.LMVis import gl_render
-        self.glCanvas = gl_render.LMGLCanvas(self.notebook1, False)
+        self.glCanvas = gl_render.LMGLCanvas(self.dsviewer, False)
         self.glCanvas.cmap = pylab.cm.gist_rainbow
 
-        self.notebook1.AddPage(page=self.glCanvas, select=True, caption='VisLite')
+        self.dsviewer.AddPage(page=self.glCanvas, select=True, caption='VisLite')
 
-        xsc = self.ds.shape[0]*1.0e3*self.mdh.getEntry('voxelsize.x')/self.glCanvas.Size[0]
-        ysc = self.ds.shape[1]*1.0e3*self.mdh.getEntry('voxelsize.y')/ self.glCanvas.Size[1]
+        xsc = self.image.data.shape[0]*1.0e3*self.image.mdh.getEntry('voxelsize.x')/self.glCanvas.Size[0]
+        ysc = self.image.data.shape[1]*1.0e3*self.image.mdh.getEntry('voxelsize.y')/ self.glCanvas.Size[1]
 
         if xsc > ysc:
             self.glCanvas.setView(0, xsc*self.glCanvas.Size[0], 0, xsc*self.glCanvas.Size[1])
@@ -409,9 +411,9 @@ class LMAnalyser:
         driftEst = self.cbDrift.GetValue()
         fitMod = self.cFitType.GetStringSelection()
 
-        self.mdh.setEntry('Analysis.DebounceRadius', int(self.tDebounceRadius.GetValue()))
+        self.image.mdh.setEntry('Analysis.DebounceRadius', int(self.tDebounceRadius.GetValue()))
 
-        if 'Psf' in fitMod and not 'PSFFile' in self.mdh.getEntryNames():
+        if 'Psf' in fitMod and not 'PSFFile' in self.image.mdh.getEntryNames():
             fdialog = wx.FileDialog(None, 'Please select PSF to use ...',
                     wildcard='PSF files|*.psf', style=wx.OPEN)
             succ = fdialog.ShowModal()
@@ -419,13 +421,13 @@ class LMAnalyser:
                 #self.ds = example.CDataStack(fdialog.GetPath().encode())
                 #self.ds =
                 psfFilename = fdialog.GetPath()
-                self.mdh.setEntry('PSFFile', getRelFilename(psfFilename))
+                self.image.mdh.setEntry('PSFFile', getRelFilename(psfFilename))
                 #self.md.setEntry('PSFFile', psfFilename)
             else:
                 return
 
         #if not driftEst:
-        self.sh.run('testFrames(%f)' % (threshold))
+        self.TestFrames(threshold)
         #else:
         #    self.sh.run('pushImagesD(%d, %f)' % (startAt, threshold)
 
@@ -456,7 +458,7 @@ class LMAnalyser:
 
         vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 7)
 
-        self.progPan = progGraph.progPanel(pan, self.dsviewer.fitResults, size=(220, 250))
+        self.progPan = progGraph.progPanel(pan, self.fitResults, size=(220, 250))
         self.progPan.draw()
 
         vsizer.Add(self.progPan, 1,wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.EXPAND, 0)
@@ -490,10 +492,10 @@ class LMAnalyser:
         self.tThreshold.SetValue('0.6')
 
     def analRefresh(self):
-        newNumAnalysed = self.tq.getNumberTasksCompleted(self.seriesName)
+        newNumAnalysed = self.tq.getNumberTasksCompleted(self.image.seriesName)
         if newNumAnalysed > self.numAnalysed:
             self.numAnalysed = newNumAnalysed
-            newResults = self.tq.getQueueData(self.seriesName, 'FitResults', len(self.fitResults))
+            newResults = self.tq.getQueueData(self.image.seriesName, 'FitResults', len(self.fitResults))
             if len(newResults) > 0:
                 if len(self.fitResults) == 0:
                     self.fitResults = newResults
@@ -535,7 +537,7 @@ class LMAnalyser:
                     self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],self.fitResults['tIndex'].astype('f'))
                     self.glCanvas.setCLim((0, self.numAnalysed))
 
-        if (self.tq.getNumberOpenTasks(self.seriesName) + self.tq.getNumberTasksInProgress(self.seriesName)) == 0 and 'SpoolingFinished' in self.mdh.getEntryNames():
+        if (self.tq.getNumberOpenTasks(self.image.seriesName) + self.tq.getNumberTasksInProgress(self.image.seriesName)) == 0 and 'SpoolingFinished' in self.image.mdh.getEntryNames():
             self.dsviewer.statusbar.SetBackgroundColour(wx.GREEN)
             self.dsviewer.statusbar.Refresh()
 
@@ -560,7 +562,7 @@ class LMAnalyser:
 
 
     def pushImages(self, startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
-        if self.dataSource.moduleName == 'HDFDataSource':
+        if self.image.dataSource.moduleName == 'HDFDataSource':
             pushImagesHDF(startingAt, detThresh, fitFcn)
         else:
             pushImagesQueue(startingAt, detThresh, fitFcn)
@@ -568,8 +570,8 @@ class LMAnalyser:
 
     def pushImagesHDF(self, startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
         #global seriesName
-        dataFilename = self.seriesName
-        resultsFilename = genResultFileName(self.seriesName)
+        dataFilename = self.image.seriesName
+        resultsFilename = genResultFileName(self.image.seriesName)
         while os.path.exists(resultsFilename):
             di, fn = os.path.split(resultsFilename)
             fdialog = wx.FileDialog(None, 'Analysis file already exists, please select a new filename',
@@ -579,27 +581,27 @@ class LMAnalyser:
                 resultsFilename = fdialog.GetPath().encode()
             else:
                 raise RuntimeError('Invalid results file - not running')
-            self.seriesName = resultsFilename
-        self.tq.createQueue('HDFTaskQueue', self.seriesName, dataFilename = dataFilename, resultsFilename=resultsFilename, startAt = 'notYet')
-        mdhQ = MetaDataHandler.QueueMDHandler(self.tq, self.seriesName, self.mdh)
+            self.image.seriesName = resultsFilename
+        self.tq.createQueue('HDFTaskQueue', self.image.seriesName, dataFilename = dataFilename, resultsFilename=resultsFilename, startAt = 'notYet')
+        mdhQ = MetaDataHandler.QueueMDHandler(self.tq, self.image.seriesName, self.image.mdh)
         mdhQ.setEntry('Analysis.DetectionThreshold', detThresh)
         mdhQ.setEntry('Analysis.FitModule', fitFcn)
-        mdhQ.setEntry('Analysis.DataFileID', fileID.genDataSourceID(self.dataSource))
-        evts = self.dataSource.getEvents()
+        mdhQ.setEntry('Analysis.DataFileID', fileID.genDataSourceID(self.image.dataSource))
+        evts = self.image.dataSource.getEvents()
         if len(evts) > 0:
-            self.tq.addQueueEvents(self.seriesName, evts)
-        self.tq.releaseTasks(self.seriesName, startingAt)
+            self.tq.addQueueEvents(self.image.seriesName, evts)
+        self.tq.releaseTasks(self.image.seriesName, startingAt)
 
 
     def pushImagesQueue(self, startingAt=0, detThresh = .9, fitFcn='LatGaussFitFR'):
-        self.mdh.setEntry('Analysis.DetectionThreshold', detThresh)
-        self.mdh.setEntry('Analysis.FitModule', fitFcn)
-        self.mdh.setEntry('Analysis.DataFileID', fileID.genDataSourceID(self.dataSource))
-        self.tq.releaseTasks(self.seriesName, startingAt)
+        self.image.mdh.setEntry('Analysis.DetectionThreshold', detThresh)
+        self.image.mdh.setEntry('Analysis.FitModule', fitFcn)
+        self.image.mdh.setEntry('Analysis.DataFileID', fileID.genDataSourceID(self.image.dataSource))
+        self.tq.releaseTasks(self.image.seriesName, startingAt)
 
 
 #    def testFrame(self, detThresh = 0.9):
-#        ft = remFitBuf.fitTask(self.seriesName,vp.zp, detThresh, MetaDataHandler.NestedClassMDHandler(mdh), cFitType.GetString(cFitType.GetSelection()), bgindices=range(max(vp.zp-10, self.mdh.getEntry('EstimatedLaserOnFrameNo')),vp.zp), SNThreshold=True)
+#        ft = remFitBuf.fitTask(self.image.seriesName,vp.zp, detThresh, MetaDataHandler.NestedClassMDHandler(mdh), cFitType.GetString(cFitType.GetSelection()), bgindices=range(max(vp.zp-10, self.image.mdh.getEntry('EstimatedLaserOnFrameNo')),vp.zp), SNThreshold=True)
 #        return ft(True)
 #
 #    def testFrameTQ(self, detThresh = 0.9):
@@ -607,11 +609,11 @@ class LMAnalyser:
 #        return ft(True, tq)
 #
 #    def pushImagesD(self, startingAt=0, detThresh = .9):
-#        self.tq.createQueue('HDFResultsTaskQueue', self.seriesName, None)
-#        mdhQ = MetaDataHandler.QueueMDHandler(self.tq, self.seriesName, mdh)
+#        self.tq.createQueue('HDFResultsTaskQueue', self.image.seriesName, None)
+#        mdhQ = MetaDataHandler.QueueMDHandler(self.tq, self.image.seriesName, mdh)
 #        mdhQ.setEntry('Analysis.DetectionThreshold', detThresh)
 #        for i in range(startingAt, ds.shape[0]):
-#            self.tq.postTask(remFitBuf.fitTask(self.seriesName,i, detThresh, MetaDataHandler.NestedClassMDHandler(self.mdh), 'LatGaussFitFR', bgindices=range(max(i-10,self.mdh.getEntry('EstimatedLaserOnFrameNo') ),i), SNThreshold=True,driftEstInd=range(max(i-5, self.mdh.getEntry('EstimatedLaserOnFrameNo')),min(i + 5, ds.shape[0])), dataSourceModule=self.dataSource.moduleName), queueName=self.seriesName)
+#            self.tq.postTask(remFitBuf.fitTask(self.image.seriesName,i, detThresh, MetaDataHandler.NestedClassMDHandler(self.image.mdh), 'LatGaussFitFR', bgindices=range(max(i-10,self.image.mdh.getEntry('EstimatedLaserOnFrameNo') ),i), SNThreshold=True,driftEstInd=range(max(i-5, self.image.mdh.getEntry('EstimatedLaserOnFrameNo')),min(i + 5, ds.shape[0])), dataSourceModule=self.dataSource.moduleName), queueName=self.image.seriesName)
 
 
 #    def testFrameD(self, detThresh = 0.9):
@@ -622,8 +624,8 @@ class LMAnalyser:
         close('all')
         matplotlib.interactive(False)
         clf()
-        sq = min(self.mdh.getEntry('EstimatedLaserOnFrameNo') + 1000, self.dataSource.getNumSlices()/4)
-        zps = array(range(self.mdh.getEntry('EstimatedLaserOnFrameNo') + 20, self.mdh.getEntry('EstimatedLaserOnFrameNo') + 24)  + range(sq, sq + 4) + range(self.dataSource.getNumSlices()/2,self.dataSource.getNumSlices() /2+4))
+        sq = min(self.image.mdh.getEntry('EstimatedLaserOnFrameNo') + 1000, self.image.dataSource.getNumSlices()/4)
+        zps = array(range(self.image.mdh.getEntry('EstimatedLaserOnFrameNo') + 20, self.image.mdh.getEntry('EstimatedLaserOnFrameNo') + 24)  + range(sq, sq + 4) + range(self.image.dataSource.getNumSlices()/2,self.image.dataSource.getNumSlices() /2+4))
         zps += offset
         fitMod = self.cFitType.GetStringSelection()
         #bgFrames = int(tBackgroundFrames.GetValue())
@@ -631,20 +633,20 @@ class LMAnalyser:
         for i in range(12):
             #if 'Analysis.NumBGFrames' in md.getEntryNames():
             #bgi = range(max(zps[i] - bgFrames,mdh.getEntry('EstimatedLaserOnFrameNo')), zps[i])
-            bgi = range(max(zps[i] + bgFrames[0],self.mdh.getEntry('EstimatedLaserOnFrameNo')), max(zps[i] + bgFrames[1],self.mdh.getEntry('EstimatedLaserOnFrameNo')))
+            bgi = range(max(zps[i] + bgFrames[0],self.image.mdh.getEntry('EstimatedLaserOnFrameNo')), max(zps[i] + bgFrames[1],self.image.mdh.getEntry('EstimatedLaserOnFrameNo')))
             #else:
             #    bgi = range(max(zps[i] - 10,md.EstimatedLaserOnFrameNo), zps[i])
             if 'Splitter' in fitMod:
-                ft = remFitBuf.fitTask(self.seriesName, zps[i], detThresh, MetaDataHandler.NestedClassMDHandler(self.mdh), 'SplitterObjFindR', bgindices=bgi, SNThreshold=True)
+                ft = remFitBuf.fitTask(self.image.seriesName, zps[i], detThresh, MetaDataHandler.NestedClassMDHandler(self.image.mdh), 'SplitterObjFindR', bgindices=bgi, SNThreshold=True)
             else:
-                ft = remFitBuf.fitTask(self.seriesName, zps[i], detThresh, MetaDataHandler.NestedClassMDHandler(self.mdh), 'LatObjFindFR', bgindices=bgi, SNThreshold=True)
+                ft = remFitBuf.fitTask(self.image.seriesName, zps[i], detThresh, MetaDataHandler.NestedClassMDHandler(self.image.mdh), 'LatObjFindFR', bgindices=bgi, SNThreshold=True)
             res = ft()
             xp = floor(i/4)/3.
             yp = (3 - i%4)/4.
             #print xp, yp
             axes((xp,yp, 1./6,1./4.5))
             #d = ds[zps[i], :,:].squeeze().T
-            d = self.dataSource.getSlice(zps[i]).T
+            d = self.image.dataSource.getSlice(zps[i]).T
             imshow(d, cmap=cm.hot, interpolation='nearest', hold=False, clim=(median(d.ravel()), d.max()))
             title('Frame %d' % zps[i])
             xlim(0, d.shape[1])

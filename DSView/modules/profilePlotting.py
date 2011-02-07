@@ -17,9 +17,7 @@ class profiler:
     def __init__(self, dsviewer):
         self.dsviewer = dsviewer
 
-        self.dataSource = dsviewer.dataSource
-        self.mdh = dsviewer.mdh
-        self.ds = dsviewer.ds
+        self.vp = dsviewer.vp
 
         dsviewer.paneHooks.append(self.GenProfilePanel)
 

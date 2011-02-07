@@ -11,7 +11,7 @@
 from PYME.Analysis import MetadataTree
 
 def Plug(dsviewer):
-    mdv = MetadataTree.MetadataPanel(dsviewer, dsviewer.mdh)
+    mdv = MetadataTree.MetadataPanel(dsviewer, dsviewer.image.mdh)
     dsviewer.AddPage(page=mdv, select=False, caption='Metadata')
 
     dsviewer.mdv = mdv

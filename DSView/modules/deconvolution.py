@@ -16,9 +16,7 @@ class deconvolver:
     def __init__(self, dsviewer):
         self.dsviewer = dsviewer
 
-        self.dataSource = dsviewer.dataSource
-        self.mdh = dsviewer.mdh
-        self.ds = dsviewer.ds
+        self.image = dsviewer.image
 
         DECONV_ICTM = wx.NewId()
         DECONV_SAVE = wx.NewId()
@@ -47,9 +45,9 @@ class deconvolver:
             psf, vs = numpy.load(dlg.GetPSFFilename())
 
             self.dec = dec.dec_conv()
-            self.dec.psf_calc(psf, self.ds.shape)
+            self.dec.psf_calc(psf, self.image.data.shape)
 
-            self.decT = decThread.decThread(self.dec, self.ds.ravel(), regLambda, nIter)
+            self.decT = decThread.decThread(self.dec, self.image.data.ravel(), regLambda, nIter)
             self.decT.start()
 
             self.deconTimer = mytimer()

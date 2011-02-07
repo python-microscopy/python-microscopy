@@ -18,8 +18,7 @@ class blobFinder:
     def __init__(self, dsviewer):
         self.dsviewer = dsviewer
 
-        self.dataSource = dsviewer.dataSource
-        self.mdh = dsviewer.mdh
+        self.image = dsviewer.image
 
         self.vObjPos = None
         self.vObjFit = None
@@ -73,12 +72,12 @@ class blobFinder:
 
         if not 'ofd' in dir(self):
             #create an object identifier
-            self.ofd = ObjectIdentifier(self.dataSource)
+            self.ofd = ObjectIdentifier(self.image.data)
 
         #and identify objects ...
         if self.cbSNThreshold.GetValue(): #don't detect objects in poisson noise
             fudgeFactor = 1 #to account for the fact that the blurring etc... in ofind doesn't preserve intensities - at the moment completely arbitrary so a threshold setting of 1 results in reasonable detection.
-            threshold =  (numpy.sqrt(self.mdh.Camera.ReadNoise**2 + numpy.maximum(self.mdh.Camera.ElectronsPerCount*(self.mdh.Camera.NoiseFactor**2)*(self.dataSource.astype('f') - self.mdh.Camera.ADOffset)*self.mdh.Camera.TrueEMGain, 1))/self.mdh.Camera.ElectronsPerCount)*fudgeFactor*threshold
+            threshold =  (numpy.sqrt(self.image.mdh.Camera.ReadNoise**2 + numpy.maximum(self.image.mdh.Camera.ElectronsPerCount*(self.image.mdh.Camera.NoiseFactor**2)*(self.image.data.astype('f') - self.image.mdh.Camera.ADOffset)*self.image.mdh.Camera.TrueEMGain, 1))/self.image.mdh.Camera.ElectronsPerCount)*fudgeFactor*threshold
             self.ofd.FindObjects(threshold, 0)
         else:
             self.ofd.FindObjects(threshold)
@@ -111,7 +110,7 @@ class blobFinder:
     def OnFitObjects(self, event):
         import PYME.Analysis.FitFactories.Gauss3DFitR as fitMod
 
-        fitFac = fitMod.FitFactory(self.dataSource, self.mdh)
+        fitFac = fitMod.FitFactory(self.image.data, self.image.mdh)
 
         self.objFitRes = numpy.empty(len(self.ofd), fitMod.FitResultsDType)
         for i in range(len(self.ofd)):
