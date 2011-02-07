@@ -17,7 +17,7 @@ def Plug(dsviewer):
               introText='note that help, license etc below is for Python, not PYME\n\n')
 
     sh.Execute('from pylab import *')
-    sh.Execute('from PYME.DSView import View3D')
+    sh.Execute('from PYME.DSView import View3D, ViewIm3D')
 
     dsviewer.AddPage(page=sh, select=False, caption='Console')
 

@@ -559,6 +559,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             self.selection_end_z = int(pos[1]/(sc*self.aspect))
         if ('update' in dir(self.GetParent())):
              self.GetParent().update()
+        #self.update()
         else:
             self.imagepanel.Refresh()
             
@@ -720,10 +721,13 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 # end of class ViewPanel
 
 class ArraySettingsAndViewPanel(wx.Panel):
-    def __init__(self, parent, dstack = None, aspect=1, horizOptions = False, **kwds):
+    def __init__(self, parent, dstack = None, aspect=1, horizOptions = False, wantUpdates = [], **kwds):
         kwds["style"] = wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, parent, **kwds)
         self.showOptsPanel = 1
+
+        self.WantUpdateNotification = []
+        self.WantUpdateNotification += wantUpdates
 
         vpsizer = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -754,6 +758,9 @@ class ArraySettingsAndViewPanel(wx.Panel):
             self.view.Refresh()
             if ('update' in dir(self.GetParent())):
                  self.GetParent().update()
+
+            for cb in self.WantUpdateNotification:
+                cb()
             self.updating = False
 
     def ShowOpts(self, event):

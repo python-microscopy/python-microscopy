@@ -1,1 +1,1 @@
-from dsviewer_npy_nb import View3D
+from dsviewer_npy_nb import View3D, ViewIm3D

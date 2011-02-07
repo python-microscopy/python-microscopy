@@ -24,7 +24,7 @@ from PYME.Analysis import piecewiseMapping
 
 
 class DSViewFrame(wx.Frame):
-    def __init__(self, parent=None, title='', dstack = None, mdh = None, filename = None, queueURI = None, mode='LM', size = (800,800)):
+    def __init__(self, image,  parent=None, title='', mode='LM', size = (800,800)):
         wx.Frame.__init__(self,parent, -1, title,size=size, pos=(1100, 300))
 
         self.mode = mode
@@ -36,7 +36,8 @@ class DSViewFrame(wx.Frame):
         self.timer = mytimer()
         self.timer.Start(10000)
 
-        self.image = ImageStack(data = dstack, mdh = mdh, filename = filename, queueURI = queueURI, events = None)
+        self.image = image
+        #self.image = ImageStack(data = dstack, mdh = mdh, filename = filename, queueURI = queueURI, events = None)
         if not self.image.filename == None:
             self.SetTitle(self.image.filename)
 
@@ -46,7 +47,7 @@ class DSViewFrame(wx.Frame):
         # tell AuiManager to manage this frame
         self._mgr.SetManagedWindow(self)
 
-        self.vp = ArraySettingsAndViewPanel(self, self.image.data)
+        self.vp = ArraySettingsAndViewPanel(self, self.image.data, wantUpdates=[self.update])
         self._mgr.AddPane(self.vp, aui.AuiPaneInfo().
                           Name("Data").Caption("Data").Centre().CloseButton(False).CaptionVisible(False))
 
@@ -215,9 +216,9 @@ class MyApp(wx.App):
         import sys
         #wx.InitAllImageHandlers()
         if (len(sys.argv) == 2):
-            vframe = DSViewFrame(None, sys.argv[1], filename=sys.argv[1])
+            vframe = DSViewFrame(ImageStack(filename = sys.argv[1]), None, sys.argv[1])
         elif (len(sys.argv) == 3):
-            vframe = DSViewFrame(None, sys.argv[1], filename=sys.argv[1], queueURI=sys.argv[2])
+            vframe = DSViewFrame(ImageStack(filename = sys.argv[1], queueURI=sys.argv[2]), None, sys.argv[1])
         else:
             vframe = DSViewFrame(None, '')           
 
@@ -238,7 +239,14 @@ if __name__ == "__main__":
 
 
 def View3D(data, title='', mdh = None, mode='lite'):
-    dvf = DSViewFrame(dstack = data, title=title, mdh=mdh, mode=mode, size=(500, 500))
+    im = ImageStack(data = data, mdh = mdh, filename = filename)
+    dvf = DSViewFrame(im, title=title, mode=mode, size=(500, 500))
+    dvf.SetSize((500,500))
+    dvf.Show()
+    return dvf
+
+def ViewIm3D(image, title='', mode='lite'):
+    dvf = DSViewFrame(image, title=title, mode=mode, size=(500, 500))
     dvf.SetSize((500,500))
     dvf.Show()
     return dvf
