@@ -67,7 +67,7 @@ class OptionsPanel(wx.Panel):
             else:
                 vsizer.Add(ssizer, 0, wx.ALL, 5)
 
-        self.bOptimise = wx.Button(self, -1, "Optimise")
+        self.bOptimise = wx.Button(self, -1, "Stretch", style=wx.BU_EXACTFIT)
 
         self.cbScale = wx.Choice(self, -1, choices=["1:4", "1:2", "1:1", "2:1", "4:1"])
         self.cbScale.SetSelection(2)
@@ -79,19 +79,21 @@ class OptionsPanel(wx.Panel):
             hsizer.Add(self.cbScale, 0, wx.ALL|wx.ALIGN_CENTER, 5)
             vsizer.Add(hsizer, 0, wx.ALL|wx.ALIGN_CENTER, 0)
         else:
-            vsizer.Add(self.bOptimise, 0, wx.ALL|wx.ALIGN_CENTER, 5)
+            vsizer.Add(self.bOptimise, 0, wx.LEFT|wx.RIGHT|wx.TOP|wx.ALIGN_CENTER|wx.EXPAND, 5)
 
-            ssizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Slice'), wx.VERTICAL)
-            self.cbSlice = wx.Choice(self, -1, choices=["X-Y", "X-Y @ 90 Deg", "X-Z", "Y-Z"])
+            hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+            #ssizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Slice'), wx.VERTICAL)
+            self.cbSlice = wx.Choice(self, -1, choices=["X-Y", "X-Z", "Y-Z"])
             self.cbSlice.SetSelection(0)
-            ssizer.Add(self.cbSlice, 1, wx.ALL|wx.EXPAND, 5)
+            hsizer.Add(self.cbSlice, 1, wx.ALL|wx.EXPAND, 5)
 
-            vsizer.Add(ssizer, 0, wx.ALL|wx.EXPAND, 5)
+            #vsizer.Add(ssizer, 0, wx.ALL|wx.EXPAND, 5)
 
-            ssizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Scale'), wx.VERTICAL)
-            ssizer.Add(self.cbScale, 1, wx.ALL|wx.EXPAND, 5)
+            #ssizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Scale'), wx.VERTICAL)
+            hsizer.Add(self.cbScale, 1, wx.ALL|wx.EXPAND, 5)
 
-            vsizer.Add(ssizer, 0, wx.ALL|wx.EXPAND, 5)
+            vsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
 
             self.cbSlice.Bind(wx.EVT_CHOICE, self.OnSliceChanged)
 
@@ -107,8 +109,8 @@ class OptionsPanel(wx.Panel):
         self.RefreshHists()
 
     #constants for slice selection
-    sliceChoices = [DisplayOpts.SLICE_XY,DisplayOpts.SLICE_XY,DisplayOpts.SLICE_XZ, DisplayOpts.SLICE_YZ]
-    orientationChoices = [DisplayOpts.UPRIGHT,DisplayOpts.ROT90,DisplayOpts.UPRIGHT,DisplayOpts.UPRIGHT]
+    sliceChoices = [DisplayOpts.SLICE_XY,DisplayOpts.SLICE_XZ, DisplayOpts.SLICE_YZ]
+    orientationChoices = [DisplayOpts.UPRIGHT,DisplayOpts.UPRIGHT,DisplayOpts.UPRIGHT]
 
     def OnSliceChanged(self, event):
         sel = self.cbSlice.GetSelection()

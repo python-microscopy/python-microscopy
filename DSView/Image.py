@@ -23,6 +23,8 @@ class ImageStack:
         self.queueURI = queueURI
         self.filename = filename
 
+        self.mode = 'LM'
+
         self.saved = False
         self.volatile = False #is the data likely to change and need refreshing?
         
@@ -145,7 +147,7 @@ class ImageStack:
 
             from PYME.DSView.voxSizeDialog import VoxSizeDialog
 
-            dlg = VoxSizeDialog(self)
+            dlg = VoxSizeDialog(None)
             dlg.ShowModal()
 
             self.mdh.setEntry('voxelsize.x', dlg.GetVoxX())

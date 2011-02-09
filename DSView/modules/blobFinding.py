@@ -50,19 +50,21 @@ class blobFinder:
         pan.SetSizer(hsizer)
         hsizer.Fit(pan)
 
-        _pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+        #_pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+        item.AddNewElement(pan)
 
         self.cbSNThreshold = wx.CheckBox(item, -1, 'SNR Threshold')
         self.cbSNThreshold.SetValue(False)
 
-        _pnl.AddFoldPanelWindow(item, self.cbSNThreshold, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+        #_pnl.AddFoldPanelWindow(item, self.cbSNThreshold, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+        item.AddNewElement(self.cbSNThreshold)
 
         bFindObjects = wx.Button(item, -1, 'Find')
 
 
         bFindObjects.Bind(wx.EVT_BUTTON, self.OnFindObjects)
         #_pnl.AddFoldPanelWindow(item, bFindObjects, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
-        item.AddNewElement(pan)
+        item.AddNewElement(bFindObjects)
         _pnl.AddPane(item)
 
     def OnFindObjects(self, event):

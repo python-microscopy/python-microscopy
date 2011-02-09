@@ -17,7 +17,7 @@ import modules
 
 import PYME.misc.autoFoldPanel as afp
 from PYME.DSView.arrayViewPanel import ArraySettingsAndViewPanel
-from PYME.DSView.image import ImageStack
+from PYME.DSView.Image import ImageStack
 
 from PYME.Acquire.mytimer import mytimer
 from PYME.Analysis import piecewiseMapping
@@ -216,9 +216,11 @@ class MyApp(wx.App):
         import sys
         #wx.InitAllImageHandlers()
         if (len(sys.argv) == 2):
-            vframe = DSViewFrame(ImageStack(filename = sys.argv[1]), None, sys.argv[1])
+            im = ImageStack(filename = sys.argv[1])
+            vframe = DSViewFrame(im, None, sys.argv[1], mode = im.mode)
         elif (len(sys.argv) == 3):
-            vframe = DSViewFrame(ImageStack(filename = sys.argv[1], queueURI=sys.argv[2]), None, sys.argv[1])
+            im = ImageStack(filename = sys.argv[1], queueURI=sys.argv[2])
+            vframe = DSViewFrame(im, None, sys.argv[1], mode = im.mode)
         else:
             vframe = DSViewFrame(None, '')           
 
@@ -239,7 +241,7 @@ if __name__ == "__main__":
 
 
 def View3D(data, title='', mdh = None, mode='lite'):
-    im = ImageStack(data = data, mdh = mdh, filename = filename)
+    im = ImageStack(data = data, mdh = mdh)
     dvf = DSViewFrame(im, title=title, mode=mode, size=(500, 500))
     dvf.SetSize((500,500))
     dvf.Show()

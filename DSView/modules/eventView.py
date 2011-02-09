@@ -13,7 +13,7 @@ from PYME.Analysis import piecewiseMapping
 
 def Plug(dsviewer):
     image = dsviewer.image
-    if 'events' in dir(image):
+    if 'events' in dir(image) and len(image.events) > 0:
         st = image.mdh.getEntry('StartTime')
         if 'EndTime' in image.mdh.getEntryNames():
             et = image.mdh.getEntry('EndTime')

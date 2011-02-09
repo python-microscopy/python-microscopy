@@ -12,18 +12,26 @@
 
 
 import wx
+import wx.lib.agw.aui as aui
+
 import sys
 sys.path.append(".")
 import scrolledImagePanel
 from displayOptions import DisplayOpts
 from DisplayOptionsPanel import OptionsPanel
 
+from modules import playback
+
 import numpy
 import scipy
 #import tables
-import time
+#import time
 
+ACTION_POSITION = 0
+ACTION_SELECTION = 1
 
+SELECTION_RECTANGLE = 0
+SELECTION_LINE = 1
 
 
             
@@ -60,8 +68,12 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         self.do.scale = 2
         self.crosshairs = True
         self.selection = True
+        self.selecting = False
 
         self.aspect = 1.
+
+        self.leftButtonAction = ACTION_POSITION
+        self.selectionMode = SELECTION_RECTANGLE
 
 #        if not aspect == None:
 #            if scipy.isscalar(aspect):
@@ -80,10 +92,13 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
         wx.EVT_MOUSEWHEEL(self, self.OnWheel)
         wx.EVT_KEY_DOWN(self.imagepanel, self.OnKeyPress)
-        wx.EVT_LEFT_UP(self.imagepanel, self.OnLeftClick)
+        wx.EVT_LEFT_DOWN(self.imagepanel, self.OnLeftDown)
+        wx.EVT_LEFT_UP(self.imagepanel, self.OnLeftUp)
         
         wx.EVT_RIGHT_DOWN(self.imagepanel, self.OnRightDown)
         wx.EVT_RIGHT_UP(self.imagepanel, self.OnRightUp)
+
+        wx.EVT_MOTION(self.imagepanel, self.OnMotion)
 
         #
         wx.EVT_ERASE_BACKGROUND(self.imagepanel, self.DoNix)
@@ -164,10 +179,17 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                 hy = self.selection_end_z
         
             
-            if (self.do.orientation == self.do.UPRIGHT):
-                dc.DrawRectangle(lx*sc - x0,ly*sc*self.aspect - y0, (hx-lx)*sc,(hy-ly)*sc*self.aspect)
+            if self.selectionMode == SELECTION_RECTANGLE:
+                if (self.do.orientation == self.do.UPRIGHT):
+                    dc.DrawRectangle(lx*sc - x0,ly*sc*self.aspect - y0, (hx-lx)*sc,(hy-ly)*sc*self.aspect)
+                else:
+                    dc.DrawRectangle(ly*sc - x0,lx*sc - y0, (hy-ly)*sc,(hx-lx)*sc)
             else:
-                dc.DrawRectangle(ly*sc - x0,lx*sc - y0, (hy-ly)*sc,(hx-lx)*sc)
+                if (self.do.orientation == self.do.UPRIGHT):
+                    dc.DrawLine(lx*sc - x0,ly*sc*self.aspect - y0, hx*sc - x0,hy*sc*self.aspect - y0)
+                else:
+                    dc.DrawLine(ly*sc - x0,lx*sc - y0, hy*sc,hx*sc)
+                    
             dc.SetPen(wx.NullPen)
             dc.SetBrush(wx.NullBrush)
 
@@ -480,9 +502,20 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         
     def DoNix(self, event):
         pass
+
+    def OnLeftDown(self,event):
+        if self.leftButtonAction == ACTION_SELECTION:
+            self.StartSelection(event)
+    
+    def OnLeftUp(self,event):
+        if self.leftButtonAction == ACTION_SELECTION:
+            self.ProgressSelection(event)
+            self.EndSelection()
+        else:
+            self.OnSetPosition(event)
     
             
-    def OnLeftClick(self,event):
+    def OnSetPosition(self,event):
         dc = wx.ClientDC(self.imagepanel)
         self.imagepanel.PrepareDC(dc)
         pos = event.GetLogicalPosition(dc)
@@ -522,14 +555,17 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             return None
 
 
-
+    def OnRightDown(self, event):
+        self.StartSelection(event)
             
-    def OnRightDown(self,event):
+    def StartSelection(self,event):
+        self.selecting = True
+        
         dc = wx.ClientDC(self.imagepanel)
         self.imagepanel.PrepareDC(dc)
         pos = event.GetLogicalPosition(dc)
         pos = self.CalcUnscrolledPosition(*pos)
-        print pos
+        #print pos
         sc = pow(2.0,(self.do.scale-2))
         if (self.do.slice == self.do.SLICE_XY):
             self.selection_begin_x = int(pos[0]/sc)
@@ -540,13 +576,21 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         elif (self.do.slice == self.do.SLICE_YZ):
             self.selection_begin_y = int(pos[0]/sc)
             self.selection_begin_z = int(pos[1]/(sc*self.aspect))
-            
+
     def OnRightUp(self,event):
+        self.ProgressSelection(event)
+        self.EndSelection()
+
+    def OnMotion(self, event):
+        if event.Dragging() and self.selecting:
+            self.ProgressSelection(event)
+            
+    def ProgressSelection(self,event):
         dc = wx.ClientDC(self.imagepanel)
         self.imagepanel.PrepareDC(dc)
         pos = event.GetLogicalPosition(dc)
         pos = self.CalcUnscrolledPosition(*pos)
-        print pos
+        #print pos
         sc = pow(2.0,(self.do.scale-2))
         if (self.do.slice == self.do.SLICE_XY):
             self.selection_end_x = int(pos[0]/sc)
@@ -562,6 +606,9 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         #self.update()
         else:
             self.imagepanel.Refresh()
+
+    def EndSelection(self):
+        self.selecting = False
             
     def ResetSelection(self):
         self.selection_begin_x = 0
@@ -729,28 +776,42 @@ class ArraySettingsAndViewPanel(wx.Panel):
         self.WantUpdateNotification = []
         self.WantUpdateNotification += wantUpdates
 
-        vpsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self._mgr = aui.AuiManager(agwFlags = aui.AUI_MGR_DEFAULT)
+        # tell AuiManager to manage this frame
+        self._mgr.SetManagedWindow(self)
 
         self.view = ArrayViewPanel(self, dstack, aspect)
-        #self.imagepanel.SetMinSize((50,50))
-        #self.imagepanel.SetScrollRate(10, 10)
-        vpsizer.Add(self.view, 1, wx.EXPAND, 0)
-
-        self.bShowOpts = wx.Button(self, -1, "", size=wx.Size(7,-1))
-        vpsizer.Add(self.bShowOpts, 0, wx.EXPAND, 0)
+        self._mgr.AddPane(self.view, aui.AuiPaneInfo().
+                          Name("Data").Caption("Data").Centre().CloseButton(False).CaptionVisible(False))
 
         self.do = self.view.do
 
         self.optionspanel = OptionsPanel(self, self.view.do,horizOrientation = horizOptions)
-        #self.optionspanel = wx.ScrolledWindow(self, -1)
-        #self.optionspanel.SetScrollRate(10, 10)
-        vpsizer.Add(self.optionspanel, 0, wx.EXPAND, 0)
+        self.optionspanel.SetSize(self.optionspanel.GetBestSize())
+        pinfo = aui.AuiPaneInfo().Name("optionsPanel").Right().Caption('Display Settings').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
+        self._mgr.AddPane(self.optionspanel, pinfo)
 
+        if self.do.ds.shape[2] > 1:
+            self.playbackpanel = playback.PlayPanel(self, self)
+            self.playbackpanel.SetSize(self.playbackpanel.GetBestSize())
 
-        self.SetSizer(vpsizer)
+            pinfo1 = aui.AuiPaneInfo().Name("playbackPanel").Bottom().Caption('Playback').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
+            self._mgr.AddPane(self.playbackpanel, pinfo1)
+
+#        self.toolbar = aui.AuiToolBar(self, -1, wx.DefaultPosition, wx.DefaultSize,agwStyle=aui.AUI_TB_DEFAULT_STYLE | aui.AUI_TB_OVERFLOW| aui.AUI_TB_VERTICAL)
+#        self.toolbar.AddSimpleTool(-1, "Clockwise 1", wx.ArtProvider.GetBitmap(wx.ART_ERROR, wx.ART_OTHER, wx.Size(16, 16)))
+#        self.toolbar.Realize()
+#        self._mgr.AddPane(self.toolbar, aui.AuiPaneInfo().
+#                          Name("toolbar").Caption("Toolbar").
+#                          ToolbarPane().Right().GripperTop());
+
+        self._mgr.Update()
+        self._mgr.MinimizePane(pinfo)
+        #self._mgr.MinimizePane(pinfo1)
+        #pinfo.Minimize()
+        #self._mgr.Update()
+
         self.updating = False
-
-        wx.EVT_BUTTON(self, self.bShowOpts.GetId(), self.ShowOpts)
 
     def update(self):
         if not self.updating:
@@ -758,6 +819,9 @@ class ArraySettingsAndViewPanel(wx.Panel):
             self.view.Refresh()
             if ('update' in dir(self.GetParent())):
                  self.GetParent().update()
+
+            if 'playpanel' in dir(self):
+                self.playpanel.update()
 
             for cb in self.WantUpdateNotification:
                 cb()

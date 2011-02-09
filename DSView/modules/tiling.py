@@ -10,6 +10,7 @@
 ##################
 
 import wx
+from PYME.Analysis import piecewiseMapping
 
 class tiler:
     def __init__(self, dsviewer):
@@ -23,7 +24,7 @@ class tiler:
 
     def OnTile(self, event):
         from PYME.Analysis import deTile
-        from PYME.DSView.dsviewer_npy import View3D
+        from PYME.DSView import View3D
 
         x0 = self.image.mdh.getEntry('Positioning.Stage_X')
         xm = piecewiseMapping.GenerateBacklashCorrPMFromEventList(self.image.events, self.image.mdh, self.image.mdh.getEntry('StartTime'), x0, 'ScannerXPos', 0, .0055)

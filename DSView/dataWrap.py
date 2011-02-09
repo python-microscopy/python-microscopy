@@ -15,7 +15,7 @@ import tables
 class ListWrap:
     def __init__(self, dataList):
         self.dataList = dataList
-        self.wrapList = [DataWrap(d) for d in dataList]
+        self.wrapList = [Wrap(d) for d in dataList]
 
         self.listDim = self.wrapList[0].nTrueDims
 
