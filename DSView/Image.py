@@ -14,6 +14,8 @@ from PYME.Acquire import MetaDataHandler
 from PYME.Analysis import MetaData
 from PYME.DSView import dataWrap
 
+lastdir = ''
+
 class ImageStack:
     def __init__(self, data = None, mdh = None, filename = None, queueURI = None, events = []):
         self.data = data      #image data
@@ -163,11 +165,14 @@ class ImageStack:
     def Load(self, filename=None):
         if (filename == None):
             import wx #only introduce wx dependency here - so can be used non-interactively
+            global lastdir
+            
             fdialog = wx.FileDialog(None, 'Please select Data Stack to open ...',
-                wildcard='PYME Data|*.h5|TIFF files|*.tif|KDF files|*.kdf', style=wx.OPEN)
+                wildcard='PYME Data|*.h5|TIFF files|*.tif|KDF files|*.kdf|All files|*.*', style=wx.OPEN, defaultDir = lastdir)
             succ = fdialog.ShowModal()
             if (succ == wx.ID_OK):
                 filename = fdialog.GetPath()
+                lastdir = fdialog.GetDirectory()
 
         if not filename == None:
             if filename.startswith('QUEUE://'):

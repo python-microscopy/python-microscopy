@@ -94,8 +94,10 @@ class GeneratedImage(object):
 
         im.tag = dummy()
         #set up resolution data - unfortunately in cm as TIFF standard only supports cm and inches
-        res_ = int(1e-2/(self.pixelSize*1e-9))
-        im.tag.tagdata={296:(3,), 282:(res_,1), 283:(res_,1)}
+        #res_ = int(1e-2/(self.pixelSize*1e-9))
+        #use ImageJ scale definitions
+        res_ = int(1.e6/(self.pixelSize))
+        im.tag.tagdata={296:(1,), 282:(res_,1000000), 283:(res_,1000000), 270:'unit=nm\nspacing=%3.1d\n'%self.pixelSize}
 
         im.save(filename)
 
