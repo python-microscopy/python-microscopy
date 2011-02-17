@@ -336,9 +336,15 @@ def ExportData(ds, mdh=None, events=None, origName = None):
     if filename == None:
             return
 
-    exp = exportersByExtension['*' + os.path.splitext(filename)[1]]()
+    
+    ext = '*' + os.path.splitext(filename)[1]
+        
+    if not ext in exportersByExtension.keys():
+        wx.MessageBox('No exporter found for %s files\n Try one of the following file types:\n%s' % (ext, ', '.join(exportersByExtension.keys())), "Error saving data", wx.OK|wx.ICON_HAND)
+        return
 
+    exp = exportersByExtension[ext]()
     exp.Export(ds, filename, slice(0, ds.shape[0], 1), slice(0, ds.shape[1], 1), slice(0, ds.shape[2], 1),mdh, events, origName)
-
     return filename
+    
 

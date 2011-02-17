@@ -299,14 +299,15 @@ class microscope:
         #deactivate cameras
         for c in self.cameras.values():
             c.SetActive(False)
-            #c.SetShutter(False)
+            c.SetShutter(False)
 
         for k in self.cameras.keys():
-            self.camControls[k].Hide()#GetParent().UnPin()
+            self.camControls[k].GetParent().Hide()#GetParent().UnPin()
 
         self.cam = self.cameras[camName]
         self.cam.SetActive(True)
-        self.camControls[camName].Show()#GetParent().PinOpen()
+        self.cam.SetShutter(self.camControls[camName].cbShutter.GetValue())
+        self.camControls[camName].GetParent().Show()#GetParent().PinOpen()
         self.camControls[camName].GetParent().GetParent().Layout()
 
         if 'sa' in dir(self):
@@ -343,8 +344,14 @@ class microscope:
         self.pa.Prepare(True)
         self.pa.start()
 
-        self.dfr = dsviewer.DSViewFrame(None, "New Aquisition", CDataStack_AsArray(self.sa.ds, 0).squeeze(), self.sa.log, mdh=self.sa.mdh)
-        self.dfr.Show()
+        #self.dfr = dsviewer.DSViewFrame(None, "New Aquisition", CDataStack_AsArray(self.sa.ds, 0).squeeze(), self.sa.log, mdh=self.sa.mdh)
+        #self.dfr.Show()
+
+        im = dsviewer.ImageStack(data = CDataStack_AsArray(self.sa.ds, 0).squeeze(), mdh = self.sa.mdh)
+        dvf = dsviewer.DSViewFrame(im, title=('<Unsaved Stack %d>' % self.stackNum), mode='lite', size=(500, 500))
+        dvf.SetSize((500,500))
+        dvf.Show()
+
         self.sa.ds = None
 
     def aqt_refr(self,source):

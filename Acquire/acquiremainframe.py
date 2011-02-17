@@ -30,8 +30,10 @@ import intsliders
 import seqdialog
 import timeseqdialog
 import stepDialog
+import selectCameraPanel
 import funcs
-import PYME.DSView.dsviewer_npy as dsviewer
+#import PYME.DSView.dsviewer_npy as dsviewer
+from PYME.DSView import dsviewer_npy_nb as dsviewer
 from PYME.cSMI import CDataStack_AsArray
 from PYME.Acquire import MetaDataHandler
 import chanfr
@@ -217,6 +219,8 @@ class smiMainFrame(wx.Frame):
         # tell AuiManager to manage this frame
         self._mgr.SetManagedWindow(self)
 
+        self.snapNum = 0
+
         
 
         wx.EVT_CLOSE(self, self.OnCloseWindow)        
@@ -345,6 +349,10 @@ class smiMainFrame(wx.Frame):
             #self.notebook1.Split(self.notebook1.GetPageCount() -1, wx.DOWN)
             #self.int_sl.Show()
 
+            if len(self.scope.cameras) > 1:
+                self.pCamChoose = selectCameraPanel.CameraChooserPanel(self, self.scope)
+                self.AddCamTool(self.pCamChoose, 'Camera Selection')
+
             self.tseq_d = timeseqdialog.seqDialog(self, self.scope)
 
             self.pan_spool = HDFSpoolFrame.PanSpool(self, self.scope, nameUtils.genHDFDataFilepath())
@@ -368,9 +376,14 @@ class smiMainFrame(wx.Frame):
             self.AddCamTool(*t)
 
         #self.splash.Destroy()
+
+        
         
         self.initDone = True
         self._mgr.Update()
+
+        if 'pCamChoose' in dir(self):
+            self.pCamChoose.OnCCamera(None)
 
         #fudge to get layout right
 #        panes = self.notebook1.GetAuiManager().AllPanes
@@ -520,8 +533,12 @@ class smiMainFrame(wx.Frame):
         #wx.LayoutAlgorithm().LayoutWindow(self, self._leftWindow1)
 
     def OnFileOpenStack(self, event):
-        self.dv = dsviewer.DSViewFrame(self)
-        self.dv.Show()
+        #self.dv = dsviewer.DSViewFrame(self)
+        #self.dv.Show()
+        im = ImageStack()
+        dvf = DSViewFrame(im, parent=self, size=(500, 500))
+        dvf.SetSize((500,500))
+        dvf.Show()
         event.Skip()
 
     def OnFileExit(self, event):
@@ -550,8 +567,13 @@ class smiMainFrame(wx.Frame):
         for mdgen in MetaDataHandler.provideStartMetadata:
             mdgen(mdh)
 
-        df2 = dsviewer.DSViewFrame(self, '--new pic--', ds2, mdh=mdh)
-        df2.Show()
+        im = dsviewer.ImageStack(data = ds2, mdh = mdh)
+        dvf = dsviewer.DSViewFrame(im, title=('<Unsaved Image %d>' % self.snapNum), mode='lite', size=(500, 500))
+        dvf.SetSize((500,500))
+        dvf.Show()
+
+        self.snapNum += 1
+
         self.scope.pa.Prepare(True)
         self.scope.pa.start()
 

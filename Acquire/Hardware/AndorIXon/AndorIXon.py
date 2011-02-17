@@ -31,6 +31,7 @@ noiseProperties = {
         'ElectronsPerCount' : 27.32,
         'NGainStages' : 536,
         'ADOffset' : 971,
+        'DefaultEMGain' : 150,
         'SaturationThreshold' : (2**14 -1)
         },
 5414 : {
@@ -38,6 +39,7 @@ noiseProperties = {
         'ElectronsPerCount' : 25.24,
         'NGainStages' : 536,
         'ADOffset' : 413,
+        'DefaultEMGain' : 90,
         'SaturationThreshold' : (2**14 -1)
         }
 }

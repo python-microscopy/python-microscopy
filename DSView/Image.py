@@ -199,7 +199,8 @@ class ImageStack:
             self.filename = dataExporter.ExportData(self.data, self.mdh, self.events)
             #self.SetTitle(fn)
 
-            self.saved = True
+            if not (filename == None):
+                self.saved = True
 
 
 

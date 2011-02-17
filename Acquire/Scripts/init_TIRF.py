@@ -20,11 +20,11 @@ import time
 #scope.camControls = {}
 
 InitBG('EMCCD Cameras', '''
-scope.cameras['A'] = AndorIXon.iXonCamera(1)
-scope.cameras['B'] = AndorIXon.iXonCamera(0)
-scope.cameras['B'].SetShutter(False)
-scope.cameras['B'].SetActive(False)
-scope.cam = scope.cameras['A']
+scope.cameras['A - Left'] = AndorIXon.iXonCamera(1)
+scope.cameras['B - Right'] = AndorIXon.iXonCamera(0)
+#scope.cameras['B - Right'].SetShutter(False)
+#scope.cameras['B - Right'].SetActive(False)
+scope.cam = scope.cameras['A - Left']
 ''')
 
 #InitBG('EMCCD Camera 2', '''
@@ -32,13 +32,12 @@ scope.cam = scope.cameras['A']
 #''')
 
 InitGUI('''
-scope.camControls['A'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['A'], scope)
-camPanels.append((scope.camControls['A'], 'EMCCD A Properties'))
+scope.camControls['A - Left'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['A - Left'], scope)
+camPanels.append((scope.camControls['A - Left'], 'EMCCD A Properties'))
 
-scope.camControls['B'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['B'], scope)
-camPanels.append((scope.camControls['B'], 'EMCCD B Properties'))
-scope.camControls['B'].Hide()
-#scope.SetCamera('A')
+scope.camControls['B - Right'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['B - Right'], scope)
+camPanels.append((scope.camControls['B - Right'], 'EMCCD B Properties'))
+
 ''')
 
 InitGUI('''
