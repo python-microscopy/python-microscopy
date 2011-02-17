@@ -279,13 +279,13 @@ class smiMainFrame(wx.Frame):
     def AddPage(self, page=None, select=True,caption='Dummy'):
         pn = self._mgr.GetPaneByName("shell")
         if pn.IsNotebookPage():
-            nb = self._mgr.GetNotebooks()[pn.notebook_id]
-            currPage = nb.GetSelection()
+            #nb = self._mgr.GetNotebooks()[pn.notebook_id]
+            #currPage = nb.GetSelection()
             #print currPage
             self._mgr.AddPane(page, aui.AuiPaneInfo().
                           Name(caption.replace(' ', '')).Caption(caption).CloseButton(False).NotebookPage(pn.notebook_id))
-            if not select:
-                nb.SetSelection(currPage)
+            #if not select:
+            #    nb.SetSelection(currPage)
         else:
             self._mgr.AddPane(page, aui.AuiPaneInfo().
                           Name(caption.replace(' ', '')).Caption(caption).CloseButton(False), target=pn)
