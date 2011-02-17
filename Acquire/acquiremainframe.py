@@ -90,6 +90,11 @@ class smiMainFrame(wx.Frame):
         wx.EVT_MENU(self, wxID_SMIMAINFRAMEMCAMCHANS, self.OnMCamChans)
         wx.EVT_MENU(self, wxID_SMIMAINFRAMEMCAMROI, self.OnMCamRoi)
 
+        parent.AppendSeparator()
+        ID_SETVOXELSIZE = wx.NewId()
+        parent.Append(ID_SETVOXELSIZE, 'Set Pixel Size')
+        self.Bind(wx.EVT_MENU, self.OnMCamSetPixelSize)
+
     def _init_coll_menuBar1_Menus(self, parent):
         # generated method, don't edit
 
@@ -136,6 +141,8 @@ class smiMainFrame(wx.Frame):
         wx.EVT_MENU(self, wxID_SMIMAINFRAMEMCONTROLSSTEP, self.OnMStep)
         wx.EVT_MENU(self, wxID_SMIMAINFRAMEMCONTROLSPIEZO_INIT,
               self.OnMControlsPiezoInit)
+
+
 
     def _init_coll_mAquire_Items(self, parent):
         # generated method, don't edit
@@ -613,6 +620,12 @@ class smiMainFrame(wx.Frame):
         self.scope.vp.SetDataStack(self.scope.pa.ds)
         self.scope.pa.start()
         #event.Skip()
+
+    def OnMCamSetPixelSize(self, event):
+        import voxelSizeDialog
+
+        dlg = voxelSizeDialog.VoxelSizeDialog(self, self.scope)
+        dlg.ShowModal()
 
     def OnMCamChans(self, event):
         #return
