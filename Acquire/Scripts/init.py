@@ -34,6 +34,7 @@ scope.piezos.append((scope.fakeYPiezo, 1, 'Fake y-piezo'))
 pz.join() #piezo must be there before we start camera
 cm = InitBG('Fake Camera', '''
 scope.cam = fakeCam.FakeCamera(70*scipy.arange(-128.0, 128.0), 70*scipy.arange(-128.0, 128.0), fakeCam.NoiseMaker(), scope.fakePiezo, xpiezo = scope.fakeXPiezo, ypiezo = scope.fakeYPiezo)
+scope.cameras['Fake Camera'] = scope.cam
 #time.sleep(5)
 ''')
 
