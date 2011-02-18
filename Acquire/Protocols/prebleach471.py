@@ -20,17 +20,19 @@ import numpy
 taskList = [
 T(-1, scope.turnAllLasersOff),
 T(-1, scope.joystick.Enable, False),
+T(-1, SetCameraShutter, False),
+T(20, SetCameraShutter, True),
 #T(-1, SetEMGain,150),
-T(20, scope.filterWheel.SetFilterPos, "ND4.5"),
-T(21, scope.l671.TurnOn),
-T(58, scope.l671.TurnOff),
+T(20, scope.filterWheel.SetFilterPos, "ND2"),
+T(21, scope.l488.TurnOn),
+T(58, scope.l488.TurnOff),
 T(60, SetEMGain,0),
-T(61, scope.l671.TurnOn),
+T(61, scope.l488.TurnOn),
 T(61, scope.filterWheel.SetFilterPos, "EMPTY"),
 T(150, SetEMGain,scope.cam.DefaultEMGain),
 T(160, MainFrame.pan_spool.OnBAnalyse, None),
 T(maxint, scope.turnAllLasersOff),
-T(maxint, scope.filterWheel.SetFilterPos, "ND4.5"),
+T(maxint, scope.filterWheel.SetFilterPos, "ND2"),
 T(maxint, scope.joystick.Enable, True),
 ]
 
@@ -46,7 +48,7 @@ metaData = [
 #a list of checks which should be performed prior to launching the protocol
 #syntax: C(expression to evaluate (quoted, should have boolean return), message to display on failure),
 preflight = [
-C('scope.cam.GetEMGain() == scope.cam.DefaultEMGain', 'Was expecting an intial e.m. gain of %d' % scope.cam.DefaultEMGain),
+C('scope.cam.GetEMGain() == scope.cam.DefaultEMGain', 'Was expecting an intial e.m. gain of 150'),
 C('scope.cam.GetROIX1() > 1', 'Looks like no ROI has been set'),
 C('scope.cam.GetIntegTime() < .06', 'Camera integration time may be too long'),
 ]

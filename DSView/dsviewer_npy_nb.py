@@ -106,7 +106,9 @@ class DSViewFrame(wx.Frame):
                           Name(caption.replace(' ', '')).Caption(caption).CloseButton(False), target=pn)
             #nb = self._mgr.GetNotebooks()[0]
             #if not select:
-            #    nb.SetSelection(0)  
+            #    nb.SetSelection(0)
+
+        self._mgr.Update()
 
     def CreateModuleMenu(self):
         self.modMenuIds = {}

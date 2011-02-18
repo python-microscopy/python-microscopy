@@ -93,7 +93,7 @@ class smiMainFrame(wx.Frame):
         parent.AppendSeparator()
         ID_SETVOXELSIZE = wx.NewId()
         parent.Append(ID_SETVOXELSIZE, 'Set Pixel Size')
-        self.Bind(wx.EVT_MENU, self.OnMCamSetPixelSize)
+        wx.EVT_MENU(self, ID_SETVOXELSIZE, self.OnMCamSetPixelSize)
 
     def _init_coll_menuBar1_Menus(self, parent):
         # generated method, don't edit

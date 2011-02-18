@@ -355,15 +355,16 @@ class LMAnalyser:
             dlg.Destroy()
 
         if not driftEst:
-            self.sh.run('pushImages(%d, %f, "%s")' % (startAt, threshold, fitMod))
+            self.pushImages(startAt, threshold, fitMod)
         else:
-            self.sh.run('pushImagesD(%d, %f)' % (startAt, threshold))
+            self.pushImagesD(startAt, threshold)
 
         from PYME.Analysis.LMVis import gl_render
         self.glCanvas = gl_render.LMGLCanvas(self.dsviewer, False)
         self.glCanvas.cmap = pylab.cm.gist_rainbow
 
         self.dsviewer.AddPage(page=self.glCanvas, select=True, caption='VisLite')
+        
 
         xsc = self.image.data.shape[0]*1.0e3*self.image.mdh.getEntry('voxelsize.x')/self.glCanvas.Size[0]
         ysc = self.image.data.shape[1]*1.0e3*self.image.mdh.getEntry('voxelsize.y')/ self.glCanvas.Size[1]
@@ -375,7 +376,7 @@ class LMAnalyser:
 
         self.timer.WantNotification.append(self.analRefresh)
         self.bGo.Enable(False)
-        _pnl.Collapse(self.analysisPanel)
+        #_pnl.Collapse(self.analysisPanel)
 
     def GenPointFindingPanel(self, _pnl):
         item = afp.foldingPane(_pnl, -1, caption="Point Finding", pinned = True)
@@ -427,7 +428,7 @@ class LMAnalyser:
                 return
 
         #if not driftEst:
-        self.TestFrames(threshold)
+        self.testFrames(threshold)
         #else:
         #    self.sh.run('pushImagesD(%d, %f)' % (startAt, threshold)
 
@@ -562,10 +563,11 @@ class LMAnalyser:
 
 
     def pushImages(self, startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
+        self.checkTQ()
         if self.image.dataSource.moduleName == 'HDFDataSource':
-            pushImagesHDF(startingAt, detThresh, fitFcn)
+            self.pushImagesHDF(startingAt, detThresh, fitFcn)
         else:
-            pushImagesQueue(startingAt, detThresh, fitFcn)
+            self.pushImagesQueue(startingAt, detThresh, fitFcn)
 
 
     def pushImagesHDF(self, startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):

@@ -46,7 +46,7 @@ class IntegrationSliders(wx.Panel):
             #else:#workaround for broken mouse event handling (and hence sliders) on MacOS
             #    sl = wx.Slider(self, -1, self.chaninfo.itimes[c], 1, min(5*self.chaninfo.itimes[c], 10000), size=wx.Size(300,-1),style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
 
-            sl_val = wx.ComboBox(self, -1, choices = timeChoices, value = '%d' % self.chaninfo.itimes[c], size=(65, -1))
+            sl_val = wx.ComboBox(self, -1, choices = timeChoices, value = '%d' % self.chaninfo.itimes[c], size=(65, -1), style=wx.CB_DROPDOWN|wx.TE_PROCESS_ENTER)
  
             #sl.SetSize((800,20))
             sl.SetTickFreq(100,1)
@@ -93,7 +93,8 @@ class IntegrationSliders(wx.Panel):
     def onCombobox(self, event):
         cb = event.GetEventObject()
         ind = self.cboxes.index(cb)
-        self.chaninfo.itimes[ind] = int(cb.GetValue())
+        print cb.GetValue()
+        self.chaninfo.itimes[ind] = float(cb.GetValue())
         self.sliders[ind].SetValue(self.chaninfo.itimes[ind])
         self.sliders[ind].SetRange(1, min(5*self.chaninfo.itimes[ind], 10000))
         self.scope.pa.stop()

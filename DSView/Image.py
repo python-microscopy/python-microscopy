@@ -57,7 +57,9 @@ class ImageStack:
         self.data = self.dataSource #this will get replaced with a wrapped version
 
         self.mdh = MetaDataHandler.QueueMDHandler(self.tq, self.seriesName)
-        self.timer.WantNotification.append(self.dsRefresh)
+        MetaData.fillInBlanks(self.mdh, self.dataSource)
+
+        #self.timer.WantNotification.append(self.dsRefresh)
 
         self.events = self.dataSource.getEvents()
 
@@ -163,6 +165,7 @@ class ImageStack:
         self.mode = 'blob'
 
     def Load(self, filename=None):
+        print filename
         if (filename == None):
             import wx #only introduce wx dependency here - so can be used non-interactively
             global lastdir

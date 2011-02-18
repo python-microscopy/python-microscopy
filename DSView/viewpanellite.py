@@ -27,6 +27,7 @@ class MyViewPanel(wx.ScrolledWindow):
             self.ds = dstack
 
         self.imagepanel = self
+        self.selecting = False
 
         self.SetScrollRate(10, 10)
         
@@ -62,6 +63,11 @@ class MyViewPanel(wx.ScrolledWindow):
 
         wx.EVT_RIGHT_DOWN(self, self.OnRightDown)
         wx.EVT_RIGHT_UP(self, self.OnRightUp)
+
+        wx.EVT_LEFT_DOWN(self.imagepanel, self.OnRightDown)
+        wx.EVT_LEFT_UP(self.imagepanel, self.OnRightUp)
+
+        wx.EVT_MOTION(self.imagepanel, self.OnMotion)
         
         wx.EVT_ERASE_BACKGROUND(self, self.DoNix)
 
@@ -207,6 +213,7 @@ class MyViewPanel(wx.ScrolledWindow):
 
             
     def OnRightDown(self,event):
+        self.selecting = True
         dc = wx.ClientDC(self)
         self.PrepareDC(dc)
 
@@ -226,6 +233,7 @@ class MyViewPanel(wx.ScrolledWindow):
             self.selection_begin_z = int(pos[1]/sc)
 
     def OnRightUp(self,event):
+        self.selecting = False
         dc = wx.ClientDC(self)
         self.PrepareDC(dc)
 
@@ -246,6 +254,32 @@ class MyViewPanel(wx.ScrolledWindow):
 
         if ('update' in dir(self.GetParent())):
              self.GetParent().update()
+        else:
+            self.Refresh()
+
+    def OnMotion(self, event):
+        if event.Dragging() and self.selecting:
+            self.ProgressSelection(event)
+
+    def ProgressSelection(self,event):
+        dc = wx.ClientDC(self)
+        self.PrepareDC(dc)
+        pos = event.GetLogicalPosition(dc)
+        pos = self.CalcUnscrolledPosition(*pos)
+        #print pos
+        sc = pow(2.0,(self.scale-2))
+        if (self.do.getSliceAxis() == self.do.SLICE_XY):
+            self.selection_end_x = int(pos[0]/sc)
+            self.selection_end_y = int(pos[1]/sc)
+#        elif (self.do.slice == self.do.SLICE_XZ):
+#            self.selection_end_x = int(pos[0]/sc)
+#            self.selection_end_z = int(pos[1]/(sc*self.aspect))
+#        elif (self.do.slice == self.do.SLICE_YZ):
+#            self.selection_end_y = int(pos[0]/sc)
+#            self.selection_end_z = int(pos[1]/(sc*self.aspect))
+        if ('update' in dir(self.GetParent())):
+             self.GetParent().update()
+        #self.update()
         else:
             self.Refresh()
             
