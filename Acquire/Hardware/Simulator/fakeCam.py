@@ -197,6 +197,7 @@ class FakeCamera:
         self.noiseMaker=noiseMaker
 
         self.SaturationThreshold = (2**16) - 1
+        self.DefaultEMGain = 150
 
         self.laserPowers=laserPowers
         self.illumFcn = illumFcn
