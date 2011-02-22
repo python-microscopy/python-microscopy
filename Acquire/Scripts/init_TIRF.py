@@ -162,16 +162,16 @@ dd = DigiDataClient.getDDClient()
 
 
 from PYME.Acquire.Hardware import lasers
-scope.lFibre = lasers.DigiDataSwitchedLaser('Fibre',dd,2)
+scope.l490 = lasers.DigiDataSwitchedLaser('490',dd,4)
 scope.l405 = lasers.DigiDataSwitchedLaserInvPol('405',dd,0)
-scope.l543 = lasers.DigiDataSwitchedAnalogLaser('543',dd,0)
+#scope.l543 = lasers.DigiDataSwitchedAnalogLaser('543',dd,0)
 #scope.l671 = lasers.DigiDataSwitchedAnalogLaser('671',dd,1)
 
 pport = lasers.PPort()
 scope.l671 = lasers.ParallelSwitchedLaser('671',pport,0)
-scope.l488 = lasers.ParallelSwitchedLaser('488',pport,1)
+scope.l532 = lasers.ParallelSwitchedLaser('532',pport,1)
 
-scope.lasers = [scope.l488,scope.l405,scope.l543,scope.l671, scope.lFibre]
+scope.lasers = [scope.l405,scope.l532,scope.l671, scope.l490]
 ''')
 
 InitGUI('''

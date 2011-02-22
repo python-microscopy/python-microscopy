@@ -55,7 +55,7 @@ class LMGLCanvas(GLCanvas):
         #wx.EVT_ERASE_BACKGROUND(self, self.OnEraseBackground)
         #wx.EVT_IDLE(self, self.OnIdle)
 
-        self.init = 0
+        self.init = False
         self.nVertices = 0
         self.IScale = [1.0, 1.0, 1.0]
         self.zeroPt = [0, 1.0/3, 2.0/3]
@@ -112,14 +112,12 @@ class LMGLCanvas(GLCanvas):
     def OnPaint(self,event):
         dc = wx.PaintDC(self)
         self.SetCurrent()
-        #print 'OnPaint'
+        #print 'OnPaint', event.GetId()
         if not self.init:
             self.InitGL()
-            self.init = 1
-#            if 'OnGLViewChanged' in dir(self.parent):
-#                self.parent.OnGLViewChanged()
-            if 'RefreshView' in dir(self.parent.GetParent()):
-                self.parent.GetParent().RefreshView()
+            self.init = True
+            #if 'RefreshView' in dir(self.parent):
+            #    wx.CallAfter(self.parent.RefreshView())
             
         self.OnDraw()
         #return

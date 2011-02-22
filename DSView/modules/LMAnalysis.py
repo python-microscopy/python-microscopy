@@ -43,7 +43,7 @@ class LMAnalyser:
             self.fitResults = []
         
         if 'resultsMdh' in dir(self.image):
-            self.resultsMdh = dsviewer.resultsMdh
+            self.resultsMdh = self.image.resultsMdh
 
         mTasks = wx.Menu()
         TASKS_STANDARD_2D = wx.NewId()
@@ -108,7 +108,17 @@ class LMAnalyser:
             self.glCanvas.setView(0, ysc*self.glCanvas.Size[0], 0, ysc*self.glCanvas.Size[1])
 
         #we have to wait for the gui to be there before we start changing stuff in the GL view
-        self.timer.WantNotification.append(self.AddPointsToVis)
+        #self.timer.WantNotification.append(self.AddPointsToVis)
+
+        self.glCanvas.Bind(wx.EVT_IDLE, self.OnIdle)
+        self.pointsAdded = False
+
+    def OnIdle(self,event):
+        if not self.pointsAdded:
+            self.pointsAdded = True
+
+            self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],self.fitResults['tIndex'].astype('f'))
+            self.glCanvas.setCLim((0, self.fitResults['tIndex'].max()))
 
         
 
@@ -548,7 +558,7 @@ class LMAnalyser:
         self.dsviewer.update()
 
     def update(self):
-        if 'fitInf' in dir(self) and not self.dsviewer.player.tPlay.IsRunning():
+        if 'fitInf' in dir(self) and not self.vp.playbackpanel.tPlay.IsRunning():
             self.fitInf.UpdateDisp(self.vp.view.PointsHitTest())
 
 

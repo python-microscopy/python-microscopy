@@ -87,6 +87,8 @@ class VisGUIFrame(wx.Frame):
 
         wx.Frame.__init__(self, parent, id, title, pos, size, style)
         self._mgr = aui.AuiManager(agwFlags = aui.AUI_MGR_DEFAULT | aui.AUI_MGR_AUTONB_NO_CAPTION)
+        atabstyle = self._mgr.GetAutoNotebookStyle()
+        self._mgr.SetAutoNotebookStyle((atabstyle ^ aui.AUI_NB_BOTTOM) | aui.AUI_NB_TOP)
         self._mgr.SetManagedWindow(self)
 
         self._flags = 0
@@ -100,12 +102,15 @@ class VisGUIFrame(wx.Frame):
         self._leftWindow1 = wx.Panel(self, -1, size = wx.Size(220, 1000))
         self._pnl = 0
         
-        self.notebook = AuiNotebookWithFloatingPages(id=-1, parent=self, style=wx.aui.AUI_NB_TAB_SPLIT)
+        #self.notebook = AuiNotebookWithFloatingPages(id=-1, parent=self, style=wx.aui.AUI_NB_TAB_SPLIT)
 
         self.MainWindow = self #so we can access from shell
         self.sh = wx.py.shell.Shell(id=-1,
-              parent=self.notebook, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
+              parent=self, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
               introText='Python SMI bindings - note that help, license etc below is for Python, not PySMI\n\n')
+
+        self._mgr.AddPane(self.sh, aui.AuiPaneInfo().
+                          Name("Shell").Caption("Console").Centre().CloseButton(False).CaptionVisible(False))
 
         self.elv = None
         self.colp = None
@@ -152,7 +157,7 @@ class VisGUIFrame(wx.Frame):
         #self.__dict__.update(self.sh.shell.user_ns)
         #self.sh.shell.user_ns = self.__dict__
 
-        self.notebook.AddPage(page=self.sh, select=True, caption='Console')
+        #self.notebook.AddPage(page=self.sh, select=True, caption='Console')
 
         #self.sh.execute_command('from pylab import *', hidden=True)
         #self.sh.execute_command('from PYME.DSView.dsviewer_npy import View3D', hidden=True)
@@ -185,16 +190,19 @@ class VisGUIFrame(wx.Frame):
 
         ######
 
-        self.workspaceView = workspaceTree.WorkspaceTree(self.notebook, workspace=self.workspace, shell=self.sh)
-        self.notebook.AddPage(page=self.workspaceView, select=False, caption='Workspace')
+        self.workspaceView = workspaceTree.WorkspaceTree(self, workspace=self.workspace, shell=self.sh)
+        self.AddPage(page=self.workspaceView, select=False, caption='Workspace')
 
-        self.glCanvas = gl_render.LMGLCanvas(self.notebook)
-        self.notebook.AddPage(page=self.glCanvas, select=True, caption='View')
+        self.glCanvas = gl_render.LMGLCanvas(self)
+        self.AddPage(page=self.glCanvas, select=True, caption='View')
         self.glCanvas.cmap = pylab.cm.hot
 
         #self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_MOVE, self.OnMove)
         self.Bind(wx.EVT_CLOSE, self.OnQuit)
+
+        self.Bind(wx.EVT_IDLE, self.OnIdle)
+        self.refv = False
 
         statusLog.SetStatusDispFcn(self.SetStatus)
 
@@ -202,8 +210,8 @@ class VisGUIFrame(wx.Frame):
         self._mgr.AddPane(self._leftWindow1, aui.AuiPaneInfo().
                           Name("sidebar").Left().CloseButton(False).CaptionVisible(False))
 
-        self._mgr.AddPane(self.notebook, aui.AuiPaneInfo().
-                          Name("shell").Centre().CaptionVisible(False).CloseButton(False))
+        #self._mgr.AddPane(self.notebook, aui.AuiPaneInfo().
+        #                  Name("shell").Centre().CaptionVisible(False).CloseButton(False))
 
         self._mgr.Update()
 
@@ -211,10 +219,41 @@ class VisGUIFrame(wx.Frame):
             #self.glCanvas.OnPaint(None)
             self.OpenFile(filename)
 
+        nb = self._mgr.GetNotebooks()[0]
+        nb.SetSelection(2)
 
-        print 'about to refresh'
-        self.RefreshView()
-        self.Refresh()      
+        #print 'about to refresh'
+        #self.RefreshView()
+        #print 'refreshed'
+        #self.Refresh()
+
+    def OnIdle(self, event):
+        if not self.refv:
+            self.refv = True
+            self.RefreshView()
+            self.Refresh()
+            print 'refreshed'
+
+    def AddPage(self, page=None, select=False,caption='Dummy'):
+        self._mgr.Update()
+        pn = self._mgr.GetPaneByName("Shell")
+        if pn.IsNotebookPage():
+            print pn.notebook_id
+            nbs = self._mgr.GetNotebooks()
+            if len(nbs) > pn.notebook_id:
+                currPage = nbs[pn.notebook_id].GetSelection()
+            self._mgr.AddPane(page, aui.AuiPaneInfo().
+                          Name(caption.replace(' ', '')).Caption(caption).CloseButton(False).NotebookPage(pn.notebook_id))
+            if (not select) and len(nbs) > pn.notebook_id:
+                nbs[pn.notebook_id].SetSelection(currPage)
+        else:
+            self._mgr.AddPane(page, aui.AuiPaneInfo().
+                          Name(caption.replace(' ', '')).Caption(caption).CloseButton(False), target=pn)
+            #nb = self._mgr.GetNotebooks()[0]
+            #if not select:
+            #    nb.SetSelection(0)
+
+        self._mgr.Update()
 
     def OnSize(self, event):
 
@@ -460,8 +499,8 @@ class VisGUIFrame(wx.Frame):
     def OnObjMeasure(self, event):
         self.objectMeasures = objectMeasure.measureObjects(self.objects, self.objThreshold)
         if self.rav == None:
-            self.rav = recArrayView.recArrayPanel(self.notebook, self.objectMeasures)
-            self.notebook.AddPage(self.rav, 'Measurements')
+            self.rav = recArrayView.recArrayPanel(self, self.objectMeasures)
+            self.AddPage(self.rav, 'Measurements')
         else:
             self.rav.grid.SetData(self.objectMeasures)
 
@@ -749,8 +788,8 @@ class VisGUIFrame(wx.Frame):
     def OnView3DPoints(self,event):
         if 'z' in self.colourFilter.keys():
             if not 'glCanvas3D' in dir(self):
-                self.glCanvas3D = gl_render3D.LMGLCanvas(self.notebook)
-                self.notebook.AddPage(page=self.glCanvas3D, select=True, caption='3D')
+                self.glCanvas3D = gl_render3D.LMGLCanvas(self)
+                self.AddPage(page=self.glCanvas3D, select=True, caption='3D')
 
             self.glCanvas3D.setPoints(self.colourFilter['x'], self.colourFilter['y'], self.colourFilter['z'], self.pointColour())
             self.glCanvas3D.setCLim(self.glCanvas.clim, (-5e5, -5e5))
@@ -758,8 +797,8 @@ class VisGUIFrame(wx.Frame):
     def OnView3DTriangles(self,event):
         if 'z' in self.colourFilter.keys():
             if not 'glCanvas3D' in dir(self):
-                self.glCanvas3D = gl_render3D.LMGLCanvas(self.notebook)
-                self.notebook.AddPage(page=self.glCanvas3D, select=True, caption='3D')
+                self.glCanvas3D = gl_render3D.LMGLCanvas(self)
+                self.AddPage(page=self.glCanvas3D, select=True, caption='3D')
 
             self.glCanvas3D.setTriang(self.colourFilter['x'], self.colourFilter['y'], self.colourFilter['z'], 'z', sizeCutoff=self.glCanvas3D.edgeThreshold)
             self.glCanvas3D.setCLim(self.glCanvas3D.clim, (0, 5e-5))
@@ -905,10 +944,10 @@ class VisGUIFrame(wx.Frame):
                             else:
                                 i += 1
 
-                    self.colp = colourPanel.colourPanel(self.notebook, self)
+                    self.colp = colourPanel.colourPanel(self, self)
 #                    if 'Sample.Labelling' in self.mdh.getEntryNames():
 #                        self.colp.SpecFromMetadata(self.mdh)
-                    self.notebook.AddPage(self.colp, 'Colour')
+                    self.AddPage(self.colp, caption='Colour')
                 elif 'fitResults_sigxl' in self.selectedDataSource.keys():
                     self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource)
                     self.dataSources.append(self.selectedDataSource)
@@ -927,8 +966,8 @@ class VisGUIFrame(wx.Frame):
                 if 'Events' in self.selectedDataSource.resultsSource.h5f.root:
                     self.events = self.selectedDataSource.resultsSource.h5f.root.Events[:]
 
-                    self.elv = eventLogViewer.eventLogPanel(self.notebook, self.events, self.mdh, [0, self.selectedDataSource['tIndex'].max()]);
-                    self.notebook.AddPage(self.elv, 'Events')
+                    self.elv = eventLogViewer.eventLogPanel(self, self.events, self.mdh, [0, self.selectedDataSource['tIndex'].max()]);
+                    self.AddPage(self.elv, caption='Events')
 
                     evKeyNames = set()
                     for e in self.events:
@@ -994,8 +1033,8 @@ class VisGUIFrame(wx.Frame):
                             i += 1
 
                 if 'mdh' in dir(self):
-                    self.mdp = MetadataTree.MetadataPanel(self.notebook, self.mdh, editable=False)
-                    self.notebook.AddPage(self.mdp, 'Metadata')
+                    self.mdp = MetadataTree.MetadataPanel(self, self.mdh, editable=False)
+                    self.AddPage(self.mdp, caption='Metadata')
                         
         elif os.path.splitext(filename)[1] == '.mat': #matlab file
             from scipy.io import loadmat
@@ -1155,8 +1194,8 @@ class VisGUIFrame(wx.Frame):
             self.generatedImages.append(imf)
             imf.Show()
 
-            vp = ArraySettingsAndViewPanel(self.notebook, dataSource)
-            self.notebook.AddPage(page=vp, select=True, caption=filename)
+            vp = ArraySettingsAndViewPanel(self, dataSource)
+            self.AddPage(page=vp, select=True, caption=filename)
             vp.view.pointMode = 'lm'
             vp.view.vox_x = 1e3*md.getEntry('voxelsize.x')
             vp.view.vox_y = 1e3*md.getEntry('voxelsize.y')
