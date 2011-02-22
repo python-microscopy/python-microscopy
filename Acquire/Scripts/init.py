@@ -72,8 +72,8 @@ MainFrame.AddPage(page=dsc, select=False, caption='Simulation Settings')
 
 InitGUI('''
 from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
-acf = AndorControlFrame.AndorPanel(MainFrame, scope.cam, scope)
-camPanels.append((acf, 'EMCCD Properties'))
+scope.camControls['Fake Camera'] = AndorControlFrame.AndorPanel(MainFrame, scope.cam, scope)
+camPanels.append((scope.camControls['Fake Camera'], 'EMCCD Properties'))
 ''')
 
 #InitGUI('''
