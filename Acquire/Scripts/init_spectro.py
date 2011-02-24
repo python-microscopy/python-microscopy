@@ -12,14 +12,13 @@
 
 #!/usr/bin/python
 
-import scipy
-from Hardware.Simulator import fakeCam, fakePiezo, lasersliders, dSimControl
+#import scipy
+#from Hardware.Simulator import fakeCam, fakePiezo, lasersliders, dSimControl
 from Hardware.Spectrometer import specCam
 from Hardware import fakeShutters
-import time
+#import time
 
 from Hardware.OrielCornerstone import Cornerstone7400
-#import PYME.cSMI as example
 
 pz = InitBG('Monochromator', '''
 scope.monochromator = Cornerstone7400()
@@ -28,7 +27,6 @@ scope.piezos.append((scope.monochromator, 1, 'Monochromator'))
 scope.lasers = [scope.monochromator]
 ''')
 
-#pz.join() #piezo must be there before we start camera
 cm = InitBG('Spectrometer', '''
 scope.cam = specCam.SpecCamera()
 #time.sleep(5)
@@ -45,50 +43,8 @@ scope.chaninfo = chaninfo
 
 scope.shutters = fakeShutters
 
-#scope.EnableJoystick = 'foo'
+#cm.join()
 
-#InitBG('Should Fail', '''
-#raise Exception, 'test error'
-#time.sleep(1)
-#''')
-#
-#InitBG('Should not be there', '''
-#raise HWNotPresent, 'test error'
-#time.sleep(1)
-#''')
-
-
-#Gui stuff can't be done in background
-#InitGUI('''
-#dsc = dSimControl.dSimControl(MainFrame, scope)
-#import wx
-#dsc = wx.TextCtrl(MainFrame, -1, 'foo')
-#MainFrame.AddPage(page=dsc, select=False, caption='Simulation Settings')
-#''')
-
-#InitGUI('''
-#from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
-#acf = AndorControlFrame.AndorPanel(MainFrame, scope.cam, scope)
-#camPanels.append((acf, 'EMCCD Properties'))
-#''')
-
-#InitGUI('''
-#from PYME.Acquire.Hardware import ccdAdjPanel
-##import wx
-##f = wx.Frame(None)
-#snrPan = ccdAdjPanel.sizedCCDPanel(notebook1, scope, acf)
-#notebook1.AddPage(page=snrPan, select=False, caption='Image SNR')
-##camPanels.append((snrPan, 'SNR etc ...'))
-##f.Show()
-##time1.WantNotification.append(snrPan.ccdPan.draw)
-#''')
-
-cm.join()
-#from PYME.Acquire.Hardware import lasers
-#scope.l488 = lasers.FakeLaser('488',scope.cam,1, initPower=50)
-#scope.l405 = lasers.FakeLaser('405',scope.cam,0, initPower=10)
-
-#scope.lasers = [scope.l405, scope.l488]
 
 InitGUI('''
 from PYME.Acquire.Hardware import LaserControlFrame
@@ -98,53 +54,9 @@ lcf.Show()
 toolPanels.append((lcf, 'Laser Control'))
 ''')
 
-#InitGUI('''
-#lsf = lasersliders.LaserSliders(toolPanel, scope.lasers)
-#toolPanels.append((lsf, 'Laser Powers'))
-#''')
-
-#InitGUI('''
-#from PYME.Acquire import sarcSpacing
-#ssp = sarcSpacing.SarcomereChecker(MainFrame, menuBar1, scope)
-#''')
-
-#InitGUI('''
-#from PYME.Acquire.Hardware import focusKeys
-#fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[0])
-#time1.WantNotification.append(fk.refresh)
-#''')
-
-#InitGUI('''
-#from PYME.Acquire.Hardware import splitter
-#splt = splitter.Splitter(MainFrame, mControls, scope)
-#''')
-
-#InitGUI('''
-#from PYME.Analysis.LMVis import fastGraph
-#fg = fastGraph.SpecGraphPanel(MainFrame, scope)
-#MainFrame.AddPage(page=fg, select=False, caption='Spectrum')
-#time1.WantNotification.append(fg.refr)
-#''')
-
-from PYME import cSMI
-
-Is = []
-
-def calcSum(caller):
-    Is.append(cSMI.CDataStack_AsArray(caller.ds, 0).sum())
-
-#scope.pa.WantFrameNotification.append(calcSum)
-
 #must be here!!!
 joinBGInit() #wait for anyhting which was being done in a separate thread
 
-#import numpy
-#psf = numpy.load(r'd:\psf647.npy')
-#psf = numpy.maximum(psf, 0.)
-#from PYME.Analysis import MetaData
-#fakeCam.rend_im.setModel(psf, MetaData.TIRFDefault)
-
-time.sleep(.5)
 scope.initDone = True
 
 

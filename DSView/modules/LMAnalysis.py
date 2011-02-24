@@ -576,11 +576,49 @@ class LMAnalyser:
         self.checkTQ()
         if self.image.dataSource.moduleName == 'HDFDataSource':
             self.pushImagesHDF(startingAt, detThresh, fitFcn)
-        else:
+        elif self.image.dataSource.moduleName == 'TQDataSource':
             self.pushImagesQueue(startingAt, detThresh, fitFcn)
+        else: #generic catchall for other data sources
+            self.pushImagesDS(startingAt, detThresh, fitFcn)
 
 
     def pushImagesHDF(self, startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
+        #global seriesName
+        dataFilename = self.image.seriesName
+        resultsFilename = genResultFileName(self.image.seriesName)
+
+        while os.path.exists(resultsFilename):
+            di, fn = os.path.split(resultsFilename)
+            fdialog = wx.FileDialog(None, 'Analysis file already exists, please select a new filename',
+                        wildcard='H5R files|*.h5r', defaultDir=di, defaultFile=os.path.splitext(fn)[0] + '_1.h5r', style=wx.SAVE)
+            succ = fdialog.ShowModal()
+            if (succ == wx.ID_OK):
+                resultsFilename = fdialog.GetPath().encode()
+            else:
+                raise RuntimeError('Invalid results file - not running')
+            self.image.seriesName = resultsFilename
+
+        self.tq.createQueue('HDFTaskQueue', self.image.seriesName, dataFilename = dataFilename, resultsFilename=resultsFilename, startAt = 'notYet')
+
+        mdhQ = MetaDataHandler.QueueMDHandler(self.tq, self.image.seriesName, self.image.mdh)
+        mdhQ.setEntry('Analysis.DetectionThreshold', detThresh)
+        mdhQ.setEntry('Analysis.FitModule', fitFcn)
+        mdhQ.setEntry('Analysis.DataFileID', fileID.genDataSourceID(self.image.dataSource))
+
+        evts = self.image.dataSource.getEvents()
+        if len(evts) > 0:
+            self.tq.addQueueEvents(self.image.seriesName, evts)
+
+        self.tq.releaseTasks(self.image.seriesName, startingAt)
+
+
+    def pushImagesQueue(self, startingAt=0, detThresh = .9, fitFcn='LatGaussFitFR'):
+        self.image.mdh.setEntry('Analysis.DetectionThreshold', detThresh)
+        self.image.mdh.setEntry('Analysis.FitModule', fitFcn)
+        self.image.mdh.setEntry('Analysis.DataFileID', fileID.genDataSourceID(self.image.dataSource))
+        self.tq.releaseTasks(self.image.seriesName, startingAt)
+
+    def pushImagesDS(self, startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
         #global seriesName
         dataFilename = self.image.seriesName
         resultsFilename = genResultFileName(self.image.seriesName)
@@ -594,22 +632,32 @@ class LMAnalyser:
             else:
                 raise RuntimeError('Invalid results file - not running')
             self.image.seriesName = resultsFilename
-        self.tq.createQueue('HDFTaskQueue', self.image.seriesName, dataFilename = dataFilename, resultsFilename=resultsFilename, startAt = 'notYet')
+
+        self.tq.createQueue('HDFResultsTaskQueue', self.image.seriesName, None)
+
         mdhQ = MetaDataHandler.QueueMDHandler(self.tq, self.image.seriesName, self.image.mdh)
         mdhQ.setEntry('Analysis.DetectionThreshold', detThresh)
         mdhQ.setEntry('Analysis.FitModule', fitFcn)
         mdhQ.setEntry('Analysis.DataFileID', fileID.genDataSourceID(self.image.dataSource))
+
         evts = self.image.dataSource.getEvents()
         if len(evts) > 0:
             self.tq.addQueueEvents(self.image.seriesName, evts)
-        self.tq.releaseTasks(self.image.seriesName, startingAt)
 
+        md = MetaDataHandler.NestedClassMDHandler(mdhQ)
 
-    def pushImagesQueue(self, startingAt=0, detThresh = .9, fitFcn='LatGaussFitFR'):
-        self.image.mdh.setEntry('Analysis.DetectionThreshold', detThresh)
-        self.image.mdh.setEntry('Analysis.FitModule', fitFcn)
-        self.image.mdh.setEntry('Analysis.DataFileID', fileID.genDataSourceID(self.image.dataSource))
-        self.tq.releaseTasks(self.image.seriesName, startingAt)
+        for i in range(startingAt, self.image.dataSource.getNumSlices()):
+            if 'Analysis.BGRange' in md.getEntryNames():
+                bgi = range(max(i + md.Analysis.BGRange[0],md.EstimatedLaserOnFrameNo), max(i + md.Analysis.BGRange[1],md.EstimatedLaserOnFrameNo))
+            elif 'Analysis.NumBGFrames' in md.getEntryNames():
+                bgi = range(max(i - md.Analysis.NumBGFrames, md.EstimatedLaserOnFrameNo), i)
+            else:
+                bgi = range(max(i - 10, md.EstimatedLaserOnFrameNo), i)
+
+            #task = fitTask(self.queueID, taskNum, self.metaData.Analysis.DetectionThreshold, self.metaData, self.metaData.Analysis.FitModule, 'TQDataSource', bgindices =bgi, SNThreshold = True)
+            self.tq.postTask(remFitBuf.fitTask(self.image.seriesName,i, detThresh, md, fitFcn, bgindices=bgi, SNThreshold=True, dataSourceModule=self.image.dataSource.moduleName), queueName=self.image.seriesName)
+            
+        #self.tq.releaseTasks(self.image.seriesName, startingAt)
 
 
 #    def testFrame(self, detThresh = 0.9):
