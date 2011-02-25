@@ -9,6 +9,7 @@
 # This file may NOT be distributed without express permision from David Baddeley
 #
 ##################
+'''Estimates twist in a phase-ramp or double helix PSF'''
 
 import numpy
 import scipy.ndimage

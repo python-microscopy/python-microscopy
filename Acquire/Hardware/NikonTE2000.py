@@ -10,6 +10,8 @@
 #
 ##################
 
+# NB Possibly covered by NDA
+
 #import serial;
 #import time
 import win32com.client
