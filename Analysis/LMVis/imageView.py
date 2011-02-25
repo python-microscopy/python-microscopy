@@ -813,7 +813,7 @@ class MultiChannelImageViewFrame(wx.Frame):
         dlg.Destroy()
 
     def OnColoc(self, event):
-        from PYME.Analysis import correlationCoeffs, edtColoc
+        from PYME.Analysis.Colocalisation import correlationCoeffs, edtColoc
 
         #assume we have exactly 2 channels #FIXME - add a selector
         #grab image data
