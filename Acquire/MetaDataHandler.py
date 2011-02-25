@@ -46,9 +46,9 @@ class MDHandlerBase(DictMixin):
         return self.getEntryNames()
 
     def copyEntriesFrom(self, mdToCopy):
-        #for en in mdToCopy.getEntryNames():
-        #    self.setEntry(en, mdToCopy.getEntry(en))
-        self.update(mdToCopy)
+        for en in mdToCopy.getEntryNames():
+            self.setEntry(en, mdToCopy.getEntry(en))
+        #self.update(mdToCopy)
 
     def mergeEntriesFrom(self, mdToCopy):
         #only copies values if not already defined
@@ -59,6 +59,25 @@ class MDHandlerBase(DictMixin):
     def __repr__(self):
         s = ['%s: %s' % (en, self.getEntry(en)) for en in self.getEntryNames()]
         return '<%s>:\n\n' % self.__class__.__name__ + '\n'.join(s)
+
+    def WriteSimple(self, filename):
+        '''Writes out metadata in simplfied format'''
+        import cPickle
+        s = ['#PYME Simple Metadata v1']
+
+        for en in self.getEntryNames():
+            val = self.getEntry(en)
+
+            if val.__class__ in [str, unicode]: #quote string
+                val = "'%s'" % s
+            elif not val.__class__ in [int, float, list, dict]: #not easily recovered from representation
+                val = "cPickle.loads('%s')" % cPickle.dumps(val)
+
+            s.append("md['%s'] = %s" % (en, val))
+        
+        f = open(filename, 'w')
+        f.writelines(s)
+        f.close()
 
 
 class HDFMDHandler(MDHandlerBase):
@@ -158,6 +177,22 @@ class NestedClassMDHandler(MDHandlerBase):
 
 from xml.dom.minidom import getDOMImplementation, parse
 
+class SimpleMDHandler(NestedClassMDHandler):
+    '''simple metadata format - consists of a python script with a .md extension
+    which adds entrys using the dictionary syntax to a metadata handler called md'''
+
+    def __init__(self, filename = None, mdToCopy=None):
+        if not filename == None:
+            import cPickle
+            #loading an existing file
+            md = self
+            execfile(filename)
+
+        if not mdToCopy == None:
+            self.copyEntriesFrom(mdToCopy)
+
+    
+
 class XMLMDHandler(MDHandlerBase):
     def __init__(self, filename = None, mdToCopy=None):
         if not filename == None:
@@ -180,6 +215,7 @@ class XMLMDHandler(MDHandlerBase):
 
 
     def setEntry(self,entryName, value):
+        import cPickle
         entPath = entryName.split('.')
 
         node = self.md
@@ -195,11 +231,17 @@ class XMLMDHandler(MDHandlerBase):
 
             entPath.pop(0)
 
-        node.setAttribute('class', type(value).__name__)
-        node.setAttribute('value', repr(value))
+        typ = type(value).__name__
+        if typ in [float, int, str, unicode]: #easily recovered
+            node.setAttribute('class', type(value).__name__)
+            node.setAttribute('value', repr(value))
+        else: #pickle more complicated structures
+            node.setAttribute('class', 'pickle')
+            node.setAttribute('value', cPickle.dumps(value))
 
 
     def getEntry(self,entryName):
+        import cPickle
         entPath = entryName.split('.')
 
         node = self.md
@@ -220,6 +262,8 @@ class XMLMDHandler(MDHandlerBase):
             val = int(val)
         if cls == 'float':
             val = float(val)
+        if cls == 'pickle':
+            val = cPickle.loads(val)
 
         return val
 

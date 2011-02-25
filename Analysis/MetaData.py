@@ -69,6 +69,21 @@ ConfocDefault.setEntry('Camera.ADOffset',0)
 
 ConfocDefault.setEntry('tIndex',0)
 
+#bare bones metadata
+BareBones = NestedClassMDHandler()
+
+#voxelsize
+BareBones.setEntry('voxelsize.units','um')
+
+#camera properties - placeholder values - real vlaues will depend on gain etc...
+BareBones.setEntry('Camera.ReadNoise',0)
+BareBones.setEntry('Camera.NoiseFactor',1)
+BareBones.setEntry('Camera.ElectronsPerCount',1)
+BareBones.setEntry('Camera.TrueEMGain',1)
+BareBones.setEntry('Camera.ADOffset',0)
+
+BareBones.setEntry('tIndex',0)
+
 
 #PCO default metadata
 PCODefault = NestedClassMDHandler()

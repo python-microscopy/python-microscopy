@@ -134,22 +134,23 @@ class ImageStack:
         self.seriesName = getRelFilename(filename)
 
         self.mode = 'psf'
+        
 
-    def LoadTiff(self, filename):
-        #from PYME.FileUtils import readTiff
-        from PYME.Analysis.DataSources import TiffDataSource
-
-        self.dataSource = TiffDataSource.DataSource(filename, None)
-        self.data = self.dataSource #this will get replaced with a wrapped version
-        #self.data = readTiff.read3DTiff(filename)
-
+    def FindAndParseMetadata(self, filename):
         xmlfn = os.path.splitext(filename)[0] + '.xml'
         if os.path.exists(xmlfn):
             self.mdh = MetaData.TIRFDefault
             self.mdh.copyEntriesFrom(MetaDataHandler.XMLMDHandler(xmlfn))
         else:
-            self.mdh = MetaData.ConfocDefault
+            self.mdh = MetaData.BareBones
+            
+            #check for simple metadata (python code with an .md extension which 
+            #fills a dictionary called md)
+            mdfn = os.path.splitext(filename)[0] + '.md'
+            if os.path.exists(mdfn):
+                self.mdh.copyEntriesFrom(MetaDataHandler.SimpleMDHandler(mdfn))
 
+        if not ('voxelsize.x' in self.mdh.keys() and 'voxelsize.y' in self.mdh.keys()):
             from PYME.DSView.voxSizeDialog import VoxSizeDialog
 
             dlg = VoxSizeDialog(None)
@@ -159,6 +160,15 @@ class ImageStack:
             self.mdh.setEntry('voxelsize.y', dlg.GetVoxY())
             self.mdh.setEntry('voxelsize.z', dlg.GetVoxZ())
 
+    def LoadTiff(self, filename):
+        #from PYME.FileUtils import readTiff
+        from PYME.Analysis.DataSources import TiffDataSource
+
+        self.dataSource = TiffDataSource.DataSource(filename, None)
+        self.data = self.dataSource #this will get replaced with a wrapped version
+        #self.data = readTiff.read3DTiff(filename)
+
+        self.FindAndParseMetadata(filename)
 
         from PYME.ParallelTasks.relativeFiles import getRelFilename
         self.seriesName = getRelFilename(filename)
