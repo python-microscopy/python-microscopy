@@ -391,6 +391,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
              self.GetParent().update()
         else:
             self.imagepanel.Refresh()
+        #self.update()
     
     def OnKeyPress(self, event):
         if event.GetKeyCode() == wx.WXK_PRIOR:
@@ -820,8 +821,8 @@ class ArraySettingsAndViewPanel(wx.Panel):
             if ('update' in dir(self.GetParent())):
                  self.GetParent().update()
 
-            if 'playpanel' in dir(self):
-                self.playpanel.update()
+            if 'playbackpanel' in dir(self):
+                self.playbackpanel.update()
 
             for cb in self.WantUpdateNotification:
                 cb()

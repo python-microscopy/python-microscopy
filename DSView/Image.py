@@ -136,11 +136,12 @@ class ImageStack:
         self.mode = 'psf'
 
     def LoadTiff(self, filename):
-        from PYME.FileUtils import readTiff
-        #from PYME.Analysis.DataSources import TiffDataSource
+        #from PYME.FileUtils import readTiff
+        from PYME.Analysis.DataSources import TiffDataSource
 
-        #self.dataSource = TiffDataSource.DataSource(filename, None)
-        self.data = readTiff.read3DTiff(filename)
+        self.dataSource = TiffDataSource.DataSource(filename, None)
+        self.data = self.dataSource #this will get replaced with a wrapped version
+        #self.data = readTiff.read3DTiff(filename)
 
         xmlfn = os.path.splitext(filename)[0] + '.xml'
         if os.path.exists(xmlfn):

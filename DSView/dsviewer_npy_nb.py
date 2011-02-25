@@ -216,15 +216,36 @@ class DSViewFrame(wx.Frame):
 class MyApp(wx.App):
     def OnInit(self):
         import sys
-        #wx.InitAllImageHandlers()
-        if (len(sys.argv) == 2):
-            im = ImageStack(filename = sys.argv[1])
-            vframe = DSViewFrame(im, None, sys.argv[1], mode = im.mode)
-        elif (len(sys.argv) == 3):
-            im = ImageStack(filename = sys.argv[1], queueURI=sys.argv[2])
-            vframe = DSViewFrame(im, None, sys.argv[1], mode = im.mode)
+        from optparse import OptionParser
+
+        op = OptionParser(usage = 'usage: %s [options] [filename]' % sys.argv[0])
+
+        op.add_option('-m', '--mode', dest='mode', help="mode (or personality), as defined in PYME/DSView/modules/__init__.py")
+        op.add_option('-q', '--queueURI', dest='queueURI', help="the Pyro URI of the task queue - to avoid having to use the nameserver lookup")
+
+        options, args = op.parse_args()
+
+        if len (args) > 0:
+            im = ImageStack(filename=args[0], queueURI=options.queueURI)
         else:
-            vframe = DSViewFrame(None, '')           
+            im = ImageStack(queueURI=options.queueURI)
+
+#        #wx.InitAllImageHandlers()
+#        if (len(args) == 2):
+#            im = ImageStack(filename = args[1])
+#            vframe = DSViewFrame(im, None, args[1], mode = im.mode)
+#        elif (len(sys.argv) == 3):
+#            im = ImageStack(filename = args[1], queueURI=args[2])
+#            vframe = DSViewFrame(im, None, args[1], mode = im.mode)
+#        else:
+#            vframe = DSViewFrame(None, '')
+
+        if options.mode == None:
+            mode = im.mode
+        else:
+            mode = options.mode
+
+        vframe = DSViewFrame(im, None, im.filename, mode = mode)
 
         self.SetTopWindow(vframe)
         vframe.Show(1)

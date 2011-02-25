@@ -42,7 +42,8 @@ class fitResult(taskDef.TaskResult):
 class dataBuffer: #buffer our io to avoid decompressing multiple times
     def __init__(self,dataSource, bLen = 12):
         self.bLen = bLen
-        self.buffer = numpy.zeros((bLen,) + dataSource.getSliceShape(), 'uint16')
+        self.buffer = None #delay creation until we know the dtype
+        #self.buffer = numpy.zeros((bLen,) + dataSource.getSliceShape(), 'uint16')
         self.insertAt = 0
         self.bufferedSlices = -1*numpy.ones((bLen,), 'i')
         self.dataSource = dataSource
@@ -57,6 +58,10 @@ class dataBuffer: #buffer our io to avoid decompressing multiple times
         else: #get from our data source and store in buffer
             sl = self.dataSource.getSlice(ind)
             self.bufferedSlices[self.insertAt] = ind
+
+            if self.buffer == None: #buffer doesn't exist yet
+                self.buffer = numpy.zeros((self.bLen,) + self.dataSource.getSliceShape(), sl.dtype)
+                
             self.buffer[self.insertAt, :,:] = sl
             self.insertAt += 1
             self.insertAt %=self.bLen

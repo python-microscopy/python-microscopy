@@ -26,6 +26,7 @@ getEntryNames(self)
 
 which returns a list of entry names to help with copying data between handlers
 '''
+from UserDict import DictMixin
 
 #lists where bits of hardware can register the fact that they are capable of 
 #providing metadata, by appending a function with the signature:
@@ -33,8 +34,34 @@ which returns a list of entry names to help with copying data between handlers
 provideStartMetadata = []
 provideStopMetadata = []
 
+class MDHandlerBase(DictMixin):
+    #base class to make metadata behave like a dictionary
+    def __setitem__(self, name, value):
+        self.setEntry(name, value)
 
-class HDFMDHandler:
+    def __getitem__(self, name):
+        self.getEntry(name)
+
+    def keys(self):
+        return self.getEntryNames()
+
+    def copyEntriesFrom(self, mdToCopy):
+        #for en in mdToCopy.getEntryNames():
+        #    self.setEntry(en, mdToCopy.getEntry(en))
+        self.update(mdToCopy)
+
+    def mergeEntriesFrom(self, mdToCopy):
+        #only copies values if not already defined
+        for en in mdToCopy.getEntryNames():
+            if not en in self.getEntryNames():
+                self.setEntry(en, mdToCopy.getEntry(en))
+
+    def __repr__(self):
+        s = ['%s: %s' % (en, self.getEntry(en)) for en in self.getEntryNames()]
+        return '<%s>:\n\n' % self.__class__.__name__ + '\n'.join(s)
+
+
+class HDFMDHandler(MDHandlerBase):
     def __init__(self, h5file, mdToCopy=None):
         self.h5file = h5file
         self.md = None
@@ -74,21 +101,7 @@ class HDFMDHandler:
 
         return entryNames
 
-    def copyEntriesFrom(self, mdToCopy):
-        for en in mdToCopy.getEntryNames():
-            self.setEntry(en, mdToCopy.getEntry(en))
-
-    def mergeEntriesFrom(self, mdToCopy):
-        #only copies values if not already defined
-        for en in mdToCopy.getEntryNames():
-            if not en in self.getEntryNames():
-                self.setEntry(en, mdToCopy.getEntry(en))
-
-    def __repr__(self):
-        s = ['%s: %s' % (en, self.getEntry(en)) for en in self.getEntryNames()]
-        return '<%s>:\n\n' % self.__class__.__name__ + '\n'.join(s)
-
-class QueueMDHandler:
+class QueueMDHandler(MDHandlerBase):
     def __init__(self, tq, queueName, mdToCopy=None):
         self.tq = tq
         self.queueName = queueName
@@ -111,22 +124,8 @@ class QueueMDHandler:
         return self.tq.getQueueMetaDataKeys(self.queueName)
         
 
-    def copyEntriesFrom(self, mdToCopy):
-        for en in mdToCopy.getEntryNames():
-            self.setEntry(en, mdToCopy.getEntry(en))
 
-    def mergeEntriesFrom(self, mdToCopy):
-        #only copies values if not already defined
-        for en in mdToCopy.getEntryNames():
-            if not en in self.getEntryNames():
-                self.setEntry(en, mdToCopy.getEntry(en))
-
-    def __repr__(self):
-        s = ['%s: %s' % (en, self.getEntry(en)) for en in self.getEntryNames()]
-        return '<%s>:\n\n' % self.__class__.__name__ + '\n'.join(s)
-
-
-class NestedClassMDHandler:
+class NestedClassMDHandler(MDHandlerBase):
     def __init__(self, mdToCopy=None):
         if not mdToCopy == None:
             self.copyEntriesFrom(mdToCopy)
@@ -141,7 +140,7 @@ class NestedClassMDHandler:
                 self.__dict__[entPath[0]] = NestedClassMDHandler()
             self.__dict__[entPath[0]].setEntry('.'.join(entPath[1:]), value)
 
-
+    
     def getEntry(self,entryName):
         return eval('self.'+entryName)
 
@@ -157,23 +156,9 @@ class NestedClassMDHandler:
         return en
 
 
-    def copyEntriesFrom(self, mdToCopy):
-        for en in mdToCopy.getEntryNames():
-            self.setEntry(en, mdToCopy.getEntry(en))
-
-    def mergeEntriesFrom(self, mdToCopy):
-        #only copies values if not already defined
-        for en in mdToCopy.getEntryNames():
-            if not en in self.getEntryNames():
-                self.setEntry(en, mdToCopy.getEntry(en))
-
-    def __repr__(self):
-        s = ['%s: %s' % (en, self.getEntry(en)) for en in self.getEntryNames()]
-        return '<%s>:\n\n' % self.__class__.__name__ + '\n'.join(s)
-
 from xml.dom.minidom import getDOMImplementation, parse
 
-class XMLMDHandler:
+class XMLMDHandler(MDHandlerBase):
     def __init__(self, filename = None, mdToCopy=None):
         if not filename == None:
             #loading an existing file
@@ -256,9 +241,9 @@ class XMLMDHandler:
         return en
 
 
-    def copyEntriesFrom(self, mdToCopy):
-        for en in mdToCopy.getEntryNames():
-            self.setEntry(en, mdToCopy.getEntry(en))
+#    def copyEntriesFrom(self, mdToCopy):
+#        for en in mdToCopy.getEntryNames():
+#            self.setEntry(en, mdToCopy.getEntry(en))
 
 #    def mergeEntriesFrom(self, mdToCopy):
 #        #only copies values if not already defined

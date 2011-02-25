@@ -170,3 +170,4 @@ class blobFinder:
 
 def Plug(dsviewer):
     dsviewer.blobFinder = blobFinder(dsviewer)
+    

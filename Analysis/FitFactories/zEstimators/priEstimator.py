@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 ##################
-# astigEstimator.py
+# priEstimator.py
 #
 # Copyright David Baddeley, 2009
 # d.baddeley@auckland.ac.nz
@@ -9,16 +9,19 @@
 # This file may NOT be distributed without express permision from David Baddeley
 #
 ##################
-'''Calculates starting parameters for fitting to an astigmatic PSF. Note that this is already
-somewhat more sophisticated than the entire 3D anaylsis used by 'QuickPalm' and the like as
-it attempts to correct for coupling between the lateral centroid and defocus'''
+'''Calculates starting parameters for fitting to a phase ramp PSF. As it uses the
+angle between the lobes it should also be able to be used for double helix PSFs
+with little/no modification'''
 
 from scipy.interpolate import splprep, splev
 import numpy
+from PYME.Analysis.binAvg import binAvg
 #from pylab import *
 
 splines = {}
 
+#note that the bulk of this code is copied from astigEstimator, just replacing the
+#difference in widths with a measure of rotation
 
 def calibrate(interpolator, md, roiSize=5):
     #global zvals, dWidth
@@ -83,7 +86,7 @@ def calibrate(interpolator, md, roiSize=5):
 
 
 def _calcParams(data, X, Y):
-    '''calculates the \sigma_x - \sigma_y term used for z position estimation'''
+    '''calculates the mean angle in the image, used for z position estimation'''
     A = data.max() - data.min() #amplitude
 
     #threshold at half maximum and subtract threshold
@@ -93,13 +96,21 @@ def _calcParams(data, X, Y):
     x0 = (X[:,None]*dr).sum()/drs
     y0 = (Y[None, :]*dr).sum()/drs
 
-    sig_xl = (numpy.maximum(0, x0 - X)[:,None]*dr).sum()/(drs)
+    #sig_xl = (numpy.maximum(0, x0 - X)[:,None]*dr).sum()/(drs)
     #sig_xr = (numpy.maximum(0, X - x0)[:,None]*dr).sum()/(drs)
 
-    sig_yu = (numpy.maximum(0, y0 - Y)[None, :]*dr).sum()/(drs)
+    #sig_yu = (numpy.maximum(0, y0 - Y)[None, :]*dr).sum()/(drs)
     #sig_yd = (numpy.maximum(0, Y - y0)[None, :]*dr).sum()/(drs)
 
-    return A, x0, y0, sig_xl - sig_yu
+    #mask of thresholded region
+    #m = dr > 0
+    
+    #angle of each pixel
+    theta = numpy.mod(numpy.angle((X - x0) +1j*(Y-y0)), numpy.pi)
+
+    thm = (theta*dr).sum()/drs
+
+    return A, x0, y0, thm
 
 
 def getStartParameters(data, X, Y, Z=None):

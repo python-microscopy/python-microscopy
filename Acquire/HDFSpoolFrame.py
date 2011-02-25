@@ -326,9 +326,9 @@ class PanSpool(wx.Panel):
     def OnBAnalyse(self, event):
         if self.cbQueue.GetValue(): #queue or not
             if sys.platform == 'win32':
-                subprocess.Popen('..\\DSView\\dh5view.cmd QUEUE://%s %s' % (self.queueName, self.spooler.tq.URI), shell=True)
+                subprocess.Popen('..\\DSView\\dh5view.cmd -q %s QUEUE://%s' % (self.spooler.tq.URI, self.queueName), shell=True)
             else:
-                subprocess.Popen('../DSView/dh5view.py QUEUE://%s %s' % (self.queueName, self.spooler.tq.URI), shell=True)
+                subprocess.Popen('../DSView/dh5view.py -q %s QUEUE://%s' % (self.spooler.tq.URI, self.queueName), shell=True)
 #        else:
 #            if sys.platform == 'win32':
 #                subprocess.Popen('..\\DSView\\dh5view.cmd %s' % self.spooler.filename, shell=True)

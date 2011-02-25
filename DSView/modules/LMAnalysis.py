@@ -37,6 +37,12 @@ class LMAnalyser:
         self.image = dsviewer.image
         self.vp = dsviewer.vp
 
+        #this should only occur for files types which we weren't expecting to process
+        #as LM data (eg tiffs)
+        if not 'EstimatedLaserOnFrameNo' in self.image.mdh.getEntryNames():
+            from PYME.Analysis import MetaData
+            MetaData.fillInBlanks(self.image.mdh, self.image.dataSource)
+
         if 'fitResults' in dir(self.image):
             self.fitResults = self.image.fitResults
         else:
@@ -620,7 +626,7 @@ class LMAnalyser:
 
     def pushImagesDS(self, startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
         #global seriesName
-        dataFilename = self.image.seriesName
+        #dataFilename = self.image.seriesName
         resultsFilename = genResultFileName(self.image.seriesName)
         while os.path.exists(resultsFilename):
             di, fn = os.path.split(resultsFilename)
@@ -697,9 +703,9 @@ class LMAnalyser:
             #else:
             #    bgi = range(max(zps[i] - 10,md.EstimatedLaserOnFrameNo), zps[i])
             if 'Splitter' in fitMod:
-                ft = remFitBuf.fitTask(self.image.seriesName, zps[i], detThresh, MetaDataHandler.NestedClassMDHandler(self.image.mdh), 'SplitterObjFindR', bgindices=bgi, SNThreshold=True)
+                ft = remFitBuf.fitTask(self.image.seriesName, zps[i], detThresh, MetaDataHandler.NestedClassMDHandler(self.image.mdh), 'SplitterObjFindR', bgindices=bgi, SNThreshold=True,dataSourceModule=self.image.dataSource.moduleName)
             else:
-                ft = remFitBuf.fitTask(self.image.seriesName, zps[i], detThresh, MetaDataHandler.NestedClassMDHandler(self.image.mdh), 'LatObjFindFR', bgindices=bgi, SNThreshold=True)
+                ft = remFitBuf.fitTask(self.image.seriesName, zps[i], detThresh, MetaDataHandler.NestedClassMDHandler(self.image.mdh), 'LatObjFindFR', bgindices=bgi, SNThreshold=True,dataSourceModule=self.image.dataSource.moduleName)
             res = ft()
             xp = floor(i/4)/3.
             yp = (3 - i%4)/4.

@@ -20,7 +20,7 @@ import types
 import cPickle
 
 from PYME.Analysis._fithelpers import *
-from PYME.Analysis.FitFactories.zEstimators import astigEstimator
+#from PYME.Analysis.FitFactories.zEstimators import astigEstimator
 
 def pickleSlice(slice):
         return unpickleSlice, (slice.start, slice.stop, slice.step)
@@ -131,11 +131,18 @@ class PSFFitFactory:
         interpModule = metadata.Analysis.InterpModule
         self.interpolator = __import__('PYME.Analysis.FitFactories.Interpolators.' + interpModule , fromlist=['PYME', 'Analysis','FitFactories', 'Interpolators']).interpolator
 
+        if 'Analysis.EstimatorModule' in metadata.getEntryNames():
+            estimatorModule = metadata.Analysis.EstimatorModule
+        else:
+            estimatorModule = 'astigEstimator'
+
+        self.startPosEstimator = __import__('PYME.Analysis.FitFactories.zEstimators.' + estimatorModule , fromlist=['PYME', 'Analysis','FitFactories', 'zEstimators'])
+
         if fitfcn == f_Interp3d:
             if 'PSFFile' in metadata.getEntryNames():
                 if self.interpolator.setModel(metadata.PSFFile, metadata):
                     print 'model changed'
-                    astigEstimator.calibrate(self.interpolator, metadata)
+                    self.startPosEstimator.calibrate(self.interpolator, metadata)
             else:
                 self.interpolator.genTheoreticalModel(metadata)
 
@@ -146,7 +153,15 @@ class PSFFitFactory:
         interpolator = __import__('PYME.Analysis.FitFactories.Interpolators.' + md.Analysis.InterpModule , fromlist=['PYME', 'Analysis','FitFactories', 'Interpolators']).interpolator
         if interpolator.setModel(md.PSFFile, md):
             print 'model changed'
-            astigEstimator.calibrate(interpolator, md)
+
+#        if 'Analysis.EstimatorModule' in md.getEntryNames():
+#            estimatorModule = metadata.Analysis.EstimatorModule
+#        else:
+#            estimatorModule = 'astigEstimator'
+#
+#        startPosEstimator = __import__('PYME.Analysis.FitFactories.zEstimators.' + estimatorModule , fromlist=['PYME', 'Analysis','FitFactories', 'zEstimators'])
+#
+#        startPosEstimator.calibrate(interpolator, md)
 
         X, Y, Z, safeRegion = interpolator.getCoords(md, slice(-roiHalfSize,roiHalfSize + 1), slice(-roiHalfSize,roiHalfSize + 1), slice(0,1))
 
@@ -197,7 +212,7 @@ class PSFFitFactory:
 
         sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*dataROI)/self.metadata.Camera.ElectronsPerCount
 
-        startParameters = astigEstimator.getStartParameters(dataROI, X_, Y_)
+        startParameters = self.startPosEstimator.getStartParameters(dataROI, X_, Y_)
 
         #do the fit
         (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, self.interpolator, X, Y, Z, safeRegion)

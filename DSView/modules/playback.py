@@ -117,6 +117,7 @@ class PlayPanel(wx.Panel):
         self.vp.update()
 
     def update(self):
+        #print 'foo'
         self.slPlayPos.SetValue((100*self.vp.do.zp)/max(1,self.vp.do.ds.shape[2]-1))
 
         if not self.tPlay.IsRunning():
