@@ -92,6 +92,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
         wx.EVT_MOUSEWHEEL(self, self.OnWheel)
         wx.EVT_KEY_DOWN(self.imagepanel, self.OnKeyPress)
+        #wx.EVT_KEY_DOWN(self.Parent(), self.OnKeyPress)
         wx.EVT_LEFT_DOWN(self.imagepanel, self.OnLeftDown)
         wx.EVT_LEFT_UP(self.imagepanel, self.OnLeftUp)
         

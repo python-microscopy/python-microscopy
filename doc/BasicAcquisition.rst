@@ -1,7 +1,7 @@
 Basic Acquisiton
 ****************
 
-These instructions assume that you are imaging using near infrared dyes and the 671nm laser. While the same principles apply to imaging using other dye and laser combinations, there will be subtle differences. See Protocols_ and AdvancedImaging_.
+These instructions assume that you are imaging using near infrared dyes and the 671nm laser. While the same principles apply to imaging using other dye and laser combinations, there will be subtle differences. See :ref:`Protocols` and AdvancedImaging_.
 
 Before starting
 ===============
@@ -28,7 +28,7 @@ By default, the system is set up for ratiometric imaging using the splitter, and
 
 If you are doing multi-colour imaging, make sure you have a current shift field. If not, acquire a new one using a beads slide (see the ShiftField_ section). Now might also be a good time to let the software know about the shiftfield using the ``Controls->Splitter->Set Shift Field`` menu item. This will mean that shifts get corrected in the live unmixing view. It will also mean *(NEW)* that the shift field data gets propagated to the analysis for you and you don't need to enter it every time.
 
-It is useful to setup the acquisition protocol at this stage. For standard imaging with IR dyes this should be ``Prebleach671``. If you need to do something different, see Protocols_ or AdvancedImaging_.
+It is useful to setup the acquisition protocol at this stage. For standard imaging with IR dyes this should be ``Prebleach671``. If you need to do something different, see :ref:`Protocols` or AdvancedImaging_.
 
 
 Putting your sample on the scope

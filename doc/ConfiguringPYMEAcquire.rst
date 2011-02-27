@@ -1,3 +1,5 @@
+.. _configuringpymeacquire:
+
 Configuring PYME Acquire
 ########################
 
@@ -93,7 +95,14 @@ The old Andor EMCCD cameras use a method of setting the gain with is non-linear,
 CCD Pixel Size
 --------------
 
-PYME stores it's pixel sizes in a two step process - first there is a named list of pixel size settings, and then an index to the setting that is currently active. This is to facilitate the easy changing of cameras / objectives etc. To set the pixel size you thus have to create a new setting, and then make that active. This is done by executing the following commands in the console:
+PYME stores it's pixel sizes in a two step process - first there is a named list of
+pixel size settings, and then an index to the setting that is currently active.
+This is to facilitate the easy changing of cameras / objectives etc. To set the
+pixel size you thus have to create a new setting, and then make that active.
+
+This can be done by selecting **Controls > Camera > Set Pixel Size** from the menu.
+
+Alternatively one can execute the following commands in the console:
 ::
 
   scope.AddVoxelSizeSetting(name, x_size, y_size)

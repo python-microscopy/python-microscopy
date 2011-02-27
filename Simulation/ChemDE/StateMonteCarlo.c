@@ -91,7 +91,7 @@ static PyObject * StateMC(PyObject *self, PyObject *args, PyObject *keywds)
         nSteps --;
     }
 
-
+    //Py_INCREF(Iterates);
     return (PyObject*) Iterates;
 }
 

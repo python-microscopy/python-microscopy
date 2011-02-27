@@ -1,3 +1,5 @@
+.. _installation:
+
 Installation
 ############
 
@@ -107,6 +109,8 @@ Linux (Gnome)
 
 Change to the ``PYME/FileUtils`` directory and run ``install_gnome.sh``. This should (hopefully) create links to the relevant programs in ``~/bin`` and set up associations and :) thumbnailing! With any luck, file permissions should be OK out of the repository, but there's a chance you're going to have to make a couple of the scripts executable.
 
+.. _basicconfig:
+
 Basic Configuration
 -------------------
 
@@ -132,6 +136,6 @@ PYMENASPATH           As for PYMEMICRPATH, but for the NAS
 
 You probably want to set at least PYMEDATADIR, as the default is not particularly useful.
 
-You should now have a setup which works for simulation*, data analysis, & visualisation. Interfacing with hardware obviously requires a little more work - see ConfiguringPYMEAcquire_.
+You should now have a setup which works for simulation*, data analysis, & visualisation. Interfacing with hardware obviously requires a little more work - see :ref:`ConfiguringPYMEAcquire`.
 
-\* simulation probably won't work perfectly until you've done the EMGain calibration section of ConfiguringPYMEAcquire_.
+\* simulation probably won't work perfectly until you've done the EMGain calibration section of :ref:`ConfiguringPYMEAcquire`.

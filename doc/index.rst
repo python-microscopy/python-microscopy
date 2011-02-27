@@ -12,12 +12,11 @@ Contents:
    :maxdepth: 2
 
    Installation
-   ConfiguringPYMEAcquire
-   BasicAcquisition
+   PYMEAcquire
+   Analysis
    VisGUI
+   Technical
 
-
-test
 
 .. Indices and tables
    ==================

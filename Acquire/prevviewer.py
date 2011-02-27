@@ -18,7 +18,7 @@ import wx
 #import viewpanel
 import PYME.cSMI as example
 
-from PYME.DSView.myviewpanel import MyViewPanel
+from PYME.DSView.viewpanellite import MyViewPanel
 
 class PrevViewFrame(wx.Frame):
 	def __init__(self, parent, title, dstack):
