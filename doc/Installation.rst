@@ -52,11 +52,7 @@ There are a couple of little caveats though:
 
 
 To make this whole process of finding and installing dependencies a little less painful,
-I've put together a ``.deb`` file which depends on the modules available available
-through the Ubuntu/Debian package manager. This should work with modern versions
-of Ubuntu/Debian to give you the bulk of the dependencies.
-
-There's also now lists of required and recommended modules that can be used with
+I've put together lists of required and recommended modules that can be used with
 ``pip`` to pull any remaining dependencies. Thus one would execute::
 
  pip install -r recommended-modules.txt
@@ -66,9 +62,11 @@ to get everything I think is going to be useful, or::
  pip install -r required-modules.txt
 
 to get the bare essentials. Obviously this requires `pip <http://pypi.python.org/pypi/pip>`_
-to be installed first. I would suggest using the ``.deb`` first, or, if on windows,
-manually installing at least numpy and scipy because pip defaults to building
-everything from source, which is likely to be somewhat painful for numpy and scipy.
+to be installed first. I would suggest installing at least numpy and scipy manually
+because pip defaults to building everything from source, which is likely to be
+somewhat painful for numpy and scipy. On Ubuntu/Debian systems running the
+``install_dependencies.py`` script will try to install the dependencies using system
+packages first and then resort to *pip* for anything left over.
 
 
 Pyro Nameserver
