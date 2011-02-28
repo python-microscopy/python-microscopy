@@ -36,13 +36,39 @@ For full functionality, the following are also useful:
 
 \* part of Enthought python.
 
-On Windows (and probably MacOS) the easiest way to get the pre-requisites is to install the `Enthought Python Distribution <http://www.enthought.com/products/epd.php>`_ and then pull the remaining packages using ``pip`` or ``easy_install``. Under linux I'd use the default python install and the distribution packages for the rest. Depending on how old your distro is you might want to use pip/easy_install for some of the packages to get a more recent version instead (notably Pyro, and WxPython).
+On Windows (and probably MacOS) the easiest way to get the pre-requisites is to
+install the `Enthought Python Distribution <http://www.enthought.com/products/epd.php>`_
+and then pull the remaining packages using ``pip`` or ``easy_install``.
+Under linux I'd use the default python install and the distribution packages for
+the rest. Depending on how old your distro is you might want to use
+pip/easy_install for some of the packages to get a more recent version instead
+(notably Pyro, and WxPython).
 
 There are a couple of little caveats though:
 
 - We need a very recent version of wxPython. This means you'll probably have to upgrade the wxPython in EPD (either using pip/easy_install, or by downloading the installer). I found I had to delete the old wx directories and egg file before the new ones would be found because EPD is doing something wierd. In Linux, its just a matter of using ``easy_install -U wxpython``. On Macs (OS X, the port is generally debugged by Christian) updating wx in EPD involved downloading the latest python2.6 build for OS X (at the time that was wxPython2.8-osx-unicode-2.8.11.0-universal-py2.6.dmg downloaded from `www.wxpython.org <http://www.wxpython.org/>`_). I expanded that into a temporary directory and manually moved the relevant directories into the EPD file hierarchy which reside somewhere below /Library/Frameworks/Python.framework/Versions/Current.
 - Delny is a bit of a mess (not in in the python package archive so no easy_install, iffy licensing, need to google, download source, & build, but default sources don't build on Win or MacOS). I'm trying to remove the dependency (currently only used by one minor component of the visualisation/postprocessing), but in the meantime the easiest thing would probably be to grab a copy of the sources I've hacked to work on Win/ Mac off me.
 - On some (most?) versions of windows, the network stack is broken. Pyro needs to be told about this by setting an environment variable - ``PYRO_BROKEN_MSGWAITALL=1``. I can confirm that this is the case for pretty much every XP system, but can't comment on Vista/7). Pyro falls back on another (slower) piece of code when this the flag is set, so it should be safe in any case. Can't remember exactly how to diagnose the problem other than that Pyro falls over with cryptic error messages.
+
+
+To make this whole process of finding and installing dependencies a little less painful,
+I've put together a ``.deb`` file which depends on the modules available available
+through the Ubuntu/Debian package manager. This should work with modern versions
+of Ubuntu/Debian to give you the bulk of the dependencies.
+
+There's also now lists of required and recommended modules that can be used with
+``pip`` to pull any remaining dependencies. Thus one would execute::
+
+ pip install -r recommended-modules.txt
+
+to get everything I think is going to be useful, or::
+
+ pip install -r required-modules.txt
+
+to get the bare essentials. Obviously this requires `pip <http://pypi.python.org/pypi/pip>`_
+to be installed first. I would suggest using the ``.deb`` first, or, if on windows,
+manually installing at least numpy and scipy because pip defaults to building
+everything from source, which is likely to be somewhat painful for numpy and scipy.
 
 
 Pyro Nameserver

@@ -4,7 +4,7 @@ Shared memory array implementation for numpy which delegates all the nasty stuff
 to multiprocessing.sharedctypes.
 
 Copyright (c) 2010, David Baddeley
-All rights reserved.'''
+'''
 
 #Licensced under the BSD liscence ...
 #

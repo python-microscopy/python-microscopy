@@ -1,0 +1,11 @@
+-r required-modules.txt
+
+sympy>=0.6.3
+pyserial>=2.3
+ipython>=0.10
+Sphinx>=0.6.5
+South>=0.7.1
+Django>=1.2.1
+Mayavi>=3.3.1
+MySQL-python>=1.2.2
+Delny>=0.2.0

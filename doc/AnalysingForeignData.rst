@@ -27,6 +27,13 @@ with the intention of extending this to raw and possibly other formats (eg ``.si
 This is largely untested. It also won't play well with distributed/cluster analysis
 unless you have the data directory mounted and the relevant environment variable set.
 
+As ``dh5view`` defaults to *blob* mode for ``.tif`` files, you might want to use the
+command line mode option to force the localisation microscopy mode ie::
+
+ dh5view -m LM filename.tif
+
+I'd also recommend adding a ``filename.md`` metadata file (see below).
+
 Fixing the metadata
 ===================
 
