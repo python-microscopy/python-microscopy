@@ -53,7 +53,7 @@ r = [
     Reaction('T1 + q <-> R + qo', k11/visc),
     Reaction('R + qo <-> S0 + q', k12/visc),
     Reaction('X + q <-> S0 + qo', k13/visc),
-    Reaction('X + O2 <-> X0', k14/visc),   #postulated permanent bleaching pathway
+    Reaction('X + O2 <-> XO', k14/visc),   #postulated permanent bleaching pathway
 ]
 
 I0 = 1e-4
@@ -63,7 +63,7 @@ def I(t):
     return I0*(t > 50)
 
 #s = System(r,stimulae={'I':I}) #, constants={'I':1})#
-s = System(r,constants={'I':I0, 'q':0, 'O2':0.01*air_sat_O2_conc}, ties={'S1':(I0, 'S0')})#
+s = System(r,constants={'I':I0, 'q':1e-6, 'O2':0.01*air_sat_O2_conc}, ties={'S1':(I0, 'S0')})#
 s.GenerateGradAndJacCode()
 s.initialConditions['S0'] = 1e-3 #conc of fluorophores on an antibody ~ 100M
 #s.initialConditions['S1'] = s.initialConditions['S0']*I0 #this equilibrium will be reached really fast - help the solver out
@@ -84,7 +84,7 @@ res = s.solve(t)
 
 figure()
 
-toplot = ['S0', 'T1', 'R', 'X', 'X0']
+toplot = ['S0', 'T1', 'R', 'X', 'XO']
 
 for n in toplot: #res.dtype.names:
     plot((t/1e6), res[n], label=n, lw=2)
@@ -96,7 +96,7 @@ legend()
 
 figure()
 #dm = DiscreteModel(s, ['S0', 'S1', 'T1', 'R', 'X'])
-dm = DiscreteModel(s, ['S0', 'T1', 'R', 'X', 'X0'])
+dm = DiscreteModel(s, ['S0', 'T1', 'R', 'X', 'XO'])
 timestep=10.#3e-3
 dm.GenTransitionMatrix(t=[1e5], timestep=timestep)
 

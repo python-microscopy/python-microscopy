@@ -173,19 +173,20 @@ class System:
         for spec in self.species:
             DEs[spec] = ' + '.join(DEs[spec])
 
-        #return DEs
-        ##precompile the equations for speed
-        cDEs = {}
-        for key, value in DEs.items():
-            cDEs[key] = str(sympy.simplify(sympy.sympify(value)))#, '/tmp/test1', 'eval')
+        return DEs
+        ##simplify the equations for speed
+        #cDEs = {}
+        #for key, value in DEs.items():
+        #    cDEs[key] = str(sympy.simplify(sympy.sympify(value)))#, '/tmp/test1', 'eval')
 
-        return cDEs
+        #return cDEs
 
     def GenerateGradAndJacCode(self):
         DEs = self.getDEs()
 
+        #expand values
         gradcode = '\n'.join(['%s = v["%s"]' % (n,n) for n in self.dtype.names])
-        jaccode = '' + gradcode
+        jaccode = '' + gradcode #copy value expansion code to use for jacobian
 
         #simplify DEs
         for key, value in DEs.items():
