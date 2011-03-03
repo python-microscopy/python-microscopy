@@ -18,27 +18,35 @@ from discreteReactions import DiscreteModel
 #using constants for fluorescein from:
 #Influence of the triplet excited state on the photobleaching kinetics of fluorescein in microscopy. Song et Al, Biophys J. 1996
 #time base in us (ie constants are divided by 1e6)
+
+#inverse excited state lifetime
 k_emmision = 2.134e2
 
+#the saturating oxygen concentration in water
 air_sat_O2_conc = 250e-6
 
-visc = 1000
-visc2 = 1000 #assume fluorophore-fluorophore interactions are mostly fret based and not reliant on diffusion
+#viscocity - assume reaction rates are proportional to viscocity
+#most of our experiments were performed in glycerol, which has a viscocity of ~1200
+visc = 1000  #general solution viscocity - for reactions involving diffusing ligands
+visc2 = 1000 #dye-dye effective viscocity - if dyes are tethered, effect of viscocity is likely to be different
 
+#absorption cross-section of fluorescein
 abs_xsection = 3.e-16
 photons_per_joule_488 = 2.46e18
 excitations_per_W_per_cm2_per_us = abs_xsection*photons_per_joule_488/1.e6
 
+#Rate constants for fluorophore-quencher interactions
 k10 = 3e1 #kq = (k10 + k11) = 6.6e7 M-1s-1
 k11 = 3e1
 k12 = 1e1 #appears to be substantially slower than k13
 k13 = 1e2  #k13 ~1e8 M-1s-1 (est. from Fig 7)
 
-k14 = 0#2e0
+#permanent photo-bleaching pathways
+k14 = 0
 k15 = 0
 
 r = [
-    Reaction('S0 + I <-> S1', k_emmision),   #excitation
+    Reaction('S0 + I <-> S1', k_emmision),      #excitation (this works if we redefine I as being I/I_sat)
     Reaction('S1 <-> S0', k_emmision),          #emmission - we ignore the emitted photon
     Reaction('S1 <-> T1', 6.6e-1),              #intersystem crossing
     Reaction('T1 <-> S0', 5e-5),                  #radiationless deactivation
@@ -59,11 +67,12 @@ r = [
     Reaction('R + O2 <-> S0 + HO2', 5e2/visc),    #oxidation of R by 02 - rate constant from [kaske & linquist `64]
 ]
 
+#Intensity as a fraction of saturation intensity
 I0 = 1e-3
 
 #intensity function
-def I(t):
-    return I0*(t > 50)
+#def I(t):
+#    return I0*(t > 50)
 
 #s = System(r,stimulae={'I':I}) #, constants={'I':1})#
 s = System(r,constants={'I':I0, 'q':1e-5, 'O2':0.1*air_sat_O2_conc}, ties={'S1':(I0, 'S0')})#
