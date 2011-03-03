@@ -3,11 +3,12 @@ from scipy.integrate import ode
 import sympy
 
 class Reaction:
-    def __init__(self, equation, k_forward=0, k_reverse=0, name=None):
+    def __init__(self, equation, k_forward=0, k_reverse=0, name=None, catalysts=[]):
         self.reaction_equation = equation
         self.k_forward = k_forward
         self.k_reverse = k_reverse
         self.name = name
+        self.catalysts = catalysts
 
         self._parse(equation)
 

@@ -34,8 +34,8 @@ class DiscreteModel:
             #print '\n' + r.reaction_equation
             reags = r.reagents.keys()
             prods = r.products.keys()
-            ReagStates = sStates.intersection(reags)
-            ProdStates = sStates.intersection(prods)
+            ReagStates = sStates.intersection(reags).difference(r.catalysts)
+            ProdStates = sStates.intersection(prods).difference(r.catalysts)
 
             for state in ReagStates:
                 scale, state_ = self._resolveTies(state)
