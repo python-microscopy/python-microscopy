@@ -35,7 +35,7 @@ class Reaction:
         name, mol = spec
 
         if name in ties.keys(): #if we've got a tie, replace with the tied variable
-            name = '(%3.5f*%s)' % ties[name]
+            name = '(%s*%s)' % ties[name]
 
         #print spec
 
@@ -133,6 +133,31 @@ def gradFunction(t, y, dtype, DEs, constants, stimulae):
 
     return res
 
+class Stimulus:
+    '''Piecewise constant stimulus function'''
+    def __init__(self, initValue, times, values):
+        self.initValue = initValue
+        self.times = np.array(times)
+        self.values = np.array(values)
+
+    def __call__(self, t):
+        i = self.times.searchsorted(t, side='right')
+
+        if np.isscalar(t):
+            if i == 0:
+                return self.initValue
+            else:
+                return self.values[i-1]
+        else:
+            #print i.dtype
+            vals = self.initValue + 0*np.array(t)
+
+            vals[i> 0] = self.values[i[i>0] - 1]
+
+            return vals
+
+        
+
 
 class System:
     def __init__(self, reactions, constants={}, stimulae={}, ties={}):
@@ -155,6 +180,16 @@ class System:
         #default to zero intial conditions
         self.dtype = np.dtype({'names':self.species, 'formats':['f8' for i in range(len(self.species))]})
         self.initialConditions = np.zeros(1, dtype=self.dtype)
+
+        #we need to stop (and restart) the integration at any discontinuities
+        #search stimlulae for jumps and to list
+        self.discontinuities = []
+        
+        for stim in self.stimulae.values():
+            self.discontinuities += list(stim.times)
+
+        self.discontinuities = np.array(self.discontinuities)
+        self.discontinuities.sort()
 
         #self.GenerateGradAndJacCode()
 
@@ -241,7 +276,17 @@ class System:
 
         out = np.zeros(len(tvals), self.dtype)
 
+        disc_i = 0
+
         for i, t in enumerate(tvals):
+            ndisc_i =  self.discontinuities.searchsorted(t, side='right')
+            if not ndisc_i == disc_i:
+                #print 'Restarting integrator'
+                tDisc = self.discontinuities[ndisc_i-1]
+                o.integrate(tDisc)
+                o.set_initial_value(o.y, tDisc)
+                disc_i = ndisc_i
+                
             o.integrate(t)
             if o.successful():
                 out[i] = o.y

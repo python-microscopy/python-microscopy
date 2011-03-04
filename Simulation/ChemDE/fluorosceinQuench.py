@@ -1,7 +1,7 @@
 from pylab import *
 ioff()
 
-from reactions import Reaction, System
+from reactions import Reaction, System, Stimulus
 from discreteReactions import DiscreteModel
 
 #s   - singlet (nb lower case to keep sympy happy)
@@ -71,11 +71,12 @@ r = [
 I0 = 1e-3
 
 #intensity function
-#def I(t):
-#    return I0*(t > 50)
+#I = Stimulus(1e-3*I0, 1e6*np.array([1, 3,  4, 5,  6, 8,  9, 15, 16, 25, 26, 50, 51, 100]),
+#                                   [0, I0, 0, I0, 0, I0, 0, I0, 0,  I0, 0,  I0, 0,  I0])
+I = Stimulus(I0, [], [])
 
-#s = System(r,stimulae={'I':I}) #, constants={'I':1})#
-s = System(r,constants={'I':I0, 'q':1e-5, 'O2':0.1*air_sat_O2_conc}, ties={'S1':(I0, 'S0')})#
+#s = System(r,constants={'I':I0, 'q':1e-6, 'O2':0.1*air_sat_O2_conc}, ties={'S1':('I', 'S0')})#
+s = System(r,constants={'q':1e-7, 'O2':0.1*air_sat_O2_conc}, ties={'S1':('I', 'S0')},stimulae={'I':I})#
 s.GenerateGradAndJacCode()
 s.initialConditions['S0'] = 1e-3 #conc of fluorophores on an antibody ~ 100M
 #s.initialConditions['S1'] = s.initialConditions['S0']*I0 #this equilibrium will be reached really fast - help the solver out
@@ -90,7 +91,7 @@ print u'                  = %3.2g mW over a 15 \u03BCm field' % (exPower*(0.0015
 
 #print s.getDEs()
 
-t = linspace(1, 1e6, 10000)
+t = linspace(1, 101e6, 10000)
 
 res = s.solve(t)
 
@@ -104,6 +105,9 @@ for n in toplot: #res.dtype.names:
 ylim(0, 1.1*s.initialConditions['S0'])
 
 legend()
+
+figure()
+plot((t/1e6), res['S0']*I(t))
 
 
 figure()

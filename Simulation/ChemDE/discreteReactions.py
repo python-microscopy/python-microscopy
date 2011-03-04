@@ -12,9 +12,22 @@ class DiscreteModel:
 
         self.hist = []
 
-    def _resolveTies(self, state):
+    def _getConc(self, expr, concs, t):
+        for n in concs.dtype.names:
+            locals()[n] = concs[n]
+
+        locals().update(self.system.constants)
+
+        for key, fcn in self.system.stimulae.items():
+            locals()[key] = fcn(t)
+
+        return eval(expr)
+
+    def _resolveTies(self, state, concs, t):
         if state in self.system.ties.keys():
-            return self.system.ties[state]
+            sc, state_ = self.system.ties[state]
+            
+            return self._getConc(sc, concs, t), state_
         else:
             return 1, state
 
@@ -38,13 +51,13 @@ class DiscreteModel:
             ProdStates = sStates.intersection(prods).difference(r.catalysts)
 
             for state in ReagStates:
-                scale, state_ = self._resolveTies(state)
+                scale, state_ = self._resolveTies(state, concs, t)
 
                 n = self.states.index(state_)
 
                 p = r.k_forward
                 for st in reags:
-                    sc, st_ = self._resolveTies(st)
+                    sc, st_ = self._resolveTies(st, concs, t)
                     mol = r.reagents[st]
                     if st_ == state_: #we are in this state - act as if concentration is one
                         mol -= 1
@@ -54,7 +67,8 @@ class DiscreteModel:
                     if st in self.system.constants.keys():
                         p*= self.system.constants[st]**mol
                     else:
-                        p*= sc*concs[st_]**mol
+                        #p*= sc*concs[st_]**mol
+                        p *= sc*self._getConc(st_, concs, t)**mol
 
                     #print state_, st_, mol, p
                     
@@ -69,7 +83,7 @@ class DiscreteModel:
                 p = p/sum([r.products[st] for st in ProdStates])
 
                 for st in ProdStates:
-                    sc, st_ = self._resolveTies(st)
+                    sc, st_ = self._resolveTies(st, concs, t)
 
                     if not st_ == state_:
 
