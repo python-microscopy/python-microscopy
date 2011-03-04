@@ -76,7 +76,7 @@ I0 = 1e-3
 I = Stimulus(I0, [], [])
 
 #s = System(r,constants={'I':I0, 'q':1e-6, 'O2':0.1*air_sat_O2_conc}, ties={'S1':('I', 'S0')})#
-s = System(r,constants={'q':1e-7, 'O2':0.1*air_sat_O2_conc}, ties={'S1':('I', 'S0')},stimulae={'I':I})#
+s = System(r,constants={'q':1e-6, 'O2':0.1*air_sat_O2_conc}, ties={'S1':('I', 'S0')},stimulae={'I':I})#
 s.GenerateGradAndJacCode()
 s.initialConditions['S0'] = 1e-3 #conc of fluorophores on an antibody ~ 100M
 #s.initialConditions['S1'] = s.initialConditions['S0']*I0 #this equilibrium will be reached really fast - help the solver out
@@ -91,7 +91,7 @@ print u'                  = %3.2g mW over a 15 \u03BCm field' % (exPower*(0.0015
 
 #print s.getDEs()
 
-t = linspace(1, 101e6, 10000)
+t = linspace(1, 1e6, 10000)
 
 res = s.solve(t)
 
