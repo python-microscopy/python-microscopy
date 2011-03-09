@@ -79,7 +79,9 @@ I0 = 1e-3
 I = Stimulus(I0, [], [])
 
 #s = System(r,constants={'I':I0, 'q':1e-6, 'O2':0.1*air_sat_O2_conc}, ties={'S1':('I', 'S0')})#
-s = System(r,constants={'q':5e-6, 'O2':0.1*air_sat_O2_conc}, ties={'S1':('I', 'S0')},stimulae={'I':I})#
+#constants={'q':5e-6, 'O2':0.1*air_sat_O2_conc}
+constants={'q':0, 'O2':0}
+s = System(r,constants=constants, ties={'S1':('I', 'S0')},stimulae={'I':I})#
 s.GenerateGradAndJacCode()
 s.initialConditions['S0'] = 1e-3 #conc of fluorophores on an antibody ~ 100M
 
@@ -89,7 +91,7 @@ print u'Excitation Power: %3.2g W/cm\xB2' % (exPower)
 print u'                  = %3.2g mW over a 15 \u03BCm field' % (exPower*(0.0015**2)*1e3)
 
 def plotInitialDecay():
-    t = linspace(1, 10e6, 10000)
+    t = linspace(1, 1e6, 10000)
 
     res = s.solve(t)
 
@@ -98,7 +100,7 @@ def plotInitialDecay():
     toplot = ['S0', 'T1', 'R', 'X']
 
     for n in toplot: #res.dtype.names:
-        lw = 1
+        lw = 2
         if n == 'S0':
             lw = 3
         plot((t/1e6), res[n], label=n, lw=lw)
@@ -137,6 +139,40 @@ def stateLifetimes(spec, concs):
         s = System(r,constants=constants, ties={'S1':('I', 'S0')},stimulae={'I':I})#
         s.GenerateGradAndJacCode()
         s.initialConditions['S0'] = 1e-3 #conc of fluorophores on an antibody ~ 100M
+
+        res = s.solve(t)
+
+        r1 = FitModel(emod, [1e-3, 3], res['X'][t>1e6], t[t>1e6]/1e6 - 1)
+        tXs.append(r1[0][1])
+
+        r1 = FitModel(emod, [1e-3, 3], res['R'][t>1e6], t[t>1e6]/1e6 - 1)
+        tRs.append(r1[0][1])
+
+    loglog(concs, tXs, label='X', lw=2)
+    loglog(concs, tRs, label='R', lw=2)
+
+    ylabel('Time constant [$s^{-1}$]')
+
+    legend()
+
+def dyeConc(concs):
+    from PYME.Analysis._fithelpers import *
+
+    figure()
+
+    constants={'q':0, 'O2':0}
+    I = Stimulus(I0, [], [])
+
+    t = linspace(1, 1e6, 1000)
+
+    tXs = []
+    tRs = []
+
+    s = System(r,constants=constants, ties={'S1':('I', 'S0')},stimulae={'I':I})#
+    s.GenerateGradAndJacCode()
+
+    for i in range(len(concs)):  
+        s.initialConditions['S0'] = concs[i] #conc of fluorophores on an antibody ~ 100M
 
         res = s.solve(t)
 
@@ -267,7 +303,7 @@ plotInitialDecay()
 
 #stateLifetimes('q', logspace(-7, -2))
 #stateLifetimes('O2', air_sat_O2_conc*logspace(-4, 0))
-viscLifetimes(logspace(0, 3, 10))
+#viscLifetimes(logspace(0, 3, 10))
 
 draw()
 

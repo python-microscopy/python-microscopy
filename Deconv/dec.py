@@ -13,6 +13,7 @@
 from scipy import * 
 from scipy.linalg import *
 from scipy.fftpack import fftn, ifftn, fftshift, ifftshift
+from scipy import ndimage
 #import weave
 #import cDec
 from PYME import pad
@@ -355,6 +356,65 @@ class dec_conv(dec):
         F = fftn(fs)
         d = ifftshift(ifftn(F*self.Ht));
         d = real(d);
+        return ravel(d)
+
+class dec_bead(dec):
+    '''Classical deconvolution using non-fft convolution - pot. faster for
+    v. small psfs. Note that PSF must be symetric'''
+    def psf_calc(self, psf, data_size):
+        g = psf#/psf.sum();
+
+        #keep track of our data shape
+        self.height = data_size[0]
+        self.width  = data_size[1]
+        self.depth  = data_size[2]
+
+        self.shape = data_size
+
+        self.g = g;
+
+        #calculate OTF and conjugate transformed OTF
+        #self.H = (fftn(g));
+        #self.Ht = g.size*(ifftn(g));
+
+
+    def Lfunc(self, f):
+        '''convolve with an approximate 2nd derivative likelihood operator in 3D.
+        i.e. [[[0,0,0][0,1,0][0,0,0]],[[0,1,0][1,-6,1][0,1,0]],[[0,0,0][0,1,0][0,0,0]]]
+        '''
+        #make our data 3D again
+        fs = reshape(f, (self.height, self.width, self.depth))
+        a = -6*fs
+
+        a[:,:,0:-1] += fs[:,:,1:]
+        a[:,:,1:] += fs[:,:,0:-1]
+
+        a[:,0:-1,:] += fs[:,1:,:]
+        a[:,1:,:] += fs[:,0:-1,:]
+
+        a[0:-1,:,:] += fs[1:,:,:]
+        a[1:,:,:] += fs[0:-1,:,:]
+
+        #flatten data again
+        return ravel(cast['f'](a))
+
+    Lhfunc=Lfunc
+
+    def Afunc(self, f):
+        '''Forward transform - convolve with the PSF'''
+        fs = reshape(f, (self.height, self.width, self.depth))
+
+        d = ndimage.convolve(fs, self.g)
+
+        #d = real(d);
+        return ravel(d)
+
+    def Ahfunc(self, f):
+        '''Conjugate transform - convolve with conj. PSF'''
+        fs = reshape(f, (self.height, self.width, self.depth))
+
+        d = ndimage.correlate(fs, self.g)
+        
         return ravel(d)
     
 class dec_4pi_c(dec_4pi):
