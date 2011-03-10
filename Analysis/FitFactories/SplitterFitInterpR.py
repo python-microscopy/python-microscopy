@@ -230,9 +230,14 @@ class PSFFitFactory:
 
             dataROI = dataROI - bgROI
 
-        startParams = self.startPosEstimator.getStartParameters(dataROI.sum(2)[:,:,None], X_, Y_)
+        z0 = 0
+        if Ag > Ar: #use prightest channel for start parameter estimation
+            startParams = self.startPosEstimator.getStartParameters(dataROI[:,:,:1], X_, Y_)
+        else:
+            startParams = self.startPosEstimator.getStartParameters(dataROI[:,:,1:], X_, Y_)
+            z0 = self.metadata.Analysis.AxialShift
 
-        startParameters = [Ag*startParams[0]/(Ag + Ar), Ar*startParams[0]/(Ag + Ar), startParams[1], startParams[2], startParams[3], dataROI[:,:,0].min(),dataROI[:,:,1].min()]
+        startParameters = [Ag*startParams[0]/(Ag + Ar), Ar*startParams[0]/(Ag + Ar), startParams[1], startParams[2], z0 + startParams[3], dataROI[:,:,0].min(),dataROI[:,:,1].min()]
 
         #print dataROI.shape
 	
