@@ -12,6 +12,19 @@
 import numpy as np
 import tables
 
+class DefaultList(list):
+    '''List which returns a default value for items not in the list'''
+    def __init__(self, *args):
+        list.__init__(self, *args)
+
+    def __getitem__(self, index):
+        try:
+            return list.__getitem__(self, index)
+        except IndexError:
+            return 1
+
+
+
 class ListWrap:
     def __init__(self, dataList):
         self.dataList = dataList
@@ -19,7 +32,7 @@ class ListWrap:
 
         self.listDim = self.wrapList[0].nTrueDims
 
-        self.shape = self.wrapList[0].shape[:self.listDim] + (len(self.wrapList), 1, 1, 1)
+        self.shape = DefaultList(self.wrapList[0].shape[:self.listDim] + [len(self.wrapList),])
 
     def __getattr__(self, name):
         return getattr(self.wrapList[0], name)
@@ -48,7 +61,7 @@ class DataWrap: #permit indexing with more dimensions larger than len(shape)
             self.dim_1_is_z = True
 
         self.nTrueDims = len(data.shape)
-        self.shape = data.shape + (1, 1, 1, 1, 1)
+        #self.shape = data.shape# + (1, 1, 1, 1, 1)
         self.oldData = None
         self.oldSlice = None #buffer last lookup
 
@@ -56,6 +69,8 @@ class DataWrap: #permit indexing with more dimensions larger than len(shape)
         if data.__class__ == tables.EArray:
              self.dim_1_is_z = True
              self.shape = self.shape[1:3] + (self.shape[0],) + self.shape[3:]
+
+        self.shape = DefaultList(data.shape)
 
     def __getattr__(self, name):
         return getattr(self.data, name)

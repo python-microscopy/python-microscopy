@@ -36,6 +36,16 @@ def calibrate(interpolator, md, roiSize=5):
     z = numpy.arange(-500, 500, 10)
     ps = []
 
+    #astigmatic PSF is not necessarily aligned to the axes
+    #TODO - estimate rotation rather than requiring it as a parameter
+    if 'PSFRotation' in md.getEntryNames():
+        theta = numpy.pi*md['PSFRotation']/180.
+    else:
+        theta = 0
+
+    self.costheta = numpy.cos(theta)
+    self.sintheta = numpy.sin(theta)
+
     for z0 in z:    
         d = interpolator.interp(X, Y, Z + z0)
 #        if z0 % 100 == 0:
@@ -93,10 +103,15 @@ def _calcParams(data, X, Y):
     x0 = (X[:,None]*dr).sum()/drs
     y0 = (Y[None, :]*dr).sum()/drs
 
-    sig_xl = (numpy.maximum(0, x0 - X)[:,None]*dr).sum()/(drs)
+    xn = (x0-X)
+    yn = (y0-Y)
+
+    #sig_xl = (numpy.maximum(0, x0 - X)[:,None]*dr).sum()/(drs)
+    sig_xl = (numpy.maximum(0, xn*self.costheta - yn*self.sintheta)[:,None]*dr).sum()/(drs)
     #sig_xr = (numpy.maximum(0, X - x0)[:,None]*dr).sum()/(drs)
 
-    sig_yu = (numpy.maximum(0, y0 - Y)[None, :]*dr).sum()/(drs)
+    #sig_yu = (numpy.maximum(0, y0 - Y)[None, :]*dr).sum()/(drs)
+    sig_yu = (numpy.maximum(0, xn*self.sintheta + yn*self.costheta)[:,None]*dr).sum()/(drs)
     #sig_yd = (numpy.maximum(0, Y - y0)[None, :]*dr).sum()/(drs)
 
     return A, x0, y0, sig_xl - sig_yu
