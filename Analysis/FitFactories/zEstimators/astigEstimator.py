@@ -19,8 +19,11 @@ import numpy
 
 splines = {}
 
+sintheta = 0
+costheta = 1
 
 def calibrate(interpolator, md, roiSize=5):
+    global sintheta, costheta
     #global zvals, dWidth
     #generate grid to evaluate function on
     X, Y, Z, safeRegion = interpolator.getCoords(md, slice(-roiSize,roiSize), slice(-roiSize,roiSize), slice(0, 2))
@@ -39,12 +42,12 @@ def calibrate(interpolator, md, roiSize=5):
     #astigmatic PSF is not necessarily aligned to the axes
     #TODO - estimate rotation rather than requiring it as a parameter
     if 'PSFRotation' in md.getEntryNames():
-        theta = numpy.pi*md['PSFRotation']/180.
+        theta = numpy.pi*md.PSFRotation/180.
     else:
         theta = 0
 
-    self.costheta = numpy.cos(theta)
-    self.sintheta = numpy.sin(theta)
+    costheta = numpy.cos(theta)
+    sintheta = numpy.sin(theta)
 
     for z0 in z:    
         d = interpolator.interp(X, Y, Z + z0)
@@ -103,15 +106,15 @@ def _calcParams(data, X, Y):
     x0 = (X[:,None]*dr).sum()/drs
     y0 = (Y[None, :]*dr).sum()/drs
 
-    xn = (x0-X)
-    yn = (y0-Y)
+    xn = (x0-X)[:,None]
+    yn = (y0-Y)[None, :]
 
     #sig_xl = (numpy.maximum(0, x0 - X)[:,None]*dr).sum()/(drs)
-    sig_xl = (numpy.maximum(0, xn*self.costheta - yn*self.sintheta)[:,None]*dr).sum()/(drs)
+    sig_xl = (numpy.maximum(0, xn*costheta - yn*sintheta)*dr).sum()/(drs)
     #sig_xr = (numpy.maximum(0, X - x0)[:,None]*dr).sum()/(drs)
 
     #sig_yu = (numpy.maximum(0, y0 - Y)[None, :]*dr).sum()/(drs)
-    sig_yu = (numpy.maximum(0, xn*self.sintheta + yn*self.costheta)[:,None]*dr).sum()/(drs)
+    sig_yu = (numpy.maximum(0, xn*sintheta + yn*costheta)*dr).sum()/(drs)
     #sig_yd = (numpy.maximum(0, Y - y0)[None, :]*dr).sum()/(drs)
 
     return A, x0, y0, sig_xl - sig_yu
