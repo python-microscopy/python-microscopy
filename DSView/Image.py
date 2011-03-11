@@ -202,6 +202,7 @@ class ImageStack:
 
 
             #self.SetTitle(filename)
+            self.filename = filename
             self.saved = True
 
     def Save(self, filename=None, crop=False, view=None):
