@@ -56,7 +56,7 @@ class dec:
         LS = zeros((size(pref), nsrch), 'f')
 
         for k in range(nsrch):
-            AS[:,k] = cast['f'](Afunc(S[:,k]))
+            AS[:,k] = cast['f'](Afunc(S[:,k])[self.mask])
             LS[:,k] = cast['f'](Lfunc(S[:,k]))
 
         Hc = dot(transpose(AS), AS)
@@ -80,7 +80,7 @@ class dec:
         return data
 
 
-    def deconv(self, data, lamb, num_iters=10, alpha = None):
+    def deconv(self, data, lamb, num_iters=10, alpha = None, weights=1):
         '''This is what you actually call to do the deconvolution.
         parameters are:
 
@@ -95,6 +95,11 @@ class dec:
         '''
         #remember what shape we are
         self.dataShape = data.shape
+
+        if not numpy.isscalar(weights):
+            self.mask = weights > 0
+        else:
+            self.mask = numpy.isfinite(data.ravel())
 
         #if doing 4Pi dec, do some phase related precomputation
         #TODO move this to the 4Pi_dec classes
@@ -129,7 +134,7 @@ class dec:
             #note that 1/sqrt(data) by itself is not a good idea as it will give
             #infinite weight to zeros. As most devices have some form of readout noise
             #justifying the eps shouldn't be too tricky
-            self.res = data - self.Afunc(self.f);
+            self.res = (weights*(data - self.Afunc(self.f)))
             
             #resulting search directions
             #note that the use of the Likelihood fuction/prior as a search direction
@@ -148,7 +153,7 @@ class dec:
             self.prefs.append(norm(pref))
 
             #minimise along search directions to find new estimate
-            (fnew, cpred, spred) = self.subsearch(self.f, self.res, fdef, self.Afunc, self.Lfunc, lamb, S[:, 0:nsrch])
+            (fnew, cpred, spred) = self.subsearch(self.f, self.res[self.mask], fdef, self.Afunc, self.Lfunc, lamb, S[:, 0:nsrch])
 
             #positivity constraint (not part of original algorithm & could be ommitted)
             fnew = cast['f'](fnew*(fnew > 0))
@@ -267,7 +272,7 @@ class dec_conv(dec):
         pw1 = numpy.floor(pw)
         pw2 = numpy.ceil(pw)
 
-        g = psf#/psf.sum();
+        g = psf/psf.sum()
 
         #work out how we're going to need to pad to get the PSF the same size as our data
         if pw1[0] < 0:
@@ -362,7 +367,7 @@ class dec_bead(dec):
     '''Classical deconvolution using non-fft convolution - pot. faster for
     v. small psfs. Note that PSF must be symetric'''
     def psf_calc(self, psf, data_size):
-        g = psf#/psf.sum();
+        g = psf/psf.sum()
 
         #keep track of our data shape
         self.height = data_size[0]
@@ -371,7 +376,7 @@ class dec_bead(dec):
 
         self.shape = data_size
 
-        self.g = g;
+        self.g = g
 
         #calculate OTF and conjugate transformed OTF
         #self.H = (fftn(g));
