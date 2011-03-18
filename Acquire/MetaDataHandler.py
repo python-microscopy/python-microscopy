@@ -27,6 +27,14 @@ getEntryNames(self)
 which returns a list of entry names to help with copying data between handlers
 '''
 from UserDict import DictMixin
+#import copy_reg
+#def pickleSlice(slice):
+#        return unpickleSlice, (slice.start, slice.stop, slice.step)
+#
+#def unpickleSlice(start, stop, step):
+#        return slice(start, stop, step)
+#
+#copy_reg.pickle(slice, pickleSlice, unpickleSlice)
 
 #lists where bits of hardware can register the fact that they are capable of 
 #providing metadata, by appending a function with the signature:
@@ -176,6 +184,8 @@ class NestedClassMDHandler(MDHandlerBase):
 
 
 from xml.dom.minidom import getDOMImplementation, parse
+#from xml.sax.saxutils import escape, unescape
+import base64
 
 class SimpleMDHandler(NestedClassMDHandler):
     '''simple metadata format - consists of a python script with a .md extension
@@ -231,13 +241,14 @@ class XMLMDHandler(MDHandlerBase):
 
             entPath.pop(0)
 
-        typ = type(value).__name__
+        typ = type(value) #.__name__
         if typ in [float, int, str, unicode]: #easily recovered
             node.setAttribute('class', type(value).__name__)
             node.setAttribute('value', repr(value))
         else: #pickle more complicated structures
             node.setAttribute('class', 'pickle')
-            node.setAttribute('value', cPickle.dumps(value))
+            #print value, cPickle.dumps(value)
+            node.setAttribute('value', base64.b64encode((cPickle.dumps(value))))
 
 
     def getEntry(self,entryName):
@@ -263,7 +274,8 @@ class XMLMDHandler(MDHandlerBase):
         if cls == 'float':
             val = float(val)
         if cls == 'pickle':
-            val = cPickle.loads(val)
+            #return None
+            val = cPickle.loads(base64.b64decode(val))
 
         return val
 
