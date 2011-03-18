@@ -688,6 +688,8 @@ class LMAnalyser:
 
     def testFrames(self, detThresh = 0.9, offset = 0):
         close('all')
+        if self.image.dataSource.moduleName == 'TQDataSource':
+            self.checkTQ()
         matplotlib.interactive(False)
         clf()
         sq = min(self.image.mdh.getEntry('EstimatedLaserOnFrameNo') + 1000, self.image.dataSource.getNumSlices()/4)
@@ -706,7 +708,7 @@ class LMAnalyser:
                 ft = remFitBuf.fitTask(self.image.seriesName, zps[i], detThresh, MetaDataHandler.NestedClassMDHandler(self.image.mdh), 'SplitterObjFindR', bgindices=bgi, SNThreshold=True,dataSourceModule=self.image.dataSource.moduleName)
             else:
                 ft = remFitBuf.fitTask(self.image.seriesName, zps[i], detThresh, MetaDataHandler.NestedClassMDHandler(self.image.mdh), 'LatObjFindFR', bgindices=bgi, SNThreshold=True,dataSourceModule=self.image.dataSource.moduleName)
-            res = ft()
+            res = ft(taskQueue=self.tq)
             xp = floor(i/4)/3.
             yp = (3 - i%4)/4.
             #print xp, yp
