@@ -542,8 +542,8 @@ class smiMainFrame(wx.Frame):
     def OnFileOpenStack(self, event):
         #self.dv = dsviewer.DSViewFrame(self)
         #self.dv.Show()
-        im = ImageStack()
-        dvf = DSViewFrame(im, parent=self, size=(500, 500))
+        im = dsviewer.ImageStack()
+        dvf = dsviewer.DSViewFrame(im, parent=self, size=(500, 500))
         dvf.SetSize((500,500))
         dvf.Show()
         event.Skip()

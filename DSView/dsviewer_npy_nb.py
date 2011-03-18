@@ -17,7 +17,7 @@ import modules
 
 import PYME.misc.autoFoldPanel as afp
 from PYME.DSView.arrayViewPanel import ArraySettingsAndViewPanel
-from PYME.DSView.Image import ImageStack
+from PYME.DSView.image import ImageStack
 
 from PYME.Acquire.mytimer import mytimer
 from PYME.Analysis import piecewiseMapping
