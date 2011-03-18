@@ -20,11 +20,11 @@ import time
 #scope.camControls = {}
 
 InitBG('EMCCD Cameras', '''
-scope.cameras['A'] = AndorIXon.iXonCamera(1)
-#scope.cameras['B'] = AndorIXon.iXonCamera(0)
-#scope.cameras['B'].SetShutter(False)
-#scope.cameras['B'].SetActive(False)
-scope.cam = scope.cameras['A']
+#scope.cameras['A - Left'] = AndorIXon.iXonCamera(1)
+scope.cameras['B - Right'] = AndorIXon.iXonCamera(0)
+#scope.cameras['B - Right'].SetShutter(False)
+#scope.cameras['B - Right'].SetActive(False)
+scope.cam = scope.cameras['B - Right']
 ''')
 
 #InitBG('EMCCD Camera 2', '''
@@ -32,13 +32,12 @@ scope.cam = scope.cameras['A']
 #''')
 
 InitGUI('''
-scope.camControls['A'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['A'], scope)
-camPanels.append((scope.camControls['A'], 'EMCCD A Properties'))
+#scope.camControls['A - Left'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['A - Left'], scope)
+#camPanels.append((scope.camControls['A - Left'], 'EMCCD A Properties'))
 
-#scope.camControls['B'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['B'], scope)
-#camPanels.append((scope.camControls['B'], 'EMCCD B Properties'))
-#scope.camControls['B'].Hide()
-#scope.SetCamera('A')
+scope.camControls['B - Right'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['B - Right'], scope)
+camPanels.append((scope.camControls['B - Right'], 'EMCCD B Properties'))
+
 ''')
 
 InitGUI('''
@@ -72,7 +71,8 @@ scope.stage.SetSoftLimits(0, [1.06, 20.7])
 scope.stage.SetSoftLimits(1, [.8, 17.6])
 scope.piezos.append((scope.stage, 0, 'Stage X'))
 scope.piezos.append((scope.stage, 1, 'Stage Y'))
-scope.EnableJoystick = scope.stage.SetJoystick
+scope.joystick = scope.stage.joystick
+scope.joystick.Enable(True)
 scope.CleanupFunctions.append(scope.stage.Cleanup)
 ''')
 
@@ -98,7 +98,7 @@ time1.WantNotification.append(pv.draw)
 #splitter
 InitGUI('''
 from PYME.Acquire.Hardware import splitter
-splt = splitter.Splitter(MainFrame, mControls, scope, dichroic = 'FF741-Di01' , transLocOnCamera = 'Top')
+splt = splitter.Splitter(MainFrame, mControls, scope, scope.cam, dichroic = 'FF741-Di01' , transLocOnCamera = 'Top')
 ''')
 
 #Z stage
@@ -147,6 +147,7 @@ filtList = [WFilter(1, 'EMPTY', 'EMPTY', 0),
 InitGUI('''
 try:
     scope.filterWheel = FiltFrame(MainFrame, filtList)
+    scope.filterWheel.SetFilterPos("ND4.5")
     toolPanels.append((scope.filterWheel, 'Filter Wheel'))
 except:
     print 'Error starting filter wheel ...'
@@ -161,16 +162,16 @@ dd = DigiDataClient.getDDClient()
 
 
 from PYME.Acquire.Hardware import lasers
-scope.lFibre = lasers.DigiDataSwitchedLaser('Fibre',dd,2)
+scope.l490 = lasers.DigiDataSwitchedLaser('490',dd,4)
 scope.l405 = lasers.DigiDataSwitchedLaserInvPol('405',dd,0)
-scope.l543 = lasers.DigiDataSwitchedAnalogLaser('543',dd,0)
+#scope.l543 = lasers.DigiDataSwitchedAnalogLaser('543',dd,0)
 #scope.l671 = lasers.DigiDataSwitchedAnalogLaser('671',dd,1)
 
 pport = lasers.PPort()
 scope.l671 = lasers.ParallelSwitchedLaser('671',pport,0)
-scope.l488 = lasers.ParallelSwitchedLaser('488',pport,1)
+scope.l532 = lasers.ParallelSwitchedLaser('532',pport,1)
 
-scope.lasers = [scope.l488,scope.l405,scope.l543,scope.l671, scope.lFibre]
+scope.lasers = [scope.l405,scope.l532,scope.l671, scope.l490]
 ''')
 
 InitGUI('''
@@ -180,6 +181,12 @@ if 'lasers'in dir(scope):
     time1.WantNotification.append(lcf.refresh)
     toolPanels.append((lcf, 'Laser Control'))
 ''')
+
+from PYME.Acquire.Hardware import PM100USB
+
+scope.powerMeter = PM100USB.PowerMeter()
+scope.powerMeter.SetWavelength(671)
+scope.StatusCallbacks.append(scope.powerMeter.GetStatusText)
 
 ##Focus tracking
 #from PYME.Acquire.Hardware import FocCorrR
