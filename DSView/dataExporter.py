@@ -134,6 +134,8 @@ class TiffStackExporter(Exporter):
             xmd.setEntry('cropping.xslice', xslice.indices(data.shape[0]))
             xmd.setEntry('cropping.yslice', yslice.indices(data.shape[1]))
             xmd.setEntry('cropping.zslice', zslice.indices(data.shape[2]))
+
+            print xslice.indices(data.shape[0])
             
             xmlFile = os.path.splitext(outFile)[0] + '.xml'
             xmd.writeXML(xmlFile)

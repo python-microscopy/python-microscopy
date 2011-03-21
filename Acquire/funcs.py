@@ -19,7 +19,7 @@ import wx
 import previewaquisator
 import simplesequenceaquisator
 import prevviewer
-import PYME.DSView.dsviewer_npy as dsviewer
+import PYME.DSView.dsviewer_npy_nb as dsviewer
 #import PYME.DSView.myviewpanel as viewpanel
 import PYME.DSView.viewpanellite as viewpanel
 import PYME.DSView.displaySettingsPanel as disppanel
@@ -63,6 +63,8 @@ class microscope:
 
         self.cameras = {}
         self.camControls = {}
+
+        self.stackNum = 0
 
         #self.WantEventNotification = []
  
@@ -351,6 +353,8 @@ class microscope:
         dvf = dsviewer.DSViewFrame(im, title=('<Unsaved Stack %d>' % self.stackNum), mode='lite', size=(500, 500))
         dvf.SetSize((500,500))
         dvf.Show()
+
+        self.stackNum +=1
 
         self.sa.ds = None
 

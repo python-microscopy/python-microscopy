@@ -12,6 +12,8 @@ import pylab
 import wx
 import os
 
+from PYME.FileUtils import nameUtils
+
 class ShiftmapGenerator:
     def __init__(self, visFr):
         self.visFr = visFr
@@ -28,7 +30,7 @@ class ShiftmapGenerator:
 
         import cPickle
 
-        defFile = os.path.splitext(os.path.split(self.GetTitle())[-1])[0] + '.sf'
+        defFile = os.path.splitext(os.path.split(self.visFr.GetTitle())[-1])[0] + '.sf'
 
         fdialog = wx.FileDialog(None, 'Save shift field as ...',
             wildcard='Shift Field file (*.sf)|*.sf', style=wx.SAVE|wx.HIDE_READONLY, defaultDir = nameUtils.genShiftFieldDirectoryPath(), defaultFile=defFile)
