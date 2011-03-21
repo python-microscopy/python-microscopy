@@ -96,8 +96,8 @@ def setModel(modName, md):
     mod, voxelsize = cPickle.load(mf)
     mf.close()
 
-    if not voxelsize.x == md.voxelsize.x:
-        raise RuntimeError("PSF and Image voxel sizes don't match")
+    #if not voxelsize.x == md.voxelsize.x:
+    #    raise RuntimeError("PSF and Image voxel sizes don't match")
 
     IntXVals = 1e3*voxelsize.x*mgrid[-(mod.shape[0]/2.):(mod.shape[0]/2.)]
     IntYVals = 1e3*voxelsize.y*mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]

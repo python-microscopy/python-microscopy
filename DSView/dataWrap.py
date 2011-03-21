@@ -77,7 +77,7 @@ class DataWrap: #permit indexing with more dimensions larger than len(shape)
 
     def __getitem__(self, keys):
         keys = list(keys)
-        #print keys
+        print keys
         for i in range(len(keys)):
             if not keys[i].__class__ == slice:
                 keys[i] = slice(keys[i],keys[i] + 1)

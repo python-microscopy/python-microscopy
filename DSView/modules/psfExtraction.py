@@ -110,6 +110,8 @@ class psfExtractor:
             import cPickle
             imshow(psf.max(2))
 
+            from PYME.DSView import View3D
+
             fdialog = wx.FileDialog(None, 'Save PSF as ...',
                 wildcard='PSF file (*.psf)|*.psf|H5P file (*.h5p)|*.h5p', style=wx.SAVE|wx.HIDE_READONLY)
             succ = fdialog.ShowModal()

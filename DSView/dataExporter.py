@@ -198,6 +198,19 @@ class NumpyExporter(Exporter):
             xmd.writeXML(xmlFile)
 
 exporter(NumpyExporter)
+
+#@exporter
+class PSFExporter(Exporter):
+    extension = '*.psf'
+    descr = 'PYME psf data - .psf'
+
+    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
+        #numpy.save(outFile, data[xslice, yslice, zslice])
+        fid = open(outFile, 'wb')
+        cPickle.dump((psf, metadata.voxelsize), fid, 2)
+        fid.close()
+
+exporter(PSFExporter)
 #exporters = {'PYME HDF - .h5': H5Exporter,
 #            'TIFF (stack if 3D) - .tif' : TiffStackExporter,
 #            'TIFF (series if 3D) - .tif' : TiffSeriesExporter,
@@ -331,8 +344,8 @@ def CropExportData(vp, mdh=None, events=None, origName = None):
     
 
 
-def ExportData(ds, mdh=None, events=None, origName = None):
-    filename = _getFilename()
+def ExportData(ds, mdh=None, events=None, origName = None, defaultExt = '*.tif'):
+    filename = _getFilename(defaultExt)
     if filename == None:
             return
 
