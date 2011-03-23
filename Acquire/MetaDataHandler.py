@@ -63,17 +63,18 @@ class MDHandlerBase(DictMixin):
     def WriteSimple(self, filename):
         '''Writes out metadata in simplfied format'''
         import cPickle
-        s = ['#PYME Simple Metadata v1']
+        import numpy as np
+        s = ['#PYME Simple Metadata v1\n']
 
         for en in self.getEntryNames():
             val = self.getEntry(en)
 
-            if val.__class__ in [str, unicode]: #quote string
-                val = "'%s'" % s
+            if val.__class__ in [str, unicode] or np.isscalar(val): #quote string
+                val = repr(val)
             elif not val.__class__ in [int, float, list, dict]: #not easily recovered from representation
-                val = "cPickle.loads('%s')" % cPickle.dumps(val)
+                val = "cPickle.loads('''%s''')" % cPickle.dumps(val)
 
-            s.append("md['%s'] = %s" % (en, val))
+            s.append("md['%s'] = %s\n" % (en, val))
         
         f = open(filename, 'w')
         f.writelines(s)
@@ -167,7 +168,7 @@ class NestedClassMDHandler(MDHandlerBase):
     def getEntryNames(self):
         en = []
         for k in self.__dict__.keys():
-            if self.__dict__[k].__class__ == NestedClassMDHandler:
+            if hasattr(self.__dict__[k], 'getEntryNames'):
                 en += [k + '.' + kp for kp in self.__dict__[k].getEntryNames()]
             else:
                 en.append(k)
@@ -192,6 +193,15 @@ class SimpleMDHandler(NestedClassMDHandler):
 
         if not mdToCopy == None:
             self.copyEntriesFrom(mdToCopy)
+
+    def write(self, filename):
+        s = ''
+        for en in self.getEntryNames():
+            s += "md['%s'] = %s\n" % (en, self.getEntry(en))
+
+        fid = open(filename, 'w')
+        fid.write(s)
+        fid.close()
 
     
 

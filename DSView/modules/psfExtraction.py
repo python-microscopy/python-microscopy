@@ -106,42 +106,46 @@ class psfExtractor:
             #print psfROISize
             psf = extractImages.getPSF3D(self.image.data, self.PSFLocs, psfROISize, psfBlur)
 
-            from pylab import *
-            import cPickle
-            imshow(psf.max(2))
+#            from pylab import *
+#            import cPickle
+#            imshow(psf.max(2))
 
-            from PYME.DSView import View3D
+            from PYME.DSView.dsviewer_npy_nb import ImageStack, ViewIm3D
 
-            fdialog = wx.FileDialog(None, 'Save PSF as ...',
-                wildcard='PSF file (*.psf)|*.psf|H5P file (*.h5p)|*.h5p', style=wx.SAVE|wx.HIDE_READONLY)
-            succ = fdialog.ShowModal()
-            if (succ == wx.ID_OK):
-                fpath = fdialog.GetPath()
-                #save as a pickle containing the data and voxelsize
+            im = ImageStack(data = psf, mdh = self.image.mdh)
+            im.defaultExt = '*.psf' #we want to save as PSF by default
+            ViewIm3D(im, 'Extracted PSF')
 
-                if fpath.endswith('.psf'):
-                    fid = open(fpath, 'wb')
-                    cPickle.dump((psf, self.image.mdh.voxelsize), fid, 2)
-                    fid.close()
-                else:
-                    import tables
-                    h5out = tables.openFile(fpath,'w')
-                    filters=tables.Filters(5,'zlib',shuffle=True)
-
-                    xSize, ySize, nFrames = psf.shape
-
-                    ims = h5out.createEArray(h5out.root,'PSFData',tables.Float32Atom(),(0,xSize,ySize), filters=filters, expectedrows=nFrames)
-                    for frameN in range(nFrames):
-                        ims.append(psf[:,:,frameN][None, :,:])
-                        ims.flush()
-
-                    outMDH = MetaDataHandler.HDFMDHandler(h5out)
-
-                    outMDH.copyEntriesFrom(self.image.mdh)
-                    outMDH.setEntry('psf.originalFile', self.seriesName)
-
-                    h5out.flush()
-                    h5out.close()
+#            fdialog = wx.FileDialog(None, 'Save PSF as ...',
+#                wildcard='PSF file (*.psf)|*.psf|H5P file (*.h5p)|*.h5p', style=wx.SAVE|wx.HIDE_READONLY)
+#            succ = fdialog.ShowModal()
+#            if (succ == wx.ID_OK):
+#                fpath = fdialog.GetPath()
+#                #save as a pickle containing the data and voxelsize
+#
+#                if fpath.endswith('.psf'):
+#                    fid = open(fpath, 'wb')
+#                    cPickle.dump((psf, self.image.mdh.voxelsize), fid, 2)
+#                    fid.close()
+#                else:
+#                    import tables
+#                    h5out = tables.openFile(fpath,'w')
+#                    filters=tables.Filters(5,'zlib',shuffle=True)
+#
+#                    xSize, ySize, nFrames = psf.shape
+#
+#                    ims = h5out.createEArray(h5out.root,'PSFData',tables.Float32Atom(),(0,xSize,ySize), filters=filters, expectedrows=nFrames)
+#                    for frameN in range(nFrames):
+#                        ims.append(psf[:,:,frameN][None, :,:])
+#                        ims.flush()
+#
+#                    outMDH = MetaDataHandler.HDFMDHandler(h5out)
+#
+#                    outMDH.copyEntriesFrom(self.image.mdh)
+#                    outMDH.setEntry('psf.originalFile', self.seriesName)
+#
+#                    h5out.flush()
+#                    h5out.close()
 
 def Plug(dsviewer):
     dsviewer.psfExtractor = psfExtractor(dsviewer)

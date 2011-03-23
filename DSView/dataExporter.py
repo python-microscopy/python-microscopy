@@ -208,8 +208,9 @@ class PSFExporter(Exporter):
 
     def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
         #numpy.save(outFile, data[xslice, yslice, zslice])
+        import cPickle
         fid = open(outFile, 'wb')
-        cPickle.dump((psf, metadata.voxelsize), fid, 2)
+        cPickle.dump((data[xslice, yslice, zslice], metadata.voxelsize), fid, 2)
         fid.close()
 
 exporter(PSFExporter)

@@ -963,7 +963,7 @@ class VisGUIFrame(wx.Frame):
     
                     
 
-                if 'Events' in self.selectedDataSource.resultsSource.h5f.root:
+                if ('Events' in self.selectedDataSource.resultsSource.h5f.root) and ('StartTime' in self.mdh.keys()):
                     self.events = self.selectedDataSource.resultsSource.h5f.root.Events[:]
 
                     self.elv = eventLogViewer.eventLogPanel(self, self.events, self.mdh, [0, self.selectedDataSource['tIndex'].max()]);

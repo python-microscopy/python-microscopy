@@ -142,6 +142,8 @@ class PSFFitFactory:
             if 'PSFFile' in metadata.getEntryNames():
                 if self.interpolator.setModel(metadata.PSFFile, metadata):
                     print 'model changed'
+                    self.startPosEstimator.splines.clear()
+                if not 'z' in self.startPosEstimator.splines.keys():
                     self.startPosEstimator.calibrate(self.interpolator, metadata)
             else:
                 self.interpolator.genTheoreticalModel(metadata)
@@ -169,7 +171,7 @@ class PSFFitFactory:
         #Y = 1e3*md.voxelsize.y*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
         #Z = array([0]).astype('f')
 
-        return f_Interp3d(params, interpolator, X, Y, Z, safeRegion)
+        return f_Interp3d(params, interpolator, X, Y, Z, safeRegion), X[0], Y[0], Z[0]
 
     def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
         #if (z == None): # use position of maximum intensity

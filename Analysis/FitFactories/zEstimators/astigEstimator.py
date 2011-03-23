@@ -23,7 +23,7 @@ sintheta = 0
 costheta = 1
 
 def calibrate(interpolator, md, roiSize=5):
-    global sintheta, costheta
+    global sintheta, costheta, calibrated
     #global zvals, dWidth
     #generate grid to evaluate function on
     X, Y, Z, safeRegion = interpolator.getCoords(md, slice(-roiSize,roiSize), slice(-roiSize,roiSize), slice(0, 2))
@@ -93,6 +93,8 @@ def calibrate(interpolator, md, roiSize=5):
 
     sp, u = splprep([zm], u=dwm, s=10)
     splines['z'] = sp
+
+
 
 
 def _calcParams(data, X, Y):
