@@ -815,7 +815,7 @@ class ArraySettingsAndViewPanel(wx.Panel):
 
         self.updating = False
 
-    def update(self):
+    def update(self, source=None):
         if not self.updating:
             self.updating = True
             self.view.Refresh()

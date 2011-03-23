@@ -11,19 +11,32 @@
 ##################
 
 from ctypes import *
+#import ctypes
 
-from ctypes.wintypes import ULONG
-STRING = c_char_p
-from ctypes.wintypes import DWORD
-from ctypes.wintypes import BOOL
-from ctypes.wintypes import BYTE
-from ctypes.wintypes import WORD
-from ctypes.wintypes import UINT
-from ctypes.wintypes import HANDLE
-from ctypes.wintypes import HWND
 _stdcall_libraries = {}
-_stdcall_libraries['ATMCD32D'] = WinDLL('ATMCD32D')
 
+if 'WinDLL' in dir():
+    _stdcall_libraries['ATMCD32D'] = WinDLL('ATMCD32D')
+    from ctypes.wintypes import ULONG, DWORD, BOOL, BYTE, WORD, UINT, HANDLE, HWND
+else:
+    _stdcall_libraries['ATMCD32D'] = CDLL('libandor.so')
+
+    #from ctypes.wintypes import ULONG
+    ULONG = c_ulong
+    STRING = c_char_p
+    #from ctypes.wintypes import DWORD
+    DWORD = c_uint16
+    #from ctypes.wintypes import BOOL
+    BOOL = c_int
+    #from ctypes.wintypes import BYTE
+    BYTE = c_ubyte
+    #from ctypes.wintypes import WORD
+    WORD = c_int16
+    #from ctypes.wintypes import UINT
+    #from ctypes.wintypes import HANDLE
+    HANDLE=WORD
+    HWND = WORD
+    #from ctypes.wintypes import HWND
 
 PULONG = POINTER(ULONG)
 USHORT = c_ushort
@@ -48,6 +61,7 @@ LPVOID = c_void_p
 LPCVOID = c_void_p
 INT = c_int
 PUINT = POINTER(c_uint)
+
 class ANDORCAPS(Structure):
     pass
 ANDORCAPS._fields_ = [
@@ -126,9 +140,9 @@ GetBackground.argtypes = [POINTER(c_long), c_ulong]
 GetBitDepth = _stdcall_libraries['ATMCD32D'].GetBitDepth
 GetBitDepth.restype = c_uint
 GetBitDepth.argtypes = [c_int, POINTER(c_int)]
-GetCameraEventStatus = _stdcall_libraries['ATMCD32D'].GetCameraEventStatus
-GetCameraEventStatus.restype = c_uint
-GetCameraEventStatus.argtypes = [POINTER(DWORD)]
+#GetCameraEventStatus = _stdcall_libraries['ATMCD32D'].GetCameraEventStatus
+#GetCameraEventStatus.restype = c_uint
+#GetCameraEventStatus.argtypes = [POINTER(DWORD)]
 GetCameraHandle = _stdcall_libraries['ATMCD32D'].GetCameraHandle
 GetCameraHandle.restype = c_uint
 GetCameraHandle.argtypes = [c_long, POINTER(c_long)]
@@ -375,48 +389,48 @@ Merge.argtypes = [POINTER(c_long), c_long, c_long, c_long, POINTER(c_float), c_l
 OutAuxPort = _stdcall_libraries['ATMCD32D'].OutAuxPort
 OutAuxPort.restype = c_uint
 OutAuxPort.argtypes = [c_int, c_int]
-OWInit = _stdcall_libraries['ATMCD32D'].OWInit
-OWInit.restype = c_uint
-OWInit.argtypes = [c_uint]
-OWGetNbDevices = _stdcall_libraries['ATMCD32D'].OWGetNbDevices
-OWGetNbDevices.restype = c_uint
-OWGetNbDevices.argtypes = []
-OWGetDeviceID = _stdcall_libraries['ATMCD32D'].OWGetDeviceID
-OWGetDeviceID.restype = c_uint
-OWGetDeviceID.argtypes = [c_uint, POINTER(BYTE)]
-OWPulsePIO = _stdcall_libraries['ATMCD32D'].OWPulsePIO
-OWPulsePIO.restype = c_uint
-OWPulsePIO.argtypes = [c_uint, BYTE]
-OWReadMem = _stdcall_libraries['ATMCD32D'].OWReadMem
-OWReadMem.restype = c_uint
-OWReadMem.argtypes = [c_uint, WORD, c_ulong, POINTER(BYTE)]
-OWReadPIO = _stdcall_libraries['ATMCD32D'].OWReadPIO
-OWReadPIO.restype = c_uint
-OWReadPIO.argtypes = [c_uint, POINTER(BYTE)]
-OWResetPIOActivityLatch = _stdcall_libraries['ATMCD32D'].OWResetPIOActivityLatch
-OWResetPIOActivityLatch.restype = c_uint
-OWResetPIOActivityLatch.argtypes = [c_uint]
-OWSetMemPageRegister = _stdcall_libraries['ATMCD32D'].OWSetMemPageRegister
-OWSetMemPageRegister.restype = c_uint
-OWSetMemPageRegister.argtypes = [c_uint, c_ushort, BYTE]
-OWSetPIO = _stdcall_libraries['ATMCD32D'].OWSetPIO
-OWSetPIO.restype = c_uint
-OWSetPIO.argtypes = [c_uint, BYTE, c_uint]
-OWLockMemPageRegister = _stdcall_libraries['ATMCD32D'].OWLockMemPageRegister
-OWLockMemPageRegister.restype = c_uint
-OWLockMemPageRegister.argtypes = [c_uint, c_ushort, BYTE]
-OWWriteMem = _stdcall_libraries['ATMCD32D'].OWWriteMem
-OWWriteMem.restype = c_uint
-OWWriteMem.argtypes = [c_uint, WORD, c_ulong, POINTER(BYTE)]
-OWWritePIORegister = _stdcall_libraries['ATMCD32D'].OWWritePIORegister
-OWWritePIORegister.restype = c_uint
-OWWritePIORegister.argtypes = [c_uint, c_ushort, BYTE]
-OWReadPIORegister = _stdcall_libraries['ATMCD32D'].OWReadPIORegister
-OWReadPIORegister.restype = c_uint
-OWReadPIORegister.argtypes = [c_uint, c_ushort, POINTER(BYTE)]
-OWSetTransmissionMode = _stdcall_libraries['ATMCD32D'].OWSetTransmissionMode
-OWSetTransmissionMode.restype = c_uint
-OWSetTransmissionMode.argtypes = [c_ushort]
+#OWInit = _stdcall_libraries['ATMCD32D'].OWInit
+#OWInit.restype = c_uint
+#OWInit.argtypes = [c_uint]
+#OWGetNbDevices = _stdcall_libraries['ATMCD32D'].OWGetNbDevices
+#OWGetNbDevices.restype = c_uint
+#OWGetNbDevices.argtypes = []
+#OWGetDeviceID = _stdcall_libraries['ATMCD32D'].OWGetDeviceID
+#OWGetDeviceID.restype = c_uint
+#OWGetDeviceID.argtypes = [c_uint, POINTER(BYTE)]
+#OWPulsePIO = _stdcall_libraries['ATMCD32D'].OWPulsePIO
+#OWPulsePIO.restype = c_uint
+#OWPulsePIO.argtypes = [c_uint, BYTE]
+#OWReadMem = _stdcall_libraries['ATMCD32D'].OWReadMem
+#OWReadMem.restype = c_uint
+#OWReadMem.argtypes = [c_uint, WORD, c_ulong, POINTER(BYTE)]
+#OWReadPIO = _stdcall_libraries['ATMCD32D'].OWReadPIO
+#OWReadPIO.restype = c_uint
+#OWReadPIO.argtypes = [c_uint, POINTER(BYTE)]
+#OWResetPIOActivityLatch = _stdcall_libraries['ATMCD32D'].OWResetPIOActivityLatch
+#OWResetPIOActivityLatch.restype = c_uint
+#OWResetPIOActivityLatch.argtypes = [c_uint]
+#OWSetMemPageRegister = _stdcall_libraries['ATMCD32D'].OWSetMemPageRegister
+#OWSetMemPageRegister.restype = c_uint
+#OWSetMemPageRegister.argtypes = [c_uint, c_ushort, BYTE]
+#OWSetPIO = _stdcall_libraries['ATMCD32D'].OWSetPIO
+#OWSetPIO.restype = c_uint
+#OWSetPIO.argtypes = [c_uint, BYTE, c_uint]
+#OWLockMemPageRegister = _stdcall_libraries['ATMCD32D'].OWLockMemPageRegister
+#OWLockMemPageRegister.restype = c_uint
+#OWLockMemPageRegister.argtypes = [c_uint, c_ushort, BYTE]
+#OWWriteMem = _stdcall_libraries['ATMCD32D'].OWWriteMem
+#OWWriteMem.restype = c_uint
+#OWWriteMem.argtypes = [c_uint, WORD, c_ulong, POINTER(BYTE)]
+#OWWritePIORegister = _stdcall_libraries['ATMCD32D'].OWWritePIORegister
+#OWWritePIORegister.restype = c_uint
+#OWWritePIORegister.argtypes = [c_uint, c_ushort, BYTE]
+#OWReadPIORegister = _stdcall_libraries['ATMCD32D'].OWReadPIORegister
+#OWReadPIORegister.restype = c_uint
+#OWReadPIORegister.argtypes = [c_uint, c_ushort, POINTER(BYTE)]
+#OWSetTransmissionMode = _stdcall_libraries['ATMCD32D'].OWSetTransmissionMode
+#OWSetTransmissionMode.restype = c_uint
+#OWSetTransmissionMode.argtypes = [c_ushort]
 PrepareAcquisition = _stdcall_libraries['ATMCD32D'].PrepareAcquisition
 PrepareAcquisition.restype = c_uint
 PrepareAcquisition.argtypes = []
@@ -522,18 +536,18 @@ SetDelayGenerator.argtypes = [c_int, c_short, c_int]
 SetDMAParameters = _stdcall_libraries['ATMCD32D'].SetDMAParameters
 SetDMAParameters.restype = c_uint
 SetDMAParameters.argtypes = [c_int, c_float]
-SetDriverEvent = _stdcall_libraries['ATMCD32D'].SetDriverEvent
-SetDriverEvent.restype = c_uint
-SetDriverEvent.argtypes = [HANDLE]
+#SetDriverEvent = _stdcall_libraries['ATMCD32D'].SetDriverEvent
+#SetDriverEvent.restype = c_uint
+#SetDriverEvent.argtypes = [HANDLE]
 SetFPDP = _stdcall_libraries['ATMCD32D'].SetFPDP
 SetFPDP.restype = c_uint
 SetFPDP.argtypes = [c_int]
-SetAcqStatusEvent = _stdcall_libraries['ATMCD32D'].SetAcqStatusEvent
-SetAcqStatusEvent.restype = c_uint
-SetAcqStatusEvent.argtypes = [HANDLE]
-SetPCIMode = _stdcall_libraries['ATMCD32D'].SetPCIMode
-SetPCIMode.restype = c_uint
-SetPCIMode.argtypes = [c_int, c_int]
+#SetAcqStatusEvent = _stdcall_libraries['ATMCD32D'].SetAcqStatusEvent
+#SetAcqStatusEvent.restype = c_uint
+#SetAcqStatusEvent.argtypes = [HANDLE]
+#SetPCIMode = _stdcall_libraries['ATMCD32D'].SetPCIMode
+#SetPCIMode.restype = c_uint
+#SetPCIMode.argtypes = [c_int, c_int]
 SetEMAdvanced = _stdcall_libraries['ATMCD32D'].SetEMAdvanced
 SetEMAdvanced.restype = c_uint
 SetEMAdvanced.argtypes = [c_int]
@@ -618,9 +632,9 @@ SetMultiTrackHBin.argtypes = [c_int]
 SetNextAddress = _stdcall_libraries['ATMCD32D'].SetNextAddress
 SetNextAddress.restype = c_uint
 SetNextAddress.argtypes = [POINTER(c_long), c_long, c_long, c_long, c_long]
-SetNextAddress16 = _stdcall_libraries['ATMCD32D'].SetNextAddress16
-SetNextAddress16.restype = c_uint
-SetNextAddress16.argtypes = [POINTER(c_long), c_long, c_long, c_long, c_long]
+#SetNextAddress16 = _stdcall_libraries['ATMCD32D'].SetNextAddress16
+#SetNextAddress16.restype = c_uint
+#SetNextAddress16.argtypes = [POINTER(c_long), c_long, c_long, c_long, c_long]
 SetNumberAccumulations = _stdcall_libraries['ATMCD32D'].SetNumberAccumulations
 SetNumberAccumulations.restype = c_uint
 SetNumberAccumulations.argtypes = [c_int]
@@ -651,9 +665,9 @@ SetReadMode.argtypes = [c_int]
 SetRegisterDump = _stdcall_libraries['ATMCD32D'].SetRegisterDump
 SetRegisterDump.restype = c_uint
 SetRegisterDump.argtypes = [c_int]
-SetSaturationEvent = _stdcall_libraries['ATMCD32D'].SetSaturationEvent
-SetSaturationEvent.restype = c_uint
-SetSaturationEvent.argtypes = [HANDLE]
+#SetSaturationEvent = _stdcall_libraries['ATMCD32D'].SetSaturationEvent
+#SetSaturationEvent.restype = c_uint
+#SetSaturationEvent.argtypes = [HANDLE]
 SetShutter = _stdcall_libraries['ATMCD32D'].SetShutter
 SetShutter.restype = c_uint
 SetShutter.argtypes = [c_int, c_int, c_int, c_int]
@@ -681,9 +695,9 @@ SetTemperature.argtypes = [c_int]
 SetTriggerMode = _stdcall_libraries['ATMCD32D'].SetTriggerMode
 SetTriggerMode.restype = c_uint
 SetTriggerMode.argtypes = [c_int]
-SetUserEvent = _stdcall_libraries['ATMCD32D'].SetUserEvent
-SetUserEvent.restype = c_uint
-SetUserEvent.argtypes = [HANDLE]
+#SetUserEvent = _stdcall_libraries['ATMCD32D'].SetUserEvent
+#SetUserEvent.restype = c_uint
+#SetUserEvent.argtypes = [HANDLE]
 SetUSGenomics = _stdcall_libraries['ATMCD32D'].SetUSGenomics
 SetUSGenomics.restype = c_uint
 SetUSGenomics.argtypes = [c_long, c_long]
@@ -708,9 +722,9 @@ ShutDown.argtypes = []
 StartAcquisition = _stdcall_libraries['ATMCD32D'].StartAcquisition
 StartAcquisition.restype = c_uint
 StartAcquisition.argtypes = []
-UnMapPhysicalAddress = _stdcall_libraries['ATMCD32D'].UnMapPhysicalAddress
-UnMapPhysicalAddress.restype = c_uint
-UnMapPhysicalAddress.argtypes = []
+#UnMapPhysicalAddress = _stdcall_libraries['ATMCD32D'].UnMapPhysicalAddress
+#UnMapPhysicalAddress.restype = c_uint
+#UnMapPhysicalAddress.argtypes = []
 WaitForAcquisition = _stdcall_libraries['ATMCD32D'].WaitForAcquisition
 WaitForAcquisition.restype = c_uint
 WaitForAcquisition.argtypes = []
