@@ -365,7 +365,17 @@ class LMGLCanvas(GLCanvas):
         #    self.InitGL()
         #    self.init = 1
 
-        I = ci.argsort()
+        #I = ci.argsort()
+
+        indices = numpy.arange(len(x))
+        I = []
+
+        clumps = set(ci)
+        
+        for cl in clumps:
+            I.append(indices[ci == cl])
+
+        I = numpy.hstack(I)
 
         if c == None:
             self.c = numpy.ones(x.shape).ravel()

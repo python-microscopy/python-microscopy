@@ -171,7 +171,7 @@ class PSFFitFactory:
         #Y = 1e3*md.voxelsize.y*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
         #Z = array([0]).astype('f')
 
-        return f_Interp3d(params, interpolator, X, Y, Z, safeRegion), X[0], Y[0], Z[0]
+        return f_Interp3d(params, interpolator, X, Y, Z, safeRegion), X.ravel()[0], Y.ravel()[0], Z.ravel()[0]
 
     def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
         #if (z == None): # use position of maximum intensity
