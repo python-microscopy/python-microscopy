@@ -66,12 +66,13 @@ xlabel('Time [s]')
 from countEvents import countEvents
 
 densities = [1,2,5,10,20,50,100] #molecules/diffraction limited volume
+#densities = [100]
 
 eventCounts = {}
-for d in densities:
-    eventCounts[d] = zeros(300)
+trange = hstack([arange(1,100), logspace(2, 4, 100)])
 
-trange = logspace(0, 4, 300)
+for d in densities:
+    eventCounts[d] = zeros(trange.shape)
 
 nIters = 10
 NSteps = 100000
