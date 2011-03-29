@@ -26,9 +26,9 @@ class blocking_deconv:
         self.blockoverlap = blockoverlap
         
         self.data = data
-        self.alpha = alpha
+        #self.alpha = alpha
         self.psf = psf
-        self.taskQueue = tq
+        self.tq = tq
         self.name = name
         
         #print shape(data)
@@ -82,13 +82,13 @@ class blocking_deconv:
                     #alpha = ph_param(1)*(x+ sl_start_a) + ph_param(2)*(y + sl_start_b) + ph_param(3)*(z + sl_start) + ph_param(4);
                     #print '(%d,%d,%d)' %(sl_start_a, sl_start_b, sl_start)
                     
-                    alpha_b = self.alpha[sl_start_a:(sl_start_a + self.blocksize['x']),sl_start_b:(sl_start_b + self.blocksize['y']), sl_start:(sl_start + self.blocksize['z'])]
-                    
+                    #alpha_b = self.alpha[sl_start_a:(sl_start_a + self.blocksize['x']),sl_start_b:(sl_start_b + self.blocksize['y']), sl_start:(sl_start + self.blocksize['z'])]
+                                        
                     f = self.data[sl_start_a:(sl_start_a + self.blocksize['x']),sl_start_b:(sl_start_b + self.blocksize['y']), sl_start:(sl_start + self.blocksize['z'])]
                     
                     #f = self.data(sl_start_a + (1:length(x1)) - 1,sl_start_b + (1:length(y1)) - 1, sl_start + (1:length(z1)) - 1)
                     
-                    self.blocks.append((f, alpha_b, k))
+                    self.blocks.append((f, k))
                     k = k +1
                     #self.alphas.append(alpha_b)
     
@@ -106,7 +106,7 @@ class blocking_deconv:
         
     def push_deconv_tasks(self, lamb = 2e-2, num_iters = 10):
         for block, blocknum in zip(self.blocks, range(len(self.blocks))):
-            task = decTask(self.name, block, blocknum, lamb=lamb, num_iters=num_iters)
+            task = decTask(self.name, block[0], blocknum, lamb=lamb, num_iters=num_iters)
             self.tq.postTask(task, self.name)
         #self.results = self.tc.loop_code('f = d4.deconv(ravel(a[0]), lamb, alpha=a[1], num_iters=num_it)', 'a', {'a':self.blocks, 'lamb':lamb, 'num_it':num_iters}, ('f',))
         #self.results = []
@@ -120,13 +120,16 @@ class blocking_deconv:
 #        #    self.results.append((r[0],r[2]))
         
     def pull_and_deblock(self):
-        res = [None for b in self.blocks]
+        self.results = [None for b in self.blocks]
 
         while self.tq.getNumberTasksCompleted(self.name) > 0:
             t = self.tq.getCompletedTask(self.name)
 
-            res[t.blocknum] = t.results
+            self.results[t.blocknum] = t.results
 
+        self.deblock()
+
+    def deblock(self):
         i = 0
         self.end_res = zeros((self.height, self.width, self.depth), 'f');
         self.blockno = zeros((self.height, self.width, self.depth), 'f');
@@ -139,7 +142,7 @@ class blocking_deconv:
                     #print(res[1])
                     #print '(%d,%d,%d)' %(sl_start_a, sl_start_b, sl_start)
                     
-                    fe = reshape(res[0], (self.blocksize['x'], self.blocksize['y'], self.blocksize['z']))
+                    fe = reshape(res, (self.blocksize['x'], self.blocksize['y'], self.blocksize['z']))
 		    
                     block_n = i*ones(shape(fe))
                     
@@ -186,11 +189,11 @@ class blocking_deconv:
         self.init_cluster()
         print 'Starting the deconvolution ....'
         #self.do_deconv(lamb, num_iters)
-        self.cleanup_cluster()
-        print 'Finished deconvolution, putting blocks back together ...'
-        self.deblock()
+        #self.cleanup_cluster()
+        #print 'Finished deconvolution, putting blocks back together ...'
+        #self.deblock()
 
-        self.cleanup_cluster()
+        #self.cleanup_cluster()
 
         
     

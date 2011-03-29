@@ -97,6 +97,9 @@ class dec:
         #remember what shape we are
         self.dataShape = data.shape
 
+        if 'prep' in dir(self):
+            self.prep()
+
         if not numpy.isscalar(weights):
             self.mask = weights > 0
         else:
@@ -271,6 +274,17 @@ class dec_4pi(dec):
 
 class dec_conv(dec):
     '''Classical deconvolution with a stationary PSF'''
+    def prep(self):
+        #allocate memory
+        
+        self._F = fftw3f.create_aligned_array(self.FTshape, 'complex64')
+        self._r = fftw3f.create_aligned_array(self.shape, 'f4')
+
+        #calculate plans for other ffts
+        self._plan_r_F = fftw3f.Plan(self._r, self._F, 'forward')
+        self._plan_F_r = fftw3f.Plan(self._F, self._r, 'backward')
+
+
     def psf_calc(self, psf, data_size):
         '''Precalculate the OTF etc...'''
         pw = (numpy.array(data_size) - psf.shape)/2.
@@ -319,20 +333,20 @@ class dec_conv(dec):
 
         self.shape = data_size
 
-        FTshape = [self.shape[0], self.shape[1], self.shape[2]/2 + 1]
+        self.FTshape = [self.shape[0], self.shape[1], self.shape[2]/2 + 1]
 
         self.g = g.astype('f4');
         self.g2 = 1.0*self.g[::-1, ::-1, ::-1]
 
         #allocate memory
-        self.H = fftw3f.create_aligned_array(FTshape, 'complex64')
-        self.Ht = fftw3f.create_aligned_array(FTshape, 'complex64')
+        self.H = fftw3f.create_aligned_array(self.FTshape, 'complex64')
+        self.Ht = fftw3f.create_aligned_array(self.FTshape, 'complex64')
         #self.f = zeros(self.shape, 'f4')
         #self.res = zeros(self.shape, 'f4')
         #self.S = zeros((size(self.f), 3), 'f4')
 
-        self._F = fftw3f.create_aligned_array(FTshape, 'complex64')
-        self._r = fftw3f.create_aligned_array(self.shape, 'f4')
+        #self._F = fftw3f.create_aligned_array(self.FTshape, 'complex64')
+        #self._r = fftw3f.create_aligned_array(self.shape, 'f4')
         #S0 = self.S[:,0]
 
         #create plans & calculate OTF and conjugate transformed OTF
@@ -343,8 +357,8 @@ class dec_conv(dec):
         self.H /= g.size;
 
         #calculate plans for other ffts
-        self._plan_r_F = fftw3f.Plan(self._r, self._F, 'forward')
-        self._plan_F_r = fftw3f.Plan(self._F, self._r, 'backward')
+        #self._plan_r_F = fftw3f.Plan(self._r, self._F, 'forward')
+        #self._plan_F_r = fftw3f.Plan(self._F, self._r, 'backward')
 
 
     def Lfunc(self, f):
