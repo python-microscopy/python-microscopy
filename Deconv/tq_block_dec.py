@@ -14,7 +14,7 @@
 #import tcluster
 import dec
 from scipy import *
-from decTask import decTask
+import decTask #import decTask
 
 
 
@@ -106,13 +106,25 @@ class blocking_deconv:
         
     def push_deconv_tasks(self, lamb = 2e-2, num_iters = 10):
         for block, blocknum in zip(self.blocks, range(len(self.blocks))):
-            task = decTask(self.name, block[0], blocknum, lamb=lamb, num_iters=num_iters)
+            task = decTask.decTask(self.name, block[0], blocknum, lamb=lamb, num_iters=num_iters)
             self.tq.postTask(task, self.name)
         #self.results = self.tc.loop_code('f = d4.deconv(ravel(a[0]), lamb, alpha=a[1], num_iters=num_it)', 'a', {'a':self.blocks, 'lamb':lamb, 'num_it':num_iters}, ('f',))
         #self.results = []
         #for r in self.blocks:
         #    self.results.append((r[0],r[2]))
-        
+
+    def fake_push_deconv(self, lamb = 2e-2, num_iters = 10):
+        self.results = [None for b in self.blocks]
+
+        #decTask.decObj = self.d4
+        #decTask.queueID = self.name
+
+        for block, blocknum in zip(self.blocks, range(len(self.blocks))):
+            task = decTask.decTask(self.name, block[0], blocknum, lamb=lamb, num_iters=num_iters)
+            t = task(taskQueue=self.tq)
+            self.results[t.blocknum] = t.results
+            #self.tq.postTask(task, self.name)
+
 #    def do_sim(self):
 #        self.results = self.tc.loop_code('f = d4.sim_pic(ravel(a[0]), alpha=a[1])', 'a', {'a':self.blocks}, ('f',))
 #        #self.results = []
@@ -166,7 +178,7 @@ class blocking_deconv:
                         sel_y1 = 0
                     
                     if (sl_start_a >= (self.height - self.blocksize['x'])):
-                        self.sel_x2 = self.blocksize['x']
+                        sel_x2 = self.blocksize['x']
                     
                     if (sl_start >= (self.depth - self.blocksize['z'])):
                         sel_z2 = self.blocksize['z']

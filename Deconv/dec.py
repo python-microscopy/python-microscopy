@@ -122,6 +122,10 @@ class dec:
         #self.f = self.f.ravel()
         data = data.ravel()
 
+        print data.mean(), weights, lamb
+        print abs(self.H).sum()
+        print abs(self.Ht).sum()
+
         #use 0 as the default solution - should probably be refactored like the starting guess
         fdef = zeros(self.f.shape, 'f')
 
@@ -155,7 +159,7 @@ class dec:
             test = 1 - abs(dot(S[:,0], S[:,1])/(norm(S[:,0])*norm(S[:,1])))
 
             #print & log some statistics
-            print 'Test Statistic %f\n' % (test,)
+            print 'Test Statistic %f' % (test,)
             self.tests.append(test)
             self.ress.append(norm(self.res))
             self.prefs.append(norm(pref))
@@ -173,7 +177,7 @@ class dec:
             #set the current estimate to out new estimate
             self.f[:] = fnew
 
-        return real(self.f)
+        return real(self.fs)
         
     def sim_pic(self,data,alpha):
         '''Do the forward transform to simulate a picture. Currently with 4Pi cruft.'''

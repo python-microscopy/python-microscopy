@@ -29,7 +29,7 @@ class decResult:
         self.queueID = queueID
 
 class decTask(taskDef.Task):
-    def __init__(self, queueName, block, blocknum, lamb=1e-1, num_iters=10):
+    def __init__(self, queueName, block, blocknum, lamb=1e-2, num_iters=10):
         taskDef.Task.__init__(self)
 
         self.queueName = queueName
@@ -45,6 +45,7 @@ class decTask(taskDef.Task):
             decObj = taskQueue.getQueueData(self.queueName, 'dec')
             queueID = self.queueName
 
+        print self.blocknum, self.lamb
 
         res = decObj.deconv(self.block, self.lamb, self.num_iters)
         return decResult(self, res, queueID)
