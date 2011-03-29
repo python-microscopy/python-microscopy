@@ -10,7 +10,10 @@
 ##################
 
 import wx
+import numpy
 from PYME.Acquire.mytimer import mytimer
+from scipy import ndimage
+from PYME.DSView import View3D
 
 class deconvolver:
     def __init__(self, dsviewer):
@@ -33,9 +36,9 @@ class deconvolver:
     def OnDeconvICTM(self, event):
         from PYME.Deconv.deconvDialogs import DeconvSettingsDialog,DeconvProgressDialog
 
-        dlg = DeconvSettingsDialog(self)
+        dlg = DeconvSettingsDialog(self.dsviewer)
         if dlg.ShowModal() == wx.ID_OK:
-            from PYME.Deconv import dec, decThread
+            from PYME.Deconv import dec, decThread, richardsonLucy
             nIter = dlg.GetNumIterationss()
             regLambda = dlg.GetRegularisationLambda()
 
@@ -44,10 +47,23 @@ class deconvolver:
 
             psf, vs = numpy.load(dlg.GetPSFFilename())
 
-            self.dec = dec.dec_conv()
-            self.dec.psf_calc(psf, self.image.data.shape)
+            vx = self.image.mdh.getEntry('voxelsize.x')
+            vy = self.image.mdh.getEntry('voxelsize.y')
+            vz = self.image.mdh.getEntry('voxelsize.z')
+            
+            if not (vs.x == vx and vs.y == vy and vs.z ==vz):
+                #rescale psf to match data voxel size
+                psf = ndimage.zoom(psf, [vx/vs.x, vy/vs.y, vz/vs.z])
 
-            self.decT = decThread.decThread(self.dec, self.image.data.ravel(), regLambda, nIter)
+            data = self.image.data[:,:,:]
+
+            if dlg.GetMethod() == 'ICTM':
+                self.dec = dec.dec_conv()
+            else:
+                self.dec = richardsonLucy.dec_conv()
+            self.dec.psf_calc(psf, data.shape)
+
+            self.decT = decThread.decThread(self.dec, data, regLambda, nIter)
             self.decT.start()
 
             self.deconTimer = mytimer()
@@ -59,12 +75,13 @@ class deconvolver:
     def OnDeconEnd(self, sucess):
         self.dlgDeconProg.Destroy()
         if sucess:
-            if 'decvp' in dir(self):
-                for pNum in range(self.dsviewer.notebook1.GetPageCount()):
-                    if self.dsviewer.notebook1.GetPage(pNum) == self.decvp:
-                        self.dsviewer.notebook1.DeletePage(pNum)
-            self.decvp = MyViewPanel(self.dsviewer.notebook1, self.decT.res)
-            self.dsviewer.notebook1.AddPage(page=self.decvp, select=True, caption='Deconvolved')
+            #if 'decvp' in dir(self):
+            #    for pNum in range(self.dsviewer.notebook1.GetPageCount()):
+            #        if self.dsviewer.notebook1.GetPage(pNum) == self.decvp:
+            #            self.dsviewer.notebook1.DeletePage(pNum)
+            #self.decvp = MyViewPanel(self.dsviewer.notebook1, self.decT.res)
+            #self.dsviewer.notebook1.AddPage(page=self.decvp, select=True, caption='Deconvolved')
+            View3D(self.decT.res, '< Deconvolution Result >', parent=self.dsviewer)
 
 
     def OnDeconTimer(self, caller=None):

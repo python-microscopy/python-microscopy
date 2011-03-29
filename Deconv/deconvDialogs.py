@@ -27,6 +27,13 @@ class DeconvSettingsDialog(wx.Dialog):
         sizer2.Add(sizer3, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
 
         sizer3 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer3.Add(wx.StaticText(pan1, -1, 'Method:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+        self.cMethod = wx.Choice(pan1, -1, choices=['ICTM', 'Richardson-Lucy'])
+
+        sizer3.Add(self.cMethod, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+        sizer2.Add(sizer3, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
+
+        sizer3 = wx.BoxSizer(wx.HORIZONTAL)
         sizer3.Add(wx.StaticText(pan1, -1, 'Number of iterations:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
         self.tNumIters = wx.TextCtrl(pan1, -1, '10')
 
@@ -36,7 +43,7 @@ class DeconvSettingsDialog(wx.Dialog):
 
         sizer3 = wx.BoxSizer(wx.HORIZONTAL)
         sizer3.Add(wx.StaticText(pan1, -1, u'Regularisation \u03BB:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
-        self.tRegLambda = wx.TextCtrl(pan1, -1, '1e1')
+        self.tRegLambda = wx.TextCtrl(pan1, -1, '1e-1')
 
         sizer3.Add(self.tRegLambda, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
@@ -96,6 +103,9 @@ class DeconvSettingsDialog(wx.Dialog):
     def GetRegularisationLambda(self):
         return float(self.tRegLambda.GetValue())
 
+    def GetMethod(self):
+        return self.cMethod.GetStringSelection()
+
     def GetPSFFilename(self):
         return self.fpPSF.GetPath()
 
@@ -136,7 +146,7 @@ class DeconvProgressDialog(wx.Dialog):
 
     def Tick(self, dec):
         if not self.cancelled:
-            self.gProgress.SetValue(len(dec.tests))
+            self.gProgress.SetValue(dec.loopcount)
             return True
         else:
             return False
