@@ -166,9 +166,9 @@ class LMGLCanvas(GLCanvas):
 
         #glClear(GL_ACCUM_BUFFER_BIT)
         if self.mode =='tracks':
-            for i in range(self.cimax):
-                ns = self.clumpIndices[i]
-                nf = self.clumpIndices[i+1]
+            for cl in self.clumps:
+                ns, nf = self.clumpIndices[cl]
+                #nf = self.clumpIndices[i+1]
 
                 if nf > ns:
                     glDrawArrays(self.drawModes[self.mode], ns, nf-ns)
@@ -370,10 +370,16 @@ class LMGLCanvas(GLCanvas):
         indices = numpy.arange(len(x))
         I = []
 
-        clumps = set(ci)
-        
-        for cl in clumps:
-            I.append(indices[ci == cl])
+        self.clumps = set(ci)
+        self.clumpIndices = {}
+
+        ns = 0
+        for cl in self.clumps:
+            inds = indices[ci == cl]
+            I.append(inds)
+            nf = ns + len(inds)
+            self.clumpIndices[cl] = (ns, nf)
+            ns = nf
 
         I = numpy.hstack(I)
 
@@ -391,11 +397,11 @@ class LMGLCanvas(GLCanvas):
         #there may be a different number of points in each clump; generate a lookup
         #table for clump numbers so we can index into our list of results to get
         #all the points within a certain range of clumps
-        self.clumpIndices = (nPts + 2)*numpy.ones(ci.max() + 10, 'int32')
-        self.cimax = ci.max()
+        #self.clumpIndices = (nPts + 2)*numpy.ones(ci.max() + 10, 'int32')
+        #self.cimax = ci.max()
 
-        for c_i, i in zip(ci, range(nPts)):
-            self.clumpIndices[:(c_i+1)] = numpy.minimum(self.clumpIndices[:(c_i+1)], i)
+        #for c_i, i in zip(ci, range(nPts)):
+        #    self.clumpIndices[:(c_i+1)] = numpy.minimum(self.clumpIndices[:(c_i+1)], i)
 
         vs = numpy.vstack((x.ravel(), y.ravel()))
         vs = vs.T.ravel().reshape(len(x.ravel()), 2)
