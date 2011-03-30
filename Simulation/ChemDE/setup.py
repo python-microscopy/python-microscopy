@@ -21,6 +21,11 @@ def configuration(parent_package = '', top_path = None):
         include_dirs = [get_numpy_include_dirs()],
 	extra_compile_args = ['-O3', '-fno-exceptions'])
 
+    config.add_extension('countEvents',
+        sources=['countEvents.c'],
+        include_dirs = [get_numpy_include_dirs()],
+	extra_compile_args = ['-O3', '-fno-exceptions'])
+
     return config
 
 if __name__ == '__main__':

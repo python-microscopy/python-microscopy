@@ -31,7 +31,7 @@ static PyObject * StateMC(PyObject *self, PyObject *args, PyObject *keywds)
     //int startState=0;
     int state = 0;
     int nStates;
-    int dims[2];
+    npy_intp dims[2];
 
     int i=0;
     double r;
@@ -61,6 +61,7 @@ static PyObject * StateMC(PyObject *self, PyObject *args, PyObject *keywds)
     
 
     dims[0] = nSteps;
+    dims[1] = 1;
     Iterates = PyArray_SimpleNew(1, dims, PyArray_INT32);
     if (!Iterates)
     {

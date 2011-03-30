@@ -16,9 +16,11 @@
 #from Hardware.Simulator import fakeCam, fakePiezo, lasersliders, dSimControl
 from Hardware.Spectrometer import specCam
 from Hardware import fakeShutters
-#import time
+import time
 
 from Hardware.OrielCornerstone import Cornerstone7400
+import subprocess
+import os
 
 pz = InitBG('Monochromator', '''
 scope.monochromator = Cornerstone7400()
@@ -28,6 +30,9 @@ scope.lasers = [scope.monochromator]
 ''')
 
 cm = InitBG('Spectrometer', '''
+os.system('killall jythonOD') #kill off any previous spectrometer process
+subprocess.Popen('jythonOD /home/david/PYME/PYME/Acquire/Hardware/Spectrometer/remoteSpectrometer.py', shell=True)
+time.sleep(10) #wait for spectrometer process to start
 scope.cam = specCam.SpecCamera()
 #time.sleep(5)
 ''')

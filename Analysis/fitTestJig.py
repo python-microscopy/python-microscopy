@@ -18,29 +18,38 @@ splitterFitModules = ['SplitterFitFR','SplitterFitQR','SplitterFitCOIR', 'Biplan
 
 from pylab import *
 import copy
+from PYME.Acquire import MetaDataHandler
 
 #[A, x0, y0, 250/2.35, dataMean.min(), .001, .001]
 
-class fitTestJig:
-    def __init__(self, metadata, fitModule):
+class fitTestJig(object):
+    def __init__(self, metadata, fitModule = None):
         self.md = copy.copy(metadata)
-        self.fitModule = fitModule
+        if fitModule == None:
+            self.fitModule = self.md.getEntry('Analysis.FitModule')
+        else:
+            self.fitModule = fitModule
         self.md.tIndex = 0
 
-        self.noiseM = NoiseMaker(EMGain=150)
+        self.noiseM = NoiseMaker(EMGain=150, floor=self.md.Camera.ADOffset)
+
+
+    @classmethod
+    def fromMDFile(cls, mdfile):
+        return cls(MetaDataHandler.SimpleMDHandler(mdfile))
 
 
     def runTests(self, params=[205, 0, 0, 250/2.35, 50, 0, 0], param_jit=[200, 90, 90, 30, 10, 0, 0], nTests=100):
         self.fitMod = __import__('PYME.Analysis.FitFactories.' + self.fitModule, fromlist=['PYME', 'Analysis','FitFactories']) #import our fitting module
         self.res = numpy.empty(nTests, self.fitMod.FitResultsDType)
-        ps = zeros((nTests, len(params)))
+        ps = zeros((nTests, len(params)), 'f4')
 
         rs=5
         for i in range(nTests):
             p = array(params) + array(param_jit)*(2*rand(len(param_jit)) - 1)
             p[0] = abs(p[0])
             ps[i, :] = p
-            self.data = self.fitMod.FitFactory.evalModel(p, self.md, roiHalfSize=rs)#, roiHalfSize= roiHalfWidth))
+            self.data, self.x0, self.y0, self.z0 = self.fitMod.FitFactory.evalModel(p, self.md, roiHalfSize=rs)#, roiHalfSize= roiHalfWidth))
 
             self.d2 = self.noiseM.noisify(self.data)
 
@@ -48,6 +57,43 @@ class fitTestJig:
             self.res[i] = self.fitFac.FromPoint(rs, rs, roiHalfSize=rs)
 
         
-        return ps, self.res
+        self.ps = ps.view(self.res['fitResults'].dtype)
+        #return ps.view(self.res['fitResults'].dtype), self.res
+
+
+    def plotRes(self, varName):
+        #print self.ps
+        from pylab import *
+        figure()
+        #print varName
+        xv = self.ps[varName].ravel()
+        
+        sp = self.res['startParams'][varName]
+        yv = self.res['fitResults'][varName]
+
+        if hasattr(self, varName):
+            sp += self.__getattribute__(varName)
+            yv += self.__getattribute__(varName)
+
+        err = self.res['fitError'][varName]
+
+        plot([xv.min(), xv.max()], [xv.min(), xv.max()])
+        plot(xv, sp, '+', label='Start Est')
+        errorbar(xv, yv, err, fmt='x', label='Fitted')
+
+        ylim((yv - maximum(err, 0)).min(), (yv + maximum(err, 0)).max())
+        legend()
+
+        title(varName)
+        xlabel('True Position')
+        ylabel('Estimated Position')
+
+
+
+
+
+
+
+
 
     

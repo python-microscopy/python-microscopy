@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/jython
 
 ##################
 # RemoteSpectrometer.py
@@ -6,11 +6,12 @@
 # Copyright David Baddeley, 2010
 # d.baddeley@auckland.ac.nz
 #
+# Jython interface to ocean-optics api
+#
 # This file may NOT be distributed without express permision from David Baddeley
 #
 ##################
 
-#!/usr/bin/python
 import Pyro.core
 import Pyro.naming
 
@@ -27,7 +28,7 @@ class RemoteSpectrometer(com.oceanoptics.omnidriver.api.wrapper.Wrapper, Pyro.co
 
 if __name__ == '__main__':
 
-	Pyro.config.PYRO_MOBILE_CODE = 1
+	Pyro.config.PYRO_MOBILE_CODE = 0
 	Pyro.core.initServer()
 	ns=Pyro.naming.NameServerLocator().getNS()
 	daemon=Pyro.core.Daemon()

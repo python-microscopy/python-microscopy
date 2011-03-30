@@ -175,6 +175,21 @@ class ImageStack:
 
         self.mode = 'blob'
 
+    def LoadImageSeries(self, filename):
+        #from PYME.FileUtils import readTiff
+        from PYME.Analysis.DataSources import ImageSeriesDataSource
+
+        self.dataSource = ImageSeriesDataSource.DataSource(filename, None)
+        self.data = self.dataSource #this will get replaced with a wrapped version
+        #self.data = readTiff.read3DTiff(filename)
+
+        self.FindAndParseMetadata(filename)
+
+        from PYME.ParallelTasks.relativeFiles import getRelFilename
+        self.seriesName = getRelFilename(filename)
+
+        self.mode = 'blob'
+
     def Load(self, filename=None):
         print filename
         if (filename == None):
@@ -197,6 +212,8 @@ class ImageStack:
                 self.LoadKdf(filename)
             elif filename.endswith('.psf'): #psf
                 self.LoadPSF(filename)
+            elif filename.endswith('.md'): #treat this as being an image series
+                self.LoadImageSeries(filename)
             else: #try tiff
                 self.LoadTiff(filename)
 
@@ -211,7 +228,10 @@ class ImageStack:
         if crop:
             dataExporter.CropExportData(view, self.mdh, self.events, self.seriesName)
         else:
-            self.filename = dataExporter.ExportData(self.data, self.mdh, self.events)
+            if 'defaultExt' in dir(self):
+                self.filename = dataExporter.ExportData(self.data, self.mdh, self.events, defaultExt=self.defaultExt)
+            else:
+                self.filename = dataExporter.ExportData(self.data, self.mdh, self.events)
             #self.SetTitle(fn)
 
             if not (filename == None):

@@ -22,13 +22,14 @@ decObj = None
 
 
 class decResult:
-    def __init__(self, task, results):
+    def __init__(self, task, results, queueID):
         self.taskID = task.taskID
         self.blocknum = task.blocknum
         self.results = results
+        self.queueID = queueID
 
 class decTask(taskDef.Task):
-    def __init__(self, queueName, block, blocknum, lamb=lamb, num_iters=num_iters):
+    def __init__(self, queueName, block, blocknum, lamb=1e-2, num_iters=10):
         taskDef.Task.__init__(self)
 
         self.queueName = queueName
@@ -40,12 +41,14 @@ class decTask(taskDef.Task):
     def __call__(self, gui=False, taskQueue=None):
         global queueID, decObj
 
-        if not queueID == self.queueName:
+        if (not queueID == self.queueName) or (not decObj.shape == self.block.shape):
             decObj = taskQueue.getQueueData(self.queueName, 'dec')
+            decObj.prep()
             queueID = self.queueName
 
+        print self.blocknum, self.lamb
 
-        res = decObj.deconv(self.block.ravel(), self.lamb, self.num_iters)
-        return decResult(self, res)
+        res = decObj.deconv(self.block, self.lamb, self.num_iters)
+        return decResult(self, res, queueID)
 
 

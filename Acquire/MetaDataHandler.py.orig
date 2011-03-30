@@ -27,6 +27,14 @@ getEntryNames(self)
 which returns a list of entry names to help with copying data between handlers
 '''
 from UserDict import DictMixin
+#import copy_reg
+#def pickleSlice(slice):
+#        return unpickleSlice, (slice.start, slice.stop, slice.step)
+#
+#def unpickleSlice(start, stop, step):
+#        return slice(start, stop, step)
+#
+#copy_reg.pickle(slice, pickleSlice, unpickleSlice)
 
 #lists where bits of hardware can register the fact that they are capable of 
 #providing metadata, by appending a function with the signature:
@@ -63,18 +71,17 @@ class MDHandlerBase(DictMixin):
     def WriteSimple(self, filename):
         '''Writes out metadata in simplfied format'''
         import cPickle
-        import numpy as np
-        s = ['#PYME Simple Metadata v1\n']
+        s = ['#PYME Simple Metadata v1']
 
         for en in self.getEntryNames():
             val = self.getEntry(en)
 
-            if val.__class__ in [str, unicode] or np.isscalar(val): #quote string
-                val = repr(val)
+            if val.__class__ in [str, unicode]: #quote string
+                val = "'%s'" % s
             elif not val.__class__ in [int, float, list, dict]: #not easily recovered from representation
-                val = "cPickle.loads('''%s''')" % cPickle.dumps(val)
+                val = "cPickle.loads('%s')" % cPickle.dumps(val)
 
-            s.append("md['%s'] = %s\n" % (en, val))
+            s.append("md['%s'] = %s" % (en, val))
         
         f = open(filename, 'w')
         f.writelines(s)
@@ -168,7 +175,7 @@ class NestedClassMDHandler(MDHandlerBase):
     def getEntryNames(self):
         en = []
         for k in self.__dict__.keys():
-            if hasattr(self.__dict__[k], 'getEntryNames'):
+            if self.__dict__[k].__class__ == NestedClassMDHandler:
                 en += [k + '.' + kp for kp in self.__dict__[k].getEntryNames()]
             else:
                 en.append(k)
@@ -193,15 +200,6 @@ class SimpleMDHandler(NestedClassMDHandler):
 
         if not mdToCopy == None:
             self.copyEntriesFrom(mdToCopy)
-
-    def write(self, filename):
-        s = ''
-        for en in self.getEntryNames():
-            s += "md['%s'] = %s\n" % (en, self.getEntry(en))
-
-        fid = open(filename, 'w')
-        fid.write(s)
-        fid.close()
 
     
 
@@ -249,8 +247,13 @@ class XMLMDHandler(MDHandlerBase):
             node.setAttribute('value', repr(value))
         else: #pickle more complicated structures
             node.setAttribute('class', 'pickle')
+<<<<<<< /home/david/PYME/PYMEo/Acquire/MetaDataHandler.py
             print value, cPickle.dumps(value)
             node.setAttribute('value', base64.b64encode((cPickle.dumps(value))))
+=======
+            #print value, cPickle.dumps(value)
+            node.setAttribute('value', base64.b64encode((cPickle.dumps(value))))
+>>>>>>> /tmp/MetaDataHandler.py~other.psfBJj
 
 
     def getEntry(self,entryName):

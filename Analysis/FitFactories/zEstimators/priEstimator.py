@@ -20,6 +20,8 @@ from PYME.Analysis.binAvg import binAvg
 
 splines = {}
 
+rawMeas = {}
+
 #note that the bulk of this code is copied from astigEstimator, just replacing the
 #difference in widths with a measure of rotation
 
@@ -49,18 +51,23 @@ def calibrate(interpolator, md, roiSize=5):
     ps = numpy.array(ps)
     A, xp, yp, dw = ps.T
 
-    sp, u = splprep([A], u=z, s=10)
+    rawMeas['A'] = A
+    rawMeas['xp'] = xp
+    rawMeas['yp'] = yp
+    rawMeas['dw'] = dw
+
+    sp, u = splprep([A], u=z, s=1)
     splines['A'] = sp
 
-    sp, u = splprep([xp], u=z, s=10)
+    sp, u = splprep([xp], u=z, s=1)
     splines['xp'] = sp
 
-    sp, u = splprep([yp], u=z, s=10)
+    sp, u = splprep([yp], u=z, s=1)
     splines['yp'] = sp
 
     #now for z - want this as function of dw (the difference in x & y std. deviations)
     #first look at dw as a function of z & smooth
-    sp, u = splprep([dw], u=z, s=10)
+    sp, u = splprep([dw], u=z, s=.01)
     splines['dw'] = sp
     dw2 = splev(z, sp)[0] #evaluate to give smoothed dw values
 
@@ -81,7 +88,7 @@ def calibrate(interpolator, md, roiSize=5):
     zm = zm[I]
     dwm = dwm[I]
 
-    sp, u = splprep([zm], u=dwm, s=10)
+    sp, u = splprep([zm], u=dwm, s=1)
     splines['z'] = sp
 
 
@@ -94,7 +101,7 @@ def _calcParams(data, X, Y):
     drs = dr.sum()
 
     x0 = (X[:,None]*dr).sum()/drs
-    y0 = (Y[None, :]*dr).sum()/drs
+    y0 = (Y[None, ::-1]*dr).sum()/drs
 
     #sig_xl = (numpy.maximum(0, x0 - X)[:,None]*dr).sum()/(drs)
     #sig_xr = (numpy.maximum(0, X - x0)[:,None]*dr).sum()/(drs)
@@ -106,7 +113,12 @@ def _calcParams(data, X, Y):
     #m = dr > 0
     
     #angle of each pixel
-    theta = numpy.mod(numpy.angle((X - x0) +1j*(Y-y0)), numpy.pi)
+    theta = numpy.mod(numpy.angle((X[:,None] - x0) +1j*(Y[None, :]-y0)), numpy.pi)
+
+    #print theta.shape
+
+    #import pylab
+    #pylab.imshow(theta)
 
     thm = (theta*dr).sum()/drs
 

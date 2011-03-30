@@ -13,6 +13,7 @@
 import AndorCam as ac
 from ctypes import *
 import time
+import sys
 from PYME.Acquire import MetaDataHandler
 from PYME.Acquire.Hardware import ccdCalibrator
 
@@ -69,7 +70,7 @@ class iXonCamera:
         self.initialised = False
         self.active = True
 
-        self.boardHandle = c_int()
+        self.boardHandle = ac.GetCameraHandle.argtypes[1]._type_()
 
         ret = ac.GetCameraHandle(boardNum, byref(self.boardHandle))
         if not ret == ac.DRV_SUCCESS:
@@ -83,7 +84,12 @@ class iXonCamera:
         MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
 
         #initialise the camera - n.b. this take ~2s
-        ret = ac.Initialize('.')
+
+        #ret = ac.Initialize('.')
+        if 'linux' in sys.platform:
+            ret = ac.Initialize("/usr/local/etc/andor")
+        else:
+            ret = ac.Initialize('.')
 
         if not ret == ac.DRV_SUCCESS:
             raise RuntimeError('Error initialising camera: %s' % ac.errorCodes[ret])
@@ -93,8 +99,8 @@ class iXonCamera:
         self.noiseProps = noiseProperties[self.GetSerialNumber()]
 
         #get the CCD size
-        ccdWidth = c_int()
-        ccdHeight = c_int()
+        ccdWidth = ac.GetDetector.argtypes[0]._type_()
+        ccdHeight = ac.GetDetector.argtypes[1]._type_()
 
         ret = ac.GetDetector(byref(ccdWidth),byref(ccdHeight))
         if not ret == ac.DRV_SUCCESS:
@@ -102,8 +108,8 @@ class iXonCamera:
 
         self.CCDSize=(ccdWidth.value, ccdHeight.value)
 
-        tMin = c_int()
-        tMax = c_int()
+        tMin = ac.GetTemperatureRange.argtypes[0]._type_()
+        tMax = ac.GetTemperatureRange.argtypes[1]._type_()
 
         ret = ac.GetTemperatureRange(byref(tMin),byref(tMax))
         if not ret == ac.DRV_SUCCESS:
@@ -200,7 +206,7 @@ class iXonCamera:
 
     def _InitSpeedInfo(self):
         #temporary vars for function returns
-        tNum = c_int()
+        tNum = ac.GetNumberVSSpeeds.argtypes[0]._type_()
         tmp = c_float()
 
         ret = ac.GetNumberVSSpeeds(byref(tNum))
@@ -402,7 +408,7 @@ class iXonCamera:
 
         #    return false
         #else:
-        #    tmp = c_int()
+        #    tmp = c_long()
         #    ret = ac.GetStatus(tmp)
         #    if not ret == ac.DRV_SUCCESS:
         #        raise RuntimeError('Error getting camera status: %s' % ac.errorCodes[ret])
@@ -489,7 +495,7 @@ class iXonCamera:
 
     def ExpReady(self):
         self.__selectCamera()
-        tmp = c_int()
+        tmp = ac.GetStatus.argtypes[0]._type_()
         ret = ac.GetStatus(byref(tmp))
         if not ret == ac.DRV_SUCCESS:
             raise RuntimeError('Error getting camera status: %s' % ac.errorCodes[ret])
@@ -497,8 +503,8 @@ class iXonCamera:
         #print ac.errorCodes[tmp.value]
 
         #return tmp.value == ac.DRV_IDLE
-        first=c_int()
-        last=c_int()
+        first= ac.GetNumberNewImages.argtypes[0]._type_()
+        last= ac.GetNumberNewImages.argtypes[1]._type_()
         ret = ac.GetNumberNewImages(byref(first), byref(last))
         #print ac.errorCodes[ret]
         #print first
@@ -515,7 +521,9 @@ class iXonCamera:
         #ret = ac.GetAcquiredData16(cast(c_void_p(int(pc[6:8]+pc[4:6]+pc[2:4]+pc[0:2],16)), POINTER(c_ushort)), self.GetPicWidth()*self.GetPicHeight())
         #ret = ac.GetAcquiredData16(cast(c_void_p(int(chSlice)), POINTER(c_ushort)), self.GetPicWidth()*self.GetPicHeight())
 
-        ret = ac.GetOldestImage16(cast(c_void_p(int(chSlice)), POINTER(c_ushort)), self.GetPicWidth()*self.GetPicHeight())
+        dt = ac.GetOldestImage16.argtypes[0]
+
+        ret = ac.GetOldestImage16(cast(c_void_p(int(chSlice)), dt), self.GetPicWidth()*self.GetPicHeight())
 
         #print self.GetPicWidth()*self.GetPicHeight()
         if not ret == ac.DRV_SUCCESS:
@@ -563,7 +571,7 @@ class iXonCamera:
         self.SetShutter(False)
         self.SetEMGain(0)
         ac.CoolerOFF()
-        t = c_int(-100)
+        t = ac.GetTemperature.argtypes[0]._type_(-100)
         ac.GetTemperature(byref(t))
 
         while (t.value < -50): #wait fro temp to get above -50
@@ -630,8 +638,8 @@ class iXonCamera:
     
     def GetNumImsBuffered(self):
         self.__selectCamera()
-        first=c_int()
-        last=c_int()
+        first = ac.GetNumberNewImages.argtypes[0]._type_()
+        last = ac.GetNumberNewImages.argtypes[1]._type_()
 
         ret = ac.GetNumberNewImages(byref(first), byref(last))
         #print ac.errorCodes[ret]
@@ -641,7 +649,7 @@ class iXonCamera:
     
     def _GetBufferSize(self):
         self.__selectCamera()
-        bs = c_int()
+        bs = ac.GetSizeOfCircularBuffer.argtypes[0]._type_()
         ac.GetSizeOfCircularBuffer(byref(bs))
         self.bs = bs.value
 
@@ -663,7 +671,7 @@ class iXonCamera:
 
     def GetSerialNumber(self):
         self.__selectCamera()
-        sn = c_int()
+        sn = ac.GetCameraSerialNumber.argtypes[0]._type_()
         ac.GetCameraSerialNumber(byref(sn))
         return sn.value
 

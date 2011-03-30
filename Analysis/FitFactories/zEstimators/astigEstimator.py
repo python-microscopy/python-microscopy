@@ -18,12 +18,13 @@ import numpy
 #from pylab import *
 
 splines = {}
+rawMeas = {}
 
 sintheta = 0
 costheta = 1
 
 def calibrate(interpolator, md, roiSize=5):
-    global sintheta, costheta
+    global sintheta, costheta, calibrated
     #global zvals, dWidth
     #generate grid to evaluate function on
     X, Y, Z, safeRegion = interpolator.getCoords(md, slice(-roiSize,roiSize), slice(-roiSize,roiSize), slice(0, 2))
@@ -59,18 +60,23 @@ def calibrate(interpolator, md, roiSize=5):
     ps = numpy.array(ps)
     A, xp, yp, dw = ps.T
 
-    sp, u = splprep([A], u=z, s=10)
+    rawMeas['A'] = A
+    rawMeas['xp'] = xp
+    rawMeas['yp'] = yp
+    rawMeas['dw'] = dw
+
+    sp, u = splprep([A], u=z, s=1)
     splines['A'] = sp
 
-    sp, u = splprep([xp], u=z, s=10)
+    sp, u = splprep([xp], u=z, s=1)
     splines['xp'] = sp
 
-    sp, u = splprep([yp], u=z, s=10)
+    sp, u = splprep([yp], u=z, s=1)
     splines['yp'] = sp
 
     #now for z - want this as function of dw (the difference in x & y std. deviations)
     #first look at dw as a function of z & smooth
-    sp, u = splprep([dw], u=z, s=10)
+    sp, u = splprep([dw], u=z, s=5)
     splines['dw'] = sp
     dw2 = splev(z, sp)[0] #evaluate to give smoothed dw values
 
@@ -91,8 +97,10 @@ def calibrate(interpolator, md, roiSize=5):
     zm = zm[I]
     dwm = dwm[I]
 
-    sp, u = splprep([zm], u=dwm, s=10)
+    sp, u = splprep([zm], u=dwm, s=1)
     splines['z'] = sp
+
+
 
 
 def _calcParams(data, X, Y):
