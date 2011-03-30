@@ -78,7 +78,7 @@ class dec:
         '''starting guess for deconvolution - can be overridden in derived classes
         but the data itself is usually a pretty good guess.
         '''
-        return data
+        return data.copy()
 
 
     def deconv(self, data, lamb, num_iters=10, alpha = None, weights=1):
@@ -97,7 +97,10 @@ class dec:
         #remember what shape we are
         self.dataShape = data.shape
 
-        if 'prep' in dir(self):
+        print data.shape, data.strides
+        print self.Ht.shape, self.Ht.strides
+
+        if 'prep' in dir(self) and not '_F' in dir(self):
             self.prep()
 
         if not numpy.isscalar(weights):

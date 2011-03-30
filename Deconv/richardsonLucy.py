@@ -59,10 +59,11 @@ class rldec:
         self.dataShape = data.shape
 
         #guess a starting estimate for the object
-        self.f = self.startGuess(data)
+        self.f = self.startGuess(data).ravel()
+        self.fs = self.f.reshape(self.shape)
 
         #make things 1 dimensional
-        self.f = self.f.ravel()
+        #self.f = self.f.ravel()
         data = data.ravel()
 
         self.loopcount=0
@@ -82,9 +83,9 @@ class rldec:
 
 
             #set the current estimate to out new estimate
-            self.f = fnew
+            self.f[:] = fnew
 
-        return real(self.f)
+        return real(self.fs)
 
 #class rlbead(rl):
 class rlbead(rldec):
