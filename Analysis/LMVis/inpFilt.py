@@ -60,6 +60,64 @@ def unNestNames(nameList, parent=''):
             unList += unNestNames(n[1], parent + n[0] + '_')
     return unList
 
+def unNestDtype(descr, parent=''):
+    unList = []
+    for n in descr:
+        #print n, n.__class__, len(n)
+        if n.__class__ == tuple and len(n) == 2 and n[1].__class__ == str:
+            unList.append(parent + n[0])
+        else:
+            unList += unNestDtype(n[1], parent + n[0] + '_')
+    return unList
+
+class fitResultsSource(inputFilter):
+    _name = "recarrayfi Source"
+    def __init__(self, fitResults):
+        self.fitResults = fitResults
+
+        #sort by time
+        self.fitResults.sort(order='tIndex')
+
+        #allow access using unnested original names
+        self._keys = unNestDtype(self.fitResults.dtype.descr)
+        #or shorter aliases
+        self.transkeys = {'A' : 'fitResults_A', 'x' : 'fitResults_x0',
+                          'y' : 'fitResults_y0', 'sig' : 'fitResults_sigma',
+                          'error_x' : 'fitError_x0', 't':'tIndex'}
+
+        for k in self.transkeys.keys():
+            if not self.transkeys[k] in self._keys:
+                self.transkeys.pop(k)
+
+
+    def keys(self):
+        return self._keys + self.transkeys.keys()
+
+    def __getitem__(self, key):
+        #if we're using an alias replace with actual key
+        if key in self.transkeys.keys():
+            key = self.transkeys[key]
+
+        if not key in self._keys:
+            raise RuntimeError('Key not found')
+
+        k = key.split('_')
+
+        if len(k) == 1:
+            return self.fitResults[k[0]].astype('f')
+        elif len(k) == 2:
+            return self.fitResults[k[0]][k[1]].astype('f')
+        elif len(k) == 3:
+            return self.fitResults[k[0]][k[1]][k[2]].astype('f')
+        else:
+            raise "Don't know about deeper nesting yet"
+
+
+    def close(self):
+        self.h5f.close()
+
+    def getInfo(self):
+        return 'PYME h5r Data Source\n\n %d points' % self.fitResults.shape[0]
 
 class h5rSource(inputFilter):
     _name = "h5r Data Source"

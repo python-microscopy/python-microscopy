@@ -13,6 +13,7 @@ import numpy
 from PYME.Acquire import MetaDataHandler
 from PYME.Analysis import MetaData
 from PYME.DSView import dataWrap
+from PYME.Analysis.DataSources import BufferedDataSource
 
 lastdir = ''
 
@@ -165,6 +166,7 @@ class ImageStack:
         from PYME.Analysis.DataSources import TiffDataSource
 
         self.dataSource = TiffDataSource.DataSource(filename, None)
+        self.dataSource = BufferedDataSource.DataSource(self.dataSource, min(self.dataSource.getNumSlices(), 50))
         self.data = self.dataSource #this will get replaced with a wrapped version
         #self.data = readTiff.read3DTiff(filename)
 
@@ -180,6 +182,7 @@ class ImageStack:
         from PYME.Analysis.DataSources import ImageSeriesDataSource
 
         self.dataSource = ImageSeriesDataSource.DataSource(filename, None)
+        self.dataSource = BufferedDataSource.DataSource(self.dataSource, min(self.dataSource.getNumSlices(), 50))
         self.data = self.dataSource #this will get replaced with a wrapped version
         #self.data = readTiff.read3DTiff(filename)
 

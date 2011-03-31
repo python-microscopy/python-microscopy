@@ -1188,7 +1188,11 @@ class VisGUIFrame(wx.Frame):
             imb = ImageBounds(0,0,pixelSize*im.shape[1],pixelSize*im.shape[2])
 
             img = GeneratedImage(im,imb, pixelSize )
-            imf = imageView.ImageViewFrame(self,img, self.glCanvas, title=filename,zp=min(md.EstimatedLaserOnFrameNo+10,(h5f.root.ImageData.shape[0]-1)))
+            if 'EstimatedLaserOnFrameNo' in md.getEntryNames():
+                zp = min(md.EstimatedLaserOnFrameNo+10,(h5f.root.ImageData.shape[0]-1))
+            else:
+                zp = 0
+            imf = imageView.ImageViewFrame(self,img, self.glCanvas, title=filename,zp=zp)
             #imf = imageView.MultiChannelImageViewFrame(self, self.glCanvas, [img], title=filename, zdim=0, zp=min(md.EstimatedLaserOnFrameNo+10,(h5f.root.ImageData.shape[0]-1)))
 
             self.generatedImages.append(imf)
@@ -1200,6 +1204,10 @@ class VisGUIFrame(wx.Frame):
             vp.view.vox_x = 1e3*md.getEntry('voxelsize.x')
             vp.view.vox_y = 1e3*md.getEntry('voxelsize.y')
             vp.view.filter = self.colourFilter
+
+            if 'gFrac' in self.colourFilter.keys(): #test for splitter mode
+                vp.view.pointMode = 'splitter'
+
             #vp.view.points = np.vstack((self.colourFilter['x']/voxx, self.colourFilter['y']/voxy, self.colourFilter['t'])).T
 
             self.vp = vp

@@ -13,6 +13,8 @@
 #import dec
 import threading
 import time
+import inspect
+import ctypes
 
 def _async_raise(tid, exctype):
     '''Raises an exception in the threads with id tid'''
@@ -83,10 +85,12 @@ class decThread(threading.Thread):
         _async_raise( self._get_my_tid(), exctype )
 
     def kill(self):
-        self._raiseExc(RuntimeError('Deconvolution Cancelled'))
-        while self.isAlive():
-            time.sleep(0.1)
-            self._raiseExc(RuntimeError('Deconvolution Cancelled'))
+        #self._raiseExc(RuntimeError)
+        #while self.isAlive():
+        #    time.sleep(0.1)
+        #    self._raiseExc(RuntimeError)
+
+        self.dec.loopcount = 1e9
 
 
     def run(self):

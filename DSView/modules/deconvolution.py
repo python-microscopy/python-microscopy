@@ -17,6 +17,7 @@ from scipy import ndimage
 from PYME.DSView import View3D
 import time
 import os
+from PYME.Acquire import MetaDataHandler
 
 class deconvolver:
     def __init__(self, dsviewer):
@@ -26,13 +27,15 @@ class deconvolver:
         self.tq = None
 
         DECONV_ICTM = wx.NewId()
-        DECONV_SAVE = wx.NewId()
+        DECONV_BEAD = wx.NewId()
         dsviewer.mExtras.Append(DECONV_ICTM, "Deconvolution", "", wx.ITEM_NORMAL)
+        dsviewer.mExtras.Append(DECONV_BEAD, "Deconvolve bead shape", "", wx.ITEM_NORMAL)
         #mDeconvolution.AppendSeparator()
         #dsviewer.save_menu.Append(DECONV_SAVE, "Deconvolution", "", wx.ITEM_NORMAL)
         #self.menubar.Append(mDeconvolution, "Deconvolution")
 
         wx.EVT_MENU(dsviewer, DECONV_ICTM, self.OnDeconvICTM)
+        wx.EVT_MENU(dsviewer, DECONV_BEAD, self.OnDeconvBead)
         #wx.EVT_MENU(dsviewer, DECONV_SAVE, self.saveDeconvolution)
 
         dsviewer.updateHooks.append(self.update)
@@ -46,31 +49,47 @@ class deconvolver:
                 taskQueueName = 'taskQueue'
             self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
 
-    def OnDeconvICTM(self, event):
+    def OnDeconvBead(self, event):
+        self.OnDeconvICTM(None, True)
+    
+    def OnDeconvICTM(self, event, beadMode=False):
         from PYME.Deconv.deconvDialogs import DeconvSettingsDialog,DeconvProgressDialog,DeconvProgressPanel
 
-        dlg = DeconvSettingsDialog(self.dsviewer)
+        dlg = DeconvSettingsDialog(self.dsviewer, beadMode)
         if dlg.ShowModal() == wx.ID_OK:
             from PYME.Deconv import dec, decThread, richardsonLucy
             nIter = dlg.GetNumIterationss()
             regLambda = dlg.GetRegularisationLambda()
 
+            decMDH = MetaDataHandler.NestedClassMDHandler(self.image.mdh)
+            decMDH['Deconvolution.NumIterations'] = nIter
+            decMDH['Deconvolution.OriginalFile'] = self.image.filename
+
             #self.dlgDeconProg = DeconvProgressDialog(self.dsviewer, nIter)
             #self.dlgDeconProg.Show()
-
-            psf, vs = numpy.load(dlg.GetPSFFilename())
-
             vx = self.image.mdh.getEntry('voxelsize.x')
             vy = self.image.mdh.getEntry('voxelsize.y')
             vz = self.image.mdh.getEntry('voxelsize.z')
-            
-            if not (vs.x == vx and vs.y == vy and vs.z ==vz):
-                #rescale psf to match data voxel size
-                psf = ndimage.zoom(psf, [vx/vs.x, vy/vs.y, vz/vs.z])
+
+            if beadMode:
+                from PYME.Deconv import beadGen
+                psf = beadGen.genBeadImage(dlg.GetBeadRadius(), (1e3*vx, 1e3*vy, 1e3*vz))
+
+                decMDH['Deconvolution.BeadRadius'] = dlg.GetBeadRadius()
+                
+            else:
+                psf, vs = numpy.load(dlg.GetPSFFilename())
+
+                decMDH['Deconvolution.PSFFile'] = dlg.GetPSFFilename()
+
+                if not (vs.x == vx and vs.y == vy and vs.z ==vz):
+                    #rescale psf to match data voxel size
+                    psf = ndimage.zoom(psf, [vx/vs.x, vy/vs.y, vz/vs.z])
 
             data = self.image.data[:,:,:]
 
             if dlg.GetBlocking():
+                decMDH['Deconvolution.Method'] = 'Blocked ICTM'
                 self.checkTQ()
                 from PYME.Deconv import tq_block_dec
                 bs = dlg.GetBlockSize()
@@ -78,10 +97,18 @@ class deconvolver:
                 self.decT.go()
 
             else:
+                decMDH['Deconvolution.Method'] = dlg.GetMethod()
                 if dlg.GetMethod() == 'ICTM':
-                    self.dec = dec.dec_conv()
+                    decMDH['Deconvolution.RegularisationParameter'] = regLambda
+                    if beadMode:
+                        self.dec = dec.dec_bead()
+                    else:
+                        self.dec = dec.dec_conv()
                 else:
-                    self.dec = richardsonLucy.dec_conv()
+                    if beadMode:
+                        self.dec = richardsonLucy.rlbead()
+                    else:
+                        self.dec = richardsonLucy.dec_conv()
 
                 self.dec.psf_calc(psf, data.shape)
 
@@ -93,11 +120,11 @@ class deconvolver:
                     time.sleep(1)
                     tries += 1
                     
-                self.res = View3D(self.dec.fs, '< Deconvolution Result >', parent=self.dsviewer)
+                self.res = View3D(self.dec.fs, '< Deconvolution Result >', mdh=decMDH, parent=self.dsviewer)
 
                 self.dlgDeconProg = DeconvProgressPanel(self.res, nIter)
 
-                self.pinfo1 = aui.AuiPaneInfo().Name("deconvPanel").Top().Caption('Deconvolution Progress').DestroyOnClose(True)#.MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
+                self.pinfo1 = aui.AuiPaneInfo().Name("deconvPanel").Top().Caption('Deconvolution Progress').DestroyOnClose(True).CloseButton(False)#.MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
                 self.res._mgr.AddPane(self.dlgDeconProg, self.pinfo1)
                 self.res._mgr.Update()
 

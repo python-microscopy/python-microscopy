@@ -202,7 +202,7 @@ class blocking_deconv:
         print 'Sending precomputed info to cluster ...'
         self.init_cluster()
         print 'Starting the deconvolution ....'
-        self.push_deconv_tasks(lamb, num_iters)
+        #self.push_deconv_tasks(lamb, num_iters)
 
     def retrieve(self):
         self.pull_and_deblock()

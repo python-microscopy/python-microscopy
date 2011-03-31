@@ -17,7 +17,7 @@ from scipy.fftpack import fftn, ifftn, fftshift, ifftshift
 import fftw3f
 #import weave
 #import cDec
-from PYME import pad
+#from PYME import pad
 #import dec
 
 class rldec:
@@ -68,8 +68,8 @@ class rldec:
 
         self.loopcount=0
 
-        for self.loopcount in range(num_iters):
-            
+        while self.loopcount  < num_iters:
+            self.loopcount += 1
 
             #the residuals
             self.res = data/self.Afunc(self.f);
@@ -164,7 +164,11 @@ class dec_conv_slow(rldec):
 
 
         #do the padding
-        g = pad.with_constant(g, ((pw2[0], pw1[0]), (pw2[1], pw1[1]),(pw2[2], pw1[2])), (0,))
+        #g = pad.with_constant(g, ((pw2[0], pw1[0]), (pw2[1], pw1[1]),(pw2[2], pw1[2])), (0,))
+        g_ = fftw3f.create_aligned_array(data_size, 'float32')
+        g_[:] = 0
+        g_[pw2[0]:-pw1[0], pw2[1]:-pw1[1], pw2[2]:-pw1[2]] = g
+        g = g_
 
 
         #keep track of our data shape
@@ -263,7 +267,11 @@ class dec_conv(rldec):
 
 
         #do the padding
-        g = pad.with_constant(g, ((pw2[0], pw1[0]), (pw2[1], pw1[1]),(pw2[2], pw1[2])), (0,))
+        #g = pad.with_constant(g, ((pw2[0], pw1[0]), (pw2[1], pw1[1]),(pw2[2], pw1[2])), (0,))
+        g_ = fftw3f.create_aligned_array(data_size, 'float32')
+        g_[:] = 0
+        g_[pw2[0]:-pw1[0], pw2[1]:-pw1[1], pw2[2]:-pw1[2]] = g
+        g = g_
 
 
         #keep track of our data shape

@@ -10,6 +10,7 @@
 ##################
 import wx
 import PYME.misc.autoFoldPanel as afp
+import numpy
 
 class psfExtractor:
     def __init__(self, dsviewer):
@@ -35,6 +36,10 @@ class psfExtractor:
         bTagPSF = wx.Button(pan, -1, 'Tag', style=wx.BU_EXACTFIT)
         bTagPSF.Bind(wx.EVT_BUTTON, self.OnTagPSF)
         hsizer.Add(bTagPSF, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        bTagPoints = wx.Button(pan, -1, 'Tag Points', style=wx.BU_EXACTFIT)
+        bTagPoints.Bind(wx.EVT_BUTTON, self.OnTagPoints)
+        hsizer.Add(bTagPoints, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
         bClearTagged = wx.Button(pan, -1, 'Clear', style=wx.BU_EXACTFIT)
         bClearTagged.Bind(wx.EVT_BUTTON, self.OnClearTags)
@@ -78,9 +83,31 @@ class psfExtractor:
 
     def OnTagPSF(self, event):
         from PYME.PSFEst import extractImages
+        #if we already have a location there, un-tag it
+        for i, p in enumerate(self.PSFLocs):
+            if ((numpy.array(p[:2]) - numpy.array((self.vp.do.xp, self.vp.do.yp)))**2).sum() < 100:
+                self.PSFLocs.pop(i)
+
+                self.vp.view.psfROIs = self.PSFLocs
+                self.vp.view.Refresh()
+                return
+                
         rsx, rsy, rsz = [int(s) for s in self.tPSFROI.GetValue().split(',')]
         dx, dy, dz = extractImages.getIntCenter(self.image.data[(self.vp.do.xp-rsx):(self.vp.do.xp+rsx + 1),(self.vp.do.yp-rsy):(self.vp.do.yp+rsy+1), :])
         self.PSFLocs.append((self.vp.do.xp + dx, self.vp.do.yp + dy, dz))
+        self.vp.view.psfROIs = self.PSFLocs
+        self.vp.view.Refresh()
+
+    def OnTagPoints(self, event):
+        from PYME.PSFEst import extractImages
+        rsx, rsy, rsz = [int(s) for s in self.tPSFROI.GetValue().split(',')]
+        for xp, yp, zp in self.vp.view.points:
+            if ((xp > rsx) and (xp < (self.image.data.shape[0] - rsx)) and
+                (yp > rsy) and (yp < (self.image.data.shape[1] - rsy))):
+                    
+                    dx, dy, dz = extractImages.getIntCenter(self.image.data[(xp-rsx):(xp+rsx + 1),(yp-rsy):(yp+rsy+1), :])
+                    self.PSFLocs.append((xp + dx, yp + dy, dz))
+        
         self.vp.view.psfROIs = self.PSFLocs
         self.vp.view.Refresh()
 

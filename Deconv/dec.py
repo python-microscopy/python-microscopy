@@ -17,7 +17,7 @@ from scipy import ndimage
 import fftw3f
 #import weave
 #import cDec
-from PYME import pad
+#from PYME import pad
 import numpy
 
 class dec:
@@ -57,8 +57,8 @@ class dec:
         LS = zeros((size(pref), nsrch), 'f')
 
         for k in range(nsrch):
-            AS[:,k] = cast['f'](Afunc(S[:,k])[self.mask])
-            LS[:,k] = cast['f'](Lfunc(S[:,k]))
+            AS[:,k] = Afunc(S[:,k])[self.mask]
+            LS[:,k] = Lfunc(S[:,k])
 
         Hc = dot(transpose(AS), AS)
         Hw = dot(transpose(LS), LS)
@@ -97,8 +97,8 @@ class dec:
         #remember what shape we are
         self.dataShape = data.shape
 
-        print data.shape, data.strides
-        print self.Ht.shape, self.Ht.strides
+        #print data.shape, data.strides
+        #print self.Ht.shape, self.Ht.strides
 
         if 'prep' in dir(self) and not '_F' in dir(self):
             self.prep()
@@ -125,9 +125,9 @@ class dec:
         #self.f = self.f.ravel()
         data = data.ravel()
 
-        print data.mean(), weights, lamb
-        print abs(self.H).sum()
-        print abs(self.Ht).sum()
+        #print data.mean(), weights, lamb
+        #print abs(self.H).sum()
+        #print abs(self.Ht).sum()
 
         #use 0 as the default solution - should probably be refactored like the starting guess
         fdef = zeros(self.f.shape, 'f')
@@ -139,7 +139,8 @@ class dec:
         nsrch = 2
         self.loopcount = 0
 
-        for self.loopcount in range(num_iters):
+        while self.loopcount  < num_iters:
+            self.loopcount += 1
             #the direction our prior/ Likelihood function wants us to go
             pref = self.Lfunc(self.f - fdef);
 
@@ -330,7 +331,12 @@ class dec_conv(dec):
 
 
         #do the padding
-        g = pad.with_constant(g, ((pw2[0], pw1[0]), (pw2[1], pw1[1]),(pw2[2], pw1[2])), (0,))
+        #g = pad.with_constant(g, ((pw2[0], pw1[0]), (pw2[1], pw1[1]),(pw2[2], pw1[2])), (0,))
+
+        g_ = fftw3f.create_aligned_array(data_size, 'float32')
+        g_[:] = 0
+        g_[pw2[0]:-pw1[0], pw2[1]:-pw1[1], pw2[2]:-pw1[2]] = g
+        g = g_
 
 
         #keep track of our data shape

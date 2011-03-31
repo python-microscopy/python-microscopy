@@ -2,8 +2,8 @@ import wx
 import os
 
 class DeconvSettingsDialog(wx.Dialog):
-    def __init__(self, parent):
-        wx.Dialog.__init__(self, parent, title='ICTM Deconvolution')
+    def __init__(self, parent, beadMode=False):
+        wx.Dialog.__init__(self, parent, title='Deconvolution')
 
         sizer1 = wx.BoxSizer(wx.VERTICAL)
         #sizer2 = wx.BoxSizer(wx.HORIZONTAL)
@@ -17,12 +17,18 @@ class DeconvSettingsDialog(wx.Dialog):
         sizer2 = wx.BoxSizer(wx.VERTICAL)
         
         sizer3 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer3.Add(wx.StaticText(pan1, -1, 'PSF:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
-        self.fpPSF = wx.FilePickerCtrl(pan1, -1, wildcard='*.psf', style=wx.FLP_OPEN|wx.FLP_FILE_MUST_EXIST)
-        self.fpPSF.Bind(wx.EVT_FILEPICKER_CHANGED, self.OnPSFFileChanged)
-        
 
-        sizer3.Add(self.fpPSF, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+        if not beadMode:
+            sizer3.Add(wx.StaticText(pan1, -1, 'PSF:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+            self.fpPSF = wx.FilePickerCtrl(pan1, -1, wildcard='*.psf', style=wx.FLP_OPEN|wx.FLP_FILE_MUST_EXIST)
+            self.fpPSF.Bind(wx.EVT_FILEPICKER_CHANGED, self.OnPSFFileChanged)
+
+            sizer3.Add(self.fpPSF, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+        else:
+            sizer3.Add(wx.StaticText(pan1, -1, 'Bead Diameter [nm]:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+            self.tBeadSize = wx.TextCtrl(pan1, -1, '200')
+
+            sizer3.Add(self.tBeadSize, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
         sizer2.Add(sizer3, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
 
@@ -76,7 +82,8 @@ class DeconvSettingsDialog(wx.Dialog):
         btSizer = wx.StdDialogButtonSizer()
 
         self.bOK = wx.Button(self, wx.ID_OK)
-        self.bOK.Disable()
+        if not beadMode:
+            self.bOK.Disable()
         self.bOK.SetDefault()
 
         btSizer.AddButton(self.bOK)
@@ -106,6 +113,9 @@ class DeconvSettingsDialog(wx.Dialog):
 
     def GetBlockSize(self):
         return int(self.tTileSize.GetValue())
+
+    def GetBeadRadius(self):
+        return float(self.tBeadSize.GetValue())/2
 
     def GetPSFFilename(self):
         return self.fpPSF.GetPath()
