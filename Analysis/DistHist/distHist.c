@@ -16,7 +16,10 @@
 #include <math.h>
 #include "numpy/arrayobject.h"
 #include <stdio.h>
+
+//#define SSE
 #include <xmmintrin.h>
+
 
 
 static PyObject * distanceHistogram(PyObject *self, PyObject *args, PyObject *keywds)
@@ -185,6 +188,7 @@ static PyObject * distanceHistogram(PyObject *self, PyObject *args, PyObject *ke
     return (PyObject*) out;
 }
 
+#ifdef SSE
 static PyObject * distanceHistogramRS(PyObject *self, PyObject *args, PyObject *keywds)
 {
     double *res = 0;
@@ -361,6 +365,9 @@ static PyObject * distanceHistogramRS(PyObject *self, PyObject *args, PyObject *
     return (PyObject*) out;
 }
 
+#endif
+
+
 static PyObject * meanSquareDistHist(PyObject *self, PyObject *args, PyObject *keywds)
 {
     int *ndists = 0;
@@ -524,8 +531,10 @@ static PyObject * meanSquareDistHist(PyObject *self, PyObject *args, PyObject *k
 static PyMethodDef distHistMethods[] = {
     {"distanceHistogram",  distanceHistogram, METH_VARARGS | METH_KEYWORDS,
     "Generate a histogram of pairwise distances between two sets of points.\n. Arguments are: 'x1', 'y1', 'x2', 'y2', 'nBins'= 1e3, 'binSize' = 1"},
+#ifdef SSE
     {"distanceHistogramRS",  distanceHistogramRS, METH_VARARGS | METH_KEYWORDS,
     "Generate a histogram of pairwise distances between two sets of points.\n. Arguments are: 'x1', 'y1', 'x2', 'y2', 'nBins'= 1e3, 'binSize' = 1"},
+#endif
     {"msdHistogram",  meanSquareDistHist, METH_VARARGS | METH_KEYWORDS,
     "calculate a histogram of msd vs time.\n. Arguments are: 'x', 'y', 't', 'nBins'= 1e3, 'binSize' = 1"},
     {NULL, NULL, 0, NULL}        /* Sentinel */
