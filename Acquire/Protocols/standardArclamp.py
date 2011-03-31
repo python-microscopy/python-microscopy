@@ -32,4 +32,4 @@ metaData = [
 
 #must be defined for protocol to be discovered
 PROTOCOL = TaskListProtocol(taskList, metaData)
-PROTOCOL_STACK = ZStackTaskListProtocol(taskList, 20, 100, metaData, randomise = False)
+PROTOCOL_STACK = ZStackTaskListProtocol(taskList, 20, 30, metaData, randomise = False)

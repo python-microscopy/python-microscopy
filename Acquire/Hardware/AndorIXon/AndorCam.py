@@ -23,7 +23,6 @@ else:
 
     #from ctypes.wintypes import ULONG
     ULONG = c_ulong
-    STRING = c_char_p
     #from ctypes.wintypes import DWORD
     DWORD = c_uint16
     #from ctypes.wintypes import BOOL
@@ -37,6 +36,8 @@ else:
     HANDLE=WORD
     HWND = WORD
     #from ctypes.wintypes import HWND
+
+STRING = c_char_p
 
 PULONG = POINTER(ULONG)
 USHORT = c_ushort
