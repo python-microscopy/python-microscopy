@@ -187,6 +187,146 @@ def impfilt2(fcn, x0, args, maxIters=200, initStepSize=.01, minStepSize=.0005, m
     return x0 #, xts
 
 
+def impfilt3(fcn, x0, args, maxIters=200, initStepSize=.01, minStepSize=.0005, maxFevals = 200):
+    nIters = 0
+    nFeval = 0
+    stepsize = initStepSize
+
+    x0 = np.array(x0, 'f')
+    nDim = len(x0)
+
+    fval = fcn(x0, *args)
+    #print fval
+    nFeval += 1
+
+    tv = np.zeros(3)
+    fv = np.zeros(3)
+    ons = np.ones(3)
+
+    dfdx = np.zeros(2)
+
+    #xts = []
+
+    changed = True
+
+    while nIters < maxIters and nFeval < maxFevals and stepsize > minStepSize and changed:
+        nIters += 1
+
+        changed = False
+
+        maxChange = 0
+
+        #print stepsize
+
+        #find gradient
+        for i in range(nDim):
+            dx = stepsize
+            xCand = x0.copy()
+            xCand[i] = x0[i] + dx
+
+            fCand = fcn(xCand, *args)
+            nFeval += 1
+
+            dfdx[i] = (fCand - fval)/dx
+
+            if fCand < fval: #may as well already update
+               x0[:] = xCand[:]
+               fval = fCand
+               changed = True
+
+        dfdx_hat = dfdx/linalg.norm(dfdx)
+
+        x_0 = x0.copy()
+        B = -linalg.norm(dfdx)
+        C = fval
+        #t = 0
+
+        #print linalg.norm(dfdx), linalg.norm(dfdx_hat)
+        #print dfdx_hat, dfdx
+
+        #try to overshoot
+        dxv =  -dfdx_hat*2*dx
+        t = 2*dx
+
+        #print i, xv[0], xv[1], dfdx, dx
+
+        fPred = fval + t*B
+        
+        xCand = x0 + dxv
+        fCand = fcn(xCand, *args)
+        nFeval += 1
+
+        print x0, xCand, fPred, fCand
+
+
+        while fCand < fval and nFeval < maxFevals:
+            #search along this line, with this step size
+            #print 's'
+            changed = True
+
+            #print B
+            B = (fval-fCand)/t
+            #print B
+
+            x0[:] = xCand[:]
+            fval = fCand
+
+            C = fval
+            
+            dxv *= 2
+            t = 2*dx
+
+            #xts.append(x0.copy())
+
+            xCand = x0 + dxv
+            fCand = fcn(xCand, *args)
+            fPred = fval + t*B
+            #print xCand,fCand
+            nFeval += 1
+
+#        #now fit a parabola
+#        xv[2] = xCand[i]
+#        fv[2] = fCand
+#
+#        #print np.vstack([xv**2, xv, ons])
+#        A, B, C = linalg.solve(np.hstack([(xv**2)[:, None], xv[:, None], ons[:, None]]), fv)
+
+        #print t
+        A = (-C - B*t)/t**2
+
+        print A, B, C
+
+        #should be minimum
+        tn = -B/(2*A)
+
+        #try and see if this is better
+        xCand = x0 + tn*dfdx_hat
+        fCand = fcn(xCand, *args)
+        nFeval += 1
+
+        print 'q\t', tn,  x0, xCand, fval, fCand
+
+        if fCand < fval:
+            print 'Accepting quad est.'
+            x0[:] = xCand[:]
+            fval = fCand
+            changed = True
+
+        #maxChange = max(maxChange, abs(x0[i] - xv[0]))
+        #print maxChange
+
+
+
+
+        #if not changed:
+        stepsize *=.1
+
+    print 'Optimisation terminated:'
+    print 'nIterations: %d' % nIters
+    print 'nFevals: %d' % nFeval
+
+    return x0 #, xts
+
 
 
 
