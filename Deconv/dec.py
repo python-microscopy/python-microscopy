@@ -14,6 +14,7 @@ from scipy import *
 from scipy.linalg import *
 from scipy.fftpack import fftn, ifftn, fftshift, ifftshift
 from scipy import ndimage
+import fftw3f
 #import weave
 #import cDec
 from PYME import pad
@@ -77,7 +78,7 @@ class dec:
         '''starting guess for deconvolution - can be overridden in derived classes
         but the data itself is usually a pretty good guess.
         '''
-        return data
+        return data.copy()
 
 
     def deconv(self, data, lamb, num_iters=10, alpha = None, weights=1):
@@ -96,6 +97,12 @@ class dec:
         #remember what shape we are
         self.dataShape = data.shape
 
+        print data.shape, data.strides
+        print self.Ht.shape, self.Ht.strides
+
+        if 'prep' in dir(self) and not '_F' in dir(self):
+            self.prep()
+
         if not numpy.isscalar(weights):
             self.mask = weights > 0
         else:
@@ -109,11 +116,18 @@ class dec:
             self.e2 = fftshift(exp(2j*self.alpha))
 
         #guess a starting estimate for the object
-        self.f = self.startGuess(data)
+        self.f = self.startGuess(data).ravel()
+        self.res = 0*self.f
+
+        self.fs = self.f.reshape(self.shape)
 
         #make things 1 dimensional
-        self.f = self.f.ravel()
+        #self.f = self.f.ravel()
         data = data.ravel()
+
+        print data.mean(), weights, lamb
+        print abs(self.H).sum()
+        print abs(self.Ht).sum()
 
         #use 0 as the default solution - should probably be refactored like the starting guess
         fdef = zeros(self.f.shape, 'f')
@@ -123,9 +137,10 @@ class dec:
 
         #number of search directions
         nsrch = 2
+        self.loopcount = 0
 
-        for loopcount in range(num_iters):
-            #the direction our prior/ Liklihood function wants us to go
+        for self.loopcount in range(num_iters):
+            #the direction our prior/ Likelihood function wants us to go
             pref = self.Lfunc(self.f - fdef);
 
             #the residuals
@@ -134,20 +149,20 @@ class dec:
             #note that 1/sqrt(data) by itself is not a good idea as it will give
             #infinite weight to zeros. As most devices have some form of readout noise
             #justifying the eps shouldn't be too tricky
-            self.res = (weights*(data - self.Afunc(self.f)))
+            self.res[:] = (weights*(data - self.Afunc(self.f)))
             
             #resulting search directions
             #note that the use of the Likelihood fuction/prior as a search direction
             #is where this method departs from the classical conjugate gradient approach
-            S[:,0] = cast['f'](self.Ahfunc(self.res))
-            S[:,1] = cast['f'](-self.Lhfunc(pref))
+            S[:,0] = self.Ahfunc(self.res)
+            S[:,1] = -self.Lhfunc(pref)
 
             #check to see if the two search directions are orthogonal
             #this can be used as a measure of convergence and a stopping criteria
             test = 1 - abs(dot(S[:,0], S[:,1])/(norm(S[:,0])*norm(S[:,1])))
 
             #print & log some statistics
-            print 'Test Statistic %f\n' % (test,)
+            print 'Test Statistic %f' % (test,)
             self.tests.append(test)
             self.ress.append(norm(self.res))
             self.prefs.append(norm(pref))
@@ -156,16 +171,16 @@ class dec:
             (fnew, cpred, spred) = self.subsearch(self.f, self.res[self.mask], fdef, self.Afunc, self.Lfunc, lamb, S[:, 0:nsrch])
 
             #positivity constraint (not part of original algorithm & could be ommitted)
-            fnew = cast['f'](fnew*(fnew > 0))
+            fnew = (fnew*(fnew > 0))
 
             #add last step to search directions, as per classical conj. gradient
-            S[:,2] = cast['f'](fnew - self.f)
+            S[:,2] = (fnew - self.f)
             nsrch = 3
 
             #set the current estimate to out new estimate
-            self.f = fnew
+            self.f[:] = fnew
 
-        return real(self.f)
+        return real(self.fs)
         
     def sim_pic(self,data,alpha):
         '''Do the forward transform to simulate a picture. Currently with 4Pi cruft.'''
@@ -266,6 +281,17 @@ class dec_4pi(dec):
 
 class dec_conv(dec):
     '''Classical deconvolution with a stationary PSF'''
+    def prep(self):
+        #allocate memory
+        
+        self._F = fftw3f.create_aligned_array(self.FTshape, 'complex64')
+        self._r = fftw3f.create_aligned_array(self.shape, 'f4')
+
+        #calculate plans for other ffts
+        self._plan_r_F = fftw3f.Plan(self._r, self._F, 'forward')
+        self._plan_F_r = fftw3f.Plan(self._F, self._r, 'backward')
+
+
     def psf_calc(self, psf, data_size):
         '''Precalculate the OTF etc...'''
         pw = (numpy.array(data_size) - psf.shape)/2.
@@ -314,11 +340,32 @@ class dec_conv(dec):
 
         self.shape = data_size
 
-        self.g = g;
+        self.FTshape = [self.shape[0], self.shape[1], self.shape[2]/2 + 1]
 
-        #calculate OTF and conjugate transformed OTF
-        self.H = (fftn(g));
-        self.Ht = g.size*(ifftn(g));
+        self.g = g.astype('f4');
+        self.g2 = 1.0*self.g[::-1, ::-1, ::-1]
+
+        #allocate memory
+        self.H = fftw3f.create_aligned_array(self.FTshape, 'complex64')
+        self.Ht = fftw3f.create_aligned_array(self.FTshape, 'complex64')
+        #self.f = zeros(self.shape, 'f4')
+        #self.res = zeros(self.shape, 'f4')
+        #self.S = zeros((size(self.f), 3), 'f4')
+
+        #self._F = fftw3f.create_aligned_array(self.FTshape, 'complex64')
+        #self._r = fftw3f.create_aligned_array(self.shape, 'f4')
+        #S0 = self.S[:,0]
+
+        #create plans & calculate OTF and conjugate transformed OTF
+        fftw3f.Plan(self.g, self.H, 'forward')()
+        fftw3f.Plan(self.g2, self.Ht, 'forward')()
+
+        self.Ht /= g.size;
+        self.H /= g.size;
+
+        #calculate plans for other ffts
+        #self._plan_r_F = fftw3f.Plan(self._r, self._F, 'forward')
+        #self._plan_F_r = fftw3f.Plan(self._F, self._r, 'backward')
 
 
     def Lfunc(self, f):
@@ -345,23 +392,34 @@ class dec_conv(dec):
 
     def Afunc(self, f):
         '''Forward transform - convolve with the PSF'''
-        fs = reshape(f, (self.height, self.width, self.depth))
+        #fs = reshape(f, (self.height, self.width, self.depth))
+        self._r[:] = f.reshape(self._r.shape)
 
-        F = fftn(fs)
+        #F = fftn(fs)
 
-        d = ifftshift(ifftn(F*self.H));
+        #d = ifftshift(ifftn(F*self.H));
+        self._plan_r_F()
+        self._F *= self.H
+        self._plan_F_r()
 
-        d = real(d);
-        return ravel(d)
+        #d = real(d);
+        return ravel(ifftshift(self._r))
 
     def Ahfunc(self, f):
         '''Conjugate transform - convolve with conj. PSF'''
-        fs = reshape(f, (self.height, self.width, self.depth))
+#        fs = reshape(f, (self.height, self.width, self.depth))
+#
+#        F = fftn(fs)
+#        d = ifftshift(ifftn(F*self.Ht));
+#        d = real(d);
+#        return ravel(d)
+        self._r[:] = f.reshape(self._r.shape)
 
-        F = fftn(fs)
-        d = ifftshift(ifftn(F*self.Ht));
-        d = real(d);
-        return ravel(d)
+        self._plan_r_F()
+        self._F *= self.Ht
+        self._plan_F_r()
+
+        return ravel(ifftshift(self._r))
 
 class dec_bead(dec):
     '''Classical deconvolution using non-fft convolution - pot. faster for

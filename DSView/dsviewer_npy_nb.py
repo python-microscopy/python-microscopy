@@ -263,9 +263,9 @@ if __name__ == "__main__":
     main()
 
 
-def View3D(data, title='', mdh = None, mode='lite'):
+def View3D(data, title='', mdh = None, mode='lite', parent=None):
     im = ImageStack(data = data, mdh = mdh)
-    dvf = DSViewFrame(im, title=title, mode=mode, size=(500, 500))
+    dvf = DSViewFrame(im, title=title, mode=mode, size=(500, 500), parent=parent)
     dvf.SetSize((500,500))
     dvf.Show()
     return dvf

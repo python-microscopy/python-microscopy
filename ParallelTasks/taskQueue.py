@@ -112,6 +112,9 @@ class TaskQueue:
     def getNumberTasksCompleted(self):
         return len(self.closedTasks)
 
+    def cleanup(self):
+        pass
+
     def purge(self):
         self.openTasks = []
         self.closedTasks = []
@@ -127,6 +130,9 @@ class TaskQueueWithData(TaskQueue):
         TaskQueue.__init__(self, name, initialTasks, onEmpty, fTaskToPop)
 
         self.data = {}
+
+    def getTasks(self, workerN = 0, NWorkers = 1):
+        return [self.getTask(workerN, NWorkers)]
 
     def getQueueData(self, fieldName, *args):
         '''Get data, defined by fieldName and potntially additional arguments,  ascociated with queue'''
