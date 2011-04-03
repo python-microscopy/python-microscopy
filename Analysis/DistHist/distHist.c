@@ -149,7 +149,7 @@ static PyObject * distanceHistogram(PyObject *self, PyObject *args, PyObject *ke
       {            
         x1 = (float) *px1;
         y1 = (float) *py1;
-        for (i2 = 0; i2 < x2_len; i2++)
+        for (i2 = (i1+1); i2 < x2_len; i2++)
 	  {
             //dx = *px1 - *px2;
             //dy = *py1 - *py2;
@@ -242,9 +242,9 @@ static PyObject * distanceProduct(PyObject *self, PyObject *args, PyObject *keyw
       {
         x1 = (float) *px1;
         y1 = (float) *py1;
-        for (i2 = 0; i2 < x1_len; i2++)
+        for (i2 = (i1+1); i2 < x1_len; i2++)
 	  {
-            if (i2 != i1){
+            //if (i2 != i1){
                 dx = x1 - (float)px2o[i2];//*px2;
                 dy = y1 - (float)py2o[i2];//*py2;
 
@@ -252,7 +252,7 @@ static PyObject * distanceProduct(PyObject *self, PyObject *args, PyObject *keyw
                 //printf("%f\n", d);
 
                 res += (d);
-            }
+            //}
 
 	  }
         px1++;
@@ -404,7 +404,7 @@ static PyObject * distanceHistogramRS(PyObject *self, PyObject *args, PyObject *
       {
         x1 = (float) *px1;
         y1 = (float) *py1;
-        for (i2 = 0; i2 < x2_len; i2++)
+        for (i2 = (i1+1); i2 < x2_len; i2++)
 	  {
             //dx = *px1 - *px2;
             //dy = *py1 - *py2;
@@ -568,7 +568,7 @@ static PyObject * meanSquareDistHist(PyObject *self, PyObject *args, PyObject *k
         t_i = pt[i];
         x_i = px[i];
         y_i = py[i];
-	for (j = 0; j < x_len; j++)
+	for (j = (i+1); j < x_len; j++)
 	  {
             dx = x_i - px[j];
             dy = y_i - py[j];
