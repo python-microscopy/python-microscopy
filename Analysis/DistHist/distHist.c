@@ -152,7 +152,7 @@ static PyObject * distanceHistogram(PyObject *self, PyObject *args, PyObject *ke
       {            
         x1 = (float) *px1;
         y1 = (float) *py1;
-        for (i2 = 0; i2 < x2_len; i2++)
+        for (i2 = (i1+1); i2 < x2_len; i2++)
 	  {
             //dx = *px1 - *px2;
             //dy = *py1 - *py2;
@@ -187,6 +187,95 @@ static PyObject * distanceHistogram(PyObject *self, PyObject *args, PyObject *ke
     
     return (PyObject*) out;
 }
+
+
+
+
+static PyObject * distanceProduct(PyObject *self, PyObject *args, PyObject *keywds)
+{
+    double res = 0;
+    int i1,i2;
+    //int size[2];
+
+    int x1_len;
+
+    PyObject *ox1 =0;
+    PyObject *oy1=0;
+
+    PyArrayObject* ax1;
+    PyArrayObject* ay1;
+
+    double *px1;
+    double *py1;
+    double *px2o;
+    double *py2o;
+
+    float d, dx, dy, x1, y1;
+
+
+    static char *kwlist[] = {"x", "y", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "OO", kwlist,
+         &ox1, &oy1))
+        return NULL;
+
+    /* Do the calculations */
+
+    ax1 = (PyArrayObject *) PyArray_ContiguousFromObject(ox1, PyArray_DOUBLE, 0, 1);
+    if (ax1 == NULL)
+    {
+      PyErr_Format(PyExc_RuntimeError, "Bad x");
+      return NULL;
+    }
+
+    ay1 = (PyArrayObject *) PyArray_ContiguousFromObject(oy1, PyArray_DOUBLE, 0, 1);
+    if (ay1 == NULL)
+    {
+      Py_DECREF(ax1);
+      PyErr_Format(PyExc_RuntimeError, "Bad y");
+      return NULL;
+    }
+
+    px1 = (double*)ax1->data;
+    py1 = (double*)ay1->data;
+
+    x1_len = PyArray_Size((PyObject*)ax1);
+
+    px2o = px1;
+    py2o = py1;
+
+    for (i1 = 0; i1 < x1_len; i1++)
+      {
+        x1 = (float) *px1;
+        y1 = (float) *py1;
+        for (i2 = (i1+1); i2 < x1_len; i2++)
+	  {
+            //if (i2 != i1){
+                dx = x1 - (float)px2o[i2];//*px2;
+                dy = y1 - (float)py2o[i2];//*py2;
+
+                d = sqrtf(dx*dx + dy*dy);
+                //printf("%f\n", d);
+
+                res += (d);
+            //}
+
+	  }
+        px1++;
+        py1++;
+
+        //reset inner pointers
+        //px2 = px2o;
+        //py2 = py2o;
+      }
+
+
+    Py_DECREF(ax1);
+    Py_DECREF(ay1);
+
+    //return (PyObject*) out;
+    return Py_BuildValue("d", res);
+}
 
 #ifdef SSE
 static PyObject * distanceHistogramRS(PyObject *self, PyObject *args, PyObject *keywds)
@@ -322,7 +411,7 @@ static PyObject * distanceHistogramRS(PyObject *self, PyObject *args, PyObject *
       {
         x1 = (float) *px1;
         y1 = (float) *py1;
-        for (i2 = 0; i2 < x2_len; i2++)
+        for (i2 = (i1+1); i2 < x2_len; i2++)
 	  {
             //dx = *px1 - *px2;
             //dy = *py1 - *py2;
@@ -489,7 +578,7 @@ static PyObject * meanSquareDistHist(PyObject *self, PyObject *args, PyObject *k
         t_i = pt[i];
         x_i = px[i];
         y_i = py[i];
-	for (j = 0; j < x_len; j++)
+	for (j = (i+1); j < x_len; j++)
 	  {
             dx = x_i - px[j];
             dy = y_i - py[j];
@@ -530,6 +619,8 @@ static PyObject * meanSquareDistHist(PyObject *self, PyObject *args, PyObject *k
 
 static PyMethodDef distHistMethods[] = {
     {"distanceHistogram",  distanceHistogram, METH_VARARGS | METH_KEYWORDS,
+    "Generate a histogram of pairwise distances between two sets of points.\n. Arguments are: 'x1', 'y1', 'x2', 'y2', 'nBins'= 1e3, 'binSize' = 1"},
+    {"distanceProduct",  distanceProduct, METH_VARARGS | METH_KEYWORDS,
     "Generate a histogram of pairwise distances between two sets of points.\n. Arguments are: 'x1', 'y1', 'x2', 'y2', 'nBins'= 1e3, 'binSize' = 1"},
 #ifdef SSE
     {"distanceHistogramRS",  distanceHistogramRS, METH_VARARGS | METH_KEYWORDS,
