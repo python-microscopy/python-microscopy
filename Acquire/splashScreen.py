@@ -12,6 +12,7 @@
 
 import wx
 import time
+import os
 
 class SplashPanel(wx.Panel):
     def __init__(self, parent, scope, size=(-1,-1)):
@@ -30,7 +31,9 @@ class SplashPanel(wx.Panel):
         
         wx.EVT_PAINT(self, self.OnPaint)
 
-        self.bmLogo = wx.Bitmap('logo.png', wx.BITMAP_TYPE_PNG)
+        logofilename = os.path.join(os.path.split(__file__)[0], 'logo.png')
+
+        self.bmLogo = wx.Bitmap(logofilename, wx.BITMAP_TYPE_PNG)
         
     def DoPaint(self, dc):
         elapsedTime = time.time() - self.startTime
