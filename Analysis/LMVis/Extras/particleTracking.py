@@ -114,7 +114,10 @@ class ParticleTracker:
             alphas_[I] = res[0][1]
 
             print res[0]#, res[1]
-            error_Ds[i] = np.sqrt(res[1][0,0])
+            if not res[1] == None:
+                error_Ds[i] = np.sqrt(res[1][0,0])
+            else:
+                error_Ds[i] = -1e3
 
         pylab.figure()
         pylab.scatter(Ds, alphas)
