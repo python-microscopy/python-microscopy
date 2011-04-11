@@ -150,7 +150,7 @@ class VisGUIFrame(wx.Frame):
         self.GeneratedMeasures = {}
         self.Quads = None
         #self.pointColour = None
-        self.colData = '<None>'
+        self.colData = 't'
 
         #self.sh = WxController(self.notebook)
         #print self.sh.shell.user_ns
@@ -195,7 +195,7 @@ class VisGUIFrame(wx.Frame):
 
         self.glCanvas = gl_render.LMGLCanvas(self)
         self.AddPage(page=self.glCanvas, select=True, caption='View')
-        self.glCanvas.cmap = pylab.cm.hot
+        self.glCanvas.cmap = pylab.cm.gist_rainbow #pylab.cm.hot
 
         #self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_MOVE, self.OnMove)
