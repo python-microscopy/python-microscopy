@@ -18,7 +18,9 @@
 #include <stdio.h>
 
 //#define SSE
-#include <xmmintrin.h>
+#ifdef SSE
+  #include <xmmintrin.h>
+#endif
 
 
 

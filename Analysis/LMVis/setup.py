@@ -20,7 +20,7 @@ import sys
 if __name__ == '__main__':
     if sys.platform == 'win32':
         #from distutils.core import setup
-        try:
+        #try:
             import py2exe
             import os
             #import shutil
@@ -28,11 +28,12 @@ if __name__ == '__main__':
             setup(console=['VisGUI.py'],
               options={'py2exe':{'excludes':['pyreadline', 'Tkconstants','Tkinter','tcl', '_imagingtk','PIL._imagingtk', 'ImageTK', 'PIL.ImageTK', 'FixTk'], 'includes':['OpenGL.platform.win32'], 'optimize':0}},
               data_files=matplotlib.get_py2exe_datafiles(),
+              scripts=['VisGUI.py', 'VisGUI.cmd']
               #cmdclass = {'build_ext': build_ext},
               #ext_modules = ext_modules
               )
-        except:
-            setup()
+        #except:
+        #    setup()
 
     else:
         #try:

@@ -18,8 +18,10 @@ def configuration(parent_package = '', top_path = None):
     config = Configuration('DSView', parent_package, top_path)
     config.add_data_dir('icons')
 
-#    if sys.platform == 'win32':
-#        config.add_scripts('dh5view.cmd')
+    if sys.platform == 'win32':
+        config.add_scripts(['dh5view.cmd'])
+    else:
+        config.add_scripts(['dh5view.py'])
 
     return config
 
