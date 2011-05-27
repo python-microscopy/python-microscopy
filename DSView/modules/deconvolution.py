@@ -84,9 +84,15 @@ class deconvolver:
 
                 if not (vs.x == vx and vs.y == vy and vs.z ==vz):
                     #rescale psf to match data voxel size
-                    psf = ndimage.zoom(psf, [vx/vs.x, vy/vs.y, vz/vs.z])
+                    psf = ndimage.zoom(psf, [vs.x/vx, vs.y/vy, vs.z/vz])
 
             data = self.image.data[:,:,:]
+
+            #crop PSF in z if bigger than stack
+            if psf.shape[2] > data.shape[2]:
+                dz = psf.shape[2] - data.shape[2]
+
+                psf = psf[:,:,numpy.floor(dz/2):(psf.shape[2]-numpy.ceil(dz/2))]
 
             if dlg.GetBlocking():
                 decMDH['Deconvolution.Method'] = 'Blocked ICTM'
