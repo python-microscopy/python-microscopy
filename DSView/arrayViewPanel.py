@@ -19,6 +19,7 @@ sys.path.append(".")
 import scrolledImagePanel
 from displayOptions import DisplayOpts
 from DisplayOptionsPanel import OptionsPanel
+from OverlaysPanel import OverlayPanel
 
 from modules import playback
 
@@ -58,6 +59,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         self.showTracks = True
         self.pointMode = 'confoc'
         self.pointTolNFoc = {'confoc' : (5,5,5), 'lm' : (2, 5, 5), 'splitter' : (2,5,5)}
+        self.showAdjacentPoints = True
 
         self.psfROIs = []
         self.psfROISize=[30,30,30]
@@ -140,7 +142,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         sX, sY = im.GetWidth(), im.GetHeight()
 
         if self.crosshairs:
-            dc.SetPen(wx.Pen(wx.CYAN,0))
+            dc.SetPen(wx.Pen(wx.CYAN,1))
             if(self.do.slice == self.do.SLICE_XY):
                 lx = self.do.xp
                 ly = self.do.yp
@@ -161,7 +163,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             dc.SetPen(wx.NullPen)
             
         if self.selection:
-            dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('YELLOW'),0))
+            dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('YELLOW'),1))
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
             if(self.do.slice == self.do.SLICE_XY):
                 lx = self.selection_begin_x
@@ -196,7 +198,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
         if (len(self.psfROIs) > 0):
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
-            dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),0))
+            dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),1))
             if(self.do.slice == self.do.SLICE_XY):
                 for p in self.psfROIs:
                     dc.DrawRectangle(sc*p[0]-self.psfROISize[0]*sc - x0,sc*p[1] - self.psfROISize[1]*sc - y0, 2*self.psfROISize[0]*sc,2*self.psfROISize[1]*sc)
@@ -222,8 +224,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
 
-            pGreen = wx.Pen(wx.TheColourDatabase.FindColour('RED'),0)
-            #pRed = wx.Pen(wx.TheColourDatabase.FindColour('RED'),0)
+            pGreen = wx.Pen(wx.TheColourDatabase.FindColour('RED'),1)
+            #pRed = wx.Pen(wx.TheColourDatabase.FindColour('RED'),1)
             dc.SetPen(pGreen)
 
             for tN in tFoc:
@@ -239,7 +241,9 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
                 dc.DrawLines(pFoc)
 
-                
+
+        dx = 0
+        dy = 0
 
         if self.showPoints and ('filter' in dir(self) or len(self.points) > 0):
             if 'filter' in dir(self):
@@ -250,6 +254,14 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                     pFoc = numpy.vstack((self.filter['x'][IFoc]/self.vox_x, self.filter['y'][IFoc]/self.vox_y)).T
                     if self.pointMode == 'splitter':
                         pCol = self.filter['gFrac'] > .5
+
+                        if 'chroma' in dir(self):
+                            dx = self.chroma.dx.ev(self.filter['x'][IFoc], self.filter['y'][IFoc])/self.vox_x
+                            dy = self.chroma.dy.ev(self.filter['x'][IFoc], self.filter['y'][IFoc])/self.vox_y
+                        else:
+                            dx = 0*pFoc[:,0]
+                            dy = 0*pFoc[:,0]
+                            
 
                 elif(self.do.slice == self.do.SLICE_XZ):
                     IFoc = (abs(self.filter['y'] - self.do.yp*self.vox_y) < 3*self.vox_y)*(self.filter['t'] > y0/sc)*(self.filter['t'] < (y0 +sY)/sc)
@@ -269,7 +281,22 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                     pFoc = self.points[abs(self.points[:,2] - self.do.zp) < 1][:,:2]
                     if self.pointMode == 'splitter':
                         pCol = self.pointColours[abs(self.points[:,2] - self.do.zp) < 1]
+                        
+                        if 'chroma' in dir(self):
+                            dx = self.chroma.dx.ev(pFoc[:,0]*1e3*self.vox_x, pFoc[:,1]*1e3*self.vox_y)/(1e3*self.vox_x)
+                            dy = self.chroma.dy.ev(pFoc[:,0]*1e3*self.vox_x, pFoc[:,1]*1e3*self.vox_y)/(1e3*self.vox_y)
+                        else:
+                            dx = 0*pFoc[:,0]
+                            dy = 0*pFoc[:,0]
+
                     pNFoc = self.points[abs(self.points[:,2] - self.do.zp) < pointTol[0]][:,:2]
+                    if self.pointMode == 'splitter':
+                        if 'chroma' in dir(self):
+                            dxn = self.chroma.dx.ev(pFoc[:,0]*1e3*self.vox_x, pFoc[:,1]*1e3*self.vox_y)/(1e3*self.vox_x)
+                            dyn = self.chroma.dy.ev(pFoc[:,0]*1e3*self.vox_x, pFoc[:,1]*1e3*self.vox_y)/(1e3*self.vox_y)
+                        else:
+                            dxn = 0*pFoc[:,0]
+                            dyn = 0*pFoc[:,0]
 
                 elif(self.do.slice == self.do.SLICE_XZ):
                     pFoc = self.points[abs(self.points[:,1] - self.do.yp) < 1][:, ::2]
@@ -286,25 +313,27 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
 
-            dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('BLUE'),0))
-            for p in pNFoc:
-                dc.DrawRectangle(sc*p[0]-2*sc - x0,sc*p[1]*self.aspect - 2*sc*self.aspect - y0, 4*sc,4*sc*self.aspect)
+            if self.showAdjacentPoints:
+                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('BLUE'),1))
+                for p, dxi, dyi in zip(pNFoc, dxn, dyn):
+                    dc.DrawRectangle(sc*p[0]-2*sc - x0,sc*p[1]*self.aspect - 2*sc*self.aspect - y0, 4*sc,4*sc*self.aspect)
 
-                if self.pointMode == 'splitter' and self.do.slice == self.do.SLICE_XY:
-                    dc.DrawRectangle(sc*p[0]-2*sc - x0,sc*(self.do.ds.shape[1] - p[1])*self.aspect - 2*sc*self.aspect - y0, 4*sc,4*sc*self.aspect)
+                    if self.pointMode == 'splitter' and self.do.slice == self.do.SLICE_XY:
+                        dc.DrawRectangle(sc*(p[0]-dxi)-2*sc - x0,sc*(self.do.ds.shape[1] - p[1] + dyi)*self.aspect - 2*sc*self.aspect - y0, 4*sc,4*sc*self.aspect)
 
 
-            pGreen = wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),0)
-            pRed = wx.Pen(wx.TheColourDatabase.FindColour('RED'),0)
+            pGreen = wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),1)
+            pRed = wx.Pen(wx.TheColourDatabase.FindColour('RED'),1)
             dc.SetPen(pGreen)
             if self.pointMode == 'splitter' and self.do.slice == self.do.SLICE_XY:
-                for p, c in zip(pFoc, pCol):
+                for p, c, dxi, dyi in zip(pFoc, pCol, dx, dy):
                     if c:
                         dc.SetPen(pGreen)
                     else:
                         dc.SetPen(pRed)
                     dc.DrawRectangle(sc*p[0]-2*sc - x0,sc*p[1]*self.aspect - 2*sc*self.aspect - y0, 4*sc,4*sc*self.aspect)
-                    dc.DrawRectangle(sc*p[0]-2*sc - x0,sc*(self.do.ds.shape[1] - p[1])*self.aspect - 2*sc*self.aspect - y0, 4*sc,4*sc*self.aspect)
+                    dc.DrawRectangle(sc*(p[0]-dxi)-2*sc - x0,sc*(self.do.ds.shape[1] - p[1] + dyi)*self.aspect - 2*sc*self.aspect - y0, 4*sc,4*sc*self.aspect)
+                    
             else:
                 for p in pFoc:
                     dc.DrawRectangle(sc*p[0]-2*sc - x0,sc*p[1]*self.aspect - 2*sc*self.aspect - y0, 4*sc,4*sc*self.aspect)
@@ -318,11 +347,11 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 #
 #                dc.SetBrush(wx.TRANSPARENT_BRUSH)
 #
-#                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('BLUE'),0))
+#                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('BLUE'),1))
 #                for p in pNFoc:
 #                    dc.DrawRectangle(sc*p[0]-2*sc,sc*p[2] - 2*sc, 4*sc,4*sc)
 #
-#                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),0))
+#                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),1))
 #                for p in pFoc:
 #                    dc.DrawRectangle(sc*p[0]-2*sc,sc*p[2] - 2*sc, 4*sc,4*sc)
 #
@@ -333,11 +362,11 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 #
 #                dc.SetBrush(wx.TRANSPARENT_BRUSH)
 #
-#                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('BLUE'),0))
+#                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('BLUE'),1))
 #                for p in pNFoc:
 #                    dc.DrawRectangle(sc*p[1]-2*sc,sc*p[2] - 2*sc, 4*sc,4*sc)
 #
-#                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),0))
+#                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),1))
 #                for p in pFoc:
 #                    dc.DrawRectangle(sc*p[1]-2*sc,sc*p[2] - 2*sc, 4*sc,4*sc)
             
@@ -772,7 +801,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 # end of class ViewPanel
 
 class ArraySettingsAndViewPanel(wx.Panel):
-    def __init__(self, parent, dstack = None, aspect=1, horizOptions = False, wantUpdates = [], **kwds):
+    def __init__(self, parent, dstack = None, aspect=1, horizOptions = False, wantUpdates = [], mdh=None, **kwds):
         kwds["style"] = wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, parent, **kwds)
         self.showOptsPanel = 1
@@ -795,6 +824,11 @@ class ArraySettingsAndViewPanel(wx.Panel):
         pinfo = aui.AuiPaneInfo().Name("optionsPanel").Right().Caption('Display Settings').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
         self._mgr.AddPane(self.optionspanel, pinfo)
 
+        self.overlaypanel = OverlayPanel(self, self.view, mdh)
+        self.overlaypanel.SetSize(self.overlaypanel.GetBestSize())
+        pinfo2 = aui.AuiPaneInfo().Name("overlayPanel").Right().Caption('Overlays').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
+        self._mgr.AddPane(self.overlaypanel, pinfo2)
+
         if self.do.ds.shape[2] > 1:
             self.playbackpanel = playback.PlayPanel(self, self)
             self.playbackpanel.SetSize(self.playbackpanel.GetBestSize())
@@ -811,7 +845,7 @@ class ArraySettingsAndViewPanel(wx.Panel):
 
         self._mgr.Update()
         self._mgr.MinimizePane(pinfo)
-        #self._mgr.MinimizePane(pinfo1)
+        self._mgr.MinimizePane(pinfo2)
         #pinfo.Minimize()
         #self._mgr.Update()
 
