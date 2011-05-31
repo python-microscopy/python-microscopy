@@ -57,7 +57,7 @@ class Unmixer:
         self.pixelsize = pixelsize
         self.flip = flip
         if shiftfield:
-            self.SetShiftField(shiftField)
+            self.SetShiftField(shiftfield)
 
     def SetShiftField(self, shiftField):
         #self.shiftField = shiftField

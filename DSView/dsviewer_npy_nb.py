@@ -47,7 +47,7 @@ class DSViewFrame(wx.Frame):
         # tell AuiManager to manage this frame
         self._mgr.SetManagedWindow(self)
 
-        self.vp = ArraySettingsAndViewPanel(self, self.image.data, wantUpdates=[self.update])
+        self.vp = ArraySettingsAndViewPanel(self, self.image.data, wantUpdates=[self.update], mdh=self.image.mdh)
         self._mgr.AddPane(self.vp, aui.AuiPaneInfo().
                           Name("Data").Caption("Data").Centre().CloseButton(False).CaptionVisible(False))
 

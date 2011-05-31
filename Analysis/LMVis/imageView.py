@@ -15,6 +15,7 @@ import numpy
 import os
 import sys
 import wx
+import wx.lib.agw.aui as aui
 import histLimits
 import pylab
 import scipy.misc
@@ -23,30 +24,34 @@ import subprocess
 from PYME.Analysis import thresholding
 
 #from PYME.DSView.myviewpanel_numarray import MyViewPanel
-from PYME.DSView.arrayViewPanel import ArraySettingsAndViewPanel
+from PYME.DSView.arrayViewPanel import ArrayViewPanel
+from PYME.DSView.displayOptions import DisplayOpts
+from PYME.DSView.DisplayOptionsPanel import OptionsPanel
 
-from PYME.misc.auiFloatBook import AuiNotebookWithFloatingPages
+#from PYME.misc.auiFloatBook import AuiNotebookWithFloatingPages
 
 class ImageViewPanel(wx.Panel):
-    def __init__(self, parent, image, glCanvas, zp=0, zdim=0):
+    def __init__(self, parent, image, glCanvas, do, chan=0, zdim=0):
         wx.Panel.__init__(self, parent, -1, size=parent.Size)
 
         self.image = image
         self.glCanvas = glCanvas
-        self.zp = zp
+        #self.do.zp = zp
+        self.do = do
+        self.chan = chan
         self.zdim = zdim
         self.cmap = pylab.cm.hot
 
         if len(self.image.img.shape) == 2:
             c = self.image.img.ravel()
         elif self.zdim == 0:
-            c = self.image.img[self.zp, :,:].ravel()
+            c = self.image.img[self.do.zp, :,:].ravel()
         else:
-            c = self.image.img[:,:,self.zp].ravel()
+            c = self.image.img[:,:,self.do.zp].ravel()
 
         #clim_upper = float(c[numpy.argsort(c)[len(c)*.95]])
-        clim_upper = c.max()
-        self.clim = (c.min(), clim_upper)
+        #clim_upper = c.max()
+        #self.clim = (c.min(), clim_upper)
 
         
         wx.EVT_PAINT(self, self.OnPaint)
@@ -92,14 +97,14 @@ class ImageViewPanel(wx.Panel):
         if len(self.image.img.shape) == 2:
             im = numpy.flipud(self.image.img[int(x0_ / self.image.pixelSize):int(x1_ / self.image.pixelSize):step, int(y0_ / self.image.pixelSize):int(y1_ / self.image.pixelSize):step].astype('f').T)
         elif self.zdim ==0:
-            im = numpy.flipud(self.image.img[self.zp,int(x0_ / self.image.pixelSize):int(x1_ / self.image.pixelSize):step, int(y0_ / self.image.pixelSize):int(y1_ / self.image.pixelSize):step].astype('f').T)
+            im = numpy.flipud(self.image.img[self.do.zp,int(x0_ / self.image.pixelSize):int(x1_ / self.image.pixelSize):step, int(y0_ / self.image.pixelSize):int(y1_ / self.image.pixelSize):step].astype('f').T)
         else:
-            im = numpy.flipud(self.image.img[int(x0_ / self.image.pixelSize):int(x1_ / self.image.pixelSize):step, int(y0_ / self.image.pixelSize):int(y1_ / self.image.pixelSize):step, self.zp].astype('f').T)
+            im = numpy.flipud(self.image.img[int(x0_ / self.image.pixelSize):int(x1_ / self.image.pixelSize):step, int(y0_ / self.image.pixelSize):int(y1_ / self.image.pixelSize):step, self.do.zp].astype('f').T)
 
-        im = im - self.clim[0]
-        im = im/(self.clim[1] - self.clim[0])
+        im = im - self.do.Offs[self.chan] #self.clim[0]
+        im = im*self.do.Gains[self.chan]    #/(self.clim[1] - self.clim[0])
 
-        im = (255*self.cmap(im)[:,:,:3]).astype('b')
+        im = (255*self.do.cmaps[self.chan](im)[:,:,:3]).astype('b')
 
         #print im.shape
             
@@ -163,21 +168,22 @@ class ImageViewPanel(wx.Panel):
 
     def OnKeyPress(self, event):
         if event.GetKeyCode() == wx.WXK_PRIOR:
-            self.zp =max(self.zp - 1, 0)
+            self.do.zp =max(self.do.zp - 1, 0)
             self.Refresh()
         elif event.GetKeyCode() == wx.WXK_NEXT:
-            self.zp = min(self.zp + 1, self.image.img.shape[self.zdim] - 1)
+            self.do.zp = min(self.do.zp + 1, self.image.img.shape[self.zdim] - 1)
             self.Refresh()
         else:
             event.Skip()
 
 class ColourImageViewPanel(ImageViewPanel):
-    def __init__(self, parent, glCanvas):
+    def __init__(self, parent, glCanvas, do):
         wx.Panel.__init__(self, parent, -1, size=parent.Size)
 
         self.ivps = []
         #self.clims = []
         #self.cmaps = []
+        self.do = do
 
         self.glCanvas = glCanvas
 
@@ -200,8 +206,8 @@ class ColourImageViewPanel(ImageViewPanel):
 
         for ivp in self.ivps:
             img = ivp.image
-            clim = ivp.clim
-            cmap = ivp.cmap
+            #clim = ivp.clim
+            cmap = ivp.do.cmaps[ivp.chan]
 
             x0 = max(self.centreX  - width/2, img.imgBounds.x0)
             x1 = min(self.centreX  + width/2, img.imgBounds.x1)
@@ -229,13 +235,15 @@ class ColourImageViewPanel(ImageViewPanel):
             if len(img.img.shape) == 2:
                 im = numpy.flipud(img.img[int(x0_ / img.pixelSize):int(x1_ / img.pixelSize):step, int(y0_ / img.pixelSize):int(y1_ / img.pixelSize):step].astype('f').T)
             elif self.zdim ==0:
-                im = numpy.flipud(img.img[self.zp,int(x0_ / img.pixelSize):int(x1_ / img.pixelSize):step, int(y0_ / img.pixelSize):int(y1_ / img.pixelSize):step].astype('f').T)
+                im = numpy.flipud(img.img[self.do.zp,int(x0_ / img.pixelSize):int(x1_ / img.pixelSize):step, int(y0_ / img.pixelSize):int(y1_ / img.pixelSize):step].astype('f').T)
             else:
-                im = numpy.flipud(img.img[int(x0_ / img.pixelSize):int(x1_ / img.pixelSize):step, int(y0_ / img.pixelSize):int(y1_ / img.pixelSize):step, self.zp].astype('f').T)
+                im = numpy.flipud(img.img[int(x0_ / img.pixelSize):int(x1_ / img.pixelSize):step, int(y0_ / img.pixelSize):int(y1_ / img.pixelSize):step, self.do.zp].astype('f').T)
 
             #print clim
-            im = im.astype('f') - clim[0]
-            im = im/(clim[1] - clim[0])
+            #im = im.astype('f') - clim[0]
+            #im = im/(clim[1] - clim[0])
+            im = im - self.do.Offs[ivp.chan] #self.clim[0]
+            im = im*self.do.Gains[ivp.chan]    #/(self.clim[1] - self.clim[0])
 
             im = numpy.minimum(im, 1)
             im = numpy.maximum(im, 0)
@@ -560,18 +568,40 @@ class MultiChannelImageViewFrame(wx.Frame):
         
         self.images = images
         self.names = [n or 'Image' for n in names]
+        self.frame = self
 
-        self.notebook = AuiNotebookWithFloatingPages(id=-1, parent=self, style=wx.aui.AUI_NB_TAB_SPLIT)
+        #self.notebook = AuiNotebookWithFloatingPages(id=-1, parent=self, style=wx.aui.AUI_NB_TAB_SPLIT)
+        self._mgr = aui.AuiManager(agwFlags = aui.AUI_MGR_DEFAULT | aui.AUI_MGR_AUTONB_NO_CAPTION)
+        atabstyle = self._mgr.GetAutoNotebookStyle()
+        self._mgr.SetAutoNotebookStyle((atabstyle ^ aui.AUI_NB_BOTTOM) | aui.AUI_NB_TOP)
+        # tell AuiManager to manage this frame
+        self._mgr.SetManagedWindow(self)
+
         self.ivps = []
+        self.pane0 = None
+
+        asp = self.images[0].sliceSize/self.images[0].pixelSize
+        if asp == 0:
+            asp = 1
+        ims = self.images[0].img.shape
+
+        if len(ims) == 2:
+            ims = list(ims) + [1]
+
+        self.do = DisplayOpts([img.img.reshape(ims) for img in self.images], asp)
+        self.do.Optimise()
+        self.do.zp = zp
+        self.do.names = self.names
 
         cmaps = [pylab.cm.r, pylab.cm.g, pylab.cm.b]
 
-        for img, name in zip(self.images, self.names):
-            self.ivps.append(ImageViewPanel(self.notebook, img, glCanvas, zp=zp, zdim=zdim))
+        for img, name, i in zip(self.images, self.names, xrange(len(self.images))):
+            self.ivps.append(ImageViewPanel(self, img, glCanvas, self.do, chan=i, zdim=zdim))
             if len(self.images) > 1 and len(cmaps) > 0:
-                self.ivps[-1].cmap = cmaps.pop(0)
+                #self.ivps[-1].cmap = cmaps.pop(0)
+                self.do.cmaps[i] = cmaps.pop(0)
 
-            self.notebook.AddPage(page=self.ivps[-1], select=True, caption=name)
+            self.AddPage(page=self.ivps[-1], select=True, caption=name)
 
 
         if len(img.img.shape) > 2:
@@ -579,12 +609,13 @@ class MultiChannelImageViewFrame(wx.Frame):
             asp = self.images[0].sliceSize/self.images[0].pixelSize
             if asp == 0:
                 asp = 1
-            self.notebook.AddPage(page=ArraySettingsAndViewPanel(self.notebook, [img.img for img in self.images], aspect = asp), select=False, caption='Slices')
+            #self.AddPage(page=ArraySettingsAndViewPanel(self, [img.img for img in self.images], aspect = asp), select=False, caption='Slices')
+            self.AddPage(page=ArrayViewPanel(self, do=self.do, aspect = asp), select=False, caption='Slices')
             
         elif len(self.images) > 1:
-            self.civp = ColourImageViewPanel(self, glCanvas)
+            self.civp = ColourImageViewPanel(self, glCanvas, self.do)
             self.civp.ivps = self.ivps
-            self.notebook.AddPage(page=self.civp, select=True, caption='Composite')
+            self.AddPage(page=self.civp, select=True, caption='Composite')
 
         
 
@@ -592,7 +623,65 @@ class MultiChannelImageViewFrame(wx.Frame):
 
         self.limitsFrame = None
 
+        self.optionspanel = OptionsPanel(self, self.do, thresholdControls=True)
+        self.optionspanel.SetSize(self.optionspanel.GetBestSize())
+        pinfo = aui.AuiPaneInfo().Name("optionsPanel").Right().Caption('Display Settings').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
+        self._mgr.AddPane(self.optionspanel, pinfo)
+
+        if self.do.ds.shape[2] > 1:
+            from PYME.DSView.modules import playback
+            self.playbackpanel = playback.PlayPanel(self, self)
+            self.playbackpanel.SetSize(self.playbackpanel.GetBestSize())
+
+            pinfo1 = aui.AuiPaneInfo().Name("playbackPanel").Bottom().Caption('Playback').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
+            self._mgr.AddPane(self.playbackpanel, pinfo1)
+            self.do.WantChangeNotification.append(self.playbackpanel.update)
+
+        self._mgr.Update()
+        self._mgr.MinimizePane(pinfo)
+
         wx.EVT_CLOSE(self, self.OnClose)
+        self.do.WantChangeNotification.append(self.Refresh)
+
+    def AddPage(self, page=None, select=True,caption='Dummy'):
+        if self.pane0 == None:
+            name = caption.replace(' ', '')
+            self._mgr.AddPane(page, aui.AuiPaneInfo().
+                          Name(name).Caption(caption).Centre().CloseButton(False))
+            self.pane0 = name
+
+        else:
+            self._mgr.Update()
+            pn = self._mgr.GetPaneByName(self.pane0)
+            if pn.IsNotebookPage():
+                print pn.notebook_id
+                nbs = self._mgr.GetNotebooks()
+                if len(nbs) > pn.notebook_id:
+                    currPage = nbs[pn.notebook_id].GetSelection()
+                self._mgr.AddPane(page, aui.AuiPaneInfo().
+                              Name(caption.replace(' ', '')).Caption(caption).CloseButton(False).NotebookPage(pn.notebook_id))
+                if (not select) and len(nbs) > pn.notebook_id:
+                    nbs[pn.notebook_id].SetSelection(currPage)
+            else:
+                self._mgr.AddPane(page, aui.AuiPaneInfo().
+                              Name(caption.replace(' ', '')).Caption(caption).CloseButton(False), target=pn)
+                #nb = self._mgr.GetNotebooks()[0]
+                #if not select:
+                #    nb.SetSelection(0)
+
+        self._mgr.Update()
+
+    def update(self):
+        #if 'playbackpanel' in dir(self):
+        #        self.playbackpanel.update()
+        self.Refresh()
+
+    def GetSelectedPage(self):
+        nbs = self._mgr.GetNotebooks()
+        currPage = nbs[0].GetCurrentPage()
+
+        return currPage
+
 
     def CreateMenuBar(self):
 
@@ -604,7 +693,7 @@ class MultiChannelImageViewFrame(wx.Frame):
         ID_EXPORT = wx.NewId()
         ID_SAVEALL = wx.NewId()
 
-        ID_VIEW_COLOURLIM = wx.NewId()
+        ID_VIEW_CONSOLE = wx.NewId()
         ID_VIEW_BACKGROUND = wx.NewId()
         ID_FILTER_GAUSS = wx.NewId()
         ID_COLOC = wx.NewId()
@@ -621,7 +710,7 @@ class MultiChannelImageViewFrame(wx.Frame):
         file_menu.Append(wx.ID_CLOSE, "&Close")
 
         view_menu = wx.Menu()
-        view_menu.AppendCheckItem(ID_VIEW_COLOURLIM, "&Colour Scaling")
+        view_menu.Append(ID_VIEW_CONSOLE, "&Console")
         view_menu.Append(ID_VIEW_BACKGROUND, "Set as visualisation &background")
 
         proc_menu = wx.Menu()
@@ -662,7 +751,8 @@ class MultiChannelImageViewFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnSaveChannels, id=ID_SAVEALL)
         self.Bind(wx.EVT_MENU, self.OnClose, id=wx.ID_CLOSE)
         self.Bind(wx.EVT_MENU, self.OnExport, id=ID_EXPORT)
-        self.Bind(wx.EVT_MENU, self.OnViewCLim, id=ID_VIEW_COLOURLIM)
+        #self.Bind(wx.EVT_MENU, self.OnViewCLim, id=ID_VIEW_COLOURLIM)
+        self.Bind(wx.EVT_MENU, self.OnViewConsole, id=ID_VIEW_CONSOLE)
         self.Bind(wx.EVT_MENU, self.OnViewBackground, id=ID_VIEW_BACKGROUND)
         self.Bind(wx.EVT_MENU, self.On3DIsosurf, id=ID_3D_ISOSURF)
         self.Bind(wx.EVT_MENU, self.On3DVolume, id=ID_3D_VOLUME)
@@ -674,7 +764,7 @@ class MultiChannelImageViewFrame(wx.Frame):
 
 
     def OnSave(self, event):
-        ivp = self.notebook.GetPage(self.notebook.GetSelection())
+        ivp = self.GetSelectedPage()# self.notebook.GetPage(self.notebook.GetSelection())
 
         if 'image' in dir(ivp): #is a single channel
             fname = wx.FileSelector('Save Image ...', default_extension='.tif', wildcard="TIFF files (*.tif)|*.tif", flags = wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
@@ -683,14 +773,16 @@ class MultiChannelImageViewFrame(wx.Frame):
                 ivp.image.save(fname)
 
                 n = self.names[self.ivps.index(ivp)]
-                self.notebook.SetPageText(self.notebook.GetSelection(), n + ' - ' + os.path.split(fname)[-1])
+                #self.notebook.SetPageText(self.notebook.GetSelection(), n + ' - ' + os.path.split(fname)[-1])
+                self._mgr.GetPaneByWidget(ivp).Caption(n + ' - ' + os.path.split(fname)[-1])
+                self._mgr.Update()
 
         else:
             #wx.MessageBox('Saving composites not supported yet')
             self.OnSaveChannels(None)
 
     def OnViewBackground(self, event):
-        ivp = self.notebook.GetPage(self.notebook.GetSelection())
+        ivp = self.GetSelectedPage() #self.notebook.GetPage(self.notebook.GetSelection())
 
         if 'image' in dir(ivp): #is a single channel
             img = numpy.minimum(255.*(ivp.image.img - ivp.clim[0])/(ivp.clim[1] - ivp.clim[0]), 255).astype('uint8')
@@ -698,6 +790,9 @@ class MultiChannelImageViewFrame(wx.Frame):
 
         self.glCanvas.Refresh()
 
+    def OnViewConsole(self, event):
+        from PYME.DSView.modules import shell
+        shell.Plug(self)
 
 
     def OnSaveChannels(self, event):
@@ -775,8 +870,8 @@ class MultiChannelImageViewFrame(wx.Frame):
         if asp == 0:
             asp = 1.
 
-        for im, ivp, i in zip(self.images, self.ivps, range(len(self.images))):
-            c = mlab.contour3d(im.img, contours=[pylab.mean(ivp.clim)], color = pylab.cm.gist_rainbow(float(i)/len(self.images))[:3])
+        for i, im in enumerate(self.images):
+            c = mlab.contour3d(im.img, contours=[self.do.Offs[i] + .5/self.do.Gains[i]], color = pylab.cm.gist_rainbow(float(i)/len(self.images))[:3])
             c.mlab_source.dataset.spacing = (1. ,1., asp)
 
     def On3DVolume(self, event):
@@ -788,9 +883,10 @@ class MultiChannelImageViewFrame(wx.Frame):
         if asp == 0:
             asp = 1.
 
-        for im, ivp, i in zip(self.images, self.ivps, range(len(self.images))):
+        #for im, ivp, i in zip(self.images, self.ivps, range(len(self.images))):
+        for i, im in enumerate(self.images):
             #c = mlab.contour3d(im.img, contours=[pylab.mean(ivp.clim)], color = pylab.cm.gist_rainbow(float(i)/len(self.images))[:3])
-            v = mlab.pipeline.volume(mlab.pipeline.scalar_field(numpy.minimum(255*im.img/ivp.clim[1], 254).astype('uint8')))
+            v = mlab.pipeline.volume(mlab.pipeline.scalar_field(numpy.minimum(255*(im.img-self.do.Offs[i])*self.do.Gains[i], 254).astype('uint8')))
             v.volume.scale = (1. ,1., asp)
 
     def OnGaussianFilter(self, event):
@@ -820,8 +916,8 @@ class MultiChannelImageViewFrame(wx.Frame):
         imA = self.images[0].img
         imB = self.images[1].img
         #assume threshold is half the colour bounds - good if using threshold mode
-        tA = pylab.mean(self.ivps[0].clim)
-        tB = pylab.mean(self.ivps[0].clim)
+        tA = self.do.Offs[0] + .5/self.do.Gains[0] #pylab.mean(self.ivps[0].clim)
+        tB = self.do.Offs[1] + .5/self.do.Gains[1] #pylab.mean(self.ivps[0].clim)
 
         nameA = self.names[0]
         nameB = self.names[1]
@@ -912,9 +1008,9 @@ class MultiChannelImageViewFrame(wx.Frame):
 #        self.ivp.Refresh()
 
 
-class DispSettingsFrame(wx.MiniFrame):
-    def __init__(self, parent, id, title='Colour Scaling', pos = (0,0), **kwargs):
-        wx.MiniFrame.__init__(self, parent, id, title, pos = pos, *kwargs)
+class DispSettingsPanel(wx.Panel):
+    def __init__(self, parent, **kwargs):
+        wx.Panel.__init__(self, parent, -1, *kwargs)
 
         self.parent = parent
 
