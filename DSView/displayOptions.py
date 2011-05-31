@@ -22,7 +22,7 @@ def fast_grey(data):
 fast_grey.name = 'fastGrey'
      
 
-class DisplayOpts:
+class DisplayOpts(object):
     UPRIGHT, ROT90 = range(2)
     SLICE_XY, SLICE_XZ, SLICE_YZ = range(3)
 
@@ -33,10 +33,12 @@ class DisplayOpts:
         self.Gains = []
         self.Offs = []
         self.cmaps = []
+        self.names = []
         
         self.xp=0
         self.yp=0
-        self.zp=0
+
+        self._zp=0
 
         self.SetDataStack(datasource)
         self.SetAspect(aspect)
@@ -45,6 +47,16 @@ class DisplayOpts:
         self.orientation = self.UPRIGHT
         self.slice = self.SLICE_XY
         self.scale = 1.0
+
+    @property
+    def zp(self):
+        return self._zp
+
+    @zp.setter
+    def zp(self, value):
+        self._zp = value
+        #print 'z changed'
+        self.OnChange()
 
     def SetDataStack(self, datasource):
         self.ds = dataWrap.Wrap(datasource) #make sure data is wrapped
@@ -70,6 +82,8 @@ class DisplayOpts:
                     self.Gains.append(1.)
                     self.Offs.append(0.)
                     self.cmaps.append(cms[i%len(cms)])
+
+        self.names = ['Chan %d' %i for i in range(nchans)]
 
         self.OnChange()
 

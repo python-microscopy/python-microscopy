@@ -37,13 +37,16 @@ SELECTION_LINE = 1
 
             
 class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
-    def __init__(self, parent, dstack = None, aspect=1):
+    def __init__(self, parent, dstack = None, aspect=1, do = None):
         
-        if (dstack == None):
-            dstack = scipy.zeros(10,10)
+        if (dstack == None and do == None):
+            dstack = scipy.zeros((10,10))
 
-        self.do = DisplayOpts(dstack, aspect=aspect)
-        self.do.Optimise()
+        if do == None:
+            self.do = DisplayOpts(dstack, aspect=aspect)
+            self.do.Optimise()
+        else:
+            self.do = do
 
         scrolledImagePanel.ScrolledImagePanel.__init__(self, parent, self.DoPaint, style=wx.SUNKEN_BORDER|wx.TAB_TRAVERSAL)
 
