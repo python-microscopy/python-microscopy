@@ -19,8 +19,10 @@ import numpy
 #additional arguments
 taskList = [
 T(-1, scope.turnAllLasersOff),
+T(-1, SetCameraShutter, False),
 T(-1, scope.joystick.Enable, False),
 #T(-1, SetEMGain,150),
+T(20, SetCameraShutter, True),
 T(20, scope.filterWheel.SetFilterPos, "ND4.5"),
 T(21, scope.l671.TurnOn),
 T(58, scope.l671.TurnOff),

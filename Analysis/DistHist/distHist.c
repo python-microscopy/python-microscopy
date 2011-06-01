@@ -18,8 +18,9 @@
 #include <stdio.h>
 
 //#define SSE
-#include <xmmintrin.h>
-
+#ifdef SSE
+  #include <xmmintrin.h>
+#endif
 
 
 static PyObject * distanceHistogram(PyObject *self, PyObject *args, PyObject *keywds)
@@ -275,7 +276,8 @@ static PyObject * distanceProduct(PyObject *self, PyObject *args, PyObject *keyw
 
     //return (PyObject*) out;
     return Py_BuildValue("d", res);
-}
+}
+
 
 #ifdef SSE
 static PyObject * distanceHistogramRS(PyObject *self, PyObject *args, PyObject *keywds)
