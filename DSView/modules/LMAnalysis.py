@@ -202,7 +202,11 @@ class LMAnalyser:
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
         hsizer.Add(wx.StaticText(pan, -1, 'Start at:'), 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-        self.tStartAt = wx.TextCtrl(pan, -1, value='%d' % self.vp.do.zp, size=(50, -1))
+        if 'Protocol.DataStartsAt' in self.image.mdh.getEntryNames():
+            startAt = self.image.mdh.getEntry('Protocol.DataStartsAt')
+        else:
+            startAt = self.vp.do.zp
+        self.tStartAt = wx.TextCtrl(pan, -1, value='%d' % startAt, size=(50, -1))
 
         hsizer.Add(self.tStartAt, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
         vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 2)
