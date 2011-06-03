@@ -53,7 +53,7 @@ class DataWrap: #permit indexing with more dimensions larger than len(shape)
 
         self.dim_1_is_z = False
 
-        if not data.__class__ == np.ndarray and not data.__class__ == tables.EArray: # is a data source
+        if not isinstance(data, np.ndarray) and not isinstance(data, tables.EArray): # is a data source
             self.type = 'DataSource'
             self.shape = data.getSliceShape() + (data.getNumSlices(),)
             #print self.shape
