@@ -15,6 +15,9 @@ import wx.py.shell
 import PYME.misc.autoFoldPanel as afp
 import wx.lib.agw.aui as aui
 
+#hacked so py2exe works
+from PYME.DSView.dsviewer_npy import View3D
+
 from PYME.Analysis.LMVis import gl_render
 from PYME.Analysis.LMVis import workspaceTree
 import sys
@@ -27,7 +30,7 @@ from PYME.FileUtils import nameUtils
 from PYME.Analysis.EdgeDB import edges
 
 import os
-import gl_render3D
+from PYME.Analysis.LMVis import gl_render3D
 
 from matplotlib import delaunay
 
@@ -697,7 +700,7 @@ class VisGUIFrame(wx.Frame):
         renderers.init_renderers(self)
 
         self.extras_menu = wx.Menu()
-        import Extras
+        from PYME.Analysis.LMVis import Extras
         Extras.InitPlugins(self)
 
         help_menu = wx.Menu()

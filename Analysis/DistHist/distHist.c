@@ -23,6 +23,7 @@
 #endif
 
 
+
 static PyObject * distanceHistogram(PyObject *self, PyObject *args, PyObject *keywds)
 {
     double *res = 0;
