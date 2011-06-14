@@ -86,7 +86,7 @@ class deconvolver:
                     #rescale psf to match data voxel size
                     psf = ndimage.zoom(psf, [vs.x/vx, vs.y/vy, vs.z/vz])
 
-            data = self.image.data[:,:,:]
+            data = self.image.data[:,:,:].astype('f')
 
             #crop PSF in z if bigger than stack
             if psf.shape[2] > data.shape[2]:
