@@ -15,6 +15,14 @@ from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
 
 from PYME.Acquire.Hardware import fakeShutters
 import time
+import os
+import sys
+
+def GetComputerName():
+    if sys.platform == 'win32':
+        return os.environ['COMPUTERNAME']
+    else:
+        return os.uname()[1]
 
 #scope.cameras = {}
 #scope.camControls = {}
@@ -81,11 +89,7 @@ from PYME.Acquire import sarcSpacing
 ssp = sarcSpacing.SarcomereChecker(MainFrame, menuBar1, scope)
 ''')
 
-#InitGUI('''
-#from PYME.Acquire.Hardware import focusKeys
-#fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[0])
-#time1.WantNotification.append(fk.refresh)
-#''')
+
 
 #InitGUI('''
 #from PYME.Acquire import positionTracker
@@ -102,11 +106,19 @@ ssp = sarcSpacing.SarcomereChecker(MainFrame, menuBar1, scope)
 #''')
 
 #Z stage
-#InitBG('Nikon Z-Stage', '''
-#from PYME.Acquire.Hardware import NikonTE2000
-#scope.zStage = NikonTE2000.zDrive()
-##scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
-#''')
+InitGUI('''
+from PYME.Acquire.Hardware import NikonTi
+scope.zStage = NikonTi.zDrive()
+#import Pyro.core
+#scope.zStage = Pyro.core.getProxyForURI('PYRONAME://%s.ZDrive'  % GetComputerName())
+scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
+''')# % GetComputerName())
+
+InitGUI('''
+from PYME.Acquire.Hardware import focusKeys
+fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[0])
+time1.WantNotification.append(fk.refresh)
+''')
 
 #from PYME.Acquire.Hardware import frZStage
 #frz = frZStage.frZStepper(MainFrame, scope.zStage)
