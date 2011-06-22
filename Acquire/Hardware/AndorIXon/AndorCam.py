@@ -11,12 +11,19 @@
 ##################
 
 from ctypes import *
+import platform
 #import ctypes
 
 _stdcall_libraries = {}
 
-if 'WinDLL' in dir():
-    _stdcall_libraries['ATMCD32D'] = WinDLL('ATMCD32D')
+arch, plat = platform.architecture()
+
+#if 'WinDLL' in dir():
+if plat.startswith('Windows'):
+    if arch == '32bit':
+        _stdcall_libraries['ATMCD32D'] = WinDLL('ATMCD32D')
+    else:
+        _stdcall_libraries['ATMCD32D'] = WinDLL('atmcd64d')
     from ctypes.wintypes import ULONG, DWORD, BOOL, BYTE, WORD, UINT, HANDLE, HWND
 else:
     _stdcall_libraries['ATMCD32D'] = CDLL('libandor.so')

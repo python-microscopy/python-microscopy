@@ -575,10 +575,16 @@ class LMAnalyser:
     #from fth5.py
     def checkTQ(self):
         if self.tq == None:
-            if 'PYME_TASKQUEUENAME' in os.environ.keys():
-                taskQueueName = os.environ['PYME_TASKQUEUENAME']
-            else:
-                taskQueueName = 'taskQueue'
+            #if 'PYME_TASKQUEUENAME' in os.environ.keys():
+            #    taskQueueName = os.environ['PYME_TASKQUEUENAME']
+            #else:
+            #    taskQueueName = 'taskQueue'
+
+            from PYME.misc.computerName import GetComputerName
+            compName = GetComputerName()
+
+            taskQueueName = 'TaskQueues.%s' % compName
+
             self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
 
 

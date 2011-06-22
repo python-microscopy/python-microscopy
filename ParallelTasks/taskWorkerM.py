@@ -10,7 +10,6 @@
 #
 ##################
 
-#!/usr/bin/python
 import Pyro.core
 import os
 import sys
@@ -25,6 +24,7 @@ if 'PYME_TASKQUEUENAME' in os.environ.keys():
 else:
     taskQueueName = 'taskQueue'
 
+
 tq = Pyro.core.getProxyForURI("PYRONAME://" + taskQueueName)
 
 if sys.platform == 'win32':
@@ -32,23 +32,30 @@ if sys.platform == 'win32':
 else:
     name = os.uname()[1] + ' - PID:%d' % os.getpid()
 
+#loop forever asking for tasks
 while 1:
-    #print 'Geting Task ...'
-    #tq.returnCompletedTask(tq.getTask()(taskQueue=tq), name)
+    #ask the queue for tasks
     tasks = tq.getTasks()
+
     #results = []
+
+    #loop over tasks - we pop each task and then delete it after processing
+    #to keep memory usage down
     while len(tasks) > 0:
+        #get the next task (a task is a function, or more generally, a class with
+        #a __call__ method
         task = tasks.pop()
         try:
+            #execute the task, 
             res = task(taskQueue=tq)
             tq.returnCompletedTask(res, name)
         except:
             import traceback
             traceback.print_exc()
-        #tasks.remove(task)
+        
         del task
         
     #tq.returnCompletedTasks(results, name)
     del tasks
     #del results
-    #print 'Completed Task'
+    
