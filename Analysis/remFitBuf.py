@@ -182,6 +182,8 @@ class fitTask(taskDef.Task):
         if self.fitModule == 'ConfocCOIR': #special case - no object finding
             md = copy.copy(self.md)
             md.tIndex = self.index
+            md.taskQueue = taskQueue
+            md.dataSourceID = self.dataSourceID
             self.res = fitMod.ConfocCOI(self.data, md, background = self.bg)
             return fitResult(self, self.res, [])
 
@@ -273,6 +275,7 @@ class fitTask(taskDef.Task):
         #Create a fit 'factory'
         md = copy.copy(self.md)
         md.tIndex = self.index
+        md.taskQueue = taskQueue
 
         #if self.fitModule == 'LatGaussFitFRTC'  or self.fitModule == 'BiplaneFitR':
         #    fitFac = fitMod.FitFactory(numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2), md)
