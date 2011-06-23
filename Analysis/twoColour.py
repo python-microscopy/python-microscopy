@@ -10,7 +10,7 @@
 #
 ##################
 
-from PYME.FileUtils.read_kdf import ReadKdfData
+#from PYME.FileUtils.read_kdf import ReadKdfData
 import numpy as np
 import scipy as sp
 import ofind
