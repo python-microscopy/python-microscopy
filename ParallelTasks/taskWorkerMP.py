@@ -62,8 +62,9 @@ while 1:
             tasks = tq.getTasks(procName)
             
         except:
-            import traceback
-            traceback.print_exc()
+            pass
+            #import traceback
+            #traceback.print_exc()
         
             #pass
         
