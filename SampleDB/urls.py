@@ -35,6 +35,7 @@ urlpatterns = patterns('',
     (r'^hint/tag$', 'SampleDB.samples.views.tag_hint'),
 
     (r'^booking/$', 'SampleDB.samples.views.booking'),
+    (r'^queues/$', 'SampleDB.samples.analysisTasks.analysisTasks'),
 
     (r'^media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT }),
 

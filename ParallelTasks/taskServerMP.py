@@ -69,6 +69,7 @@ class TaskQueueSet(Pyro.core.ObjBase):
         self.numTasksProcessed = 0
         self.numTasksProcByWorker = {}
         self.lastTaskByWorker = {}
+        self.lastTimeByWorker = {}
         self.activeWorkers = []
         self.activeTimeout = 10
 
@@ -122,7 +123,7 @@ class TaskQueueSet(Pyro.core.ObjBase):
         #print workerName, len(res)
         return res
 
-    def returnCompletedTask(self, taskResult, workerName='Unspecified'):
+    def returnCompletedTask(self, taskResult, workerName='Unspecified', timeTaken=None):
         self.taskQueues[taskResult.queueID].returnCompletedTask(taskResult)
         self.numTasksProcessed += 1
         if not workerName in self.numTasksProcByWorker.keys():
@@ -130,10 +131,12 @@ class TaskQueueSet(Pyro.core.ObjBase):
 
         self.numTasksProcByWorker[workerName] += 1
         self.lastTaskByWorker[workerName] = time.time()
+
+        self.lastTimeByWorker[workerName] = timeTaken
         
         #print workerName
 
-    def returnCompletedTasks(self, taskResult, workerName='Unspecified'):
+    def returnCompletedTasks(self, taskResult, workerName='Unspecified', timeTaken=None):
         self.taskQueues[taskResult[0].queueID].returnCompletedTasks(taskResult)
         self.numTasksProcessed += len(taskResult)
         if not workerName in self.numTasksProcByWorker.keys():
@@ -141,6 +144,12 @@ class TaskQueueSet(Pyro.core.ObjBase):
 
         self.numTasksProcByWorker[workerName] += len(taskResult)
         self.lastTaskByWorker[workerName] = time.time()
+
+        if timeTaken == None:
+            self.lastTimeByWorker[workerName] = None
+        else:
+            self.lastTimeByWorker[workerName] = timeTaken/len(taskResult)
+
 
     def getCompletedTask(self, queueName = 'Default'):
         if not queueName in self.taskQueues.keys():
@@ -201,6 +210,12 @@ class TaskQueueSet(Pyro.core.ObjBase):
 
     def getWorkerNames(self):
         return self.numTasksProcByWorker.keys()
+
+    def getWorkerFPS(self, workerName):
+        if workerName in self.activeWorkers and not self.lastTimeByWorker[workerName] == None:
+            return 1./self.lastTimeByWorker[workerName]
+        else:
+            return 0
 
     def getQueueNames(self):
         return self.taskQueues.keys()

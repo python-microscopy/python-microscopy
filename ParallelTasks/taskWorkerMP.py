@@ -83,9 +83,11 @@ while 1:
         #a __call__ method
         task = tasks.pop()
         try:
-            #execute the task, 
+            #execute the task,
+            t1 = time.time()
             res = task(taskQueue=tq)
-            tq.returnCompletedTask(res, procName)
+            t2 = time.time()
+            tq.returnCompletedTask(res, procName, t2-t1)
         except:
             import traceback
             traceback.print_exc()
