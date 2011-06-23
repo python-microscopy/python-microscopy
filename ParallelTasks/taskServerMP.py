@@ -105,18 +105,18 @@ class TaskQueueSet(Pyro.core.ObjBase):
         return res
 
     def getTasks(self, workerName='Unspecified'):
-        """get task from front of list, blocks"""
+        """get task from front of list, non-blocking"""
         #print 'Task requested'
         self.getTaskLock.acquire()
-        while self.getNumberOpenTasks() < 1:
-            time.sleep(0.01)
+        if self.getNumberOpenTasks() < 1:
+            res = []
+        else:
+            if not workerName in self.activeWorkers:
+                self.activeWorkers.append(workerName)
 
-        if not workerName in self.activeWorkers:
-            self.activeWorkers.append(workerName)
+            queuesWithOpenTasks = [q for q in self.taskQueues.values() if q.getNumberOpenTasks() > 0]
 
-        queuesWithOpenTasks = [q for q in self.taskQueues.values() if q.getNumberOpenTasks() > 0]
-
-        res = queuesWithOpenTasks[int(numpy.round(len(queuesWithOpenTasks)*numpy.random.rand() - 0.5))].getTasks(self.activeWorkers.index(workerName), len(self.activeWorkers))
+            res = queuesWithOpenTasks[int(numpy.round(len(queuesWithOpenTasks)*numpy.random.rand() - 0.5))].getTasks(self.activeWorkers.index(workerName), len(self.activeWorkers))
         self.getTaskLock.release()
         return res
 
