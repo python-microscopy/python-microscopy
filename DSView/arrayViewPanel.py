@@ -318,11 +318,14 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
             if self.showAdjacentPoints:
                 dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('BLUE'),1))
-                for p, dxi, dyi in zip(pNFoc, dxn, dyn):
-                    dc.DrawRectangle(sc*p[0]-2*sc - x0,sc*p[1]*self.aspect - 2*sc*self.aspect - y0, 4*sc,4*sc*self.aspect)
-
-                    if self.pointMode == 'splitter' and self.do.slice == self.do.SLICE_XY:
+                if self.pointMode == 'splitter' and self.do.slice == self.do.SLICE_XY:
+                    for p, dxi, dyi in zip(pNFoc, dxn, dyn):
+                        dc.DrawRectangle(sc*p[0]-2*sc - x0,sc*p[1]*self.aspect - 2*sc*self.aspect - y0, 4*sc,4*sc*self.aspect)    
                         dc.DrawRectangle(sc*(p[0]-dxi)-2*sc - x0,sc*(self.do.ds.shape[1] - p[1] + dyi)*self.aspect - 2*sc*self.aspect - y0, 4*sc,4*sc*self.aspect)
+
+                else:
+                    for p in pNFoc:
+                        dc.DrawRectangle(sc*p[0]-2*sc - x0,sc*p[1]*self.aspect - 2*sc*self.aspect - y0, 4*sc,4*sc*self.aspect)
 
 
             pGreen = wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),1)
