@@ -118,6 +118,8 @@ class TaskQueueSet(Pyro.core.ObjBase):
 
             res = queuesWithOpenTasks[int(numpy.round(len(queuesWithOpenTasks)*numpy.random.rand() - 0.5))].getTasks(self.activeWorkers.index(workerName), len(self.activeWorkers))
         self.getTaskLock.release()
+        
+        #print workerName, len(res)
         return res
 
     def returnCompletedTask(self, taskResult, workerName='Unspecified'):
@@ -128,6 +130,8 @@ class TaskQueueSet(Pyro.core.ObjBase):
 
         self.numTasksProcByWorker[workerName] += 1
         self.lastTaskByWorker[workerName] = time.time()
+        
+        #print workerName
 
     def returnCompletedTasks(self, taskResult, workerName='Unspecified'):
         self.taskQueues[taskResult[0].queueID].returnCompletedTasks(taskResult)

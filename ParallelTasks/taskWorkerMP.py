@@ -24,7 +24,7 @@ compName = GetComputerName()
 if 'PYRO_NS_HOSTNAME' in os.environ.keys():
     Pyro.config.PYRO_NS_HOSTNAME=os.environ['PYRO_NS_HOSTNAME']
 
-Pyro.config.PYRO_MOBILE_CODE=1
+Pyro.config.PYRO_MOBILE_CODE=0
 
 #if 'PYME_TASKQUEUENAME' in os.environ.keys():
 #    taskQueueName = os.environ['PYME_TASKQUEUENAME']
@@ -47,6 +47,7 @@ while 1:
     #loop over all queues, looking for tasks to process
     while len(tasks) == 0 and len(queueNames) > 0:
         #try queue on current machine first
+        #print queueNames
         if compName in queueNames:
             qName = compName
             queueNames.remove(qName)
@@ -55,14 +56,23 @@ while 1:
 
         try:
             tq = Pyro.core.getProxyForURI(ns.resolve('TaskQueues.%s' % qName))
+            #print qName
 
             #ask the queue for tasks
-            tasks = tq.getTasks()
+            tasks = tq.getTasks(procName)
+            
         except:
-            pass
-
+            import traceback
+            traceback.print_exc()
+        
+            #pass
+        
+    
+    
     if len(tasks) == 0: #no queues had tasks
         time.sleep(1) #put ourselves to sleep to avoid constant polling
+    #else:
+    #    print qName, len(tasks)
 
     #results = []
 
