@@ -67,6 +67,41 @@ class myLock:
         print 'Released Lock'
         self.lock.release()
 
+class writeLock:
+    def __init__(self):
+        #self.lock = threading.Lock()
+        self.readLock = threading.Lock()
+        self.readLockCount = 0
+        self.writeLock = threading.Lock()
+
+    def acquireRead(self):
+        self.writeLock.acquire()
+
+        if not self.readLock.acquire(False):
+            self.readLockCount += 1
+
+        self.writeLock.release()
+
+    def releaseRead(self):
+        self.writeLock.acquire()
+
+        self.readLockCount -= 1
+        if self.readLockCount == 0:
+           self.readLock.release()
+
+        self.writeLock.release()
+
+    def acquireWrite(self):
+        self.readLock.acquire()
+        self.writeLock.acquire()
+
+    def releaseWrite(self):
+        self.writeLock.release()
+        self.readLock.release()
+
+
+
+
 #tablesLock = myLock()
 
 class SpoolEvent(tables.IsDescription):
@@ -93,8 +128,8 @@ class HDFResultsTaskQueue(TaskQueue):
 
         self.prepResultsFile()
 
-        #self.fileResultsLock = threading.Lock()
-        self.fileResultsLock = tablesLock
+        self.fileResultsLock = writeLock() #threading.Lock()
+        #self.fileResultsLock = tablesLock
 
         self.resultsMDH = MetaDataHandler.HDFMDHandler(self.h5ResultsFile)
 
@@ -108,31 +143,31 @@ class HDFResultsTaskQueue(TaskQueue):
         return None
 
     def setQueueMetaData(self, fieldName, value):
-        self.fileResultsLock.acquire()
+        self.fileResultsLock.acquireWrite()
         self.resultsMDH.setEntry(fieldName, value)
-        self.fileResultsLock.release()
+        self.fileResultsLock.releaseWrite()
 
     def getQueueMetaData(self, fieldName):
         res  = None
-        self.fileResultsLock.acquire()
+        self.fileResultsLock.acquireRead()
         try:
             res = self.resultsMDH.getEntry(fieldName)
         finally:
-            self.fileResultsLock.release()
+            self.fileResultsLock.releaseRead()
         return res
 
     def addQueueEvents(self, events):
-        self.fileResultsLock.acquire()
+        self.fileResultsLock.acquireWrite()
         try:
             self.resultsEvents.append(events)
         finally:
-            self.fileResultsLock.release()
+            self.fileResultsLock.releaseWrite()
 
 
     def getQueueMetaDataKeys(self):
-        self.fileResultsLock.acquire()
+        self.fileResultsLock.acquireRead()
         res = self.resultsMDH.getEntryNames()
-        self.fileResultsLock.release()
+        self.fileResultsLock.releaseRead()
         return res
 
     def getNumberTasksCompleted(self):
@@ -155,7 +190,7 @@ class HDFResultsTaskQueue(TaskQueue):
         if res.results == [] and res.driftResults == []: #if we had a dud frame
             return
 
-        self.fileResultsLock.acquire() #get a lock
+        self.fileResultsLock.acquireWrite() #get a lock
             
         if not len(res.results) == 0:
             #print res.results, res.results == []
@@ -172,7 +207,7 @@ class HDFResultsTaskQueue(TaskQueue):
 
         self.h5ResultsFile.flush()
 
-        self.fileResultsLock.release() #release lock
+        self.fileResultsLock.releaseWrite() #release lock
 
         self.numClosedTasks += 1
         
@@ -180,12 +215,12 @@ class HDFResultsTaskQueue(TaskQueue):
         '''Get data, defined by fieldName and potntially additional arguments,  ascociated with queue'''
         if fieldName == 'FitResults':
             startingAt, = args
-            self.fileResultsLock.acquire()
+            self.fileResultsLock.acquireRead()
             if self.h5ResultsFile.__contains__('/FitResults'):
                 res = self.h5ResultsFile.root.FitResults[startingAt:]
             else:
                 res = []
-            self.fileResultsLock.release()
+            self.fileResultsLock.releaseRead()
             return res
         else:
             return None
@@ -264,7 +299,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         self.queueID = name
 
         #self.dataFileLock = threading.Lock()
-        self.dataFileLock = tablesLock
+        self.dataFileLock = writeLock() #tablesLock
         #self.getTaskLock = threading.Lock()
                 
     def prepResultsFile(self):
@@ -276,10 +311,10 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         #self.openTasks.append(task)
         #print 'posting tasks not implemented yet'
         if self.acceptNewTasks:
-            self.dataFileLock.acquire()
+            self.dataFileLock.acquireWrite()
             self.imageData.append(task)
             self.h5DataFile.flush()
-            self.dataFileLock.release()
+            self.dataFileLock.releaseWrite()
 
             if self.releaseNewTasks:
                 self.openTasks.append(self.imNum)
@@ -291,7 +326,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
     def postTasks(self,tasks):
         #self.openTasks += tasks
         if self.acceptNewTasks:
-            self.dataFileLock.acquire()
+            self.dataFileLock.acquireWrite()
             for task in tasks:
                 self.imageData.append(task)
                 #self.h5DataFile.flush()
@@ -302,7 +337,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
                 self.imNum += 1
 
             self.h5DataFile.flush()
-            self.dataFileLock.release()
+            self.dataFileLock.releaseWrite()
         else:
             print "can't post new tasks"
         #print 'posting tasks not implemented yet'
@@ -315,10 +350,10 @@ class HDFTaskQueue(HDFResultsTaskQueue):
             time.sleep(0.01)
 
         if self.metaDataStale:
-            self.dataFileLock.acquire()
+            self.fileResultsLock.acquireRead()
             self.metaData = MetaDataHandler.NestedClassMDHandler(self.resultsMDH)
             self.metaDataStale = False
-            self.dataFileLock.release()
+            self.fileResultsLock.releaseRead()
 
             #patch up old data which doesn't have BGRange in metadata
             if not 'Analysis.BGRange' in self.metaData.getEntryNames():
@@ -358,10 +393,10 @@ class HDFTaskQueue(HDFResultsTaskQueue):
             time.sleep(0.01)
 
         if self.metaDataStale:
-            self.dataFileLock.acquire()
+            self.fileResultsLock.acquireRead()
             self.metaData = MetaDataHandler.NestedClassMDHandler(self.resultsMDH)
             self.metaDataStale = False
-            self.dataFileLock.release()
+            self.fileResultsLock.releaseRead()
 
             if not 'Analysis.BGRange' in self.metaData.getEntryNames():
                 if 'Analysis.NumBGFrames' in self.metaData.getEntryNames():
@@ -416,34 +451,34 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         self.h5ResultsFile.close()
 
     def setQueueMetaData(self, fieldName, value):
-        self.dataFileLock.acquire()
+        self.dataFileLock.acquireWrite()
         self.dataMDH.setEntry(fieldName, value)
-        self.dataFileLock.release()
+        self.dataFileLock.releaseWrite()
         HDFResultsTaskQueue.setQueueMetaData(self, fieldName, value)
         self.metaDataStale = True
         
     def getQueueData(self, fieldName, *args):
         '''Get data, defined by fieldName and potntially additional arguments,  ascociated with queue'''
         if fieldName == 'ImageShape':
-            self.dataFileLock.acquire()
+            self.dataFileLock.acquireRead()
             res = self.h5DataFile.root.ImageData.shape[1:]
-            self.dataFileLock.release()
+            self.dataFileLock.releaseRead()
             return res
         elif fieldName == 'ImageData':
             sliceNum, = args
-            self.dataFileLock.acquire()
+            self.dataFileLock.acquireRead()
             res = self.h5DataFile.root.ImageData[sliceNum, :,:]
-            self.dataFileLock.release()
+            self.dataFileLock.releaseRead()
             return res
         elif fieldName == 'NumSlices':
-            self.dataFileLock.acquire()
+            self.dataFileLock.acquireRead()
             res = self.h5DataFile.root.ImageData.shape[0]
-            self.dataFileLock.release()
+            self.dataFileLock.releaseRead()
             return res
         elif fieldName == 'Events':
-            self.dataFileLock.acquire()
+            self.dataFileLock.acquireRead()
             res = self.h5DataFile.root.Events[:]
-            self.dataFileLock.release()
+            self.dataFileLock.releaseRead()
             return res
         elif fieldName == 'PSF':
             from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
@@ -473,10 +508,10 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         ev['EventDescr'] = eventDescr
         ev['Time'] = evtTime
 
-        self.dataFileLock.acquire()
+        self.dataFileLock.acquireWrite()
         ev.append()
         self.events.flush()
-        self.dataFileLock.release()
+        self.dataFileLock.releaseWrite()
 
         ev = self.resultsEvents.row
 
@@ -484,11 +519,11 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         ev['EventDescr'] = eventDescr
         ev['Time'] = evtTime
 
-        self.fileResultsLock.acquire()
+        self.fileResultsLock.acquireWrite()
         #print len(self.events)
         ev.append()
         self.resultsEvents.flush()
-        self.fileResultsLock.release()
+        self.fileResultsLock.releaseWrite()
 
         #self.dataFileLock.release()
 
