@@ -160,13 +160,13 @@ class HDFResultsTaskQueue(TaskQueue):
         if not len(res.results) == 0:
             #print res.results, res.results == []
             if not self.h5ResultsFile.__contains__('/FitResults'):
-                self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'FitResults', res.results, filters=tables.Filters(complevel=5, shuffle=True))
+                self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'FitResults', res.results, filters=tables.Filters(complevel=5, shuffle=True), expectedrows=500000)
             else:
                 self.h5ResultsFile.root.FitResults.append(res.results)
 
         if not len(res.driftResults) == 0:
             if not self.h5ResultsFile.__contains__('/DriftResults'):
-                self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'DriftResults', res.driftResults, filters=tables.Filters(complevel=5, shuffle=True))
+                self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'DriftResults', res.driftResults, filters=tables.Filters(complevel=5, shuffle=True), expectedrows=500000)
             else:
                 self.h5ResultsFile.root.DriftResults.append(res.driftResults)
 
@@ -319,16 +319,25 @@ class HDFTaskQueue(HDFResultsTaskQueue):
             self.metaData = MetaDataHandler.NestedClassMDHandler(self.resultsMDH)
             self.metaDataStale = False
             self.dataFileLock.release()
+
+            #patch up old data which doesn't have BGRange in metadata
+            if not 'Analysis.BGRange' in self.metaData.getEntryNames():
+                if 'Analysis.NumBGFrames' in self.metaData.getEntryNames():
+                    nBGFrames = self.metaData.Analysis.NumBGFrames
+                else:
+                    nBGFrames = 10
+
+                self.metaData.setEntry('Analysis.BGRange', (-nBGFrames, 0))
         
         
         taskNum = self.openTasks.pop(self.fTaskToPop(workerN, NWorkers, len(self.openTasks)))
 
-        if 'Analysis.BGRange' in self.metaData.getEntryNames():
-            bgi = range(max(taskNum + self.metaData.Analysis.BGRange[0],self.metaData.EstimatedLaserOnFrameNo), max(taskNum + self.metaData.Analysis.BGRange[1],self.metaData.EstimatedLaserOnFrameNo))
-        elif 'Analysis.NumBGFrames' in self.metaData.getEntryNames():
-            bgi = range(max(taskNum - self.metaData.Analysis.NumBGFrames,self.metaData.EstimatedLaserOnFrameNo), taskNum)
-        else:
-            bgi = range(max(taskNum - 10,self.metaData.EstimatedLaserOnFrameNo), taskNum)
+        #if 'Analysis.BGRange' in self.metaData.getEntryNames():
+        bgi = range(max(taskNum + self.metaData.Analysis.BGRange[0],self.metaData.EstimatedLaserOnFrameNo), max(taskNum + self.metaData.Analysis.BGRange[1],self.metaData.EstimatedLaserOnFrameNo))
+        #elif 'Analysis.NumBGFrames' in self.metaData.getEntryNames():
+        #    bgi = range(max(taskNum - self.metaData.Analysis.NumBGFrames,self.metaData.EstimatedLaserOnFrameNo), taskNum)
+        #else:
+        #    bgi = range(max(taskNum - 10,self.metaData.EstimatedLaserOnFrameNo), taskNum)
         
         task = fitTask(self.queueID, taskNum, self.metaData.Analysis.DetectionThreshold, self.metaData, self.metaData.Analysis.FitModule, 'TQDataSource', bgindices = bgi, SNThreshold = True)
         
@@ -354,18 +363,27 @@ class HDFTaskQueue(HDFResultsTaskQueue):
             self.metaDataStale = False
             self.dataFileLock.release()
 
+            if not 'Analysis.BGRange' in self.metaData.getEntryNames():
+                if 'Analysis.NumBGFrames' in self.metaData.getEntryNames():
+                    nBGFrames = self.metaData.Analysis.NumBGFrames
+                else:
+                    nBGFrames = 10
+
+                self.metaData.setEntry('Analysis.BGRange', (-nBGFrames, 0))
+
+
         tasks = []
 
         for i in range(min(CHUNKSIZE,len(self.openTasks))):
 
             taskNum = self.openTasks.pop(self.fTaskToPop(workerN, NWorkers, len(self.openTasks)))
 
-            if 'Analysis.BGRange' in self.metaData.getEntryNames():
-                bgi = range(max(taskNum + self.metaData.Analysis.BGRange[0],self.metaData.EstimatedLaserOnFrameNo), max(taskNum + self.metaData.Analysis.BGRange[1],self.metaData.EstimatedLaserOnFrameNo))
-            elif 'Analysis.NumBGFrames' in self.metaData.getEntryNames():
-                bgi = range(max(taskNum - self.metaData.Analysis.NumBGFrames,self.metaData.EstimatedLaserOnFrameNo), taskNum)
-            else:
-                bgi = range(max(taskNum - 10,self.metaData.EstimatedLaserOnFrameNo), taskNum)
+            #if 'Analysis.BGRange' in self.metaData.getEntryNames():
+            bgi = range(max(taskNum + self.metaData.Analysis.BGRange[0],self.metaData.EstimatedLaserOnFrameNo), max(taskNum + self.metaData.Analysis.BGRange[1],self.metaData.EstimatedLaserOnFrameNo))
+            #elif 'Analysis.NumBGFrames' in self.metaData.getEntryNames():
+            #    bgi = range(max(taskNum - self.metaData.Analysis.NumBGFrames,self.metaData.EstimatedLaserOnFrameNo), taskNum)
+            #else:
+            #    bgi = range(max(taskNum - 10,self.metaData.EstimatedLaserOnFrameNo), taskNum)
 
             task = fitTask(self.queueID, taskNum, self.metaData.Analysis.DetectionThreshold, self.metaData, self.metaData.Analysis.FitModule, 'TQDataSource', bgindices =bgi, SNThreshold = True)
 
