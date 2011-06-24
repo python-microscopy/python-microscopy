@@ -56,6 +56,7 @@ while 1:
 
         try:
             tq = Pyro.core.getProxyForURI(ns.resolve('TaskQueues.%s' % qName))
+            tq._setOneway(['returnCompletedTask'])
             #print qName
 
             #ask the queue for tasks

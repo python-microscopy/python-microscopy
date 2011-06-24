@@ -18,9 +18,9 @@ import time
 
 import os
 
-from PYME.mProfile import mProfile
+#from PYME.mProfile import mProfile
 
-mProfile.profileOn(['taskWorkerMPP.py'])
+#mProfile.profileOn(['taskWorkerMPP.py'])
 
 from PYME.misc.computerName import GetComputerName
 compName = GetComputerName()
@@ -43,7 +43,7 @@ procName = compName + ' - PID:%d' % os.getpid()
 
 
 #loop forever asking for tasks
-for i in range(10):
+for i in range(3):
     queueNames = [n[0] for n in ns.list('TaskQueues')]
 
     tasks = []
@@ -60,6 +60,7 @@ for i in range(10):
 
         try:
             tq = Pyro.core.getProxyForURI(ns.resolve('TaskQueues.%s' % qName))
+            tq._setOneway(['returnCompletedTask'])
             #print qName
 
             #ask the queue for tasks
@@ -103,4 +104,4 @@ for i in range(10):
     del tasks
     #del results
 
-mProfile.report()
+#mProfile.report()
