@@ -42,10 +42,10 @@ class MyFrame(wx.Frame):
         self.panel_1 = wx.Panel(self, -1)
         self.sizer_4_staticbox = wx.StaticBox(self.panel_1, -1, "Queues")
         self.sizer_5_staticbox = wx.StaticBox(self.panel_1, -1, "Workers")
-        self.sizer_3_staticbox = wx.StaticBox(self.panel_1, -1, "General")
-        self.label_1 = wx.StaticText(self.panel_1, -1, "label_1")
-        self.gQueues = wx.grid.Grid(self.panel_1, -1, size=(250, 150))
-        self.gWorkers = wx.grid.Grid(self.panel_1, -1, size=(250, 150))
+        #self.sizer_3_staticbox = wx.StaticBox(self.panel_1, -1, "General")
+        #self.label_1 = wx.StaticText(self.panel_1, -1, "label_1")
+        self.gQueues = wx.grid.Grid(self.panel_1, -1, size=(400, 150))
+        self.gWorkers = wx.grid.Grid(self.panel_1, -1, size=(400, 150))
 
         self.__set_properties()
         self.__do_layout()
@@ -66,17 +66,19 @@ class MyFrame(wx.Frame):
     def __set_properties(self):
         # begin wxGlade: MyFrame.__set_properties
         self.SetTitle("PYME TaskMon")
-        self.gQueues.CreateGrid(0, 3)
+        self.gQueues.CreateGrid(0, 4)
         self.gQueues.EnableEditing(0)
         self.gQueues.SetColLabelValue(0, "Name")
         self.gQueues.SetColLabelValue(1, "Open")
-        self.gQueues.SetColLabelValue(2, "Complete")
+        self.gQueues.SetColLabelValue(2, "In Progress")
+        self.gQueues.SetColLabelValue(3, "Complete")
         self.gQueues.SetFont(wx.Font(10, wx.DEFAULT, wx.NORMAL, wx.NORMAL, 0, ""))
-        self.gWorkers.CreateGrid(0, 3)
+        self.gWorkers.CreateGrid(0, 4)
         self.gWorkers.EnableEditing(0)
         self.gWorkers.SetColLabelValue(0, "Name")
         self.gWorkers.SetColLabelValue(1, "Processed")
         self.gWorkers.SetColLabelValue(2, "Tasks/s")
+        self.gWorkers.SetColLabelValue(3, "Loc. Tasks/s")
         self.gWorkers.SetFont(wx.Font(10, wx.DEFAULT, wx.NORMAL, wx.NORMAL, 0, "Sans"))
         # end wxGlade
 
@@ -86,9 +88,9 @@ class MyFrame(wx.Frame):
         sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_5 = wx.StaticBoxSizer(self.sizer_5_staticbox, wx.VERTICAL)
         sizer_4 = wx.StaticBoxSizer(self.sizer_4_staticbox, wx.VERTICAL)
-        sizer_3 = wx.StaticBoxSizer(self.sizer_3_staticbox, wx.VERTICAL)
-        sizer_3.Add(self.label_1, 0, 0, 1)
-        sizer_2.Add(sizer_3, 0, wx.LEFT|wx.EXPAND, 5)
+        #sizer_3 = wx.StaticBoxSizer(self.sizer_3_staticbox, wx.VERTICAL)
+        #sizer_3.Add(self.label_1, 0, 0, 1)
+        #sizer_2.Add(sizer_3, 0, wx.LEFT|wx.EXPAND, 5)
         sizer_4.Add(self.gQueues, 1, wx.EXPAND, 0)
         sizer_2.Add(sizer_4, 1, wx.LEFT|wx.EXPAND, 5)
         sizer_5.Add(self.gWorkers, 1, wx.EXPAND, 5)
@@ -116,12 +118,14 @@ class MyFrame(wx.Frame):
         for i in range(nq):
             self.gQueues.SetCellValue(i, 0,queues[i])
             self.gQueues.SetCellValue(i, 1, '%d' % self.tq.getNumberOpenTasks(queues[i]))
-            self.gQueues.SetCellValue(i, 2, '%d' % self.tq.getNumberTasksCompleted(queues[i]))
+            self.gQueues.SetCellValue(i, 2, '%d' % self.tq.getNumberTasksInProgress(queues[i]))
+            self.gQueues.SetCellValue(i, 3, '%d' % self.tq.getNumberTasksCompleted(queues[i]))
 
         
         self.gQueues.SetCellValue(n - 1, 0,'Total')
         self.gQueues.SetCellValue(n - 1, 1, '%d' % self.tq.getNumberOpenTasks())
-        self.gQueues.SetCellValue(n - 1, 2, '%d' % self.tq.getNumberTasksCompleted())
+        self.gQueues.SetCellValue(n - 1, 2, '%d' % self.tq.getNumberTasksInProgress())
+        self.gQueues.SetCellValue(n - 1, 3, '%d' % self.tq.getNumberTasksCompleted())
 
         
         workers = self.tq.getWorkerNames()
@@ -152,6 +156,8 @@ class MyFrame(wx.Frame):
                 fps =  (nt - self.workerProc[workers[i]])/dt
                 self.gWorkers.SetCellValue(i, 2, '%3.3f' % fps)
             self.workerProc[workers[i]] = nt
+            self.gWorkers.SetCellValue(i, 3, '%d' % self.tq.getWorkerFPS(workers[i]))
+
 
         
         self.gWorkers.SetCellValue(n - 1, 0,'Total')

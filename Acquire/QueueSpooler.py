@@ -53,6 +53,7 @@ class Spooler(sp.Spooler):
        taskQueueName = 'TaskQueues.%s' % compName
 
        self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
+       self.tq._setOneway(['postTask', 'postTasks', 'addQueueEvents', 'setQueueMetaData'])
 
        self.seriesName = filename
        self.buffer = []

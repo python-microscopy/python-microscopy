@@ -109,13 +109,17 @@ class TaskQueueSet(Pyro.core.ObjBase):
         """get task from front of list, non-blocking"""
         #print 'Task requested'
         self.getTaskLock.acquire()
-        if self.getNumberOpenTasks() < 1:
+        #calling getNumberOpenTasks with False makes the queues tell us how many
+        #tasks they are prepared to give out, rather than how many they actually have
+        #important for maintaining cache & io performance (avoids scattering small
+        #numbers of tasks over a large number of processes)
+        if self.getNumberOpenTasks(exact=False) < 1:
             res = []
         else:
             if not workerName in self.activeWorkers:
                 self.activeWorkers.append(workerName)
 
-            queuesWithOpenTasks = [q for q in self.taskQueues.values() if q.getNumberOpenTasks() > 0]
+            queuesWithOpenTasks = [q for q in self.taskQueues.values() if q.getNumberOpenTasks(False) > 0]
 
             res = queuesWithOpenTasks[int(numpy.round(len(queuesWithOpenTasks)*numpy.random.rand() - 0.5))].getTasks(self.activeWorkers.index(workerName), len(self.activeWorkers))
         self.getTaskLock.release()
@@ -166,15 +170,15 @@ class TaskQueueSet(Pyro.core.ObjBase):
             if self.lastTaskByWorker.has_key(w) and self.lastTaskByWorker[w] < (t - self.activeTimeout):
                 self.activeWorkers.remove(w)
 
-    def getNumberOpenTasks(self, queueName = None):
+    def getNumberOpenTasks(self, queueName = None, exact=True):
         #print queueName
         if queueName == None:
             nO = 0
             for q in self.taskQueues.values():
-                nO += q.getNumberOpenTasks()
+                nO += q.getNumberOpenTasks(exact)
             return nO
         else:
-            return self.taskQueues[queueName].getNumberOpenTasks()
+            return self.taskQueues[queueName].getNumberOpenTasks(exact)
 
     def getNumberTasksInProgress(self, queueName = None):
         if queueName == None:

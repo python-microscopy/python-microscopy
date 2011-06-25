@@ -84,8 +84,9 @@ class backgroundBuffer:
             self.curBG[:] = (self.curBG - self.dataBuffer.getSlice(fi))[:]
 
         #add frames we don't already have
+        nSlices = self.dataBuffer.dataSource.getNumSlices()
         for fi in bgi.difference(self.curFrames):
-            if fi >= self.dataBuffer.dataSource.getNumSlices():
+            if fi >= nSlices:
                 #drop frames which run over the end of our data
                 bgi.remove(fi)
             else:

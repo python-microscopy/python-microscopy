@@ -103,7 +103,7 @@ class TaskQueue:
                     self.tasksInProgress.remove(it)
         self.inProgressLock.release()
 
-    def getNumberOpenTasks(self):
+    def getNumberOpenTasks(self, exact=True):
         return len(self.openTasks)
 
     def getNumberTasksInProgress(self):
