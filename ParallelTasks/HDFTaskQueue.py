@@ -19,6 +19,7 @@ from PYME.Acquire import MetaDataHandler
 
 import os
 import sys
+import numpy as np
 
 from PYME.FileUtils.nameUtils import genResultFileName
 from PYME.ParallelTasks.relativeFiles import getFullFilename
@@ -478,13 +479,13 @@ class HDFTaskQueue(HDFResultsTaskQueue):
                 #res = self.h5DataFile.root.PSFData[:]
             #finally:
             #    self.dataFileLock.release()
-            try:
-                modName = self.resultsMDH.getEntry('PSFFile')
-                mf = open(getFullExistingFilename(modName), 'rb')
-                res = load(mf)
-                mf.close()
-            except:
-                pass
+            #try:
+            modName = self.resultsMDH.getEntry('PSFFile')
+            mf = open(getFullExistingFilename(modName), 'rb')
+            res = np.load(mf)
+            mf.close()
+            #except:
+                #pass
 
             return res
         else:
