@@ -83,7 +83,7 @@ while 1:
     while len(tasks) > 0:
         #get the next task (a task is a function, or more generally, a class with
         #a __call__ method
-        task = tasks.pop()
+        task = tasks.pop(0)
         try:
             #execute the task,
             t1 = time.time()

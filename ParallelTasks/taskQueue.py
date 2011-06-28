@@ -65,11 +65,13 @@ class TaskQueue:
             for it in self.tasksInProgress[:]:
                     if (it.taskID == taskResult.taskID):
                             self.tasksInProgress.remove(it)
+            self.inProgressLock.release()
+            
             self.fileResult(taskResult)
 
             if (len(self.openTasks) + len(self.tasksInProgress)) == 0: #no more tasks
                     self.onEmpty(self)
-            self.inProgressLock.release()
+            
 
     def returnCompletedTasks(self, taskResults):
         self.inProgressLock.acquire()
@@ -77,12 +79,14 @@ class TaskQueue:
             for it in self.tasksInProgress[:]:
                 if (it.taskID == taskResult.taskID):
                     self.tasksInProgress.remove(it)
-
+        self.inProgressLock.release()
+        
+        for taskResult in taskResults:
             self.fileResult(taskResult)
 
         if (len(self.openTasks) + len(self.tasksInProgress)) == 0: #no more tasks
             self.onEmpty(self)
-        self.inProgressLock.release()
+        
 
     def fileResult(self,taskResult):
         self.closedTasks.append(taskResult)

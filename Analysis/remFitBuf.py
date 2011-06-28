@@ -22,6 +22,7 @@ bBuffer = None
 dataSourceID = None
 
 bufferMisses = 0
+nTasksProcessed = 0
 
 splitterFitModules = ['SplitterFitFR','SplitterFitQR','SplitterFitCOIR', 'BiplaneFitR', 'SplitterShiftEstFR', 'SplitterObjFindR', 'SplitterFitInterpR']
 
@@ -67,6 +68,9 @@ class dataBuffer: #buffer our io to avoid decompressing multiple times
             self.insertAt %=self.bLen
 
             bufferMisses += 1
+            
+            #if bufferMisses % 10 == 0:
+            #    print nTasksProcessed, bufferMisses
 
             return sl
         
@@ -134,11 +138,17 @@ class fitTask(taskDef.Task):
 
 
     def __call__(self, gui=False, taskQueue=None):
-        global dBuffer, bBuffer, dataSourceID
+        global dBuffer, bBuffer, dataSourceID, nTasksProcessed
                         
         fitMod = __import__('PYME.Analysis.FitFactories.' + self.fitModule, fromlist=['PYME', 'Analysis','FitFactories']) #import our fitting module
 
         DataSource = __import__('PYME.Analysis.DataSources.' + self.dataSourceModule, fromlist=['DataSource']).DataSource #import our data source
+        
+        #create a local copy of the metadata        
+        md = copy.copy(self.md)
+        md.tIndex = self.index
+        md.taskQueue = taskQueue
+        md.dataSourceID = self.dataSourceID
 
         #read the data
         if not dataSourceID == self.dataSourceID: #avoid unnecessary opening and closing of 
@@ -147,6 +157,8 @@ class fitTask(taskDef.Task):
             dataSourceID = self.dataSourceID
         
         self.data = dBuffer.getSlice(self.index)
+        nTasksProcessed += 1
+        #print self.index
 
         #when camera buffer overflows, empty pictures are produced - deal with these here
         if self.data.max() == 0:
@@ -181,10 +193,6 @@ class fitTask(taskDef.Task):
             self.bg = bBuffer.getBackground(self.bgindices).reshape(self.data.shape)
 
         if self.fitModule == 'ConfocCOIR': #special case - no object finding
-            md = copy.copy(self.md)
-            md.tIndex = self.index
-            md.taskQueue = taskQueue
-            md.dataSourceID = self.dataSourceID
             self.res = fitMod.ConfocCOI(self.data, md, background = self.bg)
             return fitResult(self, self.res, [])
 
@@ -206,10 +214,12 @@ class fitTask(taskDef.Task):
 #
 #            self.data = numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2)
 
+        
+
         if not 'PSFFile' in self.md.getEntryNames():
             self.ofd = ofind.ObjectIdentifier(bgd * (bgd > 0))
         else: #if we've got a PSF then use cross-correlation object identificatio      
-            self.ofd = ofind_xcorr.ObjectIdentifier(bgd * (bgd > 0), self.md.getEntry('PSFFile'), 7, 5e-2)
+            self.ofd = ofind_xcorr.ObjectIdentifier(bgd * (bgd > 0), md, 7, 5e-2)
             
 
         if 'Analysis.DebounceRadius' in self.md.getEntryNames():
@@ -274,9 +284,9 @@ class fitTask(taskDef.Task):
             pylab.show()
 
         #Create a fit 'factory'
-        md = copy.copy(self.md)
-        md.tIndex = self.index
-        md.taskQueue = taskQueue
+        #md = copy.copy(self.md)
+        #md.tIndex = self.index
+        #md.taskQueue = taskQueue
 
         #if self.fitModule == 'LatGaussFitFRTC'  or self.fitModule == 'BiplaneFitR':
         #    fitFac = fitMod.FitFactory(numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2), md)

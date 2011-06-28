@@ -24,6 +24,7 @@ from PYME.FileUtils.nameUtils import genResultFileName
 from PYME.ParallelTasks.relativeFiles import getFullFilename
 
 CHUNKSIZE = 50
+MAXCHUNKSIZE = 200 #allow chunk size to be improved to allow better caching 
 
 #def genDataFilename(name):
 #	fn = os.g
@@ -53,6 +54,36 @@ tablesLock = threading.Lock()
 #
 #tw = TaskWatcher(tq)
 #    #tw.start()
+
+bufferMisses = 0
+
+class dataBuffer: #buffer our io to avoid decompressing multiple times
+    def __init__(self,dataSource, bLen = 1000):
+        self.bLen = bLen
+        self.buffer = {} #delay creation until we know the dtype
+        #self.buffer = numpy.zeros((bLen,) + dataSource.getSliceShape(), 'uint16')
+        #self.insertAt = 0
+        #self.bufferedSlices = -1*numpy.ones((bLen,), 'i')
+        self.dataSource = dataSource
+        
+    def getSlice(self,ind):
+        global bufferMisses
+        #print self.bufferedSlices, self.insertAt, ind
+        #return self.dataSource.getSlice(ind)
+        if ind in self.bufferedSlices.keys(): #return from buffer
+            #print int(numpy.where(self.bufferedSlices == ind)[0])
+            return self.buffer[ind]
+        else: #get from our data source and store in buffer
+            sl = self.dataSource[ind,:,:]
+            
+            self.buffer[sl] = sl
+
+            bufferMisses += 1
+            
+            #if bufferMisses % 10 == 0:
+            #    print nTasksProcessed, bufferMisses
+
+            return sl
 
 class myLock:
     def __init__(self):
@@ -99,6 +130,8 @@ class HDFResultsTaskQueue(TaskQueue):
         self.resultsMDH = MetaDataHandler.HDFMDHandler(self.h5ResultsFile)
 
         self.resultsEvents = self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'Events', SpoolEvent,filters=tables.Filters(complevel=5, shuffle=True))
+        
+        self.haveResultsTable = False
 
     def prepResultsFile(self):
         pass
@@ -159,8 +192,9 @@ class HDFResultsTaskQueue(TaskQueue):
             
         if not len(res.results) == 0:
             #print res.results, res.results == []
-            if not self.h5ResultsFile.__contains__('/FitResults'):
+            if not self.haveResultsTable: # self.h5ResultsFile.__contains__('/FitResults'):
                 self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'FitResults', res.results, filters=tables.Filters(complevel=5, shuffle=True), expectedrows=500000)
+                self.haveResultsTable = True
             else:
                 self.h5ResultsFile.root.FitResults.append(res.results)
 
@@ -170,11 +204,29 @@ class HDFResultsTaskQueue(TaskQueue):
             else:
                 self.h5ResultsFile.root.DriftResults.append(res.driftResults)
 
-        self.h5ResultsFile.flush()
+        #self.h5ResultsFile.flush()
 
         self.fileResultsLock.release() #release lock
 
         self.numClosedTasks += 1
+        
+    def checkTimeouts(self):
+        self.inProgressLock.acquire()
+        curTime = time.clock()
+        for it in self.tasksInProgress:
+            if 'workerTimeout' in dir(it):
+                if curTime > it.workerTimeout:
+                    self.openTasks.append(it.index)
+                    self.tasksInProgress.remove(it)
+
+        self.inProgressLock.release()
+        
+        self.fileResultsLock.acquire() #get a lock
+        
+        self.h5ResultsFile.flush()
+
+        self.fileResultsLock.release() #release lock
+        
         
     def getQueueData(self, fieldName, *args):
         '''Get data, defined by fieldName and potntially additional arguments,  ascociated with queue'''
@@ -395,7 +447,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
 
         tasks = []
 
-        for i in range(min(CHUNKSIZE,len(self.openTasks))):
+        for i in range(min(max(CHUNKSIZE, min(MAXCHUNKSIZE, len(self.openTasks))),len(self.openTasks))):
 
             taskNum = self.openTasks.pop(self.fTaskToPop(workerN, NWorkers, len(self.openTasks)))
 
@@ -422,16 +474,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         return tasks
 
 	
-    def checkTimeouts(self):
-        self.inProgressLock.acquire()
-        curTime = time.clock()
-        for it in self.tasksInProgress:
-            if 'workerTimeout' in dir(it):
-                if curTime > it.workerTimeout:
-                    self.openTasks.insert(0, it.taskNum)
-                    self.tasksInProgress.remove(it)
-
-        self.inProgressLock.release()
+    
 
 
     def cleanup(self):
