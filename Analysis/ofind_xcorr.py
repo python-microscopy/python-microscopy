@@ -27,12 +27,19 @@ cachedOTF2 = None
 cachedOTFH = None
 autocorr = None
 
-def preparePSF(PSFFilename, PSSize):
+def preparePSF(md, PSSize):
     global PSFFileName, cachedPSF, cachedOTF2, cachedOTFH, autocorr
+    
+    PSFFilename = md.PSFFile
+                
     if (not (PSFFileName == PSFFilename)) or (not (cachedPSF.shape == PSSize)):
-        fid = open(getFullExistingFilename(PSFFilename), 'rb')
-        ps, vox = cPickle.load(fid)
-        fid.close()
+        try:
+            ps, vox = md.taskQueue.getQueueData(md.dataSourceID, 'PSF')
+        except:
+            fid = open(getFullExistingFilename(PSFFilename), 'rb')
+            ps, vox = cPickle.load(fid)
+            fid.close()
+            
         ps = ps.max(2)
         ps = ps - ps.min()
         #ps = ps*(ps > 0)
@@ -84,7 +91,7 @@ class PseudoPointList:
     #    return self[self.curpos]
 
 class ObjectIdentifier(list):
-    def __init__(self, data, PSFFilename, filterRadiusHighpass=5, lamb = 5e-5):
+    def __init__(self, data, metadata, filterRadiusHighpass=5, lamb = 5e-5):
         """Creates an Identifier object to be used for object finding, takes a 2D or 3D slice
         into a data stack (data), and a filtering mode (filterMode, one of ["fast", "good"])
         where "fast" performs a z-projection and then filters, wheras "good" filters in 3D before 
@@ -93,7 +100,7 @@ class ObjectIdentifier(list):
         self.data = data
         self.filterRadiusHighpass = filterRadiusHighpass
         self.lamb = lamb
-        preparePSF(PSFFilename, data.shape[:2])
+        preparePSF(metadata, data.shape[:2])
         
     def __FilterData2D(self,data):
         #lowpass filter to suppress noise

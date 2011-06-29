@@ -21,6 +21,7 @@ from taskQueue import *
 from HDFTaskQueue import *
 
 import os
+import sys
 
 from PYME.misc.computerName import GetComputerName
 compName = GetComputerName()
@@ -54,7 +55,7 @@ class TaskWatcher(threading.Thread):
                         #finally:
                         #        pass
                         #print mProfile.files
-			time.sleep(10)
+			time.sleep(5)
 
 
 
@@ -74,6 +75,14 @@ class TaskQueueSet(Pyro.core.ObjBase):
         self.activeTimeout = 10
 
         self.getTaskLock = threading.Lock()
+        
+        self.alive = True
+        
+    def isAlive(self):
+        return self.isAlive
+        
+    def kill(self):
+        self.isAlive = False
 
 
     def postTask(self, task, queueName='Default'):
@@ -268,9 +277,11 @@ class TaskQueueSet(Pyro.core.ObjBase):
 			
 
 if __name__ == '__main__':
-    #if True:
-    #from PYME.mProfile import mProfile
-    #mProfile.profileOn(['taskServerM.py', 'HDFTaskQueue.py'])
+    profile = False
+    if len(sys.argv) > 1 and sys.argv[1] == '-p':
+        profile = True
+        from PYME.mProfile import mProfile
+        mProfile.profileOn(['taskServerMP.py', 'HDFTaskQueue.py'])
 
     Pyro.config.PYRO_MOBILE_CODE = 0
     Pyro.core.initServer()
@@ -292,10 +303,12 @@ if __name__ == '__main__':
     uri=daemon.connect(tq,taskQueueName)
 
     tw = TaskWatcher(tq)
-    #tw.start()
+    tw.start()
     try:
-        daemon.requestLoop()
+        daemon.requestLoop(tq.isAlive)
     finally:
         daemon.shutdown(True)
         tw.alive = False
-        #mProfile.report()
+        
+        if profile:
+            mProfile.report()
