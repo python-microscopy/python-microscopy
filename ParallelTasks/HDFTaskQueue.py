@@ -25,7 +25,7 @@ from PYME.FileUtils.nameUtils import genResultFileName
 from PYME.ParallelTasks.relativeFiles import getFullFilename
 
 CHUNKSIZE = 50
-MAXCHUNKSIZE = 200 #allow chunk size to be improved to allow better caching 
+MAXCHUNKSIZE = 100 #allow chunk size to be improved to allow better caching
 
 #def genDataFilename(name):
 #	fn = os.g
