@@ -18,7 +18,7 @@ from PYME.Analysis.LMVis import histLimits
 from displayOptions import DisplayOpts, fast_grey
 
 class OptionsPanel(wx.Panel):
-    def __init__(self, parent, displayOpts, horizOrientation=False, thresholdControls=False, **kwargs):
+    def __init__(self, parent, displayOpts, horizOrientation=False, thresholdControls=True, **kwargs):
         kwargs['style'] = wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, parent, **kwargs)
 
