@@ -23,7 +23,7 @@ nik.Device = nik.Devices(1)
 from PYME.Acquire import eventLog
 
 class zDrive:
-    def __init__(self, maxtravel = 450000):
+    def __init__(self, maxtravel = 4500000):
         #nik = win32com.client.Dispatch("Nikon.TiScope.NikonTi")
         # connect to the real hardware (device 0 is simulated)
         #nik.Device = nik.Devices(1)

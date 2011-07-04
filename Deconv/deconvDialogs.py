@@ -46,6 +46,14 @@ class DeconvSettingsDialog(wx.Dialog):
         sizer3.Add(self.tNumIters, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
         sizer2.Add(sizer3, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
+        
+        sizer3 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer3.Add(wx.StaticText(pan1, -1, 'Offset:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+        self.tOffset = wx.TextCtrl(pan1, -1, '0')
+
+        sizer3.Add(self.tOffset, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+
+        sizer2.Add(sizer3, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
 
         sizer3 = wx.BoxSizer(wx.HORIZONTAL)
         sizer3.Add(wx.StaticText(pan1, -1, u'Regularisation \u03BB:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
@@ -122,6 +130,9 @@ class DeconvSettingsDialog(wx.Dialog):
 
     def OnPSFFileChanged(self, event):
         self.bOK.Enable(os.path.exists(self.fpPSF.GetPath()))
+        
+    def GetOffset(self):
+        return float(self.tOffset.GetValue())
 
 
 class DeconvProgressDialog(wx.Dialog):
