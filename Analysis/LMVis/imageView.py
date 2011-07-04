@@ -27,6 +27,7 @@ from PYME.Analysis import thresholding
 from PYME.DSView.arrayViewPanel import ArrayViewPanel
 from PYME.DSView.displayOptions import DisplayOpts
 from PYME.DSView.DisplayOptionsPanel import OptionsPanel
+from PYME.DSView.image import ImageStack
 
 #from PYME.misc.auiFloatBook import AuiNotebookWithFloatingPages
 
@@ -558,6 +559,8 @@ class ColourImageViewFrame(wx.Frame):
         self.ivp.cmap = pylab.cm.__getattribute__(cmn)
         self.ivp.Refresh()
         
+from PYME.Acquire.MetaDataHandler import NestedClassMDHandler
+from PYME.DSView import modules as dsvmods
 
 class MultiChannelImageViewFrame(wx.Frame):
     def __init__(self, parent, glCanvas, images, names=['Image'], title='Generated Image',zp=0, zdim=2):
@@ -569,6 +572,19 @@ class MultiChannelImageViewFrame(wx.Frame):
         self.images = images
         self.names = [n or 'Image' for n in names]
         self.frame = self
+
+        
+        md = NestedClassMDHandler()
+        md.setEntry('voxelsize.x', images[0].pixelSize)
+        md.setEntry('voxelsize.y', images[0].pixelSize)
+        md.setEntry('voxelsize.z', images[0].sliceSize)
+
+        self.image = ImageStack([numpy.atleast_3d(im.img) for im in images], md)
+
+        self.paneHooks = []
+        self.updateHooks = []
+        self.statusHooks = []
+        self.installedModules = []
 
         #self.notebook = AuiNotebookWithFloatingPages(id=-1, parent=self, style=wx.aui.AUI_NB_TAB_SPLIT)
         self._mgr = aui.AuiManager(agwFlags = aui.AUI_MGR_DEFAULT | aui.AUI_MGR_AUTONB_NO_CAPTION)
@@ -619,7 +635,8 @@ class MultiChannelImageViewFrame(wx.Frame):
 
         
 
-        self.SetMenuBar(self.CreateMenuBar())
+        self.menubar = self.CreateMenuBar()
+        self.SetMenuBar(self.menubar)
 
         self.limitsFrame = None
 
@@ -637,11 +654,42 @@ class MultiChannelImageViewFrame(wx.Frame):
             self._mgr.AddPane(self.playbackpanel, pinfo1)
             self.do.WantChangeNotification.append(self.playbackpanel.update)
 
+        dsvmods.loadMode('lite', self)
+        self.CreateModuleMenu()
+
         self._mgr.Update()
         self._mgr.MinimizePane(pinfo)
 
         wx.EVT_CLOSE(self, self.OnClose)
         self.do.WantChangeNotification.append(self.Refresh)
+
+    def CreateModuleMenu(self):
+        self.modMenuIds = {}
+        self.mModules = wx.Menu()
+        for mn in dsvmods.allmodules:
+            id = wx.NewId()
+            self.mModules.AppendCheckItem(id, mn)
+            self.modMenuIds[id] = mn
+            if mn in self.installedModules:
+                self.mModules.Check(id, True)
+
+            wx.EVT_MENU(self, id, self.OnToggleModule)
+
+        self.menubar.Append(self.mModules, "&Modules")
+
+    def OnToggleModule(self, event):
+        id = event.GetId()
+        mn = self.modMenuIds[id]
+        if self.mModules.IsChecked(id):
+            dsvmods.loadModule(mn, self)
+
+        if mn in self.installedModules:
+            self.mModules.Check(id, True)
+
+        #self.CreateFoldPanel()
+        self._mgr.Update()
+
+
 
     def AddPage(self, page=None, select=True,caption='Dummy'):
         if self.pane0 == None:
@@ -866,28 +914,29 @@ class MultiChannelImageViewFrame(wx.Frame):
 
         f = mlab.figure()
 
-        asp = self.images[0].sliceSize/self.images[0].pixelSize
-        if asp == 0:
-            asp = 1.
+        #asp = self.images[0].sliceSize/self.images[0].pixelSize
+        #asp = self.image.mdh.getEntry('voxelsize.z')/
+        #if asp == 0:
+        #    asp = 1.
 
-        for i, im in enumerate(self.images):
-            c = mlab.contour3d(im.img, contours=[self.do.Offs[i] + .5/self.do.Gains[i]], color = pylab.cm.gist_rainbow(float(i)/len(self.images))[:3])
-            c.mlab_source.dataset.spacing = (1. ,1., asp)
+        for i in range(self.image.data.shape[3]):
+            c = mlab.contour3d(self.image.data[:,:,:,i], contours=[self.do.Offs[i] + .5/self.do.Gains[i]], color = pylab.cm.gist_rainbow(float(i)/len(self.images))[:3])
+            c.mlab_source.dataset.spacing = (self.image.mdh.getEntry('voxelsize.x') ,self.image.mdh.getEntry('voxelsize.y'), self.image.mdh.getEntry('voxelsize.z'))
 
     def On3DVolume(self, event):
         from enthought.mayavi import mlab
 
         f = mlab.figure()
 
-        asp = self.images[0].sliceSize/self.images[0].pixelSize
-        if asp == 0:
-            asp = 1.
+        #asp = self.images[0].sliceSize/self.images[0].pixelSize
+        #if asp == 0:
+        #    asp = 1.
 
         #for im, ivp, i in zip(self.images, self.ivps, range(len(self.images))):
-        for i, im in enumerate(self.images):
+        for i in range(self.image.data.shape[3]):
             #c = mlab.contour3d(im.img, contours=[pylab.mean(ivp.clim)], color = pylab.cm.gist_rainbow(float(i)/len(self.images))[:3])
-            v = mlab.pipeline.volume(mlab.pipeline.scalar_field(numpy.minimum(255*(im.img-self.do.Offs[i])*self.do.Gains[i], 254).astype('uint8')))
-            v.volume.scale = (1. ,1., asp)
+            v = mlab.pipeline.volume(mlab.pipeline.scalar_field(numpy.minimum(255*(self.image.data[:,:,:,i] -self.do.Offs[i])*self.do.Gains[i], 254).astype('uint8')))
+            v.volume.scale = (self.image.mdh.getEntry('voxelsize.x') ,self.image.mdh.getEntry('voxelsize.y'), self.image.mdh.getEntry('voxelsize.z'))
 
     def OnGaussianFilter(self, event):
         from scipy.ndimage import gaussian_filter
