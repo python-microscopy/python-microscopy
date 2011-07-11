@@ -20,6 +20,9 @@ import fftw3f
 #from PYME import pad
 #import dec
 
+NTHREADS = 8
+FFTWFLAGS = ['measure']
+
 class rldec:
     '''Deconvolution class, implementing a variant of the Richardson-Lucy algorithm.
 
@@ -305,8 +308,8 @@ class dec_conv(rldec):
         self.H /= g.size;
 
         #calculate plans for other ffts
-        self._plan_r_F = fftw3f.Plan(self._r, self._F, 'forward')
-        self._plan_F_r = fftw3f.Plan(self._F, self._r, 'backward')
+        self._plan_r_F = fftw3f.Plan(self._r, self._F, 'forward', flags = FFTWFLAGS, nthreads=NTHREADS)
+        self._plan_F_r = fftw3f.Plan(self._F, self._r, 'backward', flags = FFTWFLAGS, nthreads=NTHREADS)
 
 
     def Lfunc(self, f):

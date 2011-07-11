@@ -12,7 +12,7 @@
 
 from scipy import ndimage
 import numpy
-import binAvg
+from PYME.Analysis import binAvg
 
 def imageDensityAtDistance(A, mask, voxelsize = None, bins=100):
     '''Calculates the distribution of a label at varying distances from a mask.

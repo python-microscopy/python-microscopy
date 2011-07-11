@@ -39,15 +39,31 @@ class deconvolver:
         #wx.EVT_MENU(dsviewer, DECONV_SAVE, self.saveDeconvolution)
 
         dsviewer.updateHooks.append(self.update)
-
+        
     def checkTQ(self):
         import Pyro.core
         if self.tq == None:
-            if 'PYME_TASKQUEUENAME' in os.environ.keys():
-                taskQueueName = os.environ['PYME_TASKQUEUENAME']
-            else:
-                taskQueueName = 'taskQueue'
+            #if 'PYME_TASKQUEUENAME' in os.environ.keys():
+            #    taskQueueName = os.environ['PYME_TASKQUEUENAME']
+            #else:
+            #    taskQueueName = 'taskQueue'
+
+            from PYME.misc.computerName import GetComputerName
+            compName = GetComputerName()
+
+            taskQueueName = 'TaskQueues.%s' % compName
+
             self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
+
+
+#    def checkTQ(self):
+#        import Pyro.core
+#        if self.tq == None:
+#            if 'PYME_TASKQUEUENAME' in os.environ.keys():
+#                taskQueueName = os.environ['PYME_TASKQUEUENAME']
+#            else:
+#                taskQueueName = 'taskQueue'
+#            self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
 
     def OnDeconvBead(self, event):
         self.OnDeconvICTM(None, True)
