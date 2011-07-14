@@ -579,6 +579,8 @@ class MultiChannelImageViewFrame(wx.Frame):
         md.setEntry('voxelsize.y', images[0].pixelSize)
         md.setEntry('voxelsize.z', images[0].sliceSize)
 
+        md.setEntry('ChannelNames', self.names)
+
         self.image = ImageStack([numpy.atleast_3d(im.img) for im in images], md)
 
         self.paneHooks = []
@@ -962,16 +964,26 @@ class MultiChannelImageViewFrame(wx.Frame):
 
         #assume we have exactly 2 channels #FIXME - add a selector
         #grab image data
-        imA = self.images[0].img
-        imB = self.images[1].img
+        #imA = self.images[0].img
+        #imB = self.images[1].img
+        imA = self.image.data[:,:,:,0].squeeze()
+        imB = self.image.data[:,:,:,1].squeeze()
+
         #assume threshold is half the colour bounds - good if using threshold mode
         tA = self.do.Offs[0] + .5/self.do.Gains[0] #pylab.mean(self.ivps[0].clim)
         tB = self.do.Offs[1] + .5/self.do.Gains[1] #pylab.mean(self.ivps[0].clim)
 
-        nameA = self.names[0]
-        nameB = self.names[1]
+        try:
+            nameA, nameB = self.image.mdh.getEntry('ChannelNames')[:2]
+        finally:
+            nameA = 'Channel 1'
+            nameB = 'Channel 2'
 
-        voxelsize = [self.images[0].pixelSize, self.images[0].pixelSize, self.images[0].sliceSize]
+        #nameA = self.names[0]
+        #nameB = self.names[1]
+
+        #voxelsize = [self.images[0].pixelSize, self.images[0].pixelSize, self.images[0].sliceSize]
+        voxelsize = [self.image.mdh.getEntry('voxelsize.x') ,self.image.mdh.getEntry('voxelsize.y'), self.image.mdh.getEntry('voxelsize.z')]
         voxelsize = voxelsize[:imA.ndim] #trunctate to number of dimensions
 
         pearson = correlationCoeffs.pearson(imA, imB)
