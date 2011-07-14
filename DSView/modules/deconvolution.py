@@ -28,8 +28,8 @@ class deconvolver:
 
         DECONV_ICTM = wx.NewId()
         DECONV_BEAD = wx.NewId()
-        dsviewer.mExtras.Append(DECONV_ICTM, "Deconvolution", "", wx.ITEM_NORMAL)
-        dsviewer.mExtras.Append(DECONV_BEAD, "Deconvolve bead shape", "", wx.ITEM_NORMAL)
+        dsviewer.mProcessing.Append(DECONV_ICTM, "Deconvolution", "", wx.ITEM_NORMAL)
+        dsviewer.mProcessing.Append(DECONV_BEAD, "Deconvolve bead shape", "", wx.ITEM_NORMAL)
         #mDeconvolution.AppendSeparator()
         #dsviewer.save_menu.Append(DECONV_SAVE, "Deconvolution", "", wx.ITEM_NORMAL)
         #self.menubar.Append(mDeconvolution, "Deconvolution")

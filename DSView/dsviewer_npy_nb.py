@@ -52,6 +52,7 @@ class DSViewFrame(wx.Frame):
                           Name("Data").Caption("Data").Centre().CloseButton(False).CaptionVisible(False))
 
         self.mainFrame = self
+        self.do = self.vp.do
         
         # Menu Bar
         self.menubar = wx.MenuBar()
@@ -68,8 +69,8 @@ class DSViewFrame(wx.Frame):
         self.menubar.Append(tmp_menu, "File")
 
         #'extras' menu for modules to install stuff into
-        self.mExtras = wx.Menu()
-        self.menubar.Append(self.mExtras, "&Extras")
+        self.mProcessing = wx.Menu()
+        self.menubar.Append(self.mProcessing, "&Processing")
 
         # Menu Bar end
         wx.EVT_MENU(self, wx.ID_SAVE, self.OnSave)

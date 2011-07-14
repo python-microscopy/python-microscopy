@@ -80,6 +80,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         self.leftButtonAction = ACTION_POSITION
         self.selectionMode = SELECTION_RECTANGLE
 
+        self.selectionWidth = 1
+
 #        if not aspect == None:
 #            if scipy.isscalar(aspect):
 #                self.do.aspects[2] = aspect
@@ -166,23 +168,27 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             dc.SetPen(wx.NullPen)
             
         if self.selection:
-            dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('YELLOW'),1))
+            col = wx.TheColourDatabase.FindColour('YELLOW')
+            #col.Set(col.red, col.green, col.blue, 125)
+            dc.SetPen(wx.Pen(col,1))
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
-            if(self.do.slice == self.do.SLICE_XY):
-                lx = self.selection_begin_x
-                ly = self.selection_begin_y
-                hx = self.selection_end_x
-                hy = self.selection_end_y
-            elif(self.do.slice == self.do.SLICE_XZ):
-                lx = self.selection_begin_x
-                ly = self.selection_begin_z
-                hx = self.selection_end_x
-                hy = self.selection_end_z
-            elif(self.do.slice == self.do.SLICE_YZ):
-                lx = self.selection_begin_y
-                ly = self.selection_begin_z
-                hx = self.selection_end_y
-                hy = self.selection_end_z
+
+            lx, ly, hx, hy = self.GetSliceSelection()
+#            if(self.do.slice == self.do.SLICE_XY):
+#                lx = self.selection_begin_x
+#                ly = self.selection_begin_y
+#                hx = self.selection_end_x
+#                hy = self.selection_end_y
+#            elif(self.do.slice == self.do.SLICE_XZ):
+#                lx = self.selection_begin_x
+#                ly = self.selection_begin_z
+#                hx = self.selection_end_x
+#                hy = self.selection_end_z
+#            elif(self.do.slice == self.do.SLICE_YZ):
+#                lx = self.selection_begin_y
+#                ly = self.selection_begin_z
+#                hx = self.selection_end_y
+#                hy = self.selection_end_z
         
             
             if self.selectionMode == SELECTION_RECTANGLE:
@@ -190,11 +196,40 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                     dc.DrawRectangle(lx*sc - x0,ly*sc*self.aspect - y0, (hx-lx)*sc,(hy-ly)*sc*self.aspect)
                 else:
                     dc.DrawRectangle(ly*sc - x0,lx*sc - y0, (hy-ly)*sc,(hx-lx)*sc)
-            else:
+            elif self.selectionWidth == 1:
                 if (self.do.orientation == self.do.UPRIGHT):
                     dc.DrawLine(lx*sc - x0,ly*sc*self.aspect - y0, hx*sc - x0,hy*sc*self.aspect - y0)
                 else:
                     dc.DrawLine(ly*sc - x0,lx*sc - y0, hy*sc,hx*sc)
+            else:
+
+                dx = hx - lx
+                dy = hy - ly
+
+                if dx == 0 and dy == 0: #special case - profile is orthogonal to current plane
+                    d_x = 0.5*self.selectionWidth
+                    d_y = 0.5*self.selectionWidth
+                else:
+                    d_x = 0.5*self.selectionWidth*dy/numpy.sqrt((dx**2 + dy**2))
+                    d_y = 0.5*self.selectionWidth*dx/numpy.sqrt((dx**2 + dy**2))
+                
+                if (self.do.orientation == self.do.UPRIGHT):
+                    x_1 = lx*sc - x0
+                    y_1 = ly*sc - y0
+                    x_2 = hx*sc - x0
+                    y_2 = hy*sc - y0
+
+                    dc.DrawLine(lx*sc - x0,ly*sc*self.aspect - y0, hx*sc - x0,hy*sc*self.aspect - y0)
+                    dc.DrawPolygon([(x_1 +d_x*sc, y_1-d_y*sc), (x_1 - d_x*sc, y_1 + d_y*sc), (x_2-d_x*sc, y_2+d_y*sc), (x_2 + d_x*sc, y_2 - d_y*sc)])
+                else:
+                    x1 = ly*sc - x0
+                    y1 = lx*sc - y0
+                    x2 = x1 + hy*sc
+                    y2 = y1 + hx*sc
+
+                    dc.DrawLine(ly*sc - x0,lx*sc - y0, hy*sc,hx*sc)
+
+                    dc.DrawPolygon([(x1-d_x, y1-d_y), (x1 + d_x, y1 + d_y), (x2+d_x, y2+d_y), (x2 - d_x, y2 - d_y)])
                     
             dc.SetPen(wx.NullPen)
             dc.SetBrush(wx.NullBrush)
@@ -419,6 +454,25 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 #        self.painting = False
 #        #print self.lastFrameTime
             
+    def GetSliceSelection(self):
+        if(self.do.slice == self.do.SLICE_XY):
+            lx = self.selection_begin_x
+            ly = self.selection_begin_y
+            hx = self.selection_end_x
+            hy = self.selection_end_y
+        elif(self.do.slice == self.do.SLICE_XZ):
+            lx = self.selection_begin_x
+            ly = self.selection_begin_z
+            hx = self.selection_end_x
+            hy = self.selection_end_z
+        elif(self.do.slice == self.do.SLICE_YZ):
+            lx = self.selection_begin_y
+            ly = self.selection_begin_z
+            hx = self.selection_end_y
+            hy = self.selection_end_z
+            
+        return lx, ly, hx, hy
+
     def OnWheel(self, event):
         rot = event.GetWheelRotation()
         if rot < 0:

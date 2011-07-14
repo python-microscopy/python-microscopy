@@ -12,29 +12,118 @@
 import wx
 from PYME.Acquire.mytimer import mytimer
 import pylab
+from scipy import ndimage
+import numpy as np
 
 class profiler:
     def __init__(self, dsviewer):
         self.dsviewer = dsviewer
 
-        self.vp = dsviewer.vp
+        self.view = dsviewer.vp.view
+        self.do = dsviewer.do
+        self.image = dsviewer.image
 
-        dsviewer.paneHooks.append(self.GenProfilePanel)
+        PLOT_PROFILE = wx.NewId()
+        dsviewer.mProcessing.Append(PLOT_PROFILE, "Plot &Profile", "", wx.ITEM_NORMAL)
+        
+        dsviewer.Bind(wx.EVT_MENU, self.OnPlotProfile, id=PLOT_PROFILE)
 
-    def GenProfilePanel(self, _pnl):
-        item = afp.foldingPane(_pnl, -1, caption="Intensity Profile", pinned = True)
-#        item = self._pnl.AddFoldPanel("Intensity Profile", collapsed=False,
-#                                      foldIcons=self.Images)
-
-        bPlotProfile = wx.Button(item, -1, 'Plot')
-
-        bPlotProfile.Bind(wx.EVT_BUTTON, self.OnPlotProfile)
-        #self._pnl.AddFoldPanelWindow(item, bPlotProfile, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
-        item.AddNewElement(bPlotProfile)
-        _pnl.AddPane(item)
+        accel_tbl = wx.AcceleratorTable([(wx.ACCEL_CTRL,  ord('k'), PLOT_PROFILE )])
+        self.dsviewer.SetAcceleratorTable(accel_tbl)
 
 
-    def OnPlotProfile(self, event):
+    def OnPlotProfile(self, event=None):
+        lx, ly, hx, hy = self.view.GetSliceSelection()
+
+        w = np.floor(0.5*self.view.selectionWidth)
+
+        try:
+            names = self.image.mdh.getEntry('ChannelNames')
+        except:
+            names = ['Channel %d' % d for d in range(self.image.data.shape[3])]
+
+        try:
+            voxx = self.mdh.getEntry('voxelsize.x')
+        except:
+            voxx=1
+
+        Dx = hx - lx
+        Dy = hy - ly
+
+        l = np.sqrt((Dx**2 + Dy**2))
+
+        dx = Dx/l
+        dy = Dy/l
+        
+        if Dx == 0 and Dy == 0: #special case - profile is orthogonal to current plane
+            d_x = w
+            d_y = w
+        else:
+            d_x = w*dy
+            d_y = w*dx
+
+        #print lx, hx, ly, hy
+
+        pylab.figure()
+            
+
+        for chanNum in range(self.image.data.shape[3]):
+            if(self.do.slice == self.do.SLICE_XY):
+                ims = self.image.data[(lx - d_x):(hx+d_x), (ly-d_y):(hy+d_y), self.do.zp, chanNum].squeeze()
+
+            splf = ndimage.spline_filter(ims)
+
+            t = np.arange(np.ceil(l))
+
+            p = np.zeros(len(t))
+
+
+            x_c = t*dx
+            y_c = t*dy
+
+            print splf.shape
+
+
+            for i in range(-w, w+1):
+                #print np.vstack([x_c + d_x +i*dy, y_c + d_y + i*dx])
+                p += ndimage.map_coordinates(splf, np.vstack([x_c + d_x +i*dy, y_c + d_y + i*dx]), prefilter=False)
+
+            p = p/(2*w + 1)
+
+
+
+            pylab.plot(t*voxx, p)
+
+        pylab.legend(names)
+
+
+
+
+
+
+
+
+
+
+
+
+
+        #dsviewer.paneHooks.append(self.GenProfilePanel)
+
+#    def GenProfilePanel(self, _pnl):
+#        item = afp.foldingPane(_pnl, -1, caption="Intensity Profile", pinned = True)
+##        item = self._pnl.AddFoldPanel("Intensity Profile", collapsed=False,
+##                                      foldIcons=self.Images)
+#
+#        bPlotProfile = wx.Button(item, -1, 'Plot')
+#
+#        bPlotProfile.Bind(wx.EVT_BUTTON, self.OnPlotProfile)
+#        #self._pnl.AddFoldPanelWindow(item, bPlotProfile, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+#        item.AddNewElement(bPlotProfile)
+#        _pnl.AddPane(item)
+
+
+    def OnZPlotProfile(self, event):
         x,p,d, pi = self.vp.GetProfile(50, background=[7,7])
 
         pylab.figure(1)

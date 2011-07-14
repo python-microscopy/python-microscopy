@@ -616,18 +616,16 @@ class MultiChannelImageViewFrame(wx.Frame):
         for img, name, i in zip(self.images, self.names, xrange(len(self.images))):
             self.ivps.append(ImageViewPanel(self, img, glCanvas, self.do, chan=i, zdim=zdim))
             if len(self.images) > 1 and len(cmaps) > 0:
-                #self.ivps[-1].cmap = cmaps.pop(0)
                 self.do.cmaps[i] = cmaps.pop(0)
 
             self.AddPage(page=self.ivps[-1], select=True, caption=name)
 
 
         if len(img.img.shape) > 2:
-            #for img, name in zip(self.images, self.names)
             asp = self.images[0].sliceSize/self.images[0].pixelSize
             if asp == 0:
                 asp = 1
-            #self.AddPage(page=ArraySettingsAndViewPanel(self, [img.img for img in self.images], aspect = asp), select=False, caption='Slices')
+            
             self.AddPage(page=ArrayViewPanel(self, do=self.do, aspect = asp), select=False, caption='Slices')
             
         elif len(self.images) > 1:
@@ -656,7 +654,7 @@ class MultiChannelImageViewFrame(wx.Frame):
             self._mgr.AddPane(self.playbackpanel, pinfo1)
             self.do.WantChangeNotification.append(self.playbackpanel.update)
 
-        dsvmods.loadMode('lite', self)
+        dsvmods.loadMode('VisGUI', self)
         self.CreateModuleMenu()
 
         self._mgr.Update()
@@ -743,12 +741,12 @@ class MultiChannelImageViewFrame(wx.Frame):
         ID_EXPORT = wx.NewId()
         ID_SAVEALL = wx.NewId()
 
-        ID_VIEW_CONSOLE = wx.NewId()
+        #ID_VIEW_CONSOLE = wx.NewId()
         ID_VIEW_BACKGROUND = wx.NewId()
         ID_FILTER_GAUSS = wx.NewId()
-        ID_COLOC = wx.NewId()
-        ID_3D_ISOSURF = wx.NewId()
-        ID_3D_VOLUME = wx.NewId()
+        #ID_COLOC = wx.NewId()
+        #ID_3D_ISOSURF = wx.NewId()
+        #ID_3D_VOLUME = wx.NewId()
         self.ID_VIEW_CMAP_INVERT = wx.NewId()
 
         file_menu.Append(wx.ID_SAVE, "&Save Channel")
@@ -760,41 +758,23 @@ class MultiChannelImageViewFrame(wx.Frame):
         file_menu.Append(wx.ID_CLOSE, "&Close")
 
         view_menu = wx.Menu()
-        view_menu.Append(ID_VIEW_CONSOLE, "&Console")
+        #view_menu.Append(ID_VIEW_CONSOLE, "&Console")
         view_menu.Append(ID_VIEW_BACKGROUND, "Set as visualisation &background")
 
-        proc_menu = wx.Menu()
-        proc_menu.Append(ID_FILTER_GAUSS, "&Gaussian Filter")
-        proc_menu.Append(ID_COLOC, "&Colocalisation")
+        self.mProcessing = wx.Menu()
+        self.mProcessing.Append(ID_FILTER_GAUSS, "&Gaussian Filter")
+        self.mProcessing.Append(ID_COLOC, "&Colocalisation")
 
 
-        td_menu = wx.Menu()
-        td_menu.Append(ID_3D_ISOSURF, "&Isosurface")
-        td_menu.Append(ID_3D_VOLUME, "&Volume")
-#
-#        self.cmap_menu = wx.Menu()
-#
-#        self.cmap_menu.AppendCheckItem(self.ID_VIEW_CMAP_INVERT, "&Invert")
-#        self.cmap_menu.AppendSeparator()
-#
-#        cmapnames = pylab.cm.cmapnames
-#        cmapnames.sort()
-#        self.cmapIDs = {}
-#        for cmn in cmapnames:
-#            cmmId = wx.NewId()
-#            self.cmapIDs[cmmId] = cmn
-#            self.cmap_menu.AppendRadioItem(cmmId, cmn)
-#            if cmn == self.ivp.cmap.name:
-#                self.cmap_menu.Check(cmmId, True)
-#            self.Bind(wx.EVT_MENU, self.OnChangeLUT, id=cmmId)
-#
-#        view_menu.AppendMenu(-1,'&LUT', self.cmap_menu)
+        #td_menu = wx.Menu()
+        #td_menu.Append(ID_3D_ISOSURF, "&Isosurface")
+        #td_menu.Append(ID_3D_VOLUME, "&Volume")
 
         menu_bar = wx.MenuBar()
 
         menu_bar.Append(file_menu, "&File")
         menu_bar.Append(view_menu, "&View")
-        menu_bar.Append(proc_menu, "&Processing")
+        menu_bar.Append(self.mProcessing, "&Processing")
         menu_bar.Append(td_menu, "&3D")
 
         self.Bind(wx.EVT_MENU, self.OnSave, id=wx.ID_SAVE)
@@ -802,12 +782,12 @@ class MultiChannelImageViewFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnClose, id=wx.ID_CLOSE)
         self.Bind(wx.EVT_MENU, self.OnExport, id=ID_EXPORT)
         #self.Bind(wx.EVT_MENU, self.OnViewCLim, id=ID_VIEW_COLOURLIM)
-        self.Bind(wx.EVT_MENU, self.OnViewConsole, id=ID_VIEW_CONSOLE)
+        #self.Bind(wx.EVT_MENU, self.OnViewConsole, id=ID_VIEW_CONSOLE)
         self.Bind(wx.EVT_MENU, self.OnViewBackground, id=ID_VIEW_BACKGROUND)
-        self.Bind(wx.EVT_MENU, self.On3DIsosurf, id=ID_3D_ISOSURF)
-        self.Bind(wx.EVT_MENU, self.On3DVolume, id=ID_3D_VOLUME)
+        #self.Bind(wx.EVT_MENU, self.On3DIsosurf, id=ID_3D_ISOSURF)
+        #self.Bind(wx.EVT_MENU, self.On3DVolume, id=ID_3D_VOLUME)
         self.Bind(wx.EVT_MENU, self.OnGaussianFilter, id=ID_FILTER_GAUSS)
-        self.Bind(wx.EVT_MENU, self.OnColoc, id=ID_COLOC)
+        #self.Bind(wx.EVT_MENU, self.OnColoc, id=ID_COLOC)
         #self.Bind(wx.EVT_MENU, self.OnCMapInvert, id=self.ID_VIEW_CMAP_INVERT)
 
         return menu_bar
@@ -840,43 +820,20 @@ class MultiChannelImageViewFrame(wx.Frame):
 
         self.glCanvas.Refresh()
 
-    def OnViewConsole(self, event):
-        from PYME.DSView.modules import shell
-        shell.Plug(self)
+    #def OnViewConsole(self, event):
+    #    from PYME.DSView.modules import shell
+    #    shell.Plug(self)
 
 
     def OnSaveChannels(self, event):
         fname = wx.FileSelector('Save Image ...', default_extension='.tif', wildcard="TIFF files (*.tif)|*.tif", flags = wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
 
         if not fname == "":
-            #command = ["tiffcp"]
-            # add options here, if any (e.g. for compression)
-
-            #im = im.astype('uint16')
-            #im = im.astype('>u2').astype('<u2')
-
-#            for img, i in zip(self.images, range(len(self.images))):
-#                framefile = "/tmp/frame%d.tif" % i
-#
-#                img.save(framefile)
-#                command.append(framefile)
-#
-#            command.append(fname)
-#            subprocess.call(command)
-#
-#            # remove frame files here
-#            subprocess.call('rm /tmp/frame*.tif', shell=True)
             img = numpy.array([im.img.astype('f') for im in self.images])
 
             from PYME.FileUtils import saveTiffStack
 
             saveTiffStack.saveTiffMultipage(img, fname)
-
-
-            
-
-            #ivp.image.save(fname)
-        
 
 
 
@@ -902,43 +859,43 @@ class MultiChannelImageViewFrame(wx.Frame):
             elif ext == '.bmp':
                 ivp.curIm.SaveFile(fname, wx.BITMAP_TYPE_BMP)
 
-    def OnViewCLim(self, event):
-        if self.limitsFrame == None:
-            px, py = self.GetPosition()
-            self.limitsFrame = DispSettingsFrame(self, -1, pos=(px+self.Size[0], py))
-            self.limitsFrame.Show()
-        else:
-            self.limitsFrame.Destroy()
-            self.limitsFrame = None
+    #def OnViewCLim(self, event):
+    #    if self.limitsFrame == None:
+    #        px, py = self.GetPosition()
+    #        self.limitsFrame = DispSettingsFrame(self, -1, pos=(px+self.Size[0], py))
+    #        self.limitsFrame.Show()
+    #    else:
+    #        self.limitsFrame.Destroy()
+    #        self.limitsFrame = None
 
-    def On3DIsosurf(self, event):
-        from enthought.mayavi import mlab
-
-        f = mlab.figure()
-
-        #asp = self.images[0].sliceSize/self.images[0].pixelSize
-        #asp = self.image.mdh.getEntry('voxelsize.z')/
-        #if asp == 0:
-        #    asp = 1.
-
-        for i in range(self.image.data.shape[3]):
-            c = mlab.contour3d(self.image.data[:,:,:,i], contours=[self.do.Offs[i] + .5/self.do.Gains[i]], color = pylab.cm.gist_rainbow(float(i)/len(self.images))[:3])
-            c.mlab_source.dataset.spacing = (self.image.mdh.getEntry('voxelsize.x') ,self.image.mdh.getEntry('voxelsize.y'), self.image.mdh.getEntry('voxelsize.z'))
-
-    def On3DVolume(self, event):
-        from enthought.mayavi import mlab
-
-        f = mlab.figure()
-
-        #asp = self.images[0].sliceSize/self.images[0].pixelSize
-        #if asp == 0:
-        #    asp = 1.
-
-        #for im, ivp, i in zip(self.images, self.ivps, range(len(self.images))):
-        for i in range(self.image.data.shape[3]):
-            #c = mlab.contour3d(im.img, contours=[pylab.mean(ivp.clim)], color = pylab.cm.gist_rainbow(float(i)/len(self.images))[:3])
-            v = mlab.pipeline.volume(mlab.pipeline.scalar_field(numpy.minimum(255*(self.image.data[:,:,:,i] -self.do.Offs[i])*self.do.Gains[i], 254).astype('uint8')))
-            v.volume.scale = (self.image.mdh.getEntry('voxelsize.x') ,self.image.mdh.getEntry('voxelsize.y'), self.image.mdh.getEntry('voxelsize.z'))
+#    def On3DIsosurf(self, event):
+#        from enthought.mayavi import mlab
+#
+#        f = mlab.figure()
+#
+#        #asp = self.images[0].sliceSize/self.images[0].pixelSize
+#        #asp = self.image.mdh.getEntry('voxelsize.z')/
+#        #if asp == 0:
+#        #    asp = 1.
+#
+#        for i in range(self.image.data.shape[3]):
+#            c = mlab.contour3d(self.image.data[:,:,:,i], contours=[self.do.Offs[i] + .5/self.do.Gains[i]], color = pylab.cm.gist_rainbow(float(i)/len(self.images))[:3])
+#            c.mlab_source.dataset.spacing = (self.image.mdh.getEntry('voxelsize.x') ,self.image.mdh.getEntry('voxelsize.y'), self.image.mdh.getEntry('voxelsize.z'))
+#
+#    def On3DVolume(self, event):
+#        from enthought.mayavi import mlab
+#
+#        f = mlab.figure()
+#
+#        #asp = self.images[0].sliceSize/self.images[0].pixelSize
+#        #if asp == 0:
+#        #    asp = 1.
+#
+#        #for im, ivp, i in zip(self.images, self.ivps, range(len(self.images))):
+#        for i in range(self.image.data.shape[3]):
+#            #c = mlab.contour3d(im.img, contours=[pylab.mean(ivp.clim)], color = pylab.cm.gist_rainbow(float(i)/len(self.images))[:3])
+#            v = mlab.pipeline.volume(mlab.pipeline.scalar_field(numpy.minimum(255*(self.image.data[:,:,:,i] -self.do.Offs[i])*self.do.Gains[i], 254).astype('uint8')))
+#            v.volume.scale = (self.image.mdh.getEntry('voxelsize.x') ,self.image.mdh.getEntry('voxelsize.y'), self.image.mdh.getEntry('voxelsize.z'))
 
     def OnGaussianFilter(self, event):
         from scipy.ndimage import gaussian_filter
@@ -959,69 +916,65 @@ class MultiChannelImageViewFrame(wx.Frame):
 
         dlg.Destroy()
 
-    def OnColoc(self, event):
-        from PYME.Analysis.Colocalisation import correlationCoeffs, edtColoc
-
-        #assume we have exactly 2 channels #FIXME - add a selector
-        #grab image data
-        #imA = self.images[0].img
-        #imB = self.images[1].img
-        imA = self.image.data[:,:,:,0].squeeze()
-        imB = self.image.data[:,:,:,1].squeeze()
-
-        #assume threshold is half the colour bounds - good if using threshold mode
-        tA = self.do.Offs[0] + .5/self.do.Gains[0] #pylab.mean(self.ivps[0].clim)
-        tB = self.do.Offs[1] + .5/self.do.Gains[1] #pylab.mean(self.ivps[0].clim)
-
-        try:
-            nameA, nameB = self.image.mdh.getEntry('ChannelNames')[:2]
-        finally:
-            nameA = 'Channel 1'
-            nameB = 'Channel 2'
-
-        #nameA = self.names[0]
-        #nameB = self.names[1]
-
-        #voxelsize = [self.images[0].pixelSize, self.images[0].pixelSize, self.images[0].sliceSize]
-        voxelsize = [self.image.mdh.getEntry('voxelsize.x') ,self.image.mdh.getEntry('voxelsize.y'), self.image.mdh.getEntry('voxelsize.z')]
-        voxelsize = voxelsize[:imA.ndim] #trunctate to number of dimensions
-
-        pearson = correlationCoeffs.pearson(imA, imB)
-        MA, MB = correlationCoeffs.thresholdedManders(imA, imB, tA, tB)
-
-        bnA, bmA, binsA = edtColoc.imageDensityAtDistance(imB, imA > tA, voxelsize)
-        bnB, bmB, binsB = edtColoc.imageDensityAtDistance(imA, imB > tB, voxelsize)
-
-        pylab.figure()
-        pylab.figtext(.1, .95, 'Pearson: %2.2f   M1: %2.2f M2: %2.2f' % (pearson, MA, MB))
-        pylab.subplot(211)
-        #bn, bm, bins = edtColoc.imageDensityAtDistance(imB, imA > tA, voxelsize)
-        pylab.bar(binsA[:-1], bmA, binsA[1] - binsA[0])
-        pylab.xlabel('Distance from edge of %s [nm]' % nameA)
-        pylab.ylabel('Density of %s' % nameB)
-
-        pylab.subplot(212)
-        #bn, bm, bins = edtColoc.imageDensityAtDistance(imA, imB > tB, voxelsize)
-        pylab.bar(binsB[:-1], bmB, binsB[1] - binsB[0])
-        pylab.xlabel('Distance from edge of %s [nm]' % nameB)
-        pylab.ylabel('Density of %s' % nameA)
-
-        pylab.figure()
-        pylab.figtext(.1, .95, 'Pearson: %2.2f   M1: %2.2f M2: %2.2f' % (pearson, MA, MB))
-        pylab.subplot(211)
-        #bn, bm, bins = edtColoc.imageDensityAtDistance(imB, imA > tA, voxelsize)
-        pylab.bar(binsA[:-1], bmA*bnA, binsA[1] - binsA[0])
-        pylab.xlabel('Distance from edge of %s [nm]' % nameA)
-        pylab.ylabel('Fraction of %s' % nameB)
-
-        pylab.subplot(212)
-        #bn, bm, bins = edtColoc.imageDensityAtDistance(imA, imB > tB, voxelsize)
-        pylab.bar(binsB[:-1], bmB*bnB, binsB[1] - binsB[0])
-        pylab.xlabel('Distance from edge of %s [nm]' % nameB)
-        pylab.ylabel('Fraction of %s' % nameA)
-
-
-        
+#    def OnColoc(self, event):
+#        from PYME.Analysis.Colocalisation import correlationCoeffs, edtColoc
+#
+#        #assume we have exactly 2 channels #FIXME - add a selector
+#        #grab image data
+#        #imA = self.images[0].img
+#        #imB = self.images[1].img
+#        imA = self.image.data[:,:,:,0].squeeze()
+#        imB = self.image.data[:,:,:,1].squeeze()
+#
+#        #assume threshold is half the colour bounds - good if using threshold mode
+#        tA = self.do.Offs[0] + .5/self.do.Gains[0] #pylab.mean(self.ivps[0].clim)
+#        tB = self.do.Offs[1] + .5/self.do.Gains[1] #pylab.mean(self.ivps[0].clim)
+#
+#        try:
+#            nameA, nameB = self.image.mdh.getEntry('ChannelNames')[:2]
+#        except:
+#            nameA = 'Channel 1'
+#            nameB = 'Channel 2'
+#
+#        #nameA = self.names[0]
+#        #nameB = self.names[1]
+#
+#        #voxelsize = [self.images[0].pixelSize, self.images[0].pixelSize, self.images[0].sliceSize]
+#        voxelsize = [self.image.mdh.getEntry('voxelsize.x') ,self.image.mdh.getEntry('voxelsize.y'), self.image.mdh.getEntry('voxelsize.z')]
+#        voxelsize = voxelsize[:imA.ndim] #trunctate to number of dimensions
+#
+#        pearson = correlationCoeffs.pearson(imA, imB)
+#        MA, MB = correlationCoeffs.thresholdedManders(imA, imB, tA, tB)
+#
+#        bnA, bmA, binsA = edtColoc.imageDensityAtDistance(imB, imA > tA, voxelsize)
+#        bnB, bmB, binsB = edtColoc.imageDensityAtDistance(imA, imB > tB, voxelsize)
+#
+#        pylab.figure()
+#        pylab.figtext(.1, .95, 'Pearson: %2.2f   M1: %2.2f M2: %2.2f' % (pearson, MA, MB))
+#        pylab.subplot(211)
+#        pylab.bar(binsA[:-1], bmA, binsA[1] - binsA[0])
+#        pylab.xlabel('Distance from edge of %s [nm]' % nameA)
+#        pylab.ylabel('Density of %s' % nameB)
+#
+#        pylab.subplot(212)
+#        pylab.bar(binsB[:-1], bmB, binsB[1] - binsB[0])
+#        pylab.xlabel('Distance from edge of %s [nm]' % nameB)
+#        pylab.ylabel('Density of %s' % nameA)
+#
+#        pylab.figure()
+#        pylab.figtext(.1, .95, 'Pearson: %2.2f   M1: %2.2f M2: %2.2f' % (pearson, MA, MB))
+#        pylab.subplot(211)
+#        pylab.bar(binsA[:-1], bmA*bnA, binsA[1] - binsA[0])
+#        pylab.xlabel('Distance from edge of %s [nm]' % nameA)
+#        pylab.ylabel('Fraction of %s' % nameB)
+#
+#        pylab.subplot(212)
+#        pylab.bar(binsB[:-1], bmB*bnB, binsB[1] - binsB[0])
+#        pylab.xlabel('Distance from edge of %s [nm]' % nameB)
+#        pylab.ylabel('Fraction of %s' % nameA)
+#
+#
+#
 
     def GetChannel(self, chan):
         if not type(chan) == int:
@@ -1045,28 +998,6 @@ class MultiChannelImageViewFrame(wx.Frame):
             #3D
             return self.images[chan].pixelSize, self.images[chan].pixelSize, self.images[chan].sliceSize
 
-
-
-
-#    def OnCLimChanged(self, event):
-#        self.ivp.clim = (event.lower, event.upper)
-#        self.ivp.Refresh()
-
-#    def OnChangeLUT(self, event):
-#        #print event
-#        self.cmn = self.cmapIDs[event.GetId()]
-#        cmn = self.cmn
-#        if self.cmap_menu.IsChecked(self.ID_VIEW_CMAP_INVERT):
-#            cmn = cmn + '_r'
-#        self.ivp.cmap = pylab.cm.__getattribute__(cmn)
-#        self.ivp.Refresh()
-#
-#    def OnCMapInvert(self, event):
-#        cmn = self.cmn
-#        if self.cmap_menu.IsChecked(self.ID_VIEW_CMAP_INVERT):
-#            cmn = cmn + '_r'
-#        self.ivp.cmap = pylab.cm.__getattribute__(cmn)
-#        self.ivp.Refresh()
 
 
 class DispSettingsPanel(wx.Panel):

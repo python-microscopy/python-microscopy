@@ -14,6 +14,7 @@ modeModules = {
 'LM' : basemodules + ['LMAnalysis'],
 'blob' : basemodules + ['blobFinding', 'psfExtraction'],
 'default' : basemodules + ['psfExtraction'],
+'visGUI' : ['coloc', 'vis3D'],
 }
 
 def loadModule(modName, dsviewer):

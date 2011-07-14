@@ -22,7 +22,7 @@ class PrebleachExtractor:
         self.mixmatrix=np.array([[.85, .15],[.11, .89]])
 
         EXTRAS_PREBLEACH = wx.NewId()
-        dsviewer.mExtras.Append(EXTRAS_PREBLEACH, "&Extract Prebleach Image", "", wx.ITEM_NORMAL)
+        dsviewer.mProcessing.Append(EXTRAS_PREBLEACH, "&Extract Prebleach Image", "", wx.ITEM_NORMAL)
         wx.EVT_MENU(dsviewer, EXTRAS_PREBLEACH, self.OnExtract)
 
     def OnExtract(self, event):

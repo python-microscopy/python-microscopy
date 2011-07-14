@@ -15,7 +15,7 @@ import pylab
 class visualiser:
     def __init__(self, dsviewer):
         self.dsviewer = dsviewer
-        self.do = dsviewer.vp.do
+        self.do = dsviewer.do
 
         self.image = dsviewer.image
         self.tq = None
@@ -24,30 +24,15 @@ class visualiser:
 
         VIEW_ISOSURFACE = wx.NewId()
         VIEW_VOLUME = wx.NewId()
-        #dsviewer.mExtras.AppendSeparator()
+        
         td_menu.Append(VIEW_ISOSURFACE, "3D Isosurface", "", wx.ITEM_NORMAL)
         td_menu.Append(VIEW_VOLUME, "3D Volume", "", wx.ITEM_NORMAL)
 
-        dsviewer.menubar.Insert(dsviewer.menubar.GetMenuCount()-1, td_menu, '3D')
-        #mDeconvolution.AppendSeparator()
-        #dsviewer.save_menu.Append(DECONV_SAVE, "Deconvolution", "", wx.ITEM_NORMAL)
-        #self.menubar.Append(mDeconvolution, "Deconvolution")
+        dsviewer.menubar.Insert(dsviewer.menubar.GetMenuCount()-1, td_menu, '&3D')
 
         wx.EVT_MENU(dsviewer, VIEW_ISOSURFACE, self.On3DIsosurf)
         wx.EVT_MENU(dsviewer, VIEW_VOLUME, self.On3DVolume)
-        #wx.EVT_MENU(dsviewer, DECONV_SAVE, self.saveDeconvolution)
 
-        #dsviewer.updateHooks.append(self.update)
-
-
-    def checkTQ(self):
-        import Pyro.core
-        if self.tq == None:
-            if 'PYME_TASKQUEUENAME' in os.environ.keys():
-                taskQueueName = os.environ['PYME_TASKQUEUENAME']
-            else:
-                taskQueueName = 'taskQueue'
-            self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
 
     def On3DIsosurf(self, event):
         from enthought.mayavi import mlab
