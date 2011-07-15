@@ -654,7 +654,7 @@ class MultiChannelImageViewFrame(wx.Frame):
             self._mgr.AddPane(self.playbackpanel, pinfo1)
             self.do.WantChangeNotification.append(self.playbackpanel.update)
 
-        dsvmods.loadMode('VisGUI', self)
+        dsvmods.loadMode('visGUI', self)
         self.CreateModuleMenu()
 
         self._mgr.Update()
@@ -763,7 +763,7 @@ class MultiChannelImageViewFrame(wx.Frame):
 
         self.mProcessing = wx.Menu()
         self.mProcessing.Append(ID_FILTER_GAUSS, "&Gaussian Filter")
-        self.mProcessing.Append(ID_COLOC, "&Colocalisation")
+        #self.mProcessing.Append(ID_COLOC, "&Colocalisation")
 
 
         #td_menu = wx.Menu()
@@ -775,7 +775,7 @@ class MultiChannelImageViewFrame(wx.Frame):
         menu_bar.Append(file_menu, "&File")
         menu_bar.Append(view_menu, "&View")
         menu_bar.Append(self.mProcessing, "&Processing")
-        menu_bar.Append(td_menu, "&3D")
+        #menu_bar.Append(td_menu, "&3D")
 
         self.Bind(wx.EVT_MENU, self.OnSave, id=wx.ID_SAVE)
         self.Bind(wx.EVT_MENU, self.OnSaveChannels, id=ID_SAVEALL)

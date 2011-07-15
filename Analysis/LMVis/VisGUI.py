@@ -1195,8 +1195,8 @@ class VisGUIFrame(wx.Frame):
                 zp = min(md.EstimatedLaserOnFrameNo+10,(h5f.root.ImageData.shape[0]-1))
             else:
                 zp = 0
-            imf = imageView.ImageViewFrame(self,img, self.glCanvas, title=filename,zp=zp)
-            #imf = imageView.MultiChannelImageViewFrame(self, self.glCanvas, [img], title=filename, zdim=0, zp=min(md.EstimatedLaserOnFrameNo+10,(h5f.root.ImageData.shape[0]-1)))
+            #imf = imageView.ImageViewFrame(self,img, self.glCanvas, title=filename,zp=zp)
+            imf = imageView.MultiChannelImageViewFrame(self, self.glCanvas, [img], title=filename, zdim=0, zp=zp)
 
             self.generatedImages.append(imf)
             imf.Show()
@@ -1217,7 +1217,7 @@ class VisGUIFrame(wx.Frame):
 
         elif ext == '.tif': #Tiff file
             from PYME.FileUtils import readTiff
-            im = readTiff.read3DTiff(filename)[:,:,0].squeeze()
+            im = readTiff.read3DTiff(filename).squeeze()
 
             xmlfn = os.path.splitext(filename)[0] + '.xml'
             if os.path.exists(xmlfn):

@@ -35,7 +35,7 @@ class profiler:
     def OnPlotProfile(self, event=None):
         lx, ly, hx, hy = self.view.GetSliceSelection()
 
-        w = np.floor(0.5*self.view.selectionWidth)
+        w = int(np.floor(0.5*self.view.selectionWidth))
 
         try:
             names = self.image.mdh.getEntry('ChannelNames')
