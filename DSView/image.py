@@ -10,6 +10,8 @@
 ##################
 import os
 import numpy
+import weakref
+
 from PYME.Acquire import MetaDataHandler
 from PYME.Analysis import MetaData
 from PYME.DSView import dataWrap
@@ -17,8 +19,12 @@ from PYME.Analysis.DataSources import BufferedDataSource
 
 lastdir = ''
 
+openImages = weakref.WeakValueDictionary()
+nUntitled = 0
+
 class ImageStack:
     def __init__(self, data = None, mdh = None, filename = None, queueURI = None, events = []):
+        global nUntitled
         self.data = data      #image data
         self.mdh = mdh        #metadata (a MetaDataHandler class)
         self.events = events  #events
@@ -37,6 +43,12 @@ class ImageStack:
         #the data does not need to be a numpy array - it could also be, eg., queue data
         #on a remote server - wrap so that is is indexable like an array
         self.data = dataWrap.Wrap(self.data)
+
+        if self.filename == None:
+            self.filename = 'Untitled Image %d' % nUntitled
+            nUntitled += 1
+
+        openImages[self.filename] = self
 
 
     def LoadQueue(self, filename):
@@ -228,6 +240,8 @@ class ImageStack:
     def Save(self, filename=None, crop=False, view=None):
         import dataExporter
 
+        ofn = self.filename
+
         if crop:
             dataExporter.CropExportData(view, self.mdh, self.events, self.seriesName)
         else:
@@ -239,6 +253,12 @@ class ImageStack:
 
             if not (self.filename == None):
                 self.saved = True
+
+                openImages.pop(ofn)
+                openImages[self.filename] = self
+
+            else:
+                self.filename = ofn
 
 
 

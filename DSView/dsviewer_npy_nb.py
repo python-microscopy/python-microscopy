@@ -83,6 +83,9 @@ class DSViewFrame(wx.Frame):
         modules.loadMode(self.mode, self)
         self.CreateModuleMenu()
 
+        #self.mWindows =  wx.Menu()
+        #self.menubar.append(self.mWindows, '&Composite With')
+
         self.CreateFoldPanel()
         self._mgr.Update()
         self.Layout()

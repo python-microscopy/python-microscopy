@@ -10,10 +10,34 @@
 ##################
 
 import wx
-from PYME.Acquire.mytimer import mytimer
+
+
+from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
+from matplotlib.backends.backend_wxagg import NavigationToolbar2WxAgg
+
+from matplotlib.figure import Figure
+
+#from PYME.Acquire.mytimer import mytimer
 import pylab
 from scipy import ndimage
 import numpy as np
+
+class MyNavigationToolbar(NavigationToolbar2WxAgg):
+    """
+    Extend the default wx toolbar with your own event handlers
+    """
+    ON_SAVE_DATA = wx.NewId()
+    def __init__(self, canvas, cankill):
+        NavigationToolbar2WxAgg.__init__(self, canvas)
+
+        self.AddSimpleTool(self.ON_SAVE_DATA, _load_bitmap('stock_left.xpm'),
+                           'Click me', 'Activate custom contol')
+        EVT_TOOL(self, self.ON_SAVE_DATA, self.OnSaveData)
+
+    def OnSaveData(self, evt):
+
+        np.savetxt
+        evt.Skip()
 
 class profiler:
     def __init__(self, dsviewer):
@@ -24,12 +48,12 @@ class profiler:
         self.image = dsviewer.image
 
         PLOT_PROFILE = wx.NewId()
-        dsviewer.mProcessing.Append(PLOT_PROFILE, "Plot &Profile", "", wx.ITEM_NORMAL)
+        dsviewer.mProcessing.Append(PLOT_PROFILE, "Plot &Profile\tCtrl-K", "", wx.ITEM_NORMAL)
         
         dsviewer.Bind(wx.EVT_MENU, self.OnPlotProfile, id=PLOT_PROFILE)
 
-        accel_tbl = wx.AcceleratorTable([(wx.ACCEL_CTRL,  ord('k'), PLOT_PROFILE )])
-        self.dsviewer.SetAcceleratorTable(accel_tbl)
+        #accel_tbl = wx.AcceleratorTable([(wx.ACCEL_CTRL,  ord('k'), PLOT_PROFILE )])
+        #self.dsviewer.SetAcceleratorTable(accel_tbl)
 
 
     def OnPlotProfile(self, event=None):
@@ -68,8 +92,12 @@ class profiler:
             
 
         for chanNum in range(self.image.data.shape[3]):
+
+            x_0 = min(lx, hx)
+            y_0 = min(ly, hy)
+
             if(self.do.slice == self.do.SLICE_XY):
-                ims = self.image.data[(lx - d_x):(hx+d_x), (ly-d_y):(hy+d_y), self.do.zp, chanNum].squeeze()
+                ims = self.image.data[(min(lx, hx) - d_x):(max(lx,hx)+d_x), (min(ly, hy)-d_y):(max(ly,hy)+d_y), self.do.zp, chanNum].squeeze()
 
             splf = ndimage.spline_filter(ims)
 
@@ -78,8 +106,8 @@ class profiler:
             p = np.zeros(len(t))
 
 
-            x_c = t*dx
-            y_c = t*dy
+            x_c = t*dx + lx - x_0
+            y_c = t*dy + ly - y_0
 
             print splf.shape
 

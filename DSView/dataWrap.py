@@ -26,11 +26,14 @@ class DefaultList(list):
 
 
 class ListWrap:
-    def __init__(self, dataList):
+    def __init__(self, dataList, listDim = None):
         self.dataList = dataList
         self.wrapList = [Wrap(d) for d in dataList]
 
-        self.listDim = self.wrapList[0].nTrueDims
+        if not listDim == None:
+            self.listDim = listDim
+        else:
+            self.listDim = self.wrapList[0].nTrueDims
 
         self.shape = DefaultList(self.wrapList[0].shape[:self.listDim] + [len(self.wrapList),])
 
