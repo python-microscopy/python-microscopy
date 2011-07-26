@@ -67,7 +67,7 @@ class profiler:
             names = ['Channel %d' % d for d in range(self.image.data.shape[3])]
 
         try:
-            voxx = self.mdh.getEntry('voxelsize.x')
+            voxx = self.image.mdh.getEntry('voxelsize.x')
         except:
             voxx=1
 
@@ -97,7 +97,7 @@ class profiler:
             y_0 = min(ly, hy)
 
             if(self.do.slice == self.do.SLICE_XY):
-                ims = self.image.data[(min(lx, hx) - d_x):(max(lx,hx)+d_x), (min(ly, hy)-d_y):(max(ly,hy)+d_y), self.do.zp, chanNum].squeeze()
+                ims = self.image.data[(min(lx, hx) - d_x):(max(lx,hx)+d_x+1), (min(ly, hy)-d_y):(max(ly,hy)+d_y+1), self.do.zp, chanNum].squeeze()
 
             splf = ndimage.spline_filter(ims)
 
@@ -113,7 +113,7 @@ class profiler:
 
 
             for i in range(-w, w+1):
-                #print np.vstack([x_c + d_x +i*dy, y_c + d_y + i*dx])
+                print np.vstack([x_c + d_x +i*dy, y_c + d_y + i*dx])
                 p += ndimage.map_coordinates(splf, np.vstack([x_c + d_x +i*dy, y_c + d_y + i*dx]), prefilter=False)
 
             p = p/(2*w + 1)
@@ -123,6 +123,9 @@ class profiler:
             pylab.plot(t*voxx, p)
 
         pylab.legend(names)
+
+        if not voxx == 1:
+            pylab.xlabel('Distance [um]')
 
 
 

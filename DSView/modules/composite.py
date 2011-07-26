@@ -25,10 +25,17 @@ class compositor:
 
         self.compMenu = wx.Menu()
 
+        dsviewer.mProcessing.AppendSeparator()
         MAKE_COMPOSITE = wx.NewId()
         dsviewer.mProcessing.Append(MAKE_COMPOSITE, "Make Composite", "", wx.ITEM_NORMAL)
 
+        SPLIT_CHANNELS = wx.NewId()
+        dsviewer.mProcessing.Append(SPLIT_CHANNELS, "Split Channels", "", wx.ITEM_NORMAL)
+
+        dsviewer.mProcessing.AppendSeparator()
+
         dsviewer.Bind(wx.EVT_MENU, self.OnMakeComposite, id=MAKE_COMPOSITE)
+        dsviewer.Bind(wx.EVT_MENU, self.OnSplitChannels, id=SPLIT_CHANNELS)
 
 
 
@@ -73,6 +80,20 @@ class compositor:
             View3D(dataWrap.ListWrap(newData, 3), '< Composite >', mdh=mdh, parent=self.dsviewer)
 
         dlg.Destroy()
+
+    def OnSplitChannels(self, event):
+        try:
+            names = self.image.mdh.getEntry('ChannelNames')
+        except:
+            names = ['%d' % d for d in range(self.image.data.shape[3])]
+
+        for i in range(self.image.data.shape[3]):
+            mdh = MetaDataHandler.NestedClassMDHandler(self.image.mdh)
+            mdh.setEntry('ChannelNames', [names[i]])
+
+            View3D(self.image.data[:,:,:,i], '%s - %s' % (self.image.filename, names[i]), mdh=mdh, parent=self.dsviewer)
+
+
 
        
     

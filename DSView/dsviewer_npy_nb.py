@@ -38,7 +38,7 @@ class DSViewFrame(wx.Frame):
 
         self.image = image
         #self.image = ImageStack(data = dstack, mdh = mdh, filename = filename, queueURI = queueURI, events = None)
-        if not self.image.filename == None:
+        if not self.image.filename == None and title == '':
             self.SetTitle(self.image.filename)
 
         self._mgr = aui.AuiManager(agwFlags = aui.AUI_MGR_DEFAULT | aui.AUI_MGR_AUTONB_NO_CAPTION)
@@ -58,6 +58,7 @@ class DSViewFrame(wx.Frame):
         self.menubar = wx.MenuBar()
         self.SetMenuBar(self.menubar)
         tmp_menu = wx.Menu()
+        tmp_menu.Append(wx.ID_OPEN, '&Open', "", wx.ITEM_NORMAL)
         tmp_menu.Append(wx.ID_SAVE, "&Save As", "", wx.ITEM_NORMAL)
         tmp_menu.Append(wx.ID_SAVEAS, "&Export Cropped", "", wx.ITEM_NORMAL)
 
@@ -73,6 +74,7 @@ class DSViewFrame(wx.Frame):
         self.menubar.Append(self.mProcessing, "&Processing")
 
         # Menu Bar end
+        wx.EVT_MENU(self, wx.ID_OPEN, self.OnOpen)
         wx.EVT_MENU(self, wx.ID_SAVE, self.OnSave)
         wx.EVT_MENU(self, wx.ID_SAVEAS, self.OnExport)
         wx.EVT_CLOSE(self, self.OnCloseWindow)
@@ -176,6 +178,9 @@ class DSViewFrame(wx.Frame):
         #update any modules which require it
         for uCallback in self.updateHooks:
             uCallback()
+
+    def OnOpen(self, event=None):
+        ViewIm3D(ImageStack())
         
 
     def OnSave(self, event=None):

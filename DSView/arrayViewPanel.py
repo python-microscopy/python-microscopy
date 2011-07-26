@@ -14,14 +14,15 @@
 import wx
 import wx.lib.agw.aui as aui
 
-import sys
-sys.path.append(".")
-import scrolledImagePanel
-from displayOptions import DisplayOpts
-from DisplayOptionsPanel import OptionsPanel
-from OverlaysPanel import OverlayPanel
+#import sys
+import os
+#sys.path.append(".")
+from PYME.DSView import scrolledImagePanel
+from PYME.DSView.displayOptions import DisplayOpts
+from PYME.DSView.DisplayOptionsPanel import OptionsPanel
+from PYME.DSView.OverlaysPanel import OverlayPanel
 
-from modules import playback
+from PYME.DSView.modules import playback
 
 import numpy
 import scipy
@@ -34,6 +35,10 @@ ACTION_SELECTION = 1
 SELECTION_RECTANGLE = 0
 SELECTION_LINE = 1
 
+dirname = os.path.dirname(__file__)
+bmCrosshairs = wx.Bitmap(os.path.join(dirname, 'icons/crosshairs.png'))
+bmRectSelect = wx.Bitmap(os.path.join(dirname, 'icons/rect_select.png'))
+bmLineSelect = wx.Bitmap(os.path.join(dirname, 'icons/line_select.png'))
 
             
 class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
@@ -131,6 +136,63 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
     def ResetDataStack(self, ds):
         self.do.SetDataStack(ds)
+
+    def CreateToolBar(self, wind):
+        self.toolB = aui.AuiToolBar(wind, -1, wx.DefaultPosition, wx.DefaultSize, agwStyle=aui.AUI_TB_DEFAULT_STYLE | aui.AUI_TB_OVERFLOW | aui.AUI_TB_VERTICAL)
+        self.toolB.SetToolBitmapSize(wx.Size(16, 16))
+
+        #ID_POINTER = wx.NewId()
+        ID_CROSSHAIRS = wx.NewId()
+        ID_RECTSELECT = wx.NewId()
+        ID_LINESELECT = wx.NewId()
+
+        self.toolB.AddRadioTool(ID_CROSSHAIRS, "Point selection", bmCrosshairs, bmCrosshairs)
+        self.toolB.AddRadioTool(ID_RECTSELECT, "Rectangle selection", bmRectSelect, bmRectSelect)
+        self.toolB.AddRadioTool(ID_LINESELECT, "Rectangle selection", bmLineSelect, bmLineSelect)
+
+        self.toolB.Realize()
+
+        #self._mgr.AddPane(tb5, aui.AuiPaneInfo().Name("tb5").Caption("Sample Vertical Toolbar").
+        #                  ToolbarPane().Left().GripperTop())
+
+        self.toolB.ToggleTool(ID_CROSSHAIRS, True)
+
+        wind.Bind(wx.EVT_TOOL, self.OnSelectCrosshairs, id=ID_CROSSHAIRS)
+        wind.Bind(wx.EVT_TOOL, self.OnSelectRectangle, id=ID_RECTSELECT)
+        wind.Bind(wx.EVT_TOOL, self.OnSelectLine, id=ID_LINESELECT)
+        wind.Bind(aui.EVT_AUITOOLBAR_RIGHT_CLICK, self.OnLineThickness, id=ID_LINESELECT)
+
+        return self.toolB
+
+    def OnSelectCrosshairs(self, event):
+        self.leftButtonAction = ACTION_POSITION
+        self.selectionMode = SELECTION_RECTANGLE
+
+        self.Refresh()
+
+    def OnSelectRectangle(self, event):
+        self.leftButtonAction = ACTION_SELECTION
+        self.selectionMode = SELECTION_RECTANGLE
+
+        self.Refresh()
+
+    def OnSelectLine(self, event):
+        self.leftButtonAction = ACTION_SELECTION
+        self.selectionMode = SELECTION_LINE
+
+        self.Refresh()
+
+    def OnLineThickness(self, event):
+        print 'foo'
+        dlg = wx.TextEntryDialog(self, 'Line Thickness', 'Set width of line selection', '%d' % self.selectionWidth)
+
+        if dlg.ShowModal() == wx.ID_OK:
+            self.selectionWidth = int(dlg.GetValue())
+
+        dlg.Destroy()
+
+        self.Refresh()
+
         
     def DoPaint(self, dc):
         
@@ -888,6 +950,10 @@ class ArraySettingsAndViewPanel(wx.Panel):
         self.overlaypanel.SetSize(self.overlaypanel.GetBestSize())
         pinfo2 = aui.AuiPaneInfo().Name("overlayPanel").Right().Caption('Overlays').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
         self._mgr.AddPane(self.overlaypanel, pinfo2)
+
+        self._mgr.AddPane(self.view.CreateToolBar(self), aui.AuiPaneInfo().Name("ViewTools").Caption("View Tools").CloseButton(False).
+                          ToolbarPane().Right().GripperTop())
+
 
         if self.do.ds.shape[2] > 1:
             self.playbackpanel = playback.PlayPanel(self, self)

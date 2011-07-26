@@ -35,7 +35,7 @@ class ListWrap:
         else:
             self.listDim = self.wrapList[0].nTrueDims
 
-        self.shape = DefaultList(self.wrapList[0].shape[:self.listDim] + [len(self.wrapList),])
+        self.shape = DefaultList([self.wrapList[0].shape[i] for i in range(self.listDim)] + [len(self.wrapList),])
 
     def __getattr__(self, name):
         return getattr(self.wrapList[0], name)
