@@ -36,9 +36,11 @@ SELECTION_RECTANGLE = 0
 SELECTION_LINE = 1
 
 dirname = os.path.dirname(__file__)
-bmCrosshairs = wx.Bitmap(os.path.join(dirname, 'icons/crosshairs.png'))
-bmRectSelect = wx.Bitmap(os.path.join(dirname, 'icons/rect_select.png'))
-bmLineSelect = wx.Bitmap(os.path.join(dirname, 'icons/line_select.png'))
+
+#windows complains if bitmaps are loaded before wx.App exists - defer loading to first use
+bmCrosshairs = None #wx.Bitmap(os.path.join(dirname, 'icons/crosshairs.png'))
+bmRectSelect = None #wx.Bitmap(os.path.join(dirname, 'icons/rect_select.png'))
+bmLineSelect = None #wx.Bitmap(os.path.join(dirname, 'icons/line_select.png'))
 
             
 class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
@@ -138,6 +140,13 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         self.do.SetDataStack(ds)
 
     def CreateToolBar(self, wind):
+        global bmCrosshairs, bmRectSelect, bmLineSelect
+
+        if bmCrosshairs == None: #load bitmaps on first use
+            bmCrosshairs = wx.Bitmap(os.path.join(dirname, 'icons/crosshairs.png'))
+            bmRectSelect = wx.Bitmap(os.path.join(dirname, 'icons/rect_select.png'))
+            bmLineSelect = wx.Bitmap(os.path.join(dirname, 'icons/line_select.png'))
+            
         self.toolB = aui.AuiToolBar(wind, -1, wx.DefaultPosition, wx.DefaultSize, agwStyle=aui.AUI_TB_DEFAULT_STYLE | aui.AUI_TB_OVERFLOW | aui.AUI_TB_VERTICAL)
         self.toolB.SetToolBitmapSize(wx.Size(16, 16))
 

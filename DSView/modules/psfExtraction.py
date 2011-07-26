@@ -15,7 +15,8 @@ import numpy
 class psfExtractor:
     def __init__(self, dsviewer):
         self.dsviewer = dsviewer
-        self.vp = dsviewer.vp
+        self.view = dsviewer.view
+        self.do = dsviewer.do
         self.image = dsviewer.image
 
         self.PSFLocs = []
@@ -85,7 +86,7 @@ class psfExtractor:
         from PYME.PSFEst import extractImages
         #if we already have a location there, un-tag it
         for i, p in enumerate(self.PSFLocs):
-            if ((numpy.array(p[:2]) - numpy.array((self.vp.do.xp, self.vp.do.yp)))**2).sum() < 100:
+            if ((numpy.array(p[:2]) - numpy.array((self.do.xp, self.do.yp)))**2).sum() < 100:
                 self.PSFLocs.pop(i)
 
                 self.view.psfROIs = self.PSFLocs
@@ -93,8 +94,8 @@ class psfExtractor:
                 return
                 
         rsx, rsy, rsz = [int(s) for s in self.tPSFROI.GetValue().split(',')]
-        dx, dy, dz = extractImages.getIntCenter(self.image.data[(self.vp.do.xp-rsx):(self.vp.do.xp+rsx + 1),(self.vp.do.yp-rsy):(self.vp.do.yp+rsy+1), :])
-        self.PSFLocs.append((self.vp.do.xp + dx, self.vp.do.yp + dy, dz))
+        dx, dy, dz = extractImages.getIntCenter(self.image.data[(self.do.xp-rsx):(self.do.xp+rsx + 1),(self.do.yp-rsy):(self.do.yp+rsy+1), :])
+        self.PSFLocs.append((self.do.xp + dx, self.do.yp + dy, dz))
         self.view.psfROIs = self.PSFLocs
         self.view.Refresh()
 
@@ -120,7 +121,7 @@ class psfExtractor:
         try:
             psfROISize = [int(s) for s in self.tPSFROI.GetValue().split(',')]
             self.view.psfROISize = psfROISize
-            self.vp.Refresh()
+            self.view.Refresh()
         except:
             pass
 
