@@ -58,36 +58,16 @@ class DSViewFrame(wx.Frame):
         self.do = DisplayOpts(self.image.data)
         self.do.Optimise()
 
-        if 'ChannelNames' in self.image.mdh.getEntryNames():
+        if self.image.mdh and 'ChannelNames' in self.image.mdh.getEntryNames():
             self.do.names = self.image.mdh.getEntry('ChannelNames')
 
         #self.vp = ArraySettingsAndViewPanel(self, self.image.data, wantUpdates=[self.update], mdh=self.image.mdh)
-        self.view = ArrayViewPanel(self, do=self.do)
-        self.AddPage(self.view, True, 'Data')
+        #self.view = ArrayViewPanel(self, do=self.do)
+        #self.AddPage(self.view, True, 'Data')
         #self._mgr.AddPane(self.vp, aui.AuiPaneInfo().
         #                  Name("Data").Caption("Data").Centre().CloseButton(False).CaptionVisible(False))
 
-        self.optionspanel = OptionsPanel(self, self.do, thresholdControls=True)
-        self.optionspanel.SetSize(self.optionspanel.GetBestSize())
-        pinfo = aui.AuiPaneInfo().Name("optionsPanel").Right().Caption('Display Settings').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
-        self._mgr.AddPane(self.optionspanel, pinfo)
         
-        self.overlaypanel = OverlayPanel(self, self.view, self.image.mdh)
-        self.overlaypanel.SetSize(self.overlaypanel.GetBestSize())
-        pinfo2 = aui.AuiPaneInfo().Name("overlayPanel").Right().Caption('Overlays').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
-        self._mgr.AddPane(self.overlaypanel, pinfo2)
-
-        self._mgr.AddPane(self.view.CreateToolBar(self), aui.AuiPaneInfo().Name("ViewTools").Caption("View Tools").CloseButton(False).
-                          ToolbarPane().Right().GripperTop())
-
-        if self.do.ds.shape[2] > 1:
-            from PYME.DSView.modules import playback
-            self.playbackpanel = playback.PlayPanel(self, self)
-            self.playbackpanel.SetSize(self.playbackpanel.GetBestSize())
-
-            pinfo1 = aui.AuiPaneInfo().Name("playbackPanel").Bottom().Caption('Playback').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
-            self._mgr.AddPane(self.playbackpanel, pinfo1)
-            self.do.WantChangeNotification.append(self.playbackpanel.update)
 
         self.mainFrame = self
         #self.do = self.vp.do
@@ -123,23 +103,55 @@ class DSViewFrame(wx.Frame):
         modules.loadMode(self.mode, self)
         self.CreateModuleMenu()
 
+        self.panesToMinimise = []
+
+        self.optionspanel = OptionsPanel(self, self.do, thresholdControls=True)
+        self.optionspanel.SetSize(self.optionspanel.GetBestSize())
+        pinfo = aui.AuiPaneInfo().Name("optionsPanel").Right().Caption('Display Settings').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
+        self._mgr.AddPane(self.optionspanel, pinfo)
+
+        self.panesToMinimise.append(pinfo)
+
+        if 'view' in dir(self):
+            self.overlaypanel = OverlayPanel(self, self.view, self.image.mdh)
+            self.overlaypanel.SetSize(self.overlaypanel.GetBestSize())
+            pinfo2 = aui.AuiPaneInfo().Name("overlayPanel").Right().Caption('Overlays').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
+            self._mgr.AddPane(self.overlaypanel, pinfo2)
+
+            #self._mgr.AddPane(self.view.CreateToolBar(self), aui.AuiPaneInfo().Name("ViewTools").Caption("View Tools").CloseButton(False).
+            #                  ToolbarPane().Right().GripperTop())
+
+            self.panesToMinimise.append(pinfo2)
+
+        if self.do.ds.shape[2] > 1:
+            from PYME.DSView.modules import playback
+            self.playbackpanel = playback.PlayPanel(self, self)
+            self.playbackpanel.SetSize(self.playbackpanel.GetBestSize())
+
+            pinfo1 = aui.AuiPaneInfo().Name("playbackPanel").Bottom().Caption('Playback').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
+            self._mgr.AddPane(self.playbackpanel, pinfo1)
+            self.do.WantChangeNotification.append(self.playbackpanel.update)
+
         #self.mWindows =  wx.Menu()
         #self.menubar.append(self.mWindows, '&Composite With')
 
         self.CreateFoldPanel()
         self._mgr.Update()
-        self._mgr.MinimizePane(pinfo)
-        self._mgr.MinimizePane(pinfo2)
+
+        for pn in self.panesToMinimise:
+            self._mgr.MinimizePane(pn)
+        #self._mgr.MinimizePane(pinfo2)
         self.Layout()
 
-        self.view.Refresh()
+        if 'view' in dir(self):
+            self.view.Refresh()
         self.update()
 
     def AddPage(self, page=None, select=True,caption='Dummy'):
         if self.pane0 == None:
             name = caption.replace(' ', '')
             self._mgr.AddPane(page, aui.AuiPaneInfo().
-                          Name(name).Caption(caption).Centre().CloseButton(False))
+                          Name(name).Caption(caption).Centre().CloseButton(False).CaptionVisible(False))
             self.pane0 = name
         else:
             self._mgr.Update()
@@ -216,7 +228,8 @@ class DSViewFrame(wx.Frame):
     def update(self):
         if not self.updating:
             self.updating = True
-            self.view.Refresh()
+            if 'view' in dir(self):
+                self.view.Refresh()
             statusText = 'Slice No: (%d/%d)    x: %d    y: %d' % (self.do.zp, self.do.ds.shape[2], self.do.xp, self.do.yp)
             #grab status from modules which supply it
             for sCallback in self.statusHooks:

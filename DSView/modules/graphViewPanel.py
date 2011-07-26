@@ -47,8 +47,28 @@ class GraphViewPanel(wx.Panel):
 
         sizer1.Add(self.canvas, 1, wx.TOP | wx.LEFT | wx.EXPAND)
 
+        self.toolbar = NavigationToolbar2WxAgg(self.canvas)
+        self.toolbar.Realize()
+
+        if wx.Platform == '__WXMAC__':
+            # Mac platform (OSX 10.3, MacPython) does not seem to cope with
+            # having a toolbar in a sizer. This work-around gets the buttons
+            # back, but at the expense of having the toolbar at the top
+            self.SetToolBar(self.toolbar)
+        else:
+            # On Windows platform, default window size is incorrect, so set
+            # toolbar width to figure width.
+            tw, th = self.toolbar.GetSizeTuple()
+            fw, fh = self.canvas.GetSizeTuple()
+            # By adding toolbar in sizer, we are able to put it at the bottom
+            # of the frame - so appearance is closer to GTK version.
+            # As noted above, doesn't work for Mac.
+            self.toolbar.SetSize(wx.Size(fw, th))
+            sizer1.Add(self.toolbar, 0, wx.LEFT | wx.EXPAND)
+
         self.Bind(wx.EVT_SIZE, self._onSize)
 
+        self.toolbar.update()
         self.SetSizerAndFit(sizer1)
         self.draw()
 
@@ -81,9 +101,13 @@ class GraphViewPanel(wx.Panel):
                                      float( pixels[1] )/self.figure.get_dpi() )
 
 def Plug(dsviewer):
-    if 'xvalues' in dsviewer.image.mdh.getEntryNames():
-        xvals = dsviewer.image.mdh.getEntry('xvalues')
-        xlabel = dsviewer.image.mdh.getEntry('xlabel')
+    #if dsviewer.image.mdh and 'xvalues' in dsviewer.image.mdh.getEntryNames():
+    #    xvals = dsviewer.image.mdh.getEntry('xvalues')
+    #    xlabel = dsviewer.image.mdh.getEntry('xlabel')
+
+    if 'xvals' in dir(dsviewer.image):
+        xvals = dsviewer.image.xvals
+        xlabel = dsviewer.image.xlabel
 
     else:
         xvals = None

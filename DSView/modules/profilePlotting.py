@@ -11,33 +11,12 @@
 
 import wx
 
-
-from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
-from matplotlib.backends.backend_wxagg import NavigationToolbar2WxAgg
-
-from matplotlib.figure import Figure
-
 #from PYME.Acquire.mytimer import mytimer
 import pylab
 from scipy import ndimage
 import numpy as np
 
-class MyNavigationToolbar(NavigationToolbar2WxAgg):
-    """
-    Extend the default wx toolbar with your own event handlers
-    """
-    ON_SAVE_DATA = wx.NewId()
-    def __init__(self, canvas, cankill):
-        NavigationToolbar2WxAgg.__init__(self, canvas)
-
-        self.AddSimpleTool(self.ON_SAVE_DATA, _load_bitmap('stock_left.xpm'),
-                           'Click me', 'Activate custom contol')
-        EVT_TOOL(self, self.ON_SAVE_DATA, self.OnSaveData)
-
-    def OnSaveData(self, evt):
-
-        np.savetxt
-        evt.Skip()
+from PYME.DSView.dsviewer_npy_nb import ViewIm3D, ImageStack
 
 class profiler:
     def __init__(self, dsviewer):
@@ -88,8 +67,9 @@ class profiler:
 
         #print lx, hx, ly, hy
 
-        pylab.figure()
-            
+        #pylab.figure()
+        plots = []
+        t = np.arange(np.ceil(l))
 
         for chanNum in range(self.image.data.shape[3]):
 
@@ -104,9 +84,7 @@ class profiler:
             if(self.do.slice == self.do.SLICE_XY):
                 ims = self.image.data[(min(lx, hx) - d__x):(max(lx,hx)+d__x+1), (min(ly, hy)-d__y):(max(ly,hy)+d__y+1), self.do.zp, chanNum].squeeze()
 
-            splf = ndimage.spline_filter(ims)
-
-            t = np.arange(np.ceil(l))
+            splf = ndimage.spline_filter(ims) 
 
             p = np.zeros(len(t))
 
@@ -125,12 +103,34 @@ class profiler:
 
 
 
-            pylab.plot(t*voxx, p)
+            plots.append(p.reshape(-1, 1,1))
 
-        pylab.legend(names)
+        #pylab.legend(names)
+
+        im = ImageStack(plots)
+        im.xvals = t*voxx
 
         if not voxx == 1:
-            pylab.xlabel('Distance [um]')
+            im.xlabel = 'Distance [um]'
+        else:
+            im.xlabel = 'Distance [pixels]'
+
+        im.ylabel = 'Intensity'
+
+        im.mdh['voxelsize.x'] = voxx
+        im.mdh['ChannelNames'] = names
+        im.mdh['Profile.XValues'] = im.xvals
+        im.mdh['Profile.XLabel'] = im.xlabel
+        im.mdh['Profile.YLabel'] = im.ylabel
+        im.mdh['Profile.StartX'] = lx
+        im.mdh['Profile.StartY'] = ly
+        im.mdh['Profile.EndX'] = hx
+        im.mdh['Profile.EndY'] = hy
+        im.mdh['Profile.Width'] = 2*w + 1
+
+        im.mdh['OriginalImage'] = self.image.filename
+
+        ViewIm3D(im, mode='graph')
 
 
 

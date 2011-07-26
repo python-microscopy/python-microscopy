@@ -1025,4 +1025,6 @@ class ArraySettingsAndViewPanel(wx.Panel):
             self.showOptsPanel = 1
             self.GetSizer().Show(self.optionspanel, 1)
             self.Layout()
+
+
         

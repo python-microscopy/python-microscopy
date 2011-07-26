@@ -48,6 +48,9 @@ class ImageStack:
             self.filename = 'Untitled Image %d' % nUntitled
             nUntitled += 1
 
+        if self.mdh == None:
+            self.mdh = MetaDataHandler.NestedClassMDHandler()
+
         openImages[self.filename] = self
 
 
