@@ -88,38 +88,38 @@ class psfExtractor:
             if ((numpy.array(p[:2]) - numpy.array((self.vp.do.xp, self.vp.do.yp)))**2).sum() < 100:
                 self.PSFLocs.pop(i)
 
-                self.vp.view.psfROIs = self.PSFLocs
-                self.vp.view.Refresh()
+                self.view.psfROIs = self.PSFLocs
+                self.view.Refresh()
                 return
                 
         rsx, rsy, rsz = [int(s) for s in self.tPSFROI.GetValue().split(',')]
         dx, dy, dz = extractImages.getIntCenter(self.image.data[(self.vp.do.xp-rsx):(self.vp.do.xp+rsx + 1),(self.vp.do.yp-rsy):(self.vp.do.yp+rsy+1), :])
         self.PSFLocs.append((self.vp.do.xp + dx, self.vp.do.yp + dy, dz))
-        self.vp.view.psfROIs = self.PSFLocs
-        self.vp.view.Refresh()
+        self.view.psfROIs = self.PSFLocs
+        self.view.Refresh()
 
     def OnTagPoints(self, event):
         from PYME.PSFEst import extractImages
         rsx, rsy, rsz = [int(s) for s in self.tPSFROI.GetValue().split(',')]
-        for xp, yp, zp in self.vp.view.points:
+        for xp, yp, zp in self.view.points:
             if ((xp > rsx) and (xp < (self.image.data.shape[0] - rsx)) and
                 (yp > rsy) and (yp < (self.image.data.shape[1] - rsy))):
                     
                     dx, dy, dz = extractImages.getIntCenter(self.image.data[(xp-rsx):(xp+rsx + 1),(yp-rsy):(yp+rsy+1), :])
                     self.PSFLocs.append((xp + dx, yp + dy, dz))
         
-        self.vp.view.psfROIs = self.PSFLocs
-        self.vp.view.Refresh()
+        self.view.psfROIs = self.PSFLocs
+        self.view.Refresh()
 
     def OnClearTags(self, event):
         self.PSFLocs = []
-        self.vp.view.psfROIs = self.PSFLocs
-        self.vp.view.Refresh()
+        self.view.psfROIs = self.PSFLocs
+        self.view.Refresh()
 
     def OnPSFROI(self, event):
         try:
             psfROISize = [int(s) for s in self.tPSFROI.GetValue().split(',')]
-            self.vp.view.psfROISize = psfROISize
+            self.view.psfROISize = psfROISize
             self.vp.Refresh()
         except:
             pass

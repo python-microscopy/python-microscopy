@@ -43,7 +43,7 @@ class profiler:
     def __init__(self, dsviewer):
         self.dsviewer = dsviewer
 
-        self.view = dsviewer.vp.view
+        self.view = dsviewer.view
         self.do = dsviewer.do
         self.image = dsviewer.image
 
@@ -83,8 +83,8 @@ class profiler:
             d_x = w
             d_y = w
         else:
-            d_x = w*dy
-            d_y = w*dx
+            d_x = w*abs(dy)
+            d_y = w*abs(dx)
 
         #print lx, hx, ly, hy
 
@@ -96,8 +96,13 @@ class profiler:
             x_0 = min(lx, hx)
             y_0 = min(ly, hy)
 
+            d__x = abs(d_x) + 1
+            d__y = abs(d_y) + 1
+
+            print dx, dy, d__x, d__y, w
+
             if(self.do.slice == self.do.SLICE_XY):
-                ims = self.image.data[(min(lx, hx) - d_x):(max(lx,hx)+d_x+1), (min(ly, hy)-d_y):(max(ly,hy)+d_y+1), self.do.zp, chanNum].squeeze()
+                ims = self.image.data[(min(lx, hx) - d__x):(max(lx,hx)+d__x+1), (min(ly, hy)-d__y):(max(ly,hy)+d__y+1), self.do.zp, chanNum].squeeze()
 
             splf = ndimage.spline_filter(ims)
 
@@ -113,8 +118,8 @@ class profiler:
 
 
             for i in range(-w, w+1):
-                print np.vstack([x_c + d_x +i*dy, y_c + d_y + i*dx])
-                p += ndimage.map_coordinates(splf, np.vstack([x_c + d_x +i*dy, y_c + d_y + i*dx]), prefilter=False)
+                #print np.vstack([x_c + d__x +i*dy, y_c + d__y + i*dx])
+                p += ndimage.map_coordinates(splf, np.vstack([x_c + d__x +i*dy, y_c + d__y + i*dx]), prefilter=False)
 
             p = p/(2*w + 1)
 

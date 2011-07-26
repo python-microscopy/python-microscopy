@@ -85,9 +85,9 @@ class blobFinder:
         else:
             self.ofd.FindObjects(threshold,0)
 
-        self.dsviewer.vp.view.points = numpy.array([[p.x, p.y, p.z] for p in self.ofd])
+        self.dsviewer.view.points = numpy.array([[p.x, p.y, p.z] for p in self.ofd])
 
-        self.objPosRA = numpy.rec.fromrecords(self.dsviewer.vp.view.points, names='x,y,z')
+        self.objPosRA = numpy.rec.fromrecords(self.dsviewer.view.points, names='x,y,z')
 
         if self.vObjPos == None:
             self.vObjPos = recArrayView.recArrayPanel(self.dsviewer, self.objPosRA)

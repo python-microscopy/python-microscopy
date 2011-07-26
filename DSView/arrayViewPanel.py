@@ -746,16 +746,41 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         pos = event.GetLogicalPosition(dc)
         pos = self.CalcUnscrolledPosition(*pos)
         #print pos
+        
         sc = pow(2.0,(self.do.scale-2))
-        if (self.do.slice == self.do.SLICE_XY):
-            self.selection_end_x = int(pos[0]/sc)
-            self.selection_end_y = int(pos[1]/(sc*self.aspect))
-        elif (self.do.slice == self.do.SLICE_XZ):
-            self.selection_end_x = int(pos[0]/sc)
-            self.selection_end_z = int(pos[1]/(sc*self.aspect))
-        elif (self.do.slice == self.do.SLICE_YZ):
-            self.selection_end_y = int(pos[0]/sc)
-            self.selection_end_z = int(pos[1]/(sc*self.aspect))
+
+        if not event.ShiftDown():
+            if (self.do.slice == self.do.SLICE_XY):
+                self.selection_end_x = int(pos[0]/sc)
+                self.selection_end_y = int(pos[1]/(sc*self.aspect))
+            elif (self.do.slice == self.do.SLICE_XZ):
+                self.selection_end_x = int(pos[0]/sc)
+                self.selection_end_z = int(pos[1]/(sc*self.aspect))
+            elif (self.do.slice == self.do.SLICE_YZ):
+                self.selection_end_y = int(pos[0]/sc)
+                self.selection_end_z = int(pos[1]/(sc*self.aspect))
+        else: #lock
+            if (self.do.slice == self.do.SLICE_XY):
+                self.selection_end_x = int(pos[0]/sc)
+                self.selection_end_y = int(pos[1]/(sc*self.aspect))
+
+                dx = abs(self.selection_end_x - self.selection_begin_x)
+                dy = abs(self.selection_end_y - self.selection_begin_y)
+
+                if dx > 1.5*dy: #horizontal
+                    self.selection_end_y = self.selection_begin_y
+                elif dy > 1.5*dx: #vertical
+                    self.selection_end_x = self.selection_begin_x
+                else: #diagonal
+                    self.selection_end_y = self.selection_begin_y + dx*numpy.sign(self.selection_end_y - self.selection_begin_y)
+
+            elif (self.do.slice == self.do.SLICE_XZ):
+                self.selection_end_x = int(pos[0]/sc)
+                self.selection_end_z = int(pos[1]/(sc*self.aspect))
+            elif (self.do.slice == self.do.SLICE_YZ):
+                self.selection_end_y = int(pos[0]/sc)
+                self.selection_end_z = int(pos[1]/(sc*self.aspect))
+
         if ('update' in dir(self.GetParent())):
              self.GetParent().update()
         #self.update()

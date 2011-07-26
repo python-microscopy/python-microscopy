@@ -35,7 +35,8 @@ class LMAnalyser:
             self.tq = None
         
         self.image = dsviewer.image
-        self.vp = dsviewer.vp
+        self.view = dsviewer.view
+        self.do = dsviewer.do
 
         #this should only occur for files types which we weren't expecting to process
         #as LM data (eg tiffs)
@@ -78,29 +79,29 @@ class LMAnalyser:
         dsviewer.statusHooks.append(self.GetStatusText)
 
         if 'Protocol.DataStartsAt' in self.image.mdh.getEntryNames():
-            self.vp.zp = self.image.mdh.getEntry('Protocol.DataStartsAt')
+            self.do.zp = self.image.mdh.getEntry('Protocol.DataStartsAt')
         else:
-            self.vp.zp = self.image.mdh.getEntry('EstimatedLaserOnFrameNo')
+            self.do.zp = self.image.mdh.getEntry('EstimatedLaserOnFrameNo')
         
         if len(self.fitResults) > 0:
             self.GenResultsView()
 
     def GenResultsView(self):
-        self.vp.view.pointMode = 'lm'
+        self.view.pointMode = 'lm'
 
         voxx = 1e3*self.image.mdh.getEntry('voxelsize.x')
         voxy = 1e3*self.image.mdh.getEntry('voxelsize.y')
-        self.vp.view.points = numpy.vstack((self.fitResults['fitResults']['x0']/voxx, self.fitResults['fitResults']['y0']/voxy, self.fitResults['tIndex'])).T
+        self.view.points = numpy.vstack((self.fitResults['fitResults']['x0']/voxx, self.fitResults['fitResults']['y0']/voxy, self.fitResults['tIndex'])).T
 
         if 'Splitter' in self.image.mdh.getEntry('Analysis.FitModule'):
-            self.vp.view.pointMode = 'splitter'
-            self.vp.view.pointColours = self.fitResults['fitResults']['Ag'] > self.fitResults['fitResults']['Ar']
+            self.view.pointMode = 'splitter'
+            self.view.pointColours = self.fitResults['fitResults']['Ag'] > self.fitResults['fitResults']['Ar']
 
-        self.fitInf = fitInfo.FitInfoPanel(self.dsviewer, self.fitResults, self.resultsMdh, self.vp.do.ds)
+        self.fitInf = fitInfo.FitInfoPanel(self.dsviewer, self.fitResults, self.resultsMdh, self.do.ds)
         self.dsviewer.AddPage(page=self.fitInf, select=False, caption='Fit Info')
 
         from PYME.Analysis.LMVis import gl_render
-        self.glCanvas = gl_render.LMGLCanvas(self.dsviewer, False, vp = self.vp.do, vpVoxSize = voxx)
+        self.glCanvas = gl_render.LMGLCanvas(self.dsviewer, False, vp = self.do, vpVoxSize = voxx)
         self.glCanvas.cmap = pylab.cm.gist_rainbow
 
         self.dsviewer.AddPage(page=self.glCanvas, select=True, caption='VisLite')
@@ -205,7 +206,7 @@ class LMAnalyser:
         if 'Protocol.DataStartsAt' in self.image.mdh.getEntryNames():
             startAt = self.image.mdh.getEntry('Protocol.DataStartsAt')
         else:
-            startAt = self.vp.do.zp
+            startAt = self.do.zp
         self.tStartAt = wx.TextCtrl(pan, -1, value='%d' % startAt, size=(50, -1))
 
         hsizer.Add(self.tStartAt, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
@@ -524,7 +525,7 @@ class LMAnalyser:
                     self.fitResults = numpy.concatenate((self.fitResults, newResults))
                 self.progPan.fitResults = self.fitResults
 
-                self.vp.points = numpy.vstack((self.fitResults['fitResults']['x0'], self.fitResults['fitResults']['y0'], self.fitResults['tIndex'])).T
+                self.view.points = numpy.vstack((self.fitResults['fitResults']['x0'], self.fitResults['fitResults']['y0'], self.fitResults['tIndex'])).T
 
                 self.numEvents = len(self.fitResults)
 
@@ -568,8 +569,8 @@ class LMAnalyser:
         self.dsviewer.update()
 
     def update(self):
-        if 'fitInf' in dir(self) and not self.vp.playbackpanel.tPlay.IsRunning():
-            self.fitInf.UpdateDisp(self.vp.view.PointsHitTest())
+        if 'fitInf' in dir(self) and not self.playbackpanel.tPlay.IsRunning():
+            self.fitInf.UpdateDisp(self.view.PointsHitTest())
 
 
     #from fth5.py

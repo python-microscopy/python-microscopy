@@ -16,7 +16,11 @@ import pylab
 import modules
 
 import PYME.misc.autoFoldPanel as afp
-from PYME.DSView.arrayViewPanel import ArraySettingsAndViewPanel
+#from PYME.DSView.arrayViewPanel import ArraySettingsAndViewPanel
+from PYME.DSView.arrayViewPanel import ArrayViewPanel
+from PYME.DSView.displayOptions import DisplayOpts
+from PYME.DSView.DisplayOptionsPanel import OptionsPanel
+from PYME.DSView.OverlaysPanel import OverlayPanel
 from PYME.DSView.image import ImageStack
 
 from PYME.Acquire.mytimer import mytimer
@@ -33,6 +37,10 @@ class DSViewFrame(wx.Frame):
         self.statusHooks = []
         self.installedModules = []
 
+        self.updating = False
+
+        self.pane0 = None
+
         self.timer = mytimer()
         self.timer.Start(10000)
 
@@ -47,12 +55,42 @@ class DSViewFrame(wx.Frame):
         # tell AuiManager to manage this frame
         self._mgr.SetManagedWindow(self)
 
-        self.vp = ArraySettingsAndViewPanel(self, self.image.data, wantUpdates=[self.update], mdh=self.image.mdh)
-        self._mgr.AddPane(self.vp, aui.AuiPaneInfo().
-                          Name("Data").Caption("Data").Centre().CloseButton(False).CaptionVisible(False))
+        self.do = DisplayOpts(self.image.data)
+        self.do.Optimise()
+
+        if 'ChannelNames' in self.image.mdh.getEntryNames():
+            self.do.names = self.image.mdh.getEntry('ChannelNames')
+
+        #self.vp = ArraySettingsAndViewPanel(self, self.image.data, wantUpdates=[self.update], mdh=self.image.mdh)
+        self.view = ArrayViewPanel(self, do=self.do)
+        self.AddPage(self.view, True, 'Data')
+        #self._mgr.AddPane(self.vp, aui.AuiPaneInfo().
+        #                  Name("Data").Caption("Data").Centre().CloseButton(False).CaptionVisible(False))
+
+        self.optionspanel = OptionsPanel(self, self.do, thresholdControls=True)
+        self.optionspanel.SetSize(self.optionspanel.GetBestSize())
+        pinfo = aui.AuiPaneInfo().Name("optionsPanel").Right().Caption('Display Settings').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
+        self._mgr.AddPane(self.optionspanel, pinfo)
+        
+        self.overlaypanel = OverlayPanel(self, self.view, self.image.mdh)
+        self.overlaypanel.SetSize(self.overlaypanel.GetBestSize())
+        pinfo2 = aui.AuiPaneInfo().Name("overlayPanel").Right().Caption('Overlays').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
+        self._mgr.AddPane(self.overlaypanel, pinfo2)
+
+        self._mgr.AddPane(self.view.CreateToolBar(self), aui.AuiPaneInfo().Name("ViewTools").Caption("View Tools").CloseButton(False).
+                          ToolbarPane().Right().GripperTop())
+
+        if self.do.ds.shape[2] > 1:
+            from PYME.DSView.modules import playback
+            self.playbackpanel = playback.PlayPanel(self, self)
+            self.playbackpanel.SetSize(self.playbackpanel.GetBestSize())
+
+            pinfo1 = aui.AuiPaneInfo().Name("playbackPanel").Bottom().Caption('Playback').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
+            self._mgr.AddPane(self.playbackpanel, pinfo1)
+            self.do.WantChangeNotification.append(self.playbackpanel.update)
 
         self.mainFrame = self
-        self.do = self.vp.do
+        #self.do = self.vp.do
         
         # Menu Bar
         self.menubar = wx.MenuBar()
@@ -90,29 +128,37 @@ class DSViewFrame(wx.Frame):
 
         self.CreateFoldPanel()
         self._mgr.Update()
+        self._mgr.MinimizePane(pinfo)
+        self._mgr.MinimizePane(pinfo2)
         self.Layout()
 
-        self.vp.Refresh()
+        self.view.Refresh()
         self.update()
 
     def AddPage(self, page=None, select=True,caption='Dummy'):
-        self._mgr.Update()
-        pn = self._mgr.GetPaneByName("Data")
-        if pn.IsNotebookPage():
-            print pn.notebook_id
-            nbs = self._mgr.GetNotebooks()
-            if len(nbs) > pn.notebook_id:
-                currPage = nbs[pn.notebook_id].GetSelection()
+        if self.pane0 == None:
+            name = caption.replace(' ', '')
             self._mgr.AddPane(page, aui.AuiPaneInfo().
-                          Name(caption.replace(' ', '')).Caption(caption).CloseButton(False).NotebookPage(pn.notebook_id))
-            if (not select) and len(nbs) > pn.notebook_id:
-                nbs[pn.notebook_id].SetSelection(currPage)
+                          Name(name).Caption(caption).Centre().CloseButton(False))
+            self.pane0 = name
         else:
-            self._mgr.AddPane(page, aui.AuiPaneInfo().
-                          Name(caption.replace(' ', '')).Caption(caption).CloseButton(False), target=pn)
-            #nb = self._mgr.GetNotebooks()[0]
-            #if not select:
-            #    nb.SetSelection(0)
+            self._mgr.Update()
+            pn = self._mgr.GetPaneByName(self.pane0)
+            if pn.IsNotebookPage():
+                print pn.notebook_id
+                nbs = self._mgr.GetNotebooks()
+                if len(nbs) > pn.notebook_id:
+                    currPage = nbs[pn.notebook_id].GetSelection()
+                self._mgr.AddPane(page, aui.AuiPaneInfo().
+                              Name(caption.replace(' ', '')).Caption(caption).CloseButton(False).NotebookPage(pn.notebook_id))
+                if (not select) and len(nbs) > pn.notebook_id:
+                    nbs[pn.notebook_id].SetSelection(currPage)
+            else:
+                self._mgr.AddPane(page, aui.AuiPaneInfo().
+                              Name(caption.replace(' ', '')).Caption(caption).CloseButton(False), target=pn)
+                #nb = self._mgr.GetNotebooks()[0]
+                #if not select:
+                #    nb.SetSelection(0)
 
         self._mgr.Update()
 
@@ -168,16 +214,23 @@ class DSViewFrame(wx.Frame):
 
 
     def update(self):
-        self.vp.update()
-        statusText = 'Slice No: (%d/%d)    x: %d    y: %d' % (self.vp.do.zp, self.vp.do.ds.shape[2], self.vp.do.xp, self.vp.do.yp)
-        #grab status from modules which supply it
-        for sCallback in self.statusHooks:
-            statusText += '\t' + sCallback() #'Frames Analysed: %d    Events detected: %d' % (self.vp.do.zp, self.vp.do.ds.shape[2], self.vp.do.xp, self.vp.do.yp, self.LMAnalyser.numAnalysed, self.LMAnalyser.numEvents)
-        self.statusbar.SetStatusText(statusText)
+        if not self.updating:
+            self.updating = True
+            self.view.Refresh()
+            statusText = 'Slice No: (%d/%d)    x: %d    y: %d' % (self.do.zp, self.do.ds.shape[2], self.do.xp, self.do.yp)
+            #grab status from modules which supply it
+            for sCallback in self.statusHooks:
+                statusText += '\t' + sCallback() #'Frames Analysed: %d    Events detected: %d' % (self.vp.do.zp, self.vp.do.ds.shape[2], self.vp.do.xp, self.vp.do.yp, self.LMAnalyser.numAnalysed, self.LMAnalyser.numEvents)
+            self.statusbar.SetStatusText(statusText)
 
-        #update any modules which require it
-        for uCallback in self.updateHooks:
-            uCallback()
+            if 'playbackpanel' in dir(self):
+                self.playbackpanel.update()
+
+            #update any modules which require it
+            for uCallback in self.updateHooks:
+                uCallback()
+
+            self.updating = False
 
     def OnOpen(self, event=None):
         ViewIm3D(ImageStack())
@@ -188,7 +241,7 @@ class DSViewFrame(wx.Frame):
         self.SetTitle(self.image.filename)
 
     def OnExport(self, event=None):
-        self.image.Save(crop = True, view = self.vp.view)
+        self.image.Save(crop = True, view = self.view)
 
     def OnCloseWindow(self, event):
         pylab.close('all')
@@ -210,7 +263,7 @@ class DSViewFrame(wx.Frame):
 
     def dsRefresh(self):
         #zp = self.vp.do.zp #save z -position
-        self.vp.do.SetDataStack(self.image.dataSource)
+        self.do.SetDataStack(self.image.dataSource)
         #self.vp.do.zp = zp #restore z position
         self.elv.SetEventSource(self.image.dataSource.getEvents())
         self.elv.SetRange([0, self.image.dataSource.getNumSlices()])
