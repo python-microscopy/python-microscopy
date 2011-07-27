@@ -142,7 +142,7 @@ class deconvolver:
                     time.sleep(1)
                     tries += 1
                     
-                self.res = View3D(self.dec.fs, '< Deconvolution Result >', mdh=decMDH, parent=self.dsviewer)
+                self.res = View3D(self.dec.fs, 'Deconvolution Result', mdh=decMDH, parent=self.dsviewer)
 
                 self.dlgDeconProg = DeconvProgressPanel(self.res, nIter)
 

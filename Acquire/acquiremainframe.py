@@ -574,8 +574,12 @@ class smiMainFrame(wx.Frame):
         for mdgen in MetaDataHandler.provideStartMetadata:
             mdgen(mdh)
 
-        im = dsviewer.ImageStack(data = ds2, mdh = mdh)
-        dvf = dsviewer.DSViewFrame(im, title=('<Unsaved Image %d>' % self.snapNum), mode='lite', size=(500, 500))
+        im = dsviewer.ImageStack(data = ds2, mdh = mdh, titleStub='Unsaved Image')
+        if not im.mode == 'graph':
+            im.mode = 'lite'
+
+        #print im.mode
+        dvf = dsviewer.DSViewFrame(im, mode= im.mode, size=(500, 500))
         dvf.SetSize((500,500))
         dvf.Show()
 

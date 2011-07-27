@@ -107,7 +107,7 @@ class profiler:
 
         #pylab.legend(names)
 
-        im = ImageStack(plots)
+        im = ImageStack(plots, titleStub='New Profile')
         im.xvals = t*voxx
 
         if not voxx == 1:
