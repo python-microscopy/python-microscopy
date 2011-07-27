@@ -15,6 +15,10 @@ class PowerMeter:
         self.instr.write('SENS:CORR:WAV %d' % wavelength)
 
     def GetStatusText(self):
-        return 'Laser power: %3.3f mW' % (self.GetPower()*1e3*self.dispScale)
+        try:
+            pow = self.GetPower()
+            return 'Laser power: %3.3f mW' % (pow*1e3*self.dispScale)
+        except:
+            return 'Laser power: ERR'
 
 

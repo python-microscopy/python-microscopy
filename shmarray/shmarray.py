@@ -82,7 +82,7 @@ class shmarray(numpy.ndarray):
         return __reduce_ex__(self, 0)
 
 
-def create(shape, dtype='d'):
+def create(shape, dtype='d', order=None):
     '''Create an uninitialised shared array. Avoid object arrays, as these
     will almost certainly break as the objects themselves won't be stored in shared
     memory, only the pointers'''
@@ -103,15 +103,15 @@ def create(shape, dtype='d'):
 
     a = sharedctypes.RawArray(dt, N)
 
-    sa =  shmarray(a, shape, dtype)
+    sa =  shmarray(a, shape, dtype, order=order)
 
     return sa
 
-def zeros(shape, dtype='d'):
+def zeros(shape, dtype='d', order=None):
     '''Create an shared array initialised to zeros. Avoid object arrays, as these
     will almost certainly break as the objects themselves won't be stored in shared
     memory, only the pointers'''
-    sa = create(shape, dtype='d')
+    sa = create(shape, dtype='d', order=order)
 
     #contrary to the documentation, sharedctypes.RawArray does NOT always return
     #an array which is initialised to zero - do it ourselves

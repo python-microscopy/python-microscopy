@@ -30,6 +30,8 @@ class blocking_deconv:
         self.psf = psf
         self.tq = tq
         self.name = name
+
+        self.killed = False
         
         #print shape(data)
         
@@ -200,6 +202,27 @@ class blocking_deconv:
         print 'Sending precomputed info to cluster ...'
         self.init_cluster()
         print 'Starting the deconvolution ....'
+        #self.push_deconv_tasks(lamb, num_iters)
+
+    def retrieve(self):
+        self.pull_and_deblock()
+        self.cleanup_cluster()
+
+        self.res = self.end_res
+
+
+    def isAlive(self):
+        if self.killed:
+            return False
+        else:
+            ia =  self.tq.getNumberTasksCompleted(self.name) < len(self.blocks)
+            if not ia:
+                self.retrieve()
+            return ia
+
+    def kill(self):
+        self.killed = True
+        self.cleanup_cluster()
         #self.do_deconv(lamb, num_iters)
         #self.cleanup_cluster()
         #print 'Finished deconvolution, putting blocks back together ...'

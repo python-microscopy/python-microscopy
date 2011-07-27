@@ -12,6 +12,7 @@
 import wx
 import PYME.misc.autoFoldPanel as afp
 from PYME.Analysis.LMVis import recArrayView
+import numpy
 
 
 class blobFinder:
@@ -74,7 +75,7 @@ class blobFinder:
 
         if not 'ofd' in dir(self):
             #create an object identifier
-            self.ofd = ObjectIdentifier(self.image.data)
+            self.ofd = ObjectIdentifier(self.image.data[:,:,:])
 
         #and identify objects ...
         if self.cbSNThreshold.GetValue(): #don't detect objects in poisson noise
@@ -82,15 +83,15 @@ class blobFinder:
             threshold =  (numpy.sqrt(self.image.mdh.Camera.ReadNoise**2 + numpy.maximum(self.image.mdh.Camera.ElectronsPerCount*(self.image.mdh.Camera.NoiseFactor**2)*(self.image.data.astype('f') - self.image.mdh.Camera.ADOffset)*self.image.mdh.Camera.TrueEMGain, 1))/self.image.mdh.Camera.ElectronsPerCount)*fudgeFactor*threshold
             self.ofd.FindObjects(threshold, 0)
         else:
-            self.ofd.FindObjects(threshold)
+            self.ofd.FindObjects(threshold,0)
 
-        self.vp.points = numpy.array([[p.x, p.y, p.z] for p in self.ofd])
+        self.dsviewer.view.points = numpy.array([[p.x, p.y, p.z] for p in self.ofd])
 
-        self.objPosRA = numpy.rec.fromrecords(self.vp.points, names='x,y,z')
+        self.objPosRA = numpy.rec.fromrecords(self.dsviewer.view.points, names='x,y,z')
 
         if self.vObjPos == None:
-            self.vObjPos = recArrayView.recArrayPanel(self.notebook1, self.objPosRA)
-            self.notebook1.AddPage(self.vObjPos, 'Object Positions')
+            self.vObjPos = recArrayView.recArrayPanel(self.dsviewer, self.objPosRA)
+            self.dsviewer.AddPage(self.vObjPos, 'Object Positions')
         else:
             self.vObjPos.grid.SetData(self.objPosRA)
 

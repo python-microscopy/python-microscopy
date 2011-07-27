@@ -17,8 +17,11 @@ from scipy.fftpack import fftn, ifftn, fftshift, ifftshift
 import fftw3f
 #import weave
 #import cDec
-from PYME import pad
+#from PYME import pad
 #import dec
+
+NTHREADS = 8
+FFTWFLAGS = ['measure']
 
 class rldec:
     '''Deconvolution class, implementing a variant of the Richardson-Lucy algorithm.
@@ -59,16 +62,17 @@ class rldec:
         self.dataShape = data.shape
 
         #guess a starting estimate for the object
-        self.f = self.startGuess(data)
+        self.f = self.startGuess(data).ravel()
+        self.fs = self.f.reshape(self.shape)
 
         #make things 1 dimensional
-        self.f = self.f.ravel()
+        #self.f = self.f.ravel()
         data = data.ravel()
 
         self.loopcount=0
 
-        for self.loopcount in range(num_iters):
-            
+        while self.loopcount  < num_iters:
+            self.loopcount += 1
 
             #the residuals
             self.res = data/self.Afunc(self.f);
@@ -82,9 +86,9 @@ class rldec:
 
 
             #set the current estimate to out new estimate
-            self.f = fnew
+            self.f[:] = fnew
 
-        return real(self.f)
+        return real(self.fs)
 
 #class rlbead(rl):
 class rlbead(rldec):
@@ -163,7 +167,11 @@ class dec_conv_slow(rldec):
 
 
         #do the padding
-        g = pad.with_constant(g, ((pw2[0], pw1[0]), (pw2[1], pw1[1]),(pw2[2], pw1[2])), (0,))
+        #g = pad.with_constant(g, ((pw2[0], pw1[0]), (pw2[1], pw1[1]),(pw2[2], pw1[2])), (0,))
+        g_ = fftw3f.create_aligned_array(data_size, 'float32')
+        g_[:] = 0
+        g_[pw2[0]:-pw1[0], pw2[1]:-pw1[1], pw2[2]:-pw1[2]] = g
+        g = g_
 
 
         #keep track of our data shape
@@ -262,7 +270,11 @@ class dec_conv(rldec):
 
 
         #do the padding
-        g = pad.with_constant(g, ((pw2[0], pw1[0]), (pw2[1], pw1[1]),(pw2[2], pw1[2])), (0,))
+        #g = pad.with_constant(g, ((pw2[0], pw1[0]), (pw2[1], pw1[1]),(pw2[2], pw1[2])), (0,))
+        g_ = fftw3f.create_aligned_array(data_size, 'float32')
+        g_[:] = 0
+        g_[pw2[0]:-pw1[0], pw2[1]:-pw1[1], pw2[2]:-pw1[2]] = g
+        g = g_
 
 
         #keep track of our data shape
@@ -296,8 +308,8 @@ class dec_conv(rldec):
         self.H /= g.size;
 
         #calculate plans for other ffts
-        self._plan_r_F = fftw3f.Plan(self._r, self._F, 'forward')
-        self._plan_F_r = fftw3f.Plan(self._F, self._r, 'backward')
+        self._plan_r_F = fftw3f.Plan(self._r, self._F, 'forward', flags = FFTWFLAGS, nthreads=NTHREADS)
+        self._plan_F_r = fftw3f.Plan(self._F, self._r, 'backward', flags = FFTWFLAGS, nthreads=NTHREADS)
 
 
     def Lfunc(self, f):

@@ -140,9 +140,10 @@ class PSFFitFactory:
 
         if fitfcn == f_Interp3d:
             if 'PSFFile' in metadata.getEntryNames():
-                if self.interpolator.setModel(metadata.PSFFile, metadata):
+                if self.interpolator.setModelFromMetadata(metadata):
                     print 'model changed'
                     self.startPosEstimator.splines.clear()
+
                 if not 'z' in self.startPosEstimator.splines.keys():
                     self.startPosEstimator.calibrate(self.interpolator, metadata)
             else:
@@ -153,7 +154,7 @@ class PSFFitFactory:
         #generate grid to evaluate function on
         #setModel(md.PSFFile, md)
         interpolator = __import__('PYME.Analysis.FitFactories.Interpolators.' + md.Analysis.InterpModule , fromlist=['PYME', 'Analysis','FitFactories', 'Interpolators']).interpolator
-        if interpolator.setModel(md.PSFFile, md):
+        if interpolator.setModelFromFile(md.PSFFile, md):
             print 'model changed'
 
 #        if 'Analysis.EstimatorModule' in md.getEntryNames():

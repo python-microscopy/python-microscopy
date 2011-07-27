@@ -10,14 +10,21 @@
 ##################
 import os
 import numpy
+import weakref
+
 from PYME.Acquire import MetaDataHandler
 from PYME.Analysis import MetaData
 from PYME.DSView import dataWrap
+from PYME.Analysis.DataSources import BufferedDataSource
 
 lastdir = ''
 
+openImages = weakref.WeakValueDictionary()
+nUntitled = 0
+
 class ImageStack:
     def __init__(self, data = None, mdh = None, filename = None, queueURI = None, events = []):
+        global nUntitled
         self.data = data      #image data
         self.mdh = mdh        #metadata (a MetaDataHandler class)
         self.events = events  #events
@@ -36,6 +43,15 @@ class ImageStack:
         #the data does not need to be a numpy array - it could also be, eg., queue data
         #on a remote server - wrap so that is is indexable like an array
         self.data = dataWrap.Wrap(self.data)
+
+        if self.filename == None:
+            self.filename = 'Untitled Image %d' % nUntitled
+            nUntitled += 1
+
+        if self.mdh == None:
+            self.mdh = MetaDataHandler.NestedClassMDHandler()
+
+        openImages[self.filename] = self
 
 
     def LoadQueue(self, filename):
@@ -137,10 +153,17 @@ class ImageStack:
         
 
     def FindAndParseMetadata(self, filename):
+        mdf = None
         xmlfn = os.path.splitext(filename)[0] + '.xml'
+        xmlfnmc = os.path.splitext(filename)[0].split('__')[0] + '.xml'
         if os.path.exists(xmlfn):
             self.mdh = MetaData.TIRFDefault
             self.mdh.copyEntriesFrom(MetaDataHandler.XMLMDHandler(xmlfn))
+            mdf = xmlfn
+        elif os.path.exists(xmlfnmc): #this is a single colour channel of a pair
+            self.mdh = MetaData.TIRFDefault
+            self.mdh.copyEntriesFrom(MetaDataHandler.XMLMDHandler(xmlfnmc))
+            mdf = xmlfnmc
         else:
             self.mdh = MetaData.BareBones
             
@@ -149,6 +172,7 @@ class ImageStack:
             mdfn = os.path.splitext(filename)[0] + '.md'
             if os.path.exists(mdfn):
                 self.mdh.copyEntriesFrom(MetaDataHandler.SimpleMDHandler(mdfn))
+                mdf = mdfn
 
         if not ('voxelsize.x' in self.mdh.keys() and 'voxelsize.y' in self.mdh.keys()):
             from PYME.DSView.voxSizeDialog import VoxSizeDialog
@@ -160,15 +184,46 @@ class ImageStack:
             self.mdh.setEntry('voxelsize.y', dlg.GetVoxY())
             self.mdh.setEntry('voxelsize.z', dlg.GetVoxZ())
 
+        return mdf
+
     def LoadTiff(self, filename):
         #from PYME.FileUtils import readTiff
         from PYME.Analysis.DataSources import TiffDataSource
 
+        mdfn = self.FindAndParseMetadata(filename)
+
         self.dataSource = TiffDataSource.DataSource(filename, None)
+        self.dataSource = BufferedDataSource.DataSource(self.dataSource, min(self.dataSource.getNumSlices(), 50))
         self.data = self.dataSource #this will get replaced with a wrapped version
+
+
+        #if we have a multi channel data set, try and pull in all the channels
+        if 'ChannelFiles' in self.mdh.getEntryNames():
+            try:
+                from PYME.DSView.dataWrap import ListWrap
+                #pull in all channels
+
+                chans = []
+
+                for cf in self.mdh.getEntry('ChannelFiles'):
+                    cfn = os.path.join(os.path.split(filename)[0], cf)
+
+                    ds = TiffDataSource.DataSource(cfn, None)
+                    ds = BufferedDataSource.DataSource(ds, min(ds.getNumSlices(), 50))
+
+                    chans.append(ds)
+
+                self.data = ListWrap(chans) #this will get replaced with a wrapped version
+
+                self.filename = mdfn
+            except:
+                pass
+
+
+        
         #self.data = readTiff.read3DTiff(filename)
 
-        self.FindAndParseMetadata(filename)
+        
 
         from PYME.ParallelTasks.relativeFiles import getRelFilename
         self.seriesName = getRelFilename(filename)
@@ -180,6 +235,7 @@ class ImageStack:
         from PYME.Analysis.DataSources import ImageSeriesDataSource
 
         self.dataSource = ImageSeriesDataSource.DataSource(filename, None)
+        self.dataSource = BufferedDataSource.DataSource(self.dataSource, min(self.dataSource.getNumSlices(), 50))
         self.data = self.dataSource #this will get replaced with a wrapped version
         #self.data = readTiff.read3DTiff(filename)
 
@@ -225,6 +281,8 @@ class ImageStack:
     def Save(self, filename=None, crop=False, view=None):
         import dataExporter
 
+        ofn = self.filename
+
         if crop:
             dataExporter.CropExportData(view, self.mdh, self.events, self.seriesName)
         else:
@@ -234,8 +292,14 @@ class ImageStack:
                 self.filename = dataExporter.ExportData(self.data, self.mdh, self.events)
             #self.SetTitle(fn)
 
-            if not (filename == None):
+            if not (self.filename == None):
                 self.saved = True
+
+                openImages.pop(ofn)
+                openImages[self.filename] = self
+
+            else:
+                self.filename = ofn
 
 
 

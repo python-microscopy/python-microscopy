@@ -79,7 +79,7 @@ Trace short and quick memory allocations at T5
     Qhull uses int instead of size_t except for system calls such as malloc, qsort, qh_malloc, etc.
     This matches Qt convention and is easier to work with.  
 */
-typedef long ptr_intT;
+typedef long long ptr_intT;
 
 /*-<a                             href="qh-mem.htm#TOC"
   >--------------------------------</a><a name="qhmemT">-</a>

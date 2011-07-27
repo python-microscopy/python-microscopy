@@ -26,13 +26,16 @@ class DefaultList(list):
 
 
 class ListWrap:
-    def __init__(self, dataList):
+    def __init__(self, dataList, listDim = None):
         self.dataList = dataList
         self.wrapList = [Wrap(d) for d in dataList]
 
-        self.listDim = self.wrapList[0].nTrueDims
+        if not listDim == None:
+            self.listDim = listDim
+        else:
+            self.listDim = self.wrapList[0].nTrueDims
 
-        self.shape = DefaultList(self.wrapList[0].shape[:self.listDim] + [len(self.wrapList),])
+        self.shape = DefaultList([self.wrapList[0].shape[i] for i in range(self.listDim)] + [len(self.wrapList),])
 
     def __getattr__(self, name):
         return getattr(self.wrapList[0], name)
@@ -53,7 +56,7 @@ class DataWrap: #permit indexing with more dimensions larger than len(shape)
 
         self.dim_1_is_z = False
 
-        if not data.__class__ == np.ndarray and not data.__class__ == tables.EArray: # is a data source
+        if not isinstance(data, np.ndarray) and not isinstance(data, tables.EArray): # is a data source
             self.type = 'DataSource'
             self.shape = data.getSliceShape() + (data.getNumSlices(),)
             #print self.shape

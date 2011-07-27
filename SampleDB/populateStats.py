@@ -16,7 +16,7 @@ from SampleDB.samples import calcEventStats
 
 def addStats():
     #dir_size = 0
-    files = File.objects.all()[8100:8200]
+    files = File.objects.all()
     for f in files:
         calcEventStats.getStats(f)
 

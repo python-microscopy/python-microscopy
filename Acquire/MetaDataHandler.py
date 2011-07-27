@@ -168,7 +168,7 @@ class NestedClassMDHandler(MDHandlerBase):
     def getEntryNames(self):
         en = []
         for k in self.__dict__.keys():
-            if hasattr(self.__dict__[k], 'getEntryNames'):
+            if hasattr(self.__dict__[k], 'getEntryNames') and not self.__dict__[k].__module__ == 'Pyro.core':
                 en += [k + '.' + kp for kp in self.__dict__[k].getEntryNames()]
             else:
                 en.append(k)

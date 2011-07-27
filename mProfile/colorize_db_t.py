@@ -114,18 +114,20 @@ class Parser:
 
     stylesheet = _STYLESHEET
 
-    def __init__(self, raw, times, thresholdT = 0.01, out=sys.stdout):
+    def __init__(self, raw, times, counts, thresholdT = 0.01, out=sys.stdout):
         """ Store the source text.
         """
         self.raw = string.strip(string.expandtabs(raw))
         self.out = out
         self.times = times
+        self.counts = counts
 
         self.totTime = sum(times.values())
         self.maxTime = max(max(times.values()), 1e-3)
         self.cover_flag = False
         self.line_flag = False
         self.thresholdT = thresholdT
+        
 
     def format(self):
         """ Parse and send the colored source.
@@ -172,7 +174,7 @@ class Parser:
         
         if (not self.line_flag):
             #tspec = 'XXX.YYs'
-            tspec =  '       '
+            tspec =  '       ' + '       '
             if (self.times.has_key(srow)):
                 #print srow
                 t = self.times[srow]
@@ -181,7 +183,7 @@ class Parser:
                 self.cover_flag = True
 
                 if (t/self.maxTime > self.thresholdT):
-                    tspec = '%6.2fs' % t
+                    tspec = '%6.2fs n=%04d' % (t, self.counts[srow])
 
 
             self.out.write('%s    %03d    ' % (tspec,srow ))
@@ -235,7 +237,7 @@ class Parser:
             self.line_flag = False
 
 
-def colorize_file(times, file=None, outstream=sys.stdout, standalone=True):
+def colorize_file(times, counts, file=None, outstream=sys.stdout, standalone=True):
     """Convert a python source file into colorized HTML.
 
     Reads file and writes to outstream (default sys.stdout). file can be a
@@ -266,7 +268,7 @@ def colorize_file(times, file=None, outstream=sys.stdout, standalone=True):
 
     if standalone:
         outstream.write(_HTML_HEADER % {'title': filename})
-    Parser(source, times, out=outstream).format()
+    Parser(source, times, counts, out=outstream).format()
     if standalone:
         outstream.write(_HTML_FOOTER)
 

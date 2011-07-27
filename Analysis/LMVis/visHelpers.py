@@ -404,26 +404,10 @@ else:
 
         return im/n
 
-
-def rendJitTet(x,y,z,n,jsig, jsigz, mcp, imageBounds, pixelSize, zb,sliceSize=100):
-    import gen3DTriangs
-
-    sizeX = (imageBounds.x1 - imageBounds.x0)/pixelSize
-    sizeY = (imageBounds.y1 - imageBounds.y0)/pixelSize
-
-    x = (x - imageBounds.x0)/pixelSize
-    y = (y - imageBounds.y0)/pixelSize
-
-    jsig = jsig/pixelSize
-    jsigz = jsigz/sliceSize
-
-    z = (z - zb[0])/sliceSize
-
-    sizeZ  = floor((zb[1] + sliceSize - zb[0])/sliceSize)
-
-    im = numpy.zeros((sizeX, sizeY, sizeZ), order='F')
-
+def rendJTet(im, x,y,z,jsig, jsigz, mcp, n):
     for i in range(n):
+        scipy.random.seed()
+
         Imc = scipy.rand(len(x)) < mcp
         if type(jsig) == numpy.ndarray:
             print jsig.shape, Imc.shape
@@ -435,7 +419,90 @@ def rendJitTet(x,y,z,n,jsig, jsigz, mcp, imageBounds, pixelSize, zb,sliceSize=10
         print p.shape
         RenderTetrahedra(p, im)
 
-    return im/n
+if multiProc:
+
+    def rendJitTet(x,y,z,n,jsig, jsigz, mcp, imageBounds, pixelSize, zb,sliceSize=100):
+        import gen3DTriangs
+
+        sizeX = (imageBounds.x1 - imageBounds.x0)/pixelSize
+        sizeY = (imageBounds.y1 - imageBounds.y0)/pixelSize
+
+        x = (x - imageBounds.x0)/pixelSize
+        y = (y - imageBounds.y0)/pixelSize
+
+        jsig = jsig/pixelSize
+        jsigz = jsigz/sliceSize
+
+        z = (z - zb[0])/sliceSize
+
+        sizeZ  = floor((zb[1] + sliceSize - zb[0])/sliceSize)
+
+        #im = numpy.zeros((sizeX, sizeY, sizeZ), order='F')
+
+        im = shmarray.zeros((sizeX, sizeY, sizeZ), order='F')
+
+        x = shmarray.create_copy(x)
+        y = shmarray.create_copy(y)
+        z = shmarray.create_copy(z)
+
+        if type(jsig) == numpy.ndarray:
+            jsig = shmarray.create_copy(jsig)
+
+        if type(jsigz) == numpy.ndarray:
+            jsigz = shmarray.create_copy(jsigz)
+
+        #pool = multiprocessing.Pool()
+
+        #Ts = pool.map(gJitTriang, range(n))
+
+        nCPUs = multiprocessing.cpu_count()
+
+        tasks = (n/nCPUs)*numpy.ones(nCPUs, 'i')
+        tasks[:(n%nCPUs)] += 1
+
+        processes = [multiprocessing.Process(target = rendJTet, args=(im, x, y,z, jsig, jsigz, mcp, nIt)) for nIt in tasks]
+
+        for p in processes:
+            p.start()
+
+        for p in processes:
+            p.join()
+
+        return im/n
+
+else:
+    def rendJitTet(x,y,z,n,jsig, jsigz, mcp, imageBounds, pixelSize, zb,sliceSize=100):
+        import gen3DTriangs
+
+        sizeX = (imageBounds.x1 - imageBounds.x0)/pixelSize
+        sizeY = (imageBounds.y1 - imageBounds.y0)/pixelSize
+
+        x = (x - imageBounds.x0)/pixelSize
+        y = (y - imageBounds.y0)/pixelSize
+
+        jsig = jsig/pixelSize
+        jsigz = jsigz/sliceSize
+
+        z = (z - zb[0])/sliceSize
+
+        sizeZ  = floor((zb[1] + sliceSize - zb[0])/sliceSize)
+
+        im = numpy.zeros((sizeX, sizeY, sizeZ), order='F')
+
+        #for i in range(n):
+        rendJTet(im, x,y,z,n,jsig, jsigz, mcp, n)
+    #        Imc = scipy.rand(len(x)) < mcp
+    #        if type(jsig) == numpy.ndarray:
+    #            print jsig.shape, Imc.shape
+    #            jsig = jsig[Imc]
+    #            jsigz = jsigz[Imc]
+    #
+    #        #gen3DTriangs.renderTetrahedra(im, x[Imc]+ jsig*scipy.randn(Imc.sum()), y[Imc]+ jsig*scipy.randn(Imc.sum()), z[Imc]+ jsigz*scipy.randn(Imc.sum()), scale = [1,1,1], pixelsize=[1,1,1])
+    #        p = numpy.hstack(((x[Imc]+ jsig*scipy.randn(Imc.sum()))[:, None], (y[Imc]+ jsig*scipy.randn(Imc.sum()))[:, None], (z[Imc]+ jsigz*scipy.randn(Imc.sum()))[:, None]))
+    #        print p.shape
+    #        RenderTetrahedra(p, im)
+
+        return im/n
 
 
 def rendHist(x,y, imageBounds, pixelSize):

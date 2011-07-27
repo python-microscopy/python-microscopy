@@ -15,6 +15,9 @@ import wx.py.shell
 import PYME.misc.autoFoldPanel as afp
 import wx.lib.agw.aui as aui
 
+#hacked so py2exe works
+from PYME.DSView.dsviewer_npy import View3D
+
 from PYME.Analysis.LMVis import gl_render
 from PYME.Analysis.LMVis import workspaceTree
 import sys
@@ -27,7 +30,7 @@ from PYME.FileUtils import nameUtils
 from PYME.Analysis.EdgeDB import edges
 
 import os
-import gl_render3D
+from PYME.Analysis.LMVis import gl_render3D
 
 from matplotlib import delaunay
 
@@ -150,7 +153,7 @@ class VisGUIFrame(wx.Frame):
         self.GeneratedMeasures = {}
         self.Quads = None
         #self.pointColour = None
-        self.colData = '<None>'
+        self.colData = 't'
 
         #self.sh = WxController(self.notebook)
         #print self.sh.shell.user_ns
@@ -195,7 +198,7 @@ class VisGUIFrame(wx.Frame):
 
         self.glCanvas = gl_render.LMGLCanvas(self)
         self.AddPage(page=self.glCanvas, select=True, caption='View')
-        self.glCanvas.cmap = pylab.cm.hot
+        self.glCanvas.cmap = pylab.cm.gist_rainbow #pylab.cm.hot
 
         #self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_MOVE, self.OnMove)
@@ -697,7 +700,7 @@ class VisGUIFrame(wx.Frame):
         renderers.init_renderers(self)
 
         self.extras_menu = wx.Menu()
-        import Extras
+        from PYME.Analysis.LMVis import Extras
         Extras.InitPlugins(self)
 
         help_menu = wx.Menu()
@@ -1188,8 +1191,12 @@ class VisGUIFrame(wx.Frame):
             imb = ImageBounds(0,0,pixelSize*im.shape[1],pixelSize*im.shape[2])
 
             img = GeneratedImage(im,imb, pixelSize )
-            imf = imageView.ImageViewFrame(self,img, self.glCanvas, title=filename,zp=min(md.EstimatedLaserOnFrameNo+10,(h5f.root.ImageData.shape[0]-1)))
-            #imf = imageView.MultiChannelImageViewFrame(self, self.glCanvas, [img], title=filename, zdim=0, zp=min(md.EstimatedLaserOnFrameNo+10,(h5f.root.ImageData.shape[0]-1)))
+            if 'EstimatedLaserOnFrameNo' in md.getEntryNames():
+                zp = min(md.EstimatedLaserOnFrameNo+10,(h5f.root.ImageData.shape[0]-1))
+            else:
+                zp = 0
+            #imf = imageView.ImageViewFrame(self,img, self.glCanvas, title=filename,zp=zp)
+            imf = imageView.MultiChannelImageViewFrame(self, self.glCanvas, [img], title=filename, zdim=0, zp=zp)
 
             self.generatedImages.append(imf)
             imf.Show()
@@ -1200,13 +1207,17 @@ class VisGUIFrame(wx.Frame):
             vp.view.vox_x = 1e3*md.getEntry('voxelsize.x')
             vp.view.vox_y = 1e3*md.getEntry('voxelsize.y')
             vp.view.filter = self.colourFilter
+
+            if 'gFrac' in self.colourFilter.keys(): #test for splitter mode
+                vp.view.pointMode = 'splitter'
+
             #vp.view.points = np.vstack((self.colourFilter['x']/voxx, self.colourFilter['y']/voxy, self.colourFilter['t'])).T
 
             self.vp = vp
 
         elif ext == '.tif': #Tiff file
             from PYME.FileUtils import readTiff
-            im = readTiff.read3DTiff(filename)[:,:,0].squeeze()
+            im = readTiff.read3DTiff(filename).squeeze()
 
             xmlfn = os.path.splitext(filename)[0] + '.xml'
             if os.path.exists(xmlfn):

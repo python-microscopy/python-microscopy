@@ -82,6 +82,16 @@
         display: inline-block;
     }
 
+    div.server{
+        background-color: #c3d6e1;
+        padding-left: 5px;
+        margin: 1px;
+    }
+
+    tr.summary{
+        font-weight: bold;
+    }
+
     {%block extra_style%}
     {%endblock%}}
 
@@ -89,7 +99,7 @@
   </head>
   <body>
     <div class="header">
-        <b>PYME Sample Information:</b>&nbsp;&nbsp;<a href="/images/">Images</a>&nbsp;&nbsp;<a href="/slides/">Slides</a>&nbsp;&nbsp;<a href="/booking/">Booking</a> <a href="/temperature/">Temperature</a>&nbsp;&nbsp;<a href="/hg/PYME/">Hg Repository</a>&nbsp;&nbsp;<a href="/documentation/">Documentation</a>
+        <b>PYME Sample Information:</b>&nbsp;&nbsp;<a href="/images/">Images</a>&nbsp;&nbsp;<a href="/slides/">Slides</a>&nbsp;&nbsp;<a href="/booking/">Booking</a> <a href="/temperature/">Temperature</a>&nbsp;&nbsp;<a href="/hg/PYME/">Hg Repository</a>&nbsp;&nbsp;<a href="/documentation/">Documentation</a>&nbsp;&nbsp;<a href="/queues/">Analysis</a>
     </div>
     {% block content %}
     {%endblock%}

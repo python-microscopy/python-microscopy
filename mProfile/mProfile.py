@@ -36,9 +36,9 @@ import webbrowser
 import tempfile
 import threading
 
-#tPrev = time.time()
+#lStore.tPrev = time.time()
 
-#lPrev = None
+#lStore.lPrev = None
 class mydictn(dict):
     def __init__(self, *args):
         dict.__init__(self, *args)
@@ -49,11 +49,14 @@ class mydictn(dict):
         else:
             return None
 
-tPrev = {}
-lPrev = mydictn()
+
+lStore = threading.local()
+#lStore.tPrev = {}
+#lStore.lPrev = mydictn()
 
 filenames = []
 files = {}
+linecounts = {}
 fullfilenames = {}
 
 class mydict(dict):
@@ -67,15 +70,18 @@ class mydict(dict):
             return 0
 
 def profileOn(fnames):
-    global filenames, files, tPrev
+    global filenames, files, linecounts
 
     filenames = fnames
     
     files = {}
+    linecounts = {}
     for f in fnames:
         files[f] = mydict()
+        linecounts[f] = mydict()
+        
 
-    #tPrev = time.time()
+    #lStore.tPrev = time.time()
     sys.settrace(te)
     threading.settrace(te)
 
@@ -84,21 +90,27 @@ def profileOff():
     threading.settrace(None)
 
 def te(frame, event, arg):
-    global tPrev, filenames, files, lPrev
+    global filenames, files
+    if not hasattr(lStore, 'tPrev'):
+        lStore.tPrev = {}
+    if not hasattr(lStore, 'lPrev'):
+        lStore.lPrev = mydictn()
+    
     fn = frame.f_code.co_filename.split(os.sep)[-1]
     funcName = fn + ' ' + frame.f_code.co_name 
     #print fn
-    if fn in filenames and not lPrev[funcName] == None:
+    if fn in filenames and not lStore.lPrev[funcName] == None:
         t = time.time()
-        files[lPrev[funcName][0]][lPrev[funcName][1]] += (t - tPrev[funcName])
-        lPrev[funcName] = None
+        files[lStore.lPrev[funcName][0]][lStore.lPrev[funcName][1]] += (t - lStore.tPrev[funcName])
+        lStore.lPrev[funcName] = None
     if event == 'call':
         return te
     if event == 'line':
         if fn in filenames:
+            linecounts[fn][frame.f_lineno] += 1
             fullfilenames[fn] = frame.f_code.co_filename
-            lPrev[funcName] = (fn,frame.f_lineno)
-            tPrev[funcName] = time.time()
+            lStore.lPrev[funcName] = (fn,frame.f_lineno)
+            lStore.tPrev[funcName] = time.time()
 
 
 
@@ -109,6 +121,6 @@ def report():
 
     for f in filenames:
         tfn = os.path.join(tpath,  f + '.html')
-        colorize_db_t.colorize_file(files[f], fullfilenames[f],open(tfn, 'w'))
+        colorize_db_t.colorize_file(files[f], linecounts[f], fullfilenames[f],open(tfn, 'w'))
         webbrowser.open(tfn, 2)
         

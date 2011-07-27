@@ -8,12 +8,15 @@ allmodules = [os.path.splitext(os.path.split(p)[-1])[0] for p in glob.glob(__pat
 
 
 basemodules = ['shell', 'metadataView', 'eventView', 'deconvolution', 'tiling']
+liteModules = ['composite', 'profilePlotting']
 
 modeModules = {
-'lite': [],
-'LM' : basemodules + ['LMAnalysis'],
-'blob' : basemodules + ['blobFinding', 'psfExtraction'],
-'default' : basemodules + ['psfExtraction'],
+'lite': ['arrayView'] + liteModules,
+'LM' : ['arrayView'] + liteModules + basemodules +  ['LMAnalysis'],
+'blob' : ['arrayView'] + liteModules + basemodules + ['blobFinding', 'psfExtraction'],
+'default' : ['arrayView'] + liteModules + basemodules + ['psfExtraction'],
+'visGUI' : liteModules + ['coloc', 'vis3D'],
+'graph' : ['graphViewPanel']
 }
 
 def loadModule(modName, dsviewer):

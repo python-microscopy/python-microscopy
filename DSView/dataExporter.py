@@ -116,18 +116,33 @@ class TiffStackExporter(Exporter):
     descr = 'TIFF (stack if 3D) - .tif'
 
     def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
+        #xmd = None
+        if not metadata == None:
+            xmd = MetaDataHandler.XMLMDHandler(mdToCopy=metadata)
+            
         if data.shape[3] > 1: #have multiple colour channels
             if data.shape[2] == 1: #2d image -> stack with chans
-                d = numpy.concatenate([data[xslice, yslice, 0, i] for i in range(data.shape[3])],2)
+                #print data[xslice, yslice, 0, 0].squeeze().shape
+                d = numpy.concatenate([numpy.atleast_3d(data[xslice, yslice, 0, i].squeeze()) for i in range(data.shape[3])],2)
                 saveTiffStack.saveTiffMultipage(d, outFile)
             else: #save each channel as it's own stack
+                if not metadata == None and 'ChannelNames' in metadata.getEntryNames():
+                    chanNames = metadata.getEntry['ChannelNames']    
+
+                else:
+                    chanNames = range(data.shape[3])
+
+                chanFiles = [os.path.splitext(os.path.split(outFile)[1])[0] + '__%s.tif' % chanNames[i]  for i in range(data.shape[3])]
+                if not metadata == None:
+                    xmd['ChannelFiles'] = chanFiles
+
                 for i in range(data.shape[3]):
-                    saveTiffStack.saveTiffMultipage(data[xslice, yslice, zslice, i], outFile + '_ch%d' % i)
+                    saveTiffStack.saveTiffMultipage(data[xslice, yslice, zslice, i].squeeze(), os.path.splitext(outFile)[0] + '__%s.tif' % chanNames[i])
         else:
             saveTiffStack.saveTiffMultipage(data[xslice, yslice, zslice], outFile)
 
         if not metadata == None:
-            xmd = MetaDataHandler.XMLMDHandler(mdToCopy=metadata)
+            #xmd = MetaDataHandler.XMLMDHandler(mdToCopy=metadata)
             if not origName == None:
                 xmd.setEntry('cropping.originalFile', origName)
 
@@ -214,6 +229,41 @@ class PSFExporter(Exporter):
         fid.close()
 
 exporter(PSFExporter)
+
+#@exporter
+class TxtExporter(Exporter):
+    extension = '*.txt'
+    descr = 'Tab formatted txt  - .txt'
+
+    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
+        #numpy.save(outFile, data[xslice, yslice, zslice])
+        #import cPickle
+
+        try:
+            chanNames = metadata.getEntry('ChannelNames')
+        except:
+            chanNames = ['Chan %d' % d for d in range(data.shape[3])]
+
+        dat = [data[xslice, yslice, zslice, chan].squeeze() for chan in range(data.shape[3])]
+
+        #print chanNames
+
+        if metadata and 'Profile.XValues' in metadata.getEntryNames():
+            dat = [metadata.getEntry('Profile.XValues')] + dat
+            chanNames = [metadata.getEntry('Profile.XLabel')] + chanNames
+            
+
+        fid = open(outFile, 'wb')
+
+        #write header
+        fid.write('#' + '\t'.join(chanNames))
+
+        for i in range(len(dat[0])):
+            fid.write('\n' + '\t'.join(['%f' % d[i] for d in dat]))
+
+        fid.close()
+
+exporter(TxtExporter)
 #exporters = {'PYME HDF - .h5': H5Exporter,
 #            'TIFF (stack if 3D) - .tif' : TiffStackExporter,
 #            'TIFF (series if 3D) - .tif' : TiffSeriesExporter,

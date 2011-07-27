@@ -114,8 +114,13 @@ class ColourRenderer(CurrentRenderer):
         if not 'neighbourDistances' in self.genMeas:
             self.genMeas.append('neighbourDistances')
         jitVars += self.genMeas
+        
+        if 'z' in self.visFr.mapping.keys():
+            zvals = self.visFr.mapping['z']
+        else:
+            zvals = None
 
-        dlg = genImageDialog.GenImageDialog(self.visFr, mode=self.mode, colours=self.visFr.fluorSpecies.keys(), zvals = self.visFr.mapping['z'], jitterVariables = jitVars, jitterVarDefault=self._getDefaultJitVar(jitVars), jitterVarDefaultZ=self._getDefaultZJitVar(jitVars))
+        dlg = genImageDialog.GenImageDialog(self.visFr, mode=self.mode, colours=self.visFr.fluorSpecies.keys(), zvals = zvals, jitterVariables = jitVars, jitterVarDefault=self._getDefaultJitVar(jitVars), jitterVarDefaultZ=self._getDefaultZJitVar(jitVars))
         ret = dlg.ShowModal()
 
         bCurr = wx.BusyCursor()

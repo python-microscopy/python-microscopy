@@ -19,11 +19,13 @@ from PYME.Acquire import MetaDataHandler
 
 import os
 import sys
+import numpy as np
 
 from PYME.FileUtils.nameUtils import genResultFileName
 from PYME.ParallelTasks.relativeFiles import getFullFilename
 
 CHUNKSIZE = 50
+MAXCHUNKSIZE = 100 #allow chunk size to be improved to allow better caching
 
 #def genDataFilename(name):
 #	fn = os.g
@@ -53,6 +55,36 @@ tablesLock = threading.Lock()
 #
 #tw = TaskWatcher(tq)
 #    #tw.start()
+
+bufferMisses = 0
+
+class dataBuffer: #buffer our io to avoid decompressing multiple times
+    def __init__(self,dataSource, bLen = 1000):
+        self.bLen = bLen
+        self.buffer = {} #delay creation until we know the dtype
+        #self.buffer = numpy.zeros((bLen,) + dataSource.getSliceShape(), 'uint16')
+        #self.insertAt = 0
+        #self.bufferedSlices = -1*numpy.ones((bLen,), 'i')
+        self.dataSource = dataSource
+        
+    def getSlice(self,ind):
+        global bufferMisses
+        #print self.bufferedSlices, self.insertAt, ind
+        #return self.dataSource.getSlice(ind)
+        if ind in self.bufferedSlices.keys(): #return from buffer
+            #print int(numpy.where(self.bufferedSlices == ind)[0])
+            return self.buffer[ind]
+        else: #get from our data source and store in buffer
+            sl = self.dataSource[ind,:,:]
+            
+            self.buffer[sl] = sl
+
+            bufferMisses += 1
+            
+            #if bufferMisses % 10 == 0:
+            #    print nTasksProcessed, bufferMisses
+
+            return sl
 
 class myLock:
     def __init__(self):
@@ -99,6 +131,8 @@ class HDFResultsTaskQueue(TaskQueue):
         self.resultsMDH = MetaDataHandler.HDFMDHandler(self.h5ResultsFile)
 
         self.resultsEvents = self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'Events', SpoolEvent,filters=tables.Filters(complevel=5, shuffle=True))
+        
+        self.haveResultsTable = False
 
     def prepResultsFile(self):
         pass
@@ -159,22 +193,41 @@ class HDFResultsTaskQueue(TaskQueue):
             
         if not len(res.results) == 0:
             #print res.results, res.results == []
-            if not self.h5ResultsFile.__contains__('/FitResults'):
-                self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'FitResults', res.results, filters=tables.Filters(complevel=5, shuffle=True))
+            if not self.haveResultsTable: # self.h5ResultsFile.__contains__('/FitResults'):
+                self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'FitResults', res.results, filters=tables.Filters(complevel=5, shuffle=True), expectedrows=500000)
+                self.haveResultsTable = True
             else:
                 self.h5ResultsFile.root.FitResults.append(res.results)
 
         if not len(res.driftResults) == 0:
             if not self.h5ResultsFile.__contains__('/DriftResults'):
-                self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'DriftResults', res.driftResults, filters=tables.Filters(complevel=5, shuffle=True))
+                self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'DriftResults', res.driftResults, filters=tables.Filters(complevel=5, shuffle=True), expectedrows=500000)
             else:
                 self.h5ResultsFile.root.DriftResults.append(res.driftResults)
 
-        self.h5ResultsFile.flush()
+        #self.h5ResultsFile.flush()
 
         self.fileResultsLock.release() #release lock
 
         self.numClosedTasks += 1
+        
+    def checkTimeouts(self):
+        self.inProgressLock.acquire()
+        curTime = time.clock()
+        for it in self.tasksInProgress:
+            if 'workerTimeout' in dir(it):
+                if curTime > it.workerTimeout:
+                    self.openTasks.append(it.index)
+                    self.tasksInProgress.remove(it)
+
+        self.inProgressLock.release()
+        
+        self.fileResultsLock.acquire() #get a lock
+        
+        self.h5ResultsFile.flush()
+
+        self.fileResultsLock.release() #release lock
+        
         
     def getQueueData(self, fieldName, *args):
         '''Get data, defined by fieldName and potntially additional arguments,  ascociated with queue'''
@@ -263,9 +316,12 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         self.metaDataStale = True
         self.queueID = name
 
+        self.numSlices = self.imageData.shape[0]
+
         #self.dataFileLock = threading.Lock()
         self.dataFileLock = tablesLock
         #self.getTaskLock = threading.Lock()
+        self.lastTaskTime = 0
                 
     def prepResultsFile(self):
         pass
@@ -279,6 +335,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
             self.dataFileLock.acquire()
             self.imageData.append(task)
             self.h5DataFile.flush()
+            self.numSlices = self.imageData.shape[0]
             self.dataFileLock.release()
 
             if self.releaseNewTasks:
@@ -302,10 +359,25 @@ class HDFTaskQueue(HDFResultsTaskQueue):
                 self.imNum += 1
 
             self.h5DataFile.flush()
+            self.numSlices = self.imageData.shape[0]
             self.dataFileLock.release()
         else:
             print "can't post new tasks"
         #print 'posting tasks not implemented yet'
+
+    def getNumberOpenTasks(self, exact=True):
+        #when doing real time analysis we might not want to tasks out straight
+        #away, in order that our caches still work
+        nOpen = len(self.openTasks)
+
+        #Answer truthfully if we are being asked for the exact number of tasks, 
+        #we have enough tasks to give a full chunk, or if it was a while since 
+        #we last gave out any tasks (necessary to make sure all tasks get 
+        #processed at the end of the run.
+        if exact or nOpen > CHUNKSIZE or (time.time() - self.lastTaskTime) > 2:
+            return nOpen
+        else: #otherwise lie and make the workers wait
+            return 0
 
     def getTask(self, workerN = 0, NWorkers = 1):
         """get task from front of list, blocks"""
@@ -319,16 +391,25 @@ class HDFTaskQueue(HDFResultsTaskQueue):
             self.metaData = MetaDataHandler.NestedClassMDHandler(self.resultsMDH)
             self.metaDataStale = False
             self.dataFileLock.release()
+
+            #patch up old data which doesn't have BGRange in metadata
+            if not 'Analysis.BGRange' in self.metaData.getEntryNames():
+                if 'Analysis.NumBGFrames' in self.metaData.getEntryNames():
+                    nBGFrames = self.metaData.Analysis.NumBGFrames
+                else:
+                    nBGFrames = 10
+
+                self.metaData.setEntry('Analysis.BGRange', (-nBGFrames, 0))
         
         
         taskNum = self.openTasks.pop(self.fTaskToPop(workerN, NWorkers, len(self.openTasks)))
 
-        if 'Analysis.BGRange' in self.metaData.getEntryNames():
-            bgi = range(max(taskNum + self.metaData.Analysis.BGRange[0],self.metaData.EstimatedLaserOnFrameNo), max(taskNum + self.metaData.Analysis.BGRange[1],self.metaData.EstimatedLaserOnFrameNo))
-        elif 'Analysis.NumBGFrames' in self.metaData.getEntryNames():
-            bgi = range(max(taskNum - self.metaData.Analysis.NumBGFrames,self.metaData.EstimatedLaserOnFrameNo), taskNum)
-        else:
-            bgi = range(max(taskNum - 10,self.metaData.EstimatedLaserOnFrameNo), taskNum)
+        #if 'Analysis.BGRange' in self.metaData.getEntryNames():
+        bgi = range(max(taskNum + self.metaData.Analysis.BGRange[0],self.metaData.EstimatedLaserOnFrameNo), max(taskNum + self.metaData.Analysis.BGRange[1],self.metaData.EstimatedLaserOnFrameNo))
+        #elif 'Analysis.NumBGFrames' in self.metaData.getEntryNames():
+        #    bgi = range(max(taskNum - self.metaData.Analysis.NumBGFrames,self.metaData.EstimatedLaserOnFrameNo), taskNum)
+        #else:
+        #    bgi = range(max(taskNum - 10,self.metaData.EstimatedLaserOnFrameNo), taskNum)
         
         task = fitTask(self.queueID, taskNum, self.metaData.Analysis.DetectionThreshold, self.metaData, self.metaData.Analysis.FitModule, 'TQDataSource', bgindices = bgi, SNThreshold = True)
         
@@ -338,6 +419,8 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         self.tasksInProgress.append(task)
         self.inProgressLock.release()
         #self.getTaskLock.release()
+
+        self.lastTaskTime = time.time()
 
         return task
 
@@ -354,18 +437,27 @@ class HDFTaskQueue(HDFResultsTaskQueue):
             self.metaDataStale = False
             self.dataFileLock.release()
 
+            if not 'Analysis.BGRange' in self.metaData.getEntryNames():
+                if 'Analysis.NumBGFrames' in self.metaData.getEntryNames():
+                    nBGFrames = self.metaData.Analysis.NumBGFrames
+                else:
+                    nBGFrames = 10
+
+                self.metaData.setEntry('Analysis.BGRange', (-nBGFrames, 0))
+
+
         tasks = []
 
-        for i in range(min(CHUNKSIZE,len(self.openTasks))):
+        for i in range(min(max(CHUNKSIZE, min(MAXCHUNKSIZE, len(self.openTasks))),len(self.openTasks))):
 
             taskNum = self.openTasks.pop(self.fTaskToPop(workerN, NWorkers, len(self.openTasks)))
 
-            if 'Analysis.BGRange' in self.metaData.getEntryNames():
-                bgi = range(max(taskNum + self.metaData.Analysis.BGRange[0],self.metaData.EstimatedLaserOnFrameNo), max(taskNum + self.metaData.Analysis.BGRange[1],self.metaData.EstimatedLaserOnFrameNo))
-            elif 'Analysis.NumBGFrames' in self.metaData.getEntryNames():
-                bgi = range(max(taskNum - self.metaData.Analysis.NumBGFrames,self.metaData.EstimatedLaserOnFrameNo), taskNum)
-            else:
-                bgi = range(max(taskNum - 10,self.metaData.EstimatedLaserOnFrameNo), taskNum)
+            #if 'Analysis.BGRange' in self.metaData.getEntryNames():
+            bgi = range(max(taskNum + self.metaData.Analysis.BGRange[0],self.metaData.EstimatedLaserOnFrameNo), max(taskNum + self.metaData.Analysis.BGRange[1],self.metaData.EstimatedLaserOnFrameNo))
+            #elif 'Analysis.NumBGFrames' in self.metaData.getEntryNames():
+            #    bgi = range(max(taskNum - self.metaData.Analysis.NumBGFrames,self.metaData.EstimatedLaserOnFrameNo), taskNum)
+            #else:
+            #    bgi = range(max(taskNum - 10,self.metaData.EstimatedLaserOnFrameNo), taskNum)
 
             task = fitTask(self.queueID, taskNum, self.metaData.Analysis.DetectionThreshold, self.metaData, self.metaData.Analysis.FitModule, 'TQDataSource', bgindices =bgi, SNThreshold = True)
 
@@ -378,19 +470,12 @@ class HDFTaskQueue(HDFResultsTaskQueue):
 
             tasks.append(task)
 
+        self.lastTaskTime = time.time()
+
         return tasks
 
 	
-    def checkTimeouts(self):
-        self.inProgressLock.acquire()
-        curTime = time.clock()
-        for it in self.tasksInProgress:
-            if 'workerTimeout' in dir(it):
-                if curTime > it.workerTimeout:
-                    self.openTasks.insert(0, it.taskNum)
-                    self.tasksInProgress.remove(it)
-
-        self.inProgressLock.release()
+    
 
 
     def cleanup(self):
@@ -418,14 +503,33 @@ class HDFTaskQueue(HDFResultsTaskQueue):
             self.dataFileLock.release()
             return res
         elif fieldName == 'NumSlices':
-            self.dataFileLock.acquire()
-            res = self.h5DataFile.root.ImageData.shape[0]
-            self.dataFileLock.release()
-            return res
+            #self.dataFileLock.acquire()
+            #res = self.h5DataFile.root.ImageData.shape[0]
+            #self.dataFileLock.release()
+            #print res, self.numSlices
+            #return res
+            return self.numSlices
         elif fieldName == 'Events':
             self.dataFileLock.acquire()
             res = self.h5DataFile.root.Events[:]
             self.dataFileLock.release()
+            return res
+        elif fieldName == 'PSF':
+            from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
+            res = None
+            #self.dataFileLock.acquire()
+            #try:
+                #res = self.h5DataFile.root.PSFData[:]
+            #finally:
+            #    self.dataFileLock.release()
+            #try:
+            modName = self.resultsMDH.getEntry('PSFFile')
+            mf = open(getFullExistingFilename(modName), 'rb')
+            res = np.load(mf)
+            mf.close()
+            #except:
+                #pass
+
             return res
         else:
             return HDFResultsTaskQueue.getQueueData(self, fieldName, *args)

@@ -43,11 +43,17 @@ class EventLogger:
 
 class Spooler(sp.Spooler):
    def __init__(self, scope, filename, acquisator, protocol = p.NullProtocol, parent=None, complevel=6, complib='zlib'):
-       if 'PYME_TASKQUEUENAME' in os.environ.keys():
-            taskQueueName = os.environ['PYME_TASKQUEUENAME']
-       else:
-            taskQueueName = 'taskQueue'
+#       if 'PYME_TASKQUEUENAME' in os.environ.keys():
+#            taskQueueName = os.environ['PYME_TASKQUEUENAME']
+#       else:
+#            taskQueueName = 'taskQueue'
+       from PYME.misc.computerName import GetComputerName
+       compName = GetComputerName()
+
+       taskQueueName = 'TaskQueues.%s' % compName
+
        self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
+       self.tq._setOneway(['postTask', 'postTasks', 'addQueueEvents', 'setQueueMetaData'])
 
        self.seriesName = filename
        self.buffer = []

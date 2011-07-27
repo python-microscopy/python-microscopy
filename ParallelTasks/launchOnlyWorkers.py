@@ -61,22 +61,22 @@ if sys.platform == 'win32':
 
     #time.sleep(3)
 
-    subprocess.Popen('python ./fitMon.py', shell=True)
+    #subprocess.Popen('python ./fitMonP.py', shell=True)
 
     for i in range(numProcessors):
-        subprocess.Popen('python ./taskWorkerM.py', shell=True)
+        subprocess.Popen('python ./taskWorkerMP.py', shell=True)
 
 else: #operating systems which can launch python scripts directly
     #get rid of any previously started queues etc...
     #os.system('killall taskServerM.py')
-    os.system('killall taskWorkerM.py')
-    os.system('killall fitMon.py')
+    os.system('killall taskWorkerMP.py')
+    #os.system('killall fitMonP.py')
 
     #subprocess.Popen('./taskServerM.py', shell=True)
 
     #time.sleep(3)
 
-    subprocess.Popen('./fitMon.py', shell=True)
+    #subprocess.Popen('./fitMonP.py', shell=True)
 
     for i in range(numProcessors):
-        subprocess.Popen('./taskWorkerM.py', shell=True)
+        subprocess.Popen('./taskWorkerMP.py', shell=True)

@@ -41,8 +41,9 @@ class decTask(taskDef.Task):
     def __call__(self, gui=False, taskQueue=None):
         global queueID, decObj
 
-        if not queueID == self.queueName:
+        if (not queueID == self.queueName) or (not decObj.shape == self.block.shape):
             decObj = taskQueue.getQueueData(self.queueName, 'dec')
+            decObj.prep()
             queueID = self.queueName
 
         print self.blocknum, self.lamb

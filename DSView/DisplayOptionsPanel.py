@@ -11,14 +11,23 @@
 ##################
 
 import wx
+import wx.lib.agw.aui as aui
 import pylab
 from PYME.misc import extraCMaps
 #from matplotlib import cm
 from PYME.Analysis.LMVis import histLimits
 from displayOptions import DisplayOpts, fast_grey
 
+import os
+dirname = os.path.dirname(__file__)
+
+#windows complains if bitmaps are loaded before wx.App exists - defer loading to first use
+bmCrosshairs = None #wx.Bitmap(os.path.join(dirname, 'icons/crosshairs.png'))
+bmRectSelect = None #wx.Bitmap(os.path.join(dirname, 'icons/rect_select.png'))
+bmLineSelect = None #wx.Bitmap(os.path.join(dirname, 'icons/line_select.png'))
+
 class OptionsPanel(wx.Panel):
-    def __init__(self, parent, displayOpts, horizOrientation=False, **kwargs):
+    def __init__(self, parent, displayOpts, horizOrientation=False, thresholdControls=True, **kwargs):
         kwargs['style'] = wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, parent, **kwargs)
 
@@ -43,7 +52,7 @@ class OptionsPanel(wx.Panel):
             dispSize = (100, 80)
 
         for i in range(len(self.do.Chans)):
-            ssizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Chan %d' %i), wx.VERTICAL)
+            ssizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, self.do.names[i]), wx.VERTICAL)
 
             id = wx.NewId()
             self.hIds.append(id)
@@ -97,12 +106,38 @@ class OptionsPanel(wx.Panel):
 
             self.cbSlice.Bind(wx.EVT_CHOICE, self.OnSliceChanged)
 
-        self.SetSizer(vsizer)
-
+        
         #self.cbSlice.Bind(wx.EVT_CHOICE, self.OnSliceChanged)
         self.cbScale.Bind(wx.EVT_CHOICE, self.OnScaleChanged)
 
         self.bOptimise.Bind(wx.EVT_BUTTON, self.OnOptimise)
+
+        if thresholdControls:
+            ssizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Segmentation'), wx.VERTICAL)
+
+            self.cbShowThreshold = wx.CheckBox(self, -1, 'Threshold mode')
+            self.cbShowThreshold.Bind(wx.EVT_CHECKBOX, self.OnShowThreshold)
+            ssizer.Add(self.cbShowThreshold, 0, wx.ALL, 5)
+
+            self.bIsodataThresh = wx.Button(self, -1, 'Isodata')
+            self.bIsodataThresh.Bind(wx.EVT_BUTTON, self.OnIsodataThresh)
+            self.bIsodataThresh.Enable(False)
+            ssizer.Add(self.bIsodataThresh, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5)
+
+
+            hsizer=wx.BoxSizer(wx.HORIZONTAL)
+            self.tPercThresh = wx.TextCtrl(self, -1, '.80', size=[30, -1])
+            self.tPercThresh.Enable(False)
+            hsizer.Add(self.tPercThresh, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 1)
+            self.bPercThresh = wx.Button(self, -1, 'Signal Fraction')
+            self.bPercThresh.Bind(wx.EVT_BUTTON, self.OnSignalFracThresh)
+            self.bPercThresh.Enable(False)
+            hsizer.Add(self.bPercThresh, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 1)
+            ssizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 5)
+
+            vsizer.Add(ssizer, 0, wx.ALL|wx.EXPAND, 5)
+
+        self.SetSizer(vsizer)
 
     def OnOptimise(self, event):
         self.do.Optimise()
@@ -137,11 +172,105 @@ class OptionsPanel(wx.Panel):
         else:
             self.do.SetCMap(ind, pylab.cm.__getattribute__(cmn))
 
+    def OnShowThreshold(self, event):
+        tMode = self.cbShowThreshold.GetValue()
+        for hClim in self.hcs:
+            hClim.SetThresholdMode(tMode)
+
+        self.bIsodataThresh.Enable(tMode)
+        self.tPercThresh.Enable(tMode)
+        self.bPercThresh.Enable(tMode)
+
+
+    def OnIsodataThresh(self, event):
+        from PYME.Analysis import thresholding
+        for i, hClim in enumerate(self.hcs):
+            t = thresholding.isodata_f(self.do.ds[:,:,:,i])
+            hClim.SetValueAndFire((t,t))
+
+    def OnSignalFracThresh(self, event):
+        from PYME.Analysis import thresholding
+        frac = max(0., min(1., float(self.tPercThresh.GetValue())))
+        for i, hClim in enumerate(self.hcs):
+            t = thresholding.signalFraction(self.do.ds[:,:,:,i], frac)
+            hClim.SetValueAndFire((t,t))
+
 
     def RefreshHists(self):
         for i in range(len(self.do.Chans)):
             c = self.do.ds[:,:,self.do.zp, self.do.Chans[i]].ravel()
             self.hcs[i].SetData(c[::max(1, len(c)/1e4)], self.do.Offs[i], self.do.Offs[i] + 1./self.do.Gains[i])
+
+    def CreateToolBar(self, wind):
+        global bmCrosshairs, bmRectSelect, bmLineSelect
+
+        if bmCrosshairs == None: #load bitmaps on first use
+            bmCrosshairs = wx.Bitmap(os.path.join(dirname, 'icons/crosshairs.png'))
+            bmRectSelect = wx.Bitmap(os.path.join(dirname, 'icons/rect_select.png'))
+            bmLineSelect = wx.Bitmap(os.path.join(dirname, 'icons/line_select.png'))
+
+        self.toolB = aui.AuiToolBar(wind, -1, wx.DefaultPosition, wx.DefaultSize, agwStyle=aui.AUI_TB_DEFAULT_STYLE | aui.AUI_TB_OVERFLOW | aui.AUI_TB_VERTICAL)
+        self.toolB.SetToolBitmapSize(wx.Size(16, 16))
+
+        #ID_POINTER = wx.NewId()
+        ID_CROSSHAIRS = wx.NewId()
+        ID_RECTSELECT = wx.NewId()
+        ID_LINESELECT = wx.NewId()
+
+        self.toolB.AddRadioTool(ID_CROSSHAIRS, "Point selection", bmCrosshairs, bmCrosshairs)
+        self.toolB.AddRadioTool(ID_RECTSELECT, "Rectangle selection", bmRectSelect, bmRectSelect)
+        self.toolB.AddRadioTool(ID_LINESELECT, "Rectangle selection", bmLineSelect, bmLineSelect)
+
+        self.toolB.Realize()
+
+        #self._mgr.AddPane(tb5, aui.AuiPaneInfo().Name("tb5").Caption("Sample Vertical Toolbar").
+        #                  ToolbarPane().Left().GripperTop())
+
+        self.toolB.ToggleTool(ID_CROSSHAIRS, True)
+
+        wind.Bind(wx.EVT_TOOL, self.OnSelectCrosshairs, id=ID_CROSSHAIRS)
+        wind.Bind(wx.EVT_TOOL, self.OnSelectRectangle, id=ID_RECTSELECT)
+        wind.Bind(wx.EVT_TOOL, self.OnSelectLine, id=ID_LINESELECT)
+        wind.Bind(aui.EVT_AUITOOLBAR_RIGHT_CLICK, self.OnLineThickness, id=ID_LINESELECT)
+
+        return self.toolB
+
+    def OnSelectCrosshairs(self, event):
+        self.do.leftButtonAction = DisplayOpts.ACTION_POSITION
+        self.do.selectionMode = DisplayOpts.SELECTION_RECTANGLE
+        self.do.showSelection = False
+
+        #self.Refresh()
+        self.do.OnChange()
+
+    def OnSelectRectangle(self, event):
+        self.do.leftButtonAction = DisplayOpts.ACTION_SELECTION
+        self.do.selectionMode = DisplayOpts.SELECTION_RECTANGLE
+        self.do.showSelection = True
+
+        #self.Refresh()
+        self.do.OnChange()
+
+    def OnSelectLine(self, event):
+        self.do.leftButtonAction = DisplayOpts.ACTION_SELECTION
+        self.do.selectionMode = DisplayOpts.SELECTION_LINE
+        self.do.showSelection = True
+
+        #self.Refresh()
+        self.do.OnChange()
+
+    def OnLineThickness(self, event):
+        print 'foo'
+        dlg = wx.TextEntryDialog(self, 'Line Thickness', 'Set width of line selection', '%d' % self.do.selectionWidth)
+
+        if dlg.ShowModal() == wx.ID_OK:
+            self.do.selectionWidth = int(dlg.GetValue())
+
+        dlg.Destroy()
+
+        self.do.OnChange()
+
+        #self.Refresh()
 
 
 

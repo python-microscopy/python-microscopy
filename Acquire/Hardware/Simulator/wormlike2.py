@@ -18,10 +18,9 @@ def bareDNA(kbp, steplength=10):
 def fibre30nm(kbp, steplength=10):
     return wormlikeChain(kbp, steplength, lengthPerKbp=10.0, persistLength=150.0)
 
-class wormlikeChain:   
-      
+class wormlikeChain:         
     def __init__(self, kbp, steplength=10.0, lengthPerKbp=10.0, persistLength=150.0):
-        numsteps = round(lengthPerKbp*kbp/steplength)
+        numsteps = int(round(lengthPerKbp*kbp/steplength))
 
         exp_costheta = (exp(-steplength/persistLength));
         theta = sqrt(2*log(1/exp_costheta))*abs(randn(numsteps));
