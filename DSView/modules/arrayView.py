@@ -20,8 +20,8 @@ def Plug(dsviewer):
 #    pinfo2 = aui.AuiPaneInfo().Name("overlayPanel").Right().Caption('Overlays').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
 #    dsviewer._mgr.AddPane(dsviewer.overlaypanel, pinfo2)
 
-    dsviewer._mgr.AddPane(dsviewer.view.CreateToolBar(dsviewer), aui.AuiPaneInfo().Name("ViewTools").Caption("View Tools").CloseButton(False).
-                      ToolbarPane().Right().GripperTop())
+#    dsviewer._mgr.AddPane(dsviewer.view.CreateToolBar(dsviewer), aui.AuiPaneInfo().Name("ViewTools").Caption("View Tools").CloseButton(False).
+#                      ToolbarPane().Right().GripperTop())
 
     #dsviewer.panesToMinimise.append(pinfo2)
 

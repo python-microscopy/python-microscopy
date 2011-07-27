@@ -29,18 +29,13 @@ import scipy
 #import tables
 #import time
 
-ACTION_POSITION = 0
-ACTION_SELECTION = 1
+#ACTION_POSITION = 0
+#ACTION_SELECTION = 1
 
-SELECTION_RECTANGLE = 0
-SELECTION_LINE = 1
+#SELECTION_RECTANGLE = 0
+#SELECTION_LINE = 1
 
-dirname = os.path.dirname(__file__)
 
-#windows complains if bitmaps are loaded before wx.App exists - defer loading to first use
-bmCrosshairs = None #wx.Bitmap(os.path.join(dirname, 'icons/crosshairs.png'))
-bmRectSelect = None #wx.Bitmap(os.path.join(dirname, 'icons/rect_select.png'))
-bmLineSelect = None #wx.Bitmap(os.path.join(dirname, 'icons/line_select.png'))
 
             
 class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
@@ -79,15 +74,12 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
         self.do.scale = 2
         self.crosshairs = True
-        self.selection = True
+        #self.showSelection = True
         self.selecting = False
 
         self.aspect = 1.
 
-        self.leftButtonAction = ACTION_POSITION
-        self.selectionMode = SELECTION_RECTANGLE
-
-        self.selectionWidth = 1
+        
 
 #        if not aspect == None:
 #            if scipy.isscalar(aspect):
@@ -95,7 +87,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 #            elif len(aspect) == 3:
 #                self.do.aspects = aspect
 
-        self.ResetSelection()
+        
         #self.SetOpts()
         #self.optionspanel.RefreshHists()
         self.updating = 0
@@ -131,7 +123,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         self.do.zp=0
         self.do.Optimise()
             
-        self.ResetSelection()
+        self.do.ResetSelection()
         
         self.Layout()
 #        self.Refresh()
@@ -139,68 +131,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
     def ResetDataStack(self, ds):
         self.do.SetDataStack(ds)
 
-    def CreateToolBar(self, wind):
-        global bmCrosshairs, bmRectSelect, bmLineSelect
-
-        if bmCrosshairs == None: #load bitmaps on first use
-            bmCrosshairs = wx.Bitmap(os.path.join(dirname, 'icons/crosshairs.png'))
-            bmRectSelect = wx.Bitmap(os.path.join(dirname, 'icons/rect_select.png'))
-            bmLineSelect = wx.Bitmap(os.path.join(dirname, 'icons/line_select.png'))
-            
-        self.toolB = aui.AuiToolBar(wind, -1, wx.DefaultPosition, wx.DefaultSize, agwStyle=aui.AUI_TB_DEFAULT_STYLE | aui.AUI_TB_OVERFLOW | aui.AUI_TB_VERTICAL)
-        self.toolB.SetToolBitmapSize(wx.Size(16, 16))
-
-        #ID_POINTER = wx.NewId()
-        ID_CROSSHAIRS = wx.NewId()
-        ID_RECTSELECT = wx.NewId()
-        ID_LINESELECT = wx.NewId()
-
-        self.toolB.AddRadioTool(ID_CROSSHAIRS, "Point selection", bmCrosshairs, bmCrosshairs)
-        self.toolB.AddRadioTool(ID_RECTSELECT, "Rectangle selection", bmRectSelect, bmRectSelect)
-        self.toolB.AddRadioTool(ID_LINESELECT, "Rectangle selection", bmLineSelect, bmLineSelect)
-
-        self.toolB.Realize()
-
-        #self._mgr.AddPane(tb5, aui.AuiPaneInfo().Name("tb5").Caption("Sample Vertical Toolbar").
-        #                  ToolbarPane().Left().GripperTop())
-
-        self.toolB.ToggleTool(ID_CROSSHAIRS, True)
-
-        wind.Bind(wx.EVT_TOOL, self.OnSelectCrosshairs, id=ID_CROSSHAIRS)
-        wind.Bind(wx.EVT_TOOL, self.OnSelectRectangle, id=ID_RECTSELECT)
-        wind.Bind(wx.EVT_TOOL, self.OnSelectLine, id=ID_LINESELECT)
-        wind.Bind(aui.EVT_AUITOOLBAR_RIGHT_CLICK, self.OnLineThickness, id=ID_LINESELECT)
-
-        return self.toolB
-
-    def OnSelectCrosshairs(self, event):
-        self.leftButtonAction = ACTION_POSITION
-        self.selectionMode = SELECTION_RECTANGLE
-
-        self.Refresh()
-
-    def OnSelectRectangle(self, event):
-        self.leftButtonAction = ACTION_SELECTION
-        self.selectionMode = SELECTION_RECTANGLE
-
-        self.Refresh()
-
-    def OnSelectLine(self, event):
-        self.leftButtonAction = ACTION_SELECTION
-        self.selectionMode = SELECTION_LINE
-
-        self.Refresh()
-
-    def OnLineThickness(self, event):
-        print 'foo'
-        dlg = wx.TextEntryDialog(self, 'Line Thickness', 'Set width of line selection', '%d' % self.selectionWidth)
-
-        if dlg.ShowModal() == wx.ID_OK:
-            self.selectionWidth = int(dlg.GetValue())
-
-        dlg.Destroy()
-
-        self.Refresh()
+    
 
         
     def DoPaint(self, dc):
@@ -238,36 +169,21 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                 dc.DrawLine(ly*sc - x0, 0, ly*sc - x0, sY)
             dc.SetPen(wx.NullPen)
             
-        if self.selection:
+        if self.do.showSelection:
             col = wx.TheColourDatabase.FindColour('YELLOW')
             #col.Set(col.red, col.green, col.blue, 125)
             dc.SetPen(wx.Pen(col,1))
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
 
-            lx, ly, hx, hy = self.GetSliceSelection()
-#            if(self.do.slice == self.do.SLICE_XY):
-#                lx = self.selection_begin_x
-#                ly = self.selection_begin_y
-#                hx = self.selection_end_x
-#                hy = self.selection_end_y
-#            elif(self.do.slice == self.do.SLICE_XZ):
-#                lx = self.selection_begin_x
-#                ly = self.selection_begin_z
-#                hx = self.selection_end_x
-#                hy = self.selection_end_z
-#            elif(self.do.slice == self.do.SLICE_YZ):
-#                lx = self.selection_begin_y
-#                ly = self.selection_begin_z
-#                hx = self.selection_end_y
-#                hy = self.selection_end_z
+            lx, ly, hx, hy = self.do.GetSliceSelection()
         
             
-            if self.selectionMode == SELECTION_RECTANGLE:
+            if self.do.selectionMode == DisplayOpts.SELECTION_RECTANGLE:
                 if (self.do.orientation == self.do.UPRIGHT):
                     dc.DrawRectangle(lx*sc - x0,ly*sc*self.aspect - y0, (hx-lx)*sc,(hy-ly)*sc*self.aspect)
                 else:
                     dc.DrawRectangle(ly*sc - x0,lx*sc - y0, (hy-ly)*sc,(hx-lx)*sc)
-            elif self.selectionWidth == 1:
+            elif self.do.selectionWidth == 1:
                 if (self.do.orientation == self.do.UPRIGHT):
                     dc.DrawLine(lx*sc - x0,ly*sc*self.aspect - y0, hx*sc - x0,hy*sc*self.aspect - y0)
                 else:
@@ -278,11 +194,11 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                 dy = hy - ly
 
                 if dx == 0 and dy == 0: #special case - profile is orthogonal to current plane
-                    d_x = 0.5*self.selectionWidth
-                    d_y = 0.5*self.selectionWidth
+                    d_x = 0.5*self.do.selectionWidth
+                    d_y = 0.5*self.do.selectionWidth
                 else:
-                    d_x = 0.5*self.selectionWidth*dy/numpy.sqrt((dx**2 + dy**2))
-                    d_y = 0.5*self.selectionWidth*dx/numpy.sqrt((dx**2 + dy**2))
+                    d_x = 0.5*self.do.selectionWidth*dy/numpy.sqrt((dx**2 + dy**2))
+                    d_y = 0.5*self.do.selectionWidth*dx/numpy.sqrt((dx**2 + dy**2))
                 
                 if (self.do.orientation == self.do.UPRIGHT):
                     x_1 = lx*sc - x0
@@ -525,24 +441,6 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 #        self.painting = False
 #        #print self.lastFrameTime
             
-    def GetSliceSelection(self):
-        if(self.do.slice == self.do.SLICE_XY):
-            lx = self.selection_begin_x
-            ly = self.selection_begin_y
-            hx = self.selection_end_x
-            hy = self.selection_end_y
-        elif(self.do.slice == self.do.SLICE_XZ):
-            lx = self.selection_begin_x
-            ly = self.selection_begin_z
-            hx = self.selection_end_x
-            hy = self.selection_end_z
-        elif(self.do.slice == self.do.SLICE_YZ):
-            lx = self.selection_begin_y
-            ly = self.selection_begin_z
-            hx = self.selection_end_y
-            hy = self.selection_end_z
-            
-        return lx, ly, hx, hy
 
     def OnWheel(self, event):
         rot = event.GetWheelRotation()
@@ -668,11 +566,11 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         pass
 
     def OnLeftDown(self,event):
-        if self.leftButtonAction == ACTION_SELECTION:
+        if self.do.leftButtonAction == self.do.ACTION_SELECTION:
             self.StartSelection(event)
     
     def OnLeftUp(self,event):
-        if self.leftButtonAction == ACTION_SELECTION:
+        if self.do.leftButtonAction == self.do.ACTION_SELECTION:
             self.ProgressSelection(event)
             self.EndSelection()
         else:
@@ -732,14 +630,14 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         #print pos
         sc = pow(2.0,(self.do.scale-2))
         if (self.do.slice == self.do.SLICE_XY):
-            self.selection_begin_x = int(pos[0]/sc)
-            self.selection_begin_y = int(pos[1]/(sc*self.aspect))
+            self.do.selection_begin_x = int(pos[0]/sc)
+            self.do.selection_begin_y = int(pos[1]/(sc*self.aspect))
         elif (self.do.slice == self.do.SLICE_XZ):
-            self.selection_begin_x = int(pos[0]/sc)
-            self.selection_begin_z = int(pos[1]/(sc*self.aspect))
+            self.do.selection_begin_x = int(pos[0]/sc)
+            self.do.selection_begin_z = int(pos[1]/(sc*self.aspect))
         elif (self.do.slice == self.do.SLICE_YZ):
-            self.selection_begin_y = int(pos[0]/sc)
-            self.selection_begin_z = int(pos[1]/(sc*self.aspect))
+            self.do.selection_begin_y = int(pos[0]/sc)
+            self.do.selection_begin_z = int(pos[1]/(sc*self.aspect))
 
     def OnRightUp(self,event):
         self.ProgressSelection(event)
@@ -760,35 +658,35 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
         if not event.ShiftDown():
             if (self.do.slice == self.do.SLICE_XY):
-                self.selection_end_x = int(pos[0]/sc)
-                self.selection_end_y = int(pos[1]/(sc*self.aspect))
+                self.do.selection_end_x = int(pos[0]/sc)
+                self.do.selection_end_y = int(pos[1]/(sc*self.aspect))
             elif (self.do.slice == self.do.SLICE_XZ):
-                self.selection_end_x = int(pos[0]/sc)
-                self.selection_end_z = int(pos[1]/(sc*self.aspect))
+                self.do.selection_end_x = int(pos[0]/sc)
+                self.do.selection_end_z = int(pos[1]/(sc*self.aspect))
             elif (self.do.slice == self.do.SLICE_YZ):
-                self.selection_end_y = int(pos[0]/sc)
-                self.selection_end_z = int(pos[1]/(sc*self.aspect))
+                self.do.selection_end_y = int(pos[0]/sc)
+                self.do.selection_end_z = int(pos[1]/(sc*self.aspect))
         else: #lock
             if (self.do.slice == self.do.SLICE_XY):
-                self.selection_end_x = int(pos[0]/sc)
-                self.selection_end_y = int(pos[1]/(sc*self.aspect))
+                self.do.selection_end_x = int(pos[0]/sc)
+                self.do.selection_end_y = int(pos[1]/(sc*self.aspect))
 
-                dx = abs(self.selection_end_x - self.selection_begin_x)
-                dy = abs(self.selection_end_y - self.selection_begin_y)
+                dx = abs(self.do.selection_end_x - self.do.selection_begin_x)
+                dy = abs(self.do.selection_end_y - self.do.selection_begin_y)
 
                 if dx > 1.5*dy: #horizontal
-                    self.selection_end_y = self.selection_begin_y
+                    self.do.selection_end_y = self.do.selection_begin_y
                 elif dy > 1.5*dx: #vertical
-                    self.selection_end_x = self.selection_begin_x
+                    self.do.selection_end_x = self.do.selection_begin_x
                 else: #diagonal
-                    self.selection_end_y = self.selection_begin_y + dx*numpy.sign(self.selection_end_y - self.selection_begin_y)
+                    self.do.selection_end_y = self.do.selection_begin_y + dx*numpy.sign(self.do.selection_end_y - self.do.selection_begin_y)
 
             elif (self.do.slice == self.do.SLICE_XZ):
-                self.selection_end_x = int(pos[0]/sc)
-                self.selection_end_z = int(pos[1]/(sc*self.aspect))
+                self.do.selection_end_x = int(pos[0]/sc)
+                self.do.selection_end_z = int(pos[1]/(sc*self.aspect))
             elif (self.do.slice == self.do.SLICE_YZ):
-                self.selection_end_y = int(pos[0]/sc)
-                self.selection_end_z = int(pos[1]/(sc*self.aspect))
+                self.do.selection_end_y = int(pos[0]/sc)
+                self.do.selection_end_z = int(pos[1]/(sc*self.aspect))
 
         if ('update' in dir(self.GetParent())):
              self.GetParent().update()
@@ -799,23 +697,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
     def EndSelection(self):
         self.selecting = False
             
-    def ResetSelection(self):
-        self.selection_begin_x = 0
-        self.selection_begin_y = 0
-        self.selection_begin_z = 0
-        
-        self.selection_end_x = self.do.ds.shape[0] - 1
-        self.selection_end_y = self.do.ds.shape[1] - 1
-        self.selection_end_z = self.do.ds.shape[2] - 1
-        
-    def SetSelection(self, (b_x,b_y,b_z),(e_x,e_y,e_z)):
-        self.selection_begin_x = b_x
-        self.selection_begin_y = b_y
-        self.selection_begin_z = b_z
-        
-        self.selection_end_x = e_x
-        self.selection_end_y = e_y
-        self.selection_end_z = e_z
+
         
 #    def Render(self):
 #        x0,y0 = self.imagepanel.CalcUnscrolledPosition(0,0)
@@ -913,47 +795,47 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         return wx.ImageFromData(ima.shape[1], ima.shape[0], ima.ravel())
 
 
-    def GetProfile(self,halfLength=10,axis = 2, pos=None, roi=[2,2], background=None):
-        if not pos == None:
-            px, py, pz = pos
-        else:
-            px, py, pz = self.do.xp, self.do.yp, self.do.zp
-
-        points = self.points
-        d = None
-        pts = None
-
-        if axis == 2: #z
-            p = self.do.ds[(px - roi[0]):(px + roi[0]),(py - roi[1]):(py + roi[1]),(pz - halfLength):(pz + halfLength)].mean(2).mean(1)
-            x = numpy.mgrid[(pz - halfLength):(pz + halfLength)]
-            if len(points) > 0:
-                d = numpy.array([((abs(points[:,0] - px) < 2*roi[0])*(abs(points[:,1] - py) < 2*roi[1])*(points[:,2] == z)).sum() for z in x])
-
-                pts = numpy.where((abs(points[:,0] - px) < 2*roi[0])*(abs(points[:,1] - py) < 2*roi[1])*(abs(points[:,2] - pz) < halfLength))
-            #print p.shape
-            #p = p.mean(1).mean(0)
-            if not background == None:
-                p -= self.do.ds[(px - background[0]):(px + background[0]),(py - background[1]):(py + background[1]),(pz - halfLength):(pz + halfLength)].mean(2).mean(1)
-        elif axis == 1: #y
-            p = self.do.ds[(px - roi[0]):(px + roi[0]),(py - halfLength):(py + halfLength),(pz - roi[1]):(pz + roi[1])].mean(1).mean(0)
-            x = numpy.mgrid[(py - halfLength):(py + halfLength)]
-            if len(points) > 0:
-                d = numpy.array([((abs(points[:,1] - py) < 2*roi[0])*(abs(points[:,2] - pz) < 2*roi[1])*(points[:,0] == z)).sum() for z in x])
-
-                pts = numpy.where((abs(points[:,0] - px) < 2*roi[0])*(abs(points[:,1] - py) < halfLength)*(abs(points[:,2] - pz) < 2*roi[1]))
-            if not background == None:
-                p -= self.do.ds[(px - background[0]):(px + background[0]),(py - halfLength):(py + halfLength),(pz - background[1]):(pz + background[1]),(pz - halfLength):(pz + halfLength)].mean(1).mean(0)
-        elif axis == 0: #x
-            p = self.do.ds[(px - halfLength):(px + halfLength), (py - roi[0]):(py + roi[0]),(pz - roi[1]):(pz + roi[1])].mean(2).mean(0)
-            x = numpy.mgrid[(px - halfLength):(px + halfLength)]
-            if len(points) > 0:
-                d = numpy.array([((abs(points[:,0] - px) < 2*roi[0])*(abs(points[:,2] - pz) < 2*roi[1])*(points[:,1] == z)).sum() for z in x])
-
-                pts = numpy.where((abs(points[:,0] - px) < halfLength)*(abs(points[:,1] - py) < 2*roi[0])*(abs(points[:,2] - pz) < 2*roi[1]))
-            if not background == None:
-                p -= self.do.ds[(px - halfLength):(px + halfLength),(py - background[0]):(py + background[0]),(pz - background[1]):(pz + background[1])].mean(2).mean(0)
-
-        return x,p,d, pts
+#    def GetProfile(self,halfLength=10,axis = 2, pos=None, roi=[2,2], background=None):
+#        if not pos == None:
+#            px, py, pz = pos
+#        else:
+#            px, py, pz = self.do.xp, self.do.yp, self.do.zp
+#
+#        points = self.points
+#        d = None
+#        pts = None
+#
+#        if axis == 2: #z
+#            p = self.do.ds[(px - roi[0]):(px + roi[0]),(py - roi[1]):(py + roi[1]),(pz - halfLength):(pz + halfLength)].mean(2).mean(1)
+#            x = numpy.mgrid[(pz - halfLength):(pz + halfLength)]
+#            if len(points) > 0:
+#                d = numpy.array([((abs(points[:,0] - px) < 2*roi[0])*(abs(points[:,1] - py) < 2*roi[1])*(points[:,2] == z)).sum() for z in x])
+#
+#                pts = numpy.where((abs(points[:,0] - px) < 2*roi[0])*(abs(points[:,1] - py) < 2*roi[1])*(abs(points[:,2] - pz) < halfLength))
+#            #print p.shape
+#            #p = p.mean(1).mean(0)
+#            if not background == None:
+#                p -= self.do.ds[(px - background[0]):(px + background[0]),(py - background[1]):(py + background[1]),(pz - halfLength):(pz + halfLength)].mean(2).mean(1)
+#        elif axis == 1: #y
+#            p = self.do.ds[(px - roi[0]):(px + roi[0]),(py - halfLength):(py + halfLength),(pz - roi[1]):(pz + roi[1])].mean(1).mean(0)
+#            x = numpy.mgrid[(py - halfLength):(py + halfLength)]
+#            if len(points) > 0:
+#                d = numpy.array([((abs(points[:,1] - py) < 2*roi[0])*(abs(points[:,2] - pz) < 2*roi[1])*(points[:,0] == z)).sum() for z in x])
+#
+#                pts = numpy.where((abs(points[:,0] - px) < 2*roi[0])*(abs(points[:,1] - py) < halfLength)*(abs(points[:,2] - pz) < 2*roi[1]))
+#            if not background == None:
+#                p -= self.do.ds[(px - background[0]):(px + background[0]),(py - halfLength):(py + halfLength),(pz - background[1]):(pz + background[1]),(pz - halfLength):(pz + halfLength)].mean(1).mean(0)
+#        elif axis == 0: #x
+#            p = self.do.ds[(px - halfLength):(px + halfLength), (py - roi[0]):(py + roi[0]),(pz - roi[1]):(pz + roi[1])].mean(2).mean(0)
+#            x = numpy.mgrid[(px - halfLength):(px + halfLength)]
+#            if len(points) > 0:
+#                d = numpy.array([((abs(points[:,0] - px) < 2*roi[0])*(abs(points[:,2] - pz) < 2*roi[1])*(points[:,1] == z)).sum() for z in x])
+#
+#                pts = numpy.where((abs(points[:,0] - px) < halfLength)*(abs(points[:,1] - py) < 2*roi[0])*(abs(points[:,2] - pz) < 2*roi[1]))
+#            if not background == None:
+#                p -= self.do.ds[(px - halfLength):(px + halfLength),(py - background[0]):(py + background[0]),(pz - background[1]):(pz + background[1])].mean(2).mean(0)
+#
+#        return x,p,d, pts
 # end of class ViewPanel
 
 class ArraySettingsAndViewPanel(wx.Panel):

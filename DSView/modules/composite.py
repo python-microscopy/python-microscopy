@@ -10,6 +10,7 @@
 ##################
 #import numpy
 import wx
+import os
 #import pylab
 from PYME.Acquire import MetaDataHandler
 from PYME.DSView import image, View3D
@@ -54,12 +55,12 @@ class compositor:
             try:
                 names = self.image.mdh.getEntry('ChannelNames')
             except:
-                names = ['%s -  %d' % (self.image.filename, d) for d in range(self.image.data.shape[3])]
+                names = ['%s -  %d' % (os.path.split(self.image.filename)[1], d) for d in range(self.image.data.shape[3])]
 
             try:
                 otherNames = other.mdh.getEntry('ChannelNames')
             except:
-                otherNames = ['%s -  %d' % (self.image.filename, d) for d in range(other.data.shape[3])]
+                otherNames = ['%s -  %d' % (os.path.split(other.filename)[1], d) for d in range(other.data.shape[3])]
 
             newNames = names + otherNames
 

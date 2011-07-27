@@ -153,14 +153,17 @@ class ImageStack:
         
 
     def FindAndParseMetadata(self, filename):
+        mdf = None
         xmlfn = os.path.splitext(filename)[0] + '.xml'
         xmlfnmc = os.path.splitext(filename)[0].split('__')[0] + '.xml'
         if os.path.exists(xmlfn):
             self.mdh = MetaData.TIRFDefault
             self.mdh.copyEntriesFrom(MetaDataHandler.XMLMDHandler(xmlfn))
+            mdf = xmlfn
         elif os.path.exists(xmlfnmc): #this is a single colour channel of a pair
             self.mdh = MetaData.TIRFDefault
             self.mdh.copyEntriesFrom(MetaDataHandler.XMLMDHandler(xmlfnmc))
+            mdf = xmlfnmc
         else:
             self.mdh = MetaData.BareBones
             
@@ -169,6 +172,7 @@ class ImageStack:
             mdfn = os.path.splitext(filename)[0] + '.md'
             if os.path.exists(mdfn):
                 self.mdh.copyEntriesFrom(MetaDataHandler.SimpleMDHandler(mdfn))
+                mdf = mdfn
 
         if not ('voxelsize.x' in self.mdh.keys() and 'voxelsize.y' in self.mdh.keys()):
             from PYME.DSView.voxSizeDialog import VoxSizeDialog
@@ -180,32 +184,40 @@ class ImageStack:
             self.mdh.setEntry('voxelsize.y', dlg.GetVoxY())
             self.mdh.setEntry('voxelsize.z', dlg.GetVoxZ())
 
+        return mdf
+
     def LoadTiff(self, filename):
         #from PYME.FileUtils import readTiff
         from PYME.Analysis.DataSources import TiffDataSource
 
-        self.FindAndParseMetadata(filename)
+        mdfn = self.FindAndParseMetadata(filename)
 
         self.dataSource = TiffDataSource.DataSource(filename, None)
         self.dataSource = BufferedDataSource.DataSource(self.dataSource, min(self.dataSource.getNumSlices(), 50))
         self.data = self.dataSource #this will get replaced with a wrapped version
 
+
         #if we have a multi channel data set, try and pull in all the channels
         if 'ChannelFiles' in self.mdh.getEntryNames():
-            from PYME.DSView.dataWrap import ListWrap
-            #pull in all channels
+            try:
+                from PYME.DSView.dataWrap import ListWrap
+                #pull in all channels
 
-            chans = []
+                chans = []
 
-            for cf in self.mdh.getEntry('ChannelFiles'):
-                cfn = os.path.join(os.path.split(filename)[0])
+                for cf in self.mdh.getEntry('ChannelFiles'):
+                    cfn = os.path.join(os.path.split(filename)[0], cf)
 
-                ds = TiffDataSource.DataSource(filename, None)
-                ds = BufferedDataSource.DataSource(ds, min(ds.getNumSlices(), 50))
+                    ds = TiffDataSource.DataSource(cfn, None)
+                    ds = BufferedDataSource.DataSource(ds, min(ds.getNumSlices(), 50))
 
-                chans.append(ds)
+                    chans.append(ds)
 
-            self.data = ListWrap(chans) #this will get replaced with a wrapped version
+                self.data = ListWrap(chans) #this will get replaced with a wrapped version
+
+                self.filename = mdfn
+            except:
+                pass
 
 
         

@@ -25,6 +25,8 @@ from PYME.FileUtils import nameUtils
 import PYME.misc.autoFoldPanel as afp
 from PYME.Acquire.mytimer import mytimer
 from PYME.DSView import fitInfo
+from PYME.DSView.OverlaysPanel import OverlayPanel
+import wx.lib.agw.aui as aui
 
 class LMAnalyser:
     def __init__(self, dsviewer):
@@ -754,4 +756,11 @@ class LMAnalyser:
 
 def Plug(dsviewer):
     dsviewer.LMAnalyser = LMAnalyser(dsviewer)
+
+    dsviewer.overlaypanel = OverlayPanel(dsviewer, dsviewer.view, dsviewer.image.mdh)
+    dsviewer.overlaypanel.SetSize(dsviewer.overlaypanel.GetBestSize())
+    pinfo2 = aui.AuiPaneInfo().Name("overlayPanel").Right().Caption('Overlays').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
+    dsviewer._mgr.AddPane(dsviewer.overlaypanel, pinfo2)
+
+    dsviewer.panesToMinimise.append(pinfo2)
 

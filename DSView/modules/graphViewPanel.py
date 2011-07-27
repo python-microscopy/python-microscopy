@@ -83,7 +83,8 @@ class GraphViewPanel(wx.Panel):
         for i in range(self.do.ds.shape[3]):
             self.axes.plot(xvals, self.do.ds[:,self.do.yp, self.do.zp, i].squeeze(), label=self.do.names[i])
 
-        self.axes.legend()
+        if self.do.ds.shape[3] > 1:
+            self.axes.legend()
         self.axes.set_xlabel(self.xlabel)
 
         self.canvas.draw()

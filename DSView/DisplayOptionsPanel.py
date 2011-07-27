@@ -11,11 +11,20 @@
 ##################
 
 import wx
+import wx.lib.agw.aui as aui
 import pylab
 from PYME.misc import extraCMaps
 #from matplotlib import cm
 from PYME.Analysis.LMVis import histLimits
 from displayOptions import DisplayOpts, fast_grey
+
+import os
+dirname = os.path.dirname(__file__)
+
+#windows complains if bitmaps are loaded before wx.App exists - defer loading to first use
+bmCrosshairs = None #wx.Bitmap(os.path.join(dirname, 'icons/crosshairs.png'))
+bmRectSelect = None #wx.Bitmap(os.path.join(dirname, 'icons/rect_select.png'))
+bmLineSelect = None #wx.Bitmap(os.path.join(dirname, 'icons/line_select.png'))
 
 class OptionsPanel(wx.Panel):
     def __init__(self, parent, displayOpts, horizOrientation=False, thresholdControls=True, **kwargs):
@@ -191,6 +200,77 @@ class OptionsPanel(wx.Panel):
         for i in range(len(self.do.Chans)):
             c = self.do.ds[:,:,self.do.zp, self.do.Chans[i]].ravel()
             self.hcs[i].SetData(c[::max(1, len(c)/1e4)], self.do.Offs[i], self.do.Offs[i] + 1./self.do.Gains[i])
+
+    def CreateToolBar(self, wind):
+        global bmCrosshairs, bmRectSelect, bmLineSelect
+
+        if bmCrosshairs == None: #load bitmaps on first use
+            bmCrosshairs = wx.Bitmap(os.path.join(dirname, 'icons/crosshairs.png'))
+            bmRectSelect = wx.Bitmap(os.path.join(dirname, 'icons/rect_select.png'))
+            bmLineSelect = wx.Bitmap(os.path.join(dirname, 'icons/line_select.png'))
+
+        self.toolB = aui.AuiToolBar(wind, -1, wx.DefaultPosition, wx.DefaultSize, agwStyle=aui.AUI_TB_DEFAULT_STYLE | aui.AUI_TB_OVERFLOW | aui.AUI_TB_VERTICAL)
+        self.toolB.SetToolBitmapSize(wx.Size(16, 16))
+
+        #ID_POINTER = wx.NewId()
+        ID_CROSSHAIRS = wx.NewId()
+        ID_RECTSELECT = wx.NewId()
+        ID_LINESELECT = wx.NewId()
+
+        self.toolB.AddRadioTool(ID_CROSSHAIRS, "Point selection", bmCrosshairs, bmCrosshairs)
+        self.toolB.AddRadioTool(ID_RECTSELECT, "Rectangle selection", bmRectSelect, bmRectSelect)
+        self.toolB.AddRadioTool(ID_LINESELECT, "Rectangle selection", bmLineSelect, bmLineSelect)
+
+        self.toolB.Realize()
+
+        #self._mgr.AddPane(tb5, aui.AuiPaneInfo().Name("tb5").Caption("Sample Vertical Toolbar").
+        #                  ToolbarPane().Left().GripperTop())
+
+        self.toolB.ToggleTool(ID_CROSSHAIRS, True)
+
+        wind.Bind(wx.EVT_TOOL, self.OnSelectCrosshairs, id=ID_CROSSHAIRS)
+        wind.Bind(wx.EVT_TOOL, self.OnSelectRectangle, id=ID_RECTSELECT)
+        wind.Bind(wx.EVT_TOOL, self.OnSelectLine, id=ID_LINESELECT)
+        wind.Bind(aui.EVT_AUITOOLBAR_RIGHT_CLICK, self.OnLineThickness, id=ID_LINESELECT)
+
+        return self.toolB
+
+    def OnSelectCrosshairs(self, event):
+        self.do.leftButtonAction = DisplayOpts.ACTION_POSITION
+        self.do.selectionMode = DisplayOpts.SELECTION_RECTANGLE
+        self.do.showSelection = False
+
+        #self.Refresh()
+        self.do.OnChange()
+
+    def OnSelectRectangle(self, event):
+        self.do.leftButtonAction = DisplayOpts.ACTION_SELECTION
+        self.do.selectionMode = DisplayOpts.SELECTION_RECTANGLE
+        self.do.showSelection = True
+
+        #self.Refresh()
+        self.do.OnChange()
+
+    def OnSelectLine(self, event):
+        self.do.leftButtonAction = DisplayOpts.ACTION_SELECTION
+        self.do.selectionMode = DisplayOpts.SELECTION_LINE
+        self.do.showSelection = True
+
+        #self.Refresh()
+        self.do.OnChange()
+
+    def OnLineThickness(self, event):
+        print 'foo'
+        dlg = wx.TextEntryDialog(self, 'Line Thickness', 'Set width of line selection', '%d' % self.do.selectionWidth)
+
+        if dlg.ShowModal() == wx.ID_OK:
+            self.do.selectionWidth = int(dlg.GetValue())
+
+        dlg.Destroy()
+
+        self.do.OnChange()
+
+        #self.Refresh()
 
 
 

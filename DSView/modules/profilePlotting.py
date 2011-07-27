@@ -22,7 +22,7 @@ class profiler:
     def __init__(self, dsviewer):
         self.dsviewer = dsviewer
 
-        self.view = dsviewer.view
+        #self.view = dsviewer.view
         self.do = dsviewer.do
         self.image = dsviewer.image
 
@@ -36,9 +36,9 @@ class profiler:
 
 
     def OnPlotProfile(self, event=None):
-        lx, ly, hx, hy = self.view.GetSliceSelection()
+        lx, ly, hx, hy = self.do.GetSliceSelection()
 
-        w = int(np.floor(0.5*self.view.selectionWidth))
+        w = int(np.floor(0.5*self.do.selectionWidth))
 
         try:
             names = self.image.mdh.getEntry('ChannelNames')

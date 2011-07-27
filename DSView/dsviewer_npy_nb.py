@@ -20,7 +20,7 @@ import PYME.misc.autoFoldPanel as afp
 from PYME.DSView.arrayViewPanel import ArrayViewPanel
 from PYME.DSView.displayOptions import DisplayOpts
 from PYME.DSView.DisplayOptionsPanel import OptionsPanel
-from PYME.DSView.OverlaysPanel import OverlayPanel
+#from PYME.DSView.OverlaysPanel import OverlayPanel
 from PYME.DSView.image import ImageStack
 
 from PYME.Acquire.mytimer import mytimer
@@ -100,10 +100,12 @@ class DSViewFrame(wx.Frame):
 		
         self.statusbar = self.CreateStatusBar(1, wx.ST_SIZEGRIP)
 
+        self.panesToMinimise = []
+
         modules.loadMode(self.mode, self)
         self.CreateModuleMenu()
 
-        self.panesToMinimise = []
+        
 
         self.optionspanel = OptionsPanel(self, self.do, thresholdControls=True)
         self.optionspanel.SetSize(self.optionspanel.GetBestSize())
@@ -112,16 +114,8 @@ class DSViewFrame(wx.Frame):
 
         self.panesToMinimise.append(pinfo)
 
-        if 'view' in dir(self):
-            self.overlaypanel = OverlayPanel(self, self.view, self.image.mdh)
-            self.overlaypanel.SetSize(self.overlaypanel.GetBestSize())
-            pinfo2 = aui.AuiPaneInfo().Name("overlayPanel").Right().Caption('Overlays').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
-            self._mgr.AddPane(self.overlaypanel, pinfo2)
-
-            #self._mgr.AddPane(self.view.CreateToolBar(self), aui.AuiPaneInfo().Name("ViewTools").Caption("View Tools").CloseButton(False).
-            #                  ToolbarPane().Right().GripperTop())
-
-            self.panesToMinimise.append(pinfo2)
+        self._mgr.AddPane(self.optionspanel.CreateToolBar(self), aui.AuiPaneInfo().Name("ViewTools").Caption("View Tools").CloseButton(False).
+                      ToolbarPane().Right().GripperTop())
 
         if self.do.ds.shape[2] > 1:
             from PYME.DSView.modules import playback
@@ -304,16 +298,6 @@ class MyApp(wx.App):
             im = ImageStack(filename=args[0], queueURI=options.queueURI)
         else:
             im = ImageStack(queueURI=options.queueURI)
-
-#        #wx.InitAllImageHandlers()
-#        if (len(args) == 2):
-#            im = ImageStack(filename = args[1])
-#            vframe = DSViewFrame(im, None, args[1], mode = im.mode)
-#        elif (len(sys.argv) == 3):
-#            im = ImageStack(filename = args[1], queueURI=args[2])
-#            vframe = DSViewFrame(im, None, args[1], mode = im.mode)
-#        else:
-#            vframe = DSViewFrame(None, '')
 
         if options.mode == None:
             mode = im.mode
