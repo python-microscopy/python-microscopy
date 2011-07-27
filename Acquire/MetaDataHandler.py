@@ -40,7 +40,7 @@ class MDHandlerBase(DictMixin):
         self.setEntry(name, value)
 
     def __getitem__(self, name):
-        self.getEntry(name)
+        return self.getEntry(name)
 
     def keys(self):
         return self.getEntryNames()

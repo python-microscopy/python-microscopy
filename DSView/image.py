@@ -19,11 +19,22 @@ from PYME.Analysis.DataSources import BufferedDataSource
 
 lastdir = ''
 
+class DefaultDict(dict):
+    '''List which returns a default value for items not in the list'''
+    def __init__(self, *args):
+        dict.__init__(self, *args)
+
+    def __getitem__(self, index):
+        try:
+            return dict.__getitem__(self, index)
+        except KeyError:
+            return 0
+
 openImages = weakref.WeakValueDictionary()
-nUntitled = 0
+nUntitled = DefaultDict()
 
 class ImageStack:
-    def __init__(self, data = None, mdh = None, filename = None, queueURI = None, events = []):
+    def __init__(self, data = None, mdh = None, filename = None, queueURI = None, events = [], titleStub='Untitled Image'):
         global nUntitled
         self.data = data      #image data
         self.mdh = mdh        #metadata (a MetaDataHandler class)
@@ -45,11 +56,17 @@ class ImageStack:
         self.data = dataWrap.Wrap(self.data)
 
         if self.filename == None:
-            self.filename = 'Untitled Image %d' % nUntitled
-            nUntitled += 1
+            self.filename = '%s %d' % (titleStub, nUntitled[titleStub])
+            nUntitled[titleStub] += 1
 
         if self.mdh == None:
             self.mdh = MetaDataHandler.NestedClassMDHandler()
+
+        if 'Spectrum.Wavelengths' in self.mdh.getEntryNames():
+            self.xvals = mdh['Spectrum.Wavelengths']
+            self.xlabel = 'Wavelength [nm]'
+
+            self.mode = 'graph'
 
         openImages[self.filename] = self
 
