@@ -739,7 +739,7 @@ class MultiChannelImageViewFrame(wx.Frame):
         #ID_SAVE = wx.NewId()
         #ID_CLOSE = wx.NewId()
         ID_EXPORT = wx.NewId()
-        ID_SAVEALL = wx.NewId()
+        #ID_SAVEALL = wx.NewId()
 
         #ID_VIEW_CONSOLE = wx.NewId()
         ID_VIEW_BACKGROUND = wx.NewId()
@@ -750,7 +750,7 @@ class MultiChannelImageViewFrame(wx.Frame):
         self.ID_VIEW_CMAP_INVERT = wx.NewId()
 
         file_menu.Append(wx.ID_SAVE, "&Save Channel")
-        file_menu.Append(ID_SAVEALL, "Save &Multi-channel")
+        #file_menu.Append(ID_SAVEALL, "Save &Multi-channel")
         file_menu.Append(ID_EXPORT, "E&xport Current View")
 
         file_menu.AppendSeparator()
@@ -778,7 +778,7 @@ class MultiChannelImageViewFrame(wx.Frame):
         #menu_bar.Append(td_menu, "&3D")
 
         self.Bind(wx.EVT_MENU, self.OnSave, id=wx.ID_SAVE)
-        self.Bind(wx.EVT_MENU, self.OnSaveChannels, id=ID_SAVEALL)
+        #self.Bind(wx.EVT_MENU, self.OnSaveChannels, id=ID_SAVEALL)
         self.Bind(wx.EVT_MENU, self.OnClose, id=wx.ID_CLOSE)
         self.Bind(wx.EVT_MENU, self.OnExport, id=ID_EXPORT)
         #self.Bind(wx.EVT_MENU, self.OnViewCLim, id=ID_VIEW_COLOURLIM)
@@ -794,22 +794,23 @@ class MultiChannelImageViewFrame(wx.Frame):
 
 
     def OnSave(self, event):
-        ivp = self.GetSelectedPage()# self.notebook.GetPage(self.notebook.GetSelection())
-
-        if 'image' in dir(ivp): #is a single channel
-            fname = wx.FileSelector('Save Image ...', default_extension='.tif', wildcard="TIFF files (*.tif)|*.tif", flags = wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
-
-            if not fname == "":
-                ivp.image.save(fname)
-
-                n = self.names[self.ivps.index(ivp)]
-                #self.notebook.SetPageText(self.notebook.GetSelection(), n + ' - ' + os.path.split(fname)[-1])
-                self._mgr.GetPaneByWidget(ivp).Caption(n + ' - ' + os.path.split(fname)[-1])
-                self._mgr.Update()
-
-        else:
-            #wx.MessageBox('Saving composites not supported yet')
-            self.OnSaveChannels(None)
+        self.image.save()
+#        ivp = self.GetSelectedPage()# self.notebook.GetPage(self.notebook.GetSelection())
+#
+#        if 'image' in dir(ivp): #is a single channel
+#            fname = wx.FileSelector('Save Image ...', default_extension='.tif', wildcard="TIFF files (*.tif)|*.tif", flags = wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+#
+#            if not fname == "":
+#                ivp.image.save(fname)
+#
+#                n = self.names[self.ivps.index(ivp)]
+#                #self.notebook.SetPageText(self.notebook.GetSelection(), n + ' - ' + os.path.split(fname)[-1])
+#                self._mgr.GetPaneByWidget(ivp).Caption(n + ' - ' + os.path.split(fname)[-1])
+#                self._mgr.Update()
+#
+#        else:
+#            #wx.MessageBox('Saving composites not supported yet')
+#            self.OnSaveChannels(None)
 
     def OnViewBackground(self, event):
         ivp = self.GetSelectedPage() #self.notebook.GetPage(self.notebook.GetSelection())

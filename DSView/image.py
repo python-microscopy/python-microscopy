@@ -154,9 +154,13 @@ class ImageStack:
 
     def FindAndParseMetadata(self, filename):
         xmlfn = os.path.splitext(filename)[0] + '.xml'
+        xmlfnmc = os.path.splitext(filename)[0].split('__')[0] + '.xml'
         if os.path.exists(xmlfn):
             self.mdh = MetaData.TIRFDefault
             self.mdh.copyEntriesFrom(MetaDataHandler.XMLMDHandler(xmlfn))
+        elif os.path.exists(xmlfnmc): #this is a single colour channel of a pair
+            self.mdh = MetaData.TIRFDefault
+            self.mdh.copyEntriesFrom(MetaDataHandler.XMLMDHandler(xmlfnmc))
         else:
             self.mdh = MetaData.BareBones
             
@@ -180,12 +184,34 @@ class ImageStack:
         #from PYME.FileUtils import readTiff
         from PYME.Analysis.DataSources import TiffDataSource
 
+        self.FindAndParseMetadata(filename)
+
         self.dataSource = TiffDataSource.DataSource(filename, None)
         self.dataSource = BufferedDataSource.DataSource(self.dataSource, min(self.dataSource.getNumSlices(), 50))
         self.data = self.dataSource #this will get replaced with a wrapped version
+
+        #if we have a multi channel data set, try and pull in all the channels
+        if 'ChannelFiles' in self.mdh.getEntryNames():
+            from PYME.DSView.dataWrap import ListWrap
+            #pull in all channels
+
+            chans = []
+
+            for cf in self.mdh.getEntry('ChannelFiles'):
+                cfn = os.path.join(os.path.split(filename)[0])
+
+                ds = TiffDataSource.DataSource(filename, None)
+                ds = BufferedDataSource.DataSource(ds, min(ds.getNumSlices(), 50))
+
+                chans.append(ds)
+
+            self.data = ListWrap(chans) #this will get replaced with a wrapped version
+
+
+        
         #self.data = readTiff.read3DTiff(filename)
 
-        self.FindAndParseMetadata(filename)
+        
 
         from PYME.ParallelTasks.relativeFiles import getRelFilename
         self.seriesName = getRelFilename(filename)
