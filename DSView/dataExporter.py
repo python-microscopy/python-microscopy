@@ -251,6 +251,10 @@ class TxtExporter(Exporter):
         if metadata and 'Profile.XValues' in metadata.getEntryNames():
             dat = [metadata.getEntry('Profile.XValues')] + dat
             chanNames = [metadata.getEntry('Profile.XLabel')] + chanNames
+
+        if metadata and 'Spectrum.Wavelengths' in metadata.getEntryNames():
+            dat = [metadata.getEntry('Spectrum.Wavelengths')] + dat
+            chanNames = [metadata.getEntry('Wavelength [nm]')] + chanNames
             
 
         fid = open(outFile, 'wb')
