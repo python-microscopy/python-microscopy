@@ -38,8 +38,8 @@ class DisplayOpts(object):
         self.cmaps = []
         self.names = []
         
-        self.xp=0
-        self.yp=0
+        self._xp=0
+        self._yp=0
 
         self._zp=0
 
@@ -66,6 +66,26 @@ class DisplayOpts(object):
     @zp.setter
     def zp(self, value):
         self._zp = value
+        #print 'z changed'
+        self.OnChange()
+
+    @property
+    def xp(self):
+        return self._xp
+
+    @xp.setter
+    def xp(self, value):
+        self._xp = value
+        #print 'z changed'
+        self.OnChange()
+
+    @property
+    def yp(self):
+        return self._yp
+
+    @yp.setter
+    def yp(self, value):
+        self._yp = value
         #print 'z changed'
         self.OnChange()
 

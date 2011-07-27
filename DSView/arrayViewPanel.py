@@ -53,6 +53,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         scrolledImagePanel.ScrolledImagePanel.__init__(self, parent, self.DoPaint, style=wx.SUNKEN_BORDER|wx.TAB_TRAVERSAL)
 
         self.do.WantChangeNotification.append(self.GetOpts)
+        #self.do.WantChangeNotification.append(self.Refresh)
 
         self.SetVirtualSize(wx.Size(self.do.ds.shape[0],self.do.ds.shape[1]))
         #self.imagepanel.SetSize(wx.Size(self.do.ds.shape[0],self.do.ds.shape[1]))
@@ -78,6 +79,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         self.selecting = False
 
         self.aspect = 1.
+
+        self.slice = None
 
         
 
@@ -517,28 +520,31 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             s = self.CalcImSize()
             self.SetVirtualSize(wx.Size(s[0]*sc,s[1]*sc))
 
-            #if not event == None and event.GetId() in [self.cbSlice.GetId(), self.cbScale.GetId()]:
-            #recenter the view
-            if(self.do.slice == self.do.SLICE_XY):
-                lx = self.do.xp
-                ly = self.do.yp
-                self.aspect = self.do.aspect[1]/self.do.aspect[0]
-            elif(self.do.slice == self.do.SLICE_XZ):
-                lx = self.do.xp
-                ly = self.do.zp
-                self.aspect = self.do.aspect[2]/self.do.aspect[0]
-            elif(self.do.slice == self.do.SLICE_YZ):
-                lx = self.do.yp
-                ly = self.do.zp
-                self.aspect = self.do.aspect[2]/self.do.aspect[1]
+            if not self.slice == self.do.slice:
+                #if the slice has changed, change our aspect and do some
+                self.slice = self.do.slice
+                #if not event == None and event.GetId() in [self.cbSlice.GetId(), self.cbScale.GetId()]:
+                #recenter the view
+                if(self.do.slice == self.do.SLICE_XY):
+                    lx = self.do.xp
+                    ly = self.do.yp
+                    self.aspect = self.do.aspect[1]/self.do.aspect[0]
+                elif(self.do.slice == self.do.SLICE_XZ):
+                    lx = self.do.xp
+                    ly = self.do.zp
+                    self.aspect = self.do.aspect[2]/self.do.aspect[0]
+                elif(self.do.slice == self.do.SLICE_YZ):
+                    lx = self.do.yp
+                    ly = self.do.zp
+                    self.aspect = self.do.aspect[2]/self.do.aspect[1]
 
-            sx,sy =self.imagepanel.GetClientSize()
+                sx,sy =self.imagepanel.GetClientSize()
 
-            #self.imagepanel.SetScrollbars(20,20,s[0]*sc/20,s[1]*sc/20,min(0, lx*sc - sx/2)/20, min(0,ly*sc - sy/2)/20)
-            ppux, ppuy = self.GetScrollPixelsPerUnit()
-            #self.imagepanel.SetScrollPos(wx.HORIZONTAL, max(0, lx*sc - sx/2)/ppux)
-            #self.imagepanel.SetScrollPos(wx.VERTICAL, max(0, ly*sc - sy/2)/ppuy)
-            self.Scroll(max(0, lx*sc - sx/2)/ppux, max(0, ly*sc*self.aspect - sy/2)/ppuy)
+                #self.imagepanel.SetScrollbars(20,20,s[0]*sc/20,s[1]*sc/20,min(0, lx*sc - sx/2)/20, min(0,ly*sc - sy/2)/20)
+                ppux, ppuy = self.GetScrollPixelsPerUnit()
+                #self.imagepanel.SetScrollPos(wx.HORIZONTAL, max(0, lx*sc - sx/2)/ppux)
+                #self.imagepanel.SetScrollPos(wx.VERTICAL, max(0, ly*sc - sy/2)/ppuy)
+                self.Scroll(max(0, lx*sc - sx/2)/ppux, max(0, ly*sc*self.aspect - sy/2)/ppuy)
 
             #self.imagepanel.Refresh()
             self.Refresh()
@@ -594,10 +600,10 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         elif (self.do.slice == self.do.SLICE_YZ):
             self.do.yp =int(pos[0]/sc)
             self.do.zp =int(pos[1]/(sc*self.aspect))
-        if ('update' in dir(self.GetParent())):
-             self.GetParent().update()
-        else:
-            self.imagepanel.Refresh()
+        #if ('update' in dir(self.GetParent())):
+        #     self.GetParent().update()
+        #else:
+        #    self.imagepanel.Refresh()
 
     def PointsHitTest(self):
         if len(self.points) > 0:

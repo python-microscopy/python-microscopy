@@ -78,7 +78,7 @@ class compositor:
             mdh = MetaDataHandler.NestedClassMDHandler(self.image.mdh)
             mdh.setEntry('ChannelNames', newNames)
 
-            View3D(dataWrap.ListWrap(newData, 3), '< Composite >', mdh=mdh, parent=self.dsviewer)
+            View3D(dataWrap.ListWrap(newData, 3), 'Composite', mdh=mdh, mode = self.dsviewer.mode, parent=self.dsviewer)
 
         dlg.Destroy()
 

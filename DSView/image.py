@@ -63,10 +63,11 @@ class ImageStack:
             self.mdh = MetaDataHandler.NestedClassMDHandler()
 
         if 'Spectrum.Wavelengths' in self.mdh.getEntryNames():
-            self.xvals = mdh['Spectrum.Wavelengths']
+            self.xvals = self.mdh['Spectrum.Wavelengths']
             self.xlabel = 'Wavelength [nm]'
 
-            self.mode = 'graph'
+            if self.data.shape[1] == 1:
+                self.mode = 'graph'
 
         openImages[self.filename] = self
 
