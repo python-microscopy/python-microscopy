@@ -116,6 +116,7 @@ class profiler:
             im.xlabel = 'Distance [pixels]'
 
         im.ylabel = 'Intensity'
+        im.defaultExt = '.txt'
 
         im.mdh['voxelsize.x'] = voxx
         im.mdh['ChannelNames'] = names
