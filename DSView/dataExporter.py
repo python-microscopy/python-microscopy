@@ -254,7 +254,7 @@ class TxtExporter(Exporter):
 
         if metadata and 'Spectrum.Wavelengths' in metadata.getEntryNames():
             dat = [metadata.getEntry('Spectrum.Wavelengths')] + dat
-            chanNames = [metadata.getEntry('Wavelength [nm]')] + chanNames
+            chanNames = ['Wavelength [nm]'] + chanNames
             
 
         fid = open(outFile, 'wb')
