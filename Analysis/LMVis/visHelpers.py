@@ -73,58 +73,68 @@ class ImageBounds:
 class dummy:
     pass
 
-class GeneratedImage(object):
-    def __init__(self, img, imgBounds, pixelSize, sliceSize=0):
-        self.img = img
-        self.imgBounds = imgBounds
+#from PYME.DSView.image import ImageStack
+#def GeneratedImage(img, imgBounds, pixelSize, sliceSize, channelNames):
+#    image = ImageStack(img)
+#    image.pixelSize = pixelSize
+#    image.sliceSize = sliceSize
+#    image.imgBounds = imgBounds
+#    image.names = channelNames
+#
+#    return image
 
-        self.pixelSize = pixelSize
-        self.sliceSize = sliceSize
-
-    def save(self, filename):
-        if len(self.img.shape) == 2:
-            self.save2D(filename)
-        else:
-            self.save3D(filename)
-
-    def save2D(self, filename):
-        import Image
-        #save using PIL - because we're using float pretty much only tif will work
-        im = Image.fromarray(self.img.astype('f'), 'F')
-
-        im.tag = dummy()
-        #set up resolution data - unfortunately in cm as TIFF standard only supports cm and inches
-        #res_ = int(1e-2/(self.pixelSize*1e-9))
-        #use ImageJ scale definitions
-        res_ = int(1.e6/(self.pixelSize))
-        im.tag.tagdata={296:(1,), 282:(res_,1000000), 283:(res_,1000000), 270:'unit=nm\nspacing=%3.1d\n'%self.pixelSize}
-
-        im.save(filename)
-
-    def save3D(self, filename):
+#class GeneratedImage(object):
+#    def __init__(self, img, imgBounds, pixelSize, sliceSize=0):
+#        self.img = img
+#        self.imgBounds = imgBounds
+#
+#        self.pixelSize = pixelSize
+#        self.sliceSize = sliceSize
+#
+#    def save(self, filename):
+#        if len(self.img.shape) == 2:
+#            self.save2D(filename)
+#        else:
+#            self.save3D(filename)
+#
+#    def save2D(self, filename):
 #        import Image
-#        command = ["tiffcp"]
-#        # add options here, if any (e.g. for compression)
+#        #save using PIL - because we're using float pretty much only tif will work
+#        im = Image.fromarray(self.img.astype('f'), 'F')
 #
-#        #im = im.astype('uint16')
-#        #im = im.astype('>u2').astype('<u2')
+#        im.tag = dummy()
+#        #set up resolution data - unfortunately in cm as TIFF standard only supports cm and inches
+#        #res_ = int(1e-2/(self.pixelSize*1e-9))
+#        #use ImageJ scale definitions
+#        res_ = int(1.e6/(self.pixelSize))
+#        im.tag.tagdata={296:(1,), 282:(res_,1000000), 283:(res_,1000000), 270:'unit=nm\nspacing=%3.1d\n'%self.pixelSize}
 #
-#        for i in range(self.img.shape[2]):
-#            framefile = "/tmp/frame%d.tif" % i
+#        im.save(filename)
 #
-#            im = Image.fromarray(self.img[:,:,i].astype('f'), 'F')
-#            im.save(framefile)
-#            command.append(framefile)
+#    def save3D(self, filename):
+##        import Image
+##        command = ["tiffcp"]
+##        # add options here, if any (e.g. for compression)
+##
+##        #im = im.astype('uint16')
+##        #im = im.astype('>u2').astype('<u2')
+##
+##        for i in range(self.img.shape[2]):
+##            framefile = "/tmp/frame%d.tif" % i
+##
+##            im = Image.fromarray(self.img[:,:,i].astype('f'), 'F')
+##            im.save(framefile)
+##            command.append(framefile)
+##
+##        command.append(filename)
+##        subprocess.call(command)
+##
+##        # remove frame files here
+##        subprocess.call('rm /tmp/frame*.tif', shell=True)
 #
-#        command.append(filename)
-#        subprocess.call(command)
+#        #from PYME.FileUtils import saveTiffStack
 #
-#        # remove frame files here
-#        subprocess.call('rm /tmp/frame*.tif', shell=True)
-
-        #from PYME.FileUtils import saveTiffStack
-
-        saveTiffStack.saveTiffMultipage(self.img, filename)
+#        saveTiffStack.saveTiffMultipage(self.img, filename)
 
         
 

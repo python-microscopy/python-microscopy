@@ -77,7 +77,13 @@ class FilterPane(afp.foldingPane):
         self.AddNewElement(self.bClipToSelection)
         #self._pnl.AddFoldPanelWindow(self, self.bClipToSelection, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
 
+
         self.bClipToSelection.Bind(wx.EVT_BUTTON, self.OnFilterClipToSelection)
+        
+        
+        visFr.Bind(wx.EVT_MENU, self.OnFilterClipToSelection, id=visFr.ID_VIEW_CLIP_ROI)
+
+
 
     def OnFilterListRightClick(self, event):
 

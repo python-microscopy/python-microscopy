@@ -8,7 +8,8 @@
 # This file may NOT be distributed without express permision from David Baddeley
 #
 ##################
-from PYME.Analysis.LMVis.visHelpers import ImageBounds, GeneratedImage
+from PYME.Analysis.LMVis.visHelpers import ImageBounds#, GeneratedImage
+from PYME.DSView.image import GeneratedImage
 from PYME.Analysis.LMVis import genImageDialog
 from PYME.Analysis.LMVis import visHelpers
 from PYME.Analysis.LMVis import imageView
@@ -44,6 +45,14 @@ class CurrentRenderer:
         y0 = max(self.visFr.glCanvas.ymin, self.visFr.imageBounds.y0)
         x1 = min(self.visFr.glCanvas.xmax, self.visFr.imageBounds.x1)
         y1 = min(self.visFr.glCanvas.ymax, self.visFr.imageBounds.y1)
+
+        if 'x' in self.visFr.filterKeys.keys():
+            x0 = max(x0, self.visFr.filterKeys['x'][0])
+            x1 = min(x1, self.visFr.filterKeys['x'][1])
+
+        if 'y' in self.visFr.filterKeys.keys():
+            y0 = max(y0, self.visFr.filterKeys['y'][0])
+            y1 = min(y1, self.visFr.filterKeys['y'][1])
 
         #imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
         return ImageBounds(x0, y0, x1, y1)
@@ -84,8 +93,9 @@ class CurrentRenderer:
             imb = self._getImBounds()
 
             im = self.genIm(dlg, imb)
-            img = GeneratedImage(im,imb, pixelSize )
-            imf = imageView.ImageViewFrame(self.visFr,img, self.visFr.glCanvas)
+            img = GeneratedImage(im,imb, pixelSize, 0, ['Image'] )
+            #imf = imageView.ImageViewFrame(self.visFr,img, self.visFr.glCanvas)
+            imageView.MultiChannelImageViewFrame(self.visFr, self.visFr.glCanvas, img, title='Generated %s - %3.1fnm bins' % (self.name, pixelSize))
             self.visFr.generatedImages.append(imf)
             imf.Show()
 
@@ -139,10 +149,11 @@ class ColourRenderer(CurrentRenderer):
 
             for c in  colours:
                 self.visFr.colourFilter.setColour(c)
-                im = self.genIm(dlg, imb)
-                ims.append(GeneratedImage(im,imb, pixelSize,  dlg.getZSliceThickness()))
+                ims.append(np.atleast_3d(self.genIm(dlg, imb)))
 
-            imfc = imageView.MultiChannelImageViewFrame(self.visFr, self.visFr.glCanvas, ims, colours, title='Generated %s - %3.1fnm bins' % (self.name, pixelSize))
+            im = GeneratedImage(ims,imb, pixelSize,  dlg.getZSliceThickness(), colours)
+
+            imfc = imageView.MultiChannelImageViewFrame(self.visFr, self.visFr.glCanvas, im, title='Generated %s - %3.1fnm bins' % (self.name, pixelSize))
 
             self.visFr.generatedImages.append(imfc)
             imfc.Show()

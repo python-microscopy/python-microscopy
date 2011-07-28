@@ -32,7 +32,7 @@ from PYME.DSView.image import ImageStack
 #from PYME.misc.auiFloatBook import AuiNotebookWithFloatingPages
 
 class ImageViewPanel(wx.Panel):
-    def __init__(self, parent, image, glCanvas, do, chan=0, zdim=0):
+    def __init__(self, parent, image, glCanvas, do, chan=0, zdim=2):
         wx.Panel.__init__(self, parent, -1, size=parent.Size)
 
         self.image = image
@@ -92,6 +92,8 @@ class ImageViewPanel(wx.Panel):
 
         im = im - self.do.Offs[self.chan] #self.clim[0]
         im = im*self.do.Gains[self.chan]    #/(self.clim[1] - self.clim[0])
+
+        print im.shape
 
         im = (255*self.do.cmaps[self.chan](im)[:,:,:3]).astype('b')
             
@@ -405,28 +407,30 @@ class ColourImageViewPanel(ImageViewPanel):
 from PYME.DSView import modules as dsvmods
 
 class MultiChannelImageViewFrame(wx.Frame):
-    def __init__(self, parent, glCanvas, images, names=['Image'], title='Generated Image',zp=0, zdim=2):
+    def __init__(self, parent, glCanvas, image, title='Generated Image',zp=0, zdim=2):
         wx.Frame.__init__(self, parent, -1, title=title, size=(800,800))
 
         self.glCanvas = glCanvas
         self.parent = parent
         self.frame = self
 
-        self.image = ImageStack([numpy.atleast_3d(im.img) for im in images])
-        self.image.pixelSize = images[0].pixelSize
-        self.image.sliceSize = images[0].sliceSize
+        self.image = image
 
-        self.image.imgBounds = images[0].imgBounds
-        
-        #self.images = images
-        self.image.names = [n or 'Image' for n in names]
+#        self.image = ImageStack([numpy.atleast_3d(im.img) for im in images])
+#        self.image.pixelSize = images[0].pixelSize
+#        self.image.sliceSize = images[0].sliceSize
+#
+#        self.image.imgBounds = images[0].imgBounds
+#
+#        #self.images = images
+#        self.image.names = [n or 'Image' for n in names]
         
         #md = NestedClassMDHandler()
-        self.image.mdh.setEntry('voxelsize.x', .001*images[0].pixelSize)
-        self.image.mdh.setEntry('voxelsize.y', .001*images[0].pixelSize)
-        self.image.mdh.setEntry('voxelsize.z', .001*images[0].sliceSize)
-
-        self.image.mdh.setEntry('ChannelNames', self.image.names)
+#        self.image.mdh.setEntry('voxelsize.x', .001*images[0].pixelSize)
+#        self.image.mdh.setEntry('voxelsize.y', .001*images[0].pixelSize)
+#        self.image.mdh.setEntry('voxelsize.z', .001*images[0].sliceSize)
+#
+#        self.image.mdh.setEntry('ChannelNames', self.image.names)
 
         #self.image = ImageStack([numpy.atleast_3d(im.img) for im in images], md)
 
@@ -458,23 +462,23 @@ class MultiChannelImageViewFrame(wx.Frame):
         self.do.zp = zp
         self.do.names = self.image.names
 
-        cmaps = [pylab.cm.r, pylab.cm.g, pylab.cm.b]
-
-        for name, i in zip(self.image.names, xrange(self.image.data.shape[3])):
-            self.ivps.append(ImageViewPanel(self, self.image, glCanvas, self.do, chan=i, zdim=zdim))
-            if self.image.data.shape[3] > 1 and len(cmaps) > 0:
-                self.do.cmaps[i] = cmaps.pop(0)
-
-            self.AddPage(page=self.ivps[-1], select=True, caption=name)
-
-
-        if self.image.data.shape[2] > 1:
-            self.AddPage(page=ArrayViewPanel(self, do=self.do, aspect = asp), select=False, caption='Slices')
-            
-        elif self.image.data.shape[3] > 1:
-            self.civp = ColourImageViewPanel(self, glCanvas, self.do, self.image, zdim=zdim)
-            self.civp.ivps = self.ivps
-            self.AddPage(page=self.civp, select=True, caption='Composite')
+#        cmaps = [pylab.cm.r, pylab.cm.g, pylab.cm.b]
+#
+#        for name, i in zip(self.image.names, xrange(self.image.data.shape[3])):
+#            self.ivps.append(ImageViewPanel(self, self.image, glCanvas, self.do, chan=i, zdim=zdim))
+#            if self.image.data.shape[3] > 1 and len(cmaps) > 0:
+#                self.do.cmaps[i] = cmaps.pop(0)
+#
+#            self.AddPage(page=self.ivps[-1], select=True, caption=name)
+#
+#
+#        if self.image.data.shape[2] > 1:
+#            self.AddPage(page=ArrayViewPanel(self, do=self.do, aspect = asp), select=False, caption='Slices')
+#
+#        elif self.image.data.shape[3] > 1:
+#            self.civp = ColourImageViewPanel(self, glCanvas, self.do, self.image, zdim=zdim)
+#            self.civp.ivps = self.ivps
+#            self.AddPage(page=self.civp, select=True, caption='Composite')
 
         
 
@@ -500,6 +504,7 @@ class MultiChannelImageViewFrame(wx.Frame):
             self._mgr.AddPane(self.playbackpanel, pinfo1)
             self.do.WantChangeNotification.append(self.playbackpanel.update)
 
+        self.mode = 'visGUI'
         dsvmods.loadMode('visGUI', self)
         self.CreateModuleMenu()
 
@@ -606,7 +611,7 @@ class MultiChannelImageViewFrame(wx.Frame):
         view_menu.Append(ID_VIEW_BACKGROUND, "Set as visualisation &background")
 
         self.mProcessing = wx.Menu()
-        self.mProcessing.Append(ID_FILTER_GAUSS, "&Gaussian Filter")
+        #self.mProcessing.Append(ID_FILTER_GAUSS, "&Gaussian Filter")
 
         menu_bar = wx.MenuBar()
 
@@ -622,7 +627,7 @@ class MultiChannelImageViewFrame(wx.Frame):
         #self.Bind(wx.EVT_MENU, self.OnViewCLim, id=ID_VIEW_COLOURLIM)
         #self.Bind(wx.EVT_MENU, self.OnViewConsole, id=ID_VIEW_CONSOLE)
         self.Bind(wx.EVT_MENU, self.OnViewBackground, id=ID_VIEW_BACKGROUND)
-        self.Bind(wx.EVT_MENU, self.OnGaussianFilter, id=ID_FILTER_GAUSS)
+        #self.Bind(wx.EVT_MENU, self.OnGaussianFilter, id=ID_FILTER_GAUSS)
 
         return menu_bar
 
@@ -664,21 +669,21 @@ class MultiChannelImageViewFrame(wx.Frame):
                 ivp.curIm.SaveFile(fname, wx.BITMAP_TYPE_BMP)
 
 
-    def OnGaussianFilter(self, event):
-        from scipy.ndimage import gaussian_filter
-        from PYME.Analysis.LMVis.visHelpers import ImageBounds, GeneratedImage
-
-        dlg = wx.TextEntryDialog(self, 'Blur size [pixels]:', 'Gaussian Blur', '[1,1,1]')
-
-        if dlg.ShowModal() == wx.ID_OK:
-            sigmas = eval(dlg.GetValue())
-            #print sigmas
-            #print self.images[0].img.shape
-            filt_ims = [GeneratedImage(gaussian_filter(self.image.data[:,:,:,chanNum].squeeze(), sigmas), self.image.imgBounds, self.image.pixelSize, self.image.sliceSize) for chanNum in range(self.image.data.shape[3])]
-
-            imfc = MultiChannelImageViewFrame(self.parent, self.parent.glCanvas, filt_ims, self.image.names, title='Filtered Image - %3.1fnm bins' % self.image.pixelSize)
-
-            self.parent.generatedImages.append(imfc)
-            imfc.Show()
-
-        dlg.Destroy()
+#    def OnGaussianFilter(self, event):
+#        from scipy.ndimage import gaussian_filter
+#        from PYME.Analysis.LMVis.visHelpers import ImageBounds, GeneratedImage
+#
+#        dlg = wx.TextEntryDialog(self, 'Blur size [pixels]:', 'Gaussian Blur', '[1,1,1]')
+#
+#        if dlg.ShowModal() == wx.ID_OK:
+#            sigmas = eval(dlg.GetValue())
+#            #print sigmas
+#            #print self.images[0].img.shape
+#            filt_ims = [GeneratedImage(gaussian_filter(self.image.data[:,:,:,chanNum].squeeze(), sigmas), self.image.imgBounds, self.image.pixelSize, self.image.sliceSize) for chanNum in range(self.image.data.shape[3])]
+#
+#            imfc = MultiChannelImageViewFrame(self.parent, self.parent.glCanvas, filt_ims, self.image.names, title='Filtered Image - %3.1fnm bins' % self.image.pixelSize)
+#
+#            self.parent.generatedImages.append(imfc)
+#            imfc.Show()
+#
+#        dlg.Destroy()

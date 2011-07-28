@@ -16,6 +16,7 @@ from PYME.Acquire import MetaDataHandler
 from PYME.Analysis import MetaData
 from PYME.DSView import dataWrap
 from PYME.Analysis.DataSources import BufferedDataSource
+from PYME.Analysis.LMVis.visHelpers import ImageBounds
 
 lastdir = ''
 
@@ -33,7 +34,7 @@ class DefaultDict(dict):
 openImages = weakref.WeakValueDictionary()
 nUntitled = DefaultDict()
 
-class ImageStack:
+class ImageStack(object):
     def __init__(self, data = None, mdh = None, filename = None, queueURI = None, events = [], titleStub='Untitled Image'):
         global nUntitled
         self.data = data      #image data
@@ -70,6 +71,57 @@ class ImageStack:
                 self.mode = 'graph'
 
         openImages[self.filename] = self
+
+    @property
+    def pixelSize(self):
+        try:
+            return 1e3*self.mdh['voxelsize.x']
+        except:
+            return 1
+
+    @pixelSize.setter
+    def pixelSize(self, value):
+        self.mdh['voxelsize.x'] = .001*value
+        self.mdh['voxelsize.y'] = .001*value
+
+    @property
+    def sliceSize(self):
+        try:
+            return 1e3*self.mdh['voxelsize.z']
+        except:
+            return 1
+
+    @sliceSize.setter
+    def sliceSize(self, value):
+        self.mdh['voxelsize.z'] = .001*value
+
+
+    @property
+    def names(self):
+        try:
+            return self.mdh['ChannelNames']
+        except:
+            return ['Chan %d' for d in range(self.data.dhape[3])]
+
+    @names.setter
+    def names(self, value):
+        self.mdh['ChannelNames'] = value
+
+    @property
+    def imgBounds(self):
+        try:
+            return ImageBounds(self.mdh['ImageBounds.x0'],self.mdh['ImageBounds.y0'],self.mdh['ImageBounds.x1'],self.mdh['ImageBounds.y1'],self.mdh['ImageBounds.z0'],self.mdh['ImageBounds.z1'])
+        except:
+            return ImageBounds(0, 0, self.pixelSize*self.data.shape[0], self.pixelSize*self.data.shape[1],0, self.sliceSize*self.data.shape[2])
+
+    @imgBounds.setter
+    def imgBounds(self, value):
+        self.mdh['ImageBounds.x0'] = value.x0
+        self.mdh['ImageBounds.y0'] = value.y0
+        self.mdh['ImageBounds.x1'] = value.x1
+        self.mdh['ImageBounds.y1'] = value.y1
+        self.mdh['ImageBounds.z0'] = value.z0
+        self.mdh['ImageBounds.z1'] = value.z1
 
 
     def LoadQueue(self, filename):
@@ -320,7 +372,14 @@ class ImageStack:
                 self.filename = ofn
 
 
+def GeneratedImage(img, imgBounds, pixelSize, sliceSize, channelNames):
+    image = ImageStack(img)
+    image.pixelSize = pixelSize
+    image.sliceSize = sliceSize
+    image.imgBounds = imgBounds
+    image.names = channelNames
 
+    return image
 
 
 

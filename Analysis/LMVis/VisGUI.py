@@ -81,7 +81,9 @@ from PYME.DSView import eventLogViewer
 from PYME.misc.auiFloatBook import AuiNotebookWithFloatingPages
 
 from PYME.Analysis.LMVis import statusLog
-from PYME.Analysis.LMVis.visHelpers import ImageBounds, GeneratedImage
+from PYME.Analysis.LMVis.visHelpers import ImageBounds#, GeneratedImage
+
+from PYME.DSView.image import ImageStack, GeneratedImage
 
 
 class VisGUIFrame(wx.Frame):    
@@ -627,6 +629,7 @@ class VisGUIFrame(wx.Frame):
 
         ID_VIEW_FIT = wx.NewId()
         ID_VIEW_FIT_ROI = wx.NewId()
+        
 
         ID_TOGGLE_SETTINGS = wx.NewId()
 
@@ -675,6 +678,10 @@ class VisGUIFrame(wx.Frame):
         self.view_menu.AppendSeparator()
         self.view_menu.Append(ID_VIEW_FIT, '&Fit')
         self.view_menu.Append(ID_VIEW_FIT_ROI, 'Fit &ROI')
+
+        self.ID_VIEW_CLIP_ROI = wx.NewId()
+        self.view_menu.Append(self.ID_VIEW_CLIP_ROI, 'Clip to ROI\tF8')
+
 
         self.view_menu.AppendSeparator()
         self.view_menu.AppendCheckItem(ID_TOGGLE_SETTINGS, "Show Settings")

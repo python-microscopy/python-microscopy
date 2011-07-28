@@ -329,8 +329,8 @@ def View3D(data, titleStub='Untitled Image', mdh = None, mode='lite', parent=Non
     dvf.Show()
     return dvf
 
-def ViewIm3D(image, title='', mode='lite'):
-    dvf = DSViewFrame(image, title=title, mode=mode, size=(500, 500))
+def ViewIm3D(image, title='', mode='lite', parent=None):
+    dvf = DSViewFrame(image, title=title, mode=mode, size=(500, 500), parent=parent)
     dvf.SetSize((500,500))
     dvf.Show()
     return dvf
