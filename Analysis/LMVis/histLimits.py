@@ -45,7 +45,8 @@ class HistLimitPanel(wx.Panel):
         self.threshMode = threshMode
 
         if self.threshMode:
-            thresh =  0.5*(self.limit_lower + self.limit_upper)
+            #thresh =  0.5*(self.limit_lower + self.limit_upper)
+            thresh =  0.5*(self.lower_pctile + self.upper_pctile)
             self.limit_lower = thresh
             self.limit_upper = thresh
 

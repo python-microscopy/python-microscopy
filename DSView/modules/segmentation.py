@@ -158,15 +158,22 @@ class segmenter:
         
     
     def OnSegmentAnneal(self, event):
-        newImages = [np.zeros(self.image.data.shape[:3]) for i in range(self.image.data.shape[3])]
+        newImages = [np.zeros(self.image.data.shape[:3], 'b') for i in range(self.image.data.shape[3])]
 
         im = ImageStack(newImages)
+        im.mdh.copyEntriesFrom(self.image.mdh)
+        im.mdh['Parent'] = self.image.filename
 
-        self.res = ViewIm3D(im, parent=self.dsviewer)
+        if self.dsviewer.mode == 'visGUI':
+            mode = 'visGUI'
+        else:
+            mode = 'lite'
+
+        self.res = ViewIm3D(im, parent=self.dsviewer, mode = mode, glCanvas = self.dsviewer.glCanvas)
 
         self.panAnneal = SegmentationPanel(self.res, self.image, newImages)
 
-        self.pinfo1 = aui.AuiPaneInfo().Name("annealPanel").Left().Caption('Segmentation').DestroyOnClose(True).CloseButton(False)#.MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
+        self.pinfo1 = aui.AuiPaneInfo().Name("annealPanel").Left().Caption('Segmentation').DestroyOnClose(True).CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
         self.res._mgr.AddPane(self.panAnneal, self.pinfo1)
         self.res._mgr.Update()
 
