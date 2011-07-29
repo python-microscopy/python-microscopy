@@ -71,7 +71,7 @@ def Plug(dsviewer):
 
 
     if dsviewer.image.data.shape[2] > 1:
-        dsviewer.AddPage(page=ArrayViewPanel(dsviewer, do=dsviewer.do, aspect = asp), select=False, caption='Slices')
+        dsviewer.AddPage(page=ArrayViewPanel(dsviewer, do=dsviewer.do), select=False, caption='Slices')
 
     elif dsviewer.image.data.shape[3] > 1:
         dsviewer.civp = ColourImageViewPanel(dsviewer, dsviewer.glCanvas, dsviewer.do, dsviewer.image)

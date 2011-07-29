@@ -28,7 +28,7 @@ def annealThresh(image, valP50, valPslope=1, neighP50=4, neighSlope=.25, mask=No
     else:
         neighbourMask = mask
 
-    print neighbourMask.shape
+    #print neighbourMask.shape
 
     #calculate probability that a pixel belongs to object based on it's intensity
     imP = (image/(2*valP50) - 0.5)*valPslope + 0.5
@@ -51,7 +51,7 @@ def annealThresh(image, valP50, valPslope=1, neighP50=4, neighSlope=.25, mask=No
     return obj, pObj
 
 
-def annealThresh2(image, valP50, valPslope=1, neighP50=4, neighSlope=.25, mask=None, nIters=10):
+def annealThresh2(image, valP50, valPslope=1, neighP50=.5, neighSlope=1, mask=None, nIters=10, out = None):
     '''segment an image based on both intensity and neighbourbood relationships'''
 
     #if no mask then use default
@@ -60,24 +60,35 @@ def annealThresh2(image, valP50, valPslope=1, neighP50=4, neighSlope=.25, mask=N
     else:
         neighbourMask = mask
 
-    print neighbourMask.shape
+    #print neighbourMask.shape
+
+    nNeighbours = neighbourMask.sum()
+
+    neighP50 *= nNeighbours
+    neighSlope += nNeighbours
 
     #calculate probability that a pixel belongs to object based on it's intensity
     imP = (image/(2*valP50) - 0.5)*valPslope + 0.5
 
+    if out == None:
+        out = np.zeros_like(image)
+
     #create initial object segmentation
-    obj = imP > 0.5
+
+    #print out.shape, imP.shape
+
+    out[:] = (imP > 0.5)[:]
 
     #now do the simulated annealing bit
     for i in range(nIters):
         #calculate probability of pixel given neighbours
-        pNeigh = (ndimage.convolve(obj.astype('f'), neighbourMask) - neighP50)*neighSlope
+        pNeigh = (ndimage.convolve(out.astype('f'), neighbourMask) - neighP50)*neighSlope
 
         #total probability is sum of neighbour and intensity based probabilities
         pObj = imP + pNeigh
 
         #create our new estimate of the object
-        obj =  pObj > .5
+        out[:] =  pObj > .5
 
 
-    return obj
+    return out
