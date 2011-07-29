@@ -16,10 +16,21 @@ import numpy as np
 
 from PYME.DSView import dataWrap
 
+try:
+    # location in Python 2.7 and 3.1
+    from weakref import WeakSet
+except ImportError:
+    # separately installed
+    from weakrefset import WeakSet
+
 def fast_grey(data):
     return data[:,:,None]*np.ones((1,1,4))
 
 fast_grey.name = 'fastGrey'
+
+class MyWeakSet(WeakSet):
+    def append(self, item):
+        self.add(item)
      
 
 class DisplayOpts(object):
@@ -30,7 +41,7 @@ class DisplayOpts(object):
     SELECTION_RECTANGLE, SELECTION_LINE = range(2)
 
     def __init__(self, datasource, xp=0, yp=0, zp=0, aspect=1):
-        self.WantChangeNotification = []
+        self.WantChangeNotification = MyWeakSet() #[]
         
         self.Chans = []
         self.Gains = []

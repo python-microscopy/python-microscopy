@@ -133,7 +133,7 @@ class SegmentationPanel(wx.Panel):
             annealThresh.annealThresh2(np.atleast_3d(self.sourceImage.data[:,:,:,i].squeeze()), self._getI50(i),
                 self._getISlope(i), self._getN50(i), self._getNSlope(i), nIters=self._getNIters(), out = self.destImage[i])
 
-        self.parent.Refresh()
+        self.parent.do.Optimise()
         
 
     def Tick(self, dec):

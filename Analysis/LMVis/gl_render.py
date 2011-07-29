@@ -28,6 +28,13 @@ import numpy
 import statusLog
 import weakref
 
+try:
+    # location in Python 2.7 and 3.1
+    from weakref import WeakSet
+except ImportError:
+    # separately installed
+    from weakrefset import WeakSet
+
 name = 'ball_glut'
 
 class cmap_mult:
@@ -108,7 +115,7 @@ class LMGLCanvas(GLCanvas):
         self.selectionFinish = (0,0)
         self.selection = False
 
-        self.wantViewChangeNotification = weakref.WeakValueDictionary()
+        self.wantViewChangeNotification = WeakSet()
 
         #self.InitGL()
 
@@ -751,7 +758,7 @@ class LMGLCanvas(GLCanvas):
 
         self.Refresh()
 
-        for callback in self.wantViewChangeNotification.values():
+        for callback in self.wantViewChangeNotification:
             callback.Refresh()
         #if 'OnGLViewChanged' in dir(self.parent):
         #    self.parent.OnGLViewChanged()

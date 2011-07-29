@@ -41,7 +41,7 @@ class DSViewFrame(wx.Frame):
         self.updating = False
 
         if glCanvas:
-            self.glCanvas.wantViewChangeNotification[image.filename] = self
+            self.glCanvas.wantViewChangeNotification.add(self)
 
         self.pane0 = None
 
@@ -274,15 +274,31 @@ class DSViewFrame(wx.Frame):
             ans = dialog.ShowModal()
             if(ans == wx.ID_YES):
                 self.OnSave()
+                self.timer.Stop()
+                self._mgr.UnInit()
+                if self.glCanvas:
+                    self.glCanvas.wantViewChangeNotification.remove(self)
                 self.Destroy()
             elif (ans == wx.ID_NO):
+                self.timer.Stop()
+                self._mgr.UnInit()
+                if self.glCanvas:
+                    self.glCanvas.wantViewChangeNotification.remove(self)
                 self.Destroy()
             else: #wxID_CANCEL:   
-                if (not event.CanVeto()): 
+                if (not event.CanVeto()):
+                    self.timer.Stop()
+                    self._mgr.UnInit()
+                    if self.glCanvas:
+                        self.glCanvas.wantViewChangeNotification.remove(self)
                     self.Destroy()
                 else:
                     event.Veto()
         else:
+            self.timer.Stop()
+            self._mgr.UnInit()
+            if self.glCanvas:
+                self.glCanvas.wantViewChangeNotification.remove(self)
             self.Destroy()
 
     def dsRefresh(self):
