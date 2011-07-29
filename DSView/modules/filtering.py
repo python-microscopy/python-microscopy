@@ -51,7 +51,7 @@ class filterer:
             else:
                 mode = 'lite'
 
-            ViewIm3D(im, mode=mode)
+            ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas)
 
             #imfc = MultiChannelImageViewFrame(self.parent, self.parent.glCanvas, filt_ims, self.image.names, title='Filtered Image - %3.1fnm bins' % self.image.pixelSize)
 

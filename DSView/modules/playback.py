@@ -14,21 +14,25 @@ from PYME.Acquire.mytimer import mytimer
 import PYME.misc.autoFoldPanel as afp
 
 class PlayPanel(wx.Panel):
-    def __init__(self, parent, vp):
+    def __init__(self, parent, dsviewer):
         wx.Panel.__init__(self,parent, -1)
         dirname = os.path.dirname(__file__)
 
-        self.vp = vp
+        self.do = dsviewer.do
+        self.dsviewer = dsviewer
 
         self.bmStartSeek = wx.Bitmap(os.path.join(dirname, '../icons/media-skip-backward.png'))
         self.bmPlay = wx.Bitmap(os.path.join(dirname,'../icons/media-playback-start.png'))
         self.bmPause = wx.Bitmap(os.path.join(dirname,'../icons/media-playback-pause.png'))
 
         self.mode = 'HORIZ'
+        self.moving= False
 
         #timer for playback
         self.tPlay = mytimer()
         self.tPlay.WantNotification.append(self.OnFrame)
+
+        self.do.WantChangeNotification.append(self.update)
 
         self.genContents(self.mode)
 
@@ -97,15 +101,15 @@ class PlayPanel(wx.Panel):
             self.bPlay.SetBitmapLabel(self.bmPlay)
 
     def OnFrame(self):
-        self.vp.do.zp +=1
-        if self.vp.do.zp >= self.vp.do.ds.shape[2]:
-            self.vp.do.zp = 0
+        self.do.zp +=1
+        if self.do.zp >= self.do.ds.shape[2]:
+            self.do.zp = 0
 
-        self.vp.update()
+        #self.vp.update()
 
     def OnSeekStart(self, event):
-        self.vp.do.zp = 0
-        self.vp.update()
+        self.do.zp = 0
+        #self.vp.update()
 
     def OnPlaySpeedChanged(self, event):
         if self.tPlay.IsRunning():
@@ -113,38 +117,41 @@ class PlayPanel(wx.Panel):
             self.tPlay.Start(1000./self.slPlaySpeed.GetValue())
 
     def OnPlayPosChanged(self, event):
-        self.vp.do.zp = int((self.vp.do.ds.shape[2]-1)*self.slPlayPos.GetValue()/100.)
-        self.vp.update()
+        self.moving = True #hide refreshes that we generate ourselves
+        self.do.zp = int((self.do.ds.shape[2]-1)*self.slPlayPos.GetValue()/100.)
+        self.moving = False
+        #self.vp.update()
 
     def update(self):
         #print 'foo'
-        self.slPlayPos.SetValue((100*self.vp.do.zp)/max(1,self.vp.do.ds.shape[2]-1))
+        if not self.moving:
+            self.slPlayPos.SetValue((100*self.do.zp)/max(1,self.do.ds.shape[2]-1))
 
-        if not self.tPlay.IsRunning():
-            self.vp.optionspanel.RefreshHists()
+            if not self.tPlay.IsRunning():
+                self.dsviewer.optionspanel.RefreshHists()
 
 
 
 class player:
     def __init__(self, dsviewer):
         self.dsviewer = dsviewer
-        self.vp = dsviewer.vp
+        #self.vp = dsviewer.vp
 
         dsviewer.paneHooks.append(self.GenPlayPanel)
-        dsviewer.updateHooks.append(self.update)
+        #dsviewer.updateHooks.append(self.update)
         
     def GenPlayPanel(self, _pnl):
         item = afp.foldingPane(_pnl, -1, caption="Playback", pinned = True)
 
-        self.playPan = PlayPanel(item, self.vp)
+        self.playPan = PlayPanel(item, self.dsviewer)
 
         
 
         item.AddNewElement(self.playPan)
         _pnl.AddPane(item)
 
-    def update(self):
-        self.playPan.update()
+    #def update(self):
+    #    self.playPan.update()
 
     
 

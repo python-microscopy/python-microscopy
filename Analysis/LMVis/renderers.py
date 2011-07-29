@@ -12,8 +12,10 @@ from PYME.Analysis.LMVis.visHelpers import ImageBounds#, GeneratedImage
 from PYME.DSView.image import GeneratedImage
 from PYME.Analysis.LMVis import genImageDialog
 from PYME.Analysis.LMVis import visHelpers
-from PYME.Analysis.LMVis import imageView
+#from PYME.Analysis.LMVis import imageView
 from PYME.Analysis.LMVis import statusLog
+
+from PYME.DSView import ViewIm3D
 
 from PYME.Analysis.QuadTree import QTrend
 
@@ -94,10 +96,11 @@ class CurrentRenderer:
 
             im = self.genIm(dlg, imb)
             img = GeneratedImage(im,imb, pixelSize, 0, ['Image'] )
+            imf = ViewIm3D(img, mode='visGUI', title='Generated %s - %3.1fnm bins' % (self.name, pixelSize), glCanvas=self.visFr.glCanvas, parent=self.visFr)
             #imf = imageView.ImageViewFrame(self.visFr,img, self.visFr.glCanvas)
-            imageView.MultiChannelImageViewFrame(self.visFr, self.visFr.glCanvas, img, title='Generated %s - %3.1fnm bins' % (self.name, pixelSize))
-            self.visFr.generatedImages.append(imf)
-            imf.Show()
+            #imageView.MultiChannelImageViewFrame(self.visFr, self.visFr.glCanvas, img, title='Generated %s - %3.1fnm bins' % (self.name, pixelSize))
+            #self.visFr.generatedImages.append(imf)
+            #imf.Show()
 
             self.visFr.RefreshView()
 
@@ -153,10 +156,12 @@ class ColourRenderer(CurrentRenderer):
 
             im = GeneratedImage(ims,imb, pixelSize,  dlg.getZSliceThickness(), colours)
 
-            imfc = imageView.MultiChannelImageViewFrame(self.visFr, self.visFr.glCanvas, im, title='Generated %s - %3.1fnm bins' % (self.name, pixelSize))
+            imfc = ViewIm3D(im, mode='visGUI', title='Generated %s - %3.1fnm bins' % (self.name, pixelSize), glCanvas=self.visFr.glCanvas, parent=self.visFr)
 
-            self.visFr.generatedImages.append(imfc)
-            imfc.Show()
+            #imfc = imageView.MultiChannelImageViewFrame(self.visFr, self.visFr.glCanvas, im, title='Generated %s - %3.1fnm bins' % (self.name, pixelSize))
+
+            #self.visFr.generatedImages.append(imfc)
+            #imfc.Show()
 
             self.visFr.colourFilter.setColour(oldC)
         else:

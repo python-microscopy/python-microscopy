@@ -10,24 +10,24 @@
 #
 ##################
 
-import math
+#import math
 import numpy
 import os
-import sys
+#import sys
 import wx
 import wx.lib.agw.aui as aui
-import histLimits
+#import histLimits
 import pylab
 import scipy.misc
-import subprocess
+#import subprocess
 
-from PYME.Analysis import thresholding
+#from PYME.Analysis import thresholding
 
 #from PYME.DSView.myviewpanel_numarray import MyViewPanel
-from PYME.DSView.arrayViewPanel import ArrayViewPanel
+#from PYME.DSView.arrayViewPanel import ArrayViewPanel
 from PYME.DSView.displayOptions import DisplayOpts
 from PYME.DSView.DisplayOptionsPanel import OptionsPanel
-from PYME.DSView.image import ImageStack
+#from PYME.DSView.image import ImageStack
 
 #from PYME.misc.auiFloatBook import AuiNotebookWithFloatingPages
 
@@ -52,7 +52,8 @@ class ImageViewPanel(wx.Panel):
         wx.EVT_MOTION(self, self.OnMotion)
 
         self.selecting=False
-    
+
+        self.do.WantChangeNotification.append(self.Refresh)
 
 
     def DoPaint(self, dc):
@@ -195,7 +196,7 @@ class ImageViewPanel(wx.Panel):
 
     def _ScreenToPixelCoordinates(self, x, y):
         xp, yp = self._ScreenToAbsCoordinates(x, y)
-        return xp/self.image.pixelSize, yp/self.image.pixelSize
+        return (xp - self.image.imgBounds.x0)/self.image.pixelSize , (yp- self.image.imgBounds.y0)/self.image.pixelSize
 
     def _AbsToScreenCoordinates(self, x, y):
         xp = (x -self.centreX)/self.glCanvas.pixelsize + self.Size[0]/2
@@ -204,7 +205,7 @@ class ImageViewPanel(wx.Panel):
         return xp, yp
 
     def _PixelToScreenCoordinates(self, x, y):
-        return self._AbsToScreenCoordinates(x*self.image.pixelSize, y*self.image.pixelSize)
+        return self._AbsToScreenCoordinates(x*self.image.pixelSize + self.image.imgBounds.x0, y*self.image.pixelSize + self.image.imgBounds.y0)
 
     def OnWheel(self, event):
         rot = event.GetWheelRotation()
@@ -281,21 +282,7 @@ class ImageViewPanel(wx.Panel):
 
 class ColourImageViewPanel(ImageViewPanel):
     def __init__(self, parent, glCanvas, do, image, zdim=2):
-        wx.Panel.__init__(self, parent, -1, size=parent.Size)
-
-        #self.ivps = []
-        #self.clims = []
-        #self.cmaps = []
-        self.do = do
-        self.image = image
-        self.zdim = zdim
-
-        self.glCanvas = glCanvas
-
-        wx.EVT_PAINT(self, self.OnPaint)
-        wx.EVT_SIZE(self, self.OnSize)
-        wx.EVT_MOUSEWHEEL(self, self.OnWheel)
-        wx.EVT_KEY_DOWN(self, self.OnKeyPress)
+        ImageViewPanel.__init__(self, parent, image, glCanvas, do, chan=0, zdim=zdim)
 
     def DoPaint(self, dc):
         pixelsize = self.glCanvas.pixelsize
@@ -404,286 +391,292 @@ class ColourImageViewPanel(ImageViewPanel):
         
         
 #from PYME.Acquire.MetaDataHandler import NestedClassMDHandler
-from PYME.DSView import modules as dsvmods
+#from PYME.DSView import modules as dsvmods
+#from PYME.DSView import ViewIm3D
 
-class MultiChannelImageViewFrame(wx.Frame):
-    def __init__(self, parent, glCanvas, image, title='Generated Image',zp=0, zdim=2):
-        wx.Frame.__init__(self, parent, -1, title=title, size=(800,800))
+#def MultiChannelImageViewFrame(parent, glCanvas, image, title='Generated Image',zp=0, zdim=2):
+#    return ViewIm3D(image, mode='visGUI', title=title, glCanvas=glCanvas, parent=parent)
 
-        self.glCanvas = glCanvas
-        self.parent = parent
-        self.frame = self
-
-        self.image = image
-
-#        self.image = ImageStack([numpy.atleast_3d(im.img) for im in images])
-#        self.image.pixelSize = images[0].pixelSize
-#        self.image.sliceSize = images[0].sliceSize
+#class MultiChannelImageViewFrame(wx.Frame):
+#    def __init__(self, parent, glCanvas, image, title='Generated Image',zp=0, zdim=2):
+#        wx.Frame.__init__(self, parent, -1, title=title, size=(800,800))
 #
-#        self.image.imgBounds = images[0].imgBounds
+#        self.glCanvas = glCanvas
+#        self.parent = parent
+#        self.frame = self
 #
-#        #self.images = images
-#        self.image.names = [n or 'Image' for n in names]
-        
-        #md = NestedClassMDHandler()
-#        self.image.mdh.setEntry('voxelsize.x', .001*images[0].pixelSize)
-#        self.image.mdh.setEntry('voxelsize.y', .001*images[0].pixelSize)
-#        self.image.mdh.setEntry('voxelsize.z', .001*images[0].sliceSize)
+#        self.image = image
 #
-#        self.image.mdh.setEntry('ChannelNames', self.image.names)
-
-        #self.image = ImageStack([numpy.atleast_3d(im.img) for im in images], md)
-
-        self.paneHooks = []
-        self.updateHooks = []
-        self.statusHooks = []
-        self.installedModules = []
-
-        #self.notebook = AuiNotebookWithFloatingPages(id=-1, parent=self, style=wx.aui.AUI_NB_TAB_SPLIT)
-        self._mgr = aui.AuiManager(agwFlags = aui.AUI_MGR_DEFAULT | aui.AUI_MGR_AUTONB_NO_CAPTION)
-        atabstyle = self._mgr.GetAutoNotebookStyle()
-        self._mgr.SetAutoNotebookStyle((atabstyle ^ aui.AUI_NB_BOTTOM) | aui.AUI_NB_TOP)
-        # tell AuiManager to manage this frame
-        self._mgr.SetManagedWindow(self)
-
-        self.ivps = []
-        self.pane0 = None
-
-        asp = self.image.sliceSize/self.image.pixelSize
-        if asp == 0:
-            asp = 1
-        #ims = self.images[0].img.shape
-
-        #if len(ims) == 2:
-        #    ims = list(ims) + [1]
-
-        self.do = DisplayOpts(self.image.data, asp)
-        self.do.Optimise()
-        self.do.zp = zp
-        self.do.names = self.image.names
-
-#        cmaps = [pylab.cm.r, pylab.cm.g, pylab.cm.b]
+#        self.glCanvas.wantViewChangeNotification[self.image.filename] = self
 #
-#        for name, i in zip(self.image.names, xrange(self.image.data.shape[3])):
-#            self.ivps.append(ImageViewPanel(self, self.image, glCanvas, self.do, chan=i, zdim=zdim))
-#            if self.image.data.shape[3] > 1 and len(cmaps) > 0:
-#                self.do.cmaps[i] = cmaps.pop(0)
+##        self.image = ImageStack([numpy.atleast_3d(im.img) for im in images])
+##        self.image.pixelSize = images[0].pixelSize
+##        self.image.sliceSize = images[0].sliceSize
+##
+##        self.image.imgBounds = images[0].imgBounds
+##
+##        #self.images = images
+##        self.image.names = [n or 'Image' for n in names]
 #
-#            self.AddPage(page=self.ivps[-1], select=True, caption=name)
+#        #md = NestedClassMDHandler()
+##        self.image.mdh.setEntry('voxelsize.x', .001*images[0].pixelSize)
+##        self.image.mdh.setEntry('voxelsize.y', .001*images[0].pixelSize)
+##        self.image.mdh.setEntry('voxelsize.z', .001*images[0].sliceSize)
+##
+##        self.image.mdh.setEntry('ChannelNames', self.image.names)
+#
+#        #self.image = ImageStack([numpy.atleast_3d(im.img) for im in images], md)
+#
+#        self.paneHooks = []
+#        self.updateHooks = []
+#        self.statusHooks = []
+#        self.installedModules = []
+#
+#        #self.notebook = AuiNotebookWithFloatingPages(id=-1, parent=self, style=wx.aui.AUI_NB_TAB_SPLIT)
+#        self._mgr = aui.AuiManager(agwFlags = aui.AUI_MGR_DEFAULT | aui.AUI_MGR_AUTONB_NO_CAPTION)
+#        atabstyle = self._mgr.GetAutoNotebookStyle()
+#        self._mgr.SetAutoNotebookStyle((atabstyle ^ aui.AUI_NB_BOTTOM) | aui.AUI_NB_TOP)
+#        # tell AuiManager to manage this frame
+#        self._mgr.SetManagedWindow(self)
+#
+#        self.ivps = []
+#        self.pane0 = None
+#
+#        asp = self.image.sliceSize/self.image.pixelSize
+#        if asp == 0:
+#            asp = 1
+#        #ims = self.images[0].img.shape
+#
+#        #if len(ims) == 2:
+#        #    ims = list(ims) + [1]
+#
+#        self.do = DisplayOpts(self.image.data, asp)
+#        self.do.Optimise()
+#        self.do.zp = zp
+#        self.do.names = self.image.names
+#
+##        cmaps = [pylab.cm.r, pylab.cm.g, pylab.cm.b]
+##
+##        for name, i in zip(self.image.names, xrange(self.image.data.shape[3])):
+##            self.ivps.append(ImageViewPanel(self, self.image, glCanvas, self.do, chan=i, zdim=zdim))
+##            if self.image.data.shape[3] > 1 and len(cmaps) > 0:
+##                self.do.cmaps[i] = cmaps.pop(0)
+##
+##            self.AddPage(page=self.ivps[-1], select=True, caption=name)
+##
+##
+##        if self.image.data.shape[2] > 1:
+##            self.AddPage(page=ArrayViewPanel(self, do=self.do, aspect = asp), select=False, caption='Slices')
+##
+##        elif self.image.data.shape[3] > 1:
+##            self.civp = ColourImageViewPanel(self, glCanvas, self.do, self.image, zdim=zdim)
+##            self.civp.ivps = self.ivps
+##            self.AddPage(page=self.civp, select=True, caption='Composite')
 #
 #
-#        if self.image.data.shape[2] > 1:
-#            self.AddPage(page=ArrayViewPanel(self, do=self.do, aspect = asp), select=False, caption='Slices')
 #
-#        elif self.image.data.shape[3] > 1:
-#            self.civp = ColourImageViewPanel(self, glCanvas, self.do, self.image, zdim=zdim)
-#            self.civp.ivps = self.ivps
-#            self.AddPage(page=self.civp, select=True, caption='Composite')
-
-        
-
-        self.menubar = self.CreateMenuBar()
-        self.SetMenuBar(self.menubar)
-
-        self.limitsFrame = None
-
-        self.optionspanel = OptionsPanel(self, self.do, thresholdControls=True)
-        self.optionspanel.SetSize(self.optionspanel.GetBestSize())
-        pinfo = aui.AuiPaneInfo().Name("optionsPanel").Right().Caption('Display Settings').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
-        self._mgr.AddPane(self.optionspanel, pinfo)
-
-        self._mgr.AddPane(self.optionspanel.CreateToolBar(self), aui.AuiPaneInfo().Name("ViewTools").Caption("View Tools").CloseButton(False).
-                      ToolbarPane().Right().GripperTop())
-
-        if self.do.ds.shape[2] > 1:
-            from PYME.DSView.modules import playback
-            self.playbackpanel = playback.PlayPanel(self, self)
-            self.playbackpanel.SetSize(self.playbackpanel.GetBestSize())
-
-            pinfo1 = aui.AuiPaneInfo().Name("playbackPanel").Bottom().Caption('Playback').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
-            self._mgr.AddPane(self.playbackpanel, pinfo1)
-            self.do.WantChangeNotification.append(self.playbackpanel.update)
-
-        self.mode = 'visGUI'
-        dsvmods.loadMode('visGUI', self)
-        self.CreateModuleMenu()
-
-        self._mgr.Update()
-        self._mgr.MinimizePane(pinfo)
-
-        wx.EVT_CLOSE(self, self.OnClose)
-        self.do.WantChangeNotification.append(self.Refresh)
-
-    def CreateModuleMenu(self):
-        self.modMenuIds = {}
-        self.mModules = wx.Menu()
-        for mn in dsvmods.allmodules:
-            id = wx.NewId()
-            self.mModules.AppendCheckItem(id, mn)
-            self.modMenuIds[id] = mn
-            if mn in self.installedModules:
-                self.mModules.Check(id, True)
-
-            wx.EVT_MENU(self, id, self.OnToggleModule)
-
-        self.menubar.Append(self.mModules, "&Modules")
-
-    def OnToggleModule(self, event):
-        id = event.GetId()
-        mn = self.modMenuIds[id]
-        if self.mModules.IsChecked(id):
-            dsvmods.loadModule(mn, self)
-
-        if mn in self.installedModules:
-            self.mModules.Check(id, True)
-
-        #self.CreateFoldPanel()
-        self._mgr.Update()
-
-
-
-    def AddPage(self, page=None, select=True,caption='Dummy'):
-        if self.pane0 == None:
-            name = caption.replace(' ', '')
-            self._mgr.AddPane(page, aui.AuiPaneInfo().
-                          Name(name).Caption(caption).CaptionVisible(False).Centre().CloseButton(False))
-            self.pane0 = name
-
-        else:
-            self._mgr.Update()
-            pn = self._mgr.GetPaneByName(self.pane0)
-            if pn.IsNotebookPage():
-                print pn.notebook_id
-                nbs = self._mgr.GetNotebooks()
-                if len(nbs) > pn.notebook_id:
-                    currPage = nbs[pn.notebook_id].GetSelection()
-                self._mgr.AddPane(page, aui.AuiPaneInfo().
-                              Name(caption.replace(' ', '')).Caption(caption).CloseButton(False).NotebookPage(pn.notebook_id))
-                if (not select) and len(nbs) > pn.notebook_id:
-                    nbs[pn.notebook_id].SetSelection(currPage)
-            else:
-                self._mgr.AddPane(page, aui.AuiPaneInfo().
-                              Name(caption.replace(' ', '')).Caption(caption).CloseButton(False), target=pn)
-                #nb = self._mgr.GetNotebooks()[0]
-                #if not select:
-                #    nb.SetSelection(0)
-
-        self._mgr.Update()
-
-    def update(self):
-        #if 'playbackpanel' in dir(self):
-        #        self.playbackpanel.update()
-        self.Refresh()
-
-    def GetSelectedPage(self):
-        nbs = self._mgr.GetNotebooks()
-        currPage = nbs[0].GetCurrentPage()
-
-        return currPage
-
-
-    def CreateMenuBar(self):
-
-        # Make a menubar
-        file_menu = wx.Menu()
-
-        #ID_SAVE = wx.NewId()
-        #ID_CLOSE = wx.NewId()
-        ID_EXPORT = wx.NewId()
-        #ID_SAVEALL = wx.NewId()
-
-        #ID_VIEW_CONSOLE = wx.NewId()
-        ID_VIEW_BACKGROUND = wx.NewId()
-        ID_FILTER_GAUSS = wx.NewId()
-        
-        #self.ID_VIEW_CMAP_INVERT = wx.NewId()
-
-        file_menu.Append(wx.ID_SAVE, "&Save")
-        #file_menu.Append(ID_SAVEALL, "Save &Multi-channel")
-        file_menu.Append(ID_EXPORT, "E&xport Current View")
-
-        file_menu.AppendSeparator()
-
-        file_menu.Append(wx.ID_CLOSE, "&Close")
-
-        view_menu = wx.Menu()
-        #view_menu.Append(ID_VIEW_CONSOLE, "&Console")
-        view_menu.Append(ID_VIEW_BACKGROUND, "Set as visualisation &background")
-
-        self.mProcessing = wx.Menu()
-        #self.mProcessing.Append(ID_FILTER_GAUSS, "&Gaussian Filter")
-
-        menu_bar = wx.MenuBar()
-
-        menu_bar.Append(file_menu, "&File")
-        menu_bar.Append(view_menu, "&View")
-        menu_bar.Append(self.mProcessing, "&Processing")
-        #menu_bar.Append(td_menu, "&3D")
-
-        self.Bind(wx.EVT_MENU, self.OnSave, id=wx.ID_SAVE)
-        #self.Bind(wx.EVT_MENU, self.OnSaveChannels, id=ID_SAVEALL)
-        self.Bind(wx.EVT_MENU, self.OnClose, id=wx.ID_CLOSE)
-        self.Bind(wx.EVT_MENU, self.OnExport, id=ID_EXPORT)
-        #self.Bind(wx.EVT_MENU, self.OnViewCLim, id=ID_VIEW_COLOURLIM)
-        #self.Bind(wx.EVT_MENU, self.OnViewConsole, id=ID_VIEW_CONSOLE)
-        self.Bind(wx.EVT_MENU, self.OnViewBackground, id=ID_VIEW_BACKGROUND)
-        #self.Bind(wx.EVT_MENU, self.OnGaussianFilter, id=ID_FILTER_GAUSS)
-
-        return menu_bar
-
-
-    def OnSave(self, event):
-        self.image.Save()
-        self.SetTitle(self.image.filename)
-
-    def OnViewBackground(self, event):
-        ivp = self.GetSelectedPage() #self.notebook.GetPage(self.notebook.GetSelection())
-
-        if 'image' in dir(ivp): #is a single channel
-            img = numpy.minimum(255.*(ivp.image.img - ivp.clim[0])/(ivp.clim[1] - ivp.clim[0]), 255).astype('uint8')
-            self.glCanvas.setBackgroundImage(img, (ivp.image.imgBounds.x0, ivp.image.imgBounds.y0), pixelSize=ivp.image.pixelSize)
-
-        self.glCanvas.Refresh()
-
- 
-    def OnClose(self, event):
-        if self in self.parent.generatedImages:
-            self.parent.generatedImages.remove(self)
-        self.Destroy()
-
-    def OnExport(self, event):
-        ivp = self.notebook.GetPage(self.notebook.GetSelection())
-        fname = wx.FileSelector('Save Current View', default_extension='.tif', wildcard="Supported Image Files (*.tif, *.bmp, *.gif, *.jpg, *.png)|*.tif, *.bmp, *.gif, *.jpg, *.png", flags = wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
-
-        if not fname == "":
-            ext = os.path.splitext(fname)[-1]
-            if ext == '.tif':
-                ivp.curIm.SaveFile(fname, wx.BITMAP_TYPE_TIF)
-            elif ext == '.png':
-                ivp.curIm.SaveFile(fname, wx.BITMAP_TYPE_PNG)
-            elif ext == '.jpg':
-                ivp.curIm.SaveFile(fname, wx.BITMAP_TYPE_JPG)
-            elif ext == '.gif':
-                ivp.curIm.SaveFile(fname, wx.BITMAP_TYPE_GIF)
-            elif ext == '.bmp':
-                ivp.curIm.SaveFile(fname, wx.BITMAP_TYPE_BMP)
-
-
-#    def OnGaussianFilter(self, event):
-#        from scipy.ndimage import gaussian_filter
-#        from PYME.Analysis.LMVis.visHelpers import ImageBounds, GeneratedImage
+#        self.menubar = self.CreateMenuBar()
+#        self.SetMenuBar(self.menubar)
 #
-#        dlg = wx.TextEntryDialog(self, 'Blur size [pixels]:', 'Gaussian Blur', '[1,1,1]')
+#        self.limitsFrame = None
 #
-#        if dlg.ShowModal() == wx.ID_OK:
-#            sigmas = eval(dlg.GetValue())
-#            #print sigmas
-#            #print self.images[0].img.shape
-#            filt_ims = [GeneratedImage(gaussian_filter(self.image.data[:,:,:,chanNum].squeeze(), sigmas), self.image.imgBounds, self.image.pixelSize, self.image.sliceSize) for chanNum in range(self.image.data.shape[3])]
+#        self.optionspanel = OptionsPanel(self, self.do, thresholdControls=True)
+#        self.optionspanel.SetSize(self.optionspanel.GetBestSize())
+#        pinfo = aui.AuiPaneInfo().Name("optionsPanel").Right().Caption('Display Settings').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
+#        self._mgr.AddPane(self.optionspanel, pinfo)
 #
-#            imfc = MultiChannelImageViewFrame(self.parent, self.parent.glCanvas, filt_ims, self.image.names, title='Filtered Image - %3.1fnm bins' % self.image.pixelSize)
+#        self._mgr.AddPane(self.optionspanel.CreateToolBar(self), aui.AuiPaneInfo().Name("ViewTools").Caption("View Tools").CloseButton(False).
+#                      ToolbarPane().Right().GripperTop())
 #
-#            self.parent.generatedImages.append(imfc)
-#            imfc.Show()
+#        if self.do.ds.shape[2] > 1:
+#            from PYME.DSView.modules import playback
+#            self.playbackpanel = playback.PlayPanel(self, self)
+#            self.playbackpanel.SetSize(self.playbackpanel.GetBestSize())
 #
-#        dlg.Destroy()
+#            pinfo1 = aui.AuiPaneInfo().Name("playbackPanel").Bottom().Caption('Playback').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
+#            self._mgr.AddPane(self.playbackpanel, pinfo1)
+#            self.do.WantChangeNotification.append(self.playbackpanel.update)
+#
+#        self.mode = 'visGUI'
+#        dsvmods.loadMode('visGUI', self)
+#        self.CreateModuleMenu()
+#
+#        self._mgr.Update()
+#        self._mgr.MinimizePane(pinfo)
+#
+#        wx.EVT_CLOSE(self, self.OnClose)
+#        self.do.WantChangeNotification.append(self.Refresh)
+#
+#    def CreateModuleMenu(self):
+#        self.modMenuIds = {}
+#        self.mModules = wx.Menu()
+#        for mn in dsvmods.allmodules:
+#            id = wx.NewId()
+#            self.mModules.AppendCheckItem(id, mn)
+#            self.modMenuIds[id] = mn
+#            if mn in self.installedModules:
+#                self.mModules.Check(id, True)
+#
+#            wx.EVT_MENU(self, id, self.OnToggleModule)
+#
+#        self.menubar.Append(self.mModules, "&Modules")
+#
+#    def OnToggleModule(self, event):
+#        id = event.GetId()
+#        mn = self.modMenuIds[id]
+#        if self.mModules.IsChecked(id):
+#            dsvmods.loadModule(mn, self)
+#
+#        if mn in self.installedModules:
+#            self.mModules.Check(id, True)
+#
+#        #self.CreateFoldPanel()
+#        self._mgr.Update()
+#
+#
+#
+#    def AddPage(self, page=None, select=True,caption='Dummy'):
+#        if self.pane0 == None:
+#            name = caption.replace(' ', '')
+#            self._mgr.AddPane(page, aui.AuiPaneInfo().
+#                          Name(name).Caption(caption).CaptionVisible(False).Centre().CloseButton(False))
+#            self.pane0 = name
+#
+#        else:
+#            self._mgr.Update()
+#            pn = self._mgr.GetPaneByName(self.pane0)
+#            if pn.IsNotebookPage():
+#                print pn.notebook_id
+#                nbs = self._mgr.GetNotebooks()
+#                if len(nbs) > pn.notebook_id:
+#                    currPage = nbs[pn.notebook_id].GetSelection()
+#                self._mgr.AddPane(page, aui.AuiPaneInfo().
+#                              Name(caption.replace(' ', '')).Caption(caption).CloseButton(False).NotebookPage(pn.notebook_id))
+#                if (not select) and len(nbs) > pn.notebook_id:
+#                    nbs[pn.notebook_id].SetSelection(currPage)
+#            else:
+#                self._mgr.AddPane(page, aui.AuiPaneInfo().
+#                              Name(caption.replace(' ', '')).Caption(caption).CloseButton(False), target=pn)
+#                #nb = self._mgr.GetNotebooks()[0]
+#                #if not select:
+#                #    nb.SetSelection(0)
+#
+#        self._mgr.Update()
+#
+#    def update(self):
+#        #if 'playbackpanel' in dir(self):
+#        #        self.playbackpanel.update()
+#        self.Refresh()
+#
+#    def GetSelectedPage(self):
+#        nbs = self._mgr.GetNotebooks()
+#        currPage = nbs[0].GetCurrentPage()
+#
+#        return currPage
+#
+#
+#    def CreateMenuBar(self):
+#
+#        # Make a menubar
+#        file_menu = wx.Menu()
+#
+#        #ID_SAVE = wx.NewId()
+#        #ID_CLOSE = wx.NewId()
+#        ID_EXPORT = wx.NewId()
+#        #ID_SAVEALL = wx.NewId()
+#
+#        #ID_VIEW_CONSOLE = wx.NewId()
+#        ID_VIEW_BACKGROUND = wx.NewId()
+#        ID_FILTER_GAUSS = wx.NewId()
+#
+#        #self.ID_VIEW_CMAP_INVERT = wx.NewId()
+#
+#        file_menu.Append(wx.ID_SAVE, "&Save")
+#        #file_menu.Append(ID_SAVEALL, "Save &Multi-channel")
+#        file_menu.Append(ID_EXPORT, "E&xport Current View")
+#
+#        file_menu.AppendSeparator()
+#
+#        file_menu.Append(wx.ID_CLOSE, "&Close")
+#
+#        view_menu = wx.Menu()
+#        #view_menu.Append(ID_VIEW_CONSOLE, "&Console")
+#        view_menu.Append(ID_VIEW_BACKGROUND, "Set as visualisation &background")
+#
+#        self.mProcessing = wx.Menu()
+#        #self.mProcessing.Append(ID_FILTER_GAUSS, "&Gaussian Filter")
+#
+#        menu_bar = wx.MenuBar()
+#
+#        menu_bar.Append(file_menu, "&File")
+#        menu_bar.Append(view_menu, "&View")
+#        menu_bar.Append(self.mProcessing, "&Processing")
+#        #menu_bar.Append(td_menu, "&3D")
+#
+#        self.Bind(wx.EVT_MENU, self.OnSave, id=wx.ID_SAVE)
+#        #self.Bind(wx.EVT_MENU, self.OnSaveChannels, id=ID_SAVEALL)
+#        self.Bind(wx.EVT_MENU, self.OnClose, id=wx.ID_CLOSE)
+#        self.Bind(wx.EVT_MENU, self.OnExport, id=ID_EXPORT)
+#        #self.Bind(wx.EVT_MENU, self.OnViewCLim, id=ID_VIEW_COLOURLIM)
+#        #self.Bind(wx.EVT_MENU, self.OnViewConsole, id=ID_VIEW_CONSOLE)
+#        self.Bind(wx.EVT_MENU, self.OnViewBackground, id=ID_VIEW_BACKGROUND)
+#        #self.Bind(wx.EVT_MENU, self.OnGaussianFilter, id=ID_FILTER_GAUSS)
+#
+#        return menu_bar
+#
+#
+#    def OnSave(self, event):
+#        self.image.Save()
+#        self.SetTitle(self.image.filename)
+#
+#    def OnViewBackground(self, event):
+#        ivp = self.GetSelectedPage() #self.notebook.GetPage(self.notebook.GetSelection())
+#
+#        if 'image' in dir(ivp): #is a single channel
+#            img = numpy.minimum(255.*(ivp.image.img - ivp.clim[0])/(ivp.clim[1] - ivp.clim[0]), 255).astype('uint8')
+#            self.glCanvas.setBackgroundImage(img, (ivp.image.imgBounds.x0, ivp.image.imgBounds.y0), pixelSize=ivp.image.pixelSize)
+#
+#        self.glCanvas.Refresh()
+#
+#
+#    def OnClose(self, event):
+#        #if self in self.parent.generatedImages:
+#        #    self.parent.generatedImages.remove(self)
+#        self.Destroy()
+#
+#    def OnExport(self, event):
+#        ivp = self.notebook.GetPage(self.notebook.GetSelection())
+#        fname = wx.FileSelector('Save Current View', default_extension='.tif', wildcard="Supported Image Files (*.tif, *.bmp, *.gif, *.jpg, *.png)|*.tif, *.bmp, *.gif, *.jpg, *.png", flags = wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+#
+#        if not fname == "":
+#            ext = os.path.splitext(fname)[-1]
+#            if ext == '.tif':
+#                ivp.curIm.SaveFile(fname, wx.BITMAP_TYPE_TIF)
+#            elif ext == '.png':
+#                ivp.curIm.SaveFile(fname, wx.BITMAP_TYPE_PNG)
+#            elif ext == '.jpg':
+#                ivp.curIm.SaveFile(fname, wx.BITMAP_TYPE_JPG)
+#            elif ext == '.gif':
+#                ivp.curIm.SaveFile(fname, wx.BITMAP_TYPE_GIF)
+#            elif ext == '.bmp':
+#                ivp.curIm.SaveFile(fname, wx.BITMAP_TYPE_BMP)
+#
+#
+##    def OnGaussianFilter(self, event):
+##        from scipy.ndimage import gaussian_filter
+##        from PYME.Analysis.LMVis.visHelpers import ImageBounds, GeneratedImage
+##
+##        dlg = wx.TextEntryDialog(self, 'Blur size [pixels]:', 'Gaussian Blur', '[1,1,1]')
+##
+##        if dlg.ShowModal() == wx.ID_OK:
+##            sigmas = eval(dlg.GetValue())
+##            #print sigmas
+##            #print self.images[0].img.shape
+##            filt_ims = [GeneratedImage(gaussian_filter(self.image.data[:,:,:,chanNum].squeeze(), sigmas), self.image.imgBounds, self.image.pixelSize, self.image.sliceSize) for chanNum in range(self.image.data.shape[3])]
+##
+##            imfc = MultiChannelImageViewFrame(self.parent, self.parent.glCanvas, filt_ims, self.image.names, title='Filtered Image - %3.1fnm bins' % self.image.pixelSize)
+##
+##            self.parent.generatedImages.append(imfc)
+##            imfc.Show()
+##
+##        dlg.Destroy()

@@ -694,11 +694,11 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                 self.do.selection_end_y = int(pos[0]/sc)
                 self.do.selection_end_z = int(pos[1]/(sc*self.aspect))
 
-        if ('update' in dir(self.GetParent())):
-             self.GetParent().update()
+        #if ('update' in dir(self.GetParent())):
+        #     self.GetParent().update()
         #self.update()
-        else:
-            self.imagepanel.Refresh()
+        #else:
+        self.Refresh()
 
     def EndSelection(self):
         self.selecting = False

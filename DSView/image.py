@@ -101,7 +101,7 @@ class ImageStack(object):
         try:
             return self.mdh['ChannelNames']
         except:
-            return ['Chan %d' for d in range(self.data.dhape[3])]
+            return ['Chan %d'% d for d in range(self.data.shape[3])]
 
     @names.setter
     def names(self, value):

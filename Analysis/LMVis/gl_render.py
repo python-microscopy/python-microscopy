@@ -26,6 +26,7 @@ import numpy
 #import numpy
 
 import statusLog
+import weakref
 
 name = 'ball_glut'
 
@@ -106,6 +107,8 @@ class LMGLCanvas(GLCanvas):
         self.selectionStart = (0,0)
         self.selectionFinish = (0,0)
         self.selection = False
+
+        self.wantViewChangeNotification = weakref.WeakValueDictionary()
 
         #self.InitGL()
 
@@ -747,10 +750,13 @@ class LMGLCanvas(GLCanvas):
         self.pixelsize = (xmax - xmin)*1./self.Size[0]
 
         self.Refresh()
-        if 'OnGLViewChanged' in dir(self.parent):
-            self.parent.OnGLViewChanged()
-        elif 'OnGLViewChanged' in dir(self.parent.GetParent()):
-            self.parent.GetParent().OnGLViewChanged()
+
+        for callback in self.wantViewChangeNotification.values():
+            callback.Refresh()
+        #if 'OnGLViewChanged' in dir(self.parent):
+        #    self.parent.OnGLViewChanged()
+        #elif 'OnGLViewChanged' in dir(self.parent.GetParent()):
+        #    self.parent.GetParent().OnGLViewChanged()
 
     def pan(self, dx, dy):
         self.setView(self.xmin + dx, self.xmax + dx, self.ymin + dy, self.ymax + dy)

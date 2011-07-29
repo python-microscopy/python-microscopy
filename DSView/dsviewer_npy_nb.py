@@ -28,16 +28,20 @@ from PYME.Analysis import piecewiseMapping
 
 
 class DSViewFrame(wx.Frame):
-    def __init__(self, image,  parent=None, title='', mode='LM', size = (800,800)):
+    def __init__(self, image,  parent=None, title='', mode='LM', size = (800,800), glCanvas=None):
         wx.Frame.__init__(self,parent, -1, title,size=size, pos=(1100, 300))
 
         self.mode = mode
+        self.glCanvas = glCanvas
         self.paneHooks = []
         self.updateHooks = []
         self.statusHooks = []
         self.installedModules = []
 
         self.updating = False
+
+        if glCanvas:
+            self.glCanvas.wantViewChangeNotification[image.filename] = self
 
         self.pane0 = None
 
@@ -84,8 +88,12 @@ class DSViewFrame(wx.Frame):
         self.save_menu = wx.Menu()
         tmp_menu.AppendMenu(-1, 'Save &Results', self.save_menu)
         
+        tmp_menu.AppendSeparator()
         tmp_menu.Append(wx.ID_CLOSE, "Close", "", wx.ITEM_NORMAL)
         self.menubar.Append(tmp_menu, "File")
+
+        self.view_menu = wx.Menu()
+        self.menubar.Append(self.view_menu, "&View")
 
         #'extras' menu for modules to install stuff into
         self.mProcessing = wx.Menu()
@@ -128,6 +136,7 @@ class DSViewFrame(wx.Frame):
 
         #self.mWindows =  wx.Menu()
         #self.menubar.append(self.mWindows, '&Composite With')
+        self.do.WantChangeNotification.append(self.update)
 
         self.CreateFoldPanel()
         self._mgr.Update()
@@ -194,6 +203,14 @@ class DSViewFrame(wx.Frame):
         self.CreateFoldPanel()
         self._mgr.Update()
 
+    def GetSelectedPage(self):
+        nbs = self._mgr.GetNotebooks()
+        currPage = nbs[0].GetCurrentPage()
+
+        return currPage
+
+    
+
 
 
     def CreateFoldPanel(self):
@@ -222,16 +239,16 @@ class DSViewFrame(wx.Frame):
     def update(self):
         if not self.updating:
             self.updating = True
-            if 'view' in dir(self):
-                self.view.Refresh()
+            #if 'view' in dir(self):
+            #    self.view.Refresh()
             statusText = 'Slice No: (%d/%d)    x: %d    y: %d' % (self.do.zp, self.do.ds.shape[2], self.do.xp, self.do.yp)
             #grab status from modules which supply it
             for sCallback in self.statusHooks:
                 statusText += '\t' + sCallback() #'Frames Analysed: %d    Events detected: %d' % (self.vp.do.zp, self.vp.do.ds.shape[2], self.vp.do.xp, self.vp.do.yp, self.LMAnalyser.numAnalysed, self.LMAnalyser.numEvents)
             self.statusbar.SetStatusText(statusText)
 
-            if 'playbackpanel' in dir(self):
-                self.playbackpanel.update()
+            #if 'playbackpanel' in dir(self):
+            #    self.playbackpanel.update()
 
             #update any modules which require it
             for uCallback in self.updateHooks:
@@ -322,15 +339,15 @@ if __name__ == "__main__":
     main()
 
 
-def View3D(data, titleStub='Untitled Image', mdh = None, mode='lite', parent=None):
+def View3D(data, titleStub='Untitled Image', mdh = None, mode='lite', parent=None, glCanvas=None):
     im = ImageStack(data = data, mdh = mdh, titleStub=titleStub)
-    dvf = DSViewFrame(im, mode=mode, size=(500, 500), parent=parent)
+    dvf = DSViewFrame(im, mode=mode, size=(500, 500), parent=parent, glCanvas=glCanvas)
     dvf.SetSize((500,500))
     dvf.Show()
     return dvf
 
-def ViewIm3D(image, title='', mode='lite', parent=None):
-    dvf = DSViewFrame(image, title=title, mode=mode, size=(500, 500), parent=parent)
+def ViewIm3D(image, title='', mode='lite', parent=None, glCanvas=None):
+    dvf = DSViewFrame(image, title=title, mode=mode, size=(500, 500), parent=parent, glCanvas=glCanvas)
     dvf.SetSize((500,500))
     dvf.Show()
     return dvf

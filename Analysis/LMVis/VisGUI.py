@@ -233,9 +233,13 @@ class VisGUIFrame(wx.Frame):
         #self.Refresh()
 
     def OnIdle(self, event):
-        if not self.refv:
+        if self.glCanvas.init and not self.refv:
             self.refv = True
+            print self.viewMode, self.colData
+            
             self.RefreshView()
+            #self.RefreshView()
+            self.displayPane.OnPercentileCLim(None)
             self.Refresh()
             print 'refreshed'
 
@@ -756,14 +760,14 @@ class VisGUIFrame(wx.Frame):
         #self.glCanvas.cmap = pylab.cm.hsv
         self.RefreshView()
         self.CreateFoldPanel()
-        self.dispPanel.OnPercentileCLim(None)
+        self.displayPane.OnPercentileCLim(None)
 
     def OnViewTracks(self,event):
         self.viewMode = 'tracks'
         #self.glCanvas.cmap = pylab.cm.hsv
         self.RefreshView()
         self.CreateFoldPanel()
-        self.dispPanel.OnPercentileCLim(None)
+        self.displayPane.OnPercentileCLim(None)
 
     def OnViewBlobs(self,event):
         self.viewMode = 'blobs'
@@ -775,25 +779,25 @@ class VisGUIFrame(wx.Frame):
         self.viewMode = 'triangles'
         self.RefreshView()
         self.CreateFoldPanel()
-        self.dispPanel.OnPercentileCLim(None)
+        self.displayPane.OnPercentileCLim(None)
 
     def OnViewQuads(self,event):
         self.viewMode = 'quads'
         self.RefreshView()
         self.CreateFoldPanel()
-        self.dispPanel.OnPercentileCLim(None)
+        self.displayPane.OnPercentileCLim(None)
 
     def OnViewVoronoi(self,event):
         self.viewMode = 'voronoi'
         self.RefreshView()
         self.CreateFoldPanel()
-        self.dispPanel.OnPercentileCLim(None)
+        self.displayPane.OnPercentileCLim(None)
 
     def OnViewInterpTriangles(self,event):
         self.viewMode = 'interp_triangles'
         self.RefreshView()
         self.CreateFoldPanel()
-        self.dispPanel.OnPercentileCLim(None)
+        self.displayPane.OnPercentileCLim(None)
 
     def OnView3DPoints(self,event):
         if 'z' in self.colourFilter.keys():
@@ -1446,9 +1450,9 @@ class VisGUIFrame(wx.Frame):
         else:
             self.glCanvas.setView(xbounds[0], xbounds[0] + ysc*self.glCanvas.Size[0], ybounds[0], ybounds[1])
 
-    def OnGLViewChanged(self):
-        for genI in self.generatedImages:
-            genI.Refresh()
+    #def OnGLViewChanged(self):
+    #    for genI in self.generatedImages:
+    #        genI.Refresh()
 
     def SetStatus(self, statusText):
         self.statusbar.SetStatusText(statusText, 0)
