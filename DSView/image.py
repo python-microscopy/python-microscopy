@@ -377,7 +377,7 @@ def GeneratedImage(img, imgBounds, pixelSize, sliceSize, channelNames):
     image.pixelSize = pixelSize
     image.sliceSize = sliceSize
     image.imgBounds = imgBounds
-    image.names = channelNames
+    image.names = [c if c else 'Image' for c in channelNames]
 
     return image
 

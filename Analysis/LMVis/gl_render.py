@@ -859,7 +859,8 @@ class LMGLCanvas(GLCanvas):
 
             for i in numpy.arange(0,1, .01):
                 #glColor3fv(i*sc - zp)
-                glColor3fv(self.cmap((i*mx - self.clim[0])/(self.clim[1] - self.clim[0]))[:3])
+                #glColor3fv(self.cmap((i*mx - self.clim[0])/(self.clim[1] - self.clim[0]))[:3])
+                glColor3fv(self.cmap(i)[:3])
                 glVertex2f(lb_ul_x, lb_lr_y + i*lb_len)
                 glVertex2f(lb_ur_x, lb_lr_y + i*lb_len)
 

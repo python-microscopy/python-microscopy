@@ -26,6 +26,8 @@ from PYME.DSView.image import ImageStack
 from PYME.Acquire.mytimer import mytimer
 from PYME.Analysis import piecewiseMapping
 
+import weakref
+
 
 class DSViewFrame(wx.Frame):
     def __init__(self, image,  parent=None, title='', mode='LM', size = (800,800), glCanvas=None):
@@ -73,7 +75,7 @@ class DSViewFrame(wx.Frame):
 
         
 
-        self.mainFrame = self
+        self.mainFrame = weakref.ref(self)
         #self.do = self.vp.do
         
         # Menu Bar
@@ -274,32 +276,26 @@ class DSViewFrame(wx.Frame):
             ans = dialog.ShowModal()
             if(ans == wx.ID_YES):
                 self.OnSave()
-                self.timer.Stop()
-                self._mgr.UnInit()
-                if self.glCanvas:
-                    self.glCanvas.wantViewChangeNotification.remove(self)
-                self.Destroy()
+                self._cleanup()
             elif (ans == wx.ID_NO):
-                self.timer.Stop()
-                self._mgr.UnInit()
-                if self.glCanvas:
-                    self.glCanvas.wantViewChangeNotification.remove(self)
-                self.Destroy()
+                self._cleanup()
             else: #wxID_CANCEL:   
                 if (not event.CanVeto()):
-                    self.timer.Stop()
-                    self._mgr.UnInit()
-                    if self.glCanvas:
-                        self.glCanvas.wantViewChangeNotification.remove(self)
-                    self.Destroy()
+                    self._cleanup()
                 else:
                     event.Veto()
         else:
-            self.timer.Stop()
-            self._mgr.UnInit()
-            if self.glCanvas:
-                self.glCanvas.wantViewChangeNotification.remove(self)
-            self.Destroy()
+            self._cleanup()
+
+    def _cleanup(self):
+        self.timer.Stop()
+        #for some reason AUI doesn't clean itself up properly and stops the
+        #window from being garbage collected - fix this here
+        self._mgr.UnInit()
+        self._mgr._frame = None
+        #if self.glCanvas:
+        #    self.glCanvas.wantViewChangeNotification.remove(self)
+        self.Destroy()
 
     def dsRefresh(self):
         #zp = self.vp.do.zp #save z -position

@@ -41,7 +41,7 @@ class DisplayOpts(object):
     SELECTION_RECTANGLE, SELECTION_LINE = range(2)
 
     def __init__(self, datasource, xp=0, yp=0, zp=0, aspect=1):
-        self.WantChangeNotification = MyWeakSet() #[]
+        self.WantChangeNotification = []# MyWeakSet() #[]
         
         self.Chans = []
         self.Gains = []
