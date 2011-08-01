@@ -48,9 +48,9 @@ def saveTiffMultipage(arr, fn, **params):
     if arr.dtype == 'uint16':
         nptype = 'uint16'
         piltype = 'I;16'
-    elif arr.dtype == 'uint8':
-        nptype = 'uint8'
-        piltype = 'I;8'
+    #elif arr.dtype == 'uint8':
+    #    nptype = 'uint8'
+    #    piltype = 'I;8'
     else:
         nptype = 'f'
         piltype = 'F'

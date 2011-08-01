@@ -127,7 +127,7 @@ class TiffStackExporter(Exporter):
                 saveTiffStack.saveTiffMultipage(d, outFile)
             else: #save each channel as it's own stack
                 if not metadata == None and 'ChannelNames' in metadata.getEntryNames():
-                    chanNames = metadata.getEntry['ChannelNames']    
+                    chanNames = metadata['ChannelNames']    
 
                 else:
                     chanNames = range(data.shape[3])
