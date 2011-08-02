@@ -470,7 +470,7 @@ if multiProc:
         tasks = (n/nCPUs)*numpy.ones(nCPUs, 'i')
         tasks[:(n%nCPUs)] += 1
 
-        processes = [multiprocessing.Process(target = rendJTet, args=(im, x, y,z, jsig, jsigz, mcp, nIt)) for nIt in tasks]
+        processes = [multiprocessing.Process(target = rendJTet, args=(im, y, x,z, jsig, jsigz, mcp, nIt)) for nIt in tasks]
 
         for p in processes:
             p.start()
