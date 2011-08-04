@@ -176,7 +176,7 @@ class deconvolver:
     def OnDeconTimer(self, caller=None):
         if 'res' in dir(self):
             self.res.update()
-            self.res.vp.do.Optimise()
+            self.res.do.Optimise()
         if self.decT.isAlive():
             if not self.dlgDeconProg.Tick(self.dec):
                 self.decT.kill()
