@@ -57,7 +57,7 @@ class DataSource:
         #ima = np.array(im.getdata()).newbyteorder(self.endedness)
         #return ima.reshape((self.im.size[1], self.im.size[0]))
         #return self.data[:,:,ind]
-        return self.im[ind].asarray()
+        return self.im[ind].asarray(True, False)
 
     def getSliceShape(self):
         #return (self.im.size[1], self.im.size[0])
