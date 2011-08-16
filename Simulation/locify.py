@@ -38,7 +38,9 @@ def locify(im, pixelSize=1, pointsPerPixel=0.1):
     p = im[x.round().astype('i'), y.round().astype('i')]
 
     #use monte-carlo to accept points with the given probability
-    mcInd = rand(len(x)) < p
+    mcInd = rand(len(x)) < p.ravel()
+
+    #print x.shape, mcInd.shape, p.shape, rand(len(x)).shape
 
     #take subset of positions and scale to pixel size
     x = pixelSize*x[mcInd]
@@ -53,10 +55,15 @@ def testPattern():
     
 fresultdtype=[('tIndex', '<i4'),('fitResults', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4')]),('fitError', [('A', '<f4'),('x0', '<f4'),('y0', '<f4')])]
 
-def FitResultR(x,y,I,t):
+def FitResultR(x,y,I,t, b2):
 	r_I = np.sqrt(I)
+        
+        s2 = 110**2
+        a2 = 70**2
+        
+        err_x = np.sqrt((s2 + a2/12)/I + 8*np.pi*s2**2*b2/(a2*I**2))
 
-        return np.array([(t, np.array([I, x, y], 'f'), np.array([r_I, 250/r_I, 250/r_I], 'f'))], dtype=fresultdtype)
+        return np.array([(t, np.array([I/(2*np.pi), x, y, 110.], 'f'), np.array([r_I/(2*np.pi), err_x, err_x], 'f'))], dtype=fresultdtype)
 
 def eventify(x,y,meanIntensity, meanDuration, backGroundIntensity, meanEventNumber, sf = 2, tm=2000):
     Is = np.random.exponential(meanIntensity, x.shape)
@@ -71,7 +78,7 @@ def eventify(x,y,meanIntensity, meanDuration, backGroundIntensity, meanEventNumb
             t = np.random.exponential(tm)
 
             #evts += [(x_i, y_i, I_i, t+k) for k in range(duration)] + [(x_i, y_i, I_i*(duration%1), t+floor(duration))]
-            evts += [FitResultR(x_i, y_i, I_i, t+k) for k in range(duration)] + [FitResultR(x_i, y_i, I_i*(duration%1), t+np.floor(duration))]
+            evts += [FitResultR(x_i, y_i, I_i, t+k, backGroundIntensity) for k in range(duration)] + [FitResultR(x_i, y_i, I_i*(duration%1), t+np.floor(duration), backGroundIntensity)]
 
     evts = np.vstack(evts)
     
@@ -79,7 +86,7 @@ def eventify(x,y,meanIntensity, meanDuration, backGroundIntensity, meanEventNumb
 
     In = evts['fitResults']['A']
 
-    detect = np.exp(-In**2/(2*sf**2*backGroundIntensity)) < np.random.uniform(size=In.shape)
+    detect = np.exp(-(In)**2/(2*sf**2*backGroundIntensity)) < np.random.uniform(size=In.shape)
 
     #xn = xn[detect]
     #yn = yn[detect]

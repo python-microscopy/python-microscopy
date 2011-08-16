@@ -120,7 +120,8 @@ def fitOnTimesChan(colourFilter, metadata, channame='', i=0):
 
     #print (1./(sqrt(n) + 1))
 
-    res = FitModelWeighted(ei2mod, [n[0], .2], n[1:], 1./(sqrt(n[1:]) + 1), bins[2:]*cycTime, cycTime)
+    #res = FitModelWeighted(ei2mod, [n[0], .2], n[1:], 1./(sqrt(n[1:]) + 1), bins[2:]*cycTime, cycTime)
+    res = FitModelWeighted(eimod, [n[0], .2], n[1:], 1./(sqrt(n[1:]) + 1), bins[2:]*cycTime)
 
     #print res[0]
 
@@ -128,7 +129,8 @@ def fitOnTimesChan(colourFilter, metadata, channame='', i=0):
 
     
 
-    plot(linspace(1, 20, 50)*cycTime, ei2mod(res[0], linspace(1, 20, 50)*cycTime, cycTime), colours[i], lw=3)
+    #plot(linspace(1, 20, 50)*cycTime, ei2mod(res[0], linspace(1, 20, 50)*cycTime, cycTime), colours[i], lw=3)
+    plot(linspace(1, 20, 50)*cycTime, eimod(res[0], linspace(1, 20, 50)*cycTime), colours[i], lw=3)
     ylabel('Events')
     xlabel('Event Duration [s]')
     ylim((1, ylim()[1]))
