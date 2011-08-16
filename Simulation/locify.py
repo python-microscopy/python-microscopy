@@ -78,7 +78,7 @@ def eventify(x,y,meanIntensity, meanDuration, backGroundIntensity, meanEventNumb
             t = np.random.exponential(tm)
 
             #evts += [(x_i, y_i, I_i, t+k) for k in range(duration)] + [(x_i, y_i, I_i*(duration%1), t+floor(duration))]
-            evts += [FitResultR(x_i, y_i, I_i, t+k, backGroundIntensity) for k in range(duration)] + [FitResultR(x_i, y_i, I_i*(duration%1), t+np.floor(duration), backGroundIntensity)]
+            evts += [FitResultR(x_i, y_i, I_i, t+k, backGroundIntensity) for k in range(int(np.floor(duration)))] + [FitResultR(x_i, y_i, I_i*(duration%1), t+np.floor(duration), backGroundIntensity)]
 
     evts = np.vstack(evts)
     
