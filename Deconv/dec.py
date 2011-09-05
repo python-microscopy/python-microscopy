@@ -335,7 +335,11 @@ class dec_conv(dec):
 
         g_ = fftw3f.create_aligned_array(data_size, 'float32')
         g_[:] = 0
-        g_[pw2[0]:-pw1[0], pw2[1]:-pw1[1], pw2[2]:-pw1[2]] = g
+        #print g.shape, g_.shape, g_[pw2[0]:-pw1[0], pw2[1]:-pw1[1], pw2[2]:-pw1[2]].shape
+        if pw1[2] == 0:
+            g_[pw2[0]:-pw1[0], pw2[1]:-pw1[1], pw2[2]:] = g
+        else:
+            g_[pw2[0]:-pw1[0], pw2[1]:-pw1[1], pw2[2]:-pw1[2]] = g
         g = g_
 
 
