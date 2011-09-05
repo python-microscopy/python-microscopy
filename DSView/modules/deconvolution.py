@@ -110,6 +110,8 @@ class deconvolver:
 
                 psf = psf[:,:,numpy.floor(dz/2):(psf.shape[2]-numpy.ceil(dz/2))]
 
+            print data.shape, psf.shape
+
             if dlg.GetBlocking():
                 decMDH['Deconvolution.Method'] = 'Blocked ICTM'
                 self.checkTQ()
