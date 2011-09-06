@@ -110,6 +110,28 @@ class deconvolver:
 
                 psf = psf[:,:,numpy.floor(dz/2):(psf.shape[2]-numpy.ceil(dz/2))]
 
+            print data.shape, psf.shape
+
+            if dlg.GetPadding():
+                padsize = numpy.array(dlg.GetPadSize())
+                decMDH['Deconvolution.Padding'] = padsize
+                dp = numpy.ones(numpy.array(data.shape) + 2*padsize, 'f')*data.mean()
+                weights = numpy.zeros_like(dp)
+                px, py, pz = padsize
+
+                #print data.shape, dp[px:-(px+1), py:-(py+1), pz:-(pz+1)].shape
+                dp[px:-px, py:-py, pz:-pz] = data
+                #if dlg.GetRemovePadding():
+                #    data = dp[px:-px, py:-py, pz:-pz]#should be a slice
+                #else:
+                #    data = dp
+                weights[px:-px, py:-py, pz:-pz] = 1.
+
+                weights = weights.ravel()
+            else:
+                dp = data
+                weights = 1
+
             if dlg.GetBlocking():
                 decMDH['Deconvolution.Method'] = 'Blocked ICTM'
                 self.checkTQ()
@@ -132,17 +154,22 @@ class deconvolver:
                     else:
                         self.dec = richardsonLucy.dec_conv()
 
-                self.dec.psf_calc(psf, data.shape)
+                self.dec.psf_calc(psf, dp.shape)
 
-                self.decT = decThread.decThread(self.dec, data, regLambda, nIter)
+                self.decT = decThread.decThread(self.dec, dp, regLambda, nIter, weights)
                 self.decT.start()
 
                 tries = 0
                 while tries < 10 and not hasattr(self.dec, 'fs'):
                     time.sleep(1)
                     tries += 1
-                    
-                self.res = View3D(self.dec.fs, 'Deconvolution Result', mdh=decMDH, parent=self.dsviewer)
+
+                if dlg.GetPadding() and dlg.GetRemovePadding():
+                    fs =  self.dec.fs[px:-px, py:-py, pz:-pz]
+                else:
+                    fs = self.dec.fs
+
+                self.res = View3D(fs, 'Deconvolution Result', mdh=decMDH, parent=self.dsviewer)
 
                 self.dlgDeconProg = DeconvProgressPanel(self.res, nIter)
 

@@ -44,7 +44,10 @@ class ListWrap:
         keys = list(keys)
         #print keys
 
-        kL = keys[self.listDim]
+        if len(keys) > self.listDim:
+            kL = keys[self.listDim]
+        else:
+            kL = 0 #default to taking the first channel
 
         return self.wrapList[kL].__getitem__(keys[:self.listDim])
 

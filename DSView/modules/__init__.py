@@ -8,7 +8,7 @@ allmodules = [os.path.splitext(os.path.split(p)[-1])[0] for p in glob.glob(__pat
 
 
 basemodules = ['shell', 'metadataView', 'eventView', 'deconvolution', 'tiling']
-liteModules = ['filtering', 'composite', 'profilePlotting']
+liteModules = ['filtering', 'cropping','composite', 'profilePlotting']
 
 modeModules = {
 'lite': ['arrayView'] + liteModules,
