@@ -746,7 +746,7 @@ class LMAnalyser:
                  plot([p.x for p in ft.ofdDr], [p.y for p in ft.ofdDr], 'o', mew=2, mec='b', mfc='none', ms=9)
             if ft.fitModule in remFitBuf.splitterFitModules:
                     plot([p.x for p in ft.ofd], [d.shape[0] - p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
-            #axis('tight')
+            axis('tight')
             xlim(0, d.shape[1])
             ylim(0, d.shape[0])
             xticks([])

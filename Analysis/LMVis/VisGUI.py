@@ -871,6 +871,8 @@ class VisGUIFrame(wx.Frame):
                     self.dataSources.append(self.selectedDataSource)
 
                     self.filesToClose.append(self.selectedDataSource.h5f)
+                    
+                    
 
                     if 'DriftResults' in self.selectedDataSource.h5f.root:
                         self.dataSources.append(inpFilt.h5rDSource(self.selectedDataSource.h5f))
@@ -887,23 +889,27 @@ class VisGUIFrame(wx.Frame):
                 #once we get around to storing the some metadata with the results
                 if 'MetaData' in self.selectedDataSource.h5f.root:
                     self.mdh = MetaDataHandler.HDFMDHandler(self.selectedDataSource.h5f)
+                    
+                    #if not 'y' in self.selectedDataSource.keys():
+                    #    print 'foo'
+                    #    self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource, y='t')
 
-                    if 'Camera.ROIWidth' in self.mdh.getEntryNames():
-                        x0 = 0
-                        y0 = 0
-
-                        x1 = self.mdh.getEntry('Camera.ROIWidth')*1e3*self.mdh.getEntry('voxelsize.x')
-                        y1 = self.mdh.getEntry('Camera.ROIHeight')*1e3*self.mdh.getEntry('voxelsize.y')
-
-                        if 'Splitter' in self.mdh.getEntry('Analysis.FitModule'):
-                            y1 = y1/2
-
-                        self.imageBounds = ImageBounds(x0, y0, x1, y1)
-                    else:
-                        self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
-
-                else:
-                    self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
+#                    if 'Camera.ROIWidth' in self.mdh.getEntryNames():
+#                        x0 = 0
+#                        y0 = 0
+#
+#                        x1 = self.mdh.getEntry('Camera.ROIWidth')*1e3*self.mdh.getEntry('voxelsize.x')
+#                        y1 = self.mdh.getEntry('Camera.ROIHeight')*1e3*self.mdh.getEntry('voxelsize.y')
+#
+#                        if 'Splitter' in self.mdh.getEntry('Analysis.FitModule'):
+#                            y1 = y1/2
+#
+#                        self.imageBounds = ImageBounds(x0, y0, x1, y1)
+#                    else:
+#                        self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
+#
+#                else:
+#                    self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
 
                 if not self.elv == None: #remove previous event viewer
                     i = 0
@@ -971,11 +977,32 @@ class VisGUIFrame(wx.Frame):
 
                     self.selectedDataSource.dsigd_dz = -30.
                     self.selectedDataSource.setMapping('fitResults_z0', 'dsigd_dz*sig_d')
+                elif not 'y' in self.selectedDataSource.keys():
+                    #    print 'foo'
+                    self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource, y='10*t')
+                    self.dataSources.append(self.selectedDataSource)
                 else:
                     self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource)
                     self.dataSources.append(self.selectedDataSource)
-    
-                    
+
+                if 'mdh' in dir(self):                    
+                    if 'Camera.ROIWidth' in self.mdh.getEntryNames():
+                        x0 = 0
+                        y0 = 0
+
+                        x1 = self.mdh.getEntry('Camera.ROIWidth')*1e3*self.mdh.getEntry('voxelsize.x')
+                        y1 = self.mdh.getEntry('Camera.ROIHeight')*1e3*self.mdh.getEntry('voxelsize.y')
+
+                        if 'Splitter' in self.mdh.getEntry('Analysis.FitModule'):
+                            y1 = y1/2
+
+                        self.imageBounds = ImageBounds(x0, y0, x1, y1)
+                    else:
+                        #print 'foo', self.selectedDataSource['x'].max()
+                        self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
+
+                else:
+                    self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)    
 
                 if ('Events' in self.selectedDataSource.resultsSource.h5f.root) and ('StartTime' in self.mdh.keys()):
                     self.events = self.selectedDataSource.resultsSource.h5f.root.Events[:]

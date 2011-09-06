@@ -71,15 +71,30 @@ class H5Exporter(Exporter):
         nframes = (zslice.stop - zslice.start)/zslice.step
 
         xSize, ySize = data[xslice, yslice, 0].shape[:2]
+        
+        print xSize, ySize
+        
+        #atm = tables.UInt16Atom()
+        atm = tables.Atom.from_dtype(data[xslice, yslice, 0].dtype)
 
-        ims = h5out.createEArray(h5out.root,'ImageData',tables.UInt16Atom(),(0,xSize,ySize), filters=filters, expectedrows=nframes)
+        ims = h5out.createEArray(h5out.root,'ImageData',atm,(0,xSize,ySize), filters=filters, expectedrows=nframes)
 
         for frameN in range(zslice.start,zslice.stop, zslice.step):
-            im = data[xslice, yslice, frameN].squeeze()[None, :,:]
+            im = data[xslice, yslice, frameN].squeeze()
+            
             for fN in range(frameN+1, frameN+zslice.step):
-                im += data[xslice, yslice, fN].squeeze()[None, :,:]
+                im += data[xslice, yslice, fN].squeeze()
+                
+            if im.ndim == 1:
+                im = im.reshape((-1, 1))[None, :,:]
+            else:
+                im = im[None, :,:]
+            
+            #print im.shape    
             ims.append(im)
-            ims.flush()
+            #ims.flush()
+            
+        ims.flush()
 
         outMDH = MetaDataHandler.HDFMDHandler(h5out)
 

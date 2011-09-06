@@ -62,6 +62,8 @@ class DSViewFrame(wx.Frame):
         self._mgr.SetManagedWindow(self)
 
         self.do = DisplayOpts(self.image.data)
+        if self.image.data.shape[1] == 1:
+            self.do.slice = self.do.SLICE_XZ
         self.do.Optimise()
 
         if self.image.mdh and 'ChannelNames' in self.image.mdh.getEntryNames():
