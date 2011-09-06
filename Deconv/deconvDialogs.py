@@ -91,6 +91,10 @@ class DeconvSettingsDialog(wx.Dialog):
         self.cbPadding = wx.CheckBox(pan1, -1, 'Pad data')
         sizer2.Add(self.cbPadding, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
+        self.cbRemovePadding = wx.CheckBox(pan1, -1, 'Remove padding on completion')
+        sizer2.Add(self.cbRemovePadding, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+        self.cbRemovePadding.SetValue(True)
+
         sizer3 = wx.BoxSizer(wx.HORIZONTAL)
         sizer3.Add(wx.StaticText(pan1, -1, 'Pad width:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
         self.tPadWidth = wx.TextCtrl(pan1, -1, '30,30,10')
@@ -140,6 +144,9 @@ class DeconvSettingsDialog(wx.Dialog):
 
     def GetPadding(self):
         return self.cbPadding.GetValue()
+
+    def GetRemovePadding(self):
+        return self.cbRemovePadding.GetValue()
 
     def GetPadSize(self):
         return [int(w) for w in self.tPadWidth.GetValue().split(',')]
