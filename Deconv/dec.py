@@ -81,7 +81,7 @@ class dec:
         return data.copy()
 
 
-    def deconv(self, data, lamb, num_iters=10, alpha = None, weights=1):
+    def deconv(self, data, lamb, num_iters=10, weights=1, alpha=None):
         '''This is what you actually call to do the deconvolution.
         parameters are:
 

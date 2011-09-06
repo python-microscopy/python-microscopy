@@ -45,7 +45,7 @@ class rldec:
         return 0*data + data.mean()
 
 
-    def deconv(self, data, lamb, num_iters=10, alpha = None):
+    def deconv(self, data, lamb, num_iters=10, weights = 1):
         '''This is what you actually call to do the deconvolution.
         parameters are:
 
@@ -68,6 +68,9 @@ class rldec:
         #make things 1 dimensional
         #self.f = self.f.ravel()
         data = data.ravel()
+        #weights = weights.ravel()
+
+        mask = 1 - weights
 
         self.loopcount=0
 
@@ -75,7 +78,7 @@ class rldec:
             self.loopcount += 1
 
             #the residuals
-            self.res = data/self.Afunc(self.f);
+            self.res = data/self.Afunc(self.f) +  mask;
 
             print 'Residual norm = %f' % norm(self.res)
 

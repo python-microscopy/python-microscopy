@@ -112,6 +112,22 @@ class deconvolver:
 
             print data.shape, psf.shape
 
+            if dlg.GetPadding():
+                padsize = numpy.array(dlg.GetPadSize())
+                decMDH['Deconvolution.Padding'] = padsize
+                dp = numpy.zeros(numpy.array(data.shape) + 2*padsize, 'f')
+                weights = numpy.zeros_like(dp)
+                px, py, pz = padsize
+
+                print data.shape, dp[px:-(px+1), py:-(py+1), pz:-(pz+1)].shape
+                dp[px:-px, py:-py, pz:-pz] = data
+                data = dp
+                weights[px:-px, py:-py, pz:-pz] = 1.
+
+                weights = weights.ravel()
+            else:
+                weights = 1
+
             if dlg.GetBlocking():
                 decMDH['Deconvolution.Method'] = 'Blocked ICTM'
                 self.checkTQ()
@@ -136,7 +152,7 @@ class deconvolver:
 
                 self.dec.psf_calc(psf, data.shape)
 
-                self.decT = decThread.decThread(self.dec, data, regLambda, nIter)
+                self.decT = decThread.decThread(self.dec, data, regLambda, nIter, weights)
                 self.decT.start()
 
                 tries = 0

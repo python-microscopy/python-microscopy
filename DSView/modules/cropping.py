@@ -23,7 +23,7 @@ class cropper:
         PROC_CROP = wx.NewId()
         
         
-        dsviewer.mProcessing.Append(PROC_CROP, "&Crop", "", wx.ITEM_NORMAL)
+        dsviewer.mProcessing.Append(PROC_CROP, "&Crop\tCtrl-Shift-D", "", wx.ITEM_NORMAL)
     
         wx.EVT_MENU(dsviewer, PROC_CROP, self.OnCrop)
 
@@ -65,7 +65,7 @@ class cropper:
             #self.parent.generatedImages.append(imfc)
             #imfc.Show()
 
-        dlg.Destroy()
+        #dlg.Destroy()
 
 
 
