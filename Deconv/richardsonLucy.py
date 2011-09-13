@@ -242,6 +242,7 @@ class dec_conv(rldec):
     '''Classical deconvolution with a stationary PSF'''
     def psf_calc(self, psf, data_size):
         '''Precalculate the OTF etc...'''
+        print psf.shape, data_size
         pw = (numpy.array(data_size) - psf.shape)/2.
         pw1 = numpy.floor(pw)
         pw2 = numpy.ceil(pw)
