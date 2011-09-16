@@ -13,6 +13,7 @@
 from numpy import *
 import delaunay
 import gen3DTriangs
+from PYME.Analysis import moments
 
 def getPrincipalAxis(obj_c, numIters=10):
     '''PCA via e.m. (ala wikipedia)'''
@@ -55,9 +56,9 @@ def measureAligned(object, measurements = {}):
 
     return measurements
 
-measureDType = [('xPos', 'f4'), ('yPos', 'f4'), ('NEvents', 'i4'), ('Area', 'f4'),
+measureDType = [('objID', 'i4'),('xPos', 'f4'), ('yPos', 'f4'), ('NEvents', 'i4'), ('Area', 'f4'),
     ('Perimeter', 'f4'), ('majorAxisAngle', 'f4'), ('stdMajor', 'f4'), ('stdMinor', 'f4'),
-    ('lengthMajor', 'f4'), ('lengthMinor', 'f4')]
+    ('lengthMajor', 'f4'), ('lengthMinor', 'f4'), ('moments', '25f4'), ('momentErrors', '25f4')]
 
 def measure(object, sizeCutoff, measurements = zeros(1, dtype=measureDType)):
     #measurements = {}
@@ -66,22 +67,30 @@ def measure(object, sizeCutoff, measurements = zeros(1, dtype=measureDType)):
     measurements['xPos'] = object[:,0].mean()
     measurements['yPos'] = object[:,1].mean()
 
-    T = delaunay.Triangulation(object.ravel(),2)
-    P, A, triI = gen3DTriangs.gen2DTriangsTF(T, sizeCutoff)
+    if object.shape[0] > 3:
+        T = delaunay.Triangulation(object.ravel(),2)
+        P, A, triI = gen3DTriangs.gen2DTriangsTF(T, sizeCutoff)
 
-    if not len(P) == 0:
-        measurements['Area'] = A.sum()/3
+        if not len(P) == 0:
+            measurements['Area'] = A.sum()/3
 
-        #print triI
+            #print triI
 
-        extEdges = gen3DTriangs.getExternalEdges(triI)
+            extEdges = gen3DTriangs.getExternalEdges(triI)
 
-        measurements['Perimeter'] = gen3DTriangs.getPerimeter(extEdges, T)
-    else:
-        measurements['Area'] = 0
-        measurements['Perimeter'] = 0
+            measurements['Perimeter'] = gen3DTriangs.getPerimeter(extEdges, T)
+        else:
+            measurements['Area'] = 0
+            measurements['Perimeter'] = 0
 
-    measureAligned(object, measurements)
+        ms, sm = moments.calcMCCenteredMoments(object[:,0], object[:,1])
+        #print ms.ravel()[3]
+        #print ms.shape, measurements['moments'].shape
+        measurements['moments'][:] = ms.ravel()
+        measurements['momentErrors'][:] = sm.ravel()
+
+    if object.shape[0] > 1:
+        measureAligned(object, measurements)
     #measurements.update(measureAligned(object))
     return measurements
 
@@ -91,6 +100,25 @@ def measureObjects(objects, sizeCutoff):
 
     for i, obj in enumerate(objects):
         measure(obj, sizeCutoff, measurements[i])
+
+    return measurements
+
+def measureObjectsByID(filter, sizeCutoff, ids):
+    x = filter['x'] #+ 0.1*random.randn(filter['x'].size)
+    y = filter['y'] #+ 0.1*random.randn(x.size)
+    id = filter['objectID'].astype('i')
+
+    #ids = set(ids)
+
+    measurements = zeros(len(ids), dtype=measureDType)
+
+    for j,i in enumerate(ids):
+        if not i == 0:
+            ind = id == i
+            obj = vstack([x[ind],y[ind]]).T
+            #print obj.shape
+            measure(obj, sizeCutoff, measurements[j])
+            measurements[j]['objID'] = i
 
     return measurements
 

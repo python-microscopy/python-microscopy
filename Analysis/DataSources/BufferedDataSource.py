@@ -11,6 +11,7 @@
 import numpy
 
 class DataSource: #buffer our io to avoid decompressing multiple times
+    moduleName = 'BufferedDataSource'
     def __init__(self,dataSource, bLen = 12):
         self.bLen = bLen
         self.buffer = None #delay creation until we know the dtype
