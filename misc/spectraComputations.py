@@ -35,7 +35,7 @@ class spectrum(object):
         if isinstance(other, spectrum):
             intp = interp1d(other.wavelengths, other.magnitude, bounds_error=False, fill_value=0)
 
-            print other.wavelengths.shape, other.magnitude.shape, self.wavelengths.shape
+            #print other.wavelengths.shape, other.magnitude.shape, self.wavelengths.shape
 
             dxs = self.wavelengths[1] - self.wavelengths[0]
             dxo = other.wavelengths[1] - other.wavelengths[0]
@@ -108,6 +108,9 @@ class spectrum(object):
 
     def sum(self):
         return self.magnitude.sum()
+
+    def norm(self):
+        return self/self.sum()
 
     def __len__(self):
         return 2
