@@ -1153,14 +1153,16 @@ class VisGUIFrame(wx.Frame):
         self.SetFit()
 
     def OnOpenRaw(self, event):
-        #print self.filename
-        tmp = os.path.split(self.filename)[0].split(os.sep)
-        #print tmp
-        tgtDir = os.sep.join(tmp[:-2] + tmp[-1:])
-        print tgtDir
-        filename = wx.FileSelector("Choose a file to open", tgtDir, default_extension='h5', wildcard='PYME Spool Files (*.h5)|*.h5|Khoros Data Format (*.kdf)|*.kdf|Tiff (*.tif)|*.tif')
-        if not filename == '':
-            self.OpenRaw(filename)
+        from PYME.DSView import ViewIm3D, ImageStack
+        ViewIm3D(ImageStack(), mode='visGUI', glCanvas=self.glCanvas)
+#        #print self.filename
+#        tmp = os.path.split(self.filename)[0].split(os.sep)
+#        #print tmp
+#        tgtDir = os.sep.join(tmp[:-2] + tmp[-1:])
+#        print tgtDir
+#        filename = wx.FileSelector("Choose a file to open", tgtDir, default_extension='h5', wildcard='PYME Spool Files (*.h5)|*.h5|Khoros Data Format (*.kdf)|*.kdf|Tiff (*.tif)|*.tif')
+#        if not filename == '':
+#            self.OpenRaw(filename)
 
     def OpenRaw(self, filename):
         ext = os.path.splitext(filename)[-1]

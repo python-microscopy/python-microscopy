@@ -28,6 +28,11 @@ def fast_grey(data):
 
 fast_grey.name = 'fastGrey'
 
+def labeled(data):
+    return (data > 0)[:,:,None]*cm.gist_rainbow(data % 1)
+
+labeled.name = 'labeled'
+
 class MyWeakSet(WeakSet):
     def append(self, item):
         self.add(item)

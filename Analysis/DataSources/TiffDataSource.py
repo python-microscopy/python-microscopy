@@ -49,6 +49,8 @@ class DataSource:
         #except EOFError:
         #    pass
 
+        print self.filename
+
         self.im = tifffile.TIFFfile(self.filename)
 
 
