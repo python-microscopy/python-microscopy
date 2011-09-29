@@ -38,7 +38,7 @@ def plotFilterMatrix(r, t, tp, rat, filterNames, ms = 20, dy=.4):
     draw()
 
 class plotFilterScatter(object):
-    def __init__(self, throughput, ratios, minThroughput, minRatioDist, d_i, t_i, r_i, dichroicNames, filterNames):
+    def __init__(self, throughput, ratios, minThroughput, minRatioDist, d_i, t_i, r_i, dichroicNames, filterNames, havelist = []):
         self.throughput = throughput
         self.ratios = ratios
         self.d_i = d_i
@@ -49,14 +49,36 @@ class plotFilterScatter(object):
 
         self.f = figure()
 
-        scatter(minThroughput, minRatioDist, c = rand(len(dichroicNames))[d_i], s = 10, linewidth=0, picker=50)
+        c = minThroughput*minRatioDist
+
+        #sizes = 15*ones_like(c)
+
+        dSizes = zeros(len(dichroicNames))
+        fSizes = zeros(len(filterNames))
+
+        for filt in havelist:
+            if filt in dichroicNames:
+                dSizes[dichroicNames.index(filt)] = 10
+            if filt in filterNames:
+                fSizes[filterNames.index(filt)] = 10
+
+        sizes = 15 + dSizes[d_i] + fSizes[t_i] + fSizes[r_i]
+
+
+        dcs = array(list(set(d_i)))
+
+        d_c = [c[d_i == d].min() for d in dcs]
+        dc = 100*ones(d_i.max() + 1)
+        dc[dcs] = array(d_c).argsort()
+
+        scatter(minThroughput, minRatioDist, c = dc[d_i]%10, s = 15, linewidth=0, picker=50)
         self.f.canvas.mpl_connect('pick_event', self.onpick)
 
-        self.t = self.f.text(.7, .85, '', bbox=dict(edgecolor='k', facecolor='w'))
+        self.t = self.f.text(.65, .85, '', bbox=dict(edgecolor='k', facecolor='w'))
 
 
     def onpick(self,event):
-        n = event.ind
+        n = event.ind[0]
         d, t, r = self.d_i[n], self.t_i[n], self.r_i[n]
         s = '%s, %s, %s' % (self.dichroicNames[d], self.filterNames[t], self.filterNames[r])
 

@@ -17,6 +17,7 @@ import re
 import zlib
 import pickle
 import json
+import os
 
 #teach sqlite about numpy arrays
 def adapt_numarray(array):
@@ -30,7 +31,7 @@ sqlite3.register_converter("ndarray", convert_numarray)
 
 #we are going to buffer our requests in a local database - to make it both faster and
 #to avoid loading the semrock server
-dbconn = sqlite3.connect('omegaFilters', detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+dbconn = sqlite3.connect(os.path.join(os.path.split(__file__)[0],'omegaFilters'), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 
 #see what tables we've got defined
 tableNames = [a[0] for a in dbconn.execute('SELECT name FROM sqlite_master WHERE type="table"').fetchall()]
