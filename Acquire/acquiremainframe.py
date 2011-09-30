@@ -691,7 +691,7 @@ class smiMainFrame(wx.Frame):
         self.scope.cam.SetCOC()
         self.scope.cam.GetStatus()
         self.scope.pa.Prepare()
-        self.scope.vp.SetDataStack(self.scope.pa.ds)
+        self.scope.vp.SetDataStack(self.scope.pa.dsa)
         
         #self.scope.vp.selection_begin_x = x1
         #self.scope.vp.selection_begin_y = y1
