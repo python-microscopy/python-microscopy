@@ -28,16 +28,18 @@ static PyObject * applyLUTuint16(PyObject *self, PyObject *args, PyObject *keywd
     unsigned char *out = 0;
     float gain = 0;
     float offset = 0;
+    //float d = 0;
 
     int tmp = 0;
 
     PyObject *odata =0;
+    PyObject *adata =0;
     PyObject *oLUT =0;
     PyObject *oout =0;
 
     int sizeX;
     int sizeY;
-    int N;
+    int N, N1;
     int i,j;
 
     static char *kwlist[] = {"data", "gain", "offest", "LUT", "output", NULL};
@@ -48,40 +50,48 @@ static PyObject * applyLUTuint16(PyObject *self, PyObject *args, PyObject *keywd
 
     /* Do the calculations */
 
+    adata = PyArray_GETCONTIGUOUS(odata);
 
-    if (!PyArray_Check(odata) || !PyArray_ISCONTIGUOUS(odata))
+
+    if (!PyArray_Check(adata)  || !PyArray_ISCONTIGUOUS(adata))
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array");
+        Py_DECREF(adata);
         return NULL;
     }
 
-    if (PyArray_NDIM(odata) != 2)
+    if (PyArray_NDIM(adata) != 2)
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a 2 dimensional array");
+        Py_DECREF(adata);
         return NULL;
     }
 
-    if (!PyArray_Check(odata) || !PyArray_ISCONTIGUOUS(odata))
+    if (!PyArray_Check(oLUT) || !PyArray_ISCONTIGUOUS(oLUT))
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array");
+        Py_DECREF(adata);
         return NULL;
     }
 
-    if (PyArray_NDIM(odata) != 2)
+    if (PyArray_NDIM(oLUT) != 2)
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a 2 dimensional array");
+        Py_DECREF(adata);
         return NULL;
     }
 
     if (!PyArray_Check(oout) || !PyArray_ISCONTIGUOUS(oout))
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array");
+        Py_DECREF(adata);
         return NULL;
     }
 
     if (PyArray_NDIM(oout) != 3)
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a 2 dimensional array");
+        Py_DECREF(adata);
         return NULL;
     }
 
@@ -94,15 +104,20 @@ static PyObject * applyLUTuint16(PyObject *self, PyObject *args, PyObject *keywd
     if ((PyArray_NDIM(oout) != 3) || (PyArray_DIM(oout, 0) != sizeX)|| (PyArray_DIM(oout, 1) != sizeY)|| (PyArray_DIM(oout, 2) != 3))
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a data.shape[0] x data.shape[1] x 3 array");
+        Py_DECREF(adata);
         return NULL;
     }
 
-    data = (unsigned short*) PyArray_DATA(odata);
+    data = (unsigned short*) PyArray_DATA(adata);
 
     LUTR = (unsigned char*) PyArray_DATA(oLUT);
     LUTG = LUTR + N;
     LUTB = LUTG + N;
     out = (unsigned char*) PyArray_DATA(oout);
+
+    N1 = N - 1;
+
+    gain = gain*(float)N1;
 
     //printf("%d\n", N);
 
@@ -113,9 +128,11 @@ static PyObject * applyLUTuint16(PyObject *self, PyObject *args, PyObject *keywd
     {
         for (j=0;j< sizeY;j++)
         {
-            tmp =  (int)(((float)(N-1))*gain*(((float) *data) - offset));
+            //d = (float)(*(unsigned short *)PyArray_GETPTR2(odata, i, j));
+            tmp =  (int)(gain*(((float) *data) - offset));
+            //tmp =  (int)(((float)(N-1))*gain*(d - offset));
             //printf("%d", tmp);
-            tmp = MIN(tmp, (N-1));
+            tmp = MIN(tmp, (N1));
             tmp = MAX(tmp, 0);
             *out += LUTR[tmp];
             out++;
@@ -128,6 +145,8 @@ static PyObject * applyLUTuint16(PyObject *self, PyObject *args, PyObject *keywd
     }
 
     Py_END_ALLOW_THREADS;
+
+    Py_DECREF(adata);
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -142,16 +161,18 @@ static PyObject * applyLUTuint8(PyObject *self, PyObject *args, PyObject *keywds
     unsigned char *out = 0;
     float gain = 0;
     float offset = 0;
+    //float d = 0;
 
     int tmp = 0;
 
     PyObject *odata =0;
+    PyObject *adata =0;
     PyObject *oLUT =0;
     PyObject *oout =0;
 
     int sizeX;
     int sizeY;
-    int N;
+    int N, N1;
     int i,j;
 
     static char *kwlist[] = {"data", "gain", "offest", "LUT", "output", NULL};
@@ -162,40 +183,48 @@ static PyObject * applyLUTuint8(PyObject *self, PyObject *args, PyObject *keywds
 
     /* Do the calculations */
 
+    adata = PyArray_GETCONTIGUOUS(odata);
 
-    if (!PyArray_Check(odata) || !PyArray_ISCONTIGUOUS(odata))
+
+    if (!PyArray_Check(adata)  || !PyArray_ISCONTIGUOUS(adata))
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array");
+        Py_DECREF(adata);
         return NULL;
     }
 
-    if (PyArray_NDIM(odata) != 2)
+    if (PyArray_NDIM(adata) != 2)
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a 2 dimensional array");
+        Py_DECREF(adata);
         return NULL;
     }
 
-    if (!PyArray_Check(odata) || !PyArray_ISCONTIGUOUS(odata))
+    if (!PyArray_Check(oLUT) || !PyArray_ISCONTIGUOUS(oLUT))
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array");
+        Py_DECREF(adata);
         return NULL;
     }
 
-    if (PyArray_NDIM(odata) != 2)
+    if (PyArray_NDIM(oLUT) != 2)
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a 2 dimensional array");
+        Py_DECREF(adata);
         return NULL;
     }
 
     if (!PyArray_Check(oout) || !PyArray_ISCONTIGUOUS(oout))
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array");
+        Py_DECREF(adata);
         return NULL;
     }
 
     if (PyArray_NDIM(oout) != 3)
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a 2 dimensional array");
+        Py_DECREF(adata);
         return NULL;
     }
 
@@ -208,15 +237,20 @@ static PyObject * applyLUTuint8(PyObject *self, PyObject *args, PyObject *keywds
     if ((PyArray_NDIM(oout) != 3) || (PyArray_DIM(oout, 0) != sizeX)|| (PyArray_DIM(oout, 1) != sizeY)|| (PyArray_DIM(oout, 2) != 3))
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a data.shape[0] x data.shape[1] x 3 array");
+        Py_DECREF(adata);
         return NULL;
     }
 
-    data = (unsigned char*) PyArray_DATA(odata);
+    data = (unsigned char*) PyArray_DATA(adata);
 
     LUTR = (unsigned char*) PyArray_DATA(oLUT);
     LUTG = LUTR + N;
     LUTB = LUTG + N;
     out = (unsigned char*) PyArray_DATA(oout);
+
+    N1 = N - 1;
+
+    gain = gain*(float)N1;
 
     //printf("%d\n", N);
 
@@ -227,9 +261,11 @@ static PyObject * applyLUTuint8(PyObject *self, PyObject *args, PyObject *keywds
     {
         for (j=0;j< sizeY;j++)
         {
-            tmp =  (int)(((float)(N-1))*gain*(((float) *data) - offset));
+            //d = (float)(*(unsigned short *)PyArray_GETPTR2(odata, i, j));
+            tmp =  (int)(gain*(((float) *data) - offset));
+            //tmp =  (int)(((float)(N-1))*gain*(d - offset));
             //printf("%d", tmp);
-            tmp = MIN(tmp, (N-1));
+            tmp = MIN(tmp, N1);
             tmp = MAX(tmp, 0);
             *out += LUTR[tmp];
             out++;
@@ -243,9 +279,12 @@ static PyObject * applyLUTuint8(PyObject *self, PyObject *args, PyObject *keywds
 
     Py_END_ALLOW_THREADS;
 
+    Py_DECREF(adata);
+
     Py_INCREF(Py_None);
     return Py_None;
 }
+
 
 static PyObject * applyLUTfloat(PyObject *self, PyObject *args, PyObject *keywds)
 {
@@ -256,16 +295,18 @@ static PyObject * applyLUTfloat(PyObject *self, PyObject *args, PyObject *keywds
     unsigned char *out = 0;
     float gain = 0;
     float offset = 0;
+    //float d = 0;
 
     int tmp = 0;
 
     PyObject *odata =0;
+    PyObject *adata =0;
     PyObject *oLUT =0;
     PyObject *oout =0;
 
     int sizeX;
     int sizeY;
-    int N;
+    int N, N1;
     int i,j;
 
     static char *kwlist[] = {"data", "gain", "offest", "LUT", "output", NULL};
@@ -276,40 +317,48 @@ static PyObject * applyLUTfloat(PyObject *self, PyObject *args, PyObject *keywds
 
     /* Do the calculations */
 
+    adata = PyArray_GETCONTIGUOUS(odata);
 
-    if (!PyArray_Check(odata) || !PyArray_ISCONTIGUOUS(odata))
+
+    if (!PyArray_Check(adata)  || !PyArray_ISCONTIGUOUS(adata))
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array");
+        Py_DECREF(adata);
         return NULL;
     }
 
-    if (PyArray_NDIM(odata) != 2)
+    if (PyArray_NDIM(adata) != 2)
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a 2 dimensional array");
+        Py_DECREF(adata);
         return NULL;
     }
 
-    if (!PyArray_Check(odata) || !PyArray_ISCONTIGUOUS(odata))
+    if (!PyArray_Check(oLUT) || !PyArray_ISCONTIGUOUS(oLUT))
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array");
+        Py_DECREF(adata);
         return NULL;
     }
 
-    if (PyArray_NDIM(odata) != 2)
+    if (PyArray_NDIM(oLUT) != 2)
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a 2 dimensional array");
+        Py_DECREF(adata);
         return NULL;
     }
 
     if (!PyArray_Check(oout) || !PyArray_ISCONTIGUOUS(oout))
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array");
+        Py_DECREF(adata);
         return NULL;
     }
 
     if (PyArray_NDIM(oout) != 3)
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a 2 dimensional array");
+        Py_DECREF(adata);
         return NULL;
     }
 
@@ -322,18 +371,22 @@ static PyObject * applyLUTfloat(PyObject *self, PyObject *args, PyObject *keywds
     if ((PyArray_NDIM(oout) != 3) || (PyArray_DIM(oout, 0) != sizeX)|| (PyArray_DIM(oout, 1) != sizeY)|| (PyArray_DIM(oout, 2) != 3))
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a data.shape[0] x data.shape[1] x 3 array");
+        Py_DECREF(adata);
         return NULL;
     }
 
-    data = (float*) PyArray_DATA(odata);
+    data = (float*) PyArray_DATA(adata);
 
     LUTR = (unsigned char*) PyArray_DATA(oLUT);
     LUTG = LUTR + N;
     LUTB = LUTG + N;
     out = (unsigned char*) PyArray_DATA(oout);
 
-    //printf("%d\n", N);
+    N1 = N - 1;
 
+    gain = gain*(float)N1;
+
+    //printf("%d\n", N);
 
     Py_BEGIN_ALLOW_THREADS;
 
@@ -341,9 +394,11 @@ static PyObject * applyLUTfloat(PyObject *self, PyObject *args, PyObject *keywds
     {
         for (j=0;j< sizeY;j++)
         {
-            tmp =  (int)(((float)(N-1))*gain*(((float) *data) - offset));
+            //d = (float)(*(unsigned short *)PyArray_GETPTR2(odata, i, j));
+            tmp =  (int)(gain*(((float) *data) - offset));
+            //tmp =  (int)(((float)(N-1))*gain*(d - offset));
             //printf("%d", tmp);
-            tmp = MIN(tmp, N-1);
+            tmp = MIN(tmp, N1);
             tmp = MAX(tmp, 0);
             *out += LUTR[tmp];
             out++;
@@ -357,9 +412,12 @@ static PyObject * applyLUTfloat(PyObject *self, PyObject *args, PyObject *keywds
 
     Py_END_ALLOW_THREADS;
 
+    Py_DECREF(adata);
+
     Py_INCREF(Py_None);
     return Py_None;
 }
+
 
 
 

@@ -18,4 +18,4 @@ def applyLUT(seg, gain, offset, lut, ima):
     elif seg.dtype == 'uint16':
         applyLUTu16(seg, gain, offset, lut, ima)
     else:
-        applyLUTf((1.0*seg).astype('f'), gain, offset, lut, ima)
+        applyLUTf(seg.astype('f'), gain, offset, lut, ima)

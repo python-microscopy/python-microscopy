@@ -2,6 +2,10 @@ import matplotlib.colors as colors
 #import matplotlib as mpl
 import pylab
 
+def regCmap(cmap):
+    pylab.cm.__dict__[cmap.name] = cmap
+    pylab.cm.cmapnames.append(cmap.name)
+
 if not 'cmapnames' in dir(pylab.cm):
     pylab.cm.cmapnames = pylab.cm._cmapnames
 
@@ -33,6 +37,23 @@ for cmapname in ncmapnames:
     cmapdat_r = pylab.cm.revcmap(ndat[cmapname])
     ndat[cmapname_r] = cmapdat_r
     pylab.cm.__dict__[cmapname_r] = colors.LinearSegmentedColormap(cmapname_r, cmapdat_r, pylab.cm.LUTSIZE)
+
+def labeled(data):
+    return (data > 0).reshape(list(data.shape) +  [1])*pylab.cm.gist_rainbow(data % 1)
+
+labeled.name = 'labeled'
+
+regCmap(labeled)
+
+def flow_gray(data):
+    v = ((data > 0)*(data < 1)).reshape(list(data.shape) +  [1])*pylab.cm.gray(data)
+    v += (data == 0).reshape(list(data.shape) + [1]) * pylab.array([0, 1., 0, 0]).reshape(list(pylab.ones(data.ndim) + [3]))
+    v += (data == 1).reshape(list(data.shape) + [1]) * pylab.array([1., 0, 1., 0]).reshape(list(pylab.ones(data.ndim) + [3]))
+    return v
+
+flow_gray.name = 'flow_gray'
+
+regCmap(flow_gray)
 
 
 pylab.cm.cmapnames.sort()
