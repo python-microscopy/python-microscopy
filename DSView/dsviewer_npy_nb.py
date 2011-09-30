@@ -269,6 +269,10 @@ class DSViewFrame(wx.Frame):
     def OnExport(self, event=None):
         self.image.Save(crop = True, view = self.view)
 
+    def OnCrop(self):
+        pass
+        #View3D(self.image.data[])
+
     def OnCloseWindow(self, event):
         pylab.close('all')
         if (not self.image.saved):

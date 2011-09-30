@@ -113,10 +113,10 @@ static PyObject * applyLUTuint16(PyObject *self, PyObject *args, PyObject *keywd
     {
         for (j=0;j< sizeY;j++)
         {
-            tmp =  (int)(((float)N)*gain*(((float) *data) - offset));
+            tmp =  (int)(((float)(N-1))*gain*(((float) *data) - offset));
             //printf("%d", tmp);
-            tmp = MIN(tmp, N);
-            //tmp = MAX(tmp, 0);
+            tmp = MIN(tmp, (N-1));
+            tmp = MAX(tmp, 0);
             *out += LUTR[tmp];
             out++;
             *out += LUTG[tmp];
@@ -227,10 +227,10 @@ static PyObject * applyLUTuint8(PyObject *self, PyObject *args, PyObject *keywds
     {
         for (j=0;j< sizeY;j++)
         {
-            tmp =  (int)(((float)N)*gain*(((float) *data) - offset));
+            tmp =  (int)(((float)(N-1))*gain*(((float) *data) - offset));
             //printf("%d", tmp);
-            tmp = MIN(tmp, N);
-            //tmp = MAX(tmp, 0);
+            tmp = MIN(tmp, (N-1));
+            tmp = MAX(tmp, 0);
             *out += LUTR[tmp];
             out++;
             *out += LUTG[tmp];
@@ -341,10 +341,10 @@ static PyObject * applyLUTfloat(PyObject *self, PyObject *args, PyObject *keywds
     {
         for (j=0;j< sizeY;j++)
         {
-            tmp =  (int)(((float)N)*gain*(((float) *data) - offset));
+            tmp =  (int)(((float)(N-1))*gain*(((float) *data) - offset));
             //printf("%d", tmp);
-            tmp = MIN(tmp, N);
-            //tmp = MAX(tmp, 0);
+            tmp = MIN(tmp, N-1);
+            tmp = MAX(tmp, 0);
             *out += LUTR[tmp];
             out++;
             *out += LUTG[tmp];
