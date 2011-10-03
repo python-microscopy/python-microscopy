@@ -144,6 +144,7 @@ class Splitter:
         MetaDataHandler.provideStartMetadata.append(self.ProvideMetadata)
 
         cam.splitting='none'
+        cam.splitterFlip = flip
 
         self.offset = 0
         self.mixMatrix = numpy.array([[1.,0.],[0.,1.]])

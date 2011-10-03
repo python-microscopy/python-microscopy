@@ -678,7 +678,7 @@ class smiMainFrame(wx.Frame):
                     y1 = min(y1, self.scope.cam.GetCCDHeight() - y2)
                     y2 = max(y2, self.scope.cam.GetCCDHeight() - y1)
 
-                    if not scope.splitter.flip:
+                    if not self.scope.cam.splitterFlip:
                         y1 = 0
                         y2 = self.scope.cam.GetCCDHeight()
                     

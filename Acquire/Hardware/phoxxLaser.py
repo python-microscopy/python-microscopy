@@ -10,15 +10,14 @@
 #
 ##################
 
-import serial
-#import time
+import serial;
+import time
 
 from lasers import Laser
 
-class CobaltLaser(Laser):
-    def __init__(self, name,turnOn=False, portname='COM1'):
-        self.ser_port = serial.Serial(portname, 115200, 
-                                      timeout=2, writeTimeout=2)
+class PhoxxLaser(Laser):
+    def __init__(self, name,turnOn=False, portname='COM3'):
+        self.ser_port = serial.Serial(portname, 500000, timeout=2, writeTimeout=2)
         self.powerControlable = True
         self.isOn=True
 
@@ -40,8 +39,8 @@ class CobaltLaser(Laser):
         self.isOn = False
 
     def SetPower(self, power):
-        if power < 0 or power > .1:
-            raise RuntimeError('Error setting laser power: Power must be between 0 and .1')
+        if power < 0 or power > 1:
+            raise RuntimeError('Error setting laser power: Power must be between 0 and 1')
         self.power = power
 
         if self.isOn:
