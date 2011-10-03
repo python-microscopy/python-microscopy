@@ -677,6 +677,10 @@ class smiMainFrame(wx.Frame):
                 if self.scope.cam.splitting.lower() == 'up_down':
                     y1 = min(y1, self.scope.cam.GetCCDHeight() - y2)
                     y2 = max(y2, self.scope.cam.GetCCDHeight() - y1)
+
+                    if not scope.splitter.flip:
+                        y1 = 0
+                        y2 = self.scope.cam.GetCCDHeight()
                     
             self.scope.cam.SetROI(x1,y1,x2,y2)
             self.mCam.SetLabel(wxID_SMIMAINFRAMEMCAMROI, 'Clear ROI\tF8')

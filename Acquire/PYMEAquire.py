@@ -42,7 +42,7 @@ def main():
     application.MainLoop()
 
 if __name__ == '__main__':
-    from PYME import mProfile
-    mProfile.profileOn(['arrayViewPanel.py'])
+    #from PYME import mProfile
+    #mProfile.profileOn(['arrayViewPanel.py'])
     main()
-    mProfile.report()
+    #mProfile.report()

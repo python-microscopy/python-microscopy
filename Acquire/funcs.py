@@ -254,6 +254,7 @@ class microscope:
 
                 
                 self.vp = arrayViewPanel.ArrayViewPanel(Notebook, self.pa.dsa)
+                self.vp.crosshairs = False
                 self.vp.do.leftButtonAction = self.vp.do.ACTION_SELECTION
                 self.vp.do.showSelection = True
 
