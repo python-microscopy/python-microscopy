@@ -23,6 +23,7 @@ import PYME.DSView.dsviewer_npy_nb as dsviewer
 #import PYME.DSView.myviewpanel as viewpanel
 import PYME.DSView.viewpanellite as viewpanel
 import PYME.DSView.displaySettingsPanel as disppanel
+from PYME.DSView import arrayViewPanel
 
 import PYME.Acquire.protocol as protocol
 from PYME.Acquire import MetaDataHandler
@@ -140,7 +141,8 @@ class microscope:
         self.prev_fr.update()
         
     def pr_refr2(self, source):
-        self.vp.imagepanel.Refresh()
+        #self.vp.imagepanel.Refresh()
+        self.vp.Refresh()
 
     def pr_refr3(self, souce):
         self.sp.refr()
@@ -247,15 +249,23 @@ class microscope:
                 self.prev_fr.genStatusText = self.genStatus
                 self.prev_fr.Show()
             else:
-                self.vp = viewpanel.MyViewPanel(Notebook, self.pa.ds)
-                self.vp.crosshairs = False
+                #self.vp = viewpanel.MyViewPanel(Notebook, self.pa.ds)
+                #self.vp.crosshairs = False
 
-                self.vsp = disppanel.dispSettingsPanel(Notebook, self.vp)
+                
+                self.vp = arrayViewPanel.ArrayViewPanel(Notebook, self.pa.dsa)
+                self.vp.crosshairs = False
+                self.vp.do.leftButtonAction = self.vp.do.ACTION_SELECTION
+                self.vp.do.showSelection = True
+
+                self.vsp = disppanel.dispSettingsPanel2(Notebook, self.vp)
 
 
                 Parent.time1.WantNotification.append(self.vsp.RefrData)
+                #Parent.time1.WantNotification.append(self.vsp.RefrData)
                 #Notebook.AddPage(imageId=-1, page=self.vp, select=True,text='Preview')
                 Notebook.AddPage(page=self.vp, select=True,caption='Preview')
+                #Notebook.AddPage(page=self.vp2, select=True,caption='Preview2')
                 #Notebook._mgr.AddPane
 
                 Parent.AddCamTool(self.vsp, 'Display')

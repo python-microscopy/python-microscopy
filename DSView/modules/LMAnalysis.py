@@ -229,6 +229,14 @@ class LMAnalyser:
 
         hsizer.Add(self.tDebounceRadius, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
         vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 10)
+        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        hsizer.Add(wx.StaticText(pan, -1, 'Z Shift [nm]:'), 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tZShift = wx.TextCtrl(pan, -1, value='0', size=(50, -1))
+
+        hsizer.Add(self.tZShift, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 10)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         shiftFieldText = 'Shifts: <None>'
@@ -361,21 +369,21 @@ class LMAnalyser:
             if not self.SetShiftField():
                 return
 
-        if 'Psf' in fitMod and not 'PSFFile' in self.image.mdh.getEntryNames():
+        if 'Interp' in fitMod and not 'PSFFile' in self.image.mdh.getEntryNames():
             if not self.SetPSF():
                 return
 
-        if 'Psf' in fitMod  and 'Splitter' in fitMod and not 'Analysis.AxialShift' in self.image.mdh.getEntryNames():
-            dlg = wx.TextEntryDialog(self, 'What is the axial chromatic shift between splitter halves [nm]?',
-                'Axial Shift', '300')
+        if 'Interp' in fitMod  and 'Splitter' in fitMod and not 'Analysis.AxialShift' in self.image.mdh.getEntryNames():
+            #dlg = wx.TextEntryDialog(self, 'What is the axial chromatic shift between splitter halves [nm]?',
+            #    'Axial Shift', '300')
 
-            if dlg.ShowModal() == wx.ID_OK:
-                self.image.mdh.setEntry('Analysis.AxialShift', float(dlg.GetValue()))
-            else:
-                self.image.mdh.setEntry('Analysis.AxialShift', 0.)
+            #if dlg.ShowModal() == wx.ID_OK:
+            #    self.image.mdh.setEntry('Analysis.AxialShift', float(dlg.GetValue()))
+            #else:
+            self.image.mdh.setEntry('Analysis.AxialShift', float(self.tZShift.GetValue()))
 
 
-            dlg.Destroy()
+            #dlg.Destroy()
 
         if not driftEst:
             self.pushImages(startAt, threshold, fitMod)
@@ -650,20 +658,26 @@ class LMAnalyser:
                 resultsFilename = fdialog.GetPath().encode()
             else:
                 raise RuntimeError('Invalid results file - not running')
-            self.image.seriesName = resultsFilename
+            #self.image.seriesName = resultsFilename
 
-        self.tq.createQueue('HDFResultsTaskQueue', self.image.seriesName, None)
+        self.tq.createQueue('HDFResultsTaskQueue', resultsFilename, None)
 
-        mdhQ = MetaDataHandler.QueueMDHandler(self.tq, self.image.seriesName, self.image.mdh)
+        mdhQ = MetaDataHandler.QueueMDHandler(self.tq, resultsFilename, self.image.mdh)
         mdhQ.setEntry('Analysis.DetectionThreshold', detThresh)
         mdhQ.setEntry('Analysis.FitModule', fitFcn)
         mdhQ.setEntry('Analysis.DataFileID', fileID.genDataSourceID(self.image.dataSource))
 
         evts = self.image.dataSource.getEvents()
         if len(evts) > 0:
-            self.tq.addQueueEvents(self.image.seriesName, evts)
+            self.tq.addQueueEvents(resultsFilename, evts)
 
         md = MetaDataHandler.NestedClassMDHandler(mdhQ)
+
+        mn = self.image.dataSource.moduleName
+
+        #if it's a buffered source, go back to underlying source
+        if mn == 'BufferedDataSource':
+            mn = self.image.dataSource.dataSource.moduleName
 
         for i in range(startingAt, self.image.dataSource.getNumSlices()):
             if 'Analysis.BGRange' in md.getEntryNames():
@@ -674,7 +688,10 @@ class LMAnalyser:
                 bgi = range(max(i - 10, md.EstimatedLaserOnFrameNo), i)
 
             #task = fitTask(self.queueID, taskNum, self.metaData.Analysis.DetectionThreshold, self.metaData, self.metaData.Analysis.FitModule, 'TQDataSource', bgindices =bgi, SNThreshold = True)
-            self.tq.postTask(remFitBuf.fitTask(self.image.seriesName,i, detThresh, md, fitFcn, bgindices=bgi, SNThreshold=True, dataSourceModule=self.image.dataSource.moduleName), queueName=self.image.seriesName)
+            
+            self.tq.postTask(remFitBuf.fitTask(self.image.seriesName,i, detThresh, md, fitFcn, bgindices=bgi, SNThreshold=True, dataSourceModule=mn), queueName=resultsFilename)
+
+        self.image.seriesName = resultsFilename
             
         #self.tq.releaseTasks(self.image.seriesName, startingAt)
 
@@ -711,16 +728,22 @@ class LMAnalyser:
         fitMod = self.cFitType.GetStringSelection()
         #bgFrames = int(tBackgroundFrames.GetValue())
         bgFrames = [int(v) for v in self.tBackgroundFrames.GetValue().split(':')]
+        print zps
         for i in range(12):
+            print i
             #if 'Analysis.NumBGFrames' in md.getEntryNames():
             #bgi = range(max(zps[i] - bgFrames,mdh.getEntry('EstimatedLaserOnFrameNo')), zps[i])
             bgi = range(max(zps[i] + bgFrames[0],self.image.mdh.getEntry('EstimatedLaserOnFrameNo')), max(zps[i] + bgFrames[1],self.image.mdh.getEntry('EstimatedLaserOnFrameNo')))
             #else:
             #    bgi = range(max(zps[i] - 10,md.EstimatedLaserOnFrameNo), zps[i])
+            mn = self.image.dataSource.moduleName
+            if mn == 'BufferedDataSource':
+                mn = self.image.dataSource.dataSource.moduleName
+
             if 'Splitter' in fitMod:
-                ft = remFitBuf.fitTask(self.image.seriesName, zps[i], detThresh, MetaDataHandler.NestedClassMDHandler(self.image.mdh), 'SplitterObjFindR', bgindices=bgi, SNThreshold=True,dataSourceModule=self.image.dataSource.moduleName)
+                ft = remFitBuf.fitTask(self.image.seriesName, zps[i], detThresh, MetaDataHandler.NestedClassMDHandler(self.image.mdh), 'SplitterObjFindR', bgindices=bgi, SNThreshold=True,dataSourceModule=mn)
             else:
-                ft = remFitBuf.fitTask(self.image.seriesName, zps[i], detThresh, MetaDataHandler.NestedClassMDHandler(self.image.mdh), 'LatObjFindFR', bgindices=bgi, SNThreshold=True,dataSourceModule=self.image.dataSource.moduleName)
+                ft = remFitBuf.fitTask(self.image.seriesName, zps[i], detThresh, MetaDataHandler.NestedClassMDHandler(self.image.mdh), 'LatObjFindFR', bgindices=bgi, SNThreshold=True,dataSourceModule=mn)
             res = ft(taskQueue=self.tq)
             xp = floor(i/4)/3.
             yp = (3 - i%4)/4.

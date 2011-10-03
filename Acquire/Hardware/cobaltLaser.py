@@ -10,14 +10,15 @@
 #
 ##################
 
-import serial;
-import time
+import serial
+#import time
 
 from lasers import Laser
 
 class CobaltLaser(Laser):
     def __init__(self, name,turnOn=False, portname='COM1'):
-        self.ser_port = serial.Serial(portname, 115200, timeout=2, writeTimeout=2)
+        self.ser_port = serial.Serial(portname, 115200, 
+                                      timeout=2, writeTimeout=2)
         self.powerControlable = True
         self.isOn=True
 

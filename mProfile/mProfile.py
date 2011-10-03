@@ -22,9 +22,6 @@ Due to the fact that we're doing this in python, and hooking every line,
 there is a substantial performance hit, although for the numeric code I wrote it
 for (lots of vectorised numpy/scipy stuff) it's only on the order of ~30%.
 
-
-TODO: fix hard coded temp directory so it also works on non *nix platforms
-
 Licensing: Take your pick of BSD or GPL
 '''
 
@@ -90,7 +87,7 @@ def profileOff():
     threading.settrace(None)
 
 def te(frame, event, arg):
-    global filenames, files
+    #global filenames, files
     if not hasattr(lStore, 'tPrev'):
         lStore.tPrev = {}
     if not hasattr(lStore, 'lPrev'):

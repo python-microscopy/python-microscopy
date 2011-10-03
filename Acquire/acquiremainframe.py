@@ -662,10 +662,12 @@ class smiMainFrame(wx.Frame):
             self.mCam.SetLabel(wxID_SMIMAINFRAMEMCAMROI, 'Set ROI\tF8')
             self.roi_on = False
         else:
-            x1 = self.scope.vp.selection_begin_x
-            y1 = self.scope.vp.selection_begin_y
-            x2 = self.scope.vp.selection_end_x
-            y2 = self.scope.vp.selection_end_y
+            #x1 = self.scope.vp.selection_begin_x
+            #y1 = self.scope.vp.selection_begin_y
+            #x2 = self.scope.vp.selection_end_x
+            #y2 = self.scope.vp.selection_end_y
+
+            x1, y1, x2, y2 = self.scope.vp.do.GetSliceSelection()
 
             #if we're splitting colours/focal planes across the ccd, then only allow symetric ROIs
             if 'splitting' in dir(self.scope.cam):
@@ -675,6 +677,10 @@ class smiMainFrame(wx.Frame):
                 if self.scope.cam.splitting.lower() == 'up_down':
                     y1 = min(y1, self.scope.cam.GetCCDHeight() - y2)
                     y2 = max(y2, self.scope.cam.GetCCDHeight() - y1)
+
+                    if not self.scope.cam.splitterFlip:
+                        y1 = 0
+                        y2 = self.scope.cam.GetCCDHeight()
                     
             self.scope.cam.SetROI(x1,y1,x2,y2)
             self.mCam.SetLabel(wxID_SMIMAINFRAMEMCAMROI, 'Clear ROI\tF8')
@@ -689,12 +695,13 @@ class smiMainFrame(wx.Frame):
         self.scope.cam.SetCOC()
         self.scope.cam.GetStatus()
         self.scope.pa.Prepare()
-        self.scope.vp.SetDataStack(self.scope.pa.ds)
+        self.scope.vp.SetDataStack(self.scope.pa.dsa)
         
-        self.scope.vp.selection_begin_x = x1
-        self.scope.vp.selection_begin_y = y1
-        self.scope.vp.selection_end_x = x2
-        self.scope.vp.selection_end_y = y2
+        #self.scope.vp.selection_begin_x = x1
+        #self.scope.vp.selection_begin_y = y1
+        #self.scope.vp.selection_end_x = x2
+        #self.scope.vp.selection_end_y = y2
+        self.scope.vp.do.SetSelection((x1,y1,0), (x2,y2,0))
 
         self.scope.pa.start()
         self.scope.vp.Refresh()

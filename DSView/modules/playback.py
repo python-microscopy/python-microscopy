@@ -42,7 +42,7 @@ class PlayPanel(wx.Panel):
         self.DestroyChildren() #clean out existing gui
 
         self.slPlayPos = wx.Slider(self, -1, 0, 0, 100, style=wx.SL_HORIZONTAL)
-        self.slPlayPos.Bind(wx.EVT_SCROLL_CHANGED, self.OnPlayPosChanged)
+        self.slPlayPos.Bind(wx.EVT_SCROLL_THUMBRELEASE, self.OnPlayPosChanged)
 
         self.bSeekStart = wx.BitmapButton(self, -1, self.bmStartSeek)
         self.bSeekStart.Bind(wx.EVT_BUTTON, self.OnSeekStart)
@@ -51,7 +51,7 @@ class PlayPanel(wx.Panel):
         self.bPlay.Bind(wx.EVT_BUTTON, self.OnPlay)
 
         self.slPlaySpeed = wx.Slider(self, -1, 5, 1, 50, style=wx.SL_HORIZONTAL)
-        self.slPlaySpeed.Bind(wx.EVT_SCROLL_CHANGED, self.OnPlaySpeedChanged)
+        self.slPlaySpeed.Bind(wx.EVT_SCROLL_THUMBRELEASE, self.OnPlaySpeedChanged)
 
         if self.mode == 'VERT':
             vsizer = wx.BoxSizer(wx.VERTICAL)

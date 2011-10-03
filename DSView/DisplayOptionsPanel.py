@@ -16,7 +16,7 @@ import pylab
 from PYME.misc import extraCMaps
 #from matplotlib import cm
 from PYME.Analysis.LMVis import histLimits
-from displayOptions import DisplayOpts, fast_grey
+from displayOptions import DisplayOpts, fast_grey, labeled
 
 import os
 dirname = os.path.dirname(__file__)
@@ -41,7 +41,7 @@ class OptionsPanel(wx.Panel):
         self.cbIds = []
         self.hcs = []
 
-        cmapnames = pylab.cm.cmapnames + ['fastGrey']# + [n + '_r' for n in pylab.cm.cmapnames]
+        cmapnames = pylab.cm.cmapnames + ['fastGrey', 'labeled']# + [n + '_r' for n in pylab.cm.cmapnames]
         cmapnames.sort()
         ##do = parent.do
 
@@ -169,6 +169,9 @@ class OptionsPanel(wx.Panel):
         cmn = event.GetString()
         if cmn == 'fastGrey':
             self.do.SetCMap(ind, fast_grey)
+
+        elif cmn == 'labeled':
+            self.do.SetCMap(ind, labeled)
         else:
             self.do.SetCMap(ind, pylab.cm.__getattribute__(cmn))
 

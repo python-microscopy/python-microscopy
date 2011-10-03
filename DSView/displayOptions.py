@@ -28,6 +28,11 @@ def fast_grey(data):
 
 fast_grey.name = 'fastGrey'
 
+def labeled(data):
+    return (data > 0)[:,:,None]*cm.gist_rainbow(data % 1)
+
+labeled.name = 'labeled'
+
 class MyWeakSet(WeakSet):
     def append(self, item):
         self.add(item)
@@ -147,7 +152,7 @@ class DisplayOpts(object):
                 self.Chans = [0]
                 self.Gains = [1]
                 self.Offs = [0]
-                self.cmaps = [fast_grey]
+                self.cmaps = [cm.gray]
             else:
                 self.Chans = []
                 self.Gains = []
@@ -207,13 +212,13 @@ class DisplayOpts(object):
     def Optimise(self):
         if len(self.ds.shape) == 2:
             self.Offs[0] = 1.*self.ds.min()
-            self.Gains[0] =1./(self.ds.max()- self.ds.min())
+            self.Gains[0] =1./(self.ds.max()- self.ds.min() + 1e-3)
         elif len(self.ds.shape) ==3:
             self.Offs[0] = 1.*self.ds[:,:,self.zp].min()
-            self.Gains[0] =1./(self.ds[:,:,self.zp].max()- self.ds[:,:,self.zp].min())
+            self.Gains[0] =1./(self.ds[:,:,self.zp].max()- self.ds[:,:,self.zp].min()+ 1e-3)
         else:
             for i in range(len(self.Chans)):
                 self.Offs[i] = self.ds[:,:,self.zp,self.Chans[i]].min()
-                self.Gains[i] = 1.0/(self.ds[:,:,self.zp,self.Chans[i]].max() - self.Offs[i])
+                self.Gains[i] = 1.0/(self.ds[:,:,self.zp,self.Chans[i]].max() - self.Offs[i]+ 1e-3)
 
         self.OnChange()

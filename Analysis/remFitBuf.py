@@ -24,14 +24,17 @@ dataSourceID = None
 bufferMisses = 0
 nTasksProcessed = 0
 
-splitterFitModules = ['SplitterFitFR','SplitterFitQR','SplitterFitCOIR', 'BiplaneFitR', 'SplitterShiftEstFR', 'SplitterObjFindR', 'SplitterFitInterpR']
+splitterFitModules = ['SplitterFitFR', 'SplitterFitQR', 'SplitterFitCOIR', 
+                      'BiplaneFitR', 'SplitterShiftEstFR', 
+                      'SplitterObjFindR', 'SplitterFitInterpR']
 
-from pylab import *
+#from pylab import *
 
 import copy
 
 def tqPopFcn(workerN, NWorkers, NTasks):
-    return workerN * NTasks/NWorkers #let each task work on its own chunk of data ->
+    #let each task work on its own chunk of data ->
+    return workerN * NTasks/NWorkers 
     
 class fitResult(taskDef.TaskResult):
     def __init__(self, task, results, driftResults=[]):
@@ -245,23 +248,25 @@ class fitTask(taskDef.Task):
                 self.bg = numpy.concatenate((g_.reshape(g.shape[0], -1, 1), r_.reshape(g.shape[0], -1, 1)),2)
 
         if self.driftEst: #do the same for objects which are on the whole time
-             self.mIm = numpy.ones(self.data.shape, 'f')
-             for dri in self.driftEstInd:
-                 bs = dBuffer.getSlice(dri)
-                 bs = bs.reshape(self.data.shape)
-                 #multiply images together, thus favouring images which are on over multiple frames
-                 self.mIm = self.mIm*numpy.maximum(bs.astype('f') - numpy.median(bs.ravel()), 1)
-
-             #self.mIm = numpy.absolute(self.mIm)
-             if not 'PSFFile' in self.md.getEntryNames():
-                 self.ofdDr = ofind.ObjectIdentifier(self.mIm)
-             else:
-                 self.ofdDr = ofind_xcorr.ObjectIdentifier(self.mIm, self.md.getEntry('PSFFile'), 7, 3e-2)
-             thres = self.calObjThresh**10
-             self.ofdDr.FindObjects(thres,0)
-             while len(self.ofdDr) >= 10: #just go for the brightest ones
-                 thres = thres * max(2, len(self.ofdDr)/5)
-                 self.ofdDr.FindObjects(thres,0)
+            self.mIm = numpy.ones(self.data.shape, 'f')
+            for dri in self.driftEstInd:
+                bs = dBuffer.getSlice(dri)
+                bs = bs.reshape(self.data.shape)
+                #multiply images together, thus favouring images which are on over multiple frames
+                self.mIm = self.mIm*numpy.maximum(bs.astype('f') - numpy.median(bs.ravel()), 1)
+            
+            #self.mIm = numpy.absolute(self.mIm)
+            if not 'PSFFile' in self.md.getEntryNames():
+                self.ofdDr = ofind.ObjectIdentifier(self.mIm)
+            else:
+                self.ofdDr = ofind_xcorr.ObjectIdentifier(self.mIm, self.md.getEntry('PSFFile'), 7, 3e-2)
+                
+            thres = self.calObjThresh**10
+            self.ofdDr.FindObjects(thres,0)
+            
+            while len(self.ofdDr) >= 10: #just go for the brightest ones
+                thres = thres * max(2, len(self.ofdDr)/5)
+                self.ofdDr.FindObjects(thres,0)
                  
         
         #If we're running under a gui - display found objects
@@ -277,7 +282,7 @@ class fitTask(taskDef.Task):
 
 
             if self.driftEst:
-                 pylab.plot([p.x for p in self.ofdDr], [p.y for p in self.ofdDr], 'o', mew=2, mec='b', mfc='none', ms=9)
+                pylab.plot([p.x for p in self.ofdDr], [p.y for p in self.ofdDr], 'o', mew=2, mec='b', mfc='none', ms=9)
             #axis('image')
             #gca().set_ylim([255,0])
             pylab.colorbar()

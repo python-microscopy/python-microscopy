@@ -30,7 +30,8 @@ import weakref
 
 
 class DSViewFrame(wx.Frame):
-    def __init__(self, image,  parent=None, title='', mode='LM', size = (800,800), glCanvas=None):
+    def __init__(self, image,  parent=None, title='', mode='LM', 
+                 size = (800,800), glCanvas=None):
         wx.Frame.__init__(self,parent, -1, title,size=size, pos=(1100, 300))
 
         self.mode = mode
@@ -271,6 +272,10 @@ class DSViewFrame(wx.Frame):
     def OnExport(self, event=None):
         self.image.Save(crop = True, view = self.view)
 
+    def OnCrop(self):
+        pass
+        #View3D(self.image.data[])
+
     def OnCloseWindow(self, event):
         pylab.close('all')
         if (not self.image.saved):
@@ -353,15 +358,18 @@ if __name__ == "__main__":
     main()
 
 
-def View3D(data, titleStub='Untitled Image', mdh = None, mode='lite', parent=None, glCanvas=None):
+def View3D(data, titleStub='Untitled Image', mdh = None, mode='lite', 
+           parent=None, glCanvas=None):
     im = ImageStack(data = data, mdh = mdh, titleStub=titleStub)
-    dvf = DSViewFrame(im, mode=mode, size=(500, 500), parent=parent, glCanvas=glCanvas)
+    dvf = DSViewFrame(im, mode=mode, size=(500, 500), 
+                      parent=parent, glCanvas=glCanvas)
     dvf.SetSize((500,500))
     dvf.Show()
     return dvf
 
 def ViewIm3D(image, title='', mode='lite', parent=None, glCanvas=None):
-    dvf = DSViewFrame(image, title=title, mode=mode, size=(500, 500), parent=parent, glCanvas=glCanvas)
+    dvf = DSViewFrame(image, title=title, mode=mode, size=(500, 500), 
+                      parent=parent, glCanvas=glCanvas)
     dvf.SetSize((500,500))
     dvf.Show()
     return dvf

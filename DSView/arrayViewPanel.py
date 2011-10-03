@@ -10,7 +10,6 @@
 #
 ##################
 
-
 import wx
 import wx.lib.agw.aui as aui
 
@@ -18,11 +17,12 @@ import wx.lib.agw.aui as aui
 import os
 #sys.path.append(".")
 from PYME.DSView import scrolledImagePanel
-from PYME.DSView.displayOptions import DisplayOpts
+from PYME.DSView.displayOptions import DisplayOpts, labeled
 from PYME.DSView.DisplayOptionsPanel import OptionsPanel
 from PYME.DSView.OverlaysPanel import OverlayPanel
 
 from PYME.DSView.modules import playback
+from PYME.DSView.LUT import applyLUT
 
 import numpy
 import scipy
@@ -34,6 +34,15 @@ import scipy
 
 #SELECTION_RECTANGLE = 0
 #SELECTION_LINE = 1
+
+LUTCache = {}
+
+def getLUT(cmap):
+    if not cmap.name in LUTCache.keys():
+        #calculate and cache LUT
+        LUTCache[cmap.name] = (255*cmap(numpy.linspace(0,1,256))[:,:3].T).astype('uint8')
+
+    return LUTCache[cmap.name]
 
 
 
@@ -147,7 +156,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         im.Rescale(im.GetWidth()*sc,im.GetHeight()*sc*self.aspect)
 
         x0,y0 = self.CalcUnscrolledPosition(0,0)
-        dc.DrawBitmap(wx.BitmapFromImage(im),-sc/2,-sc/2)
+        im2 = wx.BitmapFromImage(im)
+        dc.DrawBitmap(im2,-sc/2,-sc/2)
         
         sX, sY = im.GetWidth(), im.GetHeight()
 
@@ -783,20 +793,55 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         if self.do.slice == DisplayOpts.SLICE_XY:
             ima = numpy.zeros((min(sY_, self.do.ds.shape[1]), min(sX_, self.do.ds.shape[0]), 3), 'uint8')
             for chan, offset, gain, cmap in zip(self.do.Chans, self.do.Offs, self.do.Gains, self.do.cmaps):
-                ima[:] = numpy.minimum(ima[:] + (255*cmap(gain*(self.do.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.do.zp), chan].squeeze().T - offset))[:,:,:3])[:], 255)
+                #ima[:] = numpy.minimum(ima[:] + (255*cmap(gain*(self.do.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.do.zp), chan].squeeze().T - offset))[:,:,:3])[:], 255)
+                #cmap =
+                
+                #print lut.shape
+                if not cmap == labeled:
+                    #seg = self.do.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.do.zp), chan].squeeze().T
+                    #seg = seg.astype('f4')
+                    #g = numpy.float32(255.*gain)
+                    #o = numpy.float32(offset)
+                    #seg = (g*(seg - o))
+                    #print seg.dtype
+                    #seg = seg.astype('uint8')
+                    #seg = (g*(self.do.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.do.zp), chan].squeeze().T - o)).astype('uint8')
+                    #seg = lut[seg]
+                    #print seg.shape
+                    #ima[:] = seg
+                    #ima[:,:,0] = seg
+                    #ima[:,:,1] = seg
+                    #ima[:,:,2] = seg
+                    lut = getLUT(cmap)
+                    seg = self.do.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.do.zp), chan].squeeze().T
+
+                    applyLUT(seg, gain, offset, lut, ima)
+
+                else:
+                    ima[:] = numpy.minimum(ima[:] + (255*cmap(gain*(self.do.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.do.zp), chan].squeeze().T - offset))[:,:,:3])[:], 255)
         #XZ
         elif self.do.slice == DisplayOpts.SLICE_XZ:
             ima = numpy.zeros((min(sY_, self.do.ds.shape[2]), min(sX_, self.do.ds.shape[0]), 3), 'uint8')
 
             for chan, offset, gain, cmap in zip(self.do.Chans, self.do.Offs, self.do.Gains, self.do.cmaps):
-                ima[:] = ima[:] + 255*cmap(gain*(self.do.ds[x0_:(x0_+sX_),int(self.do.yp),y0_:(y0_+sY_), chan].squeeze().T - offset))[:,:,:3][:]
+                if not cmap == labeled:
+                    lut = getLUT(cmap)
+                    seg = self.do.ds[x0_:(x0_+sX_),int(self.do.yp),y0_:(y0_+sY_), chan].squeeze().T
+                    applyLUT(seg, gain, offset, lut, ima)
+                else:
+                    ima[:] = ima[:] + 255*cmap(gain*(self.do.ds[x0_:(x0_+sX_),int(self.do.yp),y0_:(y0_+sY_), chan].squeeze().T - offset))[:,:,:3][:]
 
         #YZ
         elif self.do.slice == DisplayOpts.SLICE_YZ:
             ima = numpy.zeros((min(sY_, self.do.ds.shape[2]), min(sX_, self.do.ds.shape[1]), 3), 'uint8')
 
             for chan, offset, gain, cmap in zip(self.do.Chans, self.do.Offs, self.do.Gains, self.do.cmaps):
-                ima[:] = ima[:] + 255*cmap(gain*(self.do.ds[int(self.do.xp),x0_:(x0_+sX_),y0_:(y0_+sY_), chan].squeeze().T - offset))[:,:,:3][:]
+                if not cmap == labeled:
+                    lut = getLUT(cmap)
+                    seg = self.do.ds[int(self.do.xp),x0_:(x0_+sX_),y0_:(y0_+sY_), chan].squeeze().T
+                    applyLUT(seg, gain, offset, lut, ima)
+                else:
+                    ima[:] = ima[:] + 255*cmap(gain*(self.do.ds[int(self.do.xp),x0_:(x0_+sX_),y0_:(y0_+sY_), chan].squeeze().T - offset))[:,:,:3][:]
 #        
         return wx.ImageFromData(ima.shape[1], ima.shape[0], ima.ravel())
 

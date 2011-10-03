@@ -42,6 +42,7 @@ def main():
     application.MainLoop()
 
 if __name__ == '__main__':
-    #mProfile.profileOn(['rend_im.py', 'fluor.py', 'fakeCam.py'])
+    #from PYME import mProfile
+    #mProfile.profileOn(['arrayViewPanel.py'])
     main()
     #mProfile.report()

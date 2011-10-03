@@ -78,16 +78,17 @@ from PYME.DSView import eventLogViewer
 #import threading
 
 
-from PYME.misc.auiFloatBook import AuiNotebookWithFloatingPages
+#from PYME.misc.auiFloatBook import AuiNotebookWithFloatingPages
 
 from PYME.Analysis.LMVis import statusLog
 from PYME.Analysis.LMVis.visHelpers import ImageBounds#, GeneratedImage
 
-from PYME.DSView.image import ImageStack, GeneratedImage
+from PYME.DSView.image import GeneratedImage
 
 
 class VisGUIFrame(wx.Frame):    
-    def __init__(self, parent, filename=None, id=wx.ID_ANY, title="PYME Visualise", pos=wx.DefaultPosition,
+    def __init__(self, parent, filename=None, id=wx.ID_ANY, 
+                 title="PYME Visualise", pos=wx.DefaultPosition,
                  size=(700,650), style=wx.DEFAULT_FRAME_STYLE):
 
         wx.Frame.__init__(self, parent, id, title, pos, size, style)
@@ -264,10 +265,12 @@ class VisGUIFrame(wx.Frame):
 
         self._mgr.Update()
 
-    def OnSize(self, event):
-
-        #wx.LayoutAlgorithm().LayoutWindow(self, self.notebook)
-        event.Skip()
+#===============================================================================
+#     def OnSize(self, event):
+# 
+#         #wx.LayoutAlgorithm().LayoutWindow(self, self.notebook)
+#         event.Skip()
+#===============================================================================
 
     def OnMove(self, event):
         #pass
@@ -805,7 +808,10 @@ class VisGUIFrame(wx.Frame):
                 self.glCanvas3D = gl_render3D.LMGLCanvas(self)
                 self.AddPage(page=self.glCanvas3D, select=True, caption='3D')
 
-            self.glCanvas3D.setPoints(self.colourFilter['x'], self.colourFilter['y'], self.colourFilter['z'], self.pointColour())
+            self.glCanvas3D.setPoints(self.colourFilter['x'], 
+                                      self.colourFilter['y'], 
+                                      self.colourFilter['z'], 
+                                      self.pointColour())
             self.glCanvas3D.setCLim(self.glCanvas.clim, (-5e5, -5e5))
 
     def OnView3DTriangles(self,event):
@@ -814,15 +820,19 @@ class VisGUIFrame(wx.Frame):
                 self.glCanvas3D = gl_render3D.LMGLCanvas(self)
                 self.AddPage(page=self.glCanvas3D, select=True, caption='3D')
 
-            self.glCanvas3D.setTriang(self.colourFilter['x'], self.colourFilter['y'], self.colourFilter['z'], 'z', sizeCutoff=self.glCanvas3D.edgeThreshold)
+            self.glCanvas3D.setTriang(self.colourFilter['x'], 
+                                      self.colourFilter['y'], 
+                                      self.colourFilter['z'], 'z', 
+                                      sizeCutoff=self.glCanvas3D.edgeThreshold)
+                                      
             self.glCanvas3D.setCLim(self.glCanvas3D.clim, (0, 5e-5))
 
     def genNeighbourDists(self, forceRetriang = False):
         bCurr = wx.BusyCursor()
 
         if self.Triangles == None or forceRetriang:
-                statTri = statusLog.StatusLogger("Generating Triangulation ...")
-                self.Triangles = delaunay.Triangulation(self.colourFilter['x'] + .1*np.random.normal(size=len(self.colourFilter['x'])), self.colourFilter['y']+ .1*np.random.normal(size=len(self.colourFilter['x'])))
+            statTri = statusLog.StatusLogger("Generating Triangulation ...")
+            self.Triangles = delaunay.Triangulation(self.colourFilter['x'] + .1*np.random.normal(size=len(self.colourFilter['x'])), self.colourFilter['y']+ .1*np.random.normal(size=len(self.colourFilter['x'])))
 
         statNeigh = statusLog.StatusLogger("Calculating mean neighbour distances ...")
         self.GeneratedMeasures['neighbourDistances'] = pylab.array(visHelpers.calcNeighbourDists(self.Triangles))
@@ -847,7 +857,10 @@ class VisGUIFrame(wx.Frame):
 
 
     def OnOpenFile(self, event):
-        filename = wx.FileSelector("Choose a file to open", nameUtils.genResultDirectoryPath(), default_extension='h5r', wildcard='PYME Results Files (*.h5r)|*.h5r|Tab Formatted Text (*.txt)|*.txt|Matlab data (*.mat)|*.mat')
+        filename = wx.FileSelector("Choose a file to open", 
+                                   nameUtils.genResultDirectoryPath(), 
+                                   default_extension='h5r', 
+                                   wildcard='PYME Results Files (*.h5r)|*.h5r|Tab Formatted Text (*.txt)|*.txt|Matlab data (*.mat)|*.mat')
 
         #print filename
         if not filename == '':
@@ -866,124 +879,118 @@ class VisGUIFrame(wx.Frame):
         self.filename = filename
         #print os.path.splitext(filename)[1]
         if os.path.splitext(filename)[1] == '.h5r':
-                try:
-                    self.selectedDataSource = inpFilt.h5rSource(filename)
-                    self.dataSources.append(self.selectedDataSource)
+            try:
+                self.selectedDataSource = inpFilt.h5rSource(filename)
+                self.dataSources.append(self.selectedDataSource)
 
-                    self.filesToClose.append(self.selectedDataSource.h5f)
-                    
-                    
+                self.filesToClose.append(self.selectedDataSource.h5f)
 
-                    if 'DriftResults' in self.selectedDataSource.h5f.root:
-                        self.dataSources.append(inpFilt.h5rDSource(self.selectedDataSource.h5f))
+                if 'DriftResults' in self.selectedDataSource.h5f.root:
+                    self.dataSources.append(inpFilt.h5rDSource(self.selectedDataSource.h5f))
 
-                        if len(self.selectedDataSource['x']) == 0:
-                            self.selectedDataSource = self.dataSources[-1]
+                    if len(self.selectedDataSource['x']) == 0:
+                        self.selectedDataSource = self.dataSources[-1]
 
-                except:
-                    self.selectedDataSource = inpFilt.h5rDSource(filename)
-                    self.dataSources.append(self.selectedDataSource)
-                    
-                    self.filesToClose.append(self.selectedDataSource.h5f)
+            except:
+                self.selectedDataSource = inpFilt.h5rDSource(filename)
+                self.dataSources.append(self.selectedDataSource)
+                
+                self.filesToClose.append(self.selectedDataSource.h5f)
 
-                #once we get around to storing the some metadata with the results
-                if 'MetaData' in self.selectedDataSource.h5f.root:
-                    self.mdh = MetaDataHandler.HDFMDHandler(self.selectedDataSource.h5f)
-                    
-                    #if not 'y' in self.selectedDataSource.keys():
-                    #    print 'foo'
-                    #    self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource, y='t')
+            #once we get around to storing the some metadata with the results
+            if 'MetaData' in self.selectedDataSource.h5f.root:
+                self.mdh = MetaDataHandler.HDFMDHandler(self.selectedDataSource.h5f)
 
-#                    if 'Camera.ROIWidth' in self.mdh.getEntryNames():
-#                        x0 = 0
-#                        y0 = 0
-#
-#                        x1 = self.mdh.getEntry('Camera.ROIWidth')*1e3*self.mdh.getEntry('voxelsize.x')
-#                        y1 = self.mdh.getEntry('Camera.ROIHeight')*1e3*self.mdh.getEntry('voxelsize.y')
-#
-#                        if 'Splitter' in self.mdh.getEntry('Analysis.FitModule'):
-#                            y1 = y1/2
-#
-#                        self.imageBounds = ImageBounds(x0, y0, x1, y1)
-#                    else:
-#                        self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
-#
-#                else:
-#                    self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
+                if 'Camera.ROIWidth' in self.mdh.getEntryNames():
+                    x0 = 0
+                    y0 = 0
 
-                if not self.elv == None: #remove previous event viewer
+                    x1 = self.mdh.getEntry('Camera.ROIWidth')*1e3*self.mdh.getEntry('voxelsize.x')
+                    y1 = self.mdh.getEntry('Camera.ROIHeight')*1e3*self.mdh.getEntry('voxelsize.y')
+
+                    if 'Splitter' in self.mdh.getEntry('Analysis.FitModule'):
+                        y1 = y1/2
+
+                    self.imageBounds = ImageBounds(x0, y0, x1, y1)
+                else:
+                    self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
+
+            else:
+                self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
+
+            if not self.elv == None: #remove previous event viewer
+                i = 0
+                found = False
+                while not found and i < self.notebook.GetPageCount():
+                    if self.notebook.GetPage(i) == self.elv:
+                        self.notebook.DeletePage(i)
+                        found = True
+                    else:
+                        i += 1
+
+            
+
+            if 'fitResults_Ag' in self.selectedDataSource.keys():
+                #if we used the splitter set up a mapping so we can filter on total amplitude and ratio
+                #if not 'fitError_Ag' in self.selectedDataSource.keys():
+
+                if 'fitError_Ag' in self.selectedDataSource.keys():
+                    self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource, A='fitResults_Ag + fitResults_Ar', gFrac='fitResults_Ag/(fitResults_Ag + fitResults_Ar)', error_gFrac = 'sqrt((fitError_Ag/fitResults_Ag)**2 + (fitError_Ag**2 + fitError_Ar**2)/(fitResults_Ag + fitResults_Ar)**2)*fitResults_Ag/(fitResults_Ag + fitResults_Ar)')
+                    sg = self.selectedDataSource['fitError_Ag']
+                    sr = self.selectedDataSource['fitError_Ar']
+                    g = self.selectedDataSource['fitResults_Ag']
+                    r = self.selectedDataSource['fitResults_Ar']
+                    I = self.selectedDataSource['A']
+                    self.selectedDataSource.colNorm = np.sqrt(2*np.pi)*sg*sr/(2*np.sqrt(sg**2 + sr**2)*I)*(
+                        scipy.special.erf((sg**2*r + sr**2*(I-g))/(np.sqrt(2)*sg*sr*np.sqrt(sg**2+sr**2)))
+                        - scipy.special.erf((sg**2*(r-I) - sr**2*g)/(np.sqrt(2)*sg*sr*np.sqrt(sg**2+sr**2))))
+                    self.selectedDataSource.setMapping('ColourNorm', '1.0*colNorm')
+                else:
+                    self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource, A='fitResults_Ag + fitResults_Ar', gFrac='fitResults_Ag/(fitResults_Ag + fitResults_Ar)', error_gFrac = '0*x + 0.01')
+                    self.selectedDataSource.setMapping('fitError_Ag', '1*sqrt(fitResults_Ag/1)')
+                    self.selectedDataSource.setMapping('fitError_Ar', '1*sqrt(fitResults_Ar/1)')
+                    sg = self.selectedDataSource['fitError_Ag']
+                    sr = self.selectedDataSource['fitError_Ar']
+                    g = self.selectedDataSource['fitResults_Ag']
+                    r = self.selectedDataSource['fitResults_Ar']
+                    I = self.selectedDataSource['A']
+                    self.selectedDataSource.colNorm = np.sqrt(2*np.pi)*sg*sr/(2*np.sqrt(sg**2 + sr**2)*I)*(
+                        scipy.special.erf((sg**2*r + sr**2*(I-g))/(np.sqrt(2)*sg*sr*np.sqrt(sg**2+sr**2)))
+                        - scipy.special.erf((sg**2*(r-I) - sr**2*g)/(np.sqrt(2)*sg*sr*np.sqrt(sg**2+sr**2))))
+                    self.selectedDataSource.setMapping('ColourNorm', '1.0*colNorm')
+
+                self.dataSources.append(self.selectedDataSource)
+
+                if not self.colp == None: #remove previous colour viewer
                     i = 0
                     found = False
                     while not found and i < self.notebook.GetPageCount():
-                        if self.notebook.GetPage(i) == self.elv:
+                        if self.notebook.GetPage(i) == self.colp:
                             self.notebook.DeletePage(i)
                             found = True
                         else:
                             i += 1
 
-                
-
-                if 'fitResults_Ag' in self.selectedDataSource.keys():
-                    #if we used the splitter set up a mapping so we can filter on total amplitude and ratio
-                    #if not 'fitError_Ag' in self.selectedDataSource.keys():
-
-                    if 'fitError_Ag' in self.selectedDataSource.keys():
-                        self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource, A='fitResults_Ag + fitResults_Ar', gFrac='fitResults_Ag/(fitResults_Ag + fitResults_Ar)', error_gFrac = 'sqrt((fitError_Ag/fitResults_Ag)**2 + (fitError_Ag**2 + fitError_Ar**2)/(fitResults_Ag + fitResults_Ar)**2)*fitResults_Ag/(fitResults_Ag + fitResults_Ar)')
-                        sg = self.selectedDataSource['fitError_Ag']
-                        sr = self.selectedDataSource['fitError_Ar']
-                        g = self.selectedDataSource['fitResults_Ag']
-                        r = self.selectedDataSource['fitResults_Ar']
-                        I = self.selectedDataSource['A']
-                        self.selectedDataSource.colNorm = np.sqrt(2*np.pi)*sg*sr/(2*np.sqrt(sg**2 + sr**2)*I)*(
-                            scipy.special.erf((sg**2*r + sr**2*(I-g))/(np.sqrt(2)*sg*sr*np.sqrt(sg**2+sr**2)))
-                            - scipy.special.erf((sg**2*(r-I) - sr**2*g)/(np.sqrt(2)*sg*sr*np.sqrt(sg**2+sr**2))))
-                        self.selectedDataSource.setMapping('ColourNorm', '1.0*colNorm')
-                    else:
-                        self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource, A='fitResults_Ag + fitResults_Ar', gFrac='fitResults_Ag/(fitResults_Ag + fitResults_Ar)', error_gFrac = '0*x + 0.01')
-                        self.selectedDataSource.setMapping('fitError_Ag', '1*sqrt(fitResults_Ag/1)')
-                        self.selectedDataSource.setMapping('fitError_Ar', '1*sqrt(fitResults_Ar/1)')
-                        sg = self.selectedDataSource['fitError_Ag']
-                        sr = self.selectedDataSource['fitError_Ar']
-                        g = self.selectedDataSource['fitResults_Ag']
-                        r = self.selectedDataSource['fitResults_Ar']
-                        I = self.selectedDataSource['A']
-                        self.selectedDataSource.colNorm = np.sqrt(2*np.pi)*sg*sr/(2*np.sqrt(sg**2 + sr**2)*I)*(
-                            scipy.special.erf((sg**2*r + sr**2*(I-g))/(np.sqrt(2)*sg*sr*np.sqrt(sg**2+sr**2)))
-                            - scipy.special.erf((sg**2*(r-I) - sr**2*g)/(np.sqrt(2)*sg*sr*np.sqrt(sg**2+sr**2))))
-                        self.selectedDataSource.setMapping('ColourNorm', '1.0*colNorm')
-
-                    self.dataSources.append(self.selectedDataSource)
-
-                    if not self.colp == None: #remove previous colour viewer
-                        i = 0
-                        found = False
-                        while not found and i < self.notebook.GetPageCount():
-                            if self.notebook.GetPage(i) == self.colp:
-                                self.notebook.DeletePage(i)
-                                found = True
-                            else:
-                                i += 1
-
-                    self.colp = colourPanel.colourPanel(self, self)
+                self.colp = colourPanel.colourPanel(self, self)
 #                    if 'Sample.Labelling' in self.mdh.getEntryNames():
 #                        self.colp.SpecFromMetadata(self.mdh)
-                    self.AddPage(self.colp, caption='Colour')
-                elif 'fitResults_sigxl' in self.selectedDataSource.keys():
-                    self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource)
-                    self.dataSources.append(self.selectedDataSource)
+                self.AddPage(self.colp, caption='Colour')
+            elif 'fitResults_sigxl' in self.selectedDataSource.keys():
+                self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource)
+                self.dataSources.append(self.selectedDataSource)
 
-                    self.selectedDataSource.setMapping('sig', 'fitResults_sigxl + fitResults_sigyu')
-                    self.selectedDataSource.setMapping('sig_d', 'fitResults_sigxl - fitResults_sigyu')
+                self.selectedDataSource.setMapping('sig', 'fitResults_sigxl + fitResults_sigyu')
+                self.selectedDataSource.setMapping('sig_d', 'fitResults_sigxl - fitResults_sigyu')
 
-                    self.selectedDataSource.dsigd_dz = -30.
-                    self.selectedDataSource.setMapping('fitResults_z0', 'dsigd_dz*sig_d')
+                self.selectedDataSource.dsigd_dz = -30.
+                self.selectedDataSource.setMapping('fitResults_z0', 'dsigd_dz*sig_d')
                 elif not 'y' in self.selectedDataSource.keys():
                     #    print 'foo'
                     self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource, y='10*t')
                     self.dataSources.append(self.selectedDataSource)
-                else:
-                    self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource)
-                    self.dataSources.append(self.selectedDataSource)
+            else:
+                self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource)
+                self.dataSources.append(self.selectedDataSource)
 
                 if 'mdh' in dir(self):                    
                     if 'Camera.ROIWidth' in self.mdh.getEntryNames():
@@ -1004,78 +1011,80 @@ class VisGUIFrame(wx.Frame):
                 else:
                     self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)    
 
-                if ('Events' in self.selectedDataSource.resultsSource.h5f.root) and ('StartTime' in self.mdh.keys()):
-                    self.events = self.selectedDataSource.resultsSource.h5f.root.Events[:]
+            if ('Events' in self.selectedDataSource.resultsSource.h5f.root) and ('StartTime' in self.mdh.keys()):
+                self.events = self.selectedDataSource.resultsSource.h5f.root.Events[:]
 
-                    self.elv = eventLogViewer.eventLogPanel(self, self.events, self.mdh, [0, self.selectedDataSource['tIndex'].max()]);
-                    self.AddPage(self.elv, caption='Events')
+                self.elv = eventLogViewer.eventLogPanel(self, self.events, 
+                                                        self.mdh, 
+                                                        [0, self.selectedDataSource['tIndex'].max()])
+                self.AddPage(self.elv, caption='Events')
 
-                    evKeyNames = set()
-                    for e in self.events:
-                        evKeyNames.add(e['EventName'])
+                evKeyNames = set()
+                for e in self.events:
+                    evKeyNames.add(e['EventName'])
 
-                    charts = []
+                charts = []
 
-                    if 'ProtocolFocus' in evKeyNames:
-                        self.zm = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), self.mdh.getEntry('Protocol.PiezoStartPos'))
-                        self.z_focus = 1.e3*self.zm(self.selectedDataSource['t'])
-                        #self.elv.SetCharts([('Focus [um]', self.zm, 'ProtocolFocus'),])
-                        charts.append(('Focus [um]', self.zm, 'ProtocolFocus'))
+                if 'ProtocolFocus' in evKeyNames:
+                    self.zm = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), self.mdh.getEntry('Protocol.PiezoStartPos'))
+                    self.z_focus = 1.e3*self.zm(self.selectedDataSource['t'])
+                    #self.elv.SetCharts([('Focus [um]', self.zm, 'ProtocolFocus'),])
+                    charts.append(('Focus [um]', self.zm, 'ProtocolFocus'))
 
-                        self.selectedDataSource.z_focus = self.z_focus
-                        self.selectedDataSource.setMapping('focus', 'z_focus')
+                    self.selectedDataSource.z_focus = self.z_focus
+                    self.selectedDataSource.setMapping('focus', 'z_focus')
 
-                    if 'ScannerXPos' in self.elv.evKeyNames:
-                        x0 = 0
-                        if 'Positioning.Stage_X' in self.mdh.getEntryNames():
-                            x0 = self.mdh.getEntry('Positioning.Stage_X')
-                        self.xm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), x0, 'ScannerXPos', 0)
-                        charts.append(('XPos [um]', self.xm, 'ScannerXPos'))
+                if 'ScannerXPos' in self.elv.evKeyNames:
+                    x0 = 0
+                    if 'Positioning.Stage_X' in self.mdh.getEntryNames():
+                        x0 = self.mdh.getEntry('Positioning.Stage_X')
+                    self.xm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), x0, 'ScannerXPos', 0)
+                    charts.append(('XPos [um]', self.xm, 'ScannerXPos'))
 
-                        self.selectedDataSource.scan_x = 1.e3*self.xm(self.selectedDataSource['t']-.01)
-                        self.selectedDataSource.setMapping('ScannerX', 'scan_x')
-                        self.selectedDataSource.setMapping('x', 'x + scan_x')
+                    self.selectedDataSource.scan_x = 1.e3*self.xm(self.selectedDataSource['t']-.01)
+                    self.selectedDataSource.setMapping('ScannerX', 'scan_x')
+                    self.selectedDataSource.setMapping('x', 'x + scan_x')
 
-                    if 'ScannerYPos' in self.elv.evKeyNames:
-                        y0 = 0
-                        if 'Positioning.Stage_Y' in self.mdh.getEntryNames():
-                            y0 = self.mdh.getEntry('Positioning.Stage_Y')
-                        self.ym = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), y0, 'ScannerYPos', 0)
-                        charts.append(('YPos [um]', self.ym, 'ScannerYPos'))
+                if 'ScannerYPos' in self.elv.evKeyNames:
+                    y0 = 0
+                    if 'Positioning.Stage_Y' in self.mdh.getEntryNames():
+                        y0 = self.mdh.getEntry('Positioning.Stage_Y')
+                    self.ym = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), y0, 'ScannerYPos', 0)
+                    charts.append(('YPos [um]', self.ym, 'ScannerYPos'))
 
-                        self.selectedDataSource.scan_y = 1.e3*self.ym(self.selectedDataSource['t']-.01)
-                        self.selectedDataSource.setMapping('ScannerY', 'scan_y')
-                        self.selectedDataSource.setMapping('y', 'y + scan_y')
+                    self.selectedDataSource.scan_y = 1.e3*self.ym(self.selectedDataSource['t']-.01)
+                    self.selectedDataSource.setMapping('ScannerY', 'scan_y')
+                    self.selectedDataSource.setMapping('y', 'y + scan_y')
 
-                    if 'ScannerXPos' in self.elv.evKeyNames or 'ScannerYPos' in self.elv.evKeyNames:
-                        self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
+                if 'ScannerXPos' in self.elv.evKeyNames or 'ScannerYPos' in self.elv.evKeyNames:
+                    self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
 
-                    self.elv.SetCharts(charts)
+                self.elv.SetCharts(charts)
 
-                if not 'foreShort' in dir(self.selectedDataSource):
-                    self.selectedDataSource.foreShort = 1.
+            if not 'foreShort' in dir(self.selectedDataSource):
+                self.selectedDataSource.foreShort = 1.
 
-                if not 'focus' in self.selectedDataSource.mappings.keys():
-                    self.selectedDataSource.focus= np.zeros(self.selectedDataSource['x'].shape)
-                    
-                if 'fitResults_z0' in self.selectedDataSource.keys():
-                    self.selectedDataSource.setMapping('z', 'fitResults_z0 + foreShort*focus')
-                else:
-                    self.selectedDataSource.setMapping('z', 'foreShort*focus')
+            if not 'focus' in self.selectedDataSource.mappings.keys():
+                self.selectedDataSource.focus= np.zeros(self.selectedDataSource['x'].shape)
+                
+            if 'fitResults_z0' in self.selectedDataSource.keys():
+                self.selectedDataSource.setMapping('z', 'fitResults_z0 + foreShort*focus')
+            else:
+                self.selectedDataSource.setMapping('z', 'foreShort*focus')
 
-                if not self.mdp == None: #remove previous colour viewer
-                    i = 0
-                    found = False
-                    while not found and i < self.notebook.GetPageCount():
-                        if self.notebook.GetPage(i) == self.mdp:
-                            self.notebook.DeletePage(i)
-                            found = True
-                        else:
-                            i += 1
+            if not self.mdp == None: #remove previous colour viewer
+                i = 0
+                found = False
+                while not found and i < self.notebook.GetPageCount():
+                    if self.notebook.GetPage(i) == self.mdp:
+                        self.notebook.DeletePage(i)
+                        found = True
+                    else:
+                        i += 1
 
-                if 'mdh' in dir(self):
-                    self.mdp = MetadataTree.MetadataPanel(self, self.mdh, editable=False)
-                    self.AddPage(self.mdp, caption='Metadata')
+            if 'mdh' in dir(self):
+                self.mdp = MetadataTree.MetadataPanel(self, self.mdh, editable=False)
+                self.AddPage(self.mdp, caption='Metadata')
                         
         elif os.path.splitext(filename)[1] == '.mat': #matlab file
             from scipy.io import loadmat
@@ -1132,7 +1141,10 @@ class VisGUIFrame(wx.Frame):
         self.SetFit()
 
     def OnOpenChannel(self, event):
-        filename = wx.FileSelector("Choose a file to open", nameUtils.genResultDirectoryPath(), default_extension='h5r', wildcard='PYME Results Files (*.h5r)|*.h5r|Tab Formatted Text (*.txt)|*.txt')
+        filename = wx.FileSelector("Choose a file to open", 
+                                   nameUtils.genResultDirectoryPath(), 
+                                   default_extension='h5r', 
+                                   wildcard='PYME Results Files (*.h5r)|*.h5r|Tab Formatted Text (*.txt)|*.txt')
 
         #print filename
         if not filename == '':
@@ -1144,22 +1156,22 @@ class VisGUIFrame(wx.Frame):
         self.colourFilter = None
         print os.path.splitext(filename)[1]
         if os.path.splitext(filename)[1] == '.h5r':
-                try:
-                    self.selectedDataSource = inpFilt.h5rSource(filename)
-                    self.dataSources.append(self.selectedDataSource)
+            try:
+                self.selectedDataSource = inpFilt.h5rSource(filename)
+                self.dataSources.append(self.selectedDataSource)
 
-                    self.filesToClose.append(self.selectedDataSource.h5f)
+                self.filesToClose.append(self.selectedDataSource.h5f)
 
-                    if 'DriftResults' in self.selectedDataSource.h5f.root:
-                        self.dataSources.append(inpFilt.h5rDSource(self.selectedDataSource.h5f))
+                if 'DriftResults' in self.selectedDataSource.h5f.root:
+                    self.dataSources.append(inpFilt.h5rDSource(self.selectedDataSource.h5f))
 
-                        if len(self.selectedDataSource['x']) == 0:
-                            self.selectedDataSource = self.dataSources[-1]
-                except:
-                    self.selectedDataSource = inpFilt.h5rDSource(filename)
-                    self.dataSources.append(self.selectedDataSource)
+                    if len(self.selectedDataSource['x']) == 0:
+                        self.selectedDataSource = self.dataSources[-1]
+            except:
+                self.selectedDataSource = inpFilt.h5rDSource(filename)
+                self.dataSources.append(self.selectedDataSource)
 
-                    self.filesToClose.append(self.selectedDataSource.h5f)
+                self.filesToClose.append(self.selectedDataSource.h5f)
 
         else: #assume it's a text file
             dlg = importTextDialog.ImportTextDialog(self)
@@ -1180,14 +1192,16 @@ class VisGUIFrame(wx.Frame):
         self.SetFit()
 
     def OnOpenRaw(self, event):
-        #print self.filename
-        tmp = os.path.split(self.filename)[0].split(os.sep)
-        #print tmp
-        tgtDir = os.sep.join(tmp[:-2] + tmp[-1:])
-        print tgtDir
-        filename = wx.FileSelector("Choose a file to open", tgtDir, default_extension='h5', wildcard='PYME Spool Files (*.h5)|*.h5|Khoros Data Format (*.kdf)|*.kdf|Tiff (*.tif)|*.tif')
-        if not filename == '':
-            self.OpenRaw(filename)
+        from PYME.DSView import ViewIm3D, ImageStack
+        ViewIm3D(ImageStack(), mode='visGUI', glCanvas=self.glCanvas)
+#        #print self.filename
+#        tmp = os.path.split(self.filename)[0].split(os.sep)
+#        #print tmp
+#        tgtDir = os.sep.join(tmp[:-2] + tmp[-1:])
+#        print tgtDir
+#        filename = wx.FileSelector("Choose a file to open", tgtDir, default_extension='h5', wildcard='PYME Spool Files (*.h5)|*.h5|Khoros Data Format (*.kdf)|*.kdf|Tiff (*.tif)|*.tif')
+#        if not filename == '':
+#            self.OpenRaw(filename)
 
     def OpenRaw(self, filename):
         ext = os.path.splitext(filename)[-1]
@@ -1195,7 +1209,8 @@ class VisGUIFrame(wx.Frame):
             from PYME.FileUtils import read_kdf
             im = read_kdf.ReadKdfData(filename).squeeze()
 
-            dlg = wx.TextEntryDialog(self, 'Pixel Size [nm]:', 'Please enter the x-y pixel size', '70')
+            dlg = wx.TextEntryDialog(self, 'Pixel Size [nm]:', 
+                                     'Please enter the x-y pixel size', '70')
             dlg.ShowModal()
 
             pixelSize = float(dlg.GetValue())
@@ -1203,7 +1218,8 @@ class VisGUIFrame(wx.Frame):
             imb = ImageBounds(0,0,pixelSize*im.shape[0],pixelSize*im.shape[1])
             
             img = GeneratedImage(im,imb, pixelSize )
-            imf = imageView.ImageViewFrame(self,img, self.glCanvas, title=filename,zdim=2)
+            imf = imageView.ImageViewFrame(self,img, self.glCanvas, 
+                                           title=filename,zdim=2)
             self.generatedImages.append(imf)
             imf.Show()
         elif ext == '.h5': #h5 spool
@@ -1234,7 +1250,9 @@ class VisGUIFrame(wx.Frame):
             else:
                 zp = 0
             #imf = imageView.ImageViewFrame(self,img, self.glCanvas, title=filename,zp=zp)
-            imf = imageView.MultiChannelImageViewFrame(self, self.glCanvas, [img], title=filename, zdim=0, zp=zp)
+            imf = imageView.MultiChannelImageViewFrame(self, self.glCanvas, 
+                                                       [img], title=filename, 
+                                                       zdim=0, zp=zp)
 
             self.generatedImages.append(imf)
             imf.Show()
@@ -1278,7 +1296,8 @@ class VisGUIFrame(wx.Frame):
             imb = ImageBounds(0,0,pixelSize*im.shape[0],pixelSize*im.shape[1])
 
             img = GeneratedImage(im,imb, pixelSize )
-            imf = imageView.MultiChannelImageViewFrame(self, self.glCanvas, [img], title=filename,zdim=2)
+            imf = imageView.MultiChannelImageViewFrame(self, self.glCanvas, 
+                                                       [img], title=filename,zdim=2)
             self.generatedImages.append(imf)
             imf.Show()
         else:
@@ -1289,7 +1308,8 @@ class VisGUIFrame(wx.Frame):
 
     def RegenFilter(self):
         if not self.selectedDataSource == None:
-            self.filter = inpFilt.resultsFilter(self.selectedDataSource, **self.filterKeys)
+            self.filter = inpFilt.resultsFilter(self.selectedDataSource, 
+                                                **self.filterKeys)
             if self.mapping:
                 self.mapping.resultsSource = self.filter
             else:
@@ -1314,7 +1334,8 @@ class VisGUIFrame(wx.Frame):
             return #get out of here
 
         if len(self.colourFilter['x']) == 0:
-            wx.MessageBox('No data points - try adjusting the filter', "len(filter['x']) ==0")
+            wx.MessageBox('No data points - try adjusting the filter', 
+                          "len(filter['x']) ==0")
             return
 
         if self.glCanvas.init == 0: #glcanvas is not initialised
@@ -1341,9 +1362,14 @@ class VisGUIFrame(wx.Frame):
                 self.rav = None
 
         if self.viewMode == 'points':
-            self.glCanvas.setPoints(self.colourFilter['x'], self.colourFilter['y'], self.pointColour())
+            self.glCanvas.setPoints(self.colourFilter['x'], 
+                                    self.colourFilter['y'], self.pointColour())
         elif self.viewMode == 'tracks':
-            self.glCanvas.setTracks(self.colourFilter['x'], self.colourFilter['y'], self.colourFilter['clumpIndex'], self.pointColour())
+            self.glCanvas.setTracks(self.colourFilter['x'], 
+                                    self.colourFilter['y'], 
+                                    self.colourFilter['clumpIndex'], 
+                                    self.pointColour())
+                                    
         elif self.viewMode == 'triangles':
             if self.Triangles == None:
                 status = statusLog.StatusLogger("Generating Triangulation ...")
@@ -1419,7 +1445,8 @@ class VisGUIFrame(wx.Frame):
             self.glCanvas.setBlobs(self.objects, self.objThreshold)
             self.objCInd = self.glCanvas.c
 
-        self.displayPane.hlCLim.SetData(self.glCanvas.c, self.glCanvas.clim[0], self.glCanvas.clim[1])
+        self.displayPane.hlCLim.SetData(self.glCanvas.c, self.glCanvas.clim[0], 
+                                        self.glCanvas.clim[1])
 
         if not self.colp == None and self.colp.IsShown():
             self.colp.refresh()
@@ -1431,14 +1458,16 @@ class VisGUIFrame(wx.Frame):
 
 
     def GenQuads(self):
-        di = max(self.imageBounds.x1 - self.imageBounds.x0, self.imageBounds.y1 - self.imageBounds.y0)
+        di = max(self.imageBounds.x1 - self.imageBounds.x0, 
+                 self.imageBounds.y1 - self.imageBounds.y0)
 
         np = di/self.QTGoalPixelSize
 
         di = self.QTGoalPixelSize*2**pylab.ceil(pylab.log2(np))
 
         
-        self.Quads = pointQT.qtRoot(self.imageBounds.x0, self.imageBounds.x0+di, self.imageBounds.y0, self.imageBounds.y0 + di)
+        self.Quads = pointQT.qtRoot(self.imageBounds.x0, self.imageBounds.x0+di, 
+                                    self.imageBounds.y0, self.imageBounds.y0 + di)
 
         for xi, yi in zip(self.colourFilter['x'],self.colourFilter['y']):
             self.Quads.insert(pointQT.qtRec(xi,yi, None))
@@ -1451,9 +1480,11 @@ class VisGUIFrame(wx.Frame):
         #print ysc
 
         if xsc > ysc:
-            self.glCanvas.setView(self.imageBounds.x0, self.imageBounds.x1, self.imageBounds.y0, self.imageBounds.y0 + xsc*self.glCanvas.Size[1])
+            self.glCanvas.setView(self.imageBounds.x0, self.imageBounds.x1, 
+                                  self.imageBounds.y0, self.imageBounds.y0 + xsc*self.glCanvas.Size[1])
         else:
-            self.glCanvas.setView(self.imageBounds.x0, self.imageBounds.x0 + ysc*self.glCanvas.Size[0], self.imageBounds.y0, self.imageBounds.y1)
+            self.glCanvas.setView(self.imageBounds.x0, self.imageBounds.x0 + ysc*self.glCanvas.Size[0], 
+                                  self.imageBounds.y0, self.imageBounds.y1)
 
     def OnFitROI(self,event = None):
         if 'x' in self.filterKeys.keys():
@@ -1473,9 +1504,11 @@ class VisGUIFrame(wx.Frame):
         #print ysc
 
         if xsc > ysc:
-            self.glCanvas.setView(xbounds[0], xbounds[1], ybounds[0], ybounds[0] + xsc*self.glCanvas.Size[1])
+            self.glCanvas.setView(xbounds[0], xbounds[1], ybounds[0], 
+                                  ybounds[0] + xsc*self.glCanvas.Size[1])
         else:
-            self.glCanvas.setView(xbounds[0], xbounds[0] + ysc*self.glCanvas.Size[0], ybounds[0], ybounds[1])
+            self.glCanvas.setView(xbounds[0], xbounds[0] + ysc*self.glCanvas.Size[0], 
+                                  ybounds[0], ybounds[1])
 
     #def OnGLViewChanged(self):
     #    for genI in self.generatedImages:
