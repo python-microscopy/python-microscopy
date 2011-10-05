@@ -614,10 +614,14 @@ class LMAnalyser:
         dataFilename = self.image.seriesName
         resultsFilename = genResultFileName(self.image.seriesName)
 
-        while os.path.exists(resultsFilename):
+        if os.path.exists(resultsFilename):
             di, fn = os.path.split(resultsFilename)
+            i = 1
+            stub = os.path.splitext(fn)[0]
+            while os.path.exists(os.path.join(di, stub + '_%d.h5r' % i)):
+                i += 1
             fdialog = wx.FileDialog(None, 'Analysis file already exists, please select a new filename',
-                        wildcard='H5R files|*.h5r', defaultDir=di, defaultFile=os.path.splitext(fn)[0] + '_1.h5r', style=wx.SAVE)
+                        wildcard='H5R files|*.h5r', defaultDir=di, defaultFile=stub + '_%d.h5r' % i, style=wx.SAVE)
             succ = fdialog.ShowModal()
             if (succ == wx.ID_OK):
                 resultsFilename = fdialog.GetPath().encode()

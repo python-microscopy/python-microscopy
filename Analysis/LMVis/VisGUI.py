@@ -984,10 +984,10 @@ class VisGUIFrame(wx.Frame):
 
                 self.selectedDataSource.dsigd_dz = -30.
                 self.selectedDataSource.setMapping('fitResults_z0', 'dsigd_dz*sig_d')
-                elif not 'y' in self.selectedDataSource.keys():
-                    #    print 'foo'
-                    self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource, y='10*t')
-                    self.dataSources.append(self.selectedDataSource)
+            elif not 'y' in self.selectedDataSource.keys():
+                #    print 'foo'
+                self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource, y='10*t')
+                self.dataSources.append(self.selectedDataSource)
             else:
                 self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource)
                 self.dataSources.append(self.selectedDataSource)

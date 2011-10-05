@@ -1,6 +1,8 @@
 #PYME Simple Metadata v1
 import os
-print __file__
+import numpy as np
+
+#print __file__
 md['EndTime'] = 1300676178.4949999
 md['EstimatedLaserOnFrameNo'] = 0
 md['PSFFile'] = os.path.join(os.path.split(__file__)[0], 'psf_astig.psf')
@@ -10,8 +12,9 @@ md['Analysis.BGRange'] = [0, 0]
 md['Analysis.DataFileID'] = 1571469165
 md['Analysis.DebounceRadius'] = 14
 md['Analysis.DetectionThreshold'] = 7.0
-md['Analysis.FitModule'] = u'InterpFitR'
+md['Analysis.FitModule'] = u'SplitterFitInterpR'
 md['Analysis.InterpModule'] = 'LinearInterpolator'
+md['Analysis.AxialShift'] = 250
 #md['Analysis.EstimatorModule'] = 'priEstimator'
 md['Analysis.subtractBackground'] = False
 md['Camera.ADOffset'] = 1159.0
@@ -45,5 +48,18 @@ md['voxelsize.units'] = 'um'
 md['voxelsize.x'] = 0.073999999999999996
 md['voxelsize.y'] = 0.071999999999999995
 md['voxelsize.z'] = 0.050000000000000003
-md['Test.DefaultParams'] = [205, 0, 0, 0, 50]
-md['Test.ParamJitter'] = [200, 90, 90, 250, 10]
+#load shift field
+#dx, dy = np.load(os.path.join(os.path.split(__file__)[0], '30_9_series_A_1.sf'))
+#md['chroma.dx'] = dx
+#md['chroma.dy'] = dy
+class sffake:
+    def __init__(self, val):
+        self.val = val
+
+    def ev(self, x, y):
+        return self.val
+
+md['chroma.dx'] = sffake(50.)
+md['chroma.dy'] = sffake(100.)
+md['Test.DefaultParams'] = [205, 205, 0, 0, 0, 50, 50]
+md['Test.ParamJitter'] = [150, 150, 90, 90, 250, 10, 10]

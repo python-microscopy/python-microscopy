@@ -30,7 +30,7 @@ def unpickleSlice(start, stop, step):
 
 copy_reg.pickle(slice, pickleSlice, unpickleSlice)
 
-def f_Interp3d2c(p, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, *args):
+def f_Interp3d2c(p, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, axialShift, *args):
     """3D PSF model function with constant background - parameter vector [A, x0, y0, z0, background]"""
     Ag, Ar, x0, y0, z0, bG, bR = p
 
@@ -49,7 +49,7 @@ def f_Interp3d2c(p, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, *args):
     #prob. not ideal, for a number of reasons
     x0 = min(max(x0, safeRegion[0][0]), safeRegion[0][1])
     y0 = min(max(y0, safeRegion[1][0]), safeRegion[1][1])
-    z0 = min(max(z0, safeRegion[2][0]), safeRegion[2][1])
+    z0 = min(max(z0, safeRegion[2][0] + axialShift), safeRegion[2][1] - axialShift)
 
     g = interpolator.interp(Xg - x0 + 1, Yg - y0 + 1, Zg[0] - z0 + 1)*Ag + bG
     r = interpolator.interp(Xr - x0 + 1, Yr - y0 + 1, Zr[0] - z0 + 1)*Ar + bR
@@ -125,6 +125,9 @@ class PSFFitFactory:
             if 'PSFFile' in metadata.getEntryNames():
                 if self.interpolator.setModelFromMetadata(metadata):
                     print 'model changed'
+                    self.startPosEstimator.splines.clear()
+
+                if not 'z' in self.startPosEstimator.splines.keys():
                     self.startPosEstimator.calibrate(self.interpolator, metadata)
             else:
                 self.interpolator.genTheoreticalModel(metadata)
@@ -146,13 +149,20 @@ class PSFFitFactory:
 #
 #        startPosEstimator.calibrate(interpolator, md)
 
-        X, Y, Z, safeRegion = interpolator.getCoords(md, slice(-roiHalfSize,roiHalfSize + 1), slice(-roiHalfSize,roiHalfSize + 1), slice(0,1))
+        Xg, Yg, Zg, safeRegion = interpolator.getCoords(md, slice(-roiHalfSize,roiHalfSize + 1), slice(-roiHalfSize,roiHalfSize + 1), slice(0,1))
+        
+        DeltaX = md.chroma.dx.ev(x, y)
+        DeltaY = md.chroma.dy.ev(x, y)
+
+        Xr = Xg + DeltaX
+        Yr = Yg + DeltaY
+        Zr = Zg + md.Analysis.AxialShift
 
         #X = 1e3*md.voxelsize.x*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
         #Y = 1e3*md.voxelsize.y*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
         #Z = array([0]).astype('f')
 
-        return f_Interp3d2c(params, interpolator, X, Y, Z, safeRegion)
+        return f_Interp3d2c(params, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion), Xg.ravel()[0], Yg.ravel()[0], Zg.ravel()[0]
 
     def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
         #if (z == None): # use position of maximum intensity
@@ -244,7 +254,7 @@ class PSFFitFactory:
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
         #(res, cov_x, infodict, mesg, resCode) = FitModelWeighted(self.fitfcn, startParameters, dataMean, sigma, X, Y)
-        (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, self.interpolator,Xg, Yg, Zg, Xr, Yr, Zr, safeRegion)
+        (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, self.interpolator,Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, np.abs(self.metadata.Analysis.AxialShift))
 
         fitErrors=None
         try:       

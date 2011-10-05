@@ -92,9 +92,9 @@ class Unmixer:
 
     def Unmix(self, data, mixMatrix, offset, ROI=[1,1,512, 512]):
         import scipy.linalg
-        from PYME import cSMI
-        from pylab import *
-        from PYME.DSView.dsviewer_npy import View3D
+        #from PYME import cSMI
+        #from pylab import *
+        #from PYME.DSView.dsviewer_npy import View3D
 
         umm = scipy.linalg.inv(mixMatrix)
 
@@ -103,7 +103,7 @@ class Unmixer:
         g_ = dsa[:, :(dsa.shape[1]/2)]
         r_ = dsa[:, (dsa.shape[1]/2):]
         if self.flip:
-            r_ = fliplr(r_)
+            r_ = numpy.fliplr(r_)
         r_ = self._deshift(r_, ROI)
 
         #print g_.shape, r_.shape

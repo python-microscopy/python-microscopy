@@ -68,9 +68,13 @@ def replNoneWith1(n):
 		return n
 
 
-fresultdtype=[('tIndex', '<i4'),('fitResults', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4')]),('fitError', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4')]), ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
+fresultdtype=[('tIndex', '<i4'),
+              ('fitResults', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4')]),
+              ('fitError', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4')]),
+              ('startParams', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4')]), 
+              ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
 
-def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None):
+def GaussianFitResultR(fitResults, metadata, startParams, slicesUsed=None, resultCode=-1, fitErr=None):
 	if slicesUsed == None:
 		slicesUsed = ((-1,-1,-1),(-1,-1,-1),(-1,-1,-1))
 	else: 		
@@ -92,7 +96,7 @@ def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fit
 	#print resultCode
 
 
-	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, slicesUsed)], dtype=fresultdtype) 
+	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), startParams.astype('f'), resultCode, slicesUsed)], dtype=fresultdtype) 
 		
 def splWrap(*args):
     #print ''
@@ -112,6 +116,24 @@ class GaussianFitFactory:
             self.solver = FitModelWeightedJac
         else:
             self.solver = FitModelWeighted
+            
+    @classmethod
+    def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):
+        #generate grid to evaluate function on        
+        Xg = 1e3*md.voxelsize.x*scipy.mgrid[slice(-roiHalfSize,roiHalfSize + 1)]
+        Yg = 1e3*md.voxelsize.y*scipy.mgrid[slice(-roiHalfSize,roiHalfSize + 1)]
+
+        #generate a corrected grid for the red channel      
+        DeltaX = md.chroma.dx.ev(x, y)
+        DeltaY = md.chroma.dy.ev(x, y)
+
+        Xr = Xg + DeltaX
+        Yr = Yg + DeltaY
+        
+        #print DeltaX, DeltaY
+
+
+        return f_gauss2d2ccb(params, Xg, Yg, Xr, Yr), Xg.ravel()[0], Yg.ravel()[0], 0
 		
         
     def __getitem__(self, key):
@@ -143,7 +165,7 @@ class GaussianFitFactory:
         Xr = Xg + DeltaX
         Yr = Yg + DeltaY
 
-        #print DeltaX
+        #print DeltaX, DeltaY
         #print DeltaY
 
         #estimate some start parameters...
@@ -174,7 +196,7 @@ class GaussianFitFactory:
 
             dataROI = dataROI - bgROI
 
-        startParameters = [Ag, Ar, x0, y0, 250/2.35]
+        startParameters = numpy.array([Ag, Ar, x0, y0, 250/2.35])
 	
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
@@ -193,7 +215,7 @@ class GaussianFitFactory:
             pass
 
 	#print res, fitErrors, resCode
-        return GaussianFitResultR(res, self.metadata, (xslice, yslice, zslice), resCode, fitErrors)
+        return GaussianFitResultR(res, self.metadata, startParameters, (xslice, yslice, zslice), resCode, fitErrors)
 
     def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
         #if (z == None): # use position of maximum intensity

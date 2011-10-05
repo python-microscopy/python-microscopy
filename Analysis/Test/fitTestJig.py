@@ -39,10 +39,15 @@ class fitTestJig(object):
         return cls(MetaDataHandler.SimpleMDHandler(mdfile))
 
 
-    def runTests(self, params=[205, 0, 0, 250/2.35, 50, 0, 0], param_jit=[200, 90, 90, 30, 10, 0, 0], nTests=100):
+    def runTests(self, params=None, param_jit=None, nTests=100):
+        if not params:
+            params = self.md['Test.DefaultParams']
+        if not param_jit:
+            param_jit = self.md['Test.ParamJitter']
+            
         self.fitMod = __import__('PYME.Analysis.FitFactories.' + self.fitModule, fromlist=['PYME', 'Analysis','FitFactories']) #import our fitting module
         self.res = numpy.empty(nTests, self.fitMod.FitResultsDType)
-        ps = zeros((nTests, len(params)), 'f4')
+        ps = numpy.zeros((nTests, len(params)), 'f4')
 
         rs=5
         for i in range(nTests):
@@ -50,10 +55,14 @@ class fitTestJig(object):
             p[0] = abs(p[0])
             ps[i, :] = p
             self.data, self.x0, self.y0, self.z0 = self.fitMod.FitFactory.evalModel(p, self.md, roiHalfSize=rs)#, roiHalfSize= roiHalfWidth))
+            
+            #print self.data.shape
 
             self.d2 = self.noiseM.noisify(self.data)
+            
+            #print self.d2.shape
 
-            self.fitFac = self.fitMod.FitFactory(self.d2[:,:,None], self.md, background = 0)
+            self.fitFac = self.fitMod.FitFactory(atleast_3d(self.d2), self.md, background = 0)
             self.res[i] = self.fitFac.FromPoint(rs, rs, roiHalfSize=rs)
 
         

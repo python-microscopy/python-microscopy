@@ -189,7 +189,10 @@ class SimpleMDHandler(NestedClassMDHandler):
             import cPickle
             #loading an existing file
             md = self
+            fn = __file__
+            globals()['__file__'] = filename
             execfile(filename)
+            globals()['__file__'] = fn
 
         if not mdToCopy == None:
             self.copyEntriesFrom(mdToCopy)
