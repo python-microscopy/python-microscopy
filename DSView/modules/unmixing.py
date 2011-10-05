@@ -6,7 +6,7 @@ Created on Tue Oct 04 14:48:07 2011
 """
 
 import wx
-from PYME.Acquire.Hardware import splitter
+#from PYME.Acquire.Hardware import splitter
 from PYME.Analysis.DataSources import UnsplitDataSource
 import numpy as np
 #from PYME.DSView.arrayViewPanel import *
@@ -75,32 +75,7 @@ class Unmixer:
     def __init__(self, dsviewer):
         self.dsviewer = dsviewer
 
-        self.image = dsviewer.image
-        
-        mdh = dsviewer.image.mdh
-        sf = (mdh['chroma.dx'], mdh['chroma.dy'])
-    
-        flip = True
-        if 'Splitter.Flip' in mdh.getEntryNames():
-            flip = False
-        
-        unmux = splitter.Unmixer(sf, 1e3*mdh['voxelsize.x'], flip)
-        mixMatrix = np.array([[1.,0.],[0.,1.]])
-        
-        ROIX1 = mdh.getEntry('Camera.ROIPosX')
-        ROIY1 = mdh.getEntry('Camera.ROIPosY')
-    
-        ROIX2 = ROIX1 + mdh.getEntry('Camera.ROIWidth')
-        ROIY2 = ROIY1 + mdh.getEntry('Camera.ROIHeight')
-        
-        self.um0 = UnsplitDataSource.DataSource(dsviewer.image.data, unmux, 
-                                           mixMatrix, mdh['Camera.ADOffset'],
-                                           [ROIX1, ROIY1, ROIX2, ROIY2], 0)
-        
-        self.um1 = UnsplitDataSource.DataSource(dsviewer.image.data, unmux, 
-                                           mixMatrix, mdh['Camera.ADOffset'],
-                                           [ROIX1, ROIY1, ROIX2, ROIY2], 1)
-        
+        self.image = dsviewer.image 
         
 
         EXTRAS_UNMUX = wx.NewId()
@@ -110,8 +85,40 @@ class Unmixer:
     def OnUnmix(self, event):
         #from PYME.Analysis import deTile
         from PYME.DSView import ViewIm3D, ImageStack
+
+        mdh = self.image.mdh
+        if 'chroma.dx' in mdh.getEntryNames():
+            sf = (mdh['chroma.dx'], mdh['chroma.dy'])
+        else:
+            sf = None
+
+        flip = True
+        if 'Splitter.Flip' in mdh.getEntryNames():
+            flip = False
+
+        if 'Camera.ADOffset' in mdh.getEntryNames():
+            ado = mdh['Camera.ADOffset']
+        else:
+            ado = 0
+
+        unmux = splitter.Unmixer(sf, 1e3*mdh['voxelsize.x'], flip)
+        mixMatrix = np.array([[1.,0.],[0.,1.]])
+
+        ROIX1 = mdh.getEntry('Camera.ROIPosX')
+        ROIY1 = mdh.getEntry('Camera.ROIPosY')
+
+        ROIX2 = ROIX1 + mdh.getEntry('Camera.ROIWidth')
+        ROIY2 = ROIY1 + mdh.getEntry('Camera.ROIHeight')
+
+        um0 = UnsplitDataSource.DataSource(self.image.data, unmux,
+                                           mixMatrix, ado,
+                                           [ROIX1, ROIY1, ROIX2, ROIY2], 0)
+
+        um1 = UnsplitDataSource.DataSource(self.image.data, unmux,
+                                           mixMatrix, ado,
+                                           [ROIX1, ROIY1, ROIX2, ROIY2], 1)
             
-        im = ImageStack([self.um0, self.um1], titleStub = 'Unmixed Image')
+        im = ImageStack([um0, um1], titleStub = 'Unmixed Image')
         im.mdh.copyEntriesFrom(self.image.mdh)
         im.mdh['Parent'] = self.image.filename
         #im.mdh['Processing.GaussianFilter'] = sigmas
