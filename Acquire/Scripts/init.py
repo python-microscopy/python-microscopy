@@ -13,8 +13,8 @@
 #!/usr/bin/python
 
 import scipy
-from Hardware.Simulator import fakeCam, fakePiezo, lasersliders, dSimControl
-from Hardware import fakeShutters
+from PYME.Acquire.Hardware.Simulator import fakeCam, fakePiezo, lasersliders, dSimControl
+from PYME.Acquire.Hardware import fakeShutters
 import time
 
 #import PYME.cSMI as example

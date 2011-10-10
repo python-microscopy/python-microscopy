@@ -14,14 +14,16 @@
 import sys
 
 def configuration(parent_package = '', top_path = None):
-    from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
+    from numpy.distutils.misc_util import Configuration #, get_numpy_include_dirs
     config = Configuration('DSView', parent_package, top_path)
     config.add_data_dir('icons')
+    config.add_subpackage('LUT')
+    config.add_subpackage('modules')
 
-    if sys.platform == 'win32':
-        config.add_scripts(['dh5view.cmd'])
-    else:
-        config.add_scripts(['dh5view.py'])
+    #if sys.platform == 'win32':
+    #    config.add_scripts(['dh5view.cmd'])
+    #else:
+    #    config.add_scripts(['dh5view.py'])
 
     return config
 

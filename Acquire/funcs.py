@@ -88,8 +88,10 @@ class microscope:
 
     def _OpenSettingsDB(self):
         #create =  not os.path.exists('PYMESettings.db')
+        fstub = os.path.split(__file__)[0]
+        dbfname = os.path.join(fstub, 'PYMESettings.db')
 
-        self.settingsDB = sqlite3.connect('PYMESettings.db', detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+        self.settingsDB = sqlite3.connect(dbfname, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
         self.settingsDB.isolation_level = None
 
         tableNames = [a[0] for a in self.settingsDB.execute('SELECT name FROM sqlite_master WHERE type="table"').fetchall()]

@@ -26,9 +26,9 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('EdgeDB')
     config.add_subpackage('qHull')
     config.add_subpackage('BleachProfile')
-    config.add_subpackage('DriftCorrection')
+    #config.add_subpackage('DriftCorrection')
 
-    config.add_scripts(['LMVis/VisGUI.py', 'LMVis/VisGUI.cmd'])
+    #config.add_scripts(['LMVis/VisGUI.py', 'LMVis/VisGUI.cmd'])
     
     #config.make_svn_version_py()  # installs __svn_version__.py
     #config.make_config_py()
@@ -36,4 +36,4 @@ def configuration(parent_package='',top_path=None):
 
 if __name__ == '__main__':
     from numpy.distutils.core import setup
-    setup(data_files = ['LMVis/dh5view.cmd'], **configuration(top_path='').todict())
+    setup(data_files = [], **configuration(top_path='').todict())

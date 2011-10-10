@@ -18,29 +18,29 @@ import PYME.misc.autoFoldPanel as afp
 
 import sys
 import os
-sys.path.append('.')
+#sys.path.append('.')
 
 import wx.lib.agw.aui as aui
 
 #import PYME.cSMI as example
 
-import mytimer
-import psliders
-import intsliders
-import seqdialog
-import timeseqdialog
-import stepDialog
-import selectCameraPanel
-import funcs
+from PYME.Acquire import mytimer
+from PYME.Acquire import psliders
+from PYME.Acquire import intsliders
+from PYME.Acquire import seqdialog
+from PYME.Acquire import timeseqdialog
+from PYME.Acquire import stepDialog
+from PYME.Acquire import selectCameraPanel
+from PYME.Acquire import funcs
 #import PYME.DSView.dsviewer_npy as dsviewer
 from PYME.DSView import dsviewer_npy_nb as dsviewer
 from PYME.cSMI import CDataStack_AsArray
 from PYME.Acquire import MetaDataHandler
-import chanfr
-import HDFSpoolFrame
+from PYME.Acquire import chanfr
+from PYME.Acquire import HDFSpoolFrame
 from PYME.FileUtils import nameUtils
 
-import splashScreen
+from PYME.Acquire import splashScreen
 import time
 
 import PYME.Acquire.protocol as protocol
@@ -306,14 +306,18 @@ class smiMainFrame(wx.Frame):
         #                  Name(caption.replace(' ', '')).Caption(caption).CloseButton(False).Float())
 
     def runInitScript(self):
+        #import os
         self.time1.WantNotification.remove(self.runInitScript)
         #self.sh.shell.runfile('init.py')
+        #fstub = os.path.join(os.path.split(__file__)[0], 'Scripts')
         initFile = 'init.py'
         if not self.options == None and not self.options.initFile == None:
             initFile = self.options.initFile
-        self.sh.run('import ExecTools')
+            
+        #initFile = os.path.join(fstub, initFile)
+        self.sh.run('from PYME.Acquire import ExecTools')
         self.sh.run('ExecTools.setDefaultNamespace(locals(), globals())')
-        self.sh.run('from ExecTools import InitBG, joinBGInit, InitGUI, HWNotPresent')
+        self.sh.run('from PYME.Acquire.ExecTools import InitBG, joinBGInit, InitGUI, HWNotPresent')
         #self.sh.run('''def InitGUI(code):\n\tpostInit.append(code)\n\n\n''')
         self.sh.run('ExecTools.execFileBG("%s", locals(), globals())' % initFile)
 

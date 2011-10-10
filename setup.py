@@ -9,7 +9,7 @@
 # This file may NOT be distributed without express permision from David Baddeley
 #
 ##################
-
+import glob
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
@@ -21,9 +21,17 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('cSMI')
     config.add_subpackage('ParallelTasks')
     config.add_subpackage('FileUtils')
+    config.add_subpackage('Deconv')
+    config.add_subpackage('PSFEst')
     config.add_subpackage('misc')
     config.add_subpackage('pad')
     config.add_subpackage('dataBrowser')
+    config.add_subpackage('shmarray')
+    
+    #config.add_scripts(glob.glob('scripts/*'))
+    config.add_scripts('scripts/*')
+    
+    #config.set_options()
     
     #config.make_svn_version_py()  # installs __svn_version__.py
     #config.make_config_py()
@@ -32,4 +40,6 @@ def configuration(parent_package='',top_path=None):
 if __name__ == '__main__':
     #import setuptools
     from numpy.distutils.core import setup
-    setup(**configuration(top_path='').todict())
+    setup( **configuration(top_path='').todict())
+    #setup(options = {'bdist_wininst':{'install-script=' : 'pyme_win_postinstall.py',
+    #                    'user-access-control=' : 'force'}}, **configuration(top_path='').todict())

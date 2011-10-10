@@ -1,0 +1,1 @@
+python setup.py bdist_wininst --install-script=pyme_win_postinstall.py --user-access-control=force
