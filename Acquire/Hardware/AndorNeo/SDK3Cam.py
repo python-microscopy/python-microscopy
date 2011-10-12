@@ -67,7 +67,7 @@ class ATEnum(ATProperty):
         SDK3.SetEnumIndex(self.handle, self.propertyName, val)
         
     def getString(self):
-        return SDK3.GetEnumString(self.handle, self.propertyName, 255).value
+        return self.__getitem__(self.getIndex())
     
     def setString(self, val):
         SDK3.SetEnumString(self.handle, self.propertyName, val)
@@ -81,20 +81,13 @@ class ATEnum(ATProperty):
     def getAvailableValues(self):
         n = SDK3.GetEnumCount(self.handle, self.propertyName).value
         
-        return [SDK3.GetEnumStringByIndex(self.handle, self.propertyName, i).value for i in range(n) if SDK3.GetEnumIndexAvailable(self.handle, self.propertyName, i).value]
+        return [SDK3.GetEnumStringByIndex(self.handle, self.propertyName, i, 255).value for i in range(n) if SDK3.IsEnumIndexAvailable(self.handle, self.propertyName, i).value]
         
 class ATCommand(ATProperty):
     def __call__(self):
         return SDK3.Command(self.handle, self.propertyName)
         
-def GetNumCameras():
-    return SDK3.GetInt(SDK3.AT_HANDLE_SYSTEM, 'DeviceCount').value
-    
-def GetSoftwareVersion():
-    return SDK3.GetString(SDK3.AT_HANDLE_SYSTEM, 'SoftwareVersion', 255)
-
-
-def SDK3Camera(object):
+class camReg(object):
     #keep track of the number of cameras initialised so we can initialise and finalise the library
     numCameras = 0
     
@@ -111,10 +104,21 @@ def SDK3Camera(object):
         if cls.numCameras == 0:
             SDK3.FinaliseLibrary()
             
+#make sure the library is intitalised
+camReg.regCamera()
+
+def GetNumCameras():
+    return SDK3.GetInt(SDK3.AT_HANDLE_SYSTEM, 'DeviceCount').value
+    
+def GetSoftwareVersion():
+    return SDK3.GetString(SDK3.AT_HANDLE_SYSTEM, 'SoftwareVersion', 255)
+
+
+class SDK3Camera(object):         
     def __init__(self, camNum):
         '''camera initialisation - note that this should be called  from derived classes
         *AFTER* the properties have been defined'''
-        self.regCamera() #initialise the library if needed
+        #camReg.regCamera() #initialise the library if needed
         
         self.handle = SDK3.Open(camNum)
         self.connectProperties()
@@ -130,5 +134,6 @@ def SDK3Camera(object):
         
     def shutdown(self):
         SDK3.Close(self.handle)
-        self.unregCamera()
+        #camReg.unregCamera()
         
+    

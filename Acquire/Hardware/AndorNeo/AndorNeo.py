@@ -10,86 +10,86 @@ from SDK3Cam import *
 class AndorBase(SDK3Camera):
     def __init__(self, camNum):
         #define properties
-        CameraAcquiring = ATBool()
-        SensorCooling = ATBool()
+        self.CameraAcquiring = ATBool()
+        self.SensorCooling = ATBool()
         
-        AcquisitionStart = ATCommand()
-        AcquisitionStop = ATCommand()
+        self.AcquisitionStart = ATCommand()
+        self.AcquisitionStop = ATCommand()
         
-        CycleMode = ATEnum()
-        ElectronicShutteringMode = ATEnum()
-        FanSpeed = ATEnum()
-        PreAmpGainChannel = ATEnum()
-        PixelEncoding = ATEnum()
-        PixelReadoutRate = ATEnum()
-        PreAmpGain = ATEnum()
-        PreAmpGainSelector = ATEnum()
-        TriggerMode = ATEnum()
+        self.CycleMode = ATEnum()
+        self.ElectronicShutteringMode = ATEnum()
+        self.FanSpeed = ATEnum()
+        self.PreAmpGainChannel = ATEnum()
+        self.PixelEncoding = ATEnum()
+        self.PixelReadoutRate = ATEnum()
+        self.PreAmpGain = ATEnum()
+        self.PreAmpGainSelector = ATEnum()
+        self.TriggerMode = ATEnum()
         
-        AOIHeight = ATInt()
-        AOILeft = ATInt()
-        AOITop = ATInt()
-        AOIWidth = ATInt()
-        FrameCount = ATInt()
-        ImageSizeBytes = ATInt()
-        SensorHeight = ATInt()
-        SensorWidth = ATInt()
+        self.AOIHeight = ATInt()
+        self.AOILeft = ATInt()
+        self.AOITop = ATInt()
+        self.AOIWidth = ATInt()
+        self.FrameCount = ATInt()
+        self.ImageSizeBytes = ATInt()
+        self.SensorHeight = ATInt()
+        self.SensorWidth = ATInt()
         
-        CameraModel = ATString()
-        SerialNumber = ATString()
+        self.CameraModel = ATString()
+        self.SerialNumber = ATString()
         
-        ExposureTime = ATFloat()
-        FrameRate = ATFloat()
-        SensorTemperature = ATFloat()
-        TargetSensorTemperature = ATFloat()
+        self.ExposureTime = ATFloat()
+        self.FrameRate = ATFloat()
+        self.SensorTemperature = ATFloat()
+        self.TargetSensorTemperature = ATFloat()
         
-        super().__init__(self, camNum)
+        SDK3Camera.__init__(self,camNum)
         
 class AndorNeo(AndorBase):
     def __init__(self, camNum):
         #define properties
-        Overlap = ATBool()
-        SpuriousNoiseFilter = ATBool()
+        self.Overlap = ATBool()
+        self.SpuriousNoiseFilter = ATBool()
         
-        CameraDump = ATCommand()
-        SoftwareTrigger = ATCommand()
+        self.CameraDump = ATCommand()
+        self.SoftwareTrigger = ATCommand()
         
-        TemperatureControl = ATEnum()
-        TemperatureStatus = ATEnum()
-        PreAmpGainControl = ATEnum()
-        BitDepth = ATEnum()
+        self.TemperatureControl = ATEnum()
+        self.TemperatureStatus = ATEnum()
+        self.PreAmpGainControl = ATEnum()
+        self.BitDepth = ATEnum()
         
-        ActualExposureTime = ATFloat()
-        BurstRate = ATFloat()
-        ReadoutTime = ATFloat()
+        self.ActualExposureTime = ATFloat()
+        self.BurstRate = ATFloat()
+        self.ReadoutTime = ATFloat()
         
-        AccumulateCount = ATInt()
-        BaselineLevel = ATInt()
-        BurstCount = ATInt()
-        LUTIndex = ATInt()
-        LUTValue = ATInt()
+        self.AccumulateCount = ATInt()
+        self.BaselineLevel = ATInt()
+        self.BurstCount = ATInt()
+        self.LUTIndex = ATInt()
+        self.LUTValue = ATInt()
         
-        ControllerID = ATString()
-        FirmwareVersion = ATString()
+        self.ControllerID = ATString()
+        self.FirmwareVersion = ATString()
         
-        super().__init__(self, camNum)
+        AndorBase.__init__(self,camNum)
         
 class AndorSim(AndorBase):
     def __init__(self, camNum):
         #define properties
-        SynchronousTriggering = ATBool()
+        self.SynchronousTriggering = ATBool()
         
-        PixelCorrection = ATEnum()
-        TriggerSelector = ATEnum()
-        TriggerSource = ATEnum()
+        self.PixelCorrection = ATEnum()
+        self.TriggerSelector = ATEnum()
+        self.TriggerSource = ATEnum()
         
-        PixelHeight = ATFloat()
-        PixelWidth = ATFloat()
+        self.PixelHeight = ATFloat()
+        self.PixelWidth = ATFloat()
         
-        AOIHBin = ATInt()
-        AOIVbin = ATInt()
+        self.AOIHBin = ATInt()
+        self.AOIVbin = ATInt()
         
-        super().__init__(self, camNum)
+        AndorBase.__init__(self,camNum)
         
         
         
