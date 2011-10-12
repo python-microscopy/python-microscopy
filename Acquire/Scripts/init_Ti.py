@@ -66,11 +66,11 @@ scope.shutters = fakeShutters
 
 
 #PIFoc
-#InitBG('PIFoc', '''
-#from PYME.Acquire.Hardware.Piezos import piezo_e816
-#scope.piFoc = piezo_e816.piezo_e816('COM2', 400, -0.399)
-#scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
-#''')
+InitBG('PIFoc', '''
+from PYME.Acquire.Hardware.Piezos import piezo_e816
+scope.piFoc = piezo_e816.piezo_e816('COM1', 400, 0, True)
+scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
+''')
 
 #InitBG('Stage Stepper Motors', '''
 #from PYME.Acquire.Hardware.Mercury import mercuryStepper
@@ -100,10 +100,10 @@ ssp = sarcSpacing.SarcomereChecker(MainFrame, menuBar1, scope)
 #''')
 
 #splitter
-InitGUI('''
-from PYME.Acquire.Hardware import splitter
-splt = splitter.Splitter(MainFrame, mControls, scope, scope.cam, flipChan = 0, dichroic = 'NotYet' , transLocOnCamera = 'Top', flip=False)
-''')
+#InitGUI('''
+#from PYME.Acquire.Hardware import splitter
+#splt = splitter.Splitter(MainFrame, mControls, scope, scope.cam, flipChan = 0, dichroic = 'NotYet' , transLocOnCamera = 'Top', flip=False)
+#''')
 
 #Z stage
 InitGUI('''

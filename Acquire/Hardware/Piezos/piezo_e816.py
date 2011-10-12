@@ -14,10 +14,11 @@ import serial;
 import time
 
 class piezo_e816:    
-    def __init__(self, portname='COM1', maxtravel = 12.00, Osen=None):
+    def __init__(self, portname='COM1', maxtravel = 12.00, Osen=None, hasTrigger=False):
         self.max_travel = maxtravel
         self.waveData = None
         self.numWavePoints = 0
+        
 
         self.ser_port = serial.Serial(portname, 115200, rtscts=1, timeout=2, writeTimeout=2)
         if not Osen == None:
@@ -25,6 +26,10 @@ class piezo_e816:
             self.osen = Osen
         else:
             self.osen = 0
+            
+        self.MAXWAVEPOINTS = 64
+        if self.GetFirmwareVersion() > 3.2:
+            self.MAXWAVEPOINTS = 256
 
         self.ser_port.write('WTO A0\n')
         self.ser_port.write('SVO A1\n')
@@ -32,6 +37,7 @@ class piezo_e816:
         self.lastPos = self.GetPos()
 
         self.driftCompensation = False
+        self.hasTrigger = hasTrigger
 
     def ReInit(self):
         self.ser_port.write('WTO A0\n')
@@ -72,9 +78,9 @@ class piezo_e816:
     def PopulateWaveTable(self,iChannel, data):
         '''Load wavetable data to piezo controller - data should be a sequence/array of positions
         (in um)and should have at most 64 items'''
-        if len(data) > 64:
+        if len(data) > self.MAXWAVEPOINTS:
             #wave table too big
-            raise RuntimeError('piezo_e816 - wave table must not have more than 64 entries')
+            raise RuntimeError('piezo_e816 - wave table must not have more than %d entries' % self.MAXWAVEPOINTS)
 
         self.waveData = data
         self.numWavePoints = len(data)
@@ -136,3 +142,14 @@ class piezo_e816:
         return 0
     def GetMax(self, iChan=1):
         return self.max_travel
+        
+    def GetFirmwareVersion(self):
+        import re
+        self.ser_port.write('*IDN?\n')
+        self.ser_port.flush()
+        
+        verstring = self.ser_port.readline()
+        return float(re.findall(r'V(\d\.\d\d)', verstring)[0])
+        
+        
+        

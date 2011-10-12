@@ -24,6 +24,16 @@ import simplesequenceaquisator
 
 from noclosefr import * 
 
+MSG_NO_WAVETABLE = '''Piezo does not support wavetable output.
+Synchronisation between movement and frames may be poor.
+                    
+Using a long integration time and/or setting the camera to single shot mode might help.'''
+
+MSG_LONG_WAVETABLE = '''Piezo does not support wavetables longer than %d frames.
+Synchronisation between movement and frames may be poor.
+                    
+Either decreasing the stack size, or using a long integration time and/or setting the camera to single shot mode might help.'''
+
 
 
 def create(parent):
@@ -222,9 +232,13 @@ class seqPanel(wx.Panel):
 
         self.bStart = wx.Button(self, -1, 'Single Stack', style=wx.BU_EXACTFIT)
 
-        self.bStart.Bind(wx.EVT_BUTTON, self.OnBStartButton)
+        self.bStart.Bind(wx.EVT_BUTTON, self.OnBSingle)
 
         hsizer.Add(self.bStart, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5, 0)
+        
+        self.bLive = wx.Button(self, -1, 'Live', style=wx.BU_EXACTFIT)
+        self.bLive.Bind(wx.EVT_BUTTON, self.OnBLive)
+        hsizer.Add(self.bLive, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5, 0)
 
         vsizer.Add(hsizer, 0, wx.EXPAND, 0)
 
@@ -347,6 +361,66 @@ class seqPanel(wx.Panel):
         
 
         #event.Skip()
+    def OnBSingle(self, event):
+        self.OnBLive(event, True)
+        
+    def OnSingleEnd(self):
+        wx.MessageBox('Acquisition Finished')
+        self.scope.zs.WantFrameNotification.remove(self.OnSingleEnd)
+        self.bStart.Enable(True)
+        self.bLive.SetLabel('Live')
+        
+    def OnBLive(self, event, single=False):
+        import zScanner
+        
+        if 'zs' in dir(self.scope) and self.scope.zs.running: #stop
+            self.scope.zs.Stop()
+            self.bLive.SetLabel('Live')
+            self.bStart.Enable(True)
+            
+        else:
+            res = self.scope.sa.Verify()
+            
+            if res[0]:                
+                
+                self.scope.zs = zScanner.getBestScanner(self.scope)
+                
+                if not isinstance(self.scope.zs, zScanner.wavetableZScanner):
+                    pz = self.scope.sa.piezos[self.scope.sa.GetScanChannel()][0]
+                    if 'MAXWAVEPOINTS' in dir(pz):
+                        msg = MSG_LONG_WAVETABLE % pz.MAXWAVEPOINTS
+                    else:
+                        msg = MSG_NO_WAVETABLE
+                        
+                    dialog = wx.MessageDialog(None, msg, "Warning", wx.OK)
+                    dialog.ShowModal()
+                
+                if single:
+                    self.scope.zs.WantFrameNotification.append(self.OnSingleEnd)
+                    self.scope.zs.Single()
+                else:
+                    self.scope.zs.Start()
+                self.bLive.SetLabel('Stop')
+                self.bStart.Enable(False)
+    
+            else:
+                dialog = wx.MessageDialog(None, res[2] + ' (%2.3f)'% res[3], "Parameter Error", wx.OK)
+                dialog.ShowModal()
+    
+                if res[1] == 'StepSize':
+                    self.tStepSize.SetFocus()
+    
+                elif (self.scope.sa.GetStartMode() == self.scope.sa.CENTRE_AND_LENGTH):
+                    self.tNumSlices.SetFocus()
+    
+                elif (res[1] == 'StartPos'):
+                    self.tStPos.SetFocus()
+    
+                else:
+                    self.tEndPos.SetFocus() 
+        
+            
+    
 
     def OnChPiezoChoice(self, event):
 

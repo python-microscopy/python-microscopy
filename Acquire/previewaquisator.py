@@ -39,6 +39,7 @@ class PreviewAquisator(wx.Timer):
         #lists of functions to call on a new frame, and when the aquisition ends
         self.WantFrameNotification = []
         self.WantStopNotification = []
+        self.WantStartNotification = []
         #list of functions to call to see if we ought to wait on any hardware
         self.HardwareChecks = []
         #should we start a new exposure on the next timer check?
@@ -48,9 +49,9 @@ class PreviewAquisator(wx.Timer):
         self.tThisFrame=0
 	self.nFrames = 0
         self.tl=0
-
-	#will be needed to allow the display load to be minimised by, e.g. only updating display once per poll rather than once per frame
-	self.WantFrameGroupNotification = [] 
+        
+        #will be needed to allow the display load to be minimised by, e.g. only updating display once per poll rather than once per frame
+        self.WantFrameGroupNotification = [] 
 
     def Prepare(self, keepds=False):
         self.looppos=0
@@ -326,6 +327,9 @@ class PreviewAquisator(wx.Timer):
         self.setPiezoStartPos()
 
         self.doStartLog()
+        
+        for cb in self.WantStartNotification:
+            cb(self)
 
         #self.Wait(1000)  # Warten, so dass Piezotisch wieder in Ruhe
 
