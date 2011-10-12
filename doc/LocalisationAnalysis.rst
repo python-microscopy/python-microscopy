@@ -9,29 +9,28 @@ Distributed analysis and queues
 PYME has a distributed analysis model whereby a server process manages *Task Queues*
 and distributes groups of frames to
 multiple different worker processes. These can either all be on the same machine, or be distributed
-across a network/cluster. These server and worker (``TaskServerM.py`` and ``TaskWorkerM.py``
-respectively) processes need to be running before starting the analysis. The ``launchWorkers.py``
+across a network/cluster. These server and worker processes need to be running before starting the analysis. The ``launchWorkers.py``
 script simplifies this by starting the server and the same number of workers as there
-are cores on the current machine. Distributed systems will obviously need a bit of tweaking.
+are cores on the current machine. To communicate with each other the server and worker
+processes use a package called Pyro, and a pyro nameserver needs to be running so workers and 
+servers can find each other. If there is no name server running on the local network, launchWorkers
+starts one, but this is probably only suitable/robust if only one machine is being used
+for analysis. 
+
 If you're running the analysis on the data acquisition computer, and have a decent number of
 cores available (we have 8),  better performance can be achieved by reserving a core for
 each of the Acqusition and Server processes (ie limiting the number of workers to 6 in our
 8 core case). This can be done by explicitly specifying the number of workers to launch as
-an argument to ``launchWorkers``.
+an argument eg: ``launchWorkers 6``.
 
 Distributing over multiple computers
 ++++++++++++++++++++++++++++++++++++
 
-When distributing the analysis over multiple computers there are a few points to note.
+Distributing the analysis over multiple computers (a small ad-hoc cluster) is now easy:
 
-* All computers should have the same ``PYME_TASKQUEUENAME``
-  (see :ref:`basicconfig`).
-* The server should only run on one computer. This can be achieved by running
-  ``launchWorkers`` on the server machine and ``launchOnlyWorkers`` on all the slaves.
-* If analysing 3D data, all computers need to be able to access the PSF file. To
-  do this the data directory on the acquisition computer should be mounted on all
-  the nodes and the ``PYMEDATADIR`` environment variable defined so they know
-  where to find it.
+* Make sure a pyro nameserver is running somewhere on your network and that it is 
+  bound to the external interface rather than localhost (see the `Pyro  documentation <http://packages.python.org/Pyro/5-nameserver.html>`_).
+* Run ``launchWorkers`` on each machine you want to use.
 
 Loading data
 ============

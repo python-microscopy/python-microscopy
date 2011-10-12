@@ -37,7 +37,7 @@ homedir = os.path.expanduser('~') #unix & possibly others ...
 if 'USERPROFILE' in os.environ.keys(): #windows
     homedir = os.environ['USERPROFILE']
 
-datadir = '/home/david/simul'
+datadir = os.path.join(homedir, 'PYMEData')
 if 'PYMEDATADIR' in os.environ.keys() and os.access(os.environ['PYMEDATADIR'], os.W_OK):
     datadir = os.environ['PYMEDATADIR']
 
