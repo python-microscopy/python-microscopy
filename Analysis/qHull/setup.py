@@ -7,7 +7,7 @@ qhullSources = ['qhull/' + s for s in qhullSources]
 
 def configuration(parent_package = '', top_path = None):
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs, yellow_text
-    config = Configuration('triangWrap', parent_package, top_path)
+    config = Configuration('qHull', parent_package, top_path)
 
     #print 'foo'
     #print yellow_text('foo' + config.local_path)

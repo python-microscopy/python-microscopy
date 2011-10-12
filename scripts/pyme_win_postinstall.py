@@ -7,8 +7,8 @@ Created on Sat Oct 08 21:24:45 2011
 import os
 import sys
 import subprocess
-import logging
-logging.basicConfig(filename=r'c:\Temp\example.log',level=logging.DEBUG)
+#import logging
+#logging.basicConfig(filename=r'c:\Temp\example.log',level=logging.DEBUG)
 
 if sys.argv[1] == '-install':
     #Set up file ascociations
@@ -31,11 +31,11 @@ if sys.argv[1] == '-install':
     #os.system('ftype PYME.Tiff=dh5view %*')
     #subprocess.call(['ftype', 'PYME.Metadata=dh5view %*'])
     
-    logging.debug('about to get path')
+    #logging.debug('about to get path')
     programsPath = get_special_folder_path("CSIDL_COMMON_PROGRAMS")
-    logging.debug('programsPath')
+    #logging.debug('programsPath')
     pymeShortcutPath = os.path.join(programsPath, 'PYME')
-    logging.debug('shortcut path = %s' % pymeShortcutPath)
+    #logging.debug('shortcut path = %s' % pymeShortcutPath)
     
     if not os.path.exists(pymeShortcutPath):
         os.mkdir(pymeShortcutPath)
