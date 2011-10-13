@@ -8,57 +8,24 @@ data into a format that PYME understands, and filling in the required metadata e
 
 There are two principle ways of doing this:
 
-Converting the data to PYMEs native ``.h5`` (old method)
-========================================================
-
-There are a number of scripts to convert different data types (currently Raw, Tiff
-sequences, kdf stacks, and sequences of kdfs) to ``.h5`` in the ``PYME.FileUtils``
-folder. This approach is a little inelegant but can be useful in some circumstances
-and has the advantage of giving you data compression.
-
 Directly analysing the data (reccomended method)
 ================================================
 
-PYME also supports analysing directly from tiff stacks (all time points in one file)
-and from sequences of individual tiffs (each frame is a seperate file). The caveat 
-here is that it won't play well with distributed/cluster analysis unless the 
-data is accessible on all the machines in the cluster (i.e. you have the 
-directory containing the data mounted as mapped drive on each machine and 
-the ``PYMEDATADIR`` environment variable set to point to this drive/ a sub-directory
-therof).
+PYME supports analysing directly from tiff stacks (all time points in one file)
+and from sequences of individual tiffs (each frame is a seperate file). PYME also 
+makes use of image *metadata* such as the pixel size and various camera properties.
+PYME supports a number of ways of specifying the metadata, but the easiest is to create
+a ``.md`` file for each image you want to analyse (or to copy a template and just change the
+bits which are different).
 
-As ``dh5view`` defaults to *blob* mode for ``.tif`` files, you might want to use the
-command line mode option to force the localisation microscopy mode ie::
-
- dh5view -m LM filename.tif
-
-I'd also recommend adding a ``filename.md`` metadata file (see below).
-
-Fixing the metadata
-===================
-
-In order to establish an accurate noise model for fitting and event detection, PYME
-needs to know several properties of the camera as well as the image pixel size.
-After converting and loading the data one thus needs to tweak the metadata (using
-the **Metadata** tab) of PYMEAcquire. Missing entries need to be added in the command
-window by executing::
-
-   image.mdh['entryname'] = value
-
-Unfortunately these changes don't persist (following the rational that raw data
-should be immutable) and will need to be re-entered each time you load and analyse
-the data.
-
-If using the direct method, however, you can place a ``.md`` file in the same directory
-as your data and with the same base filename and put your metadata entries in there.
 This file should consist of a number of lines having the syntax::
 
    md['entryname'] = value
 
 The metadata entries are heirachial and use a dot notation (eg ``Camera.ADOffset``)
 
-Required Entries
-++++++++++++++++
+Required Metadata Entries
++++++++++++++++++++++++++
 
 An absolute minimum set of metadata parameters is outlined below:
 
@@ -79,3 +46,73 @@ Camera.ADOffset           Analog to digital offset (dark level). Not strictly
                           is a very good match to the PYMEAcquire protocols this is
                           unlikely to work well.
 ========================  ============================================================
+
+
+Tiff Stacks
++++++++++++
+
+For tiff stacks the ``.md`` file ought to be in the same directory and have the same 
+name (modulo extension) as the .tif file
+
+Once you've created the ``.md`` file, just launch::
+
+    lmview <filename>.tif
+
+if you want to perform localisation microscopy analysis, or::
+
+    dh5view <filename>.tif
+
+for psf extraction, deconvolution, or other general purpose image processing tasks 
+(``lmview`` is just a shortcut for ``dh5view -m LM`` and launches dh5view in it's 
+localisation analysis personality).
+
+Tiff Sequences
+++++++++++++++
+
+For tiff sequences, the metadata file requires an additional entry, ``SeriesPattern``, which identifies the files which
+comprise the sequence. This is a wildcard string - if for example, 
+your data is in ``Frame001.tif``, ``Frame002.tif``, ``Frame003.tif`` etc ... a reasonable pattern could be ::
+
+    md['SeriesPattern'] = 'Frame*.tif' 
+
+This means that the ``.md`` file doesn't need to have the same name as the individual data files, and you
+now load the ``.md`` file rather than one of the ``.tif`` images. Eg.::
+
+    lmview <filename>.md
+
+Tweaking the metadata
++++++++++++++++++++++
+
+Once you have loaded the data one can further tweak the metadata (using
+the **Metadata** tab) of ``lmview``. Missing entries can to be added in the command
+window by executing::
+
+   image.mdh['entryname'] = value
+
+Unfortunately these changes don't persist (following the rational that raw data
+should be immutable) and will need to be re-entered each time you load and analyse
+the data - change the ``.md`` file, or export the data as PYMEs native ``.h5`` format 
+if you want to keep the changes.
+
+Cluster Analysis
+++++++++++++++++
+
+One of the caveats of ``.tif`` based analysis is that it won't play well 
+with distributed/cluster analysis unless the 
+data is accessible on all the machines in the cluster (i.e. you have the 
+directory containing the data mounted as mapped drive on each machine and 
+the ``PYMEDATADIR`` environment variable set to point to this drive/ a sub-directory
+thereof). If you want to use the cluster features without this hassle, it might 
+be worth exporting as ``.h5``, and then reloading. Data will now automatically get 
+distributed to workers without needing to have network drives mapped.
+
+
+Converting the data to PYMEs native ``.h5`` (old method)
+========================================================
+
+There are a number of scripts to convert different data types (currently Raw, Tiff
+sequences, kdf stacks, and sequences of kdfs) to ``.h5`` in the ``PYME.FileUtils``
+folder. This approach is a little inelegant, because you need to add all the metadata entries
+manually in ``dh5view``, but can be useful in some circumstances (notably there is not
+yet support for directly analysing raw of kdf data).
+
