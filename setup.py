@@ -35,6 +35,8 @@ def configuration(parent_package='',top_path=None):
     else:
         #don't add .cmd files
         config.add_scripts('scripts/*.py')
+        
+    config.get_version()
     
     #config.set_options()
     
@@ -45,6 +47,8 @@ def configuration(parent_package='',top_path=None):
 if __name__ == '__main__':
     #import setuptools
     from numpy.distutils.core import setup
-    setup( **configuration(top_path='').todict())
+    setup(author='David Baddeley',
+          description = 'PYthon (localisation) Microscopy Environment',
+          **configuration(top_path='').todict())
     #setup(options = {'bdist_wininst':{'install-script=' : 'pyme_win_postinstall.py',
     #                    'user-access-control=' : 'force'}}, **configuration(top_path='').todict())

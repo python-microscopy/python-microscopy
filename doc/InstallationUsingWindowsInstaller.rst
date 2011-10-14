@@ -1,30 +1,33 @@
 .. _installation:
 
-Installation of PYME on windows with enthought python
+Installation of PYME on windows with Enthought python
 #####################################################
 
-Prerequisites
-=============
+STEP 1: Installing EPD
+======================
 
 PYME requires python (ideally version 2.7) and a number of additional packages.
 The easiest way to get a system up and running is to install the
 `Enthought Python Distribution <http://www.enthought.com/products/epd.php>`_ (EPD)
 which is free for academic use. This has most of the required dependencies, although
-a couple will still need to be installed manually. Both 32 bit and 64 bit versions
+a couple will still need to be installed manually. These instructions are based on EPD 7.1.2, which 
+ships with python 2.7, other versions of EPD might work, but a change in the 
+underlying python version will need a new installer. 
+
+Both 32 bit and 64 bit versions
 are available and PYME works with either. If you want to access hardware (e.g. cameras)
 and are running 64 bit windows you might need the 64 bit version (I've only tested it
 with the 64 bit version). If given the option chose 'install for everyone / all users',
 rather than doing a personal install. Under Win7/Vista? you might need to right click the EPD
 installer and select 'run as administrator' to do an install for everyone.
 
-After installing EPD, we need to install Pyro and upgrade wxPython to get PYME 
-working. The PYME installer tries to do some of this work for you.
+STEP2: Installing PYME using the installer
+==========================================
 
-Installing PYME using the installer
-===================================
-
-This should be as simple as running the installer which corresponds to your python 
-version & number or bits. With any luck it'll install Pyro for you as well. 
+This should be as simple as running the installer which is appropriate to your
+version of EPD. ie ``PYME-X.X.X.win32-py2.7.exe`` for 32 bit EPD and ``PYME-X.X.X.win-amd64-py2.7.exe``.
+The installer will also attempt to download and install Pyro, a required dependency 
+for you as well. 
 
 
 Upgrading wxPython
