@@ -176,12 +176,14 @@ class MyFrame(wx.Frame):
         
 
 # end of class MyFrame
-
-
-if __name__ == "__main__":
+    
+def main()
     app = wx.PySimpleApp(0)
     wx.InitAllImageHandlers()
     fTaskMon = MyFrame(None, -1, "")
     app.SetTopWindow(fTaskMon)
     fTaskMon.Show()
     app.MainLoop()
+
+if __name__ == "__main__":
+    main()
