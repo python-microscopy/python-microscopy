@@ -13,8 +13,10 @@
 #Boa:Dialog:seqDialog
 
 import wx
+import wx.lib.agw.aui as aui
 
 import simplesequenceaquisator
+#from PYME.Acquire import MetaDataHandler
 
 #redefine wxFrame with a version that hides when someone tries to close it
 
@@ -22,7 +24,7 @@ import simplesequenceaquisator
 
 #NB must come after 'from wx.... import *' !!!
 
-from noclosefr import * 
+#from noclosefr import * 
 
 MSG_NO_WAVETABLE = '''Piezo does not support wavetable output.
 Synchronisation between movement and frames may be poor.
@@ -57,183 +59,90 @@ def create(parent):
 
 
 class seqPanel(wx.Panel):
-
     def _init_ctrls(self, prnt):
-
         # generated method, don't edit
 
         wx.Panel.__init__(self, id=wxID_SEQDIALOG, parent=prnt)
-
         #self.SetClientSize(wx.Size(348, 167))
-
         #self.SetBackgroundColour(wx.Colour(209, 208, 203))
 
-
-
         vsizer = wx.BoxSizer(wx.VERTICAL)
-
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-
 
         sPiezo = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Piezo Channel'), wx.HORIZONTAL)
 
-
-
         self.chPiezo = wx.Choice(self, -1, choices=[], size=(-1,-1))
-
         self.chPiezo.Bind(wx.EVT_CHOICE, self.OnChPiezoChoice)
 
-
-
         sPiezo.Add(self.chPiezo, 1,wx.ALIGN_CENTER_VERTICAL,0)
-
         hsizer.Add(sPiezo, 1, wx.EXPAND|wx.RIGHT, 5)
-
-
-
-
 
         sType = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Type'), wx.VERTICAL)
 
-
-
         self.bSt_end = wx.RadioButton(self, -1,'Start and End', size=(-1,-1))
-
         self.bSt_end.SetValue(True)
-
         self.bSt_end.Bind(wx.EVT_RADIOBUTTON, self.OnBSt_endRadiobutton)
-
-
 
         sType.Add(self.bSt_end, 1,0,0)
 
-
-
         self.bMid_num = wx.RadioButton(self, -1, 'Middle and #', size=(-1,-1))
-
         self.bMid_num.SetValue(False)
-
         self.bMid_num.Bind(wx.EVT_RADIOBUTTON, self.OnBMid_numRadiobutton)
 
-
-
         sType.Add(self.bMid_num, 1,0,0)
-
         hsizer.Add(sType, 1, wx.EXPAND, 0)
 
-
-
         vsizer.Add(hsizer, 1, wx.EXPAND, 0)
-
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-
 
         sStart = wx.StaticBoxSizer(wx.StaticBox(self, -1, u'Start Pos [\u03BCm]'), wx.HORIZONTAL)
 
-
-
         self.tStPos = wx.TextCtrl(self, -1, value='40', size=(40,-1))
-
         self.tStPos.Bind(wx.EVT_KILL_FOCUS, self.OnTStPosKillFocus)
-
         sStart.Add(self.tStPos, 2, wx.RIGHT, 5)
 
-
-
         self.bStartHere = wx.Button(self, -1,'Here', size=(10,10))
-
         self.bStartHere.Bind(wx.EVT_BUTTON, self.OnBStartHereButton)
-
         sStart.Add(self.bStartHere, 1, wx.EXPAND, 0)
-
-
 
         hsizer.Add(sStart, 1, wx.RIGHT, 5)
 
-
-
-
-
         sEnd = wx.StaticBoxSizer(wx.StaticBox(self, -1, u'End Pos [\u03BCm]'), wx.HORIZONTAL)
 
-
-
         self.tEndPos = wx.TextCtrl(self, -1, value='40', size=(40,-1))
-
         self.tEndPos.Bind(wx.EVT_KILL_FOCUS, self.OnTEndPosKillFocus)
-
         sEnd.Add(self.tEndPos, 2, wx.RIGHT, 5)
 
-
-
         self.bEndHere = wx.Button(self, -1,'Here', size=(10,10))
-
         self.bEndHere.Bind(wx.EVT_BUTTON, self.OnBEndHereButton)
-
         sEnd.Add(self.bEndHere, 1, wx.EXPAND, 0)
 
-
-
         hsizer.Add(sEnd, 1, 0, 0)
-
         vsizer.Add(hsizer, 0, wx.EXPAND, 0)
-
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-
-
-
 
         sStep = wx.StaticBoxSizer(wx.StaticBox(self, -1, u'Step Size [\u03BCm]'), wx.HORIZONTAL)
 
-
-
         self.tStepSize = wx.TextCtrl(self, -1, value='0.2', size=(40,-1))
-
         self.tStepSize.Bind(wx.EVT_KILL_FOCUS, self.OnTStepSizeKillFocus)
-
         sStep.Add(self.tStepSize, 1, 0, 0)
-
-
 
         hsizer.Add(sStep, 1, wx.RIGHT, 5)
 
-
-
-
-
         sNSlices = wx.StaticBoxSizer(wx.StaticBox(self, -1, '# Slices'), wx.HORIZONTAL)
 
-
-
         self.tNumSlices = wx.TextCtrl(self, -1, value='100', size=(40,-1))
-
         self.tNumSlices.Bind(wx.EVT_KILL_FOCUS, self.OnTNumSlicesKillFocus)
-
         sNSlices.Add(self.tNumSlices, 1, 0, 0)
 
-
-
         hsizer.Add(sNSlices, 1, 0, 0)
-
         vsizer.Add(hsizer, 0, wx.EXPAND, 0)
-
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
         self.stMemory = wx.StaticText(self, -1, '')
-
         hsizer.Add(self.stMemory, 1, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
 
-        
-
-
-
         self.bStart = wx.Button(self, -1, 'Single Stack', style=wx.BU_EXACTFIT)
-
         self.bStart.Bind(wx.EVT_BUTTON, self.OnBSingle)
-
         hsizer.Add(self.bStart, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5, 0)
         
         self.bLive = wx.Button(self, -1, 'Live', style=wx.BU_EXACTFIT)
@@ -242,133 +151,85 @@ class seqPanel(wx.Panel):
 
         vsizer.Add(hsizer, 0, wx.EXPAND, 0)
 
-
-
         self.SetSizerAndFit(vsizer)
 
-        
-
     def __init__(self, parent, scope):
-
         self.scope = scope
-
         self._init_ctrls(parent)
 
-        
-
         if not ('sa' in self.scope.__dict__):
-
             self.scope.sa = simplesequenceaquisator.SimpleSequenceAquisitor(self.scope.chaninfo, self.scope.cam, self.scope.shutters, self.scope.piezos)
 
-            
-
         for pz in self.scope.piezos:
-
             self.chPiezo.Append(pz[2])
 
         self.UpdateDisp()   
 
         
-
     def OnBEndHereButton(self, event):
-
         self.scope.sa.SetEndPos(self.scope.piezos[self.scope.sa.GetScanChannel()][0].GetPos(self.scope.piezos[self.scope.sa.GetScanChannel()][1]))
-
         self.UpdateDisp()
 
-        #event.Skip()
 
     def OnBStartHereButton(self, event):
-
         self.scope.sa.SetStartPos(self.scope.piezos[self.scope.sa.GetScanChannel()][0].GetPos(self.scope.piezos[self.scope.sa.GetScanChannel()][1]))
-
         self.UpdateDisp()
 
-        #event.Skip()
 
     def OnBStartButton(self, event):
-
         res = self.scope.sa.Verify()
 
         if res[0]:
-
             self.scope.pa.stop()
-
-            #try:
-
+            
             self.scope.sa.Prepare()
-
-            #except:
-
-            #    dialog = wxMessageDialog(None, 'The most likely reason is a lack of memory \nTry the following: Close any open aquisitions, Chose a ROI, Delete unnecessary channels, or decrease the # of slices', "Could not start aquisition", wx.OK)
-
-            #    dialog.ShowModal()
-
-            #    self.scope.sa.ds=[]
-
-            #    self.scope.pa.Prepare(True)
-
-            #    self.scope.pa.start()
-
             self.scope.sa.WantFrameNotification=[]
-
             self.scope.sa.WantFrameNotification.append(self.scope.aq_refr)
-
             self.scope.sa.WantStopNotification=[]
-
             self.scope.sa.WantStopNotification.append(self.scope.aq_end)
-
             self.scope.sa.start()
-
             self.scope.pb = wx.ProgressDialog('Aquisition in progress ...', 'Slice 1 of %d' % self.scope.sa.ds.getDepth(), self.scope.sa.ds.getDepth(), style = wx.PD_APP_MODAL|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
 
-                
-
-            
-
-                
-
-                
-
-            
-
         else:
-
             dialog = wx.MessageDialog(None, res[2] + ' (%2.3f)'% res[3], "Parameter Error", wx.OK)
-
             dialog.ShowModal()
 
-            
-
             if res[1] == 'StepSize':
-
                 self.tStepSize.SetFocus()
 
             elif (self.scope.sa.GetStartMode() == self.scope.sa.CENTRE_AND_LENGTH):
-
                 self.tNumSlices.SetFocus()
 
             elif (res[1] == 'StartPos'):
-
                 self.tStPos.SetFocus()
-
+                
             else:
-
                 self.tEndPos.SetFocus() 
 
                  
 
-        
-
-        #event.Skip()
     def OnBSingle(self, event):
         self.OnBLive(event, True)
         
+        #monkey patch in a progress panel        
+        self.dlgAqProg = SeqProgressPanel(self.scope.zs)
+
+        self.pinfo1 = aui.AuiPaneInfo().Name("deconvPanel").Top().Caption('Acquisition Progress').DestroyOnClose(True).CloseButton(False)#.MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
+        self.scope.zs.view._mgr.AddPane(self.dlgAqProg, self.pinfo1)
+        self.scope.zs.view._mgr.Update()
+        
+        self.scope.zs.WantTickNotification.append(self.dlgAqProg.Tick)
+        
     def OnSingleEnd(self):
-        wx.MessageBox('Acquisition Finished')
+        #wx.MessageBox('Acquisition Finished')
         self.scope.zs.WantFrameNotification.remove(self.OnSingleEnd)
         self.bStart.Enable(True)
         self.bLive.SetLabel('Live')
+        
+        self.scope.zs.view._mgr.ClosePane(self.pinfo1)
+        self.scope.zs.view._mgr.Update()
+        
+        self.scope.zs.WantTickNotification.remove(self.dlgAqProg.Tick)
         
     def OnBLive(self, event, single=False):
         import zScanner
@@ -534,3 +395,42 @@ class seqPanel(wx.Panel):
 
         self.stMemory.SetLabel('Mem: %2.1f MB' % (self.scope.cam.GetPicWidth()*self.scope.cam.GetPicHeight()*self.scope.sa.GetSeqLength()*2*self.scope.sa.getReqMemChans(self.scope.sa.chans.cols)/(1024.0*1024.0)))
 
+
+class SeqProgressPanel(wx.Panel):
+    def __init__(self, zscanner):
+        wx.Panel.__init__(self, zscanner.view)
+        self.cancelled = False
+        
+        self.zs = zscanner
+        
+
+        sizer1 = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.gProgress = wx.Gauge(self, -1, self.zs.nz)
+
+        sizer1.Add(self.gProgress, 5, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+
+        #btSizer = wx.StdDialogButtonSizer()
+
+        #btn = wx.Button(self, wx.ID_CANCEL)
+        #btn.Bind(wx.EVT_BUTTON, self.OnCancel)
+
+        #btSizer.AddButton(btn)
+
+        #btSizer.Realize()
+
+        #sizer1.Add(btn, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+
+        self.SetSizer(sizer1)
+        sizer1.Fit(self)
+
+    #def OnCancel(self, event):
+    #    self.cancelled = True
+        #self.EndModal(wx.ID_CANCEL)
+
+    def Tick(self):
+        if not self.cancelled:
+            self.gProgress.SetValue(self.zs.frameNum)
+            return True
+        else:
+            return False

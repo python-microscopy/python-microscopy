@@ -3,6 +3,8 @@ from PYME import cSMI
 import numpy as np
 #from PYME.Acquire import eventLog
 from math import floor
+from PYME.Acquire import MetaDataHandler
+import time
 
 class zScanner:
     def __init__(self, scope):
@@ -12,11 +14,14 @@ class zScanner:
         self.sc = 100
         self.sqrt = False
         
+        self.frameNum = 0
+        
         self.ds = scope.pa.dsa
         
         self.running = False
  
         self.WantFrameNotification = []
+        self.WantTickNotification = []
         
     def _endSingle(self):
         self.Stop()
@@ -56,17 +61,25 @@ class zScanner:
         self.running = False
         
         
-    def OnAqStart(self, caller=None):
-        
+    def OnAqStart(self, caller=None):      
         self.pos = 0
-
         self.callNum = 0
 
         self.nz = len(self.zPoss)
 
         self.image = np.zeros((self.ds.shape[0], self.ds.shape[1], self.nz), 'uint16')
 
-        self.view.do.SetDataStack(self.image)
+        self.view.image.SetData(self.image)        
+        self.view.do.SetDataStack(self.view.image.data)
+        
+        #loop over all providers of metadata
+        for mdgen in MetaDataHandler.provideStartMetadata:
+            mdgen(self.view.image.mdh)
+            
+        #new metadata handling
+        self.view.image.mdh.setEntry('StartTime', time.time())
+        self.view.image.mdh.setEntry('AcquisitionType', 'Stack')
+        
         #self.view_xz = View3D(self.image)
         #self.view_xz.do.slice = 1
         #self.view_xz.do.yp = self.ds.shape[1]/2
@@ -81,6 +94,7 @@ class zScanner:
 
     def tick(self, caller=None):
         fn = floor(self.callNum) % len(self.zPoss)
+        self.frameNum = fn
         if self.sqrt:
             self.image[:, :,fn] = (self.sc*np.sqrt(self.ds[:,:,0] - self.off)).astype('uint16')
         else:
@@ -99,14 +113,24 @@ class zScanner:
         if fn == 0: #we've wrapped around
             for cb in self.WantFrameNotification:
                 cb()
+            
+            if 'decView' in dir(self.view):
+                self.view.decView.wienerPanel.OnCalculate()
         #self.view_xz.Refresh()
         #self.view_yz.Refresh()
+        for cb in self.WantTickNotification:
+            cb()
 
     def _movePiezo(self, fn):
         self.piezo.MoveTo(self.piezoChan, self.zPoss[fn])
         
     def OnAqStop(self, caller=None):
-        pass
+        self.view.image.mdh.setEntry('EndTime', time.time())
+
+        #loop over all providers of metadata
+        for mdgen in MetaDataHandler.provideStopMetadata:
+           mdgen(self.view.image.mdh)
+        #pass
 
     def destroy(self):
         self.Stop()
@@ -143,8 +167,11 @@ class zScanner:
         
         dx = int(dx)
         dy = int(dy)
+        #print dx, dy, x1 - dx,y1-dy,x2-dx,y2-dy
         
-        self.scope.cam.SetROI(x1 - dx,y1-dy,x2-dx,y2-dy)
+        self.scope.cam.SetROI(x1 - dx - 1,y1-dy - 1,x2-dx,y2-dy)
+        
+        self.scope.pa.start()
 
         #self.view.Destroy()
         #self.view_xz.Destroy()
