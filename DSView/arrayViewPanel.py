@@ -788,6 +788,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         sY_ = int(sY/(sc*self.aspect))
         x0_ = int(x0/sc)
         y0_ = int(y0/(sc*self.aspect))
+        
 
         #XY
         if self.do.slice == DisplayOpts.SLICE_XY:
@@ -813,9 +814,18 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                     #ima[:,:,1] = seg
                     #ima[:,:,2] = seg
                     lut = getLUT(cmap)
-                    seg = self.do.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.do.zp), chan].squeeze().T
-
-                    applyLUT(seg, gain, offset, lut, ima)
+                    
+                    if self.do.maximumProjection:
+                        seg = self.do.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),:, chan].max(2).squeeze().T
+                        if self.do.colourMax:
+                            aseg = self.do.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),:, chan].argmax(2).squeeze().T
+                            applyLUT(aseg, self.do.cmax_scale/self.do.ds.shape[2], self.do.cmax_offset, lut, ima)
+                            ima[:] = (ima*numpy.clip((seg - offset)*gain, 0,1)[:,:,None]).astype('uint8')
+                        else:
+                            applyLUT(seg, gain, offset, lut, ima)
+                    else:
+                        seg = self.do.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.do.zp), chan].squeeze().T
+                        applyLUT(seg, gain, offset, lut, ima)
 
                 else:
                     ima[:] = numpy.minimum(ima[:] + (255*cmap(gain*(self.do.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.do.zp), chan].squeeze().T - offset))[:,:,:3])[:], 255)
