@@ -23,6 +23,10 @@ class ParticleTracker:
         ID_PLOT_MSD = wx.NewId()
         visFr.extras_menu.Append(ID_PLOT_MSD, "Plot Mean Squared Displacement")
         visFr.Bind(wx.EVT_MENU, self.OnCalcMSDs, id=ID_PLOT_MSD)
+        
+        ID_COALESCE = wx.NewId()
+        visFr.extras_menu.Append(ID_COALESCE, "Coalesce clumps")
+        visFr.Bind(wx.EVT_MENU, self.OnCoalesce, id=ID_COALESCE)
 
     def OnTrackMolecules(self, event):
         import PYME.Analysis.DeClump.deClumpGUI as deClumpGUI
@@ -131,6 +135,18 @@ class ParticleTracker:
         self.visFr.selectedDataSource.setMapping('diffusionConst', 'diffusionConstants')
         self.visFr.selectedDataSource.setMapping('diffusionExp', 'diffusionExponents')
 
+        self.visFr.RegenFilter()
+        self.visFr.CreateFoldPanel()
+        
+    def OnCoalesce(self, event):
+        from PYME.Analysis.LMVis import inpFilt
+        from PYME.DeClump import pyDeClump
+        
+        dclumped = pyDeClump.coalesceClumps(self.visFr.selectedDataSource.resultsSource.fitResults, self.visFr.selectedDataSource.clumpIndices)
+        ds = inpFilt.fitResultsSource(dclumped)
+        
+        self.visFr.selectedDataSource = ds
+        self.visFr.dataSources.append(ds)
         self.visFr.RegenFilter()
         self.visFr.CreateFoldPanel()
 
