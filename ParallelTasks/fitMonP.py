@@ -177,7 +177,7 @@ class MyFrame(wx.Frame):
 
 # end of class MyFrame
     
-def main()
+def main():
     app = wx.PySimpleApp(0)
     wx.InitAllImageHandlers()
     fTaskMon = MyFrame(None, -1, "")
