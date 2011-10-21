@@ -11,9 +11,10 @@
 #from scipy import *
 #from scipy.linalg import *
 #from scipy.fftpack import fftn, ifftn, fftshift, ifftshift
-#from scipy import ndimage
+from scipy import ndimage
 import numpy
 from scipy.fftpack import fftn, ifftn, fftshift, ifftshift
+import scipy
 import fftw3f
 import fftwWisdom
 
@@ -27,58 +28,42 @@ fftwWisdom.load_wisdom()
 NTHREADS = 1
 FFTWFLAGS = ['measure']
 
+from PYME.DSView import View3D
+
+def resizePSF(psf, data_size):
+    #Expand PSF to data size by fourier domain interpolation
+    print 'Resizing PSF to match data size'
+    g_ = fftw3f.create_aligned_array(data_size, 'complex64')
+    H_ = fftw3f.create_aligned_array(data_size, 'complex64')
+    
+    sx, sy, sz = numpy.array(data_size).astype('f') / psf.shape
+    
+    OT = fftshift(fftn(fftshift(psf))) #don't bother with FFTW here as raw PSF is small
+    
+    pr = ndimage.zoom(OT.real, [sx,sy,sz], order=1)
+    pi = ndimage.zoom(OT.imag, [sx,sy,sz], order=1)
+    
+    H_[:] = ifftshift(pr + 1j*pi)
+    fftw3f.Plan(H_, g_, 'backward')()
+    
+    g =  ifftshift(g_.real)
+    
+    print 'PSF resizing complete'
+    View3D(psf)
+    View3D(fftshift(numpy.abs(H_)))
+    View3D(fftshift(numpy.angle(H_)))
+    View3D(g)
+    
+    return g/g.sum()
+
 
 class dec_wiener:
     '''Classical deconvolution with a stationary PSF'''
     def psf_calc(self, psf, data_size):
         '''Precalculate the OTF etc...'''
-        pw = (numpy.array(data_size) - psf.shape)/2.
-        pw1 = numpy.floor(pw)
-        pw2 = numpy.ceil(pw)
-
-        g = psf/psf.sum()
-
-        #work out how we're going to need to pad to get the PSF the same size as our data
-        if pw1[0] < 0:
-            if pw2[0] < 0:
-                g = g[-pw1[0]:pw2[0]]
-            else:
-                g = g[-pw1[0]:]
-
-            pw1[0] = 0
-            pw2[0] = 0
-
-        if pw1[1] < 0:
-            if pw2[1] < 0:
-                g = g[-pw1[1]:pw2[1]]
-            else:
-                g = g[-pw1[1]:]
-
-            pw1[1] = 0
-            pw2[1] = 0
-
-        if pw1[2] < 0:
-            if pw2[2] < 0:
-                g = g[-pw1[2]:pw2[2]]
-            else:
-                g = g[-pw1[2]:]
-
-            pw1[2] = 0
-            pw2[2] = 0
-
-
-        #do the padding
-        #g = pad.with_constant(g, ((pw2[0], pw1[0]), (pw2[1], pw1[1]),(pw2[2], pw1[2])), (0,))
-        g_ = fftw3f.create_aligned_array(data_size, 'float32')
-        g_[:] = 0
-        #print g.shape, g_.shape, g_[pw2[0]:-pw1[0], pw2[1]:-pw1[1], pw2[2]:-pw1[2]].shape
-        if pw1[2] == 0:
-            g_[pw2[0]:-pw1[0], pw2[1]:-pw1[1], pw2[2]:] = g
-        else:
-            g_[pw2[0]:-pw1[0], pw2[1]:-pw1[1], pw2[2]:-pw1[2]] = g
-        #g_[pw2[0]:-pw1[0], pw2[1]:-pw1[1], pw2[2]:-pw1[2]] = g
-        g = g_
-
+        
+        g = resizePSF(psf, data_size)
+        
 
         #keep track of our data shape
         self.height = data_size[0]
@@ -89,18 +74,20 @@ class dec_wiener:
 
         FTshape = [self.shape[0], self.shape[1], self.shape[2]/2 + 1]
 
-        self.g = g.astype('f4');
-        self.g2 = 1.0*self.g[::-1, ::-1, ::-1]
-
         #allocate memory
+       
         self.H = fftw3f.create_aligned_array(FTshape, 'complex64')
         self.Ht = fftw3f.create_aligned_array(FTshape, 'complex64')
-        #self.f = zeros(self.shape, 'f4')
-        #self.res = zeros(self.shape, 'f4')
-        #self.S = zeros((size(self.f), 3), 'f4')
 
         self._F = fftw3f.create_aligned_array(FTshape, 'complex64')
         self._r = fftw3f.create_aligned_array(self.shape, 'f4')
+        
+        
+        
+        self.g = g.astype('f4');
+        self.g2 = 1.0*self.g[::-1, ::-1, ::-1]
+
+        
         #S0 = self.S[:,0]
 
         #create plans & calculate OTF and conjugate transformed OTF

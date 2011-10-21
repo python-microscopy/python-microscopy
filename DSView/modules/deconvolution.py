@@ -357,7 +357,7 @@ class WienerDeconvolver(wx.Panel):
     def OnDeconTimer(self, caller=None):
         if self.decT and not self.decT.isAlive():
             self.decT = None
-            self.GetParent().do.Optimise()
+            self.GetParent().Refresh()
         
         
     
