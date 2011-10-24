@@ -18,5 +18,5 @@ def GetComputerName():
     elif sys.platform == 'win32':
         return os.environ['COMPUTERNAME']
     else:
-        return os.uname()[1]
+        return os.uname()[1].split('.')[0]
 
