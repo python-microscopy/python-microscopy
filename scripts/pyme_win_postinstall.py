@@ -82,9 +82,9 @@ if sys.argv[1] == '-install':
         os.system('easy_install Pyro')
         #print 'Pyro installed'
         
-    try:
-        import wx
-        assert(wx.version() >= '2.8.11')
-    except:
-        message_box('Could not find the required version of wxPython.\nAfter finishing PYME installation, perform the following steps:\n - open a command prompt and run \'remove_old_wx.py\'\n - Download wxPython (version > 2.8.11) from http://www.wxpython.org/download.php\n - Run the wxPython installer', 'Could not find wxPython or wxPython version too old', 0)
+    #try:
+    #    import wx
+    #    assert(wx.version() >= '2.8.11')
+    #except:
+    #    message_box('Could not find the required version of wxPython.\nAfter finishing PYME installation, perform the following steps:\n - open a command prompt and run \'remove_old_wx.py\'\n - Download wxPython (version > 2.8.11) from http://www.wxpython.org/download.php\n - Run the wxPython installer', 'Could not find wxPython or wxPython version too old', 0)
 

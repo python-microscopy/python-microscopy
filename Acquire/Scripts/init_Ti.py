@@ -116,7 +116,7 @@ scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
 
 InitGUI('''
 from PYME.Acquire.Hardware import focusKeys
-fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[0])
+fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[0], scope=scope)
 time1.WantNotification.append(fk.refresh)
 ''')
 

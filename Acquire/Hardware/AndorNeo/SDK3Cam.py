@@ -129,11 +129,13 @@ class SDK3Camera(object):
             if isinstance(var, ATProperty):
                 var.connect(self.handle, name)
                 
-    def flush(self):
-        SDK3.Flush(self.handle)
         
     def shutdown(self):
         SDK3.Close(self.handle)
         #camReg.unregCamera()
+        
+    
+        
+        
         
     

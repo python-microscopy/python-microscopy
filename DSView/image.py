@@ -52,9 +52,7 @@ class ImageStack(object):
         if (data == None):
             self.Load(filename)
 
-        #the data does not need to be a numpy array - it could also be, eg., queue data
-        #on a remote server - wrap so that is is indexable like an array
-        self.data = dataWrap.Wrap(self.data)
+        self.SetData(self.data)
 
         if self.filename == None:
             self.filename = '%s %d' % (titleStub, nUntitled[titleStub])
@@ -72,6 +70,11 @@ class ImageStack(object):
 
         openImages[self.filename] = self
 
+    def SetData(self, data):
+        #the data does not need to be a numpy array - it could also be, eg., queue data
+        #on a remote server - wrap so that is is indexable like an array
+        self.data = dataWrap.Wrap(data)
+    
     @property
     def pixelSize(self):
         try:

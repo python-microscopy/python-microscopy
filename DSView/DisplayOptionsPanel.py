@@ -160,7 +160,7 @@ class OptionsPanel(wx.Panel):
     def OnCLimChanged(self, event):
         ind = self.hIds.index(event.GetId())
         self.do.SetOffset(ind, event.lower)
-        self.do.SetGain(ind,1./(event.upper- event.lower))
+        self.do.SetGain(ind,1./(event.upper- event.lower + 1e-4))
 
     def OnCMapChanged(self, event):
         #print event.GetId()

@@ -45,6 +45,30 @@ def GenWidefieldPSF(zs, dx=5):
     ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 
     return abs(ps**2)
+    
+def GenZernikePSF(zs, dx = 5, zernikeCoeffs = []):
+    from PYME.misc import zernike
+    X, Y, R, FP, F = GenWidefieldAP(dx)
+    
+    theta = angle(X + 1j*Y)
+    r = R/R[F].max()
+    
+    ang = 0
+    
+    for i, c in enumerate(zernikeCoeffs):
+        ang = ang + c*zernike.zernike(i, r, theta)
+        
+    clf()
+    imshow(angle(exp(1j*ang)))
+        
+    F = F.astype('d')*exp(-1j*ang)
+        
+    figure()
+    imshow(angle(F))
+
+    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+
+    return abs(ps**2)
 
 def GenPRIPSF(zs, dx = 5):
     X, Y, R, FP, F = GenWidefieldAP(dx)

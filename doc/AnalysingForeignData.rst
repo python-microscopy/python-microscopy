@@ -94,8 +94,8 @@ should be immutable) and will need to be re-entered each time you load and analy
 the data - change the ``.md`` file, or export the data as PYMEs native ``.h5`` format 
 if you want to keep the changes.
 
-Cluster Analysis
-++++++++++++++++
+Distributed Analysis
+++++++++++++++++++++
 
 One of the caveats of ``.tif`` based analysis is that it won't play well 
 with distributed/cluster analysis unless the 

@@ -13,9 +13,10 @@
 import wx
 
 class FocusKeys:
-    def __init__(self, parent, menu, piezo, keys = ['F1', 'F2', 'F3', 'F4']):
+    def __init__(self, parent, menu, piezo, keys = ['F1', 'F2', 'F3', 'F4'], scope = None):
         self.piezo = piezo
         self.focusIncrement = 0.2
+        self.scope = scope
 
         idFocUp = wx.NewId()
         idFocDown = wx.NewId()
@@ -43,20 +44,32 @@ class FocusKeys:
 
     def OnFocDown(self,event):
         #p = self.piezo[0].GetPos(self.piezo[1])
-        if 'lastPos' in dir(self.piezo[0]):
-            p = self.piezo[0].lastPos
+        if self.scope and 'zs' in dir(self.scope) and self.scope.zs.running:
+            #special case for when we are using a wavetable - move whole stack
+            self.scope.pa.stop()
+            self.scope.zs.zPoss -= self.focusIncrement
+            self.scope.pa.start()
         else:
-            p = self.piezo[0].GetPos(self.piezo[1])
-            
-        self.piezo[0].MoveTo(self.piezo[1], p - self.focusIncrement, False)
+            if 'lastPos' in dir(self.piezo[0]):
+                p = self.piezo[0].lastPos
+            else:
+                p = self.piezo[0].GetPos(self.piezo[1])
+                
+            self.piezo[0].MoveTo(self.piezo[1], p - self.focusIncrement, False)
 
     def OnFocUp(self,event):
-        if 'lastPos' in dir(self.piezo[0]):
-            p = self.piezo[0].lastPos
+        if self.scope and 'zs' in dir(self.scope) and self.scope.zs.running:
+            #special case for when we are using a wavetable - move whole stack
+            self.scope.pa.stop()
+            self.scope.zs.zPoss += self.focusIncrement
+            self.scope.pa.start()
         else:
-            p = self.piezo[0].GetPos(self.piezo[1])
-            
-        self.piezo[0].MoveTo(self.piezo[1], p + self.focusIncrement, False)
+            if 'lastPos' in dir(self.piezo[0]):
+                p = self.piezo[0].lastPos
+            else:
+                p = self.piezo[0].GetPos(self.piezo[1])
+                
+            self.piezo[0].MoveTo(self.piezo[1], p + self.focusIncrement, False)
 
     def OnSensDown(self,event):
         if self.focusIncrement > 0.05:

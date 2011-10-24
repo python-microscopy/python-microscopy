@@ -17,6 +17,7 @@ def configuration(parent_package = '', top_path = None):
     config = Configuration('Hardware', parent_package, top_path)
     
     config.add_subpackage('AndorIXon')
+    config.add_subpackage('AndorNeo')
     config.add_subpackage('DigiData')
     config.add_subpackage('Simulator')
     config.add_subpackage('Old')
