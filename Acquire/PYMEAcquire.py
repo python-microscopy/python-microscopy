@@ -43,6 +43,6 @@ def main():
 
 if __name__ == '__main__':
     from PYME import mProfile
-    mProfile.profileOn(['wiener.py'])
+    mProfile.profileOn(['displaySettingsPanel.py']) #'AndorNeo.py', 'previewaquisator.py', 
     main()
     mProfile.report()

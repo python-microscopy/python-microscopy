@@ -140,7 +140,7 @@ class ParticleTracker:
         
     def OnCoalesce(self, event):
         from PYME.Analysis.LMVis import inpFilt
-        from PYME.DeClump import pyDeClump
+        from PYME.Analysis.DeClump import pyDeClump
         
         dclumped = pyDeClump.coalesceClumps(self.visFr.selectedDataSource.resultsSource.fitResults, self.visFr.selectedDataSource.clumpIndices)
         ds = inpFilt.fitResultsSource(dclumped)
