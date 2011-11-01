@@ -16,3 +16,4 @@ dist\*
 .rope*
 Deconv/fftw_wisdom
 *.orig
+.DS_Store
