@@ -89,6 +89,24 @@ errCode('AT_ERR_NOMEMORY', 37)
 
 errCode('AT_ERR_HARDWARE_OVERFLOW', 100)
 
+class CameraError(Exception):
+    def __init__(self, fcnName, errNo):
+        self.errNo = errNo
+        self.fcnName = fcnName
+        
+    def __str__(self):
+        return 'when calling %s - %s' % (self.fcnName, errorCodes[self.errNo])
+        
+
+#special case for buffer timeout
+AT_ERR_TIMEDOUT = 13
+AT_ERR_NODATA = 11
+
+class TimeoutError(CameraError):
+    pass
+        
+
+
 AT_HANDLE_UNINITIALISED  = -1
 AT_HANDLE_SYSTEM  = 1
 
@@ -184,7 +202,11 @@ class dllFunction(object):
         #print res
         
         if not res == AT_SUCCESS:
-            raise RuntimeError('Camera Error when calling - %s - %s' % (self.name, errorCodes[res]))
+            if res == AT_ERR_TIMEDOUT or res == AT_ERR_NODATA:
+                #handle timeouts as a special case, as we expect to get them
+                raise TimeoutError(self.name, res)
+            else:
+                raise CameraError(self.name, res)
         
         if len(ret) == 0:
             return None
