@@ -669,6 +669,10 @@ class iXonCamera:
         self.__selectCamera()
         ac.SetBaselineClamp(int(state))
 
+    def SetFan(self, state):
+        self.__selectCamera()
+        ac.SetFanMode(state)
+
     def GetSerialNumber(self):
         self.__selectCamera()
         sn = ac.GetCameraSerialNumber.argtypes[0]._type_()

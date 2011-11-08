@@ -104,26 +104,12 @@ class PreviewAquisator(wx.Timer):
         """ Get a frame from the camera and extract the channels we want,
             putting them into ds. """
         if ('numpy_frames' in dir(self.cam)):
-            getChanSlice = lambda ds,chan: CDataStack_AsArray(ds, chan)[:,:,ds.getZPos()]
+            cs = self.dsa[:,:,0]
         else:
-            getChanSlice = lambda ds,chan: ds.getCurrentChannelSlice(chan)
+            cs = ds.getCurrentChannelSlice(chan)
 
-        if(colours & self.BW):
-            cs = getChanSlice(self.ds,self.curMemChn)
-            self.cam.ExtractColor(cs,0)
-            self.curMemChn = self.curMemChn + 1	
-        if(colours & self.RED):
-            self.cam.ExtractColor(getChanSlice(self.ds,self.curMemChn),1)
-            self.curMemChn = self.curMemChn + 1
-        if(colours & self.GREEN1):
-            self.cam.ExtractColor(getChanSlice(self.ds,self.curMemChn),2)
-            self.curMemChn = self.curMemChn + 1
-        if(colours & self.GREEN2):
-            self.cam.ExtractColor(getChanSlice(self.ds,self.curMemChn),4)
-            self.curMemChn = self.curMemChn + 1
-        if(colours & self.BLUE):
-            self.cam.ExtractColor(getChanSlice(self.ds,self.curMemChn),3)
-            self.curMemChn = self.curMemChn + 1
+        self.cam.ExtractColor(cs,0)
+        
 
     def purge(self):
         while(self.cam.ExpReady()):
@@ -137,30 +123,30 @@ class PreviewAquisator(wx.Timer):
         """ There is an exposure waiting in the Camera,
             looppos inticates which hardware (shutter) channel we're currently on """
         
-        self.loopnuf = self.loopnuf + 1
+        #self.loopnuf = self.loopnuf + 1
 
         #If this was the last set of shutter combinations, move us to the position
         # for the next slice.
-        if (self.looppos == (self.numHWChans - 1)): 
-            self.doPiezoStep()
+        #if (self.looppos == (self.numHWChans - 1)):
+        #    self.doPiezoStep()
         
         # Set the shutters for the next exposure
         #self.shutters.setShutterStates(self.hwChans[(self.looppos + 1)%self.numHWChans])
-        self.shutters.setShutterStates(0)
+        #self.shutters.setShutterStates(0)
 
         #self.Wait(15) #give shutters a chance to close - should fix hardware
 
-        self.looppos = self.looppos + 1
+        #self.looppos = self.looppos + 1
 	
         contMode = False
         if ('contMode' in dir(self.cam)): #hack for continous acquisition - do not want to/can't keep setting iTime
 	        contMode =self.cam.contMode
 
-        if ('itimes' in dir(self.chans) and not contMode): #maintain compatibility with old versions
+        if (not contMode and 'itimes' in dir(self.chans)): #maintain compatibility with old versions
             self.cam.SetIntegTime(self.chans.itimes[self.looppos%self.numHWChans])
             self.cam.SetCOC()
         
-        self.shutters.setShutterStates(self.hwChans[(self.looppos)%self.numHWChans])
+        #self.shutters.setShutterStates(self.hwChans[(self.looppos)%self.numHWChans])
         #self.Wait(15)
 
         #self.cam.StartExposure()
@@ -179,12 +165,12 @@ class PreviewAquisator(wx.Timer):
                 #self.cam.StartExposure()
 
 
-            if (self.looppos >= self.numHWChans):
-                self.looppos = 0
-                self.curMemChn = 0
+            #if (self.looppos >= self.numHWChans):
+            #    self.looppos = 0
+            #    self.curMemChn = 0
 
-                for a in self.WantFrameNotification:
-                    a(self)
+            for a in self.WantFrameNotification:
+                a(self)
 
             # If we're at the end of the Data Stack, then stop
             # Note that in normal sequence aquisition this is the line which determines how long to 
@@ -192,8 +178,8 @@ class PreviewAquisator(wx.Timer):
             # it doesn't move through the stack, and always returns true, such that the aquisition 
             # continues for ever unless we stop it some other way (ie by clicking "Stop Live Preview")
             # in CRealAquisator it's overridden to behave in the right way.
-            if not (self.getNextDsSlice()):
-                 self.stop()
+            #if not (self.getNextDsSlice()):
+            #     self.stop()
 
            
 
@@ -250,8 +236,9 @@ class PreviewAquisator(wx.Timer):
                 
                 bufferOverflowed = False
     
+                self.cam.camLock.acquire()
                 while(self.cam.ExpReady()): #changed to deal with multiple frames being ready
-                    if 'GetNumImsBuffered' in dir(self.cam):
+                    if 'GetNumImsBuffered' in dir(self.cam) and not self.cam.burstMode:
                         bufferOverflowing  = self.cam.GetNumImsBuffered() >= (self.cam.GetBufferSize() - 1)
                     else:
                         bufferOverflowing = False
@@ -278,6 +265,7 @@ class PreviewAquisator(wx.Timer):
                     if ('GetNumImsBuffered' in dir(self.cam)) and (nFrames > self.cam.GetBufferSize()/4):
                         print 'Warning: not keeping up with camera, giving up with %d frames still in buffer' % self.cam.GetNumImsBuffered()
                         break
+                self.cam.camLock.release()
     
                 if bufferOverflowed:
                     self.needExposureStart = True
