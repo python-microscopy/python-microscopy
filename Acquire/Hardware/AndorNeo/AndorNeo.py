@@ -86,6 +86,7 @@ class AndorBase(SDK3Camera):
        
         
         self.contMode = True
+        self.burstMode = False
         
         self._temp = 0
         self._frameRate = 0
@@ -100,6 +101,8 @@ class AndorBase(SDK3Camera):
         self.FrameCount.setValue(1)
         self.CycleMode.setString(u'Continuous')
         self.PixelEncoding.setString('Mono12')
+        self.SensorCooling.setValue(True)
+        self.TemperatureControl.setString('-30.00')
         #self.PixelReadoutRate.setIndex(1)
         
         #set up polling thread        
@@ -159,39 +162,43 @@ class AndorBase(SDK3Camera):
             self.queuedBuffers.put(buf)
             #print np.base_repr(buf.ctypes.data, 16)
             SDK3.QueueBuffer(self.handle, buf.ctypes.data_as(SDK3.POINTER(SDK3.AT_U8)), buf.nbytes)
-            self.fLog.write('%f\tq\n' % time.time())
+            #self.fLog.write('%f\tq\n' % time.time())
             self.nQueued += 1
+        #self.camLock.release()
         
     def _pollBuffer(self):
         try:
-            self.fLog.write('%f\tp\n' % time.time())
+            #self.fLog.write('%f\tp\n' % time.time())
             pData, lData = SDK3.WaitBuffer(self.handle, 100)
-            self.fLog.write('%f\tb\n' % time.time())
+            #self.fLog.write('%f\tb\n' % time.time())
         except SDK3.TimeoutError as e:
             #Both AT_ERR_TIMEDOUT and AT_ERR_NODATA
             #get caught as TimeoutErrors
-            if e.errNo == SDK3.AT_ERR_TIMEDOUT:          
-                self.fLog.write('%f\tt\n' % time.time())
-            else:
-                self.fLog.write('%f\tn\n' % time.time())
+            #if e.errNo == SDK3.AT_ERR_TIMEDOUT:
+            #    self.fLog.write('%f\tt\n' % time.time())
+            #else:
+            #    self.fLog.write('%f\tn\n' % time.time())
             return
         #except SDK3.CameraError as e:
         #    if not e.errNo == SDK3.AT_ERR_NODATA:
         #        traceback.print_exc()
         #    return
             
+        #self.camLock.acquire()
         buf = self.queuedBuffers.get()
         self.nQueued -= 1
         if not buf.ctypes.data == ctypes.addressof(pData.contents):
             print ctypes.addressof(pData.contents), buf.ctypes.data
+            #self.camLock.release()
             raise RuntimeError('Returned buffer not equal to expected buffer')
             #print 'Returned buffer not equal to expected buffer'
             
         self.fullBuffers.put(buf)
         self.nFull += 1
+        #self.camLock.release()
         
     def _pollLoop(self):
-        self.fLog = open('poll.txt', 'w')
+        #self.fLog = open('poll.txt', 'w')
         while self.pollLoopActive:
             self._queueBuffers()
             if self.doPoll: #only poll if an acquisition is running
@@ -200,8 +207,8 @@ class AndorBase(SDK3Camera):
                 #print 'w',
                 time.sleep(.05)
             time.sleep(.0005)
-            self.fLog.flush()
-        self.fLog.close()
+            #self.fLog.flush()
+        #self.fLog.close()
         
     #PYME Camera interface functions - make this look like the other cameras
     def ExpReady(self):
@@ -409,6 +416,17 @@ class AndorBase(SDK3Camera):
     def SetAcquisitionMode(self, aqMode):
         self.CycleMode.setIndex(aqMode)
         self.contMode = aqMode == self.MODE_CONTINUOUS
+
+    def SetBurst(self, burstSize):
+        if burstSize > 1:
+            self.SetAcquisitionMode(self.MODE_SINGLE_SHOT)
+            self.FrameCount.setValue(burstSize)
+            self.contMode = True
+            self.burstMode = True
+        else:
+            self.FrameCount.setValue(1)
+            self.SetAcquisitionMode(self.MODE_CONTINUOUS)
+            self.burstMode = False
 
     def SetShutter(self, mode):
         pass
