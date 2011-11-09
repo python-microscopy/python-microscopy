@@ -149,6 +149,16 @@ class PhoxxLaser(Laser):
         
     def __del__(self):
         self.Close()
+        
+    def GetOutputmW(self):
+        return float(self.adHocVals['MDP'][0])
+        
+    def GetStatusText(self):
+        try:
+            pow = self.GetOutputmW()
+            return '%s laser power: %3.3f mW' % (self.name, pow)
+        except:
+            return '%s laser power: ERR' % self.name
 
     def GetPower(self):
         #return self.power

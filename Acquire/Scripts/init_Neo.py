@@ -186,8 +186,13 @@ except:
 ''')
 
 
+from PYME.Acquire.Hardware import phoxxLaser
+scope.l642 = phoxxLaser.PhoxxLaser('642')
+scope.StatusCallbacks.append(scope.l642.GetStatusText)
+scope.lasers = [scope.l642]
+
 #DigiData
-scope.lasers = []
+#scope.lasers = []
 #InitBG('DigiData', '''
 #from PYME.Acquire.Hardware.DigiData import DigiDataClient
 #dd = DigiDataClient.getDDClient()
@@ -206,13 +211,13 @@ scope.lasers = []
 #scope.lasers = [scope.l405,scope.l532,scope.l671, scope.l490]
 #''')
 
-#InitGUI('''
-#if 'lasers'in dir(scope):
-#    from PYME.Acquire.Hardware import LaserControlFrame
-#    lcf = LaserControlFrame.LaserControlLight(MainFrame,scope.lasers)
-#    time1.WantNotification.append(lcf.refresh)
-#    toolPanels.append((lcf, 'Laser Control'))
-#''')
+InitGUI('''
+if 'lasers'in dir(scope):
+    from PYME.Acquire.Hardware import LaserControlFrame
+    lcf = LaserControlFrame.LaserControlLight(MainFrame,scope.lasers)
+    time1.WantNotification.append(lcf.refresh)
+    toolPanels.append((lcf, 'Laser Control'))
+''')
 #
 #from PYME.Acquire.Hardware import PM100USB
 #
