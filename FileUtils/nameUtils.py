@@ -41,13 +41,17 @@ datadir = os.path.join(homedir, 'PYMEData')
 if 'PYMEDATADIR' in os.environ.keys() and os.access(os.environ['PYMEDATADIR'], os.W_OK):
     datadir = os.environ['PYMEDATADIR']
 
+dirSuffix=''
+if 'PYMEDIRSUFFIX' in os.environ.keys():
+    dirSuffix = '_' + os.environ['PYMEDIRSUFFIX']
+
         
 
-dateDict = {'username' : getUsername(), 'day' : dtn.day, 'month' : dtn.month, 'year':dtn.year, 'sep' : os.sep, 'dataDir' : datadir, 'homeDir': homedir}
+dateDict = {'username' : getUsername(), 'day' : dtn.day, 'month' : dtn.month, 'year':dtn.year, 'sep' : os.sep, 'dataDir' : datadir, 'homeDir': homedir, 'dirSuffix': dirSuffix}
 
 
 #\\ / and * will be replaced with os dependant separator
-datadirPattern = '%(dataDir)s/%(username)s/%(day)d-%(month)d-%(year)d'
+datadirPattern = '%(dataDir)s/%(username)s/%(year)d_%(month)d_%(day)d%s(dirSuffix)'
 filePattern = '%(day)d_%(month)d_series'
 
 #resultsdirPattern = '%(homeDir)s/analysis/%(dday)d-%(dmonth)d-%(dyear)d'

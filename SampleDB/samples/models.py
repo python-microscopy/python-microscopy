@@ -5,11 +5,42 @@ import os
 from PYME.misc.hash32 import hashString32
 
 # Create your models here.
+class Species(models.Model):
+    SPECIES_NAMES = (('Human', 'Human'),
+                     ('Rat', 'Rat'),
+                     ('Mouse', 'Mouse'),
+                     ('Rabbit', 'Rabbit'),
+                     ('Sheep', 'Sheep'),
+                     ('Guinea Pig','Guinea Pig'),
+                     ('Synthetic', 'Not Biological'),)
+
+    speciesID = models.IntegerField(primary_key=True)
+    speciesName = models.CharField(max_length=200, choices=SPECIES_NAMES)
+    strain = models.CharField(max_length=200)
+
+class Sample(models.Model):
+    SAMPLE_TYPES = (('Culture', 'Cultured Cells'),
+                    ('Section', 'Tissue Section'),
+                    ('Isolated', 'Isolated Cells'),
+                    ('Synthetic', 'Beads etc ...'),)
+
+    sampleID = models.IntegerField(primary_key=True)
+    species = models.ForeignKey(Species, related_name='samples')
+    patientID = models.CharField(max_length=200)
+    sampleType = models.CharField(max_length=200, choices=SAMPLE_TYPES)
+
+class Dye(models.Model):
+    dyeID = models.IntegerField(primary_key=True)
+    shortName = models.CharField(max_length=50)
+    longName = models.CharField(max_length=200)
+    spectraDBName = models.CharField(max_length=200)
+
 class Slide(models.Model):
     slideID = models.IntegerField(primary_key=True)
     creator = models.CharField(max_length=200)
     reference = models.CharField(max_length=200)
     notes = models.TextField()
+    sample = models.ForeignKey(Sample, related_name='slides', null=True)
 
     def AddLabel(self, structure, label):
         lb = Labelling(slideID=self, structure=structure, label=label)
@@ -172,6 +203,8 @@ class File(models.Model):
 class Labelling(models.Model):
     slideID = models.ForeignKey(Slide, related_name='labelling')
     structure = models.CharField(max_length=200)
+    isotype = models.CharField(max_length=200, default='')
+    antibody = models.CharField(max_length=200, default='')
     label = models.CharField(max_length=200)
 
     def __unicode__(self):
