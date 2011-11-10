@@ -169,6 +169,7 @@ class TiffStackExporter(Exporter):
             
             xmlFile = os.path.splitext(outFile)[0] + '.xml'
             xmd.writeXML(xmlFile)
+            # xmd.WriteSimple(xmlFile)
 
 exporter(TiffStackExporter)
 
@@ -205,6 +206,7 @@ class TiffSeriesExporter(Exporter):
 
             xmlFile = os.path.splitext(outFile)[0] + '.xml'
             xmd.writeXML(xmlFile)
+            # xmd.WriteSimple(xmlFile)
 
 exporter(TiffSeriesExporter)
 
@@ -227,7 +229,8 @@ class NumpyExporter(Exporter):
             xmd.setEntry('cropping.zslice', zslice.indices(data.shape[2]))
             
             xmlFile = os.path.splitext(outFile)[0] + '.xml'
-            xmd.writeXML(xmlFile)
+            # xmd.writeXML(xmlFile)
+            xmd.WriteSimple(xmlFile)
 
 exporter(NumpyExporter)
 
@@ -391,12 +394,17 @@ def _getFilename(defaultExt = '*.tif'):
         return fname
 
 def CropExportData(vp, mdh=None, events=None, origName = None):
-    if 'ds' in dir(vp.do):
-        ds = vp.do.ds
-    else:
-        ds= vp.ds
-    roi = [[vp.selection_begin_x, vp.selection_end_x + 1],[vp.selection_begin_y, vp.selection_end_y +1], [0, ds.shape[2]]]
-    
+    #if 'ds' in dir(vp.do):
+    ds = vp.do.ds
+    #else:
+    #    ds= vp.ds
+
+    #if 'selection_begin_x' in dir(vp):
+    roi = [[vp.do.selection_begin_x, vp.do.selection_end_x + 1],
+              [vp.do.selection_begin_y, vp.do.selection_end_y +1], [0, ds.shape[2]]]
+    #else:
+    #   roi = [[0, ds.shape[0]],[0, ds.shape[1]],[0, ds.shape[2]]]
+
     dlg = ExportDialog(None, roi)
     succ = dlg.ShowModal()
 

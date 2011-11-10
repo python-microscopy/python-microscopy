@@ -34,6 +34,14 @@ from UserDict import DictMixin
 provideStartMetadata = []
 provideStopMetadata = []
 
+def instanceinlist(cls, list):
+    for c in list:
+        if isinstance(cls, c):
+            return True
+
+    return False
+    
+
 class MDHandlerBase(DictMixin):
     #base class to make metadata behave like a dictionary
     def __setitem__(self, name, value):
@@ -231,6 +239,7 @@ class XMLMDHandler(MDHandlerBase):
 
     def setEntry(self,entryName, value):
         import cPickle
+        import numpy as np
         entPath = entryName.split('.')
 
         node = self.md
@@ -246,10 +255,23 @@ class XMLMDHandler(MDHandlerBase):
 
             entPath.pop(0)
 
-        typ = type(value) #.__name__
-        if typ in [float, int, str, unicode]: #easily recovered
-            node.setAttribute('class', type(value).__name__)
-            node.setAttribute('value', repr(value))
+        #typ = type(value) #.__name__
+        
+        if isinstance(value, float):
+            node.setAttribute('class', 'float')
+            node.setAttribute('value', str(value))
+        elif isinstance(value, int):
+            node.setAttribute('class', 'int')
+            node.setAttribute('value', str(value))
+        elif isinstance(value, str):
+            node.setAttribute('class', 'str')
+            node.setAttribute('value', value)
+        elif isinstance(value, unicode):
+            node.setAttribute('class', 'unicode')
+            node.setAttribute('value', value)
+        elif np.isscalar(value):
+            node.setAttribute('class', 'float')
+            node.setAttribute('value', str(value)) 
         else: #pickle more complicated structures
             node.setAttribute('class', 'pickle')
             print value, cPickle.dumps(value)
