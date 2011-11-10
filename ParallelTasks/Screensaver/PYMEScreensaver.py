@@ -64,6 +64,7 @@ class MySaver(pyscr.Screensaver):
         info.wShowWindow=subprocess.SW_HIDE
         
         for i in range(self.numProcessors):
+            #print 'launching daughter'
             self.daughterProcesses.append(subprocess.Popen('taskWorkerME.exe', startupinfo=info))
     
     def finalize(self):

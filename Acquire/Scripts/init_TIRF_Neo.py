@@ -15,35 +15,16 @@ from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
 
 from PYME.Acquire.Hardware import fakeShutters
 import time
-import os
-import sys
-
-def GetComputerName():
-    if sys.platform == 'win32':
-        return os.environ['COMPUTERNAME']
-    else:
-        return os.uname()[1]
-
-#scope.cameras = {}
-#scope.camControls = {}
-
-#InitBG('EMCCD Cameras', '''
-#scope.cameras['A - Left'] = AndorIXon.iXonCamera(0)
-#scope.cameras['B - Right'] = AndorIXon.iXonCamera(0)
-#scope.cameras['B - Right'].SetShutter(False)
-#scope.cameras['B - Right'].SetActive(False)
-#scope.cam = scope.cameras['A - Left']
-#''')
 
 cm = InitBG('Andor Neo', '''
 from PYME.Acquire.Hardware.AndorNeo import AndorNeo
 scope.cam = AndorNeo.AndorNeo(0)
-#scope.cam.Init()
+scope.cam.Init()
 scope.cameras['Neo'] = scope.cam
 #time.sleep(5)
 ''')
 
-InitGUI('''scope.cam.Init()''')
+#InitGUI('''scope.cam.Init()''')
 
 InitBG('EMCCD Cameras', '''
 #scope.cameras['A - Left'] = AndorIXon.iXonCamera(0)
@@ -68,11 +49,11 @@ camPanels.append((scope.camControls['Ixon'], 'EMCCD Properties'))
 
 ''')
 
-#InitGUI('''
-#import sampleInformation
-#sampPan = sampleInformation.slidePanel(MainFrame)
-#camPanels.append((sampPan, 'Current Slide'))
-#''')
+InitGUI('''
+import sampleInformation
+sampPan = sampleInformation.slidePanel(MainFrame)
+camPanels.append((sampPan, 'Current Slide'))
+''')
 
 #setup for the channels to aquire - b/w camera, no shutters
 class chaninfo:
@@ -88,28 +69,32 @@ scope.shutters = fakeShutters
 #PIFoc
 InitBG('PIFoc', '''
 from PYME.Acquire.Hardware.Piezos import piezo_e816
-scope.piFoc = piezo_e816.piezo_e816('COM1', 400, 0, True)
+scope.piFoc = piezo_e816.piezo_e816('COM2', 400, -0.399)
 scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
 ''')
 
-#InitBG('Stage Stepper Motors', '''
-#from PYME.Acquire.Hardware.Mercury import mercuryStepper
-#scope.stage = mercuryStepper.mercuryStepper(comPort=5, axes=['A', 'B'], steppers=['M-229.25S', 'M-229.25S'])
-#scope.stage.SetSoftLimits(0, [1.06, 20.7])
-#scope.stage.SetSoftLimits(1, [.8, 17.6])
-#scope.piezos.append((scope.stage, 0, 'Stage X'))
-#scope.piezos.append((scope.stage, 1, 'Stage Y'))
-#scope.joystick = scope.stage.joystick
-#scope.joystick.Enable(True)
-#scope.CleanupFunctions.append(scope.stage.Cleanup)
+InitBG('Stage Stepper Motors', '''
+from PYME.Acquire.Hardware.Mercury import mercuryStepper
+scope.stage = mercuryStepper.mercuryStepper(comPort=5, axes=['A', 'B'], steppers=['M-229.25S', 'M-229.25S'])
+scope.stage.SetSoftLimits(0, [1.06, 20.7])
+scope.stage.SetSoftLimits(1, [.8, 17.6])
+scope.piezos.append((scope.stage, 0, 'Stage X'))
+scope.piezos.append((scope.stage, 1, 'Stage Y'))
+scope.joystick = scope.stage.joystick
+scope.joystick.Enable(True)
+scope.CleanupFunctions.append(scope.stage.Cleanup)
+''')
+
+#InitGUI('''
+#from PYME.Acquire import sarcSpacing
+#ssp = sarcSpacing.SarcomereChecker(MainFrame, menuBar1, scope)
 #''')
 
 InitGUI('''
-from PYME.Acquire import sarcSpacing
-ssp = sarcSpacing.SarcomereChecker(MainFrame, menuBar1, scope)
+from PYME.Acquire.Hardware import focusKeys
+fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[0])
+time1.WantNotification.append(fk.refresh)
 ''')
-
-
 
 #InitGUI('''
 #from PYME.Acquire import positionTracker
@@ -120,25 +105,17 @@ ssp = sarcSpacing.SarcomereChecker(MainFrame, menuBar1, scope)
 #''')
 
 #splitter
-#InitGUI('''
-#from PYME.Acquire.Hardware import splitter
-#splt = splitter.Splitter(MainFrame, mControls, scope, scope.cam, flipChan = 0, dichroic = 'NotYet' , transLocOnCamera = 'Top', flip=False)
-#''')
+InitGUI('''
+from PYME.Acquire.Hardware import splitter
+splt = splitter.Splitter(MainFrame, mControls, scope, scope.cam, dichroic = 'FF741-Di01' , transLocOnCamera = 'Top')
+''')
 
 #Z stage
-InitGUI('''
-from PYME.Acquire.Hardware import NikonTi
-scope.zStage = NikonTi.zDrive()
-#import Pyro.core
-#scope.zStage = Pyro.core.getProxyForURI('PYRONAME://%s.ZDrive'  % GetComputerName())
-scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
-''')# % GetComputerName())
-
-InitGUI('''
-from PYME.Acquire.Hardware import focusKeys
-fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[0], scope=scope)
-time1.WantNotification.append(fk.refresh)
-''')
+#InitBG('Nikon Z-Stage', '''
+#from PYME.Acquire.Hardware import NikonTE2000
+#scope.zStage = NikonTE2000.zDrive()
+#scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
+#''')
 
 #from PYME.Acquire.Hardware import frZStage
 #frz = frZStage.frZStepper(MainFrame, scope.zStage)
@@ -172,44 +149,39 @@ from PYME.Acquire.Hardware.FilterWheel import WFilter, FiltFrame
 filtList = [WFilter(1, 'EMPTY', 'EMPTY', 0),
     WFilter(2, 'ND.5' , 'UVND 0.5', 0.5),
     WFilter(3, 'ND1'  , 'UVND 1'  , 1),
-    WFilter(4, 'ND2', 'UVND 2', 2),
-    WFilter(5, 'ND3'  , 'UVND 3'  , 3),
-    WFilter(6, 'ND4'  , 'UVND 4'  , 4)]
+    WFilter(4, 'EMPTY', 'EMPTY', 0),
+    WFilter(5, 'ND2'  , 'UVND 2'  , 2),
+    WFilter(6, 'ND4.5'  , 'UVND 4.5'  , 4.5)]
 
 InitGUI('''
 try:
-    scope.filterWheel = FiltFrame(MainFrame, filtList, 'COM4')
-    scope.filterWheel.SetFilterPos("ND4")
+    scope.filterWheel = FiltFrame(MainFrame, filtList)
+    scope.filterWheel.SetFilterPos("ND4.5")
     toolPanels.append((scope.filterWheel, 'Filter Wheel'))
 except:
     print 'Error starting filter wheel ...'
 ''')
 
 
-from PYME.Acquire.Hardware import phoxxLaser
-scope.l642 = phoxxLaser.PhoxxLaser('642')
-scope.StatusCallbacks.append(scope.l642.GetStatusText)
-scope.lasers = [scope.l642]
-
 #DigiData
 #scope.lasers = []
-#InitBG('DigiData', '''
-#from PYME.Acquire.Hardware.DigiData import DigiDataClient
-#dd = DigiDataClient.getDDClient()
-#
-#
-#from PYME.Acquire.Hardware import lasers
-#scope.l490 = lasers.DigiDataSwitchedLaser('490',dd,4)
-#scope.l405 = lasers.DigiDataSwitchedLaserInvPol('405',dd,0)
-##scope.l543 = lasers.DigiDataSwitchedAnalogLaser('543',dd,0)
-##scope.l671 = lasers.DigiDataSwitchedAnalogLaser('671',dd,1)
-#
-#pport = lasers.PPort()
-#scope.l671 = lasers.ParallelSwitchedLaser('671',pport,0)
-#scope.l532 = lasers.ParallelSwitchedLaser('532',pport,1)
-#
-#scope.lasers = [scope.l405,scope.l532,scope.l671, scope.l490]
-#''')
+InitBG('DigiData', '''
+from PYME.Acquire.Hardware.DigiData import DigiDataClient
+dd = DigiDataClient.getDDClient()
+
+
+from PYME.Acquire.Hardware import lasers
+scope.l490 = lasers.DigiDataSwitchedLaser('490',dd,4)
+scope.l405 = lasers.DigiDataSwitchedLaserInvPol('405',dd,0)
+#scope.l543 = lasers.DigiDataSwitchedAnalogLaser('543',dd,0)
+#scope.l671 = lasers.DigiDataSwitchedAnalogLaser('671',dd,1)
+
+pport = lasers.PPort()
+scope.l671 = lasers.ParallelSwitchedLaser('671',pport,0)
+scope.l532 = lasers.ParallelSwitchedLaser('532',pport,1)
+
+scope.lasers = [scope.l405,scope.l532,scope.l671, scope.l490]
+''')
 
 InitGUI('''
 if 'lasers'in dir(scope):
@@ -218,12 +190,15 @@ if 'lasers'in dir(scope):
     time1.WantNotification.append(lcf.refresh)
     toolPanels.append((lcf, 'Laser Control'))
 ''')
-#
-#from PYME.Acquire.Hardware import PM100USB
-#
-#scope.powerMeter = PM100USB.PowerMeter()
-#scope.powerMeter.SetWavelength(671)
-#scope.StatusCallbacks.append(scope.powerMeter.GetStatusText)
+
+from PYME.Acquire.Hardware import PM100USB
+
+try:
+    scope.powerMeter = PM100USB.PowerMeter()
+    scope.powerMeter.SetWavelength(671)
+    scope.StatusCallbacks.append(scope.powerMeter.GetStatusText)
+except:
+    pass
 
 ##Focus tracking
 #from PYME.Acquire.Hardware import FocCorrR

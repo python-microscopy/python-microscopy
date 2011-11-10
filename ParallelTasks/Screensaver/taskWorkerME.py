@@ -24,6 +24,7 @@ from PYME.Analysis.FitFactories import *
 from PYME.Analysis.FitFactories.Interpolators import *
 from PYME.Analysis.FitFactories.zEstimators import *
 from PYME.Analysis.DataSources import HDFDataSource, TQDataSource
+import matplotlib.backends.backend_wxagg
 
 
 from PYME.misc.computerName import GetComputerName
@@ -56,19 +57,21 @@ while 1:
 
         try:
             tq = Pyro.core.getProxyForURI(ns.resolve('TaskQueues.%s' % qName))
+            tq._setOneway(['returnCompletedTask'])
             #print qName
 
             #ask the queue for tasks
             tasks = tq.getTasks(procName)
-
+            
         except:
-            import traceback
-            traceback.print_exc()
-
+            pass
+            #import traceback
+            #traceback.print_exc()
+        
             #pass
-
-
-
+        
+    
+    
     if len(tasks) == 0: #no queues had tasks
         time.sleep(1) #put ourselves to sleep to avoid constant polling
     #else:
@@ -81,17 +84,19 @@ while 1:
     while len(tasks) > 0:
         #get the next task (a task is a function, or more generally, a class with
         #a __call__ method
-        task = tasks.pop()
+        task = tasks.pop(0)
         try:
             #execute the task,
+            t1 = time.time()
             res = task(taskQueue=tq)
-            tq.returnCompletedTask(res, procName)
+            t2 = time.time()
+            tq.returnCompletedTask(res, procName, t2-t1)
         except:
             import traceback
             traceback.print_exc()
-
+        
         del task
-
+        
     #tq.returnCompletedTasks(results, name)
     del tasks
     #del results
