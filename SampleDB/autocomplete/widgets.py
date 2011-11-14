@@ -4,7 +4,7 @@ from django.utils import simplejson
 from django.utils.safestring import mark_safe
 from django.conf import settings
 
-from autocomplete.views import autocomplete as default_view
+from views import autocomplete as default_view
 
 
 class AutocompleteWidget(forms.Widget):
