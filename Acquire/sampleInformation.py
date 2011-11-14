@@ -82,10 +82,10 @@ class SampleInfoDialog(wx.Dialog):
         
 
         # for wxMSW
-        self.lLabelling.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.OnLabellingRightClick)
+        #self.lLabelling.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.OnLabellingRightClick)
 
-        self.ID_LABEL_DELETE = wx.NewId()
-        self.Bind(wx.EVT_MENU, self.OnLabelDelete, id=self.ID_LABEL_DELETE)
+        #self.ID_LABEL_DELETE = wx.NewId()
+        #self.Bind(wx.EVT_MENU, self.OnLabelDelete, id=self.ID_LABEL_DELETE)
 #
 #        # for wxGTK
 #        self.lLabelling.Bind(wx.EVT_RIGHT_UP, self.OnLabellingRightClick)
@@ -94,28 +94,30 @@ class SampleInfoDialog(wx.Dialog):
 
         sizer2.Add(self.lLabelling, 1, wx.ALL|wx.EXPAND, 5)
 
-        sizer3 = wx.BoxSizer(wx.HORIZONTAL)
+        #sizer3 = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.tStructure = TextCtrlAutoComplete.TextCtrlAutoComplete(self, value='', choices=[''], size=(150,-1))
-        self.tStructure.SetEntryCallback(self.setStructureChoices)
-        sizer3.Add(self.tStructure, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        #self.tStructure = TextCtrlAutoComplete.TextCtrlAutoComplete(self, value='', choices=[''], size=(150,-1))
+        #self.tStructure.SetEntryCallback(self.setStructureChoices)
+        #sizer3.Add(self.tStructure, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
-        self.tDye = TextCtrlAutoComplete.TextCtrlAutoComplete(self, value='', choices=[''], size=(150,-1))
-        self.tDye.SetEntryCallback(self.setDyeChoices)
-        sizer3.Add(self.tDye, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        #self.tDye = TextCtrlAutoComplete.TextCtrlAutoComplete(self, value='', choices=[''], size=(150,-1))
+        #self.tDye.SetEntryCallback(self.setDyeChoices)
+        #sizer3.Add(self.tDye, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
         #sizer3.Add()
 
-        self.bAddLabel = wx.Button(self, -1, 'Add')
-        self.bAddLabel.Bind(wx.EVT_BUTTON, self.OnAddLabel)
-        sizer3.Add(self.bAddLabel, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT, 5)
-        sizer2.Add(sizer3, 0, wx.ALL|wx.EXPAND, 5)
+        #self.bAddLabel = wx.Button(self, -1, 'Add')
+        #self.bAddLabel.Bind(wx.EVT_BUTTON, self.OnAddLabel)
+        #sizer3.Add(self.bAddLabel, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT, 5)
+        #sizer2.Add(sizer3, 0, wx.ALL|wx.EXPAND, 5)
 
         sizer1a.Add(sizer2, 0, wx.ALL|wx.EXPAND, 5)
 
         sizer2 = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Slide Notes:'), wx.VERTICAL)
         self.tSlideNotes = wx.TextCtrl(self, -1, '', size=(350, 50), style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER)
         sizer2.Add(self.tSlideNotes, 0, wx.ALL|wx.EXPAND, 5)
+
+        self.tSlideNotes.Enable(False)
 
         sizer1a.Add(sizer2, 0, wx.ALL|wx.EXPAND, 5)
 
@@ -194,17 +196,17 @@ class SampleInfoDialog(wx.Dialog):
             self.labels = [(l.structure, l.label) for l in slide.labelling.all()]
 
             self.slideExists = True
-            self.tStructure.Enable(False)
-            self.tDye.Enable(False)
-            self.bAddLabel.Enable(False)
+            #self.tStructure.Enable(False)
+            #self.tDye.Enable(False)
+            #self.bAddLabel.Enable(False)
             self.tSlideNotes.SetValue(slide.notes)
-            self.tSlideNotes.Enable(False)
+            #self.tSlideNotes.Enable(False)
         else:
             self.slideExists = False
-            self.tStructure.Enable(True)
-            self.tDye.Enable(True)
-            self.bAddLabel.Enable(True)
-            self.tSlideNotes.Enable(True)
+            #self.tStructure.Enable(True)
+            #self.tDye.Enable(True)
+            #self.bAddLabel.Enable(True)
+            #self.tSlideNotes.Enable(True)
 
         self.PopulateLabelList()
 
@@ -313,6 +315,7 @@ class SampleInfoDialog(wx.Dialog):
         mdh.setEntry('Sample.Creator', creator)
         mdh.setEntry('Sample.SlideRef', slideRef)
         mdh.setEntry('Sample.Notes', sampleNotes)
+        #mdh.setEntry('AcquisitionNotes', notes)
         
 
 #        labels = []
@@ -323,13 +326,13 @@ class SampleInfoDialog(wx.Dialog):
 
         mdh.setEntry('AcquiringUser', nameUtils.getUsername())
 
-        slide = models.Slide.GetOrCreate(creator, slideRef)
+        slide = models.Slide.Get(creator, slideRef)
 
-        if not self.slideExists:
-            for struct, label in self.labels:
-                l = models.Labelling(slideID=slide, structure=struct, label=label)
-                l.notes = sampleNotes
-                l.save()
+#        if not self.slideExists:
+#            for struct, label in self.labels:
+#                l = models.Labelling(slideID=slide, structure=struct, label=label)
+#                l.notes = sampleNotes
+#                l.save()
 
 
         if acquiring:

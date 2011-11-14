@@ -7,6 +7,11 @@ from django.conf import settings
 from django.contrib import admin
 admin.autodiscover()
 
+#import autocomplete
+#import os
+
+from SampleDB.samples import autocomp_settings
+
 urlpatterns = patterns('',
     # Example:
     #(r'^SampleDB/', include('SampleDB.foo.urls')),
@@ -32,6 +37,10 @@ urlpatterns = patterns('',
     (r'^tempgraph/(?P<numhours>.*)$', 'SampleDB.samples.tempgraph.tempgraph'),
     (r'^temperature/$', 'SampleDB.samples.tempgraph.temprecord'),
 
+    #(r'^autocomplete/slide$', 'SampleDB.samples.autocomplete.slide_autocomplete'),
+    #(r'^autocomplete/creator$', 'SampleDB.samples.autocomplete.creator_autocomplete'),
+    #(r'^autocomplete/structure$', 'SampleDB.samples.autocomplete.structure_autocomplete'),
+
     (r'^hint/tag$', 'SampleDB.samples.views.tag_hint'),
 
     (r'^booking/$', 'SampleDB.samples.views.booking'),
@@ -47,4 +56,11 @@ urlpatterns = patterns('',
      (r'^admin/(.*)', admin.site.root),
      (r'^$','SampleDB.samples.views.default'),
 
+     url('^autocomplete/', include(autocomp_settings.autocomplete.urls)),
+
 )
+
+#urlpatterns += patterns('',
+#            url(r'^%s(?P<path>.*)$' % settings.AUTOCOMPLETE_MEDIA_PREFIX[1:],
+#            'django.views.static.serve',
+#            {'document_root': os.path.join(autocomplete.__path__[0], 'media')})

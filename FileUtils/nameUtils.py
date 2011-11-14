@@ -51,7 +51,7 @@ dateDict = {'username' : getUsername(), 'day' : dtn.day, 'month' : dtn.month, 'y
 
 
 #\\ / and * will be replaced with os dependant separator
-datadirPattern = '%(dataDir)s/%(username)s/%(year)d_%(month)d_%(day)d%s(dirSuffix)'
+datadirPattern = '%(dataDir)s/%(username)s/%(year)d_%(month)d_%(day)d%(dirSuffix)s'
 filePattern = '%(day)d_%(month)d_series'
 
 #resultsdirPattern = '%(homeDir)s/analysis/%(dday)d-%(dmonth)d-%(dyear)d'
