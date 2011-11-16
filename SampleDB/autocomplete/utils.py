@@ -2,8 +2,8 @@ from django import forms
 from django.forms.models import modelform_factory
 from django.db import models
 
-from autocomplete import widgets
-from autocomplete.views import autocomplete as default_view
+import widgets
+from views import autocomplete as default_view
 
 
 def autocomplete_formfield(ac_id, formfield=None, view=default_view,

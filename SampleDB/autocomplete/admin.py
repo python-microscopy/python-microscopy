@@ -34,7 +34,7 @@ class AutocompleteAdmin(object):
                 **kwargs)
 
     def formfield_for_dbfield(self, db_field, **kwargs):
-        print db_field, self.autocomplete_view.settings
+        #print db_field, self.autocomplete_view.settings
         if db_field.name in self.autocomplete_fields:
             ac_id = self.autocomplete_fields[db_field.name]
             return self.autocomplete_formfield(ac_id, db_field.formfield, **kwargs)

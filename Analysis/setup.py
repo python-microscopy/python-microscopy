@@ -17,6 +17,8 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('cModels')
     config.add_subpackage('cInterp')
     config.add_subpackage('FitFactories')
+    config.add_subpackage('FitFactories.Interpolators')
+    config.add_subpackage('FitFactories.zEstimators')
     config.add_subpackage('QuadTree')
     config.add_subpackage('LMVis')
     config.add_subpackage('DataSources')

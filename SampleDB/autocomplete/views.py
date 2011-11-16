@@ -89,7 +89,7 @@ class AutocompleteSettings(object):
         
         data = []
         ids = []
-        print self.key
+        #print self.key
         i = 0
         for o in queryset:
             id = getattr(o, self.key)
@@ -157,7 +157,7 @@ class AutocompleteView(object):
         return self.settings[getattr(id, 'field', id)]
 
     def register(self, id, settings_class=AutocompleteSettings, **options):
-        print id
+        #print id
         id = getattr(id, 'field', id)
         if id in self.settings:
             id = self.settings[id].id
@@ -171,7 +171,7 @@ class AutocompleteView(object):
             #print path, self.paths
             raise Http404
 
-        print self.paths[path].view
+        #print self.paths[path].view
 	return self.paths[path].view(request)
 
     def get_urls(self):
