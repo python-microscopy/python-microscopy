@@ -118,7 +118,7 @@ class Slide(models.Model):
 
         nToday = len(today)
 
-        return '%d_%d_%d_%s' % (dtn.year, dtn.month, dtn.day, baseconvert(nToday, 'ABCDEFGHIJKLMNOPQRSTUVXWYZ'))
+        return '%d_%d_%d_%s' % (dtn.day, dtn.month, dtn.year, baseconvert(nToday, 'ABCDEFGHIJKLMNOPQRSTUVXWYZ'))
 
     @classmethod
     def GetOrCreate(cls, creator, reference):
