@@ -24,6 +24,8 @@ from PYME.SampleDB.samples import models
 lastCreator = nameUtils.getUsername()
 lastSlideRef = ''
 
+currentSlide = [None]
+
 WantSlideChangeNotification = []
 
 from PYME.Acquire.MetaDataHandler import NestedClassMDHandler
@@ -36,63 +38,55 @@ class AutoWidthListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
         wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
         listmix.ListCtrlAutoWidthMixin.__init__(self)
 
+class VirtList(wx.ListCtrl):
+    def __init__(self, parent, ID, pos=wx.DefaultPosition,
+                 size=(480, 300), style=wx.LC_REPORT|wx.LC_VIRTUAL):
+        wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
+        #listmix.ListCtrlAutoWidthMixin.__init__(self)
+        
+        #self.qs = qs
+
+        self.InsertColumn(0, "Creator")
+        self.InsertColumn(1, "Reference")
+        self.InsertColumn(2, "Labelling")
+        self.SetColumnWidth(0, 100)
+        self.SetColumnWidth(1, 120)
+        self.SetColumnWidth(2, 250)
+        #r = qs[0]
+        #self.SetItemCount(0)
+        #self.SetFilter()
+
+    def SetFilter(self, creator='', reference='', structure=''):
+        self.qs = models.Slide.objects.filter(creator__contains=creator, reference__contains = reference, labelling__structure__contains= structure).order_by('-timestamp')
+        self.SetItemCount(len(self.qs))
+
+    def OnGetItemText(self, item, col):
+        #print self.qs[item].desc()
+        return self.qs[item].desc()[col]
+
+    #def OnGetItemImage(self):
+
+
 
 class SampleInfoDialog(wx.Dialog):
-    def __init__(self, parent):
-        wx.Dialog.__init__(self, parent, -1, 'Sample Information')
+    def __init__(self, parent, init_filter=('', '', ''), acquiring=True):
+        wx.Dialog.__init__(self, parent, -1, 'Select Slide')
 
         #self.mdh = mdh
         self.labels = []
         self.slideExists = False
+        self.slide = None
 
         sizer1 = wx.BoxSizer(wx.VERTICAL)
-        sizer1a = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Slide:'), wx.VERTICAL)
-        sizer2 = wx.BoxSizer(wx.HORIZONTAL)
 
-        sizer2.Add(wx.StaticText(self, -1, 'Slide Creator:'), 0, wx.ALL, 5)
-
-        #self.tCreator = wx.TextCtrl(self, -1, lastCreator)
-        self.tCreator = TextCtrlAutoComplete.TextCtrlAutoComplete(self, value=lastCreator, choices=[lastCreator])
-        self.tCreator.SetEntryCallback(self.setCreatorChoices)
-        self.tCreator.SetToolTip(wx.ToolTip('This should be the person who mounted the slide & should have details about the slide ref in their lab book'))
-        sizer2.Add(self.tCreator, 1, wx.ALL, 5)
-
-        sizer2.Add(wx.StaticText(self, -1, 'Slide Ref:'), 0, wx.ALL, 5)
-
-        #self.tSlideRef = wx.TextCtrl(self, -1, lastSlideRef)
-        self.tSlideRef = TextCtrlAutoComplete.TextCtrlAutoComplete(self, value=lastSlideRef, choices=[lastSlideRef])
-        self.tSlideRef.SetEntryCallback(self.setSlideChoices)
-        self.tSlideRef.SetToolTip(wx.ToolTip('This should be the reference #/code which is on the slide and in lab book'))
-        sizer2.Add(self.tSlideRef, 0, wx.ALL, 5)
-
-        sizer1a.Add(sizer2, 1, wx.ALL|wx.EXPAND, 5)
-
-
-        sizer2 = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Labelling:'), wx.VERTICAL)
-#        self.gLabelling = wx.grid.Grid(self, -1, size=(250, 100))
-#        self.gLabelling.SetDefaultColSize(235/2)
-#        self.gLabelling.CreateGrid(1, 2)
-#        self.gLabelling.SetRowLabelSize(0)
-#        self.gLabelling.SetColLabelValue(0,'Structure')
-#        self.gLabelling.SetColLabelValue(1,'Dye')
-        self.lLabelling = AutoWidthListCtrl(self, -1, style=wx.LC_REPORT| wx.BORDER_NONE)
-        self.lLabelling.InsertColumn(0, "Structure")
-        self.lLabelling.InsertColumn(1, "Dye")
+        #qs = models.Slide.objects.all().order_by('-timestamp')
+        self.lSlides = VirtList(self, -1)
+        self.lSlides.SetFilter(*init_filter)
+        self.lSlides.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelectSlide)
 
         
 
-        # for wxMSW
-        #self.lLabelling.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.OnLabellingRightClick)
-
-        #self.ID_LABEL_DELETE = wx.NewId()
-        #self.Bind(wx.EVT_MENU, self.OnLabelDelete, id=self.ID_LABEL_DELETE)
-#
-#        # for wxGTK
-#        self.lLabelling.Bind(wx.EVT_RIGHT_UP, self.OnLabellingRightClick)
-
-        
-
-        sizer2.Add(self.lLabelling, 1, wx.ALL|wx.EXPAND, 5)
+        sizer1.Add(self.lSlides, 1, wx.ALL|wx.EXPAND, 5)
 
         #sizer3 = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -111,31 +105,74 @@ class SampleInfoDialog(wx.Dialog):
         #sizer3.Add(self.bAddLabel, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT, 5)
         #sizer2.Add(sizer3, 0, wx.ALL|wx.EXPAND, 5)
 
-        sizer1a.Add(sizer2, 0, wx.ALL|wx.EXPAND, 5)
+        #sizer1a.Add(sizer2, 0, wx.ALL|wx.EXPAND, 5)
 
-        sizer2 = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Slide Notes:'), wx.VERTICAL)
-        self.tSlideNotes = wx.TextCtrl(self, -1, '', size=(350, 50), style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER)
-        sizer2.Add(self.tSlideNotes, 0, wx.ALL|wx.EXPAND, 5)
+        btAdd = wx.Button(self, wx.ID_ADD, 'New Slide')
+        sizer1.Add(btAdd, 0, wx.ALL|wx.ALIGN_RIGHT, 5)
+        btAdd.Bind(wx.EVT_BUTTON, self.OnAddSlide)
 
-        self.tSlideNotes.Enable(False)
+        sizer1a = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Filter by:'), wx.VERTICAL)
 
-        sizer1a.Add(sizer2, 0, wx.ALL|wx.EXPAND, 5)
+        sizer2 = wx.BoxSizer(wx.HORIZONTAL)
+
+        sizer2.Add(wx.StaticText(self, -1, 'Creator:'), 0, wx.LEFT|wx.RIGHT, 5)
+
+        #self.tCreator = wx.TextCtrl(self, -1, lastCreator)
+        self.tCreator = TextCtrlAutoComplete.TextCtrlAutoComplete(self, value=init_filter[0], choices=[lastCreator])
+        self.tCreator.SetEntryCallback(self.setCreatorChoices)
+        self.tCreator.SetToolTip(wx.ToolTip('This should be the person who mounted the slide & should have details about the slide ref in their lab book'))
+        self.tCreator.Bind(wx.EVT_TEXT, self.OnFilterChange)
+        sizer2.Add(self.tCreator, 1, wx.LEFT|wx.RIGHT, 5)
+
+        sizer1a.Add(sizer2, 1, wx.ALL|wx.EXPAND, 5)
+        sizer2 = wx.BoxSizer(wx.HORIZONTAL)
+
+        sizer2.Add(wx.StaticText(self, -1, 'Reference:'), 0, wx.LEFT|wx.RIGHT, 5)
+
+        #self.tSlideRef = wx.TextCtrl(self, -1, lastSlideRef)
+        self.tSlideRef = TextCtrlAutoComplete.TextCtrlAutoComplete(self, value=init_filter[1], choices=[lastSlideRef])
+        self.tSlideRef.SetEntryCallback(self.setSlideChoices)
+        self.tSlideRef.SetToolTip(wx.ToolTip('This should be the reference #/code which is on the slide and in lab book'))
+        self.tSlideRef.Bind(wx.EVT_TEXT, self.OnFilterChange)
+        sizer2.Add(self.tSlideRef, 1, wx.LEFT|wx.RIGHT, 5)
+
+        sizer1a.Add(sizer2, 1, wx.ALL|wx.EXPAND, 5)
+        
+        sizer2 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer2.Add(wx.StaticText(self, -1, 'Structure:'), 0, wx.LEFT|wx.RIGHT, 5)
+
+        self.tStructure = TextCtrlAutoComplete.TextCtrlAutoComplete(self, value=init_filter[2], choices=[''], size=(150,-1))
+        self.tStructure.SetEntryCallback(self.setStructureChoices)
+        self.tStructure.Bind(wx.EVT_TEXT, self.OnFilterChange)
+        sizer2.Add(self.tStructure, 1, wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        sizer1a.Add(sizer2, 1, wx.ALL|wx.EXPAND, 5)
+
+
+        #sizer2 = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Slide Notes:'), wx.VERTICAL)
+        #self.tSlideNotes = wx.TextCtrl(self, -1, '', size=(350, 50), style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER)
+        #sizer2.Add(self.tSlideNotes, 0, wx.ALL|wx.EXPAND, 5)
+
+        #self.tSlideNotes.Enable(False)
+
+        #sizer1a.Add(sizer2, 0, wx.ALL|wx.EXPAND, 5)
 
         sizer1.Add(sizer1a, 0, wx.ALL|wx.EXPAND, 5)
 
+        if acquiring:
+            sizer2 = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Acquisition Notes:'), wx.VERTICAL)
+            self.tNotes = wx.TextCtrl(self, -1, '', size=(350, 150), style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER)
+            sizer2.Add(self.tNotes, 0, wx.ALL|wx.EXPAND, 5)
 
-        sizer2 = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Acquisition Notes:'), wx.VERTICAL)
-        self.tNotes = wx.TextCtrl(self, -1, '', size=(350, 150), style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER)
-        sizer2.Add(self.tNotes, 0, wx.ALL|wx.EXPAND, 5)
-
-        sizer1.Add(sizer2, 0, wx.ALL|wx.EXPAND, 5)
+            sizer1.Add(sizer2, 0, wx.ALL|wx.EXPAND, 5)
 
         btSizer = wx.StdDialogButtonSizer()
 
-        btn = wx.Button(self, wx.ID_OK)
-        btn.SetDefault()
+        self.bOK = wx.Button(self, wx.ID_OK)
+        #self.bOK.SetDefault()
+        self.bOK.Disable()
 
-        btSizer.AddButton(btn)
+        btSizer.AddButton(self.bOK)
 
         #btn = wx.Button(self, wx.ID_CANCEL)
 
@@ -147,91 +184,26 @@ class SampleInfoDialog(wx.Dialog):
 
         self.SetSizerAndFit(sizer1)
 
-        self.GetSlideLabels()
+        if acquiring and self.lSlides.GetItemCount() == 1:
+            self.lSlides.Select(0)
+
+        print 'foo;'
+
+    def OnAddSlide(self, event):
+        import webbrowser
+        webbrowser.open('http://lmsrv1/admin/samples/slide/add/')
 
 
-    def OnLabellingRightClick(self, event):
+    def OnSelectSlide(self, event):
+        i = event.GetIndex()
+        print i
+        self.slide = self.lSlides.qs[i]
+        print self.slide
+        self.bOK.Enable()
 
-#        x = event.GetX()
-#        y = event.GetY()
-#
-#        item, flags = self.lFiltKeys.HitTest((x, y))
-
-        if self.slideExists:
-            return
-
-        self.rcind = event.GetIndex()
-
-
-        # make a menu
-        menu = wx.Menu()
-        # add some items
-#        menu.Append(self.ID_FILT_ADD, "Add")
-#
-#        if item != wx.NOT_FOUND and flags & wx.LIST_HITTEST_ONITEM:
-#            self.currentFilterItem = item
-#            self.lFiltKeys.Select(item)
-
-        menu.Append(self.ID_LABEL_DELETE, "Delete")
-#            menu.Append(self.ID_FILT_EDIT, "Edit")
-
-        # Popup the menu.  If an item is selected then its handler
-        # will be called before PopupMenu returns.
-        self.PopupMenu(menu)
-        menu.Destroy()
-
-        self.PopulateLabelList()
-
-    def OnLabelDelete(self, event):
-        self.labels.pop(self.rcind)
-
-
-    def GetSlideLabels(self):
-        cname = self.tCreator.GetValue()
-        slref = self.tSlideRef.GetValue()
-
-        if len(models.Slide.objects.filter(reference=slref, creator=cname)) > 0:
-            slide = models.Slide.objects.get(reference=slref, creator=cname)
-
-            self.labels = [(l.structure, l.label) for l in slide.labelling.all()]
-
-            self.slideExists = True
-            #self.tStructure.Enable(False)
-            #self.tDye.Enable(False)
-            #self.bAddLabel.Enable(False)
-            self.tSlideNotes.SetValue(slide.notes)
-            #self.tSlideNotes.Enable(False)
-        else:
-            self.slideExists = False
-            #self.tStructure.Enable(True)
-            #self.tDye.Enable(True)
-            #self.bAddLabel.Enable(True)
-            #self.tSlideNotes.Enable(True)
-
-        self.PopulateLabelList()
-
-
-    def PopulateLabelList(self):
-        self.lLabelling.DeleteAllItems()
-
-        for struct, label in self.labels:
-            index = self.lLabelling.InsertStringItem(sys.maxint, struct)
-            self.lLabelling.SetStringItem(index, 1, label)
-
-
-        self.lLabelling.SetColumnWidth(0, 325/2)
-        self.lLabelling.SetColumnWidth(1, 325/2)
-
-
-    def OnAddLabel(self, event):
-        struct = self.tStructure.GetValue()
-        dye = self.tDye.GetValue()
-        if not struct == '' and not dye == '':
-            self.labels.append((struct, dye))
-            self.PopulateLabelList()
-
-        self.tStructure.SetValue('')
-        self.tDye.SetValue('')
+    def OnFilterChange(self, event):
+        self.lSlides.SetFilter(self.tCreator.GetValue(),self.tSlideRef.GetValue(),self.tStructure.GetValue())
+        event.Skip()
 
     def setCreatorChoices(self):
         cname = self.tCreator.GetValue()
@@ -246,7 +218,7 @@ class SampleInfoDialog(wx.Dialog):
         if choices != current_choices:
             self.tCreator.SetChoices(choices)
             
-        self.GetSlideLabels()
+        #self.GetSlideLabels()
 
         
 
@@ -263,7 +235,7 @@ class SampleInfoDialog(wx.Dialog):
         if choices != current_choices:
             self.tSlideRef.SetChoices(choices)
 
-        self.GetSlideLabels()
+        #self.GetSlideLabels()
 
     def setStructureChoices(self):
         sname = self.tStructure.GetValue()
@@ -287,11 +259,13 @@ class SampleInfoDialog(wx.Dialog):
 
     def PopulateMetadata(self, mdh, acquiring=True):
         global lastCreator, lastSlideRef
+        currentSlide[0] = self.slide
 
-        creator = self.tCreator.GetValue()
-        slideRef = self.tSlideRef.GetValue()
-        notes = self.tNotes.GetValue()
-        sampleNotes = self.tSlideNotes.GetValue()
+        creator = self.slide.creator
+        slideRef = self.slide.reference
+        sampleNotes = self.slide.notes
+        #notes = self.tNotes.GetValue()
+        #sampleNotes = self.tSlideNotes.GetValue()
 
         if not slideRef == lastSlideRef or not creator == lastCreator:
             lastCreator = creator
@@ -300,17 +274,17 @@ class SampleInfoDialog(wx.Dialog):
             for f in WantSlideChangeNotification:
                 f()
 
-        if len(creator) == 0:
-            creator = '<none>'
+        #if len(creator) == 0:
+        #    creator = '<none>'
 
-        if len(slideRef) == 0:
-            slideRef = '<none>'
+        #if len(slideRef) == 0:
+        #    slideRef = '<none>'
 
-        if len(notes) == 0:
-            notes = '<none>'
+        #if len(notes) == 0:
+        #    notes = '<none>'
 
-        if len(sampleNotes) == 0:
-            sampleNotes = '<none>'
+        #if len(sampleNotes) == 0:
+        #    sampleNotes = '<none>'
         
         mdh.setEntry('Sample.Creator', creator)
         mdh.setEntry('Sample.SlideRef', slideRef)
@@ -322,11 +296,11 @@ class SampleInfoDialog(wx.Dialog):
 #        for i in range(self.gLabelling.GetNumberRows()):
 #            labels.append((self.gLabelling.GetCellValue(i, 0),self.gLabelling.GetCellValue(i, 1)))
 
-        mdh.setEntry('Sample.Labelling', self.labels)
+        mdh.setEntry('Sample.Labelling', [(l.structure, l.dye.shortName) for l in self.slide.labelling.all()])
 
         mdh.setEntry('AcquiringUser', nameUtils.getUsername())
 
-        slide = models.Slide.Get(creator, slideRef)
+        #slide = models.Slide.Get(creator, slideRef)
 
 #        if not self.slideExists:
 #            for struct, label in self.labels:
@@ -336,10 +310,13 @@ class SampleInfoDialog(wx.Dialog):
 
 
         if acquiring:
+            notes = self.tNotes.GetValue()
             mdh.setEntry('Notes', notes)
-            im = models.Image.GetOrCreate(mdh.getEntry('imageID'), nameUtils.getUsername(), slide, mdh.getEntry('StartTime'))
-            im.comments = notes
-            im.save()
+
+            createImage(mdh, self.slide, notes)
+            #im = models.Image.GetOrCreate(mdh.getEntry('imageID'), nameUtils.getUsername(), self.slide, mdh.getEntry('StartTime'))
+            #im.comments = notes
+            #im.save()
 
 
 
@@ -349,7 +326,7 @@ class slidePanel(wx.Panel):
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.stSlideName = wx.StaticText(self, -1, '')
+        self.stSlideName = wx.StaticText(self, -1, '\n\n')
         hsizer.Add(self.stSlideName, 1, wx.EXPAND|wx.ALL, 2)
 
         self.bSetSlide = wx.Button(self, -1, 'Set', style=wx.BU_EXACTFIT)
@@ -365,26 +342,54 @@ class slidePanel(wx.Panel):
         self.update()
 
     def update(self):
-        self.stSlideName.SetLabel('%s - %s' % (lastCreator, lastSlideRef))
+        cs = currentSlide[0]
+        self.stSlideName.SetLabel('%s - %s\n%s' % (cs.creator, cs.reference, cs.labels()))
 
 
 
 
 def prefillSampleData(parent):
-    dlg = SampleInfoDialog(parent)
+    #global currentSlide
+
+    dlg = SampleInfoDialog(parent, acquiring=False)
 
     if dlg.ShowModal() == wx.ID_OK:
         dlg.PopulateMetadata(slideMD, False)
+        print 'bar'
+        print dlg.slide
+        currentSlide[0] = dlg.slide
+        print currentSlide
+    else:
+        currentSlide[0] = None
 
     dlg.Destroy()
 
 
 def getSampleData(parent, mdh):
-    dlg = SampleInfoDialog(parent)
+    #global currentSlide
 
-    if dlg.ShowModal() == wx.ID_OK:
-        dlg.PopulateMetadata(mdh)
+    print currentSlide
+    cs = currentSlide[0]
+
+    if cs:
+        #dlg = SampleInfoDialog(parent, (cs.creator, cs.reference, ''))
+        mdh.copyEntriesFrom(slideMD)
+        createImage(mdh, cs)
+    else:
+        dlg = SampleInfoDialog(parent)
+
+        if dlg.ShowModal() == wx.ID_OK:
+            dlg.PopulateMetadata(mdh)
+
+            currentSlide[0] = dlg.slide
+        else:
+            currentSlide[0] = None
 
     dlg.Destroy()
+
+def createImage(mdh, slide, comments=''):
+    im = models.Image.GetOrCreate(mdh.getEntry('imageID'), nameUtils.getUsername(), slide, mdh.getEntry('StartTime'))
+    im.comments = comments
+    im.save()
 
 

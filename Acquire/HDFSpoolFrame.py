@@ -17,7 +17,7 @@ import datetime
 import HDFSpooler
 import QueueSpooler
 try:
-    import sampleInformation
+    from PYME.Acquire import sampleInformation
     sampInf = True
 except:
     print 'Could not connect to the sample information database'

@@ -23,6 +23,8 @@ class LabellingInline(AutocompleteAdmin, admin.StackedInline):
 class SlideAdmin(AutocompleteAdmin, admin.ModelAdmin):
     inlines = [LabellingInline]
     autocomplete_fields = {'creator': 'Slide.creator'}
+    list_display = ('creator', 'reference', 'timestamp', 'labels')
+    list_filter = ('creator', 'timestamp')
 
     def save_model(self, request, obj, form, change):
         obj.slideID = hashString32(obj.creator + obj.reference)

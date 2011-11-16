@@ -80,6 +80,9 @@ class Slide(models.Model):
     sample = models.ForeignKey(Sample, related_name='slides', null=True, help_text='The species, strain, etc of the sample. This is intended to be a fairly coarse grouping')
     timestamp = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        ordering=['-timestamp']
+
     def AddLabel(self, structure, label):
         lb = Labelling(slideID=self, structure=structure, label=label)
         SlideTags.Add(structure)
@@ -87,6 +90,13 @@ class Slide(models.Model):
 
     def Tag(self, tagName):
         SlideTag.AddTag(self, tagName)
+
+    def labels(self):
+        l = ['%s - %s' % (l.structure, l.dyeName()) for l in self.labelling.all()]
+        return ',  '.join(l)
+
+    def desc(self):
+        return self.creator, self.reference, self.labels()
 
     def __unicode__(self):
         return u'Slide %d: %s, %s' % (self.slideID, self.creator, self.reference)
@@ -275,6 +285,13 @@ class Labelling(models.Model):
     antibody = models.CharField(max_length=200, default='', blank=True, help_text = 'Info on the antibody or other labelling method - should include antibody species etc ...')
     label = models.CharField(max_length=200, default='', blank=True, editable=False, help_text='Dye used to label the structure. Use the short form - e.g. A680. To be phased out in favour of the dye entry')
     dye = models.ForeignKey(Dye)
+
+    def dyeName(self):
+        try:
+            n = self.dye.shortName
+            return n
+        except:
+            return self.label
 
     def __unicode__(self):
         return u'%s, %s (Slide %d)' % (self.structure, self.label, self.slideID.slideID)

@@ -77,7 +77,7 @@ camPanels.append((scope.camControls['Fake Camera'], 'EMCCD Properties'))
 ''')
 
 InitGUI('''
-import sampleInformation
+from PYME.Acquire import sampleInformation
 sampPan = sampleInformation.slidePanel(MainFrame)
 camPanels.append((sampPan, 'Current Slide'))
 ''')
