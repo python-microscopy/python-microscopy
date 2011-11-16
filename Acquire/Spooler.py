@@ -17,6 +17,11 @@ import datetime
 from PYME.Acquire import MetaDataHandler
 from PYME import cSMI
 
+try:
+    from PYME.Acquire import sampleInformation
+except:
+    sampleInformation= None
+
 import time
 
 global timeFcn
@@ -78,6 +83,9 @@ class Spooler:
         if not self.parent == None:
             self.parent.Tick()
         self.protocol.OnFrame(self.imNum)
+
+        if self.imNum == 2 and sampleInformation and sampleInformation.currentSlide[0]: #have first frame and should thus have an imageID
+            sampleInformation.createImage(self.md, sampleInformation.currentSlide[0])
 
    def doStartLog(self):
       dt = datetime.datetime.now()

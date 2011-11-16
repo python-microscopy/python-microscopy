@@ -1,6 +1,7 @@
 # Create your views here.
 from django.shortcuts import render_to_response, get_object_or_404
 from django.http import HttpResponseRedirect, HttpResponse
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from SampleDB.samples.models import *
 from django.http import Http404
 from django import forms
@@ -42,9 +43,28 @@ def slide_index(request):
 
     structure_info = [userInfo(u, u in structure) for u in structures]
 
-    sl = Slide.objects.filter(**filters)
+    slides = Slide.objects.filter(**filters)
 
-    return render_to_response('samples/slide_list.html', {'slides':sl,'creator_info':creator_info,'structure_info':structure_info,})
+    paginator = Paginator(slides, 25)
+
+    page = request.REQUEST.get('page')
+    #print page
+    if page == None:
+        page = '1'
+
+    try:
+        slp = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver first page.
+        slp = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range (e.g. 9999), deliver last page of results.
+        slp = paginator.page(paginator.num_pages)
+
+    query = request.META['QUERY_STRING']
+    query = '&'.join([q for q in query.split('&') if not q.startswith('page')])
+
+    return render_to_response('samples/slide_list.html', {'slides':slp,'creator_info':creator_info,'structure_info':structure_info,'query':query,})
 
 #class ImageFilterForm(forms.Form):
 

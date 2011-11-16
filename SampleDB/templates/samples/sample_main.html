@@ -10,6 +10,9 @@
   <style>
     body {
         font-family: arial, helvetica, sans-serif;
+        width: 100%;
+        margin: 0;
+        padding: 0;
     }
 
     tr.odd{
@@ -53,10 +56,26 @@
 
     div.header{
        background-color: #80A0A0;
+       width: 100%;
     }
 
     div.header a{
        color: white;
+    }
+
+    #container{
+        padding-left: 1em;
+    }
+
+    #headline{
+        /*position: absolute;*/
+        /*top: 0;*/
+        /*left: 0;*/
+        padding: .5em 10px;
+    }
+    #headline b{
+        padding: 10px;
+        margin: 8px 0;
     }
 
     div.slider { width:1000px; margin:10px 0; background-color:#ccc; height:10px; position: relative; }
@@ -92,6 +111,11 @@
         font-weight: bold;
     }
 
+    div.pagination{
+        background-color: #D0D0D0;
+        font-style: italic;
+    }
+
     {%block extra_style%}
     {%endblock%}}
 
@@ -99,10 +123,15 @@
   </head>
   <body>
     <div class="header">
+        <div id="headline">
         <b>PYME Sample Information:</b>&nbsp;&nbsp;<a href="/images/">Images</a>&nbsp;&nbsp;<a href="/slides/">Slides</a>&nbsp;&nbsp;<a href="/booking/">Booking</a> <a href="/temperature/">Temperature</a>&nbsp;&nbsp;<a href="/hg/PYME/">Hg Repository</a>&nbsp;&nbsp;<a href="/documentation/">Documentation</a>&nbsp;&nbsp;<a href="/queues/">Analysis</a>
+        </div>
+        
     </div>
+    <div id="container">
     {% block content %}
     {%endblock%}
+    </div>
 
   </body>
 </html>

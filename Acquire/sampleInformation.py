@@ -313,7 +313,7 @@ class SampleInfoDialog(wx.Dialog):
             notes = self.tNotes.GetValue()
             mdh.setEntry('Notes', notes)
 
-            createImage(mdh, self.slide, notes)
+            #createImage(mdh, self.slide, notes)
             #im = models.Image.GetOrCreate(mdh.getEntry('imageID'), nameUtils.getUsername(), self.slide, mdh.getEntry('StartTime'))
             #im.comments = notes
             #im.save()
