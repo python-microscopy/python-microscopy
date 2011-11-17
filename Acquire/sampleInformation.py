@@ -374,7 +374,7 @@ def getSampleData(parent, mdh):
     if cs:
         #dlg = SampleInfoDialog(parent, (cs.creator, cs.reference, ''))
         mdh.copyEntriesFrom(slideMD)
-        createImage(mdh, cs)
+        #createImage(mdh, cs)
     else:
         dlg = SampleInfoDialog(parent)
 

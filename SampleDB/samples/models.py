@@ -258,8 +258,15 @@ class File(models.Model):
                     slide = Slide.GetOrCreate(mdh.Sample.Creator, mdh.Sample.SlideRef)
 
                     if len(slide.labelling.all()) == 0 and 'Sample.Labelling' in mdh.getEntryNames():
+                        dyes = Dye.objects.all()
+
                         for struct, label in mdh.Sample.Labelling:
                             l = Labelling(slideID=slide, structure=struct, label=label)
+                            n =  label.upper()
+
+                            for d in dyes:
+                               if n.startswith(d.shortName) or n.startswith(d.shortName[1:]):
+                                   l.dye = d
                             l.save()
 
                 else:
