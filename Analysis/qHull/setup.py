@@ -25,7 +25,8 @@ def configuration(parent_package = '', top_path = None):
     config.add_extension('triangWrap',
         sources=srcs + qhullSources,
         include_dirs = get_numpy_include_dirs()+['qhull', '../SoftRend'],
-	extra_compile_args = ['-O3', '-fno-exceptions', '-ffast-math'])
+	extra_compile_args = ['-O3', '-fno-exceptions', '-ffast-math'],
+        extra_link_args=['-static-libgcc'])
 
     return config
 

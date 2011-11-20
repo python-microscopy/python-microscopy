@@ -19,7 +19,8 @@ def configuration(parent_package = '', top_path = None):
     config.add_extension('ps_app',
         sources=['ps_app.c'],
         include_dirs = [get_numpy_include_dirs()],
-	extra_compile_args = ['-O0', '-fno-exceptions'])
+	extra_compile_args = ['-O0', '-fno-exceptions'],
+        extra_link_args=['-static-libgcc'])
 
     return config
 
