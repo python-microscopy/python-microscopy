@@ -73,6 +73,11 @@ class DisplayOpts(object):
         self.selectionWidth = 1
 
         self.showSelection=False
+        
+        self.maximumProjection=False
+        self.colourMax = False
+        self.cmax_offset = 0.0
+        self.cmax_scale = 1.0
 
 
     @property

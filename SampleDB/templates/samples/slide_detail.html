@@ -11,7 +11,7 @@
     <table>
     {% for lab in object.labelling.all %}
     <tr class="{% cycle 'odd' 'even' %}">
-    <td>{{ lab.structure }}</td><td>{{ lab.label }}</td>
+    <td>{{ lab.structure }}</td><td>{{ lab.dyeName }}</td>
     </tr>
     {% endfor %}
     </table>

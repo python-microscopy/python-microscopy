@@ -23,6 +23,8 @@ fftwWisdom.load_wisdom()
 #from PYME import pad
 import numpy
 
+from wiener import resizePSF
+
 class dec:
     '''Base deconvolution class, implementing a variant of the ICTM algorithm.
     ie. find f such that:
@@ -298,52 +300,53 @@ class dec_conv(dec):
 
     def psf_calc(self, psf, data_size):
         '''Precalculate the OTF etc...'''
-        pw = (numpy.array(data_size) - psf.shape)/2.
-        pw1 = numpy.floor(pw)
-        pw2 = numpy.ceil(pw)
-
-        g = psf/psf.sum()
-
-        #work out how we're going to need to pad to get the PSF the same size as our data
-        if pw1[0] < 0:
-            if pw2[0] < 0:
-                g = g[-pw1[0]:pw2[0]]
-            else:
-                g = g[-pw1[0]:]
-
-            pw1[0] = 0
-            pw2[0] = 0
-
-        if pw1[1] < 0:
-            if pw2[1] < 0:
-                g = g[-pw1[1]:pw2[1]]
-            else:
-                g = g[-pw1[1]:]
-
-            pw1[1] = 0
-            pw2[1] = 0
-
-        if pw1[2] < 0:
-            if pw2[2] < 0:
-                g = g[-pw1[2]:pw2[2]]
-            else:
-                g = g[-pw1[2]:]
-
-            pw1[2] = 0
-            pw2[2] = 0
-
-
-        #do the padding
-        #g = pad.with_constant(g, ((pw2[0], pw1[0]), (pw2[1], pw1[1]),(pw2[2], pw1[2])), (0,))
-
-        g_ = fftw3f.create_aligned_array(data_size, 'float32')
-        g_[:] = 0
-        #print g.shape, g_.shape, g_[pw2[0]:-pw1[0], pw2[1]:-pw1[1], pw2[2]:-pw1[2]].shape
-        if pw1[2] == 0:
-            g_[pw2[0]:-pw1[0], pw2[1]:-pw1[1], pw2[2]:] = g
-        else:
-            g_[pw2[0]:-pw1[0], pw2[1]:-pw1[1], pw2[2]:-pw1[2]] = g
-        g = g_
+#        pw = (numpy.array(data_size) - psf.shape)/2.
+#        pw1 = numpy.floor(pw)
+#        pw2 = numpy.ceil(pw)
+#
+#        g = psf/psf.sum()
+#
+#        #work out how we're going to need to pad to get the PSF the same size as our data
+#        if pw1[0] < 0:
+#            if pw2[0] < 0:
+#                g = g[-pw1[0]:pw2[0]]
+#            else:
+#                g = g[-pw1[0]:]
+#
+#            pw1[0] = 0
+#            pw2[0] = 0
+#
+#        if pw1[1] < 0:
+#            if pw2[1] < 0:
+#                g = g[-pw1[1]:pw2[1]]
+#            else:
+#                g = g[-pw1[1]:]
+#
+#            pw1[1] = 0
+#            pw2[1] = 0
+#
+#        if pw1[2] < 0:
+#            if pw2[2] < 0:
+#                g = g[-pw1[2]:pw2[2]]
+#            else:
+#                g = g[-pw1[2]:]
+#
+#            pw1[2] = 0
+#            pw2[2] = 0
+#
+#
+#        #do the padding
+#        #g = pad.with_constant(g, ((pw2[0], pw1[0]), (pw2[1], pw1[1]),(pw2[2], pw1[2])), (0,))
+#
+#        g_ = fftw3f.create_aligned_array(data_size, 'float32')
+#        g_[:] = 0
+#        #print g.shape, g_.shape, g_[pw2[0]:-pw1[0], pw2[1]:-pw1[1], pw2[2]:-pw1[2]].shape
+#        if pw1[2] == 0:
+#            g_[pw2[0]:-pw1[0], pw2[1]:-pw1[1], pw2[2]:] = g
+#        else:
+#            g_[pw2[0]:-pw1[0], pw2[1]:-pw1[1], pw2[2]:-pw1[2]] = g
+#        g = g_
+        g = resizePSF(psf, data_size)
 
 
         #keep track of our data shape

@@ -16,7 +16,7 @@
 
 import wx
 #import PYME.cSMI as example
-import previewaquisator
+import previewaquisator as previewaquisator
 import simplesequenceaquisator
 import prevviewer
 import PYME.DSView.dsviewer_npy_nb as dsviewer
@@ -244,9 +244,9 @@ class microscope:
 
         if self.cam.GetPicHeight() > 1:
             if 'vp' in dir(self):
-                    self.vp.SetDataStack(self.pa.ds)
+                    self.vp.SetDataStack(self.pa.dsa)
             elif (Notebook == None):
-                self.prev_fr = prevviewer.PrevViewFrame(Parent, "Live Preview", self.pa.ds)
+                self.prev_fr = prevviewer.PrevViewFrame(Parent, "Live Preview", self.pa.dsa)
                 self.pa.WantFrameGroupNotification.append(self.pr_refr)
                 self.prev_fr.genStatusText = self.genStatus
                 self.prev_fr.Show()

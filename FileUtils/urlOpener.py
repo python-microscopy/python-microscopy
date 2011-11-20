@@ -42,14 +42,14 @@ def openFile(url):
             if sys.platform == 'win32':
                 subprocess.Popen(PYMEDir + '\\DSView\\dh5view.cmd %s' % (filename), shell=True)
             else:
-                subprocess.Popen(PYMEDir + '/DSView/dh5view.py %s' % filename, shell=True)
+                subprocess.Popen(sys.executable + ' ' + PYMEDir + '/DSView/dh5view.py %s' % filename, shell=True)
 
         elif filename.endswith('.h5r'):
             if sys.platform == 'win32':
                 subprocess.Popen(PYMEDir + '\\Analysis\\LMVis\\VisGUI.cmd %s' % (filename), shell=True)
             else:
                 #print 'foo'
-                subprocess.Popen(PYMEDir + '/Analysis/LMVis/VisGUI.py %s' % filename, shell=True)
+                subprocess.Popen(sys.executable + ' ' + PYMEDir + '/Analysis/LMVis/VisGUI.py %s' % filename, shell=True)
     
     
     

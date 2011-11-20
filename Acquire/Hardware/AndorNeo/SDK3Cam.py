@@ -119,8 +119,12 @@ class SDK3Camera(object):
         '''camera initialisation - note that this should be called  from derived classes
         *AFTER* the properties have been defined'''
         #camReg.regCamera() #initialise the library if needed
+        self.camNum = camNum
         
-        self.handle = SDK3.Open(camNum)
+        
+    def Init(self):
+        print 'Foo'        
+        self.handle = SDK3.Open(self.camNum)
         self.connectProperties()
         
     

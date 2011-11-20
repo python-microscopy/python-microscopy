@@ -123,7 +123,7 @@ class dispSettingsPanel(wx.Panel):
 
     def RefrData(self, caller=None):
         #if self.hlDispMapping.dragging == None:
-        self.dsa = cSMI.CDataStack_AsArray(self.vp.ds, 0)[:,:,0].ravel()
+        self.dsa = self.vp.dsa#cSMI.CDataStack_AsArray(self.vp.ds, 0)[:,:,0].ravel()
 
         #only perform histogramming on a subset of data points to improve performance
         ##note that this may result in strange behaviour of auto-optimise
@@ -133,7 +133,8 @@ class dispSettingsPanel(wx.Panel):
         self.hlDispMapping.SetData(self.dsa, self.hlDispMapping.limit_lower, self.hlDispMapping.limit_upper)
 
         if self.cbAutoOptimise.GetValue():
-            self.OnBOptimise(None)
+            #self.OnBOptimise(None)
+            self.hlDispMapping.SetValueAndFire((self.dsa.min(), self.dsa.max()))
 
     def __getattr__(self, name):
         if name in dir(self.hlDispMapping):
@@ -217,7 +218,7 @@ class dispSettingsPanel2(wx.Panel):
 
     def RefrData(self, caller=None):
         #if self.hlDispMapping.dragging == None:
-        self.dsa = self.do.ds[:,:,0].ravel()
+        self.dsa = self.do.ds[:,:,0].ravel('F')
 
         #only perform histogramming on a subset of data points to improve performance
         ##note that this may result in strange behaviour of auto-optimise
@@ -227,7 +228,8 @@ class dispSettingsPanel2(wx.Panel):
         self.hlDispMapping.SetData(self.dsa, self.hlDispMapping.limit_lower, self.hlDispMapping.limit_upper)
 
         if self.cbAutoOptimise.GetValue():
-            self.OnBOptimise(None)
+            #self.OnBOptimise(None)
+            self.hlDispMapping.SetValueAndFire((self.dsa.min(), self.dsa.max()))
 
     def __getattr__(self, name):
         if name in dir(self.hlDispMapping):

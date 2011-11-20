@@ -113,7 +113,7 @@ def findClumps(t, x, y, delta_x):
 
 def coalesceClumps(fitResults, assigned):
     '''Agregates clumps to a single event'''
-    NClumps = assigned.max()
+    NClumps = int(assigned.max())
 
     #work out what the data type for our declumped data should be
     dt = deClumpedDType(fitResults)

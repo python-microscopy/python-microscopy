@@ -47,6 +47,7 @@ MEDIA_URL = '/media/'
 # trailing slash.
 # Examples: "http://foo.com/media/", "/media/".
 ADMIN_MEDIA_PREFIX = '/admin_media/'
+AUTOCOMPLETE_MEDIA_PREFIX = '/media/autocomplete/'
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = 'r(b1(_!^m^9imfn9o3#91t%lc5$+_kosq^3s%+64(m0wsl0kfg'

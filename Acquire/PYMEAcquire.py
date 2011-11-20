@@ -43,6 +43,6 @@ def main():
 
 if __name__ == '__main__':
     from PYME import mProfile
-    mProfile.profileOn(['wiener.py'])
+    #mProfile.profileOn(['previewaquisator2.py'])
     main()
-    mProfile.report()
+    #mProfile.report()

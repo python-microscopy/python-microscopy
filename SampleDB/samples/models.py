@@ -5,11 +5,83 @@ import os
 from PYME.misc.hash32 import hashString32
 
 # Create your models here.
+class Species(models.Model):
+    SPECIES_NAMES = (('Human', 'Human'),
+                     ('Rat', 'Rat'),
+                     ('Mouse', 'Mouse'),
+                     ('Rabbit', 'Rabbit'),
+                     ('Sheep', 'Sheep'),
+                     ('Guinea Pig','Guinea Pig'),
+                     ('Synthetic', 'Not Biological'),)
+
+    #speciesID = models.IntegerField(primary_key=True)
+    speciesName = models.CharField(max_length=200, choices=SPECIES_NAMES)
+    strain = models.CharField(max_length=200, default='', blank=True, help_text='Strain of animal / cell culture line (sugest stable transfections = different strain, transient tranf. same strain)')
+
+    def __unicode__(self):
+        return u'%s - %s' % (self.speciesName, self.strain)
+
+class Sample(models.Model):
+    SAMPLE_TYPES = (('Cell Culture', 'Cultured Cells'),
+                    ('Tissue Section', 'Tissue Section'),
+                    ('Isolated Cells', 'Isolated Cells'),
+                    ('Synthetic', 'Beads etc ...'),)
+
+    #sampleID = models.IntegerField(primary_key=True)
+    species = models.ForeignKey(Species, related_name='samples')
+    patientID = models.CharField(max_length=200, default='', blank=True, help_text='a unique identifier (when appropriate) for an animal or clinical subject')
+    sampleType = models.CharField(max_length=200, choices=SAMPLE_TYPES)
+    notes = models.TextField(blank=True, help_text='Any other information about the sample, e.g. manipulations, transfections, disease type (free form)', default='')
+
+    def __unicode__(self):
+        return u'%s - %s [%s]' % (self.species, self.sampleType, self.patientID)
+
+class Dye(models.Model):
+    from PYMEnf.FilterSpectra import scrapeOmega
+    DYE_NAMES = ['None'] + scrapeOmega.getDyeNames()
+
+    DYE_NAMES = [(n, n) for n in DYE_NAMES]
+    #dyeID = models.IntegerField(primary_key=True)
+    shortName = models.CharField(max_length=50, help_text='Short name - eg A680')
+    longName = models.CharField(max_length=200, help_text='Longer, more descriptive name - eg Alexa Fluor 680')
+    spectraDBName = models.CharField(max_length=200, choices=DYE_NAMES, help_text='Name that identifies the spectra in Omegas spectra database')
+
+    def __unicode__(self):
+        return u'Dye: %s' % self.shortName
+
+def _getMostRecentCreator():
+        return Slide._GetMostRecent().creator
+
+def _getNextSlideRef():
+        return Slide._GenSlideReference()
+
+def baseconvert(number,todigits):
+        x = number
+
+        # create the result in base 'len(todigits)'
+        res=""
+
+        if x == 0:
+            res=todigits[0]
+
+        while x>0:
+            digit = x % len(todigits)
+            res = todigits[digit] + res
+            x /= len(todigits)
+
+        return res
+
+
 class Slide(models.Model):
-    slideID = models.IntegerField(primary_key=True)
-    creator = models.CharField(max_length=200)
-    reference = models.CharField(max_length=200)
-    notes = models.TextField()
+    slideID = models.IntegerField(primary_key=True, editable=False)
+    creator = models.CharField(max_length=200, help_text='UPI of person who made the slide', default = _getMostRecentCreator)
+    reference = models.CharField(max_length=200, help_text='Unique identifyier for slide - eg d_mm_yy_[A-Z]', default = _getNextSlideRef)
+    notes = models.TextField(blank=True, help_text='Any other information about the slide, e.g. mounting, fixation, slide specific interventions (free form)')
+    sample = models.ForeignKey(Sample, related_name='slides', null=True, help_text='The species, strain, etc of the sample. This is intended to be a fairly coarse grouping')
+    timestamp = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering=['-timestamp']
 
     def AddLabel(self, structure, label):
         lb = Labelling(slideID=self, structure=structure, label=label)
@@ -19,10 +91,34 @@ class Slide(models.Model):
     def Tag(self, tagName):
         SlideTag.AddTag(self, tagName)
 
+    def labels(self):
+        l = ['%s - %s' % (l.structure, l.dyeName()) for l in self.labelling.all()]
+        return ',  '.join(l)
+
+    def desc(self):
+        return self.creator, self.reference, self.labels()
+
     def __unicode__(self):
         return u'Slide %d: %s, %s' % (self.slideID, self.creator, self.reference)
 
+    @classmethod
+    def _GetMostRecent(cls):
+        return cls.objects.order_by('-timestamp')[0]
 
+    @classmethod
+    def _GenSlideReference(cls, creator=None):
+        import datetime
+        dtn = datetime.datetime.now()
+
+        if not creator:
+            mr = cls._GetMostRecent()
+            creator = mr.creator
+
+        today = cls.objects.filter(creator=creator, timestamp__gte=datetime.datetime(dtn.year, dtn.month, dtn.day))
+
+        nToday = len(today)
+
+        return '%d_%d_%d_%s' % (dtn.day, dtn.month, dtn.year, baseconvert(nToday, 'ABCDEFGHIJKLMNOPQRSTUVXWYZ'))
 
     @classmethod
     def GetOrCreate(cls, creator, reference):
@@ -40,9 +136,22 @@ class Slide(models.Model):
 
         return sl
 
+    @classmethod
+    def Get(cls, creator, reference):
+        '''trys to find a matching slide in the database, otherwise
+        creates and returns a new slide entry.
+        '''
+        id = hashString32(creator + reference)
+        #print id
+
+
+        sl = cls.objects.get(slideID=id)
+
+        return sl
+
 
 class Image(models.Model):
-    imageID = models.IntegerField(primary_key=True)
+    imageID = models.IntegerField(primary_key=True, editable=False)
     slideID = models.ForeignKey(Slide, related_name='images')
     comments = models.TextField()
     timestamp = models.DateTimeField()
@@ -149,8 +258,15 @@ class File(models.Model):
                     slide = Slide.GetOrCreate(mdh.Sample.Creator, mdh.Sample.SlideRef)
 
                     if len(slide.labelling.all()) == 0 and 'Sample.Labelling' in mdh.getEntryNames():
+                        dyes = Dye.objects.all()
+
                         for struct, label in mdh.Sample.Labelling:
                             l = Labelling(slideID=slide, structure=struct, label=label)
+                            n =  label.upper()
+
+                            for d in dyes:
+                               if n.startswith(d.shortName) or n.startswith(d.shortName[1:]):
+                                   l.dye = d
                             l.save()
 
                 else:
@@ -171,11 +287,21 @@ class File(models.Model):
 
 class Labelling(models.Model):
     slideID = models.ForeignKey(Slide, related_name='labelling')
-    structure = models.CharField(max_length=200)
-    label = models.CharField(max_length=200)
+    structure = models.CharField(max_length=200, help_text='The protein or structure being targeted. Keep this reasonably generic eg RyR not RYR2, and try and stay consistent. This is used for finding all the labelling of a particular structure')
+    isotype = models.CharField(max_length=200, default='', blank=True, help_text='More info on the protein - eg isotype etc ...')
+    antibody = models.CharField(max_length=200, default='', blank=True, help_text = 'Info on the antibody or other labelling method - should include antibody species etc ...')
+    label = models.CharField(max_length=200, default='', blank=True, editable=False, help_text='Dye used to label the structure. Use the short form - e.g. A680. To be phased out in favour of the dye entry')
+    dye = models.ForeignKey(Dye)
+
+    def dyeName(self):
+        try:
+            n = self.dye.shortName
+            return n
+        except:
+            return self.label
 
     def __unicode__(self):
-        return u'%s, %s (Slide %d)' % (self.structure, self.label, self.slideID)
+        return u'%s, %s (Slide %d)' % (self.structure, self.label, self.slideID.slideID)
 
 class TagName(models.Model):
     name = models.CharField(max_length=200)
@@ -259,3 +385,4 @@ class EventStats(models.Model):
         return u'Stats for %s: %s\t%d\t%3.1f\t%3.2f\t%3.1f' % (self.fileID.filename, self.label, self.nEvents, self.meanPhotons, self.tMax, self.tMedian)
 
     
+#print Slide.creator

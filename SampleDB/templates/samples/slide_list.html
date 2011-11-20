@@ -50,9 +50,39 @@
     </form>
     </div>
 
+    <form action="/admin/samples/slide/add/" method ="get">
+        <input type="submit" value="New Slide"/>
+    </form>
+
+    <div class="pagination">
+    <span class="step-links">
+        
+
+        <span class="current">
+            Page {{ slides.number }} of {{ slides.paginator.num_pages }}.
+        </span>
+
+        {% if slides.has_previous %}
+            <a href="/slides/?{{query}}&page={{ slides.previous_page_number }}">previous</a>
+        {% endif %}
+
+        {%for pn in slides.paginator.page_range%}
+        {%ifequal pn slides.number%}
+        {{pn}}
+        {%else%}
+        <a href="/slides/?{{query}}&page={{pn}}">{{pn}}</a>
+        {%endifequal%}
+        {%endfor%}
+
+        {% if slides.has_next %}
+            <a href="/slides/?{{query}}&page={{ slides.next_page_number }}">next</a>
+        {% endif %}
+    </span>
+    </div>
+
     <table>
         <thead><th>ID</th><th>Creator</th><th>Reference</th><th>Labelling</th><th># Images</th></thead>
-    {% for sl in slides %}
+    {% for sl in slides.object_list %}
     <tr class="{% cycle 'odd' 'even' %}">
     <td><a href="/slides/{{ sl.slideID }}">{{ sl.slideID }}</a></td>
     <td width="100px">{{sl.creator}}</td>
@@ -70,6 +100,22 @@
     </tr>
     {% endfor %}
     </table>
+
+    <div class="pagination">
+    <span class="step-links">
+        {% if slides.has_previous %}
+            <a href="?page={{ slides.previous_page_number }}">previous</a>
+        {% endif %}
+
+        <span class="current">
+            Page {{ slides.number }} of {{ slides.paginator.num_pages }}.
+        </span>
+
+        {% if slides.has_next %}
+            <a href="?page={{ slides.next_page_number }}">next</a>
+        {% endif %}
+    </span>
+    </div>
 
 
 

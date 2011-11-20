@@ -331,6 +331,7 @@ class smiMainFrame(wx.Frame):
 
     def doPostInit(self):
         for cm in self.postInit:
+            #print cm
             for cl in cm.split('\n'):
                 self.sh.run(cl)
 
@@ -655,47 +656,64 @@ class smiMainFrame(wx.Frame):
         self.scope.pa.stop()
         
         #print (self.scope.vp.selection_begin_x, self.scope.vp.selection_begin_y, self.scope.vp.selection_end_x, self.scope.vp.selection_end_y)
-        
-        if (self.roi_on):
-            x1 = self.scope.cam.GetROIX1()
-            y1 = self.scope.cam.GetROIY1()
-            x2 = self.scope.cam.GetROIX2()
-            y2 = self.scope.cam.GetROIY2()
 
-            self.scope.cam.SetROI(0,0, self.scope.cam.GetCCDWidth(), self.scope.cam.GetCCDHeight())
-            self.mCam.SetLabel(wxID_SMIMAINFRAMEMCAMROI, 'Set ROI\tF8')
-            self.roi_on = False
-        else:
-            #x1 = self.scope.vp.selection_begin_x
-            #y1 = self.scope.vp.selection_begin_y
-            #x2 = self.scope.vp.selection_end_x
-            #y2 = self.scope.vp.selection_end_y
-
-            x1, y1, x2, y2 = self.scope.vp.do.GetSliceSelection()
-
-            #if we're splitting colours/focal planes across the ccd, then only allow symetric ROIs
-            if 'splitting' in dir(self.scope.cam):
-                if self.scope.cam.splitting.lower() == 'left_right':
-                    x1 = min(x1, self.scope.cam.GetCCDWidth() - x2)
-                    x2 = max(x2, self.scope.cam.GetCCDWidth() - x1)
-                if self.scope.cam.splitting.lower() == 'up_down':
-                    y1 = min(y1, self.scope.cam.GetCCDHeight() - y2)
-                    y2 = max(y2, self.scope.cam.GetCCDHeight() - y1)
-
-                    if not self.scope.cam.splitterFlip:
-                        y1 = 0
-                        y2 = self.scope.cam.GetCCDHeight()
-                    
-            self.scope.cam.SetROI(x1,y1,x2,y2)
-            self.mCam.SetLabel(wxID_SMIMAINFRAMEMCAMROI, 'Clear ROI\tF8')
-            self.roi_on = True
-
+        if 'validROIS' in dir(self.scope.cam):
+            #special case for cameras with restricted ROIs - eg Neo
+            print 'setting ROI'
+            dlg = wx.SingleChoiceDialog(self, 'Please select the ROI size', 'Camera ROI', ['%dx%d at (%d, %d)' % roi for roi in self.scope.cam.validROIS])
+            dlg.ShowModal()
+            print 'Dlg Shown'
+            self.scope.cam.SetROIIndex(dlg.GetSelection())
+            dlg.Destroy()
+            
             x1 = 0
             y1 = 0
             x2 = self.scope.cam.GetPicWidth()
             y2 = self.scope.cam.GetPicHeight()
+            print 'ROI Set'
+        
+        else:
+            if (self.roi_on):
+                x1 = self.scope.cam.GetROIX1()
+                y1 = self.scope.cam.GetROIY1()
+                x2 = self.scope.cam.GetROIX2()
+                y2 = self.scope.cam.GetROIY2()
+    
+                self.scope.cam.SetROI(0,0, self.scope.cam.GetCCDWidth(), self.scope.cam.GetCCDHeight())
+                self.mCam.SetLabel(wxID_SMIMAINFRAMEMCAMROI, 'Set ROI\tF8')
+                self.roi_on = False
+            else:
+                #x1 = self.scope.vp.selection_begin_x
+                #y1 = self.scope.vp.selection_begin_y
+                #x2 = self.scope.vp.selection_end_x
+                #y2 = self.scope.vp.selection_end_y
+    
+                x1, y1, x2, y2 = self.scope.vp.do.GetSliceSelection()
+    
+                #if we're splitting colours/focal planes across the ccd, then only allow symetric ROIs
+                if 'splitting' in dir(self.scope.cam):
+                    if self.scope.cam.splitting.lower() == 'left_right':
+                        x1 = min(x1, self.scope.cam.GetCCDWidth() - x2)
+                        x2 = max(x2, self.scope.cam.GetCCDWidth() - x1)
+                    if self.scope.cam.splitting.lower() == 'up_down':
+                        y1 = min(y1, self.scope.cam.GetCCDHeight() - y2)
+                        y2 = max(y2, self.scope.cam.GetCCDHeight() - y1)
+    
+                        if not self.scope.cam.splitterFlip:
+                            y1 = 0
+                            y2 = self.scope.cam.GetCCDHeight()
+                        
+                self.scope.cam.SetROI(x1,y1,x2,y2)
+                self.mCam.SetLabel(wxID_SMIMAINFRAMEMCAMROI, 'Clear ROI\tF8')
+                self.roi_on = True
+    
+                x1 = 0
+                y1 = 0
+                x2 = self.scope.cam.GetPicWidth()
+                y2 = self.scope.cam.GetPicHeight()
 
             
+        print 'about to set COC'
         self.scope.cam.SetCOC()
         self.scope.cam.GetStatus()
         self.scope.pa.Prepare()
