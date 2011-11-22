@@ -19,7 +19,8 @@ def configuration(parent_package = '', top_path = None):
     config.add_extension('cInterp',
         sources=['cInterp.c'],
         include_dirs = [get_numpy_include_dirs()],
-	extra_compile_args = ['-O3', '-fno-exceptions'])
+	extra_compile_args = ['-O3', '-fno-exceptions'],
+        extra_link_args=['-static-libgcc'])
 
     return config
 
