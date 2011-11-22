@@ -110,7 +110,8 @@ def image_list(request):
 
     user_info = [userInfo(u, u in users) for u in usernames]
 
-    structures = set([l.structure for l in Labelling.objects.all()])
+    structures = list(set([l.structure for l in Labelling.objects.all()]))
+    structures.sort()
 
     structure = [i[0].split('_')[1] for i in request.REQUEST.items() if i[0].startswith('structure_') and i[1] == '1']
 
@@ -126,7 +127,7 @@ def image_list(request):
 #
 #    tagnames = list(tagnames)
 
-    tagnames = [t.name for t in TagName.objects.all()]
+    tagnames = [t.name for t in TagName.objects.order_by('name')]
 
     tags = [i[0].split('__')[1] for i in request.REQUEST.items() if i[0].startswith('tag__') and i[1] == '1']
     #print users
