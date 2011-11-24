@@ -61,8 +61,10 @@ def openFile(url):
 if __name__ == '__main__':
     #print url
     fn = ' '.join(sys.argv[1:])
-    if fn.startswith('pyme:/'):
+    if fn.startswith('pyme:/'): #in gnome, whole url gets passed
         url = fn[6:]
+    elif fn.startswith('//'): #in windows, just the bit after the : gets passed
+        url = fn[1:]
     else:    
         f = open(fn)
         url = f.readline().strip()
