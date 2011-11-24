@@ -1,0 +1,13 @@
+
+[Desktop Entry]
+Name=Data Viewer
+Comment=View (and analyse) raw data
+Exec=dh5view.py
+Icon=eog
+#StartupNotify=true
+#NoDisplay=true
+Terminal=false
+Type=Application
+Categories=PYME;
+MimeType=application/x-pyme-url;
+

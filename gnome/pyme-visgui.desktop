@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=VisGUI
+Comment=Generate images from pont position data
+Exec=VisGUI.py %f
+Icon=eog
+#StartupNotify=true
+#NoDisplay=true
+Terminal=false
+Type=Application
+Categories=PYME;
+MimeType=application/x-extension-h5r;

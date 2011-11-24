@@ -25,6 +25,9 @@ print PYMEDir
 
 
 def openFile(url):
+    print url
+        
+    
     if url.startswith(micrPrefix):
         filename = os.path.join(micrPath, *seps.split(url[len(micrPrefix):]))
     elif url.startswith(nasPrefix):
@@ -40,25 +43,30 @@ def openFile(url):
         #print 'pe'
         if filename.endswith('.h5') or filename.endswith('.kdf'):
             if sys.platform == 'win32':
-                subprocess.Popen(PYMEDir + '\\DSView\\dh5view.cmd %s' % (filename), shell=True)
+                subprocess.Popen('dh5view.cmd %s' % (filename), shell=True)
             else:
-                subprocess.Popen(sys.executable + ' ' + PYMEDir + '/DSView/dh5view.py %s' % filename, shell=True)
+                subprocess.Popen('dh5view.py %s' % filename, shell=True)
 
         elif filename.endswith('.h5r'):
             if sys.platform == 'win32':
-                subprocess.Popen(PYMEDir + '\\Analysis\\LMVis\\VisGUI.cmd %s' % (filename), shell=True)
+                subprocess.Popen('VisGUI.cmd %s' % (filename), shell=True)
             else:
                 #print 'foo'
-                subprocess.Popen(sys.executable + ' ' + PYMEDir + '/Analysis/LMVis/VisGUI.py %s' % filename, shell=True)
+                subprocess.Popen('VisGUI.py %s' % filename, shell=True)
     
     
     
         
 
 if __name__ == '__main__':
-    f = open(' '.join(sys.argv[1:]))
-    url = f.readline().strip()
-    f.close()
+    #print url
+    fn = ' '.join(sys.argv[1:])
+    if fn.startswith('pyme:/'):
+        url = fn[6:]
+    else:    
+        f = open(fn)
+        url = f.readline().strip()
+        f.close()
     #print url
     
     openFile(url)

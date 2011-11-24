@@ -1,0 +1,13 @@
+
+[Desktop Entry]
+Name=Parallel Analysis
+Comment=Launch worker processes for data analysis
+Exec=launchWorkers.py
+Icon=eog
+#StartupNotify=true
+#NoDisplay=true
+Terminal=false
+Type=Application
+Categories=PYME;
+#MimeType=application/x-extension-h5;image/tif;image/x-tif;image/tiff;image/x-tiff;application/tif;application/x-tif;application/tiff;application/x-tiff
+

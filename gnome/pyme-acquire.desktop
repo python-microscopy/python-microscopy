@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=PYMEAcquire
+Comment=Simulation
+Exec=PYMEAcquire.py
+Icon=eog
+#StartupNotify=true
+#NoDisplay=true
+Terminal=false
+Type=Application
+Categories=PYME;
+#MimeType=application/x-extension-h5;

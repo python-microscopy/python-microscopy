@@ -1,3 +1,4 @@
+#!/usr/bin/python
 from PYME.Analysis.LMVis.VisGUI import *
 
 

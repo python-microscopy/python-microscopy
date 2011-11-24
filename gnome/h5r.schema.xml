@@ -18,7 +18,7 @@
             <applyto>/desktop/gnome/thumbnailers/application@x-extension-h5/command</applyto>
             <owner>thumbnailer</owner>
             <type>string</type>
-            <default>/home/david/bin/h5-thumbnailer %u %o %s</default>
+            <default>h5-thumbnailer.py %u %o %s</default>
             <locale name="C">
                 <short>Create thumbnail for PYME raw data</short>
                 <long>Create thumbnail for PYME raw data</long>
@@ -43,7 +43,7 @@
             <applyto>/desktop/gnome/thumbnailers/application@x-extension-h5r/command</applyto>
             <owner>thumbnailer</owner>
             <type>string</type>
-            <default>/home/david/bin/h5r-thumbnailer %u %o %s</default>
+            <default>h5r-thumbnailer.py %u %o %s</default>
             <locale name="C">
                 <short>Create thumbnail for PYME results</short>
                 <long>Create thumbnail for PYME results</long>
@@ -67,7 +67,7 @@
             <applyto>/desktop/gnome/thumbnailers/application@x-extension-kdf/command</applyto>
             <owner>thumbnailer</owner>
             <type>string</type>
-            <default>/home/david/bin/kdf-thumbnailer %u %o %s</default>
+            <default>kdf-thumbnailer.py %u %o %s</default>
             <locale name="C">
                 <short>Create thumbnail for kdf data</short>
                 <long>Create thumbnail for kdf data</long>
@@ -91,7 +91,7 @@
             <applyto>/desktop/gnome/thumbnailers/application@x-extension-sf/command</applyto>
             <owner>thumbnailer</owner>
             <type>string</type>
-            <default>/home/david/bin/sf-thumbnailer %u %o %s</default>
+            <default>sf-thumbnailer.py %u %o %s</default>
             <locale name="C">
                 <short>Create thumbnail for shift field</short>
                 <long>Create thumbnail for shift field</long>
