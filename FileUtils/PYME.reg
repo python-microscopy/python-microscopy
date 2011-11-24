@@ -1,0 +1,8 @@
+"REGEDIT4"
+
+[HKEY_CLASSES_ROOT\pyme]
+@="URL:PYME Protocol"
+"URL Protocol"=""
+
+[HKEY_CLASSES_ROOT\pyme\shell\open\command]
+@=""C:\Python2.7\Scripts\pymeUrlOpener.cmd" "%1""
