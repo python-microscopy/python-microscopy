@@ -58,7 +58,10 @@ class VirtList(wx.ListCtrl):
 
     def SetFilter(self, creator='', reference='', structure=''):
         self.SetItemCount(0)
-        self.qs = models.Slide.objects.filter(creator__contains=creator, reference__contains = reference, labelling__structure__contains= structure).order_by('-timestamp')
+        if not structure == '':
+            self.qs = models.Slide.objects.filter(creator__contains=creator, reference__contains=reference, labelling__structure__contains=structure).order_by('-timestamp')
+        else:
+            self.qs = models.Slide.objects.filter(creator__contains=creator, reference__contains=reference).order_by('-timestamp')
         self.SetItemCount(len(self.qs))
 
     def OnGetItemText(self, item, col):
