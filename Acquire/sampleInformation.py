@@ -57,6 +57,7 @@ class VirtList(wx.ListCtrl):
         #self.SetFilter()
 
     def SetFilter(self, creator='', reference='', structure=''):
+        self.SetItemCount(0)
         self.qs = models.Slide.objects.filter(creator__contains=creator, reference__contains = reference, labelling__structure__contains= structure).order_by('-timestamp')
         self.SetItemCount(len(self.qs))
 
@@ -107,9 +108,19 @@ class SampleInfoDialog(wx.Dialog):
 
         #sizer1a.Add(sizer2, 0, wx.ALL|wx.EXPAND, 5)
 
+        sizer2 = wx.BoxSizer(wx.HORIZONTAL)
+
+        sizer2.AddStretchSpacer()
+
+        btRefresh = wx.Button(self, wx.ID_ADD, 'Refresh')
+        sizer2.Add(btRefresh, 0, wx.ALL, 5)
+        btRefresh.Bind(wx.EVT_BUTTON, self.OnFilterChange)
+
         btAdd = wx.Button(self, wx.ID_ADD, 'New Slide')
-        sizer1.Add(btAdd, 0, wx.ALL|wx.ALIGN_RIGHT, 5)
+        sizer2.Add(btAdd, 0, wx.ALL, 5)
         btAdd.Bind(wx.EVT_BUTTON, self.OnAddSlide)
+
+        sizer1.Add(sizer2, 0, wx.ALL|wx.EXPAND, 5)
 
         sizer1a = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Filter by:'), wx.VERTICAL)
 
@@ -203,6 +214,7 @@ class SampleInfoDialog(wx.Dialog):
 
     def OnFilterChange(self, event):
         self.lSlides.SetFilter(self.tCreator.GetValue(),self.tSlideRef.GetValue(),self.tStructure.GetValue())
+        self.lSlides.Refresh()
         event.Skip()
 
     def setCreatorChoices(self):
@@ -368,7 +380,7 @@ def prefillSampleData(parent):
 def getSampleData(parent, mdh):
     #global currentSlide
 
-    print currentSlide
+    print 'currSlide:', currentSlide
     cs = currentSlide[0]
 
     if cs:
@@ -379,6 +391,7 @@ def getSampleData(parent, mdh):
         dlg = SampleInfoDialog(parent)
 
         if dlg.ShowModal() == wx.ID_OK:
+            print 'populating metadata'
             dlg.PopulateMetadata(mdh)
 
             currentSlide[0] = dlg.slide

@@ -170,9 +170,10 @@ from PYME.Acquire.Hardware.DigiData import DigiDataClient
 dd = DigiDataClient.getDDClient()
 
 
-from PYME.Acquire.Hardware import lasers
+from PYME.Acquire.Hardware import lasers, cobaltLaser
 scope.l490 = lasers.DigiDataSwitchedLaser('490',dd,4)
 scope.l405 = lasers.DigiDataSwitchedLaserInvPol('405',dd,0)
+scope.l491 = cobaltLaser.CobaltLaser('491',portname='COM1')
 #scope.l543 = lasers.DigiDataSwitchedAnalogLaser('543',dd,0)
 #scope.l671 = lasers.DigiDataSwitchedAnalogLaser('671',dd,1)
 
@@ -180,7 +181,7 @@ pport = lasers.PPort()
 scope.l671 = lasers.ParallelSwitchedLaser('671',pport,0)
 scope.l532 = lasers.ParallelSwitchedLaser('532',pport,1)
 
-scope.lasers = [scope.l405,scope.l532,scope.l671, scope.l490]
+scope.lasers = [scope.l405,scope.l532,scope.l671, scope.l490, scope.l491]
 ''')
 
 InitGUI('''

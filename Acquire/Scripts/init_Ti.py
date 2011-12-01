@@ -49,7 +49,7 @@ camPanels.append((scope.camControls['A - Left'], 'EMCCD A Properties'))
 ''')
 
 InitGUI('''
-import sampleInformation
+From PYME.Acquire import sampleInformation
 sampPan = sampleInformation.slidePanel(MainFrame)
 camPanels.append((sampPan, 'Current Slide'))
 ''')
