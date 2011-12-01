@@ -37,8 +37,11 @@ class Sample(models.Model):
         return u'%s - %s [%s]' % (self.species, self.sampleType, self.patientID)
 
 class Dye(models.Model):
-    from PYMEnf.FilterSpectra import scrapeOmega
-    DYE_NAMES = ['None'] + scrapeOmega.getDyeNames()
+    try:
+       from PYMEnf.FilterSpectra import scrapeOmega
+       DYE_NAMES = ['None'] + scrapeOmega.getDyeNames()
+    except:
+       DYE_NAMES = ['None'] 
 
     DYE_NAMES = [(n, n) for n in DYE_NAMES]
     #dyeID = models.IntegerField(primary_key=True)

@@ -20,7 +20,7 @@ import numpy
 taskList = [
 T(-1, scope.turnAllLasersOff),
 T(-1, SetCameraShutter, False),
-T(-1, scope.joystick.Enable, False),
+#T(-1, scope.joystick.Enable, False),
 #T(-1, SetEMGain,150),
 T(20, SetCameraShutter, True),
 T(20, scope.filterWheel.SetFilterPos, "ND4"),
@@ -33,7 +33,7 @@ T(200, SetEMGain,scope.cam.DefaultEMGain),
 T(210, MainFrame.pan_spool.OnBAnalyse, None),
 T(maxint, scope.turnAllLasersOff),
 T(maxint, scope.filterWheel.SetFilterPos, "ND4"),
-T(maxint, scope.joystick.Enable, True),
+#T(maxint, scope.joystick.Enable, True),
 ]
 
 #optional - metadata entries
