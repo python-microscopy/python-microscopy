@@ -41,6 +41,8 @@ def imageDensityAtDistance(A, mask, voxelsize = None, bins=100):
 
     if numpy.isscalar(bins):
         bins = numpy.linspace(dt.min(), dt.max(), bins+1)
+        
+    #print bins
 
     bn, bm, bs = binAvg.binAvg(dt, A, bins)
 

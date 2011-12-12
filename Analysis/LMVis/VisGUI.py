@@ -53,7 +53,7 @@ except:
 #try importing our drift correction stuff
 HAVE_DRIFT_CORRECTION = False
 try:
-    from PYMENonFree.DriftCorrection.driftGUI import CreateDriftPane
+    from PYMEnf.DriftCorrection.driftGUI import CreateDriftPane
     HAVE_DRIFT_CORRECTION = True
 except:
     pass

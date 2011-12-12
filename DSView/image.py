@@ -291,6 +291,12 @@ class ImageStack(object):
                 self.filename = mdfn
             except:
                 pass
+            
+        elif 'ChannelNames' in self.mdh.getEntryNames() and len(self.mdh['ChannelNames']) == self.data.getNumSlices():
+            from PYME.DSView.dataWrap import ListWrap
+            chans = [numpy.atleast_3d(self.data.getSlice(i)) for i in range(len(self.mdh['ChannelNames']))]
+            self.data = ListWrap(chans)
+            
 
 
         
