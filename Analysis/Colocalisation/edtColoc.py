@@ -37,7 +37,7 @@ def imageDensityAtDistance(A, mask, voxelsize = None, bins=100):
 
     dt = -ndimage.distance_transform_edt(mask, sampling=voxelsize)
 
-    dt = dt + ndimage.distance_transform_edt(ndimage.binary_dilation(1-mask), sampling=voxelsize)
+    dt = dt + ndimage.distance_transform_edt(1- ndimage.binary_dilation(mask), sampling=voxelsize)
 
     if numpy.isscalar(bins):
         bins = numpy.linspace(dt.min(), dt.max(), bins+1)
