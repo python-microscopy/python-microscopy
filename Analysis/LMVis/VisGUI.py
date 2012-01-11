@@ -227,6 +227,8 @@ class VisGUIFrame(wx.Frame):
 
         nb = self._mgr.GetNotebooks()[0]
         nb.SetSelection(2)
+        
+        renderers.renderMetadataProviders.append(self.SaveMetadata)
 
         #print 'about to refresh'
         #self.RefreshView()
@@ -297,7 +299,17 @@ class VisGUIFrame(wx.Frame):
 
     def OnToggleWindow(self, event):
         self._mgr.ShowPane(self._leftWindow1,not self._leftWindow1.IsShown())
-        self.glCanvas.Refresh()    
+        self.glCanvas.Refresh()  
+        
+    def SaveMetadata(self, mdh):
+        mdh['Filter.Keys'] = self.filterKeys      
+        
+        if HAVE_DRIFT_CORRECTION and 'x' in self.mapping.mappings.keys(): #drift correction has been applied
+            mdh['DriftCorrection.ExprX'] = self.driftPane.dp.driftExprX
+            mdh['DriftCorrection.ExprY'] = self.driftPane.dp.driftExprY
+            mdh['DriftCorrection.ExprZ'] = self.driftPane.dp.driftExprZ
+            
+            mdh['DriftCorrection.Parameters'] = self.driftPane.dp.driftCorrParams
 
     def CreateFoldPanel(self):
         # delete earlier panel
@@ -315,7 +327,8 @@ class VisGUIFrame(wx.Frame):
         self.filterPane = CreateFilterPane(self._pnl, self.filterKeys, self)
 
         if HAVE_DRIFT_CORRECTION:
-            CreateDriftPane(self._pnl, self.mapping, self)
+            self.driftPane = CreateDriftPane(self._pnl, self.mapping, self)
+            #renderers.renderMetadataProviders.append(pn.SaveDriftMetadata)
             #self.GenDriftPanel()
             
         self.colourFilterPane = CreateColourFilterPane(self._pnl, self.colourFilter, self)

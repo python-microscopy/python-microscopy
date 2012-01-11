@@ -15,6 +15,8 @@ from PYME.Analysis.LMVis import visHelpers
 #from PYME.Analysis.LMVis import imageView
 from PYME.Analysis.LMVis import statusLog
 
+from PYME.Acquire import MetaDataHandler
+
 from PYME.DSView import ViewIm3D
 
 from PYME.Analysis.QuadTree import QTrend
@@ -22,6 +24,8 @@ from PYME.Analysis.QuadTree import QTrend
 import wx
 import pylab
 import numpy as np
+
+renderMetadataProviders = []
 
 class CurrentRenderer:
     '''Renders current view (in black and white). Only renderer not to take care
@@ -90,12 +94,21 @@ class CurrentRenderer:
         bCurr = wx.BusyCursor()
 
         if ret == wx.ID_OK:
+            mdh = MetaDataHandler.NestedClassMDHandler()
+            mdh['Rendering.Method'] = self.name
+            if 'imageID' in self.visFr.mdh.getEntryNames():
+                mdh['Rendering.SourceImageID'] = self.visFr.mdh['imageID']
+            mdh['Rendering.SourceFilename'] = self.visFr.filename
+            
+            for cb in renderMetadataProviders:
+                cb(mdh)            
+            
             pixelSize = dlg.getPixelSize()
 
             imb = self._getImBounds()
 
-            im = self.genIm(dlg, imb)
-            img = GeneratedImage(im,imb, pixelSize, 0, ['Image'] )
+            im = self.genIm(dlg, imb, mdh)
+            img = GeneratedImage(im,imb, pixelSize, 0, ['Image'] , mdh = mdh)
             imf = ViewIm3D(img, mode='visGUI', title='Generated %s - %3.1fnm bins' % (self.name, pixelSize), glCanvas=self.visFr.glCanvas, parent=self.visFr)
             #imf = imageView.ImageViewFrame(self.visFr,img, self.visFr.glCanvas)
             #imageView.MultiChannelImageViewFrame(self.visFr, self.visFr.glCanvas, img, title='Generated %s - %3.1fnm bins' % (self.name, pixelSize))
@@ -107,7 +120,7 @@ class CurrentRenderer:
         dlg.Destroy()
         return imf
 
-    def genIm(self, dlg, imb):
+    def genIm(self, dlg, imb, mdh):
         oldcmap = self.visFr.glCanvas.cmap
         self.visFr.glCanvas.setCMap(pylab.cm.gray)
         im = self.visFr.glCanvas.getIm(dlg.getPixelSize())
@@ -139,6 +152,15 @@ class ColourRenderer(CurrentRenderer):
         bCurr = wx.BusyCursor()
 
         if ret == wx.ID_OK:
+            mdh = MetaDataHandler.NestedClassMDHandler()
+            mdh['Rendering.Method'] = self.name
+            if 'imageID' in self.visFr.mdh.getEntryNames():
+                mdh['Rendering.SourceImageID'] = self.visFr.mdh['imageID']
+            mdh['Rendering.SourceFilename'] = self.visFr.filename
+            
+            for cb in renderMetadataProviders:
+                cb(mdh)           
+            
             pixelSize = dlg.getPixelSize()
 
             status = statusLog.StatusLogger('Generating %s Image ...' % self.name)
@@ -152,9 +174,9 @@ class ColourRenderer(CurrentRenderer):
 
             for c in  colours:
                 self.visFr.colourFilter.setColour(c)
-                ims.append(np.atleast_3d(self.genIm(dlg, imb)))
+                ims.append(np.atleast_3d(self.genIm(dlg, imb, mdh)))
 
-            im = GeneratedImage(ims,imb, pixelSize,  dlg.getZSliceThickness(), colours)
+            im = GeneratedImage(ims,imb, pixelSize,  dlg.getZSliceThickness(), colours, mdh = mdh)
 
             imfc = ViewIm3D(im, mode='visGUI', title='Generated %s - %3.1fnm bins' % (self.name, pixelSize), glCanvas=self.visFr.glCanvas, parent=self.visFr)
 
@@ -177,7 +199,7 @@ class HistogramRenderer(ColourRenderer):
     name = 'Histogram'
     mode = 'histogram'
 
-    def genIm(self, dlg, imb):
+    def genIm(self, dlg, imb, mdh):
         return visHelpers.rendHist(self.visFr.colourFilter['x'],self.visFr.colourFilter['y'], imb, dlg.getPixelSize())
 
 class Histogram3DRenderer(HistogramRenderer):
@@ -186,7 +208,7 @@ class Histogram3DRenderer(HistogramRenderer):
     name = '3D Histogram'
     mode = '3Dhistogram'
 
-    def genIm(self, dlg, imb):
+    def genIm(self, dlg, imb, mdh):
         return visHelpers.rendHist3D(self.visFr.colourFilter['x'],self.visFr.colourFilter['y'], self.visFr.colourFilter['z'], imb, dlg.getPixelSize(), dlg.getZBounds(), dlg.getZSliceThickness())
     
 
@@ -202,10 +224,13 @@ class GaussianRenderer(ColourRenderer):
         else:
             return 0
 
-    def genIm(self, dlg, imb):
+    def genIm(self, dlg, imb, mdh):
         pixelSize = dlg.getPixelSize()
         jitParamName = dlg.getJitterVariable()
         jitScale = dlg.getJitterScale()
+        
+        mdh['Rendering.JitterVariable'] = jitParamName
+        mdh['Rendering.JitterScale'] = jitScale
 
         jitVals = self._genJitVals(jitParamName, jitScale)
 
@@ -217,12 +242,17 @@ class Gaussian3DRenderer(GaussianRenderer):
     name = '3D Gaussian'
     mode = '3Dgaussian'
 
-    def genIm(self, dlg, imb):
+    def genIm(self, dlg, imb, mdh):
         pixelSize = dlg.getPixelSize()
         jitParamName = dlg.getJitterVariable()
         jitScale = dlg.getJitterScale()
         jitParamNameZ = dlg.getJitterVariableZ()
         jitScaleZ = dlg.getJitterScaleZ()
+        
+        mdh['Rendering.JitterVariable'] = jitParamName
+        mdh['Rendering.JitterScale'] = jitScale
+        mdh['Rendering.JitterVariableZ'] = jitParamNameZ
+        mdh['Rendering.JitterScaleZ'] = jitScaleZ
 
         jitVals = self._genJitVals(jitParamName, jitScale)
         jitValsZ = self._genJitVals(jitParamNameZ, jitScaleZ)
@@ -236,10 +266,13 @@ class TriangleRenderer(ColourRenderer):
     name = 'Jittered Triangulation'
     mode = 'triangles'
 
-    def genIm(self, dlg, imb):
+    def genIm(self, dlg, imb, mdh):
         pixelSize = dlg.getPixelSize()
         jitParamName = dlg.getJitterVariable()
         jitScale = dlg.getJitterScale()
+        
+        mdh['Rendering.JitterVariable'] = jitParamName
+        mdh['Rendering.JitterScale'] = jitScale
 
         jitVals = self._genJitVals(jitParamName, jitScale)
 
@@ -255,12 +288,17 @@ class Triangle3DRenderer(TriangleRenderer):
     name = '3D Triangularisation'
     mode = '3Dtriangles'
 
-    def genIm(self, dlg, imb):
+    def genIm(self, dlg, imb, mdh):
         pixelSize = dlg.getPixelSize()
         jitParamName = dlg.getJitterVariable()
         jitScale = dlg.getJitterScale()
         jitParamNameZ = dlg.getJitterVariableZ()
         jitScaleZ = dlg.getJitterScaleZ()
+        
+        mdh['Rendering.JitterVariable'] = jitParamName
+        mdh['Rendering.JitterScale'] = jitScale
+        mdh['Rendering.JitterVariableZ'] = jitParamNameZ
+        mdh['Rendering.JitterScaleZ'] = jitScaleZ
 
         jitVals = self._genJitVals(jitParamName, jitScale)
         jitValsZ = self._genJitVals(jitParamNameZ, jitScaleZ)
@@ -273,7 +311,7 @@ class QuadTreeRenderer(ColourRenderer):
     name = 'QuadTree'
     mode = 'quadtree'
 
-    def genIm(self, dlg, imb):
+    def genIm(self, dlg, imb, mdh):
         pixelSize = dlg.getPixelSize()
 
         if not pylab.mod(pylab.log2(pixelSize/self.visFr.QTGoalPixelSize), 1) == 0:#recalculate QuadTree to get right pixel size
