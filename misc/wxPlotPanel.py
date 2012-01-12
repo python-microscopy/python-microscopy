@@ -39,7 +39,7 @@ flag, and the actual resizing of the figure is triggered by an Idle event."""
         self.SetColor( color )
 
         self._SetSize()
-        self.draw()
+        #self.draw()
 
         self._resizeflag = False
 

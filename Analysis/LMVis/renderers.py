@@ -35,8 +35,9 @@ class CurrentRenderer:
     name = 'Current'
     mode = 'current'
     
-    def __init__(self, visFr):
+    def __init__(self, visFr, pipeline):
         self.visFr = visFr
+        self.pipeline = pipeline
 
         self._addMenuItems()
 
@@ -47,18 +48,18 @@ class CurrentRenderer:
         self.visFr.Bind(wx.EVT_MENU, self.Generate, id=ID)
 
     def _getImBounds(self):
-        x0 = max(self.visFr.glCanvas.xmin, self.visFr.imageBounds.x0)
-        y0 = max(self.visFr.glCanvas.ymin, self.visFr.imageBounds.y0)
-        x1 = min(self.visFr.glCanvas.xmax, self.visFr.imageBounds.x1)
-        y1 = min(self.visFr.glCanvas.ymax, self.visFr.imageBounds.y1)
+        x0 = max(self.visFr.glCanvas.xmin, self.pipeline.imageBounds.x0)
+        y0 = max(self.visFr.glCanvas.ymin, self.pipeline.imageBounds.y0)
+        x1 = min(self.visFr.glCanvas.xmax, self.pipeline.imageBounds.x1)
+        y1 = min(self.visFr.glCanvas.ymax, self.pipeline.imageBounds.y1)
 
-        if 'x' in self.visFr.filterKeys.keys():
-            x0 = max(x0, self.visFr.filterKeys['x'][0])
-            x1 = min(x1, self.visFr.filterKeys['x'][1])
+        if 'x' in self.pipeline.filterKeys.keys():
+            x0 = max(x0, self.pipeline.filterKeys['x'][0])
+            x1 = min(x1, self.pipeline.filterKeys['x'][1])
 
-        if 'y' in self.visFr.filterKeys.keys():
-            y0 = max(y0, self.visFr.filterKeys['y'][0])
-            y1 = min(y1, self.visFr.filterKeys['y'][1])
+        if 'y' in self.pipeline.filterKeys.keys():
+            y0 = max(y0, self.pipeline.filterKeys['y'][0])
+            y1 = min(y1, self.pipeline.filterKeys['y'][1])
 
         #imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
         return ImageBounds(x0, y0, x1, y1)
@@ -75,14 +76,15 @@ class CurrentRenderer:
     def _genJitVals(self, jitParamName, jitScale):
         #print jitParamName
         if jitParamName == '1.0':
-            jitVals = np.ones(self.visFr.colourFilter['x'].shape)
-        elif jitParamName in self.visFr.colourFilter.keys():
-            jitVals = self.visFr.colourFilter[jitParamName]
+            jitVals = np.ones(self.pipeline.colourFilter['x'].shape)
+        elif jitParamName in self.pipeline.colourFilter.keys():
+            jitVals = self.pipeline.colourFilter[jitParamName]
         elif jitParamName in self.genMeas:
             #print 'f'
             if jitParamName == 'neighbourDistances':
-                self.visFr.genNeighbourDists(True)
-            jitVals = self.visFr.GeneratedMeasures[jitParamName]
+                jitVals = self.pipeline.getNeighbourDists(True)
+            else:
+                jitVals = self.pipeline.GeneratedMeasures[jitParamName]
 
         return jitVals*jitScale
 
@@ -96,9 +98,9 @@ class CurrentRenderer:
         if ret == wx.ID_OK:
             mdh = MetaDataHandler.NestedClassMDHandler()
             mdh['Rendering.Method'] = self.name
-            if 'imageID' in self.visFr.mdh.getEntryNames():
-                mdh['Rendering.SourceImageID'] = self.visFr.mdh['imageID']
-            mdh['Rendering.SourceFilename'] = self.visFr.filename
+            if 'imageID' in self.pipeline.mdh.getEntryNames():
+                mdh['Rendering.SourceImageID'] = self.pipeline.mdh['imageID']
+            mdh['Rendering.SourceFilename'] = self.pipeline.filename
             
             for cb in renderMetadataProviders:
                 cb(mdh)            
@@ -134,19 +136,19 @@ class ColourRenderer(CurrentRenderer):
     
     def Generate(self, event=None):
         jitVars = ['1.0']
-        jitVars += self.visFr.colourFilter.keys()
+        jitVars += self.pipeline.colourFilter.keys()
 
-        self.genMeas = self.visFr.GeneratedMeasures.keys()
+        self.genMeas = self.pipeline.GeneratedMeasures.keys()
         if not 'neighbourDistances' in self.genMeas:
             self.genMeas.append('neighbourDistances')
         jitVars += self.genMeas
         
-        if 'z' in self.visFr.mapping.keys():
-            zvals = self.visFr.mapping['z']
+        if 'z' in self.pipeline.mapping.keys():
+            zvals = self.pipeline.mapping['z']
         else:
             zvals = None
 
-        dlg = genImageDialog.GenImageDialog(self.visFr, mode=self.mode, colours=self.visFr.fluorSpecies.keys(), zvals = zvals, jitterVariables = jitVars, jitterVarDefault=self._getDefaultJitVar(jitVars), jitterVarDefaultZ=self._getDefaultZJitVar(jitVars))
+        dlg = genImageDialog.GenImageDialog(self.visFr, mode=self.mode, colours=self.pipeline.fluorSpecies.keys(), zvals = zvals, jitterVariables = jitVars, jitterVarDefault=self._getDefaultJitVar(jitVars), jitterVarDefaultZ=self._getDefaultZJitVar(jitVars))
         ret = dlg.ShowModal()
 
         bCurr = wx.BusyCursor()
@@ -154,9 +156,9 @@ class ColourRenderer(CurrentRenderer):
         if ret == wx.ID_OK:
             mdh = MetaDataHandler.NestedClassMDHandler()
             mdh['Rendering.Method'] = self.name
-            if 'imageID' in self.visFr.mdh.getEntryNames():
-                mdh['Rendering.SourceImageID'] = self.visFr.mdh['imageID']
-            mdh['Rendering.SourceFilename'] = self.visFr.filename
+            if 'imageID' in self.pipeline.mdh.getEntryNames():
+                mdh['Rendering.SourceImageID'] = self.pipeline.mdh['imageID']
+            mdh['Rendering.SourceFilename'] = self.pipeline.filename
             
             for cb in renderMetadataProviders:
                 cb(mdh)           
@@ -168,12 +170,12 @@ class ColourRenderer(CurrentRenderer):
             imb = self._getImBounds()
             
             colours =  dlg.getColour()
-            oldC = self.visFr.colourFilter.currentColour
+            oldC = self.pipeline.colourFilter.currentColour
 
             ims = []
 
             for c in  colours:
-                self.visFr.colourFilter.setColour(c)
+                self.pipeline.colourFilter.setColour(c)
                 ims.append(np.atleast_3d(self.genIm(dlg, imb, mdh)))
 
             im = GeneratedImage(ims,imb, pixelSize,  dlg.getZSliceThickness(), colours, mdh = mdh)
@@ -185,7 +187,7 @@ class ColourRenderer(CurrentRenderer):
             #self.visFr.generatedImages.append(imfc)
             #imfc.Show()
 
-            self.visFr.colourFilter.setColour(oldC)
+            self.pipeline.colourFilter.setColour(oldC)
         else:
             imfc = None
 
@@ -200,7 +202,7 @@ class HistogramRenderer(ColourRenderer):
     mode = 'histogram'
 
     def genIm(self, dlg, imb, mdh):
-        return visHelpers.rendHist(self.visFr.colourFilter['x'],self.visFr.colourFilter['y'], imb, dlg.getPixelSize())
+        return visHelpers.rendHist(self.pipeline.colourFilter['x'],self.pipeline.colourFilter['y'], imb, dlg.getPixelSize())
 
 class Histogram3DRenderer(HistogramRenderer):
     '''3D histogram rendering'''
@@ -209,7 +211,7 @@ class Histogram3DRenderer(HistogramRenderer):
     mode = '3Dhistogram'
 
     def genIm(self, dlg, imb, mdh):
-        return visHelpers.rendHist3D(self.visFr.colourFilter['x'],self.visFr.colourFilter['y'], self.visFr.colourFilter['z'], imb, dlg.getPixelSize(), dlg.getZBounds(), dlg.getZSliceThickness())
+        return visHelpers.rendHist3D(self.pipeline.colourFilter['x'],self.pipeline.colourFilter['y'], self.pipeline.colourFilter['z'], imb, dlg.getPixelSize(), dlg.getZBounds(), dlg.getZSliceThickness())
     
 
 class GaussianRenderer(ColourRenderer):
@@ -234,7 +236,7 @@ class GaussianRenderer(ColourRenderer):
 
         jitVals = self._genJitVals(jitParamName, jitScale)
 
-        return visHelpers.rendGauss(self.visFr.colourFilter['x'],self.visFr.colourFilter['y'], jitVals, imb, pixelSize)
+        return visHelpers.rendGauss(self.pipeline.colourFilter['x'],self.pipeline.colourFilter['y'], jitVals, imb, pixelSize)
 
 class Gaussian3DRenderer(GaussianRenderer):
     '''3D Gaussian rendering'''
@@ -257,7 +259,7 @@ class Gaussian3DRenderer(GaussianRenderer):
         jitVals = self._genJitVals(jitParamName, jitScale)
         jitValsZ = self._genJitVals(jitParamNameZ, jitScaleZ)
 
-        return visHelpers.rendGauss3D(self.visFr.colourFilter['x'],self.visFr.colourFilter['y'],self.visFr.colourFilter['z'], jitVals, jitValsZ, imb, pixelSize, dlg.getZBounds(), dlg.getZSliceThickness())
+        return visHelpers.rendGauss3D(self.pipeline.colourFilter['x'],self.pipeline.colourFilter['y'],self.pipeline.colourFilter['z'], jitVals, jitValsZ, imb, pixelSize, dlg.getZBounds(), dlg.getZSliceThickness())
 
 
 class TriangleRenderer(ColourRenderer):
@@ -278,9 +280,9 @@ class TriangleRenderer(ColourRenderer):
 
         if dlg.getSoftRender():
             status = statusLog.StatusLogger("Rendering triangles ...")
-            return visHelpers.rendJitTriang(self.visFr.colourFilter['x'],self.visFr.colourFilter['y'], dlg.getNumSamples(), jitVals, dlg.getMCProbability(),imb, pixelSize)
+            return visHelpers.rendJitTriang(self.pipeline.colourFilter['x'],self.pipeline.colourFilter['y'], dlg.getNumSamples(), jitVals, dlg.getMCProbability(),imb, pixelSize)
         else:
-            return self.visFr.glCanvas.genJitTim(dlg.getNumSamples(),self.visFr.colourFilter['x'],self.visFr.colourFilter['y'], jitVals, dlg.getMCProbability(),pixelSize)
+            return self.visFr.glCanvas.genJitTim(dlg.getNumSamples(),self.pipeline.colourFilter['x'],self.pipeline.colourFilter['y'], jitVals, dlg.getMCProbability(),pixelSize)
 
 class Triangle3DRenderer(TriangleRenderer):
     '''3D Triangularisation rendering'''
@@ -303,7 +305,7 @@ class Triangle3DRenderer(TriangleRenderer):
         jitVals = self._genJitVals(jitParamName, jitScale)
         jitValsZ = self._genJitVals(jitParamNameZ, jitScaleZ)
 
-        return visHelpers.rendJitTet(self.visFr.colourFilter['x'],self.visFr.colourFilter['y'],self.visFr.colourFilter['z'], dlg.getNumSamples(), jitVals, jitValsZ, dlg.getMCProbability(), imb, pixelSize, dlg.getZBounds(), dlg.getZSliceThickness())
+        return visHelpers.rendJitTet(self.pipeline.colourFilter['x'],self.pipeline.colourFilter['y'],self.pipeline.colourFilter['z'], dlg.getNumSamples(), jitVals, jitValsZ, dlg.getMCProbability(), imb, pixelSize, dlg.getZBounds(), dlg.getZSliceThickness())
 
 class QuadTreeRenderer(ColourRenderer):
     '''2D quadtree rendering'''
@@ -334,5 +336,5 @@ RENDERER_GROUPS = ((CurrentRenderer,),(HistogramRenderer, GaussianRenderer, Tria
 def init_renderers(visFr):
     for g in RENDERER_GROUPS:
         for r in g:
-            r(visFr)
+            r(visFr, visFr.pipeline)
         visFr.gen_menu.AppendSeparator()
