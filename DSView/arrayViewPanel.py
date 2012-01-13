@@ -196,6 +196,10 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                     dc.DrawRectangle(lx*sc - x0,ly*sc*self.aspect - y0, (hx-lx)*sc,(hy-ly)*sc*self.aspect)
                 else:
                     dc.DrawRectangle(ly*sc - x0,lx*sc - y0, (hy-ly)*sc,(hx-lx)*sc)
+            elif self.do.selectionMode == DisplayOpts.SELECTION_SQUIGLE:
+                if len(self.do.selection_trace) > 2:
+                    pts = sc*numpy.array(self.do.selection_trace)*numpy.array([[1.0, self.aspect]]) - numpy.array([[x0, y0]])
+                    dc.DrawSpline(pts)
             elif self.do.selectionWidth == 1:
                 if (self.do.orientation == self.do.UPRIGHT):
                     dc.DrawLine(lx*sc - x0,ly*sc*self.aspect - y0, hx*sc - x0,hy*sc*self.aspect - y0)
@@ -654,6 +658,9 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         elif (self.do.slice == self.do.SLICE_YZ):
             self.do.selection_begin_y = int(pos[0]/sc)
             self.do.selection_begin_z = int(pos[1]/(sc*self.aspect))
+            
+        self.do.selection_trace = []
+        self.do.selection_trace.append(((pos[0]/sc), (pos[1]/(sc*self.aspect))))
 
     def OnRightUp(self,event):
         self.ProgressSelection(event)
@@ -703,6 +710,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             elif (self.do.slice == self.do.SLICE_YZ):
                 self.do.selection_end_y = int(pos[0]/sc)
                 self.do.selection_end_z = int(pos[1]/(sc*self.aspect))
+                
+        self.do.selection_trace.append(((pos[0]/sc), (pos[1]/(sc*self.aspect))))
 
         #if ('update' in dir(self.GetParent())):
         #     self.GetParent().update()
