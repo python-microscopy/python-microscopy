@@ -43,6 +43,8 @@ HAVE_DRIFT_CORRECTION = False
 try:
     from PYMEnf.DriftCorrection.driftGUI import CreateDriftPane
     HAVE_DRIFT_CORRECTION = True
+    #from PYMEnf.DriftCorrection import driftGUI
+    #renderers.renderMetadataProviders.append(driftGUI.dp.SaveMetadata)
 except:
     pass
 
@@ -212,11 +214,7 @@ class VisGUIFrame(wx.Frame):
         mdh['Filter.Keys'] = self.pipeline.filterKeys      
         
         if HAVE_DRIFT_CORRECTION and 'x' in self.pipeline.mapping.mappings.keys(): #drift correction has been applied
-            mdh['DriftCorrection.ExprX'] = self.driftPane.dp.driftExprX
-            mdh['DriftCorrection.ExprY'] = self.driftPane.dp.driftExprY
-            mdh['DriftCorrection.ExprZ'] = self.driftPane.dp.driftExprZ
-            
-            mdh['DriftCorrection.Parameters'] = self.driftPane.dp.driftCorrParams
+            self.driftPane.dp.SaveMetadata(mdh)
 
     def CreateFoldPanel(self):
         # delete earlier panel

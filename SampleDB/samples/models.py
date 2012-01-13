@@ -4,6 +4,8 @@ import os
 
 from PYME.misc.hash32 import hashString32
 
+from fields import PickledObjectField
+
 # Create your models here.
 class Species(models.Model):
     SPECIES_NAMES = (('Human', 'Human'),
@@ -372,6 +374,26 @@ class SlideTag(models.Model):
             sl.save()
 
         return sl
+        
+class DriftFit(models.Model):
+    imageID = models.ForeignKey(Image, related_name='drift_settings')
+    exprX = models.CharField(max_length=200)
+    exprY = models.CharField(max_length=200)
+    exprZ = models.CharField(max_length=200)
+    
+    timestamp = models.DateTimeField(auto_now=True)
+    
+    auto=models.BooleanField(default=False)
+    
+    parameters = PickledObjectField()
+    
+    def __unicode__(self):
+        s =  u'%s - x = %s, y = %s' % (self.timestamp, self.exprX, self.exprY)
+        if len(s) > 60:
+            s = s[:60] + ' ...'
+            
+        return s
+        
 
 
 class EventStats(models.Model):

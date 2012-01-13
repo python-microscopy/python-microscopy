@@ -2,6 +2,7 @@ from PYME.Analysis.LMVis import inpFilt
 from PYME.Analysis.LMVis.visHelpers import ImageBounds
 from PYME.Analysis.LMVis import dyeRatios
 from PYME.Analysis.LMVis import statusLog
+from PYME.Analysis.LMVis import renderers
 
 from PYME.Analysis import piecewiseMapping
 from PYME.Acquire import MetaDataHandler
@@ -51,6 +52,8 @@ class Pipeline:
 
         if not filename==None:
             self.OpenFile(filename)
+            
+        #renderers.renderMetadataProviders.append(self.SaveMetadata)
             
     def __getitem__(self, key):
         '''gets values from the 'tail' of the pipeline (ie the colourFilter)'''
@@ -155,7 +158,9 @@ class Pipeline:
         
         self.selectedDataSource.setMapping('ColourNorm', '1.0*colNorm')
         
-
+    def CloseFiles(self):
+        while len(self.filesToClose) > 0:
+            self.filesToClose.pop().close()
 
     def OpenFile(self, filename, **kwargs):
         '''Open a file - accepts optional keyword arguments for use with files
