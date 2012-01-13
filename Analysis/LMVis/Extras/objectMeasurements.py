@@ -28,6 +28,7 @@ class ParticleTracker:
         from PYME.DSView import image
 
         visFr = self.visFr
+        pipeline = visFr.pipeline
 
         dlg = wx.SingleChoiceDialog(
                 self.visFr, 'choose the image which contains labels', 'Use Segmentation',
@@ -38,8 +39,8 @@ class ParticleTracker:
         if dlg.ShowModal() == wx.ID_OK:
             img = image.openImages[dlg.GetStringSelection()]
 
-            pixX = np.round((visFr.mapping['x'] - img.imgBounds.x0)/img.pixelSize).astype('i')
-            pixY = np.round((visFr.mapping['y'] - img.imgBounds.y0)/img.pixelSize).astype('i')
+            pixX = np.round((pipeline.mapping['x'] - img.imgBounds.x0)/img.pixelSize).astype('i')
+            pixY = np.round((pipeline.mapping['y'] - img.imgBounds.y0)/img.pixelSize).astype('i')
 
             ind = (pixX < img.data.shape[0])*(pixY < img.data.shape[1])*(pixX >= 0)*(pixY >= 0)
 
@@ -49,14 +50,14 @@ class ParticleTracker:
 
             numPerObject, b = np.histogram(ids, np.arange(ids.max() + 1.5) + .5)
 
-            visFr.selectedDataSource.objectIDs = np.zeros(len(visFr.selectedDataSource['x']))
-            visFr.selectedDataSource.objectIDs[visFr.filter.Index] = ids
+            pipeline.selectedDataSource.objectIDs = np.zeros(len(pipeline.selectedDataSource['x']))
+            pipeline.selectedDataSource.objectIDs[pipeline.filter.Index] = ids
 
-            visFr.selectedDataSource.numPerObject = np.zeros(len(visFr.selectedDataSource['x']))
-            visFr.selectedDataSource.numPerObject[visFr.filter.Index] = numPerObject[ids-1]
+            pipeline.selectedDataSource.numPerObject = np.zeros(len(pipeline.selectedDataSource['x']))
+            pipeline.selectedDataSource.numPerObject[pipeline.filter.Index] = numPerObject[ids-1]
 
-            visFr.selectedDataSource.setMapping('objectID', 'objectIDs')
-            visFr.selectedDataSource.setMapping('NEvents', 'numPerObject')
+            pipeline.selectedDataSource.setMapping('objectID', 'objectIDs')
+            pipeline.selectedDataSource.setMapping('NEvents', 'numPerObject')
 
             visFr.RegenFilter()
             visFr.CreateFoldPanel()
@@ -66,15 +67,15 @@ class ParticleTracker:
     def OnMeasure(self, event):
         from PYME.Analysis.LMVis import objectMeasure
 
-        chans = self.visFr.colourFilter.getColourChans()
+        chans = self.pipeline.colourFilter.getColourChans()
 
-        ids = set(self.visFr.mapping['objectID'].astype('i'))
-        self.visFr.objectMeasures = {}
+        ids = set(self.pipeline.mapping['objectID'].astype('i'))
+        self.pipeline.objectMeasures = {}
 
         if len(chans) == 0:
-            self.visFr.objectMeasures['Everything'] = objectMeasure.measureObjectsByID(self.visFr.colourFilter, 10,ids)
+            self.pipeline.objectMeasures['Everything'] = objectMeasure.measureObjectsByID(self.pipeline.colourFilter, 10,ids)
         else:
-            curChan = self.visFr.colourFilter.currentColour
+            curChan = self.pipeline.colourFilter.currentColour
 
             chanNames = chans[:]
 

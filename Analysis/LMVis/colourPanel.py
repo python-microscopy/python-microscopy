@@ -20,17 +20,20 @@ import sys
 import dyeRatios
 
 class colourPlotPanel(wxPlotPanel.PlotPanel):
-    def __init__(self, parent, visFrame, **kwargs ):
+    def __init__(self, parent, pipeline, visFrame, **kwargs ):
+        self.pipeline = pipeline
         self.visFrame = visFrame
         self.parent = parent
 
         wxPlotPanel.PlotPanel.__init__( self, parent, **kwargs )
 
     def draw( self ):
+            print 'd'
             """Draw data."""
-            if not self.visFrame.filter or len(self.visFrame.filter['x']) == 0:
+            if self.visFrame.refv and not self.pipeline.ready or len(self.pipeline.filter['x']) == 0:
                 return
             
+            print 'vd'            
             if not hasattr( self, 'subplot1' ):
                 self.subplot1 = self.figure.add_axes([.1, .1, .89, .89])
                 #self.subplot2 = self.figure.add_subplot( 122 )
@@ -39,7 +42,7 @@ class colourPlotPanel(wxPlotPanel.PlotPanel):
 
             self.subplot1.cla()
 
-            x, y = self.visFrame.filter['fitResults_Ag'], self.visFrame.filter['fitResults_Ar']
+            x, y = self.visFrame.pipeline['fitResults_Ag'], self.pipeline.filter['fitResults_Ar']
             n, xedge, yedge = numpy.histogram2d(x, y, bins = [100,100], range=[(x.min(), x.max()), (y.min(), y.max())])
 
             l_x = len(x)
@@ -51,22 +54,22 @@ class colourPlotPanel(wxPlotPanel.PlotPanel):
             c = -5e3*numpy.ones(x.shape)
 #            print (c < -1).sum(), c.min()
 
-            for k, v in self.visFrame.fluorSpecies.items():
-                p_dye = self.visFrame.mapping['p_%s' % k][::max(l_x/1e4, 1)]
+            for k, v in self.pipeline.fluorSpecies.items():
+                p_dye = self.pipeline.mapping['p_%s' % k][::max(l_x/1e4, 1)]
 
                 p_other = numpy.zeros(x.shape)
                 #p_tot = numpy.zeros(p_dye.shape)
-                p_tot = self.visFrame.t_p_background*self.visFrame.mapping['ColourNorm'][::max(l_x/1e4, 1)]
+                p_tot = self.pipeline.t_p_background*self.pipeline.mapping['ColourNorm'][::max(l_x/1e4, 1)]
 
-                for k2 in self.visFrame.fluorSpecies.keys():
-                    p_tot  += self.visFrame.mapping['p_%s' % k2][::max(l_x/1e4, 1)]
+                for k2 in self.pipeline.fluorSpecies.keys():
+                    p_tot  += self.pipeline.mapping['p_%s' % k2][::max(l_x/1e4, 1)]
                     if not k2 ==k:
-                        p_other = numpy.maximum(p_other, self.visFrame.mapping['p_%s' % k2][::max(l_x/1e4, 1)])
+                        p_other = numpy.maximum(p_other, self.pipeline.mapping['p_%s' % k2][::max(l_x/1e4, 1)])
 
                 p_dye = p_dye/p_tot
                 p_other = p_other/p_tot
 
-                c[(p_dye > self.visFrame.t_p_dye)*(p_other < self.visFrame.t_p_other)] = v
+                c[(p_dye > self.pipeline.t_p_dye)*(p_other < self.pipeline.t_p_other)] = v
 
             cs = 0.75*cm.jet_r(c.copy())[:,:3]
             
@@ -98,7 +101,7 @@ class colourPlotPanel(wxPlotPanel.PlotPanel):
             self.subplot1.set_ylim((0, yl))
 
 
-            for k, v in self.visFrame.fluorSpecies.items():
+            for k, v in self.pipeline.fluorSpecies.items():
                 self.subplot1.plot([0,xl], [0, ((1-v)/v)*xl], lw=2, c=cm.jet_r(v))
 
             self.canvas.draw()
@@ -112,13 +115,14 @@ class colourPlotPanel(wxPlotPanel.PlotPanel):
 #            self.subplot2.set_yticks([0, a.sum()])
 
 class colourPanel(wx.Panel):
-    def __init__(self, parent, visFrame, id=-1):
+    def __init__(self, parent, pipeline,visFrame, id=-1):
         wx.Panel.__init__(self, parent, id)
         bsizer = wx.BoxSizer(wx.VERTICAL)
 
         self.visFr = visFrame
+        self.pipeline = pipeline
 
-        self.colPlotPan = colourPlotPanel(self, visFrame)
+        self.colPlotPan = colourPlotPanel(self, pipeline, visFrame)
         bsizer.Add(self.colPlotPan, 4,wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5)
 
 #        hsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -155,7 +159,7 @@ class colourPanel(wx.Panel):
         self.lFluorSpecies.makeColumnEditable(4)
         self.lFluorSpecies.makeColumnEditable(5)
 
-        for key, value in self.visFr.fluorSpecies.items():
+        for key, value in self.pipeline.fluorSpecies.items():
             ind = self.lFluorSpecies.InsertStringItem(sys.maxint, key)
             self.lFluorSpecies.SetStringItem(ind,1, '%3.2f' % value)
             self.lFluorSpecies.SetItemTextColour(ind, wx.Colour(*((128*numpy.array(cm.jet_r(value)))[:3])))
@@ -200,7 +204,7 @@ class colourPanel(wx.Panel):
         hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
         hsizer2.Add(wx.StaticText(self, -1, 'p_dye:   '), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
-        self.tPBelong = wx.TextCtrl(self, -1, '%3.3f' % self.visFr.t_p_dye)
+        self.tPBelong = wx.TextCtrl(self, -1, '%3.3f' % self.pipeline.t_p_dye)
         hsizer2.Add(self.tPBelong, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
         self.tPBelong.Bind(wx.EVT_TEXT, self.OnChangePDye)
 
@@ -209,7 +213,7 @@ class colourPanel(wx.Panel):
         hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
         hsizer2.Add(wx.StaticText(self, -1, 'p_other:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
-        self.tPOther = wx.TextCtrl(self, -1, '%3.3f' % self.visFr.t_p_other)
+        self.tPOther = wx.TextCtrl(self, -1, '%3.3f' % self.pipeline.t_p_other)
         hsizer2.Add(self.tPOther, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
         self.tPOther.Bind(wx.EVT_TEXT, self.OnChangePOther)
 
@@ -225,11 +229,11 @@ class colourPanel(wx.Panel):
         self.Bind(wx.EVT_SHOW, self.OnShow)
 
     def OnChangePDye(self, event):
-        self.visFr.t_p_dye = float(self.tPBelong.GetValue())
+        self.pipeline.t_p_dye = float(self.tPBelong.GetValue())
         self.refresh()
 
     def OnChangePOther(self, event):
-        self.visFr.t_p_other = float(self.tPOther.GetValue())
+        self.pipeline.t_p_other = float(self.tPOther.GetValue())
         self.refresh()
 
     def OnSpecListRightClick(self, event):
@@ -274,7 +278,7 @@ class colourPanel(wx.Panel):
             if key == "":
                 return
 
-            self.visFr.fluorSpecies[key] = val
+            self.pipeline.fluorSpecies[key] = val
 
             ind = self.lFluorSpecies.InsertStringItem(sys.maxint, key)
             self.lFluorSpecies.SetStringItem(ind,1, '%3.2f' % val)
@@ -283,7 +287,7 @@ class colourPanel(wx.Panel):
 
             #self.visFr.mapping.setMapping('p_%s' % key, 'exp(-(%f*A - fitResults_Ag)**2/(2*fitError_Ag**2))*exp(-(%f*A - fitResults_Ar)**2/(2*fitError_Ar**2))' % (1- val, val))
             #self.visFr.mapping.setMapping('p_%s' % key, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))' % (val))
-            self.visFr.mapping.setMapping('p_%s' % key, '(1.0/(ColourNorm*2*numpy.pi*fitError_Ag*fitError_Ar))*exp(-(fitResults_Ag - %f*A)**2/(2*fitError_Ag**2) - (fitResults_Ar - %f*A)**2/(2*fitError_Ar**2))' % (val, 1-val))
+            self.pipeline.mapping.setMapping('p_%s' % key, '(1.0/(ColourNorm*2*numpy.pi*fitError_Ag*fitError_Ar))*exp(-(fitResults_Ag - %f*A)**2/(2*fitError_Ag**2) - (fitResults_Ar - %f*A)**2/(2*fitError_Ar**2))' % (val, 1-val))
 
             self.visFr.UpdatePointColourChoices()
             self.visFr.colourFilterPane.UpdateColourFilterChoices()
@@ -296,9 +300,9 @@ class colourPanel(wx.Panel):
     def OnSpecDelete(self, event):
         it = self.lFluorSpecies.GetItem(self.currentFilterItem)
         self.lFluorSpecies.DeleteItem(self.currentFilterItem)
-        self.visFr.fluorSpecies.pop(it.GetText())
+        self.pipeline.fluorSpecies.pop(it.GetText())
 
-        self.visFr.mapping.mappings.pop('p_%s' % it.GetText())
+        self.pipeline.mapping.mappings.pop('p_%s' % it.GetText())
 
         self.visFr.UpdatePointColourChoices()
         self.visFr.colourFilterPane.UpdateColourFilterChoices()
@@ -313,41 +317,41 @@ class colourPanel(wx.Panel):
         col = event.GetColumn()
 
         if col == 1: #frac
-            self.visFr.fluorSpecies[it.GetText()] = val
+            self.pipeline.fluorSpecies[it.GetText()] = val
             self.lFluorSpecies.SetItemTextColour(event.m_itemIndex, wx.Colour(*((128*numpy.array(cm.jet_r(val)))[:3])))
 
             #self.visFr.mapping.setMapping('p_%s' % it.GetText(), 'exp(-(%f*A - fitResults_Ag)**2/(4*fitError_Ag**2 + 2*fitError_Ar**2))*exp(-(%f*A - fitResults_Ar)**2/(2*fitError_Ag**2 +4*fitError_Ar**2))' % (1- val, val))
             #self.visFr.mapping.setMapping('p_%s' % it.GetText(), 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))' % (val))
-            self.visFr.mapping.setMapping('p_%s' % it.GetText(), '(1.0/(ColourNorm*2*numpy.pi*fitError_Ag*fitError_Ar))*exp(-(fitResults_Ag - %f*A)**2/(2*fitError_Ag**2) - (fitResults_Ar - %f*A)**2/(2*fitError_Ar**2))' % (val, 1-val))
+            self.pipeline.mapping.setMapping('p_%s' % it.GetText(), '(1.0/(ColourNorm*2*numpy.pi*fitError_Ag*fitError_Ar))*exp(-(fitResults_Ag - %f*A)**2/(2*fitError_Ag**2) - (fitResults_Ar - %f*A)**2/(2*fitError_Ar**2))' % (val, 1-val))
 
             self.refresh()
         else: #shift
             axis = ['x', 'y', 'z'][col-3]
             specName = it.GetText()
-            if not specName in self.visFr.chromaticShifts.keys():
-                self.visFr.chromaticShifts[specName] = {}
+            if not specName in self.pipeline.chromaticShifts.keys():
+                self.pipeline.chromaticShifts[specName] = {}
 
-            self.visFr.chromaticShifts[specName][axis] = val
+            self.pipeline.chromaticShifts[specName][axis] = val
             self.visFr.RefreshView()
 
     def OnSpecGuess(self, event):
         import scipy.cluster
         
         #count number of peaks in gFrac histogram
-        n = (numpy.diff(numpy.sign(numpy.diff(numpy.histogram(self.visFr.filter['gFrac'], numpy.linspace(0, 1, 20))[0]))) < 0).sum()
+        n = (numpy.diff(numpy.sign(numpy.diff(numpy.histogram(self.pipeline.filter['gFrac'], numpy.linspace(0, 1, 20))[0]))) < 0).sum()
 
-        guesses = scipy.cluster.vq.kmeans(self.visFr.filter['gFrac'], n)[0]
+        guesses = scipy.cluster.vq.kmeans(self.pipeline.filter['gFrac'], n)[0]
 
         for g, i in zip(guesses, range(n)):
             key = '%c' % (65 + i)
-            self.visFr.fluorSpecies[key] = g
+            self.pipeline.fluorSpecies[key] = g
             ind = self.lFluorSpecies.InsertStringItem(sys.maxint, key)
             self.lFluorSpecies.SetStringItem(ind,1, '%3.3f' % g)
             self.lFluorSpecies.SetItemTextColour(ind, wx.Colour(*((128*numpy.array(cm.jet_r(g)))[:3])))
 
             #self.visFr.mapping.setMapping('p_%s' % key, 'exp(-(%f*A - fitResults_Ag)**2/(2*fitError_Ag**2))*exp(-(%f*A - fitResults_Ar)**2/(2*fitError_Ar**2))' % (1- val, val))
             #self.visFr.mapping.setMapping('p_%s' % key, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))' % (g))
-            self.visFr.mapping.setMapping('p_%s' % key, '(1.0/(ColourNorm*2*numpy.pi*fitError_Ag*fitError_Ar))*exp(-(fitResults_Ag - %f*A)**2/(2*fitError_Ag**2) - (fitResults_Ar - %f*A)**2/(2*fitError_Ar**2))' % (val, 1-val))
+            self.pipeline.mapping.setMapping('p_%s' % key, '(1.0/(ColourNorm*2*numpy.pi*fitError_Ag*fitError_Ar))*exp(-(fitResults_Ag - %f*A)**2/(2*fitError_Ag**2) - (fitResults_Ar - %f*A)**2/(2*fitError_Ar**2))' % (val, 1-val))
 
         self.visFr.UpdatePointColourChoices()
         self.visFr.colourFilterPane.UpdateColourFilterChoices()
@@ -366,14 +370,14 @@ class colourPanel(wx.Panel):
             ratio = dyeRatios.getRatio(dye, mdh)
 
             if not ratio == None:
-                self.visFr.fluorSpecies[structure] = ratio
+                self.pipeline.fluorSpecies[structure] = ratio
                 ind = self.lFluorSpecies.InsertStringItem(sys.maxint, structure)
                 self.lFluorSpecies.SetStringItem(ind,1, '%3.3f' % ratio)
                 self.lFluorSpecies.SetItemTextColour(ind, wx.Colour(*((128*numpy.array(cm.jet_r(ratio)))[:3])))
 
                 #self.visFr.mapping.setMapping('p_%s' % key, 'exp(-(%f*A - fitResults_Ag)**2/(2*fitError_Ag**2))*exp(-(%f*A - fitResults_Ar)**2/(2*fitError_Ar**2))' % (1- val, val))
                 #self.visFr.mapping.setMapping('p_%s' % structure, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))' % (ratio))
-                self.visFr.mapping.setMapping('p_%s' % structure, '(1.0/(ColourNorm*2*numpy.pi*fitError_Ag*fitError_Ar))*exp(-(fitResults_Ag - %f*A)**2/(2*fitError_Ag**2) - (fitResults_Ar - %f*A)**2/(2*fitError_Ar**2))' % (ratio, 1-ratio))
+                self.pipeline.mapping.setMapping('p_%s' % structure, '(1.0/(ColourNorm*2*numpy.pi*fitError_Ag*fitError_Ar))*exp(-(fitResults_Ag - %f*A)**2/(2*fitError_Ag**2) - (fitResults_Ar - %f*A)**2/(2*fitError_Ar**2))' % (ratio, 1-ratio))
 
         self.visFr.UpdatePointColourChoices()
         self.visFr.colourFilterPane.UpdateColourFilterChoices()
@@ -383,28 +387,30 @@ class colourPanel(wx.Panel):
         
 
     def OnShow(self, event):
-        self.refresh()
+        #print event.IsShown()
+        if event.IsShown():
+            self.refresh()
 
     def refresh(self):
         self.colPlotPan.draw()
 
-        for key in self.visFr.fluorSpecies.keys():
+        for key in self.pipeline.fluorSpecies.keys():
             ind = self.lFluorSpecies.FindItem(-1,key)
-            p_dye = self.visFr.mapping['p_%s' % key]
+            p_dye = self.pipeline.mapping['p_%s' % key]
 
             p_other = numpy.zeros(p_dye.shape)
             #p_tot = numpy.zeros(p_dye.shape)
-            p_tot = self.visFr.t_p_background*self.visFr.mapping['ColourNorm']
+            p_tot = self.pipeline.t_p_background*self.pipeline.mapping['ColourNorm']
 
-            for k2 in self.visFr.fluorSpecies.keys():
-                p_tot  += self.visFr.mapping['p_%s' % k2]
+            for k2 in self.pipeline.fluorSpecies.keys():
+                p_tot  += self.pipeline.mapping['p_%s' % k2]
                 if not k2 ==key:
-                    p_other = numpy.maximum(p_other, self.visFr.mapping['p_%s' % k2])
+                    p_other = numpy.maximum(p_other, self.pipeline.mapping['p_%s' % k2])
 
             p_dye = p_dye/p_tot
             p_other = p_other/p_tot
 
-            self.lFluorSpecies.SetStringItem(ind,2, '%d' % ((p_dye > self.visFr.t_p_dye)*(p_other < self.visFr.t_p_other)).sum())
+            self.lFluorSpecies.SetStringItem(ind,2, '%d' % ((p_dye > self.pipeline.t_p_dye)*(p_other < self.pipeline.t_p_other)).sum())
 
 
         #self.colPlotPan._SetSize()

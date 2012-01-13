@@ -381,8 +381,8 @@ class ImageStack(object):
                 self.filename = ofn
 
 
-def GeneratedImage(img, imgBounds, pixelSize, sliceSize, channelNames):
-    image = ImageStack(img)
+def GeneratedImage(img, imgBounds, pixelSize, sliceSize, channelNames, mdh=None):
+    image = ImageStack(img, mdh=mdh)
     image.pixelSize = pixelSize
     image.sliceSize = sliceSize
     image.imgBounds = imgBounds
