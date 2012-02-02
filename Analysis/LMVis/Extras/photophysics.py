@@ -31,7 +31,9 @@ class DecayAnalyser:
 
         kinModels.fitDecay(pipeline.colourFilter, pipeline.mdh)
         kinModels.fitFluorBrightness(pipeline.colourFilter, pipeline.mdh)
+        kinModels.fitFluorBrightnessT(pipeline.colourFilter, pipeline.mdh)
         kinModels.fitOnTimes(pipeline.colourFilter, pipeline.mdh)
+        
 
     def OnRetrieveIntensitySteps(self, event):
         from PYME.Analysis import piecewiseMapping
