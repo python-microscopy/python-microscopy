@@ -51,47 +51,11 @@ class squiggle:
         except:
             voxx=1
 
-        #d_x = w
-        #d_y = w
-        
-
-        #pylab.figure()
         plots = []
         t = np.arange(np.ceil(len(pts)))
 
-        for chanNum in range(self.image.data.shape[3]):
-
-            #x_0 = min(lx, hx)
-            #y_0 = min(ly, hy)
-
-            #d__x = abs(d_x) + 1
-            #d__y = abs(d_y) + 1
-
-            #print dx, dy, d__x, d__y, w
-
-            #if(self.do.slice == self.do.SLICE_XY):
-            #    ims = self.image.data[(min(lx, hx) - d__x):(max(lx,hx)+d__x+1), (min(ly, hy)-d__y):(max(ly,hy)+d__y+1), self.do.zp, chanNum].squeeze()
-
-            #splf = ndimage.spline_filter(ims) 
-
-            #p = np.zeros(len(t))
-
-
-            #x_c = t*dx + lx - x_0
-            #y_c = t*dy + ly - y_0
-
-            #print splf.shape
-
-
-            #for i in range(-w, w+1):
-                #print np.vstack([x_c + d__x +i*dy, y_c + d__y + i*dx])
-            #    p += ndimage.map_coordinates(splf, pts.T, prefilter=False)
-
-            #p = p/(2*w + 1)
-            
+        for chanNum in range(self.image.data.shape[3]):       
             p = ndimage.map_coordinates(self.image.data[:,:, self.do.zp, chanNum].squeeze(), pts.T)
-
-
 
             plots.append(p.reshape(-1, 1,1))
 

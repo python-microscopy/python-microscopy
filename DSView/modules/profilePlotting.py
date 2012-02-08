@@ -30,6 +30,11 @@ class profiler:
         dsviewer.mProcessing.Append(PLOT_PROFILE, "Plot &Profile\tCtrl-K", "", wx.ITEM_NORMAL)
         
         dsviewer.Bind(wx.EVT_MENU, self.OnPlotProfile, id=PLOT_PROFILE)
+        
+        PLOT_ZPROFILE = wx.NewId()
+        dsviewer.mProcessing.Append(PLOT_ZPROFILE, "Plot Axial Profile", "", wx.ITEM_NORMAL)
+        
+        dsviewer.Bind(wx.EVT_MENU, self.OnPlotAxialProfile, id=PLOT_ZPROFILE)
 
         #accel_tbl = wx.AcceleratorTable([(wx.ACCEL_CTRL,  ord('k'), PLOT_PROFILE )])
         #self.dsviewer.SetAcceleratorTable(accel_tbl)
@@ -136,7 +141,64 @@ class profiler:
 
 
 
+    def OnPlotAxialProfile(self, event=None):
+        lx, ly, hx, hy = self.do.GetSliceSelection()
 
+        try:
+            names = self.image.mdh.getEntry('ChannelNames')
+        except:
+            names = ['Channel %d' % d for d in range(self.image.data.shape[3])]
+
+       
+        plots = []
+        t = np.arange(self.image.data.shape[2])
+        
+        try:
+            dt = self.image.mdh['Camera.CycleTime']
+        except:
+            dt = 1
+            
+        for chanNum in range(self.image.data.shape[3]):
+            plots.append(np.zeros((len(t), 1, 1)))
+
+        dlg = wx.ProgressDialog('Extracting Axial Profile', 'Progress', len(t) - 1)        
+        for i in t:      
+            for chanNum in range(self.image.data.shape[3]):
+                plots[chanNum][i] = self.image.data[lx:hx, ly:hy, i, chanNum].mean()
+                if (i % 10) == 0:
+                    dlg.Update(i, '%d of %d frames' % (i, t.size))
+                    
+        dlg.Destroy()
+                
+
+        #pylab.legend(names)
+
+        im = ImageStack(plots, titleStub='New Profile')
+        im.xvals = t*dt
+
+        if not dt == 1:
+            im.xlabel = 'Time [s]'
+        else:
+            im.xlabel = 'Time [frames]'
+
+        im.ylabel = 'Intensity'
+        im.defaultExt = '.txt'
+
+        im.mdh['voxelsize.x'] = dt
+        im.mdh['ChannelNames'] = names
+        im.mdh['Profile.XValues'] = im.xvals
+        im.mdh['Profile.XLabel'] = im.xlabel
+        im.mdh['Profile.YLabel'] = im.ylabel
+        im.mdh['Profile.X1'] = lx
+        im.mdh['Profile.Y1'] = ly
+        im.mdh['Profile.X2'] = hx
+        im.mdh['Profile.Y2'] = hy
+
+        im.mdh['OriginalImage'] = self.image.filename
+        
+        im.parent = self.image
+
+        ViewIm3D(im, mode='graph')
 
 
 
