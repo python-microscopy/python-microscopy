@@ -171,6 +171,7 @@ from PYME.Acquire.Hardware import phoxxLaser
 scope.l642 = phoxxLaser.PhoxxLaser('642')
 scope.StatusCallbacks.append(scope.l642.GetStatusText)
 scope.lasers = [scope.l642]
+# scope.lasers = []
 #InitBG('DigiData', '''
 #from PYME.Acquire.Hardware.DigiData import DigiDataClient
 #dd = DigiDataClient.getDDClient()

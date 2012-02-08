@@ -32,22 +32,15 @@ from PYME.Acquire.Hardware import ccdCalibrator
 from PYME.cSMI import CDataStack_AsArray
 from math import exp
 import sqlite3
-import cPickle as pickle
+#import cPickle as pickle
 import os
-from numpy import ndarray
+#from numpy import ndarray
 import datetime
 #import piezo_e662
 #import piezo_e816
 
-#teach sqlite about numpy arrays
-def adapt_numarray(array):
-    return sqlite3.Binary(array.dumps())
-
-def convert_numarray(s):
-    return pickle.loads(s)
-
-sqlite3.register_adapter(ndarray, adapt_numarray)
-sqlite3.register_converter("ndarray", convert_numarray)
+#register handlers for ndarrays
+from PYME.misc import sqlitendarray
 
 
 
