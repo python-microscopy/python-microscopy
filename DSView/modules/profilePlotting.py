@@ -154,9 +154,17 @@ class profiler:
         t = np.arange(self.image.data.shape[2])
         
         try:
-            dt = self.image.mdh['Camera.CycleTime']
+            stack = (self.image.mdh['AcquisitionType'] == 'Stack')
         except:
-            dt = 1
+            stack = False                
+        
+        if stack:
+            dt = self.image.mdh['voxelsize.z']
+        else:
+            try:        
+                dt = self.image.mdh['Camera.CycleTime']
+            except:
+                dt = 1
             
         for chanNum in range(self.image.data.shape[3]):
             plots.append(np.zeros((len(t), 1, 1)))
@@ -176,7 +184,9 @@ class profiler:
         im = ImageStack(plots, titleStub='New Profile')
         im.xvals = t*dt
 
-        if not dt == 1:
+        if stack:
+            im.xlabel = 'Position [um]'
+        elif not dt == 1:
             im.xlabel = 'Time [s]'
         else:
             im.xlabel = 'Time [frames]'

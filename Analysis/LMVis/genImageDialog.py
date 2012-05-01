@@ -100,7 +100,7 @@ class GenImageDialog(wx.Dialog):
             sizer2 = wx.BoxSizer(wx.HORIZONTAL)
             sizer2.Add(wx.StaticText(self, -1, 'Z slice thickness [nm]:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
-            self.tZThickness = wx.TextCtrl(self, -1, '100', size=(60, -1))
+            self.tZThickness = wx.TextCtrl(self, -1, '50', size=(60, -1))
             sizer2.Add(self.tZThickness, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
             sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
 

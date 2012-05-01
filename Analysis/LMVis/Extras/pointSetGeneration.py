@@ -90,7 +90,7 @@ class ImageSource(PointSource):
     #foo = Enum([1,2,3,4])
 
     def getPoints(self):
-        from PYME.Simulation import locify
+        from PYMEnf.Simulation import locify
 
         im = image.openImages[self.image]
         #import numpy as np
@@ -182,7 +182,7 @@ class Generator(HasTraits):
         self.OnGenEvents(None)
 
     def OnGenEvents(self, event):
-        from PYME.Simulation import locify
+        from PYMEnf.Simulation import locify
         #from PYME.Acquire.Hardware.Simulator import wormlike2
         from PYME.Analysis.LMVis import inpFilt
         from PYME.Analysis.LMVis.visHelpers import ImageBounds
@@ -191,6 +191,7 @@ class Generator(HasTraits):
         #wc = wormlike2.wormlikeChain(100)
         
         pipeline = self.visFr.pipeline
+        pipeline.filename='Simulation'
 
         pylab.figure()
         pylab.plot(self.xp, self.yp, 'x') #, lw=2)

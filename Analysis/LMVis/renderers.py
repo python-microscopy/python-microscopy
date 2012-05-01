@@ -34,6 +34,7 @@ class CurrentRenderer:
 
     name = 'Current'
     mode = 'current'
+    _defaultPixelSize = 5.0
     
     def __init__(self, visFr, pipeline):
         self.visFr = visFr
@@ -148,7 +149,7 @@ class ColourRenderer(CurrentRenderer):
         else:
             zvals = None
 
-        dlg = genImageDialog.GenImageDialog(self.visFr, mode=self.mode, colours=self.pipeline.fluorSpecies.keys(), zvals = zvals, jitterVariables = jitVars, jitterVarDefault=self._getDefaultJitVar(jitVars), jitterVarDefaultZ=self._getDefaultZJitVar(jitVars))
+        dlg = genImageDialog.GenImageDialog(self.visFr, mode=self.mode, defaultPixelSize=self._defaultPixelSize, colours=self.pipeline.fluorSpecies.keys(), zvals = zvals, jitterVariables = jitVars, jitterVarDefault=self._getDefaultJitVar(jitVars), jitterVarDefaultZ=self._getDefaultZJitVar(jitVars))
         ret = dlg.ShowModal()
 
         bCurr = wx.BusyCursor()
@@ -267,6 +268,7 @@ class TriangleRenderer(ColourRenderer):
 
     name = 'Jittered Triangulation'
     mode = 'triangles'
+    _defaultPixelSize = 5.0
 
     def genIm(self, dlg, imb, mdh):
         pixelSize = dlg.getPixelSize()
@@ -289,6 +291,7 @@ class Triangle3DRenderer(TriangleRenderer):
 
     name = '3D Triangularisation'
     mode = '3Dtriangles'
+    _defaultPixelSize = 5.0
 
     def genIm(self, dlg, imb, mdh):
         pixelSize = dlg.getPixelSize()
