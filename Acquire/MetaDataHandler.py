@@ -118,7 +118,15 @@ class HDFMDHandler(MDHandlerBase):
         en = entPath[-1]
         ep = entPath[:-1]
 
-        return self.h5file.getNodeAttr('/'.join(['', 'MetaData']+ ep), en)
+        res =  self.h5file.getNodeAttr('/'.join(['', 'MetaData']+ ep), en)
+        
+        #dodgy hack to get around a problem with zero length strings not
+        #being picklable if they are numpy (rather than pure python) types
+        #this code should convert a numpy empty string into a python empty string
+        if res == '':
+            return ''
+        
+        return res
         
 
 

@@ -130,12 +130,15 @@ class ImageStack(object):
     def LoadQueue(self, filename):
         import Pyro.core
         from PYME.Analysis.DataSources import TQDataSource
+        from PYME.misc.computerName import GetComputerName
+        compName = GetComputerName()
 
         if self.queueURI == None:
-            if 'PYME_TASKQUEUENAME' in os.environ.keys():
-                taskQueueName = os.environ['PYME_TASKQUEUENAME']
-            else:
-                taskQueueName = 'taskQueue'
+            #if 'PYME_TASKQUEUENAME' in os.environ.keys():
+            #    taskQueueName = os.environ['PYME_TASKQUEUENAME']
+            #else:
+            #    taskQueueName = 'taskQueue'
+            taskQueueName = 'TaskQueues.%s' % compName
             self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
         else:
             self.tq = Pyro.core.getProxyForURI(self.queueURI)

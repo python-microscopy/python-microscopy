@@ -114,6 +114,12 @@ scope.zStage = NikonTi.zDrive()
 scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
 ''')# % GetComputerName())
 
+#Z stage
+InitGUI('''
+from PYME.Acquire.Hardware import NikonTi
+scope.dichroic = NikonTi.FilterChanger()
+''')# % GetComputerName())
+
 InitGUI('''
 from PYME.Acquire.Hardware import focusKeys
 fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[0], scope=scope)
