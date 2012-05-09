@@ -223,13 +223,15 @@ class seqPanel(wx.Panel):
     def OnSingleEnd(self):
         #wx.MessageBox('Acquisition Finished')
         self.scope.zs.WantFrameNotification.remove(self.OnSingleEnd)
+        self.scope.zs.WantTickNotification.remove(self.dlgAqProg.Tick)
         self.bStart.Enable(True)
         self.bLive.SetLabel('Live')
         
         self.scope.zs.view._mgr.ClosePane(self.pinfo1)
         self.scope.zs.view._mgr.Update()
+        print 'se'
         
-        self.scope.zs.WantTickNotification.remove(self.dlgAqProg.Tick)
+        
         
     def OnBLive(self, event, single=False):
         import zScanner
