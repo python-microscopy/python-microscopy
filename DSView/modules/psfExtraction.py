@@ -93,6 +93,8 @@ class psfExtractor:
                 self.view.Refresh()
                 return
                 
+        #if we have a muilt-colour stack, 
+                
         rsx, rsy, rsz = [int(s) for s in self.tPSFROI.GetValue().split(',')]
         dx, dy, dz = extractImages.getIntCenter(self.image.data[(self.do.xp-rsx):(self.do.xp+rsx + 1),(self.do.yp-rsy):(self.do.yp+rsy+1), :])
         self.PSFLocs.append((self.do.xp + dx, self.do.yp + dy, dz))
