@@ -50,7 +50,7 @@ cm_grey = cmap_mult(numpy.ones(3), [0, 0, 0])
 
 class LMGLCanvas(GLCanvas):
     def __init__(self, parent, trackSelection=True, vp = None, vpVoxSize = None):
-        attriblist = [wx.glcanvas.WX_GL_RGBA, wx.glcanvas.WX_GL_DOUBLEBUFFER, 0]
+        attriblist = [wx.glcanvas.WX_GL_RGBA,wx.glcanvas.WX_GL_STENCIL_SIZE,8, wx.glcanvas.WX_GL_DOUBLEBUFFER, 0]
         GLCanvas.__init__(self, parent,-1)#, attribList = attriblist)
         #GLCanvas.__init__(self, parent,-1)
         wx.EVT_PAINT(self, self.OnPaint)
@@ -62,6 +62,8 @@ class LMGLCanvas(GLCanvas):
             wx.EVT_MOTION(self, self.OnMouseMove)
         #wx.EVT_ERASE_BACKGROUND(self, self.OnEraseBackground)
         #wx.EVT_IDLE(self, self.OnIdle)
+        
+        self.gl_context = wx.glcanvas.GLContext(self)
 
         self.init = False
         self.nVertices = 0
@@ -121,7 +123,10 @@ class LMGLCanvas(GLCanvas):
 
     def OnPaint(self,event):
         dc = wx.PaintDC(self)
-        self.SetCurrent()
+        print self.GetContext()
+        self.SetCurrent(self.gl_context)
+        print self.gl_context
+        print self.GetContext()
         #print 'OnPaint', event.GetId()
         if not self.init:
             self.InitGL()
@@ -155,6 +160,8 @@ class LMGLCanvas(GLCanvas):
 
         glLoadIdentity()
         glOrtho(self.xmin,self.xmax,self.ymin,self.ymax,self.zmin,self.zmax)
+        
+        glDisable(GL_LIGHTING)
 
         #glRotatef(self.ang, 0, 1, 0)
         #glPushMatrix()
@@ -234,6 +241,8 @@ class LMGLCanvas(GLCanvas):
         glOrtho(self.xmin,self.xmax,self.ymin,self.ymax,-1,1)
         glClearColor(0.0, 0.0, 0.0, 1.0)
         glClearDepth(1.0)
+        
+        glEnable(GL_POINT_SMOOTH)
 
 
         glEnableClientState(GL_VERTEX_ARRAY)
