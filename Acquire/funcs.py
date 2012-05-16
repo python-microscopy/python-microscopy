@@ -41,7 +41,7 @@ import datetime
 
 #register handlers for ndarrays
 from PYME.misc import sqlitendarray
-
+#from PYME.Acquire import MetaDataHandler
 
 
 class microscope:
@@ -78,6 +78,9 @@ class microscope:
         self._OpenSettingsDB()
 
         MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
+        
+        #provision to set global metadata values in startup script
+        self.mdh = MetaDataHandler.NestedClassMDHandler()
 
     def _OpenSettingsDB(self):
         #create =  not os.path.exists('PYMESettings.db')
@@ -116,6 +119,8 @@ class microscope:
 
         for p in self.piezos:
             mdh.setEntry('Positioning.%s' % p[2].replace(' ', '_').replace('-', '_'), p[0].GetPos(p[1]))
+            
+        mdh.copyEntriesFrom(self.mdh)
 
     def AddVoxelSizeSetting(self, name, x, y):
         self.settingsDB.execute("INSERT INTO VoxelSizes (name, x, y) VALUES (?, ?, ?)", (name, x, y))

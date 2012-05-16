@@ -55,7 +55,7 @@ cm_grey = cmap_mult(numpy.ones(3), [0, 0, 0])
 
 class LMGLCanvas(GLCanvas):
     def __init__(self, parent):
-        attriblist = [wx.glcanvas.WX_GL_RGBA,wx.glcanvas.WX_GL_STENCIL_SIZE,8, wx.glcanvas.WX_GL_DOUBLEBUFFER, 0]
+        attriblist = [wx.glcanvas.WX_GL_RGBA,wx.glcanvas.WX_GL_STENCIL_SIZE,8, wx.glcanvas.WX_GL_DOUBLEBUFFER, 16]
         GLCanvas.__init__(self, parent,-1, attribList = attriblist)
         wx.EVT_PAINT(self, self.OnPaint)
         wx.EVT_SIZE(self, self.OnSize)
@@ -359,9 +359,9 @@ class LMGLCanvas(GLCanvas):
 
         to = testObj()
 
-        self.setBlob(to[0], to[1], to[2], smScale=[1e3,1e3,1e3])
+        #self.setBlob(to[0], to[1], to[2], smScale=[1e3,1e3,1e3])
         #self.setTriang(to[0], to[1], to[2])
-        #self.setPoints(to[0], to[1], to[2], to[2])
+        self.setPoints(to[0], to[1], to[2], to[2])
         self.ResetView()
 
         #glMatrixMode(GL_PROJECTION)
