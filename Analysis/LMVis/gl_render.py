@@ -63,7 +63,8 @@ class LMGLCanvas(GLCanvas):
         #wx.EVT_ERASE_BACKGROUND(self, self.OnEraseBackground)
         #wx.EVT_IDLE(self, self.OnIdle)
         
-        self.gl_context = wx.glcanvas.GLContext(self)
+        #self.gl_context = wx.glcanvas.GLContext(self)
+        #self.gl_context.SetCurrent()
 
         self.init = False
         self.nVertices = 0
@@ -123,10 +124,10 @@ class LMGLCanvas(GLCanvas):
 
     def OnPaint(self,event):
         dc = wx.PaintDC(self)
-        print self.GetContext()
-        self.SetCurrent(self.gl_context)
-        print self.gl_context
-        print self.GetContext()
+        #print self.GetContext()
+        self.SetCurrent()
+        #print self.gl_context
+        #print self.GetContext()
         #print 'OnPaint', event.GetId()
         if not self.init:
             self.InitGL()
