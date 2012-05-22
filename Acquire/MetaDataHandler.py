@@ -55,6 +55,7 @@ class MDHandlerBase(DictMixin):
 
     def copyEntriesFrom(self, mdToCopy):
         for en in mdToCopy.getEntryNames():
+            #print en
             self.setEntry(en, mdToCopy.getEntry(en))
         #self.update(mdToCopy)
 

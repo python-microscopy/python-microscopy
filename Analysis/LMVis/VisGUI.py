@@ -717,8 +717,9 @@ class VisGUIFrame(wx.Frame):
     def OnView3DPoints(self,event):
         if 'z' in self.pipeline.keys():
             if not 'glCanvas3D' in dir(self):
-                self.glCanvas3D = gl_render3D.LMGLCanvas(self)
-                self.AddPage(page=self.glCanvas3D, select=True, caption='3D')
+                #self.glCanvas3D = gl_render3D.LMGLCanvas(self)
+                #self.AddPage(page=self.glCanvas3D, select=True, caption='3D')
+                self.glCanvas3D = gl_render3D.showGLFrame()
 
             #else:            
             self.glCanvas3D.setPoints(self.pipeline['x'], 
