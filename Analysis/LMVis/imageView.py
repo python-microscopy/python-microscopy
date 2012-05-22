@@ -133,6 +133,13 @@ class ImageViewPanel(wx.Panel):
 
             if self.do.selectionMode == DisplayOpts.SELECTION_RECTANGLE:
                 dc.DrawRectangle(lx,ly, (hx-lx),(hy-ly))
+                
+            elif self.do.selectionMode == DisplayOpts.SELECTION_SQUIGLE:
+                if len(self.do.selection_trace) > 2:
+                    x, y = numpy.array(self.do.selection_trace).T
+                    pts = numpy.vstack(self._PixelToScreenCoordinates(x, y)).T
+                    print pts.shape
+                    dc.DrawSpline(pts)
             elif self.do.selectionWidth == 1:
                 dc.DrawLine(lx,ly, hx,hy)
             else:
@@ -249,6 +256,9 @@ class ImageViewPanel(wx.Panel):
         
         self.do.selection_begin_x = int(xp)
         self.do.selection_begin_y = int(yp)
+        
+        self.do.selection_trace = []
+        self.do.selection_trace.append((xp, yp))
 
     def OnMotion(self, event):
         if event.Dragging() and self.selecting:
@@ -274,6 +284,8 @@ class ImageViewPanel(wx.Panel):
                 self.do.selection_end_x = self.do.selection_begin_x
             else: #diagonal
                 self.do.selection_end_y = self.do.selection_begin_y + dx*numpy.sign(self.do.selection_end_y - self.do.selection_begin_y)
+                
+        self.do.selection_trace.append((xp, yp))
 
         self.Refresh()
 

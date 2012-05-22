@@ -32,23 +32,16 @@ from PYME.Acquire.Hardware import ccdCalibrator
 from PYME.cSMI import CDataStack_AsArray
 from math import exp
 import sqlite3
-import cPickle as pickle
+#import cPickle as pickle
 import os
-from numpy import ndarray
+#from numpy import ndarray
 import datetime
 #import piezo_e662
 #import piezo_e816
 
-#teach sqlite about numpy arrays
-def adapt_numarray(array):
-    return sqlite3.Binary(array.dumps())
-
-def convert_numarray(s):
-    return pickle.loads(s)
-
-sqlite3.register_adapter(ndarray, adapt_numarray)
-sqlite3.register_converter("ndarray", convert_numarray)
-
+#register handlers for ndarrays
+from PYME.misc import sqlitendarray
+#from PYME.Acquire import MetaDataHandler
 
 
 class microscope:
@@ -85,6 +78,9 @@ class microscope:
         self._OpenSettingsDB()
 
         MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
+        
+        #provision to set global metadata values in startup script
+        self.mdh = MetaDataHandler.NestedClassMDHandler()
 
     def _OpenSettingsDB(self):
         #create =  not os.path.exists('PYMESettings.db')
@@ -123,6 +119,8 @@ class microscope:
 
         for p in self.piezos:
             mdh.setEntry('Positioning.%s' % p[2].replace(' ', '_').replace('-', '_'), p[0].GetPos(p[1]))
+            
+        mdh.copyEntriesFrom(self.mdh)
 
     def AddVoxelSizeSetting(self, name, x, y):
         self.settingsDB.execute("INSERT INTO VoxelSizes (name, x, y) VALUES (?, ?, ?)", (name, x, y))

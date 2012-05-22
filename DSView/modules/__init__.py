@@ -16,7 +16,7 @@ modeModules = {
 'blob' : ['arrayView'] + liteModules + basemodules + ['blobFinding', 'psfExtraction'],
 'default' : ['arrayView'] + liteModules + basemodules + ['psfExtraction'],
 'visGUI' : ['visgui'] + liteModules + ['coloc', 'vis3D'],
-'graph' : ['graphViewPanel'],
+'graph' : ['graphViewPanel', 'profileFitting'],
 'bare' : [],
 }
 

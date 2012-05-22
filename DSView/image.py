@@ -130,12 +130,15 @@ class ImageStack(object):
     def LoadQueue(self, filename):
         import Pyro.core
         from PYME.Analysis.DataSources import TQDataSource
+        from PYME.misc.computerName import GetComputerName
+        compName = GetComputerName()
 
         if self.queueURI == None:
-            if 'PYME_TASKQUEUENAME' in os.environ.keys():
-                taskQueueName = os.environ['PYME_TASKQUEUENAME']
-            else:
-                taskQueueName = 'taskQueue'
+            #if 'PYME_TASKQUEUENAME' in os.environ.keys():
+            #    taskQueueName = os.environ['PYME_TASKQUEUENAME']
+            #else:
+            #    taskQueueName = 'taskQueue'
+            taskQueueName = 'TaskQueues.%s' % compName
             self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
         else:
             self.tq = Pyro.core.getProxyForURI(self.queueURI)
@@ -291,6 +294,12 @@ class ImageStack(object):
                 self.filename = mdfn
             except:
                 pass
+            
+        elif 'ChannelNames' in self.mdh.getEntryNames() and len(self.mdh['ChannelNames']) == self.data.getNumSlices():
+            from PYME.DSView.dataWrap import ListWrap
+            chans = [numpy.atleast_3d(self.data.getSlice(i)) for i in range(len(self.mdh['ChannelNames']))]
+            self.data = ListWrap(chans)
+            
 
 
         
@@ -375,8 +384,8 @@ class ImageStack(object):
                 self.filename = ofn
 
 
-def GeneratedImage(img, imgBounds, pixelSize, sliceSize, channelNames):
-    image = ImageStack(img)
+def GeneratedImage(img, imgBounds, pixelSize, sliceSize, channelNames, mdh=None):
+    image = ImageStack(img, mdh=mdh)
     image.pixelSize = pixelSize
     image.sliceSize = sliceSize
     image.imgBounds = imgBounds

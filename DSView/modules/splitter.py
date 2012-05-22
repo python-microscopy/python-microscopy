@@ -38,7 +38,7 @@ class Unmixer:
             sf = None
 
         flip = True
-        if 'Splitter.Flip' in mdh.getEntryNames():
+        if 'Splitter.Flip' in mdh.getEntryNames() and not mdh['Splitter.Flip']:
             flip = False
 
         ROIX1 = mdh.getEntry('Camera.ROIPosX')

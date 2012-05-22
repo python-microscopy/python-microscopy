@@ -26,22 +26,29 @@ class DecayAnalyser:
 
     def OnCalcDecays(self, event):
         from PYME.Analysis.BleachProfile import kinModels
+        
+        pipeline = self.visFr.pipeline
 
-        kinModels.fitDecay(self.visFr.colourFilter, self.visFr.mdh)
-        kinModels.fitFluorBrightness(self.visFr.colourFilter, self.visFr.mdh)
-        kinModels.fitOnTimes(self.visFr.colourFilter, self.visFr.mdh)
+        kinModels.fitDecay(pipeline.colourFilter, pipeline.mdh)
+        kinModels.fitFluorBrightness(pipeline.colourFilter, pipeline.mdh)
+        kinModels.fitFluorBrightnessT(pipeline.colourFilter, pipeline.mdh)
+        kinModels.fitOnTimes(pipeline.colourFilter, pipeline.mdh)
+        
 
     def OnRetrieveIntensitySteps(self, event):
         from PYME.Analysis import piecewiseMapping
-        fw = piecewiseMapping.GeneratePMFromProtocolEvents(self.visFr.events, self.visFr.mdh, self.visFr.mdh.getEntry('StartTime'), 10)
-        self.visFr.selectedDataSource.fw = fw(self.visFr.selectedDataSource['t'])
-        self.visFr.selectedDataSource.setMapping('filter', 'fw')
-        self.visFr.selectedDataSource.setMapping('ColourNorm', '0.0*t')
 
-        vals = list(set(self.visFr.selectedDataSource.fw))
+        pipeline = self.visFr.pipeline        
+        
+        fw = piecewiseMapping.GeneratePMFromProtocolEvents(pipeline.events, pipeline.mdh, pipeline.mdh.getEntry('StartTime'), 10)
+        pipeline.selectedDataSource.fw = fw(pipeline.selectedDataSource['t'])
+        pipeline.selectedDataSource.setMapping('filter', 'fw')
+        pipeline.selectedDataSource.setMapping('ColourNorm', '0.0*t')
+
+        vals = list(set(pipeline.selectedDataSource.fw))
 
         for key in vals:
-            self.visFr.mapping.setMapping('p_%d' % key, 'filter == %d' % key)
+            pipeline.mapping.setMapping('p_%d' % key, 'filter == %d' % key)
 
         #self.visFr.UpdatePointColourChoices()
         self.visFr.colourFilterPane.UpdateColourFilterChoices()

@@ -25,8 +25,12 @@ def binAvg(binVar, indepVar, bins):
         v = indepVar[(binVar >= el)*(binVar < er)]
 
         bn[i] = len(v)
-        bm[i] = v.mean()
-        bs[i] = v.std()
+        if bn[i] == 0:
+            bm[i] = 0
+            bs[i] = 0
+        else:
+            bm[i] = v.mean()
+            bs[i] = v.std()
 
     return bn, bm, bs
 

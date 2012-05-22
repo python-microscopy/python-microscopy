@@ -34,6 +34,7 @@ class ParticleTracker:
         import PYME.Analysis.trackUtils as trackUtils
 
         visFr = self.visFr
+        pipeline = visFr.pipeline
 
         bCurr = wx.BusyCursor()
         dlg = deClumpGUI.deClumpDialog(visFr)
@@ -44,28 +45,28 @@ class ParticleTracker:
             nFrames = dlg.GetClumpTimeWindow()
             rad_var = dlg.GetClumpRadiusVariable()
             if rad_var == '1.0':
-                delta_x = 0*visFr.mapping['x'] + dlg.GetClumpRadiusMultiplier()
+                delta_x = 0*pipeline.mapping['x'] + dlg.GetClumpRadiusMultiplier()
             else:
-                delta_x = dlg.GetClumpRadiusMultiplier()*visFr.mapping[rad_var]
+                delta_x = dlg.GetClumpRadiusMultiplier()*pipeline.mapping[rad_var]
 
-        clumpIndices = deClump.findClumps(visFr.mapping['t'].astype('i'), visFr.mapping['x'].astype('f4'), visFr.mapping['y'].astype('f4'), delta_x.astype('f4'), nFrames)
+        clumpIndices = deClump.findClumps(pipeline.mapping['t'].astype('i'), pipeline.mapping['x'].astype('f4'), pipeline.mapping['y'].astype('f4'), delta_x.astype('f4'), nFrames)
         numPerClump, b = np.histogram(clumpIndices, np.arange(clumpIndices.max() + 1.5) + .5)
 
-        trackVelocities = trackUtils.calcTrackVelocity(visFr.mapping['x'], visFr.mapping['y'], clumpIndices)
+        trackVelocities = trackUtils.calcTrackVelocity(pipeline.mapping['x'], pipeline.mapping['y'], clumpIndices)
         #print b
 
-        visFr.selectedDataSource.clumpIndices = -1*np.ones(len(visFr.selectedDataSource['x']))
-        visFr.selectedDataSource.clumpIndices[visFr.filter.Index] = clumpIndices
+        pipeline.selectedDataSource.clumpIndices = -1*np.ones(len(pipeline.selectedDataSource['x']))
+        pipeline.selectedDataSource.clumpIndices[pipeline.filter.Index] = clumpIndices
 
-        visFr.selectedDataSource.clumpSizes = np.zeros(visFr.selectedDataSource.clumpIndices.shape)
-        visFr.selectedDataSource.clumpSizes[visFr.filter.Index] = numPerClump[clumpIndices - 1]
+        pipeline.selectedDataSource.clumpSizes = np.zeros(pipeline.selectedDataSource.clumpIndices.shape)
+        pipeline.selectedDataSource.clumpSizes[pipeline.filter.Index] = numPerClump[clumpIndices - 1]
 
-        visFr.selectedDataSource.trackVelocities = np.zeros(visFr.selectedDataSource.clumpIndices.shape)
-        visFr.selectedDataSource.trackVelocities[visFr.filter.Index] = trackVelocities
+        pipeline.selectedDataSource.trackVelocities = np.zeros(pipeline.selectedDataSource.clumpIndices.shape)
+        pipeline.selectedDataSource.trackVelocities[pipeline.filter.Index] = trackVelocities
 
-        visFr.selectedDataSource.setMapping('clumpIndex', 'clumpIndices')
-        visFr.selectedDataSource.setMapping('clumpSize', 'clumpSizes')
-        visFr.selectedDataSource.setMapping('trackVelocity', 'trackVelocities')
+        pipeline.selectedDataSource.setMapping('clumpIndex', 'clumpIndices')
+        pipeline.selectedDataSource.setMapping('clumpSize', 'clumpSizes')
+        pipeline.selectedDataSource.setMapping('trackVelocity', 'trackVelocities')
 
         visFr.RegenFilter()
         visFr.CreateFoldPanel()
@@ -80,26 +81,28 @@ class ParticleTracker:
         def powerMod(p,t):
             D, alpha = p
             return 4*D*t**alpha #factor 4 for 2D (6 for 3D)
+            
+        pipeline = self.visFr.pipeline
 
-        clumps = set(self.visFr.mapping['clumpIndex'])
+        clumps = set(pipeline.mapping['clumpIndex'])
 
-        dt = self.visFr.mdh.getEntry('Camera.CycleTime')
+        dt = pipeline.mdh.getEntry('Camera.CycleTime')
 
 
         Ds = np.zeros(len(clumps))
-        Ds_ =  np.zeros(self.visFr.mapping['x'].shape)
+        Ds_ =  np.zeros(pipeline.mapping['x'].shape)
         alphas = np.zeros(len(clumps))
-        alphas_ =  np.zeros(self.visFr.mapping['x'].shape)
+        alphas_ =  np.zeros(pipeline.mapping['x'].shape)
         error_Ds = np.zeros(len(clumps))
 
         pylab.figure()
 
         for i, ci in enumerate(clumps):
-            I = self.visFr.mapping['clumpIndex'] == ci
+            I = pipeline.mapping['clumpIndex'] == ci
 
-            x = self.visFr.mapping['x'][I]
-            y = self.visFr.mapping['y'][I]
-            t = self.visFr.mapping['t'][I]
+            x = pipeline.mapping['x'][I]
+            y = pipeline.mapping['y'][I]
+            t = pipeline.mapping['t'][I]
 
             nT = (t.max() - t.min())/2
 
@@ -126,14 +129,14 @@ class ParticleTracker:
         pylab.figure()
         pylab.scatter(Ds, alphas)
 
-        self.visFr.selectedDataSource.diffusionConstants = -1*np.ones(self.visFr.selectedDataSource.clumpIndices.shape)
-        self.visFr.selectedDataSource.diffusionConstants[self.visFr.filter.Index] = Ds_
+        pipeline.selectedDataSource.diffusionConstants = -1*np.ones(pipeline.selectedDataSource.clumpIndices.shape)
+        pipeline.selectedDataSource.diffusionConstants[pipeline.filter.Index] = Ds_
 
-        self.visFr.selectedDataSource.diffusionExponents = np.zeros(self.visFr.selectedDataSource.clumpIndices.shape)
-        self.visFr.selectedDataSource.diffusionExponents[self.visFr.filter.Index] = alphas_
+        pipeline.selectedDataSource.diffusionExponents = np.zeros(pipeline.selectedDataSource.clumpIndices.shape)
+        pipeline.selectedDataSource.diffusionExponents[pipeline.filter.Index] = alphas_
 
-        self.visFr.selectedDataSource.setMapping('diffusionConst', 'diffusionConstants')
-        self.visFr.selectedDataSource.setMapping('diffusionExp', 'diffusionExponents')
+        pipeline.selectedDataSource.setMapping('diffusionConst', 'diffusionConstants')
+        pipeline.selectedDataSource.setMapping('diffusionExp', 'diffusionExponents')
 
         self.visFr.RegenFilter()
         self.visFr.CreateFoldPanel()
@@ -142,11 +145,13 @@ class ParticleTracker:
         from PYME.Analysis.LMVis import inpFilt
         from PYME.Analysis.DeClump import pyDeClump
         
-        dclumped = pyDeClump.coalesceClumps(self.visFr.selectedDataSource.resultsSource.fitResults, self.visFr.selectedDataSource.clumpIndices)
+        pipeline = self.visFr.pipeline
+        
+        dclumped = pyDeClump.coalesceClumps(pipeline.selectedDataSource.resultsSource.fitResults, pipeline.selectedDataSource.clumpIndices)
         ds = inpFilt.fitResultsSource(dclumped)
         
-        self.visFr.selectedDataSource = ds
-        self.visFr.dataSources.append(ds)
+        pipeline.selectedDataSource = ds
+        pipeline.dataSources.append(ds)
         self.visFr.RegenFilter()
         self.visFr.CreateFoldPanel()
 

@@ -1,15 +1,19 @@
 REGEDIT4
 
-
-
 [HKEY_CLASSES_ROOT\pyme]
-
 @="URL:PYME Protocol"
-
 "URL Protocol"=""
 
-
-
 [HKEY_CLASSES_ROOT\pyme\shell\open\command]
-
 @="C:\\Python27\\Scripts\\pymeUrlOpener.cmd \"%1\""
+
+
+[HKEY_CLASSES_ROOT\.h5]
+@="PYME.RawData.h5"
+"Content Type"="application/x-extension-h5"
+"PercievedType"="image"
+
+[HKEY_CLASSES_LOCAL_MACHINE\SOFTWARE\Classes\.h5]
+@="PYME.AnalysedData.h5"
+"Content Type"="application/x-extension-h5r"
+"PercievedType"="image"

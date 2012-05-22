@@ -26,6 +26,7 @@ def GetComputerName():
 
 #scope.cameras = {}
 #scope.camControls = {}
+from PYME.Acquire import MetaDataHandler
 
 InitBG('EMCCD Cameras', '''
 scope.cameras['A - Left'] = AndorIXon.iXonCamera(0)
@@ -49,7 +50,7 @@ camPanels.append((scope.camControls['A - Left'], 'EMCCD A Properties'))
 ''')
 
 InitGUI('''
-From PYME.Acquire import sampleInformation
+from PYME.Acquire import sampleInformation
 sampPan = sampleInformation.slidePanel(MainFrame)
 camPanels.append((sampPan, 'Current Slide'))
 ''')
@@ -105,13 +106,30 @@ ssp = sarcSpacing.SarcomereChecker(MainFrame, menuBar1, scope)
 #splt = splitter.Splitter(MainFrame, mControls, scope, scope.cam, flipChan = 0, dichroic = 'NotYet' , transLocOnCamera = 'Top', flip=False)
 #''')
 
+#we don't have a splitter - make sure that the analysis knows this
+#scope.mdh['Splitter.Flip'] = False
+
 #Z stage
-InitGUI('''
-from PYME.Acquire.Hardware import NikonTi
-scope.zStage = NikonTi.zDrive()
+#InitGUI('''
+#from PYME.Acquire.Hardware import NikonTi
+#scope.zStage = NikonTi.zDrive()
 #import Pyro.core
 #scope.zStage = Pyro.core.getProxyForURI('PYRONAME://%s.ZDrive'  % GetComputerName())
-scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
+#scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
+#''')# % GetComputerName())
+
+#Nikon Ti motorised controls
+InitGUI('''
+from PYME.Acquire.Hardware import NikonTi, NikonTiGUI
+scope.dichroic = NikonTi.FilterChanger()
+scope.lightpath = NikonTi.LightPath()
+
+TiPanel = NikonTiGUI.TiPanel(MainFrame, scope.dichroic, scope.lightpath)
+toolPanels.append((TiPanel, 'Nikon Ti'))
+time1.WantNotification.append(TiPanel.SetSelections)
+
+MetaDataHandler.provideStartMetadata.append(scope.dichroic.ProvideMetadata)
+MetaDataHandler.provideStartMetadata.append(scope.lightpath.ProvideMetadata)
 ''')# % GetComputerName())
 
 InitGUI('''
@@ -171,6 +189,7 @@ from PYME.Acquire.Hardware import phoxxLaser
 scope.l642 = phoxxLaser.PhoxxLaser('642')
 scope.StatusCallbacks.append(scope.l642.GetStatusText)
 scope.lasers = [scope.l642]
+# scope.lasers = []
 #InitBG('DigiData', '''
 #from PYME.Acquire.Hardware.DigiData import DigiDataClient
 #dd = DigiDataClient.getDDClient()

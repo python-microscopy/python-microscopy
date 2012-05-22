@@ -43,7 +43,7 @@ class DisplayOpts(object):
     SLICE_XY, SLICE_XZ, SLICE_YZ = range(3)
 
     ACTION_POSITION, ACTION_SELECTION = range(2)
-    SELECTION_RECTANGLE, SELECTION_LINE = range(2)
+    SELECTION_RECTANGLE, SELECTION_LINE, SELECTION_SQUIGLE = range(3)
 
     def __init__(self, datasource, xp=0, yp=0, zp=0, aspect=1):
         self.WantChangeNotification = []# MyWeakSet() #[]
@@ -118,6 +118,8 @@ class DisplayOpts(object):
         self.selection_end_x = self.ds.shape[0] - 1
         self.selection_end_y = self.ds.shape[1] - 1
         self.selection_end_z = self.ds.shape[2] - 1
+        
+        self.selection_trace = []
 
     def SetSelection(self, (b_x,b_y,b_z),(e_x,e_y,e_z)):
         self.selection_begin_x = b_x

@@ -25,6 +25,7 @@ dirname = os.path.dirname(__file__)
 bmCrosshairs = None #wx.Bitmap(os.path.join(dirname, 'icons/crosshairs.png'))
 bmRectSelect = None #wx.Bitmap(os.path.join(dirname, 'icons/rect_select.png'))
 bmLineSelect = None #wx.Bitmap(os.path.join(dirname, 'icons/line_select.png'))
+bmSquiggleSelect = None
 
 class OptionsPanel(wx.Panel):
     def __init__(self, parent, displayOpts, horizOrientation=False, thresholdControls=True, **kwargs):
@@ -205,12 +206,13 @@ class OptionsPanel(wx.Panel):
             self.hcs[i].SetData(c[::max(1, len(c)/1e4)], self.do.Offs[i], self.do.Offs[i] + 1./self.do.Gains[i])
 
     def CreateToolBar(self, wind):
-        global bmCrosshairs, bmRectSelect, bmLineSelect
+        global bmCrosshairs, bmRectSelect, bmLineSelect, bmSquiggleSelect
 
         if bmCrosshairs == None: #load bitmaps on first use
             bmCrosshairs = wx.Bitmap(os.path.join(dirname, 'icons/crosshairs.png'))
             bmRectSelect = wx.Bitmap(os.path.join(dirname, 'icons/rect_select.png'))
             bmLineSelect = wx.Bitmap(os.path.join(dirname, 'icons/line_select.png'))
+            bmSquiggleSelect = wx.Bitmap(os.path.join(dirname, 'icons/squiggle_select.png'))
 
         self.toolB = aui.AuiToolBar(wind, -1, wx.DefaultPosition, wx.DefaultSize, agwStyle=aui.AUI_TB_DEFAULT_STYLE | aui.AUI_TB_OVERFLOW | aui.AUI_TB_VERTICAL)
         self.toolB.SetToolBitmapSize(wx.Size(16, 16))
@@ -219,10 +221,12 @@ class OptionsPanel(wx.Panel):
         ID_CROSSHAIRS = wx.NewId()
         ID_RECTSELECT = wx.NewId()
         ID_LINESELECT = wx.NewId()
+        ID_SQUIGGLESELECT = wx.NewId()
 
         self.toolB.AddRadioTool(ID_CROSSHAIRS, "Point selection", bmCrosshairs, bmCrosshairs)
         self.toolB.AddRadioTool(ID_RECTSELECT, "Rectangle selection", bmRectSelect, bmRectSelect)
-        self.toolB.AddRadioTool(ID_LINESELECT, "Rectangle selection", bmLineSelect, bmLineSelect)
+        self.toolB.AddRadioTool(ID_LINESELECT, "Line selection", bmLineSelect, bmLineSelect)
+        self.toolB.AddRadioTool(ID_SQUIGGLESELECT, "Freeform selection", bmSquiggleSelect, bmSquiggleSelect)
 
         self.toolB.Realize()
 
@@ -235,6 +239,7 @@ class OptionsPanel(wx.Panel):
         wind.Bind(wx.EVT_TOOL, self.OnSelectRectangle, id=ID_RECTSELECT)
         wind.Bind(wx.EVT_TOOL, self.OnSelectLine, id=ID_LINESELECT)
         wind.Bind(aui.EVT_AUITOOLBAR_RIGHT_CLICK, self.OnLineThickness, id=ID_LINESELECT)
+        wind.Bind(wx.EVT_TOOL, self.OnSelectSquiggle, id=ID_SQUIGGLESELECT)
 
         return self.toolB
 
@@ -257,6 +262,14 @@ class OptionsPanel(wx.Panel):
     def OnSelectLine(self, event):
         self.do.leftButtonAction = DisplayOpts.ACTION_SELECTION
         self.do.selectionMode = DisplayOpts.SELECTION_LINE
+        self.do.showSelection = True
+
+        #self.Refresh()
+        self.do.OnChange()
+        
+    def OnSelectSquiggle(self, event):
+        self.do.leftButtonAction = DisplayOpts.ACTION_SELECTION
+        self.do.selectionMode = DisplayOpts.SELECTION_SQUIGLE
         self.do.showSelection = True
 
         #self.Refresh()

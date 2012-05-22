@@ -24,6 +24,7 @@ class zScanner:
         self.WantTickNotification = []
         
     def _endSingle(self):
+        print 'es'
         self.Stop()
         self.WantFrameNotification.remove(self._endSingle)
         self.sa.piezoGoHome()
@@ -95,6 +96,7 @@ class zScanner:
     def tick(self, caller=None):
         fn = floor(self.callNum) % len(self.zPoss)
         self.frameNum = fn
+        #print fn
         if self.sqrt:
             self.image[:, :,fn] = (self.sc*np.sqrt(self.ds[:,:,0] - self.off)).astype('uint16')
         else:
@@ -108,11 +110,14 @@ class zScanner:
         #self.piezo.MoveTo(self.piezoChan, self.zPoss[fn])
         self._movePiezo(fn)
         
-        self.view.Refresh()
         
-        if fn == 0: #we've wrapped around
-            for cb in self.WantFrameNotification:
+        
+        if fn == 0: #we've wrapped around 
+            #make a copy of callbacks so that if we remove one, we still call the others
+            callbacks = [] + self.WantFrameNotification              
+            for cb in callbacks:
                 cb()
+                
             
             if 'decView' in dir(self.view):
                 self.view.decView.wienerPanel.OnCalculate()
@@ -120,6 +125,8 @@ class zScanner:
         #self.view_yz.Refresh()
         for cb in self.WantTickNotification:
             cb()
+            
+        self.view.Refresh()
 
     def _movePiezo(self, fn):
         self.piezo.MoveTo(self.piezoChan, self.zPoss[fn])

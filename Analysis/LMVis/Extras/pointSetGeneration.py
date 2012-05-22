@@ -90,7 +90,7 @@ class ImageSource(PointSource):
     #foo = Enum([1,2,3,4])
 
     def getPoints(self):
-        from PYME.Simulation import locify
+        from PYMEnf.Simulation import locify
 
         im = image.openImages[self.image]
         #import numpy as np
@@ -182,13 +182,16 @@ class Generator(HasTraits):
         self.OnGenEvents(None)
 
     def OnGenEvents(self, event):
-        from PYME.Simulation import locify
+        from PYMEnf.Simulation import locify
         #from PYME.Acquire.Hardware.Simulator import wormlike2
         from PYME.Analysis.LMVis import inpFilt
         from PYME.Analysis.LMVis.visHelpers import ImageBounds
         import pylab
         
         #wc = wormlike2.wormlikeChain(100)
+        
+        pipeline = self.visFr.pipeline
+        pipeline.filename='Simulation'
 
         pylab.figure()
         pylab.plot(self.xp, self.yp, 'x') #, lw=2)
@@ -198,19 +201,19 @@ class Generator(HasTraits):
         res = locify.eventify(self.xp, self.yp, self.meanIntensity, self.meanDuration, self.backgroundIntensity, self.meanEventNumber, self.scaleFactor, self.meanTime)
         pylab.plot(res['fitResults']['x0'],res['fitResults']['y0'], '+')
 
-        self.visFr.selectedDataSource = inpFilt.mappingFilter(inpFilt.fitResultsSource(res))
-        self.visFr.imageBounds = ImageBounds.estimateFromSource(self.visFr.selectedDataSource)
-        self.visFr.dataSources.append(self.visFr.selectedDataSource)
+        pipeline.selectedDataSource = inpFilt.mappingFilter(inpFilt.fitResultsSource(res))
+        pipeline.imageBounds = ImageBounds.estimateFromSource(pipeline.selectedDataSource)
+        pipeline.dataSources.append(pipeline.selectedDataSource)
 
         from PYME.Acquire.MetaDataHandler import NestedClassMDHandler
-        self.visFr.mdh = NestedClassMDHandler()
-        self.visFr.mdh['Camera.ElectronsPerCount'] = 1
-        self.visFr.mdh['Camera.TrueEMGain'] = 1
-        self.visFr.mdh['Camera.CycleTime'] = 1
-        self.visFr.mdh['voxelsize.x'] = .110
+        pipeline.mdh = NestedClassMDHandler()
+        pipeline.mdh['Camera.ElectronsPerCount'] = 1
+        pipeline.mdh['Camera.TrueEMGain'] = 1
+        pipeline.mdh['Camera.CycleTime'] = 1
+        pipeline.mdh['voxelsize.x'] = .110
 
         try:
-            self.visFr.filterKeys.pop('sig')
+            pipeline.filterKeys.pop('sig')
         except:
             pass
         self.visFr.RegenFilter()

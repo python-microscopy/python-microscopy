@@ -16,16 +16,17 @@ import PYME.misc.autoFoldPanel as afp
 from PYME.Analysis.LMVis import histLimits
 from PYME.Analysis.LMVis import editFilterDialog
 
-def CreateFilterPane(panel, mapping, visFr):
-    pane = FilterPane(panel, mapping, visFr)
+def CreateFilterPane(panel, mapping, pipeline, visFr):
+    pane = FilterPane(panel, mapping, pipeline, visFr)
     panel.AddPane(pane)
     return pane
 
 class FilterPane(afp.foldingPane):
-    def __init__(self, panel, filterKeys, visFr):
+    def __init__(self, panel, filterKeys, pipeline, visFr):
         afp.foldingPane.__init__(self, panel, -1, caption="Filter", pinned = False)
 
         self.filterKeys = filterKeys
+        self.pipeline = pipeline
         self.visFr = visFr
 
         self.lFiltKeys = wx.ListCtrl(self, -1, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.SUNKEN_BORDER, size=(-1, 200))
@@ -67,8 +68,8 @@ class FilterPane(afp.foldingPane):
 
         self.stFilterNumPoints = wx.StaticText(self, -1, '')
 
-        if not self.visFr.filter == None:
-            self.stFilterNumPoints.SetLabel('%d of %d events' % (len(self.visFr.filter['x']), len(self.visFr.selectedDataSource['x'])))
+        if not self.pipeline.filter == None:
+            self.stFilterNumPoints.SetLabel('%d of %d events' % (len(self.pipeline.filter['x']), len(self.pipeline.selectedDataSource['x'])))
 
         self.AddNewElement(self.stFilterNumPoints)
         #self._pnl.AddFoldPanelWindow(self, self.stFilterNumPoints, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
@@ -168,8 +169,8 @@ class FilterPane(afp.foldingPane):
         #key = self.lFiltKeys.GetItem(self.currentFilterItem).GetText()
 
         possibleKeys = []
-        if not self.visFr.selectedDataSource == None:
-            possibleKeys = self.visFr.selectedDataSource.keys()
+        if not self.pipeline.selectedDataSource == None:
+            possibleKeys = self.pipeline.selectedDataSource.keys()
 
         dlg = editFilterDialog.FilterEditDialog(self, mode='new', possibleKeys=possibleKeys)
 
@@ -205,7 +206,7 @@ class FilterPane(afp.foldingPane):
         key = self.lFiltKeys.GetItem(self.currentFilterItem).GetText()
 
         #dlg = editFilterDialog.FilterEditDialog(self, mode='edit', possibleKeys=[], key=key, minVal=self.filterKeys[key][0], maxVal=self.filterKeys[key][1])
-        dlg = histLimits.HistLimitDialog(self, self.visFr.selectedDataSource[key], self.filterKeys[key][0], self.filterKeys[key][1], title=key)
+        dlg = histLimits.HistLimitDialog(self, self.pipeline.selectedDataSource[key], self.filterKeys[key][0], self.filterKeys[key][1], title=key)
         ret = dlg.ShowModal()
 
         if ret == wx.ID_OK:
