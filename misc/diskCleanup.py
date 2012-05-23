@@ -5,7 +5,7 @@ import os
 micrDataDir = '/mnt/MicrData/'
 lDataDir = len(micrDataDir)
 nasDir = '/mnt/NasData/'
-backupDir = '/media/disk/LMNAS1/'
+#backupDir = '/media/disk/LMNAS1/'
 
 def deleteFiles(directory):
     #dir_size = 0
@@ -15,11 +15,11 @@ def deleteFiles(directory):
             #print filename
 
             nFilename = nasDir + filename[lDataDir:]
-            bFilename = backupDir + filename[lDataDir:]
+            #bFilename = backupDir + filename[lDataDir:]
 
             #print nFilename, bFilename
 
-            if os.path.exists(nFilename) and os.path.exists(bFilename) and os.path.getsize(filename) == os.path.getsize(nFilename):
+            if os.path.exists(nFilename): #and os.path.exists(bFilename) and os.path.getsize(filename) == os.path.getsize(nFilename):
                 print 'Deleting %s' % filename
                 os.remove(filename)
             else:
