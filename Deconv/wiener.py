@@ -49,10 +49,10 @@ def resizePSF(psf, data_size):
     g =  ifftshift(g_.real)
     
     print 'PSF resizing complete'
-    View3D(psf)
-    View3D(fftshift(numpy.abs(H_)))
-    View3D(fftshift(numpy.angle(H_)))
-    View3D(g)
+    #View3D(psf)
+    #View3D(fftshift(numpy.abs(H_)))
+    #View3D(fftshift(numpy.angle(H_)))
+    #View3D(g)
     
     return g/g.sum()
 

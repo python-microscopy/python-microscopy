@@ -83,9 +83,10 @@ class rldec:
             self.loopcount += 1
 
             #the residuals
-            self.res = data/self.Afunc(self.f) +  mask;
+            self.res = weights*(data/self.Afunc(self.f)) +  mask;
 
-            print 'Residual norm = %f' % norm(self.res)
+            #print 'Residual norm = %f' % norm(self.res)
+            
 
             #adjustment
             adjFact = self.Ahfunc(self.res)
@@ -95,6 +96,7 @@ class rldec:
 
             #set the current estimate to out new estimate
             self.f[:] = fnew
+            print 'Sum = %f' % self.f.sum()
 
         return real(self.fs)
 
@@ -305,6 +307,8 @@ class dec_conv(rldec):
         self.depth  = data_size[2]
 
         self.shape = data_size
+        
+        print 'Calculating OTF' 
 
         FTshape = [self.shape[0], self.shape[1], self.shape[2]/2 + 1]
 
@@ -328,12 +332,16 @@ class dec_conv(rldec):
 
         self.Ht /= g.size;
         self.H /= g.size;
+        
+        print 'Creating plans for FFTs - this might take a while'
 
         #calculate plans for other ffts
         self._plan_r_F = fftw3f.Plan(self._r, self._F, 'forward', flags = FFTWFLAGS, nthreads=NTHREADS)
         self._plan_F_r = fftw3f.Plan(self._F, self._r, 'backward', flags = FFTWFLAGS, nthreads=NTHREADS)
         
         fftwWisdom.save_wisdom()
+        
+        print 'Done planning'
 
 
     def Lfunc(self, f):
