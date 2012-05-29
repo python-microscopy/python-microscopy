@@ -49,7 +49,7 @@ class fitTestJig(object):
         self.res = numpy.empty(nTests, self.fitMod.FitResultsDType)
         ps = numpy.zeros((nTests, len(params)), 'f4')
 
-        rs=5
+        rs=11
         for i in range(nTests):
             p = array(params) + array(param_jit)*(2*rand(len(param_jit)) - 1)
             p[0] = abs(p[0])
@@ -57,6 +57,9 @@ class fitTestJig(object):
             self.data, self.x0, self.y0, self.z0 = self.fitMod.FitFactory.evalModel(p, self.md, roiHalfSize=rs)#, roiHalfSize= roiHalfWidth))
             
             #print self.data.shape
+            #print self.data.min(), self.data.max()
+            #from PYME.DSView import View3D
+            #View3D(self.data)
 
             self.d2 = self.noiseM.noisify(self.data)
             
