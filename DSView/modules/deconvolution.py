@@ -106,6 +106,7 @@ class deconvolver:
                     psf = ndimage.zoom(psf, [vs.x/vx, vs.y/vy, vs.z/vz])
 
             data = self.image.data[:,:,:, dlg.GetChannel()].astype('f') - dlg.GetOffset()
+            decMDH['Deconvolution.Offset'] = dlg.GetOffset()
 
             #crop PSF in z if bigger than stack
             if psf.shape[2] > data.shape[2]:
@@ -206,7 +207,8 @@ class deconvolver:
     def OnDeconTimer(self, caller=None):
         if 'res' in dir(self):
             self.res.update()
-            self.res.do.Optimise()
+            self.res.Refresh()
+            #self.res.do.Optimise()
         if self.decT.isAlive():
             if not self.dlgDeconProg.Tick(self.dec):
                 self.decT.kill()
