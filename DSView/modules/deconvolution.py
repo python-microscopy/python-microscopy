@@ -74,7 +74,7 @@ class deconvolver:
     def OnDeconvICTM(self, event, beadMode=False):
         from PYME.Deconv.deconvDialogs import DeconvSettingsDialog,DeconvProgressDialog,DeconvProgressPanel
 
-        dlg = DeconvSettingsDialog(self.dsviewer, beadMode)
+        dlg = DeconvSettingsDialog(self.dsviewer, beadMode, self.image.data.shape[3])
         if dlg.ShowModal() == wx.ID_OK:
             from PYME.Deconv import dec, decThread, richardsonLucy
             nIter = dlg.GetNumIterationss()
@@ -105,7 +105,7 @@ class deconvolver:
                     #rescale psf to match data voxel size
                     psf = ndimage.zoom(psf, [vs.x/vx, vs.y/vy, vs.z/vz])
 
-            data = self.image.data[:,:,:].astype('f') - dlg.GetOffset()
+            data = self.image.data[:,:,:, dlg.GetChannel()].astype('f') - dlg.GetOffset()
 
             #crop PSF in z if bigger than stack
             if psf.shape[2] > data.shape[2]:
