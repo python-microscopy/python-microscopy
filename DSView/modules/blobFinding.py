@@ -148,7 +148,7 @@ class blobFinder:
 
         if self.vObjPos == None:
             self.vObjPos = recArrayView.recArrayPanel(self.dsviewer, self.objPosRA)
-            self.dsviewer.AddPage(self.vObjPos, 'Object Positions')
+            self.dsviewer.AddPage(self.vObjPos, caption='Object Positions')
         else:
             self.vObjPos.grid.SetData(self.objPosRA)
 
