@@ -98,7 +98,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         self.refrTimer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.OnRefrTimer)
 
-        wx.EVT_MOUSEWHEEL(self, self.OnWheel)
+        wx.EVT_MOUSEWHEEL(self.imagepanel, self.OnWheel)
         wx.EVT_KEY_DOWN(self.imagepanel, self.OnKeyPress)
         #wx.EVT_KEY_DOWN(self.Parent(), self.OnKeyPress)
         wx.EVT_LEFT_DOWN(self.imagepanel, self.OnLeftDown)
@@ -610,6 +610,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
     def OnLeftDown(self,event):
         if self.do.leftButtonAction == self.do.ACTION_SELECTION:
             self.StartSelection(event)
+            
+        event.Skip()
     
     def OnLeftUp(self,event):
         if self.do.leftButtonAction == self.do.ACTION_SELECTION:
@@ -617,6 +619,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             self.EndSelection()
         else:
             self.OnSetPosition(event)
+            
+        event.Skip()
     
             
     def OnSetPosition(self,event):

@@ -109,7 +109,7 @@ class blobFinder:
         _pnl.AddPane(item)
         
     def OnChangeMethod(self, event):
-        thresholds = [50, 1, 4]
+        thresholds = [50, 1, 1]
         sel = self.chMethod.GetSelection()
         
         if sel == 2: #multi-threshold

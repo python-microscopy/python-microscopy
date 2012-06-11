@@ -321,7 +321,7 @@ class ImageStack(object):
             from PYME.DSView.dataWrap import ListWrap
             chans = [numpy.atleast_3d(self.data.getSlice(i)) for i in range(len(self.mdh['ChannelNames']))]
             self.data = ListWrap(chans)
-        elif 'LSM.images_number_channels' in self.mdh.keys() and self.mdh['LSM.images_number_channels'] > 1:
+        elif filename.endswith('.lsm') and 'LSM.images_number_channels' in self.mdh.keys() and self.mdh['LSM.images_number_channels'] > 1:
             from PYME.DSView.dataWrap import ListWrap
             nChans = self.mdh['LSM.images_number_channels']
             

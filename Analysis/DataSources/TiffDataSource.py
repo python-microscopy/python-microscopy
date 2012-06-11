@@ -64,6 +64,7 @@ class DataSource:
         res =  self.im[ind].asarray(False, False)
         #if res.ndim == 3:
         #print res.shape
+        #print self.chanNum
         res = res[0,self.chanNum, :,:].squeeze()
         #print res.shape
         return res

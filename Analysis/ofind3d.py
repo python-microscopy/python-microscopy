@@ -13,6 +13,8 @@
 import scipy
 import scipy.ndimage as ndimage
 import pylab
+import numpy as np
+from PYME.DSView import View3D
 
 class OfindPoint:
     def __init__(self, x, y, z=None, detectionThreshold=None):
@@ -131,7 +133,7 @@ class ObjectIdentifier(list):
         del self[:]
         
         #do filtering
-        filteredData = self.__FilterData()
+        filteredData = np.maximum(self.__FilterData(), 0)
         
         #apply mask
         if not (self.mask ==None):
@@ -155,18 +157,22 @@ class ObjectIdentifier(list):
         
         if self.numThresholdSteps > 0:
             #determine (approximate) mode
-            N, bins = scipy.histogram(maskedFilteredData, bins=200)
-            posMax = N.argmax() #find bin with maximum number of counts
-            modeApp = bins[posMax:(posMax+1)].mean() #bins contains left-edges - find middle of most frequent bin
+            #N, bins = scipy.histogram(maskedFilteredData, bins=200)
+            #posMax = N.argmax() #find bin with maximum number of counts
+            #modeApp = bins[posMax:(posMax+1)].mean() #bins contains left-edges - find middle of most frequent bin
+            
+            #modeApp = np.median(maskedFilteredData)
 
             #catch the corner case where the mode could be zero - this is highly unlikely, but if it were
             #to occur one would no longer be able to influence the threshold with threshFactor
-            if (abs(modeApp) < 1): 
-                modeApp = 1
+            #if (abs(modeApp) < 1): 
+            #    modeApp = 1
+            
+            modeApp = maskedFilteredData.max()/100.
 
             #calc thresholds
-            self.lowerThreshold = modeApp*self.thresholdFactor
-            self.upperThreshold = (maskedFilteredData.max() - maskedFilteredData.min())/2 + maskedFilteredData.min()
+            self.lowerThreshold = modeApp*self.thresholdFactor 
+            self.upperThreshold = maskedFilteredData.max()/2 
             
         else:
             if self.estSN:
@@ -179,6 +185,8 @@ class ObjectIdentifier(list):
     
         if (self.numThresholdSteps == 0): #don't do threshold scan - just use lower threshold (faster)
             im = maskedFilteredData
+            #View3D(im)
+            print 'Threshold: %3.2f' %self.lowerThreshold
             (labeledPoints, nLabeled) = ndimage.label(im > self.lowerThreshold)
             
             objSlices = ndimage.find_objects(labeledPoints)
@@ -196,7 +204,9 @@ class ObjectIdentifier(list):
         else: #do threshold scan (default)
 
             #generate threshold range - note slightly awkard specification of lowwer and upper bounds as the stop bound is excluded from arange
-            self.thresholdRange = scipy.arange(self.upperThreshold, self.lowerThreshold - (self.upperThreshold - self.lowerThreshold)/(self.numThresholdSteps -1), - (self.upperThreshold - self.lowerThreshold)/(self.numThresholdSteps))
+            #self.thresholdRange = scipy.arange(self.upperThreshold, self.lowerThreshold - (self.upperThreshold - self.lowerThreshold)/(self.numThresholdSteps -1), - (self.upperThreshold - self.lowerThreshold)/(self.numThresholdSteps))
+            self.thresholdRange = scipy.logspace(np.log10(self.upperThreshold), np.log10(self.lowerThreshold), self.numThresholdSteps)
+            print 'Thresholds:', self.thresholdRange
 
             #get a working copy of the filtered data
             im = maskedFilteredData.copy()
@@ -209,6 +219,7 @@ class ObjectIdentifier(list):
 
         
             for threshold in self.thresholdRange:
+                #View3D(im)
                 #apply threshold and label regions
                 (labeledPoints, nLabeled) = ndimage.label(im > threshold)
 
@@ -234,10 +245,11 @@ class ObjectIdentifier(list):
                     corrWeights[objSlices[i]] = 1.0/scipy.sqrt(nPixels)
 
                 #calculate correction matrix
-                corr = ndimage.gaussian_filter(2*self.blurRadius*scipy.sqrt(2*scipy.pi)*1.7*im*corrWeights, [self.blurRadius, self.blurRadius, self.blurRadiusZ])
+                corr = ndimage.gaussian_filter(((2*self.blurRadius)**2)*(2*self.blurRadiusZ)*1.5*im*corrWeights, [self.blurRadius, self.blurRadius, self.blurRadiusZ])
+                #View3D([im, corr, corrWeights])
 
                 #subtract from working image
-                im -= corr
+                im  = np.maximum(im - corr, 0)
 
                 #pylab.figure()
                 #pylab.imshow(corr)
