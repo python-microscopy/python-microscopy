@@ -13,7 +13,8 @@ import wx
 import PYME.misc.autoFoldPanel as afp
 from PYME.Analysis.LMVis import recArrayView
 import numpy
-
+from PYME.DSView.OverlaysPanel import OverlayPanel
+import wx.lib.agw.aui as aui
 
 class blobFinder:
     def __init__(self, dsviewer):
@@ -53,12 +54,51 @@ class blobFinder:
 
         #_pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
         item.AddNewElement(pan)
+        
+        pan = wx.Panel(item, -1)
 
-        self.cbSNThreshold = wx.CheckBox(item, -1, 'SNR Threshold')
-        self.cbSNThreshold.SetValue(False)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        #hsizer.Add(wx.StaticText(pan, -1, 'Method:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.chMethod = wx.Choice(pan, -1, choices=['Simple Threshold', 'SNR Threshold', 'Multi-threshold'])
+        self.chMethod.SetSelection(0)
+        self.chMethod.Bind(wx.EVT_CHOICE, self.OnChangeMethod)
+
+        hsizer.Add(self.chMethod, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        pan.SetSizer(hsizer)
+        hsizer.Fit(pan)
+
+        #_pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+        item.AddNewElement(pan)
+        
+        pan = wx.Panel(item, -1)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        hsizer.Add(wx.StaticText(pan, -1, 'Blur size:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tBlurSize = wx.TextCtrl(pan, -1, value='1.5', size=(40, -1))
+        self.tBlurSize.Disable()
+
+        hsizer.Add(self.tBlurSize, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        pan.SetSizer(hsizer)
+        hsizer.Fit(pan)
+
+        #_pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+        item.AddNewElement(pan)
+
+        #self.cbSNThreshold = wx.CheckBox(item, -1, 'SNR Threshold')
+        #self.cbSNThreshold.SetValue(False)
 
         #_pnl.AddFoldPanelWindow(item, self.cbSNThreshold, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
-        item.AddNewElement(self.cbSNThreshold)
+        #item.AddNewElement(self.cbSNThreshold)
+        
+        #self.cbThresholdRange = wx.CheckBox(item, -1, 'Multi-thresholds')
+        #self.cbThresholdRange.SetValue(False)
+
+        #_pnl.AddFoldPanelWindow(item, self.cbSNThreshold, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+        #item.AddNewElement(self.cbThresholdRange)
 
         bFindObjects = wx.Button(item, -1, 'Find')
 
@@ -67,6 +107,21 @@ class blobFinder:
         #_pnl.AddFoldPanelWindow(item, bFindObjects, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
         item.AddNewElement(bFindObjects)
         _pnl.AddPane(item)
+        
+    def OnChangeMethod(self, event):
+        thresholds = [50, 1, 4]
+        sel = self.chMethod.GetSelection()
+        
+        if sel == 2: #multi-threshold
+            self.tBlurSize.Enable()
+            #self.tThreshold.SetValue('4')
+        else:
+            self.tBlurSize.Disable()
+        
+        #if sel == 1:
+        self.tThreshold.SetValue('%3.1f' % thresholds[sel])
+            
+        #if sel == 
 
     def OnFindObjects(self, event):
         threshold = float(self.tThreshold.GetValue())
@@ -78,10 +133,12 @@ class blobFinder:
             self.ofd = ObjectIdentifier(self.image.data[:,:,:])
 
         #and identify objects ...
-        if self.cbSNThreshold.GetValue(): #don't detect objects in poisson noise
+        if self.chMethod.GetSelection() == 1: #don't detect objects in poisson noise
             fudgeFactor = 1 #to account for the fact that the blurring etc... in ofind doesn't preserve intensities - at the moment completely arbitrary so a threshold setting of 1 results in reasonable detection.
             threshold =  (numpy.sqrt(self.image.mdh.Camera.ReadNoise**2 + numpy.maximum(self.image.mdh.Camera.ElectronsPerCount*(self.image.mdh.Camera.NoiseFactor**2)*(self.image.data.astype('f') - self.image.mdh.Camera.ADOffset)*self.image.mdh.Camera.TrueEMGain, 1))/self.image.mdh.Camera.ElectronsPerCount)*fudgeFactor*threshold
             self.ofd.FindObjects(threshold, 0)
+        elif self.chMethod.GetSelection() == 2:
+            self.ofd.FindObjects(threshold)
         else:
             self.ofd.FindObjects(threshold,0)
 
@@ -171,4 +228,12 @@ class blobFinder:
 
 def Plug(dsviewer):
     dsviewer.blobFinder = blobFinder(dsviewer)
+    
+    if not 'overlaypanel' in dir(dsviewer):    
+        dsviewer.overlaypanel = OverlayPanel(dsviewer, dsviewer.view, dsviewer.image.mdh)
+        dsviewer.overlaypanel.SetSize(dsviewer.overlaypanel.GetBestSize())
+        pinfo2 = aui.AuiPaneInfo().Name("overlayPanel").Right().Caption('Overlays').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
+        dsviewer._mgr.AddPane(dsviewer.overlaypanel, pinfo2)
+    
+        dsviewer.panesToMinimise.append(pinfo2)
     

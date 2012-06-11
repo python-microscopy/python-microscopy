@@ -20,7 +20,7 @@ def z(n, expr, descr):
 
 z(0, '1', 'Piston')   
 z(1, 'r*cos(theta)', 'Tilt x')
-z(2, 'r*sin(theta)', 'Tilt x')
+z(2, 'r*sin(theta)', 'Tilt y')
 z(3, '-1 + 2*r**2', 'Defocus')
 z(4, 'r**2*cos(2*theta)', 'Astig x')
 z(5, 'r**2*sin(2*theta)', 'Astig y')
@@ -80,6 +80,17 @@ def projectZ(image, key, weights = 1.0):
     
     bf = zernikeIm(key, image.shape)
     
-    return lstsq((bf*weights).ravel().reshape([-1, 1], image*weights))
+    return lstsq((bf*weights).ravel().reshape([-1, 1]), (image*weights).ravel())
     
     
+def calcCoeffs(image, maxN, weights=1.0):
+    im = image
+    coeffs = []
+    for n in range(maxN):
+        c, res, rand, sing = projectZ(im, n, weights)
+        print '%d - %s: %3.2f   residual=%3.2f' % (n, NameByNumber[n], c, res)
+        coeffs.append(c[0])
+        
+        im = im - c*zernikeIm(n, im.shape)
+        
+    return coeffs, res, im

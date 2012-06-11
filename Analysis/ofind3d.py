@@ -140,7 +140,7 @@ class ObjectIdentifier(list):
             maskedFilteredData = filteredData
 
         #manually mask the edge pixels
-        if len(maskedFilteredData) == 3:
+        if maskedFilteredData.ndim == 3:
             maskedFilteredData[0:5, 0:5, :] = 0
             maskedFilteredData[0:5, -5:,:] = 0
             maskedFilteredData[-5:, -5:,:] = 0
@@ -166,7 +166,7 @@ class ObjectIdentifier(list):
 
             #calc thresholds
             self.lowerThreshold = modeApp*self.thresholdFactor
-            self.upperThreshold = maskedFilteredData.max()/2
+            self.upperThreshold = (maskedFilteredData.max() - maskedFilteredData.min())/2 + maskedFilteredData.min()
             
         else:
             if self.estSN:
@@ -248,13 +248,19 @@ class ObjectIdentifier(list):
                 #pylab.colorbar()
 
                 #clip border pixels again
-                im[0:5, 0:5, :] = 0
-                im[0:5, -5:,:] = 0
-                im[-5:, -5:,:] = 0
-                im[-5:, 0:5,:] = 0
-
-                im[:,:,:5]  = 0
-                im[:,:,-5:] = 0
+                if maskedFilteredData.ndim == 3:
+                    im[0:5, 0:5, :] = 0
+                    im[0:5, -5:,:] = 0
+                    im[-5:, -5:,:] = 0
+                    im[-5:, 0:5,:] = 0
+    
+                    im[:,:,:3]  = 0
+                    im[:,:,-3:] = 0
+                else:
+                    im[0:5, 0:5] = 0
+                    im[0:5, -5:] = 0
+                    im[-5:, -5:] = 0
+                    im[-5:, 0:5] = 0
 
                 print len(self)
 
