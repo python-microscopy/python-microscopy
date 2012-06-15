@@ -70,6 +70,7 @@ class fitter:
             #imo = self.image.parent
         pylab.legend()
         #rawIntensity.processIntensityTrace(I, imo.mdh, dt=imo.mdh['Camera.CycleTime'])
+        pylab.show()
         
 
 

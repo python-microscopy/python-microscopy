@@ -30,9 +30,14 @@ class DataSource: #buffer our io to avoid decompressing multiple times
         else: #get from our data source and store in buffer
             sl = self.dataSource.getSlice(ind)
             self.bufferedSlices[self.insertAt] = ind
+            #print sl.shape
+            #print self.insertAt
+            #print self.buffer
 
             if self.buffer == None: #buffer doesn't exist yet
                 self.buffer = numpy.zeros((self.bLen,) + self.dataSource.getSliceShape(), sl.dtype)
+                
+            #print self.buffer.shape
 
             self.buffer[self.insertAt, :,:] = sl
             self.insertAt += 1

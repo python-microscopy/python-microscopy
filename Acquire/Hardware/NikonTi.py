@@ -79,27 +79,30 @@ class FilterChanger:
         
     def SetFilter(self, filterName):
         self.SetPosition(self.names.index(filterName))
+        
+    def ProvideMetadata(self,mdh):
+        mdh.setEntry('NikonTi.FilterCube', self.GetFilter())
          
          
 class LightPath:
     def __init__(self, names = ['EYE', 'L100', 'R100', 'L80']):
         self.names = names
         
-    def SetPositon(self, pos):
-        nik.FilterBlockCassette1.Position = pos
+    def SetPosition(self, pos):
+        nik.LightPathDrive.Position = (pos + 1)
         
     def GetPosition(self):
-        return int(nik.FilterBlockCassette1.Position)
+        return int(nik.LightPathDrive.Position) - 1
         
     def SetPort(self, port):
         self.SetPositon(self.names.index(port))
         
     def GetPort(self):
         return self.names[self.GetPosition()]
+    
+    def ProvideMetadata(self,mdh):
+        mdh.setEntry('NikonTi.LightPath', self.GetPort())
         
-        
-
-
 
 
 if __name__ == '__main__':

@@ -2,8 +2,9 @@ import wx
 import os
 
 class DeconvSettingsDialog(wx.Dialog):
-    def __init__(self, parent, beadMode=False):
+    def __init__(self, parent, beadMode=False, nChans=1):
         wx.Dialog.__init__(self, parent, title='Deconvolution')
+        self.nChans = nChans
 
         sizer1 = wx.BoxSizer(wx.VERTICAL)
         #sizer2 = wx.BoxSizer(wx.HORIZONTAL)
@@ -15,6 +16,16 @@ class DeconvSettingsDialog(wx.Dialog):
         notebook.AddPage(pan1, 'Basic')
 
         sizer2 = wx.BoxSizer(wx.VERTICAL)
+        
+        print 'nchans:', nChans
+        
+        if nChans > 1:
+            sizer3 = wx.BoxSizer(wx.HORIZONTAL)
+            sizer3.Add(wx.StaticText(pan1, -1, 'Channel:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+            self.cChannel = wx.Choice(pan1, -1, choices=['Chan %d' % i for i in range(nChans)])
+
+            sizer3.Add(self.cChannel, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+            sizer2.Add(sizer3, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
         
         sizer3 = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -162,6 +173,12 @@ class DeconvSettingsDialog(wx.Dialog):
         
     def GetOffset(self):
         return float(self.tOffset.GetValue())
+        
+    def GetChannel(self):
+        if self.nChans == 1:
+            return 0
+        else:
+            return self.cChannel.GetSelection()
 
 
 class DeconvProgressDialog(wx.Dialog):

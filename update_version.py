@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 """
 Created on Fri Oct 14 13:26:21 2011
@@ -8,6 +9,10 @@ Created on Fri Oct 14 13:26:21 2011
 from datetime import datetime
 import os
 import subprocess
+
+def hook(ui, repo, **kwargs):
+    update_version()
+    return 0
 
 def update_version():
     now = datetime.now()

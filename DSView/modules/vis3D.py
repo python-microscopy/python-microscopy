@@ -37,7 +37,8 @@ class visualiser:
     def On3DIsosurf(self, event):
         from enthought.mayavi import mlab
 
-        f = mlab.figure()
+        self.dsviewer.f3d = mlab.figure()
+        self.dsviewer.f3d.scene.stereo = True
 
         for i in range(self.image.data.shape[3]):
             c = mlab.contour3d(self.image.data[:,:,:,i].astype('f'), contours=[self.do.Offs[i] + .5/self.do.Gains[i]], color = pylab.cm.gist_rainbow(float(i)/self.image.data.shape[3])[:3])

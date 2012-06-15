@@ -303,7 +303,8 @@ class SampleInfoDialog(wx.Dialog):
         
         mdh.setEntry('Sample.Creator', creator)
         mdh.setEntry('Sample.SlideRef', slideRef)
-        mdh.setEntry('Sample.Notes', sampleNotes)
+        if len(sampleNotes) > 0:
+            mdh.setEntry('Sample.Notes', sampleNotes)
         #mdh.setEntry('AcquisitionNotes', notes)
         
 

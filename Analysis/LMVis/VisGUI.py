@@ -717,13 +717,15 @@ class VisGUIFrame(wx.Frame):
     def OnView3DPoints(self,event):
         if 'z' in self.pipeline.keys():
             if not 'glCanvas3D' in dir(self):
-                self.glCanvas3D = gl_render3D.LMGLCanvas(self)
-                self.AddPage(page=self.glCanvas3D, select=True, caption='3D')
+                #self.glCanvas3D = gl_render3D.LMGLCanvas(self)
+                #self.AddPage(page=self.glCanvas3D, select=True, caption='3D')
+                self.glCanvas3D = gl_render3D.showGLFrame()
 
+            #else:            
             self.glCanvas3D.setPoints(self.pipeline['x'], 
-                                      self.pipeline['y'], 
-                                      self.pipeline['z'], 
-                                      self.pointColour())
+                                  self.pipeline['y'], 
+                                  self.pipeline['z'], 
+                                  self.pointColour())
             self.glCanvas3D.setCLim(self.glCanvas.clim, (-5e5, -5e5))
 
     def OnView3DTriangles(self,event):
@@ -931,6 +933,13 @@ class VisGUIFrame(wx.Frame):
         if self.viewMode == 'points':
             self.glCanvas.setPoints(self.pipeline['x'], 
                                     self.pipeline['y'], self.pointColour())
+                                    
+            if 'glCanvas3D' in dir(self):
+                self.glCanvas3D.setPoints(self.pipeline['x'], 
+                                      self.pipeline['y'], 
+                                      self.pipeline['z'], 
+                                      self.pointColour())
+                self.glCanvas3D.setCLim(self.glCanvas.clim, (-5e5, -5e5))
         elif self.viewMode == 'tracks':
             self.glCanvas.setTracks(self.pipeline['x'], 
                                     self.pipeline['y'], 

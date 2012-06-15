@@ -16,6 +16,7 @@ import wx
 #from OpenGL.GLUT import *
 #from OpenGL.GLU import *
 from OpenGL.GL import *
+from OpenGL.GLU import *
 import sys,math
 #import sys
 import numpy
@@ -54,14 +55,20 @@ cm_grey = cmap_mult(numpy.ones(3), [0, 0, 0])
 
 class LMGLCanvas(GLCanvas):
     def __init__(self, parent):
-        attriblist = [wx.glcanvas.WX_GL_RGBA, wx.glcanvas.WX_GL_DOUBLEBUFFER, 0]
+        attriblist = [wx.glcanvas.WX_GL_RGBA,wx.glcanvas.WX_GL_STENCIL_SIZE,8, wx.glcanvas.WX_GL_DOUBLEBUFFER, 16]
         GLCanvas.__init__(self, parent,-1, attribList = attriblist)
         wx.EVT_PAINT(self, self.OnPaint)
         wx.EVT_SIZE(self, self.OnSize)
         wx.EVT_MOUSEWHEEL(self, self.OnWheel)
         wx.EVT_LEFT_DOWN(self, self.OnLeftDown)
         wx.EVT_LEFT_UP(self, self.OnLeftUp)
+        wx.EVT_MIDDLE_DOWN(self, self.OnMiddleDown)
+        wx.EVT_MIDDLE_UP(self, self.OnMiddleUp)
         wx.EVT_MOTION(self, self.OnMouseMove)
+        wx.EVT_KEY_DOWN(self, self.OnKeyPress)
+        #wx.EVT_MOVE(self, self.OnMove)
+        
+        #self.gl_context = wx.glcanvas.GLContext(self)
 
         self.init = 0
         self.nVertices = 0
@@ -73,7 +80,7 @@ class LMGLCanvas(GLCanvas):
 
         self.parent = parent
 
-        self.pointSize=30 #default point size = 5nm
+        self.pointSize=5 #default point size = 5nm
 
         self.pixelsize = 5./800
 
@@ -111,94 +118,180 @@ class LMGLCanvas(GLCanvas):
         self.zc = 0
 
         self.scale = 1
+        self.stereo = True
+        
+        self.eye_dist = .1
         
         self.dragging = False
+        self.panning = False
 
         self.edgeThreshold = 100
 
         return
 
     def OnPaint(self,event):
+        if not self.IsShown():
+            print 'ns'
+            return
+        print 'foo'
+        #raise Exception('foo')
         dc = wx.PaintDC(self)
+        #print self.GetContext()
+        #print self.gl_context
         self.SetCurrent()
         if not self.init:
             self.InitGL()
             self.init = 1
-        self.OnDraw()
+        else:
+            self.OnDraw()
         return
 
     def OnSize(self, event):
-        glViewport(0,0, self.Size[0], self.Size[1])
+        #self.SetCurrent(self.gl_context)
+        #glViewport(0,0, self.Size[0], self.Size[1])
 
         self.xmax = self.xmin + self.Size[0]*self.pixelsize
         self.ymax = self.ymin + self.Size[1]*self.pixelsize
+        
+        #self.interlace_stencil()
+        
+    def OnMove(self, event):
+        self.Refresh()
+        
+    def interlace_stencil(self):
+        WindowWidth = self.Size[0]
+        WindowHeight = self.Size[1]
+        # setting screen-corresponding geometry
+        glViewport(0,0,WindowWidth,WindowHeight)
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity
+        glMatrixMode (GL_PROJECTION)
+        glLoadIdentity()
+        gluOrtho2D(0.0,WindowWidth-1,0.0,WindowHeight-1)
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
+        	
+        #clearing and configuring stencil drawing
+        glDrawBuffer(GL_BACK)
+        glEnable(GL_STENCIL_TEST)
+        glClearStencil(0)
+        glClear(GL_STENCIL_BUFFER_BIT)
+        glStencilOp (GL_REPLACE, GL_REPLACE, GL_REPLACE) # colorbuffer is copied to stencil
+        glDisable(GL_DEPTH_TEST)
+        glStencilFunc(GL_ALWAYS,1,1) # to avoid interaction with stencil content
+        	
+        # drawing stencil pattern
+        glColor4f(1,1,1,0)	# alfa is 0 not to interfere with alpha tests
+
+        start = self.ScreenPosition[1] % 2     
+        #print start
+        
+        for y in range(start, WindowHeight, 2):
+            glLineWidth(1)
+            glBegin(GL_LINES)
+            glVertex2f(0,y)
+            glVertex2f(WindowWidth,y)
+            glEnd()	
+            
+        glStencilOp (GL_KEEP, GL_KEEP, GL_KEEP)# // disabling changes in stencil buffer
+        glFlush()
+        
+        #print 'is'
 
 
     def OnDraw(self):
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-
-        glLoadIdentity()
-        glOrtho(-10,10,-10,10,-1000,1000)
-
-#        light_position = [5., 5., 0., 0.0]
-#        glLightfv(GL_LIGHT0, GL_POSITION, light_position)
-
-        self.setupLights()
-
-        #glRotatef(self.angup, *self.vecUp)
-        #glRotatef(self.angright, *self.vecRight)
-
-        #glTranslatef(-self.xcc, -self.ycc, -self.zcc)
-        trafMatrix = numpy.array([numpy.hstack((self.vecRight, 0)), numpy.hstack((self.vecUp, 0)), numpy.hstack((self.vecBack, 0)), [0,0,0, 1]])
-        self.drawAxes(trafMatrix)
-
-        glTranslatef(-self.xc, -self.yc, -self.zc)
-
-        #print self.xc, self.yc, self.zc
-
-        glMultMatrixf(trafMatrix)
-
-        glScalef(self.scale, self.scale, self.scale)
-
-        #glTranslatef(-self.xc, -self.yc, -self.zc)
-
+        self.interlace_stencil()
+        glEnable(GL_DEPTH_TEST)
+        glClear(GL_COLOR_BUFFER_BIT)
         
-
-        #glPushMatrix()
-        #color = [1.0,0.,0.,1.]
-        #glMaterialfv(GL_FRONT,GL_DIFFUSE,color)
-        #glutSolidSphere(2,20,20)
-        #glColor3f(1,0,0)
-
-        #glBegin(GL_POLYGON)
-        #glVertex2f(0, 0)
-        #glVertex2f(1,0)
-        #glVertex2f(1,1)
-        #glVertex2f(0,1)
-        #glEnd()
-
+        #print 'od'
         
-
-        if self.mode in  ['points']:
-            glDisable(GL_LIGHTING)
-            glPointSize(self.pointSize*(self.scale*float(self.Size[0])/(self.xmax - self.xmin)))
+        if self.stereo:
+            views = ['left', 'right']
         else:
-            pass
-            #glEnable(GL_LIGHTING)
+            views = ['centre']
+        
+        for view in views:
+            if view == 'left':
+                eye = -self.eye_dist
+                glStencilFunc(GL_NOTEQUAL,1,1)
+            elif view == 'right':
+                eye = +self.eye_dist
+                glStencilFunc(GL_EQUAL,1,1)
+            else:
+                eye = 0
+            
+            glClear(GL_DEPTH_BUFFER_BIT)
+            glMatrixMode(GL_MODELVIEW)        
+            glLoadIdentity()
+            glMatrixMode(GL_PROJECTION)        
+            glLoadIdentity()
+            #glOrtho(-10,10,-10,10,-1000,1000)
+            glFrustum(-1 + eye,1 + eye,-1,1,1.5,20)
+            #glFrustum(
+            #       (-(1+eye) *(ps.znear/ps.zscreen)*xfactor,
+            #       (ps.w/(2.0*PIXELS_PER_INCH)+Eye)    *(ps.znear/ps.zscreen)*xfactor,
+            #       -(ps.h/(2.0*PIXELS_PER_INCH))*(ps.znear/ps.zscreen)*yfactor,
+            #       (ps.h/(2.0*PIXELS_PER_INCH))*(ps.znear/ps.zscreen)*yfactor,
+            #       ps.znear, ps.zfar);
+            #gluPerspective(60, 1, 1.5, 20)
+            
+            glMatrixMode(GL_MODELVIEW)
+            glTranslatef(eye,0.0,0.0)
+    
+            self.setupLights()
 
-        #glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        glPushMatrix ()
+            trafMatrix = numpy.array([numpy.hstack((self.vecRight, 0)), numpy.hstack((self.vecUp, 0)), numpy.hstack((self.vecBack, 0)), [0,0,0, 1]])
+            self.drawAxes(trafMatrix)            
+            
+            glTranslatef(-self.xc, -self.yc, -self.zc)             
+            glTranslatef(0, 0, -10)
 
-        glColor4f(0,0.5,0, 1)
+    
+            glMultMatrixf(trafMatrix)
+    
+            glScalef(self.scale, self.scale, self.scale)
 
-        glDrawArrays(self.drawModes[self.mode], 0, self.nVertices)
-
-        glPopMatrix ()
+              
+            #glPushMatrix()
+            #color = [1.0,0.,0.,1.]
+            #glMaterialfv(GL_FRONT,GL_DIFFUSE,color)
+            #glutSolidSphere(2,20,20)
+            #glColor3f(1,0,0)
+    
+            #glBegin(GL_POLYGON)
+            #glVertex2f(0, 0)
+            #glVertex2f(1,0)
+            #glVertex2f(1,1)
+            #glVertex2f(0,1)
+            #glEnd()
+    
+            #print self.scale
+    
+            if self.mode in  ['points']:
+                glDisable(GL_LIGHTING)
+                #glPointSize(self.pointSize*self.scale*(self.xmax - self.xmin))
+                glPointSize(self.pointSize)
+            else:
+                pass
+                #glEnable(GL_LIGHTING)
+    
+            #glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+            glPushMatrix ()
+    
+            glColor4f(0,0.5,0, 1)
+    
+            glDrawArrays(self.drawModes[self.mode], 0, self.nVertices)
+    
+            glPopMatrix ()
         
 
         glFlush()
         #glPopMatrix()
+        #print 'odf'
         self.SwapBuffers()
+        
+        #print 'odd'
         return
 
     def setupLights(self):
@@ -235,6 +328,7 @@ class LMGLCanvas(GLCanvas):
 #        glEnable(GL_LIGHT0)
         glEnable(GL_DEPTH_TEST)
         glEnable(GL_NORMALIZE)
+        #glEnable(GL_STENCIL)
 
         glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, [0.3, 0.3, 0.3, 1])
         glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, 50)
@@ -256,6 +350,7 @@ class LMGLCanvas(GLCanvas):
         glEnableClientState(GL_NORMAL_ARRAY)
         glEnable (GL_BLEND)
         glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glEnable(GL_POINT_SMOOTH)
 
         #self.vs = glVertexPointerf(numpy.array([[5, 5],[10000, 10000], [10000, 5]]).astype('f'))
         #self.cs = glColorPointerf(numpy.ones((3,3)).astype('f'))
@@ -267,6 +362,7 @@ class LMGLCanvas(GLCanvas):
         #self.setBlob(to[0], to[1], to[2], smScale=[1e3,1e3,1e3])
         #self.setTriang(to[0], to[1], to[2])
         self.setPoints(to[0], to[1], to[2], to[2])
+        self.ResetView()
 
         #glMatrixMode(GL_PROJECTION)
         #glLoadIdentity()
@@ -280,9 +376,12 @@ class LMGLCanvas(GLCanvas):
         return
 
     def drawAxes(self,trafMatrix):
+        glDisable(GL_LIGHTING)
         glPushMatrix ()
 
-        glTranslatef(8, -8.5, 0)
+        glTranslatef(.8, -.85, -2)
+        glScalef(.1, .1, .1)
+        glLineWidth(2)
         glMultMatrixf(trafMatrix)
 
         glColor3fv([1,.5,.5])
@@ -302,8 +401,11 @@ class LMGLCanvas(GLCanvas):
         glVertex3f(0,0,0)
         glVertex3f(0,0,1)
         glEnd()
+        
+        glLineWidth(1)
 
         glPopMatrix ()
+        glEnable(GL_LIGHTING)
 
     def setBlob(self, x,y,z, sizeCutoff=1000., zrescale=1, smooth=False, smScale=[10,10,10]):
         #center data
@@ -313,23 +415,29 @@ class LMGLCanvas(GLCanvas):
 
         P, A, N = gen3DBlobs(x,y,z/zrescale, sizeCutoff, smooth, smScale)
         P[:,2] = P[:,2]*zrescale
+        
+        self.sx = x.max() - x.min()
+        self.sy = y.max() - y.min()
+        self.sz = z.max() - z.min()
 
-        self.scale = 10./(x.max() - x.min())
+        #self.scale = 10./(x.max() - x.min())
 
 #        self.xc = x.mean()#*self.scale
 #        self.yc = y.mean()#*self.scale
 #        self.zc = z.mean()#*self.scale
-        self.xc = 0
-        self.yc = 0
-        self.zc = 0
+        #self.xc = 0
+        #self.yc = 0
+        #self.zc = 0
 
-        self.vecUp = numpy.array([0,1,0])
-        self.vecRight = numpy.array([1,0,0])
-        self.vecBack = numpy.array([0,0,1])
+        #self.vecUp = numpy.array([0,1,0])
+        #self.vecRight = numpy.array([1,0,0])
+        #self.vecBack = numpy.array([0,0,1])
 
         self.c = A
         self.a = self.c
         vs = P
+
+        self.SetCurrent()       
         
         self.vs_ = glVertexPointerf(vs)
         self.n_ = glNormalPointerf(N)
@@ -371,6 +479,7 @@ class LMGLCanvas(GLCanvas):
         self.a = 1./A
         vs = P
 
+        self.SetCurrent()        
         self.vs_ = glVertexPointerf(vs)
         self.n_ = glNormalPointerf(N)
 
@@ -396,22 +505,17 @@ class LMGLCanvas(GLCanvas):
             self.a = a
         else:
             self.a = numpy.ones(x.shape).ravel()
+            
+        self.sx = x.max() - x.min()
+        self.sy = y.max() - y.min()
+        self.sz = z.max() - z.min()
 
 #        self.xc = x.mean()#*self.scale
 #        self.yc = y.mean()#*self.scale
 #        self.zc = z.mean()#*self.scale
 
-        self.xc = 0
-        self.yc = 0
-        self.zc = 0
-
-        self.vecUp = numpy.array([0,1,0])
-        self.vecRight = numpy.array([1,0,0])
-        self.vecBack = numpy.array([0,0,1])
-
-
-        self.scale = 10./(x.max() - x.min())
-
+        
+        self.SetCurrent()
         vs = numpy.vstack((x.ravel(), y.ravel(), z.ravel()))
         vs = vs.T.ravel().reshape(len(x.ravel()), 3)
         self.vs_ = glVertexPointerf(vs)
@@ -426,6 +530,18 @@ class LMGLCanvas(GLCanvas):
         self.nVertices = vs.shape[0]
         self.setColour(self.IScale, self.zeroPt)
         self.setCLim((self.c.min(), self.c.max()), (0,0))
+        
+    def ResetView(self):
+        self.xc = 0
+        self.yc = 0
+        self.zc = 0
+
+        self.vecUp = numpy.array([0,1,0])
+        self.vecRight = numpy.array([1,0,0])
+        self.vecBack = numpy.array([0,0,1])
+
+
+        self.scale = 5./(self.sx)
 
 
 #    def setTriangEdges(self, T):
@@ -530,8 +646,8 @@ class LMGLCanvas(GLCanvas):
 
     def OnWheel(self, event):
         rot = event.GetWheelRotation()
-        view_size_x = self.xmax - self.xmin
-        view_size_y = self.ymax - self.ymin
+        #view_size_x = self.xmax - self.xmin
+        #view_size_y = self.ymax - self.ymin
 
         #get translated coordinates
         xp = 1*(event.GetX() - self.Size[0]/2)/float(self.Size[0])
@@ -539,40 +655,32 @@ class LMGLCanvas(GLCanvas):
 
         #print xp
         #print yp
-        
-        self.WheelZoom(rot, xp, yp)
+        if event.MiddleIsDown():
+            self.WheelFocus(rot, xp, yp)
+        else:
+            self.WheelZoom(rot, xp, yp)
         self.Refresh()
 
     
 
     def WheelZoom(self, rot, xp, yp):
-        #print xp, yp
-        #print self.xc, self.scale, self.scale*xp
-        #self.xc += 20*xp/self.scale
-        #self.yc += 20*yp/self.scale
-
-        #posCh = 20*xp*self.vecRight/self.scale + 20*yp*self.vecUp/self.scale
-
-        #self.xc += posCh[0]
-        #self.yc += posCh[1]
-        #self.zc += posCh[2]
-
-        self.xc += 20*xp
-        self.yc += 20*yp
-
         if rot > 0:
             #zoom out
             self.scale *=2.
-            self.xc*=2
-            self.yc*=2
-
 
         if rot < 0:
             #zoom in
             self.scale /=2.
-            self.xc/=2
-            self.yc/=2
             
+    def WheelFocus(self, rot, xp, yp):
+        if rot > 0:
+            #zoom out
+            self.zc -= 1.
+
+        if rot < 0:
+            #zoom in
+            self.zc +=1.
+ 
 
 
     def OnLeftDown(self, event):
@@ -587,14 +695,18 @@ class LMGLCanvas(GLCanvas):
         event.Skip()
 
     def OnLeftUp(self, event):
-        #x = event.GetX()
-        #y = event.GetY()
-
-
         self.dragging=False
+        event.Skip()
         
-        
-        #self.Refresh()
+    def OnMiddleDown(self, event):
+        self.xDragStart = event.GetX()
+        self.yDragStart = event.GetY()
+
+        self.panning = True
+        event.Skip()
+
+    def OnMiddleUp(self, event):
+        self.panning=False
         event.Skip()
 
     def OnMouseMove(self, event):
@@ -633,6 +745,50 @@ class LMGLCanvas(GLCanvas):
 
             self.Refresh()
 
+            event.Skip()
+            
+        elif self.panning:
+            x = event.GetX()
+            y = event.GetY()
+            
+            dx = 10*(x - self.xDragStart)/float(self.Size[0])
+            dy = 10*(y - self.yDragStart)/float(self.Size[1])
+            
+            #print dx
+            
+            self.xc -= dx
+            self.yc += dy
+
+            self.xDragStart = x
+            self.yDragStart = y
+
+            self.Refresh()
+
+            event.Skip()
+            
+    def OnKeyPress(self, event):
+        if event.GetKeyCode() == 83: #S - toggle stereo
+            self.stereo = not self.stereo
+            self.Refresh()
+        elif event.GetKeyCode() == 67: #C - centre
+            self.xc = 0
+            self.yc = 0
+            self.zc = 0
+            self.Refresh()
+            
+        elif event.GetKeyCode() == 91: #[ decrease eye separation
+            self.eye_dist /=1.5
+            self.Refresh()
+        
+        elif event.GetKeyCode() == 93: #] increase eye separation
+            self.eye_dist *=1.5
+            self.Refresh()
+            
+        elif event.GetKeyCode() == 82: #R reset view
+            self.ResetView()
+            self.Refresh()
+            
+        else:
             event.Skip()
 
     def getSnapshot(self, mode = GL_LUMINANCE):

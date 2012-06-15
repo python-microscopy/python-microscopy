@@ -130,12 +130,15 @@ class ImageStack(object):
     def LoadQueue(self, filename):
         import Pyro.core
         from PYME.Analysis.DataSources import TQDataSource
+        from PYME.misc.computerName import GetComputerName
+        compName = GetComputerName()
 
         if self.queueURI == None:
-            if 'PYME_TASKQUEUENAME' in os.environ.keys():
-                taskQueueName = os.environ['PYME_TASKQUEUENAME']
-            else:
-                taskQueueName = 'taskQueue'
+            #if 'PYME_TASKQUEUENAME' in os.environ.keys():
+            #    taskQueueName = os.environ['PYME_TASKQUEUENAME']
+            #else:
+            #    taskQueueName = 'taskQueue'
+            taskQueueName = 'TaskQueues.%s' % compName
             self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
         else:
             self.tq = Pyro.core.getProxyForURI(self.queueURI)
@@ -246,6 +249,28 @@ class ImageStack(object):
             if os.path.exists(mdfn):
                 self.mdh.copyEntriesFrom(MetaDataHandler.SimpleMDHandler(mdfn))
                 mdf = mdfn
+            elif filename.endswith('.lsm'):
+                #read lsm metadata
+                from PYME.gohlke.tifffile import TIFFfile
+                tf = TIFFfile(filename)
+                lsm_info = tf[0].cz_lsm_scan_information
+                self.mdh['voxelsize.x'] = lsm_info['line_spacing']
+                self.mdh['voxelsize.y'] = lsm_info['line_spacing']
+                self.mdh['voxelsize.z'] = lsm_info['plane_spacing']
+                
+                def lsm_pop(basename, dic):
+                    for k, v in dic.items():
+                        if isinstance(v, list):
+                            #print k, v
+                            for i, l_i in enumerate(v):
+                                #print i, l_i, basename
+                                lsm_pop(basename + k + '.' + k[:-1] + '%i.' %i, l_i)
+                                
+                        else:
+                            self.mdh[basename + k] = v
+                
+                lsm_pop('LSM.', lsm_info)
+                
 
         if not ('voxelsize.x' in self.mdh.keys() and 'voxelsize.y' in self.mdh.keys()):
             from PYME.DSView.voxSizeDialog import VoxSizeDialog
@@ -296,7 +321,19 @@ class ImageStack(object):
             from PYME.DSView.dataWrap import ListWrap
             chans = [numpy.atleast_3d(self.data.getSlice(i)) for i in range(len(self.mdh['ChannelNames']))]
             self.data = ListWrap(chans)
+        elif filename.endswith('.lsm') and 'LSM.images_number_channels' in self.mdh.keys() and self.mdh['LSM.images_number_channels'] > 1:
+            from PYME.DSView.dataWrap import ListWrap
+            nChans = self.mdh['LSM.images_number_channels']
             
+            chans = []
+            
+            for n in range(nChans):
+                ds = TiffDataSource.DataSource(filename, None, n)
+                ds = BufferedDataSource.DataSource(ds, min(ds.getNumSlices(), 50))
+
+                chans.append(ds)
+
+            self.data = ListWrap(chans)
 
 
         
@@ -332,7 +369,7 @@ class ImageStack(object):
             global lastdir
             
             fdialog = wx.FileDialog(None, 'Please select Data Stack to open ...',
-                wildcard='PYME Data|*.h5|TIFF files|*.tif|KDF files|*.kdf|All files|*.*', style=wx.OPEN, defaultDir = lastdir)
+                wildcard='Image Data|*.h5;*.tif;*.lsm;*.kdf;*.md;*.psf|All files|*.*', style=wx.OPEN, defaultDir = lastdir)
             succ = fdialog.ShowModal()
             if (succ == wx.ID_OK):
                 filename = fdialog.GetPath()
