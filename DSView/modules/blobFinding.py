@@ -15,6 +15,7 @@ from PYME.Analysis.LMVis import recArrayView
 import numpy
 from PYME.DSView.OverlaysPanel import OverlayPanel
 import wx.lib.agw.aui as aui
+import os
 
 class blobFinder:
     def __init__(self, dsviewer):
@@ -191,7 +192,7 @@ class blobFinder:
 
     def savePositions(self, event=None):
         fdialog = wx.FileDialog(None, 'Save Positions ...',
-            wildcard='Tab formatted text|*.txt', defaultFile=os.path.splitext(self.seriesName)[0] + '_pos.txt', style=wx.SAVE|wx.HIDE_READONLY)
+            wildcard='Tab formatted text|*.txt', defaultFile=os.path.splitext(self.image.seriesName)[0] + '_pos.txt', style=wx.SAVE|wx.HIDE_READONLY)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
             outFilename = fdialog.GetPath().encode()
@@ -209,7 +210,7 @@ class blobFinder:
 
     def saveFits(self, event=None):
         fdialog = wx.FileDialog(None, 'Save Fit Results ...',
-            wildcard='Tab formatted text|*.txt', defaultFile=os.path.splitext(self.seriesName)[0] + '_fits.txt', style=wx.SAVE|wx.HIDE_READONLY)
+            wildcard='Tab formatted text|*.txt', defaultFile=os.path.splitext(self.image.seriesName)[0] + '_fits.txt', style=wx.SAVE|wx.HIDE_READONLY)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
             outFilename = fdialog.GetPath().encode()

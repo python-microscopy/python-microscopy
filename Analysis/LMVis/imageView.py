@@ -226,6 +226,8 @@ class ImageViewPanel(wx.Panel):
         #print xp
         #print yp
         self.glCanvas.WheelZoom(rot, xp, yp)
+        
+        
 
     def OnKeyPress(self, event):
         if event.GetKeyCode() == wx.WXK_PRIOR:
@@ -240,6 +242,8 @@ class ImageViewPanel(wx.Panel):
     def OnLeftDown(self,event):
         if self.do.leftButtonAction == self.do.ACTION_SELECTION:
             self.StartSelection(event)
+            
+        event.Skip()
 
     def OnLeftUp(self,event):
         if self.do.leftButtonAction == self.do.ACTION_SELECTION:
@@ -248,6 +252,7 @@ class ImageViewPanel(wx.Panel):
         else:
             pass
             #self.OnSetPosition(event)
+        event.Skip()
 
     def StartSelection(self,event):
         self.selecting = True
