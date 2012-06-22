@@ -16,7 +16,7 @@ class DataSource(BaseDataSource):
     def __init__(self,dataSource, ROI, chan=0, flip=True, shiftfield=None, voxelsize=(70., 70., 200.)):
         #self.unmixer = unmixer
         self.dataSource = dataSource
-        self.sliceShape = list(self.dataSource.getSliceShape())
+        self.sliceShape = list(self.dataSource.shape[:-1])
         self.sliceShape[1]/=2
         
         self.ROI = ROI
