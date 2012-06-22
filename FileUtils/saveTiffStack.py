@@ -78,3 +78,49 @@ def saveTiffMultipage(arr, fn, **params):
 
         ifd_offsets.append(ifdOffset)
     fp.close()
+
+class TiffMP(object):
+    def __init__(self, fn, **params):
+        self.fp = open(fn, 'w+b')    
+        self.ifd_offsets=[]
+        params["_debug_multipage"] = True
+        
+        self.params = params
+        self.z = 0
+    
+    def AddSlice(self, arr):
+        if arr.dtype == 'uint16':
+            nptype = 'uint16'
+            piltype = 'I;16'
+        #elif arr.dtype == 'uint8':
+        #    nptype = 'uint8'
+        #    piltype = 'I;8'
+        else:
+            nptype = 'f'
+            piltype = 'F' 
+        
+        ii = Image.fromarray(arr.astype(nptype), piltype)
+
+        self.fp.seek(0,2) # go to end of file
+        if self.z==0:
+            # ref. PIL  TiffImagePlugin
+            # PIL always starts the first IFD at offset 8
+            ifdOffset = 8
+        else:
+            ifdOffset = self.fp.tell()
+
+        ii.save(self.fp, format="TIFF", **self.params)
+
+        if self.z>0: # correct "next" entry of previous ifd -- connect !
+            ifdo = self.ifd_offsets[-1]
+            self.fp.seek(ifdo)
+            ifdLength = ii._debug_multipage.i16(self.fp.read(2))
+            self.fp.seek(ifdLength*12,1) # go to "next" field near end of ifd
+            self.fp.write(ii._debug_multipage.o32( ifdOffset ))
+
+        self.ifd_offsets.append(ifdOffset)
+        self.z += 1
+    
+    def close(self):
+        self.fp.close()
+    

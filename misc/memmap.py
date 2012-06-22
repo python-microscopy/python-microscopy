@@ -19,7 +19,7 @@ def memmap(h, Astep = 1024,Amax = 1024**3):
         a = id(x)/Astep 
         s = sys.getsizeof(x)/Astep
         
-        mmap[a:(a+s+1)] = 1
+        mmap[a:(a+s+1)] |= 1
         
         #special case for numpy arrays, as sizeof  doesn't work
         #get the underlying data adress and size and add that too
@@ -27,7 +27,7 @@ def memmap(h, Astep = 1024,Amax = 1024**3):
             a = x.ctypes.data/Astep
             s = x.nbytes/Astep
             
-            mmap[a:(a+s+1)] = 1
+            mmap[a:(a+s+1)] |= 2
             
         
     return mmap

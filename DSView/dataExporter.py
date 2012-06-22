@@ -137,9 +137,12 @@ class TiffStackExporter(Exporter):
             
         if data.shape[3] > 1: #have multiple colour channels
             if data.shape[2] == 1: #2d image -> stack with chans
-                #print data[xslice, yslice, 0, 0].squeeze().shape
-                d = numpy.concatenate([numpy.atleast_3d(data[xslice, yslice, 0, i].squeeze()) for i in range(data.shape[3])],2)
-                saveTiffStack.saveTiffMultipage(d, outFile)
+                #d = numpy.concatenate([numpy.atleast_3d(data[xslice, yslice, 0, i].squeeze()) for i in range(data.shape[3])],2)
+                #saveTiffStack.saveTiffMultipage(d, outFile)
+                mpt = saveTiffStack.TiffMP(outFile)
+                for i in range(data.shape[3]):
+                    mpt.AddSlice(data[xslice, yslice, 0, i].squeeze())
+                mpt.close()
             else: #save each channel as it's own stack
                 if not metadata == None and 'ChannelNames' in metadata.getEntryNames():
                     chanNames = metadata['ChannelNames']    
