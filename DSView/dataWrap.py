@@ -61,11 +61,12 @@ class DataWrap: #permit indexing with more dimensions larger than len(shape)
 
         if not isinstance(data, np.ndarray) and not isinstance(data, tables.EArray): # is a data source
             self.type = 'DataSource'
-            self.shape = data.getSliceShape() + (data.getNumSlices(),)
+            #self.shape = data.getSliceShape() + (data.getNumSlices(),)
             #print self.shape
-            self.data.shape = self.shape
+            #self.data.shape = self.shape
+            #self.nTrueDims = 3
             self.dim_1_is_z = True
-
+        #else:
         self.nTrueDims = len(data.shape)
         #self.shape = data.shape# + (1, 1, 1, 1, 1)
         self.oldData = None
@@ -74,9 +75,23 @@ class DataWrap: #permit indexing with more dimensions larger than len(shape)
 
         if data.__class__ == tables.EArray:
              self.dim_1_is_z = True
-             self.shape = self.shape[1:3] + (self.shape[0],) + self.shape[3:]
+             #self.shape = self.shape[1:3] + (self.shape[0],) + self.shape[3:]
 
-        self.shape = DefaultList(data.shape)
+        #self.shape = DefaultList(data.shape)
+        
+    @property
+    def shape(self):
+        #if self.type == 'DataSource':
+        #    shape = self.data.getSliceShape() + (self.data.getNumSlices(),)
+        #else: #self.type == 'Array'
+        shape = self.data.shape
+            
+        if self.dim_1_is_z:
+            shape = shape[1:3] + (shape[0],) + shape[3:]
+        
+        return DefaultList(shape)
+        
+            
 
     def __getattr__(self, name):
         return getattr(self.data, name)

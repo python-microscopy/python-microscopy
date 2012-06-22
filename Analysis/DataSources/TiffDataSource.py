@@ -18,8 +18,9 @@ from PYME.ParallelTasks.relativeFiles import getFullFilename
 #import numpy as np
 
 from PYME.gohlke import tifffile
+from BaseDataSource import BaseDataSource
 
-class DataSource:
+class DataSource(BaseDataSource):
     moduleName = 'TiffDataSource'
     def __init__(self, filename, taskQueue, chanNum = 0):
         self.filename = getFullFilename(filename)#convert relative path to full path

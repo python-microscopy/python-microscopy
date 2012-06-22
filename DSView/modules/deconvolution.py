@@ -228,7 +228,7 @@ class deconvolver:
 
             saveTiffStack.saveTiffMultipage(self.dec.res, outFilename)
 
-    def update(self):
+    def update(self, dsviewer):
         if 'decvp' in dir(self):
             self.decvp.imagepanel.Refresh()
             

@@ -578,7 +578,7 @@ class LMAnalyser:
         self.dsviewer.Refresh()
         self.dsviewer.update()
 
-    def update(self):
+    def update(self, dsviewer):
         if 'fitInf' in dir(self) and not self.dsviewer.playbackpanel.tPlay.IsRunning():
             self.fitInf.UpdateDisp(self.view.PointsHitTest())
 

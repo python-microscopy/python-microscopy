@@ -103,6 +103,8 @@ class Pipeline:
             evKeyNames = set()
             for e in self.events:
                 evKeyNames.add(e['EventName'])
+                
+            self.eventCharts = []
         
             if 'ProtocolFocus' in evKeyNames:
                 self.zm = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), self.mdh.getEntry('Protocol.PiezoStartPos'))
@@ -110,6 +112,8 @@ class Pipeline:
         
                 self.selectedDataSource.z_focus = self.z_focus
                 self.selectedDataSource.setMapping('focus', 'z_focus')
+                
+                self.eventCharts.append(('Focus [um]', self.zm, 'ProtocolFocus'))
         
             if 'ScannerXPos' in evKeyNames:
                 x0 = 0
@@ -120,6 +124,8 @@ class Pipeline:
                 self.selectedDataSource.scan_x = 1.e3*self.xm(self.selectedDataSource['t']-.01)
                 self.selectedDataSource.setMapping('ScannerX', 'scan_x')
                 self.selectedDataSource.setMapping('x', 'x + scan_x')
+                
+                self.eventCharts.append(('XPos [um]', self.xm, 'ScannerXPos'))
         
             if 'ScannerYPos' in evKeyNames:
                 y0 = 0
@@ -130,6 +136,8 @@ class Pipeline:
                 self.selectedDataSource.scan_y = 1.e3*self.ym(self.selectedDataSource['t']-.01)
                 self.selectedDataSource.setMapping('ScannerY', 'scan_y')
                 self.selectedDataSource.setMapping('y', 'y + scan_y')
+                
+                self.eventCharts.append(('YPos [um]', self.ym, 'ScannerYPos'))
         
             if 'ScannerXPos' in evKeyNames or 'ScannerYPos' in evKeyNames:
                 self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)

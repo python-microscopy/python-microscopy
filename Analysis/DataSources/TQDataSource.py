@@ -9,8 +9,9 @@
 # This file may NOT be distributed without express permision from David Baddeley
 #
 ##################
+from BaseDataSource import BaseDataSource
 
-class DataSource:
+class DataSource(BaseDataSource):
     moduleName = 'TQDataSource'
     def __init__(self, queueName, taskQueue):
         self.taskQueue = taskQueue

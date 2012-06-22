@@ -9,8 +9,9 @@
 #
 ##################
 import numpy
+from BaseDataSource import BaseDataSource
 
-class DataSource: 
+class DataSource(BaseDataSource): 
     moduleName = 'UnsplitDataSource'
     def __init__(self,dataSource, ROI, chan=0, flip=True, shiftfield=None, voxelsize=(70., 70., 200.)):
         #self.unmixer = unmixer

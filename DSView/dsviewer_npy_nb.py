@@ -257,7 +257,8 @@ class DSViewFrame(wx.Frame):
 
             #update any modules which require it
             for uCallback in self.updateHooks:
-                uCallback()
+                #print uCallback
+                uCallback(self)
 
             self.updating = False
 

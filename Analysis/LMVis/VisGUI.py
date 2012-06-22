@@ -817,6 +817,9 @@ class VisGUIFrame(wx.Frame):
             self.elv = eventLogViewer.eventLogPanel(self, self.pipeline.events, 
                                                         self.pipeline.mdh, 
                                                         [0, self.pipeline.selectedDataSource['tIndex'].max()])
+    
+            self.elv.SetCharts(self.pipeline.eventCharts)
+            
             self.AddPage(self.elv, caption='Events', update=False)
             
         #print 'ud'

@@ -9,8 +9,9 @@
 #
 ##################
 import numpy
+from BaseDataSource import BaseDataSource
 
-class DataSource: #buffer our io to avoid decompressing multiple times
+class DataSource(BaseDataSource): #buffer our io to avoid decompressing multiple times
     moduleName = 'BufferedDataSource'
     def __init__(self,dataSource, bLen = 12):
         self.bLen = bLen

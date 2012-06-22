@@ -11,6 +11,17 @@
 from PYME.DSView import eventLogViewer
 from PYME.Analysis import piecewiseMapping
 
+def Update(dsviewer):
+    image = dsviewer.image
+    if 'events' in dir(image) and len(image.events) > 0:
+        st = image.mdh.getEntry('StartTime')
+        if 'EndTime' in image.mdh.getEntryNames():
+            et = image.mdh.getEntry('EndTime')
+        else:
+            et = piecewiseMapping.framesToTime(image.data.getNumSlices(), image.events, image.mdh)
+            
+        dsviewer.elv.SetRange(et - st)
+
 def Plug(dsviewer):
     image = dsviewer.image
     if 'events' in dir(image) and len(image.events) > 0:
@@ -50,5 +61,7 @@ def Plug(dsviewer):
             charts.append(('ZPos [um]', dsviewer.zm, 'ScannerZPos'))
 
         dsviewer.elv.SetCharts(charts)
+        
+        dsviewer.updateHooks.append(Update)
 
 

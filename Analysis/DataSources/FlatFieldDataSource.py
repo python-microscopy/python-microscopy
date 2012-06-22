@@ -11,9 +11,10 @@
 ##################
 
 from PYME.ParallelTasks.relativeFiles import getFullFilename
+from BaseDataSource import BaseDataSource
 #import tables
 
-class DataSource:
+class DataSource(BaseDataSource):
     moduleName = 'FlatFieldDataSource'
     def __init__(self, parentSource, mdh, flatfield):
         #self.h5Filename = getFullFilename(h5Filename)#convert relative path to full path

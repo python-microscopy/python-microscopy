@@ -89,21 +89,23 @@ def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=N
 
 
 def genFitImage(fitResults, metadata, fitfcn=f_Interp3d):
-    if fitfcn == f_Interp3d:
-        if 'PSFFile' in metadata.getEntryNames():
-            setModel(metadata.getEntry('PSFFile'), metadata)
-        else:
-            genTheoreticalModel(metadata)
+    #if fitfcn == f_Interp3d:
+    #    if 'PSFFile' in metadata.getEntryNames():
+    #        setModel(metadata.getEntry('PSFFile'), metadata)
+    #    else:
+    #        genTheoreticalModel(metadata)
 
     xslice = slice(*fitResults['slicesUsed']['x'])
     yslice = slice(*fitResults['slicesUsed']['y'])
 
-    X = 1e3*metadata.getEntry('voxelsize.x')*scipy.mgrid[xslice]
-    Y = 1e3*metadata.getEntry('voxelsize.y')*scipy.mgrid[yslice]
-    Z = array([0]).astype('f')
-    P = scipy.arange(0,1.01,.01)
+    #X = 1e3*metadata.getEntry('voxelsize.x')*scipy.mgrid[xslice]
+    #Y = 1e3*metadata.getEntry('voxelsize.y')*scipy.mgrid[yslice]
+    #Z = array([0]).astype('f')
+    #P = scipy.arange(0,1.01,.01)
 
-    im = fitfcn(fitResults['fitResults'], X, Y, Z, P).reshape(len(X), len(Y))
+    #im = fitfcn(fitResults['fitResults'], X, Y, Z, P).reshape(len(X), len(Y))
+    
+    im = PSFFitFactory.evalModel(fitResults, metadata, scipy.mgrid[xslice].mean(), scipy.mgrid[yslice].mean())
 
     return im
 
