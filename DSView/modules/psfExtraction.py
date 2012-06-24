@@ -18,6 +18,8 @@ class psfExtractor:
         self.view = dsviewer.view
         self.do = dsviewer.do
         self.image = dsviewer.image
+        
+        self.multiChannel = self.image.data.shape[3] > 1
 
         self.PSFLocs = []
 
@@ -29,6 +31,17 @@ class psfExtractor:
         pan = wx.Panel(item, -1)
 
         vsizer = wx.BoxSizer(wx.VERTICAL)
+
+        #if self.multiChannel: #we have channels            
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(pan, -1, 'Channel:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+    
+        self.chChannel = wx.Choice(pan, -1, choices=self.do.names)
+            
+        hsizer.Add(self.chChannel, 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+    
+        vsizer.Add(hsizer, 0,wx.EXPAND|wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 0)        
+        
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 #
 #        hsizer.Add(wx.StaticText(pan, -1, 'Threshold:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
@@ -64,10 +77,16 @@ class psfExtractor:
         hsizer.Add(self.tPSFBlur, 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
         vsizer.Add(hsizer, 0,wx.EXPAND|wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        
+        
 
         bExtract = wx.Button(pan, -1, 'Extract', style=wx.BU_EXACTFIT)
         bExtract.Bind(wx.EVT_BUTTON, self.OnExtractPSF)
         vsizer.Add(bExtract, 0,wx.ALL|wx.ALIGN_RIGHT, 5)
+        
+        bAxialShift = wx.Button(pan, -1, 'Estimate axial shift', style=wx.BU_EXACTFIT)
+        bAxialShift.Bind(wx.EVT_BUTTON, self.OnCalcShift)
+        vsizer.Add(bAxialShift, 0,wx.ALL|wx.ALIGN_RIGHT, 5)
 
         pan.SetSizer(vsizer)
         vsizer.Fit(pan)
@@ -94,21 +113,23 @@ class psfExtractor:
                 return
                 
         #if we have a muilt-colour stack, 
+        chnum = self.chChannel.GetSelection()
                 
         rsx, rsy, rsz = [int(s) for s in self.tPSFROI.GetValue().split(',')]
-        dx, dy, dz = extractImages.getIntCenter(self.image.data[(self.do.xp-rsx):(self.do.xp+rsx + 1),(self.do.yp-rsy):(self.do.yp+rsy+1), :])
+        dx, dy, dz = extractImages.getIntCenter(self.image.data[(self.do.xp-rsx):(self.do.xp+rsx + 1),(self.do.yp-rsy):(self.do.yp+rsy+1), :, chnum])
         self.PSFLocs.append((self.do.xp + dx, self.do.yp + dy, dz))
         self.view.psfROIs = self.PSFLocs
         self.view.Refresh()
 
     def OnTagPoints(self, event):
         from PYME.PSFEst import extractImages
+        chnum = self.chChannel.GetSelection()
         rsx, rsy, rsz = [int(s) for s in self.tPSFROI.GetValue().split(',')]
         for xp, yp, zp in self.view.points:
             if ((xp > rsx) and (xp < (self.image.data.shape[0] - rsx)) and
                 (yp > rsy) and (yp < (self.image.data.shape[1] - rsy))):
                     
-                    dx, dy, dz = extractImages.getIntCenter(self.image.data[(xp-rsx):(xp+rsx + 1),(yp-rsy):(yp+rsy+1), :])
+                    dx, dy, dz = extractImages.getIntCenter(self.image.data[(xp-rsx):(xp+rsx + 1),(yp-rsy):(yp+rsy+1), :, chnum])
                     self.PSFLocs.append((xp + dx, yp + dy, dz))
         
         self.view.psfROIs = self.PSFLocs
@@ -126,15 +147,53 @@ class psfExtractor:
             self.view.Refresh()
         except:
             pass
+        
+    def OnCalcShift(self, event):
+        if (len(self.PSFLocs) > 0):
+            import pylab
+            
+            x,y,z = self.PSFLocs[0]
+            
+            z_ = numpy.arange(self.image.data.shape[2])*self.image.mdh['voxelsize.z']*1.e3
+            z_ -= z_.mean()
+            
+            pylab.figure()
+            p_0 = 1.0*self.image.data[x,y,:,0].squeeze()
+            p_0  -= p_0.min()
+            p_0 /= p_0.max()
+
+            #print (p_0*z_).sum()/p_0.sum()
+            
+            p0b = numpy.maximum(p_0 - 0.5, 0)
+            z0 = (p0b*z_).sum()/p0b.sum()
+            
+            p_1 = 1.0*self.image.data[x,y,:,1].squeeze()
+            p_1 -= p_1.min()
+            p_1 /= p_1.max()
+            
+            p1b = numpy.maximum(p_1 - 0.5, 0)
+            z1 = (p1b*z_).sum()/p1b.sum()
+            
+            dz = z1 - z0
+
+            print 'z0: %f, z1: %f, dz: %f' % (z0,z1,dz)
+            
+            pylab.plot(z_, p_0)
+            pylab.plot(z_, p_1)
+            pylab.vlines(z0, 0, 1)
+            pylab.vlines(z1, 0, 1)
+            pylab.figtext(.7,.7, 'dz = %3.2f' % dz)
+            
 
     def OnExtractPSF(self, event):
         if (len(self.PSFLocs) > 0):
             from PYME.PSFEst import extractImages
+            chnum = self.chChannel.GetSelection()
 
             psfROISize = [int(s) for s in self.tPSFROI.GetValue().split(',')]
             psfBlur = [float(s) for s in self.tPSFBlur.GetValue().split(',')]
             #print psfROISize
-            psf = extractImages.getPSF3D(self.image.data, self.PSFLocs, psfROISize, psfBlur)
+            psf = extractImages.getPSF3D(self.image.data[:,:,:,chnum], self.PSFLocs, psfROISize, psfBlur)
 
 #            from pylab import *
 #            import cPickle

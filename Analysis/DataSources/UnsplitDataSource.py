@@ -60,7 +60,7 @@ class DataSource(BaseDataSource):
 
         #print self.chan, sl.shape
 
-        print sl.shape
+        #print sl.shape
 
         dsa = sl.squeeze()
 

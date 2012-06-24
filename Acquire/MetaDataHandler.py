@@ -306,7 +306,12 @@ class XMLMDHandler(MDHandlerBase):
         val = node.getAttribute('value')
 
         if cls == 'int':
-            val = int(val)
+            if val == 'True': #booleans get cls 'int'
+                val = True
+            elif val == 'False':
+                val = False
+            else:
+                val = int(val)
         if cls == 'float':
             val = float(val)
         if cls == 'pickle':
