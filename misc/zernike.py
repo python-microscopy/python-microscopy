@@ -86,11 +86,13 @@ def projectZ(image, key, weights = 1.0):
 def calcCoeffs(image, maxN, weights=1.0):
     im = image
     coeffs = []
+    ress = []
     for n in range(maxN):
         c, res, rand, sing = projectZ(im, n, weights)
-        print '%d - %s: %3.2f   residual=%3.2f' % (n, NameByNumber[n], c, res)
+        print '%d\t%s: %3.2f   residual=%3.2f' % (n, NameByNumber[n], c, res)
         coeffs.append(c[0])
+        ress.append(res)
         
         im = im - c*zernikeIm(n, im.shape)
         
-    return coeffs, res, im
+    return coeffs, ress, im

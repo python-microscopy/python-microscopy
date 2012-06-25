@@ -43,7 +43,7 @@ class PSFTools:
         z_ = np.arange(self.image.data.shape[2])*self.image.mdh['voxelsize.z']*1.e3
         z_ -= z_.mean()        
         
-        pupil = fourierHNA.ExtractPupil(self.image.data[:,:,:], z_, self.image.mdh['voxelsize.x']*1e3, 680, 1.49)
+        pupil = fourierHNA.ExtractPupil(self.image.data[:,:,:], z_, self.image.mdh['voxelsize.x']*1e3, 700, 1.49)
         
         pylab.figure()
         pylab.subplot(121)
@@ -55,7 +55,7 @@ class PSFTools:
         im.mdh.copyEntriesFrom(self.image.mdh)
         im.mdh['Parent'] = self.image.filename
         #im.mdh['Processing.CropROI'] = roi
-        mode = 'lite'
+        mode = 'pupil'
 
         dv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas)
 

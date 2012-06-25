@@ -344,7 +344,7 @@ class ImageStack(object):
         from PYME.ParallelTasks.relativeFiles import getRelFilename
         self.seriesName = getRelFilename(filename)
 
-        self.mode = 'lite'
+        self.mode = 'default'
 
     def LoadImageSeries(self, filename):
         #from PYME.FileUtils import readTiff
@@ -360,7 +360,7 @@ class ImageStack(object):
         from PYME.ParallelTasks.relativeFiles import getRelFilename
         self.seriesName = getRelFilename(filename)
 
-        self.mode = 'lite'
+        self.mode = 'default'
 
     def Load(self, filename=None):
         print filename

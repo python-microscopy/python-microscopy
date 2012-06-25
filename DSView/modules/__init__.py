@@ -14,9 +14,11 @@ modeModules = {
 'lite': ['arrayView'] + liteModules,
 'LM' : ['arrayView'] + liteModules + basemodules +  ['LMAnalysis'],
 'blob' : ['arrayView'] + liteModules + basemodules + ['blobFinding', 'psfExtraction'],
-'default' : ['arrayView'] + liteModules + basemodules + ['psfExtraction'],
+'default' : ['arrayView'] + liteModules + basemodules,
+'psf'   :   ['arrayView'] + liteModules + ['deconvolution', 'psfTools'],
 'visGUI' : ['visgui'] + liteModules + ['coloc', 'vis3D'],
 'graph' : ['graphViewPanel', 'profileFitting'],
+'pupil' : ['arrayView', 'pupilTools'] + liteModules,
 'bare' : [],
 }
 

@@ -50,11 +50,16 @@ class fitTestJig(object):
         ps = numpy.zeros((nTests, len(params)), 'f4')
 
         rs=11
+        
+        md2 = copy.copy(self.md)
+        if 'Test.PSFFile' in self.md.getEntryNames():
+            md2['PSFFile'] = self.md['Test.PSFFile']
+        
         for i in range(nTests):
             p = array(params) + array(param_jit)*(2*rand(len(param_jit)) - 1)
             p[0] = abs(p[0])
             ps[i, :] = p
-            self.data, self.x0, self.y0, self.z0 = self.fitMod.FitFactory.evalModel(p, self.md, roiHalfSize=rs)#, roiHalfSize= roiHalfWidth))
+            self.data, self.x0, self.y0, self.z0 = self.fitMod.FitFactory.evalModel(p, md2, roiHalfSize=rs)#, roiHalfSize= roiHalfWidth))
             
             #print self.data.shape
             #print self.data.min(), self.data.max()
