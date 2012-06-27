@@ -839,11 +839,12 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         #XY
         if self.do.slice == DisplayOpts.SLICE_XY:
             ima = numpy.zeros((min(sY_, self.do.ds.shape[1]), min(sX_, self.do.ds.shape[0]), 3), 'uint8')
-            for chan, offset, gain, cmap in zip(self.do.Chans, self.do.Offs, self.do.Gains, self.do.cmaps):
+            for chan, offset, gain, cmap in self.do.GetActiveChans():#zip(self.do.Chans, self.do.Offs, self.do.Gains, self.do.cmaps, self.do.show):
                 #ima[:] = numpy.minimum(ima[:] + (255*cmap(gain*(self.do.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.do.zp), chan].squeeze().T - offset))[:,:,:3])[:], 255)
                 #cmap =
                 
                 #print lut.shape
+                #if show:
                 if not cmap == labeled:
                     #seg = self.do.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.do.zp), chan].squeeze().T
                     #seg = seg.astype('f4')
@@ -879,7 +880,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         elif self.do.slice == DisplayOpts.SLICE_XZ:
             ima = numpy.zeros((min(sY_, self.do.ds.shape[2]), min(sX_, self.do.ds.shape[0]), 3), 'uint8')
 
-            for chan, offset, gain, cmap in zip(self.do.Chans, self.do.Offs, self.do.Gains, self.do.cmaps):
+            for chan, offset, gain, cmap in self.do.GetActiveChans():#in zip(self.do.Chans, self.do.Offs, self.do.Gains, self.do.cmaps):
                 if not cmap == labeled:
                     lut = getLUT(cmap)
                     seg = self.do.ds[x0_:(x0_+sX_),int(self.do.yp),y0_:(y0_+sY_), chan].squeeze().T
@@ -891,7 +892,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         elif self.do.slice == DisplayOpts.SLICE_YZ:
             ima = numpy.zeros((min(sY_, self.do.ds.shape[2]), min(sX_, self.do.ds.shape[1]), 3), 'uint8')
 
-            for chan, offset, gain, cmap in zip(self.do.Chans, self.do.Offs, self.do.Gains, self.do.cmaps):
+            for chan, offset, gain, cmap in self.do.GetActiveChans():#zip(self.do.Chans, self.do.Offs, self.do.Gains, self.do.cmaps):
                 if not cmap == labeled:
                     lut = getLUT(cmap)
                     seg = self.do.ds[int(self.do.xp),x0_:(x0_+sX_),y0_:(y0_+sY_), chan].squeeze().T

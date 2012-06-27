@@ -169,7 +169,7 @@ class segmenter:
         else:
             mode = 'lite'
 
-        self.res = ViewIm3D(im, parent=self.dsviewer, mode = mode, glCanvas = self.dsviewer.glCanvas)
+        self.res = ViewIm3D(im, parent=wx.GetTopLevelParent(self.dsviewer), mode = mode, glCanvas = self.dsviewer.glCanvas)
 
         self.panAnneal = SegmentationPanel(self.res, self.image, newImages)
 

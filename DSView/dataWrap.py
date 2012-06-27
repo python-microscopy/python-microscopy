@@ -11,6 +11,7 @@
 '''Classes to wrap a source of data so that it looks like an array'''
 import numpy as np
 import tables
+from PYME.Analysis.DataSources import BaseDataSource
 
 class DefaultList(list):
     '''List which returns a default value for items not in the list'''
@@ -65,7 +66,7 @@ class DataWrap: #permit indexing with more dimensions larger than len(shape)
             #print self.shape
             #self.data.shape = self.shape
             #self.nTrueDims = 3
-            self.dim_1_is_z = True
+            #self.dim_1_is_z = True
         #else:
         self.nTrueDims = len(data.shape)
         #self.shape = data.shape# + (1, 1, 1, 1, 1)
@@ -102,8 +103,8 @@ class DataWrap: #permit indexing with more dimensions larger than len(shape)
         for i in range(len(keys)):
             if not keys[i].__class__ == slice:
                 keys[i] = slice(keys[i],keys[i] + 1)
-        if keys == self.oldSlice:
-            return self.oldData
+        #if keys == self.oldSlice:
+        #    return self.oldData
         self.oldSlice = keys
         if len(keys) > len(self.data.shape):
             keys = keys[:len(self.data.shape)]
@@ -115,11 +116,20 @@ class DataWrap: #permit indexing with more dimensions larger than len(shape)
         if self.type == 'Array':
             r = self.data.__getitem__(keys)
         else:
-            r = np.concatenate([np.atleast_2d(self.data.getSlice(i)[keys[1], keys[2]])[:,:,None] for i in range(*keys[0].indices(self.data.getNumSlices()))], 2)
+            r = np.concatenate([np.atleast_2d(self.data.getSlice(i)[keys[0], keys[1]])[:,:,None] for i in range(*keys[1].indices(self.data.getNumSlices()))], 2)
 
         self.oldData = r
 
         return r
+        
+    def getSlice(self, ind):
+        return self[:,:,ind].squeeze()
+
+    def getSliceShape(self):
+        return tuple(self.shape[:2])
+
+    def getNumSlices(self):
+        return self.shape[2]
 
 
 def Wrap(datasource):
@@ -127,7 +137,7 @@ def Wrap(datasource):
     
     if datasource.__class__ ==list:
         datasource = ListWrap(datasource)
-    elif not datasource.__class__ in [DataWrap, ListWrap]: #only if not already wrapped
+    elif not datasource.__class__ in [DataWrap, ListWrap] and not isinstance(datasource, BaseDataSource.BaseDataSource): #only if not already wrapped
         datasource = DataWrap(datasource)
 
     return datasource

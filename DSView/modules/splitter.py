@@ -65,7 +65,7 @@ class Unmixer:
         else:
             mode = 'lite'
 
-        dv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas)
+        dv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
 
     def OnSetShiftField(self, event=None):
         from PYME.FileUtils import nameUtils

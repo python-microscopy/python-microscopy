@@ -41,6 +41,7 @@ class OptionsPanel(wx.Panel):
         self.cIds = []
         self.cbIds = []
         self.hcs = []
+        self.shIds = []
 
         cmapnames = pylab.cm.cmapnames + ['fastGrey', 'labeled']# + [n + '_r' for n in pylab.cm.cmapnames]
         cmapnames.sort()
@@ -64,13 +65,24 @@ class OptionsPanel(wx.Panel):
             self.hcs.append(hClim)
 
             ssizer.Add(hClim, 0, wx.ALL, 2)
+            
+            hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
 
             id = wx.NewId()
             self.cIds.append(id)
             cCmap = wx.Choice(self, id, choices=cmapnames, size=(80, -1))
             cCmap.SetSelection(cmapnames.index(self.do.cmaps[i].name))
             cCmap.Bind(wx.EVT_CHOICE, self.OnCMapChanged)
-            ssizer.Add(cCmap, 0, wx.ALL|wx.EXPAND, 2)
+            hsizer2.Add(cCmap, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+            
+            id = wx.NewId()
+            self.shIds.append(id)            
+            cbShow = wx.CheckBox(self, id)
+            cbShow.SetValue(self.do.show[i])
+            cbShow.Bind(wx.EVT_CHECKBOX, self.OnShowChanged)
+            hsizer2.Add(cbShow, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL,2)
+            
+            ssizer.Add(hsizer2, 0, wx.ALL|wx.EXPAND, 0)
 
             if horizOrientation:
                 hsizer.Add(ssizer, 0, wx.ALL, 2)
@@ -175,6 +187,13 @@ class OptionsPanel(wx.Panel):
             self.do.SetCMap(ind, labeled)
         else:
             self.do.SetCMap(ind, pylab.cm.__getattribute__(cmn))
+            
+    def OnShowChanged(self, event):
+        #print event.GetId()
+        ind = self.shIds.index(event.GetId())
+        
+        self.do.Show(ind,event.IsChecked())
+
 
     def OnShowThreshold(self, event):
         tMode = self.cbShowThreshold.GetValue()

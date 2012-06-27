@@ -53,11 +53,15 @@ class DisplayOpts(object):
         self.Offs = []
         self.cmaps = []
         self.names = []
+        self.show = []
         
         self._xp=0
         self._yp=0
 
         self._zp=0
+        
+        self.inOnChange = False
+        self.syncedWith = []
 
         self.SetDataStack(datasource)
         self.SetAspect(aspect)
@@ -78,6 +82,10 @@ class DisplayOpts(object):
         self.colourMax = False
         self.cmax_offset = 0.0
         self.cmax_scale = 1.0
+        
+        
+        
+        
 
 
     @property
@@ -160,11 +168,13 @@ class DisplayOpts(object):
                 self.Gains = [1]
                 self.Offs = [0]
                 self.cmaps = [cm.gray]
+                self.show = [True]
             else:
                 self.Chans = []
                 self.Gains = []
                 self.Offs = []
                 self.cmaps = []
+                self.show = []
 
                 cms = [cm.r, cm.g, cm.b]
 
@@ -173,6 +183,7 @@ class DisplayOpts(object):
                     self.Gains.append(1.)
                     self.Offs.append(0.)
                     self.cmaps.append(cms[i%len(cms)])
+                    self.show.append(True)
 
         self.names = ['Chan %d' %i for i in range(nchans)]
 
@@ -180,6 +191,10 @@ class DisplayOpts(object):
 
     def SetGain(self, chan, gain):
         self.Gains[chan] = gain
+        self.OnChange()
+        
+    def Show(self, chan, sh=True):
+        self.show[chan] = sh
         self.OnChange()
 
     def SetOffset(self, chan, offset):
@@ -213,8 +228,29 @@ class DisplayOpts(object):
         self.OnChange()
 
     def OnChange(self):
-        for fcn in self.WantChangeNotification:
-            fcn()
+        if not self.inOnChange:
+            self.inOnChange = True
+            try:
+                for fcn in self.WantChangeNotification:
+                    fcn()
+                    
+                for syn in self.syncedWith:
+                    syn.Synchronise(self)
+            
+            except Exception as e: 
+                print e
+            finally:
+                self.inOnChange = False
+            
+            
+    def GetActiveChans(self):
+        return [(self.Chans[i],self.Offs[i],self.Gains[i],self.cmaps[i]) for i in range(len(self.show)) if self.show[i]]
+        
+    def Synchronise(self, other):
+        self.xp = other.xp
+        self.yp = other.yp
+        self.zp = other.zp
+            
 
     def Optimise(self):
         if len(self.ds.shape) == 2:

@@ -14,6 +14,8 @@ import fftw3f
 from PYME.Deconv import fftwWisdom
 from scipy import ndimage
 
+from PYME.DSView import View3D
+
 fftwWisdom.load_wisdom()
 
 NTHREADS = 2
@@ -25,7 +27,7 @@ k = 2*pi*n/lamb #k at 488nm
 
 class FourierPropagator:
     def __init__(self, u,v,k):
-         self.propFac = -1j*(2*pi**2*(u**2 + v**2)/k)
+         self.propFac = -1j*(2*2**2*(u**2 + v**2)/k)
 
     def propagate(self, F, z):
         return ifftshift(ifftn(F*exp(self.propFac*z)))
@@ -74,16 +76,19 @@ FourierPropagator = FourierPropagatorHNA
 
 def GenWidefieldAP(dx = 5):
     X, Y = meshgrid(arange(-5000, 5000., dx),arange(-5000, 5000., dx))
-    u = X/(dx*X.shape[0]*dx)
-    v = Y/(dx*X.shape[1]*dx)
+    u = 2*X/(dx*X.shape[0]*dx*pi)
+    v = 2*Y/(dx*X.shape[1]*dx*pi)
     #print u.min()
 
     R = sqrt(u**2 + v**2)
     
     #print R.max()*lamb
+    print (R/(n*lamb)).max()
     
     #imshow(R*lamb)
     #colorbar()
+    
+    k = 2*pi*n/lamb
 
     FP = FourierPropagator(u,v,k, lamb)
 
@@ -115,8 +120,10 @@ def PsfFromPupil(pupil, zs, dx, lamb):
     
     #print ps.shape
     #print arange(-ps.shape[0]/2, ps.shape[0]/2)
-    u = X/(dx*X.shape[0]*dx)
-    v = Y/(dx*X.shape[1]*dx)
+    u = 2*X/(dx*X.shape[0]*dx*pi)
+    v = 2*Y/(dx*X.shape[1]*dx*pi)
+    
+    k = 2*pi*n/lamb
 
     #R = sqrt(u**2 + v**2)
     #M = 1.0*(R < (NA/(n*lamb))) # NA/lambda
@@ -127,31 +134,43 @@ def PsfFromPupil(pupil, zs, dx, lamb):
 
     return abs(ps**2)
     
-def PsfFromPupilVect(pupil, zs, dx, lamb):
+def PsfFromPupilVect(pupil, zs, dx, lamb, shape = [61,61]):
     dx = float(dx)
     X, Y = meshgrid(dx*arange(-pupil.shape[0]/2, pupil.shape[0]/2),dx*arange(-pupil.shape[1]/2, pupil.shape[1]/2))
     print X.min(), X.max()
     
+    if shape == None:
+        shape = X.shape
+        
+    sx = shape[0]
+    sy = shape[1]
+    ox = (X.shape[0] - sx)/2
+    oy = (X.shape[1] - sy)/2
+    ex = ox + sx
+    ey = oy + sy
+    
     #print ps.shape
     #print arange(-ps.shape[0]/2, ps.shape[0]/2)
-    u = X/(dx*X.shape[0]*dx)
-    v = Y/(dx*X.shape[1]*dx)
+    u = 2*X/(dx*X.shape[0]*dx*pi)
+    v = 2*Y/(dx*X.shape[1]*dx*pi)
 
     R = sqrt(u**2 + v**2)
     
     phi = angle(u+ 1j*v)
     theta = arcsin(minimum(R*lamb, 1))
     
-    figure()
-    imshow(phi)
+    #figure()
+    #imshow(phi)
     
-    figure()
-    imshow(theta)
+    #figure()
+    #imshow(theta)
     
     ct = cos(theta)
     st = sin(theta)
     cp = cos(phi)
     sp = sin(phi)
+    
+    k = 2*pi*n/lamb
     
     
     #M = 1.0*(R < (NA/(n*lamb))) # NA/lambda
@@ -182,20 +201,32 @@ def PsfFromPupilVect(pupil, zs, dx, lamb):
     ps = concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
     p += abs(ps**2)
 
-    return p #abs(ps**2)
+    return p[ox:ex, oy:ey, :] #abs(ps**2)
 
    
-def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters = 25):
+def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters = 50, size=5e3):
     dx = float(dx)
-    X, Y = meshgrid(float(dx)*arange(-ps.shape[0]/2, ps.shape[0]/2),float(dx)*arange(-ps.shape[1]/2, ps.shape[1]/2))
+    if not size:
+        X, Y = meshgrid(float(dx)*arange(-ps.shape[0]/2, ps.shape[0]/2),float(dx)*arange(-ps.shape[1]/2, ps.shape[1]/2))
+    else:
+        X, Y = meshgrid(arange(-size, size, dx),arange(-size, size, dx))
+    
+    sx = ps.shape[0]
+    sy = ps.shape[1]
+    ox = (X.shape[0] - sx)/2
+    oy = (X.shape[1] - sy)/2
+    ex = ox + sx
+    ey = oy + sy
     
     #print ps.shape
     #print arange(-ps.shape[0]/2, ps.shape[0]/2)
-    u = X/(dx*X.shape[0]*dx)
-    v = Y/(dx*X.shape[1]*dx)
+    u = 2*X/(dx*X.shape[0]*dx*pi)
+    v = 2*Y/(dx*X.shape[1]*dx*pi)
 
     R = sqrt(u**2 + v**2)
     M = 1.0*(R < (NA/(n*lamb))) # NA/lambda
+    
+    k = 2*pi*n/lamb
 
     FP = FourierPropagator(u,v,k, lamb)
 
@@ -203,8 +234,13 @@ def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters = 25):
     
     sps = sqrt(ps)
     
+    
+    
     for i in range(nIters):
         new_pupil = 0*pupil
+        
+        bps = []
+        abp = []
         
         print i#, abs(pupil).sum()
         
@@ -224,22 +260,29 @@ def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters = 25):
             #figure()
             #imshow(angle(prop_j))
             
-            res += ((abs(prop_j) - sps[:,:,j])**2).sum()
+                        
+            #print prop_j[ox:ex, oy:ey].shape, sps[:,:,j].shape
+            
+            res += ((abs(prop_j[ox:ex, oy:ey]) - sps[:,:,j])**2).sum()
             #replace amplitude, but keep phase
-            prop_j = sps[:,:,j]*exp(1j*angle(prop_j))
+            prop_j[ox:ex, oy:ey] = sps[:,:,j]*exp(1j*angle(prop_j[ox:ex, oy:ey]))
             
             #print abs(prop_j).sum()
             
             #propagate back
             bp = FP.propagate_r(prop_j, zs[j])
             #figure()
-            #imshow(abs(bp))
+            bps.append(abs(bp))
+            abp.append(angle(bp))
             new_pupil += bp
             
             #figure()            
             #imshow(abs(new_pupil))
             
         new_pupil /= ps.shape[2]
+        
+        View3D(bps)
+        View3D(abp)
         
         print 'res = %f' % (res/ps.shape[2])
         #print abs(new_pupil).sum()

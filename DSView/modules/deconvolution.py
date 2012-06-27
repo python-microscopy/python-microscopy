@@ -173,7 +173,7 @@ class deconvolver:
                 else:
                     fs = self.dec.fs
 
-                self.res = View3D(fs, 'Deconvolution Result', mdh=decMDH, parent=self.dsviewer)
+                self.res = View3D(fs, 'Deconvolution Result', mdh=decMDH, parent=wx.GetTopLevelParent(self.dsviewer))
 
                 self.dlgDeconProg = DeconvProgressPanel(self.res, nIter)
 

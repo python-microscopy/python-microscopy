@@ -44,9 +44,9 @@ class tiler:
 
         dt = deTile.tile(self.image.data, xm, ym, self.image.mdh, split=split, skipMoveFrames=False, dark=dark, flat=flat)#, mixmatrix = [[.3, .7], [.7, .3]])
         if dt.ndim > 2:
-            View3D([dt[:,:,0][:,:,None], dt[:,:,1][:,:,None]], 'Tiled Image')
+            View3D([dt[:,:,0][:,:,None], dt[:,:,1][:,:,None]], 'Tiled Image', parent=wx.GetTopLevelParent(self.dsviewer))
         else:
-            View3D(dt, 'Tiled Image')
+            View3D(dt, 'Tiled Image', parent=wx.GetTopLevelParent(self.dsviewer))
 
 
 def Plug(dsviewer):

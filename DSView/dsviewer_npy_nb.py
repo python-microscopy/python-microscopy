@@ -27,7 +27,18 @@ from PYME.Acquire.mytimer import mytimer
 from PYME.Analysis import piecewiseMapping
 
 import weakref
+openViewers = weakref.WeakValueDictionary()
 
+class dt(wx.FileDropTarget):
+    def OnDropFiles(self, x, y, filenames):
+        print filenames
+        
+        for filename in filenames:
+            im = ImageStack(filename=filename)
+            ViewIm3D(im)
+            
+#drop = dt()
+        
 
 class DSViewFrame(wx.Frame):
     def __init__(self, image,  parent=None, title='', mode='LM', 
@@ -154,6 +165,11 @@ class DSViewFrame(wx.Frame):
         if 'view' in dir(self):
             self.view.Refresh()
         self.update()
+        
+        self.drop = dt()        
+        self.SetDropTarget(self.drop)
+        
+        openViewers[self.image.filename] = self
 
     def AddPage(self, page=None, select=True,caption='Dummy'):
         if self.pane0 == None:

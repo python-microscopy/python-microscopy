@@ -54,7 +54,7 @@ class cropper:
         else:
             mode = 'lite'
 
-        dv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas)
+        dv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
 
         #set scaling to (0,1)
         for i in range(im.data.shape[3]):

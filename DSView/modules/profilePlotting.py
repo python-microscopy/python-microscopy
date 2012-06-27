@@ -136,7 +136,7 @@ class profiler:
 
         im.mdh['OriginalImage'] = self.image.filename
 
-        ViewIm3D(im, mode='graph')
+        ViewIm3D(im, mode='graph', parent=wx.GetTopLevelParent(self.dsviewer))
 
 
 
