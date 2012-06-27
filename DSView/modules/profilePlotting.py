@@ -32,7 +32,7 @@ class profiler:
         dsviewer.Bind(wx.EVT_MENU, self.OnPlotProfile, id=PLOT_PROFILE)
         
         PLOT_ZPROFILE = wx.NewId()
-        dsviewer.mProcessing.Append(PLOT_ZPROFILE, "Plot Axial Profile", "", wx.ITEM_NORMAL)
+        dsviewer.mProcessing.Append(PLOT_ZPROFILE, "Plot Axial Profile\tCtrl-Shift-K", "", wx.ITEM_NORMAL)
         
         dsviewer.Bind(wx.EVT_MENU, self.OnPlotAxialProfile, id=PLOT_ZPROFILE)
 

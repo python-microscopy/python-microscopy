@@ -6,6 +6,7 @@ Created on Tue Oct 04 14:48:07 2011
 """
 
 import wx
+import os
 #from PYME.Acquire.Hardware import splitter
 from PYME.Analysis.DataSources import UnsplitDataSource
 import numpy as np
@@ -20,7 +21,7 @@ class Unmixer:
         
 
         EXTRAS_UNMUX = wx.NewId()
-        dsviewer.mProcessing.Append(EXTRAS_UNMUX, "&Unsplit", "", wx.ITEM_NORMAL)
+        dsviewer.mProcessing.Append(EXTRAS_UNMUX, "&Unsplit\tCtrl-Shift-U", "", wx.ITEM_NORMAL)
         wx.EVT_MENU(dsviewer, EXTRAS_UNMUX, self.OnUnmix)
 
         EXTRAS_SETSF = wx.NewId()
@@ -55,7 +56,8 @@ class Unmixer:
                                            [ROIX1, ROIY1, ROIX2, ROIY2], 1
                                            , flip, sf)
             
-        im = ImageStack([um0, um1], titleStub = 'Unmixed Image')
+        fns = os.path.split(self.image.filename)[1]
+        im = ImageStack([um0, um1], titleStub = '%s - unsplit' % fns)
         im.mdh.copyEntriesFrom(self.image.mdh)
         im.mdh['Parent'] = self.image.filename
         #im.mdh['Processing.GaussianFilter'] = sigmas
