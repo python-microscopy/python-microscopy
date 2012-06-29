@@ -1,4 +1,4 @@
-/* tifffile.c
+ /* tifffile.c
 
 A Python C extension module for decoding PackBits and LZW encoded TIFF data.
 
@@ -103,6 +103,11 @@ typedef _W64 unsigned int  uintptr_t;
 #include <stdint.h>
 #include <limits.h>
 #endif
+
+#ifndef SSIZE_MAX
+#define SSIZE_MAX INT_MAX
+#endif
+
 
 #define SWAP2BYTES(x) \
   ((((x) >> 8) & 0x00FF) | (((x) & 0x00FF) << 8))

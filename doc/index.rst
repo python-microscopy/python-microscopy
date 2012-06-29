@@ -12,7 +12,8 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   Installation
+   Installation/InstallationUsingWindowsInstaller   
+   Installation/InstallationFromSource
    PYMEAcquire
    Analysis
    VisGUI

@@ -1,4 +1,4 @@
-.. _installation:
+.. _installationWindowsEPD:
 
 Installation of PYME on windows with Enthought python
 #####################################################
@@ -99,11 +99,14 @@ at the command prompt - you should get usage information for the pyro nameserver
 None of these are required for core functionality, so are probably best deferred
 until you are sure you want/need that feature:
 
-- PyFFTW3 (widefield/confocal deconvolution)
+- PyFFTW3 (widefield/confocal deconvolution - This can be a bit tricky on windows as 
+  you have to seperately download and install the fftw3 libraries. I have a 
+  pre-canned installer which also installs the libraries that I can give you on request.)
 - PySerial (interfacing some hardware)
 - PyParallel (ditto)
 - MySQL-python (needed for Django and sample database) 
 - Django (>1.2) (sample database)
+- Django-south
 - Delny  (triangle based segmentation)
 
 It's possible that I've also forgotten something, so if PYME complains that it can't
