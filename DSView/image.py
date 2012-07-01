@@ -57,6 +57,8 @@ class ImageStack(object):
         if self.filename == None:
             self.filename = '%s %d' % (titleStub, nUntitled[titleStub])
             nUntitled[titleStub] += 1
+            
+            self.seriesName = self.filename
 
         if self.mdh == None:
             self.mdh = MetaDataHandler.NestedClassMDHandler()
