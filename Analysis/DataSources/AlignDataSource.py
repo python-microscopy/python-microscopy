@@ -39,11 +39,12 @@ class DataSource(BaseDataSource):
         if zs == 0: #no z shift 
             return self._getXYShiftedSlice(ind)
         else: #linearly interpolate between slices
+            zs = ind - zs            
             zf = int(np.floor(zs))
             zp = zs - zf
             
-            zf = min(max(zf + ind, 0), self.getNumSlices()-1)
-            zf1 = min(max(zf +1, 0), self.getNumSlices()-1)
+            zf = min(max(zf, 0), self.getNumSlices()-1)
+            zf1 = min(max(zf, 0), self.getNumSlices()-1)
             #print zp
             return (1-zp)*self._getXYShiftedSlice(zf) + zp*self._getXYShiftedSlice(zf1)   
 
