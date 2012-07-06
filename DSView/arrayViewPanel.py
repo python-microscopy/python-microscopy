@@ -85,14 +85,16 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         self.lastUpdateTime = 0
         self.lastFrameTime = 2e-3
 
-        self.do.scale = 2
+        #self.do.scale = 0
         self.crosshairs = True
         #self.showSelection = True
         self.selecting = False
 
         self.aspect = 1.
 
-        self.slice = None    
+        self.slice = None 
+        
+        self.overlays = []
 
 #        if not aspect == None:
 #            if scipy.isscalar(aspect):
@@ -175,21 +177,30 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         
     @property
     def scale(self):
-        return pow(2.0,(self.do.scale-2))
+        return pow(2.0,(self.do.scale))
         
         
     def DoPaint(self, dc):
+        print 'p'
         
         dc.Clear()
                                      
         im = self.Render()
 
-        sc = pow(2.0,(self.do.scale-2))
-        im.Rescale(im.GetWidth()*sc,im.GetHeight()*sc*self.aspect)
+        sc = pow(2.0,(self.do.scale))
+        sc2 = sc
+        
+        if sc >= 1:
+            step = 1
+        else:
+            step = 2**(-numpy.ceil(numpy.log2(sc)))
+            sc2 = sc*step
+            
+        im.Rescale(im.GetWidth()*sc2,im.GetHeight()*sc2*self.aspect)
 
         x0,y0 = self.CalcUnscrolledPosition(0,0)
         im2 = wx.BitmapFromImage(im)
-        dc.DrawBitmap(im2,-sc/2,-sc/2)
+        dc.DrawBitmap(im2,-sc2/2,-sc2/2)
         
         sX, sY = im.GetWidth(), im.GetHeight()
 
@@ -451,6 +462,9 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             dc.SetPen(wx.NullPen)
             dc.SetBrush(wx.NullBrush)
             
+        for ovl in self.overlays:
+            ovl(self, dc)
+            
 #    def OnPaint(self,event):
 #        self.painting = True
 #        DC = wx.PaintDC(self.imagepanel)
@@ -499,6 +513,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                 self.do.yp = max(self.do.yp - 1, 0)
             elif event.MiddleIsDown(): 
                 self.do.xp = max(self.do.xp - 1, 0)
+            elif event.ShiftDown():
+                self.do.SetScale(self.do.scale - 1)
             else:
                 self.do.zp = max(self.do.zp - 1, 0)
         if rot > 0:
@@ -506,6 +522,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                 self.do.yp = min(self.do.yp + 1, self.do.ds.shape[1] -1)
             elif event.MiddleIsDown(): 
                 self.do.xp = min(self.do.xp + 1, self.do.ds.shape[0] -1)
+            elif event.ShiftDown():
+                self.do.SetScale(self.do.scale + 1)
             else:
                 self.do.zp = min(self.do.zp + 1, self.do.ds.shape[2] -1)
                 
@@ -574,7 +592,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
     def GetOpts(self,event=None):
         if (self.updating == 0):
 
-            sc = pow(2.0,(self.do.scale-2))
+            sc = pow(2.0,(self.do.scale))
             s = self.CalcImSize()
             self.SetVirtualSize(wx.Size(s[0]*sc,s[1]*sc))
 
@@ -651,8 +669,10 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         pos = event.GetLogicalPosition(dc)
         pos = self.CalcUnscrolledPosition(*pos)
 
-        #print pos
-        sc = pow(2.0,(self.do.scale-2))
+        print pos
+        self.do.inOnChange = True
+        sc = pow(2.0,(self.do.scale))
+        print sc
         if (self.do.slice == self.do.SLICE_XY):
             self.do.xp =int(pos[0]/sc)
             self.do.yp = int(pos[1]/(sc*self.aspect))
@@ -662,6 +682,9 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         elif (self.do.slice == self.do.SLICE_YZ):
             self.do.yp =int(pos[0]/sc)
             self.do.zp =int(pos[1]/(sc*self.aspect))
+            
+        self.do.inOnChange = False
+        self.do.OnChange()
         #if ('update' in dir(self.GetParent())):
         #     self.GetParent().update()
         #else:
@@ -696,7 +719,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         pos = event.GetLogicalPosition(dc)
         pos = self.CalcUnscrolledPosition(*pos)
         #print pos
-        sc = pow(2.0,(self.do.scale-2))
+        sc = pow(2.0,(self.do.scale))
         if (self.do.slice == self.do.SLICE_XY):
             self.do.selection_begin_x = int(pos[0]/sc)
             self.do.selection_begin_y = int(pos[1]/(sc*self.aspect))
@@ -725,7 +748,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         pos = self.CalcUnscrolledPosition(*pos)
         #print pos
         
-        sc = pow(2.0,(self.do.scale-2))
+        sc = pow(2.0,(self.do.scale))
 
         if not event.ShiftDown():
             if (self.do.slice == self.do.SLICE_XY):
@@ -840,16 +863,32 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
         aspect = {}
 
-        sc = pow(2.0,(self.do.scale-2))
-        sX_ = int(sX/sc)
+        sc = pow(2.0,self.do.scale)
+
+        if sc >= 1:
+            step = 1
+        else:
+            step = 2**(-numpy.ceil(numpy.log2(sc)))
+            #sc2 = sc*step
+        
+        sX_ = int(sX/(sc))
         sY_ = int(sY/(sc*self.aspect))
         x0_ = int(x0/sc)
         y0_ = int(y0/(sc*self.aspect))
         
+        #sc = pow(2.0,(self.do.scale-2))
+        
+        #print sX, sX_, self.do.ds.shape[0], step, x0_, y0_
+        
+        
+            #sc = sc*step
+            
+        fstep = float(step)
 
         #XY
         if self.do.slice == DisplayOpts.SLICE_XY:
-            ima = numpy.zeros((min(sY_, self.do.ds.shape[1]), min(sX_, self.do.ds.shape[0]), 3), 'uint8')
+            ima = numpy.zeros((numpy.ceil(min(sY_, self.do.ds.shape[1])/fstep), numpy.ceil(min(sX_, self.do.ds.shape[0])/fstep), 3), 'uint8')
+            #print ima.shape
             for chan, offset, gain, cmap in self.do.GetActiveChans():#zip(self.do.Chans, self.do.Offs, self.do.Gains, self.do.cmaps, self.do.show):
                 #ima[:] = numpy.minimum(ima[:] + (255*cmap(gain*(self.do.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.do.zp), chan].squeeze().T - offset))[:,:,:3])[:], 255)
                 #cmap =
@@ -874,42 +913,43 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                     lut = getLUT(cmap)
                     
                     if self.do.maximumProjection:
-                        seg = self.do.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),:, chan].max(2).squeeze().T
+                        seg = self.do.ds[x0_:(x0_+sX_):step,y0_:(y0_+sY_):step,:, chan].max(2).squeeze().T
                         if self.do.colourMax:
-                            aseg = self.do.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),:, chan].argmax(2).squeeze().T
+                            aseg = self.do.ds[x0_:(x0_+sX_):step,y0_:(y0_+sY_):step,:, chan].argmax(2).squeeze().T
                             applyLUT(aseg, self.do.cmax_scale/self.do.ds.shape[2], self.do.cmax_offset, lut, ima)
                             ima[:] = (ima*numpy.clip((seg - offset)*gain, 0,1)[:,:,None]).astype('uint8')
                         else:
                             applyLUT(seg, gain, offset, lut, ima)
                     else:
-                        seg = self.do.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.do.zp), chan].squeeze().T
+                        seg = self.do.ds[x0_:(x0_+sX_):step,y0_:(y0_+sY_):step,int(self.do.zp), chan].squeeze().T
+                        #print seg.shape
                         applyLUT(seg, gain, offset, lut, ima)
 
                 else:
-                    ima[:] = numpy.minimum(ima[:] + (255*cmap(gain*(self.do.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.do.zp), chan].squeeze().T - offset))[:,:,:3])[:], 255)
+                    ima[:] = numpy.minimum(ima[:] + (255*cmap(gain*(self.do.ds[x0_:(x0_+sX_):step,y0_:(y0_+sY_):step,int(self.do.zp), chan].squeeze().T - offset))[:,:,:3])[:], 255)
         #XZ
         elif self.do.slice == DisplayOpts.SLICE_XZ:
-            ima = numpy.zeros((min(sY_, self.do.ds.shape[2]), min(sX_, self.do.ds.shape[0]), 3), 'uint8')
+            ima = numpy.zeros((numpy.ceil(min(sY_, self.do.ds.shape[2])/fstep), numpy.ceil(min(sX_, self.do.ds.shape[0])/fstep), 3), 'uint8')
 
             for chan, offset, gain, cmap in self.do.GetActiveChans():#in zip(self.do.Chans, self.do.Offs, self.do.Gains, self.do.cmaps):
                 if not cmap == labeled:
                     lut = getLUT(cmap)
-                    seg = self.do.ds[x0_:(x0_+sX_),int(self.do.yp),y0_:(y0_+sY_), chan].squeeze().T
+                    seg = self.do.ds[x0_:(x0_+sX_):step,int(self.do.yp),y0_:(y0_+sY_):step, chan].squeeze().T
                     applyLUT(seg, gain, offset, lut, ima)
                 else:
-                    ima[:] = ima[:] + 255*cmap(gain*(self.do.ds[x0_:(x0_+sX_),int(self.do.yp),y0_:(y0_+sY_), chan].squeeze().T - offset))[:,:,:3][:]
+                    ima[:] = ima[:] + 255*cmap(gain*(self.do.ds[x0_:(x0_+sX_):step,int(self.do.yp),y0_:(y0_+sY_):step, chan].squeeze().T - offset))[:,:,:3][:]
 
         #YZ
         elif self.do.slice == DisplayOpts.SLICE_YZ:
-            ima = numpy.zeros((min(sY_, self.do.ds.shape[2]), min(sX_, self.do.ds.shape[1]), 3), 'uint8')
+            ima = numpy.zeros((numpy.ceil(min(sY_, self.do.ds.shape[2])/fstep), numpy.ceil(min(sX_, self.do.ds.shape[1])/fstep), 3), 'uint8')
 
             for chan, offset, gain, cmap in self.do.GetActiveChans():#zip(self.do.Chans, self.do.Offs, self.do.Gains, self.do.cmaps):
                 if not cmap == labeled:
                     lut = getLUT(cmap)
-                    seg = self.do.ds[int(self.do.xp),x0_:(x0_+sX_),y0_:(y0_+sY_), chan].squeeze().T
+                    seg = self.do.ds[int(self.do.xp),x0_:(x0_+sX_):step,y0_:(y0_+sY_):step, chan].squeeze().T
                     applyLUT(seg, gain, offset, lut, ima)
                 else:
-                    ima[:] = ima[:] + 255*cmap(gain*(self.do.ds[int(self.do.xp),x0_:(x0_+sX_),y0_:(y0_+sY_), chan].squeeze().T - offset))[:,:,:3][:]
+                    ima[:] = ima[:] + 255*cmap(gain*(self.do.ds[int(self.do.xp),x0_:(x0_+sX_):step,y0_:(y0_+sY_):step, chan].squeeze().T - offset))[:,:,:3][:]
 #        
         return wx.ImageFromData(ima.shape[1], ima.shape[0], ima.ravel())
 

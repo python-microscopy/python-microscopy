@@ -80,7 +80,7 @@ class DisplayOpts(object):
 
         self.orientation = self.UPRIGHT
         self.slice = self.SLICE_XY
-        self.scale = 1.0
+        self.scale = 0
 
         self.leftButtonAction = self.ACTION_POSITION
         self.selectionMode = self.SELECTION_RECTANGLE
@@ -197,6 +197,7 @@ class DisplayOpts(object):
                     self.show.append(True)
 
         self.names = ['Chan %d' %i for i in range(nchans)]
+        
 
         self.OnChange()
 

@@ -174,11 +174,16 @@ class DSViewFrame(wx.Frame):
         self.Layout()
 
         if 'view' in dir(self):
+            sc = round(pylab.log2(1.0*self.view.Size[0]/self.do.ds.shape[0]))
+            #print self.view.Size[0], self.do.ds.shape[0], sc
+            self.do.SetScale(sc)
             self.view.Refresh()
         self.update()
         
         self.drop = dt()        
         self.SetDropTarget(self.drop)
+        
+        
         
         openViewers[self.image.filename] = self
 

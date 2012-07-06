@@ -119,7 +119,7 @@ class MyViewPanel(wx.ScrolledWindow):
         bmp = im.GetDataBuffer()
         self.rend.pyRender(bmp,self.ds)
         
-        sc = pow(2.0,(self.scale-2))
+        sc = pow(2.0,(self.scale -2))
         im.Rescale(im.GetWidth()*sc,im.GetHeight()*sc) 
         #dc.DrawBitmap(wx.BitmapFromImage(im),wx.Point(0,0))
         dc.DrawBitmap(wx.BitmapFromImage(im),0,0)

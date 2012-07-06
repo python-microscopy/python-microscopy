@@ -60,6 +60,9 @@ class ListWrap:
             kL = keys[self.listDim]
         else:
             kL = 0 #default to taking the first channel
+            
+        #if kL.__class__ == slice:
+        #    return ListWrap([self.wrapList[i].__getitem__(keys[:self.listDim]) for i in range(*kL.indices(len(self.wrapList)))])
 
         return self.wrapList[kL].__getitem__(keys[:self.listDim])
 

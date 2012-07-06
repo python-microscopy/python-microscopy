@@ -1,0 +1,48 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html lang="en">
+<head>
+    <title>Measurements</title>
+</head>
+<body>
+
+    <h1>Measurements</h1>
+    <table>
+    <!--
+    <tr>
+    <th>Index</th><th>Image</th><th>Scheme</th><th>Short axis</th><th>Long axis</th><th>Polar</th><th>Radial</th>
+    <th>x0</th><th>y0</th><th>length</th><th>width</th>
+    </tr> -->
+    {% for obj in objects %}
+        {% if obj.shown %}
+        <tr>
+        <td>{{ loop.index0 }}</td>
+        <td><img src="images/{{ loop.index0 }}"/></td>
+        <td><img src="graphs/{{ loop.index0 }}/shortAxisDist"/></td>
+        <td><img src="graphs/{{ loop.index0 }}/angularDist"/></td>
+
+        <td rowspan=2>
+        <table>
+        <tr><th>x0</th><th>y0</th><th>length</th><th>width</th></tr>
+        {% for chan in obj.chans %}
+            <tr>
+            <td>{{ "%3.2f"|format(chan.centroid[0]) }}</td>
+            <td>{{ "%3.2f"|format(chan.centroid[1]) }}</td>
+            <td>{{ "%3.2f"|format(chan.mad_0*2.35/0.8) }}</td>
+            <td>{{ "%3.2f"|format(chan.mad_1*2.35/0.8) }}</td>
+            </tr>
+        {% endfor %}
+        </table>
+        </td>
+        </tr>
+        <tr>
+        <td></td>
+        <td><img src="schemes/{{ loop.index0 }}"/></td>        
+        <td><img src="graphs/{{ loop.index0 }}/longAxisDistN"/></td>        
+        <td><img src="graphs/{{ loop.index0 }}/radialDistN"/></td>
+
+        {% endif %}
+    {% endfor %}
+    <tr>
+    </table>
+</body>
+</html>

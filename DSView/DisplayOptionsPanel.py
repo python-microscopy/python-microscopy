@@ -102,8 +102,9 @@ class OptionsPanel(wx.Panel):
 
         self.bOptimise = wx.Button(self, -1, "Stretch", style=wx.BU_EXACTFIT)
 
-        self.cbScale = wx.Choice(self, -1, choices=["1:4", "1:2", "1:1", "2:1", "4:1"])
-        self.cbScale.SetSelection(2)
+        self.cbScale = wx.Choice(self, -1, choices=["1:16", "1:8", "1:4", "1:2", "1:1", "2:1", "4:1"])
+        self.cbScale.SetSelection(4)
+        self.scale_11 = 4
 
         if horizOrientation:
             vsizer.Add(hsizer, 0, wx.ALL, 0)
@@ -162,6 +163,8 @@ class OptionsPanel(wx.Panel):
             vsizer.Add(ssizer, 0, wx.ALL|wx.EXPAND, 5)
 
         self.SetSizer(vsizer)
+        
+        self.do.WantChangeNotification.append(self.OnDoChange)
 
     def OnOptimise(self, event):
         self.do.Optimise()
@@ -179,7 +182,7 @@ class OptionsPanel(wx.Panel):
 
 
     def OnScaleChanged(self, event):
-        self.do.SetScale(self.cbScale.GetSelection())
+        self.do.SetScale(self.cbScale.GetSelection() - self.scale_11)
 
     def OnCLimChanged(self, event):
         ind = self.hIds.index(event.GetId())
@@ -317,6 +320,10 @@ class OptionsPanel(wx.Panel):
         self.do.OnChange()
 
         #self.Refresh()
+        
+    def OnDoChange(self):
+        print 'c'
+        self.cbScale.SetSelection(self.do.scale + self.scale_11)
 
 
 
