@@ -541,6 +541,7 @@ class Measurements(wx.Panel):
     
     def hide(self, num):
         self.objects[int(num)].shown = False
+        self.dsviewer.do.OnChange()
         return ''
     hide.exposed = True
         
