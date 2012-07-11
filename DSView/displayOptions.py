@@ -95,7 +95,7 @@ class DisplayOpts(object):
         self.cmax_scale = 1.0
         
         
-        
+        self.overlays = []
         
 
 

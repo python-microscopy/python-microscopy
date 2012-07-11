@@ -462,7 +462,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             dc.SetPen(wx.NullPen)
             dc.SetBrush(wx.NullBrush)
             
-        for ovl in self.overlays:
+        for ovl in self.do.overlays:
             ovl(self, dc)
             
 #    def OnPaint(self,event):

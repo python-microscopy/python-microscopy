@@ -75,12 +75,26 @@ class DataBlock(object):
     @property
     def principalAxis(self):
         if not '_principalAxis' in dir(self):
-            px = (np.abs(self.XC)*self.data).sum()
-            py = (np.abs(self.YC)*self.data).sum()
-            pz = (np.abs(self.ZC)*self.data).sum()
+            #b = (self.XC*self.data).ravel()
+            b = np.vstack([(self.XC*self.data).ravel(), (self.YC*self.data).ravel(), (self.ZC*self.data).ravel()]).T
+            b = b[self.data.ravel() > 0, :]
+            if b.shape[0] < 2:
+                self._principalAxis = np.NaN*np.ones(3)
+            #print b.shape
+            #A = (self.R*self.data*np.sign(self.XC)).ravel()[:,None]
+            #print A.shape
+            #pz = (np.abs(self.ZC)*self.data).sum()
+            #px = 1.0
+            else:
+                pa = linalg.svd(b, full_matrices=False)[2][0]
+            #print pa
+            #pa = linalg.lstsq(A, b)[0].squeeze()
+            #print pa
             
-            pa = np.array([px, py, pz])
-            self._principalAxis = pa/linalg.norm(pa)
+            #print pa.shape
+            
+            #pa = np.array([1.0, (1 - /py, 1./pz])
+                self._principalAxis = pa/linalg.norm(pa)
             
         return self._principalAxis
         
@@ -149,8 +163,19 @@ class DataBlock(object):
         return self._A2
         
     @property
+    def SA(self):
+        if self.data.ndim > 2 and self.data.shape[2] > 1:
+            return self.A2
+        else:
+            return self.A1
+            
+    @property
     def R(self):
-        return np.sqrt(self.A0**2 + self.A1**2 + self.A2**2)
+        return np.sqrt(self.XC**2 + self.YC**2 + self.ZC**2)
+        
+    @property
+    def r(self):
+        return np.sqrt(self.A0**2 + self.A1**2)
         
     @property
     def Theta(self):
@@ -163,17 +188,26 @@ class DataBlock(object):
     @property
     def geom_length(self):
         vals = self.A0[self.data>0]
-        return vals.max() - vals.min()
+        if self.sum == 0:
+            return 0
+        else:
+            return vals.max() - vals.min()
         
     @property
     def geom_width(self):
-        vals = self.A1[self.data>0]
-        return vals.max() - vals.min()
+        if self.sum == 0:
+            return 0
+        else:
+            vals = self.A1[self.data>0]
+            return vals.max() - vals.min()
         
     @property
     def geom_depth(self):
-        vals = self.A2[self.data>0]
-        return vals.max() - vals.min()
+        if self.sum == 0:
+            return 0
+        else:
+            vals = self.A2[self.data>0]
+            return vals.max() - vals.min()
         
     @property
     def mad_0(self):
@@ -201,7 +235,7 @@ class BlobObject(object):
         mc = self.chans[masterChan]
         oc = self.chans[orientChan]
         
-        if (mc.A1*oc.data).sum()*orient_dir < 0:
+        if (mc.SA*oc.data).sum()*orient_dir < 0:
             #flip the direction of short axis on mc
             mc.flipSecondaryAxis()
         
@@ -216,10 +250,29 @@ class BlobObject(object):
         
         for c in self.chans:
             bn, bm, bs = binAvg(mc.A0/mc.geom_length, c.data, xvs)
-            bms.append(bm/bm.sum())
+            bb = bm*bn
+            bms.append(bb/bb.sum())
             
         return xvs, bms
     longAxisDistN.xlabel = 'Longitudinal position [a.u.]'
+    
+    def longAxisOrthDist(self):
+        from PYME.Analysis.binAvg import binAvg
+        
+        xvs = np.linspace(-1,1, self.nsteps)
+        bms = []
+        
+        mc = self.chans[self.masterChan]
+        
+        for c in self.chans:
+            bn, bm, bs = binAvg(mc.A0/mc.geom_length, c.data, xvs)
+            bss = bm*bn
+            bn, bm, bs = binAvg(mc.A0/mc.geom_length, c.data*mc.SA, xvs)
+            bb = bm*bn
+            bms.append(bb/bss)
+            
+        return xvs, bms
+    longAxisOrthDist.xlabel = 'Longitudinal position [a.u.]'
         
     def shortAxisDist(self):
         from PYME.Analysis.binAvg import binAvg
@@ -230,13 +283,31 @@ class BlobObject(object):
         mc = self.chans[self.masterChan]
         
         for c in self.chans:
-            bn, bm, bs = binAvg(mc.A1, c.data, xvs)
-            bms.append(bm/bm.sum())
+            bn, bm, bs = binAvg(mc.SA, c.data, xvs)
+            bb = bm*bn
+            bms.append(bb/bb.sum())
             
         return xvs, bms
     shortAxisDist.xlabel = 'Transverse position [nm]'
         
     def radialDistN(self):
+        from PYME.Analysis.binAvg import binAvg
+        
+        xvs = np.linspace(0, 2, self.nsteps)
+        bms = []
+        
+        mc = self.chans[self.masterChan]
+        r = mc.r/(mc.geom_length/2)
+        
+        for c in self.chans:
+            bn, bm, bs = binAvg(r, c.data, xvs)
+            bb = bm*bn
+            bms.append(bb/bb.sum())
+            
+        return xvs, bms
+    radialDistN.xlabel = 'Radial position [a.u.]'
+    
+    def RadialDistN(self):
         from PYME.Analysis.binAvg import binAvg
         
         xvs = np.linspace(0, 1, self.nsteps)
@@ -247,10 +318,11 @@ class BlobObject(object):
         
         for c in self.chans:
             bn, bm, bs = binAvg(R, c.data, xvs)
-            bms.append(bm/bm.sum())
+            bb = bm*bn
+            bms.append(bb/bb.sum())
             
         return xvs, bms
-    radialDistN.xlabel = 'Radial position [a.u.]'
+    RadialDistN.xlabel = 'Radial position [a.u.]'
         
     def angularDist(self):
         from PYME.Analysis.binAvg import binAvg
@@ -262,7 +334,8 @@ class BlobObject(object):
         
         for c in self.chans:
             bn, bm, bs = binAvg(mc.Theta, c.data, xvs)
-            bms.append(bm/bm.sum())
+            bb = bm*bn
+            bms.append(bb/bb.sum())
             
         return xvs, bms
     angularDist.xlabel=None
@@ -303,7 +376,10 @@ class BlobObject(object):
             ovsc = 1
             
         for c in self.chans:
-            d = np.atleast_3d(c.data.squeeze().T)
+            d = c.data
+            if d.ndim > 2 and d.shape[2] > 1:
+                d = d.mean(2)
+            d = np.atleast_3d(d.squeeze().T)
             d -= d.min()
             d = np.minimum(ovsc*255*d/d.max(), 255).astype('uint8')
             dispChans.append(d)
@@ -315,8 +391,9 @@ class BlobObject(object):
         
         #scalebar (200 nm)
         nPixels = 200/(c.voxelsize[0])
+        w = max(int(15/c.voxelsize[0]), 1)
         if c.voxelsize[0] < 50:
-            im[-8:-5, -(nPixels+5):-5, :] = 255
+            im[-(2*w):-w, -(nPixels+w):-w, :] = 255
     
 
         xsize = im.shape[0]
@@ -404,6 +481,59 @@ class BlobObject(object):
         s = out.getvalue()
         out.close()
         return s
+        
+    def getSchematic3D(self):
+        #import Image
+        from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+        from mpl_toolkits.mplot3d import Axes3D
+        from matplotlib.figure import Figure
+        import StringIO
+        import cherrypy
+        cherrypy.response.headers["Content-Type"]="image/png"
+
+        fig = Figure(figsize=(2,2))
+        canvas = FigureCanvas(fig)
+        #ax = fig.add_axes([.1, .15, .85, .8])
+        ax = Axes3D(fig)
+        
+        mc = self.chans[self.masterChan]
+            
+        #x, y, z = mc.centroid
+        l = mc.geom_length/(2*mc.voxelsize[0])
+        x0, y0, z0 = mc.centroid - l*mc.principalAxis
+        x1, y1, z1 = mc.centroid + l*mc.principalAxis
+        
+        ax.plot([x0, x1], [y0, y1], [z0, z1], 'k', lw=2)
+        
+        l = mc.geom_width/(2*mc.voxelsize[0])
+        x0, y0, z0 = mc.centroid
+        x1, y1, z1 = mc.centroid + l*mc.secondaryAxis
+        ax.plot([x0, x1], [y0, y1], [z0, z1], 'k', lw=2)
+        
+        l = mc.geom_depth/(2*mc.voxelsize[0])
+        x0, y0, z0 = mc.centroid
+        x1, y1, z1 = mc.centroid + l*mc.tertiaryAxis
+        ax.plot([x0, x1], [y0, y1], [z0, z1], 'k:', lw=2)
+        
+        cols = ['r','g', 'b']
+        for i, c in enumerate(self.chans):
+            l = c.geom_length/(2*mc.voxelsize[0])
+            x0, y0, z0 = c.centroid - l*c.principalAxis
+            x1, y1, z1 = c.centroid + l*c.principalAxis
+            
+            ax.plot([x0, x1], [y0, y1], [z0, z1],c = cols[i] , lw=2)
+            
+            x0, y0, z0 = c.centroid
+            ax.plot([x0], [y0], [z0], 'x', c = cols[i], lw=2)
+            
+        ax.axis('scaled')
+        #ax.set_axis_off()
+        
+        out = StringIO.StringIO()
+        canvas.print_png(out, dpi=100)
+        s = out.getvalue()
+        out.close()
+        return s
 
 class Measurements(wx.Panel):
     def __init__(self, dsviewer):
@@ -411,7 +541,7 @@ class Measurements(wx.Panel):
         self.dsviewer = dsviewer
         self.image = dsviewer.image
         
-        dsviewer.view.overlays.append(self.DrawOverlays)
+        dsviewer.do.overlays.append(self.DrawOverlays)
         
         vsizer=wx.BoxSizer(wx.VERTICAL)
         
@@ -522,6 +652,10 @@ class Measurements(wx.Panel):
         from jinja2 import Environment, PackageLoader
         env = Environment(loader=PackageLoader('PYME.DSView.modules', 'templates'))
         
+        #if self.dsviewer.image.data.shape[2] > 1:
+            #3D image
+       #     templateName=
+        
         template = env.get_template(templateName)
         
         return template.render(objects=self.objects)
@@ -538,6 +672,10 @@ class Measurements(wx.Panel):
     def schemes(self, num):
         return self.objects[int(num)].getSchematic()
     schemes.exposed = True
+    
+    def schemes3D(self, num):
+        return self.objects[int(num)].getSchematic3D()
+    schemes3D.exposed = True
     
     def hide(self, num):
         self.objects[int(num)].shown = False
