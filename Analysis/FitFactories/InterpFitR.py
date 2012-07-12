@@ -116,9 +116,10 @@ def genFitImage(fitResults, metadata, fitfcn=f_Interp3d):
 
     #im = fitfcn(fitResults['fitResults'], X, Y, Z, P).reshape(len(X), len(Y))
     
-    im = PSFFitFactory.evalModel(fitResults, metadata, scipy.mgrid[xslice].mean(), scipy.mgrid[yslice].mean())
+    im = PSFFitFactory.evalModel(fitResults['fitResults'], metadata, scipy.mgrid[xslice].mean(), scipy.mgrid[yslice].mean())
+    
 
-    return im
+    return im[0].squeeze()
 
 def getDataErrors(im, metadata):
     dataROI = im - metadata.getEntry('Camera.ADOffset')
@@ -179,7 +180,7 @@ class PSFFitFactory:
 #
 #        startPosEstimator.calibrate(interpolator, md)
 
-        X, Y, Z, safeRegion = interpolator.getCoords(md, slice(-roiHalfSize,roiHalfSize + 1), slice(-roiHalfSize,roiHalfSize + 1), slice(0,1))
+        X, Y, Z, safeRegion = interpolator.getCoords(md, slice(x -roiHalfSize,x + roiHalfSize + 1), slice(y -roiHalfSize,y + roiHalfSize + 1), slice(0,1))
 
         #X = 1e3*md.voxelsize.x*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
         #Y = 1e3*md.voxelsize.y*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]

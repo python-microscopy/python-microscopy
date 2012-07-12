@@ -185,7 +185,7 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
                 #print dir()
 
                 if 'genFitImage' in dir(fitMod):
-                    imf = fitMod.genFitImage(fri, self.mdh).T
+                    imf = fitMod.genFitImage(fri, self.mdh).squeeze()
 
                     self.subplot2.imshow(imf, interpolation='nearest', cmap=pylab.cm.hot)
                     self.subplot2.set_title('Fit')
