@@ -369,6 +369,8 @@ class Pipeline:
         if self.edb == None:
             self.edb = edges.EdgeDB(self.getTriangles())
             
+        return self.edb
+            
     def getBlobs(self):
         from PYME.Analysis.EdgeDB import edges
         
