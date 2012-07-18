@@ -6,7 +6,18 @@
 # Copyright David Baddeley, 2010
 # d.baddeley@auckland.ac.nz
 #
-# This file may NOT be distributed without express permision from David Baddeley
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
 
@@ -91,8 +102,9 @@ class OptionsPanel(wx.Panel):
 
         self.bOptimise = wx.Button(self, -1, "Stretch", style=wx.BU_EXACTFIT)
 
-        self.cbScale = wx.Choice(self, -1, choices=["1:4", "1:2", "1:1", "2:1", "4:1"])
-        self.cbScale.SetSelection(2)
+        self.cbScale = wx.Choice(self, -1, choices=["1:16", "1:8", "1:4", "1:2", "1:1", "2:1", "4:1"])
+        self.cbScale.SetSelection(4)
+        self.scale_11 = 4
 
         if horizOrientation:
             vsizer.Add(hsizer, 0, wx.ALL, 0)
@@ -151,6 +163,8 @@ class OptionsPanel(wx.Panel):
             vsizer.Add(ssizer, 0, wx.ALL|wx.EXPAND, 5)
 
         self.SetSizer(vsizer)
+        
+        self.do.WantChangeNotification.append(self.OnDoChange)
 
     def OnOptimise(self, event):
         self.do.Optimise()
@@ -168,7 +182,7 @@ class OptionsPanel(wx.Panel):
 
 
     def OnScaleChanged(self, event):
-        self.do.SetScale(self.cbScale.GetSelection())
+        self.do.SetScale(self.cbScale.GetSelection() - self.scale_11)
 
     def OnCLimChanged(self, event):
         ind = self.hIds.index(event.GetId())
@@ -306,6 +320,10 @@ class OptionsPanel(wx.Panel):
         self.do.OnChange()
 
         #self.Refresh()
+        
+    def OnDoChange(self):
+        print 'c'
+        self.cbScale.SetSelection(self.do.scale + self.scale_11)
 
 
 

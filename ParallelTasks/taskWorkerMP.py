@@ -6,7 +6,18 @@
 # Copyright David Baddeley, 2009
 # d.baddeley@auckland.ac.nz
 #
-# This file may NOT be distributed without express permision from David Baddeley
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
 
@@ -55,6 +66,7 @@ while 1:
             qName = queueNames.pop(random.randint(0, len(queueNames)-1))
 
         try:
+            #print qName
             tq = Pyro.core.getProxyForURI(ns.resolve('TaskQueues.%s' % qName))
             tq._setOneway(['returnCompletedTask'])
             #print qName
@@ -62,10 +74,17 @@ while 1:
             #ask the queue for tasks
             tasks = tq.getTasks(procName)
             
-        except:
-            pass
-            #import traceback
-            #traceback.print_exc()
+        except Pyro.core.ProtocolError as e:
+            if e.message == 'connection failed':
+                #server is dead in the water - put it out of it's misery
+                print 'Killing:', qName
+                try:
+                    ns.unregister('TaskQueues.%s' % qName)
+                except Pyro.errors.NamingError:
+                    pass
+        except Exception:
+            import traceback
+            traceback.print_exc()
         
             #pass
         

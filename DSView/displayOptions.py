@@ -6,7 +6,18 @@
 # Copyright David Baddeley, 2009
 # d.baddeley@auckland.ac.nz
 #
-# This file may NOT be distributed without express permision from David Baddeley
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
 
@@ -69,7 +80,7 @@ class DisplayOpts(object):
 
         self.orientation = self.UPRIGHT
         self.slice = self.SLICE_XY
-        self.scale = 1.0
+        self.scale = 0
 
         self.leftButtonAction = self.ACTION_POSITION
         self.selectionMode = self.SELECTION_RECTANGLE
@@ -84,7 +95,7 @@ class DisplayOpts(object):
         self.cmax_scale = 1.0
         
         
-        
+        self.overlays = []
         
 
 
@@ -186,6 +197,7 @@ class DisplayOpts(object):
                     self.show.append(True)
 
         self.names = ['Chan %d' %i for i in range(nchans)]
+        
 
         self.OnChange()
 

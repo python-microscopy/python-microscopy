@@ -34,14 +34,17 @@ class PSFTools(HasTraits):
         self.image = dsviewer.image
         
         PROC_EXTRACT_PUPIL = wx.NewId()
+        PROC_CALC_CRB = wx.NewId()
         #PROC_APPLY_THRESHOLD = wx.NewId()
         #PROC_LABEL = wx.NewId()
         
         dsviewer.mProcessing.Append(PROC_EXTRACT_PUPIL, "Extract &Pupil Function", "", wx.ITEM_NORMAL)
+        dsviewer.mProcessing.Append(PROC_CALC_CRB, "Calculate Cramer-Rao Bounds", "", wx.ITEM_NORMAL)
         #dsviewer.mProcessing.Append(PROC_APPLY_THRESHOLD, "Generate &Mask", "", wx.ITEM_NORMAL)
         #dsviewer.mProcessing.Append(PROC_LABEL, "&Label", "", wx.ITEM_NORMAL)
     
         wx.EVT_MENU(dsviewer, PROC_EXTRACT_PUPIL, self.OnExtractPupil)
+        wx.EVT_MENU(dsviewer, PROC_CALC_CRB, self.OnCalcCRB)
         #wx.EVT_MENU(dsviewer, PROC_APPLY_THRESHOLD, self.OnApplyThreshold)
         #wx.EVT_MENU(dsviewer, PROC_LABEL, self.OnLabel)
 
@@ -73,6 +76,32 @@ class PSFTools(HasTraits):
         mode = 'pupil'
 
         dv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
+        
+    def OnCalcCRB(self, event):
+        from PYME.Analysis import cramerRao
+        import numpy as np
+        
+        d = self.image.data[:,:,:]
+        I = d[:,:,d.shape[2]/2].sum()
+        
+        vs = 1e3*np.array([self.image.mdh['voxelsize.x'], self.image.mdh['voxelsize.y'],self.image.mdh['voxelsize.z']])
+        
+        FI = cramerRao.CalcFisherInformZ(d*(1e3/I), 100, voxelsize=vs)
+        
+        crb = cramerRao.CalcCramerReoZ(FI)
+        
+        import pylab
+        z_ = np.arange(d.shape[2])*self.image.mdh['voxelsize.z']*1.0e3
+        z_ = z_ - z_.mean()
+        pylab.figure()
+        pylab.plot(z_, np.sqrt(crb[:,0]), label='x')
+        pylab.plot(z_, np.sqrt(crb[:,1]), label='y')
+        pylab.plot(z_, np.sqrt(crb[:,2]), label='z')
+        pylab.legend()
+        
+        pylab.xlabel('Defocus [nm]')
+        pylab.ylabel('Std. Dev. [nm]')
+        pylab.title('Cramer-Rao bound for 1000 photons')
 
         
 

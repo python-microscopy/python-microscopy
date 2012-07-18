@@ -1,0 +1,68 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html lang="en">
+<head>
+    <title>Measurements</title>
+<script type="text/javascript">
+function HideObject(objID)
+{
+    xmlht = new XMLHttpRequest();
+    xmlht.open('GET', 'hide/' + objID, true);
+    xmlht.send();
+
+    document.getElementById('obj' + objID).hidden=true;
+}
+
+function ShowDetails()
+{
+    els = document.getElementsByClassName('details');
+    for (i=0;i < els.length;i++)
+    {
+        el = els[i]    
+        el.innerHTML = el.attributes.foo.value;
+    } 
+}
+</script>
+</head>
+<body>
+
+    <h1>Measurements</h1>
+    <a onclick="ShowDetails()">Show Details</a>
+    <table>
+    <!--
+    <tr>
+    <th>Index</th><th>Image</th><th>Scheme</th><th>Short axis</th><th>Long axis</th><th>Polar</th><th>Radial</th>
+    <th>x0</th><th>y0</th><th>length</th><th>width</th>
+    </tr> -->
+    {% for obj in objects %}
+        {% if obj.shown %}
+        <tr id="obj{{ loop.index0 }}">
+        <td>{{ loop.index0 }} <a onclick="HideObject({{ loop.index0 }})">hide</a></td>
+        <td><img src="images/{{ loop.index0 }}"/></td>
+        <td><img src="schemes/{{ loop.index0 }}"/></td>
+        <td><img src="schemes3D/{{ loop.index0 }}"/></td>
+        <td class='details' foo='<img src="graphs/{{ loop.index0 }}/shortAxisDist"/>'></td>
+        <td class='details' foo='<img src="graphs/{{ loop.index0 }}/longAxisDistN"/>'></td>
+        <td class='details' foo='<img src="graphs/{{ loop.index0 }}/angularDist"/>'></td>
+        <td class='details' foo='<img src="graphs/{{ loop.index0 }}/radialDistN"/>'></td>
+        <td class='details' foo='<img src="graphs/{{ loop.index0 }}/longAxisOrthDist"/>'></td>
+
+        <td>
+        <table>
+        <tr><th>x0</th><th>y0</th><th>length</th><th>width</th></tr>
+        {% for chan in obj.chans %}
+            <tr>
+            <td>{{ "%3.2f"|format(chan.centroid[0]) }}</td>
+            <td>{{ "%3.2f"|format(chan.centroid[1]) }}</td>
+            <td>{{ "%3.2f"|format(chan.mad_0*2.35/0.8) }}</td>
+            <td>{{ "%3.2f"|format(chan.mad_1*2.35/0.8) }}</td>
+            </tr>
+        {% endfor %}
+        </table>
+        </td>
+        </tr>
+        {% endif %}
+    {% endfor %}
+    <tr>
+    </table>
+</body>
+</html>

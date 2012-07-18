@@ -6,7 +6,18 @@
 # Copyright David Baddeley, 2009
 # d.baddeley@auckland.ac.nz
 #
-# This file may NOT be distributed without express permision from David Baddeley
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
 
@@ -105,9 +116,10 @@ def genFitImage(fitResults, metadata, fitfcn=f_Interp3d):
 
     #im = fitfcn(fitResults['fitResults'], X, Y, Z, P).reshape(len(X), len(Y))
     
-    im = PSFFitFactory.evalModel(fitResults, metadata, scipy.mgrid[xslice].mean(), scipy.mgrid[yslice].mean())
+    im = PSFFitFactory.evalModel(fitResults['fitResults'], metadata, scipy.mgrid[xslice].mean(), scipy.mgrid[yslice].mean())
+    
 
-    return im
+    return im[0].squeeze()
 
 def getDataErrors(im, metadata):
     dataROI = im - metadata.getEntry('Camera.ADOffset')
@@ -168,7 +180,7 @@ class PSFFitFactory:
 #
 #        startPosEstimator.calibrate(interpolator, md)
 
-        X, Y, Z, safeRegion = interpolator.getCoords(md, slice(-roiHalfSize,roiHalfSize + 1), slice(-roiHalfSize,roiHalfSize + 1), slice(0,1))
+        X, Y, Z, safeRegion = interpolator.getCoords(md, slice(x -roiHalfSize,x + roiHalfSize + 1), slice(y -roiHalfSize,y + roiHalfSize + 1), slice(0,1))
 
         #X = 1e3*md.voxelsize.x*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
         #Y = 1e3*md.voxelsize.y*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]

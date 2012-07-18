@@ -5,7 +5,18 @@
 # Copyright David Baddeley, 2009
 # d.baddeley@auckland.ac.nz
 #
-# This file may NOT be distributed without express permision from David Baddeley
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
 
@@ -343,7 +354,7 @@ class VisGUIFrame(wx.Frame):
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(pan, -1, 'Threshold [nm]:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
-        self.tBlobDist = wx.TextCtrl(pan, -1, '%3.0f' % self.objThreshold,size=(40,-1))
+        self.tBlobDist = wx.TextCtrl(pan, -1, '%3.0f' % self.pipeline.objThreshold,size=(40,-1))
         hsizer.Add(self.tBlobDist, 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
         bsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
@@ -351,7 +362,7 @@ class VisGUIFrame(wx.Frame):
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(pan, -1, 'Min Size [events]:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
-        self.tMinObjSize = wx.TextCtrl(pan, -1, '%d' % self.objMinSize, size=(40, -1))
+        self.tMinObjSize = wx.TextCtrl(pan, -1, '%d' % self.pipeline.objMinSize, size=(40, -1))
         hsizer.Add(self.tMinObjSize, 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
         bsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
@@ -359,7 +370,7 @@ class VisGUIFrame(wx.Frame):
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(pan, -1, 'Jittering:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
-        self.tObjJitter = wx.TextCtrl(pan, -1, '%d' % self.blobJitter, size=(40, -1))
+        self.tObjJitter = wx.TextCtrl(pan, -1, '%d' % self.pipeline.blobJitter, size=(40, -1))
         hsizer.Add(self.tObjJitter, 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
         bsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
@@ -402,7 +413,7 @@ class VisGUIFrame(wx.Frame):
             r = pylab.rand(self.objCInd.max() + 1)
             c = r[self.objCInd.astype('i')]
         else:
-            c = self.objectMeasures[bcolour][self.objCInd.astype('i')]
+            c = self.pipeline.objectMeasures[bcolour][self.objCInd.astype('i')]
 
         self.glCanvas.c = c
         self.glCanvas.setColour()
@@ -972,7 +983,7 @@ class VisGUIFrame(wx.Frame):
             if self.pipeline.objects == None:
                 #check to see that we don't have too many points
                 if len(self.pipeline['x']) > 1e5:
-                    goAhead = wx.MessageBox('You have %d events in the selected ROI;\nThis could take a LONG time ...' % len(self.colourFilter['x']), 'Continue with blob detection', wx.YES_NO|wx.ICON_EXCLAMATION)
+                    goAhead = wx.MessageBox('You have %d events in the selected ROI;\nThis could take a LONG time ...' % len(self.pipeline['x']), 'Continue with blob detection', wx.YES_NO|wx.ICON_EXCLAMATION)
     
                     if not goAhead == wx.YES:
                         return
