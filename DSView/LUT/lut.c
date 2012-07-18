@@ -55,7 +55,7 @@ static PyObject * applyLUTuint16(PyObject *self, PyObject *args, PyObject *keywd
 
     if (!PyArray_Check(adata)  || !PyArray_ISCONTIGUOUS(adata))
     {
-        PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array");
+        PyErr_Format(PyExc_RuntimeError, "data - Expecting a contiguous numpy array");
         Py_DECREF(adata);
         return NULL;
     }
@@ -69,7 +69,7 @@ static PyObject * applyLUTuint16(PyObject *self, PyObject *args, PyObject *keywd
 
     if (!PyArray_Check(oLUT) || !PyArray_ISCONTIGUOUS(oLUT))
     {
-        PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array");
+        PyErr_Format(PyExc_RuntimeError, "lut - Expecting a contiguous numpy array");
         Py_DECREF(adata);
         return NULL;
     }
@@ -83,7 +83,7 @@ static PyObject * applyLUTuint16(PyObject *self, PyObject *args, PyObject *keywd
 
     if (!PyArray_Check(oout) || !PyArray_ISCONTIGUOUS(oout))
     {
-        PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array");
+        PyErr_Format(PyExc_RuntimeError, "out - Expecting a contiguous numpy array");
         Py_DECREF(adata);
         return NULL;
     }
