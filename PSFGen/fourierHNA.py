@@ -86,7 +86,7 @@ class FourierPropagatorHNA:
 FourierPropagator = FourierPropagatorHNA
 
 def GenWidefieldAP(dx = 5):
-    X, Y = meshgrid(arange(-5000, 5000., dx),arange(-5000, 5000., dx))
+    X, Y = meshgrid(arange(-2000, 2000., dx),arange(-2000, 2000., dx))
     u = 2*X/(dx*X.shape[0]*dx*pi)
     v = 2*Y/(dx*X.shape[1]*dx*pi)
     #print u.min()
@@ -354,10 +354,12 @@ def GenPRIPSF(zs, dx = 5):
 
     return abs(ps**2)
 
-def GenAstigPSF(zs, dx=5):
+def GenAstigPSF(zs, dx=5, strength=1.0):
     X, Y, R, FP, F = GenWidefieldAP(dx)
+    
+    v = lamb*2*Y/(dx*Y.shape[0]*dx*pi)
 
-    F = F * exp(-1j*(.001*Y)**2)
+    F = F * exp(-1j*(strength*v)**2)
     clf()
     imshow(angle(F))
 
