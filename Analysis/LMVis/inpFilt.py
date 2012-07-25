@@ -94,7 +94,7 @@ class fitResultsSource(inputFilter):
         #or shorter aliases
         self.transkeys = {'A' : 'fitResults_A', 'x' : 'fitResults_x0',
                           'y' : 'fitResults_y0', 'sig' : 'fitResults_sigma',
-                          'error_x' : 'fitError_x0', 't':'tIndex'}
+                          'error_x' : 'fitError_x0', 'error_y' : 'fitError_y0','t':'tIndex'}
 
         for k in self.transkeys.keys():
             if not self.transkeys[k] in self._keys:
@@ -155,7 +155,7 @@ class h5rSource(inputFilter):
         #or shorter aliases
         self.transkeys = {'A' : 'fitResults_A', 'x' : 'fitResults_x0',
                           'y' : 'fitResults_y0', 'sig' : 'fitResults_sigma', 
-                          'error_x' : 'fitError_x0', 't':'tIndex'}
+                          'error_x' : 'fitError_x0', 'error_y' : 'fitError_y0', 't':'tIndex'}
 
         for k in self.transkeys.keys():
             if not self.transkeys[k] in self._keys:
@@ -211,7 +211,7 @@ class h5rDSource(inputFilter):
         #or shorter aliases
         self.transkeys = {'A' : 'fitResults_A', 'x' : 'fitResults_x0',
                           'y' : 'fitResults_y0', 'sig' : 'fitResults_sigma', 
-                          'error_x' : 'fitError_x0', 't':'tIndex'}
+                          'error_x' : 'fitError_x0', 'error_y' : 'fitError_y0', 't':'tIndex'}
 
 
     def keys(self):

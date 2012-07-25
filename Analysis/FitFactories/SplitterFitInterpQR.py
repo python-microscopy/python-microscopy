@@ -43,7 +43,7 @@ copy_reg.pickle(slice, pickleSlice, unpickleSlice)
 
 def f_Interp3d2c(p, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, axialShift, *args):
     """3D PSF model function with constant background - parameter vector [A, x0, y0, z0, background]"""
-    Ag, Ar, x0, y0, z0, bG, bR = p
+    Ag, Ar, x0, y0, z0 = p
 
     #make sure our model is big enough to stretch to our current position
 #    xm = len(Xg)/2
@@ -76,11 +76,11 @@ def replNoneWith1(n):
 
 
 fresultdtype=[('tIndex', '<i4'),
-    ('fitResults', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('backgroundG', '<f4'),('backgroundR', '<f4')]),
-    ('fitError', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('backgroundG', '<f4'),('backgroundR', '<f4')]),
+    ('fitResults', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4')]),
+    ('fitError', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4')]),
     ('resultCode', '<i4'), 
     ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])]),
-    ('startParams', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('backgroundG', '<f4'), ('backgroundR', '<f4')]),
+    ('startParams', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4')]),
     ('nchi2', '<f4')]
 
 def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None, startParams=None, nchi2=-1):
@@ -260,7 +260,7 @@ class PSFFitFactory:
             startParams = self.startPosEstimator.getStartParameters(dataROI[:,:,1:], X_, Y_)
             z0 = self.metadata.Analysis.AxialShift
 
-        startParameters = [Ag*startParams[0]/(Ag + Ar), Ar*startParams[0]/(Ag + Ar), startParams[1], startParams[2], z0 + startParams[3], dataROI[:,:,0].min(),dataROI[:,:,1].min()]
+        startParameters = [Ag*startParams[0]/(Ag + Ar), Ar*startParams[0]/(Ag + Ar), startParams[1], startParams[2], z0 + startParams[3]]
 
         #print dataROI.shape
 	

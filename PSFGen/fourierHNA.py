@@ -366,6 +366,20 @@ def GenAstigPSF(zs, dx=5, strength=1.0):
     ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 
     return abs(ps**2)
+    
+def GenCubicPhasePSF(zs, dx=5, strength=1.0):
+    X, Y, R, FP, F = GenWidefieldAP(dx)
+    
+    v = lamb*2*Y/(dx*Y.shape[0]*dx*pi)
+    u = lamb*2*X/(dx*X.shape[0]*dx*pi)
+
+    F = F * exp(-1j*strength*(u**3 + v**3))
+    clf()
+    imshow(angle(F))
+
+    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+
+    return abs(ps**2)
 
 def GenShiftedPSF(zs, dx = 5):
     X, Y, R, FP, F = GenWidefieldAP(dx)

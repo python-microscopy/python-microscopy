@@ -116,6 +116,7 @@ class LMAnalyser:
         from PYME.Analysis.LMVis import gl_render
         self.glCanvas = gl_render.LMGLCanvas(self.dsviewer, False, vp = self.do, vpVoxSize = voxx)
         self.glCanvas.cmap = pylab.cm.gist_rainbow
+        self.glCanvas.pointSelectionCallbacks.append(self.OnPointSelect)
 
         self.dsviewer.AddPage(page=self.glCanvas, select=True, caption='VisLite')
 
@@ -132,6 +133,18 @@ class LMAnalyser:
 
         self.glCanvas.Bind(wx.EVT_IDLE, self.OnIdle)
         self.pointsAdded = False
+        
+    def OnPointSelect(self, xp, yp):
+        dist = np.sqrt((xp - self.fitResults['fitResults']['x0'])**2 + (yp - self.fitResults['fitResults']['y0'])**2)
+        #print cand.sum()
+        
+        cand = dist.argmin()
+        
+        
+        self.dsviewer.do.xp = xp/(1.0e3*self.image.mdh.getEntry('voxelsize.x'))
+        self.dsviewer.do.yp = yp/(1.0e3*self.image.mdh.getEntry('voxelsize.y'))
+        self.dsviewer.do.zp = self.fitResults['tIndex'][cand]
+        
 
     def OnIdle(self,event):
         if not self.pointsAdded:
@@ -245,6 +258,8 @@ class LMAnalyser:
 
         hsizer.Add(wx.StaticText(pan, -1, 'Z Shift [nm]:'), 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
         self.tZShift = wx.TextCtrl(pan, -1, value='0', size=(50, -1))
+        if 'Analysis.AxialShift' in self.image.mdh.getEntryNames():
+            self.tZShift.SetValue('%3.2f' % self.image.mdh['Analysis.AxialShift'])
 
         hsizer.Add(self.tZShift, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
         vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 10)
@@ -384,7 +399,7 @@ class LMAnalyser:
             if not self.SetPSF():
                 return
 
-        if 'Interp' in fitMod  and 'Splitter' in fitMod and not 'Analysis.AxialShift' in self.image.mdh.getEntryNames():
+        if 'Interp' in fitMod  and 'Splitter' in fitMod:
             #dlg = wx.TextEntryDialog(self, 'What is the axial chromatic shift between splitter halves [nm]?',
             #    'Axial Shift', '300')
 

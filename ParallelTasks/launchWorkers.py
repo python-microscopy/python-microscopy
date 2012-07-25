@@ -92,7 +92,7 @@ def main():
     if sys.platform == 'win32':
         subprocess.Popen('python %s\\taskServerMP.py' % fstub, shell=True)
     
-        time.sleep(3)
+        time.sleep(5)
     
         subprocess.Popen('python %s\\fitMonP.py' % fstub, shell=True)
     
