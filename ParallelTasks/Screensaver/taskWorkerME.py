@@ -74,10 +74,17 @@ while 1:
             #ask the queue for tasks
             tasks = tq.getTasks(procName)
             
-        except:
-            pass
-            #import traceback
-            #traceback.print_exc()
+        except Pyro.core.ProtocolError as e:
+            if e.message == 'connection failed':
+                #server is dead in the water - put it out of it's misery
+                print 'Killing:', qName
+                try:
+                    ns.unregister('TaskQueues.%s' % qName)
+                except Pyro.errors.NamingError:
+                    pass
+        except Exception:
+            import traceback
+            traceback.print_exc()
         
             #pass
         

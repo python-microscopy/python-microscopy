@@ -28,11 +28,25 @@ import numpy
 import cPickle
 from scipy.fftpack import fftn, ifftn, ifftshift
 
-import fftw3
+#import fftw3
 
 from PYME import pad
 from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
 from scipy.spatial import kdtree
+
+import fftw3f as fftw3
+from PYME.Deconv import fftwWisdom
+
+#from wiener import resizePSF
+
+fftwWisdom.load_wisdom()
+#import weave
+#import cDec
+#from PYME import pad
+#import dec
+
+NTHREADS = 1
+FFTWFLAGS = ['measure']
 
 #import pylab
 PSFFileName = None
@@ -67,8 +81,10 @@ class fftwWeiner:
         self.weinerFT = fftw3.create_aligned_array(self.cachedOTFH.shape, 'complex')
         self.weinerR = fftw3.create_aligned_array(self.cachedOTFH.shape, 'float')
 
-        self.planForward = fftw3.Plan(self.weinerR, self.weinerFT)
-        self.planInverse = fftw3.Plan(self.weinerFT, self.weinerR, direction='reverse')
+        self.planForward = fftw3.Plan(self.weinerR, self.weinerFT, flags = FFTWFLAGS, nthreads=NTHREADS)
+        self.planInverse = fftw3.Plan(self.weinerFT, self.weinerR, direction='reverse', flags = FFTWFLAGS, nthreads=NTHREADS)
+        
+        fftwWisdom.save_wisdom()
         
         self.otf2mean = self.cachedOTF2.mean()
 
