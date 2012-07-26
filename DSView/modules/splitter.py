@@ -77,6 +77,9 @@ class Unmixer:
         im = ImageStack([um0, um1], titleStub = '%s - unsplit' % fns)
         im.mdh.copyEntriesFrom(self.image.mdh)
         im.mdh['Parent'] = self.image.filename
+        
+        if 'fitResults' in dir(self.image):
+            im.fitResults = self.image.fitResults
         #im.mdh['Processing.GaussianFilter'] = sigmas
 
         if self.dsviewer.mode == 'visGUI':

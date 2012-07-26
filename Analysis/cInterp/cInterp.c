@@ -19,9 +19,9 @@
 
 static PyObject * Interpolate(PyObject *self, PyObject *args, PyObject *keywds)
 {
-    double *res = 0;
+    float *res = 0;
     
-    npy_intp outDimensions[2];
+    npy_intp outDimensions[3];
     int sizeX, sizeY, sizeZ;
     int xi, yi, j;
     
@@ -51,7 +51,7 @@ static PyObject * Interpolate(PyObject *self, PyObject *args, PyObject *keywds)
 
     /* Do the calculations */ 
         
-    amod = (PyArrayObject *) PyArray_ContiguousFromObject(omod, PyArray_DOUBLE, 3, 3);
+    amod = (PyArrayObject *) PyArray_ContiguousFromObject(omod, PyArray_FLOAT, 3, 3);
     if (amod == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad model");
@@ -68,10 +68,11 @@ static PyObject * Interpolate(PyObject *self, PyObject *args, PyObject *keywds)
 
     outDimensions[0] = nx;
     outDimensions[1] = ny;
+    outDimensions[2] = 1;
 
     //printf("shp: %d, %d", nx, ny);
         
-    out = (PyArrayObject*) PyArray_SimpleNew(2,outDimensions,PyArray_DOUBLE);
+    out = (PyArrayObject*) PyArray_SimpleNew(3,outDimensions,PyArray_FLOAT);
     if (out == NULL)
     {
       Py_DECREF(amod);
@@ -81,44 +82,46 @@ static PyObject * Interpolate(PyObject *self, PyObject *args, PyObject *keywds)
     }
     
     
-    res = (double*) out->data;
+    res = (float*) out->data;
 
     //Initialise our histogram
     for (j =0; j < nx*ny; j++)
     {
-        res[j] = 0;
+        res[j] = 0.0;
     }
 
-    fx = sizeX/2 + x0/dx;
-    fy = sizeY/2 + y0/dy;
-    fz = sizeZ/2 + z0/dz;
+    fx = (int)(floorf(sizeX/2.0) + floorf(x0/dx));
+    fy = (int)(floorf(sizeY/2.0) + floorf(y0/dy));
+    fz = (int)(floorf(sizeZ/2.0) + floorf(z0/dz));
 
     ///avoid negatives by adding a chunk before taking the mod
-    rx = fmodf(x0+1e3*dx,dx)/dx;
-    ry = fmodf(y0+1e3*dy,dy)/dy;
-    rz = fmodf(z0+1e3*dz,dz)/dz;
+    rx = fmodf(x0+973*dx,dx)/dx;
+    ry = fmodf(y0+973*dy,dy)/dy;
+    rz = fmodf(z0+973*dz,dz)/dz;
 
-    r000 = ((1-rx)*(1-ry)*(1-rz));
-    r100 = ((rx)*(1-ry)*(1-rz));
-    r010 = ((1-rx)*(ry)*(1-rz));
-    r110 = ((rx)*(ry)*(1-rz));
-    r001 = ((1-rx)*(1-ry)*(rz));
-    r101 = ((1-rx)*(ry)*(rz));
-    r011 = ((1-rx)*(ry)*(rz));
+    //printf("%3.3f, %d, %3.3f\n", rz, fz, z0);
+
+    r000 = ((1.0-rx)*(1.0-ry)*(1.0-rz));
+    r100 = ((rx)*(1.0-ry)*(1.0-rz));
+    r010 = ((1.0-rx)*(ry)*(1.0-rz));
+    r110 = ((rx)*(ry)*(1.0-rz));
+    r001 = ((1.0-rx)*(1.0-ry)*(rz));
+    r101 = ((rx)*(1.0-ry)*(rz));
+    r011 = ((1.0-rx)*(ry)*(rz));
     r111 = ((rx)*(ry)*(rz));        
 
     for (xi = fx; xi < (fx+nx); xi++)
       {            
 	for (yi = fy; yi < (fy +ny); yi++)
         {
-            *res  = r000 * *(double*)PyArray_GETPTR3(amod, xi,   yi,   fz);
-            *res += r100 * *(double*)PyArray_GETPTR3(amod, xi+1, yi,   fz);
-            *res += r010 * *(double*)PyArray_GETPTR3(amod, xi,   yi+1, fz);
-            *res += r110 * *(double*)PyArray_GETPTR3(amod, xi+1, yi+1, fz);
-            *res += r001 * *(double*)PyArray_GETPTR3(amod, xi,   yi,   fz+1);
-            *res += r101 * *(double*)PyArray_GETPTR3(amod, xi+1, yi,   fz+1);
-            *res += r011 * *(double*)PyArray_GETPTR3(amod, xi,   yi+1, fz+1);
-            *res += r111 * *(double*)PyArray_GETPTR3(amod, xi+1, yi+1, fz+1);
+            *res  = r000 * *(float*)PyArray_GETPTR3(amod, xi,   yi,   fz);
+            *res += r100 * *(float*)PyArray_GETPTR3(amod, xi+1, yi,   fz);
+            *res += r010 * *(float*)PyArray_GETPTR3(amod, xi,   yi+1, fz);
+            *res += r110 * *(float*)PyArray_GETPTR3(amod, xi+1, yi+1, fz);
+            *res += r001 * *(float*)PyArray_GETPTR3(amod, xi,   yi,   fz+1);
+            *res += r101 * *(float*)PyArray_GETPTR3(amod, xi+1, yi,   fz+1);
+            *res += r011 * *(float*)PyArray_GETPTR3(amod, xi,   yi+1, fz+1);
+            *res += r111 * *(float*)PyArray_GETPTR3(amod, xi+1, yi+1, fz+1);
 
             res ++;
 	  }

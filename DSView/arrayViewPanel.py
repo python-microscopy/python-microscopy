@@ -78,6 +78,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         self.pointMode = 'confoc'
         self.pointTolNFoc = {'confoc' : (5,5,5), 'lm' : (2, 5, 5), 'splitter' : (2,5,5)}
         self.showAdjacentPoints = True
+        self.pointSize = 11
 
         self.psfROIs = []
         self.psfROISize=[30,30,30]
@@ -181,7 +182,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         
         
     def DoPaint(self, dc):
-        print 'p'
+        #print 'p'
         
         dc.Clear()
                                      
@@ -234,7 +235,6 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             lx, ly, hx, hy = self.do.GetSliceSelection()
             lx, ly = self._PixelToScreenCoordinates(lx, ly)
             hx, hy = self._PixelToScreenCoordinates(hx, hy)
-        
             
             if self.do.selectionMode == DisplayOpts.SELECTION_RECTANGLE:
                 dc.DrawRectangle(lx,ly, (hx-lx),(hy-ly))
@@ -245,12 +245,9 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                     pts = numpy.vstack(self._PixelToScreenCoordinates(x, y)).T
                     dc.DrawSpline(pts)
             elif self.do.selectionWidth == 1:
-                if (self.do.orientation == self.do.UPRIGHT):
-                    dc.DrawLine(lx*sc - x0,ly*sc*self.aspect - y0, hx*sc - x0,hy*sc*self.aspect - y0)
-                else:
-                    dc.DrawLine(ly*sc - x0,lx*sc - y0, hy*sc,hx*sc)
+                dc.DrawLine(lx,ly, hx,hy)
             else:
-
+                lx, ly, hx, hy = self.do.GetSliceSelection()
                 dx = hx - lx
                 dy = hy - ly
 
@@ -260,24 +257,18 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                 else:
                     d_x = 0.5*self.do.selectionWidth*dy/numpy.sqrt((dx**2 + dy**2))
                     d_y = 0.5*self.do.selectionWidth*dx/numpy.sqrt((dx**2 + dy**2))
+                    
+                x_0, y_0 = self._PixelToScreenCoordinates(lx + d_x, ly - d_y)
+                x_1, y_1 = self._PixelToScreenCoordinates(lx - d_x, ly + d_y)
+                x_2, y_2 = self._PixelToScreenCoordinates(hx - d_x, hy + d_y)
+                x_3, y_3 = self._PixelToScreenCoordinates(hx + d_x, hy - d_y)
                 
-                if (self.do.orientation == self.do.UPRIGHT):
-                    x_1 = lx*sc - x0
-                    y_1 = ly*sc - y0
-                    x_2 = hx*sc - x0
-                    y_2 = hy*sc - y0
+                lx, ly = self._PixelToScreenCoordinates(lx, ly)
+                hx, hy = self._PixelToScreenCoordinates(hx, hy)
+               
 
-                    dc.DrawLine(lx*sc - x0,ly*sc*self.aspect - y0, hx*sc - x0,hy*sc*self.aspect - y0)
-                    dc.DrawPolygon([(x_1 +d_x*sc, y_1-d_y*sc), (x_1 - d_x*sc, y_1 + d_y*sc), (x_2-d_x*sc, y_2+d_y*sc), (x_2 + d_x*sc, y_2 - d_y*sc)])
-                else:
-                    x1 = ly*sc - x0
-                    y1 = lx*sc - y0
-                    x2 = x1 + hy*sc
-                    y2 = y1 + hx*sc
-
-                    dc.DrawLine(ly*sc - x0,lx*sc - y0, hy*sc,hx*sc)
-
-                    dc.DrawPolygon([(x1-d_x, y1-d_y), (x1 + d_x, y1 + d_y), (x2+d_x, y2+d_y), (x2 - d_x, y2 - d_y)])
+                dc.DrawLine(lx, ly, hx, hy)
+                dc.DrawPolygon([(x_0, y_0), (x_1, y_1), (x_2, y_2), (x_3, y_3)])
                     
             dc.SetPen(wx.NullPen)
             dc.SetBrush(wx.NullBrush)
@@ -398,34 +389,44 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
 
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
+            ps = self.pointSize
+            ps2 = ps/2
 
             if self.showAdjacentPoints:
                 dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('BLUE'),1))
+                
                 if self.pointMode == 'splitter' and self.do.slice == self.do.SLICE_XY:
                     for p, dxi, dyi in zip(pNFoc, dxn, dyn):
-                        dc.DrawRectangle(sc*p[0]-2*sc - x0,sc*p[1]*self.aspect - 2*sc*self.aspect - y0, 4*sc,4*sc*self.aspect)    
-                        dc.DrawRectangle(sc*(p[0]-dxi)-2*sc - x0,sc*(self.do.ds.shape[1] - p[1] + dyi)*self.aspect - 2*sc*self.aspect - y0, 4*sc,4*sc*self.aspect)
+                        px, py = self._PixelToScreenCoordinates(p[0] - ps2, p[1] - ps2)
+                        dc.DrawRectangle(px,py, ps*sc,ps*sc*self.aspect)
+                        px, py = self._PixelToScreenCoordinates(p[0] -dxi - ps2, self.do.ds.shape[1] - p[1] + dyi - ps2)
+                        dc.DrawRectangle(px,py, ps*sc,ps*sc*self.aspect)
 
                 else:
                     for p in pNFoc:
-                        dc.DrawRectangle(sc*p[0]-2*sc - x0,sc*p[1]*self.aspect - 2*sc*self.aspect - y0, 4*sc,4*sc*self.aspect)
+                        px, py = self._PixelToScreenCoordinates(p[0] - ps2, p[1] - ps2)
+                        dc.DrawRectangle(px,py, ps*sc,ps*sc*self.aspect)
 
 
             pGreen = wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),1)
             pRed = wx.Pen(wx.TheColourDatabase.FindColour('RED'),1)
             dc.SetPen(pGreen)
+            
             if self.pointMode == 'splitter' and self.do.slice == self.do.SLICE_XY:
                 for p, c, dxi, dyi in zip(pFoc, pCol, dx, dy):
                     if c:
                         dc.SetPen(pGreen)
                     else:
                         dc.SetPen(pRed)
-                    dc.DrawRectangle(sc*p[0]-2*sc - x0,sc*p[1]*self.aspect - 2*sc*self.aspect - y0, 4*sc,4*sc*self.aspect)
-                    dc.DrawRectangle(sc*(p[0]-dxi)-2*sc - x0,sc*(self.do.ds.shape[1] - p[1] + dyi)*self.aspect - 2*sc*self.aspect - y0, 4*sc,4*sc*self.aspect)
+                    px, py = self._PixelToScreenCoordinates(p[0] - ps2, p[1] - ps2)
+                    dc.DrawRectangle(px,py, ps*sc,ps*sc*self.aspect)
+                    px, py = self._PixelToScreenCoordinates(p[0] -dxi - ps2, self.do.ds.shape[1] - p[1] + dyi - ps2)
+                    dc.DrawRectangle(px,py, ps*sc,ps*sc*self.aspect)
                     
             else:
                 for p in pFoc:
-                    dc.DrawRectangle(sc*p[0]-2*sc - x0,sc*p[1]*self.aspect - 2*sc*self.aspect - y0, 4*sc,4*sc*self.aspect)
+                    px, py = self._PixelToScreenCoordinates(p[0] - ps2, p[1] - ps2)
+                    dc.DrawRectangle(px,py, ps*sc,ps*sc*self.aspect)
 
 
 

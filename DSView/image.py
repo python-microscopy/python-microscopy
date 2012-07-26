@@ -170,11 +170,11 @@ class ImageStack(object):
 
     def Loadh5(self, filename):
         import tables
-        from PYME.Analysis.DataSources import HDFDataSource
+        from PYME.Analysis.DataSources import HDFDataSource, BGSDataSource
         from PYME.Analysis.LMVis import inpFilt
 
         self.dataSource = HDFDataSource.DataSource(filename, None)
-        self.data = self.dataSource #this will get replaced with a wrapped version
+        self.data = BGSDataSource.DataSource(self.dataSource) #this will get replaced with a wrapped version
 
         if 'MetaData' in self.dataSource.h5File.root: #should be true the whole time
             self.mdh = MetaData.TIRFDefault

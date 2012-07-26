@@ -5,7 +5,7 @@ import numpy as np
 #print __file__
 md['EndTime'] = 1300676178.4949999
 md['EstimatedLaserOnFrameNo'] = 0
-md['PSFFile'] = os.path.join(os.path.split(__file__)[0], 'psf_astig.psf')
+md['PSFFile'] = os.path.join(os.path.split(__file__)[0], 'psf_decon.psf')
 md['StartTime'] = 1300676151.901
 md['tIndex'] = 0
 md['Analysis.BGRange'] = [0, 0]
@@ -16,7 +16,7 @@ md['Analysis.FitModule'] = u'SplitterFitInterpR'
 md['Analysis.InterpModule'] = 'LinearInterpolator'
 md['Analysis.AxialShift'] = 250
 #md['Analysis.EstimatorModule'] = 'priEstimator'
-md['Analysis.subtractBackground'] = False
+#md['Analysis.subtractBackground'] = False
 md['Camera.ADOffset'] = 1159.0
 md['Camera.CycleTime'] = 0.25178998708724976
 md['Camera.EMGain'] = 150
@@ -61,5 +61,6 @@ class sffake:
 
 md['chroma.dx'] = sffake(50.)
 md['chroma.dy'] = sffake(100.)
-md['Test.DefaultParams'] = [205, 205, 0, 0, 0, 50, 50]
-md['Test.ParamJitter'] = [150, 150, 90, 90, 250, 10, 10]
+md['Test.DefaultParams'] = [155, 155, 0, 0, 0, 0, 0]
+md['Test.ParamJitter'] = [15, 15, 90, 90, 250, 10, 10]
+md['Test.Background'] = 50.

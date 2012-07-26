@@ -61,14 +61,15 @@ cm_grey = cmap_mult(numpy.ones(3), [0, 0, 0])
 
 class LMGLCanvas(GLCanvas):
     def __init__(self, parent, trackSelection=True, vp = None, vpVoxSize = None):
-        attriblist = [wx.glcanvas.WX_GL_RGBA,wx.glcanvas.WX_GL_STENCIL_SIZE,8, wx.glcanvas.WX_GL_DOUBLEBUFFER, 0]
-        GLCanvas.__init__(self, parent,-1)#, attribList = attriblist)
+        attriblist = [wx.glcanvas.WX_GL_RGBA,wx.glcanvas.WX_GL_STENCIL_SIZE,8, wx.glcanvas.WX_GL_DOUBLEBUFFER, 16]
+        GLCanvas.__init__(self, parent,-1, attribList = attriblist)
         #GLCanvas.__init__(self, parent,-1)
         wx.EVT_PAINT(self, self.OnPaint)
         wx.EVT_SIZE(self, self.OnSize)
         wx.EVT_MOUSEWHEEL(self, self.OnWheel)
         wx.EVT_LEFT_DOWN(self, self.OnLeftDown)
         wx.EVT_LEFT_UP(self, self.OnLeftUp)
+        wx.EVT_LEFT_DCLICK(self, self.OnLeftDClick)
         if trackSelection:
             wx.EVT_MOTION(self, self.OnMouseMove)
         #wx.EVT_ERASE_BACKGROUND(self, self.OnEraseBackground)
@@ -130,6 +131,7 @@ class LMGLCanvas(GLCanvas):
         self.selection = False
 
         self.wantViewChangeNotification = WeakSet()
+        self.pointSelectionCallbacks = []
 
         #self.InitGL()
 
@@ -915,6 +917,19 @@ class LMGLCanvas(GLCanvas):
             self.vp.yp = yp/self.vpVoxSize
 
             self.Refresh()
+
+        event.Skip()
+        
+    def OnLeftDClick(self, event):
+        view_size_x = self.xmax - self.xmin
+        view_size_y = self.ymax - self.ymin
+
+        #get translated coordinates
+        xp = event.GetX()*view_size_x/self.Size[0] + self.xmin
+        yp = (self.Size[1] - event.GetY())*view_size_y/self.Size[1] + self.ymin
+
+        for cb in self.pointSelectionCallbacks:
+            cb(xp, yp)
 
         event.Skip()
 

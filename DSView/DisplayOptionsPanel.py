@@ -322,7 +322,7 @@ class OptionsPanel(wx.Panel):
         #self.Refresh()
         
     def OnDoChange(self):
-        print 'c'
+        #print 'c'
         self.cbScale.SetSelection(self.do.scale + self.scale_11)
 
 
