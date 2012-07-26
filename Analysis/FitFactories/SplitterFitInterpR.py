@@ -173,7 +173,7 @@ class PSFFitFactory:
         #Y = 1e3*md.voxelsize.y*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
         #Z = array([0]).astype('f')
 
-        return f_Interp3d2c(params, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion), Xg.ravel()[0], Yg.ravel()[0], Zg.ravel()[0]
+        return f_Interp3d2c(params, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, md.Analysis.AxialShift), Xg.ravel()[0], Yg.ravel()[0], Zg.ravel()[0]
 
     def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
         #if (z == None): # use position of maximum intensity
@@ -244,10 +244,14 @@ class PSFFitFactory:
         sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*scipy.maximum(dataROI, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
 
 
-        if not self.background == None and len(numpy.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
-            bgROI = self.background[xslice, yslice, zslice] - self.metadata.Camera.ADOffset
+        if not self.background == None and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
+            #print 'bgs'
+            if len(numpy.shape(self.background)) > 1:
+                bgROI = self.background[xslice, yslice, zslice] - self.metadata.Camera.ADOffset
 
-            dataROI = dataROI - bgROI
+                dataROI = dataROI - bgROI
+            else:
+                dataROI = dataROI - (self.background - self.metadata.Camera.ADOffset)
 
         #estimate some start parameters...
         Ag = dataROI[:,:,0].max() - dataROI[:,:,0].min() #amplitude

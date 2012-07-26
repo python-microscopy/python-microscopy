@@ -182,7 +182,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         
         
     def DoPaint(self, dc):
-        print 'p'
+        #print 'p'
         
         dc.Clear()
                                      

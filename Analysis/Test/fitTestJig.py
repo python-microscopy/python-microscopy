@@ -30,6 +30,11 @@ splitterFitModules = ['SplitterFitFR','SplitterFitQR','SplitterFitCOIR', 'Biplan
 from pylab import *
 import copy
 from PYME.Acquire import MetaDataHandler
+from PYME.Acquire.Hardware import EMCCDTheory
+from scipy import optimize
+
+def emg(v, rg):
+    return (EMCCDTheory.M((80. + v)/(255 + 80.), 6.6, -70, 536, 2.2) - rg)**2
 
 #[A, x0, y0, 250/2.35, dataMean.min(), .001, .001]
 
@@ -41,8 +46,14 @@ class fitTestJig(object):
         else:
             self.fitModule = fitModule
         self.md.tIndex = 0
+        
+        self.bg = 0
+        if 'Test.Background' in self.md.getEntryNames():
+            self.bg = float(self.md['Test.Background'])
+            
+        emGain = optimize.fmin(emg, 150, args=[self.md.Camera.TrueEMGain])[0]
 
-        self.noiseM = NoiseMaker(EMGain=150, floor=self.md.Camera.ADOffset)
+        self.noiseM = NoiseMaker(EMGain=emGain, floor=self.md.Camera.ADOffset, background=self.bg, QE=1.0)
 
 
     @classmethod
@@ -62,6 +73,8 @@ class fitTestJig(object):
 
         rs=11
         
+        
+        
         md2 = copy.copy(self.md)
         if 'Test.PSFFile' in self.md.getEntryNames():
             md2['PSFFile'] = self.md['Test.PSFFile']
@@ -73,15 +86,20 @@ class fitTestJig(object):
             self.data, self.x0, self.y0, self.z0 = self.fitMod.FitFactory.evalModel(p, md2, roiHalfSize=rs)#, roiHalfSize= roiHalfWidth))
             
             #print self.data.shape
-            #print self.data.min(), self.data.max()
+            
             #from PYME.DSView import View3D
             #View3D(self.data)
 
             self.d2 = self.noiseM.noisify(self.data)
+            #print self.d2.min(), self.d2.max(), self.data.min(), self.data.max()
             
             #print self.d2.shape
+            
+            bg = self.bg*self.md.Camera.TrueEMGain/self.md.Camera.ElectronsPerCount
+            
+            #print bg, self.md.Camera.ADOffset
 
-            self.fitFac = self.fitMod.FitFactory(atleast_3d(self.d2), self.md, background = 0)
+            self.fitFac = self.fitMod.FitFactory(atleast_3d(self.d2), self.md, background = bg + self.md.Camera.ADOffset)
             self.res[i] = self.fitFac.FromPoint(rs, rs, roiHalfSize=rs)
 
         
