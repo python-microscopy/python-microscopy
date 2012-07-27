@@ -24,7 +24,16 @@
 from PYME.ParallelTasks import taskDef
 import ofind
 #import ofind_nofilt #use for drift estimation - faster
-import ofind_xcorr
+#import ofind_xcorr
+try:
+    #try to use the FFTW version if we have fftw installed
+    import ofind_xcorr_fw as ofind_xcorr
+except:
+    #fall back on fftpack in scipy
+    #this was only marginally slower at last benchmark implying much of the 
+    #cost is not in the ffts
+    import ofind_xcorr
+    
 import numpy
 import numpy as np
 

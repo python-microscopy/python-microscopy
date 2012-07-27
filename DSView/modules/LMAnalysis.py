@@ -338,6 +338,7 @@ class LMAnalyser:
 
     def SetPSF(self, event=None):
         fdialog = wx.FileDialog(None, 'Please select PSF to use ...',
+                    defaultDir=os.path.split(self.image.filename)[0],
                     wildcard='PSF files|*.psf', style=wx.OPEN)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):

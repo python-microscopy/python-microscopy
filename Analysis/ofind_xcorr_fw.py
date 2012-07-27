@@ -59,10 +59,7 @@ FTW = None
 #autocorr = None
 
 class fftwWeiner:
-    def __init__(self, PSFFilename, PSSize):
-        fid = open(getFullExistingFilename(PSFFilename), 'rb')
-        ps, vox = cPickle.load(fid)
-        fid.close()
+    def __init__(self, ps, vox, PSSize):
         ps = ps.max(2)
         ps = ps - ps.min()
 
@@ -75,11 +72,11 @@ class fftwWeiner:
         pw2 = numpy.ceil(pw)
 
         self.cachedPSF = pad.with_constant(ps, ((pw2[0], pw1[0]), (pw2[1], pw1[1])), (0,))
-        self.cachedOTFH = (ifftn(self.cachedPSF)*self.cachedPSF.size).astype('complex')
-        self.cachedOTF2 = (self.cachedOTFH*fftn(self.cachedPSF)).astype('complex')
+        self.cachedOTFH = (ifftn(self.cachedPSF)*self.cachedPSF.size).astype('complex64')
+        self.cachedOTF2 = (self.cachedOTFH*fftn(self.cachedPSF)).astype('complex64')
 
-        self.weinerFT = fftw3.create_aligned_array(self.cachedOTFH.shape, 'complex')
-        self.weinerR = fftw3.create_aligned_array(self.cachedOTFH.shape, 'float')
+        self.weinerFT = fftw3.create_aligned_array(self.cachedOTFH.shape, 'complex64')
+        self.weinerR = fftw3.create_aligned_array(self.cachedOTFH.shape, 'float32')
 
         self.planForward = fftw3.Plan(self.weinerR, self.weinerFT, flags = FFTWFLAGS, nthreads=NTHREADS)
         self.planInverse = fftw3.Plan(self.weinerFT, self.weinerR, direction='reverse', flags = FFTWFLAGS, nthreads=NTHREADS)
@@ -135,10 +132,20 @@ class fftwWeiner:
 #        cachedOTF2 = cachedOTFH*fftn(cachedPSF)
 #        #autocorr = ifftshift(ifftn(cachedOTF2)).real
         
-def preparePSF(PSFFilename, PSSize):
+def preparePSF(md, PSSize):
     global PSFFileName, PSFSize, FTW
+
+    PSFFilename = md.PSFFile    
+    
     if (not (PSFFileName == PSFFilename)) or (not (PSFSize == PSSize)):
-        FTW = fftwWeiner(PSFFilename, PSSize)
+        try:
+            ps, vox = md.taskQueue.getQueueData(md.dataSourceID, 'PSF')
+        except:
+            fid = open(getFullExistingFilename(PSFFilename), 'rb')
+            ps, vox = cPickle.load(fid)
+            fid.close()     
+        
+        FTW = fftwWeiner(ps,vox, PSSize)
 
         PSFFileName = PSFFilename
         PSFSize = PSSize
