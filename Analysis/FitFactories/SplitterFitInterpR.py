@@ -66,6 +66,36 @@ def f_Interp3d2c(p, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, axialShift
     r = interpolator.interp(Xr - x0 + 1, Yr - y0 + 1, Zr[0] - z0 + 1)*Ar + bR
 
     return numpy.concatenate((g,r), 2)
+    
+def f_J_Interp3d2c(p,interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, axialShift, *args):
+    '''generate the jacobian - for use with _fithelpers.weightedJacF'''
+    Ag, Ar, x0, y0, z0, bG, bR = p
+
+    x0 = min(max(x0, safeRegion[0][0]), safeRegion[0][1])
+    y0 = min(max(y0, safeRegion[1][0]), safeRegion[1][1])
+    z0 = min(max(z0, safeRegion[2][0] + axialShift), safeRegion[2][1] - axialShift)
+
+    g = interpolator.interp(Xg - x0 + 1, Yg - y0 + 1, Zg[0] - z0 + 1)
+    r = interpolator.interp(Xr - x0 + 1, Yr - y0 + 1, Zr[0] - z0 + 1)
+    
+    gx, gy, gz = interpolator.interpG(Xg - x0 + 1, Yg - y0 + 1, Zg[0] - z0 + 1)
+    rx, ry, rz = interpolator.interpG(Xr - x0 + 1, Yr - y0 + 1, Zr[0] - z0 + 1)
+    
+    bg = np.ones_like(gx)
+    zb = np.zeros_like(gx)
+    
+    dAg = numpy.concatenate((g,zb), 2).ravel()[:,None]
+    dAr = numpy.concatenate((zb,r), 2).ravel()[:,None]
+    dX = numpy.concatenate((Ag*gx,Ar*rx), 2).ravel()[:,None]
+    dY = numpy.concatenate((Ag*gy,Ar*ry), 2).ravel()[:,None]
+    dZ = numpy.concatenate((Ag*gz,Ar*rz), 2).ravel()[:,None]
+    dBg = numpy.concatenate((bg,zb), 2).ravel()[:,None]
+    dBr = numpy.concatenate((zb,bg), 2).ravel()[:,None]
+    
+    #r = r.reshape((-1, 7))
+    return numpy.hstack([dAg, dAr, dX, dY, dZ, dBg, dBr])
+    
+f_Interp3d2c.D = f_J_Interp3d2c
 
 def replNoneWith1(n):
 	if n == None:
@@ -116,10 +146,10 @@ class PSFFitFactory:
         self.metadata = metadata
         self.background = background
         self.fitfcn = fitfcn #allow model function to be specified (to facilitate changing between accurate and fast exponential approwimations)
-        if type(fitfcn) == types.FunctionType: #single function provided - use numerically estimated jacobian
+        if not 'D' in dir(fitfcn): #single function provided - use numerically estimated jacobian
             self.solver = FitModelWeighted_
         else: #should be a tuple containing the fit function and its jacobian
-            self.solver = FitModelWeightedJac
+            self.solver = FitModelWeightedJac_
 
 
         interpModule = metadata.Analysis.InterpModule

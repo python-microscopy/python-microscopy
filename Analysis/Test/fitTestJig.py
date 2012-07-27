@@ -104,7 +104,18 @@ class fitTestJig(object):
 
         
         self.ps = ps.view(self.res['fitResults'].dtype)
+        
+        #self.calcMEs()
         #return ps.view(self.res['fitResults'].dtype), self.res
+        
+    def calcMEs(self):
+        for varName in self.ps.dtype.names:
+            yv = self.res['fitResults'][varName]
+            if hasattr(self, varName):
+                yv += self.__getattribute__(varName)
+                
+            me = ((self.ps[varName].ravel() - yv)**2).mean()
+            print '%s: %3.2f' % (varName, me)
 
 
     def plotRes(self, varName):

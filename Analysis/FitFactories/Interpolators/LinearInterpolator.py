@@ -25,6 +25,15 @@ from numpy import *
 from PYME.Analysis.cInterp import cInterp
 
 class LinearInterpolator(__interpolator):
+    def _precompute(self):
+        '''function which is called after model loading and can be
+        overridden to allow for interpolation specific precomputations'''
+         #compute the gradient of the PSF for interpolated jacobians
+        self.gradX, self.gradY, self.gradZ = gradient(self.interpModel)
+        self.gradX /= self.dx
+        self.gradY /= self.dy
+        self.gradZ /= self.dz
+        
     def interp(self, X, Y, Z):
         '''do actual interpolation at values given'''
 
@@ -55,6 +64,39 @@ class LinearInterpolator(__interpolator):
         r = cInterp.Interpolate(self.interpModel, ox, oy, oz, xl, yl, self.dx, self.dy,self.dz)
         
         return r #atleast_3d(r)
+        
+    def interpG(self, X, Y, Z):
+        '''do actual interpolation at values given'''
+
+        #X = atleast_1d(X)
+        #Y = atleast_1d(Y)
+        #Z = atleast_1d(Z)
+
+        ox = X[0]
+        oy = Y[0]
+        oz = Z #[0]
+
+        #rx = (ox % self.dx)/self.dx
+        #ry = (oy % self.dy)/self.dy
+        #rz = (oz % self.dz)/self.dz
+
+        #fx = floor(len(self.IntXVals)/2) + floor(ox/self.dx)
+        #fy = floor(len(self.IntYVals)/2) + floor(oy/self.dy)
+        #fz = floor(len(self.IntZVals)/2) + floor(oz/self.dz)
+
+        #print fz
+        #print rx, ry, rz
+
+        xl = len(X)
+        yl = len(Y)
+        #zl = len(Z)
+
+
+        gX = -cInterp.Interpolate(self.gradX, ox, oy, oz, xl, yl, self.dx, self.dy,self.dz)
+        gY = -cInterp.Interpolate(self.gradY, ox, oy, oz, xl, yl, self.dx, self.dy,self.dz)
+        gZ = -cInterp.Interpolate(self.gradZ, ox, oy, oz, xl, yl, self.dx, self.dy,self.dz)
+        
+        return gX, gY, gZ #atleast_3d(r)
 
     def getCoords(self, metadata, xslice, yslice, zslice):
         '''placeholder to be overrriden to return coordinates needed for interpolation'''
