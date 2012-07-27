@@ -413,7 +413,7 @@ class ObjectIdentifier(list):
                 im[-5:, -5:] = 0
                 im[-5:, 0:5] = 0
 
-                print len(xs)
+                #print len(xs)
 
         xs = scipy.array(xs)
         ys = scipy.array(ys)

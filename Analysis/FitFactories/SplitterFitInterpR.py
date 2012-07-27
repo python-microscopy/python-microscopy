@@ -95,7 +95,7 @@ def f_J_Interp3d2c(p,interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, axialShif
     #r = r.reshape((-1, 7))
     return numpy.hstack([dAg, dAr, dX, dY, dZ, dBg, dBr])
     
-f_Interp3d2c.D = f_J_Interp3d2c
+#f_Interp3d2c.D = f_J_Interp3d2c
 
 def replNoneWith1(n):
 	if n == None:
