@@ -418,7 +418,7 @@ class ObjectIdentifier(list):
         xs = scipy.array(xs)
         ys = scipy.array(ys)
 
-        print len(xs)
+        #print len(xs)
 
         if splitter:
             ys = ys + (ys > im.shape[1]/2)*(im.shape[1] - 2*ys)

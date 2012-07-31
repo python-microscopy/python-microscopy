@@ -43,7 +43,7 @@ LUTCache = {}
 def getLUT(cmap):
     if not cmap.name in LUTCache.keys():
         #calculate and cache LUT
-        LUTCache[cmap.name] = (255*cmap(numpy.linspace(0,1,256))[:,:3].T).astype('uint8')
+        LUTCache[cmap.name] = (255*(cmap(numpy.linspace(0,1,256))[:,:3].T)).copy().astype('uint8')
 
     return LUTCache[cmap.name]
 

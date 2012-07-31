@@ -3,7 +3,7 @@ import os
 print __file__
 md['EndTime'] = 1300676178.4949999
 md['EstimatedLaserOnFrameNo'] = 0
-md['PSFFile'] = os.path.join(os.path.split(__file__)[0], 'psf_astig.psf')
+md['PSFFile'] = os.path.join(os.path.split(__file__)[0], 'psf_decon.psf')
 md['StartTime'] = 1300676151.901
 md['tIndex'] = 0
 md['Analysis.BGRange'] = [0, 0]
@@ -46,4 +46,4 @@ md['voxelsize.x'] = 0.073999999999999996
 md['voxelsize.y'] = 0.071999999999999995
 md['voxelsize.z'] = 0.050000000000000003
 md['Test.DefaultParams'] = [205, 0, 0, 0, 50]
-md['Test.ParamJitter'] = [200, 90, 90, 250, 10]
+md['Test.ParamJitter'] = [20, 90, 0, 0, 10]

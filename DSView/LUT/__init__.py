@@ -27,6 +27,7 @@ def applyLUT(seg, gain, offset, lut, ima):
     if seg.dtype == 'uint8':
         applyLUTu8(seg, gain, offset, lut, ima)
     elif seg.dtype == 'uint16':
+        #print lut.strides
         applyLUTu16(seg, gain, offset, lut, ima)
     else:
         applyLUTf(seg.astype('f'), gain, offset, lut, ima)

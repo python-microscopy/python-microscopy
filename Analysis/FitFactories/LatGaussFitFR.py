@@ -22,12 +22,12 @@
 ##################
 
 import scipy
-from scipy.signal import interpolate
-import scipy.ndimage as ndimage
+#from scipy.signal import interpolate
+#import scipy.ndimage as ndimage
 #from pylab import *
 import copy_reg
 import numpy
-import types
+#import types
 
 from PYME.Analysis.cModels.gauss_app import *
 
@@ -238,7 +238,7 @@ class GaussianFitFactory:
         X = 1e3*md.voxelsize.x*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
         Y = 1e3*md.voxelsize.y*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
 
-        return f_gauss2d(params, X, Y)
+        return (f_gauss2d(params, X, Y), X[0], Y[0], 0)
 
 
    

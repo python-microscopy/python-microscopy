@@ -132,6 +132,10 @@ class COIFitFactory:
             dataROI = dataROI - bgROI
 
         A = dataROI[:,:,0]
+        
+        A = A - A.min()
+        
+        A = A*(A > 0.5*A.max())
 
         #print Xg.shape, Ag.shape
         x0 =  (X*A).sum()/(A.sum())
