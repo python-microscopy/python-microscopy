@@ -782,6 +782,10 @@ class VisGUIFrame(wx.Frame):
         if not filename == '':
             self.OpenFile(filename)
             
+    @property
+    def notebook(self):
+        return self._mgr.GetNotebooks()[0]
+            
     def _removeOldTabs(self):
         if not self.elv == None: #remove previous event viewer
             i = 0

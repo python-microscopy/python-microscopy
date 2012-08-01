@@ -343,10 +343,12 @@ def GenZernikePSF(zs, dx = 5, zernikeCoeffs = []):
 
     return abs(ps**2)
 
-def GenPRIPSF(zs, dx = 5):
+def GenPRIPSF(zs, dx = 5, strength=1.0):
     X, Y, R, FP, F = GenWidefieldAP(dx)
+    
+    v = lamb*2*Y/(dx*Y.shape[0]*dx*pi)
 
-    F = F * exp(-1j*sign(X)*.005*Y)
+    F = F * exp(-1j*sign(X)*10*strength*v)
     clf()
     imshow(angle(F))
 
@@ -357,9 +359,29 @@ def GenPRIPSF(zs, dx = 5):
 def GenAstigPSF(zs, dx=5, strength=1.0):
     X, Y, R, FP, F = GenWidefieldAP(dx)
     
+    u = lamb*2*X/(dx*X.shape[0]*dx*pi)    
     v = lamb*2*Y/(dx*Y.shape[0]*dx*pi)
 
-    F = F * exp(-1j*(strength*v)**2)
+    F = F * exp(-1j*((strength*v)**2 - 0.5*(strength*lamb*R)**2))
+    clf()
+    imshow(angle(F))
+
+    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+
+    return abs(ps**2)
+    
+def GenDHPSF(zs, dx=5, vortices=[0.0]):
+    X, Y, R, FP, F = GenWidefieldAP(dx)
+    
+    u = lamb*2*X/(dx*X.shape[0]*dx*pi)    
+    v = lamb*2*Y/(dx*Y.shape[0]*dx*pi)
+    
+    ph = 0*u
+    
+    for vc in vortices:
+        ph += angle((u - vc) + 1j*v)
+
+    F = F * exp(-1j*ph)
     clf()
     imshow(angle(F))
 
