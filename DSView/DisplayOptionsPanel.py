@@ -102,7 +102,7 @@ class OptionsPanel(wx.Panel):
 
         self.bOptimise = wx.Button(self, -1, "Stretch", style=wx.BU_EXACTFIT)
 
-        self.cbScale = wx.Choice(self, -1, choices=["1:16", "1:8", "1:4", "1:2", "1:1", "2:1", "4:1"])
+        self.cbScale = wx.Choice(self, -1, choices=["1:16", "1:8", "1:4", "1:2", "1:1", "2:1", "4:1", "8:1", "16:1"])
         self.cbScale.SetSelection(4)
         self.scale_11 = 4
 
@@ -136,6 +136,15 @@ class OptionsPanel(wx.Panel):
         self.cbScale.Bind(wx.EVT_CHOICE, self.OnScaleChanged)
 
         self.bOptimise.Bind(wx.EVT_BUTTON, self.OnOptimise)
+        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Projection:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+        self.czProject = wx.Choice(self, -1, choices=['None', 'Standard', 'Colour Coded'])
+        self.czProject.SetSelection(0)
+        self.czProject.Bind(wx.EVT_CHOICE, self.OnZProjChanged)
+        hsizer.Add(self.czProject, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        vsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
+        
 
         if thresholdControls:
             ssizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Segmentation'), wx.VERTICAL)
@@ -304,6 +313,20 @@ class OptionsPanel(wx.Panel):
         self.do.leftButtonAction = DisplayOpts.ACTION_SELECTION
         self.do.selectionMode = DisplayOpts.SELECTION_SQUIGLE
         self.do.showSelection = True
+
+        #self.Refresh()
+        self.do.OnChange()
+        
+    def OnZProjChanged(self, event):
+        state = self.czProject.GetSelection()
+        if state == 0: #no projection
+            self.do.maximumProjection = False
+        if state == 1:
+            self.do.maximumProjection = True
+            self.do.colourMax = False
+        if state == 2:
+            self.do.maximumProjection = True
+            self.do.colourMax = True    
 
         #self.Refresh()
         self.do.OnChange()

@@ -43,9 +43,11 @@ class DisplayPane(afp.foldingPane):
 
         #Colourmap
         cmapnames = pylab.cm.cmapnames
+        
+        print cmapnames, self.glCanvas.cmap.name
 
-        curCMapName = self.glCanvas.cmap.name
-        #curCMapName = 'hot'
+        #curCMapName = self.glCanvas.cmap.name
+        curCMapName = 'hot'
 
         cmapReversed = False
 

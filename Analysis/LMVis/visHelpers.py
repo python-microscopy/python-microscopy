@@ -26,17 +26,17 @@ import scipy
 import numpy
 import numpy.ctypeslib
 
-from PYME.Analysis.cModels.gauss_app import *
+
 #import subprocess
-from PYME.FileUtils import saveTiffStack
+#from PYME.FileUtils import saveTiffStack
 from matplotlib import delaunay
 from PYME.Analysis.qHull.triangWrap import RenderTetrahedra
 
 from math import floor
 
-import sys
+#import sys
 
-from PYME.Analysis import EdgeDB
+
 
 #from edgeDB import genEdgeDB#, calcNeighbourDists
 
@@ -245,6 +245,7 @@ def calcNeighbourDistPart(di, x, y, edb, nStart, nEnd):
 #        return di
 #else:
 def calcNeighbourDists(T):
+    from PYME.Analysis import EdgeDB
     #edb = genEdgeDB(T)
 
     edb = EdgeDB.EdgeDB(T)
@@ -260,6 +261,7 @@ def calcNeighbourDists(T):
 
 
 def Gauss2D(Xv,Yv, A,x0,y0,s):
+    from PYME.Analysis.cModels.gauss_app import genGauss
     r = genGauss(Xv,Yv,A,x0,y0,s,0,0,0)
     #r.strides = r.strides #Really dodgy hack to get around something which numpy is not doing right ....
     return r
@@ -379,7 +381,7 @@ def rendJitTri(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1):
 
 if multiProc:
     def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize):
-        import threading
+        #import threading
         sizeX = int((imageBounds.x1 - imageBounds.x0)/pixelSize)
         sizeY = int((imageBounds.y1 - imageBounds.y0)/pixelSize)
 
@@ -443,7 +445,7 @@ def rendJTet(im, x,y,z,jsig, jsigz, mcp, n):
 if multiProc:
 
     def rendJitTet(x,y,z,n,jsig, jsigz, mcp, imageBounds, pixelSize, zb,sliceSize=100):
-        import gen3DTriangs
+        #import gen3DTriangs
 
         sizeX = (imageBounds.x1 - imageBounds.x0)/pixelSize
         sizeY = (imageBounds.y1 - imageBounds.y0)/pixelSize
@@ -554,6 +556,7 @@ def Gauss3d(X, Y, Z, x0, y0, z0, wxy, wz):
     return scipy.exp(-((X[:,None]-x0)**2 + (Y[None,:] - y0)**2)/(2*wxy**2) - ((Z-z0)**2)/(2*wz**2))/((2*scipy.pi*wxy**2)*scipy.sqrt(2*scipy.pi*wz**2))
 
 def rendGauss3D(x,y, z, sx, sz, imageBounds, pixelSize, zb, sliceSize=100):
+    from PYME.Analysis.cModels.gauss_app import genGauss3D
     fuzz = 3*scipy.median(sx)
     roiSize = int(fuzz/pixelSize)
     fuzz = pixelSize*roiSize

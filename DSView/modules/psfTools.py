@@ -78,7 +78,10 @@ class PSFTools(HasTraits):
         dv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
         
     def OnCalcCRB(self, event):
+        #print 'f'
         from PYME.Analysis import cramerRao
+        from PYME.PSFGen import fourierHNA
+        #print 'b'
         import numpy as np
         
         d = self.image.data[:,:,:]
@@ -86,13 +89,17 @@ class PSFTools(HasTraits):
         
         vs = 1e3*np.array([self.image.mdh['voxelsize.x'], self.image.mdh['voxelsize.y'],self.image.mdh['voxelsize.z']])
         
-        FI = cramerRao.CalcFisherInformZ(d*(1e3/I), 100, voxelsize=vs)
-        
+        #print 'fi'        
+        FI = cramerRao.CalcFisherInformZn2(d*(2e3/I), 100, voxelsize=vs)
+        #print 'crb'
         crb = cramerRao.CalcCramerReoZ(FI)
+        #print 'crbd'
         
         import pylab
         z_ = np.arange(d.shape[2])*self.image.mdh['voxelsize.z']*1.0e3
         z_ = z_ - z_.mean()
+        
+        print 'p'
         pylab.figure()
         pylab.plot(z_, np.sqrt(crb[:,0]), label='x')
         pylab.plot(z_, np.sqrt(crb[:,1]), label='y')
@@ -101,8 +108,13 @@ class PSFTools(HasTraits):
         
         pylab.xlabel('Defocus [nm]')
         pylab.ylabel('Std. Dev. [nm]')
-        pylab.title('Cramer-Rao bound for 1000 photons')
-
+        pylab.title('Cramer-Rao bound for 2000 photons')
+        
+        ps_as = fourierHNA.GenAstigPSF(z_, vs[0], 1.5)        
+        crb_as = np.sqrt(cramerRao.CalcCramerReoZ(cramerRao.CalcFisherInformZn2(ps_as*2000/267., 500, voxelsize=vs)))
+        pylab.plot(z_, crb_as[:,0], 'b:')
+        pylab.plot(z_, crb_as[:,1], 'g:')
+        pylab.plot(z_, crb_as[:,2], 'r:')
         
 
     

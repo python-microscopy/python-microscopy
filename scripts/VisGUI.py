@@ -22,10 +22,11 @@
 #
 ################
 #!/usr/bin/python
-from PYME.Analysis.LMVis.VisGUI import *
+
 
 
 if __name__ == '__main__':
+    from PYME.Analysis.LMVis.VisGUI import *
     from multiprocessing import freeze_support
     freeze_support()
     

@@ -349,8 +349,8 @@ def GenPRIPSF(zs, dx = 5, strength=1.0):
     v = lamb*2*Y/(dx*Y.shape[0]*dx*pi)
 
     F = F * exp(-1j*sign(X)*10*strength*v)
-    clf()
-    imshow(angle(F))
+    #clf()
+    #imshow(angle(F))
 
     ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 
@@ -363,8 +363,8 @@ def GenAstigPSF(zs, dx=5, strength=1.0):
     v = lamb*2*Y/(dx*Y.shape[0]*dx*pi)
 
     F = F * exp(-1j*((strength*v)**2 - 0.5*(strength*lamb*R)**2))
-    clf()
-    imshow(angle(F))
+    #clf()
+    #imshow(angle(F))
 
     ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 
@@ -382,8 +382,8 @@ def GenDHPSF(zs, dx=5, vortices=[0.0]):
         ph += angle((u - vc) + 1j*v)
 
     F = F * exp(-1j*ph)
-    clf()
-    imshow(angle(F))
+    #clf()
+    #imshow(angle(F))
 
     ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 
@@ -396,8 +396,8 @@ def GenCubicPhasePSF(zs, dx=5, strength=1.0):
     u = lamb*2*X/(dx*X.shape[0]*dx*pi)
 
     F = F * exp(-1j*strength*(u**3 + v**3))
-    clf()
-    imshow(angle(F))
+    #clf()
+    #imshow(angle(F))
 
     ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 
@@ -407,8 +407,8 @@ def GenShiftedPSF(zs, dx = 5):
     X, Y, R, FP, F = GenWidefieldAP(dx)
 
     F = F * exp(-1j*.01*Y)
-    clf()
-    imshow(angle(F))
+    #clf()
+    #imshow(angle(F))
 
     ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 
@@ -418,8 +418,8 @@ def GenStripePRIPSF(zs, dx = 5):
     X, Y, R, FP, F = GenWidefieldAP(dx)
 
     F = F * exp(-1j*sign(sin(X))*.005*Y)
-    clf()
-    imshow(angle(F), cmap=cm.hsv)
+    #clf()
+    #imshow(angle(F), cmap=cm.hsv)
 
     ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 
