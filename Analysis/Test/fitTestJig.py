@@ -116,7 +116,14 @@ class fitTestJig(object):
                 
             me = ((self.ps[varName].ravel() - yv)**2).mean()
             print '%s: %3.2f' % (varName, me)
-
+            
+    def error(self, varName):
+        xv = self.ps[varName].ravel()
+        yv = self.res['fitResults'][varName]
+        if hasattr(self, varName):
+            yv = yv + self.__getattribute__(varName)
+            
+        return yv - xv
 
     def plotRes(self, varName):
         #print self.ps
@@ -129,8 +136,8 @@ class fitTestJig(object):
         yv = self.res['fitResults'][varName]
 
         if hasattr(self, varName):
-            sp += self.__getattribute__(varName)
-            yv += self.__getattribute__(varName)
+            sp = sp + self.__getattribute__(varName)
+            yv = yv + self.__getattribute__(varName)
 
         err = self.res['fitError'][varName]
 

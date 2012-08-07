@@ -69,13 +69,14 @@ class DeconvSettingsDialog(wx.Dialog):
         sizer3 = wx.BoxSizer(wx.HORIZONTAL)
         sizer3.Add(wx.StaticText(pan1, -1, 'Method:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
         self.cMethod = wx.Choice(pan1, -1, choices=['ICTM', 'Richardson-Lucy'])
+        self.cMethod.SetSelection(1)
 
         sizer3.Add(self.cMethod, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
         sizer2.Add(sizer3, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
 
         sizer3 = wx.BoxSizer(wx.HORIZONTAL)
         sizer3.Add(wx.StaticText(pan1, -1, 'Number of iterations:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
-        self.tNumIters = wx.TextCtrl(pan1, -1, '10')
+        self.tNumIters = wx.TextCtrl(pan1, -1, '50')
 
         sizer3.Add(self.tNumIters, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 

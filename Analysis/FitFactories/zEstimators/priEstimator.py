@@ -61,6 +61,9 @@ def calibrate(interpolator, md, roiSize=5):
 
     ps = numpy.array(ps)
     A, xp, yp, dw = ps.T
+    
+    xp = xp - xp[z.size/2]
+    yp = yp - yp[z.size/2]
 
     rawMeas['A'] = A
     rawMeas['xp'] = xp
@@ -105,14 +108,14 @@ def calibrate(interpolator, md, roiSize=5):
 
 def _calcParams(data, X, Y):
     '''calculates the mean angle in the image, used for z position estimation'''
-    A = data.max() - data.min() #amplitude
+    A = (data.max()- data.min()) #amplitude
 
     #threshold at half maximum and subtract threshold
     dr = numpy.maximum(data - data.min() - 0.5*A, 0).squeeze()
     drs = dr.sum()
 
     x0 = (X[:,None]*dr).sum()/drs
-    y0 = (Y[None, ::-1]*dr).sum()/drs
+    y0 = (Y[None, :]*dr).sum()/drs
 
     #sig_xl = (numpy.maximum(0, x0 - X)[:,None]*dr).sum()/(drs)
     #sig_xr = (numpy.maximum(0, X - x0)[:,None]*dr).sum()/(drs)
@@ -124,7 +127,7 @@ def _calcParams(data, X, Y):
     #m = dr > 0
     
     #angle of each pixel
-    theta = numpy.mod(numpy.angle((X[:,None] - x0) +1j*(Y[None, :]-y0)), numpy.pi)
+    theta = numpy.mod(numpy.angle((x0 -X[:,None]) +1j*(y0 - Y[None, :])), numpy.pi)
 
     #print theta.shape
 
@@ -132,6 +135,8 @@ def _calcParams(data, X, Y):
     #pylab.imshow(theta)
 
     thm = (theta*dr).sum()/drs
+    
+    #A = (data - data.min()).sum()
 
     return A, x0, y0, thm
 

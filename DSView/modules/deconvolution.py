@@ -25,7 +25,7 @@ import wx.lib.agw.aui as aui
 import numpy
 from PYME.Acquire.mytimer import mytimer
 from scipy import ndimage
-from PYME.DSView import View3D
+from PYME.DSView import View3D, ViewIm3D, ImageStack
 import time
 import os
 from PYME.Acquire import MetaDataHandler
@@ -184,7 +184,16 @@ class deconvolver:
                 else:
                     fs = self.dec.fs
 
-                self.res = View3D(fs, 'Deconvolution Result', mdh=decMDH, parent=wx.GetTopLevelParent(self.dsviewer))
+                
+                
+                im = ImageStack(data = fs, mdh = decMDH, titleStub = 'Deconvolution Result')
+                mode = 'lite'
+                if beadMode:
+                    mode = 'psf'
+                    im.defaultExt = '*.psf' #we want to save as PSF by default
+                self.res = ViewIm3D(im, mode=mode, parent=wx.GetTopLevelParent(self.dsviewer))                    
+                    
+                #self.res = View3D(fs, 'Deconvolution Result', mdh=decMDH, parent=wx.GetTopLevelParent(self.dsviewer), mode=mode)
 
                 self.dlgDeconProg = DeconvProgressPanel(self.res, nIter)
 

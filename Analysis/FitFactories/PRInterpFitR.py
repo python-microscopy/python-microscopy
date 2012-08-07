@@ -174,17 +174,18 @@ class PSFFitFactory:
         #generate grid to evaluate function on
         #setModel(md.PSFFile, md)
         interpolator = __import__('PYME.Analysis.FitFactories.Interpolators.' + md.Analysis.InterpModule , fromlist=['PYME', 'Analysis','FitFactories', 'Interpolators']).interpolator
+        
+        if 'Analysis.EstimatorModule' in md.getEntryNames():
+            estimatorModule = md.Analysis.EstimatorModule
+        else:
+            estimatorModule = 'astigEstimator'
+
+        #this is just here to make sure we clear our calibration when we change models        
+        startPosEstimator = __import__('PYME.Analysis.FitFactories.zEstimators.' + estimatorModule , fromlist=['PYME', 'Analysis','FitFactories', 'zEstimators'])        
+        
         if interpolator.setModelFromFile(md.PSFFile, md):
             print 'model changed'
-
-#        if 'Analysis.EstimatorModule' in md.getEntryNames():
-#            estimatorModule = metadata.Analysis.EstimatorModule
-#        else:
-#            estimatorModule = 'astigEstimator'
-#
-#        startPosEstimator = __import__('PYME.Analysis.FitFactories.zEstimators.' + estimatorModule , fromlist=['PYME', 'Analysis','FitFactories', 'zEstimators'])
-#
-#        startPosEstimator.calibrate(interpolator, md)
+            startPosEstimator.splines.clear()
 
         X, Y, Z, safeRegion = interpolator.getCoords(md, slice(-roiHalfSize,roiHalfSize + 1), slice(-roiHalfSize,roiHalfSize + 1), slice(0,1))
 

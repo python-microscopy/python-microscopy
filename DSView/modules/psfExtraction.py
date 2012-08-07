@@ -89,7 +89,21 @@ class psfExtractor:
 
         vsizer.Add(hsizer, 0,wx.EXPAND|wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 0)
         
-        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(pan, -1, 'PSF Type:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        self.chType = wx.Choice(pan, -1, choices=['Widefield', 'Confocal'], size=(40, -1))
+        hsizer.Add(self.chType, 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        if 'Camera.IntegrationTime' in self.image.mdh.getEntryNames():
+            #most likely widefield
+            self.chType.SetSelection(0)
+        else:
+            #most likely confocal
+            #confocal is a safe default as widefield just does some fancy extra
+            #background correction
+            self.chType.SetSelection(1)
+
+        vsizer.Add(hsizer, 0,wx.EXPAND|wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 0)
 
         bExtract = wx.Button(pan, -1, 'Extract', style=wx.BU_EXACTFIT)
         bExtract.Bind(wx.EVT_BUTTON, self.OnExtractPSF)
@@ -205,6 +219,10 @@ class psfExtractor:
             psfBlur = [float(s) for s in self.tPSFBlur.GetValue().split(',')]
             #print psfROISize
             psf = extractImages.getPSF3D(self.image.data[:,:,:,chnum], self.PSFLocs, psfROISize, psfBlur)
+            
+            if self.chType.GetSelection() == 0:
+                #widefield image - do special background subtraction
+                psf = extractImages.backgroundCorrectPSFWF(psf)
 
 #            from pylab import *
 #            import cPickle

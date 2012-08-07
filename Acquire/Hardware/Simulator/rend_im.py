@@ -82,7 +82,7 @@ def genTheoreticalModel(md):
 
         interpModel = interpModel/interpModel.max() #normalise to 1
 
-genTheoreticalModel(MetaData.TIRFDefault)
+#genTheoreticalModel(MetaData.TIRFDefault)
 
 #def setModel(mod, md):
 #    global IntXVals, IntYVals, IntZVals, interpModel, dx, dy, dz
@@ -308,6 +308,9 @@ def simPalmImF(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=10, laserPowe
 
 
 def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=15, laserPowers = [.1,1], position=[0,0,0], illuminationFunction='ConstIllum'):
+    if not interpModel:
+        genTheoreticalModel(MetaData.TIRFDefault)
+        
     im = zeros((len(X), len(Y)), 'f')
 
     if fluors == None:
@@ -399,6 +402,9 @@ def simPalmImFSpec(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=10, laser
     return im
 
 def simPalmImFSpecI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=10, laserPowers = [.1,1], deltaY=64, deltaZ = 300):
+    if not interpModel:
+        genTheoreticalModel(MetaData.TIRFDefault)
+        
     im = zeros((len(X), len(Y)), 'f')
 
     deltaY = (Y[1] - Y[0])*deltaY #convert to nm
@@ -422,14 +428,14 @@ def simPalmImFSpecI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=10, lase
        ix = abs(X - fluors.fl['x'][i]).argmin()
        iy = abs(Y - deltaY - fluors.fl['y'][i]).argmin()
 
-       imp =fluors.fl[i]['spec'][0]*A[i]*1e3*interp(X[(ix - roiSize):(ix + roiSize + 1)] - fluors.fl['x'][i], Y[(iy - roiSize):(iy + roiSize + 1)] - (fluors.fl['y'][i]+ deltaY), z - fluors.fl['z'][i])
+       imp =fluors.fl[i]['spec'][0]*A[i]*1e3*interp3(X[(ix - roiSize):(ix + roiSize + 1)] - fluors.fl['x'][i], Y[(iy - roiSize):(iy + roiSize + 1)] - (fluors.fl['y'][i]+ deltaY), z - fluors.fl['z'][i])
        
        if not imp.shape[2] == 0:
            im[(ix - roiSize):(ix + roiSize + 1), (iy - roiSize):(iy + roiSize + 1)] += imp[:,:,0]
 
        iy2 = abs(flipud(Y) - deltaY - fluors.fl['y'][i]).argmin()
 
-       imp =fluors.fl[i]['spec'][1]*A[i]*1e3*interp(X[(ix - roiSize):(ix + roiSize + 1)] - fluors.fl['x'][i], Y[(iy - roiSize):(iy + roiSize + 1)] - (fluors.fl['y'][i] + deltaY), z - fluors.fl['z'][i]+deltaZ)
+       imp =fluors.fl[i]['spec'][1]*A[i]*1e3*interp3(X[(ix - roiSize):(ix + roiSize + 1)] - fluors.fl['x'][i], Y[(iy - roiSize):(iy + roiSize + 1)] - (fluors.fl['y'][i] + deltaY), z - fluors.fl['z'][i]+deltaZ)
 
        if not imp.shape[2] == 0:
            im[(ix - roiSize):(ix + roiSize + 1), (iy2 - roiSize):(iy2 + roiSize + 1)] += imp[:, ::-1, 0]

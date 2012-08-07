@@ -100,7 +100,10 @@ def getPSF(ims, points, zvals, zis):
         d[:,:,zis[i]] = d[:,:,zis[i]] + ifftn(F*exp(-2j*pi*(kx*-p[0] + ky*-p[1]))).real
 
     d = len(zvals)*d/(points[:,2].sum())
-    d = d - d.min(1).min(0)[None,None,:]
+    
+    #estimate background as a function of z by averaging rim pixels
+    bg = (d[0,:,:].squeeze().mean(0) + d[-1,:,:].squeeze().mean(0) + d[:,0,:].squeeze().mean(0) + d[:,-1,:].squeeze().mean(0))/4
+    d = d - bg[None,None,:]
     d = d/d.sum(1).sum(0)[None,None,:]
 
     return d
@@ -156,7 +159,40 @@ def getPSF3D(im, points, PSshape = [30,30,30], blur=[.5, .5, 1]):
         d = d + ifftn(F*exp(-2j*pi*(kx*-dx + ky*-dy + kz*-dz))).real
 
     d = scipy.ndimage.gaussian_filter(d, blur)
+    #estimate background as a function of z by averaging rim pixels
+    #bg = (d[0,:,:].squeeze().mean(0) + d[-1,:,:].squeeze().mean(0) + d[:,0,:].squeeze().mean(0) + d[:,-1,:].squeeze().mean(0))/4
     d = d - d.min()
     d = d/d.max()
 
     return d
+    
+def backgroundCorrectPSFWF(d):
+    import numpy as np
+    from scipy import linalg
+    
+    zf = d.shape[2]/2
+        
+    #subtract a linear background in x
+    Ax = np.vstack([np.ones(d.shape[0]), np.arange(d.shape[0])]).T        
+    bgxf = (d[0,:,zf] + d[-1,:,zf])/2
+    gx = linalg.lstsq(Ax, bgxf)[0]
+    
+    d = d - np.dot(Ax, gx)[:,None,None]
+    
+    #do the same in y
+    Ay = np.vstack([np.ones(d.shape[1]), np.arange(d.shape[1])]).T        
+    bgyf = (d[:,0,zf] + d[:,-1,zf])/2
+    gy = linalg.lstsq(Ay, bgyf)[0]
+    
+    d = d - np.dot(Ay, gy)[None, :,None]
+    
+    
+    #estimate background on central slice as mean of rim pixels
+    #bgr = (d[0,:,zf].mean() + d[-1,:,zf].mean() + d[:,0,zf].mean() + d[:,-1,zf].mean())/4
+    
+    #sum over all pixels (and hence mean) should be preserved over z (for widefield psf)
+    dm = d.mean(1).mean(0)
+    
+    bg = dm - dm[zf]
+    
+    return np.maximum(d - bg[None, None, :], 0) +  1e-5

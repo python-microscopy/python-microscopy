@@ -168,8 +168,18 @@ class PSFFitFactory:
         #generate grid to evaluate function on
         #setModel(md.PSFFile, md)
         interpolator = __import__('PYME.Analysis.FitFactories.Interpolators.' + md.Analysis.InterpModule , fromlist=['PYME', 'Analysis','FitFactories', 'Interpolators']).interpolator
+
+        if 'Analysis.EstimatorModule' in md.getEntryNames():
+            estimatorModule = md.Analysis.EstimatorModule
+        else:
+            estimatorModule = 'astigEstimator'
+
+        #this is just here to make sure we clear our calibration when we change models        
+        startPosEstimator = __import__('PYME.Analysis.FitFactories.zEstimators.' + estimatorModule , fromlist=['PYME', 'Analysis','FitFactories', 'zEstimators'])        
+        
         if interpolator.setModelFromFile(md.PSFFile, md):
             print 'model changed'
+            startPosEstimator.splines.clear()
 
 #        if 'Analysis.EstimatorModule' in md.getEntryNames():
 #            estimatorModule = metadata.Analysis.EstimatorModule
@@ -227,7 +237,7 @@ class PSFFitFactory:
         #estimate errors in data
         nSlices = 1#dataROI.shape[2]
 
-        sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*dataROI)/self.metadata.Camera.ElectronsPerCount
+        sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*dataROI)/self.metadata.Camera.ElectronsPerCount + 1
 
         startParameters = self.startPosEstimator.getStartParameters(dataROI, X_, Y_)
 

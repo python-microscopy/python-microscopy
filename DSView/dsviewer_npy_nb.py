@@ -204,13 +204,17 @@ class DSViewFrame(wx.Frame):
                 self._mgr.AddPane(page, aui.AuiPaneInfo().
                               Name(caption.replace(' ', '')).Caption(caption).CloseButton(False).NotebookPage(pn.notebook_id))
                 if (not select) and len(nbs) > pn.notebook_id:
+                    self._mgr.Update()
                     nbs[pn.notebook_id].SetSelection(currPage)
             else:
                 self._mgr.AddPane(page, aui.AuiPaneInfo().
                               Name(caption.replace(' ', '')).Caption(caption).CloseButton(False), target=pn)
-                #nb = self._mgr.GetNotebooks()[0]
-                #if not select:
-                #    nb.SetSelection(0)
+                
+                
+                if not select:
+                    self._mgr.Update()
+                    nb = self._mgr.GetNotebooks()[0]
+                    nb.SetSelection(0)
 
         self._mgr.Update()
 

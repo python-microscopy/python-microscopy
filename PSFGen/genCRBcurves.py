@@ -62,7 +62,7 @@ crb_pr = genCRB(ps_pr)
 #double helix PSF
 #NB whilst qualitatively similar to published DH-PSFs the selection of vortex 
 #locations is somewhat ad-hoc.
-ps_dh = fourierHNA.GenDHPSF(zs, 70., 2.3*array([-1.2, -.9, -.6, -.3, 0, .3, .6, .9, 1.2]))
+ps_dh = fourierHNA.GenDHPSF(zs, 70., 1.5*array([-1.2, -.9, -.6, -.3, 0, .3, .6, .9, 1.2]))
 crb_dh = genCRB(ps_dh)
 
 
@@ -154,10 +154,10 @@ def genScSurface(sc, genfcn):
     return array(crb_vs_sc)
 
 
-from mpl_toolkits.mplot3d import Axes3D 
-f = figure()
-crb_vs_sc = genScSurface(sc, fourierHNA.GenPRIPSF)   
+#from mpl_toolkits.mplot3d import Axes3D 
+#f = figure()
+#crb_vs_sc = genScSurface(sc, fourierHNA.GenPRIPSF)   
 #contour(bgvals, sc, log(crb_vs_sc), 100, cmap=cm.spectral)
-ax = Axes3D(f)
-ax.plot_surface(bgvals[None, :]*ones_like(sc)[:,None], sc[:,None]*ones_like(bgvals)[None, :], log(crb_vs_sc), rstride=1, cstride=1, cmap=cm.spectral)
-draw()
+#ax = Axes3D(f)
+#ax.plot_surface(bgvals[None, :]*ones_like(sc)[:,None], sc[:,None]*ones_like(bgvals)[None, :], log(crb_vs_sc), rstride=1, cstride=1, cmap=cm.spectral)
+#draw()

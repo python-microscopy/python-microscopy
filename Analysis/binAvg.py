@@ -41,6 +41,24 @@ def binAvg(binVar, indepVar, bins):
             bs[i] = v.std()
 
     return bn, bm, bs
+    
+def binMedian(binVar, indepVar, bins):
+    bm = np.zeros(len(bins) - 1)
+    bs = np.zeros(len(bins) - 1)
+    bn = np.zeros(len(bins) - 1, dtype='i')
+
+    for i, el, er in zip(range(len(bm)), bins[:-1], bins[1:]):
+        v = indepVar[(binVar >= el)*(binVar < er)]
+
+        bn[i] = len(v)
+        if bn[i] == 0:
+            bm[i] = 0
+            bs[i] = 0
+        else:
+            bm[i] = np.median(v)
+            bs[i] = v.std()
+
+    return bn, bm, bs
 
 
 def errorPlot(filter, bins):

@@ -70,6 +70,9 @@ def calibrate(interpolator, md, roiSize=5):
 
     ps = numpy.array(ps)
     A, xp, yp, dw = ps.T
+    
+    #xp = xp - xp[z.size/2]
+    #yp = yp - yp[z.size/2]
 
     rawMeas['A'] = A
     rawMeas['xp'] = xp
