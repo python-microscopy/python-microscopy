@@ -10,6 +10,7 @@
 ##################
 #import numpy
 import wx
+import wx.grid
 #import pylab
 #from PYME.DSView.image import ImageStack
 from enthought.traits.api import HasTraits, Float, Int
@@ -18,35 +19,40 @@ from enthought.traits.ui.menu import OKButton
 
 from graphViewPanel import *
 
+class PSFQualityPanel(wx.Panel):
+    def __init__(self, parent, dsviewer):
+        wx.Panel.__init__(self, parent) 
+        
+        self.image = dsviewer.image
+        self.dsviewer = dsviewer
+        
+        self.grid = wx.grid.Grid(self, -1)
+        self.grid.CreateGrid(2, 2)
+        self.grid.EnableEditing(0)
+        self.grid.SetColLabelValue(0, "Localisation")
+        self.grid.SetColLabelValue(1, "Deconvolution")
+        self.grid.SetRowLabelValue(0, "z pixel size")
+        self.grid.SetRowLabelValue(1, "x pixel size")
+        self.grid.SetRowLabelValue(2, "number of slices")
+        
+        self.FillGrid()
+        
+    def FillGrid(self):
+        c
+        self.SetCellBackgroundColour(0,0)
+        pass
+        
+
 class CRBViewPanel(wx.Panel):
-    def __init__(self, parent, image, xlabel=''):
+    def __init__(self, parent, image):
         wx.Panel.__init__(self, parent)
         
         self.image = image
         
         #print 'f'
-        from PYME.Analysis import cramerRao
-        from PYME.PSFGen import fourierHNA
-        #print 'b'
-        import numpy as np
         
-        d = self.image.data[:,:,:]
-        I = d[:,:,d.shape[2]/2].sum()
         
-        vs = 1e3*np.array([self.image.mdh['voxelsize.x'], self.image.mdh['voxelsize.y'],self.image.mdh['voxelsize.z']])
         
-        #print 'fi'        
-        FI = cramerRao.CalcFisherInformZn2(d*(2e3/I), 100, voxelsize=vs)
-        #print 'crb'
-        self.crb = cramerRao.CalcCramerReoZ(FI)
-        #print 'crbd'
-        
-        z_ = np.arange(d.shape[2])*self.image.mdh['voxelsize.z']*1.0e3
-        self.z_ = z_ - z_.mean()
-        
-        ps_as = fourierHNA.GenAstigPSF(self.z_, vs[0], 1.5)        
-        self.crb_as = (cramerRao.CalcCramerReoZ(cramerRao.CalcFisherInformZn2(ps_as*2000/267., 500, voxelsize=vs)))
-
             
         sizer1 = wx.BoxSizer(wx.VERTICAL)
 
@@ -81,7 +87,33 @@ class CRBViewPanel(wx.Panel):
 
         #self.toolbar.update()
         self.SetSizer(sizer1)
+        self.calcCRB()
+        #self.draw()
+        
+    def calcCRB(self, caller=None):
+        from PYME.Analysis import cramerRao
+        from PYME.PSFGen import fourierHNA
+        #print 'b'
+        import numpy as np
+        d = self.image.data[:,:,:]
+        I = d[:,:,d.shape[2]/2].sum()
+        
+        vs = 1e3*np.array([self.image.mdh['voxelsize.x'], self.image.mdh['voxelsize.y'],self.image.mdh['voxelsize.z']])
+        
+        #print 'fi'        
+        FI = cramerRao.CalcFisherInformZn2(d*(2e3/I), 100, voxelsize=vs)
+        #print 'crb'
+        self.crb = cramerRao.CalcCramerReoZ(FI)
+        #print 'crbd'
+        
+        z_ = np.arange(d.shape[2])*self.image.mdh['voxelsize.z']*1.0e3
+        self.z_ = z_ - z_.mean()
+        
+        ps_as = fourierHNA.GenAstigPSF(self.z_, vs[0], 1.5)        
+        self.crb_as = (cramerRao.CalcCramerReoZ(cramerRao.CalcFisherInformZn2(ps_as*2000/267., 500, voxelsize=vs)))
+        
         self.draw()
+
 
     def draw(self, event=None):
         self.axes.cla()
@@ -244,6 +276,7 @@ def Plug(dsviewer):
     
     dsviewer.crbv = CRBViewPanel(dsviewer, dsviewer.image)
     dsviewer.AddPage(dsviewer.crbv, False, 'Cramer-Rao Bounds')
+    dsviewer.updateHooks.append(dsviewer.crbv.calcCRB)
     
     #dsviewer.gv.toolbar = MyNavigationToolbar(dsviewer.gv.canvas, dsviewer)
     #dsviewer._mgr.AddPane(dsviewer.gv.toolbar, aui.AuiPaneInfo().Name("MPLTools").Caption("Matplotlib Tools").CloseButton(False).
