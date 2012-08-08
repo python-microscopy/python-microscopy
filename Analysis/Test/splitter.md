@@ -60,4 +60,4 @@ class sffake:
 md['chroma.dx'] = sffake(50.)
 md['chroma.dy'] = sffake(100.)
 md['Test.DefaultParams'] = [205, 205, 0, 0, 280/2.35]
-md['Test.ParamJitter'] = [150, 150, 90, 90, 50]
+md['Test.ParamJitter'] = [205, 205, 90, 90, 50]

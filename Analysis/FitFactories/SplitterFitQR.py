@@ -50,6 +50,10 @@ def f_gauss2d2c(p, Xg, Yg, Xr, Yr):
     """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sigma, background, lin_x, lin_y]"""
     Ag,Ar, x0, y0, s, bG, bR, b_x, b_y  = p
     #return A*scipy.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2)) + b + b_x*X + b_y*Y
+    #force amilitude to be positive
+    Ag = sqrt(Ag**2 + 1) - 1
+    Ar = sqrt(Ar**2 + 1) - 1   
+    
     r = genGauss(Xr,Yr,Ar,x0,y0,s,bR,b_x,b_y)
     r.strides = r.strides #Really dodgy hack to get around something which numpy is not doing right ....
 
@@ -62,6 +66,11 @@ def f_gauss2d2ccb(p, Xg, Yg, Xr, Yr):
     """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sigma, background, lin_x, lin_y]"""
     Ag,Ar, x0, y0, s = p
     #return A*scipy.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2)) + b + b_x*X + b_y*Y
+    
+    #force amilitude to be positive
+    Ag = sqrt(Ag**2 + 1) - 1
+    Ar = sqrt(Ar**2 + 1) - 1   
+    
     r = genGauss(Xr,Yr,Ar,x0,y0,s,0,0,0)
     r.strides = r.strides #Really dodgy hack to get around something which numpy is not doing right ....
 
@@ -217,7 +226,13 @@ class GaussianFitFactory:
         #(res, cov_x, infodict, mesg, resCode) = FitWeightedMisfitFcn(splitGaussWeightedMisfit, startParameters, dataROI, sigma, Xg, Yg, Xr, Yr)
         (res, cov_x, infodict, mesg, resCode) = FitWeightedMisfitFcn(splWrap, startParameters, dataROI, sigma, Xg, Yg, Xr, Yr, buf)
 
+        #print res        
+        #we map Ag and Ar to ensure positivity        
+        #transform them back
+        res[0] = sqrt(res[0]**2 + 1) -1
+        res[1] = sqrt(res[1]**2 + 1) -1
         
+        #print res
 
         fitErrors=None
         try:       

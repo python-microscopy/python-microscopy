@@ -18,29 +18,55 @@ from enthought.traits.ui.api import View, Item
 from enthought.traits.ui.menu import OKButton
 
 from graphViewPanel import *
+from PYME.PSFEst import psfQuality
 
 class PSFQualityPanel(wx.Panel):
-    def __init__(self, parent, dsviewer):
-        wx.Panel.__init__(self, parent) 
+    def __init__(self, dsviewer):
+        wx.Panel.__init__(self, dsviewer) 
         
         self.image = dsviewer.image
         self.dsviewer = dsviewer
         
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+        
         self.grid = wx.grid.Grid(self, -1)
-        self.grid.CreateGrid(2, 2)
+        self.grid.CreateGrid(len(psfQuality.test_names), 2)
         self.grid.EnableEditing(0)
+        
         self.grid.SetColLabelValue(0, "Localisation")
         self.grid.SetColLabelValue(1, "Deconvolution")
-        self.grid.SetRowLabelValue(0, "z pixel size")
-        self.grid.SetRowLabelValue(1, "x pixel size")
-        self.grid.SetRowLabelValue(2, "number of slices")
+        
+        for i, testName in enumerate(psfQuality.test_names):
+            self.grid.SetRowLabelValue(i, testName)
         
         self.FillGrid()
         
-    def FillGrid(self):
-        c
-        self.SetCellBackgroundColour(0,0)
-        pass
+        self.grid.AutoSizeColumns()
+        self.grid.SetRowLabelSize(wx.grid.GRID_AUTOSIZE)
+        
+        vsizer.Add(self.grid, 1, wx.EXPAND, 5)
+        
+        self.SetSizerAndFit(vsizer)
+        
+    def FillGrid(self, caller=None):
+        loc_res, dec_res = psfQuality.runTests(self.image, self.dsviewer.crbv)
+        
+        for i, testName in enumerate(psfQuality.test_names):
+            try:
+                val, merit = loc_res[testName]
+                colour = psfQuality.colour(merit)
+                self.grid.SetCellValue(i, 0, '%3.2g' % val)
+                self.grid.SetCellBackgroundColour(i, 0, tuple(colour*255))
+            except KeyError:
+                pass
+            
+            try:
+                val, merit = dec_res[testName]
+                colour = psfQuality.colour(merit)
+                self.grid.SetCellValue(i, 1, '%3.2g' % val)
+                self.grid.SetCellBackgroundColour(i, 1, tuple(colour*255))
+            except KeyError:
+                pass
         
 
 class CRBViewPanel(wx.Panel):
@@ -48,12 +74,7 @@ class CRBViewPanel(wx.Panel):
         wx.Panel.__init__(self, parent)
         
         self.image = image
-        
-        #print 'f'
-        
-        
-        
-            
+             
         sizer1 = wx.BoxSizer(wx.VERTICAL)
 
         self.figure = Figure()
@@ -61,27 +82,6 @@ class CRBViewPanel(wx.Panel):
         self.canvas = FigureCanvas(self, -1, self.figure)
 
         sizer1.Add(self.canvas, 1, wx.TOP | wx.LEFT | wx.EXPAND)
-
-        #self.toolbar = NavigationToolbar2WxAgg(self.canvas)
-        #self.toolbar = MyNavigationToolbar(self.canvas, self)
-        #self.toolbar.Realize()
-
-#        if wx.Platform == '__WXMAC__':
-#            # Mac platform (OSX 10.3, MacPython) does not seem to cope with
-#            # having a toolbar in a sizer. This work-around gets the buttons
-#            # back, but at the expense of having the toolbar at the top
-#            self.SetToolBar(self.toolbar)
-#        else:
-#            # On Windows platform, default window size is incorrect, so set
-#            # toolbar width to figure width.
-#            tw, th = self.toolbar.GetSizeTuple()
-#            fw, fh = self.canvas.GetSizeTuple()
-#            # By adding toolbar in sizer, we are able to put it at the bottom
-#            # of the frame - so appearance is closer to GTK version.
-#            # As noted above, doesn't work for Mac.
-#            self.toolbar.SetSize(wx.Size(fw, th))
-#            
-#            sizer1.Add(self.toolbar, 0, wx.LEFT | wx.EXPAND)
 
         self.Bind(wx.EVT_SIZE, self._onSize)
 
@@ -277,6 +277,10 @@ def Plug(dsviewer):
     dsviewer.crbv = CRBViewPanel(dsviewer, dsviewer.image)
     dsviewer.AddPage(dsviewer.crbv, False, 'Cramer-Rao Bounds')
     dsviewer.updateHooks.append(dsviewer.crbv.calcCRB)
+    
+    dsviewer.psfqp = PSFQualityPanel(dsviewer)
+    dsviewer.AddPage(dsviewer.psfqp, False, 'PSF Quality')
+    dsviewer.updateHooks.append(dsviewer.psfqp.FillGrid)
     
     #dsviewer.gv.toolbar = MyNavigationToolbar(dsviewer.gv.canvas, dsviewer)
     #dsviewer._mgr.AddPane(dsviewer.gv.toolbar, aui.AuiPaneInfo().Name("MPLTools").Caption("Matplotlib Tools").CloseButton(False).
