@@ -62,6 +62,8 @@ class DSViewFrame(wx.Frame):
         self.updateHooks = []
         self.statusHooks = []
         self.installedModules = []
+        
+        self.dataChangeHooks = []
 
         self.updating = False
 
@@ -297,6 +299,10 @@ class DSViewFrame(wx.Frame):
                 uCallback(self)
 
             self.updating = False
+            
+    def DataChanged(self):
+        for uCallback in self.dataChangeHooks:
+            uCallback(self)
 
     def OnOpen(self, event=None):
         ViewIm3D(ImageStack())

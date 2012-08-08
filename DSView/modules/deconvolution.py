@@ -213,6 +213,7 @@ class deconvolver:
         else:
             self.res._mgr.ClosePane(self.pinfo1)
             self.res._mgr.Update()
+            self.res.DataChanged()
         if sucess:
             #if 'decvp' in dir(self):
             #    for pNum in range(self.dsviewer.notebook1.GetPageCount()):

@@ -44,9 +44,38 @@ class PSFQualityPanel(wx.Panel):
         self.grid.AutoSizeColumns()
         self.grid.SetRowLabelSize(wx.grid.GRID_AUTOSIZE)
         
-        vsizer.Add(self.grid, 1, wx.EXPAND, 5)
+        vsizer.Add(self.grid, 2, wx.EXPAND|wx.ALL, 5)
+        vsizer.Add(wx.StaticText(self, -1, 'Click a cell for description'), 0, wx.ALL, 5)
+        
+        self.description = wx.TextCtrl(self, -1, '', style = wx.TE_MULTILINE|wx.TE_AUTO_SCROLL|wx.TE_READONLY)
+        vsizer.Add(self.description, 1, wx.EXPAND|wx.ALL, 5)
+        
+        self.grid.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK, self.OnSelectCell)
         
         self.SetSizerAndFit(vsizer)
+        
+    def OnSelectCell(self, event):
+        r = event.GetRow()
+        c = event.GetCol()
+        
+        self.description.SetValue('')
+        
+        name = psfQuality.test_names[r]
+        
+        if c == 0:
+            #localisaitons
+            try:
+                self.description.SetValue(psfQuality.localisation_tests[name].__doc__)
+            except KeyError:
+                pass
+        elif c == 1:
+            #deconvolution
+            try:
+                self.description.SetValue(psfQuality.deconvolution_tests[name].__doc__)
+            except KeyError:
+                pass
+            
+        event.Skip()
         
     def FillGrid(self, caller=None):
         loc_res, dec_res = psfQuality.runTests(self.image, self.dsviewer.crbv)
@@ -55,7 +84,7 @@ class PSFQualityPanel(wx.Panel):
             try:
                 val, merit = loc_res[testName]
                 colour = psfQuality.colour(merit)
-                self.grid.SetCellValue(i, 0, '%3.2g' % val)
+                self.grid.SetCellValue(i, 0, '%3.3g' % val)
                 self.grid.SetCellBackgroundColour(i, 0, tuple(colour*255))
             except KeyError:
                 pass
@@ -63,17 +92,18 @@ class PSFQualityPanel(wx.Panel):
             try:
                 val, merit = dec_res[testName]
                 colour = psfQuality.colour(merit)
-                self.grid.SetCellValue(i, 1, '%3.2g' % val)
+                self.grid.SetCellValue(i, 1, '%3.3g' % val)
                 self.grid.SetCellBackgroundColour(i, 1, tuple(colour*255))
             except KeyError:
                 pass
         
 
 class CRBViewPanel(wx.Panel):
-    def __init__(self, parent, image):
+    def __init__(self, parent, image, background=1):
         wx.Panel.__init__(self, parent)
         
         self.image = image
+        self.background = background
              
         sizer1 = wx.BoxSizer(wx.VERTICAL)
 
@@ -82,13 +112,26 @@ class CRBViewPanel(wx.Panel):
         self.canvas = FigureCanvas(self, -1, self.figure)
 
         sizer1.Add(self.canvas, 1, wx.TOP | wx.LEFT | wx.EXPAND)
+        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Background photons:', pos = (0,0)), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tBackground = wx.TextCtrl(self, -1, '%d' % self.background, pos=(0, 0))
+        hsizer.Add(self.tBackground, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tBackground.Bind(wx.EVT_TEXT, self.OnChangeBackground)
+        
+        sizer1.Add(hsizer)
 
         self.Bind(wx.EVT_SIZE, self._onSize)
 
         #self.toolbar.update()
-        self.SetSizer(sizer1)
+        self.SetSizerAndFit(sizer1)
         self.calcCRB()
         #self.draw()
+        
+    def OnChangeBackground(self, event):
+        print 'b'
+        self.background = float(self.tBackground.GetValue())
+        self.calcCRB()
         
     def calcCRB(self, caller=None):
         from PYME.Analysis import cramerRao
@@ -101,7 +144,7 @@ class CRBViewPanel(wx.Panel):
         vs = 1e3*np.array([self.image.mdh['voxelsize.x'], self.image.mdh['voxelsize.y'],self.image.mdh['voxelsize.z']])
         
         #print 'fi'        
-        FI = cramerRao.CalcFisherInformZn2(d*(2e3/I), 100, voxelsize=vs)
+        FI = cramerRao.CalcFisherInformZn2(d*(2e3/I) + self.background, 100, voxelsize=vs)
         #print 'crb'
         self.crb = cramerRao.CalcCramerReoZ(FI)
         #print 'crbd'
@@ -110,7 +153,7 @@ class CRBViewPanel(wx.Panel):
         self.z_ = z_ - z_.mean()
         
         ps_as = fourierHNA.GenAstigPSF(self.z_, vs[0], 1.5)        
-        self.crb_as = (cramerRao.CalcCramerReoZ(cramerRao.CalcFisherInformZn2(ps_as*2000/267., 500, voxelsize=vs)))
+        self.crb_as = (cramerRao.CalcCramerReoZ(cramerRao.CalcFisherInformZn2(ps_as*2000/267. + self.background, 500, voxelsize=vs)))
         
         self.draw()
 
@@ -172,12 +215,12 @@ class PSFTools(HasTraits):
         #PROC_LABEL = wx.NewId()
         
         dsviewer.mProcessing.Append(PROC_EXTRACT_PUPIL, "Extract &Pupil Function", "", wx.ITEM_NORMAL)
-        dsviewer.mProcessing.Append(PROC_CALC_CRB, "Calculate Cramer-Rao Bounds", "", wx.ITEM_NORMAL)
+        dsviewer.mProcessing.Append(PROC_CALC_CRB, "Cramer-Rao Bound vs Background ", "", wx.ITEM_NORMAL)
         dsviewer.mProcessing.Append(PROC_PSF_BG_SUB, "PSF Background Correction", "", wx.ITEM_NORMAL)
         #dsviewer.mProcessing.Append(PROC_LABEL, "&Label", "", wx.ITEM_NORMAL)
     
         wx.EVT_MENU(dsviewer, PROC_EXTRACT_PUPIL, self.OnExtractPupil)
-        wx.EVT_MENU(dsviewer, PROC_CALC_CRB, self.OnCalcCRB)
+        wx.EVT_MENU(dsviewer, PROC_CALC_CRB, self.OnCalcCRB3DvsBG)
         wx.EVT_MENU(dsviewer, PROC_PSF_BG_SUB, self.OnSubtractBackground)
         #wx.EVT_MENU(dsviewer, PROC_LABEL, self.OnLabel)
 
@@ -266,6 +309,51 @@ class PSFTools(HasTraits):
         pylab.plot(z_, crb_as[:,1], 'g:')
         pylab.plot(z_, crb_as[:,2], 'r:')
         
+        
+    def OnCalcCRB3DvsBG(self, event):
+        from PYME.Analysis import cramerRao
+        from PYME.PSFGen import fourierHNA
+        #print 'b'
+        import numpy as np
+        
+        
+        vs = 1e3*np.array([self.image.mdh['voxelsize.x'], self.image.mdh['voxelsize.y'],self.image.mdh['voxelsize.z']])
+        
+        zf = self.image.data.shape[2]/2
+        dz = 500/vs[2]
+
+        d = self.image.data[:,:,(zf-dz):(zf + dz + 1)]
+        I = d[:,:,d.shape[2]/2].sum()        
+        
+        
+        bgv = np.logspace(-1, 2)
+        z_ = np.arange(d.shape[2])*vs[2]
+        z_ = z_ - z_.mean()
+        
+        ps_as = fourierHNA.GenAstigPSF(z_, vs[0], 1.5)
+        
+        crb3D = []
+        crb3Das = []
+        
+        for bg in bgv:
+            FI = cramerRao.CalcFisherInformZn2(d*(2e3/I) + bg, 100, voxelsize=vs)
+            crb = cramerRao.CalcCramerReoZ(FI)
+            crb_as = (cramerRao.CalcCramerReoZ(cramerRao.CalcFisherInformZn2(ps_as*2000/267. + bg, 500, voxelsize=vs)))
+            
+            crb3D.append(np.sqrt(crb.sum(1)).mean())
+            crb3Das.append(np.sqrt(crb_as.sum(1)).mean())
+            
+        import pylab
+        
+        pylab.figure()
+        pylab.plot(bgv, crb3Das, label='Theoretical PSF')
+        pylab.plot(bgv, crb3D, label='Measured PSF')
+        pylab.legend()
+        
+        pylab.xlabel('Background [photons]')
+        pylab.ylabel('Average CRB 3D')
+        pylab.title('Cramer-Rao bound vs Background')
+        
 
     
 
@@ -275,12 +363,14 @@ def Plug(dsviewer):
     dsviewer.PSFTools = PSFTools(dsviewer)
     
     dsviewer.crbv = CRBViewPanel(dsviewer, dsviewer.image)
-    dsviewer.AddPage(dsviewer.crbv, False, 'Cramer-Rao Bounds')
-    dsviewer.updateHooks.append(dsviewer.crbv.calcCRB)
+    dsviewer.dataChangeHooks.append(dsviewer.crbv.calcCRB)
     
     dsviewer.psfqp = PSFQualityPanel(dsviewer)
+    dsviewer.dataChangeHooks.append(dsviewer.psfqp.FillGrid)
+    
     dsviewer.AddPage(dsviewer.psfqp, False, 'PSF Quality')
-    dsviewer.updateHooks.append(dsviewer.psfqp.FillGrid)
+    dsviewer.AddPage(dsviewer.crbv, False, 'Cramer-Rao Bounds')
+    
     
     #dsviewer.gv.toolbar = MyNavigationToolbar(dsviewer.gv.canvas, dsviewer)
     #dsviewer._mgr.AddPane(dsviewer.gv.toolbar, aui.AuiPaneInfo().Name("MPLTools").Caption("Matplotlib Tools").CloseButton(False).
