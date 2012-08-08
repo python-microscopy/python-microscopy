@@ -561,30 +561,33 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                         #print 'upt'
                 #        self.refrTimer.Start(.2, True)
                 
-        elif event.GetKeyCode() == 74:
+        elif event.GetKeyCode() == 74: #J
             self.do.xp = (self.do.xp - 1)
             if ('update' in dir(self.GetParent())):
                 self.GetParent().update()
             else:
                 self.imagepanel.Refresh()
-        elif event.GetKeyCode() == 76:
+        elif event.GetKeyCode() == 76: #L
             self.do.xp +=1
             if ('update' in dir(self.GetParent())):
                 self.GetParent().update()
             else:
                 self.imagepanel.Refresh()
-        elif event.GetKeyCode() == 73:
+        elif event.GetKeyCode() == 73: #I
             self.do.yp += 1
             if ('update' in dir(self.GetParent())):
                 self.GetParent().update()
             else:
                 self.imagepanel.Refresh()
-        elif event.GetKeyCode() == 75:
+        elif event.GetKeyCode() == 75: #L
             self.do.yp -= 1
             if ('update' in dir(self.GetParent())):
                 self.GetParent().update()
             else:
                 self.imagepanel.Refresh()
+        elif event.GetKeyCode() == 77: #M
+            #print 'o'
+            self.do.Optimise()
         else:
             event.Skip()
         
