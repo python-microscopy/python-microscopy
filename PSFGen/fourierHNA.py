@@ -292,8 +292,8 @@ def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters = 50, size=5e3):
             
         new_pupil /= ps.shape[2]
         
-        View3D(bps)
-        View3D(abp)
+        #View3D(bps)
+        #View3D(abp)
         
         print 'res = %f' % (res/ps.shape[2])
         #print abs(new_pupil).sum()

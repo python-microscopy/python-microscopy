@@ -20,6 +20,11 @@ from enthought.traits.ui.menu import OKButton
 from graphViewPanel import *
 from PYME.PSFEst import psfQuality
 
+def remove_newlines(s):
+    s = '<>'.join(s.split('\n\n'))
+    s = ' '.join(s.split())
+    return '\n'.join(s.split('<>'))
+
 class PSFQualityPanel(wx.Panel):
     def __init__(self, dsviewer):
         wx.Panel.__init__(self, dsviewer) 
@@ -65,13 +70,13 @@ class PSFQualityPanel(wx.Panel):
         if c == 0:
             #localisaitons
             try:
-                self.description.SetValue(psfQuality.localisation_tests[name].__doc__)
+                self.description.SetValue(remove_newlines(psfQuality.localisation_tests[name].__doc__))
             except KeyError:
                 pass
         elif c == 1:
             #deconvolution
             try:
-                self.description.SetValue(psfQuality.deconvolution_tests[name].__doc__)
+                self.description.SetValue(remove_newlines(psfQuality.deconvolution_tests[name].__doc__))
             except KeyError:
                 pass
             
@@ -368,13 +373,17 @@ def Plug(dsviewer):
     dsviewer.psfqp = PSFQualityPanel(dsviewer)
     dsviewer.dataChangeHooks.append(dsviewer.psfqp.FillGrid)
     
-    dsviewer.AddPage(dsviewer.psfqp, False, 'PSF Quality')
+    #dsviewer.AddPage(dsviewer.psfqp, False, 'PSF Quality')
     dsviewer.AddPage(dsviewer.crbv, False, 'Cramer-Rao Bounds')
     
     
     #dsviewer.gv.toolbar = MyNavigationToolbar(dsviewer.gv.canvas, dsviewer)
     #dsviewer._mgr.AddPane(dsviewer.gv.toolbar, aui.AuiPaneInfo().Name("MPLTools").Caption("Matplotlib Tools").CloseButton(False).
     #                  ToolbarPane().Right().GripperTop())
+    
+    pinfo1 = aui.AuiPaneInfo().Name("psfQPanel").Left().Caption('PSF Quality').DestroyOnClose(True).CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
+    dsviewer._mgr.AddPane(dsviewer.psfqp, pinfo1)
+    dsviewer._mgr.Update()
 
 
 
