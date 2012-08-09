@@ -25,22 +25,28 @@ def plotCRB(zs, crb, methodName):
     title(methodName)
 
 
-def genCRB(ps):
-    #calculated for a photon number of 2000, bg of 0
-    return cramerRao.CalcCramerReoZ(cramerRao.CalcFisherInformZn2(ps*2000/267, 500, voxelsize=[70, 70, 25]))
+
     
     
 zs = 25.*arange(-40, 40)    
     
 #vanilla widefield PSF
 ps_wf = fourierHNA.GenWidefieldPSF(zs, 70.)
-crb_wf = genCRB(ps_wf)
+
+I = ps_wf[:,:,40].sum()
+
+def genCRB(ps):
+    #calculated for a photon number of 2000, bg of 0
+    #I = ps[:,:,ps.shape[2]/2].sum()
+    return cramerRao.CalcCramerReoZ(cramerRao.CalcFisherInformZn2(ps*2000/I, 500, voxelsize=[70, 70, 25]))
+    
+crb_wf = genCRB(ps_wf + 1/2e3)
 
 
 #astigmatic PSF
 #stength of 1.5 gives approximately 500 nm axial separation
-ps_as = fourierHNA.GenAstigPSF(zs, 70., 1.5)
-crb_as = genCRB(ps_as)
+ps_as = fourierHNA.GenAstigPSF(zs, 70., 2)
+crb_as = genCRB(ps_as + 1/2e3)
 
 
 #biplane PSF
@@ -53,17 +59,17 @@ def genBiplanePSF(zs, vs=70, sep=500):
     return 0.5*ps1 + 0.5*ps2
     
 ps_bp = genBiplanePSF(zs, 70, 450)
-crb_bp = genCRB(ps_bp)
+crb_bp = genCRB(ps_bp+ 1./2e3)
 
 #phase ramp PSF
 ps_pr = fourierHNA.GenPRIPSF(zs, 70., 0.5)
-crb_pr = genCRB(ps_pr)
+crb_pr = genCRB(ps_pr+ 1./2e3)
 
 #double helix PSF
 #NB whilst qualitatively similar to published DH-PSFs the selection of vortex 
 #locations is somewhat ad-hoc.
 ps_dh = fourierHNA.GenDHPSF(zs, 70., 1.5*array([-1.2, -.9, -.6, -.3, 0, .3, .6, .9, 1.2]))
-crb_dh = genCRB(ps_dh)
+crb_dh = genCRB(ps_dh+ 1/2e3)
 
 
 
@@ -104,9 +110,10 @@ legend(['Widefield', 'Astigmatic', 'Biplane', 'Phase Ramp', 'Double Helix'])
 def crb3DvBG(ps, bgvals):
     crb3d = []
     vol = []
+    #I = ps[:,:,ps.shape[2]/2].sum()
     for bg in bgvals:
         #print bg
-        crb = genCRB(ps + 267.*bg/2000)
+        crb = genCRB(ps + I*bg/2000.)
         crb3d.append(sqrt(crb.sum(1))[20:-20].mean())
         vol.append(sqrt(crb).prod(1)[20:-20].mean())
         

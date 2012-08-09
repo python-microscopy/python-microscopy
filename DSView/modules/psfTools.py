@@ -157,8 +157,9 @@ class CRBViewPanel(wx.Panel):
         z_ = np.arange(d.shape[2])*self.image.mdh['voxelsize.z']*1.0e3
         self.z_ = z_ - z_.mean()
         
-        ps_as = fourierHNA.GenAstigPSF(self.z_, vs[0], 1.5)        
-        self.crb_as = (cramerRao.CalcCramerReoZ(cramerRao.CalcFisherInformZn2(ps_as*2000/267. + self.background, 500, voxelsize=vs)))
+        ps_as = fourierHNA.GenAstigPSF(self.z_, vs[0], 2)  
+        I = ps_as[:,:,ps_as.shape[2]/2].sum()
+        self.crb_as = (cramerRao.CalcCramerReoZ(cramerRao.CalcFisherInformZn2(ps_as*2000/I + self.background, 500, voxelsize=vs)))
         
         self.draw()
 
@@ -308,8 +309,9 @@ class PSFTools(HasTraits):
         pylab.ylabel('Std. Dev. [nm]')
         pylab.title('Cramer-Rao bound for 2000 photons')
         
-        ps_as = fourierHNA.GenAstigPSF(z_, vs[0], 1.5)        
-        crb_as = np.sqrt(cramerRao.CalcCramerReoZ(cramerRao.CalcFisherInformZn2(ps_as*2000/267., 500, voxelsize=vs)))
+        ps_as = fourierHNA.GenAstigPSF(z_, vs[0], 2)  
+        I = ps_as[:,:,ps_as.shape[2]/2].sum()
+        crb_as = np.sqrt(cramerRao.CalcCramerReoZ(cramerRao.CalcFisherInformZn2(ps_as*2000/I, 500, voxelsize=vs)))
         pylab.plot(z_, crb_as[:,0], 'b:')
         pylab.plot(z_, crb_as[:,1], 'g:')
         pylab.plot(z_, crb_as[:,2], 'r:')
@@ -335,7 +337,8 @@ class PSFTools(HasTraits):
         z_ = np.arange(d.shape[2])*vs[2]
         z_ = z_ - z_.mean()
         
-        ps_as = fourierHNA.GenAstigPSF(z_, vs[0], 1.5)
+        ps_as = fourierHNA.GenAstigPSF(z_, vs[0], 2)
+        Ias = ps_as[:,:,ps_as.shape[2]/2].sum()
         
         crb3D = []
         crb3Das = []
@@ -343,7 +346,7 @@ class PSFTools(HasTraits):
         for bg in bgv:
             FI = cramerRao.CalcFisherInformZn2(d*(2e3/I) + bg, 100, voxelsize=vs)
             crb = cramerRao.CalcCramerReoZ(FI)
-            crb_as = (cramerRao.CalcCramerReoZ(cramerRao.CalcFisherInformZn2(ps_as*2000/267. + bg, 500, voxelsize=vs)))
+            crb_as = (cramerRao.CalcCramerReoZ(cramerRao.CalcFisherInformZn2(ps_as*2000/Ias + bg, 500, voxelsize=vs)))
             
             crb3D.append(np.sqrt(crb.sum(1)).mean())
             crb3Das.append(np.sqrt(crb_as.sum(1)).mean())

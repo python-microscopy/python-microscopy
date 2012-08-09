@@ -172,6 +172,8 @@ class ColourRenderer(CurrentRenderer):
                 mdh['Rendering.SourceImageID'] = self.pipeline.mdh['imageID']
             mdh['Rendering.SourceFilename'] = self.pipeline.filename
             
+            mdh.Source = MetaDataHandler.NestedClassMDHandler(self.pipeline.mdh)
+            
             for cb in renderMetadataProviders:
                 cb(mdh)           
             

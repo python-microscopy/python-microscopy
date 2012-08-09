@@ -48,7 +48,8 @@ class FourierPropagatorHNA:
         #print k**2
         #m = (u**2 + v**2) <= (n/lamb**2)
         #self.propFac = fftw3f.create_aligned_array(u.shape, 'complex64')
-        self.propFac = 1j*4*pi*sqrt(np.maximum((n/lamb)**2 - (u**2 + v**2), 0))
+        #self.propFac = 1j*8*pi*sqrt(np.maximum((n/lamb)**2 - (u**2 + v**2), 0))
+        self.propFac = 1j*(2*pi*n/lamb)*sqrt(np.maximum(1 - (u**2 + v**2), 0))
 
         self._F = fftw3f.create_aligned_array(u.shape, 'complex64')
         self._f = fftw3f.create_aligned_array(u.shape, 'complex64')
@@ -87,8 +88,10 @@ FourierPropagator = FourierPropagatorHNA
 
 def GenWidefieldAP(dx = 5):
     X, Y = meshgrid(arange(-2000, 2000., dx),arange(-2000, 2000., dx))
-    u = 2*X/(dx*X.shape[0]*dx*pi)
-    v = 2*Y/(dx*X.shape[1]*dx*pi)
+    X = X - X.mean()
+    Y = Y - Y.mean()
+    u = dx*X*n/(lamb*X.shape[0]*2)
+    v = dx*Y*n/(lamb*X.shape[1]*2)
     #print u.min()
 
     R = sqrt(u**2 + v**2)
@@ -98,6 +101,13 @@ def GenWidefieldAP(dx = 5):
     
     #imshow(R*lamb)
     #colorbar()
+#    figure()
+#    u_ = u[u.shape[0]/2, :]
+#    plot(u_, u_)
+#    plot(u_, sqrt(1 - u_**2))
+#    plot(u_, sqrt(u_**2) < 1.49/2 )
+#    plot(u_, sqrt(u_**2) < 1.49/n )
+#    figure()
     
     k = 2*pi*n/lamb
 
@@ -108,14 +118,16 @@ def GenWidefieldAP(dx = 5):
     #colorbar()
 
     #apperture mask
-    M = 1.0*(R < (1.49/(n*lamb))) # NA/lambda
+    M = 1.0*(R < (1.47/n)) # NA/lambda
+    
+    #M = M/M.sum()
     
     #imshow(M)
 
-    return X, Y, R, FP, M
+    return X, Y, R, FP, M, u, v
 
 def GenWidefieldPSF(zs, dx=5):
-    X, Y, R, FP, F = GenWidefieldAP(dx)
+    X, Y, R, FP, F, u, v = GenWidefieldAP(dx)
     figure()
     imshow(abs(F))
 
@@ -129,10 +141,13 @@ def PsfFromPupil(pupil, zs, dx, lamb):
     X, Y = meshgrid(dx*arange(-pupil.shape[0]/2, pupil.shape[0]/2),dx*arange(-pupil.shape[1]/2, pupil.shape[1]/2))
     print X.min(), X.max()
     
+    X = X - X.mean()
+    Y = Y - Y.mean()
+    
     #print ps.shape
     #print arange(-ps.shape[0]/2, ps.shape[0]/2)
-    u = 2*X/(dx*X.shape[0]*dx*pi)
-    v = 2*Y/(dx*X.shape[1]*dx*pi)
+    u = dx*X*n/(lamb*X.shape[0]*2)
+    v = dx*Y*n/(lamb*X.shape[1]*2)
     
     k = 2*pi*n/lamb
 
@@ -150,6 +165,9 @@ def PsfFromPupilVect(pupil, zs, dx, lamb, shape = [61,61]):
     X, Y = meshgrid(dx*arange(-pupil.shape[0]/2, pupil.shape[0]/2),dx*arange(-pupil.shape[1]/2, pupil.shape[1]/2))
     print X.min(), X.max()
     
+    X = X - X.mean()
+    Y = Y - Y.mean()
+    
     if shape == None:
         shape = X.shape
         
@@ -162,8 +180,8 @@ def PsfFromPupilVect(pupil, zs, dx, lamb, shape = [61,61]):
     
     #print ps.shape
     #print arange(-ps.shape[0]/2, ps.shape[0]/2)
-    u = 2*X/(dx*X.shape[0]*dx*pi)
-    v = 2*Y/(dx*X.shape[1]*dx*pi)
+    u = dx*X*n/(lamb*X.shape[0]*2)
+    v = dx*Y*n/(lamb*X.shape[1]*2)
 
     R = sqrt(u**2 + v**2)
     
@@ -221,6 +239,9 @@ def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters = 50, size=5e3):
         X, Y = meshgrid(float(dx)*arange(-ps.shape[0]/2, ps.shape[0]/2),float(dx)*arange(-ps.shape[1]/2, ps.shape[1]/2))
     else:
         X, Y = meshgrid(arange(-size, size, dx),arange(-size, size, dx))
+        
+    X = X - X.mean()
+    Y = Y - Y.mean()
     
     sx = ps.shape[0]
     sy = ps.shape[1]
@@ -231,11 +252,11 @@ def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters = 50, size=5e3):
     
     #print ps.shape
     #print arange(-ps.shape[0]/2, ps.shape[0]/2)
-    u = 2*X/(dx*X.shape[0]*dx*pi)
-    v = 2*Y/(dx*X.shape[1]*dx*pi)
+    u = dx*X*n/(lamb*X.shape[0]*2)
+    v = dx*Y*n/(lamb*X.shape[1]*2)
 
     R = sqrt(u**2 + v**2)
-    M = 1.0*(R < (NA/(n*lamb))) # NA/lambda
+    M = 1.0*(R < (NA/n)) # NA/lambda
     
     k = 2*pi*n/lamb
 
@@ -321,7 +342,7 @@ def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters = 50, size=5e3):
     
 def GenZernikePSF(zs, dx = 5, zernikeCoeffs = []):
     from PYME.misc import zernike
-    X, Y, R, FP, F = GenWidefieldAP(dx)
+    X, Y, R, FP, F, u, v = GenWidefieldAP(dx)
     
     theta = angle(X + 1j*Y)
     r = R/R[F].max()
@@ -344,9 +365,7 @@ def GenZernikePSF(zs, dx = 5, zernikeCoeffs = []):
     return abs(ps**2)
 
 def GenPRIPSF(zs, dx = 5, strength=1.0):
-    X, Y, R, FP, F = GenWidefieldAP(dx)
-    
-    v = lamb*2*Y/(dx*Y.shape[0]*dx*pi)
+    X, Y, R, FP, F, u, v = GenWidefieldAP(dx)
 
     F = F * exp(-1j*sign(X)*10*strength*v)
     #clf()
@@ -357,12 +376,9 @@ def GenPRIPSF(zs, dx = 5, strength=1.0):
     return abs(ps**2)
 
 def GenAstigPSF(zs, dx=5, strength=1.0):
-    X, Y, R, FP, F = GenWidefieldAP(dx)
-    
-    u = lamb*2*X/(dx*X.shape[0]*dx*pi)    
-    v = lamb*2*Y/(dx*Y.shape[0]*dx*pi)
+    X, Y, R, FP, F, u, v = GenWidefieldAP(dx)
 
-    F = F * exp(-1j*((strength*v)**2 - 0.5*(strength*lamb*R)**2))
+    F = F * exp(-1j*((strength*v)**2 - 0.5*(strength*R)**2))
     #clf()
     #imshow(angle(F))
 
@@ -371,10 +387,7 @@ def GenAstigPSF(zs, dx=5, strength=1.0):
     return abs(ps**2)
     
 def GenDHPSF(zs, dx=5, vortices=[0.0]):
-    X, Y, R, FP, F = GenWidefieldAP(dx)
-    
-    u = lamb*2*X/(dx*X.shape[0]*dx*pi)    
-    v = lamb*2*Y/(dx*Y.shape[0]*dx*pi)
+    X, Y, R, FP, F, u, v = GenWidefieldAP(dx)
     
     ph = 0*u
     
@@ -390,10 +403,7 @@ def GenDHPSF(zs, dx=5, vortices=[0.0]):
     return abs(ps**2)
     
 def GenCubicPhasePSF(zs, dx=5, strength=1.0):
-    X, Y, R, FP, F = GenWidefieldAP(dx)
-    
-    v = lamb*2*Y/(dx*Y.shape[0]*dx*pi)
-    u = lamb*2*X/(dx*X.shape[0]*dx*pi)
+    X, Y, R, FP, F, u, v = GenWidefieldAP(dx)
 
     F = F * exp(-1j*strength*(u**3 + v**3))
     #clf()
@@ -404,7 +414,7 @@ def GenCubicPhasePSF(zs, dx=5, strength=1.0):
     return abs(ps**2)
 
 def GenShiftedPSF(zs, dx = 5):
-    X, Y, R, FP, F = GenWidefieldAP(dx)
+    X, Y, R, FP, F, u, v = GenWidefieldAP(dx)
 
     F = F * exp(-1j*.01*Y)
     #clf()
@@ -415,7 +425,7 @@ def GenShiftedPSF(zs, dx = 5):
     return abs(ps**2)
 
 def GenStripePRIPSF(zs, dx = 5):
-    X, Y, R, FP, F = GenWidefieldAP(dx)
+    X, Y, R, FP, F, u, v = GenWidefieldAP(dx)
 
     F = F * exp(-1j*sign(sin(X))*.005*Y)
     #clf()

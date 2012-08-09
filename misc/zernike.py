@@ -89,6 +89,9 @@ def zernikeIm(key, shape):
     x = 2* x.astype('f')/shape[0] - 1
     y = 2* y.astype('f')/shape[1] - 1
     
+    x = x - x.mean()
+    y = y - y.mean()
+    
     c = x + 1j*y
     
     r = np.abs(c)
