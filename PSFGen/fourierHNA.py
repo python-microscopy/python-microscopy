@@ -36,6 +36,8 @@ n = 1.51
 lamb = 680
 k = 2*pi*n/lamb #k at 488nm
 
+j = np.complex64(1j)
+
 class FourierPropagator:
     def __init__(self, u,v,k):
          self.propFac = -1j*(2*2**2*(u**2 + v**2)/k)
@@ -49,7 +51,7 @@ class FourierPropagatorHNA:
         #m = (u**2 + v**2) <= (n/lamb**2)
         #self.propFac = fftw3f.create_aligned_array(u.shape, 'complex64')
         #self.propFac = 1j*8*pi*sqrt(np.maximum((n/lamb)**2 - (u**2 + v**2), 0))
-        self.propFac = 1j*(2*pi*n/lamb)*sqrt(np.maximum(1 - (u**2 + v**2), 0))
+        self.propFac = ((2*pi*n/lamb)*sqrt(np.maximum(1 - (u**2 + v**2), 0))).astype('f')
 
         self._F = fftw3f.create_aligned_array(u.shape, 'complex64')
         self._f = fftw3f.create_aligned_array(u.shape, 'complex64')
@@ -69,7 +71,8 @@ class FourierPropagatorHNA:
     def propagate(self, F, z):
         #return ifftshift(ifftn(F*exp(self.propFac*z)))
         #print abs(F).sum()
-        self._F[:] = fftshift(F*exp(self.propFac*z))
+        pf = self.propFac*float(z)
+        self._F[:] = fftshift(F*(cos(pf) + j*sin(pf)))
         self._plan_F_f()
         #print abs(self._f).sum()
         return ifftshift(self._f/sqrt(self._f.size))
@@ -82,7 +85,8 @@ class FourierPropagatorHNA:
         self._plan_f_F()
         #figure()
         #imshow(angle(self._F))
-        return (ifftshift(self._F)*exp(-self.propFac*z))/sqrt(self._f.size)
+        pf = -self.propFac*float(z)
+        return (ifftshift(self._F)*(cos(pf)+j*sin(pf)))/sqrt(self._f.size)
         
 FourierPropagator = FourierPropagatorHNA
 

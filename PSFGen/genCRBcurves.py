@@ -73,38 +73,38 @@ crb_dh = genCRB(ps_dh+ 1/2e3)
 
 
 
-plotCRB(zs, crb_wf, 'Widefield')
-plotCRB(zs, crb_as, 'Astigmatic')
-plotCRB(zs, crb_bp, 'Biplane')
-plotCRB(zs, crb_pr, 'Phase Ramp')
-plotCRB(zs, crb_dh, 'Double Helix')
-
-#plot 3D CRBs as per DH papers
-figure()
-plot(zs, sqrt(crb_wf.sum(1)), lw=2)
-plot(zs, sqrt(crb_as.sum(1)), lw=2)
-plot(zs, sqrt(crb_bp.sum(1)), lw=2)
-plot(zs, sqrt(crb_pr.sum(1)), lw=2)
-plot(zs, sqrt(crb_dh.sum(1)), lw=2)
-
-xlabel('Defocus[nm]')
-ylabel('3D CRB [nm]')
-ylim(0, 20)
-legend(['Widefield', 'Astigmatic', 'Biplane', 'Phase Ramp', 'Double Helix'])
-
-
-#plot volume of localisation elipse
-figure()
-plot(zs, sqrt(crb_wf).prod(1), lw=2)
-plot(zs, sqrt(crb_as).prod(1), lw=2)
-plot(zs, sqrt(crb_bp).prod(1), lw=2)
-plot(zs, sqrt(crb_pr).prod(1), lw=2)
-plot(zs, sqrt(crb_dh).prod(1), lw=2)
-
-xlabel('Defocus[nm]')
-ylabel('Volume of Localisation elipse [nm^3]')
-legend(['Widefield', 'Astigmatic', 'Biplane', 'Phase Ramp', 'Double Helix'])
-
+#plotCRB(zs, crb_wf, 'Widefield')
+#plotCRB(zs, crb_as, 'Astigmatic')
+#plotCRB(zs, crb_bp, 'Biplane')
+#plotCRB(zs, crb_pr, 'Phase Ramp')
+#plotCRB(zs, crb_dh, 'Double Helix')
+#
+##plot 3D CRBs as per DH papers
+#figure()
+#plot(zs, sqrt(crb_wf.sum(1)), lw=2)
+#plot(zs, sqrt(crb_as.sum(1)), lw=2)
+#plot(zs, sqrt(crb_bp.sum(1)), lw=2)
+#plot(zs, sqrt(crb_pr.sum(1)), lw=2)
+#plot(zs, sqrt(crb_dh.sum(1)), lw=2)
+#
+#xlabel('Defocus[nm]')
+#ylabel('3D CRB [nm]')
+#ylim(0, 20)
+#legend(['Widefield', 'Astigmatic', 'Biplane', 'Phase Ramp', 'Double Helix'])
+#
+#
+##plot volume of localisation elipse
+#figure()
+#plot(zs, sqrt(crb_wf).prod(1), lw=2)
+#plot(zs, sqrt(crb_as).prod(1), lw=2)
+#plot(zs, sqrt(crb_bp).prod(1), lw=2)
+#plot(zs, sqrt(crb_pr).prod(1), lw=2)
+#plot(zs, sqrt(crb_dh).prod(1), lw=2)
+#
+#xlabel('Defocus[nm]')
+#ylabel('Volume of Localisation elipse [nm^3]')
+#legend(['Widefield', 'Astigmatic', 'Biplane', 'Phase Ramp', 'Double Helix'])
+#ylim(0, sqrt(crb_pr).prod(1).max()*1.5)
 
 #crb vs background - use 3D crb over 1um axially
 def crb3DvBG(ps, bgvals):
@@ -134,6 +134,8 @@ plot(bgvals, bg_bp[0], lw=2)
 plot(bgvals, bg_pr[0], lw=2)
 plot(bgvals, bg_dh[0], lw=2)
 
+ylim(0, bg_pr[0].max()*1.5)
+
 xlabel('Background [photons/pixel]')
 ylabel('3D CRB [nm]')
 legend(['Widefield', 'Astigmatic', 'Biplane', 'Phase Ramp', 'Double Helix'])
@@ -144,7 +146,7 @@ plot(bgvals, bg_as[1])
 plot(bgvals, bg_bp[1])
 plot(bgvals, bg_pr[1])
 plot(bgvals, bg_dh[1])
-
+ylim(0, bg_pr[1].max()*1.5)
 
 #plot(bgvals, bg_pr[0], 'k', lw=2)
 #plot(bgvals, bg_as[0], 'g', lw=2)
