@@ -926,8 +926,22 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                             applyLUT(seg, gain, offset, lut, ima)
                     else:
                         seg = self.do.ds[x0_:(x0_+sX_):step,y0_:(y0_+sY_):step,int(self.do.zp), chan].squeeze().T
-                        #print seg.shape
-                        applyLUT(seg, gain, offset, lut, ima)
+                        
+                        if numpy.iscomplexobj(seg):
+                            if self.do.complexMode == 'real':
+                                applyLUT(seg.real, gain, offset, lut, ima)
+                            elif self.do.complexMode == 'imag':
+                                applyLUT(seg.imag, gain, offset, lut, ima)
+                            elif self.do.complexMode == 'abs':
+                                applyLUT(numpy.abs(seg), gain, offset, lut, ima)
+                            elif self.do.complexMode == 'angle':
+                                applyLUT(numpy.angle(seg), gain, offset, lut, ima)
+                            else:
+                                applyLUT(numpy.angle(seg), self.do.cmax_scale/self.do.ds.shape[2], self.do.cmax_offset, lut, ima)
+                                ima[:] = (ima*numpy.clip((numpy.abs(seg) - offset)*gain, 0,1)[:,:,None]).astype('uint8')
+                        else:
+                            #print seg.shape
+                            applyLUT(seg, gain, offset, lut, ima)
 
                 else:
                     ima[:] = numpy.minimum(ima[:] + (255*cmap(gain*(self.do.ds[x0_:(x0_+sX_):step,y0_:(y0_+sY_):step,int(self.do.zp), chan].squeeze().T - offset))[:,:,:3])[:], 255)

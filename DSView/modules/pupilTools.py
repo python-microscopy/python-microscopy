@@ -21,20 +21,21 @@
 ##################
 #import numpy
 import wx
+import wx.grid
 #import pylab
 #from PYME.DSView.image import ImageStack
 from enthought.traits.api import HasTraits, Float, Int
 from enthought.traits.ui.api import View, Item
 from enthought.traits.ui.menu import OKButton
 
-class ZernikeView(wx.Panel):
+class ZernikeView(wx.ScrolledWindow):
     def __init__(self, dsviewer):
         from PYME.misc import zernike
         import numpy as np
         
         self.dsviewer = dsviewer
-        mag = dsviewer.image.data[:,:,0]
-        phase = dsviewer.image.data[:,:,1]
+        mag = np.abs(dsviewer.image.data[:,:])
+        phase = np.angle(dsviewer.image.data[:,:])
         
         xm = np.where(mag.max(1) > 0)[0]
         ym = np.where(mag.max(0) > 0)[0]
@@ -48,18 +49,45 @@ class ZernikeView(wx.Panel):
         
         coeffs, res, im = zernike.calcCoeffs(phase, 25, mag)
         
-        s = ''
+        #s = ''
         
-        for i, c, r, in zip(xrange(25), coeffs, res):
-            s += '%d\t%s%3.3f\tresidual=%3.2f\n' % (i, zernike.NameByNumber[i].ljust(30), c, r)
+        #for i, c, r, in zip(xrange(25), coeffs, res):
+        #    s += '%d\t%s%3.3f\tresidual=%3.2f\n' % (i, zernike.NameByNumber[i].ljust(30), c, r)
         
-        wx.Panel.__init__(self, dsviewer)
+        wx.ScrolledWindow.__init__(self, dsviewer)
         
         vsizer = wx.BoxSizer(wx.VERTICAL)
         
-        vsizer.Add(wx.StaticText(self, -1, s), 1, wx.EXPAND)
+        self.gZern = wx.grid.Grid(self, -1)
+        self.gZern.CreateGrid(len(coeffs), 3)
+        self.gZern.EnableEditing(0)
         
-        self.SetSizerAndFit(vsizer)
+        self.gZern.SetColLabelValue(0, "Name")
+        self.gZern.SetColLabelValue(1, "Coefficient")
+        self.gZern.SetColLabelValue(2, "Residual")
+        
+        for i, c, r, in zip(xrange(len(coeffs)), coeffs, res):
+            self.gZern.SetRowLabelValue(i, '%d' %i)
+            self.gZern.SetCellValue(i, 0, zernike.NameByNumber[i])
+            self.gZern.SetCellValue(i, 1, '%3.3g' % c)
+            self.gZern.SetCellValue(i, 2, '%3.3g' % r)
+            
+            cv = 255 - 125*(abs(c))
+            col = (255, cv, cv)
+            
+            self.gZern.SetCellBackgroundColour(i, 0, col)
+            self.gZern.SetCellBackgroundColour(i, 1, col)
+            self.gZern.SetCellBackgroundColour(i, 2, col)
+            
+        self.gZern.AutoSizeColumns()
+        self.gZern.SetRowLabelSize(wx.grid.GRID_AUTOSIZE)
+        
+        vsizer.Add(self.gZern, 1, wx.EXPAND|wx.ALL, 5)
+        
+        #vsizer.Add(wx.StaticText(self, -1, s), 1, wx.EXPAND)
+        
+        self.SetSizer(vsizer)
+        self.SetScrollRate(0, 10)
         
         
 
@@ -107,7 +135,7 @@ class PupilTools(HasTraits):
         z_ = np.arange(self.sizeZ)*float(self.zSpacing)
         z_ -= z_.mean()        
         
-        ps = fourierHNA.PsfFromPupil(self.image.data[:,:,0]*np.exp(1j*self.image.data[:,:,1]), z_, self.image.mdh['voxelsize.x']*1e3, self.wavelength)#, shape = [self.sizeX, self.sizeX])
+        ps = fourierHNA.PsfFromPupil(self.image.data[:,:], z_, self.image.mdh['voxelsize.x']*1e3, self.wavelength)#, shape = [self.sizeX, self.sizeX])
         
         im = ImageStack(ps, titleStub = 'Generated PSF')
         im.mdh.copyEntriesFrom(self.image.mdh)

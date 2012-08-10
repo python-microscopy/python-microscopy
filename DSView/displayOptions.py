@@ -71,6 +71,13 @@ class DisplayOpts(object):
 
         self._zp=0
         
+        self.maximumProjection=False
+        self.colourMax = False
+        self.cmax_offset = 0.0
+        self.cmax_scale = 1.0
+        
+        self._complexMode = 'coloured'
+        
         self.inOnChange = False
         self.syncedWith = []
 
@@ -89,10 +96,7 @@ class DisplayOpts(object):
 
         self.showSelection=False
         
-        self.maximumProjection=False
-        self.colourMax = False
-        self.cmax_offset = 0.0
-        self.cmax_scale = 1.0
+        
         
         
         self.overlays = []
@@ -126,6 +130,16 @@ class DisplayOpts(object):
     @yp.setter
     def yp(self, value):
         self._yp = value
+        #print 'z changed'
+        self.OnChange()
+        
+    @property
+    def complexMode(self):
+        return self._complexMode
+
+    @complexMode.setter
+    def complexMode(self, value):
+        self._complexMode = value
         #print 'z changed'
         self.OnChange()
 
@@ -179,6 +193,10 @@ class DisplayOpts(object):
                 self.Gains = [1]
                 self.Offs = [0]
                 self.cmaps = [cm.gray]
+                if np.iscomplexobj(self.ds[0,0]):
+                    self.cmaps = [cm.jet]
+                    self.cmax_offset = -np.pi
+                    self.cmax_scale = 1./(2*np.pi)
                 self.show = [True]
             else:
                 self.Chans = []

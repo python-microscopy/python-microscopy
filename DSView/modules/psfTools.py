@@ -251,7 +251,10 @@ class PSFTools(HasTraits):
         pylab.subplot(122)
         pylab.imshow(np.angle(pupil)*(np.abs(pupil) > 0), interpolation='nearest')
         
-        im = ImageStack([np.abs(pupil), np.angle(pupil)*(np.abs(pupil) > 0)], titleStub = 'Extracted Pupil')
+        pupil = pupil*(np.abs(pupil) > 0)
+        
+        #im = ImageStack([np.abs(pupil), np.angle(pupil)*(np.abs(pupil) > 0)], titleStub = 'Extracted Pupil')
+        im = ImageStack(pupil, titleStub = 'Extracted Pupil')
         im.mdh.copyEntriesFrom(self.image.mdh)
         im.mdh['Parent'] = self.image.filename
         #im.mdh['Processing.CropROI'] = roi

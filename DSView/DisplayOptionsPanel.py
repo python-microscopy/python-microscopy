@@ -25,6 +25,7 @@ import wx
 import wx.lib.agw.aui as aui
 import pylab
 from PYME.misc import extraCMaps
+import numpy as np
 #from matplotlib import cm
 from PYME.Analysis.LMVis import histLimits
 from displayOptions import DisplayOpts, fast_grey, labeled
@@ -69,7 +70,17 @@ class OptionsPanel(wx.Panel):
 
             id = wx.NewId()
             self.hIds.append(id)
-            c = self.do.ds[:,:,self.do.zp, self.do.Chans[i]].ravel()
+            c = self.do.ds[:,:,self.do.zp, self.do.Chans[i]].real.ravel()
+            if np.iscomplexobj(c):
+                if self.do.complexMode == 'real':
+                    c = c.real
+                elif self.do.complexMode == 'imag':
+                    c = c.imag
+                elif self.do.complexMode == 'angle':
+                    c = np.angle(c)
+                else:
+                    c = np.abs(c)
+                    
             hClim = histLimits.HistLimitPanel(self, id, c[::max(1, len(c)/1e4)], self.do.Offs[i], self.do.Offs[i] + 1./self.do.Gains[i], size=dispSize, log=True)
 
             hClim.Bind(histLimits.EVT_LIMIT_CHANGE, self.OnCLimChanged)
@@ -137,14 +148,24 @@ class OptionsPanel(wx.Panel):
 
         self.bOptimise.Bind(wx.EVT_BUTTON, self.OnOptimise)
         
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(self, -1, 'Projection:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
-        self.czProject = wx.Choice(self, -1, choices=['None', 'Standard', 'Colour Coded'])
-        self.czProject.SetSelection(0)
-        self.czProject.Bind(wx.EVT_CHOICE, self.OnZProjChanged)
-        hsizer.Add(self.czProject, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
-        vsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
-        
+        if self.do.ds.shape[2] > 1:        
+            hsizer = wx.BoxSizer(wx.HORIZONTAL)
+            hsizer.Add(wx.StaticText(self, -1, 'Projection:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+            self.czProject = wx.Choice(self, -1, choices=['None', 'Standard', 'Colour Coded'])
+            self.czProject.SetSelection(0)
+            self.czProject.Bind(wx.EVT_CHOICE, self.OnZProjChanged)
+            hsizer.Add(self.czProject, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+            vsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
+            
+        if np.iscomplexobj(self.do.ds[0,0]):        
+            hsizer = wx.BoxSizer(wx.HORIZONTAL)
+            #hsizer.Add(wx.StaticText(self, -1, 'Projection:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+            self.cComplex = wx.Choice(self, -1, choices=['colored', 'real', 'imag', 'angle', 'abs'])
+            self.cComplex.SetSelection(0)
+            self.cComplex.Bind(wx.EVT_CHOICE, self.OnComplexChanged)
+            hsizer.Add(self.cComplex, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+            vsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
+            
 
         if thresholdControls:
             ssizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Segmentation'), wx.VERTICAL)
@@ -211,6 +232,14 @@ class OptionsPanel(wx.Panel):
         else:
             self.do.SetCMap(ind, pylab.cm.__getattribute__(cmn))
             
+    def OnComplexChanged(self, event):
+        #print event.GetId()
+        #ind = self.cIds.index(event.GetId())
+
+        cmn = event.GetString()
+        self.do.complexMode = cmn
+        self.RefreshHists()
+            
     def OnShowChanged(self, event):
         #print event.GetId()
         ind = self.shIds.index(event.GetId())
@@ -245,6 +274,15 @@ class OptionsPanel(wx.Panel):
     def RefreshHists(self):
         for i in range(len(self.do.Chans)):
             c = self.do.ds[:,:,self.do.zp, self.do.Chans[i]].ravel()
+            if np.iscomplexobj(c):
+                if self.do.complexMode == 'real':
+                    c = c.real
+                elif self.do.complexMode == 'imag':
+                    c = c.imag
+                elif self.do.complexMode == 'angle':
+                    c = np.angle(c)
+                else:
+                    c = np.abs(c)
             self.hcs[i].SetData(c[::max(1, len(c)/1e4)], self.do.Offs[i], self.do.Offs[i] + 1./self.do.Gains[i])
 
     def CreateToolBar(self, wind):
