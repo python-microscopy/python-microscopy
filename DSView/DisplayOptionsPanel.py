@@ -157,7 +157,7 @@ class OptionsPanel(wx.Panel):
             hsizer.Add(self.czProject, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
             vsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
             
-        if np.iscomplexobj(self.do.ds[0,0]):        
+        if np.iscomplexobj(self.do.ds[0,0,0,0]):        
             hsizer = wx.BoxSizer(wx.HORIZONTAL)
             #hsizer.Add(wx.StaticText(self, -1, 'Projection:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
             self.cComplex = wx.Choice(self, -1, choices=['colored', 'real', 'imag', 'angle', 'abs'])

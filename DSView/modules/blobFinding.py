@@ -33,18 +33,23 @@ class blobFinder:
         self.dsviewer = dsviewer
 
         self.image = dsviewer.image
+        self.do = dsviewer.do
 
         self.vObjPos = None
         self.vObjFit = None
+        self.nObjFit = 0
 
         F_SAVE_POSITIONS = wx.NewId()
         F_SAVE_FITS = wx.NewId()
+        F_SAVE_SHIFTMAPS = wx.NewId()
 
         dsviewer.save_menu.Append(F_SAVE_POSITIONS, "Save &Positions", "", wx.ITEM_NORMAL)
         dsviewer.save_menu.Append(F_SAVE_FITS, "Save &Fit Results", "", wx.ITEM_NORMAL)
+        dsviewer.save_menu.Append(F_SAVE_SHIFTMAPS, "Save shift maps", "", wx.ITEM_NORMAL)
 
         wx.EVT_MENU(dsviewer, F_SAVE_POSITIONS, self.savePositions)
         wx.EVT_MENU(dsviewer, F_SAVE_FITS, self.saveFits)
+        wx.EVT_MENU(dsviewer, F_SAVE_SHIFTMAPS, self.saveShiftmaps)
 
         dsviewer.paneHooks.append(self.GenBlobFindingPanel)
         dsviewer.paneHooks.append(self.GenBlobFitPanel)
@@ -77,11 +82,25 @@ class blobFinder:
         self.chMethod.Bind(wx.EVT_CHOICE, self.OnChangeMethod)
 
         hsizer.Add(self.chMethod, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        
 
         pan.SetSizer(hsizer)
         hsizer.Fit(pan)
 
         #_pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
+        item.AddNewElement(pan)
+        
+        pan = wx.Panel(item, -1)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(pan, -1, 'Channel:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+    
+        self.chChannel = wx.Choice(pan, -1, choices=self.do.names)
+            
+        hsizer.Add(self.chChannel, 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+    
+        pan.SetSizer(hsizer)
+        hsizer.Fit(pan) 
+        
         item.AddNewElement(pan)
         
         pan = wx.Panel(item, -1)
@@ -137,12 +156,14 @@ class blobFinder:
 
     def OnFindObjects(self, event):
         threshold = float(self.tThreshold.GetValue())
+        chnum = self.chChannel.GetSelection()
 
         from PYME.Analysis.ofind3d import ObjectIdentifier
 
-        if not 'ofd' in dir(self):
+        if not 'ofd' in dir(self) or not self.ofd.chnum == chnum:
             #create an object identifier
-            self.ofd = ObjectIdentifier(self.image.data[:,:,:])
+            self.ofd = ObjectIdentifier(self.image.data[:,:,:, chnum])
+            self.ofd.chnum = chnum
 
         #and identify objects ...
         if self.chMethod.GetSelection() == 1: #don't detect objects in poisson noise
@@ -177,29 +198,118 @@ class blobFinder:
         bFitObjects.Bind(wx.EVT_BUTTON, self.OnFitObjects)
         #_pnl.AddFoldPanelWindow(item, bFitObjects, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
         item.AddNewElement(bFitObjects)
+        
+        bCalcShiftMap = wx.Button(item, -1, 'Shiftmap')
+        bCalcShiftMap.Bind(wx.EVT_BUTTON, self.OnCalcShiftmap)
+        #_pnl.AddFoldPanelWindow(item, bFitObjects, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+        item.AddNewElement(bCalcShiftMap)
         _pnl.AddPane(item)
 
     def OnFitObjects(self, event):
         import PYME.Analysis.FitFactories.Gauss3DFitR as fitMod
-
-        fitFac = fitMod.FitFactory(self.image.data, self.image.mdh)
-
-        self.objFitRes = numpy.empty(len(self.ofd), fitMod.FitResultsDType)
-        for i in range(len(self.ofd)):
-            p = self.ofd[i]
-            try:
-                self.objFitRes[i] = fitFac.FromPoint(round(p.x), round(p.y), round(p.z))
-            except:
-                pass
-
-
-        if self.vObjFit == None:
-            self.vObjFit = recArrayView.recArrayPanel(self.dsviewer.notebook1, self.objFitRes['fitResults'])
-            self.dsviewer.notebook1.AddPage(self.vObjFit, 'Fitted Positions')
-        else:
-            self.vObjFit.grid.SetData(self.objFitRes)
+        from PYME.Acquire import MetaDataHandler
+        chnum = self.chChannel.GetSelection()
+        
+        mdh = MetaDataHandler.NestedClassMDHandler(self.image.mdh)
+        mdh['tIndex'] = 0
+        
+        self.objFitRes = {}
+        
+        for chnum in range(self.image.data.shape[3]):
+            data = self.image.data[:,:,:,chnum]  
+            
+            if not 'Camera.ADOffset' in mdh.getEntryNames():
+                mdh['Camera.ADOffset'] = data.min()
+    
+            fitFac = fitMod.FitFactory(data, mdh)
+    
+            self.objFitRes[chnum] = numpy.empty(len(self.ofd), fitMod.FitResultsDType)
+            for i in range(len(self.ofd)):
+                p = self.ofd[i]
+                #try:
+                self.objFitRes[chnum][i] = fitFac.FromPoint(round(p.x), round(p.y), round(p.z), 8)
+                #except:
+                #    pass
+    
+    
+            #if self.nObjFit == None:
+                
+                
+            vObjFit = recArrayView.recArrayPanel(self.dsviewer, self.objFitRes[chnum]['fitResults'])
+            self.dsviewer.AddPage(vObjFit, caption = 'Fitted Positions %d - %d' % (chnum, self.nObjFit))
+        self.nObjFit += 1
+        #else:
+        #    self.vObjFit.grid.SetData(self.objFitRes['fitResults'])
 
         self.dsviewer.update()
+        
+    def OnCalcShiftmap(self, event):
+        from PYME.Analysis import twoColour, twoColourPlot
+        import pylab
+        masterChan = self.chChannel.GetSelection()
+        
+        master = self.objFitRes[masterChan]
+        x0 = master['fitResults']['x0']
+        y0 = master['fitResults']['y0']
+        err_x0 = master['fitError']['x0']
+        err_y0 = master['fitError']['y0']
+        z0 = master['fitResults']['z0']
+        
+        self.shiftfields ={}
+
+        pylab.figure() 
+        
+        nchans = self.image.data.shape[3]
+        ch_i = 1
+        
+        for ch in range(nchans):
+            if not ch == masterChan:
+                res = self.objFitRes[ch]
+                
+                x = res['fitResults']['x0']
+                y = res['fitResults']['y0']
+                z = res['fitResults']['z0']
+                err_x = numpy.sqrt(res['fitError']['x0']**2 + err_x0**2)
+                err_y = numpy.sqrt(res['fitError']['y0']**2 + err_y0**2)
+                
+                dx = x - x0
+                dy = y - y0
+                dz = z - z0
+                
+                print 'dz:', numpy.median(dz)
+                
+                
+                spx, spy = twoColour.genShiftVectorFieldLinear(x, y, dx, dy, err_x, err_y)
+                self.shiftfields[ch] = (spx, spy)
+                #twoColourPlot.PlotShiftField2(spx, spy, self.image.data.shape[:2])
+                
+                pylab.subplot(1,nchans -1, ch_i)
+                ch_i += 1
+                twoColourPlot.PlotShiftResidualsS(x, y, dx, dy, spx, spy)
+                
+        pylab.figure()
+        X, Y = numpy.meshgrid(numpy.linspace(0., 70.*self.image.data.shape[0], 20), numpy.linspace(0., 70.*self.image.data.shape[1], 20))
+        X = X.ravel()
+        Y = Y.ravel()
+        for k in self.shiftfields.keys():
+            spx, spy = self.shiftfields[k]
+            pylab.quiver(X, Y, spx.ev(X, Y), spy.ev(X, Y), color=['r', 'g', 'b'][k], scale=2e3)
+            
+        pylab.axis('equal')
+        
+    def saveShiftmaps(self, event=None):
+        import cPickle
+        for k in self.shiftfields.keys():
+            fdialog = wx.FileDialog(None, 'Save Positions ...',
+                wildcard='Shiftmap|*.sm', defaultFile=os.path.splitext(self.image.names[k])[0] + '.sm', style=wx.SAVE|wx.HIDE_READONLY)
+            succ = fdialog.ShowModal()
+            if (succ == wx.ID_OK):
+                outFilename = fdialog.GetPath().encode()
+                
+                fid = open(outFilename, 'wb')
+                cPickle.dump(self.shiftfields[k], fid, 2)
+                fid.close()
+                
 
     def savePositions(self, event=None):
         fdialog = wx.FileDialog(None, 'Save Positions ...',

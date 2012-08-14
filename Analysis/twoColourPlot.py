@@ -42,33 +42,58 @@ def PlotShiftField(dx, dy, spx, spy):
     quiver(xin, yin, spx.ev(xin, yin), spy.ev(xin, yin), scale=1e4)
     axis('image')
 
+def PlotShiftResiduals(x, y, dx, dy, spx, spy):
+    figure()
+    dx1 = spx.ev(x,y)
+    dy1 = spy.ev(x,y)
+    
+    print dx1.shape, dx.shape
+    
+    dist = sqrt((dx1 - dx)**2 + (dy1 - dy)**2)
+    quiver(x, y, dx1 - dx, dy1 - dy, dist, scale=2e2, clim=(0, dist.mean()*2))
+    colorbar()
+    axis('image')
+    title('Residuals')
 
-def PlotShiftField2(spx, spy):
-    xi, yi = meshgrid(arange(0, 512*70, 100), arange(0, 256*70, 100));xin = xi.ravel();yin = yi.ravel()
+def PlotShiftResidualsS(x, y, dx, dy, spx, spy):
+    #figure()
+    dx1 = spx.ev(x,y)
+    dy1 = spy.ev(x,y)
+    
+    print dx1.shape, dx.shape
+    
+    dist = sqrt((dx1 - dx)**2 + (dy1 - dy)**2)
+    quiver(x, y, dx1 - dx, dy1 - dy, dist, scale=2e2, clim=(0, dist.mean()*2))
+    colorbar()
+    axis('image')
+    title('Residuals')
+
+def PlotShiftField2(spx, spy, shape=[512, 256]):
+    xi, yi = meshgrid(arange(0, shape[0]*70, 100), arange(0, shape[1]*70, 100));xin = xi.ravel();yin = yi.ravel()
     dx = spx.ev(xin[:], yin[:]).reshape(xi.shape)
     dy = spy.ev(xin[:], yin[:]).reshape(xi.shape)
     figure()
-    subplot(311)
+    subplot(131)
     #axes([.05, .7, .4, .25])
-    imshow(dx[::-1, :], extent=[0,512, 0, 256], clim=[-70, 20])
+    imshow(dx[::-1, :], extent=[0,shape[0], 0, shape[1]])
     axis('image')
     colorbar()
     #axes([.55, .7, .4, .25])
-    subplot(312)
-    im = imshow(dy[::-1, :], extent=[0,512, 0, 256], clim=[-70, 20])
+    subplot(132)
+    im = imshow(dy[::-1, :], extent=[0,shape[0], 0, shape[1]])
     axis('image')
     colorbar()
 
     #axes([.05, .05, .9, .6])
-    xi, yi = meshgrid(arange(0, 512*70, 2200), arange(0, 256*70, 2200));xin = xi.ravel();yin = yi.ravel()
+    xi, yi = meshgrid(arange(0, shape[0]*70, 2200), arange(0, shape[1]*70, 2200));xin = xi.ravel();yin = yi.ravel()
     dx = spx.ev(xin[:], yin[:]).reshape(xi.shape)
     dy = spy.ev(xin[:], yin[:]).reshape(xi.shape)
-    subplot(313)
+    subplot(133)
     
-    quiver(xin/70, yin/70, spx.ev(xin, yin), spy.ev(xin, yin), scale=1e3)
+    quiver(xin/70, yin/70, spx.ev(xin, yin), spy.ev(xin, yin), scale=1e4)
     
     axis('image')
-    xlim(0, 512)
-    ylim(0, 256)
+    xlim(0, shape[0])
+    ylim(0, shape[1])
 
-    colorbar(im)
+    #colorbar(im)

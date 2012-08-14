@@ -193,10 +193,13 @@ class DisplayOpts(object):
                 self.Gains = [1]
                 self.Offs = [0]
                 self.cmaps = [cm.gray]
-                if np.iscomplexobj(self.ds[0,0]):
-                    self.cmaps = [cm.jet]
-                    self.cmax_offset = -np.pi
-                    self.cmax_scale = 1./(2*np.pi)
+                try:
+                    if np.iscomplexobj(self.ds[0,0]):
+                        self.cmaps = [cm.jet]
+                        self.cmax_offset = -np.pi
+                        self.cmax_scale = 1./(2*np.pi)
+                except IndexError:
+                    pass
                 self.show = [True]
             else:
                 self.Chans = []
