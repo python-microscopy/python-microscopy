@@ -21,6 +21,7 @@
 ##################
 import numpy
 from BaseDataSource import BaseDataSource
+import threading
 
 class DataSource(BaseDataSource): #buffer our io to avoid decompressing multiple times
     moduleName = 'BufferedDataSource'
@@ -32,32 +33,36 @@ class DataSource(BaseDataSource): #buffer our io to avoid decompressing multiple
         self.bufferedSlices = -1*numpy.ones((bLen,), 'i')
         self.dataSource = dataSource
 
+        self.lock = threading.Lock()
+
     def getSlice(self,ind):
         #global bufferMisses
         #print self.bufferedSlices, self.insertAt, ind
         #return self.dataSource.getSlice(ind)
-        if ind in self.bufferedSlices: #return from buffer
-            #print int(numpy.where(self.bufferedSlices == ind)[0])
-            return self.buffer[int(numpy.where(self.bufferedSlices == ind)[0]),:,:]
-        else: #get from our data source and store in buffer
-            sl = self.dataSource.getSlice(ind)
-            self.bufferedSlices[self.insertAt] = ind
-            #print sl.shape
-            #print self.insertAt
-            #print self.buffer
+        with self.lock:
+            if ind in self.bufferedSlices: #return from buffer
+                #print int(numpy.where(self.bufferedSlices == ind)[0])
+                ret = self.buffer[int(numpy.where(self.bufferedSlices == ind)[0]), :, :]
+            else: #get from our data source and store in buffer
+                sl = self.dataSource.getSlice(ind)
+                self.bufferedSlices[self.insertAt] = ind
+                #print sl.shape
+                #print self.insertAt
+                #print self.buffer
 
-            if self.buffer == None: #buffer doesn't exist yet
-                self.buffer = numpy.zeros((self.bLen,) + self.dataSource.getSliceShape(), sl.dtype)
-                
-            #print self.buffer.shape
+                if self.buffer == None: #buffer doesn't exist yet
+                    self.buffer = numpy.zeros((self.bLen, ) + self.dataSource.getSliceShape(), sl.dtype)
 
-            self.buffer[self.insertAt, :,:] = sl
-            self.insertAt += 1
-            self.insertAt %=self.bLen
+                #print self.buffer.shape
 
-            #bufferMisses += 1
+                self.buffer[self.insertAt,:, :] = sl
+                self.insertAt += 1
+                self.insertAt %= self.bLen
 
-            return sl
+                #bufferMisses += 1
+
+                ret = sl
+            return ret
 
     def getSliceShape(self):
         #return (self.im.size[1], self.im.size[0])
