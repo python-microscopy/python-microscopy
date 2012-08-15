@@ -174,6 +174,49 @@ class ShiftPanel(wx.Panel):
             
         self.OnApply(None)
         #View3D(corr)
+        
+class ShiftmapSelectionDialog(wx.Dialog):
+    def __init__(self, parent, image):
+        wx.Dialog.__init__(self, parent, title='Deconvolution')
+        nChans = image.data.shape[3]
+
+        sizer1 = wx.BoxSizer(wx.VERTICAL)
+        
+        sizer2 = wx.GridSizer(nChans, 2, 5, 5)
+        
+        sizer2.Add(wx.StaticText(self, -1, 'Channel:'))
+        sizer2.Add(wx.StaticText(self, -1, 'Shiftmap:'))
+        
+        self.filectrls = {}
+        
+        for chan in range(nChans):
+            sizer2.Add(wx.StaticText(self, -1, image.names[chan]), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+            fp = wx.FilePickerCtrl(self, -1, wildcard='*.sm', style=wx.FLP_OPEN|wx.FLP_FILE_MUST_EXIST|wx.FLP_USE_TEXTCTRL)
+            sizer2.Add(fp, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+            self.filectrls[chan] = fp
+            
+        sizer1.Add(sizer2, 1, wx.ALL|wx.EXPAND, 5)
+            
+        btSizer = wx.StdDialogButtonSizer()
+
+        self.bOK = wx.Button(self, wx.ID_OK)
+        self.bOK.SetDefault()
+
+        btSizer.AddButton(self.bOK)
+
+        btn = wx.Button(self, wx.ID_CANCEL)
+
+        btSizer.AddButton(btn)
+
+        btSizer.Realize()
+
+        sizer1.Add(btSizer, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+
+        self.SetSizer(sizer1)
+        sizer1.Fit(self)
+        
+    def GetChanFilename(self, chan):
+        return self.filectrls[chan].GetPath()
 
 class compositor:
     def __init__(self, dsviewer):
@@ -191,6 +234,9 @@ class compositor:
         SPLIT_CHANNELS = wx.NewId()
         dsviewer.mProcessing.Append(SPLIT_CHANNELS, "Split Channels", "", wx.ITEM_NORMAL)
         
+        VECT_SHIFT = wx.NewId()
+        dsviewer.mProcessing.Append(VECT_SHIFT, "Apply vector shifts", "", wx.ITEM_NORMAL)
+        
         ALIGN_CHANNELS = wx.NewId()
         dsviewer.mProcessing.Append(ALIGN_CHANNELS, "Align Channels", "", wx.ITEM_NORMAL)
 
@@ -199,6 +245,7 @@ class compositor:
         dsviewer.Bind(wx.EVT_MENU, self.OnMakeComposites, id=MAKE_COMPOSITE)
         dsviewer.Bind(wx.EVT_MENU, self.OnSplitChannels, id=SPLIT_CHANNELS)
         dsviewer.Bind(wx.EVT_MENU, self.OnAlignChannels, id=ALIGN_CHANNELS)
+        dsviewer.Bind(wx.EVT_MENU, self.OnApplyShiftmap, id=VECT_SHIFT)
 
 
 
@@ -338,6 +385,70 @@ class compositor:
             mdh.setEntry('ChannelNames', [names[i]])
 
             View3D(self.image.data[:,:,:,i], '%s - %s' % (self.image.filename, names[i]), mdh=mdh, parent=wx.GetTopLevelParent(self.dsviewer))
+            
+    def OnApplyShiftmap(self, event):
+        '''apply a vectorial correction for chromatic shift to an image - this 
+        is a generic vectorial shift compensation, rather than the secial case 
+        correction used with the splitter.'''
+        from scipy import ndimage
+        import numpy as np
+        from PYME.DSView import ImageStack, ViewIm3D
+        
+        dlg = ShiftmapSelectionDialog(self.dsviewer, self.image)
+        succ = dlg.ShowModal()
+        if (succ == wx.ID_OK):
+            #self.ds = example.CDataStack(fdialog.GetPath().encode())
+            #self.ds =
+            ds = []
+            shiftFiles = {}
+            X, Y, Z = np.mgrid[0:self.image.data.shape[0], 0:self.image.data.shape[1], 0:self.image.data.shape[2]]
+            vx = self.image.mdh['voxelsize.x']*1e3
+            vy = self.image.mdh['voxelsize.y']*1e3
+            vz = self.image.mdh['voxelsize.z']*1e3
+            
+            x0 = 1
+            y0 = 1
+            if 'Camera.ROIPosX' in self.image.mdh.getEntryNames():
+                x0  = self.image.mdh['Camera.ROIPosX']
+                y0  = self.image.mdh['Camera.ROIPosY']
+            
+            for ch in range(self.image.data.shape[3]):
+                sfFilename = dlg.GetChanFilename(ch)
+                shiftFiles[ch] = sfFilename
+                
+                data = self.image.data[:,:,:, ch]
+                
+                if os.path.exists(sfFilename):
+                    spx, spy = np.load(sfFilename)
+                    
+                    dx = spx.ev(vx*(X+x0 - 1), vy*(Y+y0 - 1))/vx
+                    dy = spy.ev(vx*(X+x0 - 1), vy*(Y+y0 - 1))/vy
+                    
+                    ds.append(ndimage.map_coordinates(data, [X+dx, Y+dy, Z], mode='nearest'))
+                else:
+                    ds.append(data)
+                
+            
+            fns = os.path.split(self.image.filename)[1]
+            im = ImageStack(ds, titleStub = '%s - corrected' % fns)
+            im.mdh.copyEntriesFrom(self.image.mdh)
+            im.mdh['Parent'] = self.image.filename
+            im.mdh.setEntry('ChromaCorrection.ShiftFilenames', shiftFiles)
+            
+            if 'fitResults' in dir(self.image):
+                im.fitResults = self.image.fitResults
+            #im.mdh['Processing.GaussianFilter'] = sigmas
+    
+            if self.dsviewer.mode == 'visGUI':
+                mode = 'visGUI'
+            else:
+                mode = 'lite'
+    
+            dv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
+            
+        dlg.destroy()
+            
+            
             
     def OnAlignChannels(self, event):
         #try:

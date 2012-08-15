@@ -23,8 +23,8 @@
 
 import scipy
 import numpy
-from scipy.signal import interpolate
-import scipy.ndimage as ndimage
+#from scipy.signal import interpolate
+#import scipy.ndimage as ndimage
 from pylab import *
 from PYME.PSFGen.ps_app import *
 
@@ -120,7 +120,7 @@ class Gauss3dFitFactory:
         xslice, yslice, zslice = key
 
         #cut region out of data stack
-        dataROI = self.data[xslice, yslice, zslice]
+        dataROI = self.data[xslice, yslice, zslice].astype('f')
 
         #generate grid to evaluate function on
         X, Y, Z = mgrid[xslice, yslice, zslice]
@@ -129,17 +129,28 @@ class Gauss3dFitFactory:
         Y = 1e3*self.metadata.voxelsize.y*Y
         Z = 1e3*self.metadata.voxelsize.z*Z
         
-
-        #imshow(dataROI[:,:,0])
+        #figure()
+        #imshow(dataROI.max(2))
         #estimate some start parameters...
         A = dataROI.max() - dataROI.min() #amplitude
-        x0 =  X.mean()
-        y0 =  Y.mean()
-        z0 =  Z.mean()
+        
+        drc = dataROI - dataROI.min()
+        drc = np.maximum(drc - drc.max()/2, 0)
+        drc = drc / drc.sum()        
+        
+        #x0 =  X.mean()
+        #y0 =  Y.mean()
+        #z0 =  Z.mean()
+        
+        x0 = (X*drc).sum()
+        y0 = (Y*drc).sum()
+        z0 = (Z*drc).sum()
 
         #try fitting with start value above and below current position,
         #at the end take the one with loeset missfit
         startParameters = [3*A, x0, y0, z0, 100, 250, dataROI.min()]
+        
+        #print startParameters
         
 
         #print startParameters        
@@ -161,7 +172,7 @@ class Gauss3dFitFactory:
         misfit = (infodict['fvec']**2).sum()
 
         
-        
+        #print res1, misfit
         
         #print res
         #print scipy.sqrt(diag(cov_x))
@@ -169,11 +180,13 @@ class Gauss3dFitFactory:
 
         fitErrors=None
         try:
-            fitErrors = scipy.sqrt(scipy.diag(cov_x)*(infodict['fvec']*infodict['fvec']).sum()/(len(dataMean.ravel())- len(res)))
+            fitErrors = scipy.sqrt(scipy.diag(cov_x)*(infodict['fvec']*infodict['fvec']).sum()/(dataROI.size- len(res1)))
         except Exception, e:
             pass
-        
-        return Gauss3dFitResultR(res1, self.metadata, (xslice, yslice, zslice), resCode, fitErrors)
+        #print 'foo'
+        fr = Gauss3dFitResultR(res1, self.metadata, (xslice, yslice, zslice), resCode, fitErrors)
+        #print 'fr:', fr
+        return fr
         
 
     def FromPoint(self, x, y, z=None, roiHalfSize=8, axialHalfSize=5):
