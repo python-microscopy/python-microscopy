@@ -89,6 +89,56 @@ class Unmixer:
 
         dv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
 
+    def OnUnmixMax(self, event):
+        #unmix and take brightest channel
+        #from PYME.Analysis import deTile
+        from PYME.DSView import ViewIm3D, ImageStack
+
+        mdh = self.image.mdh
+        if 'chroma.dx' in mdh.getEntryNames():
+            sf = (mdh['chroma.dx'], mdh['chroma.dy'])
+        else:
+            sf = None
+
+        flip = True
+        if 'Splitter.Flip' in mdh.getEntryNames() and not mdh['Splitter.Flip']:
+            flip = False
+
+        ROIX1 = mdh.getEntry('Camera.ROIPosX')
+        ROIY1 = mdh.getEntry('Camera.ROIPosY')
+
+        ROIX2 = ROIX1 + mdh.getEntry('Camera.ROIWidth')
+        ROIY2 = ROIY1 + mdh.getEntry('Camera.ROIHeight')
+
+        um0 = UnsplitDataSource.DataSource(self.image.data,
+                                           [ROIX1, ROIY1, ROIX2, ROIY2],
+                                           0, flip, sf)
+
+        um1 = UnsplitDataSource.DataSource(self.image.data, 
+                                           [ROIX1, ROIY1, ROIX2, ROIY2], 1
+                                           , flip, sf)
+            
+        fns = os.path.split(self.image.filename)[1]
+        zm = um0.shape[2]/2
+        if um0[:,:,zm].max() > um1[:,:,zm.max():
+            im = ImageStack(um0, titleStub = '%s - unsplit' % fns)
+        else:
+            im = ImageStack(um1, titleStub = '%s - unsplit' % fns)
+        im.mdh.copyEntriesFrom(self.image.mdh)
+        im.mdh['Parent'] = self.image.filename
+        
+        if 'fitResults' in dir(self.image):
+            im.fitResults = self.image.fitResults
+        #im.mdh['Processing.GaussianFilter'] = sigmas
+
+        if self.dsviewer.mode == 'visGUI':
+            mode = 'visGUI'
+        else:
+            mode = 'lite'
+
+        dv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
+
+
     def OnSetShiftField(self, event=None):
         from PYME.FileUtils import nameUtils
         fdialog = wx.FileDialog(None, 'Please select shift field to use ...',
