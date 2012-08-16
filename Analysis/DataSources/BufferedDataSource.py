@@ -40,9 +40,12 @@ class DataSource(BaseDataSource): #buffer our io to avoid decompressing multiple
         #print self.bufferedSlices, self.insertAt, ind
         #return self.dataSource.getSlice(ind)
         with self.lock:
+            print ind
             if ind in self.bufferedSlices: #return from buffer
                 #print int(numpy.where(self.bufferedSlices == ind)[0])
-                ret = self.buffer[int(numpy.where(self.bufferedSlices == ind)[0]), :, :]
+                #print self.bufferedSlices
+                ret = self.buffer[int(numpy.where(self.bufferedSlices == ind)[0]), :, :].copy()
+                #print 'buf'
             else: #get from our data source and store in buffer
                 sl = self.dataSource.getSlice(ind)
                 self.bufferedSlices[self.insertAt] = ind
