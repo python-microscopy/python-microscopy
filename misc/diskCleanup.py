@@ -37,9 +37,9 @@ def deleteFiles(directory):
             #print filename
 
             nFilename = nasDir + filename[lDataDir:]
-            bFilename = backupDir + filename[lDataDir:]
+            #bFilename = backupDir + filename[lDataDir:]
 
-            print nFilename, bFilename
+            #print nFilename, bFilename
 
             if os.path.exists(nFilename) and os.path.getsize(nFilename) == os.path.getsize(filename): #and os.path.exists(bFilename) and os.path.getsize(filename) == os.path.getsize(nFilename):
                 print 'Deleting %s' % filename
