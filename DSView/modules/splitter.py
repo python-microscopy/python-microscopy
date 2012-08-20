@@ -28,7 +28,8 @@ import os
 from PYME.Analysis.DataSources import UnsplitDataSource
 import numpy as np
 #from PYME.DSView.arrayViewPanel import *
-                                       
+        
+global_shiftfield = None                               
     
 class Unmixer:
     def __init__(self, dsviewer):
@@ -38,8 +39,12 @@ class Unmixer:
         
 
         EXTRAS_UNMUX = wx.NewId()
-        dsviewer.mProcessing.Append(EXTRAS_UNMUX, "&Unsplit\tCtrl-Shift-U", "", wx.ITEM_NORMAL)
+        dsviewer.mProcessing.Append(EXTRAS_UNMUX, "&Unsplit\tCtrl-U", "", wx.ITEM_NORMAL)
         wx.EVT_MENU(dsviewer, EXTRAS_UNMUX, self.OnUnmix)
+                
+        EXTRAS_UNMUX_MAX = wx.NewId()
+        dsviewer.mProcessing.Append(EXTRAS_UNMUX_MAX, "&Unsplit, taking brightest\tCtrl-Shift-U", "", wx.ITEM_NORMAL)
+        wx.EVT_MENU(dsviewer, EXTRAS_UNMUX_MAX, self.OnUnmixMax)
 
         EXTRAS_SETSF = wx.NewId()
         dsviewer.mProcessing.Append(EXTRAS_SETSF, "Set Shift Field", "", wx.ITEM_NORMAL)
@@ -52,6 +57,8 @@ class Unmixer:
         mdh = self.image.mdh
         if 'chroma.dx' in mdh.getEntryNames():
             sf = (mdh['chroma.dx'], mdh['chroma.dy'])
+        elif global_shiftfield:
+            sf = global_shiftfield
         else:
             sf = None
 
@@ -97,7 +104,11 @@ class Unmixer:
         mdh = self.image.mdh
         if 'chroma.dx' in mdh.getEntryNames():
             sf = (mdh['chroma.dx'], mdh['chroma.dy'])
+        elif global_shiftfield:
+            sf = global_shiftfield
         else:
+            #self.OnSetShiftField()
+            #sf = (mdh['chroma.dx'], mdh['chroma.dy'])
             sf = None
 
         flip = True
@@ -120,7 +131,7 @@ class Unmixer:
             
         fns = os.path.split(self.image.filename)[1]
         zm = um0.shape[2]/2
-        if um0[:,:,zm].max() > um1[:,:,zm.max():
+        if um0[:,:,zm].max() > um1[:,:,zm].max():
             im = ImageStack(um0, titleStub = '%s - unsplit' % fns)
         else:
             im = ImageStack(um1, titleStub = '%s - unsplit' % fns)

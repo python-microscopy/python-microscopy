@@ -55,17 +55,22 @@ def read_h5f_cols(h5f, slice):
     return (g,r)
     
     
-def shift_and_rot_model(p, x, y, dx, dy):
-    x0, y0, th, x1, y1, a = p
-    xp = x1 + a*np.sin(th)*(y-y0) + a*np.cos(th)*x
-    yp = y1 -a*np.sin(th)*(x-x0) + a*np.cos(th)*y
-    return ((xp - x -dx)**2 + (yp - y - dy)**2).sum()
 
-def shift_and_rot_model_eval(p, x, y, dx, dy):
-    x0, y0, th, x1, y1, a = p
-    xp = x1 + a*np.sin(th)*(y-y0) + a*np.cos(th)*x
-    yp = y1 -a*np.sin(th)*(x-x0) + a*np.cos(th)*y
-    return ((xp - x -dx)**2 + (yp - y - dy)**2).sum()
+
+def shift_and_rot_model_eval(p, x, y):
+    x0, y0, a, b, c, d = p#, e, y1 = p
+    x_0 = x - x0
+    y_0 = y - y0
+    xp = x0 + a*(x_0) + b*(y_0) #+ e*x_0*(y_0 - y1)
+    yp = y0 + c*(x_0) + d*(y_0) #+ f*x_0*y_0
+    return (xp - x), (yp - y)
+    
+def shift_and_rot_model(p, x, y, dx, dy):
+    dxm, dym = shift_and_rot_model_eval(p, x, y)
+    #x0, y0, th, x1, y1, a = p
+    #xp = x1 + a*np.sin(th)*(y-y0) + a*np.cos(th)*x
+    #yp = y1 -a*np.sin(th)*(x-x0) + a*np.cos(th)*y
+    return ((dxm -dx)**2 + (dym - dy)**2).sum()
     
     
 #robust fitting of a linear shift model (magnification difference)
@@ -80,6 +85,8 @@ def robustLinLhood(p, x, y, var=1):
     m, x0 = p
     err = (y - m*(x - x0))/var
     return -scipy.stats.t.logpdf(err, 1).sum()
+    
+
     
 class linModel(object):
     def __init__(self, x, dx, var=1, axis='x'):
@@ -100,11 +107,35 @@ class linModel(object):
         else:
             return self.m*(y - self.x0)
             
+def robustLin2Lhood(p, x, y, dx, var=1):
+    '''p is parameter vector, x and y as expected, and var the variance of the 
+    y value. We use a t-distribution as our likelihood as it's long tails will
+    not overly weight outliers.'''
+    mx, my, x0 = p
+    err = (dx - (mx*x + my*y + x0))/var
+    return -scipy.stats.t.logpdf(err, 1).sum()
+    
+class lin2Model(object):
+    def __init__(self, x, y, dx, var=1):
+        #do a simple linear fit to estimate start parameters
+        pstart = linalg.lstsq(np.vstack([x, y, np.ones_like(x)]).T, dx)[0]
+        print pstart
+        
+        #now do a maximum likelihood fit with our robust lhood function
+        self.mx, self.my, self.x0 = fmin(robustLin2Lhood, pstart, args=(x, y,dx, var))
+        
+        #self.axis = axis
+        
+    def ev(self, x, y):
+        '''Mimic a bivariate spline object. Since we're assuming it is linear 
+        along one axis, we use the axis that was defined when fitting the model'''
+        return self.mx*x +self.my*y + self.x0
+            
 def genShiftVectorFieldLinear(x,y, dx, dy, err_sx, err_sy):
     '''interpolates shift vectors using smoothing splines'''
 
-    spx = linModel(x, dx, err_sx**2)
-    spy = linModel(y, dy, err_sx**2, 'y')
+    spx = lin2Model(x, y, dx, err_sx**2)
+    spy = lin2Model(x, y, dy, err_sy**2)
 
     #X, Y = np.meshgrid(np.arange(0, 512*70, 100), np.arange(0, 256*70, 100))
 
@@ -252,7 +283,7 @@ def genShiftVectorFieldSpline(nx,ny, nsx, nsy, err_sx, err_sy):
     dx = spx.ev(X.ravel(),Y.ravel()).reshape(X.shape)
     dy = spy.ev(X.ravel(),Y.ravel()).reshape(X.shape)
 
-    return (dx.T, dy.T, spx, spy)
+    return (dx.T, dy.T, spx, spy, good)
 
 
 def genShiftVectorFieldMC(nx,ny, nsx, nsy, p, Nsamp):

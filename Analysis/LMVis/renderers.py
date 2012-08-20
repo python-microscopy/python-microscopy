@@ -183,6 +183,21 @@ class ColourRenderer(CurrentRenderer):
 
             imb = self._getImBounds()
             
+            #record the pixel origin in nm from the corner of the camera for futrue overlays            
+            if 'Source.Camera.ROIPosX' in mdh.getEntryNames():
+                #a rendered image with information about the source ROI
+                voxx, voxy = 1e3*mdh['Source.voxelsize.x'], 1e3*mdh['Source.voxelsize.y']
+                
+                ox = (mdh['Source.Camera.ROIPosX'] - 1)*voxx + imb.x0
+                oy = (mdh['Source.Camera.ROIPosY'] - 1)*voxy + imb.y0
+            else:
+                ox = imb.x0
+                oy = imb.y0                
+            
+            mdh['Origin.x'] = ox
+            mdh['Origin.y'] = oy
+            mdh['Origin.z'] = 0
+            
             colours =  dlg.getColour()
             oldC = self.pipeline.colourFilter.currentColour
 

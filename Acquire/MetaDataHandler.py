@@ -315,17 +315,16 @@ class XMLMDHandler(MDHandlerBase):
 
         cls = node.getAttribute('class')
         val = node.getAttribute('value')
-
-        if cls == 'int':
-            if val == 'True': #booleans get cls 'int'
+        
+        if val == 'True': #booleans get cls 'int'
                 val = True
-            elif val == 'False':
+        elif val == 'False':
                 val = False
-            else:
+        elif cls == 'int':
                 val = int(val)
-        if cls == 'float':
+        elif cls == 'float':
             val = float(val)
-        if cls == 'pickle':
+        elif cls == 'pickle':
             #return None
             val = cPickle.loads(base64.b64decode(val))
 

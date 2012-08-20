@@ -39,9 +39,9 @@ class ShiftmapGenerator:
         pipeline = self.visFr.pipeline        
         
         lx = len(pipeline.filter['x'])
-        dx, dy, spx, spy = twoColour.genShiftVectorFieldSpline(pipeline.filter['x']+.1*pylab.randn(lx), pipeline.filter['y']+.1*pylab.randn(lx), pipeline.filter['fitResults_dx'], pipeline.filter['fitResults_dy'], pipeline.filter['fitError_dx'], pipeline.filter['fitError_dy'])
+        dx, dy, spx, spy, good = twoColour.genShiftVectorFieldSpline(pipeline.filter['x']+.1*pylab.randn(lx), pipeline.filter['y']+.1*pylab.randn(lx), pipeline.filter['fitResults_dx'], pipeline.filter['fitResults_dy'], pipeline.filter['fitError_dx'], pipeline.filter['fitError_dy'])
         twoColourPlot.PlotShiftField(dx, dy, spx, spy)
-        twoColourPlot.PlotShiftResiduals(pipeline['x'], pipeline['y'], pipeline['fitResults_dx'], pipeline['fitResults_dy'], spx, spy)
+        twoColourPlot.PlotShiftResiduals(pipeline['x'][good], pipeline['y'][good], pipeline['fitResults_dx'][good], pipeline['fitResults_dy'][good], spx, spy)
 
         import cPickle
 

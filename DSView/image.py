@@ -89,6 +89,13 @@ class ImageStack(object):
         self.data = dataWrap.Wrap(data)
     
     @property
+    def voxelsize(self):
+        try:
+            return 1e3*self.mdh['voxelsize.x'], 1e3*self.mdh['voxelsize.y'],  1e3*self.mdh['voxelsize.z']
+        except:
+            return 1,1,1    
+    
+    @property
     def pixelSize(self):
         try:
             return 1e3*self.mdh['voxelsize.x']
@@ -138,6 +145,40 @@ class ImageStack(object):
         self.mdh['ImageBounds.y1'] = value.y1
         self.mdh['ImageBounds.z0'] = value.z0
         self.mdh['ImageBounds.z1'] = value.z1
+        
+    @property
+    def origin(self):
+        #the origin, in nm from the camera - used for overlaying with different ROIs
+        
+            
+        if 'Origin.x' in self.mdh.getEntryNames():
+            return self.mdh['Origin.x'], self.mdh['Origin.y'], self.mdh['Origin.z']
+        
+        elif 'Camera.ROIPosX' in self.mdh.getEntryNames():
+            #has ROI information
+            try:
+                voxx, voxy = 1e3*self.mdh['voxelsize.x'], 1e3*self.mdh['voxelsize.y']
+            except AttributeError:
+                voxx = self.pixelSize
+                voxy = voxx
+            
+            ox = (self.mdh['Camera.ROIPosX'] - 1)*voxx
+            oy = (self.mdh['Camera.ROIPosY'] - 1)*voxy
+            
+            return ox, oy, 0
+            
+        elif 'Source.Camera.ROIPosX' in self.mdh.getEntryNames():
+            #a rendered image with information about the source ROI
+            voxx, voxy = 1e3*self.mdh['Source.voxelsize.x'], 1e3*self.mdh['Source.voxelsize.y']
+            
+            ox = (self.mdh['Source.Camera.ROIPosX'] - 1)*voxx
+            oy = (self.mdh['Source.Camera.ROIPosY'] - 1)*voxy
+            
+            return ox, oy, 0
+            
+        else:
+            return 0,0
+            
 
 
     def LoadQueue(self, filename):
@@ -246,15 +287,15 @@ class ImageStack(object):
         xmlfn = os.path.splitext(filename)[0] + '.xml'
         xmlfnmc = os.path.splitext(filename)[0].split('__')[0] + '.xml'
         if os.path.exists(xmlfn):
-            self.mdh = MetaData.TIRFDefault
+            self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.TIRFDefault)
             self.mdh.copyEntriesFrom(MetaDataHandler.XMLMDHandler(xmlfn))
             mdf = xmlfn
         elif os.path.exists(xmlfnmc): #this is a single colour channel of a pair
-            self.mdh = MetaData.TIRFDefault
+            self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.TIRFDefault)
             self.mdh.copyEntriesFrom(MetaDataHandler.XMLMDHandler(xmlfnmc))
             mdf = xmlfnmc
         else:
-            self.mdh = MetaData.BareBones
+            self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.BareBones)
             
             #check for simple metadata (python code with an .md extension which 
             #fills a dictionary called md)

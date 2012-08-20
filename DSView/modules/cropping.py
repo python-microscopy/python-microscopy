@@ -60,6 +60,13 @@ class cropper:
         im.mdh['Parent'] = self.image.filename
         im.mdh['Processing.CropROI'] = roi
 
+        vx, vy, vz = self.image.voxelsize
+        ox, oy, oz = self.image.origin
+        
+        im['Origin.x'] = ox + roi[0][0]
+        im['Origin.y'] = oy + roi[1][0]
+        im['Origin.z'] = oz
+
         if self.dsviewer.mode == 'visGUI':
             mode = 'visGUI'
         else:
