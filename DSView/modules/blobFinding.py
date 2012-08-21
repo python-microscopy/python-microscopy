@@ -280,7 +280,7 @@ class blobFinder:
                 
                 
                 spx, spy = twoColour.genShiftVectorFieldLinear(x, y, dx, dy, err_x, err_y)
-                self.shiftfields[ch] = (spx, spy)
+                self.shiftfields[ch] = (spx, spy, numpy.median(dz))
                 #twoColourPlot.PlotShiftField2(spx, spy, self.image.data.shape[:2])
                 
                 pylab.subplot(1,nchans -1, ch_i)
@@ -292,7 +292,7 @@ class blobFinder:
         X = X.ravel()
         Y = Y.ravel()
         for k in self.shiftfields.keys():
-            spx, spy = self.shiftfields[k]
+            spx, spy, dz = self.shiftfields[k]
             pylab.quiver(X, Y, spx.ev(X, Y), spy.ev(X, Y), color=['r', 'g', 'b'][k], scale=2e3)
             
         pylab.axis('equal')

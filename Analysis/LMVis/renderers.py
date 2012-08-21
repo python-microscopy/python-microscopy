@@ -190,13 +190,15 @@ class ColourRenderer(CurrentRenderer):
                 
                 ox = (mdh['Source.Camera.ROIPosX'] - 1)*voxx + imb.x0
                 oy = (mdh['Source.Camera.ROIPosY'] - 1)*voxy + imb.y0
+                oz = mdh['Source.Positioning.PIFoc']*1e3
             else:
                 ox = imb.x0
-                oy = imb.y0                
+                oy = imb.y0 
+                oz = 0
             
             mdh['Origin.x'] = ox
             mdh['Origin.y'] = oy
-            mdh['Origin.z'] = 0
+            mdh['Origin.z'] = oz
             
             colours =  dlg.getColour()
             oldC = self.pipeline.colourFilter.currentColour
@@ -240,6 +242,7 @@ class Histogram3DRenderer(HistogramRenderer):
     mode = '3Dhistogram'
 
     def genIm(self, dlg, imb, mdh):
+        mdh['Origin.z'] = dlg.getZBounds()[0]
         return visHelpers.rendHist3D(self.pipeline.colourFilter['x'],self.pipeline.colourFilter['y'], self.pipeline.colourFilter['z'], imb, dlg.getPixelSize(), dlg.getZBounds(), dlg.getZSliceThickness())
     
 
@@ -284,6 +287,7 @@ class Gaussian3DRenderer(GaussianRenderer):
         mdh['Rendering.JitterScale'] = jitScale
         mdh['Rendering.JitterVariableZ'] = jitParamNameZ
         mdh['Rendering.JitterScaleZ'] = jitScaleZ
+        mdh['Origin.z'] = dlg.getZBounds()[0]
 
         jitVals = self._genJitVals(jitParamName, jitScale)
         jitValsZ = self._genJitVals(jitParamNameZ, jitScaleZ)
@@ -332,6 +336,7 @@ class Triangle3DRenderer(TriangleRenderer):
         mdh['Rendering.JitterScale'] = jitScale
         mdh['Rendering.JitterVariableZ'] = jitParamNameZ
         mdh['Rendering.JitterScaleZ'] = jitScaleZ
+        mdh['Origin.z'] = dlg.getZBounds()[0]
 
         jitVals = self._genJitVals(jitParamName, jitScale)
         jitValsZ = self._genJitVals(jitParamNameZ, jitScaleZ)

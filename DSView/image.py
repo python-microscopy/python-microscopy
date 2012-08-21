@@ -165,7 +165,14 @@ class ImageStack(object):
             ox = (self.mdh['Camera.ROIPosX'] - 1)*voxx
             oy = (self.mdh['Camera.ROIPosY'] - 1)*voxy
             
-            return ox, oy, 0
+            oz = 0
+            
+            if 'AcquisitionType' in self.mdh.getEntryNames() and self.mdh['AcquisitionType'] == 'Stack':
+                oz = self.mdh['StackSettings.StartPos']*1e3
+            elif 'Positioning.PIFoc' in self.mdh.getEntryNames():
+                oz = self.mdh['Positioning.PIFoc']*1e3
+            
+            return ox, oy, oz
             
         elif 'Source.Camera.ROIPosX' in self.mdh.getEntryNames():
             #a rendered image with information about the source ROI

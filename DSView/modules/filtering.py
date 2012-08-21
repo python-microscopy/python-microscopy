@@ -85,13 +85,16 @@ class filterer:
         import numpy as np
         from PYME.DSView.image import ImageStack
         from PYME.DSView import ViewIm3D
+        import os
 
         if projType == 'mean':        
             filt_ims = [np.atleast_3d(self.image.data[:,:,:,chanNum].mean(2)) for chanNum in range(self.image.data.shape[3])]
         elif projType == 'max':
             filt_ims = [np.atleast_3d(self.image.data[:,:,:,chanNum].max(2)) for chanNum in range(self.image.data.shape[3])]
+
+        fns = os.path.split(self.image.filename)[1]        
         
-        im = ImageStack(filt_ims, titleStub = 'Filtered Image')
+        im = ImageStack(filt_ims, titleStub = '%s - %s' %(fns, projType))
         im.mdh.copyEntriesFrom(self.image.mdh)
         im.mdh['Parent'] = self.image.filename
         im.mdh['Processing.Projection'] = projType

@@ -387,6 +387,11 @@ class MyApp(wx.App):
 
         self.SetTopWindow(vframe)
         vframe.Show(1)
+        
+        if len(args) > 1:
+            for fn in args[1:]:
+                im = ImageStack(filename=fn)
+                ViewIm3D(im)
 
         return 1
 

@@ -237,6 +237,8 @@ class ImageList(wx.ListCtrl):
         #listmix.ListCtrlAutoWidthMixin.__init__(self)
             
         self.imageNames = list(imageNames)
+        self.shiftmaps = {}
+        self.channelNames = {}
         
         self.InsertColumn(0, "Name")
         self.InsertColumn(1, "dx")
@@ -244,12 +246,14 @@ class ImageList(wx.ListCtrl):
         
         self.InsertColumn(3, "width")
         self.InsertColumn(4, "height")
+        self.InsertColumn(5, "Shiftmap")
         
         self.SetColumnWidth(0, 300)
         self.SetColumnWidth(1, 50)
         self.SetColumnWidth(2, 50)
         self.SetColumnWidth(3, 50)
         self.SetColumnWidth(4, 50)
+        self.SetColumnWidth(5, 200)
         #self.InsertColumn(5, "x0")
         #self.InsertColumn(6, "y0")
         
@@ -262,7 +266,7 @@ class ImageList(wx.ListCtrl):
         #print item, col, name
         if col == 0:
             #item name
-            return os.path.split(name)[-1]
+            return self.channelNames[name]
         else:
             img, chan = _getImage(name)
             if col == 1:
@@ -273,16 +277,45 @@ class ImageList(wx.ListCtrl):
                 return '%3.2f' % (img.imgBounds.width() / 1e3)
             elif col == 4:
                 return '%3.2f' % (img.imgBounds.height() / 1e3)
+            elif col == 5:
+                try:
+                    return self.shiftmaps[name]
+                except KeyError:
+                    return ''
                 
                 
     def Append(self, name):
         self.imageNames.append(name)
+        self.channelNames[name] = os.path.split(name)[-1]
         self.SetItemCount(len(self.imageNames))
         #self.SetColumnWidth(0, wx.LIST_AUTOSIZE)
+        
+    def SetShiftmap(self, name):
+        filename = wx.FileSelector('Choose a shiftmap', default_extension='*.sm', wildcard="Shiftmaps (*.sm)|*.sm")
+        #if filename:
+        self.shiftmaps[name] = filename
+            
+        self.Refresh()
         
     def DeleteItem(self, index):
         self.imageNames.pop(index)
         self.SetItemCount(len(self.imageNames))
+        
+    def ShiftItem(self, index, direction='up'):
+        tmp = self.imageNames[index]
+        if direction == 'up':
+            if index > 0:
+                self.imageNames[index] = self.imageNames[index - 1]
+                self.imageNames[index -1] = tmp
+                self.SetItemState(-1, 0, wx.LIST_STATE_SELECTED)
+                self.Select(index-1)
+        else:
+            if index < (len(self.imageNames) - 1):
+                self.imageNames[index] = self.imageNames[index + 1]
+                self.imageNames[index +1] = tmp
+                self.SetItemState(-1, 0, wx.LIST_STATE_SELECTED)
+                self.Select(index+1)
+        self.Refresh()
         
     def GetName(self, index):
         return self.imageNames[index]
@@ -319,7 +352,7 @@ class CompositeDialog(wx.Dialog):
         self.lAvail = wx.ListBox(self, -1, choices=self.dispNames, size=(300, 200), style=wx.LB_SORT|wx.LB_NEEDED_SB|wx.LB_EXTENDED)
         
         vsizer.Add(self.lAvail, 0, wx.ALL|wx.EXPAND, 2)
-        hsizer.Add(vsizer, 1, wx.ALL|wx.EXPAND, 2)
+        hsizer.Add(vsizer, 0, wx.ALL|wx.EXPAND, 2)
         
         vsizer = wx.BoxSizer(wx.VERTICAL)
         
@@ -339,7 +372,7 @@ class CompositeDialog(wx.Dialog):
         vsizer = wx.BoxSizer(wx.VERTICAL)
         
         vsizer.Add(wx.StaticText(self, -1, 'Selected Channels:'), 0, wx.ALL, 2)
-        self.lSelected = ImageList(self, -1, size=(500, 200))
+        self.lSelected = ImageList(self, -1, size=(600, 200))
         
         vsizer.Add(self.lSelected, 1, wx.ALL|wx.EXPAND, 2)
         hsizer.Add(vsizer, 1, wx.ALL|wx.EXPAND, 2)
@@ -355,12 +388,55 @@ class CompositeDialog(wx.Dialog):
         self.bChanDown.Bind(wx.EVT_BUTTON, self.OnChanDown)
         vsizer.Add(self.bChanDown, 0, wx.ALL, 2)
         
+        vsizer.AddSpacer(10)
+        
+        bmp = wx.ArtProvider.GetBitmap(wx.ART_HELP_SETTINGS, wx.ART_TOOLBAR, (16,16))
+        self.bSetShiftmap = wx.BitmapButton(self, -1, bmp)
+        self.bSetShiftmap.Bind(wx.EVT_BUTTON, self.OnSetShiftmap)
+        self.bSetShiftmap.SetToolTipString("Specify a shiftmap for the selected channel")
+        vsizer.Add(self.bSetShiftmap, 0, wx.ALL, 2)
+        
         hsizer.Add(vsizer, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
         
         sizer1.Add(hsizer, 1, wx.ALL|wx.EXPAND, 5)
         
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Shape:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)        
+        
+        self.tShapeX = wx.TextCtrl(self, -1)
+        hsizer.Add(self.tShapeX, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        self.tShapeY = wx.TextCtrl(self, -1)
+        hsizer.Add(self.tShapeY, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        self.tShapeZ = wx.TextCtrl(self, -1)
+        hsizer.Add(self.tShapeZ, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        
+        hsizer.Add(wx.StaticText(self, -1, 'Voxelsize [nm]:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)        
+        
+        self.tVoxX = wx.TextCtrl(self, -1)
+        hsizer.Add(self.tVoxX, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        self.tVoxY = wx.TextCtrl(self, -1)
+        hsizer.Add(self.tVoxY, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        self.tVoxZ = wx.TextCtrl(self, -1)
+        hsizer.Add(self.tVoxZ, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        
+        hsizer.Add(wx.StaticText(self, -1, 'Origin [nm]:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)        
+        
+        self.tOriginX = wx.TextCtrl(self, -1)
+        hsizer.Add(self.tOriginX, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        self.tOriginY = wx.TextCtrl(self, -1)
+        hsizer.Add(self.tOriginY, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        self.tOriginZ = wx.TextCtrl(self, -1)
+        hsizer.Add(self.tOriginZ, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        
+        sizer1.Add(hsizer, 0, wx.ALL|wx.EXPAND, 5)
+                
+        
         self.stOutput = wx.StaticText(self, -1, 'Pixel Size: 0,0\t Shape: 0,0')
         sizer1.Add(self.stOutput, 0, wx.ALL, 2) 
+        
+        self.cbIgnoreZ = wx.CheckBox(self, -1, 'Ignore Z Origin')
+        self.cbIgnoreZ.SetValue(True)
+        sizer1.Add(self.cbIgnoreZ, 0, wx.ALL, 2) 
             
         btSizer = wx.StdDialogButtonSizer()
 
@@ -385,10 +461,37 @@ class CompositeDialog(wx.Dialog):
         
         ms, ch = _getImage(master)
         
-        sh = list(ms.data.shape[:3]) + [self.lSelected.GetItemCount()]
+        #self.shape = list(ms.data.shape[:3])
+        #self.voxelsize = ms.voxelsize
+        #self.origin = ms.origin
+        
+        self.tShapeX.SetValue('%d' % ms.data.shape[0])
+        self.tShapeY.SetValue('%d' % ms.data.shape[1])
+        self.tShapeZ.SetValue('%d' % ms.data.shape[2])
+        
+        self.tVoxX.SetValue('%3.3f' % ms.voxelsize[0])
+        self.tVoxY.SetValue('%3.3f' % ms.voxelsize[1])
+        self.tVoxZ.SetValue('%3.3f' % ms.voxelsize[2])
+        
+        self.tOriginX.SetValue('%d' % ms.origin[0])
+        self.tOriginY.SetValue('%d' % ms.origin[1])
+        self.tOriginZ.SetValue('%d' % ms.origin[2])
+        
+        sh = self.shape + [self.lSelected.GetItemCount()]
         
         self.stOutput.SetLabel('Output Shape: %s\t Output Voxel Size: %s' % (sh, ms.voxelsize))
         
+    @property
+    def voxelsize(self):
+        return float(self.tVoxX.GetValue()), float(self.tVoxY.GetValue()),float(self.tVoxZ.GetValue())
+        
+    @property
+    def origin(self):
+        return float(self.tOriginX.GetValue()), float(self.tOriginY.GetValue()),float(self.tOriginZ.GetValue())
+
+    @property
+    def shape(self):
+        return [int(self.tShapeX.GetValue()), int(self.tShapeY.GetValue()),int(self.tShapeZ.GetValue())]
         
     def OnAddChan(self, event):
         chans = list(self.lAvail.GetSelections())
@@ -417,30 +520,47 @@ class CompositeDialog(wx.Dialog):
         chan = self.lSelected.GetFirstSelected()
         
         if not chan == wx.NOT_FOUND:
-            if chan > 0: #chan is not already at top
-                text = self.lSelected.GetName(chan)
-                self.lSelected.DeleteItem(chan)
-                self.lSelected.InsertStringItem(chan - 1, text)
-                #self.lSelected.Insert(text, chan - 1)
-                self.lSelected.Select(chan -1)
+            self.lSelected.ShiftItem(chan, 'up')
+#            if chan > 0: #chan is not already at top
+#                text = self.lSelected.GetName(chan)
+#                self.lSelected.DeleteItem(chan)
+#                self.lSelected.InsertStringItem(chan - 1, text)
+#                #self.lSelected.Insert(text, chan - 1)
+#                self.lSelected.Select(chan -1)
                 
     def OnChanDown(self, event):
         chan = self.lSelected.GetFirstSelected()
         
         if not chan == wx.NOT_FOUND:
-            if chan < (self.lSelected.GetItemCount() - 1): #chan is not already at top
-                text = self.lSelected.Name(chan)
-                self.lSelected.DeleteItem(chan)
-                self.lSelected.InsertStringItem(chan + 1, text)
-                #self.lSelected.Insert(text, chan + 1)
-                #print ch
-                self.lSelected.Select(chan + 1)
+            self.lSelected.ShiftItem(chan, 'down')
+#            if chan < (self.lSelected.GetItemCount() - 1): #chan is not already at top
+#                text = self.lSelected.GetName(chan)
+#                self.lSelected.DeleteItem(chan)
+#                self.lSelected.InsertStringItem(chan + 1, text)
+#                #self.lSelected.Insert(text, chan + 1)
+#                #print ch
+#                self.lSelected.Select(chan + 1)
+                
+    def OnSetShiftmap(self, event):
+        chan = self.lSelected.GetFirstSelected()
+        if not chan == wx.NOT_FOUND:
+            text = self.lSelected.GetName(chan)
+            self.lSelected.SetShiftmap(text)
                 
     def GetSelections(self):
         return [self.lSelected.GetName(ch) for ch in range(self.lSelected.GetItemCount())]
         
     def GetMaster(self):
         return self.master
+        
+    def GetShiftmap(self, chan):
+        try:
+            return self.lSelected.shiftmaps[chan]
+        except KeyError:
+            return ''
+        
+    def GetIgnoreZ(self):
+        return self.cbIgnoreZ.GetValue()
         
 
 class compositor:
@@ -472,74 +592,10 @@ class compositor:
         dsviewer.Bind(wx.EVT_MENU, self.OnAlignChannels, id=ALIGN_CHANNELS)
         dsviewer.Bind(wx.EVT_MENU, self.OnApplyShiftmap, id=VECT_SHIFT)
 
-
-
-#    def OnMakeComposite(self, event):
-#        dlg = wx.SingleChoiceDialog(
-#                self.dsviewer, 'choose the image to composite with', 'Make Composite',
-#                image.openImages.keys(),
-#                wx.CHOICEDLG_STYLE
-#                )
-#
-#        if dlg.ShowModal() == wx.ID_OK:
-#            other = image.openImages[dlg.GetStringSelection()]
-#
-#            ###TODO - Put checks on image size, voxel size etc ...
-#
-#            try:
-#                names = ['%s - %s' % (os.path.split(self.image.filename)[1], cn) for cn in  self.image.mdh.getEntry('ChannelNames')]
-#            except:
-#                names = ['%s -  %d' % (os.path.split(self.image.filename)[1], d) for d in range(self.image.data.shape[3])]
-#
-#            try:
-#                otherNames = ['%s - %s' % (os.path.split(self.other.filename)[1], cn) for cn in  self.image.mdh.getEntry('ChannelNames')]
-#            except:
-#                otherNames = ['%s -  %d' % (os.path.split(other.filename)[1], d) for d in range(other.data.shape[3])]
-#
-#            newNames = names + otherNames
-#
-#            newData = []
-#            if isinstance(self.image.data, dataWrap.ListWrap):
-#                newData += self.image.data.dataList
-#            else:
-#                newData += [self.image.data]
-#
-#            if isinstance(other.data, dataWrap.ListWrap):
-#                newData += other.data.dataList
-#            else:
-#                newData += [other.data]
-#                
-#            pre = common_prefix(newNames)
-#            print pre
-#            lPre = len(pre)
-#            newNames = [n[lPre:] for n in newNames]
-#
-#            mdh = MetaDataHandler.NestedClassMDHandler(self.image.mdh)
-#            mdh.setEntry('ChannelNames', newNames)
-#
-#            View3D(dataWrap.ListWrap(newData, 3), 'Composite', mdh=mdh, mode = self.dsviewer.mode, parent=self.dsviewer, glCanvas=self.dsviewer.glCanvas)
-#
-#        dlg.Destroy()
         
     def OnMakeComposites(self, event):
-        #imageNames =  image.openImages.keys()
-        
-        #dispNames = []
-        
-        #for iN in imageNames:
-        #    im = image.openImages[iN]
-        #    if im.data.shape[3] == 1: #single colour
-        #        dispNames.append(iN)
-        #    else:
-        #        for i in range(im.data.shape[3]):
-        #            dispNames.append('%s$%d$%s' % (iN, i, im.names[i]))
-        
-        #dlg = wx.MultiChoiceDialog(
-        #        self.dsviewer, 'choose the images to composite with', 'Make Composite',
-        #        dispNames,
-        #        wx.CHOICEDLG_STYLE
-        #        )
-        
+        import numpy as np
+       
         dlg = CompositeDialog(self.dsviewer, self.dsviewer.image)
         imageNames = dlg.imageNames
         #dispNames = dlg.dispNames
@@ -547,11 +603,12 @@ class compositor:
         if dlg.ShowModal() == wx.ID_OK:
             #others = [dispNames[n] for n in dlg.GetSelections()]
             others = dlg.GetSelections()            
-            master, mchan = _getImage(dlg.GetMaster())
+            #master, mchan = _getImage(dlg.GetMaster())
+            ignoreZ = dlg.GetIgnoreZ()
+            shape, origin, voxelsize = dlg.shape, dlg.origin, dlg.voxelsize
+            print shape, origin, voxelsize
             
             if len(others) > 0:    
-                ###TODO - Put checks on image size, voxel size etc ...
-   
                 newNames = []
                 newData = []
                             
@@ -573,10 +630,19 @@ class compositor:
                         od = other.data.dataList[chan]
                     else:
                         od = other.data
+
+                    if ignoreZ:                    
+                        originsEqual = np.allclose(other.origin[:2], origin[:2], atol=1)
+                    else:
+                        originsEqual = np.allclose(other.origin, origin, atol=1)
                         
-                    if not (other.pixelSize == master.pixelSize) or not (other.data.shape == master.data.shape):
+                    shiftField = dlg.GetShiftmap(otherN)
+                    
+                    if not np.allclose(other.pixelSize, voxelsize[0], rtol=.001) or not (other.data.shape[:3] == shape[:3]) or not originsEqual or shiftField:
                         #need to rescale ...
-                        od = self.RemapData(other, chan, master=master)
+                        print 'Remapping ', otherN, originsEqual, other.origin, np.allclose(other.pixelSize, voxelsize[0], rtol=.001), other.pixelSize, ignoreZ
+                        #print origin, voxelsize
+                        od = self.RemapData(other, chan, shape, voxelsize, origin, shiftField = shiftField, ignoreZ=ignoreZ)
                         
                     newData += [od]
     
@@ -587,6 +653,14 @@ class compositor:
                 
                 mdh = MetaDataHandler.NestedClassMDHandler(self.image.mdh)
                 mdh.setEntry('ChannelNames', newNames)
+                
+                mdh['voxelsize.x'] = voxelsize[0]/1e3
+                mdh['voxelsize.y'] = voxelsize[1]/1e3
+                mdh['voxelsize.z'] = voxelsize[2]/1e3
+                
+                mdh['Origin.x'] = origin[0]
+                mdh['Origin.y'] = origin[1]
+                mdh['Origin.z'] = origin[2]
     
                 View3D(dataWrap.ListWrap(newData, 3), 'Composite', mdh=mdh, mode = self.dsviewer.mode, parent=wx.GetTopLevelParent(self.dsviewer), glCanvas=self.dsviewer.glCanvas)
 
@@ -604,7 +678,7 @@ class compositor:
 
             View3D(self.image.data[:,:,:,i], '%s - %s' % (self.image.filename, names[i]), mdh=mdh, parent=wx.GetTopLevelParent(self.dsviewer))
      
-    def RemapData(self, image, chan, shiftField='', master=None):
+    def RemapData(self, image, chan, shape, voxelsize, origin, shiftField='', ignoreZ = True):
         '''apply a vectorial correction for chromatic shift to an image - this 
         is a generic vectorial shift compensation, rather than the secial case 
         correction used with the splitter.'''
@@ -613,16 +687,22 @@ class compositor:
         
         data = image.data[:,:,:, chan]
         
-        if not master:
-            master = image
-        
-        X, Y, Z = np.mgrid[0:master.data.shape[0], 0:master.data.shape[1], 0:master.data.shape[2]]
+        X, Y, Z = np.mgrid[0:shape[0], 0:shape[1], 0:shape[2]]
         
         vx, vy, vz = image.voxelsize
-        vxm, vym, vzm = master.voxelsize
+        vxm, vym, vzm = voxelsize
+        
+        if vz == 0:
+            vz == 1
+        if vzm == 0:
+            vzm ==1
         
         x0, y0, z0 = image.origin
-        xm0, ym0, zm0 = master.origin
+        xm0, ym0, zm0 = origin
+        
+        if ignoreZ:
+            z0 = 0
+            zm0 = 0
         
         #desired coordinates in nm from camera origin
         Xnm = X*vxm + xm0
@@ -631,13 +711,17 @@ class compositor:
         
        
         if os.path.exists(shiftField):
-            spx, spy = np.load(shiftField)
+            spx, spy, dz = np.load(shiftField)
             
             dx = spx.ev(Xnm, Ynm)
             dy = spy.ev(Xnm, Ynm)
             
+            if ignoreZ:
+                dz = 0
+            
             Xnm += dx
             Ynm += dy
+            Znm += dz
             
         return ndimage.map_coordinates(data, [(Xnm - x0)/vx, (Ynm - y0)/vy, (Znm - z0)/vz], mode='nearest')
         
@@ -675,12 +759,13 @@ class compositor:
                 data = self.image.data[:,:,:, ch]
                 
                 if os.path.exists(sfFilename):
-                    spx, spy = np.load(sfFilename)
+                    spx, spy, dz = np.load(sfFilename)
                     
                     dx = spx.ev(vx*(X+x0 - 1), vy*(Y+y0 - 1))/vx
                     dy = spy.ev(vx*(X+x0 - 1), vy*(Y+y0 - 1))/vy
+                    dz = dz/vz
                     
-                    ds.append(ndimage.map_coordinates(data, [X+dx, Y+dy, Z], mode='nearest'))
+                    ds.append(ndimage.map_coordinates(data, [X+dx, Y+dy, Z+dz], mode='nearest'))
                 else:
                     ds.append(data)
                 

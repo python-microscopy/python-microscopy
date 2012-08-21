@@ -55,7 +55,7 @@ class cropper:
 
         filt_ims = [np.atleast_3d(self.image.data[roi[0][0]:roi[0][1],roi[1][0]:roi[1][1],:,chanNum].squeeze()) for chanNum in range(self.image.data.shape[3])]
 
-        im = ImageStack(filt_ims, titleStub = 'Filtered Image')
+        im = ImageStack(filt_ims, titleStub = 'Cropped Image')
         im.mdh.copyEntriesFrom(self.image.mdh)
         im.mdh['Parent'] = self.image.filename
         im.mdh['Processing.CropROI'] = roi
@@ -63,9 +63,9 @@ class cropper:
         vx, vy, vz = self.image.voxelsize
         ox, oy, oz = self.image.origin
         
-        im['Origin.x'] = ox + roi[0][0]
-        im['Origin.y'] = oy + roi[1][0]
-        im['Origin.z'] = oz
+        im.mdh['Origin.x'] = ox + roi[0][0]*vx
+        im.mdh['Origin.y'] = oy + roi[1][0]*vy
+        im.mdh['Origin.z'] = oz
 
         if self.dsviewer.mode == 'visGUI':
             mode = 'visGUI'
