@@ -36,6 +36,24 @@ class DataBlock(object):
         self.Z = Z
         
         self.voxelsize = voxelsize
+        
+    def __getstate__(self):
+        #support for pickling
+        return {'data':self.data, 'X':self.X, 'Y':self.Y, 'Z':self.Z, 'voxelsize':self.voxelsize}
+        
+    @property
+    def bbox(self):
+        if not '_bbox' in dir(self):
+            x0 = self.X.min()*self.voxelsize[0]
+            y0 = self.Y.min()*self.voxelsize[1]
+            z0 = self.Z.min()*self.voxelsize[2]
+            
+            x1 = self.X.max()*self.voxelsize[0]
+            y1 = self.Y.max()*self.voxelsize[1]
+            z1 = self.Z.max()*self.voxelsize[2]
+            
+            self._bbox = (x0,y0,z0, x1, y1, z1)
+        return self._bbox
     
     @property
     def sum(self):
@@ -46,13 +64,20 @@ class DataBlock(object):
     @property    
     def centroid(self):
         if not '_centroid' in dir(self):
-            xc = (self.data*self.X).sum()/self.sum
-            yc = (self.data*self.Y).sum()/self.sum
-            zc = (self.data*self.Z).sum()/self.sum
+            #crop off the bottom of the data to avoid biasing the centroid
+            m = np.maximum(self.data - 0.2*self.data.max(), 0)
+            m = m/m.sum()
+            xc = (m*self.X).sum()
+            yc = (m*self.Y).sum()
+            zc = (m*self.Z).sum()
     
             self._centroid =  (xc, yc, zc)
         
         return self._centroid
+        
+    @property
+    def centroidNM(self):
+        return self.voxelsize[0]*self.centroid[0], self.voxelsize[1]*self.centroid[1], self.voxelsize[2]*self.centroid[2]
         
     @property
     def XC(self):
@@ -77,7 +102,21 @@ class DataBlock(object):
         if not '_principalAxis' in dir(self):
             #b = (self.XC*self.data).ravel()
             b = np.vstack([(self.XC*self.data).ravel(), (self.YC*self.data).ravel(), (self.ZC*self.data).ravel()]).T
-            b = b[self.data.ravel() > 0, :]
+            
+            #use thresholded data for determining principle axis
+            m = self.data
+            m = m > 0.2*m.max()
+            print m.sum()
+            l, nl = ndimage.label(m)
+            
+            #take only the largest contiguous region
+            m = 0*m
+            for i in range(1,nl+1):
+                r = l == i
+                if r.sum() > m.sum():
+                    m = r
+            b = b[m.ravel()>0.5, :]
+            print m.sum(), b.shape
             if b.shape[0] < 2:
                 self._principalAxis = np.NaN*np.ones(3)
             #print b.shape
@@ -108,12 +147,22 @@ class DataBlock(object):
             sa /= linalg.norm(sa)
             self._secondaryAxis = sa
             
-            p1 = (np.abs(self.A1)*self.data).sum()
-            p2 = (np.abs(self.A2)*self.data).sum()
             
-            sa = p1*sa + p2*self.tertiaryAxis
-            sa /= linalg.norm(sa)
-            self._secondaryAxis = sa
+            b = np.vstack([(self.A1*self.data).ravel(), (self.A2*self.data).ravel()]).T
+            b = b[self.data.ravel()>0]
+            if b.shape[0] < 2:
+                self._secondaryAxis = np.NaN*np.ones(3)
+            else:
+                p1, p2 = linalg.svd(b, full_matrices=False)[2][0]
+                #p1 = (np.abs(self.A1)*self.data).sum()
+                #p2 = (np.abs(self.A2)*self.data).sum()
+            
+                sa = p1*sa + p2*self.tertiaryAxis
+                if self.data.shape[2] == 1:
+                    #2D, force sa to be in plane
+                    sa[2] = 0
+                sa /= linalg.norm(sa)
+                self._secondaryAxis = sa
             
             del self._tertiaryAxis, self._A1, self._A2 #force these to be re-calculated
             
@@ -225,6 +274,8 @@ class BlobObject(object):
     def __init__(self, channels, masterChan=0, orientChan=1, orient_dir=-1):
         self.chans = channels
         self.masterChan = masterChan
+        self.orientChan = orientChan
+        self.orient_dir = orient_dir
         
         self.shown = True
         
@@ -236,6 +287,21 @@ class BlobObject(object):
         oc = self.chans[orientChan]
         
         if (mc.SA*oc.data).sum()*orient_dir < 0:
+            #flip the direction of short axis on mc
+            mc.flipSecondaryAxis()
+            
+    def __getstate__(self):
+        return {'chans': self.chans, 'masterChan':self.masterChan, 
+                'orientChan':self.orientChan, 'orient_dir':self.orient_dir, 
+                'shown':self.shown, 'nsteps':self.nsteps}
+        
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        
+        mc = self.chans[self.masterChan]
+        oc = self.chans[self.orientChan]
+        
+        if (mc.SA*oc.data).sum()*self.orient_dir < 0:
             #flip the direction of short axis on mc
             mc.flipSecondaryAxis()
         
@@ -343,26 +409,29 @@ class BlobObject(object):
     def drawOverlay(self, view, dc):
         #import wx
         if self.shown:
-            mc = self.chans[self.masterChan]
-            
-            #x, y, z = mc.centroid
-            l = mc.geom_length/(2*mc.voxelsize[0])
-            x0, y0, z0 = mc.centroid - l*mc.principalAxis
-            x1, y1, z1 = mc.centroid + l*mc.principalAxis
-            
-            x0_, y0_ = view._PixelToScreenCoordinates(x0, y0)
-            x1_, y1_ = view._PixelToScreenCoordinates(x1, y1)
-            
-            dc.DrawLine(x0_, y0_, x1_, y1_)
-            
-            l = mc.geom_width/(2*mc.voxelsize[0])
-            x0, y0, z0 = mc.centroid
-            x1, y1, z1 = mc.centroid + l*mc.secondaryAxis
-            
-            x0_, y0_ = view._PixelToScreenCoordinates(x0, y0)
-            x1_, y1_ = view._PixelToScreenCoordinates(x1, y1)
-            
-            dc.DrawLine(x0_, y0_, x1_, y1_)
+            try:
+                mc = self.chans[self.masterChan]
+                
+                #x, y, z = mc.centroid
+                l = mc.geom_length/(2*mc.voxelsize[0])
+                x0, y0, z0 = mc.centroid - l*mc.principalAxis
+                x1, y1, z1 = mc.centroid + l*mc.principalAxis
+                
+                x0_, y0_ = view._PixelToScreenCoordinates(x0, y0)
+                x1_, y1_ = view._PixelToScreenCoordinates(x1, y1)
+                
+                dc.DrawLine(x0_, y0_, x1_, y1_)
+                
+                l = mc.geom_width/(2*mc.voxelsize[0])
+                x0, y0, z0 = mc.centroid
+                x1, y1, z1 = mc.centroid + l*mc.secondaryAxis
+                
+                x0_, y0_ = view._PixelToScreenCoordinates(x0, y0)
+                x1_, y1_ = view._PixelToScreenCoordinates(x1, y1)
+                
+                dc.DrawLine(x0_, y0_, x1_, y1_)
+            except ValueError:
+                pass
             
     def getImage(self):
         import Image
@@ -440,40 +509,49 @@ class BlobObject(object):
         #import Image
         from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
         from matplotlib.figure import Figure
+        from matplotlib.patches import Rectangle
         import StringIO
         import cherrypy
         cherrypy.response.headers["Content-Type"]="image/png"
 
         fig = Figure(figsize=(2,2))
         canvas = FigureCanvas(fig)
-        ax = fig.add_axes([.1, .15, .85, .8])
+        ax = fig.add_axes([0.01, 0.01, .98, .98])
         
         mc = self.chans[self.masterChan]
+        
+        bx0, by0, bz0, bx1, by1, bz1 = mc.bbox
+        rect = Rectangle((bx0, by0), (bx1 - bx0), (by1 - by0), facecolor='w')
+        ax.add_patch(rect)
             
         #x, y, z = mc.centroid
-        l = mc.geom_length/(2*mc.voxelsize[0])
-        x0, y0, z0 = mc.centroid - l*mc.principalAxis
-        x1, y1, z1 = mc.centroid + l*mc.principalAxis
+        l = mc.geom_length/2
+        x0, y0, z0 = mc.centroidNM - l*mc.principalAxis
+        x1, y1, z1 = mc.centroidNM + l*mc.principalAxis
         
-        ax.plot([x0, x1], [-y0, -y1], 'k', lw=2)
+        ax.plot([x0, x1], [y0, y1], 'k', lw=2)
         
-        l = mc.geom_width/(2*mc.voxelsize[0])
-        x0, y0, z0 = mc.centroid
-        x1, y1, z1 = mc.centroid + l*mc.secondaryAxis
-        ax.plot([x0, x1], [-y0, -y1], 'k', lw=2)
+        l = mc.geom_width/2
+        x0, y0, z0 = mc.centroidNM
+        x1, y1, z1 = mc.centroidNM + l*mc.secondaryAxis
+        ax.plot([x0, x1], [y0, y1], 'k', lw=2)
         
         cols = ['r','g', 'b']
         for i, c in enumerate(self.chans):
-            l = c.geom_length/(2*mc.voxelsize[0])
-            x0, y0, z0 = c.centroid - l*c.principalAxis
-            x1, y1, z1 = c.centroid + l*c.principalAxis
+            l = c.geom_length/2
+            x0, y0, z0 = c.centroidNM - l*c.principalAxis
+            x1, y1, z1 = c.centroidNM + l*c.principalAxis
             
-            ax.plot([x0, x1], [-y0, -y1],c = cols[i] , lw=2)
+            ax.plot([x0, x1], [y0, y1],c = cols[i] , lw=2)
             
-            x0, y0, z0 = c.centroid
-            ax.plot(x0, -y0, 'x', c = cols[i], lw=2)
+            x0, y0, z0 = c.centroidNM
+            ax.plot(x0, y0, 'x', c = cols[i], lw=2)
             
+        
         ax.axis('scaled')
+        ax.set_xlim(bx0, bx1)
+        ax.set_ylim(by1, by0)
+        
         ax.set_axis_off()
         
         out = StringIO.StringIO()
@@ -526,7 +604,7 @@ class BlobObject(object):
             x0, y0, z0 = c.centroid
             ax.plot([x0], [y0], [z0], 'x', c = cols[i], lw=2)
             
-        ax.axis('scaled')
+        #ax.axis('equal')
         #ax.set_axis_off()
         
         out = StringIO.StringIO()
@@ -567,6 +645,22 @@ class Measurements(wx.Panel):
         
         vsizer.Add(hsizer, 0, wx.EXPAND, 0)
         
+        sbsizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Minimum Amplitudes:'), wx.VERTICAL)
+        nChans = len(self.image.names)        
+        
+        gsizer = wx.FlexGridSizer(nChans, 2, 2, 5)
+        
+        self.aTexts = []
+        for chan in range(nChans):
+            gsizer.Add(wx.StaticText(self, -1, self.image.names[chan]), 1, wx.ALIGN_CENTER_VERTICAL)
+            at = wx.TextCtrl(self, -1, '0')
+            self.aTexts.append(at)
+            gsizer.Add(at, 2, wx.ALIGN_CENTER_VERTICAL)
+            
+        sbsizer.Add(gsizer, 0, wx.ALL|wx.EXPAND, 2)
+        
+        vsizer.Add(sbsizer, 0, wx.EXPAND, 2)
+        
         bCalculate = wx.Button(self, -1, 'Measure')
         bCalculate.Bind(wx.EVT_BUTTON, self.OnCalculate)
         vsizer.Add(bCalculate, 0, wx.EXPAND|wx.ALL, 2)
@@ -601,6 +695,14 @@ class Measurements(wx.Panel):
         
     def OnCalculate(self, event):
         self.RetrieveObjects(self.chMaster.GetSelection(), self.chOrient.GetSelection(), 2*self.chDirection.GetSelection() - 1)
+        
+        cts = [float(at.GetValue()) for at in self.aTexts]
+        
+        for obj in self.objects:
+            for chan, ct in zip(obj.chans, cts):
+                if chan.sum < ct:
+                    obj.shown=False
+                    
         self.dsviewer.do.OnChange()
         
     def OnHideObject(self, event):
@@ -614,6 +716,10 @@ class Measurements(wx.Panel):
     def OnView(self, event):
         import webbrowser
         webbrowser.open('http://localhost:8080/measure/%d' % self.ID)
+        
+    def OnSaveObjects(self, event):
+        import cPickle
+        import zipfile
             
     
     def GetRegion(self, index, objects = None):
@@ -629,7 +735,7 @@ class Measurements(wx.Panel):
         X, Y, Z = np.ogrid[slx, sly, slz]
         vs = (1e3*self.image.mdh['voxelsize.x'], 1e3*self.image.mdh['voxelsize.y'],1e3*self.image.mdh['voxelsize.z'])
         
-        return [DataBlock(np.maximum(self.image.data[slx, sly, slz, j] - self.image.labelThresholds[j], 0)*mask , X, Y, Z, vs) for j in range(self.image.data.shape[3])]
+        return [DataBlock(np.maximum(self.image.data[slx, sly, slz, j] - self.dsviewer.do.thresholds[j], 0)*mask , X, Y, Z, vs) for j in range(self.image.data.shape[3])]
         
     def RetrieveObjects(self, masterChan=0, orientChan=1, orient_dir=-1):
         objs = ndimage.find_objects(self.image.labels)

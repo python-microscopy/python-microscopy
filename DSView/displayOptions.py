@@ -142,6 +142,10 @@ class DisplayOpts(object):
         self._complexMode = value
         #print 'z changed'
         self.OnChange()
+        
+    @property
+    def thresholds(self):
+        return [(self.Offs[chanNum] + 0.5/self.Gains[chanNum]) for chanNum in range(len(self.Offs))]
 
     def ResetSelection(self):
         self.selection_begin_x = 0

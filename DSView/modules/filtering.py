@@ -23,18 +23,21 @@ class filterer:
         PROC_GAUSSIAN_FILTER = wx.NewId()
         PROC_APPLY_THRESHOLD = wx.NewId()
         PROC_LABEL = wx.NewId()
+        PROC_WATERSHED = wx.NewId()
         PROC_MEAN_PROJECT = wx.NewId()
         PROC_MAX_PROJECT = wx.NewId()
         
         dsviewer.mProcessing.Append(PROC_GAUSSIAN_FILTER, "&Gaussian Filter", "", wx.ITEM_NORMAL)
         dsviewer.mProcessing.Append(PROC_APPLY_THRESHOLD, "Generate &Mask", "", wx.ITEM_NORMAL)
         dsviewer.mProcessing.Append(PROC_LABEL, "&Label", "", wx.ITEM_NORMAL)
+        dsviewer.mProcessing.Append(PROC_WATERSHED, "&Watershed", "", wx.ITEM_NORMAL)
         dsviewer.mProcessing.Append(PROC_MEAN_PROJECT, "Mean Projection", "", wx.ITEM_NORMAL)
         dsviewer.mProcessing.Append(PROC_MAX_PROJECT, "Max Projection", "", wx.ITEM_NORMAL)
     
         wx.EVT_MENU(dsviewer, PROC_GAUSSIAN_FILTER, self.OnGaussianFilter)
         wx.EVT_MENU(dsviewer, PROC_APPLY_THRESHOLD, self.OnApplyThreshold)
         wx.EVT_MENU(dsviewer, PROC_LABEL, self.OnLabelSizeThreshold)
+        wx.EVT_MENU(dsviewer, PROC_WATERSHED, self.OnLabelWatershed)
         wx.EVT_MENU(dsviewer, PROC_MEAN_PROJECT, self.OnMeanProject)
         wx.EVT_MENU(dsviewer, PROC_MAX_PROJECT, self.OnMaxProject)
 
@@ -261,6 +264,50 @@ class filterer:
             #set scaling to (0,1)
             for i in range(im.data.shape[3]):
                 dv.do.Gains[i] = 1.0
+                
+    def OnLabelWatershed(self, event):
+        import numpy as np
+        from PYME.cpmath import watershed
+        from PYME.DSView.image import ImageStack
+        from PYME.DSView import ViewIm3D
+        
+        nChans = self.image.data.shape[3]
+    
+        filt_ims = [np.atleast_3d(self.image.data[:,:,:,chanNum].squeeze()) for chanNum in range(nChans)]
+        
+        img = (-sum([im/im.max() for im in filt_ims])*(2**15)/nChans).astype('int16')
+        
+        mask = (sum([filt_ims[chanNum] > self.do.thresholds[chanNum] for chanNum in range(nChans)]) > .5).astype('int16')
+        
+        #self.image.labelThresholds = [(self.dsviewer.do.Offs[chanNum] + 0.5/self.dsviewer.do.Gains[chanNum]) for chanNum in range(self.image.data.shape[3])]
+
+        #print sum(filt_ims).shape
+        
+        labs = watershed.fast_watershed(img, self.image.labels.astype('int16'), mask=mask)
+            
+        #store a copy in the image for measurements etc ...
+        self.image.labels = labs
+        
+        im = ImageStack(labs, titleStub = 'Labelled Image')
+        im.mdh.copyEntriesFrom(self.image.mdh)
+        im.mdh['Parent'] = self.image.filename
+        
+        im.mdh['Labelling.WatershedThresholds'] = self.do.thresholds
+        
+        #im.mdh['Labelling.MinSize'] = rSize
+        #im.mdh['Labelling.Thresholds'] = self.image.labelThresholds
+        #im.mdh['Processing.CropROI'] = roi
+
+        if self.dsviewer.mode == 'visGUI':
+            mode = 'visGUI'
+        else:
+            mode = 'lite'
+
+        dv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
+
+        #set scaling to (0,1)
+        for i in range(im.data.shape[3]):
+            dv.do.Gains[i] = 1.0
 
 
 

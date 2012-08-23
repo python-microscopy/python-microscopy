@@ -48,13 +48,14 @@ function ShowDetails()
 
         <td>
         <table>
-        <tr><th>x0</th><th>y0</th><th>length</th><th>width</th></tr>
+        <tr><th>x0</th><th>y0</th><th>length</th><th>width</th><th>sum</th></tr>
         {% for chan in obj.chans %}
             <tr>
             <td>{{ "%3.2f"|format(chan.centroid[0]) }}</td>
             <td>{{ "%3.2f"|format(chan.centroid[1]) }}</td>
             <td>{{ "%3.2f"|format(chan.mad_0*2.35/0.8) }}</td>
             <td>{{ "%3.2f"|format(chan.mad_1*2.35/0.8) }}</td>
+            <td>{{ "%3.2f"|format(chan.sum) }}</td>
             </tr>
         {% endfor %}
         </table>

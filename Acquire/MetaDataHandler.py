@@ -80,7 +80,7 @@ class MDHandlerBase(DictMixin):
         s = ['%s: %s' % (en, self.getEntry(en)) for en in self.getEntryNames()]
         return '<%s>:\n\n' % self.__class__.__name__ + '\n'.join(s)
 
-    def WriteSimple(self, filename):
+    def GetSimpleString(self):
         '''Writes out metadata in simplfied format'''
         import cPickle
         import numpy as np
@@ -95,7 +95,9 @@ class MDHandlerBase(DictMixin):
                 val = "cPickle.loads('''%s''')" % cPickle.dumps(val)
 
             s.append("md['%s'] = %s\n" % (en, val))
-        
+    
+    def WriteSimple(self, filename):
+        s = self.GetSimpleString()
         f = open(filename, 'w')
         f.writelines(s)
         f.close()
