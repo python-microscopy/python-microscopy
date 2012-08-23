@@ -432,6 +432,10 @@ class LMAnalyser:
         else:
             self.glCanvas.setView(0, ysc*self.glCanvas.Size[0], 0, ysc*self.glCanvas.Size[1])
 
+        self.numAnalysed = 0
+        self.numEvents = 0
+        self.fitResults = []
+
         self.timer.WantNotification.append(self.analRefresh)
         self.bGo.Enable(False)
         #_pnl.Collapse(self.analysisPanel)

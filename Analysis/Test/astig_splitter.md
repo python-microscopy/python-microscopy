@@ -5,7 +5,7 @@ import numpy as np
 #print __file__
 md['EndTime'] = 1300676178.4949999
 md['EstimatedLaserOnFrameNo'] = 0
-md['PSFFile'] = os.path.join(os.path.split(__file__)[0], 'psf_decon.psf')
+md['PSFFile'] = os.path.join(os.path.split(__file__)[0], 'astig_theory.psf')
 md['StartTime'] = 1300676151.901
 md['tIndex'] = 0
 md['Analysis.BGRange'] = [0, 0]
@@ -61,6 +61,6 @@ class sffake:
 
 md['chroma.dx'] = sffake(50.)
 md['chroma.dy'] = sffake(100.)
-md['Test.DefaultParams'] = [155, 155, 0, 0, 0, 0, 0]
+md['Test.DefaultParams'] = [2000, 2000, 0, 0, 0, 0, 10]
 md['Test.ParamJitter'] = [15, 15, 90, 90, 250, 10, 10]
-md['Test.Background'] = 50.
+md['Test.Background'] = 10.
