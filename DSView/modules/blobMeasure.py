@@ -720,6 +720,8 @@ class Measurements(wx.Panel):
     def OnSaveObjects(self, event):
         import cPickle
         import zipfile
+        
+        zf = zipfile()
             
     
     def GetRegion(self, index, objects = None):

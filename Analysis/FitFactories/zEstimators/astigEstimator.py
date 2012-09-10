@@ -48,7 +48,7 @@ def calibrate(interpolator, md, roiSize=5):
         X_ = X
         Y_ = Y
 
-    z = numpy.arange(-500, 500, 10)
+    z = numpy.arange(-1000, 1000, 10)
     ps = []
 
     #astigmatic PSF is not necessarily aligned to the axes
@@ -95,7 +95,7 @@ def calibrate(interpolator, md, roiSize=5):
     dw2 = splev(z, sp)[0] #evaluate to give smoothed dw values
 
     #unfortunately dw is not always monotonic - pull out the central section that is
-    d_dw = numpy.diff(splev(numpy.arange(-500, 501, 10), sp)[0])
+    d_dw = numpy.diff(splev(numpy.arange(-1000, 1001, 10), sp)[0])
 
     #find whether gradient is +ve or negative
     sgn = numpy.sign(d_dw)
@@ -123,20 +123,20 @@ def _calcParams(data, X, Y):
 
     #threshold at half maximum and subtract threshold
     dr = numpy.maximum(data - data.min() - 0.5*A, 0).squeeze()
-    drs = dr.sum()
+    dr = dr/dr.sum()
 
-    x0 = (X[:,None]*dr).sum()/drs
-    y0 = (Y[None, :]*dr).sum()/drs
+    x0 = (X[:,None]*dr).sum()
+    y0 = (Y[None, :]*dr).sum()
 
-    xn = (x0-X)[:,None]
-    yn = (y0-Y)[None, :]
+    xn = (X - x0)[:,None]
+    yn = (Y - y0)[None, :]
 
     #sig_xl = (numpy.maximum(0, x0 - X)[:,None]*dr).sum()/(drs)
-    sig_xl = (numpy.maximum(0, xn*costheta - yn*sintheta)*dr).sum()/(drs)
+    sig_xl = (numpy.maximum(0, xn*costheta - yn*sintheta)*dr).sum()
     #sig_xr = (numpy.maximum(0, X - x0)[:,None]*dr).sum()/(drs)
 
     #sig_yu = (numpy.maximum(0, y0 - Y)[None, :]*dr).sum()/(drs)
-    sig_yu = (numpy.maximum(0, xn*sintheta + yn*costheta)*dr).sum()/(drs)
+    sig_yu = (numpy.maximum(0, xn*sintheta + yn*costheta)*dr).sum()
     #sig_yd = (numpy.maximum(0, Y - y0)[None, :]*dr).sum()/(drs)
 
     return A, x0, y0, sig_xl - sig_yu
@@ -148,7 +148,7 @@ def getStartParameters(data, X, Y, Z=None):
     #clamp dw to valid region
     dw_ = min(max(dw, splines['z'][0][0]), splines['z'][0][-1])
     #lookup z
-    z0 = max(min(splev(dw_, splines['z'])[0], 500), -500)
+    z0 = max(min(splev(dw_, splines['z'])[0], 1000), -1000)
 
     #correct position & intensity estimates for z position
     A = A/splev(z0, splines['A'])[0]
