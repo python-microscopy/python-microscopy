@@ -30,7 +30,7 @@ except ImportError:
 def configuration():
     if is_win:
         extra_compile_args = None
-        extra_link_args = ['/MANIFEST']
+        extra_link_args = []
     else:
         extra_compile_args = ['-O3']
         extra_link_args = None

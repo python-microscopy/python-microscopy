@@ -198,6 +198,20 @@ class blobFinder:
         bFitObjects.Bind(wx.EVT_BUTTON, self.OnFitObjects)
         #_pnl.AddFoldPanelWindow(item, bFitObjects, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
         item.AddNewElement(bFitObjects)
+
+        pan = wx.Panel(item, -1)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        hsizer.Add(wx.StaticText(pan, -1, 'Bead wxy:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tBeadWXY = wx.TextCtrl(pan, -1, value='125', size=(40, -1))
+
+        hsizer.Add(self.tBeadWXY, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        pan.SetSizer(hsizer)
+        hsizer.Fit(pan)
+
+        item.AddNewElement(pan)
         
         bCalcShiftMap = wx.Button(item, -1, 'Shiftmap')
         bCalcShiftMap.Bind(wx.EVT_BUTTON, self.OnCalcShiftmap)
@@ -254,6 +268,12 @@ class blobFinder:
         err_x0 = master['fitError']['x0']
         err_y0 = master['fitError']['y0']
         z0 = master['fitResults']['z0']
+
+        wxy = master['fitResults']['wxy']
+
+        wxy_bead = float(self.tBeadWXY.GetValue())
+
+        mask = numpy.abs(wxy - wxy_bead) < (.25*wxy_bead)
         
         self.shiftfields ={}
 
@@ -276,16 +296,16 @@ class blobFinder:
                 dy = y - y0
                 dz = z - z0
                 
-                print 'dz:', numpy.median(dz)
+                print 'dz:', numpy.median(dz[mask])
                 
                 
-                spx, spy = twoColour.genShiftVectorFieldLinear(x, y, dx, dy, err_x, err_y)
-                self.shiftfields[ch] = (spx, spy, numpy.median(dz))
+                spx, spy = twoColour.genShiftVectorFieldLinear(x[mask], y[mask], dx[mask], dy[mask], err_x[mask], err_y[mask])
+                self.shiftfields[ch] = (spx, spy, numpy.median(dz[mask]))
                 #twoColourPlot.PlotShiftField2(spx, spy, self.image.data.shape[:2])
                 
                 pylab.subplot(1,nchans -1, ch_i)
                 ch_i += 1
-                twoColourPlot.PlotShiftResidualsS(x, y, dx, dy, spx, spy)
+                twoColourPlot.PlotShiftResidualsS(x[mask], y[mask], dx[mask], dy[mask], spx, spy)
                 
         pylab.figure()
         X, Y = numpy.meshgrid(numpy.linspace(0., 70.*self.image.data.shape[0], 20), numpy.linspace(0., 70.*self.image.data.shape[1], 20))
