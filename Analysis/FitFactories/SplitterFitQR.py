@@ -188,18 +188,7 @@ class GaussianFitFactory:
         #print DeltaX, DeltaY
         #print DeltaY
 
-        #estimate some start parameters...
-        Ag = dataROI[:,:,0].max() - dataROI[:,:,0].min() #amplitude
-        Ar = dataROI[:,:,1].max() - dataROI[:,:,1].min() #amplitude
-
-        #figure()
-        #imshow(dataROI[:,:,1], interpolation='nearest')
-
-        #print Ag
-        #print Ar
-
-        x0 =  Xg.mean()
-        y0 =  Yg.mean()
+        
 
         #startParameters = [Ag, Ar, x0, y0, 250/2.35, dataROI[:,:,0].min(),dataROI[:,:,1].min(), .001, .001]
 
@@ -215,6 +204,19 @@ class GaussianFitFactory:
             bgROI = self.background[xslice, yslice, zslice] - self.metadata.Camera.ADOffset
 
             dataROI = dataROI - bgROI
+            
+        #estimate some start parameters...
+        Ag = dataROI[:,:,0].max() #- dataROI[:,:,0].min() #amplitude
+        Ar = dataROI[:,:,1].max() #- dataROI[:,:,1].min() #amplitude
+
+        #figure()
+        #imshow(dataROI[:,:,1], interpolation='nearest')
+
+        #print Ag
+        #print Ar
+
+        x0 =  Xg.mean()
+        y0 =  Yg.mean()
 
         startParameters = numpy.array([Ag, Ar, x0, y0, 250/2.35])
 	
@@ -229,8 +231,8 @@ class GaussianFitFactory:
         #print res        
         #we map Ag and Ar to ensure positivity        
         #transform them back
-        res[0] = sqrt(res[0]**2 + 1) -1
-        res[1] = sqrt(res[1]**2 + 1) -1
+        #res[0] = sqrt(res[0]**2 + 1) -1
+        #res[1] = sqrt(res[1]**2 + 1) -1
         
         #print res
 

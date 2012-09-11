@@ -675,9 +675,9 @@ static PyObject *splitGaussArrayPVecWeightedMisfit(PyObject *self, PyObject *arg
     if (nParams >= 4) {y0 = ppVals[3];
     if (nParams >= 5) {sigma = ppVals[4];
     if (nParams >= 6) {b = ppVals[5];
-    if (nParams >= 6) {b1 = ppVals[6];
-    if (nParams >= 7) {b_x = ppVals[7];
-    if (nParams >= 8) b_y = ppVals[8];
+    if (nParams >= 7) {b1 = ppVals[6];
+    if (nParams >= 8) {b_x = ppVals[7];
+    if (nParams >= 9) b_y = ppVals[8];
     }}}}}}}}
 
 
