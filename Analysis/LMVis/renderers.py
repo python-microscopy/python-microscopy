@@ -323,7 +323,7 @@ class Triangle3DRenderer(TriangleRenderer):
 
     name = '3D Triangularisation'
     mode = '3Dtriangles'
-    _defaultPixelSize = 5.0
+    _defaultPixelSize = 20.0
 
     def genIm(self, dlg, imb, mdh):
         pixelSize = dlg.getPixelSize()

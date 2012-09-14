@@ -68,12 +68,22 @@ class LMAnalyser:
         mTasks = wx.Menu()
         TASKS_STANDARD_2D = wx.NewId()
         TASKS_CALIBRATE_SPLITTER = wx.NewId()
+        TASKS_2D_SPLITTER = wx.NewId()
+        TASKS_3D = wx.NewId()
+        TASKS_3D_SPLITTER = wx.NewId()
         mTasks.Append(TASKS_STANDARD_2D, "Normal 2D analysis", "", wx.ITEM_NORMAL)
         mTasks.Append(TASKS_CALIBRATE_SPLITTER, "Calibrating the splitter", "", wx.ITEM_NORMAL)
+        mTasks.Append(TASKS_2D_SPLITTER, "2D with splitter", "", wx.ITEM_NORMAL)
+        mTasks.Append(TASKS_3D, "3D analysis", "", wx.ITEM_NORMAL)
+        mTasks.Append(TASKS_3D_SPLITTER, "3D with splitter", "", wx.ITEM_NORMAL)
         self.dsviewer.menubar.Append(mTasks, "Set defaults for")
         
         wx.EVT_MENU(self.dsviewer, TASKS_CALIBRATE_SPLITTER, self.OnCalibrateSplitter)
         wx.EVT_MENU(self.dsviewer, TASKS_STANDARD_2D, self.OnStandard2D)
+        wx.EVT_MENU(self.dsviewer, TASKS_2D_SPLITTER, self.OnSpitter2D)
+        wx.EVT_MENU(self.dsviewer, TASKS_3D, self.OnStandard3D)
+        wx.EVT_MENU(self.dsviewer, TASKS_3D_SPLITTER, self.OnSpliter3D)
+        
 
         #a timer object to update for us
         self.timer = mytimer()
@@ -550,9 +560,27 @@ class LMAnalyser:
 
     def OnStandard2D(self, event):
         self.cFitType.SetSelection(self.fitFactories.index('LatGaussFitFR'))
-        self.tBackgroundFrames.SetValue('-10:0')
+        self.tBackgroundFrames.SetValue('-30:0')
         self.cbSubtractBackground.SetValue(True)
         self.tThreshold.SetValue('0.6')
+        
+    def OnSpitter2D(self, event):
+        self.cFitType.SetSelection(self.fitFactories.index('SplitterFitQR'))
+        self.tBackgroundFrames.SetValue('-30:0')
+        self.cbSubtractBackground.SetValue(True)
+        self.tThreshold.SetValue('0.5')
+    
+    def OnStandard3D(self, event):
+        self.cFitType.SetSelection(self.fitFactories.index('InterpFitR'))
+        self.tBackgroundFrames.SetValue('-30:0')
+        self.cbSubtractBackground.SetValue(True)
+        self.tThreshold.SetValue('1.0')
+    
+    def OnSpliter3D(self, event):
+        self.cFitType.SetSelection(self.fitFactories.index('SplitterFitInterpR'))
+        self.tBackgroundFrames.SetValue('-30:0')
+        self.cbSubtractBackground.SetValue(True)
+        self.tThreshold.SetValue('1.0')
 
     def analRefresh(self):
         newNumAnalysed = self.tq.getNumberTasksCompleted(self.image.seriesName)

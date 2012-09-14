@@ -47,6 +47,10 @@ class GenImageDialog(wx.Dialog):
         sizer2.Add(self.cbPixelSize, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
         sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
         
+        if not zvals == None:
+            nZlevels = len(set(zvals))
+        else:
+            nZlevels = 0
 
         #jitter parameter for gaussian and triangles
         if mode in ['gaussian', 'triangles', '3Dgaussian', '3Dtriangles']:
@@ -66,10 +70,15 @@ class GenImageDialog(wx.Dialog):
 
         #jitter parameter for gaussian in z
         if mode in  ['3Dgaussian', '3Dtriangles']:
+            zJitSc = 1.0
+            if nZlevels < 100: #stack rather than 3D fit
+                zJitSc = 200.
+                jitterVarDefaultZ = 0
+                
             sizer2 = wx.BoxSizer(wx.HORIZONTAL)
             sizer2.Add(wx.StaticText(self, -1, 'Z Std. Dev. [nm]:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
-            self.tJitterScaleZ = wx.TextCtrl(self, -1, '1.0', size=(60, -1))
+            self.tJitterScaleZ = wx.TextCtrl(self, -1, '%3.2f'% zJitSc, size=(60, -1))
             sizer2.Add(self.tJitterScaleZ, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
             sizer2.Add(wx.StaticText(self, -1, 'x'), 0, wx.ALIGN_CENTER_VERTICAL | wx.TOP|wx.BOTTOM, 5)
@@ -108,10 +117,14 @@ class GenImageDialog(wx.Dialog):
             sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
 
         if mode in ['3Dhistogram', '3Dgaussian', '3Dtriangles']:
+            zThick = 50
+            if nZlevels < 100: #stack rather than 3D fit
+                zThick = 200
+                
             sizer2 = wx.BoxSizer(wx.HORIZONTAL)
             sizer2.Add(wx.StaticText(self, -1, 'Z slice thickness [nm]:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
-            self.tZThickness = wx.TextCtrl(self, -1, '50', size=(60, -1))
+            self.tZThickness = wx.TextCtrl(self, -1, '%d' % zThick, size=(60, -1))
             sizer2.Add(self.tZThickness, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
             sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
 

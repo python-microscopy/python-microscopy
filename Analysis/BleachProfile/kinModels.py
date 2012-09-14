@@ -76,18 +76,23 @@ def fImod(p, N):
     A, Ndet, tauDet, tauI = p
     return A*(1 + erf((sqrt(N)-Ndet)/tauDet**2))*exp(-N/tauI)
     
-def fITmod(p, N, t):
-    A, Ndet, lamb, tauI, a, Acrit, NDetM = p
+def fITmod(p, N, t, Nco):
+    A, Ndet, lamb, tauI, a, Acrit, bg, k, k3 = p
     
     #constraints
-    Ndet = Ndet**2 #+ve
-    NDetM = NDetM**2
-    Acrit = Acrit**2   
+    Ndet = sqrt(Ndet**2 + 1) - 1 #+ve
+    bg = sqrt(bg**2 + 1) - 1
+    Acrit = sqrt(Acrit**2 + 1) - 1   
     a = (1+erf(a))/2 # [0,1]
+    bg = sqrt(bg**2 + 1) - 1
+    k = sqrt(k**2 + 1) - 1
+    
+    #k2 = sqrt(k2**2 + 1) - 1
     
     r = 1./((t/tauI)**a + 1)
     Ar = A*r
-    return Ar*(1 + erf((N-(Ndet*r - NDetM)*(1 + Ar/Acrit))/N))*exp(-N/lamb)
+    snr = N/sqrt(N + Ar*Acrit + bg)
+    return (N> Nco)*Ar**(1 - exp(-(snr)/Ndet))*(1 + erf((k3 - sqrt(Ar)/k)))*exp(-N/lamb)
 
 
 def fitDecayChan(colourFilter, metadata, channame='', i=0):
@@ -238,22 +243,24 @@ def fitFluorBrightnessTChan(colourFilter, metadata, channame='', i=0, rng = None
     if rng == None:
         rng = nPh.mean()*3
         
+    Nco = nPh.min()
+        
     n, xbins, ybins = histogram2d(nPh, t, [linspace(0, rng, 50), linspace(0, t.max(), 20)])
     bins = xbins[:-1]
     
     xb = xbins[:-1][:,None]*ones([1,ybins.size - 1])
     yb = ybins[:-1][None, :]*ones([xbins.size - 1, 1])    
     
-    res0 = FitModel(fITmod, [n.max()*3, sqrt(bins[n[:,0].argmax()]/2), nPh.mean(), 200, 1, 7, 1], n, xb, yb)
+    res0 = FitModel(fITmod, [n.max()*3, 1, nPh.mean(), 20, 1e2, 1e2, 1, 2e5, 1], n, xb, yb, Nco)
     print res0[0]
     
-    A, Ndet, lamb, tauI, a, Acrit, NDetM = res0[0]
-    Ndet = Ndet**2
-    NDetM = NDetM**2
-    Acrit = Acrit**2
+    A, Ndet, lamb, tauI, a, Acrit, NDetM, k, k3 = res0[0]
+    #Ndet = Ndet**2
+    #NDetM = NDetM**2
+    #Acrit = Acrit**2
     a = (1+erf(a))/2
     
-    rr = fITmod(res0[0], xb, yb)
+    rr = fITmod(res0[0], xb, yb, Nco)
     
     
     figure()

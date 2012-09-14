@@ -314,6 +314,18 @@ class Pipeline:
             self.selectedDataSource.setMapping('z', 'foreShort*focus')
 
         
+
+        #Fit module specific filter settings        
+        if 'Analysis.FitModule' in self.mdh.getEntryNames():
+            fitModule = self.mdh['Analysis.FitModule']
+            
+            if 'Interp' in fitModule:
+                self.filterKeys['A'] = (5, 100000)
+                
+            if fitModule == 'SplitterShiftEstFR':
+                self.filterKeys['fitError_dx'] = (0,10)
+                self.filterKeys['fitError_dy'] = (0,10)
+                
         
         #remove any keys from the filter which are not present in the data
         for k in self.filterKeys.keys():
@@ -324,7 +336,7 @@ class Pipeline:
         self.Rebuild()
 
 
-        if 'Sample.Labelling' in self.mdh.getEntryNames():
+        if 'Sample.Labelling' in self.mdh.getEntryNames() and 'gFrac' in self.selectedDataSource.keys():
             self.SpecFromMetadata()
 
 
