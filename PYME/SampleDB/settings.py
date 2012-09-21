@@ -22,6 +22,8 @@
 #
 ################
 # Django settings for SampleDB project.
+# To change get the database working you will want to read up on Django.
+# In any case, It'll need some work
 import os
 
 DEBUG = True
@@ -36,7 +38,7 @@ MANAGERS = ADMINS
 DATABASE_ENGINE = 'mysql'           # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
 DATABASE_NAME = 'sample_db'             # Or path to database file if using sqlite3.
 DATABASE_USER = 'PYMEUSER'             # Not used with sqlite3.
-DATABASE_PASSWORD = 'PYME'         # Not used with sqlite3.
+DATABASE_PASSWORD = 'PYME'         # Not used with sqlite3. #### Change this for local install
 DATABASE_HOST = 'lmsrv1'             # Set to empty string for localhost. Not used with sqlite3.
 DATABASE_PORT = ''             # Set to empty string for default. Not used with sqlite3.
 
@@ -72,7 +74,7 @@ MEDIA_URL = '/media/'
 ADMIN_MEDIA_PREFIX = '/admin_media/'
 AUTOCOMPLETE_MEDIA_PREFIX = '/media/autocomplete/'
 
-# Make this unique, and don't share it with anybody.
+# Make this unique, and don't share it with anybody. ####Change this for local server
 SECRET_KEY = 'r(b1(_!^m^9imfn9o3#91t%lc5$+_kosq^3s%+64(m0wsl0kfg'
 
 # List of callables that know how to import templates from various sources.
