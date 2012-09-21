@@ -1,0 +1,10 @@
+This program as a whole may be used and copied under the provisions of the GPL V3 (see LICENSE). This is in part dictated by the usage of GPL licensed 3rd party code such as FFTW within the program, but also reflects the considerable investment of time the full project represents.
+
+Some aspects of the program are already covered by more permissive licensing (e.g. BSD), indicated in the file headers where relevant. 
+
+Other licensing options may be available for stand alone portions of the code and users seeking more permissive licensing (either BSD or proprietary use licenses) are encouraged to contact the author for more information. 
+
+for more information contact:
+
+d.baddeley <at> auckland.ac.nz
+or david_baddeley <at> yahoo.com.au
