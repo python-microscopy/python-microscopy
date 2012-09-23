@@ -1,0 +1,237 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Basic Acquisiton &mdash; PYME v0.1 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '#',
+        VERSION:     '0.1',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="PYME v0.1 documentation" href="index.html" />
+    <link rel="up" title="PYMEAcquire" href="PYMEAcquire.html" />
+    <link rel="next" title="Simulator" href="Simulator.html" />
+    <link rel="prev" title="Using PYME Acquire" href="AcquireBasicUsage.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="Simulator.html" title="Simulator"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="AcquireBasicUsage.html" title="Using PYME Acquire"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">PYME v0.1 documentation</a> &raquo;</li>
+          <li><a href="PYMEAcquire.html" accesskey="U">PYMEAcquire</a> &raquo;</li>
+<li><a href="http://lmsrv1/docwiki/docs/pyme-docs/BasicAcquisition.rst">Edit</a> &raquo;</li>
+ 
+
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="basic-acquisiton">
+<h1>Basic Acquisiton<a class="headerlink" href="#basic-acquisiton" title="Permalink to this headline">¶</a></h1>
+<p>These instructions assume that you are imaging using near infrared dyes and the 671nm laser. While the same principles apply to imaging using other dye and laser combinations, there will be subtle differences. See <a class="reference external" href="Protocols.html#protocols"><em>Acquisition Protocols</em></a> and <a href="#id1"><span class="problematic" id="id2">AdvancedImaging_</span></a>.</p>
+<div class="section" id="before-starting">
+<h2>Before starting<a class="headerlink" href="#before-starting" title="Permalink to this headline">¶</a></h2>
+<p>Mount slides using the appropriate switching buffer. There are a few important points to consider:</p>
+<ul class="simple">
+<li>slides and coverslips should be thoroughly cleaned</li>
+<li>we can only access a small area of the slide, so the coverslip must be within this area. There is a template on the bench in the shared lab area.</li>
+<li>You should have a consistent slide naming scheme – I tend to use <tt class="docutils literal"><span class="pre">day_month_year_A</span></tt>, <tt class="docutils literal"><span class="pre">_B</span></tt>, etc...</li>
+<li>the nail polish must be dry before putting the sample on the microscope</li>
+</ul>
+</div>
+<div class="section" id="initial-start-up">
+<h2>Initial start up<a class="headerlink" href="#initial-start-up" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><dl class="first docutils">
+<dt>Turn on the following:</dt>
+<dd><ul class="first last simple">
+<li>Computer, Pifoc, powerboard (stepper motors &amp; cooling for 2nd camera), microscope body, filter wheel, arc lamp, laser, and laser shutters</li>
+<li>Check that 2nd PC &amp; Digidata are on (these should be on the whole time)</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p class="first">log on</p>
+</li>
+<li><p class="first">fire up <strong>&#8216;PYME Acquire&#8217;</strong> and <strong>&#8216;Launch Workers – 6 cores&#8217;</strong> note that launch workers sometimes gives an error on startup (race condition). If this happens, close and restart (you can leave PYME Acquire running)</p>
+</li>
+</ul>
+</div>
+<div class="section" id="initial-configuration">
+<h2>Initial configuration<a class="headerlink" href="#initial-configuration" title="Permalink to this headline">¶</a></h2>
+<p>By default, the system is set up for ratiometric imaging using the splitter, and any ROI is constrained to cover equal areas on both sides of the centre line. If you are only intending to image a single label, you should disable this feature by unchecking the <tt class="docutils literal"><span class="pre">Constrain</span> <span class="pre">ROI</span></tt> option under the <tt class="docutils literal"><span class="pre">Controls-&gt;Splitter</span></tt> menu.</p>
+<p>If you are doing multi-colour imaging, make sure you have a current shift field. If not, acquire a new one using a beads slide (see the <a href="#id3"><span class="problematic" id="id4">ShiftField_</span></a> section). Now might also be a good time to let the software know about the shiftfield using the <tt class="docutils literal"><span class="pre">Controls-&gt;Splitter-&gt;Set</span> <span class="pre">Shift</span> <span class="pre">Field</span></tt> menu item. This will mean that shifts get corrected in the live unmixing view. It will also mean <em>(NEW)</em> that the shift field data gets propagated to the analysis for you and you don&#8217;t need to enter it every time.</p>
+<p>It is useful to setup the acquisition protocol at this stage. For standard imaging with IR dyes this should be <tt class="docutils literal"><span class="pre">Prebleach671</span></tt>. If you need to do something different, see <a class="reference external" href="Protocols.html#protocols"><em>Acquisition Protocols</em></a> or <a href="#id5"><span class="problematic" id="id6">AdvancedImaging_</span></a>.</p>
+</div>
+<div class="section" id="putting-your-sample-on-the-scope">
+<h2>Putting your sample on the scope<a class="headerlink" href="#putting-your-sample-on-the-scope" title="Permalink to this headline">¶</a></h2>
+<p>This is simple – carefully put a drop of oil on the objective and place the slide into the holder. Remember that this is an inverted microscope and the coverslip needs to face downwards.</p>
+<div class="section" id="setting-up-the-slide-information">
+<h3>Setting up the slide information<a class="headerlink" href="#setting-up-the-slide-information" title="Permalink to this headline">¶</a></h3>
+<p>The important thing is to let the software know what slide you put on and which structures are stained using the sample information dialog. Bring up the dialog by pressing the <strong>Set</strong> button in the slide pane. This is where your carefully chosen naming scheme comes in, and you should also enter the structures you labelled and the dyes you used. Trying to keep a fairly consistent naming scheme for the dyes is important (as the dye information is used later in the analysis). We&#8217;re currently using e.g. A680 or A750 for the Alexa dyes.</p>
+</div>
+</div>
+<div class="section" id="finding-cells">
+<h2>Finding cells<a class="headerlink" href="#finding-cells" title="Permalink to this headline">¶</a></h2>
+<p>Pretty much as for any normal microscope, with the following caveats:</p>
+<ul class="simple">
+<li>arc lamp / laser slider should be in (ie to arc lamp)</li>
+<li>you need to select both excitation and emission filters (see list on rack)</li>
+<li>you can only focus when PYME Acquire is in the foreground. Focus position is usually roughly in the centre of the travel. Focus sensitivity can be adjusted using the buttons on the focus wheel, and read out from the menu bar.</li>
+</ul>
+<div class="section" id="finding-cells-in-multi-colour-samples">
+<h3>Finding cells in multi-colour samples<a class="headerlink" href="#finding-cells-in-multi-colour-samples" title="Permalink to this headline">¶</a></h3>
+<p>Note that there are a number of useful functions for multi-colour samples. Below the Preview window you can open a live unmixing preview window using the <tt class="docutils literal"><span class="pre">Controls-&gt;Splitter-&gt;Unxmix</span></tt> menu item (shortcut F7). Note that you should load the proper shiftfield as described in <a class="reference internal" href="#initial-configuration">Initial configuration</a> above. When the unmix window comes up first you might have to set the unmixing matrix values correctly. A suitable unmixing matrix for Alexa 680 and Alexa 750 is:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<tbody valign="top">
+<tr><td>0.89</td>
+<td>0.11</td>
+</tr>
+<tr><td>0.13</td>
+<td>0.87</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="section" id="preparing-to-acquire">
+<h2>Preparing to acquire<a class="headerlink" href="#preparing-to-acquire" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Switch to the near-ir filter cube (#3) and excitation filter</li>
+<li>switch from eyepieces to camera</li>
+<li>if the signal is weak, switch to an EM gain of 150 (for old camera, ~100 for new camera)</li>
+<li>if still weak, increase integration time</li>
+<li>fine tune focus &amp; position</li>
+<li>ensure neutral density filter is at the ND4.5 position</li>
+<li>close shutter to arc lamp, pull illumination slider to laser position, and open laser shutter</li>
+<li>fine tune again, and set ROI to cover illuminated area</li>
+<li>if doing a z-stack, focus and set top and bottom</li>
+<li>set the integration time to 50ms and the EMGain to 150 (assuming this doesn&#8217;t saturate the detector)</li>
+</ul>
+</div>
+<div class="section" id="acquiring">
+<h2>Acquiring<a class="headerlink" href="#acquiring" title="Permalink to this headline">¶</a></h2>
+<p>Before you start the acquisition make sure you have selected the appropriate acquisition protocol for your sample (usually <tt class="docutils literal"><span class="pre">Prebleach671</span></tt>).</p>
+<p>Click on <strong>Series</strong> or <strong>Z-Series</strong> for a single slice or a stack respectively,
+wait for the analysis program to come up, test the threshold, and click go</p>
+<p>Note that some protocols, including <tt class="docutils literal"><span class="pre">Prebleach671</span></tt>, will perform a sanity check of acquisition parameters and will warn you when they think they have detected a problem. You should only override this warning if you know what you are doing.</p>
+</div>
+<div class="section" id="shutting-down">
+<h2>Shutting down<a class="headerlink" href="#shutting-down" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Close the software (waiting for the camera(s) to warm up)</li>
+<li>turn off all the pieces of hardware you switched on during start up (this can be done while the software is shutting down)</li>
+<li>Do <strong>not</strong> turn off the computer without asking people (it gets used as a server to access recently acquired files</li>
+<li>Do not turn off the Digidata or 2nd computer</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="#">Basic Acquisiton</a><ul>
+<li><a class="reference external" href="#before-starting">Before starting</a></li>
+<li><a class="reference external" href="#initial-start-up">Initial start up</a></li>
+<li><a class="reference external" href="#initial-configuration">Initial configuration</a></li>
+<li><a class="reference external" href="#putting-your-sample-on-the-scope">Putting your sample on the scope</a><ul>
+<li><a class="reference external" href="#setting-up-the-slide-information">Setting up the slide information</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#finding-cells">Finding cells</a><ul>
+<li><a class="reference external" href="#finding-cells-in-multi-colour-samples">Finding cells in multi-colour samples</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#preparing-to-acquire">Preparing to acquire</a></li>
+<li><a class="reference external" href="#acquiring">Acquiring</a></li>
+<li><a class="reference external" href="#shutting-down">Shutting down</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="AcquireBasicUsage.html"
+                                  title="previous chapter">Using PYME Acquire</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="Simulator.html"
+                                  title="next chapter">Simulator</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/BasicAcquisition.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="Simulator.html" title="Simulator"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="AcquireBasicUsage.html" title="Using PYME Acquire"
+             >previous</a> |</li>
+        <li><a href="index.html">PYME v0.1 documentation</a> &raquo;</li>
+          <li><a href="PYMEAcquire.html" >PYMEAcquire</a> &raquo;</li>
+<li><a href="http://lmsrv1/docwiki/docs/pyme-docs/BasicAcquisition.rst">Edit</a> &raquo;</li>
+ 
+
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2010, David Baddeley.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+    </div>
+  </body>
+</html>

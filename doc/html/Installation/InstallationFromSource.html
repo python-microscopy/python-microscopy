@@ -1,0 +1,313 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Installation From Source &mdash; PYME v0.1 documentation</title>
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="PYME v0.1 documentation" href="../index.html" />
+    <link rel="next" title="PYMEAcquire" href="../PYMEAcquire.html" />
+    <link rel="prev" title="Installation of PYME on windows with Enthought python" href="InstallationUsingWindowsInstaller.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../PYMEAcquire.html" title="PYMEAcquire"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="InstallationUsingWindowsInstaller.html" title="Installation of PYME on windows with Enthought python"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">PYME v0.1 documentation</a> &raquo;</li>
+<li><a href="http://lmsrv1/docwiki/docs/pyme-docs/Installation/InstallationFromSource.rst">Edit</a> &raquo;</li>
+ 
+
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="installation-from-source">
+<span id="installationfromsource"></span><h1>Installation From Source<a class="headerlink" href="#installation-from-source" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">¶</a></h2>
+<p>PYME requires:</p>
+<ul class="simple">
+<li>Python 2.6 or 2.7(reccomended) *</li>
+<li>a c compiler*</li>
+<li>python-dev (only on Linux - has the Python development header files)</li>
+</ul>
+<p>and the following Python packages:</p>
+<ul class="simple">
+<li>Numpy*</li>
+<li>Scipy*</li>
+<li>Matplotlib*</li>
+<li>wxPython* (&gt;2.8.11)</li>
+<li>pytables*</li>
+<li>Pyro (3.9.1)</li>
+<li>PyOpenGL*</li>
+<li>PIL (Python Imaging Library)*</li>
+<li>pywin32* (only req. on windows)</li>
+</ul>
+<p>For full functionality, the following are also useful:</p>
+<ul class="simple">
+<li>PySerial</li>
+<li>PyParallel</li>
+<li>PyFFTW3</li>
+<li>MySQL-python</li>
+<li>Django (&gt;1.2)</li>
+<li>Django-south</li>
+<li>Mayavi2*</li>
+<li>Delny</li>
+</ul>
+<p>* part of Enthought python.</p>
+<p>On Windows (and probably MacOS) the easiest way to get the pre-requisites is to
+install the <a class="reference external" href="http://www.enthought.com/products/epd.php">Enthought Python Distribution</a>
+and then pull the remaining packages using <tt class="docutils literal"><span class="pre">pip</span></tt> or <tt class="docutils literal"><span class="pre">easy_install</span></tt>.
+Under linux I&#8217;d use the default python install and the distribution packages for
+the rest. Depending on how old your distro is you might want to use
+pip/easy_install for some of the packages to get a more recent version instead
+(notably Pyro, and WxPython).</p>
+<p>There are a couple of little caveats though:</p>
+<ul class="simple">
+<li>We need a very recent version of wxPython. This means that you&#8217;ll probably have to
+upgrade the wxPython found in EPD and/or older linux distros. See upgrading wxPython below.</li>
+<li>Delny is a bit of a mess (not in in the python package archive so no easy_install, iffy licensing, need to google, download source, &amp; build, but default sources don&#8217;t build on Win or MacOS). I&#8217;m trying to remove the dependency (currently only used by one minor component of the visualisation/postprocessing), but in the meantime the easiest thing would probably be to grab a copy of the sources I&#8217;ve hacked to work on Win/ Mac off me.</li>
+<li>On some (most?) versions of windows, the network stack is broken. Pyro needs to be told about this by setting an environment variable - <tt class="docutils literal"><span class="pre">PYRO_BROKEN_MSGWAITALL=1</span></tt>. I can confirm that this is the case for pretty much every XP system, but can&#8217;t comment on Vista/7). Pyro falls back on another (slower) piece of code when this the flag is set, so it should be safe in any case. Can&#8217;t remember exactly how to diagnose the problem other than that Pyro falls over with cryptic error messages.</li>
+</ul>
+<p>To make this whole process of finding and installing dependencies a little less painful,
+I&#8217;ve put together lists of required and recommended modules that can be used with
+<tt class="docutils literal"><span class="pre">pip</span></tt> to pull any remaining dependencies. Thus one would execute:</p>
+<div class="highlight-python"><pre>pip install -r recommended-modules.txt</pre>
+</div>
+<p>to get everything I think is going to be useful, or:</p>
+<div class="highlight-python"><pre>pip install -r required-modules.txt</pre>
+</div>
+<p>to get the bare essentials. Obviously this requires <a class="reference external" href="http://pypi.python.org/pypi/pip">pip</a>
+to be installed first. I would suggest installing at least numpy and scipy manually
+because pip defaults to building everything from source, which is likely to be
+somewhat painful for numpy and scipy. On Ubuntu/Debian systems running the
+<tt class="docutils literal"><span class="pre">install_dependencies.py</span></tt> script will try to install the dependencies using system
+packages first and then resort to <em>pip</em> for anything left over.</p>
+<div class="section" id="pyro-nameserver">
+<h3>Pyro Nameserver<a class="headerlink" href="#pyro-nameserver" title="Permalink to this headline">¶</a></h3>
+<p>You need to run a <a class="reference external" href="http://www.xs4all.nl/~irmen/pyro3/">Pyro</a> nameserver somewhere on your network segment. For testing, the easiest thing is to run <tt class="docutils literal"><span class="pre">pryo_ns</span></tt> (or <tt class="docutils literal"><span class="pre">pyro-nsd</span></tt>) from the command line. There can, however, only be one nameserver on the network segment, so long term you might want to find a computer that&#8217;s always on and run it on that. If it&#8217;s a linux box, there might be some trickery involved to make sure it binds to the the external interface rather than localhost (specifically, the hostname has to resolve to the external interface).</p>
+<p>You&#8217;ll also want some form of mercurial client if checking out of the repository.</p>
+</div>
+</div>
+<div class="section" id="installing">
+<h2>Installing<a class="headerlink" href="#installing" title="Permalink to this headline">¶</a></h2>
+<p>Create a directory to hold the code. This directory is going to be added to the Python path, so it&#8217;s probably not a good idea to just use your home directory, or <tt class="docutils literal"><span class="pre">c:</span></tt>. On Windows I use <tt class="docutils literal"><span class="pre">c:\PYME</span></tt>, on Linux I tend to use <tt class="docutils literal"><span class="pre">~/PYME</span></tt>.</p>
+<div class="section" id="get-the-code">
+<h3>Get the code<a class="headerlink" href="#get-the-code" title="Permalink to this headline">¶</a></h3>
+<p>The code is stored in a mercurial repository. If you&#8217;re on the local network you can get the current copy by doing</p>
+<div class="highlight-python"><pre>cd ~/PYME
+hg clone http://lmsrv1/hg/PYME</pre>
+</div>
+<p>or the equivalent using a gui client (eg <a class="reference external" href="http://tortoisehg.bitbucket.org/">TortoiseHG</a>). If you&#8217;re not on the network, then extract the archive I&#8217;ve sent you into this directory.</p>
+</div>
+<div class="section" id="build-and-install">
+<h3>Build and install<a class="headerlink" href="#build-and-install" title="Permalink to this headline">¶</a></h3>
+<p>Open a terminal and execute the following:</p>
+<div class="highlight-python"><pre>c:
+cd c:\PYME\PYME
+python setup.py install</pre>
+</div>
+<p>obviously replacing the path with the relevant one.</p>
+</div>
+<div class="section" id="alternatively-if-you-re-going-to-fiddle-with-the-code">
+<h3>Alternatively, if you&#8217;re going to fiddle with the code<a class="headerlink" href="#alternatively-if-you-re-going-to-fiddle-with-the-code" title="Permalink to this headline">¶</a></h3>
+<p>This is mostly applicable when using the software for microscope control, where you
+are going to have to tweak some of the configuration codes.</p>
+<div class="highlight-python"><pre>python setup.py develop</pre>
+</div>
+</div>
+<div class="section" id="windows">
+<h3>Windows<a class="headerlink" href="#windows" title="Permalink to this headline">¶</a></h3>
+<p>If not already done by the setup script, create shortcuts somewhere (eg the start menu), to the following scripts:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">PYTHONDIR\Scripts\PYMEAquire.py</span></tt> (data acquisition)</li>
+<li><tt class="docutils literal"><span class="pre">PYTHONDIR\Scripts\launchWorkers.py</span></tt> (real time analysis)</li>
+<li><tt class="docutils literal"><span class="pre">PYTHONDIR\Scripts\dh5view.cmd</span></tt> (raw data viewer)</li>
+<li><tt class="docutils literal"><span class="pre">PYTHONDIR\Scripts\LMVis\VisGUI.cmd</span></tt> (analysed data viewer)</li>
+</ul>
+<p>Where  <tt class="docutils literal"><span class="pre">PYTHONDIR</span></tt> is the location of your python installation (typically <tt class="docutils literal"><span class="pre">c:\Python27</span></tt> or similar)
+Optionally associate .h5 files with dh5view (will also open .tif,  .kdf &amp; .psf if you want)
+and .h5r files with VisGUI. I typically do this by clicking on one of the files,
+using the &#8216;Open With&#8217; option, and telling it to remember. If you&#8217;re using the
+sample database, you can also associate .pmu files with <tt class="docutils literal"><span class="pre">PYTHONDIR\Scripts\pymeUrlOpener.cmd</span></tt>.</p>
+</div>
+<div class="section" id="linux-gnome">
+<h3>Linux (Gnome)<a class="headerlink" href="#linux-gnome" title="Permalink to this headline">¶</a></h3>
+<p>Change to the <tt class="docutils literal"><span class="pre">PYME/FileUtils</span></tt> directory and run <tt class="docutils literal"><span class="pre">install_gnome.sh</span></tt>. This should
+(hopefully) create links to the relevant programs in <tt class="docutils literal"><span class="pre">~/bin</span></tt> and set up
+associations and :) thumbnailing! With any luck, file permissions should be OK
+out of the repository, but there&#8217;s a chance you&#8217;re going to have to make a
+couple of the scripts executable.</p>
+</div>
+<div class="section" id="upgrading-wxpython">
+<h3>Upgrading wxPython<a class="headerlink" href="#upgrading-wxpython" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="linux-system-python-on-ubuntu-debian">
+<h4>Linux (system python on Ubuntu/Debian)<a class="headerlink" href="#linux-system-python-on-ubuntu-debian" title="Permalink to this headline">¶</a></h4>
+<p>The easiest way is to add the relevant
+<a class="reference external" href="http://wiki.wxpython.org/InstallingOnUbuntuOrDebian">repositories</a> and do
+an <tt class="docutils literal"><span class="pre">apt-get</span> <span class="pre">upgrade</span></tt>.</p>
+</div>
+<div class="section" id="enthought-python-distribution-windows">
+<h4>Enthought Python Distribution (windows)<a class="headerlink" href="#enthought-python-distribution-windows" title="Permalink to this headline">¶</a></h4>
+<ol class="arabic simple">
+<li>Delete the existing wxPython distribution incluing all .egg files.
+This can be done by executing the <tt class="docutils literal"><span class="pre">remove_old_wx.py</span></tt> script that ships with PYME
+(this should be on the path after installing PYME, and can otherwise be found
+in the <tt class="docutils literal"><span class="pre">scripts</span></tt> folder of the source distribution).</li>
+<li>Download and install a newer wxPython from <a class="reference external" href="http://www.wxpython.org/">www.wxpython.org</a></li>
+</ol>
+</div>
+<div class="section" id="enthought-python-distribution-osx-thanks-to-christian">
+<h4>Enthought Python Distribution (OSX) (thanks to Christian)<a class="headerlink" href="#enthought-python-distribution-osx-thanks-to-christian" title="Permalink to this headline">¶</a></h4>
+<ol class="arabic simple">
+<li>Delete the existing wxPython distribution incluing all .egg files. You&#8217;re going
+to have to dive in and manually remove the files from your <tt class="docutils literal"><span class="pre">site-packages</span></tt> directory.</li>
+<li>Download the most recent OSX build for the version of python that
+came in your EPD distribution, and extract this to a temporary directory.</li>
+<li>Copy the relevant directories across to your EPD site packages directory. This
+is likely to be somewhere below <tt class="docutils literal"><span class="pre">/Library/Frameworks/Python.framework/Versions/Current.</span></tt></li>
+</ol>
+</div>
+</div>
+<div class="section" id="basic-configuration">
+<span id="basicconfig"></span><h3>Basic Configuration<a class="headerlink" href="#basic-configuration" title="Permalink to this headline">¶</a></h3>
+<p>In addition to the setup detailed above, PYME has a couple of configuration
+options which are controlled by environment variables. These are:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="25%" />
+<col width="75%" />
+</colgroup>
+<tbody valign="top">
+<tr><td>PYMEDATADIR</td>
+<td>Default location where PYMEAcquire saves data. Eg
+<tt class="docutils literal"><span class="pre">D:\</span></tt>. Also place where other parts of analysis
+chain look for data.</td>
+</tr>
+<tr><td>PYMEMICRPATH</td>
+<td>Used with sample database to know where (on the local
+machine) the microscope computer is mapped.</td>
+</tr>
+<tr><td>PYMENASPATH</td>
+<td>As for PYMEMICRPATH, but for the NAS</td>
+</tr>
+</tbody>
+</table>
+<p>You probably want to set at least PYMEDATADIR, as the default is not particularly useful.</p>
+<p>You should now have a setup which works for simulation*, data analysis, &amp; visualisation. Interfacing with hardware obviously requires a little more work - see <a class="reference external" href="../ConfiguringPYMEAcquire.html#configuringpymeacquire"><em>Configuring PYME Acquire</em></a>.</p>
+<p>* simulation probably won&#8217;t work perfectly until you&#8217;ve done the EMGain calibration section of <a class="reference external" href="../ConfiguringPYMEAcquire.html#configuringpymeacquire"><em>Configuring PYME Acquire</em></a>.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="../index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="#">Installation From Source</a><ul>
+<li><a class="reference external" href="#prerequisites">Prerequisites</a><ul>
+<li><a class="reference external" href="#pyro-nameserver">Pyro Nameserver</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#installing">Installing</a><ul>
+<li><a class="reference external" href="#get-the-code">Get the code</a></li>
+<li><a class="reference external" href="#build-and-install">Build and install</a></li>
+<li><a class="reference external" href="#alternatively-if-you-re-going-to-fiddle-with-the-code">Alternatively, if you&#8217;re going to fiddle with the code</a></li>
+<li><a class="reference external" href="#windows">Windows</a></li>
+<li><a class="reference external" href="#linux-gnome">Linux (Gnome)</a></li>
+<li><a class="reference external" href="#upgrading-wxpython">Upgrading wxPython</a><ul>
+<li><a class="reference external" href="#linux-system-python-on-ubuntu-debian">Linux (system python on Ubuntu/Debian)</a></li>
+<li><a class="reference external" href="#enthought-python-distribution-windows">Enthought Python Distribution (windows)</a></li>
+<li><a class="reference external" href="#enthought-python-distribution-osx-thanks-to-christian">Enthought Python Distribution (OSX) (thanks to Christian)</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#basic-configuration">Basic Configuration</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="InstallationUsingWindowsInstaller.html"
+                                  title="previous chapter">Installation of PYME on windows with Enthought python</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="../PYMEAcquire.html"
+                                  title="next chapter">PYMEAcquire</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../_sources/Installation/InstallationFromSource.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../PYMEAcquire.html" title="PYMEAcquire"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="InstallationUsingWindowsInstaller.html" title="Installation of PYME on windows with Enthought python"
+             >previous</a> |</li>
+        <li><a href="../index.html">PYME v0.1 documentation</a> &raquo;</li>
+<li><a href="http://lmsrv1/docwiki/docs/pyme-docs/Installation/InstallationFromSource.rst">Edit</a> &raquo;</li>
+ 
+
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2010, David Baddeley.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+    </div>
+  </body>
+</html>

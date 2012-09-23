@@ -1,0 +1,211 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Using PYME Acquire &mdash; PYME v0.1 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '#',
+        VERSION:     '0.1',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="PYME v0.1 documentation" href="index.html" />
+    <link rel="up" title="PYMEAcquire" href="PYMEAcquire.html" />
+    <link rel="next" title="Basic Acquisiton" href="BasicAcquisition.html" />
+    <link rel="prev" title="Configuring PYME Acquire" href="ConfiguringPYMEAcquire.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="BasicAcquisition.html" title="Basic Acquisiton"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="ConfiguringPYMEAcquire.html" title="Configuring PYME Acquire"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">PYME v0.1 documentation</a> &raquo;</li>
+          <li><a href="PYMEAcquire.html" accesskey="U">PYMEAcquire</a> &raquo;</li>
+<li><a href="http://lmsrv1/docwiki/docs/pyme-docs/AcquireBasicUsage.rst">Edit</a> &raquo;</li>
+ 
+
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="using-pyme-acquire">
+<h1>Using PYME Acquire<a class="headerlink" href="#using-pyme-acquire" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="the-camera-preview">
+<h2>The camera &amp; preview<a class="headerlink" href="#the-camera-preview" title="Permalink to this headline">¶</a></h2>
+<p>PYMEAquire will start with the camera running in a live preview mode. The mapping
+of the (high bit depth) camera data to the display is controlled by the display widget.
+By default this auto-scales the available dynamic range  (max value - min value)
+in the image to 8 bits for display. This auto-scaling behaviour can be disabled by
+unchecking the <strong>Auto</strong> option. When auto-scaling is disabled, the scaling can be
+adjusted by dragging the red reference lines on the histogram, or by clicking
+<strong>Optimise</strong> to achieve a once off min-max scaling. For historical reasons this
+display assumes a maximum camera dynamic range of 12 bits and with cameras possesing
+a higher dynamic range it is possible to saturate the display before the camera
+saturates. The display widget also allows the display magnification to be changed.</p>
+<div class="section" id="integration-time">
+<h3>Integration time<a class="headerlink" href="#integration-time" title="Permalink to this headline">¶</a></h3>
+<p>The camera integration time can be set using the integration time slider or the
+accompanying combobox.</p>
+</div>
+<div class="section" id="region-of-interest">
+<h3>Region of interest<a class="headerlink" href="#region-of-interest" title="Permalink to this headline">¶</a></h3>
+<p>A region of interest can be selected by using the mouse to select an area in the
+preview window and then selecting <strong>Controls &gt; Camera &gt; Set ROI</strong> from the menu,
+or by using the ascociated keyboard shortcut (<strong>F8</strong>). The ROI can then be cleared
+through the menu, or by pressing <strong>F8</strong> again.</p>
+</div>
+<div class="section" id="advanced-camera-properties">
+<h3>Advanced camera properties<a class="headerlink" href="#advanced-camera-properties" title="Permalink to this headline">¶</a></h3>
+<p>Some cameras (eg the Andor EMCCDs) will cause an additional pane of advanced
+settings to be shown which allow, for example, the EM gain end TE cooling temperature
+to be set. A not completely obvious aspect of the acquisition software is that it
+will run the camera in <em>continuous</em> mode (ie letting the camera acquire frames one
+after the other and stream them into a buffer). This has the advantage of allowing
+the higest possible frame rates, but means that the camera frames and any hardware
+actions are essentially asynchronous. If syncronised motion is required, the camera
+can be placed into <em>single shot</em> mode whereby control returns to the software after
+each frame. For the Andor camera, this is achieved in the <strong>Advanced</strong> section of the
+EMCCD controls. This is probably advisable when doing, for example, conventional
+z-stacks. Z-stacks in protocols avoid the syncronisation problem by recording a
+timestamp of when the movement occured and calculating, post-hoc, which frame it
+corresponds to.</p>
+</div>
+<div class="section" id="multiple-camera-support">
+<h3>Multiple camera support<a class="headerlink" href="#multiple-camera-support" title="Permalink to this headline">¶</a></h3>
+<p>PYMEAcquire has some basic support for multiple cameras. If multiple cameras are
+defined in the initialisation file, a control will be shown permitting switching
+between the cameras.</p>
+</div>
+</div>
+<div class="section" id="acquiring-data">
+<h2>Acquiring data<a class="headerlink" href="#acquiring-data" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="acquiring-single-images">
+<h3>Acquiring single images<a class="headerlink" href="#acquiring-single-images" title="Permalink to this headline">¶</a></h3>
+<p>Single images (snapshots) may be acquired by either selecting <strong>Acquire &gt; 1 pic</strong>
+or by pressing <strong>F5</strong>. These can be saved as <tt class="docutils literal"><span class="pre">.tif</span></tt>, <tt class="docutils literal"><span class="pre">.h5</span></tt>, or <tt class="docutils literal"><span class="pre">.npy</span></tt> (see <a class="reference external" href="DataFormats.html#dataformats"><em>PYME Data Formats</em></a>)</p>
+</div>
+<div class="section" id="z-stacks">
+<h3>Z-Stacks<a class="headerlink" href="#z-stacks" title="Permalink to this headline">¶</a></h3>
+<p>3D image stacks such as used for conventional widefield microscopy and, for example
+PSF measurements can be obtained using the control at top right. Again, the options are <tt class="docutils literal"><span class="pre">.tif</span></tt>, <tt class="docutils literal"><span class="pre">.h5</span></tt>, or <tt class="docutils literal"><span class="pre">.npy</span></tt></p>
+</div>
+<div class="section" id="streaming-spooling">
+<h3>Streaming/Spooling<a class="headerlink" href="#streaming-spooling" title="Permalink to this headline">¶</a></h3>
+<p>Streaming functionality (the Spooling panel) is what is typically used for localisation
+microscopy, and permits data to be streamed either to disk in <tt class="docutils literal"><span class="pre">.h5</span></tt> format or
+to a server process (default) for real time analysis. If you want to save directly to
+file and analyse later, the <strong>Save to Queue</strong> option needs to be unchecked. Filenames
+are automatically generated from the current date and user name (although can be
+changed manually). To access some of the controls (eg &#8216;Spool Directory&#8217; and &#8216;Save
+to Queue&#8217; you might need to either drag the &#8216;Hardware&#8217; controls down, or unpin the
+Z-Stack controls.</p>
+<p>Before starting streaming you can choose a <a class="reference external" href="Protocols.html#protocols"><em>protocol</em></a>, which defines
+actions to be performed during the sequence. You can then choose to acquire a simple
+sequence (by clicking on <strong>Series</strong>), or one in which the focus is stepped at regular
+intervals (<strong>Z-Series</strong>). The Z-Series uses the z-stepping regime defined using the
+Z-stack control.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="#">Using PYME Acquire</a><ul>
+<li><a class="reference external" href="#the-camera-preview">The camera &amp; preview</a><ul>
+<li><a class="reference external" href="#integration-time">Integration time</a></li>
+<li><a class="reference external" href="#region-of-interest">Region of interest</a></li>
+<li><a class="reference external" href="#advanced-camera-properties">Advanced camera properties</a></li>
+<li><a class="reference external" href="#multiple-camera-support">Multiple camera support</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#acquiring-data">Acquiring data</a><ul>
+<li><a class="reference external" href="#acquiring-single-images">Acquiring single images</a></li>
+<li><a class="reference external" href="#z-stacks">Z-Stacks</a></li>
+<li><a class="reference external" href="#streaming-spooling">Streaming/Spooling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="ConfiguringPYMEAcquire.html"
+                                  title="previous chapter">Configuring PYME Acquire</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="BasicAcquisition.html"
+                                  title="next chapter">Basic Acquisiton</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/AcquireBasicUsage.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="BasicAcquisition.html" title="Basic Acquisiton"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="ConfiguringPYMEAcquire.html" title="Configuring PYME Acquire"
+             >previous</a> |</li>
+        <li><a href="index.html">PYME v0.1 documentation</a> &raquo;</li>
+          <li><a href="PYMEAcquire.html" >PYMEAcquire</a> &raquo;</li>
+<li><a href="http://lmsrv1/docwiki/docs/pyme-docs/AcquireBasicUsage.rst">Edit</a> &raquo;</li>
+ 
+
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2010, David Baddeley.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+    </div>
+  </body>
+</html>

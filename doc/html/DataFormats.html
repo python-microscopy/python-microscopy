@@ -1,0 +1,208 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PYME Data Formats &mdash; PYME v0.1 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '#',
+        VERSION:     '0.1',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="PYME v0.1 documentation" href="index.html" />
+    <link rel="up" title="Technical Details" href="Technical.html" />
+    <link rel="prev" title="Technical Details" href="Technical.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="Technical.html" title="Technical Details"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">PYME v0.1 documentation</a> &raquo;</li>
+          <li><a href="Technical.html" accesskey="U">Technical Details</a> &raquo;</li>
+<li><a href="http://lmsrv1/docwiki/docs/pyme-docs/DataFormats.rst">Edit</a> &raquo;</li>
+ 
+
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="pyme-data-formats">
+<span id="dataformats"></span><h1>PYME Data Formats<a class="headerlink" href="#pyme-data-formats" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="pyme-hdf5-h5">
+<h2>PYME HDF5 (<tt class="docutils literal"><span class="pre">.h5</span></tt>)<a class="headerlink" href="#pyme-hdf5-h5" title="Permalink to this headline">¶</a></h2>
+<p>This is the default format for saving streamed image data, and is based on
+<a class="reference external" href="http://www.hdfgroup.org/HDF5/">HDF5</a>, an open format for scientific data storage.
+HDF5 is a very flexible format, and PYME defines a root level dataset called <cite>ImageData</cite>
+containg the raw image data, stores metadata in a group called <cite>MetaData</cite>, containing a
+number of nested groups, and optionally an additional dataset called <cite>Events</cite> which
+details events which happened during the acquisition (eg focus changes and protocol tasks).</p>
+<div class="topic">
+<p class="topic-title first">Why HDF5?</p>
+<p>Whilst HDF5 is used extensively for scientific data in the areas of geophysics
+and astronomy, it is not currently particularly popular amoungst microscopists
+with the default microscopy format being tiff. In deciding to use HDF5, the more
+pertinent question might be <strong>Why not tiff?</strong> There are a number of quite
+compelling reasons not to use tiff:</p>
+<ul class="simple">
+<li>Although TIFF is nominally a standardised format, very few (if any) programs
+support the full tiff standard, making writing portable tiffs a non-trivial
+proposition</li>
+<li>Tiffs are limited in size to 2GB. Our raw data files are often ~ 6GB or more.
+In principle this can be circumvented by saving each frame as an individual
+file rather than in a multi-page tiff, but this runs into scalability issues
+well before the 2GB limit (at ~1000 frames on windows/NTFS) due to filesystem issues
+(file access becomes very slow due to the time taken to search through all
+the file nodes in the directory and the disk becomes very fragmented).</li>
+<li>Support for metadata and other accompanying information such as events is poor,
+with the only real options being to write out an accompanying metadata file,
+or to bastardise some of the existing tags (ala ImageJ) both of which negate
+any portability advantages and invite data loss when copying/editing images.</li>
+<li>Python support for TIFF leaves much to be desired, with the methods for
+writing multi-page tiffs being poor and clunky at best, as well as usually
+requiring the entire image sequence to be held in memory.</li>
+</ul>
+<p>By contrast, HDF5 offers:</p>
+<ul class="simple">
+<li>A flexible, open, self describing format</li>
+<li>Well supported in Python, ImageJ (with a plugin), Matlab, and IDL (although
+the IDL support is broken in some versions)</li>
+<li>Unlimited file sizes</li>
+<li>Transparent lossless compression (we get a factor of ~3 on image data)</li>
+<li>High performance IO with atomic writes (ie if the acquisition program crashes
+the data taken up to the point of the crash will be safe)</li>
+</ul>
+</div>
+</div>
+<div class="section" id="hdf5-results-h5r">
+<h2>HDF5 Results (<tt class="docutils literal"><span class="pre">.h5r</span></tt>)<a class="headerlink" href="#hdf5-results-h5r" title="Permalink to this headline">¶</a></h2>
+<p>This is the format in which analysis is stored. Like PYME H5 it is based on HDF5,
+but rather than having an <em>ImageData</em> dataset, it has one called <em>FitResults</em> which
+contains the fitted positions of all single molecule events. The <em>MetaData</em> and
+<em>Events</em> are copied from the data file.</p>
+</div>
+<div class="section" id="tiff-tif">
+<h2>TIFF (<tt class="docutils literal"><span class="pre">.tif</span></tt>)<a class="headerlink" href="#tiff-tif" title="Permalink to this headline">¶</a></h2>
+<p>PYME supports <tt class="docutils literal"><span class="pre">.tif</span></tt> as a format for saving individual images and stacks, but not
+for spooling (see above). There is preliminary support for analysing data stored as
+TIFF stacks.</p>
+</div>
+<div class="section" id="psf-files-psf">
+<h2>PSF Files (<tt class="docutils literal"><span class="pre">.psf</span></tt>)<a class="headerlink" href="#psf-files-psf" title="Permalink to this headline">¶</a></h2>
+<p><tt class="docutils literal"><span class="pre">.psf</span></tt> files are the result of extracting a psf from bead data and are used both
+for 3D fitting and deconvolution. They consist of a python pickle object containing
+the PSF data as a numpy array and a voxelsize definition.</p>
+</div>
+<div class="section" id="shiftfield-files-sf">
+<h2>Shiftfield files (<tt class="docutils literal"><span class="pre">.sf</span></tt>)<a class="headerlink" href="#shiftfield-files-sf" title="Permalink to this headline">¶</a></h2>
+<p><tt class="docutils literal"><span class="pre">.sf</span></tt> files are saved vector shift fields used for correction of chromatic shift
+in multi-colour imaging. Again, a python pickle.</p>
+</div>
+<div class="section" id="pyme-xml-xml">
+<h2>PYME XML (<tt class="docutils literal"><span class="pre">.xml</span></tt>)<a class="headerlink" href="#pyme-xml-xml" title="Permalink to this headline">¶</a></h2>
+<p>An XML representation of the metadata usually stored in <tt class="docutils literal"><span class="pre">.h5</span></tt> files. Used when
+saving as <tt class="docutils literal"><span class="pre">.tif</span></tt>.</p>
+</div>
+<div class="section" id="simple-metadata-md">
+<h2>Simple Metadata (<tt class="docutils literal"><span class="pre">.md</span></tt>)<a class="headerlink" href="#simple-metadata-md" title="Permalink to this headline">¶</a></h2>
+<p>A simple representation of the metadata more suited to manual editing than the
+<tt class="docutils literal"><span class="pre">.xml</span></tt> format. Designed to be used when importing, eg tiff, files not created
+with PYMEAcquire into the analysis package. <tt class="docutils literal"><span class="pre">.md</span></tt> files are python scripts whose
+sole purpose is to add metadata entries to a minimal metadata object (called <tt class="docutils literal"><span class="pre">md</span></tt>)
+using a dictionary notation.</p>
+</div>
+<div class="section" id="khoros-data-format-kdf">
+<h2>Khoros Data Format (<tt class="docutils literal"><span class="pre">.kdf</span></tt>)<a class="headerlink" href="#khoros-data-format-kdf" title="Permalink to this headline">¶</a></h2>
+<p>PYME has some legacy support for data in the <tt class="docutils literal"><span class="pre">.kdf</span></tt> format used by the Khoros/Cantata
+image processing suite. Usage is discouraged unless you have legacy data and/or
+Khoros modules you wish to use.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="#">PYME Data Formats</a><ul>
+<li><a class="reference external" href="#pyme-hdf5-h5">PYME HDF5 (<tt class="docutils literal"><span class="pre">.h5</span></tt>)</a></li>
+<li><a class="reference external" href="#hdf5-results-h5r">HDF5 Results (<tt class="docutils literal"><span class="pre">.h5r</span></tt>)</a></li>
+<li><a class="reference external" href="#tiff-tif">TIFF (<tt class="docutils literal"><span class="pre">.tif</span></tt>)</a></li>
+<li><a class="reference external" href="#psf-files-psf">PSF Files (<tt class="docutils literal"><span class="pre">.psf</span></tt>)</a></li>
+<li><a class="reference external" href="#shiftfield-files-sf">Shiftfield files (<tt class="docutils literal"><span class="pre">.sf</span></tt>)</a></li>
+<li><a class="reference external" href="#pyme-xml-xml">PYME XML (<tt class="docutils literal"><span class="pre">.xml</span></tt>)</a></li>
+<li><a class="reference external" href="#simple-metadata-md">Simple Metadata (<tt class="docutils literal"><span class="pre">.md</span></tt>)</a></li>
+<li><a class="reference external" href="#khoros-data-format-kdf">Khoros Data Format (<tt class="docutils literal"><span class="pre">.kdf</span></tt>)</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="Technical.html"
+                                  title="previous chapter">Technical Details</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/DataFormats.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="Technical.html" title="Technical Details"
+             >previous</a> |</li>
+        <li><a href="index.html">PYME v0.1 documentation</a> &raquo;</li>
+          <li><a href="Technical.html" >Technical Details</a> &raquo;</li>
+<li><a href="http://lmsrv1/docwiki/docs/pyme-docs/DataFormats.rst">Edit</a> &raquo;</li>
+ 
+
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2010, David Baddeley.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+    </div>
+  </body>
+</html>
