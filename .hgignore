@@ -6,6 +6,7 @@ syntax: glob
 *~
 */build/*
 build\*
+build/*
 */_build/*
 */dist/*
 dist\*
@@ -17,3 +18,4 @@ dist\*
 Deconv/fftw_wisdom
 *.orig
 .DS_Store
+*.egg-info*

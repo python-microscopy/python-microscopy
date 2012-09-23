@@ -18,6 +18,7 @@ def configuration(parent_package='',top_path=None):
     
     #config.make_svn_version_py()  # installs __svn_version__.py
     #config.make_config_py()
+    config.get_version('PYME/version.py')
     return config
 
 if __name__ == '__main__':
