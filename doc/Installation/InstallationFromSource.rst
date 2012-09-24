@@ -19,7 +19,7 @@ and the following Python packages:
 - Matplotlib*
 - wxPython* (>2.8.11)
 - pytables*
-- Pyro (3.9.1)
+- Pyro (3.9.1 - any 3.x version should work - the newer version 4 won't)
 - PyOpenGL*
 - PIL (Python Imaging Library)*
 - pywin32* (only req. on windows)
@@ -33,7 +33,10 @@ For full functionality, the following are also useful:
 - Django (>1.2)
 - Django-south
 - Mayavi2*
+- Traits*
 - Delny
+- jinja2*
+- cherrypy
 
 \* part of Enthought python.
 
@@ -82,31 +85,26 @@ You'll also want some form of mercurial client if checking out of the repository
 Installing
 ==========
 
-Create a directory to hold the code. This directory is going to be added to the Python path, so it's probably not a good idea to just use your home directory, or ``c:``. On Windows I use ``c:\PYME``, on Linux I tend to use ``~/PYME``.
-
 Get the code
 ------------
 
-The code is stored in a mercurial repository. If you're on the local network you can get the current copy by doing
+The code is stored in a mercurial repository. Get the current copy by doing
 ::
 
-    cd ~/PYME
-    hg clone http://lmsrv1/hg/PYME
+    hg clone https://code.google.com/p/python-microscopy/ 
 
-or the equivalent using a gui client (eg `TortoiseHG <http://tortoisehg.bitbucket.org/>`_). If you're not on the network, then extract the archive I've sent you into this directory.
+or the equivalent using a gui client (eg `TortoiseHG <http://tortoisehg.bitbucket.org/>`_). 
+Alternatively download the tarball corresponding to a particular release and extract.
 
 Build and install
 -----------------------------
 
-Open a terminal and execute the following:
+Open a terminal, change to the directory where you extracted the source and execute:
 
 ::
 
-    c:
-    cd c:\PYME\PYME
     python setup.py install
-
-obviously replacing the path with the relevant one. 
+. 
 
 Alternatively, if you're going to fiddle with the code
 -------------------------------------------------------
@@ -138,8 +136,8 @@ sample database, you can also associate .pmu files with ``PYTHONDIR\Scripts\pyme
 Linux (Gnome)
 -------------
 
-Change to the ``PYME/FileUtils`` directory and run ``install_gnome.sh``. This should 
-(hopefully) create links to the relevant programs in ``~/bin`` and set up 
+Change to the ``PYME/gnome`` directory and run ``install_gnome.sh``. This should 
+(hopefully) set up 
 associations and :) thumbnailing! With any luck, file permissions should be OK 
 out of the repository, but there's a chance you're going to have to make a 
 couple of the scripts executable.

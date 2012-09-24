@@ -92,7 +92,7 @@ The filter is also used to restrict the data to a smaller spatial ROI, by adding
 Mapping & Colour
 ----------------
 
-By default the mapping component of the pipeline simply passes the variables from the filte without change. One can however add mappings which can either define new variables or redefine existing variables. Drift correction, for example, is accomplished as remapping the *x* and *y* variables as a function of their original values and time, eg: :math:`x = x' +f(t)`. In principle other transformations, for instance rotation, are possible. There is no direct GUI control over the mapping component, but it is manipulated by the drift correction controls (see :ref:Drift Correction).
+By default the mapping component of the pipeline simply passes the variables from the filte without change. One can however add mappings which can either define new variables or redefine existing variables. In principle arbitrary transformations, for instance rotation, are possible. There is no direct GUI control over the mapping component.
 
 Following the mapping component there is a colour selection component. This is only important when processing ratiometric multi-colour images (see Multi-Colour), and is effectively transparent at all other times.
 

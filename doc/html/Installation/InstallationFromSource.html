@@ -65,7 +65,7 @@
 <li>Matplotlib*</li>
 <li>wxPython* (&gt;2.8.11)</li>
 <li>pytables*</li>
-<li>Pyro (3.9.1)</li>
+<li>Pyro (3.9.1 - any 3.x version should work - the newer version 4 won&#8217;t)</li>
 <li>PyOpenGL*</li>
 <li>PIL (Python Imaging Library)*</li>
 <li>pywin32* (only req. on windows)</li>
@@ -79,7 +79,10 @@
 <li>Django (&gt;1.2)</li>
 <li>Django-south</li>
 <li>Mayavi2*</li>
+<li>Traits*</li>
 <li>Delny</li>
+<li>jinja2*</li>
+<li>cherrypy</li>
 </ul>
 <p>* part of Enthought python.</p>
 <p>On Windows (and probably MacOS) the easiest way to get the pre-requisites is to
@@ -118,23 +121,20 @@ packages first and then resort to <em>pip</em> for anything left over.</p>
 </div>
 <div class="section" id="installing">
 <h2>Installing<a class="headerlink" href="#installing" title="Permalink to this headline">¶</a></h2>
-<p>Create a directory to hold the code. This directory is going to be added to the Python path, so it&#8217;s probably not a good idea to just use your home directory, or <tt class="docutils literal"><span class="pre">c:</span></tt>. On Windows I use <tt class="docutils literal"><span class="pre">c:\PYME</span></tt>, on Linux I tend to use <tt class="docutils literal"><span class="pre">~/PYME</span></tt>.</p>
 <div class="section" id="get-the-code">
 <h3>Get the code<a class="headerlink" href="#get-the-code" title="Permalink to this headline">¶</a></h3>
-<p>The code is stored in a mercurial repository. If you&#8217;re on the local network you can get the current copy by doing</p>
-<div class="highlight-python"><pre>cd ~/PYME
-hg clone http://lmsrv1/hg/PYME</pre>
+<p>The code is stored in a mercurial repository. Get the current copy by doing</p>
+<div class="highlight-python"><pre>hg clone https://code.google.com/p/python-microscopy/</pre>
 </div>
-<p>or the equivalent using a gui client (eg <a class="reference external" href="http://tortoisehg.bitbucket.org/">TortoiseHG</a>). If you&#8217;re not on the network, then extract the archive I&#8217;ve sent you into this directory.</p>
+<p>or the equivalent using a gui client (eg <a class="reference external" href="http://tortoisehg.bitbucket.org/">TortoiseHG</a>).
+Alternatively download the tarball corresponding to a particular release and extract.</p>
 </div>
 <div class="section" id="build-and-install">
 <h3>Build and install<a class="headerlink" href="#build-and-install" title="Permalink to this headline">¶</a></h3>
-<p>Open a terminal and execute the following:</p>
-<div class="highlight-python"><pre>c:
-cd c:\PYME\PYME
-python setup.py install</pre>
+<p>Open a terminal, change to the directory where you extracted the source and execute:</p>
+<div class="highlight-python"><pre>python setup.py install</pre>
 </div>
-<p>obviously replacing the path with the relevant one.</p>
+<p>.</p>
 </div>
 <div class="section" id="alternatively-if-you-re-going-to-fiddle-with-the-code">
 <h3>Alternatively, if you&#8217;re going to fiddle with the code<a class="headerlink" href="#alternatively-if-you-re-going-to-fiddle-with-the-code" title="Permalink to this headline">¶</a></h3>
@@ -160,8 +160,8 @@ sample database, you can also associate .pmu files with <tt class="docutils lite
 </div>
 <div class="section" id="linux-gnome">
 <h3>Linux (Gnome)<a class="headerlink" href="#linux-gnome" title="Permalink to this headline">¶</a></h3>
-<p>Change to the <tt class="docutils literal"><span class="pre">PYME/FileUtils</span></tt> directory and run <tt class="docutils literal"><span class="pre">install_gnome.sh</span></tt>. This should
-(hopefully) create links to the relevant programs in <tt class="docutils literal"><span class="pre">~/bin</span></tt> and set up
+<p>Change to the <tt class="docutils literal"><span class="pre">PYME/gnome</span></tt> directory and run <tt class="docutils literal"><span class="pre">install_gnome.sh</span></tt>. This should
+(hopefully) set up
 associations and :) thumbnailing! With any luck, file permissions should be OK
 out of the repository, but there&#8217;s a chance you&#8217;re going to have to make a
 couple of the scripts executable.</p>
