@@ -155,41 +155,6 @@
 </dl>
 </div>
 </div>
-<div class="section" id="drift-correction">
-<h2>Drift Correction<a class="headerlink" href="#drift-correction" title="Permalink to this headline">¶</a></h2>
-<p>Automatic drift correction can be performed based on the premise that changed in the image due to drift will be time correlated, whereas the actual structure shouldn&#8217;t be.</p>
-<p>Our drift correction procedure assumes that the drift can be approximated with a simple mathematical function, and estimates the drift by maximising an entropy measure whilst varying the parameters of this function. Before commencing drift correction, it is useful to set up the interactive display with the following settings:</p>
-<ul class="simple">
-<li>Point mode</li>
-<li>Point colouring using the <em>t</em> (time) variable</li>
-<li>A colour map such as <strong>gist_rainbow</strong> which displays all points with approximately the same brightness, and allows small variations in values to be seen</li>
-<li>The colour limits set such that the colour map covers the entire range of <em>t</em>-values</li>
-</ul>
-<img alt="_images/drift_colour_coded.png" src="_images/drift_colour_coded.png" />
-<p>With these settings it should be possible to see any drift as colour banding or streaking across objects. If the data contains a large number of events, it might also be wise to select a ROI (see Filter section) to accelerate the fitting process. If selecting a ROI, try to select a region with well defined structures, for which the drift is clearly visible in the coloured - points representation. After the drift has been estimated, the ROI can be cleared and the correction applied to the whole image.</p>
-<p>Drift correction is controlled using the <strong>Drift Correction</strong> pane in the sidebar. The two text fields allow mathematical expressions to be entered for <em>x</em> and <em>y</em> drifts. These can be pretty arbitrary expressions, and are in python syntax. This has a few practical consequences which you need to know about; if you want to evaluate, for example, <img class="math" src="_images/math/8f9af910fe749481919573c0dd2b132118f19d19.png" alt="x^y"/>, you would write <tt class="docutils literal"><span class="pre">x**y</span></tt>, square brackets denote a list, and you&#8217;ve also got to be a bit careful not to use language keywords as variables.</p>
-<p>The drift expressions automatically recognise variable names from the loaded data, as well as several mathematical functions and constants <a class="footnote-reference" href="#id4" id="id3">[2]</a>. Any remaining names are assigned as parameters to be fitted, and will appear in the parameters box. It is always a good idea to check that the desired parameters appear in the parameters box, and that nothing else does. Two drift expression presets, namely linear and piecewise linear are available from the presets drop down.</p>
-<table class="docutils footnote" frame="void" id="id4" rules="none">
-<colgroup><col class="label" /><col /></colgroup>
-<tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#id3">[2]</a></td><td>a list of functions/constants can be obtained by entering <tt class="docutils literal"><span class="pre">from</span> <span class="pre">PYME.Analysis.DriftCorrection</span> <span class="pre">import</span> <span class="pre">intelliFit;</span> <span class="pre">dir(intelliFit)</span></tt> in the console window. Note that there&#8217;s quite a few functions defined which are likely to be irrelevant for the fitting.</td></tr>
-</tbody>
-</table>
-<p>Once a pair of drift expressions has been chosen, the parameters can be edited by left clicking on their value. This can be used to set start values for the fit(although this is not typically required for the simpler - linear, piecewise linear - fits), or to experiment manually as to the effect of altering the parameters on the image. Clicking <strong>Fit</strong> fits the parameters by maximisation of the previously discussed entropy measure.</p>
-<p>To actually apply the correction, with either estimated or manually entered parameters you need to click on the <strong>Apply</strong> button. Clicking on the <strong>Revert</strong> button removes the correction. The <strong>Plot</strong> button displays a plot of the fitted drift.</p>
-<img alt="_images/drift_plot.png" src="_images/drift_plot.png" />
-<p>We typically find that a simple linear correction is enough to reduce the drift to a level where residual drift is on the order of or less than the localisation precision. For cases where strongly position dependant colouring is still visible after linear correction we take two approaches - either adding polynomial terms to effectively form a Taylor-expansion for the drift, or using a piecewise linear function to model the drift. Of the two, the later generally seems the more promising. When fitting complex expressions, e.g. higher order polynomials, it is often useful to extend the fit one term at a time, using the previously fitted values as starting values for the old parameters.</p>
-<div class="section" id="validation">
-<h3>Validation<a class="headerlink" href="#validation" title="Permalink to this headline">¶</a></h3>
-<p>To enable some form of validation of the drift estimates, we have included a second drift estimation function, based on binning frames together in time and performing a cross-correlation between the images obtained (by calculating a histogram of the point positions within each time bin) from the different bins.</p>
-<p>The disadvantage of this method is that the temporal and spatial bin sizes typically need extensive tweaking for each image, and as such the method is not currently particularly robust (although there may be some room for improvement here).</p>
-<p>This is accessible from the menu bar as <tt class="docutils literal"><span class="pre">Extras-&gt;Estimate</span></tt> drift using cross-correlation} and displays the dialog shown below. The bin size parameter determines the 2D histogram bin size used for creating the images, the window size is the number of frames to bin, and the time step dictates the time points at which the drift is to be estimates (if this is smaller than the window size, the windows at each time step will be overlapping).</p>
-<img alt="_images/correlation_drift_dialog.png" src="_images/correlation_drift_dialog.png" />
-<p>After clicking on <strong>OK</strong>, the drift will be estimated and a graph such as that shown below displayed. If the drift has been estimated and a correction applied using the standard drift estimation tools, the estimated drift curves will be displayed on the graph as dotted lines. It is important to note that the drift estimate obtained in this fashion is quite dependent on the choice of binning parameters etc... - the right panel shows a curve estimated for the same data as in the left but using a smaller window size, and is dominated by noise.</p>
-<img alt="_images/drift_est_corr_graph.png" src="_images/drift_est_corr_graph.png" />
-<img alt="_images/drift_est_corr_graph_2.png" src="_images/drift_est_corr_graph_2.png" />
-</div>
-</div>
 <div class="section" id="image-generation">
 <h2>Image Generation<a class="headerlink" href="#image-generation" title="Permalink to this headline">¶</a></h2>
 <p>After optimising the filter, corrected drift, and doing other sanity checks on the data, one typically wishes to generate an image. This is accomplished by choosing one of the options from the <strong>Generate Image</strong> menu. All image generation methods generate an image which matches the region currently displayed in the interactive display (View) tab. Remember that the display can be zoomed to the whole image using the <tt class="docutils literal"><span class="pre">View-&gt;Fit</span></tt> menu item.</p>
@@ -221,11 +186,11 @@
 <p>The image viewer is designed to view multi-colour images, in which case the individual channels will appear as separate tabs, in addition to a composite tab in which the channels are overlaid. When dealing with single channel data, only one tab is displayed.</p>
 <div class="section" id="saving-images">
 <h4>Saving images<a class="headerlink" href="#saving-images" title="Permalink to this headline">¶</a></h4>
-<p>The generated images have three save options, all of which can be accessed from the <strong>File</strong> menu. The one you will generally want is <strong>Save Channel</strong> which saves the entire current channel/image as a single, floating point, TIFF without any colormap or scaling applied. The other two options allow a multi-channel image to be saved as a TIFF stack <a class="footnote-reference" href="#id6" id="id5">[3]</a>  (<strong>Save Multi-channel</strong>), and allows for exporting exactly what is currently shown in the window (complete with colour maps, scaling, and zoom) as a variety of formats (<strong>Export Current View</strong>).</p>
-<table class="docutils footnote" frame="void" id="id6" rules="none">
+<p>The generated images have three save options, all of which can be accessed from the <strong>File</strong> menu. The one you will generally want is <strong>Save Channel</strong> which saves the entire current channel/image as a single, floating point, TIFF without any colormap or scaling applied. The other two options allow a multi-channel image to be saved as a TIFF stack <a class="footnote-reference" href="#id4" id="id3">[2]</a>  (<strong>Save Multi-channel</strong>), and allows for exporting exactly what is currently shown in the window (complete with colour maps, scaling, and zoom) as a variety of formats (<strong>Export Current View</strong>).</p>
+<table class="docutils footnote" frame="void" id="id4" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#id5">[3]</a></td><td>Although this currently relies on an external program, <tt class="docutils literal"><span class="pre">tiffcp</span></tt>, and is untested on windows.}</td></tr>
+<tr><td class="label"><a class="fn-backref" href="#id3">[2]</a></td><td>Although this currently relies on an external program, <tt class="docutils literal"><span class="pre">tiffcp</span></tt>, and is untested on windows.}</td></tr>
 </tbody>
 </table>
 </div>
@@ -235,11 +200,11 @@
 <h2>Extras<a class="headerlink" href="#extras" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="console">
 <h3>Console<a class="headerlink" href="#console" title="Permalink to this headline">¶</a></h3>
-<p>The console tab is a functional python console embedded within the program. The filter, mapping and colour components of the pipeline can be accessed under the names <tt class="docutils literal"><span class="pre">filter</span></tt>, <tt class="docutils literal"><span class="pre">mapping</span></tt> and <tt class="docutils literal"><span class="pre">colourFilter</span></tt> respectively, and behave like dictionaries which understand the variable names as keys <a class="footnote-reference" href="#id8" id="id7">[4]</a> . A number of Matlab style plotting and basic numeric commands are accessible by executing <tt class="docutils literal"><span class="pre">from</span> <span class="pre">pylab</span> <span class="pre">import</span> <span class="pre">*</span></tt> (see the <a class="reference external" href="http://matplotlib.sourceforge.net">matplotlib</a> webpage for more docs). After importing pylab, one can, for example, plot a histogram of point amplitudes by executing <tt class="docutils literal"><span class="pre">hist(filter['A'])</span></tt>.</p>
-<table class="docutils footnote" frame="void" id="id8" rules="none">
+<p>The console tab is a functional python console embedded within the program. The pipeline can be accessed directly, and behaves like a dictionary which understands the variable names as keys <a class="footnote-reference" href="#id6" id="id5">[3]</a> . A number of Matlab style plotting and basic numeric commands are accessible by executing <tt class="docutils literal"><span class="pre">from</span> <span class="pre">pylab</span> <span class="pre">import</span> <span class="pre">*</span></tt> (see the <a class="reference external" href="http://matplotlib.sourceforge.net">matplotlib</a> webpage for more docs). After importing pylab, one can, for example, plot a histogram of point amplitudes by executing <tt class="docutils literal"><span class="pre">hist(pipeline['A'])</span></tt>.</p>
+<table class="docutils footnote" frame="void" id="id6" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#id7">[4]</a></td><td>a lot of other aspects of the program are callable/accesible from the console window, but are beyond the scope of this quick introduction</td></tr>
+<tr><td class="label"><a class="fn-backref" href="#id5">[3]</a></td><td>a lot of other aspects of the program are callable/accesible from the console window, but are beyond the scope of this quick introduction</td></tr>
 </tbody>
 </table>
 </div>
@@ -273,10 +238,6 @@
 <li><a class="reference external" href="#the-filter">The Filter</a></li>
 <li><a class="reference external" href="#mapping-colour">Mapping &amp; Colour</a></li>
 <li><a class="reference external" href="#interactive-display">Interactive Display</a></li>
-</ul>
-</li>
-<li><a class="reference external" href="#drift-correction">Drift Correction</a><ul>
-<li><a class="reference external" href="#validation">Validation</a></li>
 </ul>
 </li>
 <li><a class="reference external" href="#image-generation">Image Generation</a><ul>

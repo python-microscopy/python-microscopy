@@ -125,54 +125,6 @@ In addition to the **Display** panel, each mode may display a panel with mode-sp
   This mode attempts to segment the image into connected areas based on neighbour distances, and allows various measurements to be performed on these segmented objects. Might not work under windows.
 
 
-Drift Correction
-================
-
-Automatic drift correction can be performed based on the premise that changed in the image due to drift will be time correlated, whereas the actual structure shouldn't be.
-
-Our drift correction procedure assumes that the drift can be approximated with a simple mathematical function, and estimates the drift by maximising an entropy measure whilst varying the parameters of this function. Before commencing drift correction, it is useful to set up the interactive display with the following settings:
-
-- Point mode
-- Point colouring using the *t* (time) variable
-- A colour map such as **gist\_rainbow** which displays all points with approximately the same brightness, and allows small variations in values to be seen
-- The colour limits set such that the colour map covers the entire range of *t*-values
-
-
-.. image:: /images/drift_colour_coded.png
-
-With these settings it should be possible to see any drift as colour banding or streaking across objects. If the data contains a large number of events, it might also be wise to select a ROI (see Filter section) to accelerate the fitting process. If selecting a ROI, try to select a region with well defined structures, for which the drift is clearly visible in the coloured - points representation. After the drift has been estimated, the ROI can be cleared and the correction applied to the whole image.
-
-Drift correction is controlled using the **Drift Correction** pane in the sidebar. The two text fields allow mathematical expressions to be entered for *x* and *y* drifts. These can be pretty arbitrary expressions, and are in python syntax. This has a few practical consequences which you need to know about; if you want to evaluate, for example, :math:`x^y`, you would write ``x**y``, square brackets denote a list, and you've also got to be a bit careful not to use language keywords as variables. 
-
-The drift expressions automatically recognise variable names from the loaded data, as well as several mathematical functions and constants [#]_. Any remaining names are assigned as parameters to be fitted, and will appear in the parameters box. It is always a good idea to check that the desired parameters appear in the parameters box, and that nothing else does. Two drift expression presets, namely linear and piecewise linear are available from the presets drop down.
-
-.. [#] a list of functions/constants can be obtained by entering ``from PYME.Analysis.DriftCorrection import intelliFit; dir(intelliFit)`` in the console window. Note that there's quite a few functions defined which are likely to be irrelevant for the fitting.
-
-Once a pair of drift expressions has been chosen, the parameters can be edited by left clicking on their value. This can be used to set start values for the fit(although this is not typically required for the simpler - linear, piecewise linear - fits), or to experiment manually as to the effect of altering the parameters on the image. Clicking **Fit** fits the parameters by maximisation of the previously discussed entropy measure. 
-
-To actually apply the correction, with either estimated or manually entered parameters you need to click on the **Apply** button. Clicking on the **Revert** button removes the correction. The **Plot** button displays a plot of the fitted drift.
-
-.. image:: /images/drift_plot.png
-
-We typically find that a simple linear correction is enough to reduce the drift to a level where residual drift is on the order of or less than the localisation precision. For cases where strongly position dependant colouring is still visible after linear correction we take two approaches - either adding polynomial terms to effectively form a Taylor-expansion for the drift, or using a piecewise linear function to model the drift. Of the two, the later generally seems the more promising. When fitting complex expressions, e.g. higher order polynomials, it is often useful to extend the fit one term at a time, using the previously fitted values as starting values for the old parameters.
-
-Validation
-----------
-
-To enable some form of validation of the drift estimates, we have included a second drift estimation function, based on binning frames together in time and performing a cross-correlation between the images obtained (by calculating a histogram of the point positions within each time bin) from the different bins.
-
-The disadvantage of this method is that the temporal and spatial bin sizes typically need extensive tweaking for each image, and as such the method is not currently particularly robust (although there may be some room for improvement here). 
-
-This is accessible from the menu bar as ``Extras->Estimate`` drift using cross-correlation} and displays the dialog shown below. The bin size parameter determines the 2D histogram bin size used for creating the images, the window size is the number of frames to bin, and the time step dictates the time points at which the drift is to be estimates (if this is smaller than the window size, the windows at each time step will be overlapping).
-
-.. image:: /images/correlation_drift_dialog.png
-
-After clicking on **OK**, the drift will be estimated and a graph such as that shown below displayed. If the drift has been estimated and a correction applied using the standard drift estimation tools, the estimated drift curves will be displayed on the graph as dotted lines. It is important to note that the drift estimate obtained in this fashion is quite dependent on the choice of binning parameters etc... - the right panel shows a curve estimated for the same data as in the left but using a smaller window size, and is dominated by noise.
-
-
-.. image:: /images/drift_est_corr_graph.png 
-.. image:: /images/drift_est_corr_graph_2.png
-
 
 
 Image Generation
@@ -229,7 +181,7 @@ Extras
 Console
 -------
 
-The console tab is a functional python console embedded within the program. The filter, mapping and colour components of the pipeline can be accessed under the names ``filter``, ``mapping`` and ``colourFilter`` respectively, and behave like dictionaries which understand the variable names as keys [#]_ . A number of Matlab style plotting and basic numeric commands are accessible by executing ``from pylab import *`` (see the matplotlib_ webpage for more docs). After importing pylab, one can, for example, plot a histogram of point amplitudes by executing ``hist(filter['A'])``.
+The console tab is a functional python console embedded within the program. The pipeline can be accessed directly, and behaves like a dictionary which understands the variable names as keys [#]_ . A number of Matlab style plotting and basic numeric commands are accessible by executing ``from pylab import *`` (see the matplotlib_ webpage for more docs). After importing pylab, one can, for example, plot a histogram of point amplitudes by executing ``hist(pipeline['A'])``.
 
 .. _matplotlib : http://matplotlib.sourceforge.net
 
