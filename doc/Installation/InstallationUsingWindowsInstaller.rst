@@ -26,7 +26,8 @@ STEP 2: Installing PYME using the installer
 
 This should be as simple as running the installer which is appropriate to your
 version of EPD. ie ``PYME-X.X.X.win32-py2.7.exe`` for 32 bit EPD and 
-``PYME-X.X.X.win-amd64-py2.7.exe`` for 64 bit EPD.
+``PYME-X.X.X.win-amd64-py2.7.exe`` for 64 bit EPD. The installers are available
+from `http://code.google.com/p/python-microscopy/downloads/list <http://code.google.com/p/python-microscopy/downloads/list>`_
 The installer will also attempt to download and install Pyro, a required dependency, 
 for you as well. Automatically installing Pyro will only work if the computer that 
 you are installing on 
