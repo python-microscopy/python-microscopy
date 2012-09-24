@@ -1,0 +1,10 @@
+PYME builds on a large number of excellent packages within the python and numpy/scipy community, the authors of which I would like to thank.
+
+I would specifically like to mention the 3rd party packages I have bundled with PYME to simplify compilation / distribution so that credit is given where deserved. These are (in no particular order):
+
+- the cpmath module from cell profiler (http://www.cellprofiler.org/)
+- Christoph Gohlke's tifffile (http://www.lfd.uci.edu/~gohlke/)
+- the patched PIL TiffImagePlugin from Priithon (http://code.google.com/p/priithon/)
+- the levmar Levenberg-Marquardt solver (http://www.ics.forth.gr/~lourakis/levmar/)
+- qHull (http://www.qhull.org/)
+- jQuery (http://jquery.com/)
