@@ -17,7 +17,7 @@ __version__="$Revision: 11052 $"
 import numpy as np
 import unittest
 
-import cellprofiler.cpmath.index as I
+import PYME.cpmath.index as I
 
 class TestIndexes(unittest.TestCase):
     def test_00_00_oh_so_empty(self):

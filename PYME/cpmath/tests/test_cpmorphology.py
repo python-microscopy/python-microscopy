@@ -21,9 +21,9 @@ import scipy.ndimage as scind
 import scipy.misc
 import scipy.io.matlab
 
-import cellprofiler.cpmath.cpmorphology as morph
-from cellprofiler.cpmath.cpmorphology import fixup_scipy_ndimage_result as fix
-from cellprofiler.cpmath.filter import permutations
+import PYME.cpmath.cpmorphology as morph
+from PYME.cpmath.cpmorphology import fixup_scipy_ndimage_result as fix
+from PYME.cpmath.filter import permutations
 
 class TestFillLabeledHoles(unittest.TestCase):
     def test_01_00_zeros(self):

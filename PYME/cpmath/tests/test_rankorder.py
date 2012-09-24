@@ -16,7 +16,7 @@ __version__ = "$Revision$"
 
 import unittest
 import numpy
-from cellprofiler.cpmath.rankorder import rank_order
+from PYME.cpmath.rankorder import rank_order
 
 class TestRankOrder(unittest.TestCase):
     def test_00_zeros(self):
