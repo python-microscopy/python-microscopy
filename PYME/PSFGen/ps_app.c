@@ -44,7 +44,7 @@ static PyObject * genWidefieldPSF(PyObject *self, PyObject *args, PyObject *keyw
 {
     double *res = 0;  
     int ix,iy,iz, ip; 
-    int size[3];
+    npy_intp size[3];
     
     int size_p;
     
@@ -94,6 +94,8 @@ static PyObject * genWidefieldPSF(PyObject *self, PyObject *args, PyObject *keyw
     double *opd_facs_r;
     double *opd_facs_i;
     double *bessel_lu;
+
+    //printf("check0\n");
     
     static char *kwlist[] = {"X", "Y", "Z", "P", "A","x0", "y0", "z0", "k", "NA", "depthInSample", "nImmersionCorr", "nSample","nCoverslipCorr", "nImmersionSample", "nCoverslipSample", "CoverslipThicknessCorr", "CoverslipThicknessSample", "ImmersionThicknessSample", NULL};
     
@@ -136,6 +138,8 @@ static PyObject * genWidefieldPSF(PyObject *self, PyObject *args, PyObject *keyw
 	PyErr_Format(PyExc_RuntimeError, "Bad Z");
         return NULL;
     }
+
+    //printf("check1\n");
     
     pXvals = (double*)Xvals->data;
     pYvals = (double*)Yvals->data;
@@ -150,13 +154,25 @@ static PyObject * genWidefieldPSF(PyObject *self, PyObject *args, PyObject *keyw
     
     size_p = PyArray_Size((PyObject*)Pvals);
 
-    out = (PyArrayObject*) PyArray_FromDims(3,size,PyArray_DOUBLE);
+    //out = (PyArrayObject*) PyArray_FromDims(3,size,PyArray_DOUBLE);
+    out = (PyArrayObject*) PyArray_New(&PyArray_Type, 3,size,NPY_DOUBLE, NULL, NULL, 0, 1, NULL);
+    if (out == NULL)
+    {
+        Py_DECREF(Xvals);
+        Py_DECREF(Yvals);
+        Py_DECREF(Zvals);
+        Py_DECREF(Pvals);
+        PyErr_Format(PyExc_RuntimeError, "Output array not allocated");
+        return NULL;
+    }
+    //printf("check2\n");
     //fix strides
-    out->strides[0] = sizeof(double);
-    out->strides[1] = sizeof(double)*size[0];
-    out->strides[2] = sizeof(double)*size[0]*size[1];
+    //out->strides[0] = sizeof(double);
+    //out->strides[1] = sizeof(double)*size[0];
+    //out->strides[2] = sizeof(double)*size[0]*size[1];
 
-    res = (double*) out->data;
+    res = (double*) PyArray_DATA(out);
+    //printf("check3\n");
     
     ni2 = ni*ni;
     NA2 = NA*NA;
@@ -172,7 +188,7 @@ static PyObject * genWidefieldPSF(PyObject *self, PyObject *args, PyObject *keyw
     opd_facs_i = PyMem_Malloc(size_p*sizeof(double));
     bessel_lu = PyMem_Malloc(size[0]*size[1]*size_p*sizeof(double));
     
-    
+    //printf("check4\n");
     
     for (iy = 0; iy < size[1]; iy++)
     {            
@@ -189,6 +205,8 @@ static PyObject * genWidefieldPSF(PyObject *self, PyObject *args, PyObject *keyw
         }
         
     }
+
+    //printf("check5\n");
     
     for (iz = 0; iz < size[2]; iz++)
     {
@@ -232,6 +250,8 @@ static PyObject * genWidefieldPSF(PyObject *self, PyObject *args, PyObject *keyw
             }
         }
     }
+
+    //printf("check6\n");
     
     PyMem_Free(opd_facs_r);
     PyMem_Free(opd_facs_i);
@@ -241,6 +261,8 @@ static PyObject * genWidefieldPSF(PyObject *self, PyObject *args, PyObject *keyw
     Py_DECREF(Yvals);
     Py_DECREF(Zvals);
     Py_DECREF(Pvals);
+
+    //printf("check7\n");
     
     return (PyObject*) out;
 }
