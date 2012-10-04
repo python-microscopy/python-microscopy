@@ -1,7 +1,7 @@
 #PYME Simple Metadata v1
 md['EndTime'] = 1300676178.4949999
 md['EstimatedLaserOnFrameNo'] = 0
-md['PSFFile'] = u'test.psf'
+md['PSFFile'] = u'/home/david/Desktop/pri_700.psf'
 md['StartTime'] = 1300676151.901
 md['tIndex'] = 0
 md['Analysis.BGRange'] = [0, 0]
@@ -12,6 +12,7 @@ md['Analysis.FitModule'] = u'PRInterpFitR'
 md['Analysis.InterpModule'] = 'LinearInterpolator'
 md['Analysis.EstimatorModule'] = 'priEstimator'
 md['Analysis.subtractBackground'] = False
+md['Analysis.ROISize'] = 9
 md['Camera.ADOffset'] = 1159.0
 md['Camera.CycleTime'] = 0.25178998708724976
 md['Camera.EMGain'] = 150
@@ -45,5 +46,7 @@ md['voxelsize.y'] = 0.071999999999999995
 md['voxelsize.z'] = 0.050000000000000003
 md['PRI.Axis']='x'
 
-md['Test.DefaultParams'] = [200, 0, 0, 0, 50,.5]
-md['Test.ParamJitter'] = [150, 90, 90, 90, 10, .3]
+md['Test.DefaultParams'] = [2000, 0, 0, 0, 2]
+md['Test.ParamJitter'] = [150, 90, 90, 250, 0]
+md['Test.PSFFile'] = '/home/david/Desktop/pri_750.psf'
+md['Test.SimModule'] = u'InterpFitR'

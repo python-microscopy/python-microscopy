@@ -118,10 +118,19 @@ class fitTestJig(object):
         for varName in self.ps.dtype.names:
             yv = self.res['fitResults'][varName]
             if hasattr(self, varName):
-                yv += self.__getattribute__(varName)
+                yv = yv + self.__getattribute__(varName)
                 
             me = ((self.ps[varName].ravel() - yv)**2).mean()
             print '%s: %3.2f' % (varName, me)
+            
+            
+    def error(self, varName):
+        xv = self.ps[varName].ravel()
+        yv = self.res['fitResults'][varName]
+        if hasattr(self, varName):
+            yv = yv + self.__getattribute__(varName)
+            
+        return yv - xv
 
 
     def plotRes(self, varName):
@@ -135,8 +144,8 @@ class fitTestJig(object):
         yv = self.res['fitResults'][varName]
 
         if hasattr(self, varName):
-            sp += self.__getattribute__(varName)
-            yv += self.__getattribute__(varName)
+            sp = sp + self.__getattribute__(varName)
+            yv = yv + self.__getattribute__(varName)
 
         err = self.res['fitError'][varName]
 
@@ -146,6 +155,33 @@ class fitTestJig(object):
 
         ylim((yv - maximum(err, 0)).min(), (yv + maximum(err, 0)).max())
         legend()
+
+        title(varName)
+        xlabel('True Position')
+        ylabel('Estimated Position')
+        
+    def plotResSimp(self, varName):
+        #print self.ps
+        from pylab import *
+        figure()
+        #print varName
+        xv = self.ps[varName].ravel()
+        
+        #sp = self.res['startParams'][varName]
+        yv = self.res['fitResults'][varName]
+
+        if hasattr(self, varName):
+            #sp = sp + self.__getattribute__(varName)
+            yv = yv + self.__getattribute__(varName)
+
+        #err = self.res['fitError'][varName]
+
+        plot([xv.min(), xv.max()], [xv.min(), xv.max()])
+        #plot(xv, sp, '+', label='Start Est')
+        plot(xv, yv, 'x', label='Fitted')
+
+        ylim((yv).min(), (yv).max())
+        #legend()
 
         title(varName)
         xlabel('True Position')
