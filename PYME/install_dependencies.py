@@ -19,10 +19,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
+'''install_dependencies trys to pull binary packages from the distro, if present 
+and of a suitable version, falling back on pip for any packages not found.'''
+
 import apt #hope this is there
 import sys
 import os
 
+#version numbers here are minumum versions
 depends = {'python' : '2.6',
 'python-imaging' : '1.1.6',
 'python-opengl' : '3.0.1',
@@ -53,7 +57,7 @@ if __name__ == '__main__':
         installRecommends = True
         
         #add recommended packages to dependencies
-        depends.update(reccomends)
+        depends.update(recommends)
 
     cache = apt.Cache()
 
@@ -75,6 +79,9 @@ if __name__ == '__main__':
 
 
     #run pip to mop up everything else
+    #these have everything above plus a couple of additional dependencies which 
+    #I'm not going to even try getting from the repositories as I know they're not there
+    #recommended-modules.txt includes required-modules.txt
     if installRecommends:
         os.system('pip install -r recommended-modules.txt')
     else:
