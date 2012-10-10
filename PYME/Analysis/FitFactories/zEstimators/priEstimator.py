@@ -159,7 +159,8 @@ def _calcParams(data, X, Y):
 
 
 def getStartParameters(data, X, Y, Z=None):
-    A, x0, y0, dw = _calcParams(data, X, Y)
+    ds = ndimage.gaussian_filter(data, 1)
+    A, x0, y0, dw = _calcParams(ds, X, Y)
 
     #clamp dw to valid region
     dw_ = min(max(dw, splines['z'][0][0]), splines['z'][0][-1])

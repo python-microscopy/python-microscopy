@@ -142,6 +142,66 @@ class FitInfoPanel(wx.Panel):
             self.stPhotons.SetLabel(self.genGaussPhotonStats(index))
 
         self.fitViewPan.draw(index)
+        
+    def DrawOverlays(self, vp, dc):
+        do = vp.do
+        frameResults = self.fitResults[self.fitResults['tIndex'] == do.zp]
+        vx = self.mdh['voxelsize.x']*1e3
+        vy = self.mdh['voxelsize.y']*1e3
+        
+        dc.SetBrush(wx.TRANSPARENT_BRUSH)
+        
+        pGreen = wx.Pen(wx.TheColourDatabase.FindColour('ORANGE'),1)
+        pRed = wx.Pen(wx.TheColourDatabase.FindColour('RED'),1)
+        dc.SetPen(pGreen)
+        
+        if False:#self.pointMode == 'splitter' and self.do.slice == self.do.SLICE_XY:
+            for p, c, dxi, dyi in zip(pFoc, pCol, dx, dy):
+                if c:
+                    dc.SetPen(pGreen)
+                else:
+                    dc.SetPen(pRed)
+                px, py = vp._PixelToScreenCoordinates(p[0] - ps2, p[1] - ps2)
+                dc.DrawRectangle(px,py, ps*sc,ps*sc*self.aspect)
+                px, py = vp._PixelToScreenCoordinates(p[0] -dxi - ps2, self.do.ds.shape[1] - p[1] + dyi - ps2)
+                dc.DrawRectangle(px,py, ps*sc,ps*sc*self.aspect)
+                
+        else:
+            for res in frameResults:
+                #print res
+                #print res['slicesUsed']                
+                
+                #draw ROI
+                x0 = res['slicesUsed']['x']['start']
+                x1 = res['slicesUsed']['x']['stop']
+                
+                y0 = res['slicesUsed']['y']['start']
+                y1 = res['slicesUsed']['y']['stop']
+                
+                px0, py0 = vp._PixelToScreenCoordinates(x0, y0)
+                px1, py1 = vp._PixelToScreenCoordinates(x1, y1)
+                
+                dc.DrawRectangle(px0,py0, px1 - px0,py1 - py0)
+                
+                #draw start pos
+                xs = res['startParams']['x0']/vx
+                ys = res['startParams']['y0']/vy
+                
+                pxs, pys = vp._PixelToScreenCoordinates(xs, ys)
+                
+                #print xs, ys, pxs, pys
+                
+                dc.DrawLine(pxs-3, pys, pxs+3, pys)
+                dc.DrawLine(pxs, pys-3, pxs, pys+3)
+                
+                #draw fitted position
+                xs = res['fitResults']['x0']/vx
+                ys = res['fitResults']['y0']/vy
+                
+                pxs, pys = vp._PixelToScreenCoordinates(xs, ys)
+                
+                dc.DrawLine(pxs-3, pys-3, pxs+3, pys+3)
+                dc.DrawLine(pxs-3, pys+3, pxs+3, pys-3)
 
 
 class fitDispPanel(wxPlotPanel.PlotPanel):
