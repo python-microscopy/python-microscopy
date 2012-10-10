@@ -33,6 +33,7 @@ import ofind
     #this was only marginally slower at last benchmark implying much of the 
     #cost is not in the ffts
 import ofind_xcorr
+import ofind_pri
     
 import numpy
 import numpy as np
@@ -237,9 +238,9 @@ class fitTask(taskDef.Task):
 #
 #            self.data = numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2)
 
-        
-
-        if not 'PSFFile' in self.md.getEntryNames():
+        if 'PRI.Axis' in self.md.getEntryNames():
+            self.ofd = ofind_pri.ObjectIdentifier(bgd * (bgd > 0), md, axis = self.md['PRI.Axis'])
+        elif not 'PSFFile' in self.md.getEntryNames():
             self.ofd = ofind.ObjectIdentifier(bgd * (bgd > 0))
         else: #if we've got a PSF then use cross-correlation object identificatio      
             self.ofd = ofind_xcorr.ObjectIdentifier(bgd * (bgd > 0), md, 7, 5e-2)
@@ -350,8 +351,9 @@ class fitTask(taskDef.Task):
         return fitResult(self, self.res, self.drRes)
 
     def calcThreshold(self):
+        from scipy import ndimage
         if self.SNThreshold:
             fudgeFactor = 1 #to account for the fact that the blurring etc... in ofind doesn't preserve intensities - at the moment completely arbitrary so a threshold setting of 1 results in reasonable detection.
-            return (numpy.sqrt(self.md.Camera.ReadNoise**2 + numpy.maximum(self.md.Camera.ElectronsPerCount*(self.md.Camera.NoiseFactor**2)*(self.data.astype('f').sum(2) - self.md.Camera.ADOffset)*self.md.Camera.TrueEMGain, 1))/self.md.Camera.ElectronsPerCount)*fudgeFactor*self.threshold
+            return (numpy.sqrt(self.md.Camera.ReadNoise**2 + numpy.maximum(self.md.Camera.ElectronsPerCount*(self.md.Camera.NoiseFactor**2)*(ndimage.gaussian_filter((self.data.astype('f') - self.md.Camera.ADOffset).sum(2), 2))*self.md.Camera.TrueEMGain, 1))/self.md.Camera.ElectronsPerCount)*fudgeFactor*self.threshold
         else:
             return self.threshold

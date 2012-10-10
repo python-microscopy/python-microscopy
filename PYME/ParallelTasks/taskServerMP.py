@@ -287,7 +287,8 @@ class TaskQueueSet(Pyro.core.ObjBase):
 		
 			
 
-if __name__ == '__main__':
+def main():
+    print 'foo'
     profile = False
     if len(sys.argv) > 1 and sys.argv[1] == '-p':
         profile = True
@@ -323,3 +324,8 @@ if __name__ == '__main__':
         
         if profile:
             mProfile.report()
+            
+#print __name__
+#if __name__ == '__main__':
+main()
+    

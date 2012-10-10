@@ -114,24 +114,24 @@ def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=N
 	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, slicesUsed, startParams.astype('f'), nchi2)], dtype=fresultdtype)
 
 
-def genFitImage(fitResults, metadata, fitfcn=f_Interp3d):
-    if fitfcn == f_Interp3d:
-        if 'PSFFile' in metadata.getEntryNames():
-            setModel(metadata.getEntry('PSFFile'), metadata)
-        else:
-            genTheoreticalModel(metadata)
-
-    xslice = slice(*fitResults['slicesUsed']['x'])
-    yslice = slice(*fitResults['slicesUsed']['y'])
-
-    X = 1e3*metadata.getEntry('voxelsize.x')*scipy.mgrid[xslice]
-    Y = 1e3*metadata.getEntry('voxelsize.y')*scipy.mgrid[yslice]
-    Z = array([0]).astype('f')
-    P = scipy.arange(0,1.01,.01)
-
-    im = fitfcn(fitResults['fitResults'], X, Y, Z, P).reshape(len(X), len(Y))
-
-    return im
+#def genFitImage(fitResults, metadata, fitfcn=f_Interp3d):
+#    if fitfcn == f_Interp3d:
+#        if 'PSFFile' in metadata.getEntryNames():
+#            setModel(metadata.getEntry('PSFFile'), metadata)
+#        else:
+#            genTheoreticalModel(metadata)
+#
+#    xslice = slice(*fitResults['slicesUsed']['x'])
+#    yslice = slice(*fitResults['slicesUsed']['y'])
+#
+#    X = 1e3*metadata.getEntry('voxelsize.x')*scipy.mgrid[xslice]
+#    Y = 1e3*metadata.getEntry('voxelsize.y')*scipy.mgrid[yslice]
+#    Z = array([0]).astype('f')
+#    P = scipy.arange(0,1.01,.01)
+#
+#    im = fitfcn(fitResults['fitResults'], X, Y, Z, P).reshape(len(X), len(Y))
+#
+#    return im
 
 def getDataErrors(im, metadata):
     dataROI = im - metadata.getEntry('Camera.ADOffset')
@@ -201,7 +201,7 @@ class PSFFitFactory:
 
         return f_Interp3d(params, interpolator, X, Y, Z, safeRegion, md['PRI.Axis']), X.ravel()[0], Y.ravel()[0], Z.ravel()[0]
 
-    def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
+    def FromPoint(self, x, y, z=None, roiHalfSize=7, axialHalfSize=15):
         #if (z == None): # use position of maximum intensity
         #    z = self.data[x,y,:].argmax()
 
