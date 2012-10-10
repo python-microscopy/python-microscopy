@@ -18,7 +18,7 @@ import numpy as np
 from scipy.ndimage import convolve1d
 import unittest
 
-import cellprofiler.cpmath.threshold as T
+import PYME.cpmath.threshold as T
 
 class TestThreshold(unittest.TestCase):
     def test_01_00_nothing(self):

@@ -94,8 +94,8 @@ def GenWidefieldAP(dx = 5):
     X, Y = meshgrid(arange(-2000, 2000., dx),arange(-2000, 2000., dx))
     X = X - X.mean()
     Y = Y - Y.mean()
-    u = dx*X*n/(lamb*X.shape[0]*2)
-    v = dx*Y*n/(lamb*X.shape[1]*2)
+    u = X*lamb/(n*X.shape[0]*dx*dx)
+    v = Y*lamb/(n*X.shape[1]*dx*dx)
     #print u.min()
 
     R = sqrt(u**2 + v**2)
@@ -150,8 +150,9 @@ def PsfFromPupil(pupil, zs, dx, lamb):
     
     #print ps.shape
     #print arange(-ps.shape[0]/2, ps.shape[0]/2)
-    u = dx*X*n/(lamb*X.shape[0]*2)
-    v = dx*Y*n/(lamb*X.shape[1]*2)
+
+    u = X*lamb/(n*X.shape[0]*dx*dx)
+    v = Y*lamb/(n*X.shape[1]*dx*dx)
     
     k = 2*pi*n/lamb
 
@@ -184,8 +185,8 @@ def PsfFromPupilVect(pupil, zs, dx, lamb, shape = [61,61]):
     
     #print ps.shape
     #print arange(-ps.shape[0]/2, ps.shape[0]/2)
-    u = dx*X*n/(lamb*X.shape[0]*2)
-    v = dx*Y*n/(lamb*X.shape[1]*2)
+    u = X*lamb/(n*X.shape[0]*dx*dx)
+    v = Y*lamb/(n*X.shape[1]*dx*dx)
 
     R = sqrt(u**2 + v**2)
     
@@ -256,8 +257,8 @@ def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters = 50, size=5e3):
     
     #print ps.shape
     #print arange(-ps.shape[0]/2, ps.shape[0]/2)
-    u = dx*X*n/(lamb*X.shape[0]*2)
-    v = dx*Y*n/(lamb*X.shape[1]*2)
+    u = X*lamb/(n*X.shape[0]*dx*dx)
+    v = Y*lamb/(n*X.shape[1]*dx*dx)
 
     R = sqrt(u**2 + v**2)
     M = 1.0*(R < (NA/n)) # NA/lambda
@@ -374,6 +375,19 @@ def GenPRIPSF(zs, dx = 5, strength=1.0):
     F = F * exp(-1j*sign(X)*10*strength*v)
     #clf()
     #imshow(angle(F))
+
+    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+
+    return abs(ps**2)
+    
+def GenColourPRIPSF(zs, dx = 5, strength=1.0, transmit = [1,1]):
+    X, Y, R, FP, F, u, v = GenWidefieldAP(dx)
+
+    F = F * exp(-1j*sign(X)*10*strength*v)
+    
+    F = F*(sqrt(transmit[0])*(X < 0) +  sqrt(transmit[1])*(X >=0))
+    #clf()
+    imshow(angle(F))
 
     ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 

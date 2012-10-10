@@ -84,6 +84,10 @@ class LMAnalyser:
         wx.EVT_MENU(self.dsviewer, TASKS_3D, self.OnStandard3D)
         wx.EVT_MENU(self.dsviewer, TASKS_3D_SPLITTER, self.OnSpliter3D)
         
+        BG_SUBTRACT = wx.NewId()
+        self.dsviewer.view_menu.AppendCheckItem(BG_SUBTRACT, 'Subtract Background')
+        wx.EVT_MENU(self.dsviewer, BG_SUBTRACT, self.OnToggleBackground)
+        
 
         #a timer object to update for us
         self.timer = mytimer()
@@ -163,7 +167,15 @@ class LMAnalyser:
             self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],self.fitResults['tIndex'].astype('f'))
             self.glCanvas.setCLim((0, self.fitResults['tIndex'].max()))
 
-        
+    def OnToggleBackground(self, event):
+        if self.do.ds.bgRange == None:
+            self.do.ds.bgRange = [int(v) for v in self.tBackgroundFrames.GetValue().split(':')]
+            self.do.ds.dataStart = int(self.tStartAt.GetValue())
+        else:
+            self.do.ds.bgRange = None
+            self.do.ds.dataStart = 0
+            
+        self.do.Optimise()
 
     def AddPointsToVis(self):
         self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],self.fitResults['tIndex'].astype('f'))
@@ -839,6 +851,64 @@ class LMAnalyser:
             yticks([])
         show()
         matplotlib.interactive(True)
+        
+    def testFrame(self, detThresh = 0.9, offset = 0):
+        #close('all')
+        if self.image.dataSource.moduleName == 'TQDataSource':
+            self.checkTQ()
+        matplotlib.interactive(False)
+        figure()
+        #sq = min(self.image.mdh.getEntry('EstimatedLaserOnFrameNo') + 1000, self.image.dataSource.getNumSlices()/4)
+        #zps = array(range(self.image.mdh.getEntry('EstimatedLaserOnFrameNo') + 20, self.image.mdh.getEntry('EstimatedLaserOnFrameNo') + 24)  + range(sq, sq + 4) + range(self.image.dataSource.getNumSlices()/2,self.image.dataSource.getNumSlices() /2+4))
+        #zps += offset
+        
+        zp = self.do.zp
+        fitMod = self.cFitType.GetStringSelection()
+        #bgFrames = int(tBackgroundFrames.GetValue())
+        bgFrames = [int(v) for v in self.tBackgroundFrames.GetValue().split(':')]
+        #print zps
+        bgi = range(max(zp + bgFrames[0],self.image.mdh.getEntry('EstimatedLaserOnFrameNo')), max(zp + bgFrames[1],self.image.mdh.getEntry('EstimatedLaserOnFrameNo')))
+            #else:
+            #    bgi = range(max(zps[i] - 10,md.EstimatedLaserOnFrameNo), zps[i])
+        mn = self.image.dataSource.moduleName
+        if mn == 'BufferedDataSource':
+            mn = self.image.dataSource.dataSource.moduleName
+
+        #if 'Splitter' in fitMod:
+        #    ft = remFitBuf.fitTask(self.image.seriesName, zp, detThresh, MetaDataHandler.NestedClassMDHandler(self.image.mdh), 'SplitterObjFindR', bgindices=bgi, SNThreshold=True,dataSourceModule=mn)
+        #else:
+        #    ft = remFitBuf.fitTask(self.image.seriesName, zp, detThresh, MetaDataHandler.NestedClassMDHandler(self.image.mdh), 'LatObjFindFR', bgindices=bgi, SNThreshold=True,dataSourceModule=mn)
+        ft = remFitBuf.fitTask(self.image.seriesName, zp, detThresh, MetaDataHandler.NestedClassMDHandler(self.image.mdh), fitMod, bgindices=bgi, SNThreshold=True,dataSourceModule=mn)
+        res = ft(taskQueue=self.tq)
+
+        d = ft.ofd.filteredData.T
+        #d = ft.data.squeeze().T
+        imshow(d, cmap=cm.hot, interpolation='nearest', hold=False, clim=(median(d.ravel()), d.max()))
+        plot([p.x for p in ft.ofd], [p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
+        if ft.driftEst:
+             plot([p.x for p in ft.ofdDr], [p.y for p in ft.ofdDr], 'o', mew=2, mec='b', mfc='none', ms=9)
+        if ft.fitModule in remFitBuf.splitterFitModules:
+                plot([p.x for p in ft.ofd], [d.shape[0] - p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
+        axis('tight')
+        xlim(0, d.shape[1])
+        ylim(d.shape[0], 0)
+        xticks([])
+        yticks([])
+        
+        if 'tIm' in dir(ft.ofd):
+            figure()
+            imshow(ft.ofd.tIm.T, cmap=cm.hot, interpolation='nearest', hold=False)
+            axis('tight')
+            xlim(0, d.shape[1])
+            ylim(d.shape[0], 0)
+            xticks([])
+            yticks([])
+            
+        show()
+
+        matplotlib.interactive(True)
+        
+        return res
 
 def Plug(dsviewer):
     dsviewer.LMAnalyser = LMAnalyser(dsviewer)

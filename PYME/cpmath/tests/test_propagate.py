@@ -19,8 +19,8 @@ import struct
 import unittest
 import time
 
-import cellprofiler.cpmath.propagate
-import cellprofiler.cpmath._propagate
+import PYME.cpmath.propagate
+import PYME.cpmath._propagate
 
 class Test_Propagate(unittest.TestCase):
     def test_01_01_test_convert_to_ints(self):

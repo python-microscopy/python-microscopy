@@ -25,6 +25,7 @@ angle between the lobes it should also be able to be used for double helix PSFs
 with little/no modification'''
 
 from scipy.interpolate import splprep, splev
+from scipy import ndimage
 import numpy
 from PYME.Analysis.binAvg import binAvg
 #from pylab import *
@@ -111,11 +112,27 @@ def _calcParams(data, X, Y):
     A = (data.max()- data.min()) #amplitude
 
     #threshold at half maximum and subtract threshold
-    dr = numpy.maximum(data - data.min() - 0.5*A, 0).squeeze()
+    dr = numpy.maximum(data - data.min() - 0.2*A, 0).squeeze()
     drs = dr.sum()
-
-    x0 = (X[:,None]*dr).sum()/drs
-    y0 = (Y[None, :]*dr).sum()/drs
+    
+    labs, nlabs = ndimage.label(dr)
+    nr = 0
+    x0 = 0
+    y0 = 0
+    
+    for i in xrange(1, nlabs + 1):
+        dri = dr*(labs == i)
+        dris = dri.sum()
+        
+        if dris > A:
+            x0 += (X[:,None]*dri).sum()/dris
+            y0 += (Y[None, :]*dri).sum()/dris
+            nr += 1
+            
+    x0 /= nr
+    y0 /= nr
+    #x0 = (X[:,None]*dr).sum()/drs
+    #y0 = (Y[None, :]*dr).sum()/drs
 
     #sig_xl = (numpy.maximum(0, x0 - X)[:,None]*dr).sum()/(drs)
     #sig_xr = (numpy.maximum(0, X - x0)[:,None]*dr).sum()/(drs)
@@ -142,7 +159,8 @@ def _calcParams(data, X, Y):
 
 
 def getStartParameters(data, X, Y, Z=None):
-    A, x0, y0, dw = _calcParams(data, X, Y)
+    ds = ndimage.gaussian_filter(data, 1)
+    A, x0, y0, dw = _calcParams(ds, X, Y)
 
     #clamp dw to valid region
     dw_ = min(max(dw, splines['z'][0][0]), splines['z'][0][-1])

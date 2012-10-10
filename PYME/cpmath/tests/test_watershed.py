@@ -53,7 +53,7 @@ import unittest
 import numpy
 import scipy.ndimage
 
-from cellprofiler.cpmath.watershed import watershed,fast_watershed
+from PYME.cpmath.watershed import watershed,fast_watershed
 
 eps = 1e-12
 

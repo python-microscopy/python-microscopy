@@ -18,8 +18,8 @@ import numpy as np
 import scipy.ndimage as scind
 import unittest
 
-import cellprofiler.cpmath.zernike as z
-from cellprofiler.cpmath.cpmorphology import fill_labeled_holes, draw_line
+import PYME.cpmath.zernike as z
+from PYME.cpmath.cpmorphology import fill_labeled_holes, draw_line
 
 class TestZernike(unittest.TestCase):
     def make_zernike_indexes(self):

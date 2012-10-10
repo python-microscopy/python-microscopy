@@ -52,8 +52,15 @@ There are a couple of little caveats though:
 
 - We need a very recent version of wxPython. This means that you'll probably have to 
   upgrade the wxPython found in EPD and/or older linux distros. See upgrading wxPython below.
-- Delny is a bit of a mess (not in in the python package archive so no easy_install, iffy licensing, need to google, download source, & build, but default sources don't build on Win or MacOS). I'm trying to remove the dependency (currently only used by one minor component of the visualisation/postprocessing), but in the meantime the easiest thing would probably be to grab a copy of the sources I've hacked to work on Win/ Mac off me.
-- On some (most?) versions of windows, the network stack is broken. Pyro needs to be told about this by setting an environment variable - ``PYRO_BROKEN_MSGWAITALL=1``. I can confirm that this is the case for pretty much every XP system, but can't comment on Vista/7). Pyro falls back on another (slower) piece of code when this the flag is set, so it should be safe in any case. Can't remember exactly how to diagnose the problem other than that Pyro falls over with cryptic error messages.
+- I have had problems with getting Delny to compile/install on Win/OSX, although
+  this might have been fixed in the interim. It's only required in PYME for some very rarely 
+  used functionality, so can usually be safely ignored.
+- On some (most?) versions of windows, the network stack is broken. Pyro needs 
+  to be told about this by setting an environment variable - ``PYRO_BROKEN_MSGWAITALL=1``. 
+  I can confirm that this is the case for pretty much every XP system, but can't comment on Vista/7). 
+  Pyro falls back on another (slower) piece of code when this the flag is set, 
+  so it should be safe in any case. Can't remember exactly how to diagnose the 
+  problem other than that Pyro falls over with cryptic error messages.
 
 
 To make this whole process of finding and installing dependencies a little less painful,

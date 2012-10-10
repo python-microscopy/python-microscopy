@@ -383,23 +383,19 @@ class PSFTools(HasTraits):
 
 def Plug(dsviewer):
     dsviewer.PSFTools = PSFTools(dsviewer)
-    
-    dsviewer.crbv = CRBViewPanel(dsviewer, dsviewer.image)
-    dsviewer.dataChangeHooks.append(dsviewer.crbv.calcCRB)
-    
-    dsviewer.psfqp = PSFQualityPanel(dsviewer)
-    dsviewer.dataChangeHooks.append(dsviewer.psfqp.FillGrid)
-    
-    #dsviewer.AddPage(dsviewer.psfqp, False, 'PSF Quality')
-    dsviewer.AddPage(dsviewer.crbv, False, 'Cramer-Rao Bounds')
-    
-    
-    #dsviewer.gv.toolbar = MyNavigationToolbar(dsviewer.gv.canvas, dsviewer)
-    #dsviewer._mgr.AddPane(dsviewer.gv.toolbar, aui.AuiPaneInfo().Name("MPLTools").Caption("Matplotlib Tools").CloseButton(False).
-    #                  ToolbarPane().Right().GripperTop())
-    
-    pinfo1 = aui.AuiPaneInfo().Name("psfQPanel").Left().Caption('PSF Quality').DestroyOnClose(True).CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
-    dsviewer._mgr.AddPane(dsviewer.psfqp, pinfo1)
+    if dsviewer.do.ds.shape[2] > 1:
+        dsviewer.crbv = CRBViewPanel(dsviewer, dsviewer.image)
+        dsviewer.dataChangeHooks.append(dsviewer.crbv.calcCRB)
+        
+        dsviewer.psfqp = PSFQualityPanel(dsviewer)
+        dsviewer.dataChangeHooks.append(dsviewer.psfqp.FillGrid)
+        
+        #dsviewer.AddPage(dsviewer.psfqp, False, 'PSF Quality')
+        dsviewer.AddPage(dsviewer.crbv, False, 'Cramer-Rao Bounds')
+            
+        pinfo1 = aui.AuiPaneInfo().Name("psfQPanel").Left().Caption('PSF Quality').DestroyOnClose(True).CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
+        dsviewer._mgr.AddPane(dsviewer.psfqp, pinfo1)
+        
     dsviewer._mgr.Update()
 
 

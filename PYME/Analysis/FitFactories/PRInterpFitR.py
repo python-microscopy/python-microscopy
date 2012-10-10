@@ -63,16 +63,22 @@ def f_Interp3d(p, interpolator, X, Y, Z, safeRegion, splitaxis, *args):
     y0 = min(max(y0, safeRegion[1][0]), safeRegion[1][1])
     z0 = min(max(z0, safeRegion[2][0]), safeRegion[2][1])
     
-    im =  interpolator.interp(X - x0 + 1, Y - y0 + 1, Z - z0 + 1)*A + b
+    im =  interpolator.interp(X - x0 + 1, Y - y0 + 1, Z - z0 + 1)*A 
+    
+    #print im.shape
 
     if splitaxis == 'x':
-        fac = 2*(r*(X < x0) + (1-r)*(X > x0))
-        im = im*fac[:,None]
+        fac = 2*(r*(X < x0) + (1-r)*(X >= x0))
+        im = im*fac[:,None, None]
+        #print 'x', fac.shape
     else: #splitaxis == 'y'
-        fac = 2*(r*(Y < y0) + (1-r)*(Y > y0))
-        im = im*fac[None, :]
+        fac = 2*(r*(Y < y0) + (1-r)*(Y >= y0))
+        #print fac.shape
+        im = im*fac[None, :, None]
+        
+    #print im.shape
     
-    return im
+    return im + b
 
 
 def replNoneWith1(n):
@@ -108,24 +114,24 @@ def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=N
 	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, slicesUsed, startParams.astype('f'), nchi2)], dtype=fresultdtype)
 
 
-def genFitImage(fitResults, metadata, fitfcn=f_Interp3d):
-    if fitfcn == f_Interp3d:
-        if 'PSFFile' in metadata.getEntryNames():
-            setModel(metadata.getEntry('PSFFile'), metadata)
-        else:
-            genTheoreticalModel(metadata)
-
-    xslice = slice(*fitResults['slicesUsed']['x'])
-    yslice = slice(*fitResults['slicesUsed']['y'])
-
-    X = 1e3*metadata.getEntry('voxelsize.x')*scipy.mgrid[xslice]
-    Y = 1e3*metadata.getEntry('voxelsize.y')*scipy.mgrid[yslice]
-    Z = array([0]).astype('f')
-    P = scipy.arange(0,1.01,.01)
-
-    im = fitfcn(fitResults['fitResults'], X, Y, Z, P).reshape(len(X), len(Y))
-
-    return im
+#def genFitImage(fitResults, metadata, fitfcn=f_Interp3d):
+#    if fitfcn == f_Interp3d:
+#        if 'PSFFile' in metadata.getEntryNames():
+#            setModel(metadata.getEntry('PSFFile'), metadata)
+#        else:
+#            genTheoreticalModel(metadata)
+#
+#    xslice = slice(*fitResults['slicesUsed']['x'])
+#    yslice = slice(*fitResults['slicesUsed']['y'])
+#
+#    X = 1e3*metadata.getEntry('voxelsize.x')*scipy.mgrid[xslice]
+#    Y = 1e3*metadata.getEntry('voxelsize.y')*scipy.mgrid[yslice]
+#    Z = array([0]).astype('f')
+#    P = scipy.arange(0,1.01,.01)
+#
+#    im = fitfcn(fitResults['fitResults'], X, Y, Z, P).reshape(len(X), len(Y))
+#
+#    return im
 
 def getDataErrors(im, metadata):
     dataROI = im - metadata.getEntry('Camera.ADOffset')
@@ -195,7 +201,7 @@ class PSFFitFactory:
 
         return f_Interp3d(params, interpolator, X, Y, Z, safeRegion, md['PRI.Axis']), X.ravel()[0], Y.ravel()[0], Z.ravel()[0]
 
-    def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
+    def FromPoint(self, x, y, z=None, roiHalfSize=7, axialHalfSize=15):
         #if (z == None): # use position of maximum intensity
         #    z = self.data[x,y,:].argmax()
 

@@ -17,7 +17,7 @@ __version__="$Revision$"
 import unittest
 import numpy
 import numpy.random
-from cellprofiler.cpmath.otsu import otsu
+from PYME.cpmath.otsu import otsu
 
 class testOtsu(unittest.TestCase):
     def test_01_TwoValues(self):

@@ -78,11 +78,16 @@ def genTheoreticalModel(md):
 
         P = arange(0,1.01,.01)
 
-        interpModel = genWidefieldPSF(IntXVals, IntYVals, IntZVals, P,1e3, 0, 0, 0, 2*pi/525, 1.47, 10e3)
+        interpModel = genWidefieldPSF(IntXVals, IntYVals, IntZVals, P,1e3, 0, 0, 0, 2*pi/525, 1.47, 10e3).astype('f')
+        
+        print 'foo'
+        print interpModel.strides, interpModel.shape
 
         interpModel = interpModel/interpModel.max() #normalise to 1
+        
+        print 'bar'
 
-#genTheoreticalModel(MetaData.TIRFDefault)
+genTheoreticalModel(MetaData.TIRFDefault)
 
 #def setModel(mod, md):
 #    global IntXVals, IntYVals, IntZVals, interpModel, dx, dy, dz
@@ -308,7 +313,7 @@ def simPalmImF(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=10, laserPowe
 
 
 def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=15, laserPowers = [.1,1], position=[0,0,0], illuminationFunction='ConstIllum'):
-    if not interpModel:
+    if interpModel == None:
         genTheoreticalModel(MetaData.TIRFDefault)
         
     im = zeros((len(X), len(Y)), 'f')
@@ -334,6 +339,8 @@ def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=15, laserPow
     #print flOn
     dx = X[1] - X[0]
     dy = Y[1] - Y[0]
+    
+    #print interpModel.shape, interpModel.strides
 
 
     for i in flOn:
@@ -357,10 +364,11 @@ def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=15, laserPow
            #imp =interp3(X[max(ix - roiSize, 0):(ix + roiSize + 1)] - x, Y[max(iy - roiSize, 0):(iy + roiSize + 1)] - y, z - fluors.fl['z'][i])* A[i]
            imp = cInterp.Interpolate(interpModel, X[ix0] - x, Y[iy0] - y, z - fluors.fl['z'][i], ix1-ix0, iy1-iy0,dx,dy,dz)* A[i]
            #print imp.shape
+           #print imp.shape
            #if not imp.shape[2] == 0
            if imp.min() < 0 or isnan(A[i]):
                print ix0, ix1, iy0, iy1, (X[ix0] - x)/dx, (Y[iy0]-  y)/dx, A[i], imp.min()
-           im[ix0:ix1, iy0:iy1] += imp[:,:]
+           im[ix0:ix1, iy0:iy1] += imp[:,:,0]
 
     return im
 
@@ -402,7 +410,7 @@ def simPalmImFSpec(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=10, laser
     return im
 
 def simPalmImFSpecI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=10, laserPowers = [.1,1], deltaY=64, deltaZ = 300):
-    if not interpModel:
+    if interpModel == None:
         genTheoreticalModel(MetaData.TIRFDefault)
         
     im = zeros((len(X), len(Y)), 'f')
