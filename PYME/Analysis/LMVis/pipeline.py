@@ -187,6 +187,30 @@ class Pipeline:
             - scipy.special.erf((sg**2*(r-I) - sr**2*g)/(np.sqrt(2)*sg*sr*np.sqrt(sg**2+sr**2))))
         
         self.selectedDataSource.setMapping('ColourNorm', '1.0*colNorm')
+
+    def _processPriSplit(self):
+        '''set mappings ascociated with the use of a splitter'''
+        self.selectedDataSource.setMapping('gFrac', 'fitResults_ratio')
+        self.selectedDataSource.setMapping('error_gFrac','fitError_ratio')
+
+        self.selectedDataSource.setMapping('fitResults_Ag','gFrac*A')
+        self.selectedDataSource.setMapping('fitResults_Ar','(1.0 - gFrac)*A')
+        self.selectedDataSource.setMapping('fitError_Ag','gFrac*fitError_A')
+        self.selectedDataSource.setMapping('fitError_Ar','(1.0 - gFrac)*fitError_A')
+        
+        sg = self.selectedDataSource['fitError_Ag']
+        sr = self.selectedDataSource['fitError_Ar']
+        g = self.selectedDataSource['fitResults_Ag']
+        r = self.selectedDataSource['fitResults_Ar']
+        I = self.selectedDataSource['A']
+        
+        self.selectedDataSource.colNorm = np.sqrt(2*np.pi)*sg*sr/(2*np.sqrt(sg**2 + sr**2)*I)*(
+            scipy.special.erf((sg**2*r + sr**2*(I-g))/(np.sqrt(2)*sg*sr*np.sqrt(sg**2+sr**2)))
+            - scipy.special.erf((sg**2*(r-I) - sr**2*g)/(np.sqrt(2)*sg*sr*np.sqrt(sg**2+sr**2))))
+        
+        self.selectedDataSource.setMapping('ColourNorm', '1.0*colNorm')
+
+
         
     def CloseFiles(self):
         while len(self.filesToClose) > 0:
@@ -287,6 +311,10 @@ class Pipeline:
         if 'fitResults_Ag' in self.selectedDataSource.keys():
             #if we used the splitter set up a number of mappings e.g. total amplitude and ratio
             self._processSplitter()
+
+        if 'fitResults_ratio' in self.selectedDataSource.keys():
+            #if we used the splitter set up a number of mappings e.g. total amplitude and ratio
+            self._processPriSplit()
 
         if 'fitResults_sigxl' in self.selectedDataSource.keys():
             #fast, quickpalm like astigmatic fitting 
