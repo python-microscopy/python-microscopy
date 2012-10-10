@@ -95,6 +95,8 @@ class CurrentRenderer:
             #print 'f'
             if jitParamName == 'neighbourDistances':
                 jitVals = self.pipeline.getNeighbourDists(True)
+            elif jitParamName == 'neighbourErrorMin':
+                jitVals = np.minimum(self.pipeline.colourFilter['error_x'], self.pipeline.getNeighbourDists(True))
             else:
                 jitVals = self.pipeline.GeneratedMeasures[jitParamName]
 
@@ -153,7 +155,9 @@ class ColourRenderer(CurrentRenderer):
         self.genMeas = self.pipeline.GeneratedMeasures.keys()
         if not 'neighbourDistances' in self.genMeas:
             self.genMeas.append('neighbourDistances')
+            self.genMeas.append('neighbourErrorMin')
         jitVars += self.genMeas
+        
         
         if 'z' in self.pipeline.mapping.keys():
             zvals = self.pipeline.mapping['z']
@@ -190,7 +194,10 @@ class ColourRenderer(CurrentRenderer):
                 
                 ox = (mdh['Source.Camera.ROIPosX'] - 1)*voxx + imb.x0
                 oy = (mdh['Source.Camera.ROIPosY'] - 1)*voxy + imb.y0
-                oz = mdh['Source.Positioning.PIFoc']*1e3
+                if 'Source.Positioning.PIFoc' in mdh.getEntryNames():
+                    oz = mdh['Source.Positioning.PIFoc']*1e3
+                else:
+                    oz = 0
             else:
                 ox = imb.x0
                 oy = imb.y0 
