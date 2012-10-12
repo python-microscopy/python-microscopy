@@ -155,7 +155,10 @@ class ColourRenderer(CurrentRenderer):
         self.genMeas = self.pipeline.GeneratedMeasures.keys()
         if not 'neighbourDistances' in self.genMeas:
             self.genMeas.append('neighbourDistances')
+            
+        if not 'neighbourErrorMin' in self.genMeas:
             self.genMeas.append('neighbourErrorMin')
+            
         jitVars += self.genMeas
         
         
