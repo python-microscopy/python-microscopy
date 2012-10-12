@@ -164,7 +164,7 @@ class ObjectIdentifier(list):
             maskedFilteredData = filteredData
 
         #manually mask the edge pixels
-        if maskedFilteredData.ndim == 3:
+        if maskedFilteredData.ndim == 3 and maskedFilteredData.shape[2] > 1:
             maskedFilteredData[0:5, 0:5, :] = 0
             maskedFilteredData[0:5, -5:,:] = 0
             maskedFilteredData[-5:, -5:,:] = 0
@@ -282,7 +282,7 @@ class ObjectIdentifier(list):
                 #pylab.colorbar()
 
                 #clip border pixels again
-                if maskedFilteredData.ndim == 3:
+                if maskedFilteredData.ndim == 3 and maskedFilteredData.shape[2] > 1:
                     im[0:5, 0:5, :] = 0
                     im[0:5, -5:,:] = 0
                     im[-5:, -5:,:] = 0
