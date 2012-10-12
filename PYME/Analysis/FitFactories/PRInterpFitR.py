@@ -133,6 +133,37 @@ def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=N
 #
 #    return im
 
+def genFitImage(fitResults, md, fitfcn=f_Interp3d):
+        xslice = slice(*fitResults['slicesUsed']['x'])
+        yslice = slice(*fitResults['slicesUsed']['y'])
+        #X = 1e3*metadata.getEntry('voxelsize.x')*scipy.mgrid[xslice]
+        #Y = 1e3*metadata.getEntry('voxelsize.y')*scipy.mgrid[yslice]
+
+        params = fitResults['fitResults']
+
+        interpolator = __import__('PYME.Analysis.FitFactories.Interpolators.' + md.Analysis.InterpModule , fromlist=['PYME', 'Analysis','FitFactories', 'Interpolators']).interpolator
+        
+        if 'Analysis.EstimatorModule' in md.getEntryNames():
+            estimatorModule = md.Analysis.EstimatorModule
+        else:
+            estimatorModule = 'astigEstimator'
+
+        #this is just here to make sure we clear our calibration when we change models        
+        startPosEstimator = __import__('PYME.Analysis.FitFactories.zEstimators.' + estimatorModule , fromlist=['PYME', 'Analysis','FitFactories', 'zEstimators'])        
+        
+        if interpolator.setModelFromFile(md.PSFFile, md):
+            print 'model changed'
+            startPosEstimator.splines.clear()
+
+        X, Y, Z, safeRegion = interpolator.getCoords(md, xslice, yslice, slice(0,1))
+
+        #X = 1e3*md.voxelsize.x*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
+        #Y = 1e3*md.voxelsize.y*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
+        #Z = array([0]).astype('f')
+
+        return f_Interp3d(params, interpolator, X, Y, Z, safeRegion, md['PRI.Axis'])#, X.ravel()[0], Y.ravel()[0], Z.ravel()[0]
+        #return PSFFitFactory.evalModel(fitResults['fitResults'], metadata, X.mean(), Y.mean(), metadata['Analysis.ROISize'])[0]
+
 def getDataErrors(im, metadata):
     dataROI = im - metadata.getEntry('Camera.ADOffset')
 
@@ -193,7 +224,7 @@ class PSFFitFactory:
             print 'model changed'
             startPosEstimator.splines.clear()
 
-        X, Y, Z, safeRegion = interpolator.getCoords(md, slice(-roiHalfSize,roiHalfSize + 1), slice(-roiHalfSize,roiHalfSize + 1), slice(0,1))
+        X, Y, Z, safeRegion = interpolator.getCoords(md, slice(-roiHalfSize + x,roiHalfSize + 1 + x), slice(-roiHalfSize + y,roiHalfSize + 1 + y), slice(0,1))
 
         #X = 1e3*md.voxelsize.x*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
         #Y = 1e3*md.voxelsize.y*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]

@@ -254,7 +254,7 @@ class ObjectIdentifier(list):
 
 
 
-    def FindObjects(self, thresholdFactor, numThresholdSteps="default", blurRadius=1, mask=None, splitter=None, debounceRadius=4, maskEdgeWidth=5):
+    def FindObjects(self, thresholdFactor, numThresholdSteps="default", blurRadius=1, mask=None, splitter=None, debounceRadius=4, maskEdgeWidth=10):
         """Finds point-like objects by subjecting the data to a band-pass filtering (as defined when 
         creating the identifier) followed by z-projection and a thresholding procedure where the 
         threshold is progressively decreased from a maximum value (half the maximum intensity in the image) to a 

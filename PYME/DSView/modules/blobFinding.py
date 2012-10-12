@@ -171,7 +171,8 @@ class blobFinder:
             threshold =  (numpy.sqrt(self.image.mdh.Camera.ReadNoise**2 + numpy.maximum(self.image.mdh.Camera.ElectronsPerCount*(self.image.mdh.Camera.NoiseFactor**2)*(self.image.data.astype('f') - self.image.mdh.Camera.ADOffset)*self.image.mdh.Camera.TrueEMGain, 1))/self.image.mdh.Camera.ElectronsPerCount)*fudgeFactor*threshold
             self.ofd.FindObjects(threshold, 0)
         elif self.chMethod.GetSelection() == 2:
-            self.ofd.FindObjects(threshold)
+            bs = float(self.tBlurSize.GetValue())
+            self.ofd.FindObjects(threshold, blurRadius = bs, blurRadiusZ = bs)
         else:
             self.ofd.FindObjects(threshold,0)
 
