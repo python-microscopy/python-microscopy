@@ -34,11 +34,18 @@ splines = {}
 
 rawMeas = {}
 
+lobeSeparation = None
+axis_x = None
+
 #note that the bulk of this code is copied from astigEstimator, just replacing the
 #difference in widths with a measure of rotation
 
 def calibrate(interpolator, md, roiSize=5):
     #global zvals, dWidth
+    global lobeSeparation, axis_x
+
+        
+    
     #generate grid to evaluate function on
     X, Y, Z, safeRegion = interpolator.getCoords(md, slice(-roiSize,roiSize), slice(-roiSize,roiSize), slice(0, 2))
     #print Z, safeRegion
@@ -51,6 +58,22 @@ def calibrate(interpolator, md, roiSize=5):
         Y_ = Y
 
     z = numpy.arange(-500, 500, 10)
+    
+    p = interpolator.interpModel.max(2)
+
+    if md['PRI.Axis'] == 'x':
+        I = p.max(1)
+    else:
+        I = p.max(0)
+            
+    sepr = I[(I.size/2):].argmax()
+    sepl = I[(I.size/2)::-1].argmax()
+    
+    #print sepr, sepl
+    
+    lobeSeparation = sepr + sepl
+    axis_x = md['PRI.Axis'] == 'x'    
+    
     ps = []
 
     for z0 in z:    
@@ -105,6 +128,8 @@ def calibrate(interpolator, md, roiSize=5):
 
     sp, u = splprep([zm], u=dwm, s=1)
     splines['z'] = sp
+    
+    
 
 
 def _calcParams(data, X, Y):
@@ -114,23 +139,69 @@ def _calcParams(data, X, Y):
     #threshold at half maximum and subtract threshold
     dr = numpy.maximum(data - data.min() - 0.2*A, 0).squeeze()
     drs = dr.sum()
-    
-    labs, nlabs = ndimage.label(dr)
-    nr = 0
-    x0 = 0
-    y0 = 0
-    
-    for i in xrange(1, nlabs + 1):
-        dri = dr*(labs == i)
-        dris = dri.sum()
-        
-        if dris > A:
-            x0 += (X[:,None]*dri).sum()/dris
-            y0 += (Y[None, :]*dri).sum()/dris
-            nr += 1
+#    
+#    labs, nlabs = ndimage.label(dr)
+#    nr = 0
+#    x0 = 0
+#    y0 = 0
+#    
+#    for i in xrange(1, nlabs + 1):
+#        dri = dr*(labs == i)
+#        dris = dri.sum()
+#        
+#        if dris > A:
+#            x0 += (X[:,None]*dri).sum()/dris
+#            y0 += (Y[None, :]*dri).sum()/dris
+#            nr += 1
             
-    x0 /= nr
-    y0 /= nr
+    xi, yi, zi = numpy.unravel_index(data.argmax(), data.shape)
+    #print xi, yi
+    
+    if axis_x:
+        if xi < data.shape[0]/2:
+            x2 = min(xi + lobeSeparation, data.shape[0] - 1)
+        else:
+            x2 = max(0, xi - lobeSeparation)
+            
+        y2 = data[x2,:].argmax()
+            
+        
+    else:
+        x0 = X[xi]
+        
+        if yi < data.shape[1]/2:
+            y2 = min(yi + lobeSeparation, data.shape[1] - 1)
+        else:
+            y2 = max(yi - lobeSeparation, 0)
+            
+        #print y2, lobeSeparation
+            
+        x2 = data[:,y2].argmax()
+    
+#    dr = data.squeeze()[(xi - 1):(xi+2), (yi - 1):(yi +2)]
+#    dr /= dr.sum()        
+#    x_0 = (X[(xi - 1):(xi+2), None]*dr).sum()
+#    y_0 = (Y[None, (yi - 1):(yi+2)]*dr).sum()
+#    
+#    dr = data.squeeze()[(x2 - 1):(x2+2), (y2 - 1):(y2 +2)]
+#    dr /= dr.sum()        
+#    x_2 = (X[(x2 - 1):(x2+2), None]*dr).sum()
+#    y_2 = (Y[None,(y2 - 1):(y2+2)]*dr).sum()
+#    
+    
+#    x0 = 0.5*(x_0 + x_2)
+#    y0 = 0.5*(y_0 + y_2)
+#    
+    
+    x0 = 0.5*(X[xi] + X[x2])
+    y0 = 0.5*(Y[yi] + Y[y2])
+    
+    
+
+#    print nr, x0, y0, X[xi], Y[yi]            
+    
+#    x0 /= nr
+#    y0 /= nr
     #x0 = (X[:,None]*dr).sum()/drs
     #y0 = (Y[None, :]*dr).sum()/drs
 
@@ -152,6 +223,7 @@ def _calcParams(data, X, Y):
     #pylab.imshow(theta)
 
     thm = (theta*dr).sum()/drs
+    #thm = float(numpy.mod(numpy.angle((x0 -X[xi]) +1j*(y0 - Y[yi])), numpy.pi))
     
     #A = (data - data.min()).sum()
 
