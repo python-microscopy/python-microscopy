@@ -43,7 +43,7 @@ copy_reg.pickle(slice, pickleSlice, unpickleSlice)
 
 def f_Interp3d(p, interpolator, X, Y, Z, safeRegion, splitaxis, *args):
     """3D PSF model function with constant background - parameter vector [A, x0, y0, z0, background]"""
-    A, x0, y0, z0, b, r = p
+    A, x0, y0, z0, r = p
 
     #make sure our model is big enough to stretch to our current position
 #    xm = len(X)/2
@@ -78,7 +78,7 @@ def f_Interp3d(p, interpolator, X, Y, Z, safeRegion, splitaxis, *args):
         
     #print im.shape
     
-    return im + b
+    return im
 
 
 def replNoneWith1(n):
@@ -90,12 +90,12 @@ def replNoneWith1(n):
 
 
 fresultdtype=[('tIndex', '<i4'),
-    ('fitResults', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('background', '<f4'), ('ratio', '<f4')]),
-    ('fitError', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('background', '<f4'), ('ratio', '<f4')]) ,
+    ('fitResults', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('ratio', '<f4')]),
+    ('fitError', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('ratio', '<f4')]) ,
     #('coiR', [('sxl', '<f4'),('sxr', '<f4'),('syu', '<f4'),('syd', '<f4')]),
     ('resultCode', '<i4'),
     ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])]),
-    ('startParams', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('background', '<f4'), ('ratio', '<f4')]), ('nchi2', '<f4')]
+    ('startParams', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('ratio', '<f4')]), ('nchi2', '<f4')]
 
 def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None, startParams=None, nchi2=-1):
 	if slicesUsed == None:
@@ -281,7 +281,7 @@ class PSFFitFactory:
             
             dataROI = dataROI - bgMean
 
-        startParameters = self.startPosEstimator.getStartParameters(dataROI, X_, Y_) + [0.5,]
+        startParameters = self.startPosEstimator.getStartParameters(dataROI, X_, Y_)[:-1] + [0.5,]
 
         #do the fit
         (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, self.interpolator, X, Y, Z, safeRegion, self.metadata['PRI.Axis'])
