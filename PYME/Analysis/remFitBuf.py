@@ -205,7 +205,7 @@ class fitTask(taskDef.Task):
 #                print 'Warning - splitter incorrectly set - '
 
         #calculate background
-        self.bg = 0
+        self.bg = self.md['Camera.ADOffset']
         if not len(self.bgindices) == 0:
 #            self.bg = numpy.zeros(self.data.shape, 'f')
 #            for bgi in self.bgindices:
