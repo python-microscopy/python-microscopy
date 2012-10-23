@@ -2,7 +2,6 @@
 
 ##################
 # init_TIRF.py
-#
 # Copyright David Baddeley, 2009
 # d.baddeley@auckland.ac.nz
 #
@@ -52,7 +51,7 @@ camPanels.append((scope.camControls['B - Right'], 'EMCCD B Properties'))
 ''')
 
 InitGUI('''
-import sampleInformation
+from PYME.Acquire import sampleInformation
 sampPan = sampleInformation.slidePanel(MainFrame)
 camPanels.append((sampPan, 'Current Slide'))
 ''')
@@ -113,11 +112,11 @@ splt = splitter.Splitter(MainFrame, mControls, scope, scope.cam, dichroic = 'FF7
 ''')
 
 #Z stage
-InitBG('Nikon Z-Stage', '''
-from PYME.Acquire.Hardware import NikonTE2000
-scope.zStage = NikonTE2000.zDrive()
-#scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
-''')
+#InitBG('Nikon Z-Stage', '''
+#from PYME.Acquire.Hardware import NikonTE2000
+#scope.zStage = NikonTE2000.zDrive()
+##scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
+#''')
 
 #from PYME.Acquire.Hardware import frZStage
 #frz = frZStage.frZStepper(MainFrame, scope.zStage)
@@ -172,8 +171,9 @@ from PYME.Acquire.Hardware.DigiData import DigiDataClient
 dd = DigiDataClient.getDDClient()
 
 
-from PYME.Acquire.Hardware import lasers
+from PYME.Acquire.Hardware import lasers, cobaltLaser
 scope.l490 = lasers.DigiDataSwitchedLaser('490',dd,4)
+scope.l491 = cobaltLaser.CobaltLaser('491',portname='COM1')
 scope.l405 = lasers.DigiDataSwitchedLaserInvPol('405',dd,0)
 #scope.l543 = lasers.DigiDataSwitchedAnalogLaser('543',dd,0)
 #scope.l671 = lasers.DigiDataSwitchedAnalogLaser('671',dd,1)
@@ -182,7 +182,7 @@ pport = lasers.PPort()
 scope.l671 = lasers.ParallelSwitchedLaser('671',pport,0)
 scope.l532 = lasers.ParallelSwitchedLaser('532',pport,1)
 
-scope.lasers = [scope.l405,scope.l532,scope.l671, scope.l490]
+scope.lasers = [scope.l405,scope.l532,scope.l671, scope.l490, scope.l491]
 ''')
 
 InitGUI('''
@@ -195,9 +195,12 @@ if 'lasers'in dir(scope):
 
 from PYME.Acquire.Hardware import PM100USB
 
-scope.powerMeter = PM100USB.PowerMeter()
-scope.powerMeter.SetWavelength(671)
-scope.StatusCallbacks.append(scope.powerMeter.GetStatusText)
+try:
+    scope.powerMeter = PM100USB.PowerMeter()
+    scope.powerMeter.SetWavelength(671)
+    scope.StatusCallbacks.append(scope.powerMeter.GetStatusText)
+except:
+    pass
 
 ##Focus tracking
 #from PYME.Acquire.Hardware import FocCorrR

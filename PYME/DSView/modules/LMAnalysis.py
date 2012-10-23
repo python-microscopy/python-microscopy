@@ -634,7 +634,11 @@ class LMAnalyser:
                     c = self.fitResults['fitResults']['Ag']/(self.fitResults['fitResults']['Ag'] + self.fitResults['fitResults']['Ar'])
                     self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],c)
                     self.glCanvas.setCLim((0, 1))
-
+                elif self.analDispMode == 'gFrac' and 'ratio' in self.fitResults['fitResults'].dtype.fields:
+                    #display ratio of colour channels as point colour
+                    c = self.fitResults['fitResults']['ratio']
+                    self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],c)
+                    self.glCanvas.setCLim((0, 1))
                 else:
                     #default to time
                     self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],self.fitResults['tIndex'].astype('f'))

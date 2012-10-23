@@ -48,6 +48,7 @@ ns=Pyro.naming.NameServerLocator().getNS()
 
 procName = compName + ' - PID:%d' % os.getpid()
 
+serverFails = {}
 
 #loop forever asking for tasks
 while 1:
@@ -73,15 +74,25 @@ while 1:
 
             #ask the queue for tasks
             tasks = tq.getTasks(procName)
-            
+
+            #we succesfully contacted the server, so reset it's fail count
+            serverFails[qName] = 0
         except Pyro.core.ProtocolError as e:
             if e.message == 'connection failed':
-                #server is dead in the water - put it out of it's misery
-                print 'Killing:', qName
-                try:
-                    ns.unregister('TaskQueues.%s' % qName)
-                except Pyro.errors.NamingError:
-                    pass
+                #remember that the server failed - and put it 'on notice'
+                nFails = 1
+                if qName in serverFails.keys():
+                    nFails += serverFails[qName]
+
+                serverFails[qName] = nFails
+
+                if nFails >= 2:
+                    #server is dead in the water - put it out of it's misery
+                    print 'Killing:', qName
+                    try:
+                        ns.unregister('TaskQueues.%s' % qName)
+                    except Pyro.errors.NamingError:
+                        pass
         except Exception:
             import traceback
             traceback.print_exc()
