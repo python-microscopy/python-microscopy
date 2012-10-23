@@ -271,7 +271,7 @@ class PSFFitFactory:
         #estimate errors in data
         nSlices = 1#dataROI.shape[2]
 
-        sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*dataROI)/self.metadata.Camera.ElectronsPerCount
+        sigma = scipy.sqrt((self.metadata.Camera.ReadNoise**2) + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*dataROI)/self.metadata.Camera.ElectronsPerCount + 1
         
         if not self.background == None and len(numpy.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
             bgROI = self.background[xslice, yslice, zslice]

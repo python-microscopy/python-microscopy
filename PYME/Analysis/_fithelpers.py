@@ -27,7 +27,7 @@ import numpy as np
 
 FWHM_CONV_FACTOR = 2*scipy.sqrt(2*scipy.log(2))
 
-EPS_FCN = 1e-4
+EPS_FCN = 1e-5
 
 def missfit(p, fcn, data, *args):
     """Helper function which evaluates a model function (fcn) with parameters (p) and additional arguments
@@ -70,13 +70,13 @@ def FitModelWeighted(modelFcn, startParameters, data, sigmas, *args):
     return optimize.leastsq(weightedMissfitF, startParameters, (modelFcn, data.ravel(), (1.0/sigmas).astype('f').ravel()) + args, full_output=1)
 
 def FitModelWeighted_(modelFcn, startParameters, data, sigmas, *args):
-    return optimize.leastsq(weightedMissfitF, startParameters, (modelFcn, data.ravel(), (1.0/sigmas).astype('f').ravel()) + args, full_output=1, epsfcn=1e-4)
+    return optimize.leastsq(weightedMissfitF, startParameters, (modelFcn, data.ravel(), (1.0/sigmas).astype('f').ravel()) + args, full_output=1, epsfcn=EPS_FCN)
 
 def FitModelWeightedJac(modelFcn, startParameters, data, sigmas, *args):
     return optimize.leastsq(weightedMissfitF, startParameters, (modelFcn, data.ravel(), (1.0/sigmas).astype('d').ravel()) + args, Dfun = weightedJacF, full_output=1, col_deriv = 0)
     
 def FitModelWeightedJac_(modelFcn, startParameters, data, sigmas, *args):
-    return optimize.leastsq(weightedMissfitF, startParameters, (modelFcn, data.ravel(), (1.0/sigmas).astype('d').ravel()) + args, Dfun = weightedJacF, full_output=1, col_deriv = 0, epsfcn=1e-4)
+    return optimize.leastsq(weightedMissfitF, startParameters, (modelFcn, data.ravel(), (1.0/sigmas).astype('d').ravel()) + args, Dfun = weightedJacF, full_output=1, col_deriv = 0, epsfcn=EPS_FCN)
 
 
 def FitWeightedMisfitFcn(misfitFcn, startParameters, data, sigmas, *args):

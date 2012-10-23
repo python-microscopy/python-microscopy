@@ -85,6 +85,8 @@ class fitTestJig(object):
         if 'Test.PSFFile' in self.md.getEntryNames():
             md2['PSFFile'] = self.md['Test.PSFFile']
         
+        self.d2 = []
+        
         for i in range(nTests):
             p = array(params) + array(param_jit)*(2*rand(len(param_jit)) - 1)
             p[0] = abs(p[0])
@@ -96,16 +98,16 @@ class fitTestJig(object):
             #from PYME.DSView import View3D
             #View3D(self.data)
 
-            self.d2 = self.noiseM.noisify(self.data)
+            self.d2.append(self.md.Camera.ADOffset + 1*(self.noiseM.noisify(self.data) - self.md.Camera.ADOffset))
             #print self.d2.min(), self.d2.max(), self.data.min(), self.data.max()
             
             #print self.d2.shape
             
-            bg = self.bg*self.md.Camera.TrueEMGain/self.md.Camera.ElectronsPerCount
+        bg = self.bg*self.md.Camera.TrueEMGain/self.md.Camera.ElectronsPerCount
             
             #print bg, self.md.Camera.ADOffset
-
-            self.fitFac = self.fitMod.FitFactory(atleast_3d(self.d2), self.md, background = bg + self.md.Camera.ADOffset)
+        for i in range(nTests):
+            self.fitFac = self.fitMod.FitFactory(atleast_3d(self.d2[i]), self.md, background = bg + self.md.Camera.ADOffset)
             self.res[i] = self.fitFac.FromPoint(rs, rs, roiHalfSize=rs)
 
         
