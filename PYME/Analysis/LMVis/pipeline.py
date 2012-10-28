@@ -194,9 +194,11 @@ class Pipeline:
         self.selectedDataSource.setMapping('error_gFrac','fitError_ratio')
 
         self.selectedDataSource.setMapping('fitResults_Ag','gFrac*A')
-        self.selectedDataSource.setMapping('fitResults_Ar','(1.0 - gFrac)*A')
-        self.selectedDataSource.setMapping('fitError_Ag','gFrac*fitError_A')
+        self.selectedDataSource.setMapping('fitResults_Ar','(1.0 - gFrac)*A + error_gFrac*A')
+        self.selectedDataSource.setMapping('fitError_Ag','gFrac*fitError_A + error_gFrac*A')
         self.selectedDataSource.setMapping('fitError_Ar','(1.0 - gFrac)*fitError_A')
+        #self.selectedDataSource.setMapping('fitError_Ag', '1*sqrt(fitResults_Ag/1e-3)')
+        #self.selectedDataSource.setMapping('fitError_Ar', '1*sqrt(fitResults_Ar/1e-3)')
         
         sg = self.selectedDataSource['fitError_Ag']
         sr = self.selectedDataSource['fitError_Ar']
@@ -207,6 +209,8 @@ class Pipeline:
         self.selectedDataSource.colNorm = np.sqrt(2*np.pi)*sg*sr/(2*np.sqrt(sg**2 + sr**2)*I)*(
             scipy.special.erf((sg**2*r + sr**2*(I-g))/(np.sqrt(2)*sg*sr*np.sqrt(sg**2+sr**2)))
             - scipy.special.erf((sg**2*(r-I) - sr**2*g)/(np.sqrt(2)*sg*sr*np.sqrt(sg**2+sr**2))))
+            
+        self.selectedDataSource.colNorm /= (sg*sr)
         
         self.selectedDataSource.setMapping('ColourNorm', '1.0*colNorm')
 

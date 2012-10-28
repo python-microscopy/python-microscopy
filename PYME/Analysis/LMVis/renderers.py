@@ -279,6 +279,38 @@ class GaussianRenderer(ColourRenderer):
         jitVals = self._genJitVals(jitParamName, jitScale)
 
         return visHelpers.rendGauss(self.pipeline.colourFilter['x'],self.pipeline.colourFilter['y'], jitVals, imb, pixelSize)
+        
+class LHoodRenderer(ColourRenderer):
+    '''Log-likelihood of object'''
+
+    name = 'Log Likelihood'
+    mode = 'gaussian'
+
+    def _getDefaultJitVar(self, jitVars):
+        if 'error_x' in jitVars:
+            return jitVars.index('error_x')
+        else:
+            return 0
+
+    def genIm(self, dlg, imb, mdh):
+        pixelSize = dlg.getPixelSize()
+        jitParamName = dlg.getJitterVariable()
+        jitScale = dlg.getJitterScale()
+        
+        mdh['Rendering.JitterVariable'] = jitParamName
+        mdh['Rendering.JitterScale'] = jitScale
+
+        jitVals = self._genJitVals(jitParamName, jitScale)
+        
+        print 'starting render'
+
+        im =  visHelpers.rendGaussProd(self.pipeline.colourFilter['x'],self.pipeline.colourFilter['y'], jitVals, imb, pixelSize)
+        
+        print 'done rendering'
+        print im.max()
+        
+        return im - im.min()
+
 
 class Gaussian3DRenderer(GaussianRenderer):
     '''3D Gaussian rendering'''
@@ -377,7 +409,7 @@ class QuadTreeRenderer(ColourRenderer):
         return im[(imb.x0/pixelSize):(imb.x1/pixelSize),(imb.y0/pixelSize):(imb.y1/pixelSize)]
 
 
-RENDERER_GROUPS = ((CurrentRenderer,),(HistogramRenderer, GaussianRenderer, TriangleRenderer, QuadTreeRenderer), (Histogram3DRenderer, Gaussian3DRenderer, Triangle3DRenderer))
+RENDERER_GROUPS = ((CurrentRenderer,),(HistogramRenderer, GaussianRenderer, TriangleRenderer, LHoodRenderer, QuadTreeRenderer), (Histogram3DRenderer, Gaussian3DRenderer, Triangle3DRenderer))
 
 def init_renderers(visFr):
     for g in RENDERER_GROUPS:

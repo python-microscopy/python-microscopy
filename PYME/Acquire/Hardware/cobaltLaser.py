@@ -33,7 +33,7 @@ class CobaltLaser(Laser):
         self.powerControlable = True
         self.isOn=True
 
-        self.power = self._getOutputPower()
+        self.power =  0.01#self._getOutputPower()
 
         Laser.__init__(self, name, turnOn)
 

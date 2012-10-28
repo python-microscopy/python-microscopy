@@ -274,6 +274,7 @@ def rendGauss(x,y, sx, imageBounds, pixelSize):
     #print imageBounds.x0
     #print imageBounds.x1
     #print fuzz
+    #print roiSize
 
     #print pixelSize
 
@@ -291,13 +292,75 @@ def rendGauss(x,y, sx, imageBounds, pixelSize):
         ix = scipy.absolute(X - x[i]).argmin()
         iy = scipy.absolute(Y - y[i]).argmin()
 
+        sxi =  max(sx[i], delX)       
         
-        imp = Gauss2D(X[(ix - roiSize):(ix + roiSize + 1)], Y[(iy - roiSize):(iy + roiSize + 1)],1, x[i],y[i],max(sx[i], delX))
+        imp = Gauss2D(X[(ix - roiSize):(ix + roiSize + 1)], Y[(iy - roiSize):(iy + roiSize + 1)],1/sxi, x[i],y[i],sxi)
         im[(ix - roiSize):(ix + roiSize + 1), (iy - roiSize):(iy + roiSize + 1)] += imp
 
     im = im[roiSize:-roiSize, roiSize:-roiSize]
 
     return im
+    
+def rendGaussProd(x,y, sx, imageBounds, pixelSize):
+    fuzz = 6*scipy.median(sx)
+    roiSize = int(fuzz/pixelSize)
+    fuzz = pixelSize*(roiSize)
+
+    #print imageBounds.x0
+    #print imageBounds.x1
+    #print fuzz
+    #print roiSize
+
+    #print pixelSize
+
+    X = numpy.arange(imageBounds.x0 - fuzz,imageBounds.x1 + fuzz, pixelSize)
+    Y = numpy.arange(imageBounds.y0 - fuzz,imageBounds.y1 + fuzz, pixelSize)
+
+    #print X
+    
+    ctval = 1e-4
+    
+    l3 = numpy.log(ctval)
+    #l3 = -10
+    
+    im = len(x)*l3*scipy.ones((len(X), len(Y)), 'd')
+    print im.min()
+    
+    fac = 1./numpy.sqrt(2*numpy.pi)
+
+    #record our image resolution so we can plot pts with a minimum size equal to res (to avoid missing small pts)
+    delX = scipy.absolute(X[1] - X[0]) 
+    
+    for i in range(len(x)):
+        ix = scipy.absolute(X - x[i]).argmin()
+        iy = scipy.absolute(Y - y[i]).argmin()
+        
+        if (ix > (roiSize + 1)) and (ix < (im.shape[0] - roiSize - 2)) and (iy > (roiSize+1)) and (iy < (im.shape[1] - roiSize-2)):       
+            #print i, X[(ix - roiSize):(ix + roiSize + 1)], Y[(iy - roiSize):(iy + roiSize + 1)]
+            #imp = Gauss2D(X[(ix - roiSize):(ix + roiSize + 1)], Y[(iy - roiSize):(iy + roiSize + 1)],1, x[i],y[i],max(sx[i], delX))
+            #print 'r'
+            #imp[numpy.isnan(imp)] = ctval
+            #imp = numpy.maximum(imp, ctval)
+            #if imp.max() > 1:        
+            #    print imp.max()
+            #if not imp.min() > 1e-20:
+                
+            #    print imp.min()
+            #imp_ = numpy.log(1.0*imp)
+            
+            sxi = max(sx[i], delX)
+            Xi, Yi = X[(ix - roiSize):(ix + roiSize + 1)][:,None], Y[(iy - roiSize):(iy + roiSize + 1)][None,:]
+            imp = numpy.log(fac/sxi) - ((Xi - x[i])**2 + (Yi -y[i])**2)/(2*sxi**2)
+            print imp.max(), imp.min(), l3, imp.shape
+            imp_ = numpy.maximum(imp, l3)
+            im[(ix - roiSize):(ix + roiSize + 1), (iy - roiSize):(iy + roiSize + 1)] += imp_ - l3
+
+    im = im[roiSize:-roiSize, roiSize:-roiSize]
+
+    return im
+    
+
+
 
 def rendTri(T, imageBounds, pixelSize, c=None, im=None):
     from PYME.Analysis.SoftRend import drawTriang, drawTriangles

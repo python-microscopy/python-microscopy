@@ -49,7 +49,7 @@ static PyObject * genGauss(PyObject *self, PyObject *args, PyObject *keywds)
 {
     double *res = 0;  
     int ix,iy; 
-    int size[2];
+    npy_intp size[2];
     
     PyObject *oX =0;
     PyObject *oY=0;
@@ -110,13 +110,23 @@ static PyObject * genGauss(PyObject *self, PyObject *args, PyObject *keywds)
     size[0] = PyArray_Size((PyObject*)Xvals);
     size[1] = PyArray_Size((PyObject*)Yvals);
         
-    out = (PyArrayObject*) PyArray_FromDims(2,size,PyArray_DOUBLE);
+    //out = (PyArrayObject*) PyArray_FromDims(2,size,PyArray_DOUBLE);
+    //out = (PyArrayObject*) PyArray_SimpleNew(2,size,PyArray_DOUBLE);
+    out = (PyArrayObject*) PyArray_New(&PyArray_Type, 2,size,NPY_DOUBLE, NULL, NULL, 0, 1, NULL);
+    if (out == NULL)
+    {
+        Py_DECREF(Xvals);
+        Py_DECREF(Yvals);
+        PyErr_Format(PyExc_RuntimeError, "Failed to allocate memory");
+        return NULL;    
+    }
     
     //fix strides
-    out->strides[0] = sizeof(double);
-    out->strides[1] = sizeof(double)*size[0];
+    //out->strides[0] = sizeof(double);
+    //out->strides[1] = sizeof(double)*size[0];
     
-    res = (double*) out->data;
+    //res = (double*) out->data;
+    res = (double*) PyArray_DATA(out);
     
     ts2 = 2*sigma*sigma;
         
