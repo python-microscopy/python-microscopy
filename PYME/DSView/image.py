@@ -46,7 +46,7 @@ openImages = weakref.WeakValueDictionary()
 nUntitled = DefaultDict()
 
 class ImageStack(object):
-    def __init__(self, data = None, mdh = None, filename = None, queueURI = None, events = [], titleStub='Untitled Image'):
+    def __init__(self, data = None, mdh = None, filename = None, queueURI = None, events = [], titleStub='Untitled Image', haveGUI=True):
         global nUntitled
         self.data = data      #image data
         self.mdh = mdh        #metadata (a MetaDataHandler class)
@@ -54,6 +54,8 @@ class ImageStack(object):
 
         self.queueURI = queueURI
         self.filename = filename
+
+        self.haveGUI = haveGUI
 
         self.mode = 'LM'
 
@@ -333,7 +335,7 @@ class ImageStack(object):
                 lsm_pop('LSM.', lsm_info)
                 
 
-        if not ('voxelsize.x' in self.mdh.keys() and 'voxelsize.y' in self.mdh.keys()):
+        if self.haveGUI and not ('voxelsize.x' in self.mdh.keys() and 'voxelsize.y' in self.mdh.keys()):
             from PYME.DSView.voxSizeDialog import VoxSizeDialog
 
             dlg = VoxSizeDialog(None)

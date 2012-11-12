@@ -42,24 +42,27 @@ FFTWFLAGS = ['measure']
 from PYME.DSView import View3D
 
 def resizePSF(psf, data_size):
-    #Expand PSF to data size by fourier domain interpolation
-    print 'Resizing PSF to match data size'
-    g_ = fftw3f.create_aligned_array(data_size, 'complex64')
-    H_ = fftw3f.create_aligned_array(data_size, 'complex64')
+    if not psf.shape == data_size:
+        #Expand PSF to data size by fourier domain interpolation
+        print 'Resizing PSF to match data size'
+        g_ = fftw3f.create_aligned_array(data_size, 'complex64')
+        H_ = fftw3f.create_aligned_array(data_size, 'complex64')
+        
+        sx, sy, sz = numpy.array(data_size).astype('f') / psf.shape
+        
+        OT = fftshift(fftn(fftshift(psf))) #don't bother with FFTW here as raw PSF is small
+        
+        pr = ndimage.zoom(OT.real, [sx,sy,sz], order=1)
+        pi = ndimage.zoom(OT.imag, [sx,sy,sz], order=1)
+        
+        H_[:] = ifftshift(pr + 1j*pi)
+        fftw3f.Plan(H_, g_, 'backward')()
+        
+        g =  ifftshift(g_.real)
     
-    sx, sy, sz = numpy.array(data_size).astype('f') / psf.shape
-    
-    OT = fftshift(fftn(fftshift(psf))) #don't bother with FFTW here as raw PSF is small
-    
-    pr = ndimage.zoom(OT.real, [sx,sy,sz], order=1)
-    pi = ndimage.zoom(OT.imag, [sx,sy,sz], order=1)
-    
-    H_[:] = ifftshift(pr + 1j*pi)
-    fftw3f.Plan(H_, g_, 'backward')()
-    
-    g =  ifftshift(g_.real)
-    
-    print 'PSF resizing complete'
+        print 'PSF resizing complete'
+    else:
+        g = psf
     #View3D(psf)
     #View3D(fftshift(numpy.abs(H_)))
     #View3D(fftshift(numpy.angle(H_)))

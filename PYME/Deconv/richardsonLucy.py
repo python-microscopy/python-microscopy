@@ -94,7 +94,7 @@ class rldec:
             self.loopcount += 1
 
             #the residuals
-            self.res = weights*(data/self.Afunc(self.f)) +  mask;
+            self.res = weights*(data/(self.Afunc(self.f)+1e-4)) +  mask;
 
             #print 'Residual norm = %f' % norm(self.res)
             

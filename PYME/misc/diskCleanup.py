@@ -43,7 +43,12 @@ def deleteFiles(directory):
 
             if os.path.exists(nFilename) and os.path.getsize(nFilename) == os.path.getsize(filename): #and os.path.exists(bFilename) and os.path.getsize(filename) == os.path.getsize(nFilename):
                 print 'Deleting %s' % filename
-                os.remove(filename)
+                try:
+                    os.remove(filename)
+                except OSError:
+                    import traceback
+                    traceback.print_exc()
+                    
             else:
                 print 'Keeping %s' % filename
 
