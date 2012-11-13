@@ -684,6 +684,10 @@ class Measurements(wx.Panel):
         bView.Bind(wx.EVT_BUTTON, self.OnView)
         vsizer.Add(bView, 0, wx.EXPAND|wx.ALL, 2)
         
+        bXls = wx.Button(self, -1, 'Export to xls')
+        bXls.Bind(wx.EVT_BUTTON, self.OnExportXls)
+        vsizer.Add(bXls, 0, wx.EXPAND|wx.ALL, 2)
+        
         self.SetSizerAndFit(vsizer)
         
         self.objects = []
@@ -733,6 +737,11 @@ class Measurements(wx.Panel):
         import zipfile
         
         zf = zipfile()
+        
+    def OnExportXls(self, event):
+        import os
+        filename = wx.FileSelector('Save to xls', default_filename=os.path.splitext(self.image.filename)[0] + '_blobMeasure.xls', wildcard='*.xls')
+        self.toXls(filename)
             
     
     def GetRegion(self, index, objects = None):
@@ -780,6 +789,102 @@ class Measurements(wx.Panel):
         return template.render(objects=self.objects)
     index.exposed = True
     
+    def _xlData(self, book, graphName):
+        gs = book.add_sheet(graphName) 
+        
+        #r = 3
+        
+        objects = [obj for obj in self.objects if obj.shown]
+        
+        #write the data first
+        c0 = 2
+        
+        for obj in objects:
+            xv, yv = getattr(obj, graphName)()
+            
+            
+            #for x_v in xv:
+            #    gs.write(r, c, x_v)
+            #    c += 1
+            
+            #add a gap
+            #c += 1
+            
+            c = c0
+            
+            
+            for yvc in yv:
+                gs.write(2, c, 'Obj %d' % self.objects.index(obj), self._boldStyle)
+                r = 3
+                for y_v in yvc:
+                    gs.write(r, c, y_v)
+                    r += 1
+                c += (len(objects) + 1)
+            
+            c0 += 1
+            #r+=1
+            
+        c = 0
+        r = 3
+        for x_v in xv:
+            gs.write(r, c, x_v)
+            r += 1
+            #    c += 1
+            
+                    
+        #now go back and write the header
+        #gs.merge(0, 0, 0, len(xv))
+        gs.write(0, 0, 'Bin edges', self._boldStyle)
+        for i, n in enumerate(self.image.names):
+            gs.merge( 0, 0,  2+ i*(len(objects)+1),  1 + (i+1)*(len(objects)+1))
+            gs.write(0, 2+ i*(len(objects)+1) , n, self._boldStyle)    
+        
+    def toXls(self, filename):
+        import xlwt
+        
+        book = xlwt.Workbook()
+        
+        gs = book.add_sheet('General')
+        
+        #set up bold style
+        self._boldStyle = xlwt.easyxf('font: bold 1')
+        
+        paramsToWrite=['Centroid x','Centroid y', 'Length', 'Width', 'Sum']
+        nParams = len(paramsToWrite)
+        
+        #Header
+        gs.write(1,0,'Image #', self._boldStyle)
+        for i, n in enumerate(self.image.names):
+            gs.merge( 0, 0, 1+ i*nParams, (i+1)*nParams,)
+            gs.write(0, 1+ i*nParams, n, self._boldStyle)
+            for j, p in enumerate(paramsToWrite):
+                gs.write(1, 1 + i*nParams + j, p, self._boldStyle)
+        
+        r = 2
+        for obj in self.objects:
+            if obj.shown:
+                for i, ch in enumerate(obj.chans):
+                    gs.write(r, 1 + i*nParams + 0, ch.centroid[0])
+                    gs.write(r, 1 + i*nParams + 1, ch.centroid[1])
+                    gs.write(r, 1 + i*nParams + 2, ch.mad_0*2.35/0.8)
+                    gs.write(r, 1 + i*nParams + 3, ch.mad_1*2.35/0.8)
+                    gs.write(r, 1 + i*nParams + 4, float(ch.sum))
+                
+                r += 1
+         
+        r+=2
+        gs.write(r, 0, 'Reference Channel:', self._boldStyle)
+        gs.write(r, 1, self.image.names[self.objects[0].masterChan])
+                
+        #now do the graph data
+        graphs = ['shortAxisDist', 'longAxisDistN', 'angularDist', 'radialDistN', 'longAxisOrthDist']
+        
+        for gn in graphs:
+            self._xlData(book, gn)
+                
+        book.save(filename)
+        
+    
     def images(self, num):
         return self.objects[int(num)].getImage()
     images.exposed = True
@@ -801,6 +906,7 @@ class Measurements(wx.Panel):
         self.dsviewer.do.OnChange()
         return ''
     hide.exposed = True
+    
         
         
 def Plug(dsviewer):

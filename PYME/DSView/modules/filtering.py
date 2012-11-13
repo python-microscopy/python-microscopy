@@ -281,68 +281,17 @@ class filterer:
                 
     def OnSetLabels(self, event):
         from PYME.DSView import image
-        image.openImages.keys()
-        import numpy as np
-        from scipy import ndimage
+        names = image.openImages.keys()
         
-        from PYME.DSView import ViewIm3D
-
-        #dlg = wx.TextEntryDialog(self.dsviewer, 'Blur size [pixels]:', 'Gaussian Blur', '[1,1,1]')
-
-        #if dlg.ShowModal() == wx.ID_OK:
-            #sigmas = eval(dlg.GetValue())
-            #print sigmas
-            #print self.images[0].img.shape
-
-        #roi = [[self.do.selection_begin_x, self.do.selection_end_x + 1],[self.do.selection_begin_y, self.do.selection_end_y +1], [0, self.image.data.shape[2]]]
-
-        #filt_ims = [np.atleast_3d(self.image.data[:,:,:,chanNum].squeeze() > self.dsviewer.do.Offs[chanNum]) for chanNum in range(self.image.data.shape[3])]
-
-        dlg = wx.TextEntryDialog(self.dsviewer, 'Minimum region size [pixels]:', 'Labelling', '1')
-
+        dlg = wx.SingleChoiceDialog(self.dsviewer, 'Select an image', 'Set Labels', names)
+        
         if dlg.ShowModal() == wx.ID_OK:
-            rSize = int(dlg.GetValue())        
-        
-            filt_ims = [np.atleast_3d(self.image.data[:,:,:,chanNum].squeeze() > (self.dsviewer.do.Offs[chanNum] + 0.5/self.dsviewer.do.Gains[chanNum])) for chanNum in range(self.image.data.shape[3])]
-            
-            self.image.labelThresholds = [(self.dsviewer.do.Offs[chanNum] + 0.5/self.dsviewer.do.Gains[chanNum]) for chanNum in range(self.image.data.shape[3])]
-    
-            #print sum(filt_ims).shape
-            mask = sum(filt_ims) > 0.5
-            labs, nlabs = ndimage.label(mask)
-            
-            if rSize > 1:
-                m2 = 0*mask
-                objs = ndimage.find_objects(labs)
-                for i, o in enumerate(objs):
-                    r = labs[o] == i+1
-                    #print r.shape
-                    if r.sum() > rSize:
-                        m2[o] = r
-                        
-                labs, nlabs = ndimage.label(m2)
-                
             #store a copy in the image for measurements etc ...
-            self.image.labels = labs
+
+            im = image.openImages[names[dlg.GetSelection()]]
             
-            im = ImageStack(labs, titleStub = 'Labelled Image')
-            im.mdh.copyEntriesFrom(self.image.mdh)
-            im.mdh['Parent'] = self.image.filename
+            self.image.labels = im.data[:,:,:].astype('i')
             
-            im.mdh['Labelling.MinSize'] = rSize
-            im.mdh['Labelling.Thresholds'] = self.image.labelThresholds
-            #im.mdh['Processing.CropROI'] = roi
-    
-            if self.dsviewer.mode == 'visGUI':
-                mode = 'visGUI'
-            else:
-                mode = 'lite'
-    
-            dv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
-    
-            #set scaling to (0,1)
-            for i in range(im.data.shape[3]):
-                dv.do.Gains[i] = 1.0
                 
     def OnLabelWatershed(self, event):
         import numpy as np
