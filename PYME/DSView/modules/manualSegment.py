@@ -70,7 +70,7 @@ class manualSegment:
         self.vmax = 0
         self.image.labels = self.mask
         
-        im = ImageStack(self.mask, titleStub = 'Manual mask')
+        im = ImageStack(self.mask, titleStub = 'Manual labels')
         im.mdh.copyEntriesFrom(self.image.mdh)
 
         #im.mdh['Processing.CropROI'] = roi

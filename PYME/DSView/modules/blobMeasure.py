@@ -757,7 +757,7 @@ class Measurements(wx.Panel):
         X, Y, Z = np.ogrid[slx, sly, slz]
         vs = (1e3*self.image.mdh['voxelsize.x'], 1e3*self.image.mdh['voxelsize.y'],1e3*self.image.mdh['voxelsize.z'])
         
-        return [DataBlock(np.maximum(self.image.data[slx, sly, slz, j] - self.dsviewer.do.thresholds[j], 0)*mask , X, Y, Z, vs) for j in range(self.image.data.shape[3])]
+        return [DataBlock(np.maximum(self.image.data[slx, sly, slz, j] - self.image.data[slx, sly, slz, j].min(), 0)*mask , X, Y, Z, vs) for j in range(self.image.data.shape[3])]
         
     def RetrieveObjects(self, masterChan=0, orientChan=1, orient_dir=-1):
         objs = ndimage.find_objects(self.image.labels)
@@ -863,6 +863,7 @@ class Measurements(wx.Panel):
         r = 2
         for obj in self.objects:
             if obj.shown:
+                gs.write(r, 0, self.objects.index(obj))
                 for i, ch in enumerate(obj.chans):
                     gs.write(r, 1 + i*nParams + 0, ch.centroid[0])
                     gs.write(r, 1 + i*nParams + 1, ch.centroid[1])
