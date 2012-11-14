@@ -96,6 +96,7 @@ def procSkelFile(filename, disp=True):
     imt = angle_filter(im)
     
     imc = (im[:,:,None]*pl.cm.hsv(imt/np.pi)[:,:,:3] + (255 - im)[:,:,None]).astype('uint8')
+    imc2 = (im[:,:,None]*pl.cm.hsv(fold(imt)/(np.pi))[:,:,:3] + (255 - im)[:,:,None]).astype('uint8')
     
     theta = imt[im > 0]
     
@@ -113,6 +114,7 @@ def procSkelFile(filename, disp=True):
         fig.savefig(fstub + '_angle.pdf')
         
     tifffile.imsave(fstub + '_angle.tif', imc)
+    tifffile.imsave(fstub + '_angle_fold.tif', imc2)
         
     n, e = np.histogram(theta*180/np.pi, 20, [0, 180])
     nn = n.astype('f')/n.sum()

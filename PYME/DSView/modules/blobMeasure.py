@@ -290,7 +290,7 @@ class BlobObject(object):
         
         self.shown = True
         
-        self.nsteps = 100
+        self.nsteps = 51
         if self.chans[0].voxelsize[0] > 20:
             self.nsteps = 10
             

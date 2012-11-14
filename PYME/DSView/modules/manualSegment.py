@@ -125,8 +125,8 @@ class manualSegment:
 
         self.vmax += 1        
         
-        for x in range(x0, x1+1):
-            for y in range (y0, y1+1):
+        for x in range(int(x0), int(x1)+1):
+            for y in range (int(y0), int(y1)+1):
                 if Point(x, y).within(p):
                     self.mask[x,y,self.do.zp] = self.vmax
         self.rois.append(p)            
