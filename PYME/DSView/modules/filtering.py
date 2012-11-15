@@ -290,7 +290,7 @@ class filterer:
 
             im = image.openImages[names[dlg.GetSelection()]]
             
-            self.image.labels = im.data[:,:,:].astype('i')
+            self.image.labels = im.data[:,:,:].astype('uint16')
             
                 
     def OnLabelWatershed(self, event):
