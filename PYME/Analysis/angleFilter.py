@@ -147,6 +147,46 @@ def width_filter(data, angles=None, FILT_SIZE=5):
     else:
         d = np.concatenate([data[:,:,None], angles[:,:,None]], 2)
         return ndimage.generic_filter(d.astype('f'), width_o, [FILT_SIZE, FILT_SIZE, 2], extra_arguments=genCoords(FILT_SIZE))[:,:,0].squeeze()
+
+def roi_at(data, x0, y0, FILT_SIZE, x, y, b, ang):
+    xi = x + x0
+    yi = y + y0
+    
+    return data[xi, yi]
+    
+def width_filter_m(data, mask, angles=None, FILT_SIZE=5):
+    d = data.astype('f')
+    res = np.zeros_like(d)
+    
+    xm, ym = np.where(mask)
+    coords = genCoords(FILT_SIZE)
+    am = np.ones_like(coords[1])
+    for xi, yi in zip(xm, ym):
+        dr = roi_at(d, xi, yi, *coords)
+                
+        if angles == None:
+            res[xi, yi] = width(dr, *coords)
+        else:
+            #print dr.shape, 
+            #print dr.shape, am.shape
+            res[xi, yi] = width_o(np.concatenate([dr[:,:,None], angles[xi, yi, None]*am[:,:,None]], 2), *coords)
+            
+    return res
+        
+def angle_filter_m(mask, FILT_SIZE=5):
+    d = mask.astype('f')
+    res = np.zeros_like(d)
+    
+    xm, ym = np.where(mask)
+    coords = genCoords(FILT_SIZE)
+    
+    for xi, yi in zip(xm, ym):
+        dr = roi_at(d, xi, yi, *coords)
+
+        res[xi, yi] = th2(dr.ravel(), *coords)
+                
+    return res
+
     
     
 def fold(thet):
