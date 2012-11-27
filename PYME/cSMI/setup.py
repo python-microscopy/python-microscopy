@@ -30,8 +30,9 @@ def configuration(parent_package = '', top_path = None):
     config.add_extension('_cSMI',
         sources=["cSMI.i","DataStack.cpp","BaseRenderer.cpp","LUTRGBRenderer.cpp","DisplayParams.cpp","DisplayOpts.cpp","LineProfile.cpp"],
         include_dirs = [get_numpy_include_dirs(), '.'],
-	extra_compile_args = ['-O3'],
-        extra_link_args=['-static-libgcc', '-static-libstdc++'])
+	extra_compile_args = ['-O3', '-fPIC'],
+        #extra_link_args=['-static-libgcc', '-static-libstdc++']
+        )
 
     return config
 

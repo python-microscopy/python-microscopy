@@ -22,8 +22,13 @@
 
 
 import wx
-from enthought.traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, Str
-from enthought.traits.ui.api import View, Item, EnumEditor, InstanceEditor
+try:
+    from enthought.traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, Str
+    from enthought.traits.ui.api import View, Item, EnumEditor, InstanceEditor
+except ImportError:
+    from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, Str
+    from traitsui.api import View, Item, EnumEditor, InstanceEditor
+    
 from PYME.DSView import image
 
 #class PointGenerationPanel(wx.Panel):

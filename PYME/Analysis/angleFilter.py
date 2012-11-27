@@ -45,9 +45,89 @@ def th2(data):
     pa =  linalg.svd(data[:,None]*b, full_matrices=False)[2][0]
     return np.angle(pa[0] + 1j*pa[1])%np.pi
     
+def width(data):
+    '''calculate orthogonal width of data segment using data itself
+    to define principle axis'''
+    if (data > 0).sum() < 2:
+        #not enough data to calculate PA
+        return -1
+        
+    pa =  linalg.svd(data[:,None]*b, full_matrices=False)[2][0]
+    
+    #generate an orthogonal axis
+    trial = np.roll(pa, 1) #gauranteed not to be co-linear with pa
+            
+    sa = np.cross(pa, trial)
+    sa /= linalg.norm(sa)
+    
+    #define a new coordinate system
+    xp = pa[0]*x + pa[1]*y
+    yp = sa[0]*x + sa[1]*y
+    
+    #create a mask of those pixels for which xp == 0
+    # this could be widened to allow some averaging along the length
+    mask = np.aps(xp) < 1
+    
+    dr = data[mask]
+    ypr = yp[mask]
+    
+    #calculate mean absolute distance along yp
+    mad = (ypr*dr).sum()/dr.sum()
+    
+    #the std. deviation formula would have squareds in here
+    
+    return mad
+    
+def width_o(data):
+    '''calculate orthogonal width of data segment based on 3D data
+    where first slice is the intensities, and second slice is the angle 
+    in each pixel.
+    '''
+    data = data.reshape(FILT_SIZE, FILT_SIZE, 2)
+    #if (data > 0).sum() < 2:
+    #    #not enough data to calculate PA
+    #    return -1
+        
+    #pa =  linalg.svd(data[:,None]*b, full_matrices=False)[2][0]
+    pai = np.exp(1j*data[FILT_SIZE/2, FILT_SIZE/2,1])
+    pa = np.array([pai.real, pai.imag])
+    
+    #generate an orthogonal axis
+    trial = np.roll(pa, 1) #gauranteed not to be co-linear with pa
+            
+    sa = np.cross(pa, trial)
+    sa /= linalg.norm(sa)
+    
+    #define a new coordinate system
+    xp = pa[0]*x + pa[1]*y
+    yp = sa[0]*x + sa[1]*y
+    
+    #create a mask of those pixels for which xp == 0
+    # this could be widened to allow some averaging along the length
+    mask = np.aps(xp) < 1
+    
+    dr = data[:,:,0][mask]
+    ypr = yp[mask]
+    
+    #calculate mean absolute distance along yp
+    mad = (ypr*dr).sum()/dr.sum()
+    
+    #the std. deviation formula would have squareds in here
+    
+    return mad
+
     
 def angle_filter(data):
     return ndimage.generic_filter(data.astype('f'), th2, FILT_SIZE)
+    
+def width_filter(data, angles=None):
+    if angles == None:
+        #estimate angle from intensity data
+        return ndimage.generic_filter(data.astype('f'), width, FILT_SIZE)
+    else:
+        d = np.concatenate([data[:,:,None], angles[:,:,None]], 2)
+        return ndimage.generic_filter(d.astype('f'), width_o, [FILT_SIZE, FILT_SIZE, 2])[:,:,0].squeeze()
+    
     
 def fold(thet):
     return thet +(-thet + (np.pi - thet))*(thet > np.pi/2)
