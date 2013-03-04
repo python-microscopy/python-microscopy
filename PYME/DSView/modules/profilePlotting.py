@@ -113,7 +113,7 @@ class profiler:
 
             for i in range(-w, w+1):
                 #print np.vstack([x_c + d__x +i*dy, y_c + d__y + i*dx])
-                p += ndimage.map_coordinates(splf, np.vstack([x_c + d__x +i*dy, y_c + d__y + i*dx]), prefilter=False)
+                p += ndimage.map_coordinates(splf, np.vstack([x_c + d__x +i*dy, y_c + d__y - i*dx]), prefilter=False)
 
             p = p/(2*w + 1)
 

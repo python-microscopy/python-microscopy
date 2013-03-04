@@ -59,6 +59,9 @@ class DataSource(BaseDataSource):
         self.endedness = 'LE'
         if self.im0.ifd.prefix =='MM':
             self.endedness = 'BE'
+            
+        print self.im0.ifd.prefix
+        print self.endedness
 
         #to find the number of images we have to loop over them all
         #this is obviously not ideal as PIL loads the image data into memory for each
@@ -80,7 +83,7 @@ class DataSource(BaseDataSource):
     def getSlice(self, ind):
         #self.im.seek(ind)
         im = Image.open(self.files[ind])
-        ima = np.array(im.getdata()).newbyteorder(self.endedness)
+        ima = np.array(im.getdata())#.newbyteorder(self.endedness)
         return ima.reshape((im.size[1], im.size[0]))
         #return self.data[:,:,ind]
         #return self.im[ind].asarray()

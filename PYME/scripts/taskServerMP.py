@@ -29,4 +29,4 @@ Created on Thu Oct 13 17:42:48 2011
 """
 
 from PYME.ParallelTasks.taskServerMP import *
-#main()
+main()

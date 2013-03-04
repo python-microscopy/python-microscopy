@@ -32,6 +32,8 @@ import os
 import sys
 import numpy as np
 
+import logging
+
 from PYME.FileUtils.nameUtils import genResultFileName
 from PYME.ParallelTasks.relativeFiles import getFullFilename
 
@@ -131,6 +133,8 @@ class HDFResultsTaskQueue(TaskQueue):
         self.resultsFilename = resultsFilename
 
         self.numClosedTasks = 0
+        
+        logging.info('Creating results file')
 
         self.h5ResultsFile = tables.openFile(self.resultsFilename, 'w')
 
@@ -138,12 +142,22 @@ class HDFResultsTaskQueue(TaskQueue):
 
         #self.fileResultsLock = threading.Lock()
         self.fileResultsLock = tablesLock
+        
+        logging.info('Creating results metadata')
 
         self.resultsMDH = MetaDataHandler.HDFMDHandler(self.h5ResultsFile)
+        
+        logging.info('Creating results events table')
+        self.fileResultsLock.acquire()
 
         self.resultsEvents = self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'Events', SpoolEvent,filters=tables.Filters(complevel=5, shuffle=True))
+        self.fileResultsLock.release()
+        
+        logging.info('Events table created')
         
         self.haveResultsTable = False
+        
+        logging.info('Results file initialised')
 
     def prepResultsFile(self):
         pass

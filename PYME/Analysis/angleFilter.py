@@ -156,7 +156,7 @@ def roi_at(data, x0, y0, FILT_SIZE, x, y, b, ang):
     
 def width_filter_m(data, mask, angles=None, FILT_SIZE=5):
     d = data.astype('f')
-    res = np.zeros_like(d)
+    res = np.zeros_like(d) - 1
     
     xm, ym = np.where(mask)
     coords = genCoords(FILT_SIZE)
@@ -175,7 +175,7 @@ def width_filter_m(data, mask, angles=None, FILT_SIZE=5):
         
 def angle_filter_m(mask, FILT_SIZE=5):
     d = mask.astype('f')
-    res = np.zeros_like(d)
+    res = np.zeros_like(d) - 1
     
     xm, ym = np.where(mask)
     coords = genCoords(FILT_SIZE)

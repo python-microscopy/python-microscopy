@@ -31,6 +31,9 @@ import numpy
 from taskQueue import *
 from HDFTaskQueue import *
 
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
 import os
 import sys
 
@@ -326,6 +329,6 @@ def main():
             mProfile.report()
             
 #print __name__
-#if __name__ == '__main__':
-main()
+if __name__ == '__main__':
+    main()
     

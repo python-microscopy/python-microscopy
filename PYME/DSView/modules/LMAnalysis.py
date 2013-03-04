@@ -39,6 +39,12 @@ from PYME.DSView import fitInfo
 from PYME.DSView.OverlaysPanel import OverlayPanel
 import wx.lib.agw.aui as aui
 
+debug = True
+
+def debugPrint(msg):
+    if debug:
+        print msg
+
 class LMAnalyser:
     def __init__(self, dsviewer):
         self.dsviewer = dsviewer
@@ -433,11 +439,17 @@ class LMAnalyser:
 
 
             #dlg.Destroy()
+            
+        if debug:
+            print 'About to push images'
 
         if not driftEst:
             self.pushImages(startAt, threshold, fitMod)
         else:
             self.pushImagesD(startAt, threshold)
+            
+        if debug:
+            print 'Images pushed'
 
         from PYME.Analysis.LMVis import gl_render
         self.glCanvas = gl_render.LMGLCanvas(self.dsviewer, False)
@@ -676,6 +688,8 @@ class LMAnalyser:
 
     def pushImages(self, startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
         self.checkTQ()
+        if debug:
+            print 'TQ checked'
         if self.image.dataSource.moduleName == 'HDFDataSource':
             self.pushImagesHDF(startingAt, detThresh, fitFcn)
         elif self.image.dataSource.moduleName == 'TQDataSource':
@@ -738,13 +752,19 @@ class LMAnalyser:
             else:
                 raise RuntimeError('Invalid results file - not running')
             #self.image.seriesName = resultsFilename
+            
+        debugPrint('Results file = %s' % resultsFilename) 
 
         self.tq.createQueue('HDFResultsTaskQueue', resultsFilename, None)
+        
+        debugPrint('Queue created')
 
         mdhQ = MetaDataHandler.QueueMDHandler(self.tq, resultsFilename, self.image.mdh)
         mdhQ.setEntry('Analysis.DetectionThreshold', detThresh)
         mdhQ.setEntry('Analysis.FitModule', fitFcn)
         mdhQ.setEntry('Analysis.DataFileID', fileID.genDataSourceID(self.image.dataSource))
+        
+        debugPrint('Metadata transferred to queue')
 
         evts = self.image.dataSource.getEvents()
         if len(evts) > 0:
@@ -759,6 +779,7 @@ class LMAnalyser:
             mn = self.image.dataSource.dataSource.moduleName
 
         for i in range(startingAt, self.image.dataSource.getNumSlices()):
+            debugPrint('Posting task %d' %i)
             if 'Analysis.BGRange' in md.getEntryNames():
                 bgi = range(max(i + md.Analysis.BGRange[0],md.EstimatedLaserOnFrameNo), max(i + md.Analysis.BGRange[1],md.EstimatedLaserOnFrameNo))
             elif 'Analysis.NumBGFrames' in md.getEntryNames():

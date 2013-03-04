@@ -71,7 +71,7 @@ class H5Exporter(Exporter):
     extension = '*.h5'
     descr = 'PYME HDF - .h5'
 
-    def __init__(self, complib='zlib', complevel=5):
+    def __init__(self, complib='zlib', complevel=6):
         self.complib = complib
         self.complevel = complevel
 
@@ -88,7 +88,7 @@ class H5Exporter(Exporter):
         #atm = tables.UInt16Atom()
         atm = tables.Atom.from_dtype(data[xslice, yslice, 0].dtype)
 
-        ims = h5out.createEArray(h5out.root,'ImageData',atm,(0,xSize,ySize), filters=filters, expectedrows=nframes)
+        ims = h5out.createEArray(h5out.root,'ImageData',atm,(0,xSize,ySize), filters=filters, expectedrows=nframes)#, chunkshape=(1,xSize,ySize))
 
         for frameN in range(zslice.start,zslice.stop, zslice.step):
             im = data[xslice, yslice, frameN].squeeze()
