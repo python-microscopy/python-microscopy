@@ -228,6 +228,7 @@ class Pipeline:
                         matlab variable.
             VarName:    the name of the variable in the .mat file which 
                         contains the data.
+            SkipRows:   Number of header rows to skip for txt file data
         '''
         
         #close any files we had open previously
@@ -279,8 +280,20 @@ class Pipeline:
             self.selectedDataSource = ds
             self.dataSources.append(ds)
 
-        else: #assume it's a text file
-            ds = inpFilt.textfileSource(filename, kwargs['FieldNames'])
+        elif os.path.splitext(filename)[1] == '.csv': 
+            #special case for csv files - tell np.loadtxt to use a comma rather than whitespace as a delimeter
+            if 'SkipRows' in kwargs.keys():
+                ds = inpFilt.textfileSource(filename, kwargs['FieldNames'], delimiter=',', skiprows=kwargs['SkipRows'])
+            else:
+                ds = inpFilt.textfileSource(filename, kwargs['FieldNames'], delimiter=',')
+            self.selectedDataSource = ds
+            self.dataSources.append(ds)
+            
+        else: #assume it's a tab (or other whitespace) delimited text file
+            if 'SkipRows' in kwargs.keys():
+                ds = inpFilt.textfileSource(filename, kwargs['FieldNames'], skiprows=kwargs['SkipRows'])
+            else:
+                ds = inpFilt.textfileSource(filename, kwargs['FieldNames'])
             self.selectedDataSource = ds
             self.dataSources.append(ds)
             

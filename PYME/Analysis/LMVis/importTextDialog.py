@@ -24,6 +24,14 @@
 import wx
 from wx.lib.scrolledpanel import ScrolledPanel
 
+def isnumber(s):
+    try:
+        float(s)
+        return True
+    except:
+        return False
+    
+
 
 class ImportTextDialog(wx.Dialog):
     requiredVariables = {'x':'x position [nm]',
@@ -81,19 +89,28 @@ class ImportTextDialog(wx.Dialog):
         dataLines = []
 
         fid = open(filename, 'r')
+        
+        if filename.endswith('.csv'):
+            delim = ','
+        else:
+            delim = None #whitespace
 
         while n < 10:
             line = fid.readline()
             if line.startswith('#'): #check for comments
                 commentLines.append(line[1:])
+            elif not isnumber(line.split(delim)[0]): #or textual header that is not a comment
+                commentLines.append(line)
             else:
-                dataLines.append(line.split())
+                dataLines.append(line.split(delim))
                 n += 1
+                
+        self.numCommentLines = len(commentLines)
 
         numCols = len(dataLines[0])
 
-        if len(commentLines) > 0 and len(commentLines[-1].split()) == numCols:
-            colNames = commentLines[-1].split()
+        if len(commentLines) > 0 and len(commentLines[-1].split(delim)) == numCols:
+            colNames = commentLines[-1].split(delim)
         else:
             colNames = ['column_%d' % i for i in range(numCols)]
 
@@ -171,6 +188,9 @@ class ImportTextDialog(wx.Dialog):
 
     def GetFieldNames(self):
         return self.colNames
+        
+    def GetNumberComments(self):
+        return self.numCommentLines
 
 
 class ImportMatDialog(wx.Dialog):
