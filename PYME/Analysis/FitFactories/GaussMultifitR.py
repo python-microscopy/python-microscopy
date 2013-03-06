@@ -196,8 +196,8 @@ class GaussianFitFactory:
         #find pixels which are > 2 sigma above noise floor.
         dt = dataMean > threshold*sigma
         
-        #pylab.imshow(dt)
-        #pylab.figure()
+#        pylab.imshow(dt.T)
+#        pylab.figure()
         
         #true events have correlated pixels. Look for at least 3 adjoining pixels on
         dt = (dt*ndimage.uniform_filter(dt.astype('f'))) > 0.35
@@ -209,11 +209,11 @@ class GaussianFitFactory:
         
         
         #pylab.figure()
-        #pylab.imshow(dt, interpolation='nearest')
-        
-        #pylab.figure()
-        #pylab.imshow(mask, interpolation='nearest')
-        #pylab.figure()
+#        pylab.imshow(dt.T, interpolation='nearest')
+#        
+#        pylab.figure()
+#        pylab.imshow(mask.T, interpolation='nearest')
+#        pylab.figure()
         #starting guesses
         labels, nlabels = ndimage.label(mask)
         print nlabels, mask.sum()
@@ -258,13 +258,13 @@ class GaussianFitFactory:
         #print self.X[mask]
         (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, d_m, s_m, X_m, Y_m, gSig)
         
-        #ft = 0*dataMean
-        #ft[mask] = self.fitfcn(res, self.X[mask], self.Y[mask], self.metadata['Analysis.PSFSigma'])
-        #pylab.imshow(ft, interpolation='nearest')
-        #pylab.colorbar()
-        #pylab.figure()
+#        ft = 0*dataMean
+#        ft[mask] = self.fitfcn(res, self.X[mask], self.Y[mask], self.metadata['Analysis.PSFSigma'])
+#        pylab.imshow(ft, interpolation='nearest')
+#        pylab.colorbar()
+#        pylab.figure()
         
-        
+        #return []
         
         residual = d_m - self.fitfcn(res, X_m, Y_m, gSig)
         
@@ -298,11 +298,12 @@ class GaussianFitFactory:
         #pylab.colorbar()
         #pylab.figure()        
         
-        #resi = 0*dataMean
-        #resi[mask] = residual
-        #pylab.imshow(resi, interpolation='nearest')
-        #pylab.colorbar()
-        #pylab.figure()
+#        resi = 0*dataMean
+#        resi[mask] = residual
+#        pylab.imshow(resi, interpolation='nearest')
+#        pylab.colorbar()
+#        pylab.figure()
+        
 
         #work out the errors
         fitErrors=None

@@ -80,6 +80,7 @@ def genHDFDataFilepath(create=True):
 
 def genResultFileName(dataFileName, create=True):
     fn, ext = os.path.splitext(dataFileName) #remove extension
+    fn = fn.replace(':', '/')
     #print os.path.join(*seps.split(resultsdirPatternShort)) % dateDict
     p = os.path.join(*(seps.split(resultsdirPatternShort) + seps.split(fn)[-2:])) %dateDict
 

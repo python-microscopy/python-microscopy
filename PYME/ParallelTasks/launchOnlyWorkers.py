@@ -67,6 +67,9 @@ def cpuCount():
 #get number of processors 
 numProcessors = cpuCount()
 
+if len(sys.argv) > 1:
+        numProcessors = int(sys.argv[1])
+
 if sys.platform == 'win32':
     #subprocess.Popen('python ./taskServerM.py', shell=True)
 
