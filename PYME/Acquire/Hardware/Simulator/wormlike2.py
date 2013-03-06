@@ -29,6 +29,9 @@ def bareDNA(kbp, steplength=10):
 
 def fibre30nm(kbp, steplength=10):
     return wormlikeChain(kbp, steplength, lengthPerKbp=10.0, persistLength=150.0)
+    
+def wiglyFibre(length, persistLength, steplength=10):
+    return wormlikeChain(length, steplength, lengthPerKbp=1., persistLength=persistLength)
 
 class wormlikeChain:         
     def __init__(self, kbp, steplength=10.0, lengthPerKbp=10.0, persistLength=150.0):

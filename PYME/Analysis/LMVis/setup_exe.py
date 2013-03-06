@@ -37,10 +37,12 @@ if __name__ == '__main__':
             #import shutil
             import matplotlib
             setup(console=['VisGUI.py'],
-              options={'py2exe':{'excludes':['pyreadline', 'Tkconstants','Tkinter','tcl', '_imagingtk','PIL._imagingtk', 'ImageTK', 'PIL.ImageTK', 'FixTk'], 'includes':['OpenGL.platform.win32', 'OpenGL.arrays.*','scipy.ndimage', 'PYME.DSView.modules.*'], 'optimize':0}},
+              options={'py2exe':{'excludes':['pyreadline', 'Tkconstants','Tkinter','tcl', '_imagingtk','PIL._imagingtk', 'ImageTK', 'PIL.ImageTK', 'FixTk'],
+                                 'includes':['OpenGL.platform.win32', 'OpenGL.arrays.*','scipy.ndimage', 'PYME.DSView.modules.*'],
+                                 'dll_excludes': ['MSVCP90.dll', 'libzmq.dll'], 'optimize':0}},
               data_files=matplotlib.get_py2exe_datafiles(),
               #package_data = {'PYME':['DSView/icons/*']},
-              scripts=['VisGUI.py', 'VisGUI.cmd']
+              scripts=['VisGUI.py']
               #cmdclass = {'build_ext': build_ext},
               #ext_modules = ext_modules
               )
