@@ -877,12 +877,13 @@ class LMAnalyser:
         show()
         matplotlib.interactive(True)
         
-    def testFrame(self, detThresh = 0.9, offset = 0):
+    def testFrame(self, detThresh = 0.9, offset = 0, gui=True):
         #close('all')
         if self.image.dataSource.moduleName == 'TQDataSource':
             self.checkTQ()
-        matplotlib.interactive(False)
-        figure()
+        if gui:    
+            matplotlib.interactive(False)
+            figure()
         #sq = min(self.image.mdh.getEntry('EstimatedLaserOnFrameNo') + 1000, self.image.dataSource.getNumSlices()/4)
         #zps = array(range(self.image.mdh.getEntry('EstimatedLaserOnFrameNo') + 20, self.image.mdh.getEntry('EstimatedLaserOnFrameNo') + 24)  + range(sq, sq + 4) + range(self.image.dataSource.getNumSlices()/2,self.image.dataSource.getNumSlices() /2+4))
         #zps += offset
@@ -905,33 +906,38 @@ class LMAnalyser:
         #    ft = remFitBuf.fitTask(self.image.seriesName, zp, detThresh, MetaDataHandler.NestedClassMDHandler(self.image.mdh), 'LatObjFindFR', bgindices=bgi, SNThreshold=True,dataSourceModule=mn)
         ft = remFitBuf.fitTask(self.image.seriesName, zp, detThresh, MetaDataHandler.NestedClassMDHandler(self.image.mdh), fitMod, bgindices=bgi, SNThreshold=True,dataSourceModule=mn)
         res = ft(taskQueue=self.tq)
-
-        d = ft.ofd.filteredData.T
-        #d = ft.data.squeeze().T
-        imshow(d, cmap=cm.hot, interpolation='nearest', hold=False, clim=(median(d.ravel()), d.max()))
-        plot([p.x for p in ft.ofd], [p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
-        if ft.driftEst:
-             plot([p.x for p in ft.ofdDr], [p.y for p in ft.ofdDr], 'o', mew=2, mec='b', mfc='none', ms=9)
-        if ft.fitModule in remFitBuf.splitterFitModules:
-                plot([p.x for p in ft.ofd], [d.shape[0] - p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
-        axis('tight')
-        xlim(0, d.shape[1])
-        ylim(d.shape[0], 0)
-        xticks([])
-        yticks([])
         
-        if 'tIm' in dir(ft.ofd):
-            figure()
-            imshow(ft.ofd.tIm.T, cmap=cm.hot, interpolation='nearest', hold=False)
-            axis('tight')
-            xlim(0, d.shape[1])
-            ylim(d.shape[0], 0)
-            xticks([])
-            yticks([])
-            
-        show()
-
-        matplotlib.interactive(True)
+        if gui:
+            try:
+                d = ft.ofd.filteredData.T
+                #d = ft.data.squeeze().T
+                imshow(d, cmap=cm.hot, interpolation='nearest', hold=False, clim=(median(d.ravel()), d.max()))
+                plot([p.x for p in ft.ofd], [p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
+                if ft.driftEst:
+                     plot([p.x for p in ft.ofdDr], [p.y for p in ft.ofdDr], 'o', mew=2, mec='b', mfc='none', ms=9)
+                if ft.fitModule in remFitBuf.splitterFitModules:
+                        plot([p.x for p in ft.ofd], [d.shape[0] - p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
+                axis('tight')
+                xlim(0, d.shape[1])
+                ylim(d.shape[0], 0)
+                xticks([])
+                yticks([])
+                
+                if 'tIm' in dir(ft.ofd):
+                    figure()
+                    imshow(ft.ofd.tIm.T, cmap=cm.hot, interpolation='nearest', hold=False)
+                    axis('tight')
+                    xlim(0, d.shape[1])
+                    ylim(d.shape[0], 0)
+                    xticks([])
+                    yticks([])
+            except AttributeError:
+                plot(res.results['fitResults']['x0'], res.results['fitResults']['y0'], 'o')
+                pass
+                    
+            show()
+    
+            matplotlib.interactive(True)
         
         return res
 

@@ -150,6 +150,292 @@ static PyObject * genGauss(PyObject *self, PyObject *args, PyObject *keywds)
     return (PyObject*) out;
 }
 
+static PyObject * genMultiGauss(PyObject *self, PyObject *args, PyObject *keywds) 
+{
+    double *res = 0;  
+    int i,j, j3,lenx, numP; 
+    npy_intp size[1];
+    
+    PyObject *oX =0;
+    PyObject *oY=0;
+    PyObject *oP=0;
+    
+    PyArrayObject* Xvals;
+    PyArrayObject* Yvals;
+    PyArrayObject* Pvals;
+    
+    PyArrayObject* out;
+    
+    double *pXvals;
+    double *pYvals;
+    double *pPvals;
+    
+    /*parameters*/
+    double sigma = 1;
+
+    /*End paramters*/
+
+    double ts2;
+    double pxp, pyp, A, x0, y0;
+
+      
+    
+    static char *kwlist[] = {"X", "Y", "p","sigma", NULL};
+    
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "OOO|d", kwlist, 
+         &oX, &oY, &oP, &sigma))
+        return NULL; 
+
+    /* Do the calculations */ 
+        
+    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, PyArray_DOUBLE, 0, 1);
+    if (Xvals == NULL) 
+    {
+      PyErr_Format(PyExc_RuntimeError, "Bad X");   
+      return NULL;
+    }
+    
+    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, PyArray_DOUBLE, 0, 1);
+    if (Yvals == NULL)
+    {
+        Py_DECREF(Xvals);
+        PyErr_Format(PyExc_RuntimeError, "Bad Y");
+        return NULL;
+    }
+    
+    Pvals = (PyArrayObject *) PyArray_ContiguousFromObject(oP, PyArray_DOUBLE, 0, 1);
+    if (Pvals == NULL)
+    {
+        Py_DECREF(Xvals);
+        Py_DECREF(Yvals);
+        PyErr_Format(PyExc_RuntimeError, "Bad P");
+        return NULL;
+    }    
+    
+    pXvals = (double*)Xvals->data;
+    pYvals = (double*)Yvals->data;
+    pPvals = (double*)Pvals->data;
+    
+    
+    size[0] = PyArray_Size((PyObject*)Xvals);
+    lenx = size[0];
+
+    numP = PyArray_Size((PyObject*)Pvals)/3;
+    //size[1] = PyArray_Size((PyObject*)Yvals);
+        
+    //out = (PyArrayObject*) PyArray_FromDims(2,size,PyArray_DOUBLE);
+    //out = (PyArrayObject*) PyArray_SimpleNew(2,size,PyArray_DOUBLE);
+    out = (PyArrayObject*) PyArray_New(&PyArray_Type, 1,size,NPY_DOUBLE, NULL, NULL, 0, 1, NULL);
+    if (out == NULL)
+    {
+        Py_DECREF(Xvals);
+        Py_DECREF(Yvals);
+        Py_DECREF(Pvals);
+        
+        PyErr_Format(PyExc_RuntimeError, "Failed to allocate memory");
+        return NULL;    
+    }
+    
+    //fix strides
+    //out->strides[0] = sizeof(double);
+    //out->strides[1] = sizeof(double)*size[0];
+    
+    //res = (double*) out->data;
+    res = (double*) PyArray_DATA(out);
+    
+    ts2 = 2*sigma*sigma;
+        
+    for (i = 0; i < lenx; i++)
+      {
+
+     *res = 0;            
+	
+	for (j = 0; j < numP; j++)
+	  {
+          j3 = 3*j;
+          //A = pPvals[j3];
+          //x0 = pPvals[j3+1];
+          //y0 = pPvals[j3+2];
+        
+          pxp = *pXvals - pPvals[j3+1];
+          pyp = *pYvals - pPvals[j3+2];
+        
+	    *res += pPvals[j3]*exp(-(pxp * pxp + pyp * pyp)/ts2);
+	    //*res = 1.0;
+	    
+            
+	  }
+        res++;
+        pXvals++;
+        pYvals++;
+        
+      }
+    
+    
+    Py_DECREF(Xvals);
+    Py_DECREF(Yvals);
+    Py_DECREF(Pvals);
+    
+    return (PyObject*) out;
+}
+
+static PyObject * genMultiGaussJac(PyObject *self, PyObject *args, PyObject *keywds) 
+{
+    double *res = 0;  
+    int i,j, j3, j_3, tp,lenx, numP; 
+    npy_intp size[2];
+    
+    PyObject *oX =0;
+    PyObject *oY=0;
+    PyObject *oP=0;
+    
+    PyArrayObject* Xvals;
+    PyArrayObject* Yvals;
+    PyArrayObject* Pvals;
+    
+    PyArrayObject* out;
+    
+    double *pXvals;
+    double *pYvals;
+    double *pPvals;
+    
+    /*parameters*/
+    double sigma = 1;
+
+    /*End paramters*/
+
+    double ts2;
+    double pxp, pyp, A, x0, y0, A2;
+
+      
+    
+    static char *kwlist[] = {"X", "Y", "p","sigma", NULL};
+    
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "OOO|d", kwlist, 
+         &oX, &oY, &oP, &sigma))
+        return NULL; 
+
+    /* Do the calculations */ 
+        
+    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, PyArray_DOUBLE, 0, 1);
+    if (Xvals == NULL) 
+    {
+      PyErr_Format(PyExc_RuntimeError, "Bad X");   
+      return NULL;
+    }
+    
+    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, PyArray_DOUBLE, 0, 1);
+    if (Yvals == NULL)
+    {
+        Py_DECREF(Xvals);
+        PyErr_Format(PyExc_RuntimeError, "Bad Y");
+        return NULL;
+    }
+    
+    Pvals = (PyArrayObject *) PyArray_ContiguousFromObject(oP, PyArray_DOUBLE, 0, 1);
+    if (Pvals == NULL)
+    {
+        Py_DECREF(Xvals);
+        Py_DECREF(Yvals);
+        PyErr_Format(PyExc_RuntimeError, "Bad P");
+        return NULL;
+    }    
+    
+    pXvals = (double*)Xvals->data;
+    pYvals = (double*)Yvals->data;
+    pPvals = (double*)Pvals->data;
+    
+    
+    lenx = PyArray_Size((PyObject*)Xvals);
+    //lenx = size[0];
+    size[0]=lenx;
+
+    numP = PyArray_Size((PyObject*)Pvals);
+    size[1] = numP;
+
+    //numP /=3;
+
+    //size[1] = PyArray_Size((PyObject*)Yvals);
+        
+    //out = (PyArrayObject*) PyArray_FromDims(2,size,PyArray_DOUBLE);
+    //out = (PyArrayObject*) PyArray_SimpleNew(2,size,PyArray_DOUBLE);
+    out = (PyArrayObject*) PyArray_New(&PyArray_Type, 2,size,NPY_DOUBLE, NULL, NULL, 0, 1, NULL);
+    if (out == NULL)
+    {
+        Py_DECREF(Xvals);
+        Py_DECREF(Yvals);
+        Py_DECREF(Pvals);
+        
+        PyErr_Format(PyExc_RuntimeError, "Failed to allocate memory");
+        return NULL;    
+    }
+    
+    //fix strides
+    //out->strides[0] = sizeof(double);
+    //out->strides[1] = sizeof(double)*size[0];
+    
+    //res = (double*) out->data;
+    res = (double*) PyArray_DATA(out);
+    
+    ts2 = 1.0/(2*sigma*sigma);
+    
+    for (j = 0; j < numP; j ++)
+    { 
+    
+        j_3 = j/3; 
+        j3 = 3*j_3;
+        tp = j % 3;
+
+        A = pPvals[j3];
+        x0 = pPvals[j3+1];
+        y0 = pPvals[j3+2]; 
+
+        if (tp == 0)
+        {
+            for (i = 0; i < lenx; i++)
+            {
+                pxp = pXvals[i] - x0;
+                pyp = pYvals[i] - y0;
+                     
+	          *res = exp(-(pxp * pxp + pyp * pyp)*ts2);
+                
+        	    res++;                    
+        	  }
+        } else if (tp == 1)
+        {
+            A2 = 2*A*ts2;            
+            for (i = 0; i < lenx; i++)
+            {
+                pxp = pXvals[i] - x0;
+                pyp = pYvals[i] - y0;
+                     
+	          *res = pxp*A2*exp(-(pxp * pxp + pyp * pyp)*ts2);
+                
+        	    res++;                    
+        	  }
+        } else if (tp == 2)
+        {
+            A2 = 2*A*ts2;            
+            for (i = 0; i < lenx; i++)
+            {
+                pxp = pXvals[i] - x0;
+                pyp = pYvals[i] - y0;
+                     
+	          *res = pyp*A2*exp(-(pxp * pxp + pyp * pyp)*ts2);
+                
+        	    res++;                    
+        	  }
+        }
+    }
+       
+    
+    Py_DECREF(Xvals);
+    Py_DECREF(Yvals);
+    Py_DECREF(Pvals);
+    
+    return (PyObject*) out;
+}
+
 static PyObject * genGaussInArray(PyObject *self, PyObject *args, PyObject *keywds)
 {
     double *res = 0;
@@ -1638,6 +1924,10 @@ static PyObject * genGaussAF(PyObject *self, PyObject *args, PyObject *keywds)
 static PyMethodDef gauss_appMethods[] = {
     {"genGauss",  genGauss, METH_VARARGS | METH_KEYWORDS,
     "Generate a (fast) Gaussian.\n. Arguments are: 'X', 'Y', 'A'=1,'x0'=0, 'y0'=0,sigma=0,b=0,b_x=0,b_y=0"},
+     {"genMultiGauss",  genMultiGauss, METH_VARARGS | METH_KEYWORDS,
+    "Generate multiple Gaussians.\n. Arguments are: 'X', 'Y', 'P',sigma=1"},
+     {"genMultiGaussJac",  genMultiGaussJac, METH_VARARGS | METH_KEYWORDS,
+    "Generate multiple Gaussians.\n. Arguments are: 'X', 'Y', 'P',sigma=1"},
     {"genGaussJac",  genGaussJac, METH_VARARGS | METH_KEYWORDS,
     "Generate jacobian for Gaussian.\n. Arguments are: 'X', 'Y', 'A'=1,'x0'=0, 'y0'=0,sigma=0,b=0,b_x=0,b_y=0"},
     {"genGaussJacW",  genGaussJacW, METH_VARARGS | METH_KEYWORDS,
