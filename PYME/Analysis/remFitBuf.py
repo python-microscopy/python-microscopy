@@ -219,13 +219,19 @@ class fitTask(taskDef.Task):
         if self.fitModule == 'ConfocCOIR': #special case - no object finding
             self.res = fitMod.ConfocCOI(self.data, md, background = self.bg)
             return fitResult(self, self.res, [])
+            
+        if 'MULTIFIT' in dir(fitMod):
+            #fit module does it's own object finding
+            ff = fitMod.FitFactory(self.data, md, background = self.bg)
+            self.res = ff.FindAndFit(self.threshold)
+            return fitResult(self, self.res, [])
 
         #Find objects
         bgd = self.data.astype('f') - self.bg
 
         if 'Splitter.TransmittedChannel' in self.md.getEntryNames():
             #don't find points in transmitted light channel
-            transChan = mdh.getEntry('Splitter.TransmitedChannel')
+            transChan = md.getEntry('Splitter.TransmitedChannel')
             if transChan == 'Top':
                 bgd[:, :(self.data.shape[1]/2)] = 0 #set upper half of image to zero
 

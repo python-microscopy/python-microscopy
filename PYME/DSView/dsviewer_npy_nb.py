@@ -53,7 +53,7 @@ class dt(wx.FileDropTarget):
 
 class DSViewFrame(wx.Frame):
     def __init__(self, image,  parent=None, title='', mode='LM', 
-                 size = (800,800), glCanvas=None):
+                 size = (800,700), glCanvas=None):
         wx.Frame.__init__(self,parent, -1, title,size=size, pos=(1100, 300))
 
         self.mode = mode

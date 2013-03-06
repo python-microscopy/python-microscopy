@@ -60,6 +60,12 @@ class MDHandlerBase(DictMixin):
 
     def __getitem__(self, name):
         return self.getEntry(name)
+        
+    def getOrDefault(self, name, default):
+        try: 
+            return self.getEntry(name)
+        except AttributeError:
+            return default
 
     def keys(self):
         return self.getEntryNames()
