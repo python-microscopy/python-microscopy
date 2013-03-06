@@ -245,7 +245,7 @@ class h5rDSource(inputFilter):
 
 class textfileSource(inputFilter):
     _name = "Text File Source"
-    def __init__(self, filename, columnnames, delimiter=None):
+    def __init__(self, filename, columnnames, delimiter=None, skiprows=0):
         ''' Input filter for use with delimited text data. Defaults
         to whitespace delimiter. need to provide a list of variable names
         in the order that they appear in the file. Using 'x', 'y' and 'error_x'
@@ -253,7 +253,7 @@ class textfileSource(inputFilter):
         with the visualisation backends'''
 
         self.res = np.loadtxt(filename, dtype={'names' : columnnames, 
-                                               'formats' :  ['f4' for i in range(len(columnnames))]}, delimiter = delimiter)
+                                               'formats' :  ['f4' for i in range(len(columnnames))]}, delimiter = delimiter, skiprows=skiprows)
         
         self._keys = list(columnnames)
        

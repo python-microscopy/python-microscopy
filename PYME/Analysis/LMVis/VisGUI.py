@@ -863,6 +863,7 @@ class VisGUIFrame(wx.Frame):
             args['FieldNames'] = dlg.GetFieldNames()
             args['VarName'] = dlg.GetVarName()
             
+            
             dlg.Destroy()
 
         else: #assume it's a text file
@@ -876,6 +877,9 @@ class VisGUIFrame(wx.Frame):
                 return #we cancelled
                 
             args['FieldNames'] = dlg.GetFieldNames()
+            args['SkipRows'] = dlg.GetNumberComments()
+            
+            #print 'Skipping %d rows' %args['SkipRows']
             dlg.Destroy()
 
         print 'Creating Pipeline'
