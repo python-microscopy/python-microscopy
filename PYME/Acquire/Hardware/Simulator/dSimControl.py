@@ -72,138 +72,144 @@ class dSimControl(wx.Panel):
 
     def _init_ctrls(self, prnt):
         # generated method, don't edit
-        wx.Panel.__init__(self, id=-1, parent=prnt, size=wx.Size(442, 637))
+        wx.Panel.__init__(self, id=-1, parent=prnt)#, size=wx.Size(442, 637))
         self._init_utils()
         #self.SetClientSize(wx.Size(434, 610))
+        vsizer= wx.BoxSizer(wx.VERTICAL)
 
-        self.staticBox1 = wx.StaticBox(id=wxID_DSIMCONTROLSTATICBOX1,
-              label='Fluorophore Postions', name='staticBox1', parent=self,
-              pos=wx.Point(10, 8), size=wx.Size(414, 128), style=0)
 
-        self.tNumFluorophores = wx.TextCtrl(id=wxID_DSIMCONTROLTNUMFLUOROPHORES,
-              name='tNumFluorophores', parent=self, pos=wx.Point(22, 31),
-              size=wx.Size(48, 21), style=0, value='1000')
+        ########### Fluorophore Positions ############        
+        sbsizer=wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Fluorophore Postions'), 
+                                  wx.VERTICAL)        
+        hsizer=wx.BoxSizer(wx.HORIZONTAL)
 
-        self.staticText1 = wx.StaticText(id=wxID_DSIMCONTROLSTATICTEXT1,
-              label='fluorophores distributed evenly along', name='staticText1',
-              parent=self, pos=wx.Point(75, 35), size=wx.Size(179, 13),
-              style=0)
+        self.tNumFluorophores = wx.TextCtrl(self, -1, value='1000', size=(60, -1))
+        hsizer.Add(self.tNumFluorophores, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
 
-        self.tKbp = wx.TextCtrl(id=wxID_DSIMCONTROLTKBP, name='tKbp',
-              parent=self, pos=wx.Point(258, 31), size=wx.Size(47, 21), style=0,
-              value='1000')
+        hsizer.Add(wx.StaticText(self,-1,'fluorophores distributed evenly along'), 
+                   0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
 
-        self.staticText2 = wx.StaticText(id=wxID_DSIMCONTROLSTATICTEXT2,
-              label='kbp', name='staticText2', parent=self, pos=wx.Point(313,
-              34), size=wx.Size(17, 13), style=0)
+        self.tKbp = wx.TextCtrl(self, -1, size=(60, -1), value='1000')
+        hsizer.Add(self.tKbp, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
+        
+        hsizer.Add(wx.StaticText(self,-1,'nm'), 
+                   0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
+                   
+        hsizer.AddStretchSpacer()
 
-        self.bGenWormlike = wx.Button(id=wxID_DSIMCONTROLBGENWORMLIKE,
-              label='Generate', name='bGenWormlike', parent=self,
-              pos=wx.Point(339, 31), size=wx.Size(75, 23), style=0)
-        self.bGenWormlike.Bind(wx.EVT_BUTTON, self.OnBGenWormlikeButton,
-              id=wxID_DSIMCONTROLBGENWORMLIKE)
+        self.bGenWormlike = wx.Button(self, -1,'Generate')
+        self.bGenWormlike.Bind(wx.EVT_BUTTON, self.OnBGenWormlikeButton)
+        hsizer.Add(self.bGenWormlike, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
+        
+        sbsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 2)
+        hsizer=wx.BoxSizer(wx.HORIZONTAL)
+        
+        hsizer.Add(wx.StaticText(self,-1,'Persistence length [nm]:'), 
+                   0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
+        self.tPersist = wx.TextCtrl(self, -1, size=(60, -1), value='150')
+        hsizer.Add(self.tPersist, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
 
-        self.bLoadPoints = wx.Button(id=wxID_DSIMCONTROLBLOADPOINTS,
-              label='Load From File', name='bLoadPoints', parent=self,
-              pos=wx.Point(160, 98), size=wx.Size(75, 23), style=0)
-        self.bLoadPoints.Bind(wx.EVT_BUTTON, self.OnBLoadPointsButton,
-              id=wxID_DSIMCONTROLBLOADPOINTS)
-
-        self.bSavePoints = wx.Button(id=wxID_DSIMCONTROLBSAVEPOINTS,
-              label='Save To File', name='bSavePoints', parent=self,
-              pos=wx.Point(30, 98), size=wx.Size(75, 23), style=0)
-        self.bSavePoints.Bind(wx.EVT_BUTTON, self.OnBSavePointsButton,
-              id=wxID_DSIMCONTROLBSAVEPOINTS)
-
-        self.staticBox2 = wx.StaticBox(id=wxID_DSIMCONTROLSTATICBOX2,
-              label='Generate Virtual Fluorophores', name='staticBox2',
-              parent=self, pos=wx.Point(8, 144), size=wx.Size(416, 344),
-              style=0)
-
-        self.staticBox3 = wx.StaticBox(id=wxID_DSIMCONTROLSTATICBOX3,
-              label='Transition Tensor', name='staticBox3', parent=self,
-              pos=wx.Point(16, 168), size=wx.Size(400, 216), style=0)
-
-        self.nTransitionTensor = wx.Notebook(id=wxID_DSIMCONTROLNTRANSITIONTENSOR,
-              name='nTransitionTensor', parent=self, pos=wx.Point(24, 184),
-              size=wx.Size(384, 184), style=0)
-        self.nTransitionTensor.SetLabel('Transition Probabilites')
-
-        self.gSpontan = wx.grid.Grid(id=wxID_DSIMCONTROLGSPONTAN,
-              name='gSpontan', parent=self.nTransitionTensor, pos=wx.Point(0,
-              0), size=wx.Size(376, 158), style=0)
-
-        self.gSwitch = wx.grid.Grid(id=wxID_DSIMCONTROLGSWITCH, name='gSwitch',
-              parent=self.nTransitionTensor, pos=wx.Point(0, 0),
-              size=wx.Size(376, 158), style=0)
-
-        self.gProbe = wx.grid.Grid(id=wxID_DSIMCONTROLGPROBE, name='gProbe',
-              parent=self.nTransitionTensor, pos=wx.Point(0, 0),
-              size=wx.Size(376, 158), style=0)
-
-        self.staticBox4 = wx.StaticBox(id=wxID_DSIMCONTROLSTATICBOX4,
-              label='Excitation Crossections', name='staticBox4', parent=self,
-              pos=wx.Point(18, 392), size=wx.Size(398, 48), style=0)
-
-        self.bGenFlours = wx.Button(id=wxID_DSIMCONTROLBGENFLOURS, label='Go',
-              name='bGenFlours', parent=self, pos=wx.Point(184, 448),
-              size=wx.Size(75, 23), style=0)
-        self.bGenFlours.Bind(wx.EVT_BUTTON, self.OnBGenFloursButton,
-              id=wxID_DSIMCONTROLBGENFLOURS)
-
-        self.bSetPSF = wx.Button(id=wxID_DSIMCONTROLBGENFLOURS, label='Set PSF',
-              parent=self, pos=wx.Point(100, 448),
-              size=wx.Size(75, 23), style=0)
-        self.bSetPSF.Bind(wx.EVT_BUTTON, self.OnBSetPSF)
-
-        self.staticText3 = wx.StaticText(id=wxID_DSIMCONTROLSTATICTEXT3,
-              label='Switching Laser:', name='staticText3', parent=self,
-              pos=wx.Point(32, 411), size=wx.Size(78, 13), style=0)
-
-        self.tExSwitch = wx.TextCtrl(id=wxID_DSIMCONTROLTEXSWITCH,
-              name='tExSwitch', parent=self, pos=wx.Point(116, 407),
-              size=wx.Size(44, 21), style=0, value='5')
-
-        self.staticText4 = wx.StaticText(id=wxID_DSIMCONTROLSTATICTEXT4,
-              label='/mWs       Probe Laser:', name='staticText4', parent=self,
-              pos=wx.Point(175, 411), size=wx.Size(109, 13), style=0)
-
-        self.tExProbe = wx.TextCtrl(id=wxID_DSIMCONTROLTEXPROBE,
-              name='tExProbe', parent=self, pos=wx.Point(284, 407),
-              size=wx.Size(44, 21), style=0, value='10')
-
-        self.staticText5 = wx.StaticText(id=wxID_DSIMCONTROLSTATICTEXT5,
-              label='/mWs', name='staticText5', parent=self, pos=wx.Point(344,
-              411), size=wx.Size(32, 13), style=0)
-
-        self.staticBox5 = wx.StaticBox(id=wxID_DSIMCONTROLSTATICBOX5,
-              label='Status', name='staticBox5', parent=self, pos=wx.Point(8,
-              496), size=wx.Size(416, 100), style=0)
-
-        self.stStatus = wx.StaticText(id=wxID_DSIMCONTROLSTSTATUS,
-              label='hello\nworld', name='stStatus', parent=self,
-              pos=wx.Point(24, 512), size=wx.Size(304, 80), style=0)
-
-        self.bPause = wx.Button(id=wxID_DSIMCONTROLBPAUSE, label='Pause',
-              name='bPause', parent=self, pos=wx.Point(340, 561),
-              size=wx.Size(75, 23), style=0)
-        self.bPause.Bind(wx.EVT_BUTTON, self.OnBPauseButton,
-              id=wxID_DSIMCONTROLBPAUSE)
-
-        self.stCurObjPoints = wx.StaticText(id=wxID_DSIMCONTROLSTCUROBJPOINTS,
-              label='Current object has 0 points', name='stCurObjPoints',
-              parent=self, pos=wx.Point(280, 108), size=wx.Size(131, 13),
-              style=0)
-
-        self.cbFlatten = wx.CheckBox(id=wxID_DSIMCONTROLCBFLATTEN,
-              label='flatten (set z to 0)', name='cbFlatten', parent=self,
-              pos=wx.Point(24, 70), size=wx.Size(136, 13), style=0)
+        self.cbFlatten = wx.CheckBox(self, -1, 'flatten (set z to 0)')
         self.cbFlatten.SetValue(False)
+        hsizer.Add(self.cbFlatten, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
 
-        self.cbColour = wx.CheckBox(id=wxID_DSIMCONTROLCBCOLOUR,
-              label=u'colourful', name=u'cbColour', parent=self,
-              pos=wx.Point(240, 70), size=wx.Size(136, 13), style=0)
+        self.cbColour = wx.CheckBox(self, -1, u'colourful')
         self.cbColour.SetValue(False)
+        hsizer.Add(self.cbColour, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
+        
+        sbsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 2)
+        
+        hsizer=wx.BoxSizer(wx.HORIZONTAL)
+        
+        hsizer.AddStretchSpacer()
+
+        self.bLoadPoints = wx.Button(self, -1,'Load From File')
+        self.bLoadPoints.Bind(wx.EVT_BUTTON, self.OnBLoadPointsButton)
+        hsizer.Add(self.bLoadPoints, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
+
+        self.bSavePoints = wx.Button(self, -1,'Save To File')
+        self.bSavePoints.Bind(wx.EVT_BUTTON, self.OnBSavePointsButton)
+        hsizer.Add(self.bSavePoints, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
+        
+        sbsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 2)
+
+        self.stCurObjPoints = wx.StaticText(self, -1, 'Current object has 0 points')        
+        
+        sbsizer.Add(self.stCurObjPoints, 0, wx.ALL, 2)
+        
+        vsizer.Add(sbsizer, 0, wx.ALL|wx.EXPAND, 2)
+        
+        ################ Virtual Fluorophores ###########
+        
+        sbsizer=wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Generate Virtual Fluorophores'), 
+                                  wx.VERTICAL)
+                                  
+        sbsizer2=wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Transition Tensor'), 
+                                  wx.VERTICAL)
+
+        self.nTransitionTensor = wx.Notebook(self, -1)
+        #self.nTransitionTensor.SetLabel('Transition Probabilites')
+
+        self.gSpontan = wx.grid.Grid(self.nTransitionTensor, -1)
+        self.gSwitch = wx.grid.Grid(self.nTransitionTensor, -1)
+        self.gProbe = wx.grid.Grid(self.nTransitionTensor, -1)
+        
+        sbsizer2.Add(self.nTransitionTensor, 1, wx.EXPAND|wx.ALL, 2)
+        sbsizer.Add(sbsizer2, 1, wx.EXPAND|wx.ALL, 2)
+        
+        sbsizer2=wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Excitation Crossections'), 
+                                  wx.HORIZONTAL)
+                                  
+        sbsizer2.Add(wx.StaticText(self, -1, 'Switching Laser:'), 0, 
+                     wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
+
+        self.tExSwitch = wx.TextCtrl(self, -1, value='5')
+        sbsizer2.Add(self.tExSwitch, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
+        
+        sbsizer2.Add(wx.StaticText(self, -1, '/mWs       Probe Laser:'), 0, 
+                     wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
+
+        self.tExProbe = wx.TextCtrl(self, -1, value='10')
+        sbsizer2.Add(self.tExProbe, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
+        
+        sbsizer2.Add(wx.StaticText(self, -1, '/mWs'), 0, 
+                     wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
+                                  
+        sbsizer.Add(sbsizer2, 0, wx.EXPAND|wx.ALL, 2)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL) 
+
+        self.bSetPSF = wx.Button(self, -1,'Set PSF')
+        self.bSetPSF.Bind(wx.EVT_BUTTON, self.OnBSetPSF)
+        hsizer.Add(self.bSetPSF, 1, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 2)                         
+
+        self.bGenFlours = wx.Button(self, -1,'Go')
+        self.bGenFlours.Bind(wx.EVT_BUTTON, self.OnBGenFloursButton)
+        hsizer.Add(self.bGenFlours, 1, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 2)
+
+        
+        
+        sbsizer.Add(hsizer, 0, wx.ALL|wx.ALIGN_RIGHT, 2)
+        vsizer.Add(sbsizer, 0, wx.ALL|wx.EXPAND, 2)
+
+        ######## Status #########
+        
+        sbsizer=wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Status'), 
+                                  wx.VERTICAL)
+
+        self.stStatus = wx.StaticText(self, -1,
+              label='hello\nworld\n\n\nfoo')
+        sbsizer.Add(self.stStatus, 0, wx.ALL|wx.EXPAND, 2)
+
+        self.bPause = wx.Button(self, -1,'Pause')
+        self.bPause.Bind(wx.EVT_BUTTON, self.OnBPauseButton)
+        sbsizer.Add(self.bPause, 0, wx.ALL|wx.ALIGN_RIGHT, 2)
+        
+        vsizer.Add(sbsizer, 0, wx.ALL|wx.EXPAND, 2)
+        
+        self.vsizer = vsizer
+
+
 
         self._init_coll_nTransitionTensor_Pages(self.nTransitionTensor)
 
@@ -275,12 +281,15 @@ class dSimControl(wx.Panel):
         self.scope=scope
         self.points = []
         self.tRefresh.Start(200)
+        self.SetSizerAndFit(self.vsizer)
         
 
     def OnBGenWormlikeButton(self, event):
         kbp = float(self.tKbp.GetValue())
         numFluors = int(self.tNumFluorophores.GetValue())
-        wc = wormlike2.fibre30nm(kbp, 10*kbp/numFluors)
+        persistLength= float(self.tPersist.GetValue())
+        #wc = wormlike2.fibre30nm(kbp, 10*kbp/numFluors)
+        wc = wormlike2.wiglyFibre(kbp, persistLength, kbp/numFluors)
         
         wc.xp -= wc.xp.mean()
         wc.yp -= wc.yp.mean()

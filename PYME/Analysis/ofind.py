@@ -297,7 +297,9 @@ class ObjectIdentifier(list):
     
         if (self.numThresholdSteps == 0): #don't do threshold scan - just use lower threshold (faster)
             im = maskedFilteredData
-            (labeledPoints, nLabeled) = ndimage.label(im > self.lowerThreshold)
+            imt = im > self.lowerThreshold
+            #imt = ndimage.binary_erosion(im >self.lowerThreshold)
+            (labeledPoints, nLabeled) = ndimage.label(imt)
             
             objSlices = ndimage.find_objects(labeledPoints)
             
