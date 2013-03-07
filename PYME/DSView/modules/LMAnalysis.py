@@ -938,7 +938,7 @@ class LMAnalyser:
                 ylim(d.shape[0], 0)
                 
                 vx = 1e3*self.image.mdh['voxelsize.x']
-                vy = 1e3*self.image.mdh['voxelsize.x']
+                vy = 1e3*self.image.mdh['voxelsize.y']
                 plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, 'ow')
                 pass
                     

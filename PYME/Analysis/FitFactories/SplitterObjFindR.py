@@ -22,7 +22,7 @@
 ##################
 
 import scipy
-from scipy.signal import interpolate
+#from scipy.signal import interpolate
 import scipy.ndimage as ndimage
 from pylab import *
 import copy_reg

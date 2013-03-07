@@ -198,12 +198,20 @@ class GaussianFitFactory:
         pe = np.log(np.maximum(dataMean/sigma, .1))
         dt = dataMean > threshold*sigma
         
+#        pylab.imshow(dataMean.T, interpolation='nearest')
+#        pylab.colorbar()
+#        pylab.figure()
+#        
+#        pylab.imshow(sigma.T, interpolation='nearest')
+#        pylab.colorbar()
+#        pylab.figure()
+#        
 #        pylab.imshow(pe.T, interpolation='nearest')
 #        pylab.colorbar()
 #        pylab.figure()
         
         
-        pt = ndimage.uniform_filter(pe) > 0
+        pt = ndimage.uniform_filter(pe) > threshold
         
 #        pylab.imshow(ndimage.uniform_filter(pe).T)
 #        pylab.colorbar()
@@ -229,7 +237,7 @@ class GaussianFitFactory:
 #        pylab.figure()
         
         #further pad        
-        mask2 = (ndimage.uniform_filter(mask.astype('f'))) > 0.2
+        #mask2 = (ndimage.uniform_filter(mask.astype('f'))) > 0.2
         
         #lab2 = 
         
@@ -247,7 +255,7 @@ class GaussianFitFactory:
         
         #labels = (labels*mask).astype('int32')
             
-        objSlices = ndimage.find_objects(labels)
+        #objSlices = ndimage.find_objects(labels)
         
         if nlabels == 0:
             #the frame is empty
@@ -304,7 +312,7 @@ class GaussianFitFactory:
         
                  #prevent an infinite loop here      
                 
-                while resmax > 4 and nEvents < 10 and d_m.size > (3*(nEvents+1)):    
+                while resmax > 2 and nEvents < 10 and d_m.size > (3*(nEvents+1)):    
                     nEvents += 1
                     #print nEvents
                     
