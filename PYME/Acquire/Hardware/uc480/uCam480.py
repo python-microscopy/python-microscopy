@@ -29,6 +29,10 @@ import sys
 from PYME.Acquire import MetaDataHandler
 from PYME.Acquire.Hardware import ccdCalibrator
 
+import threading
+import Queue
+
+import numpy as np
 #import example
 #import scipy
 
@@ -68,31 +72,28 @@ from PYME.Acquire import eventLog
 def GetError(camHandle):
     err = ctypes.c_int()
     errMessage = ctypes.c_char_p()
-    uc480.CALL("GetError",self,ctypes.byref(self.err),ctypes.byref(self.errMessage))
+    uc480.CALL("GetError",camHandle,ctypes.byref(err),ctypes.byref(errMessage))
     
     return err.value, errMessage.value
 
 class uc480Camera:
-    #numpy_frames=1
+    numpy_frames=1
+    contMode = True
 
     #define a couple of acquisition modes
 
     #MODE_CONTINUOUS = 5
     #MODE_SINGLE_SHOT = 1
 
-    def __selectCamera(self):
-        ret = ac.SetCurrentCamera(self.boardHandle)
-        if not ret == 0:
-            raise RuntimeError('Error setting camera: %d: %s' % GetError(self.boardHandle))
-
 
     def __init__(self, boardNum=0):
         self.initialised = False
         self.active = True
 
-        self.boardHandle = wintypes.HANDLE()
+        self.boardHandle = wintypes.HANDLE(0)
 
-        ret = uc480.CALL('InitCamera', byref(self.boardHandle), HWND(0))
+        ret = uc480.CALL('InitCamera', byref(self.boardHandle), wintypes.HWND(0))
+        print 'I',ret
         if not ret == 0:
             raise RuntimeError('Error getting camera handle: %d: %s' % GetError(self.boardHandle))
             
@@ -103,6 +104,12 @@ class uc480Camera:
 
         #self.noiseProps = noiseProperties[self.GetSerialNumber()]
         
+        caminfo = uc480.CAMINFO()
+        ret = uc480.CALL('GetCameraInfo', self.boardHandle, ctypes.byref(caminfo))
+        if not ret == 0:
+            raise RuntimeError('Error getting camera info: %d: %s' % GetError(self.boardHandle))
+        
+        self.serialNum = caminfo.SerNo
         
 
         #get the CCD size 
@@ -111,47 +118,109 @@ class uc480Camera:
         #ccdWidth = ac.GetDetector.argtypes[0]._type_()
         #ccdHeight = ac.GetDetector.argtypes[1]._type_()
 
-        ret = uc480.CALL('GetSensorInfo', self.boardHandle, ctypes.addressof(sensorProps))
+        ret = uc480.CALL('GetSensorInfo', self.boardHandle, ctypes.byref(sensorProps))
         if not ret == 0:
             raise RuntimeError('Error getting CCD size: %d: %s' % GetError(self.boardHandle))
 
-        self.CCDSize=(sensorProps.nMaxWidth.value, sensorProps.nMaxHeight.value)
+        self.CCDSize=(sensorProps.nMaxWidth, sensorProps.nMaxHeight)
 
         #-------------------
         #Do initial setup with a whole bunch of settings I've arbitrarily decided are
         #reasonable and make the camera behave more or less like the PCO cameras.
         #These settings will hopefully be able to be changed with methods/ read from
         #a file later.
+        dEnable = c_double(0);
+        uc480.CALL('SetAutoParameter', self.boardHandle, uc480.IS_SET_ENABLE_AUTO_GAIN, byref(dEnable), 0)
+        uc480.CALL('SetAutoParameter', self.boardHandle, uc480.IS_SET_ENABLE_AUTO_SHUTTER, byref(dEnable), 0)
+        #uc480.CALL('SetAutoParameter', self.boardHandle, uc480.IS_SET_ENABLE_AUTO_SENOR_GAIN, byref(dEnable), 0)
+        
+        uc480.CALL('SetImageSize', self.boardHandle, self.CCDSize[0],self.CCDSize[1] )
+        
+        #uc480.CALL('GetColorDepth', self.boardHandle, &m_nBitsPerPixel, &m_nColorMode);
+        uc480.CALL('SetColorMode', self.boardHandle, uc480.IS_SET_CM_BAYER)
 
 
-
+        uc480.CALL('SetBinning', self.boardHandle, uc480.IS_BINNING_DISABLE)
         self.binning=False #binning flag - binning is off
         self.binX=1 #1x1
         self.binY=1
-        self.ROIx=(1,self.CCDSize[0])
-        self.ROIy=(1,self.CCDSize[1])
+        
+        self.SetROI(0,0, self.CCDSize[0],self.CCDSize[1])
+        #self.ROIx=(1,self.CCDSize[0])
+        #self.ROIy=(1,self.CCDSize[1])
         
         self._buffers = []
         
+        self.fullBuffers = Queue.Queue()
+        self.nFull = 0
+        
+        self.Init()
+        
+    def Init(self):        
+        #set up polling thread        
+        self.doPoll = False
+        self.pollLoopActive = True
+        self.pollThread = threading.Thread(target = self._pollLoop)
+        self.pollThread.start()
+        
     def InitBuffers(self, nBuffers = 100):
         for i in range(nBuffers):
-            pData = c_char_p(0)
+            pData = POINTER(c_char)()
             bufID = c_int(0)
-            uc480.CALL('AllocImageMem', self.boardHandle, self.GetPicWidth(), self.GetPicHeight(), 8, ctypes.addressof(pData), ctypes.addressof(bufID))
-            uc480.CALL('SetImageMem', self.boardHandle, pData, bufID)
-            uc480.CALL('AddToSequence', self.boardHandle, pData, bufID)
+            ret = uc480.CALL('AllocImageMem', self.boardHandle, self.GetPicWidth(), self.GetPicHeight(), 8, ctypes.byref(pData), ctypes.byref(bufID))
+            
+            if not ret == uc480.IS_SUCCESS:
+                raise RuntimeError('Error allocating memory: %d: %s' % GetError(self.boardHandle))
+            #ret = uc480.CALL('SetImageMem', self.boardHandle, pData, bufID)
+            #if not ret == uc480.IS_SUCCESS:
+            #    raise RuntimeError('Error setting memory: %d: %s' % GetError(self.boardHandle))
+            ret = uc480.CALL('AddToSequence', self.boardHandle, pData, bufID)
+            if not ret == uc480.IS_SUCCESS:
+                raise RuntimeError('Error adding to sequence: %d: %s' % GetError(self.boardHandle))
             
             self._buffers.append((bufID, pData))
             
-        uc480.CALL('InitImageQueue', self.boardHandle, 0)
+        ret = uc480.CALL('InitImageQueue', self.boardHandle, 0)
+        if not ret == uc480.IS_SUCCESS:
+                raise RuntimeError('error initialising queue: %d: %s' % GetError(self.boardHandle))
+                
+        self.transferBuffer = np.zeros([self.GetPicHeight(), self.GetPicWidth()], np.uint8)
+        self.doPoll = True
         
     def DestroyBuffers(self):
+        self.doPoll = False
         uc480.CALL('ExitImageQueue', self.boardHandle)
         uc480.CALL('ClearSequence', self.boardHandle)
         
         while len(self._buffers) > 0:
             bID, pData = self._buffers.pop()
-            uc480.CALL('FreeImageMem', self.boardHandle, pData, bufID)
+            uc480.CALL('FreeImageMem', self.boardHandle, pData, bID)
+            
+    
+    def _pollBuffer(self):
+        pData = POINTER(c_char)()
+        bufID = c_int(0)
+        
+        ret = uc480.CALL('WaitForNextImage', self.boardHandle, 1000, byref(pData), byref(bufID))
+        
+        if not ret == uc480.IS_SUCCESS:
+            #print ret
+            return
+            
+        self.fullBuffers.put((pData, bufID))
+        self.nFull += 1
+        #self.camLock.release()
+        
+    def _pollLoop(self):
+        #self.fLog = open('poll.txt', 'w')
+        while self.pollLoopActive:
+            #self._queueBuffers()
+            if self.doPoll: #only poll if an acquisition is running
+                self._pollBuffer()
+            else:
+                #print 'w',
+                time.sleep(.05)
+            time.sleep(.0005)
         
 
 
@@ -278,39 +347,19 @@ class uc480Camera:
     def GetCCDTemp(self):
         return  25 #self.CCDTemp
 
-    def _GetAcqTimings(self):
-        self.__selectCamera()
-        exp = c_float()
-        acc = c_float()
-        kin = c_float()
-
-        ret = ac.GetAcquisitionTimings(byref(exp), byref(acc), byref(kin))
-
-        self.tExp = exp.value
-        self.tAcc = acc.value
-        self.tKin = kin.value
-
     def CamReady(self):
         return self.initialised
 
-        #    return false
-        #else:
-        #    tmp = c_long()
-        #    ret = ac.GetStatus(tmp)
-        #    if not ret == ac.DRV_SUCCESS:
-        #        raise RuntimeError('Error getting camera status: %s' % ac.errorCodes[ret])
-        #    return tmp == ac.DRV_IDLE
-
     def GetPicWidth(self):
         return (self.ROIx[1] - self.ROIx[0] + 1)/self.binX
-        #return self.CCDSize[0]
+
 
     def GetPicHeight(self):
         return (self.ROIy[1] - self.ROIy[0] + 1)/self.binY
-        #return self.CCDSize[1]
+
 
     def SetROI(self, x1,y1,x2,y2):
-        self.__selectCamera()
+        
         #if coordinates are reversed, don't care
         if (x2 > x1):
             self.ROIx = (x1+1, x2)
@@ -328,9 +377,24 @@ class uc480Camera:
         else: #y1 == y2 - BAD
             raise RuntimeError('Error Setting y ROI - Zero sized ROI')
 
-        ret = ac.SetImage(self.binX,self.binY,self.ROIx[0],self.ROIx[1],self.ROIy[0],self.ROIy[1])
-        if not ret == ac.DRV_SUCCESS:
-            raise RuntimeError('Error setting image size: %s' % ac.errorCodes[ret])
+        #ret = ac.SetImage(self.binX,self.binY,self.ROIx[0],self.ROIx[1],self.ROIy[0],self.ROIy[1])
+        
+        rect = uc480.IS_RECT()
+        rect.s32X =  self.ROIx[0] - 1
+        rect.s32Y =  self.ROIy[0] - 1
+        rect.s32Width = 1+ self.ROIx[1] - self.ROIx[0]
+        rect.s32Height = 1+ self.ROIy[1] - self.ROIy[0]
+        
+        print rect.s32X, rect.s32Width
+        
+        #ret = uc480.CALL('SetImageSize', self.boardHandle, rect.s32Width, rect.s32Height )
+        #if not ret == 0:
+        #    raise RuntimeError('Error setting image size: %d: %s' % GetError(self.boardHandle))
+        
+        ret = uc480.CALL('AOI', self.boardHandle, uc480.IS_AOI_IMAGE_SET_AOI, byref(rect), 16)
+        if not ret == 0:
+            raise RuntimeError('Error setting ROI: %d: %s' % GetError(self.boardHandle))
+
 
         #raise Exception, 'Not implemented yet!!'
 
@@ -353,9 +417,6 @@ class uc480Camera:
     def DisplayError(*args):
         pass
 
-    def Init(*args):
-        pass
-
     def GetStatus(*args):
         pass
 
@@ -363,7 +424,13 @@ class uc480Camera:
         pass
 
     def StartExposure(self):
+        
+        if self.doPoll:
+            print 'StartAq'
+            self.StopAq()
         self.InitBuffers()
+        
+        
 
         eventLog.logEvent('StartAq', '')
         ret = uc480.CALL('CaptureVideo', self.boardHandle, uc480.IS_DONT_WAIT)
@@ -377,195 +444,83 @@ class uc480Camera:
     def StopLifePreview(*args):
         raise Exception, 'Not implemented yet!!'
 
+    #PYME Camera interface functions - make this look like the other cameras
     def ExpReady(self):
-        self.__selectCamera()
-        tmp = ac.GetStatus.argtypes[0]._type_()
-        ret = ac.GetStatus(byref(tmp))
-        if not ret == ac.DRV_SUCCESS:
-            raise RuntimeError('Error getting camera status: %s' % ac.errorCodes[ret])
-
-        #print ac.errorCodes[tmp.value]
-
-        #return tmp.value == ac.DRV_IDLE
-        first= ac.GetNumberNewImages.argtypes[0]._type_()
-        last= ac.GetNumberNewImages.argtypes[1]._type_()
-        ret = ac.GetNumberNewImages(byref(first), byref(last))
-        #print ac.errorCodes[ret]
-        #print first
-        #print last
-        return ret == ac.DRV_SUCCESS 
-
-    def GetBWPicture(*args):
-        raise Exception, 'Not implemented yet!!'
-
+        #self._pollBuffer()
+        
+        return not self.fullBuffers.empty()
+        
     def ExtractColor(self, chSlice, mode):
-        self.__selectCamera()
-        #print chSlice
-        #pc = chSlice.split('_')[1]
-        #ret = ac.GetAcquiredData16(cast(c_void_p(int(pc[6:8]+pc[4:6]+pc[2:4]+pc[0:2],16)), POINTER(c_ushort)), self.GetPicWidth()*self.GetPicHeight())
-        #ret = ac.GetAcquiredData16(cast(c_void_p(int(chSlice)), POINTER(c_ushort)), self.GetPicWidth()*self.GetPicHeight())
+        #grab our buffer from the full buffers list
+        pData, bufID = self.fullBuffers.get()
+        #print pData, bufID
+        self.nFull -= 1
+        
+        #ctypes.cdll.msvcrt.memcpy(chSlice.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), buf.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), chSlice.nbytes)
+        
+        #ret = uc480.CALL('CopyImageMem', self.boardHandle, pData, bufID, chSlice.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)))
+        ret = uc480.CALL('CopyImageMem', self.boardHandle, pData, bufID, self.transferBuffer.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)))
+        
+        chSlice[:] = self.transferBuffer[:].T#.reshape(chSlice.shape)
+        
+        ret = uc480.CALL('UnlockSeqBuf', self.boardHandle, uc480.IS_IGNORE_PARAMETER, pData)
 
-        dt = ac.GetOldestImage16.argtypes[0]
-
-        ret = ac.GetOldestImage16(cast(c_void_p(int(chSlice)), dt), self.GetPicWidth()*self.GetPicHeight())
-
-        #print self.GetPicWidth()*self.GetPicHeight()
-        if not ret == ac.DRV_SUCCESS:
-            print 'Error getting image from camera: %s' % ac.errorCodes[ret]
-
+        #recycle buffer
+        #self._queueBuffer(buf)
+        
     def CheckCoordinates(*args):
         raise Exception, 'Not implemented yet!!'
 
     def StopAq(self):
-        #self.__selectCamera()
-        #ac.AbortAcquisition()
+        ret = uc480.CALL('StopLiveVideo', self.boardHandle, uc480.IS_WAIT)
         self.DestroyBuffers()
 
     def SetCCDTemp(self, temp):
-        self.__selectCamera()
-        if (temp < self.tRange[0]) or (temp > self.tRange[1]):
-            raise RuntimeError('Temperature setpoint out of range ([%d,%d])' % self.tRange)
-
-        self.tempSet = temp #temperature setpoint
-
-        ret = ac.SetTemperature(self.tempSet) #fixme so that default T is read in
-        if not ret == ac.DRV_SUCCESS:
-            raise RuntimeError('Error setting Temperature: %s' % ac.errorCodes[ret])
+        pass
 
     def SetEMGain(self, gain):
-        self.__selectCamera()
-        if (gain > 150): #150 is arbitrary, but seems like a reasomable enough boundary
-            print 'WARNING: EM Gain of %d selected; overuse of high gains can lead to gain register aging' % gain
-
-        self.EMGain = gain
-        ret = ac.SetEMCCDGain(self.EMGain)
-        if not ret == ac.DRV_SUCCESS:
-            raise RuntimeError('Error setting EM Gain: %s' % ac.errorCodes[ret])
+        raise Exception, 'Not implemented yet!!'
+       
 
     def GetEMGain(self):
         return self.EMGain
 
-    def WaitForExp(self):
-        self.__selectCamera()
-        ret = ac.WaitForAcquisition() #block until aquisition is finished
-        if not ret == ac.DRV_SUCCESS:
-            raise RuntimeError('Error waiting for acquisition: %s' % ac.errorCodes[ret])
+
 
     def Shutdown(self):
-        self.__selectCamera()
-        self.SetShutter(False)
-        self.SetEMGain(0)
-        ac.CoolerOFF()
-        t = ac.GetTemperature.argtypes[0]._type_(-100)
-        ac.GetTemperature(byref(t))
-
-        while (t.value < -50): #wait fro temp to get above -50
-            print 'Waiting for the camera to warm up - current temperature = %3.2f' % t.value
-            time.sleep(1)
-            ac.GetTemperature(byref(t))
-
-        ac.ShutDown()
+        if self.doPoll: #acquisition is running
+            self.StopAq()
+            
+        #shutdown polling thread
+        self.pollLoopActive = False
+        ret = uc480.CALL('ExitCamera', self.boardHandle)
         self.initialised = False
-
-    def SpoolOn(self, filename):
-        self.__selectCamera()
-        ac.SetAcquisitionMode(5)
-        ac.SetSpool(1,2,filename,10)
-        ac.StartAcquisition()
-
-    def SpoolOff(self):
-        self.__selectCamera()
-        ac.AbortAcquisition()
-        ac.SetSpool(0,2,r'D:\spool\spt',10)
-        ac.SetAcquisitionMode(1)
-
-    def GetCCDTempSetPoint(self):
-        return self.tempSet
-
-    def SetAcquisitionMode(self, aqMode):
-        self.__selectCamera()
-        ac.AbortAcquisition()
-        ac.SetAcquisitionMode(aqMode)
-        self.contMode = not aqMode == 1
-
-    def SetFrameTransfer(self, ftMode):
-        self.__selectCamera()
-        self.frameTransferMode = ftMode
-
-        if ftMode:
-            ac.SetFrameTransferMode(1)
-        else:
-            ac.SetFrameTransferMode(0)
-            
-    def SetVerticalShiftSpeed(self, speedIndex):
-        self.__selectCamera()
-        self.VSSpeed = speedIndex
-        ret = ac.SetVSSpeed(self.VSSpeed)
-        if not ret == ac.DRV_SUCCESS:
-            raise RuntimeError('Error setting VS speed: %s' % ac.errorCodes[ret])
-
-        #increase clock voltage to prevent smear if using fastest v.s. speed
-        #THIS MAY NEED TWEAKING
-        if speedIndex == 0:
-            ac.SetVSAmplitude(1)
-        else:
-            ac.SetVSAmplitude(0)
-            
-    def SetHorizShiftSpeed(self, speedIndex):
-        self.__selectCamera()
-        self.HSSpeed = 0
-        ret = ac.SetHSSpeed(0,self.HSSpeed)
-        if not ret == ac.DRV_SUCCESS:
-            raise RuntimeError('Error setting HS speed: %s' % ac.errorCodes[ret])
+        
         
     def GetFPS(self):
-        return 1.0/self.tKin
+        fps = c_double(0)        
+        
+        ret = uc480.CALL('GetFramesPerSecond', self.boardHandle, byref(fps))
+        return fps.value
     
     def GetNumImsBuffered(self):
-        self.__selectCamera()
-        first = ac.GetNumberNewImages.argtypes[0]._type_()
-        last = ac.GetNumberNewImages.argtypes[1]._type_()
-
-        ret = ac.GetNumberNewImages(byref(first), byref(last))
-        #print ac.errorCodes[ret]
-        #print first
-        #print last
-        return last.value - first.value
-    
-    def _GetBufferSize(self):
-        self.__selectCamera()
-        bs = ac.GetSizeOfCircularBuffer.argtypes[0]._type_()
-        ac.GetSizeOfCircularBuffer(byref(bs))
-        self.bs = bs.value
+        return self.nFull
 
     def GetBufferSize(self):
-        return self.bs
+        return len(self._buffers)
 
     def SetShutter(self, state):
-        self.__selectCamera()
-        if self.GetSerialNumber() == 1823:
-            ac.SetShutter(int(state), 1, 0, 0)
-        else:
-            s2 = 2 - int(state)
-            ac.SetShutterEx(int(state), s2, 0, 0,s2)
-        self.shutterOpen = state
+        raise Exception, 'Not implemented yet!!'
         
-    def SetBaselineClamp(self, state):
-        self.__selectCamera()
-        ac.SetBaselineClamp(int(state))
-
-    def SetFan(self, state):
-        self.__selectCamera()
-        ac.SetFanMode(state)
-
+        
     def GetSerialNumber(self):
-        self.__selectCamera()
-        sn = ac.GetCameraSerialNumber.argtypes[0]._type_()
-        ac.GetCameraSerialNumber(byref(sn))
-        return sn.value
+        #self.__selectCamera()
+        #sn = ac.GetCameraSerialNumber.argtypes[0]._type_()
+        #ac.GetCameraSerialNumber(byref(sn))
+        return self.serialNum
 
     def GetHeadModel(self):
-        self.__selectCamera()
+        #self.__selectCamera()
         hm = create_string_buffer(255)
         ac.GetHeadModel(hm)
         return hm.value
@@ -578,36 +533,36 @@ class uc480Camera:
         if self.active: #we are active -> write metadata
             self.GetStatus()
 
-            mdh.setEntry('Camera.Name', 'Andor IXon DV97')
-            mdh.setEntry('Camera.Model', self.GetHeadModel())
+            mdh.setEntry('Camera.Name', 'Thorlabs')
+            #mdh.setEntry('Camera.Model', self.GetHeadModel())
             mdh.setEntry('Camera.SerialNumber', self.GetSerialNumber())
 
-            mdh.setEntry('Camera.IntegrationTime', self.tExp)
-            mdh.setEntry('Camera.CycleTime', self.tKin)
-            mdh.setEntry('Camera.EMGain', self.GetEMGain())
+            mdh.setEntry('Camera.IntegrationTime', self.GetIntegTime())
+            mdh.setEntry('Camera.CycleTime', 1./self.GetFPS())
+            #mdh.setEntry('Camera.EMGain', self.GetEMGain())
 
             mdh.setEntry('Camera.ROIPosX', self.GetROIX1())
             mdh.setEntry('Camera.ROIPosY',  self.GetROIY1())
             mdh.setEntry('Camera.ROIWidth', self.GetROIX2() - self.GetROIX1())
             mdh.setEntry('Camera.ROIHeight',  self.GetROIY2() - self.GetROIY1())
-            mdh.setEntry('Camera.StartCCDTemp',  self.GetCCDTemp())
+            #mdh.setEntry('Camera.StartCCDTemp',  self.GetCCDTemp())
 
             #these should really be read from a configuration file
             #hard code them here until I get around to it
             #current values are at 10Mhz using e.m. amplifier
-            np = noiseProperties[self.GetSerialNumber()]
-            mdh.setEntry('Camera.ReadNoise', np['ReadNoise'])
-            mdh.setEntry('Camera.NoiseFactor', 1.41)
-            mdh.setEntry('Camera.ElectronsPerCount', np['ElectronsPerCount'])
+            #np = noiseProperties[self.GetSerialNumber()]
+            #mdh.setEntry('Camera.ReadNoise', np['ReadNoise'])
+            #mdh.setEntry('Camera.NoiseFactor', 1.41)
+            #mdh.setEntry('Camera.ElectronsPerCount', np['ElectronsPerCount'])
 
-            realEMGain = ccdCalibrator.getCalibratedCCDGain(self.GetEMGain(), self.GetCCDTempSetPoint())
-            if not realEMGain == None:
-                mdh.setEntry('Camera.TrueEMGain', realEMGain)
+            #realEMGain = ccdCalibrator.getCalibratedCCDGain(self.GetEMGain(), self.GetCCDTempSetPoint())
+            #if not realEMGain == None:
+            #    mdh.setEntry('Camera.TrueEMGain', realEMGain)
 
-    def __getattr__(self, name):
-        if name in self.noiseProps.keys():
-            return self.noiseProps[name]
-        else:  raise AttributeError, name  # <<< DON'T FORGET THIS LINE !!
+#    def __getattr__(self, name):
+#        if name in self.noiseProps.keys():
+#            return self.noiseProps[name]
+#        else:  raise AttributeError, name  # <<< DON'T FORGET THIS LINE !!
 
 
     def __del__(self):
