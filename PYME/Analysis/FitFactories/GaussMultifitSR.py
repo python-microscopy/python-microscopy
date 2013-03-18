@@ -137,9 +137,9 @@ def replNoneWith1(n):
 		return n
 
 
-fresultdtype=[('tIndex', '<i4'),('fitResults', [('A', '<f4'),('x0', '<f4'),('y0', '<f4')]),('fitError', [('A', '<f4'),('x0', '<f4'),('y0', '<f4')]), ('resultCode', '<i4')]
+fresultdtype=[('tIndex', '<i4'),('fitResults', [('A', '<f4'),('x0', '<f4'),('y0', '<f4')]),('fitError', [('A', '<f4'),('x0', '<f4'),('y0', '<f4')]), ('resultCode', '<i4'), ('nChi2', '<f4'), ('nFit', '<i4')]
 
-def GaussianFitResultR(fitResults, metadata, resultCode=-1, fitErr=None):
+def GaussianFitResultR(fitResults, metadata, resultCode=-1, fitErr=None, nChi2=0, nEvents=1):
 	
 	if fitErr == None:
 		fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
@@ -149,7 +149,7 @@ def GaussianFitResultR(fitResults, metadata, resultCode=-1, fitErr=None):
 	tIndex = metadata.tIndex
 
 
-	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode)], dtype=fresultdtype) 
+	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, nChi2, nEvents)], dtype=fresultdtype) 
 		
 
 class GaussianFitFactory:
@@ -259,7 +259,7 @@ class GaussianFitFactory:
         
         if nlabels == 0:
             #the frame is empty
-            resList = np.empty(nEvents, FitResultsDType)
+            resList = np.empty(0, FitResultsDType)
             return resList
             
         #nTotEvents = nlabels
@@ -338,7 +338,7 @@ class GaussianFitFactory:
                 #work out the errors
                 fitErrors=None
                 try:       
-                    fitErrors = scipy.sqrt(scipy.diag(cov_x)*(infodict['fvec']*infodict['fvec']).sum()/(len(dataMean.ravel())- len(res)))
+                    fitErrors = scipy.sqrt(scipy.diag(cov_x)*(infodict['fvec']*infodict['fvec']).sum()/(len(d_m)- len(res)))
                 except Exception, e:
                     pass
                 #print res, fitErrors, resCode
@@ -349,9 +349,9 @@ class GaussianFitFactory:
                     i31 = i3 + 3
                     
                     if not fitErrors == None:            
-                        resList[i] = GaussianFitResultR(res[i3:i31], self.metadata, resCode, fitErrors[i3:i31])
+                        resList[i] = GaussianFitResultR(res[i3:i31], self.metadata, resCode, fitErrors[i3:i31], nchi2, nEvents)
                     else:
-                        resList[i] = GaussianFitResultR(res[i3:i31], self.metadata, resCode, None)
+                        resList[i] = GaussianFitResultR(res[i3:i31], self.metadata, resCode, None, nchi2, nEvents)
                         
                 allEvents.append(resList)
         
