@@ -60,7 +60,7 @@ class MyViewPanel(wx.ScrolledWindow):
         self.rend = example.CLUT_RGBRenderer()
         self.rend.setDispOpts(self.do)
 
-        self.scale = 2
+        self.scale = 0
         
         self.updating = 0
 
@@ -119,7 +119,7 @@ class MyViewPanel(wx.ScrolledWindow):
         bmp = im.GetDataBuffer()
         self.rend.pyRender(bmp,self.ds)
         
-        sc = pow(2.0,(self.scale -2))
+        sc = pow(2.0,(self.scale))
         im.Rescale(im.GetWidth()*sc,im.GetHeight()*sc) 
         #dc.DrawBitmap(wx.BitmapFromImage(im),wx.Point(0,0))
         dc.DrawBitmap(wx.BitmapFromImage(im),0,0)
@@ -192,7 +192,7 @@ class MyViewPanel(wx.ScrolledWindow):
     def SetScale(self,scale):
         self.scale = scale
 
-        sc = pow(2.0,(self.scale-2))
+        sc = pow(2.0,(self.scale))
         s = self.CalcImSize()
         self.SetVirtualSize(wx.Size(s[0]*sc,s[1]*sc))
         #self.SetSize(wx.Size(s[0]*sc,s[1]*sc))
@@ -231,7 +231,7 @@ class MyViewPanel(wx.ScrolledWindow):
         pos = event.GetLogicalPosition(dc)
 
         print pos
-        sc = pow(2.0,(self.scale-2))
+        sc = pow(2.0,(self.scale))
 
         if (self.do.getSliceAxis() == self.do.SLICE_XY):
             self.selection_begin_x = int(pos[0]/sc)
@@ -251,7 +251,7 @@ class MyViewPanel(wx.ScrolledWindow):
         pos = event.GetLogicalPosition(dc)
 
         print pos
-        sc = pow(2.0,(self.scale-2))
+        sc = pow(2.0,(self.scale))
 
         if (self.do.getSliceAxis() == self.do.SLICE_XY):
             self.selection_end_x = int(pos[0]/sc)
@@ -278,7 +278,7 @@ class MyViewPanel(wx.ScrolledWindow):
         pos = event.GetLogicalPosition(dc)
         pos = self.CalcUnscrolledPosition(*pos)
         #print pos
-        sc = pow(2.0,(self.scale-2))
+        sc = pow(2.0,(self.scale))
         if (self.do.getSliceAxis() == self.do.SLICE_XY):
             self.selection_end_x = int(pos[0]/sc)
             self.selection_end_y = int(pos[1]/sc)

@@ -129,10 +129,14 @@ class uc480Camera:
         #reasonable and make the camera behave more or less like the PCO cameras.
         #These settings will hopefully be able to be changed with methods/ read from
         #a file later.
+        
         dEnable = c_double(0);
         uc480.CALL('SetAutoParameter', self.boardHandle, uc480.IS_SET_ENABLE_AUTO_GAIN, byref(dEnable), 0)
         uc480.CALL('SetAutoParameter', self.boardHandle, uc480.IS_SET_ENABLE_AUTO_SHUTTER, byref(dEnable), 0)
         #uc480.CALL('SetAutoParameter', self.boardHandle, uc480.IS_SET_ENABLE_AUTO_SENOR_GAIN, byref(dEnable), 0)
+        
+        uc480.CALL('SetGainBoost', self.boardHandle, uc480.IS_SET_GAINBOOST_ON)
+        #uc480.CALL('SetHardwareGain', self.boardHandle, 100, uc480.IS_IGNORE_PARAMETER, uc480.IS_IGNORE_PARAMETER, uc480.IS_IGNORE_PARAMETER)
         
         uc480.CALL('SetImageSize', self.boardHandle, self.CCDSize[0],self.CCDSize[1] )
         
@@ -267,18 +271,26 @@ class uc480Camera:
     def SetIntegTime(self, iTime):
         #self.__selectCamera()
         newExp = c_double(0)
-        ret = uc480.CALL('SetExposureTime', self.boardHandle, c_double(iTime), ctypes.addressof(newExp))
+        newFrameRate = c_double(0)
+        ret = uc480.CALL('SetFrameRate', self.boardHandle, c_double(1.0e3/iTime), byref(newFrameRate))
         if not ret == 0:
             raise RuntimeError('Error setting exp time: %d: %s' % GetError(self.boardHandle))
+        
+        ret = uc480.CALL('SetExposureTime', self.boardHandle, c_double(iTime), ctypes.byref(newExp))
+        if not ret == 0:
+            raise RuntimeError('Error setting exp time: %d: %s' % GetError(self.boardHandle))
+            
+        self.expTime = newExp.value
 
     def GetIntegTime(self):
         #self.__selectCamera()
-        newExp = c_double(0)
-        ret = uc480.CALL('SetExposureTime', self.boardHandle, uc480.IS_GET_EXPOSURE_TIME, ctypes.addressof(newExp))
-        if not ret == 0:
-            raise RuntimeError('Error getting exp time: %d: %s' % GetError(self.boardHandle))
+        #newExp = c_double(0)
+        #ret = uc480.CALL('Exposure', self.boardHandle, uc480.IS_GET_EXPOSURE_TIME, ctypes.byref(newExp), 8)
+        #if not ret == 0:
+        #    raise RuntimeError('Error getting exp time: %d: %s' % GetError(self.boardHandle))
 
-        return float(newExp.value)
+        #return float(newExp.value)
+        return self.expTime
 
     def SetROIMode(*args):
         raise Exception, 'Not implemented yet!!'
@@ -359,6 +371,13 @@ class uc480Camera:
 
 
     def SetROI(self, x1,y1,x2,y2):
+        #must be on silly 4x2 pixel grid
+        
+        x1 = 4*(x1/4)
+        x2 = 4*(x2/4)
+        y1 = 2*(y1/2)
+        y2 = 2*(y2/2)
+        
         
         #if coordinates are reversed, don't care
         if (x2 > x1):
@@ -391,7 +410,7 @@ class uc480Camera:
         #if not ret == 0:
         #    raise RuntimeError('Error setting image size: %d: %s' % GetError(self.boardHandle))
         
-        ret = uc480.CALL('AOI', self.boardHandle, uc480.IS_AOI_IMAGE_SET_AOI, byref(rect), 16)
+        ret = uc480.CALL('AOI', self.boardHandle, uc480.IS_AOI_IMAGE_SET_AOI, byref(rect), ctypes.sizeof(rect))
         if not ret == 0:
             raise RuntimeError('Error setting ROI: %d: %s' % GetError(self.boardHandle))
 

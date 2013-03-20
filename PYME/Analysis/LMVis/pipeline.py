@@ -355,7 +355,7 @@ class Pipeline:
             
         if 'fitResults_z0' in self.selectedDataSource.keys():
             self.selectedDataSource.setMapping('z', 'fitResults_z0 + foreShort*focus')
-        else:
+        elif not 'z' in self.selectedDataSource.keys():
             self.selectedDataSource.setMapping('z', 'foreShort*focus')
 
         
