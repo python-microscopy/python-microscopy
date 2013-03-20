@@ -137,8 +137,8 @@ def GenWidefieldAP(dx = 5, X=None, Y=None):
 
 def GenWidefieldPSF(zs, dx=5):
     X, Y, R, FP, F, u, v = GenWidefieldAP(dx)
-    figure()
-    imshow(abs(F))
+    #figure()
+    #imshow(abs(F))
 
     ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 

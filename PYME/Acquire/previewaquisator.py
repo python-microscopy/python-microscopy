@@ -291,11 +291,13 @@ class PreviewAquisator(wx.Timer):
                         break
     
                 if bufferOverflowed:
+                    print 'nse'
                     self.needExposureStart = True
     
                 if self.needExposureStart and self.checkHardware():
-                    self.cam.StartExposure() #restart aquisition - this should purge buffer
                     self.needExposureStart = False
+                    self.cam.StartExposure() #restart aquisition - this should purge buffer
+                    
     
                 #if 'nQueued' in dir(self.cam):
                 #    print '\n', nFrames, self.cam.nQueued, self.cam.nFull , self.cam.doPoll

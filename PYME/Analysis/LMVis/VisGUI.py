@@ -137,7 +137,7 @@ class VisGUIFrame(wx.Frame):
         ######
 
         #self.workspaceView = workspaceTree.WorkspaceTree(self, workspace=self.workspace, shell=self.sh)
-        #self.AddPage(page=self.workspaceView, select=False, caption='Workspace')
+        #self.AddPage(page=wx.StaticText(self, -1, 'foo'), select=False, caption='Workspace')
 
         self.glCanvas = gl_render.LMGLCanvas(self)
         self.AddPage(page=self.glCanvas, select=True, caption='View')
@@ -162,7 +162,7 @@ class VisGUIFrame(wx.Frame):
             self.OpenFile(filename)
 
         nb = self._mgr.GetNotebooks()[0]
-        nb.SetSelection(1)
+        nb.SetSelection(0)
         
         renderers.renderMetadataProviders.append(self.SaveMetadata)
 
@@ -252,6 +252,7 @@ class VisGUIFrame(wx.Frame):
             self.GenQuadTreePanel()
 
         if self.viewMode == 'points' or self.viewMode == 'tracks':
+            pass
             self.GenPointsPanel()
 
         if self.viewMode == 'blobs':

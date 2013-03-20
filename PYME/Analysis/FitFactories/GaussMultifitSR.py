@@ -137,9 +137,9 @@ def replNoneWith1(n):
 		return n
 
 
-fresultdtype=[('tIndex', '<i4'),('fitResults', [('A', '<f4'),('x0', '<f4'),('y0', '<f4')]),('fitError', [('A', '<f4'),('x0', '<f4'),('y0', '<f4')]), ('resultCode', '<i4')]
+fresultdtype=[('tIndex', '<i4'),('fitResults', [('A', '<f4'),('x0', '<f4'),('y0', '<f4')]),('fitError', [('A', '<f4'),('x0', '<f4'),('y0', '<f4')]), ('resultCode', '<i4'), ('nChi2', '<f4'), ('nFit', '<i4')]
 
-def GaussianFitResultR(fitResults, metadata, resultCode=-1, fitErr=None):
+def GaussianFitResultR(fitResults, metadata, resultCode=-1, fitErr=None, nChi2=0, nEvents=1):
 	
 	if fitErr == None:
 		fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
@@ -149,7 +149,7 @@ def GaussianFitResultR(fitResults, metadata, resultCode=-1, fitErr=None):
 	tIndex = metadata.tIndex
 
 
-	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode)], dtype=fresultdtype) 
+	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, nChi2, nEvents)], dtype=fresultdtype) 
 		
 
 class GaussianFitFactory:
@@ -194,18 +194,52 @@ class GaussianFitFactory:
         #ofind step
         import pylab
         #find pixels which are > 2 sigma above noise floor.
+        #sl = ndimage.gaussian_filter(sigma, 3)
+        pe = np.log(np.maximum(dataMean/sigma, .1))
         dt = dataMean > threshold*sigma
+        
+#        pylab.imshow(dataMean.T, interpolation='nearest')
+#        pylab.colorbar()
+#        pylab.figure()
+#        
+#        pylab.imshow(sigma.T, interpolation='nearest')
+#        pylab.colorbar()
+#        pylab.figure()
+#        
+#        pylab.imshow(pe.T, interpolation='nearest')
+#        pylab.colorbar()
+#        pylab.figure()
+        
+        
+        pt = ndimage.uniform_filter(pe) > threshold
+        
+#        pylab.imshow(ndimage.uniform_filter(pe).T)
+#        pylab.colorbar()
+#        pylab.figure()
+        
+        dt = pt*dt
+        
+        #true events have correlated pixels. Look for at least 3 adjoining pixels on
+        #dt = (dt*ndimage.uniform_filter(dt.astype('f'))) > 0.35
         
 #        pylab.imshow(dt.T)
 #        pylab.figure()
         
-        #true events have correlated pixels. Look for at least 3 adjoining pixels on
         dt = (dt*ndimage.uniform_filter(dt.astype('f'))) > 0.35
         
-        dt = (dt*ndimage.uniform_filter(dt.astype('f'))) > 0.35
+#        pylab.imshow(dt.T)
+#        pylab.figure()
         
         #now hole fill and pad out around found objects
         mask = (ndimage.uniform_filter(dt.astype('f'))) > 0.1
+        
+#        pylab.imshow(mask.T)
+#        pylab.figure()
+        
+        #further pad        
+        #mask2 = (ndimage.uniform_filter(mask.astype('f'))) > 0.2
+        
+        #lab2 = 
         
         
         #pylab.figure()
@@ -216,114 +250,112 @@ class GaussianFitFactory:
 #        pylab.figure()
         #starting guesses
         labels, nlabels = ndimage.label(mask)
-        print nlabels, mask.sum()
-            
-        objSlices = ndimage.find_objects(labels)
+        #print nlabels, mask.sum()
+        #print labels.dtype
         
-        startParameters = []
-        
-        #loop over objects
-        for i in range(nlabels):
-            #measure position
-            #x,y = ndimage.center_of_mass(im, labeledPoints, i)
-            imO = dataMean[objSlices[i]]
-            imOs = imO.sum()
-            x = (self.X[objSlices[i]]*imO).sum()/imOs
-            y = (self.Y[objSlices[i]]*imO).sum()/imOs
+        #labels = (labels*mask).astype('int32')
             
-            A = imO.max()
-
-            #and add to list
-            startParameters += [A, x, y]
-            
-        nEvents = nlabels
-
-        #startParameters = [A, x0, y0, 250/2.35, dataMean.min(), .001, .001]
+        #objSlices = ndimage.find_objects(labels)
         
         if nlabels == 0:
             #the frame is empty
-            resList = np.empty(nEvents, FitResultsDType)
+            resList = np.empty(0, FitResultsDType)
             return resList
             
-        d_m = dataMean[mask]
-        s_m = sigma[mask]
-        X_m = self.X[mask]
-        Y_m = self.Y[mask]
+        #nTotEvents = nlabels
+        allEvents = []
         
         gSig = self.metadata.getOrDefault('Analysis.PSFSigma', 105.)
-
-        #do the fit
-        #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
-        #(res, cov_x, infodict, mesg, resCode) = FitModelWeighted(self.fitfcn, startParameters, dataMean, sigma, X, Y)
-        #print self.X[mask]
-        (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, d_m, s_m, X_m, Y_m, gSig)
         
-#        ft = 0*dataMean
-#        ft[mask] = self.fitfcn(res, self.X[mask], self.Y[mask], self.metadata['Analysis.PSFSigma'])
-#        pylab.imshow(ft, interpolation='nearest')
-#        pylab.colorbar()
-#        pylab.figure()
-        
-        #return []
-        
-        residual = d_m - self.fitfcn(res, X_m, Y_m, gSig)
-        
-        nchi2 = ((residual/s_m)**2).mean()
-        resmax = (residual/s_m).max()
-        
-        print nchi2, resmax
-
-        refinementCount = 0  #prevent an infinite loop here      
-        
-        while resmax > 5 and refinementCount < 10:    
-            nEvents += 1
-            refinementCount += 1
+        #loop over objects
+        for i in range(nlabels):
+            #startParameters = []
+            #measure position
+            #x,y = ndimage.center_of_mass(im, labeledPoints, i)
+            os =  labels == (i+1) #objSlices[i]           
             
-            resI = np.argmax(residual/s_m)
-            
-            startParameters = np.hstack((res,  np.array([residual[resI], X_m[resI], Y_m[resI]])))
-            
-            (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, d_m, s_m, X_m, Y_m, gSig)
+            imO = dataMean[os]
+            if imO.size > 5:
+                imOs = imO.sum()
+                x = (self.X[os]*imO).sum()/imOs
+                y = (self.Y[os]*imO).sum()/imOs
                 
-            residual = d_m - self.fitfcn(res, X_m, Y_m, gSig)
-            
-            nchi2 = ((residual/s_m)**2).mean()
-            resmax = (residual/s_m).max()
-            
-            print nchi2, resmax
-            
-            
-
-        #pylab.imshow(dataMean, interpolation='nearest')
-        #pylab.colorbar()
-        #pylab.figure()        
+                A = imO.max()
+    
+                #and add to list
+                startParameters = [A, x, y]
+                
+                nEvents = 1
+                    
+                d_m = dataMean[os].ravel()
+                s_m = sigma[os].ravel()
+                X_m = self.X[os].ravel()
+                Y_m = self.Y[os].ravel()
         
-#        resi = 0*dataMean
-#        resi[mask] = residual
-#        pylab.imshow(resi, interpolation='nearest')
-#        pylab.colorbar()
-#        pylab.figure()
+                #do the fit
+                
+                (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, d_m, s_m, X_m, Y_m, gSig)
+                
+                residual = d_m - self.fitfcn(res, X_m, Y_m, gSig)
+                
+                nchi2 = ((residual/s_m)**2).mean()
+                resmax = (residual/s_m).max()
+                
+                #resi = 0*dataMean
+                
+                #print resi[os].shape, residual.shape                
+                
+                #resi[os] = residual/s_m
+                #resmax = ndimage.uniform_filter(resi).max()
+                
+                #print nchi2, resmax
         
-
-        #work out the errors
-        fitErrors=None
-        try:       
-            fitErrors = scipy.sqrt(scipy.diag(cov_x)*(infodict['fvec']*infodict['fvec']).sum()/(len(dataMean.ravel())- len(res)))
-        except Exception, e:
-            pass
-        #print res, fitErrors, resCode
-        #recreate a list of events in the desired format
-        resList = np.empty(nEvents, FitResultsDType)
-        for i in range(nEvents):
-            i3 = 3*i
-            i31 = i3 + 3
+                 #prevent an infinite loop here      
+                
+                while resmax > 2 and nEvents < 10 and d_m.size > (3*(nEvents+1)):    
+                    nEvents += 1
+                    #print nEvents
+                    
+                    resI = np.argmax(residual/s_m)
+                    
+                    startParameters = np.hstack((res,  np.array([residual[resI], X_m[resI], Y_m[resI]])))
+                    
+                    (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, d_m, s_m, X_m, Y_m, gSig)
+                        
+                    residual = d_m - self.fitfcn(res, X_m, Y_m, gSig)
+                    
+                    nchi2 = ((residual/s_m)**2).mean()
+                    resmax = (residual/s_m).max()
+                    
+                    #resi = 0*dataMean
+                    #resi[os][:] = residual/s_m
+                    #resmax = ndimage.uniform_filter(resi).max()
+                    
+                    #print nchi2, resmax
+                
             
-            if not fitErrors == None:            
-                resList[i] = GaussianFitResultR(res[i3:i31], self.metadata, resCode, fitErrors[i3:i31])
-            else:
-                resList[i] = GaussianFitResultR(res[i3:i31], self.metadata, resCode, None)
+    
+                #work out the errors
+                fitErrors=None
+                try:       
+                    fitErrors = scipy.sqrt(scipy.diag(cov_x)*(infodict['fvec']*infodict['fvec']).sum()/(len(d_m)- len(res)))
+                except Exception, e:
+                    pass
+                #print res, fitErrors, resCode
+                #recreate a list of events in the desired format
+                resList = np.empty(nEvents, FitResultsDType)
+                for i in range(nEvents):
+                    i3 = 3*i
+                    i31 = i3 + 3
+                    
+                    if not fitErrors == None:            
+                        resList[i] = GaussianFitResultR(res[i3:i31], self.metadata, resCode, fitErrors[i3:i31], nchi2, nEvents)
+                    else:
+                        resList[i] = GaussianFitResultR(res[i3:i31], self.metadata, resCode, None, nchi2, nEvents)
+                        
+                allEvents.append(resList)
         
-        return resList
+        return np.hstack(allEvents)
         
     @classmethod
     def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):

@@ -932,7 +932,14 @@ class LMAnalyser:
                     xticks([])
                     yticks([])
             except AttributeError:
-                plot(res.results['fitResults']['x0'], res.results['fitResults']['y0'], 'o')
+                d = self.image.data[:,:,zp].squeeze().T
+                imshow(d, cmap=cm.hot, interpolation='nearest')
+                xlim(0, d.shape[1])
+                ylim(d.shape[0], 0)
+                
+                vx = 1e3*self.image.mdh['voxelsize.x']
+                vy = 1e3*self.image.mdh['voxelsize.y']
+                plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, 'ow')
                 pass
                     
             show()

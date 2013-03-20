@@ -123,6 +123,119 @@ class backgroundBuffer:
         self.curFrames = bgi
 
         return self.curBG/len(bgi)
+        
+class bgFrameBuffer:
+    MAXSHORT = 65535
+    MAXIDX = 10000
+    def __init__(self, initialSize = 30, percentile=.25):
+        self.frameBuffer = None
+        self.indices = None
+        self.initSize = initialSize
+        self.frameNos = {}
+        self.availableSlots = []
+        self.validData = None
+        
+        self.pctile = percentile
+        
+        self.curBG = None
+        
+    def addFrame(self, frameNo, data):
+        if len(self.availableSlots) == 0:
+            self._growBuffer(data)
+            
+        slot = self.availableSlots.pop()
+        self.frameNos[frameNo] = slot
+        self.frameBuffer[slot, :,:] = data
+        self.validData[slot] = 1
+        
+        dg = self.frameBuffer <= data
+        
+        self.indices[slot, :, :] = dg.sum(0)
+        self.indices += (dg < 1)
+        
+    def removeFrame(self, frameNo):
+        slot = self.frameNos.pop(frameNo)
+        
+        
+        self.frameBuffer[slot, :,:] = self.MAXSHORT
+        self.indices -= (self.indices > self.indices[slot, :,:])
+        self.indices[slot, :,:] = self.MAXIDX
+        
+        self.validData[slot] = 0        
+        self.availableSlots.append(slot)
+        
+    def _createBuffers(self, size, shape, dtype):
+        bufShape = (size,) + shape #[:2]
+        self.frameBuffer = self.MAXSHORT*np.ones(bufShape, dtype)
+        self.indices = self.MAXIDX*np.ones(bufShape, np.uint16)
+        self.validData = np.zeros(size, np.bool)
+        
+    def _growBuffer(self, data=None):
+        if self.frameBuffer == None:
+            #starting from scratch
+            self._createBuffers(self.initSize, data.shape, data.dtype)
+            
+            self.availableSlots += range(self.initSize)
+            
+        else:
+            #keep a copy of the existing data
+            ofb = self.frameBuffer
+            oi = self.indices
+            ov = self.validData
+            
+            #make new buffers half as large again
+            oldsize = ofb.shape[0]
+            newsize = int(oldsize*1.5)
+            self._createBuffers(newsize, ofb.shape[1:], ofb.dtype)
+            
+            self.frameBuffer[:oldsize, :,:] = ofb
+            self.indices[:oldsize, :,:] = oi
+            self.validData[:oldsize] = ov
+            
+            #add new frames to list of availiable frames
+            self.availableSlots += range(oldsize, newsize)
+            
+    def getPercentile(self, pctile):
+        pcIDX = int(self.validData.sum()*pctile)
+        print pcIDX
+        
+        return (self.frameBuffer*(self.indices==pcIDX)).max(0).squeeze()
+            
+        
+        
+class backgroundBufferM:
+    def __init__(self, dataBuffer, percentile=.25):
+        self.dataBuffer = dataBuffer
+        self.curFrames = set()
+        self.curBG = np.zeros(dataBuffer.dataSource.getSliceShape(), 'f4')
+        
+        self.bfb = bgFrameBuffer(percentile=percentile)
+        
+        self.bgSegs = None
+
+    def getBackground(self, bgindices):
+        bgi = set(bgindices)
+        
+        if bgi == self.curFrames:
+            return self.curBG
+
+        #subtract frames we're currently holding but don't need
+        for fi in self.curFrames.difference(bgi):
+            self.bfb.removeFrame(fi)
+
+        #add frames we don't already have
+        nSlices = self.dataBuffer.dataSource.getNumSlices()
+        for fi in bgi.difference(self.curFrames):
+            if fi >= nSlices:
+                #drop frames which run over the end of our data
+                bgi.remove(fi)
+            else:
+                self.bfb.addFrame(fi, self.dataBuffer.getSlice(fi).squeeze())
+
+        self.curFrames = bgi
+        self.curBG = self.bfb.getPercentile(.25).astype('f')
+
+        return self.curBG
 
         
 
@@ -177,6 +290,9 @@ class fitTask(taskDef.Task):
         #read the data
         if not dataSourceID == self.dataSourceID: #avoid unnecessary opening and closing of 
             dBuffer = dataBuffer(DataSource(self.dataSourceID, taskQueue), self.bufferLen)
+            
+            if 'Analysis.PCTBackground' in self.md.getEntryNames():
+                bBuffer = backgroundBufferM(dBuffer, self.md['Analysis.PCTBackground'])
             bBuffer = backgroundBuffer(dBuffer)
             dataSourceID = self.dataSourceID
         

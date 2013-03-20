@@ -53,7 +53,15 @@ noiseProperties = {
         'ADOffset' : 413,
         'DefaultEMGain' : 90,
         'SaturationThreshold' : (2**14 -1)
-        }
+        },
+7863 : {
+        'ReadNoise' : 152.69,
+        'ElectronsPerCount' : 9.18,
+        'NGainStages' : 536,
+        'ADOffset' : 203,
+        'DefaultEMGain' : 90,
+        'SaturationThreshold' : (2**14 -1)
+        },    
 }
 
 class iXonCamera:
@@ -721,9 +729,10 @@ class iXonCamera:
             #these should really be read from a configuration file
             #hard code them here until I get around to it
             #current values are at 10Mhz using e.m. amplifier
-            mdh.setEntry('Camera.ReadNoise', 109.8)
+            np = noiseProperties[self.GetSerialNumber()]
+            mdh.setEntry('Camera.ReadNoise', np['ReadNoise'])
             mdh.setEntry('Camera.NoiseFactor', 1.41)
-            mdh.setEntry('Camera.ElectronsPerCount', 27.32)
+            mdh.setEntry('Camera.ElectronsPerCount', np['ElectronsPerCount'])
 
             realEMGain = ccdCalibrator.getCalibratedCCDGain(self.GetEMGain(), self.GetCCDTempSetPoint())
             if not realEMGain == None:

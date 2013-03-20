@@ -30,6 +30,8 @@ import PYME.misc.autoFoldPanel as afp
 import sys
 import os
 #sys.path.append('.')
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
 import wx.lib.agw.aui as aui
 
@@ -341,6 +343,7 @@ class smiMainFrame(wx.Frame):
             self.doPostInit()
 
     def doPostInit(self):
+        logging.debug('Starting post-init')
         for cm in self.postInit:
             #print cm
             for cl in cm.split('\n'):
@@ -407,6 +410,8 @@ class smiMainFrame(wx.Frame):
 
         if 'pCamChoose' in dir(self):
             self.pCamChoose.OnCCamera(None)
+            
+        logging.debug('Finished post-init')
 
         #fudge to get layout right
 #        panes = self.notebook1.GetAuiManager().AllPanes

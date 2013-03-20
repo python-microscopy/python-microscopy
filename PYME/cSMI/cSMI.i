@@ -69,7 +69,7 @@ PyObject* _CDataStack_AsArray(PyObject *self, PyObject *args)
 		PyObject* obj0;
 		PyObject* ret;
 		CDataStack *ds;
-		int dims[3];
+		npy_intp dims[3];
 		int nd = 3;
 		int chnum = 0;
 		int i;
@@ -89,13 +89,14 @@ PyObject* _CDataStack_AsArray(PyObject *self, PyObject *args)
 		
 		{
 			try {
-				ret = PyArray_FromDimsAndData(nd,dims,PyArray_USHORT, (char*)ds->getChannel(chnum));
+				/*ret = PyArray_FromDimsAndData(nd,dims,PyArray_USHORT, (char*)ds->getChannel(chnum));*/
+				ret = PyArray_SimpleNewFromData(nd, dims, NPY_USHORT, (void*)ds->getChannel(chnum));
 				
-				for (i = 0; i < nd; i++)
+				/*for (i = 0; i < nd; i++)
 				{
 					PyArray_STRIDES(ret)[i] = strid;
 					strid *= dims[i];
-				};
+				};*/
             
 			} catch(IndexOutOfBounds) {
 				SWIG_exception(SWIG_IndexError, "Index out of bounds");
