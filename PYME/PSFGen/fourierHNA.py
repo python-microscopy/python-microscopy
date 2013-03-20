@@ -90,10 +90,15 @@ class FourierPropagatorHNA:
         
 FourierPropagator = FourierPropagatorHNA
 
-def GenWidefieldAP(dx = 5):
-    X, Y = meshgrid(arange(-2000, 2000., dx),arange(-2000, 2000., dx))
+def GenWidefieldAP(dx = 5, X=None, Y=None):
+    if X == None or Y == None:
+        X, Y = meshgrid(arange(-2000, 2000., dx),arange(-2000, 2000., dx))
+    else:
+        X, Y = meshgrid(X,Y)
+    
     X = X - X.mean()
     Y = Y - Y.mean()
+        
     u = X*lamb/(n*X.shape[0]*dx*dx)
     v = Y*lamb/(n*X.shape[1]*dx*dx)
     #print u.min()
@@ -393,10 +398,65 @@ def GenColourPRIPSF(zs, dx = 5, strength=1.0, transmit = [1,1]):
 
     return abs(ps**2)
 
-def GenAstigPSF(zs, dx=5, strength=1.0):
-    X, Y, R, FP, F, u, v = GenWidefieldAP(dx)
+def GenAstigPSF(zs, dx=5, strength=1.0, X=None, Y=None):
+    X, Y, R, FP, F, u, v = GenWidefieldAP(dx, X, Y)
 
     F = F * exp(-1j*((strength*v)**2 - 0.5*(strength*R)**2))
+    #clf()
+    #imshow(angle(F))
+
+    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+
+    return abs(ps**2)
+
+
+fps = {}
+def GenSAAstigPSF(zs, dx=5, strength=1.0, SA=0, X=None, Y=None):
+    from PYME.misc import zernike
+    Xk = X.ctypes.data
+    if not Xk in fps.keys():
+        fpset = GenWidefieldAP(dx, X, Y)
+        fps[Xk] = fpset
+    else:
+        fpset = fps[Xk]
+    X, Y, R, FP, F, u, v = fpset #GenWidefieldAP(dx, X, Y)
+    r = R/R[abs(F)>0].max()
+
+    F = F * exp(-1j*((strength*v)**2 - 0.5*(strength*R)**2))
+    
+    theta = angle(X + 1j*Y)
+    
+                
+    ang = SA*zernike.zernike(8, r, theta)
+            
+    F = F*exp(-1j*ang)
+    #clf()
+    #imshow(angle(F))
+
+    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+
+    return abs(ps**2)
+    
+fps = {}
+def GenSAPRIPSF(zs, dx=5, strength=1.0, SA=0, X=None, Y=None):
+    from PYME.misc import zernike
+    Xk = X.ctypes.data
+    if not Xk in fps.keys():
+        fpset = GenWidefieldAP(dx, X, Y)
+        fps[Xk] = fpset
+    else:
+        fpset = fps[Xk]
+    X, Y, R, FP, F, u, v = fpset #GenWidefieldAP(dx, X, Y)
+    r = R/R[abs(F)>0].max()
+
+    F = F * exp(-1j*sign(X)*10*strength*v)
+    
+    theta = angle(X + 1j*Y)
+    
+                
+    ang = SA*zernike.zernike(8, r, theta)
+            
+    F = F*exp(-1j*ang)
     #clf()
     #imshow(angle(F))
 

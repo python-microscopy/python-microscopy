@@ -65,6 +65,9 @@ def FitModel(modelFcn, startParameters, data, *args):
 
 def FitModel_(modelFcn, startParameters, data, *args):
     return optimize.leastsq(missfit, startParameters, (modelFcn, data.ravel()) + args, full_output=1, epsfcn=EPS_FCN)
+    
+def FitModel_E(modelFcn, startParameters, data, eps, *args):
+    return optimize.leastsq(missfit, startParameters, (modelFcn, data.ravel()) + args, full_output=1, epsfcn=eps)
 
 def FitModelWeighted(modelFcn, startParameters, data, sigmas, *args):
     return optimize.leastsq(weightedMissfitF, startParameters, (modelFcn, data.ravel(), (1.0/sigmas).astype('f').ravel()) + args, full_output=1)
