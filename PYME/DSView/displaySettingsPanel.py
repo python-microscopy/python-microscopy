@@ -217,7 +217,7 @@ class dispSettingsPanel2(wx.Panel):
     def OnScaleChanged(self, event):
         self.scale = self.cbScale.GetSelection()
 
-        self.do.SetScale(self.scale)
+        self.do.SetScale(self.scale - 2)
 
     def OnBOptimise(self, event):
         self.do.Optimise()

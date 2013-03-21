@@ -29,7 +29,7 @@ from PYME.DSView import View3D
 
 fftwWisdom.load_wisdom()
 
-NTHREADS = 2
+NTHREADS = 1
 FFTWFLAGS = ['measure']
 
 n = 1.51
@@ -72,7 +72,8 @@ class FourierPropagatorHNA:
         #return ifftshift(ifftn(F*exp(self.propFac*z)))
         #print abs(F).sum()
         pf = self.propFac*float(z)
-        self._F[:] = fftshift(F*(cos(pf) + j*sin(pf)))
+        fs = F*(cos(pf) + j*sin(pf))
+        self._F[:] = fftshift(fs)
         self._plan_F_f()
         #print abs(self._f).sum()
         return ifftshift(self._f/sqrt(self._f.size))
@@ -416,20 +417,23 @@ def GenSAAstigPSF(zs, dx=5, strength=1.0, SA=0, X=None, Y=None):
     Xk = X.ctypes.data
     if not Xk in fps.keys():
         fpset = GenWidefieldAP(dx, X, Y)
-        fps[Xk] = fpset
+        X, Y, R, FP, F, u, v = fpset
+        r = R/R[abs(F)>0].max()
+        theta = angle(X + 1j*Y)
+        
+        z8 = zernike.zernike(8, r, theta)
+        a_s = (v**2 - 0.5*R**2)
+        
+        fps[Xk] = (fpset, z8, a_s)
     else:
-        fpset = fps[Xk]
-    X, Y, R, FP, F, u, v = fpset #GenWidefieldAP(dx, X, Y)
-    r = R/R[abs(F)>0].max()
+        fpset, z8, a_s = fps[Xk]
+        X, Y, R, FP, F, u, v = fpset #GenWidefieldAP(dx, X, Y)
+    
 
-    F = F * exp(-1j*((strength*v)**2 - 0.5*(strength*R)**2))
+    #F = F * exp(-1j*(strength*a_s + SA*z8))
+    pf = -(strength*a_s + SA*z8)
+    F = F *(cos(pf) + j*sin(pf))
     
-    theta = angle(X + 1j*Y)
-    
-                
-    ang = SA*zernike.zernike(8, r, theta)
-            
-    F = F*exp(-1j*ang)
     #clf()
     #imshow(angle(F))
 
