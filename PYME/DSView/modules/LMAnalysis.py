@@ -233,8 +233,12 @@ class LMAnalyser:
 
         hsizer.Add(wx.StaticText(pan, -1, 'Type:'), 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
         self.cFitType = wx.Choice(pan, -1, choices = self.fitFactories, size=(110, -1))
-
-        if 'Camera.ROIPosY' in self.image.mdh.getEntryNames() and (self.image.mdh.getEntry('Camera.ROIHeight') + 1 + 2*(self.image.mdh.getEntry('Camera.ROIPosY')-1)) == 512:
+        
+        if 'Analysis.FitModule' in self.image.mdh.getEntryNames():
+            #has already been analysed - most likely to want the same method again
+            self.cFitType.SetSelection(self.fitFactories.index(self.image.mdh['Analysis.FitModule']))
+            self.tThreshold.SetValue('%s' % self.image.mdh['Analysis.DetectionThreshold'])
+        elif 'Camera.ROIPosY' in self.image.mdh.getEntryNames() and (self.image.mdh.getEntry('Camera.ROIHeight') + 1 + 2*(self.image.mdh.getEntry('Camera.ROIPosY')-1)) == 512:
             #we have a symetrical ROI about the centre - most likely want to analyse using splitter
             self.cFitType.SetSelection(self.fitFactories.index('SplitterFitQR'))
             self.tThreshold.SetValue('0.5')

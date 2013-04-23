@@ -153,8 +153,11 @@ def _calcParams(data, X, Y):
 #            x0 += (X[:,None]*dri).sum()/dris
 #            y0 += (Y[None, :]*dri).sum()/dris
 #            nr += 1
-            
-    xi, yi, zi = numpy.unravel_index(data.argmax(), data.shape)
+    
+    if len(data.shape) == 3:
+        xi, yi, zi = numpy.unravel_index(data.argmax(), data.shape)
+    else:
+        xi, yi = numpy.unravel_index(data.argmax(), data.shape)
     #print xi, yi
     
     if axis_x:
