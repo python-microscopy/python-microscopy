@@ -65,18 +65,26 @@ def f_Interp3d(p, interpolator, X, Y, Z, safeRegion, splitaxis, *args):
     
     im =  interpolator.interp(X - x0 + 1, Y - y0 + 1, Z - z0 + 1)*A 
     
-    #print im.shape
-
-    if splitaxis == 'x':
-        fac = 2*(r*(X < x0) + (1-r)*(X >= x0))
-        im = im*fac[:,None, None]
-        #print 'x', fac.shape
-    else: #splitaxis == 'y'
-        fac = 2*(r*(Y < y0) + (1-r)*(Y >= y0))
-        #print fac.shape
-        im = im*fac[None, :, None]
+    #print im.shape, X.shape, Y.shape
+    
+    if len(X.shape) ==1:
+        if splitaxis == 'x':
+            fac = 2*(r*(X < x0) + (1-r)*(X >= x0))
+            im = im*fac[:,None, None]
+            #print 'x', fac.shape
+        else: #splitaxis == 'y'
+            fac = 2*(r*(Y < y0) + (1-r)*(Y >= y0))
+            #print fac.shape
+            im = im*fac[None, :, None]
+    else:
+        if splitaxis == 'x':
+            fac = 2*(r*(X < x0) + (1-r)*(X >= x0))   
+        else: #splitaxis == 'y'
+            fac = 2*(r*(Y < y0) + (1-r)*(Y >= y0))
+            
+        im = im*fac.squeeze()
         
-    #print im.shape
+    #print im.shape, fac.shape
     
     return im + b
 
