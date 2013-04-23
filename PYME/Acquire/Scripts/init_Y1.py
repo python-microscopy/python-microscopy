@@ -121,33 +121,33 @@ scope.shutters = fakeShutters
 #scope.mdh['Splitter.Flip'] = False
 
 #Z stage
-#InitGUI('''
-#from PYME.Acquire.Hardware import NikonTi
-#scope.zStage = NikonTi.zDrive()
+InitGUI('''
+from PYME.Acquire.Hardware import NikonTi
+scope.zStage = NikonTi.zDrive()
 #import Pyro.core
 #scope.zStage = Pyro.core.getProxyForURI('PYRONAME://%s.ZDrive'  % GetComputerName())
-#scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
-#''')# % GetComputerName())
+scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
+''')# % GetComputerName())
 
 #Nikon Ti motorised controls
-#InitGUI('''
-#from PYME.Acquire.Hardware import NikonTi, NikonTiGUI
-#scope.dichroic = NikonTi.FilterChanger()
-#scope.lightpath = NikonTi.LightPath()
-#
-#TiPanel = NikonTiGUI.TiPanel(MainFrame, scope.dichroic, scope.lightpath)
-#toolPanels.append((TiPanel, 'Nikon Ti'))
-#time1.WantNotification.append(TiPanel.SetSelections)
-#
-#MetaDataHandler.provideStartMetadata.append(scope.dichroic.ProvideMetadata)
-#MetaDataHandler.provideStartMetadata.append(scope.lightpath.ProvideMetadata)
-#''')# % GetComputerName())
+InitGUI('''
+from PYME.Acquire.Hardware import NikonTi, NikonTiGUI
+scope.dichroic = NikonTi.FilterChanger()
+scope.lightpath = NikonTi.LightPath()
 
-#InitGUI('''
-#from PYME.Acquire.Hardware import focusKeys
-#fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[0], scope=scope)
-#time1.WantNotification.append(fk.refresh)
-#''')
+TiPanel = NikonTiGUI.TiPanel(MainFrame, scope.dichroic, scope.lightpath)
+toolPanels.append((TiPanel, 'Nikon Ti'))
+time1.WantNotification.append(TiPanel.SetSelections)
+
+MetaDataHandler.provideStartMetadata.append(scope.dichroic.ProvideMetadata)
+MetaDataHandler.provideStartMetadata.append(scope.lightpath.ProvideMetadata)
+''')# % GetComputerName())
+
+InitGUI('''
+from PYME.Acquire.Hardware import focusKeys
+fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[0], scope=scope)
+time1.WantNotification.append(fk.refresh)
+''')
 
 #from PYME.Acquire.Hardware import frZStage
 #frz = frZStage.frZStepper(MainFrame, scope.zStage)
@@ -219,14 +219,19 @@ scope.shutters = fakeShutters
 #scope.lasers = [scope.l405,scope.l532,scope.l671, scope.l490]
 #''')
 
-#InitGUI('''
-#if 'lasers'in dir(scope):
-#    from PYME.Acquire.Hardware import LaserControlFrame
-#    lcf = LaserControlFrame.LaserControlLight(MainFrame,scope.lasers)
-#    time1.WantNotification.append(lcf.refresh)
-#    toolPanels.append((lcf, 'Laser Control'))
-#''')
-#
+from PYME.Acquire.Hardware import priorLumen
+scope.arclamp = priorLumen.PriorLumen('Arc Lamp', portname='COM1')
+
+scope.lasers = [scope.arclamp]
+
+InitGUI('''
+if 'lasers'in dir(scope):
+    from PYME.Acquire.Hardware import LaserControlFrame
+    lcf = LaserControlFrame.LaserControlLight(MainFrame,scope.lasers)
+    time1.WantNotification.append(lcf.refresh)
+    toolPanels.append((lcf, 'Laser Control'))
+''')
+
 #from PYME.Acquire.Hardware import PM100USB
 #
 #scope.powerMeter = PM100USB.PowerMeter()
