@@ -68,14 +68,15 @@ class fitter:
         pylab.figure()
         
         cols = ['b','g','r']
+        xv = self.image.xvals
         
         for chan in range(self.image.data.shape[3]):    
-            I = self.image.data[:,0,0, chan].squeeze()
+            I = self.image.data[:,0,0, chan].squeeze().astype('f')
             
-            res = fh.FitModel(gmod, [I.max()-I.min(), self.image.xvals[I.argmax()], 1, I.min()], I, self.image.xvals)
+            res = fh.FitModel(gmod, [I.max()-I.min(), xv[I.argmax()], xv[1] - xv[0], I.min()], I, xv)
             
-            pylab.plot(self.image.xvals, I, cols[chan] + 'x', label=self.image.names[chan])
-            pylab.plot(self.image.xvals, gmod(res[0], self.image.xvals), cols[chan], label='%2.3g, %2.3g, \n%2.3g, %2.3g' % tuple(res[0]))
+            pylab.plot(xv, I, cols[chan] + 'x', label=self.image.names[chan])
+            pylab.plot(xv, gmod(res[0], self.image.xvals), cols[chan], label='%2.3g, %2.3g, \n%2.3g, %2.3g' % tuple(res[0]))
             
             print res[0]
             #imo = self.image.parent
