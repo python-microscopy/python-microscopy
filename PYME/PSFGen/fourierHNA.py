@@ -91,7 +91,7 @@ class FourierPropagatorHNA:
         
 FourierPropagator = FourierPropagatorHNA
 
-def GenWidefieldAP(dx = 5, X=None, Y=None):
+def GenWidefieldAP(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47):
     if X == None or Y == None:
         X, Y = meshgrid(arange(-2000, 2000., dx),arange(-2000, 2000., dx))
     else:
@@ -128,7 +128,7 @@ def GenWidefieldAP(dx = 5, X=None, Y=None):
     #colorbar()
 
     #apperture mask
-    M = 1.0*(R < (1.47/n)) # NA/lambda
+    M = 1.0*(R < (NA/n)) # NA/lambda
     
     #M = M/M.sum()
     
@@ -136,8 +136,8 @@ def GenWidefieldAP(dx = 5, X=None, Y=None):
 
     return X, Y, R, FP, M, u, v
 
-def GenWidefieldPSF(zs, dx=5):
-    X, Y, R, FP, F, u, v = GenWidefieldAP(dx)
+def GenWidefieldPSF(zs, dx=5, lamb=700, n=1.51, NA = 1.47):
+    X, Y, R, FP, F, u, v = GenWidefieldAP(dx, lamb=lamb, n=n, NA = NA)
     #figure()
     #imshow(abs(F))
 
@@ -399,8 +399,8 @@ def GenColourPRIPSF(zs, dx = 5, strength=1.0, transmit = [1,1]):
 
     return abs(ps**2)
 
-def GenAstigPSF(zs, dx=5, strength=1.0, X=None, Y=None):
-    X, Y, R, FP, F, u, v = GenWidefieldAP(dx, X, Y)
+def GenAstigPSF(zs, dx=5, strength=1.0, X=None, Y=None, lamb=700, n=1.51, NA = 1.47):
+    X, Y, R, FP, F, u, v = GenWidefieldAP(dx, X, Y, lamb=lamb, n=n, NA = NA)
 
     F = F * exp(-1j*((strength*v)**2 - 0.5*(strength*R)**2))
     #clf()
@@ -412,11 +412,11 @@ def GenAstigPSF(zs, dx=5, strength=1.0, X=None, Y=None):
 
 
 fps = {}
-def GenSAAstigPSF(zs, dx=5, strength=1.0, SA=0, X=None, Y=None):
+def GenSAAstigPSF(zs, dx=5, strength=1.0, SA=0, X=None, Y=None, lamb=700, n=1.51, NA = 1.47):
     from PYME.misc import zernike
     Xk = X.ctypes.data
     if not Xk in fps.keys():
-        fpset = GenWidefieldAP(dx, X, Y)
+        fpset = GenWidefieldAP(dx, X, Y, lamb=lamb, n=n, NA = NA)
         X, Y, R, FP, F, u, v = fpset
         r = R/R[abs(F)>0].max()
         theta = angle(X + 1j*Y)
@@ -442,11 +442,11 @@ def GenSAAstigPSF(zs, dx=5, strength=1.0, SA=0, X=None, Y=None):
     return abs(ps**2)
     
 fps = {}
-def GenSAPRIPSF(zs, dx=5, strength=1.0, SA=0, X=None, Y=None):
+def GenSAPRIPSF(zs, dx=5, strength=1.0, SA=0, X=None, Y=None, lamb=700, n=1.51, NA = 1.47):
     from PYME.misc import zernike
     Xk = X.ctypes.data
     if not Xk in fps.keys():
-        fpset = GenWidefieldAP(dx, X, Y)
+        fpset = GenWidefieldAP(dx, X, Y, lamb=lamb, n=n, NA = NA)
         fps[Xk] = fpset
     else:
         fpset = fps[Xk]
