@@ -164,12 +164,13 @@ class bgFrameBuffer:
         
         
 class backgroundBufferM:
-    def __init__(self, dataBuffer):
+    def __init__(self, dataBuffer, percentile=0.5):
         self.dataBuffer = dataBuffer
         self.curFrames = set()
         self.curBG = np.zeros(dataBuffer.dataSource.getSliceShape(), 'f4')
         
-        self.bfb = bgFrameBuffer()
+        self.bfb = bgFrameBuffer(percentile=percentile)
+        self.pctile = percentile
         
         self.bgSegs = None
 
@@ -193,7 +194,7 @@ class backgroundBufferM:
                 self.bfb.addFrame(fi, self.dataBuffer.getSlice(fi).squeeze())
 
         self.curFrames = bgi
-        self.curBG = self.bfb.getPercentile(.25).astype('f')
+        self.curBG = self.bfb.getPercentile(self.pctile).astype('f')
 
         return self.curBG
 

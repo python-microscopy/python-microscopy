@@ -24,6 +24,8 @@
 from PYME.Acquire.Hardware.AndorIXon import AndorIXon
 from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
 
+
+
 from PYME.Acquire.Hardware import fakeShutters
 import time
 import os
@@ -39,11 +41,32 @@ def GetComputerName():
 #scope.camControls = {}
 from PYME.Acquire import MetaDataHandler
 
+# Let the software know about the noise characteristics of the camera
+# these can be found in the documentation that comes with the camera
+# and will be propagated into the image metadata
+# an entry must be present under your cameras serial number for the software to start
+#
+# The parameters are:
+# noiseProperties[<serial number>]
+#
+# ReadNoise: Read noise in electrons
+# ElectronsPerCount: as name implies - A/D the conversion factor
+# NGainStages: Number of EM gain stages (afaik, the same for all IXons, allows a more accurate calulation of muliplication excess noise, but not currently used)
+# ADOffset: The black level, or DC conversion offest. Typically recalculated on a per-series basis from initial dark frames as this number is not truely constant.
+# DefaultEMGain: EM Gain register setting (not actual gain) to be used for acquistion. Typically a value which reduces the read noise to ~ 1 e- equivalent (I choose a value which makes the true EM gain ~35).
+# SaturationThreshold: Pixel value at which to automatically turn off the EM gain / close the camera shutter to try and prevent damage to the CCD. 
+
+AndorIXon.noiseProperties[7863]={
+        'ReadNoise' : 152.69,
+        'ElectronsPerCount' : 9.18,
+        'NGainStages' : 536,
+        'ADOffset' : 203,
+        'DefaultEMGain' : 90,
+        'SaturationThreshold' : (2**14 -1)
+        }
+
 InitBG('EMCCD Cameras', '''
 scope.cameras['A - Left'] = AndorIXon.iXonCamera(0)
-#scope.cameras['B - Right'] = AndorIXon.iXonCamera(0)
-#scope.cameras['B - Right'].SetShutter(False)
-#scope.cameras['B - Right'].SetActive(False)
 scope.cam = scope.cameras['A - Left']
 ''')
 
@@ -54,9 +77,6 @@ scope.cam = scope.cameras['A - Left']
 InitGUI('''
 scope.camControls['A - Left'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['A - Left'], scope)
 camPanels.append((scope.camControls['A - Left'], 'EMCCD A Properties'))
-
-#scope.camControls['B - Right'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['B - Right'], scope)
-#camPanels.append((scope.camControls['B - Right'], 'EMCCD B Properties'))
 
 ''')
 
@@ -121,33 +141,33 @@ scope.shutters = fakeShutters
 #scope.mdh['Splitter.Flip'] = False
 
 #Z stage
-InitGUI('''
-from PYME.Acquire.Hardware import NikonTi
-scope.zStage = NikonTi.zDrive()
+#InitGUI('''
+#from PYME.Acquire.Hardware import NikonTi
+#scope.zStage = NikonTi.zDrive()
 #import Pyro.core
 #scope.zStage = Pyro.core.getProxyForURI('PYRONAME://%s.ZDrive'  % GetComputerName())
-scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
-''')# % GetComputerName())
+#scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
+#''')# % GetComputerName())
 
 #Nikon Ti motorised controls
-InitGUI('''
-from PYME.Acquire.Hardware import NikonTi, NikonTiGUI
-scope.dichroic = NikonTi.FilterChanger()
-scope.lightpath = NikonTi.LightPath()
+#InitGUI('''
+#from PYME.Acquire.Hardware import NikonTi, NikonTiGUI
+#scope.dichroic = NikonTi.FilterChanger()
+#scope.lightpath = NikonTi.LightPath()
+#
+#TiPanel = NikonTiGUI.TiPanel(MainFrame, scope.dichroic, scope.lightpath)
+#toolPanels.append((TiPanel, 'Nikon Ti'))
+#time1.WantNotification.append(TiPanel.SetSelections)
+#
+#MetaDataHandler.provideStartMetadata.append(scope.dichroic.ProvideMetadata)
+#MetaDataHandler.provideStartMetadata.append(scope.lightpath.ProvideMetadata)
+#''')# % GetComputerName())
 
-TiPanel = NikonTiGUI.TiPanel(MainFrame, scope.dichroic, scope.lightpath)
-toolPanels.append((TiPanel, 'Nikon Ti'))
-time1.WantNotification.append(TiPanel.SetSelections)
-
-MetaDataHandler.provideStartMetadata.append(scope.dichroic.ProvideMetadata)
-MetaDataHandler.provideStartMetadata.append(scope.lightpath.ProvideMetadata)
-''')# % GetComputerName())
-
-InitGUI('''
-from PYME.Acquire.Hardware import focusKeys
-fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[0], scope=scope)
-time1.WantNotification.append(fk.refresh)
-''')
+#InitGUI('''
+#from PYME.Acquire.Hardware import focusKeys
+#fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[0], scope=scope)
+#time1.WantNotification.append(fk.refresh)
+#''')
 
 #from PYME.Acquire.Hardware import frZStage
 #frz = frZStage.frZStepper(MainFrame, scope.zStage)
@@ -219,19 +239,14 @@ time1.WantNotification.append(fk.refresh)
 #scope.lasers = [scope.l405,scope.l532,scope.l671, scope.l490]
 #''')
 
-from PYME.Acquire.Hardware import priorLumen
-scope.arclamp = priorLumen.PriorLumen('Arc Lamp', portname='COM1')
-
-scope.lasers = [scope.arclamp]
-
-InitGUI('''
-if 'lasers'in dir(scope):
-    from PYME.Acquire.Hardware import LaserControlFrame
-    lcf = LaserControlFrame.LaserControlLight(MainFrame,scope.lasers)
-    time1.WantNotification.append(lcf.refresh)
-    toolPanels.append((lcf, 'Laser Control'))
-''')
-
+#InitGUI('''
+#if 'lasers'in dir(scope):
+#    from PYME.Acquire.Hardware import LaserControlFrame
+#    lcf = LaserControlFrame.LaserControlLight(MainFrame,scope.lasers)
+#    time1.WantNotification.append(lcf.refresh)
+#    toolPanels.append((lcf, 'Laser Control'))
+#''')
+#
 #from PYME.Acquire.Hardware import PM100USB
 #
 #scope.powerMeter = PM100USB.PowerMeter()
