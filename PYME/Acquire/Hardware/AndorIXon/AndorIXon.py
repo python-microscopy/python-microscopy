@@ -60,7 +60,7 @@ noiseProperties = {
         'NGainStages' : 536,
         'ADOffset' : 203,
         'DefaultEMGain' : 90,
-        'SaturationThreshold' : (2**14 -1)
+        'SaturationThreshold' : (2**16 -1)
         },    
 }
 
