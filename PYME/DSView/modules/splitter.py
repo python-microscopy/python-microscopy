@@ -65,6 +65,10 @@ class Unmixer:
         flip = True
         if 'Splitter.Flip' in mdh.getEntryNames() and not mdh['Splitter.Flip']:
             flip = False
+            
+        chanROIs = None
+        if 'Splitter.Channel0ROI' in mdh.getEntryNames():
+            chanROIs = [mdh['Splitter.Channel0ROI'],mdh['Splitter.Channel1ROI']]
 
         ROIX1 = mdh.getEntry('Camera.ROIPosX')
         ROIY1 = mdh.getEntry('Camera.ROIPosY')
@@ -74,11 +78,11 @@ class Unmixer:
 
         um0 = UnsplitDataSource.DataSource(self.image.data,
                                            [ROIX1, ROIY1, ROIX2, ROIY2],
-                                           0, flip, sf)
+                                           0, flip, sf, chanROIs=chanROIs)
 
         um1 = UnsplitDataSource.DataSource(self.image.data, 
                                            [ROIX1, ROIY1, ROIX2, ROIY2], 1
-                                           , flip, sf)
+                                           , flip, sf, chanROIs=chanROIs)
             
         fns = os.path.split(self.image.filename)[1]
         im = ImageStack([um0, um1], titleStub = '%s - unsplit' % fns)

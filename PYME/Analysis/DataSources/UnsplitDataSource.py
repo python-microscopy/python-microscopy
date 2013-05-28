@@ -24,11 +24,15 @@ from BaseDataSource import BaseDataSource
 
 class DataSource(BaseDataSource): 
     moduleName = 'UnsplitDataSource'
-    def __init__(self,dataSource, ROI, chan=0, flip=True, shiftfield=None, voxelsize=(70., 70., 200.)):
+    def __init__(self,dataSource, ROI, chan=0, flip=True, shiftfield=None, voxelsize=(70., 70., 200.), chanROIs=None):
         #self.unmixer = unmixer
         self.dataSource = dataSource
         self.sliceShape = list(self.dataSource.shape[:-1])
         self.sliceShape[1]/=2
+        
+        if not chanROIs == None:
+            x, y, w, h = chanROIs[0]
+            self.sliceShape = [w, h]
         
         self.ROI = ROI
         self.chan = chan
@@ -39,7 +43,7 @@ class DataSource(BaseDataSource):
         if shiftfield and chan == 1:
             self.SetShiftField(shiftfield)
 
-        
+        self.chanROIs = chanROIs
 
     def SetShiftField(self, shiftField):
         #self.shiftField = shiftField
@@ -76,9 +80,21 @@ class DataSource(BaseDataSource):
         dsa = sl.squeeze()
 
         if self.chan == 0:
-            return dsa[:, :(dsa.shape[1]/2)]
+            if self.chanROIs:
+                x, y, w, h = self.chanROIs[0]
+                x -= self.ROI[0]
+                y -= self.ROI[1]
+                return dsa[x:(x+w), y:(y+h)]
+            else:
+                return dsa[:, :(dsa.shape[1]/2)]
         else: #chan = 1
-            r_ = dsa[:, (dsa.shape[1]/2):]
+            if self.chanROIs:
+                x, y, w, h = self.chanROIs[1]
+                x -= self.ROI[0]
+                y -= self.ROI[1]
+                r_ = dsa[x:(x+w), y:(y+h)]
+            else:    
+                r_ = dsa[:, (dsa.shape[1]/2):]
             if self.flip:
                 r_ = numpy.fliplr(r_)
 

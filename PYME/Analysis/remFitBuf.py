@@ -311,8 +311,19 @@ class fitTask(taskDef.Task):
         if self.fitModule in splitterFitModules:
 #            if (self.md.getEntry('Camera.ROIHeight') + 1 + 2*(self.md.getEntry('Camera.ROIPosY')-1)) == 512:
             #was setup correctly for the splitter
-            g = self.data[:, :(self.data.shape[1]/2)]
-            r = self.data[:, (self.data.shape[1]/2):]
+            if 'Splitter.Channel0ROI' in self.md.getEntryNames():
+                x0, y0, w, h = self.md['Splitter.Channel0ROI']
+                x0 -= self.md['Camera.ROIPosX']
+                y0 -= self.md['Camera.ROIPosY']
+                g = self.data[x0:(x0+w), y0:(y0+h)]
+                x0, y0, w, h = self.md['Splitter.Channel1ROI']
+                x0 -= self.md['Camera.ROIPosX']
+                y0 -= self.md['Camera.ROIPosY']
+                r = self.data[x0:(x0+w), y0:(y0+h)]
+            else:
+                g = self.data[:, :(self.data.shape[1]/2)]
+                r = self.data[:, (self.data.shape[1]/2):]
+                
             if ('Splitter.Flip' in self.md.getEntryNames() and not self.md.getEntry('Splitter.Flip')):
                 pass
             else:
@@ -379,9 +390,19 @@ class fitTask(taskDef.Task):
             self.data = numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2)
 
             if not len(self.bgindices) == 0:
-                g_ = self.bg[:, :(self.bg.shape[1]/2)]
-                r_ = self.bg[:, (self.bg.shape[1]/2):]
-
+                if 'Splitter.Channel0ROI' in self.md.getEntryNames():
+                    x0, y0, w, h = self.md['Splitter.Channel0ROI']
+                    x0 -= self.md['Camera.ROIPosX']
+                    y0 -= self.md['Camera.ROIPosY']
+                    g_ = self.bg[x0:(x0+w), y0:(y0+h)]
+                    x0, y0, w, h = self.md['Splitter.Channel1ROI']
+                    x0 -= self.md['Camera.ROIPosX']
+                    y0 -= self.md['Camera.ROIPosY']
+                    r_ = self.bg[x0:(x0+w), y0:(y0+h)]
+                else:
+                    g_ = self.bg[:, :(self.data.shape[1]/2)]
+                    r_ = self.bg[:, (self.data.shape[1]/2):]
+                
                 if ('Splitter.Flip' in self.md.getEntryNames() and not self.md.getEntry('Splitter.Flip')):
                     pass
                 else:
