@@ -23,10 +23,13 @@
 
 from PYME.PSFGen import *
 from scipy import *
+from pylab import ifftshift, fftn, ifftn
 import fluor
 from PYME.Analysis import MetaData
 from PYME.Analysis import cInterp
 import cPickle
+from scipy import ndimage
+import numpy as np
 
 from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
 
@@ -260,6 +263,45 @@ def PSFIllumFunction(fluors, position):
 
     return interpModel[xi, yi, zi]
 
+illPattern = None
+illZOffset = 0
+
+def setIllumPattern(pattern, z0):
+    global illPattern, illZOffset
+    sx, sy = pattern.shape
+    psx, psy, sz = interpModel.shape
+    
+    il = np.zeros([sx,sy,sz], 'f')
+    il[:,:,sz/2] = pattern
+    ps = np.zeros_like(il)
+    ps[(sx/2-psx/2):(sx/2+psx/2), (sy/2-psy/2):(sy/2+psy/2), :] = interpModel
+    ps= ps/ps[:,:,sz/2].sum()
+    
+    illPattern = abs(ifftshift(ifftn(fftn(il)*fftn(ps))))
+    
+    
+@fluor.registerIllumFcn
+def patternIllumFcn(fluors, postion):
+    
+    x = fluors['x']/dx + illPattern.shape[0]/2
+    y = fluors['y']/dy + illPattern.shape[1]/2
+    z = (fluors['z'] - illZOffset)/dz + illPattern.shape[2]/2
+    return ndimage.map_coordinates(illPattern, [x, y, z], order=1, mode='nearest')
+
+SIM_kx = pi/180.
+SIM_ky = 0# 2*pi/180.
+SIM_phi = 0
+
+@fluor.registerIllumFcn
+def SIMIllumFcn(fluors, postion):
+    
+    x = fluors['x']#/dx + illPattern.shape[0]/2
+    y = fluors['y']#/dy + illPattern.shape[1]/2
+    #z = (fluors['z'] - illZOffset)/dz + illPattern.shape[2]/2
+    #return ndimage.map_coordinates(illPattern, [x, y, z], order=1, mode='nearest')
+    
+    return (1 + np.cos(x*SIM_kx + y*SIM_ky + SIM_phi))/2
+
 
 def simPalmIm(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=10, laserPowers = [.1,1]):
     im = zeros((len(X), len(Y)), 'f')
@@ -341,6 +383,8 @@ def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=15, laserPow
     dy = Y[1] - Y[0]
     
     #print interpModel.shape, interpModel.strides
+    
+    maxz = dz*interpModel.shape[2]/2.
 
 
     for i in flOn:
@@ -362,7 +406,7 @@ def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=15, laserPow
            iy0 = max(iy - roiSize, 0)
            iy1 = min(iy + roiSize + 1, im.shape[1])
            #imp =interp3(X[max(ix - roiSize, 0):(ix + roiSize + 1)] - x, Y[max(iy - roiSize, 0):(iy + roiSize + 1)] - y, z - fluors.fl['z'][i])* A[i]
-           imp = cInterp.Interpolate(interpModel, X[ix0] - x, Y[iy0] - y, z - fluors.fl['z'][i], ix1-ix0, iy1-iy0,dx,dy,dz)* A[i]
+           imp = cInterp.Interpolate(interpModel, X[ix0] - x, Y[iy0] - y, min(max(z - fluors.fl['z'][i], -maxz), maxz), ix1-ix0, iy1-iy0,dx,dy,dz)* A[i]
            #print imp.shape
            #print imp.shape
            #if not imp.shape[2] == 0
