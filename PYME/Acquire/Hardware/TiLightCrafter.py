@@ -202,3 +202,14 @@ class LightCrafter(object):
         
     def SetSpot(self, x, y, radius=10, intensity=255):
         self.SetMask(((self.X - x)**2 + (self.Y-y)**2) < radius**2, intensity)
+        
+    def SetLineIllumination(self, period, phase=0, angle=0, boolean=True, intensity=255):
+        kx = np.cos(angle)*2*np.pi/period
+        ky = np.sin(angle)*2*np.pi/period
+        
+        ll = .5 + .5*np.cos(self.X*kx+ self.Y*ky + phase)
+        
+        if  boolean:
+            self.SetImage(((ll > .5)*intensity).astype('uint8'))
+        else:
+            self.SetImage((ll*intensity).astype('uint8'))
