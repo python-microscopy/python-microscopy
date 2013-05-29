@@ -7,6 +7,8 @@ Created on Mon May 20 15:58:22 2013
 
 import numpy as np
 import socket
+import Image
+import StringIO
 
 class ENList(list):
     def __getattr__(self, key):
@@ -31,13 +33,7 @@ LC_ERROR = ENList([
     'ERR_NOT_SUPPORTED',
     'ERR_NOT_FOUND'])
 
-LC_DISPLAY_MODE= ENList([
-	'DISP_MODE_IMAGE',		#/* Static Image */
-	'DISP_MODE_TEST_PTN',		#/* Internal Test pattern */
-	'DISP_MODE_VIDEO',		#/* HDMI Video */
-	'DISP_MODE_VIDEO_INT_PTN',	#/* Interleaved pattern */
-	'DISP_MODE_PTN_SEQ',		#/* Pattern Sequence */
-	'DISP_NUM_MODES'])
+
  
 
 CMD_VERSION_STRING = 0x0100
@@ -72,6 +68,8 @@ DATA_MAX_SIZE = PAYLOAD_MAX_SIZE - 7
 HEADER_DTYPE = np.dtype([('pktType', 'uint8'), ('command', '>u2'), ('flag', 'uint8'), ('datalength', 'uint16')])
 IMAGE_DTYPE = np.dtype([('R', 'u1'), ('G', 'u1'), ('B', 'u1')])
 
+
+
 def MakePacket(pktType, command, flag, data):
     pktType = np.uint8(pktType)
     command = np.uint16(command)
@@ -102,6 +100,32 @@ def DecodePacket(pkt):
     return header, data
 
 class LightCrafter(object):
+    X, Y = np.mgrid[0:608, 0:684]
+    
+    DISPLAY_MODE= ENList([
+        'DISP_MODE_IMAGE',		#/* Static Image */
+        'DISP_MODE_TEST_PTN',		#/* Internal Test pattern */
+        'DISP_MODE_VIDEO',		#/* HDMI Video */
+        'DISP_MODE_VIDEO_INT_PTN',	#/* Interleaved pattern */
+        'DISP_MODE_PTN_SEQ',		#/* Pattern Sequence */
+        'DISP_NUM_MODES'])
+ 
+    TEST_PATTERN = ENList([
+        'CHECKERBOARD',
+        'SOLID_BLACK',
+        'SOLID_WHITE',
+        'SOLID_GREEN',
+        'SOLID_BLUE',
+        'SOLID_RED',
+        'VERT_LINES',    
+        'HORIZ_LINES',
+        'VERT_FINE_LINES',
+        'HORIZ_FINE_LINES',
+        'DIAG_LINES',
+        'VERT_RAMP',
+        'HORIZ_RAMP',
+        'ANSI_CHECKERBOARD'])
+        
     def __init__(self, IPAddress='192.168.1.100'):
         self.IPAddress = IPAddress
         self.sock = None
@@ -155,4 +179,26 @@ class LightCrafter(object):
         self._ExecCommand(LC_PACKET_TYPE.HOST_WRITE, CMD_DISPLAY_MODE, np.uint8(mode))
         
     def SetImage(self, data):
-        self._ExecCommand(LC_PACKET_TYPE.HOST_WRITE, CMD_STATIC_IMAGE, data)
+        im = Image.fromarray(data)
+        output = StringIO.StringIO()
+        im.save(output, format='BMP')
+        contents = output.getvalue()
+        output.close()
+        #print contents[:50], np.fromstring(contents, 'u1')[:50]
+        h, d = self._ExecCommand(LC_PACKET_TYPE.HOST_WRITE, CMD_STATIC_IMAGE, np.fromstring(contents, 'u1'))
+        return h, d
+        
+    def SetTestPattern(self, pattern):
+        #print contents[:50], np.fromstring(contents, 'u1')[:50]
+        h, d = self._ExecCommand(LC_PACKET_TYPE.HOST_WRITE, CMD_TEST_PATTERN, np.uint8(pattern))
+        return h, d
+        
+    def SetMask(self, data, intensity = 255):
+        return self.SetImage(((data > 0)*intensity).astype('uint8'))
+        
+    def SetStatic(self, value):
+        h, d = self._ExecCommand(LC_PACKET_TYPE.HOST_WRITE, CMD_STATIC_COLOR, np.uint8(value*np.array([0,1,1,1])))
+        return h, d
+        
+    def SetSpot(self, x, y, radius=10, intensity=255):
+        self.SetMask(((self.X - x)**2 + (self.Y-y)**2) < radius**2, intensity)

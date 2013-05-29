@@ -77,6 +77,19 @@ scope.chaninfo = chaninfo
 scope.shutters = fakeShutters
 
 
+
+#Light crafter
+InitGUI('''
+from PYME.Acquire.Hardware import TiLightCrafter, DMDGui
+scope.LC = TiLightCrafter.LightCrafter()
+scope.LC.Connect()
+scope.LC.SetDisplayMode(scope.LC.DISPLAY_MODE.DISP_MODE_IMAGE)
+scope.LC.SetStatic(255)
+
+LCGui = DMDGui.DMDPanel(MainFrame,scope.LC)
+toolPanels.append((LCGui, 'DMD Control'))
+''')
+
 #PIFoc
 #InitBG('PIFoc', '''
 #from PYME.Acquire.Hardware.Piezos import piezo_e816
@@ -220,9 +233,10 @@ time1.WantNotification.append(fk.refresh)
 #''')
 
 from PYME.Acquire.Hardware import priorLumen
-scope.arclamp = priorLumen.PriorLumen('Arc Lamp', portname='COM1')
+#scope.arclamp = priorLumen.PriorLumen('Arc Lamp', portname='COM1')
 
-scope.lasers = [scope.arclamp]
+#scope.lasers = [scope.arclamp]
+scope.lasers = []
 
 InitGUI('''
 if 'lasers'in dir(scope):
