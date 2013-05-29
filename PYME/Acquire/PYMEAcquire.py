@@ -54,6 +54,6 @@ def main():
 
 if __name__ == '__main__':
     from PYME import mProfile
-    #mProfile.profileOn(['previewaquisator2.py'])
+    mProfile.profileOn(['rend_im.py'])
     main()
-    #mProfile.report()
+    mProfile.report()

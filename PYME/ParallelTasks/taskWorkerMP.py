@@ -86,7 +86,7 @@ while 1:
 
                 serverFails[qName] = nFails
 
-                if nFails >= 2:
+                if nFails >= 4:
                     #server is dead in the water - put it out of it's misery
                     print 'Killing:', qName
                     try:

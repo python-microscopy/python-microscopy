@@ -640,6 +640,13 @@ class VisGUIFrame(wx.Frame):
         self.extras_menu = wx.Menu()
         from PYME.Analysis.LMVis import Extras
         Extras.InitPlugins(self)
+        
+        try:
+            #see if we can find any 'non free' plugins
+            from PYMEnf.Analysis.LMVis import Extras
+            Extras.InitPlugins(self)
+        except ImportError:
+            pass
 
         help_menu = wx.Menu()
         help_menu.Append(ID_ABOUT, "&About")

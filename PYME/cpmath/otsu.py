@@ -55,6 +55,7 @@ def otsu(data, min_threshold=None, max_threshold=None,bins=256):
         return threshold
     
     data = np.array(data).flatten()
+    data = data[~ np.isnan(data)] #handle NaNs in data
     if len(data) == 0:
         return (min_threshold if not min_threshold is None
                 else max_threshold if not max_threshold is None

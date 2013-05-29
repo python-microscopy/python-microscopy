@@ -285,14 +285,17 @@ class dSimControl(wx.Panel):
         
 
     def OnBGenWormlikeButton(self, event):
+        import numpy as np
         kbp = float(self.tKbp.GetValue())
         numFluors = int(self.tNumFluorophores.GetValue())
         persistLength= float(self.tPersist.GetValue())
         #wc = wormlike2.fibre30nm(kbp, 10*kbp/numFluors)
         wc = wormlike2.wiglyFibre(kbp, persistLength, kbp/numFluors)
         
-        wc.xp -= wc.xp.mean()
-        wc.yp -= wc.yp.mean()
+        wc.xp -= wc.xp.mean() + 128*70
+        wc.xp = np.mod(wc.xp, 256*70) - 128*70
+        wc.yp -= wc.yp.mean() + 128*70
+        wc.yp = np.mod(wc.yp, 256*70) - 128*70
         wc.zp -= wc.zp.mean()
         
         self.points = []

@@ -96,6 +96,9 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         self.slice = None 
         
         self.overlays = []
+        
+        self._oldIm = None
+        self._oldImSig = None
 
 #        if not aspect == None:
 #            if scipy.isscalar(aspect):
@@ -197,7 +200,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             step = 2**(-numpy.ceil(numpy.log2(sc)))
             sc2 = sc*step
             
-        im.Rescale(im.GetWidth()*sc2,im.GetHeight()*sc2*self.aspect)
+        #im.Rescale(im.GetWidth()*sc2,im.GetHeight()*sc2*self.aspect)
 
         x0,y0 = self.CalcUnscrolledPosition(0,0)
         im2 = wx.BitmapFromImage(im)
@@ -860,20 +863,41 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 #        b = b.reshape(b.shape + (1,))
 #        ima = numpy.concatenate((r,g,b), 2)
 #        return wx.ImageFromData(ima.shape[1], ima.shape[0], ima.ravel())
+        
+    def _gensig(self, x0, y0, sX,sY, do):
+        sig = [x0, y0, sX, sY, do.scale, do.slice, do.GetActiveChans(), do.ds.shape]
+        if do.slice == DisplayOpts.SLICE_XY:
+            sig += [do.zp, do.maximumProjection]
+        if do.slice == DisplayOpts.SLICE_XZ:
+            sig += [do.yp]
+        if do.slice == DisplayOpts.SLICE_YZ:
+            sig += [do.xp]
+            
+        return sig
+    
+    def Redraw(self):
+        self._oldImSig = None
+        self.Refresh()
 
     def Render(self):
         x0,y0 = self.CalcUnscrolledPosition(0,0)
         sX, sY = self.imagepanel.Size
+        
+        sig = self._gensig(x0, y0, sX, sY, self.do)
+        if sig == self._oldImSig:# and not self._oldIm == None:
+            #if nothing has changed, don't re-render
+            return self._oldIm
 
         aspect = {}
 
         sc = pow(2.0,self.do.scale)
+        sc2 = sc
 
         if sc >= 1:
             step = 1
         else:
             step = 2**(-numpy.ceil(numpy.log2(sc)))
-            #sc2 = sc*step
+            sc2 = sc*step
         
         sX_ = int(sX/(sc))
         sY_ = int(sY/(sc*self.aspect))
@@ -969,7 +993,11 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                 else:
                     ima[:] = ima[:] + 255*cmap(gain*(self.do.ds[int(self.do.xp),x0_:(x0_+sX_):step,y0_:(y0_+sY_):step, chan].squeeze().T - offset))[:,:,:3][:]
 #        
-        return wx.ImageFromData(ima.shape[1], ima.shape[0], ima.ravel())
+        img = wx.ImageFromData(ima.shape[1], ima.shape[0], ima.ravel())
+        img.Rescale(img.GetWidth()*sc2,img.GetHeight()*sc2*self.aspect)
+        self._oldIm = img
+        self._oldImSig = sig
+        return img
 
 
 #    def GetProfile(self,halfLength=10,axis = 2, pos=None, roi=[2,2], background=None):
