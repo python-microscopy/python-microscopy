@@ -288,8 +288,9 @@ def patternIllumFcn(fluors, postion):
     z = (fluors['z'] - illZOffset)/dz + illPattern.shape[2]/2
     return ndimage.map_coordinates(illPattern, [x, y, z], order=1, mode='nearest')
 
-SIM_kx = pi/180.
-SIM_ky = 0# 2*pi/180.
+SIM_k = pi/180.
+#SIM_ky = 0# 2*pi/180.
+SIM_theta = 0
 SIM_phi = 0
 
 @fluor.registerIllumFcn
@@ -300,7 +301,10 @@ def SIMIllumFcn(fluors, postion):
     #z = (fluors['z'] - illZOffset)/dz + illPattern.shape[2]/2
     #return ndimage.map_coordinates(illPattern, [x, y, z], order=1, mode='nearest')
     
-    return (1 + np.cos(x*SIM_kx + y*SIM_ky + SIM_phi))/2
+    kx = np.cos(SIM_theta)*SIM_k
+    ky = np.sin(SIM_theta)*SIM_k
+    
+    return (1 + np.cos(x*kx + y*ky + SIM_phi))/2
 
 
 def simPalmIm(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=10, laserPowers = [.1,1]):

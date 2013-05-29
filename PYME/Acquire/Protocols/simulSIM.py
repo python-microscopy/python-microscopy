@@ -32,15 +32,36 @@ def SetPhase(ph):
 def stop():
     MainFrame.pan_spool.OnBStopSpoolingButton(None)
     
+def SetTheta(th):
+    rend_im.SIM_theta = th
+
+#set illumination period to 180 nm    
+rend_im.SIM_k = np.pi/180
+    
 #define a list of tasks, where T(when, what, *args) creates a new task
 #when is the frame number, what is a function to be called, and *args are any
 #additional arguments
 taskList = [
 #T(20, Ex, 'scope.cam.compT.laserPowers[0] = 1'),
+T(-1, Ex, "scope.cam.compT.illumFcn = 'SIMIllumFcn'"), #Turn on SIM
+T(-1, SetTheta, 0),
 T(-1, SetPhase, 0),
 T(1, SetPhase,  2*np.pi/3),
 T(2, SetPhase,  4*np.pi/3),
-T(4, stop)
+T(3, SetTheta, np.pi/2),
+T(3, SetPhase, 0),
+T(4, SetPhase,  2*np.pi/3),
+T(5, SetPhase,  4*np.pi/3),
+T(6, SetTheta, np.pi/4),
+T(6, SetPhase, 0),
+T(7, SetPhase,  2*np.pi/3),
+T(8, SetPhase,  4*np.pi/3),
+T(9, SetTheta, -np.pi/4),
+T(9, SetPhase, 0),
+T(10, SetPhase,  2*np.pi/3),
+T(11, SetPhase,  4*np.pi/3),
+T(13, stop),
+T(maxint, Ex, "scope.cam.compT.illumFcn = 'ConstIllum'")
 #T(201, MainFrame.pan_spool.OnBAnalyse, None)
 ]
 
