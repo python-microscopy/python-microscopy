@@ -29,6 +29,7 @@ import fluor
 import wormlike2
 import pylab
 import scipy
+import numpy as np
 import os
 import rend_im
 
@@ -320,7 +321,7 @@ class dSimControl(wx.Panel):
             print 'No file selected'
             return
 
-        self.points = pylab.load(fn)
+        self.points = np.loadtxt(fn)
 
         self.stCurObjPoints.SetLabel('Current object has %d points' % len(self.points))
         #event.Skip()
