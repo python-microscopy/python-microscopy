@@ -34,7 +34,7 @@ if plat.startswith('Windows'):
     if arch == '32bit':
         _stdcall_libraries['ATCORE'] = ctypes.WinDLL('atcore')
     else:
-        _stdcall_libraries['ATCORE'] =ctypes. WinDLL('atcore')
+        _stdcall_libraries['ATCORE'] = ctypes.WinDLL('atcore')
 else:
     _stdcall_libraries['ATCORE'] = ctypes.CDLL('atcore.so')
 

@@ -39,7 +39,8 @@ class zDrive:
         # connect to the real hardware (device 0 is simulated)
         #nik.Device = nik.Devices(1)
         
-        self.stepsize =  nik.zDrive.Resolution()
+        # note that zdrive resolution is returned in nm, need to convert to um
+        self.stepsize =  nik.zDrive.Resolution()/1e3
         self.hardMin = nik.ZDrive.Position.RangeLowerLimit
         self.hardMax = nik.ZDrive.Position.RangeHigherLimit
         self.max_travel = min(maxtravel, self.hardMax*self.stepsize)
