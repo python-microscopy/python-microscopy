@@ -58,7 +58,7 @@ def resizePSF(psf, data_size):
         H_[:] = ifftshift(pr + 1j*pi)
         fftw3f.Plan(H_, g_, 'backward')()
         
-        g =  ifftshift(g_.real)
+        g =  ifftshift(g_.real).clip(min=0) # negative values may cause instability
     
         print 'PSF resizing complete'
     else:
