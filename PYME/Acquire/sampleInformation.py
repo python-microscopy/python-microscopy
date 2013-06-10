@@ -216,7 +216,7 @@ class SampleInfoDialog(wx.Dialog):
 
     def OnAddSlide(self, event):
         import webbrowser
-        webbrowser.open('http://lmsrv1/admin/samples/slide/add/')
+        webbrowser.open('http://phy-lmsrv1:8080/admin/samples/slide/add/')
 
 
     def OnSelectSlide(self, event):
