@@ -241,7 +241,7 @@ class PreviewAquisator(wx.Timer):
             self.te = time.clock()
             #print self.te - self.tl
             self.tl = self.te
-            print "Notify"
+            #print "Notify"
     
             #self.loopnuf = self.loopnuf + 1
             

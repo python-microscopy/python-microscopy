@@ -42,9 +42,14 @@ class piezo_c867:
             self.ser_port.write('FRF\n')
         
         #self.lastPos = self.GetPos()
+        #self.lastPos = [self.GetPos(1), self.GetPos(2)]
 
         #self.driftCompensation = False
         self.hasTrigger = hasTrigger
+        
+    def SetServo(self, state=1):
+        self.ser_port.write('SVO 1 %d\n' % state)
+        self.ser_port.write('SVO 2 %d\n' % state)
 
     def ReInit(self, reference=True):
         #self.ser_port.write('WTO A0\n')
@@ -55,44 +60,66 @@ class piezo_c867:
             #find reference switch (should be in centre of range)
             self.ser_port.write('FRF\n')
         
-        self.lastPos = self.GetPos()
+        #self.lastPos = [self.GetPos(1), self.GetPos(2)]
+        
+    def SetVelocity(self, chan, vel):
+        self.ser_port.write('VEL %d %3.4f\n' % (chan, vel))
+        #self.ser_port.write('VEL 2 %3.4f\n' % vel)
+        
+    def GetVelocity(self, chan):
+        self.ser_port.flushInput()
+        self.ser_port.flushOutput()
+        self.ser_port.write('VEL?\n')
+        self.ser_port.flushOutput()
+        time.sleep(0.005)
+        res = self.ser_port.readline()
+        #res = self.ser_port.readline()
+        print res
+        return float(res) 
+        
         
     def MoveTo(self, iChannel, fPos, bTimeOut=True):
         if (fPos >= 0):
             if (fPos <= self.max_travel):
-                self.ser_port.write('MOV %d %3.4f\n' % (iChannel, fPos))
-                self.lastPos = fPos
+                self.ser_port.write('MOV %d %3.6f\n' % (iChannel, fPos))
+                #self.lastPos[iChannel-1] = fPos
             else:
-                self.ser_port.write('MOV %d %3.4f\n' % (iChannel, self.max_travel))
-                self.lastPos = self.max_travel
+                self.ser_port.write('MOV %d %3.6f\n' % (iChannel, self.max_travel))
+                #self.lastPos[iChannel-1] = self.max_travel
         else:
-            self.ser_port.write('MOV %d %3.4f\n' % (iChannel, 0.0))
-            self.lastPos = 0.0
+            self.ser_port.write('MOV %d %3.6f\n' % (iChannel, 0.0))
+            #self.lastPos[iChannel-1] = 0.0
+            
+    def MoveRel(self, iChannel, incr, bTimeOut=True):
+            self.ser_port.write('MVR %d %3.6f\n' % (iChannel, incr))
+            
             
     def MoveToXY(self, xPos, yPos, bTimeOut=True):
         xPos = min(max(xPos, 0),self.max_travel)
         yPos = min(max(yPos, 0),self.max_travel)
         
-        self.ser_port.write('MOV 1 %3.4f 2 %3.4f\n' % (xPos, yPos))
+        self.ser_port.write('MOV 1 %3.6f 2 %3.6f\n' % (xPos, yPos))
+        #self.lastPos = [self.GetPos(1), self.GetPos(2)]
         #self.lastPos = fPos
             
 
     def GetPos(self, iChannel=0):
         self.ser_port.flush()
-        time.sleep(0.05)
+        time.sleep(0.005)
         self.ser_port.write('POS? %d\n' % iChannel)
         self.ser_port.flushOutput()
-        time.sleep(0.05)
+        time.sleep(0.005)
         res = self.ser_port.readline()
         
         return float(res.split('=')[1]) 
         
     def GetPosXY(self):
-        self.ser_port.flush()
-        time.sleep(0.05)
+        self.ser_port.flushInput()
+        self.ser_port.flushOutput()
+        #time.sleep(0.005)
         self.ser_port.write('POS? 1 2\n')
         self.ser_port.flushOutput()
-        time.sleep(0.05)
+        time.sleep(0.005)
         res1 = self.ser_port.readline()
         res2 = self.ser_port.readline()
         

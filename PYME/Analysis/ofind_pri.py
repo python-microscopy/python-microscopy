@@ -134,7 +134,7 @@ def preparePSF(md, axis):
 
 
 class ObjectIdentifier(list):
-    def __init__(self, data, metadata, filterRadiusLowpass=1.5, axis='x'):
+    def __init__(self, data, metadata, filterRadiusLowpass=.7, axis='x'):
         """Creates an Identifier object to be used for object finding, takes a 2D or 3D slice
         into a data stack (data), and a filtering mode (filterMode, one of ["fast", "good"])
         where "fast" performs a z-projection and then filters, wheras "good" filters in 3D before 
@@ -167,6 +167,8 @@ class ObjectIdentifier(list):
         #lowpass filter to suppress noise
         #a = ndimage.gaussian_filter(data.astype('f4'), self.filterRadiusLowpass)
         #print data.shape
+        
+        data = data - data.mean()
 
         output, a = _ni_support._get_output(None, data)
         if self.PRIaxis == 'x':
