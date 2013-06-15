@@ -37,10 +37,10 @@ cam.SetIntegTime(100)
 print 'Starting Exposure ...'
 cam.StartExposure()
 
-buf = np.empty((cam.GetPicWidth(), cam.GetPicHeight()), 'uint16')
+buf = np.empty((cam.GetPicHeight(),cam.GetPicWidth()), 'uint16')
 
 print '\nStarting Extraction loop ...'
-for i in range(200):
+for i in range(20):
     print i,
     while cam.ExpReady():
         cam.ExtractColor(buf, 1)
@@ -54,8 +54,8 @@ cam.Shutdown()
 time.sleep(.5)
 AndorNeo.camReg.unregCamera()
 
-import plotTimings
-plotTimings.PlotTimings()
+#import plotTimings
+#plotTimings.PlotTimings()
         
         
         

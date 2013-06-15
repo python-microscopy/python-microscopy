@@ -40,7 +40,7 @@ class AndorBase(SDK3Camera):
     MODE_CONTINUOUS = 1
     MODE_SINGLE_SHOT = 0
     
-    validROIS = [(2592, 2160,1, 1),
+    validROIS = [(2560,2160,1, 1),
                  (2544,2160,1,25),
                  (2064,2048,57,265),
                  (1776,1760,201,409),
@@ -50,6 +50,14 @@ class AndorBase(SDK3Camera):
                  (240,256,953,1177),
                  (144,128,1017,1225)]
     
+    SimpleGainModes = {
+        'low noise':
+            { 'name' : '11-bit (low noise)', 'PEncoding' : 'Mono12' },
+        'high capacity':
+            { 'name' : '11-bit (high well capacity)', 'PEncoding' : 'Mono12' },
+        'high dynamic range':
+            { 'name' : '16-bit (low noise & high well capacity)', 'PEncoding' : 'Mono16' }}
+
     def __init__(self, camNum):
         #define properties
         self.CameraAcquiring = ATBool()
@@ -66,6 +74,7 @@ class AndorBase(SDK3Camera):
         self.PixelReadoutRate = ATEnum()
         self.PreAmpGain = ATEnum()
         self.PreAmpGainSelector = ATEnum()
+        self.SimplePreAmpGainControl = ATEnum()
         self.TriggerMode = ATEnum()
         
         self.AOIHeight = ATInt()
@@ -117,7 +126,9 @@ class AndorBase(SDK3Camera):
         #set some intial parameters
         self.FrameCount.setValue(1)
         self.CycleMode.setString(u'Continuous')
-        self.PixelEncoding.setString('Mono12')
+        # self.SimplePreAmpGainControl.setString('16-bit (low noise & high well capacity)')
+        # self.PixelEncoding.setString('Mono16')
+        self.SetGainMode('high dynamic range')
         self.SensorCooling.setValue(True)
         self.TemperatureControl.setString('-30.00')
         #self.PixelReadoutRate.setIndex(1)
@@ -319,6 +330,18 @@ class AndorBase(SDK3Camera):
         #self.AOIWidth.setValue(x2-x1)
         #self.AOIHeight.setValue(y2 - y1)
     
+    def SetGainMode(self,mode):
+        from warnings import warn
+        if not any(mode in s for s in self.SimpleGainModes.keys()):
+            warn('invalid mode "%s" requested - ignored' % mode)
+            return
+        self._gainmode = mode
+        self.SimplePreAmpGainControl.setString(self.SimpleGainModes[mode]['name'])
+        self.PixelEncoding.setString(self.SimpleGainModes[mode]['PEncoding'])
+
+    def GetGainMode(self):
+        return self._gainmode
+
     def GetROIX1(self):
         return self.AOILeft.getValue()
         
@@ -508,7 +531,5 @@ class AndorSim(AndorBase):
         self.AOIVbin = ATInt()
         
         AndorBase.__init__(self,camNum)
-        
-        
-        
+
         

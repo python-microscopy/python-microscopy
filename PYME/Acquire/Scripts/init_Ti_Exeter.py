@@ -232,7 +232,7 @@ scope.l642 = phoxxLaser.PhoxxLaser('642',portname='COM5')
 scope.StatusCallbacks.append(scope.l642.GetStatusText)
 
 from PYME.Acquire.Hardware import lasers
-sb = lasers.SBox(com_port='COM4')
+sb = lasers.SBox(com_port='COM7')
 scope.l671 = lasers.SerialSwitchedLaser('671',sb,0)
 
 scope.lasers = [scope.l642,scope.l671]
