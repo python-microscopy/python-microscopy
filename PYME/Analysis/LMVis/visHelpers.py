@@ -263,20 +263,12 @@ def calcNeighbourDists(T):
 def Gauss2D(Xv,Yv, A,x0,y0,s):
     from PYME.Analysis.cModels.gauss_app import genGauss
     r = genGauss(Xv,Yv,A,x0,y0,s,0,0,0)
-    #r.strides = r.strides #Really dodgy hack to get around something which numpy is not doing right ....
     return r
 
 def rendGauss(x,y, sx, imageBounds, pixelSize):
     fuzz = 3*scipy.median(sx)
     roiSize = int(fuzz/pixelSize)
     fuzz = pixelSize*roiSize
-
-    #print imageBounds.x0
-    #print imageBounds.x1
-    #print fuzz
-    #print roiSize
-
-    #print pixelSize
 
     X = numpy.arange(imageBounds.x0 - fuzz,imageBounds.x1 + fuzz, pixelSize)
     Y = numpy.arange(imageBounds.y0 - fuzz,imageBounds.y1 + fuzz, pixelSize)
