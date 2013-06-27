@@ -312,6 +312,8 @@ class PreviewAquisator(wx.Timer):
                     	a(self)
             else:
                  self._stop()
+        except:
+            traceback.print_exc()
         finally:     
             self.inNotify = False
 

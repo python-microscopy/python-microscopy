@@ -2819,6 +2819,7 @@ PyObject* _CDataStack_AsArray(PyObject *self, PyObject *args)
 		PyObject* ret;
 		CDataStack *ds;
 		npy_intp dims[3];
+		//npy_intp strides[3];
 		int nd = 3;
 		int chnum = 0;
 		int i;
@@ -2839,7 +2840,8 @@ PyObject* _CDataStack_AsArray(PyObject *self, PyObject *args)
 		{
 			try {
 				/*ret = PyArray_FromDimsAndData(nd,dims,PyArray_USHORT, (char*)ds->getChannel(chnum));*/
-				ret = PyArray_SimpleNewFromData(nd, dims, NPY_USHORT, (void*)ds->getChannel(chnum));
+				/*ret = PyArray_SimpleNewFromData(nd, dims, NPY_USHORT, (void*)ds->getChannel(chnum));*/
+				ret = PyArray_New(&PyArray_Type, nd, dims, NPY_USHORT, NULL, (void*)ds->getChannel(chnum), 2, NPY_FARRAY, NULL);
 				
 				/*for (i = 0; i < nd; i++)
 				{

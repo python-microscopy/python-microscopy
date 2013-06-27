@@ -153,7 +153,7 @@ class microscope:
         
     def pr_refr2(self, source):
         #self.vp.imagepanel.Refresh()
-        self.vp.Refresh()
+        self.vp.Redraw()
 
     def pr_refr3(self, souce):
         self.sp.refr()

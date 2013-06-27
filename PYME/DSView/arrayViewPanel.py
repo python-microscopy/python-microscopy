@@ -874,6 +874,10 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             sig += [do.xp]
             
         return sig
+    
+    def Redraw(self):
+        self._oldImSig = None
+        self.Refresh()
 
     def Render(self):
         x0,y0 = self.CalcUnscrolledPosition(0,0)

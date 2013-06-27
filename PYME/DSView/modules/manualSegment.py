@@ -66,7 +66,9 @@ class manualSegment:
         from PYME.DSView.image import ImageStack
         from PYME.DSView import ViewIm3D
 
-        self.mask = np.zeros(self.image.data.shape[:3], 'uint16')
+        #sp = self.image.data.shape[:3]
+        #if len(sp)        
+        self.mask = np.atleast_3d(np.zeros(self.image.data.shape[:3], 'uint16'))
         self.vmax = 0
         self.image.labels = self.mask
         

@@ -77,12 +77,32 @@ scope.chaninfo = chaninfo
 scope.shutters = fakeShutters
 
 
+
+#Light crafter
+InitGUI('''
+from PYME.Acquire.Hardware import TiLightCrafter, DMDGui
+scope.LC = TiLightCrafter.LightCrafter()
+scope.LC.Connect()
+scope.LC.SetDisplayMode(scope.LC.DISPLAY_MODE.DISP_MODE_IMAGE)
+scope.LC.SetStatic(255)
+
+LCGui = DMDGui.DMDPanel(MainFrame,scope.LC)
+toolPanels.append((LCGui, 'DMD Control'))
+''')
+
 #PIFoc
-#InitBG('PIFoc', '''
-#from PYME.Acquire.Hardware.Piezos import piezo_e816
-#scope.piFoc = piezo_e816.piezo_e816('COM1', 400, 0, True)
-#scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
-#''')
+InitBG('Piezos', '''
+from PYME.Acquire.Hardware.Piezos import piezo_e709
+scope.piFoc = piezo_e709.piezo_e709('COM9', 400, 0, True)
+scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
+
+
+#XY Stage
+from PYME.Acquire.Hardware.Piezos import piezo_c867
+scope.xystage = piezo_c867.piezo_c867('COM8')
+scope.piezos.append((scope.xystage, 2, 'Stage_X'))
+scope.piezos.append((scope.xystage, 1, 'Stage_Y'))
+''')
 
 #InitBG('Stage Stepper Motors', '''
 #from PYME.Acquire.Hardware.Mercury import mercuryStepper
@@ -121,13 +141,13 @@ scope.shutters = fakeShutters
 #scope.mdh['Splitter.Flip'] = False
 
 #Z stage
-InitGUI('''
-from PYME.Acquire.Hardware import NikonTi
-scope.zStage = NikonTi.zDrive()
-#import Pyro.core
-#scope.zStage = Pyro.core.getProxyForURI('PYRONAME://%s.ZDrive'  % GetComputerName())
-scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
-''')# % GetComputerName())
+#InitGUI('''
+#from PYME.Acquire.Hardware import NikonTi
+#scope.zStage = NikonTi.zDrive()
+##import Pyro.core
+##scope.zStage = Pyro.core.getProxyForURI('PYRONAME://%s.ZDrive'  % GetComputerName())
+#scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
+#''')# % GetComputerName())
 
 #Nikon Ti motorised controls
 InitGUI('''
@@ -147,6 +167,14 @@ InitGUI('''
 from PYME.Acquire.Hardware import focusKeys
 fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[0], scope=scope)
 time1.WantNotification.append(fk.refresh)
+
+xykeys = focusKeys.PositionKeys(MainFrame, menuBar1, scope.piezos[1], scope.piezos[2], scope=scope)
+''')
+
+InitGUI('''
+from PYME.Acquire.Hardware import spacenav
+scope.spacenav = spacenav.SpaceNavigator()
+scope.ctrl3d = spacenav.SpaceNavPiezoCtrl(scope.spacenav, scope.piezos)
 ''')
 
 #from PYME.Acquire.Hardware import frZStage
@@ -196,8 +224,14 @@ time1.WantNotification.append(fk.refresh)
 
 
 #DigiData
-#from PYME.Acquire.Hardware import phoxxLaser
-#scope.l642 = phoxxLaser.PhoxxLaser('642')
+from PYME.Acquire.Hardware import phoxxLaser, cobaltLaser
+scope.l642 = phoxxLaser.PhoxxLaser('642',portname='COM4')
+scope.l488 = phoxxLaser.PhoxxLaser('488',portname='COM5')
+scope.l405 = phoxxLaser.PhoxxLaser('405',portname='COM6')
+scope.l561 = cobaltLaser.CobaltLaser('561',portname='COM7')
+scope.lasers = [scope.l405,scope.l488,scope.l561, scope.l642]
+#scope.lasers = [scope.l405,scope.l488, scope.l642]
+
 #scope.StatusCallbacks.append(scope.l642.GetStatusText)
 #scope.lasers = [scope.l642]
 # scope.lasers = []
@@ -220,9 +254,13 @@ time1.WantNotification.append(fk.refresh)
 #''')
 
 from PYME.Acquire.Hardware import priorLumen
-scope.arclamp = priorLumen.PriorLumen('Arc Lamp', portname='COM1')
-
-scope.lasers = [scope.arclamp]
+#try:
+#    scope.arclamp = priorLumen.PriorLumen('Arc Lamp', portname='COM1')
+#    scope.lasers.append(scope.arclamp)
+#except:
+#    pass
+#scope.lasers = [scope.arclamp]
+#scope.lasers = []
 
 InitGUI('''
 if 'lasers'in dir(scope):

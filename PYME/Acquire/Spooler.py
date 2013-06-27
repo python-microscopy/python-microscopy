@@ -75,7 +75,10 @@ class Spooler:
        
        
    def StopSpool(self):
-       self.acq.WantFrameNotification.remove(self.Tick)
+       try:
+           self.acq.WantFrameNotification.remove(self.Tick)
+       except ValueError:
+           pass
 
        try:
            self.protocol.OnFinish()#this may still cause events
