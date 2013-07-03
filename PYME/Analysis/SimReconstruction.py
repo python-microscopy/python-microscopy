@@ -6,7 +6,7 @@ from pylab import fftn, ifftn, fftshift, ifftshift
 def gMatrix(thetas):
     return np.array([[1, np.cos(th), np.sin(th)] for th in thetas]).T
     
-def ReconstructAngle(imgs, angle, phases, pixelsize, period):
+def ReconstructAngle(imgs, angle, phases, pixelsize, period, phOffset=0):
     m = gMatrix(phases)
     mi = np.linalg.inv(m)    
     
@@ -25,7 +25,7 @@ def ReconstructAngle(imgs, angle, phases, pixelsize, period):
     Bi = cps[:,:,2]
     
     #return A, (ifftn(fftn(A) + 2*fftn(Br*np.cos(X*kx + Y*ky)) - 2*fftn(Bi*np.sin(X*kx + Y*ky)))).real
-    return A, A + 2*Br*np.cos(X*kx + Y*ky) - 2*Bi*np.sin(X*kx + Y*ky)
+    return A, A + 2*Br*np.cos(X*kx + Y*ky + phOffset) - 2*Bi*np.sin(X*kx + Y*ky+phOffset), Br, Bi
     
 def Reconstruct(imgs, angles, phases, pixelsize, period):
     angles = np.array(angles)

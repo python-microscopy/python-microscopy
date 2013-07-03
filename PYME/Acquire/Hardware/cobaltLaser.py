@@ -27,21 +27,30 @@ import serial
 from lasers import Laser
 
 class CobaltLaser(Laser):
-    def __init__(self, name,turnOn=False, portname='COM1'):
+    def __init__(self, name,turnOn=False, portname='COM1', maxpower=0.1):
         self.ser_port = serial.Serial(portname, 115200, 
                                       timeout=2, writeTimeout=2)
         self.powerControlable = True
         self.isOn=True
+        self.maxpower = maxpower
 
         self.power =  0.01#self._getOutputPower()
+        
+        self._TurnOn()
 
         Laser.__init__(self, name, turnOn)
 
     def IsOn(self):
         return self.isOn
+        
+    def _TurnOn(self):
+        self.ser_port.write('@cobas 0\r\n')
+        self.ser_port.write('l1\r\n')
+        self.ser_port.flush()
+        self.isOn = True
 
     def TurnOn(self):
-        self.ser_port.write('p %3.2f\r\n' % self.power)
+        self.ser_port.write('p %3.2f\r\n' % (self.power*self.maxpower))
         self.ser_port.flush()
         self.isOn = True
 
@@ -51,8 +60,8 @@ class CobaltLaser(Laser):
         self.isOn = False
 
     def SetPower(self, power):
-        if power < 0 or power > .1:
-            raise RuntimeError('Error setting laser power: Power must be between 0 and .1')
+        if power < 0 or power > 1:
+            raise RuntimeError('Error setting laser power: Power must be between 0 and 1')
         self.power = power
 
         if self.isOn:
