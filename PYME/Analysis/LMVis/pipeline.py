@@ -229,6 +229,7 @@ class Pipeline:
             VarName:    the name of the variable in the .mat file which 
                         contains the data.
             SkipRows:   Number of header rows to skip for txt file data
+            
         '''
         
         #close any files we had open previously
