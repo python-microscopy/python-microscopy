@@ -93,8 +93,12 @@ toolPanels.append((LCGui, 'DMD Control'))
 #PIFoc
 InitBG('Piezos', '''
 from PYME.Acquire.Hardware.Piezos import piezo_e709
-scope.piFoc = piezo_e709.piezo_e709('COM9', 400, 0, True)
-scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
+from PYME.Acquire.Hardware import NikonTi
+scope.zStage = NikonTi.zDrive()
+scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
+
+#scope.piFoc = piezo_e709.piezo_e709('COM10', 100, 0, True)
+#scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
 
 
 #XY Stage
@@ -139,15 +143,6 @@ scope.piezos.append((scope.xystage, 1, 'Stage_Y'))
 
 #we don't have a splitter - make sure that the analysis knows this
 #scope.mdh['Splitter.Flip'] = False
-
-#Z stage
-#InitGUI('''
-#from PYME.Acquire.Hardware import NikonTi
-#scope.zStage = NikonTi.zDrive()
-##import Pyro.core
-##scope.zStage = Pyro.core.getProxyForURI('PYRONAME://%s.ZDrive'  % GetComputerName())
-#scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
-#''')# % GetComputerName())
 
 #Nikon Ti motorised controls
 InitGUI('''
