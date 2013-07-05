@@ -46,7 +46,10 @@ class visualiser:
 
 
     def On3DIsosurf(self, event):
-        from enthought.mayavi import mlab
+        try:
+            from enthought.mayavi import mlab
+        except ImportError:
+            from mayavi import mlab
 
         self.dsviewer.f3d = mlab.figure()
         self.dsviewer.f3d.scene.stereo = True
@@ -56,14 +59,18 @@ class visualiser:
             c.mlab_source.dataset.spacing = (self.image.mdh.getEntry('voxelsize.x') ,self.image.mdh.getEntry('voxelsize.y'), self.image.mdh.getEntry('voxelsize.z'))
 
     def On3DVolume(self, event):
-        from enthought.mayavi import mlab
+        try:
+            from enthought.mayavi import mlab
+        except ImportError:
+            from mayavi import mlab
 
-        f = mlab.figure()
+        self.dsviewer.f3d = mlab.figure()
+        self.dsviewer.f3d.scene.stereo = True
 
         for i in range(self.image.data.shape[3]):
             #c = mlab.contour3d(im.img, contours=[pylab.mean(ivp.clim)], color = pylab.cm.gist_rainbow(float(i)/len(self.images))[:3])
             v = mlab.pipeline.volume(mlab.pipeline.scalar_field(numpy.minimum(255*(self.image.data[:,:,:,i] -self.do.Offs[i])*self.do.Gains[i], 254).astype('uint8')))
-            v.volume.scale = (self.image.mdh.getEntry('voxelsize.x') ,self.image.mdh.getEntry('voxelsize.y'), self.image.mdh.getEntry('voxelsize.z'))
+            #v.volume.scale = (self.image.mdh.getEntry('voxelsize.x') ,self.image.mdh.getEntry('voxelsize.y'), self.image.mdh.getEntry('voxelsize.z'))
 
 
 

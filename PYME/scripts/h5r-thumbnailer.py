@@ -23,9 +23,9 @@
 
 #!/usr/bin/python
 
-#import logging
-#LOG_FILENAME = '/tmp/h5r-thumbnailer.log'
-#logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG,)
+import logging
+LOG_FILENAME = '/tmp/h5r-thumbnailer.log'
+logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG,)
 
 import sys
 #import gnomevfs
@@ -109,6 +109,10 @@ if __name__ == '__main__':
     thumbSize = int(sys.argv[3])
 
     im = generateThumbnail(inputFile, thumbSize)
+    
+    logging.debug('Input File: %s\n' % inputFile)
+    logging.debug('Ouput File: %s\n' % outputFile)
+    logging.debug('Thumb Size: %s\n' % thumbSize)
 
     Image.fromarray(im).save(outputFile, 'PNG')
 
