@@ -219,17 +219,17 @@ scope.ctrl3d = spacenav.SpaceNavPiezoCtrl(scope.spacenav, scope.piezos)
 
 
 #DigiData
-from PYME.Acquire.Hardware import phoxxLaser, cobaltLaser
-scope.l642 = phoxxLaser.PhoxxLaser('642',portname='COM4')
-scope.l488 = phoxxLaser.PhoxxLaser('488',portname='COM5')
-scope.l405 = phoxxLaser.PhoxxLaser('405',portname='COM6')
-scope.l561 = cobaltLaser.CobaltLaser('561',portname='COM7')
-scope.lasers = [scope.l405,scope.l488,scope.l561, scope.l642]
+#from PYME.Acquire.Hardware import phoxxLaser, cobaltLaser
+#scope.l642 = phoxxLaser.PhoxxLaser('642',portname='COM4')
+#scope.l488 = phoxxLaser.PhoxxLaser('488',portname='COM5')
+#scope.l405 = phoxxLaser.PhoxxLaser('405',portname='COM6')
+#scope.l561 = cobaltLaser.CobaltLaser('561',portname='COM7')
+#scope.lasers = [scope.l405,scope.l488,scope.l561, scope.l642]
 #scope.lasers = [scope.l405,scope.l488, scope.l642]
 
 #scope.StatusCallbacks.append(scope.l642.GetStatusText)
 #scope.lasers = [scope.l642]
-# scope.lasers = []
+scope.lasers = []
 #InitBG('DigiData', '''
 #from PYME.Acquire.Hardware.DigiData import DigiDataClient
 #dd = DigiDataClient.getDDClient()
