@@ -40,6 +40,7 @@ modeModules = {
 'psf'   :   ['arrayView'] + liteModules + ['deconvolution', 'psfTools'],
 'visGUI' : ['visgui'] + liteModules + ['coloc', 'vis3D'],
 'graph' : ['graphViewPanel', 'profileFitting'],
+'fgraph' : ['fastGraphPanel'],
 'pupil' : ['arrayView', 'pupilTools'] + liteModules,
 'bare' : [],
 }
