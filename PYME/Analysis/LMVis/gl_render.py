@@ -771,6 +771,10 @@ class LMGLCanvas(GLCanvas):
         self.setCLim([0.0, clim_upper])
 
 
+    def moveView(self, dx, dy):
+        self.setView(self.xmin + dx, self.xmax + dx, self.ymin + dy, self.ymax + dy)
+    
+    
     def setView(self, xmin, xmax, ymin, ymax):
         self.xmin = xmin
         self.xmax = xmax
@@ -957,14 +961,21 @@ class LMGLCanvas(GLCanvas):
         event.Skip()
 
     def OnMouseMove(self, event):
+        view_size_x = self.xmax - self.xmin
+        view_size_y = self.ymax - self.ymin
+
+        #get translated coordinates
+        xp = event.GetX()*view_size_x/self.Size[0] + self.xmin
+        yp = (self.Size[1] - event.GetY())*view_size_y/self.Size[1] + self.ymin
+        
         #print 'mm'
         if self.selectionDragging:
-            view_size_x = self.xmax - self.xmin
-            view_size_y = self.ymax - self.ymin
-
-            #get translated coordinates
-            xp = event.GetX()*view_size_x/self.Size[0] + self.xmin
-            yp = (self.Size[1] - event.GetY())*view_size_y/self.Size[1] + self.ymin
+#            view_size_x = self.xmax - self.xmin
+#            view_size_y = self.ymax - self.ymin
+#
+#            #get translated coordinates
+#            xp = event.GetX()*view_size_x/self.Size[0] + self.xmin
+#            yp = (self.Size[1] - event.GetY())*view_size_y/self.Size[1] + self.ymin
 
 
 
@@ -977,6 +988,21 @@ class LMGLCanvas(GLCanvas):
             #self.selectionDragging=False
 
             self.Refresh()
+            
+        if event.MiddleIsDown():
+            dx = xp - self.last_xp
+            dy = yp - self.last_yp
+            #self.last_xp = xp
+            #self.last_yp = yp
+            
+            #print dx, dy
+            
+            self.moveView(-dx, -dy)
+            self.last_xp = xp - dx
+            self.last_yp = yp - dy
+        else:
+            self.last_xp = xp
+            self.last_yp = yp
 
         event.Skip()
 

@@ -95,7 +95,7 @@ class fluors:
         self.fl['abcosthetas'][:] = abs(cos(thetas))
         self.fl['state'][:] = initialState 
 
-        self.transitionTensor = transitionProbablilities
+        self.transitionTensor = transitionProbablilities.astype('f')
         self.activeState = activeState
         #self.illuminationFunction = illuminationFunction
 
@@ -111,29 +111,23 @@ class fluors:
         c0 = self.fl['abcosthetas'][:,0]*dose[1]*ilFrac
         c1 = self.fl['abcosthetas'][:,1]*dose[2]*ilFrac
         #print c0.shape
-        #print transMat.shape
+        #print transMat.shape,transMat.dtype
         #print vstack((c0,c0, c0,c0)).shape
 
         transMat[:,:,0] *= dose[0]
-        transMat[:,:,1] *= vstack((c0,c0, c0,c0)).T 
-        transMat[:,:,2] *= vstack((c1, c1, c1, c1)).T
+        transMat[:,:,1] *= c0[:,None] #vstack((c0,c0, c0,c0)).T 
+        transMat[:,:,2] *= c1[:,None] #vstack((c1, c1, c1, c1)).T
         
         transVec = transMat.sum(2)
         tvs = transVec.sum(1)
         for i in range(transVec.shape[1]):
-            transVec[self.fl['state'] == i, i]= 1 - tvs[self.fl['state'] == i]
+            m = self.fl['state'] == i
+            transVec[m, i]= 1 - tvs[m]
         transCs = transVec.cumsum(1)
         
         r = rand(len(self.fl))
         
-        #print transVec.shape
-        #print transCs.shape
-        #print transCs
-        nch = ones(r.shape)
-        for i in range(transVec.shape[1]):
-            ch = (r < transCs[:,i]) * nch
-            self.fl['state'] = i*ch + self.fl['state']*(1 - ch)
-            nch *= (1 - ch) 
+        self.fl['state'] = (transCs < r[:, None]).sum(1)
         
         return (self.fl['state'] == self.activeState)*(self.fl['exc'][:,0]*c0 + self.fl['exc'][:,1]*c1)
 
