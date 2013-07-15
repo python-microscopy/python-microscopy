@@ -27,6 +27,7 @@ import wx.lib.newevent
 import sys,math
 import numpy
 import os
+import numpy as np
 
 #from PYME.Analysis.binAvg import binAvg
 from scipy.interpolate import interp1d
@@ -66,6 +67,8 @@ class FastGraphPanel(wx.Panel):
         self.xvals = xvals.ravel()
 
         dSort = numpy.argsort(self.xvals)
+        
+        #self.data[np.isnan(self.data)]
 
         #self.upper_pctile = float(data[dSort[len(data)*.99]])
         #self.lower_pctile = float(data[dSort[len(data)*.01]])
@@ -123,7 +126,7 @@ class FastGraphPanel(wx.Panel):
         #text_x = dc.GetTextExtent('test')[0]
         
 
-        h = (self.Size[1] - self.textSize - 2)*(1.0-((self.h - self.h.min())/(1.0*(self.h.max()-self.h.min()))))
+        h = (self.Size[1] - self.textSize - 2)*(1.0-((self.h - self.h.min())/(1.0*(self.h.max()-self.h.min() + .1))))
 
         maxy = self.Size[1] - self.textSize
         pointlist = [(i+self.left_margin,h_i) for i, h_i in zip(range(len(h)), h)]

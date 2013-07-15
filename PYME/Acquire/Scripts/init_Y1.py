@@ -80,7 +80,8 @@ scope.shutters = fakeShutters
 
 #Light crafter
 InitGUI('''
-from PYME.Acquire.Hardware import TiLightCrafter, DMDGui
+from PYME.Acquire.Hardware import TiLightCrafter
+from PYMEnf.Hardware import DMDGui
 scope.LC = TiLightCrafter.LightCrafter()
 scope.LC.Connect()
 scope.LC.SetDisplayMode(scope.LC.DISPLAY_MODE.DISP_MODE_IMAGE)
@@ -94,11 +95,11 @@ toolPanels.append((LCGui, 'DMD Control'))
 InitBG('Piezos', '''
 from PYME.Acquire.Hardware.Piezos import piezo_e709
 from PYME.Acquire.Hardware import NikonTi
-scope.zStage = NikonTi.zDrive()
-scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
+#scope.zStage = NikonTi.zDrive()
+#scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
 
-#scope.piFoc = piezo_e709.piezo_e709('COM10', 100, 0, True)
-#scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
+scope.piFoc = piezo_e709.piezo_e709('COM10', 100, 0, True)
+scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
 
 
 #XY Stage
