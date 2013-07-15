@@ -28,8 +28,13 @@ class VibrAnal:
         self.fx = np.zeros(256)
         self.x = self.dt['fitResults']['x0']
         
+        self.fy = np.zeros(256)
+        self.y = self.dt['fitResults']['y0']
+        
         self.vx = View3D(self.x, mode='fgraph')
         self.vfx = View3D(self.fx, mode='fgraph')
+        self.vy = View3D(self.y, mode='fgraph')
+        self.vfy = View3D(self.fy, mode='fgraph')
         
         scope.pa.WantFrameNotification.append(self.frameCOI)
         scope.pa.WantFrameGroupNotification.append(self.OnFrameGroup)
@@ -38,11 +43,16 @@ class VibrAnal:
         self.dt[self.i] = ConfocCOIR.FitFactory(self.scope.pa.dsa, self.mdh, self.threshold)
         self.i +=1
         self.i %= 512
+        if self.i == 0:
+            self.fx[:] = np.maximum(np.log10(np.abs(np.fft.fft(self.x - self.x.mean())[:256])), 0)
+            self.fy[:] = np.maximum(np.log10(np.abs(np.fft.fft(self.y - self.y.mean())[:256])), 0)
         
     def OnFrameGroup(self, caller):
-        self.fx[:] = np.log10(np.abs(np.fft.fft(self.x - self.x.mean())[:256]))
+        
         self.vx.do.OnChange()
         self.vfx.do.OnChange()
+        self.vy.do.OnChange()
+        self.vfy.do.OnChange()
         
     def Detach(self):
         self.scope.pa.WantFrameGroupNotification.remove(self.OnFrameGroup)

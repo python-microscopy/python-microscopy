@@ -80,7 +80,8 @@ scope.shutters = fakeShutters
 
 #Light crafter
 InitGUI('''
-from PYME.Acquire.Hardware import TiLightCrafter, DMDGui
+from PYME.Acquire.Hardware import TiLightCrafter
+from PYMEnf.Hardware import DMDGui
 scope.LC = TiLightCrafter.LightCrafter()
 scope.LC.Connect()
 scope.LC.SetDisplayMode(scope.LC.DISPLAY_MODE.DISP_MODE_IMAGE)
@@ -93,7 +94,11 @@ toolPanels.append((LCGui, 'DMD Control'))
 #PIFoc
 InitBG('Piezos', '''
 from PYME.Acquire.Hardware.Piezos import piezo_e709
-scope.piFoc = piezo_e709.piezo_e709('COM9', 400, 0, True)
+from PYME.Acquire.Hardware import NikonTi
+#scope.zStage = NikonTi.zDrive()
+#scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
+
+scope.piFoc = piezo_e709.piezo_e709('COM10', 100, 0, True)
 scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
 
 
@@ -139,15 +144,6 @@ scope.piezos.append((scope.xystage, 1, 'Stage_Y'))
 
 #we don't have a splitter - make sure that the analysis knows this
 #scope.mdh['Splitter.Flip'] = False
-
-#Z stage
-#InitGUI('''
-#from PYME.Acquire.Hardware import NikonTi
-#scope.zStage = NikonTi.zDrive()
-##import Pyro.core
-##scope.zStage = Pyro.core.getProxyForURI('PYRONAME://%s.ZDrive'  % GetComputerName())
-#scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
-#''')# % GetComputerName())
 
 #Nikon Ti motorised controls
 InitGUI('''
@@ -224,17 +220,17 @@ scope.ctrl3d = spacenav.SpaceNavPiezoCtrl(scope.spacenav, scope.piezos)
 
 
 #DigiData
-from PYME.Acquire.Hardware import phoxxLaser, cobaltLaser
-scope.l642 = phoxxLaser.PhoxxLaser('642',portname='COM4')
-scope.l488 = phoxxLaser.PhoxxLaser('488',portname='COM5')
-scope.l405 = phoxxLaser.PhoxxLaser('405',portname='COM6')
-scope.l561 = cobaltLaser.CobaltLaser('561',portname='COM7')
-scope.lasers = [scope.l405,scope.l488,scope.l561, scope.l642]
+#from PYME.Acquire.Hardware import phoxxLaser, cobaltLaser
+#scope.l642 = phoxxLaser.PhoxxLaser('642',portname='COM4')
+#scope.l488 = phoxxLaser.PhoxxLaser('488',portname='COM5')
+#scope.l405 = phoxxLaser.PhoxxLaser('405',portname='COM6')
+#scope.l561 = cobaltLaser.CobaltLaser('561',portname='COM7')
+#scope.lasers = [scope.l405,scope.l488,scope.l561, scope.l642]
 #scope.lasers = [scope.l405,scope.l488, scope.l642]
 
 #scope.StatusCallbacks.append(scope.l642.GetStatusText)
 #scope.lasers = [scope.l642]
-# scope.lasers = []
+scope.lasers = []
 #InitBG('DigiData', '''
 #from PYME.Acquire.Hardware.DigiData import DigiDataClient
 #dd = DigiDataClient.getDDClient()
