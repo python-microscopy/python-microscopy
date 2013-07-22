@@ -94,7 +94,7 @@ toolPanels.append((LCGui, 'DMD Control'))
 #PIFoc
 InitBG('Piezos', '''
 from PYME.Acquire.Hardware.Piezos import piezo_e709
-from PYME.Acquire.Hardware import NikonTi
+#from PYME.Acquire.Hardware import NikonTi                          ###
 #scope.zStage = NikonTi.zDrive()
 #scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
 
@@ -201,36 +201,36 @@ scope.ctrl3d = spacenav.SpaceNavPiezoCtrl(scope.spacenav, scope.piezos)
 #
 #''')
     
-#from PYME.Acquire.Hardware.FilterWheel import WFilter, FiltFrame
-#filtList = [WFilter(1, 'EMPTY', 'EMPTY', 0),
-#    WFilter(2, 'ND.5' , 'UVND 0.5', 0.5),
-#    WFilter(3, 'ND1'  , 'UVND 1'  , 1),
-#    WFilter(4, 'ND2', 'UVND 2', 2),
-#    WFilter(5, 'ND3'  , 'UVND 3'  , 3),
-#    WFilter(6, 'ND4'  , 'UVND 4'  , 4)]
-#
-#InitGUI('''
-#try:
-#    scope.filterWheel = FiltFrame(MainFrame, filtList, 'COM4')
-#    scope.filterWheel.SetFilterPos("ND4")
-#    toolPanels.append((scope.filterWheel, 'Filter Wheel'))
-#except:
-#    print 'Error starting filter wheel ...'
-#''')
+from PYME.Acquire.Hardware.FilterWheel import WFilter, FiltFrame
+filtList = [WFilter(1, 'LF405', 'LF405', 0),
+    WFilter(2, 'LF488' , 'LF488', 0),
+    WFilter(3, 'LF561'  , 'LF561'  , 0),
+    WFilter(4, '647LP', '647LP', 0),
+    WFilter(5, 'Cy7'  , 'Cy7'  , 0),
+    WFilter(6, 'EMPTY'  , 'EMPTY'  , 0)]
+
+InitGUI('''
+try:
+    scope.filterWheel = FiltFrame(MainFrame, filtList, 'COM11')
+    scope.filterWheel.SetFilterPos("LF488")
+    toolPanels.append((scope.filterWheel, 'Filter Wheel'))
+except:
+    print 'Error starting filter wheel ...'
+''')
 
 
 #DigiData
-#from PYME.Acquire.Hardware import phoxxLaser, cobaltLaser
-#scope.l642 = phoxxLaser.PhoxxLaser('642',portname='COM4')
-#scope.l488 = phoxxLaser.PhoxxLaser('488',portname='COM5')
-#scope.l405 = phoxxLaser.PhoxxLaser('405',portname='COM6')
-#scope.l561 = cobaltLaser.CobaltLaser('561',portname='COM7')
+from PYME.Acquire.Hardware import phoxxLaser, cobaltLaser
+scope.l642 = phoxxLaser.PhoxxLaser('642',portname='COM4')
+scope.l488 = phoxxLaser.PhoxxLaser('488',portname='COM5')
+scope.l405 = phoxxLaser.PhoxxLaser('405',portname='COM6')
+scope.l561 = cobaltLaser.CobaltLaser('561',portname='COM7')
 #scope.lasers = [scope.l405,scope.l488,scope.l561, scope.l642]
-#scope.lasers = [scope.l405,scope.l488, scope.l642]
+scope.lasers = [scope.l405,scope.l488, scope.l642]
 
 #scope.StatusCallbacks.append(scope.l642.GetStatusText)
 #scope.lasers = [scope.l642]
-scope.lasers = []
+#scope.lasers = []
 #InitBG('DigiData', '''
 #from PYME.Acquire.Hardware.DigiData import DigiDataClient
 #dd = DigiDataClient.getDDClient()
