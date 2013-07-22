@@ -22,6 +22,8 @@
 ##################
 
 from scipy import *
+import numpy as np
+import illuminate
 
 class states:
     caged, active, blinked, bleached = range(4)
@@ -40,7 +42,7 @@ def registerIllumFcn(fcn):
 def ConstIllum(fluors, position):
     return 1.0
 
-def createSimpleTransitionMatrix(pPA=[1e6,.1,0] , pOnDark=[0,0,.1], pDarkOn=[.1,0,0], pOnBleach=[0,0,.01]):
+def createSimpleTransitionMatrix(pPA=[1e6,.1,0] , pOnDark=[0,0,.1], pDarkOn=[0,.1,0], pOnBleach=[0,0,0]):
     M = zeros((states.n,states.n,len(pPA)), 'f')
     M[states.caged, states.active, :] = pPA
     M[states.active, states.blinked, :] = pOnDark
@@ -49,7 +51,7 @@ def createSimpleTransitionMatrix(pPA=[1e6,.1,0] , pOnDark=[0,0,.1], pDarkOn=[.1,
     return M
 
 class fluorophore:
-    def __init__(self, x, y, z, transitionProbablilities, excitationCrossections, thetas = [0,0], initialState=states.caged, activeState=states.active):
+    def __init__(self, x, y, z, transitionProbablilities, excitationCrossections, thetas = [0,0], initialState=states.active, activeState=states.active):
         """Create a new 'fluorophore' having one dark state where:
         transitionProbablilities is a 4x4x[number of laser wavelengths + 1] tensor of transition probablilites (units = 1/mJ)
         the diagonal elements (transition from one state to itself) should be zero as they'll be calculated later to make sum(P) =1
@@ -85,7 +87,7 @@ class fluorophore:
                     return 0
         
 class fluors:
-    def __init__(self,x, y, z,  transitionProbablilities, excitationCrossections, thetas = [0,0], initialState=states.caged, activeState=states.active):
+    def __init__(self,x, y, z,  transitionProbablilities, excitationCrossections, thetas = [0,0], initialState=states.active, activeState=states.active):
         self.fl = zeros(len(x), [('x', 'f'),('y', 'f'),('z', 'f'),('exc', '2f'), ('abcosthetas', '2f'),('state', 'i')])
         self.fl['x'] = x
         self.fl['y'] = y
@@ -95,45 +97,45 @@ class fluors:
         self.fl['abcosthetas'][:] = abs(cos(thetas))
         self.fl['state'][:] = initialState 
 
-        self.transitionTensor = transitionProbablilities
+        self.transitionTensor = transitionProbablilities.astype('f')
         self.activeState = activeState
+        #self.TM = self.transitionTensor[self.fl['state'],:,:].copy()
         #self.illuminationFunction = illuminationFunction
 
     #return fl
+    def illuminate(self,laserPowers, expTime, position=[0,0,0], illuminationFunction = 'ConstIllum'):
+        dose = (np.concatenate(([1],laserPowers),0)*expTime).astype('f')
+        ilFrac = illuminationFunctions[illuminationFunction](self.fl, position)
+        return illuminate.illuminate(self.transitionTensor, self.fl, self.fl['state'], self.fl['abcosthetas'], dose, ilFrac, self.activeState)
 
-    def illuminate(self, laserPowers, expTime, position=[0,0,0], illuminationFunction = 'ConstIllum'):
+    def _illuminate(self, laserPowers, expTime, position=[0,0,0], illuminationFunction = 'ConstIllum'):
         dose = concatenate(([1],laserPowers),0)*expTime
         #grab transition matrix
         transMat = self.transitionTensor[self.fl['state'],:,:].copy()
+        
 
         ilFrac = illuminationFunctions[illuminationFunction](self.fl, position)
 
         c0 = self.fl['abcosthetas'][:,0]*dose[1]*ilFrac
         c1 = self.fl['abcosthetas'][:,1]*dose[2]*ilFrac
         #print c0.shape
-        #print transMat.shape
+        #print transMat.shape,transMat.dtype
         #print vstack((c0,c0, c0,c0)).shape
 
         transMat[:,:,0] *= dose[0]
-        transMat[:,:,1] *= vstack((c0,c0, c0,c0)).T 
-        transMat[:,:,2] *= vstack((c1, c1, c1, c1)).T
+        transMat[:,:,1] *= c0[:,None] #vstack((c0,c0, c0,c0)).T 
+        transMat[:,:,2] *= c1[:,None] #vstack((c1, c1, c1, c1)).T
         
         transVec = transMat.sum(2)
         tvs = transVec.sum(1)
         for i in range(transVec.shape[1]):
-            transVec[self.fl['state'] == i, i]= 1 - tvs[self.fl['state'] == i]
+            m = self.fl['state'] == i
+            transVec[m, i]= 1 - tvs[m]
         transCs = transVec.cumsum(1)
         
         r = rand(len(self.fl))
         
-        #print transVec.shape
-        #print transCs.shape
-        #print transCs
-        nch = ones(r.shape)
-        for i in range(transVec.shape[1]):
-            ch = (r < transCs[:,i]) * nch
-            self.fl['state'] = i*ch + self.fl['state']*(1 - ch)
-            nch *= (1 - ch) 
+        self.fl['state'] = (transCs < r[:, None]).sum(1)
         
         return (self.fl['state'] == self.activeState)*(self.fl['exc'][:,0]*c0 + self.fl['exc'][:,1]*c1)
 
