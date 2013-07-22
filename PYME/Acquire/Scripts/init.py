@@ -93,6 +93,14 @@ sampPan = sampleInformation.slidePanel(MainFrame)
 camPanels.append((sampPan, 'Current Slide'))
 ''')
 
+InitGUI('''
+from PYMEnf.Hardware import FakeDMD, DMDGui
+scope.LC = FakeDMD.FakeDMD(scope)
+
+LCGui = DMDGui.DMDPanel(MainFrame,scope.LC, scope)
+camPanels.append((LCGui, 'DMD Control'))
+''')
+
 #InitGUI('''
 #from PYME.Acquire.Hardware import ccdAdjPanel
 ##import wx
@@ -106,7 +114,7 @@ camPanels.append((sampPan, 'Current Slide'))
 
 cm.join()
 from PYME.Acquire.Hardware import lasers
-scope.l488 = lasers.FakeLaser('488',scope.cam,1, initPower=50)
+scope.l488 = lasers.FakeLaser('488',scope.cam,1, initPower=10)
 scope.l405 = lasers.FakeLaser('405',scope.cam,0, initPower=10)
 
 scope.lasers = [scope.l405, scope.l488]
@@ -116,12 +124,12 @@ from PYME.Acquire.Hardware import LaserControlFrame
 lcf = LaserControlFrame.LaserControlLight(MainFrame,scope.lasers)
 time1.WantNotification.append(lcf.refresh)
 #lcf.Show()
-toolPanels.append((lcf, 'Laser Control'))
+camPanels.append((lcf, 'Laser Control'))
 ''')
 
 InitGUI('''
 lsf = lasersliders.LaserSliders(toolPanel, scope.lasers)
-toolPanels.append((lsf, 'Laser Powers'))
+camPanels.append((lsf, 'Laser Powers'))
 ''')
 
 InitGUI('''

@@ -88,7 +88,7 @@ def genTheoreticalModel(md):
         print 'foo'
         print interpModel.strides, interpModel.shape
 
-        interpModel = interpModel/interpModel.max() #normalise to 1
+        interpModel = np.maximum(interpModel/interpModel.max(), 0) #normalise to 1 and clip
         
         print 'bar'
 
@@ -128,9 +128,9 @@ def setModel(modName, md):
     dy = voxelsize.y*1e3
     dz = voxelsize.z*1e3
 
-    interpModel = mod
+    #interpModel = mod
 
-    interpModel = interpModel/interpModel.max() #normalise to 1
+    interpModel = np.maximum(mod/mod.max(), 0) #normalise to 1
 
 def interp(X, Y, Z):
     X = atleast_1d(X)
@@ -267,28 +267,42 @@ def PSFIllumFunction(fluors, position):
 
 illPattern = None
 illZOffset = 0
+illPCache = None
+illPKey = None
 
 def setIllumPattern(pattern, z0):
-    global illPattern, illZOffset
+    global illPattern, illZOffset, illPCache
     sx, sy = pattern.shape
     psx, psy, sz = interpModel.shape
+    
+    illPCache = None
     
     il = np.zeros([sx,sy,sz], 'f')
     il[:,:,sz/2] = pattern
     ps = np.zeros_like(il)
-    ps[(sx/2-psx/2):(sx/2+psx/2), (sy/2-psy/2):(sy/2+psy/2), :] = interpModel
+    if sx > psx:
+        ps[(sx/2-psx/2):(sx/2+psx/2), (sy/2-psy/2):(sy/2+psy/2), :] = interpModel
+    else:
+        ps[:,:,:] = interpModel[(psx/2-sx/2):(psx/2+sx/2), (psy/2-sy/2):(psy/2+sy/2), :]
     ps= ps/ps[:,:,sz/2].sum()
     
-    illPattern = abs(ifftshift(ifftn(fftn(il)*fftn(ps))))
+    illPattern = abs(ifftshift(ifftn(fftn(il)*fftn(ps)))).astype('f')
     
     
 @fluor.registerIllumFcn
 def patternIllumFcn(fluors, postion):
+    global illPKey, illPCache
+    key = hash((fluors[0]['x'], fluors[0]['y'], fluors[0]['z']))
     
-    x = fluors['x']/dx + illPattern.shape[0]/2
-    y = fluors['y']/dy + illPattern.shape[1]/2
-    z = (fluors['z'] - illZOffset)/dz + illPattern.shape[2]/2
-    return ndimage.map_coordinates(illPattern, [x, y, z], order=1, mode='nearest')
+    if not illPCache == None and illPKey == key:
+        return illPCache
+    else:
+        illPKey = key
+        x = fluors['x']/dx + illPattern.shape[0]/2
+        y = fluors['y']/dy + illPattern.shape[1]/2
+        z = (fluors['z'] - illZOffset)/dz + illPattern.shape[2]/2
+        illPCache = ndimage.map_coordinates(illPattern, [x, y, z], order=1, mode='nearest')
+        return illPCache
 
 SIM_k = pi/180.
 #SIM_ky = 0# 2*pi/180.
@@ -480,7 +494,7 @@ def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=100, laserPo
     
     #print A2.shape, z2.shape, z2.dtype
     
-    roiS = np.minimum(3 + np.abs(z2)*(2.5*200/(70.*70)), 100).astype('i')
+    roiS = np.minimum(3 + np.abs(z2)*(2.5/70), 100).astype('i')
     #print roiS
     
     #print m.sum(), len(fl['x']), len(A)
