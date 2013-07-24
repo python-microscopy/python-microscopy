@@ -104,6 +104,11 @@ class LaserControl(wx.Panel):
         sizer_1.Fit(self)
         sizer_1.SetSizeHints(self)
         self.Layout()
+        
+    def refresh(self):
+        pass
+        #for l, cb in zip(self.lasers, self.cBoxes):
+        #    cb.SetValue(l.IsOn())
         # end wxGlade
 
 

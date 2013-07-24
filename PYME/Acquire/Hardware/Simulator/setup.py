@@ -23,26 +23,30 @@
 
 #!/usr/bin/env python
 
+import sys
+
+from PYME.misc import cython_numpy_monkey
+
 def configuration(parent_package = '', top_path = None):
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
-    config = Configuration('cInterp', parent_package, top_path)
+    config = Configuration('Simulation', parent_package, top_path)
 
-    config.add_extension('cInterp',
-        sources=['cInterp.c'],
+    config.add_extension('illuminate',
+        sources=['illuminate.pyx'],
         include_dirs = [get_numpy_include_dirs()],
-	extra_compile_args = ['-O3', '-fno-exceptions', '-ffast-math', '-march=native', '-mtune=native'],
+	extra_compile_args = ['-O3', '-fno-exceptions', '-ffast-math', '-march=nocona', '-mtune=nocona'],
         extra_link_args=['-static-libgcc'])
 
     return config
 
 if __name__ == '__main__':
     from numpy.distutils.core import setup
-    setup(description = 'c coded pairwise distances',
+    setup(description = 'model functions in c',
     	author = 'David Baddeley',
        	author_email = 'd.baddeley@auckland.ac.nz',
        	url = '',
        	long_description = '''
-Provides a c-funtion for the fast & memory efficeint computation of a histogram of pairwise distances
+Provides a c-funtions to allow rapid computation of models for the purposes of e.g. fitting
 ''',
           license = "Proprietary",
           **configuration(top_path='').todict()

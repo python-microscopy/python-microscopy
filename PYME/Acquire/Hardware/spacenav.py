@@ -65,8 +65,8 @@ class SpaceNavPiezoCtrl(object):
         self.spacenav = spacenav
         self.pz, self.px, self.py = piezos
         
-        self.xy_sensitivity = 100e-3 #um/s
-        self.z_sensitivity = 3 #um/s
+        self.xy_sensitivity = 30e-3 #um/s
+        self.z_sensitivity = 1 #um/s
         
         self.spacenav.WantPosNotification.append(self.updatePosition)
         self.update_n= 0
