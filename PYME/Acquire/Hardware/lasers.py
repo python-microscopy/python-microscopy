@@ -28,6 +28,7 @@ import threading
 
 class Laser:
     powerControlable = False
+    MAX_POWER = 1
 
     def __init__(self, name,turnOn=False):
         self.name= name
@@ -148,6 +149,8 @@ class FakeLaser(Laser):
         self.power = initPower
 
         Laser.__init__(self,name,turnOn)
+        
+        self.MAX_POWER = 1e3
 
         self.powerControlable = True
         self.isOn = turnOn

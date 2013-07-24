@@ -87,8 +87,8 @@ scope.LC.Connect()
 scope.LC.SetDisplayMode(scope.LC.DISPLAY_MODE.DISP_MODE_IMAGE)
 scope.LC.SetStatic(255)
 
-LCGui = DMDGui.DMDPanel(MainFrame,scope.LC)
-toolPanels.append((LCGui, 'DMD Control'))
+LCGui = DMDGui.DMDPanel(MainFrame,scope.LC, scope)
+camPanels.append((LCGui, 'DMD Control'))
 ''')
 
 #PIFoc
@@ -256,14 +256,24 @@ from PYME.Acquire.Hardware import priorLumen
 #except:
 #    pass
 #scope.lasers = [scope.arclamp]
+
 #scope.lasers = []
+
+InitGUI('''
+from PYME.Acquire.Hardware.Simulator import lasersliders
+lsf = lasersliders.LaserSliders(toolPanel, scope.lasers)
+#time1.WantNotification.append(lsf.update)
+lsf.update()
+camPanels.append((lsf, 'Laser Powers'))
+''')
 
 InitGUI('''
 if 'lasers'in dir(scope):
     from PYME.Acquire.Hardware import LaserControlFrame
     lcf = LaserControlFrame.LaserControlLight(MainFrame,scope.lasers)
-    time1.WantNotification.append(lcf.refresh)
-    toolPanels.append((lcf, 'Laser Control'))
+    #time1.WantNotification.append(lcf.refresh)
+    lcf.refresh()
+    camPanels.append((lcf, 'Laser Control'))
 ''')
 
 #from PYME.Acquire.Hardware import PM100USB
