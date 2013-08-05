@@ -41,44 +41,22 @@ def GetComputerName():
 #scope.camControls = {}
 from PYME.Acquire import MetaDataHandler
 
-cm = InitBG('Andor Neo', '''
-from PYME.Acquire.Hardware.AndorNeo import AndorNeo
-scope.cam = AndorNeo.AndorNeo(0)
-#scope.cam.Init()
-scope.cameras['Neo'] = scope.cam
-#time.sleep(5)
-''')
-
-InitGUI('''scope.cam.Init()''')
-
 InitBG('EMCCD Cameras', '''
-#scope.cameras['A - Left'] = AndorIXon.iXonCamera(0)
-scope.cameras['Ixon'] = AndorIXon.iXonCamera(0)
-scope.cameras['Ixon'].SetShutter(False)
-scope.cameras['Ixon'].SetActive(False)
-#scope.cam = scope.cameras['A - Left']
+scope.cameras['A - Left'] = AndorIXon.iXonCamera(0)
+#scope.cameras['B - Right'] = AndorIXon.iXonCamera(0)
+#scope.cameras['B - Right'].SetShutter(False)
+#scope.cameras['B - Right'].SetActive(False)
+scope.cam = scope.cameras['A - Left']
 ''')
-
-InitGUI('''
-#scope.camControls['A - Left'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['A - Left'], scope)
-#camPanels.append((scope.camControls['A - Left'], 'EMCCD A Properties'))
-scope.camControls['Neo'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['Ixon'], scope)
-camPanels.append((scope.camControls['Neo'], 'Neo Properties'))
-
-scope.camControls['Ixon'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['Ixon'], scope)
-camPanels.append((scope.camControls['Ixon'], 'EMCCD Properties'))
-
-''')
-
 
 #PIFoc
-pz1 = InitBG('PIFoc', '''
-from PYME.Acquire.Hardware.Piezos import piezo_e816
-scope.piFoc = piezo_e816.piezo_e816('COM1', 400, 0, False)
-scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
-''')
+#pz1 = InitBG('PIFoc', '''
+#from PYME.Acquire.Hardware.Piezos import piezo_e816
+#scope.piFoc = piezo_e816.piezo_e816('COM1', 400, 0, True)
+#scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
+#''')
 
-pz1.join()
+#pz1.join()
 
 #pz = InitBG('Fake Piezo(s)', '''
 #scope.fakePiezo = fakePiezo.FakePiezo(100)
@@ -104,12 +82,12 @@ pz1.join()
 #scope.cameras['B'] = AndorIXon.iXonCamera(0)
 #''')
 
-# InitGUI('''
-# scope.camControls['A - Left'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['A - Left'], scope)
-# camPanels.append((scope.camControls['A - Left'], 'EMCCD A Properties'))
+InitGUI('''
+scope.camControls['A - Left'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['A - Left'], scope)
+camPanels.append((scope.camControls['A - Left'], 'EMCCD A Properties'))
 
-# #scope.camControls['B - Right'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['B - Right'], scope)
-# #camPanels.append((scope.camControls['B - Right'], 'EMCCD B Properties'))
+#scope.camControls['B - Right'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['B - Right'], scope)
+#camPanels.append((scope.camControls['B - Right'], 'EMCCD B Properties'))
 
 #''')
 
@@ -174,13 +152,13 @@ ssp = sarcSpacing.SarcomereChecker(MainFrame, menuBar1, scope)
 #scope.mdh['Splitter.Flip'] = False
 
 #Z stage
-# InitGUI('''
-# from PYME.Acquire.Hardware import NikonTi
-# scope.zStage = NikonTi.zDrive()
-# #import Pyro.core
-# #scope.zStage = Pyro.core.getProxyForURI('PYRONAME://%s.ZDrive'  % GetComputerName())
-# scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
-# ''')# % GetComputerName())
+InitGUI('''
+from PYME.Acquire.Hardware import NikonTi
+scope.zStage = NikonTi.zDrive()
+#import Pyro.core
+#scope.zStage = Pyro.core.getProxyForURI('PYRONAME://%s.ZDrive'  % GetComputerName())
+scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
+''')# % GetComputerName())
 
 #Nikon Ti motorised controls
 InitGUI('''

@@ -50,13 +50,13 @@ scope.cam = scope.cameras['A - Left']
 ''')
 
 #PIFoc
-#pz1 = InitBG('PIFoc', '''
-#from PYME.Acquire.Hardware.Piezos import piezo_e816
-#scope.piFoc = piezo_e816.piezo_e816('COM1', 400, 0, True)
-#scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
-#''')
+pz1 = InitBG('PIFoc', '''
+from PYME.Acquire.Hardware.Piezos import piezo_e816
+scope.piFoc = piezo_e816.piezo_e816('COM1', 400, 0, False)
+scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
+''')
 
-#pz1.join()
+pz1.join()
 
 #pz = InitBG('Fake Piezo(s)', '''
 #scope.fakePiezo = fakePiezo.FakePiezo(100)
@@ -89,7 +89,7 @@ camPanels.append((scope.camControls['A - Left'], 'EMCCD A Properties'))
 #scope.camControls['B - Right'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['B - Right'], scope)
 #camPanels.append((scope.camControls['B - Right'], 'EMCCD B Properties'))
 
-#''')
+''')
 
 #InitGUI('''
 #from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
@@ -152,13 +152,13 @@ ssp = sarcSpacing.SarcomereChecker(MainFrame, menuBar1, scope)
 #scope.mdh['Splitter.Flip'] = False
 
 #Z stage
-InitGUI('''
-from PYME.Acquire.Hardware import NikonTi
-scope.zStage = NikonTi.zDrive()
-#import Pyro.core
-#scope.zStage = Pyro.core.getProxyForURI('PYRONAME://%s.ZDrive'  % GetComputerName())
-scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
-''')# % GetComputerName())
+# InitGUI('''
+# from PYME.Acquire.Hardware import NikonTi
+# scope.zStage = NikonTi.zDrive()
+# #import Pyro.core
+# #scope.zStage = Pyro.core.getProxyForURI('PYRONAME://%s.ZDrive'  % GetComputerName())
+# scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
+# ''')# % GetComputerName())
 
 #Nikon Ti motorised controls
 InitGUI('''

@@ -128,7 +128,10 @@ class AndorBase(SDK3Camera):
         self.CycleMode.setString(u'Continuous')
         # self.SimplePreAmpGainControl.setString('16-bit (low noise & high well capacity)')
         # self.PixelEncoding.setString('Mono16')
-        self.SetGainMode('high dynamic range')
+        # self.SetGainMode('high dynamic range')
+        self.SetGainMode('low noise')
+        # spurious noise filter off by default
+        self.SpuriousNoiseFilter.setValue(0)
         self.SensorCooling.setValue(True)
         self.TemperatureControl.setString('-30.00')
         #self.PixelReadoutRate.setIndex(1)
