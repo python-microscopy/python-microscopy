@@ -145,7 +145,7 @@ class ZMX(object):
             if l.startswith('SURF'):
                 self.surfaces.append(Surface(lines, glasses))  
                 
-    def toPyOptic(self, position, direction=[0,0,1]):
+    def toPyOptic(self, position, direction=[0,0,1], fb=None, flip = False, f = None):
         from pyoptic import System as pyo
         #we're only interested in real surfaces
         surfs = self.surfaces[1:-1]
@@ -153,15 +153,37 @@ class ZMX(object):
         d = np.array(direction)
         pos = np.array(position)
         
-        #calculate length of lens
         l = sum([s.disz for s in surfs[:-1]])
+        print l
+        
+        if fb == None and f == None:
+            #calculate length of lens
+            
+            #midpoint at l/2
+            z0 = -l/2
+        elif fb == None:
+            z0 = float(f) - sum([s.disz for s in surfs])
+        else:
+            z0 = -float(fb) - l + float(f)
         
         outSurfs = []
-        #midpoint at l/2
-        z0 = -l/2
-        for i, s in enumerate(surfs):
-            outSurfs.append(pyo.SphericalSurface('ZMX_%d'%i, 1,np.ones(3)*float(s.diam[0]),pyo.Placement((z0 - 0)*d + pos,d),s.glass, s.radius))
-            z0 += s.disz
+        
+        if flip:
+            z0 = -z0 - l
+            i_s = range(len(surfs))
+            for i in i_s[::-1]:
+                print i
+                s = surfs[i]
+                glass = self.surfaces[i].glass
+                outSurfs.append(pyo.SphericalSurface('ZMX_%d'%i, 1,np.ones(3)*float(s.diam[0]),pyo.Placement((z0 - 0)*d + pos,d),glass, -s.radius))
+                print z0, s.disz
+                z0 += self.surfaces[i].disz         
+        else:
+            for i, s in enumerate(surfs):
+                outSurfs.append(pyo.SphericalSurface('ZMX_%d'%i, 1,np.ones(3)*float(s.diam[0]),pyo.Placement((z0 - 0)*d + pos,d),s.glass, s.radius))
+                print z0, s.disz
+                z0 += s.disz
+                
             
         return outSurfs
         

@@ -466,9 +466,9 @@ class ImageStack(object):
             dataExporter.CropExportData(view, self.mdh, self.events, self.seriesName)
         else:
             if 'defaultExt' in dir(self):
-                self.filename = dataExporter.ExportData(self.data, self.mdh, self.events, defaultExt=self.defaultExt)
+                self.filename = dataExporter.ExportData(self.data, self.mdh, self.events, defaultExt=self.defaultExt, filename=filename)
             else:
-                self.filename = dataExporter.ExportData(self.data, self.mdh, self.events)
+                self.filename = dataExporter.ExportData(self.data, self.mdh, self.events, filename=filename)
             #self.SetTitle(fn)
 
             if not (self.filename == None):

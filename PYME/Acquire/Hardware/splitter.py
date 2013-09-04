@@ -64,16 +64,21 @@ def LoadShiftField(filename = None):
 
 
 class Unmixer:
-    def __init__(self, shiftfield=None, pixelsize=70., flip=True):
+    def __init__(self, shiftfield=None, pixelsize=70., flip=True, axis='up_down'):
         self.pixelsize = pixelsize
         self.flip = flip
+        self.axis = axis
         if shiftfield:
             self.SetShiftField(shiftfield)
 
     def SetShiftField(self, shiftField):
         #self.shiftField = shiftField
-        #self.shiftFieldName = sfname
-        X, Y = numpy.ogrid[:512, :256]
+        #self.shiftFieldname = sfname
+    
+        if self.axis == 'up_down':
+            X, Y = numpy.ogrid[:512, :256]
+        else:
+            X, Y = numpy.ogrid[:256, :512]
 
         self.X2 = numpy.round(X - shiftField[0](X*70., Y*70.)/70.).astype('i')
         self.Y2 = numpy.round(Y - shiftField[1](X*70., Y*70.)/70.).astype('i')
@@ -87,8 +92,12 @@ class Unmixer:
 
             #print self.X2.shape
 
-            Xn = self.X2[x1:x2, y1:(y1 + red_chan.shape[1])] - x1
-            Yn = self.Y2[x1:x2, y1:(y1 + red_chan.shape[1])] - y1
+            if self.axis == 'up_down':
+                Xn = self.X2[x1:x2, y1:(y1 + red_chan.shape[1])] - x1
+                Yn = self.Y2[x1:x2, y1:(y1 + red_chan.shape[1])] - y1
+            else:
+                Xn = self.X2[x1:(x1 + red_chan.shape[0]), y1:y2] - x1
+                Yn = self.Y2[x1:(x1 + red_chan.shape[0]), y1:y2] - y1
 
             #print Xn.shape
 
@@ -110,12 +119,19 @@ class Unmixer:
         umm = scipy.linalg.inv(mixMatrix)
 
         dsa = data.squeeze() - offset
-
-        g_ = dsa[:, :(dsa.shape[1]/2)]
-        r_ = dsa[:, (dsa.shape[1]/2):]
-        if self.flip:
-            r_ = numpy.fliplr(r_)
-        r_ = self._deshift(r_, ROI)
+        
+        if self.axis == 'up_down':
+            g_ = dsa[:, :(dsa.shape[1]/2)]
+            r_ = dsa[:, (dsa.shape[1]/2):]
+            if self.flip:
+                r_ = numpy.fliplr(r_)
+            r_ = self._deshift(r_, ROI)
+        else:
+            g_ = dsa[:(dsa.shape[0]/2), :]
+            r_ = dsa[(dsa.shape[0]/2):, :]
+            if self.flip:
+                r_ = numpy.flipud(r_)
+            r_ = self._deshift(r_, ROI)
 
         #print g_.shape, r_.shape
 
