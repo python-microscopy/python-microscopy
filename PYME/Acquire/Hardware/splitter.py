@@ -159,7 +159,7 @@ class Splitter:
         self.cam = cam
         self.flipChan=flipChan
         self.parent = parent
-        self.unmixer = Unmixer(flip=flip)
+        self.unmixer = Unmixer(flip=flip, axis = dir)
         self.flip = flip
 
         #which dichroic mirror is installed
@@ -211,6 +211,13 @@ class Splitter:
             mdh.setEntry('Splitter.Dichroic', self.dichroic)
             mdh.setEntry('Splitter.TransmittedPathPosition', self.transLocOnCamera)
             mdh.setEntry('Splitter.Flip', self.flip)
+            
+            if self.dir == 'up_down':
+                mdh['Splitter.Channel0ROI'] = [0,0,self.cam.GetCCDWidth(), self.cam.GetCCDHeight()/2]
+                mdh['Splitter.Channel1ROI'] = [0,self.cam.GetCCDHeight()/2,self.cam.GetCCDWidth(), self.cam.GetCCDHeight()/2]
+            else: #dir == 'left_right'
+                mdh['Splitter.Channel0ROI'] = [0,0,self.cam.GetCCDWidth()/2, self.cam.GetCCDHeight()]
+                mdh['Splitter.Channel1ROI'] = [self.cam.GetCCDWidth()/2,0,self.cam.GetCCDWidth()/2, self.cam.GetCCDHeight()]
 
             if 'shiftField' in dir(self):
                 mdh.setEntry('chroma.ShiftFilename', self.shiftFieldName)
@@ -423,6 +430,7 @@ class UnMixPanel(wx.Panel):
 
 
     def update(self, caller=None):
+        #print 'u'
         #print self.tMM00.GetValue(), self.tMM01.GetValue()
 #        self.splitter.mixMatrix[0,0]= float(self.tMM00.GetValue())
 #        self.splitter.mixMatrix[0,1]= float(self.tMM01.GetValue())
@@ -433,7 +441,7 @@ class UnMixPanel(wx.Panel):
 
         if self.IsShown():
             self.vp.ResetDataStack(self.splitter.Unmix())
-            self.vp.imagepanel.Refresh()
+            self.vp.Redraw()#imagepanel.Refresh()
 
     def OnCloseWindow(self, event):
         self.splitter.scope.pa.WantFrameGroupNotification.remove(self.update)
