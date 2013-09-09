@@ -23,6 +23,7 @@
 
 from PYME.Acquire.Hardware.AndorIXon import AndorIXon
 from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
+from PYME.Acquire.Hardware.uc480 import uCam480
 
 from PYME.Acquire.Hardware import fakeShutters
 import time
@@ -41,9 +42,9 @@ from PYME.Acquire import MetaDataHandler
 
 InitBG('EMCCD Cameras', '''
 scope.cameras['A - Left'] = AndorIXon.iXonCamera(0)
-#scope.cameras['B - Right'] = AndorIXon.iXonCamera(0)
+scope.cameras['B - Right'] = uCam480.uc480Camera(0)
 #scope.cameras['B - Right'].SetShutter(False)
-#scope.cameras['B - Right'].SetActive(False)
+scope.cameras['B - Right'].SetActive(False)
 scope.cam = scope.cameras['A - Left']
 ''')
 
@@ -55,8 +56,8 @@ InitGUI('''
 scope.camControls['A - Left'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['A - Left'], scope)
 camPanels.append((scope.camControls['A - Left'], 'EMCCD A Properties'))
 
-#scope.camControls['B - Right'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['B - Right'], scope)
-#camPanels.append((scope.camControls['B - Right'], 'EMCCD B Properties'))
+scope.camControls['B - Right'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['A - Left'], scope)
+camPanels.append((scope.camControls['B - Right'], 'EMCCD B Properties'))
 
 ''')
 
