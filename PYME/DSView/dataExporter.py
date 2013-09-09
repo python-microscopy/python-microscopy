@@ -438,10 +438,14 @@ def CropExportData(vp, mdh=None, events=None, origName = None):
     
 
 
-def ExportData(ds, mdh=None, events=None, origName = None, defaultExt = '*.tif'):
-    filename = _getFilename(defaultExt)
+def ExportData(ds, mdh=None, events=None, origName = None, defaultExt = '*.tif', filename=None):
     if filename == None:
-            return
+        #show file selection dialog box
+        filename = _getFilename(defaultExt)
+        
+    if filename == None:
+        #we cancelled the dialog - exit
+        return
 
     
     ext = '*' + os.path.splitext(filename)[1]

@@ -34,7 +34,7 @@ def getUsername():
     '''
     if sys.platform == 'win32':
         import win32api
-        return win32api.GetUserName()
+        return '_'.join(win32api.GetUserName().split(' '))
     if sys.platform.startswith('darwin'):
         return os.environ['USER']
     else: #linux

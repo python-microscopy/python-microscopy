@@ -88,7 +88,7 @@ class WRDictEnum (BaseEnum):
     #    return ' or '.join( [ repr( x ) for x in self.values ] )
 
     def create_editor ( self):
-        from enthought.traits.ui.api import EnumEditor
+        #from enthought.traits.ui.api import EnumEditor
         #print dict(self.wrdict.items())
 
         ed = EnumEditor( values   = self,
@@ -107,6 +107,7 @@ class ImageSource(PointSource):
 
     def getPoints(self):
         from PYMEnf.Simulation import locify
+        print self.image
 
         im = image.openImages[self.image]
         #import numpy as np

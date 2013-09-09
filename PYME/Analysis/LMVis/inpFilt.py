@@ -36,6 +36,7 @@ import tables
 
 class inputFilter:
     pass
+    
 
 class randomSource(inputFilter):
     _name = "Random Source"

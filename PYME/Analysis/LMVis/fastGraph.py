@@ -27,6 +27,7 @@ import wx.lib.newevent
 import sys,math
 import numpy
 import os
+import numpy as np
 
 #from PYME.Analysis.binAvg import binAvg
 from scipy.interpolate import interp1d
@@ -45,6 +46,7 @@ class FastGraphPanel(wx.Panel):
 
         self.textSize = 10
         self.log = log
+        self.left_margin = 20
 
         self.threshMode = threshMode
 
@@ -65,6 +67,8 @@ class FastGraphPanel(wx.Panel):
         self.xvals = xvals.ravel()
 
         dSort = numpy.argsort(self.xvals)
+        
+        #self.data[np.isnan(self.data)]
 
         #self.upper_pctile = float(data[dSort[len(data)*.99]])
         #self.lower_pctile = float(data[dSort[len(data)*.01]])
@@ -96,7 +100,7 @@ class FastGraphPanel(wx.Panel):
 
         
 
-        self.hstep = (self.hmax - self.hmin)/max(self.Size[0], 1)
+        self.hstep = (self.hmax - self.hmin)/max(self.Size[0] - self.left_margin, 1)
 
         #print self.hmin, self.hmax, self.hstep
 
@@ -119,12 +123,14 @@ class FastGraphPanel(wx.Panel):
             return
         dc.SetFont(wx.NORMAL_FONT)
         self.textSize = dc.GetTextExtent('test')[1] + 4
+        #text_x = dc.GetTextExtent('test')[0]
+        
 
-        h = (self.Size[1] - self.textSize - 2)*(1.0-((self.h - self.h.min())/(1.0*(self.h.max()-self.h.min()))))
+        h = (self.Size[1] - self.textSize - 2)*(1.0-((self.h - self.h.min())/(1.0*(self.h.max()-self.h.min() + .1))))
 
         maxy = self.Size[1] - self.textSize
-        pointlist = [(i,h_i) for i, h_i in zip(range(len(h)), h)]
-        pointlist = [(0,maxy)] + pointlist + [(self.Size[0], maxy)]
+        pointlist = [(i+self.left_margin,h_i) for i, h_i in zip(range(len(h)), h)]
+        #pointlist = [(10,h[0])] + pointlist + [(self.Size[0], maxy)]
 
         dc.Clear()
 
@@ -160,7 +166,7 @@ class FastGraphPanel(wx.Panel):
         #dc.DrawLine(llx, 0, llx, maxy)
         lab = '%1.3G' % self.limit_lower
         labSize = dc.GetTextExtent(lab)
-        dc.DrawText(lab, max(llx - labSize[0]/2, 0), maxy + 2)
+        dc.DrawText(lab, max(llx - labSize[0]/2 + self.left_margin, 0), maxy + 2)
 
 
         if not self.threshMode:
@@ -174,6 +180,19 @@ class FastGraphPanel(wx.Panel):
             lab = '%1.3G' % self.limit_upper
             labSize = dc.GetTextExtent(lab)
             dc.DrawText(lab, min(ulx - labSize[0]/2, self.Size[0] - labSize[0]), maxy + 2)
+            
+        lly = 0 #self.h.min()
+        #dc.DrawLine(llx, 0, llx, maxy)
+        lab = '%1.3G' % self.h.max()
+        labSize = dc.GetTextExtent(lab)
+        dc.DrawText(lab, 0, lly)
+        
+        # -  #self.h.min()
+        #dc.DrawLine(llx, 0, llx, maxy)
+        lab = '%1.3G' % self.h.min()
+        labSize = dc.GetTextExtent(lab)
+        lly = maxy - labSize[1]
+        dc.DrawText(lab, 0, lly)
 
 
         dc.SetPen(wx.NullPen)
