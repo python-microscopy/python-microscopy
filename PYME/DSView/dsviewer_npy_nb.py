@@ -300,6 +300,9 @@ class DSViewFrame(wx.Frame):
 
             self.updating = False
             
+    #def Redraw(self):
+    #    self.v
+            
     def DataChanged(self):
         for uCallback in self.dataChangeHooks:
             uCallback(self)

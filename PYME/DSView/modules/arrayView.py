@@ -24,6 +24,7 @@ from PYME.DSView.arrayViewPanel import *
 
 def Plug(dsviewer):
     dsviewer.view = ArrayViewPanel(dsviewer, do=dsviewer.do)
+    dsviewer.updateHooks.append(dsviewer.view.Redraw)
     dsviewer.AddPage(dsviewer.view, True, 'Data')
 
 #    dsviewer.overlaypanel = OverlayPanel(dsviewer, dsviewer.view, dsviewer.image.mdh)
