@@ -13,7 +13,7 @@ import numpy as np
 cimport numpy as np
 #from libc.stdlib cimport random, RAND_MAX
 cdef extern from "stdlib.h":
-    long int random()
+    long int rand()
     long int RAND_MAX
 
 #ctypedef np.int_t INT_t
@@ -73,7 +73,7 @@ def illuminate(np.ndarray[float, ndim=3] transTensor,
         transVec[st_i] = 1 - tvs
         
         #r = float(np.random.rand())
-        r = IRMAX*float(random())
+        r = IRMAX*float(rand())
         
         transCs = 0
         j = 0

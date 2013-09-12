@@ -61,11 +61,11 @@ camPanels.append((scope.camControls['B - Right'], 'EMCCD B Properties'))
 
 ''')
 
-#InitGUI('''
-#from PYME.Acquire import sampleInformation
-#sampPan = sampleInformation.slidePanel(MainFrame)
-#camPanels.append((sampPan, 'Current Slide'))
-#''')
+InitGUI('''
+from PYME.Acquire import sampleInformation
+sampPan = sampleInformation.slidePanel(MainFrame)
+camPanels.append((sampPan, 'Current Slide'))
+''')
 
 #setup for the channels to aquire - b/w camera, no shutters
 class chaninfo:
