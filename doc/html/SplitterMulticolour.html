@@ -1,0 +1,146 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Using an image splitting device for multi-colour ratiometric imaging &mdash; PYME 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="PYME 0.1 documentation" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li><a href="index.html">PYME 0.1 documentation</a> &raquo;</li>
+<li><a href="http://lmsrv1/docwiki/docs/pyme-docs/SplitterMulticolour.rst">Edit</a> &raquo;</li>
+ 
+
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="using-an-image-splitting-device-for-multi-colour-ratiometric-imaging">
+<span id="imagesplitter"></span><h1>Using an image splitting device for multi-colour ratiometric imaging<a class="headerlink" href="#using-an-image-splitting-device-for-multi-colour-ratiometric-imaging" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="calibrating-the-image-splitting-device">
+<h2>Calibrating the image splitting device<a class="headerlink" href="#calibrating-the-image-splitting-device" title="Permalink to this headline">¶</a></h2>
+<p>These instructions are designed for use with an image splitting device and a single CCD camera. They should be able to be applied to a multi-camera scenario if the images are stiched together first. The code was originally written for a home-built splitter where the CCD was split vertically and the two halves were mirror image views. It has since been modified to work with more generic splitters, although these modifications are not yet well tested (we&#8217;re currently in the process of assembling a new splitter which split&#8217;s horizontally and doesn&#8217;t flip, so any bugs are likely to be ironed out over the course of the next couple of weeks).</p>
+<ol class="arabic simple">
+<li>Prepare a medium density bead slide (minimum separation between beads should be on the order of ~ 500 nm, more is OK). The density should be low enough that beads in both channels can be unambiguously assigned (i.e. there should only be one bead in any given 15x15 pixel ROI), a small number of clusters is permissible as these will be discarded in post-processing. A suitable density usually works out at ~20 beads in the field of view (our FOV is half the camera).</li>
+<li>Because the density used above is relatively low, a single image will not give us a particularly good estimate of the vector shift field between the two channels. To enable a better coverage of the field of view we take multiple shifted images of the beads, achieving better coverage through post-processing. If using PYMEAcquire for data acquisition on a microscope with a motorised stage there is a protocol (called &#8216;shiftfield&#8217;) which will do this for you. If using 3rd party software, or using a microscope without a motorised stage you can simply move the stage manually whilst recording a sequence of images (the analysed data is filtered for bead width and blurred beads will be discarded – I find a series of short moves with brief pauses to be effective).</li>
+<li>Make sure that the distributed data analysis platform (launchWorkers) is running.</li>
+<li>Open the data using dh5view (if using PYMEAcquire it should open automatically).</li>
+<li>From the &#8216;Set defaults for&#8217; menu chose &#8216;Calibrating the splitter&#8217;. This sets the fit model to one in which the separation between red and green images of the same bead is a free parameter. It also turns off temporal background subtraction and increases the detection threshold.</li>
+</ol>
+<p>6. [Non-PYME data only] If the data was acquired in 3rd party software you will also need to set a number of metadata parameters to tell the software about how the splitting is carried out (these can be entered from the console within dh5view, but it might make more sense to put them in the .md file used to get the data to load – see the loading external data bit of the PYME documentation). The relevant parameters are Splitter.Channel0ROI, Splitter.Channel1ROI, and Splitter.Flip. The ROI parameters take a list of values in the form [x0, y0, width, height]. The Flip parameter is either True or False. It is important that the width and height is the same for both ROIs. Eg (if entered in the .md file – if executed at the console, replace md with image.mdh):
+md[&#8216; Splitter.Channel0ROI&#8217;] = [0, 0, 512, 256]
+md[&#8216; Splitter.Channel1ROI&#8217;] = [0, 256, 512, 256]
+md[&#8216; Splitter.Flip&#8217;] = False
+7. Click on &#8216;Test&#8217; to see if the detection threshold is suitable – if necessary try a higher or lower threshold.
+8. Once happy with the threshold, click &#8216;Go&#8217;. This will send the frames into the distributed analysis system which should churn through and perform the fits (extra for experts:  in this case it will probably only make use of 1 or 2 cores as the distributed analysis uses a chunk size of at least 50 frames to allow the data to be cached for efficient background subtraction on the workers when analysing binking datasets).
+9. One all the analysis tasks are complete, go to the analysis folder (if you haven&#8217;t set the &#8216;PYMEDataDir&#8217; environment varible it should be under “c:Users&lt;username&gt;PYMEDataAnalysis&lt;name of folder containing raw data&gt;”) and find the .mdh file corresponding to the raw data. Open this in VisGUI.
+10. Check the data in VisGUI to see if it looks reasonable - good coverage of the field of view, reasonable looking distribution of shifts if you set the point colour to be FitResults_dx or FitResults_dy (the x and y shifts). Try adjusting the filter if this is not the case (a good place to start is sigma – the PSF std deviation, which can be set to a reasonably narrow window around the expected bead width). A few erroneous vectors are still permissible as these will be filtered out in subsequent steps.
+11. From the &#8216;Extras&#8217; menu choose &#8216;Calculate shiftmap&#8217;. This will attempt to interpolate the shift vectors obtained at the bead locations across the field of view. The algorithm first checks to see if each vector points in approximately the same direction as it&#8217;s neighbours. &#8216;Wonky&#8217; vectors which dramatically differ from their neighbours but have somehow made if through prior filtering steps are discarded at this point. Bivariate smoothing splines are then fitted to the x and y shift vectors. The resulting interpolated shift field (and residuals) is shown, and the user given the opportunity to save the shiftmap (effectively the spline coefficients) in a .sf file. Unfortunately the &#8216;save&#8217; dialog is modal and you don&#8217;t get a chance to examine the shift field before being prompted to save. I usually cancel the save request the first time, examine the result, and if happy, run &#8216;Calculate shiftmap&#8217; again, saving the result. This interpolated shift field should be smooth, although it&#8217;s common to see magnification differences as well as rotation in the field resulting in a spiral or vortex like appearance. If you&#8217;re unhappy with the generated shiftmap, you can go back to the filter (or if really bad try acquiring and analysing a new data set).
+&lt;NB – there&#8217;s a good chance that the display routines here have hard-coded ROI values and might need a bit of tweaking. We ought to find out in the next couple of weeks.&gt;</p>
+</div>
+<div class="section" id="analysing-ratiometric-images">
+<h2>Analysing ratiometric images<a class="headerlink" href="#analysing-ratiometric-images" title="Permalink to this headline">¶</a></h2>
+<p>Whilst not as complicated as the calibration procedure, the analysis procedure for multi-colour images is also a little different to that for single colour images.</p>
+<ol class="arabic simple">
+<li>Load the data in dh5view</li>
+<li>Choose &#8216;SplitterFitFR&#8217; (or if in need of a little extra speed &#8216;SplitterFitQR&#8217;, which assumes that the temporal background subtraction has done it&#8217;s thing and doesn&#8217;t fit the background at all) as the fit module (If the data was acquired in PYMEAcquire this may have been done automagically for you)</li>
+<li>Set the Splitter parameters as in 6 above</li>
+<li>Set the shift field to the .sf file saved in the calibration step (click on the &#8216;Set&#8217; button)</li>
+<li>Test the threshold</li>
+</ol>
+<p>6. Click &#8216;Go&#8217; to start the analysis.
+IMPORTANT – the shifts are corrected as part of the fitting process (they should be absent from the fitted data)</p>
+</div>
+<div class="section" id="visualising-ratiometric-data">
+<h2>Visualising ratiometric data<a class="headerlink" href="#visualising-ratiometric-data" title="Permalink to this headline">¶</a></h2>
+<p>If you have analysed data using one of the &#8216;SplitterFit...&#8217; modules, VisGUI will show a colour tab with a scattergram of the ratios. Before you can render the images as multi-colour, you will need to add species to this scattergram by clicking add and setting the ratio (which can then be tweaked by clicking on the ratio value in the table). You can also try and automagically guess what components are present by using the &#8216;Guess&#8217; button. The points assigned to a certain ratio will be given the same colour as that component. After the ratios have been defined, you will have new selections in the colour filter selector in the main window, and rendering options will default to producing multi-channel images. [Note – it is also possible to define species and ratios in the metadata,  but that is beyond the scope of what we can go into here]</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Using an image splitting device for multi-colour ratiometric imaging</a><ul>
+<li><a class="reference internal" href="#calibrating-the-image-splitting-device">Calibrating the image splitting device</a></li>
+<li><a class="reference internal" href="#analysing-ratiometric-images">Analysing ratiometric images</a></li>
+<li><a class="reference internal" href="#visualising-ratiometric-data">Visualising ratiometric data</a></li>
+</ul>
+</li>
+</ul>
+
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/SplitterMulticolour.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li><a href="index.html">PYME 0.1 documentation</a> &raquo;</li>
+<li><a href="http://lmsrv1/docwiki/docs/pyme-docs/SplitterMulticolour.rst">Edit</a> &raquo;</li>
+ 
+
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010, David Baddeley.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
