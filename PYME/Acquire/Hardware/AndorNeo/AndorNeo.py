@@ -429,10 +429,12 @@ class AndorBase(SDK3Camera):
             mdh.setEntry('Camera.ROIWidth', self.GetROIX2() - self.GetROIX1())
             mdh.setEntry('Camera.ROIHeight',  self.GetROIY2() - self.GetROIY1())
             #mdh.setEntry('Camera.StartCCDTemp',  self.GetCCDTemp())
-    
-            mdh.setEntry('Camera.ReadNoise', 1)
+
+            # values for readnoise and EpC from Neo sheet for Gain 4
+            # should be selected with 11 bit low noise setting
+            mdh.setEntry('Camera.ReadNoise', 1.5)
             mdh.setEntry('Camera.NoiseFactor', 1)
-            mdh.setEntry('Camera.ElectronsPerCount', 1)
+            mdh.setEntry('Camera.ElectronsPerCount', 0.65)
             #mdh.setEntry('Camera.ADOffset', self.noiseMaker.ADOffset)
     
             #mdh.setEntry('Simulation.Fluorophores', self.fluors.fl)
