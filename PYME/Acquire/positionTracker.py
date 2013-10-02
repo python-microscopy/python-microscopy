@@ -93,18 +93,21 @@ class TrackerPanel(wx.Panel):
         self.tpan.draw()
 
 class PositionTracker:
-    def __init__(self, scope, time1):
+    def __init__(self, scope, time1, viewsize=25., nPixels=500):
         self.track = []
+        #self.stds = []
         self.tags = {}
         self.tags['edge'] = []
 
         self.scope = scope
         self.time1 = time1
+        self.im = np.zeros([nPixels, nPixels])
+        self.ps = viewsize/nPixels
 
         time1.WantNotification.append(self.Tick)
 
     def Tick(self):
-        positions  = np.zeros(len(self.scope.piezos) + 1)
+        positions  = np.zeros(len(self.scope.piezos) + 2)
         positions[0] = time.time()
         
         for i, p in enumerate(self.scope.piezos):
@@ -114,6 +117,13 @@ class PositionTracker:
                 positions[i+1] = p[0].lastPos
             else:
                 positions[i+1] = p[0].GetPos(p[1])
+                
+        positions[-1] = np.std(self.scope.pa.dsa)
+        
+        t, z, x, y, s = positions
+        xi = int(np.round(x/self.ps))
+        yi = int(np.round(y/self.ps))
+        self.im[xi, yi] = max(self.im[xi, yi], s)
 
 #        if len(self.track) > 0:
 #            print np.absolute(self.track[-1][1:] - positions[1:]), (np.absolute(self.track[-1][1:] - positions[1:]) > [.1, .001, .001]).any()
@@ -151,6 +161,18 @@ class PositionTracker:
 
     def GetTags(self, tagName='edge'):
         return np.vstack(self.tags[tagName])
+        
+    def GetImage(self, viewsize=25., nPixels=500):
+        im = np.zeros([nPixels, nPixels])
+        
+        ps = viewsize/nPixels
+        for pos in self.track:
+            t, x, y, z, s = pos
+            xi = int(np.round(x/ps))
+            yi = int(np.round(y/ps))
+            im[xi, yi] = max(im[xi, yi], s)
+            
+        return im
 
 
 

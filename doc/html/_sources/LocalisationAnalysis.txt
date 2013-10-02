@@ -29,7 +29,7 @@ Distributing over multiple computers
 Distributing the analysis over multiple computers (a small ad-hoc cluster) is now easy:
 
 * Make sure a pyro nameserver is running somewhere on your network and that it is 
-  bound to the external interface rather than localhost (see the `Pyro  documentation <http://packages.python.org/Pyro/5-nameserver.html>`_).
+  bound to the external interface rather than localhost (see the `Pyro  documentation <http://packages.python.org/Pyro/5-nameserver.html>`_). If you don't explicity run a nameserver, the first copy of ``launchWorkers`` you start will run one for you. The caveat with this approach is that you shouldn't close this copy while you (or anyone else on your network segment) is doing analyisis, even on other computers.
 * Run ``launchWorkers`` on each machine you want to use.
 
 Loading data
@@ -125,5 +125,7 @@ Launching the analysis tasks
 ++++++++++++++++++++++++++++
 
 Once satisfied with the event detection, the analysis proper can be started by
-clicking the **Go** button.
+clicking the **Go** button. The results will automatically be saved, either under the
+``PYMEDATADIR`` directory (if the environment variable was set earlier), or in a directory
+called ``PYMEData`` in the users home directory (``c:\\Users\\<username>\\`` under windows).
 

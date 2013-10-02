@@ -32,7 +32,7 @@ from PYME.Analysis.LMVis.visHelpers import ImageBounds
 lastdir = ''
 
 class DefaultDict(dict):
-    '''List which returns a default value for items not in the list'''
+    '''dictionary which returns a default value (0) for items not in the list'''
     def __init__(self, *args):
         dict.__init__(self, *args)
 
@@ -42,11 +42,61 @@ class DefaultDict(dict):
         except KeyError:
             return 0
 
+#keep track of open images - to allow compositing of images etc ... without
+#relying on some GUI or global magic to keep track of windows
+#use a weakref dictionary so that they still get garbage collected when they
+#cease to be used elsewhere
 openImages = weakref.WeakValueDictionary()
+
+#this is going to determine the numbering of each new image - images are
+#created with a stub name e.g. 'Untitled Image', or 'Filter result', followed
+#by an incrementing index - this dictionary stores the current index for each 
+#stub. If a stub hasn't been used yet, the index defaults to zero.
 nUntitled = DefaultDict()
 
 class ImageStack(object):
     def __init__(self, data = None, mdh = None, filename = None, queueURI = None, events = [], titleStub='Untitled Image', haveGUI=True):
+        ''' Create an Image Stack.
+        
+        This is a essentially a wrapper of the image data and any ascociated 
+        metadata. The class can be given a ndarray like* data source, or  
+        alternatively supports loading from file, or from a PYME task queue 
+        URI, in which case individual slices will be fetched from the server 
+        as required.  
+        
+        For details on the file type support, see the Load method.
+        
+        You should provide one of the 'data' or 'filename' parmeters,
+        with all other parameters being optional.
+        
+        Parameters:
+            data    Image data. Something that supports ndarray like slicing and exposes
+                    a .shape parameter, something implementing the
+                    PYME.Analysis.DataSources interface, or a list of either
+                    of the above. Dimensionality can be between 1 and 4, with
+                    the dimensions being interpreted as x, y, z/t, colour.
+                    A mangled (will support slicing, but not necessarily other array 
+                    operations) version of the data will be stored as the .data 
+                    member of the class.
+                    
+            mdh     something derived from PYME.Acquire.MetaDataHandler.MDHandlerBase
+                    If None, and empty one will be created.
+            
+            filename    filename of the data to load (see Load), or PYME queue identifier
+            
+            queueURI    PYRO URI of the task server. This exists to optionally speed up 
+                        loading from a queue by eliminating the PYRO nameserver
+                        lookup. The queue name itself should be passed in the filename,
+                        with a leading QUEUE://.
+            
+            events      An array of time series events (TODO - more doc)
+            
+            haveGUI     Whether we have a wx GUI available, so that we can
+                        display dialogs asking for, e.g. a file name if no
+                        data or filename is supplied, or for missing metadata
+                        entries
+                    
+        '''
         global nUntitled
         self.data = data      #image data
         self.mdh = mdh        #metadata (a MetaDataHandler class)
@@ -57,32 +107,40 @@ class ImageStack(object):
 
         self.haveGUI = haveGUI
 
+        #default 'mode' / image type - see PYME/DSView/modules/__init__.py        
         self.mode = 'LM'
 
         self.saved = False
         self.volatile = False #is the data likely to change and need refreshing?
         
         if (data == None):
+            #if we've supplied data, use that, otherwise load from file
             self.Load(filename)
 
+        #do the necessary munging to get the data in the format we want it        
         self.SetData(self.data)
 
+        #generate a placeholder filename / window title        
         if self.filename == None:
             self.filename = '%s %d' % (titleStub, nUntitled[titleStub])
             nUntitled[titleStub] += 1
             
             self.seriesName = self.filename
 
+        #generate some empty metadata if we don't have any        
         if self.mdh == None:
             self.mdh = MetaDataHandler.NestedClassMDHandler()
 
+        #hack to make spectral data behave right - doesn't really belong here        
         if 'Spectrum.Wavelengths' in self.mdh.getEntryNames():
             self.xvals = self.mdh['Spectrum.Wavelengths']
             self.xlabel = 'Wavelength [nm]'
 
-            if self.data.shape[1] == 1:
-                self.mode = 'graph'
+        #if we have 1D data, plot as graph rather than image        
+        if self.data.shape[1] == 1:
+            self.mode = 'graph'
 
+        #add ourselves to the list of open images        
         openImages[self.filename] = self
 
     def SetData(self, data):
@@ -92,6 +150,8 @@ class ImageStack(object):
     
     @property
     def voxelsize(self):
+        '''Returns voxel size, in nm, as a 3-tuple. Expects metadata voxel size
+        to be in um'''
         try:
             return 1e3*self.mdh['voxelsize.x'], 1e3*self.mdh['voxelsize.y'],  1e3*self.mdh['voxelsize.z']
         except:
@@ -123,6 +183,7 @@ class ImageStack(object):
 
     @property
     def names(self):
+        '''Return the names of the colour channels'''
         try:
             return self.mdh['ChannelNames']
         except:
@@ -134,6 +195,7 @@ class ImageStack(object):
 
     @property
     def imgBounds(self):
+        '''Return the bounds (or valid area) of the image in nm as (x0, y0, x1, y1, z0, z1)'''
         try:
             return ImageBounds(self.mdh['ImageBounds.x0'],self.mdh['ImageBounds.y0'],self.mdh['ImageBounds.x1'],self.mdh['ImageBounds.y1'],self.mdh['ImageBounds.z0'],self.mdh['ImageBounds.z1'])
         except:
@@ -191,16 +253,21 @@ class ImageStack(object):
 
 
     def LoadQueue(self, filename):
+        '''Load data from a remote PYME.ParallelTasks.HDFTaskQueue queue using
+        Pyro.
+        
+        Parameters:
+
+            filename    the name of the queue         
+        
+        '''
         import Pyro.core
         from PYME.Analysis.DataSources import TQDataSource
         from PYME.misc.computerName import GetComputerName
         compName = GetComputerName()
 
         if self.queueURI == None:
-            #if 'PYME_TASKQUEUENAME' in os.environ.keys():
-            #    taskQueueName = os.environ['PYME_TASKQUEUENAME']
-            #else:
-            #    taskQueueName = 'taskQueue'
+            #do a lookup
             taskQueueName = 'TaskQueues.%s' % compName
             self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
         else:
@@ -219,11 +286,16 @@ class ImageStack(object):
         self.events = self.dataSource.getEvents()
 
     def Loadh5(self, filename):
+        '''Load PYMEs semi-custom HDF5 image data format. Offloads all the
+        hard work to the HDFDataSource class'''
         import tables
         from PYME.Analysis.DataSources import HDFDataSource, BGSDataSource
         from PYME.Analysis.LMVis import inpFilt
-
+        
+        #open hdf5 file
         self.dataSource = HDFDataSource.DataSource(filename, None)
+        #chain on a background subtraction data source, so we can easily do 
+        #background subtraction in the GUI the same way as in the analysis
         self.data = BGSDataSource.DataSource(self.dataSource) #this will get replaced with a wrapped version
 
         if 'MetaData' in self.dataSource.h5File.root: #should be true the whole time
@@ -234,8 +306,10 @@ class ImageStack(object):
             wx.MessageBox("Carrying on with defaults - no gaurantees it'll work well", 'ERROR: No metadata found in file ...', wx.OK)
             print "ERROR: No metadata fond in file ... Carrying on with defaults - no gaurantees it'll work well"
 
+        #attempt to estimate any missing parameters from the data itself        
         MetaData.fillInBlanks(self.mdh, self.dataSource)
 
+        #calculate the name to use when we do batch analysis on this        
         from PYME.ParallelTasks.relativeFiles import getRelFilename
         self.seriesName = getRelFilename(filename)
 
@@ -256,6 +330,7 @@ class ImageStack(object):
         self.events = self.dataSource.getEvents()
 
     def LoadKdf(self, filename):
+        '''load khorus formatted data - pretty much deprecated by now'''
         import PYME.cSMI as cSMI
         self.data = cSMI.CDataStack_AsArray(cSMI.CDataStack(filename), 0).squeeze()
         self.mdh = MetaData.TIRFDefault
@@ -277,6 +352,10 @@ class ImageStack(object):
         self.mode = 'psf'
 
     def LoadPSF(self, filename):
+        '''Load PYME .psf data.
+        
+        .psf files consist of a tuple containing the data and the voxelsize.
+        '''
         self.data, vox = numpy.load(filename)
         self.mdh = MetaData.ConfocDefault
 
@@ -292,6 +371,9 @@ class ImageStack(object):
         
 
     def FindAndParseMetadata(self, filename):
+        '''Try and find and load a .xml or .md metadata file that might be ascociated
+        with a given image filename. See the relevant metadatahandler classes
+        for details.'''
         mdf = None
         xmlfn = os.path.splitext(filename)[0] + '.xml'
         xmlfnmc = os.path.splitext(filename)[0].split('__')[0] + '.xml'
@@ -482,6 +564,8 @@ class ImageStack(object):
 
 
 def GeneratedImage(img, imgBounds, pixelSize, sliceSize, channelNames, mdh=None):
+    '''Helper function for LMVis which creates an image and fills in a few 
+    metadata parameters'''
     image = ImageStack(img, mdh=mdh)
     image.pixelSize = pixelSize
     image.sliceSize = sliceSize

@@ -7,3 +7,4 @@ Data Analysis
    dh5view
    LocalisationAnalysis
    AnalysingForeignData
+   SplitterMulticolour

@@ -23,6 +23,7 @@
 
 from PYME.Acquire.Hardware.AndorIXon import AndorIXon
 from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
+from PYME.Acquire.Hardware.uc480 import uCam480
 
 from PYME.Acquire.Hardware import fakeShutters
 import time
@@ -41,9 +42,9 @@ from PYME.Acquire import MetaDataHandler
 
 InitBG('EMCCD Cameras', '''
 scope.cameras['A - Left'] = AndorIXon.iXonCamera(0)
-#scope.cameras['B - Right'] = AndorIXon.iXonCamera(0)
+scope.cameras['B - Right'] = uCam480.uc480Camera(0)
 #scope.cameras['B - Right'].SetShutter(False)
-#scope.cameras['B - Right'].SetActive(False)
+scope.cameras['B - Right'].SetActive(False)
 scope.cam = scope.cameras['A - Left']
 ''')
 
@@ -55,16 +56,16 @@ InitGUI('''
 scope.camControls['A - Left'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['A - Left'], scope)
 camPanels.append((scope.camControls['A - Left'], 'EMCCD A Properties'))
 
-#scope.camControls['B - Right'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['B - Right'], scope)
-#camPanels.append((scope.camControls['B - Right'], 'EMCCD B Properties'))
+scope.camControls['B - Right'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['A - Left'], scope)
+camPanels.append((scope.camControls['B - Right'], 'EMCCD B Properties'))
 
 ''')
 
-#InitGUI('''
-#from PYME.Acquire import sampleInformation
-#sampPan = sampleInformation.slidePanel(MainFrame)
-#camPanels.append((sampPan, 'Current Slide'))
-#''')
+InitGUI('''
+from PYME.Acquire import sampleInformation
+sampPan = sampleInformation.slidePanel(MainFrame)
+camPanels.append((sampPan, 'Current Slide'))
+''')
 
 #setup for the channels to aquire - b/w camera, no shutters
 class chaninfo:
@@ -98,13 +99,13 @@ from PYME.Acquire.Hardware.Piezos import piezo_e709
 #scope.zStage = NikonTi.zDrive()
 #scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
 
-scope.piFoc = piezo_e709.piezo_e709('COM10', 100, 0, True)
+scope.piFoc = piezo_e709.piezo_e709('COM9', 400, 0, True)
 scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
 
 
 #XY Stage
 from PYME.Acquire.Hardware.Piezos import piezo_c867
-scope.xystage = piezo_c867.piezo_c867('COM8')
+scope.xystage = piezo_c867.piezo_c867T('COM8')
 scope.piezos.append((scope.xystage, 2, 'Stage_X'))
 scope.piezos.append((scope.xystage, 1, 'Stage_Y'))
 ''')
@@ -128,19 +129,19 @@ scope.piezos.append((scope.xystage, 1, 'Stage_Y'))
 
 
 
-#InitGUI('''
-#from PYME.Acquire import positionTracker
-#pt = positionTracker.PositionTracker(scope, time1)
-#pv = positionTracker.TrackerPanel(MainFrame, pt)
-#MainFrame.AddPage(page=pv, select=False, caption='Track')
-#time1.WantNotification.append(pv.draw)
-#''')
+InitGUI('''
+from PYME.Acquire import positionTracker
+pt = positionTracker.PositionTracker(scope, time1)
+pv = positionTracker.TrackerPanel(MainFrame, pt)
+MainFrame.AddPage(page=pv, select=False, caption='Track')
+time1.WantNotification.append(pv.draw)
+''')
 
 #splitter
-#InitGUI('''
-#from PYME.Acquire.Hardware import splitter
-#splt = splitter.Splitter(MainFrame, mControls, scope, scope.cam, flipChan = 0, dichroic = 'NotYet' , transLocOnCamera = 'Top', flip=False)
-#''')
+InitGUI('''
+from PYME.Acquire.Hardware import splitter
+splt = splitter.Splitter(MainFrame, mControls, scope, scope.cam, flipChan = 0, dichroic = 'FF700-Di01' , transLocOnCamera = 'Left', flip=False, dir='left_right')
+''')
 
 #we don't have a splitter - make sure that the analysis knows this
 #scope.mdh['Splitter.Flip'] = False
@@ -170,7 +171,7 @@ xykeys = focusKeys.PositionKeys(MainFrame, menuBar1, scope.piezos[1], scope.piez
 InitGUI('''
 from PYME.Acquire.Hardware import spacenav
 scope.spacenav = spacenav.SpaceNavigator()
-scope.ctrl3d = spacenav.SpaceNavPiezoCtrl(scope.spacenav, scope.piezos)
+scope.ctrl3d = spacenav.SpaceNavPiezoCtrl(scope.spacenav, scope.piFoc, scope.xystage)
 ''')
 
 #from PYME.Acquire.Hardware import frZStage
@@ -225,8 +226,9 @@ scope.l642 = phoxxLaser.PhoxxLaser('642',portname='COM4')
 scope.l488 = phoxxLaser.PhoxxLaser('488',portname='COM5')
 scope.l405 = phoxxLaser.PhoxxLaser('405',portname='COM6')
 scope.l561 = cobaltLaser.CobaltLaser('561',portname='COM7')
-#scope.lasers = [scope.l405,scope.l488,scope.l561, scope.l642]
-scope.lasers = [scope.l405,scope.l488, scope.l642]
+scope.lasers = [scope.l405,scope.l488,scope.l561, scope.l642]
+#scope.lasers = [scope.l405,scope.l488, scope.l642]
+#scope.lasers = [scope.l642]
 
 #scope.StatusCallbacks.append(scope.l642.GetStatusText)
 #scope.lasers = [scope.l642]

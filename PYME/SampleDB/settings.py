@@ -42,6 +42,10 @@ DATABASE_PASSWORD = 'PYME'         # Not used with sqlite3. #### Change this for
 DATABASE_HOST = 'lmsrv1'             # Set to empty string for localhost. Not used with sqlite3.
 DATABASE_PORT = ''             # Set to empty string for default. Not used with sqlite3.
 
+#look for database host in environment variable
+if 'PYME_DATABASE_HOST' in os.environ.keys():
+    DATABASE_HOST = os.environ['PYME_DATABASE_HOST']
+
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
 # although not all choices may be available on all operating systems.

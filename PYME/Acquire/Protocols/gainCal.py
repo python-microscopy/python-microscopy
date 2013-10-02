@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 ##################
-# prebleach671.py
+# standard488.py
 #
 # Copyright David Baddeley, 2009
 # d.baddeley@auckland.ac.nz
@@ -30,41 +30,24 @@ import numpy
 #additional arguments
 taskList = [
 T(-1, scope.turnAllLasersOff),
+T(-1, SetIntegTime, 25),
 T(-1, SetCameraShutter, False),
-#T(-1, scope.joystick.Enable, False),
-#T(-1, SetEMGain,150),
 T(20, SetCameraShutter, True),
-#T(20, scope.filterWheel.SetFilterPos, "ND4"),
-T(20, scope.l642.SetPower, .01),
-T(21, scope.l642.TurnOn),
-T(58, scope.l642.TurnOff),
-T(60, SetEMGain,0),
-T(61, scope.l642.TurnOn),
-T(61, scope.l642.SetPower, 1),
-T(200, SetEMGain,scope.cam.DefaultEMGain),
-T(210, MainFrame.pan_spool.OnBAnalyse, None),
-T(maxint, scope.turnAllLasersOff),
-T(maxint, scope.l642.SetPower, .01),
-#T(maxint, scope.joystick.Enable, True),
+T(30, SetIntegTime, 50),
+T(40, SetIntegTime, 100),
+T(50, SetIntegTime, 250),
+T(60, SetIntegTime, 500),
+T(70, SetIntegTime, 1000),
+
+#T(30, MainFrame.pan_spool.OnBAnalyse, None),
 ]
 
 #optional - metadata entries
 metaData = [
 ('Protocol.DarkFrameRange', (0, 20)),
-('Protocol.DataStartsAt', 201),
-('Protocol.PrebleachFrames', (21, 58)),
-('Protocol.BleachFrames', (61,200)),
-]
-
-#optional - pre-flight check
-#a list of checks which should be performed prior to launching the protocol
-#syntax: C(expression to evaluate (quoted, should have boolean return), message to display on failure),
-preflight = [
-C('scope.cam.GetEMGain() == scope.cam.DefaultEMGain', 'Was expecting an intial e.m. gain of %d' % scope.cam.DefaultEMGain),
-C('scope.cam.GetROIX1() > 1', 'Looks like no ROI has been set'),
-C('scope.cam.GetIntegTime() < .06', 'Camera integration time may be too long'),
+('Protocol.DataStartsAt', 21)
 ]
 
 #must be defined for protocol to be discovered
-PROTOCOL = TaskListProtocol(taskList, metaData, preflight)
-PROTOCOL_STACK = ZStackTaskListProtocol(taskList, 101, 100, metaData, preflight, randomise = False)
+PROTOCOL = TaskListProtocol(taskList, metaData)
+PROTOCOL_STACK = ZStackTaskListProtocol(taskList, 20, 30, metaData, randomise = False)
