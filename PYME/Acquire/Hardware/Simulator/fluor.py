@@ -23,7 +23,13 @@
 
 from scipy import *
 import numpy as np
-import illuminate
+
+try:
+    import illuminate
+    HAVE_ILLUMINATE_MOD = True
+except ImportError:
+    HAVE_ILLUMINATE_MOD = False
+    
 
 class states:
     caged, active, blinked, bleached = range(4)
@@ -103,41 +109,43 @@ class fluors:
         #self.illuminationFunction = illuminationFunction
 
     #return fl
-    def illuminate(self,laserPowers, expTime, position=[0,0,0], illuminationFunction = 'ConstIllum'):
-        dose = (np.concatenate(([1],laserPowers),0)*expTime).astype('f')
-        ilFrac = illuminationFunctions[illuminationFunction](self.fl, position)
-        return illuminate.illuminate(self.transitionTensor, self.fl, self.fl['state'], self.fl['abcosthetas'], dose, ilFrac, self.activeState)
-
-    def _illuminate(self, laserPowers, expTime, position=[0,0,0], illuminationFunction = 'ConstIllum'):
-        dose = concatenate(([1],laserPowers),0)*expTime
-        #grab transition matrix
-        transMat = self.transitionTensor[self.fl['state'],:,:].copy()
-        
-
-        ilFrac = illuminationFunctions[illuminationFunction](self.fl, position)
-
-        c0 = self.fl['abcosthetas'][:,0]*dose[1]*ilFrac
-        c1 = self.fl['abcosthetas'][:,1]*dose[2]*ilFrac
-        #print c0.shape
-        #print transMat.shape,transMat.dtype
-        #print vstack((c0,c0, c0,c0)).shape
-
-        transMat[:,:,0] *= dose[0]
-        transMat[:,:,1] *= c0[:,None] #vstack((c0,c0, c0,c0)).T 
-        transMat[:,:,2] *= c1[:,None] #vstack((c1, c1, c1, c1)).T
-        
-        transVec = transMat.sum(2)
-        tvs = transVec.sum(1)
-        for i in range(transVec.shape[1]):
-            m = self.fl['state'] == i
-            transVec[m, i]= 1 - tvs[m]
-        transCs = transVec.cumsum(1)
-        
-        r = rand(len(self.fl))
-        
-        self.fl['state'] = (transCs < r[:, None]).sum(1)
-        
-        return (self.fl['state'] == self.activeState)*(self.fl['exc'][:,0]*c0 + self.fl['exc'][:,1]*c1)
+    if HAVE_ILLUMINATE_MOD:
+        #use faster cythoned version of function if available
+        def illuminate(self,laserPowers, expTime, position=[0,0,0], illuminationFunction = 'ConstIllum'):
+            dose = (np.concatenate(([1],laserPowers),0)*expTime).astype('f')
+            ilFrac = illuminationFunctions[illuminationFunction](self.fl, position)
+            return illuminate.illuminate(self.transitionTensor, self.fl, self.fl['state'], self.fl['abcosthetas'], dose, ilFrac, self.activeState)
+    else:
+        def illuminate(self, laserPowers, expTime, position=[0,0,0], illuminationFunction = 'ConstIllum'):
+            dose = concatenate(([1],laserPowers),0)*expTime
+            #grab transition matrix
+            transMat = self.transitionTensor[self.fl['state'],:,:].copy()
+            
+    
+            ilFrac = illuminationFunctions[illuminationFunction](self.fl, position)
+    
+            c0 = self.fl['abcosthetas'][:,0]*dose[1]*ilFrac
+            c1 = self.fl['abcosthetas'][:,1]*dose[2]*ilFrac
+            #print c0.shape
+            #print transMat.shape,transMat.dtype
+            #print vstack((c0,c0, c0,c0)).shape
+    
+            transMat[:,:,0] *= dose[0]
+            transMat[:,:,1] *= c0[:,None] #vstack((c0,c0, c0,c0)).T 
+            transMat[:,:,2] *= c1[:,None] #vstack((c1, c1, c1, c1)).T
+            
+            transVec = transMat.sum(2)
+            tvs = transVec.sum(1)
+            for i in range(transVec.shape[1]):
+                m = self.fl['state'] == i
+                transVec[m, i]= 1 - tvs[m]
+            transCs = transVec.cumsum(1)
+            
+            r = rand(len(self.fl))
+            
+            self.fl['state'] = (transCs < r[:, None]).sum(1)
+            
+            return (self.fl['state'] == self.activeState)*(self.fl['exc'][:,0]*c0 + self.fl['exc'][:,1]*c1)
 
 
 class specFluors(fluors):
