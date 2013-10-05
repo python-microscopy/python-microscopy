@@ -145,7 +145,7 @@ time1.WantNotification.append(fk.refresh)
 
 InitGUI('''
 from PYME.Acquire.Hardware import splitter
-splt = splitter.Splitter(MainFrame, mControls, scope)
+splt = splitter.Splitter(MainFrame, mControls, scope, scope.cam, dichroic = 'FF741-Di01' , transLocOnCamera = 'Top')
 ''')
 
 from PYME import cSMI
