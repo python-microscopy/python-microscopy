@@ -529,7 +529,8 @@ class uc480Camera:
         return len(self._buffers)
 
     def SetShutter(self, state):
-        raise Exception, 'Not implemented yet!!'
+        pass
+        #raise Exception, 'Not implemented yet!!'
         
         
     def GetSerialNumber(self):

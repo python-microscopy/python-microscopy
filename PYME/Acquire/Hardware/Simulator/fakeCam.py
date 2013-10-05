@@ -42,7 +42,7 @@ class CDataStack(example.CDataStack):
         return example.CDataStack_AsArray(self, curMemChn)[:,:,self.getZPos()]
 
 class NoiseMaker:
-    def __init__(self, QE=.8, ADGain=27.32, readoutNoise=109.8, EMGain=0, background=10., floor=967, shutterOpen = True, numGainElements=536, vbreakdown=6.6, temperature = -70.):
+    def __init__(self, QE=.8, ADGain=27.32, readoutNoise=109.8, EMGain=0, background=0., floor=967, shutterOpen = True, numGainElements=536, vbreakdown=6.6, temperature = -70.):
         self.QE = QE
         self.ElectronsPerCount = ADGain
         self.ReadoutNoise=readoutNoise

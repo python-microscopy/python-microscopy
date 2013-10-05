@@ -39,7 +39,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('EdgeDB')
     config.add_subpackage('qHull')
     config.add_subpackage('BleachProfile')
-    #config.add_subpackage('DriftCorrection')
+    config.add_subpackage('Colocalisation')
 
     #config.add_scripts(['LMVis/VisGUI.py', 'LMVis/VisGUI.cmd'])
     

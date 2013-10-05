@@ -237,7 +237,7 @@ class PanSpool(wx.Panel):
         return self.seriesStub + '_' + self._NumToAlph(self.seriesCounter)
 
     def _NumToAlph(self, num):
-        return baseconvert(num, 'ABCDEFGHIJKLMNOPQRSTUVXWYZ')
+        return baseconvert(num, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')
 
     def UpdateFreeSpace(self, event=None):
         freeGB = get_free_space(self.dirname)/1e9

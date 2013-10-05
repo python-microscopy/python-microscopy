@@ -64,16 +64,21 @@ def LoadShiftField(filename = None):
 
 
 class Unmixer:
-    def __init__(self, shiftfield=None, pixelsize=70., flip=True):
+    def __init__(self, shiftfield=None, pixelsize=70., flip=True, axis='up_down'):
         self.pixelsize = pixelsize
         self.flip = flip
+        self.axis = axis
         if shiftfield:
             self.SetShiftField(shiftfield)
 
     def SetShiftField(self, shiftField):
         #self.shiftField = shiftField
-        #self.shiftFieldName = sfname
-        X, Y = numpy.ogrid[:512, :256]
+        #self.shiftFieldname = sfname
+    
+        if self.axis == 'up_down':
+            X, Y = numpy.ogrid[:512, :256]
+        else:
+            X, Y = numpy.ogrid[:256, :512]
 
         self.X2 = numpy.round(X - shiftField[0](X*70., Y*70.)/70.).astype('i')
         self.Y2 = numpy.round(Y - shiftField[1](X*70., Y*70.)/70.).astype('i')
@@ -87,8 +92,12 @@ class Unmixer:
 
             #print self.X2.shape
 
-            Xn = self.X2[x1:x2, y1:(y1 + red_chan.shape[1])] - x1
-            Yn = self.Y2[x1:x2, y1:(y1 + red_chan.shape[1])] - y1
+            if self.axis == 'up_down':
+                Xn = self.X2[x1:x2, y1:(y1 + red_chan.shape[1])] - x1
+                Yn = self.Y2[x1:x2, y1:(y1 + red_chan.shape[1])] - y1
+            else:
+                Xn = self.X2[x1:(x1 + red_chan.shape[0]), y1:y2] - x1
+                Yn = self.Y2[x1:(x1 + red_chan.shape[0]), y1:y2] - y1
 
             #print Xn.shape
 
@@ -110,12 +119,19 @@ class Unmixer:
         umm = scipy.linalg.inv(mixMatrix)
 
         dsa = data.squeeze() - offset
-
-        g_ = dsa[:, :(dsa.shape[1]/2)]
-        r_ = dsa[:, (dsa.shape[1]/2):]
-        if self.flip:
-            r_ = numpy.fliplr(r_)
-        r_ = self._deshift(r_, ROI)
+        
+        if self.axis == 'up_down':
+            g_ = dsa[:, :(dsa.shape[1]/2)]
+            r_ = dsa[:, (dsa.shape[1]/2):]
+            if self.flip:
+                r_ = numpy.fliplr(r_)
+            r_ = self._deshift(r_, ROI)
+        else:
+            g_ = dsa[:(dsa.shape[0]/2), :]
+            r_ = dsa[(dsa.shape[0]/2):, :]
+            if self.flip:
+                r_ = numpy.flipud(r_)
+            r_ = self._deshift(r_, ROI)
 
         #print g_.shape, r_.shape
 
@@ -143,7 +159,7 @@ class Splitter:
         self.cam = cam
         self.flipChan=flipChan
         self.parent = parent
-        self.unmixer = Unmixer(flip=flip)
+        self.unmixer = Unmixer(flip=flip, axis = dir)
         self.flip = flip
 
         #which dichroic mirror is installed
@@ -195,6 +211,13 @@ class Splitter:
             mdh.setEntry('Splitter.Dichroic', self.dichroic)
             mdh.setEntry('Splitter.TransmittedPathPosition', self.transLocOnCamera)
             mdh.setEntry('Splitter.Flip', self.flip)
+            
+            if self.dir == 'up_down':
+                mdh['Splitter.Channel0ROI'] = [0,0,self.cam.GetCCDWidth(), self.cam.GetCCDHeight()/2]
+                mdh['Splitter.Channel1ROI'] = [0,self.cam.GetCCDHeight()/2,self.cam.GetCCDWidth(), self.cam.GetCCDHeight()/2]
+            else: #dir == 'left_right'
+                mdh['Splitter.Channel0ROI'] = [0,0,self.cam.GetCCDWidth()/2, self.cam.GetCCDHeight()]
+                mdh['Splitter.Channel1ROI'] = [self.cam.GetCCDWidth()/2,0,self.cam.GetCCDWidth()/2, self.cam.GetCCDHeight()]
 
             if 'shiftField' in dir(self):
                 mdh.setEntry('chroma.ShiftFilename', self.shiftFieldName)
@@ -407,6 +430,7 @@ class UnMixPanel(wx.Panel):
 
 
     def update(self, caller=None):
+        #print 'u'
         #print self.tMM00.GetValue(), self.tMM01.GetValue()
 #        self.splitter.mixMatrix[0,0]= float(self.tMM00.GetValue())
 #        self.splitter.mixMatrix[0,1]= float(self.tMM01.GetValue())
@@ -417,7 +441,7 @@ class UnMixPanel(wx.Panel):
 
         if self.IsShown():
             self.vp.ResetDataStack(self.splitter.Unmix())
-            self.vp.imagepanel.Refresh()
+            self.vp.Redraw()#imagepanel.Refresh()
 
     def OnCloseWindow(self, event):
         self.splitter.scope.pa.WantFrameGroupNotification.remove(self.update)

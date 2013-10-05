@@ -24,9 +24,14 @@ import wx
 import wx.grid
 #import pylab
 #from PYME.DSView.image import ImageStack
-from enthought.traits.api import HasTraits, Float, Int
-from enthought.traits.ui.api import View, Item
-from enthought.traits.ui.menu import OKButton
+try:
+    from enthought.traits.api import HasTraits, Float, Int
+    from enthought.traits.ui.api import View, Item
+    from enthought.traits.ui.menu import OKButton
+except ImportError:
+    from traits.api import HasTraits, Float, Int
+    from traitsui.api import View, Item
+    from traitsui.menu import OKButton
 
 from graphViewPanel import *
 from PYME.PSFEst import psfQuality

@@ -21,10 +21,24 @@
 #
 ################
 from ctypes import *
+import platform
 
 STRING = c_char_p
 _stdcall_libraries = {}
-_stdcall_libraries['PI_Mercury_GCS_DLL.dll'] = WinDLL('PI_Mercury_GCS_DLL.dll')
+
+#_stdcall_libraries['PI_Mercury_GCS_DLL.dll'] = WinDLL('PI_Mercury_GCS_DLL.dll')
+
+arch, plat = platform.architecture()
+
+if plat.startswith('Windows'):
+    if arch == '32bit':
+        _stdcall_libraries['PI_Mercury_GCS_DLL.dll'] = WinDLL('PI_Mercury_GCS_DLL.dll')
+    else:
+        _stdcall_libraries['PI_Mercury_GCS_DLL.dll'] = WinDLL('PI_Mercury_GCS_DLL_x64.dll')
+    from ctypes.wintypes import ULONG, DWORD, BOOL, BYTE, WORD, UINT, HANDLE, HWND
+else:
+    raise RuntimeError('Not a supported platform: %s' % plat)
+
 from ctypes.wintypes import BOOL
 
 

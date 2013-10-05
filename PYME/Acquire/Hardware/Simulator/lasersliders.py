@@ -49,19 +49,19 @@ class LaserSliders(wx.Panel):
 
         for c in range(len(self.lasers)):
             #if sys.platform == 'darwin': #sliders are subtly broken on MacOS, requiring workaround
-            sl = wx.Slider(self, -1, self.lasers[c].GetPower(), 0, 1000, size=wx.Size(150,-1),style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
+            sl = wx.Slider(self, -1, self.lasers[c].GetPower(), 0, 1000, size=wx.Size(150,-1),style=wx.SL_HORIZONTAL)#|wx.SL_AUTOTICKS|wx.SL_LABELS)
             #else: #sane OS's
             #    sl = wx.Slider(self, -1, self.cam.laserPowers[c], 0, 1000, size=wx.Size(300,-1),style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
 
             #sl.SetSize((800,20))
             sl.SetTickFreq(100,1)
             sz = wx.StaticBoxSizer(wx.StaticBox(self, -1, self.laserNames[c] + " [mW]"), wx.HORIZONTAL)
-            sz.Add(sl, 1, wx.ALL|wx.EXPAND, 5)
+            sz.Add(sl, 1, wx.ALL|wx.EXPAND, 2)
             sizer_2.Add(sz,1,wx.EXPAND,0)
 
             self.sliders.append(sl)
 
-        sizer_2.AddSpacer(5)
+        #sizer_2.AddSpacer(5)
 
         wx.EVT_SCROLL(self,self.onSlide)
                 
@@ -79,11 +79,11 @@ class LaserSliders(wx.Panel):
         ind = self.sliders.index(sl)
         self.sl = sl
         self.ind = ind
-        self.lasers[ind].SetPower(sl.GetValue())
+        self.lasers[ind].SetPower(self.lasers[ind].MAX_POWER*sl.GetValue()/1.0e3)
 
     def update(self):
-        for ind in range(len(self.piezos)):
-            self.sliders[ind].SetValue(self.cam.laserPowers[ind])
+        for ind, L in enumerate(self.lasers):
+            self.sliders[ind].SetValue(L.GetPower()*1e3/L.MAX_POWER)
 
             
 
