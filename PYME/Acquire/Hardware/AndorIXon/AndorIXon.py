@@ -54,13 +54,13 @@ noiseProperties = {
         'DefaultEMGain' : 90,
         'SaturationThreshold' : (2**14 -1)
         },
-7863 : {
-        'ReadNoise' : 152.69,
-        'ElectronsPerCount' : 9.18,
+7863 : { #Gain setting of 3
+        'ReadNoise' : 88.1,
+        'ElectronsPerCount' : 4.99,
         'NGainStages' : 536,
         'ADOffset' : 203,
         'DefaultEMGain' : 90,
-        'SaturationThreshold' : (2**16 -1)
+        'SaturationThreshold' : 5.4e4#(2**16 -1)
         },
 7546 : {
         #  preamp: currently using most sensitive setting (default according to docs)
@@ -199,6 +199,13 @@ class iXonCamera:
             raise RuntimeError('Error setting HS speed: %s' % ac.errorCodes[ret])
 
         #FIXME - do something about selecting A/D channel
+
+        # this is in David's part of the code - I stay with preampGain 3 for now
+        # self.preampGain = 2 #gain of "3" 
+        # ret = ac.SetPreAmpGain(self.preampGain)
+        # if not ret == ac.DRV_SUCCESS:
+        #    raise RuntimeError('Error setting Preamp gain: %s' % ac.errorCodes[ret])
+
 
         self.binning=False #binning flag - binning is off
         self.binX=1 #1x1

@@ -164,7 +164,7 @@ class dSimControl(wx.Panel):
         sbsizer2.Add(wx.StaticText(self, -1, 'Switching Laser:'), 0, 
                      wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
 
-        self.tExSwitch = wx.TextCtrl(self, -1, value='5')
+        self.tExSwitch = wx.TextCtrl(self, -1, value='1')
         sbsizer2.Add(self.tExSwitch, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
         
         sbsizer2.Add(wx.StaticText(self, -1, '/mWs       Probe Laser:'), 0, 
@@ -369,14 +369,14 @@ class dSimControl(wx.Panel):
         
         self.scope.cam.setFluors(fluors)
         
-        pylab.figure(1)
-        pylab.clf()
-        pylab.scatter([p[0] for p in self.points],[p[1] for p in self.points], c = [p[2] for p in self.points], cmap=pylab.cm.gist_rainbow, hold=False)
-        pylab.gca().set_ylim(self.scope.cam.YVals[0], self.scope.cam.YVals[-1])
-        pylab.gca().set_xlim(self.scope.cam.XVals[0], self.scope.cam.XVals[-1])
-        pylab.axis('equal')
-        pylab.colorbar()
-        pylab.show()
+#        pylab.figure(1)
+#        pylab.clf()
+#        pylab.scatter([p[0] for p in self.points],[p[1] for p in self.points], c = [p[2] for p in self.points], cmap=pylab.cm.gist_rainbow, hold=False)
+#        pylab.gca().set_ylim(self.scope.cam.YVals[0], self.scope.cam.YVals[-1])
+#        pylab.gca().set_xlim(self.scope.cam.XVals[0], self.scope.cam.XVals[-1])
+#        pylab.axis('equal')
+#        pylab.colorbar()
+#        pylab.show()
         #event.Skip()
 
     def OnBPauseButton(self, event):

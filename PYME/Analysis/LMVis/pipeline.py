@@ -229,6 +229,7 @@ class Pipeline:
             VarName:    the name of the variable in the .mat file which 
                         contains the data.
             SkipRows:   Number of header rows to skip for txt file data
+            
         '''
         
         #close any files we had open previously
@@ -476,6 +477,21 @@ class Pipeline:
         self.objectMeasures = objectMeasure.measureObjects(self.objects, self.objThreshold)
         
         return self.objectMeasures
+        
+    def save_txt(self, outFile, keys=None):
+        if keys == None:
+            keys = self.keys()
+
+        #nRecords = len(ds[keys[0]])
+    
+        of = open(outFile, 'w')
+    
+        of.write('#' + '\t'.join(['%s' % k for k in keys]) + '\n')
+    
+        for row in zip(*[self[k] for k in keys]):
+            of.write('\t'.join(['%e' % c for c in row]) + '\n')
+    
+        of.close()
     
 
 

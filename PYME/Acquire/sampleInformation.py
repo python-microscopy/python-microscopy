@@ -216,7 +216,12 @@ class SampleInfoDialog(wx.Dialog):
 
     def OnAddSlide(self, event):
         import webbrowser
-        webbrowser.open('http://phy-lmsrv1:8080/admin/samples/slide/add/')
+        import os
+        host = 'phy-lmsrv1:8080'
+        if 'PYME_DATABASE_HOST' in os.environ.keys():
+            host = os.environ['PYME_DATABASE_HOST']
+            
+        webbrowser.open('http://%s/admin/samples/slide/add/' % host)
 
 
     def OnSelectSlide(self, event):

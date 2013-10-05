@@ -61,12 +61,14 @@ class SpaceNavigator(object):
 class SpaceNavPiezoCtrl(object):
     FULL_SCALE = 350.
     EVENT_RATE = 6.
-    def __init__(self, spacenav, piezos):
+    def __init__(self, spacenav, pz, pxy):
         self.spacenav = spacenav
-        self.pz, self.px, self.py = piezos
+        self.pz = pz#, self.px, self.py = piezos
+        self.pxy = pxy
         
-        self.xy_sensitivity = 100e-3 #um/s
+        self.xy_sensitivity = .1 #um/s
         self.z_sensitivity = 3 #um/s
+        self.kappa = 1.5
         
         self.spacenav.WantPosNotification.append(self.updatePosition)
         self.update_n= 0
@@ -74,23 +76,32 @@ class SpaceNavPiezoCtrl(object):
         
     def updatePosition(self, sn):
         if self.update_n % 10:
-            x_incr = float(sn.x*self.xy_sensitivity)/(self.FULL_SCALE*self.EVENT_RATE)
-            y_incr = float(sn.y*self.xy_sensitivity)/(self.FULL_SCALE*self.EVENT_RATE)
+            #x_incr = float(sn.x*self.xy_sensitivity)/(self.FULL_SCALE*self.EVENT_RATE)
+            #y_incr = float(sn.y*self.xy_sensitivity)/(self.FULL_SCALE*self.EVENT_RATE)
             z_incr = float(sn.z*self.z_sensitivity)/(self.FULL_SCALE*self.EVENT_RATE)
             
-            norm = abs(sn.x) + abs(sn.y) + abs(sn.z)
+            norm = (abs(sn.x) + abs(sn.y) + abs(sn.z))/self.FULL_SCALE
             #print x_incr, y_incr, z_incr
     
-            try:
-                if abs(sn.z) >= norm/3:
-                    self.pz[0].MoveRel(self.pz[1], z_incr)
-                if abs(sn.x) >= norm/3:
-                    self.px[0].MoveRel(self.px[1], x_incr)
-                if abs(sn.y) >= norm/3:
-                    self.py[0].MoveRel(self.py[1], y_incr)
+            #try:
+            if abs(sn.z) >= norm/3:
+                try:
+                    self.pz.MoveRel(0, z_incr)
+                except:
+                    pass
+            #if abs(sn.x) >= norm/3:
+            #    self.px[0].MoveRel(self.px[1], x_incr)
+            #if abs(sn.y) >= norm/3:
+            #    self.py[0].MoveRel(self.py[1], y_incr)
+            print sn.x/self.FULL_SCALE, sn.y/self.FULL_SCALE
+            if  (abs(sn.x) >= norm/3 or abs(sn.y) >= norm/3) and norm > .01:
                 
-            except:
-                pass
+                self.pxy.MoveInDir(self.xy_sensitivity*np.sign(sn.x)*abs(sn.x/self.FULL_SCALE)**self.kappa, self.xy_sensitivity*np.sign(sn.y)*abs(sn.y/self.FULL_SCALE)**self.kappa)
+            else:
+                self.pxy.StopMove()
+                
+            #except:
+            #    pass
             
         self.update_n += 1
             
