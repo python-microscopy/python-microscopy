@@ -92,13 +92,19 @@ class TaskQueue:
                     self.tasksInProgress.remove(it)
         self.inProgressLock.release()
         
-        for taskResult in taskResults:
-            self.fileResult(taskResult)
+        #for taskResult in taskResults:
+        #allow this to be over-ridden 
+        self.fileResults(taskResults)
 
         if (len(self.openTasks) + len(self.tasksInProgress)) == 0: #no more tasks
             self.onEmpty(self)
         
 
+    def fileResults(self, taskResults):
+        #allow this to be over-ridden in derived classes to file multiple results at once
+        for taskResult in taskResults:
+            self.fileResult(taskResult)
+    
     def fileResult(self,taskResult):
         self.closedTasks.append(taskResult)
 

@@ -296,7 +296,7 @@ def main():
     if len(sys.argv) > 1 and sys.argv[1] == '-p':
         profile = True
         from PYME.mProfile import mProfile
-        mProfile.profileOn(['taskServerMP.py', 'HDFTaskQueue.py'])
+        mProfile.profileOn(['taskServerMP.py', 'HDFTaskQueue.py', 'TaskQueue.py'])
 
     Pyro.config.PYRO_MOBILE_CODE = 0
     Pyro.core.initServer()

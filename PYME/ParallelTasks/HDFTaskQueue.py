@@ -34,6 +34,9 @@ import numpy as np
 
 import logging
 
+import time
+import Queue
+
 from PYME.FileUtils.nameUtils import genResultFileName
 from PYME.ParallelTasks.relativeFiles import getFullFilename
 
@@ -157,6 +160,10 @@ class HDFResultsTaskQueue(TaskQueue):
         
         self.haveResultsTable = False
         
+        self.resultsQueue = []#Queue.Queue()
+        self.resultsQueueLock = threading.Lock()
+        self.lastResultsQueuePurge = time.time() 
+        
         logging.info('Results file initialised')
 
     def prepResultsFile(self):
@@ -206,6 +213,37 @@ class HDFResultsTaskQueue(TaskQueue):
         #self.h5DataFile.close()
         self.h5ResultsFile.close()
 
+#    def fileResult(self, res):
+#        #print res, res.results, res.driftResults, self.h5ResultsFile
+#        if res == None:
+#            print 'res == None'
+#            
+#        if res.results == [] and res.driftResults == []: #if we had a dud frame
+#            return
+#
+#        self.fileResultsLock.acquire() #get a lock
+#            
+#        if not len(res.results) == 0:
+#            #print res.results, res.results == []
+#            if not self.haveResultsTable: # self.h5ResultsFile.__contains__('/FitResults'):
+#                self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'FitResults', res.results, filters=tables.Filters(complevel=5, shuffle=True), expectedrows=500000)
+#                self.haveResultsTable = True
+#            else:
+#                self.h5ResultsFile.root.FitResults.append(res.results)
+#
+#        if not len(res.driftResults) == 0:
+#            if not self.h5ResultsFile.__contains__('/DriftResults'):
+#                self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'DriftResults', res.driftResults, filters=tables.Filters(complevel=5, shuffle=True), expectedrows=500000)
+#            else:
+#                self.h5ResultsFile.root.DriftResults.append(res.driftResults)
+#
+#        #self.h5ResultsFile.flush()
+#
+#        self.fileResultsLock.release() #release lock
+#
+#        self.numClosedTasks += 1
+
+
     def fileResult(self, res):
         #print res, res.results, res.driftResults, self.h5ResultsFile
         if res == None:
@@ -213,28 +251,65 @@ class HDFResultsTaskQueue(TaskQueue):
             
         if res.results == [] and res.driftResults == []: #if we had a dud frame
             return
+            
+        rq = None
+        with self.resultsQueueLock:
+            #logging.info('Filing result')
+            self.resultsQueue.append(res)
+            #print 'rq'
+            
+            t = time.time()
+            if (t > (self.lastResultsQueuePurge + 5)):# or (len(self.resultsQueue) > 20):
+                print 'fr'
+                self.lastResultsQueuePurge = t
+                rq = self.resultsQueue
+                self.resultsQueue = []
+                
+            #print 'rf'
+                
+        if rq:
+            self.fileResults(rq)
+            #print 'rff'
+                
+        #logging.info('Result Filed')
+        #logging.info('Result filed result')
+        
+    def fileResults(self, ress):
+        #print res, res.results, res.driftResults, self.h5ResultsFile
+        #if ress == None:
+        #    print 'res == None'
+            
+        results = []
+        driftResults = []
+        
+        for r in ress:
+            results += r.results
+            driftResults += r.driftResults
+        
+        if results == [] and driftResults == []: #if we had a dud frame
+            return
 
         self.fileResultsLock.acquire() #get a lock
             
-        if not len(res.results) == 0:
+        if not len(results) == 0:
             #print res.results, res.results == []
             if not self.haveResultsTable: # self.h5ResultsFile.__contains__('/FitResults'):
-                self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'FitResults', res.results, filters=tables.Filters(complevel=5, shuffle=True), expectedrows=500000)
+                self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'FitResults', results, filters=tables.Filters(complevel=5, shuffle=True), expectedrows=500000)
                 self.haveResultsTable = True
             else:
-                self.h5ResultsFile.root.FitResults.append(res.results)
+                self.h5ResultsFile.root.FitResults.append(results)
 
-        if not len(res.driftResults) == 0:
+        if not len(driftResults) == 0:
             if not self.h5ResultsFile.__contains__('/DriftResults'):
-                self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'DriftResults', res.driftResults, filters=tables.Filters(complevel=5, shuffle=True), expectedrows=500000)
+                self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'DriftResults', driftResults, filters=tables.Filters(complevel=5, shuffle=True), expectedrows=500000)
             else:
-                self.h5ResultsFile.root.DriftResults.append(res.driftResults)
+                self.h5ResultsFile.root.DriftResults.append(driftResults)
 
         #self.h5ResultsFile.flush()
 
         self.fileResultsLock.release() #release lock
 
-        self.numClosedTasks += 1
+        self.numClosedTasks += len(ress)
         
     def checkTimeouts(self):
         self.inProgressLock.acquire()
