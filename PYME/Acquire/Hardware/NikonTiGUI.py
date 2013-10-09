@@ -56,6 +56,9 @@ class TiPanel(wx.Panel):
         
         self.SetSizerAndFit(hsizer)
         
+        self.filterchanger.wantChangeNotification.append(self.OnFilterChange)
+        self.lightpath.wantChangeNotification.append(self.OnLightpathChange)
+        
             
     def OnFilterChoice(self, event):
         n = self.chFilters.GetSelection()
@@ -69,5 +72,10 @@ class TiPanel(wx.Panel):
         self.chFilters.SetSelection(self.filterchanger.GetPosition())
         self.chLightpath.SetSelection(self.lightpath.GetPosition())
         
+    def OnFilterChange(self):
+        self.chFilters.SetSelection(self.filterchanger.GetPosition())
+        
+    def OnLightpathChange(self):
+        self.chLightpath.SetSelection(self.lightpath.GetPosition())
    
         

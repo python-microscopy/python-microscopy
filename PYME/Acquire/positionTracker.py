@@ -34,29 +34,30 @@ class TrackerPlotPanel(PlotPanel):
         
 
     def draw(self):
-        if not hasattr( self, 'subplot' ):
-                self.subplot = self.figure.add_subplot( 111 )
-
-        try:
-            trk  = self.posTrk.GetTrack()
-
-            self.subplot.cla()
-
-            self.subplot.plot(trk[:,2], trk[:,3], 'x-')
-            self.subplot.plot(trk[-1,2], trk[-1,3], '.r')
-            self.subplot.axis('equal')
-
-            for tn in self.posTrk.tags.keys():
-                tg = self.posTrk.GetTags(tn)
-                self.subplot.plot(tg[:,2], tg[:,3], 'og', ms=4)
-
-        except:
-            pass
-
-        #self.subplot.set_xlim(0, 512)
-        #self.subplot.set_ylim(0, 256)
-
-        self.canvas.draw()
+        if self.IsShown():
+            if not hasattr( self, 'subplot' ):
+                    self.subplot = self.figure.add_subplot( 111 )
+    
+            try:
+                trk  = self.posTrk.GetTrack()
+    
+                self.subplot.cla()
+    
+                self.subplot.plot(trk[:,2], trk[:,3], 'x-')
+                self.subplot.plot(trk[-1,2], trk[-1,3], '.r')
+                self.subplot.axis('equal')
+    
+                for tn in self.posTrk.tags.keys():
+                    tg = self.posTrk.GetTags(tn)
+                    self.subplot.plot(tg[:,2], tg[:,3], 'og', ms=4)
+    
+            except:
+                pass
+    
+            #self.subplot.set_xlim(0, 512)
+            #self.subplot.set_ylim(0, 256)
+    
+            self.canvas.draw()
 
 class TrackerPanel(wx.Panel):
     def __init__(self, parent, posTrk):

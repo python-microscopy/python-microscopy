@@ -154,19 +154,21 @@ scope.lightpath = NikonTi.LightPath()
 
 TiPanel = NikonTiGUI.TiPanel(MainFrame, scope.dichroic, scope.lightpath)
 toolPanels.append((TiPanel, 'Nikon Ti'))
-time1.WantNotification.append(TiPanel.SetSelections)
+#time1.WantNotification.append(TiPanel.SetSelections)
+time1.WantNotification.append(scope.dichroic.Poll)
+time1.WantNotification.append(scope.lightpath.Poll)
 
 MetaDataHandler.provideStartMetadata.append(scope.dichroic.ProvideMetadata)
 MetaDataHandler.provideStartMetadata.append(scope.lightpath.ProvideMetadata)
 ''')# % GetComputerName())
 
-InitGUI('''
-from PYME.Acquire.Hardware import focusKeys
-fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[0], scope=scope)
-time1.WantNotification.append(fk.refresh)
-
-xykeys = focusKeys.PositionKeys(MainFrame, menuBar1, scope.piezos[1], scope.piezos[2], scope=scope)
-''')
+#InitGUI('''
+#from PYME.Acquire.Hardware import focusKeys
+#fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[0], scope=scope)
+#time1.WantNotification.append(fk.refresh)
+#
+#xykeys = focusKeys.PositionKeys(MainFrame, menuBar1, scope.piezos[1], scope.piezos[2], scope=scope)
+#''')
 
 InitGUI('''
 from PYME.Acquire.Hardware import spacenav
@@ -212,7 +214,7 @@ filtList = [WFilter(1, 'LF405', 'LF405', 0),
 
 InitGUI('''
 try:
-    scope.filterWheel = FiltFrame(MainFrame, filtList, 'COM11')
+    scope.filterWheel = FiltFrame(MainFrame, filtList, 'COM11', dichroic=scope.dichroic)
     scope.filterWheel.SetFilterPos("LF488")
     toolPanels.append((scope.filterWheel, 'Filter Wheel'))
 except:
@@ -223,10 +225,14 @@ except:
 #DigiData
 from PYME.Acquire.Hardware import phoxxLaser, cobaltLaser
 scope.l642 = phoxxLaser.PhoxxLaser('642',portname='COM4')
+scope.CleanupFunctions.append(scope.l642.Close)
 scope.l488 = phoxxLaser.PhoxxLaser('488',portname='COM5')
+scope.CleanupFunctions.append(scope.l488.Close)
 scope.l405 = phoxxLaser.PhoxxLaser('405',portname='COM6')
+scope.CleanupFunctions.append(scope.l405.Close)
 scope.l561 = cobaltLaser.CobaltLaser('561',portname='COM7')
 scope.lasers = [scope.l405,scope.l488,scope.l561, scope.l642]
+
 #scope.lasers = [scope.l405,scope.l488, scope.l642]
 #scope.lasers = [scope.l642]
 
