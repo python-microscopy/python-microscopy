@@ -103,8 +103,9 @@ class PiezoSliders(wx.Panel):
                 self.sliders[ind].SetValue(100*lp)
                 self.sliderLabels[ind].SetLabel(u'%s - %2.2f \u03BCm' % (self.piezos[ind][2],lp))
             else:
-                self.sliders[ind].SetValue(100*self.piezos[ind][0].GetPos(self.piezos[ind][1]))
-                self.sliderLabels[ind].SetLabel(u'%s - %2.2f \u03BCm' % (self.piezos[ind][2],self.piezos[ind][0].GetPos(self.piezos[ind][1])))
+                pos = self.piezos[ind][0].GetPos(self.piezos[ind][1])
+                self.sliders[ind].SetValue(100*pos)
+                self.sliderLabels[ind].SetLabel(u'%s - %2.2f \u03BCm' % (self.piezos[ind][2],pos))
                 
     	    self.sliders[ind].SetMin(100*self.piezos[ind][0].GetMin(self.piezos[ind][1]))
     	    self.sliders[ind].SetMax(100*self.piezos[ind][0].GetMax(self.piezos[ind][1]))

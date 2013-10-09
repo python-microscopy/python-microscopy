@@ -66,8 +66,8 @@ class SpaceNavPiezoCtrl(object):
         self.pz = pz#, self.px, self.py = piezos
         self.pxy = pxy
         
-        self.xy_sensitivity = .1 #um/s
-        self.z_sensitivity = 3 #um/s
+        self.xy_sensitivity = .03 #um/s
+        self.z_sensitivity = 2 #um/s
         self.kappa = 1.5
         
         self.spacenav.WantPosNotification.append(self.updatePosition)
@@ -94,7 +94,7 @@ class SpaceNavPiezoCtrl(object):
             #if abs(sn.y) >= norm/3:
             #    self.py[0].MoveRel(self.py[1], y_incr)
             print sn.x/self.FULL_SCALE, sn.y/self.FULL_SCALE
-            if  (abs(sn.x) >= norm/3 or abs(sn.y) >= norm/3) and norm > .01:
+            if  (abs(sn.x) >= norm/2 or abs(sn.y) >= norm/2) and norm > .01:
                 
                 self.pxy.MoveInDir(self.xy_sensitivity*np.sign(sn.x)*abs(sn.x/self.FULL_SCALE)**self.kappa, self.xy_sensitivity*np.sign(sn.y)*abs(sn.y/self.FULL_SCALE)**self.kappa)
             else:

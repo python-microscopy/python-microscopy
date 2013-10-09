@@ -22,12 +22,26 @@
 ##################
 
 import wx
+import time
+
+
 
 class mytimer(wx.Timer):
-    def __init__(self):
+    def __init__(self, PROFILE=False):
         wx.Timer.__init__(self)
         self.WantNotification = []
+        self.PROFILE=PROFILE
+        self.times = {}
 
     def Notify(self):
         for a in self.WantNotification:
-                a()
+            ts = time.clock()
+            a()
+            
+            if self.PROFILE:
+                te = time.clock() - ts
+                ar = repr(a)
+                #if ar in times.keys():
+                #    self.times[ar] = self.times[ar]+ te
+                #else:
+                self.times[ar] = te

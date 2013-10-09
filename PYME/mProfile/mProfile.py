@@ -119,7 +119,7 @@ def te(frame, event, arg):
     funcName = fn + ' ' + frame.f_code.co_name 
     #print fn
     if fn in filenames and not lStore.lPrev[funcName] == None:
-        t = time.time()
+        t = time.clock()
         files[lStore.lPrev[funcName][0]][lStore.lPrev[funcName][1]] += (t - lStore.tPrev[funcName])
         lStore.lPrev[funcName] = None
     if event == 'call':
@@ -129,7 +129,7 @@ def te(frame, event, arg):
             linecounts[fn][frame.f_lineno] += 1
             fullfilenames[fn] = frame.f_code.co_filename
             lStore.lPrev[funcName] = (fn,frame.f_lineno)
-            lStore.tPrev[funcName] = time.time()
+            lStore.tPrev[funcName] = time.clock()
 
 
 

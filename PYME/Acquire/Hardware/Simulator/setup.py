@@ -29,7 +29,7 @@ from PYME.misc import cython_numpy_monkey
 
 def configuration(parent_package = '', top_path = None):
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
-    config = Configuration('Simulation', parent_package, top_path)
+    config = Configuration('Simulator', parent_package, top_path)
 
     config.add_extension('illuminate',
         sources=['illuminate.pyx'],
