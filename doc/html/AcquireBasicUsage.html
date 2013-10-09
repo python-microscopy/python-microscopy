@@ -1,25 +1,31 @@
+
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Using PYME Acquire &mdash; PYME v0.1 documentation</title>
+    <title>Using PYME Acquire &mdash; PYME 0.1 documentation</title>
+    
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '#',
+        URL_ROOT:    '',
         VERSION:     '0.1',
-        COLLAPSE_MODINDEX: false,
+        COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="PYME v0.1 documentation" href="index.html" />
+    <link rel="top" title="PYME 0.1 documentation" href="index.html" />
     <link rel="up" title="PYMEAcquire" href="PYMEAcquire.html" />
     <link rel="next" title="Basic Acquisiton" href="BasicAcquisition.html" />
     <link rel="prev" title="Configuring PYME Acquire" href="ConfiguringPYMEAcquire.html" /> 
@@ -37,7 +43,7 @@
         <li class="right" >
           <a href="ConfiguringPYMEAcquire.html" title="Configuring PYME Acquire"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">PYME v0.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">PYME 0.1 documentation</a> &raquo;</li>
           <li><a href="PYMEAcquire.html" accesskey="U">PYMEAcquire</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/AcquireBasicUsage.rst">Edit</a> &raquo;</li>
  
@@ -104,7 +110,7 @@ between the cameras.</p>
 <div class="section" id="acquiring-single-images">
 <h3>Acquiring single images<a class="headerlink" href="#acquiring-single-images" title="Permalink to this headline">¶</a></h3>
 <p>Single images (snapshots) may be acquired by either selecting <strong>Acquire &gt; 1 pic</strong>
-or by pressing <strong>F5</strong>. These can be saved as <tt class="docutils literal"><span class="pre">.tif</span></tt>, <tt class="docutils literal"><span class="pre">.h5</span></tt>, or <tt class="docutils literal"><span class="pre">.npy</span></tt> (see <a class="reference external" href="DataFormats.html#dataformats"><em>PYME Data Formats</em></a>)</p>
+or by pressing <strong>F5</strong>. These can be saved as <tt class="docutils literal"><span class="pre">.tif</span></tt>, <tt class="docutils literal"><span class="pre">.h5</span></tt>, or <tt class="docutils literal"><span class="pre">.npy</span></tt> (see <a class="reference internal" href="DataFormats.html#dataformats"><em>PYME Data Formats</em></a>)</p>
 </div>
 <div class="section" id="z-stacks">
 <h3>Z-Stacks<a class="headerlink" href="#z-stacks" title="Permalink to this headline">¶</a></h3>
@@ -121,7 +127,7 @@ are automatically generated from the current date and user name (although can be
 changed manually). To access some of the controls (eg &#8216;Spool Directory&#8217; and &#8216;Save
 to Queue&#8217; you might need to either drag the &#8216;Hardware&#8217; controls down, or unpin the
 Z-Stack controls.</p>
-<p>Before starting streaming you can choose a <a class="reference external" href="Protocols.html#protocols"><em>protocol</em></a>, which defines
+<p>Before starting streaming you can choose a <a class="reference internal" href="Protocols.html#protocols"><em>protocol</em></a>, which defines
 actions to be performed during the sequence. You can then choose to acquire a simple
 sequence (by clicking on <strong>Series</strong>), or one in which the focus is stepped at regular
 intervals (<strong>Z-Series</strong>). The Z-Series uses the z-stepping regime defined using the
@@ -136,50 +142,50 @@ Z-stack control.</p>
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
-            <h3><a href="index.html">Table Of Contents</a></h3>
-            <ul>
-<li><a class="reference external" href="#">Using PYME Acquire</a><ul>
-<li><a class="reference external" href="#the-camera-preview">The camera &amp; preview</a><ul>
-<li><a class="reference external" href="#integration-time">Integration time</a></li>
-<li><a class="reference external" href="#region-of-interest">Region of interest</a></li>
-<li><a class="reference external" href="#advanced-camera-properties">Advanced camera properties</a></li>
-<li><a class="reference external" href="#multiple-camera-support">Multiple camera support</a></li>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Using PYME Acquire</a><ul>
+<li><a class="reference internal" href="#the-camera-preview">The camera &amp; preview</a><ul>
+<li><a class="reference internal" href="#integration-time">Integration time</a></li>
+<li><a class="reference internal" href="#region-of-interest">Region of interest</a></li>
+<li><a class="reference internal" href="#advanced-camera-properties">Advanced camera properties</a></li>
+<li><a class="reference internal" href="#multiple-camera-support">Multiple camera support</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#acquiring-data">Acquiring data</a><ul>
-<li><a class="reference external" href="#acquiring-single-images">Acquiring single images</a></li>
-<li><a class="reference external" href="#z-stacks">Z-Stacks</a></li>
-<li><a class="reference external" href="#streaming-spooling">Streaming/Spooling</a></li>
+<li><a class="reference internal" href="#acquiring-data">Acquiring data</a><ul>
+<li><a class="reference internal" href="#acquiring-single-images">Acquiring single images</a></li>
+<li><a class="reference internal" href="#z-stacks">Z-Stacks</a></li>
+<li><a class="reference internal" href="#streaming-spooling">Streaming/Spooling</a></li>
 </ul>
 </li>
 </ul>
 </li>
 </ul>
 
-            <h4>Previous topic</h4>
-            <p class="topless"><a href="ConfiguringPYMEAcquire.html"
-                                  title="previous chapter">Configuring PYME Acquire</a></p>
-            <h4>Next topic</h4>
-            <p class="topless"><a href="BasicAcquisition.html"
-                                  title="next chapter">Basic Acquisiton</a></p>
-            <h3>This Page</h3>
-            <ul class="this-page-menu">
-              <li><a href="_sources/AcquireBasicUsage.txt"
-                     rel="nofollow">Show Source</a></li>
-            </ul>
-          <div id="searchbox" style="display: none">
-            <h3>Quick search</h3>
-              <form class="search" action="search.html" method="get">
-                <input type="text" name="q" size="18" />
-                <input type="submit" value="Go" />
-                <input type="hidden" name="check_keywords" value="yes" />
-                <input type="hidden" name="area" value="default" />
-              </form>
-              <p class="searchtip" style="font-size: 90%">
-              Enter search terms or a module, class or function name.
-              </p>
-          </div>
-          <script type="text/javascript">$('#searchbox').show(0);</script>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="ConfiguringPYMEAcquire.html"
+                        title="previous chapter">Configuring PYME Acquire</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="BasicAcquisition.html"
+                        title="next chapter">Basic Acquisiton</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/AcquireBasicUsage.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -196,7 +202,7 @@ Z-stack control.</p>
         <li class="right" >
           <a href="ConfiguringPYMEAcquire.html" title="Configuring PYME Acquire"
              >previous</a> |</li>
-        <li><a href="index.html">PYME v0.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">PYME 0.1 documentation</a> &raquo;</li>
           <li><a href="PYMEAcquire.html" >PYMEAcquire</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/AcquireBasicUsage.rst">Edit</a> &raquo;</li>
  
@@ -204,8 +210,8 @@ Z-stack control.</p>
       </ul>
     </div>
     <div class="footer">
-      &copy; Copyright 2010, David Baddeley.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+        &copy; Copyright 2010, David Baddeley.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
   </body>
 </html>
