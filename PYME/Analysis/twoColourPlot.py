@@ -68,8 +68,8 @@ def PlotShiftResidualsS(x, y, dx, dy, spx, spy):
     axis('image')
     title('Residuals')
 
-def PlotShiftField2(spx, spy, shape=[512, 256]):
-    xi, yi = meshgrid(arange(0, shape[0]*70, 100), arange(0, shape[1]*70, 100));xin = xi.ravel();yin = yi.ravel()
+def PlotShiftField2(spx, spy, shape=[512, 256], voxelsize=(70., 70., 200.)):
+    xi, yi = meshgrid(arange(0, shape[0]*voxelsize[0], 100), arange(0, shape[1]*voxelsize[1], 100));xin = xi.ravel();yin = yi.ravel()
     dx = spx.ev(xin[:], yin[:]).reshape(xi.shape)
     dy = spy.ev(xin[:], yin[:]).reshape(xi.shape)
     figure()
@@ -85,12 +85,12 @@ def PlotShiftField2(spx, spy, shape=[512, 256]):
     colorbar()
 
     #axes([.05, .05, .9, .6])
-    xi, yi = meshgrid(arange(0, shape[0]*70, 2200), arange(0, shape[1]*70, 2200));xin = xi.ravel();yin = yi.ravel()
+    xi, yi = meshgrid(arange(0, shape[0]*voxelsize[0], 2200), arange(0, shape[1]*voxelsize[1], 2200));xin = xi.ravel();yin = yi.ravel()
     dx = spx.ev(xin[:], yin[:]).reshape(xi.shape)
     dy = spy.ev(xin[:], yin[:]).reshape(xi.shape)
     subplot(133)
     
-    quiver(xin/70, yin/70, spx.ev(xin, yin), spy.ev(xin, yin), scale=1e4)
+    quiver(xin/voxelsize[0], yin/voxelsize[0], spx.ev(xin, yin), spy.ev(xin, yin), scale=1e4)
     
     axis('image')
     xlim(0, shape[0])

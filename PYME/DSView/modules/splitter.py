@@ -78,11 +78,11 @@ class Unmixer:
 
         um0 = UnsplitDataSource.DataSource(self.image.data,
                                            [ROIX1, ROIY1, ROIX2, ROIY2],
-                                           0, flip, sf, chanROIs=chanROIs)
+                                           0, flip, sf, chanROIs=chanROIs, voxelsize=self.image.voxelsize)
 
         um1 = UnsplitDataSource.DataSource(self.image.data, 
                                            [ROIX1, ROIY1, ROIX2, ROIY2], 1
-                                           , flip, sf, chanROIs=chanROIs)
+                                           , flip, sf, chanROIs=chanROIs, voxelsize=self.image.voxelsize)
             
         fns = os.path.split(self.image.filename)[1]
         im = ImageStack([um0, um1], titleStub = '%s - unsplit' % fns)
@@ -97,6 +97,8 @@ class Unmixer:
             mode = 'visGUI'
         else:
             mode = 'lite'
+            
+        #print im.data[:,:,1,1].shape
 
         dv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
 
