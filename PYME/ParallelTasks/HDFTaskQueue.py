@@ -105,17 +105,38 @@ class dataBuffer: #buffer our io to avoid decompressing multiple times
 class myLock:
     def __init__(self):
         self.lock = threading.Lock()
+        self.owner = None
+        self.oowner = None
+        self.aqtime = 0
 
     def acquire(self):
-        self.lock.acquire()
         fr = sys._getframe()
-        print 'Acquired Lock - ' + fr.f_back.f_code.co_name + ' %d' % fr.f_back.f_lineno
+        dt = (time.time() - self.aqtime)
+        if self.owner and (dt > 1):    
+            logging.info(fr.f_back.f_back.f_code.co_name + ' %d' % fr.f_back.f_back.f_lineno + ' waiting on lock held by %s for %f s' % (self.owner, dt) )
+        self.lock.acquire()
+        
+        self.owner = fr.f_back.f_back.f_code.co_name + ' %d' % fr.f_back.f_back.f_lineno
+        dtt = (time.time() - self.aqtime - dt)
+        if (dtt > 1):
+            logging.info(self.owner + ' succesfully acquired lock held by %s for %f s after waiting %f s' % (self.oowner, dt + dtt, dtt) )
+        self.aqtime = time.time()
+        #fr = sys._getframe()
+        #print 'Acquired Lock - ' + fr.f_back.f_code.co_name + ' %d' % fr.f_back.f_lineno
 
     def release(self):
-        print 'Released Lock'
+        #print 'Released Lock'
         self.lock.release()
+        self.oowner = self.owner
+        self.owner = None
+        
+    def __enter__(self):
+        self.acquire()
+        
+    def __exit__(self, type, value, traceback):
+        self.release()
 
-#tablesLock = myLock()
+tablesLock = myLock()
 
 class SpoolEvent(tables.IsDescription):
    EventName = tables.StringCol(32)
@@ -255,14 +276,16 @@ class HDFResultsTaskQueue(TaskQueue):
             
             t = time.time()
             if (t > (self.lastResultsQueuePurge + 5)):# or (len(self.resultsQueue) > 20):
-                print 'fr'
+                #print 'fr'
                 self.lastResultsQueuePurge = t
                 rq = self.resultsQueue
+                #print(len(rq)), 'r_q'
                 self.resultsQueue = []
                 
             #print 'rf'
                 
         if rq:
+            #print 'frf'
             self.fileResults(rq)
             #print 'rff'
                 
@@ -273,26 +296,34 @@ class HDFResultsTaskQueue(TaskQueue):
         #print res, res.results, res.driftResults, self.h5ResultsFile
         #if ress == None:
         #    print 'res == None'
+        #print len(ress)
             
         results = []
         driftResults = []
         
         for r in ress:
-            results += r.results
-            driftResults += r.driftResults
+            #print r, results
+            if not r.results == []:
+                results.append(r.results)
+            if not r.driftResults == []:
+                driftResults.append(r.driftResults)
         
         if results == [] and driftResults == []: #if we had a dud frame
             return
+            
+        #print len(results), len(driftResults)
 
         with self.fileResultsLock: #get a lock
             
             if not len(results) == 0:
                 #print res.results, res.results == []
                 if not self.haveResultsTable: # self.h5ResultsFile.__contains__('/FitResults'):
-                    self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'FitResults', results, filters=tables.Filters(complevel=5, shuffle=True), expectedrows=500000)
+                    self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'FitResults', np.hstack(results), filters=tables.Filters(complevel=5, shuffle=True), expectedrows=500000)
                     self.haveResultsTable = True
                 else:
-                    self.h5ResultsFile.root.FitResults.append(results)
+                    self.h5ResultsFile.root.FitResults.append(np.hstack(results))
+                    
+            #print 'rs'
     
             if not len(driftResults) == 0:
                 if not self.h5ResultsFile.__contains__('/DriftResults'):
@@ -386,7 +417,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
             self.h5DataFile = tables.openFile(ffn, 'w')
             filt = tables.Filters(complevel, complib, shuffle=True)
 
-            self.imageData = self.h5DataFile.createEArray(self.h5DataFile.root, 'ImageData', tables.UInt16Atom(), (0,)+tuple(frameSize), filters=filt)
+            self.imageData = self.h5DataFile.createEArray(self.h5DataFile.root, 'ImageData', tables.UInt16Atom(), (0,)+tuple(frameSize), filters=filt, chunkshape=(1,)+tuple(frameSize))
             self.events = self.h5DataFile.createTable(self.h5DataFile.root, 'Events', SpoolEvent,filters=filt)
             self.imNum=0
             self.acceptNewTasks = True
@@ -441,18 +472,29 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         #self.openTasks += tasks
         if self.acceptNewTasks:
             with self.dataFileLock:
+                #t1 = time.clock()
+                #t_1 = 0
+                #t_2 = 0
                 for task in tasks:
+                    #t1_ = time.clock()
+                    #print task.dtype
                     self.imageData.append(task)
                     #self.h5DataFile.flush()
                     #self.dataFileLock.release()
-    
+                    #t2_ = time.clock()
+                    #t_1 = (t2_ - t1_)
                     if self.releaseNewTasks:
                         self.openTasks.append(self.imNum)
                     self.imNum += 1
-    
+                    #t3_ = time.clock()
+                    #t_2 = (t3_ - t2_)
+                    #print t_1, t_2
+                #t2 = time.clock()
                 self.h5DataFile.flush()
+                #t3 = time.clock()
                 self.numSlices = self.imageData.shape[0]
-            
+                
+            #print len(tasks), t2 - t1, t3 - t2
         else:
             print "can't post new tasks"
         #print 'posting tasks not implemented yet'

@@ -313,12 +313,12 @@ class fitTask(taskDef.Task):
             #was setup correctly for the splitter
             if 'Splitter.Channel0ROI' in self.md.getEntryNames():
                 x0, y0, w, h = self.md['Splitter.Channel0ROI']
-                x0 -= self.md['Camera.ROIPosX']
-                y0 -= self.md['Camera.ROIPosY']
+                x0 -= (self.md['Camera.ROIPosX'] - 1)
+                y0 -= (self.md['Camera.ROIPosY'] - 1)
                 g = self.data[x0:(x0+w), y0:(y0+h)]
                 x0, y0, w, h = self.md['Splitter.Channel1ROI']
-                x0 -= self.md['Camera.ROIPosX']
-                y0 -= self.md['Camera.ROIPosY']
+                x0 -= (self.md['Camera.ROIPosX'] - 1)
+                y0 -= (self.md['Camera.ROIPosY'] - 1)
                 r = self.data[x0:(x0+w), y0:(y0+h)]
             else:
                 g = self.data[:, :(self.data.shape[1]/2)]
@@ -355,7 +355,7 @@ class fitTask(taskDef.Task):
             return fitResult(self, self.res, [])
 
         #Find objects
-        bgd = self.data.astype('f') - self.bg
+        bgd = (self.data.astype('f') - self.bg)
 
         if 'Splitter.TransmittedChannel' in self.md.getEntryNames():
             #don't find points in transmitted light channel
@@ -371,6 +371,32 @@ class fitTask(taskDef.Task):
 ##            bgd = g_ + r_
 #
 #            self.data = numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2)
+        #print self.data.shape, bgd.shape
+        
+        if self.fitModule in splitterFitModules:
+            #print g.shape, r.shape
+            #self.data = numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2)
+            if 'Splitter.Channel0ROI' in self.md.getEntryNames():
+                x0, y0, w, h = self.md['Splitter.Channel0ROI']
+                x0 -= (self.md['Camera.ROIPosX'] - 1)
+                y0 -= (self.md['Camera.ROIPosY'] - 1)
+                g_ = bgd[x0:(x0+w), y0:(y0+h)]
+                x0, y0, w, h = self.md['Splitter.Channel1ROI']
+                x0 -= (self.md['Camera.ROIPosX'] - 1)
+                y0 -= (self.md['Camera.ROIPosY'] - 1)
+                r_ = bgd[x0:(x0+w), y0:(y0+h)]
+            else:
+                g_ = bgd[:, :(self.data.shape[1]/2)]
+                r_ = bgd[:, (self.data.shape[1]/2):]
+                
+            if ('Splitter.Flip' in self.md.getEntryNames() and not self.md.getEntry('Splitter.Flip')):
+                pass
+            else:
+                r_ = np.fliplr(r_)
+                
+            bgd = numpy.concatenate((g_.reshape(g_.shape[0], -1, 1), r_.reshape(g_.shape[0], -1, 1)),2)
+            self.data = numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2)
+
 
         if 'PRI.Axis' in self.md.getEntryNames():
             self.ofd = ofind_pri.ObjectIdentifier(bgd * (bgd > 0), md, axis = self.md['PRI.Axis'])
@@ -385,19 +411,22 @@ class fitTask(taskDef.Task):
         else:
             debounce = 5
         self.ofd.FindObjects(self.calcThreshold(),0, splitter=(self.fitModule in splitterFitModules), debounceRadius=debounce)
+        
+        
 
         if self.fitModule in splitterFitModules:
-            self.data = numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2)
+            #print g.shape, r.shape
+            #self.data = numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2)
 
             if not len(self.bgindices) == 0:
                 if 'Splitter.Channel0ROI' in self.md.getEntryNames():
                     x0, y0, w, h = self.md['Splitter.Channel0ROI']
-                    x0 -= self.md['Camera.ROIPosX']
-                    y0 -= self.md['Camera.ROIPosY']
+                    x0 -= (self.md['Camera.ROIPosX'] - 1)
+                    y0 -= (self.md['Camera.ROIPosY'] - 1)
                     g_ = self.bg[x0:(x0+w), y0:(y0+h)]
                     x0, y0, w, h = self.md['Splitter.Channel1ROI']
-                    x0 -= self.md['Camera.ROIPosX']
-                    y0 -= self.md['Camera.ROIPosY']
+                    x0 -= (self.md['Camera.ROIPosX'] - 1)
+                    y0 -= (self.md['Camera.ROIPosY'] - 1)
                     r_ = self.bg[x0:(x0+w), y0:(y0+h)]
                 else:
                     g_ = self.bg[:, :(self.data.shape[1]/2)]

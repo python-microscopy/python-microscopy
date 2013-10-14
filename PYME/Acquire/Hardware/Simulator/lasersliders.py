@@ -39,7 +39,7 @@ class LaserSliders(wx.Panel):
         wx.Panel.__init__(self, parent, winid)
 
         #self.cam = cam
-        self.lasers = lasers
+        self.lasers = [l for l in lasers if l.IsPowerControlable()]
         self.laserNames=[l.GetName() for l in lasers]
         
         self.sliders = []

@@ -43,9 +43,12 @@ from PYME.Acquire import MetaDataHandler
 InitBG('EMCCD Cameras', '''
 scope.cameras['A - Left'] = AndorIXon.iXonCamera(0)
 scope.cameras['B - Right'] = uCam480.uc480Camera(0)
+scope.cameras['A - Left'].port = 'L100'
+scope.cameras['B - Right'].port = 'R100'
 #scope.cameras['B - Right'].SetShutter(False)
 scope.cameras['B - Right'].SetActive(False)
 scope.cam = scope.cameras['A - Left']
+
 ''')
 
 #InitBG('EMCCD Camera 2', '''
@@ -108,6 +111,8 @@ from PYME.Acquire.Hardware.Piezos import piezo_c867
 scope.xystage = piezo_c867.piezo_c867T('COM8')
 scope.piezos.append((scope.xystage, 2, 'Stage_X'))
 scope.piezos.append((scope.xystage, 1, 'Stage_Y'))
+scope.joystick = piezo_c867.c867Joystick(scope.xystage)
+#scope.joystick.Enable(True)
 ''')
 
 #InitBG('Stage Stepper Motors', '''
@@ -258,11 +263,9 @@ scope.lasers = [scope.l405,scope.l488,scope.l561, scope.l642]
 #''')
 
 from PYME.Acquire.Hardware import priorLumen
-#try:
-#    scope.arclamp = priorLumen.PriorLumen('Arc Lamp', portname='COM1')
-#    scope.lasers.append(scope.arclamp)
-#except:
-#    pass
+scope.arclamp = priorLumen.PriorLumen('Arc Lamp', portname='COM1')
+scope.lasers.append(scope.arclamp)
+
 #scope.lasers = [scope.arclamp]
 
 #scope.lasers = []

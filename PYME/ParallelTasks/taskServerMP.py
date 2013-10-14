@@ -44,8 +44,8 @@ if 'PYRO_NS_HOSTNAME' in os.environ.keys():
     Pyro.config.PYRO_NS_HOSTNAME=os.environ['PYRO_NS_HOSTNAME']
     print Pyro.config.PYRO_NS_HOSTNAME
 
-#from PYME.mProfile import mProfile
-#mProfile.profileOn(['taskServerM.py', 'HDFTaskQueue.py'])
+from PYME import mProfile
+#mProfile.profileOn(['taskServerMP.py', 'HDFTaskQueue.py'])
 
 #if 'PYME_TASKQUEUENAME' in os.environ.keys():
 #    taskQueueName = os.environ['PYME_TASKQUEUENAME']
@@ -74,7 +74,7 @@ class TaskWatcher(threading.Thread):
 
 
 
-
+nq = 0
 
 
 class TaskQueueSet(Pyro.core.ObjBase):
@@ -115,37 +115,37 @@ class TaskQueueSet(Pyro.core.ObjBase):
     def getTask(self, workerName='Unspecified'):
         """get task from front of list, blocks"""
         #print 'Task requested'
-        self.getTaskLock.acquire()
-        while self.getNumberOpenTasks() < 1:
-            time.sleep(0.01)
-
-        if not workerName in self.activeWorkers:
-            self.activeWorkers.append(workerName)
-            
-        queuesWithOpenTasks = [q for q in self.taskQueues.values() if q.getNumberOpenTasks() > 0]
-
-        res = queuesWithOpenTasks[int(numpy.round(len(queuesWithOpenTasks)*numpy.random.rand() - 0.5))].getTask(self.activeWorkers.index(workerName), len(self.activeWorkers))
-        self.getTaskLock.release()
+        with self.getTaskLock:
+            while self.getNumberOpenTasks() < 1:
+                time.sleep(0.01)
+    
+            if not workerName in self.activeWorkers:
+                self.activeWorkers.append(workerName)
+                
+            queuesWithOpenTasks = [q for q in self.taskQueues.values() if q.getNumberOpenTasks() > 0]
+    
+            res = queuesWithOpenTasks[int(numpy.round(len(queuesWithOpenTasks)*numpy.random.rand() - 0.5))].getTask(self.activeWorkers.index(workerName), len(self.activeWorkers))
+        
         return res
 
     def getTasks(self, workerName='Unspecified'):
         """get task from front of list, non-blocking"""
         #print 'Task requested'
-        self.getTaskLock.acquire()
-        #calling getNumberOpenTasks with False makes the queues tell us how many
-        #tasks they are prepared to give out, rather than how many they actually have
-        #important for maintaining cache & io performance (avoids scattering small
-        #numbers of tasks over a large number of processes)
-        if self.getNumberOpenTasks(exact=False) < 1:
-            res = []
-        else:
-            if not workerName in self.activeWorkers:
-                self.activeWorkers.append(workerName)
-
-            queuesWithOpenTasks = [q for q in self.taskQueues.values() if q.getNumberOpenTasks(False) > 0]
-
-            res = queuesWithOpenTasks[int(numpy.round(len(queuesWithOpenTasks)*numpy.random.rand() - 0.5))].getTasks(self.activeWorkers.index(workerName), len(self.activeWorkers))
-        self.getTaskLock.release()
+        with self.getTaskLock:
+            #calling getNumberOpenTasks with False makes the queues tell us how many
+            #tasks they are prepared to give out, rather than how many they actually have
+            #important for maintaining cache & io performance (avoids scattering small
+            #numbers of tasks over a large number of processes)
+            if self.getNumberOpenTasks(exact=False) < 1:
+                res = []
+            else:
+                if not workerName in self.activeWorkers:
+                    self.activeWorkers.append(workerName)
+    
+                queuesWithOpenTasks = [q for q in self.taskQueues.values() if q.getNumberOpenTasks(False) > 0]
+    
+                res = queuesWithOpenTasks[int(numpy.round(len(queuesWithOpenTasks)*numpy.random.rand() - 0.5))].getTasks(self.activeWorkers.index(workerName), len(self.activeWorkers))
+        
         
         #print workerName, len(res)
         return res
@@ -287,6 +287,11 @@ class TaskQueueSet(Pyro.core.ObjBase):
             raise RuntimeError('queue with same name already present')
 
         self.taskQueues[queueName] = eval(queueType)(queueName, *args, **kwargs)
+        
+#        global nq
+#        if nq > 1:
+#            mProfile.report()
+#        nq += 1
 		
 			
 
@@ -294,6 +299,7 @@ def main():
     print 'foo'
     profile = False
     if len(sys.argv) > 1 and sys.argv[1] == '-p':
+        print 'profiling'
         profile = True
         from PYME.mProfile import mProfile
         mProfile.profileOn(['taskServerMP.py', 'HDFTaskQueue.py', 'TaskQueue.py'])

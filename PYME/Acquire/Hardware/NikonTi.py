@@ -128,7 +128,7 @@ class LightPath:
         return int(nik.LightPathDrive.Position) - 1
         
     def SetPort(self, port):
-        self.SetPositon(self.names.index(port))
+        self.SetPosition(self.names.index(port))
         self.OnChange()
         
     def GetPort(self):
