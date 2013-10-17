@@ -24,9 +24,10 @@ from pylab import *
 from PYME.Analysis._fithelpers import *
 from PYME.Analysis.DeClump import deClump
 from scipy.special import erf
-from PYME.Analysis import processLogger as PL
+from PYME.Analysis.processLogger import PL
 import inspect
 import numpy as np
+import os
 
 colours = ['r', 'g', 'b']
 
@@ -42,7 +43,7 @@ def munge_res(model, res):
     return r.view(dt)
 
 
-def goalfcn(indepvars):
+def goalfcn(indepvars = ''):
     indepvars = [s.strip() for s in indepvars.split(',')]
     
     def wrapfcn(fcn):
@@ -161,8 +162,53 @@ def fITmod2(A, Ndet, lamb, tauI, a, Acrit, bg, N, t, Nco):
     return (N> Nco)*Ar**(1 - exp(-(snr)/Ndet))*exp(-N/lamb)
 
 
+#########################
+#########################
+#define decorator to apply each fit fuction independantly over each colour channel
+def applyByChannel(fcn):
+    args = inspect.getargspec(fnc).args
+    def colfcnwrap(pipeline):
+        colourFilter = pipeline.colourFilter
+        metadata = pipeline.mdh
+        chans = colourFilter.getColourChans()
+        
+        if USE_GUI:
+            figure(os.path.split(pipeline.filename)[-1] + ' - ' + fcn.func_name)
+    
+        if len(chans) == 0:
+            fcn(colourFilter, metadata)
+        else:
+            curChan = colourFilter.currentColour
+            
+            if 'rng' in args:
+                nPh = getPhotonNums(colourFilter, metadata)
+                rng = 6*nPh.mean()
+    
+            chanNames = chans[:]
+    
+            if 'Sample.Labelling' in metadata.getEntryNames():
+                lab = metadata.getEntry('Sample.Labelling')
+    
+                for i in range(len(lab)):
+                    if lab[i][0] in chanNames:
+                        chanNames[chanNames.index(lab[i][0])] = lab[i][1]
+    
+            for ch, i in zip(chans, range(len(chans))):
+                colourFilter.setColour(ch)
+                PL.ExtendContext({'chan', ch})
+                if 'rng' in args:
+                    fcn(colourFilter, metadata, chanNames[i], i, rng)
+                else:
+                    fcn(colourFilter, metadata, chanNames[i], i)
+                PL.PopContext()
+            colourFilter.setColour(curChan)
+            
+    return colfcnwrap
+    
+###############
 
-def fitDecayChan(colourFilter, metadata, channame='', i=0):
+@applyByChannel
+def fitDecay(colourFilter, metadata, channame='', i=0):
     #get frames in which events occured and convert into seconds
     t = colourFilter['t']*metadata.getEntry('Camera.CycleTime')
 
@@ -172,7 +218,7 @@ def fitDecayChan(colourFilter, metadata, channame='', i=0):
 
     res = FitModel(e2mod, [n.max()*2, 15, 1e-3, n.max()*3, n[1]/10], n[1:], b1[1:])
     
-    PL.PL.AddRecord('/Decay/e2mod', munge_res(e2mod, res))
+    PL.AddRecord('/Photophysics/Decay/e2mod', munge_res(e2mod, res))
 
     if USE_GUI:        
         bar(b1/60, n, width=(b1[1]-b1[0])/60, alpha=0.4, fc=colours[i])
@@ -183,61 +229,22 @@ def fitDecayChan(colourFilter, metadata, channame='', i=0):
     
         figtext(.4,.8 -.05*i, channame + '\t$\\tau = %3.2fs,\\;b = %3.2f$' % (res[0][1], res[0][2]**2/res[0][0]), size=18, color=colours[i])
 
-def fitDecay(colourFilter, metadata):
-    chans = colourFilter.getColourChans()
-    
-    if USE_GUI:
-        figure()
 
-    if len(chans) == 0:
-        fitDecayChan(colourFilter, metadata)
-    else:
-        curChan = colourFilter.currentColour
-
-        chanNames = chans[:]
-
-        if 'Sample.Labelling' in metadata.getEntryNames():
-            lab = metadata.getEntry('Sample.Labelling')
-
-            for i in range(len(lab)):
-                if lab[i][0] in chanNames:
-                    chanNames[chanNames.index(lab[i][0])] = lab[i][1]
-
-        for ch, i in zip(chans, range(len(chans))):
-            colourFilter.setColour(ch)
-            PL.PL.ExtendContext({'chan', ch})
-            fitDecayChan(colourFilter, metadata, chanNames[i], i)
-            PL.PL.PopContext()
-        colourFilter.setColour(curChan)
-
-def fitOnTimesChan(colourFilter, metadata, channame='', i=0):
-    #if 'error_x' in colourFilter.keys():
-    #    clumpIndices = deClump.findClumps(colourFilter['t'].astype('i'), colourFilter['x'].astype('f4'), colourFilter['y'].astype('f4'), colourFilter['error_x'].astype('f4'), 3)
-    #else:
-    #    clumpIndices = deClump.findClumps(colourFilter['t'].astype('i'), colourFilter['x'].astype('f4'), colourFilter['y'].astype('f4'), 30*ones(len(colourFilter['x'])).astype('f4'), 3)
-
-    #numPerClump, b = histogram(clumpIndices, arange(clumpIndices.max() + 1.5) + .5)
-    
+@applyByChannel
+def fitOnTimes(colourFilter, metadata, channame='', i=0):    
     numPerClump = colourFilter['clumpSize']
 
     n, bins = histogram(numPerClump, arange(20)+.001)
     n = n/arange(1, 20)
 
-    #n = n[:10]
-    #bins = bins[:10]
-
     cycTime = metadata.getEntry('Camera.CycleTime')
-
-   
-
-    #print (1./(sqrt(n) + 1))
 
     
     res = FitModelWeighted(eimod, [n[0], .2], n[1:], 1./(sqrt(n[1:]) + 1), bins[2:]*cycTime)
     res2 = FitModelWeighted(ei2mod, [n[0], .2], n[1:], 1./(sqrt(n[1:]) + 1), bins[2:]*cycTime, cycTime)
     
-    PL.PL.AddRecord('/OnTimes/eimod', munge_res(eimod,res))
-    PL.PL.AddRecord('/OnTimes/ei2mod', munge_res(ei2mod,res2))
+    PL.AddRecord('/Photophysics/OnTimes/eimod', munge_res(eimod,res))
+    PL.AddRecord('/Photophysics/OnTimes/ei2mod', munge_res(ei2mod,res2))
 
     #print res[0]
 
@@ -258,35 +265,9 @@ def fitOnTimesChan(colourFilter, metadata, channame='', i=0):
         figtext(.6,.8 -.05*i, channame + '\t$\\tau = %3.4fs$' % (res[0][1], ), size=18, color=colours[i])
 
 
-def fitOnTimes(colourFilter, metadata):
-    chans = colourFilter.getColourChans()
-    
-    if USE_GUI:
-        figure()
 
-    if len(chans) == 0:
-        fitOnTimesChan(colourFilter, metadata)
-    else:
-        curChan = colourFilter.currentColour
-
-        chanNames = chans[:]
-
-        if 'Sample.Labelling' in metadata.getEntryNames():
-            lab = metadata.getEntry('Sample.Labelling')
-
-            for i in range(len(lab)):
-                if lab[i][0] in chanNames:
-                    chanNames[chanNames.index(lab[i][0])] = lab[i][1]
-
-        for ch, i in zip(chans, range(len(chans))):
-            colourFilter.setColour(ch)
-            PL.PL.ExtendContext({'chan', ch})
-            fitOnTimesChan(colourFilter, metadata, chanNames[i], i)
-            PL.PL.PopContext()
-        colourFilter.setColour(curChan)
-
-
-def fitFluorBrightnessChan(colourFilter, metadata, channame='', i=0, rng = None):
+@applyByChannel
+def fitFluorBrightness(colourFilter, metadata, channame='', i=0, rng = None):
     #nPh = (colourFilter['A']*2*math.pi*(colourFilter['sig']/(1e3*metadata.getEntry('voxelsize.x')))**2)
     #nPh = nPh*metadata.getEntry('Camera.ElectronsPerCount')/metadata.getEntry('Camera.TrueEMGain')
     nPh = getPhotonNums(colourFilter, metadata)
@@ -299,7 +280,7 @@ def fitFluorBrightnessChan(colourFilter, metadata, channame='', i=0, rng = None)
     bins = bins[:-1]
 
     res = FitModel(fImod, [n.max(), bins[n.argmax()]/2, 100, nPh.mean()], n, bins)
-    PL.PL.AddRecord('/FluorBrightness/fImod', munge_res(fImod,res))
+    PL.AddRecord('/Photophysics/FluorBrightness/fImod', munge_res(fImod,res))
 
     #figure()
     #semilogy()
@@ -314,8 +295,9 @@ def fitFluorBrightnessChan(colourFilter, metadata, channame='', i=0, rng = None)
         #print res[0][2]
     
         figtext(.4,.8 -.05*i, channame + '\t$N_{det} = %3.0f\\;\\lambda = %3.0f$' % (res[0][1], res[0][3]), size=18, color=colours[i])
-    
-def fitFluorBrightnessTChan(colourFilter, metadata, channame='', i=0, rng = None):
+
+@applyByChannel    
+def fitFluorBrightnessT(colourFilter, metadata, channame='', i=0, rng = None):
     #nPh = (colourFilter['A']*2*math.pi*(colourFilter['sig']/(1e3*metadata.getEntry('voxelsize.x')))**2)
     #nPh = nPh*metadata.getEntry('Camera.ElectronsPerCount')/metadata.getEntry('Camera.TrueEMGain')
     #from mpl_toolkits.mplot3d import Axes3D
@@ -337,7 +319,7 @@ def fitFluorBrightnessTChan(colourFilter, metadata, channame='', i=0, rng = None
     res0 = FitModel(fITmod, [n.max()*3, 1, np.median(nPh), 20, 1e2, 1e2, 1e-3, 2e5, 1], n, xb, yb, Nco)
     print res0[0]
     
-    PL.PL.AddRecord('/FluorBrightness/fITmod', munge_res(fITmod,res0))
+    PL.AddRecord('/Photophysics/FluorBrightness/fITmod', munge_res(fITmod,res0))
     
     A, Ndet, lamb, tauI, a, Acrit, NDetM, k, k3 = res0[0]
     #Ndet = Ndet**2
@@ -412,67 +394,3 @@ def fitFluorBrightnessTChan(colourFilter, metadata, channame='', i=0, rng = None
     
 
 
-def fitFluorBrightness(colourFilter, metadata):
-    chans = colourFilter.getColourChans()
-    
-    if USE_GUI:
-        figure()
-
-    if len(chans) == 0:
-        fitFluorBrightnessChan(colourFilter, metadata)
-    else:
-        #nPh = (colourFilter['A']*2*math.pi*(colourFilter['sig']/(1e3*metadata.getEntry('voxelsize.x')))**2)
-        #nPh = nPh*metadata.getEntry('Camera.ElectronsPerCount')/metadata.getEntry('Camera.TrueEMGain')
-        nPh = getPhotonNums(colourFilter, metadata)
-        
-        rng = 6*nPh.mean()
-
-        curChan = colourFilter.currentColour
-
-        chanNames = chans[:]
-
-        if 'Sample.Labelling' in metadata.getEntryNames():
-            lab = metadata.getEntry('Sample.Labelling')
-
-            for i in range(len(lab)):
-                if lab[i][0] in chanNames:
-                    chanNames[chanNames.index(lab[i][0])] = lab[i][1]
-
-        for ch, i in zip(chans, range(len(chans))):
-            colourFilter.setColour(ch)
-            PL.PL.ExtendContext({'chan', ch})
-            fitFluorBrightnessChan(colourFilter, metadata, chanNames[i], i, rng)
-            PL.PL.PopContext()
-        colourFilter.setColour(curChan)
-
-def fitFluorBrightnessT(colourFilter, metadata):
-    chans = colourFilter.getColourChans()
-
-    #figure()
-
-    if len(chans) == 0:
-        fitFluorBrightnessTChan(colourFilter, metadata)
-    else:
-        #nPh = (colourFilter['A']*2*math.pi*(colourFilter['sig']/(1e3*metadata.getEntry('voxelsize.x')))**2)
-        #nPh = nPh*metadata.getEntry('Camera.ElectronsPerCount')/metadata.getEntry('Camera.TrueEMGain')
-        #nPh = getPhotonNums(colourFilter, metadata)
-        
-        #rng = 6*nPh.mean()
-
-        curChan = colourFilter.currentColour
-
-        chanNames = chans[:]
-
-        if 'Sample.Labelling' in metadata.getEntryNames():
-            lab = metadata.getEntry('Sample.Labelling')
-
-            for i in range(len(lab)):
-                if lab[i][0] in chanNames:
-                    chanNames[chanNames.index(lab[i][0])] = lab[i][1]
-
-        for ch, i in zip(chans, range(len(chans))):
-            colourFilter.setColour(ch)
-            PL.PL.ExtendContext({'chan', ch})
-            fitFluorBrightnessTChan(colourFilter, metadata, chanNames[i], i)
-            PL.PL.PopContext()
-        colourFilter.setColour(curChan)
