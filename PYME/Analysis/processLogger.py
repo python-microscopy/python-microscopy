@@ -12,7 +12,22 @@
 
 import numpy as np
 
+def _upstr(dt):
+        '''Force strings to a constant width dtype'''
+        if dt.str.startswith('|S'):
+            return '|S255'
+        else: 
+            return dt
 
+def dictToRecarray(d):
+        '''Create a 1 entry recarray from a dictionay'''
+        dt = np.dtype([(k, _upstr(np.array(v).dtype)) for k, v in d.items()])
+        
+        ra = np.zeros(1, dt)
+        for k,v in d.items():
+            ra[k] = v
+        
+        return ra
     
 
 class ContextLayer(object):
@@ -28,26 +43,13 @@ class ContextLayer(object):
         if isinstance(contextInfo, np.ndarray):
             self.contextInfo = contextInfo
         elif isinstance(contextInfo, dict): #key value tuple
-            self.contextInfo = self._dictToRecarray(contextInfo)
+            self.contextInfo = dictToRecarray(contextInfo)
         else:        
             raise RuntimeError('Was expecting an ndarray or dictionary')
             
-    def _upstr(self,dt):
-        '''Force strings to a constant width dtype'''
-        if dt.str.startswith('|S'):
-            return '|S255'
-        else: 
-            return dt
+    
             
-    def _dictToRecarray(self,d):
-        '''Create a 1 entry recarray from a dictionay'''
-        dt = np.dtype([(k, self._upstr(np.array(v).dtype)) for k, v in d.items()])
-        
-        ra = np.zeros(1, dt)
-        for k,v in d.items():
-            ra[k] = v
-        
-        return ra
+    
         
     def _reccat(self, reca, recb):
         '''Concatenate 2 records'''

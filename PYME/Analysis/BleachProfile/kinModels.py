@@ -166,7 +166,7 @@ def fITmod2(A, Ndet, lamb, tauI, a, Acrit, bg, N, t, Nco):
 #########################
 #define decorator to apply each fit fuction independantly over each colour channel
 def applyByChannel(fcn):
-    args = inspect.getargspec(fnc).args
+    args = inspect.getargspec(fcn).args
     def colfcnwrap(pipeline):
         colourFilter = pipeline.colourFilter
         metadata = pipeline.mdh

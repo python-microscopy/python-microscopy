@@ -6,8 +6,9 @@ Created on Wed Oct 16 22:05:41 2013
 """
 import os
 from PYME.Analysis.LMVis.pipeline import Pipeline
-from PYME.Analysis.processLogger import PL, TablesBackend
+from PYME.Analysis.processLogger import PL, TablesBackend, dictToRecarray
 from PYME.Analysis import trackUtils
+import numpy as np
 
 from PYME.Analysis.BleachProfile import kinModels
 #turn graph display off
@@ -24,14 +25,31 @@ def analyseFile(filename):
     pipe.filterKeys['t'] = (0, 7000)
     pipe.Rebuild()
 
-    #find molecules appearing across multiple frames    
-    trackUtils.findTracks(pipe, 'error_x', 2, 20)
-    pipe.Rebuild()
+    extraParams = {}    
+    extraParams['cycleTime'] = pipe.mdh['Camera.CycleTime']
+    nPhot = kinModels.getPhotonNums(pipe.colourFilter, pipe.mdh)
+    extraParams['MedianPhotons'] = np.median(nPhot)
+    extraParams['MeanPhotons'] = np.mean(nPhot)
+    extraParams['NEvents'] = len(nPhot)
+    extraParams['MeanBackground'] = pipe['fitResults_background'].mean() - pipe.mdh['Camera.ADOffset']
+    extraParams['MedianBackground'] = np.median(pipe['fitResults_background']) - pipe.mdh['Camera.ADOffset']
+    
+    PL.AddRecord('/Photophysics/ExtraParams', dictToRecarray(extraParams))
     
     kinModels.fitDecay(pipe)
     kinModels.fitFluorBrightness(pipe)
     #kinModels.fitFluorBrightnessT(pipe)
-    kinModels.fitOnTimes(pipe)
+
+    #max_off_ts = [3,5,10,20,40]
+    max_off_ts = [20]
+
+    for ot in max_off_ts:
+        PL.ExtendContext({'otMax':ot})
+        #find molecules appearing across multiple frames 
+        trackUtils.findTracks(pipe, 'error_x', 2, ot)
+        pipe.Rebuild()
+        kinModels.fitOnTimes(pipe)
+        PL.PopContext()
     
     pipe.CloseFiles()
     PL.PopContext()
