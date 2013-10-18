@@ -19,8 +19,12 @@ def analyseFile(filename):
     print filename
     seriesName = os.path.splitext(os.path.split(filename)[-1])[0]
     PL.ExtendContext({'seriesName':seriesName})
-    
-    pipe = Pipeline(filename)
+    try:
+        pipe = Pipeline(filename)
+    except RuntimeError:
+        print 'Error opening %s' % filename
+        PL.PopContext()
+        return
     
     #only look at first 7k frames
     pipe.filterKeys['t'] = (0, 7000)
@@ -57,6 +61,7 @@ def analyseFile(filename):
         #PL.PopContext()
     
     pipe.CloseFiles()
+     
     PL.PopContext()
 	
 def processDir(dataPath, outfile):
