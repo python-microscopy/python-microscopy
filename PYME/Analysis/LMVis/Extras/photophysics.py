@@ -42,7 +42,7 @@ class DecayAnalyser:
 
         kinModels.fitDecay(pipeline)
         kinModels.fitFluorBrightness(pipeline)
-        kinModels.fitFluorBrightnessT(pipeline)
+        #kinModels.fitFluorBrightnessT(pipeline)
         kinModels.fitOnTimes(pipeline)
         
 

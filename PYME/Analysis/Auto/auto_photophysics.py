@@ -17,12 +17,16 @@ kinModels.USE_GUI = False
 
 def analyseFile(filename):
     print filename
-    PL.ExtendContext({'filename':filename})
+    seriesName = os.path.splitext(os.path.split(filename)[-1])[0]
+    PL.ExtendContext({'seriesName':seriesName})
     
     pipe = Pipeline(filename)
     
     #only look at first 7k frames
     pipe.filterKeys['t'] = (0, 7000)
+    pipe.Rebuild()
+    
+    trackUtils.findTracks(pipe, 'error_x', 2, 20)
     pipe.Rebuild()
 
     extraParams = {}    
@@ -33,6 +37,8 @@ def analyseFile(filename):
     extraParams['NEvents'] = len(nPhot)
     extraParams['MeanBackground'] = pipe['fitResults_background'].mean() - pipe.mdh['Camera.ADOffset']
     extraParams['MedianBackground'] = np.median(pipe['fitResults_background']) - pipe.mdh['Camera.ADOffset']
+    extraParams['MeanClumpSize'] = pipe['clumpSize'].mean()
+    extraParams['MeanClumpPhotons'] = (pipe['clumpSize']*nPhot).mean()
     
     PL.AddRecord('/Photophysics/ExtraParams', dictToRecarray(extraParams))
     
@@ -41,28 +47,19 @@ def analyseFile(filename):
     #kinModels.fitFluorBrightnessT(pipe)
 
     #max_off_ts = [3,5,10,20,40]
-    max_off_ts = [20]
+    #max_off_ts = [20]
 
-    for ot in max_off_ts:
-        PL.ExtendContext({'otMax':ot})
+    #for ot in max_off_ts:
+        #PL.ExtendContext({'otMax':ot})
         #find molecules appearing across multiple frames 
-        trackUtils.findTracks(pipe, 'error_x', 2, ot)
-        pipe.Rebuild()
-        kinModels.fitOnTimes(pipe)
-        PL.PopContext()
+        
+    kinModels.fitOnTimes(pipe)
+        #PL.PopContext()
     
     pipe.CloseFiles()
     PL.PopContext()
-    
-if __name__ == '__main__':
-    import sys
-    
-    #path to directory containing input files
-    dataPath = sys.argv[1]
-    
-    #output file (hdf5 - use .h5p as extension)
-    outfile = sys.argv[2]
-    
+	
+def processDir(dataPath, outfile):
     #set the logging backend to the PyTables file
     TB = TablesBackend(outfile)
     PL.SetBackend(TB)
@@ -73,3 +70,14 @@ if __name__ == '__main__':
             if os.path.splitext(f)[1] in ['.h5r']:
                 filename = os.path.join(path, f)
                 analyseFile(filename)
+				
+if __name__ == '__main__':
+    import sys
+    
+    #path to directory containing input files
+    dataPath = sys.argv[1]
+    
+    #output file (hdf5 - use .h5p as extension)
+    outfile = sys.argv[2]
+    
+    processDir(dataPath, outfile)
