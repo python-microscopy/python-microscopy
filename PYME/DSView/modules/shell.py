@@ -29,6 +29,12 @@ def Plug(dsviewer):
 
     sh.Execute('from pylab import *')
     sh.Execute('from PYME.DSView import View3D, ViewIm3D')
+    try:
+        import dutil
+    except:
+        print 'could not import dutil'
+    else:
+        sh.Execute('import dutil as du')
 
     dsviewer.AddPage(page=sh, select=False, caption='Console')
 

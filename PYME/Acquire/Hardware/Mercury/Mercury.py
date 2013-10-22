@@ -72,6 +72,32 @@ class ArraySetter(fcnWrap):
         if not succ:
             self.HandleError(ID)
 
+class ArrayGetter(fcnWrap):
+    def __call__(self, ID, szAxes):
+        out_args = []
+
+        AxIDs = [1 for id in szAxes]  # have to be all 1 for mercury
+        #build input arrays
+        for argtype in self.fcn.argtypes[3:-1]:
+            if argtype.__name__.startswith('LP_'): #array input
+                basetype = ctypes.__dict__[argtype.__name__[3:]]
+
+                out_args.append((basetype*len(szAxes))())
+            else:
+                out_args.append(argtype())
+
+        out_args.append(len(szAxes))
+
+        #print "%s(%s, '%s', '%s')" % (self.fcn.__name__, ID, szAxes, ','.join([repr(oa)for oa in out_args]))
+        succ = self.fcn(ID, szAxes, AxIDs, *out_args)
+        if not succ:
+            self.HandleError(ID)
+
+        if len(out_args) == 1:
+            out_args = out_args[0]
+
+        return out_args
+
 
 class AxesGetter(fcnWrap):
     def __call__(self, ID, szAxes):
@@ -213,9 +239,9 @@ qERR = ValGetter(mc.qERR)
 qHLP = StringGetter(mc.qHLP)
 qHPA = StringGetter(mc.qHPA)
 qIDN = StringGetter(mc.qIDN)
-qJAS = NotImplemented(mc.qJAS)
+qJAS = ArrayGetter(mc.qJAS)
 qJAX = NotImplemented(mc.qJAX)
-qJBS = NotImplemented(mc.qJBS)
+qJBS = ArrayGetter(mc.qJBS)
 qJLT = NotImplemented(mc.qJLT)
 qJON = NotImplemented(mc.qJON)
 qLIM = AxesGetter(mc.qLIM)
