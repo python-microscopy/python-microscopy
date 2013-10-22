@@ -38,3 +38,9 @@ Otherwise we are apparently plotting many histograms as we thread over all 1D su
 	# open a tiff file and force conversion to float type (32 bit)
 	rdata = tifffile.TIFFfile(dname).asarray().astype('f')
 	
+### MetaData
+
+Metadata can be accessed in the `dh5view` console using the global variable `mdv` (MetaDataPanel) which has a member `mdh`:
+
+	mdv.mdh['voxelsize']
+

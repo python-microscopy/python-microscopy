@@ -10,3 +10,8 @@ Primary access is via the `pipeline` variable which exposes the various members 
 	x = pipeline['x']
 	specgram(x)
 	scatter(t,x)
+
+### Getting metadata handles
+
+	mdh = mdp.mdh
+	duration = mdh['EndTime']-mdh['StartTime']
