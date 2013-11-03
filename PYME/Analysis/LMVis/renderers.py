@@ -167,7 +167,7 @@ class ColourRenderer(CurrentRenderer):
         else:
             zvals = None
 
-        dlg = genImageDialog.GenImageDialog(self.visFr, mode=self.mode, defaultPixelSize=self._defaultPixelSize, colours=self.pipeline.fluorSpecies.keys(), zvals = zvals, jitterVariables = jitVars, jitterVarDefault=self._getDefaultJitVar(jitVars), jitterVarDefaultZ=self._getDefaultZJitVar(jitVars))
+        dlg = genImageDialog.GenImageDialog(self.visFr, mode=self.mode, defaultPixelSize=self._defaultPixelSize, colours=self.pipeline.colourFilter.getColourChans(), zvals = zvals, jitterVariables = jitVars, jitterVarDefault=self._getDefaultJitVar(jitVars), jitterVarDefaultZ=self._getDefaultZJitVar(jitVars))
         ret = dlg.ShowModal()
 
         bCurr = wx.BusyCursor()

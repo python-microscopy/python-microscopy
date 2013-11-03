@@ -695,10 +695,16 @@ class LMAnalyser:
 
             from PYME.misc.computerName import GetComputerName
             compName = GetComputerName()
+            
+            try:
 
-            taskQueueName = 'TaskQueues.%s' % compName
+                taskQueueName = 'TaskQueues.%s' % compName
 
-            self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
+                self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
+            except:
+                taskQueueName = 'PrivateTaskQueues.%s' % compName
+
+                self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
 
 
     def pushImages(self, startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
