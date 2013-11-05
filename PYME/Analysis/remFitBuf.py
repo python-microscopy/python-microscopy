@@ -45,7 +45,7 @@ dataSourceID = None
 bufferMisses = 0
 nTasksProcessed = 0
 
-splitterFitModules = ['SplitterFitFR', 'SplitterFitQR', 'SplitterFitCOIR', 
+splitterFitModules = ['SplitterFitFR', 'SplitterFitFNR','SplitterFitQR', 'SplitterFitCOIR', 
                       'BiplaneFitR', 'SplitterShiftEstFR', 
                       'SplitterObjFindR', 'SplitterFitInterpR', 'SplitterFitInterpQR']
 
@@ -429,8 +429,8 @@ class fitTask(taskDef.Task):
                     y0 -= (self.md['Camera.ROIPosY'] - 1)
                     r_ = self.bg[x0:(x0+w), y0:(y0+h)]
                 else:
-                    g_ = self.bg[:, :(self.data.shape[1]/2)]
-                    r_ = self.bg[:, (self.data.shape[1]/2):]
+                    g_ = self.bg[:, :(self.bg.shape[1]/2)]
+                    r_ = self.bg[:, (self.bg.shape[1]/2):]
                 
                 if ('Splitter.Flip' in self.md.getEntryNames() and not self.md.getEntry('Splitter.Flip')):
                     pass

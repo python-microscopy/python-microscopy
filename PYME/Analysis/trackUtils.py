@@ -20,7 +20,35 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
-import numpy
+import numpy as np
+
+def findTracks(pipeline, rad_var='error_x', multiplier='2.0', nFrames=20):
+    import PYME.Analysis.DeClump.deClump as deClump
+    
+    if rad_var == '1.0':
+        delta_x = 0*pipeline.mapping['x'] + multiplier
+    else:
+        delta_x = multiplier*pipeline.mapping[rad_var]
+
+    clumpIndices = deClump.findClumps(pipeline.mapping['t'].astype('i'), pipeline.mapping['x'].astype('f4'), pipeline.mapping['y'].astype('f4'), delta_x.astype('f4'), nFrames)
+    numPerClump, b = np.histogram(clumpIndices, np.arange(clumpIndices.max() + 1.5) + .5)
+
+    trackVelocities = calcTrackVelocity(pipeline.mapping['x'], pipeline.mapping['y'], clumpIndices)
+    #print b
+
+    pipeline.selectedDataSource.clumpIndices = -1*np.ones(len(pipeline.selectedDataSource['x']))
+    pipeline.selectedDataSource.clumpIndices[pipeline.filter.Index] = clumpIndices
+
+    pipeline.selectedDataSource.clumpSizes = np.zeros(pipeline.selectedDataSource.clumpIndices.shape)
+    pipeline.selectedDataSource.clumpSizes[pipeline.filter.Index] = numPerClump[clumpIndices - 1]
+
+    pipeline.selectedDataSource.trackVelocities = np.zeros(pipeline.selectedDataSource.clumpIndices.shape)
+    pipeline.selectedDataSource.trackVelocities[pipeline.filter.Index] = trackVelocities
+
+    pipeline.selectedDataSource.setMapping('clumpIndex', 'clumpIndices')
+    pipeline.selectedDataSource.setMapping('clumpSize', 'clumpSizes')
+    pipeline.selectedDataSource.setMapping('trackVelocity', 'trackVelocities')
+
 
 def calcTrackVelocity(x, y, ci):
     #if not self.init:
@@ -29,17 +57,17 @@ def calcTrackVelocity(x, y, ci):
 
     I = ci.argsort()
 
-    v = numpy.zeros(x.shape) #velocities
-    w = numpy.zeros(x.shape) #weights
+    v = np.zeros(x.shape) #velocities
+    w = np.zeros(x.shape) #weights
 
     x = x[I]
     y = y[I]
     ci = ci[I]
 
-    dists = numpy.sqrt(numpy.diff(x)**2 + numpy.diff(y)**2)
+    dists = np.sqrt(np.diff(x)**2 + np.diff(y)**2)
 
     #now calculate a mask so that we only include distances from within the trace
-    mask = numpy.diff(ci) < 1
+    mask = np.diff(ci) < 1
 
     #a points velocity is the average of the steps in each direction
     v[1:] += dists*mask
@@ -58,7 +86,7 @@ def calcTrackVelocity(x, y, ci):
     return v
 
 def jumpDistProb(r, D, t):
-    return (1./(4*numpy.pi*D*t))*numpy.exp(-r**2/(4*D*t))*2*numpy.pi*r
+    return (1./(4*np.pi*D*t))*np.exp(-r**2/(4*D*t))*2*np.pi*r
 
 
 def jumpDistModel(p, r, N, t, dx):

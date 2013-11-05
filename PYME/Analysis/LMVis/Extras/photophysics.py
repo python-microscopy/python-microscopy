@@ -40,10 +40,10 @@ class DecayAnalyser:
         
         pipeline = self.visFr.pipeline
 
-        kinModels.fitDecay(pipeline.colourFilter, pipeline.mdh)
-        kinModels.fitFluorBrightness(pipeline.colourFilter, pipeline.mdh)
-        kinModels.fitFluorBrightnessT(pipeline.colourFilter, pipeline.mdh)
-        kinModels.fitOnTimes(pipeline.colourFilter, pipeline.mdh)
+        kinModels.fitDecay(pipeline)
+        kinModels.fitFluorBrightness(pipeline)
+        #kinModels.fitFluorBrightnessT(pipeline)
+        kinModels.fitOnTimes(pipeline)
         
 
     def OnRetrieveIntensitySteps(self, event):
