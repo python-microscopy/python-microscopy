@@ -68,6 +68,8 @@ DATA_MAX_SIZE = PAYLOAD_MAX_SIZE - 7
 HEADER_DTYPE = np.dtype([('pktType', 'uint8'), ('command', '>u2'), ('flag', 'uint8'), ('datalength', 'uint16')])
 IMAGE_DTYPE = np.dtype([('R', 'u1'), ('G', 'u1'), ('B', 'u1')])
 
+PATTERN_INFO_DTYPE = np.dtype([('depth', 'u1'), ('nPatterns', 'u1'), ('invert', 'u1'), ('trigger', 'u1'), ('triggerDelay', 'u4'), ('triggerPeriod', 'u4'), ('exposureTime', 'u4'), ('LEDSelect', 'u1')])
+PATTERN_TRIGGER = ENList(['COMMAND', 'AUTO', 'EXT_POS', 'EXT_NEG', 'CAM_POS','CAM_NEG','EXT_EXP'])
 
 
 def MakePacket(pktType, command, flag, data):
@@ -188,6 +190,30 @@ class LightCrafter(object):
         h, d = self._ExecCommand(LC_PACKET_TYPE.HOST_WRITE, CMD_STATIC_IMAGE, np.fromstring(contents, 'u1'))
         return h, d
         
+    def SetPatternDefs(self, dataFrames):
+        patternSettings = np.zeros(1,PATTERN_INFO_DTYPE)
+        patternSettings['depth'] = 1
+        patternSettings['nPatterns'] = len(dataFrames)
+        patternSettings['invert'] = 0
+        patternSettings['trigger'] = PATTERN_TRIGGER.COMMAND
+        #patternSettings[']
+        h, d = self._ExecCommand(LC_PACKET_TYPE.HOST_WRITE, CMD_PATTERN_SETTING, patternSettings)
+        print h, d
+        
+        for index, data in enumerate(dataFrames):
+            im = Image.fromarray(data)#.convert('1')
+            output = StringIO.StringIO()
+            im.save(output, format='BMP')
+            contents = output.getvalue()
+            output.close()
+            #print contents[:50], np.fromstring(contents, 'u1')[:50]
+            h, d = self._ExecCommand(LC_PACKET_TYPE.HOST_WRITE, CMD_PATTERN_DEFINITION, np.hstack([np.ubyte(index),np.fromstring(contents, 'u1')]))
+            print h, d
+        return h, d
+        
+    def SetPattern(self, index):
+        self._ExecCommand(LC_PACKET_TYPE.HOST_WRITE, CMD_DISPLAY_PATTERN, np.uint8(index))
+        
     def SetTestPattern(self, pattern):
         #print contents[:50], np.fromstring(contents, 'u1')[:50]
         h, d = self._ExecCommand(LC_PACKET_TYPE.HOST_WRITE, CMD_TEST_PATTERN, np.uint8(pattern))
@@ -198,6 +224,14 @@ class LightCrafter(object):
         
     def SetStatic(self, value):
         h, d = self._ExecCommand(LC_PACKET_TYPE.HOST_WRITE, CMD_STATIC_COLOR, np.uint8(value*np.array([0,1,1,1])))
+        return h, d
+        
+    def StartPatternSeq(self, start=True):
+        h, d = self._ExecCommand(LC_PACKET_TYPE.HOST_WRITE, CMD_PATTERN_START, np.uint8(start))
+        return h, d
+    
+    def AdvancePatternSeq(self, start=True):
+        h, d = self._ExecCommand(LC_PACKET_TYPE.HOST_WRITE, CMD_PATTERN_ADVANCE, np.empty(0))
         return h, d
         
     def SetSpot(self, x, y, radius=10, intensity=255):
