@@ -926,9 +926,10 @@ class LMAnalyser:
         #else:
         #    ft = remFitBuf.fitTask(self.image.seriesName, zp, detThresh, MetaDataHandler.NestedClassMDHandler(self.image.mdh), 'LatObjFindFR', bgindices=bgi, SNThreshold=True,dataSourceModule=mn)
         ft = remFitBuf.fitTask(self.image.seriesName, zp, detThresh, MetaDataHandler.NestedClassMDHandler(self.image.mdh), fitMod, bgindices=bgi, SNThreshold=True,dataSourceModule=mn)
-        res = ft(taskQueue=self.tq)
+        res = ft(gui=gui,taskQueue=self.tq)
         
         if gui:
+            figure()
             try:
                 d = ft.ofd.filteredData.T
                 #d = ft.data.squeeze().T
@@ -936,9 +937,9 @@ class LMAnalyser:
                 plot([p.x for p in ft.ofd], [p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
                 if ft.driftEst:
                      plot([p.x for p in ft.ofdDr], [p.y for p in ft.ofdDr], 'o', mew=2, mec='b', mfc='none', ms=9)
-                if ft.fitModule in remFitBuf.splitterFitModules:
-                        plot([p.x for p in ft.ofd], [d.shape[0] - p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
-                axis('tight')
+                #if ft.fitModule in remFitBuf.splitterFitModules:
+                #        plot([p.x for p in ft.ofd], [d.shape[0] - p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
+                #axis('tight')
                 xlim(0, d.shape[1])
                 ylim(d.shape[0], 0)
                 xticks([])
@@ -947,11 +948,18 @@ class LMAnalyser:
                 if 'tIm' in dir(ft.ofd):
                     figure()
                     imshow(ft.ofd.tIm.T, cmap=cm.hot, interpolation='nearest', hold=False)
-                    axis('tight')
+                    #axis('tight')
                     xlim(0, d.shape[1])
                     ylim(d.shape[0], 0)
                     xticks([])
                     yticks([])
+                    
+                vx = 1e3*self.image.mdh['voxelsize.x']
+                vy = 1e3*self.image.mdh['voxelsize.y']
+                plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, '+b')
+                    
+                #figure()
+                #imshow()
             except AttributeError:
                 d = self.image.data[:,:,zp].squeeze().T
                 imshow(d, cmap=cm.hot, interpolation='nearest')
@@ -967,7 +975,7 @@ class LMAnalyser:
     
             matplotlib.interactive(True)
         
-        return res
+        return ft, res
 
 def Plug(dsviewer):
     dsviewer.LMAnalyser = LMAnalyser(dsviewer)
