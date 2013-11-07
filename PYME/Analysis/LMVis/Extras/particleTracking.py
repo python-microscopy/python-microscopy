@@ -41,7 +41,7 @@ class ParticleTracker:
 
     def OnTrackMolecules(self, event):
         import PYME.Analysis.DeClump.deClumpGUI as deClumpGUI
-        import PYME.Analysis.DeClump.deClump as deClump
+        #import PYME.Analysis.DeClump.deClump as deClump
         import PYME.Analysis.trackUtils as trackUtils
 
         visFr = self.visFr
@@ -53,34 +53,35 @@ class ParticleTracker:
         ret = dlg.ShowModal()
 
         if ret == wx.ID_OK:
-            nFrames = dlg.GetClumpTimeWindow()
-            rad_var = dlg.GetClumpRadiusVariable()
-            if rad_var == '1.0':
-                delta_x = 0*pipeline.mapping['x'] + dlg.GetClumpRadiusMultiplier()
-            else:
-                delta_x = dlg.GetClumpRadiusMultiplier()*pipeline.mapping[rad_var]
+            #nFrames = dlg.GetClumpTimeWindow()
+            #rad_var = dlg.GetClumpRadiusVariable()
+            trackUtils.findTracks(pipeline, dlg.GetClumpRadiusVariable(),dlg.GetClumpRadiusMultiplier(), dlg.GetClumpTimeWindow())
+#            if rad_var == '1.0':
+#                delta_x = 0*pipeline.mapping['x'] + dlg.GetClumpRadiusMultiplier()
+#            else:
+#                delta_x = dlg.GetClumpRadiusMultiplier()*pipeline.mapping[rad_var]
+#
+#        clumpIndices = deClump.findClumps(pipeline.mapping['t'].astype('i'), pipeline.mapping['x'].astype('f4'), pipeline.mapping['y'].astype('f4'), delta_x.astype('f4'), nFrames)
+#        numPerClump, b = np.histogram(clumpIndices, np.arange(clumpIndices.max() + 1.5) + .5)
+#
+#        trackVelocities = trackUtils.calcTrackVelocity(pipeline.mapping['x'], pipeline.mapping['y'], clumpIndices)
+#        #print b
+#
+#        pipeline.selectedDataSource.clumpIndices = -1*np.ones(len(pipeline.selectedDataSource['x']))
+#        pipeline.selectedDataSource.clumpIndices[pipeline.filter.Index] = clumpIndices
+#
+#        pipeline.selectedDataSource.clumpSizes = np.zeros(pipeline.selectedDataSource.clumpIndices.shape)
+#        pipeline.selectedDataSource.clumpSizes[pipeline.filter.Index] = numPerClump[clumpIndices - 1]
+#
+#        pipeline.selectedDataSource.trackVelocities = np.zeros(pipeline.selectedDataSource.clumpIndices.shape)
+#        pipeline.selectedDataSource.trackVelocities[pipeline.filter.Index] = trackVelocities
+#
+#        pipeline.selectedDataSource.setMapping('clumpIndex', 'clumpIndices')
+#        pipeline.selectedDataSource.setMapping('clumpSize', 'clumpSizes')
+#        pipeline.selectedDataSource.setMapping('trackVelocity', 'trackVelocities')
 
-        clumpIndices = deClump.findClumps(pipeline.mapping['t'].astype('i'), pipeline.mapping['x'].astype('f4'), pipeline.mapping['y'].astype('f4'), delta_x.astype('f4'), nFrames)
-        numPerClump, b = np.histogram(clumpIndices, np.arange(clumpIndices.max() + 1.5) + .5)
-
-        trackVelocities = trackUtils.calcTrackVelocity(pipeline.mapping['x'], pipeline.mapping['y'], clumpIndices)
-        #print b
-
-        pipeline.selectedDataSource.clumpIndices = -1*np.ones(len(pipeline.selectedDataSource['x']))
-        pipeline.selectedDataSource.clumpIndices[pipeline.filter.Index] = clumpIndices
-
-        pipeline.selectedDataSource.clumpSizes = np.zeros(pipeline.selectedDataSource.clumpIndices.shape)
-        pipeline.selectedDataSource.clumpSizes[pipeline.filter.Index] = numPerClump[clumpIndices - 1]
-
-        pipeline.selectedDataSource.trackVelocities = np.zeros(pipeline.selectedDataSource.clumpIndices.shape)
-        pipeline.selectedDataSource.trackVelocities[pipeline.filter.Index] = trackVelocities
-
-        pipeline.selectedDataSource.setMapping('clumpIndex', 'clumpIndices')
-        pipeline.selectedDataSource.setMapping('clumpSize', 'clumpSizes')
-        pipeline.selectedDataSource.setMapping('trackVelocity', 'trackVelocities')
-
-        visFr.RegenFilter()
-        visFr.CreateFoldPanel()
+            visFr.RegenFilter()
+            visFr.CreateFoldPanel()
 
         dlg.Destroy()
 

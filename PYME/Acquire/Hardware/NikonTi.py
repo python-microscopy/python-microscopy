@@ -78,6 +78,9 @@ class zDrive:
 class FilterChanger:
     def __init__(self):
         self.names = [b.Name for b in nik.FilterBlockCassette1.FilterBlocks]
+        self.wantChangeNotification = []
+        
+        self.lastPosition = self.GetPosition()
     
     def GetPosition(self):
         #convert to zero based indices for python consistency
@@ -88,32 +91,63 @@ class FilterChanger:
         
     def SetPosition(self, pos):
         nik.FilterBlockCassette1.Position = (pos + 1)
+        self.lastPosition = pos
+        self.OnChange()
         
     def SetFilter(self, filterName):
         self.SetPosition(self.names.index(filterName))
+        self.OnChange()
         
     def ProvideMetadata(self,mdh):
         mdh.setEntry('NikonTi.FilterCube', self.GetFilter())
+        
+    def OnChange(self):
+        for a in self.wantChangeNotification:
+            a()
+        
+    def Poll(self):
+        pos = self.GetPosition()
+        if not self.lastPosition == pos:
+            self.lastPosition = pos
+            self.OnChange()
+            
          
          
 class LightPath:
     def __init__(self, names = ['EYE', 'L100', 'R100', 'L80']):
         self.names = names
+        self.wantChangeNotification = []
+        
+        self.lastPosition = self.GetPosition()
         
     def SetPosition(self, pos):
         nik.LightPathDrive.Position = (pos + 1)
+        self.lastPosition = pos
+        self.OnChange()
         
     def GetPosition(self):
         return int(nik.LightPathDrive.Position) - 1
         
     def SetPort(self, port):
-        self.SetPositon(self.names.index(port))
+        self.SetPosition(self.names.index(port))
+        self.OnChange()
         
     def GetPort(self):
         return self.names[self.GetPosition()]
     
     def ProvideMetadata(self,mdh):
         mdh.setEntry('NikonTi.LightPath', self.GetPort())
+        
+    def OnChange(self):
+        for a in self.wantChangeNotification:
+            a()
+            
+    def Poll(self):
+        pos = self.GetPosition()
+        if not self.lastPosition == pos:
+            self.lastPosition = pos
+            self.OnChange()
+        
         
 
 

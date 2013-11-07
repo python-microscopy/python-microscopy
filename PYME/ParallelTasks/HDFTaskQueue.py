@@ -34,6 +34,9 @@ import numpy as np
 
 import logging
 
+import time
+import Queue
+
 from PYME.FileUtils.nameUtils import genResultFileName
 from PYME.ParallelTasks.relativeFiles import getFullFilename
 
@@ -102,17 +105,38 @@ class dataBuffer: #buffer our io to avoid decompressing multiple times
 class myLock:
     def __init__(self):
         self.lock = threading.Lock()
+        self.owner = None
+        self.oowner = None
+        self.aqtime = 0
 
     def acquire(self):
-        self.lock.acquire()
         fr = sys._getframe()
-        print 'Acquired Lock - ' + fr.f_back.f_code.co_name + ' %d' % fr.f_back.f_lineno
+        dt = (time.time() - self.aqtime)
+        if self.owner and (dt > 1):    
+            logging.info(fr.f_back.f_back.f_code.co_name + ' %d' % fr.f_back.f_back.f_lineno + ' waiting on lock held by %s for %f s' % (self.owner, dt) )
+        self.lock.acquire()
+        
+        self.owner = fr.f_back.f_back.f_code.co_name + ' %d' % fr.f_back.f_back.f_lineno
+        dtt = (time.time() - self.aqtime - dt)
+        if (dtt > 1):
+            logging.info(self.owner + ' succesfully acquired lock held by %s for %f s after waiting %f s' % (self.oowner, dt + dtt, dtt) )
+        self.aqtime = time.time()
+        #fr = sys._getframe()
+        #print 'Acquired Lock - ' + fr.f_back.f_code.co_name + ' %d' % fr.f_back.f_lineno
 
     def release(self):
-        print 'Released Lock'
+        #print 'Released Lock'
         self.lock.release()
+        self.oowner = self.owner
+        self.owner = None
+        
+    def __enter__(self):
+        self.acquire()
+        
+    def __exit__(self, type, value, traceback):
+        self.release()
 
-#tablesLock = myLock()
+tablesLock = myLock()
 
 class SpoolEvent(tables.IsDescription):
    EventName = tables.StringCol(32)
@@ -148,14 +172,17 @@ class HDFResultsTaskQueue(TaskQueue):
         self.resultsMDH = MetaDataHandler.HDFMDHandler(self.h5ResultsFile)
         
         logging.info('Creating results events table')
-        self.fileResultsLock.acquire()
-
-        self.resultsEvents = self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'Events', SpoolEvent,filters=tables.Filters(complevel=5, shuffle=True))
-        self.fileResultsLock.release()
+        with self.fileResultsLock:
+            self.resultsEvents = self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'Events', SpoolEvent,filters=tables.Filters(complevel=5, shuffle=True))
+        
         
         logging.info('Events table created')
         
         self.haveResultsTable = False
+        
+        self.resultsQueue = []#Queue.Queue()
+        self.resultsQueueLock = threading.Lock()
+        self.lastResultsQueuePurge = time.time() 
         
         logging.info('Results file initialised')
 
@@ -167,31 +194,27 @@ class HDFResultsTaskQueue(TaskQueue):
         return None
 
     def setQueueMetaData(self, fieldName, value):
-        self.fileResultsLock.acquire()
-        self.resultsMDH.setEntry(fieldName, value)
-        self.fileResultsLock.release()
+        with self.fileResultsLock:
+            self.resultsMDH.setEntry(fieldName, value)
+        
 
     def getQueueMetaData(self, fieldName):
         res  = None
-        self.fileResultsLock.acquire()
-        try:
+        with self.fileResultsLock:
             res = self.resultsMDH.getEntry(fieldName)
-        finally:
-            self.fileResultsLock.release()
+        
         return res
 
     def addQueueEvents(self, events):
-        self.fileResultsLock.acquire()
-        try:
+        with self.fileResultsLock:
             self.resultsEvents.append(events)
-        finally:
-            self.fileResultsLock.release()
 
 
     def getQueueMetaDataKeys(self):
-        self.fileResultsLock.acquire()
-        res = self.resultsMDH.getEntryNames()
-        self.fileResultsLock.release()
+        res = None
+        with self.fileResultsLock:
+            res = self.resultsMDH.getEntryNames()
+        
         return res
 
     def getNumberTasksCompleted(self):
@@ -206,6 +229,37 @@ class HDFResultsTaskQueue(TaskQueue):
         #self.h5DataFile.close()
         self.h5ResultsFile.close()
 
+#    def fileResult(self, res):
+#        #print res, res.results, res.driftResults, self.h5ResultsFile
+#        if res == None:
+#            print 'res == None'
+#            
+#        if res.results == [] and res.driftResults == []: #if we had a dud frame
+#            return
+#
+#        self.fileResultsLock.acquire() #get a lock
+#            
+#        if not len(res.results) == 0:
+#            #print res.results, res.results == []
+#            if not self.haveResultsTable: # self.h5ResultsFile.__contains__('/FitResults'):
+#                self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'FitResults', res.results, filters=tables.Filters(complevel=5, shuffle=True), expectedrows=500000)
+#                self.haveResultsTable = True
+#            else:
+#                self.h5ResultsFile.root.FitResults.append(res.results)
+#
+#        if not len(res.driftResults) == 0:
+#            if not self.h5ResultsFile.__contains__('/DriftResults'):
+#                self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'DriftResults', res.driftResults, filters=tables.Filters(complevel=5, shuffle=True), expectedrows=500000)
+#            else:
+#                self.h5ResultsFile.root.DriftResults.append(res.driftResults)
+#
+#        #self.h5ResultsFile.flush()
+#
+#        self.fileResultsLock.release() #release lock
+#
+#        self.numClosedTasks += 1
+
+
     def fileResult(self, res):
         #print res, res.results, res.driftResults, self.h5ResultsFile
         if res == None:
@@ -213,57 +267,101 @@ class HDFResultsTaskQueue(TaskQueue):
             
         if res.results == [] and res.driftResults == []: #if we had a dud frame
             return
-
-        self.fileResultsLock.acquire() #get a lock
             
-        if not len(res.results) == 0:
-            #print res.results, res.results == []
-            if not self.haveResultsTable: # self.h5ResultsFile.__contains__('/FitResults'):
-                self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'FitResults', res.results, filters=tables.Filters(complevel=5, shuffle=True), expectedrows=500000)
-                self.haveResultsTable = True
-            else:
-                self.h5ResultsFile.root.FitResults.append(res.results)
+        rq = None
+        with self.resultsQueueLock:
+            #logging.info('Filing result')
+            self.resultsQueue.append(res)
+            #print 'rq'
+            
+            t = time.time()
+            if (t > (self.lastResultsQueuePurge + 5)):# or (len(self.resultsQueue) > 20):
+                #print 'fr'
+                self.lastResultsQueuePurge = t
+                rq = self.resultsQueue
+                #print(len(rq)), 'r_q'
+                self.resultsQueue = []
+                
+            #print 'rf'
+                
+        if rq:
+            #print 'frf'
+            self.fileResults(rq)
+            #print 'rff'
+                
+        #logging.info('Result Filed')
+        #logging.info('Result filed result')
+        
+    def fileResults(self, ress):
+        #print res, res.results, res.driftResults, self.h5ResultsFile
+        #if ress == None:
+        #    print 'res == None'
+        #print len(ress)
+            
+        results = []
+        driftResults = []
+        
+        for r in ress:
+            #print r, results
+            if not r.results == []:
+                results.append(r.results)
+            if not r.driftResults == []:
+                driftResults.append(r.driftResults)
+        
+        if results == [] and driftResults == []: #if we had a dud frame
+            return
+            
+        #print len(results), len(driftResults)
 
-        if not len(res.driftResults) == 0:
-            if not self.h5ResultsFile.__contains__('/DriftResults'):
-                self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'DriftResults', res.driftResults, filters=tables.Filters(complevel=5, shuffle=True), expectedrows=500000)
-            else:
-                self.h5ResultsFile.root.DriftResults.append(res.driftResults)
+        with self.fileResultsLock: #get a lock
+            
+            if not len(results) == 0:
+                #print res.results, res.results == []
+                if not self.haveResultsTable: # self.h5ResultsFile.__contains__('/FitResults'):
+                    self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'FitResults', np.hstack(results), filters=tables.Filters(complevel=5, shuffle=True), expectedrows=500000)
+                    self.haveResultsTable = True
+                else:
+                    self.h5ResultsFile.root.FitResults.append(np.hstack(results))
+                    
+            #print 'rs'
+    
+            if not len(driftResults) == 0:
+                if not self.h5ResultsFile.__contains__('/DriftResults'):
+                    self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'DriftResults', driftResults, filters=tables.Filters(complevel=5, shuffle=True), expectedrows=500000)
+                else:
+                    self.h5ResultsFile.root.DriftResults.append(driftResults)
+    
+            #self.h5ResultsFile.flush()
 
-        #self.h5ResultsFile.flush()
+       
 
-        self.fileResultsLock.release() #release lock
-
-        self.numClosedTasks += 1
+        self.numClosedTasks += len(ress)
         
     def checkTimeouts(self):
-        self.inProgressLock.acquire()
-        curTime = time.clock()
-        for it in self.tasksInProgress:
-            if 'workerTimeout' in dir(it):
-                if curTime > it.workerTimeout:
-                    self.openTasks.append(it.index)
-                    self.tasksInProgress.remove(it)
-
-        self.inProgressLock.release()
+        with self.inProgressLock:
+            curTime = time.clock()
+            for it in self.tasksInProgress:
+                if 'workerTimeout' in dir(it):
+                    if curTime > it.workerTimeout:
+                        self.openTasks.append(it.index)
+                        self.tasksInProgress.remove(it)
         
-        self.fileResultsLock.acquire() #get a lock
-        
-        self.h5ResultsFile.flush()
+        with self.fileResultsLock: #get a lock
+            self.h5ResultsFile.flush()
 
-        self.fileResultsLock.release() #release lock
+       
         
         
     def getQueueData(self, fieldName, *args):
         '''Get data, defined by fieldName and potntially additional arguments,  ascociated with queue'''
         if fieldName == 'FitResults':
             startingAt, = args
-            self.fileResultsLock.acquire()
-            if self.h5ResultsFile.__contains__('/FitResults'):
-                res = self.h5ResultsFile.root.FitResults[startingAt:]
-            else:
-                res = []
-            self.fileResultsLock.release()
+            with self.fileResultsLock:
+                if self.h5ResultsFile.__contains__('/FitResults'):
+                    res = self.h5ResultsFile.root.FitResults[startingAt:]
+                else:
+                    res = []
+            
             return res
         else:
             return None
@@ -319,7 +417,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
             self.h5DataFile = tables.openFile(ffn, 'w')
             filt = tables.Filters(complevel, complib, shuffle=True)
 
-            self.imageData = self.h5DataFile.createEArray(self.h5DataFile.root, 'ImageData', tables.UInt16Atom(), (0,)+tuple(frameSize), filters=filt)
+            self.imageData = self.h5DataFile.createEArray(self.h5DataFile.root, 'ImageData', tables.UInt16Atom(), (0,)+tuple(frameSize), filters=filt, chunkshape=(1,)+tuple(frameSize))
             self.events = self.h5DataFile.createTable(self.h5DataFile.root, 'Events', SpoolEvent,filters=filt)
             self.imNum=0
             self.acceptNewTasks = True
@@ -357,11 +455,11 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         #self.openTasks.append(task)
         #print 'posting tasks not implemented yet'
         if self.acceptNewTasks:
-            self.dataFileLock.acquire()
-            self.imageData.append(task)
-            self.h5DataFile.flush()
-            self.numSlices = self.imageData.shape[0]
-            self.dataFileLock.release()
+            with self.dataFileLock:
+                self.imageData.append(task)
+                self.h5DataFile.flush()
+                self.numSlices = self.imageData.shape[0]
+            
 
             if self.releaseNewTasks:
                 self.openTasks.append(self.imNum)
@@ -373,19 +471,30 @@ class HDFTaskQueue(HDFResultsTaskQueue):
     def postTasks(self,tasks):
         #self.openTasks += tasks
         if self.acceptNewTasks:
-            self.dataFileLock.acquire()
-            for task in tasks:
-                self.imageData.append(task)
-                #self.h5DataFile.flush()
-                #self.dataFileLock.release()
-
-                if self.releaseNewTasks:
-                    self.openTasks.append(self.imNum)
-                self.imNum += 1
-
-            self.h5DataFile.flush()
-            self.numSlices = self.imageData.shape[0]
-            self.dataFileLock.release()
+            with self.dataFileLock:
+                #t1 = time.clock()
+                #t_1 = 0
+                #t_2 = 0
+                for task in tasks:
+                    #t1_ = time.clock()
+                    #print task.dtype
+                    self.imageData.append(task)
+                    #self.h5DataFile.flush()
+                    #self.dataFileLock.release()
+                    #t2_ = time.clock()
+                    #t_1 = (t2_ - t1_)
+                    if self.releaseNewTasks:
+                        self.openTasks.append(self.imNum)
+                    self.imNum += 1
+                    #t3_ = time.clock()
+                    #t_2 = (t3_ - t2_)
+                    #print t_1, t_2
+                #t2 = time.clock()
+                self.h5DataFile.flush()
+                #t3 = time.clock()
+                self.numSlices = self.imageData.shape[0]
+                
+            #print len(tasks), t2 - t1, t3 - t2
         else:
             print "can't post new tasks"
         #print 'posting tasks not implemented yet'
@@ -412,11 +521,10 @@ class HDFTaskQueue(HDFResultsTaskQueue):
             time.sleep(0.01)
 
         if self.metaDataStale:
-            self.dataFileLock.acquire()
-            self.metaData = MetaDataHandler.NestedClassMDHandler(self.resultsMDH)
-            self.metaDataStale = False
-            self.dataFileLock.release()
-
+            with self.dataFileLock:
+                self.metaData = MetaDataHandler.NestedClassMDHandler(self.resultsMDH)
+                self.metaDataStale = False
+            
             #patch up old data which doesn't have BGRange in metadata
             if not 'Analysis.BGRange' in self.metaData.getEntryNames():
                 if 'Analysis.NumBGFrames' in self.metaData.getEntryNames():
@@ -440,9 +548,9 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         
         task.queueID = self.queueID
         task.initializeWorkerTimeout(time.clock())
-        self.inProgressLock.acquire()
-        self.tasksInProgress.append(task)
-        self.inProgressLock.release()
+        with self.inProgressLock:
+            self.tasksInProgress.append(task)
+        #self.inProgressLock.release()
         #self.getTaskLock.release()
 
         self.lastTaskTime = time.time()
@@ -457,10 +565,10 @@ class HDFTaskQueue(HDFResultsTaskQueue):
             time.sleep(0.01)
 
         if self.metaDataStale:
-            self.dataFileLock.acquire()
-            self.metaData = MetaDataHandler.NestedClassMDHandler(self.resultsMDH)
-            self.metaDataStale = False
-            self.dataFileLock.release()
+            with self.dataFileLock:
+                self.metaData = MetaDataHandler.NestedClassMDHandler(self.resultsMDH)
+                self.metaDataStale = False
+            
 
             if not 'Analysis.BGRange' in self.metaData.getEntryNames():
                 if 'Analysis.NumBGFrames' in self.metaData.getEntryNames():
@@ -488,10 +596,9 @@ class HDFTaskQueue(HDFResultsTaskQueue):
 
             task.queueID = self.queueID
             task.initializeWorkerTimeout(time.clock())
-            self.inProgressLock.acquire()
-            self.tasksInProgress.append(task)
-            self.inProgressLock.release()
-            #self.getTaskLock.release()
+            with self.inProgressLock:
+                self.tasksInProgress.append(task)
+            
 
             tasks.append(task)
 
@@ -508,24 +615,24 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         self.h5ResultsFile.close()
 
     def setQueueMetaData(self, fieldName, value):
-        self.dataFileLock.acquire()
-        self.dataMDH.setEntry(fieldName, value)
-        self.dataFileLock.release()
+        with self.dataFileLock:
+            self.dataMDH.setEntry(fieldName, value)
+        
         HDFResultsTaskQueue.setQueueMetaData(self, fieldName, value)
         self.metaDataStale = True
         
     def getQueueData(self, fieldName, *args):
         '''Get data, defined by fieldName and potntially additional arguments,  ascociated with queue'''
         if fieldName == 'ImageShape':
-            self.dataFileLock.acquire()
-            res = self.h5DataFile.root.ImageData.shape[1:]
-            self.dataFileLock.release()
+            with self.dataFileLock:
+                res = self.h5DataFile.root.ImageData.shape[1:]
+            
             return res
         elif fieldName == 'ImageData':
             sliceNum, = args
-            self.dataFileLock.acquire()
-            res = self.h5DataFile.root.ImageData[sliceNum, :,:]
-            self.dataFileLock.release()
+            with self.dataFileLock:
+                res = self.h5DataFile.root.ImageData[sliceNum, :,:]
+            
             return res
         elif fieldName == 'NumSlices':
             #self.dataFileLock.acquire()
@@ -535,9 +642,9 @@ class HDFTaskQueue(HDFResultsTaskQueue):
             #return res
             return self.numSlices
         elif fieldName == 'Events':
-            self.dataFileLock.acquire()
-            res = self.h5DataFile.root.Events[:]
-            self.dataFileLock.release()
+            with self.dataFileLock:
+                res = self.h5DataFile.root.Events[:]
+            
             return res
         elif fieldName == 'PSF':
             from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
@@ -567,10 +674,10 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         ev['EventDescr'] = eventDescr
         ev['Time'] = evtTime
 
-        self.dataFileLock.acquire()
-        ev.append()
-        self.events.flush()
-        self.dataFileLock.release()
+        with self.dataFileLock:
+            ev.append()
+            self.events.flush()
+        
 
         ev = self.resultsEvents.row
 
@@ -578,11 +685,11 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         ev['EventDescr'] = eventDescr
         ev['Time'] = evtTime
 
-        self.fileResultsLock.acquire()
+        with self.fileResultsLock:
         #print len(self.events)
-        ev.append()
-        self.resultsEvents.flush()
-        self.fileResultsLock.release()
+            ev.append()
+            self.resultsEvents.flush()
+        
 
         #self.dataFileLock.release()
 

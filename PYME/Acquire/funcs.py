@@ -338,6 +338,9 @@ class microscope:
 
         if 'pa' in dir(self):
             self.livepreview()
+            
+        if 'lightpath' in dir(self):
+            self.lightpath.SetPort(self.cam.port)
 
 
     #aquisition

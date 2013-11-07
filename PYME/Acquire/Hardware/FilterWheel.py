@@ -57,13 +57,17 @@ class FiltFrame(wx.Panel):
         self.chFiltWheel.Bind(wx.EVT_CHOICE, self.OnChFiltWheelChoice,
               id=wxID_FILTFRAMECHFILTWHEEL)
 
-    def __init__(self, parent, installedFilters, serPort='COM3'):
+    def __init__(self, parent, installedFilters, serPort='COM3', dichroic=None):
         '''Create a filter wheel gui object. installedFilters should be a list of
         WFilter objects. The first item is the default'''
         self.installedFilters = installedFilters 
         self._init_ctrls(parent)
         
         self.fw = filtWheel(serPort)
+        if dichroic:
+            self.dichroic = dichroic
+            self.dichroic.wantChangeNotification.append(self.DichroicSync)
+            self.DICHROIC_SYNC = True
 
         for k in installedFilters:
             self.chFiltWheel.Append(k.name)
@@ -86,7 +90,17 @@ class FiltFrame(wx.Panel):
         self.fw.setPos(self.installedFilters[id].pos)
         self.chFiltWheel.SetSelection(id)
         
+    def GetFilterNames(self):
+        return [f.name for f in self.installedFilters]
+        
     def GetSelectedFilter(self):
         n = self.chFiltWheel.GetSelection()
         return self.installedFilters(n)
+        
+    def DichroicSync(self):
+        if self.DICHROIC_SYNC:
+            dname =  self.dichroic.GetFilter()
+            
+            if dname in self.GetFilterNames():
+                self.SetFilterPos(name=dname)
         

@@ -48,20 +48,26 @@ class DataSource(BaseDataSource):
     def SetShiftField(self, shiftField):
         #self.shiftField = shiftField
         #self.shiftFieldName = sfname
-        X, Y = numpy.ogrid[:512, :256]
-
-        self.X2 = numpy.round(X - shiftField[0](X*self.voxelsize[0], Y*self.voxelsize[1])/self.voxelsize[0]).astype('i')
-        self.Y2 = numpy.round(Y - shiftField[1](X*self.voxelsize[0], Y*self.voxelsize[1])/self.voxelsize[1]).astype('i')
-
         x1, y1, x2, y2 = self.ROI
         x1 = x1 - 1
-        #x2 = self.scope.cam.GetROIX2()
         y1 = y1 - 1
+        
+        X, Y = numpy.ogrid[:self.sliceShape[0], :self.sliceShape[1]]
+        X += x1
+        Y += y1
+
+        Xn = numpy.round(X - x1 - shiftField[0](X*self.voxelsize[0], Y*self.voxelsize[1])/self.voxelsize[0]).astype('i')
+        Yn = numpy.round(Y - y1 - shiftField[1](X*self.voxelsize[0], Y*self.voxelsize[1])/self.voxelsize[1]).astype('i')
+
+        #x1, y1, x2, y2 = self.ROI
+        #x1 = x1 - 1
+        #x2 = self.scope.cam.GetROIX2()
+        #y1 = y1 - 1
 
         #print self.X2.shape
 
-        Xn = self.X2[x1:x2, y1:(y1 + self.sliceShape[1])] - x1
-        Yn = self.Y2[x1:x2, y1:(y1 + self.sliceShape[1])] - y1
+        #Xn = self.X2[x1:x2, y1:(y1 + self.sliceShape[1])] - x1
+        #Yn = self.Y2[x1:x2, y1:(y1 + self.sliceShape[1])] - y1
 
         #print Xn.shape
 
@@ -82,23 +88,26 @@ class DataSource(BaseDataSource):
         if self.chan == 0:
             if self.chanROIs:
                 x, y, w, h = self.chanROIs[0]
-                x -= self.ROI[0]
-                y -= self.ROI[1]
+                x -= (self.ROI[0] - 1)
+                y -= (self.ROI[1] - 1)
+                #print x, y
                 return dsa[x:(x+w), y:(y+h)]
             else:
                 return dsa[:, :(dsa.shape[1]/2)]
         else: #chan = 1
             if self.chanROIs:
                 x, y, w, h = self.chanROIs[1]
-                x -= self.ROI[0]
-                y -= self.ROI[1]
+                x -= (self.ROI[0] - 1)
+                y -= (self.ROI[1] - 1)
+                #print x,y
                 r_ = dsa[x:(x+w), y:(y+h)]
+                #print r_.shape
             else:    
                 r_ = dsa[:, (dsa.shape[1]/2):]
             if self.flip:
                 r_ = numpy.fliplr(r_)
 
-            if 'X2' in dir(self):
+            if 'Xn' in dir(self):
                 return r_[self.Xn, self.Yn]
             else:
                 return r_

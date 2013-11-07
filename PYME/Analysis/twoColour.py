@@ -267,16 +267,20 @@ def genShiftVectorField(nx,ny, nsx, nsy):
 
     return (dx.T, dy.T, rbx, rby)
 
-def genShiftVectorFieldSpline(nx,ny, nsx, nsy, err_sx, err_sy):
+def genShiftVectorFieldSpline(nx,ny, nsx, nsy, err_sx, err_sy, bbox=None):
     '''interpolates shift vectors using smoothing splines'''
     wonky = findWonkyVectors(nx, ny, nsx, nsy, tol=2*err_sx.mean())
     #wonky = findWonkyVectors(nx, ny, nsx, nsy, tol=100)
     good = wonky == 0
 
     print '%d wonky vectors found and discarded' % wonky.sum()
-
-    spx = SmoothBivariateSpline(nx[good], ny[good], nsx[good], 1./err_sx[good])
-    spy = SmoothBivariateSpline(nx[good], ny[good], nsy[good], 1./err_sy[good])
+    
+    if bbox:
+        spx = SmoothBivariateSpline(nx[good], ny[good], nsx[good], 1./err_sx[good], bbox=bbox)
+        spy = SmoothBivariateSpline(nx[good], ny[good], nsy[good], 1./err_sy[good], bbox=bbox)
+    else:
+        spx = SmoothBivariateSpline(nx[good], ny[good], nsx[good], 1./err_sx[good])
+        spy = SmoothBivariateSpline(nx[good], ny[good], nsy[good], 1./err_sy[good])
 
     X, Y = np.meshgrid(np.arange(0, 512*70, 100), np.arange(0, 256*70, 100))
 

@@ -134,6 +134,7 @@ class GaussianFitFactory:
 
         #print DeltaX
         #print DeltaY
+        #print dataROI.shape
 
         #estimate some start parameters...
         Ag = dataROI[:,:,0].max() - dataROI[:,:,0].min() #amplitude
@@ -186,6 +187,8 @@ class GaussianFitFactory:
 	
         x = round(x)
         y = round(y)
+        
+        #print x, y
 	
         return self[max((x - roiHalfSize), 0):min((x + roiHalfSize + 1),self.data.shape[0]), 
                     max((y - roiHalfSize), 0):min((y + roiHalfSize + 1), self.data.shape[1]), 0:2]

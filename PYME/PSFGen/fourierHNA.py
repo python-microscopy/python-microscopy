@@ -386,6 +386,26 @@ def GenPRIPSF(zs, dx = 5, strength=1.0):
 
     return abs(ps**2)
     
+def GenICPRIPSF(zs, dx = 5, strength=1.0):
+    X, Y, R, FP, F, u, v = GenWidefieldAP(dx)
+
+    F = F * exp(-1j*sign(X)*10*strength*v)
+    #clf()
+    #imshow(angle(F))
+    
+    F_ = F
+    F = F*(X >= 0)
+
+    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+
+    p1 = abs(ps**2)
+    
+    F = F_*(X < 0)
+
+    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+
+    return  p1 + abs(ps**2)
+    
 def GenColourPRIPSF(zs, dx = 5, strength=1.0, transmit = [1,1]):
     X, Y, R, FP, F, u, v = GenWidefieldAP(dx)
 
@@ -505,6 +525,26 @@ def GenShiftedPSF(zs, dx = 5):
     ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 
     return abs(ps**2)
+    
+def GenBiplanePSF(zs, dx = 5, zshift = 500, xshift = 1):
+    X, Y, R, FP, F, u, v = GenWidefieldAP(dx)
+    F_ = F
+
+    F = F * exp(-1j*.01*xshift*Y)
+    #clf()
+    #imshow(angle(F))
+
+    ps = concatenate([FP.propagate(F, z-zshift/2)[:,:,None] for z in zs], 2)
+
+    ps1 = abs(ps**2)
+    
+    F = F_ * exp(1j*.01*xshift*Y) 
+    
+    #clf()
+    #imshow(angle(F))
+
+    ps = concatenate([FP.propagate(F, z+zshift/2)[:,:,None] for z in zs], 2)
+    return 0.5*ps1 +0.5*abs(ps**2)
 
 def GenStripePRIPSF(zs, dx = 5):
     X, Y, R, FP, F, u, v = GenWidefieldAP(dx)

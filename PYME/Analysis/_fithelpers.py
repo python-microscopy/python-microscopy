@@ -84,3 +84,13 @@ def FitModelWeightedJac_(modelFcn, startParameters, data, sigmas, *args):
 
 def FitWeightedMisfitFcn(misfitFcn, startParameters, data, sigmas, *args):
     return optimize.leastsq(misfitFcn, np.array(startParameters), (np.array(data, order='F'), np.array(1.0/sigmas, order='F')) + args, full_output=1)
+
+
+def poisson_lhood(p, fcn, data, *args):
+    """Helper function which evaluates a model function (fcn) with parameters (p) and additional arguments
+    (*args) and compares this with measured data (data)"""
+    mu = fcn(p, *args).ravel()
+    return -(data*np.log(mu) - mu).sum()
+    
+def FitModelPoisson(modelFcn, startParmeters, data, *args):
+    return [optimize.fmin(poisson_lhood, startParmeters, ((modelFcn, data,) +args))]

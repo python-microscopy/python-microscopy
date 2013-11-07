@@ -43,9 +43,12 @@ from PYME.Acquire import MetaDataHandler
 InitBG('EMCCD Cameras', '''
 scope.cameras['A - Left'] = AndorIXon.iXonCamera(0)
 scope.cameras['B - Right'] = uCam480.uc480Camera(0)
+scope.cameras['A - Left'].port = 'L100'
+scope.cameras['B - Right'].port = 'R100'
 #scope.cameras['B - Right'].SetShutter(False)
 scope.cameras['B - Right'].SetActive(False)
 scope.cam = scope.cameras['A - Left']
+
 ''')
 
 #InitBG('EMCCD Camera 2', '''
@@ -108,6 +111,8 @@ from PYME.Acquire.Hardware.Piezos import piezo_c867
 scope.xystage = piezo_c867.piezo_c867T('COM8')
 scope.piezos.append((scope.xystage, 2, 'Stage_X'))
 scope.piezos.append((scope.xystage, 1, 'Stage_Y'))
+scope.joystick = piezo_c867.c867Joystick(scope.xystage)
+#scope.joystick.Enable(True)
 ''')
 
 #InitBG('Stage Stepper Motors', '''
@@ -154,19 +159,21 @@ scope.lightpath = NikonTi.LightPath()
 
 TiPanel = NikonTiGUI.TiPanel(MainFrame, scope.dichroic, scope.lightpath)
 toolPanels.append((TiPanel, 'Nikon Ti'))
-time1.WantNotification.append(TiPanel.SetSelections)
+#time1.WantNotification.append(TiPanel.SetSelections)
+time1.WantNotification.append(scope.dichroic.Poll)
+time1.WantNotification.append(scope.lightpath.Poll)
 
 MetaDataHandler.provideStartMetadata.append(scope.dichroic.ProvideMetadata)
 MetaDataHandler.provideStartMetadata.append(scope.lightpath.ProvideMetadata)
 ''')# % GetComputerName())
 
-InitGUI('''
-from PYME.Acquire.Hardware import focusKeys
-fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[0], scope=scope)
-time1.WantNotification.append(fk.refresh)
-
-xykeys = focusKeys.PositionKeys(MainFrame, menuBar1, scope.piezos[1], scope.piezos[2], scope=scope)
-''')
+#InitGUI('''
+#from PYME.Acquire.Hardware import focusKeys
+#fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[0], scope=scope)
+#time1.WantNotification.append(fk.refresh)
+#
+#xykeys = focusKeys.PositionKeys(MainFrame, menuBar1, scope.piezos[1], scope.piezos[2], scope=scope)
+#''')
 
 InitGUI('''
 from PYME.Acquire.Hardware import spacenav
@@ -212,7 +219,7 @@ filtList = [WFilter(1, 'LF405', 'LF405', 0),
 
 InitGUI('''
 try:
-    scope.filterWheel = FiltFrame(MainFrame, filtList, 'COM11')
+    scope.filterWheel = FiltFrame(MainFrame, filtList, 'COM11', dichroic=scope.dichroic)
     scope.filterWheel.SetFilterPos("LF488")
     toolPanels.append((scope.filterWheel, 'Filter Wheel'))
 except:
@@ -223,10 +230,14 @@ except:
 #DigiData
 from PYME.Acquire.Hardware import phoxxLaser, cobaltLaser
 scope.l642 = phoxxLaser.PhoxxLaser('642',portname='COM4')
+scope.CleanupFunctions.append(scope.l642.Close)
 scope.l488 = phoxxLaser.PhoxxLaser('488',portname='COM5')
+scope.CleanupFunctions.append(scope.l488.Close)
 scope.l405 = phoxxLaser.PhoxxLaser('405',portname='COM6')
+scope.CleanupFunctions.append(scope.l405.Close)
 scope.l561 = cobaltLaser.CobaltLaser('561',portname='COM7')
 scope.lasers = [scope.l405,scope.l488,scope.l561, scope.l642]
+
 #scope.lasers = [scope.l405,scope.l488, scope.l642]
 #scope.lasers = [scope.l642]
 
@@ -252,11 +263,9 @@ scope.lasers = [scope.l405,scope.l488,scope.l561, scope.l642]
 #''')
 
 from PYME.Acquire.Hardware import priorLumen
-#try:
-#    scope.arclamp = priorLumen.PriorLumen('Arc Lamp', portname='COM1')
-#    scope.lasers.append(scope.arclamp)
-#except:
-#    pass
+scope.arclamp = priorLumen.PriorLumen('Arc Lamp', portname='COM1')
+scope.lasers.append(scope.arclamp)
+
 #scope.lasers = [scope.arclamp]
 
 #scope.lasers = []

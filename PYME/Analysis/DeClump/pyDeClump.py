@@ -129,25 +129,27 @@ def coalesceClumps(fitResults, assigned):
     #work out what the data type for our declumped data should be
     dt = deClumpedDType(fitResults)
 
-    filtered_res = []
+    fres = np.empty(NClumps, dt)
+    
+    clist = [[] for i in xrange(NClumps)]
+    for i, c in enumerate(assigned):
+        clist[int(c-1)].append(i)
 
-    for i in range(1, NClumps+1):
+    for i in xrange(NClumps):
             #coalesce the connected ponts into one
-            vals = fitResults[assigned == i]
+            vals = fitResults[clist[i]]
 
-            vn = np.zeros(1,dtype=dt)
+            #vn = np.zeros(1,dtype=dt)
                         
-            vn['tIndex'] = vals['tIndex'].min()
+            fres['tIndex'][i] = vals['tIndex'].min()
 
-            vn['fitResults'], vn['fitError'] = weightedAverage(vals['fitResults'], vals['fitError'])
+            fres['fitResults'][i], fres['fitError'][i] = weightedAverage(vals['fitResults'], vals['fitError'])
 
-            vn['nFrames'] = len(vals)
-            vn['ATotal'] = vals['fitResults']['A'].sum()
-
-            filtered_res.append(vn)
+            fres['nFrames'][i] = len(vals)
+            fres['ATotal'][i] = vals['fitResults']['A'].sum()
 
 
-    return np.hstack(filtered_res)
+    return fres
 
 
 def deClump(fitResults):

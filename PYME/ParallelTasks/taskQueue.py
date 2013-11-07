@@ -62,9 +62,9 @@ class TaskQueue:
 
         task.queueID = self.queueID
         task.initializeWorkerTimeout(time.clock())
-        self.inProgressLock.acquire()
-        self.tasksInProgress.append(task)
-        self.inProgressLock.release()
+        with self.inProgressLock:
+            self.tasksInProgress.append(task)
+        
         #print '[%s] - Task given to worker' % self.queueID
         return task
 
@@ -72,11 +72,11 @@ class TaskQueue:
         return [self.getTask(workerN, NWorkers) for i in range(min(CHUNKSIZE,len(self.openTasks)))]
 
     def returnCompletedTask(self, taskResult):
-            self.inProgressLock.acquire()
-            for it in self.tasksInProgress[:]:
-                    if (it.taskID == taskResult.taskID):
-                            self.tasksInProgress.remove(it)
-            self.inProgressLock.release()
+            with self.inProgressLock:
+                for it in self.tasksInProgress[:]:
+                        if (it.taskID == taskResult.taskID):
+                                self.tasksInProgress.remove(it)
+            
             
             self.fileResult(taskResult)
 
@@ -85,20 +85,26 @@ class TaskQueue:
             
 
     def returnCompletedTasks(self, taskResults):
-        self.inProgressLock.acquire()
-        for taskResult in taskResults:
-            for it in self.tasksInProgress[:]:
-                if (it.taskID == taskResult.taskID):
-                    self.tasksInProgress.remove(it)
-        self.inProgressLock.release()
+        with self.inProgressLock:
+            for taskResult in taskResults:
+                for it in self.tasksInProgress[:]:
+                    if (it.taskID == taskResult.taskID):
+                        self.tasksInProgress.remove(it)
         
-        for taskResult in taskResults:
-            self.fileResult(taskResult)
+        
+        #for taskResult in taskResults:
+        #allow this to be over-ridden 
+        self.fileResults(taskResults)
 
         if (len(self.openTasks) + len(self.tasksInProgress)) == 0: #no more tasks
             self.onEmpty(self)
         
 
+    def fileResults(self, taskResults):
+        #allow this to be over-ridden in derived classes to file multiple results at once
+        for taskResult in taskResults:
+            self.fileResult(taskResult)
+    
     def fileResult(self,taskResult):
         self.closedTasks.append(taskResult)
 
@@ -109,14 +115,14 @@ class TaskQueue:
             return self.closedTasks.pop(0)
 
     def checkTimeouts(self):
-        self.inProgressLock.acquire()
-        curTime = time.clock()
-        for it in self.tasksInProgress:
-            if 'workerTimeout' in dir(it):
-                if curTime > it.workerTimeout:
-                    self.openTasks.insert(0, it)
-                    self.tasksInProgress.remove(it)
-        self.inProgressLock.release()
+        with self.inProgressLock:
+            curTime = time.clock()
+            for it in self.tasksInProgress:
+                if 'workerTimeout' in dir(it):
+                    if curTime > it.workerTimeout:
+                        self.openTasks.insert(0, it)
+                        self.tasksInProgress.remove(it)
+        
 
     def getNumberOpenTasks(self, exact=True):
         return len(self.openTasks)

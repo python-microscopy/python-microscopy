@@ -152,16 +152,23 @@ import Queue
 import numpy as np
         
 class piezo_c867T(object):    
-    def __init__(self, portname='COM1', maxtravel = 25.00, hasTrigger=False, reference=True, maxvelocity=200.):
+    def __init__(self, portname='COM1', maxtravel = 25.00, hasTrigger=False, reference=True, maxvelocity=200., validRegion = [[4.5, 19], [0, 25]]):
         self.max_travel = maxtravel
         self.maxvelocity = maxvelocity
         self.ser_port = serial.Serial(portname, 38400, timeout=.1, writeTimeout=.1)
         
+        self.validRegion=validRegion
+        
+        #reboot stage
+        self.ser_port.write('RBT\n')
+        time.sleep(1)
         #turn servo mode on
         self.ser_port.write('SVO 1 1\n')
         self.ser_port.write('SVO 2 1\n')
         
         self.servo = True
+        
+        self.errCode = 0
         
         if reference:
             #find reference switch (should be in centre of range)
@@ -204,6 +211,13 @@ class piezo_c867T(object):
                 self.position[0] = float(res1.split('=')[1])
                 self.position[1] = float(res2.split('=')[1])
                 
+                self.ser_port.write('ERR?\n')
+                self.ser_port.flushOutput()
+                self.errCode = int(self.ser_port.readline())
+                
+                if not self.errCode == 0:
+                    print 'Stage Error: %d' %self.errCode
+                
                 #print self.targetPosition, self.stopMove
                 
                 if self.stopMove:
@@ -223,7 +237,7 @@ class piezo_c867T(object):
                 
                 if not np.all(self.velocity == self.targetVelocity):
                     for i, vel in enumerate(self.targetVelocity):
-                        self.ser_port.write('VEL %d %3.4f\n' % (i+1, vel))
+                        self.ser_port.write('VEL %d %3.9f\n' % (i+1, vel))
                     self.velocity = self.targetVelocity.copy()
                     print 'v'
                 
@@ -231,13 +245,14 @@ class piezo_c867T(object):
                     #update our target position
                     pos = np.clip(self.targetPosition, 0,self.max_travel)
         
-                    self.ser_port.write('MOV 1 %3.6f 2 %3.6f\n' % (pos[0], pos[1]))
+                    self.ser_port.write('MOV 1 %3.9f 2 %3.9f\n' % (pos[0], pos[1]))
                     self.lastTargetPosition = pos.copy()
                     print 'p'
                     
                 #time.sleep(.1)
                 
             except serial.SerialTimeoutException:
+                print 'Serial Timeout'
                 pass
             finally:
                 self.stopMove = False
@@ -262,6 +277,8 @@ class piezo_c867T(object):
         #self.ser_port.write('WTO A0\n')
         self.lock.acquire()
         try:
+            self.ser_port.write('RBT\n')
+            time.sleep(1)
             self.ser_port.write('SVO 1 1\n')
             self.ser_port.write('SVO 2 1\n')
             self.servo = True
@@ -286,10 +303,11 @@ class piezo_c867T(object):
         return self.velocity[chan-1]
         
     def MoveTo(self, iChannel, fPos, bTimeOut=True, vel=None):
+        chan = iChannel - 1
         if vel == None:
             vel = self.maxvelocity
-        self.targetVelocity[iChannel - 1] = vel
-        self.targetPosition[iChannel - 1] = fPos
+        self.targetVelocity[chan] = vel
+        self.targetPosition[chan] = min(max(fPos, self.validRegion[chan][0]),self.validRegion[chan][1]) 
             
     #def MoveRel(self, iChannel, incr, bTimeOut=True):
     #        self.ser_port.write('MVR %d %3.6f\n' % (iChannel, incr))
@@ -298,8 +316,8 @@ class piezo_c867T(object):
     def MoveToXY(self, xPos, yPos, bTimeOut=True, vel=None):
         if vel == None:
             vel = self.maxvelocity
-        self.targetPosition[0] = xPos
-        self.targetPosition[1] = yPos
+        self.targetPosition[0] = min(max(xPos, self.validRegion[0][0]),self.validRegion[0][1])
+        self.targetPosition[1] = min(max(yPos, self.validRegion[1][0]),self.validRegion[1][1])
         self.targetVelocity[:] = vel 
             
 
@@ -317,23 +335,23 @@ class piezo_c867T(object):
     def GetPosXY(self):
         return self.position
 
-    def MoveInDir(self, dx, dy, th=.00002):
+    def MoveInDir(self, dx, dy, th=.0000):
         self.targetVelocity[0] = abs(dx)*self.maxvelocity
         self.targetVelocity[1] = abs(dy)*self.maxvelocity
         
         if dx > th:
-            self.targetPosition[0] = np.round(self.position[0]+1)
+            self.targetPosition[0] = min(max(np.round(self.position[0]+1), self.validRegion[0][0]),self.validRegion[0][1])
         elif dx < -th:
-            self.targetPosition[0] = np.round(self.position[0]-1)
+            self.targetPosition[0] = min(max(np.round(self.position[0]-1), self.validRegion[0][0]),self.validRegion[0][1])
         else:
-            self.targetPosition[0] = self.position[0]
+            self.targetPosition[0] = min(max(self.position[0], self.validRegion[0][0]),self.validRegion[0][1])
             
         if dy > th:
-            self.targetPosition[1] = np.round(self.position[1]+1)
+            self.targetPosition[1] = min(max(np.round(self.position[1]+1), self.validRegion[1][0]),self.validRegion[1][1])
         elif dy < -th:
-            self.targetPosition[1] = np.round(self.position[1]-1)
+            self.targetPosition[1] = min(max(np.round(self.position[1]-1), self.validRegion[1][0]),self.validRegion[1][1])
         else:
-            self.targetPosition[1] = self.position[1]
+            self.targetPosition[1] = min(max(self.position[1], self.validRegion[1][0]),self.validRegion[1][1])
             
     def StopMove(self):
         self.stopMove = True
@@ -358,5 +376,15 @@ class piezo_c867T(object):
         return float(re.findall(r'V(\d\.\d\d)', verstring)[0])
 
         
-        
+class c867Joystick:
+    def __init__(self, stepper):
+        self.stepper = stepper
+
+    def Enable(self, enabled = True):
+        if not self.IsEnabled() == enabled:
+            self.stepper.SetServo(enabled)
+
+    def IsEnabled(self):
+        return self.stepper.servo
+     
         
