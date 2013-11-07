@@ -607,8 +607,8 @@ class VisGUIFrame(wx.Frame):
         #self.view_menu.Enable(ID_VIEW_QUADS, False)
 
         self.view_menu.AppendSeparator()
-        self.view_menu.Append(ID_VIEW_FIT, '&Fit')
-        self.view_menu.Append(ID_VIEW_FIT_ROI, 'Fit &ROI')
+        self.view_menu.Append(ID_VIEW_FIT, '&Fit\tF6')
+        self.view_menu.Append(ID_VIEW_FIT_ROI, 'Fit &ROI\tF7')
 
         self.ID_VIEW_CLIP_ROI = wx.NewId()
         self.view_menu.Append(self.ID_VIEW_CLIP_ROI, 'Clip to ROI\tF8')

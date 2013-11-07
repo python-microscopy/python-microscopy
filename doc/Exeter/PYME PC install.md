@@ -37,6 +37,11 @@ https://confluence.atlassian.com/display/BITBUCKET/Set+up+SSH+for+Mercurial
 
         easy_install Pyro
 
+        easy install pip
+        # pip is a replacement for easy_install that supports uninstall
+
+    - install django, note we need 1.2.x version for compatibility (this bit is for sample database compatibility)
+    - may also require the 'south' module
     - install mysql-python, used MySQL-python-1.2.3.win-amd64-py2.7.exe
     - get FFTW 3 libs from http://www.fftw.org/install/windows.html and unpack into suitable directory
 
@@ -73,7 +78,3 @@ https://confluence.atlassian.com/display/BITBUCKET/Set+up+SSH+for+Mercurial
 - needed to run cython on 'illuminate.pyx'
 
 - also tried the conflict resolver that came up automatically; need to edit the default editor for hgworkbench
-
-
-
-> Written with [StackEdit](http://benweet.github.io/stackedit/).
