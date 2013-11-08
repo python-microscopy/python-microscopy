@@ -47,7 +47,7 @@ nTasksProcessed = 0
 
 splitterFitModules = ['SplitterFitFR', 'SplitterFitFNR','SplitterFitQR', 'SplitterFitCOIR', 
                       'BiplaneFitR', 'SplitterShiftEstFR', 
-                      'SplitterObjFindR', 'SplitterFitInterpR', 'SplitterFitInterpQR']
+                      'SplitterObjFindR', 'SplitterFitInterpR', 'SplitterFitInterpQR', 'SplitterFitInterpNR']
 
 #from pylab import *
 
@@ -479,10 +479,10 @@ class fitTask(taskDef.Task):
 
         if 'PRI.Axis' in self.md.getEntryNames():
             self.ofd = ofind_pri.ObjectIdentifier(bgd * (bgd > 0), md, axis = self.md['PRI.Axis'])
-        elif not 'PSFFile' in self.md.getEntryNames():
+        else:# not 'PSFFile' in self.md.getEntryNames():
             self.ofd = ofind.ObjectIdentifier(bgd * (bgd > 0))
-        else: #if we've got a PSF then use cross-correlation object identificatio      
-            self.ofd = ofind_xcorr.ObjectIdentifier(bgd * (bgd > 0), md, 7, 5e-2)
+        #else: #if we've got a PSF then use cross-correlation object identificatio      
+        #    self.ofd = ofind_xcorr.ObjectIdentifier(bgd * (bgd > 0), md, 7, 5e-2)
             
 
         if 'Analysis.DebounceRadius' in self.md.getEntryNames():
