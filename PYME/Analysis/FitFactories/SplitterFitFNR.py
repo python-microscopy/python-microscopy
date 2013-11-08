@@ -93,9 +93,16 @@ def replNoneWith1(n):
 		return n
 
 
-fresultdtype=[('tIndex', '<i4'),('fitResults', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('backgroundG', '<f4'),('backgroundR', '<f4'),('bx', '<f4'),('by', '<f4')]),('fitError', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('backgroundG', '<f4'),('backgroundR', '<f4'),('bx', '<f4'),('by', '<f4')]), ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
+#fresultdtype=[('tIndex', '<i4'),('fitResults', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('backgroundG', '<f4'),('backgroundR', '<f4'),('bx', '<f4'),('by', '<f4')]),('fitError', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('backgroundG', '<f4'),('backgroundR', '<f4'),('bx', '<f4'),('by', '<f4')]), ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
 
-def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None):
+fresultdtype=[('tIndex', '<i4'),
+              ('fitResults', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4')]),
+              ('fitError', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4')]),
+              ('startParams', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4')]), 
+              ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
+
+
+def GaussianFitResultR(fitResults, metadata, startParams, slicesUsed=None, resultCode=-1, fitErr=None):
 	if slicesUsed == None:
 		slicesUsed = ((-1,-1,-1),(-1,-1,-1))
 	else: 		
@@ -117,7 +124,13 @@ def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fit
 	#print resultCode
 
 
-	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, slicesUsed)], dtype=fresultdtype) 
+	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), startParams.astype('f'), resultCode, slicesUsed)], dtype=fresultdtype) 
+ 
+def BlankResult(metadata):
+    r = numpy.zeros(1, fresultdtype)
+    r['tIndex'] = metadata.tIndex
+    r['fitError'].view('5f4')[:] = -5e3
+    return r
 		
 def splWrap(*args):
     #print ''
@@ -167,11 +180,23 @@ class GaussianFitFactory:
         
         #find ROI which works in both channels
         #if dxp < 0:
-        xslice = slice(max((x - roiHalfSize), max(0,-dxp)),min((x + roiHalfSize + 1),self.data.shape[0] - min(0, -dxp))) 
-        xslice2 = slice(max((x + dxp - roiHalfSize), max(0, dxp)),min((x + dxp + roiHalfSize + 1),self.data.shape[0] - min(0,dxp))) 
+        x01 = max(x - roiHalfSize, max(0, dxp))
+        x11 = min(max(x01, x + roiHalfSize), self.data.shape[0] + min(0, dxp))
+        x02 = x01 - dxp
+        x12 = x11 - dxp
         
-        yslice = slice(max((y - roiHalfSize), max(0,-dyp)),min((y + roiHalfSize + 1), self.data.shape[1] - min(0,-dyp)))
-        yslice2 = slice(max((y + dyp - roiHalfSize), max(0,dyp)),min((y + dyp + roiHalfSize + 1), self.data.shape[1]- min(0,dyp)))
+        y01 = max(y - roiHalfSize, max(0, dyp))
+        y11 = min(max(y + roiHalfSize,  y01), self.data.shape[1] + min(0, dyp))
+        y02 = y01 - dyp
+        y12 = y11 - dyp
+        
+        xslice = slice(x01, x11)
+        xslice2 = slice(x02, x12) 
+        
+        yslice = slice(y01, y11)
+        yslice2 = slice(y02, y12)
+        
+        #print x, y, x01, x11, y01, y11, '\t', dxp, dyp
         
         #print key
         #xslice, yslice, zslice = key
@@ -180,6 +205,9 @@ class GaussianFitFactory:
         dataROI = self.data[xslice, yslice, 0:2] - self.metadata.Camera.ADOffset
         #print dataROI.shape, xslice, yslice, xslice2, yslice2
         dataROI[:,:,1] = self.data[xslice2, yslice2, 1] - self.metadata.Camera.ADOffset
+        
+        if min(dataROI.shape[:2]) < 4: # too small to fit
+            return BlankResult(self.metadata)
         
         #dataROI -= self.metadata.Camera.ADOffset
 
@@ -202,7 +230,7 @@ class GaussianFitFactory:
        
 
         Xr = Xg + DeltaX - vx*dxp
-        Yr = Yg + DeltaY - vx*dxp
+        Yr = Yg + DeltaY - vy*dyp
         
         
         #a buffer so we can avoid allocating memory each time we evaluate the model function
@@ -216,7 +244,7 @@ class GaussianFitFactory:
         Ar = dataROI[:,:,1].max() - dataROI[:,:,1].min() #amplitude
 
         #figure()
-        #imshow(dataROI[:,:,1], interpolation='nearest')
+        #imshow(np.hstack([dataROI[:,:,0], dataROI[:,:,1]]), interpolation='nearest')
 
         #print Ag
         #print Ar
@@ -238,9 +266,11 @@ class GaussianFitFactory:
             bgROI = self.background[xslice, yslice, 0:2] - self.metadata.Camera.ADOffset
             bgROI[:,:,1] = self.background[xslice2, yslice2, 1] - self.metadata.Camera.ADOffset
 
-            dataROI = dataROI - bgROI
+            dataROI = np.maximum(dataROI - bgROI, 0)
 
-        startParameters = [Ag, Ar, x0, y0, 250/2.35, dataROI[:,:,0].min(),dataROI[:,:,1].min(), .001, .001]
+        #startParameters = [Ag, Ar, x0, y0, 250/2.35, dataROI[:,:,0].min(),dataROI[:,:,1].min(), .001, .001]
+        startParameters = numpy.array([Ag, Ar, x0, y0, 250/2.35])
+
 	
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
@@ -265,7 +295,7 @@ class GaussianFitFactory:
         #fitErrors = hstack([fitErrors, array([0,0,0,0])])
 
 	#print res, fitErrors, resCode
-        return GaussianFitResultR(res, self.metadata, (xslice, yslice), resCode, fitErrors)
+        return GaussianFitResultR(res, self.metadata, startParameters,(xslice, yslice), resCode, fitErrors)
 
     
         
