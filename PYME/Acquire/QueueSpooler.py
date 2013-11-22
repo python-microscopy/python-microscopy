@@ -26,7 +26,7 @@ from PYME.Acquire import MetaDataHandler
 from PYME import cSMI
 import Pyro.core
 import os
-#import time
+import time
 
 import PYME.Acquire.Spooler as sp
 from PYME.Acquire import protocol as p
@@ -53,7 +53,7 @@ class EventLogger:
       
 
 class Spooler(sp.Spooler):
-   def __init__(self, scope, filename, acquisator, protocol = p.NullProtocol, parent=None, complevel=6, complib='zlib'):
+   def __init__(self, scope, filename, acquisator, protocol = p.NullProtocol, parent=None, complevel=2, complib='zlib'):
 #       if 'PYME_TASKQUEUENAME' in os.environ.keys():
 #            taskQueueName = os.environ['PYME_TASKQUEUENAME']
 #       else:
@@ -64,13 +64,13 @@ class Spooler(sp.Spooler):
        taskQueueName = 'TaskQueues.%s' % compName
 
        self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
-       self.tq._setOneway(['postTask', 'postTasks', 'addQueueEvents', 'setQueueMetaData'])
+       self.tq._setOneway(['postTask', 'postTasks', 'addQueueEvents', 'setQueueMetaData', 'logQueueEvent'])
 
        self.seriesName = filename
        self.buffer = []
        self.buflen = 30
 
-       self.tq.createQueue('HDFTaskQueue',self.seriesName, filename, frameSize = (scope.cam.GetPicWidth(), scope.cam.GetPicHeight()))
+       self.tq.createQueue('HDFTaskQueue',self.seriesName, filename, frameSize = (scope.cam.GetPicWidth(), scope.cam.GetPicHeight()), complevel=complevel, complib=complib)
 
        self.md = MetaDataHandler.QueueMDHandler(self.tq, self.seriesName)
        self.evtLogger = EventLogger(self, scope, self.tq, self.seriesName)
@@ -90,7 +90,9 @@ class Spooler(sp.Spooler):
       sp.Spooler.Tick(self, caller)
       
    def FlushBuffer(self):
+      t1 = time.time()
       self.tq.postTasks(self.buffer, self.seriesName)
+      #print time.time() -t1
       self.buffer = []
 
 

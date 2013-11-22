@@ -126,6 +126,7 @@ class myLock:
 
     def release(self):
         #print 'Released Lock'
+        #logging.info(self.owner + ' released lock')
         self.lock.release()
         self.oowner = self.owner
         self.owner = None
@@ -175,7 +176,7 @@ class rwlock(object):
     def addReader(self):
         suc = False
         with self.glock:
-            if self.numWriters == 0:
+            if (self.numWriters == 0) and (self.numReaders == 0):
                 self.numReaders += 1
                 suc = True
         
@@ -184,6 +185,7 @@ class rwlock(object):
     def acquireRead(self):
         while not self.addReader():
             time.sleep(.001)
+        #logging.info('Acquired read lock - nr, nw = %d, %d' % (self.numReaders, self.numWriters))
         
     def releaseRead(self):
         with self.glock:
@@ -201,6 +203,7 @@ class rwlock(object):
     def acquireWrite(self):
         while not self.addWriter():
             time.sleep(.001)
+        #logging.info('Acquired write lock - nr, nw = %d, %d' % (self.numReaders, self.numWriters))
         
     def releaseWrite(self):
         with self.glock:
