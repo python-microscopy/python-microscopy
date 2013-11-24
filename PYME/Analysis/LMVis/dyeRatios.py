@@ -25,13 +25,21 @@ different splitter configurations.
 
 currently just uses values for the default splitter config'''
 
-ratios = {'A647':0.85, 'A680':0.87, 'A750': 0.11, 'CF770': 0.11}
+ratios = {'A647':0.85, 'A680':0.87, 'A750': 0.11, 'A700': 0.3, 'CF770': 0.11}
 PRIRatios = {'A680':0.7, 'A750': 0.5}
+
+dichr_ratios = {'FF700-Di01': {'A647':0.3, 'A680':0.87,'A700':0.7}}
 
 def getRatio(dye, mdh=None):
     if dye in ratios.keys():
+        
         if 'Analysis.FitModule' in mdh.getEntryNames() and mdh['Analysis.FitModule'].startswith('PRInterpFit'):
             return PRIRatios[dye]
+        if 'Splitter.Dichroic' in mdh.getEntryNames():
+            dichroicName = mdh['Splitter.Dichroic']
+            if dichroicName in dichr_ratios.keys():
+                return dichr_ratios[dichroicName][dye]
+                
         if 'Splitter.TransmittedPathPosition' in mdh.getEntryNames() and mdh.getEntry('Splitter.TransmittedPathPosition') == 'Top':
             return 1 - ratios[dye]
         else:

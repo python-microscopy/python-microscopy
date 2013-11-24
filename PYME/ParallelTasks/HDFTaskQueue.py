@@ -654,8 +654,13 @@ class HDFTaskQueue(HDFResultsTaskQueue):
 
 
         tasks = []
+        
+        if not 'Analysis.ChunkSize' in self.metaData.getEntryNames():
+            cs = min(max(CHUNKSIZE, min(MAXCHUNKSIZE, len(self.openTasks))),len(self.openTasks))
+        else:
+            cs = min(self.metaData['Analysis.ChunkSize'], len(self.openTasks))
 
-        for i in range(min(max(CHUNKSIZE, min(MAXCHUNKSIZE, len(self.openTasks))),len(self.openTasks))):
+        for i in range(cs):
 
             taskNum = self.openTasks.pop(self.fTaskToPop(workerN, NWorkers, len(self.openTasks)))
 

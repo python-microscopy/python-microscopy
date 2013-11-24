@@ -271,10 +271,10 @@ scope.lasers.append(scope.arclamp)
 #scope.lasers = []
 
 InitGUI('''
-from PYME.Acquire.Hardware.Simulator import lasersliders
+from PYME.Acquire import lasersliders
 lsf = lasersliders.LaserSliders(toolPanel, scope.lasers)
-#time1.WantNotification.append(lsf.update)
-lsf.update()
+time1.WantNotification.append(lsf.update)
+#lsf.update()
 camPanels.append((lsf, 'Laser Powers'))
 ''')
 
@@ -282,8 +282,8 @@ InitGUI('''
 if 'lasers'in dir(scope):
     from PYME.Acquire.Hardware import LaserControlFrame
     lcf = LaserControlFrame.LaserControlLight(MainFrame,scope.lasers)
-    #time1.WantNotification.append(lcf.refresh)
-    lcf.refresh()
+    time1.WantNotification.append(lcf.refresh)
+    #lcf.refresh()
     camPanels.append((lcf, 'Laser Control'))
 ''')
 
