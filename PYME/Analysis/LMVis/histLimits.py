@@ -180,7 +180,7 @@ class HistLimitPanel(wx.Panel):
         dc.SetFont(wx.NORMAL_FONT)
         self.textSize = dc.GetTextExtent('test')[1] + 4
 
-        h = (self.Size[1] - self.textSize - 2)*(1.0-(self.h/(1.0*self.h[1:-1].max()))) + 2
+        h = (self.Size[1] - self.textSize - 2)*(1.0-(self.h/(1.0*self.h[1:-1].max()+1e-9))) + 2
 
         maxy = self.Size[1] - self.textSize
         pointlist = [(i,h_i) for i, h_i in zip(range(len(h)), h)]

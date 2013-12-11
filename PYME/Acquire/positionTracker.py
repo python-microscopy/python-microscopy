@@ -34,7 +34,7 @@ class TrackerPlotPanel(PlotPanel):
         
 
     def draw(self):
-        if self.IsShown():
+        if self.IsShownOnScreen():
             if not hasattr( self, 'subplot' ):
                     self.subplot = self.figure.add_subplot( 111 )
     

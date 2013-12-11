@@ -588,6 +588,8 @@ class LMAnalyser:
         self.tBackgroundFrames.SetValue('0:0')
         self.cbSubtractBackground.SetValue(False)
         self.tThreshold.SetValue('2')
+        self.image.mdh['Analysis.ChunkSize'] = 1
+        self.image.mdh['Analysis.ROISize'] = 11
 
     def OnStandard2D(self, event):
         self.cFitType.SetSelection(self.fitFactories.index('LatGaussFitFR'))

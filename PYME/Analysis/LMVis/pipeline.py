@@ -308,7 +308,12 @@ class Pipeline:
             y1 = self.mdh.getEntry('Camera.ROIHeight')*1e3*self.mdh.getEntry('voxelsize.y')
 
             if 'Splitter' in self.mdh.getEntry('Analysis.FitModule'):
-                y1 = y1/2
+                if 'Splitter.Channel0ROI' in self.mdh.getEntryNames():
+                    rx0, ry0, rw, rh = self.mdh['Splitter.Channel0ROI']
+                    x1 = rw*1e3*self.mdh.getEntry('voxelsize.x')
+                    x1 = rh*1e3*self.mdh.getEntry('voxelsize.x')
+                else:
+                    y1 = y1/2
 
             self.imageBounds = ImageBounds(x0, y0, x1, y1)
         else:

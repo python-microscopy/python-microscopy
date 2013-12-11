@@ -31,7 +31,7 @@ class piezo_e709:
         #self.numWavePoints = 0
         
 
-        self.ser_port = serial.Serial(portname, 115200, rtscts=0, timeout=2, writeTimeout=2)
+        self.ser_port = serial.Serial(portname, 115200, rtscts=0, timeout=.1, writeTimeout=.1)
         if not Osen == None:
             #self.ser_port.write('SPA A8 %3.4f\n' % Osen)
             self.osen = Osen

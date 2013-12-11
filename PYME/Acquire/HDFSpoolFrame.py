@@ -283,7 +283,7 @@ class PanSpool(wx.Panel):
             return #bail
             
         if self.cbCompress.GetValue():
-            compLevel = 6
+            compLevel = 2
         else:
             compLevel = 0
 

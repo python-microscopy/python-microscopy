@@ -50,6 +50,7 @@ class PhoxxLaser(Laser):
         
         #self.power = self._getOutputPower()
         time.sleep(1)
+        self.power = self._getOutputPower()
         
 
         Laser.__init__(self, name, turnOn)
@@ -152,11 +153,12 @@ class PhoxxLaser(Laser):
         self.adHocVals[cmd] = vals
         
     def Close(self):
-        self.TurnOff()
+        try:
+            self.TurnOff()
         #time.sleep(1)        
-        
-        self.doPoll = False
-        self.ser_port.close()
+        finally:
+            self.doPoll = False
+            self.ser_port.close()
         
     def __del__(self):
         self.Close()
