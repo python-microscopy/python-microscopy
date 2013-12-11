@@ -77,7 +77,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         self.showTracks = True
         self.pointMode = 'confoc'
         self.pointTolNFoc = {'confoc' : (5,5,5), 'lm' : (2, 5, 5), 'splitter' : (2,5,5)}
-        self.showAdjacentPoints = True
+        self.showAdjacentPoints = False
         self.pointSize = 11
 
         self.psfROIs = []

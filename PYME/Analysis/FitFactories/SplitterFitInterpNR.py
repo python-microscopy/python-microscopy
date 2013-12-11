@@ -109,7 +109,10 @@ fresultdtype=[('tIndex', '<i4'),
               ('fitError', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4')]),
               ('startParams', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4')]), 
               ('resultCode', '<i4'), 
-              ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])]),
+              ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),
+                              ('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),
+                              ('x2', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),
+                              ('y2', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])]),
               ('nchi2', '<f4')]
 
 
@@ -323,7 +326,7 @@ class InterpFitFactory:
             bgROI = self.background[xslice, yslice, 0:2] - self.metadata.Camera.ADOffset
             bgROI[:,:,1] = self.background[xslice2, yslice2, 1] - self.metadata.Camera.ADOffset
 
-            dataROI = np.maximum(dataROI - bgROI, 0)
+            dataROI = np.maximum(dataROI - bgROI, -sigma)
 
         #estimate some start parameters...
         Ag = dataROI[:,:,0].max() - dataROI[:,:,0].min() #amplitude
@@ -355,7 +358,7 @@ class InterpFitFactory:
         nchi2 = (infodict['fvec']**2).sum()/(dataROI.size - res.size)
 
 	#print res, fitErrors, resCode
-        return PSFFitResultR(res, self.metadata, np.array(startParams), (xslice, yslice), resCode, fitErrors, nchi2)
+        return PSFFitResultR(res, self.metadata, np.array(startParams), (xslice, yslice, xslice2, yslice2), resCode, fitErrors, nchi2)
         #return PSFFitResultR(res, self.metadata, , resCode, fitErrors, numpy.array(startParameters), nchi2)
     
         

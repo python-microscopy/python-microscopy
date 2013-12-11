@@ -99,6 +99,16 @@ class bgFrameBuffer:
         
         self.curBG = None
         
+    def _indexAdd(self,data, slot):
+        self.indices[slot,:,:] = 0
+        for i in xrange(self.frameBuffer.shape[0]):
+            if not i == slot:
+                dg = (self.frameBuffer[i,:,:] > data).astype('uint16')
+                self.indices[slot, :,:] += (1 - dg)
+                self.indices[i, :,:] += dg
+                #print i, self.indices[slot,:,:]
+            
+        
     def addFrame(self, frameNo, data):
         if len(self.availableSlots) == 0:
             self._growBuffer(data)
@@ -108,10 +118,11 @@ class bgFrameBuffer:
         self.frameBuffer[slot, :,:] = data
         self.validData[slot] = 1
         
-        dg = self.frameBuffer <= data
+        #dg = self.frameBuffer <= data
         
-        self.indices[slot, :, :] = dg.sum(0)
-        self.indices += (dg < 1)
+        #self.indices[slot, :, :] = dg.sum(0)
+        #self.indices += (dg < 1)
+        self._indexAdd(data, slot)
         
     def removeFrame(self, frameNo):
         slot = self.frameNos.pop(frameNo)

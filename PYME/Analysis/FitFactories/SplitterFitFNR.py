@@ -137,6 +137,58 @@ def splWrap(*args):
     #args = args[:]
     return splitGaussWeightedMisfit(*args).copy()
     
+    
+def genFitImage(fitResults, metadata):
+    #if fitfcn == f_Interp3d:
+    #    if 'PSFFile' in metadata.getEntryNames():
+    #        setModel(metadata.getEntry('PSFFile'), metadata)
+    #    else:
+    #        genTheoreticalModel(metadata)
+
+    xslice = slice(*fitResults['slicesUsed']['x'])
+    yslice = slice(*fitResults['slicesUsed']['y'])
+    
+    vx = 1e3*metadata.voxelsize.x
+    vy = 1e3*metadata.voxelsize.y
+    
+    #position in nm from camera origin
+    x_ = (xslice.start + metadata.Camera.ROIPosX - 1)*vx
+    y_ = (yslice.start + metadata.Camera.ROIPosY - 1)*vy
+    
+    #look up shifts
+    DeltaX = metadata.chroma.dx.ev(x_, y_)
+    DeltaY = metadata.chroma.dy.ev(x_, y_)
+    
+    dxp = int(DeltaX/vx)
+    dyp = int(DeltaY/vy)
+    
+    Xg = vx*scipy.mgrid[xslice]
+    Yg = vy*scipy.mgrid[yslice]
+
+    #generate a corrected grid for the red channel
+    #note that we're cheating a little here - for shifts which are slowly
+    #varying we should be able to set Xr = Xg + delta_x(\bar{Xr}) and
+    #similarly for y. For slowly varying shifts the following should be
+    #equivalent to this. For rapidly varying shifts all bets are off ...
+
+    Xr = Xg + DeltaX - vx*dxp
+    Yr = Yg + DeltaY - vy*dyp
+
+    #X = 1e3*metadata.getEntry('voxelsize.x')*scipy.mgrid[xslice]
+    #Y = 1e3*metadata.getEntry('voxelsize.y')*scipy.mgrid[yslice]
+    #Z = array([0]).astype('f')
+    #P = scipy.arange(0,1.01,.01)
+
+    #im = fitfcn(fitResults['fitResults'], X, Y, Z, P).reshape(len(X), len(Y))
+    #buf = numpy.zeros()
+    d = np.zeros([Xr.shape[0], Yr.shape[0], 2], order='F')
+    s = np.ones_like(d)
+    buf = np.zeros(d.size)
+    print d.shape, Xr.shape, Yr.shape
+    im = -splWrap(np.array(list(fitResults['fitResults'])), d, s, Xg, Yg, Xr, Yr, buf).reshape(d.shape, order='F')
+
+    return np.hstack([im[:,:,0], im[:,:,1]]).squeeze()
+    
 
 
 
@@ -266,7 +318,7 @@ class GaussianFitFactory:
             bgROI = self.background[xslice, yslice, 0:2] - self.metadata.Camera.ADOffset
             bgROI[:,:,1] = self.background[xslice2, yslice2, 1] - self.metadata.Camera.ADOffset
 
-            dataROI = np.maximum(dataROI - bgROI, 0)
+            dataROI = np.maximum(dataROI - bgROI, -sigma)
 
         #startParameters = [Ag, Ar, x0, y0, 250/2.35, dataROI[:,:,0].min(),dataROI[:,:,1].min(), .001, .001]
         startParameters = numpy.array([Ag, Ar, x0, y0, 250/2.35])
