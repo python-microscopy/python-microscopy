@@ -230,6 +230,8 @@ class Pipeline:
                         contains the data.
             SkipRows:   Number of header rows to skip for txt file data
             
+            PixelSize:  Pixel size if not in nm
+            
         '''
         
         #close any files we had open previously
@@ -298,7 +300,22 @@ class Pipeline:
             self.selectedDataSource = ds
             self.dataSources.append(ds)
             
+        
+            
 
+        
+            
+            
+        #wrap the data source with a mapping so we can fiddle with things
+        #e.g. combining z position and focus            
+        self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource)
+        self.dataSources.append(self.selectedDataSource)
+        
+        if 'PixelSize' in kwargs.keys():
+            self.selectedDataSource.pixelSize = kwargs['PixelSize']
+            self.selectedDataSource.setMapping('x', 'x*pixelSize')
+            self.selectedDataSource.setMapping('y', 'y*pixelSize')
+            
         #Retrieve or estimate image bounds
         if 'Camera.ROIWidth' in self.mdh.getEntryNames():
             x0 = 0
@@ -318,12 +335,6 @@ class Pipeline:
             self.imageBounds = ImageBounds(x0, y0, x1, y1)
         else:
             self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)        
-            
-            
-        #wrap the data source with a mapping so we can fiddle with things
-        #e.g. combining z position and focus            
-        self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource)
-        self.dataSources.append(self.selectedDataSource)
             
         #extract information from any events
         self._processEvents()

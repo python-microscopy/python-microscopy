@@ -870,6 +870,7 @@ class VisGUIFrame(wx.Frame):
                 
             args['FieldNames'] = dlg.GetFieldNames()
             args['VarName'] = dlg.GetVarName()
+            args['PixelSize'] = dlg.GetPixelSize()
             
             
             dlg.Destroy()
@@ -886,6 +887,7 @@ class VisGUIFrame(wx.Frame):
                 
             args['FieldNames'] = dlg.GetFieldNames()
             args['SkipRows'] = dlg.GetNumberComments()
+            args['PixelSize'] = dlg.GetPixelSize()
             
             #print 'Skipping %d rows' %args['SkipRows']
             dlg.Destroy()
