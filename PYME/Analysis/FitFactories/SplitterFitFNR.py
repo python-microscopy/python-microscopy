@@ -99,10 +99,11 @@ fresultdtype=[('tIndex', '<i4'),
               ('fitResults', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4')]),
               ('fitError', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4')]),
               ('startParams', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4')]), 
+              ('subtractedBackground', [('g','<f4'),('r','<f4')])
               ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
 
 
-def GaussianFitResultR(fitResults, metadata, startParams, slicesUsed=None, resultCode=-1, fitErr=None):
+def GaussianFitResultR(fitResults, metadata, startParams, slicesUsed=None, resultCode=-1, fitErr=None, background = None):
 	if slicesUsed == None:
 		slicesUsed = ((-1,-1,-1),(-1,-1,-1))
 	else: 		
@@ -110,6 +111,9 @@ def GaussianFitResultR(fitResults, metadata, startParams, slicesUsed=None, resul
 
 	if fitErr == None:
 		fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
+  
+      if background  == None:
+          background = numpy.zeros(2, 'f')
 
 	#print slicesUsed
 
@@ -124,7 +128,7 @@ def GaussianFitResultR(fitResults, metadata, startParams, slicesUsed=None, resul
 	#print resultCode
 
 
-	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), startParams.astype('f'), resultCode, slicesUsed)], dtype=fresultdtype) 
+	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), startParams.astype('f'), background, resultCode, slicesUsed)], dtype=fresultdtype) 
  
 def BlankResult(metadata):
     r = numpy.zeros(1, fresultdtype)
@@ -347,7 +351,7 @@ class GaussianFitFactory:
         #fitErrors = hstack([fitErrors, array([0,0,0,0])])
 
 	#print res, fitErrors, resCode
-        return GaussianFitResultR(res, self.metadata, startParameters,(xslice, yslice), resCode, fitErrors)
+        return GaussianFitResultR(res, self.metadata, startParameters,(xslice, yslice), resCode, fitErrors, bgROI.mean(0).mean(0))
 
     
         
