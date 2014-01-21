@@ -99,7 +99,7 @@ fresultdtype=[('tIndex', '<i4'),
               ('fitResults', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4')]),
               ('fitError', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4')]),
               ('startParams', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4')]), 
-              ('subtractedBackground', [('g','<f4'),('r','<f4')])
+              ('subtractedBackground', [('g','<f4'),('r','<f4')]),
               ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
 
 
