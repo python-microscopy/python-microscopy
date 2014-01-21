@@ -388,7 +388,7 @@ class ObjectIdentifier(list):
        # if splitter:
        #     ys = ys + (ys > im.shape[1]/2)*(im.shape[1] - 2*ys)
 
-        if splitter:
+        if splitter and (len(xs) > 0):
             xs, ys = splitter(xs, ys)
 
         xs, ys = self.__Debounce(xs, ys, debounceRadius)
