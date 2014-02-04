@@ -375,10 +375,10 @@ def GenZernikePSF(zs, dx = 5, zernikeCoeffs = []):
 
     return abs(ps**2)
 
-def GenPRIPSF(zs, dx = 5, strength=1.0):
+def GenPRIPSF(zs, dx = 5, strength=1.0, dp=0):
     X, Y, R, FP, F, u, v = GenWidefieldAP(dx)
 
-    F = F * exp(-1j*sign(X)*10*strength*v)
+    F = F * exp(-1j*sign(X)*(10*strength*v + dp/2))
     #clf()
     #imshow(angle(F))
 
