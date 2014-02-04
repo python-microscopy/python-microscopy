@@ -113,32 +113,24 @@ fresultdtype=[('tIndex', '<i4'),
                               ('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),
                               ('x2', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),
                               ('y2', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])]),
+              ('subtractedBackground', [('g','<f4'),('r','<f4')])
               ('nchi2', '<f4')]
 
 
-def PSFFitResultR(fitResults, metadata, startParams, slicesUsed=None, resultCode=-1, fitErr=None, nchi2=-1):
-	if slicesUsed == None:
-		slicesUsed = ((-1,-1,-1),(-1,-1,-1))
-	else: 		
-		slicesUsed = ((slicesUsed[0].start,slicesUsed[0].stop,replNoneWith1(slicesUsed[0].step)),(slicesUsed[1].start,slicesUsed[1].stop,replNoneWith1(slicesUsed[1].step)))
+def PSFFitResultR(fitResults, metadata, startParams, slicesUsed=None, resultCode=-1, fitErr=None, nchi2=-1, background=None):
+    if slicesUsed == None:
+        slicesUsed = ((-1,-1,-1),(-1,-1,-1))
+    else: 		
+        slicesUsed = ((slicesUsed[0].start,slicesUsed[0].stop,replNoneWith1(slicesUsed[0].step)),(slicesUsed[1].start,slicesUsed[1].stop,replNoneWith1(slicesUsed[1].step)))
 
-	if fitErr == None:
-		fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
+    if fitErr == None:
+        fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
+        
+    if background  == None:
+        background = numpy.zeros(2, 'f')
 
-	#print slicesUsed
-
-	tIndex = metadata.tIndex
-
-	#print fitResults.dtype
-	#print fitErr.dtype
-	#print fitResults
-	#print fitErr
-	#print tIndex
-	#print slicesUsed
-	#print resultCode
-
-
-	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), startParams.astype('f'), resultCode, slicesUsed, nchi2)], dtype=fresultdtype) 
+    tIndex = metadata.tIndex
+    return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), startParams.astype('f'), resultCode, slicesUsed, background,nchi2)], dtype=fresultdtype) 
  
 def BlankResult(metadata):
     r = numpy.zeros(1, fresultdtype)
@@ -358,7 +350,7 @@ class InterpFitFactory:
         nchi2 = (infodict['fvec']**2).sum()/(dataROI.size - res.size)
 
 	#print res, fitErrors, resCode
-        return PSFFitResultR(res, self.metadata, np.array(startParams), (xslice, yslice, xslice2, yslice2), resCode, fitErrors, nchi2)
+        return PSFFitResultR(res, self.metadata, np.array(startParams), (xslice, yslice, xslice2, yslice2), resCode, fitErrors, nchi2, bgROI.mean(0).mean(0))
         #return PSFFitResultR(res, self.metadata, , resCode, fitErrors, numpy.array(startParameters), nchi2)
     
         
