@@ -180,7 +180,7 @@ class profiler:
         for chanNum in range(self.image.data.shape[3]):
             plots.append(np.zeros((len(t), 1, 1)))
 
-        dlg = wx.ProgressDialog('Extracting Axial Profile', 'Progress', len(t) - 1)        
+        dlg = wx.ProgressDialog('Extracting Axial Profile', 'Progress', max(len(t) - 1, 1))        
         for i in t:      
             for chanNum in range(self.image.data.shape[3]):
                 plots[chanNum][i] = self.image.data[lx:hx, ly:hy, i, chanNum].mean()
@@ -191,6 +191,17 @@ class profiler:
                 
 
         #pylab.legend(names)
+
+        # fix so that we can even plot stacks of depth 1 (i.e. data that is not really a stack)
+        # works by replicating the single plane twice simulating a stack of depth 2
+        if len(t) == 1:
+            t =  np.arange(2)
+            plots2 = []
+            for chanNum in range(self.image.data.shape[3]):
+                plots2.append(np.zeros((len(t), 1, 1)))
+                for j in range(2):
+                    plots2[chanNum][j] = plots[chanNum][0]
+            plots = plots2
 
         im = ImageStack(plots, titleStub='New Profile')
         im.xvals = t*dt
