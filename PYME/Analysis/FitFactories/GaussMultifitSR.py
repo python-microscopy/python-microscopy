@@ -175,7 +175,7 @@ class GaussianFitFactory:
              self.Y = 1e3*self.metadata.voxelsize.y*Y
             
 
-    def FindAndFit(self, threshold=2):
+    def FindAndFit(self, threshold=2, gui=False):
         #average in z
         dataMean = self.data.mean(2) - self.metadata.Camera.ADOffset
 
@@ -256,6 +256,13 @@ class GaussianFitFactory:
         #labels = (labels*mask).astype('int32')
             
         #objSlices = ndimage.find_objects(labels)
+            
+        if gui:
+            pylab.imshow(dataMean.T,interpolation='nearest')
+            pylab.figure()
+            pylab.imshow(mask.T, interpolation='nearest')
+            pylab.figure()
+            
         
         if nlabels == 0:
             #the frame is empty
