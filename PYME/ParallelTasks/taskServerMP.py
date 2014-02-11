@@ -69,7 +69,7 @@ class TaskWatcher(threading.Thread):
                         #finally:
                         #        pass
                         #print mProfile.files
-			time.sleep(5)
+			time.sleep(10)
 
 
 
@@ -86,7 +86,7 @@ class TaskQueueSet(Pyro.core.ObjBase):
         self.lastTaskByWorker = {}
         self.lastTimeByWorker = {}
         self.activeWorkers = []
-        self.activeTimeout = 10
+        self.activeTimeout = 60
 
         self.getTaskLock = threading.Lock()
         

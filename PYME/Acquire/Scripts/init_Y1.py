@@ -102,7 +102,7 @@ from PYME.Acquire.Hardware.Piezos import piezo_e709
 #scope.zStage = NikonTi.zDrive()
 #scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
 
-scope.piFoc = piezo_e709.piezo_e709('COM9', 400, 0, True)
+scope.piFoc = piezo_e709.piezo_e709T('COM9', 400, 0, True)
 scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
 
 

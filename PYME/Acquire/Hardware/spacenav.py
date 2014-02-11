@@ -96,7 +96,7 @@ class SpaceNavPiezoCtrl(object):
             #    self.px[0].MoveRel(self.px[1], x_incr)
             #if abs(sn.y) >= norm/3:
             #    self.py[0].MoveRel(self.py[1], y_incr)
-            print sn.x/self.FULL_SCALE, sn.y/self.FULL_SCALE, sn.z/self.FULL_SCALE
+            #print sn.x/self.FULL_SCALE, sn.y/self.FULL_SCALE, sn.z/self.FULL_SCALE
             if  (abs(sn.x) >= norm/2 or abs(sn.y) >= norm/2) and norm > .0001:
                 t = time.time()
                 dt = t - self.lastTime
