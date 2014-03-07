@@ -261,7 +261,7 @@ class GaussianFitFactory:
             pylab.imshow(dataMean.T,interpolation='nearest')
             pylab.figure()
             pylab.imshow(mask.T, interpolation='nearest')
-            pylab.figure()
+            #pylab.figure()
             
         
         if nlabels == 0:
@@ -306,6 +306,10 @@ class GaussianFitFactory:
                 residual = d_m - self.fitfcn(res, X_m, Y_m, gSig)
                 
                 nchi2 = ((residual/s_m)**2).mean()
+                
+                
+                residual *= (abs(X_m - res[1::3]) > 50)*(abs(Y_m - res[2::3]) > 50)
+                
                 resmax = (residual/s_m).max()
                 
                 #resi = 0*dataMean
@@ -319,7 +323,7 @@ class GaussianFitFactory:
         
                  #prevent an infinite loop here      
                 
-                while resmax > 2 and nEvents < 10 and d_m.size > (3*(nEvents+1)):    
+                while resmax > 3 and nEvents < 10 and d_m.size > (3*(nEvents+1)):    
                     nEvents += 1
                     #print nEvents
                     

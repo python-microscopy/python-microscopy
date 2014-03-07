@@ -119,7 +119,7 @@ class LMAnalyser:
         else:
             self.do.zp = self.image.mdh.getEntry('EstimatedLaserOnFrameNo')
         
-        if len(self.fitResults) > 0:
+        if (len(self.fitResults) > 0) and not 'PYME_BUGGYOPENGL' in os.environ.keys():
             self.GenResultsView()
 
     def GenResultsView(self):
@@ -963,7 +963,8 @@ class LMAnalyser:
                 #figure()
                 #imshow()
             except AttributeError:
-                d = self.image.data[:,:,zp].squeeze().T
+                #d = self.image.data[:,:,zp].squeeze().T
+                d = (ft.data.squeeze() - ft.bg.squeeze()).T
                 imshow(d, cmap=cm.hot, interpolation='nearest')
                 xlim(0, d.shape[1])
                 ylim(d.shape[0], 0)
