@@ -22,7 +22,7 @@
 ##################
 
 import serial
-#import time
+import time
 
 from lasers import Laser
 
@@ -48,12 +48,18 @@ class PriorLumen(Laser):
             i += 1
 
     def IsOn(self):
+        return self.isOn
+        #this doesn't seem to work ...
         try:
             self.ser_port.open()
             self.ser_port.write('8 1\r')
             self.ser_port.flush()
             
+            time.sleep(.1)
+            
             m = self._read()
+            print m
+            
                 
             self.ser_port.close()
                 
