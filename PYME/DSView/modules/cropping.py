@@ -32,11 +32,14 @@ class cropper:
         self.image = dsviewer.image
         
         PROC_CROP = wx.NewId()
+        PROC_DIAG_COMP = wx.NewId()
         
         
         dsviewer.mProcessing.Append(PROC_CROP, "&Crop\tCtrl-Shift-D", "", wx.ITEM_NORMAL)
+        dsviewer.mProcessing.Append(PROC_DIAG_COMP, "Diagonal Composite", "", wx.ITEM_NORMAL)
     
         wx.EVT_MENU(dsviewer, PROC_CROP, self.OnCrop)
+        wx.EVT_MENU(dsviewer, PROC_DIAG_COMP, self.OnDiagSplit)
 
     def OnCrop(self, event):
         import numpy as np
@@ -66,6 +69,61 @@ class cropper:
         im.mdh['Origin.x'] = ox + roi[0][0]*vx
         im.mdh['Origin.y'] = oy + roi[1][0]*vy
         im.mdh['Origin.z'] = oz
+
+        if self.dsviewer.mode == 'visGUI':
+            mode = 'visGUI'
+        else:
+            mode = 'lite'
+
+        dv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
+
+        #set scaling to (0,1)
+        for i in range(im.data.shape[3]):
+            dv.do.Gains[i] = 1.0
+
+            #imfc = MultiChannelImageViewFrame(self.parent, self.parent.glCanvas, filt_ims, self.image.names, title='Filtered Image - %3.1fnm bins' % self.image.pixelSize)
+
+            #self.parent.generatedImages.append(imfc)
+            #imfc.Show()
+
+        #dlg.Destroy()
+
+    def OnDiagSplit(self, event):
+        import numpy as np
+        #from scipy.ndimage import gaussian_filter
+        from PYME.DSView.image import ImageStack
+        from PYME.DSView import ViewIm3D
+
+        #dlg = wx.TextEntryDialog(self.dsviewer, 'Blur size [pixels]:', 'Gaussian Blur', '[1,1,1]')
+
+        #if dlg.ShowModal() == wx.ID_OK:
+            #sigmas = eval(dlg.GetValue())
+            #print sigmas
+            #print self.images[0].img.shape
+
+        x0, x1, y0, y1 = [self.do.selection_begin_x, self.do.selection_end_x, self.do.selection_begin_y, self.do.selection_end_y]
+        
+        dx = x1 - x0
+        dy = y1 - y0
+        
+        m = dy/dx
+        c = y0 - m*x0
+        
+        d = self.image.data
+        
+        X, Y = np.ogrid[:d.shape[0], :d.shape[1]]
+        
+        msk = Y > (m*X + c)
+
+        #filt_ims = [np.atleast_3d(self.image.data[roi[0][0]:roi[0][1],roi[1][0]:roi[1][1],:,chanNum].squeeze()) for chanNum in range(self.image.data.shape[3])]
+        imn = (d[:,:,:, 0] - self.do.Offs[0])*self.do.Gains[0]*msk[:,:, None] + (d[:,:,:,1]- self.do.Offs[1])*self.do.Gains[1]*(1-msk)[:,:,None]
+
+        im = ImageStack(imn, titleStub = 'Cropped Image')
+        im.mdh.copyEntriesFrom(self.image.mdh)
+        im.mdh['Parent'] = self.image.filename
+        #im.mdh['Processing.CropROI'] = roi
+
+          
 
         if self.dsviewer.mode == 'visGUI':
             mode = 'visGUI'

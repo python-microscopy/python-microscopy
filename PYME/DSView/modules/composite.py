@@ -437,6 +437,10 @@ class CompositeDialog(wx.Dialog):
         self.cbIgnoreZ = wx.CheckBox(self, -1, 'Ignore Z Origin')
         self.cbIgnoreZ.SetValue(True)
         sizer1.Add(self.cbIgnoreZ, 0, wx.ALL, 2) 
+        
+        self.cbInterp = wx.CheckBox(self, -1, 'Interpolate')
+        self.cbInterp.SetValue(True)
+        sizer1.Add(self.cbInterp, 0, wx.ALL, 2) 
             
         btSizer = wx.StdDialogButtonSizer()
 
@@ -562,6 +566,9 @@ class CompositeDialog(wx.Dialog):
     def GetIgnoreZ(self):
         return self.cbIgnoreZ.GetValue()
         
+    def GetInterp(self):
+        return self.cbInterp.GetValue()
+        
 
 class compositor:
     def __init__(self, dsviewer):
@@ -605,6 +612,12 @@ class compositor:
             others = dlg.GetSelections()            
             #master, mchan = _getImage(dlg.GetMaster())
             ignoreZ = dlg.GetIgnoreZ()
+            interp = dlg.GetInterp()
+            if interp:
+                order = 3
+            else:
+                order = 0
+                
             shape, origin, voxelsize = dlg.shape, dlg.origin, dlg.voxelsize
             print shape, origin, voxelsize
             
@@ -642,7 +655,7 @@ class compositor:
                         #need to rescale ...
                         print 'Remapping ', otherN, originsEqual, other.origin, np.allclose(other.pixelSize, voxelsize[0], rtol=.001), other.pixelSize, ignoreZ
                         #print origin, voxelsize
-                        od = self.RemapData(other, chan, shape, voxelsize, origin, shiftField = shiftField, ignoreZ=ignoreZ)
+                        od = self.RemapData(other, chan, shape, voxelsize, origin, shiftField = shiftField, ignoreZ=ignoreZ, order=order)
                         
                     newData += [od]
     
@@ -678,7 +691,7 @@ class compositor:
 
             View3D(self.image.data[:,:,:,i], '%s - %s' % (self.image.filename, names[i]), mdh=mdh, parent=wx.GetTopLevelParent(self.dsviewer))
      
-    def RemapData(self, image, chan, shape, voxelsize, origin, shiftField='', ignoreZ = True):
+    def RemapData(self, image, chan, shape, voxelsize, origin, shiftField='', ignoreZ = True, order=3):
         '''apply a vectorial correction for chromatic shift to an image - this 
         is a generic vectorial shift compensation, rather than the secial case 
         correction used with the splitter.'''
@@ -693,9 +706,9 @@ class compositor:
         vxm, vym, vzm = voxelsize
         
         if vz == 0:
-            vz == 1
+            vz = 1
         if vzm == 0:
-            vzm ==1
+            vzm =1
         
         x0, y0, z0 = image.origin
         xm0, ym0, zm0 = origin
@@ -723,7 +736,9 @@ class compositor:
             Ynm += dy
             Znm += dz
             
-        return ndimage.map_coordinates(data, [(Xnm - x0)/vx, (Ynm - y0)/vy, (Znm - z0)/vz], mode='nearest')
+        print vx, vy, vz, data.shape
+            
+        return ndimage.map_coordinates(data, [(Xnm - x0)/vx, (Ynm - y0)/vy, (Znm - z0)/vz], mode='nearest', order = order)
         
         
     def OnApplyShiftmap(self, event):
