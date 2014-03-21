@@ -3,7 +3,7 @@
 
 - install EPD using the latest EPD installer, currently: epd-7.3-2-win-x86_64.msi
 
-- update EPD:
+- update EPD: (this may actually brake things with most recent updates - skip!)
 
   	     enpkg --userpass # (user: c.soeller@exeter.ac.uk, pwd: usual)
 
@@ -73,7 +73,7 @@ https://confluence.atlassian.com/display/BITBUCKET/Set+up+SSH+for+Mercurial
         default = https://code.google.com/p/python-microscopy/
         # default = ssh://csoelle@phy-lmsrv1.ex.ac.uk/src/python-microscopy-exeter
 
-- this can be done from within workbench 'Settings' dialog and using 'Edit File' button
+- this can be done from within workbench 'File->Settings' dialog and using 'Edit File' button on the 'python-microscopy-exeter repository settings' tab
 
 - needed to run cython on 'illuminate.pyx'
 
