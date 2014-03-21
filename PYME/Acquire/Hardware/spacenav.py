@@ -9,6 +9,7 @@ Created on Fri Jun 14 17:14:31 2013
 
 from pywinusb import hid
 import numpy as np
+import time
 
 class SpaceNavigator(object):
     def __init__(self):
@@ -72,10 +73,12 @@ class SpaceNavPiezoCtrl(object):
         
         self.spacenav.WantPosNotification.append(self.updatePosition)
         self.update_n= 0
+        self.lastTime = 0
         
         
     def updatePosition(self, sn):
         if self.update_n % 10:
+            
             #x_incr = float(sn.x*self.xy_sensitivity)/(self.FULL_SCALE*self.EVENT_RATE)
             #y_incr = float(sn.y*self.xy_sensitivity)/(self.FULL_SCALE*self.EVENT_RATE)
             z_incr = float(sn.z*self.z_sensitivity)/(self.FULL_SCALE*self.EVENT_RATE)
@@ -93,15 +96,25 @@ class SpaceNavPiezoCtrl(object):
             #    self.px[0].MoveRel(self.px[1], x_incr)
             #if abs(sn.y) >= norm/3:
             #    self.py[0].MoveRel(self.py[1], y_incr)
-            print sn.x/self.FULL_SCALE, sn.y/self.FULL_SCALE, sn.z/self.FULL_SCALE
+            #print sn.x/self.FULL_SCALE, sn.y/self.FULL_SCALE, sn.z/self.FULL_SCALE
             if  (abs(sn.x) >= norm/2 or abs(sn.y) >= norm/2) and norm > .0001:
-                
-                self.pxy.MoveInDir(self.xy_sensitivity*np.sign(sn.x)*abs(sn.x/self.FULL_SCALE)**self.kappa, -self.xy_sensitivity*np.sign(sn.y)*abs(sn.y/self.FULL_SCALE)**self.kappa)
-                
+                t = time.time()
+                dt = t - self.lastTime
+                #print dt
+                if True:#dt < .1: #constant motion
+                    self.pxy.MoveInDir(self.xy_sensitivity*np.sign(sn.x)*abs(sn.x/self.FULL_SCALE)**self.kappa, -self.xy_sensitivity*np.sign(sn.y)*abs(sn.y/self.FULL_SCALE)**self.kappa)
+                else: #nudge
+                    xp, yp = self.pxy.GetPosXY()
+                    
+                    self.pxy.MoveToXY(xp + (abs(sn.x) >= norm/2)*np.sign(sn.x)*.0003, yp - (abs(sn.y) >= norm/2)*np.sign(sn.y)*.0003)
+                    
+                self.lastTime = t
             else:
                 print 's'
                 self.pxy.StopMove()
                 
+            
+            
             #except:
             #    pass
             

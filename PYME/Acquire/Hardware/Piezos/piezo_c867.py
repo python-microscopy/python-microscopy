@@ -157,11 +157,16 @@ class piezo_c867T(object):
         self.maxvelocity = maxvelocity
         self.ser_port = serial.Serial(portname, 38400, timeout=.1, writeTimeout=.1)
         
+        self.units = 'mm'
+        
         self.validRegion=validRegion
         
         #reboot stage
         self.ser_port.write('RBT\n')
         time.sleep(1)
+        #try to make motion smooth
+        self.ser_port.write('SPA 1 0x4D 2\n')
+        self.ser_port.write('SPA 2 0x4D 2\n')
         #turn servo mode on
         self.ser_port.write('SVO 1 1\n')
         self.ser_port.write('SVO 2 1\n')
@@ -272,6 +277,15 @@ class piezo_c867T(object):
             self.servo = state == 1
         finally:
             self.lock.release()
+            
+#    def SetParameter(self, paramID, state):
+#        self.lock.acquire()
+#        try:
+#            self.ser_port.write('SVO 1 %d\n' % state)
+#            self.ser_port.write('SVO 2 %d\n' % state)
+#            self.servo = state == 1
+#        finally:
+#            self.lock.release()
 
     def ReInit(self, reference=True):
         #self.ser_port.write('WTO A0\n')

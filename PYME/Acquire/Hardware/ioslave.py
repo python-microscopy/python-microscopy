@@ -31,9 +31,53 @@ class IOSlave(object):
     def GetTemperature(self, chan):
         self.ser_port.write('QT%d\n' % chan)
         return float(self.ser_port.readline())
-    
-    
+        
 
+
+        
+from lasers import Laser
+
+class AOMLaser(Laser):
+    ENABLE_PIN=4
+    AMPLITUDE_PIN=5
+    FULL_SCALE_VOLTS = 5.0
+    def __init__(self, name,turnOn=False, ios = None, maxpower=1):
+        if ios == None:
+            self.ios = IOSlave()
+        else:
+            self.ios = ios
+            
+        self.powerControlable = True
+        self.isOn=True
+        self.maxpower = maxpower
+
+        self.SetPower(1)
+
+        Laser.__init__(self, name, turnOn)
+
+    def IsOn(self):
+        return self.isOn
+
+    def TurnOn(self):
+        self.ios.SetDigital(self.ENABLE_PIN, 1)
+        self.isOn = True
+
+    def TurnOff(self):
+        self.ios.SetDigital(self.ENABLE_PIN, 0)
+        self.isOn = False
+
+    def SetPower(self, power):
+        if power < 0 or power > 1:
+            raise RuntimeError('Error setting laser power: Power must be between 0 and 1')
+        self.ios.SetAnalog(self.AMPLITUDE_PIN, power/self.FULL_SCALE_VOLTS)
+        self.power = power
+
+        if self.isOn:
+            self.TurnOn() #turning on actually sets power
+
+    def GetPower(self):
+        return self.power
+        
 if __name__ == '__main__':
     #run as a temperature logger
     ios = IOSlave()

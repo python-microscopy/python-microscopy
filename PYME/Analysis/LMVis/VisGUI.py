@@ -113,6 +113,9 @@ class VisGUIFrame(wx.Frame):
 
         self.viewMode = 'points' #one of points, triangles, quads, or voronoi
         self.colData = 't'
+        
+#        if 'PYME_BUGGYOPENGL' in os.environ.keys():
+#            pylab.plot(pylab.randn(10))
 
         self.sh.Execute('from pylab import *')
         self.sh.Execute('from PYME.DSView.dsviewer_npy import View3D')
@@ -870,6 +873,7 @@ class VisGUIFrame(wx.Frame):
                 
             args['FieldNames'] = dlg.GetFieldNames()
             args['VarName'] = dlg.GetVarName()
+            args['PixelSize'] = dlg.GetPixelSize()
             
             
             dlg.Destroy()
@@ -886,6 +890,7 @@ class VisGUIFrame(wx.Frame):
                 
             args['FieldNames'] = dlg.GetFieldNames()
             args['SkipRows'] = dlg.GetNumberComments()
+            args['PixelSize'] = dlg.GetPixelSize()
             
             #print 'Skipping %d rows' %args['SkipRows']
             dlg.Destroy()

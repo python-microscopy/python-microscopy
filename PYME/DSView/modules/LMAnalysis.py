@@ -119,7 +119,7 @@ class LMAnalyser:
         else:
             self.do.zp = self.image.mdh.getEntry('EstimatedLaserOnFrameNo')
         
-        if len(self.fitResults) > 0:
+        if (len(self.fitResults) > 0) and not 'PYME_BUGGYOPENGL' in os.environ.keys():
             self.GenResultsView()
 
     def GenResultsView(self):
@@ -490,14 +490,18 @@ class LMAnalyser:
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        hsizer.Add(wx.StaticText(pan, -1, 'Threshold:'), 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-        self.tThreshold = wx.TextCtrl(pan, -1, value='0.6', size=(40, -1))
+        hsizer.Add(wx.StaticText(pan, -1, 'Thresh:'), 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tThreshold = wx.TextCtrl(pan, -1, value='0.6', size=(30, -1))
 
         hsizer.Add(self.tThreshold, 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
 
         bTest = wx.Button(pan, -1, 'Test', style=wx.BU_EXACTFIT)
         bTest.Bind(wx.EVT_BUTTON, self.OnTest)
         hsizer.Add(bTest, 0,wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
+        
+        bTestF = wx.Button(pan, -1, 'TF', style=wx.BU_EXACTFIT)
+        bTestF.Bind(wx.EVT_BUTTON, self.OnTestFrame)
+        hsizer.Add(bTestF, 0,wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
 
         pan.SetSizer(hsizer)
         hsizer.Fit(pan)
@@ -532,6 +536,30 @@ class LMAnalyser:
 
         #if not driftEst:
         self.testFrames(threshold)
+        
+    def OnTestFrame(self, event):
+        threshold = float(self.tThreshold.GetValue())
+        startAt = int(self.tStartAt.GetValue())
+        driftEst = self.cbDrift.GetValue()
+        fitMod = self.cFitType.GetStringSelection()
+
+        self.image.mdh.setEntry('Analysis.DebounceRadius', int(self.tDebounceRadius.GetValue()))
+
+        if 'Psf' in fitMod and not 'PSFFile' in self.image.mdh.getEntryNames():
+            fdialog = wx.FileDialog(None, 'Please select PSF to use ...',
+                    wildcard='PSF files|*.psf', style=wx.OPEN)
+            succ = fdialog.ShowModal()
+            if (succ == wx.ID_OK):
+                #self.ds = example.CDataStack(fdialog.GetPath().encode())
+                #self.ds =
+                psfFilename = fdialog.GetPath()
+                self.image.mdh.setEntry('PSFFile', getRelFilename(psfFilename))
+                #self.md.setEntry('PSFFile', psfFilename)
+            else:
+                return
+
+        #if not driftEst:
+        self.testFrame(threshold)
         #else:
         #    self.sh.run('pushImagesD(%d, %f)' % (startAt, threshold)
 
@@ -588,6 +616,8 @@ class LMAnalyser:
         self.tBackgroundFrames.SetValue('0:0')
         self.cbSubtractBackground.SetValue(False)
         self.tThreshold.SetValue('2')
+        self.image.mdh['Analysis.ChunkSize'] = 1
+        self.image.mdh['Analysis.ROISize'] = 11
 
     def OnStandard2D(self, event):
         self.cFitType.SetSelection(self.fitFactories.index('LatGaussFitFR'))
@@ -926,9 +956,10 @@ class LMAnalyser:
         #else:
         #    ft = remFitBuf.fitTask(self.image.seriesName, zp, detThresh, MetaDataHandler.NestedClassMDHandler(self.image.mdh), 'LatObjFindFR', bgindices=bgi, SNThreshold=True,dataSourceModule=mn)
         ft = remFitBuf.fitTask(self.image.seriesName, zp, detThresh, MetaDataHandler.NestedClassMDHandler(self.image.mdh), fitMod, bgindices=bgi, SNThreshold=True,dataSourceModule=mn)
-        res = ft(taskQueue=self.tq)
+        res = ft(gui=gui,taskQueue=self.tq)
         
         if gui:
+            figure()
             try:
                 d = ft.ofd.filteredData.T
                 #d = ft.data.squeeze().T
@@ -936,9 +967,9 @@ class LMAnalyser:
                 plot([p.x for p in ft.ofd], [p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
                 if ft.driftEst:
                      plot([p.x for p in ft.ofdDr], [p.y for p in ft.ofdDr], 'o', mew=2, mec='b', mfc='none', ms=9)
-                if ft.fitModule in remFitBuf.splitterFitModules:
-                        plot([p.x for p in ft.ofd], [d.shape[0] - p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
-                axis('tight')
+                #if ft.fitModule in remFitBuf.splitterFitModules:
+                #        plot([p.x for p in ft.ofd], [d.shape[0] - p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
+                #axis('tight')
                 xlim(0, d.shape[1])
                 ylim(d.shape[0], 0)
                 xticks([])
@@ -947,14 +978,22 @@ class LMAnalyser:
                 if 'tIm' in dir(ft.ofd):
                     figure()
                     imshow(ft.ofd.tIm.T, cmap=cm.hot, interpolation='nearest', hold=False)
-                    axis('tight')
+                    #axis('tight')
                     xlim(0, d.shape[1])
                     ylim(d.shape[0], 0)
                     xticks([])
                     yticks([])
+                    
+                vx = 1e3*self.image.mdh['voxelsize.x']
+                vy = 1e3*self.image.mdh['voxelsize.y']
+                plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, '+b')
+                    
+                #figure()
+                #imshow()
             except AttributeError:
-                d = self.image.data[:,:,zp].squeeze().T
-                imshow(d, cmap=cm.hot, interpolation='nearest')
+                #d = self.image.data[:,:,zp].squeeze().T
+                d = (ft.data.squeeze() - ft.bg.squeeze()).T
+                imshow(d, cmap=cm.jet, interpolation='nearest', clim = [0, d.max()])
                 xlim(0, d.shape[1])
                 ylim(d.shape[0], 0)
                 
@@ -967,7 +1006,7 @@ class LMAnalyser:
     
             matplotlib.interactive(True)
         
-        return res
+        return ft, res
 
 def Plug(dsviewer):
     dsviewer.LMAnalyser = LMAnalyser(dsviewer)

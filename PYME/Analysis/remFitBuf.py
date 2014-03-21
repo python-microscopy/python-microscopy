@@ -47,7 +47,7 @@ nTasksProcessed = 0
 
 splitterFitModules = ['SplitterFitFR', 'SplitterFitFNR','SplitterFitQR', 'SplitterFitCOIR', 
                       'BiplaneFitR', 'SplitterShiftEstFR', 
-                      'SplitterObjFindR', 'SplitterFitInterpR', 'SplitterFitInterpQR']
+                      'SplitterObjFindR', 'SplitterFitInterpR', 'SplitterFitInterpQR', 'SplitterFitInterpNR']
 
 #from pylab import *
 
@@ -273,6 +273,82 @@ class fitTask(taskDef.Task):
         if self.driftEst: 
             #increase the buffer length as we're going to look forward as well
             self.bufferLen = 50 #17
+            
+    def __mapSplitterCoords(self, x,y):
+        vx = self.md['voxelsize.x']*1e3
+        vy = self.md['voxelsize.y']*1e3
+        
+        if 'Splitter.Channel0ROI' in self.md.getEntryNames():
+            x0, y0, w, h = self.md['Splitter.Channel0ROI']
+            x0 -= (self.md['Camera.ROIPosX'] - 1)
+            y0 -= (self.md['Camera.ROIPosY'] - 1)
+            
+            x1, y1, w, h = self.md['Splitter.Channel1ROI']
+            x1 -= (self.md['Camera.ROIPosX'] - 1)
+            y1 -= (self.md['Camera.ROIPosY'] - 1)
+        else:
+            x0,y0, w, h = 0,0,self.data.shape[0], self.data.shape[1]
+            x1, y1 = w,h
+            
+        ch1 = (x>=x1)&(y >= y1)
+            
+        xn = x - (x >= (x0+w))*x1
+        yn = y - (y >= (y0+h))*y1
+        
+        if not (('Splitter.Flip' in self.md.getEntryNames() and not self.md.getEntry('Splitter.Flip'))):          
+            yn += ch1*(h - 2*yn) 
+            
+        #print xn, yn
+            
+        #chromatic shift
+        if 'chroma.dx' in self.md.getEntryNames():
+            dx = self.md['chroma.dx'].ev(xn*vx, yn*vy)/vx
+            dy = self.md['chroma.dy'].ev(xn*vy, yn*vy)/vy
+        
+            xn += dx*ch1
+            yn += dy*ch1
+        
+        #print xn, yn
+       
+        return np.clip(xn, 0, w-1), np.clip(yn, 0, h-1)
+        
+    def __remapSplitterCoords(self, x,y):
+        vx = self.md['voxelsize.x']*1e3
+        vy = self.md['voxelsize.y']*1e3
+        
+        if 'Splitter.Channel0ROI' in self.md.getEntryNames():
+            x0, y0, w, h = self.md['Splitter.Channel0ROI']
+            x0 -= (self.md['Camera.ROIPosX'] - 1)
+            y0 -= (self.md['Camera.ROIPosY'] - 1)
+            
+            x1, y1, w, h = self.md['Splitter.Channel1ROI']
+            x1 -= (self.md['Camera.ROIPosX'] - 1)
+            y1 -= (self.md['Camera.ROIPosY'] - 1)
+        else:
+            x0,y0, w, h = 0,0,self.data.shape[0], self.data.shape[1]
+            x1, y1 = w,h
+            
+        #ch1 = (x>=x1)&(y >= y1)
+            
+        xn = x + x1
+        yn = y + y1
+        
+        if not (('Splitter.Flip' in self.md.getEntryNames() and not self.md.getEntry('Splitter.Flip'))):          
+            yn = (h - y) + y1 
+            
+        #print xn, yn
+            
+        #chromatic shift
+        if 'chroma.dx' in self.md.getEntryNames():
+            dx = self.md['chroma.dx'].ev(x*vx, y*vy)/vx
+            dy = self.md['chroma.dy'].ev(x*vx, y*vy)/vy
+        
+            xn -= dx
+            yn -= dy
+        
+        #print xn, yn
+       
+        return xn, yn
 
 
     def __call__(self, gui=False, taskQueue=None):
@@ -351,7 +427,7 @@ class fitTask(taskDef.Task):
         if 'MULTIFIT' in dir(fitMod):
             #fit module does it's own object finding
             ff = fitMod.FitFactory(self.data, md, background = self.bg)
-            self.res = ff.FindAndFit(self.threshold)
+            self.res = ff.FindAndFit(self.threshold, gui=gui)
             return fitResult(self, self.res, [])
 
         #Find objects
@@ -372,51 +448,56 @@ class fitTask(taskDef.Task):
 #
 #            self.data = numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2)
         #print self.data.shape, bgd.shape
-        
+    
+    
+        sfunc = None        
         if self.fitModule in splitterFitModules:
             #print g.shape, r.shape
             #self.data = numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2)
-            if 'Splitter.Channel0ROI' in self.md.getEntryNames():
-                x0, y0, w, h = self.md['Splitter.Channel0ROI']
-                x0 -= (self.md['Camera.ROIPosX'] - 1)
-                y0 -= (self.md['Camera.ROIPosY'] - 1)
-                g_ = bgd[x0:(x0+w), y0:(y0+h)]
-                x0, y0, w, h = self.md['Splitter.Channel1ROI']
-                x0 -= (self.md['Camera.ROIPosX'] - 1)
-                y0 -= (self.md['Camera.ROIPosY'] - 1)
-                r_ = bgd[x0:(x0+w), y0:(y0+h)]
-            else:
-                g_ = bgd[:, :(self.data.shape[1]/2)]
-                r_ = bgd[:, (self.data.shape[1]/2):]
+#            if 'Splitter.Channel0ROI' in self.md.getEntryNames():
+#                x0, y0, w, h = self.md['Splitter.Channel0ROI']
+#                x0 -= (self.md['Camera.ROIPosX'] - 1)
+#                y0 -= (self.md['Camera.ROIPosY'] - 1)
+#                g_ = bgd[x0:(x0+w), y0:(y0+h)]
+#                x0, y0, w, h = self.md['Splitter.Channel1ROI']
+#                x0 -= (self.md['Camera.ROIPosX'] - 1)
+#                y0 -= (self.md['Camera.ROIPosY'] - 1)
+#                r_ = bgd[x0:(x0+w), y0:(y0+h)]
+#            else:
+#                g_ = bgd[:, :(self.data.shape[1]/2)]
+#                r_ = bgd[:, (self.data.shape[1]/2):]
+#                
+#            if ('Splitter.Flip' in self.md.getEntryNames() and not self.md.getEntry('Splitter.Flip')):
+#                pass
+#            else:
+#                r_ = np.fliplr(r_)
                 
-            if ('Splitter.Flip' in self.md.getEntryNames() and not self.md.getEntry('Splitter.Flip')):
-                pass
-            else:
-                r_ = np.fliplr(r_)
-                
-            bgd = numpy.concatenate((g_.reshape(g_.shape[0], -1, 1), r_.reshape(g_.shape[0], -1, 1)),2)
-            self.data = numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2)
+            #bgd = numpy.concatenate((g_.reshape(g_.shape[0], -1, 1), r_.reshape(g_.shape[0], -1, 1)),2)
+            
+            sfunc = self.__mapSplitterCoords
 
 
         if 'PRI.Axis' in self.md.getEntryNames():
             self.ofd = ofind_pri.ObjectIdentifier(bgd * (bgd > 0), md, axis = self.md['PRI.Axis'])
-        elif not 'PSFFile' in self.md.getEntryNames():
+        else:# not 'PSFFile' in self.md.getEntryNames():
             self.ofd = ofind.ObjectIdentifier(bgd * (bgd > 0))
-        else: #if we've got a PSF then use cross-correlation object identificatio      
-            self.ofd = ofind_xcorr.ObjectIdentifier(bgd * (bgd > 0), md, 7, 5e-2)
+        #else: #if we've got a PSF then use cross-correlation object identificatio      
+        #    self.ofd = ofind_xcorr.ObjectIdentifier(bgd * (bgd > 0), md, 7, 5e-2)
             
 
         if 'Analysis.DebounceRadius' in self.md.getEntryNames():
             debounce = self.md.getEntry('Analysis.DebounceRadius')
         else:
             debounce = 5
-        self.ofd.FindObjects(self.calcThreshold(),0, splitter=(self.fitModule in splitterFitModules), debounceRadius=debounce)
+            
+        self.ofd.FindObjects(self.calcThreshold(),0, splitter=sfunc, debounceRadius=debounce)
         
         
 
         if self.fitModule in splitterFitModules:
             #print g.shape, r.shape
             #self.data = numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2)
+            self.data = numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2)
 
             if not len(self.bgindices) == 0:
                 if 'Splitter.Channel0ROI' in self.md.getEntryNames():
@@ -469,10 +550,13 @@ class fitTask(taskDef.Task):
             cm = pylab.cm
             pylab.clf()
             pylab.imshow(self.ofd.filteredData.T, cmap=pylab.cm.hot, hold=False)
-            pylab.plot([p.x for p in self.ofd], [p.y for p in self.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
+            xc = np.array([p.x for p in self.ofd])
+            yc = np.array([p.y for p in self.ofd])
+            pylab.plot(xc, yc, 'o', mew=2, mec='g', mfc='none', ms=9)
 
             if self.fitModule in splitterFitModules:
-                pylab.plot([p.x for p in self.ofd], [bgd.shape[1] - p.y for p in self.ofd], 'o', mew=2, mec='r', mfc='none', ms=9)
+                xn, yn = self.__remapSplitterCoords(xc, yc)
+                pylab.plot(xn, yn, 'o', mew=2, mec='r', mfc='none', ms=9)
 
 
             if self.driftEst:

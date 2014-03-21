@@ -24,7 +24,7 @@
 import wx
 import math
 import pylab
-#import numpy
+import numpy as np
 
 from PYME.misc import wxPlotPanel
 #from PYME.Acquire.MetaDataHandler import NestedClassMDHandler
@@ -208,9 +208,70 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
     def __init__(self, parent, fitResults, mdh, ds, **kwargs ):
         self.fitResults = fitResults
         self.mdh = mdh
-        self.ds = ds
+        self.ds = ds      
 
         wxPlotPanel.PlotPanel.__init__( self, parent, **kwargs )
+        
+    def _extractROI(self, fri):
+        if 'Ag' in fri['fitResults'].dtype.names:
+             # is a splitter fit
+            if 'Splitter.Channel0ROI' in self.mdh.getEntryNames():
+                x0, y0, w, h = self.mdh['Splitter.Channel0ROI']
+                x0 -= (self.mdh['Camera.ROIPosX'] - 1)
+                y0 -= (self.mdh['Camera.ROIPosY'] - 1)
+                #g = self.data[x0:(x0+w), y0:(y0+h)]
+                x1, y1, w, h = self.mdh['Splitter.Channel1ROI']
+                x1 -= (self.mdh['Camera.ROIPosX'] - 1)
+                y1 -= (self.mdh['Camera.ROIPosY'] - 1)
+                #r = self.data[x0:(x0+w), y0:(y0+h)]
+            else:
+                x0, y0 = 0,0
+                x1, y1 = 0, (self.mdh['Camera.ROIHeight'] + 1)/2
+                
+            slux = fri['slicesUsed']['x']
+            sluy = fri['slicesUsed']['y']
+            
+            sx0 = slice(x0+ slux[0], x0+slux[1])
+            sy0 = slice(y0+ sluy[0], y0+sluy[1])
+            
+            if 'NR' in self.mdh['Analysis.FitModule']:
+                #for fits which take chromatic shift into account when selecting ROIs
+                #pixel size in nm
+                vx = 1e3*self.mdh['voxelsize.x']
+                vy = 1e3*self.mdh['voxelsize.y']
+                
+                #position in nm from camera origin
+                x_ = (sx0.start + self.mdh['Camera.ROIPosX'] - 1)*vx
+                y_ = (sy0.start + self.mdh['Camera.ROIPosY'] - 1)*vy
+                
+                #look up shifts
+                DeltaX = self.mdh['chroma.dx'].ev(x_, y_)
+                DeltaY = self.mdh['chroma.dy'].ev(x_, y_)
+                
+                #find shift in whole pixels
+                dxp = int(DeltaX/vx)
+                dyp = int(DeltaY/vy)
+                
+                print DeltaX, DeltaY, dxp, dyp
+                
+                x1 -= dxp
+                y1 -= dyp
+            
+            sx1 = slice(x1+ slux[0], x1+slux[1])
+            
+            if ('Splitter.Flip' in self.mdh.getEntryNames() and not self.mdh.getEntry('Splitter.Flip')):
+                sy1 = slice(y1+ sluy[0], y1+sluy[1])
+            else:
+                sy1 = slice(y1+ sluy[0], y1+sluy[1]) #FIXME
+                
+            print sx0, sx1, sy0, sy1
+                
+            g = self.ds[sx0, sy0, int(fri['tIndex'])].squeeze()
+            r = self.ds[sx1, sy1, int(fri['tIndex'])].squeeze()
+                
+            return np.hstack([g,r])
+        else:
+            return self.ds[slice(*fri['slicesUsed']['x']), slice(*fri['slicesUsed']['y']), int(fri['tIndex'])].squeeze()
 
     def draw( self, i = None):
             """Draw data."""
@@ -236,7 +297,8 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
                 #print fri
                 #print fri['tIndex'], slice(*fri['slicesUsed']['x']), slice(*fri['slicesUsed']['y'])
                 #print self.ds[slice(*fri['slicesUsed']['x']), slice(*fri['slicesUsed']['y']), int(fri['tIndex'])].shape
-                imd = self.ds[slice(*fri['slicesUsed']['x']), slice(*fri['slicesUsed']['y']), int(fri['tIndex'])].squeeze()
+                #imd = self.ds[slice(*fri['slicesUsed']['x']), slice(*fri['slicesUsed']['y']), int(fri['tIndex'])].squeeze()
+                imd = self._extractROI(fri)
 
                 self.subplot1.imshow(imd, interpolation='nearest', cmap=pylab.cm.hot)
                 self.subplot1.set_title('Data')

@@ -31,7 +31,7 @@ class piezo_e709:
         #self.numWavePoints = 0
         
 
-        self.ser_port = serial.Serial(portname, 115200, rtscts=0, timeout=2, writeTimeout=2)
+        self.ser_port = serial.Serial(portname, 115200, rtscts=0, timeout=.1, writeTimeout=.1)
         if not Osen == None:
             #self.ser_port.write('SPA A8 %3.4f\n' % Osen)
             self.osen = Osen
@@ -171,3 +171,233 @@ class piezo_e709:
         
         
         
+import threading
+import Queue
+import numpy as np
+        
+class piezo_e709T(object):    
+    def __init__(self, portname='COM1', maxtravel = 400., Osen=None, hasTrigger=False):
+        self.max_travel = maxtravel
+        
+        self.ser_port = serial.Serial(portname, 115200, timeout=.1, writeTimeout=.1)
+        
+        self.units = 'um'
+                
+        #reboot stage
+        #self.ser_port.write('RBT\n')
+        #time.sleep(1)
+        
+        #turn servo mode on
+        self.ser_port.write('SVO Z 1\n')
+        #self.ser_port.write('SVO 2 1\n')
+        
+        self.servo = True
+        
+        self.errCode = 0
+        
+
+        #self.lastPos = self.GetPos()
+        #self.lastPos = [self.GetPos(1), self.GetPos(2)]
+
+        #self.driftCompensation = False
+        self.hasTrigger = hasTrigger
+        self.loopActive = True
+        self.stopMove = False
+        self.position = np.array([0.])
+        #self.velocity = np.array([self.maxvelocity, self.maxvelocity])
+        
+        self.targetPosition = np.array([200.])
+        #self.targetVelocity = self.velocity.copy()
+        
+        self.lastTargetPosition = self.position.copy()
+        
+        self.lock = threading.Lock()
+        self.tloop = threading.Thread(target=self._Loop)
+        self.tloop.start()
+        
+    def _Loop(self):
+        while self.loopActive:
+            self.lock.acquire()
+            try:
+                self.ser_port.flushInput()
+                self.ser_port.flushOutput()
+            
+                #check position
+                time.sleep(0.005)
+                self.ser_port.write('POS? Z\n')
+                self.ser_port.flushOutput()
+                time.sleep(0.005)
+                res1 = self.ser_port.readline()
+                #res2 = self.ser_port.readline()
+                #print res1, res2
+                self.position[0] = float(res1.split('=')[1])
+                #self.position[1] = float(res2.split('=')[1])
+                
+                self.ser_port.write('ERR?\n')
+                self.ser_port.flushOutput()
+                self.errCode = int(self.ser_port.readline())
+                
+                if not self.errCode == 0:
+                    print 'Stage Error: %d' %self.errCode
+                
+                #print self.targetPosition, self.stopMove
+                
+                if self.stopMove:
+                    self.ser_port.write('STP\n')
+                    time.sleep(.1)
+                    self.ser_port.write('POS? Z\n')
+                    self.ser_port.flushOutput()
+                    time.sleep(0.005)
+                    res1 = self.ser_port.readline()
+                    #res2 = self.ser_port.readline()
+                    #print res1, res2
+                    self.position[0] = float(res1.split('=')[1])
+                    #self.position[1] = float(res2.split('=')[1])
+                    self.targetPosition[:] = self.position[:]
+                    self.stopMove = False
+                    
+                
+                #if not np.all(self.velocity == self.targetVelocity):
+                #    for i, vel in enumerate(self.targetVelocity):
+                #        self.ser_port.write('VEL %d %3.9f\n' % (i+1, vel))
+                #    self.velocity = self.targetVelocity.copy()
+                #    print 'v'
+               # print 'l'
+                if not np.all(self.targetPosition == self.lastTargetPosition):
+                    #update our target position
+                    pos = np.clip(self.targetPosition, 0,self.max_travel)
+        
+                    self.ser_port.write('MOV Z %3.9f\n' % (pos[0], ))
+                    self.lastTargetPosition = pos.copy()
+                    print 'p'
+                    
+                #time.sleep(.1)
+                
+            except serial.SerialTimeoutException:
+                print 'Serial Timeout'
+                pass
+            except IndexError:
+                print 'IndexException'
+            finally:
+                self.stopMove = False
+                self.lock.release()
+                
+    def close(self):
+        self.loopActive = False
+        time.sleep(1)
+        self.ser_port.close()            
+                
+        
+    def SetServo(self, state=1):
+        self.lock.acquire()
+        try:
+            self.ser_port.write('SVO Z %d\n' % state)
+            #self.ser_port.write('SVO 2 %d\n' % state)
+            self.servo = state == 1
+        finally:
+            self.lock.release()
+            
+#    def SetParameter(self, paramID, state):
+#        self.lock.acquire()
+#        try:
+#            self.ser_port.write('SVO 1 %d\n' % state)
+#            self.ser_port.write('SVO 2 %d\n' % state)
+#            self.servo = state == 1
+#        finally:
+#            self.lock.release()
+
+    def ReInit(self, reference=True):
+        #self.ser_port.write('WTO A0\n')
+        self.lock.acquire()
+        try:
+            self.ser_port.write('RBT\n')
+            time.sleep(1)
+            self.ser_port.write('SVO z 1\n')
+            #self.ser_port.write('SVO 2 1\n')
+            self.servo = True
+        
+            #if reference:
+            #find reference switch (should be in centre of range)
+            #   self.ser_port.write('FRF\n')
+             
+            time.sleep(1)
+            self.stopMove = True
+        finally:
+            self.lock.release()
+        
+        #self.lastPos = [self.GetPos(1), self.GetPos(2)]
+        
+    #def SetVelocity(self, chan, vel):
+        #self.ser_port.write('VEL %d %3.4f\n' % (chan, vel))
+        #self.ser_port.write('VEL 2 %3.4f\n' % vel)
+        #self.targetVelocity[chan-1] = vel
+        
+#    def GetVelocity(self, chan):
+#        return self.velocity[chan-1]
+        
+    def MoveTo(self, iChannel, fPos, bTimeOut=True, vel=None):
+        chan = iChannel - 1
+        #if vel == None:
+        #    vel = self.maxvelocity
+        #self.targetVelocity[chan] = vel
+        self.targetPosition[chan] = min(max(fPos, 0),self.max_travel) 
+            
+    def MoveRel(self, iChannel, incr, bTimeOut=True):
+        self.targetPosition[iChannel] += incr
+            
+            
+#    def MoveToXY(self, xPos, yPos, bTimeOut=True, vel=None):
+#        if vel == None:
+#            vel = self.maxvelocity
+#        self.targetPosition[0] = min(max(xPos, self.validRegion[0][0]),self.validRegion[0][1])
+#        self.targetPosition[1] = min(max(yPos, self.validRegion[1][0]),self.validRegion[1][1])
+#        self.targetVelocity[:] = vel 
+            
+
+    def GetPos(self, iChannel=0):
+        #self.ser_port.flush()
+        #time.sleep(0.005)
+        #self.ser_port.write('POS? %d\n' % iChannel)
+        #self.ser_port.flushOutput()
+        #time.sleep(0.005)
+        #res = self.ser_port.readline()
+        pos = self.GetPosXY()
+        
+        return pos[iChannel-1]
+        
+    def GetPosXY(self):
+        return self.position
+
+    def MoveInDir(self, dx, dy, th=.0000):
+        #self.targetVelocity[0] = abs(dx)*self.maxvelocity
+        #self.targetVelocity[1] = abs(dy)*self.maxvelocity
+        
+        if dx > th:
+            self.targetPosition[0] = min(max(np.round(self.position[0]+1), 0),self.max_travel)
+        elif dx < -th:
+            self.targetPosition[0] = min(max(np.round(self.position[0]-1), 0),self.max_travel)
+        else:
+            self.targetPosition[0] = self.position[0]
+            
+                   
+    def StopMove(self):
+        self.stopMove = True
+    
+    def GetControlReady(self):
+        return True
+    def GetChannelObject(self):
+        return 1
+    def GetChannelPhase(self):
+        return 2
+    def GetMin(self,iChan=1):
+        return 0
+    def GetMax(self, iChan=1):
+        return self.max_travel
+        
+    def GetFirmwareVersion(self):
+        import re
+        self.ser_port.write('*IDN?\n')
+        self.ser_port.flush()
+        
+        verstring = self.ser_port.readline()
+        return float(re.findall(r'V(\d\.\d\d)', verstring)[0])
