@@ -177,13 +177,13 @@ class GaussianFitFactory:
              self.X = vx*X
              self.Y = vy*Y
              
-        u,v = np.mgrid[0:10., 0:10]
-        u = vx*u
-        v = vy*v
+#        u,v = np.mgrid[0:10., 0:10]
+#        u = vx*u
+#        v = vy*v
         
         gSig = float(self.metadata.getOrDefault('Analysis.PSFSigma', 130.))
         
-        self.gLUT = (vx*vy/(2*np.pi*gSig*gSig))*np.exp(-(u*u + v*v)/(2*gSig*gSig))
+#        self.gLUT = (vx*vy/(2*np.pi*gSig*gSig))*np.exp(-(u*u + v*v)/(2*gSig*gSig))
         self.gLUT2 = (vx*vy/(2*np.pi*gSig*gSig))*np.exp(-(vx*vx*np.arange(33.))/(2*gSig*gSig))
         self.gLUT2[-1] = 0
         
