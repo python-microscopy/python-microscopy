@@ -40,14 +40,17 @@ class fitter:
         fit_menu = wx.Menu()
 
         FIT_RAW_INTENSITY_DECAY = wx.NewId()
+        FIT_RAW_INTENSITY_SIMPLE = wx.NewId()
         FIT_GAUSS = wx.NewId()
         
         fit_menu.Append(FIT_RAW_INTENSITY_DECAY, "Raw Intensity Decay", "", wx.ITEM_NORMAL)
+        fit_menu.Append(FIT_RAW_INTENSITY_SIMPLE, "Simple Decay", "", wx.ITEM_NORMAL)
         fit_menu.Append(FIT_GAUSS, "Gaussian", "", wx.ITEM_NORMAL)
 
         dsviewer.menubar.Insert(dsviewer.menubar.GetMenuCount()-1, fit_menu, 'Fitting')
 
         wx.EVT_MENU(dsviewer, FIT_RAW_INTENSITY_DECAY, self.OnRawDecay)
+        wx.EVT_MENU(dsviewer, FIT_RAW_INTENSITY_SIMPLE, self.OnRawDecaySimp)
         wx.EVT_MENU(dsviewer, FIT_GAUSS, self.OnGaussianFit)
         
     def OnRawDecay(self, event):
@@ -84,8 +87,62 @@ class fitter:
         #rawIntensity.processIntensityTrace(I, imo.mdh, dt=imo.mdh['Camera.CycleTime'])
         pylab.show()
         
-
-
+    def OnRawDecaySimp(self, event):
+        from pylab import *
+        I = self.image.data[:].squeeze()
+        t = self.image.xvals
+        
+        dt = t[1] - t[0]
+        
+        #prebleach
+        
+        figure()
+        bStart, bEnd = self.image.parent.mdh['Protocol.BleachFrames']
+        
+        Ib = 1.0*I[bStart:bEnd]
+        tb = t[bStart:bEnd]
+        
+        #scale to [0,1]
+        Ib-= Ib.min()
+        Ib /= Ib.max()
+        tau_shelve = (Ib > 1./np.e).sum()*dt
+        plot(tb, Ib)
+        figtext(.7, .8, 'Tau = %3.4f s'%tau_shelve)
+        xlabel('Time [s]')
+        title('Prebleach Intensity')
+        
+        #total decay
+        figure()
+        multiplier = np.ones_like(I)
+        multiplier[bStart:bEnd] = self.image.parent.mdh['Camera.TrueEMGain']
+        
+        pStart, pEnd = self.image.parent.mdh['Protocol.PrebleachFrames']
+        
+        multiplier[pStart:pEnd] = 100
+        
+        plot(I*multiplier)
+        #figure()
+        #plot(multiplier)
+        
+        #actual imaging
+        figure()
+        Ii = I[self.image.parent.mdh['Protocol.DataStartsAt']:]
+        ti = t[self.image.parent.mdh['Protocol.DataStartsAt']:]
+        
+        Ii = Ii - self.image.parent.mdh['Camera.ADOffset']
+        
+        Ii = Ii/Ii.max()
+        
+        plot(ti, Ii)
+        
+        n100 = abs(ti-100).argmin()
+        print n100, Ii[n100]
+        figtext(.5, .8, 'I100/Imax = %3.4f'%(Ii[n100]))
+        plot(ti[n100], Ii[n100], 'xr')
+        
+        
+        
+        
 
 
 def Plug(dsviewer):
