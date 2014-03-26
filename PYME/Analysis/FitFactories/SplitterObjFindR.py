@@ -136,6 +136,12 @@ class GaussianFitFactory:
         #print DeltaY
         #print dataROI.shape
 
+        # we need to protect against event candidates that
+        # seem to be so far outside the ROI that we get a an empty region
+        # cut out; not sure why this happens when calling TEST
+        if min(dataROI.shape) < 1:
+            return GaussianFitResultR(scipy.array([0, 0, 0, 0, 250/2.35, 0,0, .001, .001]), self.metadata, (xslice, yslice, zslice), 0, None)
+
         #estimate some start parameters...
         Ag = dataROI[:,:,0].max() - dataROI[:,:,0].min() #amplitude
         Ar = dataROI[:,:,1].max() - dataROI[:,:,1].min() #amplitude

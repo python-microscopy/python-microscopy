@@ -67,14 +67,20 @@ https://confluence.atlassian.com/display/BITBUCKET/Set+up+SSH+for+Mercurial
 ### History items ###
 - merged changes from default branch into exeter;
 
-- todo, run 'Merge with Local' in tortoiseHg workbench from latest revision of merged branch (normally default); note that I had to edit .hgrc to change default path to google-code repo:
+- todo, run `Merge with Local` in tortoiseHg workbench from latest revision of merged branch; in other words, find the latest tip from the `default` branch that was merged into the repo by selecting the incoming change-sets from google-code.
+
+- note that you need to switch the source repo by editing `.hgrc` to change default path to google-code repo:
 
         [paths]
         default = https://code.google.com/p/python-microscopy/
         # default = ssh://csoelle@phy-lmsrv1.ex.ac.uk/src/python-microscopy-exeter
 
-- this can be done from within workbench 'File->Settings' dialog and using 'Edit File' button on the 'python-microscopy-exeter repository settings' tab
+- this can be done from within workbench `File->Settings` dialog and using `Edit File` button on the `python-microscopy-exeter repository settings` tab
 
-- needed to run cython on 'illuminate.pyx'
+- currently `illuminate.c` appears not to be tracked in our copy but is tracked on google-code, this causes a conflict and may need tgo be resolved.
 
-- also tried the conflict resolver that came up automatically; need to edit the default editor for hgworkbench
+- also tried the conflict resolver that came up automatically; needed to edit the default editor for hgworkbench
+
+- after doing that one may need to run `python setup.py develop` from the top-level python-microscopy-exeter directory
+
+- finally switch back to local repository server by switching back edits in `.hgrc`

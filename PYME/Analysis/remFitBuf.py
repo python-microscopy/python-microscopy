@@ -278,7 +278,7 @@ class fitTask(taskDef.Task):
         vx = self.md['voxelsize.x']*1e3
         vy = self.md['voxelsize.y']*1e3
         
-        if 'Splitter.Channel0ROI' in self.md.getEntryNames():
+        if 'Splitter.Channel0ROI*' in self.md.getEntryNames():
             x0, y0, w, h = self.md['Splitter.Channel0ROI']
             x0 -= (self.md['Camera.ROIPosX'] - 1)
             y0 -= (self.md['Camera.ROIPosY'] - 1)
@@ -316,7 +316,7 @@ class fitTask(taskDef.Task):
         vx = self.md['voxelsize.x']*1e3
         vy = self.md['voxelsize.y']*1e3
         
-        if 'Splitter.Channel0ROI' in self.md.getEntryNames():
+        if 'Splitter.Channel0ROI*' in self.md.getEntryNames():
             x0, y0, w, h = self.md['Splitter.Channel0ROI']
             x0 -= (self.md['Camera.ROIPosX'] - 1)
             y0 -= (self.md['Camera.ROIPosY'] - 1)
@@ -387,7 +387,7 @@ class fitTask(taskDef.Task):
         if self.fitModule in splitterFitModules:
 #            if (self.md.getEntry('Camera.ROIHeight') + 1 + 2*(self.md.getEntry('Camera.ROIPosY')-1)) == 512:
             #was setup correctly for the splitter
-            if 'Splitter.Channel0ROI' in self.md.getEntryNames():
+            if 'Splitter.Channel0ROI*' in self.md.getEntryNames():
                 x0, y0, w, h = self.md['Splitter.Channel0ROI']
                 x0 -= (self.md['Camera.ROIPosX'] - 1)
                 y0 -= (self.md['Camera.ROIPosY'] - 1)
@@ -500,7 +500,7 @@ class fitTask(taskDef.Task):
             self.data = numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2)
 
             if not len(self.bgindices) == 0:
-                if 'Splitter.Channel0ROI' in self.md.getEntryNames():
+                if 'Splitter.Channel0ROI*' in self.md.getEntryNames():
                     x0, y0, w, h = self.md['Splitter.Channel0ROI']
                     x0 -= (self.md['Camera.ROIPosX'] - 1)
                     y0 -= (self.md['Camera.ROIPosY'] - 1)
