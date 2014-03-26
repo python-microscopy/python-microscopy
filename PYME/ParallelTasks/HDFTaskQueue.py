@@ -208,8 +208,17 @@ class rwlock(object):
     def releaseWrite(self):
         with self.glock:
             self.numWriters -= 1
+
+class rwlock2(object):
+    def __init__(self):
+        self.glock = threading.Lock()
+        self.numReaders = 0
+        self.numWriters = 0  
         
-tablesLock = rwlock()
+        self.rlock = myLock(self.glock)
+        self.wlock = self.rlock
+        
+tablesLock = rwlock2()
 
 
 class SpoolEvent(tables.IsDescription):

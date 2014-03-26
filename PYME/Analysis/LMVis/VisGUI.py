@@ -113,6 +113,9 @@ class VisGUIFrame(wx.Frame):
 
         self.viewMode = 'points' #one of points, triangles, quads, or voronoi
         self.colData = 't'
+        
+#        if 'PYME_BUGGYOPENGL' in os.environ.keys():
+#            pylab.plot(pylab.randn(10))
 
         self.sh.Execute('from pylab import *')
         self.sh.Execute('from PYME.DSView.dsviewer_npy import View3D')

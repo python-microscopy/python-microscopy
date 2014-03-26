@@ -102,7 +102,7 @@ from PYME.Acquire.Hardware.Piezos import piezo_e709
 #scope.zStage = NikonTi.zDrive()
 #scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
 
-scope.piFoc = piezo_e709.piezo_e709('COM9', 400, 0, True)
+scope.piFoc = piezo_e709.piezo_e709T('COM9', 400, 0, True)
 scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
 
 
@@ -228,7 +228,7 @@ except:
 
 
 #DigiData
-from PYME.Acquire.Hardware import phoxxLaser, cobaltLaser
+from PYME.Acquire.Hardware import phoxxLaser, cobaltLaser, ioslave
 scope.l642 = phoxxLaser.PhoxxLaser('642',portname='COM4')
 scope.CleanupFunctions.append(scope.l642.Close)
 scope.l488 = phoxxLaser.PhoxxLaser('488',portname='COM5')
@@ -236,7 +236,8 @@ scope.CleanupFunctions.append(scope.l488.Close)
 scope.l405 = phoxxLaser.PhoxxLaser('405',portname='COM6')
 scope.CleanupFunctions.append(scope.l405.Close)
 scope.l561 = cobaltLaser.CobaltLaser('561',portname='COM7')
-scope.lasers = [scope.l405,scope.l488,scope.l561, scope.l642]
+scope.lAOM = ioslave.AOMLaser('AOM')
+scope.lasers = [scope.l405,scope.l488,scope.l561, scope.lAOM, scope.l642]
 
 #scope.lasers = [scope.l405,scope.l488, scope.l642]
 #scope.lasers = [scope.l642]
