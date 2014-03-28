@@ -250,6 +250,13 @@ class GaussianFitFactory:
 #        pylab.plot(ret)        
 #        
         return ret
+        
+    def _gFilter2(self, x, y, vals):        
+        x = (x/(1e3*self.metadata.voxelsize.x)).astype('i')
+        y = (y/(1e3*self.metadata.voxelsize.y)).astype('i')
+        
+            
+        return NRFilter(x, y, vals, self.gLUT2)
             
 
     def FindAndFit(self, threshold=2, gui=False):
@@ -412,7 +419,8 @@ class GaussianFitFactory:
                 
                 #residual *= (abs(X_m - res[1::3]) > 50)*(abs(Y_m - res[2::3]) > 50)
                 #correlate residuals with PSF
-                resf = self._gFilter(X_m, Y_m, residual/s_m)
+                #resf = self._gFilter(X_m, Y_m, residual/s_m)
+                resf = self._gFilter2(X_m, Y_m, residual/s_m)
                 
                 resmax = (resf).max()
                 
@@ -455,7 +463,7 @@ class GaussianFitFactory:
                     nchi2 = ((residual/s_m)**2).mean()
                     #resmax = (residual/s_m).max()
                     
-                    resf = self._gFilter(X_m, Y_m, residual/s_m)
+                    resf = self._gFilter2(X_m, Y_m, residual/s_m)
                     resmax = (resf).max()
                     
                     if gui ==2:

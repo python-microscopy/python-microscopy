@@ -1983,8 +1983,8 @@ static PyObject * NRFilter(PyObject *self, PyObject *args, PyObject *keywds)
 	
 		for (j = 0; j < lenx; j++)
 	  	{
-	  		dx = xi - pXvals[j];
-          	dy = yi = pYvals[j];
+	  	dx = xi - pXvals[j];
+          	dy = yi - pYvals[j];
 
           	r2 = dx*dx + dy*dy;
           	r2 = MIN(r2, (lut_size-1));
