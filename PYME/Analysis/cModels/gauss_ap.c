@@ -10,37 +10,7 @@
 ##################
  */
 
-#include "Python.h"
-#include <complex.h>
-#include <math.h>
-#include "numpy/arrayobject.h"
-#include <stdio.h>
-
-#define MIN(a, b) ((a<b) ? a : b) 
-#define MAX(a, b) ((a>b) ? a : b)
-
-#define LITTLEENDIAN
-
-
-//Really dodgy fast approximation to exponential
-static union
-{
-  double d;
-  struct
-  {
-
-#ifdef LITTLEENDIAN
-    int j, i;
-#else
-    int i, j;
-#endif
-  } n;
-} eco;
-
-#define EXP_A (1048576/M_LN2) /* use 1512775 for integer version */
-#define EXP_C 60801 /* see text for choice of c values */
-#define EXP(y) (eco.n.i = EXP_A*(y) + (1072693248 - EXP_C), eco.d)
-//end eponential approx
+#include "gapp.h"
 
 //normalisation factor for 3D Gaussian
 #define TDNORM 15.75
@@ -1921,6 +1891,127 @@ static PyObject * genGaussAF(PyObject *self, PyObject *args, PyObject *keywds)
     return (PyObject*) out;
 }
 
+static PyObject * NRFilter(PyObject *self, PyObject *args, PyObject *keywds) 
+{
+    double *res = 0;  
+    int i,j,lenx, numP, lut_size; 
+    npy_intp size[1];
+    
+    PyObject *oX =0;
+    PyObject *oY=0;
+    PyObject *oI=0;
+    PyObject *oLUT=0;
+    
+    PyArrayObject* Xvals;
+    PyArrayObject* Yvals;
+    PyArrayObject* Ivals;
+    PyArrayObject* LUTvals;
+    
+    PyArrayObject* out;
+    
+    int *pXvals;
+    int *pYvals;
+    double *pIvals;
+    double *pLUTvals;
+
+    int xi, yi, dx, dy, r2;
+      
+    
+    static char *kwlist[] = {"X", "Y", "I","LUT", NULL};
+    
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "OOOO", kwlist, 
+         &oX, &oY, &oI, &oLUT))
+        return NULL; 
+
+    /* Get values into a cormat we understand */ 
+        
+    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, PyArray_INT, 0, 1);
+    if (Xvals == NULL) 
+    {
+      PyErr_Format(PyExc_RuntimeError, "Bad X");   
+      goto abort;
+    }
+    
+    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, PyArray_INT, 0, 1);
+    if (Yvals == NULL)
+    {
+        PyErr_Format(PyExc_RuntimeError, "Bad Y");
+        goto abort;
+    }
+    
+    Ivals = (PyArrayObject *) PyArray_ContiguousFromObject(oI, PyArray_DOUBLE, 0, 1);
+    if (Ivals == NULL)
+    {
+        PyErr_Format(PyExc_RuntimeError, "Bad I");
+        goto abort;
+    }
+
+    LUTvals = (PyArrayObject *) PyArray_ContiguousFromObject(oLUT, PyArray_DOUBLE, 0, 1);
+    if (LUTvals == NULL)
+    {
+        PyErr_Format(PyExc_RuntimeError, "Bad LUT");
+        goto abort;
+    }    
+    
+    pXvals = (int*)Xvals->data;
+    pYvals = (int*)Yvals->data;
+    pIvals = (double*)Ivals->data;
+    pLUTvals = (double*)LUTvals->data;
+    
+    
+    size[0] = PyArray_Size((PyObject*)Xvals);
+    lenx = size[0];
+
+    lut_size = PyArray_Size((PyObject*)LUTvals);
+    
+    /* Allocate memory for result */
+    out = (PyArrayObject*) PyArray_New(&PyArray_Type, 1,size,NPY_DOUBLE, NULL, NULL, 0, 1, NULL);
+    if (out == NULL)
+    {
+        PyErr_Format(PyExc_RuntimeError, "Failed to allocate memory");
+        goto abort;    
+    }
+    
+    
+    res = (double*) PyArray_DATA(out);
+        
+    for (i = 0; i < lenx; i++)
+      {
+      	*res = 0;
+      	xi = pXvals[i];
+      	yi = pYvals[i];            
+	
+		for (j = 0; j < lenx; j++)
+	  	{
+	  	dx = xi - pXvals[j];
+          	dy = yi - pYvals[j];
+
+          	r2 = dx*dx + dy*dy;
+          	r2 = MIN(r2, (lut_size-1));
+        	
+	    	*res += pLUTvals[r2]*pIvals[j];	    
+	  	}
+        
+        res++;
+      }
+    
+    
+    Py_XDECREF(Xvals);
+    Py_XDECREF(Yvals);
+    Py_XDECREF(Ivals);
+    Py_XDECREF(LUTvals);
+    
+    return (PyObject*) out;
+
+abort:
+    Py_XDECREF(Xvals);
+    Py_XDECREF(Yvals);
+    Py_XDECREF(Ivals);
+    Py_XDECREF(LUTvals);
+    
+    return NULL;
+}
+
 static PyMethodDef gauss_appMethods[] = {
     {"genGauss",  genGauss, METH_VARARGS | METH_KEYWORDS,
     "Generate a (fast) Gaussian.\n. Arguments are: 'X', 'Y', 'A'=1,'x0'=0, 'y0'=0,sigma=0,b=0,b_x=0,b_y=0"},
@@ -1950,6 +2041,8 @@ static PyMethodDef gauss_appMethods[] = {
     "Generate a double Gaussian in pre-allocated memory.\n. Arguments are: out, X, Y, X1, Y1, A=1, A1=1,x0=0, y0=0,sigma=0, b=0,b_x=0,b_y=0"},
      {"splitGaussWeightedMisfit",  splitGaussArrayPVecWeightedMisfit, METH_VARARGS | METH_KEYWORDS,
     "Generate a double Gaussian in pre-allocated memory.\n. Arguments are: out, X, Y, X1, Y1, A=1, A1=1,x0=0, y0=0,sigma=0, b=0,b_x=0,b_y=0"},
+    {"NRFilter",  NRFilter, METH_VARARGS | METH_KEYWORDS,
+    "Perform a filter on an X, Y, I dataset using an R^2 dependant LUT"},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 

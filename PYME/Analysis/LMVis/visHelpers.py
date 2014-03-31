@@ -423,10 +423,13 @@ def rendJitTri(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1):
         scipy.random.seed()
 
         Imc = scipy.rand(len(x)) < mcp
-        if type(jsig) == numpy.ndarray:
-            #print jsig.shape, Imc.shape
-            jsig = jsig[Imc]
-        T = delaunay.Triangulation(x[Imc] +  jsig*scipy.randn(Imc.sum()), y[Imc] +  jsig*scipy.randn(Imc.sum()))
+        #print len(jsig), type(jsig)
+        if isinstance(jsig, numpy.ndarray):
+            print jsig.shape, Imc.shape
+            jsig2 = jsig[Imc]
+        else:
+            jsig2 - float(jsig)
+        T = delaunay.Triangulation(x[Imc] +  jsig2*scipy.randn(Imc.sum()), y[Imc] +  jsig2*scipy.randn(Imc.sum()))
 
         #return T
         rendTri(T, imageBounds, pixelSize, im=im)
