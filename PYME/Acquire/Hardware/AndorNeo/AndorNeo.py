@@ -47,8 +47,8 @@ class AndorBase(SDK3Camera):
                  (1920,1080,537,337),
                  (1392,1040,561,601),
                  (528,512,825,1033),
-                 (240,256,953,1177),
-                 (144,128,1017,1225)]
+                 (240,256,953,953),
+                 (128,128,961,961)]
     
     SimpleGainModes = {
         'low noise':
@@ -133,9 +133,14 @@ class AndorBase(SDK3Camera):
         # spurious noise filter off by default
         self.SpuriousNoiseFilter.setValue(0)
         self.SensorCooling.setValue(True)
-        self.TemperatureControl.setString('-30.00')
-        #self.PixelReadoutRate.setIndex(1)
-        
+        # note that we apparently cannot set the temperature for the Zyla
+        # it is locked to 0.0
+        # self.TemperatureControl.setString('0.00')
+        # self.PixelReadoutRate.setIndex(1)
+        # need to mark the camera as active so that it can write its metadata
+        # not sure if this is problematic in the Init function when using several cameras
+        self.SetActive()
+
         #set up polling thread        
         self.doPoll = False
         self.pollLoopActive = True
@@ -432,9 +437,9 @@ class AndorBase(SDK3Camera):
 
             # values for readnoise and EpC from Neo sheet for Gain 4
             # should be selected with 11 bit low noise setting
-            mdh.setEntry('Camera.ReadNoise', 1.5)
+            mdh.setEntry('Camera.ReadNoise', 1.1)
             mdh.setEntry('Camera.NoiseFactor', 1)
-            mdh.setEntry('Camera.ElectronsPerCount', 0.65)
+            mdh.setEntry('Camera.ElectronsPerCount', 0.28)
             #mdh.setEntry('Camera.ADOffset', self.noiseMaker.ADOffset)
     
             #mdh.setEntry('Simulation.Fluorophores', self.fluors.fl)
