@@ -143,6 +143,49 @@ def genShiftVectorFieldLinear(x,y, dx, dy, err_sx, err_sy):
     #dy = spy.ev(X.ravel(),Y.ravel()).reshape(X.shape)
 
     return spx, spy
+    
+def robustLin3Lhood(p, x, y, dx, var=1):
+    '''p is parameter vector, x and y as expected, and var the variance of the 
+    y value. We use a t-distribution as our likelihood as it's long tails will
+    not overly weight outliers.'''
+    mx, my, mx2, my2, mxy, mxy2, mx2y, mx3, x0 = p
+    err = (dx - (mx*x + my*y + mx2*x*x +my2*y*y + mxy*x*y + mxy2*x*y*y + mx2y*x*x*y + mx3*x*x*x + x0))/var
+    return -scipy.stats.t.logpdf(err, 1).sum()
+    
+class lin3Model(object):
+    sc = 1./18e3
+    def __init__(self, x, y, dx, var=1):
+        x = x*self.sc
+        y = y*self.sc
+        #do a simple linear fit to estimate start parameters
+        pstart = linalg.lstsq(np.vstack([x, y, x*x, y*y, x*y, x*y*y, x*x*y,x*x*x, np.ones_like(x)]).T, dx)[0]
+        print pstart
+        
+        
+        #now do a maximum likelihood fit with our robust lhood function
+        self.mx, self.my, self.mx2, self.my2, self.mxy, self.mxy2, self.mx2y,self.mx3, self.x0 = fmin(robustLin3Lhood, pstart, args=(x, y,dx, var))
+        
+        #self.axis = axis
+        
+    def ev(self, x, y):
+        '''Mimic a bivariate spline object. Since we're assuming it is linear 
+        along one axis, we use the axis that was defined when fitting the model'''
+        x = x*self.sc
+        y = y*self.sc
+        return self.mx*x +self.my*y + self.mx2*x*x + self.my2*y*y + self.mxy*x*y + self.mxy2*x*y*y + self.mx2y*x*x*y + self.mx3*x*x*x  + self.x0
+            
+def genShiftVectorFieldQuad(x,y, dx, dy, err_sx, err_sy):
+    '''interpolates shift vectors using smoothing splines'''
+
+    spx = lin3Model(x, y, dx, err_sx**2)
+    spy = lin3Model(x, y, dy, err_sy**2)
+
+    #X, Y = np.meshgrid(np.arange(0, 512*70, 100), np.arange(0, 256*70, 100))
+
+    #dx = spx.ev(X.ravel(),Y.ravel()).reshape(X.shape)
+    #dy = spy.ev(X.ravel(),Y.ravel()).reshape(X.shape)
+
+    return spx, spy
 
 
 def genRGBImage(g,r, gsat = 1, rsat= 1):

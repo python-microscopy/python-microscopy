@@ -40,7 +40,7 @@ class ImportTextDialog(wx.Dialog):
                             't':'time [frames]',
                             'sig':'std. deviation of Gaussian [nm]',
                             'error_x':'fit error in x direction [nm]'}
-    niceVariables = {}
+    niceVariables = {'error_y':'fit error in y direction [nm]'}
 
     def __init__(self, parent, textFileName):
         wx.Dialog.__init__(self, parent, title='Import data from text file')
@@ -60,6 +60,12 @@ class ImportTextDialog(wx.Dialog):
 
         self.stRecommendedNotPresent = wx.StaticText(self, -1, 'Recommended variables not yet defined:\n')
         sizer2.Add(self.stRecommendedNotPresent, 1, wx.ALL, 5)
+        sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL|wx.EXPAND, 5)
+        
+        sizer2 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer2.Add(wx.StaticText(self, -1, 'Pixel size [nm]:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+        self.tPixelSize = wx.TextCtrl(self, -1, '1.0')
+        sizer2.Add(self.tPixelSize, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
         sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL|wx.EXPAND, 5)
         
         btSizer = wx.StdDialogButtonSizer()
@@ -159,7 +165,7 @@ class ImportTextDialog(wx.Dialog):
             id = wx.NewId()
             self.comboIDs.append(id)
 
-            cb = wx.ComboBox(self.scrollW, id, size=(120, -1), choices=[cn]+ self.requiredVariables.keys() +self.recommendedVariables.keys())
+            cb = wx.ComboBox(self.scrollW, id, size=(120, -1), choices=[cn]+ self.requiredVariables.keys() +self.recommendedVariables.keys() + self.niceVariables.keys())
             self.combos.append(cb)
             cb.SetSelection(0)
 
@@ -191,6 +197,9 @@ class ImportTextDialog(wx.Dialog):
         
     def GetNumberComments(self):
         return self.numCommentLines
+        
+    def GetPixelSize(self):
+        return float(self.tPixelSize.GetValue())
 
 
 class ImportMatDialog(wx.Dialog):

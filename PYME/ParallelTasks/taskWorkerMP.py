@@ -47,6 +47,9 @@ ns=Pyro.naming.NameServerLocator().getNS()
 #tq = Pyro.core.getProxyForURI("PYRONAME://" + taskQueueName)
 
 procName = compName + ' - PID:%d' % os.getpid()
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger('')
 
 serverFails = {}
 
@@ -95,7 +98,7 @@ while 1:
                         pass
         except Exception:
             import traceback
-            traceback.print_exc()
+            logger.exception(traceback.format_exc())
         
             #pass
         

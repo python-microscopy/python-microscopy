@@ -118,7 +118,7 @@ class ObjectIdentifier(list):
         if not filterRadiusHighpass == filtRadHighpass:
             #recompute weights for different filter size
             filtRadHighpass = filterRadiusHighpass
-            weightsHighpass = calc_guass_weights(filtRadHighpass)
+            weightsHighpass = calc_gauss_weights(filtRadHighpass)
 
 
     def __FilterData2D(self,data):
@@ -146,11 +146,13 @@ class ObjectIdentifier(list):
     def __FilterDataFast(self):
         #project data
         if len(self.data.shape) == 2: #if already 2D, do nothing
-            projData = self.data
+            #projData = self.data
+            return self.__FilterData2D(self.data)
         else:
-            projData = self.data.max(2) 
+            #projData = self.data.max(2) 
+            return sum([self.__FilterData2D(self.data[:,:,i]) for i in range(self.data.shape[2])])
 
-        return self.__FilterData2D(projData)
+        #return self.__FilterData2D(projData)
         
 
     def __FilterDataGood(self):
@@ -385,6 +387,9 @@ class ObjectIdentifier(list):
 
        # if splitter:
        #     ys = ys + (ys > im.shape[1]/2)*(im.shape[1] - 2*ys)
+
+        if splitter and (len(xs) > 0):
+            xs, ys = splitter(xs, ys)
 
         xs, ys = self.__Debounce(xs, ys, debounceRadius)
 

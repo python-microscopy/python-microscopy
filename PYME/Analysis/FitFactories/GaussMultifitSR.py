@@ -167,15 +167,92 @@ class GaussianFitFactory:
             self.solver = FitModelWeightedJac
         else: 
             self.solver = FitModelWeighted
+            
+        vx = 1e3*self.metadata.voxelsize.x
+        vy = 1e3*self.metadata.voxelsize.y
         
         #only recalculate grid if existing one doesn't match
         if not self.X or not self.X.shape == self.data.shape[:2]:
              X,  Y = np.mgrid[0:self.data.shape[0], 0:self.data.shape[1]]
-             self.X = 1e3*self.metadata.voxelsize.x*X
-             self.Y = 1e3*self.metadata.voxelsize.y*Y
+             self.X = vx*X
+             self.Y = vy*Y
+             
+        u,v = np.mgrid[0:10., 0:10]
+        u = vx*u
+        v = vy*v
+        
+        gSig = float(self.metadata.getOrDefault('Analysis.PSFSigma', 130.))
+        
+        self.gLUT = (vx*vy/(2*np.pi*gSig*gSig))*np.exp(-(u*u + v*v)/(2*gSig*gSig))
+        self.gLUT2 = (vx*vy/(2*np.pi*gSig*gSig))*np.exp(-(vx*vx*np.arange(33.))/(2*gSig*gSig))
+        self.gLUT2[-1] = 0
+        
+    def _gFilter(self, x, y, vals):
+        ret = 0*vals
+        
+        x = (x/(1e3*self.metadata.voxelsize.x)).astype('i')
+        y = (y/(1e3*self.metadata.voxelsize.y)).astype('i')
+        
+        dx = x[:,None] - x[None,:]
+        #dx = np.minimum(np.abs(x[:,None] - x[None,:]), 9)
+        dy = y[:,None] - y[None,:]
+        #dy = np.minimum(np.abs(y[:,None] - y[None,:]), 9)
+        
+        
+        di = dx*dx + dy*dy
+        di = np.minimum(di, 32)
+        
+        
+        
+        wi = self.gLUT2[di]
+        
+#        import pylab
+        
+#        pylab.figure(figsize=(16, 5))
+#        pylab.subplot(131)
+#        pylab.imshow(dx)
+#        pylab.subplot(132)
+#        
+#        pylab.imshow(di)
+#        pylab.colorbar()
+#        pylab.subplot(133)
+#        pylab.imshow(wi)
+        
+#        dx = np.minimum(np.abs(x[:,None] - x[None,:]), 9)
+#        dy = np.minimum(np.abs(y[:,None] - y[None,:]), 9)
+#        
+#        wi = self.gLUT[dx, dy]
+#        
+#        pylab.figure(figsize=(16, 5))
+#        pylab.subplot(131)
+#        pylab.imshow(dx)
+#        pylab.subplot(132)
+#        
+#        pylab.imshow(dy)
+#        pylab.colorbar()
+#        pylab.subplot(133)
+#        pylab.imshow(wi)
+        
+        ret = (vals[:,None]*wi).sum(0)
+        
+#        pylab.figure()
+#        pylab.plot(vals)
+#        pylab.plot(ret)
+#        
+#        ret = 0*vals
+#        
+#        for i in range(len(x)):
+#            dx = np.minimum(np.abs(x - x[i]), 9).astype('i')
+#            dy = np.minimum(np.abs(y - y[i]), 9).astype('i')
+#                    
+#            ret[i] =  (vals*self.gLUT[dx, dy]).sum()
+#
+#        pylab.plot(ret)        
+#        
+        return ret
             
 
-    def FindAndFit(self, threshold=2):
+    def FindAndFit(self, threshold=2, gui=False):
         #average in z
         dataMean = self.data.mean(2) - self.metadata.Camera.ADOffset
 
@@ -256,6 +333,13 @@ class GaussianFitFactory:
         #labels = (labels*mask).astype('int32')
             
         #objSlices = ndimage.find_objects(labels)
+            
+        if gui:
+            pylab.imshow(dataMean.T,interpolation='nearest')
+            pylab.figure()
+            pylab.imshow(mask.T, interpolation='nearest')
+            #pylab.figure()
+            
         
         if nlabels == 0:
             #the frame is empty
@@ -265,7 +349,32 @@ class GaussianFitFactory:
         #nTotEvents = nlabels
         allEvents = []
         
-        gSig = self.metadata.getOrDefault('Analysis.PSFSigma', 105.)
+        gSig = self.metadata.getOrDefault('Analysis.PSFSigma', 130.)
+        rMax = self.metadata.getOrDefault('Analysis.ResidualMax', .25)
+        
+        
+        
+        def plotIterate(res, os, residuals, resfilt):
+            pylab.figure(figsize=(20,4))
+            pylab.subplot(141)
+            pylab.imshow(dataMean.T,interpolation='nearest')
+            pylab.contour(mask.T, [0.5], colors=['y'])
+            pylab.plot(res[1::3]/70, res[2::3]/70, 'xr')
+            pylab.subplot(142)
+            md = self.fitfcn(res,self.X.ravel(), self.Y.ravel(), gSig).reshape(dataMean.shape)
+            pylab.imshow(md.T)
+            pylab.subplot(143)
+            #pylab.imshow(((dataMean-md)/sigma).T, interpolation='nearest')
+            rs = np.zeros_like(dataMean)
+            rs[os] = residuals
+            pylab.imshow(rs.T)
+            #pylab.colorbar()
+            pylab.subplot(144)
+            rs = np.zeros_like(dataMean)
+            rs[os] = resfilt
+            pylab.imshow(rs.T)
+            pylab.colorbar()
+            
         
         #loop over objects
         for i in range(nlabels):
@@ -299,7 +408,17 @@ class GaussianFitFactory:
                 residual = d_m - self.fitfcn(res, X_m, Y_m, gSig)
                 
                 nchi2 = ((residual/s_m)**2).mean()
-                resmax = (residual/s_m).max()
+                
+                
+                #residual *= (abs(X_m - res[1::3]) > 50)*(abs(Y_m - res[2::3]) > 50)
+                #correlate residuals with PSF
+                resf = self._gFilter(X_m, Y_m, residual/s_m)
+                
+                resmax = (resf).max()
+                
+                
+                if gui ==2:
+                   plotIterate(res, os, residual/s_m, resf)
                 
                 #resi = 0*dataMean
                 
@@ -310,28 +429,44 @@ class GaussianFitFactory:
                 
                 #print nchi2, resmax
         
-                 #prevent an infinite loop here      
+                #prevent an infinite loop here      
+        
                 
-                while resmax > 2 and nEvents < 10 and d_m.size > (3*(nEvents+1)):    
+                while resmax > rMax and nEvents < 10 and d_m.size > (3*(nEvents+1)):    
                     nEvents += 1
                     #print nEvents
                     
                     resI = np.argmax(residual/s_m)
+                    resI = np.argmax(resf)
                     
                     startParameters = np.hstack((res,  np.array([residual[resI], X_m[resI], Y_m[resI]])))
                     
-                    (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, d_m, s_m, X_m, Y_m, gSig)
+                    (res_n, cov_x_n, infodict_n, mesg_n, resCode_n) = self.solver(self.fitfcn, startParameters, d_m, s_m, X_m, Y_m, gSig)
+                    
+                    #test for convergence - no convergence = abandon and unwind back to previous
+                    if cov_x_n == None:
+                        nEvents -= 1
+                        break
+                    else: # fit converged - continue
+                        res, cov_x, infodict, mesg, resCode = (res_n, cov_x_n, infodict_n, mesg_n, resCode_n)
                         
                     residual = d_m - self.fitfcn(res, X_m, Y_m, gSig)
                     
                     nchi2 = ((residual/s_m)**2).mean()
-                    resmax = (residual/s_m).max()
+                    #resmax = (residual/s_m).max()
+                    
+                    resf = self._gFilter(X_m, Y_m, residual/s_m)
+                    resmax = (resf).max()
+                    
+                    if gui ==2:
+                        plotIterate(res, os, residual/s_m, resf)
+                        print nEvents, nchi2, resmax, resCode#, cov_x
                     
                     #resi = 0*dataMean
                     #resi[os][:] = residual/s_m
                     #resmax = ndimage.uniform_filter(resi).max()
                     
-                    #print nchi2, resmax
+                    
                 
             
     

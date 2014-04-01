@@ -230,6 +230,8 @@ class Pipeline:
                         contains the data.
             SkipRows:   Number of header rows to skip for txt file data
             
+            PixelSize:  Pixel size if not in nm
+            
         '''
         
         #close any files we had open previously
@@ -298,7 +300,22 @@ class Pipeline:
             self.selectedDataSource = ds
             self.dataSources.append(ds)
             
+        
+            
 
+        
+            
+            
+        #wrap the data source with a mapping so we can fiddle with things
+        #e.g. combining z position and focus            
+        self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource)
+        self.dataSources.append(self.selectedDataSource)
+        
+        if 'PixelSize' in kwargs.keys():
+            self.selectedDataSource.pixelSize = kwargs['PixelSize']
+            self.selectedDataSource.setMapping('x', 'x*pixelSize')
+            self.selectedDataSource.setMapping('y', 'y*pixelSize')
+            
         #Retrieve or estimate image bounds
         if 'Camera.ROIWidth' in self.mdh.getEntryNames():
             x0 = 0
@@ -308,17 +325,16 @@ class Pipeline:
             y1 = self.mdh.getEntry('Camera.ROIHeight')*1e3*self.mdh.getEntry('voxelsize.y')
 
             if 'Splitter' in self.mdh.getEntry('Analysis.FitModule'):
-                y1 = y1/2
+                if 'Splitter.Channel0ROI' in self.mdh.getEntryNames():
+                    rx0, ry0, rw, rh = self.mdh['Splitter.Channel0ROI']
+                    x1 = rw*1e3*self.mdh.getEntry('voxelsize.x')
+                    x1 = rh*1e3*self.mdh.getEntry('voxelsize.x')
+                else:
+                    y1 = y1/2
 
             self.imageBounds = ImageBounds(x0, y0, x1, y1)
         else:
             self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)        
-            
-            
-        #wrap the data source with a mapping so we can fiddle with things
-        #e.g. combining z position and focus            
-        self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource)
-        self.dataSources.append(self.selectedDataSource)
             
         #extract information from any events
         self._processEvents()

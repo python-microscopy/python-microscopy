@@ -49,7 +49,11 @@ class PiezoSliders(wx.Panel):
             #else:
             #    sl = wx.Slider(self.panel_1, -1, 100*p[0].GetPos(p[1]), 100*p[0].GetMin(p[1]), 100*p[0].GetMax(p[1]), size=wx.Size(300,-1), style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
             #sl.SetSize((800,20))
-            sLab = wx.StaticBox(self, -1, u'%s - %2.2f \u03BCm' % (p[2], p[0].GetPos(p[1])))
+            if 'units' in dir(p[0]):
+                unit = p[0].units
+            else:
+                unit = u'\u03BCm'
+            sLab = wx.StaticBox(self, -1, u'%s - %2.4f %s' % (p[2], p[0].GetPos(p[1]), unit))
 
 #            if 'minorTick' in dir(p):
 #                sl.SetTickFreq(100, p.minorTick)
@@ -95,17 +99,23 @@ class PiezoSliders(wx.Panel):
 
     def update(self):
         for ind in range(len(self.piezos)):
+            p = self.piezos[ind]
+            if 'units' in dir(p[0]):
+                unit = p[0].units
+            else:
+                unit = u'\u03BCm'
+                
             if 'lastPos' in dir(self.piezos[ind]):
                 self.sliders[ind].SetValue(100*self.piezos[ind][0].lastPos)
-                self.sliderLabels[ind].SetLabel(u'%s - %2.2f \u03BCm' % (self.piezos[ind][2],self.piezos[ind][0].lastPos))
+                self.sliderLabels[ind].SetLabel(u'%s - %2.4f %s' % (self.piezos[ind][2],self.piezos[ind][0].lastPos, unit))
             elif 'GetLastPos' in dir(self.piezos[ind][0]):
                 lp = self.piezos[ind][0].GetLastPos(self.piezos[ind][1])
                 self.sliders[ind].SetValue(100*lp)
-                self.sliderLabels[ind].SetLabel(u'%s - %2.2f \u03BCm' % (self.piezos[ind][2],lp))
+                self.sliderLabels[ind].SetLabel(u'%s - %2.4f %s' % (self.piezos[ind][2],lp, unit))
             else:
                 pos = self.piezos[ind][0].GetPos(self.piezos[ind][1])
                 self.sliders[ind].SetValue(100*pos)
-                self.sliderLabels[ind].SetLabel(u'%s - %2.2f \u03BCm' % (self.piezos[ind][2],pos))
+                self.sliderLabels[ind].SetLabel(u'%s - %2.4f %s' % (self.piezos[ind][2],pos, unit))
                 
     	    self.sliders[ind].SetMin(100*self.piezos[ind][0].GetMin(self.piezos[ind][1]))
     	    self.sliders[ind].SetMax(100*self.piezos[ind][0].GetMax(self.piezos[ind][1]))

@@ -50,7 +50,7 @@ MAXCHUNKSIZE = 100 #allow chunk size to be improved to allow better caching
 #get away with locking separately for each file (or maybe not locking at all -
 #is linux hdf5 threadsafe?)
 
-tablesLock = threading.Lock()
+#tablesLock = threading.Lock()
 
 #class TaskWatcher(threading.Thread):
 #	def __init__(self, tQueue):
@@ -103,8 +103,8 @@ class dataBuffer: #buffer our io to avoid decompressing multiple times
             return sl
 
 class myLock:
-    def __init__(self):
-        self.lock = threading.Lock()
+    def __init__(self, lock = threading.Lock()):
+        self.lock = lock
         self.owner = None
         self.oowner = None
         self.aqtime = 0
@@ -126,6 +126,7 @@ class myLock:
 
     def release(self):
         #print 'Released Lock'
+        #logging.info(self.owner + ' released lock')
         self.lock.release()
         self.oowner = self.owner
         self.owner = None
@@ -136,7 +137,89 @@ class myLock:
     def __exit__(self, type, value, traceback):
         self.release()
 
-tablesLock = myLock()
+#tablesLock = myLock()
+
+class readLock(object):
+    def __init__(self, rwlock):
+        self.rwlock = rwlock       
+
+    def acquire(self):
+        self.rwlock.acquireRead()
+
+    def release(self):
+        self.rwlock.releaseRead()
+        
+    def __enter__(self):
+        self.acquire()
+        
+    def __exit__(self, type, value, traceback):
+        self.release()
+        
+class writeLock(readLock):
+    def acquire(self):
+        self.rwlock.acquireWrite()
+
+    def release(self):
+        self.rwlock.releaseWrite()
+        
+
+class rwlock(object):
+    def __init__(self):
+        self.glock = threading.Lock()
+        self.numReaders = 0
+        self.numWriters = 0  
+        
+        self.rlock = myLock(readLock(self))
+        self.wlock = myLock(writeLock(self))
+        
+        
+    def addReader(self):
+        suc = False
+        with self.glock:
+            if (self.numWriters == 0) and (self.numReaders == 0):
+                self.numReaders += 1
+                suc = True
+        
+        return suc
+        
+    def acquireRead(self):
+        while not self.addReader():
+            time.sleep(.001)
+        #logging.info('Acquired read lock - nr, nw = %d, %d' % (self.numReaders, self.numWriters))
+        
+    def releaseRead(self):
+        with self.glock:
+            self.numReaders -= 1
+            
+    def addWriter(self):
+        suc = False
+        with self.glock:
+            if (self.numWriters == 0) and (self.numReaders == 0):
+                self.numWriters += 1
+                suc = True
+        
+        return suc
+        
+    def acquireWrite(self):
+        while not self.addWriter():
+            time.sleep(.001)
+        #logging.info('Acquired write lock - nr, nw = %d, %d' % (self.numReaders, self.numWriters))
+        
+    def releaseWrite(self):
+        with self.glock:
+            self.numWriters -= 1
+
+class rwlock2(object):
+    def __init__(self):
+        self.glock = threading.Lock()
+        self.numReaders = 0
+        self.numWriters = 0  
+        
+        self.rlock = myLock(self.glock)
+        self.wlock = self.rlock
+        
+tablesLock = rwlock2()
+
 
 class SpoolEvent(tables.IsDescription):
    EventName = tables.StringCol(32)
@@ -172,7 +255,7 @@ class HDFResultsTaskQueue(TaskQueue):
         self.resultsMDH = MetaDataHandler.HDFMDHandler(self.h5ResultsFile)
         
         logging.info('Creating results events table')
-        with self.fileResultsLock:
+        with self.fileResultsLock.wlock:
             self.resultsEvents = self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'Events', SpoolEvent,filters=tables.Filters(complevel=5, shuffle=True))
         
         
@@ -194,25 +277,25 @@ class HDFResultsTaskQueue(TaskQueue):
         return None
 
     def setQueueMetaData(self, fieldName, value):
-        with self.fileResultsLock:
+        with self.fileResultsLock.wlock:
             self.resultsMDH.setEntry(fieldName, value)
         
 
     def getQueueMetaData(self, fieldName):
         res  = None
-        with self.fileResultsLock:
+        with self.fileResultsLock.rlock:
             res = self.resultsMDH.getEntry(fieldName)
         
         return res
 
     def addQueueEvents(self, events):
-        with self.fileResultsLock:
+        with self.fileResultsLock.wlock:
             self.resultsEvents.append(events)
 
 
     def getQueueMetaDataKeys(self):
         res = None
-        with self.fileResultsLock:
+        with self.fileResultsLock.rlock:
             res = self.resultsMDH.getEntryNames()
         
         return res
@@ -313,7 +396,7 @@ class HDFResultsTaskQueue(TaskQueue):
             
         #print len(results), len(driftResults)
 
-        with self.fileResultsLock: #get a lock
+        with self.fileResultsLock.wlock: #get a lock
             
             if not len(results) == 0:
                 #print res.results, res.results == []
@@ -346,7 +429,7 @@ class HDFResultsTaskQueue(TaskQueue):
                         self.openTasks.append(it.index)
                         self.tasksInProgress.remove(it)
         
-        with self.fileResultsLock: #get a lock
+        with self.fileResultsLock.wlock: #get a lock
             self.h5ResultsFile.flush()
 
        
@@ -356,7 +439,7 @@ class HDFResultsTaskQueue(TaskQueue):
         '''Get data, defined by fieldName and potntially additional arguments,  ascociated with queue'''
         if fieldName == 'FitResults':
             startingAt, = args
-            with self.fileResultsLock:
+            with self.fileResultsLock.rlock:
                 if self.h5ResultsFile.__contains__('/FitResults'):
                     res = self.h5ResultsFile.root.FitResults[startingAt:]
                 else:
@@ -455,7 +538,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         #self.openTasks.append(task)
         #print 'posting tasks not implemented yet'
         if self.acceptNewTasks:
-            with self.dataFileLock:
+            with self.dataFileLock.wlock:
                 self.imageData.append(task)
                 self.h5DataFile.flush()
                 self.numSlices = self.imageData.shape[0]
@@ -471,7 +554,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
     def postTasks(self,tasks):
         #self.openTasks += tasks
         if self.acceptNewTasks:
-            with self.dataFileLock:
+            with self.dataFileLock.wlock:
                 #t1 = time.clock()
                 #t_1 = 0
                 #t_2 = 0
@@ -521,7 +604,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
             time.sleep(0.01)
 
         if self.metaDataStale:
-            with self.dataFileLock:
+            with self.dataFileLock.rlock:
                 self.metaData = MetaDataHandler.NestedClassMDHandler(self.resultsMDH)
                 self.metaDataStale = False
             
@@ -565,7 +648,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
             time.sleep(0.01)
 
         if self.metaDataStale:
-            with self.dataFileLock:
+            with self.dataFileLock.rlock:
                 self.metaData = MetaDataHandler.NestedClassMDHandler(self.resultsMDH)
                 self.metaDataStale = False
             
@@ -580,8 +663,13 @@ class HDFTaskQueue(HDFResultsTaskQueue):
 
 
         tasks = []
+        
+        if not 'Analysis.ChunkSize' in self.metaData.getEntryNames():
+            cs = min(max(CHUNKSIZE, min(MAXCHUNKSIZE, len(self.openTasks))),len(self.openTasks))
+        else:
+            cs = min(self.metaData['Analysis.ChunkSize'], len(self.openTasks))
 
-        for i in range(min(max(CHUNKSIZE, min(MAXCHUNKSIZE, len(self.openTasks))),len(self.openTasks))):
+        for i in range(cs):
 
             taskNum = self.openTasks.pop(self.fTaskToPop(workerN, NWorkers, len(self.openTasks)))
 
@@ -615,7 +703,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         self.h5ResultsFile.close()
 
     def setQueueMetaData(self, fieldName, value):
-        with self.dataFileLock:
+        with self.dataFileLock.wlock:
             self.dataMDH.setEntry(fieldName, value)
         
         HDFResultsTaskQueue.setQueueMetaData(self, fieldName, value)
@@ -624,13 +712,13 @@ class HDFTaskQueue(HDFResultsTaskQueue):
     def getQueueData(self, fieldName, *args):
         '''Get data, defined by fieldName and potntially additional arguments,  ascociated with queue'''
         if fieldName == 'ImageShape':
-            with self.dataFileLock:
+            with self.dataFileLock.rlock:
                 res = self.h5DataFile.root.ImageData.shape[1:]
             
             return res
         elif fieldName == 'ImageData':
             sliceNum, = args
-            with self.dataFileLock:
+            with self.dataFileLock.rlock:
                 res = self.h5DataFile.root.ImageData[sliceNum, :,:]
             
             return res
@@ -642,7 +730,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
             #return res
             return self.numSlices
         elif fieldName == 'Events':
-            with self.dataFileLock:
+            with self.dataFileLock.rlock:
                 res = self.h5DataFile.root.Events[:]
             
             return res
@@ -674,7 +762,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         ev['EventDescr'] = eventDescr
         ev['Time'] = evtTime
 
-        with self.dataFileLock:
+        with self.dataFileLock.wlock:
             ev.append()
             self.events.flush()
         
@@ -685,7 +773,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         ev['EventDescr'] = eventDescr
         ev['Time'] = evtTime
 
-        with self.fileResultsLock:
+        with self.fileResultsLock.wlock:
         #print len(self.events)
             ev.append()
             self.resultsEvents.flush()
