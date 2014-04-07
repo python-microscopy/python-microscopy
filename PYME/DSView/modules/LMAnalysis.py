@@ -194,6 +194,20 @@ class LMAnalyser:
 
     def GetStatusText(self):
         return 'Frames Analysed: %d    Events detected: %d' % (self.numAnalysed, self.numEvents)
+        
+    def _populateCustomAnalysisPanel(self, pan, vsizer):
+        try:
+            fitMod = self.cFitType.GetStringSelection()
+            fm = __import__('PYME.Analysis.FitFactories.' + fitMod, fromlist=['PYME', 'Analysis', 'FitFactories'])
+            
+            #vsizer = wx.BoxSizer(wx.VERTICAL)
+            for param in fm.PARAMETERS:
+                pg = param.createGUI(pan, self.image.mdh)
+                vsizer.Add(pg, 0,wx.BOTTOM|wx.EXPAND, 10)
+            vsizer.Fit(pan)
+                
+        except ValueError:
+            pass
 
     def GenAnalysisPanel(self, _pnl):
 #        item = _pnl.AddFoldPanel("Analysis", collapsed=False,
@@ -338,6 +352,15 @@ class LMAnalyser:
 
         pan = wx.Panel(item, -1)
         vsizer = wx.BoxSizer(wx.VERTICAL)
+        pan.SetSizer(vsizer)
+
+        self._populateCustomAnalysisPanel(pan, vsizer)        
+        
+        #vsizer.Fit(pan)
+        item.AddNewElement(pan)
+
+        pan = wx.Panel(item, -1)
+        vsizer = wx.BoxSizer(wx.VERTICAL)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -415,6 +438,18 @@ class LMAnalyser:
             return True
         else:
             return False
+            
+    def SetMDItems(self):
+        try:
+            fitMod = self.cFitType.GetStringSelection()
+            fm = __import__('PYME.Analysis.FitFactories.' + fitMod, fromlist=['PYME', 'Analysis', 'FitFactories'])
+            
+            for param in fm.PARAMETERS:
+                param.retrieveValue(self.image.mdh)
+                
+        except ValueError:
+            pass
+        
 
 
     def OnGo(self, event):

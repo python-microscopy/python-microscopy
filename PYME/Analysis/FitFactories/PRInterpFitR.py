@@ -31,6 +31,7 @@ import types
 import cPickle
 
 from PYME.Analysis._fithelpers import *
+from PYME.Analysis.MetaDataEdit import *
 #from PYME.Analysis.FitFactories.zEstimators import astigEstimator
 
 def pickleSlice(slice):
@@ -313,3 +314,4 @@ class PSFFitFactory:
 FitFactory = PSFFitFactory
 FitResult = PSFFitResultR
 FitResultsDType = fresultdtype #only defined if returning data as numarray
+PARAMETERS = [StringParam('Analysis.EstimatorModule', 'Start Estimator:', 'priEstimator')]
