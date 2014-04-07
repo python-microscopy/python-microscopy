@@ -261,25 +261,7 @@ class LMAnalyser:
         hsizer.Add(self.cInterpType, 1,wx.ALIGN_CENTER_VERTICAL, 0)
         vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 7)
 
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        hsizer.Add(wx.StaticText(pan, -1, 'Start at:'), 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-        if 'Protocol.DataStartsAt' in self.image.mdh.getEntryNames():
-            startAt = self.image.mdh.getEntry('Protocol.DataStartsAt')
-        else:
-            startAt = self.do.zp
-        self.tStartAt = wx.TextCtrl(pan, -1, value='%d' % startAt, size=(50, -1))
-
-        hsizer.Add(self.tStartAt, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
-        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 2)
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        hsizer.Add(wx.StaticText(pan, -1, 'Background:'), 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-        self.tBackgroundFrames = wx.TextCtrl(pan, -1, value='-30:0', size=(50, -1))
-
-        hsizer.Add(self.tBackgroundFrames, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
-        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 2)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -348,11 +330,38 @@ class LMAnalyser:
         #_pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, 5, 5)
         item.AddNewElement(pan)
 
-        self.cbDrift = wx.CheckBox(item, -1, 'Estimate Drift')
-        self.cbDrift.SetValue(False)
+#        self.cbDrift = wx.CheckBox(item, -1, 'Estimate Drift')
+#        self.cbDrift.SetValue(False)
+#
+#        #_pnl.AddFoldPanelWindow(item, self.cbDrift, fpb.FPB_ALIGN_WIDTH, 7, 5)
+#        item.AddNewElement(self.cbDrift)
 
-        #_pnl.AddFoldPanelWindow(item, self.cbDrift, fpb.FPB_ALIGN_WIDTH, 7, 5)
-        item.AddNewElement(self.cbDrift)
+        pan = wx.Panel(item, -1)
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        hsizer.Add(wx.StaticText(pan, -1, 'Start at:'), 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+        if 'Protocol.DataStartsAt' in self.image.mdh.getEntryNames():
+            startAt = self.image.mdh.getEntry('Protocol.DataStartsAt')
+        else:
+            startAt = self.do.zp
+        self.tStartAt = wx.TextCtrl(pan, -1, value='%d' % startAt, size=(50, -1))
+
+        hsizer.Add(self.tStartAt, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 2)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        hsizer.Add(wx.StaticText(pan, -1, 'Background:'), 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tBackgroundFrames = wx.TextCtrl(pan, -1, value='-30:0', size=(50, -1))
+
+        hsizer.Add(self.tBackgroundFrames, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 2)
+        
+        pan.SetSizer(vsizer)
+        vsizer.Fit(pan)
+        item.AddNewElement(pan)
 
         self.cbSubtractBackground = wx.CheckBox(item, -1, 'Subtract background in fit')
         self.cbSubtractBackground.SetValue(True)
@@ -411,7 +420,7 @@ class LMAnalyser:
     def OnGo(self, event):
         threshold = float(self.tThreshold.GetValue())
         startAt = int(self.tStartAt.GetValue())
-        driftEst = self.cbDrift.GetValue()
+        driftEst = False#self.cbDrift.GetValue()
         fitMod = self.cFitType.GetStringSelection()
         interpolator = self.interpolators[self.cInterpType.GetSelection()]
         bgFrames = [int(v) for v in self.tBackgroundFrames.GetValue().split(':')]
@@ -516,7 +525,7 @@ class LMAnalyser:
     def OnTest(self, event):
         threshold = float(self.tThreshold.GetValue())
         startAt = int(self.tStartAt.GetValue())
-        driftEst = self.cbDrift.GetValue()
+        driftEst = False#self.cbDrift.GetValue()
         fitMod = self.cFitType.GetStringSelection()
 
         self.image.mdh.setEntry('Analysis.DebounceRadius', int(self.tDebounceRadius.GetValue()))
@@ -540,7 +549,7 @@ class LMAnalyser:
     def OnTestFrame(self, event):
         threshold = float(self.tThreshold.GetValue())
         startAt = int(self.tStartAt.GetValue())
-        driftEst = self.cbDrift.GetValue()
+        driftEst = False#self.cbDrift.GetValue()
         fitMod = self.cFitType.GetStringSelection()
 
         self.image.mdh.setEntry('Analysis.DebounceRadius', int(self.tDebounceRadius.GetValue()))
