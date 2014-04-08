@@ -622,7 +622,11 @@ class LMAnalyser:
 
     def update(self, dsviewer):
         if 'fitInf' in dir(self) and not self.dsviewer.playbackpanel.tPlay.IsRunning():
-            self.fitInf.UpdateDisp(self.view.PointsHitTest())
+            try:
+                self.fitInf.UpdateDisp(self.view.PointsHitTest())
+            except:
+                import traceback
+                print traceback.format_exc()
 
 
     #from fth5.py
