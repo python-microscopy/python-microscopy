@@ -274,3 +274,21 @@ class PSFFitFactory:
 FitFactory = PSFFitFactory
 FitResult = PSFFitResultR
 FitResultsDType = fresultdtype #only defined if returning data as numarray
+
+import PYME.Analysis.MetaDataEdit as mde
+from PYME.Analysis.FitFactories import Interpolators
+#from PYME.Analysis.FitFactories import zEstimators
+
+#set of parameters that this fit needs to know about
+PARAMETERS = [mde.ChoiceParam('Analysis.InterpModule','Interp:','LinearInterpolator', choices=Interpolators.interpolatorList, choiceNames=Interpolators.interpolatorDisplayList),
+              mde.FilenameParam('PSFFilename', 'PSF:', prompt='Please select PSF to use ...', wildcard='PSF Files|*.psf'),
+              #mde.ShiftFieldParam('chroma.ShiftFilename', 'Shifts:', prompt='Please select shiftfield to use', wildcard='Shiftfields|*.sf'),
+              #mde.IntParam('Analysis.DebounceRadius', 'Debounce r:', 4),
+              #mde.FloatParam('Analysis.AxialShift', 'Z Shift [nm]:', 0),
+              #mde.ChoiceParam('Analysis.EstimatorModule', 'Z Start Est:', 'astigEstimator', choices=zEstimators.estimatorList),
+              #mde.ChoiceParam('PRI.Axis', 'PRI Axis:', 'y', choices=['x', 'y'])
+              ]
+              
+
+DESCRIPTION = 'EXP. 3D, single colour fitting for widefield PSF.'
+LONG_DESCRIPTION = 'Experimental 3D, single colour fitting optimized for widefield PSF. Attempts to work around the symmetry problem by starting the fit both above and below the focus, and seeing which converges to the better fit. Uses an interpolated experimental PSF like the other Interp fits. Unlikely to work very well unless there are significant abberations (e.g. S.A.) in the PSF.'

@@ -24,15 +24,18 @@ import Pyro.core
 from PYME.Analysis import remFitBuf
 import os
 from PYME.Acquire import MetaDataHandler
+import PYME.Analysis.FitFactories
+
+from PYME.Analysis import MetaDataEdit as mde
 from pylab import *
 from PYME.FileUtils import fileID
 from PYME.FileUtils.nameUtils import genResultFileName
 from PYME.Analysis.LMVis import progGraph as progGraph
-from PYME.ParallelTasks.relativeFiles import getRelFilename
-import glob
+
+
 import numpy
 import pylab
-from PYME.FileUtils import nameUtils
+
 import PYME.misc.autoFoldPanel as afp
 from PYME.Acquire.mytimer import mytimer
 from PYME.DSView import fitInfo
@@ -44,8 +47,22 @@ debug = True
 def debugPrint(msg):
     if debug:
         print msg
+        
+
+
 
 class LMAnalyser:
+    FINDING_PARAMS = [#mde.FloatParam('Analysis.DetectionThreshold', 'Thresh:', 1.0),
+                      mde.IntParam('Analysis.DebounceRadius', 'Debounce rad:', 4),
+    ]
+    
+    DEFAULT_PARAMS = [#mde.ChoiceParam('Analysis.InterpModule','Interp:','LinearInterpolator', choices=Interpolators.interpolatorList, choiceNames=Interpolators.interpolatorDisplayList),
+                      #mde.ShiftFieldParam('chroma.ShiftFilename', 'Shifts:', prompt='Please select shiftfield to use', wildcard='Shiftfields|*.sf'),
+                      #mde.FilenameParam('PSFFilename', 'PSF:', prompt='Please select PSF to use ...', wildcard='PSF Files|*.psf'),
+                      #mde.IntParam('Analysis.DebounceRadius', 'Debounce r:', 4),
+                      #mde.FloatParam('Analysis.AxialShift', 'Z Shift [nm]:', 0),
+    ]
+    
     def __init__(self, dsviewer):
         self.dsviewer = dsviewer
         if 'tq' in dir(dsviewer):
@@ -159,10 +176,8 @@ class LMAnalyser:
         
     def OnPointSelect(self, xp, yp):
         dist = np.sqrt((xp - self.fitResults['fitResults']['x0'])**2 + (yp - self.fitResults['fitResults']['y0'])**2)
-        #print cand.sum()
         
         cand = dist.argmin()
-        
         
         self.dsviewer.do.xp = xp/(1.0e3*self.image.mdh.getEntry('voxelsize.x'))
         self.dsviewer.do.yp = yp/(1.0e3*self.image.mdh.getEntry('voxelsize.y'))
@@ -195,170 +210,42 @@ class LMAnalyser:
     def GetStatusText(self):
         return 'Frames Analysed: %d    Events detected: %d' % (self.numAnalysed, self.numEvents)
         
+    def _populateStdOptionsPanel(self, pan, vsizer):
+        for param in self.DEFAULT_PARAMS:
+            pg = param.createGUI(pan, self.image.mdh)
+            vsizer.Add(pg, 0,wx.BOTTOM|wx.EXPAND, 5)
+        vsizer.Fit(pan)
+            
+    def _populateFindOptionsPanel(self, pan, vsizer):
+        for param in self.FINDING_PARAMS:
+            pg = param.createGUI(pan, self.image.mdh)
+            vsizer.Add(pg, 0,wx.BOTTOM|wx.EXPAND, 5)
+        #vsizer.Fit(pan)
+    
+        
     def _populateCustomAnalysisPanel(self, pan, vsizer):
         try:
-            fitMod = self.cFitType.GetStringSelection()
+            fitMod = self.fitFactories[self.cFitType.GetSelection()]
             fm = __import__('PYME.Analysis.FitFactories.' + fitMod, fromlist=['PYME', 'Analysis', 'FitFactories'])
             
             #vsizer = wx.BoxSizer(wx.VERTICAL)
             for param in fm.PARAMETERS:
                 pg = param.createGUI(pan, self.image.mdh)
-                vsizer.Add(pg, 0,wx.BOTTOM|wx.EXPAND, 10)
+                vsizer.Add(pg, 0,wx.BOTTOM|wx.EXPAND, 5)
             vsizer.Fit(pan)
                 
-        except ValueError:
+        except AttributeError:
             pass
+        
+    def OnFitModuleChanged(self, event):
+        self.customOptionsSizer.Clear(True)
+        self._populateCustomAnalysisPanel(self.customOptionsPan, self.customOptionsSizer)
+        
 
     def GenAnalysisPanel(self, _pnl):
-#        item = _pnl.AddFoldPanel("Analysis", collapsed=False,
-#                                      foldIcons=self.Images)
         item = afp.foldingPane(_pnl, -1, caption="Analysis", pinned = True)
-
-        pan = wx.Panel(item, -1)
-
-        #find out what fit factories we have
-        import PYME.Analysis.FitFactories
-        fitFactoryList = glob.glob(PYME.Analysis.FitFactories.__path__[0] + '/[a-zA-Z]*.py')
-        fitFactoryList = [os.path.split(p)[-1][:-3] for p in fitFactoryList]
-        fitFactoryList.sort()
-
-        self.fitFactories = []
-        for ff in fitFactoryList:
-            try:
-                fm = __import__('PYME.Analysis.FitFactories.' + ff, fromlist=['PYME', 'Analysis', 'FitFactories'])
-                if 'FitResultsDType' in dir(fm):
-                    self.fitFactories.append(ff)
-            except:
-                pass
-
-        interpolatorList = glob.glob(PYME.Analysis.FitFactories.__path__[0] + '/Interpolators/[a-zA-Z]*.py')
-        interpolatorList = [os.path.split(p)[-1][:-3] for p in interpolatorList]
-        #print interpolatorList
-        interpolatorList.remove('baseInterpolator')
-        interpolatorList.sort()
-
-        self.interpolators = interpolatorList
-
-        #ditch the 'Interpolator' at the end of the module name for display
-        interpolatorList = [i[:-12] for i in interpolatorList]
-
-        #print fitFactoryList
-        #print self.fitFactories
-
-        vsizer = wx.BoxSizer(wx.VERTICAL)
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        hsizer.Add(wx.StaticText(pan, -1, 'Type:'), 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-        self.cFitType = wx.Choice(pan, -1, choices = self.fitFactories, size=(110, -1))
         
-        if 'Analysis.FitModule' in self.image.mdh.getEntryNames():
-            #has already been analysed - most likely to want the same method again
-            self.cFitType.SetSelection(self.fitFactories.index(self.image.mdh['Analysis.FitModule']))
-            self.tThreshold.SetValue('%s' % self.image.mdh['Analysis.DetectionThreshold'])
-        elif 'Camera.ROIPosY' in self.image.mdh.getEntryNames() and (self.image.mdh.getEntry('Camera.ROIHeight') + 1 + 2*(self.image.mdh.getEntry('Camera.ROIPosY')-1)) == 512:
-            #we have a symetrical ROI about the centre - most likely want to analyse using splitter
-            self.cFitType.SetSelection(self.fitFactories.index('SplitterFitQR'))
-            self.tThreshold.SetValue('0.5')
-        else:
-            self.cFitType.SetSelection(self.fitFactories.index('LatGaussFitFR'))
-
-        hsizer.Add(self.cFitType, 1,wx.ALIGN_CENTER_VERTICAL, 0)
-        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 2)
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        hsizer.Add(wx.StaticText(pan, -1, 'Interp:'), 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-        self.cInterpType = wx.Choice(pan, -1, choices = interpolatorList, size=(100, -1))
-
-        self.cInterpType.SetSelection(interpolatorList.index('Linear'))
-
-        hsizer.Add(self.cInterpType, 1,wx.ALIGN_CENTER_VERTICAL, 0)
-        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 7)
-
-
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        hsizer.Add(wx.StaticText(pan, -1, 'Debounce r:'), 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-        self.tDebounceRadius = wx.TextCtrl(pan, -1, value='4', size=(50, -1))
-
-        hsizer.Add(self.tDebounceRadius, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
-        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 10)
-        
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        hsizer.Add(wx.StaticText(pan, -1, 'Z Shift [nm]:'), 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-        self.tZShift = wx.TextCtrl(pan, -1, value='0', size=(50, -1))
-        if 'Analysis.AxialShift' in self.image.mdh.getEntryNames():
-            self.tZShift.SetValue('%3.2f' % self.image.mdh['Analysis.AxialShift'])
-
-        hsizer.Add(self.tZShift, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
-        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 10)
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        shiftFieldText = 'Shifts: <None>'
-        haveShiftField=False
-        if 'chroma.ShiftFilename' in self.image.mdh.getEntryNames():
-            #have new format shift field data
-            shiftFieldText = 'Shifts: ' + os.path.split(self.image.mdh.getEntry('chroma.ShiftFilename'))[1]
-            haveShiftField=True
-        elif 'chroma.dx' in self.image.mdh.getEntryNames():
-            #have shift field, but filename not recorded
-            shiftFieldText = 'Shifts: present'
-            haveShiftField=True
-
-        self.stShiftFieldName = wx.StaticText(pan, -1, shiftFieldText)
-        if haveShiftField:
-            self.stShiftFieldName.SetForegroundColour(wx.Colour(0, 128, 0))
-        hsizer.Add(self.stShiftFieldName, 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        bSetShiftField = wx.Button(pan, -1, 'Set', style=wx.BU_EXACTFIT)
-        bSetShiftField.Bind(wx.EVT_BUTTON, self.SetShiftField)
-        hsizer.Add(bSetShiftField, 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
-
-        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 2)
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        psfFieldText = 'PSF: <None>'
-        havePSF = False
-
-        if 'PSFFile' in self.image.mdh.getEntryNames():
-            psfFieldText = 'PSF: ' + os.path.split(self.image.mdh.getEntry('PSFFile'))[1]
-            havePSF = True
-
-        self.stPSFFilename = wx.StaticText(pan, -1, psfFieldText)
-        if havePSF:
-            self.stPSFFilename.SetForegroundColour(wx.Colour(0, 128, 0))
-
-        hsizer.Add(self.stPSFFilename, 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        bSetPSF = wx.Button(pan, -1, 'Set', style=wx.BU_EXACTFIT)
-        bSetPSF.Bind(wx.EVT_BUTTON, self.SetPSF)
-        hsizer.Add(bSetPSF, 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
-
-        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 10)
-
-        pan.SetSizer(vsizer)
-        vsizer.Fit(pan)
-
-        #_pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, 5, 5)
-        item.AddNewElement(pan)
-
-#        self.cbDrift = wx.CheckBox(item, -1, 'Estimate Drift')
-#        self.cbDrift.SetValue(False)
-#
-#        #_pnl.AddFoldPanelWindow(item, self.cbDrift, fpb.FPB_ALIGN_WIDTH, 7, 5)
-#        item.AddNewElement(self.cbDrift)
-
-        pan = wx.Panel(item, -1)
-        vsizer = wx.BoxSizer(wx.VERTICAL)
-        pan.SetSizer(vsizer)
-
-        self._populateCustomAnalysisPanel(pan, vsizer)        
-        
-        #vsizer.Fit(pan)
-        item.AddNewElement(pan)
-
+        ##############################
         pan = wx.Panel(item, -1)
         vsizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -389,65 +276,101 @@ class LMAnalyser:
         self.cbSubtractBackground = wx.CheckBox(item, -1, 'Subtract background in fit')
         self.cbSubtractBackground.SetValue(True)
 
-        #_pnl.AddFoldPanelWindow(item, self.cbSubtractBackground, fpb.FPB_ALIGN_WIDTH, 2, 5)
+
         item.AddNewElement(self.cbSubtractBackground)
 
+        #############################
+        #std options
+        pan = wx.Panel(item, -1)
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+        pan.SetSizer(vsizer)
+        
+        self._populateStdOptionsPanel(pan, vsizer)
+                
+        item.AddNewElement(pan)
+
+        
+        #######################
+        #Fit factory selection
+        pan = wx.Panel(item, -1)
+
+        #find out what fit factories we have
+        self.fitFactories = PYME.Analysis.FitFactories.resFitFactories
+        print self.fitFactories
+
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        hsizer.Add(wx.StaticText(pan, -1, 'Type:'), 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.cFitType = wx.Choice(pan, -1, choices = ['{:<35} \t- {:} '.format(f, PYME.Analysis.FitFactories.useFor[f]) for f in self.fitFactories], size=(110, -1))
+        
+        if 'Analysis.FitModule' in self.image.mdh.getEntryNames():
+            #has already been analysed - most likely to want the same method again
+            self.cFitType.SetSelection(self.fitFactories.index(self.image.mdh['Analysis.FitModule']))
+            self.tThreshold.SetValue('%s' % self.image.mdh['Analysis.DetectionThreshold'])
+        #elif 'Camera.ROIPosY' in self.image.mdh.getEntryNames() and (self.image.mdh.getEntry('Camera.ROIHeight') + 1 + 2*(self.image.mdh.getEntry('Camera.ROIPosY')-1)) == 512:
+        #    #we have a symetrical ROI about the centre - most likely want to analyse using splitter
+        #    self.cFitType.SetSelection(self.fitFactories.index('SplitterFitQR'))
+        #    self.tThreshold.SetValue('0.5')
+        else:
+            self.cFitType.SetSelection(self.fitFactories.index('LatGaussFitFR'))
+            
+        self.cFitType.Bind(wx.EVT_CHOICE, self.OnFitModuleChanged)
+
+        hsizer.Add(self.cFitType, 1,wx.ALIGN_CENTER_VERTICAL, 0)
+        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 2)
+
+        pan.SetSizer(vsizer)
+        vsizer.Fit(pan)
+
+        item.AddNewElement(pan)
+
+#        self.cbDrift = wx.CheckBox(item, -1, 'Estimate Drift')
+#        self.cbDrift.SetValue(False)
+#
+#        #_pnl.AddFoldPanelWindow(item, self.cbDrift, fpb.FPB_ALIGN_WIDTH, 7, 5)
+#        item.AddNewElement(self.cbDrift)
+
+
+        ########################################        
+        #custom  (fit factory dependant) options        
+        self.customOptionsPan = wx.Panel(item, -1)
+        self.customOptionsSizer = wx.BoxSizer(wx.VERTICAL)
+        self.customOptionsPan.SetSizer(self.customOptionsSizer)
+
+        self._populateCustomAnalysisPanel(self.customOptionsPan, self.customOptionsSizer)        
+
+        item.AddNewElement(self.customOptionsPan)
+        
+        ######################
+        #Go
         self.bGo = wx.Button(item, -1, 'Go')
 
 
         self.bGo.Bind(wx.EVT_BUTTON, self.OnGo)
-        #_pnl.AddFoldPanelWindow(item, self.bGo, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
         item.AddNewElement(self.bGo)
         _pnl.AddPane(item)
 
         self.analysisPanel = item
 
 
-    def SetPSF(self, event=None):
-        fdialog = wx.FileDialog(None, 'Please select PSF to use ...',
-                    defaultDir=os.path.split(self.image.filename)[0],
-                    wildcard='PSF files|*.psf', style=wx.OPEN)
-        succ = fdialog.ShowModal()
-        if (succ == wx.ID_OK):
-            #self.ds = example.CDataStack(fdialog.GetPath().encode())
-            #self.ds =
-            psfFilename = fdialog.GetPath()
-            self.image.mdh.setEntry('PSFFile', getRelFilename(psfFilename))
-            #self.md.setEntry('PSFFile', psfFilename)
-            self.stPSFFilename.SetLabel('PSF: %s' % os.path.split(psfFilename)[1])
-            self.stPSFFilename.SetForegroundColour(wx.Colour(0, 128, 0))
-            return True
-        else:
-            return False
 
-    def SetShiftField(self, event=None):
-        fdialog = wx.FileDialog(None, 'Please select shift field to use ...',
-                    wildcard='Shift fields|*.sf', style=wx.OPEN, defaultDir = nameUtils.genShiftFieldDirectoryPath())
-        succ = fdialog.ShowModal()
-        if (succ == wx.ID_OK):
-            #self.ds = example.CDataStack(fdialog.GetPath().encode())
-            #self.ds =
-            sfFilename = fdialog.GetPath()
-            self.image.mdh.setEntry('chroma.ShiftFilename', sfFilename)
-            dx, dy = numpy.load(sfFilename)
-            self.image.mdh.setEntry('chroma.dx', dx)
-            self.image.mdh.setEntry('chroma.dy', dy)
-            #self.md.setEntry('PSFFile', psfFilename)
-            self.stShiftFieldName.SetLabel('Shifts: %s' % os.path.split(sfFilename)[1])
-            self.stShiftFieldName.SetForegroundColour(wx.Colour(0, 128, 0))
-            return True
-        else:
-            return False
             
     def SetMDItems(self):
+        for param in self.DEFAULT_PARAMS:
+            param.retrieveValue(self.image.mdh)
+            
+        for param in self.FINDING_PARAMS:
+            param.retrieveValue(self.image.mdh)
+            
         try:
-            fitMod = self.cFitType.GetStringSelection()
+            fitMod = self.fitFactories[self.cFitType.GetSelection()]
             fm = __import__('PYME.Analysis.FitFactories.' + fitMod, fromlist=['PYME', 'Analysis', 'FitFactories'])
             
             for param in fm.PARAMETERS:
                 param.retrieveValue(self.image.mdh)
                 
-        except ValueError:
+        except AttributeError:
             pass
         
 
@@ -456,40 +379,16 @@ class LMAnalyser:
         threshold = float(self.tThreshold.GetValue())
         startAt = int(self.tStartAt.GetValue())
         driftEst = False#self.cbDrift.GetValue()
-        fitMod = self.cFitType.GetStringSelection()
+        fitMod = self.fitFactories[self.cFitType.GetSelection()]
         interpolator = self.interpolators[self.cInterpType.GetSelection()]
         bgFrames = [int(v) for v in self.tBackgroundFrames.GetValue().split(':')]
 
         self.image.mdh.setEntry('Analysis.subtractBackground', self.cbSubtractBackground.GetValue())
-        #self.md.setEntry('Analysis.subtractBackground', self.cbSubtractBackground.GetValue())
-
-        #self.image.mdh.setEntry('Analysis.NumBGFrames', bgFrames)
         self.image.mdh.setEntry('Analysis.BGRange', bgFrames)
-        #self.md.setEntry('Analysis.NumBGFrames', bgFrames)
+        
 
         self.image.mdh.setEntry('Analysis.InterpModule', interpolator)
 
-        self.image.mdh.setEntry('Analysis.DebounceRadius', int(self.tDebounceRadius.GetValue()))
-
-        if fitMod.startswith('SplitterFit') and not 'chroma.dx' in self.image.mdh.getEntryNames():
-            if not self.SetShiftField():
-                return
-
-        if 'Interp' in fitMod and not 'PSFFile' in self.image.mdh.getEntryNames():
-            if not self.SetPSF():
-                return
-
-        if 'Interp' in fitMod  and 'Splitter' in fitMod:
-            #dlg = wx.TextEntryDialog(self, 'What is the axial chromatic shift between splitter halves [nm]?',
-            #    'Axial Shift', '300')
-
-            #if dlg.ShowModal() == wx.ID_OK:
-            #    self.image.mdh.setEntry('Analysis.AxialShift', float(dlg.GetValue()))
-            #else:
-            self.image.mdh.setEntry('Analysis.AxialShift', float(self.tZShift.GetValue()))
-
-
-            #dlg.Destroy()
             
         if debug:
             print 'About to push images'
@@ -502,6 +401,8 @@ class LMAnalyser:
         if debug:
             print 'Images pushed'
 
+        #############
+        #set up real time display        
         from PYME.Analysis.LMVis import gl_render
         self.glCanvas = gl_render.LMGLCanvas(self.dsviewer, False)
         self.glCanvas.cmap = pylab.cm.gist_rainbow
@@ -531,86 +432,48 @@ class LMAnalyser:
 #                                      foldIcons=self.Images)
 
         pan = wx.Panel(item, -1)
-
+        vsizer = wx.BoxSizer(wx.VERTICAL)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        hsizer.Add(wx.StaticText(pan, -1, 'Thresh:'), 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-        self.tThreshold = wx.TextCtrl(pan, -1, value='0.6', size=(30, -1))
+        hsizer.Add(wx.StaticText(pan, -1, 'Threshold:'), 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tThreshold = wx.TextCtrl(pan, -1, value='0.6', size=(40, -1))
 
-        hsizer.Add(self.tThreshold, 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-
+        hsizer.Add(self.tThreshold, 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+        
+        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 2)
+        
+        #load any additional point finding settings
+        self._populateFindOptionsPanel(pan, vsizer)
+        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
         bTest = wx.Button(pan, -1, 'Test', style=wx.BU_EXACTFIT)
         bTest.Bind(wx.EVT_BUTTON, self.OnTest)
         hsizer.Add(bTest, 0,wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
         
-        bTestF = wx.Button(pan, -1, 'TF', style=wx.BU_EXACTFIT)
+        bTestF = wx.Button(pan, -1, 'Test This Frame', style=wx.BU_EXACTFIT)
         bTestF.Bind(wx.EVT_BUTTON, self.OnTestFrame)
         hsizer.Add(bTestF, 0,wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
+        
+        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 2)
+        
+        pan.SetSizerAndFit(vsizer)
 
-        pan.SetSizer(hsizer)
-        hsizer.Fit(pan)
-
-        #_pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
         item.AddNewElement(pan)
         _pnl.AddPane(item)
 
 
-        #_pnl.AddFoldPanelWindow(item, bTest, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
-
     def OnTest(self, event):
         threshold = float(self.tThreshold.GetValue())
-        startAt = int(self.tStartAt.GetValue())
-        driftEst = False#self.cbDrift.GetValue()
-        fitMod = self.cFitType.GetStringSelection()
-
-        self.image.mdh.setEntry('Analysis.DebounceRadius', int(self.tDebounceRadius.GetValue()))
-
-        if 'Psf' in fitMod and not 'PSFFile' in self.image.mdh.getEntryNames():
-            fdialog = wx.FileDialog(None, 'Please select PSF to use ...',
-                    wildcard='PSF files|*.psf', style=wx.OPEN)
-            succ = fdialog.ShowModal()
-            if (succ == wx.ID_OK):
-                #self.ds = example.CDataStack(fdialog.GetPath().encode())
-                #self.ds =
-                psfFilename = fdialog.GetPath()
-                self.image.mdh.setEntry('PSFFile', getRelFilename(psfFilename))
-                #self.md.setEntry('PSFFile', psfFilename)
-            else:
-                return
-
-        #if not driftEst:
+        self.SetMDItems()
         self.testFrames(threshold)
         
     def OnTestFrame(self, event):
-        threshold = float(self.tThreshold.GetValue())
-        startAt = int(self.tStartAt.GetValue())
-        driftEst = False#self.cbDrift.GetValue()
-        fitMod = self.cFitType.GetStringSelection()
-
-        self.image.mdh.setEntry('Analysis.DebounceRadius', int(self.tDebounceRadius.GetValue()))
-
-        if 'Psf' in fitMod and not 'PSFFile' in self.image.mdh.getEntryNames():
-            fdialog = wx.FileDialog(None, 'Please select PSF to use ...',
-                    wildcard='PSF files|*.psf', style=wx.OPEN)
-            succ = fdialog.ShowModal()
-            if (succ == wx.ID_OK):
-                #self.ds = example.CDataStack(fdialog.GetPath().encode())
-                #self.ds =
-                psfFilename = fdialog.GetPath()
-                self.image.mdh.setEntry('PSFFile', getRelFilename(psfFilename))
-                #self.md.setEntry('PSFFile', psfFilename)
-            else:
-                return
-
-        #if not driftEst:
+        threshold = float(self.tThreshold.GetValue())        
+        self.SetMDItems()
         self.testFrame(threshold)
-        #else:
-        #    self.sh.run('pushImagesD(%d, %f)' % (startAt, threshold)
 
     def GenFitStatusPanel(self, _pnl):
         item = afp.foldingPane(_pnl, -1, caption="Fit Status", pinned = True)
-#        item = _pnl.AddFoldPanel("Fit Status", collapsed=False,
-#                                      foldIcons=self.Images)
 
         pan = wx.Panel(item, -1, size = (160, 300))
 
@@ -920,7 +783,7 @@ class LMAnalyser:
         sq = min(self.image.mdh.getEntry('EstimatedLaserOnFrameNo') + 1000, self.image.dataSource.getNumSlices()/4)
         zps = array(range(self.image.mdh.getEntry('EstimatedLaserOnFrameNo') + 20, self.image.mdh.getEntry('EstimatedLaserOnFrameNo') + 24)  + range(sq, sq + 4) + range(self.image.dataSource.getNumSlices()/2,self.image.dataSource.getNumSlices() /2+4))
         zps += offset
-        fitMod = self.cFitType.GetStringSelection()
+        fitMod = self.fitFactories[self.cFitType.GetSelection()]
         #bgFrames = int(tBackgroundFrames.GetValue())
         bgFrames = [int(v) for v in self.tBackgroundFrames.GetValue().split(':')]
         print zps
@@ -984,7 +847,7 @@ class LMAnalyser:
         #zps += offset
         
         zp = self.do.zp
-        fitMod = self.cFitType.GetStringSelection()
+        fitMod = self.fitFactories[self.cFitType.GetSelection()]
         #bgFrames = int(tBackgroundFrames.GetValue())
         bgFrames = [int(v) for v in self.tBackgroundFrames.GetValue().split(':')]
         #print zps

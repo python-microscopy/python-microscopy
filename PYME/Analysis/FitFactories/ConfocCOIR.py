@@ -144,3 +144,7 @@ def ConfocCOI(data, metadata, thresh=5, background=None):
 FitFactory = ConfocCOI
 FitResult = COIFitResultR
 FitResultsDType = fresultdtype #only defined if returning data as numarray
+
+
+DESCRIPTION = '3D centroid for confocal data.'
+LONG_DESCRIPTION = '3D centroid suitable for use on 3D data sets (e.g. Confocal). Not useful for PALM/STORM analysis.'

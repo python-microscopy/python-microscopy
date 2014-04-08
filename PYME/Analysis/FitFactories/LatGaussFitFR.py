@@ -258,3 +258,7 @@ class GaussianFitFactory:
 FitFactory = GaussianFitFactory
 FitResult = GaussianFitResultR
 FitResultsDType = fresultdtype #only defined if returning data as numarray
+
+DESCRIPTION = 'Vanilla 2D Gaussian fit.'
+LONG_DESCRIPTION = 'Single colour 2D Gaussian fit. This should be the first stop for simple analyisis.'
+USE_FOR = '2D single-colour'

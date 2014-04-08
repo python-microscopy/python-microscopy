@@ -260,3 +260,19 @@ class GaussianFitFactory:
 FitFactory = GaussianFitFactory
 FitResult = GaussianFitResultR
 FitResultsDType = fresultdtype #only defined if returning data as numarray
+
+import PYME.Analysis.MetaDataEdit as mde
+#from PYME.Analysis.FitFactories import Interpolators
+#from PYME.Analysis.FitFactories import zEstimators
+
+PARAMETERS = [#mde.ChoiceParam('Analysis.InterpModule','Interp:','LinearInterpolator', choices=Interpolators.interpolatorList, choiceNames=Interpolators.interpolatorDisplayList),
+              #mde.FilenameParam('PSFFilename', 'PSF:', prompt='Please select PSF to use ...', wildcard='PSF Files|*.psf'),
+              mde.ShiftFieldParam('chroma.ShiftFilename', 'Shifts:', prompt='Please select shiftfield to use', wildcard='Shiftfields|*.sf'),
+              #mde.IntParam('Analysis.DebounceRadius', 'Debounce r:', 4),
+              #mde.FloatParam('Analysis.AxialShift', 'Z Shift [nm]:', 0),
+              #mde.ChoiceParam('Analysis.EstimatorModule', 'Z Start Est:', 'astigEstimator', choices=zEstimators.estimatorList),
+              #mde.ChoiceParam('PRI.Axis', 'PRI Axis:', 'y', choices=['x', 'y'])
+              ]
+              
+DESCRIPTION = 'Ratiometric multi-colour 2D Gaussian fit (no background term).'
+LONG_DESCRIPTION = 'Ratiometric multi-colour 2D Gaussian fit. Uses shiftfield to correct chromatic shift during the fit. Assumes background has been subtracted and eliminates background term for better performance over SplitterFitQR.'

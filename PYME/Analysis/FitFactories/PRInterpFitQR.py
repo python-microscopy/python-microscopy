@@ -33,6 +33,10 @@ import cPickle
 from PYME.Analysis._fithelpers import *
 #from PYME.Analysis.FitFactories.zEstimators import astigEstimator
 
+import PYME.Analysis.MetaDataEdit as mde
+from PYME.Analysis.FitFactories import Interpolators
+from PYME.Analysis.FitFactories import zEstimators
+
 def pickleSlice(slice):
         return unpickleSlice, (slice.start, slice.stop, slice.step)
 
@@ -314,3 +318,15 @@ class PSFFitFactory:
 FitFactory = PSFFitFactory
 FitResult = PSFFitResultR
 FitResultsDType = fresultdtype #only defined if returning data as numarray
+
+PARAMETERS = [mde.ChoiceParam('Analysis.InterpModule','Interp:','LinearInterpolator', choices=Interpolators.interpolatorList, choiceNames=Interpolators.interpolatorDisplayList),
+              mde.FilenameParam('PSFFilename', 'PSF:', prompt='Please select PSF to use ...', wildcard='PSF Files|*.psf'),
+              #mde.ShiftFieldParam('chroma.ShiftFilename', 'Shifts:', prompt='Please select shiftfield to use', wildcard='Shiftfields|*.sf'),
+              #mde.IntParam('Analysis.DebounceRadius', 'Debounce r:', 4),
+              #mde.FloatParam('Analysis.AxialShift', 'Z Shift [nm]:', 0),
+              mde.ChoiceParam('Analysis.EstimatorModule', 'Z Start Est:', 'astigEstimator', choices=zEstimators.estimatorList),
+              mde.ChoiceParam('PRI.Axis', 'PRI Axis:', 'y', choices=['x', 'y'])
+              ]
+              
+DESCRIPTION = '3D fitting for the PRI PSF with variable lobe heights.'
+LONG_DESCRIPTION = '3D fitting for the PRI PSF with variable lobe heights. A special version of InterpFit which allows us to measure the realative strength of the two PRI lobes. Assumes background subtracted. Fairly specialised use cases - unless you know you need it use InterpFitR instead.'

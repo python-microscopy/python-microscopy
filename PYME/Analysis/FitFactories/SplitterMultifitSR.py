@@ -387,3 +387,16 @@ FitResultsDType = fresultdtype #only defined if returning data as numarray
 #this means that factory is reponsible for it's own object finding and implements
 #a GetAllResults method that returns a list of localisations
 MULTIFIT=True
+
+import PYME.Analysis.MetaDataEdit as mde
+#from PYME.Analysis.FitFactories import Interpolators
+#from PYME.Analysis.FitFactories import zEstimators
+
+PARAMETERS = [#mde.ChoiceParam('Analysis.InterpModule','Interp:','LinearInterpolator', choices=Interpolators.interpolatorList, choiceNames=Interpolators.interpolatorDisplayList),
+              #mde.FilenameParam('PSFFilename', 'PSF:', prompt='Please select PSF to use ...', wildcard='PSF Files|*.psf'),
+              mde.ShiftFieldParam('chroma.ShiftFilename', 'Shifts:', prompt='Please select shiftfield to use', wildcard='Shiftfields|*.sf'),
+              #mde.IntParam('Analysis.DebounceRadius', 'Debounce r:', 4),
+              #mde.FloatParam('Analysis.AxialShift', 'Z Shift [nm]:', 0),
+              #mde.ChoiceParam('Analysis.EstimatorModule', 'Z Start Est:', 'astigEstimator', choices=zEstimators.estimatorList),
+              #mde.ChoiceParam('PRI.Axis', 'PRI Axis:', 'y', choices=['x', 'y'])
+              ]

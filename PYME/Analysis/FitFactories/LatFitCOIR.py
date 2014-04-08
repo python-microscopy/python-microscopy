@@ -170,3 +170,6 @@ class COIFitFactory:
 FitFactory = COIFitFactory
 FitResult = COIFitResultR
 FitResultsDType = fresultdtype #only defined if returning data as numarray
+
+DESCRIPTION = '2D Centroid (No Fit), with x and y width estimation.'
+LONG_DESCRIPTION = '2D Centroid. Quick and dirty, although somewhat more precise than QuickPALM as it subtracts the threshold before taking the centroid and is thus not as affected by bias.'

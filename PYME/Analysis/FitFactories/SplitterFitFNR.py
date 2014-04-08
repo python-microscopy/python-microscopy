@@ -349,3 +349,20 @@ class GaussianFitFactory:
 FitFactory = GaussianFitFactory
 FitResult = GaussianFitResultR
 FitResultsDType = fresultdtype #only defined if returning data as numarray
+
+import PYME.Analysis.MetaDataEdit as mde
+#from PYME.Analysis.FitFactories import Interpolators
+#from PYME.Analysis.FitFactories import zEstimators
+
+PARAMETERS = [#mde.ChoiceParam('Analysis.InterpModule','Interp:','LinearInterpolator', choices=Interpolators.interpolatorList, choiceNames=Interpolators.interpolatorDisplayList),
+              #mde.FilenameParam('PSFFilename', 'PSF:', prompt='Please select PSF to use ...', wildcard='PSF Files|*.psf'),
+              mde.ShiftFieldParam('chroma.ShiftFilename', 'Shifts:', prompt='Please select shiftfield to use', wildcard='Shiftfields|*.sf'),
+              #mde.IntParam('Analysis.DebounceRadius', 'Debounce r:', 4),
+              #mde.FloatParam('Analysis.AxialShift', 'Z Shift [nm]:', 0),
+              #mde.ChoiceParam('Analysis.EstimatorModule', 'Z Start Est:', 'astigEstimator', choices=zEstimators.estimatorList),
+              #mde.ChoiceParam('PRI.Axis', 'PRI Axis:', 'y', choices=['x', 'y'])
+              ]
+              
+DESCRIPTION = 'Ratiometric multi-colour 2D Gaussian fit (large shifts).'
+LONG_DESCRIPTION = 'Ratiometric multi-colour 2D Gaussian fit (large shifts). This variant of the splitter fit uses the shiftmap to extract a different ROI in each of the colour channels, allowing chromatic shifts to be larger than for the other splitter fits. Useful if there is a magnification difference between the two colour channels, but will perform just as well (or better) on low shift data, as a smaller ROI can be used. Assumes background already subtracted.'
+USE_FOR = '2D multi-colour'

@@ -194,3 +194,7 @@ class GaussianFitFactory:
 FitFactory = GaussianFitFactory
 FitResult = GaussianFitResultR
 FitResultsDType = fresultdtype #only defined if returning data as numarray
+
+DESCRIPTION = '2D ratiometric fitting shift calibration'
+LONG_DESCRIPTION = '2D ratiometric fitting shift calibration. Used with a bead (or very bright single molecule) dataset to calibrate the chromatic shift between the two colour channels.'
+USE_FOR = 'Calibrating the splitter'

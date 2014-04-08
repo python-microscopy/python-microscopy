@@ -198,3 +198,7 @@ class GaussianFitFactory:
 FitFactory = GaussianFitFactory
 FitResult = GaussianFitResultR
 FitResultsDType = fresultdtype #only defined if returning data as numarray
+
+
+DESCRIPTION = 'Just finds candidate objects for Splitter fits - no fitting'
+LONG_DESCRIPTION = 'Helper fit method used to test object finding for Splitter fits.'

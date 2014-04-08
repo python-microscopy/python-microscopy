@@ -185,3 +185,6 @@ class GaussianFitFactory:
 FitFactory = GaussianFitFactory
 FitResult = GaussianFitResultR
 FitResultsDType = fresultdtype #only defined if returning data as numarray
+
+DESCRIPTION = 'Helper function for testing object finding.'
+LONG_DESCRIPTION = 'Single colour object finding test routine - used internally for testing detections. Gives ~1px accuracy.'

@@ -205,3 +205,6 @@ class Gauss3dFitFactory:
 FitFactory = Gauss3dFitFactory
 FitResult = Gauss3dFitResultR
 FitResultsDType = fresultdtype #only defined if returning data as numarray
+
+DESCRIPTION = '3D Gaussian fit for confocal data.'
+LONG_DESCRIPTION = '3D Gaussian fit suitable for use on 3D data sets (e.g. Confocal). Not useful for PALM/STORM analysis.'
