@@ -103,7 +103,7 @@ class ChoiceParam(object):
         return hsizer
         
     def retrieveValue(self, mdh):
-        mdh[self.paramName] = self.choices[self.tValue.GetSelection()]
+        mdh[self.paramName] = self.choices[self.cValue.GetSelection()]
         
         
 class FilenameParam(object):
@@ -127,6 +127,7 @@ class FilenameParam(object):
             self.filename = mdh[self.paramName]
             FieldText = '%s ' % self.guiName + os.path.split(mdh[self.paramName])[1]
             haveFile = True
+            print FieldText
 
         self.stFilename = wx.StaticText(parent, -1, FieldText)
         if haveFile:
@@ -184,4 +185,55 @@ class ShiftFieldParam(FilenameParam):
             mdh.setEntry('chroma.dx', dx)
             mdh.setEntry('chroma.dy', dy)
         
+
+class BoolParam(object):
+    def __init__(self, paramName, guiName, default=False, helpText=''):
+        self.paramName = paramName
+        self.guiName = guiName
+        self.default = default
         
+    def createGUI(self, parent, mdh):
+        import wx
+        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        
+        self.cbValue = wx.CheckBox(parent, -1, self.guiName)
+        self.cbValue.SetValue(self.default)
+
+        hsizer.Add(self.cbValue, 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+        
+        return hsizer
+        
+    def retrieveValue(self, mdh):
+        mdh[self.paramName] = self.tValue.GetValue()   
+
+class BoolFloatParam(object):
+    def __init__(self, paramName, guiName, default=False, helpText='', ondefault=0, offvalue=0):
+        self.paramName = paramName
+        self.guiName = guiName
+        self.default = default
+        self.ondefault = ondefault
+        self.offvalue = offvalue
+        
+    def createGUI(self, parent, mdh):
+        import wx
+        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.cbValue = wx.CheckBox(parent, -1, self.guiName)
+        self.cbValue.SetValue(self.default)
+
+        hsizer.Add(self.cbValue, 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+        
+        self.tValue = wx.TextCtrl(parent, -1, value='0', size=(50, -1))
+        self.tValue.SetValue('%3.2f' % mdh.getOrDefault(self.paramName, self.ondefault))
+
+        hsizer.Add(self.tValue, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+        
+        return hsizer
+        
+    def retrieveValue(self, mdh):
+        if self.cbValue.GetValue():
+            mdh[self.paramName] = float(self.tValue.GetValue())
+        else:
+            mdh[self.paramName] = float(self.offvalue)

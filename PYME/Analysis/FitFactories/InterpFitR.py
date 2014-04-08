@@ -270,12 +270,12 @@ from PYME.Analysis.FitFactories import zEstimators
 
 #set of parameters that this fit needs to know about
 PARAMETERS = [mde.ChoiceParam('Analysis.InterpModule','Interp:','LinearInterpolator', choices=Interpolators.interpolatorList, choiceNames=Interpolators.interpolatorDisplayList),
-              mde.FilenameParam('PSFFilename', 'PSF:', prompt='Please select PSF to use ...', wildcard='PSF Files|*.psf'),
+              mde.FilenameParam('PSFFile', 'PSF:', prompt='Please select PSF to use ...', wildcard='PSF Files|*.psf'),
               #mde.ShiftFieldParam('chroma.ShiftFilename', 'Shifts:', prompt='Please select shiftfield to use', wildcard='Shiftfields|*.sf'),
               #mde.IntParam('Analysis.DebounceRadius', 'Debounce r:', 4),
               #mde.FloatParam('Analysis.AxialShift', 'Z Shift [nm]:', 0),
               mde.ChoiceParam('Analysis.EstimatorModule', 'Z Start Est:', 'astigEstimator', choices=zEstimators.estimatorList),
-              mde.ChoiceParam('PRI.Axis', 'PRI Axis:', 'y', choices=['x', 'y'])]
+              mde.ChoiceParam('PRI.Axis', 'PRI Axis:', 'none', choices=['x', 'y', 'none'])]
               
 DESCRIPTION = '3D, single colour fitting using an interpolated measured PSF.'
 LONG_DESCRIPTION = '3D, single colour fitting using an interpolated measured PSF. Should work for any 3D engineered PSF, with the default parameterisation optimised for astigmatism.'

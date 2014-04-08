@@ -31,8 +31,8 @@ def Update(dsviewer):
         else:
             et = piecewiseMapping.framesToTime(image.data.getNumSlices(), image.events, image.mdh)
             
-        #dsviewer.elv.SetRange(0, et - st)
-        dsviewer.elv.SetRange([st, et])
+        dsviewer.elv.SetRange(0, et - st)
+        #dsviewer.elv.SetRange([st, et])
 
 def Plug(dsviewer):
     image = dsviewer.image

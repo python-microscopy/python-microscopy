@@ -61,6 +61,7 @@ class LMAnalyser:
                       #mde.FilenameParam('PSFFilename', 'PSF:', prompt='Please select PSF to use ...', wildcard='PSF Files|*.psf'),
                       #mde.IntParam('Analysis.DebounceRadius', 'Debounce r:', 4),
                       #mde.FloatParam('Analysis.AxialShift', 'Z Shift [nm]:', 0),
+                      mde.BoolFloatParam('Analysis.PCTBackground' , 'Use percentile for background', default=False, helpText='', ondefault=0.25, offvalue=0),
     ]
     
     def __init__(self, dsviewer):
@@ -363,16 +364,18 @@ class LMAnalyser:
         for param in self.FINDING_PARAMS:
             param.retrieveValue(self.image.mdh)
             
-        try:
-            fitMod = self.fitFactories[self.cFitType.GetSelection()]
-            fm = __import__('PYME.Analysis.FitFactories.' + fitMod, fromlist=['PYME', 'Analysis', 'FitFactories'])
             
-            for param in fm.PARAMETERS:
-                param.retrieveValue(self.image.mdh)
-                
-        except AttributeError:
-            pass
+        fitMod = self.fitFactories[self.cFitType.GetSelection()]
+        fm = __import__('PYME.Analysis.FitFactories.' + fitMod, fromlist=['PYME', 'Analysis', 'FitFactories'])
         
+        try: 
+            plist = fm.PARAMETERS
+        except AttributeError:
+            plist = []     
+        
+        for param in plist:
+            param.retrieveValue(self.image.mdh)
+            
 
 
     def OnGo(self, event):

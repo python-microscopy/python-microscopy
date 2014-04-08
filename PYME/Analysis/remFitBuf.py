@@ -368,9 +368,10 @@ class fitTask(taskDef.Task):
         if not dataSourceID == self.dataSourceID: #avoid unnecessary opening and closing of 
             dBuffer = dataBuffer(DataSource(self.dataSourceID, taskQueue), self.bufferLen)
             
-            if 'Analysis.PCTBackground' in self.md.getEntryNames():
+            if 'Analysis.PCTBackground' in self.md.getEntryNames() and self.md['Analysis.PCTBackground'] > 0:
                 bBuffer = backgroundBufferM(dBuffer, self.md['Analysis.PCTBackground'])
-            bBuffer = backgroundBuffer(dBuffer)
+            else:
+                bBuffer = backgroundBuffer(dBuffer)
             dataSourceID = self.dataSourceID
         
         self.data = dBuffer.getSlice(self.index)
@@ -477,7 +478,7 @@ class fitTask(taskDef.Task):
             sfunc = self.__mapSplitterCoords
 
 
-        if 'PRI.Axis' in self.md.getEntryNames():
+        if 'PRI.Axis' in self.md.getEntryNames() and not self.md['PRI.Axis'] == 'none':
             self.ofd = ofind_pri.ObjectIdentifier(bgd * (bgd > 0), md, axis = self.md['PRI.Axis'])
         else:# not 'PSFFile' in self.md.getEntryNames():
             self.ofd = ofind.ObjectIdentifier(bgd * (bgd > 0))
