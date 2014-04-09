@@ -72,6 +72,7 @@ while 1:
         try:
             #print qName
             tq = Pyro.core.getProxyForURI(ns.resolve('TaskQueues.%s' % qName))
+            tq._setTimeout(1)
             tq._setOneway(['returnCompletedTask'])
             #print qName
 

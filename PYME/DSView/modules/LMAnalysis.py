@@ -407,12 +407,13 @@ class LMAnalyser:
             print 'Images pushed'
 
         #############
-        #set up real time display        
-        from PYME.Analysis.LMVis import gl_render
-        self.glCanvas = gl_render.LMGLCanvas(self.dsviewer, False)
-        self.glCanvas.cmap = pylab.cm.gist_rainbow
-
-        self.dsviewer.AddPage(page=self.glCanvas, select=True, caption='VisLite')
+        #set up real time display
+        if not 'glCanvas' in dir(self):   #re-use existing canvas if present     
+            from PYME.Analysis.LMVis import gl_render
+            self.glCanvas = gl_render.LMGLCanvas(self.dsviewer, False)
+            self.glCanvas.cmap = pylab.cm.gist_rainbow
+    
+            self.dsviewer.AddPage(page=self.glCanvas, select=True, caption='VisLite')
         
 
         xsc = self.image.data.shape[0]*1.0e3*self.image.mdh.getEntry('voxelsize.x')/self.glCanvas.Size[0]
