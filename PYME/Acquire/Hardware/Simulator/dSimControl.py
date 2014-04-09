@@ -170,7 +170,7 @@ class dSimControl(wx.Panel):
         sbsizer2.Add(wx.StaticText(self, -1, '/mWs       Probe Laser:'), 0, 
                      wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
 
-        self.tExProbe = wx.TextCtrl(self, -1, value='10')
+        self.tExProbe = wx.TextCtrl(self, -1, value='100')
         sbsizer2.Add(self.tExProbe, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
         
         sbsizer2.Add(wx.StaticText(self, -1, '/mWs'), 0, 
@@ -339,7 +339,8 @@ class dSimControl(wx.Panel):
 
     def OnBSetPSF(self, event):
         fn = wx.FileSelector('Read PSF from file', default_extension='psf', wildcard='PYME PSF Files (*.psf)|*.psf')
-        if fn == None:
+        print fn
+        if fn == '':
             rend_im.genTheoreticalModel(rend_im.MetaData.TIRFDefault)
             return
         else:

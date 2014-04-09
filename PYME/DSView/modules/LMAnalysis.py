@@ -383,14 +383,16 @@ class LMAnalyser:
         startAt = int(self.tStartAt.GetValue())
         driftEst = False#self.cbDrift.GetValue()
         fitMod = self.fitFactories[self.cFitType.GetSelection()]
-        interpolator = self.interpolators[self.cInterpType.GetSelection()]
+        #interpolator = self.interpolators[self.cInterpType.GetSelection()]
         bgFrames = [int(v) for v in self.tBackgroundFrames.GetValue().split(':')]
 
         self.image.mdh.setEntry('Analysis.subtractBackground', self.cbSubtractBackground.GetValue())
         self.image.mdh.setEntry('Analysis.BGRange', bgFrames)
         
+        self.SetMDItems()
+        
 
-        self.image.mdh.setEntry('Analysis.InterpModule', interpolator)
+        #self.image.mdh.setEntry('Analysis.InterpModule', interpolator)
 
             
         if debug:
@@ -631,17 +633,22 @@ class LMAnalyser:
 
     #from fth5.py
     def checkTQ(self):
-        if self.tq == None:
+            
+        try:
             #if 'PYME_TASKQUEUENAME' in os.environ.keys():
             #    taskQueueName = os.environ['PYME_TASKQUEUENAME']
             #else:
             #    taskQueueName = 'taskQueue'
-
+            self.tq.isAlive()
+        
+        except:
+            self.tq = None
+        
+        if self.tq == None:
             from PYME.misc.computerName import GetComputerName
             compName = GetComputerName()
             
             try:
-
                 taskQueueName = 'TaskQueues.%s' % compName
 
                 self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
@@ -889,6 +896,15 @@ class LMAnalyser:
                 xticks([])
                 yticks([])
                 
+                
+                    
+                vx = 1e3*self.image.mdh['voxelsize.x']
+                vy = 1e3*self.image.mdh['voxelsize.y']
+                plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, '+b', mew=2)
+                
+                if 'startParams' in res.results.dtype.names:
+                    plot(res.results['startParams']['x0']/vx, res.results['startParams']['y0']/vy, 'xc', mew=2)
+                
                 if 'tIm' in dir(ft.ofd):
                     figure()
                     imshow(ft.ofd.tIm.T, cmap=cm.hot, interpolation='nearest', hold=False)
@@ -897,10 +913,7 @@ class LMAnalyser:
                     ylim(d.shape[0], 0)
                     xticks([])
                     yticks([])
-                    
-                vx = 1e3*self.image.mdh['voxelsize.x']
-                vy = 1e3*self.image.mdh['voxelsize.y']
-                plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, '+b')
+                    plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, '+b')
                     
                 #figure()
                 #imshow()

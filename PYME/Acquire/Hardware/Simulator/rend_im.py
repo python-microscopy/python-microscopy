@@ -34,6 +34,7 @@ import numpy as np
 from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
 import multiprocessing
 import threading
+from PYME.Deconv.wiener import resizePSF
 
 #import threading
 #tLock = threading.Lock()
@@ -88,7 +89,7 @@ def genTheoreticalModel(md):
         print 'foo'
         print interpModel.strides, interpModel.shape
 
-        interpModel = np.maximum(interpModel/interpModel.max(), 0) #normalise to 1 and clip
+        interpModel = np.maximum(interpModel/interpModel[:,:,len(IntZVals)/2].sum(), 0) #normalise to 1 and clip
         
         print 'bar'
 
@@ -116,6 +117,8 @@ def setModel(modName, md):
     mf = open(getFullExistingFilename(modName), 'rb')
     mod, voxelsize = cPickle.load(mf)
     mf.close()
+    
+    mod = resizePSF(mod, interpModel.shape)
 
     #if not voxelsize.x == md.voxelsize.x:
     #    raise RuntimeError("PSF and Image voxel sizes don't match")
@@ -130,7 +133,8 @@ def setModel(modName, md):
 
     #interpModel = mod
 
-    interpModel = np.maximum(mod/mod.max(), 0) #normalise to 1
+    #interpModel = np.maximum(mod/mod.max(), 0) #normalise to 1
+    interpModel = np.maximum(mod/mod[:,:,len(IntZVals)/2].sum(), 0) #normalise to 1 and clip
 
 def interp(X, Y, Z):
     X = atleast_1d(X)
@@ -453,6 +457,7 @@ def _rFluorSubset(im, fl, A, x0, y0, z, roiSize, dx, dy, dz):
     #print A
     
     #roiSize = 30*np.ones(A.shape, 'i')
+    #print 'rFlS', len(x0)
         
     cInterp.InterpolateInplaceM(interpModel, im, fl['x'] - x0, fl['y'] - y0, z, A, roiSize,dx,dy,dz)
 
@@ -494,7 +499,8 @@ def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=100, laserPo
     
     #print A2.shape, z2.shape, z2.dtype
     
-    roiS = np.minimum(3 + np.abs(z2)*(2.5/70), 100).astype('i')
+    #roiS = np.minimum(3 + np.abs(z2)*(2.5/70), 100).astype('i')
+    roiS = np.minimum(8 + np.abs(z2)*(2.5/70), 140).astype('i')
     #print roiS
     
     #print m.sum(), len(fl['x']), len(A)
