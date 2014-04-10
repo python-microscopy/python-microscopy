@@ -31,7 +31,7 @@ import numpy
 taskList = [
 T(-1, scope.turnAllLasersOff),
 T(20, scope.l488.TurnOn),
-#T(20, scope.lFibre.TurnOn),
+T(20, scope.l405.TurnOn),
 T(30, MainFrame.pan_spool.OnBAnalyse, None)
 ]
 

@@ -253,6 +253,10 @@ class HDFResultsTaskQueue(TaskQueue):
         logging.info('Creating results metadata')
 
         self.resultsMDH = MetaDataHandler.HDFMDHandler(self.h5ResultsFile)
+        self.metaData = MetaDataHandler.NestedClassMDHandler()
+        #self.metaData = None #MetaDataHandler.NestedClassMDHandler(self.resultsMDH)
+        self.metaDataStale = True
+        self.MDHCache = []
         
         logging.info('Creating results events table')
         with self.fileResultsLock.wlock:
@@ -275,18 +279,29 @@ class HDFResultsTaskQueue(TaskQueue):
 
     def getCompletedTask(self):
         return None
+        
+    def flushMetaData(self):
+        if len(self.MDHCache) > 0:
+            with self.fileResultsLock.wlock:
+                mdts = list(self.MDHCache)
+                self.MDHCache = []
+                
+                for mdk, mdv in mdts:
+                    self.resultsMDH.setEntry(mdk, mdv)
 
     def setQueueMetaData(self, fieldName, value):
-        with self.fileResultsLock.wlock:
-            self.resultsMDH.setEntry(fieldName, value)
+        #with self.fileResultsLock.wlock:
+        self.metaData.setEntry(fieldName, value)
+        self.MDHCache.append((fieldName, value))
         
 
     def getQueueMetaData(self, fieldName):
-        res  = None
-        with self.fileResultsLock.rlock:
-            res = self.resultsMDH.getEntry(fieldName)
+        #res  = None
+        #with self.fileResultsLock.rlock:
+        #    res = self.resultsMDH.getEntry(fieldName)
+        return self.metaData[fieldName]
         
-        return res
+        #return res
 
     def addQueueEvents(self, events):
         with self.fileResultsLock.wlock:
@@ -294,11 +309,12 @@ class HDFResultsTaskQueue(TaskQueue):
 
 
     def getQueueMetaDataKeys(self):
-        res = None
-        with self.fileResultsLock.rlock:
-            res = self.resultsMDH.getEntryNames()
-        
-        return res
+        return self.metaData.getEntryNames()
+        #res = None
+        #with self.fileResultsLock.rlock:
+        #    res = self.resultsMDH.getEntryNames()
+        #
+        #return res
 
     def getNumberTasksCompleted(self):
 		return self.numClosedTasks
@@ -421,6 +437,7 @@ class HDFResultsTaskQueue(TaskQueue):
         self.numClosedTasks += len(ress)
         
     def checkTimeouts(self):
+        self.flushMetaData()
         with self.inProgressLock:
             curTime = time.clock()
             for it in self.tasksInProgress:
@@ -431,6 +448,8 @@ class HDFResultsTaskQueue(TaskQueue):
         
         with self.fileResultsLock.wlock: #get a lock
             self.h5ResultsFile.flush()
+            
+        
 
        
         
@@ -495,6 +514,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
                 initialTasks = list(range(startAt, self.h5DataFile.root.ImageData.shape[0]))
 
             self.imNum = len(self.imageData)
+            self.dataRW = False
 
         else: #make ourselves a new file
             self.h5DataFile = tables.openFile(ffn, 'w')
@@ -507,19 +527,20 @@ class HDFTaskQueue(HDFResultsTaskQueue):
 
             self.dataMDH = MetaDataHandler.HDFMDHandler(self.h5DataFile)
             self.dataMDH.mergeEntriesFrom(MetaData.TIRFDefault)
+            self.dataRW = True
 
 
         HDFResultsTaskQueue.__init__(self, name, resultsFilename, initialTasks, onEmpty, fTaskToPop)
 
         
         self.resultsMDH.copyEntriesFrom(self.dataMDH)
+        self.metaData.copyEntriesFrom(self.resultsMDH)
 
         #copy events to results file
         if len (self.h5DataFile.root.Events) > 0:
             self.resultsEvents.append(self.h5DataFile.root.Events[:])
 
-        self.metaData = None #MetaDataHandler.NestedClassMDHandler(self.resultsMDH)
-        self.metaDataStale = True
+        
         self.queueID = name
 
         self.numSlices = self.imageData.shape[0]
@@ -603,19 +624,19 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         while len(self.openTasks) < 1:
             time.sleep(0.01)
 
-        if self.metaDataStale:
-            with self.dataFileLock.rlock:
-                self.metaData = MetaDataHandler.NestedClassMDHandler(self.resultsMDH)
-                self.metaDataStale = False
+        #if self.metaDataStale:
+#            with self.dataFileLock.rlock:
+#                self.metaData = MetaDataHandler.NestedClassMDHandler(self.resultsMDH)
+#                self.metaDataStale = False
             
             #patch up old data which doesn't have BGRange in metadata
-            if not 'Analysis.BGRange' in self.metaData.getEntryNames():
-                if 'Analysis.NumBGFrames' in self.metaData.getEntryNames():
-                    nBGFrames = self.metaData.Analysis.NumBGFrames
-                else:
-                    nBGFrames = 10
+        if not 'Analysis.BGRange' in self.metaData.getEntryNames():
+            if 'Analysis.NumBGFrames' in self.metaData.getEntryNames():
+                nBGFrames = self.metaData.Analysis.NumBGFrames
+            else:
+                nBGFrames = 10
 
-                self.metaData.setEntry('Analysis.BGRange', (-nBGFrames, 0))
+            self.metaData.setEntry('Analysis.BGRange', (-nBGFrames, 0))
         
         
         taskNum = self.openTasks.pop(self.fTaskToPop(workerN, NWorkers, len(self.openTasks)))
@@ -647,19 +668,19 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         while len(self.openTasks) < 1:
             time.sleep(0.01)
 
-        if self.metaDataStale:
-            with self.dataFileLock.rlock:
-                self.metaData = MetaDataHandler.NestedClassMDHandler(self.resultsMDH)
-                self.metaDataStale = False
+        #if self.metaDataStale:
+#            with self.dataFileLock.rlock:
+#                self.metaData = MetaDataHandler.NestedClassMDHandler(self.resultsMDH)
+#                self.metaDataStale = False
             
 
-            if not 'Analysis.BGRange' in self.metaData.getEntryNames():
-                if 'Analysis.NumBGFrames' in self.metaData.getEntryNames():
-                    nBGFrames = self.metaData.Analysis.NumBGFrames
-                else:
-                    nBGFrames = 10
+        if not 'Analysis.BGRange' in self.metaData.getEntryNames():
+            if 'Analysis.NumBGFrames' in self.metaData.getEntryNames():
+                nBGFrames = self.metaData.Analysis.NumBGFrames
+            else:
+                nBGFrames = 10
 
-                self.metaData.setEntry('Analysis.BGRange', (-nBGFrames, 0))
+            self.metaData.setEntry('Analysis.BGRange', (-nBGFrames, 0))
 
 
         tasks = []
@@ -708,6 +729,16 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         
         HDFResultsTaskQueue.setQueueMetaData(self, fieldName, value)
         self.metaDataStale = True
+        
+    def flushMetaData(self):
+        with self.fileResultsLock.wlock:
+            mdts = list(self.MDHCache)
+            self.MDHCache = []
+            
+            for mdk, mdv in mdts:
+                self.resultsMDH.setEntry(mdk, mdv)
+                if self.dataRW:
+                    self.dataMDH.setEntry(mdk, mdv)
         
     def getQueueData(self, fieldName, *args):
         '''Get data, defined by fieldName and potntially additional arguments,  ascociated with queue'''
