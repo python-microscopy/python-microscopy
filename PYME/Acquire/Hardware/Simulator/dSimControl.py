@@ -90,7 +90,7 @@ class dSimControl(wx.Panel):
         hsizer.Add(wx.StaticText(self,-1,'fluorophores distributed evenly along'), 
                    0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
 
-        self.tKbp = wx.TextCtrl(self, -1, size=(60, -1), value='1000')
+        self.tKbp = wx.TextCtrl(self, -1, size=(60, -1), value='20000')
         hsizer.Add(self.tKbp, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
         
         hsizer.Add(wx.StaticText(self,-1,'nm'), 
@@ -107,8 +107,13 @@ class dSimControl(wx.Panel):
         
         hsizer.Add(wx.StaticText(self,-1,'Persistence length [nm]:'), 
                    0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
-        self.tPersist = wx.TextCtrl(self, -1, size=(60, -1), value='150')
+        self.tPersist = wx.TextCtrl(self, -1, size=(60, -1), value='1500')
         hsizer.Add(self.tPersist, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
+        
+        hsizer.Add(wx.StaticText(self,-1,'Z scale:'), 
+                   0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
+        self.tZScale = wx.TextCtrl(self, -1, size=(60, -1), value='1.0')
+        hsizer.Add(self.tZScale, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
 
         self.cbFlatten = wx.CheckBox(self, -1, 'flatten (set z to 0)')
         self.cbFlatten.SetValue(False)
@@ -122,6 +127,8 @@ class dSimControl(wx.Panel):
         
         hsizer=wx.BoxSizer(wx.HORIZONTAL)
         
+        self.stCurObjPoints = wx.StaticText(self, -1, 'Current object has 0 points')
+        hsizer.Add(self.stCurObjPoints, 0, wx.ALL, 2)
         hsizer.AddStretchSpacer()
 
         self.bLoadPoints = wx.Button(self, -1,'Load From File')
@@ -134,9 +141,9 @@ class dSimControl(wx.Panel):
         
         sbsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 2)
 
-        self.stCurObjPoints = wx.StaticText(self, -1, 'Current object has 0 points')        
+                
         
-        sbsizer.Add(self.stCurObjPoints, 0, wx.ALL, 2)
+        
         
         vsizer.Add(sbsizer, 0, wx.ALL|wx.EXPAND, 2)
         
@@ -299,7 +306,10 @@ class dSimControl(wx.Panel):
         wc.yp = np.mod(wc.yp, 256*70) - 128*70
         wc.zp -= wc.zp.mean()
         
+        wc.zp *= float(self.tZScale.GetValue())
+        
         self.points = []
+        
         for i in range(len(wc.xp)):
             if not self.cbFlatten.GetValue():
                 if self.cbColour.GetValue():
