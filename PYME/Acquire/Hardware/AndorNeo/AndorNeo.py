@@ -40,15 +40,15 @@ class AndorBase(SDK3Camera):
     MODE_CONTINUOUS = 1
     MODE_SINGLE_SHOT = 0
     
-    validROIS = [(2560,2160,1, 1),
-                 (2544,2160,1,25),
-                 (2064,2048,57,265),
-                 (1776,1760,201,409),
-                 (1920,1080,537,337),
-                 (1392,1040,561,601),
-                 (528,512,825,1033),
-                 (240,256,953,1177),
-                 (144,128,1017,1225)]
+    validROIS = [(2048,2048,1, 1),
+                 (2040,2048,1,1),
+                 (2000,2000,24,24),
+                 (1780,1760,140,140),
+                 (1920,1080,50,500),
+                 (1400,1040,320,500),
+                 (520,512,825,1033),
+                 (240,280,953,1177),
+                 (140,128,1017,1225)]
     
     SimpleGainModes = {
         'low noise':
@@ -133,7 +133,8 @@ class AndorBase(SDK3Camera):
         # spurious noise filter off by default
         self.SpuriousNoiseFilter.setValue(0)
         self.SensorCooling.setValue(True)
-        self.TemperatureControl.setString('-30.00')
+        # Zyla does not like a temperature to be set
+        # self.TemperatureControl.setString('-30.00')
         #self.PixelReadoutRate.setIndex(1)
         
         #set up polling thread        
@@ -257,7 +258,8 @@ class AndorBase(SDK3Camera):
         #bv = buf.view(chSlice.dtype).reshape(chSlice.shape)
         #chSlice[:] = bv
         #chSlice[:,:] = bv
-        ctypes.cdll.msvcrt.memcpy(chSlice.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), buf.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), chSlice.nbytes)
+        #ctypes.cdll.msvcrt.memcpy(chSlice.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), buf.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), chSlice.nbytes)
+        ctypes.memmove(chSlice.ctypes.data_as(ctypes.c_void_p), buf.ctypes.data_as(ctypes.c_void_p), chSlice.nbytes)
         #print 'f'
         
         #recycle buffer

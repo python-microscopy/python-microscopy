@@ -34,6 +34,7 @@ cam.Init()
 cam.SetIntegTime(100)
 #cam.PixelReadoutRate.setIndex(2)
 
+cam.SetROIIndex(7)
 print 'Starting Exposure ...'
 cam.StartExposure()
 
