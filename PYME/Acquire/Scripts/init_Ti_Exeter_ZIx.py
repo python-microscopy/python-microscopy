@@ -41,7 +41,6 @@ def GetComputerName():
 #scope.camControls = {}
 from PYME.Acquire import MetaDataHandler
 
-
 # bits to include in init_***.py files:
 from PYME.Acquire.Hardware.comports import ComPort
 
@@ -61,13 +60,22 @@ if hwconfig is None:
         'Laser671' :           ComPort('COM12', doc='671nm laser; leostick'),
     }
 
+InitBG('Andor Zyla', '''
+from PYME.Acquire.Hardware.AndorNeo import AndorNeo
+scope.cameras['Zyla'] =  AndorNeo.AndorNeo(0)
+scope.cam = scope.cameras['Zyla']
+''')
+
+InitGUI('''scope.cameras['Zyla'].Init()''')
 
 InitBG('EMCCD Cameras', '''
-scope.cameras['A - Left'] = AndorIXon.iXonCamera(0)
-#scope.cameras['B - Right'] = AndorIXon.iXonCamera(0)
-#scope.cameras['B - Right'].SetShutter(False)
-#scope.cameras['B - Right'].SetActive(False)
-scope.cam = scope.cameras['A - Left']
+#scope.cameras['A - Left'] = AndorIXon.iXonCamera(0)
+scope.cameras['Ixon'] = AndorIXon.iXonCamera(0)
+scope.cameras['Ixon'].SetShutter(False)
+scope.cameras['Ixon'].SetActive(False)
+scope.cameras['Ixon'].port = 'L100'
+scope.cameras['Zyla'].port = 'R100'
+#scope.cam = scope.cameras['A - Left']
 ''')
 
 #PIFoc
@@ -104,13 +112,25 @@ pz1.join()
 #''')
 
 InitGUI('''
-scope.camControls['A - Left'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['A - Left'], scope)
-camPanels.append((scope.camControls['A - Left'], 'EMCCD A Properties'))
+scope.camControls['Zyla'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['Ixon'], scope)
+camPanels.append((scope.camControls['Zyla'], 'Zyla Properties'))
 
 #scope.camControls['B - Right'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['B - Right'], scope)
 #camPanels.append((scope.camControls['B - Right'], 'EMCCD B Properties'))
 
+scope.camControls['Ixon'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['Ixon'], scope)
+camPanels.append((scope.camControls['Ixon'], 'EMCCD Properties'))
+
 ''')
+
+# InitGUI('''
+# scope.camControls['A - Left'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['A - Left'], scope)
+# camPanels.append((scope.camControls['A - Left'], 'EMCCD A Properties'))
+
+# #scope.camControls['B - Right'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['B - Right'], scope)
+# #camPanels.append((scope.camControls['B - Right'], 'EMCCD B Properties'))
+
+# ''')
 
 #InitGUI('''
 #from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
