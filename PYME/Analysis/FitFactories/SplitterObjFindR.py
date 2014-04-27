@@ -109,7 +109,7 @@ class GaussianFitFactory:
         
     def __getitem__(self, key):
         #print key
-        xslice, yslice, zslice = key
+        xslice, yslice, zslice, x, y, z = key
 
         #cut region out of data stack
         dataROI = self.data[xslice, yslice, zslice] - self.metadata.Camera.ADOffset
@@ -140,7 +140,8 @@ class GaussianFitFactory:
         # seem to be so far outside the ROI that we get a an empty region
         # cut out; not sure why this happens when calling TEST
         if min(dataROI.shape) < 1:
-            return GaussianFitResultR(scipy.array([0, 0, 0, 0, 250/2.35, 0,0, .001, .001]), self.metadata, (xslice, yslice, zslice), 0, None)
+		print "invalid slice at ", x, y, z
+		return GaussianFitResultR(scipy.array([-1, 0, 0, 0, 250/2.35, 0,0, .001, .001]), self.metadata, (xslice, yslice, zslice), 0, None)
 
         #estimate some start parameters...
         Ag = dataROI[:,:,0].max() - dataROI[:,:,0].min() #amplitude
@@ -196,9 +197,8 @@ class GaussianFitFactory:
         
         #print x, y
 	
-        return self[max((x - roiHalfSize), 0):min((x + roiHalfSize + 1),self.data.shape[0]), 
-                    max((y - roiHalfSize), 0):min((y + roiHalfSize + 1), self.data.shape[1]), 0:2]
-        
+        return self[max((x - roiHalfSize), 0):min((x + roiHalfSize + 1),self.data.shape[0]),
+		    max((y - roiHalfSize), 0):min((y + roiHalfSize + 1), self.data.shape[1]), 0:2, x, y, z]
 
 #so that fit tasks know which class to use
 FitFactory = GaussianFitFactory
