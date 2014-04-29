@@ -873,6 +873,7 @@ class LMAnalyser:
             self.checkTQ()
         matplotlib.interactive(False)
         clf()
+
         sq = min(self.image.mdh.getEntry('EstimatedLaserOnFrameNo') + 1000, self.image.dataSource.getNumSlices()/4)
         zps = array(range(self.image.mdh.getEntry('EstimatedLaserOnFrameNo') + 20, self.image.mdh.getEntry('EstimatedLaserOnFrameNo') + 24)  + range(sq, sq + 4) + range(self.image.dataSource.getNumSlices()/2,self.image.dataSource.getNumSlices() /2+4))
         zps += offset
@@ -919,7 +920,10 @@ class LMAnalyser:
             if ft.driftEst:
                  plot([p.x for p in ft.ofdDr], [p.y for p in ft.ofdDr], 'o', mew=2, mec='b', mfc='none', ms=9)
             if ft.fitModule in remFitBuf.splitterFitModules:
-                    plot([p.x for p in ft.ofd], [d.shape[0] - p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
+                if self.image.mdh.getEntry('Splitter.Flip'):
+                    plot([p.x for p in ft.ofd], [ d.shape[0] - p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
+                else:
+                    plot([p.x for p in ft.ofd], [ p.y + d.shape[0]/2 for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
             axis('tight')
             xlim(0, d.shape[1])
             ylim(0, d.shape[0])

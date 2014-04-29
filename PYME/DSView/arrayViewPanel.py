@@ -402,7 +402,9 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                     for p, dxi, dyi in zip(pNFoc, dxn, dyn):
                         px, py = self._PixelToScreenCoordinates(p[0] - ps2, p[1] - ps2)
                         dc.DrawRectangle(px,py, ps*sc,ps*sc*self.aspect)
-                        px, py = self._PixelToScreenCoordinates(p[0] -dxi - ps2, self.do.ds.shape[1] - p[1] + dyi - ps2)
+#                        px, py = self._PixelToScreenCoordinates(p[0] -dxi - ps2, self.do.ds.shape[1] - p[1] + dyi - ps2)
+#                        dc.DrawRectangle(px,py, ps*sc,ps*sc*self.aspect)
+                        px, py = self._PixelToScreenCoordinates(p[0] -dxi - ps2, p[1] - dyi + self.do.ds.shape[1]/2 - ps2)
                         dc.DrawRectangle(px,py, ps*sc,ps*sc*self.aspect)
 
                 else:
@@ -423,7 +425,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                         dc.SetPen(pRed)
                     px, py = self._PixelToScreenCoordinates(p[0] - ps2, p[1] - ps2)
                     dc.DrawRectangle(px,py, ps*sc,ps*sc*self.aspect)
-                    px, py = self._PixelToScreenCoordinates(p[0] -dxi - ps2, self.do.ds.shape[1] - p[1] + dyi - ps2)
+                    px, py = self._PixelToScreenCoordinates(p[0] -dxi - ps2,  p[1] - dyi + self.do.ds.shape[1]/2 - ps2)
                     dc.DrawRectangle(px,py, ps*sc,ps*sc*self.aspect)
                     
             else:

@@ -425,6 +425,7 @@ class AndorBase(SDK3Camera):
             mdh.setEntry('Camera.IntegrationTime', self.GetIntegTime())
             mdh.setEntry('Camera.CycleTime', self.GetIntegTime())
             mdh.setEntry('Camera.EMGain', 1)
+            mdh.setEntry('Camera.DefaultEMGain', 1) # needed for some protocols
     
             mdh.setEntry('Camera.ROIPosX', self.GetROIX1())
             mdh.setEntry('Camera.ROIPosY',  self.GetROIY1())
