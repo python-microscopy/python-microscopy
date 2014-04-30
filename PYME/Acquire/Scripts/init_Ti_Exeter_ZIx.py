@@ -186,7 +186,7 @@ time1.WantNotification.append(pv.draw)
 #splitter
 InitGUI('''
 from PYME.Acquire.Hardware import splitter
-splt = splitter.Splitter(MainFrame, mControls, scope, scope.cameras['Ixon'], flipChan = 0, dichroic = 'FF741-Di01' , transLocOnCamera = 'Top', flip=False)
+splt = splitter.Splitter(MainFrame, mControls, scope, scope.cameras['Ixon'], flipChan = 0, dichroic = 'T740LPXR' , transLocOnCamera = 'bottom', flip=False)
 ''')
 
 #we don't have a splitter - make sure that the analysis knows this
