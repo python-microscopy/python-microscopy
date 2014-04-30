@@ -381,6 +381,7 @@ class AndorBase(SDK3Camera):
         self.StopAq()
         self._temp = self.SensorTemperature.getValue()
         self._frameRate = self.FrameRate.getValue()
+        self.tKin = 1.0 / self._frameRate
         
         eventLog.logEvent('StartAq', '')
         self._flush()
