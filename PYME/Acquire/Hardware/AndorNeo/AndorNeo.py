@@ -116,6 +116,7 @@ class AndorBase(SDK3Camera):
         
         self._temp = 0
         self._frameRate = 0
+        self._fixed_ROIs = FALSE # this should really be a call to the suitable feature test function
         
         #register as a provider of metadata
         MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
@@ -323,17 +324,35 @@ class AndorBase(SDK3Camera):
 
     def SetROI(self, x1, y1, x2, y2):
         #shouldn't do GUI stuff here, but quick way of making it work
-        print 'Setting ROI'
-        import wx
-        dlg = wx.SingleChoiceDialog(None, 'Please select the ROI size', 'Camera ROI', ['%dx%d at (%d, %d)' % roi for roi in self.validROIS])
-        dlg.ShowModal()
-        self.SetROIIndex(dlg.GetSelection())
-        dlg.Destroy()
-        #pass #silently fail
-        #self.AOILeft.setValue(x1)
-        #self.AOITop.setValue(y1)
-        #self.AOIWidth.setValue(x2-x1)
-        #self.AOIHeight.setValue(y2 - y1)
+        if self._fixed_ROIs:
+            print 'Setting ROI'
+            import wx
+            dlg = wx.SingleChoiceDialog(None, 'Please select the ROI size', 'Camera ROI', ['%dx%d at (%d, %d)' % roi for roi in self.validROIS])
+            dlg.ShowModal()
+            self.SetROIIndex(dlg.GetSelection())
+            dlg.Destroy()
+        else: # allow to select ROI size more freely
+            # for some weird reason the width must be divisble by 10 on the zyla
+            if (x1 > x2):
+                xtmp = x2
+                x2 = x1
+                x1 = xtmp
+            if (y1 > y2):
+                ytmp = y2
+                y2 = y1
+                y1 = ytmp
+            if x1 == x2:
+                raise RuntimeError('Error Setting x ROI - Zero sized ROI')
+            if y1 == y2:
+                raise RuntimeError('Error Setting y ROI - Zero sized ROI')
+            w10 = int((x2-x1+9)/10.0) * 10
+            if x1+w10 > 2048:
+                w10 -= 10
+            # now set as specified
+            self.AOILeft.setValue(x1)
+            self.AOITop.setValue(y1)
+            self.AOIWidth.setValue(w10)
+            self.AOIHeight.setValue(y2 - y1)
     
     def SetGainMode(self,mode):
         from warnings import warn

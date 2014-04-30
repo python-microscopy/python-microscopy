@@ -278,14 +278,17 @@ class fitTask(taskDef.Task):
         vx = self.md['voxelsize.x']*1e3
         vy = self.md['voxelsize.y']*1e3
         
-        if 'Splitter.Channel0ROI' in self.md.getEntryNames():
-            x0, y0, w, h = self.md['Splitter.Channel0ROI']
-            x0 -= (self.md['Camera.ROIPosX'] - 1)
-            y0 -= (self.md['Camera.ROIPosY'] - 1)
+       if 'Splitter.Channel0ROI' in self.md.getEntryNames():
+           pseudo_roiposx = 1
+           pseudo_roiposy = 1 
+
+           x0, y0, w, h = self.md['Splitter.Channel0ROI']
+           x0 -= (pseudo_roiposx - 1) # note: these are all no-ops!
+           y0 -= (pseudo_roiposy - 1)
             
-            x1, y1, w, h = self.md['Splitter.Channel1ROI']
-            x1 -= (self.md['Camera.ROIPosX'] - 1)
-            y1 -= (self.md['Camera.ROIPosY'] - 1)
+           x1, y1, w, h = self.md['Splitter.Channel1ROI']
+           x1 -= (pseudo_roiposx - 1)
+           y1 -= (pseudo_roiposy - 1)
         else:
             x0,y0, w, h = 0,0,self.data.shape[0], self.data.shape[1]
             x1, y1 = w,h
@@ -302,8 +305,10 @@ class fitTask(taskDef.Task):
             
         #chromatic shift
         if 'chroma.dx' in self.md.getEntryNames():
-            dx = self.md['chroma.dx'].ev(xn*vx, yn*vy)/vx
-            dy = self.md['chroma.dy'].ev(xn*vy, yn*vy)/vy
+            xnn = xn+self.metadata.Camera.ROIPosX - 1
+            ynn = yn+self.metadata.Camera.ROIPosY - 1
+            dx = self.md['chroma.dx'].ev(xnn*vx, ynn*vy)/vx
+            dy = self.md['chroma.dy'].ev(xnn*vy, ynn*vy)/vy
         
             xn += dx*ch1
             yn += dy*ch1
@@ -317,13 +322,16 @@ class fitTask(taskDef.Task):
         vy = self.md['voxelsize.y']*1e3
         
         if 'Splitter.Channel0ROI' in self.md.getEntryNames():
+            pseudo_roiposx = 1
+            pseudo_roiposy = 1 
+
             x0, y0, w, h = self.md['Splitter.Channel0ROI']
-            x0 -= (self.md['Camera.ROIPosX'] - 1)
-            y0 -= (self.md['Camera.ROIPosY'] - 1)
+            x0 -= (pseudo_roiposx - 1)
+            y0 -= (pseudo_roiposy - 1)
             
             x1, y1, w, h = self.md['Splitter.Channel1ROI']
-            x1 -= (self.md['Camera.ROIPosX'] - 1)
-            y1 -= (self.md['Camera.ROIPosY'] - 1)
+            x1 -= (pseudo_roiposx - 1)
+            y1 -= (pseudo_roiposy - 1)
         else:
             x0,y0, w, h = 0,0,self.data.shape[0], self.data.shape[1]
             x1, y1 = w,h
@@ -340,8 +348,10 @@ class fitTask(taskDef.Task):
             
         #chromatic shift
         if 'chroma.dx' in self.md.getEntryNames():
-            dx = self.md['chroma.dx'].ev(x*vx, y*vy)/vx
-            dy = self.md['chroma.dy'].ev(x*vx, y*vy)/vy
+            xnn = x + self.metadata.Camera.ROIPosX - 1
+            ynn = y + self.metadata.Camera.ROIPosY - 1
+            dx = self.md['chroma.dx'].ev(xnn*vx, ynn*vy)/vx
+            dy = self.md['chroma.dy'].ev(xnn*vx, ynn*vy)/vy
         
             xn -= dx
             yn -= dy
@@ -388,13 +398,15 @@ class fitTask(taskDef.Task):
 #            if (self.md.getEntry('Camera.ROIHeight') + 1 + 2*(self.md.getEntry('Camera.ROIPosY')-1)) == 512:
             #was setup correctly for the splitter
             if 'Splitter.Channel0ROI' in self.md.getEntryNames():
+                pseudo_roiposx = 1
+                pseudo_roiposy = 1
                 x0, y0, w, h = self.md['Splitter.Channel0ROI']
-                x0 -= (self.md['Camera.ROIPosX'] - 1)
-                y0 -= (self.md['Camera.ROIPosY'] - 1)
+                x0 -= (pseudo_roiposx - 1)
+                y0 -= (pseudo_roiposy - 1)
                 g = self.data[x0:(x0+w), y0:(y0+h)]
                 x0, y0, w, h = self.md['Splitter.Channel1ROI']
-                x0 -= (self.md['Camera.ROIPosX'] - 1)
-                y0 -= (self.md['Camera.ROIPosY'] - 1)
+                x0 -= (pseudo_roiposx - 1)
+                y0 -= (pseudo_roiposy - 1)
                 r = self.data[x0:(x0+w), y0:(y0+h)]
             else:
                 g = self.data[:, :(self.data.shape[1]/2)]
@@ -501,13 +513,15 @@ class fitTask(taskDef.Task):
 
             if not len(self.bgindices) == 0:
                 if 'Splitter.Channel0ROI' in self.md.getEntryNames():
+                    pseudo_roiposx = 1
+                    pseudo_roiposy = 1
                     x0, y0, w, h = self.md['Splitter.Channel0ROI']
-                    x0 -= (self.md['Camera.ROIPosX'] - 1)
-                    y0 -= (self.md['Camera.ROIPosY'] - 1)
+                    x0 -= (pseudo_roiposx - 1)
+                    y0 -= (pseudo_roiposy - 1)
                     g_ = self.bg[x0:(x0+w), y0:(y0+h)]
                     x0, y0, w, h = self.md['Splitter.Channel1ROI']
-                    x0 -= (self.md['Camera.ROIPosX'] - 1)
-                    y0 -= (self.md['Camera.ROIPosY'] - 1)
+                    x0 -= (pseudo_roiposx - 1)
+                    y0 -= (pseudo_roiposy - 1)
                     r_ = self.bg[x0:(x0+w), y0:(y0+h)]
                 else:
                     g_ = self.bg[:, :(self.bg.shape[1]/2)]
