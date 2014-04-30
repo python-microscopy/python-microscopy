@@ -305,8 +305,8 @@ class fitTask(taskDef.Task):
             
         #chromatic shift
         if 'chroma.dx' in self.md.getEntryNames():
-            xnn = xn+self.metadata.Camera.ROIPosX - 1
-            ynn = yn+self.metadata.Camera.ROIPosY - 1
+            xnn = xn+self.md['Camera.ROIPosX'] - 1
+            ynn = yn+self.md['Camera.ROIPosY'] - 1
             dx = self.md['chroma.dx'].ev(xnn*vx, ynn*vy)/vx
             dy = self.md['chroma.dy'].ev(xnn*vy, ynn*vy)/vy
         
@@ -348,8 +348,8 @@ class fitTask(taskDef.Task):
             
         #chromatic shift
         if 'chroma.dx' in self.md.getEntryNames():
-            xnn = x + self.metadata.Camera.ROIPosX - 1
-            ynn = y + self.metadata.Camera.ROIPosY - 1
+            xnn = x + self.md['Camera.ROIPosX'] - 1
+            ynn = y + self.md['Camera.ROIPosY'] - 1
             dx = self.md['chroma.dx'].ev(xnn*vx, ynn*vy)/vx
             dy = self.md['chroma.dy'].ev(xnn*vx, ynn*vy)/vy
         

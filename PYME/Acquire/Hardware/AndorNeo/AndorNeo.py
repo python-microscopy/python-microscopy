@@ -116,7 +116,7 @@ class AndorBase(SDK3Camera):
         
         self._temp = 0
         self._frameRate = 0
-        self._fixed_ROIs = False # this should really be a call to the suitable feature test function
+        self._fixed_ROIs = True # this should really be a call to the suitable feature test function
         
         #register as a provider of metadata
         MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
@@ -326,10 +326,14 @@ class AndorBase(SDK3Camera):
     def SetROIIndex(self, index):
         width, height, top, left = self.validROIS[index]
         
+        #print 'in SetROIIndex'
         self.AOIWidth.setValue(width)
         self.AOILeft.setValue(left)
         self.AOIHeight.setValue(height)
         self.AOITop.setValue(top)
+
+    def ROIsAreFixed(self):
+        return self._fixed_ROIs
 
     def SetROI(self, x1, y1, x2, y2):
         #shouldn't do GUI stuff here, but quick way of making it work
@@ -358,11 +362,13 @@ class AndorBase(SDK3Camera):
             w10 = int((x2-x1+9)/10.0) * 10
             if x1+w10 > 2048:
                 w10 -= 10
+            h = y2-y1
             # now set as specified
+            print x1,y1,w10,h
             self.AOILeft.setValue(x1)
             self.AOITop.setValue(y1)
             self.AOIWidth.setValue(w10)
-            self.AOIHeight.setValue(y2 - y1)
+            self.AOIHeight.setValue(h)
     
     def SetGainMode(self,mode):
         from warnings import warn
