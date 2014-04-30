@@ -278,17 +278,17 @@ class fitTask(taskDef.Task):
         vx = self.md['voxelsize.x']*1e3
         vy = self.md['voxelsize.y']*1e3
         
-       if 'Splitter.Channel0ROI' in self.md.getEntryNames():
-           pseudo_roiposx = 1
-           pseudo_roiposy = 1 
-
-           x0, y0, w, h = self.md['Splitter.Channel0ROI']
-           x0 -= (pseudo_roiposx - 1) # note: these are all no-ops!
-           y0 -= (pseudo_roiposy - 1)
+        if 'Splitter.Channel0ROI' in self.md.getEntryNames():
+            pseudo_roiposx = 1
+            pseudo_roiposy = 1 
             
-           x1, y1, w, h = self.md['Splitter.Channel1ROI']
-           x1 -= (pseudo_roiposx - 1)
-           y1 -= (pseudo_roiposy - 1)
+            x0, y0, w, h = self.md['Splitter.Channel0ROI']
+            x0 -= (pseudo_roiposx - 1) # note: these are all no-ops!
+            y0 -= (pseudo_roiposy - 1)
+            
+            x1, y1, w, h = self.md['Splitter.Channel1ROI']
+            x1 -= (pseudo_roiposx - 1)
+            y1 -= (pseudo_roiposy - 1)
         else:
             x0,y0, w, h = 0,0,self.data.shape[0], self.data.shape[1]
             x1, y1 = w,h

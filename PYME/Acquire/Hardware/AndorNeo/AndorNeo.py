@@ -116,7 +116,7 @@ class AndorBase(SDK3Camera):
         
         self._temp = 0
         self._frameRate = 0
-        self._fixed_ROIs = FALSE # this should really be a call to the suitable feature test function
+        self._fixed_ROIs = False # this should really be a call to the suitable feature test function
         
         #register as a provider of metadata
         MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
@@ -130,9 +130,18 @@ class AndorBase(SDK3Camera):
         # self.SimplePreAmpGainControl.setString('16-bit (low noise & high well capacity)')
         # self.PixelEncoding.setString('Mono16')
         # self.SetGainMode('high dynamic range')
-        self.SetGainMode('low noise')
+        try:
+            self.SetGainMode('low noise') # this will fail with the SimCams
+        except:
+            print "error setting gain mode"
+            pass
         # spurious noise filter off by default
-        self.SpuriousNoiseFilter.setValue(0)
+        try:
+            self.SpuriousNoiseFilter.setValue(0) # this will also fail with the SimCams
+        except:
+            print "error disabling spurios noise filter"
+            pass
+        
         self.SensorCooling.setValue(True)
         # Zyla does not like a temperature to be set
         # self.TemperatureControl.setString('-30.00')
@@ -325,13 +334,14 @@ class AndorBase(SDK3Camera):
     def SetROI(self, x1, y1, x2, y2):
         #shouldn't do GUI stuff here, but quick way of making it work
         if self._fixed_ROIs:
-            print 'Setting ROI'
+            print 'Setting ROI, using fixed sizes'
             import wx
             dlg = wx.SingleChoiceDialog(None, 'Please select the ROI size', 'Camera ROI', ['%dx%d at (%d, %d)' % roi for roi in self.validROIS])
             dlg.ShowModal()
             self.SetROIIndex(dlg.GetSelection())
             dlg.Destroy()
         else: # allow to select ROI size more freely
+            print "free ROI choice" 
             # for some weird reason the width must be divisble by 10 on the zyla
             if (x1 > x2):
                 xtmp = x2
