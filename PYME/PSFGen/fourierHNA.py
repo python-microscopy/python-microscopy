@@ -52,6 +52,7 @@ class FourierPropagatorHNA:
         #self.propFac = fftw3f.create_aligned_array(u.shape, 'complex64')
         #self.propFac = 1j*8*pi*sqrt(np.maximum((n/lamb)**2 - (u**2 + v**2), 0))
         self.propFac = ((2*pi*n/lamb)*sqrt(np.maximum(1 - (u**2 + v**2), 0))).astype('f')
+        self.pfm =(self.propFac > 0).astype('f')
 
         self._F = fftw3f.create_aligned_array(u.shape, 'complex64')
         self._f = fftw3f.create_aligned_array(u.shape, 'complex64')
@@ -72,11 +73,13 @@ class FourierPropagatorHNA:
         #return ifftshift(ifftn(F*exp(self.propFac*z)))
         #print abs(F).sum()
         pf = self.propFac*float(z)
-        fs = F*(cos(pf) + j*sin(pf))
-        self._F[:] = fftshift(fs)
+        fs = F*self.pfm*(cos(pf) + j*sin(pf))
+        #self._F[:] = fftshift(fs)
+        self._F[:] = (fs)
         self._plan_F_f()
         #print abs(self._f).sum()
-        return ifftshift(self._f/sqrt(self._f.size))
+        #return ifftshift(self._f/sqrt(self._f.size))
+        return (self._f/sqrt(self._f.size))
         
     def propagate_r(self, f, z):
         #return ifftshift(ifftn(F*exp(self.propFac*z)))

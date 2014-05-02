@@ -84,13 +84,13 @@ class dSimControl(wx.Panel):
                                   wx.VERTICAL)        
         hsizer=wx.BoxSizer(wx.HORIZONTAL)
 
-        self.tNumFluorophores = wx.TextCtrl(self, -1, value='1000', size=(60, -1))
+        self.tNumFluorophores = wx.TextCtrl(self, -1, value='10000', size=(60, -1))
         hsizer.Add(self.tNumFluorophores, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
 
         hsizer.Add(wx.StaticText(self,-1,'fluorophores distributed evenly along'), 
                    0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
 
-        self.tKbp = wx.TextCtrl(self, -1, size=(60, -1), value='20000')
+        self.tKbp = wx.TextCtrl(self, -1, size=(60, -1), value='200000')
         hsizer.Add(self.tKbp, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
         
         hsizer.Add(wx.StaticText(self,-1,'nm'), 

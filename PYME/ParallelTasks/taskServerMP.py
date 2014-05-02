@@ -130,7 +130,7 @@ class TaskQueueSet(Pyro.core.ObjBase):
 
     def getTasks(self, workerName='Unspecified'):
         """get task from front of list, non-blocking"""
-        print 'Task requested'
+        #print 'Task requested'
         with self.getTaskLock:
             #calling getNumberOpenTasks with False makes the queues tell us how many
             #tasks they are prepared to give out, rather than how many they actually have
@@ -147,7 +147,7 @@ class TaskQueueSet(Pyro.core.ObjBase):
                 res = queuesWithOpenTasks[int(numpy.round(len(queuesWithOpenTasks)*numpy.random.rand() - 0.5))].getTasks(self.activeWorkers.index(workerName), len(self.activeWorkers))
         
         
-        print workerName, len(res)
+        #print workerName, len(res)
         return res
 
     def returnCompletedTask(self, taskResult, workerName='Unspecified', timeTaken=None):
