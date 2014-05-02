@@ -116,7 +116,7 @@ class AndorBase(SDK3Camera):
         
         self._temp = 0
         self._frameRate = 0
-        self._fixed_ROIs = True # this should really be a call to the suitable feature test function
+        self._fixed_ROIs = False # this should really be a call to the suitable feature test function
         
         #register as a provider of metadata
         MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
@@ -146,7 +146,9 @@ class AndorBase(SDK3Camera):
         # Zyla does not like a temperature to be set
         # self.TemperatureControl.setString('-30.00')
         #self.PixelReadoutRate.setIndex(1)
-        
+        # this one to deal with the requirement to have width divisible by 10
+        if not self._fixed_ROIs:
+            self.SetROI(0,0, self.GetCCDWidth(), self.GetCCDHeight())
         #set up polling thread        
         self.doPoll = False
         self.pollLoopActive = True
@@ -286,7 +288,9 @@ class AndorBase(SDK3Camera):
         return self.ExposureTime.getValue()
     
     def GetCCDWidth(self): 
-        return self.SensorWidth.getValue()
+        # limit width to multiple of 10 - Zyla specific!!!
+        # NOTE: we are not sure why only this size works
+        return 10*int(self.SensorWidth.getValue()/10)
     def GetCCDHeight(self): 
         return self.SensorHeight.getValue()
     
