@@ -417,8 +417,8 @@ def getSampleData(parent, mdh):
             currentSlide[0] = dlg.slide
         else:
             currentSlide[0] = None
-
-    dlg.Destroy()
+        
+        dlg.Destroy()
 
 def createImage(mdh, slide, comments=''):
     im = models.Image.GetOrCreate(mdh.getEntry('imageID'), nameUtils.getUsername(), slide, mdh.getEntry('StartTime'))

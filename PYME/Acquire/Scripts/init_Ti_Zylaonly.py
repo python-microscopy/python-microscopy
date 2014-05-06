@@ -76,7 +76,7 @@ InitGUI('''scope.cameras['Zyla'].Init()''')
 #scope.cam = fakeCam.FakeCamera(70*scipy.arange(-128.0, 128.0), 70*scipy.arange(-128.0, 128.0), fakeCam.NoiseMaker(), scope.fakePiezo, xpiezo = scope.fakeXPiezo, ypiezo = scope.fakeYPiezo)
 #scope.cameras['Fake Camera'] = scope.cam
 #time.sleep(5)
-''')
+#''')
 
 #InitBG('EMCCD Camera 2', '''
 #scope.cameras['B'] = AndorIXon.iXonCamera(0)
