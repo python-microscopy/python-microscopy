@@ -58,6 +58,15 @@ class AndorBase(SDK3Camera):
         'high dynamic range':
             { 'name' : '16-bit (low noise & high well capacity)', 'PEncoding' : 'Mono16' }}
 
+    NoiseProperties = {
+        'ReadNoise' : 1.1,
+        'ElectronsPerCount' : 0.28,
+        'NGainStages' : -1,
+        'ADOffset' : 100,
+        'DefaultEMGain' : 85,
+        'SaturationThreshold' : 2e4#(2**16 -1)
+    }
+
     def __init__(self, camNum):
         #define properties
         self.CameraAcquiring = ATBool()
@@ -93,6 +102,7 @@ class AndorBase(SDK3Camera):
         self.FrameRate = ATFloat()
         self.SensorTemperature = ATFloat()
         self.TargetSensorTemperature = ATFloat()
+        self.FullAOIControl = ATBool()
         
         SDK3Camera.__init__(self,camNum)
         
@@ -116,8 +126,6 @@ class AndorBase(SDK3Camera):
         
         self._temp = 0
         self._frameRate = 0
-        self._fixed_ROIs = False # this should really be a call to the suitable feature test function
-        
         #register as a provider of metadata
         MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
         
@@ -145,8 +153,14 @@ class AndorBase(SDK3Camera):
         
         self.SensorCooling.setValue(True)
         # Zyla does not like a temperature to be set
-        # self.TemperatureControl.setString('-30.00')
+        if self.TemperatureControl.isImplemented() and self.TemperatureControl.isWritable():
+            self.TemperatureControl.setString('-30.00')
         #self.PixelReadoutRate.setIndex(1)
+        # test if we have only fixed ROIs
+        self._fixed_ROIs = not self.FullAOIControl.isImplemented() or not self.FullAOIControl.getValue()
+        self.noiseProps = self.NoiseProperties
+
+
         # this one to deal with the requirement to have width divisible by 10
         if not self._fixed_ROIs:
             self.SetROI(1,1, self.GetCCDWidth(), self.GetCCDHeight())
@@ -540,15 +554,20 @@ class AndorBase(SDK3Camera):
     def GetFPS(self):
         #return self.FrameRate.getValue()
         return self._frameRate
-        
+
+    def __getattr__(self, name):
+        if name in self.noiseProps.keys():
+            return self.noiseProps[name]
+        else:  raise AttributeError, name  # <<< DON'T FORGET THIS LINE !!
+
+
+
+
     def __del__(self):
         self.Shutdown()
         #self.compT.kill = True
 
-        
-        
-        
-        
+
 class AndorNeo(AndorBase):              
     def __init__(self, camNum):
         #define properties
