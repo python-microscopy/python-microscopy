@@ -29,9 +29,9 @@ import wx
 
 #redefine wxFrame with a version that hides when someone tries to close it
 #dirty trick, but lets the Boa gui builder still work with frames we do this to
-from noclosefr import *
+#from PYME.Acquire.noclosefr import *
 
-import sys
+#import sys
 
 timeChoices = ['10', '25', '50', '100', '250', '500', '1000', '2500']
 
@@ -104,7 +104,7 @@ class IntegrationSliders(wx.Panel):
     def onCombobox(self, event):
         cb = event.GetEventObject()
         ind = self.cboxes.index(cb)
-        print cb.GetValue()
+        print((cb.GetValue()))
         self.chaninfo.itimes[ind] = float(cb.GetValue())
         self.sliders[ind].SetValue(self.chaninfo.itimes[ind])
         self.sliders[ind].SetRange(1, min(5*self.chaninfo.itimes[ind], 10000))

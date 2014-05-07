@@ -40,7 +40,7 @@ class DeconvSettingsDialog(wx.Dialog):
 
         sizer2 = wx.BoxSizer(wx.VERTICAL)
         
-        print 'nchans:', nChans
+        print(('nchans:', nChans))
         
         if nChans > 1:
             sizer3 = wx.BoxSizer(wx.HORIZONTAL)

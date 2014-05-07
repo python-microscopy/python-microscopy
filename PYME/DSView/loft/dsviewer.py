@@ -151,7 +151,7 @@ class DSViewFrame(wx.Frame):
 class MyApp(wx.App):
     def OnInit(self):
         #wx.InitAllImageHandlers()
-        print sys.argv
+        print((sys.argv))
         if (len(sys.argv) > 1):
             vframe = DSViewFrame(None, sys.argv[1], filename=sys.argv[1])
         else:

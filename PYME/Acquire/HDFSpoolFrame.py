@@ -25,13 +25,13 @@
 
 import wx
 import datetime
-import HDFSpooler
-import QueueSpooler
+from PYME.Acquire import HDFSpooler
+from PYME.Acquire import QueueSpooler
 try:
     from PYME.Acquire import sampleInformation
     sampInf = True
 except:
-    print 'Could not connect to the sample information database'
+    print('Could not connect to the sample information database')
     sampInf = False
 #import win32api
 from PYME.FileUtils import nameUtils
@@ -40,7 +40,7 @@ from PYME.ParallelTasks.relativeFiles import getRelFilename
 
 import PYME.Acquire.Protocols
 import PYME.Acquire.protocol as prot
-import preflight
+from PYME.Acquire import preflight
 
 import os
 import sys
@@ -289,7 +289,7 @@ class PanSpool(wx.Panel):
 
         if stack:
             protocol = self.protocolZ
-            print protocol
+            print(protocol)
         else:
             protocol = self.protocol
 

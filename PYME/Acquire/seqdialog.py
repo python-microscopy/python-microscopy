@@ -26,7 +26,7 @@
 import wx
 import wx.lib.agw.aui as aui
 
-import simplesequenceaquisator
+from PYME.Acquire import simplesequenceaquisator
 #from PYME.Acquire import MetaDataHandler
 
 #redefine wxFrame with a version that hides when someone tries to close it
@@ -65,7 +65,7 @@ def create(parent):
 
  wxID_SEQDIALOGTNUMSLICES, wxID_SEQDIALOGTSTEPSIZE, wxID_SEQDIALOGTSTPOS, 
 
-] = map(lambda _init_ctrls: wx.NewId(), range(18))
+] = [wx.NewId() for i in range(18)]
 
 
 
@@ -240,12 +240,12 @@ class seqPanel(wx.Panel):
         
         self.scope.zs.view._mgr.ClosePane(self.pinfo1)
         self.scope.zs.view._mgr.Update()
-        print 'se'
+        print('se')
         
         
         
     def OnBLive(self, event, single=False):
-        import zScanner
+        from PYME.Acquire import zScanner
         
         if 'zs' in dir(self.scope) and self.scope.zs.running: #stop
             self.scope.zs.Stop()

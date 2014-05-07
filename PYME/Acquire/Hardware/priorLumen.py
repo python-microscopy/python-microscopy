@@ -24,7 +24,7 @@
 import serial
 import time
 
-from lasers import Laser
+from PYME.Acquire.Hardware.lasers import Laser
 
 class PriorLumen(Laser):
     '''Pretend we're a laser so that we can re-use the laser GUI controls'''
@@ -58,7 +58,7 @@ class PriorLumen(Laser):
             time.sleep(.1)
             
             m = self._read()
-            print m
+            print( m)
             
                 
             self.ser_port.close()

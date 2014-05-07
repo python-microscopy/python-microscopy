@@ -708,7 +708,7 @@ class MyViewPanel(viewpanelN.ViewPanel):
         dc = wx.ClientDC(self.imagepanel.impanel)
         self.imagepanel.impanel.PrepareDC(dc)
         pos = event.GetLogicalPosition(dc)
-        print pos
+        print(pos)
         sc = pow(2.0,(self.scale-2))
         if (self.do.slice == self.do.SLICE_XY):
             self.selection_begin_x = int(pos[0]/sc)
@@ -724,7 +724,7 @@ class MyViewPanel(viewpanelN.ViewPanel):
         dc = wx.ClientDC(self.imagepanel.impanel)
         self.imagepanel.impanel.PrepareDC(dc)
         pos = event.GetLogicalPosition(dc)
-        print pos
+        print(pos)
         sc = pow(2.0,(self.scale-2))
         if (self.do.slice == self.do.SLICE_XY):
             self.selection_end_x = int(pos[0]/sc)

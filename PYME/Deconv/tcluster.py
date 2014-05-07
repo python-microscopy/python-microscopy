@@ -125,11 +125,11 @@ class ThreadedCluster(scipy.cow.machine_cluster):
 class tMachine(scipy.cow.sync_cluster.standard_sync_client):
     def executeTask(self, task):
         start_time = time.time()
-        print 'Starting task: %s on host: %s:%s' % (task.name, self.host, self.port)
+        print(('Starting task: %s on host: %s:%s' % (task.name, self.host, self.port)))
         self.send(task.package, task.addendum)
         ret = self.recv()
         end_time = time.time()
-        print 'Task: %s completed on host: %s:%s, Elapsed time: %s seconds' % (task.name, self.host, self.port, end_time - start_time)
+        print(('Task: %s completed on host: %s:%s, Elapsed time: %s seconds' % (task.name, self.host, self.port, end_time - start_time)))
         return ret
     
     def is_running(self):
@@ -154,7 +154,7 @@ class TaskThread(threading.Thread):
         while len(self.results) < self.num_tasks:
            try: 
                 self.task = self.task_queue.get_nowait()
-                print '%s tasks remaining ' % (self.task_queue.qsize() + 1,) 
+                print(('%s tasks remaining ' % (self.task_queue.qsize() + 1,))) 
                 #if there are no items left then the exception thrown
                 #should get us out of the while loop
                 try:

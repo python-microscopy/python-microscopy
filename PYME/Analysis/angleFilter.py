@@ -272,10 +272,10 @@ if __name__ == '__main__':
     import sys
     
     filenames = sys.argv[1:]
-    print filenames
+    print(filenames)
     
     for fn in filenames:
-        print fn
+        print(fn)
         procSkelFile(fn)
     
     

@@ -177,7 +177,7 @@ def genFitImage(fitResults, metadata):
     d = np.zeros([Xr.shape[0], Yr.shape[0], 2], order='F')
     s = np.ones_like(d)
     buf = np.zeros(d.size)
-    print d.shape, Xr.shape, Yr.shape
+    print((d.shape, Xr.shape, Yr.shape))
     im = -splWrap(np.array(list(fitResults['fitResults'])), d, s, Xg, Yg, Xr, Yr, buf).reshape(d.shape, order='F')
 
     return np.hstack([im[:,:,0], im[:,:,1]]).squeeze()

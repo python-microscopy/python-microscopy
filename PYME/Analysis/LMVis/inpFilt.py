@@ -122,7 +122,7 @@ class fitResultsSource(inputFilter):
         elif len(k) == 3:
             return self.fitResults[k[0]][k[1]][k[2]].astype('f')
         else:
-            raise "Don't know about deeper nesting yet"
+            raise RuntimeError("Don't know about deeper nesting yet")
 
 
     def close(self):
@@ -183,7 +183,7 @@ class h5rSource(inputFilter):
         elif len(k) == 3:
             return self.fitResults[k[0]][k[1]][k[2]].astype('f')
         else:
-            raise "Don't know about deeper nesting yet"
+            raise RuntimeError("Don't know about deeper nesting yet")
         
 
     def close(self):
@@ -235,7 +235,7 @@ class h5rDSource(inputFilter):
         elif len(k) == 3:
             return self.h5f.root.DriftResults[:][k[0]][k[1]][k[2]].astype('f')
         else:
-            raise "Don't know about deeper nesting yet"
+            raise RuntimeError("Don't know about deeper nesting yet")
         
 
     def close(self):

@@ -128,13 +128,13 @@ class colocaliser:
 
         voxelsize = voxelsize[:imA.ndim] #trunctate to number of dimensions
 
-        print 'Calculating Pearson and Manders coefficients ...'        
+        print('Calculating Pearson and Manders coefficients ...')        
         pearson = correlationCoeffs.pearson(imA, imB)
         MA, MB = correlationCoeffs.thresholdedManders(imA, imB, tA, tB)
 
-        print 'Performing distance transform ...'        
+        print('Performing distance transform ...')        
         bnA, bmA, binsA = edtColoc.imageDensityAtDistance(imB, imA > tA, voxelsize, bins)
-        print 'Performing distance transform (reversed) ...' 
+        print('Performing distance transform (reversed) ...') 
         bnB, bmB, binsB = edtColoc.imageDensityAtDistance(imA, imB > tB, voxelsize, bins)
         
         #print binsB, bmB

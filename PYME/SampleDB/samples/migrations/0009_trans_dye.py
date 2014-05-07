@@ -34,16 +34,16 @@ class Migration(DataMigration):
         dyes = orm.Dye.objects.all()
         for lab in orm.Labelling.objects.all():
             n =  lab.label.upper()
-            print n
+            print(n)
 
             for d in dyes:
                #nominally n should be A680 or similar - people have also used things
                #like 'a680', '680', or 'A680 <some other crap>'
                #try to catch it all
-               print d.shortName
+               print((d.shortName))
                if n.startswith(d.shortName) or n.startswith(d.shortName[1:]):
                    lab.dye = d
-                   print lab.dye
+                   print((lab.dye))
 
 
             lab.save()

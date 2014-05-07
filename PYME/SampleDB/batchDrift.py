@@ -38,7 +38,7 @@ from SampleDB.samples.models import DriftFit, Image
 filename = sys.argv[1]
 
 def fitDrift(filename):
-    print filename
+    print(filename)
     pipe = pipeline.Pipeline(filename)
 
     im = Image.objects.get(pk=pipe.mdh['imageID'])
@@ -53,7 +53,7 @@ def fitDrift(filename):
                       parameters=dc.driftCorrParams, auto=True)
         df.save()
         
-        print df
+        print(df)
         
     pipe.CloseFiles()
 

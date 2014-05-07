@@ -27,9 +27,9 @@
 
 import wx
 #import PYME.cSMI as example
-import previewaquisator as previewaquisator
-import simplesequenceaquisator
-import prevviewer
+from PYME.Acquire import previewaquisator as previewaquisator
+from PYME.Acquire import simplesequenceaquisator
+from PYME.Acquire import prevviewer
 import PYME.DSView.dsviewer_npy_nb as dsviewer
 #import PYME.DSView.myviewpanel as viewpanel
 import PYME.DSView.viewpanellite as viewpanel

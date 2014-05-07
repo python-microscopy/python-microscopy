@@ -108,7 +108,7 @@ class FocusCorrector(wx.Timer):
                 
                 #don't make more than 1um correction in any one step
                 corr = min(max(corr, -1), 1)
-                print corr
+                print(corr)
                 
                 self.LastPos = currPos
                 self.piezo.MoveTo(0,self.piezo.GetPos(0) + corr)
@@ -141,7 +141,7 @@ class FocusCorrector(wx.Timer):
         
         self.SlopeEst = (detPosMinus - detPosPlus)/2
         
-        print 'Slope estimated at: %f pixels/um' % self.SlopeEst
+        print(( 'Slope estimated at: %f pixels/um' % self.SlopeEst))
         
         self.piezo.MoveTo(0,curPzPos)
 

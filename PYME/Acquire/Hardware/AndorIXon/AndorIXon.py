@@ -21,7 +21,7 @@
 #
 ##################
 
-import AndorCam as ac
+from . import AndorCam as ac
 from ctypes import *
 import time
 import sys
@@ -224,7 +224,7 @@ class iXonCamera:
         ret = ac.SetShutter(1,1,0,0) #only the 2nd parameter is important as we're leaving the shutter open
         if not ret == ac.DRV_SUCCESS:
             #raise RuntimeError('Error setting shutter: %s' % ac.errorCodes[ret])
-            print 'Error setting shutter: %s' % ac.errorCodes[ret]
+            print(('Error setting shutter: %s' % ac.errorCodes[ret]))
 
         
 
@@ -260,7 +260,7 @@ class iXonCamera:
             for gainType in [0,1]: #0 = EM gain, 1 = conventional
                 ret = ac.GetNumberHSSpeeds(i,gainType, byref(tNum))
                 if not ret == ac.DRV_SUCCESS:
-                    print 'Error getting num HS Speeds (%d,%d): %s' % (i, gainType, ac.errorCodes[ret])
+                    print(('Error getting num HS Speeds (%d,%d): %s' % (i, gainType, ac.errorCodes[ret])))
 
                 HSSpeedsG = []
 
@@ -269,7 +269,7 @@ class iXonCamera:
                 for j in range(nhs):
                     ac.GetHSSpeed(i,gainType, j, byref(tmp))
                     if not ret == ac.DRV_SUCCESS:
-                        print 'Error getting VS Speed %d: %s' % (i,ac.errorCodes[ret])
+                        print(('Error getting VS Speed %d: %s' % (i,ac.errorCodes[ret])))
                     HSSpeedsG.append(float(tmp.value))
 
                 HSSpeeds.append(HSSpeedsG)
@@ -284,43 +284,43 @@ class iXonCamera:
 
 
     def GetCamType(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetDataType(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetADBits(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetMaxDigit(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetNumberCh(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetBytesPerPoint(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetCCDType(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetCamID(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetCamVer(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def SetTrigMode(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetTrigMode(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def SetDelayTime(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetDelayTime(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
 
     def SetIntegTime(self, iTime):
@@ -342,22 +342,22 @@ class iXonCamera:
         return float(exp.value)
 
     def SetROIMode(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetROIMode(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def SetCamMode(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetCamMode(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def SetBoardNum(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetBoardNum(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetCCDWidth(self):
         return self.CCDSize[0]
@@ -400,7 +400,7 @@ class iXonCamera:
         return self.binY
 
     def GetNumberChannels(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetElectrTemp(*args):
         return 25
@@ -513,10 +513,10 @@ class iXonCamera:
         return 0
 
     def StartLifePreview(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def StopLifePreview(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def ExpReady(self):
         self.__selectCamera()
@@ -537,7 +537,7 @@ class iXonCamera:
         return ret == ac.DRV_SUCCESS 
 
     def GetBWPicture(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def ExtractColor(self, chSlice, mode):
         self.__selectCamera()
@@ -552,10 +552,10 @@ class iXonCamera:
 
         #print self.GetPicWidth()*self.GetPicHeight()
         if not ret == ac.DRV_SUCCESS:
-            print 'Error getting image from camera: %s' % ac.errorCodes[ret]
+            print(('Error getting image from camera: %s' % ac.errorCodes[ret]))
 
     def CheckCoordinates(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def StopAq(self):
         self.__selectCamera()
@@ -575,7 +575,7 @@ class iXonCamera:
     def SetEMGain(self, gain):
         self.__selectCamera()
         if (gain > 150): #150 is arbitrary, but seems like a reasomable enough boundary
-            print 'WARNING: EM Gain of %d selected; overuse of high gains can lead to gain register aging' % gain
+            print(('WARNING: EM Gain of %d selected; overuse of high gains can lead to gain register aging' % gain))
 
         self.EMGain = gain
         ret = ac.SetEMCCDGain(self.EMGain)
@@ -600,7 +600,7 @@ class iXonCamera:
         ac.GetTemperature(byref(t))
 
         while (t.value < -50): #wait fro temp to get above -50
-            print 'Waiting for the camera to warm up - current temperature = %3.2f' % t.value
+            print(('Waiting for the camera to warm up - current temperature = %3.2f' % t.value))
             time.sleep(1)
             ac.GetTemperature(byref(t))
 
@@ -745,9 +745,9 @@ class iXonCamera:
                 mdh.setEntry('Camera.TrueEMGain', realEMGain)
 
     def __getattr__(self, name):
-        if name in self.noiseProps.keys():
+        if name in list(self.noiseProps.keys()):
             return self.noiseProps[name]
-        else:  raise AttributeError, name  # <<< DON'T FORGET THIS LINE !!
+        else:  raise AttributeError(name)  # <<< DON'T FORGET THIS LINE !!
 
 
     def __del__(self):

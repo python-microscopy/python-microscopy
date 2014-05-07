@@ -40,7 +40,7 @@ def parseErrors(f):
         errs[err] = (i, where, fcn)        
         
         i += 1 
-        print i
+        print(i)
         s = f.readline()
         
     return errs

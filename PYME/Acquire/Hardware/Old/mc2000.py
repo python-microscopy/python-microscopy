@@ -42,10 +42,10 @@ class mc2000:
                 time.sleep(0.1)
                 if (iChannel == 1):
                     #self.ser_port.write('%2.5f 0 0 rmove \r\n' %(fPos - self.max_travel[iChannel - 1]/2))
-                    print ('%2.5f 0 0 rmove \r\n' %(fPos - self.max_travel[iChannel - 1]/2))
+                    print(('%2.5f 0 0 rmove \r\n' %(fPos - self.max_travel[iChannel - 1]/2)))
                 else:
                     #self.ser_port.write('0 %2.5f 0 rmove \r\n' %(fPos - self.max_travel[iChannel - 1]/2))
-                    print ('0 %2.5f 0 rmove \r\n' %(fPos - self.max_travel[iChannel - 1]/2))
+                    print(('0 %2.5f 0 rmove \r\n' %(fPos - self.max_travel[iChannel - 1]/2)))
                     
             else:
                 self.ser_port.flushOutput()
@@ -78,7 +78,7 @@ class mc2000:
         # and we have the value as string now
         ipos = posi.__getitem__(0)
         ipos = float(ipos) + self.max_travel[iChannel - 1]/2
-        print('Kanal: %d Wert: %2.5f' %(iChannel, ipos))
+        print(('Kanal: %d Wert: %2.5f' %(iChannel, ipos)))
         return ipos 
     
     def GetId(self):
@@ -112,14 +112,14 @@ class mc2000:
         self.ser_port.flushOutput()
         time.sleep(0.05)
         self.ser_port.write('1 j \r\n')
-        print 'joystick on'
+        print('joystick on')
         
     def JoyOff(self, event=1):
         # switch the Joystick off
         self.ser_port.flushOutput()
         time.sleep(0.05)
         self.ser_port.write('0 j \r\n')
-        print 'joystick off'        
+        print('joystick off')        
     
     def addMenuItems(self,parentWindow, menu):
         '''Add menu items and keyboard accelerators for joystick control

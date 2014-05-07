@@ -172,12 +172,12 @@ class VisGUIFrame(wx.Frame):
     def OnIdle(self, event):
         if self.glCanvas.init and not self.refv:
             self.refv = True
-            print self.viewMode, self.colData
+            print((self.viewMode, self.colData))
             
             self.RefreshView()
             self.displayPane.OnPercentileCLim(None)
             self.Refresh()
-            print 'refreshed'
+            print('refreshed')
 
     def AddPage(self, page=None, select=False,caption='Dummy', update=True):
         if update:
@@ -895,9 +895,9 @@ class VisGUIFrame(wx.Frame):
             #print 'Skipping %d rows' %args['SkipRows']
             dlg.Destroy()
 
-        print 'Creating Pipeline'
+        print('Creating Pipeline')
         self.pipeline.OpenFile(filename, **args)
-        print 'Pipeline Created'
+        print('Pipeline Created')
         self.SetTitle('PYME Visualise - ' + filename)
         
         #############################
@@ -906,7 +906,7 @@ class VisGUIFrame(wx.Frame):
         self._createNewTabs()
         
         self.CreateFoldPanel()
-        print 'Gui stuff done'
+        print('Gui stuff done')
         
         self.SetFit()
             

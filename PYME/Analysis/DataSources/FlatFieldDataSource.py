@@ -22,7 +22,7 @@
 ##################
 
 from PYME.ParallelTasks.relativeFiles import getFullFilename
-from BaseDataSource import BaseDataSource
+from .BaseDataSource import BaseDataSource
 #import tables
 
 class DataSource(BaseDataSource):
@@ -40,7 +40,7 @@ class DataSource(BaseDataSource):
         y0 = mdh.getEntry('Camera.ROIPosY') - 1
         y1 = y0 + mdh.getEntry('Camera.ROIHeight') + 1
 
-        print x0, x1, y0, y1
+        print((x0, x1, y0, y1))
 
         #self.offset = mdh.getEntry()
 
@@ -50,7 +50,7 @@ class DataSource(BaseDataSource):
     def getSlice(self, ind):
         #if ind >= self.h5File.root.ImageData.shape[0]:
         #        self.reloadData() #try reloading the data in case it's grown
-        print self.getSliceShape(), self.flat.shape
+        print((self.getSliceShape(), self.flat.shape))
         
         return (self.source.getSlice(ind) - self.mdh.getEntry('Camera.ADOffset'))*self.flat
 

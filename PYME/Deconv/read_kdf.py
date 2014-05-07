@@ -103,7 +103,7 @@ def ReadKdfHeader(fid):
           DimZ = SegDims[2]
           DimE = SegDims[4]
           TypeString = SegType
-          print TypeString
+          print(TypeString)
           
         
         #continue;

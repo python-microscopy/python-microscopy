@@ -107,7 +107,7 @@ class ImageSource(PointSource):
 
     def getPoints(self):
         from PYMEnf.Simulation import locify
-        print self.image
+        print((self.image))
 
         im = image.openImages[self.image]
         #import numpy as np

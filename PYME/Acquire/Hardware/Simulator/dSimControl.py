@@ -25,13 +25,13 @@
 
 import wx
 import wx.grid
-import fluor
-import wormlike2
+from . import fluor
+from . import wormlike2
 import pylab
 import scipy
 import numpy as np
-import os
-import rend_im
+#import os
+from . import rend_im
 
 def create(parent):
     return dSimControl(parent)
@@ -328,7 +328,7 @@ class dSimControl(wx.Panel):
     def OnBLoadPointsButton(self, event):
         fn = wx.FileSelector('Read point positions from file')
         if fn == None:
-            print 'No file selected'
+            print('No file selected')
             return
 
         self.points = np.loadtxt(fn)
@@ -339,7 +339,7 @@ class dSimControl(wx.Panel):
     def OnBSavePointsButton(self, event):
         fn = wx.SaveFileSelector('Save point positions to file', '.txt')
         if fn == None:
-            print 'No file selected'
+            print('No file selected')
             return
 
         #self.points = pylab.load(fn)
@@ -349,7 +349,7 @@ class dSimControl(wx.Panel):
 
     def OnBSetPSF(self, event):
         fn = wx.FileSelector('Read PSF from file', default_extension='psf', wildcard='PYME PSF Files (*.psf)|*.psf')
-        print fn
+        print(fn)
         if fn == '':
             rend_im.genTheoreticalModel(rend_im.MetaData.TIRFDefault)
             return

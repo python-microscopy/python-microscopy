@@ -18,7 +18,7 @@ def test_ps_app():
     X = np.arange(-5e3, 5e3, 70)
     P = np.arange(0, 1, .1)
     ps = ps_app.genWidefieldPSF(X, X, X, P)
-    print ps
+    print(ps)
     
 if __name__ == '__main__':
     test_ps_app()

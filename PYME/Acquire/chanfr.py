@@ -31,7 +31,7 @@ import wx
 #import viewpanel
 #import example
 
-from chanpanel import ChannelPan
+from PYME.Acquire.chanpanel import ChannelPan
 
 class ChanFrame(wx.Dialog):
     def __init__(self, parent, chaninfo, title='Edit Shutters/Channels'):

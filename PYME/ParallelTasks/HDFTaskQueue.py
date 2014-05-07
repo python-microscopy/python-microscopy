@@ -362,7 +362,7 @@ class HDFResultsTaskQueue(TaskQueue):
     def fileResult(self, res):
         #print res, res.results, res.driftResults, self.h5ResultsFile
         if res == None:
-            print 'res == None'
+            print('res == None')
             
         if res.results == [] and res.driftResults == []: #if we had a dud frame
             return
@@ -569,7 +569,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
                 self.openTasks.append(self.imNum)
             self.imNum += 1
         else:
-            print "can't post new tasks"
+            print("can't post new tasks")
 			
 
     def postTasks(self,tasks):
@@ -600,7 +600,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
                 
             #print len(tasks), t2 - t1, t3 - t2
         else:
-            print "can't post new tasks"
+            print("can't post new tasks")
         #print 'posting tasks not implemented yet'
 
     def getNumberOpenTasks(self, exact=True):

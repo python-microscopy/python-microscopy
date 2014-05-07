@@ -22,8 +22,8 @@
 ##################
 
 import numpy as np
-from fitCommon import fmtSlicesUsed 
-import FFBase 
+from .fitCommon import fmtSlicesUsed 
+from . import FFBase 
 
 from PYME.Analysis.cModels.gauss_app import genGauss,genGaussJac, genGaussJacW
 from PYME.Analysis._fithelpers import FitModelWeighted, FitModelWeightedJac

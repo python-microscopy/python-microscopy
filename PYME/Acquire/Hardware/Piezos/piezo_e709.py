@@ -172,7 +172,8 @@ class piezo_e709:
         
         
 import threading
-import Queue
+
+#import Queue
 import numpy as np
         
 class piezo_e709T(object):    
@@ -238,7 +239,7 @@ class piezo_e709T(object):
                 self.errCode = int(self.ser_port.readline())
                 
                 if not self.errCode == 0:
-                    print 'Stage Error: %d' %self.errCode
+                    print(('Stage Error: %d' %self.errCode))
                 
                 #print self.targetPosition, self.stopMove
                 
@@ -269,15 +270,15 @@ class piezo_e709T(object):
         
                     self.ser_port.write('MOV Z %3.9f\n' % (pos[0], ))
                     self.lastTargetPosition = pos.copy()
-                    print 'p'
+                    print('p')
                     
                 #time.sleep(.1)
                 
             except serial.SerialTimeoutException:
-                print 'Serial Timeout'
+                print('Serial Timeout')
                 pass
             except IndexError:
-                print 'IndexException'
+                print('IndexException')
             finally:
                 self.stopMove = False
                 self.lock.release()

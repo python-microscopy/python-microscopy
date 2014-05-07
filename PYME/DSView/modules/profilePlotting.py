@@ -95,7 +95,7 @@ class profiler:
             d__x = abs(d_x) + 1
             d__y = abs(d_y) + 1
 
-            print dx, dy, d__x, d__y, w
+            print((dx, dy, d__x, d__y, w))
 
             if(self.do.slice == self.do.SLICE_XY):
                 ims = self.image.data[(min(lx, hx) - d__x):(max(lx,hx)+d__x+1), (min(ly, hy)-d__y):(max(ly,hy)+d__y+1), self.do.zp, chanNum].squeeze()
@@ -108,7 +108,7 @@ class profiler:
             x_c = t*dx + lx - x_0
             y_c = t*dy + ly - y_0
 
-            print splf.shape
+            print((splf.shape))
 
 
             for i in range(-w, w+1):

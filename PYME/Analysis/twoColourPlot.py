@@ -47,7 +47,7 @@ def PlotShiftResiduals(x, y, dx, dy, spx, spy):
     dx1 = spx.ev(x,y)
     dy1 = spy.ev(x,y)
     
-    print dx1.shape, dx.shape
+    print((dx1.shape, dx.shape))
     
     dist = sqrt((dx1 - dx)**2 + (dy1 - dy)**2)
     quiver(x, y, dx1 - dx, dy1 - dy, dist, scale=2e2, clim=(0, dist.mean()*2))
@@ -60,7 +60,7 @@ def PlotShiftResidualsS(x, y, dx, dy, spx, spy):
     dx1 = spx.ev(x,y)
     dy1 = spy.ev(x,y)
     
-    print dx1.shape, dx.shape
+    print((dx1.shape, dx.shape))
     
     dist = sqrt((dx1 - dx)**2 + (dy1 - dy)**2)
     quiver(x, y, dx1 - dx, dy1 - dy, dist, scale=2e2, clim=(0, dist.mean()*2))

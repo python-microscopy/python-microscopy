@@ -107,7 +107,7 @@ class rldec:
 
             #set the current estimate to out new estimate
             self.f[:] = fnew
-            print 'Sum = %f' % self.f.sum()
+            print(('Sum = %f' % self.f.sum()))
 
         return real(self.fs)
 
@@ -319,7 +319,7 @@ class dec_conv(rldec):
 
         self.shape = data_size
         
-        print 'Calculating OTF' 
+        print('Calculating OTF') 
 
         FTshape = [self.shape[0], self.shape[1], self.shape[2]/2 + 1]
 
@@ -344,7 +344,7 @@ class dec_conv(rldec):
         self.Ht /= g.size;
         self.H /= g.size;
         
-        print 'Creating plans for FFTs - this might take a while'
+        print('Creating plans for FFTs - this might take a while')
 
         #calculate plans for other ffts
         self._plan_r_F = fftw3f.Plan(self._r, self._F, 'forward', flags = FFTWFLAGS, nthreads=NTHREADS)
@@ -352,7 +352,7 @@ class dec_conv(rldec):
         
         fftwWisdom.save_wisdom()
         
-        print 'Done planning'
+        print('Done planning')
 
 
     def Lfunc(self, f):

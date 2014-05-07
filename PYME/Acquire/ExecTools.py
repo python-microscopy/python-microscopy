@@ -76,9 +76,16 @@ def checkFilename(filename):
 
     return filename #give up and let exec throw its normal error message
 
-
-def _exec(codeObj, localVars = None, globalVars = None):
-    exec codeObj in localVars,globalVars
+if sys.version_info.major == 2:
+    def _exec(codeObj, localVars = None, globalVars = None):
+        exec codeObj in localVars,globalVars
+    def _execfile(filename, localVars=None, globalVars=None):
+        execfile(filename, localVars, globalVars)
+else: #Python 3
+    def _exec(codeObj, localVars = None, globalVars = None):
+        exec(codeObj,localVars,globalVars)
+    def _execfile(filename, localVars=None, globalVars=None):
+        exec(compile(open(filename).read(), filename, 'exec'), localVars, globalVars)
 
 def execBG(codeObj, localVars = defLocals, globalVars = defGlobals):
     t = threading.Thread(target=_exec, args = (codeObj, localVars, globalVars))
@@ -90,7 +97,7 @@ def execFile(filename, localVars = defLocals, globalVars = defGlobals):
     #code = fid.read()
     #fid.close()
 
-    execfile(checkFilename(filename), localVars, globalVars)
+    _execfile(checkFilename(filename), localVars, globalVars)
 
 def execFileBG(filename, localVars = defLocals, globalVars = defGlobals):
     #fid = open(checkFilename(filename))
@@ -109,7 +116,7 @@ def _bginit(name, codeObj):
         _exec("splash.SetMessage('%s', 'Initialising %s ... DONE')" % (name,name), defGlobals, defLocals)
     except HWNotPresent:
         _exec("splash.SetMessage('%s', 'Initialising %s ... NOT PRESENT')" % (name,name), defGlobals, defLocals)
-    except Exception, e:
+    except Exception as e:
         _exec("splash.SetMessage('%s', 'Initialising %s ... FAIL')" % (name,name), defGlobals, defLocals)
         raise e
 
@@ -123,7 +130,7 @@ def InitBG(name, codeObj):
 
 def joinBGInit():
     for t in bgInitThreads:
-        print t
+        print(t)
         t.join()
 
 def InitGUI(code):

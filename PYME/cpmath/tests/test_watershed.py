@@ -387,9 +387,9 @@ class TestFastWatershed(unittest.TestCase):
         before = time.clock() 
         out = fast_watershed(image,markers,self.eight)
         elapsed = time.clock()-before
-        print "Fast watershed ran a megapixel image in %f seconds"%(elapsed)
+        print(("Fast watershed ran a megapixel image in %f seconds"%(elapsed)))
         before = time.clock()
         out = scipy.ndimage.watershed_ift(image.astype(numpy.uint16), markers, self.eight)
         elapsed = time.clock()-before
-        print "Scipy watershed ran a megapixel image in %f seconds"%(elapsed)
+        print(("Scipy watershed ran a megapixel image in %f seconds"%(elapsed)))
 

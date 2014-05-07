@@ -195,7 +195,7 @@ def _calcParams(data, X, Y):
 #    x0 = 0.5*(x_0 + x_2)
 #    y0 = 0.5*(y_0 + y_2)
     
-    print xi, yi, x2, y2
+    print((xi, yi, x2, y2))
 #    
     
     x0 = 0.5*(X[xi] + X[x2])

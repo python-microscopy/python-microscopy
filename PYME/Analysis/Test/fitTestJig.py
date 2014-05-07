@@ -115,7 +115,7 @@ class fitTestJig(object):
                 yv += self.__getattribute__(varName)
                 
             me = ((self.ps[varName].ravel() - yv)**2).mean()
-            print '%s: %3.2f' % (varName, me)
+            print(('%s: %3.2f' % (varName, me)))
             
     def error(self, varName):
         xv = self.ps[varName].ravel()

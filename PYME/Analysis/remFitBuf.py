@@ -22,7 +22,7 @@
 ##################
 
 from PYME.ParallelTasks import taskDef
-import ofind
+from PYME.Analysis import ofind
 #import ofind_nofilt #use for drift estimation - faster
 #import ofind_xcorr
 #try:
@@ -32,8 +32,8 @@ import ofind
     #fall back on fftpack in scipy
     #this was only marginally slower at last benchmark implying much of the 
     #cost is not in the ffts
-import ofind_xcorr
-import ofind_pri
+from PYME.Analysis import ofind_xcorr
+from PYME.Analysis import ofind_pri
     
 import numpy
 import numpy as np
@@ -175,7 +175,7 @@ class bgFrameBuffer:
             #starting from scratch
             self._createBuffers(self.initSize, data.shape, data.dtype)
             
-            self.availableSlots += range(self.initSize)
+            self.availableSlots += list(range(self.initSize))
             
         else:
             #keep a copy of the existing data
@@ -193,11 +193,11 @@ class bgFrameBuffer:
             self.validData[:oldsize] = ov
             
             #add new frames to list of availiable frames
-            self.availableSlots += range(oldsize, newsize)
+            self.availableSlots += list(range(oldsize, newsize))
             
     def getPercentile(self, pctile):
         pcIDX = int(self.validData.sum()*pctile)
-        print pcIDX
+        print(pcIDX)
         
         return (self.frameBuffer*(self.indices==pcIDX)).max(0).squeeze()
             

@@ -21,36 +21,20 @@
 #
 ##################
 
-import scipy
-#from scipy.signal import interpolate
 import scipy.ndimage as ndimage
-#from pylab import *
-import copy_reg
-import numpy
-#import types
+import numpy as np
 
 from PYME.Analysis.cModels.gauss_app import *
-
-#from scipy import weave
-
 from PYME.Analysis._fithelpers import *
+from .fitCommon import fmtSlicesUsed
 
-def pickleSlice(slice):
-        return unpickleSlice, (slice.start, slice.stop, slice.step)
 
-def unpickleSlice(start, stop, step):
-        return slice(start, stop, step)
-
-copy_reg.pickle(slice, pickleSlice, unpickleSlice)
 
 def f_gauss2dSlow(p, X, Y):
     """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sigma, background, lin_x, lin_y]"""
     A, x0, y0, s, b, b_x, b_y = p
-    return A*scipy.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2)) + b + b_x*X + b_y*Y
-    #print X.shape
-    #r = genGauss(X,Y,A,x0,y0,s,b,b_x,b_y)
-    #r.strides = r.strides #Really dodgy hack to get around something which numpy is not doing right ....
-    #return r
+    return A*np.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2)) + b + b_x*X + b_y*Y
+
     
 def f_multiGaussS(p, X, Y, s):
     #number of Gaussians to fit
@@ -61,7 +45,7 @@ def f_multiGaussS(p, X, Y, s):
     for i in range(nG):
         i3 = 3*i
         A, x0, y0 = p[i3:(i3+3)]
-        r += A*scipy.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2))
+        r += A*np.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2))
         
     return r
     
@@ -129,27 +113,20 @@ def f_J_gauss2d(p,X,Y):
 f_gauss2d.D = f_J_gauss2d
 
 
-        
-def replNoneWith1(n):
-	if n == None:
-		return 1
-	else:
-		return n
 
 
-fresultdtype=[('tIndex', '<i4'),('fitResults', [('A', '<f4'),('x0', '<f4'),('y0', '<f4')]),('fitError', [('A', '<f4'),('x0', '<f4'),('y0', '<f4')]), ('resultCode', '<i4')]
+fresultdtype=[('tIndex', '<i4'),
+              ('fitResults', [('A', '<f4'),('x0', '<f4'),('y0', '<f4')]),
+              ('fitError', [('A', '<f4'),('x0', '<f4'),('y0', '<f4')]), 
+              ('resultCode', '<i4')]
 
-def GaussianFitResultR(fitResults, metadata, resultCode=-1, fitErr=None):
-	
+def GaussianFitResultR(fitResults, metadata, resultCode=-1, fitErr=None):	
 	if fitErr == None:
-		fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
-
-	#print slicesUsed
+		fitErr = -5e3*np.ones(fitResults.shape, 'f')
 
 	tIndex = metadata.tIndex
 
-
-	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode)], dtype=fresultdtype) 
+	return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode)], dtype=fresultdtype) 
 		
 
 class GaussianFitFactory:
@@ -183,9 +160,9 @@ class GaussianFitFactory:
         #estimate errors in data
         nSlices = self.data.shape[2]
         
-        sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*scipy.maximum(dataMean, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
+        sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataMean, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
 
-        if not self.background == None and len(numpy.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
+        if not self.background == None and len(np.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
             #average in z
             bgMean = self.background.mean(2) - self.metadata.Camera.ADOffset
             
@@ -216,7 +193,7 @@ class GaussianFitFactory:
 #        pylab.figure()
         #starting guesses
         labels, nlabels = ndimage.label(mask)
-        print nlabels, mask.sum()
+        print((nlabels, mask.sum()))
             
         objSlices = ndimage.find_objects(labels)
         
@@ -271,7 +248,7 @@ class GaussianFitFactory:
         nchi2 = ((residual/s_m)**2).mean()
         resmax = (residual/s_m).max()
         
-        print nchi2, resmax
+        print((nchi2, resmax))
 
         refinementCount = 0  #prevent an infinite loop here      
         
@@ -290,7 +267,7 @@ class GaussianFitFactory:
             nchi2 = ((residual/s_m)**2).mean()
             resmax = (residual/s_m).max()
             
-            print nchi2, resmax
+            print((nchi2, resmax))
             
             
 
@@ -308,8 +285,8 @@ class GaussianFitFactory:
         #work out the errors
         fitErrors=None
         try:       
-            fitErrors = scipy.sqrt(scipy.diag(cov_x)*(infodict['fvec']*infodict['fvec']).sum()/(len(dataMean.ravel())- len(res)))
-        except Exception, e:
+            fitErrors = np.sqrt(np.diag(cov_x)*(infodict['fvec']*infodict['fvec']).sum()/(len(dataMean.ravel())- len(res)))
+        except Exception as e:
             pass
         #print res, fitErrors, resCode
         #recreate a list of events in the desired format
@@ -328,8 +305,8 @@ class GaussianFitFactory:
     @classmethod
     def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):
         #generate grid to evaluate function on
-        X = 1e3*md.voxelsize.x*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
-        Y = 1e3*md.voxelsize.y*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
+        X = 1e3*md.voxelsize.x*np.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
+        Y = 1e3*md.voxelsize.y*np.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
 
         return (f_gauss2d(params, X, Y), X[0], Y[0], 0)
 

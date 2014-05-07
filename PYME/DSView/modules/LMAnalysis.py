@@ -46,7 +46,7 @@ debug = True
 
 def debugPrint(msg):
     if debug:
-        print msg
+        print(msg)
         
 
 
@@ -297,7 +297,7 @@ class LMAnalyser:
 
         #find out what fit factories we have
         self.fitFactories = PYME.Analysis.FitFactories.resFitFactories
-        print self.fitFactories
+        print((self.fitFactories))
 
         vsizer = wx.BoxSizer(wx.VERTICAL)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -396,7 +396,7 @@ class LMAnalyser:
 
             
         if debug:
-            print 'About to push images'
+            print('About to push images')
 
         if not driftEst:
             self.pushImages(startAt, threshold, fitMod)
@@ -404,7 +404,7 @@ class LMAnalyser:
             self.pushImagesD(startAt, threshold)
             
         if debug:
-            print 'Images pushed'
+            print('Images pushed')
 
         #############
         #set up real time display
@@ -629,7 +629,7 @@ class LMAnalyser:
                 self.fitInf.UpdateDisp(self.view.PointsHitTest())
             except:
                 import traceback
-                print traceback.format_exc()
+                print((traceback.format_exc()))
 
 
     #from fth5.py
@@ -662,7 +662,7 @@ class LMAnalyser:
     def pushImages(self, startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
         self.checkTQ()
         if debug:
-            print 'TQ checked'
+            print('TQ checked')
         if self.image.dataSource.moduleName == 'HDFDataSource':
             self.pushImagesHDF(startingAt, detThresh, fitFcn)
         elif self.image.dataSource.moduleName == 'TQDataSource':
@@ -801,9 +801,9 @@ class LMAnalyser:
         fitMod = self.fitFactories[self.cFitType.GetSelection()]
         #bgFrames = int(tBackgroundFrames.GetValue())
         bgFrames = [int(v) for v in self.tBackgroundFrames.GetValue().split(':')]
-        print zps
+        print(zps)
         for i in range(12):
-            print i
+            print(i)
             #if 'Analysis.NumBGFrames' in md.getEntryNames():
             #bgi = range(max(zps[i] - bgFrames,mdh.getEntry('EstimatedLaserOnFrameNo')), zps[i])
             bgi = range(max(zps[i] + bgFrames[0],self.image.mdh.getEntry('EstimatedLaserOnFrameNo')), max(zps[i] + bgFrames[1],self.image.mdh.getEntry('EstimatedLaserOnFrameNo')))

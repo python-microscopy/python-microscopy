@@ -370,7 +370,7 @@ class OptionsPanel(wx.Panel):
         self.do.OnChange()
 
     def OnLineThickness(self, event):
-        print 'foo'
+        print('foo')
         dlg = wx.TextEntryDialog(self, 'Line Thickness', 'Set width of line selection', '%d' % self.do.selectionWidth)
 
         if dlg.ShowModal() == wx.ID_OK:

@@ -163,7 +163,7 @@ def genFitImage(fitResults, md, fitfcn=f_Interp3d):
         startPosEstimator = __import__('PYME.Analysis.FitFactories.zEstimators.' + estimatorModule , fromlist=['PYME', 'Analysis','FitFactories', 'zEstimators'])        
         
         if interpolator.setModelFromFile(md.PSFFile, md):
-            print 'model changed'
+            print('model changed')
             startPosEstimator.splines.clear()
 
         X, Y, Z, safeRegion = interpolator.getCoords(md, xslice, yslice, slice(0,1))
@@ -209,7 +209,7 @@ class PSFFitFactory:
         if fitfcn == f_Interp3d:
             if 'PSFFile' in metadata.getEntryNames():
                 if self.interpolator.setModelFromMetadata(metadata):
-                    print 'model changed'
+                    print('model changed')
                     self.startPosEstimator.splines.clear()
 
                 if not 'z' in self.startPosEstimator.splines.keys():
@@ -232,7 +232,7 @@ class PSFFitFactory:
         startPosEstimator = __import__('PYME.Analysis.FitFactories.zEstimators.' + estimatorModule , fromlist=['PYME', 'Analysis','FitFactories', 'zEstimators'])        
         
         if interpolator.setModelFromFile(md.PSFFile, md):
-            print 'model changed'
+            print('model changed')
             startPosEstimator.splines.clear()
 
         X, Y, Z, safeRegion = interpolator.getCoords(md, slice(-roiHalfSize + x,roiHalfSize + 1 + x), slice(-roiHalfSize + y,roiHalfSize + 1 + y), slice(0,1))

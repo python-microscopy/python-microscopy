@@ -178,29 +178,29 @@ class blocking_deconv:
 		    self.blockno[(sl_start_a + sel_x1):(sl_start_a + sel_x2),(sl_start_b + sel_y1):(sl_start_b + sel_y2), (sl_start + sel_z1):(sl_start + sel_z2)] = cast['f'](real(block_n[sel_x1:sel_x2,sel_y1:sel_y2, sel_z1:sel_z2]))
                     
     def go(self, kz = 1, lamb = 2e-2, num_iters = 10):
-        print 'Dividing into blocks ...'
+        print('Dividing into blocks ...')
         self.blockify()
-        print 'Doing some PSF related precomutations ...'
+        print('Doing some PSF related precomutations ...')
         self.init_psf(kz)
-        print 'Sending precomputed info to cluster ...'
+        print('Sending precomputed info to cluster ...')
         self.init_cluster()
-        print 'Starting the deconvolution ....'
+        print('Starting the deconvolution ....')
         self.do_deconv(lamb, num_iters)
         self.cleanup_cluster()
-        print 'Finished deconvolution, putting blocks back together ...'
+        print('Finished deconvolution, putting blocks back together ...')
         self.deblock()
     
     def sim(self, kz = 1):
-        print 'Dividing into blocks ...'
+        print('Dividing into blocks ...')
         self.blockify()
-        print 'Doing some PSF related precomutations ...'
+        print('Doing some PSF related precomutations ...')
         self.init_psf(kz)
-        print 'Sending precomputed info to cluster ...'
+        print('Sending precomputed info to cluster ...')
         self.init_cluster()
-        print 'Starting the simulation ....'
+        print('Starting the simulation ....')
         self.do_sim()
         self.cleanup_cluster()
-        print 'Finished simulation, putting blocks back together ...'
+        print('Finished simulation, putting blocks back together ...')
         self.deblock()
             
 if __name__ == '__main__':
@@ -225,16 +225,16 @@ if __name__ == '__main__':
     (options, args) = parser.parse_args()
     
     if options.data == None:
-        print 'Must give a file containing the data'
+        print('Must give a file containing the data')
         sys.exit(1)
     if options.psf == None:
-        print 'Must give a file containing the psf'
+        print('Must give a file containing the psf')
         sys.exit(1)
     if options.out == None:
-        print 'Must give an output file'
+        print('Must give an output file')
         sys.exit(1)
     if options.kz == None:
-        print 'Must give the wavelength parameter'
+        print('Must give the wavelength parameter')
         sys.exit(1)
         
     data = squeeze(read_kdf.ReadKdfData(options.data))
@@ -245,9 +245,9 @@ if __name__ == '__main__':
     else:
         alpha = zeros(shape(data), 'f')
         
-    print shape(data)
-    print shape(alpha)
-    print(shape(psf))
+    print((shape(data)))
+    print((shape(alpha)))
+    print((shape(psf)))
     
     servers = []    
     if not options.servers == None:
@@ -256,7 +256,7 @@ if __name__ == '__main__':
             (host,port)=s.split(':')
             servers.append((host, int(port)))
     else:
-        print 'Creating a server on local machine'
+        print('Creating a server on local machine')
         #fid
         os.spawnl(os.P_NOWAIT, '/usr/bin/python', 'python', '/usr/lib/python/site-packages/scipy/cow/sync_cluster.py', 'server', '10001')
 	#os.spawnl(os.P_NOWAIT, '/usr/bin/python', 'python', '/usr/lib/python/site-packages/scipy/cow/sync_cluster.py', 'server', '10002')

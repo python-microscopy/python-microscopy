@@ -53,7 +53,7 @@ def cpuCount():
     if num >= 1:
         return num
     else:
-        raise NotImplementedError, 'cannot determine number of cpus'
+        raise NotImplementedError('cannot determine number of cpus')
 
 
 #get rid of any previously started queues etc...
@@ -72,7 +72,7 @@ def main():
     try: #try and find the name server
         ns=Pyro.naming.NameServerLocator().getNS()
     except: #launch our own
-        print '''Could not find PYRO nameserver - launching a local copy:
+        print('''Could not find PYRO nameserver - launching a local copy:
             
         This should work if you are only using one computer, or if you are 
         really, really careful not to close this process before all other 
@@ -80,7 +80,7 @@ def main():
         
         I highly recommend running the pyro nameserver as a seperate process, 
         ideally on a server somewhere where it's not likely to get interrupted.
-        '''
+        ''')
         
         subprocess.Popen('pyro-ns', shell=True)
         #wait for server to come up

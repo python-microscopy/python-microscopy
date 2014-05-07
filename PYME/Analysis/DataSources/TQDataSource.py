@@ -20,7 +20,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-from BaseDataSource import BaseDataSource
+from .BaseDataSource import BaseDataSource
 
 class DataSource(BaseDataSource):
     moduleName = 'TQDataSource'

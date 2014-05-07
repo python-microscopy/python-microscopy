@@ -22,7 +22,7 @@
 ################
 
 
-import SDK3
+from .import SDK3
 
 class ATProperty(object):
     def connect(self, handle, propertyName):
@@ -140,7 +140,7 @@ class SDK3Camera(object):
         
         
     def Init(self):
-        print 'Foo'        
+        print('Foo')        
         self.handle = SDK3.Open(self.camNum)
         self.connectProperties()
         

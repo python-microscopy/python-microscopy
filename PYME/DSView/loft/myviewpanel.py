@@ -405,7 +405,7 @@ class MyViewPanel(viewpanel.ViewPanel):
 
         pos = event.GetLogicalPosition(dc)
 
-        print pos
+        print(pos)
         sc = pow(2.0,(self.scale-2))
 
         if (self.do.getSliceAxis() == self.do.SLICE_XY):
@@ -424,7 +424,7 @@ class MyViewPanel(viewpanel.ViewPanel):
 
         pos = event.GetLogicalPosition(dc)
 
-        print pos
+        print(pos)
         sc = pow(2.0,(self.scale-2))
 
         if (self.do.getSliceAxis() == self.do.SLICE_XY):

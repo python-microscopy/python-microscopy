@@ -230,7 +230,7 @@ class MyViewPanel(wx.ScrolledWindow):
 
         pos = event.GetLogicalPosition(dc)
 
-        print pos
+        print(pos)
         sc = pow(2.0,(self.scale))
 
         if (self.do.getSliceAxis() == self.do.SLICE_XY):
@@ -250,7 +250,7 @@ class MyViewPanel(wx.ScrolledWindow):
 
         pos = event.GetLogicalPosition(dc)
 
-        print pos
+        print(pos)
         sc = pow(2.0,(self.scale))
 
         if (self.do.getSliceAxis() == self.do.SLICE_XY):

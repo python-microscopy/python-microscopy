@@ -20,8 +20,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
-import intensProf
-import kinModels
+from . import intensProf
+from . import kinModels
 from pylab import *
 from PYME.Analysis._fithelpers import *
 

@@ -21,7 +21,7 @@
 #
 ##################
 
-import uc480
+from . import uc480
 from ctypes import *
 import ctypes
 import time
@@ -30,7 +30,11 @@ from PYME.Acquire import MetaDataHandler
 from PYME.Acquire.Hardware import ccdCalibrator
 
 import threading
-import Queue
+
+try:
+    import Queue
+except ImportError:
+    import queue as Queue
 
 import numpy as np
 #import example
@@ -93,7 +97,7 @@ class uc480Camera:
         self.boardHandle = wintypes.HANDLE(0)
 
         ret = uc480.CALL('InitCamera', byref(self.boardHandle), wintypes.HWND(0))
-        print 'I',ret
+        print(('I',ret))
         if not ret == 0:
             raise RuntimeError('Error getting camera handle: %d: %s' % GetError(self.boardHandle))
             
@@ -229,43 +233,43 @@ class uc480Camera:
 
 
     def GetCamType(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetDataType(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetADBits(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetMaxDigit(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetNumberCh(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetBytesPerPoint(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetCCDType(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetCamID(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetCamVer(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def SetTrigMode(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetTrigMode(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def SetDelayTime(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetDelayTime(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
 
     def SetIntegTime(self, iTime):
@@ -293,22 +297,22 @@ class uc480Camera:
         return self.expTime
 
     def SetROIMode(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetROIMode(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def SetCamMode(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetCamMode(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def SetBoardNum(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetBoardNum(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetCCDWidth(self):
         return self.CCDSize[0]
@@ -323,7 +327,7 @@ class uc480Camera:
 #        ret = ac.SetImage(self.binX,self.binY,self.ROIx[0],self.ROIx[1],self.ROIy[0],self.ROIy[1])
 #        if not ret == ac.DRV_SUCCESS:
 #            raise RuntimeError('Error setting image size: %s' % ac.errorCodes[ret])
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetHorizBin(self):
         return self.binning
@@ -340,7 +344,7 @@ class uc480Camera:
 #        ret = ac.SetImage(self.binX,self.binY,self.ROIx[0],self.ROIx[1],self.ROIy[0],self.ROIy[1])
 #        if not ret == ac.DRV_SUCCESS:
 #            raise RuntimeError('Error setting image size: %s' % ac.errorCodes[ret])
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetVertBin(*args):
         return 0
@@ -351,7 +355,7 @@ class uc480Camera:
         return self.binY
 
     def GetNumberChannels(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetElectrTemp(*args):
         return 25
@@ -404,7 +408,7 @@ class uc480Camera:
         rect.s32Width = 1+ self.ROIx[1] - self.ROIx[0]
         rect.s32Height = 1+ self.ROIy[1] - self.ROIy[0]
         
-        print rect.s32X, rect.s32Width
+        print((rect.s32X, rect.s32Width))
         
         #ret = uc480.CALL('SetImageSize', self.boardHandle, rect.s32Width, rect.s32Height )
         #if not ret == 0:
@@ -445,7 +449,7 @@ class uc480Camera:
     def StartExposure(self):
         
         if self.doPoll:
-            print 'StartAq'
+            print('StartAq')
             self.StopAq()
         self.InitBuffers()
         
@@ -458,10 +462,10 @@ class uc480Camera:
         return 0
 
     def StartLifePreview(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def StopLifePreview(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     #PYME Camera interface functions - make this look like the other cameras
     def ExpReady(self):
@@ -488,7 +492,7 @@ class uc480Camera:
         #self._queueBuffer(buf)
         
     def CheckCoordinates(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def StopAq(self):
         ret = uc480.CALL('StopLiveVideo', self.boardHandle, uc480.IS_WAIT)
@@ -498,7 +502,7 @@ class uc480Camera:
         pass
 
     def SetEMGain(self, gain):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
        
 
     def GetEMGain(self):

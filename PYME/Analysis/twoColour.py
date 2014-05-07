@@ -24,9 +24,9 @@
 #from PYME.FileUtils.read_kdf import ReadKdfData
 import numpy as np
 import scipy as sp
-import ofind
+from PYME.Analysis import ofind
 from PYME.Analysis.FitFactories.LatGaussFitFR import FitFactory, FitResultsDType
-import MetaData
+from PYME.Analysis import MetaData
 from scipy.interpolate import Rbf, SmoothBivariateSpline
 from matplotlib import delaunay
 import tables
@@ -92,7 +92,7 @@ class linModel(object):
     def __init__(self, x, dx, var=1, axis='x'):
         #do a simple linear fit to estimate start parameters
         pstart = linalg.lstsq(np.vstack([x, np.ones_like(x)]).T, dx)[0]
-        print pstart
+        print(pstart)
         
         #now do a maximum likelihood fit with our robust lhood function
         self.m, self.x0 = fmin(robustLinLhood, [pstart[0],-pstart[1]/pstart[0]], args=(x, dx, var))
@@ -119,7 +119,7 @@ class lin2Model(object):
     def __init__(self, x, y, dx, var=1):
         #do a simple linear fit to estimate start parameters
         pstart = linalg.lstsq(np.vstack([x, y, np.ones_like(x)]).T, dx)[0]
-        print pstart
+        print(pstart)
         
         #now do a maximum likelihood fit with our robust lhood function
         self.mx, self.my, self.x0 = fmin(robustLin2Lhood, pstart, args=(x, y,dx, var))
@@ -159,7 +159,7 @@ class lin3Model(object):
         y = y*self.sc
         #do a simple linear fit to estimate start parameters
         pstart = linalg.lstsq(np.vstack([x, y, x*x, y*y, x*y, x*y*y, x*x*y,x*x*x, np.ones_like(x)]).T, dx)[0]
-        print pstart
+        print(pstart)
         
         
         #now do a maximum likelihood fit with our robust lhood function
@@ -258,7 +258,7 @@ def genShiftVectors(res_g, res_r):
             nsx.append(sx[i])
             nsy.append(sy[i])
         else:
-            print 'point %d dropped' %i
+            print(('point %d dropped' %i))
 
     nx = np.array(nx)
     ny = np.array(ny)
@@ -316,7 +316,7 @@ def genShiftVectorFieldSpline(nx,ny, nsx, nsy, err_sx, err_sy, bbox=None):
     #wonky = findWonkyVectors(nx, ny, nsx, nsy, tol=100)
     good = wonky == 0
 
-    print '%d wonky vectors found and discarded' % wonky.sum()
+    print(('%d wonky vectors found and discarded' % wonky.sum()))
     
     if bbox:
         spx = SmoothBivariateSpline(nx[good], ny[good], nsx[good], 1./err_sx[good], bbox=bbox)

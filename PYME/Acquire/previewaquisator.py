@@ -107,7 +107,7 @@ class PreviewAquisator(wx.Timer):
         
         #Check to see if the DataStack is big enough!
         if (self.ds.getNumChannels() < self.getReqMemChans(self.cols)):
-            raise Exception, "Not enough channels in Data Stack"
+            raise RuntimeError("Not enough channels in Data Stack")
 
         self.shutters.closeShutters(self.shutters.ALL)
 
@@ -232,7 +232,7 @@ class PreviewAquisator(wx.Timer):
     def Notify(self):
         #check to see if we are already running
         if self.inNotify:
-            print 'Already in notify, skip for now'
+            print('Already in notify, skip for now')
             return
             
         try:
@@ -268,7 +268,7 @@ class PreviewAquisator(wx.Timer):
                         bufferOverflowing = False
                     if bufferOverflowing:
                         bufferOverflowed = True
-                        print 'Warning: Camera buffer overflowing - purging buffer'
+                        print('Warning: Camera buffer overflowing - purging buffer')
                         eventLog.logEvent('Camera Buffer Overflow')
                         #stop the aquisition - we're going to restart after we're read out to purge the buffer
                         #doing it this way _should_ stop the black frames which I guess are being caused by the reading the frame which is
@@ -287,11 +287,11 @@ class PreviewAquisator(wx.Timer):
                     #we're polling at ~5hz, and we should be able to get more frames than would be expected during the polling intervall to
                     #allow us to catch up following glitches of one form or another, although not too many more.
                     if ('GetNumImsBuffered' in dir(self.cam)) and (nFrames > self.cam.GetBufferSize()/4):
-                        print 'Warning: not keeping up with camera, giving up with %d frames still in buffer' % self.cam.GetNumImsBuffered()
+                        print(('Warning: not keeping up with camera, giving up with %d frames still in buffer' % self.cam.GetNumImsBuffered()))
                         break
     
                 if bufferOverflowed:
-                    print 'nse'
+                    print('nse')
                     self.needExposureStart = True
     
                 if self.needExposureStart and self.checkHardware():

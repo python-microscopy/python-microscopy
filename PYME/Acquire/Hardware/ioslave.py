@@ -35,7 +35,7 @@ class IOSlave(object):
 
 
         
-from lasers import Laser
+from PYME.Acquire.Hardware.lasers import Laser
 
 class AOMLaser(Laser):
     ENABLE_PIN=4
@@ -86,11 +86,11 @@ if __name__ == '__main__':
     
     f = open('c:\\Data\\temp.log', 'a')
     
-    print 'starting loop'
+    print( 'starting loop')
     while True:
         #print 't'
         temp = ios.GetTemperature(0)
-        print '%f\t %f' % (time.time(), temp)
+        print(( '%f\t %f' % (time.time(), temp)))
         f.write('%f\t %f\n' % (time.time(), temp))
         f.flush()
         time.sleep(1)

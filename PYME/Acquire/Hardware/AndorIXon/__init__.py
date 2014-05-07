@@ -22,6 +22,6 @@
 ##################
 
 try:
-    from AndorIXon import *
+    from .AndorIXon import *
 except:
     pass

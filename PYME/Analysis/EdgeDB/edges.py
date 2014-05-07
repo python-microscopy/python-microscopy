@@ -20,7 +20,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
-from edgeDB import *
+from .edgeDB import *
 import numpy
 import threading
 #from PYME.ParallelTasks.launchWorkers import cpuCount
@@ -60,7 +60,7 @@ class EdgeDB:
             N = len(coords[0])
 
             taskSize = N/multiprocessing.cpu_count()
-            taskEdges = range(0,N, taskSize) + [N]
+            taskEdges = list(range(0,N, taskSize)) + [N]
 
             tasks = [(taskEdges[i], taskEdges[i+1]) for i in range(len(taskEdges)-1)]
             #print tasks

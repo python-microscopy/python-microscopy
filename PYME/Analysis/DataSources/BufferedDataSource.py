@@ -20,7 +20,7 @@
 #
 ##################
 import numpy
-from BaseDataSource import BaseDataSource
+from .BaseDataSource import BaseDataSource
 import threading
 
 class DataSource(BaseDataSource): #buffer our io to avoid decompressing multiple times

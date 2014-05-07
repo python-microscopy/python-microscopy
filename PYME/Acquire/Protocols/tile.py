@@ -156,7 +156,7 @@ def ShowSFDialog():
 
     #stop after one full scan
     stopTask.when = 14 + 1*ps.imsize
-    print stopTask.when
+    print((stopTask.when))
 
 
 

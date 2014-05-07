@@ -24,9 +24,13 @@
 import serial
 import time
 import threading
-import Queue
 
-from lasers import Laser
+try:
+    import Queue
+except ImportError:
+    import queue as Queue
+
+from PYME.Acquire.Hardware.lasers import Laser
 
 class PhoxxLaser(Laser):
     def __init__(self, name,turnOn=False, portname='COM3'):

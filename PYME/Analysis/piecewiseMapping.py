@@ -36,7 +36,7 @@ def timeToFrames(t, events, mdh):
     sfr = array([int(e['EventDescr']) for e in startEvents])
 
     si = startEvents['Time'].searchsorted(t, side='right')
-    print si, startEvents, sfr
+    print((si, startEvents, sfr))
     try:
         if len(si) > 1:
             si = si[-1]

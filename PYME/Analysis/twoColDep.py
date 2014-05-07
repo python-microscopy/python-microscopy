@@ -22,10 +22,10 @@
 ##################
 
 import numpy as np
-import scipy as sp
-import ofind
+#import scipy as sp
+from PYME.Analysis import ofind
 from PYME.Analysis.FitFactories.LatGaussFitFRTC import FitFactory, FitResultsDType
-import MetaData
+from PYME.Analysis import MetaData
 
 def fitDep(g,r,ofindThresh, dx, dy):
     rg = r + g #detect objects in sum image

@@ -252,7 +252,7 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
                 dxp = int(DeltaX/vx)
                 dyp = int(DeltaY/vy)
                 
-                print DeltaX, DeltaY, dxp, dyp
+                print((DeltaX, DeltaY, dxp, dyp))
                 
                 x1 -= dxp
                 y1 -= dyp
@@ -264,7 +264,7 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
             else:
                 sy1 = slice(y1+ sluy[0], y1+sluy[1]) #FIXME
                 
-            print sx0, sx1, sy0, sy1
+            print((sx0, sx1, sy0, sy1))
                 
             g = self.ds[sx0, sy0, int(fri['tIndex'])].squeeze()
             r = self.ds[sx1, sy1, int(fri['tIndex'])].squeeze()

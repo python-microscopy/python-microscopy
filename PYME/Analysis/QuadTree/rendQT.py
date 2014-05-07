@@ -35,7 +35,7 @@ def rendQT(ax, qt, maxDepth=-1, cmap=cm.hot, maxIsc = 1):
     Is = [float(l.numRecords)*2**(2*l.depth) for l in lvs]
 
     maxI = max(Is)
-    print maxI
+    print(maxI)
 
     for l in lvs:
         c = cmap((float(l.numRecords)*2**(2*l.depth))/(maxI*maxIsc))
@@ -53,7 +53,7 @@ def rendQTe(ax, qt, maxDepth=-1, cmap=cm.hot, maxIsc = 1):
     Is = [float(l.numRecords)*2**(2*l.depth) for l in lvs]
 
     maxI = max(Is)
-    print maxI
+    print(maxI)
 
     for l in lvs:
         c = cmap((float(l.numRecords)*2**(2*l.depth))/(maxI*maxIsc))
@@ -75,7 +75,7 @@ def rendQTa(ar, qt, maxDepth=100):
     dX = max(dX, dY)
     dY = dX
 
-    print dX
+    print(dX)
 
     for l in lvs:
         dx = l.x1 - l.x0
@@ -103,7 +103,7 @@ def rendQTan(ar, qt, maxDepth=100):
     dX = max(dX, dY)
     dY = dX
 
-    print dX
+    print(dX)
 
     ar[:,:] = 0 # initialize
     numevts = 0

@@ -164,7 +164,7 @@ def crb3d(image, psft):
     crb_3D = np.sqrt(psft.crb.sum(1))[(zf - dz):(zf + dz +1)].mean()
     crb_3D_as = np.sqrt(psft.crb_as.sum(1))[(zf - dz):(zf + dz +1)].mean()
     
-    print crb_3D, crb_3D_as
+    print((crb_3D, crb_3D_as))
     
     ratio = crb_3D/crb_3D_as
     

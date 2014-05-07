@@ -40,7 +40,7 @@ class ZernikeView(wx.ScrolledWindow):
         xm = np.where(mag.max(1) > 0)[0]
         ym = np.where(mag.max(0) > 0)[0]
         
-        print xm, ym, mag.shape
+        print((xm, ym, mag.shape))
 
         mag = mag[xm[0]:(xm[-1]+1), ym[0]:(ym[-1]+1)]        
         phase = phase[xm[0]:(xm[-1]+1), ym[0]:(ym[-1]+1)]

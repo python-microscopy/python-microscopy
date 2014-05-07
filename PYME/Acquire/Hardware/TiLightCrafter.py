@@ -8,7 +8,11 @@ Created on Mon May 20 15:58:22 2013
 import numpy as np
 import socket
 import Image
-import StringIO
+
+try:
+    import StringIO
+except ImportError:
+    import io as StringIO
 
 class ENList(list):
     def __getattr__(self, key):
@@ -198,7 +202,7 @@ class LightCrafter(object):
         patternSettings['trigger'] = PATTERN_TRIGGER.COMMAND
         #patternSettings[']
         h, d = self._ExecCommand(LC_PACKET_TYPE.HOST_WRITE, CMD_PATTERN_SETTING, patternSettings)
-        print h, d
+        print(( h, d))
         
         for index, data in enumerate(dataFrames):
             im = Image.fromarray(data)#.convert('1')
@@ -208,7 +212,7 @@ class LightCrafter(object):
             output.close()
             #print contents[:50], np.fromstring(contents, 'u1')[:50]
             h, d = self._ExecCommand(LC_PACKET_TYPE.HOST_WRITE, CMD_PATTERN_DEFINITION, np.hstack([np.ubyte(index),np.fromstring(contents, 'u1')]))
-            print h, d
+            print(( h, d))
         return h, d
         
     def SetPattern(self, index):

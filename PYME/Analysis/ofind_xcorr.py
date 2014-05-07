@@ -25,7 +25,12 @@ import scipy
 import scipy.signal
 import scipy.ndimage as ndimage
 import numpy
-import cPickle
+
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+    
 from scipy.fftpack import fftn, ifftn, ifftshift
 from PYME import pad
 from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
@@ -48,7 +53,7 @@ def preparePSF(md, PSSize):
             ps, vox = md.taskQueue.getQueueData(md.dataSourceID, 'PSF')
         except:
             fid = open(getFullExistingFilename(PSFFilename), 'rb')
-            ps, vox = cPickle.load(fid)
+            ps, vox = pickle.load(fid)
             fid.close()
             
         ps = ps.max(2)
@@ -325,7 +330,7 @@ class ObjectIdentifier(list):
                 im[-5:, -5:] = 0
                 im[-5:, 0:5] = 0
 
-                print len(xs)
+                print((len(xs)))
 
         xs = scipy.array(xs)
         ys = scipy.array(ys)

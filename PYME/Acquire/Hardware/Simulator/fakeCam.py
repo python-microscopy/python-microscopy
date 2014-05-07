@@ -21,7 +21,7 @@
 #
 ##################
 
-import rend_im
+from . import rend_im
 import PYME.cSMI as example
 import scipy
 
@@ -102,8 +102,8 @@ class compThread(threading.Thread):
         self.stopAq = False
         self.startAq = False
 
-        print laserPowers
-        print intTime
+        print(laserPowers)
+        print(intTime)
 
         #self.frameLock = threading.Lock()
         #self.frameLock.acquire()
@@ -251,33 +251,33 @@ class FakeCamera:
         
 
     def GetCamType(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def GetSerialNumber(self):
         return 0
     def GetDataType(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def GetADBits(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def GetMaxDigit(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def GetNumberCh(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def GetBytesPerPoint(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def GetCCDType(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def GetCamID(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def GetCamVer(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def SetTrigMode(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def GetTrigMode(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def SetDelayTime(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def GetDelayTime(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     
     def SetIntegTime(self, iTime): 
         self.intTime=iTime*1e-3
@@ -286,17 +286,17 @@ class FakeCamera:
         return self.intTime
     
     def SetROIMode(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def GetROIMode(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def SetCamMode(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def GetCamMode(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def SetBoardNum(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def GetBoardNum(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     
     def GetCCDWidth(self): 
         return len(self.XVals)
@@ -304,19 +304,19 @@ class FakeCamera:
         return len(self.YVals)
     
     def SetHorizBin(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def GetHorizBin(*args):
         return 0
         #raise Exception, 'Not implemented yet!!'
     def GetHorzBinValue(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def SetVertBin(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def GetVertBin(*args):
         return 0
         #raise Exception, 'Not implemented yet!!'
     def GetNumberChannels(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     
     def GetElectrTemp(*args): 
         return 25
@@ -399,9 +399,9 @@ class FakeCamera:
         return 0
 
     def StartLifePreview(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def StopLifePreview(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def ExpReady(self):
         #return not self.compTCur.isAlive() #thread has finished -> a picture is available
@@ -410,7 +410,7 @@ class FakeCamera:
         #raise Exception, 'Not implemented yet!!'
 
     def GetBWPicture(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     
     def ExtractColor(self, chSlice, mode): 
         #im = self.noiseMaker.noisify(rend_im.simPalmIm(self.XVals, self.YVals, self.zPiezo.GetPos() - self.zOffset,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime*1e-3))[:,:].astype('uint16')
@@ -420,7 +420,7 @@ class FakeCamera:
 	    chSlice[:,:] = self.compT.getIm() #grab image from completed computation thread
 	    #self.compTOld = None #set computation thread to None such that we get an error if we try and obtain the same result twice
 	except AttributeError:  # triggered if called with None
-	    print "Grabbing problem: probably called with 'None' thread"
+	    print("Grabbing problem: probably called with 'None' thread")
         #pylab.figure(2)
         #pylab.hist([f.state for f in self.fluors], [0, 1, 2, 3], hold=False)
         #pylab.gca().set_xticks([0.5,1.5,2.5,3.5])
@@ -428,7 +428,7 @@ class FakeCamera:
         #pylab.show()
         
     def CheckCoordinates(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     #new fcns for Andor compatibility
     def GetNumImsBuffered(self):
@@ -497,7 +497,7 @@ class FakeCamera:
     def __getattr__(self, name):
         if name in dir(self.noiseMaker):
             return self.noiseMaker.__dict__[name]
-        else:  raise AttributeError, name  # <<< DON'T FORGET THIS LINE !!
+        else:  raise AttributeError(name)  # <<< DON'T FORGET THIS LINE !!
         
     def __del__(self):
         self.Shutdown()

@@ -92,7 +92,7 @@ def drawChannelGraphs(chan):
 
 def drawPairwiseGraphs(chan1, chan2):
     r1, r2 = getChannelPair(chan1, chan2)
-    print len(r1), len(r2)
+    print((len(r1), len(r2)))
     figure(3)
     plot(r1['nEvents'], r2['nEvents'], '.', ms=3, label=chan2)
     #print n.max()

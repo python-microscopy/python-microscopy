@@ -25,7 +25,7 @@ from scipy import *
 import numpy as np
 
 try:
-    import illuminate
+    from . import illuminate
     HAVE_ILLUMINATE_MOD = True
 except ImportError:
     HAVE_ILLUMINATE_MOD = False

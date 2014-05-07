@@ -380,7 +380,7 @@ class ObjectIdentifier(list):
                 im[-5:, -5:] = 0
                 im[-5:, 0:5] = 0
 
-                print len(xs)
+                print((len(xs)))
 
         xs = numpy.array(xs)
         ys = numpy.array(ys)

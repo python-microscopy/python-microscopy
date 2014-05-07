@@ -297,7 +297,7 @@ class blobFinder:
                 dy = y - y0
                 dz = z - z0
                 
-                print 'dz:', numpy.median(dz[mask])
+                print(('dz:', numpy.median(dz[mask])))
                 
                 
                 spx, spy = twoColour.genShiftVectorFieldLinear(x[mask], y[mask], dx[mask], dy[mask], err_x[mask], err_y[mask])

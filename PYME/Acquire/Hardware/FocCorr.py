@@ -60,17 +60,17 @@ class FocusCorrector(wx.Timer):
                 SlopeEst_new = (self.LastPos - currPos)/self.LastStep #estimate slope
             
                 self.SlopeEst = .5*self.SlopeEst + 0.5*SlopeEst_new #average slope changes
-                print self.SlopeEst
+                print((self.SlopeEst))
             
             posErr = currPos - self.TargetPos
-            print posErr
+            print(posErr)
             
             if abs(posErr) > abs(self.tolerance/self.SlopeEst): #needs correction
                 corr = posErr*self.SlopeEst
                 
                 corr = round(0.8*corr/.05)*.05
                 
-                print corr
+                print(corr)
                 
                 self.LastPos = currPos
                 self.piezo.MoveTo(0,self.piezo.GetPos(0) + corr)
@@ -95,7 +95,7 @@ class FocusCorrector(wx.Timer):
         
         self.SlopeEst = (detPosMinus - detPosPlus)/2
         
-        print 'Slope estimated at: %f pixels/um' % self.SlopeEst
+        print(('Slope estimated at: %f pixels/um' % self.SlopeEst))
         
         self.piezo.MoveTo(0,curPzPos)
         

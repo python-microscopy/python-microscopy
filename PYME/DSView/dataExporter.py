@@ -83,7 +83,7 @@ class H5Exporter(Exporter):
 
         xSize, ySize = data[xslice, yslice, 0].shape[:2]
         
-        print xSize, ySize
+        print((xSize, ySize))
         
         #atm = tables.UInt16Atom()
         atm = tables.Atom.from_dtype(data[xslice, yslice, 0].dtype)
@@ -179,7 +179,7 @@ class TiffStackExporter(Exporter):
             xmd.setEntry('cropping.yslice', yslice.indices(data.shape[1]))
             xmd.setEntry('cropping.zslice', zslice.indices(data.shape[2]))
 
-            print xslice.indices(data.shape[0])
+            print((xslice.indices(data.shape[0])))
             
             xmlFile = os.path.splitext(outFile)[0] + '.xml'
             xmd.writeXML(xmlFile)

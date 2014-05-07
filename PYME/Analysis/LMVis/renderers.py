@@ -302,12 +302,12 @@ class LHoodRenderer(ColourRenderer):
 
         jitVals = self._genJitVals(jitParamName, jitScale)
         
-        print 'starting render'
+        print('starting render')
 
         im =  visHelpers.rendGaussProd(self.pipeline.colourFilter['x'],self.pipeline.colourFilter['y'], jitVals, imb, pixelSize)
         
-        print 'done rendering'
-        print im.max()
+        print('done rendering')
+        print((im.max()))
         
         return im - im.min()
 

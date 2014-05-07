@@ -142,9 +142,9 @@ class LMGLCanvas(GLCanvas):
 
     def OnPaint(self,event):
         if not self.IsShown():
-            print 'ns'
+            print('ns')
             return
-        print 'foo'
+        print('foo')
         #raise Exception('foo')
         dc = wx.PaintDC(self)
         #print self.GetContext()

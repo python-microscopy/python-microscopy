@@ -40,4 +40,4 @@ class myTask(Task):
  	def __init__(self):
  		Task.__init__(self)
  	def __call__(self):
- 		print "Hello"
+ 		print("Hello")

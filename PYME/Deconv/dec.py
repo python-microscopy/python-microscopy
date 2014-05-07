@@ -179,7 +179,7 @@ class dec:
             test = 1 - abs(dot(S[:,0], S[:,1])/(norm(S[:,0])*norm(S[:,1])))
 
             #print & log some statistics
-            print 'Test Statistic %f' % (test,)
+            print(('Test Statistic %f' % (test,)))
             self.tests.append(test)
             self.ress.append(norm(self.res))
             self.prefs.append(norm(pref))

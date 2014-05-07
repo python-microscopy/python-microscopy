@@ -316,7 +316,7 @@ def rendGaussProd(x,y, sx, imageBounds, pixelSize):
     #l3 = -10
     
     im = len(x)*l3*scipy.ones((len(X), len(Y)), 'd')
-    print im.min()
+    print((im.min()))
     
     fac = 1./numpy.sqrt(2*numpy.pi)
 
@@ -343,7 +343,7 @@ def rendGaussProd(x,y, sx, imageBounds, pixelSize):
             sxi = max(sx[i], delX)
             Xi, Yi = X[(ix - roiSize):(ix + roiSize + 1)][:,None], Y[(iy - roiSize):(iy + roiSize + 1)][None,:]
             imp = numpy.log(fac/sxi) - ((Xi - x[i])**2 + (Yi -y[i])**2)/(2*sxi**2)
-            print imp.max(), imp.min(), l3, imp.shape
+            print((imp.max(), imp.min(), l3, imp.shape))
             imp_ = numpy.maximum(imp, l3)
             im[(ix - roiSize):(ix + roiSize + 1), (iy - roiSize):(iy + roiSize + 1)] += imp_ - l3
 
@@ -425,7 +425,7 @@ def rendJitTri(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1):
         Imc = scipy.rand(len(x)) < mcp
         #print len(jsig), type(jsig)
         if isinstance(jsig, numpy.ndarray):
-            print jsig.shape, Imc.shape
+            print((jsig.shape, Imc.shape))
             jsig2 = jsig[Imc]
         else:
             jsig2 - float(jsig)
@@ -491,13 +491,13 @@ def rendJTet(im, x,y,z,jsig, jsigz, mcp, n):
 
         Imc = scipy.rand(len(x)) < mcp
         if type(jsig) == numpy.ndarray:
-            print jsig.shape, Imc.shape
+            print((jsig.shape, Imc.shape))
             jsig = jsig[Imc]
             jsigz = jsigz[Imc]
 
         #gen3DTriangs.renderTetrahedra(im, x[Imc]+ jsig*scipy.randn(Imc.sum()), y[Imc]+ jsig*scipy.randn(Imc.sum()), z[Imc]+ jsigz*scipy.randn(Imc.sum()), scale = [1,1,1], pixelsize=[1,1,1])
         p = numpy.hstack(((x[Imc]+ jsig*scipy.randn(Imc.sum()))[:, None], (y[Imc]+ jsig*scipy.randn(Imc.sum()))[:, None], (z[Imc]+ jsigz*scipy.randn(Imc.sum()))[:, None]))
-        print p.shape
+        print((p.shape))
         RenderTetrahedra(p, im)
 
 if multiProc:

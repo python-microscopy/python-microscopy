@@ -117,7 +117,7 @@ class DataBlock(object):
             #use thresholded data for determining principle axis
             m = self.data
             m = m > 0.2*m.max()
-            print m.sum()
+            print((m.sum()))
             l, nl = ndimage.label(m)
             
             #take only the largest contiguous region
@@ -127,7 +127,7 @@ class DataBlock(object):
                 if r.sum() > m.sum():
                     m = r
             b = b[m.ravel()>0.5, :]
-            print m.sum(), b.shape
+            print((m.sum(), b.shape))
             if b.shape[0] < 2:
                 self._principalAxis = np.NaN*np.ones(3)
             #print b.shape

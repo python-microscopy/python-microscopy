@@ -38,10 +38,10 @@ def configuration(parent_package = '', top_path = None):
 
     #check for drift correction code
     if os.path.exists(os.path.join(config.local_path, '../DriftCorrection/triangLhood.c')):
-        print yellow_text('compiling with drift correction')
+        print((yellow_text('compiling with drift correction')))
         srcs.append('../DriftCorrection/triangLhood.c')
     else:
-        print yellow_text('compiling without drift correction')
+        print((yellow_text('compiling without drift correction')))
         srcs.append('lhoodStubs.c')
 
     config.add_extension('triangWrap',

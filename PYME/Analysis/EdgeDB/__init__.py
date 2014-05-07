@@ -21,4 +21,4 @@
 #
 ##################
 
-from edges import *
+from .edges import *

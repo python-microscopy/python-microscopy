@@ -110,7 +110,7 @@ class SpaceNavPiezoCtrl(object):
                     
                 self.lastTime = t
             else:
-                print 's'
+                print( 's')
                 self.pxy.StopMove()
                 
             

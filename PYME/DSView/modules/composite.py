@@ -619,7 +619,7 @@ class compositor:
                 order = 0
                 
             shape, origin, voxelsize = dlg.shape, dlg.origin, dlg.voxelsize
-            print shape, origin, voxelsize
+            print((shape, origin, voxelsize))
             
             if len(others) > 0:    
                 newNames = []
@@ -653,14 +653,14 @@ class compositor:
                     
                     if not np.allclose(other.pixelSize, voxelsize[0], rtol=.001) or not (other.data.shape[:3] == shape[:3]) or not originsEqual or shiftField:
                         #need to rescale ...
-                        print 'Remapping ', otherN, originsEqual, other.origin, np.allclose(other.pixelSize, voxelsize[0], rtol=.001), other.pixelSize, ignoreZ
+                        print(('Remapping ', otherN, originsEqual, other.origin, np.allclose(other.pixelSize, voxelsize[0], rtol=.001), other.pixelSize, ignoreZ))
                         #print origin, voxelsize
                         od = self.RemapData(other, chan, shape, voxelsize, origin, shiftField = shiftField, ignoreZ=ignoreZ, order=order)
                         
                     newData += [od]
     
                 pre = common_prefix(newNames)
-                print pre
+                print(pre)
                 lPre = len(pre)
                 newNames = [n[lPre:] for n in newNames]                
                 
@@ -736,7 +736,7 @@ class compositor:
             Ynm += dy
             Znm += dz
             
-        print vx, vy, vz, data.shape
+        print((vx, vy, vz, data.shape))
             
         return ndimage.map_coordinates(data, [(Xnm - x0)/vx, (Ynm - y0)/vy, (Znm - z0)/vz], mode='nearest', order = order)
         

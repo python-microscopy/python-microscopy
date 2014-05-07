@@ -47,7 +47,7 @@ class zDrive:
         
     def MoveTo(self, iChannel, fPos, bTimeOut=True):
         stepPos = round(fPos/self.stepsize)
-        print stepPos
+        print(stepPos)
         if (stepPos >= self.hardMin):
             if (fPos < self.max_travel):
                 nik.ZDrive.Position = int(stepPos)
@@ -184,7 +184,7 @@ if __name__ == '__main__':
     daemon=Pyro.core.Daemon()
     daemon.useNameServer(ns)
     
-    print ns.list('')
+    print((ns.list('')))
 
     if not computername in [n[0] for n in ns.list('')]:    
         ns.createGroup(computername)

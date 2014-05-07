@@ -105,7 +105,7 @@ class ImageViewPanel(wx.Panel):
         im = im - self.do.Offs[self.chan] #self.clim[0]
         im = im*self.do.Gains[self.chan]    #/(self.clim[1] - self.clim[0])
 
-        print im.shape
+        print((im.shape))
 
         im = (255*self.do.cmaps[self.chan](im)[:,:,:3]).astype('b')
             
@@ -122,7 +122,7 @@ class ImageViewPanel(wx.Panel):
         sc = self.image.pixelSize/self.glCanvas.pixelsize
         
         if self.glCanvas.centreCross:
-            print 'drawing crosshair'
+            print('drawing crosshair')
             dc.SetPen(wx.Pen(wx.GREEN, 2))
 
             dc.DrawLine(.5*self.Size[0], 0, .5*self.Size[0], self.Size[1])
@@ -149,7 +149,7 @@ class ImageViewPanel(wx.Panel):
                 if len(self.do.selection_trace) > 2:
                     x, y = numpy.array(self.do.selection_trace).T
                     pts = numpy.vstack(self._PixelToScreenCoordinates(x, y)).T
-                    print pts.shape
+                    print((pts.shape))
                     dc.DrawSpline(pts)
             elif self.do.selectionWidth == 1:
                 dc.DrawLine(lx,ly, hx,hy)
@@ -409,7 +409,7 @@ class ColourImageViewPanel(ImageViewPanel):
         #print self.glCanvas.centreCross
 
         if self.glCanvas.centreCross:
-            print 'drawing crosshair'
+            print('drawing crosshair')
             dc.SetPen(wx.Pen(wx.GREEN, 2))
 
             dc.DrawLine(.5*self.Size[0], 0, .5*self.Size[0], self.Size[1])

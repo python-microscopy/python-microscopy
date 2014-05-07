@@ -42,7 +42,7 @@ taskList += alternans(40, 10, 5, ['Cy5', 'TxRed'])
 taskList += [T(140, scope.dichroic.SetFilter, 'DAPI'),] #Photoconversion
 taskList += alternans(250, 10, 5, ['Cy5', 'TxRed'])
 
-print taskList
+print(taskList)
 
 #optional - metadata entries
 metaData = [

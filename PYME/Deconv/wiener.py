@@ -44,7 +44,7 @@ from PYME.DSView import View3D
 def resizePSF(psf, data_size):
     if not psf.shape == data_size:
         #Expand PSF to data size by fourier domain interpolation
-        print 'Resizing PSF to match data size'
+        print('Resizing PSF to match data size')
         g_ = fftw3f.create_aligned_array(data_size, 'complex64')
         H_ = fftw3f.create_aligned_array(data_size, 'complex64')
         
@@ -60,7 +60,7 @@ def resizePSF(psf, data_size):
         
         g =  ifftshift(g_.real)
     
-        print 'PSF resizing complete'
+        print('PSF resizing complete')
     else:
         g = psf
     #View3D(psf)

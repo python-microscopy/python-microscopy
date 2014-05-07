@@ -57,7 +57,7 @@ class FourierPropagatorHNA:
         self._F = fftw3f.create_aligned_array(u.shape, 'complex64')
         self._f = fftw3f.create_aligned_array(u.shape, 'complex64')
         
-        print 'Creating plans for FFTs - this might take a while'
+        print('Creating plans for FFTs - this might take a while')
 
         #calculate plans for other ffts
         self._plan_f_F = fftw3f.Plan(self._f, self._F, 'forward', flags = FFTWFLAGS, nthreads=NTHREADS)
@@ -66,7 +66,7 @@ class FourierPropagatorHNA:
         
         fftwWisdom.save_wisdom()
         
-        print 'Done planning'
+        print('Done planning')
          #print isnan(self.propFac).sum()
 
     def propagate(self, F, z):
@@ -110,7 +110,7 @@ def GenWidefieldAP(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47):
     R = sqrt(u**2 + v**2)
     
     #print R.max()*lamb
-    print (R/(n*lamb)).max()
+    print(((R/(n*lamb)).max()))
     
     #imshow(R*lamb)
     #colorbar()
@@ -152,7 +152,7 @@ def GenWidefieldPSF(zs, dx=5, lamb=700, n=1.51, NA = 1.47):
 def PsfFromPupil(pupil, zs, dx, lamb):
     dx = float(dx)
     X, Y = meshgrid(dx*arange(-pupil.shape[0]/2, pupil.shape[0]/2),dx*arange(-pupil.shape[1]/2, pupil.shape[1]/2))
-    print X.min(), X.max()
+    print((X.min(), X.max()))
     
     X = X - X.mean()
     Y = Y - Y.mean()
@@ -177,7 +177,7 @@ def PsfFromPupil(pupil, zs, dx, lamb):
 def PsfFromPupilVect(pupil, zs, dx, lamb, shape = [61,61]):
     dx = float(dx)
     X, Y = meshgrid(dx*arange(-pupil.shape[0]/2, pupil.shape[0]/2),dx*arange(-pupil.shape[1]/2, pupil.shape[1]/2))
-    print X.min(), X.max()
+    print((X.min(), X.max()))
     
     X = X - X.mean()
     Y = Y - Y.mean()
@@ -288,7 +288,7 @@ def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters = 50, size=5e3):
         bps = []
         abp = []
         
-        print i#, abs(pupil).sum()
+        print(i)#, abs(pupil).sum()
         
         #figure()
         #imshow(abs(pupil))
@@ -330,7 +330,7 @@ def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters = 50, size=5e3):
         #View3D(bps)
         #View3D(abp)
         
-        print 'res = %f' % (res/ps.shape[2])
+        print(('res = %f' % (res/ps.shape[2])))
         #print abs(new_pupil).sum()
         
         #np_A = abs(new_pupil)

@@ -77,7 +77,7 @@ while 1:
         except Pyro.core.ProtocolError as e:
             if e.message == 'connection failed':
                 #server is dead in the water - put it out of it's misery
-                print 'Killing:', qName
+                print(('Killing:', qName))
                 try:
                     ns.unregister('TaskQueues.%s' % qName)
                 except Pyro.errors.NamingError:

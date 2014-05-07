@@ -79,9 +79,9 @@ def impfilt(fcn, x0, args, maxIters=200, initStepSize=.01, minStepSize=.0005, ma
         if not changed:
             stepsize *=.5
 
-    print 'Optimisation terminated:'
-    print 'nIterations: %d' % nIters
-    print 'nFevals: %d' % nFeval
+    print('Optimisation terminated:')
+    print(('nIterations: %d' % nIters))
+    print(('nFevals: %d' % nFeval))
 
     return x0 #, xts
 
@@ -202,9 +202,9 @@ def impfilt2(fcn, x0, args, maxIters=200, initStepSize=.01, minStepSize=.0005, m
         #if not changed:
         stepsize *=.1
 
-    print 'Optimisation terminated:'
-    print 'nIterations: %d' % nIters
-    print 'nFevals: %d' % nFeval
+    print('Optimisation terminated:')
+    print(('nIterations: %d' % nIters))
+    print(('nFevals: %d' % nFeval))
 
     return x0 #, xts
 
@@ -278,7 +278,7 @@ def impfilt3(fcn, x0, args, maxIters=200, initStepSize=.01, minStepSize=.0005, m
         fCand = fcn(xCand, *args)
         nFeval += 1
 
-        print x0, xCand, fPred, fCand
+        print((x0, xCand, fPred, fCand))
 
 
         while fCand < fval and nFeval < maxFevals:
@@ -316,7 +316,7 @@ def impfilt3(fcn, x0, args, maxIters=200, initStepSize=.01, minStepSize=.0005, m
         #print t
         A = (-C - B*t)/t**2
 
-        print A, B, C
+        print((A, B, C))
 
         #should be minimum
         tn = -B/(2*A)
@@ -326,10 +326,10 @@ def impfilt3(fcn, x0, args, maxIters=200, initStepSize=.01, minStepSize=.0005, m
         fCand = fcn(xCand, *args)
         nFeval += 1
 
-        print 'q\t', tn,  x0, xCand, fval, fCand
+        print(('q\t', tn,  x0, xCand, fval, fCand))
 
         if fCand < fval:
-            print 'Accepting quad est.'
+            print('Accepting quad est.')
             x0[:] = xCand[:]
             fval = fCand
             changed = True
@@ -343,9 +343,9 @@ def impfilt3(fcn, x0, args, maxIters=200, initStepSize=.01, minStepSize=.0005, m
         #if not changed:
         stepsize *=.1
 
-    print 'Optimisation terminated:'
-    print 'nIterations: %d' % nIters
-    print 'nFevals: %d' % nFeval
+    print('Optimisation terminated:')
+    print(('nIterations: %d' % nIters))
+    print(('nFevals: %d' % nFeval))
 
     return x0 #, xts
 

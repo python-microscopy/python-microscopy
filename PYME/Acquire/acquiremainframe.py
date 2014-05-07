@@ -63,31 +63,31 @@ def create(parent, options = None):
 
 [wxID_SMIMAINFRAME, wxID_SMIMAINFRAMENOTEBOOK1, wxID_SMIMAINFRAMEPANEL1, 
  wxID_SMIMAINFRAMESTATUSBAR1, wxID_SMIMAINFRAMETEXTCTRL1, 
-] = map(lambda _init_ctrls: wx.NewId(), range(5))
+] = [wx.NewId() for i in range(5)]
 
 [wxID_SMIMAINFRAMEMENU1FILE_EXIT, wxID_SMIMAINFRAMEMENU1FILE_OPEN, 
  wxID_SMIMAINFRAMEMENU1FILE_OPEN_SCRIPT, 
-] = map(lambda _init_coll_menu1_Items: wx.NewId(), range(3))
+] = [wx.NewId() for i in range(3)]
 
 [wxID_SMIMAINFRAMEMFILEFILE_EXIT, wxID_SMIMAINFRAMEMFILEFILE_OPEN, 
-] = map(lambda _init_coll_mFile_Items: wx.NewId(), range(2))
+] =[wx.NewId() for i in range(2)]
 
-[wxID_SMIMAINFRAMEWINDOWSITEMS0] = map(lambda _init_coll_Windows_Items: wx.NewId(), range(1))
+[wxID_SMIMAINFRAMEWINDOWSITEMS0] = [wx.NewId() for i in range(1)]
 
 [wxID_SMIMAINFRAMEMAQUIREONE_PIC, wxID_SMIMAINFRAMEMAQUIRESTACK, 
  wxID_SMIMAINFRAMEMAQUIRETD_SERIES, wxID_SMIMAINFRAMEMAQUIRETWO_D_TIME, 
-] = map(lambda _init_coll_mAquire_Items: wx.NewId(), range(4))
+] = [wx.NewId() for i in range(4)]
 
 [wxID_SMIMAINFRAMEMCONTROLSCAM, wxID_SMIMAINFRAMEMCONTROLSINT_TIME, 
  wxID_SMIMAINFRAMEMCONTROLSPIEZO, wxID_SMIMAINFRAMEMCONTROLSPIEZO_INIT, 
  wxID_SMIMAINFRAMEMCONTROLSSTEP, 
-] = map(lambda _init_coll_mControls_Items: wx.NewId(), range(5))
+] = [wx.NewId() for i in range(5)]
 
 [wxID_SMIMAINFRAMEMCAMBIN, wxID_SMIMAINFRAMEMCAMCHANS, 
  wxID_SMIMAINFRAMEMCAMROI, 
-] = map(lambda _init_coll_mCam_Items: wx.NewId(), range(3))
+] = [wx.NewId() for i in range(3)]
 
-[wxID_SMIMAINFRAMEMDISPLAYCLEAR_SEL] = map(lambda _init_coll_mDisplay_Items: wx.NewId(), range(1))
+[wxID_SMIMAINFRAMEMDISPLAYCLEAR_SEL] = [wx.NewId()]
 
 class smiMainFrame(wx.Frame):
     def _init_coll_mCam_Items(self, parent):
@@ -394,11 +394,11 @@ class smiMainFrame(wx.Frame):
         self.time1.WantNotification.append(self.StatusBarUpdate)
 
         for t in self.toolPanels:
-            print t
+            print(t)
             self.AddTool(*t)
 
         for t in self.camPanels:
-            print t
+            print(t)
             self.AddCamTool(*t)
 
         #self.splash.Destroy()
@@ -647,7 +647,7 @@ class smiMainFrame(wx.Frame):
         #event.Skip()
 
     def OnMCamSetPixelSize(self, event):
-        import voxelSizeDialog
+        from PYME.Acquire import voxelSizeDialog
 
         dlg = voxelSizeDialog.VoxelSizeDialog(self, self.scope)
         dlg.ShowModal()
@@ -675,10 +675,10 @@ class smiMainFrame(wx.Frame):
 
         if 'validROIS' in dir(self.scope.cam):
             #special case for cameras with restricted ROIs - eg Neo
-            print 'setting ROI'
+            print('setting ROI')
             dlg = wx.SingleChoiceDialog(self, 'Please select the ROI size', 'Camera ROI', ['%dx%d at (%d, %d)' % roi for roi in self.scope.cam.validROIS])
             dlg.ShowModal()
-            print 'Dlg Shown'
+            print('Dlg Shown')
             self.scope.cam.SetROIIndex(dlg.GetSelection())
             dlg.Destroy()
             
@@ -686,7 +686,7 @@ class smiMainFrame(wx.Frame):
             y1 = 0
             x2 = self.scope.cam.GetPicWidth()
             y2 = self.scope.cam.GetPicHeight()
-            print 'ROI Set'
+            print ('ROI Set')
         
         else:
             if (self.roi_on):
@@ -729,7 +729,7 @@ class smiMainFrame(wx.Frame):
                 y2 = self.scope.cam.GetPicHeight()
 
             
-        print 'about to set COC'
+        print('about to set COC')
         self.scope.cam.SetCOC()
         self.scope.cam.GetStatus()
         self.scope.pa.Prepare()

@@ -449,7 +449,7 @@ class collapsingPane(foldingPane):
         self.bFold.Bind(wx.EVT_LEFT_UP, self.OnFold)
 
     def OnFold(self, event):
-        print 'fold'
+        print('fold')
         if self.folded:
             self.Unfold()
             self.bFold.SetFolded(False)

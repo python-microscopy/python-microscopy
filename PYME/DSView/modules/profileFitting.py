@@ -81,7 +81,7 @@ class fitter:
             pylab.plot(xv, I, cols[chan] + 'x', label=self.image.names[chan])
             pylab.plot(xv, gmod(res[0], self.image.xvals), cols[chan], label='%2.3g, %2.3g, \n%2.3g, %2.3g' % tuple(res[0]))
             
-            print res[0]
+            print((res[0]))
             #imo = self.image.parent
         pylab.legend()
         #rawIntensity.processIntensityTrace(I, imo.mdh, dt=imo.mdh['Camera.CycleTime'])
@@ -136,7 +136,7 @@ class fitter:
         plot(ti, Ii)
         
         n100 = abs(ti-100).argmin()
-        print n100, Ii[n100]
+        print((n100, Ii[n100]))
         figtext(.5, .8, 'I100/Imax = %3.4f'%(Ii[n100]))
         plot(ti[n100], Ii[n100], 'xr')
         

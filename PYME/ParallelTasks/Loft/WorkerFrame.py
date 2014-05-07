@@ -81,7 +81,7 @@ class WorkerMonFrame(wx.Frame):
         self.tGetTask.Start(1000)
 
     def OnTGetTaskTimer(self, event):
-        print 'Getting Task ...'
+        print('Getting Task ...')
         time.sleep(0.01) #to improve GUI responsiveness
         self.tq.returnCompletedTask(self.tq.getTask()(gui=True))
-        print 'Completed Task'
+        print('Completed Task')

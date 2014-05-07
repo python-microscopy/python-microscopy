@@ -24,7 +24,7 @@
 import serial
 #import time
 
-from lasers import Laser
+from PYME.Acquire.Hardware.lasers import Laser
 
 class CobaltLaser(Laser):
     def __init__(self, name,turnOn=False, portname='COM1', maxpower=0.1):

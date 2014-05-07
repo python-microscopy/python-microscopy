@@ -105,10 +105,10 @@ def convex_hull_ijv(labels_ijv, indexes):
         reordered[dest_start:dest_end, :] = out[src_start:src_end, :]
         reordered_idx += count
         reordered_counts[reordered_num] = count
-    print "OUT", out
-    print "C", vertex_counts
-    print "REO", reordered
-    print "RC", reordered_counts
+    print(("OUT", out))
+    print(("C", vertex_counts))
+    print(("REO", reordered))
+    print(("RC", reordered_counts))
     return reordered[:, [2, 0, 1]], reordered_counts
 
 def convex_hull(labels, indexes=None):

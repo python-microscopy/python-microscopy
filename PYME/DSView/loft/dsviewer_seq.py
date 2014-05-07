@@ -160,8 +160,8 @@ class DSViewFrame(wx.Frame):
                     dsa -= dsa.min()
             
             if (not self.bg == None) and self.bgSub:
-                print dsa.shape
-                print self.bg.shape
+                print((dsa.shape))
+                print((self.bg.shape))
                 if self.numAvg == 0:
                     dsa -= self.bg
                 else:
@@ -198,7 +198,7 @@ class DSViewFrame(wx.Frame):
 class MyApp(wx.App):
     def OnInit(self):
         #wx.InitAllImageHandlers()
-        print sys.argv
+        print((sys.argv))
         bg = None
         if (len(sys.argv) > 1):
             fnms = os.listdir(sys.argv[1])

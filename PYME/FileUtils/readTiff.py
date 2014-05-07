@@ -42,7 +42,7 @@ def read3DTiff(filename):
     #ima = np.array(im.getdata(), 'int16').newbyteorder('BE')
     ima = np.array(im.getdata()).newbyteorder(endedness)
 
-    print ima.dtype
+    print((ima.dtype))
     
     #print ima.shape
 

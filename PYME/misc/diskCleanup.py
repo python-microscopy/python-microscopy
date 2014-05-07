@@ -42,7 +42,7 @@ def deleteFiles(directory):
             #print nFilename, bFilename
 
             if os.path.exists(nFilename) and os.path.getsize(nFilename) == os.path.getsize(filename): #and os.path.exists(bFilename) and os.path.getsize(filename) == os.path.getsize(nFilename):
-                print 'Deleting %s' % filename
+                print(('Deleting %s' % filename))
                 try:
                     os.remove(filename)
                 except OSError:
@@ -50,13 +50,13 @@ def deleteFiles(directory):
                     traceback.print_exc()
                     
             else:
-                print 'Keeping %s' % filename
+                print(('Keeping %s' % filename))
 
         for dir in dirs:
             dirname = os.path.join(path, dir)
 
             if len(os.listdir(dirname)) == 0 and not 'System Volume Information' in dirname:
-                print 'Removing %s' % dirname
+                print(('Removing %s' % dirname))
                 os.rmdir(dirname)
 
 

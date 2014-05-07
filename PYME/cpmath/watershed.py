@@ -157,10 +157,10 @@ def fast_watershed(image, markers, connectivity=None, offset=None, mask=None):
     else:
         c_connectivity = numpy.array(connectivity,bool)
         if c_connectivity.ndim != image.ndim:
-            raise ValueError,"Connectivity dimension must be same as image"
+            raise ValueError("Connectivity dimension must be same as image")
     if offset == None:
         if any([x%2==0 for x in c_connectivity.shape]):
-            raise ValueError,"Connectivity array must have an unambiguous center"
+            raise ValueError("Connectivity array must have an unambiguous center")
         #
         # offset to center of connectivity array
         #
@@ -184,17 +184,16 @@ def fast_watershed(image, markers, connectivity=None, offset=None, mask=None):
     c_image = rank_order(image)[0].astype(numpy.int32)
     c_markers = numpy.ascontiguousarray(markers,dtype=numpy.int32)
     if c_markers.ndim!=c_image.ndim:
-        raise ValueError,\
-            "markers (ndim=%d) must have same # of dimensions "\
-            "as image (ndim=%d)"%(c_markers.ndim, c_image.ndim)
+        raise ValueError("markers (ndim=%d) must have same # of dimensions "\
+            "as image (ndim=%d)"%(c_markers.ndim, c_image.ndim))
     if not all([x==y for x,y in zip(c_markers.shape, c_image.shape)]):
         raise ValueError("image and markers must have the same shape")
     if mask!=None:
         c_mask = numpy.ascontiguousarray(mask,dtype=bool)
         if c_mask.ndim!=c_markers.ndim:
-            raise ValueError, "mask must have same # of dimensions as image"
+            raise ValueError("mask must have same # of dimensions as image")
         if not all([x==y for x,y in zip(c_markers.shape, c_mask.shape)]):
-            raise ValueError, "mask must have same shape as image"
+            raise ValueError("mask must have same shape as image")
         c_markers[numpy.logical_not(mask)]=0
     else:
         c_mask = None

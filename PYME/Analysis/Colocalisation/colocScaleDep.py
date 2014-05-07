@@ -21,9 +21,9 @@
 ##################
 import numpy as np
 from scipy import ndimage
-import correlationCoeffs
+from . import correlationCoeffs
 from pylab import *
-import edtColoc
+from . import edtColoc
 import Image
 
 DIRNAME='/home/david/Desktop/coloc/'

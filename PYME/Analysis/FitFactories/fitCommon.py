@@ -5,7 +5,10 @@ Created on Sat Apr 12 17:58:51 2014
 @author: david
 """
 
-import copy_reg
+try:
+    import copy_reg
+except ImportError:
+    import copyreg as copy_reg
 
 def pickleSlice(slice):
         return unpickleSlice, (slice.start, slice.stop, slice.step)

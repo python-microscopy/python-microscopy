@@ -22,8 +22,8 @@
 ##################
 
 import math
-import datetime
-from previewaquisator import PreviewAquisator
+#import datetime
+from PYME.Acquire.previewaquisator import PreviewAquisator
 import time
 from PYME.Acquire import MetaDataHandler
 
@@ -103,7 +103,7 @@ class SimpleSequenceAquisitor(PreviewAquisator):
             return self._CurPos() - (self.GetStepSize()*(self.GetSeqLength() - 1)*self.GetDirection()/2)
         else: 
             if not ("startPos" in dir(self)):
-                raise Exception, "Please call SetStartPos first !!"
+                raise RuntimeError("Please call SetStartPos first !!")
             return self.startPos
     def SetEndPos(self, ePos):
         self.endPos = ePos
@@ -112,13 +112,13 @@ class SimpleSequenceAquisitor(PreviewAquisator):
             return self._CurPos() + (self.GetStepSize()*(self.GetSeqLength() - 1)*self.GetDirection()/2)
         else: 
             if not ("endPos" in dir(self)):
-                raise Exception, "Please call SetEndPos first !!"
+                raise RuntimeError("Please call SetEndPos first !!")
             return self.endPos
     def SetPrevPos(self, sPos):
         self.prevPos = sPos
     def GetPrevPos(self):
         if not ("prevPos" in dir(self)):
-            raise Exception, "Please call SetPrevPos first !!"
+            raise RuntimeError("Please call SetPrevPos first !!")
         return self.prevPos
     def SetDirection(self, dir):
         " Fowards = 1, backwards = -1 "

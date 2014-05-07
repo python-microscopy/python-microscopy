@@ -88,7 +88,11 @@ class MDHandlerBase(DictMixin):
 
     def GetSimpleString(self):
         '''Writes out metadata in simplfied format'''
-        import cPickle
+        try:
+            import cPickle as pickle
+        except ImportError:
+            import pickle
+            
         import numpy as np
         s = ['#PYME Simple Metadata v1\n']
 
@@ -98,7 +102,7 @@ class MDHandlerBase(DictMixin):
             if val.__class__ in [str, unicode] or np.isscalar(val): #quote string
                 val = repr(val)
             elif not val.__class__ in [int, float, list, dict]: #not easily recovered from representation
-                val = "cPickle.loads('''%s''')" % cPickle.dumps(val)
+                val = "pickle.loads('''%s''')" % pickle.dumps(val)
 
             s.append("md['%s'] = %s\n" % (en, val))
     
@@ -222,12 +226,12 @@ class SimpleMDHandler(NestedClassMDHandler):
 
     def __init__(self, filename = None, mdToCopy=None):
         if not filename == None:
-            import cPickle
+            from PYME.Acquire.ExecTools import _execfile
             #loading an existing file
             md = self
             fn = __file__
             globals()['__file__'] = filename
-            execfile(filename)
+            _execfile(filename, locals(), globals())
             globals()['__file__'] = fn
 
         if not mdToCopy == None:
@@ -266,7 +270,11 @@ class XMLMDHandler(MDHandlerBase):
 
 
     def setEntry(self,entryName, value):
-        import cPickle
+        try:
+            import cPickle as pickle
+        except ImportError:
+            import pickle
+        
         import numpy as np
         entPath = entryName.split('.')
 
@@ -302,12 +310,16 @@ class XMLMDHandler(MDHandlerBase):
             node.setAttribute('value', str(value)) 
         else: #pickle more complicated structures
             node.setAttribute('class', 'pickle')
-            print value, cPickle.dumps(value)
-            node.setAttribute('value', base64.b64encode((cPickle.dumps(value))))
+            print((value, pickle.dumps(value)))
+            node.setAttribute('value', base64.b64encode((pickle.dumps(value))))
 
 
     def getEntry(self,entryName):
-        import cPickle
+        try:
+            import cPickle as pickle
+        except ImportError:
+            import pickle
+            
         entPath = entryName.split('.')
 
         node = self.md
@@ -334,7 +346,7 @@ class XMLMDHandler(MDHandlerBase):
             val = float(val)
         elif cls == 'pickle':
             #return None
-            val = cPickle.loads(base64.b64decode(val))
+            val = pickle.loads(base64.b64decode(val))
 
         return val
 

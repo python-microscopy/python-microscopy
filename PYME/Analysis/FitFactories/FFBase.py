@@ -22,7 +22,7 @@
 ##################
 
 import numpy as np
-import fitCommon
+from . import fitCommon
 
 class FitFactory(object):
     def __init__(self, data, metadata, fitfcn=None, background=None):

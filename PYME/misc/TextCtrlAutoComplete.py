@@ -95,7 +95,7 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
 
         #Load and sort data
         if not (self._multiChoices or self._choices):
-            raise ValueError, "Pass me at least one of multiChoices OR choices"
+            raise ValueError("Pass me at least one of multiChoices OR choices")
 
         #widgets
         self.dropdown = wx.PopupWindow( self )
@@ -305,7 +305,7 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
 
         lChoices = len(choices)
         if lChoices < 2:
-            raise ValueError, "You have to pass me a multi-dimension list"
+            raise ValueError("You have to pass me a multi-dimension list")
 
         for numCol, rowValues in enumerate(choices[0]):
 
@@ -575,7 +575,7 @@ class test:
         """ Simply function that receive the row values when the
             user select an item
         """
-        print "Select Callback called...:",  values
+        print(("Select Callback called...:",  values))
 
 
 if __name__ == "__main__":

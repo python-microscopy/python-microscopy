@@ -235,7 +235,7 @@ def read_glasscat(glassdir='/home/nh/Zemax/Glasscat/'):
 
         f.close()
     else:
-        print('read_glasscat(): The input filename "' + glassdir + '" is not a valid file or directory.')
+        print(('read_glasscat(): The input filename "' + glassdir + '" is not a valid file or directory.'))
         sys.exit(1)
 
     return(glasscat)
@@ -294,8 +294,8 @@ def dispersion_data(cd, dispform, ld, wavemin=None, wavemax=None, nwaves=None, s
         s = sigma_min + (sigma_max - sigma_min) * arange(nwaves) / (nwaves - 1.0)
         w = 1.0 / s
     else:
-        print('The sampling domain "' + sampling_domain + '" defined as input ' \
-              + 'to the "dispersion_data()" function is invalid.')
+        print(('The sampling domain "' + sampling_domain + '" defined as input ' \
+              + 'to the "dispersion_data()" function is invalid.'))
         sys.exit(1)
 
     if (dispform == 1):
@@ -424,14 +424,14 @@ def index_coeffs(wavemin, wavemax, nwaves, cd, dispform, ld, basis='Taylor', \
     (waves, indices) = dispersion_data(cd, dispform, ld, sampling_domain=sampling_domain)
 
     if (wavemin < waves.min()):
-        print('index_coeffs(): The minimum wavelength (' + str(wavemin) +
+        print(('index_coeffs(): The minimum wavelength (' + str(wavemin) +
               'nm)\n is outside the transmission range given for the glass (' +
-              str(waves.min()) + '--' + str(waves.max()) + ' nm)')
+              str(waves.min()) + '--' + str(waves.max()) + ' nm)'))
         return(zeros(8), zeros(alen(waves)), waves)
     if (wavemax > waves.max()):
-        print('index_coeffs(): The maximum wavelength (' + str(wavemax) +
+        print(('index_coeffs(): The maximum wavelength (' + str(wavemax) +
               'nm)\n is outside the transmission range given for the glass (' +
-              str(waves.min()) + '--' + str(waves.max()) + ' nm)')
+              str(waves.min()) + '--' + str(waves.max()) + ' nm)'))
         return(zeros(8), zeros(alen(waves)), waves)
 
     okay = (waves >= wavemin) & (waves <= wavemax)
@@ -467,8 +467,8 @@ def index_coeffs(wavemin, wavemax, nwaves, cd, dispform, ld, basis='Taylor', \
         H[:,7] = 0.0625 * (429.0 * x**7 - 693.0 * x**5 + 315.0 * x**3 - 35.0 * x)
         H[:,8] = 0.0078125 * (6435.0 * x**8 - 12012.0 * x**6 + 6930.0 * x**4 - 1260.0 * x**2 + 35.0)
     else:
-        print('The basis chosen (' + basis + ') is invalid for the ' + \
-              '"index_coeffs()" function.')
+        print(('The basis chosen (' + basis + ') is invalid for the ' + \
+              '"index_coeffs()" function.'))
         sys.exit(3)
 
     g = indices
@@ -501,18 +501,18 @@ def insert_dispersion_coeffs(glasscat, wavemin, wavemax, nwaves=None, basis='Tay
 
 ## =============================================================================
 def print_glass_report(glass_dict):
-    print('name     = ' + str(glass_dict['name']))
-    print('nd       = ' + str(glass_dict['nd']))
-    print('vd       = ' + str(glass_dict['vd']))
-    print('dispform = ' + str(glass_dict['dispform']))
-    print('tce      = ' + str(glass_dict['tce']))
-    print('density  = ' + str(glass_dict['density']))
-    print('dpgf     = ' + str(glass_dict['dpgf']))
-    print('cd       = ' + str(glass_dict['cd']))
-    print('td       = ' + str(glass_dict['td']))
-    print('od       = ' + str(glass_dict['od']))
-    print('ld       = ' + str(glass_dict['ld']))
-    if 'coeffs' in glass_dict: print('coeffs   = ' + str(glass_dict['coeffs']))
+    print(('name     = ' + str(glass_dict['name'])))
+    print(('nd       = ' + str(glass_dict['nd'])))
+    print(('vd       = ' + str(glass_dict['vd'])))
+    print(('dispform = ' + str(glass_dict['dispform'])))
+    print(('tce      = ' + str(glass_dict['tce'])))
+    print(('density  = ' + str(glass_dict['density'])))
+    print(('dpgf     = ' + str(glass_dict['dpgf'])))
+    print(('cd       = ' + str(glass_dict['cd'])))
+    print(('td       = ' + str(glass_dict['td'])))
+    print(('od       = ' + str(glass_dict['od'])))
+    print(('ld       = ' + str(glass_dict['ld'])))
+    if 'coeffs' in glass_dict: print(('coeffs   = ' + str(glass_dict['coeffs'])))
     return
 
 ## =============================================================================

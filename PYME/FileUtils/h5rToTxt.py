@@ -72,6 +72,6 @@ if __name__ == '__main__':
         outFile = os.path.splitext(inFile)[0] + '.txt'
 
     if os.path.exists(outFile):
-        print 'Output file already exists - please remove'
+        print('Output file already exists - please remove')
     else:
         convertFile(inFile, outFile)

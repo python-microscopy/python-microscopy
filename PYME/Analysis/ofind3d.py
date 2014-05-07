@@ -208,7 +208,7 @@ class ObjectIdentifier(list):
         if (self.numThresholdSteps == 0): #don't do threshold scan - just use lower threshold (faster)
             im = maskedFilteredData
             #View3D(im)
-            print 'Threshold: %3.2f' %self.lowerThreshold
+            print(('Threshold: %3.2f' %self.lowerThreshold))
             (labeledPoints, nLabeled) = ndimage.label(im > self.lowerThreshold)
             
             objSlices = ndimage.find_objects(labeledPoints)
@@ -228,7 +228,7 @@ class ObjectIdentifier(list):
             #generate threshold range - note slightly awkard specification of lowwer and upper bounds as the stop bound is excluded from arange
             #self.thresholdRange = scipy.arange(self.upperThreshold, self.lowerThreshold - (self.upperThreshold - self.lowerThreshold)/(self.numThresholdSteps -1), - (self.upperThreshold - self.lowerThreshold)/(self.numThresholdSteps))
             self.thresholdRange = scipy.logspace(np.log10(self.upperThreshold), np.log10(self.lowerThreshold), self.numThresholdSteps)
-            print 'Thresholds:', self.thresholdRange
+            print(('Thresholds:', self.thresholdRange))
 
             #get a working copy of the filtered data
             im = maskedFilteredData.copy()
@@ -296,7 +296,7 @@ class ObjectIdentifier(list):
                     im[-5:, -5:] = 0
                     im[-5:, 0:5] = 0
 
-                print len(self)
+                print((len(self)))
 
         #create pseudo lists to allow indexing along the lines of self.x[i]
         self.x = PseudoPointList(self, 'x')

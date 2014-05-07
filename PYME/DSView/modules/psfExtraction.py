@@ -201,7 +201,7 @@ class psfExtractor:
             
             dz = z1 - z0
 
-            print 'z0: %f, z1: %f, dz: %f' % (z0,z1,dz)
+            print(('z0: %f, z1: %f, dz: %f' % (z0,z1,dz)))
             
             pylab.plot(z_, p_0)
             pylab.plot(z_, p_1)

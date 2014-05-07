@@ -313,7 +313,7 @@ def slow_augment(n, ii, jj, idx, count, x, y, u, v, c):
         cc[i,jj[idx[i]:(idx[i]+count[i])]] = c[idx[i]:(idx[i]+count[i])]
     c = cc
     for i in ii:
-        print "Processing i=%d" % i
+        print(("Processing i=%d" % i))
         j = jj[idx[i]:(idx[i] + count[i])]
         d = c[i,:] - v
         pred = np.ones(n, int) * i
@@ -323,12 +323,12 @@ def slow_augment(n, ii, jj, idx, count, x, y, u, v, c):
         to_do = list(range(n))
         try:
             while True:
-                print "Evaluating i=%d, n_scan = %d" % (i, len(scan))
+                print(("Evaluating i=%d, n_scan = %d" % (i, len(scan))))
                 if len(scan) == 0:
                     ready += on_deck
                     on_deck = []
                     umin = np.min([d[jjj] for jjj in to_do])
-                    print "umin = %f" % umin
+                    print(("umin = %f" % umin))
                     scan = [jjj for jjj in to_do if d[jjj] == umin]
                     to_do = [jjj for jjj in to_do if d[jjj] != umin]
                     for j1 in scan:
@@ -336,34 +336,34 @@ def slow_augment(n, ii, jj, idx, count, x, y, u, v, c):
                             raise StopIteration()
                 j1 = scan[0]
                 iii = y[j1]
-                print "Consider replacing i=%d, j=%d" % (iii, j1)
+                print(("Consider replacing i=%d, j=%d" % (iii, j1)))
                 scan = scan[1:]
                 on_deck += [j1]
                 u1 = c[iii, j1] - v[j1] - umin
                 for j1 in list(to_do):
                     h = c[iii, j1] - v[j1] - u1
-                    print "Consider j=%d as replacement, c[%d,%d]=%f,v[%d]=%f,h=%f, d[j]= %f" % (j1,iii,j1,c[iii,j1],j1,v[j1],h,d[j1])
+                    print(("Consider j=%d as replacement, c[%d,%d]=%f,v[%d]=%f,h=%f, d[j]= %f" % (j1,iii,j1,c[iii,j1],j1,v[j1],h,d[j1])))
                     if h < d[j1]:
-                        print "Add to chain"
+                        print("Add to chain")
                         pred[j1] = iii
                         if h == umin:
                             if y[j1] == n:
                                 raise StopIteration()
-                            print "Add to scan"
+                            print("Add to scan")
                             scan += [j1]
                             to_do.remove(j1)
                         d[j1] = h
 
         except StopIteration:
             # Augment
-            print "Augmenting %d" % j1
+            print(("Augmenting %d" % j1))
             for k in ready:
                 temp = v[k]
                 v[k] = v[k] + d[k] - umin
-                print "v[%d] %f -> %f" % (k, temp, v[k])
+                print(("v[%d] %f -> %f" % (k, temp, v[k])))
             while True:
                 iii = pred[j1]
-                print "y[%d] %d -> %d" % (j1, y[j1], iii)
+                print(("y[%d] %d -> %d" % (j1, y[j1], iii)))
                 y[j1] = iii
                 j1, x[iii] = x[iii], j1
                 if iii == i:

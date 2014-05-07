@@ -150,7 +150,7 @@ class CRBViewPanel(wx.Panel):
         #self.draw()
         
     def OnChangeBackground(self, event):
-        print 'b'
+        print('b')
         self.background = float(self.tBackground.GetValue())
         self.calcCRB()
         
@@ -317,7 +317,7 @@ class PSFTools(HasTraits):
         z_ = np.arange(d.shape[2])*self.image.mdh['voxelsize.z']*1.0e3
         z_ = z_ - z_.mean()
         
-        print 'p'
+        print('p')
         pylab.figure()
         pylab.plot(z_, np.sqrt(crb[:,0]), label='x')
         pylab.plot(z_, np.sqrt(crb[:,1]), label='y')

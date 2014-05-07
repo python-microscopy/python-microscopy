@@ -22,7 +22,7 @@
 ##################
 
 #!/usr/bin/python
-from DigiData import *
+from .DigiData import *
 import Pyro.core
 import Pyro.naming
 

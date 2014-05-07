@@ -21,21 +21,13 @@
 #
 ##################
 
-import scipy
+#import scipy
 import scipy.ndimage as ndimage
-import copy_reg
-import numpy
+import numpy as np
+from .fitCommon import fmtSlicesUsed
 
 from PYME.Analysis.cModels.gauss_app import *
 from PYME.Analysis._fithelpers import *
-
-def pickleSlice(slice):
-        return unpickleSlice, (slice.start, slice.stop, slice.step)
-
-def unpickleSlice(start, stop, step):
-        return slice(start, stop, step)
-
-copy_reg.pickle(slice, pickleSlice, unpickleSlice)
 
     
 def f_multiGaussS(p, X, Y, s):
@@ -47,7 +39,7 @@ def f_multiGaussS(p, X, Y, s):
     for i in range(nG):
         i3 = 3*i
         A, x0, y0 = p[i3:(i3+3)]
-        r += A*scipy.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2))
+        r += A*np.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2))
         
     return r
     
@@ -60,26 +52,23 @@ def f_multiGaussJ(p, X, Y, s):
 f_multiGauss.D = f_multiGaussJ
 
         
-def replNoneWith1(n):
-	if n == None:
-		return 1
-	else:
-		return n
 
 
-fresultdtype=[('tIndex', '<i4'),('fitResults', [('A', '<f4'),('x0', '<f4'),('y0', '<f4')]),('fitError', [('A', '<f4'),('x0', '<f4'),('y0', '<f4')]), ('resultCode', '<i4'), ('nChi2', '<f4'), ('nFit', '<i4')]
 
-def GaussianFitResultR(fitResults, metadata, resultCode=-1, fitErr=None, nChi2=0, nEvents=1):
-	
-	if fitErr == None:
-		fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
+fresultdtype=[('tIndex', '<i4'),
+              ('fitResults', [('A', '<f4'),('x0', '<f4'),('y0', '<f4')]),
+              ('fitError', [('A', '<f4'),('x0', '<f4'),('y0', '<f4')]), 
+              ('resultCode', '<i4'), 
+              ('nChi2', '<f4'), 
+              ('nFit', '<i4')]
 
-	#print slicesUsed
-
-	tIndex = metadata.tIndex
-
-
-	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, nChi2, nEvents)], dtype=fresultdtype) 
+def GaussianFitResultR(fitResults, metadata, resultCode=-1, fitErr=None, nChi2=0, nEvents=1):	
+    if fitErr == None:
+        fitErr = -5e3*np.ones(fitResults.shape, 'f')
+        
+    tIndex = metadata.tIndex
+    
+    return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, nChi2, nEvents)], dtype=fresultdtype) 
 		
 
 class GaussianFitFactory:
@@ -147,9 +136,9 @@ class GaussianFitFactory:
         #estimate errors in data
         nSlices = self.data.shape[2]
         
-        sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*scipy.maximum(dataMean, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
+        sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataMean, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
 
-        if not self.background == None and len(numpy.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
+        if not self.background == None and len(np.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
             #average in z
             bgMean = self.background.mean(2) - self.metadata.Camera.ADOffset
             
@@ -285,15 +274,15 @@ class GaussianFitFactory:
                     
                     if gui ==2:
                         plotIterate(res, os, residual/s_m, resf)
-                        print nEvents, nchi2, resmax, resCode#, cov_x
+                        print((nEvents, nchi2, resmax, resCode))#, cov_x
                     
                     
     
                 #work out the errors
                 fitErrors=None
                 try:       
-                    fitErrors = scipy.sqrt(scipy.diag(cov_x)*(infodict['fvec']*infodict['fvec']).sum()/(len(d_m)- len(res)))
-                except Exception, e:
+                    fitErrors = np.sqrt(np.diag(cov_x)*(infodict['fvec']*infodict['fvec']).sum()/(len(d_m)- len(res)))
+                except Exception as e:
                     pass
                 #print res, fitErrors, resCode
                 #recreate a list of events in the desired format
@@ -314,8 +303,8 @@ class GaussianFitFactory:
     @classmethod
     def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):
         #generate grid to evaluate function on
-        X = 1e3*md.voxelsize.x*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
-        Y = 1e3*md.voxelsize.y*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
+        X = 1e3*md.voxelsize.x*np.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
+        Y = 1e3*md.voxelsize.y*np.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
 
         return (f_gauss2d(params, X, Y), X[0], Y[0], 0)
 

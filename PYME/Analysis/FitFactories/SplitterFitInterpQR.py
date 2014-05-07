@@ -135,7 +135,7 @@ class PSFFitFactory:
         if fitfcn == f_Interp3d2c:
             if 'PSFFile' in metadata.getEntryNames():
                 if self.interpolator.setModelFromMetadata(metadata):
-                    print 'model changed'
+                    print('model changed')
                     self.startPosEstimator.splines.clear()
 
                 if not 'z' in self.startPosEstimator.splines.keys():
@@ -158,7 +158,7 @@ class PSFFitFactory:
         startPosEstimator = __import__('PYME.Analysis.FitFactories.zEstimators.' + estimatorModule , fromlist=['PYME', 'Analysis','FitFactories', 'zEstimators'])        
         
         if interpolator.setModelFromFile(md.PSFFile, md):
-            print 'model changed'
+            print('model changed')
             startPosEstimator.splines.clear()
 
         Xg, Yg, Zg, safeRegion = interpolator.getCoords(md, slice(-roiHalfSize,roiHalfSize + 1), slice(-roiHalfSize,roiHalfSize + 1), slice(0,1))

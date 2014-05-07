@@ -131,7 +131,7 @@ def rgb_to_hsv(r, g, b):
     maxc = np.max([r, g, b],0)
     minc = np.min([r, g, b],0)
 
-    print maxc.shape
+    print((maxc.shape))
 
     v = maxc
     h = np.zeros(v.shape)

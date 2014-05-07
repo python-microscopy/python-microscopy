@@ -21,7 +21,7 @@
 #
 ##################
 
-from BaseDataSource import BaseDataSource
+from .BaseDataSource import BaseDataSource
 import numpy as np
 
 class dataBuffer: #buffer our io to avoid decompressing multiple times
@@ -146,7 +146,7 @@ class bgFrameBuffer:
             #starting from scratch
             self._createBuffers(self.initSize, data.shape, data.dtype)
             
-            self.availableSlots += range(self.initSize)
+            self.availableSlots += list(range(self.initSize))
             
         else:
             #keep a copy of the existing data
@@ -164,11 +164,11 @@ class bgFrameBuffer:
             self.validData[:oldsize] = ov
             
             #add new frames to list of availiable frames
-            self.availableSlots += range(oldsize, newsize)
+            self.availableSlots += list(range(oldsize, newsize))
             
     def getPercentile(self, pctile):
         pcIDX = int(self.validData.sum()*pctile)
-        print pcIDX
+        print(pcIDX)
         
         return (self.frameBuffer*(self.indices==pcIDX)).max(0).squeeze()
             
@@ -228,7 +228,7 @@ class DataSource(BaseDataSource):
                 step = self.bgRange[2]
             else:
                 step = 1
-            bgi = range(max(ind + self.bgRange[0],self.dataStart), max(ind + self.bgRange[1],self.dataStart), step)
+            bgi = list(range(max(ind + self.bgRange[0],self.dataStart), max(ind + self.bgRange[1],self.dataStart), step))
             #print len(bgi)
             if len(bgi) > 0:
                 return sl - self.bBuffer.getBackground(bgi)

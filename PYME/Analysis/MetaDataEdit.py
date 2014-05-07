@@ -127,7 +127,7 @@ class FilenameParam(object):
             self.filename = mdh[self.paramName]
             FieldText = '%s ' % self.guiName + os.path.split(mdh[self.paramName])[1]
             haveFile = True
-            print FieldText
+            print(FieldText)
 
         self.stFilename = wx.StaticText(parent, -1, FieldText)
         if haveFile:

@@ -39,12 +39,12 @@ class colourPlotPanel(wxPlotPanel.PlotPanel):
         wxPlotPanel.PlotPanel.__init__( self, parent, **kwargs )
 
     def draw( self ):
-            print 'd'
+            print('d')
             """Draw data."""
             if self.visFrame.refv and not self.pipeline.ready or len(self.pipeline.filter['x']) == 0:
                 return
             
-            print 'vd'            
+            print('vd')            
             if not hasattr( self, 'subplot1' ):
                 self.subplot1 = self.figure.add_axes([.1, .1, .89, .89])
                 #self.subplot2 = self.figure.add_subplot( 122 )

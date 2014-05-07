@@ -167,7 +167,7 @@ sc = logspace(-2, 0, 50)
 def genScSurface(sc, genfcn):
     crb_vs_sc = []
     for s in sc:
-        print s
+        print(s)
         ps = genfcn(zs, 70., s)
         crb_vs_sc.append(crb3DvBG(ps[13:46, 13:46, :], bgvals)[0])
         

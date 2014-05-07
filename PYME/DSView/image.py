@@ -304,7 +304,7 @@ class ImageStack(object):
         else:
             self.mdh = MetaData.TIRFDefault
             wx.MessageBox("Carrying on with defaults - no gaurantees it'll work well", 'ERROR: No metadata found in file ...', wx.OK)
-            print "ERROR: No metadata fond in file ... Carrying on with defaults - no gaurantees it'll work well"
+            print("ERROR: No metadata fond in file ... Carrying on with defaults - no gaurantees it'll work well")
 
         #attempt to estimate any missing parameters from the data itself        
         MetaData.fillInBlanks(self.mdh, self.dataSource)
@@ -316,7 +316,7 @@ class ImageStack(object):
         #try and find a previously performed analysis
         fns = filename.split(os.path.sep)
         cand = os.path.sep.join(fns[:-2] + ['analysis',] + fns[-2:]) + 'r'
-        print cand
+        print(cand)
         if os.path.exists(cand):
             h5Results = tables.openFile(cand)
 
@@ -508,7 +508,7 @@ class ImageStack(object):
         self.mode = 'default'
 
     def Load(self, filename=None):
-        print filename
+        print(filename)
         if (filename == None):
             import wx #only introduce wx dependency here - so can be used non-interactively
             global lastdir

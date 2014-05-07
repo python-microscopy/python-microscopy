@@ -125,7 +125,7 @@ class deconvolver:
 
                 psf = psf[:,:,numpy.floor(dz/2):(psf.shape[2]-numpy.ceil(dz/2))]
 
-            print data.shape, psf.shape
+            print((data.shape, psf.shape))
 
             if dlg.GetPadding():
                 padsize = numpy.array(dlg.GetPadSize())
@@ -356,7 +356,7 @@ class WienerDeconvolver(wx.Panel):
 
             psf = psf[:,:,numpy.floor(dz/2):(psf.shape[2]-numpy.ceil(dz/2))]
             
-        print psf.shape, self.sourceImage.data.shape
+        print((psf.shape, self.sourceImage.data.shape))
             
         self.dw.psf_calc(psf, self.sourceImage.data.shape)
         

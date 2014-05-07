@@ -145,7 +145,7 @@ class ScrolledImagePanel(wx.Panel):
 
     def OnScrollY(self,event):
         self.yOff = event.GetPosition()
-        print self.yOff
+        print((self.yOff))
 
         self.imagepanel.Refresh()
 

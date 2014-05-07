@@ -23,7 +23,7 @@
 
 #!/usr/bin/python
 import wx
-import acquiremainframe
+from PYME.Acquire import acquiremainframe
 #from PYME import mProfile
 
 

@@ -28,6 +28,11 @@ from scipy import ndimage
 from scipy.ndimage import _nd_image, _ni_support
 from scipy.spatial import ckdtree
 from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
+
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 #import pylab
 
 def calc_gauss_weights(sigma):
@@ -106,12 +111,12 @@ def preparePSF(md, axis):
     PSFFilename = md.PSFFile
                 
     if (not (PSFFileName == PSFFilename)):
-        import cPickle
+        
         try:
             ps, vox = md.taskQueue.getQueueData(md.dataSourceID, 'PSF')
         except:
             fid = open(getFullExistingFilename(PSFFilename), 'rb')
-            ps, vox = cPickle.load(fid)
+            ps, vox = pickle.load(fid)
             fid.close()
             
         ps = ps.max(2)
@@ -128,7 +133,7 @@ def preparePSF(md, axis):
         sepr = I[(I.size/2):].argmax()
         sepl = I[(I.size/2)::-1].argmax()
         
-        print sepr, sepl
+        print((sepr, sepl))
         
         lobeSeparation = sepr + sepl
 
@@ -450,7 +455,7 @@ class ObjectIdentifier(list):
                 im[-5:, -5:] = 0
                 im[-5:, 0:5] = 0
 
-                print len(xs)
+                print((len(xs)))
 
         xs = numpy.array(xs)
         ys = numpy.array(ys)

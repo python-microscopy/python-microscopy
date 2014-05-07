@@ -90,7 +90,7 @@ while 1:
 
                 if False:#nFails >= 4:
                     #server is dead in the water - put it out of it's misery
-                    print 'Killing:', qName
+                    print(('Killing:', qName))
                     try:
                         ns.unregister('TaskQueues.%s' % qName)
                     except Pyro.errors.NamingError:

@@ -21,7 +21,7 @@
 ##################
 import numpy as np
 from scipy import ndimage
-from BaseDataSource import BaseDataSource
+from .BaseDataSource import BaseDataSource
 
 class DataSource(BaseDataSource): 
     moduleName = 'AlignDataSource'

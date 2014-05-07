@@ -57,7 +57,7 @@ def optics(x, k, distMethod = 'euclidean'):
         D = H.squareform(H.pdist(x, distMethod))
         distOK = True
     except:
-        print "squareform or pdist error"
+        print("squareform or pdist error")
         distOK = False
 
 
@@ -109,7 +109,7 @@ def euclid(i, x):
     y += 1
     y *= i
     if len(x) != len(y):
-        raise ValueError, "vectors must be same length"
+        raise ValueError("vectors must be same length")
 
     d = (x-y)**2
     return N.sqrt(N.sum(d, axis = 1))
@@ -138,6 +138,6 @@ if __name__ == "__main__":
     testXOrdered = testX[order]
     P.plot(testXOrdered[:,0], testXOrdered[:,1], 'b-')
 	
-    print order
+    print(order)
 
     P.show()

@@ -22,29 +22,29 @@
 ################
 
 
-print 'Importing Camera ... '
+print('Importing Camera ... ')
 import AndorNeo
 import time
 import numpy as np
 
-print 'Initialising Camera ... '
+print('Initialising Camera ... ')
 cam = AndorNeo.AndorNeo(0)
 cam.Init()
 
 cam.SetIntegTime(100)
 #cam.PixelReadoutRate.setIndex(2)
 
-print 'Starting Exposure ...'
+print('Starting Exposure ...')
 cam.StartExposure()
 
 buf = np.empty((cam.GetPicWidth(), cam.GetPicHeight()), 'uint16')
 
-print '\nStarting Extraction loop ...'
+print('\nStarting Extraction loop ...')
 for i in range(200):
-    print i,
+    print(i, end=' ')
     while cam.ExpReady():
         cam.ExtractColor(buf, 1)
-        print 'e',
+        print('e', end=' ')
     
     time.sleep(.2)
         

@@ -24,7 +24,7 @@
 #Boa:Frame:FiltFrame
 
 import wx
-from fw102 import FW102B as filtWheel
+from .fw102 import FW102B as filtWheel
 
 [wxID_FILTFRAME, wxID_FILTFRAMECHFILTWHEEL, wxID_FILTFRAMEPANEL1, 
 ] = [wx.NewId() for _init_ctrls in range(3)]
@@ -83,9 +83,9 @@ class FiltFrame(wx.Panel):
         '''Set filter by either name, position in list, or postion
         in filter wheel'''
         if not name == None:
-            id = [n for n, f in zip(range(len(self.installedFilters)), self.installedFilters) if f.name == name][0]
+            id = [n for n, f in enumerate(self.installedFilters) if f.name == name][0]
         elif id == None:
-            id = [n for n, f in zip(range(len(self.installedFilters)), self.installedFilters) if f.pos == pos][0]
+            id = [n for n, f in enumerate(self.installedFilters) if f.pos == pos][0]
             
         self.fw.setPos(self.installedFilters[id].pos)
         self.chFiltWheel.SetSelection(id)

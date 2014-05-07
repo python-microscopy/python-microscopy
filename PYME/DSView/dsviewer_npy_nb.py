@@ -42,7 +42,7 @@ openViewers = weakref.WeakValueDictionary()
 
 class dt(wx.FileDropTarget):
     def OnDropFiles(self, x, y, filenames):
-        print filenames
+        print(filenames)
         
         for filename in filenames:
             im = ImageStack(filename=filename)
@@ -199,7 +199,7 @@ class DSViewFrame(wx.Frame):
             self._mgr.Update()
             pn = self._mgr.GetPaneByName(self.pane0)
             if pn.IsNotebookPage():
-                print pn.notebook_id
+                print((pn.notebook_id))
                 nbs = self._mgr.GetNotebooks()
                 if len(nbs) > pn.notebook_id:
                     currPage = nbs[pn.notebook_id].GetSelection()

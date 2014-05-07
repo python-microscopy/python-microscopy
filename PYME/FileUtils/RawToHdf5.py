@@ -68,7 +68,7 @@ def convertFile(pathToData, outFile, frameSize = [256,256], pixelsize=None, comp
             d1 = numpy.fromfile(f1, '>u2', xSize*ySize) >> 4
             imageData.append(d1.reshape(1, xSize, ySize))
             if i % 100 == 0:
-                print '%d of %d frames' % (i, nFrames)
+                print(('%d of %d frames' % (i, nFrames)))
 
         f1.close()
 

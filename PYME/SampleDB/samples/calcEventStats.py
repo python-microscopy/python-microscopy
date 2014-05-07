@@ -49,7 +49,7 @@ def getStatsChan(pipeline, chanName, file):
 
 def getStats(file):
     if file.filename.endswith('.h5r'):
-        print file.filename
+        print((file.filename))
         try:
             p = Pipeline(file.filename)
             getStatsChan(p, 'Everything', file)
@@ -60,7 +60,7 @@ def getStats(file):
 
         except Exception as e:
             #traceback.print_exc()
-            print e
+            print(e)
         finally:
             try:
                 p.selectedDataSource.resultsSource.close()

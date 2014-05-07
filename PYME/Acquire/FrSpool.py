@@ -25,9 +25,10 @@
 
 import wx
 import datetime
-import Spooler
 import win32api
 import os
+
+from PYME.Acquire import Spooler
 
 def create(parent):
     return FrSpool(parent)

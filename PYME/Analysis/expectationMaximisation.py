@@ -263,7 +263,7 @@ def plotRes(data, errors, r):
     for i in range(means.size):
         c = pylab.cm.hsv(float(i)/means.size)
 
-        print c
+        print(c)
 
         pylab.axvline(means[i], color=c)
         pylab.axvspan(means[i] - sigs[i], means[i] + sigs[i], alpha=0.5, facecolor=c)

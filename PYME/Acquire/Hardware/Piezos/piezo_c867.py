@@ -74,7 +74,7 @@ class piezo_c867(object):
         #time.sleep(0.005)
         res = self.ser_port.readline()
         #res = self.ser_port.readline()
-        print res
+        print(res)
         return float(res) 
         
         
@@ -123,7 +123,7 @@ class piezo_c867(object):
         #time.sleep(0.005)
         res1 = self.ser_port.readline()
         res2 = self.ser_port.readline()
-        print res1, res2
+        print((res1, res2))
         return float(res1.split('=')[1]), float(res2.split('=')[1])
 
 
@@ -148,7 +148,7 @@ class piezo_c867(object):
         return float(re.findall(r'V(\d\.\d\d)', verstring)[0])
         
 import threading
-import Queue
+#import Queue
 import numpy as np
         
 class piezo_c867T(object):    
@@ -221,7 +221,7 @@ class piezo_c867T(object):
                 self.errCode = int(self.ser_port.readline())
                 
                 if not self.errCode == 0:
-                    print 'Stage Error: %d' %self.errCode
+                    print(('Stage Error: %d' %self.errCode))
                 
                 #print self.targetPosition, self.stopMove
                 
@@ -244,7 +244,7 @@ class piezo_c867T(object):
                     for i, vel in enumerate(self.targetVelocity):
                         self.ser_port.write('VEL %d %3.9f\n' % (i+1, vel))
                     self.velocity = self.targetVelocity.copy()
-                    print 'v'
+                    print('v')
                 
                 if not np.all(self.targetPosition == self.lastTargetPosition):
                     #update our target position
@@ -252,12 +252,12 @@ class piezo_c867T(object):
         
                     self.ser_port.write('MOV 1 %3.9f 2 %3.9f\n' % (pos[0], pos[1]))
                     self.lastTargetPosition = pos.copy()
-                    print 'p'
+                    print('p')
                     
                 #time.sleep(.1)
                 
             except serial.SerialTimeoutException:
-                print 'Serial Timeout'
+                print('Serial Timeout')
                 pass
             finally:
                 self.stopMove = False

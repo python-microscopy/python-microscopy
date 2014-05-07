@@ -100,7 +100,7 @@ class manualSegment:
         
     def FillSelection(self, event=None):
         if self.mask == None:
-            print 'Create a mask first'
+            print('Create a mask first')
             return
         
 #        import Image, ImageDraw

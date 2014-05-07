@@ -35,7 +35,7 @@ import os
 
 if 'PYRO_NS_HOSTNAME' in os.environ.keys():
     Pyro.config.PYRO_NS_HOSTNAME=os.environ['PYRO_NS_HOSTNAME']
-    print Pyro.config.PYRO_NS_HOSTNAME
+    print((Pyro.config.PYRO_NS_HOSTNAME))
 
 #from PYME.mProfile import mProfile
 #mProfile.profileOn(['taskServerM.py', 'HDFTaskQueue.py'])

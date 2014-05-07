@@ -256,7 +256,7 @@ class File(models.Model):
         except:
             import PYME.FileUtils.fileID as file_ID
 
-            print filename
+            print(filename)
 
             mdh = file_ID.getFileMetadata(filename)
             
@@ -268,7 +268,7 @@ class File(models.Model):
                 if 'imageID' in mdh.getEntryNames():
                     imageID = mdh.imageID
                 else:
-                    print 'guessing image id', filename
+                    print(('guessing image id', filename))
                     imageID = file_ID.genImageID(filename, guess=True)
 
                 #print imageID

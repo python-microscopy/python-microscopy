@@ -77,8 +77,8 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
     def handle(self):
         # self.request is the TCP socket connected to the client
         data = self.request.recv(1024).strip()
-        print "%s wrote:" % self.client_address[0]
-        print data
+        print(("%s wrote:" % self.client_address[0]))
+        print(data)
         
         wx.CallAfter(OpenFile, data.split('\t'), True)
 

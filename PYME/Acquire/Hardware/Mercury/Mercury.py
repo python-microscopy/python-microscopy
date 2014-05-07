@@ -20,7 +20,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
-import PI_Mercury_GCS_DLL as mc
+from . import PI_Mercury_GCS_DLL as mc
 import ctypes
 
 #class MercuryWrap:

@@ -24,10 +24,15 @@
 from PYME.PSFGen import *
 from scipy import *
 from pylab import ifftshift, fftn, ifftn
-import fluor
+from . import fluor
 from PYME.Analysis import MetaData
 from PYME.Analysis import cInterp
-import cPickle
+
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+    
 from scipy import ndimage
 import numpy as np
 
@@ -86,12 +91,12 @@ def genTheoreticalModel(md):
 
         interpModel = genWidefieldPSF(IntXVals, IntYVals, IntZVals, P,1e3, 0, 0, 0, 2*pi/525, 1.47, 10e3).astype('f')
         
-        print 'foo'
-        print interpModel.strides, interpModel.shape
+        print('foo')
+        print((interpModel.strides, interpModel.shape))
 
         interpModel = np.maximum(interpModel/interpModel[:,:,len(IntZVals)/2].sum(), 0) #normalise to 1 and clip
         
-        print 'bar'
+        print('bar')
 
 genTheoreticalModel(MetaData.TIRFDefault)
 
@@ -115,7 +120,7 @@ def setModel(modName, md):
 
     
     mf = open(getFullExistingFilename(modName), 'rb')
-    mod, voxelsize = cPickle.load(mf)
+    mod, voxelsize = pickle.load(mf)
     mf.close()
     
     mod = resizePSF(mod, interpModel.shape)

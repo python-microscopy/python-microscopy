@@ -28,7 +28,7 @@ from pylab import *
 import copy_reg
 import numpy
 import types
-import cPickle
+#import cPickle
 
 from PYME.Analysis._fithelpers import *
 #from PYME.Analysis.FitFactories.zEstimators import astigEstimator
@@ -155,7 +155,7 @@ class PSFFitFactory:
         if fitfcn == f_Interp3d:
             if 'PSFFile' in metadata.getEntryNames():
                 if self.interpolator.setModelFromMetadata(metadata):
-                    print 'model changed'
+                    print('model changed')
                     self.startPosEstimator.splines.clear()
 
                 if not 'z' in self.startPosEstimator.splines.keys():
@@ -178,7 +178,7 @@ class PSFFitFactory:
         startPosEstimator = __import__('PYME.Analysis.FitFactories.zEstimators.' + estimatorModule , fromlist=['PYME', 'Analysis','FitFactories', 'zEstimators'])        
         
         if interpolator.setModelFromFile(md.PSFFile, md):
-            print 'model changed'
+            print('model changed')
             startPosEstimator.splines.clear()
 
 #        if 'Analysis.EstimatorModule' in md.getEntryNames():
