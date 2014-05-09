@@ -59,6 +59,8 @@ class LinearInterpolator(__interpolator):
         xl = len(X)
         yl = len(Y)
         #zl = len(Z)
+        
+        print(ox, oy, oz)
 
 
         r = cInterp.Interpolate(self.interpModel, ox, oy, oz, xl, yl, self.dx, self.dy,self.dz)
