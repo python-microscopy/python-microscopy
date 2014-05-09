@@ -22,59 +22,27 @@
 ##################
 
 import scipy
-#from scipy.signal import interpolate
-#import scipy.ndimage as ndimage
-from pylab import *
-import copy_reg
 import numpy
-import types
 
-#import PYME.Analysis.twoColour as twoColour
-
-from PYME.Analysis.cModels.gauss_app import *
-
-#from scipy import weave
-
-from PYME.Analysis._fithelpers import *
-
-def pickleSlice(slice):
-        return unpickleSlice, (slice.start, slice.stop, slice.step)
-
-def unpickleSlice(start, stop, step):
-        return slice(start, stop, step)
-
-copy_reg.pickle(slice, pickleSlice, unpickleSlice)
+from .fitCommon import fmtSlicesUsed
+from . import FFBase
 
 
-def f_gauss2d2c(p, Xg, Yg, Xr, Yr):
-    """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sigma, background, lin_x, lin_y]"""
-    Ag,Ar, x0, y0, s, bG, bR, b_x, b_y  = p
-    #return A*scipy.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2)) + b + b_x*X + b_y*Y
-    r = genGauss(Xr,Yr,Ar,x0,y0,s,bR,b_x,b_y)
-    r.strides = r.strides #Really dodgy hack to get around something which numpy is not doing right ....
 
-    g = genGauss(Xg,Yg,Ag,x0,y0,s,bG,b_x,b_y)
-    g.strides = g.strides #Really dodgy hack to get around something which numpy is not doing right ....
-    
-    return numpy.concatenate((g.reshape(g.shape + (1,)),r.reshape(g.shape + (1,))), 2)
-
-
-        
-def replNoneWith1(n):
-	if n == None:
-		return 1
-	else:
-		return n
-
-
-fresultdtype=[('tIndex', '<i4'),('fitResults', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigxl', '<f4'), ('sigxr', '<f4'),('sigyu', '<f4'),('sigyd', '<f4')]), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
+fresultdtype=[('tIndex', '<i4'),
+              ('fitResults', [('Ag', '<f4'),
+                              ('Ar', '<f4'),
+                              ('x0', '<f4'),
+                              ('y0', '<f4'),
+                              ('sigxl', '<f4'), 
+                              ('sigxr', '<f4'),
+                              ('sigyu', '<f4'),
+                              ('sigyd', '<f4')]), 
+              ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),
+                              ('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),
+                              ('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
 
 def COIFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None):
-	if slicesUsed == None:
-		slicesUsed = ((-1,-1,-1),(-1,-1,-1),(-1,-1,-1))
-	else: 		
-		slicesUsed = ((slicesUsed[0].start,slicesUsed[0].stop,replNoneWith1(slicesUsed[0].step)),(slicesUsed[1].start,slicesUsed[1].stop,replNoneWith1(slicesUsed[1].step)),(slicesUsed[2].start,slicesUsed[2].stop,replNoneWith1(slicesUsed[2].step)))
-
 	if fitErr == None:
 		fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
 
@@ -82,32 +50,10 @@ def COIFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=N
 
 	tIndex = metadata.tIndex
 
-	#print fitResults.dtype
-	#print fitErr.dtype
-	#print fitResults
-	#print fitErr
-	#print tIndex
-	#print slicesUsed
-	#print resultCode
-
-
-	return numpy.array([(tIndex, fitResults.astype('f'), slicesUsed)], dtype=fresultdtype)
+	return numpy.array([(tIndex, fitResults.astype('f'), fmtSlicesUsed(slicesUsed))], dtype=fresultdtype)
 		
 
-class COIFitFactory:
-    def __init__(self, data, metadata, fitfcn=f_gauss2d2c, background=None):
-        '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in 
-        metadata. '''
-        self.data = data
-        self.background = background
-        self.metadata = metadata
-        self.fitfcn = fitfcn #allow model function to be specified (to facilitate changing between accurate and fast exponential approwimations)
-        if type(fitfcn) == types.FunctionType: #single function provided - use numerically estimated jacobian
-            self.solver = FitModelWeighted
-        else: #should be a tuple containing the fit function and its jacobian
-            self.solver = FitModelWeightedJac
-		
-        
+class COIFitFactory(FFBase.FitFactory):        
     def __getitem__(self, key):
         #print key
         xslice, yslice, zslice = key

@@ -46,13 +46,6 @@ def f_Interp3d(p, interpolator, X, Y, Z, safeRegion, *args):
     return interpolator.interp(X - x0 + 1, Y - y0 + 1, Z - z0 + 1)*A + b
 
 
-def replNoneWith1(n):
-	if n == None:
-		return 1
-	else:
-		return n
-
-
 
 fresultdtype=[('tIndex', '<i4'),
     ('fitResults', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('background', '<f4')]),
@@ -110,7 +103,7 @@ class PSFFitFactory(FFBase.FitFactory):
 
         self.startPosEstimator = __import__('PYME.Analysis.FitFactories.zEstimators.' + estimatorModule , fromlist=['PYME', 'Analysis','FitFactories', 'zEstimators'])
 
-        if fitfcn == f_Interp3d:
+        if True:#fitfcn == f_Interp3d:
             if 'PSFFile' in metadata.getEntryNames():
                 if self.interpolator.setModelFromMetadata(metadata):
                     print('model changed')
@@ -122,7 +115,7 @@ class PSFFitFactory(FFBase.FitFactory):
                 self.interpolator.genTheoreticalModel(metadata)
 
     @classmethod
-    def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):
+    def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5, model=f_Interp3d):
         #generate grid to evaluate function on
         #setModel(md.PSFFile, md)
         interpolator = __import__('PYME.Analysis.FitFactories.Interpolators.' + md.Analysis.InterpModule , fromlist=['PYME', 'Analysis','FitFactories', 'Interpolators']).interpolator
@@ -141,16 +134,13 @@ class PSFFitFactory(FFBase.FitFactory):
 
         X, Y, Z, safeRegion = interpolator.getCoords(md, slice(x -roiHalfSize,x + roiHalfSize + 1), slice(y -roiHalfSize,y + roiHalfSize + 1), slice(0,1))
 
-        return f_Interp3d(params, interpolator, X, Y, Z, safeRegion), X.ravel()[0], Y.ravel()[0], Z.ravel()[0]
+        return model(params, interpolator, X, Y, Z, safeRegion), X.ravel()[0], Y.ravel()[0], Z.ravel()[0]
         
 
     def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
         X, Y, dataMean, bgMean, sigma, xslice, yslice, zslice = self.getROIAtPoint(x,y,z,roiHalfSize, axialHalfSize)
         
-        #dataROI = self.data[xslice, yslice, zslice] - self.metadata.Camera.ADOffset
-        
         dataROI = dataMean - bgMean
-
         
         #generate grid to evaluate function on        
         X, Y, Z, safeRegion = self.interpolator.getCoords(self.metadata, xslice, yslice, zslice)
@@ -161,10 +151,6 @@ class PSFFitFactory(FFBase.FitFactory):
         else:
             X_ = X
             Y_ = Y
-
-
-        #estimate errors in data
-        #sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*dataROI)/self.metadata.Camera.ElectronsPerCount + 1
 
         #estimate start parameters        
         startParameters = self.startPosEstimator.getStartParameters(dataROI, X_, Y_)

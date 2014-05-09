@@ -22,7 +22,7 @@
 ##################
 
 import wx
-import histLimits
+from . import histLimits
 
 
 class GenImageDialog(wx.Dialog):

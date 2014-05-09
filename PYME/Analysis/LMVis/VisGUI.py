@@ -472,9 +472,9 @@ class VisGUIFrame(wx.Frame):
         colData = ['<None>']
 
         if not self.pipeline.colourFilter == None:
-            colData += self.pipeline.keys()
+            colData += list(self.pipeline.keys())
 
-        colData += self.pipeline.GeneratedMeasures.keys()
+        colData += list(self.pipeline.GeneratedMeasures.keys())
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(pan, -1, 'Colour:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
@@ -502,9 +502,9 @@ class VisGUIFrame(wx.Frame):
             colData = ['<None>']
 
             if not self.pipeline.colourFilter == None:
-                colData += self.pipeline.keys()
+                colData += list(self.pipeline.keys())
 
-            colData += self.pipeline.GeneratedMeasures.keys()
+            colData += list(self.pipeline.GeneratedMeasures.keys())
 
             self.chPointColour.Clear()
             for cd in colData:

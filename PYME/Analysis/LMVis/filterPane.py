@@ -49,7 +49,7 @@ class FilterPane(afp.foldingPane):
         self.lFiltKeys.InsertColumn(2, 'Max')
 
         for key, value in self.filterKeys.items():
-            ind = self.lFiltKeys.InsertStringItem(sys.maxint, key)
+            ind = self.lFiltKeys.InsertStringItem(sys.maxsize, key)
             self.lFiltKeys.SetStringItem(ind,1, '%3.2f' % value[0])
             self.lFiltKeys.SetStringItem(ind,2, '%3.2f' % value[1])
 
@@ -153,12 +153,12 @@ class FilterPane(afp.foldingPane):
             x1, y1 = self.visFr.glCanvas.selectionFinish
 
             if not 'x' in self.filterKeys.keys():
-                indx = self.lFiltKeys.InsertStringItem(sys.maxint, 'x')
+                indx = self.lFiltKeys.InsertStringItem(sys.maxsize, 'x')
             else:
                 indx = [self.lFiltKeys.GetItemText(i) for i in range(self.lFiltKeys.GetItemCount())].index('x')
 
             if not 'y' in self.filterKeys.keys():
-                indy = self.lFiltKeys.InsertStringItem(sys.maxint, 'y')
+                indy = self.lFiltKeys.InsertStringItem(sys.maxsize, 'y')
             else:
                 indy = [self.lFiltKeys.GetItemText(i) for i in range(self.lFiltKeys.GetItemCount())].index('y')
 
@@ -181,7 +181,7 @@ class FilterPane(afp.foldingPane):
 
         possibleKeys = []
         if not self.pipeline.selectedDataSource == None:
-            possibleKeys = self.pipeline.selectedDataSource.keys()
+            possibleKeys = list(self.pipeline.selectedDataSource.keys())
 
         dlg = editFilterDialog.FilterEditDialog(self, mode='new', possibleKeys=possibleKeys)
 
@@ -198,7 +198,7 @@ class FilterPane(afp.foldingPane):
 
             self.filterKeys[key] = (minVal, maxVal)
 
-            ind = self.lFiltKeys.InsertStringItem(sys.maxint, key)
+            ind = self.lFiltKeys.InsertStringItem(sys.maxsize, key)
             self.lFiltKeys.SetStringItem(ind,1, '%3.2f' % minVal)
             self.lFiltKeys.SetStringItem(ind,2, '%3.2f' % maxVal)
 

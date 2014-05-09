@@ -163,9 +163,9 @@ class DisplayPane(afp.foldingPane):
         hsizer.Add(wx.StaticText(pan, -1, 'Scale Bar: '), 0, wx.LEFT|wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL, 5)
 
 
-        chInd = self.scaleBarLengths.values().index(self.glCanvas.scaleBarLength)
+        chInd = list(self.scaleBarLengths.values()).index(self.glCanvas.scaleBarLength)
 
-        chScaleBar = wx.Choice(pan, -1, choices = self.scaleBarLengths.keys())
+        chScaleBar = wx.Choice(pan, -1, choices = list(self.scaleBarLengths.keys()))
         chScaleBar.SetSelection(chInd)
         hsizer.Add(chScaleBar, 0,wx.RIGHT|wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL, 5)
 

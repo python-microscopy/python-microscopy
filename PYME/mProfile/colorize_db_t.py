@@ -163,7 +163,7 @@ class Parser:
         """ Token handler.
         """
         if 0:
-            print("type", toktype, token.tok_name[toktype], "text", toktext, end=' ')
+            print("type", toktype, token.tok_name[toktype], "text", toktext,)
             print("start", srow,scol, "end", erow,ecol, "<br>")
 
         # calculate new positions

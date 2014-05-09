@@ -22,13 +22,10 @@
 ##################
 
 import scipy
-#from scipy.signal import interpolate
-#import scipy.ndimage as ndimage
-from pylab import *
-import copy_reg
 import numpy
-import types
-#import cPickle
+
+from . import InterpFitR
+from .fitCommon import fmtSlicesUsed
 
 from PYME.Analysis._fithelpers import *
 import PYME.Analysis.MetaDataEdit as mde
@@ -36,13 +33,6 @@ from PYME.Analysis.FitFactories import Interpolators
 from PYME.Analysis.FitFactories import zEstimators
 #from PYME.Analysis.FitFactories.zEstimators import astigEstimator
 
-def pickleSlice(slice):
-        return unpickleSlice, (slice.start, slice.stop, slice.step)
-
-def unpickleSlice(start, stop, step):
-        return slice(start, stop, step)
-
-copy_reg.pickle(slice, pickleSlice, unpickleSlice)
 
 def f_Interp3d(p, interpolator, X, Y, Z, safeRegion, splitaxis, *args):
     """3D PSF model function with constant background - parameter vector [A, x0, y0, z0, background]"""
@@ -92,12 +82,6 @@ def f_Interp3d(p, interpolator, X, Y, Z, safeRegion, splitaxis, *args):
     return im + b
 
 
-def replNoneWith1(n):
-	if n == None:
-		return 1
-	else:
-		return n
-
 
 
 fresultdtype=[('tIndex', '<i4'),
@@ -107,13 +91,9 @@ fresultdtype=[('tIndex', '<i4'),
     ('resultCode', '<i4'),
     ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])]),
     ('startParams', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('background', '<f4'), ('ratio', '<f4')]), ('nchi2', '<f4')]
+    
 
 def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None, startParams=None, nchi2=-1):
-	if slicesUsed == None:
-		slicesUsed = ((-1,-1,-1),(-1,-1,-1),(-1,-1,-1))
-	else:
-		slicesUsed = ((slicesUsed[0].start,slicesUsed[0].stop,replNoneWith1(slicesUsed[0].step)),(slicesUsed[1].start,slicesUsed[1].stop,replNoneWith1(slicesUsed[1].step)),(slicesUsed[2].start,slicesUsed[2].stop,replNoneWith1(slicesUsed[2].step)))
-
 	if fitErr == None:
 		fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
 
@@ -122,7 +102,7 @@ def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=N
 
 	tIndex = metadata.tIndex
 
-	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, slicesUsed, startParams.astype('f'), nchi2)], dtype=fresultdtype)
+	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, fmtSlicesUsed(slicesUsed), startParams.astype('f'), nchi2)], dtype=fresultdtype)
 
 
 #def genFitImage(fitResults, metadata, fitfcn=f_Interp3d):
@@ -182,93 +162,22 @@ def getDataErrors(im, metadata):
 
 		
 
-class PSFFitFactory:
+class PSFFitFactory(InterpFitR.PSFFitFactory):
     def __init__(self, data, metadata, fitfcn=f_Interp3d, background=None):
-        '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
-        metadata. '''
-        self.data = data
-        self.metadata = metadata
-        self.background = background
-        self.fitfcn = fitfcn #allow model function to be specified (to facilitate changing between accurate and fast exponential approwimations)
-        if type(fitfcn) == types.FunctionType: #single function provided - use numerically estimated jacobian
-            self.solver = FitModelWeighted_
-        else: #should be a tuple containing the fit function and its jacobian
-            self.solver = FitModelWeightedJac
-        
-
-        interpModule = metadata.Analysis.InterpModule
-        self.interpolator = __import__('PYME.Analysis.FitFactories.Interpolators.' + interpModule , fromlist=['PYME', 'Analysis','FitFactories', 'Interpolators']).interpolator
-
-        if 'Analysis.EstimatorModule' in metadata.getEntryNames():
-            estimatorModule = metadata.Analysis.EstimatorModule
-        else:
-            estimatorModule = 'astigEstimator'
-
-        self.startPosEstimator = __import__('PYME.Analysis.FitFactories.zEstimators.' + estimatorModule , fromlist=['PYME', 'Analysis','FitFactories', 'zEstimators'])
-
-        if fitfcn == f_Interp3d:
-            if 'PSFFile' in metadata.getEntryNames():
-                if self.interpolator.setModelFromMetadata(metadata):
-                    print('model changed')
-                    self.startPosEstimator.splines.clear()
-
-                if not 'z' in self.startPosEstimator.splines.keys():
-                    self.startPosEstimator.calibrate(self.interpolator, metadata)
-            else:
-                self.interpolator.genTheoreticalModel(metadata)
-
+       InterpFitR.PSFFitFactory.__init__(self, data, metadata, fitfcn, background) 
+       
     @classmethod
-    def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):
-        #generate grid to evaluate function on
-        #setModel(md.PSFFile, md)
-        interpolator = __import__('PYME.Analysis.FitFactories.Interpolators.' + md.Analysis.InterpModule , fromlist=['PYME', 'Analysis','FitFactories', 'Interpolators']).interpolator
+    def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5, model=f_Interp3d):
+        return InterpFitR.PSFFitFactory.evalModel(params, md, x, y, roiHalfSize, model)
         
-        if 'Analysis.EstimatorModule' in md.getEntryNames():
-            estimatorModule = md.Analysis.EstimatorModule
-        else:
-            estimatorModule = 'astigEstimator'
-
-        #this is just here to make sure we clear our calibration when we change models        
-        startPosEstimator = __import__('PYME.Analysis.FitFactories.zEstimators.' + estimatorModule , fromlist=['PYME', 'Analysis','FitFactories', 'zEstimators'])        
+    def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
+        X, Y, dataMean, bgMean, sigma, xslice, yslice, zslice = self.getROIAtPoint(x,y,z,roiHalfSize, axialHalfSize)
         
-        if interpolator.setModelFromFile(md.PSFFile, md):
-            print('model changed')
-            startPosEstimator.splines.clear()
-
-        X, Y, Z, safeRegion = interpolator.getCoords(md, slice(-roiHalfSize + x,roiHalfSize + 1 + x), slice(-roiHalfSize + y,roiHalfSize + 1 + y), slice(0,1))
-
-        #X = 1e3*md.voxelsize.x*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
-        #Y = 1e3*md.voxelsize.y*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
-        #Z = array([0]).astype('f')
-
-        return f_Interp3d(params, interpolator, X, Y, Z, safeRegion, md['PRI.Axis']), X.ravel()[0], Y.ravel()[0], Z.ravel()[0]
-
-    def FromPoint(self, x, y, z=None, roiHalfSize=7, axialHalfSize=15):
-        #if (z == None): # use position of maximum intensity
-        #    z = self.data[x,y,:].argmax()
-
-        x0 = x
-        y0 = y
-        x = round(x)
-        y = round(y)
-
-        xslice = slice(max((x - roiHalfSize), 0),min((x + roiHalfSize + 1),self.data.shape[0]))
-        yslice = slice(max((y - roiHalfSize), 0),min((y + roiHalfSize + 1), self.data.shape[1]))
-        zslice = slice(0,1)
-		
+        dataROI = dataMean - bgMean
         
-    #def __getitem__(self, key):
-        #xslice, yslice, zslice = key
-
-        #cut region out of data stack
-        dataROI = self.data[xslice, yslice, zslice] - self.metadata.Camera.ADOffset
-
         #generate grid to evaluate function on        
         X, Y, Z, safeRegion = self.interpolator.getCoords(self.metadata, xslice, yslice, zslice)
-
-
-        #estimate some start parameters...
-
+        
         if len(X.shape) > 1: #X is a matrix
             X_ = X[:, 0, 0]
             Y_ = Y[0, :, 0]
@@ -276,22 +185,7 @@ class PSFFitFactory:
             X_ = X
             Y_ = Y
 
-        
-
-
-        #estimate errors in data
-        nSlices = 1#dataROI.shape[2]
-
-        sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*dataROI)/self.metadata.Camera.ElectronsPerCount
-        
-        if not self.background == None and len(numpy.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
-            bgROI = self.background[xslice, yslice, zslice]
-
-            #average in z
-            bgMean = bgROI - self.metadata.Camera.ADOffset
-            
-            dataROI = dataROI - bgMean
-
+        #estimate start parameters        
         startParameters = self.startPosEstimator.getStartParameters(dataROI, X_, Y_) + [0.5,]
 
         #do the fit
@@ -300,7 +194,7 @@ class PSFFitFactory:
         fitErrors=None
         try:
             fitErrors = scipy.sqrt(scipy.diag(cov_x) * (infodict['fvec'] * infodict['fvec']).sum() / (len(dataROI.ravel())- len(res)))
-        except Exception, e:
+        except Exception:
             pass
 
         #normalised Chi-squared

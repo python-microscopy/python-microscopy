@@ -28,7 +28,7 @@ import numpy
 import wx
 from pylab import cm
 import sys
-import dyeRatios
+from . import dyeRatios
 
 class colourPlotPanel(wxPlotPanel.PlotPanel):
     def __init__(self, parent, pipeline, visFrame, **kwargs ):

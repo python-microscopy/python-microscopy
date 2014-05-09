@@ -24,10 +24,13 @@
 import scipy
 #from scipy.signal import interpolate
 #import scipy.ndimage as ndimage
-from pylab import *
-import copy_reg
+#from pylab import *
+#import copy_reg
 import numpy
-import types
+#import types
+
+from . import InterpFitR
+from .fitCommon import fmtSlicesUsed
 
 from PYME.Analysis._fithelpers import *
 
@@ -43,17 +46,6 @@ copy_reg.pickle(slice, pickleSlice, unpickleSlice)
 def f_Interp3d2c(p, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, axialShift, *args):
     """3D PSF model function with constant background - parameter vector [A, x0, y0, z0, background]"""
     Ag, Ar, x0, y0, z0, bG, bR = p
-
-    #make sure our model is big enough to stretch to our current position
-#    xm = len(Xg)/2
-#    dx = min((interpolator.shape[0] - len(Xg))/2, xm) - 2
-#
-#    ym = len(Yg)/2
-#    dy = min((interpolator.shape[1] - len(Yg))/2, ym) - 2
-#
-#    x0 = min(max(x0, Xg[xm - dx]), Xg[dx + xm])
-#    y0 = min(max(y0, Yg[ym - dy]), Yg[dy + ym])
-#    z0 = min(max(z0, max(Zg[0], Zr[0]) + interpolator.IntZVals[2]), min(Zg[0], Zr[0]) + interpolator.IntZVals[-2])
 
     #currently just come to a hard stop when the optimiser tries to leave the safe region
     #prob. not ideal, for a number of reasons
@@ -95,12 +87,6 @@ def f_J_Interp3d2c(p,interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, axialShif
     return numpy.hstack([dAg, dAr, dX, dY, dZ, dBg, dBr])
 
         
-def replNoneWith1(n):
-	if n == None:
-		return 1
-	else:
-		return n
-
 
 #fresultdtype=[('tIndex', '<i4'),('fitResults', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('backgroundG', '<f4'),('backgroundR', '<f4'),('bx', '<f4'),('by', '<f4')]),('fitError', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('backgroundG', '<f4'),('backgroundR', '<f4'),('bx', '<f4'),('by', '<f4')]), ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
 
@@ -118,11 +104,6 @@ fresultdtype=[('tIndex', '<i4'),
 
 
 def PSFFitResultR(fitResults, metadata, startParams, slicesUsed=None, resultCode=-1, fitErr=None, nchi2=-1, background=None):
-    if slicesUsed == None:
-        slicesUsed = ((-1,-1,-1),(-1,-1,-1))
-    else: 		
-        slicesUsed = ((slicesUsed[0].start,slicesUsed[0].stop,replNoneWith1(slicesUsed[0].step)),(slicesUsed[1].start,slicesUsed[1].stop,replNoneWith1(slicesUsed[1].step)))
-
     if fitErr == None:
         fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
         
@@ -130,7 +111,7 @@ def PSFFitResultR(fitResults, metadata, startParams, slicesUsed=None, resultCode
         background = numpy.zeros(2, 'f')
 
     tIndex = metadata.tIndex
-    return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), startParams.astype('f'), resultCode, slicesUsed, background,nchi2)], dtype=fresultdtype) 
+    return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), startParams.astype('f'), resultCode, fmtSlicesUsed(slicesUsed), background,nchi2)], dtype=fresultdtype) 
  
 def BlankResult(metadata):
     r = numpy.zeros(1, fresultdtype)
@@ -146,41 +127,9 @@ def getDataErrors(im, metadata):
 
 
 
-class InterpFitFactory:
+class InterpFitFactory(InterpFitR.PSFFitFactory):
     def __init__(self, data, metadata, fitfcn=f_Interp3d2c, background=None):
-        '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in 
-        metadata. '''
-        self.data = data
-        self.background = background
-        self.metadata = metadata
-        self.fitfcn = fitfcn #allow model function to be specified (to facilitate changing between accurate and fast exponential approwimations)
-        
-        if not 'D' in dir(fitfcn): #single function provided - use numerically estimated jacobian
-            self.solver = FitModelWeighted_
-        else: #should be a tuple containing the fit function and its jacobian
-            self.solver = FitModelWeightedJac_
-
-
-        interpModule = metadata.Analysis.InterpModule
-        self.interpolator = __import__('PYME.Analysis.FitFactories.Interpolators.' + interpModule , fromlist=['PYME', 'Analysis','FitFactories', 'Interpolators']).interpolator
-
-        if 'Analysis.EstimatorModule' in metadata.getEntryNames():
-            estimatorModule = metadata.Analysis.EstimatorModule
-        else:
-            estimatorModule = 'astigEstimator'
-
-        self.startPosEstimator = __import__('PYME.Analysis.FitFactories.zEstimators.' + estimatorModule , fromlist=['PYME', 'Analysis','FitFactories', 'zEstimators'])
-
-        if fitfcn == f_Interp3d2c:
-            if 'PSFFile' in metadata.getEntryNames():
-                if self.interpolator.setModelFromMetadata(metadata):
-                    print('model changed')
-                    self.startPosEstimator.splines.clear()
-
-                if not 'z' in self.startPosEstimator.splines.keys():
-                    self.startPosEstimator.calibrate(self.interpolator, metadata)
-            else:
-                self.interpolator.genTheoreticalModel(metadata)
+       InterpFitR.PSFFitFactory.__init__(self, data, metadata, fitfcn, background) 
                 
     @classmethod
     def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):
@@ -213,112 +162,14 @@ class InterpFitFactory:
 		
         
     def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
-        #if (z == None): # use position of maximum intensity
-        #    z = self.data[x,y,:].argmax()
-	
-        x = round(x)
-        y = round(y)
-        
-        #pixel size in nm
-        vx = 1e3*self.metadata.voxelsize.x
-        vy = 1e3*self.metadata.voxelsize.y
-        
-        #position in nm from camera origin
-        x_ = (x + self.metadata.Camera.ROIPosX - 1)*vx
-        y_ = (y + self.metadata.Camera.ROIPosY - 1)*vy
-        
-        #look up shifts
-        DeltaX = self.metadata.chroma.dx.ev(x_, y_)
-        DeltaY = self.metadata.chroma.dy.ev(x_, y_)
-        
-        #find shift in whole pixels
-        dxp = int(DeltaX/vx)
-        dyp = int(DeltaY/vy)
-        
-        #find ROI which works in both channels
-        #if dxp < 0:
-        x01 = max(x - roiHalfSize, max(0, dxp))
-        x11 = min(max(x01, x + roiHalfSize), self.data.shape[0] + min(0, dxp))
-        x02 = x01 - dxp
-        x12 = x11 - dxp
-        
-        y01 = max(y - roiHalfSize, max(0, dyp))
-        y11 = min(max(y + roiHalfSize,  y01), self.data.shape[1] + min(0, dyp))
-        y02 = y01 - dyp
-        y12 = y11 - dyp
-        
-        xslice = slice(x01, x11)
-        xslice2 = slice(x02, x12) 
-        
-        yslice = slice(y01, y11)
-        yslice2 = slice(y02, y12)
-        
-        zslice = slice(0,2)
-        
-        #print x, y, x01, x11, y01, y11, '\t', dxp, dyp
-        
-        #print key
-        #xslice, yslice, zslice = key
-
-         #cut region out of data stack
-        dataROI = self.data[xslice, yslice, 0:2] - self.metadata.Camera.ADOffset
-        #print dataROI.shape, xslice, yslice, xslice2, yslice2
-        dataROI[:,:,1] = self.data[xslice2, yslice2, 1] - self.metadata.Camera.ADOffset
+        Xg, Yg, Xr, Yr, dataROI, bgROI, sigma, xslice, yslice, xslice2, yslice2 = self.getSplitROIAtPoint(self, x, y, z, roiHalfSize, axialHalfSize)
         
         if min(dataROI.shape[:2]) < 4: # too small to fit
             return BlankResult(self.metadata)
+      
         
-        #dataROI -= self.metadata.Camera.ADOffset
-
-        #average in z
-        #dataMean = dataROI.mean(2) - self.metadata.CCD.ADOffset
-
-        #generate grid to evaluate function on        
-        Xg, Yg, Zg, safeRegion = self.interpolator.getCoords(self.metadata, xslice, yslice, zslice)
-
-
-        #generate a corrected grid for the red channel
-        #note that we're cheating a little here - for shifts which are slowly
-        #varying we should be able to set Xr = Xg + delta_x(\bar{Xr}) and
-        #similarly for y. For slowly varying shifts the following should be
-        #equivalent to this. For rapidly varying shifts all bets are off ...
-
-        Xr = Xg + DeltaX - vx*dxp
-        Yr = Yg + DeltaY - vy*dyp
-        Zr = Zg + self.metadata.Analysis.AxialShift
-        
-        if len(Xg.shape) > 1: #X is a matrix
-            X_ = Xg[:, 0, 0]
-            Y_ = Yg[0, :, 0]
-        else:
-            X_ = Xg
-            Y_ = Yg
-        
-        
-        #a buffer so we can avoid allocating memory each time we evaluate the model function
-        #buf = numpy.zeros(dataROI.shape, order='F')
-
-        #estimate errors in data
-        nSlices = 1#dataROI.shape[2]
-        
-        #sigma = scipy.sqrt(self.metadata.CCD.ReadNoise**2 + (self.metadata.CCD.noiseFactor**2)*self.metadata.CCD.electronsPerCount*self.metadata.CCD.EMGain*dataROI)/self.metadata.CCD.electronsPerCount
-        sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*scipy.maximum(dataROI, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount + 1
-
-
-#        if not self.background == None and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
-#            #print 'bgs'
-#            if len(numpy.shape(self.background)) > 1:
-#                bgROI = self.background[xslice, yslice, zslice] - self.metadata.Camera.ADOffset
-#
-#                dataROI = dataROI - bgROI
-#            else:
-#                dataROI = dataROI - (self.background - self.metadata.Camera.ADOffset)
+        dataROI = np.maximum(dataROI - bgROI, -sigma)
                 
-        if not self.background == None and len(numpy.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
-            bgROI = self.background[xslice, yslice, 0:2] - self.metadata.Camera.ADOffset
-            bgROI[:,:,1] = self.background[xslice2, yslice2, 1] - self.metadata.Camera.ADOffset
-
-            dataROI = np.maximum(dataROI - bgROI, -sigma)
 
         #estimate some start parameters...
         Ag = dataROI[:,:,0].max() - dataROI[:,:,0].min() #amplitude
@@ -343,7 +194,7 @@ class InterpFitFactory:
         fitErrors=None
         try:       
             fitErrors = scipy.sqrt(scipy.diag(cov_x) * (infodict['fvec'] * infodict['fvec']).sum() / (len(dataROI.ravel())- len(res)))
-        except Exception, e:
+        except Exception:
             pass
 
         #normalised Chi-squared

@@ -448,7 +448,7 @@ def simPalmImFI_(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=15, laserPo
             iy0 = max(iy - roiSize, 0)
             iy1 = min(iy + roiSize + 1, im.shape[1])
             #imp =interp3(X[max(ix - roiSize, 0):(ix + roiSize + 1)] - x, Y[max(iy - roiSize, 0):(iy + roiSize + 1)] - y, z - fluors.fl['z'][i])* A[i]
-            imp = cInterp.Interpolate(interpModel, X[ix0] - x, Y[iy0] - y, min(max(z - fluors.fl['z'][i], -maxz), maxz), ix1-ix0, iy1-iy0,dx,dy,dz)* A[i]
+            imp = cInterp.Interpolate(interpModel, -(X[ix0] - x), -(Y[iy0] - y), min(max(z - fluors.fl['z'][i], -maxz), maxz), ix1-ix0, iy1-iy0,dx,dy,dz)* A[i]
            
             #if imp.min() < 0 or isnan(A[i]):
             #    print ix0, ix1, iy0, iy1, (X[ix0] - x)/dx, (Y[iy0]-  y)/dx, A[i], imp.min()

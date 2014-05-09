@@ -22,8 +22,8 @@
 ##################
 
 import numpy as np
-from fitCommon import fmtSlicesUsed 
-import FFBase 
+from . fitCommon import fmtSlicesUsed 
+from . import FFBase 
 
 #define the format of the results
 fresultdtype=[('tIndex', '<i4'),
