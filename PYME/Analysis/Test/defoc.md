@@ -1,7 +1,8 @@
 #PYME Simple Metadata v1
+import os
 md['EndTime'] = 1300676178.4949999
 md['EstimatedLaserOnFrameNo'] = 0
-md['PSFFile'] = u'beads1.psf'
+md['PSFFile'] = os.path.join(os.path.split(__file__)[0], u'beads1.psf')
 md['StartTime'] = 1300676151.901
 md['tIndex'] = 0
 md['Analysis.BGRange'] = [0, 0]
@@ -10,7 +11,7 @@ md['Analysis.DebounceRadius'] = 14
 md['Analysis.DetectionThreshold'] = 7.0
 md['Analysis.FitModule'] = u'InterpFitWFR'
 md['Analysis.InterpModule'] = 'LinearInterpolator'
-md['Analysis.EstimatorModule'] = 'priEstimator'
+md['Analysis.EstimatorModule'] = 'astigEstimator'
 md['Analysis.subtractBackground'] = False
 md['Camera.ADOffset'] = 1159.0
 md['Camera.CycleTime'] = 0.25178998708724976
@@ -43,5 +44,5 @@ md['voxelsize.units'] = 'um'
 md['voxelsize.x'] = 0.073999999999999996
 md['voxelsize.y'] = 0.071999999999999995
 md['voxelsize.z'] = 0.050000000000000003
-md['Test.DefaultParams'] = [205, 0, 0, 0, 50]
-md['Test.ParamJitter'] = [100, 90, 90, 550, 10]
+md['Test.DefaultParams'] = [5050, 0, 0, 0, 0]
+md['Test.ParamJitter'] = [500, 90, 90, 400, 0]

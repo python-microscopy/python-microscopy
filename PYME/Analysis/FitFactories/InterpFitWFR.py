@@ -46,12 +46,14 @@ class WFPSFFitFactory(PSFFitFactory):
         #estimate start parameters        
 
         drMin = dataROI.min()
-        A = dataROI.max() - drMin
+        A = 5000*dataROI.max() - drMin
         
         x0 = X.mean()
         y0 = Y.mean()
         startParameters0 = [A, x0, y0, -400, drMin]
         startParameters1 = [A, x0, y0, 400, drMin]
+        
+        #print startParameters0
 
         #do the fit
         (res0, cov_x0, infodict0, mesg0, resCode0) = self.solver(self.fitfcn, startParameters0, dataROI, sigma, self.interpolator, X, Y, Z, safeRegion)        

@@ -352,8 +352,8 @@ class ImageFileDirectory:
                 import TiffTags
                 tagname = TiffTags.TAGS.get(tag, "unknown")
                 typname = TiffTags.TYPES.get(typ, "unknown")
-                print("tag: %s (%d)" % (tagname, tag), end=' ')
-                print("- type: %s (%d)" % (typname, typ), end=' ')
+                print("tag: %s (%d)" % (tagname, tag))
+                print("- type: %s (%d)" % (typname, typ))
 
             try:
                 dispatch = self.load_dispatch[typ]
@@ -414,7 +414,7 @@ class ImageFileDirectory:
             if Image.DEBUG:
                 import TiffTags
                 tagname = TiffTags.TAGS.get(tag, "unknown")
-                print("save: %s (%d)" % (tagname, tag), end=' ')
+                print("save: %s (%d)" % (tagname, tag))
                 print("- value:", value)
 
             if type(value[0]) is type(""):

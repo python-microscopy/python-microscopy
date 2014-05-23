@@ -24,9 +24,14 @@ import wx
 import wx.grid
 #import pylab
 #from PYME.DSView.image import ImageStack
-from enthought.traits.api import HasTraits, Float, Int
-from enthought.traits.ui.api import View, Item
-from enthought.traits.ui.menu import OKButton
+try:
+    from enthought.traits.api import HasTraits, Float, Int
+    from enthought.traits.ui.api import View, Item
+    from enthought.traits.ui.menu import OKButton
+except ImportError:
+    from traits.api import HasTraits, Float, Int
+    from traitsui.api import View, Item
+    from traitsui.menu import OKButton
 
 class ZernikeView(wx.ScrolledWindow):
     def __init__(self, dsviewer):
@@ -136,6 +141,8 @@ class PupilTools(HasTraits):
         z_ -= z_.mean()        
         
         ps = fourierHNA.PsfFromPupil(self.image.data[:,:], z_, self.image.mdh['voxelsize.x']*1e3, self.wavelength)#, shape = [self.sizeX, self.sizeX])
+        
+        ps = ps/ps[:,:,self.sizeZ/2].sum()
         
         im = ImageStack(ps, titleStub = 'Generated PSF')
         im.mdh.copyEntriesFrom(self.image.mdh)

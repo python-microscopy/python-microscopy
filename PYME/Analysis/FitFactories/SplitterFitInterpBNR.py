@@ -35,9 +35,12 @@ from .fitCommon import fmtSlicesUsed
 from PYME.Analysis._fithelpers import *
 
 
-def f_Interp3d2c(p, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, axialShift, *args):
+def f_Interp3d2cr(p, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, axialShift, ratio, *args):
     """3D PSF model function with constant background - parameter vector [A, x0, y0, z0, background]"""
-    Ag, Ar, x0, y0, z0, bG, bR = p
+    A, x0, y0, z0, bG, bR = p
+    
+    Ag = ratio*A
+    Ar = (1-ratio)*A
 
     #currently just come to a hard stop when the optimiser tries to leave the safe region
     #prob. not ideal, for a number of reasons
@@ -50,9 +53,12 @@ def f_Interp3d2c(p, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, axialShift
 
     return numpy.concatenate((np.atleast_3d(g),np.atleast_3d(r)), 2)
     
-def f_J_Interp3d2c(p,interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, axialShift, *args):
+def f_J_Interp3d2c(p,interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, axialShift, ratio, *args):
     '''generate the jacobian - for use with _fithelpers.weightedJacF'''
-    Ag, Ar, x0, y0, z0, bG, bR = p
+    A, x0, y0, z0, bG, bR = p
+    
+    Ag = ratio*A
+    Ar = (1-ratio)*A
 
     x0 = min(max(x0, safeRegion[0][0]), safeRegion[0][1])
     y0 = min(max(y0, safeRegion[1][0]), safeRegion[1][1])
@@ -83,19 +89,20 @@ def f_J_Interp3d2c(p,interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, axialShif
 #fresultdtype=[('tIndex', '<i4'),('fitResults', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('backgroundG', '<f4'),('backgroundR', '<f4'),('bx', '<f4'),('by', '<f4')]),('fitError', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('backgroundG', '<f4'),('backgroundR', '<f4'),('bx', '<f4'),('by', '<f4')]), ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
 
 fresultdtype=[('tIndex', '<i4'),
-              ('fitResults', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('bg', '<f4'), ('br', '<f4')]),
-              ('fitError', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('bg', '<f4'), ('br', '<f4')]),
-              ('startParams', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('bg', '<f4'), ('br', '<f4')]), 
+              ('fitResults', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('bg', '<f4'), ('br', '<f4')]),
+              ('fitError', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('bg', '<f4'), ('br', '<f4')]),
+              ('startParams', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('bg', '<f4'), ('br', '<f4')]), 
               ('resultCode', '<i4'), 
               ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),
                               ('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),
                               ('x2', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),
                               ('y2', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])]),
               ('subtractedBackground', [('g','<f4'),('r','<f4')]),
+              ('ratio', '<f4'),
               ('nchi2', '<f4')]
 
 
-def PSFFitResultR(fitResults, metadata, startParams, slicesUsed=None, resultCode=-1, fitErr=None, nchi2=-1, background=None):
+def PSFFitResultR(fitResults, metadata, startParams, slicesUsed=None, resultCode=-1, fitErr=None, nchi2=-1, background=None, ratio=None):
     if fitErr == None:
         fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
         
@@ -103,7 +110,7 @@ def PSFFitResultR(fitResults, metadata, startParams, slicesUsed=None, resultCode
         background = numpy.zeros(2, 'f')
 
     tIndex = metadata.tIndex
-    return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), startParams.astype('f'), resultCode, fmtSlicesUsed(slicesUsed), background,nchi2)], dtype=fresultdtype) 
+    return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), startParams.astype('f'), resultCode, fmtSlicesUsed(slicesUsed), background,ratio, nchi2)], dtype=fresultdtype) 
  
 def BlankResult(metadata):
     r = numpy.zeros(1, fresultdtype)
@@ -120,7 +127,7 @@ def getDataErrors(im, metadata):
 
 
 class InterpFitFactory(InterpFitR.PSFFitFactory):
-    def __init__(self, data, metadata, fitfcn=f_Interp3d2c, background=None):
+    def __init__(self, data, metadata, fitfcn=f_Interp3d2cr, background=None):
        super(InterpFitFactory, self).__init__(data, metadata, fitfcn, background) 
                 
     @classmethod
@@ -149,8 +156,10 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
         Xr = Xg + DeltaX
         Yr = Yg + DeltaY
         Zr = Zg + md.Analysis.AxialShift
+        
+        ratio = md.chroma.ChannelRatio
 
-        return f_Interp3d2c(params, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, md.Analysis.AxialShift), Xg.ravel()[0], Yg.ravel()[0], Zg.ravel()[0]
+        return f_Interp3d2cr(params, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, md.Analysis.AxialShift, ratio), Xg.ravel()[0], Yg.ravel()[0], Zg.ravel()[0]
 		
         
     def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
@@ -182,7 +191,10 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
 
         #estimate some start parameters...
         Ag = dataROI[:,:,0].max() - dataROI[:,:,0].min() #amplitude
-        Ar = dataROI[:,:,1].max() - dataROI[:,:,1].min() #amplitude        
+        Ar = dataROI[:,:,1].max() - dataROI[:,:,1].min() #amplitude      
+        
+        A = Ag + Ar
+        
         
         
         z0 = 0        
@@ -196,7 +208,7 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
                 startParams = self.startPosEstimator.getStartParameters(dataROI[:,:,1:], X_, Y_)
                 z0 = self.metadata.Analysis.AxialShift
 
-        startParameters = [Ag*startParams[0]/(Ag + Ar), Ar*startParams[0]/(Ag + Ar), startParams[1], startParams[2], z0 + startParams[3], dataROI[:,:,0].min(),dataROI[:,:,1].min()]
+        startParameters = [2*startParams[0], startParams[1], startParams[2], z0 + startParams[3], dataROI[:,:,0].min(),dataROI[:,:,1].min()]
         #print startParameters
 
         #print dataROI.shape
@@ -204,19 +216,37 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
         #(res, cov_x, infodict, mesg, resCode) = FitModelWeighted(self.fitfcn, startParameters, dataMean, sigma, X, Y)
-        (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, self.interpolator,Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, self.metadata.Analysis.AxialShift)
+ 
+        fitErrors_m=None
+        res_m = None
+        resCode_m = None
+        ratio = None
+        nchi2_m = None
+        
+        for r in self.metadata.chroma.ChannelRatios:
+            (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, self.interpolator,Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, self.metadata.Analysis.AxialShift,r)
 
-        fitErrors=None
-        try:       
-            fitErrors = scipy.sqrt(scipy.diag(cov_x) * (infodict['fvec'] * infodict['fvec']).sum() / (len(dataROI.ravel())- len(res)))
-        except Exception:
-            pass
+            fitErrors=None
+            try:       
+                fitErrors = scipy.sqrt(scipy.diag(cov_x) * (infodict['fvec'] * infodict['fvec']).sum() / (len(dataROI.ravel())- len(res)))
+            except Exception:
+                pass
 
-        #normalised Chi-squared
-        nchi2 = (infodict['fvec']**2).sum()/(dataROI.size - res.size)
+            #normalised Chi-squared
+            nchi2 = (infodict['fvec']**2).sum()/(dataROI.size - res.size)
+            
+            if (fitErrors_m == None) or (nchi2 < nchi2_m):
+                res_m = res
+                fitErrors_m = fitErrors
+                resCode_m = resCode
+                nchi2_m = nchi2
+                ratio = r
+                
+            
+            
 
 	#print res, fitErrors, resCode
-        return PSFFitResultR(res, self.metadata, np.array(startParameters), (xslice, yslice, xslice2, yslice2), resCode, fitErrors, nchi2, bgROI.mean(0).mean(0))
+        return PSFFitResultR(res_m, self.metadata, np.array(startParameters), (xslice, yslice, xslice2, yslice2), resCode_m, fitErrors_m, nchi2_m, bgROI.mean(0).mean(0), ratio)
         #return PSFFitResultR(res, self.metadata, , resCode, fitErrors, numpy.array(startParameters), nchi2)
     
         

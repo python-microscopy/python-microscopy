@@ -5,17 +5,17 @@ import numpy as np
 #print __file__
 md['EndTime'] = 1300676178.4949999
 md['EstimatedLaserOnFrameNo'] = 0
-md['PSFFile'] = os.path.join(os.path.split(__file__)[0], 'astig_theory.psf')
+md['PSFFile'] = os.path.join(os.path.split(__file__)[0], 'beads1.psf')
 md['StartTime'] = 1300676151.901
 md['tIndex'] = 0
 md['Analysis.BGRange'] = [0, 0]
 md['Analysis.DataFileID'] = 1571469165
 md['Analysis.DebounceRadius'] = 14
 md['Analysis.DetectionThreshold'] = 7.0
-md['Analysis.FitModule'] = u'SplitterFitInterpR'
+md['Analysis.FitModule'] = u'SplitterFitInterpBNR'
 md['Analysis.InterpModule'] = 'LinearInterpolator'
 md['Analysis.AxialShift'] = 500
-#md['Analysis.EstimatorModule'] = 'priEstimator'
+md['Analysis.EstimatorModule'] = 'biplaneEstimator'
 #md['Analysis.subtractBackground'] = False
 md['Camera.ADOffset'] = 1159.0
 md['Camera.CycleTime'] = 0.25178998708724976
@@ -61,6 +61,14 @@ class sffake:
 
 md['chroma.dx'] = sffake(50.)
 md['chroma.dy'] = sffake(100.)
-md['Test.DefaultParams'] = [2000, 2000, 0, 0, 0, 0, 10]
-md['Test.ParamJitter'] = [15, 15, 90, 90, 250, 10, 10]
+md['chroma.ChannelRatio'] = .5
+md['chroma.ChannelRatios'] = [1./3, 1./2, 2./3]
+#md['Test.DefaultParams'] = [20000, 20000, 0, 0, 0, 0, 10]
+#md['Test.ParamJitter'] = [15, 15, 90, 90, 250, 10, 10]
+#md['Test.DefaultParams'] = [2000, 1000, 0, 0, 0, 0, 0]
+#md['Test.ParamJitter'] = [0, 0, 90, 90, 350, 0, 0]
+
+md['Test.DefaultParams'] = [30000, 0, 0, 0, 0, 0]
+md['Test.ParamJitter'] = [0, 90, 90, 350, 0, 0]
+
 md['Test.Background'] = 10.

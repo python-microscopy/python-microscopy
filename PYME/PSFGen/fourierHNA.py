@@ -74,12 +74,12 @@ class FourierPropagatorHNA:
         #print abs(F).sum()
         pf = self.propFac*float(z)
         fs = F*self.pfm*(cos(pf) + j*sin(pf))
-        #self._F[:] = fftshift(fs)
-        self._F[:] = (fs)
+        self._F[:] = fftshift(fs)
+        #self._F[:] = (fs)
         self._plan_F_f()
         #print abs(self._f).sum()
-        #return ifftshift(self._f/sqrt(self._f.size))
-        return (self._f/sqrt(self._f.size))
+        return ifftshift(self._f/sqrt(self._f.size))
+        #return (self._f/sqrt(self._f.size))
         
     def propagate_r(self, f, z):
         #return ifftshift(ifftn(F*exp(self.propFac*z)))
@@ -268,9 +268,18 @@ def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters = 50, size=5e3):
     #print arange(-ps.shape[0]/2, ps.shape[0]/2)
     u = X*lamb/(n*X.shape[0]*dx*dx)
     v = Y*lamb/(n*X.shape[1]*dx*dx)
+    
+    
 
     R = sqrt(u**2 + v**2)
     M = 1.0*(R < (NA/n)) # NA/lambda
+    
+    figure()
+    imshow(R)
+    
+    colorbar()
+    contour(M, [0.5])
+    figure()
     
     k = 2*pi*n/lamb
 
@@ -280,7 +289,7 @@ def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters = 50, size=5e3):
     
     sps = sqrt(ps)
     
-    
+    View3D(sps)
     
     for i in range(nIters):
         new_pupil = 0*pupil

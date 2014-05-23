@@ -511,7 +511,7 @@ class BlobObject(object):
         ax.set_xlabel(getattr(self, graphName).xlabel)
         
         out = StringIO.StringIO()
-        canvas.print_png(out, dpi=100)
+        canvas.print_png(out, dpi=100, facecolor='w')
         s = out.getvalue()
         out.close()
         return s
@@ -566,7 +566,7 @@ class BlobObject(object):
         ax.set_axis_off()
         
         out = StringIO.StringIO()
-        canvas.print_png(out, dpi=100)
+        canvas.print_png(out, dpi=100, facecolor='w')
         s = out.getvalue()
         out.close()
         return s

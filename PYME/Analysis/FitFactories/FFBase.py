@@ -24,7 +24,7 @@
 import numpy as np
 from . import fitCommon
 
-class FitFactory(object):
+class FFBase(object):
     def __init__(self, data, metadata, fitfcn=None, background=None):
         '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
         metadata. '''
@@ -148,7 +148,7 @@ class FitFactory(object):
             bgROI = self.background[xslice, yslice, 0:2] - self.metadata.Camera.ADOffset
             bgROI[:,:,1] = self.background[xslice2, yslice2, 1] - self.metadata.Camera.ADOffset
         else:
-            bgROI = 0
+            bgROI = np.array(0)
 
  
 
@@ -178,3 +178,5 @@ class FitFactory(object):
         uses FitResultsDType to pre-allocate an array for the results)'''
         
         raise NotImplementedError('This function should be over-ridden in derived class')
+        
+FitFactory = FFBase
