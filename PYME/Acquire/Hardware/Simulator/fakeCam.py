@@ -489,6 +489,9 @@ class FakeCamera:
         self.shutterOpen = mode
         self.noiseMaker.shutterOpen = mode
 
+    def GetBaselineClamp(self):
+        return True
+
     def SetBaselineClamp(self, mode):
         pass
 
