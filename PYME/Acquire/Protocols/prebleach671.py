@@ -31,7 +31,7 @@ import numpy
 taskList = [
 T(-1, scope.turnAllLasersOff),
 T(-1, SetCameraShutter, False),
-#T(-1, scope.joystick.Enable, False),
+T(-1, scope.joystick.Enable, False),
 #T(-1, SetEMGain,150),
 T(20, SetCameraShutter, True),
 T(20, scope.filterWheel.SetFilterPos, "ND4"),

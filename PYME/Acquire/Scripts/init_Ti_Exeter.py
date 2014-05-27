@@ -23,6 +23,7 @@
 
 from PYME.Acquire.Hardware.AndorIXon import AndorIXon
 from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
+from PYME.Acquire.Hardware.AndorNeo import AndorNeoControlFrame
 
 import scipy
 from PYME.Acquire.Hardware.Simulator import fakeCam, fakePiezo
@@ -83,8 +84,8 @@ pz1.join()
 #''')
 
 InitGUI('''
-scope.camControls['A - Left'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['A - Left'], scope)
-camPanels.append((scope.camControls['A - Left'], 'EMCCD A Properties'))
+scope.camControls['Zyla'] = AndorNeoControlFrame.AndorNeoPanel(MainFrame, scope.cameras['Zyla'], scope)
+camPanels.append((scope.camControls['Zyla'], 'Zyla Properties'))
 
 #scope.camControls['B - Right'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['B - Right'], scope)
 #camPanels.append((scope.camControls['B - Right'], 'EMCCD B Properties'))

@@ -78,12 +78,14 @@ class LMAnalyser:
         TASKS_3D = wx.NewId()
         TASKS_3D_SPLITTER = wx.NewId()
         TASKS_PRI = wx.NewId()
+        TASKS_PRIscmos = wx.NewId()
         mTasks.Append(TASKS_STANDARD_2D, "Normal 2D analysis", "", wx.ITEM_NORMAL)
         mTasks.Append(TASKS_CALIBRATE_SPLITTER, "Calibrating the splitter", "", wx.ITEM_NORMAL)
         mTasks.Append(TASKS_2D_SPLITTER, "2D with splitter", "", wx.ITEM_NORMAL)
         mTasks.Append(TASKS_3D, "3D analysis", "", wx.ITEM_NORMAL)
         mTasks.Append(TASKS_3D_SPLITTER, "3D with splitter", "", wx.ITEM_NORMAL)
         mTasks.Append(TASKS_PRI, "PRI", "", wx.ITEM_NORMAL)
+        mTasks.Append(TASKS_PRIscmos, "PRIscmos", "", wx.ITEM_NORMAL)
         self.dsviewer.menubar.Append(mTasks, "Set defaults for")
         
         wx.EVT_MENU(self.dsviewer, TASKS_CALIBRATE_SPLITTER, self.OnCalibrateSplitter)
@@ -92,6 +94,7 @@ class LMAnalyser:
         wx.EVT_MENU(self.dsviewer, TASKS_3D, self.OnStandard3D)
         wx.EVT_MENU(self.dsviewer, TASKS_3D_SPLITTER, self.OnSpliter3D)
         wx.EVT_MENU(self.dsviewer, TASKS_PRI, self.OnPRI3D)
+        wx.EVT_MENU(self.dsviewer, TASKS_PRIscmos, self.OnPRI3Dscmos)
         
         BG_SUBTRACT = wx.NewId()
         self.dsviewer.view_menu.AppendCheckItem(BG_SUBTRACT, 'Subtract Background')
@@ -649,6 +652,14 @@ class LMAnalyser:
         #self.cbSubtractBackground.SetValue(True)
         #self.tThreshold.SetValue('1.0')
         self.image.mdh['PRI.Axis'] = 'y'
+        self.image.mdh['Analysis.EstimatorModule'] = 'priEstimator'
+
+    def OnPRI3Dscmos(self, event):
+        #self.cFitType.SetSelection(self.fitFactories.index('SplitterFitInterpR'))
+        #self.tBackgroundFrames.SetValue('-30:0')
+        #self.cbSubtractBackground.SetValue(True)
+        #self.tThreshold.SetValue('1.0')
+        self.image.mdh['PRI.Axis'] = 'x'
         self.image.mdh['Analysis.EstimatorModule'] = 'priEstimator'
 
     def analRefresh(self):
