@@ -456,6 +456,9 @@ class FakeCamera:
         mdh.setEntry('Camera.ElectronsPerCount', self.noiseMaker.ElectronsPerCount)
         mdh.setEntry('Camera.ADOffset', self.noiseMaker.ADOffset)
 
+        if int(self.noiseMaker.EMGain)>0:
+            mdh.setEntry('Camera.ElectronsPerCount', 1116)
+
         #mdh.setEntry('Simulation.Fluorophores', self.fluors.fl)
         #mdh.setEntry('Simulation.LaserPowers', self.laserPowers)
 
@@ -488,6 +491,9 @@ class FakeCamera:
 
     def SetBaselineClamp(self, mode):
         pass
+
+    def GetBaselineClamp(self):
+        return True
 
     def SetIlluminationFcn(self, illumFcn):
         self.illumFcn = illumFcn
