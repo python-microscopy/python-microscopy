@@ -49,7 +49,7 @@ class FilterPane(afp.foldingPane):
         self.lFiltKeys.InsertColumn(2, 'Max')
 
         for key, value in self.filterKeys.items():
-            ind = self.lFiltKeys.InsertStringItem(sys.maxsize, key)
+            ind = self.lFiltKeys.InsertStringItem(sys.maxint, key)
             self.lFiltKeys.SetStringItem(ind,1, '%3.2f' % value[0])
             self.lFiltKeys.SetStringItem(ind,2, '%3.2f' % value[1])
 
