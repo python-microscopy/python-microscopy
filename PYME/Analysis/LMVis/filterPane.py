@@ -153,12 +153,12 @@ class FilterPane(afp.foldingPane):
             x1, y1 = self.visFr.glCanvas.selectionFinish
 
             if not 'x' in self.filterKeys.keys():
-                indx = self.lFiltKeys.InsertStringItem(sys.maxsize, 'x')
+                indx = self.lFiltKeys.InsertStringItem(sys.maxint, 'x')
             else:
                 indx = [self.lFiltKeys.GetItemText(i) for i in range(self.lFiltKeys.GetItemCount())].index('x')
 
             if not 'y' in self.filterKeys.keys():
-                indy = self.lFiltKeys.InsertStringItem(sys.maxsize, 'y')
+                indy = self.lFiltKeys.InsertStringItem(sys.maxint, 'y')
             else:
                 indy = [self.lFiltKeys.GetItemText(i) for i in range(self.lFiltKeys.GetItemCount())].index('y')
 
@@ -198,7 +198,7 @@ class FilterPane(afp.foldingPane):
 
             self.filterKeys[key] = (minVal, maxVal)
 
-            ind = self.lFiltKeys.InsertStringItem(sys.maxsize, key)
+            ind = self.lFiltKeys.InsertStringItem(sys.maxint, key)
             self.lFiltKeys.SetStringItem(ind,1, '%3.2f' % minVal)
             self.lFiltKeys.SetStringItem(ind,2, '%3.2f' % maxVal)
 
