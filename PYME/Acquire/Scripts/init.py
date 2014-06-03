@@ -82,7 +82,7 @@ MainFrame.AddPage(page=dsc, select=False, caption='Simulation Settings')
 ''')
 
 InitGUI('''
-from PYME.Acquire.Hardware.Simulator import AndorControlFrame
+from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
 scope.camControls['Fake Camera'] = AndorControlFrame.AndorPanel(MainFrame, scope.cam, scope)
 camPanels.append((scope.camControls['Fake Camera'], 'EMCCD Properties'))
 ''')
@@ -115,7 +115,7 @@ camPanels.append((LCGui, 'DMD Control'))
 cm.join()
 from PYME.Acquire.Hardware import lasers
 scope.l488 = lasers.FakeLaser('488',scope.cam,1, initPower=10)
-scope.l405 = lasers.FakeLaser('405',scope.cam,0, initPower=10)
+scope.l405 = lasers.FakeLaser('405',scope.cam,0, initPower=5, maxPower=100)
 
 scope.lasers = [scope.l405, scope.l488]
 
