@@ -58,6 +58,15 @@ class AndorBase(SDK3Camera):
         'high dynamic range':
             { 'name' : '16-bit (low noise & high well capacity)', 'PEncoding' : 'Mono16' }}
 
+    NoiseProperties = {
+        'ReadNoise' : 1.1,
+        'ElectronsPerCount' : 0.28,
+        'NGainStages' : -1,
+        'ADOffset' : 100,
+        'DefaultEMGain' : 85,
+        'SaturationThreshold' : 2e4#(2**16 -1)
+    }
+
     def __init__(self, camNum):
         #define properties
         self.CameraAcquiring = ATBool()
@@ -93,6 +102,7 @@ class AndorBase(SDK3Camera):
         self.FrameRate = ATFloat()
         self.SensorTemperature = ATFloat()
         self.TargetSensorTemperature = ATFloat()
+        self.FullAOIControl = ATBool()
         
         SDK3Camera.__init__(self,camNum)
         
@@ -116,8 +126,6 @@ class AndorBase(SDK3Camera):
         
         self._temp = 0
         self._frameRate = 0
-        self._fixed_ROIs = False # this should really be a call to the suitable feature test function
-        
         #register as a provider of metadata
         MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
         
@@ -131,7 +139,8 @@ class AndorBase(SDK3Camera):
         # self.PixelEncoding.setString('Mono16')
         # self.SetGainMode('high dynamic range')
         try:
-            self.SetGainMode('low noise') # this will fail with the SimCams
+            self.SetEMGain(0)
+            # self.SetGainMode('low noise') # this will fail with the SimCams
         except:
             print "error setting gain mode"
             pass
@@ -144,11 +153,17 @@ class AndorBase(SDK3Camera):
         
         self.SensorCooling.setValue(True)
         # Zyla does not like a temperature to be set
-        # self.TemperatureControl.setString('-30.00')
+        if self.TemperatureControl.isImplemented() and self.TemperatureControl.isWritable():
+            self.TemperatureControl.setString('-30.00')
         #self.PixelReadoutRate.setIndex(1)
+        # test if we have only fixed ROIs
+        self._fixed_ROIs = not self.FullAOIControl.isImplemented() or not self.FullAOIControl.getValue()
+        self.noiseProps = self.NoiseProperties
+
+
         # this one to deal with the requirement to have width divisible by 10
         if not self._fixed_ROIs:
-            self.SetROI(0,0, self.GetCCDWidth(), self.GetCCDHeight())
+            self.SetROI(1,1, self.GetCCDWidth(), self.GetCCDHeight())
         #set up polling thread        
         self.doPoll = False
         self.pollLoopActive = True
@@ -290,7 +305,10 @@ class AndorBase(SDK3Camera):
     def GetCCDWidth(self): 
         # limit width to multiple of 10 - Zyla specific!!!
         # NOTE: we are not sure why only this size works
-        return 10*int(self.SensorWidth.getValue()/10)
+        if True:
+            return self.SensorWidth.getValue()
+        else:
+            return 10*int(self.SensorWidth.getValue()/10)
     def GetCCDHeight(self): 
         return self.SensorHeight.getValue()
     
@@ -349,7 +367,12 @@ class AndorBase(SDK3Camera):
             self.SetROIIndex(dlg.GetSelection())
             dlg.Destroy()
         else: # allow to select ROI size more freely
-            print "free ROI choice" 
+            print "free ROI choice"
+            print "requested: ", x1,y1,x2-x1,y2-y1
+            if x1 < 1:
+                x1 = 1
+            if y1 < 1:
+                y1 = 1
             # for some weird reason the width must be divisble by 10 on the zyla
             if (x1 > x2):
                 xtmp = x2
@@ -368,12 +391,12 @@ class AndorBase(SDK3Camera):
                 w10 -= 10
             h = y2-y1
             # now set as specified
-            print x1,y1,w10,h
-            self.AOILeft.setValue(x1)
-            self.AOITop.setValue(y1)
+            print "setting: ", x1,y1,w10,h
             self.AOIWidth.setValue(w10)
+            self.AOILeft.setValue(x1)
             self.AOIHeight.setValue(h)
-    
+            self.AOITop.setValue(y1)
+
     def SetGainMode(self,mode):
         from warnings import warn
         if not any(mode in s for s in self.SimpleGainModes.keys()):
@@ -465,7 +488,7 @@ class AndorBase(SDK3Camera):
             mdh.setEntry('Camera.IntegrationTime', self.GetIntegTime())
             mdh.setEntry('Camera.CycleTime', self.GetIntegTime())
             mdh.setEntry('Camera.EMGain', 1)
-            mdh.setEntry('Camera.DefaultEMGain', 1) # needed for some protocols
+            mdh.setEntry('Camera.DefaultEMGain', 85) # needed for some protocols
     
             mdh.setEntry('Camera.ROIPosX', self.GetROIX1())
             mdh.setEntry('Camera.ROIPosY',  self.GetROIY1())
@@ -489,7 +512,7 @@ class AndorBase(SDK3Camera):
 
     #functions to make us look more like andor camera
     def GetEMGain(self):
-        return 1
+        return self.EMGain
 
     def GetCCDTempSetPoint(self):
         return self.TargetSensorTemperature.getValue()
@@ -499,7 +522,13 @@ class AndorBase(SDK3Camera):
         #pass
 
     def SetEMGain(self, gain):
-        pass
+        self.EMGain = gain
+        if gain > 0:
+            print 'low noise mode'
+            self.SetGainMode('low noise')
+        else:
+            print 'high dynamic range mode'
+            self.SetGainMode('high dynamic range')
     
     def SetAcquisitionMode(self, aqMode):
         self.CycleMode.setIndex(aqMode)
@@ -525,15 +554,20 @@ class AndorBase(SDK3Camera):
     def GetFPS(self):
         #return self.FrameRate.getValue()
         return self._frameRate
-        
+
+    def __getattr__(self, name):
+        if name in self.noiseProps.keys():
+            return self.noiseProps[name]
+        else:  raise AttributeError, name  # <<< DON'T FORGET THIS LINE !!
+
+
+
+
     def __del__(self):
         self.Shutdown()
         #self.compT.kill = True
 
-        
-        
-        
-        
+
 class AndorNeo(AndorBase):              
     def __init__(self, camNum):
         #define properties
@@ -560,6 +594,7 @@ class AndorNeo(AndorBase):
         
         self.ControllerID = ATString()
         self.FirmwareVersion = ATString()
+        self.active = True # we need that for metadata initialisation I believe, not sure if best to do here or elsewhere
         
         AndorBase.__init__(self,camNum)
         

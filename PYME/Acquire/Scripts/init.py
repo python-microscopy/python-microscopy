@@ -115,7 +115,7 @@ camPanels.append((LCGui, 'DMD Control'))
 cm.join()
 from PYME.Acquire.Hardware import lasers
 scope.l488 = lasers.FakeLaser('488',scope.cam,1, initPower=10)
-scope.l405 = lasers.FakeLaser('405',scope.cam,0, initPower=10)
+scope.l405 = lasers.FakeLaser('405',scope.cam,0, initPower=5, maxPower=100)
 
 scope.lasers = [scope.l405, scope.l488]
 
