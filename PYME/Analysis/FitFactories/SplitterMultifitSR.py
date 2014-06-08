@@ -176,7 +176,7 @@ class GaussianFitFactory:
              self.C = C.astype('int')
             
 
-    def FindAndFit(self, threshold=2):
+    def FindAndFit(self, threshold=2, gui=False):
         #average in z
         data = self.data - self.metadata.Camera.ADOffset
 
@@ -193,7 +193,7 @@ class GaussianFitFactory:
             data = data - bgM
             
         #ofind step
-        #import pylab
+        import pylab
         #find pixels which are > 2 sigma above noise floor.
         #sl = ndimage.gaussian_filter(sigma, 3)
         pe = np.log(np.maximum(data/sigma, .1))
@@ -260,6 +260,11 @@ class GaussianFitFactory:
             
         #objSlices = ndimage.find_objects(labels)
         
+        if gui:
+            pylab.imshow(data.T,interpolation='nearest')
+            pylab.figure()
+            pylab.imshow(mask.T, interpolation='nearest')
+
         if nlabels == 0:
             #the frame is empty
             resList = np.empty(0, FitResultsDType)
@@ -280,7 +285,7 @@ class GaussianFitFactory:
             imO = data[os]
             if imO.size > 5:
                 imOs = imO.sum()
-                d_m = dataMean[os].ravel()
+                d_m = data[os].ravel()
                 s_m = sigma[os].ravel()
                 C_m = self.C[os].ravel()
                 X_m = self.X[os].ravel()
