@@ -321,7 +321,10 @@ class dSimControl(wx.Panel):
             print 'No file selected'
             return
 
-        self.points = np.loadtxt(fn)
+        if fn.endswith('.npy'):
+            self.points = list(np.load(fn))
+        else:
+            self.points = np.loadtxt(fn)
 
         self.stCurObjPoints.SetLabel('Current object has %d points' % len(self.points))
         #event.Skip()
