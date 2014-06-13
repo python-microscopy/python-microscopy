@@ -173,7 +173,7 @@ class GaussianFitFactory(FFBase.FitFactory):
 		
         
     def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
-        Xg, Yg, Xr, Yr, dataROI, bgROI, sigma, xslice, yslice, xslice2, yslice2 = self.getSplitROIAtPoint(self, x, y, z, roiHalfSize, axialHalfSize)
+        Xg, Yg, Xr, Yr, dataROI, bgROI, sigma, xslice, yslice, xslice2, yslice2 = self.getSplitROIAtPoint(x, y, z, roiHalfSize, axialHalfSize)
         
         if min(dataROI.shape[:2]) < 4: # too small to fit
             return BlankResult(self.metadata)
