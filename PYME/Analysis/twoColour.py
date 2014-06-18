@@ -165,6 +165,8 @@ class lin3Model(object):
         #now do a maximum likelihood fit with our robust lhood function
         self.mx, self.my, self.mx2, self.my2, self.mxy, self.mxy2, self.mx2y,self.mx3, self.x0 = fmin(robustLin3Lhood, pstart, args=(x, y,dx, var))
         
+        self.my3 = 0
+        
         #self.axis = axis
         
     def ev(self, x, y):
@@ -172,7 +174,7 @@ class lin3Model(object):
         along one axis, we use the axis that was defined when fitting the model'''
         x = x*self.sc
         y = y*self.sc
-        return self.mx*x +self.my*y + self.mx2*x*x + self.my2*y*y + self.mxy*x*y + self.mxy2*x*y*y + self.mx2y*x*x*y + self.mx3*x*x*x  + self.x0
+        return self.mx*x +self.my*y + self.mx2*x*x + self.my2*y*y + self.mxy*x*y + self.mxy2*x*y*y + self.mx2y*x*x*y + self.mx3*x*x*x + self.my3*y*y*y  + self.x0
             
 def genShiftVectorFieldQuad(x,y, dx, dy, err_sx, err_sy):
     '''interpolates shift vectors using smoothing splines'''
@@ -186,6 +188,30 @@ def genShiftVectorFieldQuad(x,y, dx, dy, err_sx, err_sy):
     #dy = spy.ev(X.ravel(),Y.ravel()).reshape(X.shape)
 
     return spx, spy
+    
+def genShiftVectorFieldQ(nx,ny, nsx, nsy, err_sx, err_sy, bbox=None):
+    '''interpolates shift vectors using smoothing splines'''
+    wonky = findWonkyVectors(nx, ny, nsx, nsy, tol=2*err_sx.mean())
+    #wonky = findWonkyVectors(nx, ny, nsx, nsy, tol=100)
+    good = wonky == 0
+
+    print(('%d wonky vectors found and discarded' % wonky.sum()))
+    
+    #if bbox:
+    #    spx = SmoothBivariateSpline(nx[good], ny[good], nsx[good], 1./err_sx[good], bbox=bbox)
+    #    spy = SmoothBivariateSpline(nx[good], ny[good], nsy[good], 1./err_sy[good], bbox=bbox)
+    #else:
+    #    spx = SmoothBivariateSpline(nx[good], ny[good], nsx[good], 1./err_sx[good])
+    #    spy = SmoothBivariateSpline(nx[good], ny[good], nsy[good], 1./err_sy[good])
+    
+    spx, spy = genShiftVectorFieldQuad(nx[good], ny[good], nsx[good], nsy[good], err_sx[good], err_sy[good])
+
+    X, Y = np.meshgrid(np.arange(0, 512*70, 100), np.arange(0, 256*70, 100))
+
+    dx = spx.ev(X.ravel(),Y.ravel()).reshape(X.shape)
+    dy = spy.ev(X.ravel(),Y.ravel()).reshape(X.shape)
+
+    return (dx.T, dy.T, spx, spy, good)
 
 
 def genRGBImage(g,r, gsat = 1, rsat= 1):
