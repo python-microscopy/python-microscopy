@@ -51,7 +51,8 @@ class FourierPropagatorHNA:
         #m = (u**2 + v**2) <= (n/lamb**2)
         #self.propFac = fftw3f.create_aligned_array(u.shape, 'complex64')
         #self.propFac = 1j*8*pi*sqrt(np.maximum((n/lamb)**2 - (u**2 + v**2), 0))
-        self.propFac = ((2*pi*n/lamb)*sqrt(np.maximum(1 - (u**2 + v**2), 0))).astype('f')
+        #self.propFac = ((2*pi*n/lamb)*sqrt(np.maximum(1 - (u**2 + v**2), 0))).astype('f')
+        self.propFac = ((2*pi*n/lamb)*cos(.5*pi*sqrt((u**2 + v**2)))).astype('f')
         self.pfm =(self.propFac > 0).astype('f')
 
         self._F = fftw3f.create_aligned_array(u.shape, 'complex64')
