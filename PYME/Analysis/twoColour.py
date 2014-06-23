@@ -175,6 +175,9 @@ class lin3Model(object):
         x = x*self.sc
         y = y*self.sc
         return self.mx*x +self.my*y + self.mx2*x*x + self.my2*y*y + self.mxy*x*y + self.mxy2*x*y*y + self.mx2y*x*x*y + self.mx3*x*x*x + self.my3*y*y*y  + self.x0
+        
+    def __call__(self, x, y):
+        return self.ev(x, y)
             
 def genShiftVectorFieldQuad(x,y, dx, dy, err_sx, err_sy):
     '''interpolates shift vectors using smoothing splines'''
