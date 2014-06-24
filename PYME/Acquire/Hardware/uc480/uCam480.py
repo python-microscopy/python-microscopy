@@ -79,6 +79,26 @@ def GetError(camHandle):
     uc480.CALL("GetError",camHandle,ctypes.byref(err),ctypes.byref(errMessage))
     
     return err.value, errMessage.value
+    
+def GetNumCameras():
+    numCams = ctypes.c_int()
+    uc480.CALL("GetNumberOfCameras", ctypes.byref(numCams))
+    
+    return numCams.value
+    
+def GetCameraList():
+    nCams = GetNumCameras()
+    
+    class UEYE_CAMERA_LIST(ctypes.Structure):
+        _fields_ = [("dwCount", ctypes.wintypes.ULONG ),] + [("uci%d" %n, uc480.UEYE_CAMERA_INFO) for n in range(nCams)] #
+    
+    camlist = UEYE_CAMERA_LIST()
+    camlist.dwCount = nCams
+    
+    uc480.CALL("GetCameraList", ctypes.byref(camlist))
+    
+    return camlist
+    
 
 class uc480Camera:
     numpy_frames=1
@@ -94,7 +114,7 @@ class uc480Camera:
         self.initialised = False
         self.active = True
 
-        self.boardHandle = wintypes.HANDLE(0)
+        self.boardHandle = wintypes.HANDLE(boardNum)
 
         ret = uc480.CALL('InitCamera', byref(self.boardHandle), wintypes.HWND(0))
         print(('I',ret))
