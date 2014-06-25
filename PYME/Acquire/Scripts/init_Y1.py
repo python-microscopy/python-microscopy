@@ -42,7 +42,7 @@ from PYME.Acquire import MetaDataHandler
 
 InitBG('EMCCD Cameras', '''
 scope.cameras['A - Left'] = AndorIXon.iXonCamera(0)
-scope.cameras['B - Right'] = uCam480.uc480Camera(0)
+scope.cameras['B - Right'] = uCam480.uc480Camera(1)
 scope.cameras['A - Left'].port = 'L100'
 scope.cameras['B - Right'].port = 'R100'
 #scope.cameras['B - Right'].SetShutter(False)

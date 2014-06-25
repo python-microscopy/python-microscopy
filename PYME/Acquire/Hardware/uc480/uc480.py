@@ -78,6 +78,8 @@ class REVISIONINFO(ctypes.Structure):
 #} REVISIONINFO, *PREVISIONINFO;
 PREVISIONINFO = ctypes.POINTER(REVISIONINFO)
 
+
+
 class UC480_CAMERA_INFO(ctypes.Structure):
 	_fields_ = [("dwCameraID",DWORD  ),	# this is the user defineable camera ID
 				("dwDeviceID",DWORD  ),	# this is the systems enumeration ID
@@ -88,6 +90,21 @@ class UC480_CAMERA_INFO(ctypes.Structure):
 				("dwReserved[16]",DWORD  *16)] #
 #}UC480_CAMERA_INFO, *PUC480_CAMERA_INFO;
 PUC480_CAMERA_INFO = ctypes.POINTER(UC480_CAMERA_INFO)
+
+class UEYE_CAMERA_INFO(ctypes.Structure):
+	_fields_ = [("dwCameraID",DWORD  ),	# this is the user defineable camera ID
+				("dwDeviceID",DWORD  ),	# this is the systems enumeration ID
+				("dwSensorID",DWORD  ),	# this is the sensor ID e.g. IS_SENSOR_C0640R13M
+				("dwInUse",DWORD  ),	# flag, whether the camera is in use or not
+				("SerNo[16]",IS_CHAR*16),	# serial numer of the camera
+				("Model[16]",IS_CHAR*16),	# model name of the camera
+                       ("dwStatus", DWORD),
+                       ("dwReserved[2]", DWORD*2),
+                       ("FullModelName", IS_CHAR*32),
+				("dwReserved2[5]",DWORD  *5)] #
+#}UC480_CAMERA_INFO, *PUC480_CAMERA_INFO;
+PUEYE_CAMERA_INFO = ctypes.POINTER(UEYE_CAMERA_INFO)
+
 
 if os.name=='nt':
     # UNTESTED: Please report results to http://code.google.com/p/pylibuc480/issues
@@ -100,7 +117,8 @@ if os.name=='nt':
 
 		
 #libuc480 = ctypes.cdll.LoadLibrary(lib)
-libuc480 = ctypes.WinDLL('uc480_64')
+#libuc480 = ctypes.WinDLL('uc480_64')
+libuc480 = ctypes.WinDLL('ueye_api_64')
 if libuc480 is not None:
 	uc480_h_name = 'uc480_h'
 	try:
