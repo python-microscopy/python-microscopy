@@ -186,25 +186,30 @@ class ObjectIdentifier(list):
 
         xsd = []
         ysd = []
+        visited = 0*xs
 
-        for xi, yi in zip(xs, ys):
-            #neigh = kdt.query_ball_point([xi,yi], radius)
-            dn, neigh = kdt.query(numpy.array([xi,yi]), 5)
+        for i in xrange(len(xs)):
+            if not visited[i]:
+                xi = xs[i]
+                yi = ys[i]
+                #neigh = kdt.query_ball_point([xi,yi], radius)
+            
+                dn, neigh = kdt.query(numpy.array([xi,yi]), 5)
 
-            neigh = neigh[dn < radius]
+                neigh = neigh[dn < radius]
 
-            if len(neigh) > 1:
-                Ii = self.filteredData[xi,yi]
+                if len(neigh) > 1:
+                    In = self.filteredData[xs[neigh].astype('i'),ys[neigh].astype('i')]
+                    mi = In.argmax()
+    
+                    xsd.append(xs[neigh[mi]])
+                    ysd.append(ys[neigh[mi]])
+                    visited[neigh] = 1
+                        
 
-                In = self.filteredData[xs[neigh].astype('i'),ys[neigh].astype('i')].max()
-
-                if not Ii < In:
+                else:
                     xsd.append(xi)
                     ysd.append(yi)
-
-            else:
-                xsd.append(xi)
-                ysd.append(yi)
 
         return xsd, ysd
 

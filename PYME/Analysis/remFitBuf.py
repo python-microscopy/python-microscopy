@@ -278,22 +278,25 @@ class fitTask(taskDef.Task):
         vx = self.md['voxelsize.x']*1e3
         vy = self.md['voxelsize.y']*1e3
         
+        x0 = (self.md['Camera.ROIPosX'] - 1)
+        y0 = (self.md['Camera.ROIPosY'] - 1)
+        
         if 'Splitter.Channel0ROI' in self.md.getEntryNames():
-            x0, y0, w, h = self.md['Splitter.Channel0ROI']
-            x0 -= (self.md['Camera.ROIPosX'] - 1)
-            y0 -= (self.md['Camera.ROIPosY'] - 1)
+            xg, yg, w, h = self.md['Splitter.Channel0ROI']
+            #x0 -= (self.md['Camera.ROIPosX'] - 1)
+            #y0 -= (self.md['Camera.ROIPosY'] - 1)
             
-            x1, y1, w, h = self.md['Splitter.Channel1ROI']
-            x1 -= (self.md['Camera.ROIPosX'] - 1)
-            y1 -= (self.md['Camera.ROIPosY'] - 1)
+            xr, yr, w, h = self.md['Splitter.Channel1ROI']
+            #x1 -= (self.md['Camera.ROIPosX'] - 1)
+            #y1 -= (self.md['Camera.ROIPosY'] - 1)
         else:
-            x0,y0, w, h = 0,0,self.data.shape[0], self.data.shape[1]
-            x1, y1 = w,h
+            xg,yg, w, h = 0,0,self.data.shape[0], self.data.shape[1]
+            xr, yr = w,h
             
-        ch1 = (x>=x1)&(y >= y1)
+        ch1 = (x>=(xr - x0))&(y >= (yr - y0))
             
-        xn = x - (x >= (x0+w))*x1
-        yn = y - (y >= (y0+h))*y1
+        xn = x - (x >= (xg-x0+w))*xr
+        yn = y - (y >= (yg-y0+h))*yr
         
         if not (('Splitter.Flip' in self.md.getEntryNames() and not self.md.getEntry('Splitter.Flip'))):          
             yn += ch1*(h - 2*yn) 
@@ -302,8 +305,8 @@ class fitTask(taskDef.Task):
             
         #chromatic shift
         if 'chroma.dx' in self.md.getEntryNames():
-            dx = self.md['chroma.dx'].ev(xn*vx, yn*vy)/vx
-            dy = self.md['chroma.dy'].ev(xn*vy, yn*vy)/vy
+            dx = self.md['chroma.dx'].ev((xn+x0)*vx, (yn+y0)*vy)/vx
+            dy = self.md['chroma.dy'].ev((xn+x0)*vy, (yn+y0)*vy)/vy
         
             xn += dx*ch1
             yn += dy*ch1
@@ -316,32 +319,38 @@ class fitTask(taskDef.Task):
         vx = self.md['voxelsize.x']*1e3
         vy = self.md['voxelsize.y']*1e3
         
+        x0 = (self.md['Camera.ROIPosX'] - 1)
+        y0 = (self.md['Camera.ROIPosY'] - 1)
+        
         if 'Splitter.Channel0ROI' in self.md.getEntryNames():
-            x0, y0, w, h = self.md['Splitter.Channel0ROI']
-            x0 -= (self.md['Camera.ROIPosX'] - 1)
-            y0 -= (self.md['Camera.ROIPosY'] - 1)
+            xg, yg, w, h = self.md['Splitter.Channel0ROI']
+            #x0 -= (self.md['Camera.ROIPosX'] - 1)
+            #y0 -= (self.md['Camera.ROIPosY'] - 1)
             
-            x1, y1, w, h = self.md['Splitter.Channel1ROI']
-            x1 -= (self.md['Camera.ROIPosX'] - 1)
-            y1 -= (self.md['Camera.ROIPosY'] - 1)
+            xr, yr, w, h = self.md['Splitter.Channel1ROI']
+            #x1 -= (self.md['Camera.ROIPosX'] - 1)
+            #y1 -= (self.md['Camera.ROIPosY'] - 1)
         else:
-            x0,y0, w, h = 0,0,self.data.shape[0], self.data.shape[1]
-            x1, y1 = w,h
+            xg,yg, w, h = 0,0,self.data.shape[0], self.data.shape[1]
+            xr, yr = w,h
             
         #ch1 = (x>=x1)&(y >= y1)
             
-        xn = x + x1
-        yn = y + y1
+        xn = x + (xr - xg)
+        yn = y + (yr -yg)
+        
+        #print y1
         
         if not (('Splitter.Flip' in self.md.getEntryNames() and not self.md.getEntry('Splitter.Flip'))):          
-            yn = (h - y) + y1 
+            yn = (h - y) + yr - yg 
             
-        #print xn, yn
             
         #chromatic shift
         if 'chroma.dx' in self.md.getEntryNames():
-            dx = self.md['chroma.dx'].ev(x*vx, y*vy)/vx
-            dy = self.md['chroma.dy'].ev(x*vx, y*vy)/vy
+            dx = self.md['chroma.dx'].ev((x+x0)*vx, (y+y0)*vy)/vx
+            dy = self.md['chroma.dy'].ev((x+x0)*vx, (y+y0)*vy)/vy
+            
+            #print dx, dy
         
             xn -= dx
             yn -= dy
@@ -349,6 +358,49 @@ class fitTask(taskDef.Task):
         #print xn, yn
        
         return xn, yn
+        
+    def _getSplitterROIs(self):
+        x0 = (self.md['Camera.ROIPosX'] - 1)
+        y0 = (self.md['Camera.ROIPosY'] - 1)        
+        
+        if 'Splitter.Channel0ROI' in self.md.getEntryNames():
+            xg, yg, wg, hg = self.md['Splitter.Channel0ROI']                       
+            xr, yr, wr, hr = self.md['Splitter.Channel1ROI']
+        else:
+            xg = 0
+            yg = 0
+            wg = self.data.shape[0]
+            hg = self.data.shape[1]/2
+            
+            xr = 0
+            yr = hg
+            wr = self.data.shape[0]
+            hr = self.data.shape[1]/2
+            
+        def _bdsClip(x, w, x0, iw):
+            x -= x0
+            if (x < 0):
+                w += x
+                x = 0
+            if ((x + w) > iw):
+                w -= (x + w) - iw
+                
+            return x, w
+            
+        xg, wg = _bdsClip(xg, wg, x0, self.data.shape[0])
+        xr, wr = _bdsClip(xr, wr, x0, self.data.shape[0])
+        yg, hg = _bdsClip(yg, hg, y0, self.data.shape[1])
+        yr, hr = _bdsClip(yr, hr, y0, self.data.shape[1])
+            
+        w = min(wg, wr)
+        h = min(hg, hr)
+                
+        if ('Splitter.Flip' in self.md.getEntryNames() and not self.md.getEntry('Splitter.Flip')):
+            step = 1
+        else:
+            step = -1
+            
+        return slice(xg, xg+w, 1), slice(xr, xr+w, 1),slice(yg, yg+h, 1),slice(yr, yr+h, step)
 
 
     def __call__(self, gui=False, taskQueue=None):
@@ -385,42 +437,16 @@ class fitTask(taskDef.Task):
         #squash 4th dimension
         self.data = self.data.reshape((self.data.shape[0], self.data.shape[1],1))
 
-        if self.fitModule in splitterFitModules:
-#            if (self.md.getEntry('Camera.ROIHeight') + 1 + 2*(self.md.getEntry('Camera.ROIPosY')-1)) == 512:
-            #was setup correctly for the splitter
-            if 'Splitter.Channel0ROI' in self.md.getEntryNames():
-                x0, y0, w, h = self.md['Splitter.Channel0ROI']
-                x0 -= (self.md['Camera.ROIPosX'] - 1)
-                y0 -= (self.md['Camera.ROIPosY'] - 1)
-                g = self.data[x0:(x0+w), y0:(y0+h)]
-                x0, y0, w, h = self.md['Splitter.Channel1ROI']
-                x0 -= (self.md['Camera.ROIPosX'] - 1)
-                y0 -= (self.md['Camera.ROIPosY'] - 1)
-                r = self.data[x0:(x0+w), y0:(y0+h)]
-            else:
-                g = self.data[:, :(self.data.shape[1]/2)]
-                r = self.data[:, (self.data.shape[1]/2):]
-                
-            if ('Splitter.Flip' in self.md.getEntryNames() and not self.md.getEntry('Splitter.Flip')):
-                pass
-            else:
-                r = np.fliplr(r)
-#            else:
-#                #someone bodged something
-#                print 'Warning - splitter incorrectly set - '
 
         #calculate background
         self.bg = self.md['Camera.ADOffset']
         if not len(self.bgindices) == 0:
-#            self.bg = numpy.zeros(self.data.shape, 'f')
-#            for bgi in self.bgindices:
-#                bs = dBuffer.getSlice(bgi).astype('f')
-#                bs = bs.reshape(self.data.shape)
-#                self.bg = self.bg + bs
-#
-#            self.bg *= 1.0/len(self.bgindices)
             self.bg = bBuffer.getBackground(self.bgindices).reshape(self.data.shape)
 
+        
+        #############################################
+        # Special cases - defer object finding to fit module
+        
         if self.fitModule == 'ConfocCOIR': #special case - no object finding
             self.res = fitMod.ConfocCOI(self.data, md, background = self.bg)
             return fitResult(self, self.res, [])
@@ -430,51 +456,23 @@ class fitTask(taskDef.Task):
             ff = fitMod.FitFactory(self.data, md, background = self.bg)
             self.res = ff.FindAndFit(self.threshold, gui=gui)
             return fitResult(self, self.res, [])
+            
 
-        #Find objects
+        ##############################################        
+        # Find candidate molecule positions
+
         bgd = (self.data.astype('f') - self.bg)
 
+        
         if 'Splitter.TransmittedChannel' in self.md.getEntryNames():
             #don't find points in transmitted light channel
             transChan = md.getEntry('Splitter.TransmitedChannel')
             if transChan == 'Top':
                 bgd[:, :(self.data.shape[1]/2)] = 0 #set upper half of image to zero
-
-#        if self.fitModule in splitterFitModules:
-##            g_ = bgd[:, :(self.data.shape[1]/2)]
-##            r_ = bgd[:, (self.data.shape[1]/2):]
-##            r_ = np.fliplr(r_)
-##
-##            bgd = g_ + r_
-#
-#            self.data = numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2)
-        #print self.data.shape, bgd.shape
     
-    
+        #defne splitter mapping function (if appropriate) for use in object finding
         sfunc = None        
-        if self.fitModule in splitterFitModules:
-            #print g.shape, r.shape
-            #self.data = numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2)
-#            if 'Splitter.Channel0ROI' in self.md.getEntryNames():
-#                x0, y0, w, h = self.md['Splitter.Channel0ROI']
-#                x0 -= (self.md['Camera.ROIPosX'] - 1)
-#                y0 -= (self.md['Camera.ROIPosY'] - 1)
-#                g_ = bgd[x0:(x0+w), y0:(y0+h)]
-#                x0, y0, w, h = self.md['Splitter.Channel1ROI']
-#                x0 -= (self.md['Camera.ROIPosX'] - 1)
-#                y0 -= (self.md['Camera.ROIPosY'] - 1)
-#                r_ = bgd[x0:(x0+w), y0:(y0+h)]
-#            else:
-#                g_ = bgd[:, :(self.data.shape[1]/2)]
-#                r_ = bgd[:, (self.data.shape[1]/2):]
-#                
-#            if ('Splitter.Flip' in self.md.getEntryNames() and not self.md.getEntry('Splitter.Flip')):
-#                pass
-#            else:
-#                r_ = np.fliplr(r_)
-                
-            #bgd = numpy.concatenate((g_.reshape(g_.shape[0], -1, 1), r_.reshape(g_.shape[0], -1, 1)),2)
-            
+        if self.fitModule in splitterFitModules:            
             sfunc = self.__mapSplitterCoords
 
 
@@ -494,35 +492,8 @@ class fitTask(taskDef.Task):
         self.ofd.FindObjects(self.calcThreshold(),0, splitter=sfunc, debounceRadius=debounce)
         
         
-
-        if self.fitModule in splitterFitModules:
-            #print g.shape, r.shape
-            #self.data = numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2)
-            self.data = numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2)
-
-            if not len(self.bgindices) == 0:
-                if 'Splitter.Channel0ROI' in self.md.getEntryNames():
-                    x0, y0, w, h = self.md['Splitter.Channel0ROI']
-                    x0 -= (self.md['Camera.ROIPosX'] - 1)
-                    y0 -= (self.md['Camera.ROIPosY'] - 1)
-                    g_ = self.bg[x0:(x0+w), y0:(y0+h)]
-                    x0, y0, w, h = self.md['Splitter.Channel1ROI']
-                    x0 -= (self.md['Camera.ROIPosX'] - 1)
-                    y0 -= (self.md['Camera.ROIPosY'] - 1)
-                    r_ = self.bg[x0:(x0+w), y0:(y0+h)]
-                else:
-                    g_ = self.bg[:, :(self.bg.shape[1]/2)]
-                    r_ = self.bg[:, (self.bg.shape[1]/2):]
-                
-                if ('Splitter.Flip' in self.md.getEntryNames() and not self.md.getEntry('Splitter.Flip')):
-                    pass
-                else:
-                    r_ = np.fliplr(r_)
-
-                #print g.shape, r.shape, g_.shape, r_.shape
-
-                self.bg = numpy.concatenate((g_.reshape(g.shape[0], -1, 1), r_.reshape(g.shape[0], -1, 1)),2)
-
+        ####################################################
+        # Find Fiducials
         if self.driftEst: #do the same for objects which are on the whole time
             self.mIm = numpy.ones(self.data.shape, 'f')
             for dri in self.driftEstInd:
@@ -538,11 +509,29 @@ class fitTask(taskDef.Task):
                 self.ofdDr = ofind_xcorr.ObjectIdentifier(self.mIm, self.md.getEntry('PSFFile'), 7, 3e-2)
                 
             thres = self.calObjThresh**10
-            self.ofdDr.FindObjects(thres,0)
+            self.ofdDr.FindObjects(thres,0, splitter=sfunc, debounceRadius=debounce)
             
             while len(self.ofdDr) >= 10: #just go for the brightest ones
                 thres = thres * max(2, len(self.ofdDr)/5)
-                self.ofdDr.FindObjects(thres,0)
+                self.ofdDr.FindObjects(thres,0, splitter=sfunc, debounceRadius=debounce)
+                
+                
+        
+        #####################################################################
+        #If we are using a splitter, chop the largest common ROI out of the two channels
+        
+        if self.fitModule in splitterFitModules:
+            xgs, xrs, ygs, yrs = self._getSplitterROIs()
+            g = self.data[xgs, ygs]
+            r = self.data[xrs, yrs]
+            
+            self.data = numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2)
+            
+            if not len(self.bgindices) == 0:
+                g_ = self.bg[xgs,ygs]
+                r_ = self.bg[xrs,yrs]
+                self.bg = numpy.concatenate((g_.reshape(g.shape[0], -1, 1), r_.reshape(g.shape[0], -1, 1)),2)
+
                  
         
         #If we're running under a gui - display found objects
@@ -567,11 +556,8 @@ class fitTask(taskDef.Task):
             pylab.colorbar()
             pylab.show()
 
+        #########################################################
         #Create a fit 'factory'
-        #md = copy.copy(self.md)
-        #md.tIndex = self.index
-        #md.taskQueue = taskQueue
-
         #if self.fitModule == 'LatGaussFitFRTC'  or self.fitModule == 'BiplaneFitR':
         #    fitFac = fitMod.FitFactory(numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2), md)
         #else:
