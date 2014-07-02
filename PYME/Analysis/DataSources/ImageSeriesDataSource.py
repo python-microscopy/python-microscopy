@@ -24,7 +24,7 @@
 from PYME.ParallelTasks.relativeFiles import getFullFilename
 from PYME.Acquire import MetaDataHandler
 #from PYME.FileUtils import readTiff
-import Image
+from PIL import Image
 import glob
 import os
 import numpy as np

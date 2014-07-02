@@ -25,7 +25,10 @@ import os.path
 import wx
 import tables
 import numpy
-import Image
+try:
+    import Image
+except ImportError:
+    from PIL import Image
 import os
 from PYME.FileUtils import saveTiffStack
 from PYME.Acquire import MetaDataHandler

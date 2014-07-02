@@ -32,7 +32,7 @@ import sys
 
 from PYME.Analysis.LMVis import inpFilt
 from scipy import histogram2d, arange, minimum, concatenate, newaxis
-import Image
+from PIL import Image
 
 
 #logging.debug('Input File: %s\n' % inputFile)

@@ -22,7 +22,7 @@
 #
 ################
 from django.http import HttpResponse
-import Image
+from PIL import Image
 import numpy as np
 
 def int2bin(n, count=24):

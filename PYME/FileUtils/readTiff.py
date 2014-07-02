@@ -21,7 +21,7 @@
 #
 ##################
 
-import Image
+from PIL import Image
 import numpy as np
 from PYME.misc import TiffImagePlugin #monkey patch PIL with improved tiff support from Priithon
 

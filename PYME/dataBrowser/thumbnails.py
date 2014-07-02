@@ -24,7 +24,8 @@
 from django.http import HttpResponse
 import os
 import sys
-import Image
+from PIL import Image
+    
 from PYME.FileUtils import thumbnailDatabase
 
 def thumb(request, filename, size=200):

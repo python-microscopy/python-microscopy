@@ -6,7 +6,10 @@ Created on Tue Apr 22 11:33:35 2014
 """
 import numpy as np
 from scipy import ndimage
-import Image
+try:
+    import Image
+except ImportError:
+    from PIL import Image
 import os
 #from PYME.DSView import View3D
 

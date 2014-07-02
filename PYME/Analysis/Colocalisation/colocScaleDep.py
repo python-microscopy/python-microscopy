@@ -24,7 +24,7 @@ from scipy import ndimage
 from . import correlationCoeffs
 from pylab import *
 from . import edtColoc
-import Image
+from PIL import Image
 
 DIRNAME='/home/david/Desktop/coloc/'
 

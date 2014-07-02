@@ -28,7 +28,7 @@ import tables
 import os
 import sys
 
-import Image
+from PIL import Image
 
 from numpy import array
 

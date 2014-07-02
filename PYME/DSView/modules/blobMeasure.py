@@ -445,7 +445,11 @@ class BlobObject(object):
                 pass
             
     def getImage(self):
-        import Image
+        try:
+            import Image
+        except ImportError:
+            from PIL import Image
+            
         import StringIO
         import cherrypy
         cherrypy.response.headers["Content-Type"]="image/png"

@@ -7,7 +7,7 @@ Created on Mon May 20 15:58:22 2013
 
 import numpy as np
 import socket
-import Image
+from PIL import Image
 
 try:
     import StringIO
