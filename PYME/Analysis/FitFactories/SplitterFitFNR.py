@@ -161,15 +161,39 @@ def genFitImage(fitResults, metadata):
     
 
 
-
-class GaussianFitFactory(FFBase.FitFactory):
+class GaussianFitFactory(FFBase.FFBase):
     def __init__(self, data, metadata, fitfcn=genSplitGaussInArrayPVec, background=None):
-        FFBase.FitFactory.__init__(self, data, metadata, fitfcn, background)
+        super(GaussianFitFactory, self).__init__(data, metadata, fitfcn, background)
         
         #if False:#'D' in dir(fitfcn): #function has jacobian
         #    self.solver = FitModelWeightedJac
         #else:
         #    self.solver = FitModelWeighted
+    @classmethod
+    def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):
+        #generate grid to evaluate function on        
+        Xg = x + 1e3*md.voxelsize.x*scipy.mgrid[slice(-roiHalfSize,roiHalfSize + 1)]
+        Yg = y + 1e3*md.voxelsize.y*scipy.mgrid[slice(-roiHalfSize,roiHalfSize + 1)]
+
+        #generate a corrected grid for the red channel      
+        DeltaX = md.chroma.dx.ev(x, y)
+        DeltaY = md.chroma.dy.ev(x, y)
+
+        Xr = Xg + DeltaX
+        Yr = Yg + DeltaY
+        
+        #print DeltaX, DeltaY
+        d = np.zeros([Xr.shape[0], Yr.shape[0], 2], order='F')
+        s = np.ones_like(d)
+        buf = np.zeros(d.size)
+        #print((d.shape, Xr.shape, Yr.shape))
+        im = -splWrap(np.array(params), d, s, Xg, Yg, Xr, Yr, buf).reshape(d.shape, order='F')
+    
+        #return np.concatenate([im[:,:,0], im[:,:,1]], 2).squeeze(), Xg.ravel()[0], Yg.ravel()[0], 0
+        return im, Xg.ravel()[0], Yg.ravel()[0], 0
+
+
+        #return splWrap(params, Xg, Yg, Xr, Yr), Xg.ravel()[0], Yg.ravel()[0], 0
 		
         
     def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
@@ -188,6 +212,16 @@ class GaussianFitFactory(FFBase.FitFactory):
         startParameters = numpy.array([Ag, Ar, x0, y0, 250/2.35])
         
         dataROI = np.maximum(dataROI - bgROI, -sigma)
+        
+        if (self.metadata.getOrDefault('Analysis.DebugLevel', 0) == 2):
+            import pylab
+            pylab.figure()
+            pylab.subplot(121)
+            pylab.imshow(dataROI[:,:,0].squeeze(), interpolation='nearest', cmap=pylab.cm.gray)
+            pylab.title('(%d, %d - %d, %d)'%(x,y, xslice.start+roiHalfSize, yslice.start+roiHalfSize))
+            pylab.subplot(122)
+            pylab.imshow(dataROI[:,:,1].squeeze(), interpolation='nearest', cmap=pylab.cm.gray)
+            pylab.title('(%d, %d)'%(xslice2.start+roiHalfSize, yslice2.start+roiHalfSize))
 
 	
         #do the fit

@@ -29,6 +29,8 @@ Contents:
    VisGUI
    Technical
 
+   api/modules
+
 
 .. Indices and tables
    ==================

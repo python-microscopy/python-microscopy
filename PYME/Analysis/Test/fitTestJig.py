@@ -100,7 +100,7 @@ class fitTestJig(object):
             #print bg, self.md.Camera.ADOffset
 
             self.fitFac = self.fitMod.FitFactory(atleast_3d(self.d2), self.md, background = bg + self.md.Camera.ADOffset)
-            self.res[i] = self.fitFac.FromPoint(rs, rs, roiHalfSize=rs)
+            self.res[i] = self.fitFac.FromPoint(rs, rs)#, roiHalfSize=rs)
 
         
         self.ps = ps.view(self.res['fitResults'].dtype)

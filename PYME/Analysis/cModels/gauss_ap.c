@@ -928,7 +928,7 @@ static PyObject *splitGaussArrayPVecWeightedMisfit(PyObject *self, PyObject *arg
     pVals = (PyArrayObject *) PyArray_ContiguousFromObject(oParameters, PyArray_DOUBLE, 0, 1);
     if (pVals == NULL)
     {
-      PyErr_Format(PyExc_RuntimeError, "Bad X");
+      PyErr_Format(PyExc_RuntimeError, "Bad parameters");
       return NULL;
     }
 
@@ -951,7 +951,7 @@ static PyObject *splitGaussArrayPVecWeightedMisfit(PyObject *self, PyObject *arg
     if (Xvals == NULL)
     {
       Py_DECREF(pVals);
-      PyErr_Format(PyExc_RuntimeError, "Bad X");
+      PyErr_Format(PyExc_RuntimeError, "Bad Xg");
       return NULL;
     }
 
@@ -960,7 +960,7 @@ static PyObject *splitGaussArrayPVecWeightedMisfit(PyObject *self, PyObject *arg
     {
         Py_DECREF(Xvals);
         Py_DECREF(pVals);
-        PyErr_Format(PyExc_RuntimeError, "Bad Y");
+        PyErr_Format(PyExc_RuntimeError, "Bad Yg");
         return NULL;
     }
 
@@ -970,7 +970,7 @@ static PyObject *splitGaussArrayPVecWeightedMisfit(PyObject *self, PyObject *arg
       Py_DECREF(Xvals);
       Py_DECREF(Yvals);
       Py_DECREF(pVals);
-      PyErr_Format(PyExc_RuntimeError, "Bad X");
+      PyErr_Format(PyExc_RuntimeError, "Bad Xr");
       return NULL;
     }
 
@@ -981,7 +981,7 @@ static PyObject *splitGaussArrayPVecWeightedMisfit(PyObject *self, PyObject *arg
         Py_DECREF(Yvals);
         Py_DECREF(X2vals);
         Py_DECREF(pVals);
-        PyErr_Format(PyExc_RuntimeError, "Bad Y");
+        PyErr_Format(PyExc_RuntimeError, "Bad Yr");
         return NULL;
     }
 

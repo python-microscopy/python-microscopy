@@ -460,6 +460,23 @@ def GenSAPSF(zs, dx=5, strength=1.0, X=None, Y=None, lamb=700, n=1.51, NA = 1.47
 
     return abs(ps**2)
     
+def GenR3PSF(zs, dx=5, strength=1.0, X=None, Y=None, lamb=700, n=1.51, NA = 1.47):
+    from PYME.misc import zernike
+    X, Y, R, FP, F, u, v = GenWidefieldAP(dx, X, Y, lamb=lamb, n=n, NA = NA)
+    
+    r = R/R[abs(F)>0].max()
+    theta = angle(X + 1j*Y)
+    
+    z8 = r**3#zernike.zernike(8, r, theta)
+
+    F = F * exp(-1j*strength*z8)
+    #clf()
+    #imshow(angle(F))
+
+    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+
+    return abs(ps**2)
+    
 def GenBesselPSF(zs, dx=5, rad=.95, X=None, Y=None, lamb=700, n=1.51, NA = 1.47):
     #from PYME.misc import zernike
     X, Y, R, FP, F, u, v = GenWidefieldAP(dx, X, Y, lamb=lamb, n=n, NA = NA)
