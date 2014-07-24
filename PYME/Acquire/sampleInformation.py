@@ -73,7 +73,7 @@ class VirtList(wx.ListCtrl):
             self.qs = models.Slide.objects.filter(creator__contains=creator, reference__contains=reference, labelling__structure__contains=structure).order_by('-timestamp')
         else:
             self.qs = models.Slide.objects.filter(creator__contains=creator, reference__contains=reference).order_by('-timestamp')
-        self.SetItemCount(len(self.qs))
+        self.SetItemCount(self.qs.count())
 
     def OnGetItemText(self, item, col):
         #print self.qs[item].desc()
@@ -241,7 +241,7 @@ class SampleInfoDialog(wx.Dialog):
         slref = self.tSlideRef.GetValue()
         current_choices = self.tCreator.GetChoices()
 
-        if slref == '' or len(models.Slide.objects.filter(reference=slref)) ==0:
+        if slref == '' or (models.Slide.objects.filter(reference=slref).count() ==0):
             choices = list(set([e.creator for e in models.Slide.objects.filter(creator__startswith=cname)]))
         else:
             choices = list(set([e.creator for e in models.Slide.objects.filter(creator__startswith=cname, reference=slref)]))
@@ -258,7 +258,7 @@ class SampleInfoDialog(wx.Dialog):
         slref = self.tSlideRef.GetValue()
         current_choices = self.tSlideRef.GetChoices()
 
-        if cname == '' or (len(models.Slide.objects.filter(creator=cname)) == 0):
+        if cname == '' or (models.Slide.objects.filter(creator=cname).count() == 0):
             choices = list(set([e.reference for e in models.Slide.objects.filter(reference__startswith=slref)]))
         else:
             choices = list(set([e.reference for e in models.Slide.objects.filter(reference__startswith=slref, creator=cname)]))

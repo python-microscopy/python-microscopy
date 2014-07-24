@@ -10,7 +10,7 @@ import time
 
 class IOSlave(object):
     def __init__(self, port='COM12'):
-        self.ser_port = serial.Serial(port, 9600, rtscts=0, timeout=2, writeTimeout=2)
+        self.ser_port = serial.Serial(port, 115200, rtscts=0, timeout=.1, writeTimeout=2)
         
     def SetDigital(self, chan, value):
         self.ser_port.write('SD%d %d\n' % (chan, value))

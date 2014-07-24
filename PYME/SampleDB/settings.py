@@ -35,16 +35,32 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
-DATABASE_ENGINE = 'mysql'           # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-DATABASE_NAME = 'sample_db'             # Or path to database file if using sqlite3.
-DATABASE_USER = 'PYMEUSER'             # Not used with sqlite3.
-DATABASE_PASSWORD = 'PYME'         # Not used with sqlite3. #### Change this for local install
+##DATABASE_ENGINE = 'mysql'           # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+##DATABASE_NAME = 'sample_db'             # Or path to database file if using sqlite3.
+##DATABASE_USER = 'PYMEUSER'             # Not used with sqlite3.
+##DATABASE_PASSWORD = 'PYME'         # Not used with sqlite3. #### Change this for local install
 DATABASE_HOST = 'lmsrv1'             # Set to empty string for localhost. Not used with sqlite3.
-DATABASE_PORT = ''             # Set to empty string for default. Not used with sqlite3.
+##DATABASE_PORT = ''             # Set to empty string for default. Not used with sqlite3.
+##DATABASE_OPTIONS = {
+##    "connect_timeout": 1,
+##}
 
 #look for database host in environment variable
 if 'PYME_DATABASE_HOST' in os.environ.keys():
     DATABASE_HOST = os.environ['PYME_DATABASE_HOST']
+
+DATABASES = {
+    'default': {
+        'NAME': 'sample_db',
+        'HOST' : DATABASE_HOST,
+        'ENGINE': 'mysql',
+        'USER': 'PYMEUSER',
+        'PASSWORD': 'PYME',
+        'OPTIONS': {"connect_timeout": 5,},
+    },
+}
+
+
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
