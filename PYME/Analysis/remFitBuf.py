@@ -295,8 +295,8 @@ class fitTask(taskDef.Task):
             
         ch1 = (x>=(xr - x0))&(y >= (yr - y0))
             
-        xn = x - (x >= (xg-x0+w))*xr
-        yn = y - (y >= (yg-y0+h))*yr
+        xn = x - (x >= (xg-x0+w))*(xr)
+        yn = y - (y >= (yg-y0+h))*(yr)
         
         if not (('Splitter.Flip' in self.md.getEntryNames() and not self.md.getEntry('Splitter.Flip'))):          
             yn += ch1*(h - 2*yn) 
@@ -361,11 +361,14 @@ class fitTask(taskDef.Task):
         
     def _getSplitterROIs(self):
         x0 = (self.md['Camera.ROIPosX'] - 1)
-        y0 = (self.md['Camera.ROIPosY'] - 1)        
+        y0 = (self.md['Camera.ROIPosY'] - 1)  
+        
+        #print x0, y0
         
         if 'Splitter.Channel0ROI' in self.md.getEntryNames():
             xg, yg, wg, hg = self.md['Splitter.Channel0ROI']                       
             xr, yr, wr, hr = self.md['Splitter.Channel1ROI']
+            #print 'Have splitter ROIs'
         else:
             xg = 0
             yg = 0
@@ -388,9 +391,11 @@ class fitTask(taskDef.Task):
             return x, w
             
         xg, wg = _bdsClip(xg, wg, x0, self.data.shape[0])
-        xr, wr = _bdsClip(xr, wr, x0, self.data.shape[0])
+        xr, wr = _bdsClip(xr, wr, 0, self.data.shape[0])
         yg, hg = _bdsClip(yg, hg, y0, self.data.shape[1])
-        yr, hr = _bdsClip(yr, hr, y0, self.data.shape[1])
+        yr, hr = _bdsClip(yr, hr, 0, self.data.shape[1])
+        
+        #print xr, wr
             
         w = min(wg, wr)
         h = min(hg, hr)

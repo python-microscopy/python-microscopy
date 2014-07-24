@@ -12,7 +12,7 @@ md['Analysis.BGRange'] = [0, 0]
 md['Analysis.DataFileID'] = 1571469165
 md['Analysis.DebounceRadius'] = 14
 md['Analysis.DetectionThreshold'] = 7.0
-md['Analysis.FitModule'] = u'SplitterFitQR'
+md['Analysis.FitModule'] = u'SplitterFitFNR'
 md['Analysis.InterpModule'] = 'LinearInterpolator'
 #md['Analysis.AxialShift'] = 0
 #md['Analysis.EstimatorModule'] = 'priEstimator'
@@ -57,7 +57,7 @@ class sffake:
     def ev(self, x, y):
         return self.val
 
-md['chroma.dx'] = sffake(50.)
-md['chroma.dy'] = sffake(100.)
+md['chroma.dx'] = sffake(150.)
+md['chroma.dy'] = sffake(370.)
 md['Test.DefaultParams'] = [205, 205, 0, 0, 280/2.35]
-md['Test.ParamJitter'] = [205, 205, 90, 90, 50]
+md['Test.ParamJitter'] = [5, 5, 190, 190, 50]

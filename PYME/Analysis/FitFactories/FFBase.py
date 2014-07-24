@@ -135,9 +135,12 @@ class FFBase(object):
         yslice = slice(y01, y11)
         yslice2 = slice(y02, y12)
         
+        #print xslice2, yslice2
+        
 
          #cut region out of data stack
         dataROI = self.data[xslice, yslice, 0:2] - self.metadata.Camera.ADOffset
+        #print dataROI.shape
         dataROI[:,:,1] = self.data[xslice2, yslice2, 1] - self.metadata.Camera.ADOffset
         
         nSlices = 1

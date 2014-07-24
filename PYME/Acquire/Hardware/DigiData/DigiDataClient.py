@@ -24,4 +24,7 @@
 import Pyro.core
 
 def getDDClient(): #for client machine
+    '''
+    Returns a proxy to a remote DigiData.
+    '''
     return Pyro.core.getProxyForURI('PYRONAME://DigiData')
