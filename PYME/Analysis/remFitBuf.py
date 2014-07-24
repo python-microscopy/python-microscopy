@@ -47,7 +47,7 @@ nTasksProcessed = 0
 
 splitterFitModules = ['SplitterFitFR', 'SplitterFitFNR','SplitterFitQR', 'SplitterFitCOIR', 
                       'BiplaneFitR', 'SplitterShiftEstFR', 
-                      'SplitterObjFindR', 'SplitterFitInterpR', 'SplitterFitInterpQR', 'SplitterFitInterpNR']
+                      'SplitterObjFindR', 'SplitterFitInterpR', 'SplitterFitInterpQR', 'SplitterFitInterpNR', 'SplitterFitInterpBNR']
 
 #from pylab import *
 
