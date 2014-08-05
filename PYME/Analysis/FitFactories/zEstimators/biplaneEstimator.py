@@ -43,6 +43,8 @@ def calibrate(interpolator, md, roiSize=5):
     X, Y, Z, safeRegion = interpolator.getCoords(md, slice(-roiSize,roiSize), slice(-roiSize,roiSize), slice(0, 2))
     #print Z, safeRegion
     axialShift = md.Analysis.AxialShift
+    
+    ratio = md.Analysis.ColourRatio
 
     if len(X.shape) > 1: #X is a matrix
         X_ = X[:, 0, 0]
@@ -67,8 +69,8 @@ def calibrate(interpolator, md, roiSize=5):
     print axialShift
 
     for z0 in z:    
-        d1 = interpolator.interp(X, Y, Z + z0)
-        d2 = interpolator.interp(X, Y, Z + z0 + axialShift)
+        d1 = ratio*interpolator.interp(X, Y, Z + z0)
+        d2 = (1-ratio)*interpolator.interp(X, Y, Z + z0 + axialShift)
 #        if z0 % 100 == 0:
 #            figure()
 #            imshow(d)
@@ -146,7 +148,8 @@ def _calcParams(data, X, Y):
     A = data.max(1).max(0) - data.min() #amplitude
     
     #threshold at half maximum and subtract threshold
-    dr = numpy.maximum(data - data.min() - .5*A[None,None, :], 0).squeeze()
+    dr = numpy.maximum(data - data.min() - 0.2*A[None,None, :], 0).squeeze()
+    #dr = (data - data.mean()).squeeze()
     dr = dr/dr.sum(1).sum(0)[None,None,:]
     #print dr.sum(1).sum(0)[None,None,:] 
 
@@ -160,10 +163,17 @@ def _calcParams(data, X, Y):
     
     #r = numpy.sqrt(xn*xn + yn*yn)
 
-    sig = numpy.sqrt((xn*xn*dr + yn*yn*dr).sum(1).sum(0)) #+ (xn*xn*dr).sum(1).sum(0)
+    #sig = numpy.sqrt((xn*xn*dr + yn*yn*dr).sum(1).sum(0)) #+ (xn*xn*dr).sum(1).sum(0)
+
+    rn2 = xn*xn + yn*yn
+    
+    d1 = (rn2 < (3*70)**2).astype('f')*data
+    #print d1.shape
+
+    sig = d1.sum(1).sum(0)/d1.sum()
     
     #print A.mean(), x0[0], y0[0], sig[1] - sig[0]
-    return A.mean(), x0[0], y0[0], sig[0], sig[1]
+    return data.sum(), x0[0], y0[0], sig[0], sig[1]
 
 
 def getStartParameters(data, X, Y, Z=None):

@@ -150,35 +150,27 @@ static PyObject * distanceHistogram(PyObject *self, PyObject *args, PyObject *ke
     px2o = px2;
     py2o = py2;
 
-    for (i1 = 0; i1 < x1_len; i1++)
+    for (i1 = 0; i1 < x1_len; i1++) //loop through the 1st set of points
       {            
-        x1 = (float) *px1;
-        y1 = (float) *py1;
-        for (i2 = (i1+1); i2 < x2_len; i2++)
-	  {
-            //dx = *px1 - *px2;
-            //dy = *py1 - *py2;
-            dx = x1 - (float)px2o[i2];//*px2;
-            dy = y1 - (float)py2o[i2];//*py2;
+        x1 = (float) px1[i1];
+        y1 = (float) py1[i1];
+        for (i2 = (i1+1); i2 < x2_len; i2++) 
+	  {//loop through the second set of points - Note we only need to take the upper triangle of the distance matrix
+
+            //calculate the delta
+            dx = x1 - (float)px2o[i2];
+            dy = y1 - (float)py2o[i2];
             
+            //and the distance            
             d = sqrtf(dx*dx + dy*dy);
 
-            //id = (int)floorf(d*rBinSize);
+            //convert distance to bin index            
             id = (int)(d*rBinSize);
 
             if (id < nBins) res[id] += 1;
-            //res[id] += (id < nBins);
-
-            //px2++;
-            //py2++;
+            
             
 	  }
-        px1++;
-        py1++;
-
-        //reset inner pointers
-        //px2 = px2o;
-        //py2 = py2o;
       }
     
     
