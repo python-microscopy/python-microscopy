@@ -1,0 +1,43 @@
+DigiData Package
+================
+
+:mod:`DigiData` Package
+-----------------------
+
+.. automodule:: PYME.Acquire.Hardware.DigiData
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`DigiData` Module
+----------------------
+
+.. automodule:: PYME.Acquire.Hardware.DigiData.DigiData
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`DigiDataClient` Module
+----------------------------
+
+.. automodule:: PYME.Acquire.Hardware.DigiData.DigiDataClient
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`RemoteDigiData` Module
+----------------------------
+
+.. automodule:: PYME.Acquire.Hardware.DigiData.RemoteDigiData
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`axDD132x` Module
+----------------------
+
+.. automodule:: PYME.Acquire.Hardware.DigiData.axDD132x
+    :members:
+    :undoc-members:
+    :show-inheritance:
+

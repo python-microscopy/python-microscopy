@@ -1,0 +1,91 @@
+Simulator Package
+=================
+
+:mod:`Simulator` Package
+------------------------
+
+.. automodule:: PYME.Acquire.Hardware.Simulator
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`dSimControl` Module
+-------------------------
+
+.. automodule:: PYME.Acquire.Hardware.Simulator.dSimControl
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`fakeCam` Module
+---------------------
+
+.. automodule:: PYME.Acquire.Hardware.Simulator.fakeCam
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`fakePiezo` Module
+-----------------------
+
+.. automodule:: PYME.Acquire.Hardware.Simulator.fakePiezo
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`fluor` Module
+-------------------
+
+.. automodule:: PYME.Acquire.Hardware.Simulator.fluor
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`lasersliders` Module
+--------------------------
+
+.. automodule:: PYME.Acquire.Hardware.Simulator.lasersliders
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`rend_im` Module
+---------------------
+
+.. automodule:: PYME.Acquire.Hardware.Simulator.rend_im
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`setup` Module
+-------------------
+
+.. automodule:: PYME.Acquire.Hardware.Simulator.setup
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`wormlike` Module
+----------------------
+
+.. automodule:: PYME.Acquire.Hardware.Simulator.wormlike
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`wormlike2` Module
+-----------------------
+
+.. automodule:: PYME.Acquire.Hardware.Simulator.wormlike2
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`wormlike_curled` Module
+-----------------------------
+
+.. automodule:: PYME.Acquire.Hardware.Simulator.wormlike_curled
+    :members:
+    :undoc-members:
+    :show-inheritance:
+

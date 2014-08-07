@@ -369,7 +369,7 @@ def GenZernikePSF(zs, dx = 5, zernikeCoeffs = []):
     X, Y, R, FP, F, u, v = GenWidefieldAP(dx)
     
     theta = angle(X + 1j*Y)
-    r = R/R[F].max()
+    r = R/R[abs(F)>0].max()
     
     ang = 0
     
@@ -383,6 +383,56 @@ def GenZernikePSF(zs, dx = 5, zernikeCoeffs = []):
         
     figure()
     imshow(angle(F))
+
+    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+
+    return abs(ps**2)
+    
+def GenZernikeDPSF(zs, dx = 5, zernikeCoeffs = {}, lamb=700, n=1.51, NA = 1.47, ns=1.51):
+    from PYME.misc import zernike, snells
+    X, Y, R, FP, F, u, v = GenWidefieldAP(dx, lamb=lamb, n = n, NA = NA)
+    
+    theta = angle(X + 1j*Y)
+    r = R/R[abs(F)>0].max()
+    
+    if ns == n:
+        T = 1.0*F
+    else:
+        #find angles    
+        t_t = np.minimum(r*arcsin(NA/n), np.pi/2)
+        
+        #corresponding angle in sample with mismatch
+        t_i = snells.theta_t(t_t, n, ns)
+        
+        #Transmission at interface (average of S and P)
+        T = 0.5*(snells.Ts(t_i, ns, n) + snells.Tp(t_i, ns, n))
+        #concentration of high angle rays:
+        T = T*F/(n*np.cos(t_t)/np.sqrt(ns*2 - (n*np.sin(t_t))**2))
+    
+    
+    
+    #imshow(T*(-t_i + snells.theta_t(t_t+.001, n, ns)))
+    #imshow(F)
+    #colorbar()
+    #figure()
+    #imshow(T, clim=(.8, 1.2))
+    #colorbar()
+    #figure()
+    #imshow(T*(-t_i + snells.theta_t(t_t+.01, n, ns)))
+    #imshow(t_i - t_t)
+    
+    ang = 0
+    
+    for i, c in zernikeCoeffs.items():
+        ang = ang + c*zernike.zernike(i, r, theta)
+        
+    #clf()
+    #imshow(angle(exp(1j*ang)))
+        
+    F = T*exp(-1j*ang)
+        
+    #figure()
+    #imshow(angle(F))
 
     ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 
@@ -515,7 +565,10 @@ def GenSABesselPSF(zs, dx=5, rad=.95, strength=1.0, X=None, Y=None, lamb=700, n=
 fps = {}
 def GenSAAstigPSF(zs, dx=5, strength=1.0, SA=0, X=None, Y=None, lamb=700, n=1.51, NA = 1.47):
     from PYME.misc import zernike
-    Xk = X.ctypes.data
+    if X == None:
+        Xk = 'none'
+    else:
+        Xk = X.ctypes.data
     if not Xk in fps.keys():
         fpset = GenWidefieldAP(dx, X, Y, lamb=lamb, n=n, NA = NA)
         X, Y, R, FP, F, u, v = fpset

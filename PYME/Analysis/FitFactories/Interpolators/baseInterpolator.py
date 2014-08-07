@@ -61,7 +61,7 @@ class __interpolator:
         else:
             return False #model not changed
 
-    def setModelFromFile(self, modName, md):
+    def setModelFromFile(self, modName, md=None):
         '''load the model from file - returns True if the model changed, False if
         an existing model was reused'''
         #global IntXVals, IntYVals, IntZVals, interpModel, interpModelName, dx, dy, dz
