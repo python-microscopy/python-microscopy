@@ -1,75 +1,78 @@
-Piezos Package
-==============
+PYME.Acquire.Hardware.Piezos package
+====================================
 
-:mod:`Piezos` Package
----------------------
+Submodules
+----------
 
-.. automodule:: PYME.Acquire.Hardware.Piezos
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`piezo_c867` Module
-------------------------
+PYME.Acquire.Hardware.Piezos.piezo_c867 module
+----------------------------------------------
 
 .. automodule:: PYME.Acquire.Hardware.Piezos.piezo_c867
     :members:
-    :undoc-members:
+    
     :show-inheritance:
 
-:mod:`piezo_e255` Module
-------------------------
+PYME.Acquire.Hardware.Piezos.piezo_e255 module
+----------------------------------------------
 
 .. automodule:: PYME.Acquire.Hardware.Piezos.piezo_e255
     :members:
-    :undoc-members:
+    
     :show-inheritance:
 
-:mod:`piezo_e662` Module
-------------------------
+PYME.Acquire.Hardware.Piezos.piezo_e662 module
+----------------------------------------------
 
 .. automodule:: PYME.Acquire.Hardware.Piezos.piezo_e662
     :members:
-    :undoc-members:
+    
     :show-inheritance:
 
-:mod:`piezo_e709` Module
-------------------------
+PYME.Acquire.Hardware.Piezos.piezo_e709 module
+----------------------------------------------
 
 .. automodule:: PYME.Acquire.Hardware.Piezos.piezo_e709
     :members:
-    :undoc-members:
+    
     :show-inheritance:
 
-:mod:`piezo_e816` Module
-------------------------
+PYME.Acquire.Hardware.Piezos.piezo_e816 module
+----------------------------------------------
 
 .. automodule:: PYME.Acquire.Hardware.Piezos.piezo_e816
     :members:
-    :undoc-members:
+    
     :show-inheritance:
 
-:mod:`piezo_e816_corr` Module
------------------------------
+PYME.Acquire.Hardware.Piezos.piezo_e816_corr module
+---------------------------------------------------
 
 .. automodule:: PYME.Acquire.Hardware.Piezos.piezo_e816_corr
     :members:
-    :undoc-members:
+    
     :show-inheritance:
 
-:mod:`piezo_e816b` Module
--------------------------
+PYME.Acquire.Hardware.Piezos.piezo_e816b module
+-----------------------------------------------
 
 .. automodule:: PYME.Acquire.Hardware.Piezos.piezo_e816b
     :members:
-    :undoc-members:
+    
     :show-inheritance:
 
-:mod:`piezo_test` Module
-------------------------
+PYME.Acquire.Hardware.Piezos.piezo_test module
+----------------------------------------------
 
 .. automodule:: PYME.Acquire.Hardware.Piezos.piezo_test
     :members:
-    :undoc-members:
+    
     :show-inheritance:
 
+
+Module contents
+---------------
+
+.. automodule:: PYME.Acquire.Hardware.Piezos
+    :members:
+    
+    :show-inheritance:

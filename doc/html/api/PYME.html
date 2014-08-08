@@ -60,46 +60,6 @@
             
   <div class="section" id="pyme-package">
 <h1>PYME Package<a class="headerlink" href="#pyme-package" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="id1">
-<h2><a class="reference internal" href="#module-PYME" title="PYME"><tt class="xref py py-mod docutils literal"><span class="pre">PYME</span></tt></a> Package<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
-<span class="target" id="module-PYME"></span></div>
-<div class="section" id="module-PYME.install_dependencies">
-<span id="install-dependencies-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">install_dependencies</span></tt> Module<a class="headerlink" href="#module-PYME.install_dependencies" title="Permalink to this headline">¶</a></h2>
-<p>install_dependencies trys to pull binary packages from the distro, if present 
-and of a suitable version, falling back on pip for any packages not found.</p>
-</div>
-<div class="section" id="module-PYME.setup">
-<span id="setup-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">setup</span></tt> Module<a class="headerlink" href="#module-PYME.setup" title="Permalink to this headline">¶</a></h2>
-<dl class="function">
-<dt id="PYME.setup.configuration">
-<tt class="descclassname">PYME.setup.</tt><tt class="descname">configuration</tt><big>(</big><em>parent_package=''</em>, <em>top_path=None</em><big>)</big><a class="headerlink" href="#PYME.setup.configuration" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</div>
-<div class="section" id="module-PYME.setup_exe">
-<span id="setup-exe-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">setup_exe</span></tt> Module<a class="headerlink" href="#module-PYME.setup_exe" title="Permalink to this headline">¶</a></h2>
-<dl class="function">
-<dt id="PYME.setup_exe.configuration">
-<tt class="descclassname">PYME.setup_exe.</tt><tt class="descname">configuration</tt><big>(</big><em>parent_package=''</em>, <em>top_path=None</em><big>)</big><a class="headerlink" href="#PYME.setup_exe.configuration" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</div>
-<div class="section" id="module-PYME.update_version">
-<span id="update-version-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">update_version</span></tt> Module<a class="headerlink" href="#module-PYME.update_version" title="Permalink to this headline">¶</a></h2>
-<dl class="function">
-<dt id="PYME.update_version.hook">
-<tt class="descclassname">PYME.update_version.</tt><tt class="descname">hook</tt><big>(</big><em>ui</em>, <em>repo</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#PYME.update_version.hook" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="PYME.update_version.update_version">
-<tt class="descclassname">PYME.update_version.</tt><tt class="descname">update_version</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.update_version.update_version" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</div>
-<div class="section" id="module-PYME.version">
-<span id="version-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">version</span></tt> Module<a class="headerlink" href="#module-PYME.version" title="Permalink to this headline">¶</a></h2>
-</div>
 <div class="section" id="subpackages">
 <h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
 <div class="toctree-wrapper compound">
@@ -124,6 +84,10 @@ and of a suitable version, falling back on pip for any packages not found.</p>
 <li class="toctree-l3"><a class="reference internal" href="PYME.Acquire.html#microscope-module"><tt class="docutils literal"><span class="pre">microscope</span></tt> Module</a><ul class="simple">
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="PYME.Acquire.html#module-PYME.Acquire.protocol"><tt class="docutils literal"><span class="pre">protocol</span></tt> Module</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="PYME.Acquire.html#module-PYME.Acquire.preflight"><tt class="docutils literal"><span class="pre">preflight</span></tt> Module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="PYME.Acquire.html#module-PYME.Acquire.ExecTools"><tt class="docutils literal"><span class="pre">ExecTools</span></tt> Module</a></li>
 </ul>
 </li>
@@ -135,7 +99,90 @@ and of a suitable version, falling back on pip for any packages not found.</p>
 <li class="toctree-l3"><a class="reference internal" href="PYME.Acquire.html#module-PYME.Acquire.HDFSpoolFrame"><tt class="docutils literal"><span class="pre">HDFSpoolFrame</span></tt> Module</a><ul class="simple">
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="PYME.Acquire.html#subpackages">Subpackages</a><ul class="simple">
+<li class="toctree-l3"><a class="reference internal" href="PYME.Acquire.html#module-PYME.Acquire.intsliders"><tt class="docutils literal"><span class="pre">intsliders</span></tt> Module</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="PYME.Acquire.html#module-PYME.Acquire.lasersliders"><tt class="docutils literal"><span class="pre">lasersliders</span></tt> Module</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="PYME.Acquire.html#module-PYME.Acquire.mytimer"><tt class="docutils literal"><span class="pre">mytimer</span></tt> Module</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="PYME.Acquire.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.html">PYME.Acquire.Hardware package</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="PYME.Acquire.Hardware.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html">PYME.Acquire.Hardware.Piezos package</a><ul>
+<li class="toctree-l7"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#submodules">Submodules</a></li>
+<li class="toctree-l7"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#module-PYME.Acquire.Hardware.Piezos.piezo_c867">PYME.Acquire.Hardware.Piezos.piezo_c867 module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#module-PYME.Acquire.Hardware.Piezos.piezo_e255">PYME.Acquire.Hardware.Piezos.piezo_e255 module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#module-PYME.Acquire.Hardware.Piezos.piezo_e662">PYME.Acquire.Hardware.Piezos.piezo_e662 module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#module-PYME.Acquire.Hardware.Piezos.piezo_e709">PYME.Acquire.Hardware.Piezos.piezo_e709 module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#module-PYME.Acquire.Hardware.Piezos.piezo_e816">PYME.Acquire.Hardware.Piezos.piezo_e816 module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#module-PYME.Acquire.Hardware.Piezos.piezo_e816_corr">PYME.Acquire.Hardware.Piezos.piezo_e816_corr module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#module-PYME.Acquire.Hardware.Piezos.piezo_e816b">PYME.Acquire.Hardware.Piezos.piezo_e816b module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#pyme-acquire-hardware-piezos-piezo-test-module">PYME.Acquire.Hardware.Piezos.piezo_test module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#module-PYME.Acquire.Hardware.Piezos">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html">PYME.Acquire.Hardware.Simulator package</a><ul>
+<li class="toctree-l7"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#submodules">Submodules</a></li>
+<li class="toctree-l7"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#pyme-acquire-hardware-simulator-dsimcontrol-module">PYME.Acquire.Hardware.Simulator.dSimControl module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#pyme-acquire-hardware-simulator-fakecam-module">PYME.Acquire.Hardware.Simulator.fakeCam module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator.fakePiezo">PYME.Acquire.Hardware.Simulator.fakePiezo module</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator.fluor">PYME.Acquire.Hardware.Simulator.fluor module</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator.illuminate">PYME.Acquire.Hardware.Simulator.illuminate module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator.lasersliders">PYME.Acquire.Hardware.Simulator.lasersliders module</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#pyme-acquire-hardware-simulator-rend-im-module">PYME.Acquire.Hardware.Simulator.rend_im module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#pyme-acquire-hardware-simulator-setup-module">PYME.Acquire.Hardware.Simulator.setup module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator.wormlike">PYME.Acquire.Hardware.Simulator.wormlike module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator.wormlike2">PYME.Acquire.Hardware.Simulator.wormlike2 module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator.wormlike_curled">PYME.Acquire.Hardware.Simulator.wormlike_curled module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="PYME.Acquire.Hardware.html#submodules">Submodules</a></li>
+<li class="toctree-l5"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.EMCCDTheory">PYME.Acquire.Hardware.EMCCDTheory module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.FilterWheel">PYME.Acquire.Hardware.FilterWheel module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.FocCorr">PYME.Acquire.Hardware.FocCorr module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="PYME.Acquire.Hardware.html#pyme-acquire-hardware-foccorrr-module">PYME.Acquire.Hardware.FocCorrR module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.FrFilter">PYME.Acquire.Hardware.FrFilter module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.LaserControlFrame">PYME.Acquire.Hardware.LaserControlFrame module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="PYME.Acquire.Hardware.html#pyme-acquire-hardware-nikonte2000-module">PYME.Acquire.Hardware.NikonTE2000 module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="PYME.Acquire.Hardware.html#pyme-acquire-hardware-nikonti-module">PYME.Acquire.Hardware.NikonTi module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.NikonTiGUI">PYME.Acquire.Hardware.NikonTiGUI module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.OrielCornerstone">PYME.Acquire.Hardware.OrielCornerstone module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="PYME.Acquire.Hardware.html#pyme-acquire-hardware-pm100usb-module">PYME.Acquire.Hardware.PM100USB module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="PYME.Acquire.Hardware.html#pyme-acquire-hardware-tilightcrafter-module">PYME.Acquire.Hardware.TiLightCrafter module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="PYME.Acquire.Hardware.html#pyme-acquire-hardware-ccdadjpanel-module">PYME.Acquire.Hardware.ccdAdjPanel module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.ccdCalibrator">PYME.Acquire.Hardware.ccdCalibrator module</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.cobaltLaser">PYME.Acquire.Hardware.cobaltLaser module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.fakeShutters">PYME.Acquire.Hardware.fakeShutters module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.focusKeys">PYME.Acquire.Hardware.focusKeys module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.frZStage">PYME.Acquire.Hardware.frZStage module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.fw102">PYME.Acquire.Hardware.fw102 module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.ioslave">PYME.Acquire.Hardware.ioslave module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.lasers">PYME.Acquire.Hardware.lasers module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.phoxxLaser">PYME.Acquire.Hardware.phoxxLaser module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.priorLumen">PYME.Acquire.Hardware.priorLumen module</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.setup">PYME.Acquire.Hardware.setup module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="PYME.Acquire.Hardware.html#pyme-acquire-hardware-spacenav-module">PYME.Acquire.Hardware.spacenav module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.splitter">PYME.Acquire.Hardware.splitter module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="PYME.Acquire.Hardware.html#pyme-acquire-hardware-thorlabspiezo-module">PYME.Acquire.Hardware.thorlabsPiezo module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware">Module contents</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -156,12 +203,6 @@ and of a suitable version, falling back on pip for any packages not found.</p>
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">PYME Package</a><ul>
-<li><a class="reference internal" href="#id1"><tt class="docutils literal"><span class="pre">PYME</span></tt> Package</a></li>
-<li><a class="reference internal" href="#module-PYME.install_dependencies"><tt class="docutils literal"><span class="pre">install_dependencies</span></tt> Module</a></li>
-<li><a class="reference internal" href="#module-PYME.setup"><tt class="docutils literal"><span class="pre">setup</span></tt> Module</a></li>
-<li><a class="reference internal" href="#module-PYME.setup_exe"><tt class="docutils literal"><span class="pre">setup_exe</span></tt> Module</a></li>
-<li><a class="reference internal" href="#module-PYME.update_version"><tt class="docutils literal"><span class="pre">update_version</span></tt> Module</a></li>
-<li><a class="reference internal" href="#module-PYME.version"><tt class="docutils literal"><span class="pre">version</span></tt> Module</a></li>
 <li><a class="reference internal" href="#subpackages">Subpackages</a></li>
 </ul>
 </li>

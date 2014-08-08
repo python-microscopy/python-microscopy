@@ -382,55 +382,55 @@ class microscope:
 
         self.sa.ds = None
 
-    def aqt_refr(self,source):
-        if not self.pb.Update(self.ta.ds.getZPos(), 'Slice %d of %d' % (self.ta.ds.getZPos(), self.ta.ds.getDepth())):
-            self.ta.stop()
-        #self.dfr.update()
+#    def aqt_refr(self,source):
+#        if not self.pb.Update(self.ta.ds.getZPos(), 'Slice %d of %d' % (self.ta.ds.getZPos(), self.ta.ds.getDepth())):
+#            self.ta.stop()
+#        #self.dfr.update()
 
-    def aqt_end(self,source):
-        #self.dfr.update()
-        self.pb.Update(self.ta.ds.getDepth())
-        
-        if 'step' in self.__dict__:
-            self.sa.log['STEPPER'] = {}
-            self.sa.log['STEPPER']['XPos'] = self.step.GetPosX()
-            self.sa.log['STEPPER']['YPos'] = self.step.GetPosY()
-            self.sa.log['STEPPER']['ZPos'] = self.step.GetPosZ()
-            
-        if 'scopedetails' in self.__dict__:
-            self.ta.log['MICROSCOPE'] = self.scopedetails
-        
-        dialog = wx.MessageDialog(None, "Aquisition Finished", "pySMI", wx.OK)
-        dialog.ShowModal()
-        dialog.Destroy()
-        
-        self.pa.Prepare(True)
-        self.pa.start()
+#    def aqt_end(self,source):
+#        #self.dfr.update()
+#        self.pb.Update(self.ta.ds.getDepth())
+#        
+#        if 'step' in self.__dict__:
+#            self.sa.log['STEPPER'] = {}
+#            self.sa.log['STEPPER']['XPos'] = self.step.GetPosX()
+#            self.sa.log['STEPPER']['YPos'] = self.step.GetPosY()
+#            self.sa.log['STEPPER']['ZPos'] = self.step.GetPosZ()
+#            
+#        if 'scopedetails' in self.__dict__:
+#            self.ta.log['MICROSCOPE'] = self.scopedetails
+#        
+#        dialog = wx.MessageDialog(None, "Aquisition Finished", "pySMI", wx.OK)
+#        dialog.ShowModal()
+#        dialog.Destroy()
+#        
+#        self.pa.Prepare(True)
+#        self.pa.start()
+#
+#        self.dfr = dsviewer.DSViewFrame(None, "New Aquisition", CDataSatck_AsArray(self.ta.ds, 0), self.ta.log)
+#        self.dfr.Show()
+#        self.ta.ds = None
 
-        self.dfr = dsviewer.DSViewFrame(None, "New Aquisition", CDataSatck_AsArray(self.ta.ds, 0), self.ta.log)
-        self.dfr.Show()
-        self.ta.ds = None
-
-    def aquireStack(self,piezo, startpos, endpos, stepsize, channel = 1):
-        self.pa.stop()
-
-        self.sa = simplesequenceaquisator.SimpleSequenceAquisitor(self.chaninfo, self.cam, self.shutters, piezo)
-        self.sa.SetStartMode(self.sa.START_AND_END)
-
-        self.sa.SetStepSize(stepsize)
-        self.sa.SetStartPos(endpos)
-        self.sa.SetEndPos(startpos)
-
-        self.sa.Prepare()
-
-        
-        self.sa.WantFrameNotification.append(self.aq_refr)
-
-        self.sa.WantStopNotification.append(self.aq_end)
-
-        self.sa.start()
-
-        self.pb = wx.ProgressDialog('Aquisition in progress ...', 'Slice 1 of %d' % self.sa.ds.getDepth(), self.sa.ds.getDepth(), style = wx.PD_APP_MODAL|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
+#    def aquireStack(self,piezo, startpos, endpos, stepsize, channel = 1):
+#        self.pa.stop()
+#
+#        self.sa = simplesequenceaquisator.SimpleSequenceAquisitor(self.chaninfo, self.cam, self.shutters, piezo)
+#        self.sa.SetStartMode(self.sa.START_AND_END)
+#
+#        self.sa.SetStepSize(stepsize)
+#        self.sa.SetStartPos(endpos)
+#        self.sa.SetEndPos(startpos)
+#
+#        self.sa.Prepare()
+#
+#        
+#        self.sa.WantFrameNotification.append(self.aq_refr)
+#
+#        self.sa.WantStopNotification.append(self.aq_end)
+#
+#        self.sa.start()
+#
+#        self.pb = wx.ProgressDialog('Aquisition in progress ...', 'Slice 1 of %d' % self.sa.ds.getDepth(), self.sa.ds.getDepth(), style = wx.PD_APP_MODAL|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
 
     def turnAllLasersOff(self):
         for l in self.lasers:

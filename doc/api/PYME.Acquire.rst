@@ -60,6 +60,22 @@ Core modules
     :undoc-members:
     :show-inheritance:
 
+:mod:`protocol` Module
+----------------------
+
+.. automodule:: PYME.Acquire.protocol
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`preflight` Module
+-----------------------
+
+.. automodule:: PYME.Acquire.preflight
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 :mod:`ExecTools` Module
 -----------------------
@@ -68,6 +84,8 @@ Core modules
     :members:
     :undoc-members:
     :show-inheritance:
+
+    
 
 GUI Modules
 ***********
@@ -92,105 +110,37 @@ GUI Modules
     :members:
     :undoc-members:
 
+:mod:`intsliders` Module
+------------------------
 
+.. automodule:: PYME.Acquire.intsliders
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`lasersliders` Module
+--------------------------
+
+.. automodule:: PYME.Acquire.lasersliders
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`mytimer` Module
+---------------------
+
+.. automodule:: PYME.Acquire.mytimer
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 
 ..
-    :mod:`MultiPointScanner` Module
-    -------------------------------
-
-    .. automodule:: PYME.Acquire.MultiPointScanner
-        :members:
-        :undoc-members:
-        :show-inheritance:
-
     
 
     
 
-
-
     
-
-    :mod:`chanedit` Module
-    ----------------------
-
-    .. automodule:: PYME.Acquire.chanedit
-        :members:
-        :undoc-members:
-        :show-inheritance:
-
-    :mod:`chanfr` Module
-    --------------------
-
-    .. automodule:: PYME.Acquire.chanfr
-        :members:
-        :undoc-members:
-        :show-inheritance:
-
-    :mod:`chanpanel` Module
-    -----------------------
-
-    .. automodule:: PYME.Acquire.chanpanel
-        :members:
-        :undoc-members:
-        :show-inheritance:
-
-    :mod:`coverslipGeometries` Module
-    ---------------------------------
-
-    .. automodule:: PYME.Acquire.coverslipGeometries
-        :members:
-        :undoc-members:
-        :show-inheritance:
-
-
-
-    
-
-    :mod:`fastTiler` Module
-    -----------------------
-
-    .. automodule:: PYME.Acquire.fastTiler
-        :members:
-        :undoc-members:
-        :show-inheritance:
-
-    
-
-    :mod:`intsliders` Module
-    ------------------------
-
-    .. automodule:: PYME.Acquire.intsliders
-        :members:
-        :undoc-members:
-        :show-inheritance:
-
-    :mod:`lasersliders` Module
-    --------------------------
-
-    .. automodule:: PYME.Acquire.lasersliders
-        :members:
-        :undoc-members:
-        :show-inheritance:
-
-    :mod:`mytimer` Module
-    ---------------------
-
-    .. automodule:: PYME.Acquire.mytimer
-        :members:
-        :undoc-members:
-        :show-inheritance:
-
-
-
-    :mod:`pointScanner` Module
-    --------------------------
-
-    .. automodule:: PYME.Acquire.pointScanner
-        :members:
-        :undoc-members:
-        :show-inheritance:
 
     :mod:`positionTracker` Module
     -----------------------------
@@ -200,13 +150,7 @@ GUI Modules
         :undoc-members:
         :show-inheritance:
 
-    :mod:`preflight` Module
-    -----------------------
 
-    .. automodule:: PYME.Acquire.preflight
-        :members:
-        :undoc-members:
-        :show-inheritance:
 
     :mod:`previewaquisator` Module
     ------------------------------
@@ -226,13 +170,7 @@ GUI Modules
         :undoc-members:
         :show-inheritance:
 
-    :mod:`protocol` Module
-    ----------------------
-
-    .. automodule:: PYME.Acquire.protocol
-        :members:
-        :undoc-members:
-        :show-inheritance:
+    
 
     :mod:`psliders` Module
     ----------------------
@@ -250,13 +188,7 @@ GUI Modules
         :undoc-members:
         :show-inheritance:
 
-    :mod:`sarcSpacing` Module
-    -------------------------
-
-    .. automodule:: PYME.Acquire.sarcSpacing
-        :members:
-        :undoc-members:
-        :show-inheritance:
+  
 
     :mod:`selectCameraPanel` Module
     -------------------------------
@@ -266,29 +198,11 @@ GUI Modules
         :undoc-members:
         :show-inheritance:
 
-    :mod:`seqdialog` Module
-    -----------------------
+  
 
-    .. automodule:: PYME.Acquire.seqdialog
-        :members:
-        :undoc-members:
-        :show-inheritance:
 
-    :mod:`setup` Module
-    -------------------
 
-    .. automodule:: PYME.Acquire.setup
-        :members:
-        :undoc-members:
-        :show-inheritance:
-
-    :mod:`simplesequenceaquisator` Module
-    -------------------------------------
-
-    .. automodule:: PYME.Acquire.simplesequenceaquisator
-        :members:
-        :undoc-members:
-        :show-inheritance:
+    
 
     :mod:`splashScreen` Module
     --------------------------
@@ -298,21 +212,9 @@ GUI Modules
         :undoc-members:
         :show-inheritance:
 
-    :mod:`stepDialog` Module
-    ------------------------
+   
 
-    .. automodule:: PYME.Acquire.stepDialog
-        :members:
-        :undoc-members:
-        :show-inheritance:
 
-    :mod:`vibrationAnalysis` Module
-    -------------------------------
-
-    .. automodule:: PYME.Acquire.vibrationAnalysis
-        :members:
-        :undoc-members:
-        :show-inheritance:
 
     :mod:`voxelSizeDialog` Module
     -----------------------------
@@ -322,13 +224,8 @@ GUI Modules
         :undoc-members:
         :show-inheritance:
 
-    :mod:`zScanner` Module
-    ----------------------
 
-    .. automodule:: PYME.Acquire.zScanner
-        :members:
-        :undoc-members:
-        :show-inheritance:
+  
 
 Subpackages
 -----------
@@ -337,4 +234,5 @@ Subpackages
 
     PYME.Acquire.Hardware
     PYME.Acquire.Protocols
+    PYME.Acquire.Utils
 

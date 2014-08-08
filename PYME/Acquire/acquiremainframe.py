@@ -53,7 +53,7 @@ from PYME.Acquire import microscope
 from PYME.DSView import dsviewer_npy_nb as dsviewer
 from PYME.cSMI import CDataStack_AsArray
 from PYME.Acquire import MetaDataHandler
-from PYME.Acquire import chanfr
+#from PYME.Acquire import chanfr
 from PYME.Acquire import HDFSpoolFrame
 from PYME.FileUtils import nameUtils
 
