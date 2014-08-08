@@ -41,15 +41,23 @@ class SpoolEvent(tables.IsDescription):
     EventDescr = tables.StringCol(256)
 
 class EventLogger:
-    '''Event logging backend for hdf/pytables data storage'''
+    '''Event logging backend for hdf/pytables data storage
+        
+    Parameters
+    ----------
+    spool : instance of HDFSpooler.Spooler
+        The spooler to ascociate this logger with
+    
+    scope : PYME.Acquire.microscope.microscope instance
+        The current microscope object
+    
+    hdf5File : pytables hdf file 
+        The open HDF5 file to write to
+    '''
     def __init__(self, spool, scope, hdf5File):
       '''Create a new Events table.
       
-      Parameters
-      ----------
-      spool : instance of HDFSpooler.Spooler
-      scope : current microscope object (see funcs.py)
-      hdf5File : pytables hdf file handle to write to
+      
       '''
       self.spooler = spool
       self.scope = scope

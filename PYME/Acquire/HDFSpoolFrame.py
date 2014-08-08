@@ -227,8 +227,8 @@ class PanSpool(wx.Panel):
         ----------
         parent : wx.Window derived class
             The parent window
-        scope : scope instance
-            The currently active microscope class (see funcs.py)
+        scope : microscope instance
+            The currently active microscope class (see microscope.py)
         defDir : string pattern
             The default directory to save data to. Any keys of the form `%(<key>)` 
             will be substituted using the values defined in `PYME.fileUtils.nameUtils.dateDict` 

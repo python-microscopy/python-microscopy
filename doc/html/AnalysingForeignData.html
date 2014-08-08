@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -15,7 +13,7 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
+        URL_ROOT:    './',
         VERSION:     '0.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
@@ -25,6 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="PYME 0.1 documentation" href="index.html" />
     <link rel="up" title="Data Analysis" href="Analysis.html" />
     <link rel="next" title="Using an image splitting device for multi-colour ratiometric imaging" href="SplitterMulticolour.html" />
@@ -126,10 +125,12 @@ unlikely to work well.</td>
 <p>For tiff stacks the <tt class="docutils literal"><span class="pre">.md</span></tt> file ought to be in the same directory and have the same
 name (modulo extension) as the .tif file</p>
 <p>Once you&#8217;ve created the <tt class="docutils literal"><span class="pre">.md</span></tt> file, just launch:</p>
-<div class="highlight-python"><pre>lmview &lt;filename&gt;.tif</pre>
+<div class="highlight-python"><div class="highlight"><pre>lmview &lt;filename&gt;.tif
+</pre></div>
 </div>
 <p>if you want to perform localisation microscopy analysis, or:</p>
-<div class="highlight-python"><pre>dh5view &lt;filename&gt;.tif</pre>
+<div class="highlight-python"><div class="highlight"><pre>dh5view &lt;filename&gt;.tif
+</pre></div>
 </div>
 <p>for psf extraction, deconvolution, or other general purpose image processing tasks
 (<tt class="docutils literal"><span class="pre">lmview</span></tt> is just a shortcut for <tt class="docutils literal"><span class="pre">dh5view</span> <span class="pre">-m</span> <span class="pre">LM</span></tt> and launches dh5view in it&#8217;s
@@ -145,7 +146,8 @@ your data is in <tt class="docutils literal"><span class="pre">Frame001.tif</spa
 </div>
 <p>This means that the <tt class="docutils literal"><span class="pre">.md</span></tt> file doesn&#8217;t need to have the same name as the individual data files, and you
 now load the <tt class="docutils literal"><span class="pre">.md</span></tt> file rather than one of the <tt class="docutils literal"><span class="pre">.tif</span></tt> images. Eg.:</p>
-<div class="highlight-python"><pre>lmview &lt;filename&gt;.md</pre>
+<div class="highlight-python"><div class="highlight"><pre>lmview &lt;filename&gt;.md
+</pre></div>
 </div>
 </div>
 <div class="section" id="tweaking-the-metadata">
@@ -257,7 +259,7 @@ yet support for directly analysing raw of kdf data).</p>
     </div>
     <div class="footer">
         &copy; Copyright 2010, David Baddeley.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>

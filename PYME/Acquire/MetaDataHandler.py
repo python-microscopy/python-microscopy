@@ -24,9 +24,44 @@
 #!/usr/bin/python
 '''
 Defines metadata handlers for the saving of acquisiton metadata to a variety 
-of file formats. 
+of file formats, as well as keeping track of metadata sources. 
 
-The format of a metadata handler is defined by the MDHandlerBase class
+Metadata sources
+----------------
+
+Metadata sources are simply functions, which when called, write information into
+a provided handler. e.g.::
+    def metadataGenerator(mdhandler):
+        mdhandler['a.key'] = value
+
+These generator functions are registered by adding them to one of two lists exposed 
+by this module: **provideStartMetadata** or **provideStopMetadata**. depending on
+whether it makes more sense to record the metadata at the start or stop of an 
+acquisition.
+
+A good example can be found in PYME.Acquire.Hardware.Camera.AndorIXon.AndorIXon.
+
+MetaData Handlers
+-----------------
+
+**NestedClassMDHandler**
+    An in-memory metadatahandler used to buffer metadata or to store values prior
+    to the file format being known.
+**HDFMDHandler**
+    For local pytables/hdf5 datasets
+**QueueMDHandler**
+    For use with data hosted in a taskqueue
+**XMLMDHandler**
+    For use with PYMEs XML metadata format - typically used with .tiff files or
+    other data for which it is difficult to embed metadata.
+**SimpleMDHandler**
+    Saves and reads metadata as a python script (a series of md[key]=value statements).
+    Used where you might want to construct or modify metadata by hand - e.g. with
+    foreign source data.
+
+The format of a metadata handler is defined by the `MDHandlerBase` class. 
+
+
 '''
 from UserDict import DictMixin
 
@@ -48,8 +83,9 @@ class MDHandlerBase(DictMixin):
     '''Base class from which all metadata handlers are derived.
 
     Metadata attributes can be read and set using either a dictionary like
-    interface, or by calling the `getEntry` and `setEntry` methods. Derived 
-    classes *MUST* override `getEntry`, `setEntry`, and `getEntryNames`.
+    interface, or by calling the `getEntry` and `setEntry` methods. 
+    
+    .. note:: Derived classes **MUST** override `getEntry`, `setEntry`, and `getEntryNames`.
     '''
     #base class to make metadata behave like a dictionary
     def getEntry(self, name):

@@ -1,28 +1,30 @@
 Acquire Package
 ===============
 
-:mod:`Acquire` Package
-----------------------
-
 .. automodule:: PYME.Acquire
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`ExecTools` Module
------------------------
 
-.. automodule:: PYME.Acquire.ExecTools
+Core modules
+***************
+
+:mod:`MetaDataHandler` Module
+-----------------------------
+
+.. automodule:: PYME.Acquire.MetaDataHandler
+
+.. autoclass:: PYME.Acquire.MetaDataHandler.MDHandlerBase
     :members:
-    :undoc-members:
-    :show-inheritance:
+    :undoc-members:    
+    
 
-:mod:`HDFSpoolFrame` Module
----------------------------
+:mod:`Spooler` Module
+---------------------
 
-.. automodule:: PYME.Acquire.HDFSpoolFrame
+.. automodule:: PYME.Acquire.Spooler
     :members:
-    :undoc-members:
     :show-inheritance:
 
 :mod:`HDFSpooler` Module
@@ -33,15 +35,65 @@ Acquire Package
     :undoc-members:
     :show-inheritance:
 ..
-    
 
-:mod:`MetaDataHandler` Module
------------------------------
+:mod:`QueueSpooler` Module
+--------------------------
 
-.. automodule:: PYME.Acquire.MetaDataHandler
+.. automodule:: PYME.Acquire.QueueSpooler
     :members:
     :undoc-members:
     :show-inheritance:
+
+:mod:`eventLog` Module
+----------------------
+
+.. automodule:: PYME.Acquire.eventLog
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`microscope` Module
+-------------------
+
+.. automodule:: PYME.Acquire.microscope
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+:mod:`ExecTools` Module
+-----------------------
+
+.. automodule:: PYME.Acquire.ExecTools
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+GUI Modules
+***********
+
+:mod:`PYMEAcquire` Module
+-------------------------
+
+.. automodule:: PYME.Acquire.PYMEAcquire
+
+:mod:`acquiremainframe` Module
+------------------------------
+
+.. automodule:: PYME.Acquire.acquiremainframe
+    :members:
+
+
+
+:mod:`HDFSpoolFrame` Module
+---------------------------
+
+.. automodule:: PYME.Acquire.HDFSpoolFrame
+    :members:
+    :undoc-members:
+
+
+
 
 ..
     :mod:`MultiPointScanner` Module
@@ -52,37 +104,13 @@ Acquire Package
         :undoc-members:
         :show-inheritance:
 
-    :mod:`PYMEAcquire` Module
-    -------------------------
+    
 
-    .. automodule:: PYME.Acquire.PYMEAcquire
-        :members:
-        :undoc-members:
-        :show-inheritance:
+    
 
-    :mod:`QueueSpooler` Module
-    --------------------------
 
-    .. automodule:: PYME.Acquire.QueueSpooler
-        :members:
-        :undoc-members:
-        :show-inheritance:
 
-    :mod:`Spooler` Module
-    ---------------------
-
-    .. automodule:: PYME.Acquire.Spooler
-        :members:
-        :undoc-members:
-        :show-inheritance:
-
-    :mod:`acquiremainframe` Module
-    ------------------------------
-
-    .. automodule:: PYME.Acquire.acquiremainframe
-        :members:
-        :undoc-members:
-        :show-inheritance:
+    
 
     :mod:`chanedit` Module
     ----------------------
@@ -116,13 +144,9 @@ Acquire Package
         :undoc-members:
         :show-inheritance:
 
-    :mod:`eventLog` Module
-    ----------------------
 
-    .. automodule:: PYME.Acquire.eventLog
-        :members:
-        :undoc-members:
-        :show-inheritance:
+
+    
 
     :mod:`fastTiler` Module
     -----------------------
@@ -132,13 +156,7 @@ Acquire Package
         :undoc-members:
         :show-inheritance:
 
-    :mod:`funcs` Module
-    -------------------
-
-    .. automodule:: PYME.Acquire.funcs
-        :members:
-        :undoc-members:
-        :show-inheritance:
+    
 
     :mod:`intsliders` Module
     ------------------------
@@ -164,13 +182,7 @@ Acquire Package
         :undoc-members:
         :show-inheritance:
 
-    :mod:`noclosefr` Module
-    -----------------------
 
-    .. automodule:: PYME.Acquire.noclosefr
-        :members:
-        :undoc-members:
-        :show-inheritance:
 
     :mod:`pointScanner` Module
     --------------------------
@@ -204,13 +216,7 @@ Acquire Package
         :undoc-members:
         :show-inheritance:
 
-    :mod:`previewaquisator2` Module
-    -------------------------------
-
-    .. automodule:: PYME.Acquire.previewaquisator2
-        :members:
-        :undoc-members:
-        :show-inheritance:
+    
 
     :mod:`prevviewer` Module
     ------------------------

@@ -187,35 +187,35 @@ class seqPanel(wx.Panel):
         self.UpdateDisp()
 
 
-    def OnBStartButton(self, event):
-        res = self.scope.sa.Verify()
-
-        if res[0]:
-            self.scope.pa.stop()
-            
-            self.scope.sa.Prepare()
-            self.scope.sa.WantFrameNotification=[]
-            self.scope.sa.WantFrameNotification.append(self.scope.aq_refr)
-            self.scope.sa.WantStopNotification=[]
-            self.scope.sa.WantStopNotification.append(self.scope.aq_end)
-            self.scope.sa.start()
-            self.scope.pb = wx.ProgressDialog('Aquisition in progress ...', 'Slice 1 of %d' % self.scope.sa.ds.getDepth(), self.scope.sa.ds.getDepth(), style = wx.PD_APP_MODAL|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
-
-        else:
-            dialog = wx.MessageDialog(None, res[2] + ' (%2.3f)'% res[3], "Parameter Error", wx.OK)
-            dialog.ShowModal()
-
-            if res[1] == 'StepSize':
-                self.tStepSize.SetFocus()
-
-            elif (self.scope.sa.GetStartMode() == self.scope.sa.CENTRE_AND_LENGTH):
-                self.tNumSlices.SetFocus()
-
-            elif (res[1] == 'StartPos'):
-                self.tStPos.SetFocus()
-                
-            else:
-                self.tEndPos.SetFocus() 
+#    def OnBStartButton(self, event):
+#        res = self.scope.sa.Verify()
+#
+#        if res[0]:
+#            self.scope.pa.stop()
+#            
+#            self.scope.sa.Prepare()
+#            self.scope.sa.WantFrameNotification=[]
+#            self.scope.sa.WantFrameNotification.append(self.scope.aq_refr)
+#            self.scope.sa.WantStopNotification=[]
+#            self.scope.sa.WantStopNotification.append(self.scope.aq_end)
+#            self.scope.sa.start()
+#            self.scope.pb = wx.ProgressDialog('Aquisition in progress ...', 'Slice 1 of %d' % self.scope.sa.ds.getDepth(), self.scope.sa.ds.getDepth(), style = wx.PD_APP_MODAL|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
+#
+#        else:
+#            dialog = wx.MessageDialog(None, res[2] + ' (%2.3f)'% res[3], "Parameter Error", wx.OK)
+#            dialog.ShowModal()
+#
+#            if res[1] == 'StepSize':
+#                self.tStepSize.SetFocus()
+#
+#            elif (self.scope.sa.GetStartMode() == self.scope.sa.CENTRE_AND_LENGTH):
+#                self.tNumSlices.SetFocus()
+#
+#            elif (res[1] == 'StartPos'):
+#                self.tStPos.SetFocus()
+#                
+#            else:
+#                self.tEndPos.SetFocus() 
 
                  
 

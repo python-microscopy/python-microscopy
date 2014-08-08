@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -15,7 +13,7 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
+        URL_ROOT:    './',
         VERSION:     '0.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
@@ -25,6 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="PYME 0.1 documentation" href="index.html" />
     <link rel="up" title="Data Analysis" href="Analysis.html" />
     <link rel="next" title="Analysing Localisation Microscopy data" href="LocalisationAnalysis.html" />
@@ -64,7 +63,8 @@
 <p>DSView is a general purpose data viewer that supports all the <a class="reference internal" href="DataFormats.html#dataformats"><em>PYME Data Formats</em></a>
 and additionally the <tt class="docutils literal"><span class="pre">QUEUE</span></tt> objects used in real-time data analysis. DSView may
 either be invoked with the command:</p>
-<div class="highlight-python"><pre>dh5view [options] filename</pre>
+<div class="highlight-python"><div class="highlight"><pre>dh5view [options] filename
+</pre></div>
 </div>
 <p>or launched programatically by passing a <em>numpy</em> array or PYME <em>datasource</em> to
 <tt class="docutils literal"><span class="pre">PYME.DSView.View3D</span></tt>.</p>
@@ -112,7 +112,8 @@ later from the <strong>Modules</strong> menu.</p>
 </tbody>
 </table>
 <p>A particular mode can be forced by calling <tt class="docutils literal"><span class="pre">dh5view</span></tt> with the <tt class="docutils literal"><span class="pre">-m</span></tt> option, eg:</p>
-<div class="highlight-python"><pre>dh5view -m LM filename</pre>
+<div class="highlight-python"><div class="highlight"><pre>dh5view -m LM filename
+</pre></div>
 </div>
 </div>
 </div>
@@ -184,7 +185,7 @@ later from the <strong>Modules</strong> menu.</p>
     </div>
     <div class="footer">
         &copy; Copyright 2010, David Baddeley.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>

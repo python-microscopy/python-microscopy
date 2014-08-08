@@ -24,7 +24,10 @@
 import wx
 import wx.lib.agw.aui as aui
 import pylab
-from PYME.misc import extraCMaps
+try:
+    from PYME.misc import extraCMaps
+except:
+    pass
 import numpy as np
 #from matplotlib import cm
 from PYME.Analysis.LMVis import histLimits

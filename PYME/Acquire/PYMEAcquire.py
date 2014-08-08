@@ -20,6 +20,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
+'''
+This is the principle entry point for `PYMEAcquire`, the acquisition component of PYME.
+
+`PYMEAcquire` takes one option to specify the initialisation file, which should be in the 
+'PYME/Acquire/Scripts' directory
+
+.. code-block:: bash
+
+    python PYMEAcquire.py -i <initialisation file>
+    
+If run without an intialisation file it defaults to using simulated hardware.
+'''
 
 #!/usr/bin/python
 import wx
