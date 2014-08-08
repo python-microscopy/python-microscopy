@@ -23,19 +23,10 @@
 
 #!/usr/bin/python
 '''
-define meta data handlers - these should expose three methods,
+Defines metadata handlers for the saving of acquisiton metadata to a variety 
+of file formats. 
 
-setEntry(self, entryName, value) 
-getEntry(self, entryName)
-
-which set and get a meta data value. entryName is a name of the form:
-"key" or "group.key" or "group.subgroup.key" etc...
-
-and 
-
-getEntryNames(self)
-
-which returns a list of entry names to help with copying data between handlers
+The format of a metadata handler is defined by the MDHandlerBase class
 '''
 from UserDict import DictMixin
 
@@ -54,7 +45,59 @@ def instanceinlist(cls, list):
     
 
 class MDHandlerBase(DictMixin):
+    '''Base class from which all metadata handlers are derived.
+
+    Metadata attributes can be read and set using either a dictionary like
+    interface, or by calling the `getEntry` and `setEntry` methods. Derived 
+    classes *MUST* override `getEntry`, `setEntry`, and `getEntryNames`.
+    '''
     #base class to make metadata behave like a dictionary
+    def getEntry(self, name):
+        '''Returns the entry for a given name.
+        
+        Parameters
+        ----------
+        name : string
+            The entry name. This name should be heirachical, and deliminated
+            with dots e.g. 'Camera.EMCCDGain'
+            
+        Returns
+        -------
+        value : object
+            The value stored for the given key. This can, in principle, be 
+            anything that can be pickled. strings, ints, bools and floats are
+            all stored in a human readable form in the textual metadata 
+            representations, wheras more complex objects are base64 encoded.
+        '''
+        raise NotImplementedError('getEntry must be overridden in derived classes')
+        
+    def setEntry(self, name):
+        '''Sets the entry for a given name.
+        
+        Parameters
+        ----------
+        name : string
+            The entry name. This name should be heirachical, and deliminated
+            with dots e.g. 'Camera.EMCCDGain'
+            
+        value : object
+            The value stored for the given key. This can, in principle, be 
+            anything that can be pickled. strings, ints, bools and floats are
+            all stored in a human readable form in the textual metadata 
+            representations, wheras more complex objects are base64 encoded.
+        '''
+        raise NotImplementedError('setEntry must be overridden in derived classes')
+        
+    def getEntryNames(self):
+        '''Returns a list of defined entries.
+            
+        Returns
+        -------
+        names : list of string
+            The keys which are defined in the metadata.
+        '''
+        raise NotImplementedError('getEntryNames must be overridden in derived classes')
+        
     def __setitem__(self, name, value):
         self.setEntry(name, value)
 
@@ -62,21 +105,57 @@ class MDHandlerBase(DictMixin):
         return self.getEntry(name)
         
     def getOrDefault(self, name, default):
+        '''Returns the entry for a given name, of a default value if the key 
+        is not present.
+        
+        Parameters
+        ----------
+        name : string
+            The entry name. This name should be heirachical, and deliminated
+            with dots e.g. 'Camera.EMCCDGain'
+        default : object
+            What to return if the name is not defined
+            
+        Returns
+        -------
+        value : object
+            The value stored for the given key. This can, in principle, be 
+            anything that can be pickled. strings, ints, bools and floats are
+            all stored in a human readable form in the textual metadata 
+            representations, wheras more complex objects are base64 encoded.
+        '''
         try: 
             return self.getEntry(name)
         except AttributeError:
             return default
 
     def keys(self):
+        '''Alias for getEntryNames to make us look like a dictionary'''
         return self.getEntryNames()
 
     def copyEntriesFrom(self, mdToCopy):
+        '''Copies entries from another metadata object into this one. Duplicate 
+        keys will be overwritten.
+        
+        Parameters
+        ----------
+        mdToCopy : an instance of a metadata handler
+            The metadata handler from which to copy entries.
+        '''
         for en in mdToCopy.getEntryNames():
             #print en
             self.setEntry(en, mdToCopy.getEntry(en))
         #self.update(mdToCopy)
 
     def mergeEntriesFrom(self, mdToCopy):
+        '''Copies entries from another metadata object into this one. Values
+        are only copied if they are not already defined locally.
+        
+        Parameters
+        ----------
+        mdToCopy : an instance of a metadata handler
+            The metadata handler from which to copy entries.
+        '''
         #only copies values if not already defined
         for en in mdToCopy.getEntryNames():
             if not en in self.getEntryNames():
@@ -87,7 +166,18 @@ class MDHandlerBase(DictMixin):
         return '<%s>:\n\n' % self.__class__.__name__ + '\n'.join(s)
 
     def GetSimpleString(self):
-        '''Writes out metadata in simplfied format'''
+        '''Writes out metadata in simplfied format.
+        
+        Returns
+        -------
+            mdstring : string
+                The metadata in a simple, human readable format.
+                
+        See Also
+        --------
+        SimpleMDHandler
+        '''
+        
         try:
             import cPickle as pickle
         except ImportError:
@@ -107,6 +197,17 @@ class MDHandlerBase(DictMixin):
             s.append("md['%s'] = %s\n" % (en, val))
     
     def WriteSimple(self, filename):
+        '''Dumps metadata to file in simplfied format.
+        
+        Parameters
+        ----------
+            filename : string
+                The the filename to write to. Should end in .md.
+                
+        See Also
+        --------
+        SimpleMDHandler
+        '''
         s = self.GetSimpleString()
         f = open(filename, 'w')
         f.writelines(s)

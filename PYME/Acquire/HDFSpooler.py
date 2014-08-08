@@ -35,60 +35,88 @@ from PYME.Acquire import protocol as p
 from PYME.FileUtils import fileID
 
 class SpoolEvent(tables.IsDescription):
-   EventName = tables.StringCol(32)
-   Time = tables.Time64Col()
-   EventDescr = tables.StringCol(256)
+    '''Pytables description for Events table in spooled dataset'''
+    EventName = tables.StringCol(32)
+    Time = tables.Time64Col()
+    EventDescr = tables.StringCol(256)
 
 class EventLogger:
-   def __init__(self, spool, scope, hdf5File):
+    '''Event logging backend for hdf/pytables data storage'''
+    def __init__(self, spool, scope, hdf5File):
+      '''Create a new Events table.
+      
+      Parameters
+      ----------
+      spool : instance of HDFSpooler.Spooler
+      scope : current microscope object (see funcs.py)
+      hdf5File : pytables hdf file handle to write to
+      '''
       self.spooler = spool
       self.scope = scope
       self.hdf5File = hdf5File
-
+    
       self.evts = self.hdf5File.createTable(hdf5File.root, 'Events', SpoolEvent)
 
-   def logEvent(self, eventName, eventDescr = ''):
-      if eventName == 'StartAq':
-          eventDescr = '%d' % self.spooler.imNum
+    def logEvent(self, eventName, eventDescr = ''):
+        '''Log an event.
           
-      ev = self.evts.row
-
-      ev['EventName'] = eventName
-      ev['EventDescr'] = eventDescr
-      ev['Time'] = sp.timeFcn()
-
-      ev.append()
-      self.evts.flush()
+        Parameters
+        ----------
+        eventName : string
+            short event name - < 32 chars and should be shared by events of the
+            same type.
+        eventDescr : string
+            description of the event - additional, even specific information
+            packaged as a string (<255 chars). This is commonly used to store 
+            parameters - e.g. z positions, and should be both human readable and 
+            easily parsed.
+        
+        
+        In addition to the name and description, timing information is recorded
+        for each event.
+        '''
+        if eventName == 'StartAq':
+            eventDescr = '%d' % self.spooler.imNum
+              
+        ev = self.evts.row
+        
+        ev['EventName'] = eventName
+        ev['EventDescr'] = eventDescr
+        ev['Time'] = sp.timeFcn()
+        
+        ev.append()
+        self.evts.flush()
 
 class Spooler(sp.Spooler):
-   def __init__(self, scope, filename, acquisator, protocol = p.NullProtocol, parent=None, complevel=6, complib='zlib'):
-       self.h5File = tables.openFile(filename, 'w')
-       
-       filt = tables.Filters(complevel, complib, shuffle=True)
-
-       self.imageData = self.h5File.createEArray(self.h5File.root, 'ImageData', tables.UInt16Atom(), (0,scope.cam.GetPicWidth(),scope.cam.GetPicHeight()), filters=filt)
-       self.md = MetaDataHandler.HDFMDHandler(self.h5File)
-       self.evtLogger = EventLogger(self, scope, self.h5File)
-
-       sp.Spooler.__init__(self, scope, filename, acquisator, protocol, parent)
-
-       
-       
-   def StopSpool(self):
-       sp.Spooler.StopSpool(self)
-       
-       self.h5File.flush()
-       self.h5File.close()
-   
-   def Tick(self, caller):      
-      self.imageData.append(cSMI.CDataStack_AsArray(caller.ds, 0).reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()))
-      self.h5File.flush()
-
-      if self.imNum == 0: #first frame
-          self.md.setEntry('imageID', fileID.genFrameID(self.imageData[0,:,:]))
-
-      sp.Spooler.Tick(self, caller)
+    '''Responsible for the mechanics of spooling to a pytables/hdf file.
+    '''
+    def __init__(self, scope, filename, acquisator, protocol = p.NullProtocol, parent=None, complevel=6, complib='zlib'):
+        self.h5File = tables.openFile(filename, 'w')
+           
+        filt = tables.Filters(complevel, complib, shuffle=True)
         
-   def __del__(self):
+        self.imageData = self.h5File.createEArray(self.h5File.root, 'ImageData', tables.UInt16Atom(), (0,scope.cam.GetPicWidth(),scope.cam.GetPicHeight()), filters=filt)
+        self.md = MetaDataHandler.HDFMDHandler(self.h5File)
+        self.evtLogger = EventLogger(self, scope, self.h5File)
+        
+        sp.Spooler.__init__(self, scope, filename, acquisator, protocol, parent)
+
+    def StopSpool(self):
+        '''Stop spooling and close file'''
+        sp.Spooler.StopSpool(self)
+           
+        self.h5File.flush()
+        self.h5File.close()
+        
+    def Tick(self, caller):
+        '''Called on each frame'''
+        self.imageData.append(cSMI.CDataStack_AsArray(caller.ds, 0).reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()))
+        self.h5File.flush()
+        if self.imNum == 0: #first frame
+            self.md.setEntry('imageID', fileID.genFrameID(self.imageData[0,:,:]))
+            
+        sp.Spooler.Tick(self, caller)
+        
+    def __del__(self):
         if self.spoolOn:
             self.StopSpool()

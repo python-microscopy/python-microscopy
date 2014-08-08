@@ -196,1138 +196,12 @@ threads to complete.</p>
 </div>
 <div class="section" id="module-PYME.Acquire.HDFSpoolFrame">
 <span id="hdfspoolframe-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">HDFSpoolFrame</span></tt> Module<a class="headerlink" href="#module-PYME.Acquire.HDFSpoolFrame" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="PYME.Acquire.HDFSpoolFrame.FrSpool">
-<em class="property">class </em><tt class="descclassname">PYME.Acquire.HDFSpoolFrame.</tt><tt class="descname">FrSpool</tt><big>(</big><em>parent</em>, <em>scope</em>, <em>defDir</em>, <em>defSeries='%(day)d_%(month)d_series'</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpoolFrame.FrSpool" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">wx._windows.Frame</span></tt></p>
-<p class="rubric">Attributes</p>
-<table border="1" class="longtable docutils">
-<colgroup>
-<col width="10%" />
-<col width="90%" />
-</colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">AcceleratorTable</span></tt></td>
-<td>See <cite>GetAcceleratorTable</cite> and <cite>SetAcceleratorTable</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">AutoLayout</span></tt></td>
-<td>See <cite>GetAutoLayout</cite> and <cite>SetAutoLayout</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">BackgroundColour</span></tt></td>
-<td>See <cite>GetBackgroundColour</cite> and <cite>SetBackgroundColour</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">BackgroundStyle</span></tt></td>
-<td>See <cite>GetBackgroundStyle</cite> and <cite>SetBackgroundStyle</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">BestSize</span></tt></td>
-<td>See <cite>GetBestSize</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">BestVirtualSize</span></tt></td>
-<td>See <cite>GetBestVirtualSize</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Border</span></tt></td>
-<td>See <cite>GetBorder</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Caret</span></tt></td>
-<td>See <cite>GetCaret</cite> and <cite>SetCaret</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">CharHeight</span></tt></td>
-<td>See <cite>GetCharHeight</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">CharWidth</span></tt></td>
-<td>See <cite>GetCharWidth</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Children</span></tt></td>
-<td>See <cite>GetChildren</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">ClassName</span></tt></td>
-<td>See <cite>GetClassName</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">ClientAreaOrigin</span></tt></td>
-<td>See <cite>GetClientAreaOrigin</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">ClientRect</span></tt></td>
-<td>See <cite>GetClientRect</cite> and <cite>SetClientRect</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">ClientSize</span></tt></td>
-<td>See <cite>GetClientSize</cite> and <cite>SetClientSize</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Constraints</span></tt></td>
-<td>See <cite>GetConstraints</cite> and <cite>SetConstraints</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">ContainingSizer</span></tt></td>
-<td>See <cite>GetContainingSizer</cite> and <cite>SetContainingSizer</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Cursor</span></tt></td>
-<td>See <cite>GetCursor</cite> and <cite>SetCursor</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">DefaultAttributes</span></tt></td>
-<td>See <cite>GetDefaultAttributes</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">DefaultItem</span></tt></td>
-<td>See <cite>GetDefaultItem</cite> and <cite>SetDefaultItem</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">DropTarget</span></tt></td>
-<td>See <cite>GetDropTarget</cite> and <cite>SetDropTarget</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">EffectiveMinSize</span></tt></td>
-<td>See <cite>GetEffectiveMinSize</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Enabled</span></tt></td>
-<td>See <cite>IsEnabled</cite> and <cite>Enable</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">EventHandler</span></tt></td>
-<td>See <cite>GetEventHandler</cite> and <cite>SetEventHandler</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">EvtHandlerEnabled</span></tt></td>
-<td>See <cite>GetEvtHandlerEnabled</cite> and <cite>SetEvtHandlerEnabled</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">ExtraStyle</span></tt></td>
-<td>See <cite>GetExtraStyle</cite> and <cite>SetExtraStyle</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Font</span></tt></td>
-<td>See <cite>GetFont</cite> and <cite>SetFont</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">ForegroundColour</span></tt></td>
-<td>See <cite>GetForegroundColour</cite> and <cite>SetForegroundColour</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GrandParent</span></tt></td>
-<td>See <cite>GetGrandParent</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GtkWidget</span></tt></td>
-<td>GetGtkWidget(self) -&gt; long</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Handle</span></tt></td>
-<td>See <cite>GetHandle</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">HelpText</span></tt></td>
-<td>See <cite>GetHelpText</cite> and <cite>SetHelpText</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Icon</span></tt></td>
-<td>See <cite>GetIcon</cite> and <cite>SetIcon</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Id</span></tt></td>
-<td>See <cite>GetId</cite> and <cite>SetId</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Label</span></tt></td>
-<td>See <cite>GetLabel</cite> and <cite>SetLabel</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">LayoutDirection</span></tt></td>
-<td>See <cite>GetLayoutDirection</cite> and <cite>SetLayoutDirection</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">MaxHeight</span></tt></td>
-<td>See <cite>GetMaxHeight</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">MaxSize</span></tt></td>
-<td>See <cite>GetMaxSize</cite> and <cite>SetMaxSize</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">MaxWidth</span></tt></td>
-<td>See <cite>GetMaxWidth</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">MenuBar</span></tt></td>
-<td>See <cite>GetMenuBar</cite> and <cite>SetMenuBar</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">MinHeight</span></tt></td>
-<td>See <cite>GetMinHeight</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">MinSize</span></tt></td>
-<td>See <cite>GetMinSize</cite> and <cite>SetMinSize</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">MinWidth</span></tt></td>
-<td>See <cite>GetMinWidth</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Name</span></tt></td>
-<td>See <cite>GetName</cite> and <cite>SetName</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">NextHandler</span></tt></td>
-<td>See <cite>GetNextHandler</cite> and <cite>SetNextHandler</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Parent</span></tt></td>
-<td>See <cite>GetParent</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Position</span></tt></td>
-<td>See <cite>GetPosition</cite> and <cite>SetPosition</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">PreviousHandler</span></tt></td>
-<td>See <cite>GetPreviousHandler</cite> and <cite>SetPreviousHandler</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Rect</span></tt></td>
-<td>See <cite>GetRect</cite> and <cite>SetRect</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">ScreenPosition</span></tt></td>
-<td>See <cite>GetScreenPosition</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">ScreenRect</span></tt></td>
-<td>See <cite>GetScreenRect</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Shown</span></tt></td>
-<td>See <cite>IsShown</cite> and <cite>Show</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Size</span></tt></td>
-<td>See <cite>GetSize</cite> and <cite>SetSize</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Sizer</span></tt></td>
-<td>See <cite>GetSizer</cite> and <cite>SetSizer</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">StatusBar</span></tt></td>
-<td>See <cite>GetStatusBar</cite> and <cite>SetStatusBar</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">StatusBarPane</span></tt></td>
-<td>See <cite>GetStatusBarPane</cite> and <cite>SetStatusBarPane</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">ThemeEnabled</span></tt></td>
-<td>See <cite>GetThemeEnabled</cite> and <cite>SetThemeEnabled</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Title</span></tt></td>
-<td>See <cite>GetTitle</cite> and <cite>SetTitle</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">TmpDefaultItem</span></tt></td>
-<td>See <cite>GetTmpDefaultItem</cite> and <cite>SetTmpDefaultItem</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">ToolBar</span></tt></td>
-<td>See <cite>GetToolBar</cite> and <cite>SetToolBar</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">ToolTip</span></tt></td>
-<td>See <cite>GetToolTip</cite> and <cite>SetToolTip</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">ToolTipString</span></tt></td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">TopLevel</span></tt></td>
-<td>See <cite>IsTopLevel</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">TopLevelParent</span></tt></td>
-<td>See <cite>GetTopLevelParent</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">UpdateClientRect</span></tt></td>
-<td>See <cite>GetUpdateClientRect</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">UpdateRegion</span></tt></td>
-<td>See <cite>GetUpdateRegion</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Validator</span></tt></td>
-<td>See <cite>GetValidator</cite> and <cite>SetValidator</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">VirtualSize</span></tt></td>
-<td>See <cite>GetVirtualSize</cite> and <cite>SetVirtualSize</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">WindowStyle</span></tt></td>
-<td>See <cite>GetWindowStyle</cite> and <cite>SetWindowStyle</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">WindowStyleFlag</span></tt></td>
-<td>See <cite>GetWindowStyleFlag</cite> and <cite>SetWindowStyleFlag</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">WindowVariant</span></tt></td>
-<td>See <cite>GetWindowVariant</cite> and <cite>SetWindowVariant</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">thisown</span></tt></td>
-<td>The membership flag</td>
-</tr>
-</tbody>
-</table>
-<p class="rubric">Methods</p>
-<table border="1" class="longtable docutils">
-<colgroup>
-<col width="10%" />
-<col width="90%" />
-</colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">AcceptsFocus</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Can this window have focus?</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">AcceptsFocusFromKeyboard</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Can this window be given focus by keyboard navigation? if not, the</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">AddChild</span></tt>(self,&nbsp;Window&nbsp;child)</td>
-<td>Adds a child window.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">AddPendingEvent</span></tt>(self,&nbsp;Event&nbsp;event)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">AdjustForLayoutDirection</span></tt>((self,&nbsp;int&nbsp;x,&nbsp;...)</td>
-<td>Mirror coordinates for RTL layout if this window uses it and if the</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">AssociateHandle</span></tt>(self,&nbsp;long&nbsp;handle)</td>
-<td>Associate the window with a new native handle</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Bind</span></tt>(event,&nbsp;handler[,&nbsp;source,&nbsp;id,&nbsp;id2])</td>
-<td>Bind an event to an event handler.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">CacheBestSize</span></tt>(self,&nbsp;Size&nbsp;size)</td>
-<td>Cache the best size so it doesn&#8217;t need to be calculated again, (at least until</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">CanSetTransparent</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Returns <tt class="docutils literal"><span class="pre">True</span></tt> if the platform supports setting the transparency for</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">CaptureMouse</span></tt>(self)</td>
-<td>Directs all mouse input to this window.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Center</span></tt>(self,&nbsp;int&nbsp;direction=BOTH)</td>
-<td>Centers the window.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">CenterOnParent</span></tt>(self,&nbsp;int&nbsp;dir=BOTH)</td>
-<td>Center with respect to the the parent window</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">CenterOnScreen</span></tt>(self,&nbsp;int&nbsp;dir=BOTH)</td>
-<td>Center the window on screen</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Centre</span></tt>(self,&nbsp;int&nbsp;direction=BOTH)</td>
-<td>Centers the window.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">CentreOnParent</span></tt>(self,&nbsp;int&nbsp;dir=BOTH)</td>
-<td>Center with respect to the the parent window</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">CentreOnScreen</span></tt>(self,&nbsp;int&nbsp;dir=BOTH)</td>
-<td>Center the window on screen</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">ClearBackground</span></tt>(self)</td>
-<td>Clears the window by filling it with the current background colour.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">ClientToScreen</span></tt>((self,&nbsp;Point&nbsp;pt)&nbsp;-&gt;&nbsp;Point)</td>
-<td>Converts to screen coordinates from coordinates relative to this window.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">ClientToScreenXY</span></tt>(int&nbsp;x,&nbsp;int&nbsp;y)&nbsp;-&gt;&nbsp;(x,y)</td>
-<td>Converts to screen coordinates from coordinates relative to this window.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">ClientToWindowSize</span></tt>((self,&nbsp;Size&nbsp;size)&nbsp;-&gt;&nbsp;Size)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Close</span></tt>((self,&nbsp;bool&nbsp;force=False)&nbsp;-&gt;&nbsp;bool)</td>
-<td>This function simply generates a EVT_CLOSE event whose handler usually</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Command</span></tt>(*args,&nbsp;**kwargs)</td>
-<td>ProcessCommand(self, int winid) -&gt; bool</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Connect</span></tt>(self,&nbsp;int&nbsp;id,&nbsp;int&nbsp;lastId,&nbsp;...)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">ConvertDialogPointToPixels</span></tt>((self,&nbsp;...)</td>
-<td>Converts a point or size from dialog units to pixels.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">ConvertDialogSizeToPixels</span></tt>((self,&nbsp;...)</td>
-<td>Converts a point or size from dialog units to pixels.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">ConvertPixelPointToDialog</span></tt>((self,&nbsp;...)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">ConvertPixelSizeToDialog</span></tt>((self,&nbsp;Size&nbsp;sz)&nbsp;-&gt;&nbsp;Size)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Create</span></tt>(*args,&nbsp;**kwargs)</td>
-<td>Create(self, Window parent, int id=-1, String title=EmptyString,</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">CreateStatusBar</span></tt>(*args,&nbsp;**kwargs)</td>
-<td>CreateStatusBar(self, int number=1, long style=DEFAULT_STATUSBAR_STYLE, int winid=0,</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">CreateToolBar</span></tt>((self,&nbsp;long&nbsp;style=-1,&nbsp;...)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">DLG_PNT</span></tt>((self,&nbsp;Point&nbsp;pt)&nbsp;-&gt;&nbsp;Point)</td>
-<td>Converts a point or size from dialog units to pixels.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">DLG_SZE</span></tt>((self,&nbsp;Size&nbsp;sz)&nbsp;-&gt;&nbsp;Size)</td>
-<td>Converts a point or size from dialog units to pixels.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Destroy</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Destroys the window safely.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">DestroyChildren</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Destroys all children of a window.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Disable</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Disables the window, same as Enable(false).</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Disconnect</span></tt>(*args,&nbsp;**kwargs)</td>
-<td>Disconnect(self, int id, int lastId=-1, EventType eventType=wxEVT_NULL,</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">DissociateHandle</span></tt>(self)</td>
-<td>Dissociate the current native handle from the window</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">DoGiveHelp</span></tt>(self,&nbsp;String&nbsp;text,&nbsp;bool&nbsp;show)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">DoMenuUpdates</span></tt>(self,&nbsp;Menu&nbsp;menu=None)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">DragAcceptFiles</span></tt>(self,&nbsp;bool&nbsp;accept)</td>
-<td>Enables or disables eligibility for drop file events, EVT_DROP_FILES.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Enable</span></tt>((self,&nbsp;bool&nbsp;enable=True)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Enable or disable the window for user input.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">EnableCloseButton</span></tt>((self,&nbsp;bool&nbsp;enable)&nbsp;-&gt;&nbsp;bool)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">FindFocus</span></tt>(()&nbsp;-&gt;&nbsp;Window)</td>
-<td>Returns the window or control that currently has the keyboard focus,</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">FindWindowById</span></tt>((self,&nbsp;long&nbsp;winid)&nbsp;-&gt;&nbsp;Window)</td>
-<td>Find a child of this window by window ID</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">FindWindowByLabel</span></tt>((self,&nbsp;String&nbsp;label)&nbsp;-&gt;&nbsp;Window)</td>
-<td>Find a child of this window by label</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">FindWindowByName</span></tt>((self,&nbsp;String&nbsp;name)&nbsp;-&gt;&nbsp;Window)</td>
-<td>Find a child of this window by name</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Fit</span></tt>(self)</td>
-<td>Sizes the window so that it fits around its subwindows.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">FitInside</span></tt>(self)</td>
-<td>Similar to Fit, but sizes the interior (virtual) size of a</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Freeze</span></tt>(self)</td>
-<td>Freezes the window or, in other words, prevents any updates from taking place on screen, the window is not redrawn at all.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetAcceleratorTable</span></tt>((self)&nbsp;-&gt;&nbsp;AcceleratorTable)</td>
-<td>Gets the accelerator table for this window.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetAdjustedBestSize</span></tt>(*args,&nbsp;**kwargs)</td>
-<td>Use <cite>GetEffectiveMinSize</cite> instead.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetAutoLayout</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Returns the current autoLayout setting</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetBackgroundColour</span></tt>((self)&nbsp;-&gt;&nbsp;Colour)</td>
-<td>Returns the background colour of the window.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetBackgroundStyle</span></tt>((self)&nbsp;-&gt;&nbsp;int)</td>
-<td>Returns the background style of the window.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetBestFittingSize</span></tt>(*args,&nbsp;**kwargs)</td>
-<td>Use <cite>GetEffectiveMinSize</cite> instead.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetBestSize</span></tt>((self)&nbsp;-&gt;&nbsp;Size)</td>
-<td>This function returns the best acceptable minimal size for the window, if applicable.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetBestSizeTuple</span></tt>()&nbsp;-&gt;&nbsp;(width,&nbsp;height)</td>
-<td>This function returns the best acceptable minimal size for the window, if applicable.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetBestVirtualSize</span></tt>((self)&nbsp;-&gt;&nbsp;Size)</td>
-<td>Return the largest of ClientSize and BestSize (as determined by a</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetBorder</span></tt>((self,&nbsp;long&nbsp;flags)&nbsp;-&gt;&nbsp;int)</td>
-<td>GetBorder(self) -&gt; int</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetCapture</span></tt>(()&nbsp;-&gt;&nbsp;Window)</td>
-<td>Returns the window which currently captures the mouse or None</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetCaret</span></tt>((self)&nbsp;-&gt;&nbsp;Caret)</td>
-<td>Returns the caret associated with the window.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetCharHeight</span></tt>((self)&nbsp;-&gt;&nbsp;int)</td>
-<td>Get the (average) character size for the current font.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetCharWidth</span></tt>((self)&nbsp;-&gt;&nbsp;int)</td>
-<td>Get the (average) character size for the current font.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetChildren</span></tt>((self)&nbsp;-&gt;&nbsp;WindowList)</td>
-<td>Returns an object containing a list of the window&#8217;s children.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetClassDefaultAttributes</span></tt>(...)</td>
-<td>Get the default attributes for this class.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetClassName</span></tt>((self)&nbsp;-&gt;&nbsp;String)</td>
-<td>Returns the class name of the C++ class using wxRTTI.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetClientAreaOrigin</span></tt>((self)&nbsp;-&gt;&nbsp;Point)</td>
-<td>Get the origin of the client area of the window relative to the</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetClientRect</span></tt>((self)&nbsp;-&gt;&nbsp;Rect)</td>
-<td>Get the client area position and size as a <cite>wx.Rect</cite> object.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetClientSize</span></tt>((self)&nbsp;-&gt;&nbsp;Size)</td>
-<td>This gets the size of the window&#8217;s &#8216;client area&#8217; in pixels.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetClientSizeTuple</span></tt>()&nbsp;-&gt;&nbsp;(width,&nbsp;height)</td>
-<td>This gets the size of the window&#8217;s &#8216;client area&#8217; in pixels.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetConstraints</span></tt>((self)&nbsp;-&gt;&nbsp;LayoutConstraints)</td>
-<td>Returns a pointer to the window&#8217;s layout constraints, or None if there</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetContainingSizer</span></tt>((self)&nbsp;-&gt;&nbsp;Sizer)</td>
-<td>Return the sizer that this window is a member of, if any, otherwise None.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetCursor</span></tt>((self)&nbsp;-&gt;&nbsp;Cursor)</td>
-<td>Return the cursor associated with this window.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetDefaultAttributes</span></tt>((self)&nbsp;-&gt;&nbsp;VisualAttributes)</td>
-<td>Get the default attributes for an instance of this class.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetDefaultItem</span></tt>((self)&nbsp;-&gt;&nbsp;Window)</td>
-<td>Get the default child of this parent, i.e.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetDropTarget</span></tt>((self)&nbsp;-&gt;&nbsp;DropTarget)</td>
-<td>Returns the associated drop target, which may be None.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetEffectiveMinSize</span></tt>((self)&nbsp;-&gt;&nbsp;Size)</td>
-<td>This function will merge the window&#8217;s best size into the window&#8217;s</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetEventHandler</span></tt>((self)&nbsp;-&gt;&nbsp;EvtHandler)</td>
-<td>Returns the event handler for this window.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetEvtHandlerEnabled</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetExtraStyle</span></tt>((self)&nbsp;-&gt;&nbsp;long)</td>
-<td>Returns the extra style bits for the window.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetFont</span></tt>((self)&nbsp;-&gt;&nbsp;Font)</td>
-<td>Returns the default font used for this window.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetForegroundColour</span></tt>((self)&nbsp;-&gt;&nbsp;Colour)</td>
-<td>Returns the foreground colour of the window.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetFullTextExtent</span></tt>(String&nbsp;string,&nbsp;...)</td>
-<td>(width, height, descent, externalLeading)</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetGrandParent</span></tt>((self)&nbsp;-&gt;&nbsp;Window)</td>
-<td>Returns the parent of the parent of this window, or None if there</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetGtkWidget</span></tt>((self)&nbsp;-&gt;&nbsp;long)</td>
-<td>On wxGTK returns a pointer to the GtkWidget for this window as a long</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetHandle</span></tt>((self)&nbsp;-&gt;&nbsp;long)</td>
-<td>Returns the platform-specific handle (as a long integer) of the physical window.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetHelpText</span></tt>((self)&nbsp;-&gt;&nbsp;String)</td>
-<td>Gets the help text to be used as context-sensitive help for this window.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetHelpTextAtPoint</span></tt>((self,&nbsp;Point&nbsp;pt,&nbsp;...)</td>
-<td>Get the help string associated with the given position in this window.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetIcon</span></tt>((self)&nbsp;-&gt;&nbsp;Icon)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetId</span></tt>((self)&nbsp;-&gt;&nbsp;int)</td>
-<td>Returns the identifier of the window.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetLabel</span></tt>((self)&nbsp;-&gt;&nbsp;String)</td>
-<td>Generic way of getting a label from any window, for identification purposes.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetLayoutDirection</span></tt>((self)&nbsp;-&gt;&nbsp;int)</td>
-<td>Get the layout direction (LTR or RTL) for this window.  Returns</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetMaxHeight</span></tt>((self)&nbsp;-&gt;&nbsp;int)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetMaxSize</span></tt>((self)&nbsp;-&gt;&nbsp;Size)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetMaxWidth</span></tt>((self)&nbsp;-&gt;&nbsp;int)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetMenuBar</span></tt>((self)&nbsp;-&gt;&nbsp;MenuBar)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetMinHeight</span></tt>((self)&nbsp;-&gt;&nbsp;int)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetMinSize</span></tt>((self)&nbsp;-&gt;&nbsp;Size)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetMinWidth</span></tt>((self)&nbsp;-&gt;&nbsp;int)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetName</span></tt>((self)&nbsp;-&gt;&nbsp;String)</td>
-<td>Returns the windows name.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetNextHandler</span></tt>((self)&nbsp;-&gt;&nbsp;EvtHandler)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetParent</span></tt>((self)&nbsp;-&gt;&nbsp;Window)</td>
-<td>Returns the parent window of this window, or None if there isn&#8217;t one.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetPosition</span></tt>((self)&nbsp;-&gt;&nbsp;Point)</td>
-<td>Get the window&#8217;s position.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetPositionTuple</span></tt>()&nbsp;-&gt;&nbsp;(x,y)</td>
-<td>Get the window&#8217;s position.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetPreviousHandler</span></tt>((self)&nbsp;-&gt;&nbsp;EvtHandler)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetRect</span></tt>((self)&nbsp;-&gt;&nbsp;Rect)</td>
-<td>Returns the size and position of the window as a <cite>wx.Rect</cite> object.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetScreenPosition</span></tt>((self)&nbsp;-&gt;&nbsp;Point)</td>
-<td>Get the position of the window in screen coordinantes.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetScreenPositionTuple</span></tt>()&nbsp;-&gt;&nbsp;(x,y)</td>
-<td>Get the position of the window in screen coordinantes.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetScreenRect</span></tt>((self)&nbsp;-&gt;&nbsp;Rect)</td>
-<td>Returns the size and position of the window in screen coordinantes as</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetScrollPos</span></tt>((self,&nbsp;int&nbsp;orientation)&nbsp;-&gt;&nbsp;int)</td>
-<td>Returns the built-in scrollbar position.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetScrollRange</span></tt>((self,&nbsp;int&nbsp;orientation)&nbsp;-&gt;&nbsp;int)</td>
-<td>Returns the built-in scrollbar range.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetScrollThumb</span></tt>((self,&nbsp;int&nbsp;orientation)&nbsp;-&gt;&nbsp;int)</td>
-<td>Returns the built-in scrollbar thumb size.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetSize</span></tt>((self)&nbsp;-&gt;&nbsp;Size)</td>
-<td>Get the window size.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetSizeTuple</span></tt>()&nbsp;-&gt;&nbsp;(width,&nbsp;height)</td>
-<td>Get the window size.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetSizer</span></tt>((self)&nbsp;-&gt;&nbsp;Sizer)</td>
-<td>Return the sizer associated with the window by a previous call to</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetStatusBar</span></tt>((self)&nbsp;-&gt;&nbsp;StatusBar)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetStatusBarPane</span></tt>((self)&nbsp;-&gt;&nbsp;int)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetTextExtent</span></tt>(String&nbsp;string)&nbsp;-&gt;&nbsp;(width,&nbsp;height)</td>
-<td>Get the width and height of the text using the current font.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetThemeEnabled</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Return the themeEnabled flag.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetTitle</span></tt>((self)&nbsp;-&gt;&nbsp;String)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetTmpDefaultItem</span></tt>((self)&nbsp;-&gt;&nbsp;Window)</td>
-<td>Return the temporary default item, which can be None.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetToolBar</span></tt>((self)&nbsp;-&gt;&nbsp;wxToolBar)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetToolTip</span></tt>((self)&nbsp;-&gt;&nbsp;ToolTip)</td>
-<td>get the associated tooltip or None if none</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetToolTipString</span></tt>()</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetTopLevelParent</span></tt>((self)&nbsp;-&gt;&nbsp;Window)</td>
-<td>Returns the first frame or dialog in this window&#8217;s parental hierarchy.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetUpdateClientRect</span></tt>((self)&nbsp;-&gt;&nbsp;Rect)</td>
-<td>Get the update rectangle region bounding box in client coords.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetUpdateRegion</span></tt>((self)&nbsp;-&gt;&nbsp;Region)</td>
-<td>Returns the region specifying which parts of the window have been damaged.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetValidator</span></tt>((self)&nbsp;-&gt;&nbsp;Validator)</td>
-<td>Returns a pointer to the current validator for the window, or None if</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetVirtualSize</span></tt>((self)&nbsp;-&gt;&nbsp;Size)</td>
-<td>Get the the virtual size of the window in pixels.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetVirtualSizeTuple</span></tt>()&nbsp;-&gt;&nbsp;(width,&nbsp;height)</td>
-<td>Get the the virtual size of the window in pixels.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetWindowBorderSize</span></tt>((self)&nbsp;-&gt;&nbsp;Size)</td>
-<td>Return the size of the left/right and top/bottom borders.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetWindowStyle</span></tt>(*args,&nbsp;**kwargs)</td>
-<td>GetWindowStyleFlag(self) -&gt; long</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetWindowStyleFlag</span></tt>((self)&nbsp;-&gt;&nbsp;long)</td>
-<td>Gets the window style that was passed to the constructor or Create</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetWindowVariant</span></tt>((self)&nbsp;-&gt;&nbsp;int)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">HasCapture</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Returns true if this window has the current mouse capture.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">HasFlag</span></tt>((self,&nbsp;int&nbsp;flag)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Test if the given style is set for this window.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">HasMultiplePages</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">HasScrollbar</span></tt>((self,&nbsp;int&nbsp;orient)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Does the window have the scrollbar for this orientation?</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">HasTransparentBackground</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Returns True if this window&#8217;s background is transparent (as, for</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Hide</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Equivalent to calling Show(False).</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">HitTest</span></tt>((self,&nbsp;Point&nbsp;pt)&nbsp;-&gt;&nbsp;int)</td>
-<td>Test where the given (in client coords) point lies</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">HitTestXY</span></tt>((self,&nbsp;int&nbsp;x,&nbsp;int&nbsp;y)&nbsp;-&gt;&nbsp;int)</td>
-<td>Test where the given (in client coords) point lies</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Iconize</span></tt>(self,&nbsp;bool&nbsp;iconize=True)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">InheritAttributes</span></tt>(self)</td>
-<td>This function is (or should be, in case of custom controls) called during window creation to intelligently set up the window visual attributes, that is the font and the foreground and background colours.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">InheritsBackgroundColour</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">InitDialog</span></tt>(self)</td>
-<td>Sends an EVT_INIT_DIALOG event, whose handler usually transfers data</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">InvalidateBestSize</span></tt>(self)</td>
-<td>Reset the cached best size value so it will be recalculated the next</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsActive</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsAlwaysMaximized</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsBeingDeleted</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Is the window in the process of being deleted?</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsDoubleBuffered</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Returns <tt class="docutils literal"><span class="pre">True</span></tt> if the window contents is double-buffered by the</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsEnabled</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Returns true if the window is enabled for input, false otherwise.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsExposed</span></tt>((self,&nbsp;int&nbsp;x,&nbsp;int&nbsp;y,&nbsp;int&nbsp;w=1,&nbsp;...)</td>
-<td>Returns true if the given point or rectangle area has been exposed since the last repaint.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsExposedPoint</span></tt>((self,&nbsp;Point&nbsp;pt)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Returns true if the given point or rectangle area has been exposed since the last repaint.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsExposedRect</span></tt>((self,&nbsp;Rect&nbsp;rect)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Returns true if the given point or rectangle area has been exposed since the last repaint.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsFrozen</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Returns <tt class="docutils literal"><span class="pre">True</span></tt> if the window has been frozen and not thawed yet.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsFullScreen</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsIconized</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsMaximized</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsRetained</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Returns true if the window is retained, false otherwise.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsSameAs</span></tt>((self,&nbsp;Object&nbsp;p)&nbsp;-&gt;&nbsp;bool)</td>
-<td>For wx.Objects that use C++ reference counting internally, this method</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsShown</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Returns true if the window is shown, false if it has been hidden.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsShownOnScreen</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Returns <tt class="docutils literal"><span class="pre">True</span></tt> if the window is physically visible on the screen,</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsTopLevel</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Returns true if the given window is a top-level one.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Layout</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Invokes the constraint-based layout algorithm or the sizer-based algorithm for this window.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">LineDown</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td>This is just a wrapper for ScrollLines(1).</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">LineUp</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td>This is just a wrapper for ScrollLines(-1).</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Lower</span></tt>(self)</td>
-<td>Lowers the window to the bottom of the window hierarchy.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">MacGetMetalAppearance</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">MacGetTopLevelWindowRef</span></tt>((self)&nbsp;-&gt;&nbsp;long)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">MacGetUnifiedAppearance</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">MacSetMetalAppearance</span></tt>(self,&nbsp;bool&nbsp;on)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">MakeModal</span></tt>(self,&nbsp;bool&nbsp;modal=True)</td>
-<td>Disables all other windows in the application so that the user can only interact with this window.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Maximize</span></tt>(self,&nbsp;bool&nbsp;maximize=True)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Move</span></tt>(self,&nbsp;Point&nbsp;pt,&nbsp;int&nbsp;flags=SIZE_USE_EXISTING)</td>
-<td>Moves the window to the given position.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">MoveAfterInTabOrder</span></tt>(self,&nbsp;Window&nbsp;win)</td>
-<td>Moves this window in the tab navigation order after the specified sibling window.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">MoveBeforeInTabOrder</span></tt>(self,&nbsp;Window&nbsp;win)</td>
-<td>Same as <cite>MoveAfterInTabOrder</cite> except that it inserts this window just</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">MoveXY</span></tt>(self,&nbsp;int&nbsp;x,&nbsp;int&nbsp;y,&nbsp;...)</td>
-<td>Moves the window to the given position.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Navigate</span></tt>((self,&nbsp;...)</td>
-<td>Does keyboard navigation from this window to another, by sending a</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">NewControlId</span></tt>(()&nbsp;-&gt;&nbsp;int)</td>
-<td>Generate a control id for the controls which were not given one.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">NextControlId</span></tt>((int&nbsp;winid)&nbsp;-&gt;&nbsp;int)</td>
-<td>Get the id of the control following the one with the given</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">PageDown</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td>This is just a wrapper for ScrollPages(1).</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">PageUp</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td>This is just a wrapper for ScrollPages(-1).</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">PopEventHandler</span></tt>((self,&nbsp;...)</td>
-<td>Removes and returns the top-most event handler on the event handler stack.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">PopStatusText</span></tt>(self,&nbsp;int&nbsp;number=0)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">PopupMenu</span></tt>((self,&nbsp;Menu&nbsp;menu,&nbsp;...)</td>
-<td>Pops up the given menu at the specified coordinates, relative to this window, and returns control when the user has dismissed the menu.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">PopupMenuXY</span></tt>((self,&nbsp;Menu&nbsp;menu,&nbsp;int&nbsp;x=-1,&nbsp;...)</td>
-<td>Pops up the given menu at the specified coordinates, relative to this window, and returns control when the user has dismissed the menu.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">PostCreate</span></tt>(pre)</td>
-<td>Phase 3 of the 2-phase create &lt;wink!&gt;</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">PrepareDC</span></tt>(self,&nbsp;DC&nbsp;dc)</td>
-<td>Call this function to prepare the device context for drawing a scrolled image.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">PrevControlId</span></tt>((int&nbsp;winid)&nbsp;-&gt;&nbsp;int)</td>
-<td>Get the id of the control preceding the one with the given</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">ProcessCommand</span></tt>((self,&nbsp;int&nbsp;winid)&nbsp;-&gt;&nbsp;bool)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">ProcessEvent</span></tt>((self,&nbsp;Event&nbsp;event)&nbsp;-&gt;&nbsp;bool)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">ProcessPendingEvents</span></tt>(self)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">PushEventHandler</span></tt>(self,&nbsp;EvtHandler&nbsp;handler)</td>
-<td>Pushes this event handler onto the event handler stack for the window.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">PushStatusText</span></tt>(self,&nbsp;String&nbsp;text,&nbsp;int&nbsp;number=0)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Raise</span></tt>(self)</td>
-<td>Raises the window to the top of the window hierarchy.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Refresh</span></tt>(self,&nbsp;bool&nbsp;eraseBackground=True,&nbsp;...)</td>
-<td>Mark the specified rectangle (or the whole window) as &#8220;dirty&#8221; so it will be repainted.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">RefreshRect</span></tt>(self,&nbsp;Rect&nbsp;rect,&nbsp;...)</td>
-<td>Redraws the contents of the given rectangle: the area inside it will be repainted.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">RegisterHotKey</span></tt>((self,&nbsp;int&nbsp;hotkeyId,&nbsp;...)</td>
-<td>Registers a system wide hotkey.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">ReleaseMouse</span></tt>(self)</td>
-<td>Releases mouse input captured with wx.Window.CaptureMouse.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">RemoveChild</span></tt>(self,&nbsp;Window&nbsp;child)</td>
-<td>Removes a child window.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">RemoveEventHandler</span></tt>((self,&nbsp;...)</td>
-<td>Find the given handler in the event handler chain and remove (but not</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Reparent</span></tt>((self,&nbsp;Window&nbsp;newParent)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Reparents the window, i.e the window will be removed from its current parent window (e.g.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">RequestUserAttention</span></tt>(self,&nbsp;...)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Restore</span></tt>(self)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">ScreenToClient</span></tt>((self,&nbsp;Point&nbsp;pt)&nbsp;-&gt;&nbsp;Point)</td>
-<td>Converts from screen to client window coordinates.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">ScreenToClientXY</span></tt>(int&nbsp;x,&nbsp;int&nbsp;y)&nbsp;-&gt;&nbsp;(x,y)</td>
-<td>Converts from screen to client window coordinates.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">ScrollLines</span></tt>((self,&nbsp;int&nbsp;lines)&nbsp;-&gt;&nbsp;bool)</td>
-<td>If the platform and window class supports it, scrolls the window by the given number of lines down, if lines is positive, or up if lines is negative.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">ScrollPages</span></tt>((self,&nbsp;int&nbsp;pages)&nbsp;-&gt;&nbsp;bool)</td>
-<td>If the platform and window class supports it, scrolls the window by the given number of pages down, if pages is positive, or up if pages is negative.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">ScrollWindow</span></tt>(self,&nbsp;int&nbsp;dx,&nbsp;int&nbsp;dy,&nbsp;...)</td>
-<td>Physically scrolls the pixels in the window and move child windows accordingly.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SendSizeEvent</span></tt>(self)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetAcceleratorTable</span></tt>(self,&nbsp;AcceleratorTable&nbsp;accel)</td>
-<td>Sets the accelerator table for this window.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetAutoLayout</span></tt>(self,&nbsp;bool&nbsp;autoLayout)</td>
-<td>Determines whether the Layout function will be called automatically</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetBackgroundColour</span></tt>((self,&nbsp;...)</td>
-<td>Sets the background colour of the window.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetBackgroundStyle</span></tt>((self,&nbsp;int&nbsp;style)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Returns the background style of the window.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetBestFittingSize</span></tt>(*args,&nbsp;**kwargs)</td>
-<td>Use <cite>SetInitialSize</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetCaret</span></tt>(self,&nbsp;Caret&nbsp;caret)</td>
-<td>Sets the caret associated with the window.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetClientRect</span></tt>(self,&nbsp;Rect&nbsp;rect)</td>
-<td>This sets the size of the window client area in pixels.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetClientSize</span></tt>(self,&nbsp;Size&nbsp;size)</td>
-<td>This sets the size of the window client area in pixels.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetClientSizeWH</span></tt>(self,&nbsp;int&nbsp;width,&nbsp;int&nbsp;height)</td>
-<td>This sets the size of the window client area in pixels.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetConstraints</span></tt>(self,&nbsp;...)</td>
-<td>Sets the window to have the given layout constraints.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetContainingSizer</span></tt>(self,&nbsp;Sizer&nbsp;sizer)</td>
-<td>This normally does not need to be called by application code.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetCursor</span></tt>((self,&nbsp;Cursor&nbsp;cursor)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Sets the window&#8217;s cursor.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetDefaultItem</span></tt>((self,&nbsp;Window&nbsp;child)&nbsp;-&gt;&nbsp;Window)</td>
-<td>Set this child as default, return the old default.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetDimensions</span></tt>(self,&nbsp;int&nbsp;x,&nbsp;int&nbsp;y,&nbsp;int&nbsp;width,&nbsp;...)</td>
-<td>Sets the position and size of the window in pixels.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetDoubleBuffered</span></tt>(self,&nbsp;bool&nbsp;on)</td>
-<td>Put the native window into double buffered or composited mode.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetDropTarget</span></tt>(self,&nbsp;DropTarget&nbsp;dropTarget)</td>
-<td>Associates a drop target with this window.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetEventHandler</span></tt>(self,&nbsp;EvtHandler&nbsp;handler)</td>
-<td>Sets the event handler for this window.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetEvtHandlerEnabled</span></tt>(self,&nbsp;bool&nbsp;enabled)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetExtraStyle</span></tt>(self,&nbsp;long&nbsp;exStyle)</td>
-<td>Sets the extra style bits for the window.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetFocus</span></tt>(self)</td>
-<td>Set&#8217;s the focus to this window, allowing it to receive keyboard input.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetFocusFromKbd</span></tt>(self)</td>
-<td>Set focus to this window as the result of a keyboard action.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetFont</span></tt>((self,&nbsp;Font&nbsp;font)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Sets the font for this window.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetForegroundColour</span></tt>((self,&nbsp;...)</td>
-<td>Sets the foreground colour of the window.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetHelpText</span></tt>(self,&nbsp;String&nbsp;text)</td>
-<td>Sets the help text to be used as context-sensitive help for this window.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetHelpTextForId</span></tt>(self,&nbsp;String&nbsp;text)</td>
-<td>Associate this help text with all windows with the same id as this</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetIcon</span></tt>(self,&nbsp;Icon&nbsp;icon)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetIcons</span></tt>(self,&nbsp;wxIconBundle&nbsp;icons)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetId</span></tt>(self,&nbsp;int&nbsp;winid)</td>
-<td>Sets the identifier of the window.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetInitialSize</span></tt>(self,&nbsp;Size&nbsp;size=DefaultSize)</td>
-<td>A &#8216;Smart&#8217; SetSize that will fill in default size components with the</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetLabel</span></tt>(self,&nbsp;String&nbsp;label)</td>
-<td>Set the text which the window shows in its label if applicable.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetLayoutDirection</span></tt>(self,&nbsp;int&nbsp;dir)</td>
-<td>Set the layout direction (LTR or RTL) for this window.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetMaxSize</span></tt>(self,&nbsp;Size&nbsp;maxSize)</td>
-<td>A more convenient method than <cite>SetSizeHints</cite> for setting just the</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetMenuBar</span></tt>(self,&nbsp;MenuBar&nbsp;menubar)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetMinSize</span></tt>(self,&nbsp;Size&nbsp;minSize)</td>
-<td>A more convenient method than <cite>SetSizeHints</cite> for setting just the</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetName</span></tt>(self,&nbsp;String&nbsp;name)</td>
-<td>Sets the window&#8217;s name.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetNextHandler</span></tt>(self,&nbsp;EvtHandler&nbsp;handler)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetOwnBackgroundColour</span></tt>(self,&nbsp;Colour&nbsp;colour)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetOwnFont</span></tt>(self,&nbsp;Font&nbsp;font)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetOwnForegroundColour</span></tt>(self,&nbsp;Colour&nbsp;colour)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetPosition</span></tt>(self,&nbsp;Point&nbsp;pt,&nbsp;...)</td>
-<td>Moves the window to the given position.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetPreviousHandler</span></tt>(self,&nbsp;EvtHandler&nbsp;handler)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetRect</span></tt>(self,&nbsp;Rect&nbsp;rect,&nbsp;int&nbsp;sizeFlags=SIZE_AUTO)</td>
-<td>Sets the position and size of the window in pixels using a wx.Rect.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetScrollPos</span></tt>(self,&nbsp;int&nbsp;orientation,&nbsp;int&nbsp;pos,&nbsp;...)</td>
-<td>Sets the position of one of the built-in scrollbars.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetScrollbar</span></tt>(self,&nbsp;int&nbsp;orientation,&nbsp;...)</td>
-<td>Sets the scrollbar properties of a built-in scrollbar.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetShape</span></tt>((self,&nbsp;Region&nbsp;region)&nbsp;-&gt;&nbsp;bool)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetSize</span></tt>(self,&nbsp;Size&nbsp;size)</td>
-<td>Sets the size of the window in pixels.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetSizeHints</span></tt>(self,&nbsp;int&nbsp;minW,&nbsp;int&nbsp;minH,&nbsp;...)</td>
-<td>Allows specification of minimum and maximum window sizes, and window size increments.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetSizeHintsSz</span></tt>(self,&nbsp;Size&nbsp;minSize,&nbsp;...)</td>
-<td>Allows specification of minimum and maximum window sizes, and window size increments.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetSizeWH</span></tt>(self,&nbsp;int&nbsp;width,&nbsp;int&nbsp;height)</td>
-<td>Sets the size of the window in pixels.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetSizer</span></tt>(self,&nbsp;Sizer&nbsp;sizer,&nbsp;bool&nbsp;deleteOld=True)</td>
-<td>Sets the window to have the given layout sizer.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetSizerAndFit</span></tt>(self,&nbsp;Sizer&nbsp;sizer,&nbsp;...)</td>
-<td>The same as SetSizer, except it also sets the size hints for the</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetStatusBar</span></tt>(self,&nbsp;StatusBar&nbsp;statBar)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetStatusBarPane</span></tt>(self,&nbsp;int&nbsp;n)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetStatusText</span></tt>(self,&nbsp;String&nbsp;text,&nbsp;int&nbsp;number=0)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetStatusWidths</span></tt>(self,&nbsp;int&nbsp;widths)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetThemeEnabled</span></tt>(self,&nbsp;bool&nbsp;enableTheme)</td>
-<td>This function tells a window if it should use the system&#8217;s &#8220;theme&#8221;  code to draw the windows&#8217; background instead if its own background  drawing code.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetTitle</span></tt>(self,&nbsp;String&nbsp;title)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetTmpDefaultItem</span></tt>(self,&nbsp;Window&nbsp;win)</td>
-<td>Set this child as temporary default</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetToolBar</span></tt>(self,&nbsp;wxToolBar&nbsp;toolbar)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetToolTip</span></tt>(self,&nbsp;ToolTip&nbsp;tip)</td>
-<td>Attach a tooltip to the window.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetToolTipString</span></tt>(self,&nbsp;String&nbsp;tip)</td>
-<td>Attach a tooltip to the window.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetTransparent</span></tt>((self,&nbsp;byte&nbsp;alpha)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Attempt to set the transparency of this window to the <tt class="docutils literal"><span class="pre">alpha</span></tt> value,</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetValidator</span></tt>(self,&nbsp;Validator&nbsp;validator)</td>
-<td>Deletes the current validator (if any) and sets the window validator,</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetVirtualSize</span></tt>(self,&nbsp;Size&nbsp;size)</td>
-<td>Set the the virtual size of a window in pixels.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetVirtualSizeHints</span></tt>(self,&nbsp;int&nbsp;minW,&nbsp;...)</td>
-<td>Allows specification of minimum and maximum virtual window sizes.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetVirtualSizeHintsSz</span></tt>(self,&nbsp;Size&nbsp;minSize,&nbsp;...)</td>
-<td>Allows specification of minimum and maximum virtual window sizes.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetVirtualSizeWH</span></tt>(self,&nbsp;int&nbsp;w,&nbsp;int&nbsp;h)</td>
-<td>Set the the virtual size of a window in pixels.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetWindowStyle</span></tt>(self,&nbsp;long&nbsp;style)</td>
-<td>Sets the style of the window.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetWindowStyleFlag</span></tt>(self,&nbsp;long&nbsp;style)</td>
-<td>Sets the style of the window.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetWindowVariant</span></tt>(self,&nbsp;int&nbsp;variant)</td>
-<td>Sets the variant of the window/font size to use for this window, if</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">ShouldInheritColours</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Return true from here to allow the colours of this window to be</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Show</span></tt>((self,&nbsp;bool&nbsp;show=True)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Shows or hides the window.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">ShowFullScreen</span></tt>((self,&nbsp;bool&nbsp;show,&nbsp;...)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Thaw</span></tt>(self)</td>
-<td>Reenables window updating after a previous call to Freeze.  Calls to</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">ToggleWindowStyle</span></tt>((self,&nbsp;int&nbsp;flag)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Turn the flag on if it had been turned off before and vice versa,</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">TransferDataFromWindow</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Transfers values from child controls to data areas specified by their validators.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">TransferDataToWindow</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Transfers values to child controls from data areas specified by their validators.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Unbind</span></tt>(event[,&nbsp;source,&nbsp;id,&nbsp;id2,&nbsp;handler])</td>
-<td>Disconnects the event handler binding for event from self.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">UnregisterHotKey</span></tt>((self,&nbsp;int&nbsp;hotkeyId)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Unregisters a system wide hotkey.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Update</span></tt>(self)</td>
-<td>Calling this method immediately repaints the invalidated area of the</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">UpdateWindowUI</span></tt>(self,&nbsp;long&nbsp;flags=UPDATE_UI_NONE)</td>
-<td>This function sends EVT_UPDATE_UI events to the window. The particular</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">UseBgCol</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Validate</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
-<td>Validates the current values of the child controls using their validators.</td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">WarpPointer</span></tt>(self,&nbsp;int&nbsp;x,&nbsp;int&nbsp;y)</td>
-<td>Moves the pointer to the given position on the window.</td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">WindowToClientSize</span></tt>((self,&nbsp;Size&nbsp;size)&nbsp;-&gt;&nbsp;Size)</td>
-<td></td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
+<p>The GUI controls for streaming acquisiton.</p>
 <dl class="class">
 <dt id="PYME.Acquire.HDFSpoolFrame.PanSpool">
 <em class="property">class </em><tt class="descclassname">PYME.Acquire.HDFSpoolFrame.</tt><tt class="descname">PanSpool</tt><big>(</big><em>parent</em>, <em>scope</em>, <em>defDir</em>, <em>defSeries='%(day)d_%(month)d_series'</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpoolFrame.PanSpool" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">wx._windows.Panel</span></tt></p>
+<p>A Panel containing the GUI controls for spooling</p>
 <p class="rubric">Attributes</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -1999,22 +873,22 @@ threads to complete.</p>
 <td>Get the id of the control following the one with the given</td>
 </tr>
 <tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.OnBAnalyse" title="PYME.Acquire.HDFSpoolFrame.PanSpool.OnBAnalyse"><tt class="xref py py-obj docutils literal"><span class="pre">OnBAnalyse</span></tt></a>(event)</td>
-<td></td>
+<td>GUI callback to launch data analysis.</td>
 </tr>
 <tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.OnBSetAqProtocolButton" title="PYME.Acquire.HDFSpoolFrame.PanSpool.OnBSetAqProtocolButton"><tt class="xref py py-obj docutils literal"><span class="pre">OnBSetAqProtocolButton</span></tt></a>(event)</td>
-<td></td>
+<td>Set the current protocol (GUI callback).</td>
 </tr>
 <tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.OnBSetSpoolDirButton" title="PYME.Acquire.HDFSpoolFrame.PanSpool.OnBSetSpoolDirButton"><tt class="xref py py-obj docutils literal"><span class="pre">OnBSetSpoolDirButton</span></tt></a>(event)</td>
-<td></td>
+<td>Set the directory we&#8217;re spooling into (GUI callback).</td>
 </tr>
 <tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.OnBStartSpoolButton" title="PYME.Acquire.HDFSpoolFrame.PanSpool.OnBStartSpoolButton"><tt class="xref py py-obj docutils literal"><span class="pre">OnBStartSpoolButton</span></tt></a>([event,&nbsp;stack])</td>
-<td></td>
+<td>GUI callback to start spooling.</td>
 </tr>
 <tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.OnBStartStackButton" title="PYME.Acquire.HDFSpoolFrame.PanSpool.OnBStartStackButton"><tt class="xref py py-obj docutils literal"><span class="pre">OnBStartStackButton</span></tt></a>([event])</td>
-<td></td>
+<td>GUI callback to start spooling with z-stepping.</td>
 </tr>
 <tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.OnBStopSpoolingButton" title="PYME.Acquire.HDFSpoolFrame.PanSpool.OnBStopSpoolingButton"><tt class="xref py py-obj docutils literal"><span class="pre">OnBStopSpoolingButton</span></tt></a>(event)</td>
-<td></td>
+<td>GUI callback to stop spooling.</td>
 </tr>
 <tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.OnTcSpoolFileText" title="PYME.Acquire.HDFSpoolFrame.PanSpool.OnTcSpoolFileText"><tt class="xref py py-obj docutils literal"><span class="pre">OnTcSpoolFileText</span></tt></a>(event)</td>
 <td></td>
@@ -2281,7 +1155,7 @@ threads to complete.</p>
 <td>Reenables window updating after a previous call to Freeze.  Calls to</td>
 </tr>
 <tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.Tick" title="PYME.Acquire.HDFSpoolFrame.PanSpool.Tick"><tt class="xref py py-obj docutils literal"><span class="pre">Tick</span></tt></a>()</td>
-<td></td>
+<td>Called with each new frame.</td>
 </tr>
 <tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">ToggleWindowStyle</span></tt>((self,&nbsp;int&nbsp;flag)&nbsp;-&gt;&nbsp;bool)</td>
 <td>Turn the flag on if it had been turned off before and vice versa,</td>
@@ -2302,7 +1176,7 @@ threads to complete.</p>
 <td>Calling this method immediately repaints the invalidated area of the</td>
 </tr>
 <tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.UpdateFreeSpace" title="PYME.Acquire.HDFSpoolFrame.PanSpool.UpdateFreeSpace"><tt class="xref py py-obj docutils literal"><span class="pre">UpdateFreeSpace</span></tt></a>([event])</td>
-<td></td>
+<td>Updates the free space display.</td>
 </tr>
 <tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">UpdateWindowUI</span></tt>(self,&nbsp;long&nbsp;flags=UPDATE_UI_NONE)</td>
 <td>This function sends EVT_UPDATE_UI events to the window. The particular</td>
@@ -2324,32 +1198,43 @@ threads to complete.</p>
 <dl class="method">
 <dt id="PYME.Acquire.HDFSpoolFrame.PanSpool.OnBAnalyse">
 <tt class="descname">OnBAnalyse</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.OnBAnalyse" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>GUI callback to launch data analysis.</p>
+<p>NB: this is often called programatically from within protocols to 
+automatically launch the analysis. TODO - factor this functionality 
+out of the view</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="PYME.Acquire.HDFSpoolFrame.PanSpool.OnBSetAqProtocolButton">
 <tt class="descname">OnBSetAqProtocolButton</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.OnBSetAqProtocolButton" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Set the current protocol (GUI callback).</p>
+<p>See also: PYME.Acquire.Protocols.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="PYME.Acquire.HDFSpoolFrame.PanSpool.OnBSetSpoolDirButton">
 <tt class="descname">OnBSetSpoolDirButton</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.OnBSetSpoolDirButton" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Set the directory we&#8217;re spooling into (GUI callback).</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="PYME.Acquire.HDFSpoolFrame.PanSpool.OnBStartSpoolButton">
 <tt class="descname">OnBStartSpoolButton</tt><big>(</big><em>event=None</em>, <em>stack=False</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.OnBStartSpoolButton" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>GUI callback to start spooling.</p>
+<p>NB: this is also called programatically by the start stack button.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="PYME.Acquire.HDFSpoolFrame.PanSpool.OnBStartStackButton">
 <tt class="descname">OnBStartStackButton</tt><big>(</big><em>event=None</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.OnBStartStackButton" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>GUI callback to start spooling with z-stepping.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="PYME.Acquire.HDFSpoolFrame.PanSpool.OnBStopSpoolingButton">
 <tt class="descname">OnBStopSpoolingButton</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.OnBStopSpoolingButton" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>GUI callback to stop spooling.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="PYME.Acquire.HDFSpoolFrame.PanSpool.OnTcSpoolFileText">
@@ -2359,19 +1244,42 @@ threads to complete.</p>
 <dl class="method">
 <dt id="PYME.Acquire.HDFSpoolFrame.PanSpool.Tick">
 <tt class="descname">Tick</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.Tick" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Called with each new frame. Updates the number of frames spooled 
+and disk space remaining</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="PYME.Acquire.HDFSpoolFrame.PanSpool.UpdateFreeSpace">
 <tt class="descname">UpdateFreeSpace</tt><big>(</big><em>event=None</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.UpdateFreeSpace" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Updates the free space display.</p>
+<p>Designed to be used as a callback with one of the system timers, but 
+can be called separately</p>
+</dd></dl>
 
 </dd></dl>
 
 <dl class="function">
 <dt id="PYME.Acquire.HDFSpoolFrame.baseconvert">
 <tt class="descclassname">PYME.Acquire.HDFSpoolFrame.</tt><tt class="descname">baseconvert</tt><big>(</big><em>number</em>, <em>todigits</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpoolFrame.baseconvert" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Converts a number to an arbtrary base.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>number</strong> : int</p>
+<blockquote>
+<div><p>The number to convert</p>
+</div></blockquote>
+<p><strong>todigits</strong> : iterable or string</p>
+<blockquote class="last">
+<div><p>The digits of the base e.g. &#8216;0123456&#8217; (base 7) 
+or &#8216;ABCDEFGHIJK&#8217; (non-numeric base 11)</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 <dl class="function">
 <dt id="PYME.Acquire.HDFSpoolFrame.create">
@@ -2384,7 +1292,8 @@ threads to complete.</p>
 <dl class="class">
 <dt id="PYME.Acquire.HDFSpooler.EventLogger">
 <em class="property">class </em><tt class="descclassname">PYME.Acquire.HDFSpooler.</tt><tt class="descname">EventLogger</tt><big>(</big><em>spool</em>, <em>scope</em>, <em>hdf5File</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpooler.EventLogger" title="Permalink to this definition">¶</a></dt>
-<dd><p class="rubric">Methods</p>
+<dd><p>Event logging backend for hdf/pytables data storage</p>
+<p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
 <col width="10%" />
@@ -2392,21 +1301,45 @@ threads to complete.</p>
 </colgroup>
 <tbody valign="top">
 <tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.HDFSpooler.EventLogger.logEvent" title="PYME.Acquire.HDFSpooler.EventLogger.logEvent"><tt class="xref py py-obj docutils literal"><span class="pre">logEvent</span></tt></a>(eventName[,&nbsp;eventDescr])</td>
-<td></td>
+<td>Log an event.</td>
 </tr>
 </tbody>
 </table>
 <dl class="method">
 <dt id="PYME.Acquire.HDFSpooler.EventLogger.logEvent">
 <tt class="descname">logEvent</tt><big>(</big><em>eventName</em>, <em>eventDescr=''</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpooler.EventLogger.logEvent" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Log an event.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>eventName</strong> : string</p>
+<blockquote>
+<div><p>short event name - &lt; 32 chars and should be shared by events of the
+same type.</p>
+</div></blockquote>
+<p><strong>eventDescr</strong> : string</p>
+<blockquote>
+<div><p>description of the event - additional, even specific information
+packaged as a string (&lt;255 chars). This is commonly used to store 
+parameters - e.g. z positions, and should be both human readable and 
+easily parsed.</p>
+</div></blockquote>
+<p><strong>In addition to the name and description, timing information is recorded</strong></p>
+<p class="last"><strong>for each event.</strong></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 </dd></dl>
 
 <dl class="class">
 <dt id="PYME.Acquire.HDFSpooler.Spooler">
-<em class="property">class </em><tt class="descclassname">PYME.Acquire.HDFSpooler.</tt><tt class="descname">Spooler</tt><big>(</big><em>scope</em>, <em>filename</em>, <em>acquisator</em>, <em>protocol=&lt;PYME.Acquire.protocol.Protocol instance at 0x49d5878&gt;</em>, <em>parent=None</em>, <em>complevel=6</em>, <em>complib='zlib'</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpooler.Spooler" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.HDFSpooler.</tt><tt class="descname">Spooler</tt><big>(</big><em>scope</em>, <em>filename</em>, <em>acquisator</em>, <em>protocol=&lt;PYME.Acquire.protocol.Protocol instance at 0x317e9e0&gt;</em>, <em>parent=None</em>, <em>complevel=6</em>, <em>complib='zlib'</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpooler.Spooler" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">PYME.Acquire.Spooler.Spooler</span></tt></p>
+<p>Responsible for the mechanics of spooling to a pytables/hdf file.</p>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -2418,10 +1351,10 @@ threads to complete.</p>
 <td></td>
 </tr>
 <tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.HDFSpooler.Spooler.StopSpool" title="PYME.Acquire.HDFSpooler.Spooler.StopSpool"><tt class="xref py py-obj docutils literal"><span class="pre">StopSpool</span></tt></a>()</td>
-<td></td>
+<td>Stop spooling and close file</td>
 </tr>
 <tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.HDFSpooler.Spooler.Tick" title="PYME.Acquire.HDFSpooler.Spooler.Tick"><tt class="xref py py-obj docutils literal"><span class="pre">Tick</span></tt></a>(caller)</td>
-<td></td>
+<td>Called on each frame</td>
 </tr>
 <tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">doStartLog</span></tt>()</td>
 <td></td>
@@ -2437,14 +1370,770 @@ threads to complete.</p>
 <dl class="method">
 <dt id="PYME.Acquire.HDFSpooler.Spooler.StopSpool">
 <tt class="descname">StopSpool</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpooler.Spooler.StopSpool" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Stop spooling and close file</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="PYME.Acquire.HDFSpooler.Spooler.Tick">
 <tt class="descname">Tick</tt><big>(</big><em>caller</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpooler.Spooler.Tick" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called on each frame</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-PYME.Acquire.MetaDataHandler">
+<span id="metadatahandler-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">MetaDataHandler</span></tt> Module<a class="headerlink" href="#module-PYME.Acquire.MetaDataHandler" title="Permalink to this headline">¶</a></h2>
+<p>Defines metadata handlers for the saving of acquisiton metadata to a variety 
+of file formats.</p>
+<p>The format of a metadata handler is defined by the MDHandlerBase class</p>
+<dl class="class">
+<dt id="PYME.Acquire.MetaDataHandler.HDFMDHandler">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.MetaDataHandler.</tt><tt class="descname">HDFMDHandler</tt><big>(</big><em>h5file</em>, <em>mdToCopy=None</em><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.HDFMDHandler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase" title="PYME.Acquire.MetaDataHandler.MDHandlerBase"><tt class="xref py py-class docutils literal"><span class="pre">PYME.Acquire.MetaDataHandler.MDHandlerBase</span></tt></a></p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetSimpleString</span></tt>()</td>
+<td>Writes out metadata in simplfied format.</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">WriteSimple</span></tt>(filename)</td>
+<td>Dumps metadata to file in simplfied format.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">clear</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">copyEntriesFrom</span></tt>(mdToCopy)</td>
+<td>Copies entries from another metadata object into this one.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">get</span></tt>(key[,&nbsp;default])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.HDFMDHandler.getEntry" title="PYME.Acquire.MetaDataHandler.HDFMDHandler.getEntry"><tt class="xref py py-obj docutils literal"><span class="pre">getEntry</span></tt></a>(entryName)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.HDFMDHandler.getEntryNames" title="PYME.Acquire.MetaDataHandler.HDFMDHandler.getEntryNames"><tt class="xref py py-obj docutils literal"><span class="pre">getEntryNames</span></tt></a>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">getOrDefault</span></tt>(name,&nbsp;default)</td>
+<td>Returns the entry for a given name, of a default value if the key  is not present.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">has_key</span></tt>(key)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">items</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">iteritems</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">iterkeys</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">itervalues</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">keys</span></tt>()</td>
+<td>Alias for getEntryNames to make us look like a dictionary</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">mergeEntriesFrom</span></tt>(mdToCopy)</td>
+<td>Copies entries from another metadata object into this one.</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">pop</span></tt>(key,&nbsp;*args)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">popitem</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.HDFMDHandler.setEntry" title="PYME.Acquire.MetaDataHandler.HDFMDHandler.setEntry"><tt class="xref py py-obj docutils literal"><span class="pre">setEntry</span></tt></a>(entryName,&nbsp;value)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">setdefault</span></tt>(key[,&nbsp;default])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">update</span></tt>([other])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">values</span></tt>()</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="PYME.Acquire.MetaDataHandler.HDFMDHandler.getEntry">
+<tt class="descname">getEntry</tt><big>(</big><em>entryName</em><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.HDFMDHandler.getEntry" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.MetaDataHandler.HDFMDHandler.getEntryNames">
+<tt class="descname">getEntryNames</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.HDFMDHandler.getEntryNames" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.MetaDataHandler.HDFMDHandler.setEntry">
+<tt class="descname">setEntry</tt><big>(</big><em>entryName</em>, <em>value</em><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.HDFMDHandler.setEntry" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
+
+<dl class="class">
+<dt id="PYME.Acquire.MetaDataHandler.MDHandlerBase">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.MetaDataHandler.</tt><tt class="descname">MDHandlerBase</tt><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">UserDict.DictMixin</span></tt></p>
+<p>Base class from which all metadata handlers are derived.</p>
+<p>Metadata attributes can be read and set using either a dictionary like
+interface, or by calling the <cite>getEntry</cite> and <cite>setEntry</cite> methods. Derived 
+classes <em>MUST</em> override <cite>getEntry</cite>, <cite>setEntry</cite>, and <cite>getEntryNames</cite>.</p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.GetSimpleString" title="PYME.Acquire.MetaDataHandler.MDHandlerBase.GetSimpleString"><tt class="xref py py-obj docutils literal"><span class="pre">GetSimpleString</span></tt></a>()</td>
+<td>Writes out metadata in simplfied format.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.WriteSimple" title="PYME.Acquire.MetaDataHandler.MDHandlerBase.WriteSimple"><tt class="xref py py-obj docutils literal"><span class="pre">WriteSimple</span></tt></a>(filename)</td>
+<td>Dumps metadata to file in simplfied format.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">clear</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.copyEntriesFrom" title="PYME.Acquire.MetaDataHandler.MDHandlerBase.copyEntriesFrom"><tt class="xref py py-obj docutils literal"><span class="pre">copyEntriesFrom</span></tt></a>(mdToCopy)</td>
+<td>Copies entries from another metadata object into this one.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">get</span></tt>(key[,&nbsp;default])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.getEntry" title="PYME.Acquire.MetaDataHandler.MDHandlerBase.getEntry"><tt class="xref py py-obj docutils literal"><span class="pre">getEntry</span></tt></a>(name)</td>
+<td>Returns the entry for a given name.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.getEntryNames" title="PYME.Acquire.MetaDataHandler.MDHandlerBase.getEntryNames"><tt class="xref py py-obj docutils literal"><span class="pre">getEntryNames</span></tt></a>()</td>
+<td>Returns a list of defined entries.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.getOrDefault" title="PYME.Acquire.MetaDataHandler.MDHandlerBase.getOrDefault"><tt class="xref py py-obj docutils literal"><span class="pre">getOrDefault</span></tt></a>(name,&nbsp;default)</td>
+<td>Returns the entry for a given name, of a default value if the key  is not present.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">has_key</span></tt>(key)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">items</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">iteritems</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">iterkeys</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">itervalues</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.keys" title="PYME.Acquire.MetaDataHandler.MDHandlerBase.keys"><tt class="xref py py-obj docutils literal"><span class="pre">keys</span></tt></a>()</td>
+<td>Alias for getEntryNames to make us look like a dictionary</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.mergeEntriesFrom" title="PYME.Acquire.MetaDataHandler.MDHandlerBase.mergeEntriesFrom"><tt class="xref py py-obj docutils literal"><span class="pre">mergeEntriesFrom</span></tt></a>(mdToCopy)</td>
+<td>Copies entries from another metadata object into this one.</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">pop</span></tt>(key,&nbsp;*args)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">popitem</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.setEntry" title="PYME.Acquire.MetaDataHandler.MDHandlerBase.setEntry"><tt class="xref py py-obj docutils literal"><span class="pre">setEntry</span></tt></a>(name)</td>
+<td>Sets the entry for a given name.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">setdefault</span></tt>(key[,&nbsp;default])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">update</span></tt>([other])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">values</span></tt>()</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="PYME.Acquire.MetaDataHandler.MDHandlerBase.GetSimpleString">
+<tt class="descname">GetSimpleString</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.GetSimpleString" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes out metadata in simplfied format.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns :</th><td class="field-body"><p class="first"><strong>mdstring</strong> : string</p>
+<blockquote class="last">
+<div><p>The metadata in a simple, human readable format.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.SimpleMDHandler" title="PYME.Acquire.MetaDataHandler.SimpleMDHandler"><tt class="xref py py-obj docutils literal"><span class="pre">SimpleMDHandler</span></tt></a></p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.MetaDataHandler.MDHandlerBase.WriteSimple">
+<tt class="descname">WriteSimple</tt><big>(</big><em>filename</em><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.WriteSimple" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dumps metadata to file in simplfied format.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>filename</strong> : string</p>
+<blockquote class="last">
+<div><p>The the filename to write to. Should end in .md.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.SimpleMDHandler" title="PYME.Acquire.MetaDataHandler.SimpleMDHandler"><tt class="xref py py-obj docutils literal"><span class="pre">SimpleMDHandler</span></tt></a></p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.MetaDataHandler.MDHandlerBase.copyEntriesFrom">
+<tt class="descname">copyEntriesFrom</tt><big>(</big><em>mdToCopy</em><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.copyEntriesFrom" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copies entries from another metadata object into this one. Duplicate 
+keys will be overwritten.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>mdToCopy</strong> : an instance of a metadata handler</p>
+<blockquote class="last">
+<div><p>The metadata handler from which to copy entries.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.MetaDataHandler.MDHandlerBase.getEntry">
+<tt class="descname">getEntry</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.getEntry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the entry for a given name.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>name</strong> : string</p>
+<blockquote>
+<div><p>The entry name. This name should be heirachical, and deliminated
+with dots e.g. &#8216;Camera.EMCCDGain&#8217;</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns :</th><td class="field-body"><p class="first"><strong>value</strong> : object</p>
+<blockquote class="last">
+<div><p>The value stored for the given key. This can, in principle, be 
+anything that can be pickled. strings, ints, bools and floats are
+all stored in a human readable form in the textual metadata 
+representations, wheras more complex objects are base64 encoded.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.MetaDataHandler.MDHandlerBase.getEntryNames">
+<tt class="descname">getEntryNames</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.getEntryNames" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of defined entries.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns :</th><td class="field-body"><p class="first"><strong>names</strong> : list of string</p>
+<blockquote class="last">
+<div><p>The keys which are defined in the metadata.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.MetaDataHandler.MDHandlerBase.getOrDefault">
+<tt class="descname">getOrDefault</tt><big>(</big><em>name</em>, <em>default</em><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.getOrDefault" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the entry for a given name, of a default value if the key 
+is not present.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>name</strong> : string</p>
+<blockquote>
+<div><p>The entry name. This name should be heirachical, and deliminated
+with dots e.g. &#8216;Camera.EMCCDGain&#8217;</p>
+</div></blockquote>
+<p><strong>default</strong> : object</p>
+<blockquote>
+<div><p>What to return if the name is not defined</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns :</th><td class="field-body"><p class="first"><strong>value</strong> : object</p>
+<blockquote class="last">
+<div><p>The value stored for the given key. This can, in principle, be 
+anything that can be pickled. strings, ints, bools and floats are
+all stored in a human readable form in the textual metadata 
+representations, wheras more complex objects are base64 encoded.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.MetaDataHandler.MDHandlerBase.keys">
+<tt class="descname">keys</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for getEntryNames to make us look like a dictionary</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.MetaDataHandler.MDHandlerBase.mergeEntriesFrom">
+<tt class="descname">mergeEntriesFrom</tt><big>(</big><em>mdToCopy</em><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.mergeEntriesFrom" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copies entries from another metadata object into this one. Values
+are only copied if they are not already defined locally.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>mdToCopy</strong> : an instance of a metadata handler</p>
+<blockquote class="last">
+<div><p>The metadata handler from which to copy entries.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.MetaDataHandler.MDHandlerBase.setEntry">
+<tt class="descname">setEntry</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.setEntry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the entry for a given name.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>name</strong> : string</p>
+<blockquote>
+<div><p>The entry name. This name should be heirachical, and deliminated
+with dots e.g. &#8216;Camera.EMCCDGain&#8217;</p>
+</div></blockquote>
+<p><strong>value</strong> : object</p>
+<blockquote class="last">
+<div><p>The value stored for the given key. This can, in principle, be 
+anything that can be pickled. strings, ints, bools and floats are
+all stored in a human readable form in the textual metadata 
+representations, wheras more complex objects are base64 encoded.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="PYME.Acquire.MetaDataHandler.NestedClassMDHandler">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.MetaDataHandler.</tt><tt class="descname">NestedClassMDHandler</tt><big>(</big><em>mdToCopy=None</em><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.NestedClassMDHandler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase" title="PYME.Acquire.MetaDataHandler.MDHandlerBase"><tt class="xref py py-class docutils literal"><span class="pre">PYME.Acquire.MetaDataHandler.MDHandlerBase</span></tt></a></p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetSimpleString</span></tt>()</td>
+<td>Writes out metadata in simplfied format.</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">WriteSimple</span></tt>(filename)</td>
+<td>Dumps metadata to file in simplfied format.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">clear</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">copyEntriesFrom</span></tt>(mdToCopy)</td>
+<td>Copies entries from another metadata object into this one.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">get</span></tt>(key[,&nbsp;default])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.NestedClassMDHandler.getEntry" title="PYME.Acquire.MetaDataHandler.NestedClassMDHandler.getEntry"><tt class="xref py py-obj docutils literal"><span class="pre">getEntry</span></tt></a>(entryName)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.NestedClassMDHandler.getEntryNames" title="PYME.Acquire.MetaDataHandler.NestedClassMDHandler.getEntryNames"><tt class="xref py py-obj docutils literal"><span class="pre">getEntryNames</span></tt></a>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">getOrDefault</span></tt>(name,&nbsp;default)</td>
+<td>Returns the entry for a given name, of a default value if the key  is not present.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">has_key</span></tt>(key)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">items</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">iteritems</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">iterkeys</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">itervalues</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">keys</span></tt>()</td>
+<td>Alias for getEntryNames to make us look like a dictionary</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">mergeEntriesFrom</span></tt>(mdToCopy)</td>
+<td>Copies entries from another metadata object into this one.</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">pop</span></tt>(key,&nbsp;*args)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">popitem</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.NestedClassMDHandler.setEntry" title="PYME.Acquire.MetaDataHandler.NestedClassMDHandler.setEntry"><tt class="xref py py-obj docutils literal"><span class="pre">setEntry</span></tt></a>(entryName,&nbsp;value)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">setdefault</span></tt>(key[,&nbsp;default])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">update</span></tt>([other])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">values</span></tt>()</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="PYME.Acquire.MetaDataHandler.NestedClassMDHandler.getEntry">
+<tt class="descname">getEntry</tt><big>(</big><em>entryName</em><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.NestedClassMDHandler.getEntry" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.MetaDataHandler.NestedClassMDHandler.getEntryNames">
+<tt class="descname">getEntryNames</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.NestedClassMDHandler.getEntryNames" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.MetaDataHandler.NestedClassMDHandler.setEntry">
+<tt class="descname">setEntry</tt><big>(</big><em>entryName</em>, <em>value</em><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.NestedClassMDHandler.setEntry" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="PYME.Acquire.MetaDataHandler.QueueMDHandler">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.MetaDataHandler.</tt><tt class="descname">QueueMDHandler</tt><big>(</big><em>tq</em>, <em>queueName</em>, <em>mdToCopy=None</em><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.QueueMDHandler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase" title="PYME.Acquire.MetaDataHandler.MDHandlerBase"><tt class="xref py py-class docutils literal"><span class="pre">PYME.Acquire.MetaDataHandler.MDHandlerBase</span></tt></a></p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetSimpleString</span></tt>()</td>
+<td>Writes out metadata in simplfied format.</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">WriteSimple</span></tt>(filename)</td>
+<td>Dumps metadata to file in simplfied format.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">clear</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">copyEntriesFrom</span></tt>(mdToCopy)</td>
+<td>Copies entries from another metadata object into this one.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">get</span></tt>(key[,&nbsp;default])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.QueueMDHandler.getEntry" title="PYME.Acquire.MetaDataHandler.QueueMDHandler.getEntry"><tt class="xref py py-obj docutils literal"><span class="pre">getEntry</span></tt></a>(entryName)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.QueueMDHandler.getEntryNames" title="PYME.Acquire.MetaDataHandler.QueueMDHandler.getEntryNames"><tt class="xref py py-obj docutils literal"><span class="pre">getEntryNames</span></tt></a>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">getOrDefault</span></tt>(name,&nbsp;default)</td>
+<td>Returns the entry for a given name, of a default value if the key  is not present.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">has_key</span></tt>(key)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">items</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">iteritems</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">iterkeys</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">itervalues</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">keys</span></tt>()</td>
+<td>Alias for getEntryNames to make us look like a dictionary</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">mergeEntriesFrom</span></tt>(mdToCopy)</td>
+<td>Copies entries from another metadata object into this one.</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">pop</span></tt>(key,&nbsp;*args)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">popitem</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.QueueMDHandler.setEntry" title="PYME.Acquire.MetaDataHandler.QueueMDHandler.setEntry"><tt class="xref py py-obj docutils literal"><span class="pre">setEntry</span></tt></a>(entryName,&nbsp;value)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">setdefault</span></tt>(key[,&nbsp;default])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">update</span></tt>([other])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">values</span></tt>()</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="PYME.Acquire.MetaDataHandler.QueueMDHandler.getEntry">
+<tt class="descname">getEntry</tt><big>(</big><em>entryName</em><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.QueueMDHandler.getEntry" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.MetaDataHandler.QueueMDHandler.getEntryNames">
+<tt class="descname">getEntryNames</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.QueueMDHandler.getEntryNames" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.MetaDataHandler.QueueMDHandler.setEntry">
+<tt class="descname">setEntry</tt><big>(</big><em>entryName</em>, <em>value</em><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.QueueMDHandler.setEntry" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="PYME.Acquire.MetaDataHandler.SimpleMDHandler">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.MetaDataHandler.</tt><tt class="descname">SimpleMDHandler</tt><big>(</big><em>filename=None</em>, <em>mdToCopy=None</em><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.SimpleMDHandler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#PYME.Acquire.MetaDataHandler.NestedClassMDHandler" title="PYME.Acquire.MetaDataHandler.NestedClassMDHandler"><tt class="xref py py-class docutils literal"><span class="pre">PYME.Acquire.MetaDataHandler.NestedClassMDHandler</span></tt></a></p>
+<p>simple metadata format - consists of a python script with a .md extension
+which adds entrys using the dictionary syntax to a metadata handler called md</p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetSimpleString</span></tt>()</td>
+<td>Writes out metadata in simplfied format.</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">WriteSimple</span></tt>(filename)</td>
+<td>Dumps metadata to file in simplfied format.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">clear</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">copyEntriesFrom</span></tt>(mdToCopy)</td>
+<td>Copies entries from another metadata object into this one.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">get</span></tt>(key[,&nbsp;default])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">getEntry</span></tt>(entryName)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">getEntryNames</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">getOrDefault</span></tt>(name,&nbsp;default)</td>
+<td>Returns the entry for a given name, of a default value if the key  is not present.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">has_key</span></tt>(key)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">items</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">iteritems</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">iterkeys</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">itervalues</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">keys</span></tt>()</td>
+<td>Alias for getEntryNames to make us look like a dictionary</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">mergeEntriesFrom</span></tt>(mdToCopy)</td>
+<td>Copies entries from another metadata object into this one.</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">pop</span></tt>(key,&nbsp;*args)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">popitem</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">setEntry</span></tt>(entryName,&nbsp;value)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">setdefault</span></tt>(key[,&nbsp;default])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">update</span></tt>([other])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">values</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.SimpleMDHandler.write" title="PYME.Acquire.MetaDataHandler.SimpleMDHandler.write"><tt class="xref py py-obj docutils literal"><span class="pre">write</span></tt></a>(filename)</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="PYME.Acquire.MetaDataHandler.SimpleMDHandler.write">
+<tt class="descname">write</tt><big>(</big><em>filename</em><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.SimpleMDHandler.write" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="PYME.Acquire.MetaDataHandler.XMLMDHandler">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.MetaDataHandler.</tt><tt class="descname">XMLMDHandler</tt><big>(</big><em>filename=None</em>, <em>mdToCopy=None</em><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.XMLMDHandler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase" title="PYME.Acquire.MetaDataHandler.MDHandlerBase"><tt class="xref py py-class docutils literal"><span class="pre">PYME.Acquire.MetaDataHandler.MDHandlerBase</span></tt></a></p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetSimpleString</span></tt>()</td>
+<td>Writes out metadata in simplfied format.</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">WriteSimple</span></tt>(filename)</td>
+<td>Dumps metadata to file in simplfied format.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">clear</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">copyEntriesFrom</span></tt>(mdToCopy)</td>
+<td>Copies entries from another metadata object into this one.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">get</span></tt>(key[,&nbsp;default])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.XMLMDHandler.getEntry" title="PYME.Acquire.MetaDataHandler.XMLMDHandler.getEntry"><tt class="xref py py-obj docutils literal"><span class="pre">getEntry</span></tt></a>(entryName)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.XMLMDHandler.getEntryNames" title="PYME.Acquire.MetaDataHandler.XMLMDHandler.getEntryNames"><tt class="xref py py-obj docutils literal"><span class="pre">getEntryNames</span></tt></a>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">getOrDefault</span></tt>(name,&nbsp;default)</td>
+<td>Returns the entry for a given name, of a default value if the key  is not present.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">has_key</span></tt>(key)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">items</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">iteritems</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">iterkeys</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">itervalues</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">keys</span></tt>()</td>
+<td>Alias for getEntryNames to make us look like a dictionary</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">mergeEntriesFrom</span></tt>(mdToCopy)</td>
+<td>Copies entries from another metadata object into this one.</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">pop</span></tt>(key,&nbsp;*args)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">popitem</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.XMLMDHandler.setEntry" title="PYME.Acquire.MetaDataHandler.XMLMDHandler.setEntry"><tt class="xref py py-obj docutils literal"><span class="pre">setEntry</span></tt></a>(entryName,&nbsp;value)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">setdefault</span></tt>(key[,&nbsp;default])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">update</span></tt>([other])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">values</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.XMLMDHandler.writeXML" title="PYME.Acquire.MetaDataHandler.XMLMDHandler.writeXML"><tt class="xref py py-obj docutils literal"><span class="pre">writeXML</span></tt></a>(filename)</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="PYME.Acquire.MetaDataHandler.XMLMDHandler.getEntry">
+<tt class="descname">getEntry</tt><big>(</big><em>entryName</em><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.XMLMDHandler.getEntry" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.MetaDataHandler.XMLMDHandler.getEntryNames">
+<tt class="descname">getEntryNames</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.XMLMDHandler.getEntryNames" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.MetaDataHandler.XMLMDHandler.setEntry">
+<tt class="descname">setEntry</tt><big>(</big><em>entryName</em>, <em>value</em><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.XMLMDHandler.setEntry" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.MetaDataHandler.XMLMDHandler.writeXML">
+<tt class="descname">writeXML</tt><big>(</big><em>filename</em><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.XMLMDHandler.writeXML" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="PYME.Acquire.MetaDataHandler.instanceinlist">
+<tt class="descclassname">PYME.Acquire.MetaDataHandler.</tt><tt class="descname">instanceinlist</tt><big>(</big><em>cls</em>, <em>list</em><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.instanceinlist" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </div>
 <div class="section" id="subpackages">
@@ -2471,6 +2160,9 @@ threads to complete.</p>
 </ul>
 </li>
 <li><a class="reference internal" href="#module-PYME.Acquire.HDFSpooler"><tt class="docutils literal"><span class="pre">HDFSpooler</span></tt> Module</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-PYME.Acquire.MetaDataHandler"><tt class="docutils literal"><span class="pre">MetaDataHandler</span></tt> Module</a><ul>
 </ul>
 </li>
 <li><a class="reference internal" href="#subpackages">Subpackages</a><ul>

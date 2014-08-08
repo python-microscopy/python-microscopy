@@ -20,8 +20,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
+'''The GUI controls for streaming acquisiton.
 
-#Boa:Frame:FrSpool
+'''
 
 import wx
 import datetime
@@ -59,40 +60,53 @@ def create(parent):
 ] = [wx.NewId() for _init_ctrls in range(14)]
 
 def baseconvert(number,todigits):
-        x = number
+    '''Converts a number to an arbtrary base.
     
-        # create the result in base 'len(todigits)'
-        res=""
+    Parameters
+    ----------
+    number : int
+        The number to convert
+    todigits : iterable or string
+        The digits of the base e.g. '0123456' (base 7) 
+        or 'ABCDEFGHIJK' (non-numeric base 11)
+    '''
+    x = number
 
-        if x == 0:
-            res=todigits[0]
-        
-        while x>0:
-            digit = x % len(todigits)
-            res = todigits[digit] + res
-            x /= len(todigits)
+    # create the result in base 'len(todigits)'
+    res=""
 
-        return res
+    if x == 0:
+        res=todigits[0]
+    
+    while x>0:
+        digit = x % len(todigits)
+        res = todigits[digit] + res
+        x /= len(todigits)
+
+    return res
 
 
-class FrSpool(wx.Frame):
-    def __init__(self, parent, scope, defDir, defSeries='%(day)d_%(month)d_series'):
-        wx.Frame.__init__(self, id=wxID_FRSPOOL, name='FrSpool', parent=parent,
-              pos=wx.Point(543, 403), size=wx.Size(285, 253),
-              style=wx.DEFAULT_FRAME_STYLE, title='Spooling')
-        #self.SetClientSize(wx.Size(277, 226))
-
-        vsizer = wx.BoxSizer(wx.VERTICAL)
-
-        self.spPan = PanSpool(self, scope, defDir, defSeries='%(day)d_%(month)d_series')
-
-        vsizer.Add(self.spPan, 0, wx.ALL, 0)
-        self.SetSizer(vsizer)
-        vsizer.Fit(self)
+#class FrSpool(wx.Frame):
+#    '''A standalone frame containing the spool panel. Mostly historical as 
+#    the panel is now embedded directly within the main GUI frame.'''
+#    def __init__(self, parent, scope, defDir, defSeries='%(day)d_%(month)d_series'):
+#        wx.Frame.__init__(self, id=wxID_FRSPOOL, name='FrSpool', parent=parent,
+#              pos=wx.Point(543, 403), size=wx.Size(285, 253),
+#              style=wx.DEFAULT_FRAME_STYLE, title='Spooling')
+#        #self.SetClientSize(wx.Size(277, 226))
+#
+#        vsizer = wx.BoxSizer(wx.VERTICAL)
+#
+#        self.spPan = PanSpool(self, scope, defDir, defSeries='%(day)d_%(month)d_series')
+#
+#        vsizer.Add(self.spPan, 0, wx.ALL, 0)
+#        self.SetSizer(vsizer)
+#        vsizer.Fit(self)
 
     
 
 class PanSpool(wx.Panel):
+    '''A Panel containing the GUI controls for spooling'''
     def _init_ctrls(self, prnt):
         wx.Panel.__init__(self, parent=prnt, style=wx.TAB_TRAVERSAL)
 
@@ -207,6 +221,21 @@ class PanSpool(wx.Panel):
         vsizer.Fit(self)
 
     def __init__(self, parent, scope, defDir, defSeries='%(day)d_%(month)d_series'):
+        '''Initialise the spooling panel.
+        
+        Parameters
+        ----------
+        parent : wx.Window derived class
+            The parent window
+        scope : scope instance
+            The currently active microscope class (see funcs.py)
+        defDir : string pattern
+            The default directory to save data to. Any keys of the form `%(<key>)` 
+            will be substituted using the values defined in `PYME.fileUtils.nameUtils.dateDict` 
+        defSeries : string pattern
+            This specifies a pattern for file naming. Keys will be substituted as for `defDir`
+            
+        '''
         self._init_ctrls(parent)
         self.scope = scope
         
@@ -240,6 +269,11 @@ class PanSpool(wx.Panel):
         return baseconvert(num, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')
 
     def UpdateFreeSpace(self, event=None):
+        '''Updates the free space display. 
+        
+        Designed to be used as a callback with one of the system timers, but 
+        can be called separately
+        '''
         freeGB = get_free_space(self.dirname)/1e9
         self.stDiskSpace.SetLabel('Free Space: %3.2f GB' % freeGB)
         if freeGB < 5:
@@ -250,6 +284,10 @@ class PanSpool(wx.Panel):
         
 
     def OnBStartSpoolButton(self, event=None, stack=False):
+        '''GUI callback to start spooling.
+        
+        NB: this is also called programatically by the start stack button.'''
+        
         #fn = wx.FileSelector('Save spooled data as ...', default_extension='.log',wildcard='*.log')
         #if not fn == '': #if the user cancelled 
         #    self.spooler = Spooler.Spooler(self.scope, fn, self.scope.pa, self)
@@ -318,10 +356,12 @@ class PanSpool(wx.Panel):
             sampleInformation.getSampleData(self, self.spooler.md)
 
     def OnBStartStackButton(self, event=None):
+        '''GUI callback to start spooling with z-stepping.'''
         self.OnBStartSpoolButton(stack=True)
         
 
     def OnBStopSpoolingButton(self, event):
+        '''GUI callback to stop spooling.'''
         self.spooler.StopSpool()
         self.bStartSpool.Enable(True)
         self.bStartStack.Enable(True)
@@ -335,6 +375,11 @@ class PanSpool(wx.Panel):
         self.UpdateFreeSpace()
 
     def OnBAnalyse(self, event):
+        '''GUI callback to launch data analysis.
+        
+        NB: this is often called programatically from within protocols to 
+        automatically launch the analysis. TODO - factor this functionality 
+        out of the view'''
         if self.cbQueue.GetValue(): #queue or not
             if sys.platform == 'win32':
                 subprocess.Popen('dh5view.cmd -q %s QUEUE://%s' % (self.spooler.tq.URI, self.queueName), shell=True)
@@ -347,6 +392,8 @@ class PanSpool(wx.Panel):
 #                subprocess.Popen('../DSView/dh5view.py %s' % self.spooler.filename, shell=True)
         
     def Tick(self):
+        '''Called with each new frame. Updates the number of frames spooled 
+        and disk space remaining'''
         dtn = datetime.datetime.now()
         
         dtt = dtn - self.spooler.dtStart
@@ -355,6 +402,7 @@ class PanSpool(wx.Panel):
         self.UpdateFreeSpace()
 
     def OnBSetSpoolDirButton(self, event):
+        '''Set the directory we're spooling into (GUI callback).'''
         ndir = wx.DirSelector()
         if not ndir == '':
             self.dirname = ndir + os.sep
@@ -369,6 +417,9 @@ class PanSpool(wx.Panel):
             self.UpdateFreeSpace()
 
     def OnBSetAqProtocolButton(self, event):
+        '''Set the current protocol (GUI callback).
+        
+        See also: PYME.Acquire.Protocols.'''
         protocolList = glob.glob(PYME.Acquire.Protocols.__path__[0] + '/[a-zA-Z]*.py')
         protocolList = ['<None>',] + [os.path.split(p)[-1] for p in protocolList]
         pDlg = wx.SingleChoiceDialog(self, '', 'Select Protocol', protocolList)

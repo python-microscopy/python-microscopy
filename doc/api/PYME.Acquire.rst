@@ -33,22 +33,17 @@ Acquire Package
     :undoc-members:
     :show-inheritance:
 ..
-    :mod:`KDFSpooler` Module
-    ------------------------
+    
 
-    .. automodule:: PYME.Acquire.KDFSpooler
-        :members:
-        :undoc-members:
-        :show-inheritance:
+:mod:`MetaDataHandler` Module
+-----------------------------
 
-    :mod:`MetaDataHandler` Module
-    -----------------------------
+.. automodule:: PYME.Acquire.MetaDataHandler
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
-    .. automodule:: PYME.Acquire.MetaDataHandler
-        :members:
-        :undoc-members:
-        :show-inheritance:
-
+..
     :mod:`MultiPointScanner` Module
     -------------------------------
 
