@@ -40,8 +40,10 @@ class deconvolver:
         DECONV_ICTM = wx.NewId()
         DECONV_BEAD = wx.NewId()
         DECONV_WIENER = wx.NewId()
+        DECONV_MOVIE = wx.NewId()
         dsviewer.mProcessing.Append(DECONV_ICTM, "Deconvolution", "", wx.ITEM_NORMAL)
         dsviewer.mProcessing.Append(DECONV_BEAD, "Deconvolve bead shape", "", wx.ITEM_NORMAL)
+        dsviewer.mProcessing.Append(DECONV_MOVIE, "Deconvolve movie (2D)", "", wx.ITEM_NORMAL)
         dsviewer.mProcessing.Append(DECONV_WIENER, "Wiener Deconvolution", "", wx.ITEM_NORMAL)
         #mDeconvolution.AppendSeparator()
         #dsviewer.save_menu.Append(DECONV_SAVE, "Deconvolution", "", wx.ITEM_NORMAL)
@@ -50,6 +52,7 @@ class deconvolver:
         wx.EVT_MENU(dsviewer, DECONV_ICTM, self.OnDeconvICTM)
         wx.EVT_MENU(dsviewer, DECONV_BEAD, self.OnDeconvBead)
         wx.EVT_MENU(dsviewer, DECONV_WIENER, self.OnDeconvWiener)
+        wx.EVT_MENU(dsviewer, DECONV_MOVIE, self.OnDeconvMovie)
         #wx.EVT_MENU(dsviewer, DECONV_SAVE, self.saveDeconvolution)
 
         dsviewer.updateHooks.append(self.update)
@@ -108,7 +111,9 @@ class deconvolver:
                 decMDH['Deconvolution.BeadRadius'] = dlg.GetBeadRadius()
                 
             else:
-                psf, vs = numpy.load(dlg.GetPSFFilename())
+                #psf, vs = numpy.load(dlg.GetPSFFilename())
+                #psf = numpy.atleast_3d(psf)
+                psfFilename, psf, vs = dlg.GetPSF(vshint = vx)
 
                 decMDH['Deconvolution.PSFFile'] = dlg.GetPSFFilename()
 
@@ -120,6 +125,8 @@ class deconvolver:
             decMDH['Deconvolution.Offset'] = dlg.GetOffset()
 
             #crop PSF in z if bigger than stack
+
+            print psf.shape, data.shape
             if psf.shape[2] > data.shape[2]:
                 dz = psf.shape[2] - data.shape[2]
 
@@ -205,6 +212,98 @@ class deconvolver:
             self.deconTimer.WantNotification.append(self.OnDeconTimer)
 
             self.deconTimer.Start(500)
+            
+    def OnDeconvMovie(self, event, beadMode=False):
+        from PYME.Deconv.deconvDialogs import DeconvSettingsDialog #,DeconvProgressDialog,DeconvProgressPanel
+
+        dlg = DeconvSettingsDialog(self.dsviewer, beadMode, self.image.data.shape[3])
+        if dlg.ShowModal() == wx.ID_OK:
+            from PYME.Deconv import dec, richardsonLucy #, decThread
+            nIter = dlg.GetNumIterationss()
+            regLambda = dlg.GetRegularisationLambda()
+
+            decMDH = MetaDataHandler.NestedClassMDHandler(self.image.mdh)
+            decMDH['Deconvolution.NumIterations'] = nIter
+            decMDH['Deconvolution.OriginalFile'] = self.image.filename
+
+            #self.dlgDeconProg = DeconvProgressDialog(self.dsviewer, nIter)
+            #self.dlgDeconProg.Show()
+            vx = self.image.mdh.getEntry('voxelsize.x')
+            vy = self.image.mdh.getEntry('voxelsize.y')
+            vz = self.image.mdh.getEntry('voxelsize.z')
+
+            if beadMode:
+                from PYME.Deconv import beadGen
+                psf = beadGen.genBeadImage(dlg.GetBeadRadius(), (1e3*vx, 1e3*vy, 1e3*vz))
+
+                decMDH['Deconvolution.BeadRadius'] = dlg.GetBeadRadius()
+                
+            else:
+                #psf, vs = numpy.load(dlg.GetPSFFilename())
+                #psf = numpy.atleast_3d(psf)
+                
+                psfFilename, psf, vs = dlg.GetPSF(vshint = vx)
+
+                decMDH['Deconvolution.PSFFile'] = psfFilename
+
+                if not (vs.x == vx and vs.y == vy):# and vs.z ==vz):
+                    #rescale psf to match data voxel size
+                    psf = ndimage.zoom(psf, [vs.x/vx, vs.y/vy, 1])
+
+            data = self.image.data[:,:,:, dlg.GetChannel()].astype('f') - dlg.GetOffset()
+            decMDH['Deconvolution.Offset'] = dlg.GetOffset()
+
+            #crop PSF in z if bigger than stack
+
+            #print psf.shape, data.shape
+            if psf.shape[2] > data.shape[2]:
+                dz = psf.shape[2] - data.shape[2]
+
+                psf = psf[:,:,numpy.floor(dz/2):(psf.shape[2]-numpy.ceil(dz/2))]
+
+            print((data.shape, psf.shape))
+
+
+            dp = data
+            weights = 1
+
+            if dlg.GetBlocking():
+                decMDH['Deconvolution.Method'] = 'Blocked ICTM'
+                self.checkTQ()
+                from PYME.Deconv import tq_block_dec
+                bs = dlg.GetBlockSize()
+                self.decT = tq_block_dec.blocking_deconv(self.tq, data, psf, self.image.seriesName, blocksize={'y': bs, 'x': bs, 'z': 256})
+                self.decT.go()
+
+            else:
+                decMDH['Deconvolution.Method'] = dlg.GetMethod()
+                if dlg.GetMethod() == 'ICTM':
+                    decMDH['Deconvolution.RegularisationParameter'] = regLambda
+                    if beadMode:
+                        self.dec = dec.dec_bead()
+                    else:
+                        self.dec = dec.dec_conv()
+                else:
+                    if beadMode:
+                        self.dec = richardsonLucy.rlbead()
+                    else:
+                        self.dec = richardsonLucy.dec_conv()
+
+                self.dec.psf_calc(psf, dp[:,:,0:1].shape)
+
+                #self.decT = decThread.decThread(self.dec, dp, regLambda, nIter, weights)
+                #self.decT.start()
+
+                res = numpy.concatenate([self.dec.deconv(dp[:,:,i:(i+1)], regLambda, nIter, weights).reshape(self.dec.shape) for i in range(dp.shape[2])], 2)
+
+
+                
+                
+                im = ImageStack(data = res, mdh = decMDH, titleStub = 'Deconvolution Result')
+                mode = 'lite'
+                
+                self.res = ViewIm3D(im, mode=mode, parent=wx.GetTopLevelParent(self.dsviewer))                    
+                    
 
 
     def OnDeconEnd(self, sucess):

@@ -215,7 +215,7 @@ class DataSource(BaseDataSource):
         self.datasource = datasource
         
         self.dBuffer = dataBuffer(self.datasource, 50)
-        self.bBuffer = backgroundBufferM(self.dBuffer)
+        self.bBuffer = backgroundBuffer(self.dBuffer)
         
         self.bgRange = bgRange
         self.dataStart = 0

@@ -87,6 +87,8 @@ class rldec:
         #weights = weights.ravel()
 
         mask = 1 - weights
+        
+        print data.sum(), self.f.sum()
 
         self.loopcount=0
 
@@ -309,7 +311,10 @@ class dec_conv(rldec):
 #        #g_[pw2[0]:-pw1[0], pw2[1]:-pw1[1], pw2[2]:-pw1[2]] = g
 #        g = g_
         
+        print psf.sum()
+        
         g = resizePSF(psf, data_size)
+        print g.sum()
 
 
         #keep track of our data shape

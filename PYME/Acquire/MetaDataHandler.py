@@ -231,6 +231,8 @@ class MDHandlerBase(DictMixin):
                 val = "pickle.loads('''%s''')" % pickle.dumps(val)
 
             s.append("md['%s'] = %s\n" % (en, val))
+        
+        return s
     
     def WriteSimple(self, filename):
         '''Dumps metadata to file in simplfied format.

@@ -151,9 +151,9 @@ class microscope:
     def pr_refr(self, source):
         self.prev_fr.update()
         
-    def pr_refr2(self, source):
-        #self.vp.imagepanel.Refresh()
-        self.vp.Redraw()
+#    def pr_refr2(self, source):
+#        #self.vp.imagepanel.Refresh()
+#        self.vp.Redraw()
 
     def pr_refr3(self, souce):
         self.sp.refr()
@@ -285,7 +285,9 @@ class microscope:
                 #             Notebook.SetSelection(2)
                 #             Notebook.SetSelection(3)
 
-            self.pa.WantFrameGroupNotification.append(self.pr_refr2)
+            #self.pa.WantFrameGroupNotification.append(self.pr_refr2)
+            self.pa.WantFrameGroupNotification.append(self.vp.Redraw)
+
         else:
             #1d data - use graph instead
             from PYME.Analysis.LMVis import fastGraph
