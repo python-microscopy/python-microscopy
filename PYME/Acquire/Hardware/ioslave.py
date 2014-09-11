@@ -69,7 +69,7 @@ class AOMLaser(Laser):
     def SetPower(self, power):
         if power < 0 or power > 1:
             raise RuntimeError('Error setting laser power: Power must be between 0 and 1')
-        self.ios.SetAnalog(self.AMPLITUDE_PIN, power/self.FULL_SCALE_VOLTS)
+        self.ios.SetAnalog(self.AMPLITUDE_PIN, power*self.FULL_SCALE_VOLTS)
         self.power = power
 
         if self.isOn:

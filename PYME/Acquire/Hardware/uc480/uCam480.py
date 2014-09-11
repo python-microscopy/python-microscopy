@@ -182,6 +182,8 @@ class uc480Camera:
         self.fullBuffers = Queue.Queue()
         self.nFull = 0
         
+        self.background = None
+        
         self.Init()
         
     def Init(self):        
@@ -504,7 +506,10 @@ class uc480Camera:
         #ret = uc480.CALL('CopyImageMem', self.boardHandle, pData, bufID, chSlice.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)))
         ret = uc480.CALL('CopyImageMem', self.boardHandle, pData, bufID, self.transferBuffer.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)))
         
-        chSlice[:] = self.transferBuffer[:].T#.reshape(chSlice.shape)
+        chSlice[:] = self.transferBuffer[:].T #.reshape(chSlice.shape)
+        
+        if (not self.background == None) and self.background.shape == chSlice.shape:
+            chSlice[:] = (chSlice - np.minimum(chSlice, self.background))[:]
         
         ret = uc480.CALL('UnlockSeqBuf', self.boardHandle, uc480.IS_IGNORE_PARAMETER, pData)
 
