@@ -395,6 +395,9 @@ class ObjectIdentifier(list):
 
         if splitter and (len(xs) > 0):
             xs, ys = splitter(xs, ys)
+            
+            xs = numpy.clip(xs, 0, self.filteredData.shape[0] - 1)
+            ys = numpy.clip(ys, 0, self.filteredData.shape[1] - 1)
 
         xs, ys = self.__Debounce(xs, ys, debounceRadius)
 

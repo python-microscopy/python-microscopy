@@ -44,7 +44,7 @@ def calibrate(interpolator, md, roiSize=5):
     #print Z, safeRegion
     axialShift = md.Analysis.AxialShift
     
-    ratio = md.Analysis.ColourRatio
+    ratio = 0.5#md.Analysis.ColourRatio
 
     if len(X.shape) > 1: #X is a matrix
         X_ = X[:, 0, 0]
@@ -53,7 +53,7 @@ def calibrate(interpolator, md, roiSize=5):
         X_ = X
         Y_ = Y
 
-    z = numpy.arange(-500, 500, 10)
+    z = numpy.arange(-800, 800, 10)
     ps = []
 
     #astigmatic PSF is not necessarily aligned to the axes
@@ -79,7 +79,7 @@ def calibrate(interpolator, md, roiSize=5):
     ps = numpy.array(ps)
     A, xp, yp, s0, s1 = ps.T
     
-    dw = s1 - s0
+    dw = s1/(s0 + s1)
     
     #xp = xp - xp[z.size/2]
     #yp = yp - yp[z.size/2]
@@ -102,7 +102,7 @@ def calibrate(interpolator, md, roiSize=5):
 
     #now for z - want this as function of dw (the difference in x & y std. deviations)
     #first look at dw as a function of z & smooth
-    sp, u = splprep([dw], u=z, s=5)
+    sp, u = splprep([dw], u=z, s=.1)
     splines['dw'] = sp
     dw2 = splev(z, sp)[0] #evaluate to give smoothed dw values
     
@@ -121,16 +121,26 @@ def calibrate(interpolator, md, roiSize=5):
 #        print zm, dwm
 
     #unfortunately dw is not always monotonic - pull out the central section that is
-    d_dw = numpy.diff(splev(numpy.arange(-500, 501, 10), sp)[0])
+    d_dw = numpy.diff(splev(z, sp)[0])
 
     #find whether gradient is +ve or negative
     sgn = numpy.sign(d_dw)
 
-    #take all bits having the same gradient sign as the central bit
-    mask = sgn == sgn[len(sgn)/2]
+    #take central bit having, the same gradient sign
 
-    zm = z[mask]
-    dwm = dw2[mask]
+    imn = len(sgn)/2
+    imx  =  imn
+    
+    sg =  sgn[imn]
+    
+    while (sgn[imx] == sg) and imx < len(sgn):
+        imx += 1
+        
+    while (sgn[imn - 1] == sg) and imn > 1:
+        imn -= 1
+
+    zm = z[imn:imx]
+    dwm = dw2[imn:imx]
     
     #now sort the values by dw, so we can use dw as the dependant variable
     I = dwm.argsort()
@@ -167,10 +177,10 @@ def _calcParams(data, X, Y):
 
     rn2 = xn*xn + yn*yn
     
-    d1 = (rn2 < (3*70)**2).astype('f')*data
+    d1 = (rn2 < (2*70.)**2).astype('f')*data
     #print d1.shape
 
-    sig = d1.sum(1).sum(0)/d1.sum()
+    sig = d1.sum(1).sum(0)/data.sum(1).sum(0)
     
     #print A.mean(), x0[0], y0[0], sig[1] - sig[0]
     return data.sum(), x0[0], y0[0], sig[0], sig[1]
@@ -179,7 +189,7 @@ def _calcParams(data, X, Y):
 def getStartParameters(data, X, Y, Z=None):
     A, x0, y0, s0, s1 = _calcParams(data, X, Y)
     
-    dw = s1 - s0
+    dw = s1/(s0 + s1)
 
     #clamp dw to valid region
     dw_ = min(max(dw, splines['z'][0][0]), splines['z'][0][-1])
