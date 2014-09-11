@@ -158,6 +158,7 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
         Zr = Zg + md.Analysis.AxialShift
         
         ratio = md.chroma.ChannelRatio
+        #print ratio
 
         return f_Interp3d2cr(params, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, md.Analysis.AxialShift, ratio), Xg.ravel()[0], Yg.ravel()[0], Zg.ravel()[0]
 		

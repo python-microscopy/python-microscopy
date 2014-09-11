@@ -16,6 +16,7 @@ md['Analysis.FitModule'] = u'SplitterFitInterpBNR'
 md['Analysis.InterpModule'] = 'LinearInterpolator'
 md['Analysis.AxialShift'] = 500
 md['Analysis.EstimatorModule'] = 'biplaneEstimator'
+md['Analysis.ColourRatio'] = 0.6
 #md['Analysis.subtractBackground'] = False
 md['Camera.ADOffset'] = 1159.0
 md['Camera.CycleTime'] = 0.25178998708724976
