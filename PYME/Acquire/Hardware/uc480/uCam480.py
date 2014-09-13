@@ -183,6 +183,7 @@ class uc480Camera:
         self.nFull = 0
         
         self.background = None
+        self.flatfield = None
         
         self.Init()
         
@@ -510,6 +511,9 @@ class uc480Camera:
         
         if (not self.background == None) and self.background.shape == chSlice.shape:
             chSlice[:] = (chSlice - np.minimum(chSlice, self.background))[:]
+            
+        if (not self.flatfield == None) and self.flatfield.shape == chSlice.shape:
+            chSlice[:] = (chSlice*self.flatfield).astype('uint16')[:]
         
         ret = uc480.CALL('UnlockSeqBuf', self.boardHandle, uc480.IS_IGNORE_PARAMETER, pData)
 
