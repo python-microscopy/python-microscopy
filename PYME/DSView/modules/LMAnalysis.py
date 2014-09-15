@@ -79,7 +79,11 @@ class LMAnalyser:
         #as LM data (eg tiffs)
         if not 'EstimatedLaserOnFrameNo' in self.image.mdh.getEntryNames():
             from PYME.Analysis import MetaData
+            #try:
             MetaData.fillInBlanks(self.image.mdh, self.image.dataSource)
+            #except IndexError:
+            #    pass
+            
 
         if 'fitResults' in dir(self.image):
             self.fitResults = self.image.fitResults

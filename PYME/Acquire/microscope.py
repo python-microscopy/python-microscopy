@@ -64,6 +64,10 @@ class microscope:
 
         #list of tuples  of form (class, chan, name) describing the instaled piezo channels
         self.piezos = []
+        
+        #entries should be of the form: "x" : (piezo, channel, multiplier)
+        # where multiplyier is what to multiply by to get the usints to um
+        self.positioning = {}
         self.joystick = None
 
         self.cameras = {}
@@ -92,6 +96,20 @@ class microscope:
         
         #provision to set global metadata values in startup script
         self.mdh = MetaDataHandler.NestedClassMDHandler()
+        
+    def GetPos(self):
+        res = {}
+        for k in self.positioning.keys():
+            p, c, m = self.positioning[k]
+            res[k] = p.GetPos(c)*m
+            
+        return res
+        
+    def SetPos(self, **kwargs):
+        for k, v in kwargs.items():
+            p, c, m = self.positioning[k]
+            p.MoveTo(c, v/m)
+        
 
     def _OpenSettingsDB(self):
         #create =  not os.path.exists('PYMESettings.db')
@@ -268,6 +286,7 @@ class microscope:
                 self.vp.crosshairs = False
                 self.vp.do.leftButtonAction = self.vp.do.ACTION_SELECTION
                 self.vp.do.showSelection = True
+                self.vp.CenteringHandlers.append(self.centreView)
 
                 self.vsp = disppanel.dispSettingsPanel2(Notebook, self.vp)
 
@@ -343,6 +362,18 @@ class microscope:
             
         if 'lightpath' in dir(self):
             self.lightpath.SetPort(self.cam.port)
+            
+    def centreView(self, dx, dy):
+        vx, vy = self.GetPixelSize()
+        
+        p = self.GetPos()
+        
+        ox = p['x']
+        oy = p['y']
+        
+        #print dx, dy, vx, vy, dx*vx
+        
+        self.SetPos(x=(ox + dx*vx), y=(oy + dy*vy))
 
 
     #aquisition

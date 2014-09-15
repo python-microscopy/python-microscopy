@@ -6,7 +6,7 @@ Created on Sat Sep 13 16:54:15 2014
 """
 import Pyro.core
 import Pyro.naming
-import Threading
+import threading
 
 class piezoOffsetProxy(Pyro.core.ObjBase):    
     def __init__(self, basePiezo):

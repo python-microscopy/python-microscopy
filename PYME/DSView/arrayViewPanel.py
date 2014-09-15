@@ -99,6 +99,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         
         self._oldIm = None
         self._oldImSig = None
+        
+        self.CenteringHandlers = []
 
 #        if not aspect == None:
 #            if scipy.isscalar(aspect):
@@ -123,6 +125,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         
         wx.EVT_RIGHT_DOWN(self.imagepanel, self.OnRightDown)
         wx.EVT_RIGHT_UP(self.imagepanel, self.OnRightUp)
+        
+        wx.EVT_MIDDLE_DCLICK(self.imagepanel, self.OnMiddleDClick)
 
         wx.EVT_MOTION(self.imagepanel, self.OnMotion)
 
@@ -666,6 +670,22 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             self.EndSelection()
         else:
             self.OnSetPosition(event)
+            
+        event.Skip()
+        
+    def OnMiddleDClick(self,event):
+        dc = wx.ClientDC(self.imagepanel)
+        self.imagepanel.PrepareDC(dc)
+        pos = event.GetLogicalPosition(dc)
+        pos = self.CalcUnscrolledPosition(*pos)
+        #print pos
+        sc = pow(2.0,(self.do.scale))
+        if (self.do.slice == self.do.SLICE_XY):
+            x = (pos[0]/sc) - 0.5*self.do.ds.shape[0]
+            y = (pos[1]/(sc*self.aspect)) - 0.5*self.do.ds.shape[1]
+            
+            for h in self.CenteringHandlers:
+                h(x,y)
             
         event.Skip()
     

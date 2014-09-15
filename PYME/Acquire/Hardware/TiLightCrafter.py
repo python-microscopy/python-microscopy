@@ -136,6 +136,8 @@ class LightCrafter(object):
         self.IPAddress = IPAddress
         self.sock = None
         
+        self.StoredMasks = {}
+        
     def Connect(self):
         self.sock = socket.socket()
         self.sock.settimeout(1)
@@ -225,6 +227,9 @@ class LightCrafter(object):
         
     def SetMask(self, data, intensity = 255):
         return self.SetImage(((data > 0)*intensity).astype('uint8'))
+        
+    def SetStoredMask(self, key, intensity = 255):
+        self.SetMask(self.StoredMasks[key], intensity)
         
     def SetStatic(self, value):
         h, d = self._ExecCommand(LC_PACKET_TYPE.HOST_WRITE, CMD_STATIC_COLOR, np.uint8(value*np.array([0,1,1,1])))

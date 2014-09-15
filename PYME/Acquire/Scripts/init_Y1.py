@@ -104,6 +104,7 @@ from PYME.Acquire.Hardware.Piezos import piezo_e709
 
 scope.piFoc = piezo_e709.piezo_e709T('COM9', 400, 0, True)
 scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
+scope.positioning['z'] = (scope.piFoc, 1, 1)
 
 
 #XY Stage
@@ -111,6 +112,8 @@ from PYME.Acquire.Hardware.Piezos import piezo_c867
 scope.xystage = piezo_c867.piezo_c867T('COM8')
 scope.piezos.append((scope.xystage, 2, 'Stage_X'))
 scope.piezos.append((scope.xystage, 1, 'Stage_Y'))
+scope.positioning['x'] = (scope.xystage, 1, 1000)
+scope.positioning['y'] = (scope.xystage, 2, -1000)
 scope.joystick = piezo_c867.c867Joystick(scope.xystage)
 #scope.joystick.Enable(True)
 ''')
