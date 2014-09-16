@@ -307,9 +307,10 @@ class Pipeline:
             
             
         #wrap the data source with a mapping so we can fiddle with things
-        #e.g. combining z position and focus            
-        self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource)
-        self.dataSources.append(self.selectedDataSource)
+        #e.g. combining z position and focus 
+        self.inputMapping = inpFilt.mappingFilter(self.selectedDataSource)
+        self.selectedDataSource = self.inputMapping
+        self.dataSources.append(self.inputMapping)
         
         if 'PixelSize' in kwargs.keys():
             self.selectedDataSource.pixelSize = kwargs['PixelSize']

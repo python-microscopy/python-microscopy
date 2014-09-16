@@ -148,15 +148,20 @@ class filterer:
         #print sum(filt_ims).shape
 
 
-        im = ImageStack(sum(filt_ims) > 0.5, titleStub = 'Thresholded Image')
-        im.mdh.copyEntriesFrom(self.image.mdh)
-        im.mdh['Parent'] = self.image.filename
+        
         #im.mdh['Processing.CropROI'] = roi
 
         if self.dsviewer.mode == 'visGUI':
             mode = 'visGUI'
+        elif self.dsviewer.mode == 'graph':
+            mode = 'graph'
+            filt_ims = [fi.squeeze() for fi in filt_ims]
         else:
             mode = 'lite'
+            
+        im = ImageStack(sum(filt_ims) > 0.5, titleStub = 'Thresholded Image')
+        im.mdh.copyEntriesFrom(self.image.mdh)
+        im.mdh['Parent'] = self.image.filename
 
         dv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
 

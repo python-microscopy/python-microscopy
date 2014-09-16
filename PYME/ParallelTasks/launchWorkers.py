@@ -64,9 +64,13 @@ def cpuCount():
 #launch pyro name server
 #os.system('pyro-nsd start')
 
+SERVER_PROC = 'taskServerMP.py'
+WORKER_PROC = 'taskWorkerMP.py'
+
 fstub = os.path.split(__file__)[0]
 
 def main():
+    global SERVER_PROC, WORKER_PROC
     #get number of processors 
     numProcessors = cpuCount()
     try: #try and find the name server
@@ -87,31 +91,35 @@ def main():
         time.sleep(3)
     
     if len(sys.argv) > 1:
-        numProcessors = int(sys.argv[1])
+	if sys.argv[1] == '-l':
+            SERVER_PROC = 'taskServerML.py'
+            WORKER_PROC = 'taskWorkerML.py'
+        else:
+            numProcessors = int(sys.argv[1])
     
     if sys.platform == 'win32':
-        subprocess.Popen('python %s\\taskServerMP.py' % fstub, shell=True)
+        subprocess.Popen('python %s\\%s' % (fstub, SERVER_PROC), shell=True)
     
         time.sleep(5)
     
         subprocess.Popen('python %s\\fitMonP.py' % fstub, shell=True)
     
         for i in range(numProcessors):
-            subprocess.Popen('python %s\\taskWorkerMP.py' % fstub, shell=True)
+            subprocess.Popen('python %s\\%s' % (fstub, WORKER_PROC), shell=True)
     else: #operating systems which can launch python scripts directly
         #get rid of any previously started queues etc...
-        os.system('killall taskServerMP.py')
-        os.system('killall taskWorkerMP.py')
+        os.system('killall %s' % SERVER_PROC)
+        os.system('killall %s' % WORKER_PROC)
         os.system('killall fitMonP.py')
     
-        subprocess.Popen('taskServerMP.py', shell=True)
+        subprocess.Popen(SERVER_PROC, shell=True)
     
         time.sleep(3)
     
         subprocess.Popen('fitMonP.py', shell=True)
     
         for i in range(numProcessors):
-            subprocess.Popen('taskWorkerMP.py', shell=True)
+            subprocess.Popen(WORKER_PROC, shell=True)
             
 
 if __name__ == '__main__':

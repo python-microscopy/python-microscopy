@@ -26,9 +26,14 @@ import wx.lib.agw.aui as aui
 import pylab
 import modules
 
+try:
+   import PYMEnf.DSView.modules
+except ImportError:
+    pass
+
 import PYME.misc.autoFoldPanel as afp
 #from PYME.DSView.arrayViewPanel import ArraySettingsAndViewPanel
-from PYME.DSView.arrayViewPanel import ArrayViewPanel
+#from PYME.DSView.arrayViewPanel import ArrayViewPanel
 from PYME.DSView.displayOptions import DisplayOpts
 from PYME.DSView.DisplayOptionsPanel import OptionsPanel
 #from PYME.DSView.OverlaysPanel import OverlayPanel
@@ -223,7 +228,7 @@ class DSViewFrame(wx.Frame):
     def CreateModuleMenu(self):
         self.modMenuIds = {}
         self.mModules = wx.Menu()
-        for mn in modules.allmodules:
+        for mn in modules.allmodules():
             id = wx.NewId()
             self.mModules.AppendCheckItem(id, mn)
             self.modMenuIds[id] = mn
