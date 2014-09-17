@@ -21,9 +21,26 @@ class DriftTrackingControl(wx.Panel):
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         
-        bStart =
-
+        self.cbTrack = wx.CheckBox(self, -1, 'Track')
+        hsizer.Add(self.cbTrack, 0, wx.ALL, 2) 
+        self.cbTrack.Bind(wx.EVT_CHECKBOX, self.OnCBTrack)
+        self.cbLock = wx.CheckBox(self, -1, 'Lock')
+        self.cbLock.Bind(wx.EVT_CHECKBOX, self.OnCBLock)
+        hsizer.Add(self.cbLock, 0, wx.ALL, 2)        
         sizer_1.Add(hsizer,0, wx.EXPAND, 0)
+        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.bSetPostion = wx.Button(self, -1, 'Set focus to current')
+        hsizer.Add(self.bSetPostion, 0, wx.ALL, 2) 
+        self.bSetPostion.Bind(wx.EVT_BUTTON, self.OnBSetPostion)
+        sizer_1.Add(hsizer,0, wx.EXPAND, 0)
+        
+        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.stError = wx.StaticText(self, -1, 'Error:\n\n')
+        hsizer.Add(self.stError, 0, wx.ALL, 2)        
+        sizer_1.Add(hsizer,0, wx.EXPAND, 0)
+        
 
 
         self.SetAutoLayout(1)
@@ -33,15 +50,22 @@ class DriftTrackingControl(wx.Panel):
         self.Layout()
         # end wxGlade
 
-    def OnCbOn(self, event):
-        cb = event.GetEventObject()
-        ind = self.cBoxes.index(cb)
-
-        if cb.GetValue():
-            self.lasers[ind].TurnOn()
+    def OnCBTrack(self, event):
+        #print self.cbTrack.GetValue()
+        if self.cbTrack.GetValue():
+            self.dt.register()
         else:
-            self.lasers[ind].TurnOff()
+            self.dt.deregister()
+            
+    def OnBSetPostion(self, event):
+        self.dt.reCalibrate()
+        
+    def OnCBLock(self, event):
+        self.dt.lockFocus = self.cbLock.GetValue()
 
     def refresh(self):
-        for l, cb in zip(self.lasers, self.cBoxes):
-            cb.SetValue(l.IsOn())
+        try:
+            t, dx, dy, dz = self.dt.history[-1]
+            self.stError.SetLabel('Error: x = %3.2f px\ny = %3.2f px\nz = %3.2f nm' % (dx, dy, dz*1000))
+        except IndexError:
+            pass
