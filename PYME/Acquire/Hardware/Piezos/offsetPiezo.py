@@ -7,6 +7,8 @@ Created on Sat Sep 13 16:54:15 2014
 import Pyro.core
 import Pyro.naming
 import threading
+from PYME.misc.computerName import GetComputerName
+
 
 class piezoOffsetProxy(Pyro.core.ObjBase):    
     def __init__(self, basePiezo):
@@ -51,19 +53,52 @@ class piezoOffsetProxy(Pyro.core.ObjBase):
         return self.offset
         
     def SetOffset(self, val):
+        p = self.GetPos()
         self.offset = val
+        self.MoveTo(0, p)
         
 class ServerThread(threading.Thread):
-    def __init__(self):
+    def __init__(self, basePiezo):
+        threading.Thread.__init__(self)
+        
+        compName = GetComputerName()
+        
         Pyro.core.initServer()
         ns=Pyro.naming.NameServerLocator().getNS()
-        daemon=Pyro.core.Daemon()
-        daemon.useNameServer(ns)
+
+        if not compName in [n[0] for n in ns.list('')]:
+            ns.createGroup(compName)        
         
-        dd = RemoteDigiData()
-        uri=daemon.connect(dd,"DigiData")
+        self.daemon=Pyro.core.Daemon()
+        self.daemon.useNameServer(ns)
         
-        try:
-            daemon.requestLoop()
-        finally:
-            daemon.shutdown(True)
+        self.piezo = piezoOffsetProxy(basePiezo)
+        
+        
+        uri=self.daemon.connect(self.piezo,"%s.Piezo" % compName)
+        
+    def run(self):
+        print 'foo'
+        #try:
+        self.daemon.requestLoop()
+        #finally:
+        #    daemon.shutdown(True)
+                
+
+def getClient(compName = GetComputerName()):
+    return Pyro.core.getProxyForURI('PYRONAME://%s.Piezo'%compName)
+    
+def main():
+    '''For testing only'''
+    from PYME.Acquire.Hardware.Simulator import fakePiezo
+    bp = fakePiezo.FakePiezo(100)
+    st = ServerThread(bp)
+    print 'foo'
+    st.start()
+    st.join()
+    #st.run()
+    #st.daemon.requestLoop()
+    print 'bar'
+    
+if __name__ == '__main__':
+    main()
