@@ -180,7 +180,12 @@ class uc480Camera:
         self._buffers = []
         
         self.fullBuffers = Queue.Queue()
+        self.freeBuffers = None
+        
         self.nFull = 0
+        
+        self.nAccum = 1
+        self.nAccumCurrent = 0
         
         self.background = None
         self.flatfield = None
@@ -194,7 +199,7 @@ class uc480Camera:
         self.pollThread = threading.Thread(target = self._pollLoop)
         self.pollThread.start()
         
-    def InitBuffers(self, nBuffers = 100):
+    def InitBuffers(self, nBuffers = 50, nAccumBuffers = 50):
         for i in range(nBuffers):
             pData = POINTER(c_char)()
             bufID = c_int(0)
@@ -216,6 +221,12 @@ class uc480Camera:
                 raise RuntimeError('error initialising queue: %d: %s' % GetError(self.boardHandle))
                 
         self.transferBuffer = np.zeros([self.GetPicHeight(), self.GetPicWidth()], np.uint8)
+        
+        self.freeBuffers = Queue.Queue()
+        for i in range(nAccumBuffers):
+            self.freeBuffers.put(np.zeros([self.GetPicHeight(), self.GetPicWidth()], np.uint16))
+        self.accumBuffer = self.freeBuffers.get()
+        self.nAccumCurrent = 0
         self.doPoll = True
         
     def DestroyBuffers(self):
@@ -226,6 +237,8 @@ class uc480Camera:
         while len(self._buffers) > 0:
             bID, pData = self._buffers.pop()
             uc480.CALL('FreeImageMem', self.boardHandle, pData, bID)
+            
+        self.freeBuffers = None
             
     
     def _pollBuffer(self):
@@ -238,8 +251,19 @@ class uc480Camera:
             #print ret
             return
             
-        self.fullBuffers.put((pData, bufID))
-        self.nFull += 1
+        ret = uc480.CALL('CopyImageMem', self.boardHandle, pData, bufID, self.transferBuffer.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)))
+        
+        #chSlice[:] = self.transferBuffer[:].T #.reshape(chSlice.shape)
+        self.accumBuffer[:] = self.accumBuffer + self.transferBuffer
+        self.nAccumCurrent += 1
+        
+        ret = uc480.CALL('UnlockSeqBuf', self.boardHandle, uc480.IS_IGNORE_PARAMETER, pData)
+        
+        if self.nAccumCurrent >= self.nAccum:    
+            self.fullBuffers.put(self.accumBuffer)
+            self.accumBuffer = self.freeAccumBuffers.get()
+            self.nAccumCurrent = 0
+            self.nFull += 1
         #self.camLock.release()
         
     def _pollLoop(self):
@@ -498,16 +522,18 @@ class uc480Camera:
         
     def ExtractColor(self, chSlice, mode):
         #grab our buffer from the full buffers list
-        pData, bufID = self.fullBuffers.get()
+        #pData, bufID = self.fullBuffers.get()
+        buf = self.fullBuffers.get()
         #print pData, bufID
         self.nFull -= 1
         
         #ctypes.cdll.msvcrt.memcpy(chSlice.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), buf.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), chSlice.nbytes)
         
         #ret = uc480.CALL('CopyImageMem', self.boardHandle, pData, bufID, chSlice.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)))
-        ret = uc480.CALL('CopyImageMem', self.boardHandle, pData, bufID, self.transferBuffer.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)))
+        #ret = uc480.CALL('CopyImageMem', self.boardHandle, pData, bufID, self.transferBuffer.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)))
         
-        chSlice[:] = self.transferBuffer[:].T #.reshape(chSlice.shape)
+        #chSlice[:] = self.transferBuffer[:].T #.reshape(chSlice.shape)
+        chSlice[:] = buf.T
         
         if (not self.background == None) and self.background.shape == chSlice.shape:
             chSlice[:] = (chSlice - np.minimum(chSlice, self.background))[:]
@@ -515,10 +541,10 @@ class uc480Camera:
         if (not self.flatfield == None) and self.flatfield.shape == chSlice.shape:
             chSlice[:] = (chSlice*self.flatfield).astype('uint16')[:]
         
-        ret = uc480.CALL('UnlockSeqBuf', self.boardHandle, uc480.IS_IGNORE_PARAMETER, pData)
+        #ret = uc480.CALL('UnlockSeqBuf', self.boardHandle, uc480.IS_IGNORE_PARAMETER, pData)
 
         #recycle buffer
-        #self._queueBuffer(buf)
+        self.freeBuffers.put(buf)
         
     def CheckCoordinates(*args):
         raise Exception('Not implemented yet!!')
@@ -536,8 +562,13 @@ class uc480Camera:
 
     def GetEMGain(self):
         return self.EMGain
-
-
+        
+    
+    def SetAccumulation(self, nFrames):
+        self.nAccum = nFrames
+        
+    def GetAccumulation(self):
+        return self.nAccum
 
     def Shutdown(self):
         if self.doPoll: #acquisition is running
