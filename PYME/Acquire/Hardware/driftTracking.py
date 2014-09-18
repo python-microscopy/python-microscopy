@@ -175,7 +175,7 @@ class correlator(object):
             
             if self.lockFocus:
                 if abs(dz) > self.focusTolerance and self.lastAdjustment >= 2:
-                    self.piezo.SetOffset(self.piezo.offset - dz)
+                    self.piezo.SetOffset(self.piezo.GetOffset() - dz)
                     self.historyCorrections.append((time.time(), dz))
                     self.lastAdjustment = 0
                 else:

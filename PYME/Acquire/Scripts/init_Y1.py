@@ -97,14 +97,18 @@ camPanels.append((LCGui, 'DMD Control'))
 
 #PIFoc
 InitBG('Piezos', '''
-from PYME.Acquire.Hardware.Piezos import piezo_e709
+from PYME.Acquire.Hardware.Piezos import piezo_e709, offsetPiezo
 #from PYME.Acquire.Hardware import NikonTi                          ###
 #scope.zStage = NikonTi.zDrive()
 #scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
 
-scope.piFoc = piezo_e709.piezo_e709T('COM9', 400, 0, True)
+scope._piFoc = piezo_e709.piezo_e709T('COM9', 400, 0, True)
+scope.piFoc = offsetPiezo.piezoOffsetProxy(scope._piFoc)
 scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
-scope.positioning['z'] = (scope.piFoc, 1, 1)
+
+#server so drift correction can connect to the piezo
+pst = offsetPiezo.ServerThread(scope.piFoc)
+pst.start()
 
 
 #XY Stage
@@ -112,8 +116,6 @@ from PYME.Acquire.Hardware.Piezos import piezo_c867
 scope.xystage = piezo_c867.piezo_c867T('COM8')
 scope.piezos.append((scope.xystage, 2, 'Stage_X'))
 scope.piezos.append((scope.xystage, 1, 'Stage_Y'))
-scope.positioning['x'] = (scope.xystage, 1, 1000)
-scope.positioning['y'] = (scope.xystage, 2, -1000)
 scope.joystick = piezo_c867.c867Joystick(scope.xystage)
 #scope.joystick.Enable(True)
 ''')

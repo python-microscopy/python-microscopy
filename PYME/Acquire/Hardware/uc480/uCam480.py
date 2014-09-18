@@ -110,9 +110,10 @@ class uc480Camera:
     #MODE_SINGLE_SHOT = 1
 
 
-    def __init__(self, boardNum=0):
+    def __init__(self, boardNum=0, nbits = 8):
         self.initialised = False
         self.active = True
+        self.nbits = nbits
 
         self.boardHandle = wintypes.HANDLE(boardNum)
 
@@ -166,6 +167,9 @@ class uc480Camera:
         
         #uc480.CALL('GetColorDepth', self.boardHandle, &m_nBitsPerPixel, &m_nColorMode);
         uc480.CALL('SetColorMode', self.boardHandle, uc480.IS_SET_CM_BAYER)
+        
+        if self.nbits == 12:
+            uc480.CALL('DeviceFeature', self.boardHandle, uc480.IS_DEVICE_FEATURE_CMD_SET_SENSOR_BIT_DEPTH, byref(uc480.IS_SENSOR_BIT_DEPTH_12_BIT) , sizeof(nBitDepth))
 
 
         uc480.CALL('SetBinning', self.boardHandle, uc480.IS_BINNING_DISABLE)
@@ -536,6 +540,15 @@ class uc480Camera:
 
     def GetEMGain(self):
         return self.EMGain
+        
+    def SetGainBoost(self, on):
+        if on:
+            uc480.CALL('SetGainBoost', self.boardHandle, uc480.IS_SET_GAINBOOST_ON)
+        else:
+            uc480.CALL('SetGainBoost', self.boardHandle, uc480.IS_SET_GAINBOOST_OFF)
+            
+    def SetGain(self, gain=100):
+        uc480.CALL('SetHardwareGain', self.boardHandle, gain, uc480.IS_IGNORE_PARAMETER, uc480.IS_IGNORE_PARAMETER, uc480.IS_IGNORE_PARAMETER)
 
 
 

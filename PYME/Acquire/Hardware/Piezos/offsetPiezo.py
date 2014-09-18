@@ -74,8 +74,15 @@ class ServerThread(threading.Thread):
         
         self.piezo = piezoOffsetProxy(basePiezo)
         
+        pname = "%s.Piezo" % compName
         
-        uri=self.daemon.connect(self.piezo,"%s.Piezo" % compName)
+        #get rid of any previous instance
+        try:
+            ns.unregister(pname)
+        except Pyro.errors.NamingError:
+            pass
+        
+        uri=self.daemon.connect(self.piezo,pname)
         
     def run(self):
         print 'foo'
