@@ -429,7 +429,7 @@ easily parsed.</p>
 
 <dl class="class">
 <dt id="PYME.Acquire.Spooler.Spooler">
-<em class="property">class </em><tt class="descclassname">PYME.Acquire.Spooler.</tt><tt class="descname">Spooler</tt><big>(</big><em>scope</em>, <em>filename</em>, <em>acquisator</em>, <em>protocol=&lt;PYME.Acquire.protocol.Protocol instance at 0x4ac3830&gt;</em>, <em>parent=None</em><big>)</big><a class="headerlink" href="#PYME.Acquire.Spooler.Spooler" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.Spooler.</tt><tt class="descname">Spooler</tt><big>(</big><em>scope</em>, <em>filename</em>, <em>acquisator</em>, <em>protocol=&lt;PYME.Acquire.protocol.Protocol instance at 0x55d1f38&gt;</em>, <em>parent=None</em><big>)</big><a class="headerlink" href="#PYME.Acquire.Spooler.Spooler" title="Permalink to this definition">¶</a></dt>
 <dd><p>Spooler base class</p>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
@@ -554,7 +554,7 @@ easily parsed.</p>
 
 <dl class="class">
 <dt id="PYME.Acquire.HDFSpooler.Spooler">
-<em class="property">class </em><tt class="descclassname">PYME.Acquire.HDFSpooler.</tt><tt class="descname">Spooler</tt><big>(</big><em>scope</em>, <em>filename</em>, <em>acquisator</em>, <em>protocol=&lt;PYME.Acquire.protocol.Protocol instance at 0x4ac3830&gt;</em>, <em>parent=None</em>, <em>complevel=6</em>, <em>complib='zlib'</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpooler.Spooler" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.HDFSpooler.</tt><tt class="descname">Spooler</tt><big>(</big><em>scope</em>, <em>filename</em>, <em>acquisator</em>, <em>protocol=&lt;PYME.Acquire.protocol.Protocol instance at 0x55d1f38&gt;</em>, <em>parent=None</em>, <em>complevel=6</em>, <em>complib='zlib'</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpooler.Spooler" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#PYME.Acquire.Spooler.Spooler" title="PYME.Acquire.Spooler.Spooler"><tt class="xref py py-class docutils literal"><span class="pre">PYME.Acquire.Spooler.Spooler</span></tt></a></p>
 <p>Responsible for the mechanics of spooling to a pytables/hdf file.</p>
 <p class="rubric">Methods</p>
@@ -625,7 +625,7 @@ easily parsed.</p>
 
 <dl class="class">
 <dt id="PYME.Acquire.QueueSpooler.Spooler">
-<em class="property">class </em><tt class="descclassname">PYME.Acquire.QueueSpooler.</tt><tt class="descname">Spooler</tt><big>(</big><em>scope</em>, <em>filename</em>, <em>acquisator</em>, <em>protocol=&lt;PYME.Acquire.protocol.Protocol instance at 0x4ac3830&gt;</em>, <em>parent=None</em>, <em>complevel=2</em>, <em>complib='zlib'</em><big>)</big><a class="headerlink" href="#PYME.Acquire.QueueSpooler.Spooler" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.QueueSpooler.</tt><tt class="descname">Spooler</tt><big>(</big><em>scope</em>, <em>filename</em>, <em>acquisator</em>, <em>protocol=&lt;PYME.Acquire.protocol.Protocol instance at 0x55d1f38&gt;</em>, <em>parent=None</em>, <em>complevel=2</em>, <em>complib='zlib'</em><big>)</big><a class="headerlink" href="#PYME.Acquire.QueueSpooler.Spooler" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#PYME.Acquire.Spooler.Spooler" title="PYME.Acquire.Spooler.Spooler"><tt class="xref py py-class docutils literal"><span class="pre">PYME.Acquire.Spooler.Spooler</span></tt></a></p>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
@@ -696,7 +696,13 @@ easily parsed.</p>
 <tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.GetPixelSize" title="PYME.Acquire.microscope.microscope.GetPixelSize"><tt class="xref py py-obj docutils literal"><span class="pre">GetPixelSize</span></tt></a>()</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.SetCamera" title="PYME.Acquire.microscope.microscope.SetCamera"><tt class="xref py py-obj docutils literal"><span class="pre">SetCamera</span></tt></a>(camName)</td>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.GetPos" title="PYME.Acquire.microscope.microscope.GetPos"><tt class="xref py py-obj docutils literal"><span class="pre">GetPos</span></tt></a>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.SetCamera" title="PYME.Acquire.microscope.microscope.SetCamera"><tt class="xref py py-obj docutils literal"><span class="pre">SetCamera</span></tt></a>(camName)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.SetPos" title="PYME.Acquire.microscope.microscope.SetPos"><tt class="xref py py-obj docutils literal"><span class="pre">SetPos</span></tt></a>(**kwargs)</td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.SetVoxelSize" title="PYME.Acquire.microscope.microscope.SetVoxelSize"><tt class="xref py py-obj docutils literal"><span class="pre">SetVoxelSize</span></tt></a>(voxelsizename[,&nbsp;camName])</td>
@@ -708,16 +714,16 @@ easily parsed.</p>
 <tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.aq_refr" title="PYME.Acquire.microscope.microscope.aq_refr"><tt class="xref py py-obj docutils literal"><span class="pre">aq_refr</span></tt></a>(source)</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.genStatus" title="PYME.Acquire.microscope.microscope.genStatus"><tt class="xref py py-obj docutils literal"><span class="pre">genStatus</span></tt></a>()</td>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.centreView" title="PYME.Acquire.microscope.microscope.centreView"><tt class="xref py py-obj docutils literal"><span class="pre">centreView</span></tt></a>(dx,&nbsp;dy)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.livepreview" title="PYME.Acquire.microscope.microscope.livepreview"><tt class="xref py py-obj docutils literal"><span class="pre">livepreview</span></tt></a>([Parent,&nbsp;Notebook])</td>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.genStatus" title="PYME.Acquire.microscope.microscope.genStatus"><tt class="xref py py-obj docutils literal"><span class="pre">genStatus</span></tt></a>()</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.pr_refr" title="PYME.Acquire.microscope.microscope.pr_refr"><tt class="xref py py-obj docutils literal"><span class="pre">pr_refr</span></tt></a>(source)</td>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.livepreview" title="PYME.Acquire.microscope.microscope.livepreview"><tt class="xref py py-obj docutils literal"><span class="pre">livepreview</span></tt></a>([Parent,&nbsp;Notebook])</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.pr_refr2" title="PYME.Acquire.microscope.microscope.pr_refr2"><tt class="xref py py-obj docutils literal"><span class="pre">pr_refr2</span></tt></a>(source)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.pr_refr" title="PYME.Acquire.microscope.microscope.pr_refr"><tt class="xref py py-obj docutils literal"><span class="pre">pr_refr</span></tt></a>(source)</td>
 <td></td>
 </tr>
 <tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.pr_refr3" title="PYME.Acquire.microscope.microscope.pr_refr3"><tt class="xref py py-obj docutils literal"><span class="pre">pr_refr3</span></tt></a>(souce)</td>
@@ -747,8 +753,18 @@ easily parsed.</p>
 <dd></dd></dl>
 
 <dl class="method">
+<dt id="PYME.Acquire.microscope.microscope.GetPos">
+<tt class="descname">GetPos</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.microscope.microscope.GetPos" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="PYME.Acquire.microscope.microscope.SetCamera">
 <tt class="descname">SetCamera</tt><big>(</big><em>camName</em><big>)</big><a class="headerlink" href="#PYME.Acquire.microscope.microscope.SetCamera" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.microscope.microscope.SetPos">
+<tt class="descname">SetPos</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#PYME.Acquire.microscope.microscope.SetPos" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -767,6 +783,11 @@ easily parsed.</p>
 <dd></dd></dl>
 
 <dl class="method">
+<dt id="PYME.Acquire.microscope.microscope.centreView">
+<tt class="descname">centreView</tt><big>(</big><em>dx</em>, <em>dy</em><big>)</big><a class="headerlink" href="#PYME.Acquire.microscope.microscope.centreView" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="PYME.Acquire.microscope.microscope.genStatus">
 <tt class="descname">genStatus</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.microscope.microscope.genStatus" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -779,11 +800,6 @@ easily parsed.</p>
 <dl class="method">
 <dt id="PYME.Acquire.microscope.microscope.pr_refr">
 <tt class="descname">pr_refr</tt><big>(</big><em>source</em><big>)</big><a class="headerlink" href="#PYME.Acquire.microscope.microscope.pr_refr" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="PYME.Acquire.microscope.microscope.pr_refr2">
-<tt class="descname">pr_refr2</tt><big>(</big><em>source</em><big>)</big><a class="headerlink" href="#PYME.Acquire.microscope.microscope.pr_refr2" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">

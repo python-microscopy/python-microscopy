@@ -40,6 +40,14 @@ import sys
 from PYME.misc.computerName import GetComputerName
 compName = GetComputerName()
 
+#Local only mode restricts workers to the local machine - used principally for debugging
+LOCAL = False
+if 'PYME_LOCAL_ONLY' in os.environ.keys():
+    LOCAL = os.environ['PYME_LOCAL_ONLY'] == '1'
+    if LOCAL:
+        print 'Local mode active - will only talk to workeers on theis computer'
+        
+
 if 'PYRO_NS_HOSTNAME' in os.environ.keys():
     Pyro.config.PYRO_NS_HOSTNAME=os.environ['PYRO_NS_HOSTNAME']
     print((Pyro.config.PYRO_NS_HOSTNAME))
@@ -130,6 +138,11 @@ class TaskQueueSet(Pyro.core.ObjBase):
 
     def getTasks(self, workerName='Unspecified'):
         """get task from front of list, non-blocking"""
+        if LOCAL and not compName in workerName:
+            #we only want to give tasks to local workers
+            return []
+            
+        
         #print 'Task requested'
         with self.getTaskLock:
             #calling getNumberOpenTasks with False makes the queues tell us how many

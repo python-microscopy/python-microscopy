@@ -32,6 +32,10 @@ import os
 from PYME.misc.computerName import GetComputerName
 compName = GetComputerName()
 
+LOCAL = False
+if 'PYME_LOCAL_ONLY' in os.environ.keys():
+    LOCAL = os.environ['PYME_LOCAL_ONLY'] == '1'
+
 if 'PYRO_NS_HOSTNAME' in os.environ.keys():
     Pyro.config.PYRO_NS_HOSTNAME=os.environ['PYRO_NS_HOSTNAME']
 

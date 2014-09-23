@@ -26,8 +26,18 @@ These instructions are designed for use with an image splitting device and a sin
 9. One all the analysis tasks are complete, go to the analysis folder (if you haven't set the ``PYMEDataDir`` environment varible it should be under ``c:\Users\<username>\PYMEData\Analysis\<name of folder containing raw data>``) and find the ``.h5r`` file corresponding to the raw data. Open this in ``VisGUI``.
 10. Check the data in ``VisGUI`` to see if it looks reasonable - good coverage of the field of view, reasonable looking distribution of shifts if you set the point colour to be ``FitResults_dx`` or ``FitResults_dy`` (the x and y shifts). Try adjusting the filter if this is not the case (a good place to start is sigma – the PSF std deviation, which can be set to a reasonably narrow window around the expected bead width). A few erroneous vectors are still permissible as these will be filtered out in subsequent steps.
 11. From the *'Extras'* menu choose *'Calculate shiftmap'*. This will attempt to interpolate the shift vectors obtained at the bead locations across the field of view. The algorithm first checks to see if each vector points in approximately the same direction as it's neighbours. 'Wonky' vectors which dramatically differ from their neighbours but have somehow made if through prior filtering steps are discarded at this point. Bivariate smoothing splines are then fitted to the x and y shift vectors. The resulting interpolated shift field (and residuals) is shown, and the user given the opportunity to save the shiftmap (effectively the spline coefficients) in a .sf file. Unfortunately the 'save' dialog is modal and you don't get a chance to examine the shift field before being prompted to save. I usually cancel the save request the first time, examine the result, and if happy, run *'Calculate shiftmap'* again, saving the result. This interpolated shift field should be smooth, although it's common to see magnification differences as well as rotation in the field resulting in a spiral or vortex like appearance. If you're unhappy with the generated shiftmap, you can go back to the filter (or if really bad try acquiring and analysing a new data set).
+  **New**: If the above does not yield a good shiftmap (shifts should be mostly translation, rotation, and some scaling, which results in smoothly varying shiftmaps) you can also try the *'Calculate Shiftmap (Model Based)'* option (also on the *'Extras'* menu) which fits the coefficients of a global affine transform rather than trying to interpolate shifts. The resulting shiftmap will be less flexible than one calculated using the *'Calculate shiftmap'* function, but captures the most likely transformations and is better behaved (particularly at the corners of the field where errors can be common).
 
-<NB – there's a good chance that the display routines here have hard-coded ROI values and might need a bit of tweaking. We ought to find out in the next couple of weeks.>
+Large shifts
+------------
+
+If you have very large shifts, you might need to increase the size of the ROI used to fit each bead when performing the callibration. This can be achieved by overriding the ``ROISize`` parameter in the analysis - e.g. by entering: 
+::
+
+  image.mdh['Analysis.ROISize'] = 10
+
+in the ``dh5view`` console. The ``ROISize`` setting is the size of a 'half ROI', with the size of the actual ROI being :math:`2n + 1`. The default for shift estimation is 7 (15x15), and the default for fitting is 5 (11x11).
+  
 
 Analysing ratiometric images
 ============================
@@ -35,18 +45,21 @@ Analysing ratiometric images
 Whilst not as complicated as the calibration procedure, the analysis procedure for multi-colour images is also a little different to that for single colour images.
 
 1. Load the data in dh5view
-2. Choose ``SplitterFitFR`` (or if in need of a little extra speed ``SplitterFitQR``, which assumes that the temporal background subtraction has done it's thing and doesn't fit the background at all) as the fit module (If the data was acquired in PYMEAcquire this may have been done automagically for you)
+2. Choose ``SplitterFitFNR`` as the fit module (**Note:** this assumes that the default temporal background subtraction has done it's thing and doesn't fit the background at all. If you have disabled background subtraction, try using the older ``SplitterFitFR``) [#]_.
 3. Set the Splitter parameters as in 6 above
 4. Set the shift field to the .sf file saved in the calibration step (click on the 'Set' button)
 5. Test the threshold
 6. Click 'Go' to start the analysis. 
 
-IMPORTANT – the shifts are corrected as part of the fitting process (they should be absent from the fitted data)
+.. note:: The shifts are corrected as part of the fitting process (they should be absent from the fitted data)
 
 Visualising ratiometric data
 ============================
 
-If you have analysed data using one of the *'SplitterFit...'* modules, VisGUI will show a colour tab with a scattergram of the ratios. Before you can render the images as multi-colour, you will need to add species to this scattergram by clicking add and setting the ratio (which can then be tweaked by clicking on the ratio value in the table). You can also try and automagically guess what components are present by using the 'Guess' button. The points assigned to a certain ratio will be given the same colour as that component. After the ratios have been defined, you will have new selections in the colour filter selector in the main window, and rendering options will default to producing multi-channel images. [Note – it is also possible to define species and ratios in the metadata,  but that is beyond the scope of what we can go into here]
+If you have analysed data using one of the *'SplitterFit...'* modules, VisGUI will show a colour tab with a scattergram of the ratios. Before you can render the images as multi-colour, you will need to add species to this scattergram by clicking add and setting the ratio (which can then be tweaked by clicking on the ratio value in the table). You can also try and automagically guess what components are present by using the 'Guess' button. The points assigned to a certain ratio will be given the same colour as that component. After the ratios have been defined, you will have new selections in the colour filter selector in the main window, and rendering options will default to producing multi-channel images. 
+
+.. note:: It is also possible to define species and ratios in the metadata, but that is beyond the scope of what we can go into here.
 
 
 .. [#] Extra for experts:  in this case it will probably only make use of 1 or 2 cores as the distributed analysis uses a chunk size of at least 50 frames to allow the data to be cached for efficient background subtraction on the workers when analysing binking datasets.
+.. [#] ``SplitterFitFNR`` is a new routine and is preferred as it performs shift-corrected ROI extraction and thus works for larger shift values. The previous versions only worked if the shift was sufficently small that the ROI co-ordinates for the 1st channel could also be used to extract a ROI for the second channel which completely enclosed the 2nd image of a molecule. As well as coping with almost arbitrarily large shifts, the new routine allows a smaller ROI to be used for moderate shifts, improving speed and tolerable localisation density. 
