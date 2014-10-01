@@ -522,9 +522,9 @@ static PyObject * InterpolateInplaceM(PyObject *self, PyObject *args, PyObject *
     cy = (int)(floorf(sizeY/2.0)) - fy; //+ floorf(y0/dy)); 
 
     ///avoid negatives by adding a chunk before taking the mod
-    rx = fmodf(x0+973*dx,dx)/dx;
-    ry = fmodf(y0+973*dy,dy)/dy;
-    rz = fmodf(z0+973*dz,dz)/dz;
+    rx = 1.0 - fmodf(x0+973*dx,dx)/dx;
+    ry = 1.0 - fmodf(y0+973*dy,dy)/dy;
+    rz = 1.0 - fmodf(z0+973*dz,dz)/dz;
 
     //printf("%3.3f, %d, %3.3f\n", rz, fz, z0);
 

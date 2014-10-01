@@ -464,7 +464,7 @@ def _rFluorSubset(im, fl, A, x0, y0, z, roiSize, dx, dy, dz):
     #roiSize = 30*np.ones(A.shape, 'i')
     #print 'rFlS', len(x0)
         
-    cInterp.InterpolateInplaceM(interpModel, im, fl['x'] - x0, fl['y'] - y0, z, A, roiSize,dx,dy,dz)
+    cInterp.InterpolateInplaceM(interpModel, im, (fl['x'] - x0), (fl['y'] - y0), z, A, roiSize,dx,dy,dz)
 
 def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=100, laserPowers = [.1,1], position=[0,0,0], illuminationFunction='ConstIllum'):
     if interpModel == None:
