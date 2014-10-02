@@ -1,0 +1,220 @@
+{% extends "samples/sample_main.html" %}
+{% load extra_filters %}
+
+{%block extra_style%}
+    span.user{
+        {%if user_info|sum:"disp"%}
+        background-color: #8489AC;
+        {%else%}
+        background-color: #D4D9FC;
+        {%endif%}
+    }
+
+    span.tag{
+        {%if tag_info|sum:"disp"%}
+        background-color: #8489AC;
+        {%else%}
+        background-color: #D4D9FC;
+        {%endif%}
+    }
+
+    span.structure{
+        {%if structure_info|sum:"disp"%}
+        background-color: #8489AC;
+        {%else%}
+        background-color: #D4D9FC;
+        {%endif%}
+    }
+
+    span.user_active, span.tag_active{
+        background-color: #D4D9FC;
+    }
+
+
+
+
+    
+
+{%endblock%}
+
+
+
+{%block content%}
+    <h3>Images</h3>
+    
+
+    <div class="filter">
+    <form action="/images/" method="get">
+        
+    <p>
+        <b>User:</b>
+    {%for ui in user_info%}
+        <span class="user{%if ui.disp%}_active{%endif%}">
+        <label for="user_{{ui.name}}">{{ui.name}}</label><input type="checkbox" name="user_{{ui.name}}" id="user_{{ui.name}}" value="1" {%if ui.disp%} checked="checked"{%endif%}/>
+        </span>
+    {%endfor%}
+    </p>
+    <p>
+        <table>
+            <tr>
+        <td><b>Date:</b></td>
+        <td>
+        <img src="/datehist/?{{query}}"/><br>
+        
+        <div id="date_slider" class="slider">
+        <div class="handle" style="background-color: #0A0;"></div>
+        <div class="handle" style="background-color: #0A0;"></div>
+        </div>
+        <label for="start_date">Start</label>
+        <input type="text" name="start_date" id="start_date" value="{{start_date|date:"d/m/Y"}}"/>
+        <label for="end_date">End</label>
+        <input type="text" name="end_date" id="end_date" value="{{end_date|date:"d/m/Y"}}"/>
+        <input type="button" value="Clear" onclick="$('start_date').value='none';$('end_date').value='none';"/>
+        </td>
+        </tr>
+        </table>
+    </p>
+        <table>
+            <tr>
+            <td><b>Tags:</b></td>
+            <td>
+            {%for tag in tag_info%}
+            <span class="tag{%if tag.disp%}_active{%endif%}">
+            <label for="tag__{{tag.name}}">{{tag.name|tagify}}</label><input type="checkbox" name="tag__{{tag.name}}" id="tag__{{tag.name}}" value="1" {%if tag.disp%} checked="checked"{%endif%}/>
+            </span>
+            
+            {%endfor%}
+            </td>
+            </tr>
+        </table>
+
+        <p>
+        <b>Labelling:</b>
+    {%for ui in structure_info%}
+        <span class="user structure{%if ui.disp%}_active{%endif%}">
+        <label for="structure_{{ui.name}}">{{ui.name}}</label><input type="checkbox" name="structure_{{ui.name}}" id="structure_{{ui.name}}" value="1" {%if ui.disp%} checked="checked"{%endif%}/>
+        </span>
+    {%endfor%}
+    </p>
+
+        <p>
+            <label for="min_h5r_size">Minimum results file size</label>
+        <input type="text" name= "min_h5r_size" id="min_h5r_size" size="5" value="{{min_h5r_size}}"/> MB
+        </p>
+
+        <input type="submit" value="Apply Filter" />
+    </form>
+
+    <script type="text/javascript">
+  (function() {
+    var date_slider = $('date_slider');
+    var start_d = new Date({{start_date.year}}, {{start_date.month}}, {{start_date.day}}, 0, 0, 0, 0);
+    var end_d = new Date({{end_date.year}}, {{end_date.month}}, {{end_date.day}}, 0, 0, 0);
+
+    new Control.Slider(date_slider.select('.handle'), date_slider, {
+      range: $R(0, 1.),
+      sliderValue: [0,1.],
+      onSlide: function(value) {
+        //box.setStyle({ width: value + 'px', height: value + 'px' });
+        var new_s = new Date(start_d.getTime() + value[0]*(end_d.getTime() - start_d.getTime()));
+        var new_e = new Date(start_d.getTime() + value[1]*(end_d.getTime() - start_d.getTime()));
+        $('start_date').value = new_s.getDate() + '/' + (new_s.getMonth() + 1) + '/' + new_s.getFullYear();
+        $('end_date').value = new_e.getDate() + '/' + (new_e.getMonth() + 1) + '/' + new_e.getFullYear();
+      },
+      onChange: function(value) {
+        var new_s = new Date(start_d.getTime() + value[0]*(end_d.getTime() - start_d.getTime()));
+        var new_e = new Date(start_d.getTime() + value[1]*(end_d.getTime() - start_d.getTime()));
+        $('start_date').value = new_s.getDate() + '/' + (new_s.getMonth() + 1) + '/' + new_s.getFullYear();
+        $('end_date').value = new_e.getDate() + '/' + (new_e.getMonth() + 1) + '/' + new_e.getFullYear();
+      }
+    });
+
+    
+  })();
+  </script>
+    </div>
+
+    <p>Displaying results {{startNum}} to {{endNum}} of {{totalNum}}<br>
+    {% if startNum %}
+    <a href="/images/?{{query}}&start_num={{prevStartNum}}">&lt</a>
+    {% endif %}
+    {%for sn in startNums%}
+    {%ifequal sn startNum%}
+    {{forloop.counter}}
+    {%else%}
+    <a href="/images/?{{query}}&start_num={{sn}}">{{forloop.counter}}</a>
+    {%endifequal%}
+    {%endfor%}
+    {% if nextStartNum %}
+    <a href="/images/?{{query}}&start_num={{nextStartNum}}">&gt</a>
+    {% endif %}
+    </p>
+    <table>
+    <thead>
+    <tr><th>ID</th><th>Date</th><th>Files</th><th>Tags</th><th>Labels</th></tr>
+    </thead>
+    {% for im in object_list|dictsort:"timestamp" %}
+    {#<tr class="{% cycle 'odd' 'even' %}">#}
+    <tr class="{{im.timestamp.date|is_changed}}">
+    <td><a href="/images/{{ im.imageID }}">{{im.imageID}}</a></td>
+    <td>{{im.timestamp.date|date:"d/m/y"}}</td>
+    <td>
+        <table>
+            <tr>
+                <td>
+    {%for f in im.files.all|dictsort:"filename" %}
+    {%if forloop.last%}
+    <img src="/thumbnails/{{f.filename}}?size=100" float="left"/>
+    {%endif%}
+    {%endfor%}
+                </td>
+                <td>
+    {%for f in im.files.all %}
+    {{f.filename}}
+    {%if f.filesize > 0%}
+    [{{f.filesize|filesizeformat}}]
+    {%endif%}
+    <br>
+    {%endfor%}
+                
+            </tr>
+    </table>
+    </td>
+    <td width="170">
+    {%for t in im.tags.all %}
+    {{t.tag|tagify}}<br>
+    {%endfor%}
+    {%for f in im.files.all %}
+    {%for t in f.tags.all %}
+    {{t.tag|tagify}}<br>
+    {%endfor%}
+    {%endfor%}
+    </td>
+    <td>
+    {%for lab in im.slideID.labelling.all%}
+    {{lab.structure}} {{lab.dyeName}}<br>
+    {%endfor%}
+    </td>
+    </tr>
+    {% endfor %}
+    </table>
+
+    <p>Displaying results {{startNum}} to {{endNum}} of {{totalNum}}<br>
+    {% if startNum %}
+    <a href="/images/?{{query}}&start_num={{prevStartNum}}">&lt</a>
+    {% endif %}
+    {%for sn in startNums%}
+    {%ifequal sn startNum%}
+    {{forloop.counter}}
+    {%else%}
+    <a href="/images/?{{query}}&start_num={{sn}}">{{forloop.counter}}</a>
+    {%endifequal%}
+    {%endfor%}
+    {% if nextStartNum %}
+    <a href="/images/?{{query}}&start_num={{nextStartNum}}">&gt</a>
+    {% endif %}
+    </p>
+
+
+
+ {%endblock%}

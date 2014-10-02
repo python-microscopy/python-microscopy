@@ -1,0 +1,85 @@
+{% extends "samples/sample_main.html" %}
+{% load extra_filters %}
+{%block content%}
+    <div class="main">
+    <h2>Image {{object.imageID}}:</h2>
+    <p><b>Acquired by:</b> {{object.userID}}</p>
+    <p><b>At:</b> {{object.timestamp}}</p>
+
+    <div class="slide">
+    <h3>Slide {{object.slideID.slideID}}:</h3>
+    <p><b>Creator:</b> {{object.slideID.creator}}</p>
+    <p><b>Reference:</b> {{object.slideID.reference}}</p>
+
+    <h4>Labelling</h4>
+    <table>
+    {% for lab in object.slideID.labelling.all %}
+    <tr class="{% cycle 'odd' 'even' %}">
+    <td>{{ lab.structure }}</td><td>{{ lab.dyeName }}</td>
+    </tr>
+    {% endfor %}
+    </table>
+
+    <h4>Slide Tags</h4>
+
+    {%for t in object.slideID.tags.all %}
+    {{t.tag}},
+    {%endfor%}
+    <br>
+
+    <h4>Slide Notes</h4>
+    {{object.slideID.notes}}
+    <br>
+
+    </div>
+
+    <div class="tagbar">
+    <h4>Image Tags</h4>
+
+    {%for t in object.tags.all %}
+    {{t.tag|tagify}},
+    {%endfor%}
+    
+       <form action="/images/{{object.imageID}}/tag" method="post">
+        <input type="text" name="tag" id="tag" value="" />
+
+        <input type="submit" value="Tag" />
+        
+        <div id="hint" class="autocomplete"></div>
+        <script type="text/javascript">
+        new Ajax.Autocompleter("tag","hint","/hint/tag");
+        </script>
+        </form>
+
+    </div>
+
+    <h4>Notes</h4>
+    {{object.comments}}
+
+
+    <h3>Files</h3>
+
+    <table>
+    {%for f in object.files.all %}
+    <tr class="{% cycle 'odd' 'even' %}">
+    <td><a href="pyme:/{{f.filename}}"><img src="/thumbnails/{{ f.filename }}" float="left"/></a></td>
+    <td>{{f.filename}}</td>
+    <td>
+        {%for t in f.tags.all %}
+        {{t.tag|tagify}},
+        {%endfor%}
+    </td>
+    <td>
+        {% if f.filesize > 0 %}
+        {{f.filesize|filesizeformat}}
+        {% endif %}
+    </td>
+    </tr>
+    {%endfor%}
+    </table>
+
+    </div>
+
+    
+
+ {%endblock%}

@@ -1,0 +1,45 @@
+{% extends "samples/sample_main.html" %}
+
+{% block content%}
+
+<h2>Analysis Queues</h2>
+<br>
+
+{%for server in servers%}
+
+<div class="server">
+    <h3>{{server.name}}</h3>
+
+    <h4>Task Queues</h4>
+
+    <table>
+        <thead>
+            <tr><th>Name</th><th>Open Tasks</th><th>Tasks in Progress</th><th>Closed Tasks</th></tr>
+        </thead>
+
+        {%for queue in server.queues%}
+        <tr class="{% cycle 'odd' 'even' %}">
+        <td>{{queue.name}}</td><td>{{queue.NOpen}}</td><td>{{queue.NInProc}}</td><td>{{queue.NClosed}}</td> </tr>
+        {%endfor%}
+    </table>
+
+    <h4>Workers</h4>
+
+    <table>
+        <thead>
+            <tr><th>Name</th><th>Num Tasks Processed</th><th>FPS</th></tr>
+        </thead>
+
+        {%for worker in server.workers%}
+        <tr class="{% cycle 'odd' 'even' %}">
+        <td>{{worker.name}}</td><td>{{worker.NProc}}</td><td>{{worker.FPS}}</td> </tr>
+        {%endfor%}
+        <tr class="summary"><td>Total</td><td>{{server.NProc}}</td><td>{{server.FPS}}</td> </tr>
+    </table>
+
+
+</div>
+
+{%endfor%}
+
+{% endblock %}

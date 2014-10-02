@@ -39,7 +39,7 @@ MANAGERS = ADMINS
 ##DATABASE_NAME = 'sample_db'             # Or path to database file if using sqlite3.
 ##DATABASE_USER = 'PYMEUSER'             # Not used with sqlite3.
 ##DATABASE_PASSWORD = 'PYME'         # Not used with sqlite3. #### Change this for local install
-DATABASE_HOST = 'lmsrv1'             # Set to empty string for localhost. Not used with sqlite3.
+DATABASE_HOST = 'dbsrv1'             # Set to empty string for localhost. Not used with sqlite3.
 ##DATABASE_PORT = ''             # Set to empty string for default. Not used with sqlite3.
 ##DATABASE_OPTIONS = {
 ##    "connect_timeout": 1,
@@ -67,7 +67,7 @@ DATABASES = {
 # although not all choices may be available on all operating systems.
 # If running in a Windows environment this must be set to the same as your
 # system time zone.
-TIME_ZONE = 'NZ'
+TIME_ZONE = 'Eastern'
 
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html

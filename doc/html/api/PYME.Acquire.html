@@ -39,6 +39,9 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
           <a href="PYME.html" title="PYME Package"
              accesskey="P">previous</a> |</li>
         <li><a href="../index.html">PYME 0.1 documentation</a> &raquo;</li>
@@ -429,7 +432,7 @@ easily parsed.</p>
 
 <dl class="class">
 <dt id="PYME.Acquire.Spooler.Spooler">
-<em class="property">class </em><tt class="descclassname">PYME.Acquire.Spooler.</tt><tt class="descname">Spooler</tt><big>(</big><em>scope</em>, <em>filename</em>, <em>acquisator</em>, <em>protocol=&lt;PYME.Acquire.protocol.Protocol instance at 0x55d1f38&gt;</em>, <em>parent=None</em><big>)</big><a class="headerlink" href="#PYME.Acquire.Spooler.Spooler" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.Spooler.</tt><tt class="descname">Spooler</tt><big>(</big><em>scope</em>, <em>filename</em>, <em>acquisator</em>, <em>protocol=&lt;PYME.Acquire.protocol.Protocol instance at 0x2b2fc1400dd0&gt;</em>, <em>parent=None</em><big>)</big><a class="headerlink" href="#PYME.Acquire.Spooler.Spooler" title="Permalink to this definition">¶</a></dt>
 <dd><p>Spooler base class</p>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
@@ -542,8 +545,8 @@ packaged as a string (&lt;255 chars). This is commonly used to store
 parameters - e.g. z positions, and should be both human readable and 
 easily parsed.</p>
 </div></blockquote>
-<p><strong>In addition to the name and description, timing information is recorded</strong></p>
-<p class="last"><strong>for each event.</strong></p>
+<p><strong>In addition to the name and description, timing information is recorded</strong> :</p>
+<p class="last"><strong>for each event.</strong> :</p>
 </td>
 </tr>
 </tbody>
@@ -554,7 +557,7 @@ easily parsed.</p>
 
 <dl class="class">
 <dt id="PYME.Acquire.HDFSpooler.Spooler">
-<em class="property">class </em><tt class="descclassname">PYME.Acquire.HDFSpooler.</tt><tt class="descname">Spooler</tt><big>(</big><em>scope</em>, <em>filename</em>, <em>acquisator</em>, <em>protocol=&lt;PYME.Acquire.protocol.Protocol instance at 0x55d1f38&gt;</em>, <em>parent=None</em>, <em>complevel=6</em>, <em>complib='zlib'</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpooler.Spooler" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.HDFSpooler.</tt><tt class="descname">Spooler</tt><big>(</big><em>scope</em>, <em>filename</em>, <em>acquisator</em>, <em>protocol=&lt;PYME.Acquire.protocol.Protocol instance at 0x2b2fc1400dd0&gt;</em>, <em>parent=None</em>, <em>complevel=6</em>, <em>complib='zlib'</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpooler.Spooler" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#PYME.Acquire.Spooler.Spooler" title="PYME.Acquire.Spooler.Spooler"><tt class="xref py py-class docutils literal"><span class="pre">PYME.Acquire.Spooler.Spooler</span></tt></a></p>
 <p>Responsible for the mechanics of spooling to a pytables/hdf file.</p>
 <p class="rubric">Methods</p>
@@ -625,7 +628,7 @@ easily parsed.</p>
 
 <dl class="class">
 <dt id="PYME.Acquire.QueueSpooler.Spooler">
-<em class="property">class </em><tt class="descclassname">PYME.Acquire.QueueSpooler.</tt><tt class="descname">Spooler</tt><big>(</big><em>scope</em>, <em>filename</em>, <em>acquisator</em>, <em>protocol=&lt;PYME.Acquire.protocol.Protocol instance at 0x55d1f38&gt;</em>, <em>parent=None</em>, <em>complevel=2</em>, <em>complib='zlib'</em><big>)</big><a class="headerlink" href="#PYME.Acquire.QueueSpooler.Spooler" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.QueueSpooler.</tt><tt class="descname">Spooler</tt><big>(</big><em>scope</em>, <em>filename</em>, <em>acquisator</em>, <em>protocol=&lt;PYME.Acquire.protocol.Protocol instance at 0x2b2fc1400dd0&gt;</em>, <em>parent=None</em>, <em>complevel=2</em>, <em>complib='zlib'</em><big>)</big><a class="headerlink" href="#PYME.Acquire.QueueSpooler.Spooler" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#PYME.Acquire.Spooler.Spooler" title="PYME.Acquire.Spooler.Spooler"><tt class="xref py py-class docutils literal"><span class="pre">PYME.Acquire.Spooler.Spooler</span></tt></a></p>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
@@ -1567,39 +1570,6 @@ or &#8216;ABCDEFGHIJK&#8217; (non-numeric base 11)</p>
 <dt id="PYME.Acquire.mytimer.mytimer">
 <em class="property">class </em><tt class="descclassname">PYME.Acquire.mytimer.</tt><tt class="descname">mytimer</tt><big>(</big><em>PROFILE=False</em><big>)</big><a class="headerlink" href="#PYME.Acquire.mytimer.mytimer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">wx._misc.Timer</span></tt></p>
-<p class="rubric">Attributes</p>
-<table border="1" class="longtable docutils">
-<colgroup>
-<col width="10%" />
-<col width="90%" />
-</colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">ClassName</span></tt></td>
-<td>See <cite>GetClassName</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">EvtHandlerEnabled</span></tt></td>
-<td>See <cite>GetEvtHandlerEnabled</cite> and <cite>SetEvtHandlerEnabled</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Id</span></tt></td>
-<td>See <cite>GetId</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Interval</span></tt></td>
-<td>See <cite>GetInterval</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">NextHandler</span></tt></td>
-<td>See <cite>GetNextHandler</cite> and <cite>SetNextHandler</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Owner</span></tt></td>
-<td>See <cite>GetOwner</cite> and <cite>SetOwner</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">PreviousHandler</span></tt></td>
-<td>See <cite>GetPreviousHandler</cite> and <cite>SetPreviousHandler</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">thisown</span></tt></td>
-<td>The membership flag</td>
-</tr>
-</tbody>
-</table>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -1831,39 +1801,6 @@ or &#8216;ABCDEFGHIJK&#8217; (non-numeric base 11)</p>
 <dt id="PYME.Acquire.previewaquisator.PreviewAquisator">
 <em class="property">class </em><tt class="descclassname">PYME.Acquire.previewaquisator.</tt><tt class="descname">PreviewAquisator</tt><big>(</big><em>_chans</em>, <em>_cam</em>, <em>_shutters</em>, <em>_ds=None</em><big>)</big><a class="headerlink" href="#PYME.Acquire.previewaquisator.PreviewAquisator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">wx._misc.Timer</span></tt></p>
-<p class="rubric">Attributes</p>
-<table border="1" class="longtable docutils">
-<colgroup>
-<col width="10%" />
-<col width="90%" />
-</colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">ClassName</span></tt></td>
-<td>See <cite>GetClassName</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">EvtHandlerEnabled</span></tt></td>
-<td>See <cite>GetEvtHandlerEnabled</cite> and <cite>SetEvtHandlerEnabled</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Id</span></tt></td>
-<td>See <cite>GetId</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Interval</span></tt></td>
-<td>See <cite>GetInterval</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">NextHandler</span></tt></td>
-<td>See <cite>GetNextHandler</cite> and <cite>SetNextHandler</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Owner</span></tt></td>
-<td>See <cite>GetOwner</cite> and <cite>SetOwner</cite></td>
-</tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">PreviousHandler</span></tt></td>
-<td>See <cite>GetPreviousHandler</cite> and <cite>SetPreviousHandler</cite></td>
-</tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">thisown</span></tt></td>
-<td>The membership flag</td>
-</tr>
-</tbody>
-</table>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -2349,81 +2286,7 @@ looppos inticates which hardware (shutter) channel we&#8217;re currently on</p>
 <div class="section" id="subpackages">
 <h3>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h3>
 <div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="PYME.Acquire.Hardware.html">PYME.Acquire.Hardware package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#subpackages">Subpackages</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html">PYME.Acquire.Hardware.Piezos package</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#submodules">Submodules</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#module-PYME.Acquire.Hardware.Piezos.piezo_c867">PYME.Acquire.Hardware.Piezos.piezo_c867 module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#module-PYME.Acquire.Hardware.Piezos.piezo_e255">PYME.Acquire.Hardware.Piezos.piezo_e255 module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#module-PYME.Acquire.Hardware.Piezos.piezo_e662">PYME.Acquire.Hardware.Piezos.piezo_e662 module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#module-PYME.Acquire.Hardware.Piezos.piezo_e709">PYME.Acquire.Hardware.Piezos.piezo_e709 module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#module-PYME.Acquire.Hardware.Piezos.piezo_e816">PYME.Acquire.Hardware.Piezos.piezo_e816 module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#module-PYME.Acquire.Hardware.Piezos.piezo_e816_corr">PYME.Acquire.Hardware.Piezos.piezo_e816_corr module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#module-PYME.Acquire.Hardware.Piezos.piezo_e816b">PYME.Acquire.Hardware.Piezos.piezo_e816b module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#pyme-acquire-hardware-piezos-piezo-test-module">PYME.Acquire.Hardware.Piezos.piezo_test module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#module-PYME.Acquire.Hardware.Piezos">Module contents</a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html">PYME.Acquire.Hardware.Simulator package</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#submodules">Submodules</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#pyme-acquire-hardware-simulator-dsimcontrol-module">PYME.Acquire.Hardware.Simulator.dSimControl module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#pyme-acquire-hardware-simulator-fakecam-module">PYME.Acquire.Hardware.Simulator.fakeCam module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator.fakePiezo">PYME.Acquire.Hardware.Simulator.fakePiezo module</a><ul class="simple">
-</ul>
-</li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator.fluor">PYME.Acquire.Hardware.Simulator.fluor module</a><ul class="simple">
-</ul>
-</li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator.illuminate">PYME.Acquire.Hardware.Simulator.illuminate module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator.lasersliders">PYME.Acquire.Hardware.Simulator.lasersliders module</a><ul class="simple">
-</ul>
-</li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#pyme-acquire-hardware-simulator-rend-im-module">PYME.Acquire.Hardware.Simulator.rend_im module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#pyme-acquire-hardware-simulator-setup-module">PYME.Acquire.Hardware.Simulator.setup module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator.wormlike">PYME.Acquire.Hardware.Simulator.wormlike module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator.wormlike2">PYME.Acquire.Hardware.Simulator.wormlike2 module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator.wormlike_curled">PYME.Acquire.Hardware.Simulator.wormlike_curled module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator">Module contents</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.EMCCDTheory">PYME.Acquire.Hardware.EMCCDTheory module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.FilterWheel">PYME.Acquire.Hardware.FilterWheel module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.FocCorr">PYME.Acquire.Hardware.FocCorr module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#pyme-acquire-hardware-foccorrr-module">PYME.Acquire.Hardware.FocCorrR module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.FrFilter">PYME.Acquire.Hardware.FrFilter module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.LaserControlFrame">PYME.Acquire.Hardware.LaserControlFrame module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#pyme-acquire-hardware-nikonte2000-module">PYME.Acquire.Hardware.NikonTE2000 module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#pyme-acquire-hardware-nikonti-module">PYME.Acquire.Hardware.NikonTi module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.NikonTiGUI">PYME.Acquire.Hardware.NikonTiGUI module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.OrielCornerstone">PYME.Acquire.Hardware.OrielCornerstone module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#pyme-acquire-hardware-pm100usb-module">PYME.Acquire.Hardware.PM100USB module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#pyme-acquire-hardware-tilightcrafter-module">PYME.Acquire.Hardware.TiLightCrafter module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#pyme-acquire-hardware-ccdadjpanel-module">PYME.Acquire.Hardware.ccdAdjPanel module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.ccdCalibrator">PYME.Acquire.Hardware.ccdCalibrator module</a><ul class="simple">
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.cobaltLaser">PYME.Acquire.Hardware.cobaltLaser module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.fakeShutters">PYME.Acquire.Hardware.fakeShutters module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.focusKeys">PYME.Acquire.Hardware.focusKeys module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.frZStage">PYME.Acquire.Hardware.frZStage module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.fw102">PYME.Acquire.Hardware.fw102 module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.ioslave">PYME.Acquire.Hardware.ioslave module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.lasers">PYME.Acquire.Hardware.lasers module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.phoxxLaser">PYME.Acquire.Hardware.phoxxLaser module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.priorLumen">PYME.Acquire.Hardware.priorLumen module</a><ul class="simple">
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.setup">PYME.Acquire.Hardware.setup module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#pyme-acquire-hardware-spacenav-module">PYME.Acquire.Hardware.spacenav module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.splitter">PYME.Acquire.Hardware.splitter module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#pyme-acquire-hardware-thorlabspiezo-module">PYME.Acquire.Hardware.thorlabsPiezo module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware">Module contents</a></li>
-</ul>
-</li>
+<ul class="simple">
 </ul>
 </div>
 </div>
@@ -2512,6 +2375,9 @@ looppos inticates which hardware (shutter) channel we&#8217;re currently on</p>
              >index</a></li>
         <li class="right" >
           <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
           <a href="PYME.html" title="PYME Package"

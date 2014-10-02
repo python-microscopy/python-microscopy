@@ -1,0 +1,122 @@
+{% extends "samples/sample_main.html" %}
+{% load extra_filters %}
+
+{%block extra_style%}
+    span.user{
+        {%if creator_info|sum:"disp"%}
+        background-color: #8489AC;
+        {%else%}
+        background-color: #D4D9FC;
+        {%endif%}
+    }
+
+    span.structure{
+        {%if structure_info|sum:"disp"%}
+        background-color: #8489AC;
+        {%else%}
+        background-color: #D4D9FC;
+        {%endif%}
+    }
+
+    span.user_active, span.tag_active{
+        background-color: #D4D9FC;
+    }
+
+{%endblock%}
+
+{% block content%}
+    <h3>Slides</h3>
+
+    <div class="filter">
+    <form action="/slides/" method="get">
+
+    <p>
+        <b>Creator:</b>
+    {%for ui in creator_info%}
+        <span class="user{%if ui.disp%}_active{%endif%}">
+        <label for="creator_{{ui.name}}">{{ui.name}}</label><input type="checkbox" name="creator_{{ui.name}}" id="creator_{{ui.name}}" value="1" {%if ui.disp%} checked="checked"{%endif%}/>
+        </span>
+    {%endfor%}
+    </p>
+    <p>
+        <b>Labelling:</b>
+    {%for ui in structure_info%}
+        <span class="user structure{%if ui.disp%}_active{%endif%}">
+        <label for="structure_{{ui.name}}">{{ui.name}}</label><input type="checkbox" name="structure_{{ui.name}}" id="structure_{{ui.name}}" value="1" {%if ui.disp%} checked="checked"{%endif%}/>
+        </span>
+    {%endfor%}
+    </p>
+        <input type="submit" value="Apply Filter" />
+    </form>
+    </div>
+
+    <form action="/admin/samples/slide/add/" method ="get">
+        <input type="submit" value="New Slide"/>
+    </form>
+
+    <div class="pagination">
+    <span class="step-links">
+        
+
+        <span class="current">
+            Page {{ slides.number }} of {{ slides.paginator.num_pages }}.
+        </span>
+
+        {% if slides.has_previous %}
+            <a href="/slides/?{{query}}&page={{ slides.previous_page_number }}">previous</a>
+        {% endif %}
+
+        {%for pn in slides.paginator.page_range%}
+        {%ifequal pn slides.number%}
+        {{pn}}
+        {%else%}
+        <a href="/slides/?{{query}}&page={{pn}}">{{pn}}</a>
+        {%endifequal%}
+        {%endfor%}
+
+        {% if slides.has_next %}
+            <a href="/slides/?{{query}}&page={{ slides.next_page_number }}">next</a>
+        {% endif %}
+    </span>
+    </div>
+
+    <table>
+        <thead><th>ID</th><th>Creator</th><th>Reference</th><th>Labelling</th><th># Images</th></thead>
+    {% for sl in slides.object_list %}
+    <tr class="{% cycle 'odd' 'even' %}">
+    <td><a href="/slides/{{ sl.slideID }}">{{ sl.slideID }}</a></td>
+    <td width="100px">{{sl.creator}}</td>
+    <td width="100px">{{sl.reference}}</td>
+    <td>
+    <table>
+    {%for lab in sl.labelling.all%}
+    <tr>
+        <td width="100px">{{lab.structure}}</td><td>{{lab.label}}</td>
+    </tr>
+    {%endfor%}
+    </table>
+    </td>
+    <td>{{sl.images.count}}</td>
+    </tr>
+    {% endfor %}
+    </table>
+
+    <div class="pagination">
+    <span class="step-links">
+        {% if slides.has_previous %}
+            <a href="?page={{ slides.previous_page_number }}">previous</a>
+        {% endif %}
+
+        <span class="current">
+            Page {{ slides.number }} of {{ slides.paginator.num_pages }}.
+        </span>
+
+        {% if slides.has_next %}
+            <a href="?page={{ slides.next_page_number }}">next</a>
+        {% endif %}
+    </span>
+    </div>
+
+
+
+{% endblock %}
