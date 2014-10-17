@@ -67,5 +67,7 @@ class DriftTrackingControl(wx.Panel):
         try:
             t, dx, dy, dz = self.dt.history[-1]
             self.stError.SetLabel('Error: x = %3.2f px\ny = %3.2f px\nz = %3.2f nm' % (dx, dy, dz*1000))
+        except AttributeError:
+            pass
         except IndexError:
             pass

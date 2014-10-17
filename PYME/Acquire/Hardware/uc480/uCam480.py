@@ -258,14 +258,17 @@ class uc480Camera:
         ret = uc480.CALL('CopyImageMem', self.boardHandle, pData, bufID, self.transferBuffer.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)))
         
         #chSlice[:] = self.transferBuffer[:].T #.reshape(chSlice.shape)
-        self.accumBuffer[:] = self.accumBuffer + self.transferBuffer
+        if self.nAccumCurrent == 0:
+            self.accumBuffer[:] = self.transferBuffer
+        else:
+            self.accumBuffer[:] = self.accumBuffer + self.transferBuffer
         self.nAccumCurrent += 1
         
         ret = uc480.CALL('UnlockSeqBuf', self.boardHandle, uc480.IS_IGNORE_PARAMETER, pData)
         
         if self.nAccumCurrent >= self.nAccum:    
             self.fullBuffers.put(self.accumBuffer)
-            self.accumBuffer = self.freeAccumBuffers.get()
+            self.accumBuffer = self.freeBuffers.get()
             self.nAccumCurrent = 0
             self.nFull += 1
         #self.camLock.release()
