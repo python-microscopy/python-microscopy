@@ -40,6 +40,9 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
+          <a href="np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
           <a href="VisGUI.html" title="Visualising Data - VisGUI"
              accesskey="N">next</a> |</li>
         <li class="right" >
@@ -78,33 +81,55 @@
 </div>
 <ol class="arabic simple" start="7">
 <li>Click on <em>&#8216;Test&#8217;</em> to see if the detection threshold is suitable – if necessary try a higher or lower threshold.</li>
-<li>Once happy with the threshold, click <em>&#8216;Go&#8217;</em>. This will send the frames into the distributed analysis system which should churn through and perform the fits <a class="footnote-reference" href="#id2" id="id1">[1]</a>.</li>
+<li>Once happy with the threshold, click <em>&#8216;Go&#8217;</em>. This will send the frames into the distributed analysis system which should churn through and perform the fits <a class="footnote-reference" href="#id3" id="id1">[1]</a>.</li>
 <li>One all the analysis tasks are complete, go to the analysis folder (if you haven&#8217;t set the <tt class="docutils literal"><span class="pre">PYMEDataDir</span></tt> environment varible it should be under <tt class="docutils literal"><span class="pre">c:\Users\&lt;username&gt;\PYMEData\Analysis\&lt;name</span> <span class="pre">of</span> <span class="pre">folder</span> <span class="pre">containing</span> <span class="pre">raw</span> <span class="pre">data&gt;</span></tt>) and find the <tt class="docutils literal"><span class="pre">.h5r</span></tt> file corresponding to the raw data. Open this in <tt class="docutils literal"><span class="pre">VisGUI</span></tt>.</li>
 <li>Check the data in <tt class="docutils literal"><span class="pre">VisGUI</span></tt> to see if it looks reasonable - good coverage of the field of view, reasonable looking distribution of shifts if you set the point colour to be <tt class="docutils literal"><span class="pre">FitResults_dx</span></tt> or <tt class="docutils literal"><span class="pre">FitResults_dy</span></tt> (the x and y shifts). Try adjusting the filter if this is not the case (a good place to start is sigma – the PSF std deviation, which can be set to a reasonably narrow window around the expected bead width). A few erroneous vectors are still permissible as these will be filtered out in subsequent steps.</li>
 <li>From the <em>&#8216;Extras&#8217;</em> menu choose <em>&#8216;Calculate shiftmap&#8217;</em>. This will attempt to interpolate the shift vectors obtained at the bead locations across the field of view. The algorithm first checks to see if each vector points in approximately the same direction as it&#8217;s neighbours. &#8216;Wonky&#8217; vectors which dramatically differ from their neighbours but have somehow made if through prior filtering steps are discarded at this point. Bivariate smoothing splines are then fitted to the x and y shift vectors. The resulting interpolated shift field (and residuals) is shown, and the user given the opportunity to save the shiftmap (effectively the spline coefficients) in a .sf file. Unfortunately the &#8216;save&#8217; dialog is modal and you don&#8217;t get a chance to examine the shift field before being prompted to save. I usually cancel the save request the first time, examine the result, and if happy, run <em>&#8216;Calculate shiftmap&#8217;</em> again, saving the result. This interpolated shift field should be smooth, although it&#8217;s common to see magnification differences as well as rotation in the field resulting in a spiral or vortex like appearance. If you&#8217;re unhappy with the generated shiftmap, you can go back to the filter (or if really bad try acquiring and analysing a new data set).</li>
 </ol>
-<p>&lt;NB – there&#8217;s a good chance that the display routines here have hard-coded ROI values and might need a bit of tweaking. We ought to find out in the next couple of weeks.&gt;</p>
+<blockquote>
+<div><strong>New</strong>: If the above does not yield a good shiftmap (shifts should be mostly translation, rotation, and some scaling, which results in smoothly varying shiftmaps) you can also try the <em>&#8216;Calculate Shiftmap (Model Based)&#8217;</em> option (also on the <em>&#8216;Extras&#8217;</em> menu) which fits the coefficients of a global affine transform rather than trying to interpolate shifts. The resulting shiftmap will be less flexible than one calculated using the <em>&#8216;Calculate shiftmap&#8217;</em> function, but captures the most likely transformations and is better behaved (particularly at the corners of the field where errors can be common).</div></blockquote>
+<div class="section" id="large-shifts">
+<h3>Large shifts<a class="headerlink" href="#large-shifts" title="Permalink to this headline">¶</a></h3>
+<p>If you have very large shifts, you might need to increase the size of the ROI used to fit each bead when performing the callibration. This can be achieved by overriding the <tt class="docutils literal"><span class="pre">ROISize</span></tt> parameter in the analysis - e.g. by entering:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">image</span><span class="o">.</span><span class="n">mdh</span><span class="p">[</span><span class="s">&#39;Analysis.ROISize&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">10</span>
+</pre></div>
+</div>
+<p>in the <tt class="docutils literal"><span class="pre">dh5view</span></tt> console. The <tt class="docutils literal"><span class="pre">ROISize</span></tt> setting is the size of a &#8216;half ROI&#8217;, with the size of the actual ROI being <span class="math">\(2n + 1\)</span>. The default for shift estimation is 7 (15x15), and the default for fitting is 5 (11x11).</p>
+</div>
 </div>
 <div class="section" id="analysing-ratiometric-images">
 <h2>Analysing ratiometric images<a class="headerlink" href="#analysing-ratiometric-images" title="Permalink to this headline">¶</a></h2>
 <p>Whilst not as complicated as the calibration procedure, the analysis procedure for multi-colour images is also a little different to that for single colour images.</p>
 <ol class="arabic simple">
 <li>Load the data in dh5view</li>
-<li>Choose <tt class="docutils literal"><span class="pre">SplitterFitFR</span></tt> (or if in need of a little extra speed <tt class="docutils literal"><span class="pre">SplitterFitQR</span></tt>, which assumes that the temporal background subtraction has done it&#8217;s thing and doesn&#8217;t fit the background at all) as the fit module (If the data was acquired in PYMEAcquire this may have been done automagically for you)</li>
+<li>Choose <tt class="docutils literal"><span class="pre">SplitterFitFNR</span></tt> as the fit module (<strong>Note:</strong> this assumes that the default temporal background subtraction has done it&#8217;s thing and doesn&#8217;t fit the background at all. If you have disabled background subtraction, try using the older <tt class="docutils literal"><span class="pre">SplitterFitFR</span></tt>) <a class="footnote-reference" href="#id4" id="id2">[2]</a>.</li>
 <li>Set the Splitter parameters as in 6 above</li>
 <li>Set the shift field to the .sf file saved in the calibration step (click on the &#8216;Set&#8217; button)</li>
 <li>Test the threshold</li>
 <li>Click &#8216;Go&#8217; to start the analysis.</li>
 </ol>
-<p>IMPORTANT – the shifts are corrected as part of the fitting process (they should be absent from the fitted data)</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The shifts are corrected as part of the fitting process (they should be absent from the fitted data)</p>
+</div>
 </div>
 <div class="section" id="visualising-ratiometric-data">
 <h2>Visualising ratiometric data<a class="headerlink" href="#visualising-ratiometric-data" title="Permalink to this headline">¶</a></h2>
-<p>If you have analysed data using one of the <em>&#8216;SplitterFit...&#8217;</em> modules, VisGUI will show a colour tab with a scattergram of the ratios. Before you can render the images as multi-colour, you will need to add species to this scattergram by clicking add and setting the ratio (which can then be tweaked by clicking on the ratio value in the table). You can also try and automagically guess what components are present by using the &#8216;Guess&#8217; button. The points assigned to a certain ratio will be given the same colour as that component. After the ratios have been defined, you will have new selections in the colour filter selector in the main window, and rendering options will default to producing multi-channel images. [Note – it is also possible to define species and ratios in the metadata,  but that is beyond the scope of what we can go into here]</p>
-<table class="docutils footnote" frame="void" id="id2" rules="none">
+<p>If you have analysed data using one of the <em>&#8216;SplitterFit...&#8217;</em> modules, VisGUI will show a colour tab with a scattergram of the ratios. Before you can render the images as multi-colour, you will need to add species to this scattergram by clicking add and setting the ratio (which can then be tweaked by clicking on the ratio value in the table). You can also try and automagically guess what components are present by using the &#8216;Guess&#8217; button. The points assigned to a certain ratio will be given the same colour as that component. After the ratios have been defined, you will have new selections in the colour filter selector in the main window, and rendering options will default to producing multi-channel images.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">It is also possible to define species and ratios in the metadata, but that is beyond the scope of what we can go into here.</p>
+</div>
+<table class="docutils footnote" frame="void" id="id3" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
 <tr><td class="label"><a class="fn-backref" href="#id1">[1]</a></td><td>Extra for experts:  in this case it will probably only make use of 1 or 2 cores as the distributed analysis uses a chunk size of at least 50 frames to allow the data to be cached for efficient background subtraction on the workers when analysing binking datasets.</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="id4" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id2">[2]</a></td><td><tt class="docutils literal"><span class="pre">SplitterFitFNR</span></tt> is a new routine and is preferred as it performs shift-corrected ROI extraction and thus works for larger shift values. The previous versions only worked if the shift was sufficently small that the ROI co-ordinates for the 1st channel could also be used to extract a ROI for the second channel which completely enclosed the 2nd image of a molecule. As well as coping with almost arbitrarily large shifts, the new routine allows a smaller ROI to be used for moderate shifts, improving speed and tolerable localisation density.</td></tr>
 </tbody>
 </table>
 </div>
@@ -119,7 +144,10 @@
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Using an image splitting device for multi-colour ratiometric imaging</a><ul>
-<li><a class="reference internal" href="#calibrating-the-image-splitting-device">Calibrating the image splitting device</a></li>
+<li><a class="reference internal" href="#calibrating-the-image-splitting-device">Calibrating the image splitting device</a><ul>
+<li><a class="reference internal" href="#large-shifts">Large shifts</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#analysing-ratiometric-images">Analysing ratiometric images</a></li>
 <li><a class="reference internal" href="#visualising-ratiometric-data">Visualising ratiometric data</a></li>
 </ul>
@@ -162,6 +190,9 @@
              >index</a></li>
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="np-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
           <a href="VisGUI.html" title="Visualising Data - VisGUI"

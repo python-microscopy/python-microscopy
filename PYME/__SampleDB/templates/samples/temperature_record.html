@@ -1,0 +1,14 @@
+{% extends "samples/sample_main.html" %}
+
+{% block content%}
+
+<img src="/tempgraph/{{numhours}}"/>
+<br>
+<b>Last: </b>
+<a href="/temperature/?numhours=6">6 hours</a>
+<a href="/temperature/">24 hours</a>
+<a href="/temperature/?numhours=72">3 days</a>
+<a href="/temperature/?numhours=168">week</a>
+<a href="/temperature/?numhours=672">month</a>
+
+{% endblock %}

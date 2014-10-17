@@ -1,0 +1,228 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>The Sample Database &mdash; PYME 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PYME 0.1 documentation" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">PYME 0.1 documentation</a> &raquo;</li>
+<li><a href="http://lmsrv1/docwiki/docs/pyme-docs/SampleDB.rst">Edit</a> &raquo;</li>
+ 
+
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="the-sample-database">
+<h1>The Sample Database<a class="headerlink" href="#the-sample-database" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<p>These instructions assume you are running an ubuntu linux server with python, mercurial, apache, mysql, and phpmyadmin <a class="footnote-reference" href="#id3" id="id1">[1]</a>. They should also provide a starting point for other systems. A reasonable knowledge of linux and python is assumed.</p>
+<div class="section" id="part-i-basic-setup">
+<h3>Part I - Basic Setup<a class="headerlink" href="#part-i-basic-setup" title="Permalink to this headline">¶</a></h3>
+<ol class="arabic">
+<li><p class="first">Using <tt class="docutils literal"><span class="pre">apt-get</span></tt> or <tt class="docutils literal"><span class="pre">synaptic</span></tt> install <tt class="docutils literal"><span class="pre">python-setuptools</span></tt>, <tt class="docutils literal"><span class="pre">python-scipy</span></tt>, <tt class="docutils literal"><span class="pre">python-matplotlib</span></tt> and <tt class="docutils literal"><span class="pre">python-tables</span></tt> from the distribution packages</p>
+</li>
+<li><p class="first">Get a copy of <tt class="docutils literal"><span class="pre">python-microscopy</span></tt> by cloning from the repository:</p>
+<div class="highlight-python"><div class="highlight"><pre>hg clone https://code.google.com/p/python-microscopy/
+</pre></div>
+</div>
+</li>
+<li><p class="first">Install Django from the distribution package archive - ie <tt class="docutils literal"><span class="pre">sudo</span> <span class="pre">apt-get</span> <span class="pre">install</span> <span class="pre">python-django</span></tt></p>
+</li>
+<li><p class="first">Make a new mysql user called <tt class="docutils literal"><span class="pre">sample_db</span></tt> with password <tt class="docutils literal"><span class="pre">PYMEUSER</span></tt> (can be modified in <tt class="docutils literal"><span class="pre">SampleDB2/settings.py</span></tt>).</p>
+</li>
+<li><p class="first">Create a new mysql database called <tt class="docutils literal"><span class="pre">sample_db</span></tt> and grant the <tt class="docutils literal"><span class="pre">sample_db</span></tt> user all rights. <a class="footnote-reference" href="#id4" id="id2">[2]</a></p>
+</li>
+<li><p class="first">Open a terminal window and change to the <tt class="docutils literal"><span class="pre">PYME/SampleDB2/</span></tt> directory.</p>
+</li>
+<li><p class="first">Test the installation so far by entering:</p>
+<div class="highlight-python"><div class="highlight"><pre>python manage.py sql samples
+</pre></div>
+</div>
+<p>This should show the SQL which will be used to make the tables that <cite>SampleDB</cite> needs, and will only work if Django is installed and can connect to the database. If this fails, chase up the error messages.</p>
+</li>
+<li><p class="first">Create the tables by entering:</p>
+<div class="highlight-python"><div class="highlight"><pre>python manage.py syncdb
+</pre></div>
+</div>
+<p>This will create all the database tables and prompt you for an admin username and password.</p>
+</li>
+<li><p class="first">Test the setup by running the development server:</p>
+<div class="highlight-python"><div class="highlight"><pre>python setup.py runserver
+</pre></div>
+</div>
+<p>Now direct your browser to <tt class="docutils literal"><span class="pre">localhost:8080</span></tt> and you should get your first glimpse of the sample database. This will, however, only be visible on the local computer.</p>
+</li>
+</ol>
+<p>Usernames, database names, and passwords can be customized for your site in <tt class="docutils literal"><span class="pre">SampleDB2/settings.py</span></tt> - for more details see the Django documentation.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">These instructions follow my re-installation on Ubuntu 14.04 LTS, which ships with Django 1.6. Other versions of Django might not work.</p>
+</div>
+<table class="docutils footnote" frame="void" id="id3" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[1]</a></td><td>phpmyadmin can be substituted for your mysql admin interface of choice</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="id4" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id2">[2]</a></td><td>steps 2&amp;3 can be combined in phpmyadmin by checking a box during the user creation process</td></tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="part-ii-getting-apache-to-serve-the-sampledb">
+<h3>Part II - Getting Apache to serve the SampleDB<a class="headerlink" href="#part-ii-getting-apache-to-serve-the-sampledb" title="Permalink to this headline">¶</a></h3>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">In its default state, the PYME SampleDB is not secure. Only use behind a firewall and do so at your own risk/discretion. The version of the Django <tt class="docutils literal"><span class="pre">settings.py</span></tt> in the python-microscopy repository has <tt class="docutils literal"><span class="pre">DEBUG</span></tt> set to <tt class="docutils literal"><span class="pre">True</span></tt>, which is a known security risk. In a controlled environment, this risk is probably acceptable in return for easier troubleshooting, but you have been warned!</p>
+</div>
+<ol class="arabic">
+<li><p class="first">Create a directory <tt class="docutils literal"><span class="pre">/var/www/SampleDB/static</span></tt> for the static files (if you want to host the files from another directory, you will need to change <tt class="docutils literal"><span class="pre">STATIC_ROOT</span></tt> in <tt class="docutils literal"><span class="pre">settings.py</span></tt> and the apache .conf file detailed in step 3).</p>
+</li>
+<li><p class="first">Install the static files by calling:</p>
+<div class="highlight-python"><div class="highlight"><pre>sudo python manage.py collectstatic
+</pre></div>
+</div>
+</li>
+<li><p class="first">Create a new file in <tt class="docutils literal"><span class="pre">/etc/apache2/conf-available</span></tt> called <tt class="docutils literal"><span class="pre">SampleDB.conf</span></tt> with the following contents (alter the paths to reflect where you have extracted python-microscopy):</p>
+<div class="highlight-python"><div class="highlight"><pre>WSGIScriptAlias / /home/david/python-microscopy/PYME/SampleDB2/SampleDB2/wsgi.py
+WSGIPythonPath /home/david/python-microscopy/PYME/SampleDB2/
+
+&lt;Directory /home/david/python-microscopy/PYME/SampleDB2/SampleDB2/&gt;
+&lt;Files wsgi.py&gt;
+Require all granted
+&lt;/Files&gt;
+&lt;/Directory&gt;
+
+Alias /media/ /var/www/SampleDB/static/
+&lt;Directory /var/www/SampleDB/static/&gt;
+Order deny,allow
+Allow from all
+&lt;/Directory&gt;
+</pre></div>
+</div>
+</li>
+<li><p class="first">Activate the newly created <tt class="docutils literal"><span class="pre">SampleDB.conf</span></tt> by calling:</p>
+<div class="highlight-python"><div class="highlight"><pre>sudo a2enconf SampleDB
+sudo service apache2 reload
+</pre></div>
+</div>
+</li>
+<li><p class="first">Verify that you can now see the server from another machine.</p>
+</li>
+<li><p class="first"><strong>[Optional but reccomended]</strong> Lock the server down. Edit <tt class="docutils literal"><span class="pre">settings.py</span></tt> to add your machine name to <tt class="docutils literal"><span class="pre">ALLOWED_HOSTS</span></tt> and then set <tt class="docutils literal"><span class="pre">DEBUG</span></tt> to <tt class="docutils literal"><span class="pre">False</span></tt>. Restart apache with <tt class="docutils literal"><span class="pre">sudo</span> <span class="pre">service</span> <span class="pre">apache2</span> <span class="pre">reload</span></tt> to make the changes take effect.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">This alone is not enough to make SampleDB secure. You would also want to look at changing the database passwords and the <tt class="docutils literal"><span class="pre">SECRET_KEY</span></tt> in <tt class="docutils literal"><span class="pre">settings.py</span></tt>, as well as potentially restricting access to MySQL to the local machine, or at least the local subnet (PYMEAcquire talks directly to the database server when adding information about the the current slide, so looking the database down too tight will break this). Some items are stored in the database as pickles, which means that, although difficult to exploit, a database breach theoretically has the capablilty to allow remote code execution.</p>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">The Sample Database</a><ul>
+<li><a class="reference internal" href="#installation">Installation</a><ul>
+<li><a class="reference internal" href="#part-i-basic-setup">Part I - Basic Setup</a></li>
+<li><a class="reference internal" href="#part-ii-getting-apache-to-serve-the-sampledb">Part II - Getting Apache to serve the SampleDB</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/SampleDB.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">PYME 0.1 documentation</a> &raquo;</li>
+<li><a href="http://lmsrv1/docwiki/docs/pyme-docs/SampleDB.rst">Edit</a> &raquo;</li>
+ 
+
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010, David Baddeley.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

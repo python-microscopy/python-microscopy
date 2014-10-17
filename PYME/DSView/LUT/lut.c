@@ -129,11 +129,11 @@ static PyObject * applyLUTuint16(PyObject *self, PyObject *args, PyObject *keywd
         for (j=0;j< sizeY;j++)
         {
             //d = (float)(*(unsigned short *)PyArray_GETPTR2(odata, i, j));
-            tmp =  (int)(gain*(((float) *data) - offset));
+            tmp =  (int)MAX(MIN((gain*(((float) *data) - offset)), 255), 0);
             //tmp =  (int)(((float)(N-1))*gain*(d - offset));
             //printf("%d", tmp);
-            tmp = MIN(tmp, (N1));
-            tmp = MAX(tmp, 0);
+            //tmp = MIN(tmp, (N1));
+            //tmp = MAX(tmp, 0);
             *out += LUTR[tmp];
             out++;
             *out += LUTG[tmp];
@@ -262,11 +262,12 @@ static PyObject * applyLUTuint8(PyObject *self, PyObject *args, PyObject *keywds
         for (j=0;j< sizeY;j++)
         {
             //d = (float)(*(unsigned short *)PyArray_GETPTR2(odata, i, j));
-            tmp =  (int)(gain*(((float) *data) - offset));
+            //tmp =  (int)(gain*(((float) *data) - offset));
+            tmp =  (int)MAX(MIN((gain*(((float) *data) - offset)), 255), 0);
             //tmp =  (int)(((float)(N-1))*gain*(d - offset));
             //printf("%d", tmp);
-            tmp = MIN(tmp, N1);
-            tmp = MAX(tmp, 0);
+            //tmp = MIN(tmp, N1);
+            //tmp = MAX(tmp, 0);
             *out += LUTR[tmp];
             out++;
             *out += LUTG[tmp];
@@ -395,16 +396,20 @@ static PyObject * applyLUTfloat(PyObject *self, PyObject *args, PyObject *keywds
         for (j=0;j< sizeY;j++)
         {
             //d = (float)(*(unsigned short *)PyArray_GETPTR2(odata, i, j));
-            tmp =  (int)(gain*(((float) *data) - offset));
+            //tmp =  (int)(gain*(((float) *data) - offset));
+            tmp =  (int)MAX(MIN((gain*(((float) *data) - offset)), 255), 0);
             //tmp =  (int)(((float)(N-1))*gain*(d - offset));
             //printf("%d", tmp);
-            tmp = MIN(tmp, N1);
-            tmp = MAX(tmp, 0);
-            *out += LUTR[tmp];
+            //tmp = MIN(tmp, N1);
+            //tmp = MAX(tmp, 0);
+            *out = MIN(*out + LUTR[tmp], 255);
+            //*out += LUTR[tmp];
             out++;
-            *out += LUTG[tmp];
+            //*out += LUTG[tmp];
+            *out = MIN(*out + LUTG[tmp], 255);
             out++;
-            *out += LUTB[tmp];
+            //*out += LUTB[tmp];
+            *out = MIN(*out + LUTB[tmp], 255);
             out++;
             data ++;
         }
