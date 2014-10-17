@@ -87,5 +87,8 @@ Part II - Getting Apache to serve the SampleDB
     
     .. warning :: This alone is not enough to make SampleDB secure. You would also want to look at changing the database passwords and the ``SECRET_KEY`` in ``settings.py``, as well as potentially restricting access to MySQL to the local machine, or at least the local subnet (PYMEAcquire talks directly to the database server when adding information about the the current slide, so locking the database down too tight will break this). Some items are stored in the database as pickles, which means that, although difficult to exploit, a database breach theoretically has the capablilty to allow remote code execution.
         
+Part III - Letting other machines know where to find the SampleDB
+------------------------------------------------------------------
 
+Letting other machines find the sample database is as simple as setting an environment variable: ``PYME_DATABASE_HOST`` to the hostname of IP address of the server.
 
