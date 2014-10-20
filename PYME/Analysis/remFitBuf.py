@@ -45,7 +45,7 @@ dataSourceID = None
 bufferMisses = 0
 nTasksProcessed = 0
 
-splitterFitModules = ['SplitterFitFR', 'SplitterFitFNR','SplitterFitQR', 'SplitterFitCOIR', 
+splitterFitModules = ['SplitterFitFR', 'SplitterFitFNR','SplitterFitQR', 'SplitterFitCOIR', 'SplitterFitFNSR',
                       'BiplaneFitR', 'SplitterShiftEstFR', 
                       'SplitterObjFindR', 'SplitterFitInterpR', 'SplitterFitInterpQR', 'SplitterFitInterpNR', 'SplitterFitInterpBNR', 'SplitterROIExtractNR']
 

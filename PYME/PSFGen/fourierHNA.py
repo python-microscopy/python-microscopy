@@ -58,7 +58,7 @@ class FourierPropagatorHNA:
         self._F = fftw3f.create_aligned_array(u.shape, 'complex64')
         self._f = fftw3f.create_aligned_array(u.shape, 'complex64')
         
-        print('Creating plans for FFTs - this might take a while')
+        #print('Creating plans for FFTs - this might take a while')
 
         #calculate plans for other ffts
         self._plan_f_F = fftw3f.Plan(self._f, self._F, 'forward', flags = FFTWFLAGS, nthreads=NTHREADS)
@@ -67,7 +67,7 @@ class FourierPropagatorHNA:
         
         fftwWisdom.save_wisdom()
         
-        print('Done planning')
+        #print('Done planning')
          #print isnan(self.propFac).sum()
 
     def propagate(self, F, z):
@@ -95,7 +95,64 @@ class FourierPropagatorHNA:
         
 FourierPropagator = FourierPropagatorHNA
 
-def GenWidefieldAP(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47):
+class FourierPropagatorClipHNA:
+    def __init__(self, u,v,k, lamb = 488, n=1.51, field_x=0, field_y=0, apertureNA=1.5, apertureZGradient = 0):
+        #print k**2
+        #m = (u**2 + v**2) <= (n/lamb**2)
+        #self.propFac = fftw3f.create_aligned_array(u.shape, 'complex64')
+        #self.propFac = 1j*8*pi*sqrt(np.maximum((n/lamb)**2 - (u**2 + v**2), 0))
+        #self.propFac = ((2*pi*n/lamb)*sqrt(np.maximum(1 - (u**2 + v**2), 0))).astype('f')
+        self.propFac = ((2*pi*n/lamb)*cos(.5*pi*sqrt((u**2 + v**2)))).astype('f')
+        self.pfm =(self.propFac > 0).astype('f')
+        
+        #self.field_x = field_x
+        #self.field_y = field_y
+        self.appR = apertureNA/n
+        self.apertureZGrad = apertureZGradient
+        self.x = u - field_x
+        self.y = v - field_y
+
+        self._F = fftw3f.create_aligned_array(u.shape, 'complex64')
+        self._f = fftw3f.create_aligned_array(u.shape, 'complex64')
+        
+        #print('Creating plans for FFTs - this might take a while')
+
+        #calculate plans for other ffts
+        self._plan_f_F = fftw3f.Plan(self._f, self._F, 'forward', flags = FFTWFLAGS, nthreads=NTHREADS)
+        self._plan_F_f = fftw3f.Plan(self._F, self._f, 'backward', flags = FFTWFLAGS, nthreads=NTHREADS)
+        #self._plan_F_f = fftw3f.Plan(self._F, self._f, 'backward', flags = FFTWFLAGS, nthreads=NTHREADS)
+        
+        fftwWisdom.save_wisdom()
+        
+        #print('Done planning')
+         #print isnan(self.propFac).sum()
+
+    def propagate(self, F, z):
+        #return ifftshift(ifftn(F*exp(self.propFac*z)))
+        #print abs(F).sum()
+        pf = self.propFac*float(z)
+        r = self.appR*(1 -self.apertureZGrad*z)
+        M = (self.x*self.x + self.y*self.y) < (r*r)
+        fs = F*M*self.pfm*(cos(pf) + j*sin(pf))
+        self._F[:] = fftshift(fs)
+        #self._F[:] = (fs)
+        self._plan_F_f()
+        #print abs(self._f).sum()
+        return ifftshift(self._f/sqrt(self._f.size))
+        #return (self._f/sqrt(self._f.size))
+        
+    def propagate_r(self, f, z):
+        #return ifftshift(ifftn(F*exp(self.propFac*z)))
+        #figure()
+        #imshow(angle(f))
+        self._f[:] = fftshift(f)
+        self._plan_f_F()
+        #figure()
+        #imshow(angle(self._F))
+        pf = -self.propFac*float(z)
+        return (ifftshift(self._F)*(cos(pf)+j*sin(pf)))/sqrt(self._f.size)
+
+def GenWidefieldAP(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47, apodizisation='sine'):
     if X == None or Y == None:
         X, Y = meshgrid(arange(-2000, 2000., dx),arange(-2000, 2000., dx))
     else:
@@ -111,7 +168,7 @@ def GenWidefieldAP(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47):
     R = sqrt(u**2 + v**2)
     
     #print R.max()*lamb
-    print(((R/(n*lamb)).max()))
+    #print(((R/(n*lamb)).max()))
     
     #imshow(R*lamb)
     #colorbar()
@@ -132,7 +189,62 @@ def GenWidefieldAP(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47):
     #colorbar()
 
     #apperture mask
+    if apodizisation == None:
+        M = 1.0*(R < (NA/n)) # NA/lambda
+    elif apodizisation == 'sine':
+        M = 1.0*(R < (NA/n))*sqrt(cos(.5*pi*np.minimum(R, 1)))
+    
+    
+    
+    #M = M/M.sum()
+    
+    #imshow(M)
+
+    return X, Y, R, FP, M, u, v
+    
+def GenWidefieldAPA(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47, field_x=0, field_y=0, apertureNA=1.5, apertureZGradient = 0, apodizisation='sine'):
+    if X == None or Y == None:
+        X, Y = meshgrid(arange(-2000, 2000., dx),arange(-2000, 2000., dx))
+    else:
+        X, Y = meshgrid(X,Y)
+    
+    X = X - X.mean()
+    Y = Y - Y.mean()
+        
+    u = X*lamb/(n*X.shape[0]*dx*dx)
+    v = Y*lamb/(n*X.shape[1]*dx*dx)
+    #print u.min()
+
+    R = sqrt(u**2 + v**2)
+    
+    #print R.max()*lamb
+    #print(((R/(n*lamb)).max()))
+    
+    #imshow(R*lamb)
+    #colorbar()
+#    figure()
+#    u_ = u[u.shape[0]/2, :]
+#    plot(u_, u_)
+#    plot(u_, sqrt(1 - u_**2))
+#    plot(u_, sqrt(u_**2) < 1.49/2 )
+#    plot(u_, sqrt(u_**2) < 1.49/n )
+#    figure()
+    
+    k = 2*pi*n/lamb
+
+    FP = FourierPropagatorClipHNA(u,v,k, lamb, n, field_x, field_y, apertureNA, apertureZGradient)
+
+    #clf()
+    #imshow(imag(FP.propFac))
+    #colorbar()
+
+    #apperture mask
     M = 1.0*(R < (NA/n)) # NA/lambda
+    
+    if apodizisation == None:
+        M = 1.0*(R < (NA/n)) # NA/lambda
+    elif apodizisation == 'sine':
+        M = 1.0*(R < (NA/n))*sqrt(cos(.5*pi*np.minimum(R, 1)))
     
     #M = M/M.sum()
     
@@ -142,6 +254,15 @@ def GenWidefieldAP(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47):
 
 def GenWidefieldPSF(zs, dx=5, lamb=700, n=1.51, NA = 1.47):
     X, Y, R, FP, F, u, v = GenWidefieldAP(dx, lamb=lamb, n=n, NA = NA)
+    #figure()
+    #imshow(abs(F))
+
+    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+
+    return abs(ps**2)
+    
+def GenWidefieldPSFA(zs, dx=5, lamb=700, n=1.51, NA = 1.47,field_x=0, field_y=0, apertureNA=1.5, apertureZGradient = 0):
+    X, Y, R, FP, F, u, v = GenWidefieldAPA(dx, lamb=lamb, n=n, NA = NA, field_x=field_x, field_y=field_y, apertureNA=apertureNA, apertureZGradient = apertureZGradient)
     #figure()
     #imshow(abs(F))
 
@@ -391,6 +512,56 @@ def GenZernikePSF(zs, dx = 5, zernikeCoeffs = []):
 def GenZernikeDPSF(zs, dx = 5, zernikeCoeffs = {}, lamb=700, n=1.51, NA = 1.47, ns=1.51):
     from PYME.misc import zernike, snells
     X, Y, R, FP, F, u, v = GenWidefieldAP(dx, lamb=lamb, n = n, NA = NA)
+    
+    theta = angle(X + 1j*Y)
+    r = R/R[abs(F)>0].max()
+    
+    if ns == n:
+        T = 1.0*F
+    else:
+        #find angles    
+        t_t = np.minimum(r*arcsin(NA/n), np.pi/2)
+        
+        #corresponding angle in sample with mismatch
+        t_i = snells.theta_t(t_t, n, ns)
+        
+        #Transmission at interface (average of S and P)
+        T = 0.5*(snells.Ts(t_i, ns, n) + snells.Tp(t_i, ns, n))
+        #concentration of high angle rays:
+        T = T*F/(n*np.cos(t_t)/np.sqrt(ns*2 - (n*np.sin(t_t))**2))
+    
+    
+    
+    #imshow(T*(-t_i + snells.theta_t(t_t+.001, n, ns)))
+    #imshow(F)
+    #colorbar()
+    #figure()
+    #imshow(T, clim=(.8, 1.2))
+    #colorbar()
+    #figure()
+    #imshow(T*(-t_i + snells.theta_t(t_t+.01, n, ns)))
+    #imshow(t_i - t_t)
+    
+    ang = 0
+    
+    for i, c in zernikeCoeffs.items():
+        ang = ang + c*zernike.zernike(i, r, theta)
+        
+    #clf()
+    #imshow(angle(exp(1j*ang)))
+        
+    F = T*exp(-1j*ang)
+        
+    #figure()
+    #imshow(angle(F))
+
+    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+
+    return abs(ps**2)
+    
+def GenZernikeDAPSF(zs, dx = 5, X=None, Y=None, zernikeCoeffs = {}, lamb=700, n=1.51, NA = 1.47, ns=1.51,field_x=0, field_y=0, apertureNA=1.5, apertureZGradient = 0, apodizisation=None):
+    from PYME.misc import zernike, snells
+    X, Y, R, FP, F, u, v = GenWidefieldAPA(dx, X = X, Y=Y, lamb=lamb, n = n, NA = NA, field_x=field_x, field_y=field_y, apertureNA=apertureNA, apertureZGradient = apertureZGradient, apodizisation=apodizisation)
     
     theta = angle(X + 1j*Y)
     r = R/R[abs(F)>0].max()
