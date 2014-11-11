@@ -67,6 +67,12 @@ class FitInfoPanel(wx.Panel):
 
 
         self.SetSizerAndFit(vsizer)
+        
+    def SetResults(self, results, mdh):
+        self.fitResults = results
+        self.mdh = mdh
+        self.fitViewPan.SetFitResults(results, mdh)
+        
 
     def genResultsText(self, index):
         s =  u''
@@ -212,8 +218,12 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
 
         wxPlotPanel.PlotPanel.__init__( self, parent, **kwargs )
         
+    def SetFitResults(self, fitResults, mdh):
+        self.fitResults = fitResults
+        self.mdh = mdh
+        
     def _extractROI(self, fri):
-        if 'Ag' in fri['fitResults'].dtype.names:
+        if 'Splitter' in self.mdh['Analysis.FitModule']:
              # is a splitter fit
             if 'Splitter.Channel0ROI' in self.mdh.getEntryNames():
                 x0, y0, w, h = self.mdh['Splitter.Channel0ROI']

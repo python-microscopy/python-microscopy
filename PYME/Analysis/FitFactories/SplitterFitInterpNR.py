@@ -37,7 +37,13 @@ from PYME.Analysis._fithelpers import *
 
 def f_Interp3d2c(p, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, axialShift, *args):
     """3D PSF model function with constant background - parameter vector [A, x0, y0, z0, background]"""
-    Ag, Ar, x0, y0, z0, bG, bR = p
+    
+    if len(p) == 7:
+        Ag, Ar, x0, y0, z0, bG, bR = p
+    else: #not fitting background
+        Ag, Ar, x0, y0, z0 = p
+        bG = 0
+        bR = 0
 
     #currently just come to a hard stop when the optimiser tries to leave the safe region
     #prob. not ideal, for a number of reasons
@@ -52,6 +58,7 @@ def f_Interp3d2c(p, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, axialShift
     
 def f_J_Interp3d2c(p,interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, axialShift, *args):
     '''generate the jacobian - for use with _fithelpers.weightedJacF'''
+    
     Ag, Ar, x0, y0, z0, bG, bR = p
 
     x0 = min(max(x0, safeRegion[0][0]), safeRegion[0][1])
@@ -94,16 +101,40 @@ fresultdtype=[('tIndex', '<i4'),
               ('subtractedBackground', [('g','<f4'),('r','<f4')]),
               ('nchi2', '<f4')]
 
+#
+#def PSFFitResultR(fitResults, metadata, startParams, slicesUsed=None, resultCode=-1, fitErr=None, nchi2=-1, background=None):
+#    if fitErr == None:
+#        fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
+#        
+#    if background  == None:
+#        background = numpy.zeros(2, 'f')
+#
+#    tIndex = metadata.tIndex
+#    return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), startParams.astype('f'), resultCode, fmtSlicesUsed(slicesUsed), background,nchi2)], dtype=fresultdtype) 
+    
+def PSFFitResultR(fitResults, metadata, startParams, slicesUsed=None, resultCode=-1, fitErr=-5e3, nchi2=-1, background=0):
+    fr = np.zeros(1, dtype=fresultdtype)
+    
+    n = len(fitResults)
 
-def PSFFitResultR(fitResults, metadata, startParams, slicesUsed=None, resultCode=-1, fitErr=None, nchi2=-1, background=None):
+    fr['tIndex'] = metadata.tIndex
+    fr['resultCode'] = resultCode
+    fr['nchi2'] = nchi2
+    #print n, fr['fitResults'].view('f4').shape
+    fr['fitResults'].view('f4')[:n] = fitResults   
+    fr['startParams'].view('f4')[:n] = startParams
+    
     if fitErr == None:
-        fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
+        fr['fitError'].view('f4')[:] = -5e3
+    else:
+        fr['fitError'].view('f4')[:n] = fitErr
         
-    if background  == None:
-        background = numpy.zeros(2, 'f')
-
-    tIndex = metadata.tIndex
-    return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), startParams.astype('f'), resultCode, fmtSlicesUsed(slicesUsed), background,nchi2)], dtype=fresultdtype) 
+    fr['subtractedBackground'].view('f4')[:] = background
+    slu = np.array(fmtSlicesUsed(slicesUsed), dtype='i4')
+    #print slu.shape, fr['slicesUsed'].view('12i4').shape, slu.dtype, slu.ravel().shape
+    fr['slicesUsed'].view('i4')[:] = slu.ravel()
+        
+    return fr 
  
 def BlankResult(metadata):
     r = numpy.zeros(1, fresultdtype)
@@ -117,7 +148,23 @@ def getDataErrors(im, metadata):
 
     return scipy.sqrt(metadata.getEntry('Camera.ReadNoise')**2 + (metadata.getEntry('Camera.NoiseFactor')**2)*metadata.getEntry('Camera.ElectronsPerCount')*metadata.getEntry('Camera.TrueEMGain')*dataROI)/metadata.getEntry('Camera.ElectronsPerCount')    
 
+def genFitImage(fitResults, metadata):
+    xslice = slice(*fitResults['slicesUsed']['x'])
+    yslice = slice(*fitResults['slicesUsed']['y'])
+    
+    vx = 1e3*metadata.voxelsize.x
+    vy = 1e3*metadata.voxelsize.y
+    
+    #position in nm from camera origin
+    x_ = (xslice.start + metadata.Camera.ROIPosX - 1)*vx
+    y_ = (yslice.start + metadata.Camera.ROIPosY - 1)*vy
+    
+    #ratio = fitResults['ratio']
+    
+    im = InterpFitFactory._evalModel(np.array(list(fitResults['fitResults'])), metadata, xslice, yslice, x_, y_)[0]
+    print im.shape
 
+    return np.hstack([im[:,:,0], im[:,:,1]]).squeeze()
 
 class InterpFitFactory(InterpFitR.PSFFitFactory):
     def __init__(self, data, metadata, fitfcn=f_Interp3d2c, background=None):
@@ -125,6 +172,13 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
                 
     @classmethod
     def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):
+        xs = slice(-roiHalfSize,roiHalfSize + 1)
+        ys = slice(-roiHalfSize,roiHalfSize + 1)
+
+        cls._evalModel(params, md, xs, ys, x, y)        
+        
+    @classmethod    
+    def _evalModel(cls, params, md, xs, ys, x, y):
         #generate grid to evaluate function on
         #setModel(md.PSFFile, md)
         interpolator = __import__('PYME.Analysis.FitFactories.Interpolators.' + md.Analysis.InterpModule , fromlist=['PYME', 'Analysis','FitFactories', 'Interpolators']).interpolator
@@ -141,16 +195,22 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
             print('model changed')
             startPosEstimator.splines.clear()
 
-        Xg, Yg, Zg, safeRegion = interpolator.getCoords(md, slice(-roiHalfSize,roiHalfSize + 1), slice(-roiHalfSize,roiHalfSize + 1), slice(0,1))
+        Xg, Yg, Zg, safeRegion = interpolator.getCoords(md, xs, ys, slice(0,1))
         
         DeltaX = md.chroma.dx.ev(x, y)
         DeltaY = md.chroma.dy.ev(x, y)
 
-        Xr = Xg + DeltaX
-        Yr = Yg + DeltaY
+        vx = 1e3*md.voxelsize.x
+        vy = 1e3*md.voxelsize.y
+        
+        dxp = int(DeltaX/vx)
+        dyp = int(DeltaY/vy)
+
+        Xr = Xg + DeltaX - vx*dxp
+        Yr = Yg + DeltaY - vx*dyp
         Zr = Zg + md.Analysis.AxialShift
 
-        return f_Interp3d2c(params, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, md.Analysis.AxialShift), Xg.ravel()[0], Yg.ravel()[0], Zg.ravel()[0]
+        return f_Interp3d2c(params, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, md.Analysis.AxialShift, np.ones_like(params)), Xg.ravel()[0], Yg.ravel()[0], Zg.ravel()[0]
 		
         
     def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
@@ -196,10 +256,16 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
                 startParams = self.startPosEstimator.getStartParameters(dataROI[:,:,1:], X_, Y_)
                 z0 = self.metadata.Analysis.AxialShift
 
-        startParameters = [Ag*startParams[0]/(Ag + Ar), Ar*startParams[0]/(Ag + Ar), startParams[1], startParams[2], z0 + startParams[3], dataROI[:,:,0].min(),dataROI[:,:,1].min()]
-        #print startParameters
+        fitBackground = self.metadata.getOrDefault('Analysis.FitBackground', True)
 
-        #print dataROI.shape
+        if fitBackground:         
+            startParameters = [Ag*startParams[0]/(Ag + Ar), Ar*startParams[0]/(Ag + Ar), startParams[1], startParams[2], z0 + startParams[3], dataROI[:,:,0].min(),dataROI[:,:,1].min()]
+        else:
+            startParameters = [Ag*startParams[0]/(Ag + Ar), Ar*startParams[0]/(Ag + Ar), startParams[1], startParams[2], z0 + startParams[3]]
+        #print startParameters
+        
+        startParameters = np.array(startParameters)
+        
 	
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
@@ -230,11 +296,11 @@ import PYME.Analysis.MetaDataEdit as mde
 from PYME.Analysis.FitFactories import Interpolators
 from PYME.Analysis.FitFactories import zEstimators
 
-PARAMETERS = [mde.ChoiceParam('Analysis.InterpModule','Interp:','LinearInterpolator', choices=Interpolators.interpolatorList, choiceNames=Interpolators.interpolatorDisplayList),
+PARAMETERS = [mde.ChoiceParam('Analysis.InterpModule','Interp:','CSInterpolator', choices=Interpolators.interpolatorList, choiceNames=Interpolators.interpolatorDisplayList),
               mde.FilenameParam('PSFFile', 'PSF:', prompt='Please select PSF to use ...', wildcard='PSF Files|*.psf'),
               mde.ShiftFieldParam('chroma.ShiftFilename', 'Shifts:', prompt='Please select shiftfield to use', wildcard='Shiftfields|*.sf'),
               #mde.IntParam('Analysis.DebounceRadius', 'Debounce r:', 4),
-              mde.FloatParam('Analysis.AxialShift', 'Z Shift [nm]:', 0),
+              mde.FloatParam('Analysis.AxialShift', 'Z Shift [nm]:', -270),
               mde.ChoiceParam('Analysis.EstimatorModule', 'Z Start Est:', 'astigEstimator', choices=zEstimators.estimatorList),
               mde.ChoiceParam('PRI.Axis', 'PRI Axis:', 'none', choices=['x', 'y', 'none']),
               ]

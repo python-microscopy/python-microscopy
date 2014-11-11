@@ -509,7 +509,7 @@ def GenZernikePSF(zs, dx = 5, zernikeCoeffs = []):
 
     return abs(ps**2)
     
-def GenZernikeDPSF(zs, dx = 5, zernikeCoeffs = {}, lamb=700, n=1.51, NA = 1.47, ns=1.51):
+def GenZernikeDPSF(zs, dx = 5, zernikeCoeffs = {}, lamb=700, n=1.51, NA = 1.47, ns=1.51, beadsize=0):
     from PYME.misc import zernike, snells
     X, Y, R, FP, F, u, v = GenWidefieldAP(dx, lamb=lamb, n = n, NA = NA)
     
@@ -556,8 +556,12 @@ def GenZernikeDPSF(zs, dx = 5, zernikeCoeffs = {}, lamb=700, n=1.51, NA = 1.47, 
     #imshow(angle(F))
 
     ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
-
-    return abs(ps**2)
+    
+    if beadsize == 0:
+        return abs(ps**2)
+    else:
+        p1 = abs(ps**2)
+        
     
 def GenZernikeDAPSF(zs, dx = 5, X=None, Y=None, zernikeCoeffs = {}, lamb=700, n=1.51, NA = 1.47, ns=1.51,field_x=0, field_y=0, apertureNA=1.5, apertureZGradient = 0, apodizisation=None):
     from PYME.misc import zernike, snells

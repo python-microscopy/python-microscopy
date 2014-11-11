@@ -93,13 +93,13 @@ camPanels.append((scope.camControls['Fake Camera'], 'EMCCD Properties'))
 #camPanels.append((sampPan, 'Current Slide'))
 #''')
 
-#InitGUI('''
-#from PYMEnf.Hardware import FakeDMD, DMDGui
-#scope.LC = FakeDMD.FakeDMD(scope)
-#
-#LCGui = DMDGui.DMDPanel(MainFrame,scope.LC, scope)
-#camPanels.append((LCGui, 'DMD Control'))
-#''')
+InitGUI('''
+from PYMEnf.Hardware import FakeDMD, DMDGui
+scope.LC = FakeDMD.FakeDMD(scope)
+
+LCGui = DMDGui.DMDPanel(MainFrame,scope.LC, scope)
+camPanels.append((LCGui, 'DMD Control'))
+''')
 
 #InitGUI('''
 #from PYME.Acquire.Hardware import ccdAdjPanel

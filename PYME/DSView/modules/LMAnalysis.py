@@ -145,18 +145,10 @@ class LMAnalyser:
             self.GenResultsView()
 
     def GenResultsView(self):
-        self.view.pointMode = 'lm'
-
         voxx = 1e3*self.image.mdh.getEntry('voxelsize.x')
         voxy = 1e3*self.image.mdh.getEntry('voxelsize.y')
-        self.view.points = numpy.vstack((self.fitResults['fitResults']['x0']/voxx, self.fitResults['fitResults']['y0']/voxy, self.fitResults['tIndex'])).T
-
-        if 'Splitter' in self.image.mdh.getEntry('Analysis.FitModule'):
-            self.view.pointMode = 'splitter'
-            self.view.pointColours = self.fitResults['fitResults']['Ag'] > self.fitResults['fitResults']['Ar']
-
-        self.fitInf = fitInfo.FitInfoPanel(self.dsviewer, self.fitResults, self.resultsMdh, self.do.ds)
-        self.dsviewer.AddPage(page=self.fitInf, select=False, caption='Fit Info')
+        
+        self.SetFitInfo()
 
         from PYME.Analysis.LMVis import gl_render
         self.glCanvas = gl_render.LMGLCanvas(self.dsviewer, False, vp = self.do, vpVoxSize = voxx)
@@ -178,6 +170,26 @@ class LMAnalyser:
 
         self.glCanvas.Bind(wx.EVT_IDLE, self.OnIdle)
         self.pointsAdded = False
+        
+    def SetFitInfo(self):
+        self.view.pointMode = 'lm'
+        voxx = 1e3*self.image.mdh.getEntry('voxelsize.x')
+        voxy = 1e3*self.image.mdh.getEntry('voxelsize.y')
+        self.view.points = numpy.vstack((self.fitResults['fitResults']['x0']/voxx, self.fitResults['fitResults']['y0']/voxy, self.fitResults['tIndex'])).T
+
+        if 'Splitter' in self.image.mdh.getEntry('Analysis.FitModule'):
+            self.view.pointMode = 'splitter'
+            if 'BNR' in self.image.mdh['Analysis.FitModule']:
+                self.view.pointColours = self.fitResults['ratio'] > 0.5
+            else:
+                self.view.pointColours = self.fitResults['fitResults']['Ag'] > self.fitResults['fitResults']['Ar']
+            
+        if not 'fitInf' in dir(self):
+            self.fitInf = fitInfo.FitInfoPanel(self.dsviewer, self.fitResults, self.resultsMdh, self.do.ds)
+            self.dsviewer.AddPage(page=self.fitInf, select=False, caption='Fit Info')
+        else:
+            self.fitInf.SetResults(self.fitResults, self.resultsMdh)
+            
         
     def OnPointSelect(self, xp, yp):
         dist = np.sqrt((xp - self.fitResults['fitResults']['x0'])**2 + (yp - self.fitResults['fitResults']['y0'])**2)
@@ -480,7 +492,13 @@ class LMAnalyser:
     def OnTestFrame(self, event):
         threshold = float(self.tThreshold.GetValue())        
         self.SetMDItems()
-        self.testFrame(threshold)
+        
+        ft, fr = self.testFrame(threshold)
+        
+        self.fitResults = fr.results
+        self.resultsMdh = self.image.mdh       
+        
+        self.SetFitInfo()
 
     def GenFitStatusPanel(self, _pnl):
         item = afp.foldingPane(_pnl, -1, caption="Fit Status", pinned = True)
@@ -867,6 +885,7 @@ class LMAnalyser:
         
         zp = self.do.zp
         fitMod = self.fitFactories[self.cFitType.GetSelection()]
+        self.image.mdh.setEntry('Analysis.FitModule', fitMod)
         #bgFrames = int(tBackgroundFrames.GetValue())
         bgFrames = [int(v) for v in self.tBackgroundFrames.GetValue().split(':')]
         #print zps
