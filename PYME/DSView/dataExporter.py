@@ -246,8 +246,8 @@ class NumpyExporter(Exporter):
             xmd.setEntry('cropping.zslice', zslice.indices(data.shape[2]))
             
             xmlFile = os.path.splitext(outFile)[0] + '.xml'
-            # xmd.writeXML(xmlFile)
-            xmd.WriteSimple(xmlFile)
+            xmd.writeXML(xmlFile)
+            #xmd.WriteSimple(xmlFile)
 
 exporter(NumpyExporter)
 

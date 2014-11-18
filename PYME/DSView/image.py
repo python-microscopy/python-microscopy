@@ -369,18 +369,42 @@ class ImageStack(object):
 
         self.mode = 'psf'
         
+    def LoadNPY(self, filename):
+        '''Load numpy .npy data.
+        
+       
+        '''
+        mdfn = self.FindAndParseMetadata(filename)
+        
+        self.data = numpy.load(filename)
+
+
+        from PYME.ParallelTasks.relativeFiles import getRelFilename
+        self.seriesName = getRelFilename(filename)
+
+        self.mode = 'default'
+        
 
     def FindAndParseMetadata(self, filename):
         '''Try and find and load a .xml or .md metadata file that might be ascociated
         with a given image filename. See the relevant metadatahandler classes
         for details.'''
+        import xml.parsers.expat      
+        
         mdf = None
         xmlfn = os.path.splitext(filename)[0] + '.xml'
         xmlfnmc = os.path.splitext(filename)[0].split('__')[0] + '.xml'
         if os.path.exists(xmlfn):
-            self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.TIRFDefault)
-            self.mdh.copyEntriesFrom(MetaDataHandler.XMLMDHandler(xmlfn))
-            mdf = xmlfn
+            try:
+                self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.TIRFDefault)
+                self.mdh.copyEntriesFrom(MetaDataHandler.XMLMDHandler(xmlfn))
+                mdf = xmlfn
+            except xml.parsers.expat.ExpatError:
+                #fix for bug in which PYME .md was written with a .xml extension
+                self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.BareBones)
+                self.mdh.copyEntriesFrom(MetaDataHandler.SimpleMDHandler(xmlfn))
+                mdf = xmlfn
+                
         elif os.path.exists(xmlfnmc): #this is a single colour channel of a pair
             self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.TIRFDefault)
             self.mdh.copyEntriesFrom(MetaDataHandler.XMLMDHandler(xmlfnmc))
@@ -514,7 +538,7 @@ class ImageStack(object):
             global lastdir
             
             fdialog = wx.FileDialog(None, 'Please select Data Stack to open ...',
-                wildcard='Image Data|*.h5;*.tif;*.lsm;*.kdf;*.md;*.psf|All files|*.*', style=wx.OPEN, defaultDir = lastdir)
+                wildcard='Image Data|*.h5;*.tif;*.lsm;*.kdf;*.md;*.psf;*.npy|All files|*.*', style=wx.OPEN, defaultDir = lastdir)
             succ = fdialog.ShowModal()
             if (succ == wx.ID_OK):
                 filename = fdialog.GetPath()
@@ -531,6 +555,8 @@ class ImageStack(object):
                 self.LoadPSF(filename)
             elif filename.endswith('.md'): #treat this as being an image series
                 self.LoadImageSeries(filename)
+            elif filename.endswith('.npy'): #treat this as being an image series
+                self.LoadNPY(filename)
             else: #try tiff
                 self.LoadTiff(filename)
 
