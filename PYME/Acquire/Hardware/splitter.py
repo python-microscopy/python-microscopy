@@ -257,6 +257,10 @@ class Splitter:
             self.parent._mgr.ShowPane(self.f, True)
         else:
             self.f.vp.do.Optimise()
+            
+        if not self.f.update in self.scope.pa.WantFrameGroupNotification:
+            self.scope.pa.WantFrameGroupNotification.append(self.f.update)
+
 
     def OnSetShiftField(self, event):
         fdialog = wx.FileDialog(None, 'Select shift field',
@@ -426,7 +430,6 @@ class UnMixPanel(wx.Panel):
 
         #self.Layout()
         
-        self.splitter.scope.pa.WantFrameGroupNotification.append(self.update)
 
 
     def update(self, caller=None):
