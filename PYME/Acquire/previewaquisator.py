@@ -320,6 +320,7 @@ class PreviewAquisator(wx.Timer):
     def checkHardware(self):
         for callback in self.HardwareChecks:
             if not callback():
+                print 'Waiting for hardware'
                 return False
 
         return True

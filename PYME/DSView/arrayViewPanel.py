@@ -123,6 +123,9 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         wx.EVT_LEFT_DOWN(self.imagepanel, self.OnLeftDown)
         wx.EVT_LEFT_UP(self.imagepanel, self.OnLeftUp)
         
+        wx.EVT_MIDDLE_DOWN(self.imagepanel, self.OnMiddleDown)
+        wx.EVT_MIDDLE_UP(self.imagepanel, self.OnMiddleUp)
+        
         wx.EVT_RIGHT_DOWN(self.imagepanel, self.OnRightDown)
         wx.EVT_RIGHT_UP(self.imagepanel, self.OnRightUp)
         
@@ -671,6 +674,30 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         else:
             self.OnSetPosition(event)
             
+        event.Skip()
+        
+    def OnMiddleDown(self,event):
+        dc = wx.ClientDC(self.imagepanel)
+        self.imagepanel.PrepareDC(dc)
+        pos = event.GetLogicalPosition(dc)
+        self.middleDownPos = self.CalcUnscrolledPosition(*pos)
+        event.Skip()
+    
+    def OnMiddleUp(self,event):
+        dc = wx.ClientDC(self.imagepanel)
+        self.imagepanel.PrepareDC(dc)
+        pos = event.GetLogicalPosition(dc)
+        pos = self.CalcUnscrolledPosition(*pos)
+
+        dx = pos[0] - self.middleDownPos[0]
+        dy = pos[1] - self.middleDownPos[1]
+        
+        sc = pow(2.0,(self.do.scale))
+
+        if (abs(dx) > 5) or (abs(dy) > 5):
+            for h in self.CenteringHandlers:
+                h(-dx/sc,-dy/sc)
+        
         event.Skip()
         
     def OnMiddleDClick(self,event):

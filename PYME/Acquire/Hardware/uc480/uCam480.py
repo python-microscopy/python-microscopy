@@ -106,8 +106,8 @@ class uc480Camera:
 
     #define a couple of acquisition modes
 
-    #MODE_CONTINUOUS = 5
-    #MODE_SINGLE_SHOT = 1
+    MODE_CONTINUOUS = 5
+    MODE_SINGLE_SHOT = 1
 
 
     def __init__(self, boardNum=0, nbits = 8):
@@ -324,6 +324,12 @@ class uc480Camera:
 
     def GetDelayTime(*args):
         raise Exception('Not implemented yet!!')
+        
+    def SetAcquisitionMode(self, mode):
+        if mode == self.MODE_SINGLE_SHOT:
+            self.contMode = False
+        else:
+            self.contMode = True
 
 
     def SetIntegTime(self, iTime):
@@ -510,7 +516,10 @@ class uc480Camera:
         
 
         eventLog.logEvent('StartAq', '')
-        ret = uc480.CALL('CaptureVideo', self.boardHandle, uc480.IS_DONT_WAIT)
+        if self.contMode:
+            ret = uc480.CALL('CaptureVideo', self.boardHandle, uc480.IS_DONT_WAIT)
+        else:
+            ret = uc480.CALL('FreezeVideo', self.boardHandle, uc480.IS_DONT_WAIT)
         if not ret == 0:
             raise RuntimeError('Error starting exposure: %d: %s' % GetError(self.boardHandle))
         return 0

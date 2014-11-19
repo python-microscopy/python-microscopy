@@ -103,6 +103,7 @@ from PYME.Acquire.Hardware.Piezos import piezo_e709, offsetPiezo
 #scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
 
 scope._piFoc = piezo_e709.piezo_e709T('COM9', 400, 0, True)
+scope.hardwareChecks.append(scope._piFoc.OnTarget)
 scope.piFoc = offsetPiezo.piezoOffsetProxy(scope._piFoc)
 scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
 scope.positioning['z'] = (scope.piFoc, 1, 1)
@@ -119,6 +120,7 @@ scope.piezos.append((scope.xystage, 2, 'Stage_X'))
 scope.piezos.append((scope.xystage, 1, 'Stage_Y'))
 scope.joystick = piezo_c867.c867Joystick(scope.xystage)
 #scope.joystick.Enable(True)
+scope.hardwareChecks.append(scope.xystage.OnTarget)
 
 scope.positioning['x'] = (scope.xystage, 1, 1000)
 scope.positioning['y'] = (scope.xystage, 2, -1000)

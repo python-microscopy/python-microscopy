@@ -64,6 +64,7 @@ class microscope:
 
         #list of tuples  of form (class, chan, name) describing the instaled piezo channels
         self.piezos = []
+        self.hardwareChecks = []
         
         #entries should be of the form: "x" : (piezo, channel, multiplier)
         # where multiplyier is what to multiply by to get the usints to um
@@ -267,6 +268,7 @@ class microscope:
 #            self.pa.stop() #stop old acquisition
 
         self.pa = previewaquisator.PreviewAquisator(self.chaninfo,self.cam, self.shutters)
+        self.pa.HardwareChecks.extend(self.hardwareChecks)
         self.pa.Prepare()
 
         if self.cam.GetPicHeight() > 1:

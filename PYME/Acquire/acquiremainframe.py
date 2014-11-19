@@ -574,8 +574,9 @@ class PYMEMainFrame(wx.Frame):
         #event.Skip()
 
     def OnMAquireOnePic(self, event):
+        import numpy as np
         self.scope.pa.stop()
-        ds2 = CDataStack_AsArray(self.scope.pa.ds, 0).reshape(self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()).copy()
+        ds2 = np.atleast_3d(CDataStack_AsArray(self.scope.pa.ds, 0).reshape(self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()).copy())
 
 
         #metadata handling
