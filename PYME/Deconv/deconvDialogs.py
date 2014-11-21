@@ -131,6 +131,7 @@ class DeconvSettingsDialog(wx.Dialog):
         sizer3.Add(wx.StaticText(pan1, -1, 'Method:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
         self.cMethod = wx.Choice(pan1, -1, choices=['ICTM', 'Richardson-Lucy'])
         self.cMethod.SetSelection(1)
+        self.cMethod.Bind(wx.EVT_CHOICE, self.OnMethodChanged)
 
         sizer3.Add(self.cMethod, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
         sizer2.Add(sizer3, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
@@ -154,6 +155,7 @@ class DeconvSettingsDialog(wx.Dialog):
         sizer3 = wx.BoxSizer(wx.HORIZONTAL)
         sizer3.Add(wx.StaticText(pan1, -1, u'Regularisation \u03BB:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
         self.tRegLambda = wx.TextCtrl(pan1, -1, '1e-1')
+        self.tRegLambda.Disable()
 
         sizer3.Add(self.tRegLambda, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
@@ -267,10 +269,20 @@ class DeconvSettingsDialog(wx.Dialog):
             self.bOK.Enable()
             
     def OnPSFNotebookPageChanged(self, event):    
-        if os.path.exists(LASTPSFFILENAME) or not self.nb2.GetCurrentPage().PSFMode == 'File':
+        if os.path.exists(LASTPSFFILENAME) or not event.GetSelection() == 0:#self.nb2.GetCurrentPage().PSFMode == 'File':
             self.bOK.Enable()
         else:
             self.bOK.Disable()
+            
+        event.Skip()
+        
+    def OnMethodChanged(self, event):    
+        if self.cMethod.GetStringSelection() == 'ICTM':
+            self.tRegLambda.Enable()
+        else:
+            self.tRegLambda.Disable()
+            
+        event.Skip()
         
     def GetOffset(self):
         return float(self.tOffset.GetValue())
