@@ -384,6 +384,20 @@ class ImageStack(object):
 
         self.mode = 'default'
         
+    def LoadDBL(self, filename):
+        '''Load Bewersdorf custom STED data. 
+       
+        '''
+        mdfn = self.FindAndParseMetadata(filename)
+        
+        self.data = numpy.memmap(filename, dtype='<f4', mode='r', offset=128, shape=(self.mdh['Camera.ROIWidth'],self.mdh['Camera.ROIHeight'],self.mdh['NumImages']), order='F')
+
+
+        from PYME.ParallelTasks.relativeFiles import getRelFilename
+        self.seriesName = getRelFilename(filename)
+
+        self.mode = 'default'
+        
 
     def FindAndParseMetadata(self, filename):
         '''Try and find and load a .xml or .md metadata file that might be ascociated
@@ -439,6 +453,45 @@ class ImageStack(object):
                             self.mdh[basename + k] = v
                 
                 lsm_pop('LSM.', lsm_info)
+            elif filename.endswith('.dbl'): #Bewersdorf lab STED
+                mdfn = filename[:-4] + '.txt'
+                entrydict = {}
+                
+                with open(mdfn, 'r') as mf:
+                    for line in mf:
+                        s = line.split(':')
+                        if len(s) == 2:
+                            entrydict[s[0]] = s[1]
+                            
+                vx, vy = entrydict['Pixel size (um)'].split('x')
+                self.mdh['voxelsize.x'] = float(vx)
+                self.mdh['voxelsize.y'] = float(vy)
+                self.mdh['voxelsize.z'] = 0.2 #FIXME for stacks ...
+                
+                sx, sy = entrydict['Image format'].split('x')
+                self.mdh['Camera.ROIWidth'] = int(sx)
+                self.mdh['Camera.ROIHeight'] = int(sy)
+                
+                self.mdh['NumImages'] = int(entrydict['# Images'])
+                
+                def _sanitise_key(key):
+                    k = key.replace('#', 'Num')
+                    k = k.replace('(%)', '')
+                    k = k.replace('(', '')
+                    k = k.replace(')', '')
+                    k = k.replace('.', '')
+                    k = k.replace('/', '')
+                    k = k.replace('?', '')
+                    k = k.replace(' ', '')
+                    if not k[0].isalpha():
+                        k = 's' + k
+                    return k
+                    
+                for k, v in entrydict.items():
+                    self.mdh['STED.%s'%_sanitise_key(k)] = v
+                    
+                    
+                
                 
 
         if self.haveGUI and not ('voxelsize.x' in self.mdh.keys() and 'voxelsize.y' in self.mdh.keys()):
@@ -538,7 +591,7 @@ class ImageStack(object):
             global lastdir
             
             fdialog = wx.FileDialog(None, 'Please select Data Stack to open ...',
-                wildcard='Image Data|*.h5;*.tif;*.lsm;*.kdf;*.md;*.psf;*.npy|All files|*.*', style=wx.OPEN, defaultDir = lastdir)
+                wildcard='Image Data|*.h5;*.tif;*.lsm;*.kdf;*.md;*.psf;*.npy;*.dbl|All files|*.*', style=wx.OPEN, defaultDir = lastdir)
             succ = fdialog.ShowModal()
             if (succ == wx.ID_OK):
                 filename = fdialog.GetPath()
@@ -557,6 +610,8 @@ class ImageStack(object):
                 self.LoadImageSeries(filename)
             elif filename.endswith('.npy'): #treat this as being an image series
                 self.LoadNPY(filename)
+            elif filename.endswith('.dbl'): #treat this as being an image series
+                self.LoadDBL(filename)
             else: #try tiff
                 self.LoadTiff(filename)
 
