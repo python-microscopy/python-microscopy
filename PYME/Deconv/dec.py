@@ -96,7 +96,10 @@ class dec:
         '''
         return data.copy()
 
-
+    def deconvp(self, args):
+        ''' convenience function for deconvolving in parallel using processing.Pool.map'''
+        self.deconv(*args)
+    
     def deconv(self, data, lamb, num_iters=10, weights=1, alpha=None):
         '''This is what you actually call to do the deconvolution.
         parameters are:

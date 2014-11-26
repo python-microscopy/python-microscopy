@@ -191,7 +191,7 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
         
         ratio = md.chroma.ChannelRatio
 
-        cls._evalModel(params, md, xs, ys, ratio, x, y)        
+        return cls._evalModel(params, md, xs, ys, ratio, x, y)        
         
     @classmethod    
     def _evalModel(cls, params, md, xs, ys, ratio, x, y):

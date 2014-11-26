@@ -457,22 +457,40 @@ class ImageStack(object):
                 mdfn = filename[:-4] + '.txt'
                 entrydict = {}
                 
-                with open(mdfn, 'r') as mf:
-                    for line in mf:
-                        s = line.split(':')
-                        if len(s) == 2:
-                            entrydict[s[0]] = s[1]
+                try: #try to read in extra metadata if possible
+                    with open(mdfn, 'r') as mf:
+                        for line in mf:
+                            s = line.split(':')
+                            if len(s) == 2:
+                                entrydict[s[0]] = s[1]
                             
-                vx, vy = entrydict['Pixel size (um)'].split('x')
-                self.mdh['voxelsize.x'] = float(vx)
-                self.mdh['voxelsize.y'] = float(vy)
-                self.mdh['voxelsize.z'] = 0.2 #FIXME for stacks ...
+                except IOError:
+                    pass
+                            
+#                vx, vy = entrydict['Pixel size (um)'].split('x')
+#                self.mdh['voxelsize.x'] = float(vx)
+#                self.mdh['voxelsize.y'] = float(vy)
+#                self.mdh['voxelsize.z'] = 0.2 #FIXME for stacks ...
+#                
+#                sx, sy = entrydict['Image format'].split('x')
+#                self.mdh['Camera.ROIWidth'] = int(sx)
+#                self.mdh['Camera.ROIHeight'] = int(sy)
+#                
+#                self.mdh['NumImages'] = int(entrydict['# Images'])
                 
-                sx, sy = entrydict['Image format'].split('x')
-                self.mdh['Camera.ROIWidth'] = int(sx)
-                self.mdh['Camera.ROIHeight'] = int(sy)
-                
-                self.mdh['NumImages'] = int(entrydict['# Images'])
+                with open(filename) as df:
+                    s = df.read(8)
+                    Z, X, Y, T = numpy.fromstring(s, '>u2')
+                    s = df.read(16)
+                    depth, width, height, elapsed = numpy.fromstring(s, '<f4')
+                    
+                    self.mdh['voxelsize.x'] = width/X
+                    self.mdh['voxelsize.y'] = height/Y
+                    self.mdh['voxelsize.z'] = depth
+                    
+                    self.mdh['Camera.ROIWidth'] = X
+                    self.mdh['Camera.ROIHeight'] = Y
+                    self.mdh['NumImages'] = Z*T
                 
                 def _sanitise_key(key):
                     k = key.replace('#', 'Num')

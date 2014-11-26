@@ -30,6 +30,12 @@ import time
 import os
 from PYME.Acquire import MetaDataHandler
 
+def _pt(sl):
+    dec, psf, d, regLambda, nIter, weights = sl
+    dec.psf_calc(psf, d.shape)
+    r = dec.deconv(d,regLambda, nIter, weights).reshape(dec.shape)
+    return r
+
 class deconvolver:
     def __init__(self, dsviewer):
         self.dsviewer = dsviewer
@@ -215,6 +221,7 @@ class deconvolver:
             
     def OnDeconvMovie(self, event, beadMode=False):
         from PYME.Deconv.deconvDialogs import DeconvSettingsDialog #,DeconvProgressDialog,DeconvProgressPanel
+        import multiprocessing
 
         dlg = DeconvSettingsDialog(self.dsviewer, beadMode, self.image.data.shape[3])
         if dlg.ShowModal() == wx.ID_OK:
@@ -264,7 +271,7 @@ class deconvolver:
             print((data.shape, psf.shape))
 
 
-            dp = data
+            dp = 1.0*data + 0
             weights = 1
 
             if dlg.GetBlocking():
@@ -289,14 +296,24 @@ class deconvolver:
                     else:
                         self.dec = richardsonLucy.dec_conv()
 
-                self.dec.psf_calc(psf, dp[:,:,0:1].shape)
+                #self.dec.psf_calc(psf, dp[:,:,0:1].shape)
 
                 #self.decT = decThread.decThread(self.dec, dp, regLambda, nIter, weights)
                 #self.decT.start()
 
+                #p = multiprocessing.Pool()
+                
+                
+                #slices = [(self.dec, psf, dp[:,:,i:(i+1)],regLambda, nIter, weights)  for i in range(dp.shape[2])]
+                
+                #slices = [(self.dec, )  for i in range(dp.shape[2])]
+                
+                
+                
+                #r = p.map(_pt, slices)
+                #res = numpy.concatenate(r, 2)
+
                 res = numpy.concatenate([self.dec.deconv(dp[:,:,i:(i+1)], regLambda, nIter, weights).reshape(self.dec.shape) for i in range(dp.shape[2])], 2)
-
-
                 
                 
                 im = ImageStack(data = res, mdh = decMDH, titleStub = 'Deconvolution Result')

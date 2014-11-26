@@ -175,7 +175,7 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
         xs = slice(-roiHalfSize,roiHalfSize + 1)
         ys = slice(-roiHalfSize,roiHalfSize + 1)
 
-        cls._evalModel(params, md, xs, ys, x, y)        
+        return cls._evalModel(params, md, xs, ys, x, y)        
         
     @classmethod    
     def _evalModel(cls, params, md, xs, ys, x, y):

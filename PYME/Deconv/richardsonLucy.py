@@ -30,7 +30,7 @@ import fftwWisdom
 
 from wiener import resizePSF
 
-fftwWisdom.load_wisdom()
+#fftwWisdom.load_wisdom()
 #import weave
 #import cDec
 #from PYME import pad
@@ -61,6 +61,11 @@ class rldec:
         return 0*data + data.mean()
 
 
+    def deconvp(self, args):
+        ''' convenience function for deconvolving in parallel using processing.Pool.map'''
+        return self.deconv(*args)
+        #return 0
+    
     def deconv(self, data, lamb, num_iters=10, weights = 1):
         '''This is what you actually call to do the deconvolution.
         parameters are:
@@ -310,6 +315,7 @@ class dec_conv(rldec):
 #            g_[pw2[0]:-pw1[0], pw2[1]:-pw1[1], pw2[2]:-pw1[2]] = g
 #        #g_[pw2[0]:-pw1[0], pw2[1]:-pw1[1], pw2[2]:-pw1[2]] = g
 #        g = g_
+        fftwWisdom.load_wisdom()
         
         print psf.sum()
         
@@ -352,7 +358,6 @@ class dec_conv(rldec):
         print('Creating plans for FFTs - this might take a while')
 
         #calculate plans for other ffts
-        self._plan_r_F = fftw3f.Plan(self._r, self._F, 'forward', flags = FFTWFLAGS, nthreads=NTHREADS)
         self._plan_F_r = fftw3f.Plan(self._F, self._r, 'backward', flags = FFTWFLAGS, nthreads=NTHREADS)
         
         fftwWisdom.save_wisdom()
