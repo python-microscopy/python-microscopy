@@ -34,6 +34,7 @@ def _pt(sl):
     dec, psf, d, regLambda, nIter, weights = sl
     dec.psf_calc(psf, d.shape)
     r = dec.deconv(d,regLambda, nIter, weights).reshape(dec.shape)
+    #r = 0
     return r
 
 class deconvolver:
@@ -221,7 +222,7 @@ class deconvolver:
             
     def OnDeconvMovie(self, event, beadMode=False):
         from PYME.Deconv.deconvDialogs import DeconvSettingsDialog #,DeconvProgressDialog,DeconvProgressPanel
-        import multiprocessing
+        #import multiprocessing
 
         dlg = DeconvSettingsDialog(self.dsviewer, beadMode, self.image.data.shape[3])
         if dlg.ShowModal() == wx.ID_OK:
@@ -271,7 +272,7 @@ class deconvolver:
             print((data.shape, psf.shape))
 
 
-            dp = 1.0*data + 0
+            dp = numpy.array(data)
             weights = 1
 
             if dlg.GetBlocking():
@@ -296,22 +297,17 @@ class deconvolver:
                     else:
                         self.dec = richardsonLucy.dec_conv()
 
-                #self.dec.psf_calc(psf, dp[:,:,0:1].shape)
+                self.dec.psf_calc(psf, dp[:,:,0:1].shape)
+
+                #print dp.__class__
 
                 #self.decT = decThread.decThread(self.dec, dp, regLambda, nIter, weights)
                 #self.decT.start()
 
-                #p = multiprocessing.Pool()
-                
-                
-                #slices = [(self.dec, psf, dp[:,:,i:(i+1)],regLambda, nIter, weights)  for i in range(dp.shape[2])]
-                
-                #slices = [(self.dec, )  for i in range(dp.shape[2])]
-                
-                
-                
-                #r = p.map(_pt, slices)
-                #res = numpy.concatenate(r, 2)
+#                p = multiprocessing.Pool()
+#                slices = [(self.dec, psf, dp[:,:,i:(i+1)],regLambda, nIter, weights)  for i in range(dp.shape[2])]                
+#                r = p.map(_pt, slices)
+#                res = numpy.concatenate(r, 2)
 
                 res = numpy.concatenate([self.dec.deconv(dp[:,:,i:(i+1)], regLambda, nIter, weights).reshape(self.dec.shape) for i in range(dp.shape[2])], 2)
                 

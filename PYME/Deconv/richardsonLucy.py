@@ -30,7 +30,7 @@ import fftwWisdom
 
 from wiener import resizePSF
 
-#fftwWisdom.load_wisdom()
+fftwWisdom.load_wisdom()
 #import weave
 #import cDec
 #from PYME import pad
@@ -81,21 +81,27 @@ class rldec:
         '''
         #remember what shape we are
         self.dataShape = data.shape
+        
+        #print 'dc1'
 
         #guess a starting estimate for the object
         self.f = self.startGuess(data).ravel()
         self.fs = self.f.reshape(self.shape)
+        #print 'dc2'
 
         #make things 1 dimensional
         #self.f = self.f.ravel()
         data = data.ravel()
         #weights = weights.ravel()
+        #print 'dc3'
 
         mask = 1 - weights
         
         print data.sum(), self.f.sum()
 
         self.loopcount=0
+        
+        
 
         while self.loopcount  < num_iters:
             self.loopcount += 1
@@ -115,6 +121,8 @@ class rldec:
             #set the current estimate to out new estimate
             self.f[:] = fnew
             print(('Sum = %f' % self.f.sum()))
+            
+        #print 'dc3'
 
         return real(self.fs)
 
@@ -315,7 +323,7 @@ class dec_conv(rldec):
 #            g_[pw2[0]:-pw1[0], pw2[1]:-pw1[1], pw2[2]:-pw1[2]] = g
 #        #g_[pw2[0]:-pw1[0], pw2[1]:-pw1[1], pw2[2]:-pw1[2]] = g
 #        g = g_
-        fftwWisdom.load_wisdom()
+        
         
         print psf.sum()
         
@@ -358,6 +366,7 @@ class dec_conv(rldec):
         print('Creating plans for FFTs - this might take a while')
 
         #calculate plans for other ffts
+        self._plan_r_F = fftw3f.Plan(self._r, self._F, 'forward', flags = FFTWFLAGS, nthreads=NTHREADS)
         self._plan_F_r = fftw3f.Plan(self._F, self._r, 'backward', flags = FFTWFLAGS, nthreads=NTHREADS)
         
         fftwWisdom.save_wisdom()
