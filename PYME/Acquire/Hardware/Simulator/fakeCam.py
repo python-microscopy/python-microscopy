@@ -63,6 +63,14 @@ class NoiseMaker:
         #print F2
         #print im.max()
         return self.ADOffset + M*scipy.random.poisson(int(self.shutterOpen)*(im + self.background)*self.QE*F2)/(self.ElectronsPerCount*F2) + self.ReadoutNoise*scipy.random.standard_normal(im.shape)/self.ElectronsPerCount
+        
+    def getbg(self):
+        M = EMCCDTheory.M((80. + self.EMGain)/(255 + 80.), self.vbreakdown, self.temperature, self.NGainElements, 2.2)
+        F2 = 1.0/EMCCDTheory.FSquared(M, self.NGainElements)
+        #print im.min(), F2, self.QE, self.background
+        #print F2
+        #print im.max()
+        return self.ADOffset + M*(int(self.shutterOpen)*(0 + self.background)*self.QE*F2)/(self.ElectronsPerCount*F2) 
 
 
 

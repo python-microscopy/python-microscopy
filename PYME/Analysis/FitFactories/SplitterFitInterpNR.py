@@ -218,6 +218,8 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
         
         if min(dataROI.shape[:2]) < 4: # too small to fit
             return BlankResult(self.metadata)
+            
+        #print bgROI.mean(), np.mean(self.background)
       
         
         dataROI = np.maximum(dataROI - bgROI, -sigma)
@@ -303,6 +305,8 @@ PARAMETERS = [mde.ChoiceParam('Analysis.InterpModule','Interp:','CSInterpolator'
               mde.FloatParam('Analysis.AxialShift', 'Z Shift [nm]:', -270),
               mde.ChoiceParam('Analysis.EstimatorModule', 'Z Start Est:', 'astigEstimator', choices=zEstimators.estimatorList),
               mde.ChoiceParam('PRI.Axis', 'PRI Axis:', 'none', choices=['x', 'y', 'none']),
+              mde.BoolParam('Analysis.FitBackground', 'Fit Background', True),
+              #mde.FloatListParam('chroma.ChannelRatios', 'Channel Ratios', [0.7]),
               ]
               
 DESCRIPTION = 'Ratiometric multi-colour 3D PSF fit (large shifts).'

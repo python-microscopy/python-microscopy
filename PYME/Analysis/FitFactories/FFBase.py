@@ -147,9 +147,13 @@ class FFBase(object):
         sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataROI, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
 
 
-        if not self.background == None and len(np.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
-            bgROI = self.background[xslice, yslice, 0:2] - self.metadata.Camera.ADOffset
-            bgROI[:,:,1] = self.background[xslice2, yslice2, 1] - self.metadata.Camera.ADOffset
+        if self.metadata.getOrDefault('Analysis.subtractBackground', True) :
+            #print 'bgs'
+            if not self.background == None and len(np.shape(self.background)) > 1:
+                bgROI = self.background[xslice, yslice, 0:2] - self.metadata.Camera.ADOffset
+                bgROI[:,:,1] = self.background[xslice2, yslice2, 1] - self.metadata.Camera.ADOffset
+            else:
+                bgROI = np.array(0) + self.background - self.metadata.Camera.ADOffset
         else:
             bgROI = np.array(0)
 
