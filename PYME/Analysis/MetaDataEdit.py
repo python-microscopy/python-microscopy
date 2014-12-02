@@ -234,7 +234,7 @@ class BoolParam(object):
         return hsizer
         
     def retrieveValue(self, mdh):
-        mdh[self.paramName] = self.tValue.GetValue()   
+        mdh[self.paramName] = self.cbValue.GetValue()   
 
 class BoolFloatParam(object):
     def __init__(self, paramName, guiName, default=False, helpText='', ondefault=0, offvalue=0):

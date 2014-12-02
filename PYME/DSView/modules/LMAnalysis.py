@@ -209,12 +209,16 @@ class LMAnalyser:
             self.glCanvas.setCLim((0, self.fitResults['tIndex'].max()))
 
     def OnToggleBackground(self, event):
+        self.SetMDItems()
         if self.do.ds.bgRange == None:
             self.do.ds.bgRange = [int(v) for v in self.tBackgroundFrames.GetValue().split(':')]
             self.do.ds.dataStart = int(self.tStartAt.GetValue())
+            
+            self.do.ds.setBackgroundBufferPCT(self.image.mdh['Analysis.PCTBackground'])
         else:
             self.do.ds.bgRange = None
             self.do.ds.dataStart = 0
+            
             
         self.do.Optimise()
 
