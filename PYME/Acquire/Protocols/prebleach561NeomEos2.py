@@ -35,16 +35,17 @@ T(-1, scope.joystick.Enable, False),
 #T(-1, SetEMGain,150),
 #T(20, SetCameraShutter, True),
 T(20, scope.filterWheel.SetFilterPos, "ND4"),
-T(21, scope.l671.TurnOn),
-T(58, scope.l671.TurnOff),
+T(21, scope.l561.TurnOn),
+T(58, scope.l561.TurnOff),
 #T(60, SetEMGain,0),
-T(61, scope.l671.TurnOn),
+T(61, scope.l561.TurnOn),
 T(61, scope.filterWheel.SetFilterPos, "EMPTY"),
 #T(200, SetEMGain,scope.cam.DefaultEMGain),
 T(210, MainFrame.pan_spool.OnBAnalyse, None),
+T(210, scope.l405.TurnOn),
 T(maxint, scope.turnAllLasersOff),
 T(maxint, scope.filterWheel.SetFilterPos, "ND4"),
-T(maxint, scope.joystick.Enable, True),
+T(maxint, scope.joystick.Enable, False),
 ]
 
 #optional - metadata entries
@@ -52,7 +53,7 @@ metaData = [
 ('Protocol.DarkFrameRange', (0, 20)),
 ('Protocol.DataStartsAt', 201),
 ('Protocol.PrebleachFrames', (21, 58)),
-('Protocol.BleachFrames', (61,200)),
+('Protocol.BleachFrames', (61,210)),
 ]
 
 #optional - pre-flight check

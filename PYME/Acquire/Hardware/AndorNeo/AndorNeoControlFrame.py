@@ -105,6 +105,11 @@ class AndorNeoPanel(wx.Panel):
         self.cbShutter.Bind(wx.EVT_CHECKBOX, self.OnCbShutterCheckbox)
         vsizer.Add(self.cbShutter, 0, wx.ALIGN_CENTER_VERTICAL|wx.TOP, 5)
 
+        self.cbStaticBlemishCorrection = wx.CheckBox(self, -1, u'Static Blemish Correction')
+        self.cbStaticBlemishCorrection.SetValue(False)
+        self.cbStaticBlemishCorrection.Bind(wx.EVT_CHECKBOX, self.OnCbStaticBlemishCorrection)
+        vsizer.Add(self.cbStaticBlemishCorrection, 0, wx.ALIGN_CENTER_VERTICAL|wx.TOP, 5)
+
         self.SetSizer(vsizer)
 
         
@@ -136,6 +141,11 @@ class AndorNeoPanel(wx.Panel):
         self.cam.SpuriousNoiseFilter.setValue(self.cbShutter.GetValue())
         self.scope.pa.start()
         #event.Skip()
+
+    def OnCbStaticBlemishCorrection(self, event):
+        self.scope.pa.stop()
+        self.cam.StaticBlemishCorrection.setValue(self.cbStaticBlemishCorrection.GetValue())
+        self.scope.pa.start()
 
     def OnEMGainTextChange(self, event):
         calEMGain = ccdCalibrator.getCalibratedCCDGain(float(self.tEMGain.GetValue()), self.cam.GetCCDTempSetPoint())

@@ -150,6 +150,13 @@ class AndorBase(SDK3Camera):
         except:
             print "error disabling spurios noise filter"
             pass
+
+        # Static Blemish Correction off by default
+        try:
+            self.StaticBlemishCorrection.setValue(0) # this will also fail with the SimCams
+        except:
+            print "error disabling Static Blemish Correction"
+            pass
         
         self.SensorCooling.setValue(True)
         # Zyla does not like a temperature to be set
@@ -510,6 +517,11 @@ class AndorBase(SDK3Camera):
             #if not realEMGain == None:
             mdh.setEntry('Camera.TrueEMGain', 1)
 
+            #update the scmos Metadata for different gain modes
+            if int(self.EMGain) == 0:
+                mdh.setEntry('Camera.ElectronsPerCount', 0.5)
+                mdh.setEntry('Camera.ReadNoise', 1.33)
+
     #functions to make us look more like andor camera
     def GetEMGain(self):
         return self.EMGain
@@ -573,6 +585,7 @@ class AndorNeo(AndorBase):
         #define properties
         self.Overlap = ATBool()
         self.SpuriousNoiseFilter = ATBool()
+        self.StaticBlemishCorrection = ATBool()
         
         self.CameraDump = ATCommand()
         self.SoftwareTrigger = ATCommand()

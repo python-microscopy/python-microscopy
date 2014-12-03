@@ -119,6 +119,9 @@ class VisGUIFrame(wx.Frame):
 
         self.sh.Execute('from pylab import *')
         self.sh.Execute('from PYME.DSView.dsviewer_npy import View3D')
+        if os.getenv('PYMEGRAPHICSFIX'): # fix issue with graphics freezing on some machines (apparently matplotlib related)
+            self.sh.Execute('plot()')
+            self.sh.Execute('close()')
 
         #self.workspace = workspaceTree.WorkWrap(self.__dict__)
         ##### Make certain things visible in the workspace tree

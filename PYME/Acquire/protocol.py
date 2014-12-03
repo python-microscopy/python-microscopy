@@ -148,7 +148,11 @@ class ZStackTaskListProtocol(TaskListProtocol):
         self.randomise = randomise
 
     def Init(self, spooler):
-        self.zPoss = np.arange(scope.sa.GetStartPos(), scope.sa.GetEndPos()+.95*scope.sa.GetStepSize(),scope.sa.GetStepSize())
+        #self.zPoss = np.arange(scope.sa.GetStartPos(), scope.sa.GetEndPos()+.95*scope.sa.GetStepSize(),scope.sa.GetStepSize())
+        # this code changes the original saw-tooth into a zig-zag stepping
+        zPoss1 = np.arange(scope.sa.GetStartPos(), scope.sa.GetEndPos()+.95*scope.sa.GetStepSize(),scope.sa.GetStepSize())
+        zPoss2 = np.arange(scope.sa.GetEndPos(), scope.sa.GetStartPos()-0.95*scope.sa.GetStepSize(),-1*scope.sa.GetStepSize())
+        self.zPoss = np.asarray(zPoss1.tolist()+zPoss2.tolist()) # this should be doable more directly with array functions
 
         if self.randomise:
             self.zPoss = self.zPoss[np.argsort(np.random.rand(len(self.zPoss)))]
