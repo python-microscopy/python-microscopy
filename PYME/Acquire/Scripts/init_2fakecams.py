@@ -43,9 +43,16 @@ scope.piezos.append((scope.fakeYPiezo, 1, 'Fake y-piezo'))
 ''')
 
 pz.join() #piezo must be there before we start camera
-cm = InitBG('Fake Camera', '''
+cm1 = InitBG('Fake Camera', '''
 scope.cam = fakeCam.FakeCamera(70*scipy.arange(-128.0, 128.0), 70*scipy.arange(-128.0, 128.0), fakeCam.NoiseMaker(), scope.fakePiezo, xpiezo = scope.fakeXPiezo, ypiezo = scope.fakeYPiezo)
-scope.cameras['Fake Camera'] = scope.cam
+scope.cameras['Fake Camera 1'] = scope.cam
+#time.sleep(5)
+''')
+
+cm2 = InitBG('Fake Camera', '''
+cam2 = fakeCam.FakeCamera(70*scipy.arange(-256.0, 256.0), 70*scipy.arange(-256.0, 256.0), fakeCam.NoiseMaker(), scope.fakePiezo, xpiezo = scope.fakeXPiezo, ypiezo = scope.fakeYPiezo)
+scope.cameras['Fake Camera 2'] = cam2
+cam2.SetActive(False)
 #time.sleep(5)
 ''')
 
@@ -83,8 +90,10 @@ MainFrame.AddPage(page=dsc, select=False, caption='Simulation Settings')
 
 InitGUI('''
 from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
-scope.camControls['Fake Camera'] = AndorControlFrame.AndorPanel(MainFrame, scope.cam, scope)
-camPanels.append((scope.camControls['Fake Camera'], 'EMCCD Properties'))
+scope.camControls['Fake Camera 1'] = AndorControlFrame.AndorPanel(MainFrame, scope.cam, scope)
+camPanels.append((scope.camControls['Fake Camera 1'], 'EMCCD Properties 1'))
+scope.camControls['Fake Camera 2'] = AndorControlFrame.AndorPanel(MainFrame, scope.cam, scope)
+camPanels.append((scope.camControls['Fake Camera 2'], 'EMCCD Properties 2'))
 ''')
 
 InitGUI('''
@@ -112,7 +121,8 @@ camPanels.append((LCGui, 'DMD Control'))
 ##time1.WantNotification.append(snrPan.ccdPan.draw)
 #''')
 
-cm.join()
+cm1.join()
+cm2.join()
 from PYME.Acquire.Hardware import lasers
 scope.l488 = lasers.FakeLaser('488',scope.cam,1, initPower=10)
 scope.l405 = lasers.FakeLaser('405',scope.cam,0, initPower=5, maxPower=100)

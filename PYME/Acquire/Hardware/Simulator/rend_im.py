@@ -130,7 +130,7 @@ def setModel(modName, md):
 
     #interpModel = mod
 
-    interpModel = np.maximum(mod/mod.max(), 0) #normalise to 1
+    interpModel = np.maximum(mod/mod.max(), 0).astype('float32') #normalise to 1
 
 def interp(X, Y, Z):
     X = atleast_1d(X)
@@ -453,7 +453,7 @@ def _rFluorSubset(im, fl, A, x0, y0, z, roiSize, dx, dy, dz):
     #print A
     
     #roiSize = 30*np.ones(A.shape, 'i')
-        
+    #print interpModel.dtype
     cInterp.InterpolateInplaceM(interpModel, im, fl['x'] - x0, fl['y'] - y0, z, A, roiSize,dx,dy,dz)
 
 def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=100, laserPowers = [.1,1], position=[0,0,0], illuminationFunction='ConstIllum'):

@@ -248,10 +248,10 @@ class Splitter:
             self.parent.AddCamTool(self.o, 'Unmixing Settings')
             #self.f.SetSize((800,500))
             #self.f.Show()
-            cpinfo = aui.AuiPaneInfo().Name("unmixingDisplay").Caption("Unmixing").Bottom().CloseButton(True)
+            self.cpinfo = aui.AuiPaneInfo().Name("unmixingDisplay").Caption("Unmixing").Bottom().CloseButton(True)
             #cpinfo.dock_proportion  = int(cpinfo.dock_proportion*1.6)
 
-            self.parent._mgr.AddPane(self.f, cpinfo)
+            self.parent._mgr.AddPane(self.f, self.cpinfo)
             self.parent._mgr.Update()
         elif not self.f.IsShown():
             self.parent._mgr.ShowPane(self.f, True)
