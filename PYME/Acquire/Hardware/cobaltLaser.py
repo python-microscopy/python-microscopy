@@ -35,8 +35,8 @@ class CobaltLaser(Laser):
         self.maxpower = maxpower
 
         self.power =  0.01#self._getOutputPower()
-        
-        self._TurnOn()
+
+    #    self._TurnOn()
 
         Laser.__init__(self, name, turnOn)
 
@@ -50,12 +50,15 @@ class CobaltLaser(Laser):
         self.isOn = True
 
     def TurnOn(self):
-        self.ser_port.write('p %3.2f\r\n' % (self.power*self.maxpower))
+        #self.ser_port.write('p %3.2f\r\n' % (self.power*self.maxpower))
+        self.ser_port.write('@cobas 0\r\n')
+        self.ser_port.write('l1\r\n') # the Cobolt 405nm laser needs to be restarted if it is powered on before the interlock is closed.
         self.ser_port.flush()
         self.isOn = True
 
     def TurnOff(self):
-        self.ser_port.write('p 0\r\n')
+        #self.ser_port.write('p 0\r\n')
+        self.ser_port.write('l0\r\n')
         self.ser_port.flush()
         self.isOn = False
 
@@ -64,8 +67,11 @@ class CobaltLaser(Laser):
             raise RuntimeError('Error setting laser power: Power must be between 0 and 1')
         self.power = power
 
-        if self.isOn:
-            self.TurnOn() #turning on actually sets power
+        self.ser_port.write('p %3.2f\r\n' % (self.power*self.maxpower))
+        self.ser_port.flush()
+
+    #    if self.isOn:
+    #        self.TurnOn() #turning on actually sets power
 
     def _getOutputPower(self):
         self.ser_port.write('p?\r')

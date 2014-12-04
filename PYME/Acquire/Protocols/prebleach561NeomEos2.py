@@ -30,21 +30,22 @@ import numpy
 #additional arguments
 taskList = [
 T(-1, scope.turnAllLasersOff),
-T(-1, SetCameraShutter, False),
+#T(-1, SetCameraShutter, False),
 T(-1, scope.joystick.Enable, False),
 #T(-1, SetEMGain,150),
-T(20, SetCameraShutter, True),
+#T(20, SetCameraShutter, True),
 T(20, scope.filterWheel.SetFilterPos, "ND4"),
-T(21, scope.l671.TurnOn),
-T(58, scope.l671.TurnOff),
-T(60, SetEMGain,0),
-T(61, scope.l671.TurnOn),
+T(21, scope.l561.TurnOn),
+T(58, scope.l561.TurnOff),
+#T(60, SetEMGain,0),
+T(61, scope.l561.TurnOn),
 T(61, scope.filterWheel.SetFilterPos, "EMPTY"),
-T(200, SetEMGain,scope.cam.DefaultEMGain),
+#T(200, SetEMGain,scope.cam.DefaultEMGain),
 T(210, MainFrame.pan_spool.OnBAnalyse, None),
+T(210, scope.l405.TurnOn),
 T(maxint, scope.turnAllLasersOff),
 T(maxint, scope.filterWheel.SetFilterPos, "ND4"),
-#T(maxint, scope.joystick.Enable, True),
+T(maxint, scope.joystick.Enable, False),
 ]
 
 #optional - metadata entries
@@ -52,15 +53,15 @@ metaData = [
 ('Protocol.DarkFrameRange', (0, 20)),
 ('Protocol.DataStartsAt', 201),
 ('Protocol.PrebleachFrames', (21, 58)),
-('Protocol.BleachFrames', (61,200)),
+('Protocol.BleachFrames', (61,210)),
 ]
 
 #optional - pre-flight check
 #a list of checks which should be performed prior to launching the protocol
 #syntax: C(expression to evaluate (quoted, should have boolean return), message to display on failure),
 preflight = [
-C('scope.cam.GetEMGain() == scope.cam.DefaultEMGain', 'Was expecting an intial e.m. gain of %d' % scope.cam.DefaultEMGain),
-C('scope.cam.GetROIX1() > 1', 'Looks like no ROI has been set'),
+#C('scope.cam.GetEMGain() == scope.cam.DefaultEMGain', 'Was expecting an intial e.m. gain of %d' % scope.cam.DefaultEMGain),
+#C('scope.cam.GetROIX1() > 1', 'Looks like no ROI has been set'),
 C('scope.cam.GetIntegTime() < .06', 'Camera integration time may be too long'),
 ]
 

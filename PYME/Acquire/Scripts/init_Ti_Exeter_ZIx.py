@@ -23,6 +23,7 @@
 
 from PYME.Acquire.Hardware.AndorIXon import AndorIXon
 from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
+from PYME.Acquire.Hardware.AndorNeo import AndorNeoControlFrame
 
 import scipy
 from PYME.Acquire.Hardware.Simulator import fakeCam, fakePiezo
@@ -58,6 +59,9 @@ if hwconfig is None:
         'Filterwheel' :        ComPort('COM8', doc='Thorlabs Filterwheel'),
         'Laser642' :           ComPort('COM7', doc='642nm laser'),
         'Laser671' :           ComPort('COM12', doc='671nm laser; leostick'),
+        'Laser405' :           ComPort('COM13', doc='405nm laser'),
+        'Laser561' :           ComPort('COM15', doc='561nm laser'),
+        'Lumen200S' :          ComPort('COM6', doc='Prior Lumen200S arclamp shutter'),
     }
 
 InitBG('Andor Zyla', '''
@@ -112,7 +116,7 @@ pz1.join()
 #''')
 
 InitGUI('''
-scope.camControls['Zyla'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['Ixon'], scope)
+scope.camControls['Zyla'] = AndorNeoControlFrame.AndorNeoPanel(MainFrame, scope.cameras['Zyla'], scope)
 camPanels.append((scope.camControls['Zyla'], 'Zyla Properties'))
 
 #scope.camControls['B - Right'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['B - Right'], scope)
@@ -276,7 +280,13 @@ from PYME.Acquire.Hardware import lasers
 sb = lasers.SBox(com_port=hwconfig['Laser671'].portname())
 scope.l671 = lasers.SerialSwitchedLaser('671',sb,0)
 
-scope.lasers = [scope.l642,scope.l671]
+from PYME.Acquire.Hardware import cobaltLaser
+scope.l405 = cobaltLaser.CobaltLaser('405',portname=hwconfig['Laser405'].portname())
+
+from PYME.Acquire.Hardware import cobaltLaser561
+scope.l561 = cobaltLaser561.CobaltLaser561('561',portname=hwconfig['Laser561'].portname())
+
+scope.lasers = [scope.l642,scope.l671,scope.l405,scope.l561]
 #scope.lasers = [scope.l671]
 
 #scope.lasers = []
@@ -305,6 +315,27 @@ if 'lasers'in dir(scope):
     time1.WantNotification.append(lcf.refresh)
     toolPanels.append((lcf, 'Laser Control'))
 ''')
+
+InitGUI('''
+from PYME.Acquire import lasersliders
+lsf = lasersliders.LaserSliders(toolPanel, scope.lasers)
+time1.WantNotification.append(lsf.update)
+#lsf.update()
+camPanels.append((lsf, 'Laser Powers'))
+''')
+
+from PYME.Acquire.Hardware import priorarclampshutter, arclampshutterpanel
+InitGUI('''
+try:
+    scope.arclampshutter = priorarclampshutter.Priorarclampshutter('Arc lamp shutter', portname=hwconfig['Lumen200S'].portname())
+    scope.shuttercontrol = [scope.arclampshutter]
+    acf = arclampshutterpanel.Arclampshutterpanel(MainFrame,scope.shuttercontrol)
+    time1.WantNotification.append(acf.refresh)
+    camPanels.append((acf, 'Shutter Control'))
+except:
+    print 'Error starting arc-lamp shutter ...'
+''')
+
 #
 #from PYME.Acquire.Hardware import PM100USB
 #
