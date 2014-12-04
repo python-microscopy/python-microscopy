@@ -25,6 +25,7 @@ try:
     import delaunay
 except:
     print('could not import delaunay')
+
 from numpy import *
 #import matplotlib.delaunay
 

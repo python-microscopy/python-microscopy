@@ -207,6 +207,10 @@ class backgroundBufferM:
 
         self.curFrames = bgi
         self.curBG = self.bfb.getPercentile(self.pctile).astype('f')
+        
+        med = self.bfb.getPercentile(0.5).astype('f')
+        off = np.median(med.flat[::20]) - np.median(self.curBG.flat[::20]) #correct for the offset introduced in median calculation
+        self.curBG += off
 
         return self.curBG - self.offset
 

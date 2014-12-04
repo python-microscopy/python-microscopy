@@ -235,6 +235,10 @@ class backgroundBufferM:
 
         self.curFrames = bgi
         self.curBG = self.bfb.getPercentile(self.pctile).astype('f')
+        
+        med = self.bfb.getPercentile(0.5).astype('f')
+        off = np.median(med) - np.median(self.curBG)
+        self.curBG += off
 
         return self.curBG
 
@@ -424,12 +428,20 @@ class fitTask(taskDef.Task):
         #read the data
         if not dataSourceID == self.dataSourceID: #avoid unnecessary opening and closing of 
             dBuffer = dataBuffer(DataSource(self.dataSourceID, taskQueue), self.bufferLen)
-            
-            if 'Analysis.PCTBackground' in self.md.getEntryNames() and self.md['Analysis.PCTBackground'] > 0:
+            bBuffer = None
+        
+        #fix our background buffers
+        if self.md.getOrDefault('Analysis.PCTBackground', 0) > 0:
+            if not isinstance(bBuffer, backgroundBufferM):
                 bBuffer = backgroundBufferM(dBuffer, self.md['Analysis.PCTBackground'])
             else:
+                bBuffer.pctile = self.md['Analysis.PCTBackground']
+        else:
+            if not isinstance(bBuffer, backgroundBuffer):
                 bBuffer = backgroundBuffer(dBuffer)
-            dataSourceID = self.dataSourceID
+                
+        dataSourceID = self.dataSourceID
+
         
         self.data = dBuffer.getSlice(self.index)
         nTasksProcessed += 1

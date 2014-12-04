@@ -99,3 +99,5 @@ md['Test.ROISize']=5
 
 ### Magnitude of background (in 'photons') to add to the generated molecule image
 md['Test.Background'] = 10.
+
+md['Test.PSFFile'] = os.path.join(os.path.split(__file__)[0], 'wf_theory2.psf')

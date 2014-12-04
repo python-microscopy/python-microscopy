@@ -84,7 +84,7 @@ class FloatListParam(object):
         self.default = default
         
     def _valToString(self, values):
-        return ''.join(values)
+        return ''.join(['%3.2f' % v for v in values])
         
     def _strToVal(self, s):
         sl = s.split(',')

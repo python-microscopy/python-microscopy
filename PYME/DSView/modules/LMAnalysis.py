@@ -378,6 +378,9 @@ class LMAnalyser:
 
             
     def SetMDItems(self):
+        self.image.mdh.setEntry('Analysis.subtractBackground', self.cbSubtractBackground.GetValue())
+        
+        
         for param in self.DEFAULT_PARAMS:
             param.retrieveValue(self.image.mdh)
             
@@ -405,9 +408,8 @@ class LMAnalyser:
         fitMod = self.fitFactories[self.cFitType.GetSelection()]
         #interpolator = self.interpolators[self.cInterpType.GetSelection()]
         bgFrames = [int(v) for v in self.tBackgroundFrames.GetValue().split(':')]
-
-        self.image.mdh.setEntry('Analysis.subtractBackground', self.cbSubtractBackground.GetValue())
         self.image.mdh.setEntry('Analysis.BGRange', bgFrames)
+        
         
         self.SetMDItems()
         

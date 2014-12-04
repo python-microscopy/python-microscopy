@@ -97,6 +97,10 @@ class FitInfoPanel(wx.Panel):
             #s = s[:-1]
             if 'resultCode' in r.dtype.names:
                 s += '\nresultCode: %d' % r['resultCode']
+                
+            if 'Ag' in r['fitResults'].dtype.names:
+                rf = r['fitResults']
+                s += '\n\ngFrac: %3.2f' % (rf['Ag']/(rf['Ag'] + rf['Ar']))
             
             if 'startParams' in r.dtype.names:
                 s += '\n\nStart Params:\n%s' % str(r['startParams'])
