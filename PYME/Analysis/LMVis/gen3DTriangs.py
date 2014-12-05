@@ -312,11 +312,26 @@ def gen3DTriangsTFC(T, sizeCutoff = inf, internalCull=False, pcut = inf):
 
     #use mean squared side length as a proxy for area
     #A = mean([s01, s12, s23, s02, s03, s13], 0)
+
+    #scut = 0.4*pcut
     
-    P012 = (s01 + s12 + s02) < pcut
-    P123 = (s12 + s23 + s13) < pcut
-    P023 = (s02 + s03 + s23) < pcut
-    P013 = (s01 + s03 + s13) < pcut
+    #cut triangles with an excessive perimeter or aspect ratio
+    scr = 0.5
+    p = (s01 + s12 + s02)
+    scut = scr*p
+    P012 = (p < pcut)*(s01<scut)*(s02<scut)*(s12<scut)
+    
+    p =(s12 + s23 + s13)
+    scut = scr*p
+    P123 = (p< pcut)*(s23<scut)*(s13<scut)*(s12<scut)
+    
+    p=(s02 + s03 + s23)
+    scut = scr*p
+    P023 = (p< pcut)*(s03<scut)*(s02<scut)*(s23<scut)
+    
+    p=(s01 + s03 + s13)
+    scut = scr*p
+    P013 = (p< pcut)*(s01<scut)*(s03<scut)*(s13<scut)
     
     #print len(P012), P012.sum()
 
@@ -379,27 +394,36 @@ def gen3DTriangsTFC(T, sizeCutoff = inf, internalCull=False, pcut = inf):
     s_12 = va[triInds[:,1]] - va[triInds[:,2]]
     s12 = (s_12**2).sum(1)
 
-    sback = va[triInds[:,0]] - va[nInds]
+    sback = (va[triInds[:,0]] + va[triInds[:,1]] + va[triInds[:,2]])/3.0 - va[nInds]
     #print sback.shape
+    
+    
 
     N = cross(s_01, s_02)
+    
+    tridir = ((N*sback).sum(1) >0)
+    
+    print 'Num backwards triangles:', tridir.sum(), len(tridir)
 
     #print N.shape
     N = -N*(sign((N*sback).sum(1))/sqrt((N**2).sum(1))).T[:,newaxis]
     #N = repeat(N, 3, 0)
     
     Na = np.zeros(va.shape)
-    Nn = np.zeros(va.shape[0])
+    #Nn = np.zeros(va.shape[0])
     
     for i in range(len(N)):
         for j in range(3):
             i1 = triInds[i, j]
             Na[i1,:] += N[i,:]
-            Nn[i1] += 1
+            #Nn[i1] += 1
     
-    Nv = Na/Nn[:,None]
+    #Nv = Na/Nn[:,None]
     
-    N = Nv[triInds.ravel(), :]   
+    triInds[tridir, :] = triInds[tridir, :][:,::-1] #reverse direction of offending triangles
+    
+    N = Na[triInds.ravel(), :] 
+    N = N/(sqrt((N*N).sum(1))[:, None])
 
     P = va[triInds.ravel(), :]
 

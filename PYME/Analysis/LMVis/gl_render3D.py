@@ -136,7 +136,7 @@ class LMGLCanvas(GLCanvas):
         self.dragging = False
         self.panning = False
 
-        self.edgeThreshold = 100
+        self.edgeThreshold = 200
 
         return
 
@@ -345,7 +345,7 @@ class LMGLCanvas(GLCanvas):
         glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, 50)
 
 
-        glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE)
+        glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE)
         glEnable(GL_COLOR_MATERIAL)
 
         glShadeModel(GL_SMOOTH)
@@ -487,7 +487,8 @@ class LMGLCanvas(GLCanvas):
         else:
             self.c = 1./A
             
-        self.a = 1./A
+        #self.a = 1./A
+        self.a = 0.5*numpy.ones_like(A)
         vs = P
 
         self.SetCurrent()        
