@@ -175,10 +175,11 @@ class bgFrameBuffer:
         
         
 class backgroundBufferM:
-    def __init__(self, dataBuffer, percentile=0.5):
+    def __init__(self, dataBuffer, percentile=0.5, offset=0):
         self.dataBuffer = dataBuffer
         self.curFrames = set()
         self.curBG = np.zeros(dataBuffer.dataSource.getSliceShape(), 'f4')
+        self.offset = offset #using a percentile not equal to 0.5 will lead to bias
         
         self.bfb = bgFrameBuffer(percentile=percentile)
         self.pctile = percentile
@@ -206,8 +207,12 @@ class backgroundBufferM:
 
         self.curFrames = bgi
         self.curBG = self.bfb.getPercentile(self.pctile).astype('f')
+        
+        med = self.bfb.getPercentile(0.5).astype('f')
+        off = np.median(med.flat[::20]) - np.median(self.curBG.flat[::20]) #correct for the offset introduced in median calculation
+        self.curBG += off
 
-        return self.curBG
+        return self.curBG - self.offset
 
 class DataSource(BaseDataSource):
     moduleName = 'BGSDataSource'
@@ -215,10 +220,19 @@ class DataSource(BaseDataSource):
         self.datasource = datasource
         
         self.dBuffer = dataBuffer(self.datasource, 50)
-        self.bBuffer = backgroundBuffer(self.dBuffer)
+        self.bBufferMn = backgroundBuffer(self.dBuffer)
+        self.bBufferP = backgroundBufferM(self.dBuffer)
+        self.bBuffer = self.bBufferMn
         
         self.bgRange = bgRange
         self.dataStart = 0
+        
+    def setBackgroundBufferPCT(self, pctile=0):
+        if not pctile == 0:
+            self.bBufferP.pctile = pctile
+            self.bBuffer = self.bBufferP
+        else:
+            self.bBuffer = self.bBufferMn
 
     def getSlice(self, ind):
         sl = self.dBuffer.getSlice(ind)

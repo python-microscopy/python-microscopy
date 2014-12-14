@@ -61,6 +61,11 @@ class rldec:
         return 0*data + data.mean()
 
 
+    def deconvp(self, args):
+        ''' convenience function for deconvolving in parallel using processing.Pool.map'''
+        return self.deconv(*args)
+        #return 0
+    
     def deconv(self, data, lamb, num_iters=10, weights = 1):
         '''This is what you actually call to do the deconvolution.
         parameters are:
@@ -76,21 +81,27 @@ class rldec:
         '''
         #remember what shape we are
         self.dataShape = data.shape
+        
+        #print 'dc1'
 
         #guess a starting estimate for the object
         self.f = self.startGuess(data).ravel()
         self.fs = self.f.reshape(self.shape)
+        #print 'dc2'
 
         #make things 1 dimensional
         #self.f = self.f.ravel()
         data = data.ravel()
         #weights = weights.ravel()
+        #print 'dc3'
 
         mask = 1 - weights
         
         print data.sum(), self.f.sum()
 
         self.loopcount=0
+        
+        
 
         while self.loopcount  < num_iters:
             self.loopcount += 1
@@ -110,6 +121,8 @@ class rldec:
             #set the current estimate to out new estimate
             self.f[:] = fnew
             print(('Sum = %f' % self.f.sum()))
+            
+        #print 'dc3'
 
         return real(self.fs)
 
@@ -310,6 +323,7 @@ class dec_conv(rldec):
 #            g_[pw2[0]:-pw1[0], pw2[1]:-pw1[1], pw2[2]:-pw1[2]] = g
 #        #g_[pw2[0]:-pw1[0], pw2[1]:-pw1[1], pw2[2]:-pw1[2]] = g
 #        g = g_
+        
         
         print psf.sum()
         

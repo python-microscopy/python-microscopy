@@ -77,6 +77,35 @@ class StringParam(object):
     def retrieveValue(self, mdh):
         mdh[self.paramName] = self.tValue.GetValue()
         
+class FloatListParam(object):
+    def __init__(self, paramName, guiName, default='', helpText=''):
+        self.paramName = paramName
+        self.guiName = guiName
+        self.default = default
+        
+    def _valToString(self, values):
+        return ''.join(['%3.2f' % v for v in values])
+        
+    def _strToVal(self, s):
+        sl = s.split(',')
+        return [float(si) for si in sl]
+        
+    def createGUI(self, parent, mdh):
+        import wx
+        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        hsizer.Add(wx.StaticText(parent, -1, self.guiName), 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tValue = wx.TextCtrl(parent, -1, value='0', size=(50, -1))
+        self.tValue.SetValue(self._valToString(mdh.getOrDefault(self.paramName, self.default)))
+
+        hsizer.Add(self.tValue, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+        
+        return hsizer
+        
+    def retrieveValue(self, mdh):
+        mdh[self.paramName] = self._strToVal(self.tValue.GetValue())
+        
 
 class ChoiceParam(object):
     def __init__(self, paramName, guiName, default='', helpText='', choices = [], choiceNames = []):
@@ -205,7 +234,7 @@ class BoolParam(object):
         return hsizer
         
     def retrieveValue(self, mdh):
-        mdh[self.paramName] = self.tValue.GetValue()   
+        mdh[self.paramName] = self.cbValue.GetValue()   
 
 class BoolFloatParam(object):
     def __init__(self, paramName, guiName, default=False, helpText='', ondefault=0, offvalue=0):

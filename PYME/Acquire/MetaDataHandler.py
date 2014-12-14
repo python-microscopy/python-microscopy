@@ -58,6 +58,7 @@ MetaData Handlers
     Saves and reads metadata as a python script (a series of md[key]=value statements).
     Used where you might want to construct or modify metadata by hand - e.g. with
     foreign source data.
+    
 
 The format of a metadata handler is defined by the `MDHandlerBase` class. 
 
@@ -353,7 +354,6 @@ class NestedClassMDHandler(MDHandlerBase):
                 en.append(k)
 
         return en
-
 
 from xml.dom.minidom import getDOMImplementation, parse
 #from xml.sax.saxutils import escape, unescape

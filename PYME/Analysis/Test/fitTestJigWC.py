@@ -35,6 +35,9 @@ from scipy import optimize
 
 def emg(v, rg):
     return (EMCCDTheory.M((80. + v)/(255 + 80.), 6.6, -70, 536, 2.2) - rg)**2
+    
+def IQR(x):
+    return np.percentile(x, 75) - np.percentile(x, 25)
 
 #[A, x0, y0, 250/2.35, dataMean.min(), .001, .001]
 
@@ -77,7 +80,7 @@ class fitTestJig(object):
         self.res = numpy.empty(nTests, self.fitMod.FitResultsDType)
         ps = numpy.zeros((nTests, len(params)), 'f4')
 
-        rs=7
+        rs=self.md.getOrDefault('Test.ROISize', 7)
         
         
         
@@ -103,11 +106,15 @@ class fitTestJig(object):
             
             #print self.d2.shape
             
-        bg = self.bg*self.md.Camera.TrueEMGain/self.md.Camera.ElectronsPerCount
+        bg = self.bg*1.0/(self.md.Camera.TrueEMGain/self.md.Camera.ElectronsPerCount) + self.md.Camera.ADOffset
+        
+        print bg, self.noiseM.getbg()
+        
+        bg = self.noiseM.getbg()
             
             #print bg, self.md.Camera.ADOffset
         for i in range(nTests):
-            self.fitFac = self.fitMod.FitFactory(atleast_3d(self.d2[i]), self.md, background = bg + self.md.Camera.ADOffset)
+            self.fitFac = self.fitMod.FitFactory(atleast_3d(self.d2[i]), self.md, background = bg)
             self.res[i] = self.fitFac.FromPoint(rs, rs, roiHalfSize=rs)
 
         
@@ -138,7 +145,7 @@ class fitTestJig(object):
     def plotRes(self, varName):
         #print self.ps
         from pylab import *
-        figure()
+        figure(figsize=(8,3))
         #print varName
         xv = self.ps[varName].ravel()
         
@@ -150,6 +157,8 @@ class fitTestJig(object):
             yv = yv + self.__getattribute__(varName)
 
         err = self.res['fitError'][varName]
+        
+        subplot(121)
 
         plot([xv.min(), xv.max()], [xv.min(), xv.max()])
         plot(xv, sp, '+', label='Start Est')
@@ -161,6 +170,13 @@ class fitTestJig(object):
         title(varName)
         xlabel('True Position')
         ylabel('Estimated Position')
+        
+        subplot(122)
+        dv = yv - xv
+        iq = IQR(dv)
+        print 'Mean: %f, std. dev: %f, IQR: %f' % (dv.mean(), dv.std(), iq)
+        hist(dv, linspace(dv.mean()-3*iq, dv.mean() + 3*iq))
+        
         
     def plotResSimp(self, varName):
         #print self.ps
