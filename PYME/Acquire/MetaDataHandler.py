@@ -311,7 +311,7 @@ class QueueMDHandler(MDHandlerBase):
             self.copyEntriesFrom(mdToCopy)
             
     def copyEntriesFrom(self, mdToCopy):
-        self.tq.SetQueueMetaDataEntries(self.queueName, mdToCopy)
+        self.tq.setQueueMetaDataEntries(self.queueName, mdToCopy)
 
     def setEntry(self,entryName, value):
         self.tq.setQueueMetaData(self.queueName, entryName, value)
