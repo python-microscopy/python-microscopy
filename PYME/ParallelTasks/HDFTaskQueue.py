@@ -298,7 +298,7 @@ class HDFResultsTaskQueue(TaskQueue):
         with self.fileResultsLock.wlock:
             self.resultsMDH.copyEntriesFrom(mdh)
             
-        #self.metaData.copyEntriesFrom(mdh)
+        self.metaData.copyEntriesFrom(mdh)
         #self.MDHCache.append((fieldName, value))
         
 
