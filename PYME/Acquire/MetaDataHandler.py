@@ -309,7 +309,9 @@ class QueueMDHandler(MDHandlerBase):
 
         if not mdToCopy == None:
             self.copyEntriesFrom(mdToCopy)
-
+            
+    def copyEntriesFrom(self, mdToCopy):
+        self.tq.SetQueueMetaDataEntries(self.queueName, mdToCopy)
 
     def setEntry(self,entryName, value):
         self.tq.setQueueMetaData(self.queueName, entryName, value)

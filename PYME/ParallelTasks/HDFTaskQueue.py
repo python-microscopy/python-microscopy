@@ -294,6 +294,13 @@ class HDFResultsTaskQueue(TaskQueue):
         self.metaData.setEntry(fieldName, value)
         self.MDHCache.append((fieldName, value))
         
+    def setQueueMetaDataEntries(self, mdh):
+        with self.fileResultsLock.wlock:
+            self.resultsMDH.copyEntriesFrom(mdh)
+            
+        #self.metaData.copyEntriesFrom(mdh)
+        #self.MDHCache.append((fieldName, value))
+        
 
     def getQueueMetaData(self, fieldName):
         #res  = None
@@ -728,6 +735,13 @@ class HDFTaskQueue(HDFResultsTaskQueue):
             self.dataMDH.setEntry(fieldName, value)
         
         HDFResultsTaskQueue.setQueueMetaData(self, fieldName, value)
+        self.metaDataStale = True
+        
+    def setQueueMetaDataEntries(self, mdh):
+        with self.dataFileLock.wlock:
+            self.dataMDH.copyEntriesFrom(mdh)
+        
+        HDFResultsTaskQueue.setQueueMetaDataEntries(self, mdh)
         self.metaDataStale = True
         
     def flushMetaData(self):
