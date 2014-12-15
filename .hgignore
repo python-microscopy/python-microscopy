@@ -21,3 +21,4 @@ Deconv/fftw_wisdom
 *.egg-info*
 dist/PYME-13\.5\.30\.tar\.gz
 doc/contrib/hackingpyme\.pdf
+PYME/Acquire/Scripts/Pyro_NS_URI

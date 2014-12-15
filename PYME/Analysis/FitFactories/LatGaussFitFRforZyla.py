@@ -139,6 +139,7 @@ fresultdtype=[('tIndex', '<i4'),
 Zyla_offset = numpy.loadtxt('C:/python-microscopy-exeter/PYME/Analysis/FitFactories/offset.txt')
 Zyla_variance = numpy.loadtxt('C:/python-microscopy-exeter/PYME/Analysis/FitFactories/variance.txt')
 Zyla_gain = numpy.loadtxt('C:/python-microscopy-exeter/PYME/Analysis/FitFactories/gain.txt')
+meangain = Zyla_gain.mean()
 
 def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None, background=0):
 	if slicesUsed == None:
@@ -208,9 +209,11 @@ class GaussianFitFactory:
         readnoiseROI = region_readnoise[xslice, yslice]
         gainROI = region_gain[xslice, yslice]
 
-        #average in z
-        #dataMean = dataROI.mean(2) - self.metadata.Camera.ADOffset
-        dataMean = dataROI.mean(2)/(gainROI*0.28) - offsetROI # gainROI = mean of gain * gain variation, mean of gain = 1/0.28 (from data sheet); gain variation = raw (raw data before filter)/ rawf (gaussian filtered data)
+        # average in z
+        # dataMean = dataROI.mean(2) - self.metadata.Camera.ADOffset
+	# meangain = 1/0.28 # this should really be set elsewhere and also needs a less confusing name
+
+        dataMean = dataROI.mean(2)/(gainROI/meangain) - offsetROI # gainROI = mean of gain * gain variation, mean of gain = 1/0.28 (from data sheet); gain variation = raw (raw data before filter)/ rawf (gaussian filtered data)
 
         #print (dataMean.shape == region_offset.shape, dataMean.shape == region_readnoise.shape, dataMean.shape == region_gain.shape)
         #print (self.data.shape, region_offset.shape, region_readnoise.shape, region_gain.shape)
@@ -233,7 +236,7 @@ class GaussianFitFactory:
         nSlices = dataROI.shape[2]
         
         #sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*scipy.maximum(dataMean, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
-        sigma = scipy.sqrt(readnoiseROI**2 + 0.28*scipy.maximum(dataMean, 1)/nSlices)/0.28
+        sigma = scipy.sqrt(readnoiseROI**2 + scipy.maximum(dataMean, 1)/meangain/nSlices)*meangain
 
 
         bgm = 0
