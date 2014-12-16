@@ -328,6 +328,36 @@ class ImageStack(object):
                 self.resultsMdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(h5Results))
 
         self.events = self.dataSource.getEvents()
+        
+    def LoadHTTP(self, filename):
+        '''Load PYMEs semi-custom HDF5 image data format. Offloads all the
+        hard work to the HDFDataSource class'''
+        import tables
+        from PYME.Analysis.DataSources import HTTPDataSource, BGSDataSource
+        #from PYME.Analysis.LMVis import inpFilt
+        
+        #open hdf5 file
+        self.dataSource = HTTPDataSource.DataSource(filename)
+        #chain on a background subtraction data source, so we can easily do 
+        #background subtraction in the GUI the same way as in the analysis
+        self.data = BGSDataSource.DataSource(self.dataSource) #this will get replaced with a wrapped version
+
+        #try: #should be true the whole time
+        self.mdh = MetaData.TIRFDefault
+        self.mdh.copyEntriesFrom(self.dataSource.getMetadata())
+        #except:
+        #    self.mdh = MetaData.TIRFDefault
+        #    wx.MessageBox("Carrying on with defaults - no gaurantees it'll work well", 'ERROR: No metadata found in file ...', wx.OK)
+        #    print("ERROR: No metadata fond in file ... Carrying on with defaults - no gaurantees it'll work well")
+
+        #attempt to estimate any missing parameters from the data itself        
+        MetaData.fillInBlanks(self.mdh, self.dataSource)
+
+        #calculate the name to use when we do batch analysis on this        
+        #from PYME.ParallelTasks.relativeFiles import getRelFilename
+        self.seriesName = filename
+
+        self.events = self.dataSource.getEvents()
 
     def LoadKdf(self, filename):
         '''load khorus formatted data - pretty much deprecated by now'''
@@ -618,6 +648,8 @@ class ImageStack(object):
         if not filename == None:
             if filename.startswith('QUEUE://'):
                 self.LoadQueue(filename)
+            if filename.startswith('http://'):
+                self.LoadHTTP(filename)
             elif filename.endswith('.h5'):
                 self.Loadh5(filename)
             elif filename.endswith('.kdf'):

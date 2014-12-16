@@ -252,7 +252,6 @@ class MDHandlerBase(DictMixin):
         f.writelines(s)
         f.close()
 
-
 class HDFMDHandler(MDHandlerBase):
     def __init__(self, h5file, mdToCopy=None):
         self.h5file = h5file
@@ -354,6 +353,33 @@ class NestedClassMDHandler(MDHandlerBase):
                 en.append(k)
 
         return en
+        
+class CachingMDHandler(MDHandlerBase):
+    def __init__(self, mdToCache):
+        self.mdToCache = mdToCache
+        
+        if not mdToCache == None:
+            self.cache = dict(mdToCache.items())
+            
+    @classmethod
+    def recreate(cls, cache):
+        c = cls(None)
+        c.cache = cache
+        
+    def __reduce__(self):
+        return (CachingMDHandler.recreate, (self.cache,))
+        
+    def getEntry(self, entryName):
+        return self.cache[entryName]
+        
+    def setEntry(self, entryName, value):
+        self.cache[entryName] = value
+        if not self.mdToCache == None:
+            self.mdToCache.setEntry(entryName, value)
+        
+    def getEntryNames(self):
+        return self.cache.keys()
+    
 
 from xml.dom.minidom import getDOMImplementation, parse
 #from xml.sax.saxutils import escape, unescape
