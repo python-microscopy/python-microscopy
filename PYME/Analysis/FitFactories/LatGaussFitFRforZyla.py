@@ -136,10 +136,15 @@ fresultdtype=[('tIndex', '<i4'),
               ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])]),
               ('subtractedBackground', '<f4')
               ]
-Zyla_offset = numpy.loadtxt('C:/python-microscopy-exeter/PYME/Analysis/FitFactories/offset.txt')
-Zyla_variance = numpy.loadtxt('C:/python-microscopy-exeter/PYME/Analysis/FitFactories/variance.txt')
-Zyla_gain = numpy.loadtxt('C:/python-microscopy-exeter/PYME/Analysis/FitFactories/gain.txt')
-meangain = Zyla_gain.mean()
+
+# this fails on all but the acquiring machine
+try:
+        Zyla_offset = numpy.loadtxt('C:/python-microscopy-exeter/PYME/Analysis/FitFactories/offset.txt')
+        Zyla_variance = numpy.loadtxt('C:/python-microscopy-exeter/PYME/Analysis/FitFactories/variance.txt')
+        Zyla_gain = numpy.loadtxt('C:/python-microscopy-exeter/PYME/Analysis/FitFactories/gain.txt')
+        Zyla_gain =  Zyla_gain / Zyla_gain.mean()
+except:
+        pass
 
 def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None, background=0):
 	if slicesUsed == None:
@@ -176,6 +181,14 @@ class GaussianFitFactory:
         else: 
             self.solver = FitModelWeighted
 
+        self.region_offset = Zyla_offset[self.metadata.Camera.ROIPosX-1:self.metadata.Camera.ROIPosX-1+self.metadata.Camera.ROIWidth,
+                                         self.metadata.Camera.ROIPosY-1:self.metadata.Camera.ROIPosY-1+self.metadata.Camera.ROIHeight]
+        region_variance=Zyla_variance[self.metadata.Camera.ROIPosX-1:self.metadata.Camera.ROIPosX-1+self.metadata.Camera.ROIWidth,
+                                      self.metadata.Camera.ROIPosY-1:self.metadata.Camera.ROIPosY-1+self.metadata.Camera.ROIHeight]
+        self.region_readnoise = numpy.sqrt(region_variance)*self.metadata.Camera.ElectronsPerCount # note: readnoise must be in units of e-
+        self.region_gain = Zyla_gain[self.metadata.Camera.ROIPosX-1:self.metadata.Camera.ROIPosX-1+self.metadata.Camera.ROIWidth,
+                                     self.metadata.Camera.ROIPosY-1:self.metadata.Camera.ROIPosY-1+self.metadata.Camera.ROIHeight]
+
     def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
         if (z == None): # use position of maximum intensity
             z = self.data[x,y,:].argmax()
@@ -193,10 +206,12 @@ class GaussianFitFactory:
         yslice = slice(max((y - roiHalfSize), 0),min((y + roiHalfSize + 1), self.data.shape[1]))
         zslice = slice(max((z - axialHalfSize), 0),min((z + axialHalfSize + 1), self.data.shape[2]))
 
-        region_offset = Zyla_offset[self.metadata.Camera.ROIPosX-1:self.metadata.Camera.ROIPosX-1+self.metadata.Camera.ROIWidth,self.metadata.Camera.ROIPosY-1:self.metadata.Camera.ROIPosY-1+self.metadata.Camera.ROIHeight]
-        region_variance=Zyla_variance[self.metadata.Camera.ROIPosX-1:self.metadata.Camera.ROIPosX-1+self.metadata.Camera.ROIWidth,self.metadata.Camera.ROIPosY-1:self.metadata.Camera.ROIPosY-1+self.metadata.Camera.ROIHeight]
-        region_readnoise = numpy.sqrt(region_variance)
-        region_gain = Zyla_gain[self.metadata.Camera.ROIPosX-1:self.metadata.Camera.ROIPosX-1+self.metadata.Camera.ROIWidth,self.metadata.Camera.ROIPosY-1:self.metadata.Camera.ROIPosY-1+self.metadata.Camera.ROIHeight]
+        # this is presumably quite inefficiient as it is done for every point!
+        # try to put into other part of the code so only done once
+        #region_offset = Zyla_offset[self.metadata.Camera.ROIPosX-1:self.metadata.Camera.ROIPosX-1+self.metadata.Camera.ROIWidth,self.metadata.Camera.ROIPosY-1:self.metadata.Camera.ROIPosY-1+self.metadata.Camera.ROIHeight]
+        #region_variance=Zyla_variance[self.metadata.Camera.ROIPosX-1:self.metadata.Camera.ROIPosX-1+self.metadata.Camera.ROIWidth,self.metadata.Camera.ROIPosY-1:self.metadata.Camera.ROIPosY-1+self.metadata.Camera.ROIHeight]
+        #region_readnoise = numpy.sqrt(region_variance) # note: readnoise must be in units of e-   CHECK!
+        #region_gain = Zyla_gain[self.metadata.Camera.ROIPosX-1:self.metadata.Camera.ROIPosX-1+self.metadata.Camera.ROIWidth,self.metadata.Camera.ROIPosY-1:self.metadata.Camera.ROIPosY-1+self.metadata.Camera.ROIHeight]
         
     #def __getitem__(self, key):
         #print key
@@ -205,15 +220,15 @@ class GaussianFitFactory:
         #cut region out of data stack
         dataROI = self.data[xslice, yslice, zslice]
 
-        offsetROI = region_offset[xslice, yslice]
-        readnoiseROI = region_readnoise[xslice, yslice]
-        gainROI = region_gain[xslice, yslice]
+        offsetROI = self.region_offset[xslice, yslice]
+        readnoiseROI = self.region_readnoise[xslice, yslice]
+        gainROI = self.region_gain[xslice, yslice]
 
         # average in z
         # dataMean = dataROI.mean(2) - self.metadata.Camera.ADOffset
 	# meangain = 1/0.28 # this should really be set elsewhere and also needs a less confusing name
 
-        dataMean = dataROI.mean(2)/(gainROI/meangain) - offsetROI # gainROI = mean of gain * gain variation, mean of gain = 1/0.28 (from data sheet); gain variation = raw (raw data before filter)/ rawf (gaussian filtered data)
+        dataMean = (dataROI.mean(2) - offsetROI)/gainROI # gainROI = gain variation; gain variation = raw (raw data before filter)/ rawf (gaussian filtered data)
 
         #print (dataMean.shape == region_offset.shape, dataMean.shape == region_readnoise.shape, dataMean.shape == region_gain.shape)
         #print (self.data.shape, region_offset.shape, region_readnoise.shape, region_gain.shape)
@@ -236,7 +251,8 @@ class GaussianFitFactory:
         nSlices = dataROI.shape[2]
         
         #sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*scipy.maximum(dataMean, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
-        sigma = scipy.sqrt(readnoiseROI**2 + scipy.maximum(dataMean, 1)/meangain/nSlices)*meangain
+        sigma = scipy.sqrt(readnoiseROI**2 + scipy.maximum(dataMean, 1)*
+                           self.metadata.Camera.ElectronsPerCount/nSlices)/self.metadata.Camera.ElectronsPerCount
 
 
         bgm = 0

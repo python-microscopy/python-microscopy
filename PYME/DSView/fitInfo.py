@@ -51,7 +51,7 @@ class FitInfoPanel(wx.Panel):
 
         vsizer.Add(sFitRes, 0, wx.EXPAND|wx.LEFT|wx.TOP|wx.BOTTOM|wx.RIGHT, 5)
 
-        if self.mdh.getEntry('Analysis.FitModule') == 'LatGaussFitFR':
+        if self.mdh.getEntry('Analysis.FitModule') in ['LatGaussFitFR','LatGaussFitFRforZyla']:
             #we know what the fit parameters are, and how to convert to photons
 
             sPhotons = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Photon Stats'), wx.VERTICAL)
@@ -138,7 +138,7 @@ class FitInfoPanel(wx.Panel):
         self.stSliceNum.SetLabel(slN)
 
         self.stFitRes.SetLabel(self.genResultsText(index))
-        if self.mdh.getEntry('Analysis.FitModule') == 'LatGaussFitFR':
+        if self.mdh.getEntry('Analysis.FitModule') in ['LatGaussFitFR','LatGaussFitFRforZyla']:
             self.stPhotons.SetLabel(self.genGaussPhotonStats(index))
 
         self.fitViewPan.draw(index)
