@@ -346,11 +346,14 @@ class microscope:
         for c in self.cameras.values():
             c.SetActive(False)
             c.SetShutter(False)
-
+            
         for k in self.cameras.keys():
             self.camControls[k].GetParent().Hide()#GetParent().UnPin()
-
+        
         self.cam = self.cameras[camName]
+        if 'lightpath' in dir(self):
+            self.lightpath.SetPort(self.cam.port)
+        
         self.cam.SetActive(True)
         self.cam.SetShutter(self.camControls[camName].cbShutter.GetValue())
         self.camControls[camName].GetParent().Show()#GetParent().PinOpen()
@@ -362,8 +365,7 @@ class microscope:
         if 'pa' in dir(self):
             self.livepreview()
             
-        if 'lightpath' in dir(self):
-            self.lightpath.SetPort(self.cam.port)
+        
             
     def centreView(self, dx, dy):
         vx, vy = self.GetPixelSize()

@@ -39,7 +39,7 @@ class Pipeline:
     def __init__(self, filename=None, visFr=None):
         self.dataSources = []
         self.selectedDataSource = None
-        self.filterKeys = {'error_x': (0,30), 'error_y':(0,30),'A':(5,2000), 'sig' : (95, 200)}
+        self.filterKeys = {'error_x': (0,30), 'error_y':(0,30),'A':(5,20000), 'sig' : (95, 200)}
 
         self.filter = None
         self.mapping = None

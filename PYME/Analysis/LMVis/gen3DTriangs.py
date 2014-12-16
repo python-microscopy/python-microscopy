@@ -71,7 +71,7 @@ def testObj():
 
     return x, y, z
 
-def gen3DTriangs(x,y,z, sizeCutoff=inf, internalCull=False, pcut=inf):
+def gen3DTriangs(x,y,z, sizeCutoff=inf, internalCull=True, pcut=inf):
     T = delaunay.Triangulation(array([x,y,z]).T.ravel(),3)
 
     return gen3DTriangsTFC(T, sizeCutoff, internalCull, pcut=sizeCutoff)[:3]
@@ -291,100 +291,83 @@ def gen3DTriangsTF(T, sizeCutoff = inf, internalCull=False):
 
     return (P, A, N, triInds.ravel())
     
-def gen3DTriangsTFC(T, sizeCutoff = inf, internalCull=False, pcut = inf):
+def gen3DTriangsTFC(T, sizeCutoff = inf, internalCull=True, pcut = inf):
     iarray = array(T.indices)
     
     va = array(T.set)
     
-    #find the squared side lengths of each facet
-    s_01 = va[iarray[:, 0]] - va[iarray[:, 1]]
-    s01 = sqrt((s_01**2).sum(1))
-    s_12 = va[iarray[:, 1]] - va[iarray[:, 2]]
-    s12 = sqrt((s_12**2).sum(1))
-    s_23 = va[iarray[:, 2]] - va[iarray[:, 3]]
-    s23 = sqrt((s_23**2).sum(1))
-    s_02 = va[iarray[:, 0]] - va[iarray[:, 2]]
-    s02 = sqrt((s_02**2).sum(1))
-    s_03 = va[iarray[:, 0]] - va[iarray[:, 3]]
-    s03 = sqrt((s_03**2).sum(1))
-    s_13 = va[iarray[:, 1]] - va[iarray[:, 3]]
-    s13 = sqrt((s_13**2).sum(1))
-
-    #use mean squared side length as a proxy for area
-    #A = mean([s01, s12, s23, s02, s03, s13], 0)
-
-    #scut = 0.4*pcut
+    if internalCull:
+        
+        #find the squared side lengths of each facet
+        s_01 = va[iarray[:, 0]] - va[iarray[:, 1]]
+        s01 = sqrt((s_01**2).sum(1))
+        s_12 = va[iarray[:, 1]] - va[iarray[:, 2]]
+        s12 = sqrt((s_12**2).sum(1))
+        s_23 = va[iarray[:, 2]] - va[iarray[:, 3]]
+        s23 = sqrt((s_23**2).sum(1))
+        s_02 = va[iarray[:, 0]] - va[iarray[:, 2]]
+        s02 = sqrt((s_02**2).sum(1))
+        s_03 = va[iarray[:, 0]] - va[iarray[:, 3]]
+        s03 = sqrt((s_03**2).sum(1))
+        s_13 = va[iarray[:, 1]] - va[iarray[:, 3]]
+        s13 = sqrt((s_13**2).sum(1))
     
-    #cut triangles with an excessive perimeter or aspect ratio
-    scr = 0.5
-    p = (s01 + s12 + s02)
-    scut = scr*p
-    P012 = (p < pcut)*(s01<scut)*(s02<scut)*(s12<scut)
+        #use mean squared side length as a proxy for area
+        #A = mean([s01, s12, s23, s02, s03, s13], 0)
     
-    p =(s12 + s23 + s13)
-    scut = scr*p
-    P123 = (p< pcut)*(s23<scut)*(s13<scut)*(s12<scut)
+        #scut = 0.4*pcut
+        
+        #cut triangles with an excessive perimeter or aspect ratio
+        scr = 0.5
+        p = (s01 + s12 + s02)
+        scut = scr*p
+        P012 = (p < pcut)*(s01<scut)*(s02<scut)*(s12<scut)
+        
+        p =(s12 + s23 + s13)
+        scut = scr*p
+        P123 = (p< pcut)*(s23<scut)*(s13<scut)*(s12<scut)
+        
+        p=(s02 + s03 + s23)
+        scut = scr*p
+        P023 = (p< pcut)*(s03<scut)*(s02<scut)*(s23<scut)
+        
+        p=(s01 + s03 + s13)
+        scut = scr*p
+        P013 = (p< pcut)*(s01<scut)*(s03<scut)*(s13<scut)
+        
+        #find all the tetrahedra with an perimeter less than cutoff    
+        
+        cutInd = ((1- P012*P123*P023*P013)*((P012 + P123 + P023 + P013) > 0)) > 0 #*(A < sizeCutoff)
+        
+        print len(P012), P012.sum(), cutInd.sum()
     
-    p=(s02 + s03 + s23)
-    scut = scr*p
-    P023 = (p< pcut)*(s03<scut)*(s02<scut)*(s23<scut)
+        #cut keep the indices which pass the test    
+        iarray = iarray[cutInd, : ]
+        P012 = P012[cutInd]
+        P123 = P123[cutInd]
+        P013 = P013[cutInd]
+        P023 = P023[cutInd]
     
-    p=(s01 + s03 + s13)
-    scut = scr*p
-    P013 = (p< pcut)*(s01<scut)*(s03<scut)*(s13<scut)
+        #print len(iarray)
+        #print iarray.shape, P012.shape, P023.shape, iarray[:,(0, 1, 3)][P023,:].shape
     
-    #print len(P012), P012.sum()
-
-    #find all the tetrahedra with an 'area' less than cutoff    
-    #cutInd = A < sizeCutoff
+        if len(iarray) == 0:
+            return ([], [], [], [])
     
-    cutInd = ((1- P012*P123*P023*P013)*((P012 + P123 + P023 + P013) > 0)) > 0 #*(A < sizeCutoff)
+        #calculate the indices of the triangles to include
+        triInds = vstack((iarray[P012,:][:,:3], 
+                          iarray[P123,:][:,1:], 
+                          iarray[P023,:][:,(0, 2, 3)], 
+                          iarray[P013,:][:,(0, 1, 3)]))
     
-    print len(P012), P012.sum(), cutInd.sum()
-
-    #print cutInd
-    #A = A[cutInd]
-    #A = vstack((A,A,A)).T.ravel()
-
-    #cut keep the indices which pass the test    
-    iarray = iarray[cutInd, : ]
-    P012 = P012[cutInd]
-    P123 = P123[cutInd]
-    P013 = P013[cutInd]
-    P023 = P023[cutInd]
-
-    #print len(iarray)
-    #print iarray.shape, P012.shape, P023.shape, iarray[:,(0, 1, 3)][P023,:].shape
-
-    if len(iarray) == 0:
-        return ([], [], [], [])
-
-    #calculate the indices of the triangles to include
-    triInds = vstack((iarray[P012,:][:,:3], 
-                      iarray[P123,:][:,1:], 
-                      iarray[P023,:][:,(0, 2, 3)], 
-                      iarray[P013,:][:,(0, 1, 3)]))
-    #triInds.sort(1)
-
-    nInds = hstack((iarray[P012,:][:,3], iarray[P123,:][:,0], iarray[P023,:][:, 1], iarray[P013,:][:,2]))
-
-    #surfInds = triInds[:,0] > -1
-
-#    #internal face culling
-#    if internalCull:
-#        fcs = {} #emptyListDict()
-#        for i, triI in zip(range(len(triInds)), triInds):
-#            t_t = tuple(triI)
-#            if t_t in fcs.keys():
-#                surfInds[fcs[t_t]] = 0
-#                surfInds[i] = 0
-#            else:
-#                fcs[t_t] = i
-
-    #triInds = triInds[surfInds,:]
-
-    #nInds = nInds[surfInds]
-    #print nInds.shape
+        nInds = hstack((iarray[P012,:][:,3], iarray[P123,:][:,0], iarray[P023,:][:, 1], iarray[P013,:][:,2]))
+    else:
+        triInds = vstack((iarray[:,:3], 
+                          iarray[:,1:], 
+                          iarray[:,(0, 2, 3)], 
+                          iarray[:,(0, 1, 3)]))
+    
+        nInds = hstack((iarray[:,3], iarray[:,0], iarray[:, 1], iarray[:,2]))
 
     #calculate normals    
     s_01 = va[triInds[:,0]] - va[triInds[:,1]]
@@ -396,8 +379,6 @@ def gen3DTriangsTFC(T, sizeCutoff = inf, internalCull=False, pcut = inf):
 
     sback = (va[triInds[:,0]] + va[triInds[:,1]] + va[triInds[:,2]])/3.0 - va[nInds]
     #print sback.shape
-    
-    
 
     N = cross(s_01, s_02)
     
@@ -407,25 +388,27 @@ def gen3DTriangsTFC(T, sizeCutoff = inf, internalCull=False, pcut = inf):
 
     #print N.shape
     N = -N*(sign((N*sback).sum(1))/sqrt((N**2).sum(1))).T[:,newaxis]
-    #N = repeat(N, 3, 0)
+    Nr = repeat(N, 3, 0)
     
-    Na = np.zeros(va.shape)
-    #Nn = np.zeros(va.shape[0])
-    
-    for i in range(len(N)):
-        for j in range(3):
-            i1 = triInds[i, j]
-            Na[i1,:] += N[i,:]
-            #Nn[i1] += 1
-    
-    #Nv = Na/Nn[:,None]
-    
-    triInds[tridir, :] = triInds[tridir, :][:,::-1] #reverse direction of offending triangles
-    
-    N = Na[triInds.ravel(), :] 
-    N = N/(sqrt((N*N).sum(1))[:, None])
+    #
+    if internalCull:
+        Na = np.zeros(va.shape)
+        for i in range(len(N)):
+            for j in range(3):
+                i1 = triInds[i, j]
+                Na[i1,:] += N[i,:]
+                #Nn[i1] += 1
+        
+        #Nv = Na/Nn[:,None]
+        
+        triInds[tridir, :] = triInds[tridir, :][:,::-1] #reverse direction of offending triangles
+        
+        N = Na[triInds.ravel(), :] 
+        N = N/(sqrt((N*N).sum(1))[:, None])
+    else:
+        N = Nr
 
-    P = va[triInds.ravel(), :]
+    P = va[triInds.ravel(), :] #+ 1*Nr
 
     A = mean([s01, s12,s02], 0)
 

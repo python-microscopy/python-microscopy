@@ -123,25 +123,29 @@ class Spooler:
             sampleInformation.createImage(self.md, sampleInformation.currentSlide[0])
 
    def doStartLog(self):
-      '''Record pertinant information to metadata at start of acquisition.
-      
-      Loops through all registered sources of start metadata and adds their entries.
+        '''Record pertinant information to metadata at start of acquisition.
+        
+        Loops through all registered sources of start metadata and adds their entries.
+        
+        See Also
+        --------
+        PYME.Acquire.MetaDataHandler
+        '''
+        dt = datetime.datetime.now()
+        
+        self.dtStart = dt
+        
+        self.tStart = time.time()
+          
+        mdt = MetaDataHandler.NestedClassMDHandler()
+          
+        mdt.setEntry('StartTime', self.tStart)
 
-      See Also
-      --------
-      PYME.Acquire.MetaDataHandler
-      '''
-      dt = datetime.datetime.now()
-
-      self.dtStart = dt
-
-      self.tStart = time.time()
-      
-      self.md.setEntry('StartTime', self.tStart)
-
-      #loop over all providers of metadata
-      for mdgen in MetaDataHandler.provideStartMetadata:
-         mdgen(self.md)
+        #loop over all providers of metadata
+        for mdgen in MetaDataHandler.provideStartMetadata:
+            mdgen(mdt)
+            
+        self.md.copyEntriesFrom(mdt)
        
 
    def doStopLog(self):
