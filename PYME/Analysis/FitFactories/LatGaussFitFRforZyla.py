@@ -138,12 +138,17 @@ fresultdtype=[('tIndex', '<i4'),
               ]
 
 # this fails on all but the acquiring machine
+import warnings
 try:
-        Zyla_offset = numpy.loadtxt('C:/python-microscopy-exeter/PYME/Analysis/FitFactories/offset.txt')
-        Zyla_variance = numpy.loadtxt('C:/python-microscopy-exeter/PYME/Analysis/FitFactories/variance.txt')
-        Zyla_gain = numpy.loadtxt('C:/python-microscopy-exeter/PYME/Analysis/FitFactories/gain.txt')
+        mapdir = 'C:/python-microscopy-exeter/PYME/Analysis/FitFactories/'
+        if 'PYMEZYLAMAPDIR' in os.environ.keys() and os.access(os.environ['PYMEZYLAMAPDIR'], os.W_OK):
+                mapdir = os.environ['PYMEZYLAMAPDIR']
+        Zyla_offset = numpy.loadtxt(os.path.join(mapdir,'offset.txt'))
+        Zyla_variance = numpy.loadtxt(os.path.join(mapdir,'variance.txt'))
+        Zyla_gain = numpy.loadtxt(os.path.join(mapdir,'gain.txt'))
         Zyla_gain =  Zyla_gain / Zyla_gain.mean()
 except:
+        warnings.warn('cannot load Zyla proerties maps')
         pass
 
 def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None, background=0):
