@@ -16,7 +16,7 @@ accessTimes = {}
 
 class H5File(object):
     def __init__(self, pth, mode='r'):
-        if mode in ['w', 'a', 'r+'] and os.path.exists():
+        if mode in ['w', 'a', 'r+'] and os.path.exists(pth):
             raise RuntimeError('Cannot open existing file in write mode')
         self.h5f = tables.openFile(pth, mode)
         self.mode = mode
@@ -35,6 +35,9 @@ class H5File(object):
             self.nEvents = self.h5f.root.Events.shape[0]
         else:
             self.nEvents = 0
+            
+            if mode == 'w':
+                self._checkCreateEventsTable()
 
     def getFrame(self, frameNo):
         if frameNo >= self.dshape[2]:
@@ -47,7 +50,10 @@ class H5File(object):
     	return self.h5f.root.Events[eventNo].dumps()
 
     def getEvents(self):
-    	return self.h5f.root.Events[:].dumps()
+        if self.nEvents > 0:
+            return self.h5f.root.Events[:].dumps()
+        else:
+            return pickle.dumps([])
 
     def getMetadata(self):
     	return pickle.dumps(MetaDataHandler.NestedClassMDHandler(self.mdh))
@@ -55,16 +61,16 @@ class H5File(object):
     def _checkCreateDataTable(self, f):
     	if not 'ImageData' in dir(self.h5f.root):
             filt = tables.Filters(self.complevel, self.complib, shuffle=True)
-            framesize = f.shape[:2]
+            framesize = f.shape[1:3]
             self.imageData = self.h5f.createEArray(self.h5f.root, 'ImageData', tables.UInt16Atom(), (0,)+tuple(framesize), filters=filt, chunkshape=(1,)+tuple(framesize))
             #self.events = self.h5DataFile.createTable(self.h5DataFile.root, 'Events', HDFTaskQueue.SpoolEvent,filters=filt)
             self.dshape[:2] = framesize
 
-    def _checkCreateEventsTable(self, f):
+    def _checkCreateEventsTable(self):
     	if not 'Events' in dir(self.h5f.root):
             filt = tables.Filters(self.complevel, self.complib, shuffle=True)
-            self.events = self.h5DataFile.createTable(self.h5DataFile.root, 'Events', HDFTaskQueue.SpoolEvent,filters=filt)
-            self.dshape[:2] = framesize
+            self.events = self.h5f.createTable(self.h5f.root, 'Events', HDFTaskQueue.SpoolEvent,filters=filt)
+            
     
     def putFrame(self, frame):
     	f = pickle.loads(frame)
@@ -75,25 +81,28 @@ class H5File(object):
         self.dshape[2] += 1
 
     def putFrames(self, frames):
-    	fs = pickle.loads(frames)
-    	self._checkCreateDataTable(fs[0])
-
+        fs = pickle.loads(frames)
+        self._checkCreateDataTable(fs[0])
+        
         for f in fs:
-        	self.imageData.append(f)
-        	self.dshape[2] += 1
-
+            #print f.shape
+            self.imageData.append(f)
+            self.dshape[2] += 1
+        
         self.imageData.flush()
         
     def putEvent(self, event):
-    	eventName, eventDescr, evtTime = pickle.loads(event)
-    	ev = self.events.row
-
+        #self._checkCreateEventsTable()
+        eventName, eventDescr, evtTime = pickle.loads(event)
+        ev = self.events.row
+        
         ev['EventName'] = eventName
         ev['EventDescr'] = eventDescr
         ev['Time'] = evtTime
-
+        
         ev.append()
         self.events.flush()
+        self.nEvents += 1
 
 
     def putMetadata(self, metadata):
@@ -105,6 +114,8 @@ class H5File(object):
         self.mdh[key] = value
 
 class GetHandler(BaseHTTPRequestHandler):
+    #protocol_version = "HTTP/1.0"   
+    protocol_version = "HTTP/1.1"   
     def _getH5File(self, pth, mode='r'):
         try:
             h5f = fileCache[pth]
@@ -112,7 +123,7 @@ class GetHandler(BaseHTTPRequestHandler):
             return h5f
         except KeyError:
             #we don't yet have the file open:
-            h5f = H5File(pth)
+            h5f = H5File(pth, mode)
 
             fileCache[pth] = h5f
             accessTimes[pth] = time.time()
@@ -228,7 +239,12 @@ class GetHandler(BaseHTTPRequestHandler):
         # Begin the response
         filepth, entry = os.path.split(fullpath)
         
-        message = self.rfile.read()
+        #print filepth, entry
+        
+        #print self.headers.items()
+        
+        message = self.rfile.read(int(self.headers['content-length']))
+       # print len(message)
         
         if filepth.endswith('.h5'):
             h5f = self._getH5File(filepth, 'w')
@@ -236,6 +252,7 @@ class GetHandler(BaseHTTPRequestHandler):
             if entry == 'NEWFRAME':
                 h5f.putFrame(message)
             elif entry == 'NEWFRAMES':
+                #pass
                 h5f.putFrames(message)
             elif entry == 'NEWEVENT':
                 h5f.putEvent(message)
@@ -247,11 +264,10 @@ class GetHandler(BaseHTTPRequestHandler):
                 self.send_error(404, 'Operation Not Supported')
                 return
         
-        self.send_response(200)
-        self.end_headers()
-        return
-
-
+            print 'About to return'        
+            self.send_response(200)
+            self.end_headers()
+            return
 
         self.send_error(404, 'Operation Not Supported')
         return
