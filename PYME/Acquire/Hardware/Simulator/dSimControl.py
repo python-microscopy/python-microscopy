@@ -361,7 +361,7 @@ class dSimControl(wx.Panel):
         transTens = self.getTensorFromGrids()
         exCrosses = [float(self.tExSwitch.GetValue()), float(self.tExProbe.GetValue())]
         #fluors = [fluor.fluorophore(x, y, z, transTens, exCrosses, activeState=self.activeState) for (x,y,z) in self.points]
-        points_a = scipy.array(self.points)
+        points_a = scipy.array(self.points).astype('f')
         x = points_a[:,0]
         y = points_a[:,1]
         z = points_a[:,2]

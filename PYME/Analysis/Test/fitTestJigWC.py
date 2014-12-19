@@ -145,7 +145,7 @@ class fitTestJig(object):
     def plotRes(self, varName):
         #print self.ps
         from pylab import *
-        figure(figsize=(8,3))
+        figure(figsize=(14,5))
         #print varName
         xv = self.ps[varName].ravel()
         
@@ -160,9 +160,10 @@ class fitTestJig(object):
         
         subplot(121)
 
+        
+       # plot(xv, sp, '+', label='Start Est')
+        errorbar(xv, yv, err, fmt='xr', label='Fitted')
         plot([xv.min(), xv.max()], [xv.min(), xv.max()])
-        plot(xv, sp, '+', label='Start Est')
-        errorbar(xv, yv, err, fmt='x', label='Fitted')
 
         ylim((yv - maximum(err, 0)).min(), (yv + maximum(err, 0)).max())
         legend()
@@ -176,6 +177,8 @@ class fitTestJig(object):
         iq = IQR(dv)
         print 'Mean: %f, std. dev: %f, IQR: %f' % (dv.mean(), dv.std(), iq)
         hist(dv, linspace(dv.mean()-3*iq, dv.mean() + 3*iq))
+        xlabel('Position Error [nm]')
+        ylabel('Frequency')
         
         
     def plotResSimp(self, varName):

@@ -24,6 +24,9 @@ from numpy import *
 #import cPickle
 from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
 
+class dummy(object):
+    pass
+
 class __interpolator:
     def __init__(self):
         self.IntXVals = None
@@ -45,14 +48,19 @@ class __interpolator:
         modName = md.PSFFile
 
         if not modName == self.interpModelName:
-            #try and get psf from task queue
-            #if not md.taskQueue == None:
-            try:
-                mod, voxelsize = md.taskQueue.getQueueData(md.dataSourceID, 'PSF')
-            except:
-                mf = open(getFullExistingFilename(modName), 'rb')
-                mod, voxelsize = load(mf)
-                mf.close()
+            #special case for theoretical models
+            if modName.startswith('ZMODEL:'):
+                params = eval(modName[7:])
+                mod, voxelsize = self.genTheoreticalModelZernike(md, **params)
+            else: 
+                #try and get psf from task queue
+                #if not md.taskQueue == None:
+                try:
+                    mod, voxelsize = md.taskQueue.getQueueData(md.dataSourceID, 'PSF')
+                except:
+                    mf = open(getFullExistingFilename(modName), 'rb')
+                    mod, voxelsize = load(mf)
+                    mf.close()
 
             self.setModel(modName, mod, voxelsize)
 
@@ -67,9 +75,15 @@ class __interpolator:
         #global IntXVals, IntYVals, IntZVals, interpModel, interpModelName, dx, dy, dz
 
         if not modName == self.interpModelName:
-            mf = open(getFullExistingFilename(modName), 'rb')
-            mod, voxelsize = load(mf)
-            mf.close()
+            #special case for theoretical models
+            if modName.startswith('ZMODEL:'):
+                #print modName[7:]
+                params = eval(modName[7:])
+                mod, voxelsize = self.genTheoreticalModelZernike(md, **params)
+            else: 
+                mf = open(getFullExistingFilename(modName), 'rb')
+                mod, voxelsize = load(mf)
+                mf.close()
 
             self.setModel(modName, mod, voxelsize)
 
@@ -96,6 +110,19 @@ class __interpolator:
         self.shape = mod.shape
 
         self._precompute()
+        
+    def genTheoreticalModelZernike(self, md, zmodes={}, nDesign=1.51, nSample=1.51, NA=1.47, wavelength=700):
+        from PYME.PSFGen import fourierHNA
+        zs = arange(-1e3, 1e3, 50)
+        
+        voxelsize = dummy()
+        voxelsize.x = md['voxelsize.x']
+        voxelsize.y = md['voxelsize.x']
+        voxelsize.z = .05
+
+        ps = fourierHNA.GenZernikeDPSF(zs, 1e3*voxelsize.x, zmodes,lamb=wavelength, NA = NA, n=nDesign, ns=nSample)
+        
+        return ps, voxelsize
 
     def genTheoreticalModel(self, md):
         from PYME.PSFGen.ps_app import *

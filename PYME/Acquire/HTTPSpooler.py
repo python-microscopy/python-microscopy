@@ -35,6 +35,8 @@ from PYME.ParallelTasks.relativeFiles import getRelFilename
 
 import httplib
 import cPickle as pickle
+import threading
+import Queue
 
 #rom PYME.Acquire import eventLog
 
@@ -52,8 +54,25 @@ class EventLogger:
       if eventName == 'StartAq':
           eventDescr = '%d' % self.spooler.imNum
       self.spooler._post('NEWEVENT', (eventName, eventDescr, sp.timeFcn()))
+      
+class HttpSpoolMDHandler(MetaDataHandler.MDHandlerBase):
+    def __init__(self, spooler, mdToCopy=None):
+        self.spooler = spooler
+        self.cache = {}
+        
+        if not mdToCopy == None:
+            self.copyEntriesFrom(mdToCopy)
 
-SERVERNAME='http://127.0.0.1:8080/'      
+    def setEntry(self,entryName, value):
+        self.spooler._post('METADATAENTRY', (entryName, value))
+    
+    def getEntry(self,entryName):
+        return self.cache[entryName]
+
+    def getEntryNames(self):
+        return self.cache.keys()
+
+SERVERNAME='127.0.0.1:8080'      
 
 class Spooler(sp.Spooler):
     def __init__(self, scope, filename, acquisator, protocol = p.NullProtocol, parent=None, complevel=2, complib='zlib'):
@@ -68,25 +87,50 @@ class Spooler(sp.Spooler):
         
         #self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
         #self.tq._setOneway(['postTask', 'postTasks', 'addQueueEvents', 'setQueueMetaData', 'logQueueEvent'])
+        filename = filename[len(nameUtils.datadir):]
         
-        self.seriesName = '/'.join(os.path.sep.split(getRelFilename(filename)))
+        
+        self.seriesName = '/'.join(filename.split(os.path.sep))
+        print filename, self.seriesName
         self.buffer = []
         self.buflen = 30
         
+        
+        
+        self.postQueue = Queue.Queue()
+        self.dPoll = True
+        
+        self.pollThread = threading.Thread(target=self._queuePoll)
+        self.pollThread.start()
+        
         #self.tq.createQueue('HDFTaskQueue',self.seriesName, filename, frameSize = (scope.cam.GetPicWidth(), scope.cam.GetPicHeight()), complevel=complevel, complib=complib)
         
-        #self.md = MetaDataHandler.QueueMDHandler(self.tq, self.seriesName)
+        self.md = HttpSpoolMDHandler(self)
         self.evtLogger = EventLogger(self, scope)
         
+        
         sp.Spooler.__init__(self, scope, filename, acquisator, protocol, parent)
+        
+    def _queuePoll(self):
+        self.conn = httplib.HTTPConnection(SERVERNAME, timeout=5)
+        while self.dPoll:            
+            ur, data = self.postQueue.get()
+            print ur
+            self.conn.request('POST', ur, pickle.dumps(data))
+            
+            resp = self.conn.getresponse()
+            print resp.status, resp.reason
+            time.sleep(.1)
     
     def _post(self, ursufix, data):
-        conn = httplib.HTTPConnection(SERVERNAME)
-        ur = '/%s/%s' % (self.seriesName, ursufix)
-        conn.request('POST', ur, pickle.dumps(data))
+       self.postQueue.put(('%s/%s' % (self.seriesName, ursufix), data))
         
-        resp = conn.getresponse()
-        print resp.status, resp.reason
+    def getURL(self):
+        return 'http://' + SERVERNAME + self.seriesName
+    
+    def StopSpool(self):
+        self.dPoll = False
+        sp.Spooler.StopSpool(self)
         
         
     def Tick(self, caller):
@@ -106,6 +150,7 @@ class Spooler(sp.Spooler):
       self._post('NEWFRAMES', self.buffer)
       #print time.time() -t1
       self.buffer = []
+     
 
 
 

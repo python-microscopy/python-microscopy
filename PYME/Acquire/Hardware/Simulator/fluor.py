@@ -160,6 +160,6 @@ class specFluors(fluors):
         self.fl['state'][:] = initialState
         self.fl['spec'][:] = spectralSig
 
-        self.transitionTensor = transitionProbablilities
+        self.transitionTensor = transitionProbablilities.astype('f')
         self.activeState = activeState
     

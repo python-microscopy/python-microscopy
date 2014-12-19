@@ -27,7 +27,7 @@
 import wx
 import datetime
 from PYME.Acquire import HDFSpooler
-from PYME.Acquire import QueueSpooler
+from PYME.Acquire import QueueSpooler, HTTPSpooler
 try:
     from PYME.Acquire import sampleInformation
     sampInf = True
@@ -201,14 +201,25 @@ class PanSpool(wx.Panel):
         spoolDirSizer.Add(self.bSetSpoolDir, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
         vsizer.Add(spoolDirSizer, 0, wx.ALL|wx.EXPAND, 0)
+        
+        #queues etcc        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.rbQueue = wx.RadioBox(self, -1,'Spool to:', choices=['File', 'Queue', 'HTTP'])
+        self.rbQueue.SetSelection(1)
+
+        hsizer.Add(self.rbQueue, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+
+        vsizer.Add(hsizer, 0, wx.LEFT|wx.RIGHT|wx.EXPAND, 0)
 
         ### Queue & Compression
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.cbQueue = wx.CheckBox(self, -1,'Save to Queue')
-        self.cbQueue.SetValue(True)
+        #self.cbQueue = wx.CheckBox(self, -1,'Save to Queue')
+        #self.cbQueue.SetValue(True)
 
-        hsizer.Add(self.cbQueue, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        #hsizer.Add(self.cbQueue, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.cbCompress = wx.CheckBox(self, -1, 'Compression')
         self.cbCompress.SetValue(True)
@@ -216,6 +227,8 @@ class PanSpool(wx.Panel):
         hsizer.Add(self.cbCompress, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
         vsizer.Add(hsizer, 0, wx.LEFT|wx.RIGHT|wx.EXPAND, 0)
+        
+        
 
         self.SetSizer(vsizer)
         vsizer.Fit(self)
@@ -334,9 +347,15 @@ class PanSpool(wx.Panel):
         if not preflight.ShowPreflightResults(self, self.protocol.PreflightCheck()):
             return #bail if we failed the pre flight check, and the user didn't choose to continue
 
-        if self.cbQueue.GetValue():
+        spoolType = self.rbQueue.GetStringSelection()        
+        #if self.cbQueue.GetValue():
+        if spoolType == 'Queue':
             self.queueName = getRelFilename(self.dirname + fn + '.h5')
             self.spooler = QueueSpooler.Spooler(self.scope, self.queueName, self.scope.pa, protocol, self, complevel=compLevel)
+            self.bAnalyse.Enable(True)
+        elif spoolType == 'HTTP':
+            self.queueName = self.dirname + fn + '.h5'
+            self.spooler = HTTPSpooler.Spooler(self.scope, self.queueName, self.scope.pa, protocol, self, complevel=compLevel)
             self.bAnalyse.Enable(True)
         else:
             self.spooler = HDFSpooler.Spooler(self.scope, self.dirname + fn + '.h5', self.scope.pa, protocol, self, complevel=compLevel)
@@ -380,11 +399,16 @@ class PanSpool(wx.Panel):
         NB: this is often called programatically from within protocols to 
         automatically launch the analysis. TODO - factor this functionality 
         out of the view'''
-        if self.cbQueue.GetValue(): #queue or not
+        if isinstance(self.spooler, QueueSpooler.Spooler): #queue or not
             if sys.platform == 'win32':
                 subprocess.Popen('dh5view.cmd -q %s QUEUE://%s' % (self.spooler.tq.URI, self.queueName), shell=True)
             else:
                 subprocess.Popen('dh5view.py -q %s QUEUE://%s' % (self.spooler.tq.URI, self.queueName), shell=True)
+        elif isinstance(self.spooler, HTTPSpooler.Spooler): #queue or not
+            if sys.platform == 'win32':
+                subprocess.Popen('dh5view.cmd %s' % self.spooler.getURL(), shell=True)
+            else:
+                subprocess.Popen('dh5view.py %s' % self.spooler.getURL(), shell=True) 
 #        else:
 #            if sys.platform == 'win32':
 #                subprocess.Popen('..\\DSView\\dh5view.cmd %s' % self.spooler.filename, shell=True)
