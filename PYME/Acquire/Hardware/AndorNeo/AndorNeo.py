@@ -59,14 +59,31 @@ class AndorBase(SDK3Camera):
             { 'name' : '16-bit (low noise & high well capacity)', 'PEncoding' : 'Mono16' }}
 
     NoiseProperties = {
-        'ReadNoise' : 1.1,
-        'ElectronsPerCount' : 0.28,
-        'NGainStages' : -1,
-        'ADOffset' : 100,
-        'DefaultEMGain' : 85,
-        'SaturationThreshold' : 2e4#(2**16 -1)
-    }
-
+        'low noise': {
+            'ReadNoise' : 1.1,
+            'ElectronsPerCount' : 0.28,
+            'NGainStages' : -1,
+            'ADOffset' : 100, # check mean (or median) offset
+            'DefaultEMGain' : 85,
+            'SaturationThreshold' : 2**11-1#(2**16 -1) # check this is really 11 bit
+        },
+        'high capacity': {
+            'ReadNoise' : 5.96,
+            'ElectronsPerCount' : 6.97,
+            'NGainStages' : -1,
+            'ADOffset' : 100,
+            'DefaultEMGain' : 85,
+            'SaturationThreshold' : 2**11-1#(2**16 -1)         
+        },
+        'high dynamic range': {
+            'ReadNoise' : 1.33,
+            'ElectronsPerCount' : 0.5,
+            'NGainStages' : -1,
+            'ADOffset' : 100,
+            'DefaultEMGain' : 85,
+            'SaturationThreshold' : (2**16 -1)
+        }}
+    
     def __init__(self, camNum):
         #define properties
         self.CameraAcquiring = ATBool()
@@ -135,12 +152,8 @@ class AndorBase(SDK3Camera):
         #set some intial parameters
         self.FrameCount.setValue(1)
         self.CycleMode.setString(u'Continuous')
-        # self.SimplePreAmpGainControl.setString('16-bit (low noise & high well capacity)')
-        # self.PixelEncoding.setString('Mono16')
-        # self.SetGainMode('high dynamic range')
         try:
-            self.SetEMGain(0)
-            # self.SetGainMode('low noise') # this will fail with the SimCams
+            self.SetEMGain(0) # note that this sets 'high dynamic range' mode
         except:
             print "error setting gain mode"
             pass
@@ -165,8 +178,7 @@ class AndorBase(SDK3Camera):
         #self.PixelReadoutRate.setIndex(1)
         # test if we have only fixed ROIs
         self._fixed_ROIs = not self.FullAOIControl.isImplemented() or not self.FullAOIControl.getValue()
-        self.noiseProps = self.NoiseProperties
-
+        self.noiseProps = self.NoiseProperties[self.GetGainMode()] # gain mode has been set via EMGain above
 
         # this one to deal with the requirement to have width divisible by 10
         if not self._fixed_ROIs:
@@ -375,7 +387,7 @@ class AndorBase(SDK3Camera):
             dlg.Destroy()
         else: # allow to select ROI size more freely
             print "free ROI choice"
-            print "requested: ", x1,y1,x2-x1,y2-y1
+            print "requested: ", x1,y1,x2-x1+1,y2-y1+1
             if x1 < 1:
                 x1 = 1
             if y1 < 1:
@@ -393,10 +405,13 @@ class AndorBase(SDK3Camera):
                 raise RuntimeError('Error Setting x ROI - Zero sized ROI')
             if y1 == y2:
                 raise RuntimeError('Error Setting y ROI - Zero sized ROI')
-            w10 = int((x2-x1+9)/10.0) * 10
-            if x1+w10 > 2048:
+            if (x2-x1+1) == 2048:
+                w10 = 2048  # allow full size
+            else:
+                w10 = int((x2-x1+9)/10.0) * 10
+            if x1+w10-1 > 2048: # x1+w10-1 should be index of largest row
                 w10 -= 10
-            h = y2-y1
+            h = y2-y1+1
             # now set as specified
             print "setting: ", x1,y1,w10,h
             self.AOIWidth.setValue(w10)
@@ -412,7 +427,8 @@ class AndorBase(SDK3Camera):
         self._gainmode = mode
         self.SimplePreAmpGainControl.setString(self.SimpleGainModes[mode]['name'])
         self.PixelEncoding.setString(self.SimpleGainModes[mode]['PEncoding'])
-
+        self.noiseProps = self.NoiseProperties[self._gainmode] # update noise properties for new mode
+        
     def GetGainMode(self):
         return self._gainmode
 
@@ -505,10 +521,11 @@ class AndorBase(SDK3Camera):
 
             # values for readnoise and EpC from Neo sheet for Gain 4
             # should be selected with 11 bit low noise setting
-            mdh.setEntry('Camera.ReadNoise', 1.1)
-            mdh.setEntry('Camera.NoiseFactor', 1)
-            mdh.setEntry('Camera.ElectronsPerCount', 0.28)
-            #mdh.setEntry('Camera.ADOffset', self.noiseMaker.ADOffset)
+            np = self.NoiseProperties[self.GetGainMode()]
+            mdh.setEntry('Camera.ReadNoise', np['ReadNoise'])
+            mdh.setEntry('Camera.NoiseFactor', np['NoiseFactor'])
+            mdh.setEntry('Camera.ElectronsPerCount', np['ElectronsPerCount'])
+            mdh.setEntry('Camera.ADOffset', np['ADOffset'])
     
             #mdh.setEntry('Simulation.Fluorophores', self.fluors.fl)
             #mdh.setEntry('Simulation.LaserPowers', self.laserPowers)
@@ -517,10 +534,15 @@ class AndorBase(SDK3Camera):
             #if not realEMGain == None:
             mdh.setEntry('Camera.TrueEMGain', 1)
 
+            # this should not be needed anymore with the changes in NoiseProperties dict
             #update the scmos Metadata for different gain modes
-            if int(self.EMGain) == 0:
-                mdh.setEntry('Camera.ElectronsPerCount', 0.5)
-                mdh.setEntry('Camera.ReadNoise', 1.33)
+            #if int(self.EMGain) == 0:
+            #    mdh.setEntry('Camera.ElectronsPerCount', 0.5)
+            #    mdh.setEntry('Camera.ReadNoise', 1.33)
+
+            mdh.setEntry('Camera.StaticBlemishCorrection', self.StaticBlemishCorrection.GetValue())
+            mdh.setEntry('Camera.SpuriousNoiseFilter', self.SpuriousNoiseFilter.GetValue())
+
 
     #functions to make us look more like andor camera
     def GetEMGain(self):

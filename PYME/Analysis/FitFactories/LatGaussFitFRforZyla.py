@@ -137,22 +137,50 @@ fresultdtype=[('tIndex', '<i4'),
               ('subtractedBackground', '<f4')
               ]
 
-# this fails on all but the acquiring machine
+########################################
+## start map reading and processing code
+########################################
+
+# map reading and processing code
+# this should really go in its own module
+# currently this typically fails on all but the acquiring machine (because other machines do not have the maps)
 import warnings
 import os
-mapdir = 'C:/python-microscopy-exeter/PYME/Analysis/FitFactories/'
-if 'PYMEZYLAMAPDIR' in os.environ.keys() and os.access(os.environ['PYMEZYLAMAPDIR'], os.W_OK):
-        mapdir = os.environ['PYMEZYLAMAPDIR']
+from PYME.gohlke import tifffile as tif
 
-try:
-        Zyla_offset = numpy.loadtxt(os.path.join(mapdir,'offset.txt'))
-        Zyla_variance = numpy.loadtxt(os.path.join(mapdir,'variance.txt'))
-        Zyla_gain = numpy.loadtxt(os.path.join(mapdir,'gain.txt'))
-        Zyla_gain =  Zyla_gain / Zyla_gain.mean()
-        print 'loaded Zyla maps'
-except:
-        warnings.warn('cannot load Zyla property maps')
-        pass
+def readmaps():
+        mapdir = os.getenv('PYMEZYLAMAPDIR',
+                           default='C:/python-microscopy-exeter/PYME/Analysis/FitFactories/')
+        maps = {}
+        try:
+                maps['offset'] = tif.imread(os.path.join(mapdir,'offset.tif'))
+                maps['variance'] = tif.imread(os.path.join(mapdir,'variance.tif'))
+                gain = tif.imread(os.path.join(mapdir,'gain.tif'))
+                maps['gain'] =  gain / gain.mean()
+                print 'loader V2: loaded Zyla maps'
+        except:
+                warnings.warn('cannot load Zyla property maps')
+                pass
+        return maps
+
+def mapROI(map,md):
+        return map[md.Camera.ROIPosX-1:md.Camera.ROIPosX-1+md.Camera.ROIWidth,
+                   md.Camera.ROIPosY-1:md.Camera.ROIPosY-1+md.Camera.ROIHeight]        
+
+# this is the general idea
+# should probably go into a separate module to manipulate and generate maps
+def readnoiseBlemish(rn,offs,gain,rnMax=10.3,offsMaxdev=20,gainMaxdev=0.3, blemishVal=1e7):
+        offmedian = numpy.median(offs)
+        rn = rn.copy()
+        rn[rn > rnMax] = blemishVal
+        rn[offs>offmedian+offsMaxdev] = blemishVal
+        rn[gain > 1.0+gainMaxdev] = blemishVal
+        rn[gain < 1.0-gainMaxdev] = blemishVal
+        return rn
+
+######################################
+## end map reading and processing code
+######################################
 
 def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None, background=0):
 	if slicesUsed == None:
@@ -172,6 +200,7 @@ def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fit
 		
 
 class GaussianFitFactory:
+    maps = None  # maps are stored in a class variable and only read once when first object is instantiated
     def __init__(self, data, metadata, fitfcn=f_gauss2d, background=None):
         '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
         metadata. '''
@@ -189,13 +218,16 @@ class GaussianFitFactory:
         else: 
             self.solver = FitModelWeighted
 
-        self.region_offset = Zyla_offset[self.metadata.Camera.ROIPosX-1:self.metadata.Camera.ROIPosX-1+self.metadata.Camera.ROIWidth,
-                                         self.metadata.Camera.ROIPosY-1:self.metadata.Camera.ROIPosY-1+self.metadata.Camera.ROIHeight]
-        region_variance=Zyla_variance[self.metadata.Camera.ROIPosX-1:self.metadata.Camera.ROIPosX-1+self.metadata.Camera.ROIWidth,
-                                      self.metadata.Camera.ROIPosY-1:self.metadata.Camera.ROIPosY-1+self.metadata.Camera.ROIHeight]
-        self.region_readnoise = numpy.sqrt(region_variance)*self.metadata.Camera.ElectronsPerCount # note: readnoise must be in units of e-
-        self.region_gain = Zyla_gain[self.metadata.Camera.ROIPosX-1:self.metadata.Camera.ROIPosX-1+self.metadata.Camera.ROIWidth,
-                                     self.metadata.Camera.ROIPosY-1:self.metadata.Camera.ROIPosY-1+self.metadata.Camera.ROIHeight]
+        # read camera maps and make sub regions matching ROI of this series
+        if self.__class__.maps is None: # read only once for this class
+                self.__class__.maps = readmaps()
+        maps = self.__class__.maps
+        self.region_offset = mapROI(maps['offset'],self.metadata)
+        region_variance = mapROI(maps['variance'],self.metadata)
+        # note: readnoise must be in units of e- ; this should really have taken place by storing readnoise directly rather than variance
+        self.region_readnoise = numpy.sqrt(region_variance)*self.metadata.Camera.ElectronsPerCount
+        self.region_gain = mapROI(maps['gain'],self.metadata)
+        self.region_readnoiseB = readnoiseBlemish(self.region_readnoise,self.region_offset,self.region_gain)
 
     def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
         if (z == None): # use position of maximum intensity
@@ -213,13 +245,6 @@ class GaussianFitFactory:
         xslice = slice(max((x - roiHalfSize), 0),min((x + roiHalfSize + 1),self.data.shape[0]))
         yslice = slice(max((y - roiHalfSize), 0),min((y + roiHalfSize + 1), self.data.shape[1]))
         zslice = slice(max((z - axialHalfSize), 0),min((z + axialHalfSize + 1), self.data.shape[2]))
-
-        # this is presumably quite inefficiient as it is done for every point!
-        # try to put into other part of the code so only done once
-        #region_offset = Zyla_offset[self.metadata.Camera.ROIPosX-1:self.metadata.Camera.ROIPosX-1+self.metadata.Camera.ROIWidth,self.metadata.Camera.ROIPosY-1:self.metadata.Camera.ROIPosY-1+self.metadata.Camera.ROIHeight]
-        #region_variance=Zyla_variance[self.metadata.Camera.ROIPosX-1:self.metadata.Camera.ROIPosX-1+self.metadata.Camera.ROIWidth,self.metadata.Camera.ROIPosY-1:self.metadata.Camera.ROIPosY-1+self.metadata.Camera.ROIHeight]
-        #region_readnoise = numpy.sqrt(region_variance) # note: readnoise must be in units of e-   CHECK!
-        #region_gain = Zyla_gain[self.metadata.Camera.ROIPosX-1:self.metadata.Camera.ROIPosX-1+self.metadata.Camera.ROIWidth,self.metadata.Camera.ROIPosY-1:self.metadata.Camera.ROIPosY-1+self.metadata.Camera.ROIHeight]
         
     #def __getitem__(self, key):
         #print key
@@ -229,7 +254,7 @@ class GaussianFitFactory:
         dataROI = self.data[xslice, yslice, zslice]
 
         offsetROI = self.region_offset[xslice, yslice]
-        readnoiseROI = self.region_readnoise[xslice, yslice]
+        readnoiseROI = self.region_readnoiseB[xslice, yslice] # we use the readnoise with blemish pixels which are effectively 'missing data'
         gainROI = self.region_gain[xslice, yslice]
 
         # average in z
