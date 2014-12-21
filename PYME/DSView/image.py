@@ -648,7 +648,7 @@ class ImageStack(object):
         if not filename == None:
             if filename.startswith('QUEUE://'):
                 self.LoadQueue(filename)
-            if filename.startswith('http://'):
+            elif filename.startswith('http://'):
                 self.LoadHTTP(filename)
             elif filename.endswith('.h5'):
                 self.Loadh5(filename)
