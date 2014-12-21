@@ -109,9 +109,14 @@ class FFBase(object):
         x_ = (x + self.metadata.Camera.ROIPosX - 1)*vx
         y_ = (y + self.metadata.Camera.ROIPosY - 1)*vy
         
+        
         #look up shifts
-        DeltaX = self.metadata.chroma.dx.ev(x_, y_)
-        DeltaY = self.metadata.chroma.dy.ev(x_, y_)
+        if not self.metadata.getOrDefault('Analysis.FitShifts', False):
+            DeltaX = self.metadata.chroma.dx.ev(x_, y_)
+            DeltaY = self.metadata.chroma.dy.ev(x_, y_)
+        else:
+            DeltaX = 0
+            DeltaY = 0
         
         #find shift in whole pixels
         dxp = int(DeltaX/vx)
