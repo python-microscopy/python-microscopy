@@ -506,8 +506,10 @@ class AndorBase(SDK3Camera):
         if self.active:
             self.GetStatus()
     
-            mdh.setEntry('Camera.Name', 'Andor Neo')
-    
+            mdh.setEntry('Camera.Name', 'Andor sCMOS')
+            mdh.setEntry('Camera.Model', self.CameraModel.getValue())
+            mdh.setEntry('Camera.SerialNumber', self.GetSerialNumber())
+
             mdh.setEntry('Camera.IntegrationTime', self.GetIntegTime())
             mdh.setEntry('Camera.CycleTime', self.GetIntegTime())
             mdh.setEntry('Camera.EMGain', 1)
