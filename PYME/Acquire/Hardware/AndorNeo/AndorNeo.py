@@ -405,10 +405,11 @@ class AndorBase(SDK3Camera):
                 raise RuntimeError('Error Setting x ROI - Zero sized ROI')
             if y1 == y2:
                 raise RuntimeError('Error Setting y ROI - Zero sized ROI')
-            if (x2-x1+1) == 2048:
-                w10 = 2048  # allow full size
-            else:
-                w10 = int((x2-x1+9)/10.0) * 10
+            #if (x2-x1+1) == 2048:
+            #    w10 = 2048  # allow full size
+            #else:
+            #    w10 = int((x2-x1+9)/10.0) * 10
+            w10 = int((x2-x1+9)/10.0) * 10
             if x1+w10-1 > 2048: # x1+w10-1 should be index of largest row
                 w10 -= 10
             h = y2-y1+1
@@ -512,7 +513,7 @@ class AndorBase(SDK3Camera):
 
             mdh.setEntry('Camera.IntegrationTime', self.GetIntegTime())
             mdh.setEntry('Camera.CycleTime', self.GetIntegTime())
-            mdh.setEntry('Camera.EMGain', 1)
+            mdh.setEntry('Camera.EMGain', self.GetEMGain())
             mdh.setEntry('Camera.DefaultEMGain', 85) # needed for some protocols
     
             mdh.setEntry('Camera.ROIPosX', self.GetROIX1())
@@ -543,9 +544,9 @@ class AndorBase(SDK3Camera):
             #    mdh.setEntry('Camera.ReadNoise', 1.33)
 
             if  self.StaticBlemishCorrection.isImplemented():
-                mdh.setEntry('Camera.StaticBlemishCorrection', self.StaticBlemishCorrection.GetValue())
+                mdh.setEntry('Camera.StaticBlemishCorrection', self.StaticBlemishCorrection.getValue())
             if  self.SpuriousNoiseFilter.isImplemented():
-                mdh.setEntry('Camera.SpuriousNoiseFilter', self.SpuriousNoiseFilter.GetValue())
+                mdh.setEntry('Camera.SpuriousNoiseFilter', self.SpuriousNoiseFilter.getValue())
 
 
     #functions to make us look more like andor camera
