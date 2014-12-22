@@ -525,7 +525,7 @@ class AndorBase(SDK3Camera):
             # should be selected with 11 bit low noise setting
             np = self.NoiseProperties[self.GetGainMode()]
             mdh.setEntry('Camera.ReadNoise', np['ReadNoise'])
-            mdh.setEntry('Camera.NoiseFactor', np['NoiseFactor'])
+            mdh.setEntry('Camera.NoiseFactor', 1.0)
             mdh.setEntry('Camera.ElectronsPerCount', np['ElectronsPerCount'])
             mdh.setEntry('Camera.ADOffset', np['ADOffset'])
     
@@ -542,8 +542,10 @@ class AndorBase(SDK3Camera):
             #    mdh.setEntry('Camera.ElectronsPerCount', 0.5)
             #    mdh.setEntry('Camera.ReadNoise', 1.33)
 
-            mdh.setEntry('Camera.StaticBlemishCorrection', self.StaticBlemishCorrection.GetValue())
-            mdh.setEntry('Camera.SpuriousNoiseFilter', self.SpuriousNoiseFilter.GetValue())
+            if  self.StaticBlemishCorrection.isImplemented():
+                mdh.setEntry('Camera.StaticBlemishCorrection', self.StaticBlemishCorrection.GetValue())
+            if  self.SpuriousNoiseFilter.isImplemented():
+                mdh.setEntry('Camera.SpuriousNoiseFilter', self.SpuriousNoiseFilter.GetValue())
 
 
     #functions to make us look more like andor camera
