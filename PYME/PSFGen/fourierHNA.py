@@ -153,6 +153,7 @@ class FourierPropagatorClipHNA:
         pf = -self.propFac*float(z)
         return (ifftshift(self._F)*(cos(pf)+j*sin(pf)))/sqrt(self._f.size)
 
+
 def GenWidefieldAP(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47, apodization='sine'):
     if X == None or Y == None:
         X, Y = meshgrid(arange(-2000, 2000., dx),arange(-2000, 2000., dx))
@@ -674,8 +675,8 @@ def GenZernikeDAPSF(zs, dx = 5, X=None, Y=None, zernikeCoeffs = {}, lamb=700, n=
 
     #return abs(ps**2)
 
-def GenPRIPSF(zs, dx = 5, strength=1.0, dp=0):
-    X, Y, R, FP, F, u, v = GenWidefieldAP(dx)
+def GenPRIPSF(zs, dx = 5, strength=1.0, dp=0, NA=1.47):
+    X, Y, R, FP, F, u, v = GenWidefieldAP(dx, NA=NA)
 
     F = F * exp(-1j*sign(X)*(10*strength*v + dp/2))
     #clf()
@@ -685,8 +686,8 @@ def GenPRIPSF(zs, dx = 5, strength=1.0, dp=0):
 
     return abs(ps**2)
     
-def GenICPRIPSF(zs, dx = 5, strength=1.0):
-    X, Y, R, FP, F, u, v = GenWidefieldAP(dx)
+def GenICPRIPSF(zs, dx = 5, strength=1.0, NA=1.47):
+    X, Y, R, FP, F, u, v = GenWidefieldAP(dx, NA = NA)
 
     F = F * exp(-1j*sign(X)*10*strength*v)
     #clf()
@@ -858,8 +859,8 @@ def GenSAPRIPSF(zs, dx=5, strength=1.0, SA=0, X=None, Y=None, lamb=700, n=1.51, 
 
     return abs(ps**2)
     
-def GenDHPSF(zs, dx=5, vortices=[0.0]):
-    X, Y, R, FP, F, u, v = GenWidefieldAP(dx)
+def GenDHPSF(zs, dx=5, vortices=[0.0], NA=1.47):
+    X, Y, R, FP, F, u, v = GenWidefieldAP(dx, NA=NA)
     
     ph = 0*u
     
@@ -896,8 +897,8 @@ def GenShiftedPSF(zs, dx = 5):
 
     return abs(ps**2)
     
-def GenBiplanePSF(zs, dx = 5, zshift = 500, xshift = 1):
-    X, Y, R, FP, F, u, v = GenWidefieldAP(dx)
+def GenBiplanePSF(zs, dx = 5, zshift = 500, xshift = 1, NA=1.47):
+    X, Y, R, FP, F, u, v = GenWidefieldAP(dx, NA=NA)
     F_ = F
 
     F = F * exp(-1j*.01*xshift*Y)
