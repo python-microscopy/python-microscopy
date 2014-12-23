@@ -131,7 +131,8 @@ class FourierPropagatorClipHNA:
         #return ifftshift(ifftn(F*exp(self.propFac*z)))
         #print abs(F).sum()
         pf = self.propFac*float(z)
-        r = self.appR*(1 -self.apertureZGrad*z)
+        r = max(self.appR*(1 -self.apertureZGrad*z), 0)
+        #print z, r
         M = (self.x*self.x + self.y*self.y) < (r*r)
         fs = F*M*self.pfm*(cos(pf) + j*sin(pf))
         self._F[:] = fftshift(fs)
@@ -152,7 +153,7 @@ class FourierPropagatorClipHNA:
         pf = -self.propFac*float(z)
         return (ifftshift(self._F)*(cos(pf)+j*sin(pf)))/sqrt(self._f.size)
 
-def GenWidefieldAP(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47, apodizisation='sine'):
+def GenWidefieldAP(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47, apodization='sine'):
     if X == None or Y == None:
         X, Y = meshgrid(arange(-2000, 2000., dx),arange(-2000, 2000., dx))
     else:
@@ -189,9 +190,9 @@ def GenWidefieldAP(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47, apodizis
     #colorbar()
 
     #apperture mask
-    if apodizisation == None:
+    if apodization == None:
         M = 1.0*(R < (NA/n)) # NA/lambda
-    elif apodizisation == 'sine':
+    elif apodization == 'sine':
         M = 1.0*(R < (NA/n))*sqrt(cos(.5*pi*np.minimum(R, 1)))
     
     
@@ -367,7 +368,56 @@ def PsfFromPupilVect(pupil, zs, dx, lamb, shape = [61,61]):
     p += abs(ps**2)
 
     return p[ox:ex, oy:ey, :] #abs(ps**2)
+    
+def PsfFromPupilVectFP(X, Y, R, FP, u, v, n, pupil, zs):
+    
+    phi = angle(u+ 1j*v)
+    theta = arcsin(minimum(R/n, 1))
+    
+    #figure()
+    #imshow(phi)
+    
+    figure()
+    #imshow(theta)
+    print theta.min(), theta.max()
+    
+    ct = cos(theta)
+    st = sin(theta)
+    cp = cos(phi)
+    sp = sin(phi) 
+    
+    fac = ct*cp**2 + sp**2
+    ps = concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
+    p = abs(ps**2)
+    
+    fac = (ct - 1)*cp*sp
+    ps = concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
+    p += abs(ps**2)
+    
+    fac = (ct - 1)*cp*sp
+    ps = concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
+    p += abs(ps**2)
+    
+    fac = ct*sp**2 + cp**2
+    ps = concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
+    p += abs(ps**2)
+    
+    fac = st*cp
+    ps = concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
+    p += abs(ps**2)
+    
+    fac = st*sp
+    ps = concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
+    p += abs(ps**2)
 
+    return p#p[ox:ex, oy:ey, :] #abs(ps**2)
+
+def PsfFromPupilFP(X, Y, R, FP, u, v, n, pupil, zs):
+
+    ps = concatenate([FP.propagate(pupil, z)[:,:,None] for z in zs], 2)
+    p = abs(ps**2)
+
+    return p#p[ox:ex, oy:ey, :] #abs(ps**2)
    
 def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters = 50, size=5e3):
     dx = float(dx)
@@ -509,9 +559,9 @@ def GenZernikePSF(zs, dx = 5, zernikeCoeffs = []):
 
     return abs(ps**2)
     
-def GenZernikeDPSF(zs, dx = 5, zernikeCoeffs = {}, lamb=700, n=1.51, NA = 1.47, ns=1.51, beadsize=0):
+def GenZernikeDPSF(zs, dx = 5, zernikeCoeffs = {}, lamb=700, n=1.51, NA = 1.47, ns=1.51, beadsize=0, vect=False, apodization=None):
     from PYME.misc import zernike, snells
-    X, Y, R, FP, F, u, v = GenWidefieldAP(dx, lamb=lamb, n = n, NA = NA)
+    X, Y, R, FP, F, u, v = GenWidefieldAP(dx, lamb=lamb, n = n, NA = NA, apodization=apodization)
     
     theta = angle(X + 1j*Y)
     r = R/R[abs(F)>0].max()
@@ -554,16 +604,22 @@ def GenZernikeDPSF(zs, dx = 5, zernikeCoeffs = {}, lamb=700, n=1.51, NA = 1.47, 
         
     #figure()
     #imshow(angle(F))
-
-    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
-    
-    if beadsize == 0:
-        return abs(ps**2)
+        
+    if vect:
+        return PsfFromPupilVectFP(X,Y,R, FP, u,v, n, F, zs)
     else:
-        p1 = abs(ps**2)
+        return PsfFromPupilFP(X,Y,R, FP, u,v, n, F, zs)
+
+#    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+#    
+#    if beadsize == 0:
+#        return abs(ps**2)
+#    else:
+#        p1 = abs(ps**2)
+        
         
     
-def GenZernikeDAPSF(zs, dx = 5, X=None, Y=None, zernikeCoeffs = {}, lamb=700, n=1.51, NA = 1.47, ns=1.51,field_x=0, field_y=0, apertureNA=1.5, apertureZGradient = 0, apodizisation=None):
+def GenZernikeDAPSF(zs, dx = 5, X=None, Y=None, zernikeCoeffs = {}, lamb=700, n=1.51, NA = 1.47, ns=1.51,field_x=0, field_y=0, apertureNA=1.5, apertureZGradient = 0, apodizisation=None, vect=True):
     from PYME.misc import zernike, snells
     X, Y, R, FP, F, u, v = GenWidefieldAPA(dx, X = X, Y=Y, lamb=lamb, n = n, NA = NA, field_x=field_x, field_y=field_y, apertureNA=apertureNA, apertureZGradient = apertureZGradient, apodizisation=apodizisation)
     
@@ -608,10 +664,15 @@ def GenZernikeDAPSF(zs, dx = 5, X=None, Y=None, zernikeCoeffs = {}, lamb=700, n=
         
     #figure()
     #imshow(angle(F))
+        
+    if vect:
+        return PsfFromPupilVectFP(X,Y,R, FP, u,v, n, F, zs)
+    else:
+        return PsfFromPupilFP(X,Y,R, FP, u,v, n, F, zs)
 
-    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+    #ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 
-    return abs(ps**2)
+    #return abs(ps**2)
 
 def GenPRIPSF(zs, dx = 5, strength=1.0, dp=0):
     X, Y, R, FP, F, u, v = GenWidefieldAP(dx)

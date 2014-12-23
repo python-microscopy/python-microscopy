@@ -452,6 +452,16 @@ class HDFResultsTaskQueue(TaskQueue):
                     if curTime > it.workerTimeout:
                         self.openTasks.append(it.index)
                         self.tasksInProgress.remove(it)
+                        
+        with self.resultsQueueLock:
+            t = time.time()
+            if (t > (self.lastResultsQueuePurge + 10)):# or (len(self.resultsQueue) > 20):
+                #print 'fr'
+                self.lastResultsQueuePurge = t
+                rq = self.resultsQueue
+                #print(len(rq)), 'r_q'
+                self.resultsQueue = []
+                self.fileResults(rq)
         
         with self.fileResultsLock.wlock: #get a lock
             self.h5ResultsFile.flush()
