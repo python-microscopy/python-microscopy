@@ -37,12 +37,16 @@ from PYME.Analysis._fithelpers import *
 
 def f_Interp3d2cr(p, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, axialShift, ratio, *args):
     """3D PSF model function with constant background - parameter vector [A, x0, y0, z0, background]"""
-    if len(p) == 6:
+    if len(p) == 8:
+        A, x0, y0, z0, bG, bR, dx, dy = p
+    elif len(p) == 6:
         A, x0, y0, z0, bG, bR = p
+        dx, dy = 0,0
     else: #not fitting background
         A, x0, y0, z0 = p
         bG = 0
         bR = 0
+        dx, dy = 0,0
     
     Ag = ratio*A
     Ar = (1-ratio)*A
@@ -54,7 +58,7 @@ def f_Interp3d2cr(p, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, axialShif
     z0 = min(max(z0, safeRegion[2][0] + axialShift), safeRegion[2][1] - axialShift)
 
     g = interpolator.interp(Xg - x0 + 1, Yg - y0 + 1, Zg - z0 + 1)*Ag + bG
-    r = interpolator.interp(Xr - x0 + 1, Yr - y0 + 1, Zr - z0 + 1)*Ar + bR
+    r = interpolator.interp(Xr - x0 + 1 + dx, Yr - y0 + 1 + dy, Zr - z0 + 1)*Ar + bR
 
     return numpy.concatenate((np.atleast_3d(g),np.atleast_3d(r)), 2)
     
@@ -99,9 +103,9 @@ def f_J_Interp3d2c(p,interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, axialShif
 #fresultdtype=[('tIndex', '<i4'),('fitResults', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('backgroundG', '<f4'),('backgroundR', '<f4'),('bx', '<f4'),('by', '<f4')]),('fitError', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('backgroundG', '<f4'),('backgroundR', '<f4'),('bx', '<f4'),('by', '<f4')]), ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
 
 fresultdtype=[('tIndex', '<i4'),
-              ('fitResults', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('bg', '<f4'), ('br', '<f4')]),
-              ('fitError', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('bg', '<f4'), ('br', '<f4')]),
-              ('startParams', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('bg', '<f4'), ('br', '<f4')]), 
+              ('fitResults', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('bg', '<f4'), ('br', '<f4'), ('dx', '<f4'), ('dy', '<f4')]),
+              ('fitError', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('bg', '<f4'), ('br', '<f4'), ('dx', '<f4'), ('dy', '<f4')]),
+              ('startParams', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('bg', '<f4'), ('br', '<f4'), ('dx', '<f4'), ('dy', '<f4')]), 
               ('resultCode', '<i4'), 
               ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),
                               ('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),
@@ -150,7 +154,7 @@ def PSFFitResultR(fitResults, metadata, startParams, slicesUsed=None, resultCode
 def BlankResult(metadata):
     r = numpy.zeros(1, fresultdtype)
     r['tIndex'] = metadata.tIndex
-    r['fitError'].view('6f4')[:] = -5e3
+    r['fitError'].view('f4')[:] = -5e3
     return r
 		
 
@@ -277,9 +281,13 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
                 z0 = self.metadata.Analysis.AxialShift
 
         fitBackground = self.metadata.getOrDefault('Analysis.FitBackground', True)
+        fitShifts = self.metadata.getOrDefault('Analysis.FitShifts', False)
 
-        if fitBackground:         
-            startParameters = [2*startParams[0], startParams[1], startParams[2], z0 + startParams[3], dataROI[:,:,0].min(),dataROI[:,:,1].min()]
+        if fitBackground: 
+            if fitShifts:
+                startParameters = [2*startParams[0], startParams[1], startParams[2], z0 + startParams[3], dataROI[:,:,0].min(),dataROI[:,:,1].min(), 0, 0]
+            else:
+                startParameters = [2*startParams[0], startParams[1], startParams[2], z0 + startParams[3], dataROI[:,:,0].min(),dataROI[:,:,1].min()]
         else:
             startParameters = [2*startParams[0], startParams[1], startParams[2], z0 + startParams[3]]
         #print startParameters
