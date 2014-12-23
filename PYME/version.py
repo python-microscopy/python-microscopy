@@ -1,5 +1,5 @@
 #PYME uses date based versions (yy.m.d)
-version = '14.12.22'
+version = '14.12.23'
 
 #Mercurial changeset id
-changeset = '0a30eeccd4cc+'
+changeset = 'dd3b61bf37fb+'

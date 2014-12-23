@@ -506,7 +506,9 @@ class fitTask(taskDef.Task):
         else:
             debounce = 5
             
-        self.ofd.FindObjects(self.calcThreshold(),0, splitter=sfunc, debounceRadius=debounce)
+        discardClumpRadius = self.md.getOrDefault('Analysis.ClumpRejectRadius', 0)
+            
+        self.ofd.FindObjects(self.calcThreshold(),0, splitter=sfunc, debounceRadius=debounce, discardClumpRadius = discardClumpRadius)
         
         
         ####################################################
