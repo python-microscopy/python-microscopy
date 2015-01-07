@@ -27,14 +27,14 @@ import serial
 from lasers import Laser
 
 class CobaltLaser(Laser):
-    def __init__(self, name,turnOn=False, portname='COM1', maxpower=0.1):
+    def __init__(self, name,turnOn=False, portname='COM1', minpower=0.001, maxpower=0.1): # minpower, maxpower in Watts
         self.ser_port = serial.Serial(portname, 115200, 
                                       timeout=2, writeTimeout=2)
         self.powerControlable = True
         self.isOn=True
         self.maxpower = maxpower
-
-        self.power =  0.01#self._getOutputPower()
+        self.minpower = minpower
+        self.power =  minpower/maxpower #self._getOutputPower() # starting at the minimum power (in %)
 
     #    self._TurnOn()
 
@@ -52,6 +52,7 @@ class CobaltLaser(Laser):
     def TurnOn(self):
         #self.ser_port.write('p %3.2f\r\n' % (self.power*self.maxpower))
         self.ser_port.write('@cobas 0\r\n')
+        self.ser_port.write('cf\r\n')
         self.ser_port.write('l1\r\n') # the Cobolt 405nm laser needs to be restarted if it is powered on before the interlock is closed.
         self.ser_port.flush()
         self.isOn = True
@@ -63,8 +64,9 @@ class CobaltLaser(Laser):
         self.isOn = False
 
     def SetPower(self, power):
-        if power < 0 or power > 1:
-            raise RuntimeError('Error setting laser power: Power must be between 0 and 1')
+        if power < (self.minpower/self.maxpower) or power > 1:
+            power = self.minpower/self.maxpower
+            raise RuntimeError('Error setting laser power: Power must be between %3.2f and 1' % power)
         self.power = power
 
         self.ser_port.write('p %3.2f\r\n' % (self.power*self.maxpower))
@@ -78,6 +80,13 @@ class CobaltLaser(Laser):
         self.ser_port.flush()
 
         return float(self.ser_port.readline())
+
+    def checkfault(self):
+        self.ser_port.write('f?\r\n')
+        self.ser_port.flush()
+
+        return self.ser_port.read(50)
+        print ('fault code: 0-no errors; 1-temperature error; 3-interlock error; 4-constant power time out')
 
     def GetPower(self):
         return self.power

@@ -281,10 +281,10 @@ sb = lasers.SBox(com_port=hwconfig['Laser671'].portname())
 scope.l671 = lasers.SerialSwitchedLaser('671',sb,0)
 
 from PYME.Acquire.Hardware import cobaltLaser
-scope.l405 = cobaltLaser.CobaltLaser('405',portname=hwconfig['Laser405'].portname())
+scope.l405 = cobaltLaser.CobaltLaser('405',portname=hwconfig['Laser405'].portname(), minpower=0.001, maxpower=0.1) # minpower, maxpower in Watts
 
-from PYME.Acquire.Hardware import cobaltLaser561
-scope.l561 = cobaltLaser561.CobaltLaser561('561',portname=hwconfig['Laser561'].portname())
+from PYME.Acquire.Hardware import cobaltLaser
+scope.l561 = cobaltLaser.CobaltLaser('561',portname=hwconfig['Laser561'].portname(), minpower=0.1, maxpower=0.2)
 
 scope.lasers = [scope.l642,scope.l671,scope.l405,scope.l561]
 #scope.lasers = [scope.l671]
@@ -324,10 +324,10 @@ time1.WantNotification.append(lsf.update)
 camPanels.append((lsf, 'Laser Powers'))
 ''')
 
-from PYME.Acquire.Hardware import priorarclampshutter, arclampshutterpanel
+from PYME.Acquire.Hardware import priorLumen, arclampshutterpanel
 InitGUI('''
 try:
-    scope.arclampshutter = priorarclampshutter.Priorarclampshutter('Arc lamp shutter', portname=hwconfig['Lumen200S'].portname())
+    scope.arclampshutter = priorLumen.PriorLumen('Arc lamp shutter', portname=hwconfig['Lumen200S'].portname())
     scope.shuttercontrol = [scope.arclampshutter]
     acf = arclampshutterpanel.Arclampshutterpanel(MainFrame,scope.shuttercontrol)
     time1.WantNotification.append(acf.refresh)
