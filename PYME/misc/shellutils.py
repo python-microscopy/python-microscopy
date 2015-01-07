@@ -82,6 +82,26 @@ def getDriftPars(mdh=None):
 
     return pars
 
+def visguiDriftPlot(driftpane):
+    parameterNames, indepVarsUsed, xCode, yCode, zCode , parameterNamesZ, varExpandCode, varExpandCodeZ = driftpane.dp.driftCorrFcn
+
+    indepVars = driftpane.visFr.filter
+    t = np.linspace(indepVars['t'].min(), indepVars['t'].max())
+
+    x = 0
+    y = 0
+
+    p = [driftpane.dp.driftCorrParams[pn] for pn in parameterNames]
+
+    exec(varExpandCode)
+
+    x1 = eval(xCode)
+    y1 = eval(yCode)
+
+    plt.plot(t,x1)
+    plt.plot(t,y1)
+    plt.show()
+    
 def findSlide(mdh=None):
     if mdh is None:
         mdh = getmdh(inmodule=True)
@@ -369,3 +389,33 @@ def gmesig(sig,N,Nb,voxelsize):
 
 def gmestd(sig,N,Nb,voxelsize,mdh=None):
     return np.sqrt(gmesig(sig,N,Nb,voxelsize))
+
+# histogram with binwidth guaranteed to be one
+def histone(data,binwidth=1):
+    d=data.squeeze()
+    plt.hist(d, bins=range(int(min(d)), int(max(d)) + binwidth, binwidth))
+
+# this routine is designed for correlative tracking using the first (potentially averaged) image
+# as reference and then determines displacement of later images aginst that one
+import scipy.ndimage
+from numpy.fft import *
+def correltrack(data,start=0,avgover=10,pixelsize=70.0,centersize=7,centroidfrac=1.5):
+    cs = centersize
+    shp = [d for d in data.shape if d > 1]
+    nsteps = long((shp[2]-start)/avgover)
+    shh = (shp[0]/2,shp[1]/2)
+    xctw=np.zeros((2*centersize+1,2*centersize+1,nsteps))
+    shifts = []
+    i1 = data[:,:,start:start+avgover].squeeze().mean(axis=2)
+    I1 = fftn(i1)
+    for i in range(nsteps):
+        xc = abs(ifftshift(ifftn(I1*ifftn(data[:,:,start+i*avgover:start+(i+1)*avgover].squeeze().mean(axis=2)))))
+        xct = xc-xc.min()
+        xct = (xct-xct.max()/centroidfrac)*(xct > xct.max()/centroidfrac)
+        xctw[:,:,i] = xct[shh[0]-cs:shh[0]+cs+1,shh[1]-cs:shh[1]+cs+1]
+        shifts.append(scipy.ndimage.measurements.center_of_mass(xctw[:,:,i]))
+
+    sh = np.array(shifts)
+    t = start + np.arange(nsteps)*avgover
+    sh = pixelsize*(sh-sh[0])
+    return t, sh, xctw

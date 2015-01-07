@@ -137,51 +137,6 @@ fresultdtype=[('tIndex', '<i4'),
               ('subtractedBackground', '<f4')
               ]
 
-########################################
-## start map reading and processing code
-########################################
-
-# map reading and processing code
-# this should really go in its own module
-# currently this typically fails on all but the acquiring machine (because other machines do not have the maps)
-import warnings
-import os
-from PYME.gohlke import tifffile as tif
-
-def readmaps():
-        mapdir = os.getenv('PYMEZYLAMAPDIR',
-                           default='C:/python-microscopy-exeter/PYME/Analysis/FitFactories/')
-        maps = {}
-        try:
-                maps['offset'] = tif.imread(os.path.join(mapdir,'offset.tif'))
-                maps['variance'] = tif.imread(os.path.join(mapdir,'variance.tif'))
-                gain = tif.imread(os.path.join(mapdir,'gain.tif'))
-                maps['gain'] =  gain / gain.mean()
-                print 'loader V2: loaded Zyla maps'
-        except:
-                warnings.warn('cannot load Zyla property maps')
-                pass
-        return maps
-
-def mapROI(map,md):
-        return map[md.Camera.ROIPosX-1:md.Camera.ROIPosX-1+md.Camera.ROIWidth,
-                   md.Camera.ROIPosY-1:md.Camera.ROIPosY-1+md.Camera.ROIHeight]        
-
-# this is the general idea
-# should probably go into a separate module to manipulate and generate maps
-def readnoiseBlemish(rn,offs,gain,rnMax=10.3,offsMaxdev=20,gainMaxdev=0.3, blemishVal=1e7):
-        offmedian = numpy.median(offs)
-        rn = rn.copy()
-        rn[rn > rnMax] = blemishVal
-        rn[offs>offmedian+offsMaxdev] = blemishVal
-        rn[gain > 1.0+gainMaxdev] = blemishVal
-        rn[gain < 1.0-gainMaxdev] = blemishVal
-        return rn
-
-######################################
-## end map reading and processing code
-######################################
-
 def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None, background=0):
 	if slicesUsed == None:
 		slicesUsed = ((-1,-1,-1),(-1,-1,-1),(-1,-1,-1))
@@ -198,16 +153,13 @@ def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fit
 
 	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, slicesUsed, background)], dtype=fresultdtype) 
 		
-
+# this makes the camera map handling code available
+from PYME.Analysis import CameraMaps
 class GaussianFitFactory:
-    maps = None  # maps are stored in a class variable and only read once when first object is instantiated
+    globalmaps = None  # maps are stored in a class variable and only read once when first object is instantiated
     def __init__(self, data, metadata, fitfcn=f_gauss2d, background=None):
         '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
         metadata. '''
-
-        #self.Zyla_offset = numpy.loadtxt('C:/python-microscopy-exeter/PYME/Analysis/FitFactories/offset.txt')
-        #self.Zyla_variance = numpy.loadtxt('C:/python-microscopy-exeter/PYME/Analysis/FitFactories/variance.txt')
-        #self.Zyla_gain = numpy.loadtxt('C:/python-microscopy-exeter/PYME/Analysis/FitFactories/gain.txt')
 
         self.data = data
         self.background = background
@@ -218,16 +170,12 @@ class GaussianFitFactory:
         else: 
             self.solver = FitModelWeighted
 
-        # read camera maps and make sub regions matching ROI of this series
-        if self.__class__.maps is None: # read only once for this class
-                self.__class__.maps = readmaps()
-        maps = self.__class__.maps
-        self.region_offset = mapROI(maps['offset'],self.metadata)
-        region_variance = mapROI(maps['variance'],self.metadata)
-        # note: readnoise must be in units of e- ; this should really have taken place by storing readnoise directly rather than variance
-        self.region_readnoise = numpy.sqrt(region_variance)*self.metadata.Camera.ElectronsPerCount
-        self.region_gain = mapROI(maps['gain'],self.metadata)
-        self.region_readnoiseB = readnoiseBlemish(self.region_readnoise,self.region_offset,self.region_gain)
+        # read global camera maps
+        # in the future we may use metadata to choose the 'blemish' criteria
+        if self.__class__.globalmaps is None: # read only once for this class
+                self.__class__.globalmaps = CameraMaps.tifReadMaps()
+        #  and cut out ROI matching this series
+        self.maps = self.__class__.globalmaps.makeROI(self.metadata)
 
     def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
         if (z == None): # use position of maximum intensity
@@ -253,13 +201,12 @@ class GaussianFitFactory:
         #cut region out of data stack
         dataROI = self.data[xslice, yslice, zslice]
 
-        offsetROI = self.region_offset[xslice, yslice]
-        readnoiseROI = self.region_readnoiseB[xslice, yslice] # we use the readnoise with blemish pixels which are effectively 'missing data'
-        gainROI = self.region_gain[xslice, yslice]
+        offsetROI = self.maps.offset[xslice, yslice]
+        readnoiseROI = self.maps.readnoiseB[xslice, yslice] # we use the readnoise with blemish pixels which are effectively 'missing data'
+        gainROI = self.maps.gain[xslice, yslice]
 
         # average in z
         # dataMean = dataROI.mean(2) - self.metadata.Camera.ADOffset
-	# meangain = 1/0.28 # this should really be set elsewhere and also needs a less confusing name
 
         dataMean = (dataROI.mean(2) - offsetROI)/gainROI # gainROI = gain variation; gain variation = raw (raw data before filter)/ rawf (gaussian filtered data)
 
@@ -294,7 +241,7 @@ class GaussianFitFactory:
             bgROI = self.background[xslice, yslice, zslice]
 
             #average in z
-            bgMean = bgROI.mean(2) - self.metadata.Camera.ADOffset
+            bgMean = bgROI.mean(2) - offsetROI # do we want to gain correct this as above?
             
             bgm = bgMean.mean()
             

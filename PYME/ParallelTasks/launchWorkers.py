@@ -100,9 +100,13 @@ def main():
             subprocess.Popen('python %s\\taskWorkerMP.py' % fstub, shell=True)
     else: #operating systems which can launch python scripts directly
         #get rid of any previously started queues etc...
-        os.system('killall taskServerMP.py')
-        os.system('killall taskWorkerMP.py')
-        os.system('killall fitMonP.py')
+        if sys.platform == 'darwin':
+            killall = 'pkill -f'
+        else:
+            killall = 'killall'
+        os.system('%s taskServerMP.py' % killall)
+        os.system('%s taskWorkerMP.py' % killall)
+        os.system('%s fitMonP.py' % killall)
     
         subprocess.Popen('taskServerMP.py', shell=True)
     
