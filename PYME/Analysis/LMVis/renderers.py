@@ -359,6 +359,30 @@ class TriangleRenderer(ColourRenderer):
             return visHelpers.rendJitTriang(self.pipeline.colourFilter['x'],self.pipeline.colourFilter['y'], dlg.getNumSamples(), jitVals, dlg.getMCProbability(),imb, pixelSize)
         else:
             return self.visFr.glCanvas.genJitTim(dlg.getNumSamples(),self.pipeline.colourFilter['x'],self.pipeline.colourFilter['y'], jitVals, dlg.getMCProbability(),pixelSize)
+            
+class TriangleRendererW(ColourRenderer):
+    '''2D triangulation rendering - weighted'''
+
+    name = 'Jittered Triangulation - weighted'
+    mode = 'trianglesw'
+    _defaultPixelSize = 5.0
+
+    def genIm(self, dlg, imb, mdh):
+        pixelSize = dlg.getPixelSize()
+        jitParamName = dlg.getJitterVariable()
+        jitScale = dlg.getJitterScale()
+        
+        mdh['Rendering.JitterVariable'] = jitParamName
+        mdh['Rendering.JitterScale'] = jitScale
+
+        jitVals = self._genJitVals(jitParamName, jitScale)
+
+        if dlg.getSoftRender():
+            status = statusLog.StatusLogger("Rendering triangles ...")
+            return visHelpers.rendJitTriang2(self.pipeline.colourFilter['x'],self.pipeline.colourFilter['y'], dlg.getNumSamples(), jitVals, dlg.getMCProbability(),imb, pixelSize)
+        else:
+            return self.visFr.glCanvas.genJitTim(dlg.getNumSamples(),self.pipeline.colourFilter['x'],self.pipeline.colourFilter['y'], jitVals, dlg.getMCProbability(),pixelSize)
+
 
 class Triangle3DRenderer(TriangleRenderer):
     '''3D Triangularisation rendering'''
@@ -409,7 +433,7 @@ class QuadTreeRenderer(ColourRenderer):
         return im[(imb.x0/pixelSize):(imb.x1/pixelSize),(imb.y0/pixelSize):(imb.y1/pixelSize)]
 
 
-RENDERER_GROUPS = ((CurrentRenderer,),(HistogramRenderer, GaussianRenderer, TriangleRenderer, LHoodRenderer, QuadTreeRenderer), (Histogram3DRenderer, Gaussian3DRenderer, Triangle3DRenderer))
+RENDERER_GROUPS = ((CurrentRenderer,),(HistogramRenderer, GaussianRenderer, TriangleRenderer, TriangleRendererW,LHoodRenderer, QuadTreeRenderer), (Histogram3DRenderer, Gaussian3DRenderer, Triangle3DRenderer))
 
 def init_renderers(visFr):
     for g in RENDERER_GROUPS:

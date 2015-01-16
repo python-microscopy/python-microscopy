@@ -34,6 +34,23 @@ def facsPlotScatter(x, y, nbins=None, ms=1):
     c = ndimage.map_coordinates(n, [(x - xedge[0])/dx, (y - yedge[0])/dy])
 
     scatter(x, y, c=c, s=ms, edgecolors='none')
+    
+def facsPlotScatter2(x, y, nxbins=None, nybins=None, ms=1):
+    #if nbins == None:
+    #    nbins = 0.25*sqrt(len(x))
+    n, xedge, yedge = histogram2d(x, y, bins = [nxbins,nybins], range=[(min(x), max(x)), (min(y), max(y))])
+
+    dx = diff(xedge[:2])
+    dy = diff(yedge[:2])
+
+    #c = ndimage.map_coordinates(n, [(x - xedge[0])/dx, (y - yedge[0])/dy])
+
+    bx = floor((x - xedge[0])/dx).astype('i')
+    by = floor((y - yedge[0])/dy).astype('i')
+    
+    c = n[bx, by]
+
+    scatter(x, y, c=c, s=ms, edgecolors='none')
 
 def facsPlotScatterLog(x, y, nbins=None, ms=1):
     if nbins == None:
