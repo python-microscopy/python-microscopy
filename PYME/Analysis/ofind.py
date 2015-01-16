@@ -212,12 +212,38 @@ class ObjectIdentifier(list):
                     ysd.append(yi)
 
         return xsd, ysd
+        
+    
+    def __discardClumped(self, xs, ys, radius=4):
+        if len(xs) < 2:
+            return xs, ys
+        
+        kdt = ckdtree.cKDTree(numpy.array([xs,ys]).T)
+
+        xsd = []
+        ysd = []
+
+        for i in xrange(len(xs)):
+            xi = xs[i]
+            yi = ys[i]
+            #neigh = kdt.query_ball_point([xi,yi], radius)
+        
+            dn, neigh = kdt.query(numpy.array([xi,yi]), 2)
+            print dn
+
+            if (dn[1] > radius):
+                xsd.append(xi)
+                ysd.append(yi)
+                
+        print len(xsd)
+
+        return numpy.array(xsd), numpy.array(ysd)
 
 
 
 
 
-    def FindObjects(self, thresholdFactor, numThresholdSteps="default", blurRadius=1.5, mask=None, splitter=None, debounceRadius=4, maskEdgeWidth=5, upperThreshFactor = 0.5):
+    def FindObjects(self, thresholdFactor, numThresholdSteps="default", blurRadius=1.5, mask=None, splitter=None, debounceRadius=4, maskEdgeWidth=5, upperThreshFactor = 0.5, discardClumpRadius=0):
         """Finds point-like objects by subjecting the data to a band-pass filtering (as defined when 
         creating the identifier) followed by z-projection and a thresholding procedure where the 
         threshold is progressively decreased from a maximum value (half the maximum intensity in the image) to a 
@@ -399,6 +425,10 @@ class ObjectIdentifier(list):
             xs = numpy.clip(xs, 0, self.filteredData.shape[0] - 1)
             ys = numpy.clip(ys, 0, self.filteredData.shape[1] - 1)
 
+        if discardClumpRadius > 0:
+            print 'ditching clumps'
+            xs, ys = self.__discardClumped(xs, ys, discardClumpRadius)
+            
         xs, ys = self.__Debounce(xs, ys, debounceRadius)
 
         for x, y, t in zip(xs, ys, ts):

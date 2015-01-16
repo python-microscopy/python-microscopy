@@ -73,14 +73,17 @@ class ShiftmapGenerator:
 
         pipeline = self.visFr.pipeline
 
-        vs = [pipeline.mdh['voxelsize.x']*1e3, pipeline.mdh['voxelsize.y']*1e3, 200.]        
+        vs = [pipeline.mdh['voxelsize.x']*1e3, pipeline.mdh['voxelsize.y']*1e3, 200.] 
+        
+        x0 = (pipeline.mdh['Camera.ROIPosX'] -1)*vs[0]
+        y0 = (pipeline.mdh['Camera.ROIPosY'] -1)*vs[1]
         
         lx = len(pipeline.filter['x'])
         bbox = None#[0,(pipeline.mdh['Camera.ROIWidth'] + 1)*vs[0], 0,(pipeline.mdh['Camera.ROIHeight'] + 1)*vs[1]]
-        dx, dy, spx, spy, good = twoColour.genShiftVectorFieldQ(pipeline.filter['x']+.1*pylab.randn(lx), pipeline.filter['y']+.1*pylab.randn(lx), pipeline.filter['fitResults_dx'], pipeline.filter['fitResults_dy'], pipeline.filter['fitError_dx'], pipeline.filter['fitError_dy'], bbox=bbox)
+        dx, dy, spx, spy, good = twoColour.genShiftVectorFieldQ(pipeline.filter['x']+.1*pylab.randn(lx) + x0, pipeline.filter['y']+.1*pylab.randn(lx) + y0, pipeline.filter['fitResults_dx'], pipeline.filter['fitResults_dy'], pipeline.filter['fitError_dx'], pipeline.filter['fitError_dy'], bbox=bbox)
         #twoColourPlot.PlotShiftField(dx, dy, spx, spy)
         twoColourPlot.PlotShiftField2(spx, spy, pipeline.mdh['Splitter.Channel0ROI'][2:], voxelsize=vs)
-        twoColourPlot.PlotShiftResiduals(pipeline['x'][good], pipeline['y'][good], pipeline['fitResults_dx'][good], pipeline['fitResults_dy'][good], spx, spy)
+        twoColourPlot.PlotShiftResiduals(pipeline['x'][good] + x0, pipeline['y'][good] + y0, pipeline['fitResults_dx'][good], pipeline['fitResults_dy'][good], spx, spy)
 
         import cPickle
 

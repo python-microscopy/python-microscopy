@@ -317,7 +317,7 @@ class ImageStack(object):
         fns = filename.split(os.path.sep)
         cand = os.path.sep.join(fns[:-2] + ['analysis',] + fns[-2:]) + 'r'
         print(cand)
-        if os.path.exists(cand):
+        if False:#os.path.exists(cand):
             h5Results = tables.openFile(cand)
 
             if 'FitResults' in dir(h5Results.root):
