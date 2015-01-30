@@ -384,6 +384,7 @@ def plotphotons(pipeline,color='red'):
     ph_range = 6*nph.mean()
     n, bins = np.histogram(nph, np.linspace(0, ph_range, 100))
     plt.bar(bins[:-1], n, width=bins[1]-bins[0], alpha=0.4, color=color)
+    return nph
 
 def photonconvert(data,mdh=None):
     if mdh is None:
