@@ -66,9 +66,10 @@ def weightedAverage(vals, errs):
 
     for k in vals.dtype.names:
         erk2 = errs[k]**2
-        vark = 1./(1./erk2).sum()
-        res[k] = (vals[k]/erk2).sum()*vark
-        eres[k] = np.sqrt(vark)
+        if erk2.min() > 0: # apparently sometimes we can have zeros here?
+            vark = 1./(1./erk2).sum()
+            res[k] = (vals[k]/erk2).sum()*vark
+            eres[k] = np.sqrt(vark)
 
     return res, eres
 
@@ -122,13 +123,19 @@ def findClumps(t, x, y, delta_x):
     return assigned
 
 
-def coalesceClumps(fitResults, assigned):
+def coalesceClumps(fitResults, selectedDS):
     '''Agregates clumps to a single event'''
+    assigned = selectedDS.clumpIndices
     NClumps = int(assigned.max())
 
     #work out what the data type for our declumped data should be
     dt = deClumpedDType(fitResults)
-
+    dt.append(('clumpSize','<i4'))
+    usewidth = False
+    if hasattr(selectedDS,'clumpWidths'):
+        dt.append(('clumpWidth','<f4'))
+        usewidth = True
+    
     fres = np.empty(NClumps, dt)
     
     clist = [[] for i in xrange(NClumps)]
@@ -147,7 +154,9 @@ def coalesceClumps(fitResults, assigned):
 
             fres['nFrames'][i] = len(vals)
             fres['ATotal'][i] = vals['fitResults']['A'].sum()
-
+            fres['clumpSize'][i] = selectedDS.clumpSizes[clist[i][0]] # assign the value from the first pixel of the current clump
+            if usewidth:
+                fres['clumpWidth'][i] = selectedDS.clumpWidths[clist[i][0]]
 
     return fres
 
