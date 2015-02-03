@@ -1,6 +1,7 @@
-## Code fragments to access your data in PYME GUI Apps
+Code fragments to access your data in PYME GUI Apps
+==========================================
 
-The code fragments below are a random selection of tips to access your data from the console/shell/command line within `dh5view` and `Visgui` etc.
+The code fragments below are a random collection of tips to access your data from the console/shell/command line within `dh5view`.
 
 ### Accessing data in dh5view
 
@@ -26,6 +27,8 @@ Flatten the data before histograming, e.g.
 Otherwise we are apparently plotting many histograms as we thread over all 1D sub-vectors. Flattening first, for example using the numpy `ravel()` command, should speed things up considerably.
 
 ### Reading and writing tiffs
+
+It is often useful to import or export data to/from tiffs: 
 
 	import PYME.FileUtils.saveTiffStack as st
 	from PYME.gohlke import tifffile
