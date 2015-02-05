@@ -23,7 +23,7 @@
 
 import scipy
 #from scipy.signal import interpolate
-#import scipy.ndimage as ndimage
+import scipy.ndimage as ndimage
 #from pylab import *
 #import copy_reg
 import numpy
@@ -33,6 +33,7 @@ from . import InterpFitR
 from .fitCommon import fmtSlicesUsed
 
 from PYME.Analysis._fithelpers import *
+
 
 
 def f_Interp3d2c(p, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, axialShift, *args):
@@ -224,9 +225,16 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
             return BlankResult(self.metadata)
             
         #print bgROI.mean(), np.mean(self.background)
+            
+        
+            
+        #print sigma.mean(), sigma.min(), sigma.max()
       
         
-        dataROI = np.maximum(dataROI - bgROI, -sigma)
+        #dataROI = np.maximum(dataROI - bgROI, -sigma)
+        #dataROI = np.maximum(dataROI - bgROI, 0)
+        
+        dataROI = dataROI-bgROI
         
         dx_ = Xg[0] - Xr[0]
         dy_ = Yg[0] - Yr[0]
@@ -277,17 +285,30 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
         
         startParameters = np.array(startParameters)
         
-	
+        #pScale= np.ones_like(startParameters)
+        #pScale[:2] = 1e-4
+        #pScale[2:4] = 10
+        #pScale[4] = 1e6
+ 
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
         #(res, cov_x, infodict, mesg, resCode) = FitModelWeighted(self.fitfcn, startParameters, dataMean, sigma, X, Y)
-        (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, self.interpolator,Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, self.metadata.Analysis.AxialShift)
+        if  self.metadata.getOrDefault('Analysis.PoissonML', False):
+            res = FitModelPoissonBFGS(self.fitfcn, startParameters, dataROI + bgROI, bgROI, self.interpolator,Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, self.metadata.Analysis.AxialShift)[0]
+            cov_x = np.eye(len(res))            
+            infodict = {'fvec': self.fitfcn(res, self.interpolator,Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, self.metadata.Analysis.AxialShift) - (dataROI + bgROI)}
+            resCode = 1
+        else:
+            (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, self.interpolator,Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, self.metadata.Analysis.AxialShift)
+            #(res, cov_x, infodict, mesg, resCode) = FitModelWeighted_D(self.fitfcn, startParameters, dataROI, sigma, pScale, self.interpolator,Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, self.metadata.Analysis.AxialShift)
 
         fitErrors=None
         try:       
             fitErrors = scipy.sqrt(scipy.diag(cov_x) * (infodict['fvec'] * infodict['fvec']).sum() / (len(dataROI.ravel())- len(res)))
         except Exception:
             pass
+        
+        #print infodict['nfev']
 
         #normalised Chi-squared
         nchi2 = (infodict['fvec']**2).sum()/(dataROI.size - res.size)

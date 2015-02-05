@@ -430,7 +430,7 @@ def rendTri2(T, imageBounds, pixelSize, c=None, im=None, im1=None):
 
     #c = numpy.maximum(((b*b).sum(1)),((a*a).sum(1)))
     
-    #c = numpy.abs(a[:,0]*b[:,1] + a[:,1]*b[:,0])
+    c = numpy.abs(a[:,0]*b[:,1] + a[:,1]*b[:,0])
 
     if c == None:
         if numpy.version.version > '1.2':
@@ -438,7 +438,7 @@ def rendTri2(T, imageBounds, pixelSize, c=None, im=None, im1=None):
         else:
             c = numpy.median([(b * b).sum(1), (a * a).sum(1), (b2 * b2).sum(1)])
             
-        c = c
+        #c = c*c/1e6
 
     a_ = ((a*a).sum(1))
     b_ = ((b*b).sum(1))

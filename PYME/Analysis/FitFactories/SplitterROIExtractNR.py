@@ -32,8 +32,8 @@ from . import FFBase
 #fresultdtype=[('tIndex', '<i4'),('fitResults', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('backgroundG', '<f4'),('backgroundR', '<f4'),('bx', '<f4'),('by', '<f4')]),('fitError', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('backgroundG', '<f4'),('backgroundR', '<f4'),('bx', '<f4'),('by', '<f4')]), ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
 
 fresultdtype=[('tIndex', '<i4'), ('x', '<f4'), ('y', '<f4'),
-              ('data', 'f4', (19,19, 2)),
-              ('sigma', 'f4', (19,19, 2)),
+              ('data', 'f4', (11,11, 2)),
+              ('sigma', 'f4', (11,11, 2)),
               ('sp', [('Xg0', '<f4'),('Yg0', '<f4'),('Xr0', '<f4'),('Yr0', '<f4')]),
               ]
 
@@ -44,7 +44,7 @@ class GaussianFitFactory(FFBase.FFBase):
         
         
     def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
-        roiHalfSize=9
+        roiHalfSize=5
         Xg, Yg, Xr, Yr, dataROI, bgROI, sigma, xslice, yslice, xslice2, yslice2 = self.getSplitROIAtPoint(x, y, z, roiHalfSize, axialHalfSize)
         
         res = np.zeros(1, fresultdtype)

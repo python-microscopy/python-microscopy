@@ -254,8 +254,8 @@ def GenWidefieldAPA(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47, field_x
 
     return X, Y, R, FP, M, u, v
 
-def GenWidefieldPSF(zs, dx=5, lamb=700, n=1.51, NA = 1.47):
-    X, Y, R, FP, F, u, v = GenWidefieldAP(dx, lamb=lamb, n=n, NA = NA)
+def GenWidefieldPSF(zs, dx=5, lamb=700, n=1.51, NA = 1.47,apodization=None):
+    X, Y, R, FP, F, u, v = GenWidefieldAP(dx, lamb=lamb, n=n, NA = NA, apodization=apodization)
     #figure()
     #imshow(abs(F))
 
@@ -675,8 +675,9 @@ def GenZernikeDAPSF(zs, dx = 5, X=None, Y=None, zernikeCoeffs = {}, lamb=700, n=
 
     #return abs(ps**2)
 
-def GenPRIPSF(zs, dx = 5, strength=1.0, dp=0, NA=1.47):
-    X, Y, R, FP, F, u, v = GenWidefieldAP(dx, NA=NA)
+def GenPRIPSF(zs, dx = 5, strength=1.0, dp=0, lamb=700, n=1.51, NA = 1.47, ns=1.51, beadsize=0, vect=False, apodization=None):
+    #X, Y, R, FP, F, u, v = GenWidefieldAP(dx, NA=NA)
+    X, Y, R, FP, F, u, v = GenWidefieldAP(dx, lamb=lamb, n = n, NA = NA, apodization=apodization)
 
     F = F * exp(-1j*sign(X)*(10*strength*v + dp/2))
     #clf()
@@ -859,8 +860,8 @@ def GenSAPRIPSF(zs, dx=5, strength=1.0, SA=0, X=None, Y=None, lamb=700, n=1.51, 
 
     return abs(ps**2)
     
-def GenDHPSF(zs, dx=5, vortices=[0.0], NA=1.47):
-    X, Y, R, FP, F, u, v = GenWidefieldAP(dx, NA=NA)
+def GenDHPSF(zs, dx=5, vortices=[0.0], lamb=700, n=1.51, NA = 1.47, ns=1.51, beadsize=0, vect=False, apodization=None):
+    X, Y, R, FP, F, u, v = GenWidefieldAP(dx, lamb=lamb, n = n, NA = NA, apodization=apodization)
     
     ph = 0*u
     

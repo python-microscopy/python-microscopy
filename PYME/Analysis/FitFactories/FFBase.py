@@ -23,6 +23,7 @@
 
 import numpy as np
 from . import fitCommon
+from scipy import ndimage
 
 class FFBase(object):
     def __init__(self, data, metadata, fitfcn=None, background=None):
@@ -69,7 +70,9 @@ class FFBase(object):
         #estimate errors in data
         nSlices = dataROI.shape[2]
         
-        sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataMean, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
+        #sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataMean, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
+        ### Fixed for better Poisson noise approx
+        sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*(np.maximum(dataMean, 1) + 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
 
         if not self.background == None and len(np.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
             bgROI = self.background[xslice, yslice, zslice]
@@ -149,7 +152,12 @@ class FFBase(object):
         dataROI[:,:,1] = self.data[xslice2, yslice2, 1] - self.metadata.Camera.ADOffset
         
         nSlices = 1
-        sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataROI, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
+        #sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataROI, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
+        #phConv = self.metadata.Camera.ElectronsPerCount/self.metadata.Camera.TrueEMGain
+        #nPhot = dataROI*phConv
+        
+        sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*(self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataROI, 1) + self.metadata.Camera.TrueEMGain*self.metadata.Camera.TrueEMGain))/self.metadata.Camera.ElectronsPerCount
+        sigma = ndimage.maximum_filter(sigma, [3,3,0])
 
 
         if self.metadata.getOrDefault('Analysis.subtractBackground', True) :

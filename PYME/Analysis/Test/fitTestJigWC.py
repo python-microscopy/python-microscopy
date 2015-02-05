@@ -162,7 +162,8 @@ class fitTestJig(object):
 
         
        # plot(xv, sp, '+', label='Start Est')
-        errorbar(xv, yv, err, fmt='xr', label='Fitted')
+        errorbar(xv, yv, err, fmt='r.', label='Fitted')
+        plot(xv, yv, 'xg', label='Fitted')
         plot([xv.min(), xv.max()], [xv.min(), xv.max()])
 
         ylim((yv - maximum(err, 0)).min(), (yv + maximum(err, 0)).max())
