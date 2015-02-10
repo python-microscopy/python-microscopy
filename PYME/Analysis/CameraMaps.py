@@ -43,8 +43,8 @@ class cmaps:
             else:
                 epc = self.metadata.getEntry('Camera.ElectronsPerCount')
                 self.variance.shape
-                self.readnoise = epc*numpy.sqrt(self.variance)
-                self.genBlemishes()
+            self.readnoise = epc*numpy.sqrt(self.variance)
+            self.genBlemishes()
         
     @staticmethod
     def _mkROI(map1,md):

@@ -198,8 +198,14 @@ class ParticleTracker:
                 
         pipeline.selectedDataSource.clumpWidths = -1*np.ones(pipeline.selectedDataSource.clumpIndices.shape)
         pipeline.selectedDataSource.clumpWidths[pipeline.filter.Index] = widths
+        pipeline.selectedDataSource.clumpWidthsX = -1*np.ones(pipeline.selectedDataSource.clumpIndices.shape)
+        pipeline.selectedDataSource.clumpWidthsX[pipeline.filter.Index] = np.sqrt(xvars)
+        pipeline.selectedDataSource.clumpWidthsY = -1*np.ones(pipeline.selectedDataSource.clumpIndices.shape)
+        pipeline.selectedDataSource.clumpWidthsY[pipeline.filter.Index] = np.sqrt(yvars)
  
         pipeline.selectedDataSource.setMapping('clumpWidth', 'clumpWidths')
+        pipeline.selectedDataSource.setMapping('clumpWidthX', 'clumpWidthsX')
+        pipeline.selectedDataSource.setMapping('clumpWidthY', 'clumpWidthsY')
          
         self.visFr.RegenFilter()
         self.visFr.CreateFoldPanel()

@@ -134,6 +134,8 @@ def coalesceClumps(fitResults, selectedDS):
     usewidth = False
     if hasattr(selectedDS,'clumpWidths'):
         dt.append(('clumpWidth','<f4'))
+        dt.append(('clumpWidthX','<f4'))
+        dt.append(('clumpWidthY','<f4'))
         usewidth = True
     
     fres = np.empty(NClumps, dt)
@@ -157,6 +159,8 @@ def coalesceClumps(fitResults, selectedDS):
             fres['clumpSize'][i] = selectedDS.clumpSizes[clist[i][0]] # assign the value from the first pixel of the current clump
             if usewidth:
                 fres['clumpWidth'][i] = selectedDS.clumpWidths[clist[i][0]]
+                fres['clumpWidthX'][i] = selectedDS.clumpWidthsX[clist[i][0]]
+                fres['clumpWidthY'][i] = selectedDS.clumpWidthsY[clist[i][0]]
 
     return fres
 
