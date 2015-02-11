@@ -177,6 +177,7 @@ class VisGUIFrame(wx.Frame):
             self.RefreshView()
             self.displayPane.OnPercentileCLim(None)
             self.Refresh()
+            self.Update()
             print('refreshed')
 
     def AddPage(self, page=None, select=False,caption='Dummy', update=True):
@@ -201,6 +202,7 @@ class VisGUIFrame(wx.Frame):
 
     def OnMove(self, event):
         self.Refresh()
+        self.Update()
         event.Skip()      
 
     def OnQuit(self, event):

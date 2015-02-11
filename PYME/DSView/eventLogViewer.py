@@ -273,7 +273,7 @@ class eventLogPanel(wx.Panel):
 
     def OnPaint(self,event):
         DC = wx.PaintDC(self)
-        self.PrepareDC(DC)
+        #self.PrepareDC(DC)
 
         s = self.GetVirtualSize()
         MemBitmap = wx.EmptyBitmap(s.GetWidth(), s.GetHeight())
@@ -294,6 +294,7 @@ class eventLogPanel(wx.Panel):
 
     def OnSize(self,event):
         self.Refresh()
+        self.Update()
 
     def OnWheel(self, event):
         rot = event.GetWheelRotation()
@@ -322,6 +323,7 @@ class eventLogPanel(wx.Panel):
 
         self.frameRange = (nMin, nMax)
         self.Refresh()
+        self.Update()
 
     def SetEventSource(self, eventSource):
         self.eventSource = eventSource
@@ -337,16 +339,19 @@ class eventLogPanel(wx.Panel):
 
         if self.initialised:
             self.Refresh()
+            self.Update()
 
     def SetRange(self, range):
         self.maxRange = range
         if self.autoRange:
             self.frameRange = range
         self.Refresh()
+        self.Update()
 
     def SetCharts(self, charts):
         self.charts = charts
         self.Refresh()
+        self.Update()
 
 class eventLogTPanel(wx.Panel):
     def __init__(self, parent, eventSource, metaData, timeRange, charts = [], size=(-1, -1)):
@@ -667,6 +672,7 @@ class eventLogTPanel(wx.Panel):
 
     def OnSize(self,event):
         self.Refresh()
+        self.Update()
 
     def OnWheel(self, event):
         rot = event.GetWheelRotation()
@@ -695,6 +701,7 @@ class eventLogTPanel(wx.Panel):
 
         self.timeRange = (nMin, nMax)
         self.Refresh()
+        self.Update()
 
     def SetEventSource(self, eventSource):
         self.eventSource = eventSource
@@ -710,12 +717,14 @@ class eventLogTPanel(wx.Panel):
 
         if self.initialised:
             self.Refresh()
+            self.Update()
 
     def SetRange(self, range):
         self.maxRange = range
         if self.autoRange:
             self.frameRange = range
         self.Refresh()
+        self.Update()
 
     def SetCharts(self, charts):
         self.charts = charts

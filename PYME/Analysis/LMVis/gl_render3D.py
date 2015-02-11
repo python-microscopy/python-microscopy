@@ -129,7 +129,7 @@ class LMGLCanvas(GLCanvas):
         wx.EVT_KEY_DOWN(self, self.OnKeyPress)
         #wx.EVT_MOVE(self, self.OnMove)
         
-        #self.gl_context = wx.glcanvas.GLContext(self)
+        self.gl_context = wx.glcanvas.GLContext(self)
 
         self.init = 0
         self.nVertices = 0
@@ -202,7 +202,7 @@ class LMGLCanvas(GLCanvas):
         #raise Exception('foo')
         dc = wx.PaintDC(self)
         #print self.GetContext()
-        #print self.gl_context
+        self.gl_context.SetCurrent(self)
         self.SetCurrent()
         if not self.init:
             self.InitGL()
@@ -854,6 +854,8 @@ def main():
     app = wx.PySimpleApp()
     frame = wx.Frame(None,-1,'ball_wx',wx.DefaultPosition,wx.Size(800,800))
     canvas = LMGLCanvas(frame)
+    #glcontext = wx.glcanvas.GLContext(canvas)
+    #glcontext.SetCurrent(canvas)
     to = testObj()
     canvas.setPoints(to[0], to[1], to[2])
     canvas.setTriang(to[0], to[1], to[2], sizeCutoff = 6e3, alpha=0.5)

@@ -22,6 +22,11 @@
 ##################
 
 #!/usr/bin/env python
+import sys
+if sys.platform == 'darwin':#MacOS
+    linkArgs = []
+else:
+    linkArgs = ['-static-libgcc', '-static-libstdc++']
 
 def configuration(parent_package = '', top_path = None):
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
@@ -31,7 +36,7 @@ def configuration(parent_package = '', top_path = None):
         sources=["cSMI.i","DataStack.cpp","BaseRenderer.cpp","LUTRGBRenderer.cpp","DisplayParams.cpp","DisplayOpts.cpp","LineProfile.cpp"],
         include_dirs = [get_numpy_include_dirs(), '.'],
 	extra_compile_args = ['-O3', '-fPIC'],
-        extra_link_args=['-static-libgcc', '-static-libstdc++']
+        extra_link_args=linkArgs
         )
 
     return config

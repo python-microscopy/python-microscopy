@@ -92,6 +92,7 @@ class HistLimitPanel(wx.Panel):
 
         self.GenHist()
         self.Refresh()
+        self.Update()
 
     def OnLeftDown(self, event):
         x = event.GetX()
@@ -121,6 +122,7 @@ class HistLimitPanel(wx.Panel):
         self.dragging=None
         self.GenHist()
         self.Refresh()
+        self.Update()
         event.Skip()
 
     def OnMouseMove(self, event):
@@ -138,6 +140,7 @@ class HistLimitPanel(wx.Panel):
             self.limit_upper = xt
 
         self.Refresh()
+        self.Update()
 
         event.Skip()
 
@@ -242,7 +245,7 @@ class HistLimitPanel(wx.Panel):
 
     def OnPaint(self,event):
         DC = wx.PaintDC(self)
-        self.PrepareDC(DC)
+        #self.PrepareDC(DC)
 
         s = self.GetVirtualSize()
         MemBitmap = wx.EmptyBitmap(s.GetWidth(), s.GetHeight())
@@ -263,17 +266,20 @@ class HistLimitPanel(wx.Panel):
 
     def OnSize(self, event):
         self.Refresh()
+        self.Update()
 
     def OnKeyPress(self, event):
         if event.GetKeyCode() == 76: #L - toggle log y axis
             self.log = not self.log
             self.GenHist()
             self.Refresh()
+            self.Update()
         elif event.GetKeyCode() == 77: #M - set min-max
             self.limit_lower = float(self.data.min())
             self.limit_upper = float(self.data.max())
             self.GenHist()
             self.Refresh()
+            self.Update()
             evt = LimitChangeEvent(self.GetId(), upper=self.limit_upper, lower=self.limit_lower)
             wx.PostEvent(self, evt)
         elif event.GetKeyCode() == 80: #P - set percentile
@@ -281,6 +287,7 @@ class HistLimitPanel(wx.Panel):
             self.limit_upper = self.upper_pctile
             self.GenHist()
             self.Refresh()
+            self.Update()
             evt = LimitChangeEvent(self.GetId(), upper=self.limit_upper, lower=self.limit_lower)
             wx.PostEvent(self, evt)
         elif event.GetKeyCode() == 84: #T - toggle threshold mode
@@ -299,6 +306,7 @@ class HistLimitPanel(wx.Panel):
 
             self.GenHist()
             self.Refresh()
+            self.Update()
             evt = LimitChangeEvent(self.GetId(), upper=self.limit_upper, lower=self.limit_lower)
             wx.PostEvent(self, evt)
         else:
@@ -321,6 +329,7 @@ class HistLimitPanel(wx.Panel):
 
             self.GenHist()
             self.Refresh()
+            self.Update()
             evt = LimitChangeEvent(self.GetId(), upper=self.limit_upper, lower=self.limit_lower)
             wx.PostEvent(self, evt)
 
@@ -335,6 +344,7 @@ class HistLimitPanel(wx.Panel):
 
         self.GenHist()
         self.Refresh()
+        self.Update()
 
     def SetValueAndFire(self, val):
         self.SetValue(val)

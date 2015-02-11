@@ -22,6 +22,7 @@
 
 import wx
 import wx.lib.agw.aui as aui
+#import PYME.misc.aui as aui
 
 import pylab
 import modules
@@ -60,6 +61,8 @@ class DSViewFrame(wx.Frame):
     def __init__(self, image,  parent=None, title='', mode='LM', 
                  size = (800,700), glCanvas=None):
         wx.Frame.__init__(self,parent, -1, title,size=size, pos=(1100, 300))
+        
+        self.SetAutoLayout(True)
 
         self.mode = mode
         self.glCanvas = glCanvas
@@ -138,6 +141,7 @@ class DSViewFrame(wx.Frame):
         wx.EVT_MENU(self, wx.ID_SAVE, self.OnSave)
         wx.EVT_MENU(self, wx.ID_SAVEAS, self.OnExport)
         wx.EVT_CLOSE(self, self.OnCloseWindow)
+        wx.EVT_SIZE(self, self.OnSize)
 
 		
         self.statusbar = self.CreateStatusBar(1, wx.ST_SIZEGRIP)
@@ -193,6 +197,12 @@ class DSViewFrame(wx.Frame):
         
         
         openViewers[self.image.filename] = self
+        
+    def OnSize(self, event):
+        #self.Layout()
+        self._mgr.Update()
+        #self.Refresh()
+        #self.Update()
 
     def AddPage(self, page=None, select=True,caption='Dummy'):
         if self.pane0 == None:
@@ -223,7 +233,12 @@ class DSViewFrame(wx.Frame):
                     nb = self._mgr.GetNotebooks()[0]
                     nb.SetSelection(0)
 
-        self._mgr.Update()
+               
+        wx.CallAfter(self._mgr.Update)
+        #self.Layout() 
+        #self.OnSize(None)
+        #self.OnSize(None)
+        
 
     def CreateModuleMenu(self):
         self.modMenuIds = {}
@@ -282,6 +297,7 @@ class DSViewFrame(wx.Frame):
 
         self._mgr.Update()
         self.Refresh()
+        self.Update()
 
 
     def update(self):
@@ -378,10 +394,14 @@ class MyApp(wx.App):
 
         op.add_option('-m', '--mode', dest='mode', help="mode (or personality), as defined in PYME/DSView/modules/__init__.py")
         op.add_option('-q', '--queueURI', dest='queueURI', help="the Pyro URI of the task queue - to avoid having to use the nameserver lookup")
+        op.add_option('-t', '--test', dest='test', help="Show a test image", action="store_true", default=False)
 
         options, args = op.parse_args()
-
-        if len (args) > 0:
+        
+        if options.test:
+            import pylab
+            im = ImageStack(pylab.randn(100,100))
+        elif len (args) > 0:
             im = ImageStack(filename=args[0], queueURI=options.queueURI)
         else:
             im = ImageStack(queueURI=options.queueURI)

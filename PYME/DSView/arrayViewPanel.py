@@ -139,6 +139,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
     def OnRefrTimer(self, event):
         self.Refresh()
+        self.Update()
         
     def SetDataStack(self, ds):
         self.do.SetDataStack(ds)
@@ -638,6 +639,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
             #self.imagepanel.Refresh()
             self.Refresh()
+            self.Update()
             
     def Optim(self, event = None):
         self.do.Optimise(self.do.ds, int(self.do.zp))
@@ -645,6 +647,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         #self.SetOpts()
         #self.optionspanel.RefreshHists()
         self.Refresh()
+        self.Update()
         self.updating=0
         
     def CalcImSize(self):
@@ -719,7 +722,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             
     def OnSetPosition(self,event):
         dc = wx.ClientDC(self.imagepanel)
-        self.imagepanel.PrepareDC(dc)
+        #self.imagepanel.PrepareDC(dc)
         pos = event.GetLogicalPosition(dc)
         pos = self.CalcUnscrolledPosition(*pos)
 
@@ -769,7 +772,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         self.selecting = True
         
         dc = wx.ClientDC(self.imagepanel)
-        self.imagepanel.PrepareDC(dc)
+        #self.imagepanel.PrepareDC(dc)
         pos = event.GetLogicalPosition(dc)
         pos = self.CalcUnscrolledPosition(*pos)
         #print pos
@@ -797,7 +800,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             
     def ProgressSelection(self,event):
         dc = wx.ClientDC(self.imagepanel)
-        self.imagepanel.PrepareDC(dc)
+        #self.imagepanel.PrepareDC(dc)
         pos = event.GetLogicalPosition(dc)
         pos = self.CalcUnscrolledPosition(*pos)
         #print pos
@@ -843,6 +846,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         #self.update()
         #else:
         self.Refresh()
+        self.Update()
 
     def EndSelection(self):
         self.selecting = False
@@ -925,8 +929,10 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
     def Redraw(self, caller=None):
         self._oldImSig = None
         self.Refresh()
+        self.Update()
 
     def Render(self):
+        #print 'rend'
         x0,y0 = self.CalcUnscrolledPosition(0,0)
         sX, sY = self.imagepanel.Size
         
