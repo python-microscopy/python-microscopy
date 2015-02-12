@@ -24,6 +24,7 @@
 QT_MAXRECORDS = 10 #maximum number of records in a leaf
 QT_MAXDEPTH = 100 #let leaves grow larger if a maximum depth is exceeded (to prevent infinite recursion)
 
+import numpy as np
 
 from math import floor, ceil
 
@@ -72,22 +73,40 @@ class qtLeafNode(qtNode):
         #self.y0 = y0
         #self.x1 = x1
         #self.y1 = y1
-        self.records = []
+        #self.records = []
+        
+        self.records = np.zeros([QT_MAXRECORDS, 3])
     
     def insert(self, rec):
-        if len(self.records) < QT_MAXRECORDS or self.depth >= QT_MAXDEPTH: #don't need to subdivide
-            self.records.append(rec)
+        if self.numRecords < QT_MAXRECORDS or self.depth >= QT_MAXDEPTH: #don't need to subdivide
+            self.records[self.numRecords, :] = rec
             self.numRecords += 1
             return self
         else: #subdivide 
             newBranch = qtBranchNode(self.x0,self.x1, self.y0, self.y1, self.depth)
-            for r in self.records: #copy records
-                   newBranch.insert(r)
+            #for r in self.records: #copy records
+            #       newBranch.insert(r)
+            newBranch.insertRecords(self.records[:self.numRecords, :])
             newBranch.insert(rec)
+            return newBranch
+            
+    def insertRecords(self, recs):
+        nNew = len(recs)
+        if (self.numRecords + nNew) < QT_MAXRECORDS or self.depth >= QT_MAXDEPTH: #don't need to subdivide
+            self.records[self.numRecords:(self.numRecords + nNew), :] = recs
+            self.numRecords += nNew
+            return self
+        else: #subdivide 
+            newBranch = qtBranchNode(self.x0,self.x1, self.y0, self.y1, self.depth)
+            #for r in self.records: #copy records
+            newBranch.insertRecords(self.records[:self.numRecords, :])
+            newBranch.insert(recs)
             return newBranch
 
     def get(self,x0,x1, y0, y1):
-        return [r for r in self.records if (r.x > x0) and (r.x < x1) and (r.y > y0) and (r.y < y1)]
+        #return [r for r in self.records if (r.x > x0) and (r.x < x1) and (r.y > y0) and (r.y < y1)]
+        r = self.records[:self.numRecords, :]
+        return r[(r[:,0] > x0)*(r[:,0] < x1)*(r[:,1] > y0)*(r[:,1] < y1), :]
 
     def drawTree(self, depth=0):
         st = u'' + repr(self) +'\n'
@@ -108,35 +127,43 @@ class qtLeafNode(qtNode):
 class qtBranchNode(qtNode):
     def __init__(self,x0,x1, y0, y1, depth=0):
         qtNode.__init__(self,x0,x1, y0, y1, depth)
-        xc = (x0 + x1)/2
-        yc = (y0 + y1)/2
+        self.xc = (x0 + x1)/2
+        self.yc = (y0 + y1)/2
         #self.x0 = x0
         #self.y0 = y0
         #self.x1 = x1
         #self.y1 = y1
 
         #generate child nodes
-        self.NW = qtLeafNode(x0,xc, y0, yc, depth+1)
-        self.NE = qtLeafNode(xc,x1, y0, yc, depth+1)
-        self.SE = qtLeafNode(xc,x1, yc, y1, depth+1)
-        self.SW = qtLeafNode(x0,xc, yc, y1, depth+1)
+        self.NW = qtLeafNode(x0,self.xc, y0, self.yc, depth+1)
+        self.NE = qtLeafNode(self.xc,x1, y0, self.yc, depth+1)
+        self.SE = qtLeafNode(self.xc,x1, self.yc, y1, depth+1)
+        self.SW = qtLeafNode(x0,self.xc, self.yc, y1, depth+1)
 
     def insert(self, rec):
-        xc = (self.x0 + self.x1)/2
-        yc = (self.y0 + self.y1)/2
-
-        if rec.x < xc:
-            if rec.y < yc:
+        if rec[0] < self.xc:
+            if rec[1] < self.yc:
                 self.NW = self.NW.insert(rec)
             else:
                 self.SW = self.SW.insert(rec)
         else:
-            if rec.y < yc:
+            if rec[1] < self.yc:
                 self.NE = self.NE.insert(rec)
             else:
                 self.SE = self.SE.insert(rec)
 
         self.numRecords += 1
+        return self
+        
+    def insertRecords(self, recs):
+        W = recs[:,0] < self.xc
+        N = recs[:,1] < self.yc
+        self.NW.insertRecords(recs[W*N, :])
+        self.NE.insertRecords(recs[(W<1)*N, :])
+        self.SE.insertRecords(recs[(W<1)*(N < 1), :])
+        self.SW.insertRecords(recs[W*(N < 1), :])
+        
+        self.numRecords += recs.shape[0]
         return self
 
     def get(self,x0,x1, y0, y1):
@@ -219,9 +246,9 @@ def createQT(x,y, t=None):
 
     if t == None:
         for xi, yi in zip(x,y):
-            qt.insert(qtRec(xi,yi, None))
+            qt.insert(np.array((xi,yi, 0)))
     else:
         for xi, yi, ti in zip(x,y, t):
-            qt.insert(qtRec(xi,yi, ti))
+            qt.insert(np.array((xi,yi, ti)))
 
     return qt

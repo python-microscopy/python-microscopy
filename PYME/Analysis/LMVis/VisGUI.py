@@ -86,6 +86,8 @@ class VisGUIFrame(wx.Frame):
         self._flags = 0
         
         self.pipeline = pipeline.Pipeline(visFr=self)
+        
+        #self.Quads = None
                
         self.SetMenuBar(self.CreateMenuBar())
 
@@ -345,7 +347,7 @@ class VisGUIFrame(wx.Frame):
         pointQT.QT_MAXRECORDS = leafSize
         self.stQTSNR.SetLabel('Effective SNR = %3.2f' % pylab.sqrt(pointQT.QT_MAXRECORDS/2.0))
 
-        self.Quads = None
+        self.pipeline.Quads = None
         self.RefreshView()
 
 
@@ -1008,12 +1010,12 @@ class VisGUIFrame(wx.Frame):
             
 
         elif self.viewMode == 'quads':
-            if self.Quads == None:
+            if self.pipeline.Quads == None:
                 status = statusLog.StatusLogger("Generating QuadTree ...")
-                self.GenQuads()
+                self.pipeline.GenQuads()
                 
 
-            self.glCanvas.setQuads(self.Quads)
+            self.glCanvas.setQuads(self.pipeline.Quads)
 
         elif self.viewMode == 'interp_triangles':
             self.glCanvas.setIntTriang(self.pipeline.getTriangles(), self.pointColour())
