@@ -39,6 +39,9 @@ class __interpolator:
         self.dx = None
         self.dy = None
         self.dz = None
+        
+        self.SplitPSF = False
+        self.PSF2Offset = 0
 
     def setModelFromMetadata(self, md):
         '''load the model from file - returns True if the model changed, False if
@@ -97,10 +100,20 @@ class __interpolator:
 
         #if not voxelsize.x == md.voxelsize.x:
         #    raise RuntimeError("PSF and Image voxel sizes don't match")
-
-        self.IntXVals = 1e3*voxelsize.x*mgrid[-(mod.shape[0]/2.):(mod.shape[0]/2.)]
-        self.IntYVals = 1e3*voxelsize.y*mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]
-        self.IntZVals = 1e3*voxelsize.z*mgrid[-(mod.shape[2]/2.):(mod.shape[2]/2.)]
+        
+        if mod.shape[0] == 2*mod.shape[1]: 
+            #using a split model - we have 2 PSFs side by side
+            self.SplitPSF = True
+            self.PSF2Offset = 1e3*voxelsize.x*mod.shape[1]
+            self.IntXVals = 1e3*voxelsize.x*mgrid[-(mod.shape[1]/2.):(mod.shape[0]-mod.shape[1]/2.)]
+            self.IntYVals = 1e3*voxelsize.y*mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]
+            self.IntZVals = 1e3*voxelsize.z*mgrid[-(mod.shape[2]/2.):(mod.shape[2]/2.)]
+        else:
+            self.SplitPSF = False
+            self.PSF2Offset = 0
+            self.IntXVals = 1e3*voxelsize.x*mgrid[-(mod.shape[0]/2.):(mod.shape[0]/2.)]
+            self.IntYVals = 1e3*voxelsize.y*mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]
+            self.IntZVals = 1e3*voxelsize.z*mgrid[-(mod.shape[2]/2.):(mod.shape[2]/2.)]
 
         self.dx = voxelsize.x*1e3
         self.dy = voxelsize.y*1e3

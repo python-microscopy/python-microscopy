@@ -58,7 +58,7 @@ def f_Interp3d2cr(p, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, axialShif
     z0 = min(max(z0, safeRegion[2][0] + axialShift), safeRegion[2][1] - axialShift)
 
     g = interpolator.interp(Xg - x0 + 1, Yg - y0 + 1, Zg - z0 + 1)*Ag + bG
-    r = interpolator.interp(Xr - x0 + 1 + dx, Yr - y0 + 1 + dy, Zr - z0 + 1)*Ar + bR
+    r = interpolator.interp(Xr - x0 + interpolator.PSF2Offset + 1 + dx, Yr - y0 + 1 + dy, Zr - z0 + 1)*Ar + bR
 
     return numpy.concatenate((np.atleast_3d(g),np.atleast_3d(r)), 2)
     
