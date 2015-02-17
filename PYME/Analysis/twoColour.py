@@ -525,4 +525,9 @@ def warpCorrectRedImage(r, dx, dy):
     return vals.T
 
 
+class sffake:
+    def __init__(self, val):
+        self.val = val
 
+    def ev(self, x, y):
+        return self.val

@@ -300,8 +300,12 @@ class dSimControl(wx.Panel):
         #wc = wormlike2.fibre30nm(kbp, 10*kbp/numFluors)
         wc = wormlike2.wiglyFibre(kbp, persistLength, kbp/numFluors)
         
-        wc.xp -= wc.xp.mean() + 128*70
-        wc.xp = np.mod(wc.xp, 256*70) - 128*70
+        if self.cbColour.GetValue():        
+            wc.xp -= wc.xp.mean() + 64*70
+            wc.xp = np.mod(wc.xp, 128*70) - 64*70
+        else:
+            wc.xp -= wc.xp.mean() + 128*70
+            wc.xp = np.mod(wc.xp, 256*70) - 128*70
         wc.yp -= wc.yp.mean() + 128*70
         wc.yp = np.mod(wc.yp, 256*70) - 128*70
         wc.zp -= wc.zp.mean()

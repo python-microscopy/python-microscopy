@@ -141,7 +141,9 @@ class compThread(threading.Thread):
                 else:
                     self.im = self.noiseMaker.noisify(rend_im.simPalmImFI(self.XVals + xp, self.YVals + yp, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime, position=[xp,yp,zPos], illuminationFunction=self.illumFcn))[:,:].astype('uint16')
             else:
-                self.im = self.noiseMaker.noisify(rend_im.simPalmImFSpecI(self.XVals, self.YVals, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
+                #self.im = self.noiseMaker.noisify(rend_im.simPalmImFSpecI(self.XVals, self.YVals, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
+                #self.im = self.noiseMaker.noisify(rend_im.simPalmImFI(self.XVals, self.YVals, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
+                self.im = self.noiseMaker.noisify(rend_im.simPalmImFI(self.XVals + xp, self.YVals + yp, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime, position=[xp,yp,zPos], illuminationFunction=self.illumFcn, Chan2XOffset=70.*self.XVals.shape[0]/4., Chan2ZOffset=self.deltaZ))[:,:].astype('uint16')
 
             self.buffer[:,:,self.bufferWritePos] = self.im
             self.bufferWritePos +=1
@@ -471,6 +473,11 @@ class FakeCamera:
         realEMGain = ccdCalibrator.getCalibratedCCDGain(self.GetEMGain(), self.GetCCDTempSetPoint())
         if not realEMGain == None:
             mdh.setEntry('Camera.TrueEMGain', realEMGain)
+            
+        if 'spec' in self.fluors.fl.dtype.fields.keys(): #set the splitter parameters
+            mdh['Splitter.Channel0ROI'] = [0,0,128, 256]
+            mdh['Splitter.Channel1ROI'] = [128,0,128, 256]
+            mdh['Splitter.Flip'] = False
 
     #functions to make us look more like andor camera
     def GetEMGain(self):
