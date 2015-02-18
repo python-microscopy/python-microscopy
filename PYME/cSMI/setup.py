@@ -23,17 +23,29 @@
 
 #!/usr/bin/env python
 import sys
+import os
 if sys.platform == 'darwin':#MacOS
     linkArgs = []
 else:
     linkArgs = ['-static-libgcc', '-static-libstdc++']
 
+if sys.platform == 'win32':
+    swigname = 'swig.exe'
+else:
+    swigname = 'swig'
+
+#test to see if we have swig
+if True in [os.path.exists(os.path.join(p, 'swig')) for p in os.environ['PATH'].split(os.pathsep)]:
+    srcs = ["cSMI.i","DataStack.cpp","BaseRenderer.cpp","LUTRGBRenderer.cpp","DisplayParams.cpp","DisplayOpts.cpp","LineProfile.cpp"]
+else:
+    srcs = ["_cSMI_wrap.cpp","DataStack.cpp","BaseRenderer.cpp","LUTRGBRenderer.cpp","DisplayParams.cpp","DisplayOpts.cpp","LineProfile.cpp"]
+    
 def configuration(parent_package = '', top_path = None):
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
     config = Configuration('cSMI', parent_package, top_path)
 
     config.add_extension('_cSMI',
-        sources=["cSMI.i","DataStack.cpp","BaseRenderer.cpp","LUTRGBRenderer.cpp","DisplayParams.cpp","DisplayOpts.cpp","LineProfile.cpp"],
+        sources=srcs,
         include_dirs = [get_numpy_include_dirs(), '.'],
 	extra_compile_args = ['-O3', '-fPIC'],
         extra_link_args=linkArgs
