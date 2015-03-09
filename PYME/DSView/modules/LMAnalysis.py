@@ -32,6 +32,45 @@ from PYME.FileUtils import fileID
 from PYME.FileUtils.nameUtils import genResultFileName
 from PYME.Analysis.LMVis import progGraph as progGraph
 
+from PYME.Analysis.LMVis import gl_render
+#from PYME.Analysis.LMVis import workspaceTree
+#import sys
+
+import pylab
+from PYME.misc import extraCMaps
+from PYME.FileUtils import nameUtils
+
+import os
+from PYME.Analysis.LMVis import gl_render3D
+
+from PYME.Analysis.LMVis import colourPanel
+from PYME.Analysis.LMVis import renderers
+from PYME.Analysis.LMVis import pipeline
+
+try:
+    from PYME.Analysis.LMVis import recArrayView
+except:
+    pass
+
+#try importing our drift correction stuff
+HAVE_DRIFT_CORRECTION = False
+try:
+    from PYMEnf.DriftCorrection.driftGUI import CreateDriftPane
+    HAVE_DRIFT_CORRECTION = True
+    #from PYMEnf.DriftCorrection import driftGUI
+    #renderers.renderMetadataProviders.append(driftGUI.dp.SaveMetadata)
+except:
+    pass
+
+from PYME.Analysis.LMVis.colourFilterGUI import CreateColourFilterPane
+from PYME.Analysis.LMVis.displayPane import CreateDisplayPane
+from PYME.Analysis.LMVis.filterPane import CreateFilterPane
+
+from PYME.Analysis import MetadataTree
+
+import numpy as np
+
+from PYME.Analysis.LMVis import pipeline, inpFilt
 
 import numpy
 import pylab
@@ -128,6 +167,9 @@ class LMAnalyser:
 
         self.numAnalysed = 0
         self.numEvents = 0
+        
+        dsviewer.pipeline = pipeline.Pipeline()
+        self.ds = None
 
         dsviewer.paneHooks.append(self.GenPointFindingPanel)
         dsviewer.paneHooks.append(self.GenAnalysisPanel)
@@ -141,35 +183,35 @@ class LMAnalyser:
         else:
             self.do.zp = self.image.mdh.getEntry('EstimatedLaserOnFrameNo')
         
-        if (len(self.fitResults) > 0) and not 'PYME_BUGGYOPENGL' in os.environ.keys():
-            self.GenResultsView()
+        #if (len(self.fitResults) > 0) and not 'PYME_BUGGYOPENGL' in os.environ.keys():
+        #    self.GenResultsView()
 
-    def GenResultsView(self):
-        voxx = 1e3*self.image.mdh.getEntry('voxelsize.x')
-        voxy = 1e3*self.image.mdh.getEntry('voxelsize.y')
-        
-        self.SetFitInfo()
-
-        from PYME.Analysis.LMVis import gl_render
-        self.glCanvas = gl_render.LMGLCanvas(self.dsviewer, False, vp = self.do, vpVoxSize = voxx)
-        self.glCanvas.cmap = pylab.cm.gist_rainbow
-        self.glCanvas.pointSelectionCallbacks.append(self.OnPointSelect)
-
-        self.dsviewer.AddPage(page=self.glCanvas, select=True, caption='VisLite')
-
-        xsc = self.image.data.shape[0]*1.0e3*self.image.mdh.getEntry('voxelsize.x')/self.glCanvas.Size[0]
-        ysc = self.image.data.shape[1]*1.0e3*self.image.mdh.getEntry('voxelsize.y')/ self.glCanvas.Size[1]
-
-        if xsc > ysc:
-            self.glCanvas.setView(0, xsc*self.glCanvas.Size[0], 0, xsc*self.glCanvas.Size[1])
-        else:
-            self.glCanvas.setView(0, ysc*self.glCanvas.Size[0], 0, ysc*self.glCanvas.Size[1])
-
-        #we have to wait for the gui to be there before we start changing stuff in the GL view
-        #self.timer.WantNotification.append(self.AddPointsToVis)
-
-        self.glCanvas.Bind(wx.EVT_IDLE, self.OnIdle)
-        self.pointsAdded = False
+#    def GenResultsView(self):
+#        voxx = 1e3*self.image.mdh.getEntry('voxelsize.x')
+#        voxy = 1e3*self.image.mdh.getEntry('voxelsize.y')
+#        
+#        self.SetFitInfo()
+#
+#        from PYME.Analysis.LMVis import gl_render
+#        self.glCanvas = gl_render.LMGLCanvas(self.dsviewer, False, vp = self.do, vpVoxSize = voxx)
+#        self.glCanvas.cmap = pylab.cm.gist_rainbow
+#        self.glCanvas.pointSelectionCallbacks.append(self.OnPointSelect)
+#
+#        self.dsviewer.AddPage(page=self.glCanvas, select=True, caption='VisLite')
+#
+#        xsc = self.image.data.shape[0]*1.0e3*self.image.mdh.getEntry('voxelsize.x')/self.glCanvas.Size[0]
+#        ysc = self.image.data.shape[1]*1.0e3*self.image.mdh.getEntry('voxelsize.y')/ self.glCanvas.Size[1]
+#
+#        if xsc > ysc:
+#            self.glCanvas.setView(0, xsc*self.glCanvas.Size[0], 0, xsc*self.glCanvas.Size[1])
+#        else:
+#            self.glCanvas.setView(0, ysc*self.glCanvas.Size[0], 0, ysc*self.glCanvas.Size[1])
+#
+#        #we have to wait for the gui to be there before we start changing stuff in the GL view
+#        #self.timer.WantNotification.append(self.AddPointsToVis)
+#
+#        self.glCanvas.Bind(wx.EVT_IDLE, self.OnIdle)
+#        self.pointsAdded = False
         
     def SetFitInfo(self):
         self.view.pointMode = 'lm'
@@ -222,11 +264,11 @@ class LMAnalyser:
             
         self.do.Optimise()
 
-    def AddPointsToVis(self):
-        self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],self.fitResults['tIndex'].astype('f'))
-        self.glCanvas.setCLim((0, self.fitResults['tIndex'].max()))
-
-        self.timer.WantNotification.remove(self.AddPointsToVis)
+#    def AddPointsToVis(self):
+#        self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],self.fitResults['tIndex'].astype('f'))
+#        self.glCanvas.setCLim((0, self.fitResults['tIndex'].max()))
+#
+#        self.timer.WantNotification.remove(self.AddPointsToVis)
 
     def GetStatusText(self):
         return 'Frames Analysed: %d    Events detected: %d' % (self.numAnalysed, self.numEvents)
@@ -430,21 +472,21 @@ class LMAnalyser:
 
         #############
         #set up real time display
-        if not 'glCanvas' in dir(self):   #re-use existing canvas if present     
-            from PYME.Analysis.LMVis import gl_render
-            self.glCanvas = gl_render.LMGLCanvas(self.dsviewer, False)
-            self.glCanvas.cmap = pylab.cm.gist_rainbow
-    
-            self.dsviewer.AddPage(page=self.glCanvas, select=True, caption='VisLite')
+#        if not 'glCanvas' in dir(self):   #re-use existing canvas if present     
+#            from PYME.Analysis.LMVis import gl_render
+#            self.glCanvas = gl_render.LMGLCanvas(self.dsviewer, False)
+#            self.glCanvas.cmap = pylab.cm.gist_rainbow
+#    
+#            self.dsviewer.AddPage(page=self.glCanvas, select=True, caption='VisLite')
         
 
-        xsc = self.image.data.shape[0]*1.0e3*self.image.mdh.getEntry('voxelsize.x')/self.glCanvas.Size[0]
-        ysc = self.image.data.shape[1]*1.0e3*self.image.mdh.getEntry('voxelsize.y')/ self.glCanvas.Size[1]
-
-        if xsc > ysc:
-            self.glCanvas.setView(0, xsc*self.glCanvas.Size[0], 0, xsc*self.glCanvas.Size[1])
-        else:
-            self.glCanvas.setView(0, ysc*self.glCanvas.Size[0], 0, ysc*self.glCanvas.Size[1])
+#        xsc = self.image.data.shape[0]*1.0e3*self.image.mdh.getEntry('voxelsize.x')/self.glCanvas.Size[0]
+#        ysc = self.image.data.shape[1]*1.0e3*self.image.mdh.getEntry('voxelsize.y')/ self.glCanvas.Size[1]
+#
+#        if xsc > ysc:
+#            self.glCanvas.setView(0, xsc*self.glCanvas.Size[0], 0, xsc*self.glCanvas.Size[1])
+#        else:
+#            self.glCanvas.setView(0, ysc*self.glCanvas.Size[0], 0, ysc*self.glCanvas.Size[1])
 
         self.numAnalysed = 0
         self.numEvents = 0
@@ -600,47 +642,19 @@ class LMAnalyser:
             if len(newResults) > 0:
                 if len(self.fitResults) == 0:
                     self.fitResults = newResults
+                    self.ds = inpFilt.fitResultsSource(self.fitResults)
+                    self.dsviewer.pipeline.OpenFile(ds=self.ds)
                 else:
                     self.fitResults = numpy.concatenate((self.fitResults, newResults))
+                    self.ds.setResults(self.fitResults)
+                    self.dsviewer.pipeline.Rebuild()
+                    
+                
                 self.progPan.fitResults = self.fitResults
 
                 self.view.points = numpy.vstack((self.fitResults['fitResults']['x0'], self.fitResults['fitResults']['y0'], self.fitResults['tIndex'])).T
 
                 self.numEvents = len(self.fitResults)
-
-                if self.analDispMode == 'z' and (('zm' in dir(self)) or ('z0' in self.fitResults['fitResults'].dtype.fields)):
-                    #display z as colour
-                    if 'zm' in dir(self): #we have z info
-                        if 'z0' in self.fitResults['fitResults'].dtype.fields:
-                            z = 1e3*self.zm(self.fitResults['tIndex'].astype('f')).astype('f')
-                            z_min = z.min() - 500
-                            z_max = z.max() + 500
-                            z = z + self.fitResults['fitResults']['z0']
-                            self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],z)
-                            self.glCanvas.setCLim((z_min, z_max))
-                        else:
-                            z = self.zm(self.fitResults['tIndex'].astype('f')).astype('f')
-                            self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],z)
-                            self.glCanvas.setCLim((z.min(), z.max()))
-                    elif 'z0' in self.fitResults['fitResults'].dtype.fields:
-                        z = self.fitResults['fitResults']['z0']
-                        self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],z)
-                        self.glCanvas.setCLim((-1e3, 1e3))
-
-                elif self.analDispMode == 'gFrac' and 'Ag' in self.fitResults['fitResults'].dtype.fields:
-                    #display ratio of colour channels as point colour
-                    c = self.fitResults['fitResults']['Ag']/(self.fitResults['fitResults']['Ag'] + self.fitResults['fitResults']['Ar'])
-                    self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],c)
-                    self.glCanvas.setCLim((0, 1))
-                elif self.analDispMode == 'gFrac' and 'ratio' in self.fitResults['fitResults'].dtype.fields:
-                    #display ratio of colour channels as point colour
-                    c = self.fitResults['fitResults']['ratio']
-                    self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],c)
-                    self.glCanvas.setCLim((0, 1))
-                else:
-                    #default to time
-                    self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],self.fitResults['tIndex'].astype('f'))
-                    self.glCanvas.setCLim((0, self.numAnalysed))
 
         if (self.tq.getNumberOpenTasks(self.image.seriesName) + self.tq.getNumberTasksInProgress(self.image.seriesName)) == 0 and 'SpoolingFinished' in self.image.mdh.getEntryNames():
             self.dsviewer.statusbar.SetBackgroundColour(wx.GREEN)
@@ -793,8 +807,9 @@ class LMAnalyser:
             self.tq.postTask(remFitBuf.fitTask(self.image.seriesName,i, detThresh, md, fitFcn, bgindices=bgi, SNThreshold=True, dataSourceModule=mn), queueName=resultsFilename)
 
         self.image.seriesName = resultsFilename
-            
-        #self.tq.releaseTasks(self.image.seriesName, startingAt)
+        
+        
+   
 
 
 #    def testFrame(self, detThresh = 0.9):

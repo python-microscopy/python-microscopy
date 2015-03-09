@@ -220,7 +220,7 @@ class Pipeline:
         while len(self.filesToClose) > 0:
             self.filesToClose.pop().close()
 
-    def OpenFile(self, filename, **kwargs):
+    def OpenFile(self, filename= '', ds = None, **kwargs):
         '''Open a file - accepts optional keyword arguments for use with files
         saved as .txt and .mat. These are:
             
@@ -250,7 +250,10 @@ class Pipeline:
         
         self.filename = filename
         
-        if os.path.splitext(filename)[1] == '.h5r':
+        if not ds == None:
+            self.selectedDataSource = ds
+            self.dataSources.append(ds)
+        elif os.path.splitext(filename)[1] == '.h5r':
             try:
                 self.selectedDataSource = inpFilt.h5rSource(filename)
                 self.dataSources.append(self.selectedDataSource)

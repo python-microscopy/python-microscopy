@@ -42,7 +42,7 @@ class ParticleTracker:
         pipeline = visFr.pipeline
 
         dlg = wx.SingleChoiceDialog(
-                self.visFr, 'choose the image which contains labels', 'Use Segmentation',
+                None, 'choose the image which contains labels', 'Use Segmentation',
                 image.openImages.keys(),
                 wx.CHOICEDLG_STYLE
                 )
@@ -102,10 +102,10 @@ class ParticleTracker:
 #                        chanNames[chanNames.index(lab[i][0])] = lab[i][1]
 
             for ch, i in zip(chans, range(len(chans))):
-                self.visFr.colourFilter.setColour(ch)
+                self.pipeline.colourFilter.setColour(ch)
                 #fitDecayChan(colourFilter, metadata, chanNames[i], i)
-                self.visFr.objectMeasures[chanNames[i]] = objectMeasure.measureObjectsByID(self.visFr.colourFilter, 10,ids)
-            self.visFr.colourFilter.setColour(curChan)
+                self.pipeline.objectMeasures[chanNames[i]] = objectMeasure.measureObjectsByID(self.visFr.colourFilter, 10,ids)
+            self.pipeline.colourFilter.setColour(curChan)
 
 
 
