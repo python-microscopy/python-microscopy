@@ -27,46 +27,18 @@ from PYME.Acquire import MetaDataHandler
 import PYME.Analysis.FitFactories
 
 from PYME.Analysis import MetaDataEdit as mde
-from pylab import *
+#from pylab import *
 from PYME.FileUtils import fileID
 from PYME.FileUtils.nameUtils import genResultFileName
 from PYME.Analysis.LMVis import progGraph as progGraph
 
-from PYME.Analysis.LMVis import gl_render
+#from PYME.Analysis.LMVis import gl_render
 #from PYME.Analysis.LMVis import workspaceTree
 #import sys
 
-import pylab
+
 from PYME.misc import extraCMaps
-from PYME.FileUtils import nameUtils
 
-import os
-from PYME.Analysis.LMVis import gl_render3D
-
-from PYME.Analysis.LMVis import colourPanel
-from PYME.Analysis.LMVis import renderers
-from PYME.Analysis.LMVis import pipeline
-
-try:
-    from PYME.Analysis.LMVis import recArrayView
-except:
-    pass
-
-#try importing our drift correction stuff
-HAVE_DRIFT_CORRECTION = False
-try:
-    from PYMEnf.DriftCorrection.driftGUI import CreateDriftPane
-    HAVE_DRIFT_CORRECTION = True
-    #from PYMEnf.DriftCorrection import driftGUI
-    #renderers.renderMetadataProviders.append(driftGUI.dp.SaveMetadata)
-except:
-    pass
-
-from PYME.Analysis.LMVis.colourFilterGUI import CreateColourFilterPane
-from PYME.Analysis.LMVis.displayPane import CreateDisplayPane
-from PYME.Analysis.LMVis.filterPane import CreateFilterPane
-
-from PYME.Analysis import MetadataTree
 
 import numpy as np
 
@@ -833,6 +805,7 @@ class LMAnalyser:
 #        return ft(True)
 
     def testFrames(self, detThresh = 0.9, offset = 0):
+        from pylab import *
         close('all')
         if self.image.dataSource.moduleName == 'TQDataSource':
             self.checkTQ()
@@ -894,6 +867,7 @@ class LMAnalyser:
         matplotlib.interactive(True)
         
     def testFrame(self, detThresh = 0.9, offset = 0, gui=True):
+        from pylab import *
         #close('all')
         if self.image.dataSource.moduleName == 'TQDataSource':
             self.checkTQ()

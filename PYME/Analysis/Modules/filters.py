@@ -5,10 +5,10 @@ Created on Fri Feb 20 17:11:05 2015
 @author: david
 """
 try:
-    from enthought.traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, Str, Bool, Int, ListInstance
+    from enthought.traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, ListInstance
     from enthought.traits.ui.api import View, Item, EnumEditor, InstanceEditor
 except ImportError:
-    from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, Str, Bool, Int, ListInstance
+    from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, ListInstance
     from traitsui.api import View, Item, EnumEditor, InstanceEditor
 
 from PYME.DSView.image import ImageStack
@@ -79,7 +79,7 @@ class ModuleCollection(HasTraits):
     def toYAML(self):
         import yaml
         l = []
-        for mod in self:
+        for mod in self.modules:
             l.append({mod.__class__.__name__: mod.get()})
             
         return yaml.dump(l, default_flow_style=False)
@@ -91,6 +91,9 @@ class ModuleCollection(HasTraits):
         l = yaml.load(data)
         
         mc = []
+        
+        if l == None:
+            l = []
         
         for mdd in l:
             mn, md = mdd.items()[0]
@@ -121,8 +124,8 @@ class ModuleBase(HasTraits):
     
 class ExtractChannel(ModuleBase):
     '''extract one channel from an image'''
-    inputName = Str('input')
-    outputName = Str('filtered_image')     
+    inputName = CStr('input')
+    outputName = CStr('filtered_image')     
     
     channelToExtract = Int(0)
     
@@ -139,8 +142,8 @@ class ExtractChannel(ModuleBase):
     
 class Filter(ModuleBase):
     '''Module with one image input and one image output'''
-    inputName = Str('input')
-    outputName = Str('filtered_image')
+    inputName = CStr('input')
+    outputName = CStr('filtered_image')
     
     processFramesIndividually = Bool(False)
     
@@ -148,9 +151,9 @@ class Filter(ModuleBase):
         if self.processFramesIndividually:
             filt_ims = []
             for chanNum in range(image.data.shape[3]):
-                filt_ims.append(np.concatenate([np.atleast_3d(self.applyFilter(image.data[:,:,i,chanNum].squeeze(), chanNum, i)) for i in range(image.data.shape[2])], 2))
+                filt_ims.append(np.concatenate([np.atleast_3d(self.applyFilter(image.data[:,:,i,chanNum].squeeze(), chanNum, i, image)) for i in range(image.data.shape[2])], 2))
         else:
-            filt_ims = [np.atleast_3d(self.applyFilter(image.data[:,:,:,chanNum].squeeze(), chanNum, 0)) for chanNum in range(image.data.shape[3])]
+            filt_ims = [np.atleast_3d(self.applyFilter(image.data[:,:,:,chanNum].squeeze(), chanNum, 0, image)) for chanNum in range(image.data.shape[3])]
             
         im = ImageStack(filt_ims, titleStub = self.outputName)
         im.mdh.copyEntriesFrom(image.mdh)
@@ -162,6 +165,9 @@ class Filter(ModuleBase):
         
     def execute(self, namespace):
         namespace[self.outputName] = self.filter(namespace[self.inputName])
+        
+    def completeMetadata(self, im):
+        pass  
     
 class GaussianFilter(Filter):
     sigmaY = Float(1.0)
@@ -173,7 +179,7 @@ class GaussianFilter(Filter):
     def sigmas(self):
         return [self.sigmaX, self.sigmaY, self.sigmaZ]
     
-    def applyFilter(self, data, chanNum, frNum):
+    def applyFilter(self, data, chanNum, frNum, im):
         return ndimage.gaussian_filter(data, self.sigmas[:len(data.shape)])
     
     def completeMetadata(self, im):
@@ -182,7 +188,7 @@ class GaussianFilter(Filter):
 class SimpleThreshold(Filter):
     threshold = Float(0.5)
     
-    def applyFilter(self, data, chanNum, frNum):
+    def applyFilter(self, data, chanNum, frNum, im):
         mask = data > self.threshold
         return mask
 
@@ -192,7 +198,7 @@ class SimpleThreshold(Filter):
 class Label(Filter):
     minRegionPixels = Int(10)
     
-    def applyFilter(self, data, chanNum, frNum):
+    def applyFilter(self, data, chanNum, frNum, im):
         mask = data > 0.5
         labs, nlabs = ndimage.label(mask)
         
@@ -214,38 +220,122 @@ class Label(Filter):
     def completeMetadata(self, im):
         im.mdh['Labelling.MinSize'] = self.minRegionPixels
         
+class LocalMaxima(Filter):
+    threshold = Float(.3)
+    minDistance = Int(10)
+    
+    def applyFilter(self, data, chanNum, frNum, im):
+        import skimage.feature
+        im = data.astype('f')/data.max()
+        return skimage.feature.peak_local_max(im, threshold_abs = self.threshold, min_distance = self.minDistance, indices=False)
+
+    def completeMetadata(self, im):
+        im.mdh['LocalMaxima.threshold'] = self.threshold
+        im.mdh['LocalMaxima.minDistance'] = self.minDistance
+        
+class DistanceTransform(Filter):    
+    def applyFilter(self, data, chanNum, frNum, im):
+        mask = 1.0*(data > 0.5)
+        voxelsize = np.array(im.voxelsize)[:mask.ndim]
+        dt = -ndimage.distance_transform_edt(data, sampling=voxelsize)
+        dt = dt + ndimage.distance_transform_edt(ndimage.binary_dilation(1-mask), sampling=voxelsize)
+        return dt
+     
+class BinaryDilation(Filter):
+    iterations = Int(1)
+    radius = Float(1)
+    
+    def applyFilter(self, data, chanNum, frNum, im):
+        import skimage.morphology
+        
+        if len(data.shape) == 3: #3D
+            selem = skimage.morphology.ball(self.radius)
+        else:
+            selem = skimage.morphology.disk(self.radius)
+        return ndimage.binary_dilation(data, selem)
+        
+class BinaryErosion(Filter):
+    iterations = Int(1)
+    radius = Float(1)
+    
+    def applyFilter(self, data, chanNum, frNum, im):
+        import skimage.morphology
+        
+        if len(data.shape) == 3: #3D
+            selem = skimage.morphology.ball(self.radius)
+        else:
+            selem = skimage.morphology.disk(self.radius)
+        return ndimage.binary_erosion(data, selem)
+        
+class BinaryFillHoles(Filter):
+    iterations = Int(1)
+    radius = Float(1)
+    
+    def applyFilter(self, data, chanNum, frNum, im):
+        import skimage.morphology
+        
+        if len(data.shape) == 3: #3D
+            selem = skimage.morphology.ball(self.radius)
+        else:
+            selem = skimage.morphology.disk(self.radius)
+        return ndimage.binary_fill_holes(data, selem)
+        
 class Watershed(ModuleBase):
     '''Module with one image input and one image output'''
-    inputName = Str('input')
-    outputName = Str('filtered_image')
+    inputImage = CStr('input')
+    inputMarkers = CStr('markers')
+    inputMask = CStr('')
+    outputName = CStr('watershed')
     
     processFramesIndividually = Bool(False)
     
-    def filter(self, image):
+    def filter(self, image, markers, mask=None):
         if self.processFramesIndividually:
             filt_ims = []
             for chanNum in range(image.data.shape[3]):
-                filt_ims.append(np.concatenate([np.atleast_3d(self.applyFilter(image.data[:,:,i,chanNum].squeeze(), chanNum, i)) for i in range(image.data.shape[2])], 2))
+                if not mask == None:
+                    filt_ims.append(np.concatenate([np.atleast_3d(self.applyFilter(image.data[:,:,i,chanNum].squeeze(), markers.data[:,:,i,chanNum].squeeze(), mask.data[:,:,i,chanNum].squeeze())) for i in range(image.data.shape[2])], 2))
+                else:
+                    filt_ims.append(np.concatenate([np.atleast_3d(self.applyFilter(image.data[:,:,i,chanNum].squeeze(), markers.data[:,:,i,chanNum].squeeze())) for i in range(image.data.shape[2])], 2))
         else:
-            filt_ims = [np.atleast_3d(self.applyFilter(image.data[:,:,:,chanNum].squeeze(), chanNum, 0)) for chanNum in range(image.data.shape[3])]
+            if not mask == None:
+                filt_ims = [np.atleast_3d(self.applyFilter(image.data[:,:,:,chanNum].squeeze(), markers.data[:,:,:,chanNum].squeeze(), mask.data[:,:,:,chanNum].squeeze())) for chanNum in range(image.data.shape[3])]
+            else:
+                filt_ims = [np.atleast_3d(self.applyFilter(image.data[:,:,:,chanNum].squeeze(), mask.data[:,:,:,chanNum].squeeze())) for chanNum in range(image.data.shape[3])]
             
         im = ImageStack(filt_ims, titleStub = self.outputName)
         im.mdh.copyEntriesFrom(image.mdh)
         im.mdh['Parent'] = image.filename
         
-        self.completeMetadata(im)
+        #self.completeMetadata(im)
         
         return im
         
+    def applyFilter(self, image,markers, mask=None):
+        import skimage.morphology
+
+        img = ((image/image.max())*2**15).astype('int16')         
+        
+        if not mask == None:
+            return skimage.morphology.watershed(img, markers.astype('int16'), mask = mask.astype('int16'))
+        else:
+            return skimage.morphology.watershed(img, markers.astype('int16'))
+        
     def execute(self, namespace):
-        namespace[self.outputName] = self.filter(namespace[self.inputName])
+        image = namespace[self.inputImage]
+        markers =  namespace[self.inputMarkers]
+        if self.inputMask in ['', 'none', 'None']:
+            namespace[self.outputName] = self.filter(image, markers)
+        else:
+            mask = namespace[self.inputMask]
+            namespace[self.outputName] = self.filter(image, markers, mask)
 
 
 class Measure2D(ModuleBase):
     '''Module with one image input and one image output'''
-    inputLabels = Str('labels')
-    inputIntensity = Str('data')
-    outputName = Str('measurements')
+    inputLabels = CStr('labels')
+    inputIntensity = CStr('data')
+    outputName = CStr('measurements')
     
     measureContour = Bool(True)    
         
@@ -294,7 +384,11 @@ class Measure2D(ModuleBase):
                 elif key == 'y':
                     return self.ps*np.array([r.centroid[1] for r in self.measures])
                 else:
-                    return np.array([getattr(r, key) for r in self.measures])       
+                    a = np.array([getattr(r, key) for r in self.measures])
+                    if a.ndim == 2:
+                        return a.T
+                    else:
+                        return a
         
         # end measuremnt class def
         
@@ -320,13 +414,34 @@ class Measure2D(ModuleBase):
             it = intensity.data[:,:,frameNo].squeeze()
         else:
             it = None
+            
+        rp = skimage.measure.regionprops(li, it)
+        
+        #print len(rp), li.max()
         
         if self.measureContour:
-            ct = skimage.measure.find_contours((li > .5), .5)
+            ct = []
+            for i in range(len(rp)):
+                #print i, (li == (i+1)).sum()
+                #c = skimage.measure.find_contours(r['image'], .5)
+                c = skimage.measure.find_contours((li == (i+1)), .5)
+                if len(c) == 0:
+                    c = [np.zeros((2,2))]
+                #ct.append(c[0] + np.array(r['bbox'])[:2][None,:])
+                ct.append(c[0])
         else:
             ct = None
             
-        rp = skimage.measure.regionprops(li, it)
+        
             
         return rp, ct
-        
+
+def _issubclass(cl, c):
+    try:
+        return issubclass(cl, c)
+    except TypeError:
+        return False
+ 
+#d = {}
+#d.update(locals())
+#moduleList = [c for c in d if _issubclass(c, ModuleBase) and not c == ModuleBase]       
