@@ -378,6 +378,14 @@ def gphotons(pipeline):
     colourFilter.setColour(curcol)
     return ret
 
+import PYME.Analysis.BleachProfile.kinModels as km
+def plotphotons(pipeline,color='red'):
+    nph = km.getPhotonNums(pipeline.colourFilter,pipeline.mdh)
+    ph_range = 6*nph.mean()
+    n, bins = np.histogram(nph, np.linspace(0, ph_range, 100))
+    plt.bar(bins[:-1], n, width=bins[1]-bins[0], alpha=0.4, color=color)
+    return nph
+
 def photonconvert(data,mdh=None):
     if mdh is None:
         mdh = getmdh(inmodule=True)
@@ -419,3 +427,4 @@ def correltrack(data,start=0,avgover=10,pixelsize=70.0,centersize=7,centroidfrac
     t = start + np.arange(nsteps)*avgover
     sh = pixelsize*(sh-sh[0])
     return t, sh, xctw
+
