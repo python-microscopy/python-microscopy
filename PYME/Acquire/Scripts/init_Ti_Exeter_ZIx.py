@@ -118,6 +118,7 @@ pz1.join()
 InitGUI('''
 scope.camControls['Zyla'] = AndorNeoControlFrame.AndorNeoPanel(MainFrame, scope.cameras['Zyla'], scope)
 camPanels.append((scope.camControls['Zyla'], 'Zyla Properties'))
+time1.WantNotification.append(scope.camControls['Zyla'].refresh)
 
 #scope.camControls['B - Right'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['B - Right'], scope)
 #camPanels.append((scope.camControls['B - Right'], 'EMCCD B Properties'))

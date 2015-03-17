@@ -155,3 +155,7 @@ class AndorNeoPanel(wx.Panel):
         else:
             self.stTrueEMGain.SetLabel('True Gain = %3.2f' % calEMGain)
             self.stTrueEMGain.SetForegroundColour(wx.BLUE)
+
+    def refresh(self):
+        self.cbShutter.SetValue(self.cam.SpuriousNoiseFilter.getValue())
+        self.cbStaticBlemishCorrection.SetValue(self.cam.StaticBlemishCorrection.getValue())

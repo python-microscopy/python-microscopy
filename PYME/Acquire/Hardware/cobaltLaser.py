@@ -84,9 +84,8 @@ class CobaltLaser(Laser):
     def checkfault(self):
         self.ser_port.write('f?\r\n')
         self.ser_port.flush()
-
-        return self.ser_port.read(50)
         print ('fault code: 0-no errors; 1-temperature error; 3-interlock error; 4-constant power time out')
+        return self.ser_port.read(50)
 
     def GetPower(self):
         return self.power
