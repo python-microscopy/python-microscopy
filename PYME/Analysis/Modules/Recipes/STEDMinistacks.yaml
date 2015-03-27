@@ -1,0 +1,15 @@
+- SimpleThreshold:
+    inputName: input
+    outputName: mask
+    processFramesIndividually: true
+    threshold: 25.0
+- Label:
+    inputName: mask
+    minRegionPixels: 5
+    outputName: labels
+    processFramesIndividually: true
+- Measure2D:
+    inputIntensity: input
+    inputLabels: labels
+    measureContour: true
+    outputName: output

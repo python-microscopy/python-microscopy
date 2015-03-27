@@ -85,10 +85,7 @@ class filterer:
             for i in range(im.data.shape[3]):
                 dv.do.Gains[i] = 1.0
 
-            #imfc = MultiChannelImageViewFrame(self.parent, self.parent.glCanvas, filt_ims, self.image.names, title='Filtered Image - %3.1fnm bins' % self.image.pixelSize)
-
-            #self.parent.generatedImages.append(imfc)
-            #imfc.Show()
+            
 
         dlg.Destroy()
         
@@ -130,26 +127,12 @@ class filterer:
 
     def OnApplyThreshold(self, event):
         import numpy as np
-        #from scipy.ndimage import gaussian_filter
         from PYME.DSView.image import ImageStack
         from PYME.DSView import ViewIm3D
 
-        #dlg = wx.TextEntryDialog(self.dsviewer, 'Blur size [pixels]:', 'Gaussian Blur', '[1,1,1]')
-
-        #if dlg.ShowModal() == wx.ID_OK:
-            #sigmas = eval(dlg.GetValue())
-            #print sigmas
-            #print self.images[0].img.shape
-
-        #roi = [[self.do.selection_begin_x, self.do.selection_end_x + 1],[self.do.selection_begin_y, self.do.selection_end_y +1], [0, self.image.data.shape[2]]]
-
-        filt_ims = [np.atleast_3d(self.image.data[:,:,:,chanNum].squeeze() > (self.dsviewer.do.Offs[chanNum] + 0.5/self.dsviewer.do.Gains[chanNum])) for chanNum in range(self.image.data.shape[3])]
+       
+        filt_ims = [np.atleast_3d(self.image.data[:,:,:,chanNum].squeeze() > self.dsviewer.do.thresholds[chanNum]) for chanNum in range(self.image.data.shape[3])]
         
-        #print sum(filt_ims).shape
-
-
-        
-        #im.mdh['Processing.CropROI'] = roi
 
         if self.dsviewer.mode == 'visGUI':
             mode = 'visGUI'
@@ -169,12 +152,7 @@ class filterer:
         for i in range(im.data.shape[3]):
             dv.do.Gains[i] = 1.0
 
-            #imfc = MultiChannelImageViewFrame(self.parent, self.parent.glCanvas, filt_ims, self.image.names, title='Filtered Image - %3.1fnm bins' % self.image.pixelSize)
-
-            #self.parent.generatedImages.append(imfc)
-            #imfc.Show()
-
-        #dlg.Destroy()
+            
 
     def OnLabel(self, event):
         import numpy as np
@@ -182,17 +160,7 @@ class filterer:
         from PYME.DSView.image import ImageStack
         from PYME.DSView import ViewIm3D
 
-        #dlg = wx.TextEntryDialog(self.dsviewer, 'Blur size [pixels]:', 'Gaussian Blur', '[1,1,1]')
-
-        #if dlg.ShowModal() == wx.ID_OK:
-            #sigmas = eval(dlg.GetValue())
-            #print sigmas
-            #print self.images[0].img.shape
-
-        #roi = [[self.do.selection_begin_x, self.do.selection_end_x + 1],[self.do.selection_begin_y, self.do.selection_end_y +1], [0, self.image.data.shape[2]]]
-
-        #filt_ims = [np.atleast_3d(self.image.data[:,:,:,chanNum].squeeze() > self.dsviewer.do.Offs[chanNum]) for chanNum in range(self.image.data.shape[3])]
-        filt_ims = [np.atleast_3d(self.image.data[:,:,:,chanNum].squeeze() > (self.dsviewer.do.Offs[chanNum] + 0.5/self.dsviewer.do.Gains[chanNum])) for chanNum in range(self.image.data.shape[3])]
+        filt_ims = [np.atleast_3d(self.image.data[:,:,:,chanNum].squeeze() > self.dsviewer.do.thresholds[chanNum]) for chanNum in range(self.image.data.shape[3])]
 
         #print sum(filt_ims).shape
         mask = sum(filt_ims) > 0.5
@@ -214,12 +182,7 @@ class filterer:
         for i in range(im.data.shape[3]):
             dv.do.Gains[i] = 1.0
 
-            #imfc = MultiChannelImageViewFrame(self.parent, self.parent.glCanvas, filt_ims, self.image.names, title='Filtered Image - %3.1fnm bins' % self.image.pixelSize)
-
-            #self.parent.generatedImages.append(imfc)
-            #imfc.Show()
-
-        #dlg.Destroy()
+            
         
     def OnLabelSizeThreshold(self, event):
         import numpy as np
@@ -241,11 +204,15 @@ class filterer:
         dlg = wx.TextEntryDialog(self.dsviewer, 'Minimum region size [pixels]:', 'Labelling', '1')
 
         if dlg.ShowModal() == wx.ID_OK:
-            rSize = int(dlg.GetValue())        
-        
-            filt_ims = [np.atleast_3d(self.image.data[:,:,:,chanNum].squeeze() > (self.dsviewer.do.Offs[chanNum] + 0.5/self.dsviewer.do.Gains[chanNum])) for chanNum in range(self.image.data.shape[3])]
+            rSize = int(dlg.GetValue())
             
-            self.image.labelThresholds = [(self.dsviewer.do.Offs[chanNum] + 0.5/self.dsviewer.do.Gains[chanNum]) for chanNum in range(self.image.data.shape[3])]
+            
+            self.image.labelThresholds = self.do.thresholds
+        
+            #filt_ims = [np.atleast_3d(self.image.data[:,:,:,chanNum].squeeze() > (self.dsviewer.do.Offs[chanNum] + 0.5/self.dsviewer.do.Gains[chanNum])) for chanNum in range(self.image.data.shape[3])]
+            filt_ims = [np.atleast_3d(self.image.data[:,:,:,chanNum].squeeze() > self.image.labelThresholds[chanNum]) for chanNum in range(self.image.data.shape[3])]
+            
+            #self.image.labelThresholds = [(self.dsviewer.do.Offs[chanNum] + 0.5/self.dsviewer.do.Gains[chanNum]) for chanNum in range(self.image.data.shape[3])]
     
             #print sum(filt_ims).shape
             mask = sum(filt_ims) > 0.5

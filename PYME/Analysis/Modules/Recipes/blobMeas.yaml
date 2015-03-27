@@ -1,0 +1,19 @@
+- GaussianFilter:
+    inputName: input
+    outputName: filtered
+    processFramesIndividually: true
+- SimpleThreshold:
+    inputName: filtered
+    outputName: mask
+    processFramesIndividually: false
+    threshold: 90
+- Label:
+    inputName: mask
+    minRegionPixels: 10
+    outputName: labels
+    processFramesIndividually: true
+- Measure2D:
+    inputIntensity: filtered
+    inputLabels: labels
+    measureContour: true
+    outputName: output

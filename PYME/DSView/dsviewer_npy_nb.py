@@ -23,8 +23,11 @@
 import wx
 import wx.lib.agw.aui as aui
 #import PYME.misc.aui as aui
+import matplotlib
+matplotlib.use('WxAgg')
 
 import pylab
+pylab.ion()
 import modules
 
 try:

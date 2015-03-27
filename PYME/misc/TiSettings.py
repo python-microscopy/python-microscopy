@@ -33,5 +33,4 @@ TISETTINGSDIR = r'C:\Program Files\Nikon\Shared\Data\Ti'
 
 class TiSettings:
     def read(self, directory):
-        
-        
+        pass

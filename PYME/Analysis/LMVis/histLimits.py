@@ -117,7 +117,9 @@ class HistLimitPanel(wx.Panel):
 
         if not self.dragging == None:
             evt = LimitChangeEvent(self.GetId(), upper=self.limit_upper, lower=self.limit_lower)
-            wx.PostEvent(self, evt)
+            #evt.ShouldPropagate()
+            #wx.PostEvent(self, evt)
+            self.ProcessEvent(evt)
 
         self.dragging=None
         self.GenHist()
@@ -281,7 +283,7 @@ class HistLimitPanel(wx.Panel):
             self.Refresh()
             self.Update()
             evt = LimitChangeEvent(self.GetId(), upper=self.limit_upper, lower=self.limit_lower)
-            wx.PostEvent(self, evt)
+            self.ProcessEvent(evt)
         elif event.GetKeyCode() == 80: #P - set percentile
             self.limit_lower = self.lower_pctile
             self.limit_upper = self.upper_pctile
@@ -289,7 +291,7 @@ class HistLimitPanel(wx.Panel):
             self.Refresh()
             self.Update()
             evt = LimitChangeEvent(self.GetId(), upper=self.limit_upper, lower=self.limit_lower)
-            wx.PostEvent(self, evt)
+            self.ProcessEvent(evt)
         elif event.GetKeyCode() == 84: #T - toggle threshold mode
             self.threshMode = not self.threshMode
             if self.threshMode:
@@ -308,7 +310,7 @@ class HistLimitPanel(wx.Panel):
             self.Refresh()
             self.Update()
             evt = LimitChangeEvent(self.GetId(), upper=self.limit_upper, lower=self.limit_lower)
-            wx.PostEvent(self, evt)
+            self.ProcessEvent(evt)
         else:
             event.Skip()
 
@@ -331,7 +333,7 @@ class HistLimitPanel(wx.Panel):
             self.Refresh()
             self.Update()
             evt = LimitChangeEvent(self.GetId(), upper=self.limit_upper, lower=self.limit_lower)
-            wx.PostEvent(self, evt)
+            self.ProcessEvent(evt)
 
     def SetValue(self, val):
         self.limit_lower = float(val[0])
@@ -349,7 +351,7 @@ class HistLimitPanel(wx.Panel):
     def SetValueAndFire(self, val):
         self.SetValue(val)
         evt = LimitChangeEvent(self.GetId(), upper=self.limit_upper, lower=self.limit_lower)
-        wx.PostEvent(self, evt)
+        self.ProcessEvent(evt)
 
 
     def GetValue(self):

@@ -218,6 +218,7 @@ class OptionsPanel(wx.Panel):
         self.do.SetScale(self.cbScale.GetSelection() - self.scale_11)
 
     def OnCLimChanged(self, event):
+        #print 'clc'
         ind = self.hIds.index(event.GetId())
         self.do.SetOffset(ind, event.lower)
         self.do.SetGain(ind,1./(event.upper- event.lower + 1e-4))
