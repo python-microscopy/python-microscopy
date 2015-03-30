@@ -53,14 +53,17 @@ class FitInfoPanel(wx.Panel):
 
         if self.mdh.getEntry('Analysis.FitModule') == 'LatGaussFitFR':
             #we know what the fit parameters are, and how to convert to photons
+            tPhotons = self.genGaussPhotonStats(None)
+        else:
+            tPhotons = ''
 
-            sPhotons = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Photon Stats'), wx.VERTICAL)
+        sPhotons = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Photon Stats'), wx.VERTICAL)
 
-            self.stPhotons = wx.StaticText(self, -1, self.genGaussPhotonStats(None))
-            self.stPhotons.SetFont(wx.Font(10, wx.MODERN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
-            sPhotons.Add(self.stPhotons, 0, wx.EXPAND|wx.TOP|wx.BOTTOM, 5)
+        self.stPhotons = wx.StaticText(self, -1, tPhotons)
+        self.stPhotons.SetFont(wx.Font(10, wx.MODERN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+        sPhotons.Add(self.stPhotons, 0, wx.EXPAND|wx.TOP|wx.BOTTOM, 5)
 
-            vsizer.Add(sPhotons, 0, wx.EXPAND|wx.LEFT|wx.TOP|wx.BOTTOM|wx.RIGHT, 5)
+        vsizer.Add(sPhotons, 0, wx.EXPAND|wx.LEFT|wx.TOP|wx.BOTTOM|wx.RIGHT, 5)
 
         self.fitViewPan = fitDispPanel(self, fitResults, mdh, ds, size=(300, 700))
         vsizer.Add(self.fitViewPan, 1, wx.EXPAND|wx.ALL, 5)

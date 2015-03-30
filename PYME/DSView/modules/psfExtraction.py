@@ -33,6 +33,9 @@ class psfExtractor:
         self.multiChannel = self.image.data.shape[3] > 1
 
         self.PSFLocs = []
+        self.psfROISize = [30,30,30]
+        
+        dsviewer.do.overlays.append(self.DrawOverlays)
 
         dsviewer.paneHooks.append(self.GenPSFPanel)
 
@@ -141,7 +144,7 @@ class psfExtractor:
             if ((numpy.array(p[:2]) - numpy.array((self.do.xp, self.do.yp)))**2).sum() < 100:
                 self.PSFLocs.pop(i)
 
-                self.view.psfROIs = self.PSFLocs
+                #self.view.psfROIs = self.PSFLocs
                 self.view.Refresh()
                 return
                 
@@ -165,21 +168,44 @@ class psfExtractor:
                     dx, dy, dz = extractImages.getIntCenter(self.image.data[(xp-rsx):(xp+rsx + 1),(yp-rsy):(yp+rsy+1), :, chnum])
                     self.PSFLocs.append((xp + dx, yp + dy, dz))
         
-        self.view.psfROIs = self.PSFLocs
+        #self.view.psfROIs = self.PSFLocs
         self.view.Refresh()
 
     def OnClearTags(self, event):
         self.PSFLocs = []
-        self.view.psfROIs = self.PSFLocs
+        #self.view.psfROIs = self.PSFLocs
         self.view.Refresh()
 
     def OnPSFROI(self, event):
         try:
-            psfROISize = [int(s) for s in self.tPSFROI.GetValue().split(',')]
-            self.view.psfROISize = psfROISize
+            self.psfROISize = [int(s) for s in self.tPSFROI.GetValue().split(',')]
+            #self.view.psfROISize = psfROISize
             self.view.Refresh()
         except:
             pass
+        
+    def DrawOverlays(self, view, dc):
+        #PSF ROIs
+        if (len(self.PSFLocs) > 0):
+            dc.SetBrush(wx.TRANSPARENT_BRUSH)
+            dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),1))
+            
+            if(view.do.slice == view.do.SLICE_XY):
+                a_x = 0
+                a_y = 1
+            elif(view.do.slice == view.do.SLICE_XZ):
+                a_x = 0
+                a_y = 2
+            elif(view.do.slice == view.do.SLICE_YZ):
+                a_x = 1
+                a_y = 2
+                
+            for p in self.PSFLocs:
+                #dc.DrawRectangle(sc*p[0]-self.psfROISize[0]*sc - x0,sc*p[1] - self.psfROISize[1]*sc - y0, 2*self.psfROISize[0]*sc,2*self.psfROISize[1]*sc)
+                xp0, yp0 = view._PixelToScreenCoordinates(p[a_x]-self.psfROISize[a_x],p[a_y] - self.psfROISize[a_y])
+                xp1, yp1 = view._PixelToScreenCoordinates(p[a_x]+self.psfROISize[a_x],p[a_y] + self.psfROISize[a_y])
+                dc.DrawRectangle(xp0, yp0, xp1-xp0,yp1-yp0)
+
         
     def OnCalcShift(self, event):
         if (len(self.PSFLocs) > 0):

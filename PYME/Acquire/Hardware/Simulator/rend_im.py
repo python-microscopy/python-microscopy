@@ -456,17 +456,21 @@ def simPalmImFI_(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=15, laserPo
     
     return im
     
-def _rFluorSubset(im, fl, A, x0, y0, z, roiSize, dx, dy, dz):
+def _rFluorSubset(im, fl, A, x0, y0, z, roiSize, dx, dy, dz, Chan2XOffset=0, Chan2ZOffset=0):
     
     #print fl['x'] - x0
     #print A
     
     #roiSize = 30*np.ones(A.shape, 'i')
     #print 'rFlS', len(x0)
-        
-    cInterp.InterpolateInplaceM(interpModel, im, (fl['x'] - x0), (fl['y'] - y0), z, A, roiSize,dx,dy,dz)
+    
+    if Chan2XOffset == 0:    
+        cInterp.InterpolateInplaceM(interpModel, im, (fl['x'] - x0), (fl['y'] - y0), z, A, roiSize,dx,dy,dz)
+    else:
+        cInterp.InterpolateInplaceM(interpModel, im, (fl['x'] - x0- Chan2XOffset),(fl['y'] - y0 ),  z, A*fl['spec'][:,0], roiSize,dx,dy,dz)
+        cInterp.InterpolateInplaceM(interpModel, im, (fl['x'] - x0+ Chan2XOffset),(fl['y'] - y0 ),  z+Chan2ZOffset, A*fl['spec'][:,1], roiSize,dx,dy,dz)
 
-def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=100, laserPowers = [.1,1], position=[0,0,0], illuminationFunction='ConstIllum'):
+def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=100, laserPowers = [.1,1], position=[0,0,0], illuminationFunction='ConstIllum', Chan2XOffset=0, Chan2ZOffset=0):
     if interpModel == None:
         genTheoreticalModel(MetaData.TIRFDefault)
         
@@ -520,7 +524,7 @@ def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=100, laserPo
         #print fl[::nCPUs].shape
         
             
-        threads = [threading.Thread(target = _rFluorSubset, args=(im, fl[i::nCPUs], A2[i::nCPUs], x0, y0, z2[i::nCPUs], roiS[i::nCPUs], dx, dy, dz)) for i in range(nCPUs)]
+        threads = [threading.Thread(target = _rFluorSubset, args=(im, fl[i::nCPUs], A2[i::nCPUs], x0, y0, z2[i::nCPUs], roiS[i::nCPUs], dx, dy, dz, Chan2XOffset, Chan2ZOffset)) for i in range(nCPUs)]
     
         for p in threads:
             #print p

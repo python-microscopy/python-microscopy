@@ -104,6 +104,7 @@ class dispSettingsPanel(wx.Panel):
         hsizer.Fit(self)
 
     def OnMappingChange(self, event):
+        print 'mc'
         lower, upper = self.hlDispMapping.GetValue()
 
         off = 1.*(lower)
@@ -118,6 +119,7 @@ class dispSettingsPanel(wx.Panel):
         self.vp.do.setDisp1Off(off)
 
         self.vp.Refresh()
+        self.vp.Update()
 
     def OnScaleChanged(self, event):
         self.scale = self.cbScale.GetSelection()

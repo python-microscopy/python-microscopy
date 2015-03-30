@@ -139,16 +139,16 @@ class GaussianFitFactory:
         Ag = dataROI[:,:,0].max() - dataROI[:,:,0].min() #amplitude
         Ar = dataROI[:,:,1].max() - dataROI[:,:,1].min() #amplitude
 
-#        figure(2)
-#        clf()
-#        subplot(121)
-#        imshow(dataROI[:,:,0], interpolation='nearest')
+        figure(2)
+        clf()
+        subplot(121)
+        imshow(dataROI[:,:,0], interpolation='nearest')
 #
-#        subplot(122)
-#        imshow(dataROI[:,:,1], interpolation='nearest')
+        subplot(122)
+        imshow(dataROI[:,:,1], interpolation='nearest')
 
-        #print Ag
-        #print Ar
+        print Ag
+        print Ar
 
         x0 =  X.mean()
         y0 =  Y.mean()

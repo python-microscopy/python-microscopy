@@ -93,7 +93,10 @@ class FilterPane(afp.foldingPane):
         self.bClipToSelection.Bind(wx.EVT_BUTTON, self.OnFilterClipToSelection)
         
         
-        visFr.Bind(wx.EVT_MENU, self.OnFilterClipToSelection, id=visFr.ID_VIEW_CLIP_ROI)
+        try:        
+            visFr.Bind(wx.EVT_MENU, self.OnFilterClipToSelection, id=visFr.ID_VIEW_CLIP_ROI)
+        except AttributeError:
+            pass
 
 
 
