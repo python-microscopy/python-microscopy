@@ -23,7 +23,8 @@
 
 from PYME.Acquire.Hardware.AndorIXon import AndorIXon
 from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
-from PYME.Acquire.Hardware.uc480 import uCam480
+from PYME.Acquire.Hardware.AndorNeo import AndorZyla
+#from PYME.Acquire.Hardware.uc480 import uCam480
 
 from PYME.Acquire.Hardware import fakeShutters
 import time
@@ -42,7 +43,9 @@ from PYME.Acquire import MetaDataHandler
 
 InitBG('EMCCD Cameras', '''
 scope.cameras['A - Left'] = AndorIXon.iXonCamera(0)
-scope.cameras['B - Right'] = uCam480.uc480Camera(1)
+#scope.cameras['B - Right'] = uCam480.uc480Camera(1)
+scope.cameras['B - Right'] = AndorZyla.AndorZyla(0)
+scope.cameras['B - Right'].Init()
 scope.cameras['A - Left'].port = 'L100'
 scope.cameras['B - Right'].port = 'R100'
 #scope.cameras['B - Right'].SetShutter(False)
@@ -51,6 +54,7 @@ scope.cam = scope.cameras['A - Left']
 
 ''')
 
+#InitGUI('''scope.cam.Init()''')
 #InitBG('EMCCD Camera 2', '''
 #scope.cameras['B'] = AndorIXon.iXonCamera(0)
 #''')
