@@ -79,7 +79,7 @@ class Spooler(sp.Spooler):
    
    def Tick(self, caller):
       #self.tq.postTask(cSMI.CDataStack_AsArray(caller.ds, 0).reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()), self.seriesName)
-      self.buffer.append(cSMI.CDataStack_AsArray(caller.ds, 0).reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()).copy())
+      self.buffer.append(caller.dsa.reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()).copy())
 
       if self.imNum == 0: #first frame
           self.md.setEntry('imageID', fileID.genFrameID(self.buffer[-1].squeeze()))
