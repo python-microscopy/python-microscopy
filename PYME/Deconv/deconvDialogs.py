@@ -151,6 +151,14 @@ class DeconvSettingsDialog(wx.Dialog):
         sizer3.Add(self.tOffset, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
         sizer2.Add(sizer3, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
+        
+        sizer3 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer3.Add(wx.StaticText(pan1, -1, 'Background:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+        self.tBackground = wx.TextCtrl(pan1, -1, '0')
+
+        sizer3.Add(self.tBackground, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+
+        sizer2.Add(sizer3, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
 
         sizer3 = wx.BoxSizer(wx.HORIZONTAL)
         sizer3.Add(wx.StaticText(pan1, -1, u'Regularisation \u03BB:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
@@ -286,6 +294,9 @@ class DeconvSettingsDialog(wx.Dialog):
         
     def GetOffset(self):
         return float(self.tOffset.GetValue())
+        
+    def GetBackground(self):
+        return float(self.tBackground.GetValue())
         
     def GetChannel(self):
         if self.nChans == 1:

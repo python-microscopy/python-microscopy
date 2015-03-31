@@ -130,6 +130,9 @@ class deconvolver:
 
             data = self.image.data[:,:,:, dlg.GetChannel()].astype('f') - dlg.GetOffset()
             decMDH['Deconvolution.Offset'] = dlg.GetOffset()
+            
+            bg = dlg.GetBackground()
+            decMDH['Deconvolution.Background'] = bg
 
             #crop PSF in z if bigger than stack
 
@@ -185,7 +188,7 @@ class deconvolver:
 
                 self.dec.psf_calc(psf, dp.shape)
 
-                self.decT = decThread.decThread(self.dec, dp, regLambda, nIter, weights)
+                self.decT = decThread.decThread(self.dec, dp, regLambda, nIter, weights, bg = bg)
                 self.decT.start()
 
                 tries = 0
@@ -260,6 +263,9 @@ class deconvolver:
 
             data = self.image.data[:,:,:, dlg.GetChannel()].astype('f') - dlg.GetOffset()
             decMDH['Deconvolution.Offset'] = dlg.GetOffset()
+            
+            bg = dlg.GetBackground()
+            decMDH['Deconvolution.Background'] = bg
 
             #crop PSF in z if bigger than stack
 
@@ -309,7 +315,7 @@ class deconvolver:
 #                r = p.map(_pt, slices)
 #                res = numpy.concatenate(r, 2)
 
-                res = numpy.concatenate([self.dec.deconv(dp[:,:,i:(i+1)], regLambda, nIter, weights).reshape(self.dec.shape) for i in range(dp.shape[2])], 2)
+                res = numpy.concatenate([self.dec.deconv(dp[:,:,i:(i+1)], regLambda, nIter, weights, bg=bg).reshape(self.dec.shape) for i in range(dp.shape[2])], 2)
                 
                 
                 im = ImageStack(data = res, mdh = decMDH, titleStub = 'Deconvolution Result')

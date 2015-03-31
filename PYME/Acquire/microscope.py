@@ -55,13 +55,8 @@ from PYME.misc import sqlitendarray
 #from PYME.Acquire import MetaDataHandler
 
 
-class microscope:
+class microscope(object):
     def __init__(self):
-        #example.CShutterControl.init()
-
-        #self.cam = example.CCamera()
-        #self.cam.Init()
-
         #list of tuples  of form (class, chan, name) describing the instaled piezo channels
         self.piezos = []
         self.hardwareChecks = []
@@ -78,7 +73,6 @@ class microscope:
 
         #self.WantEventNotification = []
  
-        #self.windows = []
         self.StatusCallbacks = [] #list of functions which provide status information
         self.CleanupFunctions = [] #list of functions to be called at exit
         #preview
@@ -280,12 +274,9 @@ class microscope:
                 self.prev_fr.genStatusText = self.genStatus
                 self.prev_fr.Show()
             else:
-                #self.vp = viewpanel.MyViewPanel(Notebook, self.pa.ds)
-                #self.vp.crosshairs = False
-
-                
                 self.vp = arrayViewPanel.ArrayViewPanel(Notebook, self.pa.dsa)
                 self.vp.crosshairs = False
+                self.vp.DrawScaleBar = False
                 self.vp.do.leftButtonAction = self.vp.do.ACTION_SELECTION
                 self.vp.do.showSelection = True
                 self.vp.CenteringHandlers.append(self.centreView)
@@ -294,17 +285,10 @@ class microscope:
 
 
                 Parent.time1.WantNotification.append(self.vsp.RefrData)
-                #Parent.time1.WantNotification.append(self.vsp.RefrData)
-                #Notebook.AddPage(imageId=-1, page=self.vp, select=True,text='Preview')
+
                 Notebook.AddPage(page=self.vp, select=True,caption='Preview')
-                #Notebook.AddPage(page=self.vp2, select=True,caption='Preview2')
-                #Notebook._mgr.AddPane
 
                 Parent.AddCamTool(self.vsp, 'Display')
-                #             Notebook.AddPage(page=self.vsp, select=False,caption='Display')
-                #             Notebook.Split(3, wx.RIGHT)
-                #             Notebook.SetSelection(2)
-                #             Notebook.SetSelection(3)
 
             #self.pa.WantFrameGroupNotification.append(self.pr_refr2)
             self.pa.WantFrameGroupNotification.append(self.vp.Redraw)
@@ -323,13 +307,6 @@ class microscope:
                 self.sp = fastGraph.SpecGraphPanel(Notebook, self)
 
                 Notebook.AddPage(page=self.sp, select=True,caption='Preview')
-                #Notebook._mgr.AddPane
-
-                #Parent.AddCamTool(self.vsp, 'Display')
-                #             Notebook.AddPage(page=self.vsp, select=False,caption='Display')
-                #             Notebook.Split(3, wx.RIGHT)
-                #             Notebook.SetSelection(2)
-                #             Notebook.SetSelection(3)
 
             self.pa.WantFrameGroupNotification.append(self.pr_refr3)
 
@@ -382,42 +359,42 @@ class microscope:
 
     #aquisition
 
-    def aq_refr(self,source):
-        if not self.pb.Update(self.sa.ds.getZPos(), 'Slice %d of %d' % (self.sa.ds.getZPos(), self.sa.ds.getDepth())):
-            self.sa.stop()
-        #self.dfr.update()
+#    def aq_refr(self,source):
+#        if not self.pb.Update(self.sa.ds.getZPos(), 'Slice %d of %d' % (self.sa.ds.getZPos(), self.sa.ds.getDepth())):
+#            self.sa.stop()
+#        #self.dfr.update()
 
-    def aq_end(self,source):
-        #self.dfr.update()
-        self.pb.Update(self.sa.ds.getDepth())
-        
-        if 'step' in self.__dict__:
-            self.sa.log['STEPPER'] = {}
-            self.sa.log['STEPPER']['XPos'] = self.step.GetPosX()
-            self.sa.log['STEPPER']['YPos'] = self.step.GetPosY()
-            self.sa.log['STEPPER']['ZPos'] = self.step.GetPosZ()
-            
-        if 'scopedetails' in self.__dict__:
-            self.sa.log['MICROSCOPE'] = self.scopedetails
-        
-        dialog = wx.MessageDialog(None, "Aquisition Finished", "pySMI", wx.OK)
-        dialog.ShowModal()
-        dialog.Destroy()
-        
-        self.pa.Prepare(True)
-        self.pa.start()
-
-        #self.dfr = dsviewer.DSViewFrame(None, "New Aquisition", CDataStack_AsArray(self.sa.ds, 0).squeeze(), self.sa.log, mdh=self.sa.mdh)
-        #self.dfr.Show()
-
-        im = dsviewer.ImageStack(data = CDataStack_AsArray(self.sa.ds, 0).squeeze(), mdh = self.sa.mdh)
-        dvf = dsviewer.DSViewFrame(im, title=('<Unsaved Stack %d>' % self.stackNum), mode='lite', size=(500, 500))
-        dvf.SetSize((500,500))
-        dvf.Show()
-
-        self.stackNum +=1
-
-        self.sa.ds = None
+#    def aq_end(self,source):
+#        #self.dfr.update()
+#        self.pb.Update(self.sa.ds.getDepth())
+#        
+#        if 'step' in self.__dict__:
+#            self.sa.log['STEPPER'] = {}
+#            self.sa.log['STEPPER']['XPos'] = self.step.GetPosX()
+#            self.sa.log['STEPPER']['YPos'] = self.step.GetPosY()
+#            self.sa.log['STEPPER']['ZPos'] = self.step.GetPosZ()
+#            
+#        if 'scopedetails' in self.__dict__:
+#            self.sa.log['MICROSCOPE'] = self.scopedetails
+#        
+#        dialog = wx.MessageDialog(None, "Aquisition Finished", "pySMI", wx.OK)
+#        dialog.ShowModal()
+#        dialog.Destroy()
+#        
+#        self.pa.Prepare(True)
+#        self.pa.start()
+#
+#        #self.dfr = dsviewer.DSViewFrame(None, "New Aquisition", CDataStack_AsArray(self.sa.ds, 0).squeeze(), self.sa.log, mdh=self.sa.mdh)
+#        #self.dfr.Show()
+#
+#        im = dsviewer.ImageStack(data = CDataStack_AsArray(self.sa.ds, 0).squeeze(), mdh = self.sa.mdh)
+#        dvf = dsviewer.DSViewFrame(im, title=('<Unsaved Stack %d>' % self.stackNum), mode='lite', size=(500, 500))
+#        dvf.SetSize((500,500))
+#        dvf.Show()
+#
+#        self.stackNum +=1
+#
+#        self.sa.ds = None
 
 #    def aqt_refr(self,source):
 #        if not self.pb.Update(self.ta.ds.getZPos(), 'Slice %d of %d' % (self.ta.ds.getZPos(), self.ta.ds.getDepth())):
