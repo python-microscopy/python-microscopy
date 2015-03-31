@@ -2,7 +2,7 @@
 
 This is a fork of the python-microscopy project (by David Baddeley) that has in addition to David's original code a branch that has local changes from work in my lab at the University of Exeter.
 
-There is not too much new or different material here, some differnt hardware backends and changes we required to make certain things work. I mainly maintain this repo to facilitate code exchange between David's and my copies of the repository. David's code gets on a semi-regular basis folded into this fork.
+There is not too much new or different material here, some different hardware backends and changes we required to make certain things work. I mainly maintain this repo to facilitate code exchange between David's and my copies of the repository. David's code gets on a semi-regular basis folded into this fork.
 
 Info on PYME from David's ReadMe:
 
