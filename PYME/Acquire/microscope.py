@@ -276,7 +276,7 @@ class microscope(object):
             else:
                 self.vp = arrayViewPanel.ArrayViewPanel(Notebook, self.pa.dsa)
                 self.vp.crosshairs = False
-                self.vp.DrawScaleBar = False
+                self.vp.showScaleBar = False
                 self.vp.do.leftButtonAction = self.vp.do.ACTION_SELECTION
                 self.vp.do.showSelection = True
                 self.vp.CenteringHandlers.append(self.centreView)
@@ -332,7 +332,11 @@ class microscope(object):
             self.lightpath.SetPort(self.cam.port)
         
         self.cam.SetActive(True)
-        self.cam.SetShutter(self.camControls[camName].cbShutter.GetValue())
+        try:
+            self.cam.SetShutter(self.camControls[camName].cbShutter.GetValue())
+        except AttributeError:
+            pass #for cameras which don't have a shutter
+        
         self.camControls[camName].GetParent().Show()#GetParent().PinOpen()
         self.camControls[camName].GetParent().GetParent().Layout()
 

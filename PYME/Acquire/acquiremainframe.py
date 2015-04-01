@@ -801,6 +801,15 @@ class PYMEMainFrame(wx.Frame):
             self.scope.cam.Shutdown()
         for f in self.scope.CleanupFunctions:
             f()
+            
+        print 'All cleanup functions called'
+        
+        time.sleep(1)
+        
+        import threading
+        print 'Remaining Threads:'
+        for t in threading.enumerate():
+            print t, t._Thread__target
         #self.int_sl.Destroy()
         #self.piezo_sl.Destroy()
         #self.seq_d.Destroy()

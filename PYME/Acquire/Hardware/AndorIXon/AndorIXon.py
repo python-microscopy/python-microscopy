@@ -592,6 +592,7 @@ class iXonCamera:
             raise RuntimeError('Error waiting for acquisition: %s' % ac.errorCodes[ret])
 
     def Shutdown(self):
+        print 'Shutting down EMCCD'
         self.__selectCamera()
         self.SetShutter(False)
         self.SetEMGain(0)
@@ -599,7 +600,7 @@ class iXonCamera:
         t = ac.GetTemperature.argtypes[0]._type_(-100)
         ac.GetTemperature(byref(t))
 
-        while (t.value < -50): #wait fro temp to get above -50
+        while False:#(t.value < -50): #wait fro temp to get above -50
             print(('Waiting for the camera to warm up - current temperature = %3.2f' % t.value))
             time.sleep(1)
             ac.GetTemperature(byref(t))

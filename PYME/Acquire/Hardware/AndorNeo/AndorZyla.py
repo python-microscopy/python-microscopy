@@ -367,6 +367,7 @@ class AndorBase(SDK3Camera):
     #    pass
 
     def Shutdown(self):
+        print 'Shutting down sCMOS camera'
         self.pollLoopActive = False
         self.shutdown()
         #pass

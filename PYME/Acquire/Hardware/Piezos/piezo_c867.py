@@ -282,9 +282,10 @@ class piezo_c867T(object):
                 self.lock.release()
                 
     def close(self):
-        self.loopActive = False
-        time.sleep(1)
-        self.ser_port.close()            
+        print "Shutting down XY Stage"
+        with self.lock:
+            self.loopActive = False
+            self.ser_port.close()            
                 
         
     def SetServo(self, state=1):
