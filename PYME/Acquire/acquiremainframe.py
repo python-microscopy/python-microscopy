@@ -576,7 +576,7 @@ class PYMEMainFrame(wx.Frame):
     def OnMAquireOnePic(self, event):
         import numpy as np
         self.scope.pa.stop()
-        ds2 = np.atleast_3d(CDataStack_AsArray(self.scope.pa.ds, 0).reshape(self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()).copy())
+        ds2 = np.atleast_3d(self.scope.pa.dsa.reshape(self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()).copy())
 
 
         #metadata handling
@@ -635,7 +635,7 @@ class PYMEMainFrame(wx.Frame):
         self.scope.cam.SetCOC()
         self.scope.cam.GetStatus()
         self.scope.pa.Prepare()
-        self.scope.vp.SetDataStack(self.scope.pa.ds)
+        self.scope.vp.SetDataStack(self.scope.pa.dsa)
         self.scope.pa.start()
         #event.Skip()
 
@@ -657,7 +657,7 @@ class PYMEMainFrame(wx.Frame):
         self.int_sl.Show()
             
         self.scope.pa.Prepare()
-        self.scope.vp.SetDataStack(self.scope.pa.ds)
+        self.scope.vp.SetDataStack(self.scope.pa.dsa)
         self.scope.pa.start()
         #event.Skip()
 
@@ -765,7 +765,7 @@ class PYMEMainFrame(wx.Frame):
         self.scope.cam.SetCOC()
         self.scope.cam.GetStatus()
         self.scope.pa.Prepare()
-        self.scope.vp.SetDataStack(self.scope.pa.ds)
+        self.scope.vp.SetDataStack(self.scope.pa.dsa)
 
         self.scope.vp.selection_begin_x = x1
         self.scope.vp.selection_begin_y = y1

@@ -33,10 +33,13 @@ arch, plat = platform.architecture()
 if plat.startswith('Windows'):
     if arch == '32bit':
         _stdcall_libraries['ATCORE'] = ctypes.WinDLL('atcore')
+        _stdcall_libraries['ATUTIL'] = ctypes.WinDLL('atutility')
     else:
         _stdcall_libraries['ATCORE'] =ctypes. WinDLL('atcore')
+        _stdcall_libraries['ATUTIL'] = ctypes.WinDLL('atutility')
 else:
     _stdcall_libraries['ATCORE'] = ctypes.CDLL('atcore.so')
+    _stdcall_libraries['ATUTIL'] = ctypes.CDLL('atutility.so')
 
 #### typedefs
 AT_H = ctypes.c_int
@@ -161,8 +164,8 @@ def stripMeta(val):
         return val
         
 class dllFunction(object):
-    def __init__(self, name, args = [], argnames = []):
-        self.f = getattr(_stdcall_libraries['ATCORE'], name)
+    def __init__(self, name, args = [], argnames = [], lib='ATCORE'):
+        self.f = getattr(_stdcall_libraries[lib], name)
         self.f.restype = c_int
         self.f.argtypes = [stripMeta(a) for a in args]
         
@@ -229,8 +232,8 @@ class dllFunction(object):
     
         
         
-def dllFunc(name, args = [], argnames = []):
-    f = dllFunction(name, args, argnames)    
+def dllFunc(name, args = [], argnames = [], lib='ATCORE'):
+    f = dllFunction(name, args, argnames, lib)    
     globals()[name[3:]] = f
 
 dllFunc('AT_InitialiseLibrary')
@@ -282,3 +285,13 @@ dllFunc('AT_GetStringMaxLength', [AT_H, STRING, OUTPUT(c_int)])
 dllFunc('AT_QueueBuffer', [AT_H, POINTER(AT_U8), c_int])
 dllFunc('AT_WaitBuffer', [AT_H, OUTPUT(POINTER(AT_U8)), OUTPUT(c_int), c_uint])
 dllFunc('AT_Flush', [AT_H])
+
+#####################################
+##Utility library (for unpacking etc ...)
+dllFunc('AT_InitialiseUtilityLibrary', lib='ATUTIL')
+dllFunc('AT_FinaliseUtilityLibrary', lib='ATUTIL')
+dllFunc('AT_ConvertBuffer', [POINTER(AT_U8), POINTER(AT_U8), AT_64, AT_64, AT_64, STRING, STRING], lib='ATUTIL')
+dllFunc('AT_ConvertBufferUsingMetadata', [POINTER(AT_U8), POINTER(AT_U8), AT_64, STRING], lib='ATUTIL')
+
+#Initialize the utility library
+InitialiseUtilityLibrary()

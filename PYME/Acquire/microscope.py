@@ -178,7 +178,7 @@ class microscope:
         self.sp.refr()
 
     def satCheck(self, source): # check for saturation
-        im = CDataStack_AsArray(source.ds, 0)
+        im = source.dsa
         IMax = im.max()
 
         if not self.cam.shutterOpen:
@@ -315,7 +315,7 @@ class microscope:
             if 'sp' in dir(self):
                     pass
             elif (Notebook == None):
-                self.prev_fr = prevviewer.PrevViewFrame(Parent, "Preview", self.pa.ds)
+                self.prev_fr = prevviewer.PrevViewFrame(Parent, "Preview", self.pa.dsa)
                 self.pa.WantFrameGroupNotification.append(self.pr_refr)
                 self.prev_fr.genStatusText = self.genStatus
                 self.prev_fr.Show()
