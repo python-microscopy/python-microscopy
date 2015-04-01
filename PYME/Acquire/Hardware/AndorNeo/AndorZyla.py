@@ -255,15 +255,21 @@ class AndorBase(SDK3Camera):
         xs, ys = chSlice.shape[:2]
         
         a_s = self.AOIStride.getValue()
+        
         #print buf.nbytes
         #bv = buf.view(chSlice.dtype).reshape([-1, ys], order='F')
-        bv = np.ndarray(shape=[xs,ys], dtype='uint16', strides=[2, a_s], buffer=buf)
-        #print bv.strides
-        chSlice[:] = bv
+        
+#        bv = np.ndarray(shape=[xs,ys], dtype='uint16', strides=[2, a_s], buffer=buf)
+#        chSlice[:] = bv
+        
         #chSlice[:,:] = bv
         #ctypes.cdll.msvcrt.memcpy(chSlice.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), buf.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), chSlice.nbytes)
         #ctypes.cdll.msvcrt.memcpy(chSlice.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), buf.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), chSlice.nbytes)
         #print 'f'
+        
+        dt = self.PixelEncoding.getString()
+        
+        SDK3.ConvertBuffer(buf.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), chSlice.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), xs, ys, a_s, dt, 'Mono16')
         
         #recycle buffer
         self._queueBuffer(buf)
