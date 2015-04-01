@@ -28,8 +28,9 @@ from PYME.Acquire.Hardware.lasers import Laser
 
 class CobaltLaser(Laser):
     def __init__(self, name,turnOn=False, portname='COM1', maxpower=0.1):
-        self.ser_port = serial.Serial(portname, 115200, 
-                                      timeout=2, writeTimeout=2)
+        self.ser_args = dict(port=portname, baudrate=115200, timeout=2, writetimeout=2)
+        #ser = serial.Serial(portname, 115200, 
+        #                              timeout=2, writeTimeout=2)
         self.powerControlable = True
         self.isOn=True
         self.maxpower = maxpower
@@ -44,20 +45,23 @@ class CobaltLaser(Laser):
         return self.isOn
         
     def _TurnOn(self):
-        self.ser_port.write('@cobas 0\r\n')
-        self.ser_port.write('l1\r\n')
-        self.ser_port.flush()
-        self.isOn = True
+        with serial.Serial(**self.ser_args) as ser:
+            ser.write('@cobas 0\r\n')
+            ser.write('l1\r\n')
+            ser.flush()
+            self.isOn = True
 
     def TurnOn(self):
-        self.ser_port.write('p %3.2f\r\n' % (self.power*self.maxpower))
-        self.ser_port.flush()
-        self.isOn = True
+        with serial.Serial(**self.ser_args) as ser:
+            ser.write('p %3.2f\r\n' % (self.power*self.maxpower))
+            ser.flush()
+            self.isOn = True
 
     def TurnOff(self):
-        self.ser_port.write('p 0\r\n')
-        self.ser_port.flush()
-        self.isOn = False
+        with serial.Serial(**self.ser_args) as ser:
+            ser.write('p 0\r\n')
+            ser.flush()
+            self.isOn = False
 
     def SetPower(self, power):
         if power < 0 or power > 1:
@@ -68,10 +72,13 @@ class CobaltLaser(Laser):
             self.TurnOn() #turning on actually sets power
 
     def _getOutputPower(self):
-        self.ser_port.write('p?\r')
-        self.ser_port.flush()
-
-        return float(self.ser_port.readline())
+        with serial.Serial(**self.ser_args) as ser:
+            ser.write('p?\r')
+            ser.flush()
+    
+            res = float(ser.readline())
+        
+        return res
 
     def GetPower(self):
         return self.power

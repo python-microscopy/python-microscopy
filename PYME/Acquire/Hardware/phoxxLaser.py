@@ -34,6 +34,7 @@ from PYME.Acquire.Hardware.lasers import Laser
 
 class PhoxxLaser(Laser):
     def __init__(self, name,turnOn=False, portname='COM3'):
+        #self.ser_args = dict(port=portname, baudrate=500000, timeout=.1, writetimeout=2)
         self.ser_port = serial.Serial(portname, 500000, timeout=.1, writeTimeout=2)
         self.powerControlable = True
         #self.isOn=False

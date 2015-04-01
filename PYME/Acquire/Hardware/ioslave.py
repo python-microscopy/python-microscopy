@@ -8,32 +8,110 @@ Created on Sun Oct 06 15:59:23 2013
 import serial
 import time
 
+#class IOSlave(object):
+#    def __init__(self, port='COM12'):
+#        self.ser_port = serial.Serial(port, 115200, rtscts=0, timeout=.1, writeTimeout=2)
+#        
+#    def SetDigital(self, chan, value):
+#        self.ser_port.write('SD%d %d\n' % (chan, value))
+#        res = self.ser_port.readline()
+#       
+#    def SetAnalog(self, chan, value):
+#        self.ser_port.write('SA%d %f\n' % (chan, value))
+#        res = self.ser_port.readline()
+#    
+#    def SetFlash(self, chan, value):
+#        self.ser_port.write('SF%d %d\n' % (chan, value))
+#        res = self.ser_port.readline()
+#    
+#    def GetAnalog(self, chan):
+#        self.ser_port.write('QA%d\n' % chan)
+#        return float(self.ser_port.readline())
+#        
+#    def GetTemperature(self, chan):
+#        self.ser_port.write('QT%d\n' % chan)
+#        return float(self.ser_port.readline())
+#        
+#class IOSlave2(object):
+#    def __init__(self, port='COM12'):
+#        #self.portname = port
+#        self.ser_port = serial.Serial(None, 115200, rtscts=0, timeout=.1, writeTimeout=2)
+#        self.ser_port.setPort(port)
+#        
+#    def SetDigital(self, chan, value):
+#        self.ser_port.open()
+#        try:
+#            self.ser_port.write('SD%d %d\n' % (chan, value))
+#            res = self.ser_port.readline()
+#        finally:
+#            self.ser_port.close()
+#       
+#    def SetAnalog(self, chan, value):
+#        self.ser_port.open()
+#        try:
+#            self.ser_port.write('SA%d %f\n' % (chan, value))
+#            res = self.ser_port.readline()
+#        finally:
+#            self.ser_port.close()
+#    
+#    def SetFlash(self, chan, value):
+#        self.ser_port.open()
+#        try:
+#            self.ser_port.write('SF%d %d\n' % (chan, value))
+#            res = self.ser_port.readline()
+#        finally:
+#            self.ser_port.close()
+#    
+#    def GetAnalog(self, chan):
+#        self.ser_port.open()
+#        try:
+#            self.ser_port.write('QA%d\n' % chan)
+#            res = float(self.ser_port.readline())
+#        finally:
+#            self.ser_port.close()
+#        return res
+#        
+#    def GetTemperature(self, chan):
+#        self.ser_port.open()
+#        try:
+#            self.ser_port.write('QT%d\n' % chan)
+#            res =  float(self.ser_port.readline())
+#        finally:
+#            self.ser_port.close()
+#        return res
+
 class IOSlave(object):
     def __init__(self, port='COM12'):
-        self.ser_port = serial.Serial(port, 115200, rtscts=0, timeout=.1, writeTimeout=2)
+        self.ser_args = dict(port=port, baudrate=115200, rtscts=0, timeout=.1, writeTimeout=2)
         
     def SetDigital(self, chan, value):
-        self.ser_port.write('SD%d %d\n' % (chan, value))
-        res = self.ser_port.readline()
+        with serial.Serial(**self.ser_args) as ser:
+            ser.write('SD%d %d\n' % (chan, value))
+            res = ser.readline()
        
     def SetAnalog(self, chan, value):
-        self.ser_port.write('SA%d %f\n' % (chan, value))
-        res = self.ser_port.readline()
+        with serial.Serial(**self.ser_args) as ser:
+            ser.write('SA%d %f\n' % (chan, value))
+            res = ser.readline()
     
     def SetFlash(self, chan, value):
-        self.ser_port.write('SF%d %d\n' % (chan, value))
-        res = self.ser_port.readline()
+        with serial.Serial(**self.ser_args) as ser:
+            ser.write('SF%d %d\n' % (chan, value))
+            res = ser.readline()       
     
     def GetAnalog(self, chan):
-        self.ser_port.write('QA%d\n' % chan)
-        return float(self.ser_port.readline())
+        with serial.Serial(**self.ser_args) as ser:
+            ser.write('QA%d\n' % chan)
+            res = float(ser.readline())
+        
+        return res
         
     def GetTemperature(self, chan):
-        self.ser_port.write('QT%d\n' % chan)
-        return float(self.ser_port.readline())
+        with serial.Serial(**self.ser_args) as ser:
+            ser.write('QT%d\n' % chan)
+            res =  float(ser.readline())
         
-
-
+        return res
         
 from PYME.Acquire.Hardware.lasers import Laser
 
