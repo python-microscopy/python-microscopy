@@ -256,3 +256,13 @@ class LightCrafter(object):
             self.SetImage(((ll > .5)*intensity).astype('uint8'))
         else:
             self.SetImage((ll*intensity).astype('uint8'))
+            
+    def SetVDCLines(self, period, phase=0, angle=0, dutyCycle=.5, intensity=255.):
+        kx = np.cos(angle)/period
+        ky = np.sin(angle)/period
+        
+        d = kx*self.X + ky*self.Y + phase
+        
+        ll = (d%1) < dutyCycle
+        
+        self.SetImage((ll*intensity).astype('uint8'))

@@ -40,6 +40,8 @@ logging.basicConfig(level=logging.DEBUG)
 import wx.lib.agw.aui as aui
 
 #import PYME.cSMI as example
+import PYME.DSView.displaySettingsPanel as disppanel
+from PYME.DSView import arrayViewPanel
 
 from PYME.Acquire import mytimer
 from PYME.Acquire import psliders
@@ -51,7 +53,7 @@ from PYME.Acquire import selectCameraPanel
 from PYME.Acquire import microscope
 #import PYME.DSView.dsviewer_npy as dsviewer
 from PYME.DSView import dsviewer_npy_nb as dsviewer
-from PYME.cSMI import CDataStack_AsArray
+#from PYME.cSMI import CDataStack_AsArray
 from PYME.Acquire import MetaDataHandler
 #from PYME.Acquire import chanfr
 from PYME.Acquire import HDFSpoolFrame
@@ -357,6 +359,50 @@ class PYMEMainFrame(wx.Frame):
             self.time1.WantNotification.remove(self.checkInitDone)
             #self.time1.WantNotification.remove(self.splash.Tick)
             self.doPostInit()
+    
+    def _refreshDataStack(self):
+        if 'vp' in dir(self):
+            self.vp.SetDataStack(self.scope.pa.dsa)
+        
+    def livepreview(self):
+        self.scope.startAquisistion()
+
+        if self.scope.cam.GetPicHeight() > 1:
+            if 'vp' in dir(self):
+                    self.vp.SetDataStack(self.scope.pa.dsa)
+            else:
+                self.vp = arrayViewPanel.ArrayViewPanel(self, self.scope.pa.dsa)
+                self.vp.crosshairs = False
+                self.vp.showScaleBar = False
+                self.vp.do.leftButtonAction = self.vp.do.ACTION_SELECTION
+                self.vp.do.showSelection = True
+                self.vp.CenteringHandlers.append(self.scope.centreView)
+
+                self.vsp = disppanel.dispSettingsPanel2(self, self.vp)
+
+
+                self.time1.WantNotification.append(self.vsp.RefrData)
+
+                self.AddPage(page=self.vp, select=True,caption='Preview')
+
+                self.AddCamTool(self.vsp, 'Display')
+
+            self.scope.pa.WantFrameGroupNotification.append(self.vp.Redraw)
+
+        else:
+            #1d data - use graph instead
+            from PYME.Analysis.LMVis import fastGraph
+            if 'sp' in dir(self):
+                    pass
+            else:
+                self.sp = fastGraph.SpecGraphPanel(self, self)
+
+                self.AddPage(page=self.sp, select=True,caption='Preview')
+
+            self.scope.pa.WantFrameGroupNotification.append(self.sp.refr)
+            
+        self.scope.PACallbacks.append(self._refreshDataStack)
+
 
     def doPostInit(self):
         logging.debug('Starting post-init')
@@ -382,7 +428,7 @@ class PYMEMainFrame(wx.Frame):
             #self.seq_d.Show()
 
         if (self.scope.cam.CamReady() and ('chaninfo' in self.scope.__dict__)):
-            self.scope.livepreview(self, Notebook = self)
+            self.livepreview()
             
 
             self.int_sl = intsliders.IntegrationSliders(self.scope.chaninfo,self, self.scope)
