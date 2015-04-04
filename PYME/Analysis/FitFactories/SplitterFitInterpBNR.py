@@ -185,8 +185,8 @@ def genFitImage(fitResults, metadata):
 #f_Interp3d2cr.D = f_J_Interp3d2c
 
 class InterpFitFactory(InterpFitR.PSFFitFactory):
-    def __init__(self, data, metadata, fitfcn=f_Interp3d2cr, background=None):
-       super(InterpFitFactory, self).__init__(data, metadata, fitfcn, background) 
+    def __init__(self, data, metadata, fitfcn=f_Interp3d2cr, background=None, noiseSigma=None):
+       super(InterpFitFactory, self).__init__(data, metadata, fitfcn, background, noiseSigma) 
                 
     @classmethod
     def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):

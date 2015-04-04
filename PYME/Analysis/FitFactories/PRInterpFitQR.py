@@ -133,8 +133,8 @@ def getDataErrors(im, metadata):
 		
 
 class PSFFitFactory(InterpFitR.PSFFitFactory):
-    def __init__(self, data, metadata, fitfcn=f_Interp3d, background=None):
-       InterpFitR.PSFFitFactory.__init__(self, data, metadata, fitfcn, background) 
+    def __init__(self, data, metadata, fitfcn=f_Interp3d, background=None, noiseSigma=None):
+       InterpFitR.PSFFitFactory.__init__(self, data, metadata, fitfcn, background, noiseSigma) 
        
     @classmethod
     def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5, model=f_Interp3d):
