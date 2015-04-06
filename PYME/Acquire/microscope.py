@@ -131,7 +131,7 @@ class microscope(object):
         for p in self.piezos:
             mdh.setEntry('Positioning.%s' % p[2].replace(' ', '_').replace('-', '_'), p[0].GetPos(p[1]))
             
-        for k, v in self.GetPos():
+        for k, v in self.GetPos().items():
             mdh.setEntry('Positioning.%s' % k.replace(' ', '_').replace('-', '_'), v)
             
         mdh.copyEntriesFrom(self.mdh)
@@ -153,6 +153,8 @@ class microscope(object):
 
 
     def satCheck(self, source): # check for saturation
+        if not 'shutterOpen' in dir(self.cam):
+            return
         im = source.dsa
         IMax = im.max()
 
@@ -237,7 +239,7 @@ class microscope(object):
     def startAquisistion(self):
         if 'pa' in dir(self):
             self.pa.stop() #stop old acquisition
-
+        
         self.pa = previewaquisator.PreviewAquisator(self.chaninfo,self.cam, self.shutters)
         self.pa.HardwareChecks.extend(self.hardwareChecks)
         self.pa.Prepare()
@@ -279,7 +281,10 @@ class microscope(object):
             self.sa.cam = self.cam
 
         if 'pa' in dir(self):
-            self.startAquisistion()
+            self.pa.cam = self.cam
+            self.pa.Prepare()
+            
+            self.pa.start()
             
         
             
