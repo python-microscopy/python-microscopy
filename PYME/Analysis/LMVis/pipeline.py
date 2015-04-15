@@ -32,7 +32,8 @@ from PYME.Acquire import MetaDataHandler
 import numpy as np
 import scipy.special
 import os
-#from PYME.Analysis.BleachProfile.kinModels import getPhotonNums
+
+from PYME.Analysis.BleachProfile.kinModels import getPhotonNums
 
 
 class Pipeline:
@@ -385,8 +386,16 @@ class Pipeline:
         if 'Analysis.FitModule' in self.mdh.getEntryNames():
             fitModule = self.mdh['Analysis.FitModule']
             
+            print 'fitModule = %s' % fitModule
+            
             if 'Interp' in fitModule:
                 self.filterKeys['A'] = (5, 100000)
+                
+            
+            if 'LatGaussFitFR' in fitModule:
+                self.selectedDataSource.nPhot = getPhotonNums(self.selectedDataSource, self.mdh)
+                self.selectedDataSource.setMapping('nPhotons', 'nPhot')
+                
                 
             if fitModule == 'SplitterShiftEstFR':
                 self.filterKeys['fitError_dx'] = (0,10)

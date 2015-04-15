@@ -32,9 +32,7 @@ class PrebleachExtractor:
         self.split = 'Splitter' in self.image.mdh.getEntry('Analysis.FitModule')
         self.mixmatrix=np.array([[.85, .15],[.11, .89]])
 
-        EXTRAS_PREBLEACH = wx.NewId()
-        dsviewer.mProcessing.Append(EXTRAS_PREBLEACH, "&Extract Prebleach Image", "", wx.ITEM_NORMAL)
-        wx.EVT_MENU(dsviewer, EXTRAS_PREBLEACH, self.OnExtract)
+        dsviewer.AddMenuItem('Processing', "&Extract Prebleach Image", self.OnExtract)
 
     def OnExtract(self, event):
         from PYME.DSView import View3D

@@ -116,6 +116,7 @@ class DSViewFrame(wx.Frame):
         self.mainFrame = weakref.ref(self)
         #self.do = self.vp.do
         
+        self._menus = {}
         # Menu Bar
         self.menubar = wx.MenuBar()
         self.SetMenuBar(self.menubar)
@@ -126,6 +127,7 @@ class DSViewFrame(wx.Frame):
 
         #a submenu for modules to hook and install saving functions into
         self.save_menu = wx.Menu()
+        self._menus['Save'] = self.save_menu
         tmp_menu.AppendMenu(-1, 'Save &Results', self.save_menu)
         
         tmp_menu.AppendSeparator()
@@ -134,10 +136,12 @@ class DSViewFrame(wx.Frame):
 
         self.view_menu = wx.Menu()
         self.menubar.Append(self.view_menu, "&View")
+        self._menus['View'] = self.view_menu
 
         #'extras' menu for modules to install stuff into
         self.mProcessing = wx.Menu()
         self.menubar.Append(self.mProcessing, "&Processing")
+        self._menus['Processing'] = self.mProcessing
 
         # Menu Bar end
         wx.EVT_MENU(self, wx.ID_OPEN, self.OnOpen)
@@ -256,6 +260,25 @@ class DSViewFrame(wx.Frame):
             wx.EVT_MENU(self, id, self.OnToggleModule)
             
         self.menubar.Append(self.mModules, "&Modules")
+        
+    def AddMenuItem(self, menuName, itemName='', itemCallback = None, itemType='normal', helpText = ''):
+        ID = -1        
+        
+        if not menuName in self._menus.keys():
+            menu = wx.Menu()
+            self.menubar.Insert(self.menubar.GetMenuCount()-1, menu, menuName)
+            self._menus[menuName] = menu
+        else:
+            menu = self._menus[menuName]
+        
+        if itemType == 'normal':        
+            mItem = menu.Append(wx.ID_ANY, itemName, helpText, wx.ITEM_NORMAL)
+            self.Bind(wx.EVT_MENU, itemCallback, mItem)
+            ID = mItem.GetId()
+        elif itemType == 'seperator':
+            menu.AppendSeparator()
+            
+        return ID
 
     def OnToggleModule(self, event):
         id = event.GetId()

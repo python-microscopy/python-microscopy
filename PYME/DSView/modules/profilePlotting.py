@@ -36,16 +36,9 @@ class profiler:
         #self.view = dsviewer.view
         self.do = dsviewer.do
         self.image = dsviewer.image
-
-        PLOT_PROFILE = wx.NewId()
-        dsviewer.mProcessing.Append(PLOT_PROFILE, "Plot &Profile\tCtrl-K", "", wx.ITEM_NORMAL)
         
-        dsviewer.Bind(wx.EVT_MENU, self.OnPlotProfile, id=PLOT_PROFILE)
-        
-        PLOT_ZPROFILE = wx.NewId()
-        dsviewer.mProcessing.Append(PLOT_ZPROFILE, "Plot Axial Profile\tCtrl-Shift-K", "", wx.ITEM_NORMAL)
-        
-        dsviewer.Bind(wx.EVT_MENU, self.OnPlotAxialProfile, id=PLOT_ZPROFILE)
+        dsviewer.AddMenuItem('Processing', "Plot &Profile\tCtrl-K", self.OnPlotProfile)
+        dsviewer.AddMenuItem('Processing', "Plot Axial Profile\tCtrl-Shift-K", self.OnPlotAxialProfile)
 
         #accel_tbl = wx.AcceleratorTable([(wx.ACCEL_CTRL,  ord('k'), PLOT_PROFILE )])
         #self.dsviewer.SetAcceleratorTable(accel_tbl)

@@ -577,27 +577,16 @@ class compositor:
 
         self.image = dsviewer.image
 
-        self.compMenu = wx.Menu()
+        #self.compMenu = wx.Menu()
 
         dsviewer.mProcessing.AppendSeparator()
-        MAKE_COMPOSITE = wx.NewId()
-        dsviewer.mProcessing.Append(MAKE_COMPOSITE, "Make Composite", "", wx.ITEM_NORMAL)
-
-        SPLIT_CHANNELS = wx.NewId()
-        dsviewer.mProcessing.Append(SPLIT_CHANNELS, "Split Channels", "", wx.ITEM_NORMAL)
         
-        VECT_SHIFT = wx.NewId()
-        dsviewer.mProcessing.Append(VECT_SHIFT, "Apply vector shifts", "", wx.ITEM_NORMAL)
+        dsviewer.AddMenuItem("Processing", "Make Composite", self.OnMakeComposites)
+        dsviewer.AddMenuItem("Processing", "Split Channels", self.OnSplitChannels)
+        dsviewer.AddMenuItem("Processing", "Apply vector shifts", self.OnApplyShiftmap)
+        dsviewer.AddMenuItem("Processing", "Align Channels", self.OnAlignChannels)
         
-        ALIGN_CHANNELS = wx.NewId()
-        dsviewer.mProcessing.Append(ALIGN_CHANNELS, "Align Channels", "", wx.ITEM_NORMAL)
-
         dsviewer.mProcessing.AppendSeparator()
-
-        dsviewer.Bind(wx.EVT_MENU, self.OnMakeComposites, id=MAKE_COMPOSITE)
-        dsviewer.Bind(wx.EVT_MENU, self.OnSplitChannels, id=SPLIT_CHANNELS)
-        dsviewer.Bind(wx.EVT_MENU, self.OnAlignChannels, id=ALIGN_CHANNELS)
-        dsviewer.Bind(wx.EVT_MENU, self.OnApplyShiftmap, id=VECT_SHIFT)
 
         
     def OnMakeComposites(self, event):

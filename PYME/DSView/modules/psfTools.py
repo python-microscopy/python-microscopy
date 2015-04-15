@@ -230,20 +230,9 @@ class PSFTools(HasTraits):
 
         self.image = dsviewer.image
         
-        PROC_EXTRACT_PUPIL = wx.NewId()
-        PROC_CALC_CRB = wx.NewId()
-        PROC_PSF_BG_SUB = wx.NewId()
-        #PROC_APPLY_THRESHOLD = wx.NewId()
-        #PROC_LABEL = wx.NewId()
-        
-        dsviewer.mProcessing.Append(PROC_EXTRACT_PUPIL, "Extract &Pupil Function", "", wx.ITEM_NORMAL)
-        dsviewer.mProcessing.Append(PROC_CALC_CRB, "Cramer-Rao Bound vs Background ", "", wx.ITEM_NORMAL)
-        dsviewer.mProcessing.Append(PROC_PSF_BG_SUB, "PSF Background Correction", "", wx.ITEM_NORMAL)
-        #dsviewer.mProcessing.Append(PROC_LABEL, "&Label", "", wx.ITEM_NORMAL)
-    
-        wx.EVT_MENU(dsviewer, PROC_EXTRACT_PUPIL, self.OnExtractPupil)
-        wx.EVT_MENU(dsviewer, PROC_CALC_CRB, self.OnCalcCRB3DvsBG)
-        wx.EVT_MENU(dsviewer, PROC_PSF_BG_SUB, self.OnSubtractBackground)
+        dsviewer.AddMenuItem('Processing', "Extract &Pupil Function", self.OnExtractPupil)
+        dsviewer.AddMenuItem('Processing', "Cramer-Rao Bound vs Background ", self.OnCalcCRB3DvsBG)
+        dsviewer.AddMenuItem('Processing', "PSF Background Correction", self.OnSubtractBackground)
         #wx.EVT_MENU(dsviewer, PROC_LABEL, self.OnLabel)
 
     def OnExtractPupil(self, event):

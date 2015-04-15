@@ -115,7 +115,6 @@ class FitInfoPanel(wx.Panel):
                 
         return s
 
-
     def genGaussPhotonStats(self, index):
         s =  u''
 
