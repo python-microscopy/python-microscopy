@@ -258,7 +258,7 @@ class Recipes:
 #        wx.EVT_MENU(dsviewer, RUN_CURRENT, self.RunCurrentRecipe)
         
         dsviewer.AddMenuItem('Recipes', "Load Recipe", self.OnLoadRecipe)
-        dsviewer.AddMenuItem('Recipes', "Run Current Recipe\tF5", self.RunCurrentRecipe)
+        self.mICurrent = dsviewer.AddMenuItem('Recipes', "Run Current Recipe\tF5", self.RunCurrentRecipe)
         
         #print CANNED_RECIPES
         
@@ -268,7 +268,7 @@ class Recipes:
             
             for r in CANNED_RECIPES:
                 #print r, 
-                ID = dsviewer.AddMenuItem('Recipes', os.path.split(r)[1], self.OnRunCanned)
+                ID = dsviewer.AddMenuItem('Recipes', os.path.split(r)[1], self.OnRunCanned).GetId()
                 #ID = wx.NewId()
                 self.cannedIDs[ID] = r
                 #self.mRecipes.Append(ID, os.path.split(r)[1],"",  wx.ITEM_NORMAL)

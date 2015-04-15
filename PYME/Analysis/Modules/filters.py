@@ -385,7 +385,8 @@ class Measure2D(ModuleBase):
                     return self.ps*np.array([r.centroid[1] for r in self.measures])
                 else:
                     a = np.array([getattr(r, key) for r in self.measures])
-                    if a.ndim == 2:
+                    print a.shape
+                    if not a.shape[0] == len(self.measures):#a.ndim == 2:
                         return a.T
                     else:
                         return a
