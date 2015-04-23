@@ -362,7 +362,7 @@ class PYMEMainFrame(wx.Frame):
     
     def _refreshDataStack(self):
         if 'vp' in dir(self):
-            if not self.vp.do.ds == self.scope.pa.dsa:
+            if not (self.vp.do.ds.data is self.scope.pa.dsa):
                 self.vp.SetDataStack(self.scope.pa.dsa)
         
     def livepreview(self):
@@ -745,7 +745,7 @@ class PYMEMainFrame(wx.Frame):
                 #x2 = self.scope.vp.selection_end_x
                 #y2 = self.scope.vp.selection_end_y
     
-                x1, y1, x2, y2 = self.scope.vp.do.GetSliceSelection()
+                x1, y1, x2, y2 = self.vp.do.GetSliceSelection()
     
                 #if we're splitting colours/focal planes across the ccd, then only allow symetric ROIs
                 if 'splitting' in dir(self.scope.cam):

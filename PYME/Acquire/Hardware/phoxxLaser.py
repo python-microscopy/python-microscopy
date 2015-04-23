@@ -135,7 +135,7 @@ class PhoxxLaser(Laser):
                     pass
                 
                 #wait a little for reply                
-                time.sleep(.05)
+                time.sleep(.1)
                 ret = self._readline(ser)
                 
                 if not ret == '':

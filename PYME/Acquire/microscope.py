@@ -296,6 +296,16 @@ class microscope(object):
         ox = p['x']
         oy = p['y']
         
+        if 'orientation' in dir(self.cam):
+            if self.cam.orientation['rotate']:
+                dx, dy = dy, dx
+                
+            if self.cam.orientation['flipx']:
+                dx *= -1
+                
+            if self.cam.orientation['flipy']:
+                dy *= -1
+        
         self.SetPos(x=(ox + dx*vx), y=(oy + dy*vy))
 
 
