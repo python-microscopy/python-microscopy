@@ -30,30 +30,14 @@ class filterer:
         self.do = dsviewer.do
 
         self.image = dsviewer.image
-        
-        PROC_GAUSSIAN_FILTER = wx.NewId()
-        PROC_APPLY_THRESHOLD = wx.NewId()
-        PROC_LABEL = wx.NewId()
-        PROC_SETLABELS = wx.NewId()
-        PROC_WATERSHED = wx.NewId()
-        PROC_MEAN_PROJECT = wx.NewId()
-        PROC_MAX_PROJECT = wx.NewId()
-        
-        dsviewer.mProcessing.Append(PROC_GAUSSIAN_FILTER, "&Gaussian Filter", "", wx.ITEM_NORMAL)
-        dsviewer.mProcessing.Append(PROC_APPLY_THRESHOLD, "Generate &Mask", "", wx.ITEM_NORMAL)
-        dsviewer.mProcessing.Append(PROC_LABEL, "&Label", "", wx.ITEM_NORMAL)
-        dsviewer.mProcessing.Append(PROC_SETLABELS, "Set Labels", "", wx.ITEM_NORMAL)
-        dsviewer.mProcessing.Append(PROC_WATERSHED, "&Watershed", "", wx.ITEM_NORMAL)
-        dsviewer.mProcessing.Append(PROC_MEAN_PROJECT, "Mean Projection", "", wx.ITEM_NORMAL)
-        dsviewer.mProcessing.Append(PROC_MAX_PROJECT, "Max Projection", "", wx.ITEM_NORMAL)
-    
-        wx.EVT_MENU(dsviewer, PROC_GAUSSIAN_FILTER, self.OnGaussianFilter)
-        wx.EVT_MENU(dsviewer, PROC_APPLY_THRESHOLD, self.OnApplyThreshold)
-        wx.EVT_MENU(dsviewer, PROC_LABEL, self.OnLabelSizeThreshold)
-        wx.EVT_MENU(dsviewer, PROC_SETLABELS, self.OnSetLabels)
-        wx.EVT_MENU(dsviewer, PROC_WATERSHED, self.OnLabelWatershed)
-        wx.EVT_MENU(dsviewer, PROC_MEAN_PROJECT, self.OnMeanProject)
-        wx.EVT_MENU(dsviewer, PROC_MAX_PROJECT, self.OnMaxProject)
+                
+        dsviewer.AddMenuItem('Processing', '&Gaussian Filter', self.OnGaussianFilter)        
+        dsviewer.AddMenuItem('Processing', 'Generate &Mask', self.OnApplyThreshold)
+        dsviewer.AddMenuItem('Processing', '&Label', self.OnLabelSizeThreshold)        
+        dsviewer.AddMenuItem('Processing', 'Set Labels', self.OnSetLabels)        
+        dsviewer.AddMenuItem('Processing', '&Watershed', self.OnLabelWatershed)        
+        dsviewer.AddMenuItem('Processing', 'Mean Projection', self.OnMeanProject)
+        dsviewer.AddMenuItem('Processing', 'Max Projection', self.OnMaxProject)    
 
     def OnGaussianFilter(self, event):
         import numpy as np

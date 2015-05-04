@@ -150,11 +150,11 @@ class SimpleSequenceAquisitor(PreviewAquisator):
         if (self.GetEndPos() > self.piezos[self.GetScanChannel()][0].GetMax(self.piezos[self.GetScanChannel()][1])):
             return (False, 'EndPos', 'EndPos is larger than piezo maximum',self.piezos[self.GetScanChannel()][0].GetMax(self.piezos[self.GetScanChannel()][1])) 
         
-        if (self.GetEndPos() < self.GetStartPos()):
-            return (False, 'EndPos', 'EndPos is before Startpos',self.GetStartPos()) 
+        #if (self.GetEndPos() < self.GetStartPos()):
+        #    return (False, 'EndPos', 'EndPos is before Startpos',self.GetStartPos()) 
         #stepsize limits are at present arbitrary == not really restricted to sensible values
-        if (self.GetStepSize() < 0.001):
-            return (False, 'StepSize', 'StepSize is smaller than piezo minimum',0.001) 
+        #if (self.GetStepSize() < 0.001):
+        #    return (False, 'StepSize', 'StepSize is smaller than piezo minimum',0.001) 
         
         #if (self.GetStartPos() > 90):
         #    return (False, 'StepSize', 'Simplesequenceaquisator StepSize is larger than piezo maximum',90)

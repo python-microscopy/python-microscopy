@@ -482,6 +482,15 @@ class HDFResultsTaskQueue(TaskQueue):
                     res = []
             
             return res
+        elif fieldName == 'MAP':
+            mapName, = args
+            from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
+            from PPYME.DSView.image import ImageStack
+            
+            fn = getFullExistingFilename(mapName)
+            varmap = ImageStack(filename=fn).data[:,:,0].squeeze() #this should handle .tif, .h5, and a few others
+
+            return varmap
         else:
             return None
 

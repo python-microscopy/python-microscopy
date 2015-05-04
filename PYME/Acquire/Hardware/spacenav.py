@@ -58,6 +58,12 @@ class SpaceNavigator(object):
             self.buttonState = bs
             for cb in self.WantButtonNotification:
                 cb(self)
+
+    def close(self):
+        self.snav.close()
+            
+    def __del__(self):
+        self.close()
         
 class SpaceNavPiezoCtrl(object):
     FULL_SCALE = 350.

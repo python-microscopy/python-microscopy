@@ -66,7 +66,7 @@ class rldec:
         return self.deconv(*args)
         #return 0
     
-    def deconv(self, data, lamb, num_iters=10, weights = 1):
+    def deconv(self, data, lamb, num_iters=10, weights = 1, bg = 0):
         '''This is what you actually call to do the deconvolution.
         parameters are:
 
@@ -85,7 +85,7 @@ class rldec:
         #print 'dc1'
 
         #guess a starting estimate for the object
-        self.f = self.startGuess(data).ravel()
+        self.f = self.startGuess(data).ravel() - bg
         self.fs = self.f.reshape(self.shape)
         #print 'dc2'
 
@@ -97,7 +97,7 @@ class rldec:
 
         mask = 1 - weights
         
-        print data.sum(), self.f.sum()
+        #print data.sum(), self.f.sum()
 
         self.loopcount=0
         
@@ -107,7 +107,7 @@ class rldec:
             self.loopcount += 1
 
             #the residuals
-            self.res = weights*(data/(self.Afunc(self.f)+1e-4)) +  mask;
+            self.res = weights*(data/(self.Afunc(self.f)+1e-12 + bg)) +  mask;
 
             #print 'Residual norm = %f' % norm(self.res)
             
@@ -120,7 +120,7 @@ class rldec:
 
             #set the current estimate to out new estimate
             self.f[:] = fnew
-            print(('Sum = %f' % self.f.sum()))
+            #print(('Sum = %f' % self.f.sum()))
             
         #print 'dc3'
 

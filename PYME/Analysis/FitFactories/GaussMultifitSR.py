@@ -33,13 +33,15 @@ from PYME.Analysis._fithelpers import *
 def f_multiGaussS(p, X, Y, s):
     #number of Gaussians to fit
     nG = len(p)/3
+    
+    nm = 1./(s*s*2*np.pi)
 
     r = 0.0    
     
     for i in range(nG):
         i3 = 3*i
         A, x0, y0 = p[i3:(i3+3)]
-        r += A*np.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2))
+        r += A*np.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2))*nm
         
     return r
     
@@ -75,7 +77,7 @@ class GaussianFitFactory:
     X = None
     Y = None
     
-    def __init__(self, data, metadata, fitfcn=f_multiGauss, background=None):
+    def __init__(self, data, metadata, fitfcn=f_multiGauss, background=None, noiseSigma=None):
         '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
         metadata. '''
         self.data = data

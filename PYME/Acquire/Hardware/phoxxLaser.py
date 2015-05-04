@@ -34,7 +34,8 @@ from PYME.Acquire.Hardware.lasers import Laser
 
 class PhoxxLaser(Laser):
     def __init__(self, name,turnOn=False, portname='COM3'):
-        self.ser_port = serial.Serial(portname, 500000, timeout=.1, writeTimeout=2)
+        self.ser_args = dict(port=portname, baudrate=500000, timeout=.1, writeTimeout=2)
+        #self.ser_port = serial.Serial(portname, 500000, timeout=.1, writeTimeout=2)
         self.powerControlable = True
         #self.isOn=False
         
@@ -111,39 +112,42 @@ class PhoxxLaser(Laser):
             
         return vals
     
-    def _readline(self):
+    def _readline(self, ser):
         s = []
-        c = self.ser_port.read()
+        c = ser.read()
         while not c in ['', '\r']:
             s.append(c)
-            c = self.ser_port.read()
+            c = ser.read()
             
         return ''.join(s)
         
     def _poll(self):
         while self.doPoll:
             #print 'p'
-            try:
-                cmd = self.commandQueue.get(False)
-                #print cmd
-                self.ser_port.write(cmd)
-                self.ser_port.flush()
+            with serial.Serial(**self.ser_args) as ser:
+                try:
+                    cmd = self.commandQueue.get(False)
+                    #print cmd
+                    ser.write(cmd)
+                    ser.flush()
+                    
+                except Queue.Empty:
+                    pass
                 
-            except Queue.Empty:
-                pass
-            
-            #wait a little for reply                
+                #wait a little for reply                
+                time.sleep(.05)
+                ret = self._readline(ser)
+                
+                if not ret == '':
+                    #print ret
+                    #process response - either a response or an ad-hoc message
+                    if not ret.startswith('$'): #normal response
+                        self.replyQueue.put(ret)
+                    else: #adhoc
+                        self._procAdHoc(ret)
+                        #self.adhocQueue.put(ret)
+                    
             time.sleep(.05)
-            ret = self._readline()
-            
-            if not ret == '':
-                #print ret
-                #process response - either a response or an ad-hoc message
-                if not ret.startswith('$'): #normal response
-                    self.replyQueue.put(ret)
-                else: #adhoc
-                    self._procAdHoc(ret)
-                    #self.adhocQueue.put(ret)
                     
     def _decodeResponse(self, resp):
         cmd = resp[1:4]
@@ -157,12 +161,13 @@ class PhoxxLaser(Laser):
         self.adHocVals[cmd] = vals
         
     def Close(self):
-        try:
-            self.TurnOff()
-        #time.sleep(1)        
-        finally:
-            self.doPoll = False
-            self.ser_port.close()
+        print 'Shutting down %s' % self.name
+        #try:
+        self.TurnOff()
+        time.sleep(.1)        
+        #finally:
+        self.doPoll = False
+            #self.ser_port.close()
         
     def __del__(self):
         self.Close()

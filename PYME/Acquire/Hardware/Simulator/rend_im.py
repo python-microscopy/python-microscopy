@@ -284,7 +284,7 @@ def setIllumPattern(pattern, z0):
     sx, sy = pattern.shape
     psx, psy, sz = interpModel.shape
     
-    illPCache = None
+    
     
     il = np.zeros([sx,sy,sz], 'f')
     il[:,:,sz/2] = pattern
@@ -296,6 +296,8 @@ def setIllumPattern(pattern, z0):
     ps= ps/ps[:,:,sz/2].sum()
     
     illPattern = abs(ifftshift(ifftn(fftn(il)*fftn(ps)))).astype('f')
+    
+    illPCache = None
     
     
 @fluor.registerIllumFcn

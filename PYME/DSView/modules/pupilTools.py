@@ -115,17 +115,7 @@ class PupilTools(HasTraits):
 
         self.image = dsviewer.image
         
-        PROC_PUPIL_TO_PSF = wx.NewId()
-        #PROC_APPLY_THRESHOLD = wx.NewId()
-        #PROC_LABEL = wx.NewId()
-        
-        dsviewer.mProcessing.Append(PROC_PUPIL_TO_PSF, "Generate PSF from pupil", "", wx.ITEM_NORMAL)
-        #dsviewer.mProcessing.Append(PROC_APPLY_THRESHOLD, "Generate &Mask", "", wx.ITEM_NORMAL)
-        #dsviewer.mProcessing.Append(PROC_LABEL, "&Label", "", wx.ITEM_NORMAL)
-    
-        wx.EVT_MENU(dsviewer, PROC_PUPIL_TO_PSF, self.OnPSFFromPupil)
-        #wx.EVT_MENU(dsviewer, PROC_APPLY_THRESHOLD, self.OnApplyThreshold)
-        #wx.EVT_MENU(dsviewer, PROC_LABEL, self.OnLabel)
+        dsviewer.AddMenuItem('Processing', "Generate PSF from pupil", self.OnPSFFromPupil)
 
     def OnPSFFromPupil(self, event):
         import numpy as np

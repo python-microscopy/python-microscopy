@@ -36,14 +36,8 @@ class squiggle:
         #self.view = dsviewer.view
         self.do = dsviewer.do
         self.image = dsviewer.image
-
-        PLOT_PROFILE = wx.NewId()
-        dsviewer.mProcessing.Append(PLOT_PROFILE, "Plot wavy profile", "", wx.ITEM_NORMAL)
         
-        dsviewer.Bind(wx.EVT_MENU, self.OnPlotProfile, id=PLOT_PROFILE)
-
-        #accel_tbl = wx.AcceleratorTable([(wx.ACCEL_CTRL,  ord('k'), PLOT_PROFILE )])
-        #self.dsviewer.SetAcceleratorTable(accel_tbl)
+        dsviewer.AddMenuItem('Processing', "Plot wavy profile", self.OnPlotProfile)
 
 
     def OnPlotProfile(self, event=None):

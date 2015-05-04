@@ -278,9 +278,7 @@ class Splitter:
 
 
     def Unmix(self):
-        from PYME import cSMI
-
-        dsa = cSMI.CDataStack_AsArray(self.scope.pa.ds, 0).squeeze()
+        dsa = self.scope.pa.dsa.squeeze()
 
         return self.unmixer.Unmix(dsa, self.mixMatrix, self.offset, ROI=[self.scope.cam.GetROIX1(),self.scope.cam.GetROIY1(),self.scope.cam.GetROIX2(), self.scope.cam.GetROIY2()])
 

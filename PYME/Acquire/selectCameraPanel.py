@@ -41,3 +41,4 @@ class CameraChooserPanel(wx.Panel):
 
     def OnCCamera(self, event):
         self.scope.SetCamera(self.cCamera.GetStringSelection())
+        

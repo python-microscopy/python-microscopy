@@ -90,6 +90,10 @@ class ServerThread(threading.Thread):
         self.daemon.requestLoop()
         #finally:
         #    daemon.shutdown(True)
+        
+    def cleanup(self):
+        print 'Shutting down Offset Piezo Server'
+        self.daemon.shutdown(True)
                 
 
 def getClient(compName = GetComputerName()):
