@@ -330,6 +330,7 @@ class Watershed(ModuleBase):
             mask = namespace[self.inputMask]
             namespace[self.outputName] = self.filter(image, markers, mask)
 
+from PYME.Analysis.LMVis import inpFilt
 
 class Measure2D(ModuleBase):
     '''Module with one image input and one image output'''
@@ -343,7 +344,7 @@ class Measure2D(ModuleBase):
         labels = namespace[self.inputLabels]
         
         #define the measurement class, which behaves like an input filter        
-        class measurements(object):
+        class measurements(inpFilt.inputFilter):
             _name = 'Measue 2D source'
             ps = labels.pixelSize
             
@@ -378,18 +379,33 @@ class Measure2D(ModuleBase):
                 if key == 't':
                     return np.array(self.frameNos)
                 elif key == 'contour':
-                    return np.array(self.contours)
+                    return np.array(self.contours, dtype='O')
                 elif key == 'x':
                     return self.ps*np.array([r.centroid[0] for r in self.measures])
                 elif key == 'y':
                     return self.ps*np.array([r.centroid[1] for r in self.measures])
                 else:
-                    a = np.array([getattr(r, key) for r in self.measures])
-                    print a.shape
-                    if not a.shape[0] == len(self.measures):#a.ndim == 2:
-                        return a.T
-                    else:
+                    l = [getattr(r, key) for r in self.measures]
+                    
+                    if np.isscalar(l[0]):
+                        a = np.array(l)
                         return a
+                    else:
+                        a = np.empty(len(l), dtype='O')
+                        for i, li in enumerate(l):
+                            a[i] = li
+                            
+                        return a
+                        
+#            def toDataFrame(self, keys=None):
+#                import pandas as pd
+#                if keys == None:
+#                    keys = self._keys
+#                
+#                d = {k: self.__getitem__(k) for k in keys}
+#                
+#                return pd.DataFrame(d)
+                
         
         # end measuremnt class def
         
@@ -404,7 +420,7 @@ class Measure2D(ModuleBase):
         for i in xrange(labels.data.shape[2]):
             m.addFrameMeasures(i, *self._measureFrame(i, labels, intensity))
                     
-        namespace[self.outputName] = m      
+        namespace[self.outputName] = m#.toDataFrame()      
         
     def _measureFrame(self, frameNo, labels, intensity):
         import skimage.measure

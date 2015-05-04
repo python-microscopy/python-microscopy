@@ -34,8 +34,15 @@ from PYME.Analysis.piecewise import * #allow piecewise linear mappings
 
 import tables
 
-class inputFilter:
-    pass
+class inputFilter(object):
+    def toDataFrame(self, keys=None):
+        import pandas as pd
+        if keys == None:
+            keys = self.keys()
+        
+        d = {k: self.__getitem__(k) for k in keys}
+        
+        return pd.DataFrame(d)
     
 
 class randomSource(inputFilter):
@@ -417,7 +424,7 @@ class mappingFilter(inputFilter):
             return self.resultsSource[key]
 
     def keys(self):
-        return self.resultsSource.keys() + self.mappings.keys()
+        return list(self.resultsSource.keys()) + self.mappings.keys()
 
     def setMapping(self, key, mapping):
         if type(mapping) == types.CodeType:
