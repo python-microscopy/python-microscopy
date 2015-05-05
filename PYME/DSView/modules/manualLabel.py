@@ -92,25 +92,16 @@ class manualLabel:
         self.curLabel = 1
         self.lineWidth = 1
         
-        seg_menu = wx.Menu()
         
         #dsviewer.do.overlays.append(self.DrawOverlays)
 
+        dsviewer.AddMenuItem('Segmentation', 'Create mask', self.OnCreateMask)
+        dsviewer.AddMenuItem('Segmentation', "Fill selection\tCtrl-F", self.FillSelection)
+        dsviewer.AddMenuItem('Segmentation', "Draw line\tCtrl-L", self.DrawLine)
+        dsviewer.AddMenuItem('Segmentation', "SVM Segmentation", self.OnSVMSegment)
         
 
-        CREATE_MASK = wx.NewId()
-        FILL_SELECTION = wx.NewId()
-        DRAW_LINE = wx.NewId()
-        seg_menu.Append(CREATE_MASK, "Create mask", "", wx.ITEM_NORMAL)
-        seg_menu.Append(FILL_SELECTION, "Fill selection\tF", "", wx.ITEM_NORMAL)
-        seg_menu.Append(DRAW_LINE, "Draw line\tL", "", wx.ITEM_NORMAL)
         
-        dsviewer.Bind(wx.EVT_MENU, self.OnCreateMask, id=CREATE_MASK)
-        dsviewer.Bind(wx.EVT_MENU, self.FillSelection, id=FILL_SELECTION)
-        dsviewer.Bind(wx.EVT_MENU, self.DrawLine, id=DRAW_LINE)
-        
-        dsviewer.menubar.Insert(dsviewer.menubar.GetMenuCount()-1, seg_menu, 'Segmentation')
-
         #accel_tbl = wx.AcceleratorTable([(wx.ACCEL_CTRL,  ord('k'), PLOT_PROFILE )])
         #self.dsviewer.SetAcceleratorTable(accel_tbl)
 
@@ -245,7 +236,7 @@ class manualLabel:
         self.dv.Update()
         
     def OnSVMSegment(self, event):
-        from PYMEnf.analysis import svmSegment
+        from PYMEnf.Analysis import svmSegment
         from PYME.DSView.image import ImageStack
         from PYME.DSView import ViewIm3D
         
