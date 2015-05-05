@@ -32,10 +32,18 @@ from PYME.DSView.dsviewer_npy_nb import ViewIm3D, ImageStack
 
 import wx.lib.mixins.listctrl as listmix
 
-class myListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
+class myListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin, listmix.TextEditMixin):
     def __init__(self, parent, ID, pos=wx.DefaultPosition, size=wx.DefaultSize, style=0):
         wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
         listmix.ListCtrlAutoWidthMixin.__init__(self)
+        listmix.TextEditMixin.__init__(self)
+        self.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginLabelEdit)
+
+    def OnBeginLabelEdit(self, event):
+        if event.m_col == 0:
+            event.Veto()
+        else:
+            event.Skip()
 
 class LabelPanel(wx.Panel):
     def __init__(self, parent, labeler, **kwargs):
