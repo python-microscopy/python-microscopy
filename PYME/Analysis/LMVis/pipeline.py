@@ -251,7 +251,7 @@ class Pipeline:
         
         self.filename = filename
         
-        if not ds == None:
+        if not ds is None:
             self.selectedDataSource = ds
             self.dataSources.append(ds)
         elif os.path.splitext(filename)[1] == '.h5r':
@@ -522,6 +522,15 @@ class Pipeline:
             of.write('\t'.join(['%e' % c for c in row]) + '\n')
     
         of.close()
+        
+    def toDataFrame(self, keys=None):
+        import pandas as pd
+        if keys == None:
+            keys = self.keys()
+        
+        d = {k: self[k] for k in keys}
+        
+        return pd.DataFrame(d)
     
 
 

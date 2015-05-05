@@ -261,9 +261,8 @@ class DSViewFrame(wx.Frame):
             
         self.menubar.Append(self.mModules, "&Modules")
         
-    def AddMenuItem(self, menuName, itemName='', itemCallback = None, itemType='normal', helpText = ''):
-        ID = -1        
-        
+    def AddMenuItem(self, menuName, itemName='', itemCallback = None, itemType='normal', helpText = ''):   
+        mItem = None
         if not menuName in self._menus.keys():
             menu = wx.Menu()
             self.menubar.Insert(self.menubar.GetMenuCount()-1, menu, menuName)
@@ -274,11 +273,10 @@ class DSViewFrame(wx.Frame):
         if itemType == 'normal':        
             mItem = menu.Append(wx.ID_ANY, itemName, helpText, wx.ITEM_NORMAL)
             self.Bind(wx.EVT_MENU, itemCallback, mItem)
-            ID = mItem.GetId()
-        elif itemType == 'seperator':
+        elif itemType == 'separator':
             menu.AppendSeparator()
             
-        return ID
+        return mItem
 
     def OnToggleModule(self, event):
         id = event.GetId()
