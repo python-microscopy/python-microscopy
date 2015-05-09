@@ -14,6 +14,7 @@ except ImportError:
 from PYME.DSView.image import ImageStack
 from scipy import ndimage
 import numpy as np
+import os
        
 
 class ModuleCollection(HasTraits):
@@ -102,6 +103,21 @@ class ModuleCollection(HasTraits):
             mc.append(mod)
             
         return cls(modules=mc)
+        
+    @property
+    def inputs(self):
+        ip = set()
+        for mod in self.modules:
+            ip.update({k for k in mod.inputs if k.startswith('in')})
+        return ip
+        
+    @property
+    def outputs(self):
+        op = set()
+        for mod in self.modules:
+            op.update({k for k in mod.outputs if k.startswith('out')})
+        return op
+        
             
     
 
@@ -181,6 +197,47 @@ class GaussianFilter(Filter):
     
     def applyFilter(self, data, chanNum, frNum, im):
         return ndimage.gaussian_filter(data, self.sigmas[:len(data.shape)])
+    
+    def completeMetadata(self, im):
+        im.mdh['Processing.GaussianFilter'] = self.sigmas
+        
+class Zoom(Filter):
+    zoom = Float(1.0)
+    
+    def applyFilter(self, data, chanNum, frNum, im):
+        return ndimage.zoom(data, self.zoom)
+    
+    def completeMetadata(self, im):
+        im.mdh['Processing.Zoom'] = self.zoom
+        im.mdh['voxelsize.x'] = im.mdh['voxelsize.x']/self.zoom
+        im.mdh['voxelsize.y'] = im.mdh['voxelsize.y']/self.zoom
+        
+        if not self.processFramesIndividually:
+            im.mdh['voxelsize.z'] = im.mdh['voxelsize.z']/self.zoom
+            
+        
+class DoGFilter(Filter):
+    '''Difference of Gaussians'''
+    sigmaY = Float(1.0)
+    sigmaX = Float(1.0)
+    sigmaZ = Float(1.0)
+    
+    sigma2Y = Float(1.0)
+    sigma2X = Float(1.0)
+    sigma2Z = Float(1.0)
+
+    #def __init__(self, **kwargs):
+    #    pass
+    @property
+    def sigmas(self):
+        return [self.sigmaX, self.sigmaY, self.sigmaZ]
+        
+    @property
+    def sigma2s(self):
+        return [self.sigma2X, self.sigma2Y, self.sigma2Z]
+    
+    def applyFilter(self, data, chanNum, frNum, im):
+        return ndimage.gaussian_filter(data, self.sigmas[:len(data.shape)]) - ndimage.gaussian_filter(data, self.sigma2s[:len(data.shape)])
     
     def completeMetadata(self, im):
         im.mdh['Processing.GaussianFilter'] = self.sigmas
@@ -330,7 +387,110 @@ class Watershed(ModuleBase):
             mask = namespace[self.inputMask]
             namespace[self.outputName] = self.filter(image, markers, mask)
 
+
+
 from PYME.Analysis.LMVis import inpFilt
+
+class MultifitBlobs(ModuleBase):
+    inputImage = CStr('input')
+    outputName = CStr('positions')
+    blobSigma = Float(45.0)
+    threshold = Float(2.0)
+    scale = Float(1000)
+    
+    def execute(self, namespace):
+        from PYME.Analysis.FitFactories import GaussMultifitSR
+        img = namespace[self.inputImage]
+        
+        img.mdh['Analysis.PSFSigma'] = self.blobSigma
+        
+        ff = GaussMultifitSR.FitFactory(self.scale*img.data[:,:,:], img.mdh, noiseSigma=np.ones_like(img.data[:,:,:].squeeze()))
+        
+        res = inpFilt.fitResultsSource(ff.FindAndFit(self.threshold))
+        
+        namespace[self.outputName] = res#inpFilt.mappingFilter(res, x='fitResults_x0', y='fitResults_y0')
+
+class MeanNeighbourDistances(ModuleBase):
+    '''Calculates mean distance to nearest neighbour in a triangulation of the 
+    supplied points'''
+    inputPositions = CStr('input')
+    outputName = CStr('neighbourDists')
+    key = CStr('neighbourDists')
+    
+    def execute(self, namespace):
+        from matplotlib import delaunay
+        from PYME.Analysis.LMVis import visHelpers
+        pos = namespace[self.inputPositions]
+        
+        x, y = pos['x'], pos['y']
+        #triangulate the data
+        T = delaunay.Triangulation(x + .1*np.random.normal(size=len(x)), y + .1*np.random.normal(size=len(x)))
+        #find the average edge lengths leading away from a given point
+        res = np.array(visHelpers.calcNeighbourDists(T))
+        
+        namespace[self.outputName] = {self.key:res}
+        
+class NearestNeighbourDistances(ModuleBase):
+    '''Calculates the nearest neighbour distances between supplied points using
+    a kdtree'''
+    inputPositions = CStr('input')
+    outputName = CStr('neighbourDists')
+    key = CStr('neighbourDists')
+    
+    def execute(self, namespace):
+        from scipy.spatial import cKDTree
+        pos = namespace[self.inputPositions]
+        
+        x, y = pos['x'], pos['y']
+        
+        #create a kdtree
+        p = np.vstack([x,y]).T
+        kdt = cKDTree(p)
+        
+        #query the two closest entries - the closest entry will be the 
+        #original point, the next closest it's nearest neighbour
+        d, i = kdt.query(p, 2)
+        res = d[:,1]
+        
+        namespace[self.outputName] = {self.key: res}
+        
+class PairwiseDistanceHistogram(ModuleBase):
+    '''Calculates a histogram of pairwise distances'''
+    inputPositions = CStr('input')
+    outputName = CStr('distHist')
+    nbins = Int(50)
+    binSize = Float(50.)
+    
+    def execute(self, namespace):
+        from PYME.Analysis import DistHist
+        
+        pos = namespace[self.inputPositions]
+        
+        x, y = pos['x'], pos['y']
+        
+        res = DistHist.distanceHistogram(x, y, x, y, self.nbins, self.binsize)
+        d = self.binsize*np.arange(self.nbins)
+        
+        namespace[self.outputName] = {'bins' : d, 'counts' : res}
+        
+class Histogram(ModuleBase):
+    '''Calculates a histogram of a given measurement key'''
+    inputMeasurements = CStr('input')
+    outputName = CStr('distHist')
+    key = CStr('key')
+    nbins = Int(50)
+    left = Float(0.)
+    right = Float(1000)
+    
+    def execute(self, namespace):        
+        v = namespace[self.inputMeasurements][self.key]
+        
+        edges = np.linspace(self.left, self.right, self.nbins)
+        
+        res = np.histogram(v, edges)[0]
+        
+        namespace[self.outputName] = {'bins' : edges, 'counts' : res}
+
 
 class Measure2D(ModuleBase):
     '''Module with one image input and one image output'''
@@ -452,6 +612,59 @@ class Measure2D(ModuleBase):
         
             
         return rp, ct
+        
+class SelectMeasurementColumns(ModuleBase):
+    '''Take just certain columns of a variable'''
+    inputMeasurments = CStr('measurements')
+    keys = CStr('')
+    outputName = CStr('selectedMeasurements') 
+    
+    def execute(self, namespace):       
+        meas = namespace[self.inputMeasurments]
+        namespace[self.outputName] = {k:meas[k] for k in self.keys.split()}
+        
+class AddMetadataToMeasurements(ModuleBase):
+    inputMeasurments = CStr('measurements')
+    inputImage = CStr('input')
+    keys = CStr('SampleNotes')
+    metadataKeys = CStr('Sample.Notes')
+    outputName = CStr('annotatedMeasurements')
+    
+    def execute(self, namespace):
+        res = {}
+        res.update(namespace[self.inputMeasurments])
+        
+        img = namespace[self.inputImage]
+
+        nEntries = len(res.values()[0])
+        for k, mdk in zip(self.keys.split(), self.metadataKeys.split()):
+            if mdk == 'seriesName':
+                #import os
+                v = os.path.split(img.seriesName)[1]
+            else:
+                v = img.mdh[mdk]
+            res[k] = np.array([v]*nEntries)
+        
+        namespace[self.outputName] = res
+        
+class AggregateMeasurements(ModuleBase):
+    '''Create a new composite measurement containing the results of multiple
+    previous measurements'''
+    inputMeasurements1 = CStr('meas1')
+    inputMeasurements2 = CStr('')
+    inputMeasurements3 = CStr('')
+    inputMeasurements4 = CStr('')
+    outputName = CStr('aggregatedMeasurements') 
+    
+    def execute(self, namespace):
+        res = {}
+        for mk in [getattr(self, n) for n in dir(self) if n.startswith('inputMeas')]:
+            if not mk == '':
+                meas = namespace[mk]
+                res.update(meas)
+        
+        namespace[self.outputName] = res
+        
 
 def _issubclass(cl, c):
     try:
