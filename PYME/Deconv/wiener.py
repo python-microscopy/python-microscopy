@@ -44,23 +44,33 @@ from PYME.DSView import View3D
 def resizePSF(psf, data_size):
     if not psf.shape == data_size:
         #Expand PSF to data size by fourier domain interpolation
-        print 'Resizing PSF to match data size'
+        print('Resizing PSF to match data size')
         g_ = fftw3f.create_aligned_array(data_size, 'complex64')
         H_ = fftw3f.create_aligned_array(data_size, 'complex64')
         
         sx, sy, sz = numpy.array(data_size).astype('f') / psf.shape
         
+        #print sx, sy, sz
+        
         OT = fftshift(fftn(fftshift(psf))) #don't bother with FFTW here as raw PSF is small
         
-        pr = ndimage.zoom(OT.real, [sx,sy,sz], order=1)
-        pi = ndimage.zoom(OT.imag, [sx,sy,sz], order=1)
+        if data_size[2] > 1:
+            pr = ndimage.zoom(OT.real, [sx,sy,sz], order=1)
+            pi = ndimage.zoom(OT.imag, [sx,sy,sz], order=1)
+        else: #special case for 2D
+            pr = ndimage.zoom(OT.real.squeeze(), [sx,sy], order=1).reshape(data_size)
+            pi = ndimage.zoom(OT.imag.squeeze(), [sx,sy], order=1).reshape(data_size)
         
         H_[:] = ifftshift(pr + 1j*pi)
         fftw3f.Plan(H_, g_, 'backward')()
+        #View3D(psf)
+        #View3D(H_)
+        #View3D(OT)
+        #View3D(pr)
         
         g =  ifftshift(g_.real).clip(min=0) # negative values may cause instability
     
-        print 'PSF resizing complete'
+        print('PSF resizing complete')
     else:
         g = psf
     #View3D(psf)

@@ -46,7 +46,7 @@ class zScanner:
         self.WantTickNotification = []
         
     def _endSingle(self):
-        print 'es'
+        print ('es')
         self.Stop()
         self.WantFrameNotification.remove(self._endSingle)
         self.sa.piezoGoHome()
@@ -179,8 +179,8 @@ class zScanner:
         x0 = (im2*x[:,None,None]).sum()/im2s
         y0 = (im2*y[None,:,None]).sum()/im2s
         
-        print x0, y0, z0
-        print x0 - x.mean(), y0 - y.mean(), z0 - self.zPoss.mean()
+        print((x0, y0, z0))
+        print((x0 - x.mean(), y0 - y.mean(), z0 - self.zPoss.mean()))
         
         return x0 - x.mean(), y0 - y.mean(), z0 - self.zPoss.mean()
         

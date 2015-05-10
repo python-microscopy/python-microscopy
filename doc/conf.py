@@ -13,6 +13,24 @@
 
 import sys, os
 
+import mock
+import numpy
+ 
+MOCK_MODULES = ['numpy', 'tables', 'scipy', 'scipy.interpolate', 'scipy.ndimage', 'pylab', 'win32api', ]
+MOCK_MODULES += ['matplotlib', 'matplotlib.pyplot', 'matplotlib.colors', ]
+for mod_name in MOCK_MODULES:
+    sys.modules[mod_name] = mock.Mock()
+    
+import wx
+import wx.py.shell
+from wx.lib.agw.aui.aui_utilities import BitmapFromBits
+
+class mClass:
+    pass
+
+wx.Frame = mClass
+wx.Panel = mClass
+wx.Dialog = mClass
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -22,7 +40,7 @@ import sys, os
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest', 'sphinx.ext.todo', 'sphinx.ext.coverage', 'sphinx.ext.pngmath']
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest', 'sphinx.ext.todo', 'sphinx.ext.coverage', 'sphinx.ext.mathjax', 'numpydoc', 'sphinx.ext.autosummary']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -64,7 +82,7 @@ release = '0.1'
 
 # List of directories, relative to source directory, that shouldn't be searched
 # for source files.
-exclude_trees = ['_build']
+exclude_trees = ['_build', '_hidden']
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 #default_role = None

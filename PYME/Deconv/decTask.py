@@ -57,7 +57,7 @@ class decTask(taskDef.Task):
             decObj.prep()
             queueID = self.queueName
 
-        print self.blocknum, self.lamb
+        print((self.blocknum, self.lamb))
 
         res = decObj.deconv(self.block, self.lamb, self.num_iters)
         return decResult(self, res, queueID)

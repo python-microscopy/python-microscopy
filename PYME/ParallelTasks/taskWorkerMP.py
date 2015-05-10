@@ -32,6 +32,10 @@ import os
 from PYME.misc.computerName import GetComputerName
 compName = GetComputerName()
 
+LOCAL = False
+if 'PYME_LOCAL_ONLY' in os.environ.keys():
+    LOCAL = os.environ['PYME_LOCAL_ONLY'] == '1'
+
 if 'PYRO_NS_HOSTNAME' in os.environ.keys():
     Pyro.config.PYRO_NS_HOSTNAME=os.environ['PYRO_NS_HOSTNAME']
 
@@ -72,6 +76,7 @@ while 1:
         try:
             #print qName
             tq = Pyro.core.getProxyForURI(ns.resolve('TaskQueues.%s' % qName))
+            tq._setTimeout(1)
             tq._setOneway(['returnCompletedTask'])
             #print qName
 
@@ -91,7 +96,7 @@ while 1:
 
                 if False:#nFails >= 4:
                     #server is dead in the water - put it out of it's misery
-                    print 'Killing:', qName
+                    print(('Killing:', qName))
                     try:
                         ns.unregister('TaskQueues.%s' % qName)
                     except Pyro.errors.NamingError:

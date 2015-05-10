@@ -22,8 +22,8 @@
 ##################
 
 #!/usr/bin/python
-'''defines a few neat things to allow scripts to be executed in background & to
-allow a user script directory'''
+'''Defines a few neat things to allow scripts to be executed in background during 
+initialisation & to allow a user script directory'''
 import threading
 #import pythoncom
 
@@ -54,10 +54,19 @@ bgInitThreads = []
 #bgInitStatus = {}
 
 class HWNotPresent(Exception):
+    '''An exception which, if thrown during initialisation, will result in a more
+    informative error message than just failure'''
     pass
 
 
 def setDefaultNamespace(locals, globals):
+    '''Populate the namespace in which the initialisation script will run.
+    
+    Parameters
+    ----------
+    locals : dict
+    globals : dict    
+    '''
     global defGlobals
     global defLocals
 
@@ -65,6 +74,15 @@ def setDefaultNamespace(locals, globals):
     defGlobals = globals
 
 def checkFilename(filename):
+    '''Check both the scripts directory in the PYME tree and a separate user 
+    script directory, `~/PYMEScripts` for an initialisation script of the given
+    name. 
+    
+    Returns
+    -------
+    filename : string
+        The full path to the requested script
+    '''
     #try and find filename in our script directories
     if os.path.exists(filename):
         return filename
@@ -76,11 +94,25 @@ def checkFilename(filename):
 
     return filename #give up and let exec throw its normal error message
 
-
-def _exec(codeObj, localVars = None, globalVars = None):
-    exec codeObj in localVars,globalVars
+if sys.version_info.major == 2:
+    def _exec(codeObj, localVars = None, globalVars = None):
+        exec codeObj in localVars,globalVars
+    def _execfile(filename, localVars=None, globalVars=None):
+        execfile(filename, localVars, globalVars)
+else: #Python 3
+    def _exec(codeObj, localVars = None, globalVars = None):
+        exec(codeObj,localVars,globalVars)
+    def _execfile(filename, localVars=None, globalVars=None):
+        exec(compile(open(filename).read(), filename, 'exec'), localVars, globalVars)
 
 def execBG(codeObj, localVars = defLocals, globalVars = defGlobals):
+    '''Executes a code object in a background thread, using the given namespace.
+    
+    Returns
+    -------
+    t : thread
+        The thread in which the code is executing (can be used with threading.join later)
+    '''
     t = threading.Thread(target=_exec, args = (codeObj, localVars, globalVars))
     t.start()
     return t
@@ -90,7 +122,7 @@ def execFile(filename, localVars = defLocals, globalVars = defGlobals):
     #code = fid.read()
     #fid.close()
 
-    execfile(checkFilename(filename), localVars, globalVars)
+    _execfile(checkFilename(filename), localVars, globalVars)
 
 def execFileBG(filename, localVars = defLocals, globalVars = defGlobals):
     #fid = open(checkFilename(filename))
@@ -109,12 +141,26 @@ def _bginit(name, codeObj):
         _exec("splash.SetMessage('%s', 'Initialising %s ... DONE')" % (name,name), defGlobals, defLocals)
     except HWNotPresent:
         _exec("splash.SetMessage('%s', 'Initialising %s ... NOT PRESENT')" % (name,name), defGlobals, defLocals)
-    except Exception, e:
+    except Exception as e:
         _exec("splash.SetMessage('%s', 'Initialising %s ... FAIL')" % (name,name), defGlobals, defLocals)
         raise e
 
 
 def InitBG(name, codeObj):
+    '''Runs a portion of the initialisation code in a background thread
+    
+    Parameters
+    ----------
+    name : string
+        A descriptive name for the code block - e.g. 'Camera'
+    codeObj : string, compiled code object
+        The code that will be executed - something that `exec` understands
+    
+    Returns
+    -------
+    t : thread
+        The thread in which the code is executing (can be used with threading.join later)    
+    '''
     t = threading.Thread(target=_bginit, args = (name,codeObj))
     t.start()
     bgInitThreads.append(t)
@@ -122,9 +168,22 @@ def InitBG(name, codeObj):
     
 
 def joinBGInit():
+    '''
+    Wait for all the initialisation tasks that bave been launched as background 
+    threads to complete.
+    '''
     for t in bgInitThreads:
-        print t
+        print(t)
         t.join()
 
 def InitGUI(code):
+    '''Add a piece of code to a list of items to be executed once the GUI is 
+    up and running. Used to defer the initialisation of GUI components ascociated
+    with hardware items until they can be displayed.
+    
+    Parameters
+    ----------
+    codeObj : string, compiled code object
+        The code that will be executed - something that `exec` understands  
+    '''
     defLocals['postInit'].append(code)

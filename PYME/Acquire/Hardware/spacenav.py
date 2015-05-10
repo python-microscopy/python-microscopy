@@ -58,6 +58,12 @@ class SpaceNavigator(object):
             self.buttonState = bs
             for cb in self.WantButtonNotification:
                 cb(self)
+
+    def close(self):
+        self.snav.close()
+            
+    def __del__(self):
+        self.close()
         
 class SpaceNavPiezoCtrl(object):
     FULL_SCALE = 350.
@@ -67,7 +73,7 @@ class SpaceNavPiezoCtrl(object):
         self.pz = pz#, self.px, self.py = piezos
         self.pxy = pxy
         
-        self.xy_sensitivity = .03 #um/s
+        self.xy_sensitivity = .01 #um/s
         self.z_sensitivity = -2 #um/s
         self.kappa = 1.5
         
@@ -87,7 +93,8 @@ class SpaceNavPiezoCtrl(object):
             #print x_incr, y_incr, z_incr
     
             #try:
-            if abs(sn.z) >= norm/3:
+            if abs(sn.z) >= norm/2:
+                self.pxy.StopMove()
                 try:
                     self.pz.MoveRel(0, z_incr)
                 except:
@@ -97,7 +104,7 @@ class SpaceNavPiezoCtrl(object):
             #if abs(sn.y) >= norm/3:
             #    self.py[0].MoveRel(self.py[1], y_incr)
             #print sn.x/self.FULL_SCALE, sn.y/self.FULL_SCALE, sn.z/self.FULL_SCALE
-            if  (abs(sn.x) >= norm/2 or abs(sn.y) >= norm/2) and norm > .0001:
+            elif  (abs(sn.x) >= norm/2 or abs(sn.y) >= norm/2) and norm > .0001:
                 t = time.time()
                 dt = t - self.lastTime
                 #print dt
@@ -110,7 +117,7 @@ class SpaceNavPiezoCtrl(object):
                     
                 self.lastTime = t
             else:
-                print 's'
+                print( 's')
                 self.pxy.StopMove()
                 
             

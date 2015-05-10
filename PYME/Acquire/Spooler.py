@@ -42,13 +42,33 @@ from PYME.Acquire import eventLog
 from PYME.Acquire import protocol as p
 
 class EventLogger:
-   def __init__(self, scope, hdf5File):
-      self.scope = scope      
+    '''Event logging backend base class'''
+    def __init__(self, scope, hdf5File):
+        self.scope = scope      
 
-   def logEvent(self, eventName, eventDescr = ''):
-      pass
+    def logEvent(self, eventName, eventDescr = ''):
+        '''Log an event. Should be overriden in derived classes.
+        
+        .. note:: In addition to the name and description, timing information is recorded
+        for each event.
+          
+        Parameters
+        ----------
+        eventName : string
+            short event name - < 32 chars and should be shared by events of the
+            same type.
+        eventDescr : string
+            description of the event - additional, even specific information
+            packaged as a string (<255 chars). This is commonly used to store 
+            parameters - e.g. z positions, and should be both human readable and 
+            easily parsed.
+        
+        '''
+        pass
+
 
 class Spooler:
+   '''Spooler base class'''
    def __init__(self, scope, filename, acquisator, protocol = p.NullProtocol, parent=None):
        global timeFcn
        self.scope = scope
@@ -93,6 +113,7 @@ class Spooler:
        self.spoolOn = False
 
    def Tick(self, caller):
+        '''Called on every frame'''
         self.imNum += 1
         if not self.parent == None:
             self.parent.Tick()
@@ -102,20 +123,33 @@ class Spooler:
             sampleInformation.createImage(self.md, sampleInformation.currentSlide[0])
 
    def doStartLog(self):
-      dt = datetime.datetime.now()
+        '''Record pertinant information to metadata at start of acquisition.
+        
+        Loops through all registered sources of start metadata and adds their entries.
+        
+        See Also
+        --------
+        PYME.Acquire.MetaDataHandler
+        '''
+        dt = datetime.datetime.now()
+        
+        self.dtStart = dt
+        
+        self.tStart = time.time()
+          
+        mdt = MetaDataHandler.NestedClassMDHandler()
+          
+        mdt.setEntry('StartTime', self.tStart)
 
-      self.dtStart = dt
-
-      self.tStart = time.time()
-      
-      self.md.setEntry('StartTime', self.tStart)
-
-      #loop over all providers of metadata
-      for mdgen in MetaDataHandler.provideStartMetadata:
-         mdgen(self.md)
+        #loop over all providers of metadata
+        for mdgen in MetaDataHandler.provideStartMetadata:
+            mdgen(mdt)
+            
+        self.md.copyEntriesFrom(mdt)
        
 
    def doStopLog(self):
+        '''Record information to metadata at end of acquisition'''
         self.md.setEntry('EndTime', time.time())
         
         #loop over all providers of metadata

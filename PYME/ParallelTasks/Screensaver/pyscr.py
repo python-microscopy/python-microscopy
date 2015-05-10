@@ -97,10 +97,10 @@ class Screensaver:
                 PostMessage(self.hWnd, WM_CLOSE, 0, 0)
                 exinfo = StringIO.StringIO()
                 traceback.print_exc(file=exinfo)
-                print "-"*78
-                print "Exception in users initialiaztion code:"
-                print exinfo.getvalue()
-                print "-"*78
+                print(("-"*78))
+                print("Exception in users initialiaztion code:")
+                print((exinfo.getvalue()))
+                print(("-"*78))
                 self.closing = True
                 self.finalize()
                 windll.user32.MessageBoxA(self.hWnd, exinfo.getvalue(), "Error in pyscr startup", 0, 0, 0)

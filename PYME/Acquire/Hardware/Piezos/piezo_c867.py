@@ -74,7 +74,7 @@ class piezo_c867(object):
         #time.sleep(0.005)
         res = self.ser_port.readline()
         #res = self.ser_port.readline()
-        print res
+        print(res)
         return float(res) 
         
         
@@ -123,7 +123,7 @@ class piezo_c867(object):
         #time.sleep(0.005)
         res1 = self.ser_port.readline()
         res2 = self.ser_port.readline()
-        print res1, res2
+        print((res1, res2))
         return float(res1.split('=')[1]), float(res2.split('=')[1])
 
 
@@ -148,7 +148,7 @@ class piezo_c867(object):
         return float(re.findall(r'V(\d\.\d\d)', verstring)[0])
         
 import threading
-import Queue
+#import Queue
 import numpy as np
         
 class piezo_c867T(object):    
@@ -160,6 +160,8 @@ class piezo_c867T(object):
         self.units = 'mm'
         
         self.validRegion=validRegion
+        self.onTarget = False
+        self.ptol = 5e-5
         
         #reboot stage
         self.ser_port.write('RBT\n')
@@ -172,6 +174,8 @@ class piezo_c867T(object):
         self.ser_port.write('SVO 2 1\n')
         
         self.servo = True
+        self.onTarget = False
+        self.onTargetLast = False
         
         self.errCode = 0
         
@@ -221,7 +225,7 @@ class piezo_c867T(object):
                 self.errCode = int(self.ser_port.readline())
                 
                 if not self.errCode == 0:
-                    print 'Stage Error: %d' %self.errCode
+                    print(('Stage Error: %d' %self.errCode))
                 
                 #print self.targetPosition, self.stopMove
                 
@@ -244,7 +248,7 @@ class piezo_c867T(object):
                     for i, vel in enumerate(self.targetVelocity):
                         self.ser_port.write('VEL %d %3.9f\n' % (i+1, vel))
                     self.velocity = self.targetVelocity.copy()
-                    print 'v'
+                    print('v')
                 
                 if not np.all(self.targetPosition == self.lastTargetPosition):
                     #update our target position
@@ -252,21 +256,36 @@ class piezo_c867T(object):
         
                     self.ser_port.write('MOV 1 %3.9f 2 %3.9f\n' % (pos[0], pos[1]))
                     self.lastTargetPosition = pos.copy()
-                    print 'p'
+                    print('p')
+                    
+                #check to see if we're on target
+                self.ser_port.write('ONT?\n')
+                self.ser_port.flushOutput()
+                time.sleep(0.005)
+                res1 = self.ser_port.readline()
+                ont1 = int(res1.split('=')[1]) == 1
+                res1 = self.ser_port.readline()
+                ont2 = int(res1.split('=')[1]) == 1
+                
+                onT = (ont1 and ont2) or (self.servo == False)
+                self.onTarget = onT and self.onTargetLast
+                self.onTargetLast = onT
+#                self.onTarget = np.allclose(self.position, self.targetPosition, atol=self.ptol)
                     
                 #time.sleep(.1)
                 
             except serial.SerialTimeoutException:
-                print 'Serial Timeout'
+                print('Serial Timeout')
                 pass
             finally:
                 self.stopMove = False
                 self.lock.release()
                 
     def close(self):
-        self.loopActive = False
-        time.sleep(1)
-        self.ser_port.close()            
+        print "Shutting down XY Stage"
+        with self.lock:
+            self.loopActive = False
+            self.ser_port.close()            
                 
         
     def SetServo(self, state=1):
@@ -322,6 +341,7 @@ class piezo_c867T(object):
             vel = self.maxvelocity
         self.targetVelocity[chan] = vel
         self.targetPosition[chan] = min(max(fPos, self.validRegion[chan][0]),self.validRegion[chan][1]) 
+        self.onTarget = False
             
     #def MoveRel(self, iChannel, incr, bTimeOut=True):
     #        self.ser_port.write('MVR %d %3.6f\n' % (iChannel, incr))
@@ -332,7 +352,8 @@ class piezo_c867T(object):
             vel = self.maxvelocity
         self.targetPosition[0] = min(max(xPos, self.validRegion[0][0]),self.validRegion[0][1])
         self.targetPosition[1] = min(max(yPos, self.validRegion[1][0]),self.validRegion[1][1])
-        self.targetVelocity[:] = vel 
+        self.targetVelocity[:] = vel
+        self.onTarget = False
             
 
     def GetPos(self, iChannel=0):
@@ -367,6 +388,8 @@ class piezo_c867T(object):
         else:
             self.targetPosition[1] = min(max(self.position[1], self.validRegion[1][0]),self.validRegion[1][1])
             
+        self.onTarget = False
+            
     def StopMove(self):
         self.stopMove = True
     
@@ -380,6 +403,9 @@ class piezo_c867T(object):
         return 0
     def GetMax(self, iChan=1):
         return self.max_travel
+        
+    def OnTarget(self):
+        return self.onTarget
         
     def GetFirmwareVersion(self):
         import re

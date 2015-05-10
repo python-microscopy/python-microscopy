@@ -40,7 +40,7 @@ class progPanel(wxPlotPanel.PlotPanel):
                 self.subplot2 = self.figure.add_axes([.14,.05,.85,.44])#self.figure.add_subplot( 212 )
 
             a, ed = numpy.histogram(self.fitResults['tIndex'], self.Size[0]/2)
-            print float(numpy.diff(ed[:2]))
+            print((float(numpy.diff(ed[:2]))))
 
             self.subplot1.cla()
             self.subplot1.plot(ed[:-1], a/float(numpy.diff(ed[:2])), color='b' )

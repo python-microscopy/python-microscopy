@@ -22,13 +22,13 @@
 ##################
 
 import numpy as np
-import sys
+#import sys
 from PYME.Analysis.LMVis.visHelpers import genEdgeDB
 
 def cluster(T):
     edb = genEdgeDB(T)
     nodeNum = -1*np.ones(T.x.shape)
-    nodeInfo = sys.maxint*np.ones((len(T.x), 2))
+    nodeInfo = np.iinfo('i').max*np.ones((len(T.x), 2))
 
     curNode = 0
 

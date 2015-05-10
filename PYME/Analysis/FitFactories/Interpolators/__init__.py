@@ -24,3 +24,10 @@ import glob
 import os
 
 __all__ = [os.path.splitext(os.path.split(p)[-1])[0] for p in glob.glob(__path__[0] + '/[a-zA-Z]*.py')]
+
+interpolatorList = [i for i in __all__]
+interpolatorList.remove('baseInterpolator')
+interpolatorList.sort()
+
+#ditch the 'Interpolator' at the end of the module name for display
+interpolatorDisplayList = [i[:-12] for i in interpolatorList]

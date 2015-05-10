@@ -21,7 +21,7 @@
 #
 ##################
 
-import uc480
+from . import uc480
 from ctypes import *
 import ctypes
 import time
@@ -30,7 +30,11 @@ from PYME.Acquire import MetaDataHandler
 from PYME.Acquire.Hardware import ccdCalibrator
 
 import threading
-import Queue
+
+try:
+    import Queue
+except ImportError:
+    import queue as Queue
 
 import numpy as np
 #import example
@@ -75,6 +79,26 @@ def GetError(camHandle):
     uc480.CALL("GetError",camHandle,ctypes.byref(err),ctypes.byref(errMessage))
     
     return err.value, errMessage.value
+    
+def GetNumCameras():
+    numCams = ctypes.c_int()
+    uc480.CALL("GetNumberOfCameras", ctypes.byref(numCams))
+    
+    return numCams.value
+    
+def GetCameraList():
+    nCams = GetNumCameras()
+    
+    class UEYE_CAMERA_LIST(ctypes.Structure):
+        _fields_ = [("dwCount", ctypes.wintypes.ULONG ),] + [("uci%d" %n, uc480.UEYE_CAMERA_INFO) for n in range(nCams)] #
+    
+    camlist = UEYE_CAMERA_LIST()
+    camlist.dwCount = nCams
+    
+    uc480.CALL("GetCameraList", ctypes.byref(camlist))
+    
+    return camlist
+    
 
 class uc480Camera:
     numpy_frames=1
@@ -82,18 +106,19 @@ class uc480Camera:
 
     #define a couple of acquisition modes
 
-    #MODE_CONTINUOUS = 5
-    #MODE_SINGLE_SHOT = 1
+    MODE_CONTINUOUS = 5
+    MODE_SINGLE_SHOT = 1
 
 
-    def __init__(self, boardNum=0):
+    def __init__(self, boardNum=0, nbits = 8):
         self.initialised = False
         self.active = True
+        self.nbits = nbits
 
-        self.boardHandle = wintypes.HANDLE(0)
+        self.boardHandle = wintypes.HANDLE(boardNum)
 
         ret = uc480.CALL('InitCamera', byref(self.boardHandle), wintypes.HWND(0))
-        print 'I',ret
+        print(('I',ret))
         if not ret == 0:
             raise RuntimeError('Error getting camera handle: %d: %s' % GetError(self.boardHandle))
             
@@ -142,6 +167,9 @@ class uc480Camera:
         
         #uc480.CALL('GetColorDepth', self.boardHandle, &m_nBitsPerPixel, &m_nColorMode);
         uc480.CALL('SetColorMode', self.boardHandle, uc480.IS_SET_CM_BAYER)
+        
+        if self.nbits == 12:
+            uc480.CALL('DeviceFeature', self.boardHandle, uc480.IS_DEVICE_FEATURE_CMD_SET_SENSOR_BIT_DEPTH, byref(uc480.IS_SENSOR_BIT_DEPTH_12_BIT) , sizeof(nBitDepth))
 
 
         uc480.CALL('SetBinning', self.boardHandle, uc480.IS_BINNING_DISABLE)
@@ -156,7 +184,15 @@ class uc480Camera:
         self._buffers = []
         
         self.fullBuffers = Queue.Queue()
+        self.freeBuffers = None
+        
         self.nFull = 0
+        
+        self.nAccum = 1
+        self.nAccumCurrent = 0
+        
+        self.background = None
+        self.flatfield = None
         
         self.Init()
         
@@ -167,7 +203,7 @@ class uc480Camera:
         self.pollThread = threading.Thread(target = self._pollLoop)
         self.pollThread.start()
         
-    def InitBuffers(self, nBuffers = 100):
+    def InitBuffers(self, nBuffers = 50, nAccumBuffers = 50):
         for i in range(nBuffers):
             pData = POINTER(c_char)()
             bufID = c_int(0)
@@ -189,6 +225,12 @@ class uc480Camera:
                 raise RuntimeError('error initialising queue: %d: %s' % GetError(self.boardHandle))
                 
         self.transferBuffer = np.zeros([self.GetPicHeight(), self.GetPicWidth()], np.uint8)
+        
+        self.freeBuffers = Queue.Queue()
+        for i in range(nAccumBuffers):
+            self.freeBuffers.put(np.zeros([self.GetPicHeight(), self.GetPicWidth()], np.uint16))
+        self.accumBuffer = self.freeBuffers.get()
+        self.nAccumCurrent = 0
         self.doPoll = True
         
     def DestroyBuffers(self):
@@ -200,6 +242,8 @@ class uc480Camera:
             bID, pData = self._buffers.pop()
             uc480.CALL('FreeImageMem', self.boardHandle, pData, bID)
             
+        self.freeBuffers = None
+            
     
     def _pollBuffer(self):
         pData = POINTER(c_char)()
@@ -208,11 +252,28 @@ class uc480Camera:
         ret = uc480.CALL('WaitForNextImage', self.boardHandle, 1000, byref(pData), byref(bufID))
         
         if not ret == uc480.IS_SUCCESS:
-            #print ret
+            print 'Wait for image failed with:', ret
             return
             
-        self.fullBuffers.put((pData, bufID))
-        self.nFull += 1
+        ret = uc480.CALL('CopyImageMem', self.boardHandle, pData, bufID, self.transferBuffer.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)))
+        if not ret == uc480.IS_SUCCESS:
+            print 'CopyImageMem failed with:', ret
+            return
+        
+        #chSlice[:] = self.transferBuffer[:].T #.reshape(chSlice.shape)
+        if self.nAccumCurrent == 0:
+            self.accumBuffer[:] = self.transferBuffer
+        else:
+            self.accumBuffer[:] = self.accumBuffer + self.transferBuffer
+        self.nAccumCurrent += 1
+        
+        ret = uc480.CALL('UnlockSeqBuf', self.boardHandle, uc480.IS_IGNORE_PARAMETER, pData)
+        
+        if self.nAccumCurrent >= self.nAccum:    
+            self.fullBuffers.put(self.accumBuffer)
+            self.accumBuffer = self.freeBuffers.get()
+            self.nAccumCurrent = 0
+            self.nFull += 1
         #self.camLock.release()
         
     def _pollLoop(self):
@@ -229,43 +290,49 @@ class uc480Camera:
 
 
     def GetCamType(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetDataType(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetADBits(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetMaxDigit(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetNumberCh(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetBytesPerPoint(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetCCDType(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetCamID(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetCamVer(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def SetTrigMode(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetTrigMode(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def SetDelayTime(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetDelayTime(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
+        
+    def SetAcquisitionMode(self, mode):
+        if mode == self.MODE_SINGLE_SHOT:
+            self.contMode = False
+        else:
+            self.contMode = True
 
 
     def SetIntegTime(self, iTime):
@@ -293,22 +360,22 @@ class uc480Camera:
         return self.expTime
 
     def SetROIMode(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetROIMode(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def SetCamMode(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetCamMode(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def SetBoardNum(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetBoardNum(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetCCDWidth(self):
         return self.CCDSize[0]
@@ -323,7 +390,7 @@ class uc480Camera:
 #        ret = ac.SetImage(self.binX,self.binY,self.ROIx[0],self.ROIx[1],self.ROIy[0],self.ROIy[1])
 #        if not ret == ac.DRV_SUCCESS:
 #            raise RuntimeError('Error setting image size: %s' % ac.errorCodes[ret])
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetHorizBin(self):
         return self.binning
@@ -340,7 +407,7 @@ class uc480Camera:
 #        ret = ac.SetImage(self.binX,self.binY,self.ROIx[0],self.ROIx[1],self.ROIy[0],self.ROIy[1])
 #        if not ret == ac.DRV_SUCCESS:
 #            raise RuntimeError('Error setting image size: %s' % ac.errorCodes[ret])
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetVertBin(*args):
         return 0
@@ -351,7 +418,7 @@ class uc480Camera:
         return self.binY
 
     def GetNumberChannels(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetElectrTemp(*args):
         return 25
@@ -404,7 +471,7 @@ class uc480Camera:
         rect.s32Width = 1+ self.ROIx[1] - self.ROIx[0]
         rect.s32Height = 1+ self.ROIy[1] - self.ROIy[0]
         
-        print rect.s32X, rect.s32Width
+        print((rect.s32X, rect.s32Width))
         
         #ret = uc480.CALL('SetImageSize', self.boardHandle, rect.s32Width, rect.s32Height )
         #if not ret == 0:
@@ -445,23 +512,26 @@ class uc480Camera:
     def StartExposure(self):
         
         if self.doPoll:
-            print 'StartAq'
+            print('StartAq')
             self.StopAq()
         self.InitBuffers()
         
         
 
         eventLog.logEvent('StartAq', '')
-        ret = uc480.CALL('CaptureVideo', self.boardHandle, uc480.IS_DONT_WAIT)
+        if self.contMode:
+            ret = uc480.CALL('CaptureVideo', self.boardHandle, uc480.IS_DONT_WAIT)
+        else:
+            ret = uc480.CALL('FreezeVideo', self.boardHandle, uc480.IS_DONT_WAIT)
         if not ret == 0:
             raise RuntimeError('Error starting exposure: %d: %s' % GetError(self.boardHandle))
         return 0
 
     def StartLifePreview(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def StopLifePreview(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     #PYME Camera interface functions - make this look like the other cameras
     def ExpReady(self):
@@ -471,24 +541,32 @@ class uc480Camera:
         
     def ExtractColor(self, chSlice, mode):
         #grab our buffer from the full buffers list
-        pData, bufID = self.fullBuffers.get()
+        #pData, bufID = self.fullBuffers.get()
+        buf = self.fullBuffers.get()
         #print pData, bufID
         self.nFull -= 1
         
         #ctypes.cdll.msvcrt.memcpy(chSlice.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), buf.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), chSlice.nbytes)
         
         #ret = uc480.CALL('CopyImageMem', self.boardHandle, pData, bufID, chSlice.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)))
-        ret = uc480.CALL('CopyImageMem', self.boardHandle, pData, bufID, self.transferBuffer.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)))
+        #ret = uc480.CALL('CopyImageMem', self.boardHandle, pData, bufID, self.transferBuffer.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)))
         
-        chSlice[:] = self.transferBuffer[:].T#.reshape(chSlice.shape)
+        #chSlice[:] = self.transferBuffer[:].T #.reshape(chSlice.shape)
+        chSlice[:] = buf.T
         
-        ret = uc480.CALL('UnlockSeqBuf', self.boardHandle, uc480.IS_IGNORE_PARAMETER, pData)
+        if (not self.background == None) and self.background.shape == chSlice.shape:
+            chSlice[:] = (chSlice - np.minimum(chSlice, self.background))[:]
+            
+        if (not self.flatfield == None) and self.flatfield.shape == chSlice.shape:
+            chSlice[:] = (chSlice*self.flatfield).astype('uint16')[:]
+        
+        #ret = uc480.CALL('UnlockSeqBuf', self.boardHandle, uc480.IS_IGNORE_PARAMETER, pData)
 
         #recycle buffer
-        #self._queueBuffer(buf)
+        self.freeBuffers.put(buf)
         
     def CheckCoordinates(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def StopAq(self):
         ret = uc480.CALL('StopLiveVideo', self.boardHandle, uc480.IS_WAIT)
@@ -498,13 +576,27 @@ class uc480Camera:
         pass
 
     def SetEMGain(self, gain):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
        
 
     def GetEMGain(self):
         return self.EMGain
-
-
+        
+    def SetGainBoost(self, on):
+        if on:
+            uc480.CALL('SetGainBoost', self.boardHandle, uc480.IS_SET_GAINBOOST_ON)
+        else:
+            uc480.CALL('SetGainBoost', self.boardHandle, uc480.IS_SET_GAINBOOST_OFF)
+            
+    def SetGain(self, gain=100):
+        uc480.CALL('SetHardwareGain', self.boardHandle, gain, uc480.IS_IGNORE_PARAMETER, uc480.IS_IGNORE_PARAMETER, uc480.IS_IGNORE_PARAMETER)
+        
+    
+    def SetAccumulation(self, nFrames):
+        self.nAccum = nFrames
+        
+    def GetAccumulation(self):
+        return self.nAccum
 
     def Shutdown(self):
         if self.doPoll: #acquisition is running

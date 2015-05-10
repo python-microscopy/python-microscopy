@@ -31,15 +31,8 @@ class cropper:
 
         self.image = dsviewer.image
         
-        PROC_CROP = wx.NewId()
-        PROC_DIAG_COMP = wx.NewId()
-        
-        
-        dsviewer.mProcessing.Append(PROC_CROP, "&Crop\tCtrl-Shift-D", "", wx.ITEM_NORMAL)
-        dsviewer.mProcessing.Append(PROC_DIAG_COMP, "Diagonal Composite", "", wx.ITEM_NORMAL)
-    
-        wx.EVT_MENU(dsviewer, PROC_CROP, self.OnCrop)
-        wx.EVT_MENU(dsviewer, PROC_DIAG_COMP, self.OnDiagSplit)
+        dsviewer.AddMenuItem("Processing", "&Crop\tCtrl-Shift-D", self.OnCrop)
+        dsviewer.AddMenuItem("Processing", "Diagonal Composite", self.OnDiagSplit)
 
     def OnCrop(self, event):
         import numpy as np

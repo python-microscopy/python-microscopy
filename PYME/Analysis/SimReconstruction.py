@@ -37,7 +37,7 @@ def Reconstruct(imgs, angles, phases, pixelsize, period):
     
     for ang in a:
         idx = angles == ang
-        print idx, imgs[:,:,idx].shape, phases[idx].shape
+        print((idx, imgs[:,:,idx].shape, phases[idx].shape))
         A1, B1 = ReconstructAngle(imgs[:,:,idx], ang, phases[idx], pixelsize, period)
         A += A1
         B += B1

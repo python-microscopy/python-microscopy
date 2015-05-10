@@ -22,8 +22,8 @@
 ##################
 
 import math
-import datetime
-from previewaquisator import PreviewAquisator
+#import datetime
+from PYME.Acquire.previewaquisator import PreviewAquisator
 import time
 from PYME.Acquire import MetaDataHandler
 
@@ -103,7 +103,7 @@ class SimpleSequenceAquisitor(PreviewAquisator):
             return self._CurPos() - (self.GetStepSize()*(self.GetSeqLength() - 1)*self.GetDirection()/2)
         else: 
             if not ("startPos" in dir(self)):
-                raise Exception, "Please call SetStartPos first !!"
+                raise RuntimeError("Please call SetStartPos first !!")
             return self.startPos
     def SetEndPos(self, ePos):
         self.endPos = ePos
@@ -112,13 +112,13 @@ class SimpleSequenceAquisitor(PreviewAquisator):
             return self._CurPos() + (self.GetStepSize()*(self.GetSeqLength() - 1)*self.GetDirection()/2)
         else: 
             if not ("endPos" in dir(self)):
-                raise Exception, "Please call SetEndPos first !!"
+                raise RuntimeError("Please call SetEndPos first !!")
             return self.endPos
     def SetPrevPos(self, sPos):
         self.prevPos = sPos
     def GetPrevPos(self):
         if not ("prevPos" in dir(self)):
-            raise Exception, "Please call SetPrevPos first !!"
+            raise RuntimeError("Please call SetPrevPos first !!")
         return self.prevPos
     def SetDirection(self, dir):
         " Fowards = 1, backwards = -1 "
@@ -150,11 +150,11 @@ class SimpleSequenceAquisitor(PreviewAquisator):
         if (self.GetEndPos() > self.piezos[self.GetScanChannel()][0].GetMax(self.piezos[self.GetScanChannel()][1])):
             return (False, 'EndPos', 'EndPos is larger than piezo maximum',self.piezos[self.GetScanChannel()][0].GetMax(self.piezos[self.GetScanChannel()][1])) 
         
-        if (self.GetEndPos() < self.GetStartPos()):
-            return (False, 'EndPos', 'EndPos is before Startpos',self.GetStartPos()) 
+        #if (self.GetEndPos() < self.GetStartPos()):
+        #    return (False, 'EndPos', 'EndPos is before Startpos',self.GetStartPos()) 
         #stepsize limits are at present arbitrary == not really restricted to sensible values
-        if (self.GetStepSize() < 0.001):
-            return (False, 'StepSize', 'StepSize is smaller than piezo minimum',0.001) 
+        #if (self.GetStepSize() < 0.001):
+        #    return (False, 'StepSize', 'StepSize is smaller than piezo minimum',0.001) 
         
         #if (self.GetStartPos() > 90):
         #    return (False, 'StepSize', 'Simplesequenceaquisator StepSize is larger than piezo maximum',90)

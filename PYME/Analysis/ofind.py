@@ -186,33 +186,64 @@ class ObjectIdentifier(list):
 
         xsd = []
         ysd = []
+        visited = 0*xs
 
-        for xi, yi in zip(xs, ys):
-            #neigh = kdt.query_ball_point([xi,yi], radius)
-            dn, neigh = kdt.query(numpy.array([xi,yi]), 5)
+        for i in xrange(len(xs)):
+            if not visited[i]:
+                xi = xs[i]
+                yi = ys[i]
+                #neigh = kdt.query_ball_point([xi,yi], radius)
+            
+                dn, neigh = kdt.query(numpy.array([xi,yi]), 5)
 
-            neigh = neigh[dn < radius]
+                neigh = neigh[dn < radius]
 
-            if len(neigh) > 1:
-                Ii = self.filteredData[xi,yi]
+                if len(neigh) > 1:
+                    In = self.filteredData[xs[neigh].astype('i'),ys[neigh].astype('i')]
+                    mi = In.argmax()
+    
+                    xsd.append(xs[neigh[mi]])
+                    ysd.append(ys[neigh[mi]])
+                    visited[neigh] = 1
+                        
 
-                In = self.filteredData[xs[neigh].astype('i'),ys[neigh].astype('i')].max()
-
-                if not Ii < In:
+                else:
                     xsd.append(xi)
                     ysd.append(yi)
 
-            else:
+        return xsd, ysd
+        
+    
+    def __discardClumped(self, xs, ys, radius=4):
+        if len(xs) < 2:
+            return xs, ys
+        
+        kdt = ckdtree.cKDTree(numpy.array([xs,ys]).T)
+
+        xsd = []
+        ysd = []
+
+        for i in xrange(len(xs)):
+            xi = xs[i]
+            yi = ys[i]
+            #neigh = kdt.query_ball_point([xi,yi], radius)
+        
+            dn, neigh = kdt.query(numpy.array([xi,yi]), 2)
+            print dn
+
+            if (dn[1] > radius):
                 xsd.append(xi)
                 ysd.append(yi)
+                
+        print len(xsd)
 
-        return xsd, ysd
+        return numpy.array(xsd), numpy.array(ysd)
 
 
 
 
 
-    def FindObjects(self, thresholdFactor, numThresholdSteps="default", blurRadius=1.5, mask=None, splitter=None, debounceRadius=4, maskEdgeWidth=5):
+    def FindObjects(self, thresholdFactor, numThresholdSteps="default", blurRadius=1.5, mask=None, splitter=None, debounceRadius=4, maskEdgeWidth=5, upperThreshFactor = 0.5, discardClumpRadius=0):
         """Finds point-like objects by subjecting the data to a band-pass filtering (as defined when 
         creating the identifier) followed by z-projection and a thresholding procedure where the 
         threshold is progressively decreased from a maximum value (half the maximum intensity in the image) to a 
@@ -279,7 +310,7 @@ class ObjectIdentifier(list):
 
             #calc thresholds
             self.lowerThreshold = modeApp*self.thresholdFactor
-            self.upperThreshold = maskedFilteredData.max()/2
+            self.upperThreshold = maskedFilteredData.max()*upperThreshFactor
             
         else:
             if self.estSN:
@@ -380,7 +411,7 @@ class ObjectIdentifier(list):
                 im[-5:, -5:] = 0
                 im[-5:, 0:5] = 0
 
-                print len(xs)
+                print((len(xs)))
 
         xs = numpy.array(xs)
         ys = numpy.array(ys)
@@ -391,7 +422,14 @@ class ObjectIdentifier(list):
         else:
             if splitter and (len(xs) > 0):
                 xs, ys = splitter(xs, ys)
+            
+            xs = numpy.clip(xs, 0, self.filteredData.shape[0] - 1)
+            ys = numpy.clip(ys, 0, self.filteredData.shape[1] - 1)
 
+        if discardClumpRadius > 0:
+            print 'ditching clumps'
+            xs, ys = self.__discardClumped(xs, ys, discardClumpRadius)
+            
         xs, ys = self.__Debounce(xs, ys, debounceRadius)
 
         for x, y, t in zip(xs, ys, ts):

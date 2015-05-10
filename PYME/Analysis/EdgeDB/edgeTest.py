@@ -21,10 +21,10 @@
 #
 ################
 from pylab import *
-import edges
+from . import edges
 from matplotlib import delaunay
 
-import segment
+#import segment
 
 
 x = rand(1e6)
@@ -43,20 +43,20 @@ T = delaunay.Triangulation(x,y)
 
 E = edges.EdgeDB(T)
 
-print "foo"
+print("foo")
 
 #print E.edgeArray[len(x):, 0]
-print E.edgeArray[0]
+print((E.edgeArray[0]))
 
 #ei= E.edgeArray[:len(x)]
 
 #print ei[ei['numIncidentEdges']>=7, :]
 #print ei
 
-print E.getVertexEdgeLengths(5)
-print E.getVertexNeighbours(5)
+print((E.getVertexEdgeLengths(5)))
+print((E.getVertexNeighbours(5)))
 
-print E.getNeighbourDists()
+print((E.getNeighbourDists()))
 
 #objects = segment.segment(E, .002)
 

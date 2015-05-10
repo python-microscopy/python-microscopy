@@ -40,9 +40,17 @@ import sys
 from PYME.misc.computerName import GetComputerName
 compName = GetComputerName()
 
+#Local only mode restricts workers to the local machine - used principally for debugging
+LOCAL = False
+if 'PYME_LOCAL_ONLY' in os.environ.keys():
+    LOCAL = os.environ['PYME_LOCAL_ONLY'] == '1'
+    if LOCAL:
+        print 'Local mode active - will only talk to workeers on theis computer'
+        
+
 if 'PYRO_NS_HOSTNAME' in os.environ.keys():
     Pyro.config.PYRO_NS_HOSTNAME=os.environ['PYRO_NS_HOSTNAME']
-    print Pyro.config.PYRO_NS_HOSTNAME
+    print((Pyro.config.PYRO_NS_HOSTNAME))
 
 from PYME import mProfile
 #mProfile.profileOn(['taskServerMP.py', 'HDFTaskQueue.py'])
@@ -130,6 +138,11 @@ class TaskQueueSet(Pyro.core.ObjBase):
 
     def getTasks(self, workerName='Unspecified'):
         """get task from front of list, non-blocking"""
+        if LOCAL and not compName in workerName:
+            #we only want to give tasks to local workers
+            return []
+            
+        
         #print 'Task requested'
         with self.getTaskLock:
             #calling getNumberOpenTasks with False makes the queues tell us how many
@@ -269,6 +282,10 @@ class TaskQueueSet(Pyro.core.ObjBase):
     def setQueueMetaData(self, queueName, *args):
         '''Set meta-data ascociated with queue'''
         self.taskQueues[queueName].setQueueMetaData(*args)
+        
+    def setQueueMetaDataEntries(self, queueName, *args):
+        '''Set meta-data ascociated with queue'''
+        self.taskQueues[queueName].setQueueMetaDataEntries(*args)
 
     def getQueueMetaDataKeys(self, queueName, *args):
         '''Get meta-data keys ascociated with queue'''
@@ -296,10 +313,10 @@ class TaskQueueSet(Pyro.core.ObjBase):
 			
 
 def main():
-    print 'foo'
+    print('foo')
     profile = False
     if len(sys.argv) > 1 and sys.argv[1] == '-p':
-        print 'profiling'
+        print('profiling')
         profile = True
         from PYME.mProfile import mProfile
         mProfile.profileOn(['taskServerMP.py', 'HDFTaskQueue.py', 'TaskQueue.py'])

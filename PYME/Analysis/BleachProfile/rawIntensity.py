@@ -140,7 +140,7 @@ def processIntensityTrace(I, mdh, dt=1):
     
     r0 = FitModel(linMod, [-1, -1, full_bleach[0],full_bleach[3] - init_bleach[-1]], hstack((init_bleach[-40:], full_bleach[5:40])), 
                   hstack((t_init[-40:], t_full[5:40])) - t_init[-1])
-    print r0[0]
+    print((r0[0]))
     
     figure()
     t_ = hstack((t_init[-40:], t_full[5:40])) - t_init[-1]
@@ -160,26 +160,26 @@ def processIntensityTrace(I, mdh, dt=1):
     #ds3 = t[ds] - t2[0]
     
     r = FitModelWeighted(dyedyemod, [I2[0], 1., I2[-1]], I2, sqrt(I2)/4, t3)
-    print r[0]
+    print((r[0]))
     
     #r2 = FitModel(dyedyemod2, [I2[0], 1., I2[-1], 0.], I2, t3, ds3)
     #print r2[0]
     
     r3 = FitModel(dyedyemod, [init_bleach[0], .01, full_bleach[-1]], init_bleach, t_init - t_init[0])
-    print r3[0]
+    print((r3[0]))
     
-    print [init_bleach[0], .01, full_bleach[-1]]
+    print([init_bleach[0], .01, full_bleach[-1]])
     
     r4 = FitModel(dyedyemod, [init_bleach[0], .1, full_bleach[-1]], full_bleach, t_full - t_init[0])
-    print r4[0]
+    print((r4[0]))
     
     #r5 = FitModel(dyedyemoda, [sqrt(init_bleach[0]), .01, full_bleach[-1]], full_bleach, t_full - t_init[0])
     #print r5[0]
     
     A0 = init_bleach[0] 
-    print A0
+    print(A0)
     r6 = FitModelWeighted(dyedyemodt, [A0, dt, full_bleach[-1], 1.], I2, sqrt(I2)/4, t3)
-    print r6[0]
+    print((r6[0]))
     
     figure()
     plot(t_init, init_bleach)

@@ -41,8 +41,11 @@
 
 __version__ = "1.3.5"
 
-import Image, ImageFile
-import ImagePalette
+try:
+    import Image, ImageFile
+    import ImagePalette
+except ImportError: #Have Pillow rather than PIL
+    from PIL import Image, ImageFile, ImagePalette
 
 import array, string, sys
 
@@ -262,7 +265,7 @@ class ImageFileDirectory:
                     # work around broken (?) matrox library
                     # (from Ted Wright, via Bob Klimek)
                     raise KeyError # use default
-                raise ValueError, "not a scalar"
+                raise ValueError("not a scalar")
             return value[0]
         except KeyError:
             if default is None:
@@ -352,14 +355,14 @@ class ImageFileDirectory:
                 import TiffTags
                 tagname = TiffTags.TAGS.get(tag, "unknown")
                 typname = TiffTags.TYPES.get(typ, "unknown")
-                print "tag: %s (%d)" % (tagname, tag),
-                print "- type: %s (%d)" % (typname, typ),
+                print("tag: %s (%d)" % (tagname, tag))
+                print("- type: %s (%d)" % (typname, typ))
 
             try:
                 dispatch = self.load_dispatch[typ]
             except KeyError:
                 if Image.DEBUG:
-                    print "- unsupported type", typ
+                    print("- unsupported type", typ)
                 continue # ignore unsupported type
 
             size, handler = dispatch
@@ -376,15 +379,15 @@ class ImageFileDirectory:
                 data = ifd[8:8+size]
 
             if len(data) != size:
-                raise IOError, "not enough data"
+                raise IOError("not enough data")
 
             self.tagdata[tag] = typ, data
 
             if Image.DEBUG:
                 if tag in (COLORMAP, IPTC_NAA_CHUNK, PHOTOSHOP_CHUNK):
-                    print "- value: <table: %d bytes>" % size
+                    print("- value: <table: %d bytes>" % size)
                 else:
-                    print "- value:", self[tag]
+                    print("- value:", self[tag])
 
         self.next = i32(fp.read(4))
 
@@ -414,8 +417,8 @@ class ImageFileDirectory:
             if Image.DEBUG:
                 import TiffTags
                 tagname = TiffTags.TAGS.get(tag, "unknown")
-                print "save: %s (%d)" % (tagname, tag),
-                print "- value:", value
+                print("save: %s (%d)" % (tagname, tag))
+                print("- value:", value)
 
             if type(value[0]) is type(""):
                 # string data
@@ -464,7 +467,7 @@ class ImageFileDirectory:
         # pass 2: write directory to file
         for tag, typ, count, value, data in directory:
             if Image.DEBUG > 1:
-                print tag, typ, count, repr(value), repr(data)
+                print(tag, typ, count, repr(value), repr(data))
             fp.write(o16(tag) + o16(typ) + o32(count) + value)
         fp.write("\0\0\0\0") # end of directory
 
@@ -491,7 +494,7 @@ class TiffImageFile(ImageFile.ImageFile):
         ifh = self.fp.read(8)
 
         if ifh[:4] not in PREFIXES:
-            raise SyntaxError, "not a TIFF file"
+            raise SyntaxError("not a TIFF file")
 
         # image file directory (tag dictionary)
         self.tag = self.ifd = ImageFileDirectory(ifh[:2])
@@ -525,7 +528,7 @@ class TiffImageFile(ImageFile.ImageFile):
             self.__next = self.__first
         while self.__frame < frame:
             if not self.__next:
-                raise EOFError, "no more images in TIFF file"
+                raise EOFError("no more images in TIFF file")
             self.fp.seek(self.__next)
             self.tag.load(self.fp)
             self.__next = self.tag.next
@@ -564,7 +567,7 @@ class TiffImageFile(ImageFile.ImageFile):
         "Setup this image object based on current tags"
 
         if self.tag.has_key(0xBC01):
-            raise IOError, "Windows Media Photo files not yet supported"
+            raise IOError("Windows Media Photo files not yet supported")
 
         getscalar = self.tag.getscalar
 
@@ -579,11 +582,11 @@ class TiffImageFile(ImageFile.ImageFile):
         fillorder = getscalar(FILLORDER, 1)
 
         if Image.DEBUG:
-            print "*** Summary ***"
-            print "- compression:", self._compression
-            print "- photometric_interpretation:", photo
-            print "- planar_configuration:", self._planar_configuration
-            print "- fill_order:", fillorder
+            print("*** Summary ***")
+            print("- compression:", self._compression)
+            print("- photometric_interpretation:", photo)
+            print("- planar_configuration:", self._planar_configuration)
+            print("- fill_order:", fillorder)
 
         # size
         xsize = getscalar(IMAGEWIDTH)
@@ -591,7 +594,7 @@ class TiffImageFile(ImageFile.ImageFile):
         self.size = xsize, ysize
 
         if Image.DEBUG:
-            print "- size:", self.size
+            print("- size:", self.size)
 
         format = getscalar(SAMPLEFORMAT, 1)
 
@@ -602,17 +605,17 @@ class TiffImageFile(ImageFile.ImageFile):
             self.tag.get(EXTRASAMPLES, ())
             )
         if Image.DEBUG:
-            print "format key:", key
+            print("format key:", key)
         try:
             self.mode, rawmode = OPEN_INFO[key]
         except KeyError:
             if Image.DEBUG:
-                print "- unsupported format"
-            raise SyntaxError, "unknown pixel mode"
+                print("- unsupported format")
+            raise SyntaxError("unknown pixel mode")
 
         if Image.DEBUG:
-            print "- raw mode:", rawmode
-            print "- pil mode:", self.mode
+            print("- raw mode:", rawmode)
+            print("- pil mode:", self.mode)
 
         self.info["compression"] = self._compression
 
@@ -673,7 +676,7 @@ class TiffImageFile(ImageFile.ImageFile):
                         a = None
         else:
             if Image.DEBUG:
-                print "- unsupported data organization"
+                print("- unsupported data organization")
             raise SyntaxError("unknown data organization")
 
         # fixup palette descriptor
@@ -734,7 +737,7 @@ def _save(im, fp, filename):
     try:
         rawmode, byteorder, photo, format, bits, extra = SAVE_INFO[im.mode]
     except KeyError:
-        raise IOError, "cannot write mode %s as TIFF" % im.mode
+        raise IOError("cannot write mode %s as TIFF" % im.mode)
 
     ifd = ImageFileDirectory(BYTEORDER_TO_PREFIX[byteorder])
 

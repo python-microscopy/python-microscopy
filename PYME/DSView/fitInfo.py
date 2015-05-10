@@ -53,20 +53,29 @@ class FitInfoPanel(wx.Panel):
 
         if self.mdh.getEntry('Analysis.FitModule') in ['LatGaussFitFR','LatGaussFitFRforZyla']:
             #we know what the fit parameters are, and how to convert to photons
+            tPhotons = self.genGaussPhotonStats(None)
+        else:
+            tPhotons = ''
 
-            sPhotons = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Photon Stats'), wx.VERTICAL)
+        sPhotons = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Photon Stats'), wx.VERTICAL)
 
-            self.stPhotons = wx.StaticText(self, -1, self.genGaussPhotonStats(None))
-            self.stPhotons.SetFont(wx.Font(10, wx.MODERN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
-            sPhotons.Add(self.stPhotons, 0, wx.EXPAND|wx.TOP|wx.BOTTOM, 5)
+        self.stPhotons = wx.StaticText(self, -1, tPhotons)
+        self.stPhotons.SetFont(wx.Font(10, wx.MODERN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+        sPhotons.Add(self.stPhotons, 0, wx.EXPAND|wx.TOP|wx.BOTTOM, 5)
 
-            vsizer.Add(sPhotons, 0, wx.EXPAND|wx.LEFT|wx.TOP|wx.BOTTOM|wx.RIGHT, 5)
+        vsizer.Add(sPhotons, 0, wx.EXPAND|wx.LEFT|wx.TOP|wx.BOTTOM|wx.RIGHT, 5)
 
         self.fitViewPan = fitDispPanel(self, fitResults, mdh, ds, size=(300, 700))
         vsizer.Add(self.fitViewPan, 1, wx.EXPAND|wx.ALL, 5)
 
 
         self.SetSizerAndFit(vsizer)
+        
+    def SetResults(self, results, mdh):
+        self.fitResults = results
+        self.mdh = mdh
+        self.fitViewPan.SetFitResults(results, mdh)
+        
 
     def genResultsText(self, index):
         s =  u''
@@ -91,6 +100,10 @@ class FitInfoPanel(wx.Panel):
             #s = s[:-1]
             if 'resultCode' in r.dtype.names:
                 s += '\nresultCode: %d' % r['resultCode']
+                
+            if 'Ag' in r['fitResults'].dtype.names:
+                rf = r['fitResults']
+                s += '\n\ngFrac: %3.2f' % (rf['Ag']/(rf['Ag'] + rf['Ar']))
             
             if 'startParams' in r.dtype.names:
                 s += '\n\nStart Params:\n%s' % str(r['startParams'])
@@ -101,7 +114,6 @@ class FitInfoPanel(wx.Panel):
                 s += u'%s:\n' % (n)
                 
         return s
-
 
     def genGaussPhotonStats(self, index):
         s =  u''
@@ -212,8 +224,12 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
 
         wxPlotPanel.PlotPanel.__init__( self, parent, **kwargs )
         
+    def SetFitResults(self, fitResults, mdh):
+        self.fitResults = fitResults
+        self.mdh = mdh
+        
     def _extractROI(self, fri):
-        if 'Ag' in fri['fitResults'].dtype.names:
+        if 'Splitter' in self.mdh['Analysis.FitModule']:
              # is a splitter fit
             if 'Splitter.Channel0ROI' in self.mdh.getEntryNames():
                 pseudo_roiposx = 1
@@ -233,8 +249,11 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
             slux = fri['slicesUsed']['x']
             sluy = fri['slicesUsed']['y']
             
-            sx0 = slice(x0+ slux[0], x0+slux[1])
-            sy0 = slice(y0+ sluy[0], y0+sluy[1])
+            slx = slice(slux[0], slux[1])
+            sly = slice(sluy[0], sluy[1])
+            
+            #sx0 = slice(x0+ slux[0], x0+slux[1])
+            #sy0 = slice(y0+ sluy[0], y0+sluy[1])
             
             if 'NR' in self.mdh['Analysis.FitModule']:
                 #for fits which take chromatic shift into account when selecting ROIs
@@ -243,8 +262,8 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
                 vy = 1e3*self.mdh['voxelsize.y']
                 
                 #position in nm from camera origin
-                x_ = (sx0.start + self.mdh['Camera.ROIPosX'] - 1)*vx
-                y_ = (sy0.start + self.mdh['Camera.ROIPosY'] - 1)*vy
+                x_ = ((slux[0] + slux[1])/2. + self.mdh['Camera.ROIPosX'] - 1)*vx
+                y_ = ((sluy[0] + sluy[1])/2. + self.mdh['Camera.ROIPosY'] - 1)*vy
                 
                 #look up shifts
                 DeltaX = self.mdh['chroma.dx'].ev(x_, y_)
@@ -254,21 +273,21 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
                 dxp = int(DeltaX/vx)
                 dyp = int(DeltaY/vy)
                 
-                print DeltaX, DeltaY, dxp, dyp
+                print((DeltaX, DeltaY, dxp, dyp))
                 
                 x1 -= dxp
                 y1 -= dyp
             
-            sx1 = slice(x1+ slux[0], x1+slux[1])
+            sx1 = slice(x1 - x0 + slux[0], x1 - x0 + slux[1])
             
             if ('Splitter.Flip' in self.mdh.getEntryNames() and not self.mdh.getEntry('Splitter.Flip')):
-                sy1 = slice(y1+ sluy[0], y1+sluy[1])
+                sy1 = slice(y1 - y0 + sluy[0], y1 - y0 +sluy[1])
             else:
-                sy1 = slice(y1+ sluy[0], y1+sluy[1]) #FIXME
+                sy1 = slice(y1 - y0 + sluy[0], y1 - y0 +sluy[1]) #FIXME
                 
-            print sx0, sx1, sy0, sy1
+            print((slx, sx1, sly, sy1))
                 
-            g = self.ds[sx0, sy0, int(fri['tIndex'])].squeeze()
+            g = self.ds[slx, sly, int(fri['tIndex'])].squeeze()
             r = self.ds[sx1, sy1, int(fri['tIndex'])].squeeze()
                 
             return np.hstack([g,r])
@@ -281,9 +300,11 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
                 return
 
             if not hasattr( self, 'subplot1' ):
-                self.subplot1 = self.figure.add_subplot( 311 )
-                self.subplot2 = self.figure.add_subplot( 312 )
-                self.subplot3 = self.figure.add_subplot( 313 )
+                self.subplot1 = self.figure.add_subplot( 511 )
+                self.subplot2 = self.figure.add_subplot( 512 )
+                self.subplot3 = self.figure.add_subplot( 513 )
+                self.subplot4 = self.figure.add_subplot( 514 )
+                self.subplot5 = self.figure.add_subplot( 515 )
 
 #            a, ed = numpy.histogram(self.fitResults['tIndex'], self.Size[0]/2)
 #            print float(numpy.diff(ed[:2]))
@@ -291,6 +312,8 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
             self.subplot1.cla()
             self.subplot2.cla()
             self.subplot3.cla()
+            self.subplot4.cla()
+            self.subplot5.cla()
 #            self.subplot1.plot(ed[:-1], a/float(numpy.diff(ed[:2])), color='b' )
 #            self.subplot1.set_xticks([0, ed.max()])
 #            self.subplot1.set_yticks([0, numpy.floor(a.max()/float(numpy.diff(ed[:2])))])
@@ -315,6 +338,12 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
                     self.subplot2.set_title('Fit')
                     self.subplot3.imshow(imd - imf, interpolation='nearest', cmap=pylab.cm.hot)
                     self.subplot3.set_title('Residuals')
+                    self.subplot4.plot(imd.sum(0))
+                    self.subplot4.plot(imf.sum(0))
+                    self.subplot5.plot(np.hstack([imd[:,:(imd.shape[1]/2)].sum(1), imd[:,(imd.shape[1]/2):].sum(1)]))
+                    self.subplot5.plot(np.hstack([imf[:,:(imd.shape[1]/2)].sum(1), imf[:,(imd.shape[1]/2):].sum(1)]))
+                    #self.subplot5.plot(imf.sum(1))
+                    
 
 
 

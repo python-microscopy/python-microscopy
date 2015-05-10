@@ -90,7 +90,7 @@ def getPSF(ims, points, zvals, zis):
     
 
     d = zeros((height, width, len(zvals)))
-    print d.shape
+    print((d.shape))
 
     for i in range(len(points)):
         F = fftn(ims[:,:,i])
@@ -144,15 +144,15 @@ def getPSF3D(im, points, PSshape = [30,30,30], blur=[.5, .5, 1]):
 
 
     d = zeros((height, width, depth))
-    print d.shape
+    print((d.shape))
 
     for px,py,pz in points:
-        print px, py, pz
+        print((px, py, pz))
         px = int(px)
         py = int(py)
         pz = int(pz)
         imi = im[(px-sx):(px+sx+1),(py-sy):(py+sy+1),(pz-sz):(pz+sz+1)]
-        print imi.shape
+        print((imi.shape))
         dx, dy, dz = getIntCenter(imi)
         dz -= sz
         F = fftn(imi)

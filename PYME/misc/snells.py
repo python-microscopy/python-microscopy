@@ -23,7 +23,7 @@
 import numpy as np
 
 def theta_t(theta_i, ni, nt):
-    return np.arcsin(ni*np.sin(theta_i)/nt)
+    return np.arcsin(np.minimum(ni*np.sin(theta_i)/nt, 1.0))
     
 def Rs(theta_i, ni, nt):
     th_t = theta_t(theta_i, ni, nt)

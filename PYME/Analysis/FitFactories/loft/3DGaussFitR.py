@@ -145,7 +145,7 @@ class PSFFitFactory:
         (res2, cov_x2, infodict2, mesg2, resCode2) = FitModelWeighted(f_PSF3d, startParameters2, dataROI, sigma, X, Y, Z, P, 2*scipy.pi/488, 1.47, 50e3)
         misfit2 = (infodict2['fvec']**2).sum()
         
-        print 'Misfit above = %f, Misfit below = %f' % (misfit1, misfit2)
+        print(('Misfit above = %f, Misfit below = %f' % (misfit1, misfit2)))
         #print res
         #print scipy.sqrt(diag(cov_x))
         #return GaussianFitResult(res, self.metadata, (xslice, yslice, zslice), resCode)

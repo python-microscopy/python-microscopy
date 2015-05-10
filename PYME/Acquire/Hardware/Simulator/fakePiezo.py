@@ -56,4 +56,4 @@ class FakePiezo:
     def __getattr__(self, name):
         if name == 'lastPos':
             return self.curpos
-        else: raise AttributeError, name  # <<< DON'T FORGET THIS LINE !!
+        else: raise AttributeError(name)  # <<< DON'T FORGET THIS LINE !!

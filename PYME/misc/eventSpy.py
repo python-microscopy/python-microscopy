@@ -98,7 +98,7 @@ def MouseEvent(event):
     #global lastEvent
     #print event.GetEventType()
     lastEvents.append(eventInfo(event))
-    print lastEvents[-1]
+    print((lastEvents[-1]))
     event.Skip()
 
 def InstallSpy(window):

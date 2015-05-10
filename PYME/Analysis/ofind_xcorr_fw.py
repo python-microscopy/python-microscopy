@@ -25,7 +25,12 @@ import scipy
 import scipy.signal
 import scipy.ndimage as ndimage
 import numpy
-import cPickle
+
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+    
 from scipy.fftpack import fftn, ifftn, ifftshift
 
 #import fftw3
@@ -142,7 +147,7 @@ def preparePSF(md, PSSize):
             ps, vox = md.taskQueue.getQueueData(md.dataSourceID, 'PSF')
         except:
             fid = open(getFullExistingFilename(PSFFilename), 'rb')
-            ps, vox = cPickle.load(fid)
+            ps, vox = pickle.load(fid)
             fid.close()     
         
         FTW = fftwWeiner(ps,vox, PSSize)

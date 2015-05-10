@@ -30,19 +30,11 @@ class visualiser:
 
         self.image = dsviewer.image
         self.tq = None
-
-        td_menu = wx.Menu()
-
-        VIEW_ISOSURFACE = wx.NewId()
-        VIEW_VOLUME = wx.NewId()
         
-        td_menu.Append(VIEW_ISOSURFACE, "3D Isosurface", "", wx.ITEM_NORMAL)
-        td_menu.Append(VIEW_VOLUME, "3D Volume", "", wx.ITEM_NORMAL)
-
-        dsviewer.menubar.Insert(dsviewer.menubar.GetMenuCount()-1, td_menu, '&3D')
-
-        wx.EVT_MENU(dsviewer, VIEW_ISOSURFACE, self.On3DIsosurf)
-        wx.EVT_MENU(dsviewer, VIEW_VOLUME, self.On3DVolume)
+        dsviewer.AddMenuItem('&3D', '3D Isosurface', self.On3DIsosurf)
+        dsviewer.AddMenuItem('&3D', '3D Volume', self.On3DVolume)
+        dsviewer.AddMenuItem('&3D', 'Save Isosurface as STL', self.save_stl)
+        
 
 
     def On3DIsosurf(self, event):
@@ -56,7 +48,9 @@ class visualiser:
 
         for i in range(self.image.data.shape[3]):
             c = mlab.contour3d(self.image.data[:,:,:,i].astype('f'), contours=[self.do.Offs[i] + .5/self.do.Gains[i]], color = pylab.cm.gist_rainbow(float(i)/self.image.data.shape[3])[:3])
+            self.lastSurf = c
             c.mlab_source.dataset.spacing = (self.image.mdh.getEntry('voxelsize.x') ,self.image.mdh.getEntry('voxelsize.y'), self.image.mdh.getEntry('voxelsize.z'))
+            
 
     def On3DVolume(self, event):
         try:
@@ -71,7 +65,20 @@ class visualiser:
             #c = mlab.contour3d(im.img, contours=[pylab.mean(ivp.clim)], color = pylab.cm.gist_rainbow(float(i)/len(self.images))[:3])
             v = mlab.pipeline.volume(mlab.pipeline.scalar_field(numpy.minimum(255*(self.image.data[:,:,:,i] -self.do.Offs[i])*self.do.Gains[i], 254).astype('uint8')))
             #v.volume.scale = (self.image.mdh.getEntry('voxelsize.x') ,self.image.mdh.getEntry('voxelsize.y'), self.image.mdh.getEntry('voxelsize.z'))
+            
+    def save_stl(self, event=None):
+        """Save last renderd scene as STL."""
+        from tvtk.api import tvtk
+        
+        fdialog = wx.FileDialog(None, 'Save 3D scene as ...', wildcard='*.stl', style=wx.SAVE|wx.HIDE_READONLY)
+        succ = fdialog.ShowModal()
+        
+        if (succ == wx.ID_OK):
+            fname = fdialog.GetPath().encode()
+            tvtk.STLWriter(input=self.lastSurf.actor.mapper.input, file_name=fname).write()
 
+        fdialog.Destroy()
+            
 
 
 def Plug(dsviewer):

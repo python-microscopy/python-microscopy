@@ -32,14 +32,15 @@ from PYME.Acquire import MetaDataHandler
 import numpy as np
 import scipy.special
 import os
-#from PYME.Analysis.BleachProfile.kinModels import getPhotonNums
+
+from PYME.Analysis.BleachProfile.kinModels import getPhotonNums
 
 
 class Pipeline:
     def __init__(self, filename=None, visFr=None):
         self.dataSources = []
         self.selectedDataSource = None
-        self.filterKeys = {'error_x': (0,30), 'error_y':(0,30),'A':(5,2000), 'sig' : (95, 200)}
+        self.filterKeys = {'error_x': (0,30), 'error_y':(0,30),'A':(5,20000), 'sig' : (95, 200)}
 
         self.filter = None
         self.mapping = None
@@ -220,7 +221,7 @@ class Pipeline:
         while len(self.filesToClose) > 0:
             self.filesToClose.pop().close()
 
-    def OpenFile(self, filename, **kwargs):
+    def OpenFile(self, filename= '', ds = None, **kwargs):
         '''Open a file - accepts optional keyword arguments for use with files
         saved as .txt and .mat. These are:
             
@@ -250,7 +251,10 @@ class Pipeline:
         
         self.filename = filename
         
-        if os.path.splitext(filename)[1] == '.h5r':
+        if not ds is None:
+            self.selectedDataSource = ds
+            self.dataSources.append(ds)
+        elif os.path.splitext(filename)[1] == '.h5r':
             try:
                 self.selectedDataSource = inpFilt.h5rSource(filename)
                 self.dataSources.append(self.selectedDataSource)
@@ -307,9 +311,10 @@ class Pipeline:
             
             
         #wrap the data source with a mapping so we can fiddle with things
-        #e.g. combining z position and focus            
-        self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource)
-        self.dataSources.append(self.selectedDataSource)
+        #e.g. combining z position and focus 
+        self.inputMapping = inpFilt.mappingFilter(self.selectedDataSource)
+        self.selectedDataSource = self.inputMapping
+        self.dataSources.append(self.inputMapping)
         
         if 'PixelSize' in kwargs.keys():
             self.selectedDataSource.pixelSize = kwargs['PixelSize']
@@ -381,8 +386,16 @@ class Pipeline:
         if 'Analysis.FitModule' in self.mdh.getEntryNames():
             fitModule = self.mdh['Analysis.FitModule']
             
+            print 'fitModule = %s' % fitModule
+            
             if 'Interp' in fitModule:
                 self.filterKeys['A'] = (5, 100000)
+                
+            
+            if 'LatGaussFitFR' in fitModule:
+                self.selectedDataSource.nPhot = getPhotonNums(self.selectedDataSource, self.mdh)
+                self.selectedDataSource.setMapping('nPhotons', 'nPhot')
+                
                 
             if fitModule == 'SplitterShiftEstFR':
                 self.filterKeys['fitError_dx'] = (0,10)
@@ -411,7 +424,8 @@ class Pipeline:
             if not ratio == None:
                 self.fluorSpecies[structure] = ratio
                 self.fluorSpeciesDyes[structure] = dye
-                self.mapping.setMapping('p_%s' % structure, '(1.0/(ColourNorm*2*numpy.pi*fitError_Ag*fitError_Ar))*exp(-(fitResults_Ag - %f*A)**2/(2*fitError_Ag**2) - (fitResults_Ar - %f*A)**2/(2*fitError_Ar**2))' % (ratio, 1-ratio))
+                #self.mapping.setMapping('p_%s' % structure, '(1.0/(ColourNorm*2*numpy.pi*fitError_Ag*fitError_Ar))*exp(-(fitResults_Ag - %f*A)**2/(2*fitError_Ag**2) - (fitResults_Ar - %f*A)**2/(2*fitError_Ar**2))' % (ratio, 1-ratio))
+                self.mapping.setMapping('p_%s' % structure, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))/(error_gFrac*sqrt(2*numpy.pi))' % ratio)
                 
     def getNeighbourDists(self, forceRetriang = False):
         from PYME.Analysis.LMVis import visHelpers
@@ -508,6 +522,15 @@ class Pipeline:
             of.write('\t'.join(['%e' % c for c in row]) + '\n')
     
         of.close()
+        
+    def toDataFrame(self, keys=None):
+        import pandas as pd
+        if keys == None:
+            keys = self.keys()
+        
+        d = {k: self[k] for k in keys}
+        
+        return pd.DataFrame(d)
     
 
 

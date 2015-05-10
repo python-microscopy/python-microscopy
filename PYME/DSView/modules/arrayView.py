@@ -23,7 +23,7 @@
 from PYME.DSView.arrayViewPanel import *
 
 def Plug(dsviewer):
-    dsviewer.view = ArrayViewPanel(dsviewer, do=dsviewer.do)
+    dsviewer.view = ArrayViewPanel(dsviewer, do=dsviewer.do, voxelsize=dsviewer.image.voxelsize)
     dsviewer.updateHooks.append(dsviewer.view.Redraw)
     dsviewer.AddPage(dsviewer.view, True, 'Data')
 

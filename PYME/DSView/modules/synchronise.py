@@ -35,20 +35,8 @@ class syncer:
         self.do = dsviewer.do
 
         self.image = dsviewer.image
-
-        self.compMenu = wx.Menu()
-
-        dsviewer.mProcessing.AppendSeparator()
-        SYNCHRONISE = wx.NewId()
-        dsviewer.mProcessing.Append(SYNCHRONISE, "Sync Windows", "", wx.ITEM_NORMAL)
-
-        #SPLIT_CHANNELS = wx.NewId()
-        #dsviewer.mProcessing.Append(SPLIT_CHANNELS, "Split Channels", "", wx.ITEM_NORMAL)
-
-        #dsviewer.mProcessing.AppendSeparator()
-
-        dsviewer.Bind(wx.EVT_MENU, self.OnSynchronise, id=SYNCHRONISE)
-        #dsviewer.Bind(wx.EVT_MENU, self.OnSplitChannels, id=SPLIT_CHANNELS)
+        
+        dsviewer.AddMenuItem('Processing', "Sync Windows", self.OnSynchronise)
 
 
 

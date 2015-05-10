@@ -28,7 +28,7 @@ import tables
 
 #from PYME.Analysis.LMVis import inpFilt
 from scipy import minimum, maximum
-import Image
+from PIL import Image
 
 from PYME.Analysis import MetaData
 from PYME.Acquire import MetaDataHandler

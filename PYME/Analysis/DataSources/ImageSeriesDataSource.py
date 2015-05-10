@@ -24,11 +24,11 @@
 from PYME.ParallelTasks.relativeFiles import getFullFilename
 from PYME.Acquire import MetaDataHandler
 #from PYME.FileUtils import readTiff
-import Image
+from PIL import Image
 import glob
 import os
 import numpy as np
-from BaseDataSource import BaseDataSource
+from .BaseDataSource import BaseDataSource
 #from PYME.misc import TiffImagePlugin #monkey patch PIL with improved tiff support from Priithon
 
 #import numpy as np
@@ -60,8 +60,8 @@ class DataSource(BaseDataSource):
         if self.im0.ifd.prefix =='MM':
             self.endedness = 'BE'
             
-        print self.im0.ifd.prefix
-        print self.endedness
+        print((self.im0.ifd.prefix))
+        print((self.endedness))
 
         #to find the number of images we have to loop over them all
         #this is obviously not ideal as PIL loads the image data into memory for each

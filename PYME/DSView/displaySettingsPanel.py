@@ -55,7 +55,7 @@ class dispSettingsPanel(wx.Panel):
             self.vp.do.Optimise(self.vp.ds)
 
 
-        print self.dsa.size
+        print((self.dsa.size))
         #self.do = vp.do
         
 
@@ -104,6 +104,7 @@ class dispSettingsPanel(wx.Panel):
         hsizer.Fit(self)
 
     def OnMappingChange(self, event):
+        print 'mc'
         lower, upper = self.hlDispMapping.GetValue()
 
         off = 1.*(lower)
@@ -118,6 +119,7 @@ class dispSettingsPanel(wx.Panel):
         self.vp.do.setDisp1Off(off)
 
         self.vp.Refresh()
+        self.vp.Update()
 
     def OnScaleChanged(self, event):
         self.scale = self.cbScale.GetSelection()
@@ -150,7 +152,7 @@ class dispSettingsPanel(wx.Panel):
     def __getattr__(self, name):
         if name in dir(self.hlDispMapping):
             return self.hlDispMapping.__dict__[name]
-        else:  raise AttributeError, name  # <<< DON'T FORGET THIS LINE !!
+        else:  raise AttributeError(name)  # <<< DON'T FORGET THIS LINE !!
 
 class dispSettingsPanel2(wx.Panel):
     def __init__(self, parent, vp):
@@ -245,4 +247,4 @@ class dispSettingsPanel2(wx.Panel):
     def __getattr__(self, name):
         if name in dir(self.hlDispMapping):
             return self.hlDispMapping.__dict__[name]
-        else:  raise AttributeError, name  # <<< DON'T FORGET THIS LINE !!
+        else:  raise AttributeError(name)  # <<< DON'T FORGET THIS LINE !!

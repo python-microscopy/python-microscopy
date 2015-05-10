@@ -39,9 +39,9 @@ def FitModelG(*args):
 def munge_res(model, res, **kwargs):
     #res = FitModel(model, startParams, data, *args)
     #if mse:
-    r = np.hstack([res[0],] + kwargs.values())
+    r = np.hstack([res[0],] + list(kwargs.values()))
 
-    dt = np.dtype({'names':model.paramNames + kwargs.keys(), 'formats':len(r)*[r.dtype.str]})
+    dt = np.dtype({'names':model.paramNames + list(kwargs.keys()), 'formats':len(r)*[r.dtype.str]})
     #else:
     #    r = res[0]
     #
@@ -198,7 +198,7 @@ def applyByChannel(fcn):
         chans = colourFilter.getColourChans()
         
         if USE_GUI:
-            figure(os.path.split(pipeline.filename)[-1] + ' - ' + fcn.func_name)
+            figure(os.path.split(pipeline.filename)[-1] + ' - ' + fcn.__name__)
     
         if len(chans) == 0:
             ret = fcn(colourFilter, metadata)
@@ -392,7 +392,7 @@ def fitFluorBrightnessT(colourFilter, metadata, channame='', i=0, rng = None):
     yb = ybins[:-1][None, :]*ones([xbins.size - 1, 1])    
     
     res0 = FitModel(fITmod2, [n.max()*3, 1, np.median(nPh), 20, 1e2, 1e2, 100], n, xb, yb, Nco)
-    print res0[0]
+    print((res0[0]))
     
     PL.AddRecord('/Photophysics/FluorBrightness/fITmod2', munge_res(fITmod2,res0))
     
@@ -436,7 +436,7 @@ def fitFluorBrightnessT(colourFilter, metadata, channame='', i=0, rng = None):
         #sc = (lamb/(ybins[1] - ybins[0]))
         #sc = len(ybins)
         sc = 1./(1 - exp(-(ybins[1] - ybins[0])/lamb))
-        print 'sc = ', sc
+        print(('sc = ', sc))
         y1 = sc*A/((t_/tauI)**a + 1)
         plot(t_, y1)
         plot(t_, sc*(Ndet/((t_/tauI)**a + 1) + NDetM))

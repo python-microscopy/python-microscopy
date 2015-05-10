@@ -1,0 +1,102 @@
+PYME.Acquire.Hardware.Simulator package
+=======================================
+
+Submodules
+----------
+
+PYME.Acquire.Hardware.Simulator.dSimControl module
+--------------------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.Simulator.dSimControl
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+PYME.Acquire.Hardware.Simulator.fakeCam module
+----------------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.Simulator.fakeCam
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+PYME.Acquire.Hardware.Simulator.fakePiezo module
+------------------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.Simulator.fakePiezo
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+PYME.Acquire.Hardware.Simulator.fluor module
+--------------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.Simulator.fluor
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+PYME.Acquire.Hardware.Simulator.illuminate module
+-------------------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.Simulator.illuminate
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+PYME.Acquire.Hardware.Simulator.lasersliders module
+---------------------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.Simulator.lasersliders
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+PYME.Acquire.Hardware.Simulator.rend_im module
+----------------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.Simulator.rend_im
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+PYME.Acquire.Hardware.Simulator.setup module
+--------------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.Simulator.setup
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+PYME.Acquire.Hardware.Simulator.wormlike module
+-----------------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.Simulator.wormlike
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+PYME.Acquire.Hardware.Simulator.wormlike2 module
+------------------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.Simulator.wormlike2
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+PYME.Acquire.Hardware.Simulator.wormlike_curled module
+------------------------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.Simulator.wormlike_curled
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: PYME.Acquire.Hardware.Simulator
+    :members:
+    :undoc-members:
+    :show-inheritance:

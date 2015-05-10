@@ -66,4 +66,4 @@ p = multiprocessing.Process(target=foo, args=(data,))
 p.start()
 p.join()
 
-print data
+print(data)

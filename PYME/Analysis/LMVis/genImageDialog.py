@@ -22,7 +22,7 @@
 ##################
 
 import wx
-import histLimits
+from . import histLimits
 
 
 class GenImageDialog(wx.Dialog):
@@ -53,7 +53,7 @@ class GenImageDialog(wx.Dialog):
             nZlevels = 0
 
         #jitter parameter for gaussian and triangles
-        if mode in ['gaussian', 'triangles', '3Dgaussian', '3Dtriangles']:
+        if mode in ['gaussian', 'triangles', 'trianglesw', '3Dgaussian', '3Dtriangles']:
             sizer2 = wx.BoxSizer(wx.HORIZONTAL)
             sizer2.Add(wx.StaticText(self, -1, jitterPhrase), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
@@ -90,7 +90,7 @@ class GenImageDialog(wx.Dialog):
             sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
 
         #MC subsampling parameter for triangles
-        if mode in ['triangles', '3Dtriangles']:
+        if mode in ['triangles', 'trianglesw', '3Dtriangles']:
             sizer2 = wx.BoxSizer(wx.HORIZONTAL)
             sizer2.Add(wx.StaticText(self, -1, 'MC subsampling probability:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
@@ -109,7 +109,7 @@ class GenImageDialog(wx.Dialog):
             sizer2 = wx.BoxSizer(wx.HORIZONTAL)
             #sizer2.Add(wx.StaticText(self, -1, 'Use software rendereing:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
-        if mode in ['triangles']:
+        if mode in ['triangles', 'trianglesw']:
             self.cbTriangSoftRender = wx.CheckBox(self, -1, 'Use software rendering')
             self.cbTriangSoftRender.SetValue(True)
             sizer2.Add(self.cbTriangSoftRender, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)

@@ -100,7 +100,7 @@ class fitTestJig(object):
             #print bg, self.md.Camera.ADOffset
 
             self.fitFac = self.fitMod.FitFactory(atleast_3d(self.d2), self.md, background = bg + self.md.Camera.ADOffset)
-            self.res[i] = self.fitFac.FromPoint(rs, rs, roiHalfSize=rs)
+            self.res[i] = self.fitFac.FromPoint(rs, rs)#, roiHalfSize=rs)
 
         
         self.ps = ps.view(self.res['fitResults'].dtype)
@@ -115,7 +115,7 @@ class fitTestJig(object):
                 yv += self.__getattribute__(varName)
                 
             me = ((self.ps[varName].ravel() - yv)**2).mean()
-            print '%s: %3.2f' % (varName, me)
+            print(('%s: %3.2f' % (varName, me)))
             
     def error(self, varName):
         xv = self.ps[varName].ravel()

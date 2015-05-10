@@ -61,7 +61,12 @@ class rldec:
         return 0*data + data.mean()
 
 
-    def deconv(self, data, lamb, num_iters=10, weights = 1):
+    def deconvp(self, args):
+        ''' convenience function for deconvolving in parallel using processing.Pool.map'''
+        return self.deconv(*args)
+        #return 0
+    
+    def deconv(self, data, lamb, num_iters=10, weights = 1, bg = 0):
         '''This is what you actually call to do the deconvolution.
         parameters are:
 
@@ -76,25 +81,33 @@ class rldec:
         '''
         #remember what shape we are
         self.dataShape = data.shape
+        
+        #print 'dc1'
 
         #guess a starting estimate for the object
-        self.f = self.startGuess(data).ravel()
+        self.f = self.startGuess(data).ravel() - bg
         self.fs = self.f.reshape(self.shape)
+        #print 'dc2'
 
         #make things 1 dimensional
         #self.f = self.f.ravel()
         data = data.ravel()
         #weights = weights.ravel()
+        #print 'dc3'
 
         mask = 1 - weights
+        
+        #print data.sum(), self.f.sum()
 
         self.loopcount=0
+        
+        
 
         while self.loopcount  < num_iters:
             self.loopcount += 1
 
             #the residuals
-            self.res = weights*(data/(self.Afunc(self.f)+1e-4)) +  mask;
+            self.res = weights*(data/(self.Afunc(self.f)+1e-12 + bg)) +  mask;
 
             #print 'Residual norm = %f' % norm(self.res)
             
@@ -107,7 +120,9 @@ class rldec:
 
             #set the current estimate to out new estimate
             self.f[:] = fnew
-            print 'Sum = %f' % self.f.sum()
+            #print(('Sum = %f' % self.f.sum()))
+            
+        #print 'dc3'
 
         return real(self.fs)
 
@@ -309,7 +324,11 @@ class dec_conv(rldec):
 #        #g_[pw2[0]:-pw1[0], pw2[1]:-pw1[1], pw2[2]:-pw1[2]] = g
 #        g = g_
         
+        
+        print psf.sum()
+        
         g = resizePSF(psf, data_size)
+        print g.sum()
 
 
         #keep track of our data shape
@@ -319,7 +338,7 @@ class dec_conv(rldec):
 
         self.shape = data_size
         
-        print 'Calculating OTF' 
+        print('Calculating OTF') 
 
         FTshape = [self.shape[0], self.shape[1], self.shape[2]/2 + 1]
 
@@ -344,7 +363,7 @@ class dec_conv(rldec):
         self.Ht /= g.size;
         self.H /= g.size;
         
-        print 'Creating plans for FFTs - this might take a while'
+        print('Creating plans for FFTs - this might take a while')
 
         #calculate plans for other ffts
         self._plan_r_F = fftw3f.Plan(self._r, self._F, 'forward', flags = FFTWFLAGS, nthreads=NTHREADS)
@@ -352,7 +371,7 @@ class dec_conv(rldec):
         
         fftwWisdom.save_wisdom()
         
-        print 'Done planning'
+        print('Done planning')
 
 
     def Lfunc(self, f):

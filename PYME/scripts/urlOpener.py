@@ -43,12 +43,12 @@ if 'PYMENASPATH' in os.environ.keys():
     nasPath = os.environ['PYMENASPATH']
 
 PYMEDir = os.path.split(os.path.split(os.path.abspath(nameUtils.__file__))[0])[0]
-print PYMEDir
+print(PYMEDir)
 #print __file__
 
 
 def openFile(url):
-    print url
+    print(url)
         
     
     if url.startswith(micrPrefix):
@@ -59,7 +59,7 @@ def openFile(url):
         filename = url
         
 
-    print filename
+    print(filename)
 
     if os.path.exists(filename):
         #return HttpResponse("Thumbnail for %s." % filename)

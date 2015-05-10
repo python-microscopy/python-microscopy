@@ -30,7 +30,7 @@ import sys
 
 #from PYME.Analysis.LMVis import inpFilt
 from scipy import minimum, maximum
-import Image
+from PIL import Image
 
 from PYME import cSMI
 

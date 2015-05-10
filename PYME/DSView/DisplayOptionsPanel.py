@@ -24,7 +24,10 @@
 import wx
 import wx.lib.agw.aui as aui
 import pylab
-from PYME.misc import extraCMaps
+try:
+    from PYME.misc import extraCMaps
+except:
+    pass
 import numpy as np
 #from matplotlib import cm
 from PYME.Analysis.LMVis import histLimits
@@ -215,6 +218,7 @@ class OptionsPanel(wx.Panel):
         self.do.SetScale(self.cbScale.GetSelection() - self.scale_11)
 
     def OnCLimChanged(self, event):
+        #print 'clc'
         ind = self.hIds.index(event.GetId())
         self.do.SetOffset(ind, event.lower)
         self.do.SetGain(ind,1./(event.upper- event.lower + 1e-4))
@@ -370,7 +374,7 @@ class OptionsPanel(wx.Panel):
         self.do.OnChange()
 
     def OnLineThickness(self, event):
-        print 'foo'
+        print('foo')
         dlg = wx.TextEntryDialog(self, 'Line Thickness', 'Set width of line selection', '%d' % self.do.selectionWidth)
 
         if dlg.ShowModal() == wx.ID_OK:

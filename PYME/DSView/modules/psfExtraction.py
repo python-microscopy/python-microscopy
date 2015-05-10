@@ -33,6 +33,9 @@ class psfExtractor:
         self.multiChannel = self.image.data.shape[3] > 1
 
         self.PSFLocs = []
+        self.psfROISize = [30,30,30]
+        
+        dsviewer.do.overlays.append(self.DrawOverlays)
 
         dsviewer.paneHooks.append(self.GenPSFPanel)
 
@@ -105,9 +108,17 @@ class psfExtractor:
 
         vsizer.Add(hsizer, 0,wx.EXPAND|wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 0)
 
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)        
         bExtract = wx.Button(pan, -1, 'Extract', style=wx.BU_EXACTFIT)
         bExtract.Bind(wx.EVT_BUTTON, self.OnExtractPSF)
-        vsizer.Add(bExtract, 0,wx.ALL|wx.ALIGN_RIGHT, 5)
+        hsizer.Add(bExtract, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5) 
+        
+        bExtractSplit = wx.Button(pan, -1, 'Extract Split', style=wx.BU_EXACTFIT)
+        bExtractSplit.Bind(wx.EVT_BUTTON, self.OnExtractSplitPSF)
+        hsizer.Add(bExtractSplit, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        
+        vsizer.Add(hsizer, 0,wx.ALL|wx.ALIGN_RIGHT, 5)
         
         bAxialShift = wx.Button(pan, -1, 'Estimate axial shift', style=wx.BU_EXACTFIT)
         bAxialShift.Bind(wx.EVT_BUTTON, self.OnCalcShift)
@@ -133,7 +144,7 @@ class psfExtractor:
             if ((numpy.array(p[:2]) - numpy.array((self.do.xp, self.do.yp)))**2).sum() < 100:
                 self.PSFLocs.pop(i)
 
-                self.view.psfROIs = self.PSFLocs
+                #self.view.psfROIs = self.PSFLocs
                 self.view.Refresh()
                 return
                 
@@ -157,21 +168,44 @@ class psfExtractor:
                     dx, dy, dz = extractImages.getIntCenter(self.image.data[(xp-rsx):(xp+rsx + 1),(yp-rsy):(yp+rsy+1), :, chnum])
                     self.PSFLocs.append((xp + dx, yp + dy, dz))
         
-        self.view.psfROIs = self.PSFLocs
+        #self.view.psfROIs = self.PSFLocs
         self.view.Refresh()
 
     def OnClearTags(self, event):
         self.PSFLocs = []
-        self.view.psfROIs = self.PSFLocs
+        #self.view.psfROIs = self.PSFLocs
         self.view.Refresh()
 
     def OnPSFROI(self, event):
         try:
-            psfROISize = [int(s) for s in self.tPSFROI.GetValue().split(',')]
-            self.view.psfROISize = psfROISize
+            self.psfROISize = [int(s) for s in self.tPSFROI.GetValue().split(',')]
+            #self.view.psfROISize = psfROISize
             self.view.Refresh()
         except:
             pass
+        
+    def DrawOverlays(self, view, dc):
+        #PSF ROIs
+        if (len(self.PSFLocs) > 0):
+            dc.SetBrush(wx.TRANSPARENT_BRUSH)
+            dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),1))
+            
+            if(view.do.slice == view.do.SLICE_XY):
+                a_x = 0
+                a_y = 1
+            elif(view.do.slice == view.do.SLICE_XZ):
+                a_x = 0
+                a_y = 2
+            elif(view.do.slice == view.do.SLICE_YZ):
+                a_x = 1
+                a_y = 2
+                
+            for p in self.PSFLocs:
+                #dc.DrawRectangle(sc*p[0]-self.psfROISize[0]*sc - x0,sc*p[1] - self.psfROISize[1]*sc - y0, 2*self.psfROISize[0]*sc,2*self.psfROISize[1]*sc)
+                xp0, yp0 = view._PixelToScreenCoordinates(p[a_x]-self.psfROISize[a_x],p[a_y] - self.psfROISize[a_y])
+                xp1, yp1 = view._PixelToScreenCoordinates(p[a_x]+self.psfROISize[a_x],p[a_y] + self.psfROISize[a_y])
+                dc.DrawRectangle(xp0, yp0, xp1-xp0,yp1-yp0)
+
         
     def OnCalcShift(self, event):
         if (len(self.PSFLocs) > 0):
@@ -201,7 +235,7 @@ class psfExtractor:
             
             dz = z1 - z0
 
-            print 'z0: %f, z1: %f, dz: %f' % (z0,z1,dz)
+            print(('z0: %f, z1: %f, dz: %f' % (z0,z1,dz)))
             
             pylab.plot(z_, p_0)
             pylab.plot(z_, p_1)
@@ -223,6 +257,38 @@ class psfExtractor:
             if self.chType.GetSelection() == 0:
                 #widefield image - do special background subtraction
                 psf = extractImages.backgroundCorrectPSFWF(psf)
+
+#            from pylab import *
+#            import cPickle
+#            imshow(psf.max(2))
+
+            from PYME.DSView.dsviewer_npy_nb import ImageStack, ViewIm3D
+
+            im = ImageStack(data = psf, mdh = self.image.mdh, titleStub = 'Extracted PSF')
+            im.defaultExt = '*.psf' #we want to save as PSF by default
+            ViewIm3D(im, mode='psf', parent=wx.GetTopLevelParent(self.dsviewer))
+            
+    def OnExtractSplitPSF(self, event):
+        if (len(self.PSFLocs) > 0):
+            from PYME.PSFEst import extractImages
+            chnum = self.chChannel.GetSelection()
+
+            psfROISize = [int(s) for s in self.tPSFROI.GetValue().split(',')]
+            psfBlur = [float(s) for s in self.tPSFBlur.GetValue().split(',')]
+            #print psfROISize
+
+            psfs = []            
+            
+            for i in range(self.image.data.shape[3]):
+                psf = extractImages.getPSF3D(self.image.data[:,:,:,i], self.PSFLocs, psfROISize, psfBlur)
+                
+                if self.chType.GetSelection() == 0:
+                    #widefield image - do special background subtraction
+                    psf = extractImages.backgroundCorrectPSFWF(psf)
+                    
+                psfs.append(psf)
+                
+            psf = numpy.concatenate(psfs, 0)
 
 #            from pylab import *
 #            import cPickle

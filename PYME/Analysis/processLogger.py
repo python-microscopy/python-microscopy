@@ -91,7 +91,7 @@ class ContextManager(object):
             
 class BackendBase(object):
     def AddRecord(self, table, record):
-        print table, record
+        print((table, record))
         
 PL = ContextManager(BackendBase())
 

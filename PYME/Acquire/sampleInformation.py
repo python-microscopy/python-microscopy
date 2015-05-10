@@ -29,8 +29,8 @@ import sys
 from PYME.FileUtils import nameUtils
 from PYME.misc import TextCtrlAutoComplete
 
-from PYME.SampleDB import populate #just to setup the Django environment
-from PYME.SampleDB.samples import models
+from PYME.SampleDB2 import populate #just to setup the Django environment
+from PYME.SampleDB2.samples import models
 
 lastCreator = nameUtils.getUsername()
 lastSlideRef = ''
@@ -73,7 +73,7 @@ class VirtList(wx.ListCtrl):
             self.qs = models.Slide.objects.filter(creator__contains=creator, reference__contains=reference, labelling__structure__contains=structure).order_by('-timestamp')
         else:
             self.qs = models.Slide.objects.filter(creator__contains=creator, reference__contains=reference).order_by('-timestamp')
-        self.SetItemCount(len(self.qs))
+        self.SetItemCount(self.qs.count())
 
     def OnGetItemText(self, item, col):
         #print self.qs[item].desc()
@@ -212,7 +212,7 @@ class SampleInfoDialog(wx.Dialog):
         if acquiring and self.lSlides.GetItemCount() == 1:
             self.lSlides.Select(0)
 
-        print 'foo;'
+        print ('foo;')
 
     def OnAddSlide(self, event):
         import webbrowser
@@ -226,9 +226,9 @@ class SampleInfoDialog(wx.Dialog):
 
     def OnSelectSlide(self, event):
         i = event.GetIndex()
-        print i
+        print (i)
         self.slide = self.lSlides.qs[i]
-        print self.slide
+        print((self.slide))
         self.bOK.Enable()
 
     def OnFilterChange(self, event):
@@ -241,7 +241,7 @@ class SampleInfoDialog(wx.Dialog):
         slref = self.tSlideRef.GetValue()
         current_choices = self.tCreator.GetChoices()
 
-        if slref == '' or len(models.Slide.objects.filter(reference=slref)) ==0:
+        if slref == '' or (models.Slide.objects.filter(reference=slref).count() ==0):
             choices = list(set([e.creator for e in models.Slide.objects.filter(creator__startswith=cname)]))
         else:
             choices = list(set([e.creator for e in models.Slide.objects.filter(creator__startswith=cname, reference=slref)]))
@@ -258,7 +258,7 @@ class SampleInfoDialog(wx.Dialog):
         slref = self.tSlideRef.GetValue()
         current_choices = self.tSlideRef.GetChoices()
 
-        if cname == '' or (len(models.Slide.objects.filter(creator=cname)) == 0):
+        if cname == '' or (models.Slide.objects.filter(creator=cname).count() == 0):
             choices = list(set([e.reference for e in models.Slide.objects.filter(reference__startswith=slref)]))
         else:
             choices = list(set([e.reference for e in models.Slide.objects.filter(reference__startswith=slref, creator=cname)]))
@@ -387,10 +387,10 @@ def prefillSampleData(parent):
 
     if dlg.ShowModal() == wx.ID_OK:
         dlg.PopulateMetadata(slideMD, False)
-        print 'bar'
-        print dlg.slide
+        print('bar')
+        print((dlg.slide))
         currentSlide[0] = dlg.slide
-        print currentSlide
+        print(currentSlide)
     else:
         currentSlide[0] = None
 
@@ -400,7 +400,7 @@ def prefillSampleData(parent):
 def getSampleData(parent, mdh):
     #global currentSlide
 
-    print 'currSlide:', currentSlide
+    print(('currSlide:', currentSlide))
     cs = currentSlide[0]
 
     if cs:
@@ -411,7 +411,7 @@ def getSampleData(parent, mdh):
         dlg = SampleInfoDialog(parent)
 
         if dlg.ShowModal() == wx.ID_OK:
-            print 'populating metadata'
+            print('populating metadata')
             dlg.PopulateMetadata(mdh)
 
             currentSlide[0] = dlg.slide

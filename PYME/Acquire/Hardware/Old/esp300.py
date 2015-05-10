@@ -48,7 +48,7 @@ class esp300:
     def stop_all(self, event=0):
         #stop all axes (emergency)
         self.ser_port.write('AB\r')
-        print 'stop all axes'
+        print('stop all axes')
 
     def MoveTo(self, iChannel, fPos, bTimeOut=True):
         if (fPos >= 0):
@@ -82,12 +82,12 @@ class esp300:
     def ledOn(self, event=0):
         #switch the LED on
         self.ser_port.write('sb01h\r\n')
-        print 'led on'
+        print('led on')
         
     def ledOff(self, event=1):
         # switch the LED off
         self.ser_port.write('sb00h\r\n')
-        print 'led off'        
+        print('led off')        
     
     def addMenuItems(self,parentWindow, menu):
         '''Add menu items and keyboard accelerators for LED control

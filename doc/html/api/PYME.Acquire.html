@@ -1,0 +1,2532 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Acquire Package &mdash; PYME 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PYME 0.1 documentation" href="../index.html" />
+    <link rel="up" title="PYME Package" href="PYME.html" />
+    <link rel="prev" title="PYME Package" href="PYME.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="PYME.html" title="PYME Package"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">PYME 0.1 documentation</a> &raquo;</li>
+          <li><a href="modules.html" >&lt;no title&gt;</a> &raquo;</li>
+          <li><a href="PYME.html" accesskey="U">PYME Package</a> &raquo;</li>
+<li><a href="http://lmsrv1/docwiki/docs/pyme-docs/api/PYME.Acquire.rst">Edit</a> &raquo;</li>
+ 
+
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-PYME.Acquire">
+<span id="acquire-package"></span><h1>Acquire Package<a class="headerlink" href="#module-PYME.Acquire" title="Permalink to this headline">¶</a></h1>
+<p>This package contains all the functionality of the <cite>PYMEAcquire</cite> acquisition program.</p>
+<div class="section" id="core-modules">
+<h2>Core modules<a class="headerlink" href="#core-modules" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-PYME.Acquire.MetaDataHandler">
+<span id="metadatahandler-module"></span><h3><tt class="xref py py-mod docutils literal"><span class="pre">MetaDataHandler</span></tt> Module<a class="headerlink" href="#module-PYME.Acquire.MetaDataHandler" title="Permalink to this headline">¶</a></h3>
+<p>Defines metadata handlers for the saving of acquisiton metadata to a variety 
+of file formats, as well as keeping track of metadata sources.</p>
+<div class="section" id="metadata-sources">
+<h4>Metadata sources<a class="headerlink" href="#metadata-sources" title="Permalink to this headline">¶</a></h4>
+<p>Metadata sources are simply functions, which when called, write information into
+a provided handler. e.g.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">metadataGenerator</span><span class="p">(</span><span class="n">mdhandler</span><span class="p">):</span>
+    <span class="n">mdhandler</span><span class="p">[</span><span class="s">&#39;a.key&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+</pre></div>
+</div>
+<p>These generator functions are registered by adding them to one of two lists exposed 
+by this module: <strong>provideStartMetadata</strong> or <strong>provideStopMetadata</strong>. depending on
+whether it makes more sense to record the metadata at the start or stop of an 
+acquisition.</p>
+<p>A good example can be found in PYME.Acquire.Hardware.Camera.AndorIXon.AndorIXon.</p>
+</div>
+<div class="section" id="metadata-handlers">
+<h4>MetaData Handlers<a class="headerlink" href="#metadata-handlers" title="Permalink to this headline">¶</a></h4>
+<dl class="docutils">
+<dt><strong>NestedClassMDHandler</strong></dt>
+<dd>An in-memory metadatahandler used to buffer metadata or to store values prior
+to the file format being known.</dd>
+<dt><strong>HDFMDHandler</strong></dt>
+<dd>For local pytables/hdf5 datasets</dd>
+<dt><strong>QueueMDHandler</strong></dt>
+<dd>For use with data hosted in a taskqueue</dd>
+<dt><strong>XMLMDHandler</strong></dt>
+<dd>For use with PYMEs XML metadata format - typically used with .tiff files or
+other data for which it is difficult to embed metadata.</dd>
+<dt><strong>SimpleMDHandler</strong></dt>
+<dd>Saves and reads metadata as a python script (a series of md[key]=value statements).
+Used where you might want to construct or modify metadata by hand - e.g. with
+foreign source data.</dd>
+</dl>
+<p>The format of a metadata handler is defined by the <cite>MDHandlerBase</cite> class.</p>
+</div>
+<dl class="class">
+<dt id="PYME.Acquire.MetaDataHandler.MDHandlerBase">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.MetaDataHandler.</tt><tt class="descname">MDHandlerBase</tt><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class from which all metadata handlers are derived.</p>
+<p>Metadata attributes can be read and set using either a dictionary like
+interface, or by calling the <cite>getEntry</cite> and <cite>setEntry</cite> methods.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Derived classes <strong>MUST</strong> override <cite>getEntry</cite>, <cite>setEntry</cite>, and <cite>getEntryNames</cite>.</p>
+</div>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.GetSimpleString" title="PYME.Acquire.MetaDataHandler.MDHandlerBase.GetSimpleString"><tt class="xref py py-obj docutils literal"><span class="pre">GetSimpleString</span></tt></a>()</td>
+<td>Writes out metadata in simplfied format.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.WriteSimple" title="PYME.Acquire.MetaDataHandler.MDHandlerBase.WriteSimple"><tt class="xref py py-obj docutils literal"><span class="pre">WriteSimple</span></tt></a>(filename)</td>
+<td>Dumps metadata to file in simplfied format.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">clear</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.copyEntriesFrom" title="PYME.Acquire.MetaDataHandler.MDHandlerBase.copyEntriesFrom"><tt class="xref py py-obj docutils literal"><span class="pre">copyEntriesFrom</span></tt></a>(mdToCopy)</td>
+<td>Copies entries from another metadata object into this one.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">get</span></tt>(key[,&nbsp;default])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.getEntry" title="PYME.Acquire.MetaDataHandler.MDHandlerBase.getEntry"><tt class="xref py py-obj docutils literal"><span class="pre">getEntry</span></tt></a>(name)</td>
+<td>Returns the entry for a given name.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.getEntryNames" title="PYME.Acquire.MetaDataHandler.MDHandlerBase.getEntryNames"><tt class="xref py py-obj docutils literal"><span class="pre">getEntryNames</span></tt></a>()</td>
+<td>Returns a list of defined entries.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.getOrDefault" title="PYME.Acquire.MetaDataHandler.MDHandlerBase.getOrDefault"><tt class="xref py py-obj docutils literal"><span class="pre">getOrDefault</span></tt></a>(name,&nbsp;default)</td>
+<td>Returns the entry for a given name, of a default value if the key  is not present.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">has_key</span></tt>(key)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">items</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">iteritems</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">iterkeys</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">itervalues</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.keys" title="PYME.Acquire.MetaDataHandler.MDHandlerBase.keys"><tt class="xref py py-obj docutils literal"><span class="pre">keys</span></tt></a>()</td>
+<td>Alias for getEntryNames to make us look like a dictionary</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.mergeEntriesFrom" title="PYME.Acquire.MetaDataHandler.MDHandlerBase.mergeEntriesFrom"><tt class="xref py py-obj docutils literal"><span class="pre">mergeEntriesFrom</span></tt></a>(mdToCopy)</td>
+<td>Copies entries from another metadata object into this one.</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">pop</span></tt>(key,&nbsp;*args)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">popitem</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.setEntry" title="PYME.Acquire.MetaDataHandler.MDHandlerBase.setEntry"><tt class="xref py py-obj docutils literal"><span class="pre">setEntry</span></tt></a>(name)</td>
+<td>Sets the entry for a given name.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">setdefault</span></tt>(key[,&nbsp;default])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">update</span></tt>([other])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">values</span></tt>()</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="PYME.Acquire.MetaDataHandler.MDHandlerBase.GetSimpleString">
+<tt class="descname">GetSimpleString</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.GetSimpleString" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes out metadata in simplfied format.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>mdstring</strong> : string</p>
+<blockquote class="last">
+<div><p>The metadata in a simple, human readable format.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><tt class="xref py py-obj docutils literal"><span class="pre">SimpleMDHandler</span></tt></p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.MetaDataHandler.MDHandlerBase.WriteSimple">
+<tt class="descname">WriteSimple</tt><big>(</big><em>filename</em><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.WriteSimple" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dumps metadata to file in simplfied format.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>filename</strong> : string</p>
+<blockquote class="last">
+<div><p>The the filename to write to. Should end in .md.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><tt class="xref py py-obj docutils literal"><span class="pre">SimpleMDHandler</span></tt></p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.MetaDataHandler.MDHandlerBase.copyEntriesFrom">
+<tt class="descname">copyEntriesFrom</tt><big>(</big><em>mdToCopy</em><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.copyEntriesFrom" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copies entries from another metadata object into this one. Duplicate 
+keys will be overwritten.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>mdToCopy</strong> : an instance of a metadata handler</p>
+<blockquote class="last">
+<div><p>The metadata handler from which to copy entries.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.MetaDataHandler.MDHandlerBase.getEntry">
+<tt class="descname">getEntry</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.getEntry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the entry for a given name.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>name</strong> : string</p>
+<blockquote>
+<div><p>The entry name. This name should be heirachical, and deliminated
+with dots e.g. &#8216;Camera.EMCCDGain&#8217;</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>value</strong> : object</p>
+<blockquote class="last">
+<div><p>The value stored for the given key. This can, in principle, be 
+anything that can be pickled. strings, ints, bools and floats are
+all stored in a human readable form in the textual metadata 
+representations, wheras more complex objects are base64 encoded.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.MetaDataHandler.MDHandlerBase.getEntryNames">
+<tt class="descname">getEntryNames</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.getEntryNames" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of defined entries.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>names</strong> : list of string</p>
+<blockquote class="last">
+<div><p>The keys which are defined in the metadata.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.MetaDataHandler.MDHandlerBase.getOrDefault">
+<tt class="descname">getOrDefault</tt><big>(</big><em>name</em>, <em>default</em><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.getOrDefault" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the entry for a given name, of a default value if the key 
+is not present.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>name</strong> : string</p>
+<blockquote>
+<div><p>The entry name. This name should be heirachical, and deliminated
+with dots e.g. &#8216;Camera.EMCCDGain&#8217;</p>
+</div></blockquote>
+<p><strong>default</strong> : object</p>
+<blockquote>
+<div><p>What to return if the name is not defined</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>value</strong> : object</p>
+<blockquote class="last">
+<div><p>The value stored for the given key. This can, in principle, be 
+anything that can be pickled. strings, ints, bools and floats are
+all stored in a human readable form in the textual metadata 
+representations, wheras more complex objects are base64 encoded.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.MetaDataHandler.MDHandlerBase.keys">
+<tt class="descname">keys</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for getEntryNames to make us look like a dictionary</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.MetaDataHandler.MDHandlerBase.mergeEntriesFrom">
+<tt class="descname">mergeEntriesFrom</tt><big>(</big><em>mdToCopy</em><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.mergeEntriesFrom" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copies entries from another metadata object into this one. Values
+are only copied if they are not already defined locally.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>mdToCopy</strong> : an instance of a metadata handler</p>
+<blockquote class="last">
+<div><p>The metadata handler from which to copy entries.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.MetaDataHandler.MDHandlerBase.setEntry">
+<tt class="descname">setEntry</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#PYME.Acquire.MetaDataHandler.MDHandlerBase.setEntry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the entry for a given name.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>name</strong> : string</p>
+<blockquote>
+<div><p>The entry name. This name should be heirachical, and deliminated
+with dots e.g. &#8216;Camera.EMCCDGain&#8217;</p>
+</div></blockquote>
+<p><strong>value</strong> : object</p>
+<blockquote class="last">
+<div><p>The value stored for the given key. This can, in principle, be 
+anything that can be pickled. strings, ints, bools and floats are
+all stored in a human readable form in the textual metadata 
+representations, wheras more complex objects are base64 encoded.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-PYME.Acquire.Spooler">
+<span id="spooler-module"></span><h3><tt class="xref py py-mod docutils literal"><span class="pre">Spooler</span></tt> Module<a class="headerlink" href="#module-PYME.Acquire.Spooler" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="PYME.Acquire.Spooler.EventLogger">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.Spooler.</tt><tt class="descname">EventLogger</tt><big>(</big><em>scope</em>, <em>hdf5File</em><big>)</big><a class="headerlink" href="#PYME.Acquire.Spooler.EventLogger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Event logging backend base class</p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.Spooler.EventLogger.logEvent" title="PYME.Acquire.Spooler.EventLogger.logEvent"><tt class="xref py py-obj docutils literal"><span class="pre">logEvent</span></tt></a>(eventName[,&nbsp;eventDescr])</td>
+<td>Log an event.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="PYME.Acquire.Spooler.EventLogger.logEvent">
+<tt class="descname">logEvent</tt><big>(</big><em>eventName</em>, <em>eventDescr=''</em><big>)</big><a class="headerlink" href="#PYME.Acquire.Spooler.EventLogger.logEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Log an event. Should be overriden in derived classes.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">In addition to the name and description, timing information is recorded</p>
+</div>
+<p>for each event.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>eventName</strong> : string</p>
+<blockquote>
+<div><p>short event name - &lt; 32 chars and should be shared by events of the
+same type.</p>
+</div></blockquote>
+<p><strong>eventDescr</strong> : string</p>
+<blockquote class="last">
+<div><p>description of the event - additional, even specific information
+packaged as a string (&lt;255 chars). This is commonly used to store 
+parameters - e.g. z positions, and should be both human readable and 
+easily parsed.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="PYME.Acquire.Spooler.Spooler">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.Spooler.</tt><tt class="descname">Spooler</tt><big>(</big><em>scope</em>, <em>filename</em>, <em>acquisator</em>, <em>protocol=&lt;PYME.Acquire.protocol.Protocol instance at 0x46163b0&gt;</em>, <em>parent=None</em><big>)</big><a class="headerlink" href="#PYME.Acquire.Spooler.Spooler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Spooler base class</p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">FlushBuffer</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">StopSpool</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.Spooler.Spooler.Tick" title="PYME.Acquire.Spooler.Spooler.Tick"><tt class="xref py py-obj docutils literal"><span class="pre">Tick</span></tt></a>(caller)</td>
+<td>Called on every frame</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.Spooler.Spooler.doStartLog" title="PYME.Acquire.Spooler.Spooler.doStartLog"><tt class="xref py py-obj docutils literal"><span class="pre">doStartLog</span></tt></a>()</td>
+<td>Record pertinant information to metadata at start of acquisition.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.Spooler.Spooler.doStopLog" title="PYME.Acquire.Spooler.Spooler.doStopLog"><tt class="xref py py-obj docutils literal"><span class="pre">doStopLog</span></tt></a>()</td>
+<td>Record information to metadata at end of acquisition</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">fakeTime</span></tt>()</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="PYME.Acquire.Spooler.Spooler.Tick">
+<tt class="descname">Tick</tt><big>(</big><em>caller</em><big>)</big><a class="headerlink" href="#PYME.Acquire.Spooler.Spooler.Tick" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called on every frame</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.Spooler.Spooler.doStartLog">
+<tt class="descname">doStartLog</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.Spooler.Spooler.doStartLog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Record pertinant information to metadata at start of acquisition.</p>
+<p>Loops through all registered sources of start metadata and adds their entries.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#module-PYME.Acquire.MetaDataHandler" title="PYME.Acquire.MetaDataHandler"><tt class="xref py py-obj docutils literal"><span class="pre">PYME.Acquire.MetaDataHandler</span></tt></a></p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.Spooler.Spooler.doStopLog">
+<tt class="descname">doStopLog</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.Spooler.Spooler.doStopLog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Record information to metadata at end of acquisition</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-PYME.Acquire.HDFSpooler">
+<span id="hdfspooler-module"></span><h3><tt class="xref py py-mod docutils literal"><span class="pre">HDFSpooler</span></tt> Module<a class="headerlink" href="#module-PYME.Acquire.HDFSpooler" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="PYME.Acquire.HDFSpooler.EventLogger">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.HDFSpooler.</tt><tt class="descname">EventLogger</tt><big>(</big><em>spool</em>, <em>scope</em>, <em>hdf5File</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpooler.EventLogger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Event logging backend for hdf/pytables data storage</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>spool</strong> : instance of HDFSpooler.Spooler</p>
+<blockquote>
+<div><p>The spooler to ascociate this logger with</p>
+</div></blockquote>
+<p><strong>scope</strong> : PYME.Acquire.microscope.microscope instance</p>
+<blockquote>
+<div><p>The current microscope object</p>
+</div></blockquote>
+<p><strong>hdf5File</strong> : pytables hdf file</p>
+<blockquote class="last">
+<div><p>The open HDF5 file to write to</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.HDFSpooler.EventLogger.logEvent" title="PYME.Acquire.HDFSpooler.EventLogger.logEvent"><tt class="xref py py-obj docutils literal"><span class="pre">logEvent</span></tt></a>(eventName[,&nbsp;eventDescr])</td>
+<td>Log an event.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="PYME.Acquire.HDFSpooler.EventLogger.logEvent">
+<tt class="descname">logEvent</tt><big>(</big><em>eventName</em>, <em>eventDescr=''</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpooler.EventLogger.logEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Log an event.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>eventName</strong> : string</p>
+<blockquote>
+<div><p>short event name - &lt; 32 chars and should be shared by events of the
+same type.</p>
+</div></blockquote>
+<p><strong>eventDescr</strong> : string</p>
+<blockquote>
+<div><p>description of the event - additional, even specific information
+packaged as a string (&lt;255 chars). This is commonly used to store 
+parameters - e.g. z positions, and should be both human readable and 
+easily parsed.</p>
+</div></blockquote>
+<p><strong>In addition to the name and description, timing information is recorded</strong></p>
+<p class="last"><strong>for each event.</strong></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="PYME.Acquire.HDFSpooler.Spooler">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.HDFSpooler.</tt><tt class="descname">Spooler</tt><big>(</big><em>scope</em>, <em>filename</em>, <em>acquisator</em>, <em>protocol=&lt;PYME.Acquire.protocol.Protocol instance at 0x46163b0&gt;</em>, <em>parent=None</em>, <em>complevel=6</em>, <em>complib='zlib'</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpooler.Spooler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#PYME.Acquire.Spooler.Spooler" title="PYME.Acquire.Spooler.Spooler"><tt class="xref py py-class docutils literal"><span class="pre">PYME.Acquire.Spooler.Spooler</span></tt></a></p>
+<p>Responsible for the mechanics of spooling to a pytables/hdf file.</p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">FlushBuffer</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.HDFSpooler.Spooler.StopSpool" title="PYME.Acquire.HDFSpooler.Spooler.StopSpool"><tt class="xref py py-obj docutils literal"><span class="pre">StopSpool</span></tt></a>()</td>
+<td>Stop spooling and close file</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.HDFSpooler.Spooler.Tick" title="PYME.Acquire.HDFSpooler.Spooler.Tick"><tt class="xref py py-obj docutils literal"><span class="pre">Tick</span></tt></a>(caller)</td>
+<td>Called on each frame</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">doStartLog</span></tt>()</td>
+<td>Record pertinant information to metadata at start of acquisition.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">doStopLog</span></tt>()</td>
+<td>Record information to metadata at end of acquisition</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">fakeTime</span></tt>()</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="PYME.Acquire.HDFSpooler.Spooler.StopSpool">
+<tt class="descname">StopSpool</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpooler.Spooler.StopSpool" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stop spooling and close file</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.HDFSpooler.Spooler.Tick">
+<tt class="descname">Tick</tt><big>(</big><em>caller</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpooler.Spooler.Tick" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called on each frame</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-PYME.Acquire.QueueSpooler">
+<span id="queuespooler-module"></span><h3><tt class="xref py py-mod docutils literal"><span class="pre">QueueSpooler</span></tt> Module<a class="headerlink" href="#module-PYME.Acquire.QueueSpooler" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="PYME.Acquire.QueueSpooler.EventLogger">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.QueueSpooler.</tt><tt class="descname">EventLogger</tt><big>(</big><em>spool</em>, <em>scope</em>, <em>tq</em>, <em>queueName</em><big>)</big><a class="headerlink" href="#PYME.Acquire.QueueSpooler.EventLogger" title="Permalink to this definition">¶</a></dt>
+<dd><p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.QueueSpooler.EventLogger.logEvent" title="PYME.Acquire.QueueSpooler.EventLogger.logEvent"><tt class="xref py py-obj docutils literal"><span class="pre">logEvent</span></tt></a>(eventName[,&nbsp;eventDescr])</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="PYME.Acquire.QueueSpooler.EventLogger.logEvent">
+<tt class="descname">logEvent</tt><big>(</big><em>eventName</em>, <em>eventDescr=''</em><big>)</big><a class="headerlink" href="#PYME.Acquire.QueueSpooler.EventLogger.logEvent" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="PYME.Acquire.QueueSpooler.Spooler">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.QueueSpooler.</tt><tt class="descname">Spooler</tt><big>(</big><em>scope</em>, <em>filename</em>, <em>acquisator</em>, <em>protocol=&lt;PYME.Acquire.protocol.Protocol instance at 0x46163b0&gt;</em>, <em>parent=None</em>, <em>complevel=2</em>, <em>complib='zlib'</em><big>)</big><a class="headerlink" href="#PYME.Acquire.QueueSpooler.Spooler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#PYME.Acquire.Spooler.Spooler" title="PYME.Acquire.Spooler.Spooler"><tt class="xref py py-class docutils literal"><span class="pre">PYME.Acquire.Spooler.Spooler</span></tt></a></p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.QueueSpooler.Spooler.FlushBuffer" title="PYME.Acquire.QueueSpooler.Spooler.FlushBuffer"><tt class="xref py py-obj docutils literal"><span class="pre">FlushBuffer</span></tt></a>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">StopSpool</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.QueueSpooler.Spooler.Tick" title="PYME.Acquire.QueueSpooler.Spooler.Tick"><tt class="xref py py-obj docutils literal"><span class="pre">Tick</span></tt></a>(caller)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">doStartLog</span></tt>()</td>
+<td>Record pertinant information to metadata at start of acquisition.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">doStopLog</span></tt>()</td>
+<td>Record information to metadata at end of acquisition</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">fakeTime</span></tt>()</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="PYME.Acquire.QueueSpooler.Spooler.FlushBuffer">
+<tt class="descname">FlushBuffer</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.QueueSpooler.Spooler.FlushBuffer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.QueueSpooler.Spooler.Tick">
+<tt class="descname">Tick</tt><big>(</big><em>caller</em><big>)</big><a class="headerlink" href="#PYME.Acquire.QueueSpooler.Spooler.Tick" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-PYME.Acquire.eventLog">
+<span id="eventlog-module"></span><h3><tt class="xref py py-mod docutils literal"><span class="pre">eventLog</span></tt> Module<a class="headerlink" href="#module-PYME.Acquire.eventLog" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="PYME.Acquire.eventLog.logEvent">
+<tt class="descclassname">PYME.Acquire.eventLog.</tt><tt class="descname">logEvent</tt><big>(</big><em>eventName</em>, <em>eventDescr=''</em><big>)</big><a class="headerlink" href="#PYME.Acquire.eventLog.logEvent" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="microscope-module">
+<h3><tt class="xref py py-mod docutils literal"><span class="pre">microscope</span></tt> Module<a class="headerlink" href="#microscope-module" title="Permalink to this headline">¶</a></h3>
+<span class="target" id="module-PYME.Acquire.microscope"></span><dl class="class">
+<dt id="PYME.Acquire.microscope.microscope">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.microscope.</tt><tt class="descname">microscope</tt><a class="headerlink" href="#PYME.Acquire.microscope.microscope" title="Permalink to this definition">¶</a></dt>
+<dd><p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.AddVoxelSizeSetting" title="PYME.Acquire.microscope.microscope.AddVoxelSizeSetting"><tt class="xref py py-obj docutils literal"><span class="pre">AddVoxelSizeSetting</span></tt></a>(name,&nbsp;x,&nbsp;y)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.GenStartMetadata" title="PYME.Acquire.microscope.microscope.GenStartMetadata"><tt class="xref py py-obj docutils literal"><span class="pre">GenStartMetadata</span></tt></a>(mdh)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.GetPixelSize" title="PYME.Acquire.microscope.microscope.GetPixelSize"><tt class="xref py py-obj docutils literal"><span class="pre">GetPixelSize</span></tt></a>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.GetPos" title="PYME.Acquire.microscope.microscope.GetPos"><tt class="xref py py-obj docutils literal"><span class="pre">GetPos</span></tt></a>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.SetCamera" title="PYME.Acquire.microscope.microscope.SetCamera"><tt class="xref py py-obj docutils literal"><span class="pre">SetCamera</span></tt></a>(camName)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.SetPos" title="PYME.Acquire.microscope.microscope.SetPos"><tt class="xref py py-obj docutils literal"><span class="pre">SetPos</span></tt></a>(**kwargs)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.SetVoxelSize" title="PYME.Acquire.microscope.microscope.SetVoxelSize"><tt class="xref py py-obj docutils literal"><span class="pre">SetVoxelSize</span></tt></a>(voxelsizename[,&nbsp;camName])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.aq_end" title="PYME.Acquire.microscope.microscope.aq_end"><tt class="xref py py-obj docutils literal"><span class="pre">aq_end</span></tt></a>(source)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.aq_refr" title="PYME.Acquire.microscope.microscope.aq_refr"><tt class="xref py py-obj docutils literal"><span class="pre">aq_refr</span></tt></a>(source)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.centreView" title="PYME.Acquire.microscope.microscope.centreView"><tt class="xref py py-obj docutils literal"><span class="pre">centreView</span></tt></a>(dx,&nbsp;dy)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.genStatus" title="PYME.Acquire.microscope.microscope.genStatus"><tt class="xref py py-obj docutils literal"><span class="pre">genStatus</span></tt></a>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.livepreview" title="PYME.Acquire.microscope.microscope.livepreview"><tt class="xref py py-obj docutils literal"><span class="pre">livepreview</span></tt></a>([Parent,&nbsp;Notebook])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.pr_refr" title="PYME.Acquire.microscope.microscope.pr_refr"><tt class="xref py py-obj docutils literal"><span class="pre">pr_refr</span></tt></a>(source)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.pr_refr3" title="PYME.Acquire.microscope.microscope.pr_refr3"><tt class="xref py py-obj docutils literal"><span class="pre">pr_refr3</span></tt></a>(souce)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.satCheck" title="PYME.Acquire.microscope.microscope.satCheck"><tt class="xref py py-obj docutils literal"><span class="pre">satCheck</span></tt></a>(source)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.turnAllLasersOff" title="PYME.Acquire.microscope.microscope.turnAllLasersOff"><tt class="xref py py-obj docutils literal"><span class="pre">turnAllLasersOff</span></tt></a>()</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="PYME.Acquire.microscope.microscope.AddVoxelSizeSetting">
+<tt class="descname">AddVoxelSizeSetting</tt><big>(</big><em>name</em>, <em>x</em>, <em>y</em><big>)</big><a class="headerlink" href="#PYME.Acquire.microscope.microscope.AddVoxelSizeSetting" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.microscope.microscope.GenStartMetadata">
+<tt class="descname">GenStartMetadata</tt><big>(</big><em>mdh</em><big>)</big><a class="headerlink" href="#PYME.Acquire.microscope.microscope.GenStartMetadata" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.microscope.microscope.GetPixelSize">
+<tt class="descname">GetPixelSize</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.microscope.microscope.GetPixelSize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.microscope.microscope.GetPos">
+<tt class="descname">GetPos</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.microscope.microscope.GetPos" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.microscope.microscope.SetCamera">
+<tt class="descname">SetCamera</tt><big>(</big><em>camName</em><big>)</big><a class="headerlink" href="#PYME.Acquire.microscope.microscope.SetCamera" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.microscope.microscope.SetPos">
+<tt class="descname">SetPos</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#PYME.Acquire.microscope.microscope.SetPos" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.microscope.microscope.SetVoxelSize">
+<tt class="descname">SetVoxelSize</tt><big>(</big><em>voxelsizename</em>, <em>camName=None</em><big>)</big><a class="headerlink" href="#PYME.Acquire.microscope.microscope.SetVoxelSize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.microscope.microscope.aq_end">
+<tt class="descname">aq_end</tt><big>(</big><em>source</em><big>)</big><a class="headerlink" href="#PYME.Acquire.microscope.microscope.aq_end" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.microscope.microscope.aq_refr">
+<tt class="descname">aq_refr</tt><big>(</big><em>source</em><big>)</big><a class="headerlink" href="#PYME.Acquire.microscope.microscope.aq_refr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.microscope.microscope.centreView">
+<tt class="descname">centreView</tt><big>(</big><em>dx</em>, <em>dy</em><big>)</big><a class="headerlink" href="#PYME.Acquire.microscope.microscope.centreView" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.microscope.microscope.genStatus">
+<tt class="descname">genStatus</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.microscope.microscope.genStatus" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.microscope.microscope.livepreview">
+<tt class="descname">livepreview</tt><big>(</big><em>Parent=None</em>, <em>Notebook=None</em><big>)</big><a class="headerlink" href="#PYME.Acquire.microscope.microscope.livepreview" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.microscope.microscope.pr_refr">
+<tt class="descname">pr_refr</tt><big>(</big><em>source</em><big>)</big><a class="headerlink" href="#PYME.Acquire.microscope.microscope.pr_refr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.microscope.microscope.pr_refr3">
+<tt class="descname">pr_refr3</tt><big>(</big><em>souce</em><big>)</big><a class="headerlink" href="#PYME.Acquire.microscope.microscope.pr_refr3" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.microscope.microscope.satCheck">
+<tt class="descname">satCheck</tt><big>(</big><em>source</em><big>)</big><a class="headerlink" href="#PYME.Acquire.microscope.microscope.satCheck" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.microscope.microscope.turnAllLasersOff">
+<tt class="descname">turnAllLasersOff</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.microscope.microscope.turnAllLasersOff" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-PYME.Acquire.protocol">
+<span id="protocol-module"></span><h3><tt class="xref py py-mod docutils literal"><span class="pre">protocol</span></tt> Module<a class="headerlink" href="#module-PYME.Acquire.protocol" title="Permalink to this headline">¶</a></h3>
+<dl class="attribute">
+<dt id="PYME.Acquire.protocol.C">
+<tt class="descclassname">PYME.Acquire.protocol.</tt><tt class="descname">C</tt><a class="headerlink" href="#PYME.Acquire.protocol.C" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#PYME.Acquire.protocol.PreflightCheckItem" title="PYME.Acquire.protocol.PreflightCheckItem"><tt class="xref py py-class docutils literal"><span class="pre">PreflightCheckItem</span></tt></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="PYME.Acquire.protocol.Ex">
+<tt class="descclassname">PYME.Acquire.protocol.</tt><tt class="descname">Ex</tt><big>(</big><em>str</em><big>)</big><a class="headerlink" href="#PYME.Acquire.protocol.Ex" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="PYME.Acquire.protocol.PreflightCheckItem">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.protocol.</tt><tt class="descname">PreflightCheckItem</tt><big>(</big><em>check</em>, <em>message</em><big>)</big><a class="headerlink" href="#PYME.Acquire.protocol.PreflightCheckItem" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="PYME.Acquire.protocol.Protocol">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.protocol.</tt><tt class="descname">Protocol</tt><a class="headerlink" href="#PYME.Acquire.protocol.Protocol" title="Permalink to this definition">¶</a></dt>
+<dd><p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.protocol.Protocol.Init" title="PYME.Acquire.protocol.Protocol.Init"><tt class="xref py py-obj docutils literal"><span class="pre">Init</span></tt></a>(spooler)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.protocol.Protocol.OnFinish" title="PYME.Acquire.protocol.Protocol.OnFinish"><tt class="xref py py-obj docutils literal"><span class="pre">OnFinish</span></tt></a>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.protocol.Protocol.OnFrame" title="PYME.Acquire.protocol.Protocol.OnFrame"><tt class="xref py py-obj docutils literal"><span class="pre">OnFrame</span></tt></a>(frameNum)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.protocol.Protocol.PreflightCheck" title="PYME.Acquire.protocol.Protocol.PreflightCheck"><tt class="xref py py-obj docutils literal"><span class="pre">PreflightCheck</span></tt></a>()</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="PYME.Acquire.protocol.Protocol.Init">
+<tt class="descname">Init</tt><big>(</big><em>spooler</em><big>)</big><a class="headerlink" href="#PYME.Acquire.protocol.Protocol.Init" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.protocol.Protocol.OnFinish">
+<tt class="descname">OnFinish</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.protocol.Protocol.OnFinish" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.protocol.Protocol.OnFrame">
+<tt class="descname">OnFrame</tt><big>(</big><em>frameNum</em><big>)</big><a class="headerlink" href="#PYME.Acquire.protocol.Protocol.OnFrame" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.protocol.Protocol.PreflightCheck">
+<tt class="descname">PreflightCheck</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.protocol.Protocol.PreflightCheck" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="PYME.Acquire.protocol.SetCameraShutter">
+<tt class="descclassname">PYME.Acquire.protocol.</tt><tt class="descname">SetCameraShutter</tt><big>(</big><em>open</em><big>)</big><a class="headerlink" href="#PYME.Acquire.protocol.SetCameraShutter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="PYME.Acquire.protocol.SetContinuousMode">
+<tt class="descclassname">PYME.Acquire.protocol.</tt><tt class="descname">SetContinuousMode</tt><big>(</big><em>contMode</em><big>)</big><a class="headerlink" href="#PYME.Acquire.protocol.SetContinuousMode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="PYME.Acquire.protocol.SetEMGain">
+<tt class="descclassname">PYME.Acquire.protocol.</tt><tt class="descname">SetEMGain</tt><big>(</big><em>emGain</em><big>)</big><a class="headerlink" href="#PYME.Acquire.protocol.SetEMGain" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="PYME.Acquire.protocol.SetIntegTime">
+<tt class="descclassname">PYME.Acquire.protocol.</tt><tt class="descname">SetIntegTime</tt><big>(</big><em>iTime</em><big>)</big><a class="headerlink" href="#PYME.Acquire.protocol.SetIntegTime" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="PYME.Acquire.protocol.T">
+<tt class="descclassname">PYME.Acquire.protocol.</tt><tt class="descname">T</tt><a class="headerlink" href="#PYME.Acquire.protocol.T" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#PYME.Acquire.protocol.TaskListTask" title="PYME.Acquire.protocol.TaskListTask"><tt class="xref py py-class docutils literal"><span class="pre">TaskListTask</span></tt></a></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="PYME.Acquire.protocol.TaskListProtocol">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.protocol.</tt><tt class="descname">TaskListProtocol</tt><big>(</big><em>taskList</em>, <em>metadataEntries=</em>, <span class="optional">[</span><span class="optional">]</span><em>preflightList=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="headerlink" href="#PYME.Acquire.protocol.TaskListProtocol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#PYME.Acquire.protocol.Protocol" title="PYME.Acquire.protocol.Protocol"><tt class="xref py py-class docutils literal"><span class="pre">PYME.Acquire.protocol.Protocol</span></tt></a></p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.protocol.TaskListProtocol.Init" title="PYME.Acquire.protocol.TaskListProtocol.Init"><tt class="xref py py-obj docutils literal"><span class="pre">Init</span></tt></a>(spooler)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.protocol.TaskListProtocol.OnFinish" title="PYME.Acquire.protocol.TaskListProtocol.OnFinish"><tt class="xref py py-obj docutils literal"><span class="pre">OnFinish</span></tt></a>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.protocol.TaskListProtocol.OnFrame" title="PYME.Acquire.protocol.TaskListProtocol.OnFrame"><tt class="xref py py-obj docutils literal"><span class="pre">OnFrame</span></tt></a>(frameNum)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.protocol.TaskListProtocol.PreflightCheck" title="PYME.Acquire.protocol.TaskListProtocol.PreflightCheck"><tt class="xref py py-obj docutils literal"><span class="pre">PreflightCheck</span></tt></a>()</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="PYME.Acquire.protocol.TaskListProtocol.Init">
+<tt class="descname">Init</tt><big>(</big><em>spooler</em><big>)</big><a class="headerlink" href="#PYME.Acquire.protocol.TaskListProtocol.Init" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.protocol.TaskListProtocol.OnFinish">
+<tt class="descname">OnFinish</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.protocol.TaskListProtocol.OnFinish" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.protocol.TaskListProtocol.OnFrame">
+<tt class="descname">OnFrame</tt><big>(</big><em>frameNum</em><big>)</big><a class="headerlink" href="#PYME.Acquire.protocol.TaskListProtocol.OnFrame" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.protocol.TaskListProtocol.PreflightCheck">
+<tt class="descname">PreflightCheck</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.protocol.TaskListProtocol.PreflightCheck" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="PYME.Acquire.protocol.TaskListTask">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.protocol.</tt><tt class="descname">TaskListTask</tt><big>(</big><em>when</em>, <em>what</em>, <em>*withParams</em><big>)</big><a class="headerlink" href="#PYME.Acquire.protocol.TaskListTask" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="PYME.Acquire.protocol.ZStackTaskListProtocol">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.protocol.</tt><tt class="descname">ZStackTaskListProtocol</tt><big>(</big><em>taskList</em>, <em>startFrame</em>, <em>dwellTime</em>, <em>metadataEntries=</em>, <span class="optional">[</span><span class="optional">]</span><em>preflightList=</em>, <span class="optional">[</span><span class="optional">]</span><em>randomise=False</em><big>)</big><a class="headerlink" href="#PYME.Acquire.protocol.ZStackTaskListProtocol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#PYME.Acquire.protocol.TaskListProtocol" title="PYME.Acquire.protocol.TaskListProtocol"><tt class="xref py py-class docutils literal"><span class="pre">PYME.Acquire.protocol.TaskListProtocol</span></tt></a></p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.protocol.ZStackTaskListProtocol.Init" title="PYME.Acquire.protocol.ZStackTaskListProtocol.Init"><tt class="xref py py-obj docutils literal"><span class="pre">Init</span></tt></a>(spooler)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.protocol.ZStackTaskListProtocol.OnFinish" title="PYME.Acquire.protocol.ZStackTaskListProtocol.OnFinish"><tt class="xref py py-obj docutils literal"><span class="pre">OnFinish</span></tt></a>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.protocol.ZStackTaskListProtocol.OnFrame" title="PYME.Acquire.protocol.ZStackTaskListProtocol.OnFrame"><tt class="xref py py-obj docutils literal"><span class="pre">OnFrame</span></tt></a>(frameNum)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">PreflightCheck</span></tt>()</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="PYME.Acquire.protocol.ZStackTaskListProtocol.Init">
+<tt class="descname">Init</tt><big>(</big><em>spooler</em><big>)</big><a class="headerlink" href="#PYME.Acquire.protocol.ZStackTaskListProtocol.Init" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.protocol.ZStackTaskListProtocol.OnFinish">
+<tt class="descname">OnFinish</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.protocol.ZStackTaskListProtocol.OnFinish" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.protocol.ZStackTaskListProtocol.OnFrame">
+<tt class="descname">OnFrame</tt><big>(</big><em>frameNum</em><big>)</big><a class="headerlink" href="#PYME.Acquire.protocol.ZStackTaskListProtocol.OnFrame" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-PYME.Acquire.preflight">
+<span id="preflight-module"></span><h3><tt class="xref py py-mod docutils literal"><span class="pre">preflight</span></tt> Module<a class="headerlink" href="#module-PYME.Acquire.preflight" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="PYME.Acquire.preflight.ShowPreflightResults">
+<tt class="descclassname">PYME.Acquire.preflight.</tt><tt class="descname">ShowPreflightResults</tt><big>(</big><em>parent</em>, <em>failedChecks</em><big>)</big><a class="headerlink" href="#PYME.Acquire.preflight.ShowPreflightResults" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-PYME.Acquire.ExecTools">
+<span id="exectools-module"></span><h3><tt class="xref py py-mod docutils literal"><span class="pre">ExecTools</span></tt> Module<a class="headerlink" href="#module-PYME.Acquire.ExecTools" title="Permalink to this headline">¶</a></h3>
+<p>Defines a few neat things to allow scripts to be executed in background during 
+initialisation &amp; to allow a user script directory</p>
+<dl class="exception">
+<dt id="PYME.Acquire.ExecTools.HWNotPresent">
+<em class="property">exception </em><tt class="descclassname">PYME.Acquire.ExecTools.</tt><tt class="descname">HWNotPresent</tt><a class="headerlink" href="#PYME.Acquire.ExecTools.HWNotPresent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></tt></p>
+<p>An exception which, if thrown during initialisation, will result in a more
+informative error message than just failure</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="PYME.Acquire.ExecTools.InitBG">
+<tt class="descclassname">PYME.Acquire.ExecTools.</tt><tt class="descname">InitBG</tt><big>(</big><em>name</em>, <em>codeObj</em><big>)</big><a class="headerlink" href="#PYME.Acquire.ExecTools.InitBG" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs a portion of the initialisation code in a background thread</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>name</strong> : string</p>
+<blockquote>
+<div><p>A descriptive name for the code block - e.g. &#8216;Camera&#8217;</p>
+</div></blockquote>
+<p><strong>codeObj</strong> : string, compiled code object</p>
+<blockquote>
+<div><p>The code that will be executed - something that <cite>exec</cite> understands</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>t</strong> : thread</p>
+<blockquote class="last">
+<div><p>The thread in which the code is executing (can be used with threading.join later)</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PYME.Acquire.ExecTools.InitGUI">
+<tt class="descclassname">PYME.Acquire.ExecTools.</tt><tt class="descname">InitGUI</tt><big>(</big><em>code</em><big>)</big><a class="headerlink" href="#PYME.Acquire.ExecTools.InitGUI" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a piece of code to a list of items to be executed once the GUI is 
+up and running. Used to defer the initialisation of GUI components ascociated
+with hardware items until they can be displayed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>codeObj</strong> : string, compiled code object</p>
+<blockquote class="last">
+<div><p>The code that will be executed - something that <cite>exec</cite> understands</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PYME.Acquire.ExecTools.checkFilename">
+<tt class="descclassname">PYME.Acquire.ExecTools.</tt><tt class="descname">checkFilename</tt><big>(</big><em>filename</em><big>)</big><a class="headerlink" href="#PYME.Acquire.ExecTools.checkFilename" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check both the scripts directory in the PYME tree and a separate user 
+script directory, <cite>~/PYMEScripts</cite> for an initialisation script of the given
+name.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>filename</strong> : string</p>
+<blockquote class="last">
+<div><p>The full path to the requested script</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PYME.Acquire.ExecTools.execBG">
+<tt class="descclassname">PYME.Acquire.ExecTools.</tt><tt class="descname">execBG</tt><big>(</big><em>codeObj</em>, <em>localVars={}</em>, <em>globalVars={}</em><big>)</big><a class="headerlink" href="#PYME.Acquire.ExecTools.execBG" title="Permalink to this definition">¶</a></dt>
+<dd><p>Executes a code object in a background thread, using the given namespace.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>t</strong> : thread</p>
+<blockquote class="last">
+<div><p>The thread in which the code is executing (can be used with threading.join later)</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PYME.Acquire.ExecTools.execFile">
+<tt class="descclassname">PYME.Acquire.ExecTools.</tt><tt class="descname">execFile</tt><big>(</big><em>filename</em>, <em>localVars={}</em>, <em>globalVars={}</em><big>)</big><a class="headerlink" href="#PYME.Acquire.ExecTools.execFile" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="PYME.Acquire.ExecTools.execFileBG">
+<tt class="descclassname">PYME.Acquire.ExecTools.</tt><tt class="descname">execFileBG</tt><big>(</big><em>filename</em>, <em>localVars={}</em>, <em>globalVars={}</em><big>)</big><a class="headerlink" href="#PYME.Acquire.ExecTools.execFileBG" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="PYME.Acquire.ExecTools.joinBGInit">
+<tt class="descclassname">PYME.Acquire.ExecTools.</tt><tt class="descname">joinBGInit</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.ExecTools.joinBGInit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wait for all the initialisation tasks that bave been launched as background 
+threads to complete.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="PYME.Acquire.ExecTools.setDefaultNamespace">
+<tt class="descclassname">PYME.Acquire.ExecTools.</tt><tt class="descname">setDefaultNamespace</tt><big>(</big><em>locals</em>, <em>globals</em><big>)</big><a class="headerlink" href="#PYME.Acquire.ExecTools.setDefaultNamespace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Populate the namespace in which the initialisation script will run.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>locals</strong> : dict</p>
+<p class="last"><strong>globals</strong> : dict</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="gui-modules">
+<h2>GUI Modules<a class="headerlink" href="#gui-modules" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-PYME.Acquire.PYMEAcquire">
+<span id="pymeacquire-module"></span><h3><tt class="xref py py-mod docutils literal"><span class="pre">PYMEAcquire</span></tt> Module<a class="headerlink" href="#module-PYME.Acquire.PYMEAcquire" title="Permalink to this headline">¶</a></h3>
+<p>This is the principle entry point for <cite>PYMEAcquire</cite>, the acquisition component of PYME.</p>
+<p><cite>PYMEAcquire</cite> takes one option to specify the initialisation file, which should be in the 
+&#8216;PYME/Acquire/Scripts&#8217; directory</p>
+<div class="highlight-bash"><div class="highlight"><pre>python PYMEAcquire.py -i &lt;initialisation file&gt;
+</pre></div>
+</div>
+<p>If run without an intialisation file it defaults to using simulated hardware.</p>
+</div>
+<div class="section" id="module-PYME.Acquire.acquiremainframe">
+<span id="acquiremainframe-module"></span><h3><tt class="xref py py-mod docutils literal"><span class="pre">acquiremainframe</span></tt> Module<a class="headerlink" href="#module-PYME.Acquire.acquiremainframe" title="Permalink to this headline">¶</a></h3>
+<p>This contains the bulk of the GUI code for the main window of PYMEAcquire.</p>
+<dl class="class">
+<dt id="PYME.Acquire.acquiremainframe.PYMEMainFrame">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.acquiremainframe.</tt><tt class="descname">PYMEMainFrame</tt><big>(</big><em>parent</em>, <em>options=None</em><big>)</big><a class="headerlink" href="#PYME.Acquire.acquiremainframe.PYMEMainFrame" title="Permalink to this definition">¶</a></dt>
+<dd><p>The main window class</p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.acquiremainframe.PYMEMainFrame.AddAqTool" title="PYME.Acquire.acquiremainframe.PYMEMainFrame.AddAqTool"><tt class="xref py py-obj docutils literal"><span class="pre">AddAqTool</span></tt></a>(panel,&nbsp;title)</td>
+<td>Adds a pane to the Acquisition section of the GUI</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.acquiremainframe.PYMEMainFrame.AddCamTool" title="PYME.Acquire.acquiremainframe.PYMEMainFrame.AddCamTool"><tt class="xref py py-obj docutils literal"><span class="pre">AddCamTool</span></tt></a>(panel,&nbsp;title)</td>
+<td>Adds a pane to the Camera section of the GUI</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.acquiremainframe.PYMEMainFrame.AddPage" title="PYME.Acquire.acquiremainframe.PYMEMainFrame.AddPage"><tt class="xref py py-obj docutils literal"><span class="pre">AddPage</span></tt></a>([page,&nbsp;select,&nbsp;caption])</td>
+<td>Add a page to the main notebook</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.acquiremainframe.PYMEMainFrame.AddTool" title="PYME.Acquire.acquiremainframe.PYMEMainFrame.AddTool"><tt class="xref py py-obj docutils literal"><span class="pre">AddTool</span></tt></a>(panel,&nbsp;title)</td>
+<td>Adds a pane to the tools section of the GUI</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">CreateToolPanel</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">LoadPerspective</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">OnCloseWindow</span></tt>(event)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">OnFileExit</span></tt>(event)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">OnFileOpenStack</span></tt>(event)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">OnMAquireOnePic</span></tt>(event)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">OnMAquireStack</span></tt>(event)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">OnMAquireTwo_d_timeMenu</span></tt>(event)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">OnMCamBin</span></tt>(event)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">OnMCamChans</span></tt>(event)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">OnMCamRoi</span></tt>(event)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">OnMCamSetPixelSize</span></tt>(event)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">OnMControlsPiezoInit</span></tt>(event)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">OnMDisplayClearSel</span></tt>(event)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">OnMIntTime</span></tt>(event)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">OnMPiezo</span></tt>(event)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">OnMStep</span></tt>(event)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SavePerspective</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetCentredRoi</span></tt>([event,&nbsp;halfwidth])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">StatusBarUpdate</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">checkInitDone</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">doPostInit</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">runInitScript</span></tt>()</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="PYME.Acquire.acquiremainframe.PYMEMainFrame.AddAqTool">
+<tt class="descname">AddAqTool</tt><big>(</big><em>panel</em>, <em>title</em><big>)</big><a class="headerlink" href="#PYME.Acquire.acquiremainframe.PYMEMainFrame.AddAqTool" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a pane to the Acquisition section of the GUI</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>panel</strong> : an instance of a wx.Window derived class</p>
+<blockquote>
+<div><p>The pane to add</p>
+</div></blockquote>
+<p><strong>title</strong> : string</p>
+<blockquote class="last">
+<div><p>The caption for the panel.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.acquiremainframe.PYMEMainFrame.AddCamTool">
+<tt class="descname">AddCamTool</tt><big>(</big><em>panel</em>, <em>title</em><big>)</big><a class="headerlink" href="#PYME.Acquire.acquiremainframe.PYMEMainFrame.AddCamTool" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a pane to the Camera section of the GUI</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>panel</strong> : an instance of a wx.Window derived class</p>
+<blockquote>
+<div><p>The pane to add</p>
+</div></blockquote>
+<p><strong>title</strong> : string</p>
+<blockquote class="last">
+<div><p>The caption for the panel.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.acquiremainframe.PYMEMainFrame.AddPage">
+<tt class="descname">AddPage</tt><big>(</big><em>page=None</em>, <em>select=True</em>, <em>caption='Dummy'</em><big>)</big><a class="headerlink" href="#PYME.Acquire.acquiremainframe.PYMEMainFrame.AddPage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a page to the main notebook</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>page</strong> : an instance of a wx.Window derived class</p>
+<blockquote>
+<div><p>The page to add</p>
+</div></blockquote>
+<p><strong>select</strong> : bool</p>
+<blockquote>
+<div><p>Whether to give the page focus after adding it</p>
+</div></blockquote>
+<p><strong>caption</strong> : string</p>
+<blockquote class="last">
+<div><p>The caption for the page.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.acquiremainframe.PYMEMainFrame.AddTool">
+<tt class="descname">AddTool</tt><big>(</big><em>panel</em>, <em>title</em><big>)</big><a class="headerlink" href="#PYME.Acquire.acquiremainframe.PYMEMainFrame.AddTool" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a pane to the tools section of the GUI</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>panel</strong> : an instance of a wx.Window derived class</p>
+<blockquote>
+<div><p>The pane to add</p>
+</div></blockquote>
+<p><strong>title</strong> : string</p>
+<blockquote class="last">
+<div><p>The caption for the panel.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-PYME.Acquire.HDFSpoolFrame">
+<span id="hdfspoolframe-module"></span><h3><tt class="xref py py-mod docutils literal"><span class="pre">HDFSpoolFrame</span></tt> Module<a class="headerlink" href="#module-PYME.Acquire.HDFSpoolFrame" title="Permalink to this headline">¶</a></h3>
+<p>The GUI controls for streaming acquisiton.</p>
+<dl class="class">
+<dt id="PYME.Acquire.HDFSpoolFrame.PanSpool">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.HDFSpoolFrame.</tt><tt class="descname">PanSpool</tt><big>(</big><em>parent</em>, <em>scope</em>, <em>defDir</em>, <em>defSeries='%(day)d_%(month)d_series'</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpoolFrame.PanSpool" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Panel containing the GUI controls for spooling</p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.OnBAnalyse" title="PYME.Acquire.HDFSpoolFrame.PanSpool.OnBAnalyse"><tt class="xref py py-obj docutils literal"><span class="pre">OnBAnalyse</span></tt></a>(event)</td>
+<td>GUI callback to launch data analysis.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.OnBSetAqProtocolButton" title="PYME.Acquire.HDFSpoolFrame.PanSpool.OnBSetAqProtocolButton"><tt class="xref py py-obj docutils literal"><span class="pre">OnBSetAqProtocolButton</span></tt></a>(event)</td>
+<td>Set the current protocol (GUI callback).</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.OnBSetSpoolDirButton" title="PYME.Acquire.HDFSpoolFrame.PanSpool.OnBSetSpoolDirButton"><tt class="xref py py-obj docutils literal"><span class="pre">OnBSetSpoolDirButton</span></tt></a>(event)</td>
+<td>Set the directory we&#8217;re spooling into (GUI callback).</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.OnBStartSpoolButton" title="PYME.Acquire.HDFSpoolFrame.PanSpool.OnBStartSpoolButton"><tt class="xref py py-obj docutils literal"><span class="pre">OnBStartSpoolButton</span></tt></a>([event,&nbsp;stack])</td>
+<td>GUI callback to start spooling.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.OnBStartStackButton" title="PYME.Acquire.HDFSpoolFrame.PanSpool.OnBStartStackButton"><tt class="xref py py-obj docutils literal"><span class="pre">OnBStartStackButton</span></tt></a>([event])</td>
+<td>GUI callback to start spooling with z-stepping.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.OnBStopSpoolingButton" title="PYME.Acquire.HDFSpoolFrame.PanSpool.OnBStopSpoolingButton"><tt class="xref py py-obj docutils literal"><span class="pre">OnBStopSpoolingButton</span></tt></a>(event)</td>
+<td>GUI callback to stop spooling.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.OnTcSpoolFileText" title="PYME.Acquire.HDFSpoolFrame.PanSpool.OnTcSpoolFileText"><tt class="xref py py-obj docutils literal"><span class="pre">OnTcSpoolFileText</span></tt></a>(event)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.Tick" title="PYME.Acquire.HDFSpoolFrame.PanSpool.Tick"><tt class="xref py py-obj docutils literal"><span class="pre">Tick</span></tt></a>()</td>
+<td>Called with each new frame.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.UpdateFreeSpace" title="PYME.Acquire.HDFSpoolFrame.PanSpool.UpdateFreeSpace"><tt class="xref py py-obj docutils literal"><span class="pre">UpdateFreeSpace</span></tt></a>([event])</td>
+<td>Updates the free space display.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="PYME.Acquire.HDFSpoolFrame.PanSpool.OnBAnalyse">
+<tt class="descname">OnBAnalyse</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.OnBAnalyse" title="Permalink to this definition">¶</a></dt>
+<dd><p>GUI callback to launch data analysis.</p>
+<p>NB: this is often called programatically from within protocols to 
+automatically launch the analysis. TODO - factor this functionality 
+out of the view</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.HDFSpoolFrame.PanSpool.OnBSetAqProtocolButton">
+<tt class="descname">OnBSetAqProtocolButton</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.OnBSetAqProtocolButton" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the current protocol (GUI callback).</p>
+<p>See also: PYME.Acquire.Protocols.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.HDFSpoolFrame.PanSpool.OnBSetSpoolDirButton">
+<tt class="descname">OnBSetSpoolDirButton</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.OnBSetSpoolDirButton" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the directory we&#8217;re spooling into (GUI callback).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.HDFSpoolFrame.PanSpool.OnBStartSpoolButton">
+<tt class="descname">OnBStartSpoolButton</tt><big>(</big><em>event=None</em>, <em>stack=False</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.OnBStartSpoolButton" title="Permalink to this definition">¶</a></dt>
+<dd><p>GUI callback to start spooling.</p>
+<p>NB: this is also called programatically by the start stack button.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.HDFSpoolFrame.PanSpool.OnBStartStackButton">
+<tt class="descname">OnBStartStackButton</tt><big>(</big><em>event=None</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.OnBStartStackButton" title="Permalink to this definition">¶</a></dt>
+<dd><p>GUI callback to start spooling with z-stepping.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.HDFSpoolFrame.PanSpool.OnBStopSpoolingButton">
+<tt class="descname">OnBStopSpoolingButton</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.OnBStopSpoolingButton" title="Permalink to this definition">¶</a></dt>
+<dd><p>GUI callback to stop spooling.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.HDFSpoolFrame.PanSpool.OnTcSpoolFileText">
+<tt class="descname">OnTcSpoolFileText</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.OnTcSpoolFileText" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.HDFSpoolFrame.PanSpool.Tick">
+<tt class="descname">Tick</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.Tick" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called with each new frame. Updates the number of frames spooled 
+and disk space remaining</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.HDFSpoolFrame.PanSpool.UpdateFreeSpace">
+<tt class="descname">UpdateFreeSpace</tt><big>(</big><em>event=None</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpoolFrame.PanSpool.UpdateFreeSpace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the free space display.</p>
+<p>Designed to be used as a callback with one of the system timers, but 
+can be called separately</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="PYME.Acquire.HDFSpoolFrame.baseconvert">
+<tt class="descclassname">PYME.Acquire.HDFSpoolFrame.</tt><tt class="descname">baseconvert</tt><big>(</big><em>number</em>, <em>todigits</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpoolFrame.baseconvert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a number to an arbtrary base.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>number</strong> : int</p>
+<blockquote>
+<div><p>The number to convert</p>
+</div></blockquote>
+<p><strong>todigits</strong> : iterable or string</p>
+<blockquote class="last">
+<div><p>The digits of the base e.g. &#8216;0123456&#8217; (base 7) 
+or &#8216;ABCDEFGHIJK&#8217; (non-numeric base 11)</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PYME.Acquire.HDFSpoolFrame.create">
+<tt class="descclassname">PYME.Acquire.HDFSpoolFrame.</tt><tt class="descname">create</tt><big>(</big><em>parent</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpoolFrame.create" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-PYME.Acquire.intsliders">
+<span id="intsliders-module"></span><h3><tt class="xref py py-mod docutils literal"><span class="pre">intsliders</span></tt> Module<a class="headerlink" href="#module-PYME.Acquire.intsliders" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="PYME.Acquire.intsliders.IntegrationSliders">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.intsliders.</tt><tt class="descname">IntegrationSliders</tt><big>(</big><em>chaninfo</em>, <em>parent</em>, <em>scope</em>, <em>winid=-1</em><big>)</big><a class="headerlink" href="#PYME.Acquire.intsliders.IntegrationSliders" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">mClass</span></tt></p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.intsliders.IntegrationSliders.onCombobox" title="PYME.Acquire.intsliders.IntegrationSliders.onCombobox"><tt class="xref py py-obj docutils literal"><span class="pre">onCombobox</span></tt></a>(event)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.intsliders.IntegrationSliders.onSlide" title="PYME.Acquire.intsliders.IntegrationSliders.onSlide"><tt class="xref py py-obj docutils literal"><span class="pre">onSlide</span></tt></a>(event)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.intsliders.IntegrationSliders.update" title="PYME.Acquire.intsliders.IntegrationSliders.update"><tt class="xref py py-obj docutils literal"><span class="pre">update</span></tt></a>()</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="PYME.Acquire.intsliders.IntegrationSliders.onCombobox">
+<tt class="descname">onCombobox</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#PYME.Acquire.intsliders.IntegrationSliders.onCombobox" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.intsliders.IntegrationSliders.onSlide">
+<tt class="descname">onSlide</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#PYME.Acquire.intsliders.IntegrationSliders.onSlide" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.intsliders.IntegrationSliders.update">
+<tt class="descname">update</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.intsliders.IntegrationSliders.update" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-PYME.Acquire.lasersliders">
+<span id="lasersliders-module"></span><h3><tt class="xref py py-mod docutils literal"><span class="pre">lasersliders</span></tt> Module<a class="headerlink" href="#module-PYME.Acquire.lasersliders" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="PYME.Acquire.lasersliders.LaserSliders">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.lasersliders.</tt><tt class="descname">LaserSliders</tt><big>(</big><em>parent</em>, <em>lasers</em>, <em>winid=-1</em><big>)</big><a class="headerlink" href="#PYME.Acquire.lasersliders.LaserSliders" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">mClass</span></tt></p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.lasersliders.LaserSliders.onSlide" title="PYME.Acquire.lasersliders.LaserSliders.onSlide"><tt class="xref py py-obj docutils literal"><span class="pre">onSlide</span></tt></a>(event)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.lasersliders.LaserSliders.update" title="PYME.Acquire.lasersliders.LaserSliders.update"><tt class="xref py py-obj docutils literal"><span class="pre">update</span></tt></a>()</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="PYME.Acquire.lasersliders.LaserSliders.onSlide">
+<tt class="descname">onSlide</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#PYME.Acquire.lasersliders.LaserSliders.onSlide" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.lasersliders.LaserSliders.update">
+<tt class="descname">update</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.lasersliders.LaserSliders.update" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-PYME.Acquire.mytimer">
+<span id="mytimer-module"></span><h3><tt class="xref py py-mod docutils literal"><span class="pre">mytimer</span></tt> Module<a class="headerlink" href="#module-PYME.Acquire.mytimer" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="PYME.Acquire.mytimer.mytimer">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.mytimer.</tt><tt class="descname">mytimer</tt><big>(</big><em>PROFILE=False</em><big>)</big><a class="headerlink" href="#PYME.Acquire.mytimer.mytimer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">wx._misc.Timer</span></tt></p>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">ClassName</span></tt></td>
+<td>See <cite>GetClassName</cite></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">EvtHandlerEnabled</span></tt></td>
+<td>See <cite>GetEvtHandlerEnabled</cite> and <cite>SetEvtHandlerEnabled</cite></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Id</span></tt></td>
+<td>See <cite>GetId</cite></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Interval</span></tt></td>
+<td>See <cite>GetInterval</cite></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">NextHandler</span></tt></td>
+<td>See <cite>GetNextHandler</cite> and <cite>SetNextHandler</cite></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Owner</span></tt></td>
+<td>See <cite>GetOwner</cite> and <cite>SetOwner</cite></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">PreviousHandler</span></tt></td>
+<td>See <cite>GetPreviousHandler</cite> and <cite>SetPreviousHandler</cite></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">thisown</span></tt></td>
+<td>The membership flag</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">AddPendingEvent</span></tt>(self,&nbsp;Event&nbsp;event)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Bind</span></tt>(event,&nbsp;handler[,&nbsp;source,&nbsp;id,&nbsp;id2])</td>
+<td>Bind an event to an event handler.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Connect</span></tt>(self,&nbsp;int&nbsp;id,&nbsp;int&nbsp;lastId,&nbsp;...)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Destroy</span></tt>()</td>
+<td>NO-OP: Timers must be destroyed by normal reference counting</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Disconnect</span></tt>(*args,&nbsp;**kwargs)</td>
+<td>Disconnect(self, int id, int lastId=-1, EventType eventType=wxEVT_NULL,</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetClassName</span></tt>((self)&nbsp;-&gt;&nbsp;String)</td>
+<td>Returns the class name of the C++ class using wxRTTI.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetEvtHandlerEnabled</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetId</span></tt>((self)&nbsp;-&gt;&nbsp;int)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetInterval</span></tt>((self)&nbsp;-&gt;&nbsp;int)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetNextHandler</span></tt>((self)&nbsp;-&gt;&nbsp;EvtHandler)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetOwner</span></tt>((self)&nbsp;-&gt;&nbsp;EvtHandler)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetPreviousHandler</span></tt>((self)&nbsp;-&gt;&nbsp;EvtHandler)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsOneShot</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsRunning</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsSameAs</span></tt>((self,&nbsp;Object&nbsp;p)&nbsp;-&gt;&nbsp;bool)</td>
+<td>For wx.Objects that use C++ reference counting internally, this method can be used to determine if two objects are referencing the same data object.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.mytimer.mytimer.Notify" title="PYME.Acquire.mytimer.mytimer.Notify"><tt class="xref py py-obj docutils literal"><span class="pre">Notify</span></tt></a>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">ProcessEvent</span></tt>((self,&nbsp;Event&nbsp;event)&nbsp;-&gt;&nbsp;bool)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">ProcessPendingEvents</span></tt>(self)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetEvtHandlerEnabled</span></tt>(self,&nbsp;bool&nbsp;enabled)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetNextHandler</span></tt>(self,&nbsp;EvtHandler&nbsp;handler)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetOwner</span></tt>(self,&nbsp;EvtHandler&nbsp;owner,&nbsp;int&nbsp;id=ID_ANY)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetPreviousHandler</span></tt>(self,&nbsp;EvtHandler&nbsp;handler)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Start</span></tt>((self,&nbsp;int&nbsp;milliseconds=-1,&nbsp;...)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Stop</span></tt>(self)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Unbind</span></tt>(event[,&nbsp;source,&nbsp;id,&nbsp;id2,&nbsp;handler])</td>
+<td>Disconnects the event handler binding for event from self.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="PYME.Acquire.mytimer.mytimer.Notify">
+<tt class="descname">Notify</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.mytimer.mytimer.Notify" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<blockquote>
+<div><span class="target" id="module-PYME.Acquire.positionTracker"></span><dl class="class">
+<dt id="PYME.Acquire.positionTracker.PositionTracker">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.positionTracker.</tt><tt class="descname">PositionTracker</tt><big>(</big><em>scope</em>, <em>time1</em>, <em>viewsize=25.0</em>, <em>nPixels=500</em><big>)</big><a class="headerlink" href="#PYME.Acquire.positionTracker.PositionTracker" title="Permalink to this definition">¶</a></dt>
+<dd><p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.positionTracker.PositionTracker.ClearTrack" title="PYME.Acquire.positionTracker.PositionTracker.ClearTrack"><tt class="xref py py-obj docutils literal"><span class="pre">ClearTrack</span></tt></a>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.positionTracker.PositionTracker.Detatch" title="PYME.Acquire.positionTracker.PositionTracker.Detatch"><tt class="xref py py-obj docutils literal"><span class="pre">Detatch</span></tt></a>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.positionTracker.PositionTracker.GetImage" title="PYME.Acquire.positionTracker.PositionTracker.GetImage"><tt class="xref py py-obj docutils literal"><span class="pre">GetImage</span></tt></a>([viewsize,&nbsp;nPixels])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.positionTracker.PositionTracker.GetTags" title="PYME.Acquire.positionTracker.PositionTracker.GetTags"><tt class="xref py py-obj docutils literal"><span class="pre">GetTags</span></tt></a>([tagName])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.positionTracker.PositionTracker.GetTrack" title="PYME.Acquire.positionTracker.PositionTracker.GetTrack"><tt class="xref py py-obj docutils literal"><span class="pre">GetTrack</span></tt></a>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.positionTracker.PositionTracker.Tag" title="PYME.Acquire.positionTracker.PositionTracker.Tag"><tt class="xref py py-obj docutils literal"><span class="pre">Tag</span></tt></a>([tagName])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.positionTracker.PositionTracker.Tick" title="PYME.Acquire.positionTracker.PositionTracker.Tick"><tt class="xref py py-obj docutils literal"><span class="pre">Tick</span></tt></a>()</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="PYME.Acquire.positionTracker.PositionTracker.ClearTrack">
+<tt class="descname">ClearTrack</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.positionTracker.PositionTracker.ClearTrack" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.positionTracker.PositionTracker.Detatch">
+<tt class="descname">Detatch</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.positionTracker.PositionTracker.Detatch" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.positionTracker.PositionTracker.GetImage">
+<tt class="descname">GetImage</tt><big>(</big><em>viewsize=25.0</em>, <em>nPixels=500</em><big>)</big><a class="headerlink" href="#PYME.Acquire.positionTracker.PositionTracker.GetImage" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.positionTracker.PositionTracker.GetTags">
+<tt class="descname">GetTags</tt><big>(</big><em>tagName='edge'</em><big>)</big><a class="headerlink" href="#PYME.Acquire.positionTracker.PositionTracker.GetTags" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.positionTracker.PositionTracker.GetTrack">
+<tt class="descname">GetTrack</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.positionTracker.PositionTracker.GetTrack" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.positionTracker.PositionTracker.Tag">
+<tt class="descname">Tag</tt><big>(</big><em>tagName='edge'</em><big>)</big><a class="headerlink" href="#PYME.Acquire.positionTracker.PositionTracker.Tag" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.positionTracker.PositionTracker.Tick">
+<tt class="descname">Tick</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.positionTracker.PositionTracker.Tick" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="PYME.Acquire.positionTracker.TrackerPanel">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.positionTracker.</tt><tt class="descname">TrackerPanel</tt><big>(</big><em>parent</em>, <em>posTrk</em><big>)</big><a class="headerlink" href="#PYME.Acquire.positionTracker.TrackerPanel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">mClass</span></tt></p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.positionTracker.TrackerPanel.OnClear" title="PYME.Acquire.positionTracker.TrackerPanel.OnClear"><tt class="xref py py-obj docutils literal"><span class="pre">OnClear</span></tt></a>(event)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.positionTracker.TrackerPanel.OnTagEdge" title="PYME.Acquire.positionTracker.TrackerPanel.OnTagEdge"><tt class="xref py py-obj docutils literal"><span class="pre">OnTagEdge</span></tt></a>(event)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.positionTracker.TrackerPanel.draw" title="PYME.Acquire.positionTracker.TrackerPanel.draw"><tt class="xref py py-obj docutils literal"><span class="pre">draw</span></tt></a>()</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="PYME.Acquire.positionTracker.TrackerPanel.OnClear">
+<tt class="descname">OnClear</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#PYME.Acquire.positionTracker.TrackerPanel.OnClear" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.positionTracker.TrackerPanel.OnTagEdge">
+<tt class="descname">OnTagEdge</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#PYME.Acquire.positionTracker.TrackerPanel.OnTagEdge" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.positionTracker.TrackerPanel.draw">
+<tt class="descname">draw</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.positionTracker.TrackerPanel.draw" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="PYME.Acquire.positionTracker.TrackerPlotPanel">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.positionTracker.</tt><tt class="descname">TrackerPlotPanel</tt><big>(</big><em>parent</em>, <em>posTrk</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#PYME.Acquire.positionTracker.TrackerPlotPanel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">PYME.misc.wxPlotPanel.PlotPanel</span></tt></p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetColor</span></tt>([rgbtuple])</td>
+<td>Set figure and canvas colours to be the same.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.positionTracker.TrackerPlotPanel.draw" title="PYME.Acquire.positionTracker.TrackerPlotPanel.draw"><tt class="xref py py-obj docutils literal"><span class="pre">draw</span></tt></a>()</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="PYME.Acquire.positionTracker.TrackerPlotPanel.draw">
+<tt class="descname">draw</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.positionTracker.TrackerPlotPanel.draw" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-PYME.Acquire.previewaquisator"></span><dl class="class">
+<dt id="PYME.Acquire.previewaquisator.PreviewAquisator">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.previewaquisator.</tt><tt class="descname">PreviewAquisator</tt><big>(</big><em>_chans</em>, <em>_cam</em>, <em>_shutters</em>, <em>_ds=None</em><big>)</big><a class="headerlink" href="#PYME.Acquire.previewaquisator.PreviewAquisator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">wx._misc.Timer</span></tt></p>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">ClassName</span></tt></td>
+<td>See <cite>GetClassName</cite></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">EvtHandlerEnabled</span></tt></td>
+<td>See <cite>GetEvtHandlerEnabled</cite> and <cite>SetEvtHandlerEnabled</cite></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Id</span></tt></td>
+<td>See <cite>GetId</cite></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Interval</span></tt></td>
+<td>See <cite>GetInterval</cite></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">NextHandler</span></tt></td>
+<td>See <cite>GetNextHandler</cite> and <cite>SetNextHandler</cite></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Owner</span></tt></td>
+<td>See <cite>GetOwner</cite> and <cite>SetOwner</cite></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">PreviousHandler</span></tt></td>
+<td>See <cite>GetPreviousHandler</cite> and <cite>SetPreviousHandler</cite></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">thisown</span></tt></td>
+<td>The membership flag</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">AddPendingEvent</span></tt>(self,&nbsp;Event&nbsp;event)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Bind</span></tt>(event,&nbsp;handler[,&nbsp;source,&nbsp;id,&nbsp;id2])</td>
+<td>Bind an event to an event handler.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Connect</span></tt>(self,&nbsp;int&nbsp;id,&nbsp;int&nbsp;lastId,&nbsp;...)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Destroy</span></tt>()</td>
+<td>NO-OP: Timers must be destroyed by normal reference counting</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Disconnect</span></tt>(*args,&nbsp;**kwargs)</td>
+<td>Disconnect(self, int id, int lastId=-1, EventType eventType=wxEVT_NULL,</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetClassName</span></tt>((self)&nbsp;-&gt;&nbsp;String)</td>
+<td>Returns the class name of the C++ class using wxRTTI.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetEvtHandlerEnabled</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetId</span></tt>((self)&nbsp;-&gt;&nbsp;int)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetInterval</span></tt>((self)&nbsp;-&gt;&nbsp;int)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetNextHandler</span></tt>((self)&nbsp;-&gt;&nbsp;EvtHandler)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetOwner</span></tt>((self)&nbsp;-&gt;&nbsp;EvtHandler)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetPreviousHandler</span></tt>((self)&nbsp;-&gt;&nbsp;EvtHandler)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.previewaquisator.PreviewAquisator.GetSeqLength" title="PYME.Acquire.previewaquisator.PreviewAquisator.GetSeqLength"><tt class="xref py py-obj docutils literal"><span class="pre">GetSeqLength</span></tt></a>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsOneShot</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsRunning</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsSameAs</span></tt>((self,&nbsp;Object&nbsp;p)&nbsp;-&gt;&nbsp;bool)</td>
+<td>For wx.Objects that use C++ reference counting internally, this method can be used to determine if two objects are referencing the same data object.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.previewaquisator.PreviewAquisator.Notify" title="PYME.Acquire.previewaquisator.PreviewAquisator.Notify"><tt class="xref py py-obj docutils literal"><span class="pre">Notify</span></tt></a>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.previewaquisator.PreviewAquisator.Prepare" title="PYME.Acquire.previewaquisator.PreviewAquisator.Prepare"><tt class="xref py py-obj docutils literal"><span class="pre">Prepare</span></tt></a>([keepds])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">ProcessEvent</span></tt>((self,&nbsp;Event&nbsp;event)&nbsp;-&gt;&nbsp;bool)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">ProcessPendingEvents</span></tt>(self)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetEvtHandlerEnabled</span></tt>(self,&nbsp;bool&nbsp;enabled)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetNextHandler</span></tt>(self,&nbsp;EvtHandler&nbsp;handler)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetOwner</span></tt>(self,&nbsp;EvtHandler&nbsp;owner,&nbsp;int&nbsp;id=ID_ANY)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetPreviousHandler</span></tt>(self,&nbsp;EvtHandler&nbsp;handler)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Start</span></tt>((self,&nbsp;int&nbsp;milliseconds=-1,&nbsp;...)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Stop</span></tt>(self)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Unbind</span></tt>(event[,&nbsp;source,&nbsp;id,&nbsp;id2,&nbsp;handler])</td>
+<td>Disconnects the event handler binding for event from self.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.previewaquisator.PreviewAquisator.Wait" title="PYME.Acquire.previewaquisator.PreviewAquisator.Wait"><tt class="xref py py-obj docutils literal"><span class="pre">Wait</span></tt></a>(iTime)</td>
+<td>Dirty delay routine - blocks until given no of milliseconds has elapsed</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.previewaquisator.PreviewAquisator.checkHardware" title="PYME.Acquire.previewaquisator.PreviewAquisator.checkHardware"><tt class="xref py py-obj docutils literal"><span class="pre">checkHardware</span></tt></a>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.previewaquisator.PreviewAquisator.doPiezoStep" title="PYME.Acquire.previewaquisator.PreviewAquisator.doPiezoStep"><tt class="xref py py-obj docutils literal"><span class="pre">doPiezoStep</span></tt></a>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.previewaquisator.PreviewAquisator.doStartLog" title="PYME.Acquire.previewaquisator.PreviewAquisator.doStartLog"><tt class="xref py py-obj docutils literal"><span class="pre">doStartLog</span></tt></a>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.previewaquisator.PreviewAquisator.doStopLog" title="PYME.Acquire.previewaquisator.PreviewAquisator.doStopLog"><tt class="xref py py-obj docutils literal"><span class="pre">doStopLog</span></tt></a>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.previewaquisator.PreviewAquisator.getFPS" title="PYME.Acquire.previewaquisator.PreviewAquisator.getFPS"><tt class="xref py py-obj docutils literal"><span class="pre">getFPS</span></tt></a>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.previewaquisator.PreviewAquisator.getFrame" title="PYME.Acquire.previewaquisator.PreviewAquisator.getFrame"><tt class="xref py py-obj docutils literal"><span class="pre">getFrame</span></tt></a>(colours)</td>
+<td>Get a frame from the camera and extract the channels we want, putting them into ds.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.previewaquisator.PreviewAquisator.getNextDsSlice" title="PYME.Acquire.previewaquisator.PreviewAquisator.getNextDsSlice"><tt class="xref py py-obj docutils literal"><span class="pre">getNextDsSlice</span></tt></a>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.previewaquisator.PreviewAquisator.getReqMemChans" title="PYME.Acquire.previewaquisator.PreviewAquisator.getReqMemChans"><tt class="xref py py-obj docutils literal"><span class="pre">getReqMemChans</span></tt></a>(colours)</td>
+<td>Use this function to calc how may channels to allocate when creating a new data stack</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.previewaquisator.PreviewAquisator.isRunning" title="PYME.Acquire.previewaquisator.PreviewAquisator.isRunning"><tt class="xref py py-obj docutils literal"><span class="pre">isRunning</span></tt></a>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.previewaquisator.PreviewAquisator.onExpReady" title="PYME.Acquire.previewaquisator.PreviewAquisator.onExpReady"><tt class="xref py py-obj docutils literal"><span class="pre">onExpReady</span></tt></a>()</td>
+<td>There is an exposure waiting in the Camera,</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.previewaquisator.PreviewAquisator.piezoGoHome" title="PYME.Acquire.previewaquisator.PreviewAquisator.piezoGoHome"><tt class="xref py py-obj docutils literal"><span class="pre">piezoGoHome</span></tt></a>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.previewaquisator.PreviewAquisator.piezoReady" title="PYME.Acquire.previewaquisator.PreviewAquisator.piezoReady"><tt class="xref py py-obj docutils literal"><span class="pre">piezoReady</span></tt></a>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.previewaquisator.PreviewAquisator.purge" title="PYME.Acquire.previewaquisator.PreviewAquisator.purge"><tt class="xref py py-obj docutils literal"><span class="pre">purge</span></tt></a>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.previewaquisator.PreviewAquisator.setPiezoStartPos" title="PYME.Acquire.previewaquisator.PreviewAquisator.setPiezoStartPos"><tt class="xref py py-obj docutils literal"><span class="pre">setPiezoStartPos</span></tt></a>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.previewaquisator.PreviewAquisator.start" title="PYME.Acquire.previewaquisator.PreviewAquisator.start"><tt class="xref py py-obj docutils literal"><span class="pre">start</span></tt></a>([tiint])</td>
+<td>Start aquisition</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.previewaquisator.PreviewAquisator.stop" title="PYME.Acquire.previewaquisator.PreviewAquisator.stop"><tt class="xref py py-obj docutils literal"><span class="pre">stop</span></tt></a>()</td>
+<td>Stop sequence aquisition</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="PYME.Acquire.previewaquisator.PreviewAquisator.BLUE">
+<tt class="descname">BLUE</tt><em class="property"> = 16</em><a class="headerlink" href="#PYME.Acquire.previewaquisator.PreviewAquisator.BLUE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="PYME.Acquire.previewaquisator.PreviewAquisator.BW">
+<tt class="descname">BW</tt><em class="property"> = 1</em><a class="headerlink" href="#PYME.Acquire.previewaquisator.PreviewAquisator.BW" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="PYME.Acquire.previewaquisator.PreviewAquisator.GREEN1">
+<tt class="descname">GREEN1</tt><em class="property"> = 4</em><a class="headerlink" href="#PYME.Acquire.previewaquisator.PreviewAquisator.GREEN1" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="PYME.Acquire.previewaquisator.PreviewAquisator.GREEN2">
+<tt class="descname">GREEN2</tt><em class="property"> = 8</em><a class="headerlink" href="#PYME.Acquire.previewaquisator.PreviewAquisator.GREEN2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.previewaquisator.PreviewAquisator.GetSeqLength">
+<tt class="descname">GetSeqLength</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.previewaquisator.PreviewAquisator.GetSeqLength" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.previewaquisator.PreviewAquisator.Notify">
+<tt class="descname">Notify</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.previewaquisator.PreviewAquisator.Notify" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.previewaquisator.PreviewAquisator.Prepare">
+<tt class="descname">Prepare</tt><big>(</big><em>keepds=False</em><big>)</big><a class="headerlink" href="#PYME.Acquire.previewaquisator.PreviewAquisator.Prepare" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="PYME.Acquire.previewaquisator.PreviewAquisator.RED">
+<tt class="descname">RED</tt><em class="property"> = 2</em><a class="headerlink" href="#PYME.Acquire.previewaquisator.PreviewAquisator.RED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.previewaquisator.PreviewAquisator.Wait">
+<tt class="descname">Wait</tt><big>(</big><em>iTime</em><big>)</big><a class="headerlink" href="#PYME.Acquire.previewaquisator.PreviewAquisator.Wait" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dirty delay routine - blocks until given no of milliseconds has elapsed</p>
+<p>Probably best not to use with a delay of more than about a second or windows</p>
+<p>could rightly assume that the programme is &lt;not responding&gt;</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.previewaquisator.PreviewAquisator.checkHardware">
+<tt class="descname">checkHardware</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.previewaquisator.PreviewAquisator.checkHardware" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.previewaquisator.PreviewAquisator.doPiezoStep">
+<tt class="descname">doPiezoStep</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.previewaquisator.PreviewAquisator.doPiezoStep" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.previewaquisator.PreviewAquisator.doStartLog">
+<tt class="descname">doStartLog</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.previewaquisator.PreviewAquisator.doStartLog" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.previewaquisator.PreviewAquisator.doStopLog">
+<tt class="descname">doStopLog</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.previewaquisator.PreviewAquisator.doStopLog" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.previewaquisator.PreviewAquisator.getFPS">
+<tt class="descname">getFPS</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.previewaquisator.PreviewAquisator.getFPS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.previewaquisator.PreviewAquisator.getFrame">
+<tt class="descname">getFrame</tt><big>(</big><em>colours</em><big>)</big><a class="headerlink" href="#PYME.Acquire.previewaquisator.PreviewAquisator.getFrame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a frame from the camera and extract the channels we want,
+putting them into ds.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.previewaquisator.PreviewAquisator.getNextDsSlice">
+<tt class="descname">getNextDsSlice</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.previewaquisator.PreviewAquisator.getNextDsSlice" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.previewaquisator.PreviewAquisator.getReqMemChans">
+<tt class="descname">getReqMemChans</tt><big>(</big><em>colours</em><big>)</big><a class="headerlink" href="#PYME.Acquire.previewaquisator.PreviewAquisator.getReqMemChans" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use this function to calc how may channels to allocate when creating a new data stack</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.previewaquisator.PreviewAquisator.isRunning">
+<tt class="descname">isRunning</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.previewaquisator.PreviewAquisator.isRunning" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.previewaquisator.PreviewAquisator.onExpReady">
+<tt class="descname">onExpReady</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.previewaquisator.PreviewAquisator.onExpReady" title="Permalink to this definition">¶</a></dt>
+<dd><p>There is an exposure waiting in the Camera,
+looppos inticates which hardware (shutter) channel we&#8217;re currently on</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.previewaquisator.PreviewAquisator.piezoGoHome">
+<tt class="descname">piezoGoHome</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.previewaquisator.PreviewAquisator.piezoGoHome" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.previewaquisator.PreviewAquisator.piezoReady">
+<tt class="descname">piezoReady</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.previewaquisator.PreviewAquisator.piezoReady" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.previewaquisator.PreviewAquisator.purge">
+<tt class="descname">purge</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.previewaquisator.PreviewAquisator.purge" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.previewaquisator.PreviewAquisator.setPiezoStartPos">
+<tt class="descname">setPiezoStartPos</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.previewaquisator.PreviewAquisator.setPiezoStartPos" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.previewaquisator.PreviewAquisator.start">
+<tt class="descname">start</tt><big>(</big><em>tiint=100</em><big>)</big><a class="headerlink" href="#PYME.Acquire.previewaquisator.PreviewAquisator.start" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start aquisition</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.previewaquisator.PreviewAquisator.stop">
+<tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.previewaquisator.PreviewAquisator.stop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stop sequence aquisition</p>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-PYME.Acquire.prevviewer"></span><dl class="class">
+<dt id="PYME.Acquire.prevviewer.PrevViewFrame">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.prevviewer.</tt><tt class="descname">PrevViewFrame</tt><big>(</big><em>parent</em>, <em>title</em>, <em>dstack</em><big>)</big><a class="headerlink" href="#PYME.Acquire.prevviewer.PrevViewFrame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">mClass</span></tt></p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.prevviewer.PrevViewFrame.menuClose" title="PYME.Acquire.prevviewer.PrevViewFrame.menuClose"><tt class="xref py py-obj docutils literal"><span class="pre">menuClose</span></tt></a>(event)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.prevviewer.PrevViewFrame.saveStack" title="PYME.Acquire.prevviewer.PrevViewFrame.saveStack"><tt class="xref py py-obj docutils literal"><span class="pre">saveStack</span></tt></a>([event])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.prevviewer.PrevViewFrame.update" title="PYME.Acquire.prevviewer.PrevViewFrame.update"><tt class="xref py py-obj docutils literal"><span class="pre">update</span></tt></a>()</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="PYME.Acquire.prevviewer.PrevViewFrame.menuClose">
+<tt class="descname">menuClose</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#PYME.Acquire.prevviewer.PrevViewFrame.menuClose" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.prevviewer.PrevViewFrame.saveStack">
+<tt class="descname">saveStack</tt><big>(</big><em>event=None</em><big>)</big><a class="headerlink" href="#PYME.Acquire.prevviewer.PrevViewFrame.saveStack" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.prevviewer.PrevViewFrame.update">
+<tt class="descname">update</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.prevviewer.PrevViewFrame.update" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-PYME.Acquire.psliders"></span><dl class="class">
+<dt id="PYME.Acquire.psliders.PiezoSliders">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.psliders.</tt><tt class="descname">PiezoSliders</tt><big>(</big><em>piezos</em>, <em>parent</em>, <em>joystick=None</em>, <em>id=-1</em><big>)</big><a class="headerlink" href="#PYME.Acquire.psliders.PiezoSliders" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">mClass</span></tt></p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.psliders.PiezoSliders.OnJoystickEnable" title="PYME.Acquire.psliders.PiezoSliders.OnJoystickEnable"><tt class="xref py py-obj docutils literal"><span class="pre">OnJoystickEnable</span></tt></a>(event)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.psliders.PiezoSliders.onSlide" title="PYME.Acquire.psliders.PiezoSliders.onSlide"><tt class="xref py py-obj docutils literal"><span class="pre">onSlide</span></tt></a>(event)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.psliders.PiezoSliders.update" title="PYME.Acquire.psliders.PiezoSliders.update"><tt class="xref py py-obj docutils literal"><span class="pre">update</span></tt></a>()</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="PYME.Acquire.psliders.PiezoSliders.OnJoystickEnable">
+<tt class="descname">OnJoystickEnable</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#PYME.Acquire.psliders.PiezoSliders.OnJoystickEnable" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.psliders.PiezoSliders.onSlide">
+<tt class="descname">onSlide</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#PYME.Acquire.psliders.PiezoSliders.onSlide" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.psliders.PiezoSliders.update">
+<tt class="descname">update</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.psliders.PiezoSliders.update" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-PYME.Acquire.selectCameraPanel"></span><dl class="class">
+<dt id="PYME.Acquire.selectCameraPanel.CameraChooserPanel">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.selectCameraPanel.</tt><tt class="descname">CameraChooserPanel</tt><big>(</big><em>parent</em>, <em>scope</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#PYME.Acquire.selectCameraPanel.CameraChooserPanel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">mClass</span></tt></p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.selectCameraPanel.CameraChooserPanel.OnCCamera" title="PYME.Acquire.selectCameraPanel.CameraChooserPanel.OnCCamera"><tt class="xref py py-obj docutils literal"><span class="pre">OnCCamera</span></tt></a>(event)</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="PYME.Acquire.selectCameraPanel.CameraChooserPanel.OnCCamera">
+<tt class="descname">OnCCamera</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#PYME.Acquire.selectCameraPanel.CameraChooserPanel.OnCCamera" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-PYME.Acquire.splashScreen"></span><dl class="class">
+<dt id="PYME.Acquire.splashScreen.SplashPanel">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.splashScreen.</tt><tt class="descname">SplashPanel</tt><big>(</big><em>parent</em>, <em>scope</em>, <em>size=(-1</em>, <em>-1)</em><big>)</big><a class="headerlink" href="#PYME.Acquire.splashScreen.SplashPanel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">mClass</span></tt></p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.splashScreen.SplashPanel.DoPaint" title="PYME.Acquire.splashScreen.SplashPanel.DoPaint"><tt class="xref py py-obj docutils literal"><span class="pre">DoPaint</span></tt></a>(dc)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.splashScreen.SplashPanel.OnPaint" title="PYME.Acquire.splashScreen.SplashPanel.OnPaint"><tt class="xref py py-obj docutils literal"><span class="pre">OnPaint</span></tt></a>(event)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.splashScreen.SplashPanel.drawProgBar" title="PYME.Acquire.splashScreen.SplashPanel.drawProgBar"><tt class="xref py py-obj docutils literal"><span class="pre">drawProgBar</span></tt></a>(dc,&nbsp;x,&nbsp;y,&nbsp;width,&nbsp;height,&nbsp;frac)</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="PYME.Acquire.splashScreen.SplashPanel.DoPaint">
+<tt class="descname">DoPaint</tt><big>(</big><em>dc</em><big>)</big><a class="headerlink" href="#PYME.Acquire.splashScreen.SplashPanel.DoPaint" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.splashScreen.SplashPanel.OnPaint">
+<tt class="descname">OnPaint</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#PYME.Acquire.splashScreen.SplashPanel.OnPaint" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.splashScreen.SplashPanel.drawProgBar">
+<tt class="descname">drawProgBar</tt><big>(</big><em>dc</em>, <em>x</em>, <em>y</em>, <em>width</em>, <em>height</em>, <em>frac</em><big>)</big><a class="headerlink" href="#PYME.Acquire.splashScreen.SplashPanel.drawProgBar" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="PYME.Acquire.splashScreen.SplashScreen">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.splashScreen.</tt><tt class="descname">SplashScreen</tt><big>(</big><em>parent</em>, <em>scope</em><big>)</big><a class="headerlink" href="#PYME.Acquire.splashScreen.SplashScreen" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">mClass</span></tt></p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.splashScreen.SplashScreen.SetMessage" title="PYME.Acquire.splashScreen.SplashScreen.SetMessage"><tt class="xref py py-obj docutils literal"><span class="pre">SetMessage</span></tt></a>(key,&nbsp;msg)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.splashScreen.SplashScreen.Tick" title="PYME.Acquire.splashScreen.SplashScreen.Tick"><tt class="xref py py-obj docutils literal"><span class="pre">Tick</span></tt></a>()</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="PYME.Acquire.splashScreen.SplashScreen.SetMessage">
+<tt class="descname">SetMessage</tt><big>(</big><em>key</em>, <em>msg</em><big>)</big><a class="headerlink" href="#PYME.Acquire.splashScreen.SplashScreen.SetMessage" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.splashScreen.SplashScreen.Tick">
+<tt class="descname">Tick</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.splashScreen.SplashScreen.Tick" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-PYME.Acquire.voxelSizeDialog"></span><dl class="class">
+<dt id="PYME.Acquire.voxelSizeDialog.VoxelSizeDialog">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.voxelSizeDialog.</tt><tt class="descname">VoxelSizeDialog</tt><big>(</big><em>parent</em>, <em>scope</em><big>)</big><a class="headerlink" href="#PYME.Acquire.voxelSizeDialog.VoxelSizeDialog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">mClass</span></tt></p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.voxelSizeDialog.VoxelSizeDialog.OnAddVSSetting" title="PYME.Acquire.voxelSizeDialog.VoxelSizeDialog.OnAddVSSetting"><tt class="xref py py-obj docutils literal"><span class="pre">OnAddVSSetting</span></tt></a>(event)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.voxelSizeDialog.VoxelSizeDialog.OnChooseVS" title="PYME.Acquire.voxelSizeDialog.VoxelSizeDialog.OnChooseVS"><tt class="xref py py-obj docutils literal"><span class="pre">OnChooseVS</span></tt></a>(event)</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="PYME.Acquire.voxelSizeDialog.VoxelSizeDialog.OnAddVSSetting">
+<tt class="descname">OnAddVSSetting</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#PYME.Acquire.voxelSizeDialog.VoxelSizeDialog.OnAddVSSetting" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.voxelSizeDialog.VoxelSizeDialog.OnChooseVS">
+<tt class="descname">OnChooseVS</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#PYME.Acquire.voxelSizeDialog.VoxelSizeDialog.OnChooseVS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div></blockquote>
+</div>
+<div class="section" id="subpackages">
+<h3>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h3>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="PYME.Acquire.Hardware.html">PYME.Acquire.Hardware package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html">PYME.Acquire.Hardware.Piezos package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#module-PYME.Acquire.Hardware.Piezos.piezo_c867">PYME.Acquire.Hardware.Piezos.piezo_c867 module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#module-PYME.Acquire.Hardware.Piezos.piezo_e255">PYME.Acquire.Hardware.Piezos.piezo_e255 module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#module-PYME.Acquire.Hardware.Piezos.piezo_e662">PYME.Acquire.Hardware.Piezos.piezo_e662 module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#module-PYME.Acquire.Hardware.Piezos.piezo_e709">PYME.Acquire.Hardware.Piezos.piezo_e709 module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#module-PYME.Acquire.Hardware.Piezos.piezo_e816">PYME.Acquire.Hardware.Piezos.piezo_e816 module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#module-PYME.Acquire.Hardware.Piezos.piezo_e816_corr">PYME.Acquire.Hardware.Piezos.piezo_e816_corr module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#module-PYME.Acquire.Hardware.Piezos.piezo_e816b">PYME.Acquire.Hardware.Piezos.piezo_e816b module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#pyme-acquire-hardware-piezos-piezo-test-module">PYME.Acquire.Hardware.Piezos.piezo_test module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#module-PYME.Acquire.Hardware.Piezos">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html">PYME.Acquire.Hardware.Simulator package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#pyme-acquire-hardware-simulator-dsimcontrol-module">PYME.Acquire.Hardware.Simulator.dSimControl module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#pyme-acquire-hardware-simulator-fakecam-module">PYME.Acquire.Hardware.Simulator.fakeCam module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator.fakePiezo">PYME.Acquire.Hardware.Simulator.fakePiezo module</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator.fluor">PYME.Acquire.Hardware.Simulator.fluor module</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator.illuminate">PYME.Acquire.Hardware.Simulator.illuminate module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator.lasersliders">PYME.Acquire.Hardware.Simulator.lasersliders module</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#pyme-acquire-hardware-simulator-rend-im-module">PYME.Acquire.Hardware.Simulator.rend_im module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#pyme-acquire-hardware-simulator-setup-module">PYME.Acquire.Hardware.Simulator.setup module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator.wormlike">PYME.Acquire.Hardware.Simulator.wormlike module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator.wormlike2">PYME.Acquire.Hardware.Simulator.wormlike2 module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator.wormlike_curled">PYME.Acquire.Hardware.Simulator.wormlike_curled module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.EMCCDTheory">PYME.Acquire.Hardware.EMCCDTheory module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.FilterWheel">PYME.Acquire.Hardware.FilterWheel module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.FocCorr">PYME.Acquire.Hardware.FocCorr module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#pyme-acquire-hardware-foccorrr-module">PYME.Acquire.Hardware.FocCorrR module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.FrFilter">PYME.Acquire.Hardware.FrFilter module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.LaserControlFrame">PYME.Acquire.Hardware.LaserControlFrame module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#pyme-acquire-hardware-nikonte2000-module">PYME.Acquire.Hardware.NikonTE2000 module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#pyme-acquire-hardware-nikonti-module">PYME.Acquire.Hardware.NikonTi module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.NikonTiGUI">PYME.Acquire.Hardware.NikonTiGUI module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.OrielCornerstone">PYME.Acquire.Hardware.OrielCornerstone module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#pyme-acquire-hardware-pm100usb-module">PYME.Acquire.Hardware.PM100USB module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#pyme-acquire-hardware-tilightcrafter-module">PYME.Acquire.Hardware.TiLightCrafter module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#pyme-acquire-hardware-ccdadjpanel-module">PYME.Acquire.Hardware.ccdAdjPanel module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.ccdCalibrator">PYME.Acquire.Hardware.ccdCalibrator module</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.cobaltLaser">PYME.Acquire.Hardware.cobaltLaser module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.fakeShutters">PYME.Acquire.Hardware.fakeShutters module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.focusKeys">PYME.Acquire.Hardware.focusKeys module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.frZStage">PYME.Acquire.Hardware.frZStage module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.fw102">PYME.Acquire.Hardware.fw102 module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.ioslave">PYME.Acquire.Hardware.ioslave module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.lasers">PYME.Acquire.Hardware.lasers module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.phoxxLaser">PYME.Acquire.Hardware.phoxxLaser module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.priorLumen">PYME.Acquire.Hardware.priorLumen module</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.setup">PYME.Acquire.Hardware.setup module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#pyme-acquire-hardware-spacenav-module">PYME.Acquire.Hardware.spacenav module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.splitter">PYME.Acquire.Hardware.splitter module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#pyme-acquire-hardware-thorlabspiezo-module">PYME.Acquire.Hardware.thorlabsPiezo module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Acquire Package</a><ul>
+<li><a class="reference internal" href="#core-modules">Core modules</a><ul>
+<li><a class="reference internal" href="#module-PYME.Acquire.MetaDataHandler"><tt class="docutils literal"><span class="pre">MetaDataHandler</span></tt> Module</a><ul>
+<li><a class="reference internal" href="#metadata-sources">Metadata sources</a></li>
+<li><a class="reference internal" href="#metadata-handlers">MetaData Handlers</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-PYME.Acquire.Spooler"><tt class="docutils literal"><span class="pre">Spooler</span></tt> Module</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-PYME.Acquire.HDFSpooler"><tt class="docutils literal"><span class="pre">HDFSpooler</span></tt> Module</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-PYME.Acquire.QueueSpooler"><tt class="docutils literal"><span class="pre">QueueSpooler</span></tt> Module</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-PYME.Acquire.eventLog"><tt class="docutils literal"><span class="pre">eventLog</span></tt> Module</a></li>
+<li><a class="reference internal" href="#microscope-module"><tt class="docutils literal"><span class="pre">microscope</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-PYME.Acquire.protocol"><tt class="docutils literal"><span class="pre">protocol</span></tt> Module</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-PYME.Acquire.preflight"><tt class="docutils literal"><span class="pre">preflight</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-PYME.Acquire.ExecTools"><tt class="docutils literal"><span class="pre">ExecTools</span></tt> Module</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#gui-modules">GUI Modules</a><ul>
+<li><a class="reference internal" href="#module-PYME.Acquire.PYMEAcquire"><tt class="docutils literal"><span class="pre">PYMEAcquire</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-PYME.Acquire.acquiremainframe"><tt class="docutils literal"><span class="pre">acquiremainframe</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-PYME.Acquire.HDFSpoolFrame"><tt class="docutils literal"><span class="pre">HDFSpoolFrame</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-PYME.Acquire.intsliders"><tt class="docutils literal"><span class="pre">intsliders</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-PYME.Acquire.lasersliders"><tt class="docutils literal"><span class="pre">lasersliders</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-PYME.Acquire.mytimer"><tt class="docutils literal"><span class="pre">mytimer</span></tt> Module</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#subpackages">Subpackages</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="PYME.html"
+                        title="previous chapter">PYME Package</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/api/PYME.Acquire.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="PYME.html" title="PYME Package"
+             >previous</a> |</li>
+        <li><a href="../index.html">PYME 0.1 documentation</a> &raquo;</li>
+          <li><a href="modules.html" >&lt;no title&gt;</a> &raquo;</li>
+          <li><a href="PYME.html" >PYME Package</a> &raquo;</li>
+<li><a href="http://lmsrv1/docwiki/docs/pyme-docs/api/PYME.Acquire.rst">Edit</a> &raquo;</li>
+ 
+
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010, David Baddeley.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

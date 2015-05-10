@@ -21,7 +21,7 @@
 #
 ##################
 
-import Image
+from PIL import Image
 import read_kdf
 import sys
 

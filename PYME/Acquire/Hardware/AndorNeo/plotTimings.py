@@ -57,7 +57,7 @@ def PlotTimings():
     for i, ev in enumerate(pollEvents.keys()):
         if len(pollEvents[ev]) > 0:
             t = array(pollEvents[ev])
-            print t.shape
+            print((t.shape))
             
             u = arange(t.shape[0]) % 2
             

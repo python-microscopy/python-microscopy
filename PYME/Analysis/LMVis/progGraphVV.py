@@ -76,7 +76,7 @@ class progPanel(wx.Panel):
             
 
             a, ed = numpy.histogram(self.fitResults['tIndex'], self.Size[0]/6)
-            print float(numpy.diff(ed[:2]))
+            print((float(numpy.diff(ed[:2]))))
 
             self.subplot1.MakeCurrent()
             vv.cla()

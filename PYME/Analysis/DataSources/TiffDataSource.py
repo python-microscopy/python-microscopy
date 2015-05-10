@@ -29,7 +29,7 @@ from PYME.ParallelTasks.relativeFiles import getFullFilename
 #import numpy as np
 
 from PYME.gohlke import tifffile
-from BaseDataSource import BaseDataSource
+from .BaseDataSource import BaseDataSource
 
 class DataSource(BaseDataSource):
     moduleName = 'TiffDataSource'
@@ -63,7 +63,7 @@ class DataSource(BaseDataSource):
         #except EOFError:
         #    pass
 
-        print self.filename
+        print((self.filename))
 
         self.im = tifffile.TIFFfile(self.filename).series[0].pages
 

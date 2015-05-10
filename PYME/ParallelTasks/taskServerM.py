@@ -35,7 +35,7 @@ import os
 
 if 'PYRO_NS_HOSTNAME' in os.environ.keys():
     Pyro.config.PYRO_NS_HOSTNAME=os.environ['PYRO_NS_HOSTNAME']
-    print Pyro.config.PYRO_NS_HOSTNAME
+    print((Pyro.config.PYRO_NS_HOSTNAME))
 
 #from PYME.mProfile import mProfile
 #mProfile.profileOn(['taskServerM.py', 'HDFTaskQueue.py'])
@@ -229,6 +229,10 @@ class TaskQueueSet(Pyro.core.ObjBase):
     def setQueueMetaData(self, queueName, *args):
         '''Set meta-data ascociated with queue'''
         self.taskQueues[queueName].setQueueMetaData(*args)
+        
+    def setQueueMetaDataEntries(self, queueName, *args):
+        '''Set meta-data ascociated with queue'''
+        self.taskQueues[queueName].setQueueMetaDataEntries(*args)
 
     def getQueueMetaDataKeys(self, queueName, *args):
         '''Get meta-data keys ascociated with queue'''

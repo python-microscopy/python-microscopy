@@ -96,8 +96,11 @@ class dec:
         '''
         return data.copy()
 
-
-    def deconv(self, data, lamb, num_iters=10, weights=1, alpha=None):
+    def deconvp(self, args):
+        ''' convenience function for deconvolving in parallel using processing.Pool.map'''
+        self.deconv(*args)
+    
+    def deconv(self, data, lamb, num_iters=10, weights=1, alpha=None, bg=0):
         '''This is what you actually call to do the deconvolution.
         parameters are:
 
@@ -179,7 +182,7 @@ class dec:
             test = 1 - abs(dot(S[:,0], S[:,1])/(norm(S[:,0])*norm(S[:,1])))
 
             #print & log some statistics
-            print 'Test Statistic %f' % (test,)
+            print(('Test Statistic %f' % (test,)))
             self.tests.append(test)
             self.ress.append(norm(self.res))
             self.prefs.append(norm(pref))

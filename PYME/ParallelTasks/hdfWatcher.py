@@ -48,7 +48,7 @@ while 1:
 
     if l > curpos:
         for i in range(curpos, l):
-            print i
+            print(i)
             tq.postTask(remFitHDF.fitTask(seriesName,i, thresh, MetaData.TIRFDefault, 'LatGaussFitF', bgindices=range(max(i-10, 0),i), SNThreshold=True), queueName=seriesName)
             
     if 'EndTime' in h5file.root.MetaData._v_attrs:

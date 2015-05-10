@@ -25,7 +25,10 @@ import os.path
 import wx
 import tables
 import numpy
-import Image
+try:
+    import Image
+except ImportError:
+    from PIL import Image
 import os
 from PYME.FileUtils import saveTiffStack
 from PYME.Acquire import MetaDataHandler
@@ -83,7 +86,7 @@ class H5Exporter(Exporter):
 
         xSize, ySize = data[xslice, yslice, 0].shape[:2]
         
-        print xSize, ySize
+        print((xSize, ySize))
         
         #atm = tables.UInt16Atom()
         atm = tables.Atom.from_dtype(data[xslice, yslice, 0].dtype)
@@ -179,7 +182,7 @@ class TiffStackExporter(Exporter):
             xmd.setEntry('cropping.yslice', yslice.indices(data.shape[1]))
             xmd.setEntry('cropping.zslice', zslice.indices(data.shape[2]))
 
-            print xslice.indices(data.shape[0])
+            print((xslice.indices(data.shape[0])))
             
             xmlFile = os.path.splitext(outFile)[0] + '.xml'
             xmd.writeXML(xmlFile)
@@ -243,8 +246,8 @@ class NumpyExporter(Exporter):
             xmd.setEntry('cropping.zslice', zslice.indices(data.shape[2]))
             
             xmlFile = os.path.splitext(outFile)[0] + '.xml'
-            # xmd.writeXML(xmlFile)
-            xmd.WriteSimple(xmlFile)
+            xmd.writeXML(xmlFile)
+            #xmd.WriteSimple(xmlFile)
 
 exporter(NumpyExporter)
 
@@ -393,7 +396,7 @@ def _getFilename(defaultExt = '*.tif'):
                 defIndex = i
 
         fdialog = wx.FileDialog(None, 'Save file as ...',
-                wildcard='|'.join(wcs), style=wx.SAVE|wx.HIDE_READONLY)
+                wildcard='|'.join(wcs), style=wx.SAVE)#|wx.HIDE_READONLY)
 
         fdialog.SetFilterIndex(defIndex)
 

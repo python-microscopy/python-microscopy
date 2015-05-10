@@ -273,7 +273,7 @@ class eventLogPanel(wx.Panel):
 
     def OnPaint(self,event):
         DC = wx.PaintDC(self)
-        self.PrepareDC(DC)
+        #self.PrepareDC(DC)
 
         s = self.GetVirtualSize()
         MemBitmap = wx.EmptyBitmap(s.GetWidth(), s.GetHeight())
@@ -294,6 +294,7 @@ class eventLogPanel(wx.Panel):
 
     def OnSize(self,event):
         self.Refresh()
+        self.Update()
 
     def OnWheel(self, event):
         rot = event.GetWheelRotation()
@@ -322,6 +323,7 @@ class eventLogPanel(wx.Panel):
 
         self.frameRange = (nMin, nMax)
         self.Refresh()
+        self.Update()
 
     def SetEventSource(self, eventSource):
         self.eventSource = eventSource
@@ -337,22 +339,25 @@ class eventLogPanel(wx.Panel):
 
         if self.initialised:
             self.Refresh()
+            self.Update()
 
     def SetRange(self, range):
         self.maxRange = range
         if self.autoRange:
             self.frameRange = range
         self.Refresh()
+        self.Update()
 
     def SetCharts(self, charts):
         self.charts = charts
         self.Refresh()
+        self.Update()
 
 class eventLogTPanel(wx.Panel):
     def __init__(self, parent, eventSource, metaData, timeRange, charts = [], size=(-1, -1)):
         self.eventSource = eventSource
         self.metaData = metaData
-        self.maxRange = timeRange
+        self.maxRange = list(timeRange)
         self.timeRange = timeRange
         self.charts = charts
 
@@ -667,6 +672,7 @@ class eventLogTPanel(wx.Panel):
 
     def OnSize(self,event):
         self.Refresh()
+        self.Update()
 
     def OnWheel(self, event):
         rot = event.GetWheelRotation()
@@ -674,7 +680,7 @@ class eventLogTPanel(wx.Panel):
         #get translated coordinates
         #xp = event.GetX()*view_size_x/self.Size[0] + self.xmin
         yp = self.timeRange[0] + (float(event.GetY() - 2*self.textHeight)/self.pixPerS)
-        #print yp
+        #print 'yp = ', yp
 
         dT = self.timeRange[1] - self.timeRange[0]
 
@@ -686,7 +692,7 @@ class eventLogTPanel(wx.Panel):
             nMin = max(yp - dT/4, self.maxRange[0])
             nMax = min(yp + dT/4, self.maxRange[1])
             if not nMax > (nMin + .1):
-                nMax += .1
+                nMax = nMin + .1
 
         if nMin == self.maxRange[0] and nMax == self.maxRange[1]:
             self.autoRange = True
@@ -695,6 +701,7 @@ class eventLogTPanel(wx.Panel):
 
         self.timeRange = (nMin, nMax)
         self.Refresh()
+        self.Update()
 
     def SetEventSource(self, eventSource):
         self.eventSource = eventSource
@@ -710,12 +717,14 @@ class eventLogTPanel(wx.Panel):
 
         if self.initialised:
             self.Refresh()
+            self.Update()
 
     def SetRange(self, range):
         self.maxRange = range
         if self.autoRange:
             self.frameRange = range
         self.Refresh()
+        self.Update()
 
     def SetCharts(self, charts):
         self.charts = charts

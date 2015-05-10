@@ -7,6 +7,9 @@
 #define MIN(a, b) ((a<b) ? a : b) 
 #define MAX(a, b) ((a>b) ? a : b)
 
+/////////////////////////
+// See Gibson & Lanni 1991
+
 double bessj0(double x)
 {
     /*Returns the Bessel function J0(x) for any real x.*/

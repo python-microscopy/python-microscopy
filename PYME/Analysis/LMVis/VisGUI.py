@@ -86,6 +86,8 @@ class VisGUIFrame(wx.Frame):
         self._flags = 0
         
         self.pipeline = pipeline.Pipeline(visFr=self)
+        
+        #self.Quads = None
                
         self.SetMenuBar(self.CreateMenuBar())
 
@@ -181,12 +183,13 @@ class VisGUIFrame(wx.Frame):
     def OnIdle(self, event):
         if self.glCanvas.init and not self.refv:
             self.refv = True
-            print self.viewMode, self.colData
+            print((self.viewMode, self.colData))
             
             self.RefreshView()
             self.displayPane.OnPercentileCLim(None)
             self.Refresh()
-            print 'refreshed'
+            self.Update()
+            print('refreshed')
 
     def AddPage(self, page=None, select=False,caption='Dummy', update=True):
         if update:
@@ -210,6 +213,7 @@ class VisGUIFrame(wx.Frame):
 
     def OnMove(self, event):
         self.Refresh()
+        self.Update()
         event.Skip()      
 
     def OnQuit(self, event):
@@ -352,7 +356,7 @@ class VisGUIFrame(wx.Frame):
         pointQT.QT_MAXRECORDS = leafSize
         self.stQTSNR.SetLabel('Effective SNR = %3.2f' % pylab.sqrt(pointQT.QT_MAXRECORDS/2.0))
 
-        self.Quads = None
+        self.pipeline.Quads = None
         self.RefreshView()
 
 
@@ -481,9 +485,9 @@ class VisGUIFrame(wx.Frame):
         colData = ['<None>']
 
         if not self.pipeline.colourFilter == None:
-            colData += self.pipeline.keys()
+            colData += list(self.pipeline.keys())
 
-        colData += self.pipeline.GeneratedMeasures.keys()
+        colData += list(self.pipeline.GeneratedMeasures.keys())
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(pan, -1, 'Colour:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
@@ -511,9 +515,9 @@ class VisGUIFrame(wx.Frame):
             colData = ['<None>']
 
             if not self.pipeline.colourFilter == None:
-                colData += self.pipeline.keys()
+                colData += list(self.pipeline.keys())
 
-            colData += self.pipeline.GeneratedMeasures.keys()
+            colData += list(self.pipeline.GeneratedMeasures.keys())
 
             self.chPointColour.Clear()
             for cd in colData:
@@ -762,8 +766,9 @@ class VisGUIFrame(wx.Frame):
     def OnView3DTriangles(self,event):
         if 'z' in self.pipeline.keys():
             if not 'glCanvas3D' in dir(self):
-                self.glCanvas3D = gl_render3D.LMGLCanvas(self)
-                self.AddPage(page=self.glCanvas3D, select=True, caption='3D')
+                #self.glCanvas3D = gl_render3D.LMGLCanvas(self)
+                #self.AddPage(page=self.glCanvas3D, select=True, caption='3D')
+                self.glCanvas3D = gl_render3D.showGLFrame()
 
             self.glCanvas3D.setTriang(self.pipeline['x'], 
                                       self.pipeline['y'], 
@@ -904,9 +909,9 @@ class VisGUIFrame(wx.Frame):
             #print 'Skipping %d rows' %args['SkipRows']
             dlg.Destroy()
 
-        print 'Creating Pipeline'
+        print('Creating Pipeline')
         self.pipeline.OpenFile(filename, **args)
-        print 'Pipeline Created'
+        print('Pipeline Created')
         self.SetTitle('PYME Visualise - ' + filename)
         
         #############################
@@ -915,7 +920,7 @@ class VisGUIFrame(wx.Frame):
         self._createNewTabs()
         
         self.CreateFoldPanel()
-        print 'Gui stuff done'
+        print('Gui stuff done')
         
         self.SetFit()
             
@@ -1014,12 +1019,12 @@ class VisGUIFrame(wx.Frame):
             
 
         elif self.viewMode == 'quads':
-            if self.Quads == None:
+            if self.pipeline.Quads == None:
                 status = statusLog.StatusLogger("Generating QuadTree ...")
-                self.GenQuads()
+                self.pipeline.GenQuads()
                 
 
-            self.glCanvas.setQuads(self.Quads)
+            self.glCanvas.setQuads(self.pipeline.Quads)
 
         elif self.viewMode == 'interp_triangles':
             self.glCanvas.setIntTriang(self.pipeline.getTriangles(), self.pointColour())

@@ -14,10 +14,10 @@
 from taskServerMP import *
 taskQueueName = 'PrivateTaskQueues.%s' % compName
 def main():
-    print 'foo'
+    print('foo')
     profile = False
     if len(sys.argv) > 1 and sys.argv[1] == '-p':
-        print 'profiling'
+        print('profiling')
         profile = True
         from PYME.mProfile import mProfile
         mProfile.profileOn(['taskServerMP.py', 'HDFTaskQueue.py', 'TaskQueue.py'])

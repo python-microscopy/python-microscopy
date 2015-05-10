@@ -25,11 +25,21 @@
 import glob
 import os
 
-allmodules = [os.path.splitext(os.path.split(p)[-1])[0] for p in glob.glob(__path__[0] + '/[a-zA-Z]*.py')]
-allmodules.sort()
+localmodules = [os.path.splitext(os.path.split(p)[-1])[0] for p in glob.glob(__path__[0] + '/[a-zA-Z]*.py')]
+
+modLocations = {}
+for m in localmodules:
+    modLocations[m] = ['PYME', 'DSView', 'modules'] 
 
 
-basemodules = ['shell', 'metadataView', 'eventView', 'deconvolution', 'tiling']
+def allmodules():
+    am = modLocations.keys()
+    am.sort()
+    
+    return am
+
+
+basemodules = ['shell', 'metadataView', 'eventView', 'deconvolution', 'tiling', 'recipes']
 liteModules = ['filtering', 'cropping','composite', 'profilePlotting', 'splitter', 'synchronise']
 
 modeModules = {
@@ -46,7 +56,8 @@ modeModules = {
 }
 
 def loadModule(modName, dsviewer):
-    mod = __import__('PYME.DSView.modules.' + modName, fromlist=['PYME', 'DSView', 'modules'])
+    ml = modLocations[modName]
+    mod = __import__('.'.join(ml) + '.' + modName, fromlist=ml)
     mod.Plug(dsviewer)
 
     dsviewer.installedModules.append(modName)

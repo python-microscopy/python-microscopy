@@ -21,7 +21,7 @@
 #
 ##################
 
-import rend_im
+from . import rend_im
 import PYME.cSMI as example
 import scipy
 
@@ -61,7 +61,16 @@ class NoiseMaker:
         F2 = 1.0/EMCCDTheory.FSquared(M, self.NGainElements)
         #print im.min(), F2, self.QE, self.background
         #print F2
+        #print im.max()
         return self.ADOffset + M*scipy.random.poisson(int(self.shutterOpen)*(im + self.background)*self.QE*F2)/(self.ElectronsPerCount*F2) + self.ReadoutNoise*scipy.random.standard_normal(im.shape)/self.ElectronsPerCount
+        
+    def getbg(self):
+        M = EMCCDTheory.M((80. + self.EMGain)/(255 + 80.), self.vbreakdown, self.temperature, self.NGainElements, 2.2)
+        F2 = 1.0/EMCCDTheory.FSquared(M, self.NGainElements)
+        #print im.min(), F2, self.QE, self.background
+        #print F2
+        #print im.max()
+        return self.ADOffset + M*(int(self.shutterOpen)*(0 + self.background)*self.QE*F2)/(self.ElectronsPerCount*F2) 
 
 
 
@@ -70,7 +79,7 @@ class NoiseMaker:
 #calculate image in a separate thread to maintain GUI reponsiveness
 class compThread(threading.Thread):
 #class compThread(processing.Process):
-    def __init__(self,XVals, YVals,zPiezo, zOffset, fluors, noisemaker, laserPowers, intTime, contMode = True, bufferlength=20, biplane = False, biplane_z = 500, xpiezo=None, ypiezo=None, illumFcn = 'ConstIllum'):
+    def __init__(self,XVals, YVals,zPiezo, zOffset, fluors, noisemaker, laserPowers, intTime, contMode = True, bufferlength=100, biplane = False, biplane_z = 500, xpiezo=None, ypiezo=None, illumFcn = 'ConstIllum'):
         threading.Thread.__init__(self)
         self.XVals = XVals
         self.YVals = YVals
@@ -101,8 +110,8 @@ class compThread(threading.Thread):
         self.stopAq = False
         self.startAq = False
 
-        print laserPowers
-        print intTime
+        print(laserPowers)
+        print(intTime)
 
         #self.frameLock = threading.Lock()
         #self.frameLock.acquire()
@@ -132,7 +141,9 @@ class compThread(threading.Thread):
                 else:
                     self.im = self.noiseMaker.noisify(rend_im.simPalmImFI(self.XVals + xp, self.YVals + yp, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime, position=[xp,yp,zPos], illuminationFunction=self.illumFcn))[:,:].astype('uint16')
             else:
-                self.im = self.noiseMaker.noisify(rend_im.simPalmImFSpecI(self.XVals, self.YVals, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
+                #self.im = self.noiseMaker.noisify(rend_im.simPalmImFSpecI(self.XVals, self.YVals, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
+                #self.im = self.noiseMaker.noisify(rend_im.simPalmImFI(self.XVals, self.YVals, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
+                self.im = self.noiseMaker.noisify(rend_im.simPalmImFI(self.XVals + xp, self.YVals + yp, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime, position=[xp,yp,zPos], illuminationFunction=self.illumFcn, Chan2XOffset=70.*self.XVals.shape[0]/4., Chan2ZOffset=self.deltaZ))[:,:].astype('uint16')
 
             self.buffer[:,:,self.bufferWritePos] = self.im
             self.bufferWritePos +=1
@@ -252,33 +263,33 @@ class FakeCamera:
         
 
     def GetCamType(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def GetSerialNumber(self):
         return 0
     def GetDataType(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def GetADBits(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def GetMaxDigit(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def GetNumberCh(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def GetBytesPerPoint(*args):
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def GetCCDType(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def GetCamID(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def GetCamVer(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def SetTrigMode(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def GetTrigMode(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def SetDelayTime(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def GetDelayTime(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     
     def SetIntegTime(self, iTime): 
         self.intTime=iTime*1e-3
@@ -287,17 +298,17 @@ class FakeCamera:
         return self.intTime
     
     def SetROIMode(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def GetROIMode(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def SetCamMode(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def GetCamMode(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def SetBoardNum(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def GetBoardNum(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     
     def GetCCDWidth(self): 
         return len(self.XVals)
@@ -305,19 +316,19 @@ class FakeCamera:
         return len(self.YVals)
     
     def SetHorizBin(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def GetHorizBin(*args):
         return 0
         #raise Exception, 'Not implemented yet!!'
     def GetHorzBinValue(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def SetVertBin(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def GetVertBin(*args):
         return 0
         #raise Exception, 'Not implemented yet!!'
     def GetNumberChannels(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     
     def GetElectrTemp(*args): 
         return 25
@@ -400,9 +411,9 @@ class FakeCamera:
         return 0
 
     def StartLifePreview(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def StopLifePreview(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def ExpReady(self):
         #return not self.compTCur.isAlive() #thread has finished -> a picture is available
@@ -411,7 +422,7 @@ class FakeCamera:
         #raise Exception, 'Not implemented yet!!'
 
     def GetBWPicture(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     
     def ExtractColor(self, chSlice, mode): 
         #im = self.noiseMaker.noisify(rend_im.simPalmIm(self.XVals, self.YVals, self.zPiezo.GetPos() - self.zOffset,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime*1e-3))[:,:].astype('uint16')
@@ -421,7 +432,7 @@ class FakeCamera:
 	    chSlice[:,:] = self.compT.getIm() #grab image from completed computation thread
 	    #self.compTOld = None #set computation thread to None such that we get an error if we try and obtain the same result twice
 	except AttributeError:  # triggered if called with None
-	    print "Grabbing problem: probably called with 'None' thread"
+	    print("Grabbing problem: probably called with 'None' thread")
         #pylab.figure(2)
         #pylab.hist([f.state for f in self.fluors], [0, 1, 2, 3], hold=False)
         #pylab.gca().set_xticks([0.5,1.5,2.5,3.5])
@@ -429,7 +440,7 @@ class FakeCamera:
         #pylab.show()
         
     def CheckCoordinates(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     #new fcns for Andor compatibility
     def GetNumImsBuffered(self):
@@ -464,6 +475,11 @@ class FakeCamera:
         realEMGain = ccdCalibrator.getCalibratedCCDGain(self.GetEMGain(), self.GetCCDTempSetPoint())
         if not realEMGain == None:
             mdh.setEntry('Camera.TrueEMGain', realEMGain)
+            
+        if 'spec' in self.fluors.fl.dtype.fields.keys(): #set the splitter parameters
+            mdh['Splitter.Channel0ROI'] = [0,0,128, 256]
+            mdh['Splitter.Channel1ROI'] = [128,0,128, 256]
+            mdh['Splitter.Flip'] = False
 
     #functions to make us look more like andor camera
     def GetEMGain(self):
@@ -508,7 +524,7 @@ class FakeCamera:
     def __getattr__(self, name):
         if name in dir(self.noiseMaker):
             return self.noiseMaker.__dict__[name]
-        else:  raise AttributeError, name  # <<< DON'T FORGET THIS LINE !!
+        else:  raise AttributeError(name)  # <<< DON'T FORGET THIS LINE !!
         
     def __del__(self):
         self.Shutdown()

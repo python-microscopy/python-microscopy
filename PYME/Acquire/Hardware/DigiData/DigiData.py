@@ -21,7 +21,7 @@
 #
 ##################
 
-from axDD132x import *
+from .axDD132x import *
 from ctypes import *
 from ctypes.wintypes import *
 

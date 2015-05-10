@@ -22,13 +22,22 @@
 
 import wx
 import wx.lib.agw.aui as aui
+#import PYME.misc.aui as aui
+import matplotlib
+matplotlib.use('WxAgg')
 
 import pylab
+pylab.ion()
 import modules
+
+try:
+   import PYMEnf.DSView.modules
+except ImportError:
+    pass
 
 import PYME.misc.autoFoldPanel as afp
 #from PYME.DSView.arrayViewPanel import ArraySettingsAndViewPanel
-from PYME.DSView.arrayViewPanel import ArrayViewPanel
+#from PYME.DSView.arrayViewPanel import ArrayViewPanel
 from PYME.DSView.displayOptions import DisplayOpts
 from PYME.DSView.DisplayOptionsPanel import OptionsPanel
 #from PYME.DSView.OverlaysPanel import OverlayPanel
@@ -42,7 +51,7 @@ openViewers = weakref.WeakValueDictionary()
 
 class dt(wx.FileDropTarget):
     def OnDropFiles(self, x, y, filenames):
-        print filenames
+        print(filenames)
         
         for filename in filenames:
             im = ImageStack(filename=filename)
@@ -55,6 +64,8 @@ class DSViewFrame(wx.Frame):
     def __init__(self, image,  parent=None, title='', mode='LM', 
                  size = (800,700), glCanvas=None):
         wx.Frame.__init__(self,parent, -1, title,size=size, pos=(1100, 300))
+        
+        self.SetAutoLayout(True)
 
         self.mode = mode
         self.glCanvas = glCanvas
@@ -105,6 +116,7 @@ class DSViewFrame(wx.Frame):
         self.mainFrame = weakref.ref(self)
         #self.do = self.vp.do
         
+        self._menus = {}
         # Menu Bar
         self.menubar = wx.MenuBar()
         self.SetMenuBar(self.menubar)
@@ -115,6 +127,7 @@ class DSViewFrame(wx.Frame):
 
         #a submenu for modules to hook and install saving functions into
         self.save_menu = wx.Menu()
+        self._menus['Save'] = self.save_menu
         tmp_menu.AppendMenu(-1, 'Save &Results', self.save_menu)
         
         tmp_menu.AppendSeparator()
@@ -123,16 +136,19 @@ class DSViewFrame(wx.Frame):
 
         self.view_menu = wx.Menu()
         self.menubar.Append(self.view_menu, "&View")
+        self._menus['View'] = self.view_menu
 
         #'extras' menu for modules to install stuff into
         self.mProcessing = wx.Menu()
         self.menubar.Append(self.mProcessing, "&Processing")
+        self._menus['Processing'] = self.mProcessing
 
         # Menu Bar end
         wx.EVT_MENU(self, wx.ID_OPEN, self.OnOpen)
         wx.EVT_MENU(self, wx.ID_SAVE, self.OnSave)
         wx.EVT_MENU(self, wx.ID_SAVEAS, self.OnExport)
         wx.EVT_CLOSE(self, self.OnCloseWindow)
+        wx.EVT_SIZE(self, self.OnSize)
 
 		
         self.statusbar = self.CreateStatusBar(1, wx.ST_SIZEGRIP)
@@ -188,6 +204,12 @@ class DSViewFrame(wx.Frame):
         
         
         openViewers[self.image.filename] = self
+        
+    def OnSize(self, event):
+        #self.Layout()
+        self._mgr.Update()
+        #self.Refresh()
+        #self.Update()
 
     def AddPage(self, page=None, select=True,caption='Dummy'):
         if self.pane0 == None:
@@ -199,7 +221,7 @@ class DSViewFrame(wx.Frame):
             self._mgr.Update()
             pn = self._mgr.GetPaneByName(self.pane0)
             if pn.IsNotebookPage():
-                print pn.notebook_id
+                print((pn.notebook_id))
                 nbs = self._mgr.GetNotebooks()
                 if len(nbs) > pn.notebook_id:
                     currPage = nbs[pn.notebook_id].GetSelection()
@@ -218,12 +240,17 @@ class DSViewFrame(wx.Frame):
                     nb = self._mgr.GetNotebooks()[0]
                     nb.SetSelection(0)
 
-        self._mgr.Update()
+               
+        wx.CallAfter(self._mgr.Update)
+        #self.Layout() 
+        #self.OnSize(None)
+        #self.OnSize(None)
+        
 
     def CreateModuleMenu(self):
         self.modMenuIds = {}
         self.mModules = wx.Menu()
-        for mn in modules.allmodules:
+        for mn in modules.allmodules():
             id = wx.NewId()
             self.mModules.AppendCheckItem(id, mn)
             self.modMenuIds[id] = mn
@@ -233,6 +260,23 @@ class DSViewFrame(wx.Frame):
             wx.EVT_MENU(self, id, self.OnToggleModule)
             
         self.menubar.Append(self.mModules, "&Modules")
+        
+    def AddMenuItem(self, menuName, itemName='', itemCallback = None, itemType='normal', helpText = ''):   
+        mItem = None
+        if not menuName in self._menus.keys():
+            menu = wx.Menu()
+            self.menubar.Insert(self.menubar.GetMenuCount()-1, menu, menuName)
+            self._menus[menuName] = menu
+        else:
+            menu = self._menus[menuName]
+        
+        if itemType == 'normal':        
+            mItem = menu.Append(wx.ID_ANY, itemName, helpText, wx.ITEM_NORMAL)
+            self.Bind(wx.EVT_MENU, itemCallback, mItem)
+        elif itemType == 'separator':
+            menu.AppendSeparator()
+            
+        return mItem
 
     def OnToggleModule(self, event):
         id = event.GetId()
@@ -277,6 +321,7 @@ class DSViewFrame(wx.Frame):
 
         self._mgr.Update()
         self.Refresh()
+        self.Update()
 
 
     def update(self):
@@ -373,10 +418,14 @@ class MyApp(wx.App):
 
         op.add_option('-m', '--mode', dest='mode', help="mode (or personality), as defined in PYME/DSView/modules/__init__.py")
         op.add_option('-q', '--queueURI', dest='queueURI', help="the Pyro URI of the task queue - to avoid having to use the nameserver lookup")
+        op.add_option('-t', '--test', dest='test', help="Show a test image", action="store_true", default=False)
 
         options, args = op.parse_args()
-
-        if len (args) > 0:
+        
+        if options.test:
+            import pylab
+            im = ImageStack(pylab.randn(100,100))
+        elif len (args) > 0:
             im = ImageStack(filename=args[0], queueURI=options.queueURI)
         else:
             im = ImageStack(queueURI=options.queueURI)

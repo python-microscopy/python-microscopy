@@ -10,7 +10,7 @@ import ctypes.util
 import ctypes.wintypes
 import warnings
 
-from uc480_h import *
+from .uc480_h import *
 from ctypes.wintypes import BYTE
 from ctypes.wintypes import WORD
 from ctypes.wintypes import DWORD
@@ -78,6 +78,8 @@ class REVISIONINFO(ctypes.Structure):
 #} REVISIONINFO, *PREVISIONINFO;
 PREVISIONINFO = ctypes.POINTER(REVISIONINFO)
 
+
+
 class UC480_CAMERA_INFO(ctypes.Structure):
 	_fields_ = [("dwCameraID",DWORD  ),	# this is the user defineable camera ID
 				("dwDeviceID",DWORD  ),	# this is the systems enumeration ID
@@ -89,18 +91,34 @@ class UC480_CAMERA_INFO(ctypes.Structure):
 #}UC480_CAMERA_INFO, *PUC480_CAMERA_INFO;
 PUC480_CAMERA_INFO = ctypes.POINTER(UC480_CAMERA_INFO)
 
+class UEYE_CAMERA_INFO(ctypes.Structure):
+	_fields_ = [("dwCameraID",DWORD  ),	# this is the user defineable camera ID
+				("dwDeviceID",DWORD  ),	# this is the systems enumeration ID
+				("dwSensorID",DWORD  ),	# this is the sensor ID e.g. IS_SENSOR_C0640R13M
+				("dwInUse",DWORD  ),	# flag, whether the camera is in use or not
+				("SerNo[16]",IS_CHAR*16),	# serial numer of the camera
+				("Model[16]",IS_CHAR*16),	# model name of the camera
+                       ("dwStatus", DWORD),
+                       ("dwReserved[2]", DWORD*2),
+                       ("FullModelName", IS_CHAR*32),
+				("dwReserved2[5]",DWORD  *5)] #
+#}UC480_CAMERA_INFO, *PUC480_CAMERA_INFO;
+PUEYE_CAMERA_INFO = ctypes.POINTER(UEYE_CAMERA_INFO)
+
+
 if os.name=='nt':
     # UNTESTED: Please report results to http://code.google.com/p/pylibuc480/issues
     libname = 'uc480'
     include_uc480_h = os.environ['PROGRAMFILES']+'\\Thorlabs DCU camera\\Develop\\Include\\uc480.h'
     lib = ctypes.util.find_library(libname)
     if lib is None:
-        print 'uc480.dll not found'
+        print('uc480.dll not found')
         lib = libname
 
 		
 #libuc480 = ctypes.cdll.LoadLibrary(lib)
-libuc480 = ctypes.WinDLL('uc480_64')
+#libuc480 = ctypes.WinDLL('uc480_64')
+libuc480 = ctypes.WinDLL('ueye_api_64')
 if libuc480 is not None:
 	uc480_h_name = 'uc480_h'
 	try:
@@ -110,7 +128,7 @@ if libuc480 is not None:
 	except ImportError:
 		uc480_h = None
 	if uc480_h is None:
-		assert os.path.isfile (include_uc480_h), `include_uc480_h`
+		assert os.path.isfile(include_uc480_h), repr(include_uc480_h)
 		d = {}
 		l = ['# This file is auto-generated. Do not edit!']
 		error_map = {}
@@ -144,7 +162,7 @@ if libuc480 is not None:
 				d[name] = eval(value)
 				l.append('%s = %s' % (name, value))
 			elif value.startswith('UC'):
-				print value
+				print(value)
 				d[name] = unicode(value[3:-1])
 				l.append('%s = unicode("%s")' % (name, value[3:-1]))
 			elif d.has_key(value):
@@ -156,11 +174,11 @@ if libuc480 is not None:
 				pass
 		l.append('error_map = %r' % (error_map))
 		fn = os.path.join (os.path.dirname(os.path.abspath (__file__)), uc480_h_name+'.py')
-		print 'Generating %r' % (fn)
+		print(('Generating %r' % (fn)))
 		f = open(fn, 'w')
 		f.write ('\n'.join(l) + '\n')
 		f.close()
-		print 'Please upload generated file %r to http://code.google.com/p/pylibuc480/issues' % (fn)
+		print(('Please upload generated file %r to http://code.google.com/p/pylibuc480/issues' % (fn)))
 	else:
 		pass
 		#d = uc480_h.__dict__
@@ -216,7 +234,7 @@ def CALL(name, *args):
 	new_args = []
 	for a in args:		
 		if isinstance (a, unicode):
-			print name, 'argument',a, 'is unicode'
+			print((name, 'argument',a, 'is unicode'))
 			new_args.append (str (a))
 		else:
 			new_args.append (a)
@@ -248,7 +266,7 @@ class camera(HCAM):
 		self.image = c_char_p()
 		self.id = c_int()
 		CALL('AllocImageMem',self,c_int(width),c_int(height),c_int(bitpixel),ctypes.byref(self.image),ctypes.byref(self.id))
-		print self.id
+		print((self.id))
 #		CALL('AllocImageMem',self,c_int(width),c_int(height),c_int(bitpixel),self.image.data,ctypes.byref(self.id))
 	
 	def FreeImageMem (self):
@@ -262,8 +280,8 @@ class camera(HCAM):
 		r = CALL("CopyImageMem",self,self.image,self.id,self.data.ctypes.data)
 		if r == -1:
 			self.GetError()
-			print self.err
-			print self.errMessage.value
+			print((self.err))
+			print((self.errMessage.value))
 		return 
 
 	def GetError(self):
@@ -275,7 +293,7 @@ class camera(HCAM):
 		CALL("SetImageMem",self,self.image,self.id)
 		
 	def SetImageSize(self,x=IS_GET_IMAGE_SIZE_X_MAX,y=IS_GET_IMAGE_SIZE_X_MAX):
-		print IS_GET_IMAGE_SIZE_X_MAX
+		print(IS_GET_IMAGE_SIZE_X_MAX)
 		CALL("SetImageSize",self,c_int(x),c_int(y))
 		
 	def SetImagePos(self,x=0,y=0):

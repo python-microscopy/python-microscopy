@@ -1,0 +1,245 @@
+PYME.Acquire.Hardware package
+=============================
+
+Subpackages
+-----------
+
+.. toctree::
+
+    PYME.Acquire.Hardware.AndorIXon
+    PYME.Acquire.Hardware.AndorNeo
+    PYME.Acquire.Hardware.DigiData
+    PYME.Acquire.Hardware.Mercury
+    PYME.Acquire.Hardware.Old
+    PYME.Acquire.Hardware.Piezos
+    PYME.Acquire.Hardware.Simulator
+    PYME.Acquire.Hardware.Spectrometer
+    PYME.Acquire.Hardware.uc480
+
+Submodules
+----------
+
+PYME.Acquire.Hardware.EMCCDTheory module
+----------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.EMCCDTheory
+    :members:
+    
+    :show-inheritance:
+
+PYME.Acquire.Hardware.FilterWheel module
+----------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.FilterWheel
+    :members:
+    
+    :show-inheritance:
+
+PYME.Acquire.Hardware.FocCorr module
+------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.FocCorr
+    :members:
+    
+    :show-inheritance:
+
+PYME.Acquire.Hardware.FocCorrR module
+-------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.FocCorrR
+    :members:
+    
+    :show-inheritance:
+
+PYME.Acquire.Hardware.FrFilter module
+-------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.FrFilter
+    :members:
+    
+    :show-inheritance:
+
+PYME.Acquire.Hardware.LaserControlFrame module
+----------------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.LaserControlFrame
+    :members:
+    
+    :show-inheritance:
+
+PYME.Acquire.Hardware.NikonTE2000 module
+----------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.NikonTE2000
+    :members:
+    
+    :show-inheritance:
+
+PYME.Acquire.Hardware.NikonTi module
+------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.NikonTi
+    :members:
+    
+    :show-inheritance:
+
+PYME.Acquire.Hardware.NikonTiGUI module
+---------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.NikonTiGUI
+    :members:
+    
+    :show-inheritance:
+
+PYME.Acquire.Hardware.OrielCornerstone module
+---------------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.OrielCornerstone
+    :members:
+    
+    :show-inheritance:
+
+PYME.Acquire.Hardware.PM100USB module
+-------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.PM100USB
+    :members:
+    
+    :show-inheritance:
+
+PYME.Acquire.Hardware.TiLightCrafter module
+-------------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.TiLightCrafter
+    :members:
+    
+    :show-inheritance:
+
+PYME.Acquire.Hardware.ccdAdjPanel module
+----------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.ccdAdjPanel
+    :members:
+    
+    :show-inheritance:
+
+PYME.Acquire.Hardware.ccdCalibrator module
+------------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.ccdCalibrator
+    :members:
+    
+    :show-inheritance:
+
+PYME.Acquire.Hardware.cobaltLaser module
+----------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.cobaltLaser
+    :members:
+    
+    :show-inheritance:
+
+PYME.Acquire.Hardware.fakeShutters module
+-----------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.fakeShutters
+    :members:
+    
+    :show-inheritance:
+
+PYME.Acquire.Hardware.focusKeys module
+--------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.focusKeys
+    :members:
+    
+    :show-inheritance:
+
+PYME.Acquire.Hardware.frZStage module
+-------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.frZStage
+    :members:
+    
+    :show-inheritance:
+
+PYME.Acquire.Hardware.fw102 module
+----------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.fw102
+    :members:
+    
+    :show-inheritance:
+
+PYME.Acquire.Hardware.ioslave module
+------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.ioslave
+    :members:
+    
+    :show-inheritance:
+
+PYME.Acquire.Hardware.lasers module
+-----------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.lasers
+    :members:
+    
+    :show-inheritance:
+
+PYME.Acquire.Hardware.phoxxLaser module
+---------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.phoxxLaser
+    :members:
+    
+    :show-inheritance:
+
+PYME.Acquire.Hardware.priorLumen module
+---------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.priorLumen
+    :members:
+    
+    :show-inheritance:
+
+PYME.Acquire.Hardware.setup module
+----------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.setup
+    :members:
+    
+    :show-inheritance:
+
+PYME.Acquire.Hardware.spacenav module
+-------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.spacenav
+    :members:
+    
+    :show-inheritance:
+
+PYME.Acquire.Hardware.splitter module
+-------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.splitter
+    :members:
+    
+    :show-inheritance:
+
+PYME.Acquire.Hardware.thorlabsPiezo module
+------------------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.thorlabsPiezo
+    :members:
+    
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: PYME.Acquire.Hardware
+    :members:
+    
+    :show-inheritance:

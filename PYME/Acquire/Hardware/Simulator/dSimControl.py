@@ -25,13 +25,13 @@
 
 import wx
 import wx.grid
-import fluor
-import wormlike2
+from . import fluor
+from . import wormlike2
 import pylab
 import scipy
 import numpy as np
-import os
-import rend_im
+#import os
+from . import rend_im
 
 def create(parent):
     return dSimControl(parent)
@@ -84,13 +84,13 @@ class dSimControl(wx.Panel):
                                   wx.VERTICAL)        
         hsizer=wx.BoxSizer(wx.HORIZONTAL)
 
-        self.tNumFluorophores = wx.TextCtrl(self, -1, value='1000', size=(60, -1))
+        self.tNumFluorophores = wx.TextCtrl(self, -1, value='10000', size=(60, -1))
         hsizer.Add(self.tNumFluorophores, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
 
         hsizer.Add(wx.StaticText(self,-1,'fluorophores distributed evenly along'), 
                    0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
 
-        self.tKbp = wx.TextCtrl(self, -1, size=(60, -1), value='1000')
+        self.tKbp = wx.TextCtrl(self, -1, size=(60, -1), value='200000')
         hsizer.Add(self.tKbp, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
         
         hsizer.Add(wx.StaticText(self,-1,'nm'), 
@@ -107,8 +107,13 @@ class dSimControl(wx.Panel):
         
         hsizer.Add(wx.StaticText(self,-1,'Persistence length [nm]:'), 
                    0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
-        self.tPersist = wx.TextCtrl(self, -1, size=(60, -1), value='150')
+        self.tPersist = wx.TextCtrl(self, -1, size=(60, -1), value='1500')
         hsizer.Add(self.tPersist, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
+        
+        hsizer.Add(wx.StaticText(self,-1,'Z scale:'), 
+                   0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
+        self.tZScale = wx.TextCtrl(self, -1, size=(60, -1), value='1.0')
+        hsizer.Add(self.tZScale, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
 
         self.cbFlatten = wx.CheckBox(self, -1, 'flatten (set z to 0)')
         self.cbFlatten.SetValue(False)
@@ -122,6 +127,8 @@ class dSimControl(wx.Panel):
         
         hsizer=wx.BoxSizer(wx.HORIZONTAL)
         
+        self.stCurObjPoints = wx.StaticText(self, -1, 'Current object has 0 points')
+        hsizer.Add(self.stCurObjPoints, 0, wx.ALL, 2)
         hsizer.AddStretchSpacer()
 
         self.bLoadPoints = wx.Button(self, -1,'Load From File')
@@ -134,9 +141,9 @@ class dSimControl(wx.Panel):
         
         sbsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 2)
 
-        self.stCurObjPoints = wx.StaticText(self, -1, 'Current object has 0 points')        
+                
         
-        sbsizer.Add(self.stCurObjPoints, 0, wx.ALL, 2)
+        
         
         vsizer.Add(sbsizer, 0, wx.ALL|wx.EXPAND, 2)
         
@@ -170,7 +177,7 @@ class dSimControl(wx.Panel):
         sbsizer2.Add(wx.StaticText(self, -1, '/mWs       Probe Laser:'), 0, 
                      wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
 
-        self.tExProbe = wx.TextCtrl(self, -1, value='10')
+        self.tExProbe = wx.TextCtrl(self, -1, value='100')
         sbsizer2.Add(self.tExProbe, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
         
         sbsizer2.Add(wx.StaticText(self, -1, '/mWs'), 0, 
@@ -293,13 +300,20 @@ class dSimControl(wx.Panel):
         #wc = wormlike2.fibre30nm(kbp, 10*kbp/numFluors)
         wc = wormlike2.wiglyFibre(kbp, persistLength, kbp/numFluors)
         
-        wc.xp -= wc.xp.mean() + 128*70
-        wc.xp = np.mod(wc.xp, 256*70) - 128*70
+        if self.cbColour.GetValue():        
+            wc.xp -= wc.xp.mean() + 64*70
+            wc.xp = np.mod(wc.xp, 128*70) - 64*70
+        else:
+            wc.xp -= wc.xp.mean() + 128*70
+            wc.xp = np.mod(wc.xp, 256*70) - 128*70
         wc.yp -= wc.yp.mean() + 128*70
         wc.yp = np.mod(wc.yp, 256*70) - 128*70
         wc.zp -= wc.zp.mean()
         
+        wc.zp *= float(self.tZScale.GetValue())
+        
         self.points = []
+        
         for i in range(len(wc.xp)):
             if not self.cbFlatten.GetValue():
                 if self.cbColour.GetValue():
@@ -318,7 +332,7 @@ class dSimControl(wx.Panel):
     def OnBLoadPointsButton(self, event):
         fn = wx.FileSelector('Read point positions from file')
         if fn == None:
-            print 'No file selected'
+            print('No file selected')
             return
 
         if fn.endswith('.npy'):
@@ -332,7 +346,7 @@ class dSimControl(wx.Panel):
     def OnBSavePointsButton(self, event):
         fn = wx.SaveFileSelector('Save point positions to file', '.txt')
         if fn == None:
-            print 'No file selected'
+            print('No file selected')
             return
 
         #self.points = pylab.load(fn)
@@ -342,7 +356,8 @@ class dSimControl(wx.Panel):
 
     def OnBSetPSF(self, event):
         fn = wx.FileSelector('Read PSF from file', default_extension='psf', wildcard='PYME PSF Files (*.psf)|*.psf')
-        if fn == None:
+        print(fn)
+        if fn == '':
             rend_im.genTheoreticalModel(rend_im.MetaData.TIRFDefault)
             return
         else:
@@ -353,7 +368,7 @@ class dSimControl(wx.Panel):
         transTens = self.getTensorFromGrids()
         exCrosses = [float(self.tExSwitch.GetValue()), float(self.tExProbe.GetValue())]
         #fluors = [fluor.fluorophore(x, y, z, transTens, exCrosses, activeState=self.activeState) for (x,y,z) in self.points]
-        points_a = scipy.array(self.points)
+        points_a = scipy.array(self.points).astype('f')
         x = points_a[:,0]
         y = points_a[:,1]
         z = points_a[:,2]

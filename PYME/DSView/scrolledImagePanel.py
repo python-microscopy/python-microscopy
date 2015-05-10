@@ -29,6 +29,10 @@ class ImagePanel(wx.Panel):
 
         self.parent = parent
         self.renderer = renderer
+        
+        self.recordFileName = None
+        self.record = False
+        self.frameNum = 0
 
 
         wx.EVT_PAINT(self, self.OnPaint)
@@ -39,7 +43,7 @@ class ImagePanel(wx.Panel):
 
     def OnPaint(self,event):
         DC = wx.PaintDC(self)
-        self.PrepareDC(DC)
+        #self.PrepareDC(DC)
         
         s = self.GetClientSize()
         MemBitmap = wx.EmptyBitmap(s.GetWidth(), s.GetHeight())
@@ -51,6 +55,11 @@ class ImagePanel(wx.Panel):
             self.renderer(MemDC);
             DC.Blit(0, 0, s.GetWidth(), s.GetHeight(), MemDC, 0, 0)
             DC.EndDrawing()
+            
+            if self.record: #record the image sequence to a file
+                img = MemBitmap.ConvertToImage()
+                img.SaveFile(self.recordFileName % self.frameNum, wx.BITMAP_TYPE_PNG)
+                self.frameNum += 1
         finally:
             del MemDC
             del MemBitmap
@@ -145,7 +154,7 @@ class ScrolledImagePanel(wx.Panel):
 
     def OnScrollY(self,event):
         self.yOff = event.GetPosition()
-        print self.yOff
+        print((self.yOff))
 
         self.imagepanel.Refresh()
 

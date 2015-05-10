@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -25,6 +23,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="PYME 0.1 documentation" href="../index.html" />
     <link rel="next" title="PYMEAcquire" href="../PYMEAcquire.html" />
     <link rel="prev" title="Installation of PYME on windows with Enthought python" href="InstallationUsingWindowsInstaller.html" /> 
@@ -36,6 +35,12 @@
         <li class="right" style="margin-right: 10px">
           <a href="../genindex.html" title="General Index"
              accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
         <li class="right" >
           <a href="../PYMEAcquire.html" title="PYMEAcquire"
              accesskey="N">next</a> |</li>
@@ -115,10 +120,12 @@ problem other than that Pyro falls over with cryptic error messages.</li>
 <p>To make this whole process of finding and installing dependencies a little less painful,
 I&#8217;ve put together lists of required and recommended modules that can be used with
 <tt class="docutils literal"><span class="pre">pip</span></tt> to pull any remaining dependencies. Thus one would execute:</p>
-<div class="highlight-python"><pre>pip install -r recommended-modules.txt</pre>
+<div class="highlight-python"><div class="highlight"><pre>pip install -r recommended-modules.txt
+</pre></div>
 </div>
 <p>to get everything I think is going to be useful, or:</p>
-<div class="highlight-python"><pre>pip install -r required-modules.txt</pre>
+<div class="highlight-python"><div class="highlight"><pre>pip install -r required-modules.txt
+</pre></div>
 </div>
 <p>to get the bare essentials. Obviously this requires <a class="reference external" href="http://pypi.python.org/pypi/pip">pip</a>
 to be installed first. I would suggest installing at least numpy and scipy manually
@@ -137,7 +144,8 @@ packages first and then resort to <em>pip</em> for anything left over.</p>
 <div class="section" id="get-the-code">
 <h3>Get the code<a class="headerlink" href="#get-the-code" title="Permalink to this headline">¶</a></h3>
 <p>The code is stored in a mercurial repository. Get the current copy by doing</p>
-<div class="highlight-python"><pre>hg clone https://code.google.com/p/python-microscopy/</pre>
+<div class="highlight-python"><div class="highlight"><pre>hg clone https://code.google.com/p/python-microscopy/
+</pre></div>
 </div>
 <p>or the equivalent using a gui client (eg <a class="reference external" href="http://tortoisehg.bitbucket.org/">TortoiseHG</a>).
 Alternatively download the tarball corresponding to a particular release and extract.</p>
@@ -145,7 +153,8 @@ Alternatively download the tarball corresponding to a particular release and ext
 <div class="section" id="build-and-install">
 <h3>Build and install<a class="headerlink" href="#build-and-install" title="Permalink to this headline">¶</a></h3>
 <p>Open a terminal, change to the directory where you extracted the source and execute:</p>
-<div class="highlight-python"><pre>python setup.py install</pre>
+<div class="highlight-python"><div class="highlight"><pre>python setup.py install
+</pre></div>
 </div>
 <p>.</p>
 </div>
@@ -153,7 +162,8 @@ Alternatively download the tarball corresponding to a particular release and ext
 <h3>Alternatively, if you&#8217;re going to fiddle with the code<a class="headerlink" href="#alternatively-if-you-re-going-to-fiddle-with-the-code" title="Permalink to this headline">¶</a></h3>
 <p>This is mostly applicable when using the software for microscope control, where you
 are going to have to tweak some of the configuration codes.</p>
-<div class="highlight-python"><pre>python setup.py develop</pre>
+<div class="highlight-python"><div class="highlight"><pre>python setup.py develop
+</pre></div>
 </div>
 </div>
 <div class="section" id="windows">
@@ -307,6 +317,12 @@ machine) the microscope computer is mapped.</td>
           <a href="../genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
           <a href="../PYMEAcquire.html" title="PYMEAcquire"
              >next</a> |</li>
         <li class="right" >
@@ -320,7 +336,7 @@ machine) the microscope computer is mapped.</td>
     </div>
     <div class="footer">
         &copy; Copyright 2010, David Baddeley.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>

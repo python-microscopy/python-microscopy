@@ -1,0 +1,35 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html lang="en">
+<head>
+    <title>Cheat Set</title>
+
+</head>
+<body>
+
+    <h1>Training</h1>
+    
+    <table>
+    {% for obj in training %}
+        <tr>
+        <td>{{ loop.index0 }} </td>
+        <td><img src="{{ obj.fn }}"/></td>
+        <td><h2>{{ obj.cls }}</h2></td>
+        <tr>        
+    {% endfor %}
+    
+    </table>
+
+    <h1>Test</h1>
+    
+    <table>
+    {% for obj in test %}
+        <tr>
+        <td>{{ loop.index0 }} </td>
+        <td><img src="{{ obj.fn }}"/></td>
+        <td></td>
+        <tr>        
+    {% endfor %}
+    
+    </table>
+</body>
+</html>

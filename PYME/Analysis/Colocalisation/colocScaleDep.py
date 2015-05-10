@@ -21,10 +21,10 @@
 ##################
 import numpy as np
 from scipy import ndimage
-import correlationCoeffs
+from . import correlationCoeffs
 from pylab import *
-import edtColoc
-import Image
+from . import edtColoc
+from PIL import Image
 
 DIRNAME='/home/david/Desktop/coloc/'
 

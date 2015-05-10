@@ -96,6 +96,7 @@ class SizeReportCtrl(wx.PyControl):
     def OnSize(self, event):
     
         self.Refresh()
+        self.Update()
         
 
 #stolen from aui
@@ -249,6 +250,7 @@ class CaptionBar(wx.Window):
     def OnMouseEnterLeave(self, event):
         #event.ResumePropagation(2)
         #print event.ShouldPropagate()
+        #print 'mev'
         event.SetEventObject(self.parent)
         event.ResumePropagation(2)
         event.Skip()
@@ -418,6 +420,7 @@ class foldButton(wx.Window):
     def SetFolded(self, folded=True):
         self.folded = folded
         self.Refresh()
+        self.Update()
 
 
 class collapsingPane(foldingPane):
@@ -449,7 +452,7 @@ class collapsingPane(foldingPane):
         self.bFold.Bind(wx.EVT_LEFT_UP, self.OnFold)
 
     def OnFold(self, event):
-        print 'fold'
+        print('fold')
         if self.folded:
             self.Unfold()
             self.bFold.SetFolded(False)
@@ -535,7 +538,7 @@ class foldPanel(wx.Panel):
 #        self.priorities[ind] = math.ceil(sc)
         
         #if not pane.GetClientRect().Inside(event.GetPosition())
-        #print 'enter'
+        #print 'enter', pane
         pane.Unfold()
 
         #pane.Unfold()

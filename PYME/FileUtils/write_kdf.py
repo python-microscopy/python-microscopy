@@ -171,7 +171,7 @@ def WriteKhorosData(fname, d):
         TypeString = 'Unsigned Short'
     else:
         fid.close()
-        print 'Dont know about %ss ... fixme' % (d.dtype,)
+        print(('Dont know about %ss ... fixme' % (d.dtype,)))
         error()
     
     

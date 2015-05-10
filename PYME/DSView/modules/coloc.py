@@ -20,6 +20,7 @@
 #
 ##################
 import numpy
+import numpy as np
 import wx
 import pylab
 
@@ -89,11 +90,14 @@ class colocaliser:
         self.image = dsviewer.image
         
         PROC_COLOCALISE = wx.NewId()
+        PROC_COLOCALISE_EDT = wx.NewId()
         
-        
+        dsviewer.mProcessing.AppendSeparator()
         dsviewer.mProcessing.Append(PROC_COLOCALISE, "&Colocalisation", "", wx.ITEM_NORMAL)
+        dsviewer.mProcessing.Append(PROC_COLOCALISE_EDT, "EDT Colocalisation", "", wx.ITEM_NORMAL)
     
-        wx.EVT_MENU(dsviewer, PROC_COLOCALISE, self.OnColoc)
+        wx.EVT_MENU(dsviewer, PROC_COLOCALISE, self.OnColocBasic)
+        wx.EVT_MENU(dsviewer, PROC_COLOCALISE_EDT, self.OnColoc)
 
 
 
@@ -128,13 +132,13 @@ class colocaliser:
 
         voxelsize = voxelsize[:imA.ndim] #trunctate to number of dimensions
 
-        print 'Calculating Pearson and Manders coefficients ...'        
+        print('Calculating Pearson and Manders coefficients ...')        
         pearson = correlationCoeffs.pearson(imA, imB)
         MA, MB = correlationCoeffs.thresholdedManders(imA, imB, tA, tB)
 
-        print 'Performing distance transform ...'        
+        print('Performing distance transform ...')        
         bnA, bmA, binsA = edtColoc.imageDensityAtDistance(imB, imA > tA, voxelsize, bins)
-        print 'Performing distance transform (reversed) ...' 
+        print('Performing distance transform (reversed) ...') 
         bnB, bmB, binsB = edtColoc.imageDensityAtDistance(imA, imB > tB, voxelsize, bins)
         
         #print binsB, bmB
@@ -206,6 +210,56 @@ class colocaliser:
         im.mdh['OriginalImage'] = self.image.filename
 
         ViewIm3D(im, mode='graph')
+        
+    def OnColocBasic(self, event):
+        from PYME.Analysis.Colocalisation import correlationCoeffs, edtColoc
+        voxelsize = [1e3*self.image.mdh.getEntry('voxelsize.x') ,1e3*self.image.mdh.getEntry('voxelsize.y'), 1e3*self.image.mdh.getEntry('voxelsize.z')]
+        
+        try:
+            names = self.image.mdh.getEntry('ChannelNames')
+        except:
+            names = ['Channel %d' % n for n in range(self.image.data.shape[3])]
+        
+        dlg = ColocSettingsDialog(self.dsviewer, voxelsize[0], names)
+        dlg.ShowModal()
+        
+        bins = dlg.GetBins()
+        chans = dlg.GetChans()
+        dlg.Destroy()
+
+        #assume we have exactly 2 channels #FIXME - add a selector
+        #grab image data
+        imA = self.image.data[:,:,:,chans[0]].squeeze()
+        imB = self.image.data[:,:,:,chans[1]].squeeze()
+
+        #assume threshold is half the colour bounds - good if using threshold mode
+        tA = self.do.Offs[chans[0]] + .5/self.do.Gains[chans[0]] #pylab.mean(self.ivps[0].clim)
+        tB = self.do.Offs[chans[1]] + .5/self.do.Gains[chans[1]] #pylab.mean(self.ivps[0].clim)
+        
+        nameA = names[chans[0]]
+        nameB = names[chans[1]]
+
+        voxelsize = voxelsize[:imA.ndim] #trunctate to number of dimensions
+
+        print('Calculating Pearson and Manders coefficients ...')        
+        pearson = correlationCoeffs.pearson(imA, imB)
+        MA, MB = correlationCoeffs.thresholdedManders(imA, imB, tA, tB)
+        
+        I1 = imA.ravel()
+        I2 = imB.ravel()
+        h1 = np.histogram2d(np.clip(I1/I1.mean(), 0, 100), np.clip(I2/I2.mean(), 0, 100), 200)
+
+        pylab.figure()
+        pylab.figtext(.1, .95, 'Pearson: %2.2f   M1: %2.2f M2: %2.2f' % (pearson, MA, MB))
+        pylab.subplot(111)
+        
+        pylab.imshow(np.log10(h1[0] + .1).T)
+        pylab.xlabel('%s' % nameA)
+        pylab.ylabel('%s' % nameB)
+
+        
+        pylab.show()
+        
 
 
 

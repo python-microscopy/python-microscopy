@@ -31,7 +31,7 @@ import time
 #redefine wx.Frame with a version that hides when someone tries to close it
 #dirty trick, but lets the Boa gui builder still work with frames we do this to
 #NB must come after 'from wx..... import *' !!!
-from noclosefr import * 
+#from noclosefr import * 
 
 def create(parent):
     return stepDialog(parent)
@@ -41,7 +41,7 @@ def create(parent):
  wxID_STEPDIALOGSTATICBOX2, wxID_STEPDIALOGSTATICBOX3, 
  wxID_STEPDIALOGSTATICBOX4, wxID_STEPDIALOGSTATICBOX5, wxID_STEPDIALOGTXPOS, 
  wxID_STEPDIALOGTYPOS, wxID_STEPDIALOGTZPOS, 
-] = map(lambda _init_ctrls: wx.NewId(), range(13))
+] = [wx.NewId() for i in range(13)]
 
 class stepPanel(wx.Panel):
     def _init_ctrls(self, prnt):
@@ -144,7 +144,7 @@ class stepPanel(wx.Panel):
         y = float(self.tYPos.GetValue())
         z = float(self.tZPos.GetValue())
         
-        print '(%s, %s, %s)\n' % (x,y,z)
+        print(('(%s, %s, %s)\n' % (x,y,z)))
         
         #dodgy hack ...
         dist = math.sqrt(math.pow(x - x0, 2) + math.pow(y - y0,2) + math.pow(z - z0,2))
@@ -190,11 +190,11 @@ class stepPanel(wx.Panel):
         #z = float(self.tZPos.GetValue())
         z = self.scope.step.GetPosZ()
         
-        print '(%s, %s, %s)\n' % (x,y,z)
+        print(('(%s, %s, %s)\n' % (x,y,z)))
         
         #dodgy hack ...
         dist = math.sqrt(math.pow(x - x0, 2) + math.pow(y - y0,2) + math.pow(z - z0,2))
-        print 'dist = %s' % (dist)
+        print(( 'dist = %s' % (dist)))
         
 ##        while (dist > 4000):
 ##            xt = x0 + (x - x0)*4000/dist

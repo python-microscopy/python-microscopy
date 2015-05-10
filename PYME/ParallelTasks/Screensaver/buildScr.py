@@ -39,12 +39,12 @@ try:
     )
 except getopt.GetoptError:
     # print help information and exit:
-    print __doc__
+    print(__doc__)
     sys.exit(2)
 
 for o, a in opts:
     if o in ("-h", "--help"):
-        print __doc__
+        print(__doc__)
         sys.exit()
     elif o in ("-g", "--pygame"):
         pygameMode = True
@@ -54,7 +54,7 @@ for o, a in opts:
             data_files.append(filename)
 
 if not args:
-    print __doc__
+    print(__doc__)
     sys.exit(1)
 
 name = args[0]

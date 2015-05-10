@@ -117,7 +117,7 @@ class DataBlock(object):
             #use thresholded data for determining principle axis
             m = self.data
             m = m > 0.2*m.max()
-            print m.sum()
+            print((m.sum()))
             l, nl = ndimage.label(m)
             
             #take only the largest contiguous region
@@ -127,7 +127,7 @@ class DataBlock(object):
                 if r.sum() > m.sum():
                     m = r
             b = b[m.ravel()>0.5, :]
-            print m.sum(), b.shape
+            print((m.sum(), b.shape))
             if b.shape[0] < 2:
                 self._principalAxis = np.NaN*np.ones(3)
             #print b.shape
@@ -445,7 +445,11 @@ class BlobObject(object):
                 pass
             
     def getImage(self):
-        import Image
+        try:
+            import Image
+        except ImportError:
+            from PIL import Image
+            
         import StringIO
         import cherrypy
         cherrypy.response.headers["Content-Type"]="image/png"
@@ -511,7 +515,7 @@ class BlobObject(object):
         ax.set_xlabel(getattr(self, graphName).xlabel)
         
         out = StringIO.StringIO()
-        canvas.print_png(out, dpi=100)
+        canvas.print_png(out, dpi=100, facecolor='w')
         s = out.getvalue()
         out.close()
         return s
@@ -566,7 +570,7 @@ class BlobObject(object):
         ax.set_axis_off()
         
         out = StringIO.StringIO()
-        canvas.print_png(out, dpi=100)
+        canvas.print_png(out, dpi=100, facecolor='w')
         s = out.getvalue()
         out.close()
         return s

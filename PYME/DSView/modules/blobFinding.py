@@ -38,18 +38,10 @@ class blobFinder:
         self.vObjPos = None
         self.vObjFit = None
         self.nObjFit = 0
-
-        F_SAVE_POSITIONS = wx.NewId()
-        F_SAVE_FITS = wx.NewId()
-        F_SAVE_SHIFTMAPS = wx.NewId()
-
-        dsviewer.save_menu.Append(F_SAVE_POSITIONS, "Save &Positions", "", wx.ITEM_NORMAL)
-        dsviewer.save_menu.Append(F_SAVE_FITS, "Save &Fit Results", "", wx.ITEM_NORMAL)
-        dsviewer.save_menu.Append(F_SAVE_SHIFTMAPS, "Save shift maps", "", wx.ITEM_NORMAL)
-
-        wx.EVT_MENU(dsviewer, F_SAVE_POSITIONS, self.savePositions)
-        wx.EVT_MENU(dsviewer, F_SAVE_FITS, self.saveFits)
-        wx.EVT_MENU(dsviewer, F_SAVE_SHIFTMAPS, self.saveShiftmaps)
+        
+        dsviewer.AddMenuItem("Save", "Save &Positions", self.savePositions)
+        dsviewer.AddMenuItem("Save", "Save &Fit Results", self.saveFits)
+        dsviewer.AddMenuItem("Save", "Save shift maps", self.saveShiftmaps)
 
         dsviewer.paneHooks.append(self.GenBlobFindingPanel)
         dsviewer.paneHooks.append(self.GenBlobFitPanel)
@@ -297,7 +289,7 @@ class blobFinder:
                 dy = y - y0
                 dz = z - z0
                 
-                print 'dz:', numpy.median(dz[mask])
+                print(('dz:', numpy.median(dz[mask])))
                 
                 
                 spx, spy = twoColour.genShiftVectorFieldLinear(x[mask], y[mask], dx[mask], dy[mask], err_x[mask], err_y[mask])

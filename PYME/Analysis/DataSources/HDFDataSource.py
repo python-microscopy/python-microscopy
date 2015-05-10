@@ -23,7 +23,7 @@
 
 from PYME.ParallelTasks.relativeFiles import getFullFilename
 import tables
-from BaseDataSource import BaseDataSource
+from .BaseDataSource import BaseDataSource
 
 class DataSource(BaseDataSource):
     moduleName = 'HDFDataSource'

@@ -24,7 +24,7 @@
 #Boa:Frame:FiltFrame
 
 import wx
-from fw102 import FW102B as filtWheel
+from .fw102 import FW102B as filtWheel
 
 [wxID_FILTFRAME, wxID_FILTFRAMECHFILTWHEEL, wxID_FILTFRAMEPANEL1, 
 ] = [wx.NewId() for _init_ctrls in range(3)]
@@ -39,6 +39,50 @@ class WFilter:
         self.name = name
         self.description = description
         self.OD = OD
+        
+class FiltWheel(object):
+    def __init__(self, installedFilters, serPort='COM3', dichroic=None):
+        '''Create a filter wheel gui object. installedFilters should be a list of
+        WFilter objects. The first item is the default'''
+        self.installedFilters = installedFilters 
+        
+        self.fw = filtWheel(serPort)
+        if dichroic:
+            self.dichroic = dichroic
+            self.dichroic.wantChangeNotification.append(self.DichroicSync)
+            self.DICHROIC_SYNC = True
+
+        #self.fw.setPos(installedFilters[0].pos)
+        
+    def SetFilterPos(self, name = None, id = None, pos = None):
+        '''Set filter by either name, position in list, or postion
+        in filter wheel'''
+        if not name == None:
+            id = [n for n, f in enumerate(self.installedFilters) if f.name == name][0]
+        elif id == None:
+            self.fw.setPos(pos)
+            return
+            #id = [n for n, f in enumerate(self.installedFilters) if f.pos == pos][0]
+            
+        self.fw.setPos(self.installedFilters[id].pos)
+        
+        
+    def GetFilterNames(self):
+        return [f.name for f in self.installedFilters]
+        
+    def GetCurrentIndex(self):
+        p = self.fw.getPos()
+        for i, f in enumerate(self.installedFilters):
+            if f.pos == p:
+                return i
+                
+    def DichroicSync(self):
+        if self.DICHROIC_SYNC:
+            dname =  self.dichroic.GetFilter()
+            
+            if dname in self.GetFilterNames():
+                self.SetFilterPos(name=dname)
+        
 
 class FiltFrame(wx.Panel):
     def _init_ctrls(self, prnt):
@@ -57,50 +101,26 @@ class FiltFrame(wx.Panel):
         self.chFiltWheel.Bind(wx.EVT_CHOICE, self.OnChFiltWheelChoice,
               id=wxID_FILTFRAMECHFILTWHEEL)
 
-    def __init__(self, parent, installedFilters, serPort='COM3', dichroic=None):
+    def __init__(self, parent, filterWheel):
         '''Create a filter wheel gui object. installedFilters should be a list of
         WFilter objects. The first item is the default'''
-        self.installedFilters = installedFilters 
         self._init_ctrls(parent)
         
-        self.fw = filtWheel(serPort)
-        if dichroic:
-            self.dichroic = dichroic
-            self.dichroic.wantChangeNotification.append(self.DichroicSync)
-            self.DICHROIC_SYNC = True
+        self.fWheel = filterWheel
 
-        for k in installedFilters:
+        for k in self.fWheel.installedFilters:
             self.chFiltWheel.Append(k.name)
             
-        self.chFiltWheel.SetSelection(0)
-        self.fw.setPos(installedFilters[0].pos)
+        self.chFiltWheel.SetSelection(self.fWheel.GetCurrentIndex())
+        #self.fw.setPos(installedFilters[0].pos)
             
     def OnChFiltWheelChoice(self, event):
         n = self.chFiltWheel.GetSelection()
-        self.fw.setPos(self.installedFilters[n].pos)
-        
-    def SetFilterPos(self, name = None, id = None, pos = None):
-        '''Set filter by either name, position in list, or postion
-        in filter wheel'''
-        if not name == None:
-            id = [n for n, f in zip(range(len(self.installedFilters)), self.installedFilters) if f.name == name][0]
-        elif id == None:
-            id = [n for n, f in zip(range(len(self.installedFilters)), self.installedFilters) if f.pos == pos][0]
-            
-        self.fw.setPos(self.installedFilters[id].pos)
-        self.chFiltWheel.SetSelection(id)
-        
-    def GetFilterNames(self):
-        return [f.name for f in self.installedFilters]
+        self.fWheel.SetFilterPos(id=n)
         
     def GetSelectedFilter(self):
         n = self.chFiltWheel.GetSelection()
-        return self.installedFilters(n)
+        return self.fWheel.installedFilters(n)
         
-    def DichroicSync(self):
-        if self.DICHROIC_SYNC:
-            dname =  self.dichroic.GetFilter()
-            
-            if dname in self.GetFilterNames():
-                self.SetFilterPos(name=dname)
+    
         

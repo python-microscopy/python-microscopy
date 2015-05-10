@@ -154,7 +154,7 @@ class ZMX(object):
         pos = np.array(position)
         
         l = sum([s.disz for s in surfs[:-1]])
-        print l
+        #print(l)
         
         if fb == None and f == None:
             #calculate length of lens
@@ -172,16 +172,16 @@ class ZMX(object):
             z0 = -z0 - l
             i_s = range(len(surfs))
             for i in i_s[::-1]:
-                print i
+                #print(i)
                 s = surfs[i]
                 glass = self.surfaces[i].glass
                 outSurfs.append(pyo.SphericalSurface('ZMX_%d'%i, 1,np.ones(3)*float(s.diam[0]),pyo.Placement((z0 - 0)*d + pos,d),glass, -s.radius))
-                print z0, s.disz
+                #print((z0, s.disz))
                 z0 += self.surfaces[i].disz         
         else:
             for i, s in enumerate(surfs):
                 outSurfs.append(pyo.SphericalSurface('ZMX_%d'%i, 1,np.ones(3)*float(s.diam[0]),pyo.Placement((z0 - 0)*d + pos,d),s.glass, s.radius))
-                print z0, s.disz
+                #print((z0, s.disz))
                 z0 += s.disz
                 
             
@@ -198,7 +198,7 @@ def readZar(filename):
     for gc in glass_cats:
         glasses.update(read_agf.read_cat_from_string(components[gc]))
         
-    print glasses.keys()
+    #print((glasses.keys()))
         
     #find all components (probably only one)
     zmxs = [ZMX(components[n], glasses) for n in components.keys() if (n.endswith('.ZMX') or n.endswith('.zmx'))]

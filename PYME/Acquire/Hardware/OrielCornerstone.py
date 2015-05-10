@@ -22,7 +22,7 @@
 ################
 import serial
 import time
-import lasers
+from PYME.Acquire.Hardware import lasers
 
 class Cornerstone7400(lasers.Laser):
     def __init__(self, comPort = 0, minWave = 300, maxWave=1100, name='Monocromator'):

@@ -1,0 +1,322 @@
+Analysis Package
+================
+
+:mod:`Analysis` Package
+-----------------------
+
+.. automodule:: PYME.Analysis
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`MetaData` Module
+----------------------
+
+.. automodule:: PYME.Analysis.MetaData
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`MetaDataEdit` Module
+--------------------------
+
+.. automodule:: PYME.Analysis.MetaDataEdit
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`MetadataTree` Module
+--------------------------
+
+.. automodule:: PYME.Analysis.MetadataTree
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`SimReconstruction` Module
+-------------------------------
+
+.. automodule:: PYME.Analysis.SimReconstruction
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`_fithelpers` Module
+-------------------------
+
+.. automodule:: PYME.Analysis._fithelpers
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`angleFilter` Module
+-------------------------
+
+.. automodule:: PYME.Analysis.angleFilter
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`annealThresh` Module
+--------------------------
+
+.. automodule:: PYME.Analysis.annealThresh
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`binAvg` Module
+--------------------
+
+.. automodule:: PYME.Analysis.binAvg
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`cramerRao` Module
+-----------------------
+
+.. automodule:: PYME.Analysis.cramerRao
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`deTile` Module
+--------------------
+
+.. automodule:: PYME.Analysis.deTile
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`expectationMaximisation` Module
+-------------------------------------
+
+.. automodule:: PYME.Analysis.expectationMaximisation
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`implicitFilter` Module
+----------------------------
+
+.. automodule:: PYME.Analysis.implicitFilter
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`moments` Module
+---------------------
+
+.. automodule:: PYME.Analysis.moments
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`msd` Module
+-----------------
+
+.. automodule:: PYME.Analysis.msd
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`multicolourMeta` Module
+-----------------------------
+
+.. automodule:: PYME.Analysis.multicolourMeta
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`ofind` Module
+-------------------
+
+.. automodule:: PYME.Analysis.ofind
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`ofind3d` Module
+---------------------
+
+.. automodule:: PYME.Analysis.ofind3d
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`ofind_nofilt` Module
+--------------------------
+
+.. automodule:: PYME.Analysis.ofind_nofilt
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`ofind_pri` Module
+-----------------------
+
+.. automodule:: PYME.Analysis.ofind_pri
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`ofind_split` Module
+-------------------------
+
+.. automodule:: PYME.Analysis.ofind_split
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`ofind_xcorr` Module
+-------------------------
+
+.. automodule:: PYME.Analysis.ofind_xcorr
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`ofind_xcorr_fw` Module
+----------------------------
+
+.. automodule:: PYME.Analysis.ofind_xcorr_fw
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`pSpaceMap` Module
+-----------------------
+
+.. automodule:: PYME.Analysis.pSpaceMap
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`piecewise` Module
+-----------------------
+
+.. automodule:: PYME.Analysis.piecewise
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`piecewiseMapping` Module
+------------------------------
+
+.. automodule:: PYME.Analysis.piecewiseMapping
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`pointFitConfoc` Module
+----------------------------
+
+.. automodule:: PYME.Analysis.pointFitConfoc
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`processLogger` Module
+---------------------------
+
+.. automodule:: PYME.Analysis.processLogger
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`remFitBuf` Module
+-----------------------
+
+.. automodule:: PYME.Analysis.remFitBuf
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`setup` Module
+-------------------
+
+.. automodule:: PYME.Analysis.setup
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`tCluster` Module
+----------------------
+
+.. automodule:: PYME.Analysis.tCluster
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`thresholding` Module
+--------------------------
+
+.. automodule:: PYME.Analysis.thresholding
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`trackUtils` Module
+------------------------
+
+.. automodule:: PYME.Analysis.trackUtils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`twist` Module
+-------------------
+
+.. automodule:: PYME.Analysis.twist
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`twoColDep` Module
+-----------------------
+
+.. automodule:: PYME.Analysis.twoColDep
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`twoColour` Module
+-----------------------
+
+.. automodule:: PYME.Analysis.twoColour
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`twoColourPlot` Module
+---------------------------
+
+.. automodule:: PYME.Analysis.twoColourPlot
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+Subpackages
+-----------
+
+.. toctree::
+
+    PYME.Analysis.Auto
+    PYME.Analysis.BleachProfile
+    PYME.Analysis.Colocalisation
+    PYME.Analysis.DataSources
+    PYME.Analysis.DeClump
+    PYME.Analysis.DistHist
+    PYME.Analysis.EdgeDB
+    PYME.Analysis.FitFactories
+    PYME.Analysis.LMVis
+    PYME.Analysis.QuadTree
+    PYME.Analysis.RandomPresent
+    PYME.Analysis.SoftRend
+    PYME.Analysis.Test
+    PYME.Analysis.cInterp
+    PYME.Analysis.cModels
+    PYME.Analysis.lev_gfit
+    PYME.Analysis.qHull
+

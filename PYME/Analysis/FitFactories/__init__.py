@@ -24,3 +24,31 @@ import glob
 import os
 
 __all__ = [os.path.splitext(os.path.split(p)[-1])[0] for p in glob.glob(__path__[0] + '/[a-zA-Z]*.py')]
+
+#fitFactoryList = glob.glob(PYME.Analysis.FitFactories.__path__[0] + '/[a-zA-Z]*.py')
+#fitFactoryList = [os.path.split(p)[-1][:-3] for p in fitFactoryList]
+#fitFactoryList.sort()
+
+resFitFactories = []
+descriptions = {}
+longDescriptions = {}
+useFor = {}
+for ff in __all__:
+    try:
+        fm = __import__('PYME.Analysis.FitFactories.' + ff, fromlist=['PYME', 'Analysis', 'FitFactories'])
+        if 'FitResultsDType' in dir(fm):
+            resFitFactories.append(ff)
+            if 'DESCRIPTION' in dir(fm):
+                descriptions[ff] = fm.DESCRIPTION
+                longDescriptions[ff] = fm.LONG_DESCRIPTION
+            else:
+                descriptions[ff] = ''
+                longDescriptions[ff] =''
+            if 'USE_FOR' in dir(fm):
+                useFor[ff] = fm.USE_FOR
+            else:
+                useFor[ff] = ''
+    except:
+        pass
+    
+resFitFactories.sort()

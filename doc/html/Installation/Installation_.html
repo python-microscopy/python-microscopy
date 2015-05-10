@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -25,6 +23,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="PYME 0.1 documentation" href="../index.html" /> 
   </head>
   <body>
@@ -34,6 +33,12 @@
         <li class="right" style="margin-right: 10px">
           <a href="../genindex.html" title="General Index"
              accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
         <li><a href="../index.html">PYME 0.1 documentation</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/Installation/Installation_.rst">Edit</a> &raquo;</li>
  
@@ -95,10 +100,12 @@ pip/easy_install for some of the packages to get a more recent version instead
 <p>To make this whole process of finding and installing dependencies a little less painful,
 I&#8217;ve put together lists of required and recommended modules that can be used with
 <tt class="docutils literal"><span class="pre">pip</span></tt> to pull any remaining dependencies. Thus one would execute:</p>
-<div class="highlight-python"><pre>pip install -r recommended-modules.txt</pre>
+<div class="highlight-python"><div class="highlight"><pre>pip install -r recommended-modules.txt
+</pre></div>
 </div>
 <p>to get everything I think is going to be useful, or:</p>
-<div class="highlight-python"><pre>pip install -r required-modules.txt</pre>
+<div class="highlight-python"><div class="highlight"><pre>pip install -r required-modules.txt
+</pre></div>
 </div>
 <p>to get the bare essentials. Obviously this requires <a class="reference external" href="http://pypi.python.org/pypi/pip">pip</a>
 to be installed first. I would suggest installing at least numpy and scipy manually
@@ -118,24 +125,27 @@ packages first and then resort to <em>pip</em> for anything left over.</p>
 <div class="section" id="get-the-code">
 <h3>Get the code<a class="headerlink" href="#get-the-code" title="Permalink to this headline">¶</a></h3>
 <p>The code is stored in a mercurial repository. If you&#8217;re on the local network you can get the current copy by doing</p>
-<div class="highlight-python"><pre>cd ~/PYME
-hg clone http://lmsrv1/hg/PYME</pre>
+<div class="highlight-python"><div class="highlight"><pre>cd ~/PYME
+hg clone http://lmsrv1/hg/PYME
+</pre></div>
 </div>
 <p>or the equivalent using a gui client (eg <a class="reference external" href="http://tortoisehg.bitbucket.org/">TortoiseHG</a>). If you&#8217;re not on the network, then extract the archive I&#8217;ve sent you into this directory.</p>
 </div>
 <div class="section" id="build-the-c-extension-modules">
 <h3>Build the c extension modules<a class="headerlink" href="#build-the-c-extension-modules" title="Permalink to this headline">¶</a></h3>
 <p>Open a terminal and execute the following:</p>
-<div class="highlight-python"><pre>c:
+<div class="highlight-python"><div class="highlight"><pre>c:
 cd c:\PYME\PYME
-python setup.py build_ext -i</pre>
+python setup.py build_ext -i
+</pre></div>
 </div>
 <p>obviously replacing the path with the relevant one. The -i flag tells python to do an inplace build, which is what we want for a development install.</p>
 </div>
 <div class="section" id="tell-python-where-to-find-it">
 <h3>Tell python where to find it<a class="headerlink" href="#tell-python-where-to-find-it" title="Permalink to this headline">¶</a></h3>
 <p>So that python can use the modules it needs to know how to find them. This is done by setting the <tt class="docutils literal"><span class="pre">PYTHONPATH</span></tt> environment variable, by, for example, adding the following line to <tt class="docutils literal"><span class="pre">.profile</span></tt>.</p>
-<div class="highlight-python"><pre>export PYTHONPATH=/home/david/PYME</pre>
+<div class="highlight-python"><div class="highlight"><pre>export PYTHONPATH=/home/david/PYME
+</pre></div>
 </div>
 <p>Note that these instructions are for installing a development copy of PYME (ie in a local directory to which you have write access to). This is usually what you want, there are however a couple of situations (eg when using on a multi-user linux box, or as part of a web server) where you might want to do a more conventional install and have PYME wind up in your Python site-packages directory. To do this, just run <tt class="docutils literal"><span class="pre">sudo</span> <span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">install</span></tt> rather than <tt class="docutils literal"><span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">build_ext</span> <span class="pre">-i</span></tt> and dont worry about setting <tt class="docutils literal"><span class="pre">PYTHONPATH</span></tt>.</p>
 </div>
@@ -243,6 +253,12 @@ machine) the microscope computer is mapped.</td>
         <li class="right" style="margin-right: 10px">
           <a href="../genindex.html" title="General Index"
              >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
         <li><a href="../index.html">PYME 0.1 documentation</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/Installation/Installation_.rst">Edit</a> &raquo;</li>
  
@@ -251,7 +267,7 @@ machine) the microscope computer is mapped.</td>
     </div>
     <div class="footer">
         &copy; Copyright 2010, David Baddeley.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>

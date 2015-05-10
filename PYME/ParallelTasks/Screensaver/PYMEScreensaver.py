@@ -59,7 +59,7 @@ def cpuCount():
     if num >= 1:
         return num
     else:
-        raise NotImplementedError, 'cannot determine number of cpus'
+        raise NotImplementedError('cannot determine number of cpus')
 
 
 

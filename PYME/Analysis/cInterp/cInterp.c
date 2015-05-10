@@ -137,6 +137,151 @@ static PyObject * Interpolate(PyObject *self, PyObject *args, PyObject *keywds)
     return (PyObject*) out;
 }
 
+
+void splCoeff(float r, float *coeffs)
+{
+    //calculate spline coefficients    
+    int i = 0;
+    float y = 0;
+
+    for (i = 0; i < 3; i++)
+    {
+        y = fabs(-1 - r + i);
+
+        if (y < 1)
+        {
+            coeffs[i] = (y*y*(y-2.0)*3.0 + 4.)/6.;
+        }
+        else if (y < 2.0)
+        {
+            y = 2.0 - y;
+            coeffs[i] = y*y*y/6.0;
+        } else 
+        {
+            coeffs[i] = 0;
+        }
+    }
+}
+
+static PyObject * InterpolateCS(PyObject *self, PyObject *args, PyObject *keywds)
+{
+    float *res = 0;
+    
+    npy_intp outDimensions[3];
+    int sizeX, sizeY, sizeZ;
+    int xi, yi, j;
+    
+    PyObject *omod =0;
+    
+    PyArrayObject* amod;
+    
+    PyArrayObject* out;
+
+    //double *mod = 0;
+    
+    /*parameters*/
+    float x0,y0,z0, dx, dy, dz;
+    int nx, ny;
+
+    /*End paramters*/
+
+    float rx, ry, rz;
+    float r000, r100, r010, r110, r001, r101, r011, r111;
+    int fx, fy, fz;
+    int xj, yj, zj;
+
+    float cx[3], cy[3], cz[3];
+    
+    static char *kwlist[] = {"model", "x0","y0", "z0","nx","ny","dx", "dy", "dz", NULL};
+    
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "Offfiifff", kwlist,
+         &omod, &x0, &y0, &z0, &nx, &ny, &dx, &dy, &dz))
+        return NULL; 
+
+        
+    amod = (PyArrayObject *) PyArray_ContiguousFromObject(omod, PyArray_FLOAT, 3, 3);
+    if (amod == NULL)
+    {
+      PyErr_Format(PyExc_RuntimeError, "Bad model");
+      return NULL;
+    }
+  
+    
+    //pmod = (double*)amod->data;
+
+    sizeX = PyArray_DIM(amod, 0);
+    sizeY = PyArray_DIM(amod, 1);
+    sizeZ = PyArray_DIM(amod, 2);
+    
+
+    outDimensions[0] = nx;
+    outDimensions[1] = ny;
+    outDimensions[2] = 1;
+
+    //printf("shp: %d, %d", nx, ny);
+        
+    out = (PyArrayObject*) PyArray_SimpleNew(3,outDimensions,PyArray_FLOAT);
+    if (out == NULL)
+    {
+      Py_DECREF(amod);
+      
+      PyErr_Format(PyExc_RuntimeError, "Error allocating output array");
+      return NULL;
+    }
+    
+    Py_BEGIN_ALLOW_THREADS;
+    res = (float*) out->data;
+
+    //Initialise our histogram
+    for (j =0; j < nx*ny; j++)
+    {
+        res[j] = 0.0;
+    }
+
+    fx = (int)(floorf(sizeX/2.0) + floorf(x0/dx));
+    fy = (int)(floorf(sizeY/2.0) + floorf(y0/dy));
+    fz = (int)(floorf(sizeZ/2.0) + floorf(z0/dz));
+
+    ///avoid negatives by adding a chunk before taking the mod
+    rx = fmodf(x0+973*dx,dx)/dx - 0.5;
+    ry = fmodf(y0+973*dy,dy)/dy - 0.5;
+    rz = fmodf(z0+973*dz,dz)/dz - 0.5;
+
+    //calculate the spline coefficients    
+    splCoeff(rx, cx);
+    splCoeff(ry, cy);
+    splCoeff(rz, cz);
+
+
+    for (xi = fx; xi < (fx+nx); xi++)
+      {            
+	for (yi = fy; yi < (fy +ny); yi++)
+        {
+            *res  = 0;
+            
+            for (xj=0; xj < 3; xj ++)
+            {
+                for (yj=0; yj < 3; yj ++)
+                {
+                    for (zj=0; zj < 3; zj ++)
+                        {
+                            *res += cx[xj]*cy[yj]*cz[zj] * *(float*)PyArray_GETPTR3(amod, xi + xj - 1, yi + yj - 1,   fz + zj - 1);
+                        }
+                }
+            }
+            
+
+            res ++;
+	  }
+       
+      }
+    
+    Py_END_ALLOW_THREADS;
+    Py_DECREF(amod);
+    
+    return (PyObject*) out;
+}
+
 static PyObject * InterpolateInplace(PyObject *self, PyObject *args, PyObject *keywds)
 {
     float *res = 0;
@@ -377,9 +522,9 @@ static PyObject * InterpolateInplaceM(PyObject *self, PyObject *args, PyObject *
     cy = (int)(floorf(sizeY/2.0)) - fy; //+ floorf(y0/dy)); 
 
     ///avoid negatives by adding a chunk before taking the mod
-    rx = fmodf(x0+973*dx,dx)/dx;
-    ry = fmodf(y0+973*dy,dy)/dy;
-    rz = fmodf(z0+973*dz,dz)/dz;
+    rx = 1.0 - fmodf(x0+973*dx,dx)/dx;
+    ry = 1.0 - fmodf(y0+973*dy,dy)/dy;
+    rz = 1.0 - fmodf(z0+973*dz,dz)/dz;
 
     //printf("%3.3f, %d, %3.3f\n", rz, fz, z0);
 
@@ -424,6 +569,8 @@ static PyObject * InterpolateInplaceM(PyObject *self, PyObject *args, PyObject *
 
 static PyMethodDef cInterpMethods[] = {
     {"Interpolate",  Interpolate, METH_VARARGS | METH_KEYWORDS,
+    "Generate a histogram of pairwise distances between two sets of points.\n. Arguments are: 'x1', 'y1', 'x2', 'y2', 'nBins'= 1e3, 'binSize' = 1"},
+    {"InterpolateCS",  InterpolateCS, METH_VARARGS | METH_KEYWORDS,
     "Generate a histogram of pairwise distances between two sets of points.\n. Arguments are: 'x1', 'y1', 'x2', 'y2', 'nBins'= 1e3, 'binSize' = 1"},
     {"InterpolateInplace",  InterpolateInplace, METH_VARARGS | METH_KEYWORDS,
     "Generate a histogram of pairwise distances between two sets of points.\n. Arguments are: 'x1', 'y1', 'x2', 'y2', 'nBins'= 1e3, 'binSize' = 1"},

@@ -24,16 +24,22 @@
 from PYME.PSFGen import *
 from scipy import *
 from pylab import ifftshift, fftn, ifftn
-import fluor
+from . import fluor
 from PYME.Analysis import MetaData
 from PYME.Analysis import cInterp
-import cPickle
+
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+    
 from scipy import ndimage
 import numpy as np
 
 from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
 import multiprocessing
 import threading
+from PYME.Deconv.wiener import resizePSF
 
 #import threading
 #tLock = threading.Lock()
@@ -85,12 +91,12 @@ def genTheoreticalModel(md):
 
         interpModel = genWidefieldPSF(IntXVals, IntYVals, IntZVals, P,1e3, 0, 0, 0, 2*pi/525, 1.47, 10e3).astype('f')
         
-        print 'foo'
-        print interpModel.strides, interpModel.shape
+        print('foo')
+        print((interpModel.strides, interpModel.shape))
 
-        interpModel = np.maximum(interpModel/interpModel.max(), 0) #normalise to 1 and clip
+        interpModel = np.maximum(interpModel/interpModel[:,:,len(IntZVals)/2].sum(), 0) #normalise to 1 and clip
         
-        print 'bar'
+        print('bar')
 
 genTheoreticalModel(MetaData.TIRFDefault)
 
@@ -114,8 +120,10 @@ def setModel(modName, md):
 
     
     mf = open(getFullExistingFilename(modName), 'rb')
-    mod, voxelsize = cPickle.load(mf)
+    mod, voxelsize = pickle.load(mf)
     mf.close()
+    
+    mod = resizePSF(mod, interpModel.shape)
 
     #if not voxelsize.x == md.voxelsize.x:
     #    raise RuntimeError("PSF and Image voxel sizes don't match")
@@ -130,7 +138,8 @@ def setModel(modName, md):
 
     #interpModel = mod
 
-    interpModel = np.maximum(mod/mod.max(), 0).astype('float32') #normalise to 1
+    #interpModel = np.maximum(mod/mod.max(), 0).astype('float32') #normalise to 1
+    interpModel = np.maximum(mod/mod[:,:,len(IntZVals)/2].sum(), 0).astype('float32') #normalise to 1 and clip
 
 def interp(X, Y, Z):
     X = atleast_1d(X)
@@ -275,7 +284,7 @@ def setIllumPattern(pattern, z0):
     sx, sy = pattern.shape
     psx, psy, sz = interpModel.shape
     
-    illPCache = None
+    
     
     il = np.zeros([sx,sy,sz], 'f')
     il[:,:,sz/2] = pattern
@@ -287,6 +296,8 @@ def setIllumPattern(pattern, z0):
     ps= ps/ps[:,:,sz/2].sum()
     
     illPattern = abs(ifftshift(ifftn(fftn(il)*fftn(ps)))).astype('f')
+    
+    illPCache = None
     
     
 @fluor.registerIllumFcn
@@ -439,7 +450,7 @@ def simPalmImFI_(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=15, laserPo
             iy0 = max(iy - roiSize, 0)
             iy1 = min(iy + roiSize + 1, im.shape[1])
             #imp =interp3(X[max(ix - roiSize, 0):(ix + roiSize + 1)] - x, Y[max(iy - roiSize, 0):(iy + roiSize + 1)] - y, z - fluors.fl['z'][i])* A[i]
-            imp = cInterp.Interpolate(interpModel, X[ix0] - x, Y[iy0] - y, min(max(z - fluors.fl['z'][i], -maxz), maxz), ix1-ix0, iy1-iy0,dx,dy,dz)* A[i]
+            imp = cInterp.Interpolate(interpModel, -(X[ix0] - x), -(Y[iy0] - y), min(max(z - fluors.fl['z'][i], -maxz), maxz), ix1-ix0, iy1-iy0,dx,dy,dz)* A[i]
            
             #if imp.min() < 0 or isnan(A[i]):
             #    print ix0, ix1, iy0, iy1, (X[ix0] - x)/dx, (Y[iy0]-  y)/dx, A[i], imp.min()
@@ -447,16 +458,21 @@ def simPalmImFI_(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=15, laserPo
     
     return im
     
-def _rFluorSubset(im, fl, A, x0, y0, z, roiSize, dx, dy, dz):
+def _rFluorSubset(im, fl, A, x0, y0, z, roiSize, dx, dy, dz, Chan2XOffset=0, Chan2ZOffset=0):
     
     #print fl['x'] - x0
     #print A
     
     #roiSize = 30*np.ones(A.shape, 'i')
-    #print interpModel.dtype
-    cInterp.InterpolateInplaceM(interpModel, im, fl['x'] - x0, fl['y'] - y0, z, A, roiSize,dx,dy,dz)
+    #print 'rFlS', len(x0)
+    
+    if Chan2XOffset == 0:    
+        cInterp.InterpolateInplaceM(interpModel, im, (fl['x'] - x0), (fl['y'] - y0), z, A, roiSize,dx,dy,dz)
+    else:
+        cInterp.InterpolateInplaceM(interpModel, im, (fl['x'] - x0- Chan2XOffset),(fl['y'] - y0 ),  z, A*fl['spec'][:,0], roiSize,dx,dy,dz)
+        cInterp.InterpolateInplaceM(interpModel, im, (fl['x'] - x0+ Chan2XOffset),(fl['y'] - y0 ),  z+Chan2ZOffset, A*fl['spec'][:,1], roiSize,dx,dy,dz)
 
-def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=100, laserPowers = [.1,1], position=[0,0,0], illuminationFunction='ConstIllum'):
+def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=100, laserPowers = [.1,1], position=[0,0,0], illuminationFunction='ConstIllum', Chan2XOffset=0, Chan2ZOffset=0):
     if interpModel == None:
         genTheoreticalModel(MetaData.TIRFDefault)
         
@@ -494,7 +510,8 @@ def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=100, laserPo
     
     #print A2.shape, z2.shape, z2.dtype
     
-    roiS = np.minimum(3 + np.abs(z2)*(2.5/70), 100).astype('i')
+    #roiS = np.minimum(3 + np.abs(z2)*(2.5/70), 100).astype('i')
+    roiS = np.minimum(8 + np.abs(z2)*(2.5/70), 140).astype('i')
     #print roiS
     
     #print m.sum(), len(fl['x']), len(A)
@@ -509,7 +526,7 @@ def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=100, laserPo
         #print fl[::nCPUs].shape
         
             
-        threads = [threading.Thread(target = _rFluorSubset, args=(im, fl[i::nCPUs], A2[i::nCPUs], x0, y0, z2[i::nCPUs], roiS[i::nCPUs], dx, dy, dz)) for i in range(nCPUs)]
+        threads = [threading.Thread(target = _rFluorSubset, args=(im, fl[i::nCPUs], A2[i::nCPUs], x0, y0, z2[i::nCPUs], roiS[i::nCPUs], dx, dy, dz, Chan2XOffset, Chan2ZOffset)) for i in range(nCPUs)]
     
         for p in threads:
             #print p

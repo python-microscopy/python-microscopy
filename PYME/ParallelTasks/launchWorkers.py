@@ -53,7 +53,7 @@ def cpuCount():
     if num >= 1:
         return num
     else:
-        raise NotImplementedError, 'cannot determine number of cpus'
+        raise NotImplementedError('cannot determine number of cpus')
 
 
 #get rid of any previously started queues etc...
@@ -64,15 +64,19 @@ def cpuCount():
 #launch pyro name server
 #os.system('pyro-nsd start')
 
+SERVER_PROC = 'taskServerMP.py'
+WORKER_PROC = 'taskWorkerMP.py'
+
 fstub = os.path.split(__file__)[0]
 
 def main():
+    global SERVER_PROC, WORKER_PROC
     #get number of processors 
     numProcessors = cpuCount()
     try: #try and find the name server
         ns=Pyro.naming.NameServerLocator().getNS()
     except: #launch our own
-        print '''Could not find PYRO nameserver - launching a local copy:
+        print('''Could not find PYRO nameserver - launching a local copy:
             
         This should work if you are only using one computer, or if you are 
         really, really careful not to close this process before all other 
@@ -80,42 +84,46 @@ def main():
         
         I highly recommend running the pyro nameserver as a seperate process, 
         ideally on a server somewhere where it's not likely to get interrupted.
-        '''
+        ''')
         
         subprocess.Popen('pyro-ns', shell=True)
         #wait for server to come up
         time.sleep(3)
     
     if len(sys.argv) > 1:
-        numProcessors = int(sys.argv[1])
+	if sys.argv[1] == '-l':
+            SERVER_PROC = 'taskServerML.py'
+            WORKER_PROC = 'taskWorkerML.py'
+        else:
+            numProcessors = int(sys.argv[1])
     
     if sys.platform == 'win32':
-        subprocess.Popen('python %s\\taskServerMP.py' % fstub, shell=True)
+        subprocess.Popen('python %s\\%s' % (fstub, SERVER_PROC), shell=True)
     
         time.sleep(5)
     
         subprocess.Popen('python %s\\fitMonP.py' % fstub, shell=True)
     
         for i in range(numProcessors):
-            subprocess.Popen('python %s\\taskWorkerMP.py' % fstub, shell=True)
+            subprocess.Popen('python %s\\%s' % (fstub, WORKER_PROC), shell=True)
     else: #operating systems which can launch python scripts directly
         #get rid of any previously started queues etc...
         if sys.platform == 'darwin':
             killall = 'pkill -f'
         else:
             killall = 'killall'
-        os.system('%s taskServerMP.py' % killall)
-        os.system('%s taskWorkerMP.py' % killall)
+        os.system('%s %s' % (killall,SERVER_PROC))
+        os.system('%s %s' % (killall,WORKER_PROC))
         os.system('%s fitMonP.py' % killall)
     
-        subprocess.Popen('taskServerMP.py', shell=True)
+        subprocess.Popen(SERVER_PROC, shell=True)
     
         time.sleep(3)
     
         subprocess.Popen('fitMonP.py', shell=True)
     
         for i in range(numProcessors):
-            subprocess.Popen('taskWorkerMP.py', shell=True)
+            subprocess.Popen(WORKER_PROC, shell=True)
             
 
 if __name__ == '__main__':

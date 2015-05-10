@@ -21,7 +21,7 @@
 #
 ##################
 
-import Mercury as m
+from . import Mercury as m
 import time
 import numpy  as np
 

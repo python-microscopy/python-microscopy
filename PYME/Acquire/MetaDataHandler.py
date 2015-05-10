@@ -23,19 +23,46 @@
 
 #!/usr/bin/python
 '''
-define meta data handlers - these should expose three methods,
+Defines metadata handlers for the saving of acquisiton metadata to a variety 
+of file formats, as well as keeping track of metadata sources. 
 
-setEntry(self, entryName, value) 
-getEntry(self, entryName)
+Metadata sources
+----------------
 
-which set and get a meta data value. entryName is a name of the form:
-"key" or "group.key" or "group.subgroup.key" etc...
+Metadata sources are simply functions, which when called, write information into
+a provided handler. e.g.::
+    def metadataGenerator(mdhandler):
+        mdhandler['a.key'] = value
 
-and 
+These generator functions are registered by adding them to one of two lists exposed 
+by this module: **provideStartMetadata** or **provideStopMetadata**. depending on
+whether it makes more sense to record the metadata at the start or stop of an 
+acquisition.
 
-getEntryNames(self)
+A good example can be found in PYME.Acquire.Hardware.Camera.AndorIXon.AndorIXon.
 
-which returns a list of entry names to help with copying data between handlers
+MetaData Handlers
+-----------------
+
+**NestedClassMDHandler**
+    An in-memory metadatahandler used to buffer metadata or to store values prior
+    to the file format being known.
+**HDFMDHandler**
+    For local pytables/hdf5 datasets
+**QueueMDHandler**
+    For use with data hosted in a taskqueue
+**XMLMDHandler**
+    For use with PYMEs XML metadata format - typically used with .tiff files or
+    other data for which it is difficult to embed metadata.
+**SimpleMDHandler**
+    Saves and reads metadata as a python script (a series of md[key]=value statements).
+    Used where you might want to construct or modify metadata by hand - e.g. with
+    foreign source data.
+    
+
+The format of a metadata handler is defined by the `MDHandlerBase` class. 
+
+
 '''
 from UserDict import DictMixin
 
@@ -54,7 +81,60 @@ def instanceinlist(cls, list):
     
 
 class MDHandlerBase(DictMixin):
+    '''Base class from which all metadata handlers are derived.
+
+    Metadata attributes can be read and set using either a dictionary like
+    interface, or by calling the `getEntry` and `setEntry` methods. 
+    
+    .. note:: Derived classes **MUST** override `getEntry`, `setEntry`, and `getEntryNames`.
+    '''
     #base class to make metadata behave like a dictionary
+    def getEntry(self, name):
+        '''Returns the entry for a given name.
+        
+        Parameters
+        ----------
+        name : string
+            The entry name. This name should be heirachical, and deliminated
+            with dots e.g. 'Camera.EMCCDGain'
+            
+        Returns
+        -------
+        value : object
+            The value stored for the given key. This can, in principle, be 
+            anything that can be pickled. strings, ints, bools and floats are
+            all stored in a human readable form in the textual metadata 
+            representations, wheras more complex objects are base64 encoded.
+        '''
+        raise NotImplementedError('getEntry must be overridden in derived classes')
+        
+    def setEntry(self, name):
+        '''Sets the entry for a given name.
+        
+        Parameters
+        ----------
+        name : string
+            The entry name. This name should be heirachical, and deliminated
+            with dots e.g. 'Camera.EMCCDGain'
+            
+        value : object
+            The value stored for the given key. This can, in principle, be 
+            anything that can be pickled. strings, ints, bools and floats are
+            all stored in a human readable form in the textual metadata 
+            representations, wheras more complex objects are base64 encoded.
+        '''
+        raise NotImplementedError('setEntry must be overridden in derived classes')
+        
+    def getEntryNames(self):
+        '''Returns a list of defined entries.
+            
+        Returns
+        -------
+        names : list of string
+            The keys which are defined in the metadata.
+        '''
+        raise NotImplementedError('getEntryNames must be overridden in derived classes')
+        
     def __setitem__(self, name, value):
         self.setEntry(name, value)
 
@@ -62,21 +142,57 @@ class MDHandlerBase(DictMixin):
         return self.getEntry(name)
         
     def getOrDefault(self, name, default):
+        '''Returns the entry for a given name, of a default value if the key 
+        is not present.
+        
+        Parameters
+        ----------
+        name : string
+            The entry name. This name should be heirachical, and deliminated
+            with dots e.g. 'Camera.EMCCDGain'
+        default : object
+            What to return if the name is not defined
+            
+        Returns
+        -------
+        value : object
+            The value stored for the given key. This can, in principle, be 
+            anything that can be pickled. strings, ints, bools and floats are
+            all stored in a human readable form in the textual metadata 
+            representations, wheras more complex objects are base64 encoded.
+        '''
         try: 
             return self.getEntry(name)
         except AttributeError:
             return default
 
     def keys(self):
+        '''Alias for getEntryNames to make us look like a dictionary'''
         return self.getEntryNames()
 
     def copyEntriesFrom(self, mdToCopy):
+        '''Copies entries from another metadata object into this one. Duplicate 
+        keys will be overwritten.
+        
+        Parameters
+        ----------
+        mdToCopy : an instance of a metadata handler
+            The metadata handler from which to copy entries.
+        '''
         for en in mdToCopy.getEntryNames():
             #print en
             self.setEntry(en, mdToCopy.getEntry(en))
         #self.update(mdToCopy)
 
     def mergeEntriesFrom(self, mdToCopy):
+        '''Copies entries from another metadata object into this one. Values
+        are only copied if they are not already defined locally.
+        
+        Parameters
+        ----------
+        mdToCopy : an instance of a metadata handler
+            The metadata handler from which to copy entries.
+        '''
         #only copies values if not already defined
         for en in mdToCopy.getEntryNames():
             if not en in self.getEntryNames():
@@ -87,8 +203,23 @@ class MDHandlerBase(DictMixin):
         return '<%s>:\n\n' % self.__class__.__name__ + '\n'.join(s)
 
     def GetSimpleString(self):
-        '''Writes out metadata in simplfied format'''
-        import cPickle
+        '''Writes out metadata in simplfied format.
+        
+        Returns
+        -------
+            mdstring : string
+                The metadata in a simple, human readable format.
+                
+        See Also
+        --------
+        SimpleMDHandler
+        '''
+        
+        try:
+            import cPickle as pickle
+        except ImportError:
+            import pickle
+            
         import numpy as np
         s = ['#PYME Simple Metadata v1\n']
 
@@ -98,16 +229,28 @@ class MDHandlerBase(DictMixin):
             if val.__class__ in [str, unicode] or np.isscalar(val): #quote string
                 val = repr(val)
             elif not val.__class__ in [int, float, list, dict]: #not easily recovered from representation
-                val = "cPickle.loads('''%s''')" % cPickle.dumps(val)
+                val = "pickle.loads('''%s''')" % pickle.dumps(val)
 
             s.append("md['%s'] = %s\n" % (en, val))
+        
+        return s
     
     def WriteSimple(self, filename):
+        '''Dumps metadata to file in simplfied format.
+        
+        Parameters
+        ----------
+            filename : string
+                The the filename to write to. Should end in .md.
+                
+        See Also
+        --------
+        SimpleMDHandler
+        '''
         s = self.GetSimpleString()
         f = open(filename, 'w')
         f.writelines(s)
         f.close()
-
 
 class HDFMDHandler(MDHandlerBase):
     def __init__(self, h5file, mdToCopy=None):
@@ -165,7 +308,9 @@ class QueueMDHandler(MDHandlerBase):
 
         if not mdToCopy == None:
             self.copyEntriesFrom(mdToCopy)
-
+            
+    def copyEntriesFrom(self, mdToCopy):
+        self.tq.setQueueMetaDataEntries(self.queueName, mdToCopy)
 
     def setEntry(self,entryName, value):
         self.tq.setQueueMetaData(self.queueName, entryName, value)
@@ -210,7 +355,34 @@ class NestedClassMDHandler(MDHandlerBase):
                 en.append(k)
 
         return en
-
+        
+        
+class CachingMDHandler(MDHandlerBase):
+    def __init__(self, mdToCache):
+        self.mdToCache = mdToCache
+        
+        if not mdToCache == None:
+            self.cache = dict(mdToCache.items())
+            
+    @classmethod
+    def recreate(cls, cache):
+        c = cls(None)
+        c.cache = cache
+        
+    def __reduce__(self):
+        return (CachingMDHandler.recreate, (self.cache,))
+        
+    def getEntry(self, entryName):
+        return self.cache[entryName]
+        
+    def setEntry(self, entryName, value):
+        self.cache[entryName] = value
+        if not self.mdToCache == None:
+            self.mdToCache.setEntry(entryName, value)
+        
+    def getEntryNames(self):
+        return self.cache.keys()
+    
 
 from xml.dom.minidom import getDOMImplementation, parse
 #from xml.sax.saxutils import escape, unescape
@@ -222,12 +394,13 @@ class SimpleMDHandler(NestedClassMDHandler):
 
     def __init__(self, filename = None, mdToCopy=None):
         if not filename == None:
-            import cPickle
+            from PYME.Acquire.ExecTools import _execfile
+            import cPickle as pickle
             #loading an existing file
             md = self
             fn = __file__
             globals()['__file__'] = filename
-            execfile(filename)
+            _execfile(filename, locals(), globals())
             globals()['__file__'] = fn
 
         if not mdToCopy == None:
@@ -266,7 +439,11 @@ class XMLMDHandler(MDHandlerBase):
 
 
     def setEntry(self,entryName, value):
-        import cPickle
+        try:
+            import cPickle as pickle
+        except ImportError:
+            import pickle
+        
         import numpy as np
         entPath = entryName.split('.')
 
@@ -302,12 +479,16 @@ class XMLMDHandler(MDHandlerBase):
             node.setAttribute('value', str(value)) 
         else: #pickle more complicated structures
             node.setAttribute('class', 'pickle')
-            print value, cPickle.dumps(value)
-            node.setAttribute('value', base64.b64encode((cPickle.dumps(value))))
+            print((value, pickle.dumps(value)))
+            node.setAttribute('value', base64.b64encode((pickle.dumps(value))))
 
 
     def getEntry(self,entryName):
-        import cPickle
+        try:
+            import cPickle as pickle
+        except ImportError:
+            import pickle
+            
         entPath = entryName.split('.')
 
         node = self.md
@@ -334,7 +515,7 @@ class XMLMDHandler(MDHandlerBase):
             val = float(val)
         elif cls == 'pickle':
             #return None
-            val = cPickle.loads(base64.b64decode(val))
+            val = pickle.loads(base64.b64decode(val))
 
         return val
 

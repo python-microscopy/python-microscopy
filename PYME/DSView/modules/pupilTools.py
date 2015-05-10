@@ -24,9 +24,14 @@ import wx
 import wx.grid
 #import pylab
 #from PYME.DSView.image import ImageStack
-from enthought.traits.api import HasTraits, Float, Int
-from enthought.traits.ui.api import View, Item
-from enthought.traits.ui.menu import OKButton
+try:
+    from enthought.traits.api import HasTraits, Float, Int
+    from enthought.traits.ui.api import View, Item
+    from enthought.traits.ui.menu import OKButton
+except ImportError:
+    from traits.api import HasTraits, Float, Int
+    from traitsui.api import View, Item
+    from traitsui.menu import OKButton
 
 class ZernikeView(wx.ScrolledWindow):
     def __init__(self, dsviewer):
@@ -40,7 +45,7 @@ class ZernikeView(wx.ScrolledWindow):
         xm = np.where(mag.max(1) > 0)[0]
         ym = np.where(mag.max(0) > 0)[0]
         
-        print xm, ym, mag.shape
+        print((xm, ym, mag.shape))
 
         mag = mag[xm[0]:(xm[-1]+1), ym[0]:(ym[-1]+1)]        
         phase = phase[xm[0]:(xm[-1]+1), ym[0]:(ym[-1]+1)]
@@ -110,17 +115,7 @@ class PupilTools(HasTraits):
 
         self.image = dsviewer.image
         
-        PROC_PUPIL_TO_PSF = wx.NewId()
-        #PROC_APPLY_THRESHOLD = wx.NewId()
-        #PROC_LABEL = wx.NewId()
-        
-        dsviewer.mProcessing.Append(PROC_PUPIL_TO_PSF, "Generate PSF from pupil", "", wx.ITEM_NORMAL)
-        #dsviewer.mProcessing.Append(PROC_APPLY_THRESHOLD, "Generate &Mask", "", wx.ITEM_NORMAL)
-        #dsviewer.mProcessing.Append(PROC_LABEL, "&Label", "", wx.ITEM_NORMAL)
-    
-        wx.EVT_MENU(dsviewer, PROC_PUPIL_TO_PSF, self.OnPSFFromPupil)
-        #wx.EVT_MENU(dsviewer, PROC_APPLY_THRESHOLD, self.OnApplyThreshold)
-        #wx.EVT_MENU(dsviewer, PROC_LABEL, self.OnLabel)
+        dsviewer.AddMenuItem('Processing', "Generate PSF from pupil", self.OnPSFFromPupil)
 
     def OnPSFFromPupil(self, event):
         import numpy as np
@@ -136,6 +131,8 @@ class PupilTools(HasTraits):
         z_ -= z_.mean()        
         
         ps = fourierHNA.PsfFromPupil(self.image.data[:,:], z_, self.image.mdh['voxelsize.x']*1e3, self.wavelength)#, shape = [self.sizeX, self.sizeX])
+        
+        ps = ps/ps[:,:,self.sizeZ/2].sum()
         
         im = ImageStack(ps, titleStub = 'Generated PSF')
         im.mdh.copyEntriesFrom(self.image.mdh)

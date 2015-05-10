@@ -206,13 +206,13 @@ class blocking_deconv:
 		    self.blockno[(sl_start_a + sel_x1):(sl_start_a + sel_x2),(sl_start_b + sel_y1):(sl_start_b + sel_y2), (sl_start + sel_z1):(sl_start + sel_z2)] = cast['f'](real(block_n[sel_x1:sel_x2,sel_y1:sel_y2, sel_z1:sel_z2]))
                     
     def go(self, kz = 1, lamb = 2e-2, num_iters = 10):
-        print 'Dividing into blocks ...'
+        print('Dividing into blocks ...')
         self.blockify()
-        print 'Doing some PSF related precomutations ...'
+        print('Doing some PSF related precomutations ...')
         self.init_psf(kz)
-        print 'Sending precomputed info to cluster ...'
+        print('Sending precomputed info to cluster ...')
         self.init_cluster()
-        print 'Starting the deconvolution ....'
+        print('Starting the deconvolution ....')
         #self.push_deconv_tasks(lamb, num_iters)
 
     def retrieve(self):

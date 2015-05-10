@@ -24,19 +24,20 @@
 import serial
 #import time
 
-from lasers import Laser
+from PYME.Acquire.Hardware.lasers import Laser
 
 class CobaltLaser(Laser):
     def __init__(self, name,turnOn=False, portname='COM1', minpower=0.001, maxpower=0.1): # minpower, maxpower in Watts
-        self.ser_port = serial.Serial(portname, 115200, 
-                                      timeout=2, writeTimeout=2)
+        self.ser_args = dict(port=portname, baudrate=115200, timeout=2, writeTimeout=2)
+        #ser = serial.Serial(portname, 115200, 
+        #                              timeout=2, writeTimeout=2)
         self.powerControlable = True
         self.isOn=True
         self.maxpower = maxpower
         self.minpower = minpower
         self.power =  minpower/maxpower #self._getOutputPower() # starting at the minimum power (in %)
 
-    #    self._TurnOn()
+    #    self._TurnOn()  # note: why is the TurnOn() command commented out here? 
 
         Laser.__init__(self, name, turnOn)
 
@@ -44,24 +45,25 @@ class CobaltLaser(Laser):
         return self.isOn
         
     def _TurnOn(self):
-        self.ser_port.write('@cobas 0\r\n')
-        self.ser_port.write('l1\r\n')
-        self.ser_port.flush()
-        self.isOn = True
+        with serial.Serial(**self.ser_args) as ser:
+            ser.write('@cobas 0\r\n')
+            ser.write('l1\r\n')
+            ser.flush()
+            self.isOn = True
 
     def TurnOn(self):
-        #self.ser_port.write('p %3.2f\r\n' % (self.power*self.maxpower))
-        self.ser_port.write('@cobas 0\r\n')
-        self.ser_port.write('cf\r\n')
-        self.ser_port.write('l1\r\n') # the Cobolt 405nm laser needs to be restarted if it is powered on before the interlock is closed.
-        self.ser_port.flush()
-        self.isOn = True
+        with serial.Serial(**self.ser_args) as ser:
+            ser.write('@cobas 0\r\n')
+            ser.write('cf\r\n')
+            ser.write('l1\r\n') # the Cobolt 405nm laser needs to be restarted if it is powered on before the interlock is closed.
+            self.isOn = True
 
     def TurnOff(self):
-        #self.ser_port.write('p 0\r\n')
-        self.ser_port.write('l0\r\n')
-        self.ser_port.flush()
-        self.isOn = False
+        with serial.Serial(**self.ser_args) as ser:
+            # ser.write('p 0\r\n')
+            ser.write('l0\r\n')
+            ser.flush()
+            self.isOn = False
 
     def SetPower(self, power):
         if power < (self.minpower/self.maxpower) or power > 1:
@@ -69,23 +71,29 @@ class CobaltLaser(Laser):
             raise RuntimeError('Error setting laser power: Power must be between %3.2f and 1' % power)
         self.power = power
 
-        self.ser_port.write('p %3.2f\r\n' % (self.power*self.maxpower))
-        self.ser_port.flush()
+        with serial.Serial(**self.ser_args) as ser:
+            ser.write('p %3.2f\r\n' % (self.power*self.maxpower))
+            ser.flush()
 
     #    if self.isOn:
     #        self.TurnOn() #turning on actually sets power
 
     def _getOutputPower(self):
-        self.ser_port.write('p?\r')
-        self.ser_port.flush()
-
-        return float(self.ser_port.readline())
+        with serial.Serial(**self.ser_args) as ser:
+            ser.write('p?\r')
+            ser.flush()
+    
+            res = float(ser.readline())
+        
+        return res
 
     def checkfault(self):
-        self.ser_port.write('f?\r\n')
-        self.ser_port.flush()
-        print ('fault code: 0-no errors; 1-temperature error; 3-interlock error; 4-constant power time out')
-        return self.ser_port.read(50)
+        with serial.Serial(**self.ser_args) as ser:
+           ser.write('f?\r\n')
+           ser.flush()
+           print ('fault code: 0-no errors; 1-temperature error; 3-interlock error; 4-constant power time out')
+           ret = ser.read(50)
+        return
 
     def GetPower(self):
         return self.power

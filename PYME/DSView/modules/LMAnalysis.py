@@ -24,15 +24,29 @@ import Pyro.core
 from PYME.Analysis import remFitBuf
 import os
 from PYME.Acquire import MetaDataHandler
-from pylab import *
+import PYME.Analysis.FitFactories
+
+from PYME.Analysis import MetaDataEdit as mde
+#from pylab import *
 from PYME.FileUtils import fileID
 from PYME.FileUtils.nameUtils import genResultFileName
 from PYME.Analysis.LMVis import progGraph as progGraph
-from PYME.ParallelTasks.relativeFiles import getRelFilename
-import glob
+
+#from PYME.Analysis.LMVis import gl_render
+#from PYME.Analysis.LMVis import workspaceTree
+#import sys
+
+
+from PYME.misc import extraCMaps
+
+
+import numpy as np
+
+from PYME.Analysis.LMVis import pipeline, inpFilt
+
 import numpy
 import pylab
-from PYME.FileUtils import nameUtils
+
 import PYME.misc.autoFoldPanel as afp
 from PYME.Acquire.mytimer import mytimer
 from PYME.DSView import fitInfo
@@ -43,9 +57,24 @@ debug = True
 
 def debugPrint(msg):
     if debug:
-        print msg
+        print(msg)
+        
+
+
 
 class LMAnalyser:
+    FINDING_PARAMS = [#mde.FloatParam('Analysis.DetectionThreshold', 'Thresh:', 1.0),
+                      mde.IntParam('Analysis.DebounceRadius', 'Debounce rad:', 4),
+    ]
+    
+    DEFAULT_PARAMS = [#mde.ChoiceParam('Analysis.InterpModule','Interp:','LinearInterpolator', choices=Interpolators.interpolatorList, choiceNames=Interpolators.interpolatorDisplayList),
+                      #mde.ShiftFieldParam('chroma.ShiftFilename', 'Shifts:', prompt='Please select shiftfield to use', wildcard='Shiftfields|*.sf'),
+                      #mde.FilenameParam('PSFFilename', 'PSF:', prompt='Please select PSF to use ...', wildcard='PSF Files|*.psf'),
+                      #mde.IntParam('Analysis.DebounceRadius', 'Debounce r:', 4),
+                      #mde.FloatParam('Analysis.AxialShift', 'Z Shift [nm]:', 0),
+                      mde.BoolFloatParam('Analysis.PCTBackground' , 'Use percentile for background', default=False, helpText='', ondefault=0.25, offvalue=0),
+    ]
+    
     def __init__(self, dsviewer):
         self.dsviewer = dsviewer
         if 'tq' in dir(dsviewer):
@@ -61,7 +90,11 @@ class LMAnalyser:
         #as LM data (eg tiffs)
         if not 'EstimatedLaserOnFrameNo' in self.image.mdh.getEntryNames():
             from PYME.Analysis import MetaData
+            #try:
             MetaData.fillInBlanks(self.image.mdh, self.image.dataSource)
+            #except IndexError:
+            #    pass
+            
 
         if 'fitResults' in dir(self.image):
             self.fitResults = self.image.fitResults
@@ -112,6 +145,9 @@ class LMAnalyser:
 
         self.numAnalysed = 0
         self.numEvents = 0
+        
+        dsviewer.pipeline = pipeline.Pipeline()
+        self.ds = None
 
         dsviewer.paneHooks.append(self.GenPointFindingPanel)
         dsviewer.paneHooks.append(self.GenAnalysisPanel)
@@ -125,50 +161,60 @@ class LMAnalyser:
         else:
             self.do.zp = self.image.mdh.getEntry('EstimatedLaserOnFrameNo')
         
-        if (len(self.fitResults) > 0) and not 'PYME_BUGGYOPENGL' in os.environ.keys():
-            self.GenResultsView()
+        #if (len(self.fitResults) > 0) and not 'PYME_BUGGYOPENGL' in os.environ.keys():
+        #    self.GenResultsView()
 
-    def GenResultsView(self):
+#    def GenResultsView(self):
+#        voxx = 1e3*self.image.mdh.getEntry('voxelsize.x')
+#        voxy = 1e3*self.image.mdh.getEntry('voxelsize.y')
+#        
+#        self.SetFitInfo()
+#
+#        from PYME.Analysis.LMVis import gl_render
+#        self.glCanvas = gl_render.LMGLCanvas(self.dsviewer, False, vp = self.do, vpVoxSize = voxx)
+#        self.glCanvas.cmap = pylab.cm.gist_rainbow
+#        self.glCanvas.pointSelectionCallbacks.append(self.OnPointSelect)
+#
+#        self.dsviewer.AddPage(page=self.glCanvas, select=True, caption='VisLite')
+#
+#        xsc = self.image.data.shape[0]*1.0e3*self.image.mdh.getEntry('voxelsize.x')/self.glCanvas.Size[0]
+#        ysc = self.image.data.shape[1]*1.0e3*self.image.mdh.getEntry('voxelsize.y')/ self.glCanvas.Size[1]
+#
+#        if xsc > ysc:
+#            self.glCanvas.setView(0, xsc*self.glCanvas.Size[0], 0, xsc*self.glCanvas.Size[1])
+#        else:
+#            self.glCanvas.setView(0, ysc*self.glCanvas.Size[0], 0, ysc*self.glCanvas.Size[1])
+#
+#        #we have to wait for the gui to be there before we start changing stuff in the GL view
+#        #self.timer.WantNotification.append(self.AddPointsToVis)
+#
+#        self.glCanvas.Bind(wx.EVT_IDLE, self.OnIdle)
+#        self.pointsAdded = False
+        
+    def SetFitInfo(self):
         self.view.pointMode = 'lm'
-
         voxx = 1e3*self.image.mdh.getEntry('voxelsize.x')
         voxy = 1e3*self.image.mdh.getEntry('voxelsize.y')
         self.view.points = numpy.vstack((self.fitResults['fitResults']['x0']/voxx, self.fitResults['fitResults']['y0']/voxy, self.fitResults['tIndex'])).T
 
         if 'Splitter' in self.image.mdh.getEntry('Analysis.FitModule'):
             self.view.pointMode = 'splitter'
-            self.view.pointColours = self.fitResults['fitResults']['Ag'] > self.fitResults['fitResults']['Ar']
-
-        self.fitInf = fitInfo.FitInfoPanel(self.dsviewer, self.fitResults, self.resultsMdh, self.do.ds)
-        self.dsviewer.AddPage(page=self.fitInf, select=False, caption='Fit Info')
-
-        from PYME.Analysis.LMVis import gl_render
-        self.glCanvas = gl_render.LMGLCanvas(self.dsviewer, False, vp = self.do, vpVoxSize = voxx)
-        self.glCanvas.cmap = pylab.cm.gist_rainbow
-        self.glCanvas.pointSelectionCallbacks.append(self.OnPointSelect)
-
-        self.dsviewer.AddPage(page=self.glCanvas, select=True, caption='VisLite')
-
-        xsc = self.image.data.shape[0]*1.0e3*self.image.mdh.getEntry('voxelsize.x')/self.glCanvas.Size[0]
-        ysc = self.image.data.shape[1]*1.0e3*self.image.mdh.getEntry('voxelsize.y')/ self.glCanvas.Size[1]
-
-        if xsc > ysc:
-            self.glCanvas.setView(0, xsc*self.glCanvas.Size[0], 0, xsc*self.glCanvas.Size[1])
+            if 'BNR' in self.image.mdh['Analysis.FitModule']:
+                self.view.pointColours = self.fitResults['ratio'] > 0.5
+            else:
+                self.view.pointColours = self.fitResults['fitResults']['Ag'] > self.fitResults['fitResults']['Ar']
+            
+        if not 'fitInf' in dir(self):
+            self.fitInf = fitInfo.FitInfoPanel(self.dsviewer, self.fitResults, self.resultsMdh, self.do.ds)
+            self.dsviewer.AddPage(page=self.fitInf, select=False, caption='Fit Info')
         else:
-            self.glCanvas.setView(0, ysc*self.glCanvas.Size[0], 0, ysc*self.glCanvas.Size[1])
-
-        #we have to wait for the gui to be there before we start changing stuff in the GL view
-        #self.timer.WantNotification.append(self.AddPointsToVis)
-
-        self.glCanvas.Bind(wx.EVT_IDLE, self.OnIdle)
-        self.pointsAdded = False
+            self.fitInf.SetResults(self.fitResults, self.resultsMdh)
+            
         
     def OnPointSelect(self, xp, yp):
         dist = np.sqrt((xp - self.fitResults['fitResults']['x0'])**2 + (yp - self.fitResults['fitResults']['y0'])**2)
-        #print cand.sum()
         
         cand = dist.argmin()
-        
         
         self.dsviewer.do.xp = xp/(1.0e3*self.image.mdh.getEntry('voxelsize.x'))
         self.dsviewer.do.yp = yp/(1.0e3*self.image.mdh.getEntry('voxelsize.y'))
@@ -183,89 +229,66 @@ class LMAnalyser:
             self.glCanvas.setCLim((0, self.fitResults['tIndex'].max()))
 
     def OnToggleBackground(self, event):
+        self.SetMDItems()
         if self.do.ds.bgRange == None:
             self.do.ds.bgRange = [int(v) for v in self.tBackgroundFrames.GetValue().split(':')]
             self.do.ds.dataStart = int(self.tStartAt.GetValue())
+            
+            self.do.ds.setBackgroundBufferPCT(self.image.mdh['Analysis.PCTBackground'])
         else:
             self.do.ds.bgRange = None
             self.do.ds.dataStart = 0
             
+            
         self.do.Optimise()
 
-    def AddPointsToVis(self):
-        self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],self.fitResults['tIndex'].astype('f'))
-        self.glCanvas.setCLim((0, self.fitResults['tIndex'].max()))
-
-        self.timer.WantNotification.remove(self.AddPointsToVis)
+#    def AddPointsToVis(self):
+#        self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],self.fitResults['tIndex'].astype('f'))
+#        self.glCanvas.setCLim((0, self.fitResults['tIndex'].max()))
+#
+#        self.timer.WantNotification.remove(self.AddPointsToVis)
 
     def GetStatusText(self):
         return 'Frames Analysed: %d    Events detected: %d' % (self.numAnalysed, self.numEvents)
+        
+    def _populateStdOptionsPanel(self, pan, vsizer):
+        for param in self.DEFAULT_PARAMS:
+            pg = param.createGUI(pan, self.image.mdh)
+            vsizer.Add(pg, 0,wx.BOTTOM|wx.EXPAND, 5)
+        vsizer.Fit(pan)
+            
+    def _populateFindOptionsPanel(self, pan, vsizer):
+        for param in self.FINDING_PARAMS:
+            pg = param.createGUI(pan, self.image.mdh)
+            vsizer.Add(pg, 0,wx.BOTTOM|wx.EXPAND, 5)
+        #vsizer.Fit(pan)
+    
+        
+    def _populateCustomAnalysisPanel(self, pan, vsizer):
+        try:
+            fitMod = self.fitFactories[self.cFitType.GetSelection()]
+            fm = __import__('PYME.Analysis.FitFactories.' + fitMod, fromlist=['PYME', 'Analysis', 'FitFactories'])
+            
+            #vsizer = wx.BoxSizer(wx.VERTICAL)
+            for param in fm.PARAMETERS:
+                pg = param.createGUI(pan, self.image.mdh)
+                vsizer.Add(pg, 0,wx.BOTTOM|wx.EXPAND, 5)
+            vsizer.Fit(pan)
+                
+        except AttributeError:
+            pass
+        
+    def OnFitModuleChanged(self, event):
+        self.customOptionsSizer.Clear(True)
+        self._populateCustomAnalysisPanel(self.customOptionsPan, self.customOptionsSizer)
+        
 
     def GenAnalysisPanel(self, _pnl):
-#        item = _pnl.AddFoldPanel("Analysis", collapsed=False,
-#                                      foldIcons=self.Images)
         item = afp.foldingPane(_pnl, -1, caption="Analysis", pinned = True)
-
-        pan = wx.Panel(item, -1)
-
-        #find out what fit factories we have
-        import PYME.Analysis.FitFactories
-        fitFactoryList = glob.glob(PYME.Analysis.FitFactories.__path__[0] + '/[a-zA-Z]*.py')
-        fitFactoryList = [os.path.split(p)[-1][:-3] for p in fitFactoryList]
-        fitFactoryList.sort()
-
-        self.fitFactories = []
-        for ff in fitFactoryList:
-            try:
-                fm = __import__('PYME.Analysis.FitFactories.' + ff, fromlist=['PYME', 'Analysis', 'FitFactories'])
-                if 'FitResultsDType' in dir(fm):
-                    self.fitFactories.append(ff)
-            except:
-                pass
-
-        interpolatorList = glob.glob(PYME.Analysis.FitFactories.__path__[0] + '/Interpolators/[a-zA-Z]*.py')
-        interpolatorList = [os.path.split(p)[-1][:-3] for p in interpolatorList]
-        #print interpolatorList
-        interpolatorList.remove('baseInterpolator')
-        interpolatorList.sort()
-
-        self.interpolators = interpolatorList
-
-        #ditch the 'Interpolator' at the end of the module name for display
-        interpolatorList = [i[:-12] for i in interpolatorList]
-
-        #print fitFactoryList
-        #print self.fitFactories
-
-        vsizer = wx.BoxSizer(wx.VERTICAL)
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        hsizer.Add(wx.StaticText(pan, -1, 'Type:'), 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-        self.cFitType = wx.Choice(pan, -1, choices = self.fitFactories, size=(110, -1))
         
-        if 'Analysis.FitModule' in self.image.mdh.getEntryNames():
-            #has already been analysed - most likely to want the same method again
-            self.cFitType.SetSelection(self.fitFactories.index(self.image.mdh['Analysis.FitModule']))
-            self.tThreshold.SetValue('%s' % self.image.mdh['Analysis.DetectionThreshold'])
-        elif 'Camera.ROIPosY' in self.image.mdh.getEntryNames() and (self.image.mdh.getEntry('Camera.ROIHeight') + 1 + 2*(self.image.mdh.getEntry('Camera.ROIPosY')-1)) == 512:
-            #we have a symetrical ROI about the centre - most likely want to analyse using splitter
-            self.cFitType.SetSelection(self.fitFactories.index('SplitterFitQR'))
-            self.tThreshold.SetValue('0.5')
-        else:
-            self.cFitType.SetSelection(self.fitFactories.index('LatGaussFitFR'))
-
-        hsizer.Add(self.cFitType, 1,wx.ALIGN_CENTER_VERTICAL, 0)
-        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 2)
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        hsizer.Add(wx.StaticText(pan, -1, 'Interp:'), 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-        self.cInterpType = wx.Choice(pan, -1, choices = interpolatorList, size=(100, -1))
-
-        self.cInterpType.SetSelection(interpolatorList.index('Linear'))
-
-        hsizer.Add(self.cInterpType, 1,wx.ALIGN_CENTER_VERTICAL, 0)
-        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 7)
+        ##############################
+        pan = wx.Panel(item, -1)
+        vsizer = wx.BoxSizer(wx.VERTICAL)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -286,175 +309,136 @@ class LMAnalyser:
 
         hsizer.Add(self.tBackgroundFrames, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
         vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 2)
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        hsizer.Add(wx.StaticText(pan, -1, 'Debounce r:'), 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-        self.tDebounceRadius = wx.TextCtrl(pan, -1, value='4', size=(50, -1))
-
-        hsizer.Add(self.tDebounceRadius, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
-        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 10)
         
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        hsizer.Add(wx.StaticText(pan, -1, 'Z Shift [nm]:'), 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-        self.tZShift = wx.TextCtrl(pan, -1, value='0', size=(50, -1))
-        if 'Analysis.AxialShift' in self.image.mdh.getEntryNames():
-            self.tZShift.SetValue('%3.2f' % self.image.mdh['Analysis.AxialShift'])
-
-        hsizer.Add(self.tZShift, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
-        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 10)
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        shiftFieldText = 'Shifts: <None>'
-        haveShiftField=False
-        if 'chroma.ShiftFilename' in self.image.mdh.getEntryNames():
-            #have new format shift field data
-            shiftFieldText = 'Shifts: ' + os.path.split(self.image.mdh.getEntry('chroma.ShiftFilename'))[1]
-            haveShiftField=True
-        elif 'chroma.dx' in self.image.mdh.getEntryNames():
-            #have shift field, but filename not recorded
-            shiftFieldText = 'Shifts: present'
-            haveShiftField=True
-
-        self.stShiftFieldName = wx.StaticText(pan, -1, shiftFieldText)
-        if haveShiftField:
-            self.stShiftFieldName.SetForegroundColour(wx.Colour(0, 128, 0))
-        hsizer.Add(self.stShiftFieldName, 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        bSetShiftField = wx.Button(pan, -1, 'Set', style=wx.BU_EXACTFIT)
-        bSetShiftField.Bind(wx.EVT_BUTTON, self.SetShiftField)
-        hsizer.Add(bSetShiftField, 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
-
-        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 2)
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        psfFieldText = 'PSF: <None>'
-        havePSF = False
-
-        if 'PSFFile' in self.image.mdh.getEntryNames():
-            psfFieldText = 'PSF: ' + os.path.split(self.image.mdh.getEntry('PSFFile'))[1]
-            havePSF = True
-
-        self.stPSFFilename = wx.StaticText(pan, -1, psfFieldText)
-        if havePSF:
-            self.stPSFFilename.SetForegroundColour(wx.Colour(0, 128, 0))
-
-        hsizer.Add(self.stPSFFilename, 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        bSetPSF = wx.Button(pan, -1, 'Set', style=wx.BU_EXACTFIT)
-        bSetPSF.Bind(wx.EVT_BUTTON, self.SetPSF)
-        hsizer.Add(bSetPSF, 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
-
-        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 10)
-
         pan.SetSizer(vsizer)
         vsizer.Fit(pan)
-
-        #_pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, 5, 5)
         item.AddNewElement(pan)
-
-        self.cbDrift = wx.CheckBox(item, -1, 'Estimate Drift')
-        self.cbDrift.SetValue(False)
-
-        #_pnl.AddFoldPanelWindow(item, self.cbDrift, fpb.FPB_ALIGN_WIDTH, 7, 5)
-        item.AddNewElement(self.cbDrift)
 
         self.cbSubtractBackground = wx.CheckBox(item, -1, 'Subtract background in fit')
         self.cbSubtractBackground.SetValue(True)
 
-        #_pnl.AddFoldPanelWindow(item, self.cbSubtractBackground, fpb.FPB_ALIGN_WIDTH, 2, 5)
+
         item.AddNewElement(self.cbSubtractBackground)
 
+        #############################
+        #std options
+        pan = wx.Panel(item, -1)
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+        pan.SetSizer(vsizer)
+        
+        self._populateStdOptionsPanel(pan, vsizer)
+                
+        item.AddNewElement(pan)
+
+        
+        #######################
+        #Fit factory selection
+        pan = wx.Panel(item, -1)
+
+        #find out what fit factories we have
+        self.fitFactories = PYME.Analysis.FitFactories.resFitFactories
+        print((self.fitFactories))
+
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        hsizer.Add(wx.StaticText(pan, -1, 'Type:'), 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.cFitType = wx.Choice(pan, -1, choices = ['{:<35} \t- {:} '.format(f, PYME.Analysis.FitFactories.useFor[f]) for f in self.fitFactories], size=(110, -1))
+        
+        if 'Analysis.FitModule' in self.image.mdh.getEntryNames():
+            #has already been analysed - most likely to want the same method again
+            self.cFitType.SetSelection(self.fitFactories.index(self.image.mdh['Analysis.FitModule']))
+            self.tThreshold.SetValue('%s' % self.image.mdh['Analysis.DetectionThreshold'])
+        #elif 'Camera.ROIPosY' in self.image.mdh.getEntryNames() and (self.image.mdh.getEntry('Camera.ROIHeight') + 1 + 2*(self.image.mdh.getEntry('Camera.ROIPosY')-1)) == 512:
+        #    #we have a symetrical ROI about the centre - most likely want to analyse using splitter
+        #    self.cFitType.SetSelection(self.fitFactories.index('SplitterFitQR'))
+        #    self.tThreshold.SetValue('0.5')
+        else:
+            self.cFitType.SetSelection(self.fitFactories.index('LatGaussFitFR'))
+            
+        self.cFitType.Bind(wx.EVT_CHOICE, self.OnFitModuleChanged)
+
+        hsizer.Add(self.cFitType, 1,wx.ALIGN_CENTER_VERTICAL, 0)
+        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 2)
+
+        pan.SetSizer(vsizer)
+        vsizer.Fit(pan)
+
+        item.AddNewElement(pan)
+
+#        self.cbDrift = wx.CheckBox(item, -1, 'Estimate Drift')
+#        self.cbDrift.SetValue(False)
+#
+#        #_pnl.AddFoldPanelWindow(item, self.cbDrift, fpb.FPB_ALIGN_WIDTH, 7, 5)
+#        item.AddNewElement(self.cbDrift)
+
+
+        ########################################        
+        #custom  (fit factory dependant) options        
+        self.customOptionsPan = wx.Panel(item, -1)
+        self.customOptionsSizer = wx.BoxSizer(wx.VERTICAL)
+        self.customOptionsPan.SetSizer(self.customOptionsSizer)
+
+        self._populateCustomAnalysisPanel(self.customOptionsPan, self.customOptionsSizer)        
+
+        item.AddNewElement(self.customOptionsPan)
+        
+        ######################
+        #Go
         self.bGo = wx.Button(item, -1, 'Go')
 
 
         self.bGo.Bind(wx.EVT_BUTTON, self.OnGo)
-        #_pnl.AddFoldPanelWindow(item, self.bGo, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
         item.AddNewElement(self.bGo)
         _pnl.AddPane(item)
 
         self.analysisPanel = item
 
 
-    def SetPSF(self, event=None):
-        fdialog = wx.FileDialog(None, 'Please select PSF to use ...',
-                    defaultDir=os.path.split(self.image.filename)[0],
-                    wildcard='PSF files|*.psf', style=wx.OPEN)
-        succ = fdialog.ShowModal()
-        if (succ == wx.ID_OK):
-            #self.ds = example.CDataStack(fdialog.GetPath().encode())
-            #self.ds =
-            psfFilename = fdialog.GetPath()
-            self.image.mdh.setEntry('PSFFile', getRelFilename(psfFilename))
-            #self.md.setEntry('PSFFile', psfFilename)
-            self.stPSFFilename.SetLabel('PSF: %s' % os.path.split(psfFilename)[1])
-            self.stPSFFilename.SetForegroundColour(wx.Colour(0, 128, 0))
-            return True
-        else:
-            return False
 
-    def SetShiftField(self, event=None):
-        fdialog = wx.FileDialog(None, 'Please select shift field to use ...',
-                    wildcard='Shift fields|*.sf', style=wx.OPEN, defaultDir = nameUtils.genShiftFieldDirectoryPath())
-        succ = fdialog.ShowModal()
-        if (succ == wx.ID_OK):
-            #self.ds = example.CDataStack(fdialog.GetPath().encode())
-            #self.ds =
-            sfFilename = fdialog.GetPath()
-            self.image.mdh.setEntry('chroma.ShiftFilename', sfFilename)
-            dx, dy = numpy.load(sfFilename)
-            self.image.mdh.setEntry('chroma.dx', dx)
-            self.image.mdh.setEntry('chroma.dy', dy)
-            #self.md.setEntry('PSFFile', psfFilename)
-            self.stShiftFieldName.SetLabel('Shifts: %s' % os.path.split(sfFilename)[1])
-            self.stShiftFieldName.SetForegroundColour(wx.Colour(0, 128, 0))
-            return True
-        else:
-            return False
+            
+    def SetMDItems(self):
+        self.image.mdh.setEntry('Analysis.subtractBackground', self.cbSubtractBackground.GetValue())
+        
+        
+        for param in self.DEFAULT_PARAMS:
+            param.retrieveValue(self.image.mdh)
+            
+        for param in self.FINDING_PARAMS:
+            param.retrieveValue(self.image.mdh)
+            
+            
+        fitMod = self.fitFactories[self.cFitType.GetSelection()]
+        fm = __import__('PYME.Analysis.FitFactories.' + fitMod, fromlist=['PYME', 'Analysis', 'FitFactories'])
+        
+        try: 
+            plist = fm.PARAMETERS
+        except AttributeError:
+            plist = []     
+        
+        for param in plist:
+            param.retrieveValue(self.image.mdh)
+            
 
 
     def OnGo(self, event):
         threshold = float(self.tThreshold.GetValue())
         startAt = int(self.tStartAt.GetValue())
-        driftEst = self.cbDrift.GetValue()
-        fitMod = self.cFitType.GetStringSelection()
-        interpolator = self.interpolators[self.cInterpType.GetSelection()]
+        driftEst = False#self.cbDrift.GetValue()
+        fitMod = self.fitFactories[self.cFitType.GetSelection()]
+        #interpolator = self.interpolators[self.cInterpType.GetSelection()]
         bgFrames = [int(v) for v in self.tBackgroundFrames.GetValue().split(':')]
-
-        self.image.mdh.setEntry('Analysis.subtractBackground', self.cbSubtractBackground.GetValue())
-        #self.md.setEntry('Analysis.subtractBackground', self.cbSubtractBackground.GetValue())
-
-        #self.image.mdh.setEntry('Analysis.NumBGFrames', bgFrames)
         self.image.mdh.setEntry('Analysis.BGRange', bgFrames)
-        #self.md.setEntry('Analysis.NumBGFrames', bgFrames)
+        
+        
+        self.SetMDItems()
+        
 
-        self.image.mdh.setEntry('Analysis.InterpModule', interpolator)
+        #self.image.mdh.setEntry('Analysis.InterpModule', interpolator)
 
-        self.image.mdh.setEntry('Analysis.DebounceRadius', int(self.tDebounceRadius.GetValue()))
-
-        if fitMod.startswith('SplitterFit') and not 'chroma.dx' in self.image.mdh.getEntryNames():
-            if not self.SetShiftField():
-                return
-
-        if 'Interp' in fitMod and not 'PSFFile' in self.image.mdh.getEntryNames():
-            if not self.SetPSF():
-                return
-
-        if 'Interp' in fitMod  and 'Splitter' in fitMod:
-            #dlg = wx.TextEntryDialog(self, 'What is the axial chromatic shift between splitter halves [nm]?',
-            #    'Axial Shift', '300')
-
-            #if dlg.ShowModal() == wx.ID_OK:
-            #    self.image.mdh.setEntry('Analysis.AxialShift', float(dlg.GetValue()))
-            #else:
-            self.image.mdh.setEntry('Analysis.AxialShift', float(self.tZShift.GetValue()))
-
-
-            #dlg.Destroy()
             
         if debug:
-            print 'About to push images'
+            print('About to push images')
 
         if not driftEst:
             self.pushImages(startAt, threshold, fitMod)
@@ -462,22 +446,25 @@ class LMAnalyser:
             self.pushImagesD(startAt, threshold)
             
         if debug:
-            print 'Images pushed'
+            print('Images pushed')
 
-        from PYME.Analysis.LMVis import gl_render
-        self.glCanvas = gl_render.LMGLCanvas(self.dsviewer, False)
-        self.glCanvas.cmap = pylab.cm.gist_rainbow
-
-        self.dsviewer.AddPage(page=self.glCanvas, select=True, caption='VisLite')
+        #############
+        #set up real time display
+#        if not 'glCanvas' in dir(self):   #re-use existing canvas if present     
+#            from PYME.Analysis.LMVis import gl_render
+#            self.glCanvas = gl_render.LMGLCanvas(self.dsviewer, False)
+#            self.glCanvas.cmap = pylab.cm.gist_rainbow
+#    
+#            self.dsviewer.AddPage(page=self.glCanvas, select=True, caption='VisLite')
         
 
-        xsc = self.image.data.shape[0]*1.0e3*self.image.mdh.getEntry('voxelsize.x')/self.glCanvas.Size[0]
-        ysc = self.image.data.shape[1]*1.0e3*self.image.mdh.getEntry('voxelsize.y')/ self.glCanvas.Size[1]
-
-        if xsc > ysc:
-            self.glCanvas.setView(0, xsc*self.glCanvas.Size[0], 0, xsc*self.glCanvas.Size[1])
-        else:
-            self.glCanvas.setView(0, ysc*self.glCanvas.Size[0], 0, ysc*self.glCanvas.Size[1])
+#        xsc = self.image.data.shape[0]*1.0e3*self.image.mdh.getEntry('voxelsize.x')/self.glCanvas.Size[0]
+#        ysc = self.image.data.shape[1]*1.0e3*self.image.mdh.getEntry('voxelsize.y')/ self.glCanvas.Size[1]
+#
+#        if xsc > ysc:
+#            self.glCanvas.setView(0, xsc*self.glCanvas.Size[0], 0, xsc*self.glCanvas.Size[1])
+#        else:
+#            self.glCanvas.setView(0, ysc*self.glCanvas.Size[0], 0, ysc*self.glCanvas.Size[1])
 
         self.numAnalysed = 0
         self.numEvents = 0
@@ -493,86 +480,54 @@ class LMAnalyser:
 #                                      foldIcons=self.Images)
 
         pan = wx.Panel(item, -1)
-
+        vsizer = wx.BoxSizer(wx.VERTICAL)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        hsizer.Add(wx.StaticText(pan, -1, 'Thresh:'), 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-        self.tThreshold = wx.TextCtrl(pan, -1, value='0.6', size=(30, -1))
+        hsizer.Add(wx.StaticText(pan, -1, 'Threshold:'), 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tThreshold = wx.TextCtrl(pan, -1, value='0.6', size=(40, -1))
 
-        hsizer.Add(self.tThreshold, 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-
+        hsizer.Add(self.tThreshold, 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+        
+        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 2)
+        
+        #load any additional point finding settings
+        self._populateFindOptionsPanel(pan, vsizer)
+        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
         bTest = wx.Button(pan, -1, 'Test', style=wx.BU_EXACTFIT)
         bTest.Bind(wx.EVT_BUTTON, self.OnTest)
         hsizer.Add(bTest, 0,wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
         
-        bTestF = wx.Button(pan, -1, 'TF', style=wx.BU_EXACTFIT)
+        bTestF = wx.Button(pan, -1, 'Test This Frame', style=wx.BU_EXACTFIT)
         bTestF.Bind(wx.EVT_BUTTON, self.OnTestFrame)
         hsizer.Add(bTestF, 0,wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
+        
+        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 2)
+        
+        pan.SetSizerAndFit(vsizer)
 
-        pan.SetSizer(hsizer)
-        hsizer.Fit(pan)
-
-        #_pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
         item.AddNewElement(pan)
         _pnl.AddPane(item)
 
 
-        #_pnl.AddFoldPanelWindow(item, bTest, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
-
     def OnTest(self, event):
         threshold = float(self.tThreshold.GetValue())
-        startAt = int(self.tStartAt.GetValue())
-        driftEst = self.cbDrift.GetValue()
-        fitMod = self.cFitType.GetStringSelection()
-
-        self.image.mdh.setEntry('Analysis.DebounceRadius', int(self.tDebounceRadius.GetValue()))
-
-        if 'Psf' in fitMod and not 'PSFFile' in self.image.mdh.getEntryNames():
-            fdialog = wx.FileDialog(None, 'Please select PSF to use ...',
-                    wildcard='PSF files|*.psf', style=wx.OPEN)
-            succ = fdialog.ShowModal()
-            if (succ == wx.ID_OK):
-                #self.ds = example.CDataStack(fdialog.GetPath().encode())
-                #self.ds =
-                psfFilename = fdialog.GetPath()
-                self.image.mdh.setEntry('PSFFile', getRelFilename(psfFilename))
-                #self.md.setEntry('PSFFile', psfFilename)
-            else:
-                return
-
-        #if not driftEst:
+        self.SetMDItems()
         self.testFrames(threshold)
         
     def OnTestFrame(self, event):
-        threshold = float(self.tThreshold.GetValue())
-        startAt = int(self.tStartAt.GetValue())
-        driftEst = self.cbDrift.GetValue()
-        fitMod = self.cFitType.GetStringSelection()
-
-        self.image.mdh.setEntry('Analysis.DebounceRadius', int(self.tDebounceRadius.GetValue()))
-
-        if 'Psf' in fitMod and not 'PSFFile' in self.image.mdh.getEntryNames():
-            fdialog = wx.FileDialog(None, 'Please select PSF to use ...',
-                    wildcard='PSF files|*.psf', style=wx.OPEN)
-            succ = fdialog.ShowModal()
-            if (succ == wx.ID_OK):
-                #self.ds = example.CDataStack(fdialog.GetPath().encode())
-                #self.ds =
-                psfFilename = fdialog.GetPath()
-                self.image.mdh.setEntry('PSFFile', getRelFilename(psfFilename))
-                #self.md.setEntry('PSFFile', psfFilename)
-            else:
-                return
-
-        #if not driftEst:
-        self.testFrame(threshold)
-        #else:
-        #    self.sh.run('pushImagesD(%d, %f)' % (startAt, threshold)
+        threshold = float(self.tThreshold.GetValue())        
+        self.SetMDItems()
+        
+        ft, fr = self.testFrame(threshold)
+        
+        self.fitResults = fr.results
+        self.resultsMdh = self.image.mdh       
+        
+        self.SetFitInfo()
 
     def GenFitStatusPanel(self, _pnl):
         item = afp.foldingPane(_pnl, -1, caption="Fit Status", pinned = True)
-#        item = _pnl.AddFoldPanel("Fit Status", collapsed=False,
-#                                      foldIcons=self.Images)
 
         pan = wx.Panel(item, -1, size = (160, 300))
 
@@ -679,47 +634,19 @@ class LMAnalyser:
             if len(newResults) > 0:
                 if len(self.fitResults) == 0:
                     self.fitResults = newResults
+                    self.ds = inpFilt.fitResultsSource(self.fitResults)
+                    self.dsviewer.pipeline.OpenFile(ds=self.ds)
                 else:
                     self.fitResults = numpy.concatenate((self.fitResults, newResults))
+                    self.ds.setResults(self.fitResults)
+                    self.dsviewer.pipeline.Rebuild()
+                    
+                
                 self.progPan.fitResults = self.fitResults
 
                 self.view.points = numpy.vstack((self.fitResults['fitResults']['x0'], self.fitResults['fitResults']['y0'], self.fitResults['tIndex'])).T
 
                 self.numEvents = len(self.fitResults)
-
-                if self.analDispMode == 'z' and (('zm' in dir(self)) or ('z0' in self.fitResults['fitResults'].dtype.fields)):
-                    #display z as colour
-                    if 'zm' in dir(self): #we have z info
-                        if 'z0' in self.fitResults['fitResults'].dtype.fields:
-                            z = 1e3*self.zm(self.fitResults['tIndex'].astype('f')).astype('f')
-                            z_min = z.min() - 500
-                            z_max = z.max() + 500
-                            z = z + self.fitResults['fitResults']['z0']
-                            self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],z)
-                            self.glCanvas.setCLim((z_min, z_max))
-                        else:
-                            z = self.zm(self.fitResults['tIndex'].astype('f')).astype('f')
-                            self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],z)
-                            self.glCanvas.setCLim((z.min(), z.max()))
-                    elif 'z0' in self.fitResults['fitResults'].dtype.fields:
-                        z = self.fitResults['fitResults']['z0']
-                        self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],z)
-                        self.glCanvas.setCLim((-1e3, 1e3))
-
-                elif self.analDispMode == 'gFrac' and 'Ag' in self.fitResults['fitResults'].dtype.fields:
-                    #display ratio of colour channels as point colour
-                    c = self.fitResults['fitResults']['Ag']/(self.fitResults['fitResults']['Ag'] + self.fitResults['fitResults']['Ar'])
-                    self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],c)
-                    self.glCanvas.setCLim((0, 1))
-                elif self.analDispMode == 'gFrac' and 'ratio' in self.fitResults['fitResults'].dtype.fields:
-                    #display ratio of colour channels as point colour
-                    c = self.fitResults['fitResults']['ratio']
-                    self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],c)
-                    self.glCanvas.setCLim((0, 1))
-                else:
-                    #default to time
-                    self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],self.fitResults['tIndex'].astype('f'))
-                    self.glCanvas.setCLim((0, self.numAnalysed))
 
         if (self.tq.getNumberOpenTasks(self.image.seriesName) + self.tq.getNumberTasksInProgress(self.image.seriesName)) == 0 and 'SpoolingFinished' in self.image.mdh.getEntryNames():
             self.dsviewer.statusbar.SetBackgroundColour(wx.GREEN)
@@ -732,22 +659,31 @@ class LMAnalyser:
 
     def update(self, dsviewer):
         if 'fitInf' in dir(self) and not self.dsviewer.playbackpanel.tPlay.IsRunning():
-            self.fitInf.UpdateDisp(self.view.PointsHitTest())
+            try:
+                self.fitInf.UpdateDisp(self.view.PointsHitTest())
+            except:
+                import traceback
+                print((traceback.format_exc()))
 
 
     #from fth5.py
     def checkTQ(self):
-        if self.tq == None:
+            
+        try:
             #if 'PYME_TASKQUEUENAME' in os.environ.keys():
             #    taskQueueName = os.environ['PYME_TASKQUEUENAME']
             #else:
             #    taskQueueName = 'taskQueue'
-
+            self.tq.isAlive()
+        
+        except:
+            self.tq = None
+        
+        if self.tq == None:
             from PYME.misc.computerName import GetComputerName
             compName = GetComputerName()
             
             try:
-
                 taskQueueName = 'TaskQueues.%s' % compName
 
                 self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
@@ -760,7 +696,7 @@ class LMAnalyser:
     def pushImages(self, startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
         self.checkTQ()
         if debug:
-            print 'TQ checked'
+            print('TQ checked')
         if self.image.dataSource.moduleName == 'HDFDataSource':
             self.pushImagesHDF(startingAt, detThresh, fitFcn)
         elif self.image.dataSource.moduleName == 'TQDataSource':
@@ -863,8 +799,9 @@ class LMAnalyser:
             self.tq.postTask(remFitBuf.fitTask(self.image.seriesName,i, detThresh, md, fitFcn, bgindices=bgi, SNThreshold=True, dataSourceModule=mn), queueName=resultsFilename)
 
         self.image.seriesName = resultsFilename
-            
-        #self.tq.releaseTasks(self.image.seriesName, startingAt)
+        
+        
+   
 
 
 #    def testFrame(self, detThresh = 0.9):
@@ -888,6 +825,7 @@ class LMAnalyser:
 #        return ft(True)
 
     def testFrames(self, detThresh = 0.9, offset = 0):
+        from pylab import *
         close('all')
         if self.image.dataSource.moduleName == 'TQDataSource':
             self.checkTQ()
@@ -897,12 +835,12 @@ class LMAnalyser:
         sq = min(self.image.mdh.getEntry('EstimatedLaserOnFrameNo') + 1000, self.image.dataSource.getNumSlices()/4)
         zps = array(range(self.image.mdh.getEntry('EstimatedLaserOnFrameNo') + 20, self.image.mdh.getEntry('EstimatedLaserOnFrameNo') + 24)  + range(sq, sq + 4) + range(self.image.dataSource.getNumSlices()/2,self.image.dataSource.getNumSlices() /2+4))
         zps += offset
-        fitMod = self.cFitType.GetStringSelection()
+        fitMod = self.fitFactories[self.cFitType.GetSelection()]
         #bgFrames = int(tBackgroundFrames.GetValue())
         bgFrames = [int(v) for v in self.tBackgroundFrames.GetValue().split(':')]
-        print zps
+        print(zps)
         for i in range(12):
-            print i
+            print(i)
             #if 'Analysis.NumBGFrames' in md.getEntryNames():
             #bgi = range(max(zps[i] - bgFrames,mdh.getEntry('EstimatedLaserOnFrameNo')), zps[i])
             bgi = range(max(zps[i] + bgFrames[0],self.image.mdh.getEntry('EstimatedLaserOnFrameNo')), max(zps[i] + bgFrames[1],self.image.mdh.getEntry('EstimatedLaserOnFrameNo')))
@@ -953,6 +891,7 @@ class LMAnalyser:
         matplotlib.interactive(True)
         
     def testFrame(self, detThresh = 0.9, offset = 0, gui=True):
+        from pylab import *
         #close('all')
         if self.image.dataSource.moduleName == 'TQDataSource':
             self.checkTQ()
@@ -964,7 +903,8 @@ class LMAnalyser:
         #zps += offset
         
         zp = self.do.zp
-        fitMod = self.cFitType.GetStringSelection()
+        fitMod = self.fitFactories[self.cFitType.GetSelection()]
+        self.image.mdh.setEntry('Analysis.FitModule', fitMod)
         #bgFrames = int(tBackgroundFrames.GetValue())
         bgFrames = [int(v) for v in self.tBackgroundFrames.GetValue().split(':')]
         #print zps
@@ -999,6 +939,15 @@ class LMAnalyser:
                 xticks([])
                 yticks([])
                 
+                
+                    
+                vx = 1e3*self.image.mdh['voxelsize.x']
+                vy = 1e3*self.image.mdh['voxelsize.y']
+                plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, '+b', mew=2)
+                
+                if 'startParams' in res.results.dtype.names:
+                    plot(res.results['startParams']['x0']/vx, res.results['startParams']['y0']/vy, 'xc', mew=2)
+                
                 if 'tIm' in dir(ft.ofd):
                     figure()
                     imshow(ft.ofd.tIm.T, cmap=cm.hot, interpolation='nearest', hold=False)
@@ -1007,10 +956,7 @@ class LMAnalyser:
                     ylim(d.shape[0], 0)
                     xticks([])
                     yticks([])
-                    
-                vx = 1e3*self.image.mdh['voxelsize.x']
-                vy = 1e3*self.image.mdh['voxelsize.y']
-                plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, '+b')
+                    plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, '+b')
                     
                 #figure()
                 #imshow()

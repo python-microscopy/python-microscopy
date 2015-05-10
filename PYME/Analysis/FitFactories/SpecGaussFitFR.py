@@ -22,12 +22,11 @@
 ##################
 
 import scipy
-from scipy.signal import interpolate
-import scipy.ndimage as ndimage
-#from pylab import *
-import copy_reg
 import numpy
-import types
+
+from .fitCommon import fmtSlicesUsed
+
+#import types
 
 from PYME.Analysis.cModels.gauss_app import *
 
@@ -35,13 +34,6 @@ from PYME.Analysis.cModels.gauss_app import *
 
 from PYME.Analysis._fithelpers import *
 
-def pickleSlice(slice):
-        return unpickleSlice, (slice.start, slice.stop, slice.step)
-
-def unpickleSlice(start, stop, step):
-        return slice(start, stop, step)
-
-copy_reg.pickle(slice, pickleSlice, unpickleSlice)
 
 def f_gauss1d(p, X):
     """1D Gaussian model function with linear background - parameter vector [A, x0, y0, sigma, background, lin_x, lin_y]"""
@@ -67,11 +59,6 @@ def replNoneWith1(n):
 fresultdtype=[('tIndex', '<i4'),('fitResults', [('A', '<f4'),('x0', '<f4'),('sigma', '<f4')]),('fitError', [('A', '<f4'),('x0', '<f4'),('sigma', '<f4')]), ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
 
 def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None):
-	if slicesUsed == None:
-		slicesUsed = ((-1,-1,-1),(-1,-1,-1),(-1,-1,-1))
-	else: 		
-		slicesUsed = ((slicesUsed[0].start,slicesUsed[0].stop,replNoneWith1(slicesUsed[0].step)),(slicesUsed[1].start,slicesUsed[1].stop,replNoneWith1(slicesUsed[1].step)),(slicesUsed[2].start,slicesUsed[2].stop,replNoneWith1(slicesUsed[2].step)))
-
 	if fitErr == None:
 		fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
 
@@ -80,7 +67,7 @@ def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fit
 	tIndex = metadata.tIndex
 
 
-	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, slicesUsed)], dtype=fresultdtype) 
+	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, fmtSlicesUsed(slicesUsed))], dtype=fresultdtype) 
 		
 
 class GaussianFitFactory:

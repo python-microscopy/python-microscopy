@@ -20,6 +20,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
+''' 
+This contains the bulk of the GUI code for the main window of PYMEAcquire.
+'''
+
 
 import wx
 import wx.py.shell
@@ -36,20 +40,22 @@ logging.basicConfig(level=logging.DEBUG)
 import wx.lib.agw.aui as aui
 
 #import PYME.cSMI as example
+import PYME.DSView.displaySettingsPanel as disppanel
+from PYME.DSView import arrayViewPanel
 
 from PYME.Acquire import mytimer
 from PYME.Acquire import psliders
 from PYME.Acquire import intsliders
 from PYME.Acquire import seqdialog
-from PYME.Acquire import timeseqdialog
+#from PYME.Acquire import timeseqdialog
 from PYME.Acquire import stepDialog
 from PYME.Acquire import selectCameraPanel
-from PYME.Acquire import funcs
+from PYME.Acquire import microscope
 #import PYME.DSView.dsviewer_npy as dsviewer
 from PYME.DSView import dsviewer_npy_nb as dsviewer
-from PYME.cSMI import CDataStack_AsArray
+#from PYME.cSMI import CDataStack_AsArray
 from PYME.Acquire import MetaDataHandler
-from PYME.Acquire import chanfr
+#from PYME.Acquire import chanfr
 from PYME.Acquire import HDFSpoolFrame
 from PYME.FileUtils import nameUtils
 
@@ -59,37 +65,38 @@ import time
 import PYME.Acquire.protocol as protocol
 
 def create(parent, options = None):
-    return smiMainFrame(parent, options)
+    return PYMEMainFrame(parent, options)
 
 [wxID_SMIMAINFRAME, wxID_SMIMAINFRAMENOTEBOOK1, wxID_SMIMAINFRAMEPANEL1, 
  wxID_SMIMAINFRAMESTATUSBAR1, wxID_SMIMAINFRAMETEXTCTRL1, 
-] = map(lambda _init_ctrls: wx.NewId(), range(5))
+] = [wx.NewId() for i in range(5)]
 
 [wxID_SMIMAINFRAMEMENU1FILE_EXIT, wxID_SMIMAINFRAMEMENU1FILE_OPEN, 
  wxID_SMIMAINFRAMEMENU1FILE_OPEN_SCRIPT, 
-] = map(lambda _init_coll_menu1_Items: wx.NewId(), range(3))
+] = [wx.NewId() for i in range(3)]
 
 [wxID_SMIMAINFRAMEMFILEFILE_EXIT, wxID_SMIMAINFRAMEMFILEFILE_OPEN, 
-] = map(lambda _init_coll_mFile_Items: wx.NewId(), range(2))
+] =[wx.NewId() for i in range(2)]
 
-[wxID_SMIMAINFRAMEWINDOWSITEMS0] = map(lambda _init_coll_Windows_Items: wx.NewId(), range(1))
+[wxID_SMIMAINFRAMEWINDOWSITEMS0] = [wx.NewId() for i in range(1)]
 
 [wxID_SMIMAINFRAMEMAQUIREONE_PIC, wxID_SMIMAINFRAMEMAQUIRESTACK, 
  wxID_SMIMAINFRAMEMAQUIRETD_SERIES, wxID_SMIMAINFRAMEMAQUIRETWO_D_TIME, 
-] = map(lambda _init_coll_mAquire_Items: wx.NewId(), range(4))
+] = [wx.NewId() for i in range(4)]
 
 [wxID_SMIMAINFRAMEMCONTROLSCAM, wxID_SMIMAINFRAMEMCONTROLSINT_TIME, 
  wxID_SMIMAINFRAMEMCONTROLSPIEZO, wxID_SMIMAINFRAMEMCONTROLSPIEZO_INIT, 
  wxID_SMIMAINFRAMEMCONTROLSSTEP, 
-] = map(lambda _init_coll_mControls_Items: wx.NewId(), range(5))
+] = [wx.NewId() for i in range(5)]
 
 [wxID_SMIMAINFRAMEMCAMBIN, wxID_SMIMAINFRAMEMCAMCHANS, 
  wxID_SMIMAINFRAMEMCAMROI, 
-] = map(lambda _init_coll_mCam_Items: wx.NewId(), range(3))
+] = [wx.NewId() for i in range(3)]
 
-[wxID_SMIMAINFRAMEMDISPLAYCLEAR_SEL] = map(lambda _init_coll_mDisplay_Items: wx.NewId(), range(1))
+[wxID_SMIMAINFRAMEMDISPLAYCLEAR_SEL] = [wx.NewId()]
 
-class smiMainFrame(wx.Frame):
+class PYMEMainFrame(wx.Frame):
+    '''The main window class'''
     def _init_coll_mCam_Items(self, parent):
         # generated method, don't edit
 
@@ -255,7 +262,7 @@ class smiMainFrame(wx.Frame):
 
         self.initDone = False
 
-        self.scope = funcs.microscope()
+        self.scope = microscope.microscope()
 
         self.splash = splashScreen.SplashScreen(self, self.scope)
         self.splash.Show()
@@ -301,6 +308,17 @@ class smiMainFrame(wx.Frame):
         self.time1.WantNotification.append(self.splash.Tick)
 
     def AddPage(self, page=None, select=True,caption='Dummy'):
+        '''Add a page to the main notebook
+        
+        Parameters
+        ----------
+        page : an instance of a wx.Window derived class
+            The page to add
+        select : bool
+            Whether to give the page focus after adding it
+        caption : string
+            The caption for the page.
+        '''
         pn = self._mgr.GetPaneByName("shell")
         if pn.IsNotebookPage():
             #nb = self._mgr.GetNotebooks()[pn.notebook_id]
@@ -341,6 +359,50 @@ class smiMainFrame(wx.Frame):
             self.time1.WantNotification.remove(self.checkInitDone)
             #self.time1.WantNotification.remove(self.splash.Tick)
             self.doPostInit()
+    
+    def _refreshDataStack(self):
+        if 'vp' in dir(self):
+            self.vp.SetDataStack(self.scope.pa.dsa)
+        
+    def livepreview(self):
+        self.scope.startAquisistion()
+
+        if self.scope.cam.GetPicHeight() > 1:
+            if 'vp' in dir(self):
+                    self.vp.SetDataStack(self.scope.pa.dsa)
+            else:
+                self.vp = arrayViewPanel.ArrayViewPanel(self, self.scope.pa.dsa)
+                self.vp.crosshairs = False
+                self.vp.showScaleBar = False
+                self.vp.do.leftButtonAction = self.vp.do.ACTION_SELECTION
+                self.vp.do.showSelection = True
+                self.vp.CenteringHandlers.append(self.scope.centreView)
+
+                self.vsp = disppanel.dispSettingsPanel2(self, self.vp)
+
+
+                self.time1.WantNotification.append(self.vsp.RefrData)
+
+                self.AddPage(page=self.vp, select=True,caption='Preview')
+
+                self.AddCamTool(self.vsp, 'Display')
+
+            self.scope.pa.WantFrameGroupNotification.append(self.vp.Redraw)
+
+        else:
+            #1d data - use graph instead
+            from PYME.Analysis.LMVis import fastGraph
+            if 'sp' in dir(self):
+                    pass
+            else:
+                self.sp = fastGraph.SpecGraphPanel(self, self)
+
+                self.AddPage(page=self.sp, select=True,caption='Preview')
+
+            self.scope.pa.WantFrameGroupNotification.append(self.sp.refr)
+            
+        self.scope.PACallbacks.append(self._refreshDataStack)
+
 
     def doPostInit(self):
         logging.debug('Starting post-init')
@@ -366,7 +428,7 @@ class smiMainFrame(wx.Frame):
             #self.seq_d.Show()
 
         if (self.scope.cam.CamReady() and ('chaninfo' in self.scope.__dict__)):
-            self.scope.livepreview(self, Notebook = self)
+            self.livepreview()
             
 
             self.int_sl = intsliders.IntegrationSliders(self.scope.chaninfo,self, self.scope)
@@ -379,7 +441,7 @@ class smiMainFrame(wx.Frame):
                 self.pCamChoose = selectCameraPanel.CameraChooserPanel(self, self.scope)
                 self.AddCamTool(self.pCamChoose, 'Camera Selection')
 
-            self.tseq_d = timeseqdialog.seqDialog(self, self.scope)
+            #self.tseq_d = timeseqdialog.seqDialog(self, self.scope)
 
             self.pan_spool = HDFSpoolFrame.PanSpool(self, self.scope, nameUtils.genHDFDataFilepath())
             self.AddAqTool(self.pan_spool, 'Spooling')
@@ -394,11 +456,11 @@ class smiMainFrame(wx.Frame):
         self.time1.WantNotification.append(self.StatusBarUpdate)
 
         for t in self.toolPanels:
-            print t
+            print(t)
             self.AddTool(*t)
 
         for t in self.camPanels:
-            print t
+            print(t)
             self.AddCamTool(*t)
 
         #self.splash.Destroy()
@@ -454,27 +516,6 @@ class smiMainFrame(wx.Frame):
 
 
     def CreateToolPanel(self):
-
-        # delete earlier panel
-        #self._leftWindow1.DestroyChildren()
-
-        # recreate the foldpanelbar
-#        self.Images = wx.ImageList(16,16)
-#        self.Images.Add(GetExpandedIconBitmap())
-#        self.Images.Add(GetCollapsedIconBitmap())
-
-#        self._leftWindow1 = wx.SashLayoutWindow(self, 101, wx.DefaultPosition,
-#                                                wx.Size(300, 1000), wx.NO_BORDER |
-#                                                wx.SW_3D | wx.CLIP_CHILDREN)
-#
-#        self._leftWindow1.SetDefaultSize(wx.Size(220, 1000))
-#        self._leftWindow1.SetOrientation(wx.LAYOUT_VERTICAL)
-#        self._leftWindow1.SetAlignment(wx.LAYOUT_LEFT)
-#        self._leftWindow1.SetSashVisible(wx.SASH_RIGHT, True)
-#        self._leftWindow1.SetExtraBorderSize(10)
-
-#        self.camPanel = fpb.FoldPanelBar(self, -1, wx.DefaultPosition,
-#                                     wx.Size(240,1000))#, fpb.FPB_DEFAULT_STYLE,0)
         self.camPanel = afp.foldPanel(self, -1, wx.DefaultPosition,
                                      wx.Size(240,1000))
 
@@ -483,29 +524,6 @@ class smiMainFrame(wx.Frame):
         
         self._mgr.AddPane(self.camPanel, cpinfo)
 
-        #self.notebook1.AddPage(page=self.camPanel, select=False, caption='Camera')
-        #self.notebook1.Split(self.notebook1.GetPageCount() -1, wx.RIGHT)
-
-
-
-        
-        
-        #self.notebook1.AddPage(page=self.toolPanel, select=False, caption='Hardware')
-        #self.notebook1.Split(self.notebook1.GetPageCount() -1, wx.RIGHT)
-
-#        self._rightWindow1 = wx.SashLayoutWindow(self, 101, wx.DefaultPosition,
-#                                                wx.Size(300, 1000), wx.NO_BORDER |
-#                                                wx.SW_3D | wx.CLIP_CHILDREN)
-#
-#        self._rightWindow1.SetDefaultSize(wx.Size(300, 1000))
-#        self._rightWindow1.SetOrientation(wx.LAYOUT_VERTICAL)
-#        self._rightWindow1.SetAlignment(wx.LAYOUT_LEFT)
-#        self._rightWindow1.SetSashVisible(wx.SASH_RIGHT, True)
-#        self._rightWindow1.SetExtraBorderSize(10)
-
-
-#        self.aqPanel = fpb.FoldPanelBar(self, -1, wx.DefaultPosition,
-#                                     wx.Size(240,600))#, fpb.FPB_DEFAULT_STYLE,0)
         self.aqPanel = afp.foldPanel(self, -1, wx.DefaultPosition,
                                      wx.Size(240,1000))
 
@@ -524,15 +542,17 @@ class smiMainFrame(wx.Frame):
         aqinfo.dock_proportion  = int(aqinfo.dock_proportion*1.3)
 
 
-        #self.notebook1.AddPage(page=self.aqPanel, select=False, caption='Acquisition')
-        #self.notebook1.Split(self.notebook1.GetPageCount() -2, wx.DOWN)
-        #self.notebook1.Split(self.notebook1.GetPageCount() -1, wx.RIGHT)
-        #self.notebook1.Split(self.notebook1.GetPageCount() -2, wx.RIGHT)
-        #self.notebook1.Split(self.notebook1.GetPageCount() -2, wx.RIGHT)
-
-        #self.notebook1.SetSelection(0)
 
     def AddTool(self, panel, title):
+        '''Adds a pane to the tools section of the GUI
+        
+        Parameters
+        ----------
+        panel : an instance of a wx.Window derived class
+            The pane to add
+        title : string
+            The caption for the panel.
+        '''
         item = afp.foldingPane(self.toolPanel, -1, caption=title, pinned = True)
         panel.Reparent(item)
         item.AddNewElement(panel)
@@ -543,6 +563,15 @@ class smiMainFrame(wx.Frame):
         #wx.LayoutAlgorithm().LayoutWindow(self, self._leftWindow1)
 
     def AddCamTool(self, panel, title):
+        '''Adds a pane to the Camera section of the GUI
+        
+        Parameters
+        ----------
+        panel : an instance of a wx.Window derived class
+            The pane to add
+        title : string
+            The caption for the panel.
+        '''
         #item = self.camPanel.AddFoldPanel(title, collapsed=False, foldIcons=self.Images)
         item = afp.foldingPane(self.camPanel, -1, caption=title, pinned = True)
         panel.Reparent(item)
@@ -551,6 +580,15 @@ class smiMainFrame(wx.Frame):
         #self.camPanel.AddFoldPanelWindow(item, panel, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
 
     def AddAqTool(self, panel, title):
+        '''Adds a pane to the Acquisition section of the GUI
+        
+        Parameters
+        ----------
+        panel : an instance of a wx.Window derived class
+            The pane to add
+        title : string
+            The caption for the panel.
+        '''
         item = afp.foldingPane(self.aqPanel, -1, caption=title, pinned = True)
         panel.Reparent(item)
         item.AddNewElement(panel)
@@ -582,8 +620,9 @@ class smiMainFrame(wx.Frame):
         #event.Skip()
 
     def OnMAquireOnePic(self, event):
+        import numpy as np
         self.scope.pa.stop()
-        ds2 = CDataStack_AsArray(self.scope.pa.ds, 0).reshape(self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()).copy()
+        ds2 = np.atleast_3d(self.scope.pa.dsa.reshape(self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()).copy())
 
 
         #metadata handling
@@ -642,12 +681,12 @@ class smiMainFrame(wx.Frame):
         self.scope.cam.SetCOC()
         self.scope.cam.GetStatus()
         self.scope.pa.Prepare()
-        self.scope.vp.SetDataStack(self.scope.pa.ds)
+        self.scope.vp.SetDataStack(self.scope.pa.dsa)
         self.scope.pa.start()
         #event.Skip()
 
     def OnMCamSetPixelSize(self, event):
-        import voxelSizeDialog
+        from PYME.Acquire import voxelSizeDialog
 
         dlg = voxelSizeDialog.VoxelSizeDialog(self, self.scope)
         dlg.ShowModal()
@@ -664,7 +703,7 @@ class smiMainFrame(wx.Frame):
         self.int_sl.Show()
             
         self.scope.pa.Prepare()
-        self.scope.vp.SetDataStack(self.scope.pa.ds)
+        self.scope.vp.SetDataStack(self.scope.pa.dsa)
         self.scope.pa.start()
         #event.Skip()
 
@@ -675,10 +714,10 @@ class smiMainFrame(wx.Frame):
 
         if 'validROIS' in dir(self.scope.cam) and self.scope.cam.ROIsAreFixed():
             #special case for cameras with restricted ROIs - eg Neo
-            print 'setting ROI'
+            print('setting ROI')
             dlg = wx.SingleChoiceDialog(self, 'Please select the ROI size', 'Camera ROI', ['%dx%d at (%d, %d)' % roi for roi in self.scope.cam.validROIS])
             dlg.ShowModal()
-            print 'Dlg Shown'
+            print('Dlg Shown')
             self.scope.cam.SetROIIndex(dlg.GetSelection())
             dlg.Destroy()
             
@@ -686,7 +725,7 @@ class smiMainFrame(wx.Frame):
             y1 = 0
             x2 = self.scope.cam.GetPicWidth()
             y2 = self.scope.cam.GetPicHeight()
-            print 'ROI Set'
+            print ('ROI Set')
         
         else:
             if (self.roi_on):
@@ -729,7 +768,7 @@ class smiMainFrame(wx.Frame):
                 y2 = self.scope.cam.GetPicHeight()
 
             
-        print 'about to set COC'
+        print('about to set COC')
         self.scope.cam.SetCOC()
         self.scope.cam.GetStatus()
         self.scope.pa.Prepare()
@@ -772,7 +811,7 @@ class smiMainFrame(wx.Frame):
         self.scope.cam.SetCOC()
         self.scope.cam.GetStatus()
         self.scope.pa.Prepare()
-        self.scope.vp.SetDataStack(self.scope.pa.ds)
+        self.scope.vp.SetDataStack(self.scope.pa.dsa)
 
         self.scope.vp.selection_begin_x = x1
         self.scope.vp.selection_begin_y = y1
@@ -808,6 +847,15 @@ class smiMainFrame(wx.Frame):
             self.scope.cam.Shutdown()
         for f in self.scope.CleanupFunctions:
             f()
+            
+        print 'All cleanup functions called'
+        
+        time.sleep(1)
+        
+        import threading
+        print 'Remaining Threads:'
+        for t in threading.enumerate():
+            print t, t._Thread__target
         #self.int_sl.Destroy()
         #self.piezo_sl.Destroy()
         #self.seq_d.Destroy()

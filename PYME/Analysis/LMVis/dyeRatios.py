@@ -28,7 +28,7 @@ currently just uses values for the default splitter config'''
 ratios = {'A647':0.85, 'A680':0.87, 'A750': 0.11, 'A700': 0.3, 'CF770': 0.11}
 PRIRatios = {'A680':0.7, 'A750': 0.5}
 
-dichr_ratios = {'FF700-Di01': {'A647':0.3, 'A680':0.87,'A700':0.7}}
+dichr_ratios = {'FF700-Di01': {'A647':0.3, 'A680':0.87,'A700':0.7, 'A750':.9}}
 
 def getRatio(dye, mdh=None):
     if dye in ratios.keys():

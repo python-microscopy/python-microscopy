@@ -21,142 +21,63 @@
 #
 ##################
 
-import scipy
-#from scipy.signal import interpolate
+#import scipy
 import scipy.ndimage as ndimage
-#from pylab import *
-import copy_reg
-import numpy
-#import types
+import numpy as np
+from .fitCommon import fmtSlicesUsed
 
 from PYME.Analysis.cModels.gauss_app import *
-
-#from scipy import weave
-
 from PYME.Analysis._fithelpers import *
 
-def pickleSlice(slice):
-        return unpickleSlice, (slice.start, slice.stop, slice.step)
-
-def unpickleSlice(start, stop, step):
-        return slice(start, stop, step)
-
-copy_reg.pickle(slice, pickleSlice, unpickleSlice)
-
-def f_gauss2dSlow(p, X, Y):
-    """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sigma, background, lin_x, lin_y]"""
-    A, x0, y0, s, b, b_x, b_y = p
-    return A*scipy.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2)) + b + b_x*X + b_y*Y
-    #print X.shape
-    #r = genGauss(X,Y,A,x0,y0,s,b,b_x,b_y)
-    #r.strides = r.strides #Really dodgy hack to get around something which numpy is not doing right ....
-    #return r
     
 def f_multiGaussS(p, X, Y, s):
     #number of Gaussians to fit
     nG = len(p)/3
+    
+    nm = 1./(s*s*2*np.pi)
 
     r = 0.0    
     
     for i in range(nG):
         i3 = 3*i
         A, x0, y0 = p[i3:(i3+3)]
-        r += A*scipy.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2))
+        r += A*np.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2))*nm
         
     return r
     
-def f_multiGauss(p, X, Y, s):
-    #number of Gaussians to fit
-    #nG = len(p)/3
-
-    #r = 0.0    
-    
-    #for i in range(nG):
-    #    i3 = 3*i
-    #    A, x0, y0 = p[i3:(i3+3)]
-    #    r += A*scipy.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2))
-        
+def f_multiGauss(p, X, Y, s):    
     return genMultiGauss(X, Y, p, s)
     
 def f_multiGaussJ(p, X, Y, s):
-    #number of Gaussians to fit
-    #nG = len(p)/3
-
-    #r = 0.0    
-    
-    #for i in range(nG):
-    #    i3 = 3*i
-    #    A, x0, y0 = p[i3:(i3+3)]
-    #    r += A*scipy.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2))
-        
     return genMultiGaussJac(X, Y, p, s)
     
 f_multiGauss.D = f_multiGaussJ
 
-def f_gauss2d(p, X, Y):
-    """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sigma, background, lin_x, lin_y]"""
-    A, x0, y0, s, b, b_x, b_y = p
-    #return A*scipy.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2)) + b + b_x*X + b_y*Y
-    #print X.shape
-    r = genGauss(X,Y,A,x0,y0,s,b,b_x,b_y)
-    r.strides = r.strides #Really dodgy hack to get around something which numpy is not doing right ....
-    return r
-
-def f_gauss2dF(p, X, Y):
-    """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sigma, background, lin_x, lin_y] - uses fast exponential approx"""
-    A, x0, y0, s, b, b_x, b_y = p
-    r = genGaussF(X,Y,A,x0,y0,s,b,b_x,b_y)
-    r.strides = r.strides #Really dodgy hack to get around something which numpy is not doing right ....
-    return r
-
-def f_j_gauss2d(p,func, d, w, X,Y):
-    '''generate the jacobian for a 2d Gaussian'''
-    A, x0, y0, s, b, b_x, b_y = p
-    #r = genGaussJac(X,Y,A,x0,y0,s,b,b_x,b_y)
-    r = genGaussJacW(X,Y,w,A,x0,y0,s,b,b_x,b_y)
-    r = -r.ravel().reshape((-1,7))
-    #for  i in range(7):
-	#r[:, i] = r[:, i]*w
-    return r.T
-
-def f_J_gauss2d(p,X,Y):
-    '''generate the jacobian for a 2d Gaussian - for use with _fithelpers.weightedJacF'''
-    A, x0, y0, s, b, b_x, b_y = p
-    r = genGaussJac(X,Y,A,x0,y0,s,b,b_x,b_y)
-    r = r.reshape((-1, 7))
-    return r
-
-f_gauss2d.D = f_J_gauss2d
-
-
         
-def replNoneWith1(n):
-	if n == None:
-		return 1
-	else:
-		return n
 
 
-fresultdtype=[('tIndex', '<i4'),('fitResults', [('A', '<f4'),('x0', '<f4'),('y0', '<f4')]),('fitError', [('A', '<f4'),('x0', '<f4'),('y0', '<f4')]), ('resultCode', '<i4'), ('nChi2', '<f4'), ('nFit', '<i4')]
 
-def GaussianFitResultR(fitResults, metadata, resultCode=-1, fitErr=None, nChi2=0, nEvents=1):
-	
-	if fitErr == None:
-		fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
+fresultdtype=[('tIndex', '<i4'),
+              ('fitResults', [('A', '<f4'),('x0', '<f4'),('y0', '<f4')]),
+              ('fitError', [('A', '<f4'),('x0', '<f4'),('y0', '<f4')]), 
+              ('resultCode', '<i4'), 
+              ('nChi2', '<f4'), 
+              ('nFit', '<i4')]
 
-	#print slicesUsed
-
-	tIndex = metadata.tIndex
-
-
-	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, nChi2, nEvents)], dtype=fresultdtype) 
+def GaussianFitResultR(fitResults, metadata, resultCode=-1, fitErr=None, nChi2=0, nEvents=1):	
+    if fitErr == None:
+        fitErr = -5e3*np.ones(fitResults.shape, 'f')
+        
+    tIndex = metadata.tIndex
+    
+    return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, nChi2, nEvents)], dtype=fresultdtype) 
 		
 
 class GaussianFitFactory:
     X = None
     Y = None
     
-    def __init__(self, data, metadata, fitfcn=f_multiGauss, background=None):
+    def __init__(self, data, metadata, fitfcn=f_multiGauss, background=None, noiseSigma=None):
         '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
         metadata. '''
         self.data = data
@@ -177,79 +98,29 @@ class GaussianFitFactory:
              self.X = vx*X
              self.Y = vy*Y
              
-#        u,v = np.mgrid[0:10., 0:10]
-#        u = vx*u
-#        v = vy*v
-        
         gSig = float(self.metadata.getOrDefault('Analysis.PSFSigma', 130.))
         
-#        self.gLUT = (vx*vy/(2*np.pi*gSig*gSig))*np.exp(-(u*u + v*v)/(2*gSig*gSig))
         self.gLUT2 = (vx*vy/(2*np.pi*gSig*gSig))*np.exp(-(vx*vx*np.arange(33.))/(2*gSig*gSig))
         self.gLUT2[-1] = 0
         
-    def _gFilter(self, x, y, vals):
-        ret = 0*vals
-        
-        x = (x/(1e3*self.metadata.voxelsize.x)).astype('i')
-        y = (y/(1e3*self.metadata.voxelsize.y)).astype('i')
-        
-        dx = x[:,None] - x[None,:]
-        #dx = np.minimum(np.abs(x[:,None] - x[None,:]), 9)
-        dy = y[:,None] - y[None,:]
-        #dy = np.minimum(np.abs(y[:,None] - y[None,:]), 9)
-        
-        
-        di = dx*dx + dy*dy
-        di = np.minimum(di, 32)
-        
-        
-        
-        wi = self.gLUT2[di]
-        
-#        import pylab
-        
-#        pylab.figure(figsize=(16, 5))
-#        pylab.subplot(131)
-#        pylab.imshow(dx)
-#        pylab.subplot(132)
-#        
-#        pylab.imshow(di)
-#        pylab.colorbar()
-#        pylab.subplot(133)
-#        pylab.imshow(wi)
-        
-#        dx = np.minimum(np.abs(x[:,None] - x[None,:]), 9)
-#        dy = np.minimum(np.abs(y[:,None] - y[None,:]), 9)
-#        
-#        wi = self.gLUT[dx, dy]
-#        
-#        pylab.figure(figsize=(16, 5))
-#        pylab.subplot(131)
-#        pylab.imshow(dx)
-#        pylab.subplot(132)
-#        
-#        pylab.imshow(dy)
-#        pylab.colorbar()
-#        pylab.subplot(133)
-#        pylab.imshow(wi)
-        
-        ret = (vals[:,None]*wi).sum(0)
-        
-#        pylab.figure()
-#        pylab.plot(vals)
-#        pylab.plot(ret)
-#        
+#    def _gFilter(self, x, y, vals):
 #        ret = 0*vals
 #        
-#        for i in range(len(x)):
-#            dx = np.minimum(np.abs(x - x[i]), 9).astype('i')
-#            dy = np.minimum(np.abs(y - y[i]), 9).astype('i')
-#                    
-#            ret[i] =  (vals*self.gLUT[dx, dy]).sum()
-#
-#        pylab.plot(ret)        
+#        x = (x/(1e3*self.metadata.voxelsize.x)).astype('i')
+#        y = (y/(1e3*self.metadata.voxelsize.y)).astype('i')
 #        
-        return ret
+#        dx = x[:,None] - x[None,:]
+#        
+#        dy = y[:,None] - y[None,:]
+#        
+#        di = dx*dx + dy*dy
+#        di = np.minimum(di, 32)
+#        
+#        wi = self.gLUT2[di]
+#        
+#        ret = (vals[:,None]*wi).sum(0)
+#        
+#        return ret
         
     def _gFilter2(self, x, y, vals):        
         x = (x/(1e3*self.metadata.voxelsize.x)).astype('i')
@@ -267,9 +138,9 @@ class GaussianFitFactory:
         #estimate errors in data
         nSlices = self.data.shape[2]
         
-        sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*scipy.maximum(dataMean, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
+        sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataMean, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
 
-        if not self.background == None and len(numpy.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
+        if not self.background == None and len(np.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
             #average in z
             bgMean = self.background.mean(2) - self.metadata.Camera.ADOffset
             
@@ -277,75 +148,27 @@ class GaussianFitFactory:
             
         #ofind step
         import pylab
-        #find pixels which are > 2 sigma above noise floor.
-        #sl = ndimage.gaussian_filter(sigma, 3)
+        #find pixels which are above noise floor.
         pe = np.log(np.maximum(dataMean/sigma, .1))
         dt = dataMean > threshold*sigma
-        
-#        pylab.imshow(dataMean.T, interpolation='nearest')
-#        pylab.colorbar()
-#        pylab.figure()
-#        
-#        pylab.imshow(sigma.T, interpolation='nearest')
-#        pylab.colorbar()
-#        pylab.figure()
-#        
-#        pylab.imshow(pe.T, interpolation='nearest')
-#        pylab.colorbar()
-#        pylab.figure()
-        
-        
+                
         pt = ndimage.uniform_filter(pe) > threshold
-        
-#        pylab.imshow(ndimage.uniform_filter(pe).T)
-#        pylab.colorbar()
-#        pylab.figure()
-        
+                
         dt = pt*dt
         
-        #true events have correlated pixels. Look for at least 3 adjoining pixels on
-        #dt = (dt*ndimage.uniform_filter(dt.astype('f'))) > 0.35
-        
-#        pylab.imshow(dt.T)
-#        pylab.figure()
-        
+        #true events have correlated pixels. Look for at least 3 adjoining pixels on        
         dt = (dt*ndimage.uniform_filter(dt.astype('f'))) > 0.35
-        
-#        pylab.imshow(dt.T)
-#        pylab.figure()
-        
+                
         #now hole fill and pad out around found objects
         mask = (ndimage.uniform_filter(dt.astype('f'))) > 0.1
         
-#        pylab.imshow(mask.T)
-#        pylab.figure()
-        
-        #further pad        
-        #mask2 = (ndimage.uniform_filter(mask.astype('f'))) > 0.2
-        
-        #lab2 = 
-        
-        
-        #pylab.figure()
-#        pylab.imshow(dt.T, interpolation='nearest')
-#        
-#        pylab.figure()
-#        pylab.imshow(mask.T, interpolation='nearest')
-#        pylab.figure()
-        #starting guesses
+        #label contiguous regions of pixels
         labels, nlabels = ndimage.label(mask)
-        #print nlabels, mask.sum()
-        #print labels.dtype
-        
-        #labels = (labels*mask).astype('int32')
-            
-        #objSlices = ndimage.find_objects(labels)
             
         if gui:
             pylab.imshow(dataMean.T,interpolation='nearest')
             pylab.figure()
             pylab.imshow(mask.T, interpolation='nearest')
-            #pylab.figure()
             
         
         if nlabels == 0:
@@ -353,7 +176,6 @@ class GaussianFitFactory:
             resList = np.empty(0, FitResultsDType)
             return resList
             
-        #nTotEvents = nlabels
         allEvents = []
         
         gSig = self.metadata.getOrDefault('Analysis.PSFSigma', 130.)
@@ -385,10 +207,7 @@ class GaussianFitFactory:
         
         #loop over objects
         for i in range(nlabels):
-            #startParameters = []
-            #measure position
-            #x,y = ndimage.center_of_mass(im, labeledPoints, i)
-            os =  labels == (i+1) #objSlices[i]           
+            os =  labels == (i+1)            
             
             imO = dataMean[os]
             if imO.size > 5:
@@ -416,8 +235,6 @@ class GaussianFitFactory:
                 
                 nchi2 = ((residual/s_m)**2).mean()
                 
-                
-                #residual *= (abs(X_m - res[1::3]) > 50)*(abs(Y_m - res[2::3]) > 50)
                 #correlate residuals with PSF
                 #resf = self._gFilter(X_m, Y_m, residual/s_m)
                 resf = self._gFilter2(X_m, Y_m, residual/s_m)
@@ -428,18 +245,9 @@ class GaussianFitFactory:
                 if gui ==2:
                    plotIterate(res, os, residual/s_m, resf)
                 
-                #resi = 0*dataMean
                 
-                #print resi[os].shape, residual.shape                
-                
-                #resi[os] = residual/s_m
-                #resmax = ndimage.uniform_filter(resi).max()
-                
-                #print nchi2, resmax
         
-                #prevent an infinite loop here      
-        
-                
+                #Continue adding events while the residuals are too high and the fit well defined
                 while resmax > rMax and nEvents < 10 and d_m.size > (3*(nEvents+1)):    
                     nEvents += 1
                     #print nEvents
@@ -468,21 +276,15 @@ class GaussianFitFactory:
                     
                     if gui ==2:
                         plotIterate(res, os, residual/s_m, resf)
-                        print nEvents, nchi2, resmax, resCode#, cov_x
-                    
-                    #resi = 0*dataMean
-                    #resi[os][:] = residual/s_m
-                    #resmax = ndimage.uniform_filter(resi).max()
+                        print((nEvents, nchi2, resmax, resCode))#, cov_x
                     
                     
-                
-            
     
                 #work out the errors
                 fitErrors=None
                 try:       
-                    fitErrors = scipy.sqrt(scipy.diag(cov_x)*(infodict['fvec']*infodict['fvec']).sum()/(len(d_m)- len(res)))
-                except Exception, e:
+                    fitErrors = np.sqrt(np.diag(cov_x)*(infodict['fvec']*infodict['fvec']).sum()/(len(d_m)- len(res)))
+                except Exception as e:
                     pass
                 #print res, fitErrors, resCode
                 #recreate a list of events in the desired format
@@ -503,8 +305,8 @@ class GaussianFitFactory:
     @classmethod
     def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):
         #generate grid to evaluate function on
-        X = 1e3*md.voxelsize.x*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
-        Y = 1e3*md.voxelsize.y*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
+        X = 1e3*md.voxelsize.x*np.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
+        Y = 1e3*md.voxelsize.y*np.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
 
         return (f_gauss2d(params, X, Y), X[0], Y[0], 0)
 
@@ -520,3 +322,21 @@ FitResultsDType = fresultdtype #only defined if returning data as numarray
 #this means that factory is reponsible for it's own object finding and implements
 #a GetAllResults method that returns a list of localisations
 MULTIFIT=True
+
+import PYME.Analysis.MetaDataEdit as mde
+#from PYME.Analysis.FitFactories import Interpolators
+#from PYME.Analysis.FitFactories import zEstimators
+
+PARAMETERS = [#mde.ChoiceParam('Analysis.InterpModule','Interp:','LinearInterpolator', choices=Interpolators.interpolatorList, choiceNames=Interpolators.interpolatorDisplayList),
+              #mde.FilenameParam('PSFFilename', 'PSF:', prompt='Please select PSF to use ...', wildcard='PSF Files|*.psf'),
+              #mde.ShiftFieldParam('chroma.ShiftFilename', 'Shifts:', prompt='Please select shiftfield to use', wildcard='Shiftfields|*.sf'),
+              #mde.IntParam('Analysis.DebounceRadius', 'Debounce r:', 4),
+              mde.FloatParam('Analysis.PSFSigma', u'PSF \u03c3  [nm]:', 130.),
+              mde.FloatParam('Analysis.ResidualMax', 'Max residual:', 0.25),
+              #mde.ChoiceParam('Analysis.EstimatorModule', 'Z Start Est:', 'astigEstimator', choices=zEstimators.estimatorList),
+              #mde.ChoiceParam('PRI.Axis', 'PRI Axis:', 'y', choices=['x', 'y'])
+              ]
+              
+DESCRIPTION = '2D Gaussian multi-emitter fitting'
+LONG_DESCRIPTION = '2D Gaussian multi-emitter fitting: Fits x, y and I, assuming background is already subtracted. Uses it\'s own object detection routine'   
+USE_FOR = '2D multi-emitter'

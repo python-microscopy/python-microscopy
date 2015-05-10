@@ -24,9 +24,9 @@
 #from PYME.FileUtils.read_kdf import ReadKdfData
 import numpy as np
 import scipy as sp
-import ofind
+from PYME.Analysis import ofind
 from PYME.Analysis.FitFactories.LatGaussFitFR import FitFactory, FitResultsDType
-import MetaData
+from PYME.Analysis import MetaData
 from scipy.interpolate import Rbf, SmoothBivariateSpline
 from matplotlib import delaunay
 import tables
@@ -92,7 +92,7 @@ class linModel(object):
     def __init__(self, x, dx, var=1, axis='x'):
         #do a simple linear fit to estimate start parameters
         pstart = linalg.lstsq(np.vstack([x, np.ones_like(x)]).T, dx)[0]
-        print pstart
+        print(pstart)
         
         #now do a maximum likelihood fit with our robust lhood function
         self.m, self.x0 = fmin(robustLinLhood, [pstart[0],-pstart[1]/pstart[0]], args=(x, dx, var))
@@ -119,7 +119,7 @@ class lin2Model(object):
     def __init__(self, x, y, dx, var=1):
         #do a simple linear fit to estimate start parameters
         pstart = linalg.lstsq(np.vstack([x, y, np.ones_like(x)]).T, dx)[0]
-        print pstart
+        print(pstart)
         
         #now do a maximum likelihood fit with our robust lhood function
         self.mx, self.my, self.x0 = fmin(robustLin2Lhood, pstart, args=(x, y,dx, var))
@@ -144,6 +144,42 @@ def genShiftVectorFieldLinear(x,y, dx, dy, err_sx, err_sy):
 
     return spx, spy
     
+def robustLin3zLhood(p, x, y, z, dx, var=1):
+    '''p is parameter vector, x and y as expected, and var the variance of the 
+    y value. We use a t-distribution as our likelihood as it's long tails will
+    not overly weight outliers.'''
+    mx, my, mx2, my2, mxy, mxy2, mx2y, mx3, x0, mz, mxz, myz, mxyz = p
+    err = (dx - (mx*x + my*y + mx2*x*x +my2*y*y + mxy*x*y + mxy2*x*y*y + mx2y*x*x*y + mx3*x*x*x + x0 + mz*z + mxz*x*z + myz*y*z + mxyz*x*y*z))/var
+    return -scipy.stats.t.logpdf(err, 1).sum()
+    
+class lin3zModel(object):
+    ZDEPSHIFT = True
+    sc = 1./18e3
+    def __init__(self, x, y, z, dx, var=1):
+        x = x*self.sc
+        y = y*self.sc
+        #do a simple linear fit to estimate start parameters
+        pstart = linalg.lstsq(np.vstack([x, y, x*x, y*y, x*y, x*y*y, x*x*y,x*x*x, np.ones_like(x), z, z*x, z*y, z*x*y]).T, dx)[0]
+        print(pstart)
+        
+        
+        #now do a maximum likelihood fit with our robust lhood function
+        self.mx, self.my, self.mx2, self.my2, self.mxy, self.mxy2, self.mx2y,self.mx3, self.x0, self.mz, self.mxz, self.myz, self.mxyz = fmin(robustLin3zLhood, pstart, args=(x, y, z,dx, var))
+        
+        self.my3 = 0
+        
+        #self.axis = axis
+        
+    def ev(self, x, y, z=0):
+        '''Mimic a bivariate spline object. Since we're assuming it is linear 
+        along one axis, we use the axis that was defined when fitting the model'''
+        x = x*self.sc
+        y = y*self.sc
+        return self.mx*x +self.my*y + self.mx2*x*x + self.my2*y*y + self.mxy*x*y + self.mxy2*x*y*y + self.mx2y*x*x*y + self.mx3*x*x*x + self.my3*y*y*y  + self.x0 + self.mz*z + self.mxz*x*z +self.myz*y*z + self.mxyz*z*x*y
+        
+    def __call__(self, x, y, z=0):
+        return self.ev(x, y, z)
+        
 def robustLin3Lhood(p, x, y, dx, var=1):
     '''p is parameter vector, x and y as expected, and var the variance of the 
     y value. We use a t-distribution as our likelihood as it's long tails will
@@ -159,11 +195,13 @@ class lin3Model(object):
         y = y*self.sc
         #do a simple linear fit to estimate start parameters
         pstart = linalg.lstsq(np.vstack([x, y, x*x, y*y, x*y, x*y*y, x*x*y,x*x*x, np.ones_like(x)]).T, dx)[0]
-        print pstart
+        print(pstart)
         
         
         #now do a maximum likelihood fit with our robust lhood function
         self.mx, self.my, self.mx2, self.my2, self.mxy, self.mxy2, self.mx2y,self.mx3, self.x0 = fmin(robustLin3Lhood, pstart, args=(x, y,dx, var))
+        
+        self.my3 = 0
         
         #self.axis = axis
         
@@ -172,7 +210,10 @@ class lin3Model(object):
         along one axis, we use the axis that was defined when fitting the model'''
         x = x*self.sc
         y = y*self.sc
-        return self.mx*x +self.my*y + self.mx2*x*x + self.my2*y*y + self.mxy*x*y + self.mxy2*x*y*y + self.mx2y*x*x*y + self.mx3*x*x*x  + self.x0
+        return self.mx*x +self.my*y + self.mx2*x*x + self.my2*y*y + self.mxy*x*y + self.mxy2*x*y*y + self.mx2y*x*x*y + self.mx3*x*x*x + self.my3*y*y*y  + self.x0
+        
+    def __call__(self, x, y):
+        return self.ev(x, y)
             
 def genShiftVectorFieldQuad(x,y, dx, dy, err_sx, err_sy):
     '''interpolates shift vectors using smoothing splines'''
@@ -186,6 +227,68 @@ def genShiftVectorFieldQuad(x,y, dx, dy, err_sx, err_sy):
     #dy = spy.ev(X.ravel(),Y.ravel()).reshape(X.shape)
 
     return spx, spy
+    
+def genShiftVectorFieldQ(nx,ny, nsx, nsy, err_sx, err_sy, bbox=None):
+    '''interpolates shift vectors using smoothing splines'''
+    wonky = findWonkyVectors(nx, ny, nsx, nsy, tol=2*err_sx.mean())
+    #wonky = findWonkyVectors(nx, ny, nsx, nsy, tol=100)
+    good = wonky == 0
+
+    print(('%d wonky vectors found and discarded' % wonky.sum()))
+    
+    #if bbox:
+    #    spx = SmoothBivariateSpline(nx[good], ny[good], nsx[good], 1./err_sx[good], bbox=bbox)
+    #    spy = SmoothBivariateSpline(nx[good], ny[good], nsy[good], 1./err_sy[good], bbox=bbox)
+    #else:
+    #    spx = SmoothBivariateSpline(nx[good], ny[good], nsx[good], 1./err_sx[good])
+    #    spy = SmoothBivariateSpline(nx[good], ny[good], nsy[good], 1./err_sy[good])
+    
+    spx, spy = genShiftVectorFieldQuad(nx[good], ny[good], nsx[good], nsy[good], err_sx[good], err_sy[good])
+
+    X, Y = np.meshgrid(np.arange(0, 512*70, 100), np.arange(0, 256*70, 100))
+
+    dx = spx.ev(X.ravel(),Y.ravel()).reshape(X.shape)
+    dy = spy.ev(X.ravel(),Y.ravel()).reshape(X.shape)
+
+    return (dx.T, dy.T, spx, spy, good)
+    
+
+def genShiftVectorFieldQuadz(x,y, z, dx, dy, err_sx, err_sy):
+    '''interpolates shift vectors using smoothing splines'''
+
+    spx = lin3zModel(x, y, z, dx, err_sx**2)
+    spy = lin3zModel(x, y, z, dy, err_sy**2)
+
+    #X, Y = np.meshgrid(np.arange(0, 512*70, 100), np.arange(0, 256*70, 100))
+
+    #dx = spx.ev(X.ravel(),Y.ravel()).reshape(X.shape)
+    #dy = spy.ev(X.ravel(),Y.ravel()).reshape(X.shape)
+
+    return spx, spy
+    
+def genShiftVectorFieldQz(nx,ny, nz, nsx, nsy, err_sx, err_sy, bbox=None):
+    '''interpolates shift vectors using smoothing splines'''
+    wonky = findWonkyVectors(nx, ny, nsx, nsy, tol=5*err_sx.mean())
+    #wonky = findWonkyVectors(nx, ny, nsx, nsy, tol=100)
+    good = wonky == 0
+
+    print(('%d wonky vectors found and discarded' % wonky.sum()))
+    
+    #if bbox:
+    #    spx = SmoothBivariateSpline(nx[good], ny[good], nsx[good], 1./err_sx[good], bbox=bbox)
+    #    spy = SmoothBivariateSpline(nx[good], ny[good], nsy[good], 1./err_sy[good], bbox=bbox)
+    #else:
+    #    spx = SmoothBivariateSpline(nx[good], ny[good], nsx[good], 1./err_sx[good])
+    #    spy = SmoothBivariateSpline(nx[good], ny[good], nsy[good], 1./err_sy[good])
+    
+    spx, spy = genShiftVectorFieldQuadz(nx[good], ny[good], nz[good], nsx[good], nsy[good], err_sx[good], err_sy[good])
+
+    X, Y = np.meshgrid(np.arange(0, 512*70, 100), np.arange(0, 256*70, 100))
+
+    dx = spx.ev(X.ravel(),Y.ravel()).reshape(X.shape)
+    dy = spy.ev(X.ravel(),Y.ravel()).reshape(X.shape)
+
+    return (dx.T, dy.T, spx, spy, good)
 
 
 def genRGBImage(g,r, gsat = 1, rsat= 1):
@@ -258,7 +361,7 @@ def genShiftVectors(res_g, res_r):
             nsx.append(sx[i])
             nsy.append(sy[i])
         else:
-            print 'point %d dropped' %i
+            print(('point %d dropped' %i))
 
     nx = np.array(nx)
     ny = np.array(ny)
@@ -316,7 +419,7 @@ def genShiftVectorFieldSpline(nx,ny, nsx, nsy, err_sx, err_sy, bbox=None):
     #wonky = findWonkyVectors(nx, ny, nsx, nsy, tol=100)
     good = wonky == 0
 
-    print '%d wonky vectors found and discarded' % wonky.sum()
+    print(('%d wonky vectors found and discarded' % wonky.sum()))
     
     if bbox:
         spx = SmoothBivariateSpline(nx[good], ny[good], nsx[good], 1./err_sx[good], bbox=bbox)
@@ -422,4 +525,9 @@ def warpCorrectRedImage(r, dx, dy):
     return vals.T
 
 
+class sffake:
+    def __init__(self, val):
+        self.val = val
 
+    def ev(self, x, y):
+        return self.val

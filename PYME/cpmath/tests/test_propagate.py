@@ -134,5 +134,5 @@ class TestPropagate(unittest.TestCase):
         t1 = time.clock() 
         result,distances = cellprofiler.cpmath.propagate.propagate(image, labels, mask, 1.0)
         t2 = time.clock()
-        print "Running time: %f sec"%(t2-t1)
+        print(("Running time: %f sec"%(t2-t1)))
         

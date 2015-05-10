@@ -257,6 +257,10 @@ class Splitter:
             self.parent._mgr.ShowPane(self.f, True)
         else:
             self.f.vp.do.Optimise()
+            
+        if not self.f.update in self.scope.pa.WantFrameGroupNotification:
+            self.scope.pa.WantFrameGroupNotification.append(self.f.update)
+
 
     def OnSetShiftField(self, event):
         fdialog = wx.FileDialog(None, 'Select shift field',
@@ -274,9 +278,7 @@ class Splitter:
 
 
     def Unmix(self):
-        from PYME import cSMI
-
-        dsa = cSMI.CDataStack_AsArray(self.scope.pa.ds, 0).squeeze()
+        dsa = self.scope.pa.dsa.squeeze()
 
         return self.unmixer.Unmix(dsa, self.mixMatrix, self.offset, ROI=[self.scope.cam.GetROIX1(),self.scope.cam.GetROIY1(),self.scope.cam.GetROIX2(), self.scope.cam.GetROIY2()])
 
@@ -426,7 +428,6 @@ class UnMixPanel(wx.Panel):
 
         #self.Layout()
         
-        self.splitter.scope.pa.WantFrameGroupNotification.append(self.update)
 
 
     def update(self, caller=None):

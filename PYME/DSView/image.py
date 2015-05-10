@@ -304,7 +304,7 @@ class ImageStack(object):
         else:
             self.mdh = MetaData.TIRFDefault
             wx.MessageBox("Carrying on with defaults - no gaurantees it'll work well", 'ERROR: No metadata found in file ...', wx.OK)
-            print "ERROR: No metadata fond in file ... Carrying on with defaults - no gaurantees it'll work well"
+            print("ERROR: No metadata fond in file ... Carrying on with defaults - no gaurantees it'll work well")
 
         #attempt to estimate any missing parameters from the data itself        
         MetaData.fillInBlanks(self.mdh, self.dataSource)
@@ -316,8 +316,8 @@ class ImageStack(object):
         #try and find a previously performed analysis
         fns = filename.split(os.path.sep)
         cand = os.path.sep.join(fns[:-2] + ['analysis',] + fns[-2:]) + 'r'
-        print cand
-        if os.path.exists(cand):
+        print(cand)
+        if False:#os.path.exists(cand):
             h5Results = tables.openFile(cand)
 
             if 'FitResults' in dir(h5Results.root):
@@ -326,6 +326,36 @@ class ImageStack(object):
 
                 self.resultsMdh = MetaData.TIRFDefault
                 self.resultsMdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(h5Results))
+
+        self.events = self.dataSource.getEvents()
+        
+    def LoadHTTP(self, filename):
+        '''Load PYMEs semi-custom HDF5 image data format. Offloads all the
+        hard work to the HDFDataSource class'''
+        import tables
+        from PYME.Analysis.DataSources import HTTPDataSource, BGSDataSource
+        #from PYME.Analysis.LMVis import inpFilt
+        
+        #open hdf5 file
+        self.dataSource = HTTPDataSource.DataSource(filename)
+        #chain on a background subtraction data source, so we can easily do 
+        #background subtraction in the GUI the same way as in the analysis
+        self.data = BGSDataSource.DataSource(self.dataSource) #this will get replaced with a wrapped version
+
+        #try: #should be true the whole time
+        self.mdh = MetaData.TIRFDefault
+        self.mdh.copyEntriesFrom(self.dataSource.getMetadata())
+        #except:
+        #    self.mdh = MetaData.TIRFDefault
+        #    wx.MessageBox("Carrying on with defaults - no gaurantees it'll work well", 'ERROR: No metadata found in file ...', wx.OK)
+        #    print("ERROR: No metadata fond in file ... Carrying on with defaults - no gaurantees it'll work well")
+
+        #attempt to estimate any missing parameters from the data itself        
+        MetaData.fillInBlanks(self.mdh, self.dataSource)
+
+        #calculate the name to use when we do batch analysis on this        
+        #from PYME.ParallelTasks.relativeFiles import getRelFilename
+        self.seriesName = filename
 
         self.events = self.dataSource.getEvents()
 
@@ -369,18 +399,56 @@ class ImageStack(object):
 
         self.mode = 'psf'
         
+    def LoadNPY(self, filename):
+        '''Load numpy .npy data.
+        
+       
+        '''
+        mdfn = self.FindAndParseMetadata(filename)
+        
+        self.data = numpy.load(filename)
+
+
+        from PYME.ParallelTasks.relativeFiles import getRelFilename
+        self.seriesName = getRelFilename(filename)
+
+        self.mode = 'default'
+        
+    def LoadDBL(self, filename):
+        '''Load Bewersdorf custom STED data. 
+       
+        '''
+        mdfn = self.FindAndParseMetadata(filename)
+        
+        self.data = numpy.memmap(filename, dtype='<f4', mode='r', offset=128, shape=(self.mdh['Camera.ROIWidth'],self.mdh['Camera.ROIHeight'],self.mdh['NumImages']), order='F')
+
+
+        from PYME.ParallelTasks.relativeFiles import getRelFilename
+        self.seriesName = getRelFilename(filename)
+
+        self.mode = 'default'
+        
 
     def FindAndParseMetadata(self, filename):
         '''Try and find and load a .xml or .md metadata file that might be ascociated
         with a given image filename. See the relevant metadatahandler classes
         for details.'''
+        import xml.parsers.expat      
+        
         mdf = None
         xmlfn = os.path.splitext(filename)[0] + '.xml'
         xmlfnmc = os.path.splitext(filename)[0].split('__')[0] + '.xml'
         if os.path.exists(xmlfn):
-            self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.TIRFDefault)
-            self.mdh.copyEntriesFrom(MetaDataHandler.XMLMDHandler(xmlfn))
-            mdf = xmlfn
+            try:
+                self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.TIRFDefault)
+                self.mdh.copyEntriesFrom(MetaDataHandler.XMLMDHandler(xmlfn))
+                mdf = xmlfn
+            except xml.parsers.expat.ExpatError:
+                #fix for bug in which PYME .md was written with a .xml extension
+                self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.BareBones)
+                self.mdh.copyEntriesFrom(MetaDataHandler.SimpleMDHandler(xmlfn))
+                mdf = xmlfn
+                
         elif os.path.exists(xmlfnmc): #this is a single colour channel of a pair
             self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.TIRFDefault)
             self.mdh.copyEntriesFrom(MetaDataHandler.XMLMDHandler(xmlfnmc))
@@ -415,6 +483,63 @@ class ImageStack(object):
                             self.mdh[basename + k] = v
                 
                 lsm_pop('LSM.', lsm_info)
+            elif filename.endswith('.dbl'): #Bewersdorf lab STED
+                mdfn = filename[:-4] + '.txt'
+                entrydict = {}
+                
+                try: #try to read in extra metadata if possible
+                    with open(mdfn, 'r') as mf:
+                        for line in mf:
+                            s = line.split(':')
+                            if len(s) == 2:
+                                entrydict[s[0]] = s[1]
+                            
+                except IOError:
+                    pass
+                            
+#                vx, vy = entrydict['Pixel size (um)'].split('x')
+#                self.mdh['voxelsize.x'] = float(vx)
+#                self.mdh['voxelsize.y'] = float(vy)
+#                self.mdh['voxelsize.z'] = 0.2 #FIXME for stacks ...
+#                
+#                sx, sy = entrydict['Image format'].split('x')
+#                self.mdh['Camera.ROIWidth'] = int(sx)
+#                self.mdh['Camera.ROIHeight'] = int(sy)
+#                
+#                self.mdh['NumImages'] = int(entrydict['# Images'])
+                
+                with open(filename) as df:
+                    s = df.read(8)
+                    Z, X, Y, T = numpy.fromstring(s, '>u2')
+                    s = df.read(16)
+                    depth, width, height, elapsed = numpy.fromstring(s, '<f4')
+                    
+                    self.mdh['voxelsize.x'] = width/X
+                    self.mdh['voxelsize.y'] = height/Y
+                    self.mdh['voxelsize.z'] = depth
+                    
+                    self.mdh['Camera.ROIWidth'] = X
+                    self.mdh['Camera.ROIHeight'] = Y
+                    self.mdh['NumImages'] = Z*T
+                
+                def _sanitise_key(key):
+                    k = key.replace('#', 'Num')
+                    k = k.replace('(%)', '')
+                    k = k.replace('(', '')
+                    k = k.replace(')', '')
+                    k = k.replace('.', '')
+                    k = k.replace('/', '')
+                    k = k.replace('?', '')
+                    k = k.replace(' ', '')
+                    if not k[0].isalpha():
+                        k = 's' + k
+                    return k
+                    
+                for k, v in entrydict.items():
+                    self.mdh['STED.%s'%_sanitise_key(k)] = v
+                    
+                    
+                
                 
 
         if self.haveGUI and not ('voxelsize.x' in self.mdh.keys() and 'voxelsize.y' in self.mdh.keys()):
@@ -508,13 +633,13 @@ class ImageStack(object):
         self.mode = 'default'
 
     def Load(self, filename=None):
-        print filename
+        print(filename)
         if (filename == None):
             import wx #only introduce wx dependency here - so can be used non-interactively
             global lastdir
             
             fdialog = wx.FileDialog(None, 'Please select Data Stack to open ...',
-                wildcard='Image Data|*.h5;*.tif;*.lsm;*.kdf;*.md;*.psf|All files|*.*', style=wx.OPEN, defaultDir = lastdir)
+                wildcard='Image Data|*.h5;*.tif;*.lsm;*.kdf;*.md;*.psf;*.npy;*.dbl|All files|*.*', style=wx.OPEN, defaultDir = lastdir)
             succ = fdialog.ShowModal()
             if (succ == wx.ID_OK):
                 filename = fdialog.GetPath()
@@ -523,6 +648,8 @@ class ImageStack(object):
         if not filename == None:
             if filename.startswith('QUEUE://'):
                 self.LoadQueue(filename)
+            elif filename.startswith('http://'):
+                self.LoadHTTP(filename)
             elif filename.endswith('.h5'):
                 self.Loadh5(filename)
             elif filename.endswith('.kdf'):
@@ -531,6 +658,10 @@ class ImageStack(object):
                 self.LoadPSF(filename)
             elif filename.endswith('.md'): #treat this as being an image series
                 self.LoadImageSeries(filename)
+            elif filename.endswith('.npy'): #treat this as being an image series
+                self.LoadNPY(filename)
+            elif filename.endswith('.dbl'): #treat this as being an image series
+                self.LoadDBL(filename)
             else: #try tiff
                 self.LoadTiff(filename)
 

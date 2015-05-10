@@ -21,24 +21,13 @@
 #
 ##################
 
-import scipy
-import numpy
-#from scipy.signal import interpolate
-#import scipy.ndimage as ndimage
-from pylab import *
-from PYME.PSFGen.ps_app import *
+import numpy as np
 
+#from pylab import *
+from PYME.PSFGen.ps_app import *
 from PYME.Analysis._fithelpers import *
 
-import copy_reg
-
-def pickleSlice(slice):
-        return unpickleSlice, (slice.start, slice.stop, slice.step)
-
-def unpickleSlice(start, stop, step):
-        return slice(start, stop, step)
-
-copy_reg.pickle(slice, pickleSlice, unpickleSlice)
+from .fitCommon import fmtSlicesUsed
 
 
 
@@ -49,7 +38,7 @@ def f_Gauss3d(p, X, Y, Z):
 
     #print X.shape
 
-    return A*scipy.exp(-((X-x0)**2 + (Y - y0)**2)/(2*wxy**2) - ((Z-z0)**2)/(2*wz**2)) + b
+    return A*np.exp(-((X-x0)**2 + (Y - y0)**2)/(2*wxy**2) - ((Z-z0)**2)/(2*wz**2)) + b
 
 class GaussFitResult:
     def __init__(self, fitResults, metadata, slicesUsed=None, resultCode=None, fitErr=None):
@@ -77,11 +66,11 @@ class GaussFitResult:
     def renderFit(self):
         #X,Y = scipy.mgrid[self.slicesUsed[0], self.slicesUsed[1]]
         #return f_gauss2d(self.fitResults, X, Y)
-        X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[self.slicesUsed[0]]
-        Y = 1e3*self.metadata.voxelsize.y*scipy.mgrid[self.slicesUsed[1]]
-        Z = 1e3*self.metadata.voxelsize.z*scipy.mgrid[self.slicesUsed[2]]
-        P = scipy.arange(0,1.01,.1)
-        return f_PSF3d(self.fitResults, X, Y, Z, P, 2*scipy.pi/525, 1.47, 10e3)
+        X = 1e3*self.metadata.voxelsize.x*np.mgrid[self.slicesUsed[0]]
+        Y = 1e3*self.metadata.voxelsize.y*np.mgrid[self.slicesUsed[1]]
+        Z = 1e3*self.metadata.voxelsize.z*np.mgrid[self.slicesUsed[2]]
+        P = np.arange(0,1.01,.1)
+        return f_PSF3d(self.fitResults, X, Y, Z, P, 2*np.pi/525, 1.47, 10e3)
         #pass
         
 def replNoneWith1(n):
@@ -91,23 +80,21 @@ def replNoneWith1(n):
 		return n
 
 
-fresultdtype=[('tIndex', '<i4'),('fitResults', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'),('wxy', '<f4'),('wz', '<f4'), ('background', '<f4')]),('fitError', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'),('wxy', '<f4'),('wz', '<f4'), ('background', '<f4')]), ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
+fresultdtype=[('tIndex', '<i4'),
+              ('fitResults', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'),('wxy', '<f4'),('wz', '<f4'), ('background', '<f4')]),
+              ('fitError', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'),('wxy', '<f4'),('wz', '<f4'), ('background', '<f4')]), 
+              ('resultCode', '<i4'), 
+              ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),
+                              ('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),
+                              ('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
 
 def Gauss3dFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None):
-	if slicesUsed == None:
-		slicesUsed = ((-1,-1,-1),(-1,-1,-1),(-1,-1,-1))
-	else: 		
-		slicesUsed = ((slicesUsed[0].start,slicesUsed[0].stop,replNoneWith1(slicesUsed[0].step)),(slicesUsed[1].start,slicesUsed[1].stop,replNoneWith1(slicesUsed[1].step)),(slicesUsed[2].start,slicesUsed[2].stop,replNoneWith1(slicesUsed[2].step)))
-
-	if fitErr == None:
-		fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
-
-	#print slicesUsed
+    	if fitErr == None:
+		fitErr = -5e3*np.ones(fitResults.shape, 'f')
 
 	tIndex = metadata.tIndex
 
-
-	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, slicesUsed)], dtype=fresultdtype) 
+	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, fmtSlicesUsed(slicesUsed))], dtype=fresultdtype) 
 
 class Gauss3dFitFactory:
     def __init__(self, data, metadata, background=None):
@@ -160,7 +147,7 @@ class Gauss3dFitFactory:
 
         #print X.shape, dataROI.shape, zslice
 
-        sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*scipy.maximum(dataROI, 1))/self.metadata.Camera.ElectronsPerCount
+        sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataROI, 1))/self.metadata.Camera.ElectronsPerCount
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
         #print X
@@ -180,8 +167,8 @@ class Gauss3dFitFactory:
 
         fitErrors=None
         try:
-            fitErrors = scipy.sqrt(scipy.diag(cov_x)*(infodict['fvec']*infodict['fvec']).sum()/(dataROI.size- len(res1)))
-        except Exception, e:
+            fitErrors = np.sqrt(np.diag(cov_x)*(infodict['fvec']*infodict['fvec']).sum()/(dataROI.size- len(res1)))
+        except Exception as e:
             pass
         #print 'foo'
         fr = Gauss3dFitResultR(res1, self.metadata, (xslice, yslice, zslice), resCode, fitErrors)
@@ -205,3 +192,6 @@ class Gauss3dFitFactory:
 FitFactory = Gauss3dFitFactory
 FitResult = Gauss3dFitResultR
 FitResultsDType = fresultdtype #only defined if returning data as numarray
+
+DESCRIPTION = '3D Gaussian fit for confocal data.'
+LONG_DESCRIPTION = '3D Gaussian fit suitable for use on 3D data sets (e.g. Confocal). Not useful for PALM/STORM analysis.'

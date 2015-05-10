@@ -150,7 +150,7 @@ class TextEditMixin:
         #print x,y
         item, flags, col = self.HitTest((x,y))
 
-        print item, flags, col
+        print((item, flags, col))
 
 #        if row != self.curRow: # self.curRow keeps track of the current row
 #            evt.Skip()
@@ -290,7 +290,7 @@ class TextEditMixin:
 
 class EditableTreeList(gizmos.TreeListCtrl, TextEditMixin):
     def __init__(self, parent, id=-1, style=wx.TR_DEFAULT_STYLE):
-        print style
+        print(style)
         gizmos.TreeListCtrl.__init__(self,parent, id, style=style)
         TextEditMixin.__init__(self)
 

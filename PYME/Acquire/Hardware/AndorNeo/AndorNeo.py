@@ -22,11 +22,16 @@
 ################
 
 
-from SDK3Cam import *
+from .SDK3Cam import *
 import numpy as np
 import threading
 import ctypes
-import Queue
+
+try:
+    import Queue
+except ImportError:
+    import queue as Queue
+    
 import time
 import traceback
 
@@ -266,7 +271,7 @@ class AndorBase(SDK3Camera):
         buf = self.queuedBuffers.get()
         self.nQueued -= 1
         if not buf.ctypes.data == ctypes.addressof(pData.contents):
-            print ctypes.addressof(pData.contents), buf.ctypes.data
+            print((ctypes.addressof(pData.contents), buf.ctypes.data))
             #self.camLock.release()
             raise RuntimeError('Returned buffer not equal to expected buffer')
             #print 'Returned buffer not equal to expected buffer'
@@ -332,19 +337,19 @@ class AndorBase(SDK3Camera):
         return self.SensorHeight.getValue()
     
     def SetHorizBin(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def GetHorizBin(*args):
         return 0
         #raise Exception, 'Not implemented yet!!'
     def GetHorzBinValue(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def SetVertBin(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def GetVertBin(*args):
         return 0
         #raise Exception, 'Not implemented yet!!'
     def GetNumberChannels(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     
     def GetElectrTemp(*args): 
         return 25
@@ -482,15 +487,15 @@ class AndorBase(SDK3Camera):
         
 
     def StartLifePreview(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     def StopLifePreview(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     def GetBWPicture(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
     
     def CheckCoordinates(*args): 
-        raise Exception, 'Not implemented yet!!'
+        raise Exception('Not implemented yet!!')
 
     #new fcns for Andor compatibility
     def GetNumImsBuffered(self):

@@ -7,8 +7,12 @@ Created on Mon May 20 15:58:22 2013
 
 import numpy as np
 import socket
-import Image
-import StringIO
+from PIL import Image
+
+try:
+    import StringIO
+except ImportError:
+    import io as StringIO
 
 class ENList(list):
     def __getattr__(self, key):
@@ -132,6 +136,8 @@ class LightCrafter(object):
         self.IPAddress = IPAddress
         self.sock = None
         
+        self.StoredMasks = {}
+        
     def Connect(self):
         self.sock = socket.socket()
         self.sock.settimeout(1)
@@ -198,7 +204,7 @@ class LightCrafter(object):
         patternSettings['trigger'] = PATTERN_TRIGGER.COMMAND
         #patternSettings[']
         h, d = self._ExecCommand(LC_PACKET_TYPE.HOST_WRITE, CMD_PATTERN_SETTING, patternSettings)
-        print h, d
+        print(( h, d))
         
         for index, data in enumerate(dataFrames):
             im = Image.fromarray(data)#.convert('1')
@@ -208,7 +214,7 @@ class LightCrafter(object):
             output.close()
             #print contents[:50], np.fromstring(contents, 'u1')[:50]
             h, d = self._ExecCommand(LC_PACKET_TYPE.HOST_WRITE, CMD_PATTERN_DEFINITION, np.hstack([np.ubyte(index),np.fromstring(contents, 'u1')]))
-            print h, d
+            print(( h, d))
         return h, d
         
     def SetPattern(self, index):
@@ -221,6 +227,9 @@ class LightCrafter(object):
         
     def SetMask(self, data, intensity = 255):
         return self.SetImage(((data > 0)*intensity).astype('uint8'))
+        
+    def SetStoredMask(self, key, intensity = 255):
+        self.SetMask(self.StoredMasks[key], intensity)
         
     def SetStatic(self, value):
         h, d = self._ExecCommand(LC_PACKET_TYPE.HOST_WRITE, CMD_STATIC_COLOR, np.uint8(value*np.array([0,1,1,1])))
@@ -247,3 +256,13 @@ class LightCrafter(object):
             self.SetImage(((ll > .5)*intensity).astype('uint8'))
         else:
             self.SetImage((ll*intensity).astype('uint8'))
+            
+    def SetVDCLines(self, period, phase=0, angle=0, dutyCycle=.5, intensity=255.):
+        kx = np.cos(angle)/period
+        ky = np.sin(angle)/period
+        
+        d = kx*self.X + ky*self.Y + phase
+        
+        ll = (d%1) < dutyCycle
+        
+        self.SetImage((ll*intensity).astype('uint8'))

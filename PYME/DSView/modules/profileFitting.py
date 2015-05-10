@@ -36,22 +36,10 @@ class fitter:
         #self.view = dsviewer.view
         self.do = dsviewer.do
         self.image = dsviewer.image
-
-        fit_menu = wx.Menu()
-
-        FIT_RAW_INTENSITY_DECAY = wx.NewId()
-        FIT_RAW_INTENSITY_SIMPLE = wx.NewId()
-        FIT_GAUSS = wx.NewId()
         
-        fit_menu.Append(FIT_RAW_INTENSITY_DECAY, "Raw Intensity Decay", "", wx.ITEM_NORMAL)
-        fit_menu.Append(FIT_RAW_INTENSITY_SIMPLE, "Simple Decay", "", wx.ITEM_NORMAL)
-        fit_menu.Append(FIT_GAUSS, "Gaussian", "", wx.ITEM_NORMAL)
-
-        dsviewer.menubar.Insert(dsviewer.menubar.GetMenuCount()-1, fit_menu, 'Fitting')
-
-        wx.EVT_MENU(dsviewer, FIT_RAW_INTENSITY_DECAY, self.OnRawDecay)
-        wx.EVT_MENU(dsviewer, FIT_RAW_INTENSITY_SIMPLE, self.OnRawDecaySimp)
-        wx.EVT_MENU(dsviewer, FIT_GAUSS, self.OnGaussianFit)
+        dsviewer.AddMenuItem('Fitting', "Raw Intensity Decay", self.OnRawDecay)
+        dsviewer.AddMenuItem('Fitting', "Simple Decay", self.OnRawDecaySimp)
+        dsviewer.AddMenuItem('Fitting', "Gaussian", self.OnGaussianFit)
         
     def OnRawDecay(self, event):
         from PYME.Analysis.BleachProfile import rawIntensity
@@ -81,7 +69,7 @@ class fitter:
             pylab.plot(xv, I, cols[chan] + 'x', label=self.image.names[chan])
             pylab.plot(xv, gmod(res[0], self.image.xvals), cols[chan], label='%2.3g, %2.3g, \n%2.3g, %2.3g' % tuple(res[0]))
             
-            print res[0]
+            print((res[0]))
             #imo = self.image.parent
         pylab.legend()
         #rawIntensity.processIntensityTrace(I, imo.mdh, dt=imo.mdh['Camera.CycleTime'])
@@ -136,7 +124,7 @@ class fitter:
         plot(ti, Ii)
         
         n100 = abs(ti-100).argmin()
-        print n100, Ii[n100]
+        print((n100, Ii[n100]))
         figtext(.5, .8, 'I100/Imax = %3.4f'%(Ii[n100]))
         plot(ti[n100], Ii[n100], 'xr')
         

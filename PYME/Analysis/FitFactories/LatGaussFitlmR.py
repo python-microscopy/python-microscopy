@@ -22,27 +22,15 @@
 ##################
 
 import scipy
-from scipy.signal import interpolate
-import scipy.ndimage as ndimage
+#from scipy.signal import interpolate
+#import scipy.ndimage as ndimage
 #from pylab import *
-import copy_reg
+#import copy_reg
 import numpy
-import types
+#import types
+from . import fitCommon
 
 from PYME.Analysis.lev_gfit.levmar_gfit import *
-
-#from scipy import weave
-
-#from PYME.Analysis._fithelpers import *
-
-def pickleSlice(slice):
-        return unpickleSlice, (slice.start, slice.stop, slice.step)
-
-def unpickleSlice(start, stop, step):
-        return slice(start, stop, step)
-
-copy_reg.pickle(slice, pickleSlice, unpickleSlice)
-
 
 
 class GaussianFitResult:
@@ -157,7 +145,7 @@ class GaussianFitFactory:
         fitErrors=None
         try:       
             fitErrors = scipy.sqrt(scipy.diag(cov_x))
-        except Exception, e:
+        except Exception:
             pass
         return GaussianFitResultR(res, self.metadata, (xslice, yslice, zslice), resCode, fitErrors)
 

@@ -25,7 +25,7 @@ from math import floor
 import numpy as np
 from PYME.Acquire import eventLog
 
-from sys import maxint
+from sys import maxsize as maxint
 
 #minimal protocol which does nothing
 class Protocol:
@@ -125,14 +125,14 @@ class TaskListProtocol(Protocol):
         while not self.listPos >= len(self.taskList) and frameNum >= self.taskList[self.listPos].when:
             t = self.taskList[self.listPos]
             t.what(*t.params)
-            eventLog.logEvent('ProtocolTask', '%d, %s, ' % (frameNum, t.what.func_name) + ', '.join(['%s' % p for p in t.params]))
+            eventLog.logEvent('ProtocolTask', '%d, %s, ' % (frameNum, t.what.__name__) + ', '.join(['%s' % p for p in t.params]))
             self.listPos += 1
 
     def OnFinish(self):
         while not  self.listPos >= len(self.taskList):
             t = self.taskList[self.listPos]
             t.what(*t.params)
-            eventLog.logEvent('ProtocolTask', '%s, ' % ( t.what.func_name,) + ', '.join(['%s' % p for p in t.params]))
+            eventLog.logEvent('ProtocolTask', '%s, ' % ( t.what.__name__,) + ', '.join(['%s' % p for p in t.params]))
             self.listPos += 1
 
 

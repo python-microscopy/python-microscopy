@@ -67,7 +67,7 @@ def calcCorrShift(im1, im2):
     xc = np.abs(ifftshift(ifftn(fftn(im1)*ifftn(im2))))
 
     xct = (xc - xc.max()/1.1)*(xc > xc.max()/1.1)
-    print xct.shape
+    print((xct.shape))
 
     #figure(1)
     #imshow(xct)
@@ -93,10 +93,10 @@ def guessFlat(ds, mdh, dark):
         flt +=  ds[:,:,i]
         n+=1
 
-    print flt.shape, dark.shape
+    print((flt.shape, dark.shape))
 
     flt = flt/n - dark
-    print flt.shape, flt.mean()
+    print((flt.shape, flt.mean()))
     return np.minimum(flt.mean()/flt, 2.5)
 
 
@@ -219,14 +219,14 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
                         x0,y0,x1,y1 = r
                         #print r
                         dx_, dy_ = calcCorrShift(d.sum(2)[x0:x1, y0:y1], imr[x0:x1, y0:y1])
-                        print 'd_', dx_, dy_
+                        print(('d_', dx_, dy_))
                         dx += dx_
                         dy += dy_
                     
                     dx = np.round(dx/len(rois))
                     dy = np.round(dy/len(rois))
 
-                    print dx, dy
+                    print((dx, dy))
 
                     #dx, dy = (0,0)
                 else:

@@ -37,8 +37,12 @@ from PYME.DSView.LUT import applyLUT
 
 import numpy
 import scipy
+import pylab
 
 LUTCache = {}
+
+SLICE_AXIS_LUT = {DisplayOpts.SLICE_XY:2, DisplayOpts.SLICE_XZ:1,DisplayOpts.SLICE_YZ:0}
+TOL_AXIS_LUT = {DisplayOpts.SLICE_XY:0, DisplayOpts.SLICE_XZ:1,DisplayOpts.SLICE_YZ:2}
 
 def getLUT(cmap):
     if not cmap.name in LUTCache.keys():
@@ -51,7 +55,7 @@ def getLUT(cmap):
 
             
 class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
-    def __init__(self, parent, dstack = None, aspect=1, do = None):
+    def __init__(self, parent, dstack = None, aspect=1, do = None, voxelsize=[1,1,1]):
         
         if (dstack == None and do == None):
             dstack = scipy.zeros((10,10))
@@ -61,6 +65,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             self.do.Optimise()
         else:
             self.do = do
+            
+        self.voxelsize = voxelsize
 
         scrolledImagePanel.ScrolledImagePanel.__init__(self, parent, self.DoPaint, style=wx.SUNKEN_BORDER|wx.TAB_TRAVERSAL)
 
@@ -75,10 +81,14 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         self.pointsR = []
         self.showPoints = True
         self.showTracks = True
+        self.showContours = True
+        self.showScaleBar = True
+        self.scaleBarLength = 2000
         self.pointMode = 'confoc'
         self.pointTolNFoc = {'confoc' : (5,5,5), 'lm' : (2, 5, 5), 'splitter' : (2,5,5)}
         self.showAdjacentPoints = False
         self.pointSize = 11
+        self.layerMode = 'Add'
 
         self.psfROIs = []
         self.psfROISize=[30,30,30]
@@ -99,6 +109,10 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         
         self._oldIm = None
         self._oldImSig = None
+        
+        self.CenteringHandlers = []
+        
+        self.labelPens = [wx.Pen(wx.Colour(*pylab.cm.hsv(v, bytes=True)), 2) for v in numpy.linspace(0, 1, 16)]
 
 #        if not aspect == None:
 #            if scipy.isscalar(aspect):
@@ -121,8 +135,13 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         wx.EVT_LEFT_DOWN(self.imagepanel, self.OnLeftDown)
         wx.EVT_LEFT_UP(self.imagepanel, self.OnLeftUp)
         
+        wx.EVT_MIDDLE_DOWN(self.imagepanel, self.OnMiddleDown)
+        wx.EVT_MIDDLE_UP(self.imagepanel, self.OnMiddleUp)
+        
         wx.EVT_RIGHT_DOWN(self.imagepanel, self.OnRightDown)
         wx.EVT_RIGHT_UP(self.imagepanel, self.OnRightUp)
+        
+        wx.EVT_MIDDLE_DCLICK(self.imagepanel, self.OnMiddleDClick)
 
         wx.EVT_MOTION(self.imagepanel, self.OnMotion)
 
@@ -132,6 +151,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
     def OnRefrTimer(self, event):
         self.Refresh()
+        self.Update()
         
     def SetDataStack(self, ds):
         self.do.SetDataStack(ds)
@@ -176,59 +196,62 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
     def _PixelToScreenCoordinates(self, x, y):
         #sc = pow(2.0,(self.do.scale-2))
-        
         return self._AbsToScreenCoordinates(x*self.scale, y*self.scale*self.aspect)
+        
+    def _PixelToScreenCoordinates3D(self, x, y, z):
+        #sc = pow(2.0,(self.do.scale-2))
+        if (self.do.slice == self.do.SLICE_XY):
+            xs, ys = self._PixelToScreenCoordinates(x,y)
+        elif (self.do.slice == self.do.SLICE_XZ):
+            xs, ys = self._PixelToScreenCoordinates(x,z)
+        elif (self.do.slice == self.do.SLICE_YZ):
+            xs, ys = self._PixelToScreenCoordinates(y,z)
+            
+        return xs, ys
+        
+    def _drawBoxPixelCoords(self, dc, x, y, z, w, h, d):
+        '''Draws a box in screen space given 3D co-ordinates'''        
+        if (self.do.slice == self.do.SLICE_XY):
+            xs, ys = self._PixelToScreenCoordinates(x,y)
+            ws, hs = (w*self.scale, h*self.scale*self.aspect)
+        elif (self.do.slice == self.do.SLICE_XZ):
+            xs, ys = self._PixelToScreenCoordinates(x,z)
+            ws, hs = (w*self.scale, d*self.scale*self.aspect)
+        elif (self.do.slice == self.do.SLICE_YZ):
+            xs, ys = self._PixelToScreenCoordinates(y,z)
+            ws, hs = (h*self.scale, d*self.scale*self.aspect)
+            
+        dc.DrawRectangle(xs - 0.5*ws, ys - 0.5*hs, ws,hs)
+        
         
     @property
     def scale(self):
         return pow(2.0,(self.do.scale))
         
-        
-    def DoPaint(self, dc):
-        #print 'p'
-        
-        dc.Clear()
-                                     
-        im = self.Render()
-
-        sc = pow(2.0,(self.do.scale))
-        sc2 = sc
-        
-        if sc >= 1:
-            step = 1
-        else:
-            step = 2**(-numpy.ceil(numpy.log2(sc)))
-            sc2 = sc*step
-            
-        #im.Rescale(im.GetWidth()*sc2,im.GetHeight()*sc2*self.aspect)
-
-        x0,y0 = self.CalcUnscrolledPosition(0,0)
-        im2 = wx.BitmapFromImage(im)
-        dc.DrawBitmap(im2,-sc2/2,-sc2/2)
-        
-        sX, sY = im.GetWidth(), im.GetHeight()
-
+    
+    def DrawCrosshairs(self, view, dc):
         if self.crosshairs:
+            sX, sY = view.imagepanel.Size
+            
             dc.SetPen(wx.Pen(wx.CYAN,1))
-            if(self.do.slice == self.do.SLICE_XY):
-                lx = self.do.xp
-                ly = self.do.yp
-            elif(self.do.slice == self.do.SLICE_XZ):
-                lx = self.do.xp
-                ly = self.do.zp
-            elif(self.do.slice == self.do.SLICE_YZ):
-                lx = self.do.yp
-                ly = self.do.zp
+            if(view.do.slice == view.do.SLICE_XY):
+                lx = view.do.xp
+                ly = view.do.yp
+            elif(view.do.slice == view.do.SLICE_XZ):
+                lx = view.do.xp
+                ly = view.do.zp
+            elif(view.do.slice == view.do.SLICE_YZ):
+                lx = view.do.yp
+                ly = view.do.zp
         
             
-            xc, yc = self._PixelToScreenCoordinates(lx, ly)            
+            xc, yc = view._PixelToScreenCoordinates(lx, ly)            
             dc.DrawLine(0, yc, sX, yc)
             dc.DrawLine(xc, 0, xc, sY)
             
-                #dc.DrawLine(0, lx*sc - y0, sX, lx*sc - y0)
-                #dc.DrawLine(ly*sc - x0, 0, ly*sc - x0, sY)
             dc.SetPen(wx.NullPen)
             
+    def DrawSelection(self, view, dc):
         if self.do.showSelection:
             col = wx.TheColourDatabase.FindColour('YELLOW')
             #col.Set(col.red, col.green, col.blue, 125)
@@ -275,198 +298,226 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                     
             dc.SetPen(wx.NullPen)
             dc.SetBrush(wx.NullBrush)
-
-        if (len(self.psfROIs) > 0):
-            dc.SetBrush(wx.TRANSPARENT_BRUSH)
-            dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),1))
-            if(self.do.slice == self.do.SLICE_XY):
-                for p in self.psfROIs:
-                    dc.DrawRectangle(sc*p[0]-self.psfROISize[0]*sc - x0,sc*p[1] - self.psfROISize[1]*sc - y0, 2*self.psfROISize[0]*sc,2*self.psfROISize[1]*sc)
-            elif(self.do.slice == self.do.SLICE_XZ):
-                for p in self.psfROIs:
-                    dc.DrawRectangle(sc*p[0]-self.psfROISize[0]*sc - x0,sc*p[2]*self.aspect - self.psfROISize[2]*sc*self.aspect - y0, 2*self.psfROISize[0]*sc,2*self.psfROISize[2]*sc*self.aspect)
-            elif(self.do.slice == self.do.SLICE_YZ):
-                for p in self.psfROIs:
-                    dc.DrawRectangle(sc*p[1]-self.psfROISize[1]*sc - x0,sc*p[2]*self.aspect - self.psfROISize[2]*sc*self.aspect - y0, 2*self.psfROISize[1]*sc,2*self.psfROISize[2]*sc*self.aspect)
-
-
+            
+    def DrawTracks(self, view, dc):
         if self.showTracks and 'filter' in dir(self) and 'clumpIndex' in self.filter.keys():
-            if(self.do.slice == self.do.SLICE_XY):
-                IFoc = (abs(self.filter['t'] - self.do.zp) < 1)
-                               
-            elif(self.do.slice == self.do.SLICE_XZ):
-                IFoc = (abs(self.filter['y'] - self.do.yp*self.vox_y) < 3*self.vox_y)*(self.filter['t'] > y0/sc)*(self.filter['t'] < (y0 +sY)/sc)      
-
-            else:#(self.do.slice == self.do.SLICE_YZ):
-                IFoc = (abs(self.filter['x'] - self.do.xp*self.vox_x) < 3*self.vox_x)*(self.filter['t'] > y0/sc)*(self.filter['t'] < (y0 +sY)/sc)
-
+            t = self.filter['t']
+            x = self.filter['x']/self.voxelsize[0]
+            y = self.filter['y']/self.voxelsize[1]
+            
+            xb, yb, zb = self._calcVisibleBounds()
+            
+            IFoc = (x >= xb[0])*(y >= yb[0])*(t >= zb[0])*(x < xb[1])*(y < yb[1])*(t < zb[1])
+            
             tFoc = list(set(self.filter['clumpIndex'][IFoc]))
+
+            dc.SetBrush(wx.TRANSPARENT_BRUSH)
+
+            #pGreen = wx.Pen(wx.TheColourDatabase.FindColour('RED'),1)
+            #pRed = wx.Pen(wx.TheColourDatabase.FindColour('RED'),1)
+            #dc.SetPen(pGreen)
+            
+
+            for tN in tFoc:
+                IFoc = (self.filter['clumpIndex'] == tN)
+                if IFoc.sum() < 2:
+                    return
+                pFoc = numpy.vstack(self._PixelToScreenCoordinates3D(x[IFoc], y[IFoc], t[IFoc])).T
+                
+                #print pFoc.shape
+                dc.SetPen(self.labelPens[tN%16])
+                dc.DrawLines(pFoc)
+                
+    def DrawScaleBar(self, view, dc):
+        if self.showScaleBar:
+            pGreen = wx.Pen(wx.TheColourDatabase.FindColour('WHITE'),10)
+            pGreen.SetCap(wx.CAP_BUTT)
+            dc.SetPen(pGreen)
+            sX, sY = view.imagepanel.Size
+            
+            sbLen = self.scaleBarLength*view.scale/view.voxelsize[0]
+            
+            y1 = 20
+            x1 = 20 + sbLen
+            x0 = x1 - sbLen
+            dc.DrawLine(x0, y1, x1, y1)
+            
+            dc.SetTextForeground(wx.TheColourDatabase.FindColour('WHITE'))
+            if self.scaleBarLength > 1000:
+                s = u'%1.1f \u03BCm' % (self.scaleBarLength/1000.)
+            else:
+                s = u'%d mm' % int(self.scaleBarLength)
+            w, h = dc.GetTextExtent(s)
+            dc.DrawText(s, x0 + (sbLen - w)/2, y1 + 7)
+                
+    def DrawContours(self, view, dc):
+        if self.showContours and 'filter' in dir(self) and 'contour' in self.filter.keys() and self.do.slice ==self.do.SLICE_XY:
+            t = self.filter['t']
+            x = self.filter['x']/self.voxelsize[0]
+            y = self.filter['y']/self.voxelsize[1]
+            
+            xb, yb, zb = self._calcVisibleBounds()
+            
+            IFoc = (x >= xb[0])*(y >= yb[0])*(t >= zb[0])*(x < xb[1])*(y < yb[1])*(t < zb[1])
 
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
 
             pGreen = wx.Pen(wx.TheColourDatabase.FindColour('RED'),1)
             #pRed = wx.Pen(wx.TheColourDatabase.FindColour('RED'),1)
             dc.SetPen(pGreen)
-
-            for tN in tFoc:
-                IFoc = (self.filter['clumpIndex'] == tN)
-                if(self.do.slice == self.do.SLICE_XY):
-                    pFoc = numpy.vstack((sc*self.filter['x'][IFoc]/self.vox_x - x0, sc*self.filter['y'][IFoc]/self.vox_y - y0)).T
-
-                elif(self.do.slice == self.do.SLICE_XZ):
-                    pFoc = numpy.vstack((sc*self.filter['x'][IFoc]/self.vox_x - x0, sc*self.filter['t'][IFoc] - y0)).T
-
-                else:#(self.do.slice == self.do.SLICE_YZ):
-                    pFoc = numpy.vstack((sc*self.filter['y'][IFoc]/self.vox_y - y0, sc*self.filter['t'][IFoc] - y0)).T
-
-                dc.DrawLines(pFoc)
-
-
+            
+            contours = self.filter['contour'][IFoc]
+            if 'clumpIndex' in self.filter.keys():
+                colInds = self.filter['clumpIndex'][IFoc] %len(self.labelPens)
+            else:
+                colInds = numpy.zeros(len(contours), 'i')
+            for c, colI in zip(contours, colInds):
+                xc, yc = c.T
+                dc.SetPen(self.labelPens[int(colI)])
+                dc.DrawSpline(numpy.vstack(self._PixelToScreenCoordinates(xc, yc)).T)
+                
+    
+       
+    def DrawPoints(self, view, dc):
         dx = 0
         dy = 0
+        
+        aN = SLICE_AXIS_LUT[self.do.slice]
+        tolN = TOL_AXIS_LUT[self.do.slice]
+        pos = [self.do.xp, self.do.yp, self.do.zp]
 
         if self.showPoints and ('filter' in dir(self) or len(self.points) > 0):
             if 'filter' in dir(self):
-                #pointTol = self.pointTolNFoc[self.pointMode]
-
-                if(self.do.slice == self.do.SLICE_XY):
-                    IFoc = (abs(self.filter['t'] - self.do.zp) < 1)
-                    pFoc = numpy.vstack((self.filter['x'][IFoc]/self.vox_x, self.filter['y'][IFoc]/self.vox_y)).T
-                    if self.pointMode == 'splitter':
-                        pCol = self.filter['gFrac'] > .5
-
-                        if 'chroma' in dir(self):
-                            dx = self.chroma.dx.ev(self.filter['x'][IFoc], self.filter['y'][IFoc])/self.vox_x
-                            dy = self.chroma.dy.ev(self.filter['x'][IFoc], self.filter['y'][IFoc])/self.vox_y
-                        else:
-                            dx = 0*pFoc[:,0]
-                            dy = 0*pFoc[:,0]
-                            
-
-                elif(self.do.slice == self.do.SLICE_XZ):
-                    IFoc = (abs(self.filter['y'] - self.do.yp*self.vox_y) < 3*self.vox_y)*(self.filter['t'] > y0/sc)*(self.filter['t'] < (y0 +sY)/sc)
-                    pFoc = numpy.vstack((self.filter['x'][IFoc]/self.vox_x, self.filter['t'][IFoc])).T
-
-                else:#(self.do.slice == self.do.SLICE_YZ):
-                    IFoc = (abs(self.filter['x'] - self.do.xp*self.vox_x) < 3*self.vox_x)*(self.filter['t'] > y0/sc)*(self.filter['t'] < (y0 +sY)/sc)
-                    pFoc = numpy.vstack((self.filter['y'][IFoc]/self.vox_y, self.filter['t'][IFoc])).T
-
-                #pFoc = numpy.vstack((self.filter['x'][IFoc]/self.vox_x, self.filter['y'][IFoc]/self.vox_y, self.filter['t'][IFoc])).T
+                t = self.filter['t']
+                x = self.filter['x']/self.voxelsize[0]
+                y = self.filter['y']/self.voxelsize[1]
+                
+                xb, yb, zb = self._calcVisibleBounds()
+                
+                IFoc = (x >= xb[0])*(y >= yb[0])*(t >= zb[0])*(x < xb[1])*(y < yb[1])*(t < zb[1])
+                    
+                pFoc = numpy.vstack((x[IFoc], y[IFoc], t[IFoc])).T
+                if self.pointMode == 'splitter':
+                    pCol = self.filter['gFrac'][IFoc] > .5                
                 pNFoc = []
 
-            elif len(self.points) > 0 and self.showPoints:
-                #if self.pointsMode == 'confoc':
+            #intrinsic points            
+            elif len(self.points) > 0:
                 pointTol = self.pointTolNFoc[self.pointMode]
-                if(self.do.slice == self.do.SLICE_XY):
-                    pFoc = self.points[abs(self.points[:,2] - self.do.zp) < 1][:,:2]
-                    if self.pointMode == 'splitter':
-                        pCol = self.pointColours[abs(self.points[:,2] - self.do.zp) < 1]
-                        
-                        if 'chroma' in dir(self):
-                            dx = self.chroma.dx.ev(pFoc[:,0]*1e3*self.vox_x, pFoc[:,1]*1e3*self.vox_y)/(1e3*self.vox_x)
-                            dy = self.chroma.dy.ev(pFoc[:,0]*1e3*self.vox_x, pFoc[:,1]*1e3*self.vox_y)/(1e3*self.vox_y)
-                        else:
-                            dx = 0*pFoc[:,0]
-                            dy = 0*pFoc[:,0]
+                
+                IFoc = abs(self.points[:,aN] - pos[aN]) < 1
+                INFoc = abs(self.points[:,aN] - pos[aN]) < pointTol[tolN]
+                    
+                pFoc = self.points[IFoc]
+                pNFoc = self.points[INFoc]
+                
+                if self.pointMode == 'splitter':
+                    pCol = self.pointColours[IFoc]
+                    
+            if self.pointMode == 'splitter':
+                if 'chroma' in dir(self):
+                    dx = self.chroma.dx.ev(pFoc[:,0]*1e3*self.voxelsize[0], pFoc[:,1]*1e3*self.voxelsize[1])/(1e3*self.voxelsize[0])
+                    dy = self.chroma.dy.ev(pFoc[:,0]*1e3*self.voxelsize[0], pFoc[:,1]*1e3*self.voxelsize[1])/(1e3*self.voxelsize[1])
+                else:
+                    dx = 0*pFoc[:,0]
+                    dy = 0*pFoc[:,0]
 
-                    pNFoc = self.points[abs(self.points[:,2] - self.do.zp) < pointTol[0]][:,:2]
-                    if self.pointMode == 'splitter':
-                        if 'chroma' in dir(self):
-                            dxn = self.chroma.dx.ev(pFoc[:,0]*1e3*self.vox_x, pFoc[:,1]*1e3*self.vox_y)/(1e3*self.vox_x)
-                            dyn = self.chroma.dy.ev(pFoc[:,0]*1e3*self.vox_x, pFoc[:,1]*1e3*self.vox_y)/(1e3*self.vox_y)
-                        else:
-                            dxn = 0*pFoc[:,0]
-                            dyn = 0*pFoc[:,0]
-
-                elif(self.do.slice == self.do.SLICE_XZ):
-                    pFoc = self.points[abs(self.points[:,1] - self.do.yp) < 1][:, ::2]
-                    pNFoc = self.points[abs(self.points[:,1] - self.do.yp) < pointTol[1]][:,::2]
-
-                else:#(self.do.slice == self.do.SLICE_YZ):
-                    pFoc = self.points[abs(self.points[:,0] - self.do.xp) < 1][:, 1:]
-                    pNFoc = self.points[abs(self.points[:,0] - self.do.xp) < pointTol[2]][:,1:]
-
-
-            #pFoc = numpy.atleast_1d(pFoc)
-            #pNFoc = numpy.atleast_1d(pNFoc)
-
+                if 'chroma' in dir(self):
+                    dxn = self.chroma.dx.ev(pNFoc[:,0]*1e3*self.voxelsize[0], pNFoc[:,1]*1e3*self.voxelsize[1])/(1e3*self.voxelsize[0])
+                    dyn = self.chroma.dy.ev(pNFoc[:,0]*1e3*self.voxelsize[0], pNFoc[:,1]*1e3*self.voxelsize[1])/(1e3*self.voxelsize[1])
+                else:
+                    dxn = 0*pFoc[:,0]
+                    dyn = 0*pFoc[:,0]
 
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
             ps = self.pointSize
-            ps2 = ps/2
 
             if self.showAdjacentPoints:
                 dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('BLUE'),1))
                 
-                if self.pointMode == 'splitter' and self.do.slice == self.do.SLICE_XY:
+                if self.pointMode == 'splitter':
                     for p, dxi, dyi in zip(pNFoc, dxn, dyn):
-                        px, py = self._PixelToScreenCoordinates(p[0] - ps2, p[1] - ps2)
-                        dc.DrawRectangle(px,py, ps*sc,ps*sc*self.aspect)
-#                        px, py = self._PixelToScreenCoordinates(p[0] -dxi - ps2, self.do.ds.shape[1] - p[1] + dyi - ps2)
-#                        dc.DrawRectangle(px,py, ps*sc,ps*sc*self.aspect)
-                        px, py = self._PixelToScreenCoordinates(p[0] -dxi - ps2, p[1] - dyi + self.do.ds.shape[1]/2 - ps2)
-                        dc.DrawRectangle(px,py, ps*sc,ps*sc*self.aspect)
+                        self._drawBoxPixelCoords(dc, p[0], p[1], p[2], ps, ps, ps)
+                        self._drawBoxPixelCoords(dc, p[0]-dxi, 0.5*self.do.ds.shape[1] + p[1]-dyi, p[2], ps, ps, ps)
 
                 else:
                     for p in pNFoc:
-                        px, py = self._PixelToScreenCoordinates(p[0] - ps2, p[1] - ps2)
-                        dc.DrawRectangle(px,py, ps*sc,ps*sc*self.aspect)
+                        self._drawBoxPixelCoords(dc, p[0], p[1], p[2], ps, ps, ps)
 
 
             pGreen = wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),1)
             pRed = wx.Pen(wx.TheColourDatabase.FindColour('RED'),1)
             dc.SetPen(pGreen)
             
-            if self.pointMode == 'splitter' and self.do.slice == self.do.SLICE_XY:
+            if self.pointMode == 'splitter':
                 for p, c, dxi, dyi in zip(pFoc, pCol, dx, dy):
                     if c:
                         dc.SetPen(pGreen)
                     else:
                         dc.SetPen(pRed)
-                    px, py = self._PixelToScreenCoordinates(p[0] - ps2, p[1] - ps2)
-                    dc.DrawRectangle(px,py, ps*sc,ps*sc*self.aspect)
-                    px, py = self._PixelToScreenCoordinates(p[0] -dxi - ps2,  p[1] - dyi + self.do.ds.shape[1]/2 - ps2)
-                    dc.DrawRectangle(px,py, ps*sc,ps*sc*self.aspect)
+                        
+                    self._drawBoxPixelCoords(dc, p[0], p[1], p[2], ps, ps, ps)
+                    self._drawBoxPixelCoords(dc, p[0]-dxi, 0.5*self.do.ds.shape[1] + p[1]-dyi, p[2], ps, ps, ps)
                     
             else:
                 for p in pFoc:
-                    px, py = self._PixelToScreenCoordinates(p[0] - ps2, p[1] - ps2)
-                    dc.DrawRectangle(px,py, ps*sc,ps*sc*self.aspect)
-
-
-
-#            elif(self.do.slice == self.do.SLICE_XZ):
-#                pFoc = self.points[abs(self.points[:,1] - self.do.yp) < 1]
-#                pNFoc = self.points[abs(self.points[:,1] - self.do.yp) < pointTol[1]]
-#
-#
-#                dc.SetBrush(wx.TRANSPARENT_BRUSH)
-#
-#                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('BLUE'),1))
-#                for p in pNFoc:
-#                    dc.DrawRectangle(sc*p[0]-2*sc,sc*p[2] - 2*sc, 4*sc,4*sc)
-#
-#                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),1))
-#                for p in pFoc:
-#                    dc.DrawRectangle(sc*p[0]-2*sc,sc*p[2] - 2*sc, 4*sc,4*sc)
-#
-#            else:#(self.do.slice == self.do.SLICE_YZ):
-#                pFoc = self.points[abs(self.points[:,0] - self.do.xp) < 1]
-#                pNFoc = self.points[abs(self.points[:,0] - self.do.xp) < pointTol[2] ]
-#
-#
-#                dc.SetBrush(wx.TRANSPARENT_BRUSH)
-#
-#                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('BLUE'),1))
-#                for p in pNFoc:
-#                    dc.DrawRectangle(sc*p[1]-2*sc,sc*p[2] - 2*sc, 4*sc,4*sc)
-#
-#                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),1))
-#                for p in pFoc:
-#                    dc.DrawRectangle(sc*p[1]-2*sc,sc*p[2] - 2*sc, 4*sc,4*sc)
+                    self._drawBoxPixelCoords(dc, p[0], p[1], p[2], ps, ps, ps)
             
             dc.SetPen(wx.NullPen)
             dc.SetBrush(wx.NullBrush)
+
+    def _calcVisibleBounds(self):
+        sc = pow(2.0,(self.do.scale)) 
+        x0,y0 = self.CalcUnscrolledPosition(0,0)
+        sX, sY = self.imagepanel.Size
+        
+        if self.do.slice == self.do.SLICE_XY:
+            bnds = [(x0/sc, (x0+sX)/sc), (y0/sc, (y0+sY)/sc), (self.do.zp-.5, self.do.zp+.5)]
+        elif self.do.slice == self.do.SLICE_XZ:
+            bnds = [(x0/sc, (x0+sX)/sc), (self.do.yp-.5, self.do.yp+.5), (y0/sc, (y0+sY)/sc)]
+        elif self.do.slice == self.do.SLICE_YZ:
+            bnds = [(self.do.xp-.5, self.do.xp+.5),(x0/sc, (x0+sX)/sc), (y0/sc, (y0+sY)/sc)]
+
+        return bnds
+        
+    
+    
+    def DoPaint(self, dc):
+        #print 'p'
+        
+        dc.Clear()
+                                     
+        im = self.Render()
+
+        sc = pow(2.0,(self.do.scale))
+        sc2 = sc
+        
+        if sc >= 1:
+            step = 1
+        else:
+            step = 2**(-numpy.ceil(numpy.log2(sc)))
+            sc2 = sc*step
+            
+        #sX, sY = view.imagepanel.Size
+            
+        #im.Rescale(im.GetWidth()*sc2,im.GetHeight()*sc2*self.aspect)
+
+        
+        im2 = wx.BitmapFromImage(im)
+        dc.DrawBitmap(im2,-sc2/2,-sc2/2)
+        
+        #sX, sY = im.GetWidth(), im.GetHeight()
+
+        self.DrawCrosshairs(self, dc)
+        self.DrawSelection(self, dc) 
+        self.DrawScaleBar(self, dc)
+
+        #self.DrawTracks(self, dc)
+        self.DrawPoints(self, dc)
+        self.DrawContours(self, dc)
+
+        dc.SetPen(wx.NullPen)
+        dc.SetBrush(wx.NullBrush)
             
         for ovl in self.do.overlays:
             ovl(self, dc)
@@ -633,6 +684,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
             #self.imagepanel.Refresh()
             self.Refresh()
+            self.Update()
             
     def Optim(self, event = None):
         self.do.Optimise(self.do.ds, int(self.do.zp))
@@ -640,6 +692,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         #self.SetOpts()
         #self.optionspanel.RefreshHists()
         self.Refresh()
+        self.Update()
         self.updating=0
         
     def CalcImSize(self):
@@ -670,18 +723,58 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             self.OnSetPosition(event)
             
         event.Skip()
+        
+    def OnMiddleDown(self,event):
+        dc = wx.ClientDC(self.imagepanel)
+        self.imagepanel.PrepareDC(dc)
+        pos = event.GetLogicalPosition(dc)
+        self.middleDownPos = self.CalcUnscrolledPosition(*pos)
+        event.Skip()
     
-            
-    def OnSetPosition(self,event):
+    def OnMiddleUp(self,event):
         dc = wx.ClientDC(self.imagepanel)
         self.imagepanel.PrepareDC(dc)
         pos = event.GetLogicalPosition(dc)
         pos = self.CalcUnscrolledPosition(*pos)
 
-        print pos
+        dx = pos[0] - self.middleDownPos[0]
+        dy = pos[1] - self.middleDownPos[1]
+        
+        sc = pow(2.0,(self.do.scale))
+
+        if (abs(dx) > 5) or (abs(dy) > 5):
+            for h in self.CenteringHandlers:
+                h(-dx/sc,-dy/sc)
+        
+        event.Skip()
+        
+    def OnMiddleDClick(self,event):
+        dc = wx.ClientDC(self.imagepanel)
+        self.imagepanel.PrepareDC(dc)
+        pos = event.GetLogicalPosition(dc)
+        pos = self.CalcUnscrolledPosition(*pos)
+        #print pos
+        sc = pow(2.0,(self.do.scale))
+        if (self.do.slice == self.do.SLICE_XY):
+            x = (pos[0]/sc) - 0.5*self.do.ds.shape[0]
+            y = (pos[1]/(sc*self.aspect)) - 0.5*self.do.ds.shape[1]
+            
+            for h in self.CenteringHandlers:
+                h(x,y)
+            
+        event.Skip()
+    
+            
+    def OnSetPosition(self,event):
+        dc = wx.ClientDC(self.imagepanel)
+        #self.imagepanel.PrepareDC(dc)
+        pos = event.GetLogicalPosition(dc)
+        pos = self.CalcUnscrolledPosition(*pos)
+
+        print(pos)
         self.do.inOnChange = True
         sc = pow(2.0,(self.do.scale))
-        print sc
+        print(sc)
         if (self.do.slice == self.do.SLICE_XY):
             self.do.xp =int(pos[0]/sc)
             self.do.yp = int(pos[1]/(sc*self.aspect))
@@ -724,7 +817,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         self.selecting = True
         
         dc = wx.ClientDC(self.imagepanel)
-        self.imagepanel.PrepareDC(dc)
+        #self.imagepanel.PrepareDC(dc)
         pos = event.GetLogicalPosition(dc)
         pos = self.CalcUnscrolledPosition(*pos)
         #print pos
@@ -752,7 +845,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             
     def ProgressSelection(self,event):
         dc = wx.ClientDC(self.imagepanel)
-        self.imagepanel.PrepareDC(dc)
+        #self.imagepanel.PrepareDC(dc)
         pos = event.GetLogicalPosition(dc)
         pos = self.CalcUnscrolledPosition(*pos)
         #print pos
@@ -798,6 +891,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         #self.update()
         #else:
         self.Refresh()
+        self.Update()
 
     def EndSelection(self):
         self.selecting = False
@@ -880,8 +974,10 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
     def Redraw(self, caller=None):
         self._oldImSig = None
         self.Refresh()
+        self.Update()
 
     def Render(self):
+        #print 'rend'
         x0,y0 = self.CalcUnscrolledPosition(0,0)
         sX, sY = self.imagepanel.Size
         
@@ -970,7 +1066,10 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                             applyLUT(seg, gain, offset, lut, ima)
 
                 else:
-                    ima[:] = numpy.minimum(ima[:] + (255*cmap(gain*(self.do.ds[x0_:(x0_+sX_):step,y0_:(y0_+sY_):step,int(self.do.zp), chan].squeeze().T - offset))[:,:,:3])[:], 255)
+                    if self.layerMode == 'mult':
+                        ima[:] = numpy.minimum(ima[:]*(cmap(gain*(self.do.ds[x0_:(x0_+sX_):step,y0_:(y0_+sY_):step,int(self.do.zp), chan].squeeze().T - offset))[:,:,:3])[:], 255)
+                    else:
+                        ima[:] = numpy.minimum(ima[:] + (255*cmap(gain*(self.do.ds[x0_:(x0_+sX_):step,y0_:(y0_+sY_):step,int(self.do.zp), chan].squeeze().T - offset))[:,:,:3])[:], 255)
         #XZ
         elif self.do.slice == DisplayOpts.SLICE_XZ:
             ima = numpy.zeros((numpy.ceil(min(sY_, self.do.ds.shape[2])/fstep), numpy.ceil(min(sX_, self.do.ds.shape[0])/fstep), 3), 'uint8')

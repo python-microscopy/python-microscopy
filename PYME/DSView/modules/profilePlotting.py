@@ -36,16 +36,9 @@ class profiler:
         #self.view = dsviewer.view
         self.do = dsviewer.do
         self.image = dsviewer.image
-
-        PLOT_PROFILE = wx.NewId()
-        dsviewer.mProcessing.Append(PLOT_PROFILE, "Plot &Profile\tCtrl-K", "", wx.ITEM_NORMAL)
         
-        dsviewer.Bind(wx.EVT_MENU, self.OnPlotProfile, id=PLOT_PROFILE)
-        
-        PLOT_ZPROFILE = wx.NewId()
-        dsviewer.mProcessing.Append(PLOT_ZPROFILE, "Plot Axial Profile\tCtrl-Shift-K", "", wx.ITEM_NORMAL)
-        
-        dsviewer.Bind(wx.EVT_MENU, self.OnPlotAxialProfile, id=PLOT_ZPROFILE)
+        dsviewer.AddMenuItem('Processing', "Plot &Profile\tCtrl-K", self.OnPlotProfile)
+        dsviewer.AddMenuItem('Processing', "Plot Axial Profile\tCtrl-Shift-K", self.OnPlotAxialProfile)
 
         #accel_tbl = wx.AcceleratorTable([(wx.ACCEL_CTRL,  ord('k'), PLOT_PROFILE )])
         #self.dsviewer.SetAcceleratorTable(accel_tbl)
@@ -95,7 +88,7 @@ class profiler:
             d__x = abs(d_x) + 1
             d__y = abs(d_y) + 1
 
-            print dx, dy, d__x, d__y, w
+            print((dx, dy, d__x, d__y, w))
 
             if(self.do.slice == self.do.SLICE_XY):
                 ims = self.image.data[(min(lx, hx) - d__x):(max(lx,hx)+d__x+1), (min(ly, hy)-d__y):(max(ly,hy)+d__y+1), self.do.zp, chanNum].squeeze()
@@ -108,7 +101,7 @@ class profiler:
             x_c = t*dx + lx - x_0
             y_c = t*dy + ly - y_0
 
-            print splf.shape
+            print((splf.shape))
 
 
             for i in range(-w, w+1):

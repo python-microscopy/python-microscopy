@@ -47,8 +47,14 @@ class CurrentRenderer:
     mode = 'current'
     _defaultPixelSize = 5.0
     
-    def __init__(self, visFr, pipeline):
+    def __init__(self, visFr, pipeline, mainWind = None):
         self.visFr = visFr
+
+        if mainWind == None:
+            #menu handlers must be bound to the top level window
+            mainWind = self.visFr
+        self.mainWind = mainWind
+        
         self.pipeline = pipeline
 
         self._addMenuItems()
@@ -57,7 +63,7 @@ class CurrentRenderer:
         ID = wx.NewId()
         self.visFr.gen_menu.Append(ID, self.name)
 
-        self.visFr.Bind(wx.EVT_MENU, self.Generate, id=ID)
+        self.mainWind.Bind(wx.EVT_MENU, self.Generate, id=ID)
 
     def _getImBounds(self):
         x0 = max(self.visFr.glCanvas.xmin, self.pipeline.imageBounds.x0)
@@ -104,7 +110,7 @@ class CurrentRenderer:
 
 
     def Generate(self, event=None):
-        dlg = genImageDialog.GenImageDialog(self.visFr, mode=self.mode)
+        dlg = genImageDialog.GenImageDialog(self.mainWind, mode=self.mode)
         ret = dlg.ShowModal()
 
         bCurr = wx.BusyCursor()
@@ -125,7 +131,7 @@ class CurrentRenderer:
 
             im = self.genIm(dlg, imb, mdh)
             img = GeneratedImage(im,imb, pixelSize, 0, ['Image'] , mdh = mdh)
-            imf = ViewIm3D(img, mode='visGUI', title='Generated %s - %3.1fnm bins' % (self.name, pixelSize), glCanvas=self.visFr.glCanvas, parent=self.visFr)
+            imf = ViewIm3D(img, mode='visGUI', title='Generated %s - %3.1fnm bins' % (self.name, pixelSize), glCanvas=self.visFr.glCanvas, parent=self.mainWind)
             #imf = imageView.ImageViewFrame(self.visFr,img, self.visFr.glCanvas)
             #imageView.MultiChannelImageViewFrame(self.visFr, self.visFr.glCanvas, img, title='Generated %s - %3.1fnm bins' % (self.name, pixelSize))
             #self.visFr.generatedImages.append(imf)
@@ -167,7 +173,7 @@ class ColourRenderer(CurrentRenderer):
         else:
             zvals = None
 
-        dlg = genImageDialog.GenImageDialog(self.visFr, mode=self.mode, defaultPixelSize=self._defaultPixelSize, colours=self.pipeline.colourFilter.getColourChans(), zvals = zvals, jitterVariables = jitVars, jitterVarDefault=self._getDefaultJitVar(jitVars), jitterVarDefaultZ=self._getDefaultZJitVar(jitVars))
+        dlg = genImageDialog.GenImageDialog(self.mainWind, mode=self.mode, defaultPixelSize=self._defaultPixelSize, colours=self.pipeline.colourFilter.getColourChans(), zvals = zvals, jitterVariables = jitVars, jitterVarDefault=self._getDefaultJitVar(jitVars), jitterVarDefaultZ=self._getDefaultZJitVar(jitVars))
         ret = dlg.ShowModal()
 
         bCurr = wx.BusyCursor()
@@ -221,7 +227,7 @@ class ColourRenderer(CurrentRenderer):
 
             im = GeneratedImage(ims,imb, pixelSize,  dlg.getZSliceThickness(), colours, mdh = mdh)
 
-            imfc = ViewIm3D(im, mode='visGUI', title='Generated %s - %3.1fnm bins' % (self.name, pixelSize), glCanvas=self.visFr.glCanvas, parent=self.visFr)
+            imfc = ViewIm3D(im, mode='visGUI', title='Generated %s - %3.1fnm bins' % (self.name, pixelSize), glCanvas=self.visFr.glCanvas, parent=self.mainWind)
 
             #imfc = imageView.MultiChannelImageViewFrame(self.visFr, self.visFr.glCanvas, im, title='Generated %s - %3.1fnm bins' % (self.name, pixelSize))
 
@@ -302,12 +308,12 @@ class LHoodRenderer(ColourRenderer):
 
         jitVals = self._genJitVals(jitParamName, jitScale)
         
-        print 'starting render'
+        print('starting render')
 
         im =  visHelpers.rendGaussProd(self.pipeline.colourFilter['x'],self.pipeline.colourFilter['y'], jitVals, imb, pixelSize)
         
-        print 'done rendering'
-        print im.max()
+        print('done rendering')
+        print((im.max()))
         
         return im - im.min()
 
@@ -359,6 +365,30 @@ class TriangleRenderer(ColourRenderer):
             return visHelpers.rendJitTriang(self.pipeline.colourFilter['x'],self.pipeline.colourFilter['y'], dlg.getNumSamples(), jitVals, dlg.getMCProbability(),imb, pixelSize)
         else:
             return self.visFr.glCanvas.genJitTim(dlg.getNumSamples(),self.pipeline.colourFilter['x'],self.pipeline.colourFilter['y'], jitVals, dlg.getMCProbability(),pixelSize)
+            
+class TriangleRendererW(ColourRenderer):
+    '''2D triangulation rendering - weighted'''
+
+    name = 'Jittered Triangulation - weighted'
+    mode = 'trianglesw'
+    _defaultPixelSize = 5.0
+
+    def genIm(self, dlg, imb, mdh):
+        pixelSize = dlg.getPixelSize()
+        jitParamName = dlg.getJitterVariable()
+        jitScale = dlg.getJitterScale()
+        
+        mdh['Rendering.JitterVariable'] = jitParamName
+        mdh['Rendering.JitterScale'] = jitScale
+
+        jitVals = self._genJitVals(jitParamName, jitScale)
+
+        if dlg.getSoftRender():
+            status = statusLog.StatusLogger("Rendering triangles ...")
+            return visHelpers.rendJitTriang2(self.pipeline.colourFilter['x'],self.pipeline.colourFilter['y'], dlg.getNumSamples(), jitVals, dlg.getMCProbability(),imb, pixelSize)
+        else:
+            return self.visFr.glCanvas.genJitTim(dlg.getNumSamples(),self.pipeline.colourFilter['x'],self.pipeline.colourFilter['y'], jitVals, dlg.getMCProbability(),pixelSize)
+
 
 class Triangle3DRenderer(TriangleRenderer):
     '''3D Triangularisation rendering'''
@@ -409,10 +439,10 @@ class QuadTreeRenderer(ColourRenderer):
         return im[(imb.x0/pixelSize):(imb.x1/pixelSize),(imb.y0/pixelSize):(imb.y1/pixelSize)]
 
 
-RENDERER_GROUPS = ((CurrentRenderer,),(HistogramRenderer, GaussianRenderer, TriangleRenderer, LHoodRenderer, QuadTreeRenderer), (Histogram3DRenderer, Gaussian3DRenderer, Triangle3DRenderer))
+RENDERER_GROUPS = ((CurrentRenderer,),(HistogramRenderer, GaussianRenderer, TriangleRenderer, TriangleRendererW,LHoodRenderer, QuadTreeRenderer), (Histogram3DRenderer, Gaussian3DRenderer, Triangle3DRenderer))
 
-def init_renderers(visFr):
+def init_renderers(visFr, mainWind = None):
     for g in RENDERER_GROUPS:
         for r in g:
-            r(visFr, visFr.pipeline)
+            r(visFr, visFr.pipeline, mainWind)
         visFr.gen_menu.AppendSeparator()

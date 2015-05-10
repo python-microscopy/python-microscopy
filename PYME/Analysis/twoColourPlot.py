@@ -42,12 +42,16 @@ def PlotShiftField(dx, dy, spx, spy):
     quiver(xin, yin, spx.ev(xin, yin), spy.ev(xin, yin), scale=1e4)
     axis('image')
 
-def PlotShiftResiduals(x, y, dx, dy, spx, spy):
+def PlotShiftResiduals(x, y, dx, dy, spx, spy, z=0):
     figure()
-    dx1 = spx.ev(x,y)
-    dy1 = spy.ev(x,y)
+    if 'ZDEPSHIFT' in dir(spx):
+        dx1 = spx.ev(x,y, z)
+        dy1 = spy.ev(x,y, z)
+    else:
+        dx1 = spx.ev(x,y)
+        dy1 = spy.ev(x,y)
     
-    print dx1.shape, dx.shape
+    print((dx1.shape, dx.shape))
     
     dist = sqrt((dx1 - dx)**2 + (dy1 - dy)**2)
     quiver(x, y, dx1 - dx, dy1 - dy, dist, scale=2e2, clim=(0, dist.mean()*2))
@@ -60,7 +64,7 @@ def PlotShiftResidualsS(x, y, dx, dy, spx, spy):
     dx1 = spx.ev(x,y)
     dy1 = spy.ev(x,y)
     
-    print dx1.shape, dx.shape
+    print((dx1.shape, dx.shape))
     
     dist = sqrt((dx1 - dx)**2 + (dy1 - dy)**2)
     quiver(x, y, dx1 - dx, dy1 - dy, dist, scale=2e2, clim=(0, dist.mean()*2))

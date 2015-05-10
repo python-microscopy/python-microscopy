@@ -25,7 +25,7 @@ from scipy import *
 import numpy as np
 
 try:
-    import illuminate
+    from . import illuminate
     HAVE_ILLUMINATE_MOD = True
 except ImportError:
     HAVE_ILLUMINATE_MOD = False
@@ -48,7 +48,7 @@ def registerIllumFcn(fcn):
 def ConstIllum(fluors, position):
     return 1.0
 
-def createSimpleTransitionMatrix(pPA=[1e6,.1,0] , pOnDark=[0,0,.1], pDarkOn=[0,.1,0], pOnBleach=[0,0,0]):
+def createSimpleTransitionMatrix(pPA=[1e6,.1,0] , pOnDark=[0,0,.1], pDarkOn=[0,.001,0], pOnBleach=[0,0,0]):
     M = zeros((states.n,states.n,len(pPA)), 'f')
     M[states.caged, states.active, :] = pPA
     M[states.active, states.blinked, :] = pOnDark
@@ -160,6 +160,6 @@ class specFluors(fluors):
         self.fl['state'][:] = initialState
         self.fl['spec'][:] = spectralSig
 
-        self.transitionTensor = transitionProbablilities
+        self.transitionTensor = transitionProbablilities.astype('f')
         self.activeState = activeState
     

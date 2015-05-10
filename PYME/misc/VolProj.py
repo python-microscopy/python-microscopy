@@ -24,7 +24,11 @@ from enthought.mayavi import mlab
 import os
 import tempfile
 #from PYME.FileUtils.readTiff import read3DTiff
-import Image
+
+try:
+    import Image
+except ImportError:
+    from PIL import Image
 
 def GrabImage(figure):
     tfname = os.path.join(tempfile.gettempdir(), 'mvi_out.tif')

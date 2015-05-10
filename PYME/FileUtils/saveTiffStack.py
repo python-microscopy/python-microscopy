@@ -21,7 +21,7 @@
 #
 ##################
 
-import Image
+from PIL import Image
 from PYME.misc import TiffImagePlugin #monkey patch PIL with improved tiff support from Priithon
 import subprocess
 

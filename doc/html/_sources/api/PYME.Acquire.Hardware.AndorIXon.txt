@@ -1,0 +1,35 @@
+AndorIXon Package
+=================
+
+:mod:`AndorIXon` Package
+------------------------
+
+.. automodule:: PYME.Acquire.Hardware.AndorIXon
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`AndorCam` Module
+----------------------
+
+.. automodule:: PYME.Acquire.Hardware.AndorIXon.AndorCam
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`AndorControlFrame` Module
+-------------------------------
+
+.. automodule:: PYME.Acquire.Hardware.AndorIXon.AndorControlFrame
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`AndorIXon` Module
+-----------------------
+
+.. automodule:: PYME.Acquire.Hardware.AndorIXon.AndorIXon
+    :members:
+    :undoc-members:
+    :show-inheritance:
+

@@ -261,7 +261,7 @@ if False: # __name__ == '__main__':
     mask = image > 30
     labels = scipy.ndimage.label(mask)[0]
     h = Haralick(image, labels, 3)
-    print h
+    print(h)
 
 if __name__ == '__main__':
     gray = np.array([[0,0,1,1],[0,0,1,1],[0,2,2,2],[2,2,3,3]], dtype=float)

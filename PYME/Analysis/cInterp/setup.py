@@ -22,21 +22,21 @@
 ##################
 
 #!/usr/bin/env python
+import sys
+if sys.platform == 'darwin':#MacOS
+    linkArgs = []
+else:
+    linkArgs = ['-static-libgcc']
 
 def configuration(parent_package = '', top_path = None):
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
     config = Configuration('cInterp', parent_package, top_path)
 
-    optimizations = ['-O3', '-fno-exceptions', '-ffast-math']
-    import sys
-    if sys.platform != "darwin": # not sure if there are alternatives for OS X
-        optimizations.extend(['-march=native', '-mtune=native'])
-
     config.add_extension('cInterp',
         sources=['cInterp.c'],
         include_dirs = [get_numpy_include_dirs()],
-	extra_compile_args = optimizations,
-        extra_link_args=['-static-libgcc'])
+	extra_compile_args = ['-O3', '-fno-exceptions', '-ffast-math', '-march=nocona', '-mtune=nocona'],
+        extra_link_args=linkArgs)
 
     return config
 

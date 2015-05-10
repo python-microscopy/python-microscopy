@@ -21,7 +21,7 @@
 #
 ##################
 
-from BaseDataSource import BaseDataSource
+from .BaseDataSource import BaseDataSource
 import numpy as np
 
 class dataBuffer: #buffer our io to avoid decompressing multiple times
@@ -146,7 +146,7 @@ class bgFrameBuffer:
             #starting from scratch
             self._createBuffers(self.initSize, data.shape, data.dtype)
             
-            self.availableSlots += range(self.initSize)
+            self.availableSlots += list(range(self.initSize))
             
         else:
             #keep a copy of the existing data
@@ -164,21 +164,22 @@ class bgFrameBuffer:
             self.validData[:oldsize] = ov
             
             #add new frames to list of availiable frames
-            self.availableSlots += range(oldsize, newsize)
+            self.availableSlots += list(range(oldsize, newsize))
             
     def getPercentile(self, pctile):
         pcIDX = int(self.validData.sum()*pctile)
-        print pcIDX
+        print(pcIDX)
         
         return (self.frameBuffer*(self.indices==pcIDX)).max(0).squeeze()
             
         
         
 class backgroundBufferM:
-    def __init__(self, dataBuffer, percentile=0.5):
+    def __init__(self, dataBuffer, percentile=0.5, offset=0):
         self.dataBuffer = dataBuffer
         self.curFrames = set()
         self.curBG = np.zeros(dataBuffer.dataSource.getSliceShape(), 'f4')
+        self.offset = offset #using a percentile not equal to 0.5 will lead to bias
         
         self.bfb = bgFrameBuffer(percentile=percentile)
         self.pctile = percentile
@@ -206,8 +207,12 @@ class backgroundBufferM:
 
         self.curFrames = bgi
         self.curBG = self.bfb.getPercentile(self.pctile).astype('f')
+        
+        med = self.bfb.getPercentile(0.5).astype('f')
+        off = np.median(med.flat[::20]) - np.median(self.curBG.flat[::20]) #correct for the offset introduced in median calculation
+        self.curBG += off
 
-        return self.curBG
+        return self.curBG - self.offset
 
 class DataSource(BaseDataSource):
     moduleName = 'BGSDataSource'
@@ -215,10 +220,19 @@ class DataSource(BaseDataSource):
         self.datasource = datasource
         
         self.dBuffer = dataBuffer(self.datasource, 50)
-        self.bBuffer = backgroundBufferM(self.dBuffer)
+        self.bBufferMn = backgroundBuffer(self.dBuffer)
+        self.bBufferP = backgroundBufferM(self.dBuffer)
+        self.bBuffer = self.bBufferMn
         
         self.bgRange = bgRange
         self.dataStart = 0
+        
+    def setBackgroundBufferPCT(self, pctile=0):
+        if not pctile == 0:
+            self.bBufferP.pctile = pctile
+            self.bBuffer = self.bBufferP
+        else:
+            self.bBuffer = self.bBufferMn
 
     def getSlice(self, ind):
         sl = self.dBuffer.getSlice(ind)
@@ -228,7 +242,7 @@ class DataSource(BaseDataSource):
                 step = self.bgRange[2]
             else:
                 step = 1
-            bgi = range(max(ind + self.bgRange[0],self.dataStart), max(ind + self.bgRange[1],self.dataStart), step)
+            bgi = list(range(max(ind + self.bgRange[0],self.dataStart), max(ind + self.bgRange[1],self.dataStart), step))
             #print len(bgi)
             if len(bgi) > 0:
                 return sl - self.bBuffer.getBackground(bgi)

@@ -21,7 +21,7 @@
 #
 ##################
 
-import Image
+from PIL import Image
 import numpy as np
 from PYME.misc import TiffImagePlugin #monkey patch PIL with improved tiff support from Priithon
 
@@ -42,7 +42,7 @@ def read3DTiff(filename):
     #ima = np.array(im.getdata(), 'int16').newbyteorder('BE')
     ima = np.array(im.getdata()).newbyteorder(endedness)
 
-    print ima.dtype
+    print((ima.dtype))
     
     #print ima.shape
 

@@ -26,7 +26,7 @@
 
 
 import wx
-import sys
+#import sys
 from numpy import log2
 
 #redefine wxFrame with a version that hides when someone tries to close it
@@ -90,7 +90,7 @@ class LaserSliders(wx.Panel):
             ind = self.sliders.index(sl)
             self.sl = sl
             self.ind = ind
-            #print self.lasers[ind].power, self.lasers[ind].MAX_POWER*2**(sl.GetValue())/1024.
+            print((self.lasers[ind].power, self.lasers[ind].MAX_POWER*2**(sl.GetValue())/1024.))
             #self.lasers[ind].SetPower(self.lasers[ind].MAX_POWER*2**(sl.GetValue())/1024.)
             self.lasers[ind].SetPower((sl.GetValue())/100.)
         finally:

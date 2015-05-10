@@ -34,24 +34,31 @@ from PYME.Analysis.piecewise import * #allow piecewise linear mappings
 
 import tables
 
-class inputFilter:
-    pass
+class inputFilter(object):
+    def toDataFrame(self, keys=None):
+        import pandas as pd
+        if keys == None:
+            keys = self.keys()
+        
+        d = {k: self.__getitem__(k) for k in keys}
+        
+        return pd.DataFrame(d)
     
 
 class randomSource(inputFilter):
     _name = "Random Source"
     def __init__(self, xmax, ymax, nsamps):
         '''Uniform random source, for testing and as an example'''
-        self.x = xmax*np.rand(nsamps)
-        self.y = ymax*np.rand(nsamps)
+        self.x = xmax*np.random.rand(nsamps)
+        self.y = ymax*np.random.rand(nsamps)
 
-        self.keys = ['x', 'y']
+        self._keys = ['x', 'y']
 
     def keys(self):
-        return self.keys
+        return self._keys
 
     def __getitem__(self, key):
-        if not key in self.keys:
+        if not key in self._keys:
             raise RuntimeError('Key not defined')
         
         if key == 'x':
@@ -85,6 +92,9 @@ def unNestDtype(descr, parent=''):
 class fitResultsSource(inputFilter):
     _name = "recarrayfi Source"
     def __init__(self, fitResults):
+        self.setResults(fitResults)
+        
+    def setResults(self, fitResults):
         self.fitResults = fitResults
 
         #sort by time
@@ -122,7 +132,7 @@ class fitResultsSource(inputFilter):
         elif len(k) == 3:
             return self.fitResults[k[0]][k[1]][k[2]].astype('f')
         else:
-            raise "Don't know about deeper nesting yet"
+            raise RuntimeError("Don't know about deeper nesting yet")
 
 
     def close(self):
@@ -130,6 +140,7 @@ class fitResultsSource(inputFilter):
 
     def getInfo(self):
         return 'PYME h5r Data Source\n\n %d points' % self.fitResults.shape[0]
+
 
 class h5rSource(inputFilter):
     _name = "h5r Data Source"
@@ -183,7 +194,7 @@ class h5rSource(inputFilter):
         elif len(k) == 3:
             return self.fitResults[k[0]][k[1]][k[2]].astype('f')
         else:
-            raise "Don't know about deeper nesting yet"
+            raise RuntimeError("Don't know about deeper nesting yet")
         
 
     def close(self):
@@ -235,7 +246,7 @@ class h5rDSource(inputFilter):
         elif len(k) == 3:
             return self.h5f.root.DriftResults[:][k[0]][k[1]][k[2]].astype('f')
         else:
-            raise "Don't know about deeper nesting yet"
+            raise RuntimeError("Don't know about deeper nesting yet")
         
 
     def close(self):
@@ -413,7 +424,7 @@ class mappingFilter(inputFilter):
             return self.resultsSource[key]
 
     def keys(self):
-        return self.resultsSource.keys() + self.mappings.keys()
+        return list(self.resultsSource.keys()) + self.mappings.keys()
 
     def setMapping(self, key, mapping):
         if type(mapping) == types.CodeType:

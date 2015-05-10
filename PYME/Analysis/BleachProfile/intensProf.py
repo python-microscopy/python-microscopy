@@ -26,7 +26,7 @@ from scipy import *
 import wx
 from pylab import *
 
-import deMod
+from . import deMod
 
 def calcProf(fn_list):
     sm = zeros(len(fn_list), 'f')
@@ -41,7 +41,7 @@ def calcProf(fn_list):
         if inWxApp:
             pb.Update(i, 'Processing slice %d of %d' % (i,len(fn_list)))
         else:
-            print fn_list[i]
+            print((fn_list[i]))
 
         try:
             ds_a = ReadKdfData(fn_list[i])[:,:,0]

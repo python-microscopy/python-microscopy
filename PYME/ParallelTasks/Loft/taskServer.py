@@ -36,7 +36,7 @@ class TaskWatcher(threading.Thread):
 	def run(self):
 		while True:
 			self.tQueue.checkTimeouts()
-			print '%d tasks in queue' % self.tQueue.getNumberOpenTasks()
+			print(('%d tasks in queue' % self.tQueue.getNumberOpenTasks()))
 			time.sleep(10)
 
 class TaskQueue(Pyro.core.ObjBase):
@@ -48,11 +48,11 @@ class TaskQueue(Pyro.core.ObjBase):
                 
 	def postTask(self,task):
 		self.openTasks.append(task)
-		print 'Recieved new task'
+		print('Recieved new task')
 
 	def getTask(self):
 		"""get task from front of list, blocks"""
-		print 'Task requested'
+		print('Task requested')
 		while len(self.openTasks) < 1:
 			time.sleep(0.01)
 
@@ -60,7 +60,7 @@ class TaskQueue(Pyro.core.ObjBase):
 
 		task.initializeWorkerTimeout(time.clock())
 		self.tasksInProgress.append(task)
-		print 'Task given to worker'
+		print('Task given to worker')
 		return task
 
 	def returnCompletedTask(self, taskResult):

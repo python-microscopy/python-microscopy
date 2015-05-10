@@ -97,7 +97,7 @@ class dec:
 
             test = 1 - abs(dot(S[:,0], S[:,1])/(norm(S[:,0])*norm(S[:,1])))
 
-            print 'Test Statistic %f\n' % (test,)
+            print(('Test Statistic %f\n' % (test,)))
 
             (fnew, cpred, spred) = self.subsearch(f, res, fdef, self.Afunc, self.Lfunc, lamb, S[:, 0:nsrch])
 

@@ -103,6 +103,7 @@ class MyViewPanel(wx.ScrolledWindow):
         self.Layout()
         self.GetParent().Layout()
         self.Refresh()
+        self.Update()
 
 
 
@@ -186,6 +187,7 @@ class MyViewPanel(wx.ScrolledWindow):
 
     def OnSize(self,event):
         self.Refresh()
+        self.Update()
         
   
 
@@ -201,6 +203,7 @@ class MyViewPanel(wx.ScrolledWindow):
         self.GetParent().Layout()
 
         self.Refresh()
+        self.Update()
 
     def Optim(self, event = None):
         self.do.Optimise(self.ds)
@@ -230,7 +233,7 @@ class MyViewPanel(wx.ScrolledWindow):
 
         pos = event.GetLogicalPosition(dc)
 
-        print pos
+        print(pos)
         sc = pow(2.0,(self.scale))
 
         if (self.do.getSliceAxis() == self.do.SLICE_XY):
@@ -250,7 +253,7 @@ class MyViewPanel(wx.ScrolledWindow):
 
         pos = event.GetLogicalPosition(dc)
 
-        print pos
+        print(pos)
         sc = pow(2.0,(self.scale))
 
         if (self.do.getSliceAxis() == self.do.SLICE_XY):
@@ -267,6 +270,7 @@ class MyViewPanel(wx.ScrolledWindow):
              self.GetParent().update()
         else:
             self.Refresh()
+            self.Update()
 
     def OnMotion(self, event):
         if event.Dragging() and self.selecting:
@@ -293,6 +297,7 @@ class MyViewPanel(wx.ScrolledWindow):
         #self.update()
         else:
             self.Refresh()
+            self.Update()
             
     def ResetSelection(self):
         self.selection_begin_x = 0

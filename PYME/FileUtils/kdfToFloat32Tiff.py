@@ -21,7 +21,7 @@
 #
 ##################
 
-import Image
+from PIL import Image
 import read_kdf
 
 if not (len(sys.argv) == 3):

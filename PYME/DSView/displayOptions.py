@@ -275,7 +275,7 @@ class DisplayOpts(object):
                     syn.Synchronise(self)
             
             except Exception as e: 
-                print e
+                print(e)
             finally:
                 self.inOnChange = False
             

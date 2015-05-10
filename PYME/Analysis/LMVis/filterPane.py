@@ -93,7 +93,10 @@ class FilterPane(afp.foldingPane):
         self.bClipToSelection.Bind(wx.EVT_BUTTON, self.OnFilterClipToSelection)
         
         
-        visFr.Bind(wx.EVT_MENU, self.OnFilterClipToSelection, id=visFr.ID_VIEW_CLIP_ROI)
+        try:        
+            visFr.Bind(wx.EVT_MENU, self.OnFilterClipToSelection, id=visFr.ID_VIEW_CLIP_ROI)
+        except AttributeError:
+            pass
 
 
 
@@ -181,7 +184,7 @@ class FilterPane(afp.foldingPane):
 
         possibleKeys = []
         if not self.pipeline.selectedDataSource == None:
-            possibleKeys = self.pipeline.selectedDataSource.keys()
+            possibleKeys = list(self.pipeline.selectedDataSource.keys())
 
         dlg = editFilterDialog.FilterEditDialog(self, mode='new', possibleKeys=possibleKeys)
 

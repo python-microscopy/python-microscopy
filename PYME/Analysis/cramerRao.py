@@ -42,7 +42,7 @@ def CalcFisherInformZ(lam, maxK=500, voxelsize=[1,1,1]):
     lpk = lp_poisson(lam, k)
     pk = p_poisson(lam, k)
 
-    print 'number of NaNs = %d' % isnan(pk).sum()
+    print(('number of NaNs = %d' % isnan(pk).sum()))
 
     dx, dy, dz, dk = gradient(lpk)
     dx *= 1./voxelsize[0]

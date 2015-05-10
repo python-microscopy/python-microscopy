@@ -20,7 +20,7 @@
 #
 ##################
 import numpy
-from BaseDataSource import BaseDataSource
+from .BaseDataSource import BaseDataSource
 
 class DataSource(BaseDataSource): 
     moduleName = 'UnsplitDataSource'

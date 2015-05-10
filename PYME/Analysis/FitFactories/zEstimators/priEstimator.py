@@ -158,7 +158,7 @@ def _calcParams(data, X, Y):
         xi, yi, zi = numpy.unravel_index(data.argmax(), data.shape)
     else:
         xi, yi = numpy.unravel_index(data.argmax(), data.shape)
-    #print xi, yi
+    
     
     if axis_x:
         if xi < data.shape[0]/2:
@@ -194,6 +194,8 @@ def _calcParams(data, X, Y):
     
 #    x0 = 0.5*(x_0 + x_2)
 #    y0 = 0.5*(y_0 + y_2)
+    
+    print((xi, yi, x2, y2))
 #    
     
     x0 = 0.5*(X[xi] + X[x2])

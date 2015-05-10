@@ -27,7 +27,7 @@ import numpy as np
 
 FWHM_CONV_FACTOR = 2*scipy.sqrt(2*scipy.log(2))
 
-EPS_FCN = 1e-5
+EPS_FCN = 1e-4
 
 def missfit(p, fcn, data, *args):
     """Helper function which evaluates a model function (fcn) with parameters (p) and additional arguments
@@ -66,6 +66,9 @@ def FitModel(modelFcn, startParameters, data, *args):
 def FitModel_(modelFcn, startParameters, data, *args):
     return optimize.leastsq(missfit, startParameters, (modelFcn, data.ravel()) + args, full_output=1, epsfcn=EPS_FCN)
     
+def FitModel_D(modelFcn, startParameters, data, diag, *args):
+    return optimize.leastsq(missfit, startParameters, (modelFcn, data.ravel()) + args, full_output=1, epsfcn=EPS_FCN, diag=diag)
+    
 def FitModel_E(modelFcn, startParameters, data, eps, *args):
     return optimize.leastsq(missfit, startParameters, (modelFcn, data.ravel()) + args, full_output=1, epsfcn=eps)
 
@@ -74,6 +77,10 @@ def FitModelWeighted(modelFcn, startParameters, data, sigmas, *args):
 
 def FitModelWeighted_(modelFcn, startParameters, data, sigmas, *args):
     return optimize.leastsq(weightedMissfitF, startParameters, (modelFcn, data.ravel(), (1.0/sigmas).astype('f').ravel()) + args, full_output=1, epsfcn=EPS_FCN)
+    
+def FitModelWeighted_D(modelFcn, startParameters, data, sigmas, diag, *args):
+    return optimize.leastsq(weightedMissfitF, startParameters, (modelFcn, data.ravel(), (1.0/sigmas).astype('f').ravel()) + args, full_output=1, epsfcn=EPS_FCN, diag=diag)
+
 
 def FitModelWeightedJac(modelFcn, startParameters, data, sigmas, *args):
     return optimize.leastsq(weightedMissfitF, startParameters, (modelFcn, data.ravel(), (1.0/sigmas).astype('d').ravel()) + args, Dfun = weightedJacF, full_output=1, col_deriv = 0)
@@ -86,11 +93,38 @@ def FitWeightedMisfitFcn(misfitFcn, startParameters, data, sigmas, *args):
     return optimize.leastsq(misfitFcn, np.array(startParameters), (np.array(data, order='F'), np.array(1.0/sigmas, order='F')) + args, full_output=1)
 
 
-def poisson_lhood(p, fcn, data, *args):
+def poisson_lhood(p, fcn, data, bg, *args):
     """Helper function which evaluates a model function (fcn) with parameters (p) and additional arguments
     (*args) and compares this with measured data (data)"""
-    mu = fcn(p, *args).ravel()
+    mu = (fcn(p, *args) + bg)
     return -(data*np.log(mu) - mu).sum()
     
+def poisson_lhoodJ(p, fcn, data, bg, *args):
+    """Helper function which evaluates a model function (fcn) with parameters (p) and additional arguments
+    (*args) and compares this with measured data (data)"""
+    f0 = poisson_lhood(p, fcn, data, bg, *args)
+    
+    df = 0*p
+    for i in range(len(p)):
+        dpi = 0.1*p[i] + 1
+        pt = 1.0*p + 0
+        pt[i] += dpi
+        ft = poisson_lhood(pt, fcn, data, bg, *args)
+        df[i] = (ft - f0)/dpi
+        
+    return df
+    
+    
+def poisson_lhood2(p, fcn, data, bg, *args):
+    """Helper function which evaluates a model function (fcn) with parameters (p) and additional arguments
+    (*args) and compares this with measured data (data)"""
+    mu = (fcn(p, *args) + bg)
+    return -(data*np.log(mu) - mu)
+    
 def FitModelPoisson(modelFcn, startParmeters, data, *args):
-    return [optimize.fmin(poisson_lhood, startParmeters, ((modelFcn, data,) +args))]
+    return [optimize.fmin_powell(poisson_lhood, startParmeters, ((modelFcn, data,) +args))]
+    
+def FitModelPoissonBFGS(modelFcn, startParmeters, data, *args):
+    return [optimize.fmin_bfgs(poisson_lhood, startParmeters, args=((modelFcn, data,) +args), epsilon=0.1)]
+    
+#def FitModelPoissonS(modelFcn, startParmeters, data, *args):

@@ -16,13 +16,13 @@ kinModels.USE_GUI = False
 
 
 def analyseFile(filename):
-    print filename
+    print(filename)
     seriesName = os.path.splitext(os.path.split(filename)[-1])[0]
     PL.ExtendContext({'seriesName':seriesName})
     try:
         pipe = Pipeline(filename)
     except RuntimeError:
-        print 'Error opening %s' % filename
+        print(('Error opening %s' % filename))
         PL.PopContext()
         return
     
