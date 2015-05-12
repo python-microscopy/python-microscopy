@@ -290,6 +290,78 @@ class LocalMaxima(Filter):
         im.mdh['LocalMaxima.threshold'] = self.threshold
         im.mdh['LocalMaxima.minDistance'] = self.minDistance
         
+class Deconvolve(Filter):
+    offset = Float(0)
+    method = Enum('Richardson-Lucy', 'ICTM') 
+    iterations = Int(10)
+    psfType = Enum('file', 'bead', 'Lorentzian')
+    psfFilename = CStr('') #only used for psfType == 'file'
+    lorentzianFWHM = Float(50.) #only used for psfType == 'Lorentzian'
+    beadDiameter = Float(200.) #only used for psfType == 'bead'
+    regularisationLambda = Float(0.1)
+    
+    _psfCache = {}
+    
+    def GetPSF(self, vshint = None):
+        psfKey = (self.psfType, self.psfFilename, self.lorentzianFWHM, self.beadDiameter)
+        
+        if not psfKey in self._psfCache.keys():
+            if self.psfType == 'file':
+                psf, vs = np.load(self.psfFilename)
+                psf = np.atleast_3d(psf)
+                
+                self._psfCache[psfKey] = (psf, vs)        
+            elif (self.psfType == 'Laplace'):
+                from scipy import stats
+                sc = self.lorentzianFWHM/2.0
+                X, Y = np.mgrid[-30.:31., -30.:31.]
+                R = np.sqrt(X*X + Y*Y)
+                
+                if not vshint is None:
+                    vx = vshint[0]
+                else:
+                    vx = sc/2.
+                
+                vs = type('vs', (object,), dict(x=vx/1e3, y=vx/1e3))
+                
+                psf = np.atleast_3d(stats.cauchy.pdf(vx*R, scale=sc))
+                    
+                self._psfCache[psfKey] = (psf/psf.sum(), vs)
+            elif (self.psfType == 'bead'):
+                from PYME.Deconv import beadGen
+                psf = beadGen.genBeadImage(self.beadDiameter/2, vshint)
+                
+                vs = type('vs', (object,), dict(x=vshint[0]/1e3, y=vshint[1]/1e3))
+                
+                self._psfCache[psfKey] = (psf/psf.sum(), vs)
+                
+                
+        return self._psfCache[psfKey]
+            
+    
+    def applyFilter(self, data, chanNum, frNum, im):
+        d = data.astype('f') - self.offset
+        vx, vy, vz = np.array(im.voxelsize)*1e-3
+        
+        psf, vs = self.GetPSF(im.voxelsize)
+        if not (vs.x == vx and vs.y == vy and vs.z ==vz):
+            #rescale psf to match data voxel size
+            psf = ndimage.zoom(psf, [vs.x/vx, vs.y/vy, vs.z/vz])
+            
+        
+        
+        return 
+
+    def completeMetadata(self, im):
+        im.mdh['Deconvolution.Offset'] = self.offset
+        im.mdh['Deconvolution.Method'] = self.method
+        im.mdh['Deconvolution.Iterations'] = self.iterations
+        im.mdh['Deconvolution.PsfType'] = self.psfType
+        im.mdh['Deconvolution.PSFFilename'] = self.psfFilename
+        im.mdh['Deconvolution.LorentzianFWHM'] = self.lorentzianFWHM
+        im.mdh['Deconvolution.BeadDiameter'] = self.beadDiameter
+        im.mdh['Deconvolution.RegularisationLambda'] = self.regularisationLambda
+        
 class DistanceTransform(Filter):    
     def applyFilter(self, data, chanNum, frNum, im):
         mask = 1.0*(data > 0.5)
@@ -373,7 +445,7 @@ class Watershed(ModuleBase):
 
         img = ((image/image.max())*2**15).astype('int16')         
         
-        if not mask == None:
+        if not mask is None:
             return skimage.morphology.watershed(img, markers.astype('int16'), mask = mask.astype('int16'))
         else:
             return skimage.morphology.watershed(img, markers.astype('int16'))
