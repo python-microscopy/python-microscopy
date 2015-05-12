@@ -167,9 +167,9 @@ class Filter(ModuleBase):
         if self.processFramesIndividually:
             filt_ims = []
             for chanNum in range(image.data.shape[3]):
-                filt_ims.append(np.concatenate([np.atleast_3d(self.applyFilter(image.data[:,:,i,chanNum].squeeze(), chanNum, i, image)) for i in range(image.data.shape[2])], 2))
+                filt_ims.append(np.concatenate([np.atleast_3d(self.applyFilter(image.data[:,:,i,chanNum].squeeze().astype('f'), chanNum, i, image)) for i in range(image.data.shape[2])], 2))
         else:
-            filt_ims = [np.atleast_3d(self.applyFilter(image.data[:,:,:,chanNum].squeeze(), chanNum, 0, image)) for chanNum in range(image.data.shape[3])]
+            filt_ims = [np.atleast_3d(self.applyFilter(image.data[:,:,:,chanNum].squeeze().astype('f'), chanNum, 0, image)) for chanNum in range(image.data.shape[3])]
             
         im = ImageStack(filt_ims, titleStub = self.outputName)
         im.mdh.copyEntriesFrom(image.mdh)
