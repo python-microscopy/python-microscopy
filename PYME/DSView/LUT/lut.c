@@ -11,7 +11,7 @@
  */
 
 #include "Python.h"
-#include <complex.h>
+//#include <complex.h>
 #include <math.h>
 #include "numpy/arrayobject.h"
 #include <stdio.h>
@@ -32,10 +32,10 @@ static PyObject * applyLUTuint16(PyObject *self, PyObject *args, PyObject *keywd
 
     int tmp = 0;
 
-    PyObject *odata =0;
-    PyObject *adata =0;
-    PyObject *oLUT =0;
-    PyObject *oout =0;
+    PyArrayObject *odata =0;
+    PyArrayObject *adata =0;
+    PyArrayObject *oLUT =0;
+    PyArrayObject *oout =0;
 
     int sizeX;
     int sizeY;
@@ -165,10 +165,10 @@ static PyObject * applyLUTuint8(PyObject *self, PyObject *args, PyObject *keywds
 
     int tmp = 0;
 
-    PyObject *odata =0;
-    PyObject *adata =0;
-    PyObject *oLUT =0;
-    PyObject *oout =0;
+    PyArrayObject *odata =0;
+    PyArrayObject *adata =0;
+    PyArrayObject *oLUT =0;
+    PyArrayObject *oout =0;
 
     int sizeX;
     int sizeY;
@@ -300,10 +300,10 @@ static PyObject * applyLUTfloat(PyObject *self, PyObject *args, PyObject *keywds
 
     int tmp = 0;
 
-    PyObject *odata =0;
-    PyObject *adata =0;
-    PyObject *oLUT =0;
-    PyObject *oout =0;
+    PyArrayObject *odata =0;
+    PyArrayObject *adata =0;
+    PyArrayObject *oLUT =0;
+    PyArrayObject *oout =0;
 
     int sizeX;
     int sizeY;
@@ -428,11 +428,11 @@ static PyObject * applyLUTfloat(PyObject *self, PyObject *args, PyObject *keywds
 
 
 static PyMethodDef lutMethods[] = {
-    {"applyLUTu16",  applyLUTuint16, METH_VARARGS | METH_KEYWORDS,
+    {"applyLUTu16",  (PyCFunction)applyLUTuint16, METH_VARARGS | METH_KEYWORDS,
     ""},
-    {"applyLUTu8",  applyLUTuint8, METH_VARARGS | METH_KEYWORDS,
+    {"applyLUTu8",  (PyCFunction)applyLUTuint8, METH_VARARGS | METH_KEYWORDS,
     ""},
-    {"applyLUTf",  applyLUTfloat, METH_VARARGS | METH_KEYWORDS,
+    {"applyLUTf",  (PyCFunction)applyLUTfloat, METH_VARARGS | METH_KEYWORDS,
     ""},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
