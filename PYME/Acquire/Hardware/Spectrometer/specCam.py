@@ -22,7 +22,7 @@
 ##################
 
 
-import PYME.cSMI as example
+#import PYME.cSMI as example
 import numpy as np
 
 import time
@@ -35,9 +35,9 @@ from .spectrometerClient import SpecClient
 import threading
 
 
-class CDataStack(example.CDataStack):
-    def getCurrentChannelSlice(self, curMemChn):
-        return example.CDataStack_AsArray(self, curMemChn)[:,:,self.getZPos()]
+#class CDataStack(example.CDataStack):
+#    def getCurrentChannelSlice(self, curMemChn):
+#        return example.CDataStack_AsArray(self, curMemChn)[:,:,self.getZPos()]
 
 
 #calculate image in a separate thread to maintain GUI reponsiveness

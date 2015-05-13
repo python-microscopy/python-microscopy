@@ -23,7 +23,7 @@
 
 import tables
 from PYME.Acquire import MetaDataHandler
-from PYME import cSMI
+#from PYME import cSMI
 #import Pyro.core
 import os
 import time
