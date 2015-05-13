@@ -58,7 +58,7 @@ build:
   # Used instead of build.sh or bld.bat. For short build scripts, this can
   # be more convenient. You may need to use selectors (see below) to use
   # different scripts for different platforms.
-  script: python setup.py install
+  #script: python setup.py install
 
   # Set which RPATHs are used when making executables relocatable. This
   # currently only works on Linux.  The default is lib/

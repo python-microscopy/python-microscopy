@@ -1,5 +1,6 @@
 #include "Python.h"
 //#include <complex.h>
+#define _USE_MATH_DEFINES
 #include <math.h>
 #include "numpy/arrayobject.h"
 #include <stdio.h>
