@@ -27,7 +27,7 @@
 import wx
 
 #import viewpanel
-import PYME.cSMI as example
+#import PYME.cSMI as example
 
 from PYME.DSView.viewpanellite import MyViewPanel
 
