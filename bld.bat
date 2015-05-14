@@ -1,4 +1,4 @@
-"%PYTHON%" setup.py build_ext -c mingw32
+:: "%PYTHON%" setup.py build_ext -c mingw32
 "%PYTHON%" setup.py install
 
 if errorlevel 1 exit 1

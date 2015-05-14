@@ -26,7 +26,11 @@ build:
   entry_points:
     # This creates an entry point named bsdiff4 that calls
     # bsdiff4.cli.main_bsdiff4()
-    #- bsdiff4 = bsdiff4.cli:main_bsdiff4
+    - dh5view = PYME.DSView.dsviewer_npy_nb:main
+    - PYMEAcquire = PYME.Acquire.PYMEAcquire:main
+    - VisGUI = PYME.Analysis.LMVis.VisGUI:main
+    - launchWorkers = PYME.ParallelTasks.launchWorkers:main
+
     #- bspatch4 = bsdiff4.cli:main_bspatch4
 
   # If osx_is_app is set, entry points will use python.app instead of
@@ -131,6 +135,7 @@ requirements:
     - toposort
     - networkx
     - pyro
+    - pyfftw3
     - python.app      [osx]
 
 #test:
