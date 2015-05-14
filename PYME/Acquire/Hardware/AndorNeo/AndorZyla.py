@@ -400,6 +400,16 @@ class AndorBase(SDK3Camera):
         self.AOILeft.setValue(x1+1)
         self.AOITop.setValue(y1+1)
         
+    def SetGainMode(self,mode):
+        from warnings import warn
+        if not any(mode in s for s in self.SimpleGainModes.keys()):
+            warn('invalid mode "%s" requested - ignored' % mode)
+            return
+        self._gainmode = mode
+        self.SimplePreAmpGainControl.setString(self.SimpleGainModes[mode]['name'])
+        self.PixelEncoding.setString(self.SimpleGainModes[mode]['PEncoding'])
+        self.noiseProps = self.NoiseProperties[self._gainmode] # update noise properties for new mode
+
     def GetGainMode(self):
         return self._gainmode
 
@@ -499,8 +509,11 @@ class AndorBase(SDK3Camera):
             mdh.setEntry('Camera.ReadNoise', np['ReadNoise'])
             mdh.setEntry('Camera.NoiseFactor', 1.0)
             mdh.setEntry('Camera.ElectronsPerCount', np['ElectronsPerCount'])
-            # mdh.setEntry('Camera.ADOffset', np['ADOffset'])
-            mdh.setEntry('Camera.ADOffset', self.Baseline.getValue())
+            if (self.Baseline.isImplemented()):
+                mdh.setEntry('Camera.ADOffset', self.Baseline.getValue())
+            else:
+                mdh.setEntry('Camera.ADOffset', np['ADOffset'])
+
 
             #mdh.setEntry('Simulation.Fluorophores', self.fluors.fl)
             #mdh.setEntry('Simulation.LaserPowers', self.laserPowers)

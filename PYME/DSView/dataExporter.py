@@ -454,7 +454,8 @@ def ExportData(ds, mdh=None, events=None, origName = None, defaultExt = '*.tif',
     ext = '*' + os.path.splitext(filename)[1]
         
     if not ext in exportersByExtension.keys():
-        wx.MessageBox('No exporter found for %s files\n Try one of the following file types:\n%s' % (ext, ', '.join(exportersByExtension.keys())), "Error saving data", wx.OK|wx.ICON_HAND)
+        raise RuntimeError('No exporter found for %s files')
+        #wx.MessageBox('No exporter found for %s files\n Try one of the following file types:\n%s' % (ext, ', '.join(exportersByExtension.keys())), "Error saving data", wx.OK|wx.ICON_HAND)
         return
 
     exp = exportersByExtension[ext]()

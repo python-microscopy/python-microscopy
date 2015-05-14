@@ -1,0 +1,38 @@
+- Zoom:
+    inputName: filtered_image
+    outputName: zoomed
+    processFramesIndividually: true
+    zoom: 0.5
+- GaussianFilter:
+    inputName: input
+    outputName: filtered_image
+    processFramesIndividually: true
+    sigmaX: 2.0
+    sigmaY: 2.0
+    sigmaZ: 1.0
+- MultifitBlobs:
+    blobSigma: 45.0
+    inputImage: zoomed
+    outputName: positions
+    scale: 1000.0
+    threshold: 2.0
+- SelectMeasurementColumns:
+    inputMeasurments: positions
+    keys: x y A
+    outputName: selectedPositions
+- NearestNeighbourDistances:
+    inputPositions: positions
+    key: neighbourDists
+    outputName: neighbourDists
+- AggregateMeasurements:
+    inputMeasurements1: selectedPositions
+    inputMeasurements2: neighbourDists
+    inputMeasurements3: ''
+    inputMeasurements4: ''
+    outputName: aggMeasure
+- AddMetadataToMeasurements:
+    inputImage: input
+    inputMeasurments: aggMeasure
+    keys: Notes SlideRef
+    metadataKeys: Source.Sample.Notes Source.Sample.SlideRef
+    outputName: output
