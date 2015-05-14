@@ -117,8 +117,8 @@ if os.name=='nt':
 
 		
 #libuc480 = ctypes.cdll.LoadLibrary(lib)
-#libuc480 = ctypes.WinDLL('uc480_64')
-libuc480 = ctypes.WinDLL('ueye_api_64')
+libuc480 = ctypes.WinDLL('uc480_64')
+#libuc480 = ctypes.WinDLL('ueye_api_64')
 if libuc480 is not None:
 	uc480_h_name = 'uc480_h'
 	try:
