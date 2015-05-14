@@ -22,7 +22,7 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   Installation/InstallationUsingWindowsInstaller   
+   Installation/InstallationWithAnaconda   
    Installation/InstallationFromSource
    PYMEAcquire
    Analysis
