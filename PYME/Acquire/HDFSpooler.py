@@ -24,7 +24,7 @@
 import datetime
 import tables
 from PYME.Acquire import MetaDataHandler
-from PYME import cSMI
+#from PYME import cSMI
 
 #import time
 

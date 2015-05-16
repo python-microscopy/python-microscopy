@@ -92,6 +92,13 @@ with PYMEAcquire into the analysis package. ``.md`` files are python scripts who
 sole purpose is to add metadata entries to a minimal metadata object (called ``md``)
 using a dictionary notation.
 
+PYME Recipes (``.yaml``)
+========================
+
+These are used to store the details of processing pipelines used for either 
+standard (e.g. confocal) data analysis or for postprocessing super-resolution
+reconstructions.
+
 Khoros Data Format (``.kdf``)
 =============================
 

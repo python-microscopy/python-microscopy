@@ -23,7 +23,7 @@
 
 import wx
 from PYME.Analysis.LMVis import histLimits
-from PYME import cSMI
+#from PYME import cSMI
 
 class dispSettingsFrame(wx.Frame):
     def __init__(self, parent, vp):
@@ -51,7 +51,7 @@ class dispSettingsPanel(wx.Panel):
             self.dsa = self.vp.do.ds
             self.vp.do.Optimise()
         else:
-            self.dsa = cSMI.CDataStack_AsArray(self.vp.ds, 0)[:,:,0].ravel()
+            self.dsa = self.vp.dsa#[:,:,0].ravel()
             self.vp.do.Optimise(self.vp.ds)
 
 
