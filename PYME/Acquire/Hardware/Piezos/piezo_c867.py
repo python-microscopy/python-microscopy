@@ -374,6 +374,8 @@ class piezo_c867T(object):
         self.targetVelocity[0] = abs(dx)*self.maxvelocity
         self.targetVelocity[1] = abs(dy)*self.maxvelocity
         
+        print 'md %f,%f' % (dx, dy)
+        
         if dx > th:
             self.targetPosition[0] = min(max(np.round(self.position[0]+1), self.validRegion[0][0]),self.validRegion[0][1])
         elif dx < -th:
