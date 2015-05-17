@@ -132,6 +132,7 @@ requirements:
     - networkx
     - pyro
     - python.app      [osx]
+    - pyfftw3
 
 #test:
   # files which are copied from the recipe into the (temporary) test
