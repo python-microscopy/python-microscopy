@@ -559,6 +559,7 @@ class foldPanel(wx.Panel):
 
     def OnMouseLeave(self, event):
         self.Layout()
+        self.Refresh()
         #pass #self.RegenSizer()
 
 if __name__ == "__main__":
