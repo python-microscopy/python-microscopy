@@ -248,13 +248,13 @@ if 'lasers'in dir(scope):
 #    scope.fc.Start(2000)
 #''')
 
-from PYME import cSMI
-
-
-Is = []
-
-def calcSum(caller):
-    Is.append(cSMI.CDataStack_AsArray(caller.ds, 0).sum())
+#from PYME import cSMI
+#
+#
+#Is = []
+#
+#def calcSum(caller):
+#    Is.append(cSMI.CDataStack_AsArray(caller.ds, 0).sum())
 
 
 #must be here!!!

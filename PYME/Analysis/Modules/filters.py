@@ -298,7 +298,9 @@ class Deconvolve(Filter):
     psfFilename = CStr('') #only used for psfType == 'file'
     lorentzianFWHM = Float(50.) #only used for psfType == 'Lorentzian'
     beadDiameter = Float(200.) #only used for psfType == 'bead'
-    regularisationLambda = Float(0.1)
+    regularisationLambda = Float(0.1) #Regularisation - ICTM only
+    padding = Int(0) #how much to pad the image by (to reduce edge effects)
+    zPadding = Int(0) # padding along the z axis
     
     _psfCache = {}
     
@@ -310,8 +312,13 @@ class Deconvolve(Filter):
                 psf, vs = np.load(self.psfFilename)
                 psf = np.atleast_3d(psf)
                 
+                vsa = 1e3*np.array([vs.x, vs.y, vs.z]) 
+                
+                if not np.allclose(vshint, vsa, rtol=.03):
+                    psf = ndimage.zoom(psf, vshint/vsa)
+                
                 self._psfCache[psfKey] = (psf, vs)        
-            elif (self.psfType == 'Laplace'):
+            elif (self.psfType == 'Lorentzian'):
                 from scipy import stats
                 sc = self.lorentzianFWHM/2.0
                 X, Y = np.mgrid[-30.:31., -30.:31.]
@@ -342,12 +349,24 @@ class Deconvolve(Filter):
     def applyFilter(self, data, chanNum, frNum, im):
         d = data.astype('f') - self.offset
         vx, vy, vz = np.array(im.voxelsize)*1e-3
-        
+            
+        if self.padding > 0:
+            padsize = np.array([self.padding, self.padding, self.zPadding])
+            dp = np.ones(np.array(d.shape) + 2*padsize, 'f')*d.mean()
+            weights = np.zeros_like(dp)
+            px, py, pz = padsize
+
+            dp[px:-px, py:-py, pz:-pz] = data
+            weights[px:-px, py:-py, pz:-pz] = 1.
+            weights = weights.ravel()
+        else: #no padding
+            dp = data
+            weights = 1
+            
         psf, vs = self.GetPSF(im.voxelsize)
         if not (vs.x == vx and vs.y == vy and vs.z ==vz):
             #rescale psf to match data voxel size
             psf = ndimage.zoom(psf, [vs.x/vx, vs.y/vy, vs.z/vz])
-            
         
         
         return 
@@ -361,6 +380,8 @@ class Deconvolve(Filter):
         im.mdh['Deconvolution.LorentzianFWHM'] = self.lorentzianFWHM
         im.mdh['Deconvolution.BeadDiameter'] = self.beadDiameter
         im.mdh['Deconvolution.RegularisationLambda'] = self.regularisationLambda
+        im.mdh['Deconvolution.Padding'] = self.padding
+        im.mdh['Deconvolution.ZPadding'] = self.zPadding
         
 class DistanceTransform(Filter):    
     def applyFilter(self, data, chanNum, frNum, im):
