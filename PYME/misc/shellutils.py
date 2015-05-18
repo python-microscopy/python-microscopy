@@ -159,7 +159,7 @@ def saveSelection(fname):
 def writecoords(filename,pipeline):
     n = pipeline['x'].shape[0]
     f = open(filename,'w')
-    px = pileline['x']
+    px = pipeline['x']
     py = pipeline['y']
     pt = pipeline['t']
     minx = px.min()
