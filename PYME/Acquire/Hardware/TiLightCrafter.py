@@ -277,6 +277,20 @@ class LightCrafter(object):
             
     def SetScanningVDC(self, period, exposureMs=100, angle=0, dutyCycle=.5, nSteps = 20):
         pats = [self.GenVDCLines(period, phase=p, angle = angle, dutyCycle = dutyCycle).T for p in np.linspace(0, 1, nSteps)]
+        from PYME.DSView import View3D
+        View3D(pats)
+        
+        self.SetPatternDefs(pats, exposureMs=exposureMs)
+        self.StartPatternSeq()
+            
+    def SetScanningHex(self, period, exposureMs=100, angle=0, dutyCycle=.5, nSteps = 20):
+        pats = []
+        peri, dc = period/100.0, dutyCycle*100
+        for py in np.linspace(0, int(100/dc - 1)*dc, int(100/dc)):
+            for px in np.linspace(0, int(100/dc - 1)*dc, int(100/dc)):
+                pats.append(self.GenHex(peri, dutyCycle = dc, phasex=px, phasey = py))
+        from PYME.DSView import View3D
+        View3D(pats)
         
         self.SetPatternDefs(pats, exposureMs=exposureMs)
         self.StartPatternSeq()
@@ -293,3 +307,6 @@ class LightCrafter(object):
         ll = (d%1) < dutyCycle
         
         return (ll*intensity).astype('uint8')
+        
+    def GenHex(self, period = 100, dutyCycle = 0.1, phasex = 0, phasey = 0, intensity = 255.):
+        return ((((self.X/period + phasex)%100) < dutyCycle)*(((self.Y/(period*1.3) + phasey + 50*((self.X/(130*period)).astype('i')%2)) %100) < dutyCycle)*intensity).astype('uint8')

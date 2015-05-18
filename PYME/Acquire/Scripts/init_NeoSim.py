@@ -135,12 +135,12 @@ ssp = sarcSpacing.SarcomereChecker(MainFrame, menuBar1, scope)
 #splt = splitter.Splitter(MainFrame, mControls, scope)
 #''')
 
-from PYME import cSMI
-
-Is = []
-
-def calcSum(caller):
-    Is.append(cSMI.CDataStack_AsArray(caller.ds, 0).sum())
+#from PYME import cSMI
+#
+#Is = []
+#
+#def calcSum(caller):
+#    Is.append(cSMI.CDataStack_AsArray(caller.ds, 0).sum())
 
 #scope.pa.WantFrameNotification.append(calcSum)
 

@@ -428,6 +428,7 @@ class fitTask(taskDef.Task):
         
         if self.fitModule in splitterFitModules:
             self.data = self._splitImage(self.data)
+            self.sigma = self._splitImage(self.sigma)
             
             if not len(self.bgindices) == 0:
                 self.bg = self._splitImage(self.bg)
