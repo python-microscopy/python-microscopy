@@ -159,11 +159,13 @@ def saveSelection(fname):
 def writecoords(filename,pipeline):
     n = pipeline['x'].shape[0]
     f = open(filename,'w')
-    minx = pipeline['x'].min()
-    miny = pipeline['y'].min()
+    px = pileline['x']
+    py = pipeline['y']
+    pt = pipeline['t']
+    minx = px.min()
+    miny = py.min()
     for i in range(n):
-        f.write("%.3f %.3f %d\n" % (pipeline['x'][i]-minx,pipeline['y'][i]-miny,pipeline['t'][i]))
-    
+        f.write("%.3f %.3f %d\n" % (px[i]-minx,py[i]-miny,pt[i]))
     f.close()
 
 def randmapping(pipeline):
