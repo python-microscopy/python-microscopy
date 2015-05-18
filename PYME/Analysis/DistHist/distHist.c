@@ -11,7 +11,7 @@
  */
 
 #include "Python.h"
-#include <complex.h>
+//#include <complex.h>
 #include <stdlib.h>
 #include <math.h>
 #include "numpy/arrayobject.h"
@@ -579,7 +579,7 @@ static PyObject * meanSquareDistHist(PyObject *self, PyObject *args, PyObject *k
             dy = y_i - py[j];
             d = dx*dx + dy*dy;
 
-            dt = abs(pt[j] - t_i);
+            dt = fabs(pt[j] - t_i);
 
             id = (int)floor(dt/binSize);
 
@@ -613,15 +613,15 @@ static PyObject * meanSquareDistHist(PyObject *self, PyObject *args, PyObject *k
 
 
 static PyMethodDef distHistMethods[] = {
-    {"distanceHistogram",  distanceHistogram, METH_VARARGS | METH_KEYWORDS,
+    {"distanceHistogram",  (PyCFunction)distanceHistogram, METH_VARARGS | METH_KEYWORDS,
     "Generate a histogram of pairwise distances between two sets of points.\n. Arguments are: 'x1', 'y1', 'x2', 'y2', 'nBins'= 1e3, 'binSize' = 1"},
-    {"distanceProduct",  distanceProduct, METH_VARARGS | METH_KEYWORDS,
+    {"distanceProduct",  (PyCFunction)distanceProduct, METH_VARARGS | METH_KEYWORDS,
     "Generate a histogram of pairwise distances between two sets of points.\n. Arguments are: 'x1', 'y1', 'x2', 'y2', 'nBins'= 1e3, 'binSize' = 1"},
 #ifdef SSE
-    {"distanceHistogramRS",  distanceHistogramRS, METH_VARARGS | METH_KEYWORDS,
+    {"distanceHistogramRS",  (PyCFunction)distanceHistogramRS, METH_VARARGS | METH_KEYWORDS,
     "Generate a histogram of pairwise distances between two sets of points.\n. Arguments are: 'x1', 'y1', 'x2', 'y2', 'nBins'= 1e3, 'binSize' = 1"},
 #endif
-    {"msdHistogram",  meanSquareDistHist, METH_VARARGS | METH_KEYWORDS,
+    {"msdHistogram",  (PyCFunction)meanSquareDistHist, METH_VARARGS | METH_KEYWORDS,
     "calculate a histogram of msd vs time.\n. Arguments are: 'x', 'y', 't', 'nBins'= 1e3, 'binSize' = 1"},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };

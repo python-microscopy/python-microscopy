@@ -148,12 +148,12 @@ from PYME.Acquire.Hardware import splitter
 splt = splitter.Splitter(MainFrame, mControls, scope, scope.cam, dichroic = 'FF741-Di01' , transLocOnCamera = 'Top')
 ''')
 
-from PYME import cSMI
-
-Is = []
-
-def calcSum(caller):
-    Is.append(cSMI.CDataStack_AsArray(caller.ds, 0).sum())
+#from PYME import cSMI
+#
+#Is = []
+#
+#def calcSum(caller):
+#    Is.append(cSMI.CDataStack_AsArray(caller.ds, 0).sum())
 
 #scope.pa.WantFrameNotification.append(calcSum)
 

@@ -26,7 +26,11 @@ build:
   entry_points:
     # This creates an entry point named bsdiff4 that calls
     # bsdiff4.cli.main_bsdiff4()
-    #- bsdiff4 = bsdiff4.cli:main_bsdiff4
+    - dh5view = PYME.DSView.dsviewer_npy_nb:main
+    - PYMEAcquire = PYME.Acquire.PYMEAcquire:main
+    - VisGUI = PYME.Analysis.LMVis.VisGUI:main
+    - launchWorkers = PYME.ParallelTasks.launchWorkers:main
+
     #- bspatch4 = bsdiff4.cli:main_bspatch4
 
   # If osx_is_app is set, entry points will use python.app instead of
@@ -58,7 +62,7 @@ build:
   # Used instead of build.sh or bld.bat. For short build scripts, this can
   # be more convenient. You may need to use selectors (see below) to use
   # different scripts for different platforms.
-  script: python setup.py install
+  #script: python setup.py install
 
   # Set which RPATHs are used when making executables relocatable. This
   # currently only works on Linux.  The default is lib/
@@ -131,6 +135,7 @@ requirements:
     - toposort
     - networkx
     - pyro
+    - pyfftw3
     - python.app      [osx]
 
 #test:

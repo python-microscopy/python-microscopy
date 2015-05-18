@@ -1,10 +1,3 @@
-/home/david/python-microscopy/doc/SampleDB.rst:16: ERROR: Unexpected indentation.
-/home/david/python-microscopy/doc/SampleDB.rst:28: ERROR: Unexpected indentation.
-/home/david/python-microscopy/doc/SampleDB.rst:34: ERROR: Unexpected indentation.
-/home/david/python-microscopy/doc/SampleDB.rst:40: ERROR: Unexpected indentation.
-/home/david/python-microscopy/doc/SampleDB.rst:60: ERROR: Unexpected indentation.
-/home/david/python-microscopy/doc/SampleDB.rst:64: ERROR: Unexpected indentation.
-/home/david/python-microscopy/doc/SampleDB.rst:81: ERROR: Unexpected indentation.
 /home/david/python-microscopy/doc/Technical.rst:4: WARNING: toctree contains reference to nonexisting document u'FitModules'
 /home/david/python-microscopy/PYME/Acquire/MetaDataHandler.py:docstring of PYME.Acquire.MetaDataHandler:9: ERROR: Unexpected indentation.
 /home/david/python-microscopy/doc/api/PYME.Acquire.rst:18: WARNING: toctree references unknown document u'api/PYME.Acquire.MetaDataHandler.MDHandlerBase.GetSimpleString'
@@ -58,22 +51,18 @@
 
 :mod:`microscope` Module
 -------------------
-/home/david/python-microscopy/doc/api/PYME.Acquire.rst:18: WARNING: toctree references unknown document u'api/PYME.Acquire.microscope.microscope.AddVoxelSizeSetting'
-/home/david/python-microscopy/doc/api/PYME.Acquire.rst:18: WARNING: toctree references unknown document u'api/PYME.Acquire.microscope.microscope.GenStartMetadata'
-/home/david/python-microscopy/doc/api/PYME.Acquire.rst:18: WARNING: toctree references unknown document u'api/PYME.Acquire.microscope.microscope.GetPixelSize'
-/home/david/python-microscopy/doc/api/PYME.Acquire.rst:18: WARNING: toctree references unknown document u'api/PYME.Acquire.microscope.microscope.GetPos'
-/home/david/python-microscopy/doc/api/PYME.Acquire.rst:18: WARNING: toctree references unknown document u'api/PYME.Acquire.microscope.microscope.SetCamera'
-/home/david/python-microscopy/doc/api/PYME.Acquire.rst:18: WARNING: toctree references unknown document u'api/PYME.Acquire.microscope.microscope.SetPos'
-/home/david/python-microscopy/doc/api/PYME.Acquire.rst:18: WARNING: toctree references unknown document u'api/PYME.Acquire.microscope.microscope.SetVoxelSize'
-/home/david/python-microscopy/doc/api/PYME.Acquire.rst:18: WARNING: toctree references unknown document u'api/PYME.Acquire.microscope.microscope.aq_end'
-/home/david/python-microscopy/doc/api/PYME.Acquire.rst:18: WARNING: toctree references unknown document u'api/PYME.Acquire.microscope.microscope.aq_refr'
-/home/david/python-microscopy/doc/api/PYME.Acquire.rst:18: WARNING: toctree references unknown document u'api/PYME.Acquire.microscope.microscope.centreView'
-/home/david/python-microscopy/doc/api/PYME.Acquire.rst:18: WARNING: toctree references unknown document u'api/PYME.Acquire.microscope.microscope.genStatus'
-/home/david/python-microscopy/doc/api/PYME.Acquire.rst:18: WARNING: toctree references unknown document u'api/PYME.Acquire.microscope.microscope.livepreview'
-/home/david/python-microscopy/doc/api/PYME.Acquire.rst:18: WARNING: toctree references unknown document u'api/PYME.Acquire.microscope.microscope.pr_refr'
-/home/david/python-microscopy/doc/api/PYME.Acquire.rst:18: WARNING: toctree references unknown document u'api/PYME.Acquire.microscope.microscope.pr_refr3'
-/home/david/python-microscopy/doc/api/PYME.Acquire.rst:18: WARNING: toctree references unknown document u'api/PYME.Acquire.microscope.microscope.satCheck'
-/home/david/python-microscopy/doc/api/PYME.Acquire.rst:18: WARNING: toctree references unknown document u'api/PYME.Acquire.microscope.microscope.turnAllLasersOff'
+/home/david/python-microscopy/doc/api/PYME.Acquire.rst:15: WARNING: toctree references unknown document u'api/PYME.Acquire.microscope.microscope.AddVoxelSizeSetting'
+/home/david/python-microscopy/doc/api/PYME.Acquire.rst:15: WARNING: toctree references unknown document u'api/PYME.Acquire.microscope.microscope.GenStartMetadata'
+/home/david/python-microscopy/doc/api/PYME.Acquire.rst:15: WARNING: toctree references unknown document u'api/PYME.Acquire.microscope.microscope.GetPixelSize'
+/home/david/python-microscopy/doc/api/PYME.Acquire.rst:15: WARNING: toctree references unknown document u'api/PYME.Acquire.microscope.microscope.GetPos'
+/home/david/python-microscopy/doc/api/PYME.Acquire.rst:15: WARNING: toctree references unknown document u'api/PYME.Acquire.microscope.microscope.SetCamera'
+/home/david/python-microscopy/doc/api/PYME.Acquire.rst:15: WARNING: toctree references unknown document u'api/PYME.Acquire.microscope.microscope.SetPos'
+/home/david/python-microscopy/doc/api/PYME.Acquire.rst:15: WARNING: toctree references unknown document u'api/PYME.Acquire.microscope.microscope.SetVoxelSize'
+/home/david/python-microscopy/doc/api/PYME.Acquire.rst:15: WARNING: toctree references unknown document u'api/PYME.Acquire.microscope.microscope.centreView'
+/home/david/python-microscopy/doc/api/PYME.Acquire.rst:15: WARNING: toctree references unknown document u'api/PYME.Acquire.microscope.microscope.genStatus'
+/home/david/python-microscopy/doc/api/PYME.Acquire.rst:15: WARNING: toctree references unknown document u'api/PYME.Acquire.microscope.microscope.satCheck'
+/home/david/python-microscopy/doc/api/PYME.Acquire.rst:15: WARNING: toctree references unknown document u'api/PYME.Acquire.microscope.microscope.startAquisistion'
+/home/david/python-microscopy/doc/api/PYME.Acquire.rst:15: WARNING: toctree references unknown document u'api/PYME.Acquire.microscope.microscope.turnAllLasersOff'
 /home/david/python-microscopy/doc/api/PYME.Acquire.rst:40: WARNING: toctree references unknown document u'api/PYME.Acquire.protocol.Protocol.Init'
 /home/david/python-microscopy/doc/api/PYME.Acquire.rst:40: WARNING: toctree references unknown document u'api/PYME.Acquire.protocol.Protocol.OnFinish'
 /home/david/python-microscopy/doc/api/PYME.Acquire.rst:40: WARNING: toctree references unknown document u'api/PYME.Acquire.protocol.Protocol.OnFrame'
@@ -112,6 +101,7 @@
 /home/david/python-microscopy/doc/api/PYME.Acquire.rst:18: WARNING: toctree references unknown document u'api/PYME.Acquire.acquiremainframe.PYMEMainFrame.StatusBarUpdate'
 /home/david/python-microscopy/doc/api/PYME.Acquire.rst:18: WARNING: toctree references unknown document u'api/PYME.Acquire.acquiremainframe.PYMEMainFrame.checkInitDone'
 /home/david/python-microscopy/doc/api/PYME.Acquire.rst:18: WARNING: toctree references unknown document u'api/PYME.Acquire.acquiremainframe.PYMEMainFrame.doPostInit'
+/home/david/python-microscopy/doc/api/PYME.Acquire.rst:18: WARNING: toctree references unknown document u'api/PYME.Acquire.acquiremainframe.PYMEMainFrame.livepreview'
 /home/david/python-microscopy/doc/api/PYME.Acquire.rst:18: WARNING: toctree references unknown document u'api/PYME.Acquire.acquiremainframe.PYMEMainFrame.runInitScript'
 /home/david/python-microscopy/doc/api/PYME.Acquire.rst:18: WARNING: toctree references unknown document u'api/PYME.Acquire.HDFSpoolFrame.PanSpool.OnBAnalyse'
 /home/david/python-microscopy/doc/api/PYME.Acquire.rst:18: WARNING: toctree references unknown document u'api/PYME.Acquire.HDFSpoolFrame.PanSpool.OnBSetAqProtocolButton'
@@ -334,7 +324,7 @@ Traceback (most recent call last):
   File "/home/david/python-microscopy/PYME/Acquire/Hardware/ccdAdjPanel.py", line 30, in <module>
     import scipy.special
 ImportError: No module named special
-[u"ccdCalibrator(gains=<Mock name='mock.arange()' id='75128080'>)", u':module: PYME.Acquire.Hardware.ccdCalibrator', u'', u'', u'', u'class for calibrating the ccd', u'', u'usage:', u'- use transmitted light to produce a roughly uniform field', u'- make sure CCD temperature has settled to the the specified set point', u'- adjust intensity and integration time so that camera is not saturated at', u'  the maximum em gain which is going to be calibrated for (220 when using', u'  default options). To give good results the image at max em-gain should', u'  however be bright - ~50% of saturation seems like a good point. Note that', u'  this WILL saturate the display (12 bits as opposed to 16) - use the', u'  histogram display.', u'- instantiate the class on the console - ie:', u'  from PYME.Hardware import ccdCalibrator', u'  ccdCal = ccdCalibrator.ccdCalibrator(scope.pa, scope.cam)', u'', u'.. rubric:: Methods', u'', u'.. autosummary::', u'   :toctree:', u'', u'   finish', u'   tick']:9: ERROR: Unexpected indentation.
+[u"ccdCalibrator(gains=<Mock name='mock.arange()' id='47134950584592'>)", u':module: PYME.Acquire.Hardware.ccdCalibrator', u'', u'', u'', u'class for calibrating the ccd', u'', u'usage:', u'- use transmitted light to produce a roughly uniform field', u'- make sure CCD temperature has settled to the the specified set point', u'- adjust intensity and integration time so that camera is not saturated at', u'  the maximum em gain which is going to be calibrated for (220 when using', u'  default options). To give good results the image at max em-gain should', u'  however be bright - ~50% of saturation seems like a good point. Note that', u'  this WILL saturate the display (12 bits as opposed to 16) - use the', u'  histogram display.', u'- instantiate the class on the console - ie:', u'  from PYME.Hardware import ccdCalibrator', u'  ccdCal = ccdCalibrator.ccdCalibrator(scope.pa, scope.cam)', u'', u'.. rubric:: Methods', u'', u'.. autosummary::', u'   :toctree:', u'', u'   finish', u'   tick']:9: ERROR: Unexpected indentation.
 /home/david/python-microscopy/PYME/Acquire/Hardware/ccdCalibrator.py:docstring of PYME.Acquire.Hardware.ccdCalibrator.ccdCalibrator:16: WARNING: Block quote ends without a blank line; unexpected unindent.
 /home/david/python-microscopy/doc/api/PYME.Acquire.Hardware.rst:31: WARNING: toctree references unknown document u'api/PYME.Acquire.Hardware.ccdCalibrator.ccdCalibrator.finish'
 /home/david/python-microscopy/doc/api/PYME.Acquire.Hardware.rst:31: WARNING: toctree references unknown document u'api/PYME.Acquire.Hardware.ccdCalibrator.ccdCalibrator.tick'
@@ -410,17 +400,9 @@ Traceback (most recent call last):
   File "/home/david/python-microscopy/PYME/Deconv/wiener.py", line 27, in <module>
     from scipy.fftpack import fftn, ifftn, fftshift, ifftshift
 ImportError: No module named fftpack
-/home/david/python-microscopy/doc/api/PYME.Acquire.Hardware.Simulator.rst:66: WARNING: autodoc: failed to import module u'PYME.Acquire.Hardware.Simulator.setup'; the following exception was raised:
-Traceback (most recent call last):
-  File "/usr/local/lib/python2.7/dist-packages/sphinx/ext/autodoc.py", line 335, in import_object
-    __import__(self.modname)
-  File "/home/david/python-microscopy/PYME/Acquire/Hardware/Simulator/setup.py", line 32, in <module>
-    from PYME.misc import cython_numpy_monkey
-  File "/home/david/python-microscopy/PYME/misc/cython_numpy_monkey.py", line 6, in <module>
-    from numpy.distutils.misc_util import appendpath
-ImportError: No module named distutils.misc_util
 /home/david/python-microscopy/doc/api/modules.rst:2: WARNING: Explicit markup ends without a blank line; unexpected unindent.
 /home/david/python-microscopy/doc/api/modules.rst:4: WARNING: toctree contains reference to nonexisting document u'api/setup'
+/home/david/python-microscopy/doc/Installation/InstallationUsingWindowsInstaller.rst:: WARNING: document isn't included in any toctree
 /home/david/python-microscopy/doc/Installation/InstallationWindows.rst:: WARNING: document isn't included in any toctree
 /home/david/python-microscopy/doc/Installation/Installation_.rst:: WARNING: document isn't included in any toctree
 /home/david/python-microscopy/doc/SampleDB.rst:: WARNING: document isn't included in any toctree
@@ -473,14 +455,10 @@ None:None: WARNING: toctree contains reference to nonexisting document u'api/PYM
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.SetCamera'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.SetPos'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.SetVoxelSize'
-None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.aq_end'
-None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.aq_refr'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.centreView'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.genStatus'
-None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.livepreview'
-None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.pr_refr'
-None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.pr_refr3'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.satCheck'
+None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.startAquisistion'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.turnAllLasersOff'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.protocol.Protocol.Init'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.protocol.Protocol.OnFinish'
@@ -520,6 +498,7 @@ None:None: WARNING: toctree contains reference to nonexisting document u'api/PYM
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.acquiremainframe.PYMEMainFrame.StatusBarUpdate'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.acquiremainframe.PYMEMainFrame.checkInitDone'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.acquiremainframe.PYMEMainFrame.doPostInit'
+None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.acquiremainframe.PYMEMainFrame.livepreview'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.acquiremainframe.PYMEMainFrame.runInitScript'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.HDFSpoolFrame.PanSpool.OnBAnalyse'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.HDFSpoolFrame.PanSpool.OnBSetAqProtocolButton'
@@ -718,14 +697,10 @@ None:None: WARNING: toctree contains reference to nonexisting document u'api/PYM
 <autosummary>:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.SetCamera'
 <autosummary>:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.SetPos'
 <autosummary>:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.SetVoxelSize'
-<autosummary>:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.aq_end'
-<autosummary>:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.aq_refr'
 <autosummary>:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.centreView'
 <autosummary>:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.genStatus'
-<autosummary>:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.livepreview'
-<autosummary>:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.pr_refr'
-<autosummary>:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.pr_refr3'
 <autosummary>:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.satCheck'
+<autosummary>:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.startAquisistion'
 <autosummary>:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.turnAllLasersOff'
 <autosummary>:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.protocol.Protocol.Init'
 <autosummary>:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.protocol.Protocol.OnFinish'
@@ -765,6 +740,7 @@ None:None: WARNING: toctree contains reference to nonexisting document u'api/PYM
 <autosummary>:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.acquiremainframe.PYMEMainFrame.StatusBarUpdate'
 <autosummary>:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.acquiremainframe.PYMEMainFrame.checkInitDone'
 <autosummary>:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.acquiremainframe.PYMEMainFrame.doPostInit'
+<autosummary>:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.acquiremainframe.PYMEMainFrame.livepreview'
 <autosummary>:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.acquiremainframe.PYMEMainFrame.runInitScript'
 <autosummary>:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.HDFSpoolFrame.PanSpool.OnBAnalyse'
 <autosummary>:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.HDFSpoolFrame.PanSpool.OnBSetAqProtocolButton'
@@ -998,14 +974,10 @@ None:None: WARNING: toctree contains reference to nonexisting document u'api/PYM
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.SetCamera'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.SetPos'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.SetVoxelSize'
-None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.aq_end'
-None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.aq_refr'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.centreView'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.genStatus'
-None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.livepreview'
-None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.pr_refr'
-None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.pr_refr3'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.satCheck'
+None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.startAquisistion'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.turnAllLasersOff'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.protocol.Protocol.Init'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.protocol.Protocol.OnFinish'
@@ -1045,6 +1017,7 @@ None:None: WARNING: toctree contains reference to nonexisting document u'api/PYM
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.acquiremainframe.PYMEMainFrame.StatusBarUpdate'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.acquiremainframe.PYMEMainFrame.checkInitDone'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.acquiremainframe.PYMEMainFrame.doPostInit'
+None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.acquiremainframe.PYMEMainFrame.livepreview'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.acquiremainframe.PYMEMainFrame.runInitScript'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.HDFSpoolFrame.PanSpool.OnBAnalyse'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.HDFSpoolFrame.PanSpool.OnBSetAqProtocolButton'
@@ -1243,14 +1216,10 @@ None:None: WARNING: toctree contains reference to nonexisting document u'api/PYM
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.SetCamera'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.SetPos'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.SetVoxelSize'
-None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.aq_end'
-None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.aq_refr'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.centreView'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.genStatus'
-None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.livepreview'
-None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.pr_refr'
-None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.pr_refr3'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.satCheck'
+None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.startAquisistion'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.turnAllLasersOff'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.protocol.Protocol.Init'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.protocol.Protocol.OnFinish'
@@ -1290,6 +1259,7 @@ None:None: WARNING: toctree contains reference to nonexisting document u'api/PYM
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.acquiremainframe.PYMEMainFrame.StatusBarUpdate'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.acquiremainframe.PYMEMainFrame.checkInitDone'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.acquiremainframe.PYMEMainFrame.doPostInit'
+None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.acquiremainframe.PYMEMainFrame.livepreview'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.acquiremainframe.PYMEMainFrame.runInitScript'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.HDFSpoolFrame.PanSpool.OnBAnalyse'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.HDFSpoolFrame.PanSpool.OnBSetAqProtocolButton'

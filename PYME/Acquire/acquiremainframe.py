@@ -362,7 +362,8 @@ class PYMEMainFrame(wx.Frame):
     
     def _refreshDataStack(self):
         if 'vp' in dir(self):
-            self.vp.SetDataStack(self.scope.pa.dsa)
+            if not (self.vp.do.ds.data is self.scope.pa.dsa):
+                self.vp.SetDataStack(self.scope.pa.dsa)
         
     def livepreview(self):
         self.scope.startAquisistion()
@@ -382,6 +383,7 @@ class PYMEMainFrame(wx.Frame):
 
 
                 self.time1.WantNotification.append(self.vsp.RefrData)
+                self.time1.WantNotification.append(self._refreshDataStack)
 
                 self.AddPage(page=self.vp, select=True,caption='Preview')
 
@@ -681,8 +683,8 @@ class PYMEMainFrame(wx.Frame):
         self.scope.cam.SetCOC()
         self.scope.cam.GetStatus()
         self.scope.pa.Prepare()
-        self.scope.vp.SetDataStack(self.scope.pa.dsa)
-        self.scope.pa.start()
+        self.vp.SetDataStack(self.scope.pa.dsa)
+        self.pa.start()
         #event.Skip()
 
     def OnMCamSetPixelSize(self, event):
@@ -703,7 +705,7 @@ class PYMEMainFrame(wx.Frame):
         self.int_sl.Show()
             
         self.scope.pa.Prepare()
-        self.scope.vp.SetDataStack(self.scope.pa.dsa)
+        self.vp.SetDataStack(self.scope.pa.dsa)
         self.scope.pa.start()
         #event.Skip()
 
@@ -743,7 +745,7 @@ class PYMEMainFrame(wx.Frame):
                 #x2 = self.scope.vp.selection_end_x
                 #y2 = self.scope.vp.selection_end_y
     
-                x1, y1, x2, y2 = self.scope.vp.do.GetSliceSelection()
+                x1, y1, x2, y2 = self.vp.do.GetSliceSelection()
     
                 #if we're splitting colours/focal planes across the ccd, then only allow symetric ROIs
                 if 'splitting' in dir(self.scope.cam):
@@ -772,17 +774,17 @@ class PYMEMainFrame(wx.Frame):
         self.scope.cam.SetCOC()
         self.scope.cam.GetStatus()
         self.scope.pa.Prepare()
-        self.scope.vp.SetDataStack(self.scope.pa.dsa)
+        self.vp.SetDataStack(self.scope.pa.dsa)
         
         #self.scope.vp.selection_begin_x = x1
         #self.scope.vp.selection_begin_y = y1
         #self.scope.vp.selection_end_x = x2
         #self.scope.vp.selection_end_y = y2
-        self.scope.vp.do.SetSelection((x1,y1,0), (x2,y2,0))
+        self.vp.do.SetSelection((x1,y1,0), (x2,y2,0))
 
         self.scope.pa.start()
-        self.scope.vp.Refresh()
-        self.scope.vp.GetParent().Refresh()
+        self.vp.Refresh()
+        self.vp.GetParent().Refresh()
         #event.Skip()
 
     def SetCentredRoi(self, event=None, halfwidth=5):
@@ -811,16 +813,16 @@ class PYMEMainFrame(wx.Frame):
         self.scope.cam.SetCOC()
         self.scope.cam.GetStatus()
         self.scope.pa.Prepare()
-        self.scope.vp.SetDataStack(self.scope.pa.dsa)
+        self.vp.SetDataStack(self.scope.pa.dsa)
 
-        self.scope.vp.selection_begin_x = x1
-        self.scope.vp.selection_begin_y = y1
-        self.scope.vp.selection_end_x = x2
-        self.scope.vp.selection_end_y = y2
+        self.vp.selection_begin_x = x1
+        self.vp.selection_begin_y = y1
+        self.vp.selection_end_x = x2
+        self.vp.selection_end_y = y2
 
         self.scope.pa.start()
-        self.scope.vp.Refresh()
-        self.scope.vp.GetParent().Refresh()
+        self.vp.Refresh()
+        self.vp.GetParent().Refresh()
         #event.Skip()
 
     def OnMDisplayClearSel(self, event):

@@ -83,17 +83,20 @@ class SpaceNavPiezoCtrl(object):
         
         
     def updatePosition(self, sn):
+        sv = np.array([sn.x, sn.y, sn.z])/self.FULL_SCALE
+        norm = np.linalg.norm(sv)
         if self.update_n % 10:
             
             #x_incr = float(sn.x*self.xy_sensitivity)/(self.FULL_SCALE*self.EVENT_RATE)
             #y_incr = float(sn.y*self.xy_sensitivity)/(self.FULL_SCALE*self.EVENT_RATE)
-            z_incr = float(sn.z*self.z_sensitivity)/(self.FULL_SCALE*self.EVENT_RATE)
+            z_incr = float(sv[2]*self.z_sensitivity)/(self.EVENT_RATE)
             
-            norm = (abs(sn.x) + abs(sn.y) + abs(sn.z))/self.FULL_SCALE
+            
             #print x_incr, y_incr, z_incr
+            print sv, norm
     
             #try:
-            if abs(sn.z) >= norm/2:
+            if abs(sv[2]) >= norm/2:
                 self.pxy.StopMove()
                 try:
                     self.pz.MoveRel(0, z_incr)
@@ -104,16 +107,16 @@ class SpaceNavPiezoCtrl(object):
             #if abs(sn.y) >= norm/3:
             #    self.py[0].MoveRel(self.py[1], y_incr)
             #print sn.x/self.FULL_SCALE, sn.y/self.FULL_SCALE, sn.z/self.FULL_SCALE
-            elif  (abs(sn.x) >= norm/2 or abs(sn.y) >= norm/2) and norm > .0001:
+            elif  (abs(sv[0]) >= norm/2 or abs(sv[1]) >= norm/2) and norm > .0001:
                 t = time.time()
                 dt = t - self.lastTime
-                #print dt
+                print dt
                 if True:#dt < .1: #constant motion
-                    self.pxy.MoveInDir(self.xy_sensitivity*np.sign(sn.x)*abs(sn.x/self.FULL_SCALE)**self.kappa, -self.xy_sensitivity*np.sign(sn.y)*abs(sn.y/self.FULL_SCALE)**self.kappa)
+                    self.pxy.MoveInDir(self.xy_sensitivity*np.sign(sv[0])*abs(sv[0])**self.kappa, -self.xy_sensitivity*np.sign(sv[1])*abs(sv[1])**self.kappa)
                 else: #nudge
                     xp, yp = self.pxy.GetPosXY()
                     
-                    self.pxy.MoveToXY(xp + (abs(sn.x) >= norm/2)*np.sign(sn.x)*.0003, yp - (abs(sn.y) >= norm/2)*np.sign(sn.y)*.0003)
+                    self.pxy.MoveToXY(xp + (abs(sv[0]) >= norm/2)*np.sign(sv[0])*.0003, yp - (abs(sv[1]) >= norm/2)*np.sign(sv[1])*.0003)
                     
                 self.lastTime = t
             else:
