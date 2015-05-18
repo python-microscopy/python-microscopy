@@ -21,7 +21,7 @@
 #
 ##################
 
-from PYME import cSMI
+#from PYME import cSMI
 import numpy as np
 import wx
 import pylab
@@ -74,7 +74,7 @@ class ccdCalibrator:
 
         self.realGains = np.zeros(len(gains))
 
-        self.dsa = cSMI.CDataStack_AsArray(self.pa.ds, 0)
+        self.dsa = self.pa.dsa
 
         self.pa.stop()
         #self.cam.SetAcquisitionMode(self.cam.MODE_SINGLE_SHOT)

@@ -37,18 +37,9 @@ class Unmixer:
 
         self.image = dsviewer.image 
         
-
-        EXTRAS_UNMUX = wx.NewId()
-        dsviewer.mProcessing.Append(EXTRAS_UNMUX, "&Unsplit\tCtrl-U", "", wx.ITEM_NORMAL)
-        wx.EVT_MENU(dsviewer, EXTRAS_UNMUX, self.OnUnmix)
-                
-        EXTRAS_UNMUX_MAX = wx.NewId()
-        dsviewer.mProcessing.Append(EXTRAS_UNMUX_MAX, "&Unsplit, taking brightest\tCtrl-Shift-U", "", wx.ITEM_NORMAL)
-        wx.EVT_MENU(dsviewer, EXTRAS_UNMUX_MAX, self.OnUnmixMax)
-
-        EXTRAS_SETSF = wx.NewId()
-        dsviewer.mProcessing.Append(EXTRAS_SETSF, "Set Shift Field", "", wx.ITEM_NORMAL)
-        wx.EVT_MENU(dsviewer, EXTRAS_SETSF, self.OnSetShiftField)
+        dsviewer.AddMenuItem('Processing', "&Unsplit\tCtrl-U", self.OnUnmix)
+        dsviewer.AddMenuItem('Processing', "&Unsplit, taking brightest\tCtrl-Shift-U", self.OnUnmixMax)
+        dsviewer.AddMenuItem('Processing', "Set Shift Field", self.OnSetShiftField)
 
     def OnUnmix(self, event):
         #from PYME.Analysis import deTile

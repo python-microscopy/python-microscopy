@@ -429,7 +429,7 @@ easily parsed.</p>
 
 <dl class="class">
 <dt id="PYME.Acquire.Spooler.Spooler">
-<em class="property">class </em><tt class="descclassname">PYME.Acquire.Spooler.</tt><tt class="descname">Spooler</tt><big>(</big><em>scope</em>, <em>filename</em>, <em>acquisator</em>, <em>protocol=&lt;PYME.Acquire.protocol.Protocol instance at 0x46163b0&gt;</em>, <em>parent=None</em><big>)</big><a class="headerlink" href="#PYME.Acquire.Spooler.Spooler" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.Spooler.</tt><tt class="descname">Spooler</tt><big>(</big><em>scope</em>, <em>filename</em>, <em>acquisator</em>, <em>protocol=&lt;PYME.Acquire.protocol.Protocol instance at 0x2ade761e4488&gt;</em>, <em>parent=None</em><big>)</big><a class="headerlink" href="#PYME.Acquire.Spooler.Spooler" title="Permalink to this definition">¶</a></dt>
 <dd><p>Spooler base class</p>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
@@ -554,7 +554,7 @@ easily parsed.</p>
 
 <dl class="class">
 <dt id="PYME.Acquire.HDFSpooler.Spooler">
-<em class="property">class </em><tt class="descclassname">PYME.Acquire.HDFSpooler.</tt><tt class="descname">Spooler</tt><big>(</big><em>scope</em>, <em>filename</em>, <em>acquisator</em>, <em>protocol=&lt;PYME.Acquire.protocol.Protocol instance at 0x46163b0&gt;</em>, <em>parent=None</em>, <em>complevel=6</em>, <em>complib='zlib'</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpooler.Spooler" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.HDFSpooler.</tt><tt class="descname">Spooler</tt><big>(</big><em>scope</em>, <em>filename</em>, <em>acquisator</em>, <em>protocol=&lt;PYME.Acquire.protocol.Protocol instance at 0x2ade761e4488&gt;</em>, <em>parent=None</em>, <em>complevel=6</em>, <em>complib='zlib'</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpooler.Spooler" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#PYME.Acquire.Spooler.Spooler" title="PYME.Acquire.Spooler.Spooler"><tt class="xref py py-class docutils literal"><span class="pre">PYME.Acquire.Spooler.Spooler</span></tt></a></p>
 <p>Responsible for the mechanics of spooling to a pytables/hdf file.</p>
 <p class="rubric">Methods</p>
@@ -625,7 +625,7 @@ easily parsed.</p>
 
 <dl class="class">
 <dt id="PYME.Acquire.QueueSpooler.Spooler">
-<em class="property">class </em><tt class="descclassname">PYME.Acquire.QueueSpooler.</tt><tt class="descname">Spooler</tt><big>(</big><em>scope</em>, <em>filename</em>, <em>acquisator</em>, <em>protocol=&lt;PYME.Acquire.protocol.Protocol instance at 0x46163b0&gt;</em>, <em>parent=None</em>, <em>complevel=2</em>, <em>complib='zlib'</em><big>)</big><a class="headerlink" href="#PYME.Acquire.QueueSpooler.Spooler" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.QueueSpooler.</tt><tt class="descname">Spooler</tt><big>(</big><em>scope</em>, <em>filename</em>, <em>acquisator</em>, <em>protocol=&lt;PYME.Acquire.protocol.Protocol instance at 0x2ade761e4488&gt;</em>, <em>parent=None</em>, <em>complevel=2</em>, <em>complib='zlib'</em><big>)</big><a class="headerlink" href="#PYME.Acquire.QueueSpooler.Spooler" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#PYME.Acquire.Spooler.Spooler" title="PYME.Acquire.Spooler.Spooler"><tt class="xref py py-class docutils literal"><span class="pre">PYME.Acquire.Spooler.Spooler</span></tt></a></p>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
@@ -680,7 +680,8 @@ easily parsed.</p>
 <span class="target" id="module-PYME.Acquire.microscope"></span><dl class="class">
 <dt id="PYME.Acquire.microscope.microscope">
 <em class="property">class </em><tt class="descclassname">PYME.Acquire.microscope.</tt><tt class="descname">microscope</tt><a class="headerlink" href="#PYME.Acquire.microscope.microscope" title="Permalink to this definition">¶</a></dt>
-<dd><p class="rubric">Methods</p>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
 <col width="10%" />
@@ -708,28 +709,16 @@ easily parsed.</p>
 <tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.SetVoxelSize" title="PYME.Acquire.microscope.microscope.SetVoxelSize"><tt class="xref py py-obj docutils literal"><span class="pre">SetVoxelSize</span></tt></a>(voxelsizename[,&nbsp;camName])</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.aq_end" title="PYME.Acquire.microscope.microscope.aq_end"><tt class="xref py py-obj docutils literal"><span class="pre">aq_end</span></tt></a>(source)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.aq_refr" title="PYME.Acquire.microscope.microscope.aq_refr"><tt class="xref py py-obj docutils literal"><span class="pre">aq_refr</span></tt></a>(source)</td>
-<td></td>
-</tr>
 <tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.centreView" title="PYME.Acquire.microscope.microscope.centreView"><tt class="xref py py-obj docutils literal"><span class="pre">centreView</span></tt></a>(dx,&nbsp;dy)</td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.genStatus" title="PYME.Acquire.microscope.microscope.genStatus"><tt class="xref py py-obj docutils literal"><span class="pre">genStatus</span></tt></a>()</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.livepreview" title="PYME.Acquire.microscope.microscope.livepreview"><tt class="xref py py-obj docutils literal"><span class="pre">livepreview</span></tt></a>([Parent,&nbsp;Notebook])</td>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.satCheck" title="PYME.Acquire.microscope.microscope.satCheck"><tt class="xref py py-obj docutils literal"><span class="pre">satCheck</span></tt></a>(source)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.pr_refr" title="PYME.Acquire.microscope.microscope.pr_refr"><tt class="xref py py-obj docutils literal"><span class="pre">pr_refr</span></tt></a>(source)</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.pr_refr3" title="PYME.Acquire.microscope.microscope.pr_refr3"><tt class="xref py py-obj docutils literal"><span class="pre">pr_refr3</span></tt></a>(souce)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.satCheck" title="PYME.Acquire.microscope.microscope.satCheck"><tt class="xref py py-obj docutils literal"><span class="pre">satCheck</span></tt></a>(source)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.startAquisistion" title="PYME.Acquire.microscope.microscope.startAquisistion"><tt class="xref py py-obj docutils literal"><span class="pre">startAquisistion</span></tt></a>()</td>
 <td></td>
 </tr>
 <tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.microscope.microscope.turnAllLasersOff" title="PYME.Acquire.microscope.microscope.turnAllLasersOff"><tt class="xref py py-obj docutils literal"><span class="pre">turnAllLasersOff</span></tt></a>()</td>
@@ -773,16 +762,6 @@ easily parsed.</p>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="PYME.Acquire.microscope.microscope.aq_end">
-<tt class="descname">aq_end</tt><big>(</big><em>source</em><big>)</big><a class="headerlink" href="#PYME.Acquire.microscope.microscope.aq_end" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="PYME.Acquire.microscope.microscope.aq_refr">
-<tt class="descname">aq_refr</tt><big>(</big><em>source</em><big>)</big><a class="headerlink" href="#PYME.Acquire.microscope.microscope.aq_refr" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
 <dt id="PYME.Acquire.microscope.microscope.centreView">
 <tt class="descname">centreView</tt><big>(</big><em>dx</em>, <em>dy</em><big>)</big><a class="headerlink" href="#PYME.Acquire.microscope.microscope.centreView" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -793,23 +772,13 @@ easily parsed.</p>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="PYME.Acquire.microscope.microscope.livepreview">
-<tt class="descname">livepreview</tt><big>(</big><em>Parent=None</em>, <em>Notebook=None</em><big>)</big><a class="headerlink" href="#PYME.Acquire.microscope.microscope.livepreview" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="PYME.Acquire.microscope.microscope.pr_refr">
-<tt class="descname">pr_refr</tt><big>(</big><em>source</em><big>)</big><a class="headerlink" href="#PYME.Acquire.microscope.microscope.pr_refr" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="PYME.Acquire.microscope.microscope.pr_refr3">
-<tt class="descname">pr_refr3</tt><big>(</big><em>souce</em><big>)</big><a class="headerlink" href="#PYME.Acquire.microscope.microscope.pr_refr3" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
 <dt id="PYME.Acquire.microscope.microscope.satCheck">
 <tt class="descname">satCheck</tt><big>(</big><em>source</em><big>)</big><a class="headerlink" href="#PYME.Acquire.microscope.microscope.satCheck" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PYME.Acquire.microscope.microscope.startAquisistion">
+<tt class="descname">startAquisistion</tt><big>(</big><big>)</big><a class="headerlink" href="#PYME.Acquire.microscope.microscope.startAquisistion" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -1250,7 +1219,10 @@ threads to complete.</p>
 <tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">doPostInit</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">runInitScript</span></tt>()</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">livepreview</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">runInitScript</span></tt>()</td>
 <td></td>
 </tr>
 </tbody>
@@ -1970,8 +1942,8 @@ or &#8216;ABCDEFGHIJK&#8217; (non-numeric base 11)</p>
 <tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.previewaquisator.PreviewAquisator.getFPS" title="PYME.Acquire.previewaquisator.PreviewAquisator.getFPS"><tt class="xref py py-obj docutils literal"><span class="pre">getFPS</span></tt></a>()</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.previewaquisator.PreviewAquisator.getFrame" title="PYME.Acquire.previewaquisator.PreviewAquisator.getFrame"><tt class="xref py py-obj docutils literal"><span class="pre">getFrame</span></tt></a>(colours)</td>
-<td>Get a frame from the camera and extract the channels we want, putting them into ds.</td>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.previewaquisator.PreviewAquisator.getFrame" title="PYME.Acquire.previewaquisator.PreviewAquisator.getFrame"><tt class="xref py py-obj docutils literal"><span class="pre">getFrame</span></tt></a>([colours])</td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.previewaquisator.PreviewAquisator.getNextDsSlice" title="PYME.Acquire.previewaquisator.PreviewAquisator.getNextDsSlice"><tt class="xref py py-obj docutils literal"><span class="pre">getNextDsSlice</span></tt></a>()</td>
 <td></td>
@@ -2080,10 +2052,8 @@ or &#8216;ABCDEFGHIJK&#8217; (non-numeric base 11)</p>
 
 <dl class="method">
 <dt id="PYME.Acquire.previewaquisator.PreviewAquisator.getFrame">
-<tt class="descname">getFrame</tt><big>(</big><em>colours</em><big>)</big><a class="headerlink" href="#PYME.Acquire.previewaquisator.PreviewAquisator.getFrame" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get a frame from the camera and extract the channels we want,
-putting them into ds.</p>
-</dd></dl>
+<tt class="descname">getFrame</tt><big>(</big><em>colours=None</em><big>)</big><a class="headerlink" href="#PYME.Acquire.previewaquisator.PreviewAquisator.getFrame" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="PYME.Acquire.previewaquisator.PreviewAquisator.getNextDsSlice">
@@ -2140,6 +2110,12 @@ looppos inticates which hardware (shutter) channel we&#8217;re currently on</p>
 <dd><p>Stop sequence aquisition</p>
 </dd></dl>
 
+</dd></dl>
+
+<dl class="class">
+<dt id="PYME.Acquire.previewaquisator.dsFake">
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.previewaquisator.</tt><tt class="descname">dsFake</tt><big>(</big><em>width</em>, <em>height</em>, <em>length</em>, <em>nChans</em><big>)</big><a class="headerlink" href="#PYME.Acquire.previewaquisator.dsFake" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
 </dd></dl>
 
 <span class="target" id="module-PYME.Acquire.prevviewer"></span><dl class="class">
@@ -2380,7 +2356,7 @@ looppos inticates which hardware (shutter) channel we&#8217;re currently on</p>
 </ul>
 </li>
 <li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#pyme-acquire-hardware-simulator-rend-im-module">PYME.Acquire.Hardware.Simulator.rend_im module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#pyme-acquire-hardware-simulator-setup-module">PYME.Acquire.Hardware.Simulator.setup module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator.setup">PYME.Acquire.Hardware.Simulator.setup module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator.wormlike">PYME.Acquire.Hardware.Simulator.wormlike module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator.wormlike2">PYME.Acquire.Hardware.Simulator.wormlike2 module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator.wormlike_curled">PYME.Acquire.Hardware.Simulator.wormlike_curled module</a></li>

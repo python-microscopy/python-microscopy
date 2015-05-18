@@ -11,7 +11,7 @@
  */
 
 #include "Python.h"
-#include <complex.h>
+//#include <complex.h>
 #include <math.h>
 #include "numpy/arrayobject.h"
 #include <stdio.h>
@@ -566,11 +566,11 @@ static PyObject * drawTetrahedra(PyObject *self, PyObject *args, PyObject *keywd
 
 
 static PyMethodDef triRendMethods[] = {
-    {"drawTriang",  drawTriang, METH_VARARGS | METH_KEYWORDS,
+    {"drawTriang",  (PyCFunction)drawTriang, METH_VARARGS | METH_KEYWORDS,
     ""},
-    {"drawTriangles",  drawTriangles, METH_VARARGS | METH_KEYWORDS,
+    {"drawTriangles",  (PyCFunction)drawTriangles, METH_VARARGS | METH_KEYWORDS,
     ""},
-    {"drawTetrahedra",  drawTetrahedra, METH_VARARGS | METH_KEYWORDS,
+    {"drawTetrahedra",  (PyCFunction)drawTetrahedra, METH_VARARGS | METH_KEYWORDS,
     ""},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };

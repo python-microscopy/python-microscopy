@@ -21,7 +21,7 @@
 #
 ################
 from PYME.DSView import View3D
-from PYME import cSMI
+#from PYME import cSMI
 import numpy as np
 #from PYME.Acquire import eventLog
 from math import floor

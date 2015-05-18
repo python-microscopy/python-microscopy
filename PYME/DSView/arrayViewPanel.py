@@ -88,6 +88,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         self.pointTolNFoc = {'confoc' : (5,5,5), 'lm' : (2, 5, 5), 'splitter' : (2,5,5)}
         self.showAdjacentPoints = False
         self.pointSize = 11
+        self.layerMode = 'Add'
 
         self.psfROIs = []
         self.psfROISize=[30,30,30]
@@ -1065,7 +1066,10 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                             applyLUT(seg, gain, offset, lut, ima)
 
                 else:
-                    ima[:] = numpy.minimum(ima[:] + (255*cmap(gain*(self.do.ds[x0_:(x0_+sX_):step,y0_:(y0_+sY_):step,int(self.do.zp), chan].squeeze().T - offset))[:,:,:3])[:], 255)
+                    if self.layerMode == 'mult':
+                        ima[:] = numpy.minimum(ima[:]*(cmap(gain*(self.do.ds[x0_:(x0_+sX_):step,y0_:(y0_+sY_):step,int(self.do.zp), chan].squeeze().T - offset))[:,:,:3])[:], 255)
+                    else:
+                        ima[:] = numpy.minimum(ima[:] + (255*cmap(gain*(self.do.ds[x0_:(x0_+sX_):step,y0_:(y0_+sY_):step,int(self.do.zp), chan].squeeze().T - offset))[:,:,:3])[:], 255)
         #XZ
         elif self.do.slice == DisplayOpts.SLICE_XZ:
             ima = numpy.zeros((numpy.ceil(min(sY_, self.do.ds.shape[2])/fstep), numpy.ceil(min(sX_, self.do.ds.shape[0])/fstep), 3), 'uint8')

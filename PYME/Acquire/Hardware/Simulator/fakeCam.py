@@ -22,7 +22,7 @@
 ##################
 
 from . import rend_im
-import PYME.cSMI as example
+#import PYME.cSMI as example
 import scipy
 
 from PYME.Acquire import MetaDataHandler
@@ -37,9 +37,9 @@ import time
 from PYME.Acquire.Hardware import EMCCDTheory
 from PYME.Acquire.Hardware import ccdCalibrator
 
-class CDataStack(example.CDataStack):
-    def getCurrentChannelSlice(self, curMemChn):
-        return example.CDataStack_AsArray(self, curMemChn)[:,:,self.getZPos()]
+#class CDataStack(example.CDataStack):
+#    def getCurrentChannelSlice(self, curMemChn):
+#        return example.CDataStack_AsArray(self, curMemChn)[:,:,self.getZPos()]
 
 class NoiseMaker:
     def __init__(self, QE=.8, ADGain=27.32, readoutNoise=109.8, EMGain=0, background=0., floor=967, shutterOpen = True, numGainElements=536, vbreakdown=6.6, temperature = -70.):

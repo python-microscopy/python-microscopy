@@ -104,10 +104,7 @@ class Unmixer:
 
         self.image = dsviewer.image 
         
-
-        EXTRAS_UNMUX = wx.NewId()
-        dsviewer.mProcessing.Append(EXTRAS_UNMUX, "&Unmix", "", wx.ITEM_NORMAL)
-        wx.EVT_MENU(dsviewer, EXTRAS_UNMUX, self.OnUnmix)
+        dsviewer.AddMenuItem('Processing', "&Unmix", self.OnUnmix)
 
     def OnUnmix(self, event):
         #from PYME.Analysis import deTile

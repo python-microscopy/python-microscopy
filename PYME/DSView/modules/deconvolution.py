@@ -43,24 +43,11 @@ class deconvolver:
 
         self.image = dsviewer.image
         self.tq = None
-
-        DECONV_ICTM = wx.NewId()
-        DECONV_BEAD = wx.NewId()
-        DECONV_WIENER = wx.NewId()
-        DECONV_MOVIE = wx.NewId()
-        dsviewer.mProcessing.Append(DECONV_ICTM, "Deconvolution", "", wx.ITEM_NORMAL)
-        dsviewer.mProcessing.Append(DECONV_BEAD, "Deconvolve bead shape", "", wx.ITEM_NORMAL)
-        dsviewer.mProcessing.Append(DECONV_MOVIE, "Deconvolve movie (2D)", "", wx.ITEM_NORMAL)
-        dsviewer.mProcessing.Append(DECONV_WIENER, "Wiener Deconvolution", "", wx.ITEM_NORMAL)
-        #mDeconvolution.AppendSeparator()
-        #dsviewer.save_menu.Append(DECONV_SAVE, "Deconvolution", "", wx.ITEM_NORMAL)
-        #self.menubar.Append(mDeconvolution, "Deconvolution")
-
-        wx.EVT_MENU(dsviewer, DECONV_ICTM, self.OnDeconvICTM)
-        wx.EVT_MENU(dsviewer, DECONV_BEAD, self.OnDeconvBead)
-        wx.EVT_MENU(dsviewer, DECONV_WIENER, self.OnDeconvWiener)
-        wx.EVT_MENU(dsviewer, DECONV_MOVIE, self.OnDeconvMovie)
-        #wx.EVT_MENU(dsviewer, DECONV_SAVE, self.saveDeconvolution)
+        
+        dsviewer.AddMenuItem("Processing", "Deconvolution", self.OnDeconvICTM)
+        dsviewer.AddMenuItem("Processing", "Deconvole bead shape", self.OnDeconvBead)
+        dsviewer.AddMenuItem("Processing", "Weiner Deconvolution", self.OnDeconvWiener)
+        dsviewer.AddMenuItem("Processing", "Deconvolve movie (2D)", self.OnDeconvMovie)
 
         dsviewer.updateHooks.append(self.update)
         

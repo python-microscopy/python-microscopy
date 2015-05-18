@@ -29,9 +29,7 @@ class tiler:
 
         self.image = dsviewer.image
 
-        EXTRAS_TILE = wx.NewId()
-        dsviewer.mProcessing.Append(EXTRAS_TILE, "&Tiling", "", wx.ITEM_NORMAL)
-        wx.EVT_MENU(dsviewer, EXTRAS_TILE, self.OnTile)
+        dsviewer.AddMenuItem('Processing', "&Tiling", self.OnTile)
 
     def OnTile(self, event):
         from PYME.Analysis import deTile

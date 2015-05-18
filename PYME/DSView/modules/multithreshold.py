@@ -37,10 +37,8 @@ class mthresholder:
         self.do = dsviewer.do
         self.image = dsviewer.image
 
-        TRANGE = wx.NewId()
-        dsviewer.mProcessing.Append(TRANGE, "Object # vs threshold", "", wx.ITEM_NORMAL)
         
-        dsviewer.Bind(wx.EVT_MENU, self.OnPlotProfile, id=TRANGE)
+        dsviewer.AddMenuItem('Processing', "Object # vs threshold", self.OnPlotProfile)
         
         
         #accel_tbl = wx.AcceleratorTable([(wx.ACCEL_CTRL,  ord('k'), PLOT_PROFILE )])

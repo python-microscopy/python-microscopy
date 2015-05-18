@@ -30,22 +30,11 @@ class visualiser:
 
         self.image = dsviewer.image
         self.tq = None
-
-        td_menu = wx.Menu()
-
-        VIEW_ISOSURFACE = wx.NewId()
-        VIEW_VOLUME = wx.NewId()
-        SAVE_STL = wx.NewId()
         
-        td_menu.Append(VIEW_ISOSURFACE, "3D Isosurface", "", wx.ITEM_NORMAL)
-        td_menu.Append(VIEW_VOLUME, "3D Volume", "", wx.ITEM_NORMAL)
-        td_menu.Append(SAVE_STL, "Save Isosurface as STL", "", wx.ITEM_NORMAL)
-
-        dsviewer.menubar.Insert(dsviewer.menubar.GetMenuCount()-1, td_menu, '&3D')
-
-        wx.EVT_MENU(dsviewer, VIEW_ISOSURFACE, self.On3DIsosurf)
-        wx.EVT_MENU(dsviewer, VIEW_VOLUME, self.On3DVolume)
-        wx.EVT_MENU(dsviewer, SAVE_STL, self.save_stl)
+        dsviewer.AddMenuItem('&3D', '3D Isosurface', self.On3DIsosurf)
+        dsviewer.AddMenuItem('&3D', '3D Volume', self.On3DVolume)
+        dsviewer.AddMenuItem('&3D', 'Save Isosurface as STL', self.save_stl)
+        
 
 
     def On3DIsosurf(self, event):

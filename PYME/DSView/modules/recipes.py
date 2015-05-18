@@ -245,31 +245,36 @@ class Recipes:
         
         self.cannedIDs = {}
         
-        self.mRecipes = wx.Menu()
+#        self.mRecipes = wx.Menu()
+#        
+#        LOAD_RECIPE = wx.NewId()
+#        RUN_CURRENT = wx.NewId()
+#        
+#        
+#        self.mRecipes.Append(LOAD_RECIPE, "Load Recipe", "", wx.ITEM_NORMAL)
+#        self.mICurrent = self.mRecipes.Append(RUN_CURRENT, "Run Current Recipe\tF5", "", wx.ITEM_NORMAL)
+#    
+#        wx.EVT_MENU(dsviewer, LOAD_RECIPE, self.OnLoadRecipe)
+#        wx.EVT_MENU(dsviewer, RUN_CURRENT, self.RunCurrentRecipe)
         
-        LOAD_RECIPE = wx.NewId()
-        RUN_CURRENT = wx.NewId()
-        
-        
-        self.mRecipes.Append(LOAD_RECIPE, "Load Recipe", "", wx.ITEM_NORMAL)
-        self.mICurrent = self.mRecipes.Append(RUN_CURRENT, "Run Current Recipe\tF5", "", wx.ITEM_NORMAL)
-    
-        wx.EVT_MENU(dsviewer, LOAD_RECIPE, self.OnLoadRecipe)
-        wx.EVT_MENU(dsviewer, RUN_CURRENT, self.RunCurrentRecipe)
+        dsviewer.AddMenuItem('Recipes', "Load Recipe", self.OnLoadRecipe)
+        self.mICurrent = dsviewer.AddMenuItem('Recipes', "Run Current Recipe\tF5", self.RunCurrentRecipe)
         
         #print CANNED_RECIPES
         
         if len(CANNED_RECIPES) > 0:
-            self.mRecipes.AppendSeparator()
+            dsviewer.AddMenuItem('Recipes', '', itemType='separator')
+            #self.mRecipes.AppendSeparator()
             
             for r in CANNED_RECIPES:
                 #print r, 
-                ID = wx.NewId()
+                ID = dsviewer.AddMenuItem('Recipes', os.path.split(r)[1], self.OnRunCanned).GetId()
+                #ID = wx.NewId()
                 self.cannedIDs[ID] = r
-                self.mRecipes.Append(ID, os.path.split(r)[1],"",  wx.ITEM_NORMAL)
-                wx.EVT_MENU(dsviewer, ID, self.OnRunCanned)
+                #self.mRecipes.Append(ID, os.path.split(r)[1],"",  wx.ITEM_NORMAL)
+                #wx.EVT_MENU(dsviewer, ID, self.OnRunCanned)
             
-        dsviewer.menubar.Append(self.mRecipes, "Recipes")
+        #dsviewer.menubar.Append(self.mRecipes, "Recipes")
             
         self.recipeView = RecipeView(dsviewer, self)
         dsviewer.AddPage(page=self.recipeView, select=False, caption='Recipe')

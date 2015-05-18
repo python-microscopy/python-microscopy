@@ -32,7 +32,8 @@ from PYME.Acquire import MetaDataHandler
 import numpy as np
 import scipy.special
 import os
-#from PYME.Analysis.BleachProfile.kinModels import getPhotonNums
+
+from PYME.Analysis.BleachProfile.kinModels import getPhotonNums
 
 
 class Pipeline:
@@ -250,7 +251,7 @@ class Pipeline:
         
         self.filename = filename
         
-        if not ds == None:
+        if not ds is None:
             self.selectedDataSource = ds
             self.dataSources.append(ds)
         elif os.path.splitext(filename)[1] == '.h5r':
@@ -385,8 +386,16 @@ class Pipeline:
         if 'Analysis.FitModule' in self.mdh.getEntryNames():
             fitModule = self.mdh['Analysis.FitModule']
             
+            print 'fitModule = %s' % fitModule
+            
             if 'Interp' in fitModule:
                 self.filterKeys['A'] = (5, 100000)
+                
+            
+            if 'LatGaussFitFR' in fitModule:
+                self.selectedDataSource.nPhot = getPhotonNums(self.selectedDataSource, self.mdh)
+                self.selectedDataSource.setMapping('nPhotons', 'nPhot')
+                
                 
             if fitModule == 'SplitterShiftEstFR':
                 self.filterKeys['fitError_dx'] = (0,10)
@@ -513,6 +522,15 @@ class Pipeline:
             of.write('\t'.join(['%e' % c for c in row]) + '\n')
     
         of.close()
+        
+    def toDataFrame(self, keys=None):
+        import pandas as pd
+        if keys == None:
+            keys = self.keys()
+        
+        d = {k: self[k] for k in keys}
+        
+        return pd.DataFrame(d)
     
 
 

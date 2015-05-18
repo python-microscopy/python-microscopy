@@ -26,15 +26,9 @@ from PYME.DSView.arrayViewPanel import ArrayViewPanel
 class visGuiExtras:
     def __init__(self, dsviewer):
         self.dsviewer = dsviewer
-
-        ID_EXPORT_VIEW = wx.NewId()
-        ID_VIEW_BACKGROUND = wx.NewId()
-
-        dsviewer.view_menu.Append(ID_EXPORT_VIEW, "E&xport Current View")
-        dsviewer.view_menu.Append(ID_VIEW_BACKGROUND, "Set as visualisation &background")
-
-        dsviewer.Bind(wx.EVT_MENU, self.OnExport, id=ID_EXPORT_VIEW)
-        dsviewer.Bind(wx.EVT_MENU, self.OnViewBackground, id=ID_VIEW_BACKGROUND)
+        
+        dsviewer.AddMenuItem("View", "E&xport Current View", self.OnExport)
+        dsviewer.AddMenuItem("View", "Set as visualisation &background", self.OnViewBackground)
 
     def OnViewBackground(self, event):
         ivp = self.dsviewer.GetSelectedPage() #self.notebook.GetPage(self.notebook.GetSelection())
