@@ -24,7 +24,7 @@ import wx
 from PYME.DSView.OverlaysPanel import OverlayPanel
 import wx.lib.agw.aui as aui
 
-from PYME.Analysis.Modules import filters
+from PYME.Analysis.Modules import modules
 import pylab
 from PYME.DSView.image import ImageStack
 from PYME.DSView import ViewIm3D
@@ -38,7 +38,7 @@ from traitsui.api import Controller
 import os
 import glob
 
-RECIPE_DIR = os.path.join(os.path.split(filters.__file__)[0], 'Recipes')
+RECIPE_DIR = os.path.join(os.path.split(modules.__file__)[0], 'Recipes')
 CANNED_RECIPES = glob.glob(os.path.join(RECIPE_DIR, '*.yaml'))
 
 
@@ -190,8 +190,9 @@ class RecipeView(wx.Panel):
         self.recipes.LoadRecipeText('')
         
     def OnAddModule(self, event):
-        mods = [c for c in filters.__dict__.values() if filters._issubclass(c, filters.ModuleBase) and not c == filters.ModuleBase]
-        modNames = [c.__name__ for c in mods]        
+        #mods = 
+        mods = modules.base.all_modules
+        modNames = mods.keys()        
         
         dlg = wx.SingleChoiceDialog(
                 self, 'Select module to add', 'Add a module',
@@ -202,7 +203,7 @@ class RecipeView(wx.Panel):
         if dlg.ShowModal() == wx.ID_OK:
             modName = dlg.GetStringSelection()
             
-            c = mods[modNames.index(modName)]()
+            c = mods[modName]()
             self.recipes.activeRecipe.modules.append(c)
         dlg.Destroy()
         
@@ -245,6 +246,8 @@ class Recipes:
         
         self.cannedIDs = {}
         
+        
+        
 #        self.mRecipes = wx.Menu()
 #        
 #        LOAD_RECIPE = wx.NewId()
@@ -278,6 +281,7 @@ class Recipes:
             
         self.recipeView = RecipeView(dsviewer, self)
         dsviewer.AddPage(page=self.recipeView, select=False, caption='Recipe')
+        self.LoadRecipeText('')
         
         
 
@@ -311,7 +315,7 @@ class Recipes:
             
     def LoadRecipeText(self, s, filename=''):
         self.currentFilename  = filename
-        self.activeRecipe = filters.ModuleCollection.fromYAML(s)
+        self.activeRecipe = modules.ModuleCollection.fromYAML(s)
         self.mICurrent.SetItemLabel('Run %s\tF5' % os.path.split(filename)[1])
         self.recipeView.update()
     
