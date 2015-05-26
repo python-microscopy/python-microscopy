@@ -217,7 +217,7 @@ class SampleInfoDialog(wx.Dialog):
     def OnAddSlide(self, event):
         import webbrowser
         import os
-        host = 'phy-lmsrv1:8080'
+        host = 'phy-lmsrv2'
         if 'PYME_DATABASE_HOST' in os.environ.keys():
             host = os.environ['PYME_DATABASE_HOST']
             

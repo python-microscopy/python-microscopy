@@ -24,7 +24,7 @@
 # Create your views here.
 from django.shortcuts import render_to_response, get_object_or_404
 from django.http import HttpResponseRedirect, HttpResponse
-from SampleDB.samples.models import *
+from samples.models import *
 from django.http import Http404
 from django import forms
 from django.template import RequestContext
