@@ -104,8 +104,8 @@ class CameraInfoManager(object):
         '''Extract ROI coordinates from metadata'''
         x0 = (md['Camera.ROIPosX'] - 1)
         y0 = (md['Camera.ROIPosY'] - 1)
-        x1 = x0 + md['ROIWidth']
-        y1 = y0 + md['ROIHeight']
+        x1 = x0 + md['Camera.ROIWidth']
+        y1 = y0 + md['Camera.ROIHeight']
 
         return x0, y0, x1, y1
 
@@ -390,7 +390,7 @@ class fitTask(taskDef.Task):
         # Find candidate molecule positions
         bgd = (self.data.astype('f') - self.bg)
         
-        print bgd.shape, self.calcThreshold().shape
+        #print bgd.shape, self.calcThreshold().shape
 
         if 'Splitter.TransmittedChannel' in self.md.getEntryNames():
             #don't find points in transmitted light channel
@@ -474,7 +474,7 @@ class fitTask(taskDef.Task):
 
 
     def calcSigma(self, md, data):
-        var = cameraMaps.getVarianceMap(md)
+        var = np.atleast_3d(cameraMaps.getVarianceMap(md))
         return np.sqrt(var + (md.Camera.NoiseFactor**2)*(md.Camera.ElectronsPerCount*md.Camera.TrueEMGain*np.maximum(data, 1) + md.Camera.TrueEMGain*md.Camera.TrueEMGain))/md.Camera.ElectronsPerCount    
     
     def calcThreshold(self):
