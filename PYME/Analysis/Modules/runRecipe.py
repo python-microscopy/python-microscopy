@@ -6,7 +6,7 @@ Created on Fri May  8 10:07:57 2015
 @author: david
 """
 import matplotlib
-from PYME.Analysis.Modules import filters
+from PYME.Analysis.Modules import modules
 from argparse import ArgumentParser
 from PYME.DSView.image import ImageStack
 import pandas as pd
@@ -35,9 +35,9 @@ def saveOutput(output, filename):
     '''Save an output variable, inferring type from the file extension'''
     if isinstance(output, ImageStack):
         try:
-            output.save(filename)
+            output.Save(filename)
         except RuntimeError:
-            output.save(filename + '.tif')
+            output.Save(filename + '.tif')
     elif isinstance(output, pd.DataFrame):
         saveDataFrame(output, filename)
     elif 'toDataFrame' in dir(output):
@@ -86,7 +86,7 @@ def main():
     with open(args.recipe) as f:
         s = f.read()
         
-    recipe = filters.ModuleCollection.fromYAML(s)
+    recipe = modules.ModuleCollection.fromYAML(s)
     
     #create a new parser to parse input and output filenames
     op = ArgumentParser()

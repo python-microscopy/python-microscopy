@@ -113,7 +113,7 @@ class MyFrame(wx.Frame):
         self.bRemove = wx.Button(self, -1, 'Remove selected Queue(s)')        
         self.bRemove.Bind(wx.EVT_BUTTON, self.OnBRemove)
         hsizer.Add(self.bRemove, 1, wx.ALL, 2)
-        sizer_1.Add(hsizer, 1, wx.EXPAND, 0)
+        sizer_1.Add(hsizer, 0, wx.EXPAND, 0)
         self.SetSizer(sizer_1)
         sizer_1.Fit(self)
         self.Layout()
