@@ -9,7 +9,7 @@ import matplotlib
 matplotlib.use('Cairo')
 
 from PYME.Analysis.Modules import runRecipe
-from PYME.Analysis.Modules import filters
+from PYME.Analysis.Modules import modules
 import os
 import glob
 from argparse import ArgumentParser
@@ -34,7 +34,7 @@ def main():
     with open(args.recipe) as f:
         s = f.read()
         
-    recipe = filters.ModuleCollection.fromYAML(s)
+    recipe = modules.ModuleCollection.fromYAML(s)
 
     output_dir = args.output_dir
     num_procs = args.num_processes
