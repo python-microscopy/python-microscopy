@@ -429,7 +429,7 @@ easily parsed.</p>
 
 <dl class="class">
 <dt id="PYME.Acquire.Spooler.Spooler">
-<em class="property">class </em><tt class="descclassname">PYME.Acquire.Spooler.</tt><tt class="descname">Spooler</tt><big>(</big><em>scope</em>, <em>filename</em>, <em>acquisator</em>, <em>protocol=&lt;PYME.Acquire.protocol.Protocol instance at 0x2ade761e4488&gt;</em>, <em>parent=None</em><big>)</big><a class="headerlink" href="#PYME.Acquire.Spooler.Spooler" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.Spooler.</tt><tt class="descname">Spooler</tt><big>(</big><em>scope</em>, <em>filename</em>, <em>acquisator</em>, <em>protocol=&lt;PYME.Acquire.protocol.Protocol instance at 0x10858e998&gt;</em>, <em>parent=None</em><big>)</big><a class="headerlink" href="#PYME.Acquire.Spooler.Spooler" title="Permalink to this definition">¶</a></dt>
 <dd><p>Spooler base class</p>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
@@ -554,7 +554,7 @@ easily parsed.</p>
 
 <dl class="class">
 <dt id="PYME.Acquire.HDFSpooler.Spooler">
-<em class="property">class </em><tt class="descclassname">PYME.Acquire.HDFSpooler.</tt><tt class="descname">Spooler</tt><big>(</big><em>scope</em>, <em>filename</em>, <em>acquisator</em>, <em>protocol=&lt;PYME.Acquire.protocol.Protocol instance at 0x2ade761e4488&gt;</em>, <em>parent=None</em>, <em>complevel=6</em>, <em>complib='zlib'</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpooler.Spooler" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.HDFSpooler.</tt><tt class="descname">Spooler</tt><big>(</big><em>scope</em>, <em>filename</em>, <em>acquisator</em>, <em>protocol=&lt;PYME.Acquire.protocol.Protocol instance at 0x10858e998&gt;</em>, <em>parent=None</em>, <em>complevel=6</em>, <em>complib='zlib'</em><big>)</big><a class="headerlink" href="#PYME.Acquire.HDFSpooler.Spooler" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#PYME.Acquire.Spooler.Spooler" title="PYME.Acquire.Spooler.Spooler"><tt class="xref py py-class docutils literal"><span class="pre">PYME.Acquire.Spooler.Spooler</span></tt></a></p>
 <p>Responsible for the mechanics of spooling to a pytables/hdf file.</p>
 <p class="rubric">Methods</p>
@@ -625,7 +625,7 @@ easily parsed.</p>
 
 <dl class="class">
 <dt id="PYME.Acquire.QueueSpooler.Spooler">
-<em class="property">class </em><tt class="descclassname">PYME.Acquire.QueueSpooler.</tt><tt class="descname">Spooler</tt><big>(</big><em>scope</em>, <em>filename</em>, <em>acquisator</em>, <em>protocol=&lt;PYME.Acquire.protocol.Protocol instance at 0x2ade761e4488&gt;</em>, <em>parent=None</em>, <em>complevel=2</em>, <em>complib='zlib'</em><big>)</big><a class="headerlink" href="#PYME.Acquire.QueueSpooler.Spooler" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.QueueSpooler.</tt><tt class="descname">Spooler</tt><big>(</big><em>scope</em>, <em>filename</em>, <em>acquisator</em>, <em>protocol=&lt;PYME.Acquire.protocol.Protocol instance at 0x10858e998&gt;</em>, <em>parent=None</em>, <em>complevel=2</em>, <em>complib='zlib'</em><big>)</big><a class="headerlink" href="#PYME.Acquire.QueueSpooler.Spooler" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#PYME.Acquire.Spooler.Spooler" title="PYME.Acquire.Spooler.Spooler"><tt class="xref py py-class docutils literal"><span class="pre">PYME.Acquire.Spooler.Spooler</span></tt></a></p>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
@@ -881,7 +881,7 @@ easily parsed.</p>
 
 <dl class="class">
 <dt id="PYME.Acquire.protocol.TaskListProtocol">
-<em class="property">class </em><tt class="descclassname">PYME.Acquire.protocol.</tt><tt class="descname">TaskListProtocol</tt><big>(</big><em>taskList</em>, <em>metadataEntries=</em>, <span class="optional">[</span><span class="optional">]</span><em>preflightList=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="headerlink" href="#PYME.Acquire.protocol.TaskListProtocol" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.protocol.</tt><tt class="descname">TaskListProtocol</tt><big>(</big><em>taskList</em>, <em>metadataEntries=[]</em>, <em>preflightList=[]</em><big>)</big><a class="headerlink" href="#PYME.Acquire.protocol.TaskListProtocol" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#PYME.Acquire.protocol.Protocol" title="PYME.Acquire.protocol.Protocol"><tt class="xref py py-class docutils literal"><span class="pre">PYME.Acquire.protocol.Protocol</span></tt></a></p>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
@@ -933,7 +933,7 @@ easily parsed.</p>
 
 <dl class="class">
 <dt id="PYME.Acquire.protocol.ZStackTaskListProtocol">
-<em class="property">class </em><tt class="descclassname">PYME.Acquire.protocol.</tt><tt class="descname">ZStackTaskListProtocol</tt><big>(</big><em>taskList</em>, <em>startFrame</em>, <em>dwellTime</em>, <em>metadataEntries=</em>, <span class="optional">[</span><span class="optional">]</span><em>preflightList=</em>, <span class="optional">[</span><span class="optional">]</span><em>randomise=False</em><big>)</big><a class="headerlink" href="#PYME.Acquire.protocol.ZStackTaskListProtocol" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">PYME.Acquire.protocol.</tt><tt class="descname">ZStackTaskListProtocol</tt><big>(</big><em>taskList</em>, <em>startFrame</em>, <em>dwellTime</em>, <em>metadataEntries=[]</em>, <em>preflightList=[]</em>, <em>randomise=False</em><big>)</big><a class="headerlink" href="#PYME.Acquire.protocol.ZStackTaskListProtocol" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#PYME.Acquire.protocol.TaskListProtocol" title="PYME.Acquire.protocol.TaskListProtocol"><tt class="xref py py-class docutils literal"><span class="pre">PYME.Acquire.protocol.TaskListProtocol</span></tt></a></p>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
@@ -1588,41 +1588,47 @@ or &#8216;ABCDEFGHIJK&#8217; (non-numeric base 11)</p>
 <tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Connect</span></tt>(self,&nbsp;int&nbsp;id,&nbsp;int&nbsp;lastId,&nbsp;...)</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Destroy</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">DeletePendingEvents</span></tt>(self)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Destroy</span></tt>()</td>
 <td>NO-OP: Timers must be destroyed by normal reference counting</td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Disconnect</span></tt>(*args,&nbsp;**kwargs)</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Disconnect</span></tt>(*args,&nbsp;**kwargs)</td>
 <td>Disconnect(self, int id, int lastId=-1, EventType eventType=wxEVT_NULL,</td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetClassName</span></tt>((self)&nbsp;-&gt;&nbsp;String)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetClassName</span></tt>((self)&nbsp;-&gt;&nbsp;String)</td>
 <td>Returns the class name of the C++ class using wxRTTI.</td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetEvtHandlerEnabled</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetEvtHandlerEnabled</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetId</span></tt>((self)&nbsp;-&gt;&nbsp;int)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetId</span></tt>((self)&nbsp;-&gt;&nbsp;int)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetInterval</span></tt>((self)&nbsp;-&gt;&nbsp;int)</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetInterval</span></tt>((self)&nbsp;-&gt;&nbsp;int)</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetNextHandler</span></tt>((self)&nbsp;-&gt;&nbsp;EvtHandler)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetNextHandler</span></tt>((self)&nbsp;-&gt;&nbsp;EvtHandler)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetOwner</span></tt>((self)&nbsp;-&gt;&nbsp;EvtHandler)</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetOwner</span></tt>((self)&nbsp;-&gt;&nbsp;EvtHandler)</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetPreviousHandler</span></tt>((self)&nbsp;-&gt;&nbsp;EvtHandler)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetPreviousHandler</span></tt>((self)&nbsp;-&gt;&nbsp;EvtHandler)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsOneShot</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsOneShot</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsRunning</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsRunning</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsSameAs</span></tt>((self,&nbsp;Object&nbsp;p)&nbsp;-&gt;&nbsp;bool)</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsSameAs</span></tt>((self,&nbsp;Object&nbsp;p)&nbsp;-&gt;&nbsp;bool)</td>
 <td>For wx.Objects that use C++ reference counting internally, this method can be used to determine if two objects are referencing the same data object.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsUnlinked</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
+<td></td>
 </tr>
 <tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.mytimer.mytimer.Notify" title="PYME.Acquire.mytimer.mytimer.Notify"><tt class="xref py py-obj docutils literal"><span class="pre">Notify</span></tt></a>()</td>
 <td></td>
@@ -1630,29 +1636,41 @@ or &#8216;ABCDEFGHIJK&#8217; (non-numeric base 11)</p>
 <tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">ProcessEvent</span></tt>((self,&nbsp;Event&nbsp;event)&nbsp;-&gt;&nbsp;bool)</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">ProcessPendingEvents</span></tt>(self)</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">ProcessEventLocally</span></tt>((self,&nbsp;Event&nbsp;event)&nbsp;-&gt;&nbsp;bool)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetEvtHandlerEnabled</span></tt>(self,&nbsp;bool&nbsp;enabled)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">ProcessPendingEvents</span></tt>(self)</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetNextHandler</span></tt>(self,&nbsp;EvtHandler&nbsp;handler)</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">QueueEvent</span></tt>(self,&nbsp;Event&nbsp;event)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetOwner</span></tt>(self,&nbsp;EvtHandler&nbsp;owner,&nbsp;int&nbsp;id=ID_ANY)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SafelyProcessEvent</span></tt>((self,&nbsp;Event&nbsp;event)&nbsp;-&gt;&nbsp;bool)</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetPreviousHandler</span></tt>(self,&nbsp;EvtHandler&nbsp;handler)</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetEvtHandlerEnabled</span></tt>(self,&nbsp;bool&nbsp;enabled)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Start</span></tt>((self,&nbsp;int&nbsp;milliseconds=-1,&nbsp;...)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetNextHandler</span></tt>(self,&nbsp;EvtHandler&nbsp;handler)</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Stop</span></tt>(self)</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetOwner</span></tt>(self,&nbsp;EvtHandler&nbsp;owner,&nbsp;int&nbsp;id=ID_ANY)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Unbind</span></tt>(event[,&nbsp;source,&nbsp;id,&nbsp;id2,&nbsp;handler])</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetPreviousHandler</span></tt>(self,&nbsp;EvtHandler&nbsp;handler)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Start</span></tt>((self,&nbsp;int&nbsp;milliseconds=-1,&nbsp;...)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Stop</span></tt>(self)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Unbind</span></tt>(event[,&nbsp;source,&nbsp;id,&nbsp;id2,&nbsp;handler])</td>
 <td>Disconnects the event handler binding for event from self.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Unlink</span></tt>(self)</td>
+<td></td>
 </tr>
 </tbody>
 </table>
@@ -1852,44 +1870,50 @@ or &#8216;ABCDEFGHIJK&#8217; (non-numeric base 11)</p>
 <tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Connect</span></tt>(self,&nbsp;int&nbsp;id,&nbsp;int&nbsp;lastId,&nbsp;...)</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Destroy</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">DeletePendingEvents</span></tt>(self)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Destroy</span></tt>()</td>
 <td>NO-OP: Timers must be destroyed by normal reference counting</td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Disconnect</span></tt>(*args,&nbsp;**kwargs)</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Disconnect</span></tt>(*args,&nbsp;**kwargs)</td>
 <td>Disconnect(self, int id, int lastId=-1, EventType eventType=wxEVT_NULL,</td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetClassName</span></tt>((self)&nbsp;-&gt;&nbsp;String)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetClassName</span></tt>((self)&nbsp;-&gt;&nbsp;String)</td>
 <td>Returns the class name of the C++ class using wxRTTI.</td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetEvtHandlerEnabled</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetEvtHandlerEnabled</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetId</span></tt>((self)&nbsp;-&gt;&nbsp;int)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetId</span></tt>((self)&nbsp;-&gt;&nbsp;int)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetInterval</span></tt>((self)&nbsp;-&gt;&nbsp;int)</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetInterval</span></tt>((self)&nbsp;-&gt;&nbsp;int)</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetNextHandler</span></tt>((self)&nbsp;-&gt;&nbsp;EvtHandler)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetNextHandler</span></tt>((self)&nbsp;-&gt;&nbsp;EvtHandler)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetOwner</span></tt>((self)&nbsp;-&gt;&nbsp;EvtHandler)</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetOwner</span></tt>((self)&nbsp;-&gt;&nbsp;EvtHandler)</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetPreviousHandler</span></tt>((self)&nbsp;-&gt;&nbsp;EvtHandler)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">GetPreviousHandler</span></tt>((self)&nbsp;-&gt;&nbsp;EvtHandler)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.previewaquisator.PreviewAquisator.GetSeqLength" title="PYME.Acquire.previewaquisator.PreviewAquisator.GetSeqLength"><tt class="xref py py-obj docutils literal"><span class="pre">GetSeqLength</span></tt></a>()</td>
+<tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.previewaquisator.PreviewAquisator.GetSeqLength" title="PYME.Acquire.previewaquisator.PreviewAquisator.GetSeqLength"><tt class="xref py py-obj docutils literal"><span class="pre">GetSeqLength</span></tt></a>()</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsOneShot</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsOneShot</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsRunning</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsRunning</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsSameAs</span></tt>((self,&nbsp;Object&nbsp;p)&nbsp;-&gt;&nbsp;bool)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsSameAs</span></tt>((self,&nbsp;Object&nbsp;p)&nbsp;-&gt;&nbsp;bool)</td>
 <td>For wx.Objects that use C++ reference counting internally, this method can be used to determine if two objects are referencing the same data object.</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">IsUnlinked</span></tt>((self)&nbsp;-&gt;&nbsp;bool)</td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><a class="reference internal" href="#PYME.Acquire.previewaquisator.PreviewAquisator.Notify" title="PYME.Acquire.previewaquisator.PreviewAquisator.Notify"><tt class="xref py py-obj docutils literal"><span class="pre">Notify</span></tt></a>()</td>
 <td></td>
@@ -1900,29 +1924,41 @@ or &#8216;ABCDEFGHIJK&#8217; (non-numeric base 11)</p>
 <tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">ProcessEvent</span></tt>((self,&nbsp;Event&nbsp;event)&nbsp;-&gt;&nbsp;bool)</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">ProcessPendingEvents</span></tt>(self)</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">ProcessEventLocally</span></tt>((self,&nbsp;Event&nbsp;event)&nbsp;-&gt;&nbsp;bool)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetEvtHandlerEnabled</span></tt>(self,&nbsp;bool&nbsp;enabled)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">ProcessPendingEvents</span></tt>(self)</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetNextHandler</span></tt>(self,&nbsp;EvtHandler&nbsp;handler)</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">QueueEvent</span></tt>(self,&nbsp;Event&nbsp;event)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetOwner</span></tt>(self,&nbsp;EvtHandler&nbsp;owner,&nbsp;int&nbsp;id=ID_ANY)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SafelyProcessEvent</span></tt>((self,&nbsp;Event&nbsp;event)&nbsp;-&gt;&nbsp;bool)</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetPreviousHandler</span></tt>(self,&nbsp;EvtHandler&nbsp;handler)</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetEvtHandlerEnabled</span></tt>(self,&nbsp;bool&nbsp;enabled)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Start</span></tt>((self,&nbsp;int&nbsp;milliseconds=-1,&nbsp;...)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetNextHandler</span></tt>(self,&nbsp;EvtHandler&nbsp;handler)</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Stop</span></tt>(self)</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetOwner</span></tt>(self,&nbsp;EvtHandler&nbsp;owner,&nbsp;int&nbsp;id=ID_ANY)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Unbind</span></tt>(event[,&nbsp;source,&nbsp;id,&nbsp;id2,&nbsp;handler])</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">SetPreviousHandler</span></tt>(self,&nbsp;EvtHandler&nbsp;handler)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Start</span></tt>((self,&nbsp;int&nbsp;milliseconds=-1,&nbsp;...)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Stop</span></tt>(self)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">Unbind</span></tt>(event[,&nbsp;source,&nbsp;id,&nbsp;id2,&nbsp;handler])</td>
 <td>Disconnects the event handler binding for event from self.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">Unlink</span></tt>(self)</td>
+<td></td>
 </tr>
 <tr class="row-even"><td><a class="reference internal" href="#PYME.Acquire.previewaquisator.PreviewAquisator.Wait" title="PYME.Acquire.previewaquisator.PreviewAquisator.Wait"><tt class="xref py py-obj docutils literal"><span class="pre">Wait</span></tt></a>(iTime)</td>
 <td>Dirty delay routine - blocks until given no of milliseconds has elapsed</td>
@@ -2325,81 +2361,7 @@ looppos inticates which hardware (shutter) channel we&#8217;re currently on</p>
 <div class="section" id="subpackages">
 <h3>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h3>
 <div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="PYME.Acquire.Hardware.html">PYME.Acquire.Hardware package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#subpackages">Subpackages</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html">PYME.Acquire.Hardware.Piezos package</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#submodules">Submodules</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#module-PYME.Acquire.Hardware.Piezos.piezo_c867">PYME.Acquire.Hardware.Piezos.piezo_c867 module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#module-PYME.Acquire.Hardware.Piezos.piezo_e255">PYME.Acquire.Hardware.Piezos.piezo_e255 module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#module-PYME.Acquire.Hardware.Piezos.piezo_e662">PYME.Acquire.Hardware.Piezos.piezo_e662 module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#module-PYME.Acquire.Hardware.Piezos.piezo_e709">PYME.Acquire.Hardware.Piezos.piezo_e709 module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#module-PYME.Acquire.Hardware.Piezos.piezo_e816">PYME.Acquire.Hardware.Piezos.piezo_e816 module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#module-PYME.Acquire.Hardware.Piezos.piezo_e816_corr">PYME.Acquire.Hardware.Piezos.piezo_e816_corr module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#module-PYME.Acquire.Hardware.Piezos.piezo_e816b">PYME.Acquire.Hardware.Piezos.piezo_e816b module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#pyme-acquire-hardware-piezos-piezo-test-module">PYME.Acquire.Hardware.Piezos.piezo_test module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Piezos.html#module-PYME.Acquire.Hardware.Piezos">Module contents</a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html">PYME.Acquire.Hardware.Simulator package</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#submodules">Submodules</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#pyme-acquire-hardware-simulator-dsimcontrol-module">PYME.Acquire.Hardware.Simulator.dSimControl module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#pyme-acquire-hardware-simulator-fakecam-module">PYME.Acquire.Hardware.Simulator.fakeCam module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator.fakePiezo">PYME.Acquire.Hardware.Simulator.fakePiezo module</a><ul class="simple">
-</ul>
-</li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator.fluor">PYME.Acquire.Hardware.Simulator.fluor module</a><ul class="simple">
-</ul>
-</li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator.illuminate">PYME.Acquire.Hardware.Simulator.illuminate module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator.lasersliders">PYME.Acquire.Hardware.Simulator.lasersliders module</a><ul class="simple">
-</ul>
-</li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#pyme-acquire-hardware-simulator-rend-im-module">PYME.Acquire.Hardware.Simulator.rend_im module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator.setup">PYME.Acquire.Hardware.Simulator.setup module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator.wormlike">PYME.Acquire.Hardware.Simulator.wormlike module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator.wormlike2">PYME.Acquire.Hardware.Simulator.wormlike2 module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator.wormlike_curled">PYME.Acquire.Hardware.Simulator.wormlike_curled module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PYME.Acquire.Hardware.Simulator.html#module-PYME.Acquire.Hardware.Simulator">Module contents</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.EMCCDTheory">PYME.Acquire.Hardware.EMCCDTheory module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.FilterWheel">PYME.Acquire.Hardware.FilterWheel module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.FocCorr">PYME.Acquire.Hardware.FocCorr module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#pyme-acquire-hardware-foccorrr-module">PYME.Acquire.Hardware.FocCorrR module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.FrFilter">PYME.Acquire.Hardware.FrFilter module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.LaserControlFrame">PYME.Acquire.Hardware.LaserControlFrame module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#pyme-acquire-hardware-nikonte2000-module">PYME.Acquire.Hardware.NikonTE2000 module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#pyme-acquire-hardware-nikonti-module">PYME.Acquire.Hardware.NikonTi module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.NikonTiGUI">PYME.Acquire.Hardware.NikonTiGUI module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.OrielCornerstone">PYME.Acquire.Hardware.OrielCornerstone module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#pyme-acquire-hardware-pm100usb-module">PYME.Acquire.Hardware.PM100USB module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#pyme-acquire-hardware-tilightcrafter-module">PYME.Acquire.Hardware.TiLightCrafter module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#pyme-acquire-hardware-ccdadjpanel-module">PYME.Acquire.Hardware.ccdAdjPanel module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.ccdCalibrator">PYME.Acquire.Hardware.ccdCalibrator module</a><ul class="simple">
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.cobaltLaser">PYME.Acquire.Hardware.cobaltLaser module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.fakeShutters">PYME.Acquire.Hardware.fakeShutters module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.focusKeys">PYME.Acquire.Hardware.focusKeys module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.frZStage">PYME.Acquire.Hardware.frZStage module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.fw102">PYME.Acquire.Hardware.fw102 module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.ioslave">PYME.Acquire.Hardware.ioslave module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.lasers">PYME.Acquire.Hardware.lasers module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.phoxxLaser">PYME.Acquire.Hardware.phoxxLaser module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.priorLumen">PYME.Acquire.Hardware.priorLumen module</a><ul class="simple">
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.setup">PYME.Acquire.Hardware.setup module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#pyme-acquire-hardware-spacenav-module">PYME.Acquire.Hardware.spacenav module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware.splitter">PYME.Acquire.Hardware.splitter module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#pyme-acquire-hardware-thorlabspiezo-module">PYME.Acquire.Hardware.thorlabsPiezo module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PYME.Acquire.Hardware.html#module-PYME.Acquire.Hardware">Module contents</a></li>
-</ul>
-</li>
+<ul class="simple">
 </ul>
 </div>
 </div>
@@ -2502,7 +2464,7 @@ looppos inticates which hardware (shutter) channel we&#8217;re currently on</p>
     </div>
     <div class="footer">
         &copy; Copyright 2010, David Baddeley.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>
