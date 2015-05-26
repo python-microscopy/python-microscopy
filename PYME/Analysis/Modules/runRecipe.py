@@ -35,9 +35,9 @@ def saveOutput(output, filename):
     '''Save an output variable, inferring type from the file extension'''
     if isinstance(output, ImageStack):
         try:
-            output.save(filename)
+            output.Save(filename)
         except RuntimeError:
-            output.save(filename + '.tif')
+            output.Save(filename + '.tif')
     elif isinstance(output, pd.DataFrame):
         saveDataFrame(output, filename)
     elif 'toDataFrame' in dir(output):

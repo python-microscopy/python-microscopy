@@ -98,7 +98,10 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
                 self.ax.text(v[0]+.05, v[1]+.18 , s, weight='bold')
                 #print repr(k)
                 
-                s2 = '\n'.join(['%s : %s' %i for i in k.get().items()])
+                params = k.get().items()
+                s2 = '\n'.join(['%s : %s' %i for i in params[:5]])
+                if len(params) > 5:
+                    s2 += '\n ... <some hidden>'
                 self.ax.text(v[0]+.05, v[1]-.22 , s2, size=8, stretch='ultra-condensed')
             else:
                 s = k
@@ -192,7 +195,8 @@ class RecipeView(wx.Panel):
     def OnAddModule(self, event):
         #mods = 
         mods = modules.base.all_modules
-        modNames = mods.keys()        
+        modNames = mods.keys()
+        modNames.sort()        
         
         dlg = wx.SingleChoiceDialog(
                 self, 'Select module to add', 'Add a module',
