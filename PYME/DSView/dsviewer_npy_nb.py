@@ -23,12 +23,15 @@
 import wx
 import wx.lib.agw.aui as aui
 #import PYME.misc.aui as aui
+import sys
 import matplotlib
 matplotlib.use('WxAgg')
 
 import pylab
 pylab.ion()
 import modules
+
+from . import splashScreen
 
 try:
    import PYMEnf.DSView.modules
@@ -408,9 +411,34 @@ class DSViewFrame(wx.Frame):
 
         self.update()
 
+def OSXActivateKludge():
+    '''On OSX our main window doesn't show until you click on it's icon. Try
+    to kludge around this ...'''
+    import subprocess
+    import os 
+    subprocess.Popen(['osascript', '-e', '''\
+        tell application "System Events"
+          set procName to name of first process whose unix id is %s
+        end tell
+        tell application procName to activate
+    ''' % os.getpid()])
 
 class MyApp(wx.App):
     def OnInit(self):
+        
+        
+        #self.sscreen = wx.Frame(None, size=(100,100))
+        #self.SetTopWindow(self.sscreen)
+        #self.sscreen.Show(1)
+        
+        self.splash = splashScreen.SplashScreen(None, None)
+        self.splash.Show(1)
+        
+        wx.CallAfter(self.LoadData)
+        
+        return True
+        
+    def LoadData(self):
         import sys
         from optparse import OptionParser
 
@@ -422,6 +450,7 @@ class MyApp(wx.App):
 
         options, args = op.parse_args()
         
+        print 'Loading data'
         if options.test:
             import pylab
             im = ImageStack(pylab.randn(100,100))
@@ -439,18 +468,30 @@ class MyApp(wx.App):
 
         self.SetTopWindow(vframe)
         vframe.Show(1)
+        vframe.CenterOnScreen()
+        #vframe.Raise()
+        #vframe.TopLevel()
+        #vframe.Show(1)
+        #vframe.RequestUserAttention()
         
         if len(args) > 1:
             for fn in args[1:]:
                 im = ImageStack(filename=fn)
                 ViewIm3D(im)
-
+                
+        self.splash.Destroy()
+        
+        if sys.platform == 'darwin':
+            OSXActivateKludge()
         return 1
+    
+
 
 # end of class MyApp
 
 def main():
     app = MyApp(0)
+    print 'Starting main loop'
     app.MainLoop()
 
 

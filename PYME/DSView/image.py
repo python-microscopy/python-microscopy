@@ -633,17 +633,30 @@ class ImageStack(object):
         self.mode = 'default'
 
     def Load(self, filename=None):
-        print(filename)
-        if (filename == None):
+        print('filename == %s' % filename)
+        if (filename == None or filename == ''):
             import wx #only introduce wx dependency here - so can be used non-interactively
             global lastdir
             
-            fdialog = wx.FileDialog(None, 'Please select Data Stack to open ...',
-                wildcard='Image Data|*.h5;*.tif;*.lsm;*.kdf;*.md;*.psf;*.npy;*.dbl|All files|*.*', style=wx.OPEN, defaultDir = lastdir)
-            succ = fdialog.ShowModal()
-            if (succ == wx.ID_OK):
-                filename = fdialog.GetPath()
-                lastdir = fdialog.GetDirectory()
+            #fdialog = wx.FileDialog(None, 'Please select Data Stack to open ...',
+            #    wildcard='Image Data|*.h5;*.tif;*.lsm;*.kdf;*.md;*.psf;*.npy;*.dbl|All files|*.*', style=wx.OPEN, defaultDir = lastdir)
+            #succ = fdialog.ShowModal()
+            #if (succ == wx.ID_OK):
+            #    filename = fdialog.GetPath()
+            #    lastdir = fdialog.GetDirectory()
+            #else:
+                #print succ
+
+            filename = wx.FileSelector('Please select Data Stack to open ...',
+                                       wildcard='Image Data|*.h5;*.tif;*.lsm;*.kdf;*.md;*.psf;*.npy;*.dbl|All files|*.*', 
+                                        default_path = lastdir)            
+            
+            if filename == None or filename == '':
+                #raise RuntimeError('No file selected')
+                pass
+            else:
+                lastdir = os.path.split(filename)[0]
+            #print(succ, filename)
 
         if not filename == None:
             if filename.startswith('QUEUE://'):
