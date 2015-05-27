@@ -430,3 +430,23 @@ def correltrack(data,start=0,avgover=10,pixelsize=70.0,centersize=7,centroidfrac
     sh = pixelsize*(sh-sh[0])
     return t, sh, xctw
 
+def meanvards(dataSource, start=0, end=-1):
+
+    nslices = dataSource.getNumSlices()
+    if end < 0:
+        end = nslices + end
+
+    nframes = end - start
+    xSize, ySize = dataSource.getSliceShape()
+
+    m = np.zeros((xSize,ySize),dtype='float64')
+    for frameN in range(start,end):
+        m += dataSource.getSlice(frameN)
+    m = m / nframes
+
+    v = np.zeros((xSize,ySize),dtype='float64')
+    for frameN in range(start,end):
+        v += (dataSource.getSlice(frameN)-m)**2
+    v = v / (nframes-1)
+
+    return (m,v)
