@@ -1097,7 +1097,9 @@ class VisGuiApp(wx.App):
         return True
 
 
-def main(filename):
+def main(filename=None):
+    if filename == "":
+        filename = None
     application = VisGuiApp(filename, 0)
     application.MainLoop()
 

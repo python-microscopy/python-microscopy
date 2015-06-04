@@ -27,6 +27,8 @@ import Pyro.naming
 import random
 import time
 
+import PYME.version
+
 import os
 
 from PYME.misc.computerName import GetComputerName

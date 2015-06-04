@@ -450,36 +450,37 @@ class MyApp(wx.App):
 
         options, args = op.parse_args()
         
-        print 'Loading data'
-        if options.test:
-            import pylab
-            im = ImageStack(pylab.randn(100,100))
-        elif len (args) > 0:
-            im = ImageStack(filename=args[0], queueURI=options.queueURI)
-        else:
-            im = ImageStack(queueURI=options.queueURI)
-
-        if options.mode == None:
-            mode = im.mode
-        else:
-            mode = options.mode
-
-        vframe = DSViewFrame(im, None, im.filename, mode = mode)
-
-        self.SetTopWindow(vframe)
-        vframe.Show(1)
-        vframe.CenterOnScreen()
-        #vframe.Raise()
-        #vframe.TopLevel()
-        #vframe.Show(1)
-        #vframe.RequestUserAttention()
-        
-        if len(args) > 1:
-            for fn in args[1:]:
-                im = ImageStack(filename=fn)
-                ViewIm3D(im)
-                
-        self.splash.Destroy()
+        try:        
+            print 'Loading data'
+            if options.test:
+                import pylab
+                im = ImageStack(pylab.randn(100,100))
+            elif len (args) > 0:
+                im = ImageStack(filename=args[0], queueURI=options.queueURI)
+            else:
+                im = ImageStack(queueURI=options.queueURI)
+    
+            if options.mode == None:
+                mode = im.mode
+            else:
+                mode = options.mode
+    
+            vframe = DSViewFrame(im, None, im.filename, mode = mode)
+    
+            self.SetTopWindow(vframe)
+            vframe.Show(1)
+            vframe.CenterOnScreen()
+            #vframe.Raise()
+            #vframe.TopLevel()
+            #vframe.Show(1)
+            #vframe.RequestUserAttention()
+            
+            if len(args) > 1:
+                for fn in args[1:]:
+                    im = ImageStack(filename=fn)
+                    ViewIm3D(im)
+        finally:
+            self.splash.Destroy()
         
         if sys.platform == 'darwin':
             OSXActivateKludge()

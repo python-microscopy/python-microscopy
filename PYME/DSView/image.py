@@ -652,7 +652,7 @@ class ImageStack(object):
                                         default_path = lastdir)            
             
             if filename == None or filename == '':
-                #raise RuntimeError('No file selected')
+                raise RuntimeError('No file selected')
                 pass
             else:
                 lastdir = os.path.split(filename)[0]
