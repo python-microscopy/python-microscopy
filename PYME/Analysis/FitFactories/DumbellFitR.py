@@ -27,14 +27,19 @@ from . import FFBase
 
 from PYME.Analysis._fithelpers import FitModelWeighted, FitModelWeightedJac
 
+import pylab
+
 
 ##################
 # Model functions
 def f_dumbell(p, X, Y):
     """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sigma, background, lin_x, lin_y]"""
     A, x0, y0, B, x1, y1, s, bg = p
-    return A*np.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2))/(s*s*2*np.pi) + B*np.exp(-((X-x1)**2 + (Y - y1)**2)/(2*s**2))/(s*s*2*np.pi) + bg 
-
+    X = X[:,None]
+    Y = Y [None,:]
+    r = A*np.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2)) + B*np.exp(-((X-x1)**2 + (Y - y1)**2)/(2*s**2)) + bg 
+    #print r.shape    
+    return r
 
 #####################
 
@@ -52,7 +57,8 @@ fresultdtype=[('tIndex', '<i4'),
                             ('B', '<f4'),
                             ('x1', '<f4'),('y1', '<f4'),
                             ('sigma', '<f4'), 
-                            ('background', '<f4')]), 
+                            ('background', '<f4')]),
+              ('length', '<f4'),
               ('resultCode', '<i4'), 
               ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),
                               ('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),
@@ -60,14 +66,14 @@ fresultdtype=[('tIndex', '<i4'),
               ('subtractedBackground', '<f4')
               ]
 
-def FitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None, background=0):
+def FitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None, background=0, length = 0):
     slicesUsed = fmtSlicesUsed(slicesUsed)
     #print slicesUsed
 
     if fitErr == None:
         fitErr = -5e3*np.ones(fitResults.shape, 'f')
     
-    res =  np.array([(metadata.tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, slicesUsed, background)], dtype=fresultdtype) 
+    res =  np.array([(metadata.tIndex, fitResults.astype('f'), fitErr.astype('f'), length, resultCode, slicesUsed, background)], dtype=fresultdtype) 
     #print res
     return res
 		
@@ -83,21 +89,24 @@ class DumbellFitFactory(FFBase.FitFactory):
         else: 
             self.solver = FitModelWeighted
 
-    def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
+    def FromPoint(self, x, y, z=None, roiHalfSize=7, axialHalfSize=15):
         X, Y, data, background, sigma, xslice, yslice, zslice = self.getROIAtPoint(x, y, z, roiHalfSize, axialHalfSize)
 
         dataMean = data - background
+        
+        #print data.shape
 
         #estimate some start parameters...
-        A = (data - data.min()).sum()/2 #amplitude
+        A = (data - data.min()).max() #amplitude
 
         x0 =  1e3*self.metadata.voxelsize.x*x
         y0 =  1e3*self.metadata.voxelsize.y*y
         
         bgm = np.mean(background)
 
-        startParameters = [A, x0 + 200*np.random.randn(), y0+ 200*np.random.randn(), A, x0+ 200*np.random.randn(), y0+ 200*np.random.randn(), 250/2.35, dataMean.min()]	
+        startParameters = [A, x0 + 70*np.random.randn(), y0+ 70*np.random.randn(), A, x0+ 70*np.random.randn(), y0+ 70*np.random.randn(), 250/2.35, dataMean.min()]	
 
+        
         #do the fit
         (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataMean, sigma, X, Y)
 
@@ -107,9 +116,27 @@ class DumbellFitFactory(FFBase.FitFactory):
             fitErrors = np.sqrt(np.diag(cov_x)*(infodict['fvec']*infodict['fvec']).sum()/(len(dataMean.ravel())- len(res)))
         except Exception:
             pass
+        
+        length = np.sqrt((res[1] - res[4])**2 + (res[2] - res[5])**2)
+        
+        if False:
+            #display for debugging purposes
+            pylab.figure(figsize=(15, 5))
+            pylab.subplot(141)
+            pylab.imshow(dataMean)
+            pylab.colorbar()
+            pylab.subplot(142)
+            pylab.imshow(f_dumbell(startParameters, X, Y))
+            pylab.colorbar()
+            pylab.subplot(143)
+            pylab.imshow(f_dumbell(res, X, Y))
+            pylab.colorbar()
+            pylab.subplot(144)
+            pylab.imshow(dataMean-f_dumbell(res, X, Y))
+            pylab.colorbar()
 
         #package results
-        return FitResultR(res, self.metadata, (xslice, yslice, zslice), resCode, fitErrors, bgm)
+        return FitResultR(res, self.metadata, (xslice, yslice, zslice), resCode, fitErrors, bgm, length)
 
     @classmethod
     def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):
