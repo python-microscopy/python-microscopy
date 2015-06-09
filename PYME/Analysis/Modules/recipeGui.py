@@ -9,6 +9,8 @@ import wx
 import numpy as np
 
 from PYME.Analysis.Modules import modules
+from PYME.Analysis.Modules import runRecipe
+
 import pylab
 from PYME.DSView.image import ImageStack
 from PYME.DSView import ViewIm3D
@@ -118,6 +120,7 @@ class RecipeView(wx.Panel):
         wx.Panel.__init__(self, parent, size=(400, 100))
         
         self.recipes = recipes
+        recipes.recipeView = self
         hsizer1 = wx.BoxSizer(wx.HORIZONTAL)
         vsizer = wx.BoxSizer(wx.VERTICAL)
         
@@ -265,19 +268,106 @@ class RecipeManager(object):
             self.recipeView.update()
         except AttributeError:
             pass
+
+
+class dt(wx.FileDropTarget):
+    def __init__(self, window):
+        wx.FileDropTarget.__init__(self)
+        self.window = window
+        
+    def OnDropFiles(self, x, y, filenames):
+        self.window.UpdateFileList(filenames)
     
 
-class BatchFrame(wx.Frame):
-    def __init__(self, parent=None):
+class BatchFrame(wx.Frame, wx.FileDropTarget):
+    def __init__(self, parent=None):                
         wx.Frame.__init__(self, parent, wx.ID_ANY, 'The PYME Bakery')
         
+        self.dropFiles = dt(self)      
         self.rm = RecipeManager()
+        self.inputFiles = []
         
         vsizer1=wx.BoxSizer(wx.VERTICAL)
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Recipe:"), wx.HORIZONTAL)
         self.recipeView = RecipeView(self, self.rm)
         
         hsizer.Add(self.recipeView, 1, wx.ALL|wx.EXPAND, 2)
         vsizer1.Add(hsizer, 1, wx.ALL|wx.EXPAND, 2)
+        
+        vsizer2 = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Input files:'), wx.VERTICAL)
+        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        
+        hsizer.Add(wx.StaticText(self, -1, 'Filename pattern:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        self.tGlob = wx.TextCtrl(self, -1, '')
+        hsizer.Add(self.tGlob, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        
+        self.bLoadFromGlob = wx.Button(self, -1, 'Get Matches')
+        self.bLoadFromGlob.Bind(wx.EVT_BUTTON, self.OnGetMatches)
+        hsizer.Add(self.bLoadFromGlob, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        
+        vsizer2.Add(hsizer, 0, wx.EXPAND, 0)
+        
+        self.lFiles = wx.ListCtrl(self, -1, style=wx.LC_REPORT|wx.LC_HRULES)
+        self.lFiles.InsertColumn(0, 'Filename')
+        self.lFiles.Append(['Either drag files here, or enter a pattern (e.g. /Path/to/data/*.tif ) above and click "Get Matches"',])
+        self.lFiles.SetColumnWidth(0, -1)
+        
+        vsizer2.Add(self.lFiles, .5, wx.EXPAND, 0)        
+        
+        vsizer1.Add(vsizer2, 0, wx.EXPAND|wx.TOP, 10)
+        
+        hsizer2 = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Output Directory:'), wx.HORIZONTAL)
+        
+        self.dcOutput = wx.DirPickerCtrl(self, -1, style=wx.DIRP_DIR_MUST_EXIST|wx.DIRP_USE_TEXTCTRL)
+        hsizer2.Add(self.dcOutput, 1, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        
+        vsizer1.Add(hsizer2, 0, wx.EXPAND|wx.TOP, 10)
+        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.AddStretchSpacer()
+
+        self.bBake = wx.Button(self, -1, 'Bake') 
+        hsizer.Add(self.bBake, 0, wx.ALL, 5)
+        
+        vsizer1.Add(hsizer, 0, wx.EXPAND|wx.TOP, 10)
+                
         self.SetSizerAndFit(vsizer1)
         
+        #self.SetDropTarget(self.drop)
+        self.lFiles.SetDropTarget(self.dropFiles)
+        
+    def UpdateFileList(self, filenames):
+        self.inputFiles = filenames        
+        
+        self.lFiles.DeleteAllItems()
+        
+        for f in filenames:
+            self.lFiles.Append([f,])
+        
+    def OnGetMatches(self, event=None):
+        import glob
+        
+        files = glob.glob(self.tGlob.GetValue())
+        self.UpdateFileList(files)
+        
+    def OnBake(self, event=None):
+        out_dir = self.dcOutput.GetPath()
+        
+        #validate our choices:
+        if (self.rm.activeRecipe == None) or (len(self.rm.activeRecipe.modules) == 0):
+            wx.MessageBox('No Recipe: Please open (or build) a recipe', 'Error', wx.OK|wx.ICON_ERROR)
+            return
+            
+        if not len(self.inputFiles) > 0:
+            wx.MessageBox('No input files', 'Error', wx.OK|wx.ICON_ERROR)
+            return
+            
+        if (out_dir == '') or not os.path.exists(out_dir):
+            wx.MessageBox('Ouput directory does not exist', 'Error', wx.OK|wx.ICON_ERROR)
+            return
+            
+        runRecipe.Bake(self.rm.activeRecipe, {'input':self.inputFiles}, out_dir)
+        
+            
+   
