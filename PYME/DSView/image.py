@@ -113,6 +113,11 @@ class ImageStack(object):
         self.saved = False
         self.volatile = False #is the data likely to change and need refreshing?
         
+        #support for specifying metadata as filename
+        if isinstance(mdh, str) or isinstance(mdh(unicode)):#os.path.exists(mdh):
+            self.mdh = None
+            self.FindAndParseMetadata(mdh)
+        
         if (data == None):
             #if we've supplied data, use that, otherwise load from file
             self.Load(filename)
@@ -433,7 +438,10 @@ class ImageStack(object):
         '''Try and find and load a .xml or .md metadata file that might be ascociated
         with a given image filename. See the relevant metadatahandler classes
         for details.'''
-        import xml.parsers.expat      
+        import xml.parsers.expat 
+        
+        if not self.mdh == None:
+            return #we already have metadata (probably passed in on command line)
         
         mdf = None
         xmlfn = os.path.splitext(filename)[0] + '.xml'

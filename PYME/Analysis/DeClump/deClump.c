@@ -102,6 +102,9 @@ static PyObject * findClumps(PyObject *self, PyObject *args, PyObject *keywds)
     int t_i = 0;
     int recDepth = 0;
 
+    dims[0] = 0;
+    dims[1] = 0;
+
 
     static char *kwlist[] = {"t", "x", "y", "delta_x", "nFrames", NULL};
 

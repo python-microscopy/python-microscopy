@@ -83,7 +83,7 @@ while 1:
             #print qName
 
             #ask the queue for tasks
-            tasks = tq.getTasks(procName)
+            tasks = tq.getTasks(procName, PYME.version.version)
 
             #we succesfully contacted the server, so reset it's fail count
             serverFails[qName] = 0

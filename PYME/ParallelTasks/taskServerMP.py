@@ -128,6 +128,7 @@ class TaskQueueSet(Pyro.core.ObjBase):
         
         if not workerVersion == PYME.version.version:
             #versions don't match
+            print 'Worker with incorrect version asked for task - refusing'
             return None
             
         with self.getTaskLock:

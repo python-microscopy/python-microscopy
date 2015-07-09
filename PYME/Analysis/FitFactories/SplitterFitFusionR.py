@@ -36,15 +36,21 @@ from PYME.Analysis._fithelpers import *
 
 def f_gauss2d2c(p, Xg, Yg, Xr, Yr):
     """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sigma, background, lin_x, lin_y]"""
-    Ag,Ar, x0, y0, s, bG, bR, b_x, b_y  = p
+    Ag,Ar, x0, y0, sr, sg, bG, bR  = p
     #return A*scipy.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2)) + b + b_x*X + b_y*Y
-    r = genGauss(Xr,Yr,Ar,x0,y0,s,bR,b_x,b_y)
+    r = genGauss(Xr,Yr,Ar,x0,y0,sr,bR)
     #r.strides = r.strides #Really dodgy hack to get around something which numpy is not doing right ....
 
-    g = genGauss(Xg,Yg,Ag,x0,y0,s,bG,b_x,b_y)
+    g = genGauss(Xg,Yg,Ag,x0,y0,sg,bG)
     #g.strides = g.strides #Really dodgy hack to get around something which numpy is not doing right ....
     
     return numpy.concatenate((g.reshape(g.shape + (1,)),r.reshape(g.shape + (1,))), 2)
+    
+def f_gauss2d(p, X, Y):
+    """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sigma, background, lin_x, lin_y]"""
+    A, x0, y0, s, b = p
+    r = genGauss(X,Y,A,x0,y0,s,b) #this is coded in c and defined in gauss_app
+    return r
 
 def f_gauss2d2cA(p, Xg, Yg, Xr, Yr, Arr):
     """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sigma, background, lin_x, lin_y]"""
@@ -78,9 +84,9 @@ def f_gauss2d2ccb(p, Xg, Yg, Xr, Yr):
 #fresultdtype=[('tIndex', '<i4'),('fitResults', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('backgroundG', '<f4'),('backgroundR', '<f4'),('bx', '<f4'),('by', '<f4')]),('fitError', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('backgroundG', '<f4'),('backgroundR', '<f4'),('bx', '<f4'),('by', '<f4')]), ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
 
 fresultdtype=[('tIndex', '<i4'),
-              ('fitResults', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('bg', '<f4'), ('br', '<f4')]),
-              ('fitError', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('bg', '<f4'), ('br', '<f4')]),
-              ('startParams', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('bg', '<f4'), ('br', '<f4')]), 
+              ('fitResults', [('Ag', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('bg', '<f4'),('Ar', '<f4'),('x1', '<f4'),('y1', '<f4'),('sigmag', '<f4'), ('br', '<f4')]),
+              ('fitError', [('Ag', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('bg', '<f4'),('Ar', '<f4'),('x1', '<f4'),('y1', '<f4'),('sigmag', '<f4'), ('br', '<f4')]),
+              ('startParams', [('Ag', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('bg', '<f4'),('Ar', '<f4'),('x1', '<f4'),('y1', '<f4'),('sigmag', '<f4'), ('br', '<f4')]), 
               ('subtractedBackground', [('g','<f4'),('r','<f4')]), ('nchi2', '<f4'),
               ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
 
@@ -100,23 +106,25 @@ def GaussianFitResultR(fitResults, metadata, startParams, slicesUsed=None, resul
     fr = np.zeros(1, dtype=fresultdtype)
     
     n = len(fitResults)
+    
+    #print n, fitResults, fr['fitResults'].dtype, fr['fitResults'].view('8f4').shape
 
     fr['tIndex'] = metadata.tIndex
     fr['resultCode'] = resultCode
     fr['nchi2'] = nchi2
     #print n, fr['fitResults'].view('f4').shape
-    fr['fitResults'].view('f4')[:n] = fitResults   
-    fr['startParams'].view('f4')[:n] = startParams
+    fr['fitResults'].view('10f4')[:n] = fitResults   
+    fr['startParams'].view('10f4')[:n] = startParams
     
     if fitErr == None:
-        fr['fitError'].view('f4')[:] = -5e3
+        fr['fitError'].view('10f4')[:] = -5e3
     else:
-        fr['fitError'].view('f4')[:n] = fitErr
+        fr['fitError'].view('10f4')[:n] = fitErr
         
-    fr['subtractedBackground'].view('f4')[:] = background
+    fr['subtractedBackground'].view('2f4')[:] = background
     slu = np.array(fmtSlicesUsed(slicesUsed), dtype='i4')
     #print slu.shape, fr['slicesUsed'].view('12i4').shape, slu.dtype, slu.ravel().shape
-    fr['slicesUsed'].view('i4')[:] = slu.ravel()
+    fr['slicesUsed'].view('6i4')[:] = slu.ravel()
         
     return fr 
  
@@ -186,13 +194,13 @@ def genFitImage(fitResults, metadata):
 
 
 class GaussianFitFactory(FFBase.FFBase):
-    def __init__(self, data, metadata, fitfcn=genSplitGaussInArrayPVec, background=None, noiseSigma=None):
+    def __init__(self, data, metadata, fitfcn=f_gauss2d, background=None, noiseSigma=None):
         super(GaussianFitFactory, self).__init__(data, metadata, fitfcn, background, noiseSigma)
         
-        #if False:#'D' in dir(fitfcn): #function has jacobian
-        #    self.solver = FitModelWeightedJac
-        #else:
-        #    self.solver = FitModelWeighted
+        if False:#'D' in dir(fitfcn): #function has jacobian
+            self.solver = FitModelWeightedJac
+        else:
+            self.solver = FitModelWeighted
     @classmethod
     def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):
         #generate grid to evaluate function on        
@@ -220,7 +228,7 @@ class GaussianFitFactory(FFBase.FFBase):
         #return splWrap(params, Xg, Yg, Xr, Yr), Xg.ravel()[0], Yg.ravel()[0], 0
 		
         
-    def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
+    def FromPoint(self, x, y, z=None, roiHalfSize=10, axialHalfSize=15):
         Xg, Yg, Xr, Yr, dataROI, bgROI, sigma, xslice, yslice, xslice2, yslice2 = self.getSplitROIAtPoint(x, y, z, roiHalfSize, axialHalfSize)
         
         if min(dataROI.shape[:2]) < 4: # too small to fit
@@ -233,11 +241,12 @@ class GaussianFitFactory(FFBase.FFBase):
         x0 =  Xg.mean()
         y0 =  Yg.mean()
 
-        fitBackground = self.metadata.getOrDefault('Analysis.FitBackground', True)
-        if fitBackground:
-            startParameters = numpy.array([Ag, Ar, x0, y0, 250/2.35, 0, 0])
-        else:
-            startParameters = numpy.array([Ag, Ar, x0, y0, 250/2.35])
+        #fitBackground = self.metadata.getOrDefault('Analysis.FitBackground', True)
+        #if fitBackground:
+        startParameters1 = numpy.array([Ag, x0, y0, 250., 0])
+        startParameters2 = numpy.array([Ar, x0, y0, 250., 0])
+        #else:
+        #    startParameters = numpy.array([Ag, Ar, x0, y0, 250., 250.])
         
         dataROI = np.maximum(dataROI - bgROI, -sigma)
         
@@ -255,26 +264,29 @@ class GaussianFitFactory(FFBase.FFBase):
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
         #(res, cov_x, infodict, mesg, resCode) = FitModelWeighted(self.fitfcn, startParameters, dataMean, sigma, X, Y)
-        #(res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, Xg, Yg, Xr, Yr, buf)
-        buf = numpy.zeros(dataROI.size)
+        (res1, cov_x1, infodict1, mesg1, resCode1) = self.solver(self.fitfcn, startParameters1, dataROI[:,:,0], sigma[:,:,0], Xg, Yg)#, buf)
+        (res2, cov_x2, infodict2, mesg2, resCode2) = self.solver(self.fitfcn, startParameters2, dataROI[:,:,1], sigma[:,:,1], Xr, Yr)
+        #buf = numpy.zeros(dataROI.size)
         #(res, cov_x, infodict, mesg, resCode) = FitWeightedMisfitFcn(splitGaussWeightedMisfit, startParameters, dataROI, sigma, Xg, Yg, Xr, Yr)
-        (res, cov_x, infodict, mesg, resCode) = FitWeightedMisfitFcn(splWrap, startParameters, dataROI, sigma, Xg, Yg, Xr, Yr, buf)
+        #(res, cov_x, infodict, mesg, resCode) = FitWeightedMisfitFcn(splWrap, startParameters, dataROI, sigma, Xg, Yg, Xr, Yr, buf)
 
         fitErrors=None
         try:       
-            fitErrors = scipy.sqrt(scipy.diag(cov_x)*(infodict['fvec']*infodict['fvec']).sum()/(len(dataROI.ravel())- len(res)))
+            fitErrors1 = scipy.sqrt(scipy.diag(cov_x1)*(infodict1['fvec']*infodict1['fvec']).sum()/(len(dataROI[:,:,0].ravel())- len(res1)))
+            fitErrors2 = scipy.sqrt(scipy.diag(cov_x2)*(infodict2['fvec']*infodict2['fvec']).sum()/(len(dataROI[:,:,0].ravel())- len(res1)))
+            fitErrors = np.hstack([fitErrors1, fitErrors2])
         except Exception:
             pass
         
         #normalised Chi-squared
-        nchi2 = (infodict['fvec']**2).sum()/(dataROI.size - res.size)
+        nchi2 = (infodict1['fvec']**2).sum()/(dataROI[:,:,0].size - res1.size)
         
         if bgROI.ndim == 3:
             bgs = bgROI.mean(0).mean(0)
         else:
             bgs = bgROI
 
-        return GaussianFitResultR(res, self.metadata, startParameters,(xslice, yslice), resCode, fitErrors, nchi2, bgs)
+        return GaussianFitResultR(np.hstack([res1, res2]), self.metadata, np.hstack([startParameters1, startParameters2]),(xslice, yslice), resCode1, fitErrors, nchi2, bgs)
 
     
         
