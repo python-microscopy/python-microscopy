@@ -23,12 +23,15 @@
 import wx
 import wx.lib.agw.aui as aui
 #import PYME.misc.aui as aui
+import sys
 import matplotlib
 matplotlib.use('WxAgg')
 
 import pylab
 pylab.ion()
 import modules
+
+from . import splashScreen
 
 try:
    import PYMEnf.DSView.modules
@@ -408,10 +411,35 @@ class DSViewFrame(wx.Frame):
 
         self.update()
 
+def OSXActivateKludge():
+    '''On OSX our main window doesn't show until you click on it's icon. Try
+    to kludge around this ...'''
+    import subprocess
+    import os 
+    subprocess.Popen(['osascript', '-e', '''\
+        tell application "System Events"
+          set procName to name of first process whose unix id is %s
+        end tell
+        tell application procName to activate
+    ''' % os.getpid()])
 
 class MyApp(wx.App):
     def OnInit(self):
-        import sys
+        
+        
+        #self.sscreen = wx.Frame(None, size=(100,100))
+        #self.SetTopWindow(self.sscreen)
+        #self.sscreen.Show(1)
+        
+        self.splash = splashScreen.SplashScreen(None, None)
+        self.splash.Show(1)
+        
+        wx.CallAfter(self.LoadData)
+        
+        return True
+        
+    def LoadData(self):
+        import sys, os
         from optparse import OptionParser
 
         op = OptionParser(usage = 'usage: %s [options] [filename]' % sys.argv[0])
@@ -419,38 +447,56 @@ class MyApp(wx.App):
         op.add_option('-m', '--mode', dest='mode', help="mode (or personality), as defined in PYME/DSView/modules/__init__.py")
         op.add_option('-q', '--queueURI', dest='queueURI', help="the Pyro URI of the task queue - to avoid having to use the nameserver lookup")
         op.add_option('-t', '--test', dest='test', help="Show a test image", action="store_true", default=False)
+        op.add_option('-d', '--metadata', dest='metadata', help="Load image with specified metadata file", default=None)
 
         options, args = op.parse_args()
         
-        if options.test:
-            import pylab
-            im = ImageStack(pylab.randn(100,100))
-        elif len (args) > 0:
-            im = ImageStack(filename=args[0], queueURI=options.queueURI)
-        else:
-            im = ImageStack(queueURI=options.queueURI)
-
-        if options.mode == None:
-            mode = im.mode
-        else:
-            mode = options.mode
-
-        vframe = DSViewFrame(im, None, im.filename, mode = mode)
-
-        self.SetTopWindow(vframe)
-        vframe.Show(1)
+        try:
+            #md = None
+            #if not options.metadata == '':
+            #    md = options.metadata
+            print 'Loading data'
+            if options.test:
+                import pylab
+                im = ImageStack(pylab.randn(100,100))
+            elif len (args) > 0:
+                im = ImageStack(filename=args[0], queueURI=options.queueURI, mdh=options.metadata)
+            else:
+                im = ImageStack(queueURI=options.queueURI)
+    
+            if options.mode == None:
+                mode = im.mode
+            else:
+                mode = options.mode
+    
+            vframe = DSViewFrame(im, None, im.filename, mode = mode)
+    
+            self.SetTopWindow(vframe)
+            vframe.Show(1)
+            vframe.CenterOnScreen()
+            #vframe.Raise()
+            #vframe.TopLevel()
+            #vframe.Show(1)
+            #vframe.RequestUserAttention()
+            
+            if len(args) > 1:
+                for fn in args[1:]:
+                    im = ImageStack(filename=fn)
+                    ViewIm3D(im)
+        finally:
+            self.splash.Destroy()
         
-        if len(args) > 1:
-            for fn in args[1:]:
-                im = ImageStack(filename=fn)
-                ViewIm3D(im)
-
+        if sys.platform == 'darwin':
+            OSXActivateKludge()
         return 1
+    
+
 
 # end of class MyApp
 
 def main():
     app = MyApp(0)
+    print 'Starting main loop'
     app.MainLoop()
 
 
