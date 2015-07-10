@@ -43,7 +43,7 @@ def plotEvent(clump, pipeline, rawData = None):
     
     pl.subplot(312)
     pl.plot(clump['t'], clump['fitResults_sigma'])
-    pl.plot(clump['t'], clump['fitResults_Ar'], alpha=.5)
+    pl.plot(clump['t'], clump['fitResults_sigmag'], alpha=.5)
     
     pl.ylim(0, 1e3)
     pl.grid()
@@ -92,9 +92,10 @@ def prepPipeline(pipeline):
     pipeline.Rebuild()
     
 
-def selectAndPlotEvents(pipeline, outputdir='/Users/david/FusionAnalysis'):
+def selectAndPlotEvents(pipeline, outputdir='/Users/david/FusionAnalysis', speckleFile = None):
     import os
-    import pandas as pd    
+    import pandas as pd
+    from PYME.FileUtils.readSpeckle import readSpeckles    
     #now iterate through our clumps
     clumpIndices = list(set(pipeline['clumpIndex']))
     
@@ -107,6 +108,17 @@ def selectAndPlotEvents(pipeline, outputdir='/Users/david/FusionAnalysis'):
     #noise.
     
     filteredClumps = [c for c in clumps if (c['Ag'].mean() > 2000) and (c['fitResults_sigma'].mean() > 300)]
+    
+    if not speckleFile == None:
+        vs = (1e3*pipeline.mdh['voxelsize.x'])
+        speckles = readSpeckles(speckleFile)
+        
+        #print speckles
+        
+        sp = np.array([s[0,:] for s in speckles])
+        print sp.shape
+        
+        filteredClumps = [c for c in clumps if (((c['x'][0] - vs*sp[:,1])**2 + (c['y'][0] - vs*sp[:,0])**2 + (5*(c['t'][0] - sp[:,2]))**2).min() < 300**2)]
     
     outputDir = os.path.join(outputdir, os.path.split(pipeline.filename)[1]) 
     os.makedirs(outputDir)

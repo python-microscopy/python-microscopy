@@ -114,7 +114,7 @@ class ImageStack(object):
         self.volatile = False #is the data likely to change and need refreshing?
         
         #support for specifying metadata as filename
-        if isinstance(mdh, str) or isinstance(mdh(unicode)):#os.path.exists(mdh):
+        if isinstance(mdh, str) or isinstance(mdh,unicode):#os.path.exists(mdh):
             self.mdh = None
             self.FindAndParseMetadata(mdh)
         

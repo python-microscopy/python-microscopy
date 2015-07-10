@@ -244,7 +244,7 @@ class GaussianFitFactory(FFBase.FFBase):
         #fitBackground = self.metadata.getOrDefault('Analysis.FitBackground', True)
         #if fitBackground:
         startParameters1 = numpy.array([Ag, x0, y0, 250., 0])
-        startParameters2 = numpy.array([Ar, x0, y0, 250., 0])
+        startParameters2 = numpy.array([Ar, Xr.mean(), Yr.mean(), 250., 0])
         #else:
         #    startParameters = numpy.array([Ag, Ar, x0, y0, 250., 250.])
         
