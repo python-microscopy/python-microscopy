@@ -41,6 +41,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('BleachProfile')
     config.add_subpackage('Colocalisation')
     config.add_subpackage('Modules')
+    config.add_subpackage('Tracking')
     
     config.add_data_dir('Modules/Recipes')
 
