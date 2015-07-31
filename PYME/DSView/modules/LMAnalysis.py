@@ -73,6 +73,9 @@ class LMAnalyser:
                       #mde.IntParam('Analysis.DebounceRadius', 'Debounce r:', 4),
                       #mde.FloatParam('Analysis.AxialShift', 'Z Shift [nm]:', 0),
                       mde.BoolFloatParam('Analysis.PCTBackground' , 'Use percentile for background', default=False, helpText='', ondefault=0.25, offvalue=0),
+                      mde.FilenameParam('Camera.VarianceMapID', 'Variance Map:', prompt='Please select variance map to use ...', wildcard='TIFF Files|*.tif', filename=''),
+                      mde.FilenameParam('Camera.DarkMapID', 'Dark Map:', prompt='Please select dark map to use ...', wildcard='TIFF Files|*.tif', filename=''),
+                      mde.FilenameParam('Camera.FlatfieldMapID', 'Flatfiled Map:', prompt='Please select flatfield map to use ...', wildcard='TIFF Files|*.tif', filename=''),
     ]
     
     def __init__(self, dsviewer):
