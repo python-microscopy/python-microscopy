@@ -24,12 +24,13 @@ class TrackerPlotPanel(PlotPanel):
     def draw(self):
         if self.IsShownOnScreen():
             if not hasattr( self, 'subplotx' ):
-                    self.subplotx = self.figure.add_subplot( 311 )
-                    self.subploty = self.figure.add_subplot( 312 )
-                    self.subplotz = self.figure.add_subplot( 313 )
+                    self.subplotx = self.figure.add_subplot( 411 )
+                    self.subploty = self.figure.add_subplot( 412 )
+                    self.subplotz = self.figure.add_subplot( 413 )
+                    self.subplotc = self.figure.add_subplot( 414 )
     
             #try:
-            t, dx, dy, dz  = np.array(self.dt.history[-1000:]).T
+            t, dx, dy, dz, corr  = np.array(self.dt.history[-1000:]).T
 
             self.subplotx.cla()
             self.subplotx.plot(t, dx, 'r')
@@ -45,6 +46,11 @@ class TrackerPlotPanel(PlotPanel):
             self.subplotz.plot(t, 1000*dz, 'b')
             self.subplotz.set_ylabel('Delta z [nm]')
             self.subplotz.set_xlim(t.min(), t.max())
+            
+            self.subplotc.cla()
+            self.subplotc.plot(t, corr, 'm')
+            self.subplotc.set_ylabel('Correlation')
+            self.subplotc.set_xlim(t.min(), t.max())
 
     
             #except:
@@ -100,7 +106,7 @@ class DriftTrackingControl(wx.Panel):
         hsizer.Add(self.stError, 0, wx.ALL, 2)        
         sizer_1.Add(hsizer,0, wx.EXPAND, 0)
         
-        self.trackPlot = TrackerPlotPanel(self, self.dt, size=[300, 300])
+        self.trackPlot = TrackerPlotPanel(self, self.dt, size=[300, 400])
         
         #hsizer.Add(self.stError, 0, wx.ALL, 2)        
         sizer_1.Add(self.trackPlot,0, wx.EXPAND, 0)
@@ -132,8 +138,8 @@ class DriftTrackingControl(wx.Panel):
         try:
             self.gCalib.SetRange(self.dt.NCalibStates + 1)
             self.gCalib.SetValue(self.dt.calibState)
-            t, dx, dy, dz = self.dt.history[-1]
-            self.stError.SetLabel('Error: x = %3.2f px\ny = %3.2f px\nz = %3.2f nm' % (dx, dy, dz*1000))
+            t, dx, dy, dz, corr = self.dt.history[-1]
+            self.stError.SetLabel('Error: x = %3.2f px\ny = %3.2f px\nz = %3.2f nm\noffset = %3.2f' % (dx, dy, dz*1000, self.dt.piezo.GetOffset()))
             self.trackPlot.draw()
         except AttributeError:
             pass

@@ -85,6 +85,7 @@ class correlator(object):
 
         
         self.lockFocus = False
+        self.logShifts = True
         self.lastAdjustment = 5 
         self.homePos = self.piezo.GetPos(0)
         
@@ -164,7 +165,7 @@ class correlator(object):
         
         dz = self.deltaZ*np.dot(self.ds_A.ravel(), ddz)*dzn
         
-        return dx, dy, dz + posDelta
+        return dx, dy, dz + posDelta, Cm
         
     
     def tick(self, caller=None):
@@ -209,11 +210,13 @@ class correlator(object):
             
         elif self.calibState > self.NCalibStates:
             #fully calibrated
-            dx, dy, dz = self.compare()
+            dx, dy, dz, cCoeff = self.compare()
             
             #print dx, dy, dz
             
-            self.history.append((time.time(), dx, dy, dz))
+            self.history.append((time.time(), dx, dy, dz, cCoeff))
+            if self.logShifts:
+                self.piezo.LogShifts(dx, dy, dz)
             
             if self.lockFocus:
                 if abs(dz) > self.focusTolerance and self.lastAdjustment >= 2:
