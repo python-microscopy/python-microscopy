@@ -47,7 +47,7 @@ bufferMisses = 0
 nTasksProcessed = 0
 
 splitterFitModules = ['SplitterFitFR', 'SplitterFitFNR','SplitterFitQR', 'SplitterFitCOIR', 'SplitterFitFNSR',
-                      'BiplaneFitR', 'SplitterShiftEstFR', 
+                      'BiplaneFitR', 'SplitterShiftEstFR', 'SplitterFitFusionR',
                       'SplitterObjFindR', 'SplitterFitInterpR', 'SplitterFitInterpQR', 'SplitterFitInterpNR', 'SplitterFitInterpBNR', 'SplitterROIExtractNR']
 
 #from pylab import *
@@ -122,7 +122,7 @@ class CameraInfoManager(object):
 
     def _getMap(self, md, mapName):
         '''Returns the map specified, from cache if possible'''
-        if mapName == None:
+        if mapName == None or mapName == '':
             return None
 
         ROI = self._parseROI(md)

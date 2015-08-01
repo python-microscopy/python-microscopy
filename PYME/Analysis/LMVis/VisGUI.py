@@ -27,7 +27,7 @@ import PYME.misc.autoFoldPanel as afp
 import wx.lib.agw.aui as aui
 
 #hacked so py2exe works
-from PYME.DSView.dsviewer_npy import View3D
+from PYME.DSView.dsviewer_npy_nb import View3D
 
 from PYME.Analysis.LMVis import gl_render
 #from PYME.Analysis.LMVis import workspaceTree
@@ -1106,7 +1106,9 @@ class VisGuiApp(wx.App):
         return True
 
 
-def main(filename):
+def main(filename=None):
+    if filename == "":
+        filename = None
     application = VisGuiApp(filename, 0)
     application.MainLoop()
 

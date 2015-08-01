@@ -1,0 +1,14 @@
+- Deconvolve:
+    beadDiameter: 200.0
+    inputName: input
+    iterations: 10
+    lorentzianFWHM: 50.0
+    method: Richardson-Lucy
+    offset: 0
+    outputName: output
+    padding: 0
+    processFramesIndividually: true
+    psfFilename: ''
+    psfType: Lorentzian
+    regularisationLambda: 0.1
+    zPadding: 0
