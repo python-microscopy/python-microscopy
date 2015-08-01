@@ -22,6 +22,36 @@
 ################
 import numpy as np
 
+class ClumpSource(object):
+    def __init__(self, pipeline, clumpID):
+        self.pipeline = pipeline
+        
+        self.index = pipeline['clumpIndex'] == clumpID
+        self.cache = {}
+        
+    def keys(self):
+        return self.pipeline.keys()
+
+    def __getitem__(self, key):
+        if not key in self.keys():
+            raise RuntimeError('Key not defined')
+        
+        if not key in self.cache.keys():
+            self.cache[key] = self.pipeline[key][self.index]
+            
+        return self.cache[key]
+        
+        
+class ClumpManager(object):
+    def __init__(self, pipeline):
+        self.pipeline = pipeline
+        
+    def __getitem__(self, key):
+        return ClumpSource(self.pipeline, key)
+            
+        
+    
+
 def findTracks(pipeline, rad_var='error_x', multiplier='2.0', nFrames=20):
     import PYME.Analysis.DeClump.deClump as deClump
     
@@ -48,6 +78,8 @@ def findTracks(pipeline, rad_var='error_x', multiplier='2.0', nFrames=20):
     pipeline.selectedDataSource.setMapping('clumpIndex', 'clumpIndices')
     pipeline.selectedDataSource.setMapping('clumpSize', 'clumpSizes')
     pipeline.selectedDataSource.setMapping('trackVelocity', 'trackVelocities')
+    
+    pipeline.clumps = ClumpManager(pipeline)
 
 
 def calcTrackVelocity(x, y, ci):

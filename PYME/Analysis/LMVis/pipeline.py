@@ -35,7 +35,6 @@ import os
 
 from PYME.Analysis.BleachProfile.kinModels import getPhotonNums
 
-
 class Pipeline:
     def __init__(self, filename=None, visFr=None):
         self.dataSources = []

@@ -29,6 +29,51 @@ class MultifitBlobs(ModuleBase):
         
         namespace[self.outputName] = res#inpFilt.mappingFilter(res, x='fitResults_x0', y='fitResults_y0')
 
+@register_module('FitDumbells') 
+class FitDumbells(ModuleBase):
+    inputImage = CStr('input')
+    inputPositions = CStr('objPostiions')
+    outputName = CStr('fitResults')
+    
+    def execute(self, namespace):
+        from PYME.Analysis.FitFactories import DumbellFitR
+        from PYME.Acquire import MetaDataHandler
+        img = namespace[self.inputImage]
+        
+        md = MetaDataHandler.NestedClassMDHandler()
+        #set metadata entries needed for fitting to suitable defaults
+        md['Camera.ADOffset'] = img.data[:,:,0].min()
+        md['Camera.TrueEMGain'] = 1.0
+        md['Camera.ElectronsPerCount'] = 1.0
+        md['Camera.ReadNoise'] = 1.0
+        md['Camera.NoiseFactor'] = 1.0
+        
+        #copy across the entries from the real image, replacing the defaults
+        #if necessary
+        md.copyEntriesFrom(img.mdh)
+        
+        
+        inp = namespace[self.inputPositions]
+    
+        r = np.zeros(len(inp['x']), dtype=DumbellFitR.FitResultsDType)
+        
+        ff_t = -1
+        
+        ps = img.pixelSize
+        
+        for x, y, t, i in zip(inp['x'], inp['y'], inp['t'], range(len(inp['x']))):
+            if not t == ff_t:
+                md['tIndex'] = t
+                ff = DumbellFitR.FitFactory(img.data[:,:,t], md)
+                ff_t = t
+            
+            r[i] = ff.FromPoint(x/ps, y/ps)
+            
+        
+        res = inpFilt.fitResultsSource(r)
+        
+        namespace[self.outputName] = res#inpFilt.mappingFilter(res, x='fitResults_x0', y='fitResults_y0')
+
 @register_module('MeanNeighbourDistances') 
 class MeanNeighbourDistances(ModuleBase):
     '''Calculates mean distance to nearest neighbour in a triangulation of the 

@@ -27,7 +27,7 @@ import PYME.misc.autoFoldPanel as afp
 import wx.lib.agw.aui as aui
 
 #hacked so py2exe works
-from PYME.DSView.dsviewer_npy import View3D
+from PYME.DSView.dsviewer_npy_nb import View3D
 
 from PYME.Analysis.LMVis import gl_render
 #from PYME.Analysis.LMVis import workspaceTree
@@ -120,7 +120,7 @@ class VisGUIFrame(wx.Frame):
 #            pylab.plot(pylab.randn(10))
 
         self.sh.Execute('from pylab import *')
-        self.sh.Execute('from PYME.DSView.dsviewer_npy import View3D')
+        self.sh.Execute('from PYME.DSView.dsviewer_npy_nb import View3D')
 
         #self.workspace = workspaceTree.WorkWrap(self.__dict__)
         ##### Make certain things visible in the workspace tree
@@ -1097,7 +1097,9 @@ class VisGuiApp(wx.App):
         return True
 
 
-def main(filename):
+def main(filename=None):
+    if filename == "":
+        filename = None
     application = VisGuiApp(filename, 0)
     application.MainLoop()
 
