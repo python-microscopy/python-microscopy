@@ -42,6 +42,8 @@ class TrackerPlotPanel(PlotPanel):
                 trk  = self.posTrk.GetTrack()
     
                 self.subplot.cla()
+                
+                #circle2=plt.Circle((5,5),.5,color='b',fill=False)
     
                 self.subplot.plot(trk[:,2], trk[:,3], 'x-')
                 self.subplot.plot(trk[-1,2], trk[-1,3], '.r')

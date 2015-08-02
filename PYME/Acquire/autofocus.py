@@ -34,12 +34,13 @@ class AutoFocus(object):
             else:
                 #already runing backwards
                 self.scope.SetPos(z=self.lastMaxPos)
-                self.scope.pa.WantFrameNotification.remove(self.tick)
+                self.scope.pa.WantFrameGroupNotification.remove(self.tick)
             
         self.scope.SetPos(z=self.lastMaxPos + self.incr)
         
         print 'af'
         
     def af(self, incr=0.5):
+        self.lastMax = 0
         self.incr = incr
-        self.scope.WantFrameNotification.append(self.tick)
+        self.scope.pa.WantFrameGroupNotification.append(self.tick)
