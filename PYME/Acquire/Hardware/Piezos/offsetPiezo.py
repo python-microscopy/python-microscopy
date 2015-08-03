@@ -9,6 +9,8 @@ import Pyro.naming
 import threading
 from PYME.misc.computerName import GetComputerName
 
+from PYME.Acquire import eventLog
+
 
 class piezoOffsetProxy(Pyro.core.ObjBase):    
     def __init__(self, basePiezo):
@@ -56,6 +58,10 @@ class piezoOffsetProxy(Pyro.core.ObjBase):
         p = self.GetPos()
         self.offset = val
         self.MoveTo(0, p)
+        
+    def LogShifts(self, dx, dy, dz):
+        eventLog.logEvent('ShiftMeasure', '%3.4f, %3.4f, %3.4f' % (dx, dy, dz))
+        
         
 class ServerThread(threading.Thread):
     def __init__(self, basePiezo):

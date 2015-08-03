@@ -278,7 +278,7 @@ class LightCrafter(object):
     def SetScanningVDC(self, period, exposureMs=100, angle=0, dutyCycle=.5, nSteps = 20):
         pats = [self.GenVDCLines(period, phase=p, angle = angle, dutyCycle = dutyCycle).T for p in np.linspace(0, 1, nSteps)]
         from PYME.DSView import View3D
-        View3D(pats)
+        View3D(np.array(pats))
         
         self.SetPatternDefs(pats, exposureMs=exposureMs)
         self.StartPatternSeq()
@@ -290,7 +290,7 @@ class LightCrafter(object):
             for px in np.linspace(0, int(100/dc - 1)*dc, int(100/dc)):
                 pats.append(self.GenHex(peri, dutyCycle = dc, phasex=px, phasey = py))
         from PYME.DSView import View3D
-        View3D(pats)
+        View3D(np.array(pats))
         
         self.SetPatternDefs(pats, exposureMs=exposureMs)
         self.StartPatternSeq()

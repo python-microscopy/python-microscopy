@@ -71,6 +71,15 @@ filePattern = '%(day)d_%(month)d_series'
 resultsdirPattern = '%(dataDir)s/%(username)s/analysis/%(dday)d-%(dmonth)d-%(dyear)d'
 resultsdirPatternShort = '%(dataDir)s/%(username)s/analysis/'
 
+calibrationdirPattern = '%(dataDir)s/CALIBRATION/%(serialNum)s/'
+
+def getCalibrationDir(serialNum, create=True):
+    p =  os.path.join(*seps.split(calibrationdirPattern)) % {'dataDir':datadir, 'serialNum':serialNum}
+    if create and not os.path.exists(p): #create the necessary directories
+        os.makedirs(p)
+
+    return os.path.normpath(p)
+
 def genHDFDataFilepath(create=True):
     p =  os.path.join(*seps.split(datadirPattern)) % dateDict
     if create and not os.path.exists(p): #create the necessary directories
