@@ -24,7 +24,7 @@ DEBUG = False
 
 TEMPLATE_DEBUG = DEBUG
 
-ALLOWED_HOSTS = ['DBSRV1', 'localhost']
+ALLOWED_HOSTS = ['phy-lmsrv2', 'localhost']
 
 
 # Application definition

@@ -35,7 +35,6 @@ import os
 
 from PYME.Analysis.BleachProfile.kinModels import getPhotonNums
 
-
 class Pipeline:
     def __init__(self, filename=None, visFr=None):
         self.dataSources = []
@@ -164,6 +163,14 @@ class Pipeline:
         
             if 'ScannerXPos' in evKeyNames or 'ScannerYPos' in evKeyNames:
                 self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
+                
+            if 'ShiftMeasure' in evKeyNames:
+                self.selectedDataSource.driftx = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), 0, 'ShiftMeasure', 0)(self.selectedDataSource['t']-.01)
+                self.selectedDataSource.drifty = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), 0, 'ShiftMeasure', 1)(self.selectedDataSource['t']-.01)
+        
+                self.selectedDataSource.setMapping('driftx', 'driftx')
+                self.selectedDataSource.setMapping('drifty', 'drifty')
+                
                 
     def _processSplitter(self):
         '''set mappings ascociated with the use of a splitter'''

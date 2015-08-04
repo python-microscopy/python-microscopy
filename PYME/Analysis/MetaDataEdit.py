@@ -136,11 +136,13 @@ class ChoiceParam(object):
         
         
 class FilenameParam(object):
-    def __init__(self, paramName, guiName, default='<none>', helpText='', prompt='Please select file', wildcard='All files|*.*'):
+    def __init__(self, paramName, guiName, default='<none>', helpText='', prompt='Please select file', wildcard='All files|*.*', filename = None):
         self.paramName = paramName
         self.guiName = guiName
         self.default = default
         self.filename = default
+        if not filename == None:
+            self.filename = filename
         self.prompt = prompt
         self.wildcard = wildcard
         

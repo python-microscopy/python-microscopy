@@ -73,6 +73,9 @@ class LMAnalyser:
                       #mde.IntParam('Analysis.DebounceRadius', 'Debounce r:', 4),
                       #mde.FloatParam('Analysis.AxialShift', 'Z Shift [nm]:', 0),
                       mde.BoolFloatParam('Analysis.PCTBackground' , 'Use percentile for background', default=False, helpText='', ondefault=0.25, offvalue=0),
+                      mde.FilenameParam('Camera.VarianceMapID', 'Variance Map:', prompt='Please select variance map to use ...', wildcard='TIFF Files|*.tif', filename=''),
+                      mde.FilenameParam('Camera.DarkMapID', 'Dark Map:', prompt='Please select dark map to use ...', wildcard='TIFF Files|*.tif', filename=''),
+                      mde.FilenameParam('Camera.FlatfieldMapID', 'Flatfiled Map:', prompt='Please select flatfield map to use ...', wildcard='TIFF Files|*.tif', filename=''),
     ]
     
     def __init__(self, dsviewer):
@@ -306,6 +309,7 @@ class LMAnalyser:
 
         hsizer.Add(wx.StaticText(pan, -1, 'Background:'), 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
         self.tBackgroundFrames = wx.TextCtrl(pan, -1, value='-30:0', size=(50, -1))
+        self.tBackgroundFrames.SetValue('%d:%d'% tuple(self.image.mdh.getOrDefault('Analysis.BGRange', [-30,0])))
 
         hsizer.Add(self.tBackgroundFrames, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
         vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 2)
@@ -315,7 +319,7 @@ class LMAnalyser:
         item.AddNewElement(pan)
 
         self.cbSubtractBackground = wx.CheckBox(item, -1, 'Subtract background in fit')
-        self.cbSubtractBackground.SetValue(True)
+        self.cbSubtractBackground.SetValue(self.image.mdh.getOrDefault('Analysis.subtractBackground', True))
 
 
         item.AddNewElement(self.cbSubtractBackground)
@@ -348,7 +352,7 @@ class LMAnalyser:
         if 'Analysis.FitModule' in self.image.mdh.getEntryNames():
             #has already been analysed - most likely to want the same method again
             self.cFitType.SetSelection(self.fitFactories.index(self.image.mdh['Analysis.FitModule']))
-            self.tThreshold.SetValue('%s' % self.image.mdh['Analysis.DetectionThreshold'])
+            self.tThreshold.SetValue('%s' % self.image.mdh.getOrDefault('Analysis.DetectionThreshold', 1))
         #elif 'Camera.ROIPosY' in self.image.mdh.getEntryNames() and (self.image.mdh.getEntry('Camera.ROIHeight') + 1 + 2*(self.image.mdh.getEntry('Camera.ROIPosY')-1)) == 512:
         #    #we have a symetrical ROI about the centre - most likely want to analyse using splitter
         #    self.cFitType.SetSelection(self.fitFactories.index('SplitterFitQR'))
@@ -484,7 +488,7 @@ class LMAnalyser:
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
         hsizer.Add(wx.StaticText(pan, -1, 'Threshold:'), 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-        self.tThreshold = wx.TextCtrl(pan, -1, value='0.6', size=(40, -1))
+        self.tThreshold = wx.TextCtrl(pan, -1, value='1.0', size=(40, -1))
 
         hsizer.Add(self.tThreshold, 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
         

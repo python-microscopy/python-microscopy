@@ -141,5 +141,5 @@ def report():
     for f in filenames:
         tfn = os.path.join(tpath,  f + '.html')
         colorize_db_t.colorize_file(files[f], linecounts[f], fullfilenames[f],open(tfn, 'w'))
-        webbrowser.open(tfn, 2)
+        webbrowser.open('file://' + tfn, 2)
         

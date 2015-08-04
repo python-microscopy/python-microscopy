@@ -268,8 +268,13 @@ class GaussianFitFactory(FFBase.FFBase):
         
         #normalised Chi-squared
         nchi2 = (infodict['fvec']**2).sum()/(dataROI.size - res.size)
+        
+        if bgROI.ndim == 3:
+            bgs = bgROI.mean(0).mean(0)
+        else:
+            bgs = bgROI
 
-        return GaussianFitResultR(res, self.metadata, startParameters,(xslice, yslice), resCode, fitErrors, nchi2, bgROI.mean(0).mean(0))
+        return GaussianFitResultR(res, self.metadata, startParameters,(xslice, yslice), resCode, fitErrors, nchi2, bgs)
 
     
         

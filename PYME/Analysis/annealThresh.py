@@ -86,7 +86,7 @@ def annealThresh2(image, valP50, valPslope=1, neighP50=.5, neighSlope=1, mask=No
     nNeighbours = neighbourMask.sum()
 
     neighP50 *= nNeighbours
-    neighSlope += nNeighbours
+    neighSlope /= nNeighbours
 
     #calculate probability that a pixel belongs to object based on it's intensity
     imP = (image/(2*valP50) - 0.5)*valPslope + 0.5
