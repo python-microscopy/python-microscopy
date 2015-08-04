@@ -168,8 +168,8 @@ scope.l532 = lasers.SerialSwitchedLaser('532',sb,2)
 from PYME.Acquire.Hardware import matchboxLaser
 scope.l405 = matchboxLaser.MatchboxLaser('405',portname='COM11')
 
-from PYME.Acquire.Hardware import phoxxLaser
-scope.l647 = phoxxLaser.PhoxxLaser('647',portname='COM15')
+from PYME.Acquire.Hardware import phoxxLaserOLD
+scope.l647 = phoxxLaserOLD.PhoxxLaser('647',portname='COM15')
 scope.StatusCallbacks.append(scope.l647.GetStatusText)
 
 scope.lasers = [scope.l671, scope.l405, scope.l647, scope.l532]
