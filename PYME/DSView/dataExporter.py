@@ -190,7 +190,24 @@ class TiffStackExporter(Exporter):
 
 exporter(TiffStackExporter)
 
+class OMETiffExporter(Exporter):
+    extension = '*.ome.tif'
+    descr = 'OME TIFF - .ome.tif'
 
+    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
+        from PYME.gohlke import tifffile
+        #xmd = None
+        if not metadata == None:
+            xmd = MetaDataHandler.OMEXMLMDHandler(mdToCopy=metadata)
+            description=xmd.getXML(data)
+        else:
+            description = None
+            
+            
+        tifffile.imsave_f(outFile, data, description = description) 
+
+
+exporter(OMETiffExporter)
 
 #@exporter
 class TiffSeriesExporter(Exporter):
@@ -432,7 +449,11 @@ def CropExportData(vp, mdh=None, events=None, origName = None):
             dlg.Destroy()
             return
 
-        exp = exportersByExtension['*' + os.path.splitext(filename)[1]]()
+        ext = '*' + os.path.splitext(filename)[1]
+        #deal with the special case of ome tiffs
+        if filename.endswith('ome.tif'):
+            ext = '*.ome.tif'        
+        exp = exportersByExtension[ext]()
 
         exp.Export(ds, filename, dlg.GetXSlice(), dlg.GetYSlice(), dlg.GetZSlice(),mdh, events, origName)
 
@@ -450,8 +471,11 @@ def ExportData(ds, mdh=None, events=None, origName = None, defaultExt = '*.tif',
         #we cancelled the dialog - exit
         return
 
-    
+        
     ext = '*' + os.path.splitext(filename)[1]
+    #deal with the special case of ome tiffs
+    if filename.endswith('ome.tif'):
+        ext = '*.ome.tif'
         
     if not ext in exportersByExtension.keys():
         raise RuntimeError('No exporter found for %s files')

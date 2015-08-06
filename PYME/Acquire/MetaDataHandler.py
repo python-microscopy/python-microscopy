@@ -384,7 +384,7 @@ class CachingMDHandler(MDHandlerBase):
         return self.cache.keys()
     
 
-from xml.dom.minidom import getDOMImplementation, parse
+from xml.dom.minidom import getDOMImplementation, parse, parseString
 #from xml.sax.saxutils import escape, unescape
 import base64
 
@@ -536,6 +536,84 @@ class XMLMDHandler(MDHandlerBase):
 
         return en
 
+
+class OMEXMLMDHandler(XMLMDHandler):
+    def __init__(self, XMLData = None, mdToCopy=None):
+        if not XMLData == None:
+            #loading an existing file
+            self.doc = parseString(XMLData)
+            self.md = self.doc.documentElement.getElementsByTagName('MetaData')[0]
+        else:
+            #creating a new document
+            self.doc = getDOMImplementation().createDocument(None, 'OME', None)
+            self.doc.documentElement.setAttribute('xmlns', "http://www.openmicroscopy.org/Schemas/OME/2015-01")
+            #self.doc.documentElement.setAttribute('xmlns:ROI', "http://www.openmicroscopy.org/Schemas/ROI/2015-01")
+            #self.doc.documentElement.setAttribute('xmlns:BIN', "http://www.openmicroscopy.org/Schemas/BinaryFile/2015-01")
+            self.doc.documentElement.setAttribute('xmlns:xsi', "http://www.w3.org/2001/XMLSchema-instance")
+            self.doc.documentElement.setAttribute('xsi:schemaLocation','http://www.openmicroscopy.org/Schemas/OME/2015-01 http://www.openmicroscopy.org/Schemas/OME/2015-01/ome.xsd')
+            
+            
+            self.img = self.doc.createElement('Image')
+            self.img.setAttribute('ID', 'Image:0')
+            self.img.setAttribute('Name', 'Image:0')
+            self.doc.documentElement.appendChild(self.img)
+            
+            self.pixels = self.doc.createElement('Pixels')
+            self.img.appendChild(self.pixels)
+            self.pixels.setAttribute('ID', 'Pixels:0')
+            self.pixels.setAttribute('DimensionOrder', 'XYCZT')
+            
+            tf = self.doc.createElement('TiffData')
+            self.pixels.appendChild(tf)
+            
+            sa = self.doc.createElement('StructuredAnnotations')
+            self.doc.documentElement.appendChild(sa)
+            
+            xa = self.doc.createElement('XMLAnnotation')
+            sa.appendChild(xa)
+            xa.setAttribute('ID', 'PYME')
+            #self.doc = getDOMImplementation().createDocument(None, 'PYMEImageData', None)
+            v = self.doc.createElement('Value')
+            xa.appendChild(v)
+            
+            self.md = self.doc.createElement('MetaData')
+            v.appendChild(self.md)
+
+        if not mdToCopy == None:
+            self.copyEntriesFrom(mdToCopy)
+            
+    def getXML(self, data = None):
+        #sync the OME data from the ordinary metadata
+        if not data == None:
+            ims = data.shape
+            if len(ims) > 3:
+                SizeX, SizeY, SizeT, SizeC = ims
+                SizeZ = 1
+            else:
+                SizeX, SizeY, SizeT = ims
+                SizeZ = 1
+                SizeC = 1
+                
+            
+            if str(data[0,0,0,0,0].dtype) == 'float32':
+                self.pixels.setAttribute('Type', 'float')
+            else:
+                self.pixels.setAttribute('Type', str(data[0,0,0,0,0].dtype))
+            self.pixels.setAttribute('SizeX', str(SizeX))
+            self.pixels.setAttribute('SizeY', str(SizeY))
+            self.pixels.setAttribute('SizeZ', str(SizeZ))
+            self.pixels.setAttribute('SizeT', str(SizeT))
+            self.pixels.setAttribute('SizeC', str(SizeC))
+            
+            self.pixels.setAttribute('PhysicalSizeX', '%3.4f' % self.getEntry('voxelsize.x'))
+            self.pixels.setAttribute('PhysicalSizeY', '%3.4f' % self.getEntry('voxelsize.y'))
+    
+        return self.doc.toprettyxml()
+    
+    def writeXML(self, filename):
+        f = open(filename, 'w')
+        f.write(self.getXML())
+        f.close()
 
 #    def copyEntriesFrom(self, mdToCopy):
 #        for en in mdToCopy.getEntryNames():

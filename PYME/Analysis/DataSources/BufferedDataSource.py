@@ -32,6 +32,8 @@ class DataSource(BaseDataSource): #buffer our io to avoid decompressing multiple
         self.insertAt = 0
         self.bufferedSlices = -1*numpy.ones((bLen,), 'i')
         self.dataSource = dataSource
+        self.additionalDims = dataSource.additionalDims
+        self.sizeC = dataSource.sizeC
 
         self.lock = threading.Lock()
 
