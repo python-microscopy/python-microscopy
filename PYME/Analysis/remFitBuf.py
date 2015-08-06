@@ -122,7 +122,7 @@ class CameraInfoManager(object):
 
     def _getMap(self, md, mapName):
         '''Returns the map specified, from cache if possible'''
-        if mapName == None:
+        if mapName == None or mapName == '':
             return None
 
         ROI = self._parseROI(md)

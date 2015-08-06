@@ -73,6 +73,9 @@ class LMAnalyser:
                       #mde.IntParam('Analysis.DebounceRadius', 'Debounce r:', 4),
                       #mde.FloatParam('Analysis.AxialShift', 'Z Shift [nm]:', 0),
                       mde.BoolFloatParam('Analysis.PCTBackground' , 'Use percentile for background', default=False, helpText='', ondefault=0.25, offvalue=0),
+                      mde.FilenameParam('Camera.VarianceMapID', 'Variance Map:', prompt='Please select variance map to use ...', wildcard='TIFF Files|*.tif', filename=''),
+                      mde.FilenameParam('Camera.DarkMapID', 'Dark Map:', prompt='Please select dark map to use ...', wildcard='TIFF Files|*.tif', filename=''),
+                      mde.FilenameParam('Camera.FlatfieldMapID', 'Flatfiled Map:', prompt='Please select flatfield map to use ...', wildcard='TIFF Files|*.tif', filename=''),
     ]
     
     def __init__(self, dsviewer):
@@ -479,7 +482,7 @@ class LMAnalyser:
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
         hsizer.Add(wx.StaticText(pan, -1, 'Threshold:'), 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-        self.tThreshold = wx.TextCtrl(pan, -1, value='0.6', size=(40, -1))
+        self.tThreshold = wx.TextCtrl(pan, -1, value='1.0', size=(40, -1))
 
         hsizer.Add(self.tThreshold, 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
         

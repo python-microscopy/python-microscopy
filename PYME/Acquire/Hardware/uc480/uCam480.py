@@ -29,6 +29,10 @@ import sys
 from PYME.Acquire import MetaDataHandler
 from PYME.Acquire.Hardware import ccdCalibrator
 
+import os
+#from PYME.DSView import image
+from PYME.FileUtils import nameUtils
+
 import threading
 
 try:
@@ -177,6 +181,17 @@ class uc480Camera:
         self.binX=1 #1x1
         self.binY=1
         
+        self.background = None
+        self.flatfield = None
+        self.flat = None
+        
+        #load flatfield (if present)
+        calpath = nameUtils.getCalibrationDir(self.serialNum)
+        ffname = os.path.join(calpath, 'flatfield.npy')
+        if os.path.exists(ffname):
+            self.flatfield = np.load(ffname).squeeze()
+            self.flat = self.flatfield
+        
         self.SetROI(0,0, self.CCDSize[0],self.CCDSize[1])
         #self.ROIx=(1,self.CCDSize[0])
         #self.ROIy=(1,self.CCDSize[1])
@@ -191,8 +206,7 @@ class uc480Camera:
         self.nAccum = 1
         self.nAccumCurrent = 0
         
-        self.background = None
-        self.flatfield = None
+        
         
         self.Init()
         
@@ -480,7 +494,9 @@ class uc480Camera:
         ret = uc480.CALL('AOI', self.boardHandle, uc480.IS_AOI_IMAGE_SET_AOI, byref(rect), ctypes.sizeof(rect))
         if not ret == 0:
             raise RuntimeError('Error setting ROI: %d: %s' % GetError(self.boardHandle))
-
+            
+        if not self.flatfield == None:
+            self.flat = self.flatfield[x1:x2, y1:y2]
 
         #raise Exception, 'Not implemented yet!!'
 
@@ -557,8 +573,8 @@ class uc480Camera:
         if (not self.background == None) and self.background.shape == chSlice.shape:
             chSlice[:] = (chSlice - np.minimum(chSlice, self.background))[:]
             
-        if (not self.flatfield == None) and self.flatfield.shape == chSlice.shape:
-            chSlice[:] = (chSlice*self.flatfield).astype('uint16')[:]
+        if (not self.flat == None) and self.flat.shape == chSlice.shape:
+            chSlice[:] = (chSlice*self.flat).astype('uint16')[:]
         
         #ret = uc480.CALL('UnlockSeqBuf', self.boardHandle, uc480.IS_IGNORE_PARAMETER, pData)
 

@@ -26,6 +26,7 @@ from .SDK3Cam import *
 import numpy as np
 import threading
 import ctypes
+import os
 
 try:
     import Queue
@@ -34,6 +35,7 @@ except ImportError:
     
 import time
 import traceback
+from PYME.FileUtils import nameUtils
 
 from fftw3f import create_aligned_array
 
@@ -126,7 +128,9 @@ class AndorBase(SDK3Camera):
         #set some intial parameters
         #self.FrameCount.setValue(1)
         self.CycleMode.setString(u'Continuous')
-        self.PixelEncoding.setString('Mono16')
+        
+        self.SimplePreAmpGainControl.setString(u'12-bit (low noise)')
+        self.PixelEncoding.setString('Mono12Packed')
         self.SensorCooling.setValue(True)
         #self.TemperatureControl.setString('-30.00')
         #self.PixelReadoutRate.setIndex(1)
@@ -445,6 +449,17 @@ class AndorBase(SDK3Camera):
             #realEMGain = ccdCalibrator.CalibratedCCDGain(self.GetEMGain(), self.GetCCDTempSetPoint())
             #if not realEMGain == None:
             mdh.setEntry('Camera.TrueEMGain', 1)
+            
+            itime = int(1000*self.GetIntegTime())
+            calpath = nameUtils.getCalibrationDir(self.GetSerialNumber())
+            dkfn = os.path.join(calpath, 'dark_%dms.tif'%itime)
+            print dkfn
+            if os.path.exists(dkfn):
+                mdh['Camera.DarkMapID'] = dkfn
+            varfn = os.path.join(calpath, 'variance_%dms.tif'%itime)
+            print varfn
+            if os.path.exists(varfn):
+                mdh['Camera.VarianceMapID'] = varfn
 
     #functions to make us look more like andor camera
     def GetEMGain(self):

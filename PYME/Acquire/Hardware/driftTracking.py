@@ -61,6 +61,8 @@ class correlator(object):
         
         self.focusTolerance = .05 #how far focus can drift before we correct
         self.deltaZ = 0.2 #z increment used for calibration
+        self.stackHalfSize = 10
+        self.NCalibStates = 2*self.stackHalfSize + 1
         #self.initialise()
         
     def initialise(self):
@@ -78,10 +80,14 @@ class correlator(object):
         self.mask[:,-10:] = 0
         
         self.calibState = 0 #completely uncalibrated
+        
+        
 
         
         self.lockFocus = False
+        self.logShifts = True
         self.lastAdjustment = 5 
+        self.homePos = self.piezo.GetPos(0)
         
         
         self.history = []
@@ -108,6 +114,11 @@ class correlator(object):
         self.dz = (self.refC - self.refB).ravel()
         self.dzn = 2./np.dot(self.dz, self.dz)
         
+    def setRefN(self, N):
+        d = 1.0*self.scope.pa.dsa.squeeze()
+        ref = d/d.mean() - 1        
+        self.calFTs[:,:,N] = ifftn(ref)
+        self.calImages[:,:,N] = ref*self.mask
     #def setRefD(self):
     #    self.refD = (1.0*self.d).squeeze()/self.d.mean() - 1 
     #    self.refD *= self.mask
@@ -119,8 +130,24 @@ class correlator(object):
         d = 1.0*self.scope.pa.dsa.squeeze()
         dm = d/d.mean() - 1
         
+        #where is the piezo suppposed to be
+        nomPos = self.piezo.GetPos(0)
+        posInd = np.argmin(np.abs(nomPos - self.calPositions))
+        
+        #retrieve calibration information at this location        
+        calPos = self.calPositions[posInd]
+        FA = self.calFTs[:,:,posInd]
+        refA = self.calImages[:,:,posInd] 
+
+        ddz = self.dz[:,posInd]
+        dzn = self.dzn[posInd]
+        
+        posDelta = nomPos - calPos
+        
+        print nomPos, posInd, calPos, posDelta
+        
         #find x-y drift
-        C = ifftshift(np.abs(ifftn(fftn(dm)*self.FA)))
+        C = ifftshift(np.abs(ifftn(fftn(dm)*FA)))
         
         Cm = C.max()    
         
@@ -134,9 +161,11 @@ class correlator(object):
         
         #print A.shape, As.shape
         
-        ds_A = (ds - self.refA)
+        self.ds_A = (ds - refA)
         
-        return dx, dy, self.deltaZ*np.dot(ds_A.ravel(), self.dz)*self.dzn
+        dz = self.deltaZ*np.dot(self.ds_A.ravel(), ddz)*dzn
+        
+        return dx, dy, dz + posDelta, Cm
         
     
     def tick(self, caller=None):
@@ -145,33 +174,49 @@ class correlator(object):
             
         #called on a new frame becoming available
         if self.calibState == 0:
-            self.piezo.SetOffset(0)
-            self.calibState = 1
-        elif self.calibState == 1:
-            self.calibState = 2
-        elif self.calibState == 2:
-            self.setRefA()
-            self.piezo.SetOffset(-self.deltaZ)
-            self.calibState = 3
-        elif self.calibState == 3:
-            self.calibState = 4
-        elif self.calibState == 4:
-            self.setRefB()
-            self.piezo.SetOffset(self.deltaZ)
-            self.calibState = 5
-        elif self.calibState == 5:
-            self.calibState = 6
-        elif self.calibState == 6:
-            self.setRefC()
-            self.piezo.SetOffset(0)
-            self.calibState = 7
-        elif self.calibState == 7:
+            #redefine our positions for the calibration
+            self.homePos = self.piezo.GetPos(0)
+            self.calPositions = self.homePos + self.deltaZ*np.arange(-float(self.stackHalfSize), float(self.stackHalfSize + 1))
+            self.NCalibStates = len(self.calPositions)
+            
+            self.calImages = np.zeros(self.mask.shape[:2] + (self.NCalibStates,))
+            self.calFTs = np.zeros(self.mask.shape[:2] + (self.NCalibStates,), dtype='complex64')
+            
+            self.piezo.MoveTo(0, self.calPositions[0])
+            
+            #self.piezo.SetOffset(0)
+            self.calibState += .5
+        elif self.calibState < self.NCalibStates:
+            if (self.calibState % 1) == 0:
+                #full step - record current image and move on to next position
+                self.setRefN(self.calibState - 1)
+                self.piezo.MoveTo(0, self.calPositions[self.calibState])
+            
+            #increment our calibration state
+            self.calibState += 0.5
+            
+        elif (self.calibState == self.NCalibStates):
+            self.setRefN(self.calibState - 1)
+            
+            #perform final bit of calibration - calcuate gradient between steps
+            #self.dz = (self.refC - self.refB).ravel()
+            #self.dzn = 2./np.dot(self.dz, self.dz)
+            self.dz = np.gradient(self.calImages)[2].reshape(-1, self.NCalibStates)
+            self.dzn = np.hstack([1./np.dot(self.dz[:,i], self.dz[:,i]) for i in range(self.NCalibStates)])
+            
+            self.piezo.MoveTo(0, self.homePos)
+            
+            self.calibState += 1
+            
+        elif self.calibState > self.NCalibStates:
             #fully calibrated
-            dx, dy, dz = self.compare()
+            dx, dy, dz, cCoeff = self.compare()
             
             #print dx, dy, dz
             
-            self.history.append((time.time(), dx, dy, dz))
+            self.history.append((time.time(), dx, dy, dz, cCoeff))
+            if self.logShifts:
+                self.piezo.LogShifts(dx, dy, dz)
             
             if self.lockFocus:
                 if abs(dz) > self.focusTolerance and self.lastAdjustment >= 2:
