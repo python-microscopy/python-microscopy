@@ -21,16 +21,31 @@
 #
 ################
 import numpy as np
+import matplotlib.pyplot as plt
+import mpld3
+import pandas as pd
+import os
 
-class ClumpSource(object):
+class Clump(object):
     def __init__(self, pipeline, clumpID):
         self.pipeline = pipeline
+        self.clumpID = clumpID
         
         self.index = pipeline['clumpIndex'] == clumpID
+        self.nEvents = self.index.sum()
         self.cache = {}
-        
+            
+    
     def keys(self):
         return self.pipeline.keys()
+        
+    @property
+    def varnames(self):
+        return self.keys()
+    
+    @property
+    def dtypes(self):
+        return {k: str(self[k].dtype) for k in self.keys()}
 
     def __getitem__(self, key):
         if not key in self.keys():
@@ -41,13 +56,58 @@ class ClumpSource(object):
             
         return self.cache[key]
         
+    def save(self, filename):
+        d = {}
+        d.update(self)
+        
+        df = pd.DataFrame(d)
+
+        ext = os.path.splitext(filename)[-1]        
+        
+        if ext == '.csv': 
+            df.to_csv(filename)
+        elif ext in ['.xls', '.xlsx']:
+            df.to_excel(filename)
+        elif ext == '.hdf':
+            df.to_hdf(filename)
+        elif ext == '.pik':
+            df.to_pickle(filename)
+        else:
+            raise RuntimeError('Unkonwn extension: %s' %ext)
+    
+        
+        
+class Track(Clump):
+    @property
+    def distance(self):
+        if not '_distance' in dir(self):
+            #cache result
+            self._distance = np.sqrt((self['x'][-1] - self['x'][0])**2 + (self['y'][-1] - self['y'][0])**2)
+        
+        return self._distance
+        
+    @property
+    def trajectory(self):
+        f = plt.figure()
+        
+        plt.plot(self['x'], self['y'])
+        
+        return mpld3.fig_to_html(f)
+        
+        
         
 class ClumpManager(object):
     def __init__(self, pipeline):
         self.pipeline = pipeline
         
     def __getitem__(self, key):
-        return ClumpSource(self.pipeline, key)
+        return Track(self.pipeline, key)
+    
+    @property    
+    def all(self):
+        ids = list(set(self.pipeline['clumpIndex']))
+        
+        return [self.__getitem__(id) for id in ids]
             
         
     

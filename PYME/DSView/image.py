@@ -500,7 +500,7 @@ class ImageStack(object):
                 if tf.is_ome:
                     omemdh = MetaDataHandler.OMEXMLMDHandler(tf.pages[0].tags['image_description'].value)
                     
-                self.mdh.copyEntriesFrom(omemdh)
+                    self.mdh.copyEntriesFrom(omemdh)
                 
             elif filename.endswith('.dbl'): #Bewersdorf lab STED
                 mdfn = filename[:-4] + '.txt'

@@ -7,6 +7,7 @@ Created on Mon May 25 17:10:02 2015
 from .base import ModuleBase, register_module, Filter, Float, Enum, CStr, Bool, Int, View, Item, Group
 import numpy as np
 from PYME.Analysis.LMVis import inpFilt
+from PYME.Acquire import MetaDataHandler
 import os
 
 @register_module('MultifitBlobs') 
@@ -23,11 +24,16 @@ class MultifitBlobs(ModuleBase):
         
         img.mdh['Analysis.PSFSigma'] = self.blobSigma
         
-        ff = GaussMultifitSR.FitFactory(self.scale*img.data[:,:,:], img.mdh, noiseSigma=np.ones_like(img.data[:,:,:].squeeze()))
+        res = []
         
-        res = inpFilt.fitResultsSource(ff.FindAndFit(self.threshold))
+        for i in range(img.data.shape[2]):
+            md = MetaDataHandler.NestedClassMDHandler(img.mdh)
+            md['tIndex'] = i
+            ff = GaussMultifitSR.FitFactory(self.scale*img.data[:,:,i], img.mdh, noiseSigma=np.ones_like(img.data[:,:,i].squeeze()))
         
-        namespace[self.outputName] = res#inpFilt.mappingFilter(res, x='fitResults_x0', y='fitResults_y0')
+            res.append(inpFilt.fitResultsSource(ff.FindAndFit(self.threshold)))
+        
+        namespace[self.outputName] = np.vstack(res)#inpFilt.mappingFilter(res, x='fitResults_x0', y='fitResults_y0')
 
 @register_module('FitDumbells') 
 class FitDumbells(ModuleBase):
