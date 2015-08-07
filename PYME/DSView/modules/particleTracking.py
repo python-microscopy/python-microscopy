@@ -116,6 +116,7 @@ class ParticleTracker(HasTraits):
         self.tracker = None
 
     def OnTrack(self, event):
+        from PYME.Analysis.trackUtils import ClumpManager
         pipeline = self.dsviewer.pipeline
         
         if self.tracker == None:
@@ -156,7 +157,7 @@ class ParticleTracker(HasTraits):
         pipeline.selectedDataSource.clumpSizes = clumpSizes
         pipeline.selectedDataSource.setMapping('clumpSize', 'clumpSizes')
             
-        
+        pipeline.clumps = ClumpManager(pipeline)
 
         
     def DrawOverlays(self, view, dc):

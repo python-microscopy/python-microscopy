@@ -141,8 +141,8 @@ exporter(H5Exporter)
 
 #@exporter
 class TiffStackExporter(Exporter):
-    extension = '*.tif'
-    descr = 'TIFF (stack if 3D) - .tif'
+    extension = '*.tiff'
+    descr = 'TIFF (stack if 3D) - .tiff'
 
     def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
         #xmd = None
@@ -191,8 +191,8 @@ class TiffStackExporter(Exporter):
 exporter(TiffStackExporter)
 
 class OMETiffExporter(Exporter):
-    extension = '*.ome.tif'
-    descr = 'OME TIFF - .ome.tif'
+    extension = '*.tif'
+    descr = 'OME TIFF - .tif'
 
     def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
         from PYME.gohlke import tifffile

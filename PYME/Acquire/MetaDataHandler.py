@@ -587,10 +587,10 @@ class OMEXMLMDHandler(XMLMDHandler):
         if not data == None:
             ims = data.shape
             if len(ims) > 3:
-                SizeX, SizeY, SizeT, SizeC = ims
+                SizeY, SizeX, SizeT, SizeC = ims
                 SizeZ = 1
             else:
-                SizeX, SizeY, SizeT = ims
+                SizeY, SizeX, SizeT = ims
                 SizeZ = 1
                 SizeC = 1
                 
