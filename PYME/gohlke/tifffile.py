@@ -462,7 +462,7 @@ def imsave_f(filename, data,
         #force downcast as no-one understands 64bit float tiffs
         #NB actual downcast occurs on a per-frame basis just before write so we 
         #don't need to load everything into memory here
-        data_type = numpy.float32
+        data_type = numpy.dtype('float32')
     
     data_size = frame0.size*data_type.itemsize*num_planes
 
@@ -579,8 +579,8 @@ def imsave_f(filename, data,
     writeonce = (len(tags), len(tag_data)) if num_planes > 1 else None
     tag('compression', 'H', 1, 1)
     tag('orientation', 'H', 1, 1)
-    tag('image_width', 'I', 1, shape[0])
-    tag('image_length', 'I', 1, shape[1])
+    tag('image_width', 'I', 1, shape[1])
+    tag('image_length', 'I', 1, shape[0])
     tag('new_subfile_type', 'I', 1, 0 if num_planes == 1 else 2)
     tag('sample_format', 'H', 1,
         {'u': 1, 'i': 2, 'f': 3, 'c': 6}[data_type.kind])
@@ -605,7 +605,7 @@ def imsave_f(filename, data,
         tag('x_resolution', '2I', 1, resolution[0])
         tag('y_resolution', '2I', 1, resolution[1])
         tag('resolution_unit', 'H', 1, 2)
-    tag('rows_per_strip', 'I', 1, shape[1])
+    tag('rows_per_strip', 'I', 1, shape[0])
     # use one strip per plane
     strip_byte_counts = (frame0.size * data_type.itemsize, )
     tag('strip_byte_counts', offset_format, len(strip_byte_counts), strip_byte_counts)
