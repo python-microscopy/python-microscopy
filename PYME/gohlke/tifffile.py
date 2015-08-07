@@ -457,6 +457,13 @@ def imsave_f(filename, data,
     
     frame0 = data[:,:,0,0,0]
     data_type = frame0.dtype
+    
+    if data_type == 'float64':
+        #force downcast as no-one understands 64bit float tiffs
+        #NB actual downcast occurs on a per-frame basis just before write so we 
+        #don't need to load everything into memory here
+        data_type = numpy.float32
+    
     data_size = frame0.size*data_type.itemsize*num_planes
 
     if not bigtiff and data_size < 2040*2**20:
@@ -654,7 +661,7 @@ def imsave_f(filename, data,
                         strip_offset += size
                 seek(pos)
                 # write data
-                data[:,:,i,j,k].tofile(fd)  # if this fails, try update Python and numpy
+                data[:,:,i,j,k].astype(data_type).tofile(fd)  # if this fails, try update Python and numpy
                 fd.flush()
                 # remove tags that should be written only once
                 if writeonce:
