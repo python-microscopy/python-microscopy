@@ -77,10 +77,10 @@ class Pipeline:
             
         #renderers.renderMetadataProviders.append(self.SaveMetadata)
             
-    def __getitem__(self, key):
+    def __getitem__(self, keys):
         '''gets values from the 'tail' of the pipeline (ie the colourFilter)'''
         
-        return self.colourFilter[key]
+        return self.colourFilter[keys]
 
     def keys(self):
         return self.colourFilter.keys()
@@ -538,6 +538,10 @@ class Pipeline:
         d = {k: self[k] for k in keys}
         
         return pd.DataFrame(d)
+        
+    @property
+    def dtypes(self):
+        return {k: str(self[k, :2].dtype) for k in self.keys()}
     
 
 

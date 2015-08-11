@@ -26,6 +26,50 @@ import mpld3
 import pandas as pd
 import os
 
+class FeaturePlot(object):
+    def __init__(self, clump):
+        self.clump = clump
+    
+    def __getitem__(self, key):
+        if not self.clump.dtypes[key] in ['float32', 'float64']:
+            return ''
+            
+        data = self.clump[key]
+            
+        plt.ioff()
+        f = plt.figure(figsize=(6,1))        
+        
+        plt.plot(data)
+        
+        plt.tight_layout()
+        
+        plt.ion()
+        
+        return mpld3.fig_to_html(f)
+        
+class FeatureMean(object):
+    def __init__(self, clump):
+        self.clump = clump
+    
+    def __getitem__(self, key):
+        if self.clump.dtypes[key] == 'object':
+            return 'N/A'
+        else:
+            #print key
+            data = self.clump[key]
+            return data.mean()
+            
+class FeatureStd(object):
+    def __init__(self, clump):
+        self.clump = clump
+    
+    def __getitem__(self, key):
+        if self.clump.dtypes[key] == 'object':
+            return 'N/A'
+        else:
+            data = self.clump[key]
+            return data.std()
+
 class Clump(object):
     def __init__(self, pipeline, clumpID):
         self.pipeline = pipeline
@@ -33,7 +77,12 @@ class Clump(object):
         
         self.index = pipeline['clumpIndex'] == clumpID
         self.nEvents = self.index.sum()
+        self.enabled = True
         self.cache = {}
+        
+        self.featureplot = FeaturePlot(self)
+        self.featuremean = FeatureMean(self)
+        self.featurestd = FeatureStd(self)
             
     
     def keys(self):
@@ -45,7 +94,9 @@ class Clump(object):
     
     @property
     def dtypes(self):
-        return {k: str(self[k].dtype) for k in self.keys()}
+        if not '_dtypes' in dir(self):
+            self._dtypes = self.pipeline.dtypes
+        return self._dtypes
 
     def __getitem__(self, key):
         if not key in self.keys():
@@ -75,7 +126,12 @@ class Clump(object):
         else:
             raise RuntimeError('Unkonwn extension: %s' %ext)
     
-        
+
+def powerMod2D(p,t):
+    D, alpha = p
+    return 4*D*t**alpha #factor 4 for 2D (6 for 3D)
+
+
         
 class Track(Clump):
     @property
@@ -88,11 +144,72 @@ class Track(Clump):
         
     @property
     def trajectory(self):
-        f = plt.figure()
+        plt.ioff()
+        f = plt.figure(figsize=(4,3))
         
-        plt.plot(self['x'], self['y'])
+        x = self['x']
+        y = self['y']
+        plt.plot(x - x.mean(), y-y.mean())
+        
+        plt.xlabel('x [nm]')
+        plt.ylabel('y [nm]')
+        plt.title('Particle Trajectory')
+
+        plt.axis('equal')
+        plt.tight_layout(pad=2)
+        
+        plt.ion()
         
         return mpld3.fig_to_html(f)
+        
+    @property
+    def msdinfo(self):
+        if not '_msdinfo' in dir(self):
+            from PYME.Analysis.DistHist import msdHistogram
+            from PYME.Analysis._fithelpers import FitModel
+            
+            x = self['x']
+            y = self['y']
+            t = self['t']
+            
+            dt = self.pipeline.mdh.getOrDefault('Camera.CycleTime', 1.0)
+            
+            nT = (t.max() - t.min())/2
+            
+            h = msdHistogram(x, y, t, nT)
+            t_ = dt*np.arange(len(h))
+            
+            res = FitModel(powerMod2D, [h[-1]/t_[-1], 1.], h[1:], t_[1:])
+            D, alpha = res[0]
+            
+            self._msdinfo = {'t':t_, 'msd':h, 'D':D, 'alpha':alpha}
+        
+        return self._msdinfo
+        
+    @property
+    def msdplot(self):
+        plt.ioff()
+        f = plt.figure(figsize=(4,3))
+        
+        msdi = self.msdinfo
+        t = msdi['t']
+        plt.plot(t[1:], msdi['msd'][1:])
+        plt.plot(t, powerMod2D([msdi['D'], msdi['alpha']], t))
+        
+        plt.xlabel('delta t')
+        plt.ylabel('MSD [nm^2]')
+        plt.title(r'MSD - D = %(D)3.2f, alpha = %(alpha)3.1f' % msdi)
+        
+        plt.tight_layout(pad=2)
+        
+        plt.ion()
+        
+        return mpld3.fig_to_html(f)
+        
+    #@property
+    
+            
+        
         
         
         

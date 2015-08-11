@@ -112,7 +112,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         
         self.CenteringHandlers = []
         
-        self.labelPens = [wx.Pen(wx.Colour(*pylab.cm.hsv(v, bytes=True)), 2) for v in numpy.linspace(0, 1, 16)]
+        self.labelPens = [wx.Pen(wx.Colour(*pylab.cm.hsv(v, alpha=.5, bytes=True)), 2) for v in numpy.linspace(0, 1, 16)]
 
 #        if not aspect == None:
 #            if scipy.isscalar(aspect):
