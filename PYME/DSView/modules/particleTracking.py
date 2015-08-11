@@ -348,7 +348,7 @@ class ParticleTracker(HasTraits):
     def SaveTracks(self, event=None):
         import os        
         filename = wx.FileSelector('Save tracks as ...', 
-                                   wildcard="CSV files (*.csv)|*.csv|HDF5 (*.hdf)|*.hdf", 
+                                   wildcard="HDF5 (*.hdf)|*.hdf", 
                                    flags = wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
                                    
         if not filename == '':
@@ -370,12 +370,15 @@ class ParticleTracker(HasTraits):
             for c in self.clumps:
                 if c.enabled:
                     html_file = os.path.join(dirname, 'track_%d.html' % c.clumpID)
-                    raw_file = os.path.join(dirname, 'track_%d.%s' % (c.clumpID, ext))
+                    raw_file = os.path.join(dirname, 'track_%d.csv' % (c.clumpID, ))
                     
                     with open(html_file, 'w') as f:
                         f.write(template.render(clump=c))
                         
-                    c.save(raw_file)
+                    c.save(raw_file, ['t', 'x', 'y', 'area', 'eccentricity', 
+                    'equivalent_diameter', 'extent', 'major_axis_length', 'max_intensity', 
+                    'mean_intensity', 'min_intensity', 'minor_axis_length',  'orientation', 
+                    'perimeter', 'solidity', 'clumpIndex'])
             
                     
                     

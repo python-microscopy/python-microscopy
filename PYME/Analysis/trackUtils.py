@@ -107,9 +107,13 @@ class Clump(object):
             
         return self.cache[key]
         
-    def save(self, filename):
-        d = {}
-        d.update(self)
+    def save(self, filename, keys = None):
+        d = {}        
+        if keys == None:                    
+            d.update(self)
+        else:
+            for k in keys:
+                d[k] = self[k]
         
         df = pd.DataFrame(d)
 
