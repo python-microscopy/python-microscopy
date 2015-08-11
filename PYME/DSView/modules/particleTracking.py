@@ -360,7 +360,7 @@ class ParticleTracker(HasTraits):
             if filename.endswith('.csv'):
                 df.to_csv(filename)
             elif filename.endswith('.hdf'):
-                df.to_hdf(filename)
+                df.to_hdf(filename, 'Results')
                 
             fstub, ext = os.path.splitext(filename) 
             dirname = fstub + '_tracks'

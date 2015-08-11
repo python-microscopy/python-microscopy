@@ -120,7 +120,7 @@ class Clump(object):
         elif ext in ['.xls', '.xlsx']:
             df.to_excel(filename)
         elif ext == '.hdf':
-            df.to_hdf(filename)
+            df.to_hdf(filename, 'Results')
         elif ext == '.pik':
             df.to_pickle(filename)
         else:
