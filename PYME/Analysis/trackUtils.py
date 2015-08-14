@@ -39,7 +39,10 @@ class FeaturePlot(object):
         plt.ioff()
         f = plt.figure(figsize=(6,1))        
         
-        plt.plot(data)
+        if 't' in self.clump.keys():        
+            plt.plot(self.clump['t'], data)
+        else:
+            plt.plot(data)
         
         plt.tight_layout()
         
@@ -113,7 +116,8 @@ class Clump(object):
             d.update(self)
         else:
             for k in keys:
-                d[k] = self[k]
+                if k in self.keys():
+                    d[k] = self[k]
         
         df = pd.DataFrame(d)
 
@@ -227,6 +231,7 @@ class ClumpManager(object):
     @property    
     def all(self):
         ids = list(set(self.pipeline['clumpIndex']))
+        ids.sort()
         
         return [self.__getitem__(id) for id in ids]
             

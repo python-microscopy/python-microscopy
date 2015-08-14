@@ -18,13 +18,14 @@ env = Environment(loader=PackageLoader('PYME.DSView.modules', 'templates'))
 
 
 from PYME.Analysis.Tracking import tracking
+from PYME.Analysis import trackUtils
 
 from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, ListInstance, on_trait_change
 from traitsui.api import View, Item, Group
 
 class TrackList(wx.ListCtrl):
     def __init__(self, parent):
-        wx.ListCtrl.__init__(self, parent, -1, style=wx.LC_REPORT|wx.LC_VIRTUAL|wx.LC_HRULES|wx.LC_VRULES, size=(-1, 500))
+        wx.ListCtrl.__init__(self, parent, -1, style=wx.LC_REPORT|wx.LC_VIRTUAL|wx.LC_HRULES|wx.LC_VRULES, size=(250, 400))
         #listmix.CheckListCtrlMixin.__init__(self)
         self.InsertColumn(0, 'Track ID')
         self.InsertColumn(1, 'Length')
@@ -76,6 +77,7 @@ class ParticleTracker(HasTraits):
     showTracks = Bool(True)
     showSelectedTrack = Bool(True)
     showCandidates = Bool(False)
+    showTrackIDs = Bool(False)
     
     candLineWidth = Int(4)
     chosenLineWidth = Int(5)
@@ -85,11 +87,13 @@ class ParticleTracker(HasTraits):
     traits_view = View(Group(Item(name = 'features'),
                              Item(name = 'pNew'),
                              Item(name = 'r0'),
-                             Item(name = 'pLinkCutoff'), label='Linkage'),
+                             Item(name = 'pLinkCutoff'),
+                             Item(name = 'minTrackLength'), label='Linkage'),
                        Group(Item(name = 'showTracks'),
+                             Item(name = 'showTrackIDs'),
                              Item(name = 'showSelectedTrack'),
                              Item(name = 'showCandidates'),
-                             Item(name = 'minTrackLength'),label= 'Display'))
+                             label= 'Display'))
     
     def __init__(self, dsviewer):
         HasTraits.__init__(self)
@@ -210,6 +214,11 @@ class ParticleTracker(HasTraits):
             
         pipeline.selectedDataSource.clumpSizes = clumpSizes
         pipeline.selectedDataSource.setMapping('clumpSize', 'clumpSizes')
+        
+        trackVelocities = trackUtils.calcTrackVelocity(pipeline['x'], pipeline['y'], self.tracker.clumpIndex)
+        #pipeline.selectedDataSource.trackVelocities = np.zeros(pipeline.selectedDataSource.clumps.shape)
+        pipeline.selectedDataSource.trackVelocities = trackVelocities
+        pipeline.selectedDataSource.setMapping('trackVelocity', 'trackVelocities')
             
         pipeline.clumps = ClumpManager(pipeline)
         
@@ -270,7 +279,13 @@ class ParticleTracker(HasTraits):
                     dc.SetPen(self.trackPens[c.clumpID%16])
                 dc.DrawSpline(pFoc)
                 
-        if self.showSelectedTrack and not self.showTracks:
+                if self.showTrackIDs:
+                    x0, y0 = pFoc[0]
+                    dc.SetTextForeground(self.penCols[c.clumpID%16])
+                    dc.DrawText('%d' % c.clumpID, x0, y0 + 1)
+                    
+                
+        if self.showSelectedTrack and not self.showTracks and not (self.tracker == None):
             vx, vy, vz = self.image.voxelsize
             c = self.selectedTrack
             x = c['x']/vx
@@ -343,7 +358,7 @@ class ParticleTracker(HasTraits):
         y = clump['y']/vy
         t = clump['t']
         
-        return np.any((x >= xb[0])*(y >= yb[0])*(t >= (zb[0]-5))*(x < xb[1])*(y < yb[1])*(t < (zb[1]+5)))
+        return np.any((x >= xb[0])*(y >= yb[0])*(t >= (zb[0]-1))*(x < xb[1])*(y < yb[1])*(t < (zb[1]+1)))
         
     def SaveTracks(self, event=None):
         import os        
