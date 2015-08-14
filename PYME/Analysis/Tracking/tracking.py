@@ -101,13 +101,32 @@ class Tracker(object):
     def updateTrack(self, i, linkages):
         iIndices = self.indicesByT[i]
         
+        #alreadyAssigned = []
+
+        allLinks = []        
+        
         for k, links in linkages.items():
             n = iIndices[k]
             lj, lp = links
-            if not lj[0] == -1:
-                #we are not a new object
-                self.clumpIndex[n] = self.clumpIndex[lj[0]]
+            
+            for lji, lpi in zip(lj, lp):
+                allLinks.append((lpi, lji, n))
                 
+        allLinks = np.array(allLinks)
+        
+        #sort so that the highest probability comes first
+        allLinks = allLinks[allLinks[:,0].argsort()[::-1], :]
+            
+        for j in range(len(allLinks)):
+            lpi, lji, n = allLinks[j]
+            
+            if not lpi == 0:                
+                allLinks[allLinks[:,2] == n, 0] = 0
+                if not lji == -1:
+                    #we are not a new object
+                    self.clumpIndex[n] = self.clumpIndex[lji]
+                    allLinks[allLinks[:,1] == lji, 0] = 0
+                    
     
 
         

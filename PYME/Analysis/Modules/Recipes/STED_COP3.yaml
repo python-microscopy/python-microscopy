@@ -1,0 +1,25 @@
+- SKF_threshold_adaptive:
+    block_size: 11.0
+    inputName: filtered_image
+    method: mean
+    mode: reflect
+    offset: -0.5
+    outputName: mask
+    processFramesIndividually: true
+- GaussianFilter:
+    inputName: input
+    outputName: filtered_image
+    processFramesIndividually: true
+    sigmaX: 1.0
+    sigmaY: 1.0
+    sigmaZ: 1.0
+- Label:
+    inputName: mask
+    minRegionPixels: 10
+    outputName: labels
+    processFramesIndividually: true
+- Measure2D:
+    inputIntensity: input
+    inputLabels: labels
+    measureContour: true
+    outputName: output
