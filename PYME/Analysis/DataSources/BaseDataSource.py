@@ -37,12 +37,19 @@ class DefaultList(list):
 class BaseDataSource(object):
     oldData = None
     oldSlice = None
-    nTrueDims =3
+    #nTrueDims =3
+    additionalDims = 'T'
+    #sizeZ = 1
+    sizeC = 1
+    
+    @property
+    def nTrueDims(self):
+        return 2 + len(self.additionalDims)
     
     @property
     def shape(self):
         #if self.type == 'DataSource':
-        return DefaultList(self.getSliceShape() + (self.getNumSlices(),) )
+        return DefaultList(self.getSliceShape() + (self.getNumSlices()/self.sizeC,self.sizeC) )
         
     def getSlice(self, ind):
         raise NotImplementedError
@@ -72,7 +79,17 @@ class BaseDataSource(object):
 
         #print keys
 
-        r = np.concatenate([np.atleast_2d(self.getSlice(i)[keys[0], keys[1]])[:,:,None] for i in range(*keys[2].indices(self.getNumSlices()))], 2)
+        
+        if self.nTrueDims == 3: #x,y, z/t
+            r = np.concatenate([np.atleast_2d(self.getSlice(i)[keys[0], keys[1]])[:,:,None] for i in range(*keys[2].indices(self.getNumSlices()))], 2)
+        elif self.nTrueDims == 4:
+            if self.additionalDims == 'TC':
+                indices = np.arange(*keys[2].indices(self.shape[2])) + keys[3].start*self.shape[2]
+            elif self.additionalDims == 'CT':
+                indices = np.arange(*keys[2].indices(self.shape[2]))*self.shape[3] + keys[3].start
+                
+            r = np.concatenate([np.atleast_2d(self.getSlice(i)[keys[0], keys[1]])[:,:,None] for i in indices], 2)
+            
 
         self.oldData = r
 

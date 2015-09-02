@@ -7,7 +7,7 @@ Created on Fri Feb 20 17:11:05 2015
 from .base import register_module, ModuleBase, Filter, Float, Enum, CStr, Bool, Int, View, Item, Group
 from scipy import ndimage
 #from PYME.DSView.image import ImageStack
-#import numpy as np
+import numpy as np
 
 @register_module('GaussianFilter')    
 class GaussianFilter(Filter):
@@ -42,6 +42,33 @@ class MedianFilter(Filter):
     
     def completeMetadata(self, im):
         im.mdh['Processing.MedianFilter'] = self.sigmas
+        
+@register_module('DespeckleFilter')         
+class DespeckleFilter(Filter):
+    sizeX = Int(3)
+    sizeY = Int(3)
+    sizeZ = Int(3)
+    nPix = Int(3)
+    
+    def _filt(self, data):
+        v = data[data.size/2]
+        
+        dv = np.abs(data - v)
+        
+        I = np.argsort(dv)
+        return np.median(data[I[:self.nPix]])
+        
+    #def __init__(self, **kwargs):
+    #    pass
+    @property
+    def sigmas(self):
+        return [self.sizeX, self.sizeY, self.sizeZ]
+    
+    def applyFilter(self, data, chanNum, frNum, im):
+        return ndimage.generic_filter(data, self._filt, self.sigmas[:len(data.shape)])
+    
+    def completeMetadata(self, im):
+        im.mdh['Processing.DespeckleFilter'] = self.sigmas
 
 @register_module('MeanFilter') 
 class MeanFilter(Filter):

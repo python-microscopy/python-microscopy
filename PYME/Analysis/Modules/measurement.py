@@ -7,6 +7,7 @@ Created on Mon May 25 17:10:02 2015
 from .base import ModuleBase, register_module, Filter, Float, Enum, CStr, Bool, Int, View, Item, Group
 import numpy as np
 from PYME.Analysis.LMVis import inpFilt
+from PYME.Acquire import MetaDataHandler
 import os
 
 @register_module('MultifitBlobs') 
@@ -23,11 +24,16 @@ class MultifitBlobs(ModuleBase):
         
         img.mdh['Analysis.PSFSigma'] = self.blobSigma
         
-        ff = GaussMultifitSR.FitFactory(self.scale*img.data[:,:,:], img.mdh, noiseSigma=np.ones_like(img.data[:,:,:].squeeze()))
+        res = []
         
-        res = inpFilt.fitResultsSource(ff.FindAndFit(self.threshold))
+        for i in range(img.data.shape[2]):
+            md = MetaDataHandler.NestedClassMDHandler(img.mdh)
+            md['tIndex'] = i
+            ff = GaussMultifitSR.FitFactory(self.scale*img.data[:,:,i], img.mdh, noiseSigma=np.ones_like(img.data[:,:,i].squeeze()))
         
-        namespace[self.outputName] = res#inpFilt.mappingFilter(res, x='fitResults_x0', y='fitResults_y0')
+            res.append(inpFilt.fitResultsSource(ff.FindAndFit(self.threshold)))
+        
+        namespace[self.outputName] = np.vstack(res)#inpFilt.mappingFilter(res, x='fitResults_x0', y='fitResults_y0')
 
 @register_module('FitDumbells') 
 class FitDumbells(ModuleBase):
@@ -188,6 +194,8 @@ class Measure2D(ModuleBase):
                     #first time we've called this - determine our data type
                     self._keys = ['t', 'x', 'y'] + [r for r in dir(measurements[0]) if not r.startswith('_')]
                     
+                    self._keys.remove('euler_number') #buggy!
+                    
                     if not contours == None:
                         self._keys += ['contour']
                         
@@ -200,20 +208,30 @@ class Measure2D(ModuleBase):
             def keys(self):
                 return self._keys
         
-            def __getitem__(self, key):
+            def __getitem__(self, keys):
+                if isinstance(keys, tuple) and len(keys) > 1:
+                    key = keys[0]
+                    sl = keys[1]
+                else:
+                    key = keys
+                    sl = slice(None)
+                
+                    
+                #print key, sl
+                    
                 if not key in self._keys:
                     raise RuntimeError('Key not defined')
                 
                 if key == 't':
-                    return np.array(self.frameNos)
+                    return np.array(self.frameNos[sl])
                 elif key == 'contour':
-                    return np.array(self.contours, dtype='O')
+                    return np.array(self.contours[sl], dtype='O')
                 elif key == 'x':
-                    return self.ps*np.array([r.centroid[0] for r in self.measures])
+                    return self.ps*np.array([r.centroid[0] for r in self.measures[sl]])
                 elif key == 'y':
-                    return self.ps*np.array([r.centroid[1] for r in self.measures])
+                    return self.ps*np.array([r.centroid[1] for r in self.measures[sl]])
                 else:
-                    l = [getattr(r, key) for r in self.measures]
+                    l = [getattr(r, key) for r in self.measures[sl]]
                     
                     if np.isscalar(l[0]):
                         a = np.array(l)
@@ -260,7 +278,7 @@ class Measure2D(ModuleBase):
         else:
             it = None
             
-        rp = skimage.measure.regionprops(li, it)
+        rp = skimage.measure.regionprops(li, it, cache=True)
         
         #print len(rp), li.max()
         

@@ -23,6 +23,7 @@
 #import wx
 from PYME.DSView.OverlaysPanel import OverlayPanel
 import wx.lib.agw.aui as aui
+import wx
 
 #from PYME.Analysis.Modules import modules
 from PYME.Analysis.Modules import recipeGui
@@ -62,23 +63,25 @@ class RecipePlugin(recipeGui.RecipeManager):
                 #wx.EVT_MENU(dsviewer, ID, self.OnRunCanned)
             
         #dsviewer.menubar.Append(self.mRecipes, "Recipes")
+        dsviewer.AddMenuItem('Recipes', '', itemType='separator')
+        dsviewer.AddMenuItem('Recipes', "Save Results", self.OnSaveOutputs)
             
         self.recipeView = recipeGui.RecipeView(dsviewer, self)
         dsviewer.AddPage(page=self.recipeView, select=False, caption='Recipe')
         
     def RunCurrentRecipe(self, event=None):
         if self.activeRecipe:
-            outp = self.activeRecipe.execute(input=self.image)
-            if isinstance(outp, ImageStack):
+            self.outp = self.activeRecipe.execute(input=self.image)
+            if isinstance(self.outp, ImageStack):
                 if self.dsviewer.mode == 'visGUI':
                     mode = 'visGUI'
                 else:
                     mode = 'lite'
     
-                dv = ViewIm3D(outp, mode=mode, glCanvas=self.dsviewer.glCanvas)
+                dv = ViewIm3D(self.outp, mode=mode, glCanvas=self.dsviewer.glCanvas)
     
                 #set scaling to (0,1)
-                for i in range(outp.data.shape[3]):
+                for i in range(self.outp.data.shape[3]):
                     dv.do.Gains[i] = 1.0
                     
             else:
@@ -87,13 +90,26 @@ class RecipePlugin(recipeGui.RecipeManager):
             
                 if not 'pipeline' in dir(self.dsviewer):
                     self.dsviewer.pipeline = pipeline.Pipeline()
-                    
-                self.dsviewer.pipeline.OpenFile(ds=outp)
+                
+                from PYME.Analysis.LMVis import inpFilt
+                cache = inpFilt.cachingResultsFilter(self.outp)
+                self.dsviewer.pipeline.OpenFile(ds = cache)
                 self.dsviewer.view.filter = self.dsviewer.pipeline
                 
     def OnRunCanned(self, event):
         self.LoadRecipe(self.cannedIDs[event.GetId()])
         self.RunCurrentRecipe()
+        
+    def OnSaveOutputs(self, event):
+        from PYME.Analysis.Modules import runRecipe
+        
+        filename = wx.FileSelector('Save results as ...', 
+                                   wildcard="CSV files (*.csv)|*.csv|Excell files (*.xlsx)|*.xlsx", 
+                                   flags = wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+                                   
+        if not filename == '':
+            runRecipe.saveOutput(self.outp, filename)
+            
         
 
 

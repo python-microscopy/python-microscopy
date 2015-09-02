@@ -1,0 +1,438 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		63B1A1AA1B1677E8006B9B39 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 63B1A1A91B1677E8006B9B39 /* AppDelegate.m */; };
+		63B1A1AC1B1677E8006B9B39 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 63B1A1AB1B1677E8006B9B39 /* main.m */; };
+		63B1A1AE1B1677E8006B9B39 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 63B1A1AD1B1677E8006B9B39 /* Images.xcassets */; };
+		63B1A1B11B1677E8006B9B39 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 63B1A1AF1B1677E8006B9B39 /* MainMenu.xib */; };
+		63B1A1C51B167F76006B9B39 /* libpython2.7.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 63B1A1C41B167F76006B9B39 /* libpython2.7.dylib */; };
+		63B1A1C71B16C124006B9B39 /* text5377.png in Resources */ = {isa = PBXBuildFile; fileRef = 63B1A1C61B16C124006B9B39 /* text5377.png */; };
+		63CF147D1B16449300EEC2F3 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 63CF147C1B16449300EEC2F3 /* AppDelegate.m */; };
+		63CF147F1B16449300EEC2F3 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 63CF147E1B16449300EEC2F3 /* main.m */; };
+		63CF14811B16449300EEC2F3 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 63CF14801B16449300EEC2F3 /* Images.xcassets */; };
+		63CF14841B16449300EEC2F3 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 63CF14821B16449300EEC2F3 /* MainMenu.xib */; };
+		63E202861B7E28FA008C8FD8 /* libpython2.7.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 63B1A1C41B167F76006B9B39 /* libpython2.7.dylib */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		63B1A1A41B1677E8006B9B39 /* VisGUI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VisGUI.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		63B1A1A71B1677E8006B9B39 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		63B1A1A81B1677E8006B9B39 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		63B1A1A91B1677E8006B9B39 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		63B1A1AB1B1677E8006B9B39 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		63B1A1AD1B1677E8006B9B39 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
+		63B1A1B01B1677E8006B9B39 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
+		63B1A1C41B167F76006B9B39 /* libpython2.7.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libpython2.7.dylib; path = ../../anaconda/lib/libpython2.7.dylib; sourceTree = "<group>"; };
+		63B1A1C61B16C124006B9B39 /* text5377.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = text5377.png; sourceTree = "<group>"; };
+		63CF14761B16449300EEC2F3 /* dh5view.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = dh5view.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		63CF147A1B16449300EEC2F3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		63CF147B1B16449300EEC2F3 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		63CF147C1B16449300EEC2F3 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		63CF147E1B16449300EEC2F3 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		63CF14801B16449300EEC2F3 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
+		63CF14831B16449300EEC2F3 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		63B1A1A11B1677E8006B9B39 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				63B1A1C51B167F76006B9B39 /* libpython2.7.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		63CF14731B16449300EEC2F3 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				63E202861B7E28FA008C8FD8 /* libpython2.7.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		63B1A1A51B1677E8006B9B39 /* VisGUI */ = {
+			isa = PBXGroup;
+			children = (
+				63B1A1A81B1677E8006B9B39 /* AppDelegate.h */,
+				63B1A1A91B1677E8006B9B39 /* AppDelegate.m */,
+				63B1A1AD1B1677E8006B9B39 /* Images.xcassets */,
+				63B1A1AF1B1677E8006B9B39 /* MainMenu.xib */,
+				63B1A1A61B1677E8006B9B39 /* Supporting Files */,
+			);
+			path = VisGUI;
+			sourceTree = "<group>";
+		};
+		63B1A1A61B1677E8006B9B39 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				63B1A1A71B1677E8006B9B39 /* Info.plist */,
+				63B1A1AB1B1677E8006B9B39 /* main.m */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		63CF146D1B16449300EEC2F3 = {
+			isa = PBXGroup;
+			children = (
+				63B1A1C61B16C124006B9B39 /* text5377.png */,
+				63B1A1C41B167F76006B9B39 /* libpython2.7.dylib */,
+				63CF14781B16449300EEC2F3 /* dh5view */,
+				63B1A1A51B1677E8006B9B39 /* VisGUI */,
+				63CF14771B16449300EEC2F3 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		63CF14771B16449300EEC2F3 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				63CF14761B16449300EEC2F3 /* dh5view.app */,
+				63B1A1A41B1677E8006B9B39 /* VisGUI.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		63CF14781B16449300EEC2F3 /* dh5view */ = {
+			isa = PBXGroup;
+			children = (
+				63CF147B1B16449300EEC2F3 /* AppDelegate.h */,
+				63CF147C1B16449300EEC2F3 /* AppDelegate.m */,
+				63CF14801B16449300EEC2F3 /* Images.xcassets */,
+				63CF14821B16449300EEC2F3 /* MainMenu.xib */,
+				63CF14791B16449300EEC2F3 /* Supporting Files */,
+			);
+			path = dh5view;
+			sourceTree = "<group>";
+		};
+		63CF14791B16449300EEC2F3 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				63CF147A1B16449300EEC2F3 /* Info.plist */,
+				63CF147E1B16449300EEC2F3 /* main.m */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		63B1A1A31B1677E8006B9B39 /* VisGUI */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 63B1A1BE1B1677E8006B9B39 /* Build configuration list for PBXNativeTarget "VisGUI" */;
+			buildPhases = (
+				63B1A1A01B1677E8006B9B39 /* Sources */,
+				63B1A1A11B1677E8006B9B39 /* Frameworks */,
+				63B1A1A21B1677E8006B9B39 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = VisGUI;
+			productName = VisGUI;
+			productReference = 63B1A1A41B1677E8006B9B39 /* VisGUI.app */;
+			productType = "com.apple.product-type.application";
+		};
+		63CF14751B16449300EEC2F3 /* dh5view */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 63CF14931B16449300EEC2F3 /* Build configuration list for PBXNativeTarget "dh5view" */;
+			buildPhases = (
+				63CF14721B16449300EEC2F3 /* Sources */,
+				63CF14731B16449300EEC2F3 /* Frameworks */,
+				63CF14741B16449300EEC2F3 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = dh5view;
+			productName = t1;
+			productReference = 63CF14761B16449300EEC2F3 /* dh5view.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		63CF146E1B16449300EEC2F3 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0630;
+				ORGANIZATIONNAME = "David Baddeley";
+				TargetAttributes = {
+					63B1A1A31B1677E8006B9B39 = {
+						CreatedOnToolsVersion = 6.3.2;
+					};
+					63CF14751B16449300EEC2F3 = {
+						CreatedOnToolsVersion = 6.3.2;
+					};
+				};
+			};
+			buildConfigurationList = 63CF14711B16449300EEC2F3 /* Build configuration list for PBXProject "dh5view" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 63CF146D1B16449300EEC2F3;
+			productRefGroup = 63CF14771B16449300EEC2F3 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				63CF14751B16449300EEC2F3 /* dh5view */,
+				63B1A1A31B1677E8006B9B39 /* VisGUI */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		63B1A1A21B1677E8006B9B39 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				63B1A1AE1B1677E8006B9B39 /* Images.xcassets in Resources */,
+				63B1A1C71B16C124006B9B39 /* text5377.png in Resources */,
+				63B1A1B11B1677E8006B9B39 /* MainMenu.xib in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		63CF14741B16449300EEC2F3 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				63CF14811B16449300EEC2F3 /* Images.xcassets in Resources */,
+				63CF14841B16449300EEC2F3 /* MainMenu.xib in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		63B1A1A01B1677E8006B9B39 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				63B1A1AC1B1677E8006B9B39 /* main.m in Sources */,
+				63B1A1AA1B1677E8006B9B39 /* AppDelegate.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		63CF14721B16449300EEC2F3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				63CF147F1B16449300EEC2F3 /* main.m in Sources */,
+				63CF147D1B16449300EEC2F3 /* AppDelegate.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		63B1A1AF1B1677E8006B9B39 /* MainMenu.xib */ = {
+			isa = PBXVariantGroup;
+			children = (
+				63B1A1B01B1677E8006B9B39 /* Base */,
+			);
+			name = MainMenu.xib;
+			sourceTree = "<group>";
+		};
+		63CF14821B16449300EEC2F3 /* MainMenu.xib */ = {
+			isa = PBXVariantGroup;
+			children = (
+				63CF14831B16449300EEC2F3 /* Base */,
+			);
+			name = MainMenu.xib;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		63B1A1BF1B1677E8006B9B39 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = VisGUI/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/Users/david/anaconda/lib,
+				);
+				"OTHER_CFLAGS[arch=*]" = "-I../../anaconda/include";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		63B1A1C01B1677E8006B9B39 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = VisGUI/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/Users/david/anaconda/lib,
+				);
+				"OTHER_CFLAGS[arch=*]" = "-I../../anaconda/include";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		63CF14911B16449300EEC2F3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		63CF14921B16449300EEC2F3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		63CF14941B16449300EEC2F3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = dh5view/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/Users/david/anaconda/lib,
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		63CF14951B16449300EEC2F3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = dh5view/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/Users/david/anaconda/lib,
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		63B1A1BE1B1677E8006B9B39 /* Build configuration list for PBXNativeTarget "VisGUI" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				63B1A1BF1B1677E8006B9B39 /* Debug */,
+				63B1A1C01B1677E8006B9B39 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		63CF14711B16449300EEC2F3 /* Build configuration list for PBXProject "dh5view" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				63CF14911B16449300EEC2F3 /* Debug */,
+				63CF14921B16449300EEC2F3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		63CF14931B16449300EEC2F3 /* Build configuration list for PBXNativeTarget "dh5view" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				63CF14941B16449300EEC2F3 /* Debug */,
+				63CF14951B16449300EEC2F3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 63CF146E1B16449300EEC2F3 /* Project object */;
+}

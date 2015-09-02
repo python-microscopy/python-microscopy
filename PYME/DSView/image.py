@@ -491,6 +491,17 @@ class ImageStack(object):
                             self.mdh[basename + k] = v
                 
                 lsm_pop('LSM.', lsm_info)
+                
+            elif filename.endswith('.tif'):
+                #look for OME data...
+                from PYME.gohlke.tifffile import TIFFfile
+                tf = TIFFfile(filename)
+                
+                if tf.is_ome:
+                    omemdh = MetaDataHandler.OMEXMLMDHandler(tf.pages[0].tags['image_description'].value)
+                    
+                    self.mdh.copyEntriesFrom(omemdh)
+                
             elif filename.endswith('.dbl'): #Bewersdorf lab STED
                 mdfn = filename[:-4] + '.txt'
                 entrydict = {}
@@ -569,12 +580,15 @@ class ImageStack(object):
         mdfn = self.FindAndParseMetadata(filename)
 
         self.dataSource = TiffDataSource.DataSource(filename, None)
+        print self.dataSource.shape
         self.dataSource = BufferedDataSource.DataSource(self.dataSource, min(self.dataSource.getNumSlices(), 50))
         self.data = self.dataSource #this will get replaced with a wrapped version
+        
+        print self.data.shape
 
 
         #if we have a multi channel data set, try and pull in all the channels
-        if 'ChannelFiles' in self.mdh.getEntryNames():
+        if 'ChannelFiles' in self.mdh.getEntryNames() and not len(self.mdh['ChannelFiles']) == self.data.shape[3]:
             try:
                 from PYME.DSView.dataWrap import ListWrap
                 #pull in all channels
