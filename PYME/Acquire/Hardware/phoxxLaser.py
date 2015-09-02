@@ -97,8 +97,16 @@ class PhoxxLaser(Laser):
         ret, = self._query('GLP')
         
         return int(ret, 16)/pm
+        
+    def _purge(self):
+        try:
+            while True:
+                self.replyQueue.get_nowait()
+        except:
+            pass
     
     def _query(self, cmd, arg=None):
+        self._purge()
         s = cmd
         if arg:
             s = s + arg
