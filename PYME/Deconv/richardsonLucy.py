@@ -120,7 +120,7 @@ class rldec:
             
             #adjFact*= .5 + ndimage.median_filter(self.res, 3)
             
-            adjFact/= adjFact.mean()
+            #adjFact/= adjFact.mean()
             #print self.res.min(), adjFact.min()
 
             fnew = self.f*adjFact

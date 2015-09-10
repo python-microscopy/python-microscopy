@@ -112,6 +112,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         
         self.CenteringHandlers = []
         
+        self.selectHandlers = []
+        
         self.labelPens = [wx.Pen(wx.Colour(*pylab.cm.hsv(v, alpha=.5, bytes=True)), 2) for v in numpy.linspace(0, 1, 16)]
 
 #        if not aspect == None:
@@ -787,6 +789,9 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             
         self.do.inOnChange = False
         self.do.OnChange()
+        
+        for cb in self.selectHandlers:
+            cb(self)
         #if ('update' in dir(self.GetParent())):
         #     self.GetParent().update()
         #else:
