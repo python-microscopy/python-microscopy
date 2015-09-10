@@ -211,10 +211,10 @@ class AndorBase(SDK3Camera):
             #else:
             #    self.fLog.write('%f\tn\n' % time.time())
             return
-        #except SDK3.CameraError as e:
-        #    if not e.errNo == SDK3.AT_ERR_NODATA:
-        #        traceback.print_exc()
-        #    return
+        except SDK3.CameraError as e:
+            if not e.errNo == SDK3.AT_ERR_NODATA:
+                traceback.print_exc()
+            return
             
         #self.camLock.acquire()
         buf = self.queuedBuffers.get()
