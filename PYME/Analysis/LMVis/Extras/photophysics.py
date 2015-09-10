@@ -40,7 +40,7 @@ class DecayAnalyser:
         
         pipeline = self.visFr.pipeline
 
-        kinModels.fitDecay(pipeline)
+        #kinModels.fitDecay(pipeline)
         kinModels.fitFluorBrightness(pipeline)
         #kinModels.fitFluorBrightnessT(pipeline)
         kinModels.fitOnTimes(pipeline)
