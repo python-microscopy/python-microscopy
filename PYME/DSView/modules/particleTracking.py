@@ -13,8 +13,52 @@ import PYME.misc.autoFoldPanel as afp
 import numpy as np
 import pylab
 
+import cherrypy
+
 from jinja2 import Environment, PackageLoader
 env = Environment(loader=PackageLoader('PYME.DSView.modules', 'templates'))
+
+def movieplot(clump, image):
+    import matplotlib.pyplot as plt
+    import mpld3
+    
+    plt.ioff()
+    nRows = int(np.ceil(clump.nEvents/10.))
+    f = plt.figure(figsize=(12,1.2*nRows))
+    
+    #msdi = self.msdinfo
+    #t = msdi['t']
+    #plt.plot(t[1:], msdi['msd'][1:])
+    #plt.plot(t, powerMod2D([msdi['D'], msdi['alpha']], t))
+    
+    xp, yp = clump['centroid'][0]
+    
+    xp = int(np.round(xp))
+    yp = int(np.round(yp))
+    
+    contours = clump['contour']
+    
+    for i in range(clump.nEvents):
+        plt.subplot(nRows, min(clump.nEvents, 10), i+1)
+        img = image.data[(xp - 20):(xp + 20), (yp - 20):(yp + 20), clump['t'][i]].squeeze()
+        plt.imshow(img.T, interpolation ='nearest', cmap=plt.cm.gray)
+
+        xc, yc = contours[i].T
+        plt.plot(xc - xp + 20, yc - yp + 20, c=plt.cm.hsv(clump.clumpID/16.))        
+        
+        plt.xticks([])
+        plt.yticks([])
+        plt.axis('image')
+        plt.axis('off')
+   
+    
+    plt.tight_layout(pad=1)
+    
+    plt.ion()
+    
+    return mpld3.fig_to_html(f)
+    
+env.filters['movieplot'] = movieplot
 
 
 from PYME.Analysis.Tracking import tracking
@@ -73,6 +117,7 @@ class ParticleTracker(HasTraits):
     pLinkCutoff = Float(0.2)
     
     minTrackLength = Int(5)
+    maxParticleSize = Float(20)
     
     showTracks = Bool(True)
     showSelectedTrack = Bool(True)
@@ -88,7 +133,8 @@ class ParticleTracker(HasTraits):
                              Item(name = 'pNew'),
                              Item(name = 'r0'),
                              Item(name = 'pLinkCutoff'),
-                             Item(name = 'minTrackLength'), label='Linkage'),
+                             Item(name = 'minTrackLength'),
+                             Item(name = 'maxParticleSize'), label='Linkage'),
                        Group(Item(name = 'showTracks'),
                              Item(name = 'showTrackIDs'),
                              Item(name = 'showSelectedTrack'),
@@ -104,6 +150,8 @@ class ParticleTracker(HasTraits):
         
         self.tracker = None
         self.selectedTrack = None
+        
+        self.clumps = []
         
         
 #        self.features.on_trait_change(self.OnFeaturesChanged)
@@ -177,7 +225,7 @@ class ParticleTracker(HasTraits):
         from PYME.Analysis.trackUtils import ClumpManager
         pipeline = self.dsviewer.pipeline
         
-        if self.tracker == None:
+        if (self.tracker == None) or not (len(self.tracker.t) == len(pipeline['t'])):
             featNames = [s.strip() for s in self.features.split(',')]
             
             def _calcWeights(s):
@@ -222,13 +270,13 @@ class ParticleTracker(HasTraits):
             
         pipeline.clumps = ClumpManager(pipeline)
         
-        self.clumps = [c for c in pipeline.clumps.all if c.nEvents > self.minTrackLength]
+        self.clumps = [c for c in pipeline.clumps.all if (c.nEvents > self.minTrackLength) and (c.featuremean['area'] < self.maxParticleSize)]
         self.list.SetClumps(self.clumps)
         
     def OnSelectTrack(self, event):
         self.selectedTrack = self.clumps[event.m_itemIndex]
         template = env.get_template('trackView.html')
-        self.trackview.SetPage(template.render(clump=self.selectedTrack), '')
+        self.trackview.SetPage(template.render(clump=self.selectedTrack, img=self.dsviewer.image), '')
 
         
     def DrawOverlays(self, view, dc):
@@ -277,7 +325,7 @@ class ParticleTracker(HasTraits):
                     dc.SetPen(self.selectedPens[c.clumpID%16])
                 else:
                     dc.SetPen(self.trackPens[c.clumpID%16])
-                dc.DrawSpline(pFoc)
+                dc.DrawLines(pFoc)
                 
                 if self.showTrackIDs:
                     x0, y0 = pFoc[0]
@@ -298,7 +346,7 @@ class ParticleTracker(HasTraits):
             
             dc.SetPen(self.selectedPens[c.clumpID%16])
             
-            dc.DrawSpline(pFoc)
+            dc.DrawLines(pFoc)
                 
         if self.showCandidates and not (self.tracker == None):
             if view.do.zp >=1:
@@ -360,6 +408,13 @@ class ParticleTracker(HasTraits):
         
         return np.any((x >= xb[0])*(y >= yb[0])*(t >= (zb[0]-1))*(x < xb[1])*(y < yb[1])*(t < (zb[1]+1)))
         
+    @cherrypy.expose
+    def index(self):
+        template = env.get_template('tracksOverview.html')
+        
+        return template.render(clumps = self.clumps)
+        
+        
     def SaveTracks(self, event=None):
         import os        
         filename = wx.FileSelector('Save tracks as ...', 
@@ -405,4 +460,7 @@ class ParticleTracker(HasTraits):
   
 
 def Plug(dsviewer):
+    from PYME.DSView import htmlServe #ensure that our local cherrypy server is running
     dsviewer.tracker = ParticleTracker(dsviewer)
+    cherrypy.tree.mount(dsviewer.tracker, '/tracks')
+    dsviewer.tracker.trackview.LoadURL(htmlServe.getURL() + 'tracks/')

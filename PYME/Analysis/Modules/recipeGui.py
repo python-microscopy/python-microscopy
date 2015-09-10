@@ -9,7 +9,8 @@ import wx
 import numpy as np
 
 from PYME.Analysis.Modules import modules
-from PYME.Analysis.Modules import runRecipe
+#from PYME.Analysis.Modules import runRecipe
+from PYME.Analysis.Modules import batchProcess
 
 import pylab
 from PYME.DSView.image import ImageStack
@@ -168,6 +169,8 @@ class RecipeView(wx.Panel):
         
         self.SetSizerAndFit(hsizer1)
         
+        self.recipes.LoadRecipeText('')
+        
     def update(self):
         self.recipePlot.draw()
         self.tRecipeText.SetValue(self.recipes.activeRecipe.toYAML())
@@ -319,7 +322,7 @@ class BatchFrame(wx.Frame, wx.FileDropTarget):
         
         hsizer2 = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Output Directory:'), wx.HORIZONTAL)
         
-        self.dcOutput = wx.DirPickerCtrl(self, -1, style=wx.DIRP_DIR_MUST_EXIST|wx.DIRP_USE_TEXTCTRL)
+        self.dcOutput = wx.DirPickerCtrl(self, -1, style=wx.DIRP_USE_TEXTCTRL)
         hsizer2.Add(self.dcOutput, 1, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
         
         vsizer1.Add(hsizer2, 0, wx.EXPAND|wx.TOP, 10)
@@ -329,6 +332,7 @@ class BatchFrame(wx.Frame, wx.FileDropTarget):
 
         self.bBake = wx.Button(self, -1, 'Bake') 
         hsizer.Add(self.bBake, 0, wx.ALL, 5)
+        self.bBake.Bind(wx.EVT_BUTTON, self.OnBake)
         
         vsizer1.Add(hsizer, 0, wx.EXPAND|wx.TOP, 10)
                 
@@ -367,7 +371,7 @@ class BatchFrame(wx.Frame, wx.FileDropTarget):
             wx.MessageBox('Ouput directory does not exist', 'Error', wx.OK|wx.ICON_ERROR)
             return
             
-        runRecipe.Bake(self.rm.activeRecipe, {'input':self.inputFiles}, out_dir)
+        batchProcess.bake(self.rm.activeRecipe, {'input':self.inputFiles}, out_dir)
         
             
    

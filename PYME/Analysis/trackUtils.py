@@ -83,6 +83,8 @@ class Clump(object):
         self.enabled = True
         self.cache = {}
         
+        self.image = None
+        
         self.featureplot = FeaturePlot(self)
         self.featuremean = FeatureMean(self)
         self.featurestd = FeatureStd(self)
@@ -214,6 +216,45 @@ class Track(Clump):
         
         return mpld3.fig_to_html(f)
         
+    @property
+    def movieplot(self):
+        plt.ioff()
+        f = plt.figure(figsize=(12,3))
+        
+        #msdi = self.msdinfo
+        #t = msdi['t']
+        #plt.plot(t[1:], msdi['msd'][1:])
+        #plt.plot(t, powerMod2D([msdi['D'], msdi['alpha']], t))
+        
+        xp, yp = self['centroid'][0]
+        
+        xp = int(np.round(xp))
+        yp = int(np.round(yp))
+        
+        if not self.image == None:
+            for i in range(self.nEvents):
+                plt.subplot(1, self.nEvents, i+1)
+                img = self.image[(xp - 10):(xp + 10), (yp - 10):(yp + 10), self['t'][i]]
+                plt.imshow(img, interpolation ='nearest', cmap=plt.cm.gray)
+                plt.xticks([])
+                plt.yticks([])    
+        else:
+            for i in range(self.nEvents):
+                plt.subplot(1, self.nEvents, i+1)
+                plt.imshow(self['intensity_image'][i], interpolation ='nearest', cmap=plt.cm.gray)
+                plt.xticks([])
+                plt.yticks([])
+        
+        #plt.xlabel('delta t')
+        #plt.ylabel('MSD [nm^2]')
+        #plt.title(r'MSD - D = %(D)3.2f, alpha = %(alpha)3.1f' % msdi)
+        
+        plt.tight_layout(pad=1)
+        
+        plt.ion()
+        
+        return mpld3.fig_to_html(f)
+        
     #@property
     
             
@@ -235,7 +276,23 @@ class ClumpManager(object):
         
         return [self.__getitem__(id) for id in ids]
             
+
+class TrackManager(object):
+    def __init__(self, trackList):
+        self.trackList = trackList
         
+    #def __getitem__(self, key):
+    #    return Track(self.pipeline, key)
+    
+    @property    
+    def all(self):
+        return self.trackList 
+        
+    @property
+    def filtered(self):
+        return [t for t in self.trackList if t.enabled]
+        
+    
     
 
 def findTracks(pipeline, rad_var='error_x', multiplier='2.0', nFrames=20):
