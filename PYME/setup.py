@@ -45,7 +45,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('SampleDB2')
     
     #config.add_scripts(glob.glob('scripts/*'))
-    if not 'CONDA_BUILD' in os.environ.keys():
+    if False:#not 'CONDA_BUILD' in os.environ.keys():
         #entry points are defined in the condas meta.yaml - not needed here
         #if running under conda
         if sys.platform == 'win32':
