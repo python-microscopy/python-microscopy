@@ -102,11 +102,13 @@ static PyObject * findClumps(PyObject *self, PyObject *args, PyObject *keywds)
     int t_i = 0;
     int recDepth = 0;
 
+    static char *kwlist[] = {"t", "x", "y", "delta_x", "nFrames", NULL};
+
     dims[0] = 0;
     dims[1] = 0;
 
 
-    static char *kwlist[] = {"t", "x", "y", "delta_x", "nFrames", NULL};
+    
 
     if (!PyArg_ParseTupleAndKeywords(args, keywds, "OOOO|i", kwlist,
          &tO, &xO, &yO, &delta_xO, &nFrames))

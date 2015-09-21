@@ -9,7 +9,10 @@ from . import base
 from . import filters
 from . import processing
 from . import measurement
-from . import skfilters
+try:
+    from . import skfilters
+except ImportError:
+    pass
 
 from base import ModuleCollection
 
