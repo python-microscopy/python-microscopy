@@ -41,10 +41,14 @@ def movieplot(clump, image):
     for i in range(clump.nEvents):
         plt.subplot(nRows, min(clump.nEvents, 10), i+1)
         img = image.data[(xp - 20):(xp + 20), (yp - 20):(yp + 20), clump['t'][i]].squeeze()
-        plt.imshow(img.T, interpolation ='nearest', cmap=plt.cm.gray)
+        plt.imshow(img.T, interpolation ='nearest', cmap=plt.cm.gray, clim=[0, clump.featuremean['mean_intensity']*1.5])
 
         xc, yc = contours[i].T
-        plt.plot(xc - xp + 20, yc - yp + 20, c=plt.cm.hsv(clump.clumpID/16.))        
+        plt.plot(xc - xp + 20, yc - yp + 20, c=plt.cm.hsv(clump.clumpID/16.))
+
+        xsb = 5
+        ysb = 5
+        plt.plot([xsb, xsb+ 200./image.pixelSize], [ysb,ysb], 'y', lw=4)        
         
         plt.xticks([])
         plt.yticks([])
@@ -69,7 +73,7 @@ from traitsui.api import View, Item, Group
 
 class TrackList(wx.ListCtrl):
     def __init__(self, parent):
-        wx.ListCtrl.__init__(self, parent, -1, style=wx.LC_REPORT|wx.LC_VIRTUAL|wx.LC_HRULES|wx.LC_VRULES, size=(250, 400))
+        wx.ListCtrl.__init__(self, parent, -1, style=wx.LC_REPORT|wx.LC_VIRTUAL|wx.LC_HRULES|wx.LC_VRULES|wx.LC_SINGLE_SEL, size=(250, 400))
         #listmix.CheckListCtrlMixin.__init__(self)
         self.InsertColumn(0, 'Track ID')
         self.InsertColumn(1, 'Length')
@@ -208,6 +212,9 @@ class ParticleTracker(HasTraits):
         item.AddNewElement(bSave)
         
         _pnl.AddPane(item)
+        
+        if not self.OnViewSelect in self.view.selectHandlers:
+            self.view.selectHandlers.append(self.OnViewSelect)
 
     
     @on_trait_change('pNew, r0, pLinkCutoff')    
@@ -277,6 +284,17 @@ class ParticleTracker(HasTraits):
         self.selectedTrack = self.clumps[event.m_itemIndex]
         template = env.get_template('trackView.html')
         self.trackview.SetPage(template.render(clump=self.selectedTrack, img=self.dsviewer.image), '')
+        
+    def OnViewSelect(self, view):
+        #select a track by clicking on it
+        
+        pos = (view.do.xp, view.do.yp, view.do.zp)
+        
+        candidates = [i for i, c in enumerate(self.clumps) if self._hittest(c, pos)]
+        
+        if len(candidates) > 0:
+            item = candidates[0] #take the first hit
+            self.list.SetItemState(item, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED)
 
         
     def DrawOverlays(self, view, dc):
@@ -407,6 +425,15 @@ class ParticleTracker(HasTraits):
         t = clump['t']
         
         return np.any((x >= xb[0])*(y >= yb[0])*(t >= (zb[0]-1))*(x < xb[1])*(y < yb[1])*(t < (zb[1]+1)))
+        
+    def _hittest(self, clump, pos):
+        xp, yp, zp = pos
+        
+        bounds = [(xp-2, xp+2), (yp -2, yp + 2), (zp-15, zp+15)]
+        
+        return self._visibletest(clump, bounds)
+        
+        
         
     @cherrypy.expose
     def index(self):

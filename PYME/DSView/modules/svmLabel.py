@@ -28,22 +28,39 @@ from scipy import ndimage
 import numpy as np
 import wx.lib.agw.aui as aui
 
+try:
+    from shapely import speedups
+    if speedups.available():
+        speedups.enable()
+except:
+    pass
+
 from PYME.DSView.dsviewer_npy_nb import ViewIm3D, ImageStack
 
 import wx.lib.mixins.listctrl as listmix
 
-class myListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin, listmix.TextEditMixin):
+class myListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):#, listmix.TextEditMixin):
     def __init__(self, parent, ID, pos=wx.DefaultPosition, size=wx.DefaultSize, style=0):
         wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
         listmix.ListCtrlAutoWidthMixin.__init__(self)
-        listmix.TextEditMixin.__init__(self)
-        self.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginLabelEdit)
+        #listmix.TextEditMixin.__init__(self)
+        #self.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginLabelEdit)
+        self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnLabelActivate)
+        
 
     def OnBeginLabelEdit(self, event):
         if event.m_col == 0:
             event.Veto()
         else:
             event.Skip()
+            
+    def OnLabelActivate(self, event):
+        newLabel = wx.GetTextFromUser("Enter new category name", "Rename")
+        if not newLabel == '':
+            self.SetStringItem(event.m_itemIndex, 1, newLabel)
+        
+            
+        
 
 class LabelPanel(wx.Panel):
     def __init__(self, parent, labeler, **kwargs):
@@ -106,7 +123,11 @@ class manualLabel:
         dsviewer.AddMenuItem('Segmentation', 'Create mask', self.OnCreateMask)
         dsviewer.AddMenuItem('Segmentation', "Fill selection\tCtrl-F", self.FillSelection)
         dsviewer.AddMenuItem('Segmentation', "Draw line\tCtrl-L", self.DrawLine)
+        dsviewer.AddMenuItem('Segmentation', "Train Classifier", self.OnSVMTrain)
         dsviewer.AddMenuItem('Segmentation', "SVM Segmentation", self.OnSVMSegment)
+        
+        dsviewer.AddMenuItem('Segmentation', 'Save Classifier', self.OnSaveClassifier)
+        dsviewer.AddMenuItem('Segmentation', 'Load Classifier', self.OnLoadClassifier)
         
 
         
@@ -143,13 +164,28 @@ class manualLabel:
         else:
             mode = 'lite'
 
-        self.dv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
+        self.labv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
         
         self.rois = []
 
         #set scaling to (0,1)
+        #for i in range(im.data.shape[3]):
+        #    self.dv.do.Gains[i] = 1.0
+            
         for i in range(im.data.shape[3]):
-            self.dv.do.Gains[i] = 1.0
+            self.labv.do.Gains[i] = .1
+            self.labv.do.cmaps[i] = pylab.cm.labeled
+            
+    def OnSaveClassifier(self, event=None):
+        filename = wx.FileSelector("Save classifier as:", wildcard="*.pkl", flags=wx.FD_SAVE)
+        if not filename == '':
+            self.cf.save(filename)
+            
+    def OnLoadClassifier(self, event=None):
+        from PYMEnf.Analysis import svmSegment
+        filename = wx.FileSelector("Load Classifier:", wildcard="*.pkl", flags=wx.FD_OPEN)
+        if not filename == '':
+            self.cf = svmSegment.svmClassifier(filename=filename)
 
 
             
@@ -195,12 +231,12 @@ class manualLabel:
                 if Point(x, y).within(p):
                     self.mask[x,y,self.do.zp] = self.curLabel
         #self.rois.append(p)            
-        self.dv.update()
+        self.labv.update()
         #try:
-        self.dv.do.Gains = [.1]
-        self.dv.do.cmaps = [pylab.cm.labeled]          
-        self.dv.Refresh()
-        self.dv.Update()
+        self.labv.do.Gains = [.1]
+        self.labv.do.cmaps = [pylab.cm.labeled]          
+        self.labv.Refresh()
+        self.labv.Update()
         
     def DrawLine(self, event=None):
         if self.mask == None:
@@ -236,24 +272,30 @@ class manualLabel:
                 if Point(x, y).distance(p) < self.lineWidth:
                     self.mask[x,y,self.do.zp] = self.curLabel
         #self.rois.append(p)            
-        self.dv.update()
+        self.labv.update()
         #try:
-        self.dv.do.Gains = [.1]
-        self.dv.do.cmaps = [pylab.cm.labeled]          
-        self.dv.Refresh()
-        self.dv.Update()
+        self.labv.do.Gains = [.1]
+        self.labv.do.cmaps = [pylab.cm.labeled]          
+        self.labv.Refresh()
+        self.labv.Update()
         
-    def OnSVMSegment(self, event):
+    def OnSVMTrain(self, event):
         from PYMEnf.Analysis import svmSegment
-        from PYME.DSView.image import ImageStack
-        from PYME.DSView import ViewIm3D
+        
+        #from PYME.DSView.image import ImageStack
+        #from PYME.DSView import ViewIm3D
         
         if not 'cf' in dir(self):
-            self.cf = svmSegment.svmClassifier(self.image)
-
+            self.cf = svmSegment.svmClassifier()
+        
+        self.cf.train(self.image.data[:,:,self.do.zp, 0].squeeze(), self.image.labels[:,:,self.do.zp])
+        self.OnSVMSegment(None)
+        
+    def OnSVMSegment(self, event):
+        import pylab
         #sp = self.image.data.shape[:3]
         #if len(sp)        
-        lab2 = self.cf.classify()
+        lab2 = self.cf.classify(self.image.data[:,:,self.do.zp, 0].squeeze())#, self.image.labels[:,:,self.do.zp])
         #self.vmax = 0
         #self.image.labels = self.mask
         
@@ -271,9 +313,13 @@ class manualLabel:
         
         self.rois = []
 
-        #set scaling to (0,1)
+        #set scaling to (0,10)
         for i in range(im.data.shape[3]):
-            self.dv.do.Gains[i] = 1.0
+            self.dv.do.Gains[i] = .1
+            self.dv.do.cmaps[i] = pylab.cm.labeled
+            
+        self.dv.Refresh()
+        self.dv.Update()
         
         
     

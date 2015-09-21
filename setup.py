@@ -21,7 +21,22 @@ def configuration(parent_package='',top_path=None):
     config.get_version('PYME/version.py')
     return config
 
+entry_points={
+    'console_scripts': [
+        'PYMEBatch = PYME.Analysis.Modules.batchProcess:main',
+    ],
+    'gui_scripts': [
+        'dh5view = PYME.DSView.dsviewer_npy_nb:main',
+        'PYMEAcquire = PYME.Acquire.PYMEAcquire:main',
+        'VisGUI = PYME.Analysis.LMVis.VisGUI:main',
+        'launchWorkers = PYME.ParallelTasks.launchWorkers:main',
+        'bakeshop = PYME.Analysis.Modules.bakeshop:main',
+    ]
+}
+
 if __name__ == '__main__':
     import setuptools
     from numpy.distutils.core import setup
-    setup(**configuration(top_path='').todict())
+    conf = configuration(top_path='').todict()
+    conf['entry_points'] = entry_points
+    setup(**conf)
