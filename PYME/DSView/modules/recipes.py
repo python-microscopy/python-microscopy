@@ -90,8 +90,10 @@ class RecipePlugin(recipeGui.RecipeManager):
             
                 if not 'pipeline' in dir(self.dsviewer):
                     self.dsviewer.pipeline = pipeline.Pipeline()
-                    
-                self.dsviewer.pipeline.OpenFile(ds=self.outp)
+                
+                from PYME.Analysis.LMVis import inpFilt
+                cache = inpFilt.cachingResultsFilter(self.outp)
+                self.dsviewer.pipeline.OpenFile(ds = cache)
                 self.dsviewer.view.filter = self.dsviewer.pipeline
                 
     def OnRunCanned(self, event):

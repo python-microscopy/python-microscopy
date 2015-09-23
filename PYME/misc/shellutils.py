@@ -450,3 +450,73 @@ def meanvards(dataSource, start=0, end=-1):
     v = v / (nframes-1)
 
     return (m,v)
+
+def darkCal(dataSource, integrationTimes,transitionTimes):
+    ms = []
+    vs = []
+    endTimes = transitionTimes[1:]+[-1]
+    for istart, istop in zip(transitionTimes, endTimes):
+        print "starting at %d, using %d frames..." % (istart,istop-istart)
+        m, v = meanvards(dataSource,istart,istop)
+        ms.append(m)
+        vs.append(v)
+    return (ms,vs)
+
+def darkCalfromMetadata(dataSource,mdh=None):
+    if mdh is None:
+        mdh = getmdh(inmodule=True)
+    it,tt = (mdh['Protocol.IntegrationTimes'],mdh['Protocol.Transitions'])
+    ms, vs = darkCal(dataSource,it,tt)
+    return (ms,vs,it)
+
+from scipy import stats
+def isnparray(a):
+    return type(a).__module__ == np.__name__
+    
+def dcfit(ms,integrationTimes):
+    import sys
+    if not isnparray(ms):
+        ofs = np.dstack(ms) # offsets
+    else:
+        ofs = ms
+    itimes = np.asarray(integrationTimes)
+
+    sz = ofs.shape
+    sz2d = sz[0:2]
+    def z2d():
+        return np.zeros(sz2d,dtype = 'float32')
+    dc = z2d()
+    offs = z2d()
+    r_value = z2d()
+    p_value = z2d()
+    std_err = z2d()
+    for x in range(sz[0]):
+        print "line %d" % (x) + '\r',
+        sys.stdout.flush()
+        for y in range(sz[1]):
+            dc[x,y], offs[x,y], r_value[x,y], p_value[x,y], std_err[x,y] = \
+            stats.linregress(itimes,ofs[x,y,:])
+
+    return (dc,offs,r_value,p_value,std_err)
+
+def subsampidx(arraylen, percentage=10):
+    newlen = percentage*1e-2*arraylen
+    idx = np.random.choice(arraylen,newlen)
+    return idx
+
+from scipy.stats import gaussian_kde
+import pylab
+def scatterdens(x,y,subsample=1.0):
+    xf = x.flatten()
+    yf = y.flatten()
+    if subsample < 1.0:
+        idx = subsampidx(xf.size,percentage = 100*subsample)
+        xs = xf[idx]
+        ys = yf[idx]
+    else:
+        xs = xf
+        ys = yf
+        
+    estimator = gaussian_kde([xs,ys]) 
+    density = estimator.evaluate([xf,yf])
+    pylab.scatter(xf,yf,c=density,marker='o',linewidth='0',zorder=3,s=40)
