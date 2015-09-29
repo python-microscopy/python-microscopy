@@ -76,7 +76,7 @@ class RecipePlugin(recipeGui.RecipeManager):
                 if self.dsviewer.mode == 'visGUI':
                     mode = 'visGUI'
                 else:
-                    mode = 'lite'
+                    mode = 'default'
     
                 dv = ViewIm3D(self.outp, mode=mode, glCanvas=self.dsviewer.glCanvas)
     

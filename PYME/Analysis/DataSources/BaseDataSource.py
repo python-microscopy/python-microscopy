@@ -80,7 +80,7 @@ class BaseDataSource(object):
         #print keys
 
         
-        if self.nTrueDims == 3: #x,y, z/t
+        if self.nTrueDims <= 3: #x,y, z/t
             r = np.concatenate([np.atleast_2d(self.getSlice(i)[keys[0], keys[1]])[:,:,None] for i in range(*keys[2].indices(self.getNumSlices()))], 2)
         elif self.nTrueDims == 4:
             if self.additionalDims == 'TC':

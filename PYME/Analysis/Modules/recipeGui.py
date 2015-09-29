@@ -342,7 +342,7 @@ class BatchFrame(wx.Frame, wx.FileDropTarget):
         self.lFiles.SetDropTarget(self.dropFiles)
         
     def UpdateFileList(self, filenames):
-        self.inputFiles = filenames        
+        self.inputFiles += filenames        
         
         self.lFiles.DeleteAllItems()
         
