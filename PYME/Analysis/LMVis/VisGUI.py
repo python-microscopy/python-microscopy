@@ -792,7 +792,7 @@ class VisGUIFrame(wx.Frame):
         filename = wx.FileSelector("Choose a file to open", 
                                    nameUtils.genResultDirectoryPath(), 
                                    default_extension='h5r', 
-                                   wildcard='PYME Results Files (*.h5r)|*.h5r|Tab Formatted Text (*.txt)|*.txt|Matlab data (*.mat)|*.mat|Comma separated values (*.csv)')
+                                   wildcard='PYME Results Files (*.h5r)|*.h5r|Tab Formatted Text (*.txt)|*.txt|Matlab data (*.mat)|*.mat|Comma separated values (*.csv)|*.csv')
 
         #print filename
         if not filename == '':
@@ -1097,14 +1097,16 @@ class VisGuiApp(wx.App):
         return True
 
 
-def main(filename=None):
+def main_(filename=None):
     if filename == "":
         filename = None
     application = VisGuiApp(filename, 0)
     application.MainLoop()
 
 
-if __name__ == '__main__':
+
+    
+def main():
     from multiprocessing import freeze_support
     freeze_support()
     
@@ -1114,11 +1116,14 @@ if __name__ == '__main__':
         filename = sys.argv[1]
 
     if wx.GetApp() == None: #check to see if there's already a wxApp instance (running from ipython -pylab or -wthread)
-        main(filename)
+        main_(filename)
     else:
         #time.sleep(1)
         visFr = VisGUIFrame(None, filename)
         visFr.Show()
         visFr.RefreshView()
+        
+if __name__ == '__main__':
+    main()
 
 
