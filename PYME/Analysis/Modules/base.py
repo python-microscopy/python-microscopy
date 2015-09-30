@@ -203,7 +203,41 @@ class ExtractChannel(ModuleBase):
         return im
     
     def execute(self, namespace):
-        namespace[self.outputName] = self._pickChannel(namespace[self.inputName]) 
+        namespace[self.outputName] = self._pickChannel(namespace[self.inputName])
+        
+@register_module('JoinChannels')    
+class JoinChannels(ModuleBase):
+    '''extract one channel from an image'''
+    inChan0 = CStr('input0')
+    inChan1 = CStr('')
+    inChan2 = CStr('')
+    inChan3 = CStr('')
+    outputName = CStr('output')     
+    
+    #channelToExtract = Int(0)
+    
+    def _joinChannels(self, namespace):
+        chans = []
+
+        image = namespace[self.inChan0]        
+        
+        chans.append(image.data[:,:,:,0])
+        
+        if not self.inChan1 == '':
+            chans.append(namespace[self.inChan1].data[:,:,:,0])
+        if not self.inChan2 == '':
+            chans.append(namespace[self.inChan2].data[:,:,:,0])
+        if not self.inChan3 == '':
+            chans.append(namespace[self.inChan3].data[:,:,:,0])
+        
+        im = ImageStack(chans, titleStub = 'Composite Image')
+        im.mdh.copyEntriesFrom(image.mdh)
+        im.mdh['Parent'] = image.filename
+        
+        return im
+    
+    def execute(self, namespace):
+        namespace[self.outputName] = self._joinChannels(namespace)
         
         
 def _issubclass(cl, c):
