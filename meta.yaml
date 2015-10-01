@@ -134,12 +134,19 @@ requirements:
     - pyopengl
     - traits
     - traitsui
+    - mayavi
     - toposort
     - networkx
     - pyro
     - pyfftw3
     - mpld3
     - python.app      [osx]
+    - cherrypy
+    - scikit-image
+    - scikit-learn
+    - shapely         [osx]
+
+  #unfortunately not availible through conda on windows ##FIXME
 
 #test:
   # files which are copied from the recipe into the (temporary) test

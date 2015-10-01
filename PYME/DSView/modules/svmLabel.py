@@ -182,7 +182,7 @@ class manualLabel:
             self.cf.save(filename)
             
     def OnLoadClassifier(self, event=None):
-        from PYMEnf.Analysis import svmSegment
+        from PYME.Analysis import svmSegment
         filename = wx.FileSelector("Load Classifier:", wildcard="*.pkl", flags=wx.FD_OPEN)
         if not filename == '':
             self.cf = svmSegment.svmClassifier(filename=filename)
@@ -280,7 +280,7 @@ class manualLabel:
         self.labv.Update()
         
     def OnSVMTrain(self, event):
-        from PYMEnf.Analysis import svmSegment
+        from PYME.Analysis import svmSegment
         
         #from PYME.DSView.image import ImageStack
         #from PYME.DSView import ViewIm3D
