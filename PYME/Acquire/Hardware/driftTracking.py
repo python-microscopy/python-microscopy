@@ -81,7 +81,7 @@ class correlator(object):
         
         self.calibState = 0 #completely uncalibrated
         
-        
+        self.corrRef = 0
 
         
         self.lockFocus = False
@@ -212,13 +212,15 @@ class correlator(object):
             #fully calibrated
             dx, dy, dz, cCoeff = self.compare()
             
+            self.corrRef = max(self.corrRef, cCoeff)
+            
             #print dx, dy, dz
             
             self.history.append((time.time(), dx, dy, dz, cCoeff))
             if self.logShifts:
                 self.piezo.LogShifts(dx, dy, dz)
             
-            if self.lockFocus:
+            if self.lockFocus and (cCoeff > .5*self.corrRef):
                 if abs(dz) > self.focusTolerance and self.lastAdjustment >= 2:
                     self.piezo.SetOffset(self.piezo.GetOffset() - dz)
                     self.historyCorrections.append((time.time(), dz))
@@ -229,6 +231,7 @@ class correlator(object):
             
     def reCalibrate(self):
         self.calibState = 0
+        self.corrRef = 0
         
     def register(self):
         self.scope.pa.WantFrameGroupNotification.append(self.tick)
