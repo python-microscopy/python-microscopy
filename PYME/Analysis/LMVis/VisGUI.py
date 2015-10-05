@@ -771,7 +771,7 @@ class VisGUIFrame(wx.Frame):
    
     def OnSaveMeasurements(self, event):
         fdialog = wx.FileDialog(None, 'Save measurements ...',
-            wildcard='Numpy array|*.npy|Tab formatted text|*.txt', style=wx.SAVE|wx.HIDE_READONLY)
+            wildcard='Numpy array|*.npy|Tab formatted text|*.txt', style=wx.SAVE)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
             outFilename = fdialog.GetPath().encode()
