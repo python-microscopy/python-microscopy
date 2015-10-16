@@ -199,8 +199,17 @@ class MDHandlerBase(DictMixin):
                 self.setEntry(en, mdToCopy.getEntry(en))
 
     def __repr__(self):
-        s = ['%s: %s' % (en, self.getEntry(en)) for en in self.getEntryNames()]
+        import re
+        s = ['%s: %s' % (en, self.getEntry(en) if not re.search(r'Time$',en) else self.tformat(self.getEntry(en))) for en in self.getEntryNames()]
         return '<%s>:\n\n' % self.__class__.__name__ + '\n'.join(s)
+
+    @staticmethod
+    def tformat(timeval):
+        import time
+        if timeval < 946684800: # timestamp for year 2000 as heuristic
+            return timeval
+        else:
+            return "%s (%s)" % (timeval,time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timeval)))
 
     def GetSimpleString(self):
         '''Writes out metadata in simplfied format.

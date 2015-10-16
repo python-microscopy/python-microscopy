@@ -197,8 +197,10 @@ class ExtractChannel(ModuleBase):
         chan = image.data[:,:,:,self.channelToExtract]
         
         im = ImageStack(chan, titleStub = 'Filtered Image')
-        im.mdh.copyEntriesFrom(self.image.mdh)
-        im.mdh['Parent'] = self.image.filename
+        im.mdh.copyEntriesFrom(image.mdh)
+        im.mdh['Parent'] = image.filename
+        
+        return im
     
     def execute(self, namespace):
         namespace[self.outputName] = self._pickChannel(namespace[self.inputName]) 

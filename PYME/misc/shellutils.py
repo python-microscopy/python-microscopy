@@ -49,6 +49,37 @@ def mdhnogui(filename):
     mdh = MetaDataHandler.HDFMDHandler(h5f)
     return {'h5f': h5f, 'mdh': mdh}
 
+def _mcheck(mdh,key):
+    if key in mdh.keys():
+        return mdh[key]
+    else:
+        return None 
+
+def _tformat(timeval):
+    import time
+    if timeval < 946684800: # timestamp for year 2000 as heuristic
+        return timeval
+    else:
+        return "%s (%s)" % (timeval,time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timeval)))
+
+def seriestiming(mdh=None):
+    if mdh is None:
+        mdh = getmdh(inmodule=True)
+    tinfo = {}
+    if _mcheck(mdh,'StartTime'):
+        tinfo['start'] = mdh['StartTime']
+        tinfo['end'] = _mcheck(mdh,'EndTime')
+    elif _mcheck(mdh,'Source.StartTime'):
+        tinfo['start'] = mdh['Source.StartTime']
+        tinfo['end'] = _mcheck(mdh,'Source.EndTime')
+    else:
+        print "no timing info found"
+        return
+    print "Start\t\t%s" % _tformat(tinfo['start'])
+    if tinfo['end']:
+        print "End\t\t\t%s" % _tformat(tinfo['end'])
+        print "Duration\t%.2f s (%.1f min)" % (tinfo['end']-tinfo['start'],(tinfo['end']-tinfo['start'])/60.0)
+
 def getDriftPars(mdh=None):
     if mdh is None:
         mdh = getmdh(inmodule=True)

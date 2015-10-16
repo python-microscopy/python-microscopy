@@ -5,7 +5,7 @@ Created on Mon May 25 17:15:01 2015
 @author: david
 """
 
-from .base import ModuleBase, register_module, Filter, Float, Enum, CStr, Bool, Int, View, Item, Group
+from .base import ModuleBase, register_module, Filter, Float, Enum, CStr, Bool, Int, View, Item, Group, File
 import numpy as np
 from scipy import ndimage
 from PYME.DSView.image import ImageStack
@@ -46,6 +46,18 @@ class Label(Filter):
 
     def completeMetadata(self, im):
         im.mdh['Labelling.MinSize'] = self.minRegionPixels
+        
+@register_module('SelectLabel') 
+class SelectLabel(Filter):
+    '''Creates a mask corresponding to all pixels with the given label'''
+    label = Int(1)
+    
+    def applyFilter(self, data, chanNum, frNum, im):
+        mask = (data == self.label)
+        return mask
+
+    def completeMetadata(self, im):
+        im.mdh['Processing.SelectedLabel'] = self.label
 
 @register_module('LocalMaxima')         
 class LocalMaxima(Filter):
@@ -60,6 +72,26 @@ class LocalMaxima(Filter):
     def completeMetadata(self, im):
         im.mdh['LocalMaxima.threshold'] = self.threshold
         im.mdh['LocalMaxima.minDistance'] = self.minDistance
+        
+@register_module('SVMSegment')         
+class svmSegment(Filter):
+    classifier = File('')
+    
+    def _loadClassifier(self):
+        from PYMEnf.Analysis import svmSegment
+        if not '_cf' in dir(self):
+            self._cf = svmSegment.svmClassifier(filename=self.classifier)
+    
+    def applyFilter(self, data, chanNum, frNum, im):
+        self._loadClassifier()
+        
+        return self._cf.classify(data.astype('f'))
+
+    def completeMetadata(self, im):
+        im.mdh['SVMSegment.classifier'] = self.classifier
+        
+
+        
 
 @register_module('Deconvolve')         
 class Deconvolve(Filter):
