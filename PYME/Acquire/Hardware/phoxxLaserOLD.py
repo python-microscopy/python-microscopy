@@ -44,6 +44,7 @@ class PhoxxLaser(Laser):
         
         self.commandQueue = Queue.Queue()
         self.replyQueue = Queue.Queue()
+        self.ilbit = '0'
         #self.adhocQueue = Queue.Queue()
         
         self.adHocVals = {}
@@ -64,6 +65,15 @@ class PhoxxLaser(Laser):
         return self.isOn
 
     def TurnOn(self):
+        il, = self._query('GLF') # Get Latched Failure. 
+        self.ilbit = format(int(il,16), '#018b')[-10] #convert the response to 16-bit binary and take the interlock bit (bit  )
+        print '647 laser interlock bit:' + self.ilbit
+        if self.ilbit == '1':
+            self.ser_port.write('?RsC\r') # reset controller to clear the interlock error
+            time.sleep(30) # wait until reset is finished
+            self.ser_port.flush()
+            self.ilbit = '0'
+
         ret, = self._query('LOn')
         if not ret == '>':
             raise RuntimeError('Error turning laser on')
@@ -137,7 +147,7 @@ class PhoxxLaser(Laser):
             time.sleep(.05)
             ret = self._readline()
             
-            if not ret == '':
+            if (not ret == '') and (not self.ilbit == '1'): # ignore all replies during controller reset
                 #print ret
                 #process response - either a response or an ad-hoc message
                 if not ret.startswith('$'): #normal response
