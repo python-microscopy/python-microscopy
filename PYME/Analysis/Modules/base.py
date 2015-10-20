@@ -150,7 +150,7 @@ class ModuleBase(HasTraits):
     
     @property
     def inputs(self):
-        return {v for k,v in self.get().items() if k.startswith('input')}
+        return {v for k,v in self.get().items() if k.startswith('input') and not v == ""}
         
     @property
     def outputs(self):
@@ -208,10 +208,10 @@ class ExtractChannel(ModuleBase):
 @register_module('JoinChannels')    
 class JoinChannels(ModuleBase):
     '''extract one channel from an image'''
-    inChan0 = CStr('input0')
-    inChan1 = CStr('')
-    inChan2 = CStr('')
-    inChan3 = CStr('')
+    inputChan0 = CStr('input0')
+    inputChan1 = CStr('')
+    inputChan2 = CStr('')
+    inputChan3 = CStr('')
     outputName = CStr('output')     
     
     #channelToExtract = Int(0)
@@ -219,16 +219,16 @@ class JoinChannels(ModuleBase):
     def _joinChannels(self, namespace):
         chans = []
 
-        image = namespace[self.inChan0]        
+        image = namespace[self.inputChan0]        
         
         chans.append(image.data[:,:,:,0])
         
-        if not self.inChan1 == '':
-            chans.append(namespace[self.inChan1].data[:,:,:,0])
-        if not self.inChan2 == '':
-            chans.append(namespace[self.inChan2].data[:,:,:,0])
-        if not self.inChan3 == '':
-            chans.append(namespace[self.inChan3].data[:,:,:,0])
+        if not self.inputChan1 == '':
+            chans.append(namespace[self.inputChan1].data[:,:,:,0])
+        if not self.inputChan2 == '':
+            chans.append(namespace[self.inputChan2].data[:,:,:,0])
+        if not self.inputChan3 == '':
+            chans.append(namespace[self.inputChan3].data[:,:,:,0])
         
         im = ImageStack(chans, titleStub = 'Composite Image')
         im.mdh.copyEntriesFrom(image.mdh)
