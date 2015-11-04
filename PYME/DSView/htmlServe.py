@@ -33,6 +33,7 @@ servers.wait_for_occupied_port = f2
 
 cherrypy.config.update({'server.socket_port': 0,
                         #'server.socket_host': '0.0.0.0',
+                        #'log.screen' : False,
                         'engine.autoreload.on': False})
 
 #cherrypy.server.socket_host = '127.0.0.1'

@@ -184,6 +184,45 @@ class Filter(ModuleBase):
         
     def completeMetadata(self, im):
         pass  
+    
+class ArithmaticFilter(ModuleBase):
+    '''Module with one image input and one image output'''
+    inputName0 = CStr('input')
+    inputName1 = CStr('input')
+    outputName = CStr('filtered_image')
+    
+    processFramesIndividually = Bool(False)
+    
+    def filter(self, image0, image1):
+        if self.processFramesIndividually:
+            filt_ims = []
+            for chanNum in range(image0.data.shape[3]):
+                out = []
+                for i in range(image0.data.shape[2]):
+                    d0 = image0.data[:,:,i,chanNum].squeeze().astype('f')
+                    d1 = image1.data[:,:,i,chanNum].squeeze().astype('f')
+                    out.append(np.atleast_3d(self.applyFilter(d0, d1, chanNum, i, image0)))
+                filt_ims.append(np.concatenate(out, 2))
+        else:
+            filt_ims = []
+            for chanNum in range(image0.data.shape[3]):
+                d0 = image0.data[:,:,:,chanNum].squeeze().astype('f')
+                d1 = image1.data[:,:,:,chanNum].squeeze().astype('f')
+                filt_ims.append(np.atleast_3d(self.applyFilter(d0, d1, chanNum, 0, image0)))
+            
+        im = ImageStack(filt_ims, titleStub = self.outputName)
+        im.mdh.copyEntriesFrom(image0.mdh)
+        im.mdh['Parents'] = '%s, %s' % (image0.filename, image1.filename)
+        
+        self.completeMetadata(im)
+        
+        return im
+        
+    def execute(self, namespace):
+        namespace[self.outputName] = self.filter(namespace[self.inputName0], namespace[self.inputName1])
+        
+    def completeMetadata(self, im):
+        pass  
 
 @register_module('ExtractChannel')    
 class ExtractChannel(ModuleBase):
@@ -239,6 +278,55 @@ class JoinChannels(ModuleBase):
     def execute(self, namespace):
         namespace[self.outputName] = self._joinChannels(namespace)
         
+@register_module('Add')    
+class Add(ArithmaticFilter):
+    '''Add two images'''
+    
+    def applyFilter(self, data0, data1, chanNum, i, image0):
+        
+        return data0 + data1
+        
+@register_module('Subtract')    
+class Subtract(ArithmaticFilter):
+    '''Add two images'''
+    
+    def applyFilter(self, data0, data1, chanNum, i, image0):
+        
+        return data0 - data1
+        
+@register_module('Multiply')    
+class Multiply(ArithmaticFilter):
+    '''Add two images'''
+    
+    def applyFilter(self, data0, data1, chanNum, i, image0):
+        
+        return data0*data1
+    
+@register_module('Divide')    
+class Divide(ArithmaticFilter):
+    '''Add two images'''
+    
+    def applyFilter(self, data0, data1, chanNum, i, image0):
+        
+        return data0/data1  
+        
+@register_module('Scale')    
+class Scale(Filter):
+    '''Add two images'''
+    
+    scale = Float(1)
+    
+    def applyFilter(self, data, chanNum, i, image0):
+        
+        return self.scale*data
+        
+@register_module('BinaryOr')    
+class BinaryOr(ArithmaticFilter):
+    '''Add two images'''
+    
+    def applyFilter(self, data0, data1, chanNum, i, image0):
+        
+        return (data0 + data1) > .5
         
 def _issubclass(cl, c):
     try:

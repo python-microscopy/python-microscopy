@@ -136,7 +136,7 @@ class LMAnalyser:
 
         #a timer object to update for us
         self.timer = mytimer()
-        self.timer.Start(10000)
+        self.timer.Start(1000)
 
         self.analDispMode = 'z'
 
@@ -470,6 +470,11 @@ class LMAnalyser:
 
         self.timer.WantNotification.append(self.analRefresh)
         self.bGo.Enable(False)
+        
+        #auto load VisGUI display
+        from PYME.DSView import modules
+        modules.loadModule('LMDisplay', self.dsviewer)
+        
         #_pnl.Collapse(self.analysisPanel)
 
     def GenPointFindingPanel(self, _pnl):
@@ -619,7 +624,7 @@ class LMAnalyser:
                 if len(self.fitResults) == 0:
                     self.fitResults = newResults
                     self.ds = inpFilt.fitResultsSource(self.fitResults)
-                    self.dsviewer.pipeline.OpenFile(ds=self.ds)
+                    self.dsviewer.pipeline.OpenFile(ds=self.ds, imBounds = self.dsviewer.image.imgBounds)
                 else:
                     self.fitResults = numpy.concatenate((self.fitResults, newResults))
                     self.ds.setResults(self.fitResults)
@@ -631,6 +636,11 @@ class LMAnalyser:
                 self.view.points = numpy.vstack((self.fitResults['fitResults']['x0'], self.fitResults['fitResults']['y0'], self.fitResults['tIndex'])).T
 
                 self.numEvents = len(self.fitResults)
+                
+                try:
+                    self.dsviewer.LMDisplay.RefreshView()
+                except:
+                    pass
 
         if (self.tq.getNumberOpenTasks(self.image.seriesName) + self.tq.getNumberTasksInProgress(self.image.seriesName)) == 0 and 'SpoolingFinished' in self.image.mdh.getEntryNames():
             self.dsviewer.statusbar.SetBackgroundColour(wx.GREEN)
@@ -640,6 +650,7 @@ class LMAnalyser:
         self.progPan.Refresh()
         self.dsviewer.Refresh()
         self.dsviewer.update()
+
 
     def update(self, dsviewer):
         if 'fitInf' in dir(self) and not self.dsviewer.playbackpanel.tPlay.IsRunning():

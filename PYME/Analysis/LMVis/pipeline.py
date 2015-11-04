@@ -329,7 +329,9 @@ class Pipeline:
             self.selectedDataSource.setMapping('y', 'y*pixelSize')
             
         #Retrieve or estimate image bounds
-        if 'Camera.ROIWidth' in self.mdh.getEntryNames():
+        if False:#'imgBounds' in kwargs.keys():
+            self.imageBounds = kwargs['imgBounds']
+        elif 'Camera.ROIWidth' in self.mdh.getEntryNames():
             x0 = 0
             y0 = 0
 
