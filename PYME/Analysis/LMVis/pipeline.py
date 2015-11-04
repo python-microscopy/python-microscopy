@@ -329,7 +329,9 @@ class Pipeline:
             self.selectedDataSource.setMapping('y', 'y*pixelSize')
             
         #Retrieve or estimate image bounds
-        if 'Camera.ROIWidth' in self.mdh.getEntryNames():
+        if False:#'imgBounds' in kwargs.keys():
+            self.imageBounds = kwargs['imgBounds']
+        elif 'Camera.ROIWidth' in self.mdh.getEntryNames():
             x0 = 0
             y0 = 0
 
@@ -420,6 +422,14 @@ class Pipeline:
 
         if 'Sample.Labelling' in self.mdh.getEntryNames() and 'gFrac' in self.selectedDataSource.keys():
             self.SpecFromMetadata()
+            
+        if 'probe' in self.mapping.keys():
+            #non-ratiometric (i.e. sequential) colour
+            #color channel is given in 'probe' column
+            self.mapping.setMapping('ColourNorm', '1.0 + 0*probe')
+            
+            for i in range(int(self['probe'].min()), int(self['probe'].max()+ 1)):
+                self.mapping.setMapping('p_chan%d' % i, '1.0*(probe == %d)'%i)
 
 
     def SpecFromMetadata(self):

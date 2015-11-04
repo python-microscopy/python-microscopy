@@ -28,6 +28,16 @@ def extractFeatures(im):
         feats.append(m)
         d = im - m
         feats.append(ndimage.uniform_filter(d*d, i))
+        
+        #measure displacement of ROI centre of mass
+        #x, y = np.mgrid[-i:(i+1), -i:(i+1)]  
+        #k = np.sqrt(1.0*x*x + 1.0*y*y)
+        #k = np.abs(np.arange(-i, i + 1))
+        #r = ndimage.convolve1d(ndimage.convolve1d(im, k, 0), k, 1)
+
+        #r = ndimage.convolve(d, k)        
+        
+        #feats.append(r/(m + .0001))
     
     
     feats.append(np.abs(feats[0] - feats[3]))
