@@ -228,6 +228,7 @@ except:
     print 'Error starting filter wheel ...'
 ''')
 
+from PYME.Acquire.Hardware import ExciterWheel
 exciterList = [WFilter(1, 'GFP', 'GFP', 0),
     WFilter(2, 'TxRed' , 'TxRed', 0),
     WFilter(3, 'Cy5'  , 'Cy5'  , 0),
@@ -237,23 +238,14 @@ exciterList = [WFilter(1, 'GFP', 'GFP', 0),
 
 InitGUI('''
 try:
-    scope.exciterWheel = FiltWheel(exciterList, 'COM22')
+    scope.exciterWheel = ExciterWheel.FiltWheel(exciterList, 'COM22', dichroic=scope.dichroic)
     #scope.filterWheel.SetFilterPos("LF488")
-    scope.exciterPan = FiltFrame(MainFrame, scope.exciterWheel)
+    scope.exciterPan = ExciterWheel.FiltFrame(MainFrame, scope.exciterWheel)
     toolPanels.append((scope.exciterPan, 'Exciter Wheel'))
 except:
     print 'Error starting exciter wheel ...'
 ''')
 
-
-InitBG('DMD', '''
-from PYME.Acquire.Hardware import TiLightCrafter
-
-scope.LC = TiLightCrafter.LightCrafter()
-scope.LC.Connect()
-scope.LC.SetDisplayMode(scope.LC.DISPLAY_MODE.DISP_MODE_IMAGE)
-scope.LC.SetStatic(255)
-''')
 
 InitBG('XY Stage', '''
 #XY Stage
@@ -277,17 +269,38 @@ scope.CleanupFunctions.append(scope.spacenav.close)
 scope.ctrl3d = spacenav.SpaceNavPiezoCtrl(scope.spacenav, scope.piFoc, scope.xystage)
 ''')
 
+from PYME.Acquire.Hardware import priorLumen, arclampshutterpanel
 InitGUI('''
-from PYME.Acquire.Hardware import DMDGui
-DMDModeSelectionPanel = DMDGui.DMDModeChooserPanel(MainFrame, scope)
-DMDtpPanel = DMDGui.DMDTestPattern(MainFrame, scope.LC)
-DMDsiPanel = DMDGui.DMDStaticImage(MainFrame, scope.LC)
-DMDseqPanel = DMDGui.DMDImageSeq(MainFrame, scope.LC)
-camPanels.append((DMDModeSelectionPanel, 'select DMD Mode'))
-camPanels.append((DMDtpPanel, 'select test pattern'))
-camPanels.append((DMDsiPanel, 'select static image'))
-camPanels.append((DMDseqPanel, 'select image sequence'))
+try:
+    scope.arclampshutter = priorLumen.PriorLumen('Arc lamp shutter', portname='COM23')
+    scope.shuttercontrol = [scope.arclampshutter]
+    acf = arclampshutterpanel.Arclampshutterpanel(MainFrame,scope.shuttercontrol)
+    time1.WantNotification.append(acf.refresh)
+    camPanels.append((acf, 'Shutter Control'))
+except:
+    print 'Error starting arc-lamp shutter ...'
 ''')
+
+# InitBG('DMD', '''
+# from PYME.Acquire.Hardware import TiLightCrafter
+
+# scope.LC = TiLightCrafter.LightCrafter()
+# scope.LC.Connect()
+# scope.LC.SetDisplayMode(scope.LC.DISPLAY_MODE.DISP_MODE_IMAGE)
+# scope.LC.SetStatic(255)
+# ''')
+
+# InitGUI('''
+# from PYME.Acquire.Hardware import DMDGui
+# DMDModeSelectionPanel = DMDGui.DMDModeChooserPanel(MainFrame, scope)
+# DMDtpPanel = DMDGui.DMDTestPattern(MainFrame, scope.LC)
+# DMDsiPanel = DMDGui.DMDStaticImage(MainFrame, scope.LC)
+# DMDseqPanel = DMDGui.DMDImageSeq(MainFrame, scope.LC)
+# camPanels.append((DMDModeSelectionPanel, 'select DMD Mode'))
+# camPanels.append((DMDtpPanel, 'select test pattern'))
+# camPanels.append((DMDsiPanel, 'select static image'))
+# camPanels.append((DMDseqPanel, 'select image sequence'))
+# ''')
 
 #from PYME.Acquire.Hardware import priorLumen
 #scope.arclamp = priorLumen.PriorLumen('Arc Lamp', portname='COM6')

@@ -393,15 +393,28 @@ class AndorBase(SDK3Camera):
         #dlg.ShowModal()
         #self.SetROIIndex(dlg.GetSelection())
         #dlg.Destroy()
-        print x1, y1, x2-x1, y2-y1 
+        if (x1 > x2):
+            tmp = x2
+            x2 = x1
+            x1 = tmp
+        if (y1 > y2):
+            tmp = y2
+            y2 = y1
+            y1 = tmp
+        # import sys
+        # print >>sys.stderr, x1, y1, x2-x1, y2-y1
         #pass #silently fail
         
         #have to set width before x, height before y
         self.AOIWidth.setValue(x2-x1)
+        #print >>sys.stderr, 'width was set'
         self.AOIHeight.setValue(y2 - y1)
+        #print >>sys.stderr, 'height was set'
         self.AOILeft.setValue(x1+1)
+        #print >>sys.stderr, 'AOILeft was set'
         self.AOITop.setValue(y1+1)
-        
+        #print >>sys.stderr, 'AOITop was set'
+
     def SetGainMode(self,mode):
         from warnings import warn
         if not any(mode in s for s in self.SimpleGainModes.keys()):
@@ -447,6 +460,7 @@ class AndorBase(SDK3Camera):
 
     def StartExposure(self):
         #make sure no acquisiton is running
+        #import sys
         self.StopAq()
         self._temp = self.SensorTemperature.getValue()
         self._frameRate = self.FrameRate.getValue()
@@ -454,7 +468,9 @@ class AndorBase(SDK3Camera):
         
         eventLog.logEvent('StartAq', '')
         self._flush()
+        #print >>sys.stderr, '_flush done'
         self.InitBuffers()
+        #print >>sys.stderr, 'InitBuffers done'
         self.AcquisitionStart()
 
         return 0

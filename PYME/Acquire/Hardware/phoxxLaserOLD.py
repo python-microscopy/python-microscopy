@@ -66,7 +66,7 @@ class PhoxxLaser(Laser):
 
     def TurnOn(self):
         il, = self._query('GLF') # Get Latched Failure. 
-        self.ilbit = format(int(il,16), '#018b')[-10] #convert the response to 16-bit binary and take the interlock bit (bit  )
+        self.ilbit = format(int(il,16), '#018b')[-10] #convert the response to 16-bit binary and take the interlock bit
         print '647 laser interlock bit:' + self.ilbit
         if self.ilbit == '1':
             self.ser_port.write('?RsC\r') # reset controller to clear the interlock error
