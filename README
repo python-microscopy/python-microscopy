@@ -1,7 +1,9 @@
-**The PYthon Microscopy Environment**
+**PYME-Exeter**
 
-The PYthon Microscopy Environment provides image acquisition and data analysis functionality for a number of  widefield microscopy applications, but with a particular emphasis on single molecule localisation microscopy (PALM/STORM). The package is multi platform, running on Windows, Linux, and OSX.
+This is a fork of the python-microscopy project (http://bitbucket.org/david_baddeley/python-microscopy) (by David Baddeley) that has in addition to David's original code a branch with local changes from work in my lab at the University of Exeter.
 
-To install PYME and get started [http://david_baddeley.bitbucket.org/python-microscopy/doc/index.html view the documentation].
+There is not too much new or different material here, some different hardware backends and changes we required to make certain things work. I maintain this repo to facilitate code exchange between David's and my copies of the repository. On a semi-regular basis David's code gets folded into this fork.
 
-The documentation is also available in the *docs* subdirectory of the repository
+Info excerpt on PYME from David's ReadMe:
+
+*The PYthon Microscopy Environment provides image acquisition and data analysis functionality for a number of widefield microscopy applications, but with a particular emphasis on single molecule localisation microscopy (PALM/STORM). The package is multi platform, running on Windows, Linux, and OSX.*

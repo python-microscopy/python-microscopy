@@ -61,7 +61,18 @@ noiseProperties = {
         'ADOffset' : 203,
         'DefaultEMGain' : 90,
         'SaturationThreshold' : 5.4e4#(2**16 -1)
-        },    
+        },
+7546 : {
+        #  preamp: currently using most sensitive setting (default according to docs)
+        # if I understand the code correctly the fastest Horizontal Shift Speed will be selected
+        # which should be 17 MHz for this camera; therefore using 17 MHz data
+        'ReadNoise' : 85.23,
+        'ElectronsPerCount' : 4.82,
+        'NGainStages' : 536, # relevant?
+        'ADOffset' : 150, # from test measurement at EMGain 85 (realgain ~30)
+        'DefaultEMGain' : 85, # we start carefully and can bumb this later to be in the vicinity of 30
+        'SaturationThreshold' : (2**16 -1) # this cam has 16 bit data
+    },
 }
 
 class iXonCamera:
@@ -188,11 +199,12 @@ class iXonCamera:
             raise RuntimeError('Error setting HS speed: %s' % ac.errorCodes[ret])
 
         #FIXME - do something about selecting A/D channel
-        
-        self.preampGain = 2 #gain of "3" 
-        ret = ac.SetPreAmpGain(self.preampGain)
-        if not ret == ac.DRV_SUCCESS:
-            raise RuntimeError('Error setting Preamp gain: %s' % ac.errorCodes[ret])
+
+        # this is in David's part of the code - I stay with preampGain 3 for now
+        # self.preampGain = 2 #gain of "3" 
+        # ret = ac.SetPreAmpGain(self.preampGain)
+        # if not ret == ac.DRV_SUCCESS:
+        #    raise RuntimeError('Error setting Preamp gain: %s' % ac.errorCodes[ret])
 
 
         self.binning=False #binning flag - binning is off
@@ -694,6 +706,12 @@ class iXonCamera:
     def SetBaselineClamp(self, state):
         self.__selectCamera()
         ac.SetBaselineClamp(int(state))
+
+    def GetBaselineClamp(self):
+        self.__selectCamera()
+        state = ac.GetBaselineClamp.argtypes[0]._type_()
+        ac.GetBaselineClamp(byref(state))
+        return state.value == 1
 
     def SetFan(self, state):
         self.__selectCamera()

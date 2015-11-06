@@ -28,6 +28,14 @@ class ATProperty(object):
     def connect(self, handle, propertyName):
         self.handle = handle
         self.propertyName = propertyName
+    def isImplemented(self):
+        return SDK3.IsImplemented(self.handle, self.propertyName).value
+    def isReadable(self):
+        return SDK3.IsReadable(self.handle, self.propertyName).value
+    def isWritable(self):
+        return SDK3.IsWritable(self.handle, self.propertyName).value
+    def isReadOnly(self):
+        return SDK3.IsReadOnly(self.handle, self.propertyName).value
 
 
 class ATInt(ATProperty):
@@ -50,7 +58,7 @@ class ATBool(ATProperty):
     
     def setValue(self, val):
         SDK3.SetBool(self.handle, self.propertyName, val)
-        
+    
 
         
 class ATFloat(ATProperty):
@@ -142,6 +150,7 @@ class SDK3Camera(object):
     def Init(self):
         print('Foo')        
         self.handle = SDK3.Open(self.camNum)
+        print('Opened handle, handle is ', self.handle)
         self.connectProperties()
         
     

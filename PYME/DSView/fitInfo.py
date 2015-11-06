@@ -51,7 +51,7 @@ class FitInfoPanel(wx.Panel):
 
         vsizer.Add(sFitRes, 0, wx.EXPAND|wx.LEFT|wx.TOP|wx.BOTTOM|wx.RIGHT, 5)
 
-        if self.mdh.getEntry('Analysis.FitModule') == 'LatGaussFitFR':
+        if self.mdh.getEntry('Analysis.FitModule') in ['LatGaussFitFR','LatGaussFitFRforZyla']:
             #we know what the fit parameters are, and how to convert to photons
             tPhotons = self.genGaussPhotonStats(None)
         else:
@@ -150,7 +150,7 @@ class FitInfoPanel(wx.Panel):
         self.stSliceNum.SetLabel(slN)
 
         self.stFitRes.SetLabel(self.genResultsText(index))
-        if self.mdh.getEntry('Analysis.FitModule') == 'LatGaussFitFR':
+        if self.mdh.getEntry('Analysis.FitModule') in ['LatGaussFitFR','LatGaussFitFRforZyla']:
             self.stPhotons.SetLabel(self.genGaussPhotonStats(index))
 
         self.fitViewPan.draw(index)
@@ -232,13 +232,15 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
         if 'Splitter' in self.mdh['Analysis.FitModule']:
              # is a splitter fit
             if 'Splitter.Channel0ROI' in self.mdh.getEntryNames():
+                pseudo_roiposx = 1
+                pseudo_roiposy = 1 
                 x0, y0, w, h = self.mdh['Splitter.Channel0ROI']
-                x0 -= (self.mdh['Camera.ROIPosX'] - 1)
-                y0 -= (self.mdh['Camera.ROIPosY'] - 1)
+                x0 -= (pseudo_roiposx - 1)
+                y0 -= (pseudo_roiposy - 1)
                 #g = self.data[x0:(x0+w), y0:(y0+h)]
                 x1, y1, w, h = self.mdh['Splitter.Channel1ROI']
-                x1 -= (self.mdh['Camera.ROIPosX'] - 1)
-                y1 -= (self.mdh['Camera.ROIPosY'] - 1)
+                x1 -= (pseudo_roiposx - 1)
+                y1 -= (pseudo_roiposy - 1)
                 #r = self.data[x0:(x0+w), y0:(y0+h)]
             else:
                 x0, y0 = 0,0

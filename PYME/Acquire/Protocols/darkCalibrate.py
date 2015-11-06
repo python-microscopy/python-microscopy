@@ -26,8 +26,9 @@ from PYME.Acquire.protocol import *
 import numpy as np
 import wx
 
-INTEGRATIONTIMES = [1, 2, 5, 10, 25, 50, 100]
-TRANSITIONS = list(150*np.array(INTEGRATIONTIMES) + 20)
+nframes=200
+INTEGRATIONTIMES = [5, 10, 25, 50, 100, 250]
+TRANSITIONS = list(nframes*np.arange(len(INTEGRATIONTIMES)) + 20)
 
 def stop():
     #ps.stop()
@@ -37,9 +38,12 @@ def stop():
 #when is the frame number, what is a function to be called, and *args are any
 #additional arguments
 taskList = [T(-1, scope.turnAllLasersOff),]
-taskList += [T(i,scope.cam.SetIntegTime, iTime) for i, iTime in zip(TRANSITIONS, INTEGRATIONTIMES)]
+#taskList += [T(i,scope.cam.SetIntegTime, iTime) for i, iTime in zip(TRANSITIONS, INTEGRATIONTIMES)]
+for i, iTime in zip(TRANSITIONS, INTEGRATIONTIMES):
+	taskList += [T(i,scope.cam.SetIntegTime, iTime)]
 
-taskList += [T(TRANSITIONS[-1]+150, stop),]
+# taskList += [T(10000, scope.filterWheel.SetFilterPos, "EMPTY"),]
+taskList += [T(TRANSITIONS[-1]+nframes, stop),]
 
 #optional - metadata entries
 metaData = [

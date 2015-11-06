@@ -714,7 +714,7 @@ class PYMEMainFrame(wx.Frame):
         
         #print (self.scope.vp.selection_begin_x, self.scope.vp.selection_begin_y, self.scope.vp.selection_end_x, self.scope.vp.selection_end_y)
 
-        if 'validROIS' in dir(self.scope.cam):
+        if 'validROIS' in dir(self.scope.cam) and self.scope.cam.ROIsAreFixed():
             #special case for cameras with restricted ROIs - eg Neo
             print('setting ROI')
             dlg = wx.SingleChoiceDialog(self, 'Please select the ROI size', 'Camera ROI', ['%dx%d at (%d, %d)' % roi for roi in self.scope.cam.validROIS])

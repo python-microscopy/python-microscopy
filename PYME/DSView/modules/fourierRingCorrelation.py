@@ -119,7 +119,7 @@ class RingCorrelator:
         
         rB = np.linspace(0,R.max())
         
-        bn, bm, bs = binAvg.binAvg(R, pylab.fftshift(abs(H1*H2)), rB)
+        bn, bm, bs = binAvg.binAvg(R, pylab.fftshift(H1*H2.conjugate()), rB)
         
         bn1, bm1, bs1 = binAvg.binAvg(R, pylab.fftshift(abs(H1*H1)), rB)
         bn2, bm2, bs2 = binAvg.binAvg(R, pylab.fftshift(abs(H2*H2)), rB)

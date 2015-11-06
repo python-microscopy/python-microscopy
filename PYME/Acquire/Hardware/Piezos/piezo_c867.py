@@ -152,7 +152,7 @@ import threading
 import numpy as np
         
 class piezo_c867T(object):    
-    def __init__(self, portname='COM1', maxtravel = 25.00, hasTrigger=False, reference=True, maxvelocity=200., validRegion = [[4.5, 19], [0, 25]]):
+    def __init__(self, portname='COM1', maxtravel = 25.00, hasTrigger=False, reference=True, maxvelocity=100., validRegion = [[4.5, 19], [8, 17]]):
         self.max_travel = maxtravel
         self.maxvelocity = maxvelocity
         self.ser_port = serial.Serial(portname, 38400, timeout=.1, writeTimeout=.1)
@@ -167,8 +167,8 @@ class piezo_c867T(object):
         self.ser_port.write('RBT\n')
         time.sleep(1)
         #try to make motion smooth
-        self.ser_port.write('SPA 1 0x4D 2\n')
-        self.ser_port.write('SPA 2 0x4D 2\n')
+        self.ser_port.write('SPA 1 0x4D 0\n')
+        self.ser_port.write('SPA 2 0x4D 0\n')
         #turn servo mode on
         self.ser_port.write('SVO 1 1\n')
         self.ser_port.write('SVO 2 1\n')

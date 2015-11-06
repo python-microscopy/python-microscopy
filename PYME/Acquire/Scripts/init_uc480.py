@@ -22,7 +22,7 @@
 ##################
 
 #from PYME.Acquire.Hardware.AndorIXon import AndorIXon
-#from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
+from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
 
 from PYME.Acquire.Hardware.uc480 import uCam480
 
@@ -53,14 +53,13 @@ scope.cam = scope.cameras['A - Left']
 #scope.cameras['B'] = AndorIXon.iXonCamera(0)
 #''')
 
-#InitGUI('''
-#scope.camControls['A - Left'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['A - Left'], scope)
-#camPanels.append((scope.camControls['A - Left'], 'EMCCD A Properties'))
+InitGUI('''
+scope.camControls['A - Left'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['A - Left'], scope)
+camPanels.append((scope.camControls['A - Left'], 'EMCCD A Properties'))
 #
 ##scope.camControls['B - Right'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['B - Right'], scope)
 ##camPanels.append((scope.camControls['B - Right'], 'EMCCD B Properties'))
-#
-#''')
+''')
 
 #InitGUI('''
 #from PYME.Acquire import sampleInformation

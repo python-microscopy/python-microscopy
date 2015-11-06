@@ -143,14 +143,14 @@ class DigiDataSwitchedAnalogLaser(Laser):
 
 #laser which is attached to a DigiData analog io channel
 class FakeLaser(Laser):
-    def __init__(self,name, cam, chan, turnOn=False, initPower=1):
+    def __init__(self,name, cam, chan, turnOn=False, initPower=1, maxPower=1e3):
         self.cam = cam
         self.chan = chan
         self.power = initPower
 
         Laser.__init__(self,name,turnOn)
         
-        self.MAX_POWER = 1e3
+        self.MAX_POWER = maxPower
 
         self.powerControlable = True
         self.isOn = turnOn
@@ -215,3 +215,60 @@ class ParallelSwitchedLaser(Laser):
     def TurnOff(self):
         self.pport.setPin(self.pinNo, False)
 
+
+# simple arduino-based serial box (made by Louey)
+# maps several arduino pins to 12V outputs 0-2 on box
+# arduino uses IOslave implementation, original from David Baddeley,
+# I made a number of modifications
+# serial protocol:
+# 
+class SBox:
+    def __init__(self, com_port='COM4'):
+        import serial
+        self.ser =  serial.Serial(com_port, baudrate=19200, timeout=1)
+        self.ioPorts = [0,0,0]
+        self.ioMap = ['SD3','SD4','SD5']
+        self.states = [False,False,False]
+        for port in range(0,3):
+            self.setState(port,False)
+        self.status = 'ok'
+
+    def setState(self, ioNo, on):
+        if on:
+            self.ser.write(self.ioMap[ioNo]+' 1\n')
+            echo = self.ser.readline()
+            self.status = self.ser.readline()
+            if not self._checkstatusok():
+                raise RuntimeError('Got invalid response %s' % (status))
+            self.states[ioNo] = True
+        else:
+            self.ser.write(self.ioMap[ioNo]+' 0\n')
+            echo = self.ser.readline()
+            self.status = self.ser.readline()
+            if not self._checkstatusok():
+                raise RuntimeError('Got invalid response %s' % (status))
+            self.states[ioNo] = False
+
+    def getState(self, ioNo):
+        return self.states[ioNo]
+
+    def _checkstatusok(self):
+        reps = self.status.split('\r')
+        return reps[0] == 'ok'
+
+
+class SerialSwitchedLaser(Laser):
+    def __init__(self, name, sbox, ioNo, turnOn=False):
+        self.sbox = sbox
+        self.ioNo = ioNo
+
+        Laser.__init__(self,name,turnOn)
+
+    def IsOn(self):
+        return self.sbox.getState(self.ioNo)
+
+    def TurnOn(self):
+        self.sbox.setState(self.ioNo, True)
+
+    def TurnOff(self):
+        self.sbox.setState(self.ioNo, False)

@@ -138,8 +138,8 @@ def setModel(modName, md):
 
     #interpModel = mod
 
-    #interpModel = np.maximum(mod/mod.max(), 0) #normalise to 1
-    interpModel = np.maximum(mod/mod[:,:,len(IntZVals)/2].sum(), 0) #normalise to 1 and clip
+    #interpModel = np.maximum(mod/mod.max(), 0).astype('float32') #normalise to 1
+    interpModel = np.maximum(mod/mod[:,:,len(IntZVals)/2].sum(), 0).astype('float32') #normalise to 1 and clip
 
 def interp(X, Y, Z):
     X = atleast_1d(X)

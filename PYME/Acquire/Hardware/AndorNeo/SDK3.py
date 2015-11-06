@@ -35,7 +35,7 @@ if plat.startswith('Windows'):
         _stdcall_libraries['ATCORE'] = ctypes.WinDLL('atcore')
         _stdcall_libraries['ATUTIL'] = ctypes.WinDLL('atutility')
     else:
-        _stdcall_libraries['ATCORE'] =ctypes. WinDLL('atcore')
+        _stdcall_libraries['ATCORE'] = ctypes.WinDLL('atcore')
         _stdcall_libraries['ATUTIL'] = ctypes.WinDLL('atutility')
 else:
     _stdcall_libraries['ATCORE'] = ctypes.CDLL('atcore.so')

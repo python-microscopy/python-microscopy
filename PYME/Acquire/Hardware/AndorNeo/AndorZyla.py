@@ -1,9 +1,9 @@
 #!/usr/bin/python
 
 ###############
-# AndorNeo.py
+# AndorZyla.py
 #
-# Copyright David Baddeley, 2012
+# Copyright David Baddeley, CS, 2015
 # d.baddeley@auckland.ac.nz
 #
 # This program is free software: you can redistribute it and/or modify
@@ -46,16 +46,40 @@ class AndorBase(SDK3Camera):
     numpy_frames=1
     MODE_CONTINUOUS = 1
     MODE_SINGLE_SHOT = 0
-    
-#    validROIS = [(2592, 2160,1, 1),
-#                 (2544,2160,1,25),
-#                 (2064,2048,57,265),
-#                 (1776,1760,201,409),
-#                 (1920,1080,537,337),
-#                 (1392,1040,561,601),
-#                 (528,512,825,1033),
-#                 (240,256,953,1177),
-#                 (144,128,1017,1225)]
+        
+    SimpleGainModes = {
+        'low noise':
+            { 'name' : '11-bit (low noise)', 'PEncoding' : 'Mono12' },
+        'high capacity':
+            { 'name' : '11-bit (high well capacity)', 'PEncoding' : 'Mono12' },
+        'high dynamic range':
+            { 'name' : '16-bit (low noise & high well capacity)', 'PEncoding' : 'Mono16' }}
+
+    NoiseProperties = {
+        'low noise': {
+            'ReadNoise' : 1.1,
+            'ElectronsPerCount' : 0.28,
+            'NGainStages' : -1,
+            'ADOffset' : 100, # check mean (or median) offset
+            'DefaultEMGain' : 85,
+            'SaturationThreshold' : 2**11-1#(2**16 -1) # check this is really 11 bit
+        },
+        'high capacity': {
+            'ReadNoise' : 5.96,
+            'ElectronsPerCount' : 6.97,
+            'NGainStages' : -1,
+            'ADOffset' : 100,
+            'DefaultEMGain' : 85,
+            'SaturationThreshold' : 2**11-1#(2**16 -1)         
+        },
+        'high dynamic range': {
+            'ReadNoise' : 1.33,
+            'ElectronsPerCount' : 0.5,
+            'NGainStages' : -1,
+            'ADOffset' : 100,
+            'DefaultEMGain' : 85,
+            'SaturationThreshold' : (2**16 -1)
+        }}
     
     def __init__(self, camNum):
         #define properties
@@ -73,6 +97,7 @@ class AndorBase(SDK3Camera):
         self.PixelReadoutRate = ATEnum()
         self.PreAmpGain = ATEnum()
         self.PreAmpGainSelector = ATEnum()
+        # self.SimplePreAmpGainControl = ATEnum()
         self.TriggerMode = ATEnum()
         
         self.AOIHeight = ATInt()
@@ -94,6 +119,7 @@ class AndorBase(SDK3Camera):
         self.FrameRate = ATFloat()
         self.SensorTemperature = ATFloat()
         self.TargetSensorTemperature = ATFloat()
+        self.FullAOIControl = ATBool()
         
         SDK3Camera.__init__(self,camNum)
         
@@ -128,13 +154,35 @@ class AndorBase(SDK3Camera):
         #set some intial parameters
         #self.FrameCount.setValue(1)
         self.CycleMode.setString(u'Continuous')
+        try:
+            self.SetEMGain(0) # note that this sets 'high dynamic range' mode
+        except:
+            print "error setting gain mode"
+            pass
+        # spurious noise filter off by default
+        try:
+            self.SpuriousNoiseFilter.setValue(0) # this will also fail with the SimCams
+        except:
+            print "error disabling spurios noise filter"
+            pass
+
+        # Static Blemish Correction off by default
+        try:
+            self.StaticBlemishCorrection.setValue(0) # this will also fail with the SimCams
+        except:
+            print "error disabling Static Blemish Correction"
+            pass
         
-        self.SimplePreAmpGainControl.setString(u'12-bit (low noise)')
-        self.PixelEncoding.setString('Mono12Packed')
         self.SensorCooling.setValue(True)
         #self.TemperatureControl.setString('-30.00')
         #self.PixelReadoutRate.setIndex(1)
-        
+        # test if we have only fixed ROIs
+        self._fixed_ROIs = not self.FullAOIControl.isImplemented() or not self.FullAOIControl.getValue()
+        self.noiseProps = self.NoiseProperties[self.GetGainMode()] # gain mode has been set via EMGain above
+
+        # this one to deal with the requirement to have width divisible by 10
+        if not self._fixed_ROIs:
+            self.SetROI(1,1, self.GetCCDWidth(), self.GetCCDHeight())
         #set up polling thread        
         self.doPoll = False
         self.pollLoopActive = True
@@ -334,6 +382,9 @@ class AndorBase(SDK3Camera):
         self.AOIHeight.setValue(height)
         self.AOITop.setValue(top)
 
+    def ROIsAreFixed(self):
+        return self._fixed_ROIs
+
     def SetROI(self, x1, y1, x2, y2):
         #shouldn't do GUI stuff here, but quick way of making it work
         #print('Setting ROI')
@@ -342,16 +393,41 @@ class AndorBase(SDK3Camera):
         #dlg.ShowModal()
         #self.SetROIIndex(dlg.GetSelection())
         #dlg.Destroy()
-        print x1, y1, x2-x1, y2-y1 
+        if (x1 > x2):
+            tmp = x2
+            x2 = x1
+            x1 = tmp
+        if (y1 > y2):
+            tmp = y2
+            y2 = y1
+            y1 = tmp
+        # import sys
+        # print >>sys.stderr, x1, y1, x2-x1, y2-y1
         #pass #silently fail
         
         #have to set width before x, height before y
         self.AOIWidth.setValue(x2-x1)
+        #print >>sys.stderr, 'width was set'
         self.AOIHeight.setValue(y2 - y1)
+        #print >>sys.stderr, 'height was set'
         self.AOILeft.setValue(x1+1)
+        #print >>sys.stderr, 'AOILeft was set'
         self.AOITop.setValue(y1+1)
-        
-    
+        #print >>sys.stderr, 'AOITop was set'
+
+    def SetGainMode(self,mode):
+        from warnings import warn
+        if not any(mode in s for s in self.SimpleGainModes.keys()):
+            warn('invalid mode "%s" requested - ignored' % mode)
+            return
+        self._gainmode = mode
+        self.SimplePreAmpGainControl.setString(self.SimpleGainModes[mode]['name'])
+        self.PixelEncoding.setString(self.SimpleGainModes[mode]['PEncoding'])
+        self.noiseProps = self.NoiseProperties[self._gainmode] # update noise properties for new mode
+
+    def GetGainMode(self):
+        return self._gainmode
+
     def GetROIX1(self):
         return self.AOILeft.getValue()
         
@@ -384,13 +460,17 @@ class AndorBase(SDK3Camera):
 
     def StartExposure(self):
         #make sure no acquisiton is running
+        #import sys
         self.StopAq()
         self._temp = self.SensorTemperature.getValue()
         self._frameRate = self.FrameRate.getValue()
+        self.tKin = 1.0 / self._frameRate
         
         eventLog.logEvent('StartAq', '')
         self._flush()
+        #print >>sys.stderr, '_flush done'
         self.InitBuffers()
+        #print >>sys.stderr, 'InitBuffers done'
         self.AcquisitionStart()
 
         return 0
@@ -426,23 +506,33 @@ class AndorBase(SDK3Camera):
         if self.active:
             self.GetStatus()
     
-            mdh.setEntry('Camera.Name', 'Andor Zyla')
-    
+            mdh.setEntry('Camera.Name', 'Andor sCMOS')
+            mdh.setEntry('Camera.Model', self.CameraModel.getValue())
+            mdh.setEntry('Camera.SerialNumber', self.GetSerialNumber())
+
             mdh.setEntry('Camera.IntegrationTime', self.GetIntegTime())
             mdh.setEntry('Camera.CycleTime', self.GetIntegTime())
-            mdh.setEntry('Camera.EMGain', 1)
+            mdh.setEntry('Camera.EMGain', self.GetEMGain())
+            mdh.setEntry('Camera.DefaultEMGain', 85) # needed for some protocols
     
             mdh.setEntry('Camera.ROIPosX', self.GetROIX1())
             mdh.setEntry('Camera.ROIPosY',  self.GetROIY1())
             mdh.setEntry('Camera.ROIWidth', self.GetROIX2() - self.GetROIX1())
             mdh.setEntry('Camera.ROIHeight',  self.GetROIY2() - self.GetROIY1())
             #mdh.setEntry('Camera.StartCCDTemp',  self.GetCCDTemp())
-    
-            mdh.setEntry('Camera.ReadNoise', 1)
-            mdh.setEntry('Camera.NoiseFactor', 1)
-            mdh.setEntry('Camera.ElectronsPerCount', .28)
-            mdh.setEntry('Camera.ADOffset', self.Baseline.getValue())
-    
+
+            # values for readnoise and EpC from Neo sheet for Gain 4
+            # should be selected with 11 bit low noise setting
+            np = self.NoiseProperties[self.GetGainMode()]
+            mdh.setEntry('Camera.ReadNoise', np['ReadNoise'])
+            mdh.setEntry('Camera.NoiseFactor', 1.0)
+            mdh.setEntry('Camera.ElectronsPerCount', np['ElectronsPerCount'])
+            if (self.Baseline.isImplemented()):
+                mdh.setEntry('Camera.ADOffset', self.Baseline.getValue())
+            else:
+                mdh.setEntry('Camera.ADOffset', np['ADOffset'])
+
+
             #mdh.setEntry('Simulation.Fluorophores', self.fluors.fl)
             #mdh.setEntry('Simulation.LaserPowers', self.laserPowers)
     
@@ -461,9 +551,21 @@ class AndorBase(SDK3Camera):
             if os.path.exists(varfn):
                 mdh['Camera.VarianceMapID'] = varfn
 
+            # this should not be needed anymore with the changes in NoiseProperties dict
+            #update the scmos Metadata for different gain modes
+            #if int(self.EMGain) == 0:
+            #    mdh.setEntry('Camera.ElectronsPerCount', 0.5)
+            #    mdh.setEntry('Camera.ReadNoise', 1.33)
+
+            if  self.StaticBlemishCorrection.isImplemented():
+                mdh.setEntry('Camera.StaticBlemishCorrection', self.StaticBlemishCorrection.getValue())
+            if  self.SpuriousNoiseFilter.isImplemented():
+                mdh.setEntry('Camera.SpuriousNoiseFilter', self.SpuriousNoiseFilter.getValue())
+
+
     #functions to make us look more like andor camera
     def GetEMGain(self):
-        return 1
+        return self.EMGain
 
     def GetCCDTempSetPoint(self):
         return self.TargetSensorTemperature.getValue()
@@ -473,7 +575,13 @@ class AndorBase(SDK3Camera):
         #pass
 
     def SetEMGain(self, gain):
-        pass
+        self.EMGain = gain
+        if gain > 0:
+            print 'low noise mode'
+            self.SetGainMode('low noise')
+        else:
+            print 'high dynamic range mode'
+            self.SetGainMode('high dynamic range')
     
     def SetAcquisitionMode(self, aqMode):
         self.CycleMode.setIndex(aqMode)
@@ -499,7 +607,15 @@ class AndorBase(SDK3Camera):
     def GetFPS(self):
         #return self.FrameRate.getValue()
         return self._frameRate
-        
+
+    def __getattr__(self, name):
+        if name in self.noiseProps.keys():
+            return self.noiseProps[name]
+        else:  raise AttributeError, name  # <<< DON'T FORGET THIS LINE !!
+
+
+
+
     def __del__(self):
         self.Shutdown()
         #self.compT.kill = True

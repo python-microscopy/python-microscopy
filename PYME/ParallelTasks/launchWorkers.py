@@ -108,9 +108,13 @@ def main():
             subprocess.Popen('python %s\\%s' % (fstub, WORKER_PROC), shell=True)
     else: #operating systems which can launch python scripts directly
         #get rid of any previously started queues etc...
-        os.system('killall %s' % SERVER_PROC)
-        os.system('killall %s' % WORKER_PROC)
-        os.system('killall fitMonP.py')
+        if sys.platform == 'darwin':
+            killall = 'pkill -f'
+        else:
+            killall = 'killall'
+        os.system('%s %s' % (killall,SERVER_PROC))
+        os.system('%s %s' % (killall,WORKER_PROC))
+        os.system('%s fitMonP.py' % killall)
     
         subprocess.Popen(SERVER_PROC, shell=True)
     
