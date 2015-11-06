@@ -163,6 +163,9 @@ class GaussianFitFactory:
         #cut region out of data stack
         dataROI = self.data[xslice, yslice, zslice] - self.metadata.Camera.ADOffset
 
+        if min(dataROI.shape) < 1:
+                return GaussianFitResultR(scipy.array([0, 0, 0, 0, 250/2.35, 0,0, .001, .001]), self.metadata, scipy.array([0, 0, 0, 0, 250/2.35, 0,0, .001, .001]), (xslice, yslice, zslice), 0, None)
+
         #average in z
         #dataMean = dataROI.mean(2) - self.metadata.CCD.ADOffset
 

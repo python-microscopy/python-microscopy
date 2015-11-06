@@ -109,25 +109,31 @@ class LMAnalyser:
 
         mTasks = wx.Menu()
         TASKS_STANDARD_2D = wx.NewId()
+        TASKS_STANDARD_2D_Zyla = wx.NewId()
         TASKS_CALIBRATE_SPLITTER = wx.NewId()
         TASKS_2D_SPLITTER = wx.NewId()
         TASKS_3D = wx.NewId()
         TASKS_3D_SPLITTER = wx.NewId()
         TASKS_PRI = wx.NewId()
+        TASKS_PRIscmos = wx.NewId()
         mTasks.Append(TASKS_STANDARD_2D, "Normal 2D analysis", "", wx.ITEM_NORMAL)
+        mTasks.Append(TASKS_STANDARD_2D_Zyla, "Normal 2D analysis for Zyla", "", wx.ITEM_NORMAL)
         mTasks.Append(TASKS_CALIBRATE_SPLITTER, "Calibrating the splitter", "", wx.ITEM_NORMAL)
         mTasks.Append(TASKS_2D_SPLITTER, "2D with splitter", "", wx.ITEM_NORMAL)
         mTasks.Append(TASKS_3D, "3D analysis", "", wx.ITEM_NORMAL)
         mTasks.Append(TASKS_3D_SPLITTER, "3D with splitter", "", wx.ITEM_NORMAL)
         mTasks.Append(TASKS_PRI, "PRI", "", wx.ITEM_NORMAL)
+        mTasks.Append(TASKS_PRIscmos, "PRIscmos", "", wx.ITEM_NORMAL)
         self.dsviewer.menubar.Append(mTasks, "Set defaults for")
         
         wx.EVT_MENU(self.dsviewer, TASKS_CALIBRATE_SPLITTER, self.OnCalibrateSplitter)
         wx.EVT_MENU(self.dsviewer, TASKS_STANDARD_2D, self.OnStandard2D)
+        wx.EVT_MENU(self.dsviewer, TASKS_STANDARD_2D_Zyla, self.OnStandard2DforZyla)
         wx.EVT_MENU(self.dsviewer, TASKS_2D_SPLITTER, self.OnSpitter2D)
         wx.EVT_MENU(self.dsviewer, TASKS_3D, self.OnStandard3D)
         wx.EVT_MENU(self.dsviewer, TASKS_3D_SPLITTER, self.OnSpliter3D)
         wx.EVT_MENU(self.dsviewer, TASKS_PRI, self.OnPRI3D)
+        wx.EVT_MENU(self.dsviewer, TASKS_PRIscmos, self.OnPRI3Dscmos)
         
         BG_SUBTRACT = wx.NewId()
         self.dsviewer.view_menu.AppendCheckItem(BG_SUBTRACT, 'Subtract Background')
@@ -345,7 +351,10 @@ class LMAnalyser:
         
         if 'Analysis.FitModule' in self.image.mdh.getEntryNames():
             #has already been analysed - most likely to want the same method again
-            self.cFitType.SetSelection(self.fitFactories.index(self.image.mdh['Analysis.FitModule']))
+            if self.image.mdh['Analysis.FitModule'] in self.fitFactories:
+                self.cFitType.SetSelection(self.fitFactories.index(self.image.mdh['Analysis.FitModule']))
+            else:
+                self.cFitType.SetSelection(self.fitFactories.index('LatGaussFitFR'))
             self.tThreshold.SetValue('%s' % self.image.mdh.getOrDefault('Analysis.DetectionThreshold', 1))
         #elif 'Camera.ROIPosY' in self.image.mdh.getEntryNames() and (self.image.mdh.getEntry('Camera.ROIHeight') + 1 + 2*(self.image.mdh.getEntry('Camera.ROIPosY')-1)) == 512:
         #    #we have a symetrical ROI about the centre - most likely want to analyse using splitter
@@ -583,6 +592,12 @@ class LMAnalyser:
         self.tBackgroundFrames.SetValue('-30:0')
         self.cbSubtractBackground.SetValue(True)
         self.tThreshold.SetValue('0.6')
+
+    def OnStandard2DforZyla(self, event):
+        self.cFitType.SetSelection(self.fitFactories.index('LatGaussFitFRforZyla'))
+        self.tBackgroundFrames.SetValue('-30:0')
+        self.cbSubtractBackground.SetValue(True)
+        self.tThreshold.SetValue('0.6')
         
     def OnSpitter2D(self, event):
         self.cFitType.SetSelection(self.fitFactories.index('SplitterFitQR'))
@@ -608,6 +623,14 @@ class LMAnalyser:
         #self.cbSubtractBackground.SetValue(True)
         #self.tThreshold.SetValue('1.0')
         self.image.mdh['PRI.Axis'] = 'y'
+        self.image.mdh['Analysis.EstimatorModule'] = 'priEstimator'
+
+    def OnPRI3Dscmos(self, event):
+        #self.cFitType.SetSelection(self.fitFactories.index('SplitterFitInterpR'))
+        #self.tBackgroundFrames.SetValue('-30:0')
+        #self.cbSubtractBackground.SetValue(True)
+        #self.tThreshold.SetValue('1.0')
+        self.image.mdh['PRI.Axis'] = 'x'
         self.image.mdh['Analysis.EstimatorModule'] = 'priEstimator'
 
     def analRefresh(self):
@@ -815,6 +838,7 @@ class LMAnalyser:
             self.checkTQ()
         matplotlib.interactive(False)
         clf()
+
         sq = min(self.image.mdh.getEntry('EstimatedLaserOnFrameNo') + 1000, self.image.dataSource.getNumSlices()/4)
         zps = array(range(self.image.mdh.getEntry('EstimatedLaserOnFrameNo') + 20, self.image.mdh.getEntry('EstimatedLaserOnFrameNo') + 24)  + range(sq, sq + 4) + range(self.image.dataSource.getNumSlices()/2,self.image.dataSource.getNumSlices() /2+4))
         zps += offset
@@ -861,7 +885,10 @@ class LMAnalyser:
             if ft.driftEst:
                  plot([p.x for p in ft.ofdDr], [p.y for p in ft.ofdDr], 'o', mew=2, mec='b', mfc='none', ms=9)
             if ft.fitModule in remFitBuf.splitterFitModules:
-                    plot([p.x for p in ft.ofd], [d.shape[0] - p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
+                if self.image.mdh.getEntry('Splitter.Flip'):
+                    plot([p.x for p in ft.ofd], [ d.shape[0] - p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
+                else:
+                    plot([p.x for p in ft.ofd], [ p.y + d.shape[0]/2 for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
             axis('tight')
             xlim(0, d.shape[1])
             ylim(0, d.shape[0])

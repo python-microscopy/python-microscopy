@@ -295,6 +295,8 @@ class File(models.Model):
                             for d in dyes:
                                if n.startswith(d.shortName) or n.startswith(d.shortName[1:]):
                                    l.dye = d
+                            
+                            print("dye is ",l.dye)
                             l.save()
 
                 else:

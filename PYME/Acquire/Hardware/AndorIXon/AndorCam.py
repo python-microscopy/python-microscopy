@@ -501,6 +501,9 @@ SetBaselineClamp.argtypes = [c_int]
 SetBaselineOffset = _stdcall_libraries['ATMCD32D'].SetBaselineOffset
 SetBaselineOffset.restype = c_uint
 SetBaselineOffset.argtypes = [c_int]
+GetBaselineClamp = _stdcall_libraries['ATMCD32D'].GetBaselineClamp
+GetBaselineClamp.restype = c_uint
+GetBaselineClamp.argtypes = [POINTER(c_int)]
 SetComplexImage = _stdcall_libraries['ATMCD32D'].SetComplexImage
 SetComplexImage.restype = c_uint
 SetComplexImage.argtypes = [c_int, POINTER(c_int)]
@@ -911,6 +914,8 @@ DRV_TEMP_NOT_SUPPORTED = 20039 # Variable c_int
 DRV_FPGA_VOLTAGE_ERROR = 20131 # Variable c_int
 DRV_ILLEGAL_OP_CODE = 20021 # Variable c_int
 DRV_ERROR_ACK = 20013 # Variable c_int
+AC_GETFUNCTION_BASELINECLAMP = 32768 # Variable c_int
+
 __all__ = ['SetEMClockCompensation', 'GetImages', 'SetSifComment',
            'AC_FEATURES_POLLING', 'SetFilterParameters',
            'GetPreAmpGain', 'DRV_DATATYPE', 'DRV_VXDNOTINSTALLED',
@@ -1072,7 +1077,8 @@ __all__ = ['SetEMClockCompensation', 'GetImages', 'SetSifComment',
            'GetSoftwareVersion', 'DRV_ERROR_PATTERN',
            'SetDriverEvent', 'IsPreAmpGainAvailable',
            'SetStorageMode', 'DRV_TEMP_OFF', 'DRV_FPGA_VOLTAGE_ERROR',
-           'PFLOAT', 'SetShutter', 'SaveAsSif']
+           'PFLOAT', 'SetShutter', 'SaveAsSif',
+           'AC_GETFUNCTION_BASELINECLAMP', 'GetBaselineClamp']
 
 
 errorCodes = {}

@@ -68,7 +68,7 @@ def resizePSF(psf, data_size):
         #View3D(OT)
         #View3D(pr)
         
-        g =  ifftshift(g_.real)
+        g =  ifftshift(g_.real).clip(min=0) # negative values may cause instability
     
         print('PSF resizing complete')
     else:

@@ -416,11 +416,12 @@ class ObjectIdentifier(list):
         xs = numpy.array(xs)
         ys = numpy.array(ys)
 
-       # if splitter:
-       #     ys = ys + (ys > im.shape[1]/2)*(im.shape[1] - 2*ys)
-
-        if splitter and (len(xs) > 0):
-            xs, ys = splitter(xs, ys)
+        if isinstance(splitter,(bool)): # make sure we deal with a boolean value for splitter
+            if splitter:
+                ys = ys + (ys > im.shape[1]/2)*(im.shape[1] - 2*ys)
+        else:
+            if splitter and (len(xs) > 0):
+                xs, ys = splitter(xs, ys)
             
             xs = numpy.clip(xs, 0, self.filteredData.shape[0] - 1)
             ys = numpy.clip(ys, 0, self.filteredData.shape[1] - 1)

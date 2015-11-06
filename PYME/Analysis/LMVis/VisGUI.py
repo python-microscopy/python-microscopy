@@ -120,7 +120,16 @@ class VisGUIFrame(wx.Frame):
 #            pylab.plot(pylab.randn(10))
 
         self.sh.Execute('from pylab import *')
-        self.sh.Execute('from PYME.DSView.dsviewer_npy_nb import View3D')
+        self.sh.Execute('from PYME.DSView import View3D')
+        try:
+            import PYME.misc.shellutils
+        except:
+            print 'could not import shellutils'
+        else:
+            self.sh.Execute('import PYME.misc.shellutils as su')
+        if os.getenv('PYMEGRAPHICSFIX'): # fix issue with graphics freezing on some machines (apparently matplotlib related)
+            self.sh.Execute('plot()')
+            self.sh.Execute('close()')
 
         #self.workspace = workspaceTree.WorkWrap(self.__dict__)
         ##### Make certain things visible in the workspace tree
@@ -614,8 +623,8 @@ class VisGUIFrame(wx.Frame):
         #self.view_menu.Enable(ID_VIEW_QUADS, False)
 
         self.view_menu.AppendSeparator()
-        self.view_menu.Append(ID_VIEW_FIT, '&Fit')
-        self.view_menu.Append(ID_VIEW_FIT_ROI, 'Fit &ROI')
+        self.view_menu.Append(ID_VIEW_FIT, '&Fit\tF6')
+        self.view_menu.Append(ID_VIEW_FIT_ROI, 'Fit &ROI\tF7')
 
         self.ID_VIEW_CLIP_ROI = wx.NewId()
         self.view_menu.Append(self.ID_VIEW_CLIP_ROI, 'Clip to ROI\tF8')

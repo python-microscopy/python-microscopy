@@ -244,6 +244,8 @@ class FakeCamera:
         self.HSSpeed = 0
         self.VSSpeed = 0
 
+        self.active = True
+
         #register as a provider of metadata
         MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
 
@@ -502,12 +504,22 @@ class FakeCamera:
         self.shutterOpen = mode
         self.noiseMaker.shutterOpen = mode
 
+    def GetBaselineClamp(self):
+        return True
+
     def SetBaselineClamp(self, mode):
         pass
+
+    def GetBaselineClamp(self):
+        return True
 
     def SetIlluminationFcn(self, illumFcn):
         self.illumFcn = illumFcn
         self.compT.illumFcn = illumFcn
+
+    def SetActive(self, active=True):
+        '''flag the camera as active (or inactive) to dictate whether it writes it's metadata or not'''
+        self.active = active
 
     def __getattr__(self, name):
         if name in dir(self.noiseMaker):

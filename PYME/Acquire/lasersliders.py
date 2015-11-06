@@ -41,7 +41,7 @@ class LaserSliders(wx.Panel):
 
         #self.cam = cam
         self.lasers = [l for l in lasers if l.IsPowerControlable()]
-        self.laserNames=[l.GetName() for l in lasers]
+        self.laserNames=[l.GetName() for l in self.lasers]
         
         self.sliders = []
         self.labels = []
@@ -56,7 +56,8 @@ class LaserSliders(wx.Panel):
             self.labels.append(l)
             sz.Add(l, 0, wx.ALL, 2)
             #if sys.platform == 'darwin': #sliders are subtly broken on MacOS, requiring workaround
-            sl = wx.Slider(self, -1, self.lasers[c].GetPower(), 0, 10, size=wx.Size(150,-1),style=wx.SL_HORIZONTAL)#|wx.SL_AUTOTICKS|wx.SL_LABELS)
+            #sl = wx.Slider(self, -1, self.lasers[c].GetPower(), 0, 10, size=wx.Size(150,-1),style=wx.SL_HORIZONTAL)#|wx.SL_AUTOTICKS|wx.SL_LABELS)
+            sl = wx.Slider(self, -1, self.lasers[c].GetPower(), 0, 100, size=wx.Size(150,-1),style=wx.SL_HORIZONTAL)#|wx.SL_AUTOTICKS|wx.SL_LABELS)
             #else: #sane OS's
             #    sl = wx.Slider(self, -1, self.cam.laserPowers[c], 0, 1000, size=wx.Size(300,-1),style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
 
@@ -90,7 +91,8 @@ class LaserSliders(wx.Panel):
             self.sl = sl
             self.ind = ind
             print((self.lasers[ind].power, self.lasers[ind].MAX_POWER*2**(sl.GetValue())/1024.))
-            self.lasers[ind].SetPower(self.lasers[ind].MAX_POWER*2**(sl.GetValue())/1024.)
+            #self.lasers[ind].SetPower(self.lasers[ind].MAX_POWER*2**(sl.GetValue())/1024.)
+            self.lasers[ind].SetPower((sl.GetValue())/100.)
         finally:
             self.sliding = False
 
@@ -98,8 +100,9 @@ class LaserSliders(wx.Panel):
         if not self.sliding:
             for ind, L in enumerate(self.lasers):
                 p = L.power
-                self.sliders[ind].SetValue(round(log2(max(p*1024/L.MAX_POWER, 1))))
-                self.labels[ind].SetLabel(self.laserNames[ind] + ' - %3.2f'%(100*p))
+                #self.sliders[ind].SetValue(round(log2(max(p*1024/L.MAX_POWER, 1))))
+                self.sliders[ind].SetValue(round(p*100))
+                self.labels[ind].SetLabel(self.laserNames[ind] + '-%3.2fmW'%(1000*p*L.maxpower))
 
             
 

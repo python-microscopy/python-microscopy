@@ -121,7 +121,7 @@ class AndorPanel(wx.Panel):
         hsizer.Add(self.cbFrameTransfer, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
 
         self.cbBaselineClamp = wx.ToggleButton(cp, -1, u'Baseline Clamp')
-        self.cbBaselineClamp.SetValue(False)
+        self.cbBaselineClamp.SetValue(self.cam.GetBaselineClamp())
         self.cbBaselineClamp.Bind(wx.EVT_TOGGLEBUTTON, self.OnCbBaselineClampCheckbox)
         hsizer.Add(self.cbBaselineClamp, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 

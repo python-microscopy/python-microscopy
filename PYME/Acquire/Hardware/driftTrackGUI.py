@@ -140,7 +140,9 @@ class DriftTrackingControl(wx.Panel):
             self.gCalib.SetValue(self.dt.calibState)
             t, dx, dy, dz, corr = self.dt.history[-1]
             self.stError.SetLabel('Error: x = %3.2f px\ny = %3.2f px\nz = %3.2f nm\noffset = %3.2f' % (dx, dy, dz*1000, self.dt.piezo.GetOffset()))
-            self.trackPlot.draw()
+            if len(self.dt.history)%20 == 0:
+                self.trackPlot.draw()
+            #self.trackPlot.draw()
         except AttributeError:
             pass
         except IndexError:

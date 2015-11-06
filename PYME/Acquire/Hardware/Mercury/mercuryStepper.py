@@ -80,7 +80,7 @@ class mercuryStepper:
         #callibrate axes using reference switch
         m.REF(self.connID, ''.join(self.axes))
 
-        while np.any(m.IsReferencing(self.connID, ''.join(self.axes))):
+        while sum(m.IsReferencing(self.connID, ''.join(self.axes)))>0:
             time.sleep(.5)
 
         self.minTravel = m.qTMN(self.connID, ''.join(self.axes))
