@@ -174,8 +174,9 @@ class Pipeline:
                 
     def _processSplitter(self):
         '''set mappings ascociated with the use of a splitter'''
+        self.selectedDataSource.gF_zcorr = 0
         self.selectedDataSource.setMapping('A', 'fitResults_Ag + fitResults_Ar')
-        self.selectedDataSource.setMapping('gFrac', 'fitResults_Ag/(fitResults_Ag + fitResults_Ar)')
+        self.selectedDataSource.setMapping('gFrac', 'fitResults_Ag/(fitResults_Ag + fitResults_Ar) + gF_zcorr*fitResults_z0')
         
         if 'fitError_Ag' in self.selectedDataSource.keys():    
             self.selectedDataSource.setMapping('error_gFrac', 'sqrt((fitError_Ag/fitResults_Ag)**2 + (fitError_Ag**2 + fitError_Ar**2)/(fitResults_Ag + fitResults_Ar)**2)*fitResults_Ag/(fitResults_Ag + fitResults_Ar)')
