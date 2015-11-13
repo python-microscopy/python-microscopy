@@ -82,7 +82,7 @@ scope.shutters = fakeShutters
 #PIFoc
 InitBG('PIFoc', '''
 from PYME.Acquire.Hardware.Piezos import offsetPiezo
-scope.piFoc = offsetPiezo.getClient()# piezo_e816.piezo_e816('COM1', 400, 0, True)
+scope.piFoc = offsetPiezo.getClient('PHY-LMIC1')# piezo_e816.piezo_e816('COM1', 400, 0, True)
 scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
 ''')
 
@@ -255,13 +255,13 @@ time1.WantNotification.append(dtp.refresh)
 #    scope.fc.Start(2000)
 #''')
 
-from PYME import cSMI
+# from PYME import cSMI
 
 
-Is = []
+# Is = []
 
-def calcSum(caller):
-    Is.append(cSMI.CDataStack_AsArray(caller.ds, 0).sum())
+# def calcSum(caller):
+#     Is.append(cSMI.CDataStack_AsArray(caller.ds, 0).sum())
 
 
 #must be here!!!
