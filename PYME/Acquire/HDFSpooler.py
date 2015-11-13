@@ -34,6 +34,8 @@ from PYME.Acquire import protocol as p
 
 from PYME.FileUtils import fileID
 
+import time
+
 class SpoolEvent(tables.IsDescription):
     '''Pytables description for Events table in spooled dataset'''
     EventName = tables.StringCol(32)
@@ -85,12 +87,21 @@ class EventLogger:
         '''
         if eventName == 'StartAq':
             eventDescr = '%d' % self.spooler.imNum
+
+        if eventName == 'ShiftMeasure':
+            dl = eventDescr.split(',')
+            eventtimestamp = float(dl.pop())
+            eventDescr = ','.join(dl)
               
         ev = self.evts.row
         
         ev['EventName'] = eventName
         ev['EventDescr'] = eventDescr
-        ev['Time'] = sp.timeFcn()
+        
+        if eventName == 'ShiftMeasure':
+            ev['Time'] = eventtimestamp
+        else:
+            ev['Time'] = sp.timeFcn()
         
         ev.append()
         self.evts.flush()
@@ -106,6 +117,7 @@ class Spooler(sp.Spooler):
         self.imageData = self.h5File.createEArray(self.h5File.root, 'ImageData', tables.UInt16Atom(), (0,scope.cam.GetPicWidth(),scope.cam.GetPicHeight()), filters=filt)
         self.md = MetaDataHandler.HDFMDHandler(self.h5File)
         self.evtLogger = EventLogger(self, scope, self.h5File)
+        self.TofFrame = []
         
         sp.Spooler.__init__(self, scope, filename, acquisator, protocol, parent)
 
@@ -124,6 +136,7 @@ class Spooler(sp.Spooler):
             self.md.setEntry('imageID', fileID.genFrameID(self.imageData[0,:,:]))
             
         sp.Spooler.Tick(self, caller)
+        self.TofFrame.append(time.time())
         
     def __del__(self):
         if self.spoolOn:
