@@ -289,6 +289,7 @@ class BatchFrame(wx.Frame, wx.FileDropTarget):
         self.dropFiles = dt(self)      
         self.rm = RecipeManager()
         self.inputFiles = []
+        self.inputFiles2 = []
         
         vsizer1=wx.BoxSizer(wx.VERTICAL)
         hsizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Recipe:"), wx.HORIZONTAL)
@@ -296,6 +297,8 @@ class BatchFrame(wx.Frame, wx.FileDropTarget):
         
         hsizer.Add(self.recipeView, 1, wx.ALL|wx.EXPAND, 2)
         vsizer1.Add(hsizer, 1, wx.ALL|wx.EXPAND, 2)
+        
+        hsizer1 = wx.BoxSizer(wx.HORIZONTAL)
         
         vsizer2 = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Input files:'), wx.VERTICAL)
         
@@ -318,7 +321,31 @@ class BatchFrame(wx.Frame, wx.FileDropTarget):
         
         vsizer2.Add(self.lFiles, .5, wx.EXPAND, 0)        
         
-        vsizer1.Add(vsizer2, 0, wx.EXPAND|wx.TOP, 10)
+        hsizer1.Add(vsizer2, 0, wx.EXPAND, 10)
+        
+        vsizer2 = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Input files - 2nd channel [optional]:'), wx.VERTICAL)
+        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        
+        hsizer.Add(wx.StaticText(self, -1, 'Filename pattern:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        self.tGlob2 = wx.TextCtrl(self, -1, '')
+        hsizer.Add(self.tGlob2, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        
+        self.bLoadFromGlob2 = wx.Button(self, -1, 'Get Matches')
+        self.bLoadFromGlob2.Bind(wx.EVT_BUTTON, self.OnGetMatches2)
+        hsizer.Add(self.bLoadFromGlob2, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        
+        vsizer2.Add(hsizer, 0, wx.EXPAND, 0)
+        
+        self.lFiles2 = wx.ListCtrl(self, -1, style=wx.LC_REPORT|wx.LC_HRULES)
+        self.lFiles2.InsertColumn(0, 'Filename')
+        self.lFiles2.Append(['Either drag files here, or enter a pattern (e.g. /Path/to/data/*.tif ) above and click "Get Matches"',])
+        self.lFiles2.SetColumnWidth(0, -1)
+        
+        vsizer2.Add(self.lFiles2, .5, wx.EXPAND, 0)        
+        
+        hsizer1.Add(vsizer2, 0, wx.EXPAND, 10)
+        vsizer1.Add(hsizer1, 0, wx.EXPAND|wx.TOP, 10)
         
         hsizer2 = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Output Directory:'), wx.HORIZONTAL)
         
@@ -355,6 +382,20 @@ class BatchFrame(wx.Frame, wx.FileDropTarget):
         files = glob.glob(self.tGlob.GetValue())
         self.UpdateFileList(files)
         
+    def UpdateFileList2(self, filenames):
+        self.inputFiles2 += filenames        
+        
+        self.lFiles2.DeleteAllItems()
+        
+        for f in filenames:
+            self.lFiles2.Append([f,])
+        
+    def OnGetMatches2(self, event=None):
+        import glob
+        
+        files = glob.glob(self.tGlob2.GetValue())
+        self.UpdateFileList2(files)
+        
     def OnBake(self, event=None):
         out_dir = self.dcOutput.GetPath()
         
@@ -370,8 +411,11 @@ class BatchFrame(wx.Frame, wx.FileDropTarget):
         if (out_dir == '') or not os.path.exists(out_dir):
             wx.MessageBox('Ouput directory does not exist', 'Error', wx.OK|wx.ICON_ERROR)
             return
-            
-        batchProcess.bake(self.rm.activeRecipe, {'input':self.inputFiles}, out_dir)
+        
+        if not len(self.inputFiles) == len(self.inputFiles2):            
+            batchProcess.bake(self.rm.activeRecipe, {'input':self.inputFiles}, out_dir)
+        else:
+            batchProcess.bake(self.rm.activeRecipe, {'input':self.inputFiles, 'input2':self.inputFiles2}, out_dir)
         
             
    

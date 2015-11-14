@@ -146,7 +146,7 @@ static PyObject * genMultiGauss(PyObject *self, PyObject *args, PyObject *keywds
     /*End paramters*/
 
     double ts2;
-    double pxp, pyp, A, x0, y0;
+    double pxp, pyp;//, A, x0, y0;
 
       
     
@@ -870,7 +870,7 @@ static PyObject *splitGaussArrayPVecWeightedMisfit(PyObject *self, PyObject *arg
     double *weights = 0;
     int ix,iy;
     int size[2];
-    int dims[2];
+    //int dims[2];
 
     PyObject *oX =0;
     PyObject *oY=0;
@@ -1894,7 +1894,7 @@ static PyObject * genGaussAF(PyObject *self, PyObject *args, PyObject *keywds)
 static PyObject * NRFilter(PyObject *self, PyObject *args, PyObject *keywds) 
 {
     double *res = 0;  
-    int i,j,lenx, numP, lut_size; 
+    int i,j,lenx, lut_size;
     npy_intp size[1];
     
     PyObject *oX =0;
@@ -1902,10 +1902,10 @@ static PyObject * NRFilter(PyObject *self, PyObject *args, PyObject *keywds)
     PyObject *oI=0;
     PyObject *oLUT=0;
     
-    PyArrayObject* Xvals;
-    PyArrayObject* Yvals;
-    PyArrayObject* Ivals;
-    PyArrayObject* LUTvals;
+    PyArrayObject* Xvals = NULL;
+    PyArrayObject* Yvals = NULL;
+    PyArrayObject* Ivals = NULL;
+    PyArrayObject* LUTvals = NULL;
     
     PyArrayObject* out;
     
@@ -2013,35 +2013,35 @@ abort:
 }
 
 static PyMethodDef gauss_appMethods[] = {
-    {"genGauss",  genGauss, METH_VARARGS | METH_KEYWORDS,
+    {"genGauss",  (PyCFunction) genGauss, METH_VARARGS | METH_KEYWORDS,
     "Generate a (fast) Gaussian.\n. Arguments are: 'X', 'Y', 'A'=1,'x0'=0, 'y0'=0,sigma=0,b=0,b_x=0,b_y=0"},
-     {"genMultiGauss",  genMultiGauss, METH_VARARGS | METH_KEYWORDS,
+     {"genMultiGauss",  (PyCFunction) genMultiGauss, METH_VARARGS | METH_KEYWORDS,
     "Generate multiple Gaussians.\n. Arguments are: 'X', 'Y', 'P',sigma=1"},
-     {"genMultiGaussJac",  genMultiGaussJac, METH_VARARGS | METH_KEYWORDS,
+     {"genMultiGaussJac",  (PyCFunction) genMultiGaussJac, METH_VARARGS | METH_KEYWORDS,
     "Generate multiple Gaussians.\n. Arguments are: 'X', 'Y', 'P',sigma=1"},
-    {"genGaussJac",  genGaussJac, METH_VARARGS | METH_KEYWORDS,
+    {"genGaussJac",  (PyCFunction) genGaussJac, METH_VARARGS | METH_KEYWORDS,
     "Generate jacobian for Gaussian.\n. Arguments are: 'X', 'Y', 'A'=1,'x0'=0, 'y0'=0,sigma=0,b=0,b_x=0,b_y=0"},
-    {"genGaussJacW",  genGaussJacW, METH_VARARGS | METH_KEYWORDS,
+    {"genGaussJacW",  (PyCFunction) genGaussJacW, METH_VARARGS | METH_KEYWORDS,
     "Generate jacobian for a weighted Gaussian.\n. Arguments are: 'X', 'Y', 'W','A'=1,'x0'=0, 'y0'=0,sigma=0,b=0,b_x=0,b_y=0"},
     /*{"genGaussF",  genGaussF, METH_VARARGS | METH_KEYWORDS,
     "Generate a (fast) Gaussian using dodgy exponential approx.\n. Arguments are: 'X', 'Y', 'A'=1,'x0'=0, 'y0'=0,sigma=0,b=0,b_x=0,b_y=0"},
     {"genGaussFJac",  genGaussFJac, METH_VARARGS | METH_KEYWORDS,
     "Generate jacobian for Gaussian using dodgy exponential approx.\n. Arguments are: 'X', 'Y', 'A'=1,'x0'=0, 'y0'=0,sigma=0,b=0,b_x=0,b_y=0"},*/
-    {"genGaussA",  genGaussA, METH_VARARGS | METH_KEYWORDS,
+    {"genGaussA",  (PyCFunction) genGaussA, METH_VARARGS | METH_KEYWORDS,
     "Generate a (fast) astigmatic Gaussian.\n. Arguments are: 'X', 'Y', 'A'=1,'x0'=0, 'y0'=0,sigma_x=1, sigma_y = 1,b=0,b_x=0,b_y=0"},
     /*{"genGaussAF",  genGaussAF, METH_VARARGS | METH_KEYWORDS,
       "Generate a (fast) astigmatic Gaussian using dodgy exponential approx.\n. Arguments are: 'X', 'Y', 'A'=1,'x0'=0, 'y0'=0,'sigma_x'=1, 'sigma_y'=1,b=0,b_x=0,b_y=0"},*/
-    {"genGauss3D",  genGauss3D, METH_VARARGS | METH_KEYWORDS,
+    {"genGauss3D",  (PyCFunction) genGauss3D, METH_VARARGS | METH_KEYWORDS,
     "Generate a (fast) 3D Gaussian.\n. Arguments are: 'X', 'Y', 'Z', 'A'=1,'x0'=0, 'y0'=0, 'z0'=0,sigma=0, sigma_z=1, b=0"},
-    {"genGaussInArray",  genGaussInArray, METH_VARARGS | METH_KEYWORDS,
+    {"genGaussInArray",  (PyCFunction) genGaussInArray, METH_VARARGS | METH_KEYWORDS,
     "Generate a Gaussian in pre-allocated memory.\n. Arguments are: out, X, Y, A=1,x0=0, y0=0,sigma=0, b=0,b_x=0,b_y=0"},
-    {"genSplitGaussInArray",  genSplitGaussInArray, METH_VARARGS | METH_KEYWORDS,
+    {"genSplitGaussInArray",  (PyCFunction) genSplitGaussInArray, METH_VARARGS | METH_KEYWORDS,
     "Generate a double Gaussian in pre-allocated memory.\n. Arguments are: out, X, Y, X1, Y1, A=1, A1=1,x0=0, y0=0,sigma=0, b=0,b_x=0,b_y=0"},
-    {"genSplitGaussInArrayPVec",  genSplitGaussInArrayPVec, METH_VARARGS | METH_KEYWORDS,
+    {"genSplitGaussInArrayPVec",  (PyCFunction) genSplitGaussInArrayPVec, METH_VARARGS | METH_KEYWORDS,
     "Generate a double Gaussian in pre-allocated memory.\n. Arguments are: out, X, Y, X1, Y1, A=1, A1=1,x0=0, y0=0,sigma=0, b=0,b_x=0,b_y=0"},
-     {"splitGaussWeightedMisfit",  splitGaussArrayPVecWeightedMisfit, METH_VARARGS | METH_KEYWORDS,
+     {"splitGaussWeightedMisfit",  (PyCFunction) splitGaussArrayPVecWeightedMisfit, METH_VARARGS | METH_KEYWORDS,
     "Generate a double Gaussian in pre-allocated memory.\n. Arguments are: out, X, Y, X1, Y1, A=1, A1=1,x0=0, y0=0,sigma=0, b=0,b_x=0,b_y=0"},
-    {"NRFilter",  NRFilter, METH_VARARGS | METH_KEYWORDS,
+    {"NRFilter",  (PyCFunction) NRFilter, METH_VARARGS | METH_KEYWORDS,
     "Perform a filter on an X, Y, I dataset using an R^2 dependant LUT"},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
