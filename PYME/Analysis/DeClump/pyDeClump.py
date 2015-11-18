@@ -146,7 +146,7 @@ def coalesceClumps(fitResults, assigned):
             fres['fitResults'][i], fres['fitError'][i] = weightedAverage(vals['fitResults'], vals['fitError'])
 
             fres['nFrames'][i] = len(vals)
-            fres['ATotal'][i] = vals['fitResults']['A'].sum()
+            #fres['ATotal'][i] = vals['fitResults']['A'].sum()
 
 
     return fres

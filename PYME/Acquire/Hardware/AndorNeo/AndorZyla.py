@@ -287,6 +287,9 @@ class AndorBase(SDK3Camera):
         
     def GetIntegTime(self): 
         return self.ExposureTime.getValue()
+        
+    def GetCycleTime(self):
+        return 1.0/self.FrameRate.getValue()
     
     def GetCCDWidth(self): 
         return self.SensorHeight.getValue()
@@ -429,7 +432,7 @@ class AndorBase(SDK3Camera):
             mdh.setEntry('Camera.Name', 'Andor Zyla')
     
             mdh.setEntry('Camera.IntegrationTime', self.GetIntegTime())
-            mdh.setEntry('Camera.CycleTime', self.GetIntegTime())
+            mdh.setEntry('Camera.CycleTime', self.GetCycleTime())
             mdh.setEntry('Camera.EMGain', 1)
     
             mdh.setEntry('Camera.ROIPosX', self.GetROIX1())

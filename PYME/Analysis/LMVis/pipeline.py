@@ -174,8 +174,9 @@ class Pipeline:
                 
     def _processSplitter(self):
         '''set mappings ascociated with the use of a splitter'''
+        self.selectedDataSource.gF_zcorr = 0
         self.selectedDataSource.setMapping('A', 'fitResults_Ag + fitResults_Ar')
-        self.selectedDataSource.setMapping('gFrac', 'fitResults_Ag/(fitResults_Ag + fitResults_Ar)')
+        self.selectedDataSource.setMapping('gFrac', 'fitResults_Ag/(fitResults_Ag + fitResults_Ar) + gF_zcorr*fitResults_z0')
         
         if 'fitError_Ag' in self.selectedDataSource.keys():    
             self.selectedDataSource.setMapping('error_gFrac', 'sqrt((fitError_Ag/fitResults_Ag)**2 + (fitError_Ag**2 + fitError_Ar**2)/(fitResults_Ag + fitResults_Ar)**2)*fitResults_Ag/(fitResults_Ag + fitResults_Ar)')
@@ -430,6 +431,13 @@ class Pipeline:
             
             for i in range(int(self['probe'].min()), int(self['probe'].max()+ 1)):
                 self.mapping.setMapping('p_chan%d' % i, '1.0*(probe == %d)'%i)
+                
+        nSeqCols = self.mdh.getOrDefault('Protocol.NumberSequentialColors', 1)
+        if nSeqCols > 1:
+            for i in range(nSeqCols):
+                self.mapping.setMapping('ColourNorm', '1.0 + 0*t')
+                cr = self.mdh['Protocol.ColorRange%d'%i]
+                self.mapping.setMapping('p_chan%d' % i, '(t>= %d)*(t<%d)' % cr)
 
 
     def SpecFromMetadata(self):
