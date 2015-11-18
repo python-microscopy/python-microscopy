@@ -100,9 +100,9 @@ scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
 scope.positioning['z'] = (scope.piFoc, 1, 1)
 
 #server so drift correction can connect to the piezo
-pst = offsetPiezo.ServerThread(scope.piFoc)
-pst.start()
-scope.CleanupFunctions.append(pst.cleanup)
+scope.pst = offsetPiezo.ServerThread(scope.piFoc)
+scope.pst.start()
+scope.CleanupFunctions.append(scope.pst.cleanup)
 ''')
 
 #Nikon Ti motorised controls

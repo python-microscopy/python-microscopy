@@ -88,20 +88,21 @@ class EventLogger:
         if eventName == 'StartAq':
             eventDescr = '%d' % self.spooler.imNum
 
-        if eventName == 'ShiftMeasure':
-            dl = eventDescr.split(',')
-            eventtimestamp = float(dl.pop())
-            eventDescr = ','.join(dl)
+        #if eventName == 'ShiftMeasure':
+        #    dl = eventDescr.split(',')
+        #    eventtimestamp = float(dl.pop())
+        #    eventDescr = ','.join(dl)
               
         ev = self.evts.row
         
         ev['EventName'] = eventName
         ev['EventDescr'] = eventDescr
+        ev['Time'] = sp.timeFcn()
         
-        if eventName == 'ShiftMeasure':
-            ev['Time'] = eventtimestamp
-        else:
-            ev['Time'] = sp.timeFcn()
+        #if eventName == 'ShiftMeasure':
+        #    ev['Time'] = eventtimestamp
+        #else:
+        #    ev['Time'] = sp.timeFcn()
         
         ev.append()
         self.evts.flush()
@@ -134,9 +135,14 @@ class Spooler(sp.Spooler):
         self.h5File.flush()
         if self.imNum == 0: #first frame
             self.md.setEntry('imageID', fileID.genFrameID(self.imageData[0,:,:]))
+
+        #print scope.pst.piezo.driftQueue.qsize()
+        #if not scope.pst.piezo.driftQueue.empty():
+        #    driftvalue = scope.pst.piezo.driftQueue.get()
+        #    eventLog.logEvent('ShiftMeasure', '%3.4f, %3.4f, %3.4f, %3.4f' % driftvalue)
             
         sp.Spooler.Tick(self, caller)
-        self.TofFrame.append(time.time())
+        self.TofFrame.append(time.time()) #record the time when a frame is written
         
     def __del__(self):
         if self.spoolOn:
