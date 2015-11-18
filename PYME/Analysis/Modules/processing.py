@@ -78,7 +78,7 @@ class svmSegment(Filter):
     classifier = File('')
     
     def _loadClassifier(self):
-        from PYMEnf.Analysis import svmSegment
+        from PYME.Analysis import svmSegment
         if not '_cf' in dir(self):
             self._cf = svmSegment.svmClassifier(filename=self.classifier)
     

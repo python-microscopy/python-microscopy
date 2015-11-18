@@ -76,7 +76,7 @@ class DataBlock(object):
     def centroid(self):
         if not '_centroid' in dir(self):
             #crop off the bottom of the data to avoid biasing the centroid
-            m = np.maximum(self.data - 0.2*self.data.max(), 0)
+            m = np.maximum(self.data - 1.0*self.data.mean(), 0)
             m = m/m.sum()
             xc = (m*self.X).sum()
             yc = (m*self.Y).sum()
@@ -117,7 +117,7 @@ class DataBlock(object):
             #use thresholded data for determining principle axis
             m = self.data
             m = m > 0.2*m.max()
-            print((m.sum()))
+            #print((m.sum()))
             l, nl = ndimage.label(m)
             
             #take only the largest contiguous region
@@ -127,7 +127,7 @@ class DataBlock(object):
                 if r.sum() > m.sum():
                     m = r
             b = b[m.ravel()>0.5, :]
-            print((m.sum(), b.shape))
+            #print((m.sum(), b.shape))
             if b.shape[0] < 2:
                 self._principalAxis = np.NaN*np.ones(3)
             #print b.shape
@@ -365,7 +365,7 @@ class BlobObject(object):
             bms.append(bb/bb.sum())
             
         return xvs, bms
-    shortAxisDist.xlabel = 'Transverse position [nm]'
+    shortAxisDist.xlabel = 'Position on shortest axis [nm]'
         
     def radialDistN(self):
         from PYME.Analysis.binAvg import binAvg
@@ -444,7 +444,7 @@ class BlobObject(object):
             except ValueError:
                 pass
             
-    def getImage(self):
+    def getImage(self, gains=None):
         try:
             import Image
         except ImportError:
@@ -459,13 +459,17 @@ class BlobObject(object):
         if self.chans[0].voxelsize[0] > 50:
             ovsc = 1
             
-        for c in self.chans:
+        for i, c in enumerate(self.chans):
             d = c.data
             if d.ndim > 2 and d.shape[2] > 1:
-                d = d.mean(2)
+                d = d.max(2)
             d = np.atleast_3d(d.squeeze().T)
             d -= d.min()
-            d = np.minimum(ovsc*255*d/d.max(), 255).astype('uint8')
+            if gains == None:
+                d = np.minimum(ovsc*255*d/d.max(), 255).astype('uint8')
+            else:
+                d = np.minimum(gains[i]*255*d, 255).astype('uint8')
+            
             dispChans.append(d)
             
         while len(dispChans) < 3:
@@ -501,9 +505,9 @@ class BlobObject(object):
         
         isPolar =  'ang' in graphName
         if isPolar:
-            fig = Figure(figsize=(3,3))
+            fig = Figure(figsize=(3,3), facecolor='none')
         else:
-            fig = Figure(figsize=(4,3))
+            fig = Figure(figsize=(4,3), facecolor='none')
         canvas = FigureCanvas(fig)
         ax = fig.add_axes([.1, .15, .85, .8], polar=isPolar)
         
@@ -529,7 +533,7 @@ class BlobObject(object):
         import cherrypy
         cherrypy.response.headers["Content-Type"]="image/png"
 
-        fig = Figure(figsize=(2,2))
+        fig = Figure(figsize=(2,2), facecolor='none')
         canvas = FigureCanvas(fig)
         ax = fig.add_axes([0.01, 0.01, .98, .98])
         
@@ -549,7 +553,12 @@ class BlobObject(object):
         l = mc.geom_width/2
         x0, y0, z0 = mc.centroidNM
         x1, y1, z1 = mc.centroidNM + l*mc.secondaryAxis
-        ax.plot([x0, x1], [y0, y1], 'k', lw=2)
+        ax.plot([x0, x1], [y0, y1], 'm', lw=2)
+        
+        l = mc.geom_depth/2
+        x0, y0, z0 = mc.centroidNM
+        x1, y1, z1 = mc.centroidNM + l*mc.tertiaryAxis
+        ax.plot([x0, x1], [y0, y1], 'c--', lw=2)
         
         cols = ['r','g', 'b']
         for i, c in enumerate(self.chans):
@@ -570,7 +579,7 @@ class BlobObject(object):
         ax.set_axis_off()
         
         out = StringIO.StringIO()
-        canvas.print_png(out, dpi=100, facecolor='w')
+        canvas.print_png(out, dpi=100, facecolor='none')
         s = out.getvalue()
         out.close()
         return s
@@ -584,7 +593,7 @@ class BlobObject(object):
         import cherrypy
         cherrypy.response.headers["Content-Type"]="image/png"
 
-        fig = Figure(figsize=(2,2))
+        fig = Figure(figsize=(2,2), facecolor='none')
         canvas = FigureCanvas(fig)
         #ax = fig.add_axes([.1, .15, .85, .8])
         ax = Axes3D(fig)
@@ -623,9 +632,152 @@ class BlobObject(object):
         #ax.set_axis_off()
         
         out = StringIO.StringIO()
-        canvas.print_png(out, dpi=100)
+        canvas.print_png(out, dpi=100, facecolor='none')
         s = out.getvalue()
         out.close()
+        return s
+        
+    def _shade(self, faces, baseColor= [1,0,0, 0], lightVector=[1,1,1]):
+        baseColor = np.array(baseColor)
+        lightVector = np.array(lightVector)
+        v1 = faces[:,1, :] - faces[:,0, :]
+        v2 = faces[:,2, :] - faces[:,1, :]
+        
+        vnorm = np.cross(v1, v2)
+        
+        vnorm /= np.linalg.norm(vnorm, axis=-1)[:,None]
+        
+        return baseColor[None, :]*np.clip(np.abs(np.inner(vnorm, lightVector)), .05, 1)[:,None]
+        
+        
+        
+    def get3DIsosurf(self, isovalues=None):
+        from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+        from mpl_toolkits.mplot3d import Axes3D
+        from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+        from matplotlib.figure import Figure
+        from skimage import measure
+        import StringIO
+        import cherrypy
+        cherrypy.response.headers["Content-Type"]="image/png"
+        
+        if '_3diso' in dir(self):
+            return self._3diso
+
+        fig = Figure(figsize=(8,4), facecolor='none')
+        canvas = FigureCanvas(fig)
+        #ax = fig.add_axes([.1, .15, .85, .8])
+        ax = Axes3D(fig, [0, 0, .5,1], azim = -60, elev=30, axisbg='none')
+        #ax = fig.add_subplot(1, 2, 1, projection='3d')
+        
+        mc = self.chans[self.masterChan]
+
+        meshes = []        
+        cols = [[1.,0.,0.], [0.,1.,0.], [0.,0.,1.]]    
+        
+        for i, c in enumerate(self.chans):
+            d = c.data#.swapaxes(0,1)
+            verts, faces = measure.marching_cubes(d, isovalues[i])
+            vertsc = verts + np.array(c.bbox[:3])/np.array(mc.voxelsize)
+            tris =  vertsc[faces]
+            tricols = self._shade(tris, cols[i])
+            #mesh = Poly3DCollection(vertsc[faces], facecolor=['r', 'g', 'b'][i], edgecolor=['r', 'g', 'b'][i], alpha=.5)
+            #mesh = Poly3DCollection(tris, facecolor=self._shade(tris, cols[i]), edgecolor=['r', 'g', 'b'][i], alpha=.5)
+            meshes.append((tris, tricols))
+        
+        
+            
+        #x, y, z = mc.centroid
+            
+        def _drawaxes(ax):
+            l = mc.geom_length/(2*mc.voxelsize[0])
+            x0, y0, z0 = mc.centroid - l*mc.principalAxis
+            x1, y1, z1 = mc.centroid + l*mc.principalAxis
+            
+            ax.plot([x0, x1], [y0, y1], [z0, z1], 'k', lw=3)
+            
+            l = mc.geom_width/(2*mc.voxelsize[0])
+            x0, y0, z0 = mc.centroid
+            x1, y1, z1 = mc.centroid + l*mc.secondaryAxis
+            ax.plot([x0, x1], [y0, y1], [z0, z1], 'm', lw=3)
+            
+            l = mc.geom_depth/(2*mc.voxelsize[0])
+            x0, y0, z0 = mc.centroid
+            x1, y1, z1 = mc.centroid + l*mc.tertiaryAxis
+            ax.plot([x0, x1], [y0, y1], [z0, z1], 'c--', lw=3)
+            
+            cols = ['r','g', 'b']
+            for i, c in enumerate(self.chans):
+                l = c.geom_length/(2*mc.voxelsize[0])
+                x0, y0, z0 = c.centroid - l*c.principalAxis
+                x1, y1, z1 = c.centroid + l*c.principalAxis
+                
+                ax.plot([x0, x1], [y0, y1], [z0, z1],c = cols[i] , lw=3)
+                
+                x0, y0, z0 = c.centroid
+                ax.plot([x0], [y0], [z0], 'x', c = cols[i], lw=3)
+                
+        _drawaxes(ax)
+            
+
+            
+#        cols = [[1.,0.,0.], [0.,1.,0.], [0.,0.,1.]]
+#        for i, c in enumerate(self.chans):
+#            d = c.data
+#            verts, faces = measure.marching_cubes(d, isovalues[i])
+#            vertsc = verts + np.array(c.bbox[:3])/np.array(mc.voxelsize)
+#            tris =  vertsc[faces]
+#            #mesh = Poly3DCollection(vertsc[faces], facecolor=['r', 'g', 'b'][i], edgecolor=['r', 'g', 'b'][i], alpha=.5)
+#            #mesh = Poly3DCollection(tris, facecolor=self._shade(tris, cols[i]), edgecolor=['r', 'g', 'b'][i], alpha=.5)
+#            mesh = Poly3DCollection(tris, facecolor=self._shade(tris, cols[i]), edgecolor='none', alpha=.5)
+#            ax.add_collection3d(mesh)
+        
+        for tris, fcols in meshes:
+            mesh = Poly3DCollection(tris, facecolor=fcols, edgecolor='none', alpha=.5)
+            ax.add_collection3d(mesh)
+            
+
+        x0, y0, z0 = np.array(mc.bbox[:3])/np.array(mc.voxelsize)
+        x1, y1, z1 = np.array(mc.bbox[3:])/np.array(mc.voxelsize)
+
+        xc = (x0 + x1)/2
+        al = x1 - x0
+        yc = (y0 + y1)/2
+        al = max(al, y1 - y0)        
+        zc = (z0 + z1)/2
+        al = max(al, z1 - z0)
+        
+        al2 = al/2.0
+        
+        ax.set_xlim(xc - al2, xc + al2)
+        ax.set_ylim(yc - al2, yc + al2)
+        ax.set_zlim(zc - al2, zc + al2)        
+        #print c.centroid, vertsc
+        #ax.axis('equal')
+        #ax.set_axis_off()
+        
+        #ax = fig.add_subplot(1, 2, 2, projection='3d')
+        ax = Axes3D(fig, [.5, 0, .5,1], azim = 60, elev=30, axisbg='none')
+#        for m in meshes:
+#            ax.add_collection3d(m)
+        _drawaxes(ax)
+        
+        for tris, fcols in meshes:
+            mesh = Poly3DCollection(tris, facecolor=fcols, edgecolor='none', alpha=.5)
+            ax.add_collection3d(mesh)
+            
+        ax.set_xlim(xc - al2, xc + al2)
+        ax.set_ylim(yc - al2, yc + al2)
+        ax.set_zlim(zc - al2, zc + al2)
+        
+        #ax.view_init(-45, 45)
+        
+        out = StringIO.StringIO()
+        canvas.print_png(out, dpi=100, facecolor='none')
+        s = out.getvalue()
+        out.close()
+        
+        self._3diso = s
         return s
 
 class Measurements(wx.Panel):
@@ -698,19 +850,24 @@ class Measurements(wx.Panel):
         self.ID = getNewID()
         
         self.StartServing()
-        
-        
+
     def StartServing(self):
-        try: 
-            import threading
-            self.serveThread = threading.Thread(target=self._serve)
-            self.serveThread.start()
-        except ImportError:
-            pass
-            
-    def _serve(self):
+        from PYME.DSView import htmlServe #ensure that our local cherrypy server is running
         import cherrypy
-        cherrypy.quickstart(self, '/measure/%d' % self.ID)
+        cherrypy.tree.mount(self, '/measure/%d' % self.ID)
+                    
+        
+#    def StartServing(self):
+#        try: 
+#            import threading
+#            self.serveThread = threading.Thread(target=self._serve)
+#            self.serveThread.start()
+#        except ImportError:
+#            pass
+#            
+#    def _serve(self):
+#        import cherrypy
+#        cherrypy.quickstart(self, '/measure/%d' % self.ID)
         
     def OnCalculate(self, event):
         self.RetrieveObjects(self.chMaster.GetSelection(), self.chOrient.GetSelection(), 2*self.chDirection.GetSelection() - 1)
@@ -734,7 +891,8 @@ class Measurements(wx.Panel):
     
     def OnView(self, event):
         import webbrowser
-        webbrowser.open('http://localhost:8080/measure/%d' % self.ID)
+        from PYME.DSView import htmlServe
+        webbrowser.open('%smeasure/%d' % (htmlServe.getURL(), self.ID))
         
     def OnSaveObjects(self, event):
         import cPickle
@@ -761,7 +919,8 @@ class Measurements(wx.Panel):
         X, Y, Z = np.ogrid[slx, sly, slz]
         vs = (1e3*self.image.mdh['voxelsize.x'], 1e3*self.image.mdh['voxelsize.y'],1e3*self.image.mdh['voxelsize.z'])
         
-        return [DataBlock(np.maximum(self.image.data[slx, sly, slz, j] - self.image.data[slx, sly, slz, j].min(), 0)*mask , X, Y, Z, vs) for j in range(self.image.data.shape[3])]
+        #return [DataBlock(np.maximum(self.image.data[slx, sly, slz, j] - self.image.data[slx, sly, slz, j].min(), 0)*mask , X, Y, Z, vs) for j in range(self.image.data.shape[3])]
+        return [DataBlock(np.maximum(self.image.data[slx, sly, slz, j], 0)*mask , X, Y, Z, vs) for j in range(self.image.data.shape[3])]
         
     def RetrieveObjects(self, masterChan=0, orientChan=1, orient_dir=-1):
         objs = ndimage.find_objects(self.image.labels)
@@ -780,7 +939,7 @@ class Measurements(wx.Panel):
         dc.SetPen(wx.NullPen)
         dc.SetBrush(wx.NullBrush)
         
-    def index(self, templateName='measureView.html'):
+    def index(self, templateName='measureView3.html'):
         from jinja2 import Environment, PackageLoader
         env = Environment(loader=PackageLoader('PYME.DSView.modules', 'templates'))
         
@@ -891,7 +1050,7 @@ class Measurements(wx.Panel):
         
     
     def images(self, num):
-        return self.objects[int(num)].getImage()
+        return self.objects[int(num)].getImage(self.dsviewer.do.Gains)
     images.exposed = True
     
     def graphs(self, num, graphName):
@@ -905,6 +1064,10 @@ class Measurements(wx.Panel):
     def schemes3D(self, num):
         return self.objects[int(num)].getSchematic3D()
     schemes3D.exposed = True
+    
+    def isosurface3D(self, num):
+        return self.objects[int(num)].get3DIsosurf(0.5/np.array(self.dsviewer.do.Gains))
+    isosurface3D.exposed = True
     
     def hide(self, num):
         self.objects[int(num)].shown = False

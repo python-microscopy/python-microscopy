@@ -82,7 +82,7 @@ class ServerThread(threading.Thread):
         self.daemon=Pyro.core.Daemon()
         self.daemon.useNameServer(ns)
         
-        self.piezo = piezoOffsetProxy(basePiezo)
+        self.piezo = piezoOffsetProxy(basePiezo)        
 
         pname = "%s.Piezo" % compName
         

@@ -30,6 +30,8 @@ import numpy
 #additional arguments
 taskList = [
 T(-1, scope.turnAllLasersOff),
+T(20, scope.l488.SetPower, 1000),
+T(20, scope.l405.SetPower, 50),
 T(20, scope.l488.TurnOn),
 T(20, scope.l405.TurnOn),
 T(30, MainFrame.pan_spool.OnBAnalyse, None)
