@@ -88,20 +88,21 @@ class EventLogger:
         if eventName == 'StartAq':
             eventDescr = '%d' % self.spooler.imNum
 
-        if eventName == 'ShiftMeasure':
-            dl = eventDescr.split(',')
-            eventtimestamp = float(dl.pop())
-            eventDescr = ','.join(dl)
+        #if eventName == 'ShiftMeasure':
+        #    dl = eventDescr.split(',')
+        #    eventtimestamp = float(dl.pop())
+        #    eventDescr = ','.join(dl)
               
         ev = self.evts.row
         
         ev['EventName'] = eventName
         ev['EventDescr'] = eventDescr
+        ev['Time'] = sp.timeFcn()
         
-        if eventName == 'ShiftMeasure':
-            ev['Time'] = eventtimestamp
-        else:
-            ev['Time'] = sp.timeFcn()
+        #if eventName == 'ShiftMeasure':
+        #    ev['Time'] = eventtimestamp
+        #else:
+        #    ev['Time'] = sp.timeFcn()
         
         ev.append()
         self.evts.flush()

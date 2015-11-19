@@ -127,10 +127,10 @@ class TaskListProtocol(Protocol):
             t.what(*t.params)
             eventLog.logEvent('ProtocolTask', '%d, %s, ' % (frameNum, t.what.__name__) + ', '.join(['%s' % p for p in t.params]))
             self.listPos += 1
-        print scope.piFoc.driftQueue.qsize()
-        if not scope.piFoc.driftQueue.empty():
-            driftvalue = scope.piFoc.driftQueue.get()
-            eventLog.logEvent('ShiftMeasure', '%3.4f, %3.4f, %3.4f, %3.4f' % driftvalue)
+        #print scope.piFoc.driftQueue.qsize()
+        #if not scope.piFoc.driftQueue.empty():
+        #    driftvalue = scope.piFoc.driftQueue.get()
+        #    eventLog.logEvent('ShiftMeasure', '%3.4f, %3.4f, %3.4f, %3.4f' % driftvalue)
 
     def OnFinish(self):
         while not  self.listPos >= len(self.taskList):

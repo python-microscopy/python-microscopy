@@ -11,14 +11,14 @@ from PYME.misc.computerName import GetComputerName
 
 from PYME.Acquire import eventLog
 
-import Queue
+#import Queue
 
 class piezoOffsetProxy(Pyro.core.ObjBase):    
     def __init__(self, basePiezo):
         Pyro.core.ObjBase.__init__(self)
         self.basePiezo = basePiezo
         self.offset = 0
-        self.driftQueue = Queue.Queue()
+        #self.driftQueue = Queue.Queue()
 
     def ReInit(self):
         return self.basePiezo.ReInit()
@@ -62,8 +62,8 @@ class piezoOffsetProxy(Pyro.core.ObjBase):
         self.MoveTo(0, p)
         
     def LogShifts(self, dx, dy, dz, eventtime):
-        #eventLog.logEvent('ShiftMeasure', '%3.4f, %3.4f, %3.4f' % (dx, dy, dz))
-        self.driftQueue.put((dx, dy, dz, eventtime))
+        eventLog.logEvent('ShiftMeasure', '%3.4f, %3.4f, %3.4f' % (dx, dy, dz))
+        #self.driftQueue.put((dx, dy, dz, eventtime))
         
         
 class ServerThread(threading.Thread):
@@ -81,8 +81,7 @@ class ServerThread(threading.Thread):
         self.daemon=Pyro.core.Daemon()
         self.daemon.useNameServer(ns)
         
-        #self.piezo = piezoOffsetProxy(basePiezo)
-        self.piezo = basePiezo
+        self.piezo = piezoOffsetProxy(basePiezo)
 
         pname = "%s.Piezo" % compName
         
