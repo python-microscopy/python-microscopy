@@ -138,16 +138,20 @@ def visguiDriftPlot(driftpane):
 
     xs = np.mean(x[0:10])
     ys = np.mean(y[0:10])
+    x1s = np.mean(x1[0:10])
+    y1s = np.mean(y1[0:10])
     
     plt.figure(1)
     plt.clf()
-    plt.plot(t,-x1)
-    plt.plot(t,x-xs)
+    p1,=plt.plot(t,x1-x1s,label='drift track X')
+    p2,=plt.plot(t,x-xs,label='X raw')
+    plt.legend(handles=[p1,p2])
+
     plt.figure(2)
     plt.clf()
-    
-    plt.plot(t,-y1)
-    plt.plot(t,y-ys)
+    p1,=plt.plot(t,y1-y1s,label='drift track Y')
+    p2,=plt.plot(t,y-ys,label='Y raw')
+    plt.legend(handles=[p1,p2])
     plt.show()
     
     return (x1,y1,x,y)
