@@ -117,10 +117,14 @@ def visguiDriftPlot(driftpane):
     parameterNames, indepVarsUsed, xCode, yCode, zCode , parameterNamesZ, varExpandCode, varExpandCodeZ = driftpane.dp.driftCorrFcn
 
     indepVars = driftpane.visFr.filter
-    t = np.linspace(indepVars['t'].min(), indepVars['t'].max())
+    #t = np.linspace(indepVars['t'].min(), indepVars['t'].max())
 
     x = 0
     y = 0
+
+    driftx=driftpane.visFr['driftx']
+    drifty=driftpane.visFr['drifty']
+    t = driftpane.visFr['t']
 
     p = [driftpane.dp.driftCorrParams[pn] for pn in parameterNames]
 
@@ -129,10 +133,25 @@ def visguiDriftPlot(driftpane):
     x1 = eval(xCode)
     y1 = eval(yCode)
 
-    plt.plot(t,x1)
-    plt.plot(t,y1)
+    x = driftpane.visFr['x']
+    y = driftpane.visFr['y']
+
+    xs = np.mean(x[0:10])
+    ys = np.mean(y[0:10])
+    
+    plt.figure(1)
+    plt.clf()
+    plt.plot(t,-x1)
+    plt.plot(t,x-xs)
+    plt.figure(2)
+    plt.clf()
+    
+    plt.plot(t,-y1)
+    plt.plot(t,y-ys)
     plt.show()
     
+    return (x1,y1,x,y)
+
 def findSlide(mdh=None):
     if mdh is None:
         mdh = getmdh(inmodule=True)

@@ -68,7 +68,7 @@ class piezoOffsetProxy(Pyro.core.ObjBase):
         
         
 class ServerThread(threading.Thread):
-    def __init__(self, basePiezo):
+    def __init__(self, proxyPiezo):
         threading.Thread.__init__(self)
         
         compName = GetComputerName()
@@ -82,7 +82,7 @@ class ServerThread(threading.Thread):
         self.daemon=Pyro.core.Daemon()
         self.daemon.useNameServer(ns)
         
-        self.piezo = piezoOffsetProxy(basePiezo)        
+        self.piezo = proxyPiezo      
 
         pname = "%s.Piezo" % compName
         
