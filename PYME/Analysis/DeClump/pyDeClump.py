@@ -155,7 +155,7 @@ def coalesceClumps(fitResults, selectedDS):
             fres['fitResults'][i], fres['fitError'][i] = weightedAverage(vals['fitResults'], vals['fitError'])
 
             fres['nFrames'][i] = len(vals)
-            fres['ATotal'][i] = vals['fitResults']['A'].sum()
+            #fres['ATotal'][i] = vals['fitResults']['A'].sum()
             fres['clumpSize'][i] = selectedDS.clumpSizes[clist[i][0]] # assign the value from the first pixel of the current clump
             if usewidth:
                 fres['clumpWidth'][i] = selectedDS.clumpWidths[clist[i][0]]

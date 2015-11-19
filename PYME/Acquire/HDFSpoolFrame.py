@@ -402,6 +402,8 @@ class PanSpool(wx.Panel):
         if isinstance(self.spooler, QueueSpooler.Spooler): #queue or not
             if sys.platform == 'win32':
                 subprocess.Popen('dh5view.cmd -q %s QUEUE://%s' % (self.spooler.tq.URI, self.queueName), shell=True)
+            elif sys.platform == 'darwin':
+                subprocess.Popen('dh5view -q %s QUEUE://%s' % (self.spooler.tq.URI, self.queueName), shell=True)
             else:
                 subprocess.Popen('dh5view.py -q %s QUEUE://%s' % (self.spooler.tq.URI, self.queueName), shell=True)
         elif isinstance(self.spooler, HTTPSpooler.Spooler): #queue or not

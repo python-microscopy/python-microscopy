@@ -123,15 +123,18 @@ class LMDisplay(object):
 
         #self.Bind(wx.EVT_IDLE, self.OnIdle)
         self.refv = False
+        self._sf = False
 
         #statusLog.SetStatusDispFcn(self.SetStatus)
         
         renderers.renderMetadataProviders.append(self.SaveMetadata)
+        #
 
     def OnIdle(self, event):
         if self.glCanvas.init and not self.refv:
             self.refv = True
             print((self.viewMode, self.colData))
+            self.SetFit()
             
             self.RefreshView()
             self.displayPane.OnPercentileCLim(None)
@@ -809,6 +812,10 @@ class LMDisplay(object):
         #    self.colp.refresh()
 
         #self.sh.shell.user_ns.update(self.__dict__)
+        if not self._sf:
+            if len(self.pipeline['x'] > 5):
+                self.SetFit()
+                self._sf = True
         wx.EndBusyCursor()
         #self.workspaceView.RefreshItems()
 
@@ -1033,6 +1040,7 @@ class LMDisplay(object):
         self.dsviewer.update()
 
     def update(self, dsviewer):
+        #self.RefreshView()
         if 'fitInf' in dir(self) and not self.dsviewer.playbackpanel.tPlay.IsRunning():
             try:
                 self.fitInf.UpdateDisp(self.view.PointsHitTest())

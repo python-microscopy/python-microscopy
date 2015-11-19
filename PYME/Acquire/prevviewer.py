@@ -72,7 +72,7 @@ class PrevViewFrame(wx.Frame):
 
 	def saveStack(self, event=None):
 		fdialog = wx.FileDialog(None, 'Save Data Stack as ...',
-			wildcard='*.kdf', style=wx.SAVE|wx.HIDE_READONLY)
+			wildcard='*.kdf', style=wx.SAVE)
 		succ = fdialog.ShowModal()
 		if (succ == wx.ID_OK):
 			self.ds.SaveToFile(fdialog.GetPath())

@@ -25,14 +25,14 @@ from scipy import ndimage
 from numpy import *
 
 def _splcoefs(r):
-    st = -1
+    #st = -1
+    st = float(int(floor(r)) - 1)#3./2)
+    coeffs = zeros(4)
     
-    coeffs = zeros(3)
-    
-    for hh in range(3):
+    for hh in range(4):
         y = abs(st - r + hh)
         
-        if (y < 1):
+        if (y < 1.0):
             coeffs[hh] = (y*y*(y-2.0)*3.0 + 4.)/6.
         elif (y < 2.):
             y = 2.0 - y
@@ -55,17 +55,17 @@ class CSInterpolator(__interpolator):
     def interp(self, X, Y, Z):
         '''do actual interpolation at values given'''
 
-        X = atleast_1d(X)
+        X = atleast_1d(X) #ox = X[0] 
         Y = atleast_1d(Y)
         Z = atleast_1d(Z)
 
-        ox = X[0]
+        ox = X[0] - 0.5*self.PSF2Offset
         oy = Y[0]
         oz = Z[0]
 
-        rx = (ox % self.dx)/self.dx - .5
-        ry = (oy % self.dy)/self.dy - .5
-        rz = (oz % self.dz)/self.dz - .5
+        rx = ((ox + 973*self.dx) % self.dx)/self.dx #- .5
+        ry = ((oy  + 973*self.dy) % self.dy)/self.dy #- .5
+        rz = ((oz  + 973*self.dz) % self.dz)/self.dz #- .5
 
         fx = floor(len(self.IntXVals)/2) + floor(ox/self.dx)
         fy = floor(len(self.IntYVals)/2) + floor(oy/self.dy)
@@ -76,6 +76,8 @@ class CSInterpolator(__interpolator):
         cx = _splcoefs(rx)
         cy = _splcoefs(ry)
         cz = _splcoefs(rz)
+        
+        print rx, ry, rz, cz
 
         xl = len(X)
         yl = len(Y)
@@ -88,9 +90,9 @@ class CSInterpolator(__interpolator):
 
         m = 0
         
-        for xs in range(3):
-            for ys in range(3):
-                for zs in range(3):
+        for xs in range(4):
+            for ys in range(4):
+                for zs in range(4):
                     m += cx[xs]*cy[ys]*cz[zs]*_ms(xs-1, ys-1, zs-1)
                 #print m.shape
         return m

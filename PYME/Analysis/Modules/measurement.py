@@ -190,6 +190,8 @@ class Measure2D(ModuleBase):
                 self._keys = []
                 
             def addFrameMeasures(self, frameNo, measurements, contours = None):
+                if len(measurements) == 0:
+                    return
                 if len(self.measures) == 0:
                     #first time we've called this - determine our data type
                     self._keys = ['t', 'x', 'y'] + [r for r in dir(measurements[0]) if not r.startswith('_')]
