@@ -260,7 +260,7 @@ class HDFMDHandler(MDHandlerBase):
         if self.h5file.__contains__('/MetaData'):
             self.md = self.h5file.root.MetaData
         else:
-            self.md = self.h5file.createGroup(self.h5file.root, 'MetaData')
+            self.md = self.h5file.create_group(self.h5file.root, 'MetaData')
 
         if not mdToCopy == None:
             self.copyEntriesFrom(mdToCopy)
@@ -271,8 +271,8 @@ class HDFMDHandler(MDHandlerBase):
         en = entPath[-1]
         ep = entPath[:-1]
 
-        currGroup = self.h5file._getOrCreatePath('/'.join(['', 'MetaData']+ ep), True)
-        currGroup._f_setAttr(en, value)
+        currGroup = self.h5file._get_or_create_path('/'.join(['', 'MetaData']+ ep), True)
+        currGroup._f_setattr(en, value)
         self.h5file.flush()
 
 
@@ -281,7 +281,7 @@ class HDFMDHandler(MDHandlerBase):
         en = entPath[-1]
         ep = entPath[:-1]
 
-        res =  self.h5file.getNodeAttr('/'.join(['', 'MetaData']+ ep), en)
+        res =  self.h5file.get_node_attr('/'.join(['', 'MetaData']+ ep), en)
         
         #dodgy hack to get around a problem with zero length strings not
         #being picklable if they are numpy (rather than pure python) types
@@ -295,7 +295,7 @@ class HDFMDHandler(MDHandlerBase):
 
     def getEntryNames(self):
         entryNames = []
-        for a in [self.md] + list(self.md._f_walkNodes()):
+        for a in [self.md] + list(self.md._f_walknodes()):
             entryNames.extend(['.'.join(a._v_pathname.split('/')[2:] +[ i]) for i in a._v_attrs._f_list()])
 
         return entryNames
@@ -452,9 +452,9 @@ class XMLMDHandler(MDHandlerBase):
             el = [e for e in node.childNodes if e.tagName == entPath[0]]
             if len(el) == 0:
                 #need to create node
-                newNode = self.doc.createElement(entPath[0])
-                node.appendChild(newNode)
-                node = newNode
+                new_node = self.doc.createElement(entPath[0])
+                node.appendChild(new_node)
+                node = new_node
             else:
                 node = el[0]
 
@@ -528,8 +528,8 @@ class XMLMDHandler(MDHandlerBase):
         for e in elements:
             if not e.hasChildNodes(): #we are at the end of the tree
                 n = e.nodeName #starting name
-                while not e.parentNode == self.md:
-                    e = e.parentNode
+                while not e.parentnode == self.md:
+                    e = e.parentnode
                     n = '.'.join((e.nodeName, n))
 
                 en.append(n)        
