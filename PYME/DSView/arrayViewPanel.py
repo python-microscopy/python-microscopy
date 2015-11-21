@@ -112,7 +112,9 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         
         self.CenteringHandlers = []
         
-        self.labelPens = [wx.Pen(wx.Colour(*pylab.cm.hsv(v, bytes=True)), 2) for v in numpy.linspace(0, 1, 16)]
+        self.selectHandlers = []
+        
+        self.labelPens = [wx.Pen(wx.Colour(*pylab.cm.hsv(v, alpha=.5, bytes=True)), 2) for v in numpy.linspace(0, 1, 16)]
 
 #        if not aspect == None:
 #            if scipy.isscalar(aspect):
@@ -346,7 +348,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             if self.scaleBarLength > 1000:
                 s = u'%1.1f \u03BCm' % (self.scaleBarLength/1000.)
             else:
-                s = u'%d mm' % int(self.scaleBarLength)
+                s = u'%d nm' % int(self.scaleBarLength)
             w, h = dc.GetTextExtent(s)
             dc.DrawText(s, x0 + (sbLen - w)/2, y1 + 7)
                 
@@ -726,14 +728,14 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         
     def OnMiddleDown(self,event):
         dc = wx.ClientDC(self.imagepanel)
-        self.imagepanel.PrepareDC(dc)
+#        self.imagepanel.PrepareDC(dc)
         pos = event.GetLogicalPosition(dc)
         self.middleDownPos = self.CalcUnscrolledPosition(*pos)
         event.Skip()
     
     def OnMiddleUp(self,event):
         dc = wx.ClientDC(self.imagepanel)
-        self.imagepanel.PrepareDC(dc)
+#        self.imagepanel.PrepareDC(dc)
         pos = event.GetLogicalPosition(dc)
         pos = self.CalcUnscrolledPosition(*pos)
 
@@ -750,7 +752,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         
     def OnMiddleDClick(self,event):
         dc = wx.ClientDC(self.imagepanel)
-        self.imagepanel.PrepareDC(dc)
+#        self.imagepanel.PrepareDC(dc)
         pos = event.GetLogicalPosition(dc)
         pos = self.CalcUnscrolledPosition(*pos)
         #print pos
@@ -787,6 +789,9 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             
         self.do.inOnChange = False
         self.do.OnChange()
+        
+        for cb in self.selectHandlers:
+            cb(self)
         #if ('update' in dir(self.GetParent())):
         #     self.GetParent().update()
         #else:

@@ -4,6 +4,8 @@ Created on Thu Apr 16 19:23:43 2015
 
 @author: david
 """
+import cherrypy
+
 
 ##########
 # Monkey Patch cherrypy to allow us to use default automatically selected ports
@@ -20,15 +22,37 @@ def f2(host, port, timeout=None):
     if port == 0:
         return
     else:
-        return f2(host, port, timeout)
+        return f1(host, port, timeout)
    
 servers.wait_for_occupied_port = f2
 
 ## End Monkey patch
 
-import cherrypy
 
-#open on localhost, on whichever socket the OS gives us
+#open on localhost, on whichever port the OS gives us (by calling with socket_port = 0)
 
-cherrypy.server.socket_host = '127.0.0.1'
-cherrypy.server.socket_port = 0
+cherrypy.config.update({'server.socket_port': 0,
+                        #'server.socket_host': '0.0.0.0',
+                        #'log.screen' : False,
+                        'engine.autoreload.on': False})
+
+#cherrypy.server.socket_host = '127.0.0.1'
+#cherrypy.server.socket_port = 0
+
+def _serve():
+    cherrypy.engine.start()
+    cherrypy.engine.block()
+    
+    
+def StartServing():
+    try: 
+        import threading
+        serveThread = threading.Thread(target=_serve)
+        serveThread.start()
+    except ImportError:
+        pass
+    
+StartServing()
+
+def getURL():
+    return 'http://%s:%d/' % cherrypy.server.httpserver.socket.getsockname()

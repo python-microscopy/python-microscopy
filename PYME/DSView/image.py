@@ -113,6 +113,11 @@ class ImageStack(object):
         self.saved = False
         self.volatile = False #is the data likely to change and need refreshing?
         
+        #support for specifying metadata as filename
+        if isinstance(mdh, str) or isinstance(mdh,unicode):#os.path.exists(mdh):
+            self.mdh = None
+            self.FindAndParseMetadata(mdh)
+        
         if (data == None):
             #if we've supplied data, use that, otherwise load from file
             self.Load(filename)
@@ -433,7 +438,10 @@ class ImageStack(object):
         '''Try and find and load a .xml or .md metadata file that might be ascociated
         with a given image filename. See the relevant metadatahandler classes
         for details.'''
-        import xml.parsers.expat      
+        import xml.parsers.expat 
+        
+        if not self.mdh == None:
+            return #we already have metadata (probably passed in on command line)
         
         mdf = None
         xmlfn = os.path.splitext(filename)[0] + '.xml'
@@ -483,6 +491,17 @@ class ImageStack(object):
                             self.mdh[basename + k] = v
                 
                 lsm_pop('LSM.', lsm_info)
+                
+            elif filename.endswith('.tif'):
+                #look for OME data...
+                from PYME.gohlke.tifffile import TIFFfile
+                tf = TIFFfile(filename)
+                
+                if tf.is_ome:
+                    omemdh = MetaDataHandler.OMEXMLMDHandler(tf.pages[0].tags['image_description'].value)
+                    
+                    self.mdh.copyEntriesFrom(omemdh)
+                
             elif filename.endswith('.dbl'): #Bewersdorf lab STED
                 mdfn = filename[:-4] + '.txt'
                 entrydict = {}
@@ -561,12 +580,15 @@ class ImageStack(object):
         mdfn = self.FindAndParseMetadata(filename)
 
         self.dataSource = TiffDataSource.DataSource(filename, None)
+        print self.dataSource.shape
         self.dataSource = BufferedDataSource.DataSource(self.dataSource, min(self.dataSource.getNumSlices(), 50))
         self.data = self.dataSource #this will get replaced with a wrapped version
+        
+        print self.data.shape
 
 
         #if we have a multi channel data set, try and pull in all the channels
-        if 'ChannelFiles' in self.mdh.getEntryNames():
+        if 'ChannelFiles' in self.mdh.getEntryNames() and not len(self.mdh['ChannelFiles']) == self.data.shape[3]:
             try:
                 from PYME.DSView.dataWrap import ListWrap
                 #pull in all channels
@@ -633,17 +655,30 @@ class ImageStack(object):
         self.mode = 'default'
 
     def Load(self, filename=None):
-        print(filename)
-        if (filename == None):
+        print('filename == %s' % filename)
+        if (filename == None or filename == ''):
             import wx #only introduce wx dependency here - so can be used non-interactively
             global lastdir
             
-            fdialog = wx.FileDialog(None, 'Please select Data Stack to open ...',
-                wildcard='Image Data|*.h5;*.tif;*.lsm;*.kdf;*.md;*.psf;*.npy;*.dbl|All files|*.*', style=wx.OPEN, defaultDir = lastdir)
-            succ = fdialog.ShowModal()
-            if (succ == wx.ID_OK):
-                filename = fdialog.GetPath()
-                lastdir = fdialog.GetDirectory()
+            #fdialog = wx.FileDialog(None, 'Please select Data Stack to open ...',
+            #    wildcard='Image Data|*.h5;*.tif;*.lsm;*.kdf;*.md;*.psf;*.npy;*.dbl|All files|*.*', style=wx.OPEN, defaultDir = lastdir)
+            #succ = fdialog.ShowModal()
+            #if (succ == wx.ID_OK):
+            #    filename = fdialog.GetPath()
+            #    lastdir = fdialog.GetDirectory()
+            #else:
+                #print succ
+
+            filename = wx.FileSelector('Please select Data Stack to open ...',
+                                       wildcard='Image Data|*.h5;*.tif;*.lsm;*.kdf;*.md;*.psf;*.npy;*.dbl|All files|*.*', 
+                                        default_path = lastdir)            
+            
+            if filename == None or filename == '':
+                raise RuntimeError('No file selected')
+                pass
+            else:
+                lastdir = os.path.split(filename)[0]
+            #print(succ, filename)
 
         if not filename == None:
             if filename.startswith('QUEUE://'):

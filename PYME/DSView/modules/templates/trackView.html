@@ -1,0 +1,40 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html lang="en">
+<head>
+    <title>Track {{clump.clumpID}}</title>
+
+</head>
+<body>
+
+    <h1>Track {{clump.clumpID}}</h1>
+
+    {{ clump|movieplot(img) }}
+
+    <h2>Basic information</h2>
+    <table>
+        <th><tr><td>Clump ID</td><td>Length [frames]</td><td>Distance [nm]</td></tr></th>
+        <tr><td>{{clump.clumpID}}</td><td>{{clump.nEvents}}</td><td>{{clump.distance}}</td></tr>
+    </table>
+
+    <table><tr>
+        <td>{{clump.trajectory}}</td>
+        {% if clump.nEvents > 10 %} <td>{{clump.msdplot}}</td> {% endif %}
+    </tr></table>
+    
+    
+    <h2>Measured Variables</h2>
+    <table>
+    
+    {% for k in clump.varnames %}
+        <tr>
+            <td>{{k}}</td>
+            <td>{{clump.dtypes[k]}}</td>
+            <td>{{clump.featuremean[k]}}</td>
+            <td>{{clump.featurestd[k]}}</td>
+            <td>{{clump.featureplot[k]}}</td>
+        </tr>
+    {% endfor %}
+    </table>
+        
+</body>
+</html>

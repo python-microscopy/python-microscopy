@@ -32,7 +32,16 @@ class Tracker(object):
     def calcLinkageMatrix(self, i, j, manualLinkages = []):
         '''Compare this frame (i) with another frame (j) '''
         #calculate distances 
-        dists = spatial.distance.cdist(self.xvsByT[j].T, self.xvsByT[i].T)
+        #print i, j
+        if i >= len(self.xvsByT):
+            return np.empty([0,0]),np.empty([0])
+            
+        xvs_i = self.xvsByT[i].T
+        xvs_j = self.xvsByT[j].T
+        if (len(xvs_i) == 0) or (len(xvs_j) == 0):
+            return np.empty([0,0]),np.empty([0])
+            
+        dists = spatial.distance.cdist(xvs_j, xvs_i)
         
         #calculate probablility of a certain distance (given a mean jump length r0)
         pMatch = np.exp(-dists/self.r0)
@@ -99,15 +108,40 @@ class Tracker(object):
         return self.getLinkageCandidates(lMatch, jIndices)
         
     def updateTrack(self, i, linkages):
+        if i >= len(self.indicesByT):
+            return
+            
         iIndices = self.indicesByT[i]
+        
+        #alreadyAssigned = []
+
+        allLinks = []        
         
         for k, links in linkages.items():
             n = iIndices[k]
             lj, lp = links
-            if not lj[0] == -1:
-                #we are not a new object
-                self.clumpIndex[n] = self.clumpIndex[lj[0]]
+            
+            for lji, lpi in zip(lj, lp):
+                allLinks.append((lpi, lji, n))
                 
+        if len(allLinks) == 0:
+            return
+                
+        allLinks = np.array(allLinks)
+        
+        #sort so that the highest probability comes first
+        allLinks = allLinks[allLinks[:,0].argsort()[::-1], :]
+            
+        for j in range(len(allLinks)):
+            lpi, lji, n = allLinks[j]
+            
+            if not lpi == 0:                
+                allLinks[allLinks[:,2] == n, 0] = 0
+                if not lji == -1:
+                    #we are not a new object
+                    self.clumpIndex[n] = self.clumpIndex[lji]
+                    allLinks[allLinks[:,1] == lji, 0] = 0
+                    
     
 
         

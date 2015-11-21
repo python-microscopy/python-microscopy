@@ -56,7 +56,7 @@ scope.cameras['B - Right'] = AndorZyla.AndorZyla(0)
 scope.cameras['B - Right'].Init()
 scope.cameras['B - Right'].port = 'R100'
 scope.cameras['B - Right'].SetActive(False)
-scope.cameras['B - Right'].orientation = dict(rotate=True, flipx=False, flipy=False)
+scope.cameras['B - Right'].orientation = dict(rotate=False, flipx=True, flipy=False)
 scope.cameras['B - Right'].DefaultEMGain = 0 #hack to make camera work with standard protocols
 ''')
 

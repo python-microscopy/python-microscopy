@@ -35,7 +35,6 @@ import os
 
 from PYME.Analysis.BleachProfile.kinModels import getPhotonNums
 
-
 class Pipeline:
     def __init__(self, filename=None, visFr=None):
         self.dataSources = []
@@ -78,10 +77,10 @@ class Pipeline:
             
         #renderers.renderMetadataProviders.append(self.SaveMetadata)
             
-    def __getitem__(self, key):
+    def __getitem__(self, keys):
         '''gets values from the 'tail' of the pipeline (ie the colourFilter)'''
         
-        return self.colourFilter[key]
+        return self.colourFilter[keys]
 
     def keys(self):
         return self.colourFilter.keys()
@@ -165,10 +164,19 @@ class Pipeline:
             if 'ScannerXPos' in evKeyNames or 'ScannerYPos' in evKeyNames:
                 self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
                 
+            if 'ShiftMeasure' in evKeyNames:
+                self.selectedDataSource.driftx = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), 0, 'ShiftMeasure', 0)(self.selectedDataSource['t']-.01)
+                self.selectedDataSource.drifty = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), 0, 'ShiftMeasure', 1)(self.selectedDataSource['t']-.01)
+        
+                self.selectedDataSource.setMapping('driftx', 'driftx')
+                self.selectedDataSource.setMapping('drifty', 'drifty')
+                
+                
     def _processSplitter(self):
         '''set mappings ascociated with the use of a splitter'''
+        self.selectedDataSource.gF_zcorr = 0
         self.selectedDataSource.setMapping('A', 'fitResults_Ag + fitResults_Ar')
-        self.selectedDataSource.setMapping('gFrac', 'fitResults_Ag/(fitResults_Ag + fitResults_Ar)')
+        self.selectedDataSource.setMapping('gFrac', 'fitResults_Ag/(fitResults_Ag + fitResults_Ar) + gF_zcorr*fitResults_z0')
         
         if 'fitError_Ag' in self.selectedDataSource.keys():    
             self.selectedDataSource.setMapping('error_gFrac', 'sqrt((fitError_Ag/fitResults_Ag)**2 + (fitError_Ag**2 + fitError_Ar**2)/(fitResults_Ag + fitResults_Ar)**2)*fitResults_Ag/(fitResults_Ag + fitResults_Ar)')
@@ -322,7 +330,9 @@ class Pipeline:
             self.selectedDataSource.setMapping('y', 'y*pixelSize')
             
         #Retrieve or estimate image bounds
-        if 'Camera.ROIWidth' in self.mdh.getEntryNames():
+        if False:#'imgBounds' in kwargs.keys():
+            self.imageBounds = kwargs['imgBounds']
+        elif 'Camera.ROIWidth' in self.mdh.getEntryNames():
             x0 = 0
             y0 = 0
 
@@ -413,6 +423,21 @@ class Pipeline:
 
         if 'Sample.Labelling' in self.mdh.getEntryNames() and 'gFrac' in self.selectedDataSource.keys():
             self.SpecFromMetadata()
+            
+        if 'probe' in self.mapping.keys():
+            #non-ratiometric (i.e. sequential) colour
+            #color channel is given in 'probe' column
+            self.mapping.setMapping('ColourNorm', '1.0 + 0*probe')
+            
+            for i in range(int(self['probe'].min()), int(self['probe'].max()+ 1)):
+                self.mapping.setMapping('p_chan%d' % i, '1.0*(probe == %d)'%i)
+                
+        nSeqCols = self.mdh.getOrDefault('Protocol.NumberSequentialColors', 1)
+        if nSeqCols > 1:
+            for i in range(nSeqCols):
+                self.mapping.setMapping('ColourNorm', '1.0 + 0*t')
+                cr = self.mdh['Protocol.ColorRange%d'%i]
+                self.mapping.setMapping('p_chan%d' % i, '(t>= %d)*(t<%d)' % cr)
 
 
     def SpecFromMetadata(self):
@@ -531,6 +556,10 @@ class Pipeline:
         d = {k: self[k] for k in keys}
         
         return pd.DataFrame(d)
+        
+    @property
+    def dtypes(self):
+        return {k: str(self[k, :2].dtype) for k in self.keys()}
     
 
 

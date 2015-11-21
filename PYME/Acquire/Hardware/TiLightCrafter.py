@@ -8,6 +8,7 @@ Created on Mon May 20 15:58:22 2013
 import numpy as np
 import socket
 from PIL import Image
+from PYME.Acquire import MetaDataHandler
 
 try:
     import StringIO
@@ -146,6 +147,10 @@ class LightCrafter(object):
         self.sock = None
         
         self.StoredMasks = {}
+        self.PatternVars = {'Period':'', 'DutyCycle':'', 'Angle':'', 'Phase':'', 'ExpTime':'', 'Steps':''}
+        
+        #register as a provider of metadata
+        MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
         
     def Connect(self):
         self.sock = socket.socket()
@@ -276,12 +281,19 @@ class LightCrafter(object):
             self.SetImage((ll*intensity).astype('uint8'))
             
     def SetScanningVDC(self, period, exposureMs=100, angle=0, dutyCycle=.5, nSteps = 20):
-        pats = [self.GenVDCLines(period, phase=p, angle = angle, dutyCycle = dutyCycle).T for p in np.linspace(0, 1, nSteps)]
+        pats = [self.GenVDCLines(period, phase=p, angle = angle, dutyCycle = dutyCycle).T for p in np.linspace(0, 1, nSteps, False)]
         from PYME.DSView import View3D
-        View3D(pats)
+        View3D(np.array(pats).transpose(2,1,0))
         
         self.SetPatternDefs(pats, exposureMs=exposureMs)
         self.StartPatternSeq()
+        
+        self.PatternVars['Period'] = period
+        self.PatternVars['DutyCycle'] = dutyCycle
+        self.PatternVars['Phase'] = ''
+        self.PatternVars['Angle'] = angle
+        self.PatternVars['ExpTime'] = exposureMs
+        self.PatternVars['Steps'] = nSteps
             
     def SetScanningHex(self, period, exposureMs=100, angle=0, dutyCycle=.5, nSteps = 20):
         pats = []
@@ -290,10 +302,17 @@ class LightCrafter(object):
             for px in np.linspace(0, int(100/dc - 1)*dc, int(100/dc)):
                 pats.append(self.GenHex(peri, dutyCycle = dc, phasex=px, phasey = py))
         from PYME.DSView import View3D
-        View3D(pats)
+        View3D(np.array(pats).transpose(2,1,0))
         
         self.SetPatternDefs(pats, exposureMs=exposureMs)
         self.StartPatternSeq()
+        
+        self.PatternVars['Period'] = period
+        self.PatternVars['DutyCycle'] = dutyCycle
+        self.PatternVars['Phase'] = ''
+        self.PatternVars['Angle'] = angle
+        self.PatternVars['ExpTime'] = exposureMs
+        self.PatternVars['Steps'] = int(100/dc)
     
     def SetVDCLines(self, period, phase=0, angle=0, dutyCycle=.5, intensity=255.):
         self.SetImage(self.GenVDCLines(period, phase, angle, dutyCycle, intensity))
@@ -310,3 +329,8 @@ class LightCrafter(object):
         
     def GenHex(self, period = 100, dutyCycle = 0.1, phasex = 0, phasey = 0, intensity = 255.):
         return ((((self.X/period + phasex)%100) < dutyCycle)*(((self.Y/(period*1.3) + phasey + 50*((self.X/(130*period)).astype('i')%2)) %100) < dutyCycle)*intensity).astype('uint8')
+        
+    def GenStartMetadata(self, mdh):   
+        mdh['DMD.Name'] = 'TI DLP DM365'
+        for key in self.PatternVars.keys():
+            mdh['DMD.' + key] = self.PatternVars[key]

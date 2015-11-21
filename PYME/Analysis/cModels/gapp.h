@@ -2,6 +2,7 @@
 //#include <complex.h>
 #define _USE_MATH_DEFINES
 #include <math.h>
+#define NPY_NO_DEPRECATED_API NPY_1_1_API_VERSION
 #include "numpy/arrayobject.h"
 #include <stdio.h>
 

@@ -144,7 +144,7 @@ void splCoeff(float r, float *coeffs)
     int i = 0;
     float y = 0;
 
-    for (i = 0; i < 3; i++)
+    for (i = 0; i <= 3; i++)
     {
         y = fabs(-1 - r + i);
 
@@ -190,7 +190,7 @@ static PyObject * InterpolateCS(PyObject *self, PyObject *args, PyObject *keywds
     int fx, fy, fz;
     int xj, yj, zj;
 
-    float cx[3], cy[3], cz[3];
+    float cx[4], cy[4], cz[4];
     
     static char *kwlist[] = {"model", "x0","y0", "z0","nx","ny","dx", "dy", "dz", NULL};
     
@@ -243,9 +243,9 @@ static PyObject * InterpolateCS(PyObject *self, PyObject *args, PyObject *keywds
     fz = (int)(floorf(sizeZ/2.0) + floorf(z0/dz));
 
     ///avoid negatives by adding a chunk before taking the mod
-    rx = fmodf(x0+973*dx,dx)/dx - 0.5;
-    ry = fmodf(y0+973*dy,dy)/dy - 0.5;
-    rz = fmodf(z0+973*dz,dz)/dz - 0.5;
+    rx = fmodf(x0+973*dx,dx)/dx;// - 0.5;
+    ry = fmodf(y0+973*dy,dy)/dy;// - 0.5;
+    rz = fmodf(z0+973*dz,dz)/dz;// - 0.5;
 
     //calculate the spline coefficients    
     splCoeff(rx, cx);
@@ -259,11 +259,11 @@ static PyObject * InterpolateCS(PyObject *self, PyObject *args, PyObject *keywds
         {
             *res  = 0;
             
-            for (xj=0; xj < 3; xj ++)
+            for (xj=0; xj <= 3; xj ++)
             {
-                for (yj=0; yj < 3; yj ++)
+                for (yj=0; yj <= 3; yj ++)
                 {
-                    for (zj=0; zj < 3; zj ++)
+                    for (zj=0; zj <= 3; zj ++)
                         {
                             *res += cx[xj]*cy[yj]*cz[zj] * *(float*)PyArray_GETPTR3(amod, xi + xj - 1, yi + yj - 1,   fz + zj - 1);
                         }

@@ -355,6 +355,7 @@ class seqPanel(wx.Panel):
         
 
     def UpdateDisp(self):
+        print 'seqd: update display'
 
         self.chPiezo.SetSelection(self.scope.sa.GetScanChannel())
 

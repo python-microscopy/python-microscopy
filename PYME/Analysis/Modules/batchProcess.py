@@ -9,7 +9,7 @@ import matplotlib
 matplotlib.use('Cairo')
 
 from PYME.Analysis.Modules import runRecipe
-from PYME.Analysis.Modules import filters
+from PYME.Analysis.Modules import modules
 import os
 import glob
 from argparse import ArgumentParser
@@ -21,6 +21,41 @@ NUM_PROCS = multiprocessing.cpu_count()
 def runRec(args):
     print args
     runRecipe.runRecipe(*args)
+    
+def bake(recipe, inputGlobs, output_dir, num_procs = NUM_PROCS):
+    '''Run a given recipe over using multiple proceses. 
+    
+    Arguments:
+    ----------
+      recipe:       The recipe to run
+      inputGlobs:   A dictionary of where the keys are the input names, and each
+                    entry is a list of filenames which provide the data for that
+                    input.
+      output_dir:   The directory to save the output in
+      num_procs:    The number of worker processes to launch (defaults to the number of CPUs)
+      
+    '''
+    
+    #check that we've supplied the right number of images for each named input/channel
+    inputLengths = [len(v) for v in inputGlobs.values()]
+    if not (min(inputLengths) == max(inputLengths)):
+        raise RuntimeError('The number of entries in each input category must be equal')
+        
+    taskParams = []
+    outputNames = recipe.outputs
+    
+    for i in range(inputLengths[0]):
+        in_d = {k:v[i] for k, v in inputGlobs.items()}
+        
+        fns = os.path.join(output_dir, os.path.splitext(os.path.split(in_d.values()[0])[-1])[0])
+        out_d = {k:('%s_%s'% (fns,k)) for k in  outputNames}
+        
+        taskParams.append((recipe, in_d, out_d))
+        
+    pool = multiprocessing.Pool(num_procs)
+    
+    pool.map(runRec, taskParams)
+
 
 def main():
     #start by finding out what recipe we're using - different recipes can have different options    
@@ -34,7 +69,7 @@ def main():
     with open(args.recipe) as f:
         s = f.read()
         
-    recipe = filters.ModuleCollection.fromYAML(s)
+    recipe = modules.ModuleCollection.fromYAML(s)
 
     output_dir = args.output_dir
     num_procs = args.num_processes
@@ -52,32 +87,7 @@ def main():
     
     inputGlobs = {k: glob.glob(getattr(args, k)) for k in recipe.inputs}
     
-    #print inputGlobs
-
-    inputLengths = [len(v) for v in inputGlobs.values()]
-    if not (min(inputLengths) == max(inputLengths)):
-        raise RuntimeError('The number of entries in each input category must be equal')
-    
-    taskParams = []
-    outputNames = recipe.outputs
-    
-    for i in range(inputLengths[0]):
-        in_d = {k:v[i] for k, v in inputGlobs.items()}
-        
-        fns = os.path.join(output_dir, os.path.splitext(os.path.split(in_d.values()[0])[-1])[0])
-        out_d = {k:('%s_%s'% (fns,k)) for k in  outputNames}
-        
-        taskParams.append((recipe, in_d, out_d))
-        
-    pool = multiprocessing.Pool(num_procs)
-    
-    pool.map(runRec, taskParams)
-    
-    #print taskParams
-#    for tp in taskParams:
-#        print tp[1]
-#        
-#        runRecipe.runRecipe(*tp)
+    bake(recipe, inputGlobs, output_dir, num_procs)
         
         
 if __name__ == '__main__':

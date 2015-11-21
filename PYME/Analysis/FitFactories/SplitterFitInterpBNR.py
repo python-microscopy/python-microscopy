@@ -135,18 +135,18 @@ def PSFFitResultR(fitResults, metadata, startParams, slicesUsed=None, resultCode
     fr['resultCode'] = resultCode
     fr['nchi2'] = nchi2
     #print n, fr['fitResults'].view('f4').shape
-    fr['fitResults'].view('f4')[:n] = fitResults   
-    fr['startParams'].view('f4')[:n] = startParams
+    fr['fitResults'].view('8f4')[0,:n] = fitResults   
+    fr['startParams'].view('8f4')[0,:n] = startParams
     
     if fitErr == None:
-        fr['fitError'].view('f4')[:] = -5e3
+        fr['fitError'].view('8f4')[0,:] = -5e3
     else:
-        fr['fitError'].view('f4')[:n] = fitErr
+        fr['fitError'].view('8f4')[0,:n] = fitErr
         
-    fr['subtractedBackground'].view('f4')[:] = background
+    fr['subtractedBackground'].view('2f4')[:] = background
     slu = np.array(fmtSlicesUsed(slicesUsed), dtype='i4')
     #print slu.shape, fr['slicesUsed'].view('12i4').shape, slu.dtype, slu.ravel().shape
-    fr['slicesUsed'].view('i4')[:] = slu.ravel()
+    fr['slicesUsed'].view('12i4')[:] = slu.ravel()
     fr['ratio'] = ratio
         
     return fr 

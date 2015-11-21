@@ -21,6 +21,279 @@
 #
 ################
 import numpy as np
+import matplotlib.pyplot as plt
+import mpld3
+import pandas as pd
+import os
+
+class FeaturePlot(object):
+    def __init__(self, clump):
+        self.clump = clump
+    
+    def __getitem__(self, key):
+        if not self.clump.dtypes[key] in ['float32', 'float64']:
+            return ''
+            
+        data = self.clump[key]
+            
+        plt.ioff()
+        f = plt.figure(figsize=(6,1))        
+        
+        if 't' in self.clump.keys():        
+            plt.plot(self.clump['t'], data)
+        else:
+            plt.plot(data)
+        
+        plt.tight_layout()
+        
+        plt.ion()
+        
+        return mpld3.fig_to_html(f)
+        
+class FeatureMean(object):
+    def __init__(self, clump):
+        self.clump = clump
+    
+    def __getitem__(self, key):
+        if self.clump.dtypes[key] == 'object':
+            return 'N/A'
+        else:
+            #print key
+            data = self.clump[key]
+            return data.mean()
+            
+class FeatureStd(object):
+    def __init__(self, clump):
+        self.clump = clump
+    
+    def __getitem__(self, key):
+        if self.clump.dtypes[key] == 'object':
+            return 'N/A'
+        else:
+            data = self.clump[key]
+            return data.std()
+
+class Clump(object):
+    def __init__(self, pipeline, clumpID):
+        self.pipeline = pipeline
+        self.clumpID = clumpID
+        
+        self.index = pipeline['clumpIndex'] == clumpID
+        self.nEvents = self.index.sum()
+        self.enabled = True
+        self.cache = {}
+        
+        self.image = None
+        
+        self.featureplot = FeaturePlot(self)
+        self.featuremean = FeatureMean(self)
+        self.featurestd = FeatureStd(self)
+            
+    
+    def keys(self):
+        return self.pipeline.keys()
+        
+    @property
+    def varnames(self):
+        return self.keys()
+    
+    @property
+    def dtypes(self):
+        if not '_dtypes' in dir(self):
+            self._dtypes = self.pipeline.dtypes
+        return self._dtypes
+
+    def __getitem__(self, key):
+        if not key in self.keys():
+            raise RuntimeError('Key not defined')
+        
+        if not key in self.cache.keys():
+            self.cache[key] = self.pipeline[key][self.index]
+            
+        return self.cache[key]
+        
+    def save(self, filename, keys = None):
+        d = {}        
+        if keys == None:                    
+            d.update(self)
+        else:
+            for k in keys:
+                if k in self.keys():
+                    d[k] = self[k]
+        
+        df = pd.DataFrame(d)
+
+        ext = os.path.splitext(filename)[-1]        
+        
+        if ext == '.csv': 
+            df.to_csv(filename)
+        elif ext in ['.xls', '.xlsx']:
+            df.to_excel(filename)
+        elif ext == '.hdf':
+            df.to_hdf(filename, 'Results')
+        elif ext == '.pik':
+            df.to_pickle(filename)
+        else:
+            raise RuntimeError('Unkonwn extension: %s' %ext)
+    
+
+def powerMod2D(p,t):
+    D, alpha = p
+    return 4*D*t**alpha #factor 4 for 2D (6 for 3D)
+
+
+        
+class Track(Clump):
+    @property
+    def distance(self):
+        if not '_distance' in dir(self):
+            #cache result
+            self._distance = np.sqrt((self['x'][-1] - self['x'][0])**2 + (self['y'][-1] - self['y'][0])**2)
+        
+        return self._distance
+        
+    @property
+    def trajectory(self):
+        plt.ioff()
+        f = plt.figure(figsize=(4,3))
+        
+        x = self['x']
+        y = self['y']
+        plt.plot(x - x.mean(), y-y.mean())
+        
+        plt.xlabel('x [nm]')
+        plt.ylabel('y [nm]')
+        plt.title('Particle Trajectory')
+
+        plt.axis('equal')
+        plt.tight_layout(pad=2)
+        
+        plt.ion()
+        
+        return mpld3.fig_to_html(f)
+        
+    @property
+    def msdinfo(self):
+        if not '_msdinfo' in dir(self):
+            from PYME.Analysis.DistHist import msdHistogram
+            from PYME.Analysis._fithelpers import FitModel
+            
+            x = self['x']
+            y = self['y']
+            t = self['t']
+            
+            dt = self.pipeline.mdh.getOrDefault('Camera.CycleTime', 1.0)
+            
+            nT = (t.max() - t.min())/2
+            
+            h = msdHistogram(x, y, t, nT)
+            t_ = dt*np.arange(len(h))
+            
+            res = FitModel(powerMod2D, [h[-1]/t_[-1], 1.], h[1:], t_[1:])
+            D, alpha = res[0]
+            
+            self._msdinfo = {'t':t_, 'msd':h, 'D':D, 'alpha':alpha}
+        
+        return self._msdinfo
+        
+    @property
+    def msdplot(self):
+        plt.ioff()
+        f = plt.figure(figsize=(4,3))
+        
+        msdi = self.msdinfo
+        t = msdi['t']
+        plt.plot(t[1:], msdi['msd'][1:])
+        plt.plot(t, powerMod2D([msdi['D'], msdi['alpha']], t))
+        
+        plt.xlabel('delta t')
+        plt.ylabel('MSD [nm^2]')
+        plt.title(r'MSD - D = %(D)3.2f, alpha = %(alpha)3.1f' % msdi)
+        
+        plt.tight_layout(pad=2)
+        
+        plt.ion()
+        
+        return mpld3.fig_to_html(f)
+        
+    @property
+    def movieplot(self):
+        plt.ioff()
+        f = plt.figure(figsize=(12,3))
+        
+        #msdi = self.msdinfo
+        #t = msdi['t']
+        #plt.plot(t[1:], msdi['msd'][1:])
+        #plt.plot(t, powerMod2D([msdi['D'], msdi['alpha']], t))
+        
+        xp, yp = self['centroid'][0]
+        
+        xp = int(np.round(xp))
+        yp = int(np.round(yp))
+        
+        if not self.image == None:
+            for i in range(self.nEvents):
+                plt.subplot(1, self.nEvents, i+1)
+                img = self.image[(xp - 10):(xp + 10), (yp - 10):(yp + 10), self['t'][i]]
+                plt.imshow(img, interpolation ='nearest', cmap=plt.cm.gray)
+                plt.xticks([])
+                plt.yticks([])    
+        else:
+            for i in range(self.nEvents):
+                plt.subplot(1, self.nEvents, i+1)
+                plt.imshow(self['intensity_image'][i], interpolation ='nearest', cmap=plt.cm.gray)
+                plt.xticks([])
+                plt.yticks([])
+        
+        #plt.xlabel('delta t')
+        #plt.ylabel('MSD [nm^2]')
+        #plt.title(r'MSD - D = %(D)3.2f, alpha = %(alpha)3.1f' % msdi)
+        
+        plt.tight_layout(pad=1)
+        
+        plt.ion()
+        
+        return mpld3.fig_to_html(f)
+        
+    #@property
+    
+            
+        
+        
+        
+        
+class ClumpManager(object):
+    def __init__(self, pipeline):
+        self.pipeline = pipeline
+        
+    def __getitem__(self, key):
+        return Track(self.pipeline, key)
+    
+    @property    
+    def all(self):
+        ids = list(set(self.pipeline['clumpIndex']))
+        ids.sort()
+        
+        return [self.__getitem__(id) for id in ids]
+            
+
+class TrackManager(object):
+    def __init__(self, trackList):
+        self.trackList = trackList
+        
+    #def __getitem__(self, key):
+    #    return Track(self.pipeline, key)
+    
+    @property    
+    def all(self):
+        return self.trackList 
+        
+    @property
+    def filtered(self):
+        return [t for t in self.trackList if t.enabled]
+        
+    
+    
 
 def findTracks(pipeline, rad_var='error_x', multiplier='2.0', nFrames=20):
     import PYME.Analysis.DeClump.deClump as deClump
@@ -48,6 +321,8 @@ def findTracks(pipeline, rad_var='error_x', multiplier='2.0', nFrames=20):
     pipeline.selectedDataSource.setMapping('clumpIndex', 'clumpIndices')
     pipeline.selectedDataSource.setMapping('clumpSize', 'clumpSizes')
     pipeline.selectedDataSource.setMapping('trackVelocity', 'trackVelocities')
+    
+    pipeline.clumps = ClumpManager(pipeline)
 
 
 def calcTrackVelocity(x, y, ci):

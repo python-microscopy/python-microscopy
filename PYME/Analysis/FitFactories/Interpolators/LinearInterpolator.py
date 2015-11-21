@@ -41,7 +41,7 @@ class LinearInterpolator(__interpolator):
         #Y = atleast_1d(Y)
         #Z = atleast_1d(Z)
 
-        ox = X[0]
+        ox = X[0] - 0.5*self.PSF2Offset
         oy = Y[0]
         oz = Z #[0]
 
