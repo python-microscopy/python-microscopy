@@ -31,6 +31,15 @@ from django import forms
 from django.template import RequestContext
 from datetime import datetime, timedelta
 
+from django.views.generic import DetailView
+
+class SlideDetailView(DetailView):
+    def get_queryset(self):
+        return Slide.objects.all()
+
+class ImageDetailView(DetailView):
+    def get_queryset(self):
+        return Image.objects.all()
 
 def slide_detail(request, slideID):
     try:

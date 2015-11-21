@@ -77,6 +77,11 @@ class Dye(models.Model):
     def __unicode__(self):
         return u'Dye: %s' % self.shortName
 
+    @classmethod
+    def create(cls, shortName,longName,spectraDBName='None'):
+        dye = cls(shortName=shortName,longName=longName,spectraDBName=spectraDBName)
+        return dye
+
 def _getMostRecentCreator():
         return Slide._GetMostRecent().creator
 
@@ -287,14 +292,22 @@ class File(models.Model):
 
                     if len(slide.labelling.all()) == 0 and 'Sample.Labelling' in mdh.getEntryNames():
                         dyes = Dye.objects.all()
+                        print(Dye.DYE_NAMES)
+                        print ("dyes: ",dyes)
 
                         for struct, label in mdh.Sample.Labelling:
                             l = Labelling(slideID=slide, structure=struct, label=label)
                             n =  label.upper()
+                            print("n is ",n)
 
                             for d in dyes:
                                if n.startswith(d.shortName) or n.startswith(d.shortName[1:]):
                                    l.dye = d
+                            try:
+                                l.dye
+                            except:
+                                l.dye = Dye(shortName=n,longName=n)
+                            print("dye is ",l.dye)
                             l.save()
 
                 else:

@@ -20,11 +20,11 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 SECRET_KEY = '3#d-g6g@kva0au8smne=_pjyc_++9@nw2kr+k#j37y!3j8_2mv'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 TEMPLATE_DEBUG = DEBUG
 
-ALLOWED_HOSTS = ['DBSRV1', 'localhost']
+ALLOWED_HOSTS = ['phy-lmsrv2', 'localhost']
 
 
 # Application definition
