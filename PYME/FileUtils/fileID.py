@@ -46,7 +46,7 @@ def genDataFileID(filename):
 #    print ds.sum()
 #
 #    return ((2*ds)**np.arange(31)).sum()
-    h5f = tables.open_File(filename)
+    h5f = tables.open_file(filename)
     ds = h5f.root.ImageData[0, :, :]
     h5f.close()
     ret  =  genFrameID(ds)
@@ -82,7 +82,7 @@ def genDataSourceID(datasource):
     return genFrameID(datasource.getSlice(0))
 
 def genResultsFileID(filename):
-    h5f = tables.open_File(filename)
+    h5f = tables.open_file(filename)
 
     ds = str(h5f.root.FitResults[0].data)
 
@@ -117,7 +117,7 @@ def genImageID(filename, guess=False):
         if ext == '.h5':
             return genDataFileID(filename)
         elif ext == '.h5r':
-            h5f = tables.open_File(filename)
+            h5f = tables.open_file(filename)
             md = MetaDataHandler.HDFMDHandler(h5f)
 
             if 'Analysis.DataFileID' in md.getEntryNames():
@@ -142,7 +142,7 @@ def genImageTime(filename):
 
     try:
         if ext in ['.h5', '.h5r']:
-            h5f = tables.open_File(filename)
+            h5f = tables.open_file(filename)
             md = MetaDataHandler.HDFMDHandler(h5f)
 
             ret = md.getEntry('StartTime')
@@ -183,7 +183,7 @@ def getFileMetadata(filename):
 
     try:
         if ext in ['.h5', '.h5r']:
-            h5f = tables.open_File(filename)
+            h5f = tables.open_file(filename)
             md = MetaDataHandler.HDFMDHandler(h5f)
 
             mdh = MetaDataHandler.NestedClassMDHandler(md)
@@ -203,7 +203,7 @@ def getImageTags(filename):
 
     try:
         if ext in ['.h5', '.h5r']:
-            h5f = tables.open_File(filename)
+            h5f = tables.open_file(filename)
             if 'Events' in dir(h5f.root):
                 events = h5f.root.Events[:]
 
