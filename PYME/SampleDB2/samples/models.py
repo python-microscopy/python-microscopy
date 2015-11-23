@@ -255,7 +255,7 @@ class File(models.Model):
         '''trys to find a matching tag in the database, otherwise
         creates and returns a new one.
         '''
-
+        import re
         try:
             tn = cls.objects.get(filename=filename)
         except:
@@ -301,15 +301,21 @@ class File(models.Model):
                             print("n is ",n)
 
                             for d in dyes:
-                               if n.startswith(d.shortName) or n.startswith(d.shortName[1:]):
+                               if n.startswith(d.shortName) or n.startswith(d.shortName[1:]) or re.match(r'\s*'+n+r'[sS]',d.shortName):
                                    l.dye = d
+                                   print("found dye ",d)
                             try:
                                 l.dye
                             except:
                                 l.dye = Dye(shortName=n,longName=n)
+                                print "making new dye ", l.dye
+                                l.dye.save()
                             print("dye is ",l.dye)
+                            print 'labelling dye id: ',l.dye_id
+                            if l.dye_id is None:
+                                l.dye_id = l.dye.id
+                            print 'labelling dye id: ',l.dye_id
                             l.save()
-
                 else:
                     slide=None
 
