@@ -431,6 +431,13 @@ class Pipeline:
             
             for i in range(int(self['probe'].min()), int(self['probe'].max()+ 1)):
                 self.mapping.setMapping('p_chan%d' % i, '1.0*(probe == %d)'%i)
+                
+        nSeqCols = self.mdh.getOrDefault('Protocol.NumberSequentialColors', 1)
+        if nSeqCols > 1:
+            for i in range(nSeqCols):
+                self.mapping.setMapping('ColourNorm', '1.0 + 0*t')
+                cr = self.mdh['Protocol.ColorRange%d'%i]
+                self.mapping.setMapping('p_chan%d' % i, '(t>= %d)*(t<%d)' % cr)
 
 
     def SpecFromMetadata(self):
