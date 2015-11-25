@@ -148,10 +148,10 @@ def getStartParameters(data, X, Y, Z=None):
     #clamp dw to valid region
     dw_ = min(max(dw, splines['z'][0][0]), splines['z'][0][-1])
     #lookup z
-    z0 = max(min(splev(dw_, splines['z'])[0], 1000), -1000)
+    z0 = max(min(splev(dw_, splines['z'])[0], 500), -500)
 
     #correct position & intensity estimates for z position
-    A = A/splev(z0, splines['A'])[0]
+    A = A/max(splev(z0, splines['A'])[0], .1)
     x0 = x0 - splev(z0, splines['xp'])[0]
     y0 = y0 - splev(z0, splines['yp'])[0]
 

@@ -264,8 +264,12 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
                 y_ = ((sluy[0] + sluy[1])/2. + self.mdh['Camera.ROIPosY'] - 1)*vy
                 
                 #look up shifts
-                DeltaX = self.mdh['chroma.dx'].ev(x_, y_)
-                DeltaY = self.mdh['chroma.dy'].ev(x_, y_)
+                if not self.mdh.getOrDefault('Analysis.FitShifts', False):
+                    DeltaX = self.mdh.chroma.dx.ev(x_, y_)
+                    DeltaY = self.mdh.chroma.dy.ev(x_, y_)
+                else:
+                    DeltaX = 0
+                    DeltaY = 0
                 
                 #find shift in whole pixels
                 dxp = int(DeltaX/vx)
