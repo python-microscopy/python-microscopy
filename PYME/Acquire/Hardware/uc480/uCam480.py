@@ -48,34 +48,8 @@ import numpy as np
 
 from PYME.Acquire import eventLog
 
-#import threading
-
-#noiseProperties = {
-#1823 : {
-#        'ReadNoise' : 109.8,
-#        'ElectronsPerCount' : 27.32,
-#        'NGainStages' : 536,
-#        'ADOffset' : 971,
-#        'DefaultEMGain' : 150,
-#        'SaturationThreshold' : (2**14 -1)
-#        },
-#5414 : {
-#        'ReadNoise' : 61.33,
-#        'ElectronsPerCount' : 25.24,
-#        'NGainStages' : 536,
-#        'ADOffset' : 413,
-#        'DefaultEMGain' : 90,
-#        'SaturationThreshold' : (2**14 -1)
-#        },
-#7863 : {
-#        'ReadNoise' : 152.69,
-#        'ElectronsPerCount' : 9.18,
-#        'NGainStages' : 536,
-#        'ADOffset' : 203,
-#        'DefaultEMGain' : 90,
-#        'SaturationThreshold' : (2**14 -1)
-#        },    
-#}
+def init(cameratype='uc480'):
+    uc480.init(cameratype)
 
 def GetError(camHandle):
     err = ctypes.c_int()
