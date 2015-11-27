@@ -14,7 +14,7 @@ def configuration(parent_package = '', top_path = None):
     config.add_extension('bcl',
         sources=['bcl.pyx', 'src/huffman.c'],
         include_dirs = ['src', get_numpy_include_dirs()],
-	extra_compile_args = ['-O3', '-fno-exceptions', '-ffast-math', '-march=nocona', '-mtune=nocona'],
+	extra_compile_args = ['-O3', '-fno-exceptions', '-ffast-math', '-march=native', '-mtune=native'],
         extra_link_args=linkArgs)
 
     return config

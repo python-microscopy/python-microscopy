@@ -773,10 +773,10 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         pos = event.GetLogicalPosition(dc)
         pos = self.CalcUnscrolledPosition(*pos)
 
-        print(pos)
+        #print(pos)
         self.do.inOnChange = True
         sc = pow(2.0,(self.do.scale))
-        print(sc)
+        #print(sc)
         if (self.do.slice == self.do.SLICE_XY):
             self.do.xp =int(pos[0]/sc)
             self.do.yp = int(pos[1]/(sc*self.aspect))

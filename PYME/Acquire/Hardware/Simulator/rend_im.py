@@ -91,12 +91,12 @@ def genTheoreticalModel(md):
 
         interpModel = genWidefieldPSF(IntXVals, IntYVals, IntZVals, P,1e3, 0, 0, 0, 2*pi/525, 1.47, 10e3).astype('f')
         
-        print('foo')
-        print((interpModel.strides, interpModel.shape))
+        #print('foo')
+        #print((interpModel.strides, interpModel.shape))
 
         interpModel = np.maximum(interpModel/interpModel[:,:,len(IntZVals)/2].sum(), 0) #normalise to 1 and clip
         
-        print('bar')
+        #print('bar')
 
 genTheoreticalModel(MetaData.TIRFDefault)
 

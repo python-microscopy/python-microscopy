@@ -32,9 +32,9 @@
 ##########################################################################
 
 CC      = gcc
-CFLAGS  = -c -Wall -W -ansi -pedantic -O3
-LFLAGS  = -s
-CFLAGS_EXE = -c -Wall -w -O3 -s
+CFLAGS  = -c -Wall -W -ansi -pedantic -O3 -pg
+LFLAGS  = -s -pg
+CFLAGS_EXE = -c -Wall -w -O3 -s -pg
 
 
 ##########################################################################

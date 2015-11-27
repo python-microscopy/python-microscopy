@@ -10,6 +10,99 @@ Defines a 'wire' format for transmitting or saving image frame data.
 
 import numpy as np
 
+#try:
+from PYME.bcl import bcl
+
+from multiprocessing.pool import ThreadPool
+from multiprocessing import cpu_count
+
+import threading
+
+NUM_COMP_THREADS = 2#cpu_count()
+
+compPool = ThreadPool(NUM_COMP_THREADS)
+
+def ChunkedHuffmanCompress(data):
+    num_chunks = NUM_COMP_THREADS
+    
+    chunk_size = int(np.ceil(float(len(data))/num_chunks))
+    raw_chunks = [data[j*chunk_size:(j+1)*chunk_size].data for j in range(num_chunks)]
+    
+    #compPool = ThreadPool(NUM_COMP_THREADS)
+    
+    comp_chunk_d = {}
+    
+    def _compChunk(c, j):
+        comp_chunk_d[j] = bcl.HuffmanCompress(c)
+    
+    threads = [threading.Thread(target = _compChunk, args=(rc, j)) for j, rc in enumerate(raw_chunks)]
+            
+    for p in threads:
+        #print p
+        p.start()
+
+    for p in threads:
+        p.join()
+
+    
+    #comp_chunks = compPool.map(bcl.HuffmanCompress, raw_chunks) 
+    
+    s = np.array([num_chunks], 'u2').tostring()
+    
+    for j, r in enumerate(raw_chunks):
+        c = comp_chunk_d[j]
+        s += np.array([len(c), len(r)], 'u4').tostring()
+        s += c.tostring()
+        
+    return s
+
+def ChunkedHuffmanCompress_o(data):
+    num_chunks = NUM_COMP_THREADS
+    
+    chunk_size = int(np.ceil(float(len(data))/num_chunks))
+    raw_chunks = [data[j*chunk_size:(j+1)*chunk_size].data for j in range(num_chunks)]
+    
+    #compPool = ThreadPool(NUM_COMP_THREADS)
+    
+    comp_chunks = compPool.map(bcl.HuffmanCompress, raw_chunks) 
+    
+    s = np.array([num_chunks], 'u2').tostring()
+    
+    for c, r in zip(comp_chunks, raw_chunks):
+        s += np.array([len(c), len(r)], 'u4').tostring()
+        s += c.tostring()
+        
+    return s
+
+def _chunkDecompress(args):
+    chunk, length = args
+    return bcl.HuffmanDecompress(np.fromstring(chunk, 'u1'), length)
+    
+def ChunkedHuffmanDecompress(datastring):
+    num_chunks = np.fromstring(datastring[:2], 'u2')
+    
+    #compPool = ThreadPool(NUM_COMP_THREADS)
+    
+    sp = 2
+    
+    comp_chunks = []
+    for i in range(num_chunks):
+        chunk_len, raw_len = np.fromstring(datastring[sp:(sp+8)], 'u4')
+        sp += 8
+        comp_chunks.append((datastring[sp:(sp+ chunk_len)], raw_len))
+        sp += chunk_len
+        
+    
+    decomp_chunks = compPool.map(_chunkDecompress, comp_chunks) 
+    
+    data = np.hstack(decomp_chunks)
+    
+    #print data.shape #, comp_chunks
+    return data
+
+#except ImportError:
+#    pass
+
 FILE_FORMAT_ID = 'BD'
 FORMAT_VERSION = 0
 
@@ -18,9 +111,11 @@ DATA_FMT_UINT16 = 1
 DATA_FMT_FLOAT32 = 2
 
 DATA_FMTS = ['u1', 'u2', 'f4']
+DATA_FMTS_SIZES = [1,2,4]
 
 DATA_COMP_RAW = 0
 DATA_COMP_HUFFCODE = 1
+DATA_COMP_HUFFCODE_CHUNKS = 2
 
 ##############
 # Definition of file header
@@ -68,7 +163,7 @@ def dumps(data, sequenceID=0, frameNum=0, frameTimestamp=0, compression = 'none'
     
     frameTimestamp:  A timestamp for the frame (if provided by the camera)
     
-    compression:  compression method to use (at the moment only huffman is supported)
+    compression:  compression method to use - one of: 'none' of 'huffman'
     '''
     
     header = np.zeros(1, header_dtype)
@@ -97,11 +192,14 @@ def dumps(data, sequenceID=0, frameNum=0, frameTimestamp=0, compression = 'none'
     else:
         header['Depth'] = 1
     
-    if compression == 'huffmann':
+    if compression == 'huffman':
         header['DataCompression'] = DATA_COMP_HUFFCODE
         
-        raise RuntimeError('Compression not implemented yet')
-        dataString = bcl.compress(data.tostring())
+        dataString = bcl.HuffmanCompress(data.data).tostring()
+    elif compression == 'huffman_chunks':
+        header['DataCompression'] = DATA_COMP_HUFFCODE_CHUNKS
+        
+        dataString = ChunkedHuffmanCompress(data)
     else:
         dataString = data.tostring()
         
@@ -114,13 +212,19 @@ def loads(datastring):
     
     if not header['ID'] == FILE_FORMAT_ID:
         raise RuntimeError("Invalid format: This doesn't appear to be a PZF file")
+        
+    w, h, d = header['Width'], header['Height'], header['Depth']
     
     if header['DataCompression'] == DATA_COMP_RAW:
         #no need to decompress
         data = np.fromstring(datastring[HEADER_LENGTH:], DATA_FMTS[header['DataFormat']])
+    elif header['DataCompression'] == DATA_COMP_HUFFCODE:
+        data = bcl.HuffmanDecompress(np.fromstring(datastring[HEADER_LENGTH:], 'u1'), w*h*d*DATA_FMTS_SIZES[header['DataFormat']]).view(DATA_FMTS[header['DataFormat']])
+    elif header['DataCompression'] == DATA_COMP_HUFFCODE_CHUNKS:
+        data = ChunkedHuffmanDecompress(datastring[HEADER_LENGTH:]).view(DATA_FMTS[header['DataFormat']])
     else:
-        raise RuntimeError('Compression not yet implemented')
+        raise RuntimeError('Compression type not understood')
     
-    data = data.reshape([header['Width'], header['Height'], header['Depth']])
+    data = data.reshape([w,h,d])
     
     return data, header
