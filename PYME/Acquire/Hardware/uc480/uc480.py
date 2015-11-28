@@ -108,6 +108,9 @@ PUEYE_CAMERA_INFO = ctypes.POINTER(UEYE_CAMERA_INFO)
 libuc480=None # initialise at module level
 
 def init(cameratype='uc480'):
+
+        global libuc480
+
         if os.name=='nt':
         # UNTESTED: Please report results to http://code.google.com/p/pylibuc480/issues
                 libname = 'uc480'
@@ -121,8 +124,10 @@ def init(cameratype='uc480'):
         #libuc480 = ctypes.cdll.LoadLibrary(lib)
         if cameratype=='uc480':
                 libuc480 = ctypes.WinDLL('uc480_64')
+                print "loading uc480_64"
         elif cameratype=='ueye':
                 libuc480 = ctypes.WinDLL('ueye_api_64')
+                print "loading ueye_api_64"
         else:
                 raise "unknown camera type"
         
