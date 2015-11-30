@@ -51,6 +51,13 @@ from PYME.Acquire import eventLog
 def init(cameratype='uc480'):
     uc480.init(cameratype)
 
+def errcheck(value,msg,fatal=True):
+    if not value == uc480.IS_SUCCESS:
+        if fatal:
+            raise RuntimeError('%s: %d: %s' % [msg]+GetError(self.boardHandle))
+        else:
+            print 'Error %s: %d: %s' % [msg]+GetError(self.boardHandle)
+
 def GetError(camHandle):
     err = ctypes.c_int()
     errMessage = ctypes.c_char_p()
@@ -141,9 +148,10 @@ class uc480Camera:
         uc480.CALL('SetAutoParameter', self.boardHandle, uc480.IS_SET_ENABLE_AUTO_SHUTTER, byref(dEnable), 0)
         #uc480.CALL('SetAutoParameter', self.boardHandle, uc480.IS_SET_ENABLE_AUTO_SENOR_GAIN, byref(dEnable), 0)
         
-        uc480.CALL('SetGainBoost', self.boardHandle, uc480.IS_SET_GAINBOOST_ON)
-        #uc480.CALL('SetHardwareGain', self.boardHandle, 100, uc480.IS_IGNORE_PARAMETER, uc480.IS_IGNORE_PARAMETER, uc480.IS_IGNORE_PARAMETER)
-        
+        ret = uc480.CALL('SetGainBoost', self.boardHandle, uc480.IS_SET_GAINBOOST_OFF)
+        errcheck(ret,'GainBoost',fatal=False)
+        ret = uc480.CALL('SetHardwareGain', self.boardHandle, 10, uc480.IS_IGNORE_PARAMETER, uc480.IS_IGNORE_PARAMETER, uc480.IS_IGNORE_PARAMETER)
+        errcheck(ret,'HardwareGain',fatal=False)
         uc480.CALL('SetImageSize', self.boardHandle, self.CCDSize[0],self.CCDSize[1] )
         
         #uc480.CALL('GetColorDepth', self.boardHandle, &m_nBitsPerPixel, &m_nColorMode);
