@@ -111,14 +111,14 @@ def init(cameratype='uc480'):
 
         global libuc480
 
-        if os.name=='nt':
-        # UNTESTED: Please report results to http://code.google.com/p/pylibuc480/issues
-                libname = 'uc480'
-                include_uc480_h = os.environ['PROGRAMFILES']+'\\Thorlabs DCU camera\\Develop\\Include\\uc480.h'
-                lib = ctypes.util.find_library(libname)
-                if lib is None:
-                        print('uc480.dll not found')
-                lib = libname
+        # if os.name=='nt':
+        # # UNTESTED: Please report results to http://code.google.com/p/pylibuc480/issues
+        #         libname = 'uc480'
+        #         include_uc480_h = os.environ['PROGRAMFILES']+'\\Thorlabs DCU camera\\Develop\\Include\\uc480.h'
+        #         lib = ctypes.util.find_library(libname)
+        #         if lib is None:
+        #                 print('uc480.dll not found')
+        #         lib = libname
 
 		
         #libuc480 = ctypes.cdll.LoadLibrary(lib)
@@ -131,19 +131,22 @@ def init(cameratype='uc480'):
         else:
                 raise "unknown camera type"
         
-        if libuc480 is not None:
-	        uc480_h_name = 'uc480_h'
-	        try:
-		        uc480_h = "uc480_h"
-		        #from uc480_h import *
-		        #exec 'from %s import *' % (uc480_h_name)
-	        except ImportError:
-		        uc480_h = None
-	        if uc480_h is None:
-                        generate_uc480_h(include_uc480_h)
-	else:
-		pass
+        # if libuc480 is not None:
+	#         uc480_h_name = 'uc480_h'
+	#         try:
+	# 	        uc480_h = "uc480_h"
+	# 	        #from uc480_h import *
+	# 	        #exec 'from %s import *' % (uc480_h_name)
+	#         except ImportError:
+	# 	        uc480_h = None
+	#         if uc480_h is None:
+        #                 generate_uc480_h(include_uc480_h)
+	# else:
+	# 	pass
 
+# this is not really tested at all - I suspect the include file parsing code would need
+# a full overhaul
+# we ignore it for now
 def generate_uc480_h(include_uc480_h):
 	assert os.path.isfile(include_uc480_h), repr(include_uc480_h)
 	d = {}
