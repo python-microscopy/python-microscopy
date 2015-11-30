@@ -305,10 +305,10 @@ def abscorrel(a,b):
 
     return corr
 
-def cent2d(im):
+def cent2d(im,usefrac=0.25):
     im -= im.min()
     
-    im = np.maximum(im - im.max()*.75, 0)
+    im = np.maximum(im - im.max()*(1.0-usefrac), 0)
                 
     xi, yi = np.where(im)
     
@@ -320,7 +320,7 @@ def cent2d(im):
 
     return [dxi,dyi]
 
-def trackser(ref, series, frange=None):
+def trackser(ref, series, frange=None, usefrac=0.25):
     if frange is None:
         frange = range(series.shape[2])
     nframes = len(frange)
@@ -329,7 +329,7 @@ def trackser(ref, series, frange=None):
     dy = np.zeros(nframes)
     for i in range(nframes):
         corr = abscorrel(ref,series[:,:,frange[i]].squeeze())
-        dxi, dyi = cent2d(corr)
+        dxi, dyi = cent2d(corr,usefrac=usefrac)
         dx[i] = dxi
         dy[i] = dyi
 

@@ -91,6 +91,8 @@ class uc480Camera:
     def __init__(self, boardNum=0, nbits = 8):
         self.initialised = False
         self.active = True
+        if nbits != 8 and nbits != 12:
+            raise RuntimeError('Supporting only 8 or 12 bit depth, requested &d bit' % (nbits))
         self.nbits = nbits
 
         self.boardHandle = wintypes.HANDLE(boardNum)
@@ -134,6 +136,7 @@ class uc480Camera:
         #a file later.
         
         dEnable = c_double(0);
+        # CS: this may need changing for the Sony chip - autogain issues!
         uc480.CALL('SetAutoParameter', self.boardHandle, uc480.IS_SET_ENABLE_AUTO_GAIN, byref(dEnable), 0)
         uc480.CALL('SetAutoParameter', self.boardHandle, uc480.IS_SET_ENABLE_AUTO_SHUTTER, byref(dEnable), 0)
         #uc480.CALL('SetAutoParameter', self.boardHandle, uc480.IS_SET_ENABLE_AUTO_SENOR_GAIN, byref(dEnable), 0)
@@ -144,11 +147,27 @@ class uc480Camera:
         uc480.CALL('SetImageSize', self.boardHandle, self.CCDSize[0],self.CCDSize[1] )
         
         #uc480.CALL('GetColorDepth', self.boardHandle, &m_nBitsPerPixel, &m_nColorMode);
-        uc480.CALL('SetColorMode', self.boardHandle, uc480.IS_SET_CM_BAYER)
-        
+        # CS - BITS: memory depth in here - the color mode may require something in accordance with bit depth!
+        # CS: this call may not even be necessary as it only affects the graphics card
+        # CS: On reflection this may be used to set the memory format, for 12 bits we should use a different value
+        # CS: 8bit  constant: IS_SET_CM_BAYER is supposed to be replaced by IS_CM_BAYER_RG8
+        # CS: 8bit monochrome: IS_CM_SENSOR_RAW8 should replace IS_CM_BAYER_RG8
+        # CS: 12bit constant: IS_CM_SENSOR_RAW12
+        # CS: infor from SetColorMode and "Color and memory formats" appendix
+        if self.nbits == 8:
+            colormode = uc480.IS_SET_CM_BAYER # update to new const IS_CM_SENSOR_RAW8 once checked that 8 bit works
+        elif self.nbits == 12:
+            colormode = uc480.IS_CM_SENSOR_RAW12
+        ret = uc480.CALL('SetColorMode', self.boardHandle, colormode)
+        if not ret == uc480.IS_SUCCESS:
+            raise RuntimeError('Error setting ColorMode: %d: %s' % GetError(self.boardHandle))
+       
+        # CS - BITS: memory depth in here
         if self.nbits == 12:
-            uc480.CALL('DeviceFeature', self.boardHandle, uc480.IS_DEVICE_FEATURE_CMD_SET_SENSOR_BIT_DEPTH, byref(uc480.IS_SENSOR_BIT_DEPTH_12_BIT) , sizeof(nBitDepth))
-
+            depth12bit = c_uint32(uc480.IS_SENSOR_BIT_DEPTH_12_BIT)
+            ret = uc480.CALL('DeviceFeature', self.boardHandle, uc480.IS_DEVICE_FEATURE_CMD_SET_SENSOR_BIT_DEPTH, byref(depth12bit) , sizeof(depth12bit))
+            if not ret == uc480.IS_SUCCESS:
+                raise RuntimeError('Error setting to 12 bits: %d: %s' % GetError(self.boardHandle))
 
         uc480.CALL('SetBinning', self.boardHandle, uc480.IS_BINNING_DISABLE)
         self.binning=False #binning flag - binning is off
@@ -195,8 +214,13 @@ class uc480Camera:
         for i in range(nBuffers):
             pData = POINTER(c_char)()
             bufID = c_int(0)
-            ret = uc480.CALL('AllocImageMem', self.boardHandle, self.GetPicWidth(), self.GetPicHeight(), 8, ctypes.byref(pData), ctypes.byref(bufID))
-            
+            # CS - BITS: memory depth in here
+            if self.nbits == 8:
+                bitsperpix = 8
+            elif self.nbits == 12:
+                bitsperpix = 16
+
+            ret = uc480.CALL('AllocImageMem', self.boardHandle, self.GetPicWidth(), self.GetPicHeight(), bitsperpix, ctypes.byref(pData), ctypes.byref(bufID))
             if not ret == uc480.IS_SUCCESS:
                 raise RuntimeError('Error allocating memory: %d: %s' % GetError(self.boardHandle))
             #ret = uc480.CALL('SetImageMem', self.boardHandle, pData, bufID)
@@ -212,9 +236,17 @@ class uc480Camera:
         if not ret == uc480.IS_SUCCESS:
                 raise RuntimeError('error initialising queue: %d: %s' % GetError(self.boardHandle))
                 
-        self.transferBuffer = np.zeros([self.GetPicHeight(), self.GetPicWidth()], np.uint8)
+        # CS - BITS: memory depth in here
+        if self.nbits == 8:
+            bufferdtype = np.uint8
+        elif self.nbits == 12:
+            bufferdtype = np.uint16
+        self.transferBuffer = np.zeros([self.GetPicHeight(), self.GetPicWidth()], bufferdtype)
         
         self.freeBuffers = Queue.Queue()
+        # CS - BITS: memory depth (potentially) in here
+        # CS: we leave this as uint16 regardless of 8 or 12 bits for now as accumulation
+        #     of the underlying 12 bit data should be ok (but maybe not?)
         for i in range(nAccumBuffers):
             self.freeBuffers.put(np.zeros([self.GetPicHeight(), self.GetPicWidth()], np.uint16))
         self.accumBuffer = self.freeBuffers.get()
@@ -243,6 +275,7 @@ class uc480Camera:
             print 'Wait for image failed with:', ret
             return
             
+        # CS - BITS: memory depth (potentially) in here - datatype?
         ret = uc480.CALL('CopyImageMem', self.boardHandle, pData, bufID, self.transferBuffer.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)))
         if not ret == uc480.IS_SUCCESS:
             print 'CopyImageMem failed with:', ret
