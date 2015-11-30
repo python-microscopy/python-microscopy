@@ -155,7 +155,7 @@ class uc480Camera:
         # CS: 12bit constant: IS_CM_SENSOR_RAW12
         # CS: infor from SetColorMode and "Color and memory formats" appendix
         if self.nbits == 8:
-            colormode = uc480.IS_SET_CM_BAYER # update to new const IS_CM_SENSOR_RAW8 once checked that 8 bit works
+            colormode = uc480.IS_CM_SENSOR_RAW8 # update to new const IS_CM_SENSOR_RAW8 once checked that 8 bit works
         elif self.nbits == 12:
             colormode = uc480.IS_CM_SENSOR_RAW12
         ret = uc480.CALL('SetColorMode', self.boardHandle, colormode)
@@ -163,7 +163,7 @@ class uc480Camera:
             raise RuntimeError('Error setting ColorMode: %d: %s' % GetError(self.boardHandle))
        
         # CS - BITS: memory depth in here
-        if self.nbits == 12:
+        if self.nbits == 12 and False:
             depth12bit = c_uint32(uc480.IS_SENSOR_BIT_DEPTH_12_BIT)
             ret = uc480.CALL('DeviceFeature', self.boardHandle, uc480.IS_DEVICE_FEATURE_CMD_SET_SENSOR_BIT_DEPTH, byref(depth12bit) , sizeof(depth12bit))
             if not ret == uc480.IS_SUCCESS:
