@@ -128,6 +128,8 @@ class uc480Camera:
             raise RuntimeError('Error getting CCD size: %d: %s' % GetError(self.boardHandle))
 
         self.CCDSize=(sensorProps.nMaxWidth, sensorProps.nMaxHeight)
+        senstype = ctypes.cast(sensorProps.strSensorName, ctypes.c_char_p)
+        self.sensortype = senstype.value
 
         #-------------------
         #Do initial setup with a whole bunch of settings I've arbitrarily decided are
@@ -655,10 +657,7 @@ class uc480Camera:
         return self.serialNum
 
     def GetHeadModel(self):
-        #self.__selectCamera()
-        hm = create_string_buffer(255)
-        ac.GetHeadModel(hm)
-        return hm.value
+        return self.sensortype
 
     def SetActive(self, active=True):
         '''flag the camera as active (or inactive) to dictate whether it writes it's metadata or not'''
@@ -668,8 +667,8 @@ class uc480Camera:
         if self.active: #we are active -> write metadata
             self.GetStatus()
 
-            mdh.setEntry('Camera.Name', 'Thorlabs')
-            #mdh.setEntry('Camera.Model', self.GetHeadModel())
+            mdh.setEntry('Camera.Name', 'UC480-UEYE')
+            mdh.setEntry('Camera.Model', self.GetHeadModel())
             mdh.setEntry('Camera.SerialNumber', self.GetSerialNumber())
 
             mdh.setEntry('Camera.IntegrationTime', self.GetIntegTime())
@@ -681,24 +680,6 @@ class uc480Camera:
             mdh.setEntry('Camera.ROIWidth', self.GetROIX2() - self.GetROIX1())
             mdh.setEntry('Camera.ROIHeight',  self.GetROIY2() - self.GetROIY1())
             #mdh.setEntry('Camera.StartCCDTemp',  self.GetCCDTemp())
-
-            #these should really be read from a configuration file
-            #hard code them here until I get around to it
-            #current values are at 10Mhz using e.m. amplifier
-            #np = noiseProperties[self.GetSerialNumber()]
-            #mdh.setEntry('Camera.ReadNoise', np['ReadNoise'])
-            #mdh.setEntry('Camera.NoiseFactor', 1.41)
-            #mdh.setEntry('Camera.ElectronsPerCount', np['ElectronsPerCount'])
-
-            #realEMGain = ccdCalibrator.getCalibratedCCDGain(self.GetEMGain(), self.GetCCDTempSetPoint())
-            #if not realEMGain == None:
-            #    mdh.setEntry('Camera.TrueEMGain', realEMGain)
-
-#    def __getattr__(self, name):
-#        if name in self.noiseProps.keys():
-#            return self.noiseProps[name]
-#        else:  raise AttributeError, name  # <<< DON'T FORGET THIS LINE !!
-
 
     def __del__(self):
         if self.initialised:
