@@ -51,13 +51,6 @@ from PYME.Acquire import eventLog
 def init(cameratype='uc480'):
     uc480.init(cameratype)
 
-def errcheck(value,msg,fatal=True):
-    if not value == uc480.IS_SUCCESS:
-        if fatal:
-            raise RuntimeError('%s: %d: %s' % [msg]+GetError(self.boardHandle))
-        else:
-            print 'Error %s: %d: %s' % [msg]+GetError(self.boardHandle)
-
 def GetError(camHandle):
     err = ctypes.c_int()
     errMessage = ctypes.c_char_p()
@@ -142,40 +135,33 @@ class uc480Camera:
         #These settings will hopefully be able to be changed with methods/ read from
         #a file later.
         
-        dEnable = c_double(0);
-        # CS: this may need changing for the Sony chip - autogain issues!
+        dEnable = c_double(0); # don't enable
         uc480.CALL('SetAutoParameter', self.boardHandle, uc480.IS_SET_ENABLE_AUTO_GAIN, byref(dEnable), 0)
         uc480.CALL('SetAutoParameter', self.boardHandle, uc480.IS_SET_ENABLE_AUTO_SHUTTER, byref(dEnable), 0)
         #uc480.CALL('SetAutoParameter', self.boardHandle, uc480.IS_SET_ENABLE_AUTO_SENOR_GAIN, byref(dEnable), 0)
         
+        # may need to revisit the gain - currently using 10 which translates into different gains depending on chip (I believe)
+        # had to reduce from 100 to avoid saturating camera at lowish light levels
         ret = uc480.CALL('SetGainBoost', self.boardHandle, uc480.IS_SET_GAINBOOST_OFF)
-        errcheck(ret,'GainBoost',fatal=False)
+        self.errcheck(ret,'SetGainBoost',fatal=False)
         ret = uc480.CALL('SetHardwareGain', self.boardHandle, 10, uc480.IS_IGNORE_PARAMETER, uc480.IS_IGNORE_PARAMETER, uc480.IS_IGNORE_PARAMETER)
-        errcheck(ret,'HardwareGain',fatal=False)
+        self.errcheck(ret,'SetHardwareGain',fatal=False)
+
         uc480.CALL('SetImageSize', self.boardHandle, self.CCDSize[0],self.CCDSize[1] )
         
         #uc480.CALL('GetColorDepth', self.boardHandle, &m_nBitsPerPixel, &m_nColorMode);
         # CS - BITS: memory depth in here - the color mode may require something in accordance with bit depth!
-        # CS: this call may not even be necessary as it only affects the graphics card
-        # CS: On reflection this may be used to set the memory format, for 12 bits we should use a different value
         # CS: 8bit  constant: IS_SET_CM_BAYER is supposed to be replaced by IS_CM_BAYER_RG8
         # CS: 8bit monochrome: IS_CM_SENSOR_RAW8 should replace IS_CM_BAYER_RG8
         # CS: 12bit constant: IS_CM_SENSOR_RAW12
-        # CS: infor from SetColorMode and "Color and memory formats" appendix
+        # CS: info from SetColorMode and "Color and memory formats" appendix
+        # note: the monochrome constants may be preferable
         if self.nbits == 8:
-            colormode = uc480.IS_CM_SENSOR_RAW8 # update to new const IS_CM_SENSOR_RAW8 once checked that 8 bit works
+            colormode = uc480.IS_CM_SENSOR_RAW8 # update to new const IS_CM_SENSOR_RAW8
         elif self.nbits == 12:
             colormode = uc480.IS_CM_SENSOR_RAW12
         ret = uc480.CALL('SetColorMode', self.boardHandle, colormode)
-        if not ret == uc480.IS_SUCCESS:
-            raise RuntimeError('Error setting ColorMode: %d: %s' % GetError(self.boardHandle))
-       
-        # CS - BITS: memory depth in here
-        if self.nbits == 12 and False:
-            depth12bit = c_uint32(uc480.IS_SENSOR_BIT_DEPTH_12_BIT)
-            ret = uc480.CALL('DeviceFeature', self.boardHandle, uc480.IS_DEVICE_FEATURE_CMD_SET_SENSOR_BIT_DEPTH, byref(depth12bit) , sizeof(depth12bit))
-            if not ret == uc480.IS_SUCCESS:
-                raise RuntimeError('Error setting to 12 bits: %d: %s' % GetError(self.boardHandle))
+        self.errcheck(ret,'setting ColorMode')
 
         uc480.CALL('SetBinning', self.boardHandle, uc480.IS_BINNING_DISABLE)
         self.binning=False #binning flag - binning is off
@@ -211,6 +197,13 @@ class uc480Camera:
         
         self.Init()
         
+    def errcheck(self,value,msg,fatal=True):
+    if not value == uc480.IS_SUCCESS:
+        if fatal:
+            raise RuntimeError('Error %s: %d: %s' % [msg]+GetError(self.boardHandle))
+        else:
+            print 'Error %s: %d: %s' % [msg]+GetError(self.boardHandle)
+
     def Init(self):        
         #set up polling thread        
         self.doPoll = False
@@ -283,7 +276,6 @@ class uc480Camera:
             print 'Wait for image failed with:', ret
             return
             
-        # CS - BITS: memory depth (potentially) in here - datatype?
         ret = uc480.CALL('CopyImageMem', self.boardHandle, pData, bufID, self.transferBuffer.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)))
         if not ret == uc480.IS_SUCCESS:
             print 'CopyImageMem failed with:', ret
