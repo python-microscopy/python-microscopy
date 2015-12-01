@@ -185,11 +185,11 @@ class uc480Camera:
         self.Init()
         
     def errcheck(self,value,msg,fatal=True):
-    if not value == uc480.IS_SUCCESS:
-        if fatal:
-            raise RuntimeError('Error %s: %d: %s' % [msg]+GetError(self.boardHandle))
-        else:
-            print 'Error %s: %d: %s' % [msg]+GetError(self.boardHandle)
+        if not value == uc480.IS_SUCCESS:
+            if fatal:
+                raise RuntimeError('Error %s: %d: %s' % [msg]+GetError(self.boardHandle))
+            else:
+                print 'Error %s: %d: %s' % [msg]+GetError(self.boardHandle)
 
     def Init(self):        
         #set up polling thread        
