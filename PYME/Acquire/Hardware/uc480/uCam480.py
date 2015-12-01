@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 ##################
-# AndorIXon.py
+# uCam480.py
 #
 # Copyright David Baddeley, 2009
 # d.baddeley@auckland.ac.nz
@@ -27,10 +27,8 @@ import ctypes
 import time
 import sys
 from PYME.Acquire import MetaDataHandler
-from PYME.Acquire.Hardware import ccdCalibrator
 
 import os
-#from PYME.DSView import image
 from PYME.FileUtils import nameUtils
 
 import threading
@@ -41,10 +39,6 @@ except ImportError:
     import queue as Queue
 
 import numpy as np
-#import example
-#import scipy
-
-#import pylab
 
 from PYME.Acquire import eventLog
 
@@ -107,22 +101,16 @@ class uc480Camera:
         #register as a provider of metadata
         MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
 
-        #self.noiseProps = noiseProperties[self.GetSerialNumber()]
-        
         caminfo = uc480.CAMINFO()
         ret = uc480.CALL('GetCameraInfo', self.boardHandle, ctypes.byref(caminfo))
         if not ret == 0:
             raise RuntimeError('Error getting camera info: %d: %s' % GetError(self.boardHandle))
         
         self.serialNum = caminfo.SerNo
-        
 
         #get the CCD size 
         sensorProps = uc480.SENSORINFO()
         
-        #ccdWidth = ac.GetDetector.argtypes[0]._type_()
-        #ccdHeight = ac.GetDetector.argtypes[1]._type_()
-
         ret = uc480.CALL('GetSensorInfo', self.boardHandle, ctypes.byref(sensorProps))
         if not ret == 0:
             raise RuntimeError('Error getting CCD size: %d: %s' % GetError(self.boardHandle))
@@ -151,7 +139,6 @@ class uc480Camera:
 
         uc480.CALL('SetImageSize', self.boardHandle, self.CCDSize[0],self.CCDSize[1] )
         
-        #uc480.CALL('GetColorDepth', self.boardHandle, &m_nBitsPerPixel, &m_nColorMode);
         # CS - BITS: memory depth in here - the color mode may require something in accordance with bit depth!
         # CS: 8bit  constant: IS_SET_CM_BAYER is supposed to be replaced by IS_CM_BAYER_RG8
         # CS: 8bit monochrome: IS_CM_SENSOR_RAW8 should replace IS_CM_BAYER_RG8
@@ -194,8 +181,6 @@ class uc480Camera:
         
         self.nAccum = 1
         self.nAccumCurrent = 0
-        
-        
         
         self.Init()
         
@@ -309,8 +294,6 @@ class uc480Camera:
                 #print 'w',
                 time.sleep(.05)
             time.sleep(.0005)
-        
-
 
     def GetCamType(*args):
         raise Exception('Not implemented yet!!')
@@ -357,7 +340,6 @@ class uc480Camera:
         else:
             self.contMode = True
 
-
     def SetIntegTime(self, iTime):
         #self.__selectCamera()
         newExp = c_double(0)
@@ -373,13 +355,6 @@ class uc480Camera:
         self.expTime = newExp.value
 
     def GetIntegTime(self):
-        #self.__selectCamera()
-        #newExp = c_double(0)
-        #ret = uc480.CALL('Exposure', self.boardHandle, uc480.IS_GET_EXPOSURE_TIME, ctypes.byref(newExp), 8)
-        #if not ret == 0:
-        #    raise RuntimeError('Error getting exp time: %d: %s' % GetError(self.boardHandle))
-
-        #return float(newExp.value)
         return self.expTime
 
     def SetROIMode(*args):
@@ -407,12 +382,6 @@ class uc480Camera:
         return self.CCDSize[1]
 
     def SetHorizBin(self, val):
-#        self.__selectCamera()
-#        self.binX = val
-#        
-#        ret = ac.SetImage(self.binX,self.binY,self.ROIx[0],self.ROIx[1],self.ROIy[0],self.ROIy[1])
-#        if not ret == ac.DRV_SUCCESS:
-#            raise RuntimeError('Error setting image size: %s' % ac.errorCodes[ret])
         raise Exception('Not implemented yet!!')
 
     def GetHorizBin(self):
@@ -424,12 +393,6 @@ class uc480Camera:
         return self.binX
 
     def SetVertBin(self, val):
-#        self.__selectCamera()
-#        self.binY = val
-#
-#        ret = ac.SetImage(self.binX,self.binY,self.ROIx[0],self.ROIx[1],self.ROIy[0],self.ROIy[1])
-#        if not ret == ac.DRV_SUCCESS:
-#            raise RuntimeError('Error setting image size: %s' % ac.errorCodes[ret])
         raise Exception('Not implemented yet!!')
 
     def GetVertBin(*args):
@@ -454,7 +417,6 @@ class uc480Camera:
 
     def GetPicWidth(self):
         return (self.ROIx[1] - self.ROIx[0] + 1)/self.binX
-
 
     def GetPicHeight(self):
         return (self.ROIy[1] - self.ROIy[0] + 1)/self.binY
@@ -485,8 +447,6 @@ class uc480Camera:
 
         else: #y1 == y2 - BAD
             raise RuntimeError('Error Setting y ROI - Zero sized ROI')
-
-        #ret = ac.SetImage(self.binX,self.binY,self.ROIx[0],self.ROIx[1],self.ROIy[0],self.ROIy[1])
         
         rect = uc480.IS_RECT()
         rect.s32X =  self.ROIx[0] - 1
@@ -602,7 +562,6 @@ class uc480Camera:
 
     def SetEMGain(self, gain):
         raise Exception('Not implemented yet!!')
-       
 
     def GetEMGain(self):
         return self.EMGain
@@ -632,7 +591,6 @@ class uc480Camera:
         ret = uc480.CALL('ExitCamera', self.boardHandle)
         self.initialised = False
         
-        
     def GetFPS(self):
         fps = c_double(0)        
         
@@ -649,11 +607,7 @@ class uc480Camera:
         pass
         #raise Exception, 'Not implemented yet!!'
         
-        
     def GetSerialNumber(self):
-        #self.__selectCamera()
-        #sn = ac.GetCameraSerialNumber.argtypes[0]._type_()
-        #ac.GetCameraSerialNumber(byref(sn))
         return self.serialNum
 
     def GetHeadModel(self):
@@ -673,13 +627,11 @@ class uc480Camera:
 
             mdh.setEntry('Camera.IntegrationTime', self.GetIntegTime())
             mdh.setEntry('Camera.CycleTime', 1./self.GetFPS())
-            #mdh.setEntry('Camera.EMGain', self.GetEMGain())
 
             mdh.setEntry('Camera.ROIPosX', self.GetROIX1())
             mdh.setEntry('Camera.ROIPosY',  self.GetROIY1())
             mdh.setEntry('Camera.ROIWidth', self.GetROIX2() - self.GetROIX1())
             mdh.setEntry('Camera.ROIHeight',  self.GetROIY2() - self.GetROIY1())
-            #mdh.setEntry('Camera.StartCCDTemp',  self.GetCCDTemp())
 
     def __del__(self):
         if self.initialised:
