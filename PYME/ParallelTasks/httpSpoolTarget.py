@@ -7,6 +7,8 @@ from PYME.ParallelTasks import HDFTaskQueue
 import time
 import cPickle as pickle
 
+from PYME.FileUtils import PZFFormat
+
 import tables
 import json
 
@@ -23,11 +25,19 @@ class H5File(object):
 
         self.complevel = 6
         self.complib = 'zlib'
+        
+        self.usePZFFormat = True
+        self.PZFCompression = 'huffman'
 
         self.mdh = MetaDataHandler.CachingMDHandler(MetaDataHandler.HDFMDHandler(self.h5f))
 
         if 'ImageData' in dir(self.h5f.root):
             self.dshape = [self.h5f.root.ImageData.shape[1], self.h5f.root.ImageData.shape[2], self.h5f.root.ImageData.shape[0]]
+            self.usePZFFormat = False
+        elif 'PZFImageData' in dir(self.h5f.root):
+            self.dshape = [0,0,self.hf5.root.PZFImageData.shape[0]]
+            self.dshape[:2] = self.hf5.root.PZFImageData.framesize
+            self.usePZFFormat = True
         else:
             self.dshape = [0,0,0]
         
@@ -42,7 +52,19 @@ class H5File(object):
     def getFrame(self, frameNo):
         if frameNo >= self.dshape[2]:
             raise IndexError('Index out of bounds')
-        return self.h5f.root.ImageData[frameNo, :,:].dumps()
+        if not self.usePZFFormat:
+            return self.h5f.root.ImageData[frameNo, :,:].dumps()
+        else:
+            f, h = PZFFormat.loads(self.h5f.root.PZFImageData[frameNo])
+            return f.dumps()# f.reshape((1,) + f.shape[:2]).dumps()
+            
+    def getPZFFrame(self, frameNo):
+        if frameNo >= self.dshape[2]:
+            raise IndexError('Index out of bounds')
+        if not self.usePZFFormat:
+            return PZFFormat.dumps(self.h5f.root.ImageData[frameNo, :,:].squeeze(), compression = self.PZFCompression)
+        else:
+            return self.h5f.root.PZFImageData[frameNo]
 
     def getEvent(self, eventNo):
     	if eventNo >= self.nEvents:
@@ -53,43 +75,101 @@ class H5File(object):
         if self.nEvents > 0:
             return self.h5f.root.Events[:].dumps()
         else:
-            return pickle.dumps([])
+            return pickle.dumps([], 2)
 
     def getMetadata(self):
-    	return pickle.dumps(MetaDataHandler.NestedClassMDHandler(self.mdh))
+    	return pickle.dumps(MetaDataHandler.NestedClassMDHandler(self.mdh), 2)
 
     def _checkCreateDataTable(self, f):
-    	if not 'ImageData' in dir(self.h5f.root):
-            filt = tables.Filters(self.complevel, self.complib, shuffle=True)
+        if (not 'ImageData' in dir(self.h5f.root)) and (not 'PZFImageData' in dir(self.h5f.root)):
+            if isinstance(f, str):
+                #is a PZF file
+                f = PZFFormat.loads(f)[0]
+                f.reshape((1,) + f.shape[:2])
+
             framesize = f.shape[1:3]
-            self.imageData = self.h5f.createEArray(self.h5f.root, 'ImageData', tables.UInt16Atom(), (0,)+tuple(framesize), filters=filt, chunkshape=(1,)+tuple(framesize))
-            #self.events = self.h5DataFile.createTable(self.h5DataFile.root, 'Events', HDFTaskQueue.SpoolEvent,filters=filt)
-            self.dshape[:2] = framesize
+            self.dshape[:2] = framesize            
+            
+            if not self.usePZFFormat:                
+                filt = tables.Filters(self.complevel, self.complib, shuffle=True)
+                self.imageData = self.h5f.createEArray(self.h5f.root, 'ImageData', tables.UInt16Atom(), (0,)+tuple(framesize), filters=filt, chunkshape=(1,)+tuple(framesize))                
+            else:
+                self.compImageData = self.h5f.createVLArray(self.h5f.root, 'PZFImageData', tables.VLStringAtom())
+                self.compImageData.attrs.framesize = framesize            
+
 
     def _checkCreateEventsTable(self):
     	if not 'Events' in dir(self.h5f.root):
-            filt = tables.Filters(self.complevel, self.complib, shuffle=True)
-            self.events = self.h5f.createTable(self.h5f.root, 'Events', HDFTaskQueue.SpoolEvent,filters=filt)
+         filt = tables.Filters(self.complevel, self.complib, shuffle=True)
+         self.events = self.h5f.createTable(self.h5f.root, 'Events', HDFTaskQueue.SpoolEvent,filters=filt)
             
     
     def putFrame(self, frame):
-    	f = pickle.loads(frame)
-    	self._checkCreateDataTable(f)
-
-        self.imageData.append(f)
-        self.imageData.flush()
+        f = pickle.loads(frame)
+        self._checkCreateDataTable(f)
+        
+        if self.usePZFFormat:
+            self.compImageData.append(PZFFormat.dumps(f.squeeze(), compression = self.PZFCompression))
+            self.compImageData.flush()
+        else:
+            self.imageData.append(f)
+            self.imageData.flush()
+        self.dshape[2] += 1
+        
+    def putPZFFrame(self, frame):
+        self._checkCreateDataTable(frame)
+        
+        if self.usePZFFormat:
+            self.compImageData.append(frame)
+            self.compImageData.flush()
+        else:
+            f, h = PZFFormat.loads(frame)
+            self.imageData.append(f.reshape((1,) + f.shape[:2]))
+            self.imageData.flush()
         self.dshape[2] += 1
 
     def putFrames(self, frames):
+        t1 = time.time()
         fs = pickle.loads(frames)
+        t2 = time.time()
         self._checkCreateDataTable(fs[0])
         
-        for f in fs:
-            #print f.shape
-            self.imageData.append(f)
-            self.dshape[2] += 1
+        if self.usePZFFormat:        
+            for f in fs:
+                self.compImageData.append(PZFFormat.dumps(f.squeeze(), compression = self.PZFCompression))
+                self.dshape[2] += 1
+            
+            self.compImageData.flush()
+        else:
+            for f in fs:
+                self.imageData.append(f)
+                self.dshape[2] += 1
         
-        self.imageData.flush()
+            self.imageData.flush()
+        
+        print (time.time() - t1)/float(len(fs)), (t2-t1)/float(len(fs))
+        
+    def putPZFFrames(self, frames):
+        t1 = time.time()
+        fs = pickle.loads(frames)
+        t2 = time.time()
+        self._checkCreateDataTable(fs[0])
+        
+        if self.usePZFFormat:        
+            for f in fs:
+                self.compImageData.append(f)
+                self.dshape[2] += 1
+            
+            self.compImageData.flush()
+        else:
+            for f in fs:
+                f, h = PZFFormat.loads(f)
+                self.imageData.append(f.reshape([0,] + f.shape[:2]))
+                self.dshape[2] += 1
+        
+            self.imageData.flush()
+        
+        print (time.time() - t1)/float(len(fs)), (t2-t1)/float(len(fs))
         
     def putEvent(self, event):
         #self._checkCreateEventsTable()
@@ -114,8 +194,8 @@ class H5File(object):
         self.mdh[key] = value
 
 class GetHandler(BaseHTTPRequestHandler):
-    #protocol_version = "HTTP/1.0"   
-    protocol_version = "HTTP/1.1"   
+    protocol_version = "HTTP/1.0"   
+    #protocol_version = "HTTP/1.1"   
     def _getH5File(self, pth, mode='r'):
         try:
             h5f = fileCache[pth]
@@ -171,7 +251,7 @@ class GetHandler(BaseHTTPRequestHandler):
             elif ptail[0] == "SHAPE":
                 self.send_response(200)
                 self.end_headers()
-                self.wfile.write(pickle.dumps(h5f.dshape))
+                self.wfile.write(pickle.dumps(h5f.dshape, 2))
                 return
             elif ptail[0] == "EVENTS":
                 if len(ptail) == 2:
@@ -242,18 +322,22 @@ class GetHandler(BaseHTTPRequestHandler):
         #print filepth, entry
         
         #print self.headers.items()
+        #print self.headers['content-length']
         
         message = self.rfile.read(int(self.headers['content-length']))
-       # print len(message)
+        #print len(message)
         
         if filepth.endswith('.h5'):
             h5f = self._getH5File(filepth, 'w')
             
             if entry == 'NEWFRAME':
                 h5f.putFrame(message)
+            elif entry == 'NEWPZFFRAME':
+                h5f.putPZFFrame(message)
             elif entry == 'NEWFRAMES':
-                #pass
                 h5f.putFrames(message)
+            elif entry == 'NEWPZFFRAMES':
+                h5f.putPZFFrames(message)
             elif entry == 'NEWEVENT':
                 h5f.putEvent(message)
             elif entry == 'METADATA':
@@ -264,9 +348,15 @@ class GetHandler(BaseHTTPRequestHandler):
                 self.send_error(404, 'Operation Not Supported')
                 return
         
-            print 'About to return'        
-            self.send_response(200)
+            #print 'About to return'        
+            self.send_response(200, '')
+            #print 'sr'
+            #self.send_header("Connection", "keep-alive")
             self.end_headers()
+            #self.wfile.write('')
+            self.wfile.close()
+            
+            #print 'here we go'
             return
 
         self.send_error(404, 'Operation Not Supported')

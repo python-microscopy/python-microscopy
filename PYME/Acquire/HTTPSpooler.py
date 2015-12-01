@@ -37,6 +37,7 @@ import httplib
 import cPickle as pickle
 import threading
 import Queue
+import requests
 
 #rom PYME.Acquire import eventLog
 
@@ -71,6 +72,9 @@ class HttpSpoolMDHandler(MetaDataHandler.MDHandlerBase):
 
     def getEntryNames(self):
         return self.cache.keys()
+        
+    def copyEntriesFrom(self, mdToCopy):            
+        self.spooler._post('METADATA', MetaDataHandler.NestedClassMDHandler(mdToCopy))
 
 SERVERNAME='127.0.0.1:8080'      
 
@@ -111,15 +115,59 @@ class Spooler(sp.Spooler):
         
         sp.Spooler.__init__(self, scope, filename, acquisator, protocol, parent)
         
-    def _queuePoll(self):
+    def __queuePoll(self):
         self.conn = httplib.HTTPConnection(SERVERNAME, timeout=5)
         while self.dPoll:            
             ur, data = self.postQueue.get()
-            print ur
-            self.conn.request('POST', ur, pickle.dumps(data))
+            print repr(ur)
+            #try:
+            self.conn.request('POST', ur.encode(), pickle.dumps(data, 2), {"Connection":"keep-alive"})
             
             resp = self.conn.getresponse()
             print resp.status, resp.reason
+            #except UnicodeDecodeError:
+            #    print self.conn._buffer
+            time.sleep(.1)
+            
+            
+    def _queuePoll(self):
+        #self.conn = 
+        while self.dPoll:            
+            ur, data = self.postQueue.get()
+            print repr(ur)
+            #conn = httplib.HTTPConnection(SERVERNAME, timeout=15)
+            #print 'hc'
+            #conn.request('POST', ur.encode(), pickle.dumps(data, 2))#, {"Connection":"keep-alive"})
+            #print 'rq'
+            #resp = conn.getresponse()
+            #print 'rp'
+            #conn.close()
+            
+            r = requests.post('http://' + SERVERNAME + ur.encode(), pickle.dumps(data, 2))
+            
+            print r.status_code
+                
+            #print resp.status, resp.reason
+            #except UnicodeDecodeError:
+            #    print self.conn._buffer
+            time.sleep(.1)
+            
+    def ___queuePoll(self):
+        #self.conn = 
+        while self.dPoll:            
+            ur, data = self.postQueue.get()
+            print repr(ur)
+            conn = httplib.HTTPConnection(SERVERNAME, timeout=15)
+            print 'hc'
+            conn.request('POST', ur.encode(), pickle.dumps(data, 2))#, {"Connection":"keep-alive"})
+            print 'rq'
+            resp = conn.getresponse()
+            print 'rp'
+            #conn.close()
+                
+            print resp.status, resp.reason
+            #except UnicodeDecodeError:
+            #    print self.conn._buffer
             time.sleep(.1)
     
     def _post(self, ursufix, data):
@@ -139,6 +187,7 @@ class Spooler(sp.Spooler):
 
       if self.imNum == 0: #first frame
           self.md.setEntry('imageID', fileID.genFrameID(self.buffer[-1].squeeze()))
+          #pass
 
       if len(self.buffer) >= self.buflen:
           self.FlushBuffer()

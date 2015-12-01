@@ -335,6 +335,9 @@ class AndorBase(SDK3Camera):
         
     def GetIntegTime(self): 
         return self.ExposureTime.getValue()
+        
+    def GetCycleTime(self):
+        return 1.0/self.FrameRate.getValue()
     
     def GetCCDWidth(self): 
         return self.SensorHeight.getValue()
@@ -511,7 +514,7 @@ class AndorBase(SDK3Camera):
             mdh.setEntry('Camera.SerialNumber', self.GetSerialNumber())
 
             mdh.setEntry('Camera.IntegrationTime', self.GetIntegTime())
-            mdh.setEntry('Camera.CycleTime', self.GetIntegTime())
+            mdh.setEntry('Camera.CycleTime', self.GetCycleTime())
             mdh.setEntry('Camera.EMGain', self.GetEMGain())
             mdh.setEntry('Camera.DefaultEMGain', 85) # needed for some protocols
     

@@ -26,7 +26,8 @@
 from .BaseDataSource import BaseDataSource
 
 #import httplib
-import urllib
+#import urllib
+import requests
 import cPickle as pickle
 import time
 
@@ -44,14 +45,15 @@ class DataSource(BaseDataSource):
         self.lastShapeTime = time.time()
     
     def _request(self, url):
-        f = urllib.urlopen(url)
-        data= pickle.load(f)
-        f.close()
+        #f = urllib.urlopen(url)
+        r = requests.get(url)
+        data= pickle.loads(r.content)
+        #f.close()
         return data
 
     def getSlice(self, ind):
         sliceURL = '%s/DATA/%d' % (self.url, ind)
-        return self._request(sliceURL)
+        return self._request(sliceURL).squeeze()
 
     def getSliceShape(self):
         return tuple(self.dshape[:2])

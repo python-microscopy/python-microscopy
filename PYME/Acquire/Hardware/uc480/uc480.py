@@ -105,124 +105,100 @@ class UEYE_CAMERA_INFO(ctypes.Structure):
 #}UC480_CAMERA_INFO, *PUC480_CAMERA_INFO;
 PUEYE_CAMERA_INFO = ctypes.POINTER(UEYE_CAMERA_INFO)
 
+libuc480=None # initialise at module level
 
-if os.name=='nt':
-    # UNTESTED: Please report results to http://code.google.com/p/pylibuc480/issues
-    libname = 'uc480'
-    include_uc480_h = os.environ['PROGRAMFILES']+'\\Thorlabs DCU camera\\Develop\\Include\\uc480.h'
-    lib = ctypes.util.find_library(libname)
-    if lib is None:
-        print('uc480.dll not found')
-        lib = libname
+def init(cameratype='uc480'):
+
+        global libuc480
+
+        # if os.name=='nt':
+        # # UNTESTED: Please report results to http://code.google.com/p/pylibuc480/issues
+        #         libname = 'uc480'
+        #         include_uc480_h = os.environ['PROGRAMFILES']+'\\Thorlabs DCU camera\\Develop\\Include\\uc480.h'
+        #         lib = ctypes.util.find_library(libname)
+        #         if lib is None:
+        #                 print('uc480.dll not found')
+        #         lib = libname
 
 		
-#libuc480 = ctypes.cdll.LoadLibrary(lib)
-libuc480 = ctypes.WinDLL('uc480_64')
-#libuc480 = ctypes.WinDLL('ueye_api_64')
-if libuc480 is not None:
-	uc480_h_name = 'uc480_h'
-	try:
-		uc480_h = "uc480_h"
-		#from uc480_h import *
-		#exec 'from %s import *' % (uc480_h_name)
-	except ImportError:
-		uc480_h = None
-	if uc480_h is None:
-		assert os.path.isfile(include_uc480_h), repr(include_uc480_h)
-		d = {}
-		l = ['# This file is auto-generated. Do not edit!']
-		error_map = {}
-		f = open (include_uc480_h, 'r')
+        #libuc480 = ctypes.cdll.LoadLibrary(lib)
+        if cameratype=='uc480':
+                libuc480 = ctypes.WinDLL('uc480_64')
+                print "loading uc480_64"
+        elif cameratype=='ueye':
+                libuc480 = ctypes.WinDLL('ueye_api_64')
+                print "loading ueye_api_64"
+        else:
+                raise "unknown camera type"
+        
+        # if libuc480 is not None:
+	#         uc480_h_name = 'uc480_h'
+	#         try:
+	# 	        uc480_h = "uc480_h"
+	# 	        #from uc480_h import *
+	# 	        #exec 'from %s import *' % (uc480_h_name)
+	#         except ImportError:
+	# 	        uc480_h = None
+	#         if uc480_h is None:
+        #                 generate_uc480_h(include_uc480_h)
+	# else:
+	# 	pass
+
+# this is not really tested at all - I suspect the include file parsing code would need
+# a full overhaul
+# we ignore it for now
+def generate_uc480_h(include_uc480_h):
+	assert os.path.isfile(include_uc480_h), repr(include_uc480_h)
+	d = {}
+	l = ['# This file is auto-generated. Do not edit!']
+	error_map = {}
+	f = open (include_uc480_h, 'r')
 		
-		def is_number(s):
-			try:
-				float(s)
-				return True
-			except ValueError:
-				return False
-				
-		for line in f.readlines():
-			if not line.startswith('#define'): continue
-			i = line.find('//')
-			words = line[7:i].strip().split(None, 2)
-			if len (words)!=2: continue
-			name, value = words
-			if value.startswith('0x'):
-				exec '%s = %s' % (name, value)
-				d[name] = eval(value)
-				l.append('%s = %s' % (name, value))
+	def is_number(s):
+		try:
+			float(s)
+			return True
+		except ValueError:
+			return False
+			
+	for line in f.readlines():
+		if not line.startswith('#define'): continue
+		i = line.find('//')
+		words = line[7:i].strip().split(None, 2)
+		if len (words)!=2: continue
+		name, value = words
+		if value.startswith('0x'):
+			exec '%s = %s' % (name, value) in globals(), locals()
+			d[name] = eval(value)
+			l.append('%s = %s' % (name, value))
 			# elif name.startswith('DAQmxError') or name.startswith('DAQmxWarning'):
-				# assert value[0]=='(' and value[-1]==')', `name, value`
-				# value = int(value[1:-1])
-				# error_map[value] = name[10:]
+			# assert value[0]=='(' and value[-1]==')', `name, value`
+			# value = int(value[1:-1])
+			# error_map[value] = name[10:]
 			# elif name.startswith('DAQmx_Val') or name[5:] in ['Success','_ReadWaitMode']:
-				# d[name] = eval(value)
-				# l.append('%s = %s' % (name, value))
-			elif is_number(value):
-				d[name] = eval(value)
-				l.append('%s = %s' % (name, value))
-			elif value.startswith('UC'):
-				print(value)
-				d[name] = unicode(value[3:-1])
-				l.append('%s = unicode("%s")' % (name, value[3:-1]))
-			elif d.has_key(value):
-				d[name] = d[value]
-				l.append('%s = %s' % (name, d[value]))
-			else:
-				d[name] = value
-				l.append('%s = %s' % (name, value))
-				pass
+			# d[name] = eval(value)
+			# l.append('%s = %s' % (name, value))
+		elif is_number(value):
+			d[name] = eval(value)
+			l.append('%s = %s' % (name, value))
+		elif value.startswith('UC'):
+			print(value)
+			d[name] = unicode(value[3:-1])
+			l.append('%s = unicode("%s")' % (name, value[3:-1]))
+		elif d.has_key(value):
+			d[name] = d[value]
+			l.append('%s = %s' % (name, d[value]))
+		else:
+			d[name] = value
+			l.append('%s = %s' % (name, value))
+			pass
 		l.append('error_map = %r' % (error_map))
 		fn = os.path.join (os.path.dirname(os.path.abspath (__file__)), uc480_h_name+'.py')
-		print(('Generating %r' % (fn)))
+	        print(('Generating %r' % (fn)))
 		f = open(fn, 'w')
 		f.write ('\n'.join(l) + '\n')
 		f.close()
 		print(('Please upload generated file %r to http://code.google.com/p/pylibuc480/issues' % (fn)))
-	else:
-		pass
-		#d = uc480_h.__dict__
-	
-#	for name, value in d.items():
-#		if name.startswith ('_'): continue
-#		exec '%s = %r' % (name, value)
-
-
-# def CHK(return_code, funcname, *args):
-    # """
-    # Return ``return_code`` while handle any warnings and errors from
-    # calling a libuc480 function ``funcname`` with arguments
-    # ``args``.
-    # """
-    # if return_code==0: # call was succesful
-        # pass
-    # else:
-        # buf_size = default_buf_size
-        # while buf_size < 1000000:
-            # buf = ctypes.create_string_buffer('\000' * buf_size)
-            # try:
-                # r = libuc480.DAQmxGetErrorString(return_code, ctypes.byref(buf), buf_size)
-            # except RuntimeError, msg:
-                # if 'Buffer is too small to fit the string' in str(msg):
-                    # buf_size *= 2
-                # else:
-                    # raise
-            # else:
-                # break
-        # if r:
-            # if return_code < 0:
-                # raise RuntimeError('%s%s failed with error %s=%d: %s'%\
-                                       # (funcname, args, error_map[return_code], return_code, repr(buf.value)))
-            # else:
-                # warning = error_map.get(return_code, return_code)
-                # sys.stderr.write('%s%s warning: %s\n' % (funcname, args, warning))                
-        # else:
-            # text = '\n  '.join(['']+textwrap.wrap(buf.value, 80)+['-'*10])
-            # if return_code < 0:
-                # raise RuntimeError('%s%s:%s' % (funcname,args, text))
-            # else:
-                # sys.stderr.write('%s%s warning:%s\n' % (funcname, args, text))
-    # return return_code
 	
 def CALL(name, *args):
 	"""

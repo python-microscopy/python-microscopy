@@ -291,8 +291,10 @@ class DisplayOpts(object):
 
     def Optimise(self):
         if len(self.ds.shape) == 2:
-            self.Offs[0] = 1.*self.ds[np.isnan(self.ds) == 0].min()
-            self.Gains[0] =1./(self.ds[np.isnan(self.ds) == 0].max()- self.ds[np.isnan(self.ds) == 0].min() + 1e-3)
+            dss = self.ds[:,:]
+            dss = dss[np.isnan(dss) ==0]
+            self.Offs[0] = 1.*dss.min()
+            self.Gains[0] =1./(dss.max()- dss.min()+ 1e-3)
         elif len(self.ds.shape) ==3:
             dss = self.ds[:,:,self.zp]
             dss = dss[np.isnan(dss) ==0]
