@@ -218,7 +218,7 @@ class correlator(object):
             
             self.history.append((time.time(), dx, dy, dz, cCoeff))
             if self.logShifts:
-                self.piezo.LogShifts(dx, dy, dz, time)
+                self.piezo.LogShifts(dx, dy, dz)
             
             if self.lockFocus and (cCoeff > .5*self.corrRef):
                 if abs(dz) > self.focusTolerance and self.lastAdjustment >= 2:
