@@ -33,13 +33,13 @@ class TrackerPlotPanel(PlotPanel):
             t, dx, dy, dz, corr  = np.array(self.dt.history[-1000:]).T
 
             self.subplotx.cla()
-            self.subplotx.plot(t, dx, 'r')
-            self.subplotx.set_ylabel('Delta x [pixels]')
+            self.subplotx.plot(t, 88.0*dx, 'r')
+            self.subplotx.set_ylabel('Delta x [nm]')
             self.subplotx.set_xlim(t.min(), t.max())
             
             self.subploty.cla()
-            self.subploty.plot(t, dy, 'g')
-            self.subploty.set_ylabel('Delta y [pixels]')
+            self.subploty.plot(t, 88*dy, 'g')
+            self.subploty.set_ylabel('Delta y [nm]')
             self.subploty.set_xlim(t.min(), t.max())
             
             self.subplotz.cla()

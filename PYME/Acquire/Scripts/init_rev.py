@@ -82,7 +82,7 @@ scope.shutters = fakeShutters
 #PIFoc
 InitBG('PIFoc', '''
 from PYME.Acquire.Hardware.Piezos import offsetPiezo
-scope.piFoc = offsetPiezo.getClient('PHY-LMIC1')# piezo_e816.piezo_e816('COM1', 400, 0, True)
+scope.piFoc = offsetPiezo.getClient('PHY-LMX2CPU')# piezo_e816.piezo_e816('COM1', 400, 0, True)
 scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
 ''')
 
