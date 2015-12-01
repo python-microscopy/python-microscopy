@@ -138,20 +138,16 @@ def visguiDriftPlot(driftpane):
 
     xs = np.mean(x[0:10])
     ys = np.mean(y[0:10])
-    x1s = np.mean(x1[0:10])
-    y1s = np.mean(y1[0:10])
     
     plt.figure(1)
     plt.clf()
-    p1,=plt.plot(t,x1-x1s,label='drift track X')
-    p2,=plt.plot(t,x-xs,label='X raw')
-    plt.legend(handles=[p1,p2])
-
+    plt.plot(t,-x1)
+    plt.plot(t,x-xs)
     plt.figure(2)
     plt.clf()
-    p1,=plt.plot(t,y1-y1s,label='drift track Y')
-    p2,=plt.plot(t,y-ys,label='Y raw')
-    plt.legend(handles=[p1,p2])
+    
+    plt.plot(t,-y1)
+    plt.plot(t,y-ys)
     plt.show()
     
     return (x1,y1,x,y)
@@ -309,10 +305,10 @@ def abscorrel(a,b):
 
     return corr
 
-def cent2d(im):
+def cent2d(im,usefrac=0.25):
     im -= im.min()
     
-    im = np.maximum(im - im.max()*.75, 0)
+    im = np.maximum(im - im.max()*(1.0-usefrac), 0)
                 
     xi, yi = np.where(im)
     
@@ -324,7 +320,7 @@ def cent2d(im):
 
     return [dxi,dyi]
 
-def trackser(ref, series, frange=None):
+def trackser(ref, series, frange=None, usefrac=0.25):
     if frange is None:
         frange = range(series.shape[2])
     nframes = len(frange)
@@ -333,7 +329,7 @@ def trackser(ref, series, frange=None):
     dy = np.zeros(nframes)
     for i in range(nframes):
         corr = abscorrel(ref,series[:,:,frange[i]].squeeze())
-        dxi, dyi = cent2d(corr)
+        dxi, dyi = cent2d(corr,usefrac=usefrac)
         dx[i] = dxi
         dy[i] = dyi
 
@@ -570,6 +566,10 @@ def scatterdens(x,y,subsample=1.0):
     else:
         xs = xf
         ys = yf
+        
+    estimator = gaussian_kde([xs,ys]) 
+    density = estimator.evaluate([xf,yf])
+    pylab.scatter(xf,yf,c=density,marker='o',linewidth='0',zorder=3,s=40)
         
     estimator = gaussian_kde([xs,ys]) 
     density = estimator.evaluate([xf,yf])

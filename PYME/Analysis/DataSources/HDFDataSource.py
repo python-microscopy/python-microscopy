@@ -25,24 +25,46 @@ from PYME.ParallelTasks.relativeFiles import getFullFilename
 import tables
 from .BaseDataSource import BaseDataSource
 
+try:
+    from PYME.FileUtils import PZFFormat
+except ImportError:
+    pass
+
 class DataSource(BaseDataSource):
     moduleName = 'HDFDataSource'
     def __init__(self, h5Filename, taskQueue=None):
         self.h5Filename = getFullFilename(h5Filename)#convert relative path to full path
         self.h5File = tables.openFile(self.h5Filename)
+        
+        if 'PZFImageData' in dir(self.h5File.root):
+            self.usePZFFormat = True
+        else:
+            self.usePZFFormat = False
 
     def getSlice(self, ind):
-        if ind >= self.h5File.root.ImageData.shape[0]:
-                self.reloadData() #try reloading the data in case it's grown
-        
-        return self.h5File.root.ImageData[ind, :,:]
+        if self.usePZFFormat:
+            if ind >= self.h5File.root.PZFImageData.shape[0]:
+                self.reloadData() #try 
+            
+            return PZFFormat.loads(self.h5File.root.PZFImageData[ind])[0].squeeze() 
+        else:       
+            if ind >= self.h5File.root.ImageData.shape[0]:
+                    self.reloadData() #try reloading the data in case it's grown
+            
+            return self.h5File.root.ImageData[ind, :,:]
 
 
     def getSliceShape(self):
-        return self.h5File.root.ImageData.shape[1:3]
+        if self.usePZFFormat:
+            return self.h5File.root.PZFImageData.attrs.framesize
+        else:
+            return self.h5File.root.ImageData.shape[1:3]
 
     def getNumSlices(self):
-        return self.h5File.root.ImageData.shape[0]
+        if self.usePZFFormat:
+            return self.h5File.root.PZFImageData.shape[0]
+        else:
+            return self.h5File.root.ImageData.shape[0]
 
     def getEvents(self):
         return self.h5File.root.Events[:]
