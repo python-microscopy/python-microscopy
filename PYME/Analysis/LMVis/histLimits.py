@@ -168,7 +168,7 @@ class HistLimitPanel(wx.Panel):
 
         self.hstep = (self.hmax - self.hmin)/max(self.Size[0], 1)
 
-        print self.hmin, self.hmax, self.hstep, self.Size[0], self.limit_lower, self.limit_upper
+        #print self.hmin, self.hmax, self.hstep, self.Size[0], self.limit_lower, self.limit_upper
 
         
         self.h, self.edges = numpy.histogram(self.data, numpy.arange(self.hmin, self.hmax, self.hstep))

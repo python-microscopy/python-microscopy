@@ -728,14 +728,14 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         
     def OnMiddleDown(self,event):
         dc = wx.ClientDC(self.imagepanel)
-        self.imagepanel.PrepareDC(dc)
+#        self.imagepanel.PrepareDC(dc)
         pos = event.GetLogicalPosition(dc)
         self.middleDownPos = self.CalcUnscrolledPosition(*pos)
         event.Skip()
     
     def OnMiddleUp(self,event):
         dc = wx.ClientDC(self.imagepanel)
-        self.imagepanel.PrepareDC(dc)
+#        self.imagepanel.PrepareDC(dc)
         pos = event.GetLogicalPosition(dc)
         pos = self.CalcUnscrolledPosition(*pos)
 
@@ -752,7 +752,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         
     def OnMiddleDClick(self,event):
         dc = wx.ClientDC(self.imagepanel)
-        self.imagepanel.PrepareDC(dc)
+#        self.imagepanel.PrepareDC(dc)
         pos = event.GetLogicalPosition(dc)
         pos = self.CalcUnscrolledPosition(*pos)
         #print pos
@@ -773,10 +773,10 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         pos = event.GetLogicalPosition(dc)
         pos = self.CalcUnscrolledPosition(*pos)
 
-        print(pos)
+        #print(pos)
         self.do.inOnChange = True
         sc = pow(2.0,(self.do.scale))
-        print(sc)
+        #print(sc)
         if (self.do.slice == self.do.SLICE_XY):
             self.do.xp =int(pos[0]/sc)
             self.do.yp = int(pos[1]/(sc*self.aspect))

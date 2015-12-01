@@ -476,7 +476,7 @@ class FakeCamera:
         if not realEMGain == None:
             mdh.setEntry('Camera.TrueEMGain', realEMGain)
             
-        if 'spec' in self.fluors.fl.dtype.fields.keys(): #set the splitter parameters
+        if self.fluors and 'spec' in self.fluors.fl.dtype.fields.keys(): #set the splitter parameters
             mdh['Splitter.Channel0ROI'] = [0,0,128, 256]
             mdh['Splitter.Channel1ROI'] = [128,0,128, 256]
             mdh['Splitter.Flip'] = False
