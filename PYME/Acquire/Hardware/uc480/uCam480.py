@@ -81,6 +81,22 @@ class uc480Camera:
     MODE_CONTINUOUS = 5
     MODE_SINGLE_SHOT = 1
 
+    ROIlimitlist = {
+        'UI306X' : {
+            'xmin' : 96,
+            'xstep' : 8,
+            'ymin' : 32,
+            'ystep' : 2
+        },
+        'UI324X' : {
+            'xmin' : 16,
+            'xstep' : 4,
+            'ymin' : 4,
+            'ystep' : 2
+        }        
+    }
+
+    ROIlimitsDefault = ROIlimitlist['UI324X']
 
     def __init__(self, boardNum=0, nbits = 8):
         self.initialised = False
@@ -118,6 +134,13 @@ class uc480Camera:
         self.CCDSize=(sensorProps.nMaxWidth, sensorProps.nMaxHeight)
         senstype = ctypes.cast(sensorProps.strSensorName, ctypes.c_char_p)
         self.sensortype = senstype.value
+
+        # work out the ROI limits for this sensortype
+        matches = [ROIlimitlist[st] for st in ROIlimitlist.keys() if self.sensortype.startswith(st)]
+        if len(matches) > 0:
+            self.ROIlimits = matches[0]
+        else:
+            self.ROIlimits = ROIlimitsDefault
 
         #-------------------
         #Do initial setup with a whole bunch of settings I've arbitrarily decided are
@@ -423,12 +446,14 @@ class uc480Camera:
 
 
     def SetROI(self, x1,y1,x2,y2):
-        #must be on silly 4x2 pixel grid
-        
-        x1 = 4*(x1/4)
-        x2 = 4*(x2/4)
-        y1 = 2*(y1/2)
-        y2 = 2*(y2/2)
+        #must be on xstep x ystep pixel grid
+
+        xstep = self.ROIlimits['xstep']
+        ystep = self.ROIlimits['ystep']
+        x1 = xstep*(x1/xstep)
+        x2 = xstep*(x2/xstep)
+        y1 = ystep*(y1/ystep)
+        y2 = ystep*(y2/ystep)
         
         
         #if coordinates are reversed, don't care
@@ -451,9 +476,9 @@ class uc480Camera:
         rect = uc480.IS_RECT()
         rect.s32X =  self.ROIx[0] - 1
         rect.s32Y =  self.ROIy[0] - 1
-        rect.s32Width = 1+ self.ROIx[1] - self.ROIx[0]
-        rect.s32Height = 1+ self.ROIy[1] - self.ROIy[0]
-        
+        rect.s32Width  = max(1 + self.ROIx[1] - self.ROIx[0], self.ROIlimits['xmin']) # ensure minimim size in x
+        rect.s32Height = max(1 + self.ROIy[1] - self.ROIy[0], self.ROIlimits['ymin']) # ensure minimim size in y
+
         print((rect.s32X, rect.s32Width))
         
         #ret = uc480.CALL('SetImageSize', self.boardHandle, rect.s32Width, rect.s32Height )
