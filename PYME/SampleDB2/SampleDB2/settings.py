@@ -56,18 +56,18 @@ WSGI_APPLICATION = 'SampleDB2.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.6/ref/settings/#databases
 
-DATABASE_HOST = ''
 #look for database host in environment variable
-if 'PYME_DATABASE_HOST' in os.environ.keys():
-    DATABASE_HOST = os.environ['PYME_DATABASE_HOST']
+DATABASE_HOST = os.getenv('PYME_DATABASE_HOST','')
+DATABASE_USER = os.getenv('PYME_DATABASE_USER','sample_db')
+DATABASE_PWD = os.getenv('PYME_DATABASE_PWD','PYMEUSER')
 
 DATABASES = {
 	'default': {
         'NAME': 'sample_db',
         'HOST' : DATABASE_HOST,
         'ENGINE': 'django.db.backends.mysql',
-        'USER': 'sample_db',
-        'PASSWORD': 'PYMEUSER',
+        'USER': DATABASE_USER,
+        'PASSWORD': DATABASE_PWD,
         'OPTIONS': {"connect_timeout": 5,},
     },
     #'default': {
