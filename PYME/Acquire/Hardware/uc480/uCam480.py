@@ -101,8 +101,8 @@ class uc480Camera:
     def __init__(self, boardNum=0, nbits = 8):
         self.initialised = False
         self.active = True
-        if nbits != 8 and nbits != 12:
-            raise RuntimeError('Supporting only 8 or 12 bit depth, requested &d bit' % (nbits))
+        if nbits not in [8,10,12]:
+            raise RuntimeError('Supporting only 8, 10 or 12 bit depth, requested &d bit' % (nbits))
         self.nbits = nbits
 
         self.boardHandle = wintypes.HANDLE(boardNum)
@@ -169,9 +169,11 @@ class uc480Camera:
         # CS: info from SetColorMode and "Color and memory formats" appendix
         # note: the monochrome constants may be preferable
         if self.nbits == 8:
-            colormode = uc480.IS_CM_SENSOR_RAW8 # update to new const IS_CM_SENSOR_RAW8
+            colormode = uc480.IS_CM_MONO8
+        elif self.nbits == 10:
+            colormode = uc480.IS_CM_MONO10
         elif self.nbits == 12:
-            colormode = uc480.IS_CM_SENSOR_RAW12
+            colormode = uc480.IS_CM_MONO12
         ret = uc480.CALL('SetColorMode', self.boardHandle, colormode)
         self.errcheck(ret,'setting ColorMode')
 
@@ -228,7 +230,7 @@ class uc480Camera:
             # CS - BITS: memory depth in here
             if self.nbits == 8:
                 bitsperpix = 8
-            elif self.nbits == 12:
+            else: # 10 & 12 bits
                 bitsperpix = 16
 
             ret = uc480.CALL('AllocImageMem', self.boardHandle, self.GetPicWidth(), self.GetPicHeight(), bitsperpix, ctypes.byref(pData), ctypes.byref(bufID))
@@ -250,7 +252,7 @@ class uc480Camera:
         # CS - BITS: memory depth in here
         if self.nbits == 8:
             bufferdtype = np.uint8
-        elif self.nbits == 12:
+        else: # 10 & 12 bits
             bufferdtype = np.uint16
         self.transferBuffer = np.zeros([self.GetPicHeight(), self.GetPicWidth()], bufferdtype)
         
