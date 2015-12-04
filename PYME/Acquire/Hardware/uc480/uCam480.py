@@ -82,13 +82,13 @@ class uc480Camera:
     MODE_SINGLE_SHOT = 1
 
     ROIlimitlist = {
-        'UI306X' : {
+        'UI306x' : {
             'xmin' : 96,
             'xstep' : 8,
             'ymin' : 32,
             'ystep' : 2
         },
-        'UI324X' : {
+        'UI324x' : {
             'xmin' : 16,
             'xstep' : 4,
             'ymin' : 4,
@@ -96,7 +96,7 @@ class uc480Camera:
         }        
     }
 
-    ROIlimitsDefault = ROIlimitlist['UI324X']
+    ROIlimitsDefault = ROIlimitlist['UI324x']
 
     def __init__(self, boardNum=0, nbits = 8):
         self.initialised = False
