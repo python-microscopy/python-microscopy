@@ -102,7 +102,7 @@ class uc480Camera:
         self.initialised = False
         self.active = True
         if nbits not in [8,10,12]:
-            raise RuntimeError('Supporting only 8, 10 or 12 bit depth, requested &d bit' % (nbits))
+            raise RuntimeError('Supporting only 8, 10 or 12 bit depth, requested %d bit' % (nbits))
         self.nbits = nbits
 
         self.boardHandle = wintypes.HANDLE(boardNum)
@@ -136,11 +136,12 @@ class uc480Camera:
         self.sensortype = senstype.value
 
         # work out the ROI limits for this sensortype
-        matches = [ROIlimitlist[st] for st in ROIlimitlist.keys() if self.sensortype.startswith(st)]
+        matches = [self.ROIlimitlist[st] for st in self.ROIlimitlist.keys()
+                   if self.sensortype.startswith(st)]
         if len(matches) > 0:
             self.ROIlimits = matches[0]
         else:
-            self.ROIlimits = ROIlimitsDefault
+            self.ROIlimits = self.ROIlimitsDefault
 
         #-------------------
         #Do initial setup with a whole bunch of settings I've arbitrarily decided are
