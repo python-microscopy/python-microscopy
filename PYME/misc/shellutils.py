@@ -570,3 +570,13 @@ def scatterdens(x,y,subsample=1.0):
     estimator = gaussian_kde([xs,ys]) 
     density = estimator.evaluate([xf,yf])
     pylab.scatter(xf,yf,c=density,marker='o',linewidth='0',zorder=3,s=40)
+
+def px(p):
+    t = p['t']*p.mdh['Camera.CycleTime']
+    x = p['x']-p['x'][0:10].mean()
+    plt.plot(t,x)
+
+def py(p):
+    t = p['t']*p.mdh['Camera.CycleTime']
+    y = p['y']-p['y'][0:10].mean()
+    plt.plot(t,y)
