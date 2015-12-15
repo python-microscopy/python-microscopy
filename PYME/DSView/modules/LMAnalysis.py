@@ -722,12 +722,7 @@ class LMAnalyser:
         else: #generic catchall for other data sources
             self.pushImagesDS(startingAt, detThresh, fitFcn)
 
-
-    def pushImagesHDF(self, startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
-        #global seriesName
-        dataFilename = self.image.seriesName
-        resultsFilename = genResultFileName(self.image.seriesName)
-
+    def _verifyResultsFilename(self, resultsFilename):
         if os.path.exists(resultsFilename):
             di, fn = os.path.split(resultsFilename)
             i = 1
@@ -741,7 +736,16 @@ class LMAnalyser:
                 resultsFilename = fdialog.GetPath().encode()
             else:
                 raise RuntimeError('Invalid results file - not running')
-            self.image.seriesName = resultsFilename
+                
+            return resultsFilename
+            
+
+    def pushImagesHDF(self, startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
+        #global seriesName
+        dataFilename = self.image.seriesName
+        resultsFilename = self._verifyResultsFilename(genResultFileName(self.image.seriesName))
+
+        self.image.seriesName = resultsFilename
 
         self.tq.createQueue('HDFTaskQueue', self.image.seriesName, dataFilename = dataFilename, resultsFilename=resultsFilename, startAt = 'notYet')
 
@@ -764,59 +768,85 @@ class LMAnalyser:
         self.tq.releaseTasks(self.image.seriesName, startingAt)
 
     def pushImagesDS(self, startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
-        #global seriesName
-        #dataFilename = self.image.seriesName
-        resultsFilename = genResultFileName(self.image.seriesName)
-        while os.path.exists(resultsFilename):
-            di, fn = os.path.split(resultsFilename)
-            fdialog = wx.FileDialog(None, 'Analysis file already exists, please select a new filename',
-                        wildcard='H5R files|*.h5r', defaultDir=di, defaultFile=os.path.splitext(fn)[0] + '_1.h5r', style=wx.SAVE)
-            succ = fdialog.ShowModal()
-            if (succ == wx.ID_OK):
-                resultsFilename = fdialog.GetPath().encode()
-            else:
-                raise RuntimeError('Invalid results file - not running')
-            #self.image.seriesName = resultsFilename
+        resultsFilename = self._verifyResultsFilename(genResultFileName(self.image.seriesName))
+        self.image.seriesName = resultsFilename
             
         debugPrint('Results file = %s' % resultsFilename) 
-
-        self.tq.createQueue('HDFResultsTaskQueue', resultsFilename, None)
         
-        debugPrint('Queue created')
-
-        mdhQ = MetaDataHandler.QueueMDHandler(self.tq, resultsFilename, self.image.mdh)
-        mdhQ.setEntry('Analysis.DetectionThreshold', detThresh)
-        mdhQ.setEntry('Analysis.FitModule', fitFcn)
-        mdhQ.setEntry('Analysis.DataFileID', fileID.genDataSourceID(self.image.dataSource))
+        mdh = MetaDataHandler.NestedClassMDHandler(self.image.mdh)
+        mdh.setEntry('Analysis.DetectionThreshold', detThresh)
+        mdh.setEntry('Analysis.FitModule', fitFcn)
+        mdh.setEntry('Analysis.DataFileID', fileID.genDataSourceID(self.image.dataSource))
         
-        debugPrint('Metadata transferred to queue')
-
-        evts = self.image.dataSource.getEvents()
-        if len(evts) > 0:
-            self.tq.addQueueEvents(resultsFilename, evts)
-
-        md = MetaDataHandler.NestedClassMDHandler(mdhQ)
-
         mn = self.image.dataSource.moduleName
-
         #if it's a buffered source, go back to underlying source
         if mn == 'BufferedDataSource':
             mn = self.image.dataSource.dataSource.moduleName
 
-        for i in range(startingAt, self.image.dataSource.getNumSlices()):
-            debugPrint('Posting task %d' %i)
-            if 'Analysis.BGRange' in md.getEntryNames():
-                bgi = range(max(i + md.Analysis.BGRange[0],md.EstimatedLaserOnFrameNo), max(i + md.Analysis.BGRange[1],md.EstimatedLaserOnFrameNo))
-            elif 'Analysis.NumBGFrames' in md.getEntryNames():
-                bgi = range(max(i - md.Analysis.NumBGFrames, md.EstimatedLaserOnFrameNo), i)
-            else:
-                bgi = range(max(i - 10, md.EstimatedLaserOnFrameNo), i)
+        self.tq.createQueue('DSTaskQueue', self.image.seriesName, mdh, mn, resultsFilename, startAt = startingAt)
+        
+        debugPrint('Queue created')
 
-            #task = fitTask(self.queueID, taskNum, self.metaData.Analysis.DetectionThreshold, self.metaData, self.metaData.Analysis.FitModule, 'TQDataSource', bgindices =bgi, SNThreshold = True)
-            
-            self.tq.postTask(remFitBuf.fitTask(self.image.seriesName,i, detThresh, md, fitFcn, bgindices=bgi, SNThreshold=True, dataSourceModule=mn), queueName=resultsFilename)
+#        evts = self.image.dataSource.getEvents()
+#        if len(evts) > 0:
+#            self.tq.addQueueEvents(resultsFilename, evts)
 
-        self.image.seriesName = resultsFilename
+        
+        
+#    def pushImagesDS(self, startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
+#        #global seriesName
+#        #dataFilename = self.image.seriesName
+#        resultsFilename = genResultFileName(self.image.seriesName)
+#        while os.path.exists(resultsFilename):
+#            di, fn = os.path.split(resultsFilename)
+#            fdialog = wx.FileDialog(None, 'Analysis file already exists, please select a new filename',
+#                        wildcard='H5R files|*.h5r', defaultDir=di, defaultFile=os.path.splitext(fn)[0] + '_1.h5r', style=wx.SAVE)
+#            succ = fdialog.ShowModal()
+#            if (succ == wx.ID_OK):
+#                resultsFilename = fdialog.GetPath().encode()
+#            else:
+#                raise RuntimeError('Invalid results file - not running')
+#            #self.image.seriesName = resultsFilename
+#            
+#        debugPrint('Results file = %s' % resultsFilename) 
+#
+#        self.tq.createQueue('HDFResultsTaskQueue', resultsFilename, None)
+#        
+#        debugPrint('Queue created')
+#
+#        mdhQ = MetaDataHandler.QueueMDHandler(self.tq, resultsFilename, self.image.mdh)
+#        mdhQ.setEntry('Analysis.DetectionThreshold', detThresh)
+#        mdhQ.setEntry('Analysis.FitModule', fitFcn)
+#        mdhQ.setEntry('Analysis.DataFileID', fileID.genDataSourceID(self.image.dataSource))
+#        
+#        debugPrint('Metadata transferred to queue')
+#
+#        evts = self.image.dataSource.getEvents()
+#        if len(evts) > 0:
+#            self.tq.addQueueEvents(resultsFilename, evts)
+#
+#        md = MetaDataHandler.NestedClassMDHandler(mdhQ)
+#
+#        mn = self.image.dataSource.moduleName
+#
+#        #if it's a buffered source, go back to underlying source
+#        if mn == 'BufferedDataSource':
+#            mn = self.image.dataSource.dataSource.moduleName
+#
+#        for i in range(startingAt, self.image.dataSource.getNumSlices()):
+#            debugPrint('Posting task %d' %i)
+#            if 'Analysis.BGRange' in md.getEntryNames():
+#                bgi = range(max(i + md.Analysis.BGRange[0],md.EstimatedLaserOnFrameNo), max(i + md.Analysis.BGRange[1],md.EstimatedLaserOnFrameNo))
+#            elif 'Analysis.NumBGFrames' in md.getEntryNames():
+#                bgi = range(max(i - md.Analysis.NumBGFrames, md.EstimatedLaserOnFrameNo), i)
+#            else:
+#                bgi = range(max(i - 10, md.EstimatedLaserOnFrameNo), i)
+#
+#            #task = fitTask(self.queueID, taskNum, self.metaData.Analysis.DetectionThreshold, self.metaData, self.metaData.Analysis.FitModule, 'TQDataSource', bgindices =bgi, SNThreshold = True)
+#            
+#            self.tq.postTask(remFitBuf.fitTask(self.image.seriesName,i, detThresh, md, fitFcn, bgindices=bgi, SNThreshold=True, dataSourceModule=mn), queueName=resultsFilename)
+#
+#        self.image.seriesName = resultsFilename
         
         
    

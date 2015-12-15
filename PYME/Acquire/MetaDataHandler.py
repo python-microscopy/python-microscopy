@@ -260,6 +260,20 @@ class MDHandlerBase(DictMixin):
         f = open(filename, 'w')
         f.writelines(s)
         f.close()
+        
+    def to_JSON(self):
+        import json
+        
+        def _jsify(obj):
+            '''call a custom to_JSON method, if available'''
+            try:
+                return obj.to_JSON()
+            except AttributeError:
+                return obj
+                
+        d = { k: _jsify(self.getEntry(k)) for k in self.getEntryNames()}
+        
+        return json.dumps(d)
 
 class HDFMDHandler(MDHandlerBase):
     def __init__(self, h5file, mdToCopy=None):
