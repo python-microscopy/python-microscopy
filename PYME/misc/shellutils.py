@@ -599,3 +599,13 @@ def intdens(image,framenum=0):
     if nevts is not None:
         print "Ratio Events/Intdens = %f" % (nevts/intdens)
     return intdens
+
+def px(p):
+    t = p['t']*p.mdh['Camera.CycleTime']
+    x = p['x']-p['x'][0:10].mean()
+    plt.plot(t,x)
+
+def py(p):
+    t = p['t']*p.mdh['Camera.CycleTime']
+    y = p['y']-p['y'][0:10].mean()
+    plt.plot(t,y)
