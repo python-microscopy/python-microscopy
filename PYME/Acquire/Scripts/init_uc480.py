@@ -43,7 +43,7 @@ from PYME.Acquire import MetaDataHandler
 
 InitBG('EMCCD Cameras', '''
 uCam480.init(cameratype='uc480')
-scope.cameras['A - Left'] = uCam480.uc480Camera(0)
+scope.cameras['A - Left'] = uCam480.uc480Camera(0,nbits=12)
 #scope.cameras['B - Right'] = AndorIXon.iXonCamera(0)
 #scope.cameras['B - Right'].SetShutter(False)
 #scope.cameras['B - Right'].SetActive(False)
@@ -62,11 +62,13 @@ camPanels.append((scope.camControls['A - Left'], 'EMCCD A Properties'))
 ##camPanels.append((scope.camControls['B - Right'], 'EMCCD B Properties'))
 ''')
 
-#InitGUI('''
-#from PYME.Acquire import sampleInformation
-#sampPan = sampleInformation.slidePanel(MainFrame)
-#camPanels.append((sampPan, 'Current Slide'))
-#''')
+scope.lasers = [] # we need that for most protocols
+
+InitGUI('''
+from PYME.Acquire import sampleInformation
+sampPan = sampleInformation.slidePanel(MainFrame)
+camPanels.append((sampPan, 'Current Slide'))
+''')
 
 #setup for the channels to aquire - b/w camera, no shutters
 class chaninfo:
