@@ -5,16 +5,52 @@ class SpeciesDialog(wx.Dialog):
     def __init__(self, *args, **kwargs):
         wx.Dialog.__init__(self, *args, **kwargs)
         vsizer = wx.BoxSizer(wx.VERTICAL)
+
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Species 1: '), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tSpecStringS1 = [wx.TextCtrl(self, -1, 'name1', size=[50,-1])]
+        hsizer.Add(self.tSpecStringS1[0], 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
-        hsizer.Add(wx.StaticText(self, -1, 'Species list: '), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(wx.StaticText(self, -1, 'from'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tSpecStringS1.append(wx.TextCtrl(self, -1, '0', size=[30,-1]))
+        hsizer.Add(self.tSpecStringS1[1], 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
-        self.tSpecString = wx.TextCtrl(self, -1, 'spec1,0,1e4,spec2,1e4,3e4', size=[200,-1])
-        hsizer.Add(self.tSpecString, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(wx.StaticText(self, -1, 'to'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tSpecStringS1.append(wx.TextCtrl(self, -1, '1e4', size=[30,-1]))
+        hsizer.Add(self.tSpecStringS1[2], 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
         vsizer.Add(hsizer, 0, wx.ALL, 5)
 
-        #hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Species 2: '), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tSpecStringS2 = [wx.TextCtrl(self, -1, 'name2', size=[50,-1])]
+        hsizer.Add(self.tSpecStringS2[0], 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        hsizer.Add(wx.StaticText(self, -1, 'from'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tSpecStringS2.append(wx.TextCtrl(self, -1, '1e4', size=[30,-1]))
+        hsizer.Add(self.tSpecStringS2[1], 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        hsizer.Add(wx.StaticText(self, -1, 'to'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tSpecStringS2.append(wx.TextCtrl(self, -1, '2e4', size=[30,-1]))
+        hsizer.Add(self.tSpecStringS2[2], 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        vsizer.Add(hsizer, 0, wx.ALL, 5)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Species 3: '), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tSpecStringS3 = [wx.TextCtrl(self, -1, '', size=[50,-1])]
+        hsizer.Add(self.tSpecStringS3[0], 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        hsizer.Add(wx.StaticText(self, -1, 'from'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tSpecStringS3.append(wx.TextCtrl(self, -1, '', size=[30,-1]))
+        hsizer.Add(self.tSpecStringS3[1], 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        hsizer.Add(wx.StaticText(self, -1, 'to'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tSpecStringS3.append(wx.TextCtrl(self, -1, '', size=[30,-1]))
+        hsizer.Add(self.tSpecStringS3[2], 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        vsizer.Add(hsizer, 0, wx.ALL, 5)
+
         btSizer = wx.StdDialogButtonSizer()
 
         btn = wx.Button(self, wx.ID_OK)
@@ -34,15 +70,14 @@ class SpeciesDialog(wx.Dialog):
         self.SetSizerAndFit(vsizer)
     
     def GetSpeciesDescriptor(self):
-        specstring =  self.tSpecString.GetValue()
-        rawlist = specstring.split(',')
-        # currently we assume a simple comma-seperated list of the form
-        # specname, t_start, t_end, ...
         speclist = []
-        for i in range(len(rawlist)/3):
-            speclist.append({'name'   : rawlist[3*i].strip(),
-                             't_start': float(rawlist[3*i+1]),
-                             't_end'  : float(rawlist[3*i+2])})
+        for specstrings in [self.tSpecStringS1, self.tSpecStringS2, self.tSpecStringS3]:
+            sname =  specstrings[0].GetValue().strip()
+            if sname: # empty strings will be ignored
+                speclist.append({'name'   : sname,
+                                 't_start': float(specstrings[1].GetValue()),
+                                 't_end'  : float(specstrings[2].GetValue())})
+        print speclist
         return speclist
 
 from PYME.Analysis.LMVis import renderers
