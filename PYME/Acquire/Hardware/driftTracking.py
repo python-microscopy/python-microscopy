@@ -9,6 +9,8 @@ import numpy as np
 from pylab import fftn, ifftn, fftshift, ifftshift
 import time
 from scipy import ndimage
+from PYME.Acquire import eventLog
+from PYME.gohlke import tifffile as tif
 
 def correlateFrames(A, B):
     A = A.squeeze()/A.mean() - 1
@@ -64,6 +66,7 @@ class correlator(object):
         self.stackHalfSize = 10
         self.NCalibStates = 2*self.stackHalfSize + 1
         #self.initialise()
+        self.buffer = []
         
     def initialise(self):
         d = 1.0*self.scope.pa.dsa.squeeze()        
@@ -116,7 +119,8 @@ class correlator(object):
         
     def setRefN(self, N):
         d = 1.0*self.scope.pa.dsa.squeeze()
-        ref = d/d.mean() - 1        
+        ref = d/d.mean() - 1
+        self.refImages[:,:,N] = ref        
         self.calFTs[:,:,N] = ifftn(ref)
         self.calImages[:,:,N] = ref*self.mask
     #def setRefD(self):
@@ -164,6 +168,18 @@ class correlator(object):
         self.ds_A = (ds - refA)
         
         dz = self.deltaZ*np.dot(self.ds_A.ravel(), ddz)*dzn
+
+        self.buffer.append((dz, nomPos, posInd, calPos, posDelta))
+
+#        if len(self.buffer)>10:
+#            self.buffer.remove(self.buffer[0])
+
+        if 1000*np.abs((dz + posDelta))>200:
+            #dz = np.median(self.buffer)
+            tif.imsave('C:\\Users\\Lab-test\\Desktop\\peakimage.tif', d)
+            np.savetxt('C:\\Users\\Lab-test\\Desktop\\parameter.txt', self.buffer[-1])
+            #np.savetxt('C:\\Users\\Lab-test\\Desktop\\posDelta.txt', posDelta)
+
         
         return dx, dy, dz + posDelta, Cm
         
@@ -179,6 +195,7 @@ class correlator(object):
             self.calPositions = self.homePos + self.deltaZ*np.arange(-float(self.stackHalfSize), float(self.stackHalfSize + 1))
             self.NCalibStates = len(self.calPositions)
             
+            self.refImages = np.zeros(self.mask.shape[:2] + (self.NCalibStates,))
             self.calImages = np.zeros(self.mask.shape[:2] + (self.NCalibStates,))
             self.calFTs = np.zeros(self.mask.shape[:2] + (self.NCalibStates,), dtype='complex64')
             
@@ -218,11 +235,14 @@ class correlator(object):
             
             self.history.append((time.time(), dx, dy, dz, cCoeff))
             if self.logShifts:
+                eventLog.logEvent('PYME2ShiftMeasure', '%3.4f, %3.4f, %3.4f' % (dx, dy, dz))
                 self.piezo.LogShifts(dx, dy, dz)
             
             if self.lockFocus and (cCoeff > .5*self.corrRef):
-                if abs(dz) > self.focusTolerance and self.lastAdjustment >= 2:
+                if abs(dz) > self.focusTolerance and self.lastAdjustment >= 10:
                     self.piezo.SetOffset(self.piezo.GetOffset() - dz)
+                    self.piezo.LogFocusCorrection(self.piezo.GetOffset() - dz) #inject offset changing into 'Events'
+                    eventLog.logEvent('PYME2UpdateOffset', '%3.4f' % (self.piezo.GetOffset() - dz))
                     self.historyCorrections.append((time.time(), dz))
                     self.lastAdjustment = 0
                 else:
