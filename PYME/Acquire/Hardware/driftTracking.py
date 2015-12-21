@@ -67,6 +67,7 @@ class correlator(object):
         self.NCalibStates = 2*self.stackHalfSize + 1
         #self.initialise()
         self.buffer = []
+        self.WantRecord = True
         
     def initialise(self):
         d = 1.0*self.scope.pa.dsa.squeeze()        
@@ -173,12 +174,13 @@ class correlator(object):
 
 #        if len(self.buffer)>10:
 #            self.buffer.remove(self.buffer[0])
-
-        if 1000*np.abs((dz + posDelta))>200:
+        
+        if 1000*np.abs((dz + posDelta))>200 and self.WantRecord:
             #dz = np.median(self.buffer)
             tif.imsave('C:\\Users\\Lab-test\\Desktop\\peakimage.tif', d)
             np.savetxt('C:\\Users\\Lab-test\\Desktop\\parameter.txt', self.buffer[-1])
             #np.savetxt('C:\\Users\\Lab-test\\Desktop\\posDelta.txt', posDelta)
+            self.WantRecord = False
 
         
         return dx, dy, dz + posDelta, Cm
