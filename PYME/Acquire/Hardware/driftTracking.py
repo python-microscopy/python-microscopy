@@ -69,6 +69,7 @@ class correlator(object):
         self.buffer = []
         self.WantRecord = True
         self.minDelay = 10
+        self.maxfac = 1.5
         
     def initialise(self):
         d = 1.0*self.scope.pa.dsa.squeeze()        
@@ -236,16 +237,24 @@ class correlator(object):
             
             #print dx, dy, dz
             
-            self.history.append((time.time(), dx, dy, dz, cCoeff))
+            self.history.append((time.time(), dx, dy, dz, cCoeff,self.piezo.GetOffset()))
             if self.logShifts:
                 eventLog.logEvent('PYME2ShiftMeasure', '%3.4f, %3.4f, %3.4f' % (dx, dy, dz))
                 self.piezo.LogShifts(dx, dy, dz)
             
             if self.lockFocus and (cCoeff > .5*self.corrRef): # correction only applies if correlation is still strong enough
+                if abs(self.piezo.GetOffset()) > 2.0:
+                    self.lockFocus = False
+                    print "focus lock released"
                 if abs(dz) > self.focusTolerance and self.lastAdjustment >= self.minDelay:
-                    self.piezo.SetOffset(self.piezo.GetOffset() - dz)
-                    self.piezo.LogFocusCorrection(self.piezo.GetOffset() - dz) #inject offset changing into 'Events'
-                    eventLog.logEvent('PYME2UpdateOffset', '%3.4f' % (self.piezo.GetOffset() - dz))
+                    zcorr = self.piezo.GetOffset() - dz
+                    if zcorr < - self.maxfac*self.focusTolerance:
+                        zcorr = - self.maxfac*self.focusTolerance
+                    if zcorr >  self.maxfac*self.focusTolerance:
+                        zcorr = self.maxfac*self.focusTolerance
+                    self.piezo.SetOffset(zcorr)
+                    self.piezo.LogFocusCorrection(zcorr) #inject offset changing into 'Events'
+                    eventLog.logEvent('PYME2UpdateOffset', '%3.4f' % (zcorr))
                     self.historyCorrections.append((time.time(), dz))
                     self.lastAdjustment = 0
                 else:

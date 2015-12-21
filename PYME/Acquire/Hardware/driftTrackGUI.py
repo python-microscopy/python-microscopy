@@ -33,7 +33,7 @@ class TrackerPlotPanel(PlotPanel):
                     self.subplotc = self.figure.add_subplot( 414 )
     
             #try:
-            t, dx, dy, dz, corr  = np.array(self.dt.history[-1000:]).T
+            t, dx, dy, dz, corr, poffset  = np.array(self.dt.history[-1000:]).T
 
             self.subplotx.cla()
             self.subplotx.plot(t, 88.0*dx, 'r')
@@ -51,8 +51,8 @@ class TrackerPlotPanel(PlotPanel):
             self.subplotz.set_xlim(t.min(), t.max())
             
             self.subplotc.cla()
-            self.subplotc.plot(t, corr, 'm')
-            self.subplotc.set_ylabel('Correlation')
+            self.subplotc.plot(t, poffset, 'm')
+            self.subplotc.set_ylabel('Offset')
             self.subplotc.set_xlim(t.min(), t.max())
 
     
@@ -107,7 +107,7 @@ class DriftTrackingControl(wx.Panel):
         sizer_1.Add(hsizer,0, wx.EXPAND, 0)
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(self, -1, "feedback minimum delay [frames]:"), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        hsizer.Add(wx.StaticText(self, -1, "feedback delay [frames]:"), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
         self.tMinDelay = wx.TextCtrl(self, -1, '%d' % (self.dt.minDelay), size=[30,-1])
         hsizer.Add(self.tMinDelay, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
         self.bSetMinDelay = wx.Button(self, -1, 'Set', style=wx.BU_EXACTFIT)
@@ -116,8 +116,8 @@ class DriftTrackingControl(wx.Panel):
         sizer_1.Add(hsizer,0, wx.EXPAND, 0)
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(self, -1, "Plot Interval [frmaes]:"), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
-        self.tPlotInterval = wx.TextCtrl(self, -1, '%d' % (self.dt.plotInterval), size=[30,-1])
+        hsizer.Add(wx.StaticText(self, -1, "Plot Interval [frames]:"), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        self.tPlotInterval = wx.TextCtrl(self, -1, '%d' % (self.plotInterval), size=[30,-1])
         hsizer.Add(self.tPlotInterval, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
         self.bSetPlotInterval = wx.Button(self, -1, 'Set', style=wx.BU_EXACTFIT)
         hsizer.Add(self.bSetPlotInterval, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2) 
@@ -168,8 +168,8 @@ class DriftTrackingControl(wx.Panel):
         try:
             self.gCalib.SetRange(self.dt.NCalibStates + 1)
             self.gCalib.SetValue(self.dt.calibState)
-            t, dx, dy, dz, corr = self.dt.history[-1]
-            self.stError.SetLabel('Error: x = %3.2f px\ny = %3.2f px\nz = %3.2f nm\noffset = %3.2f' % (dx, dy, dz*1000, self.dt.piezo.GetOffset()))
+            t, dx, dy, dz, corr, poffset = self.dt.history[-1]
+            self.stError.SetLabel('Error: x = %3.2f px\ny = %3.2f px\nz = %3.2f nm\noffset = %3.2f' % (dx, dy, dz*1000, poffset))
             if len(self.dt.history) % self.plotInterval == 0:
                 self.trackPlot.draw()
             #self.trackPlot.draw()
