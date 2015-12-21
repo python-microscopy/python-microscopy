@@ -21,6 +21,9 @@ class TrackerPlotPanel(PlotPanel):
 
         
 
+    # add 5th suplot
+    # replace 4th plot with offset and
+    # new 5th subplot for z-pos (how calculated, z-nominal + dz?, remove offset)
     def draw(self):
         if self.IsShownOnScreen():
             if not hasattr( self, 'subplotx' ):
@@ -61,12 +64,15 @@ class TrackerPlotPanel(PlotPanel):
     
             self.canvas.draw()
 
+
+# add controls for lastAdjustment
 class DriftTrackingControl(wx.Panel):
     def __init__(self, parent, driftTracker, winid=-1):
         # begin wxGlade: MyFrame1.__init__
         #kwds["style"] = wx.DEFAULT_FRAME_STYLE
         wx.Panel.__init__(self, parent, winid)
         self.dt = driftTracker
+        self.plotInterval = 10
 
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -100,6 +106,24 @@ class DriftTrackingControl(wx.Panel):
         self.bSetTolerance.Bind(wx.EVT_BUTTON, self.OnBSetTolerance)
         sizer_1.Add(hsizer,0, wx.EXPAND, 0)
         
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, "feedback minimum delay [frames]:"), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        self.tMinDelay = wx.TextCtrl(self, -1, '%d' % (self.dt.minDelay), size=[30,-1])
+        hsizer.Add(self.tMinDelay, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        self.bSetMinDelay = wx.Button(self, -1, 'Set', style=wx.BU_EXACTFIT)
+        hsizer.Add(self.bSetMinDelay, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2) 
+        self.bSetMinDelay.Bind(wx.EVT_BUTTON, self.OnBSetMinDelay)
+        sizer_1.Add(hsizer,0, wx.EXPAND, 0)
+        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, "Plot Interval [frmaes]:"), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        self.tPlotInterval = wx.TextCtrl(self, -1, '%d' % (self.dt.plotInterval), size=[30,-1])
+        hsizer.Add(self.tPlotInterval, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        self.bSetPlotInterval = wx.Button(self, -1, 'Set', style=wx.BU_EXACTFIT)
+        hsizer.Add(self.bSetPlotInterval, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2) 
+        self.bSetPlotInterval.Bind(wx.EVT_BUTTON, self.OnBSetPlotInterval)
+        sizer_1.Add(hsizer,0, wx.EXPAND, 0)
+        
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         self.stError = wx.StaticText(self, -1, 'Error:\n\n')
@@ -131,6 +155,12 @@ class DriftTrackingControl(wx.Panel):
     def OnBSetTolerance(self, event):
         self.dt.focusTolerance = float(self.tTolerance.GetValue())/1e3
         
+    def OnBSetMinDelay(self, event):
+        self.dt.minDelay = int(self.tMinDelay.GetValue())
+
+    def OnBSetPlotInterval(self, event):
+        self.plotInterval = int(self.tPlotInterval.GetValue())
+    
     def OnCBLock(self, event):
         self.dt.lockFocus = self.cbLock.GetValue()
 
@@ -140,7 +170,7 @@ class DriftTrackingControl(wx.Panel):
             self.gCalib.SetValue(self.dt.calibState)
             t, dx, dy, dz, corr = self.dt.history[-1]
             self.stError.SetLabel('Error: x = %3.2f px\ny = %3.2f px\nz = %3.2f nm\noffset = %3.2f' % (dx, dy, dz*1000, self.dt.piezo.GetOffset()))
-            if len(self.dt.history)%10 == 0:
+            if len(self.dt.history) % self.plotInterval == 0:
                 self.trackPlot.draw()
             #self.trackPlot.draw()
         except AttributeError:

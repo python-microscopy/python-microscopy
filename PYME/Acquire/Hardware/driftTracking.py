@@ -68,6 +68,7 @@ class correlator(object):
         #self.initialise()
         self.buffer = []
         self.WantRecord = True
+        self.minDelay = 10
         
     def initialise(self):
         d = 1.0*self.scope.pa.dsa.squeeze()        
@@ -240,8 +241,8 @@ class correlator(object):
                 eventLog.logEvent('PYME2ShiftMeasure', '%3.4f, %3.4f, %3.4f' % (dx, dy, dz))
                 self.piezo.LogShifts(dx, dy, dz)
             
-            if self.lockFocus and (cCoeff > .5*self.corrRef):
-                if abs(dz) > self.focusTolerance and self.lastAdjustment >= 10:
+            if self.lockFocus and (cCoeff > .5*self.corrRef): # correction only applies if correlation is still strong enough
+                if abs(dz) > self.focusTolerance and self.lastAdjustment >= self.minDelay:
                     self.piezo.SetOffset(self.piezo.GetOffset() - dz)
                     self.piezo.LogFocusCorrection(self.piezo.GetOffset() - dz) #inject offset changing into 'Events'
                     eventLog.logEvent('PYME2UpdateOffset', '%3.4f' % (self.piezo.GetOffset() - dz))
