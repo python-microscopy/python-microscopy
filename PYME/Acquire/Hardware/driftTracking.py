@@ -67,9 +67,9 @@ class correlator(object):
         self.NCalibStates = 2*self.stackHalfSize + 1
         #self.initialise()
         self.buffer = []
-        self.WantRecord = True
+        self.WantRecord = False
         self.minDelay = 10
-        self.maxfac = 1.5
+        self.maxfac = 1.5e3
         
     def initialise(self):
         d = 1.0*self.scope.pa.dsa.squeeze()        
@@ -151,7 +151,7 @@ class correlator(object):
         
         posDelta = nomPos - calPos
         
-        print nomPos, posInd, calPos, posDelta
+        print nomPos, self.piezo.GetOffset(), posInd, calPos, posDelta
         
         #find x-y drift
         C = ifftshift(np.abs(ifftn(fftn(dm)*FA)))
@@ -172,7 +172,9 @@ class correlator(object):
         
         dz = self.deltaZ*np.dot(self.ds_A.ravel(), ddz)*dzn
 
-        self.buffer.append((dz, nomPos, posInd, calPos, posDelta))
+        print 'dz from correlation is:', dz
+
+        self.buffer.append((dx, dy, dz + posDelta, Cm, dz, nomPos, posInd, calPos, posDelta))
 
 #        if len(self.buffer)>10:
 #            self.buffer.remove(self.buffer[0])
@@ -185,7 +187,7 @@ class correlator(object):
             self.WantRecord = False
 
         
-        return dx, dy, dz + posDelta, Cm
+        return dx, dy, dz + posDelta, Cm, dz, nomPos, posInd, calPos, posDelta
         
     
     def tick(self, caller=None):
@@ -231,13 +233,13 @@ class correlator(object):
             
         elif self.calibState > self.NCalibStates:
             #fully calibrated
-            dx, dy, dz, cCoeff = self.compare()
+            dx, dy, dz, cCoeff, dzcorr, nomPos, posInd, calPos, posDelta = self.compare()
             
             self.corrRef = max(self.corrRef, cCoeff)
             
             #print dx, dy, dz
             
-            self.history.append((time.time(), dx, dy, dz, cCoeff,self.piezo.GetOffset()))
+            self.history.append((time.time(), dx, dy, dz, cCoeff, self.piezo.GetOffset(), dzcorr, nomPos, posInd, calPos, posDelta))
             if self.logShifts:
                 eventLog.logEvent('PYME2ShiftMeasure', '%3.4f, %3.4f, %3.4f' % (dx, dy, dz))
                 self.piezo.LogShifts(dx, dy, dz)

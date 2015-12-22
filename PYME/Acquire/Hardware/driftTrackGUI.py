@@ -33,7 +33,7 @@ class TrackerPlotPanel(PlotPanel):
                     self.subplotc = self.figure.add_subplot( 414 )
     
             #try:
-            t, dx, dy, dz, corr, poffset  = np.array(self.dt.history[-1000:]).T
+            t, dx, dy, dz, corr, poffset, dzcorr, nomPos, posInd, calPos, posDelta  = np.array(self.dt.history[-1000:]).T
 
             self.subplotx.cla()
             self.subplotx.plot(t, 88.0*dx, 'r')
@@ -168,7 +168,7 @@ class DriftTrackingControl(wx.Panel):
         try:
             self.gCalib.SetRange(self.dt.NCalibStates + 1)
             self.gCalib.SetValue(self.dt.calibState)
-            t, dx, dy, dz, corr, poffset = self.dt.history[-1]
+            t, dx, dy, dz, corr, poffset, dzcorr, nomPos, posInd, calPos, posDelta = self.dt.history[-1]
             self.stError.SetLabel('Error: x = %3.2f px\ny = %3.2f px\nz = %3.2f nm\noffset = %3.2f' % (dx, dy, dz*1000, poffset))
             if len(self.dt.history) % self.plotInterval == 0:
                 self.trackPlot.draw()
