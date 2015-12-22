@@ -14,6 +14,20 @@ import wx
 import numpy as np
 from PYME.misc.wxPlotPanel import PlotPanel
 
+def YesNo(parent, question, caption = 'Yes or no?'):
+    dlg = wx.MessageDialog(parent, question, caption, wx.YES_NO | wx.ICON_QUESTION)
+    result = dlg.ShowModal() == wx.ID_YES
+    dlg.Destroy()
+    return result
+def Info(parent, message, caption = 'Insert program title'):
+    dlg = wx.MessageDialog(parent, message, caption, wx.OK | wx.ICON_INFORMATION)
+    dlg.ShowModal()
+    dlg.Destroy()
+def Warn(parent, message, caption = 'Warning!'):
+    dlg = wx.MessageDialog(parent, message, caption, wx.OK | wx.ICON_WARNING)
+    dlg.ShowModal()
+    dlg.Destroy()
+
 class TrackerPlotPanel(PlotPanel):
     def __init__(self, parent, driftTracker, *args, **kwargs):
         self.dt = driftTracker
@@ -27,32 +41,33 @@ class TrackerPlotPanel(PlotPanel):
     def draw(self):
         if self.IsShownOnScreen():
             if not hasattr( self, 'subplotx' ):
-                    self.subplotx = self.figure.add_subplot( 411 )
-                    self.subploty = self.figure.add_subplot( 412 )
-                    self.subplotz = self.figure.add_subplot( 413 )
+                    self.subplotxy = self.figure.add_subplot( 411 )
+                    self.subplotz = self.figure.add_subplot( 412 )
+                    self.subploto = self.figure.add_subplot( 413 )
                     self.subplotc = self.figure.add_subplot( 414 )
     
             #try:
-            t, dx, dy, dz, corr, poffset  = np.array(self.dt.history[-1000:]).T
+            t, dx, dy, dz, corr, corrmax, poffset, pos  = np.array(self.dt.history[-1000:]).T
 
-            self.subplotx.cla()
-            self.subplotx.plot(t, 88.0*dx, 'r')
-            self.subplotx.set_ylabel('Delta x [nm]')
-            self.subplotx.set_xlim(t.min(), t.max())
-            
-            self.subploty.cla()
-            self.subploty.plot(t, 88*dy, 'g')
-            self.subploty.set_ylabel('Delta y [nm]')
-            self.subploty.set_xlim(t.min(), t.max())
-            
+            self.subplotxy.cla()
+            self.subplotxy.plot(t, 88.0*dx, 'r')
+            self.subplotxy.plot(t, 88*dy, 'g')
+            self.subplotxy.set_ylabel('dx (r) dy (g) [nm]')
+            self.subplotxy.set_xlim(t.min(), t.max())
+                        
             self.subplotz.cla()
             self.subplotz.plot(t, 1000*dz, 'b')
-            self.subplotz.set_ylabel('Delta z [nm]')
+            self.subplotz.set_ylabel('dz [nm]')
             self.subplotz.set_xlim(t.min(), t.max())
             
+            self.subploto.cla()
+            self.subploto.plot(t, 1e3*poffset, 'm')
+            self.subploto.set_ylabel('offs [nm]')
+            self.subploto.set_xlim(t.min(), t.max())
+
             self.subplotc.cla()
-            self.subplotc.plot(t, poffset, 'm')
-            self.subplotc.set_ylabel('Offset')
+            self.subplotc.plot(t, corr/corrmax, 'r')
+            self.subplotc.set_ylabel('C/C_m')
             self.subplotc.set_xlim(t.min(), t.max())
 
     
@@ -82,13 +97,19 @@ class DriftTrackingControl(wx.Panel):
         self.cbTrack.Bind(wx.EVT_CHECKBOX, self.OnCBTrack)
         self.cbLock = wx.CheckBox(self, -1, 'Lock')
         self.cbLock.Bind(wx.EVT_CHECKBOX, self.OnCBLock)
-        hsizer.Add(self.cbLock, 0, wx.ALL, 2)        
+        hsizer.Add(self.cbLock, 0, wx.ALL, 2)
+        self.bSaveHist = wx.Button(self, -1, 'Save Hist')
+        hsizer.Add(self.bSaveHist, 0, wx.ALL, 2) 
+        self.bSaveHist.Bind(wx.EVT_BUTTON, self.OnBSaveHist)        
         sizer_1.Add(hsizer,0, wx.EXPAND, 0)
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         self.bSetPostion = wx.Button(self, -1, 'Set focus to current')
         hsizer.Add(self.bSetPostion, 0, wx.ALL, 2) 
         self.bSetPostion.Bind(wx.EVT_BUTTON, self.OnBSetPostion)
+        self.bSaveCalib = wx.Button(self, -1, 'Save Cal')
+        hsizer.Add(self.bSaveCalib, 0, wx.ALL, 2) 
+        self.bSaveCalib.Bind(wx.EVT_BUTTON, self.OnBSaveCalib)
         sizer_1.Add(hsizer,0, wx.EXPAND, 0)
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -126,11 +147,14 @@ class DriftTrackingControl(wx.Panel):
         
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.stError = wx.StaticText(self, -1, 'Error:\n\n')
+        self.stError = wx.StaticText(self, -1, 'Error:\n\n', size=[200,-1])
+        cfont = self.stError.GetFont()
+        font = wx.Font(cfont.GetPointSize(), wx.TELETYPE, wx.NORMAL, wx.NORMAL)
+        self.stError.SetFont(font)
         hsizer.Add(self.stError, 0, wx.ALL, 2)        
         sizer_1.Add(hsizer,0, wx.EXPAND, 0)
         
-        self.trackPlot = TrackerPlotPanel(self, self.dt, size=[300, 400])
+        self.trackPlot = TrackerPlotPanel(self, self.dt, size=[300, 500])
         
         #hsizer.Add(self.stError, 0, wx.ALL, 2)        
         sizer_1.Add(self.trackPlot,0, wx.EXPAND, 0)
@@ -152,6 +176,18 @@ class DriftTrackingControl(wx.Panel):
     def OnBSetPostion(self, event):
         self.dt.reCalibrate()
         
+    def OnBSaveCalib(self, event):
+        if not hasattr(self.dt, 'calibState') or (self.dt.calibState > self.dt.NCalibStates):
+            Warn(self,"not calibrated")
+        else:
+            Info(self,"save calib dummy")
+        
+    def OnBSaveHist(self, event):
+        if not hasattr(self.dt, 'history') or (len(self.dt.history) <= 0):
+            Warn(self,"no history")
+        else:
+            Info(self,"save hist dummy")
+
     def OnBSetTolerance(self, event):
         self.dt.focusTolerance = float(self.tTolerance.GetValue())/1e3
         
@@ -168,12 +204,17 @@ class DriftTrackingControl(wx.Panel):
         try:
             self.gCalib.SetRange(self.dt.NCalibStates + 1)
             self.gCalib.SetValue(self.dt.calibState)
-            t, dx, dy, dz, corr, poffset = self.dt.history[-1]
-            self.stError.SetLabel('Error: x = %3.2f px\ny = %3.2f px\nz = %3.2f nm\noffset = %3.2f' % (dx, dy, dz*1000, poffset))
+            t, dx, dy, dz, corr, corrmax,poffset,pos = self.dt.history[-1]
+            self.stError.SetLabel(("Error: x = %s nm y = %s nm\n" +
+                                  "z = %s nm noffs = %s nm c/cm = %4.2f") %
+                                  ("{:>+6.1f}".format(88.0*dx), "{:>+6.1f}".format(88.0*dy),
+                                   "{:>+6.1f}".format(1e3*dz), "{:>+6.1f}".format(1e3*poffset),
+                                   corr/corrmax))
             if len(self.dt.history) % self.plotInterval == 0:
                 self.trackPlot.draw()
-            #self.trackPlot.draw()
         except AttributeError:
+            print "AttrErr"
             pass
         except IndexError:
+            print "IndexErr"
             pass

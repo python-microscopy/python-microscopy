@@ -66,7 +66,7 @@ class correlator(object):
         self.stackHalfSize = 10
         self.NCalibStates = 2*self.stackHalfSize + 1
         #self.initialise()
-        self.buffer = []
+#        self.buffer = []
         self.WantRecord = True
         self.minDelay = 10
         self.maxfac = 1.5
@@ -151,7 +151,7 @@ class correlator(object):
         
         posDelta = nomPos - calPos
         
-        print nomPos, posInd, calPos, posDelta
+        # print nomPos, posInd, calPos, posDelta
         
         #find x-y drift
         C = ifftshift(np.abs(ifftn(fftn(dm)*FA)))
@@ -172,7 +172,7 @@ class correlator(object):
         
         dz = self.deltaZ*np.dot(self.ds_A.ravel(), ddz)*dzn
 
-        self.buffer.append((dz, nomPos, posInd, calPos, posDelta))
+#        self.buffer.append((dz, nomPos, posInd, calPos, posDelta))
 
 #        if len(self.buffer)>10:
 #            self.buffer.remove(self.buffer[0])
@@ -180,7 +180,7 @@ class correlator(object):
         if 1000*np.abs((dz + posDelta))>200 and self.WantRecord:
             #dz = np.median(self.buffer)
             tif.imsave('C:\\Users\\Lab-test\\Desktop\\peakimage.tif', d)
-            np.savetxt('C:\\Users\\Lab-test\\Desktop\\parameter.txt', self.buffer[-1])
+            # np.savetxt('C:\\Users\\Lab-test\\Desktop\\parameter.txt', self.buffer[-1])
             #np.savetxt('C:\\Users\\Lab-test\\Desktop\\posDelta.txt', posDelta)
             self.WantRecord = False
 
@@ -194,6 +194,7 @@ class correlator(object):
             
         #called on a new frame becoming available
         if self.calibState == 0:
+            #print "cal init"
             #redefine our positions for the calibration
             self.homePos = self.piezo.GetPos(0)
             self.calPositions = self.homePos + self.deltaZ*np.arange(-float(self.stackHalfSize), float(self.stackHalfSize + 1))
@@ -208,6 +209,7 @@ class correlator(object):
             #self.piezo.SetOffset(0)
             self.calibState += .5
         elif self.calibState < self.NCalibStates:
+            # print "cal proceed"
             if (self.calibState % 1) == 0:
                 #full step - record current image and move on to next position
                 self.setRefN(self.calibState - 1)
@@ -217,6 +219,7 @@ class correlator(object):
             self.calibState += 0.5
             
         elif (self.calibState == self.NCalibStates):
+            # print "cal finishing"
             self.setRefN(self.calibState - 1)
             
             #perform final bit of calibration - calcuate gradient between steps
@@ -230,14 +233,14 @@ class correlator(object):
             self.calibState += 1
             
         elif self.calibState > self.NCalibStates:
-            #fully calibrated
+            # print "fully calibrated"
             dx, dy, dz, cCoeff = self.compare()
             
             self.corrRef = max(self.corrRef, cCoeff)
             
             #print dx, dy, dz
             
-            self.history.append((time.time(), dx, dy, dz, cCoeff,self.piezo.GetOffset()))
+            self.history.append((time.time(), dx, dy, dz, cCoeff, self.corrRef, self.piezo.GetOffset(), self.piezo.GetPos(0)))
             if self.logShifts:
                 eventLog.logEvent('PYME2ShiftMeasure', '%3.4f, %3.4f, %3.4f' % (dx, dy, dz))
                 self.piezo.LogShifts(dx, dy, dz)
