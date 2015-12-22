@@ -13,6 +13,8 @@ import wx
 
 import numpy as np
 from PYME.misc.wxPlotPanel import PlotPanel
+from PYME.Acquire import MetaDataHandler
+from PYME.DSView import dsviewer_npy_nb as dsviewer
 
 def YesNo(parent, question, caption = 'Yes or no?'):
     dlg = wx.MessageDialog(parent, question, caption, wx.YES_NO | wx.ICON_QUESTION)
@@ -177,10 +179,34 @@ class DriftTrackingControl(wx.Panel):
         self.dt.reCalibrate()
         
     def OnBSaveCalib(self, event):
-        if not hasattr(self.dt, 'calibState') or (self.dt.calibState > self.dt.NCalibStates):
+        if not hasattr(self.dt, 'calibState') or (self.dt.calibState < self.dt.NCalibStates):
             Warn(self,"not calibrated")
         else:
-            Info(self,"save calib dummy")
+            self.showCalImages()
+
+    def showCalImages(self):
+        import numpy as np
+        import time
+        ds2 = self.dt.calImages 
+
+        #metadata handling
+        mdh = MetaDataHandler.NestedClassMDHandler()
+        mdh.setEntry('StartTime', time.time())
+        mdh.setEntry('AcquisitionType', 'Stack')
+
+        #loop over all providers of metadata
+        for mdgen in MetaDataHandler.provideStartMetadata:
+            mdgen(mdh)
+        mdh.setEntry('CalibrationPositions',self.dt.calPositions)
+
+        im = dsviewer.ImageStack(data = ds2, mdh = mdh, titleStub='Unsaved Image')
+        if not im.mode == 'graph':
+            im.mode = 'lite'
+
+        #print im.mode
+        dvf = dsviewer.DSViewFrame(im, mode= im.mode, size=(500, 500))
+        dvf.SetSize((500,500))
+        dvf.Show()
         
     def OnBSaveHist(self, event):
         if not hasattr(self.dt, 'history') or (len(self.dt.history) <= 0):
