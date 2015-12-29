@@ -25,7 +25,7 @@
     <h2>Measured Variables</h2>
     <table>
     
-    {% for k in clump.varnames %}
+    {% for k in clump.varnames|sort %}
         <tr>
             <td>{{k}}</td>
             <td>{{clump.dtypes[k]}}</td>

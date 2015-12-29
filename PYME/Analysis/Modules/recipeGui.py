@@ -196,7 +196,7 @@ class RecipeView(wx.Panel):
         if dlg.ShowModal() == wx.ID_OK:
             modName = dlg.GetStringSelection()
             
-            c = mods[modName]()
+            c = mods[modName](self.recipes.activeRecipe)
             self.recipes.activeRecipe.modules.append(c)
         dlg.Destroy()
         

@@ -139,7 +139,7 @@ class Tracker(object):
                 allLinks[allLinks[:,2] == n, 0] = 0
                 if not lji == -1:
                     #we are not a new object
-                    self.clumpIndex[n] = self.clumpIndex[lji]
+                    self.clumpIndex[int(n)] = self.clumpIndex[int(lji)]
                     allLinks[allLinks[:,1] == lji, 0] = 0
                     
     

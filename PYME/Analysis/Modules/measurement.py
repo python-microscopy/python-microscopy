@@ -343,16 +343,25 @@ class AggregateMeasurements(ModuleBase):
     '''Create a new composite measurement containing the results of multiple
     previous measurements'''
     inputMeasurements1 = CStr('meas1')
+    suffix1 = CStr('')
     inputMeasurements2 = CStr('')
+    suffix2 = CStr('')
     inputMeasurements3 = CStr('')
+    suffix3 = CStr('')
     inputMeasurements4 = CStr('')
+    suffix4 = CStr('')
     outputName = CStr('aggregatedMeasurements') 
     
     def execute(self, namespace):
         res = {}
-        for mk in [getattr(self, n) for n in dir(self) if n.startswith('inputMeas')]:
+        for mk, suffix in [(getattr(self, n), getattr(self, 'suffix' + n[-1])) for n in dir(self) if n.startswith('inputMeas')]:
             if not mk == '':
                 meas = namespace[mk]
-                res.update(meas)
+                
+                #res.update(meas)
+                for k in meas.keys():
+                    res[k + suffix] = meas[k]
+                
         
         namespace[self.outputName] = res
+        
