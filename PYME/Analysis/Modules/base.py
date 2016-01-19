@@ -6,10 +6,10 @@ Created on Mon May 25 17:02:04 2015
 """
 
 try:
-    from enthought.traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, ListInstance
+    from enthought.traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, ListInstance, on_trait_change
     from enthought.traits.ui.api import View, Item, EnumEditor, InstanceEditor, Group
 except ImportError:
-    from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, ListInstance
+    from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, ListInstance, on_trait_change
     from traitsui.api import View, Item, EnumEditor, InstanceEditor, Group
 
 from PYME.DSView.image import ImageStack
@@ -45,9 +45,13 @@ class ModuleCollection(HasTraits):
     def dependancyGraph(self):
         dg = {}
         
+        #only add items to dependancy graph if they are not already in the namespace
+        #calculated_objects = namespace.keys()
+        
         for mod in self.modules:
             #print mod
             s = mod.inputs
+            
             try:
                 s.update(dg[mod])
             except KeyError:
@@ -56,9 +60,64 @@ class ModuleCollection(HasTraits):
             dg[mod] = s
             
             for op in mod.outputs:
+                #if not op in calculated_objects:
                 dg[op] = {mod,}
                 
         return dg
+        
+    def reverseDependancyGraph(self):
+        dg = self.dependancyGraph()
+        
+        rdg = {}
+        
+        for k, vs in dg.items():
+            for v in vs:                
+                vdeps = set()
+                try: 
+                    vdeps = rdg[v]
+                except KeyError:
+                    pass
+                
+                vdeps.add(k)
+                rdg[v] = vdeps
+                
+        return rdg
+        
+    def _getAllDownstream(self, rdg, keys):
+        '''get all the downstream items which depend on the given key'''
+        
+        downstream = set()
+        
+        next_level = set()
+        
+        for k in keys:
+            try:        
+                next_level.update(rdg[k])
+            except KeyError:
+                pass
+            
+        if len(list(next_level)) > 0:
+        
+            downstream.update(next_level)
+            
+            downstream.update(self._getAllDownstream(rdg, list(next_level)))
+        
+        return downstream
+        
+        
+    def pruneDependanciesFromNamespace(self, keys_to_prune):
+        rdg = self.reverseDependancyGraph()
+        
+        downstream = list(keys_to_prune) + list(self._getAllDownstream(rdg, list(keys_to_prune)))
+        
+        print downstream
+        
+        for dsi in downstream:
+            try:
+                self.namespace.pop(dsi)
+            except KeyError:
+                pass
+        
         
     def resolveDependencies(self):
         import toposort
@@ -75,7 +134,7 @@ class ModuleCollection(HasTraits):
         exec_order = self.resolveDependencies()
 
         for m in exec_order:
-            if isinstance(m, ModuleBase):
+            if isinstance(m, ModuleBase) and not m.outputs_in_namespace(self.namespace):
                 m.execute(self.namespace)
         
         if 'output' in self.namespace.keys():
@@ -83,6 +142,8 @@ class ModuleCollection(HasTraits):
             
     @classmethod
     def fromMD(cls, md):
+        c = cls()
+        
         moduleNames = set([s.split('.')[0] for s in md.keys()])
         
         mc = []
@@ -92,7 +153,10 @@ class ModuleCollection(HasTraits):
             mod.set(**md[mn])
             mc.append(mod)
             
-        return cls(modules=mc)
+        #return cls(modules=mc)
+        c.modules = mc
+            
+        return c
         
     def toYAML(self):
         import yaml
@@ -107,6 +171,8 @@ class ModuleCollection(HasTraits):
     def fromYAML(cls, data):
         import yaml
         
+        c = cls()
+        
         l = yaml.load(data)
         
         mc = []
@@ -116,11 +182,13 @@ class ModuleCollection(HasTraits):
         
         for mdd in l:
             mn, md = mdd.items()[0]
-            mod = all_modules[mn]()
+            mod = all_modules[mn](c)
             mod.set(**md)
             mc.append(mod)
             
-        return cls(modules=mc)
+        c.modules = mc
+            
+        return c#cls(modules=mc)
         
     @property
     def inputs(self):
@@ -140,7 +208,21 @@ class ModuleCollection(HasTraits):
     
 
 class ModuleBase(HasTraits):
-    def execute(namespace):
+    def __init__(self, parent=None):
+        HasTraits.__init__(self)
+        
+        self.__dict__['_parent'] = parent
+        
+    @on_trait_change('anytrait')
+    def remove_outputs(self):
+        if not self._parent == None:
+            self._parent.pruneDependanciesFromNamespace(self.outputs)
+            
+    def outputs_in_namespace(self, namespace):
+        keys = namespace.keys()
+        return np.all([op in keys for op in self.outputs])
+        
+    def execute(self, namespace):
         '''prototype function - should be over-ridden in derived classes
         
         takes a namespace (a dictionary like object) from which it reads its inputs and 

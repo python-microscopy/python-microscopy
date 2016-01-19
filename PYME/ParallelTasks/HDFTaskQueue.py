@@ -482,6 +482,16 @@ class HDFResultsTaskQueue(TaskQueue):
                     res = []
             
             return res
+        elif fieldName == 'PSF':
+            from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
+            res = None
+
+            modName = self.resultsMDH.getEntry('PSFFile')
+            mf = open(getFullExistingFilename(modName), 'rb')
+            res = np.load(mf)
+            mf.close()
+           
+            return res
         elif fieldName == 'MAP':
             mapName, = args
             from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
@@ -799,23 +809,23 @@ class HDFTaskQueue(HDFResultsTaskQueue):
                 res = self.h5DataFile.root.Events[:]
             
             return res
-        elif fieldName == 'PSF':
-            from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
-            res = None
-            #self.dataFileLock.acquire()
-            #try:
-                #res = self.h5DataFile.root.PSFData[:]
-            #finally:
-            #    self.dataFileLock.release()
-            #try:
-            modName = self.resultsMDH.getEntry('PSFFile')
-            mf = open(getFullExistingFilename(modName), 'rb')
-            res = np.load(mf)
-            mf.close()
-            #except:
-                #pass
-
-            return res
+#        elif fieldName == 'PSF':
+#            from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
+#            res = None
+#            #self.dataFileLock.acquire()
+#            #try:
+#                #res = self.h5DataFile.root.PSFData[:]
+#            #finally:
+#            #    self.dataFileLock.release()
+#            #try:
+#            modName = self.resultsMDH.getEntry('PSFFile')
+#            mf = open(getFullExistingFilename(modName), 'rb')
+#            res = np.load(mf)
+#            mf.close()
+#            #except:
+#                #pass
+#
+#            return res
         else:
             return HDFResultsTaskQueue.getQueueData(self, fieldName, *args)
 

@@ -11,7 +11,10 @@ import wx.lib.mixins.listctrl as listmix
 
 import PYME.misc.autoFoldPanel as afp
 import numpy as np
+#import pandas as pd
 import pylab
+
+from PYME.Analysis.Modules.tracking import TrackFeatures
 
 import cherrypy
 
@@ -40,11 +43,23 @@ def movieplot(clump, image):
     
     for i in range(clump.nEvents):
         plt.subplot(nRows, min(clump.nEvents, 10), i+1)
-        img = image.data[(xp - 20):(xp + 20), (yp - 20):(yp + 20), clump['t'][i]].squeeze()
-        plt.imshow(img.T, interpolation ='nearest', cmap=plt.cm.gray, clim=[0, clump.featuremean['mean_intensity']*1.5])
+        if image.data.shape[3] == 1:
+            #single color
+            img = image.data[(xp - 20):(xp + 20), (yp - 20):(yp + 20), clump['t'][i]].squeeze()
+            plt.imshow(img.T, interpolation ='nearest', cmap=plt.cm.gray, clim=[0, clump.featuremean['mean_intensity']*1.5])
 
+        else:
+            img = np.zeros([40,40,3], 'uint8')
+            
+            for j in range(min(image.data.shape[3], 3)):
+                im_j = image.data[(xp - 20):(xp + 20), (yp - 20):(yp + 20), clump['t'][i], j].squeeze().T.astype('f')
+                img[:,:,j] = np.clip(255.*im_j/(clump.featuremean['mean_intensity']*1.5), 0, 255).astype('uint8')
+                
+            plt.imshow(img, interpolation ='nearest')
+            
+        
         xc, yc = contours[i].T
-        plt.plot(xc - xp + 20, yc - yp + 20, c=plt.cm.hsv(clump.clumpID/16.))
+        plt.plot(xc - xp + 20, yc - yp + 20, c='b')#plt.cm.hsv(clump.clumpID/16.))
 
         xsb = 5
         ysb = 5
@@ -65,8 +80,8 @@ def movieplot(clump, image):
 env.filters['movieplot'] = movieplot
 
 
-from PYME.Analysis.Tracking import tracking
-from PYME.Analysis import trackUtils
+#from PYME.Analysis.Tracking import tracking
+#from PYME.Analysis import trackUtils
 
 from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, ListInstance, on_trait_change
 from traitsui.api import View, Item, Group
@@ -114,14 +129,18 @@ class TrackList(wx.ListCtrl):
 #        else:
 #            return None
 
-class ParticleTracker(HasTraits):
-    features = CStr('x, y')    
-    pNew = Float(0.2)
-    r0 = Float(500)
-    pLinkCutoff = Float(0.2)
+
+        
+
+class ParticleTrackingView(HasTraits):
+    #features = CStr('x, y')    
+    #pNew = Float(0.2)
+    #r0 = Float(500)
+    #pLinkCutoff = Float(0.2)
     
-    minTrackLength = Int(5)
-    maxParticleSize = Float(20)
+    #minTrackLength = Int(5)
+    #maxParticleSize = Float(20)
+    tracker = Instance(TrackFeatures, ())
     
     showTracks = Bool(True)
     showSelectedTrack = Bool(True)
@@ -133,37 +152,37 @@ class ParticleTracker(HasTraits):
     trackLineWidth = Int(2)
     selectedLineWidth = Int(5)
     
-    traits_view = View(Group(Item(name = 'features'),
-                             Item(name = 'pNew'),
-                             Item(name = 'r0'),
-                             Item(name = 'pLinkCutoff'),
-                             Item(name = 'minTrackLength'),
-                             Item(name = 'maxParticleSize'), label='Linkage'),
+    traits_view = View(Group(Item('object.tracker.features'),
+                             Item('object.tracker.pNew'),
+                             Item('object.tracker.r0'),
+                             Item('object.tracker.pLinkCutoff'),
+                             Item('object.tracker.minTrackLength'),
+                             Item('object.tracker.maxParticleSize'), label='Linkage'),
                        Group(Item(name = 'showTracks'),
                              Item(name = 'showTrackIDs'),
                              Item(name = 'showSelectedTrack'),
                              Item(name = 'showCandidates'),
                              label= 'Display'))
     
-    def __init__(self, dsviewer):
+    def __init__(self, dsviewer, tracker = None, clumps=[]):
         HasTraits.__init__(self)
+        if tracker == None:
+            self.tracker = TrackFeatures()
+        else:
+            self.tracker = tracker
+        
+        self.clumps = []
+        
         self.dsviewer = dsviewer
         self.view = dsviewer.view
         self.do = dsviewer.do
         self.image = dsviewer.image
         
-        self.tracker = None
+        #self.tracker = None
         self.selectedTrack = None
         
-        self.clumps = []
+        #self.clumps = []
         
-        
-#        self.features.on_trait_change(self.OnFeaturesChanged)
-#        self.pNew.on_trait_change(self.OnParamChange)
-#        self.r0.on_trait_change = self.OnParamChange
-#        self.pLinkCutoff.on_trait_change = self.OnParamChange
-        
-        #self.pipeline = dsviewer.pipeline
         self.penCols = [wx.Colour(*pylab.cm.hsv(v, bytes=True)) for v in np.linspace(0, 1, 16)]
         self.penColsA = [wx.Colour(*pylab.cm.hsv(v, alpha=0.5, bytes=True)) for v in np.linspace(0, 1, 16)]
         self.CreatePens()
@@ -216,68 +235,10 @@ class ParticleTracker(HasTraits):
         if not self.OnViewSelect in self.view.selectHandlers:
             self.view.selectHandlers.append(self.OnViewSelect)
 
-    
-    @on_trait_change('pNew, r0, pLinkCutoff')    
-    def OnParamChange(self):
-        if not self.tracker == None:
-            self.tracker.pNew=self.pNew
-            self.tracker.r0 = self.r0
-            self.tracker.linkageCuttoffProb = self.pLinkCutoff
-            
-    @on_trait_change('features')   
-    def OnFeaturesChanged(self):
-        self.tracker = None
 
-    def OnTrack(self, event):
-        from PYME.Analysis.trackUtils import ClumpManager
-        pipeline = self.dsviewer.pipeline
-        
-        if (self.tracker == None) or not (len(self.tracker.t) == len(pipeline['t'])):
-            featNames = [s.strip() for s in self.features.split(',')]
-            
-            def _calcWeights(s):
-                fw = s.split('*')
-                if len(fw) == 2:
-                    return float(fw[0]), fw[1]
-                else:
-                    return 1.0, s
-                    
-            
-            weightedFeats = [_calcWeights(s) for s in featNames]
-            
-            feats = np.vstack([w*pipeline[fn] for w, fn in weightedFeats])
-            
-            self.tracker = tracking.Tracker(pipeline['t'], feats)
-            
-            self.tracker.pNew=self.pNew
-            self.tracker.r0 = self.r0
-            self.tracker.linkageCuttoffProb = self.pLinkCutoff
-
-        for i in range(1, self.dsviewer.image.data.shape[2]):
-            L = self.tracker.calcLinkages(i,i-1)
-            self.tracker.updateTrack(i, L)
-        
-        pipeline.selectedDataSource.clumps = self.tracker.clumpIndex
-        pipeline.selectedDataSource.setMapping('clumpIndex', 'clumps')
-        
-        clumpSizes = np.zeros_like(self.tracker.clumpIndex)
-        
-        for i in set(self.tracker.clumpIndex):
-            ind = (self.tracker.clumpIndex == i)
-            
-            clumpSizes[ind] = ind.sum()
-            
-        pipeline.selectedDataSource.clumpSizes = clumpSizes
-        pipeline.selectedDataSource.setMapping('clumpSize', 'clumpSizes')
-        
-        trackVelocities = trackUtils.calcTrackVelocity(pipeline['x'], pipeline['y'], self.tracker.clumpIndex)
-        #pipeline.selectedDataSource.trackVelocities = np.zeros(pipeline.selectedDataSource.clumps.shape)
-        pipeline.selectedDataSource.trackVelocities = trackVelocities
-        pipeline.selectedDataSource.setMapping('trackVelocity', 'trackVelocities')
-            
-        pipeline.clumps = ClumpManager(pipeline)
-        
-        self.clumps = [c for c in pipeline.clumps.all if (c.nEvents > self.minTrackLength) and (c.featuremean['area'] < self.maxParticleSize)]
+    def OnTrack(self, event):     
+        self.tracker.TrackWithPipeline(self.dsviewer.pipeline)
+        self.clumps = self.tracker.clumps        
         self.list.SetClumps(self.clumps)
         
     def OnSelectTrack(self, event):
@@ -297,35 +258,8 @@ class ParticleTracker(HasTraits):
             self.list.SetItemState(item, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED)
 
         
-    def DrawOverlays(self, view, dc):
-#        if self.showTracks and not (self.tracker == None):
-#            t = self.dsviewer.pipeline['t']
-#            x = self.dsviewer.pipeline['x']/self.image.voxelsize[0]
-#            y = self.dsviewer.pipeline['y']/self.image.voxelsize[1]
-#            
-#            xb, yb, zb = view._calcVisibleBounds()
-#            
-#            IFoc = (x >= xb[0])*(y >= yb[0])*(t >= (zb[0]-5))*(x < xb[1])*(y < yb[1])*(t < (zb[1]+5))
-#            
-#            tFoc = list(set(self.tracker.clumpIndex[IFoc]))
-#
-#            dc.SetBrush(wx.TRANSPARENT_BRUSH)
-#
-#            #pGreen = wx.Pen(wx.TheColourDatabase.FindColour('RED'),1)
-#            #pRed = wx.Pen(wx.TheColourDatabase.FindColour('RED'),1)
-#            #dc.SetPen(pGreen)
-#            
-#
-#            for tN in tFoc:
-#                IFoc = (self.tracker.clumpIndex == tN)
-#                if IFoc.sum() >= 2:
-#                    pFoc = np.vstack(view._PixelToScreenCoordinates3D(x[IFoc], y[IFoc], t[IFoc])).T
-#                    
-#                    #print pFoc.shape
-#                    dc.SetPen(self.trackPens[tN%16])
-#                    dc.DrawSpline(pFoc)
-    
-        if self.showTracks and not (self.tracker == None):
+    def DrawOverlays(self, view, dc):    
+        if self.showTracks and len(self.clumps > 0):
             bounds = view._calcVisibleBounds()
             vx, vy, vz = self.image.voxelsize
             visibleClumps = [c for c in self.clumps if self._visibletest(c, bounds)]
@@ -351,7 +285,7 @@ class ParticleTracker(HasTraits):
                     dc.DrawText('%d' % c.clumpID, x0, y0 + 1)
                     
                 
-        if self.showSelectedTrack and not self.showTracks and not (self.tracker == None):
+        if self.showSelectedTrack and not self.showTracks and len(self.clumps > 0):
             vx, vy, vz = self.image.voxelsize
             c = self.selectedTrack
             x = c['x']/vx
@@ -370,7 +304,7 @@ class ParticleTracker(HasTraits):
             if view.do.zp >=1:
                 iCurr = view.do.zp
                 iPrev = view.do.zp-1
-                links = self.tracker.calcLinkages(iCurr, iPrev)
+                links = self.tracker.tracker.calcLinkages(iCurr, iPrev)
                 
                 #pRed = wx.Pen(wx.TheColourDatabase.FindColour('RED'),2)
                 pRedDash = wx.Pen(wx.TheColourDatabase.FindColour('RED'),2, wx.SHORT_DASH)
@@ -380,7 +314,7 @@ class ParticleTracker(HasTraits):
                 dc.SetTextForeground(wx.TheColourDatabase.FindColour('YELLOW'))
                 
                 for curFrameIndex, linkInfo in links.items():
-                    inds = self.tracker.indicesByT[iCurr]
+                    inds = self.tracker.tracker.indicesByT[iCurr]
                     i = inds[curFrameIndex]
                     
                     x1 = self.dsviewer.pipeline['x'][i]/self.image.voxelsize[0] 
@@ -488,6 +422,6 @@ class ParticleTracker(HasTraits):
 
 def Plug(dsviewer):
     from PYME.DSView import htmlServe #ensure that our local cherrypy server is running
-    dsviewer.tracker = ParticleTracker(dsviewer)
+    dsviewer.tracker = ParticleTrackingView(dsviewer)
     cherrypy.tree.mount(dsviewer.tracker, '/tracks')
     dsviewer.tracker.trackview.LoadURL(htmlServe.getURL() + 'tracks/')

@@ -498,9 +498,12 @@ class ImageStack(object):
                 tf = TIFFfile(filename)
                 
                 if tf.is_ome:
-                    omemdh = MetaDataHandler.OMEXMLMDHandler(tf.pages[0].tags['image_description'].value)
-                    
-                    self.mdh.copyEntriesFrom(omemdh)
+                    try:
+                        omemdh = MetaDataHandler.OMEXMLMDHandler(tf.pages[0].tags['image_description'].value)
+                        
+                        self.mdh.copyEntriesFrom(omemdh)
+                    except IndexError:
+                        pass
                 
             elif filename.endswith('.dbl'): #Bewersdorf lab STED
                 mdfn = filename[:-4] + '.txt'

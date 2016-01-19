@@ -23,6 +23,7 @@ from traitsui.api import Controller
 
 import os
 import glob
+import textwrap
 
 RECIPE_DIR = os.path.join(os.path.split(modules.__file__)[0], 'Recipes')
 CANNED_RECIPES = glob.glob(os.path.join(RECIPE_DIR, '*.yaml'))
@@ -45,7 +46,17 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
 
         dg = self.recipes.activeRecipe.dependancyGraph()        
         ips = depGraph.arrangeNodes(dg)
-    
+        
+        axisWidth = self.ax.get_window_extent().width
+        nCols = max([1] + [v[0] for v in ips.values()])
+        pix_per_col = axisWidth/float(nCols)
+        
+        fontSize = max(6, min(10, 10*pix_per_col/100.))
+        
+        print pix_per_col, fontSize
+        
+        TW = textwrap.TextWrapper(width=int(1.8*pix_per_col/fontSize), subsequent_indent='  ')
+        TW2 = textwrap.TextWrapper(width=int(1.3*pix_per_col/fontSize), subsequent_indent='  ')
     
         cols = {}    
         for k, v in dg.items():
@@ -81,20 +92,29 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
                 
                 rect._data = k
                 self.ax.add_patch(rect)
-                self.ax.text(v[0]+.05, v[1]+.18 , s, weight='bold')
+                s = TW2.wrap(s)
+                if len(s) == 1:
+                    self.ax.text(v[0]+.05, v[1]+.18 , s[0], size=fontSize, weight='bold')
+                else:
+                    self.ax.text(v[0]+.05, v[1]+.18 - .05*(len(s) - 1) , '\n'.join(s), size=fontSize, weight='bold')
                 #print repr(k)
                 
                 params = k.get().items()
-                s2 = '\n'.join(['%s : %s' %i for i in params[:5]])
-                if len(params) > 5:
-                    s2 += '\n ... <some hidden>'
-                self.ax.text(v[0]+.05, v[1]-.22 , s2, size=8, stretch='ultra-condensed')
+                s2 = []
+                for i in params:
+                    s2 += TW.wrap('%s : %s' %i)
+                
+                if len(s2) > 5:
+                    s2 = '\n'.join(s2[:4]) + '\n ...'
+                else:
+                    s2 = '\n'.join(s2)
+                self.ax.text(v[0]+.05, v[1]-.22 , s2, size=.8*fontSize, stretch='ultra-condensed')
             else:
                 s = k
                 if not k in cols.keys():
                     cols[k] = 0.7*np.array(pylab.cm.hsv(pylab.rand()))
                 self.ax.plot(v[0], v[1], 'o', color=cols[k])
-                t = self.ax.text(v[0]+.1, v[1] + .02, s, color=cols[k], weight='bold', picker=True)
+                t = self.ax.text(v[0]+.1, v[1] + .02, s, color=cols[k], size=fontSize, weight='bold', picker=True)
                 t._data = k
                 
                 
@@ -196,7 +216,7 @@ class RecipeView(wx.Panel):
         if dlg.ShowModal() == wx.ID_OK:
             modName = dlg.GetStringSelection()
             
-            c = mods[modName]()
+            c = mods[modName](self.recipes.activeRecipe)
             self.recipes.activeRecipe.modules.append(c)
         dlg.Destroy()
         
