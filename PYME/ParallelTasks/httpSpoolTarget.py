@@ -27,7 +27,7 @@ class H5File(object):
         self.complib = 'zlib'
         
         self.usePZFFormat = True
-        self.PZFCompression = 'huffman'
+        self.PZFCompression = 'huffman_chunks'
 
         self.mdh = MetaDataHandler.CachingMDHandler(MetaDataHandler.HDFMDHandler(self.h5f))
 

@@ -821,25 +821,25 @@ class HDFTaskQueue(HDFResultsTaskQueue):
 
     def logQueueEvent(self, event):
         eventName, eventDescr, evtTime = event
-        ev = self.events.row
-
-        ev['EventName'] = eventName
-        ev['EventDescr'] = eventDescr
-        ev['Time'] = evtTime
-
         with self.dataFileLock.wlock:
+            ev = self.events.row
+
+            ev['EventName'] = eventName
+            ev['EventDescr'] = eventDescr
+            ev['Time'] = evtTime
+       
             ev.append()
             self.events.flush()
         
-
-        ev = self.resultsEvents.row
-
-        ev['EventName'] = eventName
-        ev['EventDescr'] = eventDescr
-        ev['Time'] = evtTime
-
         with self.fileResultsLock.wlock:
-        #print len(self.events)
+            ev = self.resultsEvents.row
+    
+            ev['EventName'] = eventName
+            ev['EventDescr'] = eventDescr
+            ev['Time'] = evtTime
+    
+            
+            #print len(self.events)
             ev.append()
             self.resultsEvents.flush()
         
