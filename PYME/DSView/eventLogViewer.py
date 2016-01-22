@@ -165,24 +165,31 @@ class eventLogPanel(wx.Panel):
             t = e['Time'] - startT
             if t > minT and t < maxT:
                 y = (t -minT)*pixPerS + 2*textHeight
+                
                 dc.SetPen(wx.Pen(self.lineColours[e['EventName']]))
                 dc.SetTextForeground(self.lineColours[e['EventName']])
+                
                 if y < (lastEvY + 2) or (numSkipped > 0 and y < (lastEvY + 1.2*textHeight)): #no room - skip
                     if ((tTickPositions - y)**2).min() < (0.3*textHeight)**2:
+                        #line will occlude time text, draw as two segments
                         dc.DrawLine(x0, y, x0 + barWidth, y)
                         dc.DrawLine(x1 - 2*hpadding, y, x1 - 2*(1 + 1*numSkipped), y)
                     else:
                         dc.DrawLine(x0, y, x1 - 2*(1 + 1*numSkipped), y)
+                        
                     dc.DrawLine(x1- 2*(1 + 1*numSkipped), y, x1- 2*(1 + 1*numSkipped), lastEvY + 0.5*textHeight + 1 + 2*numSkipped)
                     dc.DrawLine(x1- 2*(1 + 1*numSkipped),lastEvY + 0.5*textHeight + 1 + 2*numSkipped, x3 + 200, lastEvY+ 0.5*textHeight + 1 + 2*numSkipped)
                     numSkipped +=1
-                else:
+                else: #Don't skip - draw nomally
                     if ((tTickPositions - y)**2).min() < (0.3*textHeight)**2:
+                        #line will occlude time text, draw as two segments
                         dc.DrawLine(x0, y, x0 + barWidth, y)
                         dc.DrawLine(x1 - 2*hpadding, y, x1, y)
                     else:
                         dc.DrawLine(x0, y, x1, y)
+                        
                     if y < (lastEvY + 1.2*textHeight):
+                        #label will overlap with previous - move down
                         dc.DrawLine(x1, y, x1, lastEvY + 1.2*textHeight)
                         y = lastEvY + 1.2*textHeight
 

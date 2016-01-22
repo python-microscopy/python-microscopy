@@ -556,7 +556,33 @@ class OMEXMLMDHandler(XMLMDHandler):
         if not XMLData == None:
             #loading an existing file
             self.doc = parseString(XMLData)
-            self.md = self.doc.documentElement.getElementsByTagName('MetaData')[0]
+            #try:
+            try:
+                self.md = self.doc.documentElement.getElementsByTagName('MetaData')[0]
+            except IndexError:
+                self.md = self.doc.createElement('MetaData')
+                self.doc.documentElement.appendChild(self.md)
+                
+            #try to load pixel size etc fro OME metadata
+            pix = self.doc.getElementsByTagName('Pixels')[0]
+            
+            self['voxelsize.x'] = pix.getAttribute('PhysicalSizeX')
+            self['voxelsize.y'] = pix.getAttribute('PhysicalSizeY')
+            
+            self['OME.SizeX'] = pix.getAttribute('SizeX')
+            self['OME.SizeY'] = pix.getAttribute('SizeY')
+            self['OME.SizeZ'] = pix.getAttribute('SizeZ')
+            self['OME.SizeT'] = pix.getAttribute('SizeT')
+            self['OME.SizeC'] = pix.getAttribute('SizeC')
+            
+            self['OME.DimensionOrder'] = pix.getAttribute('DimensionOrder')
+                
+            #except:
+            #    pass
+            
+            
+                
+            
         else:
             #creating a new document
             self.doc = getDOMImplementation().createDocument(None, 'OME', None)
