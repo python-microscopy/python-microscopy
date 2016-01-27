@@ -731,9 +731,9 @@ class LMAnalyser:
         mdhQ.setEntry('Analysis.FitModule', fitFcn)
         mdhQ.setEntry('Analysis.DataFileID', fileID.genDataSourceID(self.image.dataSource))
 
-        evts = self.image.dataSource.getEvents()
-        if len(evts) > 0:
-            self.tq.addQueueEvents(self.image.seriesName, evts)
+#        evts = self.image.dataSource.getEvents()
+#        if len(evts) > 0:
+#            self.tq.addQueueEvents(self.image.seriesName, evts)
 
         self.tq.releaseTasks(self.image.seriesName, startingAt)
 
@@ -761,6 +761,10 @@ class LMAnalyser:
             mn = self.image.dataSource.dataSource.moduleName
 
         self.tq.createQueue('DSTaskQueue', self.image.seriesName, mdh, mn, resultsFilename, startAt = startingAt)
+        
+        evts = self.image.dataSource.getEvents()
+        if len(evts) > 0:
+            self.tq.addQueueEvents(self.image.seriesName, evts)
         
         debugPrint('Queue created')
 
