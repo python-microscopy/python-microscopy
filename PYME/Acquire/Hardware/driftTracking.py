@@ -131,7 +131,7 @@ class correlator(object):
         dm = d/d.mean() - 1
         
         #where is the piezo suppposed to be
-        nomPos = self.piezo.GetPos(0)
+        nomPos = self.piezo.GetTargetPos(0)
         
         #find closest calibration position
         posInd = np.argmin(np.abs(nomPos - self.calPositions))
