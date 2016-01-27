@@ -563,22 +563,31 @@ class OMEXMLMDHandler(XMLMDHandler):
                 self.md = self.doc.createElement('MetaData')
                 self.doc.documentElement.appendChild(self.md)
                 
-            #try to load pixel size etc fro OME metadata
-            pix = self.doc.getElementsByTagName('Pixels')[0]
-            
-            self['voxelsize.x'] = pix.getAttribute('PhysicalSizeX')
-            self['voxelsize.y'] = pix.getAttribute('PhysicalSizeY')
-            
-            self['OME.SizeX'] = pix.getAttribute('SizeX')
-            self['OME.SizeY'] = pix.getAttribute('SizeY')
-            self['OME.SizeZ'] = pix.getAttribute('SizeZ')
-            self['OME.SizeT'] = pix.getAttribute('SizeT')
-            self['OME.SizeC'] = pix.getAttribute('SizeC')
-            
-            self['OME.DimensionOrder'] = pix.getAttribute('DimensionOrder')
+                #try to load pixel size etc fro OME metadata
+                pix = self.doc.getElementsByTagName('Pixels')[0]
                 
-            #except:
-            #    pass
+                self['voxelsize.x'] = float(pix.getAttribute('PhysicalSizeX'))
+                self['voxelsize.y'] = float(pix.getAttribute('PhysicalSizeY'))
+                try:
+                    self['voxelsize.z'] = float(pix.getAttribute('PhysicalSizeZ'))
+                except:
+                    self['voxelsize.z'] = 0.2
+                    
+                try:
+                    self['Camera.CycleTime'] = float(pix.getAttribute('TimeIncrement'))
+                except:
+                    pass
+                
+                self['OME.SizeX'] = int(pix.getAttribute('SizeX'))
+                self['OME.SizeY'] = int(pix.getAttribute('SizeY'))
+                self['OME.SizeZ'] = int(pix.getAttribute('SizeZ'))
+                self['OME.SizeT'] = int(pix.getAttribute('SizeT'))
+                self['OME.SizeC'] = int(pix.getAttribute('SizeC'))
+                
+                self['OME.DimensionOrder'] = pix.getAttribute('DimensionOrder')
+                    
+                #except:
+                #    pass
             
             
                 

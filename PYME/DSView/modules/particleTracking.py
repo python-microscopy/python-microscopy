@@ -259,7 +259,7 @@ class ParticleTrackingView(HasTraits):
 
         
     def DrawOverlays(self, view, dc):    
-        if self.showTracks and len(self.clumps > 0):
+        if self.showTracks and (len(self.clumps) > 0):
             bounds = view._calcVisibleBounds()
             vx, vy, vz = self.image.voxelsize
             visibleClumps = [c for c in self.clumps if self._visibletest(c, bounds)]
@@ -285,7 +285,7 @@ class ParticleTrackingView(HasTraits):
                     dc.DrawText('%d' % c.clumpID, x0, y0 + 1)
                     
                 
-        if self.showSelectedTrack and not self.showTracks and len(self.clumps > 0):
+        if self.showSelectedTrack and not self.showTracks and (len(self.clumps) > 0):
             vx, vy, vz = self.image.voxelsize
             c = self.selectedTrack
             x = c['x']/vx

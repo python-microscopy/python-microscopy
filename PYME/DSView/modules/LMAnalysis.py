@@ -714,7 +714,7 @@ class LMAnalyser:
             else:
                 raise RuntimeError('Invalid results file - not running')
                 
-            return resultsFilename
+        return resultsFilename
             
 
     def pushImagesHDF(self, startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):

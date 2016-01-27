@@ -79,6 +79,17 @@ class RecipePlugin(recipeGui.RecipeManager):
                     mode = 'default'
     
                 dv = ViewIm3D(self.outp, mode=mode, glCanvas=self.dsviewer.glCanvas)
+                
+                if 'out_meas' in self.activeRecipe.namespace.keys():
+                    #have measurements as well - add to / overlay with output image
+                    if not 'pipeline' in dir(dv):
+                        dv.pipeline = pipeline.Pipeline()
+                    
+                    from PYME.Analysis.LMVis import inpFilt
+                    cache = inpFilt.cachingResultsFilter(self.activeRecipe.namespace['out_meas'])
+                    dv.pipeline.OpenFile(ds = cache)
+                    dv.view.filter = dv.pipeline
+                    
     
                 #set scaling to (0,1)
                 for i in range(self.outp.data.shape[3]):
