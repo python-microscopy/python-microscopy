@@ -30,7 +30,7 @@ import threading
 import numpy
 from taskQueue import *
 from HDFTaskQueue import *
-from DSTaskQueue import DSTaskQueue
+from PYME.ParallelTasks.DSTaskQueue import DSTaskQueue
 
 import PYME.version
 
