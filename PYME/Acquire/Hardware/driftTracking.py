@@ -132,6 +132,8 @@ class correlator(object):
         
         #where is the piezo suppposed to be
         nomPos = self.piezo.GetPos(0)
+        
+        #find closest calibration position
         posInd = np.argmin(np.abs(nomPos - self.calPositions))
         
         #retrieve calibration information at this location        
@@ -142,6 +144,7 @@ class correlator(object):
         ddz = self.dz[:,posInd]
         dzn = self.dzn[posInd]
         
+        #what is the offset between our target position and the calibration position         
         posDelta = nomPos - calPos
         
         print nomPos, posInd, calPos, posDelta
@@ -163,9 +166,13 @@ class correlator(object):
         
         self.ds_A = (ds - refA)
         
+        #calculate z offset between actual position and calibration position
         dz = self.deltaZ*np.dot(self.ds_A.ravel(), ddz)*dzn
         
-        return dx, dy, dz + posDelta, Cm
+        #add the offset back to determine how far we are from the target position
+        dz = dz + posDelta
+        
+        return dx, dy, dz, Cm
         
     
     def tick(self, caller=None):
