@@ -196,15 +196,26 @@ class OMETiffExporter(Exporter):
 
     def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
         from PYME.gohlke import tifffile
+        import dataWrap
+        
+        dw = dataWrap.ListWrap([data[xslice, yslice, zslice, i] for i in range(data.shape[3])])
         #xmd = None
         if not metadata == None:
             xmd = MetaDataHandler.OMEXMLMDHandler(mdToCopy=metadata)
-            description=xmd.getXML(data)
+            if not origName == None:
+                xmd.setEntry('cropping.originalFile', origName)
+
+            xmd.setEntry('cropping.xslice', xslice.indices(data.shape[0]))
+            xmd.setEntry('cropping.yslice', yslice.indices(data.shape[1]))
+            xmd.setEntry('cropping.zslice', zslice.indices(data.shape[2]))
+            
+            description=xmd.getXML(dw)
         else:
             description = None
             
             
-        tifffile.imsave_f(outFile, data, description = description) 
+            
+        tifffile.imsave_f(outFile, dw, description = description) 
 
 
 exporter(OMETiffExporter)

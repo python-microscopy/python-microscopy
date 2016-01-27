@@ -294,6 +294,49 @@ class BinaryFillHoles(Filter):
         else:
             selem = skimage.morphology.disk(self.radius)
         return ndimage.binary_fill_holes(data, selem)
+        
+@register_module('GreyDilation')      
+class GreyDilation(Filter):
+    iterations = Int(1)
+    radius = Float(1)
+    
+    def applyFilter(self, data, chanNum, frNum, im):
+        import skimage.morphology
+        
+        if len(data.shape) == 3: #3D
+            selem = skimage.morphology.ball(self.radius)
+        else:
+            selem = skimage.morphology.disk(self.radius)
+        return ndimage.grey_dilation(data, structure=selem)
+
+@register_module('GreyErosion')         
+class GreyErosion(Filter):
+    iterations = Int(1)
+    radius = Float(1)
+    
+    def applyFilter(self, data, chanNum, frNum, im):
+        import skimage.morphology
+        
+        if len(data.shape) == 3: #3D
+            selem = skimage.morphology.ball(self.radius)
+        else:
+            selem = skimage.morphology.disk(self.radius)
+        return ndimage.grey_erosion(data, structure=selem)
+        
+@register_module('WhiteTophat')         
+class WhiteTophat(Filter):
+    iterations = Int(1)
+    radius = Float(1)
+    
+    def applyFilter(self, data, chanNum, frNum, im):
+        import skimage.morphology
+        
+        if len(data.shape) == 3: #3D
+            selem = skimage.morphology.ball(self.radius)
+        else:
+            selem = skimage.morphology.disk(self.radius)
+        return ndimage.white_tophat(data, structure=selem)
+
 
 @register_module('Watershed')         
 class Watershed(ModuleBase):
