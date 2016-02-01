@@ -108,9 +108,11 @@ class rldec:
 
             #the residuals
             self.res = weights*(data/(self.Afunc(self.f)+1e-12 + bg)) +  mask;
+
             #self.res = weights*(data/(ndimage.median_filter(self.Afunc(self.f), 3)+1e-12 + bg)) +  mask;
             #self.res = weights*(data/(self.Afunc(self.f)+1e-12 + bg)) +  mask;
-            
+
+            #self.res = (data/(self.Afunc(self.f) + 1e-12))
 
             #print 'Residual norm = %f' % norm(self.res)
             

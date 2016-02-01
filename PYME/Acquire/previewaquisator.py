@@ -174,6 +174,11 @@ class PreviewAquisator(wx.Timer):
         else:
             cs = self.dsa[:,:,self.zPos].ctypes.data
             
+        #Get camera to insert data into our array (results passed back "by reference")
+        #this is a kludge/artifact of an old call into c-code
+        #in this context cs is a pointer to the memory we want the frame to go into
+        #for newer cameras, we pass a numpy array object, and the camera code
+        #copies the data into that array.
         self.cam.ExtractColor(cs,0)
 
     def purge(self):
