@@ -182,19 +182,19 @@ time1.WantNotification.append(fk.refresh)
 ##scope.lasers = [scope.l642]
 ##scope.lasers = []
 
-from PYME.Acquire.Hardware import lasers
-sb = lasers.SBox(com_port='COM19')
-scope.l671 = lasers.SerialSwitchedLaser('671',sb,0)
-scope.l532 = lasers.SerialSwitchedLaser('532',sb,2)
+# from PYME.Acquire.Hardware import lasers
+# sb = lasers.SBox(com_port='COM19')
+# scope.l671 = lasers.SerialSwitchedLaser('671',sb,0)
+# scope.l532 = lasers.SerialSwitchedLaser('532',sb,2)
 
-from PYME.Acquire.Hardware import matchboxLaser
-scope.l405 = matchboxLaser.MatchboxLaser('405',portname='COM11')
+# from PYME.Acquire.Hardware import matchboxLaser
+# scope.l405 = matchboxLaser.MatchboxLaser('405',portname='COM11')
 
-from PYME.Acquire.Hardware import phoxxLaserOLD
-scope.l647 = phoxxLaserOLD.PhoxxLaser('647',portname='COM15')
-scope.StatusCallbacks.append(scope.l647.GetStatusText)
+# from PYME.Acquire.Hardware import phoxxLaserOLD
+# scope.l647 = phoxxLaserOLD.PhoxxLaser('647',portname='COM15')
+# scope.StatusCallbacks.append(scope.l647.GetStatusText)
 
-scope.lasers = [scope.l671, scope.l405, scope.l647, scope.l532]
+# scope.lasers = [scope.l671, scope.l405, scope.l647, scope.l532]
 
 InitGUI('''
 if 'lasers'in dir(scope):
@@ -213,22 +213,22 @@ camPanels.append((lsf, 'Laser Powers'))
 ''')
 
 from PYME.Acquire.Hardware.FilterWheel import WFilter, FiltFrame, FiltWheel
-filtList = [WFilter(1, 'EMPTY', 'EMPTY', 0),
-    WFilter(2, 'ND.5' , 'UVND 0.5', 0.5),
-    WFilter(3, 'ND1'  , 'UVND 1'  , 1),
-    WFilter(4, 'ND2', 'UVND 2', 2),
-    WFilter(5, 'ND3'  , 'UVND 3'  , 3),
-    WFilter(6, 'ND4'  , 'UVND 4'  , 4)]
+# filtList = [WFilter(1, 'EMPTY', 'EMPTY', 0),
+#     WFilter(2, 'ND.5' , 'UVND 0.5', 0.5),
+#     WFilter(3, 'ND1'  , 'UVND 1'  , 1),
+#     WFilter(4, 'ND2', 'UVND 2', 2),
+#     WFilter(5, 'ND3'  , 'UVND 3'  , 3),
+#     WFilter(6, 'ND4'  , 'UVND 4'  , 4)]
 
-InitGUI('''
-try:
-    scope.filterWheel = FiltWheel(filtList, 'COM21')
-    #scope.filterWheel.SetFilterPos("LF488")
-    scope.filtPan = FiltFrame(MainFrame, scope.filterWheel)
-    toolPanels.append((scope.filtPan, 'Filter Wheel'))
-except:
-    print 'Error starting filter wheel ...'
-''')
+# InitGUI('''
+# try:
+#     scope.filterWheel = FiltWheel(filtList, 'COM21')
+#     #scope.filterWheel.SetFilterPos("LF488")
+#     scope.filtPan = FiltFrame(MainFrame, scope.filterWheel)
+#     toolPanels.append((scope.filtPan, 'Filter Wheel'))
+# except:
+#     print 'Error starting filter wheel ...'
+# ''')
 
 from PYME.Acquire.Hardware import ExciterWheel
 exciterList = [WFilter(1, 'GFP', 'GFP', 0),

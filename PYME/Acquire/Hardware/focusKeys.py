@@ -136,7 +136,7 @@ class PositionKeys:
         else:
             p = self.xpiezo[0].GetPos(self.xpiezo[1])
             
-        self.xpiezo[0].MoveTo(self.xpiezo[1], p - self.focusIncrement, False)
+        self.xpiezo[0].MoveTo(self.xpiezo[1], p - self.focusIncrement, False, vel=10)
 
     def OnRight(self,event):
         if 'lastPos' in dir(self.xpiezo[0]):
@@ -144,7 +144,7 @@ class PositionKeys:
         else:
             p = self.xpiezo[0].GetPos(self.xpiezo[1])
             
-        self.xpiezo[0].MoveTo(self.xpiezo[1], p + self.focusIncrement, False)
+        self.xpiezo[0].MoveTo(self.xpiezo[1], p + self.focusIncrement, False, vel=10)
 
     def OnUp(self,event):
         if 'lastPos' in dir(self.ypiezo[0]):
@@ -152,7 +152,7 @@ class PositionKeys:
         else:
             p = self.ypiezo[0].GetPos(self.ypiezo[1])
             
-        self.ypiezo[0].MoveTo(self.ypiezo[1], p - self.focusIncrement, False)
+        self.ypiezo[0].MoveTo(self.ypiezo[1], p - self.focusIncrement, False, vel=10)
         
     def OnDown(self,event):
         if 'lastPos' in dir(self.ypiezo[0]):
@@ -160,7 +160,7 @@ class PositionKeys:
         else:
             p = self.ypiezo[0].GetPos(self.ypiezo[1])
             
-        self.ypiezo[0].MoveTo(self.ypiezo[1], p + self.focusIncrement, False)
+        self.ypiezo[0].MoveTo(self.ypiezo[1], p + self.focusIncrement, False, vel=10)
 
     
 #    def refresh(self):

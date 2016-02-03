@@ -209,7 +209,7 @@ class piezo_e709T(object):
         self.position = np.array([0.])
         #self.velocity = np.array([self.maxvelocity, self.maxvelocity])
         
-        self.targetPosition = np.array([200.])
+        self.targetPosition = np.array([100.])
         #self.targetVelocity = self.velocity.copy()
         
         self.lastTargetPosition = self.position.copy()
