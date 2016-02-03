@@ -139,7 +139,8 @@ class correlator(object):
         
         #where is the piezo suppposed to be
         nomPos = self.piezo.GetPos(0)
-        posInd = np.argmin(np.abs(nomPos - self.calPositions))
+        #posInd = np.argmin(np.abs(nomPos - self.calPositions))
+        posInd = 10
         
         #retrieve calibration information at this location        
         calPos = self.calPositions[posInd]
@@ -174,7 +175,7 @@ class correlator(object):
 
 #        self.buffer.append((dz, nomPos, posInd, calPos, posDelta))
 
-        self.buffer.append((dx, dy, dz + posDelta, Cm, dz, nomPos, posInd, calPos, posDelta))
+#        self.buffer.append((dx, dy, dz + posDelta, Cm, dz, nomPos, posInd, calPos, posDelta))
 
 #        if len(self.buffer)>10:
 #            self.buffer.remove(self.buffer[0])
@@ -187,7 +188,8 @@ class correlator(object):
             self.WantRecord = False
 
         
-        return dx, dy, dz + posDelta, Cm, dz, nomPos, posInd, calPos, posDelta
+        #return dx, dy, dz + posDelta, Cm, dz, nomPos, posInd, calPos, posDelta
+        return dx, dy, dz, Cm, dz, nomPos, posInd, calPos, posDelta
         
     
     def tick(self, caller=None):
@@ -248,7 +250,7 @@ class correlator(object):
                 self.piezo.LogShifts(dx, dy, dz)
             
             if self.lockFocus and (cCoeff > .5*self.corrRef): # correction only applies if correlation is still strong enough
-                if abs(self.piezo.GetOffset()) > 2.0:
+                if abs(self.piezo.GetOffset()) > 20.0:
                     self.lockFocus = False
                     print "focus lock released"
                 if abs(dz) > self.focusTolerance and self.lastAdjustment >= self.minDelay:
