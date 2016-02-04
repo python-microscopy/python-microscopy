@@ -6,6 +6,7 @@ Created on Mon May 25 17:10:02 2015
 """
 from .base import ModuleBase, register_module, Filter, Float, Enum, CStr, Bool, Int, View, Item, Group
 import numpy as np
+import pandas as pd
 from PYME.Analysis.LMVis import inpFilt
 from PYME.Acquire import MetaDataHandler
 import os
@@ -32,8 +33,11 @@ class MultifitBlobs(ModuleBase):
             ff = GaussMultifitSR.FitFactory(self.scale*img.data[:,:,i], img.mdh, noiseSigma=np.ones_like(img.data[:,:,i].squeeze()))
         
             res.append(inpFilt.fitResultsSource(ff.FindAndFit(self.threshold)))
+            
+        res = pd.DataFrame(np.vstack(res))
+        res.mdh = img.mdh
         
-        namespace[self.outputName] = np.vstack(res)#inpFilt.mappingFilter(res, x='fitResults_x0', y='fitResults_y0')
+        namespace[self.outputName] = res
 
 @register_module('FitDumbells') 
 class FitDumbells(ModuleBase):
@@ -77,8 +81,9 @@ class FitDumbells(ModuleBase):
             
         
         res = inpFilt.fitResultsSource(r)
+        res.mdh = md
         
-        namespace[self.outputName] = res#inpFilt.mappingFilter(res, x='fitResults_x0', y='fitResults_y0')
+        namespace[self.outputName] = res
 
 @register_module('MeanNeighbourDistances') 
 class MeanNeighbourDistances(ModuleBase):
@@ -99,7 +104,11 @@ class MeanNeighbourDistances(ModuleBase):
         #find the average edge lengths leading away from a given point
         res = np.array(visHelpers.calcNeighbourDists(T))
         
-        namespace[self.outputName] = {self.key:res}
+        res = pd.DataFrame({self.key:res})
+        if 'mdh' in dir(pos):
+            res.mdh = pos.mdh
+        
+        namespace[self.outputName] = res
 
 @register_module('NearestNeighbourDistances')         
 class NearestNeighbourDistances(ModuleBase):
@@ -124,7 +133,11 @@ class NearestNeighbourDistances(ModuleBase):
         d, i = kdt.query(p, 2)
         res = d[:,1]
         
-        namespace[self.outputName] = {self.key: res}
+        res = pd.DataFrame({self.key:res})
+        if 'mdh' in dir(pos):
+            res.mdh = pos.mdh
+        
+        namespace[self.outputName] = res
 
 @register_module('PairwiseDistanceHistogram')         
 class PairwiseDistanceHistogram(ModuleBase):
@@ -144,13 +157,18 @@ class PairwiseDistanceHistogram(ModuleBase):
         res = DistHist.distanceHistogram(x, y, x, y, self.nbins, self.binsize)
         d = self.binsize*np.arange(self.nbins)
         
-        namespace[self.outputName] = {'bins' : d, 'counts' : res}
+        res = pd.DataFrame({'bins' : d, 'counts' : res})
+        if 'mdh' in dir(pos):
+            res.mdh = pos.mdh
+        
+        namespace[self.outputName] = res
+        
 
 @register_module('Histogram')         
 class Histogram(ModuleBase):
     '''Calculates a histogram of a given measurement key'''
     inputMeasurements = CStr('input')
-    outputName = CStr('distHist')
+    outputName = CStr('hist')
     key = CStr('key')
     nbins = Int(50)
     left = Float(0.)
@@ -163,7 +181,12 @@ class Histogram(ModuleBase):
         
         res = np.histogram(v, edges)[0]
         
-        namespace[self.outputName] = {'bins' : edges, 'counts' : res}
+        res = pd.DataFrame({'bins' : edges, 'counts' : res})
+        if 'mdh' in dir(v):
+            res.mdh = v.mdh
+        
+        namespace[self.outputName] = res
+        
 
 @register_module('Measure2D') 
 class Measure2D(ModuleBase):
@@ -267,6 +290,8 @@ class Measure2D(ModuleBase):
             
         for i in xrange(labels.data.shape[2]):
             m.addFrameMeasures(i, *self._measureFrame(i, labels, intensity))
+            
+        m.mdh = labels.mdh
                     
         namespace[self.outputName] = m#.toDataFrame()      
         
@@ -304,17 +329,23 @@ class Measure2D(ModuleBase):
 @register_module('SelectMeasurementColumns')         
 class SelectMeasurementColumns(ModuleBase):
     '''Take just certain columns of a variable'''
-    inputMeasurments = CStr('measurements')
+    inputMeasurements = CStr('measurements')
     keys = CStr('')
     outputName = CStr('selectedMeasurements') 
     
     def execute(self, namespace):       
-        meas = namespace[self.inputMeasurments]
-        namespace[self.outputName] = {k:meas[k] for k in self.keys.split()}
+        meas = namespace[self.inputMeasurements]
+        out = pd.DataFrame({k:meas[k] for k in self.keys.split()})
+        if 'mdh' in dir(meas):
+            #propagate metadata
+            out.mdh = meas.mdh
+            
+        namespace[self.outputName] = out
 
 @register_module('AddMetadataToMeasurements')         
 class AddMetadataToMeasurements(ModuleBase):
-    inputMeasurments = CStr('measurements')
+    '''Adds metadata entries as extra column(s) to the output'''
+    inputMeasurements = CStr('measurements')
     inputImage = CStr('input')
     keys = CStr('SampleNotes')
     metadataKeys = CStr('Sample.Notes')
@@ -322,7 +353,8 @@ class AddMetadataToMeasurements(ModuleBase):
     
     def execute(self, namespace):
         res = {}
-        res.update(namespace[self.inputMeasurments])
+        meas = namespace[self.inputMeasurements]
+        res.update(meas)
         
         img = namespace[self.inputImage]
 
@@ -335,6 +367,10 @@ class AddMetadataToMeasurements(ModuleBase):
                 v = img.mdh[mdk]
             res[k] = np.array([v]*nEntries)
         
+        res = pd.DataFrame(res)
+        #if 'mdh' in dir(meas):
+        res.mdh = img.mdh
+        
         namespace[self.outputName] = res
 
 
@@ -343,16 +379,30 @@ class AggregateMeasurements(ModuleBase):
     '''Create a new composite measurement containing the results of multiple
     previous measurements'''
     inputMeasurements1 = CStr('meas1')
+    suffix1 = CStr('')
     inputMeasurements2 = CStr('')
+    suffix2 = CStr('')
     inputMeasurements3 = CStr('')
+    suffix3 = CStr('')
     inputMeasurements4 = CStr('')
+    suffix4 = CStr('')
     outputName = CStr('aggregatedMeasurements') 
     
     def execute(self, namespace):
         res = {}
-        for mk in [getattr(self, n) for n in dir(self) if n.startswith('inputMeas')]:
+        for mk, suffix in [(getattr(self, n), getattr(self, 'suffix' + n[-1])) for n in dir(self) if n.startswith('inputMeas')]:
             if not mk == '':
                 meas = namespace[mk]
-                res.update(meas)
+                
+                #res.update(meas)
+                for k in meas.keys():
+                    res[k + suffix] = meas[k]
+                
         
+        meas1 = namespace[self.inputMeasurements1]
+        res = pd.DataFrame(res)
+        if 'mdh' in dir(meas1):
+            res.mdh = meas1.mdh
+            
         namespace[self.outputName] = res
+        

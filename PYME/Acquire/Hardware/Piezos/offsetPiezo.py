@@ -36,6 +36,9 @@ class piezoOffsetProxy(Pyro.core.ObjBase):
     def GetPos(self, iChannel=0):
         return self.basePiezo.GetPos(iChannel) - self.offset
         
+    def GetTargetPos(self, iChannel=0):
+        return self.basePiezo.GetTargetPos(iChannel) - self.offset
+        
     def GetControlReady(self):
         return self.basePiezo.GetControlReady()
          

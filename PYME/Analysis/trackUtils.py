@@ -100,7 +100,10 @@ class Clump(object):
     @property
     def dtypes(self):
         if not '_dtypes' in dir(self):
-            self._dtypes = self.pipeline.dtypes
+            if 'dtypes' in dir(self.pipeline):
+                self._dtypes = self.pipeline.dtypes
+            else:
+                self._dtypes = {k:self.pipeline[k].dtype for k in self.pipeline.keys()}
         return self._dtypes
 
     def __getitem__(self, key):
@@ -108,7 +111,7 @@ class Clump(object):
             raise RuntimeError('Key not defined')
         
         if not key in self.cache.keys():
-            self.cache[key] = self.pipeline[key][self.index]
+            self.cache[key] = np.array(self.pipeline[key][self.index])
             
         return self.cache[key]
         

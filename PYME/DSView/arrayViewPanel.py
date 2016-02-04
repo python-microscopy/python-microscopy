@@ -1018,7 +1018,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
         #XY
         if self.do.slice == DisplayOpts.SLICE_XY:
-            ima = numpy.zeros((numpy.ceil(min(sY_, self.do.ds.shape[1])/fstep), numpy.ceil(min(sX_, self.do.ds.shape[0])/fstep), 3), 'uint8')
+            ima = numpy.zeros((int(numpy.ceil(min(sY_, self.do.ds.shape[1])/fstep)), int(numpy.ceil(min(sX_, self.do.ds.shape[0])/fstep)), 3), 'uint8')
             #print ima.shape
             for chan, offset, gain, cmap in self.do.GetActiveChans():#zip(self.do.Chans, self.do.Offs, self.do.Gains, self.do.cmaps, self.do.show):
                 #ima[:] = numpy.minimum(ima[:] + (255*cmap(gain*(self.do.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.do.zp), chan].squeeze().T - offset))[:,:,:3])[:], 255)

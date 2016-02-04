@@ -19,8 +19,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
+#try:
+#    print 'trying to import javabridge & bioformats'
+#    import javabridge
+#    print 'imported javabridge'
+#    import bioformats
+#    print 'imported bioformats'
+#    javabridge.start_vm(class_path=bioformats.JARS, run_headless=True)
+#    print 'started java VM'
+#except:
+#    pass
+
 import os
 import numpy
+
 import weakref
 
 from PYME.Acquire import MetaDataHandler
@@ -28,6 +40,8 @@ from PYME.Analysis import MetaData
 from PYME.DSView import dataWrap
 from PYME.Analysis.DataSources import BufferedDataSource
 from PYME.Analysis.LMVis.visHelpers import ImageBounds
+
+
 
 lastdir = ''
 
@@ -498,9 +512,12 @@ class ImageStack(object):
                 tf = TIFFfile(filename)
                 
                 if tf.is_ome:
-                    omemdh = MetaDataHandler.OMEXMLMDHandler(tf.pages[0].tags['image_description'].value)
-                    
-                    self.mdh.copyEntriesFrom(omemdh)
+                    try:
+                        omemdh = MetaDataHandler.OMEXMLMDHandler(tf.pages[0].tags['image_description'].value)
+                        
+                        self.mdh.copyEntriesFrom(omemdh)
+                    except IndexError:
+                        pass
                 
             elif filename.endswith('.dbl'): #Bewersdorf lab STED
                 mdfn = filename[:-4] + '.txt'
@@ -556,6 +573,13 @@ class ImageStack(object):
                     
                 for k, v in entrydict.items():
                     self.mdh['STED.%s'%_sanitise_key(k)] = v
+                    
+            #else: #try bioformats
+            #    OMEXML = bioformats.get_omexml_metadata(filename).encode('utf8')
+            #    OMEmd = MetaDataHandler.OMEXMLMDHandler(OMEXML)
+            #    self.mdh.copyEntriesFrom(OMEmd)
+                    
+                    
                     
                     
                 
@@ -628,16 +652,41 @@ class ImageStack(object):
             self.data = ListWrap(chans)
 
 
-        
-        #self.data = readTiff.read3DTiff(filename)
+        from PYME.ParallelTasks.relativeFiles import getRelFilename
+        self.seriesName = getRelFilename(filename)
 
+        self.mode = 'default'
         
+    def LoadBioformats(self, filename):
+        #from PYME.FileUtils import readTiff
+        from PYME.Analysis.DataSources import BioformatsDataSource
+        import bioformats
+
+        #mdfn = self.FindAndParseMetadata(filename)
+        print "Bioformats:loading data"
+        self.dataSource = BioformatsDataSource.DataSource(filename, None)
+        self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.BareBones)
+        
+        print "Bioformats:loading metadata"
+        OMEXML = bioformats.get_omexml_metadata(filename).encode('utf8')
+        print "Bioformats:parsing metadata"
+        OMEmd = MetaDataHandler.OMEXMLMDHandler(OMEXML)
+        self.mdh.copyEntriesFrom(OMEmd)
+        print "Bioformats:done"
+                
+        
+        print self.dataSource.shape
+        self.dataSource = BufferedDataSource.DataSource(self.dataSource, min(self.dataSource.getNumSlices(), 50))
+        self.data = self.dataSource #this will get replaced with a wrapped version
+        
+        print self.data.shape
 
         from PYME.ParallelTasks.relativeFiles import getRelFilename
         self.seriesName = getRelFilename(filename)
 
         self.mode = 'default'
-
+        
+        
     def LoadImageSeries(self, filename):
         #from PYME.FileUtils import readTiff
         from PYME.Analysis.DataSources import ImageSeriesDataSource
@@ -697,8 +746,10 @@ class ImageStack(object):
                 self.LoadNPY(filename)
             elif filename.endswith('.dbl'): #treat this as being an image series
                 self.LoadDBL(filename)
-            else: #try tiff
+            elif os.path.splitext(filename)[1] in ['.tif', '.tiff', '.lsm']: #try tiff
                 self.LoadTiff(filename)
+            else: #try bioformats
+                self.LoadBioformats(filename)
 
 
             #self.SetTitle(filename)
