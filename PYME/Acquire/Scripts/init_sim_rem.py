@@ -155,6 +155,7 @@ from PYME.Acquire.Hardware import driftTracking, driftTrackGUI
 scope.dt = driftTracking.correlator(scope, scope.fakePiezo)
 dtp = driftTrackGUI.DriftTrackingControl(MainFrame, scope.dt)
 camPanels.append((dtp, 'Focus Lock'))
+time1.WantNotification.append(dtp.refresh)
 ''')
 
 

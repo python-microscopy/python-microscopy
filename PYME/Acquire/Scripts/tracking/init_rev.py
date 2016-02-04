@@ -22,7 +22,7 @@
 ##################
 
 #from PYME.Acquire.Hardware.AndorIXon import AndorIXon
-#from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
+from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
 
 from PYME.Acquire.Hardware.uc480 import uCam480
 
@@ -42,6 +42,7 @@ def GetComputerName():
 from PYME.Acquire import MetaDataHandler
 
 InitBG('EMCCD Cameras', '''
+uCam480.init(cameratype='uc480')
 scope.cameras['A - Left'] = uCam480.uc480Camera(0)
 #scope.cameras['B - Right'] = AndorIXon.iXonCamera(0)
 #scope.cameras['B - Right'].SetShutter(False)
@@ -53,14 +54,13 @@ scope.cam = scope.cameras['A - Left']
 #scope.cameras['B'] = AndorIXon.iXonCamera(0)
 #''')
 
-#InitGUI('''
-#scope.camControls['A - Left'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['A - Left'], scope)
-#camPanels.append((scope.camControls['A - Left'], 'EMCCD A Properties'))
+InitGUI('''
+scope.camControls['A - Left'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['A - Left'], scope)
+camPanels.append((scope.camControls['A - Left'], 'EMCCD A Properties'))
 #
 ##scope.camControls['B - Right'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['B - Right'], scope)
 ##camPanels.append((scope.camControls['B - Right'], 'EMCCD B Properties'))
-#
-#''')
+''')
 
 #InitGUI('''
 #from PYME.Acquire import sampleInformation
@@ -82,7 +82,7 @@ scope.shutters = fakeShutters
 #PIFoc
 InitBG('PIFoc', '''
 from PYME.Acquire.Hardware.Piezos import offsetPiezo
-scope.piFoc = offsetPiezo.getClient()# piezo_e816.piezo_e816('COM1', 400, 0, True)
+scope.piFoc = offsetPiezo.getClient('PHY-LMX2CPU')# piezo_e816.piezo_e816('COM1', 400, 0, True)
 scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
 ''')
 

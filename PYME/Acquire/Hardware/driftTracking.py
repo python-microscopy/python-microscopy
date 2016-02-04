@@ -9,6 +9,8 @@ import numpy as np
 from pylab import fftn, ifftn, fftshift, ifftshift
 import time
 from scipy import ndimage
+from PYME.Acquire import eventLog
+from PYME.gohlke import tifffile as tif
 
 def correlateFrames(A, B):
     A = A.squeeze()/A.mean() - 1
@@ -64,6 +66,10 @@ class correlator(object):
         self.stackHalfSize = 10
         self.NCalibStates = 2*self.stackHalfSize + 1
         #self.initialise()
+#        self.buffer = []
+        self.WantRecord = False
+        self.minDelay = 10
+        self.maxfac = 1.5e3
         
     def initialise(self):
         d = 1.0*self.scope.pa.dsa.squeeze()        
@@ -116,7 +122,8 @@ class correlator(object):
         
     def setRefN(self, N):
         d = 1.0*self.scope.pa.dsa.squeeze()
-        ref = d/d.mean() - 1        
+        ref = d/d.mean() - 1
+        self.refImages[:,:,N] = ref        
         self.calFTs[:,:,N] = ifftn(ref)
         self.calImages[:,:,N] = ref*self.mask
     #def setRefD(self):
@@ -132,7 +139,8 @@ class correlator(object):
         
         #where is the piezo suppposed to be
         nomPos = self.piezo.GetPos(0)
-        posInd = np.argmin(np.abs(nomPos - self.calPositions))
+        #posInd = np.argmin(np.abs(nomPos - self.calPositions))
+        posInd = 10
         
         #retrieve calibration information at this location        
         calPos = self.calPositions[posInd]
@@ -144,7 +152,7 @@ class correlator(object):
         
         posDelta = nomPos - calPos
         
-        print nomPos, posInd, calPos, posDelta
+        # print nomPos, posInd, calPos, posDelta
         
         #find x-y drift
         C = ifftshift(np.abs(ifftn(fftn(dm)*FA)))
@@ -164,8 +172,24 @@ class correlator(object):
         self.ds_A = (ds - refA)
         
         dz = self.deltaZ*np.dot(self.ds_A.ravel(), ddz)*dzn
+
+#        self.buffer.append((dz, nomPos, posInd, calPos, posDelta))
+
+#        self.buffer.append((dx, dy, dz + posDelta, Cm, dz, nomPos, posInd, calPos, posDelta))
+
+#        if len(self.buffer)>10:
+#            self.buffer.remove(self.buffer[0])
         
-        return dx, dy, dz + posDelta, Cm
+        if 1000*np.abs((dz + posDelta))>200 and self.WantRecord:
+            #dz = np.median(self.buffer)
+            tif.imsave('C:\\Users\\Lab-test\\Desktop\\peakimage.tif', d)
+            # np.savetxt('C:\\Users\\Lab-test\\Desktop\\parameter.txt', self.buffer[-1])
+            #np.savetxt('C:\\Users\\Lab-test\\Desktop\\posDelta.txt', posDelta)
+            self.WantRecord = False
+
+        
+        #return dx, dy, dz + posDelta, Cm, dz, nomPos, posInd, calPos, posDelta
+        return dx, dy, dz, Cm, dz, nomPos, posInd, calPos, posDelta
         
     
     def tick(self, caller=None):
@@ -174,11 +198,13 @@ class correlator(object):
             
         #called on a new frame becoming available
         if self.calibState == 0:
+            #print "cal init"
             #redefine our positions for the calibration
             self.homePos = self.piezo.GetPos(0)
             self.calPositions = self.homePos + self.deltaZ*np.arange(-float(self.stackHalfSize), float(self.stackHalfSize + 1))
             self.NCalibStates = len(self.calPositions)
             
+            self.refImages = np.zeros(self.mask.shape[:2] + (self.NCalibStates,))
             self.calImages = np.zeros(self.mask.shape[:2] + (self.NCalibStates,))
             self.calFTs = np.zeros(self.mask.shape[:2] + (self.NCalibStates,), dtype='complex64')
             
@@ -187,6 +213,7 @@ class correlator(object):
             #self.piezo.SetOffset(0)
             self.calibState += .5
         elif self.calibState < self.NCalibStates:
+            # print "cal proceed"
             if (self.calibState % 1) == 0:
                 #full step - record current image and move on to next position
                 self.setRefN(self.calibState - 1)
@@ -196,6 +223,7 @@ class correlator(object):
             self.calibState += 0.5
             
         elif (self.calibState == self.NCalibStates):
+            # print "cal finishing"
             self.setRefN(self.calibState - 1)
             
             #perform final bit of calibration - calcuate gradient between steps
@@ -209,20 +237,31 @@ class correlator(object):
             self.calibState += 1
             
         elif self.calibState > self.NCalibStates:
-            #fully calibrated
-            dx, dy, dz, cCoeff = self.compare()
+            # print "fully calibrated"
+            dx, dy, dz, cCoeff, dzcorr, nomPos, posInd, calPos, posDelta = self.compare()
             
             self.corrRef = max(self.corrRef, cCoeff)
             
             #print dx, dy, dz
             
-            self.history.append((time.time(), dx, dy, dz, cCoeff))
+            self.history.append((time.time(), dx, dy, dz, cCoeff, self.corrRef, self.piezo.GetOffset(), self.piezo.GetPos(0)))
             if self.logShifts:
+                eventLog.logEvent('PYME2ShiftMeasure', '%3.4f, %3.4f, %3.4f' % (dx, dy, dz))
                 self.piezo.LogShifts(dx, dy, dz)
             
-            if self.lockFocus and (cCoeff > .5*self.corrRef):
-                if abs(dz) > self.focusTolerance and self.lastAdjustment >= 2:
-                    self.piezo.SetOffset(self.piezo.GetOffset() - dz)
+            if self.lockFocus and (cCoeff > .5*self.corrRef): # correction only applies if correlation is still strong enough
+                if abs(self.piezo.GetOffset()) > 20.0:
+                    self.lockFocus = False
+                    print "focus lock released"
+                if abs(dz) > self.focusTolerance and self.lastAdjustment >= self.minDelay:
+                    zcorr = self.piezo.GetOffset() - dz
+                    if zcorr < - self.maxfac*self.focusTolerance:
+                        zcorr = - self.maxfac*self.focusTolerance
+                    if zcorr >  self.maxfac*self.focusTolerance:
+                        zcorr = self.maxfac*self.focusTolerance
+                    self.piezo.SetOffset(zcorr)
+                    self.piezo.LogFocusCorrection(zcorr) #inject offset changing into 'Events'
+                    eventLog.logEvent('PYME2UpdateOffset', '%3.4f' % (zcorr))
                     self.historyCorrections.append((time.time(), dz))
                     self.lastAdjustment = 0
                 else:

@@ -218,6 +218,20 @@ def writecoords(filename,pipeline):
         f.write("%.3f %.3f %d\n" % (px[i]-minx,py[i]-miny,pt[i]))
     f.close()
 
+
+def csvcoords(filename,pipeline,keys,fieldnames=None):
+    import csv
+    if fieldnames is None:
+        fieldnames = keys
+    with open(filename, 'wb') as csvfile:
+        writer = csv.writer(csvfile, delimiter=',',
+                            quotechar='#', quoting=csv.QUOTE_MINIMAL)
+        writer.writerow(fieldnames)
+        pkeys = [pipeline[key] for key in keys] # cache the pipelines as these calls may be costly
+        n = pipeline['x'].shape[0]
+        for i in range(n):
+            writer.writerow([pkey[i] for pkey in pkeys])
+
 def randmapping(pipeline):
     pipeline.selectedDataSource.setMapping('rand1','0*x+np.random.rand(x.size)')
 
@@ -570,7 +584,28 @@ def scatterdens(x,y,subsample=1.0):
     estimator = gaussian_kde([xs,ys]) 
     density = estimator.evaluate([xf,yf])
     pylab.scatter(xf,yf,c=density,marker='o',linewidth='0',zorder=3,s=40)
-        
-    estimator = gaussian_kde([xs,ys]) 
-    density = estimator.evaluate([xf,yf])
-    pylab.scatter(xf,yf,c=density,marker='o',linewidth='0',zorder=3,s=40)
+
+def intdens(image,framenum=0):
+    mdh = image.mdh
+    pixarea = 1e6*mdh['voxelsize.x']*mdh['voxelsize.y']
+    data = image.data[:,:,framenum].squeeze()
+
+    intdens = float(pixarea*data.sum())
+    nevts = None
+    try:
+        nevts = int(mdh['Rendering.NEventsRendered'])
+    except:
+        pass
+    if nevts is not None:
+        print "Ratio Events/Intdens = %f" % (nevts/intdens)
+    return intdens
+
+def px(p):
+    t = p['t']*p.mdh['Camera.CycleTime']
+    x = p['x']-p['x'][0:10].mean()
+    plt.plot(t,x)
+
+def py(p):
+    t = p['t']*p.mdh['Camera.CycleTime']
+    y = p['y']-p['y'][0:10].mean()
+    plt.plot(t,y)

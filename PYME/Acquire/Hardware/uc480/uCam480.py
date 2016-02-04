@@ -81,12 +81,28 @@ class uc480Camera:
     MODE_CONTINUOUS = 5
     MODE_SINGLE_SHOT = 1
 
+    ROIlimitlist = {
+        'UI306x' : {
+            'xmin' : 96,
+            'xstep' : 8,
+            'ymin' : 32,
+            'ystep' : 2
+        },
+        'UI324x' : {
+            'xmin' : 16,
+            'xstep' : 4,
+            'ymin' : 4,
+            'ystep' : 2
+        }        
+    }
+
+    ROIlimitsDefault = ROIlimitlist['UI324x']
 
     def __init__(self, boardNum=0, nbits = 8):
         self.initialised = False
         self.active = True
-        if nbits != 8 and nbits != 12:
-            raise RuntimeError('Supporting only 8 or 12 bit depth, requested &d bit' % (nbits))
+        if nbits not in [8,10,12]:
+            raise RuntimeError('Supporting only 8, 10 or 12 bit depth, requested %d bit' % (nbits))
         self.nbits = nbits
 
         self.boardHandle = wintypes.HANDLE(boardNum)
@@ -119,6 +135,14 @@ class uc480Camera:
         senstype = ctypes.cast(sensorProps.strSensorName, ctypes.c_char_p)
         self.sensortype = senstype.value
 
+        # work out the ROI limits for this sensortype
+        matches = [self.ROIlimitlist[st] for st in self.ROIlimitlist.keys()
+                   if self.sensortype.startswith(st)]
+        if len(matches) > 0:
+            self.ROIlimits = matches[0]
+        else:
+            self.ROIlimits = self.ROIlimitsDefault
+
         #-------------------
         #Do initial setup with a whole bunch of settings I've arbitrarily decided are
         #reasonable and make the camera behave more or less like the PCO cameras.
@@ -146,9 +170,11 @@ class uc480Camera:
         # CS: info from SetColorMode and "Color and memory formats" appendix
         # note: the monochrome constants may be preferable
         if self.nbits == 8:
-            colormode = uc480.IS_CM_SENSOR_RAW8 # update to new const IS_CM_SENSOR_RAW8
+            colormode = uc480.IS_CM_MONO8
+        elif self.nbits == 10:
+            colormode = uc480.IS_CM_MONO10
         elif self.nbits == 12:
-            colormode = uc480.IS_CM_SENSOR_RAW12
+            colormode = uc480.IS_CM_MONO12
         ret = uc480.CALL('SetColorMode', self.boardHandle, colormode)
         self.errcheck(ret,'setting ColorMode')
 
@@ -205,7 +231,7 @@ class uc480Camera:
             # CS - BITS: memory depth in here
             if self.nbits == 8:
                 bitsperpix = 8
-            elif self.nbits == 12:
+            else: # 10 & 12 bits
                 bitsperpix = 16
 
             ret = uc480.CALL('AllocImageMem', self.boardHandle, self.GetPicWidth(), self.GetPicHeight(), bitsperpix, ctypes.byref(pData), ctypes.byref(bufID))
@@ -227,7 +253,7 @@ class uc480Camera:
         # CS - BITS: memory depth in here
         if self.nbits == 8:
             bufferdtype = np.uint8
-        elif self.nbits == 12:
+        else: # 10 & 12 bits
             bufferdtype = np.uint16
         self.transferBuffer = np.zeros([self.GetPicHeight(), self.GetPicWidth()], bufferdtype)
         
@@ -423,12 +449,14 @@ class uc480Camera:
 
 
     def SetROI(self, x1,y1,x2,y2):
-        #must be on silly 4x2 pixel grid
-        
-        x1 = 4*(x1/4)
-        x2 = 4*(x2/4)
-        y1 = 2*(y1/2)
-        y2 = 2*(y2/2)
+        #must be on xstep x ystep pixel grid
+
+        xstep = self.ROIlimits['xstep']
+        ystep = self.ROIlimits['ystep']
+        x1 = xstep*(x1/xstep)
+        x2 = xstep*(x2/xstep)
+        y1 = ystep*(y1/ystep)
+        y2 = ystep*(y2/ystep)
         
         
         #if coordinates are reversed, don't care
@@ -451,9 +479,9 @@ class uc480Camera:
         rect = uc480.IS_RECT()
         rect.s32X =  self.ROIx[0] - 1
         rect.s32Y =  self.ROIy[0] - 1
-        rect.s32Width = 1+ self.ROIx[1] - self.ROIx[0]
-        rect.s32Height = 1+ self.ROIy[1] - self.ROIy[0]
-        
+        rect.s32Width  = max(1 + self.ROIx[1] - self.ROIx[0], self.ROIlimits['xmin']) # ensure minimim size in x
+        rect.s32Height = max(1 + self.ROIy[1] - self.ROIy[0], self.ROIlimits['ymin']) # ensure minimim size in y
+
         print((rect.s32X, rect.s32Width))
         
         #ret = uc480.CALL('SetImageSize', self.boardHandle, rect.s32Width, rect.s32Height )

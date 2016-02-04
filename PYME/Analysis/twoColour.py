@@ -87,9 +87,23 @@ def robustLinLhood(p, x, y, var=1):
     return -scipy.stats.t.logpdf(err, 1).sum()
     
 
+class shiftModel(object):
+    def __init__(self , *args, **kwargs):
+        if 'dict' in kwargs.keys():
+            self.__dict__.update(dict)
+        else:
+            self.fit(*args, **kwargs)
+            
+    def to_JSON(self):
+        import json
+        
+        cn = '.'.join([self.__class__.__module__, self.__class__.__name__])       
+        return json.dumps({cn:self.__dict__})
+
     
-class linModel(object):
-    def __init__(self, x, dx, var=1, axis='x'):
+class linModel(shiftModel):
+        
+    def fit(self, x, dx, var, axis):
         #do a simple linear fit to estimate start parameters
         pstart = linalg.lstsq(np.vstack([x, np.ones_like(x)]).T, dx)[0]
         print(pstart)
@@ -107,6 +121,7 @@ class linModel(object):
         else:
             return self.m*(y - self.x0)
             
+            
 def robustLin2Lhood(p, x, y, dx, var=1):
     '''p is parameter vector, x and y as expected, and var the variance of the 
     y value. We use a t-distribution as our likelihood as it's long tails will
@@ -115,8 +130,8 @@ def robustLin2Lhood(p, x, y, dx, var=1):
     err = (dx - (mx*x + my*y + x0))/var
     return -scipy.stats.t.logpdf(err, 1).sum()
     
-class lin2Model(object):
-    def __init__(self, x, y, dx, var=1):
+class lin2Model(shiftModel):
+    def fit(self, x, y, dx, var=1):
         #do a simple linear fit to estimate start parameters
         pstart = linalg.lstsq(np.vstack([x, y, np.ones_like(x)]).T, dx)[0]
         print(pstart)
@@ -152,10 +167,10 @@ def robustLin3zLhood(p, x, y, z, dx, var=1):
     err = (dx - (mx*x + my*y + mx2*x*x +my2*y*y + mxy*x*y + mxy2*x*y*y + mx2y*x*x*y + mx3*x*x*x + x0 + mz*z + mxz*x*z + myz*y*z + mxyz*x*y*z))/var
     return -scipy.stats.t.logpdf(err, 1).sum()
     
-class lin3zModel(object):
+class lin3zModel(shiftModel):
     ZDEPSHIFT = True
     sc = 1./18e3
-    def __init__(self, x, y, z, dx, var=1):
+    def fit(self, x, y, z, dx, var=1):
         x = x*self.sc
         y = y*self.sc
         #do a simple linear fit to estimate start parameters
@@ -188,9 +203,9 @@ def robustLin3Lhood(p, x, y, dx, var=1):
     err = (dx - (mx*x + my*y + mx2*x*x +my2*y*y + mxy*x*y + mxy2*x*y*y + mx2y*x*x*y + mx3*x*x*x + x0))/var
     return -scipy.stats.t.logpdf(err, 1).sum()
     
-class lin3Model(object):
+class lin3Model(shiftModel):
     sc = 1./18e3
-    def __init__(self, x, y, dx, var=1):
+    def fit(self, x, y, dx, var=1):
         x = x*self.sc
         y = y*self.sc
         #do a simple linear fit to estimate start parameters
@@ -525,8 +540,8 @@ def warpCorrectRedImage(r, dx, dy):
     return vals.T
 
 
-class sffake:
-    def __init__(self, val):
+class sffake(shiftModel):
+    def fit(self, val):
         self.val = val
 
     def ev(self, x, y):
