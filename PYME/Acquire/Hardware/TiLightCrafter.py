@@ -284,11 +284,15 @@ class LightCrafter(object):
             self.SetImage((ll*intensity).astype('uint8'))
             
     def SetScanningVDC(self, period, exposureMs=100, angle=0, dutyCycle=.5, nSteps = 20):
-        pats = [self.GenVDCLines(period, phase=p, angle = angle, dutyCycle = dutyCycle).T for p in np.linspace(0, 1, nSteps, False)]
+        pats = [self.GenVDCLines(period, phase=p, angle = angle, dutyCycle = dutyCycle).T for p in np.linspace(0, period, nSteps, False)]
+        pats1, pats2 = pats[:len(pats)//2], pats[len(pats)//2:]
+        pats3 = [val for pair in zip(pats1, pats2) for val in pair]
+        if len(pats3) < len(pats):
+          pats3 += [max(pats1, pats2, key = len)[-1]]
         from PYME.DSView import View3D
-        View3D(np.array(pats).transpose(2,1,0))
+        View3D(np.array(pats3).transpose(2,1,0))
         
-        self.SetPatternDefs(pats, exposureMs=exposureMs)
+        self.SetPatternDefs(pats3, exposureMs=exposureMs)
         self.StartPatternSeq()
         
         self.PatternVars['Type'] = 'Lines'
@@ -320,10 +324,14 @@ class LightCrafter(object):
         for py in np.linspace(0, int(100/dc - 1)*dc, int(100/dc)):
             for px in np.linspace(0, int(100/dc - 1)*dc, int(100/dc)):
                 pats.append(self.GenHex(peri, dutyCycle = dc, phasex=px, phasey = py).T)
+        pats1, pats2 = pats[:len(pats)//2], pats[len(pats)//2:]
+        pats3 = [val for pair in zip(pats1, pats2) for val in pair]
+        if len(pats3) < len(pats):
+          pats3 += [max(pats1, pats2, key = len)[-1]]
         from PYME.DSView import View3D
-        View3D(np.array(pats).transpose(2,1,0))
+        View3D(np.array(pats3).transpose(2,1,0))
         
-        self.SetPatternDefs(pats, exposureMs=exposureMs)
+        self.SetPatternDefs(pats3, exposureMs=exposureMs)
         self.StartPatternSeq()
         
         self.PatternVars['Type'] = 'Hex'
@@ -338,12 +346,16 @@ class LightCrafter(object):
         self.SetImage(self.GenVDCLines(period, phase, angle, dutyCycle, intensity))
         
     def GenVDCLines(self, period, phase=0, angle=0, dutyCycle=.5, intensity=255.):
-        kx = np.cos(angle)/period
-        ky = np.sin(angle)/period
-        
-        d = kx*self.X + ky*self.Y + phase
-        
-        ll = (d%1) < dutyCycle
+        if angle == 0:
+            d = self.X + phase
+            ll = (d%period) < int(dutyCycle*period)
+        else:
+            kx = np.cos(angle)/period
+            ky = np.sin(angle)/period
+            
+            d = kx*self.X + ky*self.Y + phase
+            
+            ll = (d%1) < dutyCycle
         
         return (ll*intensity).astype('uint8')
         
