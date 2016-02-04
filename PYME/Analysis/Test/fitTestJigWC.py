@@ -59,7 +59,7 @@ class fitTestJig(object):
         if 'Test.Background' in self.md.getEntryNames():
             self.bg = float(self.md['Test.Background'])
             
-        emGain = optimize.fmin(emg, 150, args=[self.md.Camera.TrueEMGain])[0]
+        emGain = optimize.fmin(emg, 150, args=(float(self.md.Camera.TrueEMGain),))[0]
 
         self.noiseM = NoiseMaker(EMGain=emGain, floor=self.md.Camera.ADOffset, background=self.bg, QE=1.0)
 

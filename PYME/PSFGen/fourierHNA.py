@@ -687,6 +687,19 @@ def GenPRIPSF(zs, dx = 5, strength=1.0, dp=0, lamb=700, n=1.51, NA = 1.47, ns=1.
 
     return abs(ps**2)
     
+def GenPRIEField(zs, dx = 5, strength=1.0, dp=0, lamb=700, n=1.51, NA = 1.47, ns=1.51, beadsize=0, vect=False, apodization=None):
+    #X, Y, R, FP, F, u, v = GenWidefieldAP(dx, NA=NA)
+    X, Y, R, FP, F, u, v = GenWidefieldAP(dx, lamb=lamb, n = n, NA = NA, apodization=apodization)
+
+    F = F * exp(-1j*sign(X)*(10*strength*v + dp/2))
+    #clf()
+    #imshow(angle(F))
+
+    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+
+    return ps
+    #return abs(ps**2)
+    
 def GenICPRIPSF(zs, dx = 5, strength=1.0, NA=1.47):
     X, Y, R, FP, F, u, v = GenWidefieldAP(dx, NA = NA)
 
@@ -865,8 +878,9 @@ def GenDHPSF(zs, dx=5, vortices=[0.0], lamb=700, n=1.51, NA = 1.47, ns=1.51, bea
     
     ph = 0*u
     
-    for vc in vortices:
-        ph += angle((u - vc) + 1j*v)
+    for i, vc in enumerate(vortices):
+        sgn = 1#abs(vc)*(i%2)
+        ph += sgn*angle((u - vc) + 1j*v)
 
     F = F * exp(-1j*ph)
     #clf()
