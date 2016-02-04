@@ -42,7 +42,7 @@ class TrackerPlotPanel(PlotPanel):
     # new 5th subplot for z-pos (how calculated, z-nominal + dz?, remove offset)
     def draw(self):
         if self.IsShownOnScreen():
-            if not hasattr( self, 'subplotx' ):
+            if not hasattr( self, 'subplotxy' ):
                     self.subplotxy = self.figure.add_subplot( 411 )
                     self.subplotz = self.figure.add_subplot( 412 )
                     self.subploto = self.figure.add_subplot( 413 )
