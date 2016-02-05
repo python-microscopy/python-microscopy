@@ -121,10 +121,11 @@ class CSInterpolator(__interpolator):
         #for these slices...
         if self.SplitPSF:
             xm = len(X)/2
-            dx = min((interpolator.shape[1] - len(X))/2, xm) - 2
+            #dx = min((interpolator.shape[1] - len(Y))/2, xm) - 2
     
             ym = len(Y)/2
             dy = min((interpolator.shape[1] - len(Y))/2, ym) - 2
+            dx = dy
     
             safeRegion = ((X[xm-dx], X[xm+dx]), (Y[ym-dy], Y[ym+dy]),(Z[0] + self.IntZVals[2], Z[0] + self.IntZVals[-2]))
         else:

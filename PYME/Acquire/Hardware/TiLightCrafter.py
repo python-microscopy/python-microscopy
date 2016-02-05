@@ -147,7 +147,7 @@ class LightCrafter(object):
         self.sock = None
         
         self.StoredMasks = {}
-        self.PatternVars = {'Period':'', 'DutyCycle':'', 'Angle':'', 'Phase':'', 'ExpTime':'', 'Steps':''}
+        self.PatternVars = {'Period':'', 'DutyCycle':'', 'Angle':'', 'Phase':'', 'ExpTime':'', 'Steps':'', 'Type':'', 'MaskName':''}
         
         #register as a provider of metadata
         MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
@@ -210,7 +210,7 @@ class LightCrafter(object):
         h, d = self._ExecCommand(LC_PACKET_TYPE.HOST_WRITE, CMD_STATIC_IMAGE, np.fromstring(contents, 'u1'))
         return h, d
         
-    def SetPatternDefs(self, dataFrames, triggerMode = PATTERN_TRIGGER.AUTO, exposureMs = 1000):
+    def SetPatternDefs(self, dataFrames, triggerMode = PATTERN_TRIGGER.AUTO, exposureMs = 1000, playMode = 1):
         patternSettings = np.zeros(1,PATTERN_INFO_DTYPE)
         patternSettings['depth'] = 1
         patternSettings['nPatterns'] = len(dataFrames)
@@ -219,7 +219,7 @@ class LightCrafter(object):
         
         patternSettings['exposureTime'] = exposureMs*1000
         patternSettings['LEDSelect'] = 1
-        patternSettings['playMode'] = 1
+        patternSettings['playMode'] = playMode
         
         #print patternSettings, patternSettings.view('uint8')
         #patternSettings[']
@@ -245,10 +245,13 @@ class LightCrafter(object):
         h, d = self._ExecCommand(LC_PACKET_TYPE.HOST_WRITE, CMD_TEST_PATTERN, np.uint8(pattern))
         return h, d
         
-    def SetMask(self, data, intensity = 255):
+    def SetMask(self, data, intensity = 255, Name = ''):
+        self.PatternVars['Type'] = 'Mask'
+        self.PatternVars['MaskName'] = Name
         return self.SetImage(((data > 0)*intensity).astype('uint8'))
         
     def SetStoredMask(self, key, intensity = 255):
+        self.PatternVars['Type'] = 'Mask'
         self.SetMask(self.StoredMasks[key], intensity)
         
     def SetStatic(self, value):
@@ -259,7 +262,7 @@ class LightCrafter(object):
         h, d = self._ExecCommand(LC_PACKET_TYPE.HOST_WRITE, CMD_PATTERN_START, np.uint8(start))
         return h, d
     
-    def AdvancePatternSeq(self, start=True):
+    def AdvancePatternSeq(self, start=True, dummyX=0, dummyY=0):
         h, d = self._ExecCommand(LC_PACKET_TYPE.HOST_WRITE, CMD_PATTERN_ADVANCE, np.empty(0))
         return h, d
         
@@ -288,25 +291,42 @@ class LightCrafter(object):
         self.SetPatternDefs(pats, exposureMs=exposureMs)
         self.StartPatternSeq()
         
+        self.PatternVars['Type'] = 'Lines'
         self.PatternVars['Period'] = period
         self.PatternVars['DutyCycle'] = dutyCycle
         self.PatternVars['Phase'] = ''
         self.PatternVars['Angle'] = angle
         self.PatternVars['ExpTime'] = exposureMs
         self.PatternVars['Steps'] = nSteps
+        
+    def SetCalibrationPattern(self):
+        pats = []
+        pats.append( (((((self.X-200)**2 + (self.Y-200)**2) < 100) > 0)*255).astype('uint8').T )
+        pats.append( (((((self.X-200)**2 + (self.Y-300)**2) < 100) > 0)*255).astype('uint8').T )
+        pats.append( (((((self.X-300)**2 + (self.Y-200)**2) < 100) > 0)*255).astype('uint8').T )
+        pats.append( (((((self.X-300)**2 + (self.Y-300)**2) < 100) > 0)*255).astype('uint8').T )
+        pats.append( (((((self.X-300)**2 + (self.Y-400)**2) < 100) > 0)*255).astype('uint8').T )
+        pats.append( (((((self.X-400)**2 + (self.Y-300)**2) < 100) > 0)*255).astype('uint8').T )
+        
+        self.PatternVars['Type'] = 'Calibration'
+        
+        self.SetPatternDefs(pats, triggerMode = PATTERN_TRIGGER.COMMAND, exposureMs=500, playMode = 0)
+        self.StartPatternSeq()
+        
             
     def SetScanningHex(self, period, exposureMs=100, angle=0, dutyCycle=.5, nSteps = 20):
         pats = []
-        peri, dc = period/100.0, dutyCycle*100
+        peri, dc = period/100.0, np.sqrt(dutyCycle)*100
         for py in np.linspace(0, int(100/dc - 1)*dc, int(100/dc)):
             for px in np.linspace(0, int(100/dc - 1)*dc, int(100/dc)):
-                pats.append(self.GenHex(peri, dutyCycle = dc, phasex=px, phasey = py))
+                pats.append(self.GenHex(peri, dutyCycle = dc, phasex=px, phasey = py).T)
         from PYME.DSView import View3D
         View3D(np.array(pats).transpose(2,1,0))
         
         self.SetPatternDefs(pats, exposureMs=exposureMs)
         self.StartPatternSeq()
         
+        self.PatternVars['Type'] = 'Hex'
         self.PatternVars['Period'] = period
         self.PatternVars['DutyCycle'] = dutyCycle
         self.PatternVars['Phase'] = ''

@@ -209,7 +209,7 @@ class piezo_e709T(object):
         self.position = np.array([0.])
         #self.velocity = np.array([self.maxvelocity, self.maxvelocity])
         
-        self.targetPosition = np.array([200.])
+        self.targetPosition = np.array([100.])
         #self.targetVelocity = self.velocity.copy()
         
         self.lastTargetPosition = self.position.copy()
@@ -383,6 +383,9 @@ class piezo_e709T(object):
         
     def GetPosXY(self):
         return self.position
+        
+    def GetTargetPosition(self,iChannel=0):
+        return self.targetPosition[iChannel]
 
     def MoveInDir(self, dx, dy, th=.0000):
         #self.targetVelocity[0] = abs(dx)*self.maxvelocity

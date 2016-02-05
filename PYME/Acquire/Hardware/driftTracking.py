@@ -138,7 +138,7 @@ class correlator(object):
         dm = d/d.mean() - 1
         
         #where is the piezo suppposed to be
-        nomPos = self.piezo.GetPos(0)
+        nomPos = self.piezo.GetTargetPos(0)
         #posInd = np.argmin(np.abs(nomPos - self.calPositions))
         posInd = 10
         
@@ -150,6 +150,7 @@ class correlator(object):
         ddz = self.dz[:,posInd]
         dzn = self.dzn[posInd]
         
+        #what is the offset between our target position and the calibration position         
         posDelta = nomPos - calPos
         
         # print nomPos, posInd, calPos, posDelta
@@ -171,6 +172,7 @@ class correlator(object):
         
         self.ds_A = (ds - refA)
         
+        #calculate z offset between actual position and calibration position
         dz = self.deltaZ*np.dot(self.ds_A.ravel(), ddz)*dzn
 
 #        self.buffer.append((dz, nomPos, posInd, calPos, posDelta))

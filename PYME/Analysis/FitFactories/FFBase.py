@@ -175,9 +175,9 @@ class FFBase(object):
                 bgROI = self.background[xslice, yslice, 0:2] - self.metadata.Camera.ADOffset
                 bgROI[:,:,1] = self.background[xslice2, yslice2, 1] - self.metadata.Camera.ADOffset
             else:
-                bgROI = np.array(0) + self.background - self.metadata.Camera.ADOffset
+                bgROI = np.zeros_like(dataROI) + self.background - self.metadata.Camera.ADOffset
         else:
-            bgROI = np.array(0)
+            bgROI = np.zeros_like(dataROI)
 
  
 

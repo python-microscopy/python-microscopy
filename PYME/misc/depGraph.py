@@ -25,14 +25,18 @@ def arrangeNodes(dg):
         yps = [];
         st = list(st)
         for si in st:
+            if isinstance(si, str):
+                tol = .1
+            else:
+                tol = 1
             if si in dg.keys():
                 ri = list(dg[si])
                 yp = np.mean([ips[rr][1] for rr in ri])
             else:
                 yp = 0
             
-            while yp in yps:
-               yp += 1
+            while min(abs(yp - np.array(yps + [-50]))) < tol:
+               yp += min(tol, .5)
                
             yps.append(yp)
                 
@@ -53,6 +57,14 @@ def drawGraph(dg):
     
     f = pylab.figure()
     a = pylab.axes([0,0,1,1])
+    
+    axisWidth = a.get_window_extent().width
+    nCols = max([v[0] for v in ips.values()])
+    pix_per_col = axisWidth/float(nCols)
+    
+    fontSize = min(10, 10*pix_per_col/400.)
+    
+    print pix_per_col, fontSize
     
     cols = {}    
     for k, v in dg.items():
@@ -89,16 +101,16 @@ def drawGraph(dg):
             
             rect._data = k
             pylab.gca().add_patch(rect)
-            pylab.text(v[0]+.05, v[1]+.18 , s, weight='bold')
+            pylab.text(v[0]+.05, v[1]+.18 , s, size=fontSize, weight='bold')
             
             s2 = '\n'.join(['%s : %s' %i for i in k.get().items()])
-            pylab.text(v[0]+.05, v[1]-.22 , s2, size=8, stretch='ultra-condensed')
+            pylab.text(v[0]+.05, v[1]-.22 , s2, size=.8*fontSize, stretch='ultra-condensed')
         else:
             s = k
             if not k in cols.keys():
                 cols[k] = 0.7*np.array(pylab.cm.hsv(pylab.rand()))
             pylab.plot(v[0], v[1], 'o', color=cols[k])
-            pylab.text(v[0]+.1, v[1] + .02, s, color=cols[k], weight='bold')
+            pylab.text(v[0]+.1, v[1] + .02, s, color=cols[k], size=fontSize, weight='bold')
                 
                 
     #pylab.ylim(-1, 2)

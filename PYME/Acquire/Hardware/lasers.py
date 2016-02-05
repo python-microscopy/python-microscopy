@@ -239,14 +239,14 @@ class SBox:
             echo = self.ser.readline()
             self.status = self.ser.readline()
             if not self._checkstatusok():
-                raise RuntimeError('Got invalid response %s' % (status))
+                raise RuntimeError('Got invalid response %s' % (self.status))
             self.states[ioNo] = True
         else:
             self.ser.write(self.ioMap[ioNo]+' 0\n')
             echo = self.ser.readline()
             self.status = self.ser.readline()
             if not self._checkstatusok():
-                raise RuntimeError('Got invalid response %s' % (status))
+                raise RuntimeError('Got invalid response %s' % (self.status))
             self.states[ioNo] = False
 
     def getState(self, ioNo):
