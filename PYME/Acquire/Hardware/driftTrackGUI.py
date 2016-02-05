@@ -187,7 +187,7 @@ class DriftTrackingControl(wx.Panel):
     def showCalImages(self):
         import numpy as np
         import time
-        ds2 = self.dt.calImages 
+        ds2 = self.dt.refImages
 
         #metadata handling
         mdh = MetaDataHandler.NestedClassMDHandler()
@@ -212,7 +212,14 @@ class DriftTrackingControl(wx.Panel):
         if not hasattr(self.dt, 'history') or (len(self.dt.history) <= 0):
             Warn(self,"no history")
         else:
-            Info(self,"save hist dummy")
+            dlg = wx.FileDialog(self, message="Save file as...",  
+                            defaultFile='history.txt', wildcard='txt File (*.txt)|*.txt', style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
+
+            if dlg.ShowModal() == wx.ID_OK:
+                historyfn = dlg.GetPath()
+                np.savetxt(historyfn, self.dt.history)
+                Info(self,"history saved")
+
 
     def OnBSetTolerance(self, event):
         self.dt.focusTolerance = float(self.tTolerance.GetValue())/1e3
