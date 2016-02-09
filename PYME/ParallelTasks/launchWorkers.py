@@ -106,6 +106,25 @@ def main():
     
         for i in range(numProcessors):
             subprocess.Popen('python %s\\%s' % (fstub, WORKER_PROC), shell=True)
+    elif sys.platform == 'darwin':
+        import psutil
+        
+        #kill off previous workers and servers
+        for p in psutil.process_iter():
+            if 'python' in p.name():
+                c = p.cmdline()
+                if (SERVER_PROC in c) or (WORKER_PROC in c) or ('fitMonP' in c):
+                    p.kill()
+        
+    
+        subprocess.Popen(os.path.join(fstub, SERVER_PROC), shell=True)
+    
+        time.sleep(3)
+    
+        subprocess.Popen(os.path.join(fstub,'fitMonP.py'), shell=True)
+    
+        for i in range(numProcessors):
+            subprocess.Popen(os.path.join(fstub,WORKER_PROC), shell=True)
     else: #operating systems which can launch python scripts directly
         #get rid of any previously started queues etc...
         os.system('killall %s' % SERVER_PROC)
