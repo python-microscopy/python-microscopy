@@ -443,7 +443,9 @@ class fitTask(taskDef.Task):
         fitFac = fitMod.FitFactory(self.data, md, background = self.bg, noiseSigma = self.sigma)
         
         #perform fit for each point that we detected
-        if 'FitResultsDType' in dir(fitMod):
+        if 'FromPoints' in dir(fitMod):
+            self.res = fitMod.FromPoints(self.ofd)
+        elif 'FitResultsDType' in dir(fitMod): #legacy fit modules
             self.res = numpy.empty(len(self.ofd), fitMod.FitResultsDType)
             if 'Analysis.ROISize' in md.getEntryNames():
                 rs = md.getEntry('Analysis.ROISize')
