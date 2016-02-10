@@ -188,7 +188,7 @@ cameraMaps = CameraInfoManager()
 
 
 class fitTask(taskDef.Task):
-    def __init__(self, dataSourceID, index, threshold, metadata, fitModule, dataSourceModule='HDFDataSource', bgindices = [], SNThreshold = False, driftEstInd=[], calObjThresh=200):
+    def __init__(self, dataSourceID, index, threshold, metadata, fitModule, dataSourceModule='HDFDataSource', bgindices = [], SNThreshold = False):
         '''Create a new fitting task, which opens data from a supplied filename.
         -------------
         Parameters:
@@ -213,9 +213,9 @@ class fitTask(taskDef.Task):
         self.fitModule = fitModule
         self.dataSourceModule = dataSourceModule
         self.SNThreshold = SNThreshold
-        self.driftEstInd = driftEstInd
-        self.driftEst = not len(self.driftEstInd) == 0
-        self.calObjThresh = calObjThresh
+        
+        self.driftEst = metadata.getOrDefault('Analysis.TrackFiducials', False)  
+        
                  
         self.bufferLen = 50 #12
         if self.driftEst: 
@@ -419,7 +419,10 @@ class fitTask(taskDef.Task):
         
         ####################################################
         # Find Fiducials
-        if self.driftEst: 
+        if self.driftEst:
+            self.driftEstInd = self.index + self.md.getOrDefault('Analysis.DriftIndices', np.arange(-10, 11))        
+            self.calObjThresh = self.md.getOrDefault('Analysis.FiducialThreshold', 200)
+            fiducialROISize = self.md.getOrDefault('Analysis.FiducialROISize', 11)
             self._findFiducials(sfunc, debounce)
                 
         
@@ -496,11 +499,15 @@ class fitTask(taskDef.Task):
         # Find Fiducials
 
         self.mIm = numpy.ones(self.data.shape, 'f')
+        
+        mdnm  = 1./np.median((self.data/self.sigma).ravel())
+        
         for dri in self.driftEstInd:
             bs = bufferManager.dBuffer.getSlice(dri)
-            bs = bs.reshape(self.data.shape)
+            bs = bs.reshape(self.data.shape)/self.sigma
+            bs = bs*mdnm
             #multiply images together, thus favouring images which are on over multiple frames
-            self.mIm = self.mIm*numpy.maximum(bs.astype('f') - numpy.median(bs.ravel()), 1)
+            self.mIm = self.mIm*bs
         
         #self.mIm = numpy.absolute(self.mIm)
         if not 'PSFFile' in self.md.getEntryNames():
@@ -508,12 +515,12 @@ class fitTask(taskDef.Task):
         else:
             self.ofdDr = ofind_xcorr.ObjectIdentifier(self.mIm, self.md.getEntry('PSFFile'), 7, 3e-2)
             
-        thres = self.calObjThresh**10
+        thres = self.calObjThresh**len(self.driftEstInd)
         self.ofdDr.FindObjects(thres,0, splitter=sfunc, debounceRadius=debounce)
         
-        while len(self.ofdDr) >= 10: #just go for the brightest ones
-            thres = thres * max(2, len(self.ofdDr)/5)
-            self.ofdDr.FindObjects(thres,0, splitter=sfunc, debounceRadius=debounce)  
+        #while len(self.ofdDr) >= 10: #just go for the brightest ones
+        #    thres = thres * max(2, len(self.ofdDr)/5)
+        #    self.ofdDr.FindObjects(thres,0, splitter=sfunc, debounceRadius=debounce)  
             
     def _displayFoundObjects(self):
         import pylab
