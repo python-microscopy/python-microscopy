@@ -470,7 +470,7 @@ class fitTask(taskDef.Task):
                 self.drRes = numpy.empty(nToFit, fitMod.FitResultsDType)
                 for i in range(nToFit):
                     p = self.ofdDr[i]
-                    self.drRes[i] = fitFac.FromPoint(p.x, p.y)
+                    self.drRes[i] = fitFac.FromPoint(p.x, p.y, roiHalfSize=fiducialROISize)
             else:
                 self.drRes  = [fitFac.FromPoint(p.x, p.y) for p in self.ofd[:nToFit]]    
 
