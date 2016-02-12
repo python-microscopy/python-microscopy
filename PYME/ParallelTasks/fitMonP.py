@@ -61,8 +61,17 @@ class MyFrame(wx.Frame):
         self.__set_properties()
         self.__do_layout()
         # end wxGlade
+        
+        try:
+            from PYME.misc import pyro_zeroconf 
+            ns = pyro_zeroconf.getNS()
+            URI = ns.resolve(taskQueueName)
+        except:
+            URI = 'PYRONAME://' + taskQueueName
+    
+        self.tq = Pyro.core.getProxyForURI(URI)
 
-        self.tq = Pyro.core.getProxyForURI("PYRONAME://" + taskQueueName)
+        #self.tq = Pyro.core.getProxyForURI("PYRONAME://" + taskQueueName)
         self.workerProc = {}
         self.tLast = 0
         self.gQueues.SetRowLabelSize(0)

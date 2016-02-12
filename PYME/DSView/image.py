@@ -288,7 +288,15 @@ class ImageStack(object):
         if self.queueURI == None:
             #do a lookup
             taskQueueName = 'TaskQueues.%s' % compName
-            self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
+            
+            try:
+                from PYME.misc import pyro_zeroconf 
+                ns = pyro_zeroconf.getNS()
+                URI = ns.resolve(taskQueueName)
+            except:
+                URI = 'PYRONAME://' + taskQueueName
+            
+            self.tq = Pyro.core.getProxyForURI(URI)
         else:
             self.tq = Pyro.core.getProxyForURI(self.queueURI)
 
