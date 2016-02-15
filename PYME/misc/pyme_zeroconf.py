@@ -9,7 +9,7 @@
 # This file may NOT be distributed without express permision from David Baddeley
 #
 ##################
-'''pyro_zeroconf.py
+'''pyme_zeroconf.py
 
 This implements a decentralized nameserver for PYRO based on using the zeroconf (aka Bonjour)
 automated service discovery protocol
@@ -24,10 +24,13 @@ import Pyro.core
 
 class ZCListener(object):
     advertised_services = {}
+
+    def __init__(self, protocol='_pyme-pyro'):
+        self._protocol = protocol
     
     def remove_service(self, zeroconf, _type, name):
         #print("Service %s removed" % (name,))
-        nm = name.split('._pyme-pyro')[0]
+        nm = name.split('.' + self._protocol)[0]
         try:
             self.advertised_services.pop(nm)
         except KeyError:
@@ -35,32 +38,38 @@ class ZCListener(object):
         
     def add_service(self, zeroconf, _type, name):
         #print _type, name
-        nm = name.split('._pyme-pyro')[0]
+        nm = name.split('.' + self._protocol)[0]
         info = zeroconf.get_service_info(_type, name)
         self.advertised_services[nm] = info
         
             
 class ZeroConfNS(object):
     '''This spoofs (but does not fully re-implement) a Pyro.naming.Nameserver'''
-    def __init__(self):
+    def __init__(self, protocol = '_pyme-pyro'):
         self._services = {}
+        self._protocol = protocol
         self.zeroconf = zc.Zeroconf()
-        self.listener = ZCListener()
+        self.listener = ZCListener(self._protocol)
         
-        self.browser = zc.ServiceBrowser(self.zeroconf, "_pyme-pyro._tcp.local.", 
+        self.browser = zc.ServiceBrowser(self.zeroconf, "%s._tcp.local." % self._protocol, 
                                          self.listener)
                                         
     def register(self, name, URI):
+        desc = {'URI': str(URI)}
+        
+        self.register_service(name, URI.address, URI.port, desc)
+        
+    @property
+    def advertised_services(self):
+        return self.listener.advertised_services
+        
+    def register_service(self, name, address, port, desc={}):
         if name in self.listener.advertised_services.keys():
             raise RuntimeError('Name "%s" already exists' %name)
         
-        desc = {'URI': str(URI)}
-        
-        #print URI.address, type(URI.address), URI.port, type(URI.port)
-        
-        info = zc.ServiceInfo("_pyme-pyro._tcp.local.",
-                           "%s._pyme-pyro._tcp.local." % name,
-                           socket.inet_aton(URI.address), URI.port, 0, 0,
+        info = zc.ServiceInfo("%s._tcp.local." % self._protocol,
+                           "%s.%s._tcp.local." % (name, self._protocol),
+                           socket.inet_aton(address), port, 0, 0,
                            desc)
                            
         self._services[name] = info
@@ -86,11 +95,14 @@ class ZeroConfNS(object):
         self.zeroconf.unregister_all_services()
         self.zeroconf.close()
         
-ns = None
+nsd = {}
 
-def getNS():
-    global ns
-    if ns == None:
-        ns = ZeroConfNS()
+def getNS(protocol = '_pyme-pyro'):
+    
+    try:
+        ns = nsd[protocol]
+    except KeyError:
+        ns = ZeroConfNS(protocol)
+        nsd[protocol] = ns
         
     return ns

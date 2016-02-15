@@ -75,8 +75,8 @@ class ServerThread(threading.Thread):
         Pyro.core.initServer()
         
         try:
-            from PYME.misc import pyro_zeroconf 
-            ns = pyro_zeroconf.getNS()
+            from PYME.misc import pyme_zeroconf 
+            ns = pyme_zeroconf.getNS()
         except:
             ns=Pyro.naming.NameServerLocator().getNS()
 
@@ -112,8 +112,8 @@ class ServerThread(threading.Thread):
 
 def getClient(compName = GetComputerName()):
     try:
-        from PYME.misc import pyro_zeroconf 
-        ns = pyro_zeroconf.getNS()
+        from PYME.misc import pyme_zeroconf 
+        ns = pyme_zeroconf.getNS()
         URI = ns.resolve('%s.Piezo' % compName)
     except:
         URI ='PYRONAME://%s.Piezo'%compName

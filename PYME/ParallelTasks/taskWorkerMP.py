@@ -28,7 +28,7 @@ import random
 import time
 
 import PYME.version
-import PYME.misc.pyro_zeroconf as pzc
+import PYME.misc.pyme_zeroconf as pzc
 
 import os
 

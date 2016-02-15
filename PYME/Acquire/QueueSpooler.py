@@ -33,9 +33,9 @@ from PYME.Acquire import protocol as p
 from PYME.FileUtils import fileID
 
 try:
-    from PYME.misc import pyro_zeroconf
+    from PYME.misc import pyme_zeroconf
     
-    ns = pyro_zeroconf.getNS()
+    ns = pyme_zeroconf.getNS()
 except ImportError:
     ns = None
 

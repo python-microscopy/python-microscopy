@@ -33,7 +33,7 @@ from HDFTaskQueue import *
 from PYME.ParallelTasks.DSTaskQueue import DSTaskQueue
 
 import PYME.version
-from PYME.misc import pyro_zeroconf as pzc
+from PYME.misc import pyme_zeroconf as pzc
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
