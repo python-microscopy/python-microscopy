@@ -385,6 +385,30 @@ class ImageStack(object):
         self.seriesName = filename
 
         self.events = self.dataSource.getEvents()
+        
+    def LoadClusterPZF(self, filename):
+        '''Load PYMEs semi-custom HDF5 image data format. Offloads all the
+        hard work to the HDFDataSource class'''
+
+        from PYME.Analysis.DataSources import ClusterPZFDataSource, BGSDataSource
+
+        self.dataSource = ClusterPZFDataSource.DataSource(filename)
+        #chain on a background subtraction data source, so we can easily do 
+        #background subtraction in the GUI the same way as in the analysis
+        self.data = BGSDataSource.DataSource(self.dataSource) #this will get replaced with a wrapped version
+
+        #try: #should be true the whole time
+        self.mdh = MetaData.TIRFDefault
+        self.mdh.copyEntriesFrom(self.dataSource.getMetadata())
+
+        #attempt to estimate any missing parameters from the data itself        
+        MetaData.fillInBlanks(self.mdh, self.dataSource)
+
+        #calculate the name to use when we do batch analysis on this        
+        #from PYME.ParallelTasks.relativeFiles import getRelFilename
+        self.seriesName = filename
+
+        self.events = self.dataSource.getEvents()
 
     def LoadKdf(self, filename):
         '''load khorus formatted data - pretty much deprecated by now'''
@@ -742,6 +766,8 @@ class ImageStack(object):
                 self.LoadQueue(filename)
             elif filename.startswith('http://'):
                 self.LoadHTTP(filename)
+            elif filename.startswith('PYME-CLUSTER://'):
+                self.LoadClusterPZF(filename)
             elif filename.endswith('.h5'):
                 self.Loadh5(filename)
             elif filename.endswith('.kdf'):

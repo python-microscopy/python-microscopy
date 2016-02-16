@@ -59,10 +59,19 @@
 * Types used for Huffman coding
 *************************************************************************/
 
+#include <stdint.h>
+
 typedef struct {
     unsigned char *BytePtr;
     unsigned int  BitPos;
 } huff_bitstream_t;
+
+/*typedef struct {
+    int Symbol;
+    unsigned int Count;
+    unsigned int Code;
+    unsigned int Bits;
+} huff_sym_t;*/
 
 typedef struct {
     int Symbol;
@@ -70,6 +79,7 @@ typedef struct {
     unsigned int Code;
     unsigned int Bits;
 } huff_sym_t;
+
 
 typedef struct huff_encodenode_struct huff_encodenode_t;
 
@@ -205,7 +215,7 @@ static unsigned int _Huffman_Read8Bits( huff_bitstream_t *stream )
 // * Modified by DB 26/11/15
 // *************************************************************************/
 
-static void _Huffman_WriteBits( huff_bitstream_t *stream, unsigned int x,
+static void _Huffman_WriteBits_( huff_bitstream_t *stream, unsigned int x,
                                unsigned int bits )
 {
     unsigned int  bit;//, bitsAvailable;
@@ -249,6 +259,55 @@ static void _Huffman_WriteBits( huff_bitstream_t *stream, unsigned int x,
     stream->BytePtr = buf;
     stream->BitPos  = bit;
 }
+
+/*union BU{
+    uint32_t i4;
+    uint16_t i2[2];
+    uint8_t c[4];
+};*/
+
+#define BYTETOBINARYPATTERN "%d%d%d%d%d%d%d%d"
+#define BYTETOBINARY(byte)  \
+(byte & 0x80 ? 1 : 0), \
+(byte & 0x40 ? 1 : 0), \
+(byte & 0x20 ? 1 : 0), \
+(byte & 0x10 ? 1 : 0), \
+(byte & 0x08 ? 1 : 0), \
+(byte & 0x04 ? 1 : 0), \
+(byte & 0x02 ? 1 : 0), \
+(byte & 0x01 ? 1 : 0)
+
+static void _Huffman_WriteBits( huff_bitstream_t *stream, unsigned int x,
+                               unsigned int bits )
+{
+    unsigned int  bit;
+    unsigned char *buf;
+    unsigned int bits_;
+    
+    uint32_t xi_4 = 0;
+    uint8_t *xi_c = (uint8_t*) &xi_4;
+    ((uint16_t*) &xi_4)[1] = (uint16_t) x;
+    
+    /* Get current stream state */
+    buf = stream->BytePtr;
+    bit = stream->BitPos;
+    
+    bits_ = bits + bit;// +1;
+    
+    xi_4 >>= bits_;
+    
+    buf[0] = buf[0] | xi_c[1];
+    buf[1] = buf[1] | xi_c[0];
+    
+    bit = bits_ % 8;
+    buf += bits_ / 8;
+    
+    
+    /* Store new stream state */
+    stream->BytePtr = buf;
+    stream->BitPos  = bit;
+}
+
 
 /*************************************************************************
  * _Huffman_WriteBits() - Write bits to a bitstream.
@@ -503,12 +562,12 @@ static huff_decodenode_t * _Huffman_RecoverTree( huff_decodenode_t *nodes,
 * The function returns the size of the compressed data.
 *************************************************************************/
 
-int Huffman_Compress( unsigned char *in, unsigned char *out,
+int Huffman_Compress_( unsigned char *in, unsigned char *out,
   unsigned int insize )
 {
   huff_sym_t       sym[256], tmp;
   huff_bitstream_t stream;
-  unsigned int     k, total_bytes, swaps, symbol;
+  unsigned int     k, total_bytes, swaps, symbol, code, nbits;
 
   /* Do we have anything to compress? */
   if( insize < 1 ) return 0;
@@ -543,19 +602,104 @@ int Huffman_Compress( unsigned char *in, unsigned char *out,
   for( k = 0; k < insize; ++ k )
   {
     symbol = in[k];
-    _Huffman_WriteBits( &stream, sym[symbol].Code,
-                        sym[symbol].Bits );
+      code = sym[symbol].Code;
+      nbits =sym[symbol].Bits;
+      
+    _Huffman_WriteBits( &stream, code,nbits);
   }
 
   /* Calculate size of output data */
   total_bytes = (int)(stream.BytePtr - out);
   if( stream.BitPos > 0 )
   {
-    ++ total_bytes;
+      //++ total_bytes;
+      total_bytes += (stream.BitPos/8 + 1);
   }
 
   return total_bytes;
 }
+
+int Huffman_Compress( unsigned char *in, unsigned char *out,
+                     unsigned int insize )
+{
+    huff_sym_t       sym[256], tmp;
+    huff_bitstream_t stream;
+    unsigned int     k, total_bytes, swaps, symbol, code, nbits;
+    
+    unsigned int  bit;
+    unsigned char *buf;
+    unsigned int bits_;
+    uint32_t xi_4 = 0;
+    uint8_t *xi_c = (uint8_t*) &xi_4;
+
+
+    
+    /* Do we have anything to compress? */
+    if( insize < 1 ) return 0;
+    
+    /* Initialize bitstream */
+    _Huffman_InitBitstream( &stream, out );
+    
+    /* Calculate and sort histogram for input data */
+    _Huffman_Hist( in, sym, insize );
+    
+    /* Build Huffman tree */
+    _Huffman_MakeTree( sym, &stream );
+    
+    /* Sort histogram - first symbol first (bubble sort) */
+    do
+    {
+        swaps = 0;
+        for( k = 0; k < 255; ++ k )
+        {
+            if( sym[k].Symbol > sym[k+1].Symbol )
+            {
+                tmp      = sym[k];
+                sym[k]   = sym[k+1];
+                sym[k+1] = tmp;
+                swaps    = 1;
+            }
+        }
+    }
+    while( swaps );
+    
+    /* Get current stream state */
+    buf = stream.BytePtr;
+    bit = stream.BitPos;
+    
+    /* Encode input stream */
+    for( k = 0; k < insize; ++ k )
+    {
+        symbol = in[k];
+        code = sym[symbol].Code;
+        nbits =sym[symbol].Bits;
+        
+        bits_ = nbits + bit;
+        
+        xi_4 = code << (16-bits_);
+        
+        buf[0] = buf[0] | xi_c[1];
+        buf[1] = buf[1] | xi_c[0];
+        
+        bit = bits_ % 8;
+        buf += bits_ / 8;
+        
+    }
+    /* Store new stream state */
+    stream.BytePtr = buf;
+    stream.BitPos  = bit;
+    
+    /* Calculate size of output data */
+    total_bytes = (int)(stream.BytePtr - out);
+    if( stream.BitPos > 0 )
+    {
+        //++ total_bytes;
+        total_bytes += (stream.BitPos/8 + 1);
+    }
+    
+    return total_bytes;
+}
+
 
 
 /*************************************************************************

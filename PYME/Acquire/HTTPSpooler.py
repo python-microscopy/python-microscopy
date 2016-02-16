@@ -33,73 +33,50 @@ from PYME.Acquire import protocol as p
 from PYME.FileUtils import fileID, nameUtils
 from PYME.ParallelTasks.relativeFiles import getRelFilename
 
-import httplib
-import cPickle as pickle
 import threading
 import Queue
-import requests
 
-#rom PYME.Acquire import eventLog
+from PYME.ParallelTasks import clusterIO
+from PYME.FileUtils import PZFFormat
 
-class SpoolEvent(tables.IsDescription):
-   EventName = tables.StringCol(32)
-   Time = tables.Time64Col()
-   EventDescr = tables.StringCol(256)
+import numpy as np
+import random
+
+import json
 
 class EventLogger:
-   def __init__(self, spool, scope):
-      self.spooler = spool
-      self.scope = scope
-
-   def logEvent(self, eventName, eventDescr = ''):
-      if eventName == 'StartAq':
-          eventDescr = '%d' % self.spooler.imNum
-      self.spooler._post('NEWEVENT', (eventName, eventDescr, sp.timeFcn()))
-      
-class HttpSpoolMDHandler(MetaDataHandler.MDHandlerBase):
-    def __init__(self, spooler, mdToCopy=None):
-        self.spooler = spooler
-        self.cache = {}
-        
-        if not mdToCopy == None:
-            self.copyEntriesFrom(mdToCopy)
-
-    def setEntry(self,entryName, value):
-        self.spooler._post('METADATAENTRY', (entryName, value))
+    def __init__(self, spool, scope):
+        self.spooler = spool
+        self.scope = scope
+          
+        self._events = []
     
-    def getEntry(self,entryName):
-        return self.cache[entryName]
-
-    def getEntryNames(self):
-        return self.cache.keys()
+    def logEvent(self, eventName, eventDescr = ''):
+        if eventName == 'StartAq':
+            eventDescr = '%d' % self.spooler.imNum
+        self._events.append((eventName, eventDescr, sp.timeFcn()))
         
-    def copyEntriesFrom(self, mdToCopy):            
-        self.spooler._post('METADATA', MetaDataHandler.NestedClassMDHandler(mdToCopy))
+    def to_JSON(self):
+        return json.dumps(self._events)
+          
 
-SERVERNAME='127.0.0.1:8080'      
+CLUSTERID=''  
+
+def genSequenceID(filename=''):
+    return  int(time.time()) & random.randint(0, 2**31) << 31 
 
 class Spooler(sp.Spooler):
     def __init__(self, scope, filename, acquisator, protocol = p.NullProtocol, parent=None, complevel=2, complib='zlib'):
-        #       if 'PYME_TASKQUEUENAME' in os.environ.keys():
-        #            taskQueueName = os.environ['PYME_TASKQUEUENAME']
-        #       else:
-        #            taskQueueName = 'taskQueue'
-        #from PYME.misc.computerName import GetComputerName
-        #compName = GetComputerName()
         
-        #taskQueueName = 'TaskQueues.%s' % compName
-        
-        #self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
-        #self.tq._setOneway(['postTask', 'postTasks', 'addQueueEvents', 'setQueueMetaData', 'logQueueEvent'])
         filename = filename[len(nameUtils.datadir):]
         
-        
         self.seriesName = '/'.join(filename.split(os.path.sep))
+        if self.seriesName.startswith('/'):
+            self.seriesName = self.seriesName[1:]
         print filename, self.seriesName
         self.buffer = []
-        self.buflen = 30
         
-        
+        self.buflen = 50
         
         self.postQueue = Queue.Queue()
         self.dPoll = True
@@ -107,97 +84,60 @@ class Spooler(sp.Spooler):
         self.pollThread = threading.Thread(target=self._queuePoll)
         self.pollThread.start()
         
-        #self.tq.createQueue('HDFTaskQueue',self.seriesName, filename, frameSize = (scope.cam.GetPicWidth(), scope.cam.GetPicHeight()), complevel=complevel, complib=complib)
-        
-        self.md = HttpSpoolMDHandler(self)
+        self.md = MetaDataHandler.NestedClassMDHandler()
         self.evtLogger = EventLogger(self, scope)
         
+        self.sequenceID = genSequenceID()
+        self.md['imageID'] = self.sequenceID  
         
         sp.Spooler.__init__(self, scope, filename, acquisator, protocol, parent)
         
-    def __queuePoll(self):
-        self.conn = httplib.HTTPConnection(SERVERNAME, timeout=5)
-        while self.dPoll:            
-            ur, data = self.postQueue.get()
-            print repr(ur)
-            #try:
-            self.conn.request('POST', ur.encode(), pickle.dumps(data, 2), {"Connection":"keep-alive"})
-            
-            resp = self.conn.getresponse()
-            print resp.status, resp.reason
-            #except UnicodeDecodeError:
-            #    print self.conn._buffer
-            time.sleep(.1)
-            
             
     def _queuePoll(self):
-        #self.conn = 
         while self.dPoll:            
-            ur, data = self.postQueue.get()
-            print repr(ur)
-            #conn = httplib.HTTPConnection(SERVERNAME, timeout=15)
-            #print 'hc'
-            #conn.request('POST', ur.encode(), pickle.dumps(data, 2))#, {"Connection":"keep-alive"})
-            #print 'rq'
-            #resp = conn.getresponse()
-            #print 'rp'
-            #conn.close()
+            data = self.postQueue.get()
             
-            r = requests.post('http://' + SERVERNAME + ur.encode(), pickle.dumps(data, 2))
-            
-            print r.status_code
+            files = []
+            for imNum, frame in data:
+                fn = '/'.join([self.seriesName, 'frame%05d.pzf' % imNum])
+                pzf = PZFFormat.dumps(frame, sequenceID=self.sequenceID, frameNum = imNum, compression='huffman')
                 
-            #print resp.status, resp.reason
-            #except UnicodeDecodeError:
-            #    print self.conn._buffer
-            time.sleep(.1)
-            
-    def ___queuePoll(self):
-        #self.conn = 
-        while self.dPoll:            
-            ur, data = self.postQueue.get()
-            print repr(ur)
-            conn = httplib.HTTPConnection(SERVERNAME, timeout=15)
-            print 'hc'
-            conn.request('POST', ur.encode(), pickle.dumps(data, 2))#, {"Connection":"keep-alive"})
-            print 'rq'
-            resp = conn.getresponse()
-            print 'rp'
-            #conn.close()
+                files.append((fn, pzf))
                 
-            print resp.status, resp.reason
-            #except UnicodeDecodeError:
-            #    print self.conn._buffer
-            time.sleep(.1)
-    
-    def _post(self, ursufix, data):
-       self.postQueue.put(('%s/%s' % (self.seriesName, ursufix), data))
+            clusterIO.putFiles(files)
+                
+            time.sleep(.01)
+
         
     def getURL(self):
-        return 'http://' + SERVERNAME + self.seriesName
+        #print CLUSTERID, self.seriesName
+        return 'PYME-CLUSTER://%s/%s' % (CLUSTERID, self.seriesName)
+        
+    def StartSpool(self):
+        sp.Spooler.StartSpool(self)
+        clusterIO.putFile(self.seriesName  + '/metadata.json', self.md.to_JSON())
     
     def StopSpool(self):
         self.dPoll = False
         sp.Spooler.StopSpool(self)
         
+        clusterIO.putFile(self.seriesName  + '/final_metadata.json', self.md.to_JSON())
         
-    def Tick(self, caller):
-      #self.tq.postTask(cSMI.CDataStack_AsArray(caller.ds, 0).reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()), self.seriesName)
-      self.buffer.append(caller.dsa.reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()).copy())
+        #save the acquisition events as json - TODO - consider a binary format as the events
+        #can be quite numerous
+        clusterIO.putFile(self.seriesName  + '/events.json', self.evtLogger.to_JSON())
+        
+        
+    def Tick(self, caller): 
+        self.buffer.append((self.imNum, caller.dsa.copy()))
 
-      if self.imNum == 0: #first frame
-          self.md.setEntry('imageID', fileID.genFrameID(self.buffer[-1].squeeze()))
-          #pass
-
-      if len(self.buffer) >= self.buflen:
-          self.FlushBuffer()
-
-      sp.Spooler.Tick(self, caller)
+        if len(self.buffer) >= self.buflen:
+            self.FlushBuffer()
+        
+        sp.Spooler.Tick(self, caller)
       
     def FlushBuffer(self):
-      t1 = time.time()
-      self._post('NEWFRAMES', self.buffer)
-      #print time.time() -t1
+      self.postQueue.put(self.buffer)
       self.buffer = []
      
 

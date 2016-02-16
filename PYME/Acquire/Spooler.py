@@ -76,22 +76,24 @@ class Spooler:
        self.acq = acquisator
        self.parent = parent
        self.protocol = protocol
-
-       self.doStartLog()
-
-       eventLog.WantEventNotification.append(self.evtLogger)
-
-       self.imNum = 0
-
+       
        #if we've got a fake camera - the cycle time will be wrong - fake our time sig to make up for this
        if scope.cam.__class__.__name__ == 'FakeCamera':
            timeFcn = self.fakeTime
 
+       
+
+   def StartSpool(self):
+       eventLog.WantEventNotification.append(self.evtLogger)
+
+       self.imNum = 0
+
        self.protocol.Init(self)
+       
+       self.doStartLog()
        
        self.acq.WantFrameNotification.append(self.Tick)
        self.spoolOn = True
-
        
        
    def StopSpool(self):
