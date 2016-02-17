@@ -65,8 +65,10 @@ class MyFrame(wx.Frame):
         try:
             from PYME.misc import pyme_zeroconf 
             ns = pyme_zeroconf.getNS()
+            time.sleep(1)
             URI = ns.resolve(taskQueueName)
         except:
+            print 'Could not resolve using zeroconf, trying pyro-ns'
             URI = 'PYRONAME://' + taskQueueName
     
         self.tq = Pyro.core.getProxyForURI(URI)
@@ -74,7 +76,7 @@ class MyFrame(wx.Frame):
         #self.tq = Pyro.core.getProxyForURI("PYRONAME://" + taskQueueName)
         self.workerProc = {}
         self.tLast = 0
-        self.gQueues.SetRowLabelSize(0)
+        self.gQueues.SetRowLabelSize(10)
         self.gWorkers.SetRowLabelSize(0)
         self.onTimer()
 
@@ -131,8 +133,12 @@ class MyFrame(wx.Frame):
     def OnBRemove(self, event):
         rows = self.gQueues.GetSelectedRows()
         
+        print rows
+        
         for r in rows:
             qn = self.queueNames[r]
+            
+            print "removing queue: %s" %qn
             self.tq.removeQueue(qn)
 
     def onTimer(self, ev = None):

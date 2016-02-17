@@ -761,15 +761,21 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         self.h5ResultsFile.close()
 
     def setQueueMetaData(self, fieldName, value):
-        with self.dataFileLock.wlock:
-            self.dataMDH.setEntry(fieldName, value)
+        self.metaData.setEntry(fieldName, value)
         
         HDFResultsTaskQueue.setQueueMetaData(self, fieldName, value)
+        
+        if self.dataRW:
+            with self.dataFileLock.wlock:
+                self.dataMDH.setEntry(fieldName, value)
         self.metaDataStale = True
         
     def setQueueMetaDataEntries(self, mdh):
-        with self.dataFileLock.wlock:
-            self.dataMDH.copyEntriesFrom(mdh)
+        self.metaData.copyEntriesFrom(mdh)
+        
+        if self.dataRW:        
+            with self.dataFileLock.wlock:
+                self.dataMDH.copyEntriesFrom(mdh)
         
         HDFResultsTaskQueue.setQueueMetaDataEntries(self, mdh)
         self.metaDataStale = True
