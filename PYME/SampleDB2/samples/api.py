@@ -11,8 +11,12 @@
 ##################
 
 
-from django.http import JsonResponse
+from django.http import HttpResponse
 from samples import models
+import json
+
+def JsonResponse(data):
+    return HttpResponse(json.dumps(data), content_type="application/json")
 
 def __get_matching_slides(request):
     try:    
