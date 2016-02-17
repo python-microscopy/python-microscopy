@@ -59,6 +59,24 @@ class AutoWidthListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
                  size=wx.DefaultSize, style=0):
         wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
         listmix.ListCtrlAutoWidthMixin.__init__(self)
+        
+from collections import OrderedDict
+class LimitedSizeDict(OrderedDict):
+  def __init__(self, *args, **kwds):
+    self.size_limit = kwds.pop("size_limit", None)
+    OrderedDict.__init__(self, *args, **kwds)
+    self._check_size_limit()
+
+  def __setitem__(self, key, value):
+    OrderedDict.__setitem__(self, key, value)
+    self._check_size_limit()
+
+  def _check_size_limit(self):
+    if self.size_limit is not None:
+      while len(self) > self.size_limit:
+        self.popitem(last=False)
+
+
 
 class VirtList(wx.ListCtrl):
     def __init__(self, parent, ID, pos=wx.DefaultPosition,
@@ -71,6 +89,8 @@ class VirtList(wx.ListCtrl):
         self.creator = ''
         self.reference = ''
         self.structure = ''
+        
+        self._slideCache = LimitedSizeDict(size_limit=500)
 
         self.InsertColumn(0, "Creator")
         self.InsertColumn(1, "Reference")
@@ -88,6 +108,8 @@ class VirtList(wx.ListCtrl):
         self.creator = creator
         self.reference = reference
         self.structure = structure
+        
+        self._slideCache.clear()
 #        if not structure == '':
 #            self.qs = models.Slide.objects.filter(creator__contains=creator, reference__contains=reference, labelling__structure__contains=structure).order_by('-timestamp')
 #        else:
@@ -97,13 +119,24 @@ class VirtList(wx.ListCtrl):
         resp = r.json()        
         
         self.SetItemCount(resp['num_matches'])
+        
+    def _getSlideInfo(self, index):
+        try:
+            return self._slideCache[index]
+        except KeyError:
+            r = requests.get(('http://%s/api/get_slide_info?creator=%s&reference=%s&structure=%s&index=%d'%(dbhost, self.creator, self.reference, self.structure, index)).encode())
+            resp = r.json()
+            
+            self._slideCache[index] = resp
+            return resp
 
     def OnGetItemText(self, item, col):
         #print self.qs[item].desc()
         #return self.qs[item].desc()[col]
     
-        r = requests.get(('http://%s/api/get_slide_info?creator=%s&reference=%s&structure=%s&index=%d'%(dbhost, self.creator, self.reference, self.structure, item)).encode())
-        resp = r.json()
+        #r = requests.get(('http://%s/api/get_slide_info?creator=%s&reference=%s&structure=%s&index=%d'%(dbhost, self.creator, self.reference, self.structure, item)).encode())
+        #resp = r.json()
+        resp = self._getSlideInfo(item)
         
         return resp['desc'][col]
 
@@ -256,8 +289,9 @@ class SampleInfoDialog(wx.Dialog):
         i = event.GetIndex()
         print (i)
         #self.slide = self.lSlides.qs[i]
-        r = requests.get(('http://%s/api/get_slide_info?creator=%s&reference=%s&structure=%s&index=%d'%(dbhost, self.creator, self.reference, self.structure, i)).encode())
-        resp = r.json()
+        #r = requests.get(('http://%s/api/get_slide_info?creator=%s&reference=%s&structure=%s&index=%d'%(dbhost, self.creator, self.reference, self.structure, i)).encode())
+        #resp = r.json()
+        resp = self.lSlides._getSlideInfo(i)
         self.slide = resp['info']
         print((self.slide))
         self.bOK.Enable()
