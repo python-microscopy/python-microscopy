@@ -49,7 +49,7 @@ def num_matching_slides(request):
 def get_slide_info(request):
     qs = __get_matching_slides(request)
     
-    index = request.REQUEST['index']
+    index = int(request.REQUEST['index'])
 
     sl = qs[index]
 

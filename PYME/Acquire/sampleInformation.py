@@ -67,6 +67,10 @@ class VirtList(wx.ListCtrl):
         #listmix.ListCtrlAutoWidthMixin.__init__(self)
         
         #self.qs = qs
+        
+        self.creator = ''
+        self.reference = ''
+        self.structure = ''
 
         self.InsertColumn(0, "Creator")
         self.InsertColumn(1, "Reference")
@@ -83,7 +87,7 @@ class VirtList(wx.ListCtrl):
         
         self.creator = creator
         self.reference = reference
-        self.stucture = structure
+        self.structure = structure
 #        if not structure == '':
 #            self.qs = models.Slide.objects.filter(creator__contains=creator, reference__contains=reference, labelling__structure__contains=structure).order_by('-timestamp')
 #        else:
