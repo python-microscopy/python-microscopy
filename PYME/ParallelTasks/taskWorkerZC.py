@@ -65,7 +65,7 @@ serverFails = {}
 while 1:
     queueNames = ns.list('TaskQueues')
     
-    print queueNames
+    #print queueNames
 
     tasks = []
 

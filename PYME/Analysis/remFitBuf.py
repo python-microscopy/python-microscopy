@@ -421,7 +421,7 @@ class fitTask(taskDef.Task):
         # Find Fiducials
         if self.driftEst:
             self.driftEstInd = self.index + self.md.getOrDefault('Analysis.DriftIndices', np.arange(-10, 11))        
-            self.calObjThresh = self.md.getOrDefault('Analysis.FiducialThreshold', 200)
+            self.calObjThresh = self.md.getOrDefault('Analysis.FiducialThreshold', 6)
             fiducialROISize = self.md.getOrDefault('Analysis.FiducialROISize', 11)
             self._findFiducials(sfunc, debounce)
                 

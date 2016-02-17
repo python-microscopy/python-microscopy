@@ -52,9 +52,9 @@ if 'PYME_LOCAL_ONLY' in os.environ.keys():
         print 'Local mode active - will only talk to workeers on theis computer'
         
 
-if 'PYRO_NS_HOSTNAME' in os.environ.keys():
-    Pyro.config.PYRO_NS_HOSTNAME=os.environ['PYRO_NS_HOSTNAME']
-    print((Pyro.config.PYRO_NS_HOSTNAME))
+#if 'PYRO_NS_HOSTNAME' in os.environ.keys():
+#    Pyro.config.PYRO_NS_HOSTNAME=os.environ['PYRO_NS_HOSTNAME']
+#    print((Pyro.config.PYRO_NS_HOSTNAME))
 
 from PYME import mProfile
 #mProfile.profileOn(['taskServerMP.py', 'HDFTaskQueue.py'])

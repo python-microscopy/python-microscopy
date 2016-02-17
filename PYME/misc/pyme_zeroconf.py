@@ -104,5 +104,6 @@ def getNS(protocol = '_pyme-pyro'):
     except KeyError:
         ns = ZeroConfNS(protocol)
         nsd[protocol] = ns
+        time.sleep(1) #wait for the services to come up
         
     return ns
