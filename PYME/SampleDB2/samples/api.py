@@ -58,7 +58,7 @@ def get_slide_info(request):
                 'reference' : sl.reference,
                 'notes' : sl.notes,
                 'sample' : str(sl.sample),
-                'labels' : sl.labelling()
+                'labels' : sl.label_list()
                 }
 
     return JsonResponse({'desc' : sl.desc(), 'info' : sl_info})

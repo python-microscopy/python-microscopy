@@ -123,8 +123,8 @@ class Slide(models.Model):
         l = ['%s - %s' % (l.structure, l.dyeName()) for l in self.labelling.all()]
         return ',  '.join(l)
         
-    def labelling(self):
-        return [(l.structure, l.dye.shortName) for l in self.slide.labelling.all()]
+    def label_list(self):
+        return [(l.structure, l.dye.shortName) for l in self.labelling.all()]
 
     def desc(self):
         return self.creator, self.reference, self.labels()
