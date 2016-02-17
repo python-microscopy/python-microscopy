@@ -32,6 +32,13 @@ import PYME.Acquire.Spooler as sp
 from PYME.Acquire import protocol as p
 from PYME.FileUtils import fileID
 
+try:
+    from PYME.misc import pyme_zeroconf
+    
+    ns = pyme_zeroconf.getNS()
+except ImportError:
+    ns = None
+
 #rom PYME.Acquire import eventLog
 
 class SpoolEvent(tables.IsDescription):
@@ -62,8 +69,13 @@ class Spooler(sp.Spooler):
        compName = GetComputerName()
 
        taskQueueName = 'TaskQueues.%s' % compName
+       
+       if ns:
+           URI = ns.resolve(taskQueueName)
+       else:
+           URI = 'PYRONAME://' + taskQueueName
 
-       self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
+       self.tq = Pyro.core.getProxyForURI(URI)
        self.tq._setOneway(['postTask', 'postTasks', 'addQueueEvents', 'setQueueMetaData', 'logQueueEvent'])
 
        self.seriesName = filename

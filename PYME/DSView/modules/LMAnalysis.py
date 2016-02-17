@@ -680,8 +680,15 @@ class LMAnalyser:
             
             try:
                 taskQueueName = 'TaskQueues.%s' % compName
-
-                self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
+                
+                try:
+                    from PYME.misc import pyme_zeroconf 
+                    ns = pyme_zeroconf.getNS()
+                    URI = ns.resolve(taskQueueName)
+                except:
+                    URI = 'PYRONAME://' + taskQueueName
+            
+                self.tq = Pyro.core.getProxyForURI(URI)
             except:
                 taskQueueName = 'PrivateTaskQueues.%s' % compName
 

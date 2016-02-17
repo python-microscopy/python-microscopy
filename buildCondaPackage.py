@@ -10,6 +10,9 @@ import sys
 
 sys.path.append('.')
 
+from PYME import update_version
+update_version.update_version()
+
 from PYME import version
 
 os.environ['PYME_VERSION'] = version.version

@@ -208,4 +208,20 @@ class FFBase(object):
         
         raise NotImplementedError('This function should be over-ridden in derived class')
         
+    def FromPoints(self, ofd):
+        '''Fit at a number of points.'''
+        
+        res = np.empty(len(self.ofd), self.FitResultsDType)
+        if 'Analysis.ROISize' in self.metadata.getEntryNames():
+            rs = self.metadata.getEntry('Analysis.ROISize')
+            for i in range(len(self.ofd)):
+                p = self.ofd[i]
+                res[i] = self.FromPoint(p.x, p.y, roiHalfSize=rs)
+        else:
+            for i in range(len(self.ofd)):
+                p = self.ofd[i]
+                res[i] = self.FromPoint(p.x, p.y)
+                
+        return res
+        
 FitFactory = FFBase

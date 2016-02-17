@@ -264,7 +264,7 @@ class MDHandlerBase(DictMixin):
                 
         d = { k: _jsify(self.getEntry(k)) for k in self.getEntryNames()}
         
-        return json.dumps(d)
+        return json.dumps(d, indent=0, sort_keys=True)
 
 class HDFMDHandler(MDHandlerBase):
     def __init__(self, h5file, mdToCopy=None):

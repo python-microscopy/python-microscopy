@@ -346,9 +346,12 @@ class PanSpool(wx.Panel):
 
         if not preflight.ShowPreflightResults(self, self.protocol.PreflightCheck()):
             return #bail if we failed the pre flight check, and the user didn't choose to continue
+            
+        
 
         spoolType = self.rbQueue.GetStringSelection()        
-        #if self.cbQueue.GetValue():
+        #if self.cbQueue.GetValue():        
+        
         if spoolType == 'Queue':
             self.queueName = getRelFilename(self.dirname + fn + '.h5')
             self.spooler = QueueSpooler.Spooler(self.scope, self.queueName, self.scope.pa, protocol, self, complevel=compLevel)
@@ -362,6 +365,10 @@ class PanSpool(wx.Panel):
 
         #if stack:
         #    self.spooler.md.setEntry('ZStack', True)
+        if sampInf:
+            sampleInformation.getSampleData(self, self.spooler.md)
+            
+        self.spooler.StartSpool()
 
         self.bStartSpool.Enable(False)
         self.bStartStack.Enable(False)
@@ -371,8 +378,7 @@ class PanSpool(wx.Panel):
         self.stSpoolingTo.SetLabel('Spooling to ' + fn)
         self.stNImages.SetLabel('0 images spooled in 0 minutes')
 
-        if sampInf:
-            sampleInformation.getSampleData(self, self.spooler.md)
+        
 
     def OnBStartStackButton(self, event=None):
         '''GUI callback to start spooling with z-stepping.'''

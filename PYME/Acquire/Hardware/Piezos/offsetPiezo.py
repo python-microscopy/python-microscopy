@@ -73,7 +73,12 @@ class ServerThread(threading.Thread):
         compName = GetComputerName()
         
         Pyro.core.initServer()
-        ns=Pyro.naming.NameServerLocator().getNS()
+        
+        try:
+            from PYME.misc import pyme_zeroconf 
+            ns = pyme_zeroconf.getNS()
+        except:
+            ns=Pyro.naming.NameServerLocator().getNS()
 
         if not compName in [n[0] for n in ns.list('')]:
             ns.createGroup(compName)        
@@ -106,7 +111,15 @@ class ServerThread(threading.Thread):
                 
 
 def getClient(compName = GetComputerName()):
-    return Pyro.core.getProxyForURI('PYRONAME://%s.Piezo'%compName)
+    try:
+        from PYME.misc import pyme_zeroconf 
+        ns = pyme_zeroconf.getNS()
+        URI = ns.resolve('%s.Piezo' % compName)
+    except:
+        URI ='PYRONAME://%s.Piezo'%compName
+
+    return Pyro.core.getProxyForURI(URI)
+    
     
 def main():
     '''For testing only'''

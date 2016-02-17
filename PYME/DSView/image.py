@@ -288,7 +288,15 @@ class ImageStack(object):
         if self.queueURI == None:
             #do a lookup
             taskQueueName = 'TaskQueues.%s' % compName
-            self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
+            
+            try:
+                from PYME.misc import pyme_zeroconf 
+                ns = pyme_zeroconf.getNS()
+                URI = ns.resolve(taskQueueName)
+            except:
+                URI = 'PYRONAME://' + taskQueueName
+            
+            self.tq = Pyro.core.getProxyForURI(URI)
         else:
             self.tq = Pyro.core.getProxyForURI(self.queueURI)
 
@@ -368,6 +376,30 @@ class ImageStack(object):
         #    self.mdh = MetaData.TIRFDefault
         #    wx.MessageBox("Carrying on with defaults - no gaurantees it'll work well", 'ERROR: No metadata found in file ...', wx.OK)
         #    print("ERROR: No metadata fond in file ... Carrying on with defaults - no gaurantees it'll work well")
+
+        #attempt to estimate any missing parameters from the data itself        
+        MetaData.fillInBlanks(self.mdh, self.dataSource)
+
+        #calculate the name to use when we do batch analysis on this        
+        #from PYME.ParallelTasks.relativeFiles import getRelFilename
+        self.seriesName = filename
+
+        self.events = self.dataSource.getEvents()
+        
+    def LoadClusterPZF(self, filename):
+        '''Load PYMEs semi-custom HDF5 image data format. Offloads all the
+        hard work to the HDFDataSource class'''
+
+        from PYME.Analysis.DataSources import ClusterPZFDataSource, BGSDataSource
+
+        self.dataSource = ClusterPZFDataSource.DataSource(filename)
+        #chain on a background subtraction data source, so we can easily do 
+        #background subtraction in the GUI the same way as in the analysis
+        self.data = BGSDataSource.DataSource(self.dataSource) #this will get replaced with a wrapped version
+
+        #try: #should be true the whole time
+        self.mdh = MetaData.TIRFDefault
+        self.mdh.copyEntriesFrom(self.dataSource.getMetadata())
 
         #attempt to estimate any missing parameters from the data itself        
         MetaData.fillInBlanks(self.mdh, self.dataSource)
@@ -734,6 +766,8 @@ class ImageStack(object):
                 self.LoadQueue(filename)
             elif filename.startswith('http://'):
                 self.LoadHTTP(filename)
+            elif filename.startswith('PYME-CLUSTER://'):
+                self.LoadClusterPZF(filename)
             elif filename.endswith('.h5'):
                 self.Loadh5(filename)
             elif filename.endswith('.kdf'):

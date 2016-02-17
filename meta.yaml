@@ -17,7 +17,7 @@ source:
 
 build:
   # The build number should be incremented for new builds of the same version
-  number: 1       # (defaults to 0)
+  number: 2       # (defaults to 0)
   #string: abc     # (defaults to default conda build string plus the build
                   # number)
                   # The build string cannot contain a dash '-' character
@@ -119,7 +119,7 @@ requirements:
     - python
     - numpy
     - matplotlib
-    - mingw # [win]
+    #- mingw # [win]
   # Packages required to run the package. These are the dependencies that
   # will be installed automatically whenever the package is installed.
   # Package names should be any valid conda spec (see "Specifying versions
