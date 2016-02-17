@@ -577,27 +577,16 @@ class compositor:
 
         self.image = dsviewer.image
 
-        self.compMenu = wx.Menu()
+        #self.compMenu = wx.Menu()
 
         dsviewer.mProcessing.AppendSeparator()
-        MAKE_COMPOSITE = wx.NewId()
-        dsviewer.mProcessing.Append(MAKE_COMPOSITE, "Make Composite", "", wx.ITEM_NORMAL)
-
-        SPLIT_CHANNELS = wx.NewId()
-        dsviewer.mProcessing.Append(SPLIT_CHANNELS, "Split Channels", "", wx.ITEM_NORMAL)
         
-        VECT_SHIFT = wx.NewId()
-        dsviewer.mProcessing.Append(VECT_SHIFT, "Apply vector shifts", "", wx.ITEM_NORMAL)
+        dsviewer.AddMenuItem("Processing", "Make Composite", self.OnMakeComposites)
+        dsviewer.AddMenuItem("Processing", "Split Channels", self.OnSplitChannels)
+        dsviewer.AddMenuItem("Processing", "Apply vector shifts", self.OnApplyShiftmap)
+        dsviewer.AddMenuItem("Processing", "Align Channels", self.OnAlignChannels)
         
-        ALIGN_CHANNELS = wx.NewId()
-        dsviewer.mProcessing.Append(ALIGN_CHANNELS, "Align Channels", "", wx.ITEM_NORMAL)
-
         dsviewer.mProcessing.AppendSeparator()
-
-        dsviewer.Bind(wx.EVT_MENU, self.OnMakeComposites, id=MAKE_COMPOSITE)
-        dsviewer.Bind(wx.EVT_MENU, self.OnSplitChannels, id=SPLIT_CHANNELS)
-        dsviewer.Bind(wx.EVT_MENU, self.OnAlignChannels, id=ALIGN_CHANNELS)
-        dsviewer.Bind(wx.EVT_MENU, self.OnApplyShiftmap, id=VECT_SHIFT)
 
         
     def OnMakeComposites(self, event):
@@ -651,9 +640,11 @@ class compositor:
                         
                     shiftField = dlg.GetShiftmap(otherN)
                     
-                    if not np.allclose(other.pixelSize, voxelsize[0], rtol=.001) or not (other.data.shape[:3] == shape[:3]) or not originsEqual or shiftField:
+                    print shape[:3], other.data.shape[:3]
+                    
+                    if (not np.allclose(other.pixelSize, voxelsize[0], rtol=.001)) or (not (other.data.shape[:3] == shape[:3])) or (not originsEqual) or shiftField:
                         #need to rescale ...
-                        print(('Remapping ', otherN, originsEqual, other.origin, np.allclose(other.pixelSize, voxelsize[0], rtol=.001), other.pixelSize, ignoreZ))
+                        print(('Remapping ', otherN, originsEqual, other.origin, np.allclose(other.pixelSize, voxelsize[0], rtol=.001),(not (other.data.shape[:3] == shape[:3])), shiftField, other.pixelSize, ignoreZ))
                         #print origin, voxelsize
                         od = self.RemapData(other, chan, shape, voxelsize, origin, shiftField = shiftField, ignoreZ=ignoreZ, order=order)
                         
@@ -738,7 +729,7 @@ class compositor:
             
         print((vx, vy, vz, data.shape))
             
-        return ndimage.map_coordinates(data, [(Xnm - x0)/vx, (Ynm - y0)/vy, (Znm - z0)/vz], mode='nearest', order = order)
+        return ndimage.map_coordinates(np.atleast_3d(data), [(Xnm - x0)/vx, (Ynm - y0)/vy, (Znm - z0)/vz], mode='nearest', order = order)
         
         
     def OnApplyShiftmap(self, event):

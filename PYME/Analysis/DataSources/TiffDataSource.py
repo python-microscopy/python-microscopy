@@ -64,8 +64,18 @@ class DataSource(BaseDataSource):
         #    pass
 
         print((self.filename))
+        
+        tf = tifffile.TIFFfile(self.filename)
 
-        self.im = tifffile.TIFFfile(self.filename).series[0].pages
+        self.im = tf.series[0].pages
+        if tf.is_ome:
+            sh = dict(zip(tf.series[0].axes, tf.series[0].shape))
+            self.sizeC = sh['C']
+            
+            axisOrder = tf.series[0].axes[::-1]
+            
+            self.additionalDims = ''.join([a for a in axisOrder[2:] if sh[a] > 1])
+                
 
 
     def getSlice(self, ind):

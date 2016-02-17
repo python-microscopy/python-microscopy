@@ -41,10 +41,10 @@ buf = np.empty((cam.GetPicWidth(), cam.GetPicHeight()), 'uint16')
 
 print('\nStarting Extraction loop ...')
 for i in range(200):
-    print(i, end=' ')
+    #print(i, end=' ')
     while cam.ExpReady():
         cam.ExtractColor(buf, 1)
-        print('e', end=' ')
+        #print('e', end=' ')
     
     time.sleep(.2)
         

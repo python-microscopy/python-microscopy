@@ -1,0 +1,37 @@
+- GaussianFilter:
+    inputName: input
+    outputName: filtered
+    processFramesIndividually: true
+- SimpleThreshold:
+    inputName: filtered
+    outputName: mask
+    processFramesIndividually: false
+    threshold: 70
+- GaussianFilter:
+    sigmaX: 5
+    sigmaY: 5
+    inputName: input
+    outputName: heavyFilter
+    processFramesIndividually: true
+- LocalMaxima:
+    threshold: .2
+    minDistance: 5
+    inputName: heavyFilter
+    outputName: localMax
+    processFramesIndividually: true
+- Label:
+    inputName: localMax
+    minRegionPixels: 1
+    outputName: labeledMaxima
+    processFramesIndividually: true
+- Watershed:
+    inputImage: heavyFilter
+    inputMarkers: labeledMaxima
+    inputMask: mask
+    outputName: segmented
+    processFramesIndividually: true
+- Measure2D:
+    inputIntensity: filtered
+    inputLabels: segmented
+    measureContour: true
+    outputName: output

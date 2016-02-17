@@ -19,8 +19,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
+#try:
+#    print 'trying to import javabridge & bioformats'
+#    import javabridge
+#    print 'imported javabridge'
+#    import bioformats
+#    print 'imported bioformats'
+#    javabridge.start_vm(class_path=bioformats.JARS, run_headless=True)
+#    print 'started java VM'
+#except:
+#    pass
+
 import os
 import numpy
+
 import weakref
 
 from PYME.Acquire import MetaDataHandler
@@ -28,6 +40,8 @@ from PYME.Analysis import MetaData
 from PYME.DSView import dataWrap
 from PYME.Analysis.DataSources import BufferedDataSource
 from PYME.Analysis.LMVis.visHelpers import ImageBounds
+
+
 
 lastdir = ''
 
@@ -112,6 +126,11 @@ class ImageStack(object):
 
         self.saved = False
         self.volatile = False #is the data likely to change and need refreshing?
+        
+        #support for specifying metadata as filename
+        if isinstance(mdh, str) or isinstance(mdh,unicode):#os.path.exists(mdh):
+            self.mdh = None
+            self.FindAndParseMetadata(mdh)
         
         if (data == None):
             #if we've supplied data, use that, otherwise load from file
@@ -269,7 +288,15 @@ class ImageStack(object):
         if self.queueURI == None:
             #do a lookup
             taskQueueName = 'TaskQueues.%s' % compName
-            self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
+            
+            try:
+                from PYME.misc import pyme_zeroconf 
+                ns = pyme_zeroconf.getNS()
+                URI = ns.resolve(taskQueueName)
+            except:
+                URI = 'PYRONAME://' + taskQueueName
+            
+            self.tq = Pyro.core.getProxyForURI(URI)
         else:
             self.tq = Pyro.core.getProxyForURI(self.queueURI)
 
@@ -317,7 +344,7 @@ class ImageStack(object):
         fns = filename.split(os.path.sep)
         cand = os.path.sep.join(fns[:-2] + ['analysis',] + fns[-2:]) + 'r'
         print(cand)
-        if os.path.exists(cand):
+        if False:#os.path.exists(cand):
             h5Results = tables.openFile(cand)
 
             if 'FitResults' in dir(h5Results.root):
@@ -326,6 +353,60 @@ class ImageStack(object):
 
                 self.resultsMdh = MetaData.TIRFDefault
                 self.resultsMdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(h5Results))
+
+        self.events = self.dataSource.getEvents()
+        
+    def LoadHTTP(self, filename):
+        '''Load PYMEs semi-custom HDF5 image data format. Offloads all the
+        hard work to the HDFDataSource class'''
+        import tables
+        from PYME.Analysis.DataSources import HTTPDataSource, BGSDataSource
+        #from PYME.Analysis.LMVis import inpFilt
+        
+        #open hdf5 file
+        self.dataSource = HTTPDataSource.DataSource(filename)
+        #chain on a background subtraction data source, so we can easily do 
+        #background subtraction in the GUI the same way as in the analysis
+        self.data = BGSDataSource.DataSource(self.dataSource) #this will get replaced with a wrapped version
+
+        #try: #should be true the whole time
+        self.mdh = MetaData.TIRFDefault
+        self.mdh.copyEntriesFrom(self.dataSource.getMetadata())
+        #except:
+        #    self.mdh = MetaData.TIRFDefault
+        #    wx.MessageBox("Carrying on with defaults - no gaurantees it'll work well", 'ERROR: No metadata found in file ...', wx.OK)
+        #    print("ERROR: No metadata fond in file ... Carrying on with defaults - no gaurantees it'll work well")
+
+        #attempt to estimate any missing parameters from the data itself        
+        MetaData.fillInBlanks(self.mdh, self.dataSource)
+
+        #calculate the name to use when we do batch analysis on this        
+        #from PYME.ParallelTasks.relativeFiles import getRelFilename
+        self.seriesName = filename
+
+        self.events = self.dataSource.getEvents()
+        
+    def LoadClusterPZF(self, filename):
+        '''Load PYMEs semi-custom HDF5 image data format. Offloads all the
+        hard work to the HDFDataSource class'''
+
+        from PYME.Analysis.DataSources import ClusterPZFDataSource, BGSDataSource
+
+        self.dataSource = ClusterPZFDataSource.DataSource(filename)
+        #chain on a background subtraction data source, so we can easily do 
+        #background subtraction in the GUI the same way as in the analysis
+        self.data = BGSDataSource.DataSource(self.dataSource) #this will get replaced with a wrapped version
+
+        #try: #should be true the whole time
+        self.mdh = MetaData.TIRFDefault
+        self.mdh.copyEntriesFrom(self.dataSource.getMetadata())
+
+        #attempt to estimate any missing parameters from the data itself        
+        MetaData.fillInBlanks(self.mdh, self.dataSource)
+
+        #calculate the name to use when we do batch analysis on this        
+        #from PYME.ParallelTasks.relativeFiles import getRelFilename
+        self.seriesName = filename
 
         self.events = self.dataSource.getEvents()
 
@@ -369,18 +450,59 @@ class ImageStack(object):
 
         self.mode = 'psf'
         
+    def LoadNPY(self, filename):
+        '''Load numpy .npy data.
+        
+       
+        '''
+        mdfn = self.FindAndParseMetadata(filename)
+        
+        self.data = numpy.load(filename)
+
+
+        from PYME.ParallelTasks.relativeFiles import getRelFilename
+        self.seriesName = getRelFilename(filename)
+
+        self.mode = 'default'
+        
+    def LoadDBL(self, filename):
+        '''Load Bewersdorf custom STED data. 
+       
+        '''
+        mdfn = self.FindAndParseMetadata(filename)
+        
+        self.data = numpy.memmap(filename, dtype='<f4', mode='r', offset=128, shape=(self.mdh['Camera.ROIWidth'],self.mdh['Camera.ROIHeight'],self.mdh['NumImages']), order='F')
+
+
+        from PYME.ParallelTasks.relativeFiles import getRelFilename
+        self.seriesName = getRelFilename(filename)
+
+        self.mode = 'default'
+        
 
     def FindAndParseMetadata(self, filename):
         '''Try and find and load a .xml or .md metadata file that might be ascociated
         with a given image filename. See the relevant metadatahandler classes
         for details.'''
+        import xml.parsers.expat 
+        
+        if not self.mdh == None:
+            return #we already have metadata (probably passed in on command line)
+        
         mdf = None
         xmlfn = os.path.splitext(filename)[0] + '.xml'
         xmlfnmc = os.path.splitext(filename)[0].split('__')[0] + '.xml'
         if os.path.exists(xmlfn):
-            self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.TIRFDefault)
-            self.mdh.copyEntriesFrom(MetaDataHandler.XMLMDHandler(xmlfn))
-            mdf = xmlfn
+            try:
+                self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.TIRFDefault)
+                self.mdh.copyEntriesFrom(MetaDataHandler.XMLMDHandler(xmlfn))
+                mdf = xmlfn
+            except xml.parsers.expat.ExpatError:
+                #fix for bug in which PYME .md was written with a .xml extension
+                self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.BareBones)
+                self.mdh.copyEntriesFrom(MetaDataHandler.SimpleMDHandler(xmlfn))
+                mdf = xmlfn
+                
         elif os.path.exists(xmlfnmc): #this is a single colour channel of a pair
             self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.TIRFDefault)
             self.mdh.copyEntriesFrom(MetaDataHandler.XMLMDHandler(xmlfnmc))
@@ -416,6 +538,84 @@ class ImageStack(object):
                 
                 lsm_pop('LSM.', lsm_info)
                 
+            elif filename.endswith('.tif'):
+                #look for OME data...
+                from PYME.gohlke.tifffile import TIFFfile
+                tf = TIFFfile(filename)
+                
+                if tf.is_ome:
+                    try:
+                        omemdh = MetaDataHandler.OMEXMLMDHandler(tf.pages[0].tags['image_description'].value)
+                        
+                        self.mdh.copyEntriesFrom(omemdh)
+                    except IndexError:
+                        pass
+                
+            elif filename.endswith('.dbl'): #Bewersdorf lab STED
+                mdfn = filename[:-4] + '.txt'
+                entrydict = {}
+                
+                try: #try to read in extra metadata if possible
+                    with open(mdfn, 'r') as mf:
+                        for line in mf:
+                            s = line.split(':')
+                            if len(s) == 2:
+                                entrydict[s[0]] = s[1]
+                            
+                except IOError:
+                    pass
+                            
+#                vx, vy = entrydict['Pixel size (um)'].split('x')
+#                self.mdh['voxelsize.x'] = float(vx)
+#                self.mdh['voxelsize.y'] = float(vy)
+#                self.mdh['voxelsize.z'] = 0.2 #FIXME for stacks ...
+#                
+#                sx, sy = entrydict['Image format'].split('x')
+#                self.mdh['Camera.ROIWidth'] = int(sx)
+#                self.mdh['Camera.ROIHeight'] = int(sy)
+#                
+#                self.mdh['NumImages'] = int(entrydict['# Images'])
+                
+                with open(filename) as df:
+                    s = df.read(8)
+                    Z, X, Y, T = numpy.fromstring(s, '>u2')
+                    s = df.read(16)
+                    depth, width, height, elapsed = numpy.fromstring(s, '<f4')
+                    
+                    self.mdh['voxelsize.x'] = width/X
+                    self.mdh['voxelsize.y'] = height/Y
+                    self.mdh['voxelsize.z'] = depth
+                    
+                    self.mdh['Camera.ROIWidth'] = X
+                    self.mdh['Camera.ROIHeight'] = Y
+                    self.mdh['NumImages'] = Z*T
+                
+                def _sanitise_key(key):
+                    k = key.replace('#', 'Num')
+                    k = k.replace('(%)', '')
+                    k = k.replace('(', '')
+                    k = k.replace(')', '')
+                    k = k.replace('.', '')
+                    k = k.replace('/', '')
+                    k = k.replace('?', '')
+                    k = k.replace(' ', '')
+                    if not k[0].isalpha():
+                        k = 's' + k
+                    return k
+                    
+                for k, v in entrydict.items():
+                    self.mdh['STED.%s'%_sanitise_key(k)] = v
+                    
+            #else: #try bioformats
+            #    OMEXML = bioformats.get_omexml_metadata(filename).encode('utf8')
+            #    OMEmd = MetaDataHandler.OMEXMLMDHandler(OMEXML)
+            #    self.mdh.copyEntriesFrom(OMEmd)
+                    
+                    
+                    
+                    
+                
+                
 
         if self.haveGUI and not ('voxelsize.x' in self.mdh.keys() and 'voxelsize.y' in self.mdh.keys()):
             from PYME.DSView.voxSizeDialog import VoxSizeDialog
@@ -436,12 +636,15 @@ class ImageStack(object):
         mdfn = self.FindAndParseMetadata(filename)
 
         self.dataSource = TiffDataSource.DataSource(filename, None)
+        print self.dataSource.shape
         self.dataSource = BufferedDataSource.DataSource(self.dataSource, min(self.dataSource.getNumSlices(), 50))
         self.data = self.dataSource #this will get replaced with a wrapped version
+        
+        print self.data.shape
 
 
         #if we have a multi channel data set, try and pull in all the channels
-        if 'ChannelFiles' in self.mdh.getEntryNames():
+        if 'ChannelFiles' in self.mdh.getEntryNames() and not len(self.mdh['ChannelFiles']) == self.data.shape[3]:
             try:
                 from PYME.DSView.dataWrap import ListWrap
                 #pull in all channels
@@ -481,16 +684,41 @@ class ImageStack(object):
             self.data = ListWrap(chans)
 
 
-        
-        #self.data = readTiff.read3DTiff(filename)
+        from PYME.ParallelTasks.relativeFiles import getRelFilename
+        self.seriesName = getRelFilename(filename)
 
+        self.mode = 'default'
         
+    def LoadBioformats(self, filename):
+        #from PYME.FileUtils import readTiff
+        from PYME.Analysis.DataSources import BioformatsDataSource
+        import bioformats
+
+        #mdfn = self.FindAndParseMetadata(filename)
+        print "Bioformats:loading data"
+        self.dataSource = BioformatsDataSource.DataSource(filename, None)
+        self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.BareBones)
+        
+        print "Bioformats:loading metadata"
+        OMEXML = bioformats.get_omexml_metadata(filename).encode('utf8')
+        print "Bioformats:parsing metadata"
+        OMEmd = MetaDataHandler.OMEXMLMDHandler(OMEXML)
+        self.mdh.copyEntriesFrom(OMEmd)
+        print "Bioformats:done"
+                
+        
+        print self.dataSource.shape
+        self.dataSource = BufferedDataSource.DataSource(self.dataSource, min(self.dataSource.getNumSlices(), 50))
+        self.data = self.dataSource #this will get replaced with a wrapped version
+        
+        print self.data.shape
 
         from PYME.ParallelTasks.relativeFiles import getRelFilename
         self.seriesName = getRelFilename(filename)
 
         self.mode = 'default'
-
+        
+        
     def LoadImageSeries(self, filename):
         #from PYME.FileUtils import readTiff
         from PYME.Analysis.DataSources import ImageSeriesDataSource
@@ -508,21 +736,38 @@ class ImageStack(object):
         self.mode = 'default'
 
     def Load(self, filename=None):
-        print(filename)
-        if (filename == None):
+        print('filename == %s' % filename)
+        if (filename == None or filename == ''):
             import wx #only introduce wx dependency here - so can be used non-interactively
             global lastdir
             
-            fdialog = wx.FileDialog(None, 'Please select Data Stack to open ...',
-                wildcard='Image Data|*.h5;*.tif;*.lsm;*.kdf;*.md;*.psf|All files|*.*', style=wx.OPEN, defaultDir = lastdir)
-            succ = fdialog.ShowModal()
-            if (succ == wx.ID_OK):
-                filename = fdialog.GetPath()
-                lastdir = fdialog.GetDirectory()
+            #fdialog = wx.FileDialog(None, 'Please select Data Stack to open ...',
+            #    wildcard='Image Data|*.h5;*.tif;*.lsm;*.kdf;*.md;*.psf;*.npy;*.dbl|All files|*.*', style=wx.OPEN, defaultDir = lastdir)
+            #succ = fdialog.ShowModal()
+            #if (succ == wx.ID_OK):
+            #    filename = fdialog.GetPath()
+            #    lastdir = fdialog.GetDirectory()
+            #else:
+                #print succ
+
+            filename = wx.FileSelector('Please select Data Stack to open ...',
+                                       wildcard='Image Data|*.h5;*.tif;*.lsm;*.kdf;*.md;*.psf;*.npy;*.dbl|All files|*.*', 
+                                        default_path = lastdir)            
+            
+            if filename == None or filename == '':
+                raise RuntimeError('No file selected')
+                pass
+            else:
+                lastdir = os.path.split(filename)[0]
+            #print(succ, filename)
 
         if not filename == None:
             if filename.startswith('QUEUE://'):
                 self.LoadQueue(filename)
+            elif filename.startswith('http://'):
+                self.LoadHTTP(filename)
+            elif filename.startswith('PYME-CLUSTER://'):
+                self.LoadClusterPZF(filename)
             elif filename.endswith('.h5'):
                 self.Loadh5(filename)
             elif filename.endswith('.kdf'):
@@ -531,8 +776,14 @@ class ImageStack(object):
                 self.LoadPSF(filename)
             elif filename.endswith('.md'): #treat this as being an image series
                 self.LoadImageSeries(filename)
-            else: #try tiff
+            elif filename.endswith('.npy'): #treat this as being an image series
+                self.LoadNPY(filename)
+            elif filename.endswith('.dbl'): #treat this as being an image series
+                self.LoadDBL(filename)
+            elif os.path.splitext(filename)[1] in ['.tif', '.tiff', '.lsm']: #try tiff
                 self.LoadTiff(filename)
+            else: #try bioformats
+                self.LoadBioformats(filename)
 
 
             #self.SetTitle(filename)

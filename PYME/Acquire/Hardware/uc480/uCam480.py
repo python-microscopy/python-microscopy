@@ -29,6 +29,10 @@ import sys
 from PYME.Acquire import MetaDataHandler
 from PYME.Acquire.Hardware import ccdCalibrator
 
+import os
+#from PYME.DSView import image
+from PYME.FileUtils import nameUtils
+
 import threading
 
 try:
@@ -106,13 +110,14 @@ class uc480Camera:
 
     #define a couple of acquisition modes
 
-    #MODE_CONTINUOUS = 5
-    #MODE_SINGLE_SHOT = 1
+    MODE_CONTINUOUS = 5
+    MODE_SINGLE_SHOT = 1
 
 
-    def __init__(self, boardNum=0):
+    def __init__(self, boardNum=0, nbits = 8):
         self.initialised = False
         self.active = True
+        self.nbits = nbits
 
         self.boardHandle = wintypes.HANDLE(boardNum)
 
@@ -166,12 +171,26 @@ class uc480Camera:
         
         #uc480.CALL('GetColorDepth', self.boardHandle, &m_nBitsPerPixel, &m_nColorMode);
         uc480.CALL('SetColorMode', self.boardHandle, uc480.IS_SET_CM_BAYER)
+        
+        if self.nbits == 12:
+            uc480.CALL('DeviceFeature', self.boardHandle, uc480.IS_DEVICE_FEATURE_CMD_SET_SENSOR_BIT_DEPTH, byref(uc480.IS_SENSOR_BIT_DEPTH_12_BIT) , sizeof(nBitDepth))
 
 
         uc480.CALL('SetBinning', self.boardHandle, uc480.IS_BINNING_DISABLE)
         self.binning=False #binning flag - binning is off
         self.binX=1 #1x1
         self.binY=1
+        
+        self.background = None
+        self.flatfield = None
+        self.flat = None
+        
+        #load flatfield (if present)
+        calpath = nameUtils.getCalibrationDir(self.serialNum)
+        ffname = os.path.join(calpath, 'flatfield.npy')
+        if os.path.exists(ffname):
+            self.flatfield = np.load(ffname).squeeze()
+            self.flat = self.flatfield
         
         self.SetROI(0,0, self.CCDSize[0],self.CCDSize[1])
         #self.ROIx=(1,self.CCDSize[0])
@@ -187,8 +206,7 @@ class uc480Camera:
         self.nAccum = 1
         self.nAccumCurrent = 0
         
-        self.background = None
-        self.flatfield = None
+        
         
         self.Init()
         
@@ -248,20 +266,26 @@ class uc480Camera:
         ret = uc480.CALL('WaitForNextImage', self.boardHandle, 1000, byref(pData), byref(bufID))
         
         if not ret == uc480.IS_SUCCESS:
-            #print ret
+            print 'Wait for image failed with:', ret
             return
             
         ret = uc480.CALL('CopyImageMem', self.boardHandle, pData, bufID, self.transferBuffer.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)))
+        if not ret == uc480.IS_SUCCESS:
+            print 'CopyImageMem failed with:', ret
+            return
         
         #chSlice[:] = self.transferBuffer[:].T #.reshape(chSlice.shape)
-        self.accumBuffer[:] = self.accumBuffer + self.transferBuffer
+        if self.nAccumCurrent == 0:
+            self.accumBuffer[:] = self.transferBuffer
+        else:
+            self.accumBuffer[:] = self.accumBuffer + self.transferBuffer
         self.nAccumCurrent += 1
         
         ret = uc480.CALL('UnlockSeqBuf', self.boardHandle, uc480.IS_IGNORE_PARAMETER, pData)
         
         if self.nAccumCurrent >= self.nAccum:    
             self.fullBuffers.put(self.accumBuffer)
-            self.accumBuffer = self.freeAccumBuffers.get()
+            self.accumBuffer = self.freeBuffers.get()
             self.nAccumCurrent = 0
             self.nFull += 1
         #self.camLock.release()
@@ -317,6 +341,12 @@ class uc480Camera:
 
     def GetDelayTime(*args):
         raise Exception('Not implemented yet!!')
+        
+    def SetAcquisitionMode(self, mode):
+        if mode == self.MODE_SINGLE_SHOT:
+            self.contMode = False
+        else:
+            self.contMode = True
 
 
     def SetIntegTime(self, iTime):
@@ -464,7 +494,9 @@ class uc480Camera:
         ret = uc480.CALL('AOI', self.boardHandle, uc480.IS_AOI_IMAGE_SET_AOI, byref(rect), ctypes.sizeof(rect))
         if not ret == 0:
             raise RuntimeError('Error setting ROI: %d: %s' % GetError(self.boardHandle))
-
+            
+        if not self.flatfield == None:
+            self.flat = self.flatfield[x1:x2, y1:y2]
 
         #raise Exception, 'Not implemented yet!!'
 
@@ -503,7 +535,10 @@ class uc480Camera:
         
 
         eventLog.logEvent('StartAq', '')
-        ret = uc480.CALL('CaptureVideo', self.boardHandle, uc480.IS_DONT_WAIT)
+        if self.contMode:
+            ret = uc480.CALL('CaptureVideo', self.boardHandle, uc480.IS_DONT_WAIT)
+        else:
+            ret = uc480.CALL('FreezeVideo', self.boardHandle, uc480.IS_DONT_WAIT)
         if not ret == 0:
             raise RuntimeError('Error starting exposure: %d: %s' % GetError(self.boardHandle))
         return 0
@@ -538,8 +573,8 @@ class uc480Camera:
         if (not self.background == None) and self.background.shape == chSlice.shape:
             chSlice[:] = (chSlice - np.minimum(chSlice, self.background))[:]
             
-        if (not self.flatfield == None) and self.flatfield.shape == chSlice.shape:
-            chSlice[:] = (chSlice*self.flatfield).astype('uint16')[:]
+        if (not self.flat == None) and self.flat.shape == chSlice.shape:
+            chSlice[:] = (chSlice*self.flat).astype('uint16')[:]
         
         #ret = uc480.CALL('UnlockSeqBuf', self.boardHandle, uc480.IS_IGNORE_PARAMETER, pData)
 
@@ -562,6 +597,15 @@ class uc480Camera:
 
     def GetEMGain(self):
         return self.EMGain
+        
+    def SetGainBoost(self, on):
+        if on:
+            uc480.CALL('SetGainBoost', self.boardHandle, uc480.IS_SET_GAINBOOST_ON)
+        else:
+            uc480.CALL('SetGainBoost', self.boardHandle, uc480.IS_SET_GAINBOOST_OFF)
+            
+    def SetGain(self, gain=100):
+        uc480.CALL('SetHardwareGain', self.boardHandle, gain, uc480.IS_IGNORE_PARAMETER, uc480.IS_IGNORE_PARAMETER, uc480.IS_IGNORE_PARAMETER)
         
     
     def SetAccumulation(self, nFrames):

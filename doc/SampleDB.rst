@@ -53,6 +53,8 @@ Part II - Getting Apache to serve the SampleDB
 
 .. warning :: In its default state, the PYME SampleDB is not secure. Only use behind a firewall and do so at your own risk/discretion. The version of the Django ``settings.py`` in the python-microscopy repository has ``DEBUG`` set to ``True``, which is a known security risk. In a controlled environment, this risk is probably acceptable in return for easier troubleshooting, but you have been warned! 
 
+-libapache2-mod-wsgi
+
 1.  Create a directory ``/var/www/SampleDB/static`` for the static files (if you want to host the files from another directory, you will need to change ``STATIC_ROOT`` in ``settings.py`` and the apache .conf file detailed in step 3). 
 
 2.  Install the static files by calling:

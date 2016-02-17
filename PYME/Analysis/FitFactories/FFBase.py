@@ -23,15 +23,17 @@
 
 import numpy as np
 from . import fitCommon
+from scipy import ndimage
 
 class FFBase(object):
-    def __init__(self, data, metadata, fitfcn=None, background=None):
+    def __init__(self, data, metadata, fitfcn=None, background=None, noiseSigma=None):
         '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
         metadata. '''
         self.data = data
         self.background = background
         self.metadata = metadata
         self.fitfcn = fitfcn #allow model function to be specified (to facilitate changing between accurate and fast exponential approwimations)
+        self.noiseSigma = noiseSigma
         
     def getROIAtPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
         '''Helper fcn to extract ROI from frame at given x,y, point. 
@@ -69,7 +71,12 @@ class FFBase(object):
         #estimate errors in data
         nSlices = dataROI.shape[2]
         
-        sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataMean, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
+        #sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataMean, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
+        ### Fixed for better Poisson noise approx
+        if self.noiseSigma == None:
+            sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*(np.maximum(dataMean, 1) + 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
+        else:
+            sigma = self.noiseSigma[xslice, yslice, zslice]
 
         if not self.background == None and len(np.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
             bgROI = self.background[xslice, yslice, zslice]
@@ -109,9 +116,14 @@ class FFBase(object):
         x_ = (x + self.metadata.Camera.ROIPosX - 1)*vx
         y_ = (y + self.metadata.Camera.ROIPosY - 1)*vy
         
+        
         #look up shifts
-        DeltaX = self.metadata.chroma.dx.ev(x_, y_)
-        DeltaY = self.metadata.chroma.dy.ev(x_, y_)
+        if not self.metadata.getOrDefault('Analysis.FitShifts', False):
+            DeltaX = self.metadata.chroma.dx.ev(x_, y_)
+            DeltaY = self.metadata.chroma.dy.ev(x_, y_)
+        else:
+            DeltaX = 0
+            DeltaY = 0
         
         #find shift in whole pixels
         dxp = int(DeltaX/vx)
@@ -144,14 +156,28 @@ class FFBase(object):
         dataROI[:,:,1] = self.data[xslice2, yslice2, 1] - self.metadata.Camera.ADOffset
         
         nSlices = 1
-        sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataROI, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
-
-
-        if not self.background == None and len(np.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
-            bgROI = self.background[xslice, yslice, 0:2] - self.metadata.Camera.ADOffset
-            bgROI[:,:,1] = self.background[xslice2, yslice2, 1] - self.metadata.Camera.ADOffset
+        #sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataROI, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
+        #phConv = self.metadata.Camera.ElectronsPerCount/self.metadata.Camera.TrueEMGain
+        #nPhot = dataROI*phConv
+        
+        if self.noiseSigma == None:
+            sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*(self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataROI, 1) + self.metadata.Camera.TrueEMGain*self.metadata.Camera.TrueEMGain))/self.metadata.Camera.ElectronsPerCount
         else:
-            bgROI = np.array(0)
+            sigma = self.noiseSigma[xslice, yslice, 0:2]
+            sigma[:,:,1] = self.noiseSigma[xslice2, yslice2, 1]
+            
+        sigma = ndimage.maximum_filter(sigma, [3,3,0])
+
+
+        if self.metadata.getOrDefault('Analysis.subtractBackground', True) :
+            #print 'bgs'
+            if not self.background == None and len(np.shape(self.background)) > 1:
+                bgROI = self.background[xslice, yslice, 0:2] - self.metadata.Camera.ADOffset
+                bgROI[:,:,1] = self.background[xslice2, yslice2, 1] - self.metadata.Camera.ADOffset
+            else:
+                bgROI = np.zeros_like(dataROI) + self.background - self.metadata.Camera.ADOffset
+        else:
+            bgROI = np.zeros_like(dataROI)
 
  
 
@@ -181,5 +207,21 @@ class FFBase(object):
         uses FitResultsDType to pre-allocate an array for the results)'''
         
         raise NotImplementedError('This function should be over-ridden in derived class')
+        
+    def FromPoints(self, ofd):
+        '''Fit at a number of points.'''
+        
+        res = np.empty(len(self.ofd), self.FitResultsDType)
+        if 'Analysis.ROISize' in self.metadata.getEntryNames():
+            rs = self.metadata.getEntry('Analysis.ROISize')
+            for i in range(len(self.ofd)):
+                p = self.ofd[i]
+                res[i] = self.FromPoint(p.x, p.y, roiHalfSize=rs)
+        else:
+            for i in range(len(self.ofd)):
+                p = self.ofd[i]
+                res[i] = self.FromPoint(p.x, p.y)
+                
+        return res
         
 FitFactory = FFBase

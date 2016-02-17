@@ -29,7 +29,10 @@ def regCmap(cmap):
     pylab.cm.cmapnames.append(cmap.name)
 
 if not 'cmapnames' in dir(pylab.cm):
-    pylab.cm.cmapnames = pylab.cm._cmapnames
+    if 'cmap_d' in dir(pylab.cm):
+        pylab.cm.cmapnames = pylab.cm.cmap_d.keys()
+    else:
+        pylab.cm.cmapnames = pylab.cm._cmapnames
 
 _r = {'red':((0.,0.,0.), (1.,1.,1.)), 'green':((0.,0,0), (1.,0.,0.)), 'blue':((0.,0.,0.), (1.,0.,0.))}
 _g = {'green':((0.,0.,0.), (1.,1.,1.)), 'red':((0.,0,0), (1.,0.,0.)), 'blue':((0.,0.,0.), (1.,0.,0.))}

@@ -27,7 +27,7 @@ import PYME.misc.autoFoldPanel as afp
 import wx.lib.agw.aui as aui
 
 #hacked so py2exe works
-from PYME.DSView.dsviewer_npy import View3D
+from PYME.DSView.dsviewer_npy_nb import View3D
 
 from PYME.Analysis.LMVis import gl_render
 #from PYME.Analysis.LMVis import workspaceTree
@@ -86,6 +86,8 @@ class VisGUIFrame(wx.Frame):
         self._flags = 0
         
         self.pipeline = pipeline.Pipeline(visFr=self)
+        
+        #self.Quads = None
                
         self.SetMenuBar(self.CreateMenuBar())
 
@@ -118,7 +120,7 @@ class VisGUIFrame(wx.Frame):
 #            pylab.plot(pylab.randn(10))
 
         self.sh.Execute('from pylab import *')
-        self.sh.Execute('from PYME.DSView.dsviewer_npy import View3D')
+        self.sh.Execute('from PYME.DSView.dsviewer_npy_nb import View3D')
 
         #self.workspace = workspaceTree.WorkWrap(self.__dict__)
         ##### Make certain things visible in the workspace tree
@@ -177,6 +179,7 @@ class VisGUIFrame(wx.Frame):
             self.RefreshView()
             self.displayPane.OnPercentileCLim(None)
             self.Refresh()
+            self.Update()
             print('refreshed')
 
     def AddPage(self, page=None, select=False,caption='Dummy', update=True):
@@ -201,6 +204,7 @@ class VisGUIFrame(wx.Frame):
 
     def OnMove(self, event):
         self.Refresh()
+        self.Update()
         event.Skip()      
 
     def OnQuit(self, event):
@@ -343,7 +347,7 @@ class VisGUIFrame(wx.Frame):
         pointQT.QT_MAXRECORDS = leafSize
         self.stQTSNR.SetLabel('Effective SNR = %3.2f' % pylab.sqrt(pointQT.QT_MAXRECORDS/2.0))
 
-        self.Quads = None
+        self.pipeline.Quads = None
         self.RefreshView()
 
 
@@ -753,8 +757,9 @@ class VisGUIFrame(wx.Frame):
     def OnView3DTriangles(self,event):
         if 'z' in self.pipeline.keys():
             if not 'glCanvas3D' in dir(self):
-                self.glCanvas3D = gl_render3D.LMGLCanvas(self)
-                self.AddPage(page=self.glCanvas3D, select=True, caption='3D')
+                #self.glCanvas3D = gl_render3D.LMGLCanvas(self)
+                #self.AddPage(page=self.glCanvas3D, select=True, caption='3D')
+                self.glCanvas3D = gl_render3D.showGLFrame()
 
             self.glCanvas3D.setTriang(self.pipeline['x'], 
                                       self.pipeline['y'], 
@@ -766,7 +771,7 @@ class VisGUIFrame(wx.Frame):
    
     def OnSaveMeasurements(self, event):
         fdialog = wx.FileDialog(None, 'Save measurements ...',
-            wildcard='Numpy array|*.npy|Tab formatted text|*.txt', style=wx.SAVE|wx.HIDE_READONLY)
+            wildcard='Numpy array|*.npy|Tab formatted text|*.txt', style=wx.SAVE)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
             outFilename = fdialog.GetPath().encode()
@@ -787,7 +792,7 @@ class VisGUIFrame(wx.Frame):
         filename = wx.FileSelector("Choose a file to open", 
                                    nameUtils.genResultDirectoryPath(), 
                                    default_extension='h5r', 
-                                   wildcard='PYME Results Files (*.h5r)|*.h5r|Tab Formatted Text (*.txt)|*.txt|Matlab data (*.mat)|*.mat')
+                                   wildcard='PYME Results Files (*.h5r)|*.h5r|Tab Formatted Text (*.txt)|*.txt|Matlab data (*.mat)|*.mat|Comma separated values (*.csv)|*.csv')
 
         #print filename
         if not filename == '':
@@ -1005,12 +1010,12 @@ class VisGUIFrame(wx.Frame):
             
 
         elif self.viewMode == 'quads':
-            if self.Quads == None:
+            if self.pipeline.Quads == None:
                 status = statusLog.StatusLogger("Generating QuadTree ...")
-                self.GenQuads()
+                self.pipeline.GenQuads()
                 
 
-            self.glCanvas.setQuads(self.Quads)
+            self.glCanvas.setQuads(self.pipeline.Quads)
 
         elif self.viewMode == 'interp_triangles':
             self.glCanvas.setIntTriang(self.pipeline.getTriangles(), self.pointColour())
@@ -1092,12 +1097,16 @@ class VisGuiApp(wx.App):
         return True
 
 
-def main(filename):
+def main_(filename=None):
+    if filename == "":
+        filename = None
     application = VisGuiApp(filename, 0)
     application.MainLoop()
 
 
-if __name__ == '__main__':
+
+    
+def main():
     from multiprocessing import freeze_support
     freeze_support()
     
@@ -1107,11 +1116,14 @@ if __name__ == '__main__':
         filename = sys.argv[1]
 
     if wx.GetApp() == None: #check to see if there's already a wxApp instance (running from ipython -pylab or -wthread)
-        main(filename)
+        main_(filename)
     else:
         #time.sleep(1)
         visFr = VisGUIFrame(None, filename)
         visFr.Show()
         visFr.RefreshView()
+        
+if __name__ == '__main__':
+    main()
 
 

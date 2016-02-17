@@ -1,0 +1,98 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html lang="en">
+<head>
+    <title>Measurements</title>
+<script type="text/javascript">
+function HideObject(objID)
+{
+    xmlht = new XMLHttpRequest();
+    xmlht.open('GET', 'hide/' + objID, true);
+    xmlht.send();
+
+    document.getElementById('obj' + objID).hidden=true;
+}
+
+function ShowDetails()
+{
+    els = document.getElementsByClassName('details');
+    for (i=0;i < els.length;i++)
+    {
+        el = els[i]    
+        el.innerHTML = el.attributes.foo.value;
+    } 
+}
+</script>
+<style>
+tr.odd {
+    background-color: #E0E7F0;
+}
+
+td.rh{
+    font-weight: bold;
+}
+
+td.c{
+    color: Cyan;
+}
+
+td.m{
+    color: Magenta;
+}
+
+a{
+    color: Blue;
+    text-decoration: underline; 
+}
+</style>
+</head>
+<body>
+
+    <h1>Measurements</h1>
+    <a onclick="ShowDetails()">Show Details</a>
+    <table>
+    <!--
+    <tr>
+    <th>Index</th><th>Image</th><th>Scheme</th><th>Short axis</th><th>Long axis</th><th>Polar</th><th>Radial</th>
+    <th>x0</th><th>y0</th><th>length</th><th>width</th>
+    </tr> -->
+    {% for obj in objects %}
+        {% if obj.shown %}
+        <tr id="obj{{ loop.index0 }}" class="{{ loop.cycle('odd', 'even') }}">
+            <td>Object: {{ loop.index0 }} <br><a onclick="HideObject({{ loop.index0 }})">hide</a></td>
+            <td><table>
+                <tr><td><table>
+                        <tr>        
+                            <td><img src="images/{{ loop.index0 }}"/></td>
+                            <!--<td><img src="schemes/{{ loop.index0 }}"/></td>-->
+                            <td><img src="isosurface3D/{{ loop.index0 }}"/></td>
+                            
+                            <td><table>
+                                <tr><th></th> {% for chan in obj.chans %} <th>chan {{ loop.index0 }}</th> {% endfor %} </tr>
+                
+                                <tr><td class="rh">x0</td> {% for chan in obj.chans %} <td> {{ "%3.2f"|format(chan.centroid[0]) }} </td> {% endfor %} </tr>
+                                <tr><td class="rh">y0</td> {% for chan in obj.chans %} <td> {{ "%3.2f"|format(chan.centroid[1]) }} </td> {% endfor %} </tr>
+                                <tr><td class="rh">z0</td> {% for chan in obj.chans %} <td>{{ "%3.2f"|format(chan.centroid[2]) }} </td> {% endfor %} </tr>
+                                <tr><td class="rh">length</td> {% for chan in obj.chans %} <td> {{ "%3.2f"|format(chan.mad_0*2.35/0.8) }} </td> {% endfor %} </tr>
+                                <tr><td class="rh m">width</td> {% for chan in obj.chans %} <td> {{ "%3.2f"|format(chan.mad_1*2.35/0.8) }} </td> {% endfor %} </tr>
+                                <tr> <td class="rh c">depth</td> {% for chan in obj.chans %} <td> {{ "%3.2f"|format(chan.mad_2*2.35/0.8) }} </td> {% endfor %} </tr>
+                                <tr><td class="rh">sum</td> {% for chan in obj.chans %} <td>{{ "%3.2f"|format(chan.sum) }}</td> {% endfor %} </tr>
+                            </table></td>
+                        </tr>
+                </table></td></tr>
+                <tr><td><table>
+                    <tr>
+                        <td class='details' foo='<img src="graphs/{{ loop.index0 }}/shortAxisDist"/>'></td>
+                        <!--<td class='details' foo='<img src="graphs/{{ loop.index0 }}/longAxisDistN"/>'></td>-->
+                        <td class='details' foo='<img src="graphs/{{ loop.index0 }}/angularDist"/>'></td>
+                        <td class='details' foo='<img src="graphs/{{ loop.index0 }}/radialDistN"/>'></td>
+                        <!--<td class='details' foo='<img src="graphs/{{ loop.index0 }}/longAxisOrthDist"/>'></td>-->
+                    </tr>
+                </table></td></tr>
+            </table></td>
+        </tr>
+        {% endif %}
+    {% endfor %}
+    
+    </table>
+</body>
+</html>

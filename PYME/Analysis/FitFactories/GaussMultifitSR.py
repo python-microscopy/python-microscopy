@@ -33,13 +33,15 @@ from PYME.Analysis._fithelpers import *
 def f_multiGaussS(p, X, Y, s):
     #number of Gaussians to fit
     nG = len(p)/3
+    
+    nm = 1./(s*s*2*np.pi)
 
     r = 0.0    
     
     for i in range(nG):
         i3 = 3*i
         A, x0, y0 = p[i3:(i3+3)]
-        r += A*np.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2))
+        r += A*np.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2))*nm
         
     return r
     
@@ -63,10 +65,10 @@ fresultdtype=[('tIndex', '<i4'),
               ('nFit', '<i4')]
 
 def GaussianFitResultR(fitResults, metadata, resultCode=-1, fitErr=None, nChi2=0, nEvents=1):	
-    if fitErr == None:
+    if fitErr is None:
         fitErr = -5e3*np.ones(fitResults.shape, 'f')
         
-    tIndex = metadata.tIndex
+    tIndex = metadata.getOrDefault('tIndex', 0)
     
     return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, nChi2, nEvents)], dtype=fresultdtype) 
 		
@@ -75,11 +77,12 @@ class GaussianFitFactory:
     X = None
     Y = None
     
-    def __init__(self, data, metadata, fitfcn=f_multiGauss, background=None):
+    def __init__(self, data, metadata, fitfcn=f_multiGauss, background=None, noiseSigma=None):
         '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
         metadata. '''
         self.data = data
         self.background = background
+        self.noiseSigma = noiseSigma
         self.metadata = metadata
         self.fitfcn = fitfcn #allow model function to be specified (to facilitate changing between accurate and fast exponential approwimations)
         if 'D' in dir(fitfcn): #function has jacobian
@@ -130,15 +133,18 @@ class GaussianFitFactory:
 
     def FindAndFit(self, threshold=2, gui=False):
         #average in z
-        dataMean = self.data.mean(2) - self.metadata.Camera.ADOffset
+        dataMean = self.data.mean(2) - self.metadata.getOrDefault('Camera.ADOffset', 0)
 
 	
         #estimate errors in data
         nSlices = self.data.shape[2]
         
-        sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataMean, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
+        if self.noiseSigma is None:        
+            sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataMean, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
+        else:
+            sigma = self.noiseSigma
 
-        if not self.background == None and len(np.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
+        if not self.background is None and len(np.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
             #average in z
             bgMean = self.background.mean(2) - self.metadata.Camera.ADOffset
             
@@ -258,7 +264,7 @@ class GaussianFitFactory:
                     (res_n, cov_x_n, infodict_n, mesg_n, resCode_n) = self.solver(self.fitfcn, startParameters, d_m, s_m, X_m, Y_m, gSig)
                     
                     #test for convergence - no convergence = abandon and unwind back to previous
-                    if cov_x_n == None:
+                    if cov_x_n is None:
                         nEvents -= 1
                         break
                     else: # fit converged - continue
@@ -291,7 +297,7 @@ class GaussianFitFactory:
                     i3 = 3*i
                     i31 = i3 + 3
                     
-                    if not fitErrors == None:            
+                    if not fitErrors is None:            
                         resList[i] = GaussianFitResultR(res[i3:i31], self.metadata, resCode, fitErrors[i3:i31], nchi2, nEvents)
                     else:
                         resList[i] = GaussianFitResultR(res[i3:i31], self.metadata, resCode, None, nchi2, nEvents)

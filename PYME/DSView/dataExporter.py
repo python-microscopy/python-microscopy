@@ -141,8 +141,8 @@ exporter(H5Exporter)
 
 #@exporter
 class TiffStackExporter(Exporter):
-    extension = '*.tif'
-    descr = 'TIFF (stack if 3D) - .tif'
+    extension = '*.tiff'
+    descr = 'TIFF (stack if 3D) - .tiff'
 
     def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
         #xmd = None
@@ -190,7 +190,35 @@ class TiffStackExporter(Exporter):
 
 exporter(TiffStackExporter)
 
+class OMETiffExporter(Exporter):
+    extension = '*.tif'
+    descr = 'OME TIFF - .tif'
 
+    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
+        from PYME.gohlke import tifffile
+        import dataWrap
+        
+        dw = dataWrap.ListWrap([data[xslice, yslice, zslice, i] for i in range(data.shape[3])])
+        #xmd = None
+        if not metadata == None:
+            xmd = MetaDataHandler.OMEXMLMDHandler(mdToCopy=metadata)
+            if not origName == None:
+                xmd.setEntry('cropping.originalFile', origName)
+
+            xmd.setEntry('cropping.xslice', xslice.indices(data.shape[0]))
+            xmd.setEntry('cropping.yslice', yslice.indices(data.shape[1]))
+            xmd.setEntry('cropping.zslice', zslice.indices(data.shape[2]))
+            
+            description=xmd.getXML(dw)
+        else:
+            description = None
+            
+            
+            
+        tifffile.imsave_f(outFile, dw, description = description) 
+
+
+exporter(OMETiffExporter)
 
 #@exporter
 class TiffSeriesExporter(Exporter):
@@ -246,8 +274,8 @@ class NumpyExporter(Exporter):
             xmd.setEntry('cropping.zslice', zslice.indices(data.shape[2]))
             
             xmlFile = os.path.splitext(outFile)[0] + '.xml'
-            # xmd.writeXML(xmlFile)
-            xmd.WriteSimple(xmlFile)
+            xmd.writeXML(xmlFile)
+            #xmd.WriteSimple(xmlFile)
 
 exporter(NumpyExporter)
 
@@ -396,7 +424,7 @@ def _getFilename(defaultExt = '*.tif'):
                 defIndex = i
 
         fdialog = wx.FileDialog(None, 'Save file as ...',
-                wildcard='|'.join(wcs), style=wx.SAVE|wx.HIDE_READONLY)
+                wildcard='|'.join(wcs), style=wx.SAVE)#|wx.HIDE_READONLY)
 
         fdialog.SetFilterIndex(defIndex)
 
@@ -432,7 +460,11 @@ def CropExportData(vp, mdh=None, events=None, origName = None):
             dlg.Destroy()
             return
 
-        exp = exportersByExtension['*' + os.path.splitext(filename)[1]]()
+        ext = '*' + os.path.splitext(filename)[1]
+        #deal with the special case of ome tiffs
+        if filename.endswith('ome.tif'):
+            ext = '*.ome.tif'        
+        exp = exportersByExtension[ext]()
 
         exp.Export(ds, filename, dlg.GetXSlice(), dlg.GetYSlice(), dlg.GetZSlice(),mdh, events, origName)
 
@@ -450,11 +482,15 @@ def ExportData(ds, mdh=None, events=None, origName = None, defaultExt = '*.tif',
         #we cancelled the dialog - exit
         return
 
-    
+        
     ext = '*' + os.path.splitext(filename)[1]
+    #deal with the special case of ome tiffs
+    if filename.endswith('ome.tif'):
+        ext = '*.ome.tif'
         
     if not ext in exportersByExtension.keys():
-        wx.MessageBox('No exporter found for %s files\n Try one of the following file types:\n%s' % (ext, ', '.join(exportersByExtension.keys())), "Error saving data", wx.OK|wx.ICON_HAND)
+        raise RuntimeError('No exporter found for %s files')
+        #wx.MessageBox('No exporter found for %s files\n Try one of the following file types:\n%s' % (ext, ', '.join(exportersByExtension.keys())), "Error saving data", wx.OK|wx.ICON_HAND)
         return
 
     exp = exportersByExtension[ext]()

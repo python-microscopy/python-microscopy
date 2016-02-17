@@ -82,6 +82,7 @@ class FastGraphPanel(wx.Panel):
         self.GenHist()
         if self.isinit:
             self.Refresh()
+            self.Update()
 
     def GenHist(self):
         #self.hmin = min(self.limit_lower, self.lower_pctile)
@@ -223,6 +224,7 @@ class FastGraphPanel(wx.Panel):
     def OnSize(self, event):
         self.GenHist()
         self.Refresh()
+        self.Update()
 
     
 

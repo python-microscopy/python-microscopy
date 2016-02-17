@@ -75,7 +75,7 @@ class LMGLCanvas(GLCanvas):
         #wx.EVT_ERASE_BACKGROUND(self, self.OnEraseBackground)
         #wx.EVT_IDLE(self, self.OnIdle)
         
-        #self.gl_context = wx.glcanvas.GLContext(self)
+        self.gl_context = wx.glcanvas.GLContext(self)
         #self.gl_context.SetCurrent()
 
         self.init = False
@@ -139,7 +139,7 @@ class LMGLCanvas(GLCanvas):
         dc = wx.PaintDC(self)
         #print self.GetContext()
         self.SetCurrent()
-        #print self.gl_context
+        self.gl_context.SetCurrent(self)
         #print self.GetContext()
         #print 'OnPaint', event.GetId()
         if not self.init:
@@ -756,6 +756,7 @@ class LMGLCanvas(GLCanvas):
         self.cs_ = glColorPointerf(cs)
 
         self.Refresh()
+        self.Update()
 
     def setCMap(self, cmap):
         self.cmap = cmap
@@ -784,6 +785,7 @@ class LMGLCanvas(GLCanvas):
         self.pixelsize = (xmax - xmin)*1./self.Size[0]
 
         self.Refresh()
+        self.Update()
 
         for callback in self.wantViewChangeNotification:
             callback.Refresh()
@@ -921,6 +923,7 @@ class LMGLCanvas(GLCanvas):
             self.vp.yp = yp/self.vpVoxSize
 
             self.Refresh()
+            self.Update()
 
         event.Skip()
         
@@ -957,6 +960,7 @@ class LMGLCanvas(GLCanvas):
             self.selectionDragging=False
             
             self.Refresh()
+            self.Update()
             
         event.Skip()
 
@@ -988,6 +992,7 @@ class LMGLCanvas(GLCanvas):
             #self.selectionDragging=False
 
             self.Refresh()
+            self.Update()
             
         if event.MiddleIsDown():
             dx = xp - self.last_xp
@@ -1019,6 +1024,8 @@ class LMGLCanvas(GLCanvas):
         #print yp
         
         self.WheelZoom(rot, xp, yp)
+        
+        event.Skip()
 
     def WheelZoom(self, rot, xp, yp):
         view_size_x = self.xmax - self.xmin
@@ -1179,6 +1186,7 @@ class LMGLCanvas(GLCanvas):
             self.scaleBarLength = scaleB
 
             self.Refresh()
+            self.Update()
             return h
 
 

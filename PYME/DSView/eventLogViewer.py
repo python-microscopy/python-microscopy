@@ -165,24 +165,31 @@ class eventLogPanel(wx.Panel):
             t = e['Time'] - startT
             if t > minT and t < maxT:
                 y = (t -minT)*pixPerS + 2*textHeight
+                
                 dc.SetPen(wx.Pen(self.lineColours[e['EventName']]))
                 dc.SetTextForeground(self.lineColours[e['EventName']])
+                
                 if y < (lastEvY + 2) or (numSkipped > 0 and y < (lastEvY + 1.2*textHeight)): #no room - skip
                     if ((tTickPositions - y)**2).min() < (0.3*textHeight)**2:
+                        #line will occlude time text, draw as two segments
                         dc.DrawLine(x0, y, x0 + barWidth, y)
                         dc.DrawLine(x1 - 2*hpadding, y, x1 - 2*(1 + 1*numSkipped), y)
                     else:
                         dc.DrawLine(x0, y, x1 - 2*(1 + 1*numSkipped), y)
+                        
                     dc.DrawLine(x1- 2*(1 + 1*numSkipped), y, x1- 2*(1 + 1*numSkipped), lastEvY + 0.5*textHeight + 1 + 2*numSkipped)
                     dc.DrawLine(x1- 2*(1 + 1*numSkipped),lastEvY + 0.5*textHeight + 1 + 2*numSkipped, x3 + 200, lastEvY+ 0.5*textHeight + 1 + 2*numSkipped)
                     numSkipped +=1
-                else:
+                else: #Don't skip - draw nomally
                     if ((tTickPositions - y)**2).min() < (0.3*textHeight)**2:
+                        #line will occlude time text, draw as two segments
                         dc.DrawLine(x0, y, x0 + barWidth, y)
                         dc.DrawLine(x1 - 2*hpadding, y, x1, y)
                     else:
                         dc.DrawLine(x0, y, x1, y)
+                        
                     if y < (lastEvY + 1.2*textHeight):
+                        #label will overlap with previous - move down
                         dc.DrawLine(x1, y, x1, lastEvY + 1.2*textHeight)
                         y = lastEvY + 1.2*textHeight
 
@@ -273,7 +280,7 @@ class eventLogPanel(wx.Panel):
 
     def OnPaint(self,event):
         DC = wx.PaintDC(self)
-        self.PrepareDC(DC)
+        #self.PrepareDC(DC)
 
         s = self.GetVirtualSize()
         MemBitmap = wx.EmptyBitmap(s.GetWidth(), s.GetHeight())
@@ -294,6 +301,7 @@ class eventLogPanel(wx.Panel):
 
     def OnSize(self,event):
         self.Refresh()
+        self.Update()
 
     def OnWheel(self, event):
         rot = event.GetWheelRotation()
@@ -322,6 +330,7 @@ class eventLogPanel(wx.Panel):
 
         self.frameRange = (nMin, nMax)
         self.Refresh()
+        self.Update()
 
     def SetEventSource(self, eventSource):
         self.eventSource = eventSource
@@ -337,16 +346,19 @@ class eventLogPanel(wx.Panel):
 
         if self.initialised:
             self.Refresh()
+            self.Update()
 
     def SetRange(self, range):
         self.maxRange = range
         if self.autoRange:
             self.frameRange = range
         self.Refresh()
+        self.Update()
 
     def SetCharts(self, charts):
         self.charts = charts
         self.Refresh()
+        self.Update()
 
 class eventLogTPanel(wx.Panel):
     def __init__(self, parent, eventSource, metaData, timeRange, charts = [], size=(-1, -1)):
@@ -646,7 +658,7 @@ class eventLogTPanel(wx.Panel):
 
     def OnPaint(self,event):
         DC = wx.PaintDC(self)
-        self.PrepareDC(DC)
+        #self.PrepareDC(DC)
 
         s = self.GetVirtualSize()
         MemBitmap = wx.EmptyBitmap(s.GetWidth(), s.GetHeight())
@@ -667,6 +679,7 @@ class eventLogTPanel(wx.Panel):
 
     def OnSize(self,event):
         self.Refresh()
+        self.Update()
 
     def OnWheel(self, event):
         rot = event.GetWheelRotation()
@@ -695,6 +708,7 @@ class eventLogTPanel(wx.Panel):
 
         self.timeRange = (nMin, nMax)
         self.Refresh()
+        self.Update()
 
     def SetEventSource(self, eventSource):
         self.eventSource = eventSource
@@ -710,12 +724,14 @@ class eventLogTPanel(wx.Panel):
 
         if self.initialised:
             self.Refresh()
+            self.Update()
 
     def SetRange(self, range):
         self.maxRange = range
         if self.autoRange:
             self.frameRange = range
         self.Refresh()
+        self.Update()
 
     def SetCharts(self, charts):
         self.charts = charts

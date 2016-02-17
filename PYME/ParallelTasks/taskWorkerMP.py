@@ -27,6 +27,9 @@ import Pyro.naming
 import random
 import time
 
+import PYME.version
+import PYME.misc.pyme_zeroconf as pzc
+
 import os
 
 from PYME.misc.computerName import GetComputerName
@@ -47,6 +50,7 @@ Pyro.config.PYRO_MOBILE_CODE=0
 #    taskQueueName = 'taskQueue'
     
 ns=Pyro.naming.NameServerLocator().getNS()
+#ns = pzc.getNS()
 
 #tq = Pyro.core.getProxyForURI("PYRONAME://" + taskQueueName)
 
@@ -81,7 +85,7 @@ while 1:
             #print qName
 
             #ask the queue for tasks
-            tasks = tq.getTasks(procName)
+            tasks = tq.getTasks(procName, PYME.version.version)
 
             #we succesfully contacted the server, so reset it's fail count
             serverFails[qName] = 0

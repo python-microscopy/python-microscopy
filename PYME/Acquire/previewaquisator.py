@@ -22,12 +22,24 @@
 ##################
 
 import wx
-from PYME.cSMI import CDataStack, CDataStack_AsArray
+#from PYME.cSMI import CDataStack, CDataStack_AsArray
+
+import numpy as np
 
 import time
 import traceback
 
 from PYME.Acquire import eventLog
+
+class dsFake(object):
+    def __init__(self, width, height, length, nChans):
+        self.width = width
+        self.height = height
+        self.length = length
+        self.nChans = nChans
+        
+        
+
 
 class PreviewAquisator(wx.Timer):
     BW = 1
@@ -43,7 +55,7 @@ class PreviewAquisator(wx.Timer):
         #self.hwChans = _chans.hw
         #self.numHWChans = len(_chans.hw)
         #self.cols =  _chans.cols
-        self.ds = _ds
+        self.dsa = _ds
         self.cam = _cam
         self.shutters = _shutters
         self.loopnuf = 0
@@ -64,6 +76,8 @@ class PreviewAquisator(wx.Timer):
         
         self.inNotify = False
         
+        self.zPos = 0
+        
         #will be needed to allow the display load to be minimised by, e.g. only updating display once per poll rather than once per frame
         self.WantFrameGroupNotification = [] 
 
@@ -74,67 +88,98 @@ class PreviewAquisator(wx.Timer):
         self.hwChans = self.chans.hw
         self.numHWChans = len(self.chans.hw)
         self.cols =  self.chans.cols
-   
-        if (self.ds == None or keepds == False):
-            self.ds = None
-            self.ds = CDataStack(self.cam.GetPicWidth(), self.cam.GetPicHeight(), 
-                self.GetSeqLength(),self.getReqMemChans(self.cols))
-            self.dsa = CDataStack_AsArray(self.ds, 0)
-
-            i = 0
-            for j in range(len(self.cols)):
-                a = self.chans.names[j]
-                c = self.chans.cols[j]
-                #for (a,c) in (self.chans.names, self.chans.cols):
-
-                if(c & self.BW):
-                    self.ds.setChannelName(i, (a + "_BW").encode())
-                    i = i + 1
-                if(c & self.RED):
-                    self.ds.setChannelName(i, (a + "_R").encode())
-                    i = i + 1
-                if(c & self.GREEN1):
-                    self.ds.setChannelName(i, (a + "_G1").encode())
-                    i = i + 1
-                if(c & self.GREEN2):
-                    self.ds.setChannelName(i, (a + "_G2").encode())
-                    i = i + 1
-                if(c & self.BLUE):
-                    self.ds.setChannelName(i, (a + "_B").encode())
-                    i = i + 1
-
-
         
-        #Check to see if the DataStack is big enough!
-        if (self.ds.getNumChannels() < self.getReqMemChans(self.cols)):
-            raise RuntimeError("Not enough channels in Data Stack")
+        order = 'F'
+        if 'order' in dir(self.cam):
+            order = self.cam.order  
+        
+        if (self.dsa == None or keepds == False):
+            self.dsa = None
+            #self.ds = CDataStack(self.cam.GetPicWidth(), self.cam.GetPicHeight(), 
+            #    self.GetSeqLength(),self.getReqMemChans(self.cols))
+            #self.dsa = CDataStack_AsArray(self.ds, 0)
+            self.dsa = np.zeros([self.cam.GetPicWidth(), self.cam.GetPicHeight(), 
+                                 self.GetSeqLength()], dtype = 'uint16', order = order)
+   
+#        if (self.ds == None or keepds == False):
+#            self.ds = None
+#            self.ds = CDataStack(self.cam.GetPicWidth(), self.cam.GetPicHeight(), 
+#                self.GetSeqLength(),self.getReqMemChans(self.cols))
+#            self.dsa = CDataStack_AsArray(self.ds, 0)
 
-        self.shutters.closeShutters(self.shutters.ALL)
+#            i = 0
+#            for j in range(len(self.cols)):
+#                a = self.chans.names[j]
+#                c = self.chans.cols[j]
+#                #for (a,c) in (self.chans.names, self.chans.cols):
+#
+#                if(c & self.BW):
+#                    self.ds.setChannelName(i, (a + "_BW").encode())
+#                    i = i + 1
+#                if(c & self.RED):
+#                    self.ds.setChannelName(i, (a + "_R").encode())
+#                    i = i + 1
+#                if(c & self.GREEN1):
+#                    self.ds.setChannelName(i, (a + "_G1").encode())
+#                    i = i + 1
+#                if(c & self.GREEN2):
+#                    self.ds.setChannelName(i, (a + "_G2").encode())
+#                    i = i + 1
+#                if(c & self.BLUE):
+#                    self.ds.setChannelName(i, (a + "_B").encode())
+#                    i = i + 1
+#
+#
+#        
+#        #Check to see if the DataStack is big enough!
+#        if (self.ds.getNumChannels() < self.getReqMemChans(self.cols)):
+#            raise RuntimeError("Not enough channels in Data Stack")
+#
+#        self.shutters.closeShutters(self.shutters.ALL)
 
-    def getFrame(self, colours):
-        """ Get a frame from the camera and extract the channels we want,
-            putting them into ds. """
+#    def getFrame(self, colours):
+#        """ Get a frame from the camera and extract the channels we want,
+#            putting them into ds. """
+##        if ('numpy_frames' in dir(self.cam)):
+##            getChanSlice = lambda ds,chan: CDataStack_AsArray(ds, chan)[:,:,ds.getZPos()]
+##        else:
+##            getChanSlice = lambda ds,chan: ds.getCurrentChannelSlice(chan)
+#            
+#        if ('numpy_frames' in dir(self.cam)):
+#            getChanSlice = lambda ds,chan: self.dsa[:,:,ds.getZPos()]
+#        else:
+#            getChanSlice = lambda ds,chan: self.dsa[:,:,ds.getZPos()].ctypes.data
+#
+#        if(colours & self.BW):
+#            cs = getChanSlice(self.ds,self.curMemChn)
+#            self.cam.ExtractColor(cs,0)
+#            self.curMemChn = self.curMemChn + 1	
+#        if(colours & self.RED):
+#            self.cam.ExtractColor(getChanSlice(self.ds,self.curMemChn),1)
+#            self.curMemChn = self.curMemChn + 1
+#        if(colours & self.GREEN1):
+#            self.cam.ExtractColor(getChanSlice(self.ds,self.curMemChn),2)
+#            self.curMemChn = self.curMemChn + 1
+#        if(colours & self.GREEN2):
+#            self.cam.ExtractColor(getChanSlice(self.ds,self.curMemChn),4)
+#            self.curMemChn = self.curMemChn + 1
+#        if(colours & self.BLUE):
+#            self.cam.ExtractColor(getChanSlice(self.ds,self.curMemChn),3)
+#            self.curMemChn = self.curMemChn + 1
+            
+    def getFrame(self, colours=None):
+        #print self.zPos
         if ('numpy_frames' in dir(self.cam)):
-            getChanSlice = lambda ds,chan: CDataStack_AsArray(ds, chan)[:,:,ds.getZPos()]
+            cs = self.dsa[:,:,self.zPos]
         else:
-            getChanSlice = lambda ds,chan: ds.getCurrentChannelSlice(chan)
-
-        if(colours & self.BW):
-            cs = getChanSlice(self.ds,self.curMemChn)
-            self.cam.ExtractColor(cs,0)
-            self.curMemChn = self.curMemChn + 1	
-        if(colours & self.RED):
-            self.cam.ExtractColor(getChanSlice(self.ds,self.curMemChn),1)
-            self.curMemChn = self.curMemChn + 1
-        if(colours & self.GREEN1):
-            self.cam.ExtractColor(getChanSlice(self.ds,self.curMemChn),2)
-            self.curMemChn = self.curMemChn + 1
-        if(colours & self.GREEN2):
-            self.cam.ExtractColor(getChanSlice(self.ds,self.curMemChn),4)
-            self.curMemChn = self.curMemChn + 1
-        if(colours & self.BLUE):
-            self.cam.ExtractColor(getChanSlice(self.ds,self.curMemChn),3)
-            self.curMemChn = self.curMemChn + 1
+            cs = self.dsa[:,:,self.zPos].ctypes.data
+            
+        #Get camera to insert data into our array (results passed back "by reference")
+        #this is a kludge/artifact of an old call into c-code
+        #in this context cs is a pointer to the memory we want the frame to go into
+        #for newer cameras, we pass a numpy array object, and the camera code
+        #copies the data into that array.
+        self.cam.ExtractColor(cs,0)
 
     def purge(self):
         while(self.cam.ExpReady()):
@@ -286,7 +331,7 @@ class PreviewAquisator(wx.Timer):
                     #the buffer has enough storage for ~3s when running flat out,
                     #we're polling at ~5hz, and we should be able to get more frames than would be expected during the polling intervall to
                     #allow us to catch up following glitches of one form or another, although not too many more.
-                    if ('GetNumImsBuffered' in dir(self.cam)) and (nFrames > self.cam.GetBufferSize()/4):
+                    if ('GetNumImsBuffered' in dir(self.cam)) and (nFrames > self.cam.GetBufferSize()/2):
                         print(('Warning: not keeping up with camera, giving up with %d frames still in buffer' % self.cam.GetNumImsBuffered()))
                         break
     
@@ -320,6 +365,7 @@ class PreviewAquisator(wx.Timer):
     def checkHardware(self):
         for callback in self.HardwareChecks:
             if not callback():
+                print 'Waiting for hardware'
                 return False
 
         return True
@@ -336,7 +382,8 @@ class PreviewAquisator(wx.Timer):
 
         self.shutters.closeShutters(self.shutters.ALL)
         #self.cam.StopLifePreview()
-        self.ds.setZPos(0)
+        #self.ds.setZPos(0)
+        self.zPos = 0
 
         self.piezoGoHome()
 
@@ -349,7 +396,8 @@ class PreviewAquisator(wx.Timer):
         "Start aquisition"
 
         self.looppos = 0
-        self.ds.setZPos(0) #go to start of data stack
+        #self.ds.setZPos(0) #go to start of data stack
+        self.zPos = 0
         
         #set the shutters up for the first frame
         self.shutters.setShutterStates(self.hwChans[self.looppos])

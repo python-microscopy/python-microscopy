@@ -39,11 +39,12 @@ fresultdtype=[('tIndex', '<i4'), ('x', '<f4'), ('y', '<f4'),
 
 
 class GaussianFitFactory(FFBase.FFBase):
-    def __init__(self, data, metadata, fitfcn=None, background=None):
-        super(GaussianFitFactory, self).__init__(data, metadata, fitfcn, background)
+    def __init__(self, data, metadata, fitfcn=None, background=None, noiseSigma=None):
+        super(GaussianFitFactory, self).__init__(data, metadata, fitfcn, background, noiseSigma)
         
         
     def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
+        roiHalfSize=5
         Xg, Yg, Xr, Yr, dataROI, bgROI, sigma, xslice, yslice, xslice2, yslice2 = self.getSplitROIAtPoint(x, y, z, roiHalfSize, axialHalfSize)
         
         res = np.zeros(1, fresultdtype)

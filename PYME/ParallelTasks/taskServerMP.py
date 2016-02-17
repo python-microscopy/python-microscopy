@@ -30,6 +30,9 @@ import threading
 import numpy
 from taskQueue import *
 from HDFTaskQueue import *
+from PYME.ParallelTasks.DSTaskQueue import DSTaskQueue
+
+import PYME.version
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
@@ -120,9 +123,15 @@ class TaskQueueSet(Pyro.core.ObjBase):
 
         self.taskQueues[queueName].postTasks(tasks)
 
-    def getTask(self, workerName='Unspecified'):
+    def getTask(self, workerName='Unspecified', workerVersion=None):
         """get task from front of list, blocks"""
         #print 'Task requested'
+        
+        if not workerVersion == PYME.version.version:
+            #versions don't match
+            print 'Worker with incorrect version asked for task - refusing'
+            return None
+            
         with self.getTaskLock:
             while self.getNumberOpenTasks() < 1:
                 time.sleep(0.01)
@@ -136,8 +145,13 @@ class TaskQueueSet(Pyro.core.ObjBase):
         
         return res
 
-    def getTasks(self, workerName='Unspecified'):
+    def getTasks(self, workerName='Unspecified', workerVersion=None):
         """get task from front of list, non-blocking"""
+
+        if not workerVersion == PYME.version.version:
+            #versions don't match
+            return []        
+        
         if LOCAL and not compName in workerName:
             #we only want to give tasks to local workers
             return []
@@ -282,6 +296,10 @@ class TaskQueueSet(Pyro.core.ObjBase):
     def setQueueMetaData(self, queueName, *args):
         '''Set meta-data ascociated with queue'''
         self.taskQueues[queueName].setQueueMetaData(*args)
+        
+    def setQueueMetaDataEntries(self, queueName, *args):
+        '''Set meta-data ascociated with queue'''
+        self.taskQueues[queueName].setQueueMetaDataEntries(*args)
 
     def getQueueMetaDataKeys(self, queueName, *args):
         '''Get meta-data keys ascociated with queue'''

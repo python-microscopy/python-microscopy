@@ -211,13 +211,17 @@ def getInRadius(qt, x, y, radius):
     return [r for r in qt.get(x - radius, x + radius, y - radius, y + radius) if ((r.x - x)**2 + (r.y - y)**2) < radius**2]
 
 
-def createQT(x,y):
+def createQT(x,y, t=None):
     ''' creates a quad tree from a list of x,y positions'''
 
     di = max(x.max() - x.min(), y.max() - y.min())
     qt = qtRoot(100*floor(x.min()/100), 100*ceil((x.min()+di)/100),100*floor(y.min()/100), 100*ceil((y.min()+di)/100))
 
-    for xi, yi in zip(x,y):
-        qt.insert(qtRec(xi,yi, None))
+    if t == None:
+        for xi, yi in zip(x,y):
+            qt.insert(qtRec(xi,yi, None))
+    else:
+        for xi, yi, ti in zip(x,y, t):
+            qt.insert(qtRec(xi,yi, ti))
 
     return qt

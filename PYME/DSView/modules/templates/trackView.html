@@ -1,0 +1,63 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html lang="en">
+<head>
+    <title>Track {{clump.clumpID}}</title>
+
+    <style>
+    tr.odd {
+        background-color: #E0E7F0;
+    }
+    
+    td.rh{
+        font-weight: bold;
+    }
+    
+    td.c{
+        color: Cyan;
+    }
+    
+    td.m{
+        color: Magenta;
+    }
+    
+    a{
+        color: Blue;
+        text-decoration: underline; 
+    }
+    </style>
+
+</head>
+<body>
+
+    <h1>Track {{clump.clumpID}}</h1>
+
+    {{ clump|movieplot(img) }}
+
+    <h2>Basic information</h2>
+    <table>
+        <tr><th>Clump ID</th><th>Length [frames]</th><th>Distance [nm]</th></tr>
+        <tr><td>{{clump.clumpID}}</td><td>{{clump.nEvents}}</td><td>{{clump.distance}}</td></tr>
+    </table>
+
+    <table><tr>
+        <td>{{clump.trajectory}}</td>
+        {% if clump.nEvents > 10 %} <td>{{clump.msdplot}}</td> {% endif %}
+    </tr></table>
+    
+    
+    <h2>Measured Variables</h2>
+    <table>
+    <tr><th>Name</th><th>Mean</th><th>Std. Dev.</th><th>Timecourse</th></tr>
+    {% for k in clump.varnames|sort %}
+        <tr class="{{ loop.cycle('odd', 'even') }}">
+            <td>{{k}}</td>
+            {#<td>{{clump.dtypes[k]}}</td>#}
+            <td>{{clump.featuremean[k]}}</td>
+            <td>{{clump.featurestd[k]}}</td>
+            <td>{{clump.featureplot[k]}}</td>
+        </tr>
+    {% endfor %}
+    </table>
+        
+</body>
+</html>

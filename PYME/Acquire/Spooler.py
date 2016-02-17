@@ -26,7 +26,7 @@ import os
 import datetime
 
 from PYME.Acquire import MetaDataHandler
-from PYME import cSMI
+#from PYME import cSMI
 
 try:
     from PYME.Acquire import sampleInformation
@@ -76,22 +76,24 @@ class Spooler:
        self.acq = acquisator
        self.parent = parent
        self.protocol = protocol
-
-       self.doStartLog()
-
-       eventLog.WantEventNotification.append(self.evtLogger)
-
-       self.imNum = 0
-
+       
        #if we've got a fake camera - the cycle time will be wrong - fake our time sig to make up for this
        if scope.cam.__class__.__name__ == 'FakeCamera':
            timeFcn = self.fakeTime
 
+       
+
+   def StartSpool(self):
+       eventLog.WantEventNotification.append(self.evtLogger)
+
+       self.imNum = 0
+
        self.protocol.Init(self)
+       
+       self.doStartLog()
        
        self.acq.WantFrameNotification.append(self.Tick)
        self.spoolOn = True
-
        
        
    def StopSpool(self):
@@ -123,25 +125,29 @@ class Spooler:
             sampleInformation.createImage(self.md, sampleInformation.currentSlide[0])
 
    def doStartLog(self):
-      '''Record pertinant information to metadata at start of acquisition.
-      
-      Loops through all registered sources of start metadata and adds their entries.
+        '''Record pertinant information to metadata at start of acquisition.
+        
+        Loops through all registered sources of start metadata and adds their entries.
+        
+        See Also
+        --------
+        PYME.Acquire.MetaDataHandler
+        '''
+        dt = datetime.datetime.now()
+        
+        self.dtStart = dt
+        
+        self.tStart = time.time()
+          
+        mdt = MetaDataHandler.NestedClassMDHandler()
+          
+        mdt.setEntry('StartTime', self.tStart)
 
-      See Also
-      --------
-      PYME.Acquire.MetaDataHandler
-      '''
-      dt = datetime.datetime.now()
-
-      self.dtStart = dt
-
-      self.tStart = time.time()
-      
-      self.md.setEntry('StartTime', self.tStart)
-
-      #loop over all providers of metadata
-      for mdgen in MetaDataHandler.provideStartMetadata:
-         mdgen(self.md)
+        #loop over all providers of metadata
+        for mdgen in MetaDataHandler.provideStartMetadata:
+            mdgen(mdt)
+            
+        self.md.copyEntriesFrom(mdt)
        
 
    def doStopLog(self):

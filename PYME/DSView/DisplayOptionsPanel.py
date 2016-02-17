@@ -84,7 +84,7 @@ class OptionsPanel(wx.Panel):
                 else:
                     c = np.abs(c)
                     
-            hClim = histLimits.HistLimitPanel(self, id, c[::max(1, len(c)/1e4)], self.do.Offs[i], self.do.Offs[i] + 1./self.do.Gains[i], size=dispSize, log=True)
+            hClim = histLimits.HistLimitPanel(self, id, c[::max(1, int(len(c)/1e4))], self.do.Offs[i], self.do.Offs[i] + 1./self.do.Gains[i], size=dispSize, log=True)
 
             hClim.Bind(histLimits.EVT_LIMIT_CHANGE, self.OnCLimChanged)
             self.hcs.append(hClim)
@@ -218,6 +218,7 @@ class OptionsPanel(wx.Panel):
         self.do.SetScale(self.cbScale.GetSelection() - self.scale_11)
 
     def OnCLimChanged(self, event):
+        #print 'clc'
         ind = self.hIds.index(event.GetId())
         self.do.SetOffset(ind, event.lower)
         self.do.SetGain(ind,1./(event.upper- event.lower + 1e-4))
@@ -286,7 +287,7 @@ class OptionsPanel(wx.Panel):
                     c = np.angle(c)
                 else:
                     c = np.abs(c)
-            self.hcs[i].SetData(c[::max(1, len(c)/1e4)], self.do.Offs[i], self.do.Offs[i] + 1./self.do.Gains[i])
+            self.hcs[i].SetData(c[::max(1, int(len(c)/1e4))], self.do.Offs[i], self.do.Offs[i] + 1./self.do.Gains[i])
 
     def CreateToolBar(self, wind):
         global bmCrosshairs, bmRectSelect, bmLineSelect, bmSquiggleSelect

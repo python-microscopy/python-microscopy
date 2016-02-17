@@ -21,6 +21,11 @@
 #
 ################
 import os
+import sys
+if sys.platform == 'darwin':#MacOS
+    linkArgs = []
+else:
+    linkArgs = ['-static-libgcc']
 
 qhullSources = ['user.c', 'global.c', 'stat.c', 'io.c', 'geom2.c', 'poly2.c',
        'merge.c', 'geom.c', 'poly.c', 'qset.c', 'mem.c', 'usermem.c', 'userprintf.c', 'rboxlib.c','random.c','libqhull.c']
@@ -48,7 +53,7 @@ def configuration(parent_package = '', top_path = None):
         sources=srcs + qhullSources,
         include_dirs = get_numpy_include_dirs()+['qhull', '../SoftRend'],
 	extra_compile_args = ['-O3', '-fno-exceptions', '-ffast-math'],
-        extra_link_args=['-static-libgcc'])
+        extra_link_args=linkArgs)
 
     return config
 

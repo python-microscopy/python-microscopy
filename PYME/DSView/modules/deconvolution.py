@@ -30,30 +30,24 @@ import time
 import os
 from PYME.Acquire import MetaDataHandler
 
+def _pt(sl):
+    dec, psf, d, regLambda, nIter, weights = sl
+    dec.psf_calc(psf, d.shape)
+    r = dec.deconv(d,regLambda, nIter, weights).reshape(dec.shape)
+    #r = 0
+    return r
+
 class deconvolver:
     def __init__(self, dsviewer):
         self.dsviewer = dsviewer
 
         self.image = dsviewer.image
         self.tq = None
-
-        DECONV_ICTM = wx.NewId()
-        DECONV_BEAD = wx.NewId()
-        DECONV_WIENER = wx.NewId()
-        DECONV_MOVIE = wx.NewId()
-        dsviewer.mProcessing.Append(DECONV_ICTM, "Deconvolution", "", wx.ITEM_NORMAL)
-        dsviewer.mProcessing.Append(DECONV_BEAD, "Deconvolve bead shape", "", wx.ITEM_NORMAL)
-        dsviewer.mProcessing.Append(DECONV_MOVIE, "Deconvolve movie (2D)", "", wx.ITEM_NORMAL)
-        dsviewer.mProcessing.Append(DECONV_WIENER, "Wiener Deconvolution", "", wx.ITEM_NORMAL)
-        #mDeconvolution.AppendSeparator()
-        #dsviewer.save_menu.Append(DECONV_SAVE, "Deconvolution", "", wx.ITEM_NORMAL)
-        #self.menubar.Append(mDeconvolution, "Deconvolution")
-
-        wx.EVT_MENU(dsviewer, DECONV_ICTM, self.OnDeconvICTM)
-        wx.EVT_MENU(dsviewer, DECONV_BEAD, self.OnDeconvBead)
-        wx.EVT_MENU(dsviewer, DECONV_WIENER, self.OnDeconvWiener)
-        wx.EVT_MENU(dsviewer, DECONV_MOVIE, self.OnDeconvMovie)
-        #wx.EVT_MENU(dsviewer, DECONV_SAVE, self.saveDeconvolution)
+        
+        dsviewer.AddMenuItem("Processing", "Deconvolution", self.OnDeconvICTM)
+        dsviewer.AddMenuItem("Processing", "Deconvole bead shape", self.OnDeconvBead)
+        dsviewer.AddMenuItem("Processing", "Weiner Deconvolution", self.OnDeconvWiener)
+        dsviewer.AddMenuItem("Processing", "Deconvolve movie (2D)", self.OnDeconvMovie)
 
         dsviewer.updateHooks.append(self.update)
         
@@ -123,6 +117,9 @@ class deconvolver:
 
             data = self.image.data[:,:,:, dlg.GetChannel()].astype('f') - dlg.GetOffset()
             decMDH['Deconvolution.Offset'] = dlg.GetOffset()
+            
+            bg = dlg.GetBackground()
+            decMDH['Deconvolution.Background'] = bg
 
             #crop PSF in z if bigger than stack
 
@@ -178,7 +175,7 @@ class deconvolver:
 
                 self.dec.psf_calc(psf, dp.shape)
 
-                self.decT = decThread.decThread(self.dec, dp, regLambda, nIter, weights)
+                self.decT = decThread.decThread(self.dec, dp, regLambda, nIter, weights, bg = bg)
                 self.decT.start()
 
                 tries = 0
@@ -215,6 +212,7 @@ class deconvolver:
             
     def OnDeconvMovie(self, event, beadMode=False):
         from PYME.Deconv.deconvDialogs import DeconvSettingsDialog #,DeconvProgressDialog,DeconvProgressPanel
+        #import multiprocessing
 
         dlg = DeconvSettingsDialog(self.dsviewer, beadMode, self.image.data.shape[3])
         if dlg.ShowModal() == wx.ID_OK:
@@ -252,6 +250,9 @@ class deconvolver:
 
             data = self.image.data[:,:,:, dlg.GetChannel()].astype('f') - dlg.GetOffset()
             decMDH['Deconvolution.Offset'] = dlg.GetOffset()
+            
+            bg = dlg.GetBackground()
+            decMDH['Deconvolution.Background'] = bg
 
             #crop PSF in z if bigger than stack
 
@@ -264,7 +265,7 @@ class deconvolver:
             print((data.shape, psf.shape))
 
 
-            dp = data
+            dp = numpy.array(data)
             weights = 1
 
             if dlg.GetBlocking():
@@ -291,12 +292,17 @@ class deconvolver:
 
                 self.dec.psf_calc(psf, dp[:,:,0:1].shape)
 
+                #print dp.__class__
+
                 #self.decT = decThread.decThread(self.dec, dp, regLambda, nIter, weights)
                 #self.decT.start()
 
-                res = numpy.concatenate([self.dec.deconv(dp[:,:,i:(i+1)], regLambda, nIter, weights).reshape(self.dec.shape) for i in range(dp.shape[2])], 2)
+#                p = multiprocessing.Pool()
+#                slices = [(self.dec, psf, dp[:,:,i:(i+1)],regLambda, nIter, weights)  for i in range(dp.shape[2])]                
+#                r = p.map(_pt, slices)
+#                res = numpy.concatenate(r, 2)
 
-
+                res = numpy.concatenate([self.dec.deconv(dp[:,:,i:(i+1)], regLambda, nIter, weights, bg=bg).reshape(self.dec.shape) for i in range(dp.shape[2])], 2)
                 
                 
                 im = ImageStack(data = res, mdh = decMDH, titleStub = 'Deconvolution Result')

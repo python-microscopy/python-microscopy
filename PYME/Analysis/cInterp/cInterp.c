@@ -11,7 +11,7 @@
  */
 
 #include "Python.h"
-#include <complex.h>
+//#include <complex.h>
 #include <math.h>
 #include "numpy/arrayobject.h"
 #include <stdio.h>
@@ -144,7 +144,7 @@ void splCoeff(float r, float *coeffs)
     int i = 0;
     float y = 0;
 
-    for (i = 0; i < 3; i++)
+    for (i = 0; i <= 3; i++)
     {
         y = fabs(-1 - r + i);
 
@@ -186,11 +186,11 @@ static PyObject * InterpolateCS(PyObject *self, PyObject *args, PyObject *keywds
     /*End paramters*/
 
     float rx, ry, rz;
-    float r000, r100, r010, r110, r001, r101, r011, r111;
+    //float r000, r100, r010, r110, r001, r101, r011, r111;
     int fx, fy, fz;
     int xj, yj, zj;
 
-    float cx[3], cy[3], cz[3];
+    float cx[4], cy[4], cz[4];
     
     static char *kwlist[] = {"model", "x0","y0", "z0","nx","ny","dx", "dy", "dz", NULL};
     
@@ -243,9 +243,9 @@ static PyObject * InterpolateCS(PyObject *self, PyObject *args, PyObject *keywds
     fz = (int)(floorf(sizeZ/2.0) + floorf(z0/dz));
 
     ///avoid negatives by adding a chunk before taking the mod
-    rx = fmodf(x0+973*dx,dx)/dx - 0.5;
-    ry = fmodf(y0+973*dy,dy)/dy - 0.5;
-    rz = fmodf(z0+973*dz,dz)/dz - 0.5;
+    rx = fmodf(x0+973*dx,dx)/dx;// - 0.5;
+    ry = fmodf(y0+973*dy,dy)/dy;// - 0.5;
+    rz = fmodf(z0+973*dz,dz)/dz;// - 0.5;
 
     //calculate the spline coefficients    
     splCoeff(rx, cx);
@@ -259,11 +259,11 @@ static PyObject * InterpolateCS(PyObject *self, PyObject *args, PyObject *keywds
         {
             *res  = 0;
             
-            for (xj=0; xj < 3; xj ++)
+            for (xj=0; xj <= 3; xj ++)
             {
-                for (yj=0; yj < 3; yj ++)
+                for (yj=0; yj <= 3; yj ++)
                 {
-                    for (zj=0; zj < 3; zj ++)
+                    for (zj=0; zj <= 3; zj ++)
                         {
                             *res += cx[xj]*cy[yj]*cz[zj] * *(float*)PyArray_GETPTR3(amod, xi + xj - 1, yi + yj - 1,   fz + zj - 1);
                         }
@@ -286,10 +286,10 @@ static PyObject * InterpolateInplace(PyObject *self, PyObject *args, PyObject *k
 {
     float *res = 0;
     
-    npy_intp outDimensions[3];
+    //npy_intp outDimensions[3];
     int sizeX, sizeY, sizeZ;
     int oSizeX, oSizeY;
-    int xi, yi, j;
+    int xi, yi;//, j;
     
     PyObject *amod =0;
     
@@ -309,7 +309,7 @@ static PyObject * InterpolateInplace(PyObject *self, PyObject *args, PyObject *k
     float r000, r100, r010, r110, r001, r101, r011, r111;
     //int nx, ny;
     int fx, fy, fz, cx, cy;
-    int xo, yo, zo;
+    int xo, yo;//, zo;
     
     static char *kwlist[] = {"model", "output", "x0","y0", "z0","nx", "ny", "dx", "dy", "dz", "A", NULL};
     
@@ -402,10 +402,10 @@ static PyObject * InterpolateInplaceM(PyObject *self, PyObject *args, PyObject *
 {
     float *res = 0;
     
-    npy_intp outDimensions[3];
+    //npy_intp outDimensions[3];
     int sizeX, sizeY, sizeZ;
     int oSizeX, oSizeY;
-    int xi, yi, j;
+    int xi, yi;//, j;
     
     PyObject *amod =0;
     
@@ -423,7 +423,7 @@ static PyObject * InterpolateInplaceM(PyObject *self, PyObject *args, PyObject *
     
     /*parameters*/
     float x0,y0,z0, dx, dy, dz, A;
-    int nx, ny;
+    int nx;//, ny;
 
     /*End paramters*/
 
@@ -431,7 +431,7 @@ static PyObject * InterpolateInplaceM(PyObject *self, PyObject *args, PyObject *
     float r000, r100, r010, r110, r001, r101, r011, r111;
     //int nx, ny;
     int fx, fy, fz, cx, cy;
-    int xo, yo, zo;
+    int xo, yo;//, zo;
     int i, npts;
     
     static char *kwlist[] = {"model", "output", "x0","y0", "z0", "Av","nx", "dx", "dy", "dz", NULL};
@@ -568,13 +568,13 @@ static PyObject * InterpolateInplaceM(PyObject *self, PyObject *args, PyObject *
 
 
 static PyMethodDef cInterpMethods[] = {
-    {"Interpolate",  Interpolate, METH_VARARGS | METH_KEYWORDS,
+    {"Interpolate",  (PyCFunction)Interpolate, METH_VARARGS | METH_KEYWORDS,
     "Generate a histogram of pairwise distances between two sets of points.\n. Arguments are: 'x1', 'y1', 'x2', 'y2', 'nBins'= 1e3, 'binSize' = 1"},
-    {"InterpolateCS",  InterpolateCS, METH_VARARGS | METH_KEYWORDS,
+    {"InterpolateCS",  (PyCFunction)InterpolateCS, METH_VARARGS | METH_KEYWORDS,
     "Generate a histogram of pairwise distances between two sets of points.\n. Arguments are: 'x1', 'y1', 'x2', 'y2', 'nBins'= 1e3, 'binSize' = 1"},
-    {"InterpolateInplace",  InterpolateInplace, METH_VARARGS | METH_KEYWORDS,
+    {"InterpolateInplace",  (PyCFunction)InterpolateInplace, METH_VARARGS | METH_KEYWORDS,
     "Generate a histogram of pairwise distances between two sets of points.\n. Arguments are: 'x1', 'y1', 'x2', 'y2', 'nBins'= 1e3, 'binSize' = 1"},
-    {"InterpolateInplaceM",  InterpolateInplaceM, METH_VARARGS | METH_KEYWORDS,
+    {"InterpolateInplaceM",  (PyCFunction)InterpolateInplaceM, METH_VARARGS | METH_KEYWORDS,
     "Generate a histogram of pairwise distances between two sets of points.\n. Arguments are: 'x1', 'y1', 'x2', 'y2', 'nBins'= 1e3, 'binSize' = 1"},
 
 

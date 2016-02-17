@@ -91,12 +91,12 @@ def genTheoreticalModel(md):
 
         interpModel = genWidefieldPSF(IntXVals, IntYVals, IntZVals, P,1e3, 0, 0, 0, 2*pi/525, 1.47, 10e3).astype('f')
         
-        print('foo')
-        print((interpModel.strides, interpModel.shape))
+        #print('foo')
+        #print((interpModel.strides, interpModel.shape))
 
         interpModel = np.maximum(interpModel/interpModel[:,:,len(IntZVals)/2].sum(), 0) #normalise to 1 and clip
         
-        print('bar')
+        #print('bar')
 
 genTheoreticalModel(MetaData.TIRFDefault)
 
@@ -284,7 +284,7 @@ def setIllumPattern(pattern, z0):
     sx, sy = pattern.shape
     psx, psy, sz = interpModel.shape
     
-    illPCache = None
+    
     
     il = np.zeros([sx,sy,sz], 'f')
     il[:,:,sz/2] = pattern
@@ -296,6 +296,8 @@ def setIllumPattern(pattern, z0):
     ps= ps/ps[:,:,sz/2].sum()
     
     illPattern = abs(ifftshift(ifftn(fftn(il)*fftn(ps)))).astype('f')
+    
+    illPCache = None
     
     
 @fluor.registerIllumFcn
@@ -456,17 +458,21 @@ def simPalmImFI_(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=15, laserPo
     
     return im
     
-def _rFluorSubset(im, fl, A, x0, y0, z, roiSize, dx, dy, dz):
+def _rFluorSubset(im, fl, A, x0, y0, z, roiSize, dx, dy, dz, Chan2XOffset=0, Chan2ZOffset=0):
     
     #print fl['x'] - x0
     #print A
     
     #roiSize = 30*np.ones(A.shape, 'i')
     #print 'rFlS', len(x0)
-        
-    cInterp.InterpolateInplaceM(interpModel, im, (fl['x'] - x0), (fl['y'] - y0), z, A, roiSize,dx,dy,dz)
+    
+    if Chan2XOffset == 0:    
+        cInterp.InterpolateInplaceM(interpModel, im, (fl['x'] - x0), (fl['y'] - y0), z, A, roiSize,dx,dy,dz)
+    else:
+        cInterp.InterpolateInplaceM(interpModel, im, (fl['x'] - x0- Chan2XOffset),(fl['y'] - y0 ),  z, A*fl['spec'][:,0], roiSize,dx,dy,dz)
+        cInterp.InterpolateInplaceM(interpModel, im, (fl['x'] - x0+ Chan2XOffset),(fl['y'] - y0 ),  z+Chan2ZOffset, A*fl['spec'][:,1], roiSize,dx,dy,dz)
 
-def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=100, laserPowers = [.1,1], position=[0,0,0], illuminationFunction='ConstIllum'):
+def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=100, laserPowers = [.1,1], position=[0,0,0], illuminationFunction='ConstIllum', Chan2XOffset=0, Chan2ZOffset=0):
     if interpModel == None:
         genTheoreticalModel(MetaData.TIRFDefault)
         
@@ -520,7 +526,7 @@ def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=100, laserPo
         #print fl[::nCPUs].shape
         
             
-        threads = [threading.Thread(target = _rFluorSubset, args=(im, fl[i::nCPUs], A2[i::nCPUs], x0, y0, z2[i::nCPUs], roiS[i::nCPUs], dx, dy, dz)) for i in range(nCPUs)]
+        threads = [threading.Thread(target = _rFluorSubset, args=(im, fl[i::nCPUs], A2[i::nCPUs], x0, y0, z2[i::nCPUs], roiS[i::nCPUs], dx, dy, dz, Chan2XOffset, Chan2ZOffset)) for i in range(nCPUs)]
     
         for p in threads:
             #print p

@@ -1,6 +1,8 @@
 #include "Python.h"
-#include <complex.h>
+//#include <complex.h>
+#define _USE_MATH_DEFINES
 #include <math.h>
+//#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include "numpy/arrayobject.h"
 #include <stdio.h>
 
@@ -17,7 +19,7 @@ double bessj0(double x)
     double ax,z;
     double xx,y,ans,ans1,ans2; /*Accumulate polynomials in double precision.*/
     
-    ax=abs(x);
+    ax=fabs(x);
     
     if (ax < 8.0) /* Direct rational function fit.*/
     {
@@ -271,7 +273,7 @@ static PyObject * genWidefieldPSF(PyObject *self, PyObject *args, PyObject *keyw
 }
 
 static PyMethodDef ps_appMethods[] = {
-    {"genWidefieldPSF",  genWidefieldPSF, METH_VARARGS | METH_KEYWORDS,
+    {"genWidefieldPSF",  (PyCFunction)genWidefieldPSF, METH_VARARGS | METH_KEYWORDS,
     "Generate a (shifted, spherically abberated) widefield PSF based on the paraxial approximation. Arguments are: 'X', 'Y', 'Z', 'P' , 'A'=1,'x0'=0, 'y0'=0, 'z0'=0, 'k'=2*pi/488, 'NA'=1.3, 'depthInSample'=20um, 'nImmersionCorr'=1.5, 'nSample'=1.47,'nCoverslipCorr'=1.5, 'nImmersionSample'=1.5, 'nCoverslipSample'=1.5, 'CoverslipThicknessCorr'=175um, 'CoverslipThicknessSample'=175um, 'ImmersionThicknessSample'=90um. All values should be given in nm."},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };

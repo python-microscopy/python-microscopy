@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/bin/bash /usr/bin/pythonw
 
 ##################
 # dh5view.py
@@ -21,7 +21,6 @@
 #
 ##################
 
-#!/usr/bin/python
 #from PYME import mProfile
 
 #mProfile.profileOn(['dsviewer_npy_nb.py', 'myviewpanel_numarray.py'])

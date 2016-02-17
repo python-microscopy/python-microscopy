@@ -39,21 +39,10 @@ class manualSegment:
         self.mask = None
         self.rois = []
         
-        seg_menu = wx.Menu()
-        
         dsviewer.do.overlays.append(self.DrawOverlays)
-
         
-
-        CREATE_MASK = wx.NewId()
-        FILL_SELECTION = wx.NewId()
-        seg_menu.Append(CREATE_MASK, "Create mask", "", wx.ITEM_NORMAL)
-        seg_menu.Append(FILL_SELECTION, "Fill selection\tCtrl-F", "", wx.ITEM_NORMAL)
-        
-        dsviewer.Bind(wx.EVT_MENU, self.OnCreateMask, id=CREATE_MASK)
-        dsviewer.Bind(wx.EVT_MENU, self.FillSelection, id=FILL_SELECTION)
-        
-        dsviewer.menubar.Insert(dsviewer.menubar.GetMenuCount()-1, seg_menu, 'Segmentation')
+        dsviewer.AddMenuItem('Segmentation', 'Create mask', self.OnCreateMask)
+        dsviewer.AddMenuItem('Segmentation', "Fill selection\tCtrl-F", self.FillSelection)
 
         #accel_tbl = wx.AcceleratorTable([(wx.ACCEL_CTRL,  ord('k'), PLOT_PROFILE )])
         #self.dsviewer.SetAcceleratorTable(accel_tbl)

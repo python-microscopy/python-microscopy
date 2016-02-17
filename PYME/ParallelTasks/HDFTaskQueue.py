@@ -294,6 +294,13 @@ class HDFResultsTaskQueue(TaskQueue):
         self.metaData.setEntry(fieldName, value)
         self.MDHCache.append((fieldName, value))
         
+    def setQueueMetaDataEntries(self, mdh):
+        with self.fileResultsLock.wlock:
+            self.resultsMDH.copyEntriesFrom(mdh)
+            
+        self.metaData.copyEntriesFrom(mdh)
+        #self.MDHCache.append((fieldName, value))
+        
 
     def getQueueMetaData(self, fieldName):
         #res  = None
@@ -445,6 +452,16 @@ class HDFResultsTaskQueue(TaskQueue):
                     if curTime > it.workerTimeout:
                         self.openTasks.append(it.index)
                         self.tasksInProgress.remove(it)
+                        
+        with self.resultsQueueLock:
+            t = time.time()
+            if (t > (self.lastResultsQueuePurge + 10)):# or (len(self.resultsQueue) > 20):
+                #print 'fr'
+                self.lastResultsQueuePurge = t
+                rq = self.resultsQueue
+                #print(len(rq)), 'r_q'
+                self.resultsQueue = []
+                self.fileResults(rq)
         
         with self.fileResultsLock.wlock: #get a lock
             self.h5ResultsFile.flush()
@@ -465,6 +482,26 @@ class HDFResultsTaskQueue(TaskQueue):
                     res = []
             
             return res
+        elif fieldName == 'PSF':
+            from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
+            res = None
+
+            modName = self.resultsMDH.getEntry('PSFFile')
+            mf = open(getFullExistingFilename(modName), 'rb')
+            res = np.load(mf)
+            mf.close()
+           
+            return res
+        elif fieldName == 'MAP':
+            mapName, = args
+            from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
+            from PYME.DSView.image import ImageStack
+
+            print('Serving map: %s' %mapName)            
+            fn = getFullExistingFilename(mapName)
+            varmap = ImageStack(filename=fn, haveGui=False).data[:,:,0].squeeze() #this should handle .tif, .h5, and a few others
+
+            return varmap
         else:
             return None
 
@@ -724,10 +761,23 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         self.h5ResultsFile.close()
 
     def setQueueMetaData(self, fieldName, value):
-        with self.dataFileLock.wlock:
-            self.dataMDH.setEntry(fieldName, value)
+        self.metaData.setEntry(fieldName, value)
         
         HDFResultsTaskQueue.setQueueMetaData(self, fieldName, value)
+        
+        if self.dataRW:
+            with self.dataFileLock.wlock:
+                self.dataMDH.setEntry(fieldName, value)
+        self.metaDataStale = True
+        
+    def setQueueMetaDataEntries(self, mdh):
+        self.metaData.copyEntriesFrom(mdh)
+        
+        if self.dataRW:        
+            with self.dataFileLock.wlock:
+                self.dataMDH.copyEntriesFrom(mdh)
+        
+        HDFResultsTaskQueue.setQueueMetaDataEntries(self, mdh)
         self.metaDataStale = True
         
     def flushMetaData(self):
@@ -765,47 +815,47 @@ class HDFTaskQueue(HDFResultsTaskQueue):
                 res = self.h5DataFile.root.Events[:]
             
             return res
-        elif fieldName == 'PSF':
-            from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
-            res = None
-            #self.dataFileLock.acquire()
-            #try:
-                #res = self.h5DataFile.root.PSFData[:]
-            #finally:
-            #    self.dataFileLock.release()
-            #try:
-            modName = self.resultsMDH.getEntry('PSFFile')
-            mf = open(getFullExistingFilename(modName), 'rb')
-            res = np.load(mf)
-            mf.close()
-            #except:
-                #pass
-
-            return res
+#        elif fieldName == 'PSF':
+#            from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
+#            res = None
+#            #self.dataFileLock.acquire()
+#            #try:
+#                #res = self.h5DataFile.root.PSFData[:]
+#            #finally:
+#            #    self.dataFileLock.release()
+#            #try:
+#            modName = self.resultsMDH.getEntry('PSFFile')
+#            mf = open(getFullExistingFilename(modName), 'rb')
+#            res = np.load(mf)
+#            mf.close()
+#            #except:
+#                #pass
+#
+#            return res
         else:
             return HDFResultsTaskQueue.getQueueData(self, fieldName, *args)
 
     def logQueueEvent(self, event):
         eventName, eventDescr, evtTime = event
-        ev = self.events.row
-
-        ev['EventName'] = eventName
-        ev['EventDescr'] = eventDescr
-        ev['Time'] = evtTime
-
         with self.dataFileLock.wlock:
+            ev = self.events.row
+
+            ev['EventName'] = eventName
+            ev['EventDescr'] = eventDescr
+            ev['Time'] = evtTime
+       
             ev.append()
             self.events.flush()
         
-
-        ev = self.resultsEvents.row
-
-        ev['EventName'] = eventName
-        ev['EventDescr'] = eventDescr
-        ev['Time'] = evtTime
-
         with self.fileResultsLock.wlock:
-        #print len(self.events)
+            ev = self.resultsEvents.row
+    
+            ev['EventName'] = eventName
+            ev['EventDescr'] = eventDescr
+            ev['Time'] = evtTime
+    
+            
+            #print len(self.events)
             ev.append()
             self.resultsEvents.flush()
         

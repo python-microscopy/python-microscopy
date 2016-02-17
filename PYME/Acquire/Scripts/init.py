@@ -93,13 +93,13 @@ camPanels.append((scope.camControls['Fake Camera'], 'EMCCD Properties'))
 #camPanels.append((sampPan, 'Current Slide'))
 #''')
 
-#InitGUI('''
-#from PYMEnf.Hardware import FakeDMD, DMDGui
-#scope.LC = FakeDMD.FakeDMD(scope)
-#
-#LCGui = DMDGui.DMDPanel(MainFrame,scope.LC, scope)
-#camPanels.append((LCGui, 'DMD Control'))
-#''')
+InitGUI('''
+from PYMEnf.Hardware import FakeDMD, DMDGui
+scope.LC = FakeDMD.FakeDMD(scope)
+
+LCGui = DMDGui.DMDPanel(MainFrame,scope.LC, scope)
+camPanels.append((LCGui, 'DMD Control'))
+''')
 
 #InitGUI('''
 #from PYME.Acquire.Hardware import ccdAdjPanel
@@ -148,12 +148,12 @@ from PYME.Acquire.Hardware import splitter
 splt = splitter.Splitter(MainFrame, mControls, scope)
 ''')
 
-from PYME import cSMI
-
-Is = []
-
-def calcSum(caller):
-    Is.append(cSMI.CDataStack_AsArray(caller.ds, 0).sum())
+#from PYME import cSMI
+#
+#Is = []
+#
+#def calcSum(caller):
+#    Is.append(cSMI.CDataStack_AsArray(caller.ds, 0).sum())
 
 #scope.pa.WantFrameNotification.append(calcSum)
 

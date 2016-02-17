@@ -24,7 +24,7 @@
 import datetime
 import tables
 from PYME.Acquire import MetaDataHandler
-from PYME import cSMI
+#from PYME import cSMI
 
 #import time
 
@@ -118,7 +118,7 @@ class Spooler(sp.Spooler):
         
     def Tick(self, caller):
         '''Called on each frame'''
-        self.imageData.append(cSMI.CDataStack_AsArray(caller.ds, 0).reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()))
+        self.imageData.append(caller.dsa.reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()))
         self.h5File.flush()
         if self.imNum == 0: #first frame
             self.md.setEntry('imageID', fileID.genFrameID(self.imageData[0,:,:]))

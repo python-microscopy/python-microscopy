@@ -160,10 +160,8 @@ class segmenter:
         self.dsviewer = dsviewer
 
         self.image = dsviewer.image
-
-        SEGMENT_ANNEAL = wx.NewId()
-        dsviewer.mProcessing.Append(SEGMENT_ANNEAL, "MC Annealing Segmentation", "", wx.ITEM_NORMAL)
-        wx.EVT_MENU(dsviewer, SEGMENT_ANNEAL, self.OnSegmentAnneal)
+        
+        dsviewer.AddMenuItem('Processing', "MC Annealing Segmentation", self.OnSegmentAnneal)
         
         #dsviewer.updateHooks.append(self.update)
         

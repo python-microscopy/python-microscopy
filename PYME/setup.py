@@ -22,6 +22,8 @@
 ##################
 import glob
 import sys
+import os
+import setuptools #to monkey-patch distutils for ms visualc for python
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
@@ -30,7 +32,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('Acquire')
     config.add_subpackage('DSView')
     config.add_subpackage('PSFGen')
-    config.add_subpackage('cSMI')
+    #config.add_subpackage('cSMI')
     config.add_subpackage('ParallelTasks')
     config.add_subpackage('FileUtils')
     config.add_subpackage('Deconv')
@@ -38,17 +40,21 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('mProfile')
     config.add_subpackage('misc')
     config.add_subpackage('pad')
+    config.add_subpackage('bcl')
     config.add_subpackage('gohlke')
     config.add_subpackage('dataBrowser')
     config.add_subpackage('shmarray')
-    config.add_subpackage('SampleDB')
+    config.add_subpackage('SampleDB2')
     
     #config.add_scripts(glob.glob('scripts/*'))
-    if sys.platform == 'win32':
-        config.add_scripts('scripts/*')
-    else:
-        #don't add .cmd files
-        config.add_scripts('scripts/*.py')
+    if False:#not 'CONDA_BUILD' in os.environ.keys():
+        #entry points are defined in the condas meta.yaml - not needed here
+        #if running under conda
+        if sys.platform == 'win32':
+            config.add_scripts('scripts/*')
+        else:
+            #don't add .cmd files
+            config.add_scripts('scripts/*.py')
         
     config.get_version()
     

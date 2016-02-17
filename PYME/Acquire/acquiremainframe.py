@@ -40,6 +40,8 @@ logging.basicConfig(level=logging.DEBUG)
 import wx.lib.agw.aui as aui
 
 #import PYME.cSMI as example
+import PYME.DSView.displaySettingsPanel as disppanel
+from PYME.DSView import arrayViewPanel
 
 from PYME.Acquire import mytimer
 from PYME.Acquire import psliders
@@ -51,7 +53,7 @@ from PYME.Acquire import selectCameraPanel
 from PYME.Acquire import microscope
 #import PYME.DSView.dsviewer_npy as dsviewer
 from PYME.DSView import dsviewer_npy_nb as dsviewer
-from PYME.cSMI import CDataStack_AsArray
+#from PYME.cSMI import CDataStack_AsArray
 from PYME.Acquire import MetaDataHandler
 #from PYME.Acquire import chanfr
 from PYME.Acquire import HDFSpoolFrame
@@ -357,6 +359,52 @@ class PYMEMainFrame(wx.Frame):
             self.time1.WantNotification.remove(self.checkInitDone)
             #self.time1.WantNotification.remove(self.splash.Tick)
             self.doPostInit()
+    
+    def _refreshDataStack(self):
+        if 'vp' in dir(self):
+            if not (self.vp.do.ds.data is self.scope.pa.dsa):
+                self.vp.SetDataStack(self.scope.pa.dsa)
+        
+    def livepreview(self):
+        self.scope.startAquisistion()
+
+        if self.scope.cam.GetPicHeight() > 1:
+            if 'vp' in dir(self):
+                    self.vp.SetDataStack(self.scope.pa.dsa)
+            else:
+                self.vp = arrayViewPanel.ArrayViewPanel(self, self.scope.pa.dsa)
+                self.vp.crosshairs = False
+                self.vp.showScaleBar = False
+                self.vp.do.leftButtonAction = self.vp.do.ACTION_SELECTION
+                self.vp.do.showSelection = True
+                self.vp.CenteringHandlers.append(self.scope.centreView)
+
+                self.vsp = disppanel.dispSettingsPanel2(self, self.vp)
+
+
+                self.time1.WantNotification.append(self.vsp.RefrData)
+                self.time1.WantNotification.append(self._refreshDataStack)
+
+                self.AddPage(page=self.vp, select=True,caption='Preview')
+
+                self.AddCamTool(self.vsp, 'Display')
+
+            self.scope.pa.WantFrameGroupNotification.append(self.vp.Redraw)
+
+        else:
+            #1d data - use graph instead
+            from PYME.Analysis.LMVis import fastGraph
+            if 'sp' in dir(self):
+                    pass
+            else:
+                self.sp = fastGraph.SpecGraphPanel(self, self)
+
+                self.AddPage(page=self.sp, select=True,caption='Preview')
+
+            self.scope.pa.WantFrameGroupNotification.append(self.sp.refr)
+            
+        self.scope.PACallbacks.append(self._refreshDataStack)
+
 
     def doPostInit(self):
         logging.debug('Starting post-init')
@@ -382,7 +430,7 @@ class PYMEMainFrame(wx.Frame):
             #self.seq_d.Show()
 
         if (self.scope.cam.CamReady() and ('chaninfo' in self.scope.__dict__)):
-            self.scope.livepreview(self, Notebook = self)
+            self.livepreview()
             
 
             self.int_sl = intsliders.IntegrationSliders(self.scope.chaninfo,self, self.scope)
@@ -574,8 +622,9 @@ class PYMEMainFrame(wx.Frame):
         #event.Skip()
 
     def OnMAquireOnePic(self, event):
+        import numpy as np
         self.scope.pa.stop()
-        ds2 = CDataStack_AsArray(self.scope.pa.ds, 0).reshape(self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()).copy()
+        ds2 = np.atleast_3d(self.scope.pa.dsa.reshape(self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()).copy())
 
 
         #metadata handling
@@ -634,8 +683,8 @@ class PYMEMainFrame(wx.Frame):
         self.scope.cam.SetCOC()
         self.scope.cam.GetStatus()
         self.scope.pa.Prepare()
-        self.scope.vp.SetDataStack(self.scope.pa.ds)
-        self.scope.pa.start()
+        self.vp.SetDataStack(self.scope.pa.dsa)
+        self.pa.start()
         #event.Skip()
 
     def OnMCamSetPixelSize(self, event):
@@ -656,7 +705,7 @@ class PYMEMainFrame(wx.Frame):
         self.int_sl.Show()
             
         self.scope.pa.Prepare()
-        self.scope.vp.SetDataStack(self.scope.pa.ds)
+        self.vp.SetDataStack(self.scope.pa.dsa)
         self.scope.pa.start()
         #event.Skip()
 
@@ -696,7 +745,7 @@ class PYMEMainFrame(wx.Frame):
                 #x2 = self.scope.vp.selection_end_x
                 #y2 = self.scope.vp.selection_end_y
     
-                x1, y1, x2, y2 = self.scope.vp.do.GetSliceSelection()
+                x1, y1, x2, y2 = self.vp.do.GetSliceSelection()
     
                 #if we're splitting colours/focal planes across the ccd, then only allow symetric ROIs
                 if 'splitting' in dir(self.scope.cam):
@@ -725,17 +774,17 @@ class PYMEMainFrame(wx.Frame):
         self.scope.cam.SetCOC()
         self.scope.cam.GetStatus()
         self.scope.pa.Prepare()
-        self.scope.vp.SetDataStack(self.scope.pa.dsa)
+        self.vp.SetDataStack(self.scope.pa.dsa)
         
         #self.scope.vp.selection_begin_x = x1
         #self.scope.vp.selection_begin_y = y1
         #self.scope.vp.selection_end_x = x2
         #self.scope.vp.selection_end_y = y2
-        self.scope.vp.do.SetSelection((x1,y1,0), (x2,y2,0))
+        self.vp.do.SetSelection((x1,y1,0), (x2,y2,0))
 
         self.scope.pa.start()
-        self.scope.vp.Refresh()
-        self.scope.vp.GetParent().Refresh()
+        self.vp.Refresh()
+        self.vp.GetParent().Refresh()
         #event.Skip()
 
     def SetCentredRoi(self, event=None, halfwidth=5):
@@ -764,16 +813,16 @@ class PYMEMainFrame(wx.Frame):
         self.scope.cam.SetCOC()
         self.scope.cam.GetStatus()
         self.scope.pa.Prepare()
-        self.scope.vp.SetDataStack(self.scope.pa.ds)
+        self.vp.SetDataStack(self.scope.pa.dsa)
 
-        self.scope.vp.selection_begin_x = x1
-        self.scope.vp.selection_begin_y = y1
-        self.scope.vp.selection_end_x = x2
-        self.scope.vp.selection_end_y = y2
+        self.vp.selection_begin_x = x1
+        self.vp.selection_begin_y = y1
+        self.vp.selection_end_x = x2
+        self.vp.selection_end_y = y2
 
         self.scope.pa.start()
-        self.scope.vp.Refresh()
-        self.scope.vp.GetParent().Refresh()
+        self.vp.Refresh()
+        self.vp.GetParent().Refresh()
         #event.Skip()
 
     def OnMDisplayClearSel(self, event):
@@ -800,6 +849,15 @@ class PYMEMainFrame(wx.Frame):
             self.scope.cam.Shutdown()
         for f in self.scope.CleanupFunctions:
             f()
+            
+        print 'All cleanup functions called'
+        
+        time.sleep(1)
+        
+        import threading
+        print 'Remaining Threads:'
+        for t in threading.enumerate():
+            print t, t._Thread__target
         #self.int_sl.Destroy()
         #self.piezo_sl.Destroy()
         #self.seq_d.Destroy()

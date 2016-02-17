@@ -26,44 +26,25 @@
 #sys.path.append(".")
 
 import wx
-#import PYME.cSMI as example
 from PYME.Acquire import previewaquisator as previewaquisator
-from PYME.Acquire import simplesequenceaquisator
-from PYME.Acquire import prevviewer
-import PYME.DSView.dsviewer_npy_nb as dsviewer
-#import PYME.DSView.myviewpanel as viewpanel
-import PYME.DSView.viewpanellite as viewpanel
-import PYME.DSView.displaySettingsPanel as disppanel
-from PYME.DSView import arrayViewPanel
 
 import PYME.Acquire.protocol as protocol
 from PYME.Acquire import MetaDataHandler
 from PYME.Acquire.Hardware import ccdCalibrator
 
-from PYME.cSMI import CDataStack_AsArray
-from math import exp
 import sqlite3
-#import cPickle as pickle
+
 import os
-#from numpy import ndarray
 import datetime
-#import piezo_e662
-#import piezo_e816
 
 #register handlers for ndarrays
 from PYME.misc import sqlitendarray
-#from PYME.Acquire import MetaDataHandler
 
-
-class microscope:
+class microscope(object):
     def __init__(self):
-        #example.CShutterControl.init()
-
-        #self.cam = example.CCamera()
-        #self.cam.Init()
-
         #list of tuples  of form (class, chan, name) describing the instaled piezo channels
         self.piezos = []
+        self.hardwareChecks = []
         
         #entries should be of the form: "x" : (piezo, channel, multiplier)
         # where multiplyier is what to multiply by to get the usints to um
@@ -77,9 +58,9 @@ class microscope:
 
         #self.WantEventNotification = []
  
-        #self.windows = []
         self.StatusCallbacks = [] #list of functions which provide status information
         self.CleanupFunctions = [] #list of functions to be called at exit
+        self.PACallbacks = [] #list of functions to be called when a new aquisator is created
         #preview
         self.saturationThreshold = 16383 #14 bit
         self.lastFrameSaturated = False
@@ -139,15 +120,19 @@ class microscope:
             return self.settingsDB.execute("SELECT x,y FROM VoxelSizes WHERE ID=?", currVoxelSizeID).fetchone()
 
     def GenStartMetadata(self, mdh):
-        currVoxelSizeID = self.settingsDB.execute("SELECT sizeID FROM VoxelSizeHistory2 WHERE camSerial=? ORDER BY time DESC", (self.cam.GetSerialNumber(),)).fetchone()
-        if not currVoxelSizeID == None:
-            voxx, voxy = self.settingsDB.execute("SELECT x,y FROM VoxelSizes WHERE ID=?", currVoxelSizeID).fetchone()
+        try:
+            voxx, voxy = self.GetPixelSize()
             mdh.setEntry('voxelsize.x', voxx)
             mdh.setEntry('voxelsize.y', voxy)
             mdh.setEntry('voxelsize.units', 'um')
+        except TypeError:
+            pass
 
         for p in self.piezos:
             mdh.setEntry('Positioning.%s' % p[2].replace(' ', '_').replace('-', '_'), p[0].GetPos(p[1]))
+            
+        for k, v in self.GetPos().items():
+            mdh.setEntry('Positioning.%s' % k.replace(' ', '_').replace('-', '_'), v)
             
         mdh.copyEntriesFrom(self.mdh)
 
@@ -166,18 +151,11 @@ class microscope:
         self.settingsDB.execute("INSERT INTO VoxelSizeHistory2 VALUES (?, ?, ?)", (datetime.datetime.now(), voxelSizeID, cam.GetSerialNumber()))
         self.settingsDB.commit()
 
-    def pr_refr(self, source):
-        self.prev_fr.update()
-        
-#    def pr_refr2(self, source):
-#        #self.vp.imagepanel.Refresh()
-#        self.vp.Redraw()
-
-    def pr_refr3(self, souce):
-        self.sp.refr()
 
     def satCheck(self, source): # check for saturation
-        im = CDataStack_AsArray(source.ds, 0)
+        if not 'shutterOpen' in dir(self.cam):
+            return
+        im = source.dsa
         IMax = im.max()
 
         if not self.cam.shutterOpen:
@@ -196,7 +174,7 @@ class microscope:
                 wx.MessageBox(self.saturatedMessage, "Saturation detected", wx.OK|wx.ICON_HAND)
                 return
 
-            fracPixelsSat = (im > self.saturationThreshold).sum().astype('f')/im.size
+            #fracPixelsSat = (im > self.saturationThreshold).sum().astype('f')/im.size
 
             #try turning the e.m. gain off
             if 'SetEMGain' in dir(source.cam) and not source.cam.GetEMGain() == 0:
@@ -231,10 +209,6 @@ class microscope:
             self.lastFrameSaturated = False
 
 
-
-
-
-
     def genStatus(self):
         stext = ''
         if self.cam.CamReady():
@@ -262,79 +236,21 @@ class microscope:
                 stext = stext + '    ' + sic()       
         return stext
 
-    def livepreview(self, Parent=None, Notebook = None):
-#        if 'pa' in dir(self):
-#            self.pa.stop() #stop old acquisition
-
+    def startAquisistion(self):
+        if 'pa' in dir(self):
+            self.pa.stop() #stop old acquisition
+        
         self.pa = previewaquisator.PreviewAquisator(self.chaninfo,self.cam, self.shutters)
+        self.pa.HardwareChecks.extend(self.hardwareChecks)
         self.pa.Prepare()
-
-        if self.cam.GetPicHeight() > 1:
-            if 'vp' in dir(self):
-                    self.vp.SetDataStack(self.pa.dsa)
-            elif (Notebook == None):
-                self.prev_fr = prevviewer.PrevViewFrame(Parent, "Live Preview", self.pa.dsa)
-                self.pa.WantFrameGroupNotification.append(self.pr_refr)
-                self.prev_fr.genStatusText = self.genStatus
-                self.prev_fr.Show()
-            else:
-                #self.vp = viewpanel.MyViewPanel(Notebook, self.pa.ds)
-                #self.vp.crosshairs = False
-
-                
-                self.vp = arrayViewPanel.ArrayViewPanel(Notebook, self.pa.dsa)
-                self.vp.crosshairs = False
-                self.vp.do.leftButtonAction = self.vp.do.ACTION_SELECTION
-                self.vp.do.showSelection = True
-                self.vp.CenteringHandlers.append(self.centreView)
-
-                self.vsp = disppanel.dispSettingsPanel2(Notebook, self.vp)
-
-
-                Parent.time1.WantNotification.append(self.vsp.RefrData)
-                #Parent.time1.WantNotification.append(self.vsp.RefrData)
-                #Notebook.AddPage(imageId=-1, page=self.vp, select=True,text='Preview')
-                Notebook.AddPage(page=self.vp, select=True,caption='Preview')
-                #Notebook.AddPage(page=self.vp2, select=True,caption='Preview2')
-                #Notebook._mgr.AddPane
-
-                Parent.AddCamTool(self.vsp, 'Display')
-                #             Notebook.AddPage(page=self.vsp, select=False,caption='Display')
-                #             Notebook.Split(3, wx.RIGHT)
-                #             Notebook.SetSelection(2)
-                #             Notebook.SetSelection(3)
-
-            #self.pa.WantFrameGroupNotification.append(self.pr_refr2)
-            self.pa.WantFrameGroupNotification.append(self.vp.Redraw)
-
-        else:
-            #1d data - use graph instead
-            from PYME.Analysis.LMVis import fastGraph
-            if 'sp' in dir(self):
-                    pass
-            elif (Notebook == None):
-                self.prev_fr = prevviewer.PrevViewFrame(Parent, "Preview", self.pa.ds)
-                self.pa.WantFrameGroupNotification.append(self.pr_refr)
-                self.prev_fr.genStatusText = self.genStatus
-                self.prev_fr.Show()
-            else:
-                self.sp = fastGraph.SpecGraphPanel(Notebook, self)
-
-                Notebook.AddPage(page=self.sp, select=True,caption='Preview')
-                #Notebook._mgr.AddPane
-
-                #Parent.AddCamTool(self.vsp, 'Display')
-                #             Notebook.AddPage(page=self.vsp, select=False,caption='Display')
-                #             Notebook.Split(3, wx.RIGHT)
-                #             Notebook.SetSelection(2)
-                #             Notebook.SetSelection(3)
-
-            self.pa.WantFrameGroupNotification.append(self.pr_refr3)
 
         if 'shutterOpen' in dir(self.cam):
             self.pa.WantFrameGroupNotification.append(self.satCheck)
             
         self.pa.start()
+        
+        for cb in self.PACallbacks:
+            cb()
 
     def SetCamera(self, camName):
         if 'pa' in dir(self):
@@ -344,13 +260,20 @@ class microscope:
         for c in self.cameras.values():
             c.SetActive(False)
             c.SetShutter(False)
-
+            
         for k in self.cameras.keys():
             self.camControls[k].GetParent().Hide()#GetParent().UnPin()
-
+        
         self.cam = self.cameras[camName]
+        if 'lightpath' in dir(self):
+            self.lightpath.SetPort(self.cam.port)
+        
         self.cam.SetActive(True)
-        self.cam.SetShutter(self.camControls[camName].cbShutter.GetValue())
+        try:
+            self.cam.SetShutter(self.camControls[camName].cbShutter.GetValue())
+        except AttributeError:
+            pass #for cameras which don't have a shutter
+        
         self.camControls[camName].GetParent().Show()#GetParent().PinOpen()
         self.camControls[camName].GetParent().GetParent().Layout()
 
@@ -358,10 +281,12 @@ class microscope:
             self.sa.cam = self.cam
 
         if 'pa' in dir(self):
-            self.livepreview()
+            self.pa.cam = self.cam
+            self.pa.Prepare()
             
-        if 'lightpath' in dir(self):
-            self.lightpath.SetPort(self.cam.port)
+            self.pa.start()
+            
+        
             
     def centreView(self, dx, dy):
         vx, vy = self.GetPixelSize()
@@ -371,99 +296,18 @@ class microscope:
         ox = p['x']
         oy = p['y']
         
-        #print dx, dy, vx, vy, dx*vx
+        if 'orientation' in dir(self.cam):
+            if self.cam.orientation['rotate']:
+                dx, dy = dy, dx
+                
+            if self.cam.orientation['flipx']:
+                dx *= -1
+                
+            if self.cam.orientation['flipy']:
+                dy *= -1
         
         self.SetPos(x=(ox + dx*vx), y=(oy + dy*vy))
 
-
-    #aquisition
-
-    def aq_refr(self,source):
-        if not self.pb.Update(self.sa.ds.getZPos(), 'Slice %d of %d' % (self.sa.ds.getZPos(), self.sa.ds.getDepth())):
-            self.sa.stop()
-        #self.dfr.update()
-
-    def aq_end(self,source):
-        #self.dfr.update()
-        self.pb.Update(self.sa.ds.getDepth())
-        
-        if 'step' in self.__dict__:
-            self.sa.log['STEPPER'] = {}
-            self.sa.log['STEPPER']['XPos'] = self.step.GetPosX()
-            self.sa.log['STEPPER']['YPos'] = self.step.GetPosY()
-            self.sa.log['STEPPER']['ZPos'] = self.step.GetPosZ()
-            
-        if 'scopedetails' in self.__dict__:
-            self.sa.log['MICROSCOPE'] = self.scopedetails
-        
-        dialog = wx.MessageDialog(None, "Aquisition Finished", "pySMI", wx.OK)
-        dialog.ShowModal()
-        dialog.Destroy()
-        
-        self.pa.Prepare(True)
-        self.pa.start()
-
-        #self.dfr = dsviewer.DSViewFrame(None, "New Aquisition", CDataStack_AsArray(self.sa.ds, 0).squeeze(), self.sa.log, mdh=self.sa.mdh)
-        #self.dfr.Show()
-
-        im = dsviewer.ImageStack(data = CDataStack_AsArray(self.sa.ds, 0).squeeze(), mdh = self.sa.mdh)
-        dvf = dsviewer.DSViewFrame(im, title=('<Unsaved Stack %d>' % self.stackNum), mode='lite', size=(500, 500))
-        dvf.SetSize((500,500))
-        dvf.Show()
-
-        self.stackNum +=1
-
-        self.sa.ds = None
-
-#    def aqt_refr(self,source):
-#        if not self.pb.Update(self.ta.ds.getZPos(), 'Slice %d of %d' % (self.ta.ds.getZPos(), self.ta.ds.getDepth())):
-#            self.ta.stop()
-#        #self.dfr.update()
-
-#    def aqt_end(self,source):
-#        #self.dfr.update()
-#        self.pb.Update(self.ta.ds.getDepth())
-#        
-#        if 'step' in self.__dict__:
-#            self.sa.log['STEPPER'] = {}
-#            self.sa.log['STEPPER']['XPos'] = self.step.GetPosX()
-#            self.sa.log['STEPPER']['YPos'] = self.step.GetPosY()
-#            self.sa.log['STEPPER']['ZPos'] = self.step.GetPosZ()
-#            
-#        if 'scopedetails' in self.__dict__:
-#            self.ta.log['MICROSCOPE'] = self.scopedetails
-#        
-#        dialog = wx.MessageDialog(None, "Aquisition Finished", "pySMI", wx.OK)
-#        dialog.ShowModal()
-#        dialog.Destroy()
-#        
-#        self.pa.Prepare(True)
-#        self.pa.start()
-#
-#        self.dfr = dsviewer.DSViewFrame(None, "New Aquisition", CDataSatck_AsArray(self.ta.ds, 0), self.ta.log)
-#        self.dfr.Show()
-#        self.ta.ds = None
-
-#    def aquireStack(self,piezo, startpos, endpos, stepsize, channel = 1):
-#        self.pa.stop()
-#
-#        self.sa = simplesequenceaquisator.SimpleSequenceAquisitor(self.chaninfo, self.cam, self.shutters, piezo)
-#        self.sa.SetStartMode(self.sa.START_AND_END)
-#
-#        self.sa.SetStepSize(stepsize)
-#        self.sa.SetStartPos(endpos)
-#        self.sa.SetEndPos(startpos)
-#
-#        self.sa.Prepare()
-#
-#        
-#        self.sa.WantFrameNotification.append(self.aq_refr)
-#
-#        self.sa.WantStopNotification.append(self.aq_end)
-#
-#        self.sa.start()
-#
-#        self.pb = wx.ProgressDialog('Aquisition in progress ...', 'Slice 1 of %d' % self.sa.ds.getDepth(), self.sa.ds.getDepth(), style = wx.PD_APP_MODAL|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
 
     def turnAllLasersOff(self):
         for l in self.lasers:

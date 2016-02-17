@@ -22,7 +22,7 @@
 ##################
 
 from . import rend_im
-import PYME.cSMI as example
+#import PYME.cSMI as example
 import scipy
 
 from PYME.Acquire import MetaDataHandler
@@ -37,9 +37,9 @@ import time
 from PYME.Acquire.Hardware import EMCCDTheory
 from PYME.Acquire.Hardware import ccdCalibrator
 
-class CDataStack(example.CDataStack):
-    def getCurrentChannelSlice(self, curMemChn):
-        return example.CDataStack_AsArray(self, curMemChn)[:,:,self.getZPos()]
+#class CDataStack(example.CDataStack):
+#    def getCurrentChannelSlice(self, curMemChn):
+#        return example.CDataStack_AsArray(self, curMemChn)[:,:,self.getZPos()]
 
 class NoiseMaker:
     def __init__(self, QE=.8, ADGain=27.32, readoutNoise=109.8, EMGain=0, background=0., floor=967, shutterOpen = True, numGainElements=536, vbreakdown=6.6, temperature = -70.):
@@ -63,6 +63,14 @@ class NoiseMaker:
         #print F2
         #print im.max()
         return self.ADOffset + M*scipy.random.poisson(int(self.shutterOpen)*(im + self.background)*self.QE*F2)/(self.ElectronsPerCount*F2) + self.ReadoutNoise*scipy.random.standard_normal(im.shape)/self.ElectronsPerCount
+        
+    def getbg(self):
+        M = EMCCDTheory.M((80. + self.EMGain)/(255 + 80.), self.vbreakdown, self.temperature, self.NGainElements, 2.2)
+        F2 = 1.0/EMCCDTheory.FSquared(M, self.NGainElements)
+        #print im.min(), F2, self.QE, self.background
+        #print F2
+        #print im.max()
+        return self.ADOffset + M*(int(self.shutterOpen)*(0 + self.background)*self.QE*F2)/(self.ElectronsPerCount*F2) 
 
 
 
@@ -71,7 +79,7 @@ class NoiseMaker:
 #calculate image in a separate thread to maintain GUI reponsiveness
 class compThread(threading.Thread):
 #class compThread(processing.Process):
-    def __init__(self,XVals, YVals,zPiezo, zOffset, fluors, noisemaker, laserPowers, intTime, contMode = True, bufferlength=20, biplane = False, biplane_z = 500, xpiezo=None, ypiezo=None, illumFcn = 'ConstIllum'):
+    def __init__(self,XVals, YVals,zPiezo, zOffset, fluors, noisemaker, laserPowers, intTime, contMode = True, bufferlength=100, biplane = False, biplane_z = 500, xpiezo=None, ypiezo=None, illumFcn = 'ConstIllum'):
         threading.Thread.__init__(self)
         self.XVals = XVals
         self.YVals = YVals
@@ -133,7 +141,9 @@ class compThread(threading.Thread):
                 else:
                     self.im = self.noiseMaker.noisify(rend_im.simPalmImFI(self.XVals + xp, self.YVals + yp, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime, position=[xp,yp,zPos], illuminationFunction=self.illumFcn))[:,:].astype('uint16')
             else:
-                self.im = self.noiseMaker.noisify(rend_im.simPalmImFSpecI(self.XVals, self.YVals, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
+                #self.im = self.noiseMaker.noisify(rend_im.simPalmImFSpecI(self.XVals, self.YVals, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
+                #self.im = self.noiseMaker.noisify(rend_im.simPalmImFI(self.XVals, self.YVals, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
+                self.im = self.noiseMaker.noisify(rend_im.simPalmImFI(self.XVals + xp, self.YVals + yp, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime, position=[xp,yp,zPos], illuminationFunction=self.illumFcn, Chan2XOffset=70.*self.XVals.shape[0]/4., Chan2ZOffset=self.deltaZ))[:,:].astype('uint16')
 
             self.buffer[:,:,self.bufferWritePos] = self.im
             self.bufferWritePos +=1
@@ -463,6 +473,11 @@ class FakeCamera:
         realEMGain = ccdCalibrator.getCalibratedCCDGain(self.GetEMGain(), self.GetCCDTempSetPoint())
         if not realEMGain == None:
             mdh.setEntry('Camera.TrueEMGain', realEMGain)
+            
+        if self.fluors and 'spec' in self.fluors.fl.dtype.fields.keys(): #set the splitter parameters
+            mdh['Splitter.Channel0ROI'] = [0,0,128, 256]
+            mdh['Splitter.Channel1ROI'] = [128,0,128, 256]
+            mdh['Splitter.Flip'] = False
 
     #functions to make us look more like andor camera
     def GetEMGain(self):

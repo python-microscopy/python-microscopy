@@ -29,8 +29,8 @@ import sys
 from PYME.FileUtils import nameUtils
 from PYME.misc import TextCtrlAutoComplete
 
-from PYME.SampleDB import populate #just to setup the Django environment
-from PYME.SampleDB.samples import models
+from PYME.SampleDB2 import populate #just to setup the Django environment
+from PYME.SampleDB2.samples import models
 
 lastCreator = nameUtils.getUsername()
 lastSlideRef = ''

@@ -23,7 +23,9 @@
 
 from PYME.Acquire.Hardware.AndorIXon import AndorIXon
 from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
-from PYME.Acquire.Hardware.uc480 import uCam480
+from PYME.Acquire.Hardware.AndorNeo import AndorZyla
+from PYME.Acquire.Hardware.AndorNeo import ZylaControlPanel
+#from PYME.Acquire.Hardware.uc480 import uCam480
 
 from PYME.Acquire.Hardware import fakeShutters
 import time
@@ -40,27 +42,32 @@ def GetComputerName():
 #scope.camControls = {}
 from PYME.Acquire import MetaDataHandler
 
-InitBG('EMCCD Cameras', '''
+InitBG('EMCCD Camera', '''
 scope.cameras['A - Left'] = AndorIXon.iXonCamera(0)
-scope.cameras['B - Right'] = uCam480.uc480Camera(1)
 scope.cameras['A - Left'].port = 'L100'
-scope.cameras['B - Right'].port = 'R100'
-#scope.cameras['B - Right'].SetShutter(False)
-scope.cameras['B - Right'].SetActive(False)
+scope.cameras['A - Left'].orientation = dict(rotate=False, flipx=True, flipy=False)
 scope.cam = scope.cameras['A - Left']
 
 ''')
 
-#InitBG('EMCCD Camera 2', '''
-#scope.cameras['B'] = AndorIXon.iXonCamera(0)
-#''')
+InitBG('sCMOS Camera', '''
+#scope.cameras['B - Right'] = uCam480.uc480Camera(1)
+scope.cameras['B - Right'] = AndorZyla.AndorZyla(0)
+scope.cameras['B - Right'].Init()
+scope.cameras['B - Right'].port = 'R100'
+scope.cameras['B - Right'].SetActive(False)
+scope.cameras['B - Right'].orientation = dict(rotate=False, flipx=True, flipy=False)
+scope.cameras['B - Right'].DefaultEMGain = 0 #hack to make camera work with standard protocols
+''')
+
+
 
 InitGUI('''
 scope.camControls['A - Left'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['A - Left'], scope)
 camPanels.append((scope.camControls['A - Left'], 'EMCCD A Properties'))
 
-scope.camControls['B - Right'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['A - Left'], scope)
-camPanels.append((scope.camControls['B - Right'], 'EMCCD B Properties'))
+scope.camControls['B - Right'] = ZylaControlPanel.ZylaControl(MainFrame, scope.cameras['B - Right'], scope)
+camPanels.append((scope.camControls['B - Right'], 'sCMOS Properties'))
 
 ''')
 
@@ -83,58 +90,50 @@ scope.shutters = fakeShutters
 
 
 #Light crafter
-InitGUI('''
+InitBG('DMD', '''
 from PYME.Acquire.Hardware import TiLightCrafter
-from PYMEnf.Hardware import DMDGui
+
 scope.LC = TiLightCrafter.LightCrafter()
 scope.LC.Connect()
 scope.LC.SetDisplayMode(scope.LC.DISPLAY_MODE.DISP_MODE_IMAGE)
 scope.LC.SetStatic(255)
-
+''')
+InitGUI('''
+from PYMEnf.Hardware import DMDGui
 LCGui = DMDGui.DMDPanel(MainFrame,scope.LC, scope)
 camPanels.append((LCGui, 'DMD Control'))
 ''')
 
 #PIFoc
-InitBG('Piezos', '''
-from PYME.Acquire.Hardware.Piezos import piezo_e709
-#from PYME.Acquire.Hardware import NikonTi                          ###
-#scope.zStage = NikonTi.zDrive()
-#scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
+InitBG('Z Piezo', '''
+from PYME.Acquire.Hardware.Piezos import piezo_e709, offsetPiezo
 
-scope.piFoc = piezo_e709.piezo_e709T('COM9', 400, 0, True)
+scope._piFoc = piezo_e709.piezo_e709T('COM9', 400, 0, True)
+scope.hardwareChecks.append(scope._piFoc.OnTarget)
+scope.CleanupFunctions.append(scope._piFoc.close)
+scope.piFoc = offsetPiezo.piezoOffsetProxy(scope._piFoc)
 scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
 scope.positioning['z'] = (scope.piFoc, 1, 1)
 
-
+#server so drift correction can connect to the piezo
+pst = offsetPiezo.ServerThread(scope.piFoc)
+pst.start()
+scope.CleanupFunctions.append(pst.cleanup)
+''')
+InitBG('XY Stage', '''
 #XY Stage
 from PYME.Acquire.Hardware.Piezos import piezo_c867
 scope.xystage = piezo_c867.piezo_c867T('COM8')
 scope.piezos.append((scope.xystage, 2, 'Stage_X'))
 scope.piezos.append((scope.xystage, 1, 'Stage_Y'))
-scope.positioning['x'] = (scope.xystage, 1, 1000)
-scope.positioning['y'] = (scope.xystage, 2, -1000)
 scope.joystick = piezo_c867.c867Joystick(scope.xystage)
 #scope.joystick.Enable(True)
+scope.hardwareChecks.append(scope.xystage.OnTarget)
+scope.CleanupFunctions.append(scope.xystage.close)
+
+scope.positioning['x'] = (scope.xystage, 1, 1000)
+scope.positioning['y'] = (scope.xystage, 2, -1000)
 ''')
-
-#InitBG('Stage Stepper Motors', '''
-#from PYME.Acquire.Hardware.Mercury import mercuryStepper
-#scope.stage = mercuryStepper.mercuryStepper(comPort=5, axes=['A', 'B'], steppers=['M-229.25S', 'M-229.25S'])
-#scope.stage.SetSoftLimits(0, [1.06, 20.7])
-#scope.stage.SetSoftLimits(1, [.8, 17.6])
-#scope.piezos.append((scope.stage, 0, 'Stage X'))
-#scope.piezos.append((scope.stage, 1, 'Stage Y'))
-#scope.joystick = scope.stage.joystick
-#scope.joystick.Enable(True)
-#scope.CleanupFunctions.append(scope.stage.Cleanup)
-#''')
-
-#InitGUI('''
-#from PYME.Acquire import sarcSpacing
-#ssp = sarcSpacing.SarcomereChecker(MainFrame, menuBar1, scope)
-#''')
-
 
 
 InitGUI('''
@@ -148,7 +147,7 @@ time1.WantNotification.append(pv.draw)
 #splitter
 InitGUI('''
 from PYME.Acquire.Hardware import splitter
-splt = splitter.Splitter(MainFrame, mControls, scope, scope.cam, flipChan = 0, dichroic = 'FF700-Di01' , transLocOnCamera = 'Left', flip=False, dir='left_right')
+splt = splitter.Splitter(MainFrame, mControls, scope, scope.cam, flipChan = 0, dichroic = 'FF700-Di01' , transLocOnCamera = 'Left', flip=False, dir='left_right', constrain=False)
 ''')
 
 #we don't have a splitter - make sure that the analysis knows this
@@ -170,49 +169,16 @@ MetaDataHandler.provideStartMetadata.append(scope.dichroic.ProvideMetadata)
 MetaDataHandler.provideStartMetadata.append(scope.lightpath.ProvideMetadata)
 ''')# % GetComputerName())
 
-#InitGUI('''
-#from PYME.Acquire.Hardware import focusKeys
-#fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[0], scope=scope)
-#time1.WantNotification.append(fk.refresh)
-#
-#xykeys = focusKeys.PositionKeys(MainFrame, menuBar1, scope.piezos[1], scope.piezos[2], scope=scope)
-#''')
+
 
 InitGUI('''
 from PYME.Acquire.Hardware import spacenav
 scope.spacenav = spacenav.SpaceNavigator()
+scope.CleanupFunctions.append(scope.spacenav.close)
 scope.ctrl3d = spacenav.SpaceNavPiezoCtrl(scope.spacenav, scope.piFoc, scope.xystage)
 ''')
-
-#from PYME.Acquire.Hardware import frZStage
-#frz = frZStage.frZStepper(MainFrame, scope.zStage)
-#frz.Show()
-
-##3-axis piezo
-#InitBG('Thorlabs Piezo', '''
-#from PYME.Acquire.Hardware import thorlabsPiezo
-#
-##check to see what we've got attached
-#piezoSerialNums = thorlabsPiezo.EnumeratePiezos()
-#if len(piezoSerialNums) == 3: #expect to see 3 piezos
-#    scope.pzx = thorlabsPiezo.TLPiezo(91814461, 'X Axis')
-#    scope.pzy = thorlabsPiezo.TLPiezo(91814462, 'Y Axis')
-#    scope.pzz = thorlabsPiezo.TLPiezo(91814463, 'Z Axis')
-#
-#    scope.piezos.append((scope.pzx, 1, 'X Piezo'))
-#    scope.piezos.append((scope.pzy, 1, 'Y Piezo'))
-#    scope.piezos.append((scope.pzz, 1, 'Z Piezo'))
-#
-#    #centre the piezos
-#    scope.pzx.MoveTo(0,50)
-#    scope.pzy.MoveTo(0,50)
-#    scope.pzz.MoveTo(0,40)
-#else:
-#    raise HWNotPresent
-#
-#''')
     
-from PYME.Acquire.Hardware.FilterWheel import WFilter, FiltFrame
+from PYME.Acquire.Hardware.FilterWheel import WFilter, FiltFrame, FiltWheel
 filtList = [WFilter(1, 'LF405', 'LF405', 0),
     WFilter(2, 'LF488' , 'LF488', 0),
     WFilter(3, 'LF561'  , 'LF561'  , 0),
@@ -222,9 +188,10 @@ filtList = [WFilter(1, 'LF405', 'LF405', 0),
 
 InitGUI('''
 try:
-    scope.filterWheel = FiltFrame(MainFrame, filtList, 'COM11', dichroic=scope.dichroic)
-    scope.filterWheel.SetFilterPos("LF488")
-    toolPanels.append((scope.filterWheel, 'Filter Wheel'))
+    scope.filterWheel = FiltWheel(filtList, 'COM11', dichroic=scope.dichroic)
+    #scope.filterWheel.SetFilterPos("LF488")
+    scope.filtPan = FiltFrame(MainFrame, scope.filterWheel)
+    toolPanels.append((scope.filtPan, 'Filter Wheel'))
 except:
     print 'Error starting filter wheel ...'
 ''')
@@ -242,37 +209,11 @@ scope.l561 = cobaltLaser.CobaltLaser('561',portname='COM7')
 scope.lAOM = ioslave.AOMLaser('AOM')
 scope.lasers = [scope.l405,scope.l488,scope.l561, scope.lAOM, scope.l642]
 
-#scope.lasers = [scope.l405,scope.l488, scope.l642]
-#scope.lasers = [scope.l642]
-
-#scope.StatusCallbacks.append(scope.l642.GetStatusText)
-#scope.lasers = [scope.l642]
-#scope.lasers = []
-#InitBG('DigiData', '''
-#from PYME.Acquire.Hardware.DigiData import DigiDataClient
-#dd = DigiDataClient.getDDClient()
-#
-#
-#from PYME.Acquire.Hardware import lasers
-#scope.l490 = lasers.DigiDataSwitchedLaser('490',dd,4)
-#scope.l405 = lasers.DigiDataSwitchedLaserInvPol('405',dd,0)
-##scope.l543 = lasers.DigiDataSwitchedAnalogLaser('543',dd,0)
-##scope.l671 = lasers.DigiDataSwitchedAnalogLaser('671',dd,1)
-#
-#pport = lasers.PPort()
-#scope.l671 = lasers.ParallelSwitchedLaser('671',pport,0)
-#scope.l532 = lasers.ParallelSwitchedLaser('532',pport,1)
-#
-#scope.lasers = [scope.l405,scope.l532,scope.l671, scope.l490]
-#''')
-
 from PYME.Acquire.Hardware import priorLumen
 scope.arclamp = priorLumen.PriorLumen('Arc Lamp', portname='COM1')
 scope.lasers.append(scope.arclamp)
 
-#scope.lasers = [scope.arclamp]
 
-#scope.lasers = []
 
 InitGUI('''
 from PYME.Acquire import lasersliders
@@ -291,31 +232,9 @@ if 'lasers'in dir(scope):
     camPanels.append((lcf, 'Laser Control'))
 ''')
 
-#from PYME.Acquire.Hardware import PM100USB
-#
-#scope.powerMeter = PM100USB.PowerMeter()
-#scope.powerMeter.SetWavelength(671)
-#scope.StatusCallbacks.append(scope.powerMeter.GetStatusText)
-
-##Focus tracking
-#from PYME.Acquire.Hardware import FocCorrR
-#InitBG('Focus Corrector', '''
-#scope.fc = FocCorrR.FocusCorrector(scope.zStage, tolerance=0.20000000000000001, estSlopeDyn=False, recDrift=False, axis='Y', guideLaser=l488)
-#scope.StatusCallbacks.append(fc.GetStatus)
-#''')
-#InitGUI('''
-#if 'fc' in dir(scope):
-#    scope.fc.addMenuItems(MainFrame, MainMenu)
-#    scope.fc.Start(2000)
-#''')
-
-from PYME import cSMI
 
 
-Is = []
 
-def calcSum(caller):
-    Is.append(cSMI.CDataStack_AsArray(caller.ds, 0).sum())
 
 
 #must be here!!!

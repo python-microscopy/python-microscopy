@@ -70,7 +70,10 @@ def calibrate(interpolator, md, roiSize=5):
 
     for z0 in z:    
         d1 = ratio*interpolator.interp(X, Y, Z + z0)
-        d2 = (1-ratio)*interpolator.interp(X, Y, Z + z0 + axialShift)
+        if interpolator.SplitPSF:
+            d2 = (1-ratio)*interpolator.interp(X + interpolator.PSF2Offset, Y, Z + z0 + axialShift)
+        else:
+            d2 = (1-ratio)*interpolator.interp(X, Y, Z + z0 + axialShift)
 #        if z0 % 100 == 0:
 #            figure()
 #            imshow(d)

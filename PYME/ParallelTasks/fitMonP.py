@@ -61,11 +61,22 @@ class MyFrame(wx.Frame):
         self.__set_properties()
         self.__do_layout()
         # end wxGlade
+        
+        try:
+            from PYME.misc import pyme_zeroconf 
+            ns = pyme_zeroconf.getNS()
+            time.sleep(1)
+            URI = ns.resolve(taskQueueName)
+        except:
+            print 'Could not resolve using zeroconf, trying pyro-ns'
+            URI = 'PYRONAME://' + taskQueueName
+    
+        self.tq = Pyro.core.getProxyForURI(URI)
 
-        self.tq = Pyro.core.getProxyForURI("PYRONAME://" + taskQueueName)
+        #self.tq = Pyro.core.getProxyForURI("PYRONAME://" + taskQueueName)
         self.workerProc = {}
         self.tLast = 0
-        self.gQueues.SetRowLabelSize(0)
+        self.gQueues.SetRowLabelSize(10)
         self.gWorkers.SetRowLabelSize(0)
         self.onTimer()
 
@@ -108,13 +119,31 @@ class MyFrame(wx.Frame):
         sizer_2.Add(sizer_5, 1, wx.LEFT|wx.RIGHT|wx.EXPAND, 5)
         self.panel_1.SetSizer(sizer_2)
         sizer_1.Add(self.panel_1, 1, wx.EXPAND, 0)
+        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.bRemove = wx.Button(self, -1, 'Remove selected Queue(s)')        
+        self.bRemove.Bind(wx.EVT_BUTTON, self.OnBRemove)
+        hsizer.Add(self.bRemove, 1, wx.ALL, 2)
+        sizer_1.Add(hsizer, 0, wx.EXPAND, 0)
         self.SetSizer(sizer_1)
         sizer_1.Fit(self)
         self.Layout()
         # end wxGlade
+        
+    def OnBRemove(self, event):
+        rows = self.gQueues.GetSelectedRows()
+        
+        print rows
+        
+        for r in rows:
+            qn = self.queueNames[r]
+            
+            print "removing queue: %s" %qn
+            self.tq.removeQueue(qn)
 
     def onTimer(self, ev = None):
         queues = self.tq.getQueueNames()
+        self.queueNames = queues
         nq = len(queues)
 
         self.gQueues.ClearGrid()

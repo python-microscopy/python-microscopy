@@ -196,6 +196,8 @@ class piezo_e709T(object):
         
         self.errCode = 0
         
+        self.onTarget = False
+        
 
         #self.lastPos = self.GetPos()
         #self.lastPos = [self.GetPos(1), self.GetPos(2)]
@@ -272,6 +274,13 @@ class piezo_e709T(object):
                     self.lastTargetPosition = pos.copy()
                     print('p')
                     
+                #check to see if we're on target
+                self.ser_port.write('ONT? Z\n')
+                self.ser_port.flushOutput()
+                time.sleep(0.005)
+                res1 = self.ser_port.readline()
+                self.onTarget = int(res1.split('=')[1]) == 1
+                    
                 #time.sleep(.1)
                 
             except serial.SerialTimeoutException:
@@ -284,9 +293,10 @@ class piezo_e709T(object):
                 self.lock.release()
                 
     def close(self):
-        self.loopActive = False
-        time.sleep(1)
-        self.ser_port.close()            
+        print "Shutting down piezo"
+        with self.lock:
+            self.loopActive = False
+            self.ser_port.close()            
                 
         
     def SetServo(self, state=1):
@@ -342,9 +352,11 @@ class piezo_e709T(object):
         #    vel = self.maxvelocity
         #self.targetVelocity[chan] = vel
         self.targetPosition[chan] = min(max(fPos, 0),self.max_travel) 
+        self.onTarget = False
             
     def MoveRel(self, iChannel, incr, bTimeOut=True):
         self.targetPosition[iChannel] += incr
+        self.onTarget = False
             
             
 #    def MoveToXY(self, xPos, yPos, bTimeOut=True, vel=None):
@@ -353,6 +365,9 @@ class piezo_e709T(object):
 #        self.targetPosition[0] = min(max(xPos, self.validRegion[0][0]),self.validRegion[0][1])
 #        self.targetPosition[1] = min(max(yPos, self.validRegion[1][0]),self.validRegion[1][1])
 #        self.targetVelocity[:] = vel 
+            
+    def OnTarget(self):
+        return self.onTarget
             
 
     def GetPos(self, iChannel=0):
@@ -368,6 +383,9 @@ class piezo_e709T(object):
         
     def GetPosXY(self):
         return self.position
+        
+    def GetTargetPos(self,iChannel=0):
+        return self.targetPosition[iChannel]
 
     def MoveInDir(self, dx, dy, th=.0000):
         #self.targetVelocity[0] = abs(dx)*self.maxvelocity
@@ -379,6 +397,8 @@ class piezo_e709T(object):
             self.targetPosition[0] = min(max(np.round(self.position[0]-1), 0),self.max_travel)
         else:
             self.targetPosition[0] = self.position[0]
+            
+        self.onTarget = False
             
                    
     def StopMove(self):

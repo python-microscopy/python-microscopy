@@ -41,7 +41,7 @@ class LinearInterpolator(__interpolator):
         #Y = atleast_1d(Y)
         #Z = atleast_1d(Z)
 
-        ox = X[0]
+        ox = X[0] - 0.5*self.PSF2Offset
         oy = Y[0]
         oz = Z #[0]
 
@@ -106,16 +106,27 @@ class LinearInterpolator(__interpolator):
         X = 1e3*metadata.voxelsize.x*mgrid[xslice]
         Y = 1e3*metadata.voxelsize.y*mgrid[yslice]
         Z = array([0]).astype('f')
+        
+        
 
         #what region is 'safe' (ie we won't run out of model to interpret)
         #for these slices...
-        xm = len(X)/2
-        dx = min((interpolator.shape[0] - len(X))/2, xm) - 2
-
-        ym = len(Y)/2
-        dy = min((interpolator.shape[1] - len(Y))/2, ym) - 2
-
-        safeRegion = ((X[xm-dx], X[xm+dx]), (Y[ym-dy], Y[ym+dy]),(Z[0] + self.IntZVals[2], Z[0] + self.IntZVals[-2]))
+        if self.SplitPSF:
+            xm = len(X)/2
+            dx = min((interpolator.shape[1] - len(X))/2, xm) - 2
+    
+            ym = len(Y)/2
+            dy = min((interpolator.shape[1] - len(Y))/2, ym) - 2
+    
+            safeRegion = ((X[xm-dx], X[xm+dx]), (Y[ym-dy], Y[ym+dy]),(Z[0] + self.IntZVals[2], Z[0] + self.IntZVals[-2]))
+        else:
+            xm = len(X)/2
+            dx = min((interpolator.shape[0] - len(X))/2, xm) - 2
+    
+            ym = len(Y)/2
+            dy = min((interpolator.shape[1] - len(Y))/2, ym) - 2
+    
+            safeRegion = ((X[xm-dx], X[xm+dx]), (Y[ym-dy], Y[ym+dy]),(Z[0] + self.IntZVals[2], Z[0] + self.IntZVals[-2]))
 
         return X, Y, Z, safeRegion
 

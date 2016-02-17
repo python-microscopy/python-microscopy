@@ -64,6 +64,56 @@ class cmap_mult:
 cm_hot = cmap_mult(8.0*numpy.ones(3)/3, [0, 3.0/8, 6.0/8])
 cm_grey = cmap_mult(numpy.ones(3), [0, 0, 0])
 
+    
+class RenderLayer(object):
+    drawModes = {'triang':GL_TRIANGLES, 'quads':GL_QUADS, 'edges':GL_LINES, 'points':GL_POINTS, 'wireframe':GL_TRIANGLES}
+    
+    def __init__(self, vertices, normals, colours, cmap, clim, mode='triang', pointsize=5, alpha=1):
+        self.verts = vertices
+        self.normals = normals
+        self.cols = colours
+        
+        self.cmap = cmap
+        self.clim = clim
+        self.alpha = alpha
+        
+        cs_ = ((self.cols - self.clim[0])/(self.clim[1] - self.clim[0]))
+        cs = self.cmap(cs_)
+        cs[:,3] = self.alpha
+        
+        self.cs = cs.ravel().reshape(len(self.cols), 4)
+        
+        self.mode = mode
+        self.pointSize=pointsize
+        
+    def render(self):
+        if self.mode in ['points']:
+            glDisable(GL_LIGHTING)
+            #glPointSize(self.pointSize*self.scale*(self.xmax - self.xmin))
+            glPointSize(self.pointSize)
+        else:
+            glEnable(GL_LIGHTING)
+            pass        
+        
+        if self.mode in ['wireframe']:
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+        else:
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+            
+        nVertices = self.verts.shape[0]
+            
+        self.vs_ = glVertexPointerf(self.verts)
+        self.n_ = glNormalPointerf(self.normals)
+        self.c_ = glColorPointerf(self.cs)
+            
+        glPushMatrix ()
+        glColor4f(0,0.5,0, 1)
+
+        glDrawArrays(self.drawModes[self.mode], 0, nVertices)
+
+        glPopMatrix ()
+        
+
 class LMGLCanvas(GLCanvas):
     def __init__(self, parent):
         attriblist = [wx.glcanvas.WX_GL_RGBA,wx.glcanvas.WX_GL_STENCIL_SIZE,8, wx.glcanvas.WX_GL_DOUBLEBUFFER, 16]
@@ -79,7 +129,7 @@ class LMGLCanvas(GLCanvas):
         wx.EVT_KEY_DOWN(self, self.OnKeyPress)
         #wx.EVT_MOVE(self, self.OnMove)
         
-        #self.gl_context = wx.glcanvas.GLContext(self)
+        self.gl_context = wx.glcanvas.GLContext(self)
 
         self.init = 0
         self.nVertices = 0
@@ -88,6 +138,8 @@ class LMGLCanvas(GLCanvas):
         self.cmap = pylab.cm.hsv
         self.clim = [0,1]
         self.alim = [0,1]
+        
+        self.wireframe = False
 
         self.parent = parent
 
@@ -136,7 +188,9 @@ class LMGLCanvas(GLCanvas):
         self.dragging = False
         self.panning = False
 
-        self.edgeThreshold = 100
+        self.edgeThreshold = 200
+        
+        self.layers = []
 
         return
 
@@ -148,7 +202,7 @@ class LMGLCanvas(GLCanvas):
         #raise Exception('foo')
         dc = wx.PaintDC(self)
         #print self.GetContext()
-        #print self.gl_context
+        self.gl_context.SetCurrent(self)
         self.SetCurrent()
         if not self.init:
             self.InitGL()
@@ -277,24 +331,31 @@ class LMGLCanvas(GLCanvas):
             #glVertex2f(0,1)
             #glEnd()
     
-            #print self.scale
-    
-            if self.mode in  ['points']:
-                glDisable(GL_LIGHTING)
-                #glPointSize(self.pointSize*self.scale*(self.xmax - self.xmin))
-                glPointSize(self.pointSize)
-            else:
-                pass
-                #glEnable(GL_LIGHTING)
-    
-            #glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-            glPushMatrix ()
-    
-            glColor4f(0,0.5,0, 1)
-    
-            glDrawArrays(self.drawModes[self.mode], 0, self.nVertices)
-    
-            glPopMatrix ()
+#            #print self.scale
+#            if self.wireframe:
+#                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+#            else:
+#                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+#    
+#            if self.mode in  ['points']:
+#                glDisable(GL_LIGHTING)
+#                #glPointSize(self.pointSize*self.scale*(self.xmax - self.xmin))
+#                glPointSize(self.pointSize)
+#            else:
+#                pass
+#                #glEnable(GL_LIGHTING)
+#    
+#            #glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+#            glPushMatrix ()
+#    
+#            glColor4f(0,0.5,0, 1)
+#    
+#            glDrawArrays(self.drawModes[self.mode], 0, self.nVertices)
+#    
+#            glPopMatrix ()
+            
+            for l in self.layers:
+                l.render()
         
 
         glFlush()
@@ -345,7 +406,7 @@ class LMGLCanvas(GLCanvas):
         glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, 50)
 
 
-        glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE)
+        glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE)
         glEnable(GL_COLOR_MATERIAL)
 
         glShadeModel(GL_SMOOTH)
@@ -368,11 +429,11 @@ class LMGLCanvas(GLCanvas):
 
         #self.nVertices = 3
 
-        to = testObj()
+        #to = testObj()
 
         #self.setBlob(to[0], to[1], to[2], smScale=[1e3,1e3,1e3])
         #self.setTriang(to[0], to[1], to[2])
-        self.setPoints(to[0], to[1], to[2], to[2])
+        #self.setPoints(to[0], to[1], to[2], to[2])
         self.ResetView()
 
         #glMatrixMode(GL_PROJECTION)
@@ -431,48 +492,29 @@ class LMGLCanvas(GLCanvas):
         self.sy = y.max() - y.min()
         self.sz = z.max() - z.min()
 
-        #self.scale = 10./(x.max() - x.min())
-
-#        self.xc = x.mean()#*self.scale
-#        self.yc = y.mean()#*self.scale
-#        self.zc = z.mean()#*self.scale
-        #self.xc = 0
-        #self.yc = 0
-        #self.zc = 0
-
-        #self.vecUp = numpy.array([0,1,0])
-        #self.vecRight = numpy.array([1,0,0])
-        #self.vecBack = numpy.array([0,0,1])
-
         self.c = A
         self.a = self.c
         vs = P
 
-        self.SetCurrent()       
+        self.SetCurrent()
         
-        self.vs_ = glVertexPointerf(vs)
-        self.n_ = glNormalPointerf(N)
+        self.layers.append(RenderLayer(vs, N, self.c, self.cmap, [self.c.min(), self.c.max()]))
         
-        self.mode = 'triang'
 
-        self.nVertices = vs.shape[0]
-        self.setColour(self.IScale, self.zeroPt)
-        self.setCLim((self.c.min(), self.c.max()), (-1,-1))
-
-    def setTriang(self, x,y,z, c = None, sizeCutoff=1000., zrescale=1):
+    def setTriang(self, x,y,z, c = None, sizeCutoff=1000., zrescale=1, internalCull = True, wireframe=False, alpha=1):
         #center data
         x = x - x.mean()
         y = y - y.mean()
         z = z - z.mean()
+        
+        self.sx = x.max() - x.min()
+        self.sy = y.max() - y.min()
+        self.sz = z.max() - z.min()
 
-        P, A, N = gen3DTriangs(x,y,z/zrescale, sizeCutoff)
+        P, A, N = gen3DTriangs(x,y,z/zrescale, sizeCutoff, internalCull=internalCull)
         P[:,2] = P[:,2]*zrescale
 
         self.scale = 10./(x.max() - x.min())
-
-#        self.xc = x.mean()#*self.scale
-#        self.yc = y.mean()#*self.scale
-#        self.zc = z.mean()#*self.scale
 
         self.xc = 0
         self.yc = 0
@@ -487,19 +529,20 @@ class LMGLCanvas(GLCanvas):
         else:
             self.c = 1./A
             
-        self.a = 1./A
+        #self.a = 1./A
+        self.a = 0.5*numpy.ones_like(A)
         vs = P
 
-        self.SetCurrent()        
-        self.vs_ = glVertexPointerf(vs)
-        self.n_ = glNormalPointerf(N)
+        self.SetCurrent()
+        
+        if wireframe:
+            mode = 'wireframe'
+        else:
+            mode = 'triang'
+                        
+        self.layers.append(RenderLayer(vs, N, self.c, self.cmap, [self.c.min(), self.c.max()], mode=mode, alpha = alpha))
+        self.Refresh()
 
-        self.mode = 'triang'
-
-        self.nVertices = vs.shape[0]
-
-        self.setColour(self.IScale, self.zeroPt)
-        self.setCLim((self.c.min(), self.c.max()), (0,0))
 
     def setPoints(self, x, y, z, c = None, a = None):
         #center data
@@ -520,27 +563,14 @@ class LMGLCanvas(GLCanvas):
         self.sx = x.max() - x.min()
         self.sy = y.max() - y.min()
         self.sz = z.max() - z.min()
-
-#        self.xc = x.mean()#*self.scale
-#        self.yc = y.mean()#*self.scale
-#        self.zc = z.mean()#*self.scale
-
         
         self.SetCurrent()
         vs = numpy.vstack((x.ravel(), y.ravel(), z.ravel()))
         vs = vs.T.ravel().reshape(len(x.ravel()), 3)
-        self.vs_ = glVertexPointerf(vs)
-        self.n_ = glNormalPointerf(-0.69*numpy.ones(vs.shape))
+        
+        self.layers.append(RenderLayer(vs, -0.69*numpy.ones(vs.shape), self.c, self.cmap, [self.c.min(), self.c.max()], mode='points'))
+        self.Refresh()
 
-        #cs = numpy.minimum(numpy.vstack((self.IScale[0]*c,self.IScale[1]*c,self.IScale[2]*c)), 1).astype('f')
-        #cs = cs.T.ravel().reshape(len(c), 3)
-        #cs_ = glColorPointerf(cs)
-
-        self.mode = 'points'
-
-        self.nVertices = vs.shape[0]
-        self.setColour(self.IScale, self.zeroPt)
-        self.setCLim((self.c.min(), self.c.max()), (0,0))
         
     def ResetView(self):
         self.xc = 0
@@ -554,37 +584,6 @@ class LMGLCanvas(GLCanvas):
 
         self.scale = 5./(self.sx)
 
-
-#    def setTriangEdges(self, T):
-#        xs = T.x[T.edge_db]
-#        ys = T.y[T.edge_db]
-#
-#        a = numpy.vstack((xs[:,0] - xs[:,1], ys[:,0] - ys[:,1])).T
-#        #b = numpy.vstack((xs[:,0] - xs[:,2], ys[:,0] - ys[:,2])).T
-#
-#        #area of triangle
-#        #c = 0.5*numpy.sqrt((b*b).sum(1) - ((a*b).sum(1)**2)/(a*a).sum(1))*numpy.sqrt((a*a).sum(1))
-#
-#        c = ((a*a).sum(1))
-#
-#        #c_neighbours = c[T.triangle_neighbors].sum(1)
-#        c = 1.0/(c + 1)
-#
-#        self.c = numpy.vstack((c,c)).T.ravel()
-#        self.a = self.c
-#
-#        vs = numpy.vstack((xs.ravel(), ys.ravel()))
-#        vs = vs.T.ravel().reshape(len(xs.ravel()), 2)
-#        self.vs_ = glVertexPointerf(vs)
-#
-#        #cs = numpy.minimum(numpy.vstack((self.IScale[0]*c,self.IScale[1]*c,self.IScale[2]*c)), 1).astype('f')
-#        #cs = cs.T.ravel().reshape(len(c), 3)
-#        #cs_ = glColorPointerf(cs)
-#
-#        self.mode = 'edges'
-#
-#        self.nVertices = vs.shape[0]
-#        self.setColour(self.IScale, self.zeroPt)
 
     
     def setColour(self, IScale=None, zeroPt=None):
@@ -778,6 +777,7 @@ class LMGLCanvas(GLCanvas):
             event.Skip()
             
     def OnKeyPress(self, event):
+        print event.GetKeyCode()
         if event.GetKeyCode() == 83: #S - toggle stereo
             self.stereo = not self.stereo
             self.Refresh()
@@ -797,6 +797,31 @@ class LMGLCanvas(GLCanvas):
             
         elif event.GetKeyCode() == 82: #R reset view
             self.ResetView()
+            self.Refresh()
+            
+        elif event.GetKeyCode() == 314: #left
+            pos = numpy.array([self.xc, self.yc, self.zc], 'f')
+            pos -= .1*self.vecRight
+            self.xc, self.yc, self.zc = pos
+            print 'l'
+            self.Refresh()
+            
+        elif event.GetKeyCode() == 315: #up
+            pos = numpy.array([self.xc, self.yc, self.zc])
+            pos -= .1*self.vecBack
+            self.xc, self.yc, self.zc = pos
+            self.Refresh()
+            
+        elif event.GetKeyCode() == 316: #right
+            pos = numpy.array([self.xc, self.yc, self.zc])
+            pos += .1*self.vecRight
+            self.xc, self.yc, self.zc = pos
+            self.Refresh()
+            
+        elif event.GetKeyCode() == 317: #down
+            pos = numpy.array([self.xc, self.yc, self.zc])
+            pos += .1*self.vecBack
+            self.xc, self.yc, self.zc = pos
             self.Refresh()
             
         else:
@@ -829,6 +854,12 @@ def main():
     app = wx.PySimpleApp()
     frame = wx.Frame(None,-1,'ball_wx',wx.DefaultPosition,wx.Size(800,800))
     canvas = LMGLCanvas(frame)
+    #glcontext = wx.glcanvas.GLContext(canvas)
+    #glcontext.SetCurrent(canvas)
+    to = testObj()
+    canvas.setPoints(to[0], to[1], to[2])
+    canvas.setTriang(to[0], to[1], to[2], sizeCutoff = 6e3, alpha=0.5)
+    canvas.setTriang(to[0], to[1], to[2], sizeCutoff = 6e3, wireframe=True)
     frame.Show()
     app.MainLoop()
 

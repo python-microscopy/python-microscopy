@@ -34,30 +34,52 @@ from PYME.Analysis.piecewise import * #allow piecewise linear mappings
 
 import tables
 
-class inputFilter:
-    pass
+class inputFilter(object):
+    def toDataFrame(self, keys=None):
+        import pandas as pd
+        if keys == None:
+            keys = self.keys()
+        
+        d = {k: self.__getitem__(k) for k in keys}
+        
+        return pd.DataFrame(d)
+        
+    def _getKeySlice(self, keys):
+        if isinstance(keys, tuple) and len(keys) > 1:
+            key = keys[0]
+            sl = keys[1]
+        else:
+            key = keys
+            sl = slice(None)
+
+        #print key, sl
+            
+        return key, sl
+        
     
 
 class randomSource(inputFilter):
     _name = "Random Source"
     def __init__(self, xmax, ymax, nsamps):
         '''Uniform random source, for testing and as an example'''
-        self.x = xmax*np.rand(nsamps)
-        self.y = ymax*np.rand(nsamps)
+        self.x = xmax*np.random.rand(nsamps)
+        self.y = ymax*np.random.rand(nsamps)
 
-        self.keys = ['x', 'y']
+        self._keys = ['x', 'y']
 
     def keys(self):
-        return self.keys
+        return self._keys
 
-    def __getitem__(self, key):
-        if not key in self.keys:
+    def __getitem__(self, keys):
+        key, sl = self._getKeySlice(keys)
+        
+        if not key in self._keys:
             raise RuntimeError('Key not defined')
         
         if key == 'x':
-            return self.x
+            return self.x[sl]
         elif key == 'y':
-            return self.y
+            return self.y[sl]
 
     def getInfo(self):
         return 'Random Data Source\n\n %d points' % len(self.x)
@@ -85,6 +107,9 @@ def unNestDtype(descr, parent=''):
 class fitResultsSource(inputFilter):
     _name = "recarrayfi Source"
     def __init__(self, fitResults):
+        self.setResults(fitResults)
+        
+    def setResults(self, fitResults):
         self.fitResults = fitResults
 
         #sort by time
@@ -105,7 +130,9 @@ class fitResultsSource(inputFilter):
     def keys(self):
         return self._keys + self.transkeys.keys()
 
-    def __getitem__(self, key):
+    def __getitem__(self, keys):
+        key, sl = self._getKeySlice(keys)
+            
         #if we're using an alias replace with actual key
         if key in self.transkeys.keys():
             key = self.transkeys[key]
@@ -116,11 +143,11 @@ class fitResultsSource(inputFilter):
         k = key.split('_')
 
         if len(k) == 1:
-            return self.fitResults[k[0]].astype('f')
+            return self.fitResults[k[0]].astype('f')[sl]
         elif len(k) == 2:
-            return self.fitResults[k[0]][k[1]].astype('f')
+            return self.fitResults[k[0]][k[1]].astype('f')[sl]
         elif len(k) == 3:
-            return self.fitResults[k[0]][k[1]][k[2]].astype('f')
+            return self.fitResults[k[0]][k[1]][k[2]].astype('f')[sl]
         else:
             raise RuntimeError("Don't know about deeper nesting yet")
 
@@ -130,6 +157,7 @@ class fitResultsSource(inputFilter):
 
     def getInfo(self):
         return 'PYME h5r Data Source\n\n %d points' % self.fitResults.shape[0]
+
 
 class h5rSource(inputFilter):
     _name = "h5r Data Source"
@@ -166,7 +194,9 @@ class h5rSource(inputFilter):
     def keys(self):
         return self._keys + self.transkeys.keys()
 
-    def __getitem__(self, key):
+    def __getitem__(self, keys):
+        key, sl = self._getKeySlice(keys)
+            
         #if we're using an alias replace with actual key
         if key in self.transkeys.keys():
             key = self.transkeys[key]
@@ -177,11 +207,11 @@ class h5rSource(inputFilter):
         k = key.split('_')
         
         if len(k) == 1:
-            return self.fitResults[k[0]].astype('f')
+            return self.fitResults[k[0]][sl].astype('f')
         elif len(k) == 2:
-            return self.fitResults[k[0]][k[1]].astype('f')
+            return self.fitResults[k[0]][k[1]][sl].astype('f')
         elif len(k) == 3:
-            return self.fitResults[k[0]][k[1]][k[2]].astype('f')
+            return self.fitResults[k[0]][k[1]][k[2]][sl].astype('f')
         else:
             raise RuntimeError("Don't know about deeper nesting yet")
         
@@ -218,7 +248,9 @@ class h5rDSource(inputFilter):
     def keys(self):
         return self._keys + self.transkeys.keys()
 
-    def __getitem__(self, key):
+    def __getitem__(self, keys):
+        key, sl = self._getKeySlice(keys)
+            
         #if we're using an alias replace with actual key
         if key in self.transkeys.keys():
             key = self.transkeys[key]
@@ -229,11 +261,11 @@ class h5rDSource(inputFilter):
         k = key.split('_')
         
         if len(k) == 1:
-            return self.h5f.root.DriftResults[:][k[0]].astype('f')
+            return self.h5f.root.DriftResults[sl][k[0]].astype('f')
         elif len(k) == 2:
-            return self.h5f.root.DriftResults[:][k[0]][k[1]].astype('f')
+            return self.h5f.root.DriftResults[sl][k[0]][k[1]].astype('f')
         elif len(k) == 3:
-            return self.h5f.root.DriftResults[:][k[0]][k[1]][k[2]].astype('f')
+            return self.h5f.root.DriftResults[sl][k[0]][k[1]][k[2]].astype('f')
         else:
             raise RuntimeError("Don't know about deeper nesting yet")
         
@@ -263,12 +295,14 @@ class textfileSource(inputFilter):
     def keys(self):
         return self._keys
 
-    def __getitem__(self, key):
+    def __getitem__(self, keys):
+        key, sl = self._getKeySlice(keys)
+        
         if not key in self._keys:
             raise RuntimeError('Key not found')
 
        
-        return self.res[key]
+        return self.res[key][sl]
 
     
     def getInfo(self):
@@ -297,11 +331,12 @@ class matfileSource(inputFilter):
         return self._keys
 
     def __getitem__(self, key):
+        key, sl = self._getKeySlice(keys)
         if not key in self._keys:
             raise RuntimeError('Key not found')
 
 
-        return self.res[key]
+        return self.res[key][sl]
 
 
     def getInfo(self):
@@ -336,8 +371,9 @@ class resultsFilter(inputFilter):
             self.Index *= (self.resultsSource[k] > range[0])*(self.resultsSource[k] < range[1])
                 
 
-    def __getitem__(self, key):
-        return self.resultsSource[key][self.Index]
+    def __getitem__(self, keys):
+        key, sl = self._getKeySlice(keys)
+        return self.resultsSource[key][self.Index][sl]
 
     def keys(self):
         return self.resultsSource.keys()
@@ -371,13 +407,14 @@ class cachingResultsFilter(inputFilter):
             self.Index *= (self.resultsSource[k] > range[0])*(self.resultsSource[k] < range[1])
 
 
-    def __getitem__(self, key):
+    def __getitem__(self, keys):
+        key, sl = self._getKeySlice(keys)
         if key in self.cache.keys():
-            return self.cache[key]
+            return self.cache[key][sl]
         else:
             res = self.resultsSource[key][self.Index]
             self.cache[key] = res
-            return res
+            return res[sl]
 
     def keys(self):
         return self.resultsSource.keys()
@@ -406,14 +443,15 @@ class mappingFilter(inputFilter):
             self.setMapping(k,v)
 
 
-    def __getitem__(self, key):
+    def __getitem__(self, keys):
+        key, sl = self._getKeySlice(keys)
         if key in self.mappings.keys():
-            return self.getMappedResults(key)
+            return self.getMappedResults(key, sl)
         else:
-            return self.resultsSource[key]
+            return self.resultsSource[keys]
 
     def keys(self):
-        return self.resultsSource.keys() + self.mappings.keys()
+        return list(self.resultsSource.keys()) + self.mappings.keys()
 
     def setMapping(self, key, mapping):
         if type(mapping) == types.CodeType:
@@ -423,7 +461,7 @@ class mappingFilter(inputFilter):
         else:
             self.__dict__[key] = mapping
 
-    def getMappedResults(self, key):
+    def getMappedResults(self, key, sl):
         map = self.mappings[key]
 
         #get all the variables needed for evaluation into local namespace
@@ -432,13 +470,13 @@ class mappingFilter(inputFilter):
             if vname in globals():
                 pass
             if vname in self.resultsSource.keys(): #look at original results first
-                locals()[vname] = self.resultsSource[vname]
+                locals()[vname] = self.resultsSource[(vname, sl)]
             elif vname in dir(self): #look for constants
                 locals()[vname] = self.__dict__[vname]
             elif vname in self.mappings.keys(): #finally try other mappings
                 #try to prevent infinite recursion here if mappings have circular references
                 if not vname == key and not key in self.mappings[vname].co_names:
-                    locals()[vname] = self.getMappedResults(vname)
+                    locals()[vname] = self.getMappedResults(vname, sl)
                 else:
                     raise RuntimeError('Circular reference detected in mapping')
 
@@ -457,11 +495,12 @@ class colourFilter(inputFilter):
         self.visFr = visFr
 
 
-    def __getitem__(self, key):
+    def __getitem__(self, keys):
+        key, sl = self._getKeySlice(keys)
         colChans = self.getColourChans()
 
         if not self.currentColour in colChans:
-            return self.resultsSource[key]
+            return self.resultsSource[keys]
         else:
             p_dye = self.resultsSource['p_%s' % self.currentColour]
 
@@ -481,9 +520,9 @@ class colourFilter(inputFilter):
             #chromatic shift correction
             #print self.currentColour
             if self.currentColour in self.visFr.chromaticShifts.keys() and key in self.visFr.chromaticShifts[self.currentColour].keys():
-                return self.resultsSource[key][ind] + self.visFr.chromaticShifts[self.currentColour][key]
+                return self.resultsSource[key][ind][sl] + self.visFr.chromaticShifts[self.currentColour][key]
             else:
-                return self.resultsSource[key][ind]
+                return self.resultsSource[key][ind][sl]
 
     def getColourChans(self):
         return [k[2:] for k in self.keys() if k.startswith('p_')]
@@ -509,8 +548,9 @@ class cloneSource(inputFilter):
 
 
 
-    def __getitem__(self, key):
-        return self.cache[key]
+    def __getitem__(self, keys):
+        key, sl = self._getKeySlice(keys)
+        return self.cache[key][sl]
 
     def keys(self):
         return self.cache.keys()

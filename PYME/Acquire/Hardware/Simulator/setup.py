@@ -24,8 +24,12 @@
 #!/usr/bin/env python
 
 import sys
+if sys.platform == 'darwin':#MacOS
+    linkArgs = []
+else:
+    linkArgs = ['-static-libgcc']
 
-from PYME.misc import cython_numpy_monkey
+#from PYME.misc import cython_numpy_monkey
 
 def configuration(parent_package = '', top_path = None):
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
@@ -35,7 +39,7 @@ def configuration(parent_package = '', top_path = None):
         sources=['illuminate.pyx'],
         include_dirs = [get_numpy_include_dirs()],
 	extra_compile_args = ['-O3', '-fno-exceptions', '-ffast-math', '-march=nocona', '-mtune=nocona'],
-        extra_link_args=['-static-libgcc'])
+        extra_link_args=linkArgs)
 
     return config
 

@@ -84,13 +84,18 @@ def getDataErrors(im, metadata):
 		
 
 class PSFFitFactory(FFBase.FFBase):
-    def __init__(self, data, metadata, fitfcn=f_Interp3d, background=None):
-        super(PSFFitFactory, self).__init__(data, metadata, fitfcn, background)
+    def __init__(self, data, metadata, fitfcn=f_Interp3d, background=None, noiseSigma=None):
+        super(PSFFitFactory, self).__init__(data, metadata, fitfcn, background, noiseSigma)
         
-        if type(fitfcn) == types.FunctionType: #single function provided - use numerically estimated jacobian
-            self.solver = FitModelWeighted_
-        else: #should be a tuple containing the fit function and its jacobian
+        #if type(fitfcn) == types.FunctionType: #single function provided - use numerically estimated jacobian
+        #    self.solver = FitModelWeighted_
+        #else: #should be a tuple containing the fit function and its jacobian
+            
+        
+        if 'D' in dir(fitfcn):
             self.solver = FitModelWeightedJac
+        else:
+            self.solver = FitModelWeighted_
         
 
         interpModule = metadata.Analysis.InterpModule

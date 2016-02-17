@@ -41,12 +41,13 @@ def _async_raise(tid, exctype):
         raise SystemError("PyThreadState_SetAsyncExc failed")
 
 class decThread(threading.Thread):
-    def __init__(self, dec, data, lamb, num_iters=10, weights=1):
+    def __init__(self, dec, data, lamb, num_iters=10, weights=1, bg=0):
         self.dec = dec
         self.data = data
         self.lamb = lamb
         self.num_iters = num_iters
         self.weights = weights
+        self.bg = bg
 
         threading.Thread.__init__(self)
 
@@ -106,7 +107,7 @@ class decThread(threading.Thread):
 
 
     def run(self):
-        self.res = self.dec.deconv(self.data, self.lamb, self.num_iters, self.weights).reshape(self.dec.shape)
+        self.res = self.dec.deconv(self.data, self.lamb, self.num_iters, self.weights, bg = self.bg).reshape(self.dec.shape)
 
 
 

@@ -94,7 +94,7 @@ def Gauss3dFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitE
 
 	tIndex = metadata.tIndex
 
-	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, fmtSlicesUsed(slicesUsed))], dtype=fresultdtype) 
+	return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, fmtSlicesUsed(slicesUsed))], dtype=fresultdtype) 
 
 class Gauss3dFitFactory:
     def __init__(self, data, metadata, background=None):
@@ -110,7 +110,7 @@ class Gauss3dFitFactory:
         dataROI = self.data[xslice, yslice, zslice].astype('f')
 
         #generate grid to evaluate function on
-        X, Y, Z = mgrid[xslice, yslice, zslice]
+        X, Y, Z = np.mgrid[xslice, yslice, zslice]
 
         X = 1e3*self.metadata.voxelsize.x*X
         Y = 1e3*self.metadata.voxelsize.y*Y

@@ -23,7 +23,7 @@
 
 import tables
 from PYME.Acquire import MetaDataHandler
-from PYME import cSMI
+#from PYME import cSMI
 import Pyro.core
 import os
 import time
@@ -31,6 +31,13 @@ import time
 import PYME.Acquire.Spooler as sp
 from PYME.Acquire import protocol as p
 from PYME.FileUtils import fileID
+
+try:
+    from PYME.misc import pyme_zeroconf
+    
+    ns = pyme_zeroconf.getNS()
+except ImportError:
+    ns = None
 
 #rom PYME.Acquire import eventLog
 
@@ -62,8 +69,13 @@ class Spooler(sp.Spooler):
        compName = GetComputerName()
 
        taskQueueName = 'TaskQueues.%s' % compName
+       
+       if ns:
+           URI = ns.resolve(taskQueueName)
+       else:
+           URI = 'PYRONAME://' + taskQueueName
 
-       self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
+       self.tq = Pyro.core.getProxyForURI(URI)
        self.tq._setOneway(['postTask', 'postTasks', 'addQueueEvents', 'setQueueMetaData', 'logQueueEvent'])
 
        self.seriesName = filename
@@ -79,7 +91,7 @@ class Spooler(sp.Spooler):
    
    def Tick(self, caller):
       #self.tq.postTask(cSMI.CDataStack_AsArray(caller.ds, 0).reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()), self.seriesName)
-      self.buffer.append(cSMI.CDataStack_AsArray(caller.ds, 0).reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()).copy())
+      self.buffer.append(caller.dsa.reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()).copy())
 
       if self.imNum == 0: #first frame
           self.md.setEntry('imageID', fileID.genFrameID(self.buffer[-1].squeeze()))
