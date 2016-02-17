@@ -73,6 +73,8 @@ class ServerThread(threading.Thread):
         compName = GetComputerName()
         
         Pyro.core.initServer()
+
+        pname = "%s.Piezo" % compName
         
         try:
             from PYME.misc import pyme_zeroconf 
@@ -80,21 +82,23 @@ class ServerThread(threading.Thread):
         except:
             ns=Pyro.naming.NameServerLocator().getNS()
 
-        if not compName in [n[0] for n in ns.list('')]:
-            ns.createGroup(compName)        
+            if not compName in [n[0] for n in ns.list('')]:
+                ns.createGroup(compName)
+
+            #get rid of any previous instance
+            try:
+                ns.unregister(pname)
+            except Pyro.errors.NamingError:
+                pass        
         
         self.daemon=Pyro.core.Daemon()
         self.daemon.useNameServer(ns)
         
         self.piezo = piezoOffsetProxy(basePiezo)
         
-        pname = "%s.Piezo" % compName
+        #pname = "%s.Piezo" % compName
         
-        #get rid of any previous instance
-        try:
-            ns.unregister(pname)
-        except Pyro.errors.NamingError:
-            pass
+        
         
         uri=self.daemon.connect(self.piezo,pname)
         
