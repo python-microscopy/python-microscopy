@@ -36,6 +36,15 @@ urlpatterns = patterns('',
     (r'^media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT }),
     (r'^$','samples.views.default'),
 
+    (r'^api/num_matching_slides', 'samples.api.num_matching_slides'),
+    (r'^api/get_slide_info', 'samples.api.get_slide_info'),
+    (r'^api/get_creator_choices', 'samples.api.get_creator_choices'),
+    (r'^api/get_slide_choices', 'samples.api.get_slide_choices'),
+    (r'^api/get_structure_choices', 'samples.api.get_structure_choices'),
+    (r'^api/get_dye_choices', 'samples.api.get_dye_choices'),
+
+
+
     url('^autocomplete/', include(autocomp_settings.autocomplete.urls)),
 
     url(r'^admin/', include(admin.site.urls)),

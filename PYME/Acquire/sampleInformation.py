@@ -25,12 +25,18 @@ import wx
 #import wx.grid
 import  wx.lib.mixins.listctrl  as  listmix
 import sys
+import os
+
+import requests
+import logging
+logging.getLogger("requests").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 from PYME.FileUtils import nameUtils
 from PYME.misc import TextCtrlAutoComplete
 
-from PYME.SampleDB2 import populate #just to setup the Django environment
-from PYME.SampleDB2.samples import models
+#from PYME.SampleDB2 import populate #just to setup the Django environment
+#from PYME.SampleDB2.samples import models
 
 lastCreator = nameUtils.getUsername()
 lastSlideRef = ''
@@ -42,6 +48,11 @@ WantSlideChangeNotification = []
 from PYME.Acquire.MetaDataHandler import NestedClassMDHandler
 
 slideMD = NestedClassMDHandler()
+
+if 'PYME_DATABASE_HOST' in os.environ.keys():
+    dbhost = os.environ['PYME_DATABASE_HOST']
+else:
+    dbhost = 'dbsrv1'
 
 class AutoWidthListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
     def __init__(self, parent, ID, pos=wx.DefaultPosition,
@@ -69,15 +80,28 @@ class VirtList(wx.ListCtrl):
 
     def SetFilter(self, creator='', reference='', structure=''):
         self.SetItemCount(0)
-        if not structure == '':
-            self.qs = models.Slide.objects.filter(creator__contains=creator, reference__contains=reference, labelling__structure__contains=structure).order_by('-timestamp')
-        else:
-            self.qs = models.Slide.objects.filter(creator__contains=creator, reference__contains=reference).order_by('-timestamp')
-        self.SetItemCount(self.qs.count())
+        
+        self.creator = creator
+        self.reference = reference
+        self.stucture = structure
+#        if not structure == '':
+#            self.qs = models.Slide.objects.filter(creator__contains=creator, reference__contains=reference, labelling__structure__contains=structure).order_by('-timestamp')
+#        else:
+#            self.qs = models.Slide.objects.filter(creator__contains=creator, reference__contains=reference).order_by('-timestamp')
+        
+        r = requests.get(('http://%s/api/num_matching_slides?creator=%s&reference=%s&structure=%s'%(dbhost, creator, reference, structure)).encode())
+        resp = r.json()        
+        
+        self.SetItemCount(resp['num_matches'])
 
     def OnGetItemText(self, item, col):
         #print self.qs[item].desc()
-        return self.qs[item].desc()[col]
+        #return self.qs[item].desc()[col]
+    
+        r = requests.get(('http://%s/api/get_slide_info?creator=%s&reference=%s&structure=%s&index=%d'%(dbhost, self.creator, self.reference, self.structure, item)).encode())
+        resp = r.json()
+        
+        return resp['desc'][col]
 
     #def OnGetItemImage(self):
 
@@ -227,7 +251,10 @@ class SampleInfoDialog(wx.Dialog):
     def OnSelectSlide(self, event):
         i = event.GetIndex()
         print (i)
-        self.slide = self.lSlides.qs[i]
+        #self.slide = self.lSlides.qs[i]
+        r = requests.get(('http://%s/api/get_slide_info?creator=%s&reference=%s&structure=%s&index=%d'%(dbhost, self.creator, self.reference, self.structure, i)).encode())
+        resp = r.json()
+        self.slide = resp['info']
         print((self.slide))
         self.bOK.Enable()
 
@@ -241,10 +268,13 @@ class SampleInfoDialog(wx.Dialog):
         slref = self.tSlideRef.GetValue()
         current_choices = self.tCreator.GetChoices()
 
-        if slref == '' or (models.Slide.objects.filter(reference=slref).count() ==0):
-            choices = list(set([e.creator for e in models.Slide.objects.filter(creator__startswith=cname)]))
-        else:
-            choices = list(set([e.creator for e in models.Slide.objects.filter(creator__startswith=cname, reference=slref)]))
+#        if slref == '' or (models.Slide.objects.filter(reference=slref).count() ==0):
+#            choices = list(set([e.creator for e in models.Slide.objects.filter(creator__startswith=cname)]))
+#        else:
+#            choices = list(set([e.creator for e in models.Slide.objects.filter(creator__startswith=cname, reference=slref)]))
+            
+        r = requests.get(('http://%s/api/get_creator_choices?slref=%s&cname=%s'%(dbhost, slref, cname)).encode())
+        choices = r.json()
             
         if choices != current_choices:
             self.tCreator.SetChoices(choices)
@@ -258,10 +288,13 @@ class SampleInfoDialog(wx.Dialog):
         slref = self.tSlideRef.GetValue()
         current_choices = self.tSlideRef.GetChoices()
 
-        if cname == '' or (models.Slide.objects.filter(creator=cname).count() == 0):
-            choices = list(set([e.reference for e in models.Slide.objects.filter(reference__startswith=slref)]))
-        else:
-            choices = list(set([e.reference for e in models.Slide.objects.filter(reference__startswith=slref, creator=cname)]))
+#        if cname == '' or (models.Slide.objects.filter(creator=cname).count() == 0):
+#            choices = list(set([e.reference for e in models.Slide.objects.filter(reference__startswith=slref)]))
+#        else:
+#            choices = list(set([e.reference for e in models.Slide.objects.filter(reference__startswith=slref, creator=cname)]))
+            
+        r = requests.get(('http://%s/api/get_slide_choices?slref=%s&cname=%s'%(dbhost, slref, cname)).encode())
+        choices = r.json()
 
         if choices != current_choices:
             self.tSlideRef.SetChoices(choices)
@@ -273,7 +306,10 @@ class SampleInfoDialog(wx.Dialog):
 
         current_choices = self.tStructure.GetChoices()
 
-        choices = list(set([e.structure for e in models.Labelling.objects.filter(structure__startswith=sname)]))
+        #choices = list(set([e.structure for e in models.Labelling.objects.filter(structure__startswith=sname)]))
+        
+        r = requests.get(('http://%s/api/get_structure_choices?sname=%s'%(dbhost, sname)).encode())
+        choices = r.json()
 
         if choices != current_choices:
             self.tStructure.SetChoices(choices)
@@ -283,7 +319,9 @@ class SampleInfoDialog(wx.Dialog):
 
         current_choices = self.tDye.GetChoices()
 
-        choices = list(set([e.label for e in models.Labelling.objects.filter(label__startswith=dname)]))
+        #choices = list(set([e.label for e in models.Labelling.objects.filter(label__startswith=dname)]))
+        r = requests.get(('http://%s/api/get_dye_choices?dname=%s'%(dbhost, dname)).encode())
+        choices = r.json()
 
         if choices != current_choices:
             self.tDye.SetChoices(choices)
@@ -292,9 +330,9 @@ class SampleInfoDialog(wx.Dialog):
         global lastCreator, lastSlideRef
         currentSlide[0] = self.slide
 
-        creator = self.slide.creator
-        slideRef = self.slide.reference
-        sampleNotes = self.slide.notes
+        creator = self.slide['creator']
+        slideRef = self.slide['reference']
+        sampleNotes = self.slide['notes']
         #notes = self.tNotes.GetValue()
         #sampleNotes = self.tSlideNotes.GetValue()
 
@@ -328,7 +366,10 @@ class SampleInfoDialog(wx.Dialog):
 #        for i in range(self.gLabelling.GetNumberRows()):
 #            labels.append((self.gLabelling.GetCellValue(i, 0),self.gLabelling.GetCellValue(i, 1)))
 
-        mdh.setEntry('Sample.Labelling', [(l.structure, l.dye.shortName) for l in self.slide.labelling.all()])
+        #mdh.setEntry('Sample.Labelling', [(l.structure, l.dye.shortName) for l in self.slide.labelling.all()])
+        mdh.setEntry('Sample.Labelling', self.slide['labels'])
+        mdh['Sample.SlideID'] = self.slide['slideID']
+        mdh['Sample.Specimen'] = self.slide['sample']
 
         mdh.setEntry('AcquiringUser', nameUtils.getUsername())
 
