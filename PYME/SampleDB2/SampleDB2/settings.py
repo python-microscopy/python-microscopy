@@ -20,7 +20,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 SECRET_KEY = '3#d-g6g@kva0au8smne=_pjyc_++9@nw2kr+k#j37y!3j8_2mv'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 TEMPLATE_DEBUG = DEBUG
 
@@ -56,7 +56,7 @@ WSGI_APPLICATION = 'SampleDB2.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.6/ref/settings/#databases
 
-DATABASE_HOST = ''
+DATABASE_HOST = 'DBSRV1'
 #look for database host in environment variable
 if 'PYME_DATABASE_HOST' in os.environ.keys():
     DATABASE_HOST = os.environ['PYME_DATABASE_HOST']
