@@ -844,7 +844,7 @@ class VisGUIFrame(wx.Frame):
             self.AddPage(self.colp, caption='Colour', update=False)
             
         #print 'ev'
-        if not self.pipeline.events == None:
+        if not self.pipeline.events is None:
             self.elv = eventLogViewer.eventLogPanel(self, self.pipeline.events, 
                                                         self.pipeline.mdh, 
                                                         [0, self.pipeline.selectedDataSource['tIndex'].max()])
