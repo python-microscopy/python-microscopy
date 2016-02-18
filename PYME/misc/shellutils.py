@@ -494,6 +494,36 @@ def correltrack(data,start=0,avgover=10,pixelsize=70.0,centersize=7,centroidfrac
     sh = pixelsize*(sh-sh[0])
     return t, sh, xctw
 
+# we ignore centroidfrac by default
+def correltrack2(data,start=0,avgover=10,pixelsize=70.0,centersize=15,centroidfac=0.6):
+    cs = centersize
+    shp = [d for d in data.shape if d > 1]
+    nsteps = long((shp[2]-start)/avgover)
+    shh = (shp[0]/2,shp[1]/2)
+    xctw=np.zeros((2*centersize+1,2*centersize+1,nsteps))
+    shifts = []
+    if avgover > 1:
+        ref = data[:,:,start:start+avgover].squeeze().mean(axis=2)
+    else:
+        ref = data[:,:,start].squeeze()
+    refn = ref/ref.mean() - 1
+    Frefn = fftn(refn)
+    for i in range(nsteps):
+        comp = data[:,:,start+i*avgover:start+(i+1)*avgover].squeeze()
+        if len(comp.shape) > 2:
+            comp = comp.mean(axis=2)
+        compn = comp/comp.mean() - 1
+        xc = ifftshift(np.abs(ifftn(Frefn*ifftn(compn))))
+        xcm = xc.max()
+        xcp = np.maximum(xc - centroidfac*xcm, 0)
+        xctw[:,:,i] = xcp[shh[0]-cs:shh[0]+cs+1,shh[1]-cs:shh[1]+cs+1]
+        shifts.append(scipy.ndimage.measurements.center_of_mass(xctw[:,:,i]))
+
+    sh = np.array(shifts)
+    t = start + np.arange(nsteps)*avgover
+    sh = pixelsize*(sh-sh[0])
+    return t, sh, xctw
+
 def meanvards(dataSource, start=0, end=-1):
 
     nslices = dataSource.getNumSlices()
