@@ -131,6 +131,7 @@ class correlator(object):
         dm = d/d.mean() - 1
         
         #where is the piezo suppposed to be
+        #nomPos = self.piezo.GetPos(0)
         nomPos = self.piezo.GetTargetPos(0)
         
         #find closest calibration position
@@ -212,6 +213,10 @@ class correlator(object):
             self.dzn = np.hstack([1./np.dot(self.dz[:,i], self.dz[:,i]) for i in range(self.NCalibStates)])
             
             self.piezo.MoveTo(0, self.homePos)
+            
+            #reset our history log
+            self.history = []
+            self.historyCorrections = []
             
             self.calibState += 1
             

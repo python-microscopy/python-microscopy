@@ -169,7 +169,7 @@ class h5rSource(inputFilter):
         if type(h5fFile) == tables.file.File:
             self.h5f = h5fFile
         else:
-            self.h5f = tables.openFile(h5fFile)
+            self.h5f = tables.open_file(h5fFile)
         
         if not 'FitResults' in dir(self.h5f.root):
             raise RuntimeError('Was expecting to find a "FitResults" table')

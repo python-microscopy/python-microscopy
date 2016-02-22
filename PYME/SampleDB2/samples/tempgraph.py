@@ -23,7 +23,7 @@
 ################
 from django.http import HttpResponse
 from django.shortcuts import render_to_response
-from SampleDB.samples.models import *
+from samples.models import *
 import matplotlib
 matplotlib.use('Agg')
 from pylab import *

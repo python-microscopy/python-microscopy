@@ -4,6 +4,14 @@ if sys.platform == 'darwin':#MacOS
     linkArgs = []
 else:
     linkArgs = ['-static-libgcc']
+	
+
+#windows VC++ has really shocking c standard support so we need to include
+#custom stdint.h and intypes.h files from https://code.google.com/archive/p/msinttypes
+if sys.platform == 'win32':
+	extra_include_dirs = ['win_incl']
+else:
+	extra_include_dirs = []
 
 #from PYME.misc import cython_numpy_monkey
 
@@ -13,7 +21,7 @@ def configuration(parent_package = '', top_path = None):
 
     config.add_extension('bcl',
         sources=['bcl.pyx', 'src/huffman.c'],
-        include_dirs = ['src', get_numpy_include_dirs()],
+        include_dirs = ['src', get_numpy_include_dirs()] + extra_include_dirs,
 	extra_compile_args = ['-O3', '-fno-exceptions', '-ffast-math', '-march=native', '-mtune=native'],
         extra_link_args=linkArgs)
 
