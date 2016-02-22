@@ -629,8 +629,8 @@ int Huffman_Compress( unsigned char *in, unsigned char *out,
     unsigned int  bit;
     unsigned char *buf;
     unsigned int bits_;
-    uint32_t xi_4 = 0;
-    uint8_t *xi_c = (uint8_t*) &xi_4;
+    uint64_t xi_8 = 0;
+    uint8_t *xi_c = (uint8_t*) &xi_8;
 
 
     
@@ -676,10 +676,14 @@ int Huffman_Compress( unsigned char *in, unsigned char *out,
         
         bits_ = nbits + bit;
         
-        xi_4 = code << (16-bits_);
+        xi_8 = ((uint64_t)code) << (32-bits_);
         
-        buf[0] = buf[0] | xi_c[1];
-        buf[1] = buf[1] | xi_c[0];
+        buf[0] = buf[0] | xi_c[3];
+        //buf[1] = buf[1] | xi_c[2];
+        buf[1] = xi_c[2];
+        //buf[2] = buf[2] | xi_c[1];
+        buf[2] = xi_c[1];
+        buf[3] = xi_c[0];
         
         bit = bits_ % 8;
         buf += bits_ / 8;
