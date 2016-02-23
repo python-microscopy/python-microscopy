@@ -145,6 +145,7 @@ requirements:
     - scikit-image
     - scikit-learn
     - shapely         [osx]
+    - zeroconf
 
   #unfortunately not availible through conda on windows ##FIXME
 
