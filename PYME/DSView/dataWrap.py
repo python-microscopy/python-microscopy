@@ -116,7 +116,7 @@ class DataWrap: #permit indexing with more dimensions larger than len(shape)
         #print keys
         for i in range(len(keys)):
             if not keys[i].__class__ == slice:
-                keys[i] = slice(keys[i],keys[i] + 1)
+                keys[i] = slice(int(keys[i]),int(keys[i]) + 1)
         #if keys == self.oldSlice:
         #    return self.oldData
         self.oldSlice = keys

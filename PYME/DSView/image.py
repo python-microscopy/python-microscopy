@@ -780,7 +780,7 @@ class ImageStack(object):
                 self.LoadNPY(filename)
             elif filename.endswith('.dbl'): #treat this as being an image series
                 self.LoadDBL(filename)
-            elif os.path.splitext(filename)[1] in ['.tif', '.tiff', '.lsm']: #try tiff
+            elif os.path.splitext(filename)[1] in ['.tif', '.tif', '.lsm']: #try tiff
                 self.LoadTiff(filename)
             else: #try bioformats
                 self.LoadBioformats(filename)
