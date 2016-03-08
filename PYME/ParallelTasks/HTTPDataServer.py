@@ -26,6 +26,7 @@ TODO: Add some form of authentication. Needs to be low overhead (e.g. digest bas
 
 import SimpleHTTPServer
 import BaseHTTPServer
+from SocketServer import ThreadingMixIn
 import os
 from StringIO import StringIO
 import shutil
@@ -90,7 +91,9 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         self.send_header("Content-Length", str(length))
         self.end_headers()
         return f
-        
+
+class ThreadedHTTPServer(ThreadingMixIn, BaseHTTPServer.HTTPServer):
+    """Handle requests in a separate thread."""        
     
 def test(protocol="HTTP/1.0"):
     """Test the HTTP request handler class.
@@ -107,7 +110,7 @@ def test(protocol="HTTP/1.0"):
     server_address = ('', port)
 
     PYMEHTTPRequestHandler.protocol_version = protocol
-    httpd = BaseHTTPServer.HTTPServer(server_address, PYMEHTTPRequestHandler)
+    httpd = ThreadedHTTPServer(server_address, PYMEHTTPRequestHandler)
 
     sa = httpd.socket.getsockname()
 

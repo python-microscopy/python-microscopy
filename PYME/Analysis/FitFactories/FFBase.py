@@ -48,11 +48,14 @@ class FFBase(object):
             yslice - y slice into original data array
             zslice - z slice into original data array
         '''
-        if (z == None): # use position of maximum intensity
-            z = self.data[x,y,:].argmax()
+        
 
-        x = round(x)
-        y = round(y)
+        x = int(round(x))
+        y = int(round(y))
+        roiHalfSize = int(roiHalfSize)
+        
+        if (z is None): # use position of maximum intensity
+            z = self.data[x,y,:].argmax()
 
         xslice = slice(max((x - roiHalfSize), 0),min((x + roiHalfSize + 1),self.data.shape[0]))
         yslice = slice(max((y - roiHalfSize), 0),min((y + roiHalfSize + 1), self.data.shape[1]))
@@ -73,12 +76,12 @@ class FFBase(object):
         
         #sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataMean, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
         ### Fixed for better Poisson noise approx
-        if self.noiseSigma == None:
+        if self.noiseSigma is None:
             sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*(np.maximum(dataMean, 1) + 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
         else:
             sigma = self.noiseSigma[xslice, yslice, zslice]
 
-        if not self.background == None and len(np.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
+        if not self.background is None and len(np.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
             bgROI = self.background[xslice, yslice, zslice]
 
             #average in z
@@ -160,7 +163,7 @@ class FFBase(object):
         #phConv = self.metadata.Camera.ElectronsPerCount/self.metadata.Camera.TrueEMGain
         #nPhot = dataROI*phConv
         
-        if self.noiseSigma == None:
+        if self.noiseSigma is None:
             sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*(self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataROI, 1) + self.metadata.Camera.TrueEMGain*self.metadata.Camera.TrueEMGain))/self.metadata.Camera.ElectronsPerCount
         else:
             sigma = self.noiseSigma[xslice, yslice, 0:2]
@@ -171,7 +174,7 @@ class FFBase(object):
 
         if self.metadata.getOrDefault('Analysis.subtractBackground', True) :
             #print 'bgs'
-            if not self.background == None and len(np.shape(self.background)) > 1:
+            if not self.background is None and len(np.shape(self.background)) > 1:
                 bgROI = self.background[xslice, yslice, 0:2] - self.metadata.Camera.ADOffset
                 bgROI[:,:,1] = self.background[xslice2, yslice2, 1] - self.metadata.Camera.ADOffset
             else:

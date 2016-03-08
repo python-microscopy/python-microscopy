@@ -49,7 +49,7 @@ def _listSingleDir(dirurl):
             raise RuntimeError('key is expired')
     except (KeyError, RuntimeError):
         #t = time.time()
-        r = requests.get(dirurl.encode())
+        r = requests.get(dirurl.encode(), timeout=.1)
         dt = time.time() - t
         dirL = r.json()
         _dirCache[dirurl] = (dirL, t, dt)
@@ -91,6 +91,7 @@ def listdir(dirname, serverfilter=''):
     for name, info in ns.advertised_services.items():
         if serverfilter in name:
             dirurl = 'http://%s:%d/%s' %(socket.inet_ntoa(info.address), info.port, dirname) 
+            #print dirurl
             dirL, dt = _listSingleDir(dirurl)  
 
             dirlist.update(dirL)
@@ -168,7 +169,7 @@ def getFile(filename, serverfilter=''):
         raise IOError("Specified file could not be found")
     else:
         url = _chooseLocation(locs)
-        r = requests.get(url.encode())
+        r = requests.get(url.encode(), timeout=.1)
         
         return r.content
 
@@ -217,11 +218,13 @@ def putFile(filename, data, serverfilter=''):
     url = 'http://%s:%d/%s' %(socket.inet_ntoa(info.address), info.port, filename)
     
     t = time.time()
-    r = requests.put(url.encode(), data=data)
+    r = requests.put(url.encode(), data=data, timeout=.1)
     dt = time.time() - t
     #print r.status_code
     if not r.status_code == 200:
         raise RuntimeError('Put failed with %d: %s' % (r.status_code, r.content))
+    
+    r.close()
         
     _lastwritetime[name] = t
     _lastwritespeed[name] = len(data)/dt
@@ -235,7 +238,7 @@ def putFiles(files, serverfilter=''):
         url = 'http://%s:%d/%s' %(socket.inet_ntoa(info.address), info.port, filename)
         
         t = time.time()
-        r = requests.put(url.encode(), data=data)
+        r = requests.put(url.encode(), data=data, timeout=.1)
         dt = time.time() - t
         #print r.status_code
         if not r.status_code == 200:
@@ -243,6 +246,8 @@ def putFiles(files, serverfilter=''):
             
         _lastwritetime[name] = t
         _lastwritespeed[name] = len(data)/dt
+        
+    r.close()
     
     
         

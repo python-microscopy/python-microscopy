@@ -121,7 +121,9 @@ def main():
             try:
                 if 'python' in p.name():
                     c = p.cmdline()
-                    if (SERVER_PROC in c) or (WORKER_PROC in c) or ('fitMonP' in c):
+                    #print c, SERVER_PROC, WORKER_PROC
+                    if (SERVER_PROC in c[1]) or (WORKER_PROC in c[1]) or ('fitMonP' in c[1]):
+                        print 'killing %s' % c
                         p.kill()
             except psutil.ZombieProcess:
                 pass

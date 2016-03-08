@@ -68,7 +68,7 @@ def genSequenceID(filename=''):
 #Push data to cluster from multiple threads simultaeneously to hide IO latency
 #of each individual node. Not sure what the best number is here - currenty set
 #a "safe" maximum number of nodes that could access data
-NUM_POLL_THREADS = 10
+NUM_POLL_THREADS = 1
 
 class Spooler(sp.Spooler):
     def __init__(self, scope, filename, acquisator, protocol = p.NullProtocol, parent=None, complevel=2, complib='zlib'):
@@ -112,7 +112,8 @@ class Spooler(sp.Spooler):
                 
                 files.append((fn, pzf))
                 
-            clusterIO.putFiles(files)
+            if len(files) > 0:
+                clusterIO.putFiles(files)
                 
             time.sleep(.01)
 

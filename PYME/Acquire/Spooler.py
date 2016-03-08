@@ -68,8 +68,8 @@ class EventLogger:
 
 
 class Spooler:
-   '''Spooler base class'''
-   def __init__(self, scope, filename, acquisator, protocol = p.NullProtocol, parent=None):
+    '''Spooler base class'''
+    def __init__(self, scope, filename, acquisator, protocol = p.NullProtocol, parent=None):
        global timeFcn
        self.scope = scope
        self.filename=filename
@@ -83,7 +83,7 @@ class Spooler:
 
        
 
-   def StartSpool(self):
+    def StartSpool(self):
        eventLog.WantEventNotification.append(self.evtLogger)
 
        self.imNum = 0
@@ -95,26 +95,28 @@ class Spooler:
        self.acq.WantFrameNotification.append(self.Tick)
        self.spoolOn = True
        
-       
-   def StopSpool(self):
-       try:
-           self.acq.WantFrameNotification.remove(self.Tick)
-       except ValueError:
-           pass
+    def StopSpool(self):
+        try:
+            self.acq.WantFrameNotification.remove(self.Tick)
+        except ValueError:
+            pass
 
-       try:
-           self.protocol.OnFinish()#this may still cause events
-           self.FlushBuffer()
-           self.doStopLog()
-       except:
-           import traceback
-           traceback.print_exc()
+        try:
+            self.protocol.OnFinish()#this may still cause events
+            self.FlushBuffer()
+            self.doStopLog()
+        except:
+            import traceback
+            traceback.print_exc()
+            
+        try:
+            eventLog.WantEventNotification.remove(self.evtLogger)
+        except ValueError:
+            pass
+        
+        self.spoolOn = False
 
-       eventLog.WantEventNotification.remove(self.evtLogger)
-       
-       self.spoolOn = False
-
-   def Tick(self, caller):
+    def Tick(self, caller):
         '''Called on every frame'''
         self.imNum += 1
         if not self.parent == None:
@@ -124,7 +126,7 @@ class Spooler:
         if self.imNum == 2 and sampleInformation and sampleInformation.currentSlide[0]: #have first frame and should thus have an imageID
             sampleInformation.createImage(self.md, sampleInformation.currentSlide[0])
 
-   def doStartLog(self):
+    def doStartLog(self):
         '''Record pertinant information to metadata at start of acquisition.
         
         Loops through all registered sources of start metadata and adds their entries.
@@ -150,7 +152,7 @@ class Spooler:
         self.md.copyEntriesFrom(mdt)
        
 
-   def doStopLog(self):
+    def doStopLog(self):
         '''Record information to metadata at end of acquisition'''
         self.md.setEntry('EndTime', time.time())
         
@@ -158,13 +160,13 @@ class Spooler:
         for mdgen in MetaDataHandler.provideStopMetadata:
            mdgen(self.md)
 
-   def fakeTime(self):
+    def fakeTime(self):
        return self.tStart + self.imNum*self.scope.cam.GetIntegTime()
 
-   def FlushBuffer(self):
+    def FlushBuffer(self):
        pass
         
         
-   def __del__(self):
+    def __del__(self):
         if self.spoolOn:
             self.StopSpool()

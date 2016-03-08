@@ -277,12 +277,12 @@ class SampleInfoDialog(wx.Dialog):
 
     def OnAddSlide(self, event):
         import webbrowser
-        import os
-        host = 'lmsrv1'
-        if 'PYME_DATABASE_HOST' in os.environ.keys():
-            host = os.environ['PYME_DATABASE_HOST']
+        #import os
+        #host = 'lmsrv1'
+        #if 'PYME_DATABASE_HOST' in os.environ.keys():
+        #    host = os.environ['PYME_DATABASE_HOST']
             
-        webbrowser.open('http://%s/admin/samples/slide/add/' % host)
+        webbrowser.open('http://%s/admin/samples/slide/add/' % dbhost)
 
 
     def OnSelectSlide(self, event):
@@ -313,6 +313,8 @@ class SampleInfoDialog(wx.Dialog):
             
         r = requests.get(('http://%s/api/get_creator_choices?slref=%s&cname=%s'%(dbhost, slref, cname)).encode())
         choices = r.json()
+        
+        print choices
             
         if choices != current_choices:
             self.tCreator.SetChoices(choices)
@@ -454,7 +456,7 @@ class slidePanel(wx.Panel):
 
     def update(self):
         cs = currentSlide[0]
-        self.stSlideName.SetLabel('%s - %s\n%s' % (cs.creator, cs.reference, cs.labels()))
+        self.stSlideName.SetLabel('%s - %s\n%s' % (cs['creator'], cs['reference'], cs['labels']))
 
 
 
@@ -497,11 +499,12 @@ def getSampleData(parent, mdh):
         else:
             currentSlide[0] = None
 
-    dlg.Destroy()
+        dlg.Destroy()
 
 def createImage(mdh, slide, comments=''):
-    im = models.Image.GetOrCreate(mdh.getEntry('imageID'), nameUtils.getUsername(), slide, mdh.getEntry('StartTime'))
-    im.comments = comments
-    im.save()
-
+    #im = models.Image.GetOrCreate(mdh.getEntry('imageID'), nameUtils.getUsername(), slide, mdh.getEntry('StartTime'))
+    #im.comments = comments
+    #im.save()
+    print 'FIXME: create database entry for image'
+    pass
 

@@ -59,7 +59,7 @@ def tqPopFcn(workerN, NWorkers, NTasks):
     return workerN * NTasks/NWorkers 
     
 class fitResult(taskDef.TaskResult):
-    def __init__(self, task, results, driftResults=[]):
+    def __init__(self, task, results, driftResults):
         taskDef.TaskResult.__init__(self, task)
         self.index = task.index
         self.results = results
@@ -122,7 +122,7 @@ class CameraInfoManager(object):
 
     def _getMap(self, md, mapName):
         '''Returns the map specified, from cache if possible'''
-        if mapName == None or mapName == '':
+        if mapName is None or mapName == '':
             return None
 
         ROI = self._parseROI(md)
@@ -146,7 +146,7 @@ class CameraInfoManager(object):
 
         mp = self._getMap(md, varMapName)
 
-        if (mp == None):
+        if (mp is None):
             #default to uniform read noise
             rn = md['Camera.ReadNoise']
             return rn*rn
@@ -160,7 +160,7 @@ class CameraInfoManager(object):
         darkMapName = md.getOrDefault('Camera.DarkMapID', None)
 
         mp = self._getMap(md, darkMapName)
-        if (mp == None):
+        if (mp is None):
             return 0
         else:
             return mp
@@ -173,7 +173,7 @@ class CameraInfoManager(object):
 
         mp = self._getMap(md, flatfieldMapName)
 
-        if (mp == None):
+        if (mp is None):
             return 1.0
         else:
             return mp
@@ -420,7 +420,7 @@ class fitTask(taskDef.Task):
         ####################################################
         # Find Fiducials
         if self.driftEst:
-            self.driftEstInd = self.index + self.md.getOrDefault('Analysis.DriftIndices', np.arange(-10, 11))        
+            self.driftEstInd = self.index + self.md.getOrDefault('Analysis.DriftIndices', np.array([-10, 0, 10]))        
             self.calObjThresh = self.md.getOrDefault('Analysis.FiducialThreshold', 6)
             fiducialROISize = self.md.getOrDefault('Analysis.FiducialROISize', 11)
             self._findFiducials(sfunc, debounce)
@@ -465,6 +465,7 @@ class fitTask(taskDef.Task):
         #Fit Fiducials NOTE: This is potentially broken        
         self.drRes = []
         if self.driftEst:
+            
             nToFit = min(10,len(self.ofdDr)) #don't bother fitting lots of calibration objects 
             if 'FitResultsDType' in dir(fitMod):
                 self.drRes = numpy.empty(nToFit, fitMod.FitResultsDType)
@@ -472,7 +473,9 @@ class fitTask(taskDef.Task):
                     p = self.ofdDr[i]
                     self.drRes[i] = fitFac.FromPoint(p.x, p.y, roiHalfSize=fiducialROISize)
             else:
-                self.drRes  = [fitFac.FromPoint(p.x, p.y) for p in self.ofd[:nToFit]]    
+                self.drRes  = [fitFac.FromPoint(p.x, p.y) for p in self.ofd[:nToFit]] 
+                
+            #print 'Fitted %d fiducials' % nToFit, len(self.drRes)
 
 
         return fitResult(self, self.res, self.drRes)
@@ -511,7 +514,7 @@ class fitTask(taskDef.Task):
         
         #self.mIm = numpy.absolute(self.mIm)
         if not 'PSFFile' in self.md.getEntryNames():
-            self.ofdDr = ofind.ObjectIdentifier(self.mIm)
+            self.ofdDr = ofind.ObjectIdentifier(self.mIm, filterRadiusLowpass=5, filterRadiusHighpass=9)
         else:
             self.ofdDr = ofind_xcorr.ObjectIdentifier(self.mIm, self.md.getEntry('PSFFile'), 7, 3e-2)
             
