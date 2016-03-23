@@ -138,7 +138,8 @@ class correlator(object):
         dm = d/d.mean() - 1
         
         #where is the piezo suppposed to be
-        nomPos = self.piezo.GetTargetPos(0)
+        #nomPos = self.piezo.GetTargetPos(0)
+        nomPos = 0
         #posInd = np.argmin(np.abs(nomPos - self.calPositions))
         posInd = 10
         
@@ -151,7 +152,8 @@ class correlator(object):
         dzn = self.dzn[posInd]
         
         #what is the offset between our target position and the calibration position         
-        posDelta = nomPos - calPos
+        #posDelta = nomPos - calPos
+        posDelta = 0
         
         # print nomPos, posInd, calPos, posDelta
         
@@ -182,12 +184,12 @@ class correlator(object):
 #        if len(self.buffer)>10:
 #            self.buffer.remove(self.buffer[0])
         
-        if 1000*np.abs((dz + posDelta))>200 and self.WantRecord:
+#        if 1000*np.abs((dz + posDelta))>200 and self.WantRecord:
             #dz = np.median(self.buffer)
-            tif.imsave('C:\\Users\\Lab-test\\Desktop\\peakimage.tif', d)
+#            tif.imsave('C:\\Users\\Lab-test\\Desktop\\peakimage.tif', d)
             # np.savetxt('C:\\Users\\Lab-test\\Desktop\\parameter.txt', self.buffer[-1])
             #np.savetxt('C:\\Users\\Lab-test\\Desktop\\posDelta.txt', posDelta)
-            self.WantRecord = False
+#            self.WantRecord = False
 
         
         #return dx, dy, dz + posDelta, Cm, dz, nomPos, posInd, calPos, posDelta
