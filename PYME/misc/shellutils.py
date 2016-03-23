@@ -494,6 +494,36 @@ def correltrack(data,start=0,avgover=10,pixelsize=70.0,centersize=7,centroidfrac
     sh = pixelsize*(sh-sh[0])
     return t, sh, xctw
 
+# we ignore centroidfrac by default
+def correltrack2(data,start=0,avgover=10,pixelsize=70.0,centersize=15,centroidfac=0.6):
+    cs = centersize
+    shp = [d for d in data.shape if d > 1]
+    nsteps = long((shp[2]-start)/avgover)
+    shh = (shp[0]/2,shp[1]/2)
+    xctw=np.zeros((2*centersize+1,2*centersize+1,nsteps))
+    shifts = []
+    if avgover > 1:
+        ref = data[:,:,start:start+avgover].squeeze().mean(axis=2)
+    else:
+        ref = data[:,:,start].squeeze()
+    refn = ref/ref.mean() - 1
+    Frefn = fftn(refn)
+    for i in range(nsteps):
+        comp = data[:,:,start+i*avgover:start+(i+1)*avgover].squeeze()
+        if len(comp.shape) > 2:
+            comp = comp.mean(axis=2)
+        compn = comp/comp.mean() - 1
+        xc = ifftshift(np.abs(ifftn(Frefn*ifftn(compn))))
+        xcm = xc.max()
+        xcp = np.maximum(xc - centroidfac*xcm, 0)
+        xctw[:,:,i] = xcp[shh[0]-cs:shh[0]+cs+1,shh[1]-cs:shh[1]+cs+1]
+        shifts.append(scipy.ndimage.measurements.center_of_mass(xctw[:,:,i]))
+
+    sh = np.array(shifts)
+    t = start + np.arange(nsteps)*avgover
+    sh = pixelsize*(sh-sh[0])
+    return t, sh, xctw
+
 def meanvards(dataSource, start=0, end=-1):
 
     nslices = dataSource.getNumSlices()
@@ -609,3 +639,53 @@ def py(p):
     t = p['t']*p.mdh['Camera.CycleTime']
     y = p['y']-p['y'][0:10].mean()
     plt.plot(t,y)
+
+
+def cumuexpfit(t,tau):
+    return 1-np.exp(-t/tau)
+
+from scipy.optimize import curve_fit
+def darktimes(pipeline, mdh=None, plot=True, report=True):
+    if mdh is None:
+        mdh = getmdh(inmodule=True)
+    t = pipeline['t']
+    x = pipeline['x']
+    y = pipeline['y']
+    # determine darktime from gaps and reject zeros (no real gaps) 
+    dts = t[1:]-t[0:-1]-1
+    dtg = dts[dts>0]
+    nts = dtg.shape[0]
+    # now make a cumulative histogram from these
+    cumux = np.sort(dtg+0.01*np.random.random(nts)) # hack: adding random noise helps us ensure uniqueness of x values
+    cumuy = (1.0+np.arange(nts))/np.float(nts)
+    bbx = (x.min(),x.max())
+    bby = (y.min(),y.max())
+    voxx = 1e3*mdh['voxelsize.x']
+    voxy = 1e3*mdh['voxelsize.y']
+    bbszx = bbx[1]-bbx[0]
+    bbszy = bby[1]-bby[0]
+    popt,pcov = curve_fit(cumuexpfit,cumux,cumuy, p0=(300.0))
+    if plot:
+        plt.plot(cumux,cumuy,'o')
+        plt.plot(cumux,cumuexpfit(cumux,popt[0]))
+        plt.ylim(-0.2,1.2)
+        plt.show()
+    if report:
+        print "events: %d" % t.shape[0]
+        print "dark times: %d" % nts
+        print "region: %d x %d nm (%d x %d pixel)" % (bbszx,bbszy,bbszx/voxx,bbszy/voxy)
+        print "centered at %d,%d (%d,%d pixels)" % (x.mean(),y.mean(),x.mean()/voxx,y.mean()/voxy)
+        print "darktime: %.1f frames" % popt[0]
+
+    return (cumux,cumuy,popt[0])
+
+def darktimehist(ton):
+    # determine darktime from gaps and reject zeros (no real gaps) 
+    dts = ton[1:]-ton[0:-1]-1
+    dtg = dts[dts>0]
+    nts = dtg.shape[0]
+    # now make a cumulative histogram from these
+    cumux = np.sort(dtg+0.01*np.random.random(nts)) # hack: adding random noise helps us ensure uniqueness of x values
+    cumuy = (1.0+np.arange(nts))/np.float(nts)
+
+    return (cumux,cumuy)

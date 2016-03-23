@@ -1,5 +1,5 @@
 PYMEVER=`python -c 'import PYME.version ; print PYME.version.version'`
-for filename in dh5view VisGUI VisGUI.py PYMEAcquire.py dh5view.py fitmonP.py
+for filename in dh5view VisGUI VisGUI.py PYMEAcquire.py dh5view.py fitmonP.py launchWorkers.py taskServerMP.py taskWorkerMP.py
 do
     echo "patching $filename..."
     sed -i '' -E 's|^#!(.*)python$|#!/bin/bash \1\pythonw|' $HOME/anaconda/bin/$filename
