@@ -664,10 +664,20 @@ def darktimes(pipeline, mdh=None, plot=True, report=True):
     voxy = 1e3*mdh['voxelsize.y']
     bbszx = bbx[1]-bbx[0]
     bbszy = bby[1]-bby[0]
+    maxtd = dtg.max()
+    binedges = np.arange(0,maxtd,5)
+    binctrs = 0.5*(binedges[0:-1]+binedges[1:])
+    h,be2 = np.histogram(dtg,bins=binedges)
+    hc = np.cumsum(h)
+    hcg = hc[h>0]/float(nts) # only nonzero bins and normalise
+    binctrsg = binctrs[h>0]
+    popth,pcovh = curve_fit(cumuexpfit,binctrsg,hcg, p0=(300.0))
     popt,pcov = curve_fit(cumuexpfit,cumux,cumuy, p0=(300.0))
     if plot:
         plt.plot(cumux,cumuy,'o')
         plt.plot(cumux,cumuexpfit(cumux,popt[0]))
+        plt.plot(binctrs,hc/float(nts),'o')
+        plt.plot(binctrs,cumuexpfit(binctrs,popth[0]))
         plt.ylim(-0.2,1.2)
         plt.show()
     if report:
@@ -675,9 +685,9 @@ def darktimes(pipeline, mdh=None, plot=True, report=True):
         print "dark times: %d" % nts
         print "region: %d x %d nm (%d x %d pixel)" % (bbszx,bbszy,bbszx/voxx,bbszy/voxy)
         print "centered at %d,%d (%d,%d pixels)" % (x.mean(),y.mean(),x.mean()/voxx,y.mean()/voxy)
-        print "darktime: %.1f frames" % popt[0]
+        print "darktime: %.1f (%.1f) frames" % (popt[0],popth[0])
 
-    return (cumux,cumuy,popt[0])
+    return (cumux,cumuy,popt[0],pcov)
 
 def darktimehist(ton):
     # determine darktime from gaps and reject zeros (no real gaps) 
