@@ -111,9 +111,13 @@ class ImportTextDialog(wx.Dialog):
                 dataLines.append(line.split(delim))
                 n += 1
                 
-        self.numCommentLines = len(commentLines)
+        #self.numCommentLines = len(commentLines)
 
         numCols = len(dataLines[0])
+        
+        #print commentLines
+        
+        #print commentLines[-1].split(delim), len(commentLines[-1].split(delim)), numCols
 
         if len(commentLines) > 0 and len(commentLines[-1].split(delim)) == numCols:
             colNames = commentLines[-1].split(delim)

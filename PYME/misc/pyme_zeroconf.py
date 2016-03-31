@@ -22,11 +22,10 @@ import time
 import Pyro.core
 
 
-class ZCListener(object):
-    advertised_services = {}
-
+class ZCListener(object): 
     def __init__(self, protocol='_pyme-pyro'):
         self._protocol = protocol
+        self.advertised_services = {}
     
     def remove_service(self, zeroconf, _type, name):
         #print("Service %s removed" % (name,))

@@ -12,6 +12,8 @@ import requests
 import time
 import numpy as np
 
+import urlparse
+
 import logging
 logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
@@ -51,7 +53,11 @@ def _listSingleDir(dirurl):
         #t = time.time()
         r = requests.get(dirurl.encode(), timeout=.1)
         dt = time.time() - t
-        dirL = r.json()
+        try:
+            dirL = r.json()
+        except ValueError:
+            #directory doesn't exist
+            dirL = []
         _dirCache[dirurl] = (dirL, t, dt)
         
     return dirL, dt
@@ -98,7 +104,19 @@ def listdir(dirname, serverfilter=''):
                 
     return list(dirlist)
     
-def walk(top, topdown=True, onerror=None, followlinks=False):
+def exists(name, serverfilter=''):
+    if name.endswith('/'):
+        name = name[:-1]
+        trailing='/'
+    else:
+        trailing= ''
+        
+    dirname = '/'.join(name.split('/')[:-1])
+    fname = name.split('/')[-1] + trailing
+    
+    return fname in listdir(dirname, serverfilter)
+    
+def walk(top, topdown=True, onerror=None, followlinks=False, serverfilter=''):
     """Directory tree generator. Adapted from the os.walk 
     function in the python std library.
 
@@ -112,7 +130,8 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
         return False
         
     def join(*args):
-        return '/'.join(*args)
+        j =  '/'.join(args)
+        return j.replace('//', '/')
         
     def isdir(name):
         return name.endswith('/')
@@ -125,8 +144,8 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
     try:
         # Note that listdir and error are globals in this module due
         # to earlier import-*.
-        names = listdir(top)
-    except error, err:
+        names = listdir(top, serverfilter=serverfilter)
+    except Exception, err:
         if onerror is not None:
             onerror(err)
         return
@@ -177,7 +196,10 @@ _lastwritetime = {}
 _lastwritespeed = {}
 #_diskfreespace = {}
 
-def _chooseServer(serverfilter=''):
+def _netloc(info):
+    return '%s:%s' % (socket.inet_ntoa(info.address), info.port)
+
+def _chooseServer(serverfilter='', exclude_netlocs=[]):
     '''chose a server to save to by minimizing a cost function
     
     currently takes the server which has been waiting longest
@@ -185,7 +207,7 @@ def _chooseServer(serverfilter=''):
     TODO: add free disk space and improve metrics/weightings
     
     '''
-    serv_candidates = [(k, v) for k, v in ns.advertised_services.items() if serverfilter in k]
+    serv_candidates = [(k, v) for k, v in ns.advertised_services.items() if (serverfilter in k) and not (_netloc(v) in exclude_netlocs)]
 
     t = time.time()    
     
@@ -209,16 +231,46 @@ def _chooseServer(serverfilter=''):
         costs.append(cost)# + .1*np.random.normal())
         
     return serv_candidates[np.argmin(costs)]
+    
+def mirrorFile(filename, serverfilter=''):
+    '''Copies a given file to another server on the cluster (chosen by algorithm)
+    
+    The actual copy is performed peer to peer.
+    '''
+    
+    locs = locateFile(filename, serverfilter)
+    
+    #where is the data currently located - exclude these from destinations
+    currentCopyNetlocs = [urlparse.urlparse(l[0]).netloc for l in locs]
+    
+    #choose a server to mirror onto
+    destName, destInfo = _chooseServer(serverfilter, exclude_netlocs=currentCopyNetlocs)
+    
+    #and a source to copy from
+    sourceUrl = _chooseLocation(locs)
+    
+    url = 'http://%s:%d/%s?MirrorSource=%s' %(socket.inet_ntoa(destInfo.address), destInfo.port, filename, sourceUrl)
+    
+    r = requests.put(url.encode(), timeout=1)
+
+    if not r.status_code == 200:
+        raise RuntimeError('Mirror failed with %d: %s' % (r.status_code, r.content))
+    
+    r.close()
+    
         
 def putFile(filename, data, serverfilter=''):
     '''put a file to a server in the cluster (chosen by algorithm)
+    
+    TODO - Add retry with a different server on failure
     '''
     name, info = _chooseServer(serverfilter)
     
     url = 'http://%s:%d/%s' %(socket.inet_ntoa(info.address), info.port, filename)
     
     t = time.time()
-    r = requests.put(url.encode(), data=data, timeout=.1)
+    _lastwritetime[name] = t
+    r = requests.put(url.encode(), data=data, timeout=1)
     dt = time.time() - t
     #print r.status_code
     if not r.status_code == 200:
@@ -226,11 +278,13 @@ def putFile(filename, data, serverfilter=''):
     
     r.close()
         
-    _lastwritetime[name] = t
+    
     _lastwritespeed[name] = len(data)/dt
         
 def putFiles(files, serverfilter=''):
     '''put a bunch of files to a single server in the cluster (chosen by algorithm)
+    
+    TODO - Add retry with a different server on failure
     '''
     name, info = _chooseServer(serverfilter)
     
@@ -238,13 +292,14 @@ def putFiles(files, serverfilter=''):
         url = 'http://%s:%d/%s' %(socket.inet_ntoa(info.address), info.port, filename)
         
         t = time.time()
-        r = requests.put(url.encode(), data=data, timeout=.1)
+        _lastwritetime[name] = t
+        r = requests.put(url.encode(), data=data, timeout=1)
         dt = time.time() - t
         #print r.status_code
         if not r.status_code == 200:
             raise RuntimeError('Put failed with %d: %s' % (r.status_code, r.content))
             
-        _lastwritetime[name] = t
+        
         _lastwritespeed[name] = len(data)/dt
         
     r.close()

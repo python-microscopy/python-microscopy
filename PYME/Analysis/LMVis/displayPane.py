@@ -23,6 +23,7 @@
 import wx
 import PYME.misc.autoFoldPanel as afp
 import pylab
+import numpy as np
 
 from PYME.Analysis.LMVis import histLimits
 
@@ -111,7 +112,7 @@ class DisplayPane(afp.foldingPane):
 
         bsizer.Add(hsizer, 0, wx.ALL, 0)
 
-        self.hlCLim = histLimits.HistLimitPanel(pan, -1, self.glCanvas.c, self.glCanvas.clim[0], self.glCanvas.clim[1], size=(150, 100))
+        self.hlCLim = histLimits.HistLimitPanel(pan, -1, np.array(self.glCanvas.c), self.glCanvas.clim[0], self.glCanvas.clim[1], size=(150, 100))
         bsizer.Add(self.hlCLim, 0, wx.ALL|wx.EXPAND, 5)
 
 

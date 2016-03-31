@@ -64,21 +64,39 @@ CLUSTERID=''
 
 def genSequenceID(filename=''):
     return  int(time.time()) & random.randint(0, 2**31) << 31 
+    
+
+    
+
+def getReducedFilename(filename):
+    #rname = filename[len(nameUtils.datadir):]
+        
+    sname = '/'.join(filename.split(os.path.sep))
+    if sname.startswith('/'):
+        sname = sname[1:]
+    
+    return sname
+    
+def exists(seriesName):
+    return clusterIO.exists(getReducedFilename(seriesName) + '/')
 
 #Push data to cluster from multiple threads simultaeneously to hide IO latency
 #of each individual node. Not sure what the best number is here - currenty set
 #a "safe" maximum number of nodes that could access data
-NUM_POLL_THREADS = 1
+NUM_POLL_THREADS = 10
 
 class Spooler(sp.Spooler):
     def __init__(self, scope, filename, acquisator, protocol = p.NullProtocol, parent=None, complevel=2, complib='zlib'):
         
-        filename = filename[len(nameUtils.datadir):]
+        #filename = filename[len(nameUtils.datadir):]
         
-        self.seriesName = '/'.join(filename.split(os.path.sep))
-        if self.seriesName.startswith('/'):
-            self.seriesName = self.seriesName[1:]
-        print filename, self.seriesName
+        #filename, 
+        self.seriesName = getReducedFilename(filename)
+        
+        #self.seriesName = '/'.join(filename.split(os.path.sep))
+        #if self.seriesName.startswith('/'):
+        #    self.seriesName = self.seriesName[1:]
+        #print filename, self.seriesName
         self.buffer = []
         
         self.buflen = 50
