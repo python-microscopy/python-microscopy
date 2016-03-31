@@ -59,7 +59,7 @@ def tqPopFcn(workerN, NWorkers, NTasks):
     return workerN * NTasks/NWorkers 
     
 class fitResult(taskDef.TaskResult):
-    def __init__(self, task, results, driftResults=[]):
+    def __init__(self, task, results, driftResults):
         taskDef.TaskResult.__init__(self, task)
         self.index = task.index
         self.results = results
@@ -122,7 +122,7 @@ class CameraInfoManager(object):
 
     def _getMap(self, md, mapName):
         '''Returns the map specified, from cache if possible'''
-        if mapName == None or mapName == '':
+        if mapName is None or mapName == '':
             return None
 
         ROI = self._parseROI(md)
@@ -146,7 +146,7 @@ class CameraInfoManager(object):
 
         mp = self._getMap(md, varMapName)
 
-        if (mp == None):
+        if (mp is None):
             #default to uniform read noise
             rn = md['Camera.ReadNoise']
             return rn*rn
@@ -160,7 +160,7 @@ class CameraInfoManager(object):
         darkMapName = md.getOrDefault('Camera.DarkMapID', None)
 
         mp = self._getMap(md, darkMapName)
-        if (mp == None):
+        if (mp is None):
             return 0
         else:
             return mp
@@ -173,7 +173,7 @@ class CameraInfoManager(object):
 
         mp = self._getMap(md, flatfieldMapName)
 
-        if (mp == None):
+        if (mp is None):
             return 1.0
         else:
             return mp
@@ -188,7 +188,7 @@ cameraMaps = CameraInfoManager()
 
 
 class fitTask(taskDef.Task):
-    def __init__(self, dataSourceID, index, threshold, metadata, fitModule, dataSourceModule='HDFDataSource', bgindices = [], SNThreshold = False, driftEstInd=[], calObjThresh=200):
+    def __init__(self, dataSourceID, index, threshold, metadata, fitModule, dataSourceModule='HDFDataSource', bgindices = [], SNThreshold = False):
         '''Create a new fitting task, which opens data from a supplied filename.
         -------------
         Parameters:
@@ -213,9 +213,9 @@ class fitTask(taskDef.Task):
         self.fitModule = fitModule
         self.dataSourceModule = dataSourceModule
         self.SNThreshold = SNThreshold
-        self.driftEstInd = driftEstInd
-        self.driftEst = not len(self.driftEstInd) == 0
-        self.calObjThresh = calObjThresh
+        
+        self.driftEst = metadata.getOrDefault('Analysis.TrackFiducials', False)  
+        
                  
         self.bufferLen = 50 #12
         if self.driftEst: 
@@ -419,7 +419,10 @@ class fitTask(taskDef.Task):
         
         ####################################################
         # Find Fiducials
-        if self.driftEst: 
+        if self.driftEst:
+            self.driftEstInd = self.index + self.md.getOrDefault('Analysis.DriftIndices', np.array([-10, 0, 10]))        
+            self.calObjThresh = self.md.getOrDefault('Analysis.FiducialThreshold', 6)
+            fiducialROISize = self.md.getOrDefault('Analysis.FiducialROISize', 11)
             self._findFiducials(sfunc, debounce)
                 
         
@@ -443,7 +446,9 @@ class fitTask(taskDef.Task):
         fitFac = fitMod.FitFactory(self.data, md, background = self.bg, noiseSigma = self.sigma)
         
         #perform fit for each point that we detected
-        if 'FitResultsDType' in dir(fitMod):
+        if 'FromPoints' in dir(fitMod):
+            self.res = fitMod.FromPoints(self.ofd)
+        elif 'FitResultsDType' in dir(fitMod): #legacy fit modules
             self.res = numpy.empty(len(self.ofd), fitMod.FitResultsDType)
             if 'Analysis.ROISize' in md.getEntryNames():
                 rs = md.getEntry('Analysis.ROISize')
@@ -460,14 +465,17 @@ class fitTask(taskDef.Task):
         #Fit Fiducials NOTE: This is potentially broken        
         self.drRes = []
         if self.driftEst:
+            
             nToFit = min(10,len(self.ofdDr)) #don't bother fitting lots of calibration objects 
             if 'FitResultsDType' in dir(fitMod):
                 self.drRes = numpy.empty(nToFit, fitMod.FitResultsDType)
                 for i in range(nToFit):
                     p = self.ofdDr[i]
-                    self.drRes[i] = fitFac.FromPoint(p.x, p.y)
+                    self.drRes[i] = fitFac.FromPoint(p.x, p.y, roiHalfSize=fiducialROISize)
             else:
-                self.drRes  = [fitFac.FromPoint(p.x, p.y) for p in self.ofd[:nToFit]]    
+                self.drRes  = [fitFac.FromPoint(p.x, p.y) for p in self.ofd[:nToFit]] 
+                
+            #print 'Fitted %d fiducials' % nToFit, len(self.drRes)
 
 
         return fitResult(self, self.res, self.drRes)
@@ -494,24 +502,28 @@ class fitTask(taskDef.Task):
         # Find Fiducials
 
         self.mIm = numpy.ones(self.data.shape, 'f')
+        
+        mdnm  = 1./np.median((self.data/self.sigma).ravel())
+        
         for dri in self.driftEstInd:
             bs = bufferManager.dBuffer.getSlice(dri)
-            bs = bs.reshape(self.data.shape)
+            bs = bs.reshape(self.data.shape)/self.sigma
+            bs = bs*mdnm
             #multiply images together, thus favouring images which are on over multiple frames
-            self.mIm = self.mIm*numpy.maximum(bs.astype('f') - numpy.median(bs.ravel()), 1)
+            self.mIm = self.mIm*bs
         
         #self.mIm = numpy.absolute(self.mIm)
         if not 'PSFFile' in self.md.getEntryNames():
-            self.ofdDr = ofind.ObjectIdentifier(self.mIm)
+            self.ofdDr = ofind.ObjectIdentifier(self.mIm, filterRadiusLowpass=5, filterRadiusHighpass=9)
         else:
             self.ofdDr = ofind_xcorr.ObjectIdentifier(self.mIm, self.md.getEntry('PSFFile'), 7, 3e-2)
             
-        thres = self.calObjThresh**10
+        thres = self.calObjThresh**len(self.driftEstInd)
         self.ofdDr.FindObjects(thres,0, splitter=sfunc, debounceRadius=debounce)
         
-        while len(self.ofdDr) >= 10: #just go for the brightest ones
-            thres = thres * max(2, len(self.ofdDr)/5)
-            self.ofdDr.FindObjects(thres,0, splitter=sfunc, debounceRadius=debounce)  
+        #while len(self.ofdDr) >= 10: #just go for the brightest ones
+        #    thres = thres * max(2, len(self.ofdDr)/5)
+        #    self.ofdDr.FindObjects(thres,0, splitter=sfunc, debounceRadius=debounce)  
             
     def _displayFoundObjects(self):
         import pylab

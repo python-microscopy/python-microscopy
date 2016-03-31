@@ -87,11 +87,11 @@ scope.camControls['Fake Camera'] = AndorControlFrame.AndorPanel(MainFrame, scope
 camPanels.append((scope.camControls['Fake Camera'], 'EMCCD Properties'))
 ''')
 
-#InitGUI('''
-#from PYME.Acquire import sampleInformation
-#sampPan = sampleInformation.slidePanel(MainFrame)
-#camPanels.append((sampPan, 'Current Slide'))
-#''')
+InitGUI('''
+from PYME.Acquire import sampleInformation
+sampPan = sampleInformation.slidePanel(MainFrame)
+camPanels.append((sampPan, 'Current Slide'))
+''')
 
 InitGUI('''
 from PYMEnf.Hardware import FakeDMD, DMDGui

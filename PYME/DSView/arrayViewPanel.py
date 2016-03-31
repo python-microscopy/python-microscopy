@@ -1015,6 +1015,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             #sc = sc*step
             
         fstep = float(step)
+        step = int(step)
 
         #XY
         if self.do.slice == DisplayOpts.SLICE_XY:

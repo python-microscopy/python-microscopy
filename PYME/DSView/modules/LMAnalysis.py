@@ -76,6 +76,8 @@ class LMAnalyser:
                       mde.FilenameParam('Camera.VarianceMapID', 'Variance Map:', prompt='Please select variance map to use ...', wildcard='TIFF Files|*.tif', filename=''),
                       mde.FilenameParam('Camera.DarkMapID', 'Dark Map:', prompt='Please select dark map to use ...', wildcard='TIFF Files|*.tif', filename=''),
                       mde.FilenameParam('Camera.FlatfieldMapID', 'Flatfiled Map:', prompt='Please select flatfield map to use ...', wildcard='TIFF Files|*.tif', filename=''),
+                      mde.BoolParam('Analysis.TrackFiducials', 'Track Fiducials', default=False),
+                      mde.FloatParam('Analysis.FiducialThreshold', 'Fiducial Threshold', default=1.8),
     ]
     
     def __init__(self, dsviewer):
@@ -703,8 +705,15 @@ class LMAnalyser:
             
             try:
                 taskQueueName = 'TaskQueues.%s' % compName
-
-                self.tq = Pyro.core.getProxyForURI('PYRONAME://' + taskQueueName)
+                
+                try:
+                    from PYME.misc import pyme_zeroconf 
+                    ns = pyme_zeroconf.getNS()
+                    URI = ns.resolve(taskQueueName)
+                except:
+                    URI = 'PYRONAME://' + taskQueueName
+            
+                self.tq = Pyro.core.getProxyForURI(URI)
             except:
                 taskQueueName = 'PrivateTaskQueues.%s' % compName
 

@@ -384,7 +384,7 @@ class piezo_e709T(object):
     def GetPosXY(self):
         return self.position
         
-    def GetTargetPosition(self,iChannel=0):
+    def GetTargetPos(self,iChannel=0):
         return self.targetPosition[iChannel]
 
     def MoveInDir(self, dx, dy, th=.0000):

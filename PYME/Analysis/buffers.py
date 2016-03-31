@@ -28,7 +28,7 @@ class dataBuffer: #buffer our io to avoid decompressing multiple times
             sl = self.dataSource.getSlice(ind)
             self.bufferedSlices[self.insertAt] = ind
 
-            if self.buffer == None: #buffer doesn't exist yet
+            if self.buffer is None: #buffer doesn't exist yet
                 self.buffer = np.zeros((self.bLen,) + self.dataSource.getSliceShape(), sl.dtype)
                 
             self.buffer[self.insertAt, :,:] = sl
@@ -115,7 +115,7 @@ class bgFrameBuffer:
         self.validData = np.zeros(size, np.bool)
         
     def _growBuffer(self, data=None):
-        if self.frameBuffer == None:
+        if self.frameBuffer is None:
             #starting from scratch
             self._createBuffers(self.initSize, data.shape, data.dtype)
             

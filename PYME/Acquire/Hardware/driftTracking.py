@@ -238,6 +238,10 @@ class correlator(object):
             
             self.piezo.MoveTo(0, self.homePos)
             
+            #reset our history log
+            self.history = []
+            self.historyCorrections = []
+            
             self.calibState += 1
             
         elif self.calibState > self.NCalibStates:
