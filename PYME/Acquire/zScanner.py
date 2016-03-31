@@ -62,7 +62,7 @@ class zScanner:
         self.view = View3D(self.image, 'Live Stack')
         self.running = True
         
-        self.zPoss = np.arange(self.sa.GetStartPos(), self.sa.GetEndPos()+.95*self.sa.GetStepSize(),self.sa.GetStepSize())
+        self.zPoss = np.arange(self.sa.GetStartPos(), self.sa.GetEndPos()+.95*self.sa.GetStepSize(),self.sa.GetStepSize()*self.sa.GetDirection())
         piezo = self.sa.piezos[self.sa.GetScanChannel()]
         self.piezo = piezo[0]
         self.piezoChan = piezo[1]
