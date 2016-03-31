@@ -674,10 +674,17 @@ def darktimes(pipeline, mdh=None, plot=True, report=True):
     popth,pcovh = curve_fit(cumuexpfit,binctrsg,hcg, p0=(300.0))
     popt,pcov = curve_fit(cumuexpfit,cumux,cumuy, p0=(300.0))
     if plot:
+        plt.subplot(211)
         plt.plot(cumux,cumuy,'o')
         plt.plot(cumux,cumuexpfit(cumux,popt[0]))
         plt.plot(binctrs,hc/float(nts),'o')
         plt.plot(binctrs,cumuexpfit(binctrs,popth[0]))
+        plt.ylim(-0.2,1.2)
+        plt.subplot(212)
+        plt.semilogx(cumux,cumuy,'o')
+        plt.semilogx(cumux,cumuexpfit(cumux,popt[0]))
+        plt.semilogx(binctrs,hc/float(nts),'o')
+        plt.semilogx(binctrs,cumuexpfit(binctrs,popth[0]))
         plt.ylim(-0.2,1.2)
         plt.show()
     if report:
@@ -686,6 +693,7 @@ def darktimes(pipeline, mdh=None, plot=True, report=True):
         print "region: %d x %d nm (%d x %d pixel)" % (bbszx,bbszy,bbszx/voxx,bbszy/voxy)
         print "centered at %d,%d (%d,%d pixels)" % (x.mean(),y.mean(),x.mean()/voxx,y.mean()/voxy)
         print "darktime: %.1f (%.1f) frames" % (popt[0],popth[0])
+        print "qunits: %.2f" % (200/(popt[0]+popth[0]))
 
     return (cumux,cumuy,popt[0],pcov)
 
