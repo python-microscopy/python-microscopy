@@ -24,6 +24,7 @@
 from PYME.DSView.OverlaysPanel import OverlayPanel
 import wx.lib.agw.aui as aui
 import wx
+import numpy as np
 
 #from PYME.Analysis.Modules import modules
 from PYME.Analysis.Modules import recipeGui
@@ -47,6 +48,7 @@ class RecipePlugin(recipeGui.RecipeManager):
 
         dsviewer.AddMenuItem('Recipes', "Load Recipe", self.OnLoadRecipe)
         self.mICurrent = dsviewer.AddMenuItem('Recipes', "Run Current Recipe\tF5", self.RunCurrentRecipe)
+        self.mITestCurrent = dsviewer.AddMenuItem('Recipes', "Test Current Recipe\tF7", self.TestCurrentRecipe)
         
         #print CANNED_RECIPES
         
@@ -72,9 +74,15 @@ class RecipePlugin(recipeGui.RecipeManager):
         self.recipeView = recipeGui.RecipeView(dsviewer, self)
         dsviewer.AddPage(page=self.recipeView, select=False, caption='Recipe')
         
-    def RunCurrentRecipe(self, event=None):
+    def RunCurrentRecipe(self, event=None, testMode=False):
         if self.activeRecipe:
-            self.outp = self.activeRecipe.execute(input=self.image)
+            if testMode:
+                #just run on current frame
+                self.outp = self.activeRecipe.execute(input=ImageStack([np.atleast_3d(self.image.data[:,:,self.do.zp, c]) for c in range(self.image.data.shape[3])], mdh=self.image.mdh))
+            else:
+                #run normally
+                self.outp = self.activeRecipe.execute(input=self.image)
+                
             if isinstance(self.outp, ImageStack):
                 if self.dsviewer.mode == 'visGUI':
                     mode = 'visGUI'
@@ -109,6 +117,11 @@ class RecipePlugin(recipeGui.RecipeManager):
                 cache = inpFilt.cachingResultsFilter(self.outp)
                 self.dsviewer.pipeline.OpenFile(ds = cache)
                 self.dsviewer.view.filter = self.dsviewer.pipeline
+                
+    def TestCurrentRecipe(self, event=None):
+        '''run recipe on current frame only as an inexpensive form of testing'''
+        
+        self.RunCurrentRecipe(testMode=True)
                 
     def OnRunCanned(self, event):
         self.LoadRecipe(self.cannedIDs[event.GetId()])

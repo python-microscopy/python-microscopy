@@ -129,6 +129,20 @@ class ModuleCollection(HasTraits):
         return toposort.toposort_flatten(dg)
         
     def execute(self, **kwargs):
+        #remove anything which is downstream from changed inputs
+        print self.namespace.keys()
+        for k, v in kwargs.items():
+            print k, v
+            try:
+                if not (self.namespace[k] == v):
+                    #input has changed
+                    print 'pruning: ', k
+                    self.pruneDependanciesFromNamespace([k])
+            except KeyError:
+                #key wasn't in namespace previously
+                print 'KeyError'
+                pass
+    
         self.namespace.update(kwargs)
         
         exec_order = self.resolveDependencies()
