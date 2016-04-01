@@ -148,7 +148,7 @@ class ZStackTaskListProtocol(TaskListProtocol):
         self.randomise = randomise
 
     def Init(self, spooler):
-        self.zPoss = np.arange(scope.sa.GetStartPos(), scope.sa.GetEndPos()+.95*scope.sa.GetStepSize(),scope.sa.GetStepSize())
+        self.zPoss = np.arange(scope.sa.GetStartPos(), scope.sa.GetEndPos()+.95*scope.sa.GetStepSize(),scope.sa.GetStepSize()*scope.sa.GetDirection())
 
         if self.randomise:
             self.zPoss = self.zPoss[np.argsort(np.random.rand(len(self.zPoss)))]
