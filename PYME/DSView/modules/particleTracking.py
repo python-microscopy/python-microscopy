@@ -240,8 +240,8 @@ class ParticleTrackingView(HasTraits):
 
 
     def OnTrack(self, event):     
-        self.tracker.TrackWithPipeline(self.dsviewer.pipeline)
-        self.SetTracks(self.tracker.clumps)
+        clumps = self.tracker.TrackWithPipeline(self.dsviewer.pipeline)
+        self.SetTracks(clumps)
         
     def SetTracks(self, clumps):
         self.clumps = clumps        
