@@ -309,7 +309,7 @@ def findTracks(pipeline, rad_var='error_x', multiplier='2.0', nFrames=20):
     clumpIndices = deClump.findClumps(pipeline.mapping['t'].astype('i'), pipeline.mapping['x'].astype('f4'), pipeline.mapping['y'].astype('f4'), delta_x.astype('f4'), nFrames)
     numPerClump, b = np.histogram(clumpIndices, np.arange(clumpIndices.max() + 1.5) + .5)
 
-    trackVelocities = calcTrackVelocity(pipeline.mapping['x'], pipeline.mapping['y'], clumpIndices)
+    trackVelocities = calcTrackVelocity(pipeline.mapping['x'], pipeline.mapping['y'], clumpIndices, pipeline.mapping['t'].astype('f'))
     #print b
 
     pipeline.selectedDataSource.clumpIndices = -1*np.ones(len(pipeline.selectedDataSource['x']))
@@ -328,12 +328,23 @@ def findTracks(pipeline, rad_var='error_x', multiplier='2.0', nFrames=20):
     pipeline.clumps = ClumpManager(pipeline)
 
 
-def calcTrackVelocity(x, y, ci):
+def calcTrackVelocity(x, y, ci, t):
     #if not self.init:
     #    self.InitGL()
     #    self.init = 1
+    
+    #first sort by time
+    #I = t.argsort()
+    #x = x[I]
+    #y = y[I]
+    #ci = ci[I]
 
-    I = ci.argsort()
+    #sort by both time and clump
+
+    ind = ci + .5*t/t.max()
+
+    #I = ci.argsort()
+    I = ind.argsort()
 
     v = np.zeros(x.shape) #velocities
     w = np.zeros(x.shape) #weights
@@ -341,11 +352,12 @@ def calcTrackVelocity(x, y, ci):
     x = x[I]
     y = y[I]
     ci = ci[I]
+    t = t[I]
 
     dists = np.sqrt(np.diff(x)**2 + np.diff(y)**2)
 
     #now calculate a mask so that we only include distances from within the trace
-    mask = np.diff(ci) < 1
+    mask = 1.0*(np.diff(ci) < .5)
 
     #a points velocity is the average of the steps in each direction
     v[1:] += dists*mask
@@ -359,7 +371,7 @@ def calcTrackVelocity(x, y, ci):
     v[w > 0] = v[w > 0]/w[w > 0]
 
     #reorder
-    v[I] = v
+    v[I] = (1.0*v.copy())
 
     return v
 
