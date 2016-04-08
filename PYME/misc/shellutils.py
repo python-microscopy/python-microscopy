@@ -705,5 +705,100 @@ def darktimehist(ton):
     # now make a cumulative histogram from these
     cumux = np.sort(dtg+0.01*np.random.random(nts)) # hack: adding random noise helps us ensure uniqueness of x values
     cumuy = (1.0+np.arange(nts))/np.float(nts)
+    popt,pcov = curve_fit(cumuexpfit,cumux,cumuy, p0=(300.0))
+    
+    return (cumux,cumuy,cumuexpfit(cumux,popt[0]),popt[0])
 
-    return (cumux,cumuy)
+
+def analyze1dSeries(series,chunklength=500):
+    offset = series.mean()
+    chunks = int(len(series)/chunklength)
+    chunkmaxs = np.array([max(series[chunk*chunklength:(chunk+1)*chunklength]) for chunk in range(chunks)])
+    peakaverage = chunkmaxs.mean()
+    offset = series[series < (offset+0.5*(peakaverage-offset))].mean()
+    return (offset,peakaverage)
+
+def datafrompipeline(datasource,pipeline, ctr, boxsize = 7):
+    tser = np.arange(datasource.shape[2])
+    bszh = int(boxsize/2)
+    rawser = np.zeros((2*bszh+1,2*bszh+1,tser.shape[0]))
+    for t in range(len(tser)):
+        rawser[:,:,t] = datasource[int(ctr[0])-bszh:int(ctr[0])+bszh+1,int(ctr[1])-bszh:int(ctr[1])+bszh+1,t].squeeze()
+    return (tser, rawser)
+
+import StringIO
+def darkAnalysisRawPlusPipeline(datasource,pipeline,boxsize = 7, doplot = True, threshfactor=0.45, mdh=None, debug=1):
+    xp = pipeline['x']
+    yp = pipeline['y']
+    if mdh is None: # there may be other ways to get at the mdh, e.g. via pipeline?
+        mdh = getmdh(inmodule=True)
+    xpix = 1e3*mdh['voxelsize.x']
+    ypix = 1e3*mdh['voxelsize.y']
+
+    bbox = [xp.min(),xp.max(),yp.min(),yp.max()]
+    bboxpix = [bbox[0]/xpix,bbox[1]/xpix,bbox[2]/ypix,bbox[3]/ypix]
+    ctrpix = [0.5*(bboxpix[0]+bboxpix[1]),0.5*(bboxpix[2]+bboxpix[3])]
+    ctr = np.rint(np.array(ctrpix))
+
+    if debug:
+        print 'BBox (nm): ',bbox
+        print 'BBox (pix): ',bboxpix
+        print 'Ctr (pix): ',ctr
+
+    print 'extracting region from data...'
+    tser, rawser = datafrompipeline(datasource,pipeline,ctr,boxsize = boxsize)
+    rawm = rawser.mean(axis=0).mean(axis=0)
+
+    print 'analyzing data...'
+    offset, peakav = analyze1dSeries(rawm,chunklength=500)
+    rawm = rawm-offset
+    peakav = peakav-offset
+
+    tp = pipeline['t']
+    th = tser[rawm > (threshfactor * peakav)]
+
+    ctp, chip, chipfit, taup = darktimehist(tp)
+    ctr, chir, chirfit, taur = darktimehist(th)
+    
+    outstr = StringIO.StringIO()
+
+    print >>outstr, "events: %d (%d raw)" % (tp.shape[0],th.shape[0])
+    print >>outstr, "dark times: %d (%d raw)" % (ctp.shape[0],ctr.shape[0])
+    #print >>outstr, "region: %d x %d nm (%d x %d pixel)" % (bbszx,bbszy,bbszx/voxx,bbszy/voxy)
+    #print >>outstr, "centered at %d,%d (%d,%d pixels)" % (x.mean(),y.mean(),x.mean()/voxx,y.mean()/voxy)
+    print >>outstr, "darktime: ev %.1f (raw %.1f) frames" % (taup,taur)
+    print >>outstr, "qunits: ev %.2f (raw %.2f), eunits: %.2f" % (200.0/taup,200.0/taur,tp.shape[0]/500.0)
+
+    labelstr = outstr.getvalue()
+
+    if debug:
+        print labelstr
+
+    if doplot:
+        plt.figure()
+        plt.plot(tser, rawm)
+        plt.plot(tser, peakav*np.ones(tser.shape), '--')
+        plt.plot(tp, 0.5*peakav*np.ones(tp.shape),'o')
+        plt.plot(th, threshfactor * peakav * np.ones(th.shape),'+')
+
+        plt.figure()
+        plt.semilogx(ctp, chip, 'o')
+        plt.semilogx(ctp, chipfit)
+        plt.semilogx(ctr, chir, 'x')
+        plt.semilogx(ctr, chirfit)
+        plt.ylim(-0.2,1.2)
+        plt.annotate(labelstr, xy=(0.5, 0.1), xycoords='axes fraction',
+                     fontsize=10)
+
+    return (rawser,rawm, peakav, (ctp, chip, chipfit, taup), (ctr, chir, chirfit, taur))
+
+import pickle
+def savepickled(object,fname):
+    fi = open(fname,'wb')
+    pickle.dump(object,fi)
+    fi.close()
+
+def loadpickled(fname):
+    fi = open(fname,'r')
+    return pickle.load(fi)
+
