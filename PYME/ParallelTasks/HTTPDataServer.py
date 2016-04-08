@@ -34,6 +34,8 @@ import shutil
 import sys
 import json
 import PYME.misc.pyme_zeroconf as pzc
+import urlparse
+import requests
 
 from PYME.misc.computerName import GetComputerName
 compName = GetComputerName()
@@ -53,9 +55,24 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             dir = os.path.split(path)[0]
             if not os.path.exists(dir):
                 os.makedirs(dir)
-            with open(path, 'wb') as f:
-                #shutil.copyfileobj(self.rfile, f, int(self.headers['Content-Length']))
-                f.write(self.rfile.read(int(self.headers['Content-Length'])))
+                
+            query = urlparse.parse_qs(urlparse.urlparse(self.path).query)
+            
+            if 'MirrorSource' in query.keys():
+                #File content is not in message content. This computer should 
+                #fetch the results from another computer in the cluster instead
+                #used for online duplication
+            
+                r = requests.get(query['MirrorSource'][0], timeout=.1)
+            
+                with open(path, 'wb') as f:
+                    f.write(r.content)
+                    
+            else:
+                #the standard case - use the contents of the put request
+                with open(path, 'wb') as f:
+                    #shutil.copyfileobj(self.rfile, f, int(self.headers['Content-Length']))
+                    f.write(self.rfile.read(int(self.headers['Content-Length'])))
             
             self.send_response(200)
             return
@@ -78,7 +95,7 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         #displaypath = cgi.escape(urllib.unquote(self.path))
         l2 = []
         for l in list:
-            if os.path.isdir(l):
+            if os.path.isdir(os.path.join(path, l)):
                 l2.append(l + '/')
             else:
                 l2.append(l)

@@ -297,116 +297,77 @@ class seqPanel(wx.Panel):
     
 
     def OnChPiezoChoice(self, event):
-
         self.scope.sa.SetScanChannel(self.chPiezo.GetSelection())
-
         self.UpdateDisp()
 
-        #event.Skip()
+        event.Skip()
 
     def OnBSt_endRadiobutton(self, event):
-
         self.scope.sa.SetStartMode(1)
-
         self.UpdateDisp()
 
-        #event.Skip()
+        event.Skip()
 
     def OnBMid_numRadiobutton(self, event):
-
         self.scope.sa.SetStartMode(0)
-
         self.UpdateDisp()
 
-        #event.Skip()
+        event.Skip()
 
     def OnTEndPosKillFocus(self, event):
-
         self.scope.sa.SetEndPos(float(self.tEndPos.GetValue()))
-
         self.UpdateDisp()
 
-        #event.Skip()
+        event.Skip()
 
     def OnTStPosKillFocus(self, event):
-
         self.scope.sa.SetStartPos(float(self.tStPos.GetValue()))
-
         self.UpdateDisp()
 
-        #event.Skip()
+        event.Skip()
 
     def OnTNumSlicesKillFocus(self, event):
-
         self.scope.sa.SetSeqLength(int(self.tNumSlices.GetValue()))
-
         self.UpdateDisp()
 
-        #event.Skip()
+        event.Skip()
 
     def OnTStepSizeKillFocus(self, event):
-
         self.scope.sa.SetStepSize(float(self.tStepSize.GetValue()))
-
         self.UpdateDisp()
 
-        #event.Skip()
+        event.Skip()
 
         
 
     def UpdateDisp(self):
         print 'seqd: update display'
-
         self.chPiezo.SetSelection(self.scope.sa.GetScanChannel())
 
-            
-
         if self.scope.sa.GetStartMode() == self.scope.sa.START_AND_END:
-
             self.bSt_end.SetValue(True)
-
             self.bMid_num.SetValue(False)
-
             
-
             self.tNumSlices.Enable(False)
-
             self.tStPos.Enable(True)
-
             self.tEndPos.Enable(True)
-
             self.bStartHere.Enable(True)
-
             self.bEndHere.Enable(True)
 
         else:
-
             self.bSt_end.SetValue(False)
-
             self.bMid_num.SetValue(True)
 
-            
-
             self.tNumSlices.Enable(True)
-
             self.tStPos.Enable(False)
-
             self.tEndPos.Enable(False)
-
             self.bStartHere.Enable(False)
-
             self.bEndHere.Enable(False)
 
-        
-
         self.tStPos.SetValue('%2.3f' % self.scope.sa.GetStartPos())
-
         self.tEndPos.SetValue('%2.3f' % self.scope.sa.GetEndPos())
-
         self.tStepSize.SetValue('%2.3f' % self.scope.sa.GetStepSize())
-
         self.tNumSlices.SetValue('%d' % self.scope.sa.GetSeqLength())
-
         self.stMemory.SetLabel('Mem: %2.1f MB' % (self.scope.cam.GetPicWidth()*self.scope.cam.GetPicHeight()*self.scope.sa.GetSeqLength()*2*self.scope.sa.getReqMemChans(self.scope.sa.chans.cols)/(1024.0*1024.0)))
 
 

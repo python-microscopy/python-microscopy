@@ -72,7 +72,7 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
                     
                 yvi = np.argsort(np.array(yv0))
                 #print yv0, yvi
-                yos = np.zeros(3)
+                yos = np.zeros(len(yvi))
                 yos[yvi] = yoff
                     
                 for e, yo in zip(v, yos):
@@ -114,7 +114,10 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
                 if not k in cols.keys():
                     cols[k] = 0.7*np.array(pylab.cm.hsv(pylab.rand()))
                 self.ax.plot(v[0], v[1], 'o', color=cols[k])
-                t = self.ax.text(v[0]+.1, v[1] + .02, s, color=cols[k], size=fontSize, weight='bold', picker=True)
+                if k.startswith('out'):
+                    t = self.ax.text(v[0]+.1, v[1] + .02, s, color=cols[k], size=fontSize, weight='bold', picker=True, bbox={'color':'w','edgecolor':'k'})
+                else:
+                    t = self.ax.text(v[0]+.1, v[1] + .02, s, color=cols[k], size=fontSize, weight='bold', picker=True)
                 t._data = k
                 
                 

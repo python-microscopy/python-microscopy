@@ -98,9 +98,10 @@ class Deconvolve(Filter):
     offset = Float(0)
     method = Enum('Richardson-Lucy', 'ICTM') 
     iterations = Int(10)
-    psfType = Enum('file', 'bead', 'Lorentzian')
+    psfType = Enum('file', 'bead', 'Lorentzian', 'Gaussian')
     psfFilename = CStr('') #only used for psfType == 'file'
     lorentzianFWHM = Float(50.) #only used for psfType == 'Lorentzian'
+    gaussianFWHM = Float(50.) #only used for psfType == 'Lorentzian'
     beadDiameter = Float(200.) #only used for psfType == 'bead'
     regularisationLambda = Float(0.1) #Regularisation - ICTM only
     padding = Int(0) #how much to pad the image by (to reduce edge effects)
@@ -122,6 +123,7 @@ class Deconvolve(Filter):
                 Group(Item(name='psfType'),
                       Item(name='psfFilename', visible_when='psfType=="file"'),
                       Item(name='lorentzianFWHM', visible_when='psfType=="Lorentzian"'),
+                      Item(name='gaussianFWHM', visible_when='psfType=="Gaussian"'),
                       Item(name='beadDiameter', visible_when='psfType=="bead"'),
                       label='PSF Parameters'),
                 resizable = True,
@@ -130,7 +132,7 @@ class Deconvolve(Filter):
 
     
     def GetPSF(self, vshint):
-        psfKey = (self.psfType, self.psfFilename, self.lorentzianFWHM, self.beadDiameter, vshint)
+        psfKey = (self.psfType, self.psfFilename, self.lorentzianFWHM, self.gaussianFWHM, self.beadDiameter, vshint)
         
         if not psfKey in self._psfCache.keys():
             if self.psfType == 'file':
@@ -157,6 +159,23 @@ class Deconvolve(Filter):
                 vs = type('vs', (object,), dict(x=vx/1e3, y=vx/1e3))
                 
                 psf = np.atleast_3d(stats.cauchy.pdf(vx*R, scale=sc))
+                    
+                self._psfCache[psfKey] = (psf/psf.sum(), vs)
+                
+            elif (self.psfType == 'Gaussian'):
+                from scipy import stats
+                sc = self.gaussianFWHM/2.35
+                X, Y = np.mgrid[-30.:31., -30.:31.]
+                R = np.sqrt(X*X + Y*Y)
+                
+                if not vshint is None:
+                    vx = vshint[0]
+                else:
+                    vx = sc/2.
+                
+                vs = type('vs', (object,), dict(x=vx/1e3, y=vx/1e3))
+                
+                psf = np.atleast_3d(stats.norm.pdf(vx*R, scale=sc))
                     
                 self._psfCache[psfKey] = (psf/psf.sum(), vs)
             elif (self.psfType == 'bead'):

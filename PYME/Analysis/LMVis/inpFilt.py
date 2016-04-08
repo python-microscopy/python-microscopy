@@ -412,7 +412,7 @@ class cachingResultsFilter(inputFilter):
         if key in self.cache.keys():
             return self.cache[key][sl]
         else:
-            res = self.resultsSource[key][self.Index]
+            res = np.array(self.resultsSource[key])[self.Index]
             self.cache[key] = res
             return res[sl]
 

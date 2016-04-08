@@ -183,6 +183,9 @@ class ParticleTrackingView(HasTraits):
         
         #self.clumps = []
         
+        if 'tracks' in dir(self.image):
+            self.SetTracks(self.image.tracks)
+        
         self.penCols = [wx.Colour(*pylab.cm.hsv(v, bytes=True)) for v in np.linspace(0, 1, 16)]
         self.penColsA = [wx.Colour(*pylab.cm.hsv(v, alpha=0.5, bytes=True)) for v in np.linspace(0, 1, 16)]
         self.CreatePens()
@@ -237,8 +240,11 @@ class ParticleTrackingView(HasTraits):
 
 
     def OnTrack(self, event):     
-        self.tracker.TrackWithPipeline(self.dsviewer.pipeline)
-        self.clumps = self.tracker.clumps        
+        clumps = self.tracker.TrackWithPipeline(self.dsviewer.pipeline)
+        self.SetTracks(clumps)
+        
+    def SetTracks(self, clumps):
+        self.clumps = clumps        
         self.list.SetClumps(self.clumps)
         
     def OnSelectTrack(self, event):

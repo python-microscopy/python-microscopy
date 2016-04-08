@@ -24,6 +24,7 @@
 from PYME.DSView.OverlaysPanel import OverlayPanel
 import wx.lib.agw.aui as aui
 import wx
+import numpy as np
 
 #from PYME.Analysis.Modules import modules
 from PYME.Analysis.Modules import recipeGui
@@ -47,6 +48,7 @@ class RecipePlugin(recipeGui.RecipeManager):
 
         dsviewer.AddMenuItem('Recipes', "Load Recipe", self.OnLoadRecipe)
         self.mICurrent = dsviewer.AddMenuItem('Recipes', "Run Current Recipe\tF5", self.RunCurrentRecipe)
+        self.mITestCurrent = dsviewer.AddMenuItem('Recipes', "Test Current Recipe\tF7", self.TestCurrentRecipe)
         
         #print CANNED_RECIPES
         
@@ -65,13 +67,22 @@ class RecipePlugin(recipeGui.RecipeManager):
         #dsviewer.menubar.Append(self.mRecipes, "Recipes")
         dsviewer.AddMenuItem('Recipes', '', itemType='separator')
         dsviewer.AddMenuItem('Recipes', "Save Results", self.OnSaveOutputs)
+        
+        #dsviewer.AddMenuItem('Recipes', '', itemType='separator')
+        dsviewer.AddMenuItem('Recipes', "Load Previous Results", self.OnLoadOutputs)
             
         self.recipeView = recipeGui.RecipeView(dsviewer, self)
         dsviewer.AddPage(page=self.recipeView, select=False, caption='Recipe')
         
-    def RunCurrentRecipe(self, event=None):
+    def RunCurrentRecipe(self, event=None, testMode=False):
         if self.activeRecipe:
-            self.outp = self.activeRecipe.execute(input=self.image)
+            if testMode:
+                #just run on current frame
+                self.outp = self.activeRecipe.execute(input=ImageStack([np.atleast_3d(self.image.data[:,:,self.do.zp, c]) for c in range(self.image.data.shape[3])], mdh=self.image.mdh))
+            else:
+                #run normally
+                self.outp = self.activeRecipe.execute(input=self.image)
+                
             if isinstance(self.outp, ImageStack):
                 if self.dsviewer.mode == 'visGUI':
                     mode = 'visGUI'
@@ -107,6 +118,11 @@ class RecipePlugin(recipeGui.RecipeManager):
                 self.dsviewer.pipeline.OpenFile(ds = cache)
                 self.dsviewer.view.filter = self.dsviewer.pipeline
                 
+    def TestCurrentRecipe(self, event=None):
+        '''run recipe on current frame only as an inexpensive form of testing'''
+        
+        self.RunCurrentRecipe(testMode=True)
+                
     def OnRunCanned(self, event):
         self.LoadRecipe(self.cannedIDs[event.GetId()])
         self.RunCurrentRecipe()
@@ -115,11 +131,37 @@ class RecipePlugin(recipeGui.RecipeManager):
         from PYME.Analysis.Modules import runRecipe
         
         filename = wx.FileSelector('Save results as ...', 
-                                   wildcard="CSV files (*.csv)|*.csv|Excell files (*.xlsx)|*.xlsx", 
+                                   wildcard="CSV files (*.csv)|*.csv|Excell files (*.xlsx)|*.xlsx|HDF5 files (*.hdf)|*.hdf", 
                                    flags = wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
                                    
         if not filename == '':
             runRecipe.saveOutput(self.outp, filename)
+            
+    def OnLoadOutputs(self, event):
+        import pandas
+        from PYME.Analysis.LMVis import inpFilt
+        
+        filename = wx.FileSelector('Save results as ...', 
+                                   wildcard="CSV files (*.csv)|*.csv|Excell files (*.xlsx)|*.xlsx|HDF5 files (*.hdf)|*.hdf", 
+                                   flags = wx.FD_OPEN)
+                                   
+        if not filename == '':
+            if filename.endswith('.csv'):
+                data = pandas.read_csv(filename)
+            elif filename.endswith('.xlsx'):
+                data = pandas.read_excel(filename)
+            elif filename.endswith('.hdf'):
+                data = pandas.read_hdf(filename)
+                
+            
+            if not 'pipeline' in dir(self.dsviewer):
+                self.dsviewer.pipeline = pipeline.Pipeline()
+                
+            cache = inpFilt.cachingResultsFilter(data)
+            self.dsviewer.pipeline.OpenFile(ds = cache)
+            self.dsviewer.view.filter = self.dsviewer.pipeline
+                
+                
             
         
 
