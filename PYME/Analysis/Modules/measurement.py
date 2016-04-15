@@ -311,10 +311,10 @@ class Measure2D(ModuleBase):
         
         if self.measureContour:
             ct = []
-            for i in range(len(rp)):
+            for r in rp:
                 #print i, (li == (i+1)).sum()
                 #c = skimage.measure.find_contours(r['image'], .5)
-                c = skimage.measure.find_contours((li == (i+1)), .5)
+                c = skimage.measure.find_contours((li == r.label), .5)
                 if len(c) == 0:
                     c = [np.zeros((2,2))]
                 #ct.append(c[0] + np.array(r['bbox'])[:2][None,:])

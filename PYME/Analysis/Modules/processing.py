@@ -90,7 +90,165 @@ class svmSegment(Filter):
     def completeMetadata(self, im):
         im.mdh['SVMSegment.classifier'] = self.classifier
         
+@register_module('OpticalFlow')         
+class OpticalFlow(ModuleBase):
+    filterRadius = Float(1)
+    supportRadius = Float(10) 
+    regularizationLambda = Float(0)
+    inputName = CStr('input')
+    outputNameX = CStr('flow_x')
+    outputNameY = CStr('flow_y')
+    
+    def calc_flow(self, data, chanNum):
+        from PYME.Analysis import optic_flow
+        
+        flow_x = []
+        flow_y = []
+        
+        for i in range(0, data.shape[2]):
+            dx, dy = 0,0
+            
+            if i >=1:
+                dx, dy = optic_flow.reg_of(data[:,:,i-1, chanNum].squeeze(), data[:,:,i, chanNum].squeeze(), self.filterRadius, self.supportRadius, self.regularizationLambda)
+            if (i < (data.shape[2] - 1)):
+                dx_, dy_ = optic_flow.reg_of(data[:,:,i, chanNum].squeeze(), data[:,:,i+1, chanNum].squeeze(), self.filterRadius, self.supportRadius, self.regularizationLambda)
+                dx = dx + dx_
+                dy = dy + dy_
 
+            flow_x.append(np.atleast_3d(dx))
+            flow_y.append(np.atleast_3d(dy))                
+        
+        
+        return np.concatenate(flow_x, 2),np.concatenate(flow_y, 2) 
+        
+    def execute(self, namespace):
+        image = namespace[self.inputName]
+        flow_x = []
+        flow_y = []
+        for chanNum in range(image.data.shape[3]):
+            fx, fy = self.calc_flow(image.data, chanNum)
+            flow_x.append(fx)
+            flow_y.append(fy)
+        
+        im = ImageStack(flow_x, titleStub = self.outputNameX)
+        im.mdh.copyEntriesFrom(image.mdh)
+        im.mdh['Parent'] = image.filename
+        
+        self.completeMetadata(im)
+        namespace[self.outputNameX] = im
+        
+        im = ImageStack(flow_y, titleStub = self.outputNameY)
+        im.mdh.copyEntriesFrom(image.mdh)
+        im.mdh['Parent'] = image.filename
+        
+        self.completeMetadata(im)
+        namespace[self.outputNameY] = im
+        
+    def completeMetadata(self, im):
+        im.mdh['OpticalFlow.filterRadius'] = self.filterRadius
+        im.mdh['OpticalFlow.supportRadius'] = self.supportRadius
+        
+@register_module('Gradient')         
+class Gradient2D(ModuleBase):   
+    inputName = CStr('input')
+    outputNameX = CStr('grad_x')
+    outputNameY = CStr('grad_y')
+    
+    def calc_grad(self, data, chanNum):
+        grad_x = []
+        grad_y = []
+        
+        for i in range(0, data.shape[2]):
+            dx, dy = np.gradient(data[:,:,i, chanNum].squeeze())
+            grad_x.append(np.atleast_3d(dx))
+            grad_y.append(np.atleast_3d(dy))                
+        
+        
+        return np.concatenate(grad_x, 2),np.concatenate(grad_y, 2) 
+        
+    def execute(self, namespace):
+        image = namespace[self.inputName]
+        grad_x = []
+        grad_y = []
+        for chanNum in range(image.data.shape[3]):
+            fx, fy = self.calc_grad(image.data, chanNum)
+            grad_x.append(fx)
+            grad_y.append(fy)
+        
+        im = ImageStack(grad_x, titleStub = self.outputNameX)
+        im.mdh.copyEntriesFrom(image.mdh)
+        im.mdh['Parent'] = image.filename
+        
+        #self.completeMetadata(im)
+        namespace[self.outputNameX] = im
+        
+        im = ImageStack(grad_y, titleStub = self.outputNameY)
+        im.mdh.copyEntriesFrom(image.mdh)
+        im.mdh['Parent'] = image.filename
+        
+        #self.completeMetadata(im)
+        namespace[self.outputNameY] = im
+        
+@register_module('ProjectOnVector')         
+class ProjectOnVector(ModuleBase):
+    '''Project onto a set of direction vectors, producing p and s components'''
+    inputX = CStr('inputX')
+    inputY = CStr('inputY')
+    inputDirX = CStr('dirX')
+    inputDirY = CStr('dirY')
+    
+    outputNameP = CStr('proj_p')
+    outputNameS = CStr('proj_s')
+    
+    def do_proj(self, inpX, inpY, dirX, dirY):
+        '''project onto basis vectors'''
+        norm = np.sqrt(dirX*dirX + dirY*dirY)
+        dx, dy = dirX/norm, dirY/norm
+        
+        projX = inpX*dx + inpY*dy
+        projY = -inpX*dy + inpY*dx
+        
+        return projX, projY      
+    
+    def calc_proj(self, inpX, inpY, dirX, dirY, chanNum):
+        proj_p = []
+        proj_s = []
+        
+        for i in range(0, inpX.shape[2]):
+            pp, ps = self.do_proj(inpX[:,:,i, chanNum].squeeze(), inpY[:,:,i, chanNum].squeeze(),
+                                  dirX[:,:,i, chanNum].squeeze(), dirY[:,:,i, chanNum].squeeze())
+            proj_p.append(np.atleast_3d(pp))
+            proj_s.append(np.atleast_3d(ps))                
+        
+        
+        return np.concatenate(proj_p, 2),np.concatenate(proj_s, 2) 
+        
+    def execute(self, namespace):
+        inpX = namespace[self.inputX]
+        inpY = namespace[self.inputY]
+        dirX = namespace[self.inputDirX]
+        dirY = namespace[self.inputDirY]
+        
+        proj_p = []
+        proj_s = []
+        for chanNum in range(inpX.data.shape[3]):
+            fx, fy = self.calc_proj(inpX.data, inpY.data, dirX.data, dirY.data, chanNum)
+            proj_p.append(fx)
+            proj_s.append(fy)
+        
+        im = ImageStack(proj_p, titleStub = self.outputNameP)
+        im.mdh.copyEntriesFrom(inpX.mdh)
+        im.mdh['Parent'] = inpX.filename
+        
+        #self.completeMetadata(im)
+        namespace[self.outputNameP] = im
+        
+        im = ImageStack(proj_s, titleStub = self.outputNameS)
+        im.mdh.copyEntriesFrom(inpX.mdh)
+        im.mdh['Parent'] = inpX.filename
+        
+        #self.completeMetadata(im)
+        namespace[self.outputNameS] = im
         
 
 @register_module('Deconvolve')         
