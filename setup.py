@@ -30,6 +30,9 @@ entry_points={
         'PYMEAcquire = PYME.Acquire.PYMEAcquire:main',
         'VisGUI = PYME.Analysis.LMVis.VisGUI:main',
         'launchWorkers = PYME.ParallelTasks.launchWorkers:main',
+        'taskServerZC.py = PYME.ParallelTasks.taskServerZC:main',
+        'taskWorkerZC.py = PYME.ParallelTasks.taskWorkerZC:main',
+        'fitMonP.py = PYME.ParallelTasks.fitMonP:main',
         'bakeshop = PYME.Analysis.Modules.bakeshop:main',
     ]
 }
