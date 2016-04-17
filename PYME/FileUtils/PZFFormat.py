@@ -173,6 +173,16 @@ def dumps(data, sequenceID=0, frameNum=0, frameTimestamp=0, compression = DATA_C
     
     compression:  compression method to use - one of: PZFFormat.DATA_COMP_RAW,
                   PZFFormat.DATA_COMP_HUFFCODE, or PZFFormat.DATA_COMP_HUFFCODE_CHUNKS
+                  Where raw stores the data with no compression, huffcode uses
+                  Huffman coding, and huffcode chunks breaks the data into chunks 
+                  first, with each chunk meing encodes by a separate thread.
+                  
+    quantization: Whether or not the data is quantized before saving.
+                  One of DATA_QUANT_NONE or DATA_QUANT_SQRT. If DATA_QUANT_SQRT
+                  is selected, then the data is quantized as follows prior to 
+                  compression:
+                  
+                  $data_quant =  \sqrt(data - data)
     '''
     
     header = np.zeros(1, header_dtype)

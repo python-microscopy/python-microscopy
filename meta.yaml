@@ -117,7 +117,7 @@ requirements:
   # listed explicitly if they are required.
   build:
     - python
-    - numpy
+    - numpy x.x
     - matplotlib
     #- mingw # [win]
   # Packages required to run the package. These are the dependencies that
@@ -126,7 +126,7 @@ requirements:
   # in requirements" below).
   run:
     - python
-    - numpy
+    - numpy x.x
     - scipy
     - matplotlib
     - wxpython

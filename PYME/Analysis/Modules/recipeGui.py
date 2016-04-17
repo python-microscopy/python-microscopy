@@ -58,34 +58,78 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
         TW = textwrap.TextWrapper(width=int(1.8*pix_per_col/fontSize), subsequent_indent='  ')
         TW2 = textwrap.TextWrapper(width=int(1.3*pix_per_col/fontSize), subsequent_indent='  ')
     
-        cols = {}    
-        for k, v in dg.items():
+        cols = {}
+
+        #x_offset_maxes = {}
+        line_x_offsets = {}
+        #inp_x_offsets = set()
+
+
+        #####
+        #Plot input lines coming in to a processing node 
+        #####   
+        for k, deps in dg.items():
             if not (isinstance(k, str) or isinstance(k, unicode)):
+                #This is a processing node
                 yv0 = []
-                yoff = .1*np.arange(len(v))
+                
+                #each input line should be offset / spaced from the others                 
+                yoff = .1*np.arange(len(deps))
                 yoff -= yoff.mean()
                 
-                for e in v:
-                    x0, y0 = ips[e]
-                    x1, y1 = ips[k]
-                    yv0.append(y0 + 0.01*x0*(2.0*(y0>y1) - 1))
+                ##########
+                #loop over the inputs and determine their y-order
+                for e in deps:
+                    x0, y0 = ips[e] #position of start of lines
+                    x1, y1 = ips[k] #nominal (non-offset) end points
+
+                    #if y0>y1, offset y0 slightly +ve, else offset slightly negative
+                    yv0.append(y0 + 0.01*(x1 - x0)*(2.0*(y0>y1) - 1))
                     
+                #sort in ascending order of y0 values
                 yvi = np.argsort(np.array(yv0))
                 #print yv0, yvi
+
+                ##########
+                #assign the correct y offset values
+                #to each line
                 yos = np.zeros(len(yvi))
                 yos[yvi] = yoff
+                
+                ##########
+                # Plot the lines    
+                for e, yo in zip(deps, yos):
+                    x0, y0 = ips[e] #start pos of input line
+                    x1, y1 = ips[k] #nominal end point of input line
+
+                    #offset lines in x
+                    try:
+                        xo = line_x_offsets[x0][e]
+                    except KeyError:
+                        try:
+                            xo = max(line_x_offsets[x0].values()) + .04
+                            line_x_offsets[x0][e] = xo
+                        except KeyError:
+                            xo = 0
+                            line_x_offsets[x0] = {e:xo}
+
+                    #print xo
+                    #inp_x_offsets.add(e)
                     
-                for e, yo in zip(v, yos):
-                    x0, y0 = ips[e]
-                    x1, y1 = ips[k]
-                    
+                    #choose a colour at random for this input
                     if not e in cols.keys():
                         cols[e] = 0.7*np.array(pylab.cm.hsv(pylab.rand()))
                     
-                    self.ax.plot([x0,x0+.5, x0+.5, x1], [y0,y0,y1+yo,y1+yo], c=cols[e], lw=2)
+                    #plot the input line
+                    #the line consists of a horizontal segment, a vertical segment and then
+                    #a second horizontal segment
+                    self.ax.plot([x0,x0+.5+xo, x0+.5+xo, x1], [y0,y0,y1+yo,y1+yo], c=cols[e], lw=2)
                 
+        #plot the boxes and the labels
         for k, v in ips.items():   
             if not (isinstance(k, str) or isinstance(k, unicode)):
+                #node - draw a box
+                #################
                 s = k.__class__.__name__
                 #pylab.plot(v[0], v[1], 'o', ms=5)
                 rect = pylab.Rectangle([v[0], v[1]-.25], 1, .5, ec='k', fc=[.8,.8, 1], picker=True)
@@ -110,6 +154,7 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
                     s2 = '\n'.join(s2)
                 self.ax.text(v[0]+.05, v[1]-.22 , s2, size=.8*fontSize, stretch='ultra-condensed')
             else:
+                #line - draw an output dot, and a text label 
                 s = k
                 if not k in cols.keys():
                     cols[k] = 0.7*np.array(pylab.cm.hsv(pylab.rand()))

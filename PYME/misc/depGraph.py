@@ -21,29 +21,57 @@ def arrangeNodes(dg):
     ts = list(toposort.toposort(dg))
     xc = 0
     ips = {}
+    
+    #ts gives a list of all the steps of the computation
     for st in ts:
+        #iterate over the steps
+
+        #keep a list of y positions at this step
         yps = [];
+        
         st = list(st)
-        for si in st:
-            if isinstance(si, str):
-                tol = .1
-            else:
-                tol = 1
+        
+        #loop over items to be calculated at each step
+        #and work out a preferred position
+        for si in st: 
+            #see what the dependancies of this item are
             if si in dg.keys():
                 ri = list(dg[si])
+                
+                #assign a y position as the mean of the dependancies y positions
                 yp = np.mean([ips[rr][1] for rr in ri])
             else:
+                #else assign a position of 0
                 yp = 0
-            
-            while min(abs(yp - np.array(yps + [-50]))) < tol:
-               yp += min(tol, .5)
-               
+                
             yps.append(yp)
+            
+
+        #space out positions
+        ypss = np.zeros(len(yps)) - 50       
+        for i in np.argsort(yps):
+            si = st[i]
+            yp = yps[i]
+            if isinstance(si, str):
+                #vertical spacing between outputs is .1
+                tol = .1
+            else:
+                #vertical spacing between blocks
+                tol = 1
+            
+            #space out the y positions so blocks don't overlap
+            #while min(abs(yp - np.array(ypss + [-50]))) < tol:
+            while min(abs(yp - ypss)) < tol:
+               yp += min(tol, .1)
+               
+            ypss[i] = yp
                 
         #ysi = np.argsort(yps) 
         #ys = (np.arange(len(ysi)) - ysi.mean())
-        ysi = np.arange(len(yps))
-        ys = yps
+                
+        #assign the y positions
+        ysi = np.arange(len(ypss))
+        ys = ypss
         for i, yi in zip(ysi, ys):
             ips[st[i]] = (xc, yi)
         

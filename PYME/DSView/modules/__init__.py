@@ -58,7 +58,17 @@ modeModules = {
 def loadModule(modName, dsviewer):
     ml = modLocations[modName]
     mod = __import__('.'.join(ml) + '.' + modName, fromlist=ml)
+    
+    #if modName in dsviewer.installedModules:
+    try: 
+        mod.Unplug(dsviewer)
+    except:
+        pass
+    
+    reload(mod)
+        
     mod.Plug(dsviewer)
+    
 
     dsviewer.installedModules.append(modName)
 
