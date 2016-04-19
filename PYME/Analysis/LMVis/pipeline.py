@@ -88,14 +88,26 @@ class Pipeline:
 
     def Rebuild(self):
         if not self.selectedDataSource is None:
-            self.filter = inpFilt.resultsFilter(self.selectedDataSource, **self.filterKeys)
             if self.mapping:
-                self.mapping.resultsSource = self.filter
+                self.mapping.resultsSource = self.selectedDataSource
             else:
-                self.mapping = inpFilt.mappingFilter(self.filter)
+                self.mapping = inpFilt.mappingFilter(self.selectedDataSource)
+                
+                #keep raw measurements available
+                self.mapping.setMapping('x_raw', 'x')
+                self.mapping.setMapping('y_raw', 'y')
+                self.mapping.setMapping('z_raw', 'z')
+                
+            self.filter = inpFilt.resultsFilter(self.mapping, **self.filterKeys)
+            #if self.mapping:
+            #    self.mapping.resultsSource = self.filter
+            #else:
+            #    self.mapping = inpFilt.mappingFilter(self.filter)
 
             if not self.colourFilter:
-                self.colourFilter = inpFilt.colourFilter(self.mapping, self)
+                self.colourFilter = inpFilt.colourFilter(self.filter, self)
+            else:
+                self.colourFilter.resultsSource = self.filter
                 
             self.ready = True
 
@@ -271,6 +283,8 @@ class Pipeline:
 
                 if 'DriftResults' in self.selectedDataSource.h5f.root:
                     self.dataSources.append(inpFilt.h5rDSource(self.selectedDataSource.h5f))
+                    self.driftInputMapping = inpFilt.mappingFilter(self.dataSources[-1])
+                    self.dataSources.append(self.driftInputMapping)
 
                     if len(self.selectedDataSource['x']) == 0:
                         self.selectedDataSource = self.dataSources[-1]

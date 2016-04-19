@@ -25,10 +25,28 @@ import os
 import glob
 import textwrap
 
+from scipy import optimize
+
 RECIPE_DIR = os.path.join(os.path.split(modules.__file__)[0], 'Recipes')
 CANNED_RECIPES = glob.glob(os.path.join(RECIPE_DIR, '*.yaml'))
 
-
+def _path_lh(y, yprev, ygoal, yvs, ytol):
+    d_yprev = (y - yprev)**2
+    d_ygoal = (y-ygoal)**2
+    d_obstructions = (((y-yvs)/ytol)**2).min()
+    
+    return 3*d_yprev*(d_yprev < .3**2) + 0*d_ygoal - 10*d_obstructions*(d_obstructions < 1)
+    
+def _path_v_lh(x, xtarget, y, vlines, vdir):
+    d_x = np.array([((x - vl[0,0])/0.1)**2 for vl in vlines])
+    
+    #odir = np.array([np.sign(vl[1,1] - vl[1,0])])
+    #d_yprev = (y - yprev)**2
+    #d_ygoal = (y-ygoal)**2
+    #d_obstructions = (((y-yvs)/ytol)**2).min()
+    
+    return -10*np.sum(d_x)*(np.sum(d_x < 1) > 0)
+    
 class RecipePlotPanel(wxPlotPanel.PlotPanel):
     def __init__(self, parent, recipes, **kwargs):
         self.recipes = recipes
@@ -45,7 +63,10 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
         self.ax.cla()
 
         dg = self.recipes.activeRecipe.dependancyGraph()        
-        ips = depGraph.arrangeNodes(dg)
+        ips, yvs = depGraph.arrangeNodes(dg)
+        
+        yvs = [list(yi) for yi in yvs]
+        yvtol = [list(0*np.array(yi) + .35) for yi in yvs]
         
         axisWidth = self.ax.get_window_extent().width
         nCols = max([1] + [v[0] for v in ips.values()])
@@ -63,6 +84,7 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
         #x_offset_maxes = {}
         line_x_offsets = {}
         #inp_x_offsets = set()
+        vlines = [[] for i in range(len(yvs))]
 
 
         #####
@@ -72,6 +94,8 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
             if not (isinstance(k, str) or isinstance(k, unicode)):
                 #This is a processing node
                 yv0 = []
+                
+                #deps = list(deps)
                 
                 #each input line should be offset / spaced from the others                 
                 yoff = .1*np.arange(len(deps))
@@ -101,6 +125,8 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
                 for e, yo in zip(deps, yos):
                     x0, y0 = ips[e] #start pos of input line
                     x1, y1 = ips[k] #nominal end point of input line
+                    
+                    y1 += yo #adjust with calculated offset
 
                     #offset lines in x
                     try:
@@ -115,7 +141,64 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
 
                     #print xo
                     #inp_x_offsets.add(e)
+
+                    #thread trace through blocks
+                    xv_ = [x0]
+                    yv_ = [y0]
+
+                    #xvs = np.arange(x0, x1)
+                    #print xvs, yvs[x0:x1]
+                    #print 'StartTrace - y1:', y1
                     
+                    for i, x_i in enumerate(range(x0+1, x1, 2)):
+                        #print i, x_i
+                        yvo = 1.0*yv_[-1]
+                        yn = optimize.fmin(_path_lh, yvo, (yvo, y1, np.array(yvs[x_i]), np.array(yvtol[x_i])), disp=0)[0]
+                        xn = x_i -.4
+                        #find vertical lines which might interfere
+                        vl = [l[0] for l in vlines[x_i] if (not l[1] == e) and (max(yn, yvo) > (min(l[0][1,:]) - .05)) and (min(yn, yvo) < (max(l[0][1,:]) + .05))]
+                        if len(vl) > 0:
+                            xn = optimize.fmin(_path_v_lh, xn, (xn, yn, vl, np.sign(yn-yvo)), disp=0)[0]
+                        
+                        if not np.isnan(yn):
+                            yv_.append(yvo)
+                            yv_.append(yn)
+                            xv_.append(xn)
+                            xv_.append(xn)
+                            vlines[x_i].append((np.array([[xn, xn], [yvo, yn]]), e))
+                            #print np.array([[xn, xn], [yvo, yn]])[1,:]
+                            yvs[x_i].append(yn)
+                            yvtol[x_i].append(.1)
+                        else:
+                            yvs[x_i].append(yvo)
+                            yvtol[x_i].append(.1)
+                            
+                    
+                    xn = x1 -.4    
+                    yvo = 1.0*yv_[-1]
+                    yn = y1
+                    
+                    #find vertical lines which might interfere
+                    #vl = [l for l in vlines[x1] if (yn > (min(l[1,:]) - .05)) and (yn < (max(l[1,:]) + .05))]
+                    #vl = [l for l in vlines[x1] if (max(yn, yvo) > (min(l[1,:]) - .05)) and (min(yn, yvo) < (max(l[1,:]) + .05))]
+                    vl = [l[0] for l in vlines[x1] if (not l[1] == e) and (max(yn, yvo) > (min(l[0][1,:]) - .05)) and (min(yn, yvo) < (max(l[0][1,:]) + .05))]
+                    if len(vl) > 0:
+                        xn = optimize.fmin(_path_v_lh, xn, (xn, yn, vl, np.sign(yn-yvo)), disp=0)[0]
+                    
+                    yv_.append(yvo)
+                    xv_.append(xn)
+                    xv_.append(xn)
+                    yv_.append(yn)
+
+                    vlines[x1].append((np.array([[xn, xn], [yvo, yn]]), e))                   
+                    
+                    yv_.append(y1)
+                    xv_.append(x1)
+                    
+                    #print xv_, yv_
+                    #print y1
+                        
+
                     #choose a colour at random for this input
                     if not e in cols.keys():
                         cols[e] = 0.7*np.array(pylab.cm.hsv(pylab.rand()))
@@ -123,7 +206,8 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
                     #plot the input line
                     #the line consists of a horizontal segment, a vertical segment and then
                     #a second horizontal segment
-                    self.ax.plot([x0,x0+.5+xo, x0+.5+xo, x1], [y0,y0,y1+yo,y1+yo], c=cols[e], lw=2)
+                    #self.ax.plot([x0,x1-.5+xo, x1 -.5+xo, x1], [y0,y0,y1,y1], c=cols[e], lw=2)
+                    self.ax.plot(np.array(xv_), np.array(yv_), c=cols[e], lw=2)
                 
         #plot the boxes and the labels
         for k, v in ips.items():   
@@ -178,6 +262,7 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
             pass
         
         self.ax.axis('off')
+        self.ax.grid()
         
         self.canvas.draw()
 
