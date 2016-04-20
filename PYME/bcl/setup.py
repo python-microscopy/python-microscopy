@@ -13,7 +13,7 @@ if sys.platform == 'win32':
 else:
 	extra_include_dirs = []
 
-#from PYME.misc import cython_numpy_monkey
+from PYME.misc import cython_numpy_monkey
 
 def configuration(parent_package = '', top_path = None):
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs

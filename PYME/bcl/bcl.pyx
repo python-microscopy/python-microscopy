@@ -1,11 +1,13 @@
 import numpy as np
 from cython.view cimport array as cvarray
+cimport cython
 
 cdef extern from "huffman.h":
     int Huffman_Compress( unsigned char *inp, unsigned char *out, unsigned int insize ) nogil
+    int Huffman_Compress_( unsigned char *inp, unsigned char *out, unsigned int insize ) nogil
     void Huffman_Uncompress( unsigned char *inp, unsigned char *out, unsigned int insize, unsigned int outsize ) nogil
     
-    
+@cython.boundscheck(False)    
 def HuffmanCompress(unsigned char[:] data):
     out = np.zeros(int(data.shape[0]*1.01 + 320),'uint8')
     cdef unsigned char [:] ov = out
@@ -14,7 +16,18 @@ def HuffmanCompress(unsigned char[:] data):
         
         nb = Huffman_Compress(&data[0], &ov[0], dsize)
     return out[:nb]
-    
+
+@cython.boundscheck(False)    
+def HuffmanCompressOrig(unsigned char[:] data):
+    out = np.zeros(int(data.shape[0]*1.01 + 320),'uint8')
+    cdef unsigned char [:] ov = out
+    cdef int dsize = data.shape[0]
+    with nogil:
+        
+        nb = Huffman_Compress_(&data[0], &ov[0], dsize)
+    return out[:nb]
+
+@cython.boundscheck(False)   
 def HuffmanDecompress(unsigned char[:] data, unsigned int outsize):
     out = np.zeros(outsize,'uint8')
     cdef unsigned char [:] ov = out
