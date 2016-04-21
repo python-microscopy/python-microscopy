@@ -87,16 +87,20 @@ class Pipeline:
 
 
     def Rebuild(self):
+        for s in self.dataSources:
+            if 'setMapping' in dir(s):
+                #keep raw measurements available
+                s.setMapping('x_raw', 'x')
+                s.setMapping('y_raw', 'y')
+                s.setMapping('z_raw', 'z')
+                
         if not self.selectedDataSource is None:
             if self.mapping:
                 self.mapping.resultsSource = self.selectedDataSource
             else:
                 self.mapping = inpFilt.mappingFilter(self.selectedDataSource)
                 
-                #keep raw measurements available
-                self.mapping.setMapping('x_raw', 'x')
-                self.mapping.setMapping('y_raw', 'y')
-                self.mapping.setMapping('z_raw', 'z')
+                
                 
             self.filter = inpFilt.resultsFilter(self.mapping, **self.filterKeys)
             #if self.mapping:
