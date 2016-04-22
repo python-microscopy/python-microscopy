@@ -188,6 +188,67 @@ class Histogram(ModuleBase):
         namespace[self.outputName] = res
         
 
+        
+@register_module('ImageHistogram')         
+class ImageHistogram(ModuleBase):
+    '''Calculates a histogram of a given measurement key'''
+    inputImage = CStr('input')
+    outputName = CStr('hist')
+    inputMask = CStr('')
+    nbins = Int(50)
+    left = Float(0.)
+    right = Float(1000)
+    
+    def execute(self, namespace):
+        v = namespace[self.inputImage]
+        vals = v.data[:,:,:].ravel()
+        
+        if not self.inputMask == '':
+            m = namespace[self.inputMask].data[:,:,:].ravel() >0
+        
+            vals = vals[m]
+        
+        edges = np.linspace(self.left, self.right, self.nbins)
+        
+        res = np.histogram(vals, edges)[0]
+        
+        res = pd.DataFrame({'bins' : edges, 'counts' : res})
+        if 'mdh' in dir(v):
+            res.mdh = v.mdh
+        
+        namespace[self.outputName] = res
+        
+@register_module('ImageCumulativeHistogram')         
+class ImageCumulativeHistogram(ModuleBase):
+    '''Calculates a histogram of a given measurement key'''
+    inputImage = CStr('input')
+    outputName = CStr('hist')
+    inputMask = CStr('')
+    #nbins = Int(50)
+    #left = Float(0.)
+    #right = Float(1000)
+    
+    def execute(self, namespace):
+        v = namespace[self.inputImage]
+        vals = v.data[:,:,:].ravel()
+        
+        if not self.inputMask == '':
+            m = namespace[self.inputMask].data[:,:,:].ravel() > 0 
+        
+            vals = vals[m]
+        
+        yvals = np.linspace(0, 1.0, len(vals))
+        xvals = np.sort(vals)
+        
+        #res = np.histogram(v, edges)[0]
+        
+        res = pd.DataFrame({'bins' : xvals, 'counts' : yvals})
+        if 'mdh' in dir(v):
+            res.mdh = v.mdh
+        
+        namespace[self.outputName] = res
+        
+
 @register_module('Measure2D') 
 class Measure2D(ModuleBase):
     '''Module with one image input and one image output'''
@@ -341,6 +402,45 @@ class SelectMeasurementColumns(ModuleBase):
             out.mdh = meas.mdh
             
         namespace[self.outputName] = out
+        
+@register_module('Plot')         
+class Plot(ModuleBase):
+    '''Take just certain columns of a variable'''
+    input0 = CStr('measurements')
+    input1 = CStr('')
+    input2 = CStr('')
+    input3 = CStr('')
+    xkey = CStr('')
+    ykey = CStr('')
+    outputName = CStr('outGraph') 
+    
+    def execute(self, namespace):
+        ms = []
+        labs = []
+        if not self.input0 == '':
+            ms.append(namespace[self.input0])
+            labs.append(self.input0)
+        if not self.input1 == '':
+            ms.append(namespace[self.input1])
+            labs.append(self.input1)
+        if not self.input2 == '':
+            ms.append(namespace[self.input2])
+            labs.append(self.input2)
+        if not self.input3 == '':
+            ms.append(namespace[self.input3])
+            labs.append(self.input3)
+
+        import pylab
+        
+        pylab.figure()
+        for meas in ms:
+            pylab.plot(meas[self.xkey], meas[self.ykey])
+        
+        pylab.grid()
+        pylab.legend(labs)
+        pylab.xlabel(self.xkey)
+        pylab.ylabel(self.ykey)
+        #namespace[self.outputName] = out
 
 @register_module('AddMetadataToMeasurements')         
 class AddMetadataToMeasurements(ModuleBase):

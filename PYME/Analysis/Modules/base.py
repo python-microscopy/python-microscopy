@@ -426,6 +426,18 @@ class Normalize(Filter):
         
         return data/float(data.max())
         
+@register_module('NormalizeMean')    
+class NormalizeMean(Filter):
+    '''Normalize an image so that the maximum is 1'''
+    
+    offset = Float(0)
+    
+    def applyFilter(self, data, chanNum, i, image0):
+        
+        data = data - self.offset
+        
+        return data/float(data.mean())
+        
         
 @register_module('Invert')    
 class Invert(Filter):
