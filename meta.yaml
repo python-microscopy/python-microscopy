@@ -146,6 +146,7 @@ requirements:
     - scikit-learn
     - shapely         [osx]
     - zeroconf
+    - requests
 
   #unfortunately not availible through conda on windows ##FIXME
 

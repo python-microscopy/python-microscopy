@@ -24,15 +24,19 @@ def configuration(parent_package='',top_path=None):
 entry_points={
     'console_scripts': [
         'PYMEBatch = PYME.Analysis.Modules.batchProcess:main',
+        'taskServerZC = PYME.ParallelTasks.taskServerZC:main',
+        'taskWorkerZC = PYME.ParallelTasks.taskWorkerZC:main',
+        'PYMEDataServer = PYME.ParallelTasks.HTTPDataServer:main',
+        'PYMEClusterDup = PYME.ParallelTasks.clusterDuplication:main',
     ],
     'gui_scripts': [
         'dh5view = PYME.DSView.dsviewer_npy_nb:main',
         'PYMEAcquire = PYME.Acquire.PYMEAcquire:main',
         'VisGUI = PYME.Analysis.LMVis.VisGUI:main',
         'launchWorkers = PYME.ParallelTasks.launchWorkers:main',
-        'taskServerZC.py = PYME.ParallelTasks.taskServerZC:main',
-        'taskWorkerZC.py = PYME.ParallelTasks.taskWorkerZC:main',
-        'fitMonP.py = PYME.ParallelTasks.fitMonP:main',
+        #'taskServerZC = PYME.ParallelTasks.taskServerZC:main',
+        #'taskWorkerZC = PYME.ParallelTasks.taskWorkerZC:main',
+        'fitMonP = PYME.ParallelTasks.fitMonP:main',
         'bakeshop = PYME.Analysis.Modules.bakeshop:main',
     ]
 }

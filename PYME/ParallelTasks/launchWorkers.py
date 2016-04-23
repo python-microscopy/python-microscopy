@@ -67,8 +67,8 @@ def cpuCount():
 
 #SERVER_PROC = 'taskServerMP.py'
 #WORKER_PROC = 'taskWorkerMP.py'
-SERVER_PROC = 'taskServerZC.py'
-WORKER_PROC = 'taskWorkerZC.py'
+SERVER_PROC = 'taskServerZC'
+WORKER_PROC = 'taskWorkerZC'
 
 fstub = os.path.split(__file__)[0]
 
@@ -129,7 +129,7 @@ def main():
                 pass
             
     
-        subprocess.Popen('%s %s' % (sys.executable, os.path.join(fstub, SERVER_PROC)), shell=True)
+        subprocess.Popen('%s %s.py' % (sys.executable, os.path.join(fstub, SERVER_PROC)), shell=True)
     
         time.sleep(3)
     
@@ -141,13 +141,13 @@ def main():
         #get rid of any previously started queues etc...
         os.system('killall %s' % SERVER_PROC)
         os.system('killall %s' % WORKER_PROC)
-        os.system('killall fitMonP.py')
+        os.system('killall fitMonP')
     
         subprocess.Popen(SERVER_PROC, shell=True)
     
         time.sleep(3)
     
-        subprocess.Popen('fitMonP.py', shell=True)
+        subprocess.Popen('fitMonP', shell=True)
     
         for i in range(numProcessors):
             subprocess.Popen(WORKER_PROC, shell=True)
