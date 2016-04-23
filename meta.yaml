@@ -155,6 +155,7 @@ requirements:
     - zeroconf
     - requests
     - pandas
+    - yaml
 
   #unfortunately not availible through conda on windows ##FIXME
 
