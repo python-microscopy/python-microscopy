@@ -147,6 +147,7 @@ requirements:
     - shapely         [osx]
     - zeroconf
     - requests
+    - pandas
 
   #unfortunately not availible through conda on windows ##FIXME
 
