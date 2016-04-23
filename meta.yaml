@@ -32,6 +32,13 @@ build:
     - launchWorkers = PYME.ParallelTasks.launchWorkers:main
     - PYMEBatch = PYME.Analysis.Modules.batchProcess:main
     - bakeshop = PYME.Analysis.Modules.bakeshop:main
+    - fitMonP = PYME.ParallelTasks.fitMonP:main
+    - taskWorkerZC = PYME.ParallelTasks.taskWorkerZC:main
+    - taskServerZC = PYME.ParallelTasks.taskServerZC:main
+    - PYMEDataServer = PYME.ParallelTasks.HTTPDataServer:main
+    - PYMEClusterDup = PYME.ParallelTasks.clusterDuplication:main
+
+
 
     #- bspatch4 = bsdiff4.cli:main_bspatch4
 
