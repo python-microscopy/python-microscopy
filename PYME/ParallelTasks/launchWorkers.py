@@ -102,7 +102,7 @@ def main():
     
     if sys.platform == 'win32':
         print 'Launching server ...'
-        subprocess.Popen('python %s\\%s' % (fstub, SERVER_PROC), shell=True)
+        subprocess.Popen('python %s\\%s.py' % (fstub, SERVER_PROC), shell=True)
     
         print 'Waiting for server to come up ...'
         time.sleep(10)
@@ -112,7 +112,7 @@ def main():
     
         print 'Launching %d workers ...' % numProcessors
         for i in range(numProcessors):
-            subprocess.Popen('python %s\\%s' % (fstub, WORKER_PROC), shell=True)
+            subprocess.Popen('python %s\\%s.py' % (fstub, WORKER_PROC), shell=True)
     elif sys.platform == 'darwin':
         import psutil
         
