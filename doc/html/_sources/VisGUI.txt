@@ -1,5 +1,5 @@
-Visualising Data - VisGUI
-*************************
+**VisGUI** - Visualising Localization Data Sets
+***********************************************
 
 Installing the standalone viewer
 ================================

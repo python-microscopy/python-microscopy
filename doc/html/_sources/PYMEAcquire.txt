@@ -1,7 +1,7 @@
 .. _pymeacquire:
 
-PYMEAcquire
-***********
+**PYMEAcquire** - Instrument control and simulation
+***************************************************
 
 PYMEAcquire is a general purpose microscope control and data acquisition platform
 with several features which make it well suited to localisation microscopy. These

@@ -6,15 +6,15 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Visualising Data - VisGUI &mdash; PYME 0.1 documentation</title>
+    <title>VisGUI - Visualising Localization Data Sets &mdash; PYME 16.04.23 documentation</title>
     
-    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.1',
+        VERSION:     '16.04.23',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,46 +23,109 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="PYME 0.1 documentation" href="index.html" />
-    <link rel="next" title="Technical Details" href="Technical.html" />
-    <link rel="prev" title="Using an image splitting device for multi-colour ratiometric imaging" href="SplitterMulticolour.html" /> 
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PYME 16.04.23 documentation" href="index.html" />
+    <link rel="next" title="PYME Data Formats" href="DataFormats.html" />
+    <link rel="prev" title="Using recipes for data processing and quantification" href="Recipes.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="Technical.html" title="Technical Details"
+          <a href="DataFormats.html" title="PYME Data Formats"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="SplitterMulticolour.html" title="Using an image splitting device for multi-colour ratiometric imaging"
+          <a href="Recipes.html" title="Using recipes for data processing and quantification"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">PYME 0.1 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">PYME 16.04.23 documentation</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/VisGUI.rst">Edit</a> &raquo;</li>
  
 
       </ul>
-    </div>  
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#"><strong>VisGUI</strong> - Visualising Localization Data Sets</a><ul>
+<li><a class="reference internal" href="#installing-the-standalone-viewer">Installing the standalone viewer</a><ul>
+<li><a class="reference internal" href="#system-requirements">System Requirements</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#importing-data">Importing Data</a><ul>
+<li><a class="reference internal" href="#h5r-format">.h5r format</a></li>
+<li><a class="reference internal" href="#tab-formatted-text">Tab formatted text</a></li>
+<li><a class="reference internal" href="#matlab-mat-files">Matlab .mat files</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#exploring-the-data">Exploring the data</a><ul>
+<li><a class="reference internal" href="#the-filter">The Filter</a></li>
+<li><a class="reference internal" href="#mapping-colour">Mapping &amp; Colour</a></li>
+<li><a class="reference internal" href="#interactive-display">Interactive Display</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#image-generation">Image Generation</a><ul>
+<li><a class="reference internal" href="#image-generation-methods">Image Generation Methods</a></li>
+<li><a class="reference internal" href="#generated-images">Generated Images</a><ul>
+<li><a class="reference internal" href="#saving-images">Saving images</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#extras">Extras</a><ul>
+<li><a class="reference internal" href="#console">Console</a></li>
+<li><a class="reference internal" href="#metadata-events">Metadata, Events</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="Recipes.html"
+                        title="previous chapter">Using recipes for data processing and quantification</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="DataFormats.html"
+                        title="next chapter">PYME Data Formats</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/VisGUI.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
-  <div class="section" id="visualising-data-visgui">
-<h1>Visualising Data - VisGUI<a class="headerlink" href="#visualising-data-visgui" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="visgui-visualising-localization-data-sets">
+<h1><strong>VisGUI</strong> - Visualising Localization Data Sets<a class="headerlink" href="#visgui-visualising-localization-data-sets" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="installing-the-standalone-viewer">
 <h2>Installing the standalone viewer<a class="headerlink" href="#installing-the-standalone-viewer" title="Permalink to this headline">¶</a></h2>
 <p>If you&#8217;re using the standalone py2exed version, no installation is necessary - simply unzip and run VisGUI.exe. You should get an image like that shown below.</p>
 <img alt="_images/VisGUI_NoData.png" src="_images/VisGUI_NoData.png" />
-<p>Otherwise follow the PYME <a class="reference internal" href="Installation/Installation_.html#installation"><em>Installation</em></a> instructions</p>
+<p>Otherwise follow the PYME <span class="xref std std-ref">Installation</span> instructions</p>
 <div class="section" id="system-requirements">
 <h3>System Requirements<a class="headerlink" href="#system-requirements" title="Permalink to this headline">¶</a></h3>
 <p>VisGUI will run on relatively low spec machines (I&#8217;ve had it running on an old single core 1.6GHz laptop with 1GB of RAM), but for an enjoyable user experience I&#8217;d recommend at least the following:</p>
@@ -80,14 +143,14 @@
 </div>
 <div class="section" id="importing-data">
 <h2>Importing Data<a class="headerlink" href="#importing-data" title="Permalink to this headline">¶</a></h2>
-<p>To import data, simply use the <tt class="docutils literal"><span class="pre">File-&gt;Open</span></tt> menu command, launch VisGUI from the command line with the filename as an argument, or right click on a data file in windows explorer and select <strong>Open With</strong> <a class="footnote-reference" href="#id2" id="id1">[1]</a></p>
+<p>To import data, simply use the <code class="docutils literal"><span class="pre">File-&gt;Open</span></code> menu command, launch VisGUI from the command line with the filename as an argument, or right click on a data file in windows explorer and select <strong>Open With</strong> <a class="footnote-reference" href="#id2" id="id1">[1]</a></p>
 <table class="docutils footnote" frame="void" id="id2" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
 <tr><td class="label"><a class="fn-backref" href="#id1">[1]</a></td><td>you&#8217;ll need to tell windows where to find VisGUI the first time you do this.</td></tr>
 </tbody>
 </table>
-<p>Three data formats are currently supported - our custom <tt class="docutils literal"><span class="pre">.h5r</span></tt> format, tab delimited text, and matlab <tt class="docutils literal"><span class="pre">.mat</span></tt> files. In each case, the data should take the form of a table of values where each row corresponds to a detected single molecule event, and each column corresponds to one of the fitted parameters such as, for example, x position, y position, or amplitude. All position values are assumed to be in nm. The table must contain the <em>x</em> and <em>y</em> positions of the localised single molecule events, and may contain any other pertinant parameters. It is suggested that at least folowing parameters should also be included: the time/frame number at which the event was detected, the event amplitude, event width, and the estimated localisation error.</p>
+<p>Three data formats are currently supported - our custom <code class="docutils literal"><span class="pre">.h5r</span></code> format, tab delimited text, and matlab <code class="docutils literal"><span class="pre">.mat</span></code> files. In each case, the data should take the form of a table of values where each row corresponds to a detected single molecule event, and each column corresponds to one of the fitted parameters such as, for example, x position, y position, or amplitude. All position values are assumed to be in nm. The table must contain the <em>x</em> and <em>y</em> positions of the localised single molecule events, and may contain any other pertinant parameters. It is suggested that at least folowing parameters should also be included: the time/frame number at which the event was detected, the event amplitude, event width, and the estimated localisation error.</p>
 <p>Once loaded the columns are accessed by semi-descriptive names, with the names <strong>x, y, t, A, sig, error_x</strong> being recognised by the program as the previously introduced parameters.
 :note: the program will not work if either <em>x</em> or <em>y</em> is undefined</p>
 <div class="section" id="h5r-format">
@@ -107,7 +170,7 @@
 </div>
 <div class="section" id="exploring-the-data">
 <h2>Exploring the data<a class="headerlink" href="#exploring-the-data" title="Permalink to this headline">¶</a></h2>
-<p>Having sucessfully loaded a dataset, you should see something resembling the image shown below. If you don&#8217;t see anything, don&#8217;t panic, the most common reason is that the filter is throwing all your data points away - see <em class="xref std std-ref">The Filter</em>.</p>
+<p>Having sucessfully loaded a dataset, you should see something resembling the image shown below. If you don&#8217;t see anything, don&#8217;t panic, the most common reason is that the filter is throwing all your data points away - see <span class="xref std std-ref">The Filter</span>.</p>
 <img alt="_images/vis_gui_data_loaded.png" src="_images/vis_gui_data_loaded.png" />
 <p>Within the viewer, the data follows a pipeline as illustrated below. The important components are described in detail in the following sections.</p>
 <img src="_images/vis_pipeline.svg" /><div class="section" id="the-filter">
@@ -164,7 +227,7 @@
 </div>
 <div class="section" id="image-generation">
 <h2>Image Generation<a class="headerlink" href="#image-generation" title="Permalink to this headline">¶</a></h2>
-<p>After optimising the filter, corrected drift, and doing other sanity checks on the data, one typically wishes to generate an image. This is accomplished by choosing one of the options from the <strong>Generate Image</strong> menu. All image generation methods generate an image which matches the region currently displayed in the interactive display (View) tab. Remember that the display can be zoomed to the whole image using the <tt class="docutils literal"><span class="pre">View-&gt;Fit</span></tt> menu item.</p>
+<p>After optimising the filter, corrected drift, and doing other sanity checks on the data, one typically wishes to generate an image. This is accomplished by choosing one of the options from the <strong>Generate Image</strong> menu. All image generation methods generate an image which matches the region currently displayed in the interactive display (View) tab. Remember that the display can be zoomed to the whole image using the <code class="docutils literal"><span class="pre">View-&gt;Fit</span></code> menu item.</p>
 <img alt="_images/generate_triangulation_dialog.png" src="_images/generate_triangulation_dialog.png" />
 <p>Each method will also display a simlar dialog (but potentially with a slightly different set of options) prompting for the pixel size and any other parameters. The individual methods are described in the following:</p>
 <div class="section" id="image-generation-methods">
@@ -181,14 +244,14 @@
 <p class="last">In addition to jittering, it is also possible to smooth the triangularisation by averaging several triangularisations performed on Monte-Carlo subsets of the point positions. If you want to try this out, set the multiplier for the jitter to 0 and set the MC subsampling probability to less than 1 (~ 0.2 is probably a good start).</p>
 </dd>
 <dt><strong>Quad-Tree</strong></dt>
-<dd>The <strong>Quad-Tree</strong> method allows a quad tree (see <em class="xref std std-ref">sec:intQT</em>,*Visualisation of Localisation Microscopy Data ...*) to be rendered at a given pixel size. The bin depth setting from the Quad tree in the interactive display is used.</dd>
+<dd>The <strong>Quad-Tree</strong> method allows a quad tree (see <span class="xref std std-ref">sec:intQT</span>,*Visualisation of Localisation Microscopy Data ...*) to be rendered at a given pixel size. The bin depth setting from the Quad tree in the interactive display is used.</dd>
 <dt><strong>3D Histogram &amp; 3D Gaussian</strong></dt>
 <dd>These methods are 3D versions of the histogram and Gaussian methods for data with <em>z</em> information. 3D versions of the triangularisation and Quad-Tree algorithms are in progress.</dd>
 </dl>
 </div>
 <div class="section" id="generated-images">
 <h3>Generated Images<a class="headerlink" href="#generated-images" title="Permalink to this headline">¶</a></h3>
-<p>After an image has been generated, it should pop up in a new window. All image windows are locked to the main view window in both position and zoom. Scrolling on any image window will thus result in a global zoom over all image windows. The colour scaling in the generated images can be adjusted selecting the <tt class="docutils literal"><span class="pre">View-&gt;Colour</span> <span class="pre">scaling</span></tt> menu item, which displays a small pop-up window with a histogram view.</p>
+<p>After an image has been generated, it should pop up in a new window. All image windows are locked to the main view window in both position and zoom. Scrolling on any image window will thus result in a global zoom over all image windows. The colour scaling in the generated images can be adjusted selecting the <code class="docutils literal"><span class="pre">View-&gt;Colour</span> <span class="pre">scaling</span></code> menu item, which displays a small pop-up window with a histogram view.</p>
 <img alt="_images/generated_image.png" src="_images/generated_image.png" />
 <p>The image viewer is designed to view multi-colour images, in which case the individual channels will appear as separate tabs, in addition to a composite tab in which the channels are overlaid. When dealing with single channel data, only one tab is displayed.</p>
 <div class="section" id="saving-images">
@@ -197,7 +260,7 @@
 <table class="docutils footnote" frame="void" id="id4" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#id3">[2]</a></td><td>Although this currently relies on an external program, <tt class="docutils literal"><span class="pre">tiffcp</span></tt>, and is untested on windows.}</td></tr>
+<tr><td class="label"><a class="fn-backref" href="#id3">[2]</a></td><td>Although this currently relies on an external program, <code class="docutils literal"><span class="pre">tiffcp</span></code>, and is untested on windows.}</td></tr>
 </tbody>
 </table>
 </div>
@@ -207,7 +270,7 @@
 <h2>Extras<a class="headerlink" href="#extras" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="console">
 <h3>Console<a class="headerlink" href="#console" title="Permalink to this headline">¶</a></h3>
-<p>The console tab is a functional python console embedded within the program. The pipeline can be accessed directly, and behaves like a dictionary which understands the variable names as keys <a class="footnote-reference" href="#id6" id="id5">[3]</a> . A number of Matlab style plotting and basic numeric commands are accessible by executing <tt class="docutils literal"><span class="pre">from</span> <span class="pre">pylab</span> <span class="pre">import</span> <span class="pre">*</span></tt> (see the <a class="reference external" href="http://matplotlib.sourceforge.net">matplotlib</a> webpage for more docs). After importing pylab, one can, for example, plot a histogram of point amplitudes by executing <tt class="docutils literal"><span class="pre">hist(pipeline['A'])</span></tt>.</p>
+<p>The console tab is a functional python console embedded within the program. The pipeline can be accessed directly, and behaves like a dictionary which understands the variable names as keys <a class="footnote-reference" href="#id6" id="id5">[3]</a> . A number of Matlab style plotting and basic numeric commands are accessible by executing <code class="docutils literal"><span class="pre">from</span> <span class="pre">pylab</span> <span class="pre">import</span> <span class="pre">*</span></code> (see the <a class="reference external" href="http://matplotlib.sourceforge.net">matplotlib</a> webpage for more docs). After importing pylab, one can, for example, plot a histogram of point amplitudes by executing <code class="docutils literal"><span class="pre">hist(pipeline['A'])</span></code>.</p>
 <table class="docutils footnote" frame="void" id="id6" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
@@ -226,96 +289,29 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
-        <div class="sphinxsidebarwrapper">
-  <h3><a href="index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Visualising Data - VisGUI</a><ul>
-<li><a class="reference internal" href="#installing-the-standalone-viewer">Installing the standalone viewer</a><ul>
-<li><a class="reference internal" href="#system-requirements">System Requirements</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#importing-data">Importing Data</a><ul>
-<li><a class="reference internal" href="#h5r-format">.h5r format</a></li>
-<li><a class="reference internal" href="#tab-formatted-text">Tab formatted text</a></li>
-<li><a class="reference internal" href="#matlab-mat-files">Matlab .mat files</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#exploring-the-data">Exploring the data</a><ul>
-<li><a class="reference internal" href="#the-filter">The Filter</a></li>
-<li><a class="reference internal" href="#mapping-colour">Mapping &amp; Colour</a></li>
-<li><a class="reference internal" href="#interactive-display">Interactive Display</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#image-generation">Image Generation</a><ul>
-<li><a class="reference internal" href="#image-generation-methods">Image Generation Methods</a></li>
-<li><a class="reference internal" href="#generated-images">Generated Images</a><ul>
-<li><a class="reference internal" href="#saving-images">Saving images</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li><a class="reference internal" href="#extras">Extras</a><ul>
-<li><a class="reference internal" href="#console">Console</a></li>
-<li><a class="reference internal" href="#metadata-events">Metadata, Events</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="SplitterMulticolour.html"
-                        title="previous chapter">Using an image splitting device for multi-colour ratiometric imaging</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="Technical.html"
-                        title="next chapter">Technical Details</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/VisGUI.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
-  <h3>Quick search</h3>
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
-        </div>
-      </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
           <a href="genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="Technical.html" title="Technical Details"
+          <a href="DataFormats.html" title="PYME Data Formats"
              >next</a> |</li>
         <li class="right" >
-          <a href="SplitterMulticolour.html" title="Using an image splitting device for multi-colour ratiometric imaging"
+          <a href="Recipes.html" title="Using recipes for data processing and quantification"
              >previous</a> |</li>
-        <li><a href="index.html">PYME 0.1 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">PYME 16.04.23 documentation</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/VisGUI.rst">Edit</a> &raquo;</li>
  
 
       </ul>
     </div>
-    <div class="footer">
-        &copy; Copyright 2010, David Baddeley.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, David Baddeley.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
     </div>
   </body>
 </html>

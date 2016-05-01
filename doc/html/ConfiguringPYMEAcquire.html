@@ -6,15 +6,15 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Configuring PYME Acquire &mdash; PYME 0.1 documentation</title>
+    <title>Configuring PYME Acquire &mdash; PYME 16.04.23 documentation</title>
     
-    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.1',
+        VERSION:     '16.04.23',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,71 +23,118 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="PYME 0.1 documentation" href="index.html" />
-    <link rel="up" title="PYMEAcquire" href="PYMEAcquire.html" />
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PYME 16.04.23 documentation" href="index.html" />
+    <link rel="up" title="PYMEAcquire - Instrument control and simulation" href="PYMEAcquire.html" />
     <link rel="next" title="Using PYME Acquire" href="AcquireBasicUsage.html" />
-    <link rel="prev" title="PYMEAcquire" href="PYMEAcquire.html" /> 
+    <link rel="prev" title="PYMEAcquire - Instrument control and simulation" href="PYMEAcquire.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
           <a href="AcquireBasicUsage.html" title="Using PYME Acquire"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="PYMEAcquire.html" title="PYMEAcquire"
+          <a href="PYMEAcquire.html" title="PYMEAcquire - Instrument control and simulation"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">PYME 0.1 documentation</a> &raquo;</li>
-          <li><a href="PYMEAcquire.html" accesskey="U">PYMEAcquire</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">PYME 16.04.23 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="PYMEAcquire.html" accesskey="U"><strong>PYMEAcquire</strong> - Instrument control and simulation</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/ConfiguringPYMEAcquire.rst">Edit</a> &raquo;</li>
  
 
       </ul>
-    </div>  
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Configuring PYME Acquire</a><ul>
+<li><a class="reference internal" href="#specifying-your-hardware">Specifying your Hardware</a><ul>
+<li><a class="reference internal" href="#the-scope-object">The <code class="docutils literal"><span class="pre">scope</span></code> Object</a></li>
+<li><a class="reference internal" href="#positioning-scope-piezos">Positioning - <code class="docutils literal"><span class="pre">scope.piezos</span></code></a></li>
+<li><a class="reference internal" href="#initbg-and-initgui"><code class="docutils literal"><span class="pre">InitBG</span></code> and <code class="docutils literal"><span class="pre">InitGUI</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#pymesettings-db">PYMESettings.db</a></li>
+<li><a class="reference internal" href="#calibration">Calibration</a><ul>
+<li><a class="reference internal" href="#andor-noise-properties">Andor Noise Properties</a></li>
+<li><a class="reference internal" href="#emccd-gain">EMCCD Gain</a></li>
+<li><a class="reference internal" href="#ccd-pixel-size">CCD Pixel Size</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="PYMEAcquire.html"
+                        title="previous chapter"><strong>PYMEAcquire</strong> - Instrument control and simulation</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="AcquireBasicUsage.html"
+                        title="next chapter">Using PYME Acquire</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/ConfiguringPYMEAcquire.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="configuring-pyme-acquire">
 <span id="configuringpymeacquire"></span><h1>Configuring PYME Acquire<a class="headerlink" href="#configuring-pyme-acquire" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="specifying-your-hardware">
 <h2>Specifying your Hardware<a class="headerlink" href="#specifying-your-hardware" title="Permalink to this headline">¶</a></h2>
-<p>The hardware in PYME is configured and initialised in a customised initialisation script. These typically start with <tt class="docutils literal"><span class="pre">init</span></tt> and live in <tt class="docutils literal"><span class="pre">PYME/Acquire/Scripts</span></tt>. You can tell PYME Acquire which script to use with the <tt class="docutils literal"><span class="pre">--init-script</span></tt> (short form <tt class="docutils literal"><span class="pre">-i</span></tt>) command line option eg:</p>
+<p>The hardware in PYME is configured and initialised in a customised initialisation script. These typically start with <code class="docutils literal"><span class="pre">init</span></code> and live in <code class="docutils literal"><span class="pre">PYME/Acquire/Scripts</span></code>. You can tell PYME Acquire which script to use with the <code class="docutils literal"><span class="pre">--init-script</span></code> (short form <code class="docutils literal"><span class="pre">-i</span></code>) command line option eg:</p>
 <div class="highlight-python"><div class="highlight"><pre>python PYMEAquire.py -i init_script.py
 </pre></div>
 </div>
-<p>If you don&#8217;t specify a script, it&#8217;ll use <tt class="docutils literal"><span class="pre">init.py</span></tt> by default, which contains a setup for the simulator.</p>
+<p>If you don&#8217;t specify a script, it&#8217;ll use <code class="docutils literal"><span class="pre">init.py</span></code> by default, which contains a setup for the simulator.</p>
 <p>The easiest way to get your hardware up and running is to copy and modify one of the existing scripts. There is a little bit of magic going on in places, so I&#8217;ll attempt to explain the relevant bits.</p>
 <div class="section" id="the-scope-object">
-<h3>The <tt class="docutils literal"><span class="pre">scope</span></tt> Object<a class="headerlink" href="#the-scope-object" title="Permalink to this headline">¶</a></h3>
-<p><tt class="docutils literal"><span class="pre">scope</span></tt> is an object representing the microscope. It serves a a place to accumulate all the various hardware bits as well as being home to a few utility functions. By the end of the script, scope must have the following properties defined:</p>
+<h3>The <code class="docutils literal"><span class="pre">scope</span></code> Object<a class="headerlink" href="#the-scope-object" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">scope</span></code> is an object representing the microscope. It serves a a place to accumulate all the various hardware bits as well as being home to a few utility functions. By the end of the script, scope must have the following properties defined:</p>
 <table border="1" class="docutils">
 <colgroup>
 <col width="14%" />
 <col width="86%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">scope.cam</span></tt></td>
-<td>The camera object. (<tt class="docutils literal"><span class="pre">scope.cameras</span></tt> is a dictionary of cameras used for multiple camera support, but can
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">scope.cam</span></code></td>
+<td>The camera object. (<code class="docutils literal"><span class="pre">scope.cameras</span></code> is a dictionary of cameras used for multiple camera support, but can
 safely be ignored unless you really need to drive two cameras on one rig)</td>
 </tr>
-<tr class="row-even"><td><tt class="docutils literal"><span class="pre">scope.chaninfo</span></tt></td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">scope.chaninfo</span></code></td>
 <td>Information about colour channels. This is mostly left over cruft from previous versions of the software
 and specifies how to deal with colour (bayer mask) cameras, and the sequential acquisition of different
 colour channels when using shuttered laser excitation sources, a multiband dichroic/blocking filter, and a
 black &amp; white camera. Just copy across from one of the existing scripts.</td>
 </tr>
-<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">scope.shutters</span></tt></td>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">scope.shutters</span></code></td>
 <td>Cruft again, associated with chaninfo above</td>
 </tr>
 </tbody>
@@ -99,35 +146,35 @@ black &amp; white camera. Just copy across from one of the existing scripts.</td
 <col width="86%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">scope.lasers</span></tt></td>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">scope.lasers</span></code></td>
 <td>This should be a list of laser objects, and is where most of the shuttering is now controlled</td>
 </tr>
-<tr class="row-even"><td><tt class="docutils literal"><span class="pre">scope.joystick</span></tt></td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">scope.joystick</span></code></td>
 <td>A joystick object.</td>
 </tr>
 </tbody>
 </table>
 </div>
 <div class="section" id="positioning-scope-piezos">
-<h3>Positioning - <tt class="docutils literal"><span class="pre">scope.piezos</span></tt><a class="headerlink" href="#positioning-scope-piezos" title="Permalink to this headline">¶</a></h3>
-<p><tt class="docutils literal"><span class="pre">scope.piezos</span></tt> is a list to which positioning devices which export the piezo interface (see the scripts in <tt class="docutils literal"><span class="pre">PYME\Acquire\Hardware\Piezos</span></tt>) should be added. Note that the piezo bit is historic, and this should probably be called <tt class="docutils literal"><span class="pre">scope.positioning</span></tt> (or similar) - there&#8217;s nothing to say that they can&#8217;t actually be stepper motors. The entries in this list should be tuples of the form <tt class="docutils literal"><span class="pre">(positioningObject,</span> <span class="pre">channelNum,</span> <span class="pre">displayName)</span></tt>.</p>
+<h3>Positioning - <code class="docutils literal"><span class="pre">scope.piezos</span></code><a class="headerlink" href="#positioning-scope-piezos" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">scope.piezos</span></code> is a list to which positioning devices which export the piezo interface (see the scripts in <code class="docutils literal"><span class="pre">PYME\Acquire\Hardware\Piezos</span></code>) should be added. Note that the piezo bit is historic, and this should probably be called <code class="docutils literal"><span class="pre">scope.positioning</span></code> (or similar) - there&#8217;s nothing to say that they can&#8217;t actually be stepper motors. The entries in this list should be tuples of the form <code class="docutils literal"><span class="pre">(positioningObject,</span> <span class="pre">channelNum,</span> <span class="pre">displayName)</span></code>.</p>
 </div>
 <div class="section" id="initbg-and-initgui">
-<h3><tt class="docutils literal"><span class="pre">InitBG</span></tt> and <tt class="docutils literal"><span class="pre">InitGUI</span></tt><a class="headerlink" href="#initbg-and-initgui" title="Permalink to this headline">¶</a></h3>
-<p>This is where things start to get a bit complicated. To improve startup times, PYME Acquire supports a threaded initialisation, such that different hardware components can be initialised in parallel. This is what all the <tt class="docutils literal"><span class="pre">InitBG</span></tt> blocks are.</p>
-<p>The <tt class="docutils literal"><span class="pre">InitBG</span></tt> function takes a name (to display on the splash screen) and a string containing the code to execute, and fires off a new thread to execute the code. It returns the thread created, so, if you have one bit of hardware which requires another to be initialised first, you can use the join function to force a wait. This is purely a performance tweak, so you can quite happily just put the code in without the <tt class="docutils literal"><span class="pre">InitBG</span></tt> wrappers.</p>
-<p>The <tt class="docutils literal"><span class="pre">InitGUI</span></tt> blocks serve a different function - the main PYME Acquire GUI is not properly created when the init script is run, and any GUI operations associated with the various bits of hardware need to be deferred to such time as the main window is there. <tt class="docutils literal"><span class="pre">InitGUI</span></tt> blocks add the code contained to a list of things to be executed when the main window is ready.</p>
+<h3><code class="docutils literal"><span class="pre">InitBG</span></code> and <code class="docutils literal"><span class="pre">InitGUI</span></code><a class="headerlink" href="#initbg-and-initgui" title="Permalink to this headline">¶</a></h3>
+<p>This is where things start to get a bit complicated. To improve startup times, PYME Acquire supports a threaded initialisation, such that different hardware components can be initialised in parallel. This is what all the <code class="docutils literal"><span class="pre">InitBG</span></code> blocks are.</p>
+<p>The <code class="docutils literal"><span class="pre">InitBG</span></code> function takes a name (to display on the splash screen) and a string containing the code to execute, and fires off a new thread to execute the code. It returns the thread created, so, if you have one bit of hardware which requires another to be initialised first, you can use the join function to force a wait. This is purely a performance tweak, so you can quite happily just put the code in without the <code class="docutils literal"><span class="pre">InitBG</span></code> wrappers.</p>
+<p>The <code class="docutils literal"><span class="pre">InitGUI</span></code> blocks serve a different function - the main PYME Acquire GUI is not properly created when the init script is run, and any GUI operations associated with the various bits of hardware need to be deferred to such time as the main window is there. <code class="docutils literal"><span class="pre">InitGUI</span></code> blocks add the code contained to a list of things to be executed when the main window is ready.</p>
 </div>
 </div>
 <div class="section" id="pymesettings-db">
 <h2>PYMESettings.db<a class="headerlink" href="#pymesettings-db" title="Permalink to this headline">¶</a></h2>
-<p>PYME Acquire stores a lot of it&#8217;s settings in <tt class="docutils literal"><span class="pre">PYME/Acquire/PYMESettings.db</span></tt>. This is an sqllite database and will be created the first time PYME Acquire is run. It should then have it&#8217;s permissions changed so that all users who are going to be using the software can write to it.</p>
+<p>PYME Acquire stores a lot of it&#8217;s settings in <code class="docutils literal"><span class="pre">PYME/Acquire/PYMESettings.db</span></code>. This is an sqllite database and will be created the first time PYME Acquire is run. It should then have it&#8217;s permissions changed so that all users who are going to be using the software can write to it.</p>
 </div>
 <div class="section" id="calibration">
 <h2>Calibration<a class="headerlink" href="#calibration" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="andor-noise-properties">
 <h3>Andor Noise Properties<a class="headerlink" href="#andor-noise-properties" title="Permalink to this headline">¶</a></h3>
-<p>The analysis software wants to know about the camera noise properties, which can be gleaned from the performance sheet shipped with the camera. At present you need to edit <tt class="docutils literal"><span class="pre">PYME/Acquire/Hardware/AndorIXon/AndorIXon.py</span></tt> and add an entry to the <tt class="docutils literal"><span class="pre">noiseProperties</span></tt> dictionary. The key should be your camera serial number, and the settings should be for a readout speed of 10Mhz and a pre-amp gain of ??.</p>
+<p>The analysis software wants to know about the camera noise properties, which can be gleaned from the performance sheet shipped with the camera. At present you need to edit <code class="docutils literal"><span class="pre">PYME/Acquire/Hardware/AndorIXon/AndorIXon.py</span></code> and add an entry to the <code class="docutils literal"><span class="pre">noiseProperties</span></code> dictionary. The key should be your camera serial number, and the settings should be for a readout speed of 10Mhz and a pre-amp gain of ??.</p>
 </div>
 <div class="section" id="emccd-gain">
 <h3>EMCCD Gain<a class="headerlink" href="#emccd-gain" title="Permalink to this headline">¶</a></h3>
@@ -163,7 +210,7 @@ pixel size you thus have to create a new setting, and then make that active.</p>
 <span class="n">scope</span><span class="o">.</span><span class="n">SetVoxelSize</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>where <tt class="docutils literal"><span class="pre">x_size</span></tt> and <tt class="docutils literal"><span class="pre">y_size</span></tt> are the x and y pixel sizes <strong>in the sample</strong> in um.</p>
+<p>where <code class="docutils literal"><span class="pre">x_size</span></code> and <code class="docutils literal"><span class="pre">y_size</span></code> are the x and y pixel sizes <strong>in the sample</strong> in um.</p>
 </div>
 </div>
 </div>
@@ -172,81 +219,30 @@ pixel size you thus have to create a new setting, and then make that active.</p>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
-        <div class="sphinxsidebarwrapper">
-  <h3><a href="index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Configuring PYME Acquire</a><ul>
-<li><a class="reference internal" href="#specifying-your-hardware">Specifying your Hardware</a><ul>
-<li><a class="reference internal" href="#the-scope-object">The <tt class="docutils literal"><span class="pre">scope</span></tt> Object</a></li>
-<li><a class="reference internal" href="#positioning-scope-piezos">Positioning - <tt class="docutils literal"><span class="pre">scope.piezos</span></tt></a></li>
-<li><a class="reference internal" href="#initbg-and-initgui"><tt class="docutils literal"><span class="pre">InitBG</span></tt> and <tt class="docutils literal"><span class="pre">InitGUI</span></tt></a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#pymesettings-db">PYMESettings.db</a></li>
-<li><a class="reference internal" href="#calibration">Calibration</a><ul>
-<li><a class="reference internal" href="#andor-noise-properties">Andor Noise Properties</a></li>
-<li><a class="reference internal" href="#emccd-gain">EMCCD Gain</a></li>
-<li><a class="reference internal" href="#ccd-pixel-size">CCD Pixel Size</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="PYMEAcquire.html"
-                        title="previous chapter">PYMEAcquire</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="AcquireBasicUsage.html"
-                        title="next chapter">Using PYME Acquire</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/ConfiguringPYMEAcquire.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
-  <h3>Quick search</h3>
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
-        </div>
-      </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
           <a href="genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
           <a href="AcquireBasicUsage.html" title="Using PYME Acquire"
              >next</a> |</li>
         <li class="right" >
-          <a href="PYMEAcquire.html" title="PYMEAcquire"
+          <a href="PYMEAcquire.html" title="PYMEAcquire - Instrument control and simulation"
              >previous</a> |</li>
-        <li><a href="index.html">PYME 0.1 documentation</a> &raquo;</li>
-          <li><a href="PYMEAcquire.html" >PYMEAcquire</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">PYME 16.04.23 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="PYMEAcquire.html" ><strong>PYMEAcquire</strong> - Instrument control and simulation</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/ConfiguringPYMEAcquire.rst">Edit</a> &raquo;</li>
  
 
       </ul>
     </div>
-    <div class="footer">
-        &copy; Copyright 2010, David Baddeley.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, David Baddeley.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
     </div>
   </body>
 </html>

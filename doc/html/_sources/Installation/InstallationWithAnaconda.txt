@@ -1,25 +1,23 @@
 .. _installationAnaconda:
 
-Installation of PYME on 64 bit Windows or OSX
+Installation of PYME on 64 bit Windows, OSX, or Linux
 #####################################################
 
 PYME requires python (version 2.7) and a number of additional scientific packages.
-Although it is possible to install all packages individuall, and then install PYME,
+Although it is possible to install all packages individually, and then install PYME,
 by far the easiest way to get a system up and running is to install a pre-packaged 
 'scientfic python' distribution. `Anaconda <https://store.continuum.io/cshop/anaconda/>`_ 
 is one such distribution which is free for both academic and commercial use and includes 
 extensive package management capabilities which allow us to easily distribute and update 
-PYME on a variety of platforms. We currently provide compiled packages for 64 bit windows and OSX. 
-
-PYME also runs on linux, but is not currently available as an Anaconda package, and 
-will instead need to be built from source.
+PYME on a variety of platforms. We currently provide compiled packages for 64 bit windows, OSX, and Linux. 
 
 STEP 1: Installing Anaconda
 ===========================
 
 Download and install `Anaconda <https://store.continuum.io/cshop/anaconda/>`_ from 
 https://store.continuum.io/cshop/anaconda/. Choose the 64 bit version of Python 2.7
-for your prefered platform. 
+for your prefered platform. *NB: Anaconda is available in both Python 2.7 and Python 3.x flavours.
+PYME will only work with the Python 2.7 version.*
 
 STEP 2: Installing PYME using conda
 ===========================================
@@ -62,56 +60,14 @@ installed as part of PYME.
 ========================	==================================================================================================================
 
 
+STEP 4: Setting up bioformats importing [optional]
+==================================================
 
-STEP 4: Configuration
-=====================
+PYME (or specifically dh5view) can use bioformats to load data formats it doesn't natively support. For this to work you need to have java (JRE should be enough, but as the JDK is needed to compile the interface modules I have only tested with that) and the following 2 python modules installed:
 
-.. _basicconfig:
+- python-javabridge
+- python-bioformats
 
-Basic Configuration
--------------------
-
-In addition to the setup detailed above, PYME has a couple of configuration options 
-which are controlled by environment variables. These are:
-
-.. tabularcolumns:: |p{4.5cm}|p{11cm}|
+For OSX, I have compiled versions of these in the `david_baddeley` channel which you can get using ``conda install``. On other platforms you will have to download the JDK and build these from source (both are on github). You might also get away with ``pip install`` ing them.
 
 
-==================    ======================================================
-PYMEDATADIR           Default location where PYMEAcquire saves data. Eg
-                      ``D:\``. Also place where other parts of analysis
-                      chain look for data.
-
-PYMEMICRPATH          Used with sample database to know where (on the local
-                      machine) the microscope computer is mapped. Not relevant
-                      unless you're using the sample information database.
-
-PYMENASPATH           As for PYMEMICRPATH, but for the NAS
-==================    ======================================================
-
-You probably want to set PYMEDATADIR, as the default is not 
-particularly useful. Environment variables can be set by right clicking on 
-`My Computer` selecting `Properties` and then `Advanced System Settings`.
-
-You should now have a setup which works for simulation*, 
-data analysis, & visualisation. Interfacing with hardware 
-requires a little more work - see :ref:`ConfiguringPYMEAcquire`.
-
-\* simulation probably won't work perfectly until you've done the 
-EMGain calibration section of :ref:`ConfiguringPYMEAcquire`.
-
-
-Pyro Nameserver
----------------
-
-You need to run a `Pyro <http://www.xs4all.nl/~irmen/pyro3/>`_ nameserver somewhere 
-on your network segment. For testing, the easiest thing is to let PYME launch one for you. 
-
-There can, however, only be one nameserver on the network segment and once you start
-running PYME on multiple machines a somewhat more sophisticated solution is needed.
-The nameserver can be started seperately from PYME by running ``pryo_ns`` 
-(or ``pyro-nsd``) from the command line and my recommendation is to find a machine
-which is always on (e.g. a server) and run it on that. Several linux distributions 
-have packages for Pyro which set the nameserver up as a service, although there might be some 
-trickery involved to make sure it binds to the the external interface rather 
-than localhost (specifically, the hostname has to resolve to the external interface).

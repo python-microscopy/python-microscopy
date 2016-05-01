@@ -3,6 +3,12 @@
 Analysing Localisation Microscopy data
 **************************************
 
+.. toctree::
+   :maxdepth: 1
+
+   AnalysingForeignData
+   SplitterMulticolour
+
 Distributed analysis and queues
 ===============================
 
@@ -18,7 +24,7 @@ starts one, but this is probably only suitable/robust if only one machine is bei
 for analysis. 
 
 If you're running the analysis on the data acquisition computer, and have a decent number of
-cores available (we have 8),  better performance can be achieved by reserving a core for
+cores available (e.g. 8),  better performance can be achieved by reserving a core for
 each of the Acqusition and Server processes (ie limiting the number of workers to 6 in our
 8 core case). This can be done by explicitly specifying the number of workers to launch as
 an argument eg: ``launchWorkers 6``.
@@ -28,8 +34,7 @@ Distributing over multiple computers
 
 Distributing the analysis over multiple computers (a small ad-hoc cluster) is now easy:
 
-* Make sure a pyro nameserver is running somewhere on your network and that it is 
-  bound to the external interface rather than localhost (see the `Pyro  documentation <http://packages.python.org/Pyro/5-nameserver.html>`_). If you don't explicity run a nameserver, the first copy of ``launchWorkers`` you start will run one for you. The caveat with this approach is that you shouldn't close this copy while you (or anyone else on your network segment) is doing analyisis, even on other computers.
+* Make sure that the same version of PYME is installed on all machines
 * Run ``launchWorkers`` on each machine you want to use.
 
 Loading data
@@ -44,7 +49,8 @@ Spooling panel in :ref:`PYMEAcquire <PYMEAcquire>`. Many protocols will do this
 automatically after a the intial pre-bleaching phase has been performed.
 
 For data not originating from *PYMEAcquire* the process is a little more complex
-(see :ref:`analysingforeigndata`).
+(see :ref:`analysingforeigndata`). Similarly, special attention is needed for analysing
+simultaeneous multi-colour data (see :ref:`imagesplitter`).
 
 Analysis settings
 =================

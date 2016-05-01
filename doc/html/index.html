@@ -6,15 +6,15 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>PYME’s Documentation &mdash; PYME 0.1 documentation</title>
+    <title>PYME’s Documentation &mdash; PYME 16.04.23 documentation</title>
     
-    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.1',
+        VERSION:     '16.04.23',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,111 +23,54 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="PYME 0.1 documentation" href="#" />
-    <link rel="next" title="Installation of PYME on 64 bit Windows or OSX" href="Installation/InstallationWithAnaconda.html" /> 
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PYME 16.04.23 documentation" href="#" />
+    <link rel="next" title="Installation of PYME on 64 bit Windows, OSX, or Linux" href="Installation/InstallationWithAnaconda.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="Installation/InstallationWithAnaconda.html" title="Installation of PYME on 64 bit Windows or OSX"
+          <a href="Installation/InstallationWithAnaconda.html" title="Installation of PYME on 64 bit Windows, OSX, or Linux"
              accesskey="N">next</a> |</li>
-        <li><a href="#">PYME 0.1 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="#">PYME 16.04.23 documentation</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/index.rst">Edit</a> &raquo;</li>
  
 
       </ul>
-    </div>  
-
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          <div class="body">
-            
-  <div class="section" id="pyme-s-documentation">
-<h1>PYME&#8217;s Documentation<a class="headerlink" href="#pyme-s-documentation" title="Permalink to this headline">¶</a></h1>
-<p>Thank you for your interest in PYME. I&#8217;ll be the first to admit that the documentation
-could use a lot of work, but this takes time and I hope there is enough here to get you started. Some
-aspects are currently pretty specific to our internal workflows, but I have left
-them in in the hope that they are nonetheless useful. The documentation is aimed
-at end users, with a reasonably modest level of computer ability, and there is
-currently no API documentation. If you want to extend or otherwise hack PYME I&#8217;d
-recommend getting in touch with me and I&#8217;ll tell you what bits of the API are
-fairly mature, what is on the TODO list for restructuring, and what is deprecated.
-I might even be persuaded to write some more docs.</p>
-<p>Contents:</p>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="Installation/InstallationWithAnaconda.html">Installation of PYME on 64 bit Windows or OSX</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="Installation/InstallationWithAnaconda.html#step-1-installing-anaconda">STEP 1: Installing Anaconda</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Installation/InstallationWithAnaconda.html#step-2-installing-pyme-using-conda">STEP 2: Installing PYME using conda</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Installation/InstallationWithAnaconda.html#step-3-verifying-the-installation">STEP 3: Verifying the Installation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Installation/InstallationWithAnaconda.html#step-4-configuration">STEP 4: Configuration</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="Installation/InstallationFromSource.html">Installation From Source</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="Installation/InstallationFromSource.html#prerequisites">Prerequisites</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Installation/InstallationFromSource.html#installing">Installing</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="PYMEAcquire.html">PYMEAcquire</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="ConfiguringPYMEAcquire.html">Configuration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="AcquireBasicUsage.html">Basic Usage</a></li>
-<li class="toctree-l2"><a class="reference internal" href="BasicAcquisition.html">Simple dSTORM/RPM walkthrough</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Simulator.html">Simulator</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Protocols.html">Acquisition Protocols</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="Analysis.html">Data Analysis</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="dh5view.html">DSView / <tt class="docutils literal"><span class="pre">dh5view</span></tt> - A general purpose image data viewer</a></li>
-<li class="toctree-l2"><a class="reference internal" href="LocalisationAnalysis.html">Analysing Localisation Microscopy data</a></li>
-<li class="toctree-l2"><a class="reference internal" href="AnalysingForeignData.html">Analysing data not generated by PYMEAcquire</a></li>
-<li class="toctree-l2"><a class="reference internal" href="SplitterMulticolour.html">Using an image splitting device for multi-colour ratiometric imaging</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="VisGUI.html">Visualising Data - VisGUI</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="VisGUI.html#installing-the-standalone-viewer">Installing the standalone viewer</a></li>
-<li class="toctree-l2"><a class="reference internal" href="VisGUI.html#importing-data">Importing Data</a></li>
-<li class="toctree-l2"><a class="reference internal" href="VisGUI.html#exploring-the-data">Exploring the data</a></li>
-<li class="toctree-l2"><a class="reference internal" href="VisGUI.html#image-generation">Image Generation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="VisGUI.html#extras">Extras</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="Technical.html">Technical Details</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="DataFormats.html">PYME Data Formats</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="api/PYME.html">PYME Package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="api/PYME.html#subpackages">Subpackages</a></li>
-</ul>
-</li>
-</ul>
-</div>
-</div>
-
-
-          </div>
-        </div>
-      </div>
-      <div class="sphinxsidebar">
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">PYME&#8217;s Documentation</a><ul>
+<li><a class="reference internal" href="#contents">Contents:</a><ul>
+<li><a class="reference internal" href="#installation">Installation:</a></li>
+<li><a class="reference internal" href="#component-programs-tasks">Component programs/tasks:</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#technical-details">Technical Details:</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
   <h4>Next topic</h4>
   <p class="topless"><a href="Installation/InstallationWithAnaconda.html"
-                        title="next chapter">Installation of PYME on 64 bit Windows or OSX</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/index.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
+                        title="next chapter">Installation of PYME on 64 bit Windows, OSX, or Linux</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/index.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
       <input type="text" name="q" />
@@ -142,29 +85,111 @@ I might even be persuaded to write some more docs.</p>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
       </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="pyme-s-documentation">
+<h1>PYME&#8217;s Documentation<a class="headerlink" href="#pyme-s-documentation" title="Permalink to this headline">¶</a></h1>
+<p>Thank you for your interest in PYME. I&#8217;ll be the first to admit that the documentation
+could use a lot of work, but this takes time and I hope there is enough here to get you started. Some
+aspects are currently pretty specific to our internal workflows, but I have left
+them in in the hope that they are nonetheless useful. The documentation is aimed
+at end users, with a reasonably modest level of computer ability, and there is
+currently no API documentation. If you want to extend or otherwise hack PYME I&#8217;d
+recommend getting in touch with me and I&#8217;ll tell you what bits of the API are
+fairly mature, what is on the TODO list for restructuring, and what is deprecated.
+I might even be persuaded to write some more docs.</p>
+<div class="section" id="contents">
+<h2>Contents:<a class="headerlink" href="#contents" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="installation">
+<h3>Installation:<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h3>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="Installation/InstallationWithAnaconda.html">Installation of PYME on 64 bit Windows, OSX, or Linux</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Installation/InstallationFromSource.html">Installation From Source</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="component-programs-tasks">
+<h3>Component programs/tasks:<a class="headerlink" href="#component-programs-tasks" title="Permalink to this headline">¶</a></h3>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="PYMEAcquire.html"><strong>PYMEAcquire</strong> - Instrument control and simulation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ConfiguringPYMEAcquire.html">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AcquireBasicUsage.html">Basic Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BasicAcquisition.html">Simple dSTORM/RPM walkthrough</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Simulator.html">Simulator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Protocols.html">Acquisition Protocols</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="Analysis.html"><strong>dh5view</strong> - Image Data Analysis and Viewing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Analysis.html#modules">Modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Analysis.html#modes">Modes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Analysis.html#image-processing-tasks">Image processing tasks</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="LocalisationAnalysis.html">Analysing Localisation Microscopy data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Recipes.html">Using recipes for data processing and quantification</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="VisGUI.html"><strong>VisGUI</strong> - Visualising Localization Data Sets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="VisGUI.html#installing-the-standalone-viewer">Installing the standalone viewer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="VisGUI.html#importing-data">Importing Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="VisGUI.html#exploring-the-data">Exploring the data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="VisGUI.html#image-generation">Image Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="VisGUI.html#extras">Extras</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="technical-details">
+<h3>Technical Details:<a class="headerlink" href="#technical-details" title="Permalink to this headline">¶</a></h3>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="DataFormats.html">PYME Data Formats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SampleDB.html">The Sample Database</a></li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
           <a href="genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="Installation/InstallationWithAnaconda.html" title="Installation of PYME on 64 bit Windows or OSX"
+          <a href="Installation/InstallationWithAnaconda.html" title="Installation of PYME on 64 bit Windows, OSX, or Linux"
              >next</a> |</li>
-        <li><a href="#">PYME 0.1 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="#">PYME 16.04.23 documentation</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/index.rst">Edit</a> &raquo;</li>
  
 
       </ul>
     </div>
-    <div class="footer">
-        &copy; Copyright 2010, David Baddeley.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, David Baddeley.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
     </div>
   </body>
 </html>

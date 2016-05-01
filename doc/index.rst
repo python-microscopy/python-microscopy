@@ -18,17 +18,42 @@ fairly mature, what is on the TODO list for restructuring, and what is deprecate
 I might even be persuaded to write some more docs.
 
 Contents:
+---------
+
+Installation:
+#############
+.. toctree::
+   :maxdepth: 1
+
+   Installation/InstallationWithAnaconda   
+   Installation/InstallationFromSource
+
+Component programs/tasks:
+#########################
+.. toctree::
+   :maxdepth: 2
+
+   PYMEAcquire
+
+.. toctree::
+   :maxdepth: 3
+
+   Analysis
 
 .. toctree::
    :maxdepth: 2
 
-   Installation/InstallationWithAnaconda   
-   Installation/InstallationFromSource
-   PYMEAcquire
-   Analysis
    VisGUI
-   Technical
 
+Technical Details:
+##################
+.. toctree::
+   :maxdepth: 1
+   
+   DataFormats
+   SampleDB
+
+..
    api/modules
 
 
