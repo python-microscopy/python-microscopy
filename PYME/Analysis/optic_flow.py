@@ -40,17 +40,20 @@ def reg_of(im1, im2, filt_rad=10, support_rad = 10, reg_l = 0):
     calculated with a Gaussian support function of radius support_rad. An optional
     regularization term, reg_l allows penalization of high flow velocities.
     
+    Notes
+    -----
+    
     See "Optical Flow Estimation", Fleet and Weiss 2006 for underlying maths. Our
     implementation is based on Section 2, "Basic gradient-based estimation", and 
     attempts to find a least-squares which minimizes:
     
-    $$E(\tilde{u}) = \sum_{\tilde{x}}g(\tilde{x})\left[\tilde{u} \cdot \nabla I(\tilde{x}, t) + I_t(\tilde{x}, t)\right]^2$$
+    .. math:: E(\tilde{u}) = \sum_{\tilde{x}}g(\tilde{x})\left[\tilde{u} \cdot \nabla I(\tilde{x}, t) + I_t(\tilde{x}, t)\right]^2
     
     Note that the reglarization is not described in Fleet and Wiess, but works by
     adding an L1-norm term to the equation to be minimized, resulting in the following 
     equation:
     
-    $$E(\tilde{u}) = \sum_{\tilde{x}}g(\tilde{x})\left[\tilde{u} \cdot \nabla I(\tilde{x}, t) + I_t(\tilde{x}, t)\right]^2 + \lambda \|\tilde{u}\|^2$$
+    .. math:: E(\tilde{u}) = \sum_{\tilde{x}}g(\tilde{x})\left[\tilde{u} \cdot \nabla I(\tilde{x}, t) + I_t(\tilde{x}, t)\right]^2 + \lambda \|\tilde{u}\|^2
     '''
     gf = ndimage.gaussian_filter
     

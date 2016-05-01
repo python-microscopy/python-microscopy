@@ -99,9 +99,3 @@ These are used to store the details of processing pipelines used for either
 standard (e.g. confocal) data analysis or for postprocessing super-resolution
 reconstructions.
 
-Khoros Data Format (``.kdf``)
-=============================
-
-PYME has some legacy support for data in the ``.kdf`` format used by the Khoros/Cantata
-image processing suite. Usage is discouraged unless you have legacy data and/or
-Khoros modules you wish to use.

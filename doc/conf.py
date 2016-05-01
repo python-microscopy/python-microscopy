@@ -17,8 +17,10 @@ import mock
 import numpy
 import PYME.version
  
-MOCK_MODULES = ['numpy', 'tables', 'scipy', 'scipy.interpolate', 'scipy.ndimage', 'pylab', 'win32api', ]
-MOCK_MODULES += ['matplotlib', 'matplotlib.pyplot', 'matplotlib.colors', ]
+MOCK_MODULES = ['numpy', 'tables', 'scipy', 'scipy.interpolate', 'scipy.special', 'scipy.io', 
+				'scipy.cow', 'scipy.fftpack', 'scipy.ndimage', 'scipy.linalg', 'scipy.spatial',
+				'scipy.misc', 'pylab', 'win32api', ]
+MOCK_MODULES += ['matplotlib', 'matplotlib.pyplot', 'matplotlib.colors', 'fftw3f', 'pywinusb']
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = mock.Mock()
     
@@ -83,8 +85,8 @@ release = PYME.version.version #'0.1'
 
 # List of directories, relative to source directory, that shouldn't be searched
 # for source files.
-exclude_trees = ['_build', '_hidden', 'api']
-exclude_patterns = ['_build/*', '_hidden/*', 'api/*']
+exclude_trees = ['_build', '_hidden']#, 'api']
+exclude_patterns = ['_build/*', '_hidden/*']#, 'api/*']
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 #default_role = None
@@ -105,6 +107,8 @@ pygments_style = 'sphinx'
 
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []
+
+numpydoc_show_class_members = False
 
 
 # -- Options for HTML output ---------------------------------------------------

@@ -251,7 +251,7 @@ class filterer:
                 
     def OnLabelWatershed(self, event):
         import numpy as np
-        from PYME.cpmath import watershed
+        from PYME.contrib.cpmath import watershed
         from PYME.DSView.image import ImageStack
         from PYME.DSView import ViewIm3D
         

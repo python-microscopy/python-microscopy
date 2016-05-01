@@ -22,7 +22,6 @@
 ##################
 
 
-#import PYME.cSMI as example
 import numpy as np
 
 import time

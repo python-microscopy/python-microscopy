@@ -20,3 +20,4 @@ Deconv/fftw_wisdom
 *.orig
 .DS_Store
 *.egg-info*
+doc/api/*

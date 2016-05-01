@@ -112,7 +112,7 @@ class Unmixer:
 
     def Unmix(self, data, mixMatrix, offset, ROI=[1,1,512, 512]):
         import scipy.linalg
-        #from PYME import cSMI
+        
         #from pylab import *
         #from PYME.DSView.dsviewer_npy import View3D
 

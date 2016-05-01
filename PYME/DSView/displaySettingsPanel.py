@@ -23,7 +23,6 @@
 
 import wx
 from PYME.Analysis.LMVis import histLimits
-#from PYME import cSMI
 
 class dispSettingsFrame(wx.Frame):
     def __init__(self, parent, vp):
@@ -136,7 +135,7 @@ class dispSettingsPanel(wx.Panel):
 
     def RefrData(self, caller=None):
         #if self.hlDispMapping.dragging == None:
-        self.dsa = self.vp.dsa#cSMI.CDataStack_AsArray(self.vp.ds, 0)[:,:,0].ravel()
+        self.dsa = self.vp.dsa
 
         #only perform histogramming on a subset of data points to improve performance
         ##note that this may result in strange behaviour of auto-optimise

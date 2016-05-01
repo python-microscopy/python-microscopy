@@ -35,6 +35,9 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
           <a href="DataFormats.html" title="PYME Data Formats"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">PYME 16.04.23 documentation</a> &raquo;</li>
@@ -91,6 +94,9 @@
             
   <div class="section" id="the-sample-database">
 <h1>The Sample Database<a class="headerlink" href="#the-sample-database" title="Permalink to this headline">¶</a></h1>
+<p>The sample database is a database system which can be used in conjunction with PYMEAcquire to record information about
+sample preparation, labelling, etc for every image that is acquired. The database has a web interface, and is searchable,
+allowing data matching various search keys to be easily located.</p>
 <div class="section" id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
 <p>These instructions assume you are running an ubuntu linux server with python, mercurial, apache, mysql, and phpmyadmin <a class="footnote-reference" href="#id3" id="id1">[1]</a>. They should also provide a starting point for other systems. A reasonable knowledge of linux and python is assumed.</p>
@@ -155,7 +161,6 @@
 <p class="first admonition-title">Warning</p>
 <p class="last">In its default state, the PYME SampleDB is not secure. Only use behind a firewall and do so at your own risk/discretion. The version of the Django <code class="docutils literal"><span class="pre">settings.py</span></code> in the python-microscopy repository has <code class="docutils literal"><span class="pre">DEBUG</span></code> set to <code class="docutils literal"><span class="pre">True</span></code>, which is a known security risk. In a controlled environment, this risk is probably acceptable in return for easier troubleshooting, but you have been warned!</p>
 </div>
-<p>-libapache2-mod-wsgi</p>
 <ol class="arabic">
 <li><p class="first">Create a directory <code class="docutils literal"><span class="pre">/var/www/SampleDB/static</span></code> for the static files (if you want to host the files from another directory, you will need to change <code class="docutils literal"><span class="pre">STATIC_ROOT</span></code> in <code class="docutils literal"><span class="pre">settings.py</span></code> and the apache .conf file detailed in step 3).</p>
 </li>
@@ -200,7 +205,7 @@ sudo service apache2 reload
 </div>
 <div class="section" id="part-iii-letting-other-machines-know-where-to-find-the-sampledb">
 <h3>Part III - Letting other machines know where to find the SampleDB<a class="headerlink" href="#part-iii-letting-other-machines-know-where-to-find-the-sampledb" title="Permalink to this headline">¶</a></h3>
-<p>Letting other machines find the sample database is as simple as setting an environment variable: <code class="docutils literal"><span class="pre">PYME_DATABASE_HOST</span></code> to the hostname of IP address of the server.</p>
+<p>Letting other machines find the sample database is as simple as setting an environment variable: <code class="docutils literal"><span class="pre">PYME_DATABASE_HOST</span></code> to the hostname or IP address of the server.</p>
 </div>
 </div>
 </div>
@@ -217,6 +222,9 @@ sudo service apache2 reload
         <li class="right" style="margin-right: 10px">
           <a href="genindex.html" title="General Index"
              >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
         <li class="right" >
           <a href="DataFormats.html" title="PYME Data Formats"
              >previous</a> |</li>

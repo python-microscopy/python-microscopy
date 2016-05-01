@@ -94,18 +94,6 @@ should be immutable) and will need to be re-entered each time you load and analy
 the data - change the ``.md`` file, or export the data as PYMEs native ``.h5`` format 
 if you want to keep the changes.
 
-Distributed Analysis
-++++++++++++++++++++
-
-One of the caveats of ``.tif`` based analysis is that it won't play well 
-with distributed/cluster analysis unless the 
-data is accessible on all the machines in the cluster (i.e. you have the 
-directory containing the data mounted as mapped drive on each machine and 
-the ``PYMEDATADIR`` environment variable set to point to this drive/ a sub-directory
-thereof). If you want to use the cluster features without this hassle, it might 
-be worth exporting as ``.h5``, and then reloading. Data will now automatically get 
-distributed to workers without needing to have network drives mapped.
-
 
 Converting the data to PYMEs native ``.h5`` (old method)
 ========================================================

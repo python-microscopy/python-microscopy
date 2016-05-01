@@ -18,9 +18,12 @@ import logging
 logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
+import sys
 
-ns = pzc.getNS('_pyme-http')
-time.sleep(1.5) #wait for ns resonses
+if not 'sphinx' in sys.modules.keys():
+    #do not start zeroconf if running under sphinx
+    ns = pzc.getNS('_pyme-http')
+    time.sleep(1.5) #wait for ns resonses
 
 from collections import OrderedDict
 class LimitedSizeDict(OrderedDict):

@@ -22,7 +22,6 @@
 ##################
 
 from . import rend_im
-#import PYME.cSMI as example
 import scipy
 
 from PYME.Acquire import MetaDataHandler

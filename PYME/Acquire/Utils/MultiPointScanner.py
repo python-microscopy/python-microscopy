@@ -22,7 +22,7 @@
 ################
 import time
 from PYME.DSView.dsviewer_npy import View3D
-from PYME import cSMI
+
 import numpy as np
 from PYME.Acquire import eventLog
 

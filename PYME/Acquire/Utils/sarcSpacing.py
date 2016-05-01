@@ -22,7 +22,7 @@
 ##################
 
 from pylab import *
-from PYME import cSMI
+#from PYME import cSMI
 import wx
 
 
@@ -47,7 +47,7 @@ class SarcomereChecker:
         voxx = 0.07
         voxy = 0.07
         
-        im = cSMI.CDataStack_AsArray(self.scope.pa.ds, 0)
+        im = scope.pa.dsa
         F = (abs(fftshift(fftn(im - im.mean()))) + 1e-2).squeeze()
 
         currVoxelSizeID = self.scope.settingsDB.execute("SELECT sizeID FROM VoxelSizeHistory ORDER BY time DESC").fetchone()

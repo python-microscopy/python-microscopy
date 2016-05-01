@@ -28,7 +28,7 @@ from PYME.ParallelTasks.relativeFiles import getFullFilename
 
 #import numpy as np
 
-from PYME.gohlke import tifffile
+from PYME.contrib.gohlke import tifffile
 from .BaseDataSource import BaseDataSource
 
 class DataSource(BaseDataSource):

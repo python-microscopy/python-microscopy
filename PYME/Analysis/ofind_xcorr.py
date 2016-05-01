@@ -32,7 +32,7 @@ except ImportError:
     import pickle
     
 from scipy.fftpack import fftn, ifftn, ifftshift
-from PYME import pad
+from PYME.contrib import pad
 from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
 from scipy.spatial import kdtree
 

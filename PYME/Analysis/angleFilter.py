@@ -220,7 +220,7 @@ def angHist2(theta):
     
     
 def procSkelFile(filename, disp=True):
-    from PYME.gohlke import tifffile
+    from PYME.contrib.gohlke import tifffile
     import os
     
     #generate a stub for our output files

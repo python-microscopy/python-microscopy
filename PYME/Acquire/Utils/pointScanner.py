@@ -22,7 +22,7 @@
 ################
 import time
 from PYME.DSView.dsviewer_npy import View3D
-from PYME import cSMI
+
 import numpy as np
 from PYME.Acquire import eventLog
 
@@ -98,7 +98,7 @@ class PointScanner:
         if self.avg:
             self.image = np.zeros((self.nx, self.ny))
 
-            self.ds = cSMI.CDataStack_AsArray(scope.pa.ds, 0)
+            self.ds = scope.pa.dsa
 
             self.view = View3D(self.image)
 
@@ -241,7 +241,7 @@ class PointScanner3D:
         if self.avg:
             self.image = np.zeros((self.nx, self.ny, self.nz))
 
-            self.ds = cSMI.CDataStack_AsArray(scope.pa.ds, 0)
+            self.ds = scope.pa.dsa
 
             self.view = View3D(self.image)
 

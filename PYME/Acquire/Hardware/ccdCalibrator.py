@@ -21,7 +21,6 @@
 #
 ##################
 
-#from PYME import cSMI
 import numpy as np
 import wx
 import pylab

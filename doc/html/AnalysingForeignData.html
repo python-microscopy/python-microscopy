@@ -25,7 +25,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="PYME 16.04.23 documentation" href="index.html" />
-    <link rel="up" title="dh5view - Image Data Analysis and Viewing" href="Analysis.html" />
+    <link rel="up" title="Analysing Localisation Microscopy data" href="LocalisationAnalysis.html" />
     <link rel="next" title="Using an image splitting device for multi-colour ratiometric imaging" href="SplitterMulticolour.html" />
     <link rel="prev" title="Analysing Localisation Microscopy data" href="LocalisationAnalysis.html" /> 
   </head>
@@ -37,13 +37,17 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
           <a href="SplitterMulticolour.html" title="Using an image splitting device for multi-colour ratiometric imaging"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="LocalisationAnalysis.html" title="Analysing Localisation Microscopy data"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">PYME 16.04.23 documentation</a> &raquo;</li>
-          <li class="nav-item nav-item-1"><a href="Analysis.html" accesskey="U"><strong>dh5view</strong> - Image Data Analysis and Viewing</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="Analysis.html" ><strong>dh5view</strong> - Image Data Analysis and Viewing</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="LocalisationAnalysis.html" accesskey="U">Analysing Localisation Microscopy data</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/AnalysingForeignData.rst">Edit</a> &raquo;</li>
  
 
@@ -59,7 +63,6 @@
 <li><a class="reference internal" href="#tiff-stacks">Tiff Stacks</a></li>
 <li><a class="reference internal" href="#tiff-sequences">Tiff Sequences</a></li>
 <li><a class="reference internal" href="#tweaking-the-metadata">Tweaking the metadata</a></li>
-<li><a class="reference internal" href="#distributed-analysis">Distributed Analysis</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#converting-the-data-to-pymes-native-h5-old-method">Converting the data to PYMEs native <code class="docutils literal"><span class="pre">.h5</span></code> (old method)</a></li>
@@ -206,17 +209,6 @@ should be immutable) and will need to be re-entered each time you load and analy
 the data - change the <code class="docutils literal"><span class="pre">.md</span></code> file, or export the data as PYMEs native <code class="docutils literal"><span class="pre">.h5</span></code> format
 if you want to keep the changes.</p>
 </div>
-<div class="section" id="distributed-analysis">
-<h3>Distributed Analysis<a class="headerlink" href="#distributed-analysis" title="Permalink to this headline">¶</a></h3>
-<p>One of the caveats of <code class="docutils literal"><span class="pre">.tif</span></code> based analysis is that it won&#8217;t play well
-with distributed/cluster analysis unless the
-data is accessible on all the machines in the cluster (i.e. you have the
-directory containing the data mounted as mapped drive on each machine and
-the <code class="docutils literal"><span class="pre">PYMEDATADIR</span></code> environment variable set to point to this drive/ a sub-directory
-thereof). If you want to use the cluster features without this hassle, it might
-be worth exporting as <code class="docutils literal"><span class="pre">.h5</span></code>, and then reloading. Data will now automatically get
-distributed to workers without needing to have network drives mapped.</p>
-</div>
 </div>
 <div class="section" id="converting-the-data-to-pymes-native-h5-old-method">
 <h2>Converting the data to PYMEs native <code class="docutils literal"><span class="pre">.h5</span></code> (old method)<a class="headerlink" href="#converting-the-data-to-pymes-native-h5-old-method" title="Permalink to this headline">¶</a></h2>
@@ -241,6 +233,9 @@ yet support for directly analysing raw of kdf data).</p>
           <a href="genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
           <a href="SplitterMulticolour.html" title="Using an image splitting device for multi-colour ratiometric imaging"
              >next</a> |</li>
         <li class="right" >
@@ -248,6 +243,7 @@ yet support for directly analysing raw of kdf data).</p>
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">PYME 16.04.23 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="Analysis.html" ><strong>dh5view</strong> - Image Data Analysis and Viewing</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="LocalisationAnalysis.html" >Analysing Localisation Microscopy data</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/AnalysingForeignData.rst">Edit</a> &raquo;</li>
  
 

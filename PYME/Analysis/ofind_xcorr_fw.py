@@ -35,7 +35,7 @@ from scipy.fftpack import fftn, ifftn, ifftshift
 
 #import fftw3
 
-from PYME import pad
+from PYME.contrib import pad
 from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
 from scipy.spatial import kdtree
 

@@ -26,7 +26,7 @@ import os
 import datetime
 
 from PYME.Acquire import MetaDataHandler
-#from PYME import cSMI
+
 
 try:
     from PYME.Acquire import sampleInformation

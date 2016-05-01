@@ -410,27 +410,7 @@ class ImageStack(object):
 
         self.events = self.dataSource.getEvents()
 
-    def LoadKdf(self, filename):
-        '''load khorus formatted data - pretty much deprecated by now'''
-        import PYME.cSMI as cSMI
-        self.data = cSMI.CDataStack_AsArray(cSMI.CDataStack(filename), 0).squeeze()
-        self.mdh = MetaData.TIRFDefault
-
-        try: #try and get metadata from the .log file
-            lf = open(os.path.splitext(filename)[0] + '.log')
-            from PYME.DSView import logparser
-            lp = logparser.logparser()
-            log = lp.parse(lf.read())
-            lf.close()
-
-            self.mdh.setEntry('voxelsize.z', log['PIEZOS']['Stepsize'])
-        except:
-            pass
-
-        from PYME.ParallelTasks.relativeFiles import getRelFilename
-        self.seriesName = getRelFilename(filename)
-
-        self.mode = 'psf'
+    
 
     def LoadPSF(self, filename):
         '''Load PYME .psf data.
@@ -518,7 +498,7 @@ class ImageStack(object):
                 mdf = mdfn
             elif filename.endswith('.lsm'):
                 #read lsm metadata
-                from PYME.gohlke.tifffile import TIFFfile
+                from PYME.contrib.gohlke.tifffile import TIFFfile
                 tf = TIFFfile(filename)
                 lsm_info = tf[0].cz_lsm_scan_information
                 self.mdh['voxelsize.x'] = lsm_info['line_spacing']
@@ -540,7 +520,7 @@ class ImageStack(object):
                 
             elif filename.endswith('.tif'):
                 #look for OME data...
-                from PYME.gohlke.tifffile import TIFFfile
+                from PYME.contrib.gohlke.tifffile import TIFFfile
                 tf = TIFFfile(filename)
                 
                 if tf.is_ome:
@@ -770,8 +750,8 @@ class ImageStack(object):
                 self.LoadClusterPZF(filename)
             elif filename.endswith('.h5'):
                 self.Loadh5(filename)
-            elif filename.endswith('.kdf'):
-                self.LoadKdf(filename)
+            #elif filename.endswith('.kdf'):
+            #    self.LoadKdf(filename)
             elif filename.endswith('.psf'): #psf
                 self.LoadPSF(filename)
             elif filename.endswith('.md'): #treat this as being an image series

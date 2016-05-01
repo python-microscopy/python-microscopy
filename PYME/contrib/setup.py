@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 ##################
-# __init__.py
+# setup.py
 #
 # Copyright David Baddeley, 2009
 # d.baddeley@auckland.ac.nz
@@ -21,4 +21,16 @@
 #
 ##################
 
-from cSMI import *
+
+def configuration(parent_package='',top_path=None):
+    from numpy.distutils.misc_util import Configuration
+    config = Configuration('contrib',parent_package,top_path)
+    config.add_subpackage('pad')
+    config.add_subpackage('bcl')
+    config.add_subpackage('gohlke')
+    
+    return config
+
+if __name__ == '__main__':
+    from numpy.distutils.core import setup
+    setup(data_files = [], **configuration(top_path='').todict())

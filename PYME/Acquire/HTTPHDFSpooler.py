@@ -23,7 +23,7 @@
 
 import tables
 from PYME.Acquire import MetaDataHandler
-#from PYME import cSMI
+
 #import Pyro.core
 import os
 import time
@@ -182,7 +182,6 @@ class Spooler(sp.Spooler):
         
         
     def Tick(self, caller):
-      #self.tq.postTask(cSMI.CDataStack_AsArray(caller.ds, 0).reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()), self.seriesName)
       self.buffer.append(caller.dsa.reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()).copy())
 
       if self.imNum == 0: #first frame
