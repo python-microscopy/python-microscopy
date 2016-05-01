@@ -696,7 +696,7 @@ class ColourImageViewPanel(ImageViewPanel):
 #
 ##    def OnGaussianFilter(self, event):
 ##        from scipy.ndimage import gaussian_filter
-##        from PYME.Analysis.LMVis.visHelpers import ImageBounds, GeneratedImage
+##        from PYME.LMVis.visHelpers import ImageBounds, GeneratedImage
 ##
 ##        dlg = wx.TextEntryDialog(self, 'Blur size [pixels]:', 'Gaussian Blur', '[1,1,1]')
 ##

@@ -22,7 +22,7 @@
 #
 ################
 import models
-from PYME.Analysis.LMVis.h5rNoGui import Pipeline
+from PYME.LMVis.h5rNoGui import Pipeline
 from PYME.Analysis.BleachProfile.kinModels import getPhotonNums
 import numpy as np
 import traceback

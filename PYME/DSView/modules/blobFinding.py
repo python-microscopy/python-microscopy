@@ -22,7 +22,7 @@
 
 import wx
 import PYME.misc.autoFoldPanel as afp
-from PYME.Analysis.LMVis import recArrayView
+from PYME.LMVis import recArrayView
 import numpy
 from PYME.DSView.OverlaysPanel import OverlayPanel
 import wx.lib.agw.aui as aui

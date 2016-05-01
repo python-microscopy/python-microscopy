@@ -39,7 +39,7 @@ from PYME.Acquire import MetaDataHandler
 from PYME.Analysis import MetaData
 from PYME.DSView import dataWrap
 from PYME.Analysis.DataSources import BufferedDataSource
-from PYME.Analysis.LMVis.visHelpers import ImageBounds
+from PYME.LMVis.visHelpers import ImageBounds
 
 
 
@@ -317,7 +317,7 @@ class ImageStack(object):
         hard work to the HDFDataSource class'''
         import tables
         from PYME.Analysis.DataSources import HDFDataSource, BGSDataSource
-        from PYME.Analysis.LMVis import inpFilt
+        from PYME.LMVis import inpFilt
         
         #open hdf5 file
         self.dataSource = HDFDataSource.DataSource(filename, None)
@@ -361,7 +361,7 @@ class ImageStack(object):
         hard work to the HDFDataSource class'''
         import tables
         from PYME.Analysis.DataSources import HTTPDataSource, BGSDataSource
-        #from PYME.Analysis.LMVis import inpFilt
+        #from PYME.LMVis import inpFilt
         
         #open hdf5 file
         self.dataSource = HTTPDataSource.DataSource(filename)

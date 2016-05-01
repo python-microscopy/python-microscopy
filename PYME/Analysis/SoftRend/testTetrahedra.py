@@ -22,7 +22,7 @@
 ################
 from pylab import *
 from PYME.DSView.dsviewer_npy import View3D
-from PYME.Analysis.LMVis import gen3DTriangs
+from PYME.LMVis import gen3DTriangs
 
 x = 5e3*rand(1000)
 y = 2.5e3*rand(1000)

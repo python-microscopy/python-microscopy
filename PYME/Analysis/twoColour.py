@@ -387,7 +387,7 @@ def genShiftVectors(res_g, res_r):
     return (nx, ny, nsx, nsy)
 
 def findWonkyVectors(x, y,dx,dy, tol=100):
-    from PYME.Analysis.LMVis.visHelpers import genEdgeDB
+    from PYME.LMVis.visHelpers import genEdgeDB
     T = delaunay.Triangulation(x,y)
 
     edb = genEdgeDB(T)

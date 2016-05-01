@@ -26,7 +26,7 @@ import sys
 
 import tables
 
-#from PYME.Analysis.LMVis import inpFilt
+#from PYME.LMVis import inpFilt
 from scipy import minimum, maximum
 from PIL import Image
 

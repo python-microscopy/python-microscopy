@@ -21,7 +21,7 @@
 #
 ##################
 
-from PYME.Analysis.LMVis import inpFilt
+from PYME.LMVis import inpFilt
 import os
 import sys
 

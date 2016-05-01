@@ -393,7 +393,7 @@ class PYMEMainFrame(wx.Frame):
 
         else:
             #1d data - use graph instead
-            from PYME.Analysis.LMVis import fastGraph
+            from PYME.LMVis import fastGraph
             if 'sp' in dir(self):
                     pass
             else:

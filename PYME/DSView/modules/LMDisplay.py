@@ -21,8 +21,8 @@ from PYME.DSView import fitInfo
 from PYME.DSView.OverlaysPanel import OverlayPanel
 import wx.lib.agw.aui as aui
 
-from PYME.Analysis.LMVis import gl_render
-#from PYME.Analysis.LMVis import workspaceTree
+from PYME.LMVis import gl_render
+#from PYME.LMVis import workspaceTree
 #import sys
 
 #import pylab
@@ -30,10 +30,10 @@ from PYME.misc import extraCMaps
 from PYME.FileUtils import nameUtils
 
 #import os
-#from PYME.Analysis.LMVis import gl_render3D
+#from PYME.LMVis import gl_render3D
 
-from PYME.Analysis.LMVis import renderers
-from PYME.Analysis.LMVis import pipeline
+from PYME.LMVis import renderers
+from PYME.LMVis import pipeline
 
 
 #try importing our drift correction stuff
@@ -46,11 +46,11 @@ try:
 except:
     pass
 
-from PYME.Analysis.LMVis.colourFilterGUI import CreateColourFilterPane
-from PYME.Analysis.LMVis.displayPane import CreateDisplayPane
-from PYME.Analysis.LMVis.filterPane import CreateFilterPane
+from PYME.LMVis.colourFilterGUI import CreateColourFilterPane
+from PYME.LMVis.displayPane import CreateDisplayPane
+from PYME.LMVis.filterPane import CreateFilterPane
 
-from PYME.Analysis.LMVis import progGraph as progGraph
+from PYME.LMVis import progGraph as progGraph
 
 
 import numpy as np
@@ -542,7 +542,7 @@ class LMDisplay(object):
         renderers.init_renderers(self, self.dsviewer)
 
         self.extras_menu = wx.Menu()
-        from PYME.Analysis.LMVis import Extras
+        from PYME.LMVis import Extras
         Extras.InitPlugins(self)
         
         try:
@@ -663,7 +663,7 @@ class LMDisplay(object):
         if os.path.splitext(filename)[1] == '.h5r':
             pass
         elif os.path.splitext(filename)[1] == '.mat':
-            from PYME.Analysis.LMVis import importTextDialog
+            from PYME.LMVis import importTextDialog
             from scipy.io import loadmat
             
             mf = loadmat(filename)
@@ -683,7 +683,7 @@ class LMDisplay(object):
             dlg.Destroy()
 
         else: #assume it's a text file
-            from PYME.Analysis.LMVis import importTextDialog
+            from PYME.LMVis import importTextDialog
             
             dlg = importTextDialog.ImportTextDialog(self, filename)
             ret = dlg.ShowModal()
@@ -859,7 +859,7 @@ class LMDisplay(object):
         
         self.SetFitInfo()
 
-        from PYME.Analysis.LMVis import gl_render
+        from PYME.LMVis import gl_render
         self.glCanvas = gl_render.LMGLCanvas(self.dsviewer, False, vp = self.do, vpVoxSize = voxx)
         self.glCanvas.cmap = pylab.cm.gist_rainbow
         self.glCanvas.pointSelectionCallbacks.append(self.OnPointSelect)

@@ -5,8 +5,8 @@ Created on Wed Oct 16 22:05:41 2013
 @author: david
 """
 import os
-from PYME.Analysis.LMVis.pipeline import Pipeline
-from PYME.Analysis.LMVis import visHelpers
+from PYME.LMVis.pipeline import Pipeline
+from PYME.LMVis import visHelpers
 from PYME.Analysis.processLogger import PL, TablesBackend, dictToRecarray
 from PYME.Analysis import trackUtils
 

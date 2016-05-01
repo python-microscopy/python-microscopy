@@ -30,7 +30,7 @@
 import sys
 #import gnomevfs
 
-from PYME.Analysis.LMVis import inpFilt
+from PYME.LMVis import inpFilt
 from scipy import histogram2d, arange, minimum, concatenate, newaxis
 from PIL import Image
 

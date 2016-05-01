@@ -31,7 +31,7 @@ from PYME.Analysis.Modules import recipeGui
 from PYME.DSView.image import ImageStack
 from PYME.DSView import ViewIm3D
 
-from PYME.Analysis.LMVis import pipeline
+from PYME.LMVis import pipeline
 
 import os
         
@@ -96,7 +96,7 @@ class RecipePlugin(recipeGui.RecipeManager):
                     if not 'pipeline' in dir(dv):
                         dv.pipeline = pipeline.Pipeline()
                     
-                    from PYME.Analysis.LMVis import inpFilt
+                    from PYME.LMVis import inpFilt
                     cache = inpFilt.cachingResultsFilter(self.activeRecipe.namespace['out_meas'])
                     dv.pipeline.OpenFile(ds = cache)
                     dv.view.filter = dv.pipeline
@@ -113,7 +113,7 @@ class RecipePlugin(recipeGui.RecipeManager):
                 if not 'pipeline' in dir(self.dsviewer):
                     self.dsviewer.pipeline = pipeline.Pipeline()
                 
-                from PYME.Analysis.LMVis import inpFilt
+                from PYME.LMVis import inpFilt
                 cache = inpFilt.cachingResultsFilter(self.outp)
                 self.dsviewer.pipeline.OpenFile(ds = cache)
                 self.dsviewer.view.filter = self.dsviewer.pipeline
@@ -139,7 +139,7 @@ class RecipePlugin(recipeGui.RecipeManager):
             
     def OnLoadOutputs(self, event):
         import pandas
-        from PYME.Analysis.LMVis import inpFilt
+        from PYME.LMVis import inpFilt
         
         filename = wx.FileSelector('Save results as ...', 
                                    wildcard="CSV files (*.csv)|*.csv|Excell files (*.xlsx)|*.xlsx|HDF5 files (*.hdf)|*.hdf", 

@@ -80,7 +80,7 @@ class ParticleTracker:
         dlg.Destroy()
 
     def OnMeasure(self, event):
-        from PYME.Analysis.LMVis import objectMeasure
+        from PYME.LMVis import objectMeasure
 
         chans = self.pipeline.colourFilter.getColourChans()
 

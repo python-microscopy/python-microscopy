@@ -29,8 +29,8 @@ import wx.lib.agw.aui as aui
 #hacked so py2exe works
 from PYME.DSView.dsviewer_npy_nb import View3D
 
-from PYME.Analysis.LMVis import gl_render
-#from PYME.Analysis.LMVis import workspaceTree
+from PYME.LMVis import gl_render
+#from PYME.LMVis import workspaceTree
 import sys
 
 import pylab
@@ -38,14 +38,14 @@ from PYME.misc import extraCMaps
 from PYME.FileUtils import nameUtils
 
 import os
-from PYME.Analysis.LMVis import gl_render3D
+from PYME.LMVis import gl_render3D
 
-from PYME.Analysis.LMVis import colourPanel
-from PYME.Analysis.LMVis import renderers
-from PYME.Analysis.LMVis import pipeline
+from PYME.LMVis import colourPanel
+from PYME.LMVis import renderers
+from PYME.LMVis import pipeline
 
 try:
-    from PYME.Analysis.LMVis import recArrayView
+    from PYME.LMVis import recArrayView
 except:
     pass
 
@@ -59,9 +59,9 @@ try:
 except:
     pass
 
-from PYME.Analysis.LMVis.colourFilterGUI import CreateColourFilterPane
-from PYME.Analysis.LMVis.displayPane import CreateDisplayPane
-from PYME.Analysis.LMVis.filterPane import CreateFilterPane
+from PYME.LMVis.colourFilterGUI import CreateColourFilterPane
+from PYME.LMVis.displayPane import CreateDisplayPane
+from PYME.LMVis.filterPane import CreateFilterPane
 
 from PYME.Analysis import MetadataTree
 
@@ -70,7 +70,7 @@ import scipy.special
 
 from PYME.DSView import eventLogViewer
 
-from PYME.Analysis.LMVis import statusLog
+from PYME.LMVis import statusLog
 
 class VisGUIFrame(wx.Frame):    
     def __init__(self, parent, filename=None, id=wx.ID_ANY, 
@@ -645,7 +645,7 @@ class VisGUIFrame(wx.Frame):
         renderers.init_renderers(self)
 
         self.extras_menu = wx.Menu()
-        from PYME.Analysis.LMVis import Extras
+        from PYME.LMVis import Extras
         Extras.InitPlugins(self)
         
         try:
@@ -864,7 +864,7 @@ class VisGUIFrame(wx.Frame):
         if os.path.splitext(filename)[1] == '.h5r':
             pass
         elif os.path.splitext(filename)[1] == '.mat':
-            from PYME.Analysis.LMVis import importTextDialog
+            from PYME.LMVis import importTextDialog
             from scipy.io import loadmat
             
             mf = loadmat(filename)
@@ -884,7 +884,7 @@ class VisGUIFrame(wx.Frame):
             dlg.Destroy()
 
         else: #assume it's a text file
-            from PYME.Analysis.LMVis import importTextDialog
+            from PYME.LMVis import importTextDialog
             
             dlg = importTextDialog.ImportTextDialog(self, filename)
             ret = dlg.ShowModal()

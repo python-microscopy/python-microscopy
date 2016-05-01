@@ -24,7 +24,7 @@
 from numpy import *
 from numpy.fft import *
 import numpy
-from PYME.Analysis.LMVis import inpFilt
+from PYME.LMVis import inpFilt
 import scipy.ndimage
 
 

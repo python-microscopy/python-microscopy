@@ -20,11 +20,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
-from PYME.Analysis.LMVis import inpFilt
-from PYME.Analysis.LMVis.visHelpers import ImageBounds
-from PYME.Analysis.LMVis import dyeRatios
-from PYME.Analysis.LMVis import statusLog
-from PYME.Analysis.LMVis import renderers
+from PYME.LMVis import inpFilt
+from PYME.LMVis.visHelpers import ImageBounds
+from PYME.LMVis import dyeRatios
+from PYME.LMVis import statusLog
+from PYME.LMVis import renderers
 
 from PYME.Analysis import piecewiseMapping
 from PYME.Acquire import MetaDataHandler
@@ -471,7 +471,7 @@ class Pipeline:
                 self.mapping.setMapping('p_%s' % structure, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))/(error_gFrac*sqrt(2*numpy.pi))' % ratio)
                 
     def getNeighbourDists(self, forceRetriang = False):
-        from PYME.Analysis.LMVis import visHelpers
+        from PYME.LMVis import visHelpers
         
         if forceRetriang or not 'neighbourDistances' in self.GeneratedMeasures.keys():
             statNeigh = statusLog.StatusLogger("Calculating mean neighbour distances ...")
@@ -545,7 +545,7 @@ class Pipeline:
             self.Quads.insert(pointQT.qtRec(xi,yi, None))
             
     def measureObjects(self):
-        from PYME.Analysis.LMVis import objectMeasure
+        from PYME.LMVis import objectMeasure
         
         self.objectMeasures = objectMeasure.measureObjects(self.objects, self.objThreshold)
         

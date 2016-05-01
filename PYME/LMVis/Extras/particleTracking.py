@@ -154,7 +154,7 @@ class ParticleTracker:
         self.visFr.CreateFoldPanel()
         
     def OnCoalesce(self, event):
-        from PYME.Analysis.LMVis import inpFilt
+        from PYME.LMVis import inpFilt
         from PYME.Analysis.DeClump import pyDeClump
         
         pipeline = self.visFr.pipeline

@@ -20,7 +20,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
-from PYME.Analysis.LMVis import inpFilt
+from PYME.LMVis import inpFilt
 
 from PYME.Analysis import piecewiseMapping
 
@@ -30,8 +30,8 @@ import scipy.special
 
 from PYME.Acquire import MetaDataHandler
 
-from PYME.Analysis.LMVis.visHelpers import ImageBounds
-from PYME.Analysis.LMVis import dyeRatios
+from PYME.LMVis.visHelpers import ImageBounds
+from PYME.LMVis import dyeRatios
 #from PYME.Analysis.BleachProfile.kinModels import getPhotonNums
 
 

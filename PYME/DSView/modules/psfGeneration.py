@@ -30,7 +30,7 @@ from enthought.traits.ui.menu import OKButton
 
 from PYME.PSFGen import fourierHNA
 from PYME.DSView import image
-from PYME.Analysis.LMVis.Extras.pointSetGeneration import WRDictEnum
+from PYME.LMVis.Extras.pointSetGeneration import WRDictEnum
 from PYME.misc import zernike
 
 class Pupil(HasTraits):

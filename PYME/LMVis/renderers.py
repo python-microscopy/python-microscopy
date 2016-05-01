@@ -19,12 +19,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-from PYME.Analysis.LMVis.visHelpers import ImageBounds#, GeneratedImage
+from PYME.LMVis.visHelpers import ImageBounds#, GeneratedImage
 from PYME.DSView.image import GeneratedImage
-from PYME.Analysis.LMVis import genImageDialog
-from PYME.Analysis.LMVis import visHelpers
-#from PYME.Analysis.LMVis import imageView
-from PYME.Analysis.LMVis import statusLog
+from PYME.LMVis import genImageDialog
+from PYME.LMVis import visHelpers
+#from PYME.LMVis import imageView
+from PYME.LMVis import statusLog
 
 from PYME.Acquire import MetaDataHandler
 

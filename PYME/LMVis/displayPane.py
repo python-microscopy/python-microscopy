@@ -25,7 +25,7 @@ import PYME.misc.autoFoldPanel as afp
 import pylab
 import numpy as np
 
-from PYME.Analysis.LMVis import histLimits
+from PYME.LMVis import histLimits
 
 def CreateDisplayPane(panel, mapping, visFr):
     pane = DisplayPane(panel, mapping, visFr)

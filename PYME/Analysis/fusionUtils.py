@@ -499,7 +499,7 @@ def selectAndPlotEvents(pipeline, outputdir='/Users/david/FusionAnalysis', speck
     
 def main():
     import sys
-    from PYME.Analysis.LMVis import pipeline
+    from PYME.LMVis import pipeline
     from PYME.DSView.image import ImageStack     
     
     resultFile, imageFile, speckles = sys.argv[1:]

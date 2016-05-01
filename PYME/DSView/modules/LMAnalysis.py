@@ -30,10 +30,10 @@ from PYME.Analysis import MetaDataEdit as mde
 #from pylab import *
 from PYME.FileUtils import fileID
 from PYME.FileUtils.nameUtils import genResultFileName
-from PYME.Analysis.LMVis import progGraph as progGraph
+from PYME.LMVis import progGraph as progGraph
 
-#from PYME.Analysis.LMVis import gl_render
-#from PYME.Analysis.LMVis import workspaceTree
+#from PYME.LMVis import gl_render
+#from PYME.LMVis import workspaceTree
 #import sys
 
 
@@ -42,7 +42,7 @@ from PYME.misc import extraCMaps
 
 import numpy as np
 
-from PYME.Analysis.LMVis import pipeline, inpFilt
+from PYME.LMVis import pipeline, inpFilt
 
 import numpy
 import pylab
@@ -169,7 +169,7 @@ class LMAnalyser:
 #        
 #        self.SetFitInfo()
 #
-#        from PYME.Analysis.LMVis import gl_render
+#        from PYME.LMVis import gl_render
 #        self.glCanvas = gl_render.LMGLCanvas(self.dsviewer, False, vp = self.do, vpVoxSize = voxx)
 #        self.glCanvas.cmap = pylab.cm.gist_rainbow
 #        self.glCanvas.pointSelectionCallbacks.append(self.OnPointSelect)
@@ -455,7 +455,7 @@ class LMAnalyser:
         #############
         #set up real time display
 #        if not 'glCanvas' in dir(self):   #re-use existing canvas if present     
-#            from PYME.Analysis.LMVis import gl_render
+#            from PYME.LMVis import gl_render
 #            self.glCanvas = gl_render.LMGLCanvas(self.dsviewer, False)
 #            self.glCanvas.cmap = pylab.cm.gist_rainbow
 #    

@@ -7,7 +7,7 @@ Created on Mon May 25 17:10:02 2015
 from .base import ModuleBase, register_module, Filter, Float, Enum, CStr, Bool, Int, View, Item, Group
 import numpy as np
 import pandas as pd
-from PYME.Analysis.LMVis import inpFilt
+from PYME.LMVis import inpFilt
 from PYME.Acquire import MetaDataHandler
 import os
 
@@ -95,7 +95,7 @@ class MeanNeighbourDistances(ModuleBase):
     
     def execute(self, namespace):
         from matplotlib import delaunay
-        from PYME.Analysis.LMVis import visHelpers
+        from PYME.LMVis import visHelpers
         pos = namespace[self.inputPositions]
         
         x, y = pos['x'], pos['y']

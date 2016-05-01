@@ -23,7 +23,7 @@
 
 import numpy as np
 #import sys
-from PYME.Analysis.LMVis.visHelpers import genEdgeDB
+from PYME.LMVis.visHelpers import genEdgeDB
 
 def cluster(T):
     edb = genEdgeDB(T)
