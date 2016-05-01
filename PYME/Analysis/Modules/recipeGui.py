@@ -16,7 +16,7 @@ import pylab
 from PYME.DSView.image import ImageStack
 from PYME.DSView import ViewIm3D
 
-from PYME.misc import wxPlotPanel
+from PYME.contrib import wxPlotPanel
 from PYME.misc import depGraph
 
 from traitsui.api import Controller

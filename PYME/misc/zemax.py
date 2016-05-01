@@ -4,7 +4,7 @@ Created on Fri Apr 05 11:57:53 2013
 
 @author: David Baddeley
 """
-from PYME.misc import lzw
+from PYME.contrib import lzw
 import numpy as np
 
 import read_agf

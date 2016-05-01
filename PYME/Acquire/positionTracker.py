@@ -24,7 +24,7 @@ import time
 import numpy as np
 import wx
 
-from PYME.misc.wxPlotPanel import PlotPanel
+from PYME.contrib.wxPlotPanel import PlotPanel
 
 class TrackerPlotPanel(PlotPanel):
     def __init__(self, parent, posTrk, *args, **kwargs):

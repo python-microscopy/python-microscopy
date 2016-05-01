@@ -21,7 +21,7 @@
 #
 ##################
 
-from PYME.misc import wxPlotPanel
+from PYME.contrib import wxPlotPanel
 from PYME.misc import editList
 #from PYME.misc import facsPlot
 import numpy

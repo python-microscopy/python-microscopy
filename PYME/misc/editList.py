@@ -21,7 +21,7 @@
 ##################
 
 import wx
-import PYME.misc.listctrlMixins  as  listmix
+import PYME.contrib.listctrlMixins  as  listmix
 
 class EditListCtrl(wx.ListCtrl,
                    listmix.ListCtrlAutoWidthMixin,

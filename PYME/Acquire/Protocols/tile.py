@@ -27,7 +27,7 @@ import numpy
 import wx
 
 from PYME.Acquire.pointScanner import PointScanner
-from PYME.misc.wxPlotPanel import PlotPanel
+from PYME.contrib.wxPlotPanel import PlotPanel
 #from PYME.Analysis import ofind
 
 #calculate tile sizes

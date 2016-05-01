@@ -21,7 +21,7 @@
 #
 ##################
 
-from PYME.misc import wxPlotPanel
+from PYME.contrib import wxPlotPanel
 import wx
 import numpy as np
 import matplotlib

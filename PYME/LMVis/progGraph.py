@@ -21,7 +21,7 @@
 #
 ##################
 
-from PYME.misc import wxPlotPanel
+from PYME.contrib import wxPlotPanel
 import numpy
 
 class progPanel(wxPlotPanel.PlotPanel):

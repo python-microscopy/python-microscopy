@@ -27,7 +27,7 @@ import numpy
 import wx
 
 from PYME.Acquire.pointScanner import PointScanner
-from PYME.misc.wxPlotPanel import PlotPanel
+from PYME.contrib.wxPlotPanel import PlotPanel
 #from PYME.Analysis import ofind
 
 ps = PointScanner(scope.piezos[1], scope.piezos[2], scope, pixels = [10,10], pixelsize=numpy.array([0.03, .015]), dwelltime=100, avg=False, evtLog = True)
