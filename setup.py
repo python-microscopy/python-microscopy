@@ -32,7 +32,7 @@ entry_points={
     'gui_scripts': [
         'dh5view = PYME.DSView.dsviewer_npy_nb:main',
         'PYMEAcquire = PYME.Acquire.PYMEAcquire:main',
-        'VisGUI = PYME.Analysis.LMVis.VisGUI:main',
+        'VisGUI = PYME.LMVis.VisGUI:main',
         'launchWorkers = PYME.ParallelTasks.launchWorkers:main',
         #'taskServerZC = PYME.ParallelTasks.taskServerZC:main',
         #'taskWorkerZC = PYME.ParallelTasks.taskWorkerZC:main',

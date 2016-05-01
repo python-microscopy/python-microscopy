@@ -39,6 +39,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('PSFEst')
     config.add_subpackage('mProfile')
     config.add_subpackage('misc')
+    config.add_subpackage('LMVis')
     #config.add_subpackage('pad')
     #config.add_subpackage('bcl')
     #config.add_subpackage('gohlke')

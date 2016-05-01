@@ -71,7 +71,7 @@ void _openFiles(NSArray* filenames) {
     printf(Py_GetPath());
     Py_SetProgramName("VisGUI");
     Py_Initialize();
-    PyRun_SimpleString("from PYME.Analysis.LMVis import VisGUI\nVisGUI.main()\n");
+    PyRun_SimpleString("from PYME.LMVis import VisGUI\nVisGUI.main()\n");
     Py_Finalize();
 }
 
