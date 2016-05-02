@@ -20,6 +20,27 @@ class SimpleThreshold(Filter):
 
     def completeMetadata(self, im):
         im.mdh['Processing.SimpleThreshold'] = self.threshold
+        
+@register_module('FractionalThreshold') 
+class FractionalThreshold(Filter):
+    '''Chose a threshold such that the given fraction of the total labelling is 
+    included in the mask.
+    '''
+    fractionThreshold = Float(0.5)
+
+    def applyFilter(self, data, chanNum, frNum, im):
+        N, bins = np.histogram(data, bins=5000)
+        #calculate bin centres
+        bin_mids = (bins[:-1] )
+        cN = np.cumsum(N*bin_mids)
+        i = np.argmin(abs(cN - cN[-1]*(1-self.fractionThreshold)))
+        threshold = bins[i]
+
+        mask = data > threshold
+        return mask
+
+    def completeMetadata(self, im):
+        im.mdh['Processing.FractionalThreshold'] = self.fractionThreshold
  
 @register_module('Label')        
 class Label(Filter):
