@@ -42,7 +42,7 @@ class SplashPanel(wx.Panel):
         
         wx.EVT_PAINT(self, self.OnPaint)
 
-        logofilename = os.path.join(os.path.split(__file__)[0], 'logo.png')
+        logofilename = resources.getIconPath('logo_fmhs.png')
 
         #self.bmLogo = wx.Bitmap(logofilename, wx.BITMAP_TYPE_PNG)
         

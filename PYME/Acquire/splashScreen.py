@@ -25,6 +25,8 @@ import wx
 import time
 import os
 
+from PYME import resources
+
 class SplashPanel(wx.Panel):
     def __init__(self, parent, scope, size=(-1,-1)):
         wx.Panel.__init__(self, parent, size = size)
@@ -42,9 +44,13 @@ class SplashPanel(wx.Panel):
         
         wx.EVT_PAINT(self, self.OnPaint)
 
-        logofilename = os.path.join(os.path.split(__file__)[0], 'logo.png')
+        logofilename = resources.getIconPath('logo_fmhs.png')
 
         self.bmLogo = wx.Bitmap(logofilename, wx.BITMAP_TYPE_PNG)
+        
+        logofilename = resources.getIconPath('ysm_shield.png')
+
+        self.bmLogo2 = wx.Bitmap(logofilename, wx.BITMAP_TYPE_PNG)
         
     def DoPaint(self, dc):
         elapsedTime = time.time() - self.startTime
@@ -76,14 +82,15 @@ class SplashPanel(wx.Panel):
             dc.DrawText(msg, 30, yp)
             yp += ts[1]
 
-        self.drawProgBar(dc, 30, self.Size[1]- 30 - self.bmLogo.GetHeight(), self.Size[0] - 60, 10, elapsedTime/self.times['total'])
+        self.drawProgBar(dc, 30, self.Size[1]- 30 - self.bmLogo2.GetHeight(), self.Size[0] - 60, 10, elapsedTime/self.times['total'])
 
-        dc.DrawText('Biophysics & Biophotonics Group', 10, self.Size[1] - self.bmLogo.GetHeight() - 10)
-        dc.DrawText('Dept. of Physiology', 10, self.Size[1] - self.bmLogo.GetHeight() - 10 + ts[1])
-        dc.DrawText('University of Auckland', 10, self.Size[1] - self.bmLogo.GetHeight() - 10 + 2*ts[1])
+        #dc.DrawText('Biophysics & Biophotonics Group', 10, self.Size[1] - self.bmLogo.GetHeight() - 10)
+        #dc.DrawText('Dept. of Physiology', 10, self.Size[1] - self.bmLogo.GetHeight() - 10 + ts[1])
+        #dc.DrawText('University of Auckland', 10, self.Size[1] - self.bmLogo.GetHeight() - 10 + 2*ts[1])
 
         dc.DrawBitmap(self.bmLogo, self.Size[0] - self.bmLogo.GetWidth() - 10, self.Size[1] - self.bmLogo.GetHeight() - 10)
-
+        dc.DrawBitmap(self.bmLogo2, 10, self.Size[1] - self.bmLogo2.GetHeight() - 10)        
+        
         dc.SetTextForeground(wx.BLACK)
 
         dc.SetPen(wx.NullPen)

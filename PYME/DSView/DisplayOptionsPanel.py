@@ -24,6 +24,9 @@
 import wx
 import wx.lib.agw.aui as aui
 import pylab
+
+from PYME import resources
+
 try:
     from PYME.misc import extraCMaps
 except:
@@ -293,10 +296,10 @@ class OptionsPanel(wx.Panel):
         global bmCrosshairs, bmRectSelect, bmLineSelect, bmSquiggleSelect
 
         if bmCrosshairs == None: #load bitmaps on first use
-            bmCrosshairs = wx.Bitmap(os.path.join(dirname, 'icons/crosshairs.png'))
-            bmRectSelect = wx.Bitmap(os.path.join(dirname, 'icons/rect_select.png'))
-            bmLineSelect = wx.Bitmap(os.path.join(dirname, 'icons/line_select.png'))
-            bmSquiggleSelect = wx.Bitmap(os.path.join(dirname, 'icons/squiggle_select.png'))
+            bmCrosshairs = wx.Bitmap(resources.getIconPath('crosshairs.png'))
+            bmRectSelect = wx.Bitmap(resources.getIconPath('rect_select.png'))
+            bmLineSelect = wx.Bitmap(resources.getIconPath('line_select.png'))
+            bmSquiggleSelect = wx.Bitmap(resources.getIconPath('squiggle_select.png'))
 
         self.toolB = aui.AuiToolBar(wind, -1, wx.DefaultPosition, wx.DefaultSize, agwStyle=aui.AUI_TB_DEFAULT_STYLE | aui.AUI_TB_OVERFLOW | aui.AUI_TB_VERTICAL)
         self.toolB.SetToolBitmapSize(wx.Size(16, 16))
