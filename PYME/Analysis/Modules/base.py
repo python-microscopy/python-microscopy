@@ -428,7 +428,7 @@ class Normalize(Filter):
         
 @register_module('NormalizeMean')    
 class NormalizeMean(Filter):
-    '''Normalize an image so that the maximum is 1'''
+    '''Normalize an image so that the mean is 1'''
     
     offset = Float(0)
     
