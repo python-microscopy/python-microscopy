@@ -21,7 +21,7 @@
 #
 ##################
 
-from PYME.ParallelTasks.relativeFiles import getFullFilename
+from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
 from PYME.Acquire import MetaDataHandler
 #from PYME.FileUtils import readTiff
 from PIL import Image
@@ -38,7 +38,7 @@ from .BaseDataSource import BaseDataSource
 class DataSource(BaseDataSource):
     moduleName = 'ImageSeriesDataSource'
     def __init__(self, filename, taskQueue=None):
-        self.filename = getFullFilename(filename)#convert relative path to full path
+        self.filename = getFullExistingFilename(filename)#convert relative path to full path
         #self.data = readTiff.read3DTiff(self.filename)
 
         #use metadata for glob

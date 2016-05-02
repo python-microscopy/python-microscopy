@@ -21,7 +21,7 @@
 #
 ##################
 
-from PYME.ParallelTasks.relativeFiles import getFullFilename
+from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
 import tables
 from .BaseDataSource import BaseDataSource
 
@@ -33,7 +33,7 @@ except ImportError:
 class DataSource(BaseDataSource):
     moduleName = 'HDFDataSource'
     def __init__(self, h5Filename, taskQueue=None):
-        self.h5Filename = getFullFilename(h5Filename)#convert relative path to full path
+        self.h5Filename = getFullExistingFilename(h5Filename)#convert relative path to full path
         self.h5File = tables.openFile(self.h5Filename)
         
         if 'PZFImageData' in dir(self.h5File.root):

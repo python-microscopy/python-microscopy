@@ -46,7 +46,7 @@ def release_VM():
     
 
 
-from PYME.ParallelTasks.relativeFiles import getFullFilename
+from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
 #from PYME.FileUtils import readTiff
 #import Image
 #from PYME.misc import TiffImagePlugin #monkey patch PIL with improved tiff support from Priithon
@@ -61,7 +61,7 @@ from .BaseDataSource import BaseDataSource
 class DataSource(BaseDataSource):
     moduleName = 'BioformatsDataSource'
     def __init__(self, filename, taskQueue, chanNum = 0):
-        self.filename = getFullFilename(filename)#convert relative path to full path
+        self.filename = getFullExistingFilename(filename)#convert relative path to full path
         self.chanNum = chanNum
         
         #self.data = readTiff.read3DTiff(self.filename)
