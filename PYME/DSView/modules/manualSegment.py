@@ -27,7 +27,7 @@ import pylab
 from scipy import ndimage
 import numpy as np
 
-from PYME.DSView.dsviewer_npy_nb import ViewIm3D, ImageStack
+from PYME.DSView.dsviewer import ViewIm3D, ImageStack
 
 class manualSegment:
     def __init__(self, dsviewer):

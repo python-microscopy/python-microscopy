@@ -262,7 +262,7 @@ class psfExtractor:
 #            import cPickle
 #            imshow(psf.max(2))
 
-            from PYME.DSView.dsviewer_npy_nb import ImageStack, ViewIm3D
+            from PYME.DSView.dsviewer import ImageStack, ViewIm3D
 
             im = ImageStack(data = psf, mdh = self.image.mdh, titleStub = 'Extracted PSF')
             im.defaultExt = '*.psf' #we want to save as PSF by default
@@ -294,7 +294,7 @@ class psfExtractor:
 #            import cPickle
 #            imshow(psf.max(2))
 
-            from PYME.DSView.dsviewer_npy_nb import ImageStack, ViewIm3D
+            from PYME.DSView.dsviewer import ImageStack, ViewIm3D
 
             im = ImageStack(data = psf, mdh = self.image.mdh, titleStub = 'Extracted PSF')
             im.defaultExt = '*.psf' #we want to save as PSF by default

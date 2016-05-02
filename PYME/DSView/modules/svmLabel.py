@@ -35,7 +35,7 @@ try:
 except:
     pass
 
-from PYME.DSView.dsviewer_npy_nb import ViewIm3D, ImageStack
+from PYME.DSView.dsviewer import ViewIm3D, ImageStack
 
 import wx.lib.mixins.listctrl as listmix
 

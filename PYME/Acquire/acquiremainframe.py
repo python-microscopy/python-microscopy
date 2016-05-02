@@ -52,7 +52,7 @@ from PYME.Acquire import stepDialog
 from PYME.Acquire import selectCameraPanel
 from PYME.Acquire import microscope
 #import PYME.DSView.dsviewer_npy as dsviewer
-from PYME.DSView import dsviewer_npy_nb as dsviewer
+from PYME.DSView import dsviewer as dsviewer
 #from PYME.cSMI import CDataStack_AsArray
 from PYME.Acquire import MetaDataHandler
 #from PYME.Acquire import chanfr

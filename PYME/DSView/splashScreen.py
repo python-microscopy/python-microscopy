@@ -25,6 +25,8 @@ import wx
 import time
 import os
 
+from PYME import resources
+
 class SplashPanel(wx.Panel):
     def __init__(self, parent, scope, size=(-1,-1)):
         wx.Panel.__init__(self, parent, size = size)

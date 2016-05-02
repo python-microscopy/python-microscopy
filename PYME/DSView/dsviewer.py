@@ -1,6 +1,6 @@
 #!/usr/bin/python
 ##################
-# dsviewer_npy_nb.py
+# dsviewer.py
 #
 # Copyright David Baddeley, 2009
 # d.baddeley@auckland.ac.nz
