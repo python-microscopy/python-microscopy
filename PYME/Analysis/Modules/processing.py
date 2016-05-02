@@ -44,6 +44,9 @@ class FractionalThreshold(Filter):
  
 @register_module('Label')        
 class Label(Filter):
+    '''Asigns a unique integer label to each contiguous region in the input mask. 
+    Optionally throws away all regions which are smaller than a cutoff size.
+    '''
     minRegionPixels = Int(10)
     
     def applyFilter(self, data, chanNum, frNum, im):
@@ -59,9 +62,9 @@ class Label(Filter):
                 r = labs[o] == i+1
                 #print r.shape
                 if r.sum() > rSize:
-                    m2[o] = r
+                    m2[o] += r
                                 
-            labs, nlabs = ndimage.label(m2)
+            labs, nlabs = ndimage.label(m2 > 0)
             
         return labs
 
