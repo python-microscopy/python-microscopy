@@ -13,14 +13,31 @@ from PYME.DSView.image import ImageStack
 @register_module('SimpleThreshold') 
 class SimpleThreshold(Filter):
     threshold = Float(0.5)
-    
+
+    fractionalThreshold = Bool(0)
+
     def applyFilter(self, data, chanNum, frNum, im):
         mask = data > self.threshold
         return mask
 
+@register_module('FractionalThreshold') 
+class FractionalThreshold(Filter):
+    fractionThreshold = Float(0.5)
+
+    def applyFilter(self, data, chanNum, frNum, im):
+        N, bins = np.histogram(data, bins=5000)
+        #calculate bin centres
+        bin_mids = (bins[:-1] )
+        cN = np.cumsum(N*bin_mids)
+        i = np.argmin(abs(cN - cN[-1]*(1-self.fractionThreshold)))
+        threshold = bins[i]
+
+        mask = data > threshold
+        return mask
+
     def completeMetadata(self, im):
-        im.mdh['Processing.SimpleThreshold'] = self.threshold
- 
+        im.mdh['Processing.FractionalThreshold'] = self.fractionThreshold
+
 @register_module('Label')        
 class Label(Filter):
     minRegionPixels = Int(10)
@@ -38,9 +55,9 @@ class Label(Filter):
                 r = labs[o] == i+1
                 #print r.shape
                 if r.sum() > rSize:
-                    m2[o] = r
+                    m2[o] += r
                                 
-            labs, nlabs = ndimage.label(m2)
+            labs, nlabs = ndimage.label(m2>0)
             
         return labs
 
