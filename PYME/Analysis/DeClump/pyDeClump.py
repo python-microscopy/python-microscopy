@@ -71,6 +71,16 @@ def weightedAverage(vals, errs):
         eres[k] = np.sqrt(vark)
 
     return res, eres
+    
+def weightedAverage_(vals, errs, dt):    
+    e = errs #.view(dt)
+    v = vals# .view(dt)
+    
+    w = 1.0/(e*e)
+    ws = 1.0/w.sum(0)
+    r = (v*w).sum(0)*ws
+
+    return r, np.sqrt(ws)
 
 def deClumpf(h5fFile):
     if type(h5fFile) == tables.file.File:
@@ -122,7 +132,7 @@ def findClumps(t, x, y, delta_x):
     return assigned
 
 
-def coalesceClumps(fitResults, assigned):
+def coalesceClumps_(fitResults, assigned):
     '''Agregates clumps to a single event'''
     NClumps = int(assigned.max())
 
@@ -130,6 +140,8 @@ def coalesceClumps(fitResults, assigned):
     dt = deClumpedDType(fitResults)
 
     fres = np.empty(NClumps, dt)
+    
+    dtr = '%df4' % len(fitResults['fitResults'].dtype)
     
     clist = [[] for i in xrange(NClumps)]
     for i, c in enumerate(assigned):
@@ -144,8 +156,49 @@ def coalesceClumps(fitResults, assigned):
             fres['tIndex'][i] = vals['tIndex'].min()
 
             fres['fitResults'][i], fres['fitError'][i] = weightedAverage(vals['fitResults'], vals['fitError'])
+            #fres['fitResults'][i], fres['fitError'][i] = weightedAverage_(vals['fitResults'], vals['fitError'], dtr)
 
             fres['nFrames'][i] = len(vals)
+            #fres['ATotal'][i] = vals['fitResults']['A'].sum()
+
+
+    return fres
+    
+def coalesceClumps(fitResults, assigned):
+    '''Agregates clumps to a single event'''
+    NClumps = int(assigned.max())
+
+    #work out what the data type for our declumped data should be
+    dt = deClumpedDType(fitResults)
+
+    fres = np.empty(NClumps, dt)
+    
+    dtr = '%df4' % len(fitResults['fitResults'].dtype)
+    
+    clist = [[] for i in xrange(NClumps)]
+    for i, c in enumerate(assigned):
+        clist[int(c-1)].append(i)
+        
+    avals = fitResults['fitResults'].view(dtr)
+    aerrs = fitResults['fitError'].view(dtr)
+    tIs = fitResults['tIndex']
+
+    for i in xrange(NClumps):
+            #coalesce the connected ponts into one
+            ci = clist[i]
+            #vals = fitResults[ci]
+            
+            rvs = avals[ci]
+            evs = aerrs[ci]
+
+            #vn = np.zeros(1,dtype=dt)
+                        
+            fres['tIndex'][i] = tIs[ci].min()
+
+            #fres['fitResults'][i], fres['fitError'][i] = weightedAverage(vals['fitResults'], vals['fitError'])
+            fres['fitResults'][i], fres['fitError'][i] = weightedAverage_(rvs, evs, dtr)
+
+            fres['nFrames'][i] = len(rvs)
             #fres['ATotal'][i] = vals['fitResults']['A'].sum()
 
 
