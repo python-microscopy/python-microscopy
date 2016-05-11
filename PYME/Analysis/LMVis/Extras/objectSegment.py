@@ -80,6 +80,13 @@ class ObjectSegmenter:
 
         dlg.Destroy()
 
+    def setMapping(self, mapname, mapattrname, var):
+        pipeline = self.pipeline
+        setattr(pipeline.selectedDataSource, mapattrname, -1*np.ones_like(pipeline.selectedDataSource['x']))
+        mapattr = getattr(pipeline.selectedDataSource,mapattrname)
+        mapattr[pipeline.filter.Index] = var
+        pipeline.selectedDataSource.setMapping(mapname, mapattrname)
+
     def OnMeasure(self, event):
         from PYME.Analysis.LMVis import objectDarkMeasure
 
@@ -89,7 +96,12 @@ class ObjectSegmenter:
         self.pipeline.objectMeasures = {}
 
         if len(chans) == 0:
-            self.pipeline.objectMeasures['Everything'] = objectDarkMeasure.measureObjectsByID(self.pipeline.colourFilter, ids)
+            self.pipeline.objectMeasures['Everything'], tau1, qus, ndt = objectDarkMeasure.measureObjectsByID(self.pipeline.colourFilter, ids)
+            self.setMapping('taudark','tau1',tau1)
+            self.setMapping('NDarktimes','ndt',ndt)
+            self.setMapping('QUnits','qunits',qus)
+            self.visFr.RegenFilter()
+            self.visFr.CreateFoldPanel()
         else:
             curChan = self.pipeline.colourFilter.currentColour
 
@@ -105,7 +117,7 @@ class ObjectSegmenter:
             for ch, i in zip(chans, range(len(chans))):
                 self.pipeline.colourFilter.setColour(ch)
                 #fitDecayChan(colourFilter, metadata, chanNames[i], i)
-                self.pipeline.objectMeasures[chanNames[i]] = objectDarkMeasure.measureObjectsByID(self.visFr.colourFilter, ids)
+                self.pipeline.objectMeasures[chanNames[i]], tau1, qus, ndt = objectDarkMeasure.measureObjectsByID(self.visFr.colourFilter, ids)
             self.pipeline.colourFilter.setColour(curChan)
 
 

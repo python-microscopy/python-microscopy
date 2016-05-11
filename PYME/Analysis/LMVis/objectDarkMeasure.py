@@ -97,7 +97,9 @@ def measureObjectsByID(filter, ids):
     y = filter['y'] #+ 0.1*random.randn(x.size)
     id = filter['objectID'].astype('i')
     t = filter['t']
-
+    tau1 = -1*np.ones_like(t)
+    ndt = -1*np.ones_like(t)
+    qus = -1*np.ones_like(t)
     #ids = set(ids)
 
     measurements = np.zeros(len(ids), dtype=measureDType)
@@ -109,5 +111,9 @@ def measureObjectsByID(filter, ids):
             #print obj.shape
             measure(obj, measurements[j])
             measurements[j]['objID'] = i
+            if not np.isnan(measurements[j]['tau1']):
+                tau1[ind] = measurements[j]['tau1']
+                qus[ind] = 100.0/measurements[j]['tau1']
+            ndt[ind] = measurements[j]['NDarktimes']
 
-    return measurements
+    return (measurements, tau1, qus, ndt)

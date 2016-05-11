@@ -14,8 +14,6 @@ from PYME.DSView.image import ImageStack
 class SimpleThreshold(Filter):
     threshold = Float(0.5)
 
-    fractionalThreshold = Bool(0)
-
     def applyFilter(self, data, chanNum, frNum, im):
         mask = data > self.threshold
         return mask
