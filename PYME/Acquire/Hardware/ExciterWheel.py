@@ -39,12 +39,18 @@ class WFilter:
         self.name = name
         self.description = description
         self.OD = OD
+
+class FilterPair:
+    def __init__(self, exciter, filtercube):
+        self.exciter = exciter
+        self.filtercube = filtercube
         
 class FiltWheel(object):
-    def __init__(self, installedFilters, serPort='COM3', dichroic=None):
+    def __init__(self, installedFilters, filterpair, serPort='COM3', dichroic=None):
         '''Create a filter wheel gui object. installedFilters should be a list of
         WFilter objects. The first item is the default'''
         self.installedFilters = installedFilters 
+        self.filterpair = filterpair
         
         self.fw = filtWheel(serPort)
         self.DICHROIC_SYNC = False
@@ -82,11 +88,13 @@ class FiltWheel(object):
                 return i
                 
     def DichroicSync(self):
-        if self.DICHROIC_SYNC:
+        if self.DICHROIC_SYNC and self.dichroic.GetPosition()>=0:
             dname =  self.dichroic.GetFilter()
+            print dname
+            fpair = [f for n, f in enumerate(self.filterpair) if f.filtercube == dname][0]
             
-            if dname in self.GetFilterNames():
-                self.SetFilterPos(name=dname)
+            if fpair.exciter in self.GetFilterNames():
+                self.SetFilterPos(name=fpair.exciter)
         
 
 class FiltFrame(wx.Panel):
@@ -97,24 +105,24 @@ class FiltFrame(wx.Panel):
         #self.SetClientSize(wx.Size(148, 38))
 
         self.panel1 = wx.Panel(id=wxID_FILTFRAMEPANEL1, name='panel1',
-              parent=self, pos=wx.Point(0, 0), size=wx.Size(148, 38),
+              parent=self, pos=wx.Point(0, 0), size=wx.Size(200, 38),
               style=wx.TAB_TRAVERSAL)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
         self.chFiltWheel = wx.Choice(choices=[], id=wxID_FILTFRAMECHFILTWHEEL,
               name=u'chFiltWheel', parent=self.panel1, pos=wx.Point(8, 8),
-              size=wx.Size(128, 21), style=0)
+              size=wx.Size(80, 21), style=0)
         self.chFiltWheel.Bind(wx.EVT_CHOICE, self.OnChFiltWheelChoice,
               id=wxID_FILTFRAMECHFILTWHEEL)
 
-        hsizer.Add(self.chFiltWheel, 1, wx.ALIGN_LEFT|wx.LEFT, 2)
+        hsizer.Add(self.chFiltWheel, 0, wx.LEFT|wx.TOP, 8)
 
-        self.cbMatchDi = wx.CheckBox(self, -1, 'Match dichroic')
+        self.cbMatchDi = wx.CheckBox(self.panel1, -1, 'Match dichroic')
         self.cbMatchDi.SetValue(False)
         self.cbMatchDi.Bind(wx.EVT_CHECKBOX, self.OnCbMatchdichroic)
 
-        hsizer.Add(self.cbMatchDi, 1, wx.ALIGN_LEFT|wx.LEFT, 2)
+        hsizer.Add(self.cbMatchDi, 0, wx.LEFT|wx.TOP, 10)
 
         self.SetAutoLayout(1)
         self.SetSizer(hsizer)
@@ -131,6 +139,9 @@ class FiltFrame(wx.Panel):
             
         self.chFiltWheel.SetSelection(self.fWheel.GetCurrentIndex())
         #self.fw.setPos(installedFilters[0].pos)
+
+        #self.dichroic = filterWheel.dichroic
+        #self.dichroic.wantChangeNotification.append(self.Updatemenu)
             
     def OnChFiltWheelChoice(self, event):
         n = self.chFiltWheel.GetSelection()
@@ -147,3 +158,7 @@ class FiltFrame(wx.Panel):
         else:
             self.chFiltWheel.Enable()
             self.fWheel.DICHROIC_SYNC = False
+            self.Updatemenu()
+
+    def Updatemenu(self):
+        self.chFiltWheel.SetSelection(self.fWheel.GetCurrentIndex())
