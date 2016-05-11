@@ -123,7 +123,7 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
         while ( gp != None ) :
             gp.Bind ( wx.EVT_MOVE , self.onControlChanged, gp )
             gp.Bind ( wx.EVT_SIZE , self.onControlChanged, gp )
-            gp = gp.GetParent()
+            gp = None#gp.GetParent()
 
         self.Bind( wx.EVT_KILL_FOCUS, self.onControlChanged, self )
         self.Bind( wx.EVT_TEXT , self.onEnteredText, self )
@@ -277,7 +277,10 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
         event.Skip ()
 
     def onControlChanged(self, event):
-        self._showDropDown( False )
+        try:
+            self._showDropDown( False )
+        except:
+            pass
         event.Skip()
 
 

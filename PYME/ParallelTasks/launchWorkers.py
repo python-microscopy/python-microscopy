@@ -27,7 +27,8 @@ import os
 import subprocess
 import sys
 import time
-import Pyro.naming
+
+#import Pyro.naming
 
 def cpuCount():
     '''
@@ -64,8 +65,10 @@ def cpuCount():
 #launch pyro name server
 #os.system('pyro-nsd start')
 
-SERVER_PROC = 'taskServerMP.py'
-WORKER_PROC = 'taskWorkerMP.py'
+#SERVER_PROC = 'taskServerMP.py'
+#WORKER_PROC = 'taskWorkerMP.py'
+SERVER_PROC = 'taskServerZC.py'
+WORKER_PROC = 'taskWorkerZC.py'
 
 fstub = os.path.split(__file__)[0]
 
@@ -73,22 +76,22 @@ def main():
     global SERVER_PROC, WORKER_PROC
     #get number of processors 
     numProcessors = cpuCount()
-    try: #try and find the name server
-        ns=Pyro.naming.NameServerLocator().getNS()
-    except: #launch our own
-        print('''Could not find PYRO nameserver - launching a local copy:
-            
-        This should work if you are only using one computer, or if you are 
-        really, really careful not to close this process before all other 
-        computers are done but is not going to be very robust.
-        
-        I highly recommend running the pyro nameserver as a seperate process, 
-        ideally on a server somewhere where it's not likely to get interrupted.
-        ''')
-        
-        subprocess.Popen('pyro-ns', shell=True)
-        #wait for server to come up
-        time.sleep(3)
+#    try: #try and find the name server
+#        ns=Pyro.naming.NameServerLocator().getNS()
+#    except: #launch our own
+#        print('''Could not find PYRO nameserver - launching a local copy:
+#            
+#        This should work if you are only using one computer, or if you are 
+#        really, really careful not to close this process before all other 
+#        computers are done but is not going to be very robust.
+#        
+#        I highly recommend running the pyro nameserver as a seperate process, 
+#        ideally on a server somewhere where it's not likely to get interrupted.
+#        ''')
+#        
+#        subprocess.Popen('pyro-ns', shell=True)
+#        #wait for server to come up
+#        time.sleep(3)
     
     if len(sys.argv) > 1:
 	if sys.argv[1] == '-l':
@@ -98,14 +101,42 @@ def main():
             numProcessors = int(sys.argv[1])
     
     if sys.platform == 'win32':
+        print 'Launching server ...'
         subprocess.Popen('python %s\\%s' % (fstub, SERVER_PROC), shell=True)
     
-        time.sleep(5)
+        print 'Waiting for server to come up ...'
+        time.sleep(10)
     
+        print 'Launching task monitor ...'
         subprocess.Popen('python %s\\fitMonP.py' % fstub, shell=True)
     
+        print 'Launching %d workers ...' % numProcessors
         for i in range(numProcessors):
             subprocess.Popen('python %s\\%s' % (fstub, WORKER_PROC), shell=True)
+    elif sys.platform == 'darwin':
+        import psutil
+        
+        #kill off previous workers and servers
+        for p in psutil.process_iter():
+            try:
+                if 'python' in p.name():
+                    c = p.cmdline()
+                    #print c, SERVER_PROC, WORKER_PROC
+                    if (SERVER_PROC in c[1]) or (WORKER_PROC in c[1]) or ('fitMonP' in c[1]):
+                        print 'killing %s' % c
+                        p.kill()
+            except psutil.ZombieProcess:
+                pass
+            
+    
+        subprocess.Popen('%s %s' % (sys.executable, os.path.join(fstub, SERVER_PROC)), shell=True)
+    
+        time.sleep(3)
+    
+        subprocess.Popen('%s %s' % (sys.executable, os.path.join(fstub,'fitMonP.py')), shell=True)
+    
+        for i in range(numProcessors):
+            subprocess.Popen('%s %s' % (sys.executable, os.path.join(fstub,WORKER_PROC)), shell=True)
     else: #operating systems which can launch python scripts directly
         #get rid of any previously started queues etc...
         if sys.platform == 'darwin':

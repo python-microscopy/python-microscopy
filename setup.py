@@ -9,7 +9,7 @@
 # This file may NOT be distributed without express permision from David Baddeley
 #
 ##################
-
+import setuptools #to monkey-patch distutils for ms visualc for python
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration

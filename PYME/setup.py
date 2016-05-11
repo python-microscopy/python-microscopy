@@ -23,6 +23,7 @@
 import glob
 import sys
 import os
+import setuptools #to monkey-patch distutils for ms visualc for python
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration

@@ -307,6 +307,6 @@ class DisplayOpts(object):
                 self.Offs[i] = dss.min()
                 self.Gains[i] = 1.0/(dss.max() - self.Offs[i]+ 1e-3)
                 
-        print self.Offs, self.Gains
+        #print self.Offs, self.Gains
 
         self.OnChange()

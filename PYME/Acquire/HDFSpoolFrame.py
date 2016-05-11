@@ -294,7 +294,17 @@ class PanSpool(wx.Panel):
         else:
             self.stDiskSpace.SetForegroundColour(wx.BLACK)
 
-        
+    @property
+    def spoolType(self):
+       return self.rbQueue.GetStringSelection()
+       
+    def _checkOutputExists(self, fn):
+        if self.spoolType == 'HTTP':
+            #special case for HTTP spooling
+            return HTTPSpooler.exists(getRelFilename(self.dirname + fn + '.h5'))
+            #return (fn + '.h5/') in HTTPSpooler.clusterIO.listdir(self.dirname)
+        else:
+            return (fn + '.h5') in os.listdir(self.dirname)
 
     def OnBStartSpoolButton(self, event=None, stack=False):
         '''GUI callback to start spooling.
@@ -323,7 +333,7 @@ class PanSpool(wx.Panel):
         if not self.dirname[-1] == os.sep:
             self.dirname += os.sep
 
-        if (fn + '.h5') in os.listdir(self.dirname): #check to see if data with the same name exists
+        if self._checkOutputExists(fn): #check to see if data with the same name exists
             ans = wx.MessageBox('A series with the same name already exists', 'Error', wx.OK)
             #overwriting doesn't work ... so just bail
             #increment the series counter first, though, so hopefully we don't get the same error on the next try
@@ -346,15 +356,19 @@ class PanSpool(wx.Panel):
 
         if not preflight.ShowPreflightResults(self, self.protocol.PreflightCheck()):
             return #bail if we failed the pre flight check, and the user didn't choose to continue
+            
+        
 
-        spoolType = self.rbQueue.GetStringSelection()        
-        #if self.cbQueue.GetValue():
-        if spoolType == 'Queue':
+        #spoolType = self.rbQueue.GetStringSelection()        
+        #if self.cbQueue.GetValue():        
+        
+        if self.spoolType == 'Queue':
             self.queueName = getRelFilename(self.dirname + fn + '.h5')
             self.spooler = QueueSpooler.Spooler(self.scope, self.queueName, self.scope.pa, protocol, self, complevel=compLevel)
             self.bAnalyse.Enable(True)
-        elif spoolType == 'HTTP':
-            self.queueName = self.dirname + fn + '.h5'
+        elif self.spoolType == 'HTTP':
+            #self.queueName = self.dirname + fn + '.h5'
+            self.queueName = getRelFilename(self.dirname + fn + '.h5')
             self.spooler = HTTPSpooler.Spooler(self.scope, self.queueName, self.scope.pa, protocol, self, complevel=compLevel)
             self.bAnalyse.Enable(True)
         else:
@@ -362,6 +376,15 @@ class PanSpool(wx.Panel):
 
         #if stack:
         #    self.spooler.md.setEntry('ZStack', True)
+        if sampInf:
+            try:
+                sampleInformation.getSampleData(self, self.spooler.md)
+            except:
+                #the connection to the database will timeout if not present
+                #FIXME: catch the right exception (or delegate handling to sampleInformation module)
+                pass
+            
+        self.spooler.StartSpool()
 
         self.bStartSpool.Enable(False)
         self.bStartStack.Enable(False)
@@ -371,8 +394,7 @@ class PanSpool(wx.Panel):
         self.stSpoolingTo.SetLabel('Spooling to ' + fn)
         self.stNImages.SetLabel('0 images spooled in 0 minutes')
 
-        if sampInf:
-            sampleInformation.getSampleData(self, self.spooler.md)
+        
 
     def OnBStartStackButton(self, event=None):
         '''GUI callback to start spooling with z-stepping.'''

@@ -32,15 +32,15 @@ class TrackFeatures(ModuleBase):
     def __init__(self, *args, **kwargs):
         ModuleBase.__init__(self, *args, **kwargs)
         
-        self.tracker = None        
-        self.clumps = []
+        self._tracker = None        
+        #self.clumps = []
         
     @on_trait_change('pNew, r0, pLinkCutoff')    
     def OnParamChange(self):
-        if not self.tracker == None:
-            self.tracker.pNew=self.pNew
-            self.tracker.r0 = self.r0
-            self.tracker.linkageCuttoffProb = self.pLinkCutoff
+        if not self._tracker == None:
+            self._tracker.pNew=self.pNew
+            self._tracker.r0 = self.r0
+            self._tracker.linkageCuttoffProb = self.pLinkCutoff
             
     @on_trait_change('features')   
     def OnFeaturesChanged(self):
@@ -48,7 +48,7 @@ class TrackFeatures(ModuleBase):
         
     def Track(self, objects, newTracker=False):
         '''Track objects based on a given set of feature vectors'''        
-        if (self.tracker == None) or not (len(self.tracker.t) == len(objects['t'])) or newTracker:
+        if (self._tracker == None) or not (len(self._tracker.t) == len(objects['t'])) or newTracker:
             featNames = [s.strip() for s in self.features.split(',')]
             
             def _calcWeights(s):
@@ -63,26 +63,26 @@ class TrackFeatures(ModuleBase):
             
             feats = np.vstack([w*np.array(objects[fn]) for w, fn in weightedFeats])
             
-            self.tracker = tracking.Tracker(np.array(objects['t']), feats)
+            self._tracker = tracking.Tracker(np.array(objects['t']), feats)
             
-            self.tracker.pNew=self.pNew
-            self.tracker.r0 = self.r0
-            self.tracker.linkageCuttoffProb = self.pLinkCutoff
+            self._tracker.pNew=self.pNew
+            self._tracker.r0 = self.r0
+            self._tracker.linkageCuttoffProb = self.pLinkCutoff
 
         for i in range(1, (objects['t'].max() + 1)):
-            L = self.tracker.calcLinkages(i,i-1)
-            self.tracker.updateTrack(i, L)
+            L = self._tracker.calcLinkages(i,i-1)
+            self._tracker.updateTrack(i, L)
             
-        clumpSizes = np.zeros_like(self.tracker.clumpIndex)
+        clumpSizes = np.zeros_like(self._tracker.clumpIndex)
         
-        for i in set(self.tracker.clumpIndex):
-            ind = (self.tracker.clumpIndex == i)
+        for i in set(self._tracker.clumpIndex):
+            ind = (self._tracker.clumpIndex == i)
             
             clumpSizes[ind] = ind.sum()
             
-        trackVelocities = trackUtils.calcTrackVelocity(objects['x'], objects['y'], self.tracker.clumpIndex)
+        trackVelocities = trackUtils.calcTrackVelocity(objects['x'], objects['y'], self._tracker.clumpIndex)
         
-        clumpInfo = {'clumpIndex': self.tracker.clumpIndex, 'clumpSize': clumpSizes, 'trackVelocity': trackVelocities}
+        clumpInfo = {'clumpIndex': self._tracker.clumpIndex, 'clumpSize': clumpSizes, 'trackVelocity': trackVelocities}
             
 
         pipe = {}
@@ -127,5 +127,7 @@ class TrackFeatures(ModuleBase):
         pipeline.selectedDataSource.trackVelocities = clumpInfo['trackVelocity']
         pipeline.selectedDataSource.setMapping('trackVelocity', 'trackVelocities')
         
-        self.clumps = clumps        
+        #self.clumps = clumps        
         pipeline.clumps = clumps
+        
+        return clumps

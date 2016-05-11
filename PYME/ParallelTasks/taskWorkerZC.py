@@ -49,8 +49,8 @@ Pyro.config.PYRO_MOBILE_CODE=0
 #else:
 #    taskQueueName = 'taskQueue'
     
-ns=Pyro.naming.NameServerLocator().getNS()
-#ns = pzc.getNS()
+#ns=Pyro.naming.NameServerLocator().getNS()
+ns = pzc.getNS()
 
 #tq = Pyro.core.getProxyForURI("PYRONAME://" + taskQueueName)
 
@@ -63,7 +63,9 @@ serverFails = {}
 
 #loop forever asking for tasks
 while 1:
-    queueNames = [n[0] for n in ns.list('TaskQueues')]
+    queueNames = ns.list('TaskQueues')
+    
+    #print queueNames
 
     tasks = []
 
@@ -79,7 +81,7 @@ while 1:
 
         try:
             #print qName
-            tq = Pyro.core.getProxyForURI(ns.resolve('TaskQueues.%s' % qName))
+            tq = Pyro.core.getProxyForURI(ns.resolve(qName))
             tq._setTimeout(1)
             tq._setOneway(['returnCompletedTask'])
             #print qName

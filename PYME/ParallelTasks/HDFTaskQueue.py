@@ -368,15 +368,18 @@ class HDFResultsTaskQueue(TaskQueue):
 
     def fileResult(self, res):
         #print res, res.results, res.driftResults, self.h5ResultsFile
-        if res == None:
-            print('res == None')
+        if res is None:
+            print('res is None')
             
-        if res.results == [] and res.driftResults == []: #if we had a dud frame
+        if (len(res.results)==0) and (len(res.driftResults) == 0): #if we had a dud frame
+            print 'dud'
             return
+            
+        #print len(res.results), len(res.driftResults)
             
         rq = None
         with self.resultsQueueLock:
-            #logging.info('Filing result')
+            #logging.info('Adding result to queue')
             self.resultsQueue.append(res)
             #print 'rq'
             
@@ -395,7 +398,7 @@ class HDFResultsTaskQueue(TaskQueue):
             self.fileResults(rq)
             #print 'rff'
                 
-        #logging.info('Result Filed')
+        #logging.info('Result added to queue')
         #logging.info('Result filed result')
         
     def fileResults(self, ress):
@@ -403,27 +406,32 @@ class HDFResultsTaskQueue(TaskQueue):
         #if ress == None:
         #    print 'res == None'
         #print len(ress)
+        #logging.info('Filing results from queue')
             
         results = []
         driftResults = []
         
         for r in ress:
             #print r, results
-            if not r.results == []:
+            if not len(r.results) == 0:
                 results.append(r.results)
-            if not r.driftResults == []:
+                
+            if not len(r.driftResults) == 0:
                 driftResults.append(r.driftResults)
         
-        if results == [] and driftResults == []: #if we had a dud frame
+        #print         
+        if (len(results)==0) and (len(driftResults) == 0): #if we had a dud frame
             return
             
         #print len(results), len(driftResults)
 
         with self.fileResultsLock.wlock: #get a lock
+            #logging.info('write lock acquired')
             
-            if not len(results) == 0:
+            if not (len(results) == 0):
                 #print res.results, res.results == []
                 if not self.haveResultsTable: # self.h5ResultsFile.__contains__('/FitResults'):
+                    #logging.info('creating results table')
                     self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'FitResults', np.hstack(results), filters=tables.Filters(complevel=5, shuffle=True), expectedrows=500000)
                     self.haveResultsTable = True
                 else:
@@ -431,11 +439,12 @@ class HDFResultsTaskQueue(TaskQueue):
                     
             #print 'rs'
     
-            if not len(driftResults) == 0:
+            if not (len(driftResults) == 0):
+                #logging.info('creating drift table')
                 if not self.h5ResultsFile.__contains__('/DriftResults'):
-                    self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'DriftResults', driftResults, filters=tables.Filters(complevel=5, shuffle=True), expectedrows=500000)
+                    self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'DriftResults', np.hstack(driftResults), filters=tables.Filters(complevel=5, shuffle=True), expectedrows=500000)
                 else:
-                    self.h5ResultsFile.root.DriftResults.append(driftResults)
+                    self.h5ResultsFile.root.DriftResults.append(np.hstack(driftResults))
     
             #self.h5ResultsFile.flush()
 
@@ -761,15 +770,21 @@ class HDFTaskQueue(HDFResultsTaskQueue):
         self.h5ResultsFile.close()
 
     def setQueueMetaData(self, fieldName, value):
-        with self.dataFileLock.wlock:
-            self.dataMDH.setEntry(fieldName, value)
+        self.metaData.setEntry(fieldName, value)
         
         HDFResultsTaskQueue.setQueueMetaData(self, fieldName, value)
+        
+        if self.dataRW:
+            with self.dataFileLock.wlock:
+                self.dataMDH.setEntry(fieldName, value)
         self.metaDataStale = True
         
     def setQueueMetaDataEntries(self, mdh):
-        with self.dataFileLock.wlock:
-            self.dataMDH.copyEntriesFrom(mdh)
+        self.metaData.copyEntriesFrom(mdh)
+        
+        if self.dataRW:        
+            with self.dataFileLock.wlock:
+                self.dataMDH.copyEntriesFrom(mdh)
         
         HDFResultsTaskQueue.setQueueMetaDataEntries(self, mdh)
         self.metaDataStale = True

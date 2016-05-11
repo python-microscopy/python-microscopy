@@ -283,17 +283,32 @@ class LightCrafter(object):
         else:
             self.SetImage((ll*intensity).astype('uint8'))
             
-    def SetScanningVDC(self, period, exposureMs=100, angle=0, dutyCycle=.5, nSteps = 20):
-        pats = [self.GenVDCLines(period, phase=p, angle = angle, dutyCycle = dutyCycle).T for p in np.linspace(0, 1, nSteps, False)]
+    def SetScanningVDC(self, period, exposureMs=100, angle=0, dutyCycle=.5, nSteps = 20, double = True):
+        width = int(period*dutyCycle)
+        dd = 1
+        if double:
+          if width%2 == 1:
+            width += 1
+          dd = 2
+        nSteps = int(1/dutyCycle)
+        period = nSteps * width
+        nSteps = dd * nSteps
+        pats = [self.GenVDCLines(period, phase=p, angle = angle, width = width).T for p in np.linspace(0, period, nSteps, False)]
+        pats1, pats2 = pats[:(len(pats)//2)], pats[(len(pats)//2):]
+        pats3 = [val for pair in zip(pats1, pats2) for val in pair]
+        if len(pats3) < len(pats):
+			pats3 += [max(pats1, pats2, key = len)[-1]]
+		
         from PYME.DSView import View3D
-        View3D(np.array(pats).transpose(2,1,0))
+        View3D(np.array(pats3).transpose(2,1,0), 'stack')
+        View3D(np.array(pats3).transpose(2,1,0).mean(2), 'mean')
         
-        self.SetPatternDefs(pats, exposureMs=exposureMs)
+        self.SetPatternDefs(pats3, exposureMs=exposureMs)
         self.StartPatternSeq()
         
         self.PatternVars['Type'] = 'Lines'
         self.PatternVars['Period'] = period
-        self.PatternVars['DutyCycle'] = dutyCycle
+        self.PatternVars['DutyCycle'] = 1.0*width/period
         self.PatternVars['Phase'] = ''
         self.PatternVars['Angle'] = angle
         self.PatternVars['ExpTime'] = exposureMs
@@ -313,42 +328,59 @@ class LightCrafter(object):
         self.SetPatternDefs(pats, triggerMode = PATTERN_TRIGGER.COMMAND, exposureMs=500, playMode = 0)
         self.StartPatternSeq()
         
-            
     def SetScanningHex(self, period, exposureMs=100, angle=0, dutyCycle=.5, nSteps = 20):
         pats = []
-        peri, dc = period/100.0, np.sqrt(dutyCycle)*100
-        for py in np.linspace(0, int(100/dc - 1)*dc, int(100/dc)):
-            for px in np.linspace(0, int(100/dc - 1)*dc, int(100/dc)):
-                pats.append(self.GenHex(peri, dutyCycle = dc, phasex=px, phasey = py).T)
+        periodX, periodY, dc = period, int(period/np.tan(np.pi/6)), np.sqrt(dutyCycle)
+        widthX, widthY = int(periodX*dc), int(periodY*dc)
+        if widthX%2 == 1:
+          widthX += 1
+        while widthY%4 > 0:
+          widthY += 1
+        nSteps = int(1/dc)
+        periodX, periodY = nSteps * widthX, nSteps * widthY
+        for py in np.linspace(0, periodY, nSteps, False):
+            for px in np.linspace(0, periodX, nSteps, False):
+                pats.append(self.GenHex(periodX, periodY, widthX = widthX, widthY = widthY, phasex=px, phasey = py).T)
         from PYME.DSView import View3D
-        View3D(np.array(pats).transpose(2,1,0))
+        pats1, pats2 = pats[:len(pats)//2], pats[len(pats)//2:]
+        pats3 = [val for pair in zip(pats1, pats2) for val in pair]
         
-        self.SetPatternDefs(pats, exposureMs=exposureMs)
+        if len(pats3) < len(pats):
+          pats3 += [max(pats1, pats2, key = len)[-1]]
+        View3D(np.array(pats3).transpose(2,1,0), 'stack')
+        View3D(np.array(pats3).transpose(2,1,0).mean(2), 'mean')
+        
+        self.SetPatternDefs(pats3, exposureMs=exposureMs)
         self.StartPatternSeq()
         
         self.PatternVars['Type'] = 'Hex'
-        self.PatternVars['Period'] = period
-        self.PatternVars['DutyCycle'] = dutyCycle
+        self.PatternVars['Period'] = periodX
+        self.PatternVars['DutyCycle'] = 1.0*widthX/periodX
         self.PatternVars['Phase'] = ''
         self.PatternVars['Angle'] = angle
         self.PatternVars['ExpTime'] = exposureMs
-        self.PatternVars['Steps'] = int(100/dc)
+        self.PatternVars['Steps'] = nSteps
     
     def SetVDCLines(self, period, phase=0, angle=0, dutyCycle=.5, intensity=255.):
         self.SetImage(self.GenVDCLines(period, phase, angle, dutyCycle, intensity))
         
-    def GenVDCLines(self, period, phase=0, angle=0, dutyCycle=.5, intensity=255.):
-        kx = np.cos(angle)/period
-        ky = np.sin(angle)/period
-        
-        d = kx*self.X + ky*self.Y + phase
-        
-        ll = (d%1) < dutyCycle
+    def GenVDCLines(self, period, phase=0, angle=0, dutyCycle=.5, width=15, intensity=255.):
+        if angle == 0:
+            d = self.X + phase
+            ll = (d%period) < width
+        else:
+            kx = np.cos(angle)/period
+            ky = np.sin(angle)/period
+            
+            d = kx*self.X + ky*self.Y + phase
+            
+            ll = (d%1) < dutyCycle
         
         return (ll*intensity).astype('uint8')
         
-    def GenHex(self, period = 100, dutyCycle = 0.1, phasex = 0, phasey = 0, intensity = 255.):
-        return ((((self.X/period + phasex)%100) < dutyCycle)*(((self.Y/(period*1.3) + phasey + 50*((self.X/(130*period)).astype('i')%2)) %100) < dutyCycle)*intensity).astype('uint8')
+    def GenHex(self, periodX = 100, periodY = 170, widthX = 15, widthY = 25, phasex = 0, phasey = 0, intensity = 255.):
+        widthY, offsetX, offsetY = widthY/2, periodX/2, periodY/2
+        return (((((self.X + phasex)%periodX) < widthX)*(((self.Y + phasey) %periodY) < widthY) + (((self.X + phasex + offsetX)%periodX) < widthX)*(((self.Y + phasey + offsetY) %periodY) < widthY))*intensity).astype('uint8')
         
     def GenStartMetadata(self, mdh):   
         mdh['DMD.Name'] = 'TI DLP DM365'

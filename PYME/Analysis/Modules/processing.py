@@ -13,14 +13,29 @@ from PYME.DSView.image import ImageStack
 @register_module('SimpleThreshold') 
 class SimpleThreshold(Filter):
     threshold = Float(0.5)
-    
+
     def applyFilter(self, data, chanNum, frNum, im):
         mask = data > self.threshold
         return mask
 
+@register_module('FractionalThreshold') 
+class FractionalThreshold(Filter):
+    fractionThreshold = Float(0.5)
+
+    def applyFilter(self, data, chanNum, frNum, im):
+        N, bins = np.histogram(data, bins=5000)
+        #calculate bin centres
+        bin_mids = (bins[:-1] )
+        cN = np.cumsum(N*bin_mids)
+        i = np.argmin(abs(cN - cN[-1]*(1-self.fractionThreshold)))
+        threshold = bins[i]
+
+        mask = data > threshold
+        return mask
+
     def completeMetadata(self, im):
-        im.mdh['Processing.SimpleThreshold'] = self.threshold
- 
+        im.mdh['Processing.FractionalThreshold'] = self.fractionThreshold
+
 @register_module('Label')        
 class Label(Filter):
     minRegionPixels = Int(10)
@@ -38,9 +53,9 @@ class Label(Filter):
                 r = labs[o] == i+1
                 #print r.shape
                 if r.sum() > rSize:
-                    m2[o] = r
+                    m2[o] += r
                                 
-            labs, nlabs = ndimage.label(m2)
+            labs, nlabs = ndimage.label(m2>0)
             
         return labs
 
@@ -98,9 +113,10 @@ class Deconvolve(Filter):
     offset = Float(0)
     method = Enum('Richardson-Lucy', 'ICTM') 
     iterations = Int(10)
-    psfType = Enum('file', 'bead', 'Lorentzian')
+    psfType = Enum('file', 'bead', 'Lorentzian', 'Gaussian')
     psfFilename = CStr('') #only used for psfType == 'file'
     lorentzianFWHM = Float(50.) #only used for psfType == 'Lorentzian'
+    gaussianFWHM = Float(50.) #only used for psfType == 'Lorentzian'
     beadDiameter = Float(200.) #only used for psfType == 'bead'
     regularisationLambda = Float(0.1) #Regularisation - ICTM only
     padding = Int(0) #how much to pad the image by (to reduce edge effects)
@@ -122,6 +138,7 @@ class Deconvolve(Filter):
                 Group(Item(name='psfType'),
                       Item(name='psfFilename', visible_when='psfType=="file"'),
                       Item(name='lorentzianFWHM', visible_when='psfType=="Lorentzian"'),
+                      Item(name='gaussianFWHM', visible_when='psfType=="Gaussian"'),
                       Item(name='beadDiameter', visible_when='psfType=="bead"'),
                       label='PSF Parameters'),
                 resizable = True,
@@ -130,7 +147,7 @@ class Deconvolve(Filter):
 
     
     def GetPSF(self, vshint):
-        psfKey = (self.psfType, self.psfFilename, self.lorentzianFWHM, self.beadDiameter, vshint)
+        psfKey = (self.psfType, self.psfFilename, self.lorentzianFWHM, self.gaussianFWHM, self.beadDiameter, vshint)
         
         if not psfKey in self._psfCache.keys():
             if self.psfType == 'file':
@@ -157,6 +174,23 @@ class Deconvolve(Filter):
                 vs = type('vs', (object,), dict(x=vx/1e3, y=vx/1e3))
                 
                 psf = np.atleast_3d(stats.cauchy.pdf(vx*R, scale=sc))
+                    
+                self._psfCache[psfKey] = (psf/psf.sum(), vs)
+                
+            elif (self.psfType == 'Gaussian'):
+                from scipy import stats
+                sc = self.gaussianFWHM/2.35
+                X, Y = np.mgrid[-30.:31., -30.:31.]
+                R = np.sqrt(X*X + Y*Y)
+                
+                if not vshint is None:
+                    vx = vshint[0]
+                else:
+                    vx = sc/2.
+                
+                vs = type('vs', (object,), dict(x=vx/1e3, y=vx/1e3))
+                
+                psf = np.atleast_3d(stats.norm.pdf(vx*R, scale=sc))
                     
                 self._psfCache[psfKey] = (psf/psf.sum(), vs)
             elif (self.psfType == 'bead'):

@@ -28,8 +28,11 @@ def saveDataFrame(output, filename):
         output.to_csv(filename)
     elif filename.endswith('.xlsx') or filename.endswith('.xls'):
         output.to_excell(filename)
+    elif filename.endswith('.hdf'):
+        output.to_hdf(filename)
     else: #append a .csv
-        output.to_csv(filename + '.csv')
+        #output.to_csv(filename + '.csv')
+        output.to_hdf(filename + '.hdf', 'Data')
     
 def saveOutput(output, filename):
     '''Save an output variable, inferring type from the file extension'''
