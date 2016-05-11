@@ -495,23 +495,26 @@ def correltrack(data,start=0,avgover=10,pixelsize=70.0,centersize=7,centroidfrac
     return t, sh, xctw
 
 # we ignore centroidfrac by default
-def correltrack2(data,start=0,avgover=10,pixelsize=70.0,centersize=15,centroidfac=0.6):
+def correltrack2(data,start=0,avgover=10,pixelsize=70.0,centersize=15,centroidfac=0.6,roi=[0,None,0,None]):
     cs = centersize
     shp = [d for d in data.shape if d > 1]
     nsteps = long((shp[2]-start)/avgover)
-    shh = (shp[0]/2,shp[1]/2)
     xctw=np.zeros((2*centersize+1,2*centersize+1,nsteps))
     shifts = []
     if avgover > 1:
         ref = data[:,:,start:start+avgover].squeeze().mean(axis=2)
     else:
         ref = data[:,:,start].squeeze()
+    ref = ref[roi[0]:roi[3],roi[1]:roi[3]]
     refn = ref/ref.mean() - 1
     Frefn = fftn(refn)
+    shh = (ref.shape[0]/2,ref.shape[1]/2)
+
     for i in range(nsteps):
         comp = data[:,:,start+i*avgover:start+(i+1)*avgover].squeeze()
         if len(comp.shape) > 2:
             comp = comp.mean(axis=2)
+        comp = comp[roi[0]:roi[3],roi[1]:roi[3]]
         compn = comp/comp.mean() - 1
         xc = ifftshift(np.abs(ifftn(Frefn*ifftn(compn))))
         xcm = xc.max()
