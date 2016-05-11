@@ -77,7 +77,7 @@ def analysisTasks(request):
     except:
         ns=Pyro.naming.NameServerLocator().getNS()
         
-    serverNames = [n[0] for n in ns.list('TaskQueues')]
+    serverNames = [n for n in ns.list('TaskQueues')]
 
     servers = [Server(n, ns) for n in serverNames]
 
