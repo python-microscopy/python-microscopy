@@ -20,7 +20,7 @@ urlpatterns = patterns('',
     (r'^images/(?P<image_id>.*)/tag$', 'samples.views.tag_image'),
     #(r'^images/(?P<object_id>.*)$', 'django.views.generic.list_detail.object_detail', {'queryset' : Image.objects.all()}),
     #(r'^images/(?P<object_id>.*)$', DetailView.as_view(), {'queryset' : Image.objects.all()}),
-    url(r'^images/(?P<object_id>.*)$', ImageDetailView.as_view()),
+    url(r'^images/(?P<pk>.*)$', ImageDetailView.as_view()),
     
 
     (r'^thumbnails/(?P<filename>.*)$', 'PYME.dataBrowser.thumbnails.thumb'),
