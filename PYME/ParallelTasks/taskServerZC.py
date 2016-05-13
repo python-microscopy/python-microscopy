@@ -150,6 +150,7 @@ class TaskQueueSet(Pyro.core.ObjBase):
         """get task from front of list, non-blocking"""
 
         if not workerVersion == PYME.version.version:
+            print 'Worker with incorrect version asked for task - refusing'
             #versions don't match
             return []        
         
@@ -328,7 +329,10 @@ class TaskQueueSet(Pyro.core.ObjBase):
 			
 
 def main():
-    print('foo')
+    print('Starting PYME taskServer ...')
+    import socket
+    ip_addr = socket.gethostbyname(socket.gethostname())
+    
     profile = False
     if len(sys.argv) > 1 and sys.argv[1] == '-p':
         print('profiling')
@@ -339,8 +343,9 @@ def main():
     Pyro.config.PYRO_MOBILE_CODE = 0
     Pyro.core.initServer()
     #ns=Pyro.naming.NameServerLocator().getNS()
+    
     ns = pzc.getNS()
-    daemon=Pyro.core.Daemon()
+    daemon=Pyro.core.Daemon(host = ip_addr)
     daemon.useNameServer(ns)
 
     #check to see if we've got the TaskQueues group

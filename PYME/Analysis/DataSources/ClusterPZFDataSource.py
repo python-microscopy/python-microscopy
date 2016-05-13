@@ -39,7 +39,7 @@ from PYME.FileUtils import PZFFormat
 from PYME.Acquire import MetaDataHandler
 
 class DataSource(BaseDataSource):
-    moduleName = 'ClusterPSFDataSource'
+    moduleName = 'ClusterPZFDataSource'
     def __init__(self, url, queue=None):
         self.clusterfilter = url.split('://')[1].split('/')[0]
         self.seriesName = url.split('://%s/' % self.clusterfilter)[1]
