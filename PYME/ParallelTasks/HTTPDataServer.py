@@ -36,6 +36,7 @@ import json
 import PYME.misc.pyme_zeroconf as pzc
 import urlparse
 import requests
+import socket
 
 from PYME.misc.computerName import GetComputerName
 compName = GetComputerName()
@@ -112,7 +113,7 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 class ThreadedHTTPServer(ThreadingMixIn, BaseHTTPServer.HTTPServer):
     """Handle requests in a separate thread."""        
     
-def test(protocol="HTTP/1.0"):
+def main(protocol="HTTP/1.0"):
     """Test the HTTP request handler class.
 
     This runs an HTTP server on port 8000 (or the first command line
@@ -130,13 +131,15 @@ def test(protocol="HTTP/1.0"):
     httpd = ThreadedHTTPServer(server_address, PYMEHTTPRequestHandler)
 
     sa = httpd.socket.getsockname()
+    
+    ip_addr = socket.gethostbyname(socket.gethostname())
 
     ns = pzc.getNS('_pyme-http')
-    ns.register_service('PYMEDataServer: ' + procName, sa[0], sa[1])    
+    ns.register_service('PYMEDataServer: ' + procName, ip_addr, sa[1])    
     
-    print "Serving HTTP on", sa[0], "port", sa[1], "..."
+    print "Serving HTTP on", ip_addr, "port", sa[1], "..."
     httpd.serve_forever()
 
 
 if __name__ == '__main__':
-    test()
+    main()

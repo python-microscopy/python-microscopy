@@ -136,7 +136,7 @@ def main():
         subprocess.Popen('%s %s' % (sys.executable, os.path.join(fstub,'fitMonP.py')), shell=True)
     
         for i in range(numProcessors):
-            subprocess.Popen('%s %s' % (sys.executable, os.path.join(fstub,WORKER_PROC)), shell=True)
+            subprocess.Popen('%s %s.py' % (sys.executable, os.path.join(fstub,WORKER_PROC)), shell=True)
     else: #operating systems which can launch python scripts directly
         #get rid of any previously started queues etc...
         os.system('killall %s' % SERVER_PROC)
