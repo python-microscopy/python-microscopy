@@ -24,17 +24,10 @@
 from wx.glcanvas import GLCanvas
 import wx.glcanvas
 import wx
-#from OpenGL.GLUT import *
-#from OpenGL.GLU import *
-#from OpenGL import GL
+
 from OpenGL.GL import *
-#import sys,math
-#import sys
+
 import numpy
-#import Image
-#from matplotlib import delaunay
-#from PYME.Analysis.QuadTree import pointQT
-#import numpy
 
 import statusLog
 import weakref

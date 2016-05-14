@@ -25,6 +25,7 @@ from PYME.LMVis.visHelpers import ImageBounds
 from PYME.LMVis import dyeRatios
 from PYME.LMVis import statusLog
 from PYME.LMVis import renderers
+from PYME.LMVis.triBlobs import BlobSettings
 
 from PYME.Analysis import piecewiseMapping
 from PYME.Acquire import MetaDataHandler
@@ -34,6 +35,7 @@ import scipy.special
 import os
 
 from PYME.Analysis.BleachProfile.kinModels import getPhotonNums
+
 
 class Pipeline:
     def __init__(self, filename=None, visFr=None):
@@ -53,9 +55,10 @@ class Pipeline:
         self.t_p_other = 0.1
         self.t_p_background = .01
 
-        self.objThreshold = 30
-        self.objMinSize = 10
-        self.blobJitter = 0
+        #self.objThreshold = 30
+        #self.objMinSize = 10
+        #self.blobJitter = 0
+        self.blobSettings = BlobSettings()
         self.objects = None
 
         self.imageBounds = ImageBounds(0,0,0,0)
@@ -508,24 +511,25 @@ class Pipeline:
         tri = self.getTriangles()        
         edb = self.getEdb()
         
-        if self.blobJitter == 0:
-            self.objIndices = edges.objectIndices(edb.segment(self.objThreshold), self.objMinSize)
+        
+        if self.blobSettings.jittering == 0:
+            self.objIndices = edges.objectIndices(edb.segment(self.blobSettings.distThreshold), self.blobSettings.minSize)
             self.objects = [np.vstack((tri.x[oi], tri.y[oi])).T for oi in self.objIndices]
         else:
             from matplotlib import delaunay
             
             ndists = self.getNeighbourDists()
             
-            x_ = np.hstack([self['x'] + 0.5*ndists*np.random.normal(size=ndists.size) for i in range(self.blobJitter)])
-            y_ = np.hstack([self['y'] + 0.5*ndists*np.random.normal(size=ndists.size) for i in range(self.blobJitter)])
+            x_ = np.hstack([self['x'] + 0.5*ndists*np.random.normal(size=ndists.size) for i in range(self.blobSettings.jittering)])
+            y_ = np.hstack([self['y'] + 0.5*ndists*np.random.normal(size=ndists.size) for i in range(self.blobSettings.jittering)])
 
             T = delaunay.Triangulation(x_, y_)
             edb = edges.EdgeDB(T)
             
-            objIndices = edges.objectIndices(edb.segment(self.objThreshold), self.objMinSize)
+            objIndices = edges.objectIndices(edb.segment(self.blobSettings.distThreshold), self.blobSettings.minSize)
             self.objects = [np.vstack((T.x[oi], T.y[oi])).T for oi in objIndices]
             
-        return self.objects, self.objThreshold
+        return self.objects, self.blobSettings.distThreshold
         
     def getQuads(self):
         from PYME.Analysis.QuadTree import pointQT

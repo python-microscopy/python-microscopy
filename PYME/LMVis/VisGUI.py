@@ -44,10 +44,10 @@ from PYME.LMVis import colourPanel
 from PYME.LMVis import renderers
 from PYME.LMVis import pipeline
 
-try:
-    from PYME.LMVis import recArrayView
-except:
-    pass
+#try:
+#    from PYME.LMVis import recArrayView
+#except:
+#    pass
 
 #try importing our drift correction stuff
 HAVE_DRIFT_CORRECTION = False
@@ -63,6 +63,10 @@ from PYME.LMVis.colourFilterGUI import CreateColourFilterPane
 from PYME.LMVis.displayPane import CreateDisplayPane
 from PYME.LMVis.filterPane import CreateFilterPane
 
+from PYME.LMVis import pointSettingsPanel
+from PYME.LMVis import quadTreeSettings
+from PYME.LMVis import triBlobs
+
 from PYME.Analysis import MetadataTree
 
 import numpy as np
@@ -72,7 +76,23 @@ from PYME.DSView import eventLogViewer
 
 from PYME.LMVis import statusLog
 
-class VisGUIFrame(wx.Frame):    
+class VisGUICore(object):
+    def __init__(self):
+        pass
+    
+    def OnIdle(self, event):
+        if self.glCanvas.init and not self.refv:
+            self.refv = True
+            print((self.viewMode, self.pointDisplaySettings.colourDataKey))
+            self.SetFit()
+            
+            self.RefreshView()
+            self.displayPane.OnPercentileCLim(None)
+            self.Refresh()
+            self.Update()
+            print('refreshed')
+
+class VisGUIFrame(wx.Frame, VisGUICore):    
     def __init__(self, parent, filename=None, id=wx.ID_ANY, 
                  title="PYME Visualise", pos=wx.DefaultPosition,
                  size=(700,650), style=wx.DEFAULT_FRAME_STYLE):
@@ -114,7 +134,14 @@ class VisGUIFrame(wx.Frame):
         self.generatedImages = []
 
         self.viewMode = 'points' #one of points, triangles, quads, or voronoi
-        self.colData = 't'
+        #self.colData = 't'
+        self.pointDisplaySettings = pointSettingsPanel.PointDisplaySettings()
+        self.pointDisplaySettings.on_trait_change(self.RefreshView)
+        
+        self.quadTreeSettings = quadTreeSettings.QuadTreeSettings()
+        self.quadTreeSettings.on_trait_change(self.RefreshView)
+        
+        self.pipeline.blobSettings.on_trait_change(self.RefreshView)
         
 #        if 'PYME_BUGGYOPENGL' in os.environ.keys():
 #            pylab.plot(pylab.randn(10))
@@ -171,16 +198,6 @@ class VisGUIFrame(wx.Frame):
         
         renderers.renderMetadataProviders.append(self.SaveMetadata)
 
-    def OnIdle(self, event):
-        if self.glCanvas.init and not self.refv:
-            self.refv = True
-            print((self.viewMode, self.colData))
-            
-            self.RefreshView()
-            self.displayPane.OnPercentileCLim(None)
-            self.Refresh()
-            self.Update()
-            print('refreshed')
 
     def AddPage(self, page=None, select=False,caption='Dummy', update=True):
         if update:
@@ -245,36 +262,42 @@ class VisGUIFrame(wx.Frame):
 
         self._pnl = afp.foldPanel(self._leftWindow1, -1, wx.DefaultPosition,s)
 
-        self.GenDataSourcePanel()
-
-        self.filterPane = CreateFilterPane(self._pnl, self.pipeline.filterKeys, self.pipeline, self)
-
-        if HAVE_DRIFT_CORRECTION:
-            self.driftPane = CreateDriftPane(self._pnl, self.pipeline.mapping, self.pipeline)
-            
-        self.colourFilterPane = CreateColourFilterPane(self._pnl, self.pipeline.colourFilter, self.pipeline)
-        self.displayPane = CreateDisplayPane(self._pnl, self.glCanvas, self)
+        self.GenPanels(self._pnl)
         
-        if self.viewMode == 'quads':
-            self.GenQuadTreePanel()
-
-        if self.viewMode == 'points' or self.viewMode == 'tracks':
-            pass
-            self.GenPointsPanel()
-
-        if self.viewMode == 'blobs':
-            self.GenBlobPanel()
-
-        if self.viewMode == 'interp_triangles':
-            self.GenPointsPanel('Vertex Colours')
-
         hsizer.Add(self._pnl, 1, wx.EXPAND, 0)
         self._leftWindow1.SetSizerAndFit(hsizer)
         
+        #self.glCanvas.Refresh()
+        
+    def GenPanels(self, sidePanel):    
+        self.GenDataSourcePanel(sidePanel)
+
+        self.filterPane = CreateFilterPane(sidePanel, self.pipeline.filterKeys, self.pipeline, self)
+
+        if HAVE_DRIFT_CORRECTION:
+            self.driftPane = CreateDriftPane(sidePanel, self.pipeline.mapping, self.pipeline)
+            
+        self.colourFilterPane = CreateColourFilterPane(sidePanel, self.pipeline.colourFilter, self.pipeline)
+        self.displayPane = CreateDisplayPane(sidePanel, self.glCanvas, self)
+        
+        if self.viewMode == 'quads':
+            quadTreeSettings.GenQuadTreePanel(self, sidePanel)
+
+        if self.viewMode == 'points' or self.viewMode == 'tracks':
+            pass
+            pointSettingsPanel.GenPointsPanel(self, sidePanel)
+
+        if self.viewMode == 'blobs':
+            triBlobs.GenBlobPanel(self, sidePanel)
+
+        if self.viewMode == 'interp_triangles':
+            pointSettingsPanel.GenPointsPanel(self, sidePanel,'Vertex Colours')
+
+        
         self.glCanvas.Refresh()
 
-    def GenDataSourcePanel(self):
-        item = afp.foldingPane(self._pnl, -1, caption="Data Source", pinned = False)
+    def GenDataSourcePanel(self, pnl):
+        item = afp.foldingPane(pnl, -1, caption="Data Source", pinned = False)
 
         self.dsRadioIds = []
         for ds in self.pipeline.dataSources:
@@ -286,256 +309,27 @@ class VisGUIFrame(wx.Frame):
             rb.Bind(wx.EVT_RADIOBUTTON, self.OnSourceChange)
             item.AddNewElement(rb)
 
-        self._pnl.AddPane(item)
+        pnl.AddPane(item)
 
 
     def OnSourceChange(self, event):
         dsind = self.dsRadioIds.index(event.GetId())
         self.pipeline.selectedDataSource = self.pipeline.dataSources[dsind]
         self.RegenFilter()
-        
-    
-    def GenQuadTreePanel(self):
-        from PYME.Analysis.QuadTree import pointQT
-        
-        item = afp.foldingPane(self._pnl, -1, caption="QuadTree", pinned = True)
-#        item = self._pnl.AddFoldPanel("QuadTree", collapsed=False,
-#                                      foldIcons=self.Images)
 
-        pan = wx.Panel(item, -1)
-        bsizer = wx.BoxSizer(wx.VERTICAL)
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(pan, -1, 'Leaf Size:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        self.tQTLeafSize = wx.TextCtrl(pan, -1, '%d' % pointQT.QT_MAXRECORDS)
-        hsizer.Add(self.tQTLeafSize, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        bsizer.Add(hsizer, 0, wx.ALL, 0)
-
-        self.stQTSNR = wx.StaticText(pan, -1, 'Effective SNR = %3.2f' % pylab.sqrt(pointQT.QT_MAXRECORDS/2.0))
-        bsizer.Add(self.stQTSNR, 0, wx.ALL, 5)
-
-        #hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        #hsizer.Add(wx.StaticText(pan, -1, 'Goal pixel size [nm]:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        #self.tQTSize = wx.TextCtrl(pan, -1, '20000')
-        #hsizer.Add(self.tQTLeafSize, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        #bsizer.Add(hsizer, 0, wx.ALL, 0)
-        
-        pan.SetSizer(bsizer)
-        bsizer.Fit(pan)
-
-        
-        item.AddNewElement(pan)
-        #self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
-
-        self.tQTLeafSize.Bind(wx.EVT_TEXT, self.OnQTLeafChange)
-
-        self._pnl.AddPane(item)
-
-    
-
-    def OnQTLeafChange(self, event):
-        from PYME.Analysis.QuadTree import pointQT
-        
-        leafSize = int(self.tQTLeafSize.GetValue())
-        if not leafSize >= 1:
-            raise RuntimeError('QuadTree leaves must be able to contain at least 1 item')
-
-        pointQT.QT_MAXRECORDS = leafSize
-        self.stQTSNR.SetLabel('Effective SNR = %3.2f' % pylab.sqrt(pointQT.QT_MAXRECORDS/2.0))
-
-        self.pipeline.Quads = None
-        self.RefreshView()
-
-
-    def GenBlobPanel(self):
-#        item = self._pnl.AddFoldPanel("Objects", collapsed=False,
-#                                      foldIcons=self.Images)
-        item = afp.foldingPane(self._pnl, -1, caption="Objects", pinned = True)
-
-        pan = wx.Panel(item, -1)
-        bsizer = wx.BoxSizer(wx.VERTICAL)
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(pan, -1, 'Threshold [nm]:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        self.tBlobDist = wx.TextCtrl(pan, -1, '%3.0f' % self.pipeline.objThreshold,size=(40,-1))
-        hsizer.Add(self.tBlobDist, 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        bsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(pan, -1, 'Min Size [events]:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        self.tMinObjSize = wx.TextCtrl(pan, -1, '%d' % self.pipeline.objMinSize, size=(40, -1))
-        hsizer.Add(self.tMinObjSize, 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        bsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(pan, -1, 'Jittering:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        self.tObjJitter = wx.TextCtrl(pan, -1, '%d' % self.pipeline.blobJitter, size=(40, -1))
-        hsizer.Add(self.tObjJitter, 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        bsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
-
-        self.bApplyThreshold = wx.Button(pan, -1, 'Apply')
-        bsizer.Add(self.bApplyThreshold, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5)
-
-        self.bObjMeasure = wx.Button(pan, -1, 'Measure')
-        #self.bObjMeasure.Enable(False)
-        bsizer.Add(self.bObjMeasure, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5)
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(pan, -1, 'Object Colour:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        self.cBlobColour = wx.Choice(pan, -1, choices=['Index', 'Random'])
-        self.cBlobColour.SetSelection(0)
-        self.cBlobColour.Bind(wx.EVT_CHOICE, self.OnSetBlobColour)
-
-        hsizer.Add(self.cBlobColour, 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-        bsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
-
-        pan.SetSizer(bsizer)
-        bsizer.Fit(pan)
-
-
-        #self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
-        item.AddNewElement(pan)
-
-        self.bApplyThreshold.Bind(wx.EVT_BUTTON, self.OnObjApplyThreshold)
-        self.bObjMeasure.Bind(wx.EVT_BUTTON, self.OnObjMeasure)
-
-        self._pnl.AddPane(item)
-
-    def OnSetBlobColour(self, event):
-        bcolour = self.cBlobColour.GetStringSelection()
-
-        if bcolour == 'Index':
-            c = self.objCInd.astype('f')
-        elif bcolour == 'Random':
-            r = pylab.rand(self.objCInd.max() + 1)
-            c = r[self.objCInd.astype('i')]
-        else:
-            c = self.pipeline.objectMeasures[bcolour][self.objCInd.astype('i')]
-
-        self.glCanvas.c = c
-        self.glCanvas.setColour()
-        self.OnGLViewChanged()
-        
-        self.displayPane.hlCLim.SetData(self.glCanvas.c, self.glCanvas.clim[0], self.glCanvas.clim[1])
-
-    def OnObjApplyThreshold(self, event):
-        self.pipeline.objects = None
-        self.pipeline.objThreshold = float(self.tBlobDist.GetValue())
-        self.pipeline.objMinSize = int(self.tMinObjSize.GetValue())
-        self.pipeline.blobJitter = int(self.tObjJitter.GetValue())
-
-        #self.bObjMeasure.Enable(True)
-
-        self.RefreshView()
-
-    def OnObjMeasure(self, event):
-        om = self.pipeline.measureObjects()
-        if self.rav == None:
-            self.rav = recArrayView.recArrayPanel(self, om)
-            self.AddPage(self.rav, 'Measurements')
-        else:
-            self.rav.grid.SetData(om)
-
-        self.cBlobColour.Clear()
-        self.cBlobColour.Append('Index')
-
-        for n in om.dtype.names:
-            self.cBlobColour.Append(n)
-
-        self.RefreshView()
-
-
-    def GenPointsPanel(self, title='Points'):
-        item = afp.foldingPane(self._pnl, -1, caption=title, pinned = True)
-#        item = self._pnl.AddFoldPanel(title, collapsed=False,
-#                                      foldIcons=self.Images)
-
-        pan = wx.Panel(item, -1)
-        bsizer = wx.BoxSizer(wx.VERTICAL)
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(pan, -1, 'Size [nm]:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        self.tPointSize = wx.TextCtrl(pan, -1, '%3.2f' % self.glCanvas.pointSize)
-        hsizer.Add(self.tPointSize, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        bsizer.Add(hsizer, 0, wx.ALL, 0)
-
-        
-        colData = ['<None>']
-
-        if not self.pipeline.colourFilter == None:
-            colData += list(self.pipeline.keys())
-
-        colData += list(self.pipeline.GeneratedMeasures.keys())
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(pan, -1, 'Colour:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        self.chPointColour = wx.Choice(pan, -1, choices=colData, size=(100, -1))
-        if self.colData in colData:
-            self.chPointColour.SetSelection(colData.index(self.colData))
-        hsizer.Add(self.chPointColour, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        bsizer.Add(hsizer, 0, wx.ALL, 0)
-        
-        pan.SetSizer(bsizer)
-        bsizer.Fit(pan)
-
-        item.AddNewElement(pan)
-        #self._pnl.AddFoldPanelWindow(item, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
-
-        self.tPointSize.Bind(wx.EVT_TEXT, self.OnPointSizeChange)
-        self.chPointColour.Bind(wx.EVT_CHOICE, self.OnChangePointColour)
-
-        self._pnl.AddPane(item)
-
-    def UpdatePointColourChoices(self):
-        if self.viewMode == 'points': #only change if we are in points mode
-            colData = ['<None>']
-
-            if not self.pipeline.colourFilter == None:
-                colData += list(self.pipeline.keys())
-
-            colData += list(self.pipeline.GeneratedMeasures.keys())
-
-            self.chPointColour.Clear()
-            for cd in colData:
-                self.chPointColour.Append(cd)
-
-            if self.colData in colData:
-                self.chPointColour.SetSelection(colData.index(self.colData))
-
-    def OnPointSizeChange(self, event):
-        self.glCanvas.pointSize = float(self.tPointSize.GetValue())
-        self.glCanvas.Refresh()
-
-    def OnChangePointColour(self, event):
-        self.colData = event.GetString()
-        
-        self.RefreshView()
 
     def pointColour(self):
         pointColour = None
         
-        if self.colData == '<None>':
+        colData = self.pointDisplaySettings.colourDataKey
+        
+        if colData == '<None>':
             pointColour = None
         elif not self.pipeline.colourFilter == None:
-            if self.colData in self.pipeline.keys():
-                pointColour = self.pipeline[self.colData]
-            elif self.colData in self.pipeline.GeneratedMeasures.keys():
-                pointColour = self.pipeline.GeneratedMeasures[self.colData]
+            if colData in self.pipeline.keys():
+                pointColour = self.pipeline[colData]
+            elif colData in self.pipeline.GeneratedMeasures.keys():
+                pointColour = self.pipeline.GeneratedMeasures[colData]
             else:
                 pointColour = None
 
