@@ -61,18 +61,128 @@ class dt(wx.FileDropTarget):
             ViewIm3D(im)
             
 #drop = dt()
-        
+            
 
-class DSViewFrame(wx.Frame):
-    def __init__(self, image,  parent=None, title='', mode='LM', 
-                 size = (800,700), glCanvas=None):
-        wx.Frame.__init__(self,parent, -1, title,size=size, pos=(1100, 300))
+class AUIFrame(wx.Frame):
+    '''A class which encapsulated the common frame layout code used by
+    dsviewer and VisGUI
+    
+    Note: this class will probably move to a common ui location.'''
+    def __init__(self, *args, **kwargs):
+        wx.Frame.__init__(self, *args, **kwargs)
         
         self.SetAutoLayout(True)
+        
+        self._mgr = aui.AuiManager(agwFlags = aui.AUI_MGR_DEFAULT | aui.AUI_MGR_AUTONB_NO_CAPTION)
+        atabstyle = self._mgr.GetAutoNotebookStyle()
+        self._mgr.SetAutoNotebookStyle((atabstyle ^ aui.AUI_NB_BOTTOM) | aui.AUI_NB_TOP)
+        # tell AuiManager to manage this frame
+        self._mgr.SetManagedWindow(self)
+        
+        wx.EVT_SIZE(self, self.OnSize)
+        
+        self.paneHooks = []
+        self.pane0 = None
+
+        
+    def AddPage(self, page=None, select=True,caption='Dummy'):
+        '''Add a page to the auto-notebook
+        
+        page: a wx.Window (ususally a panel) - the page to add
+        select: (bool) bring the new page to the top
+        caption: (string) the page caption
+        
+        '''
+        if self.pane0 == None:
+            name = caption.replace(' ', '')
+            self._mgr.AddPane(page, aui.AuiPaneInfo().
+                          Name(name).Caption(caption).Centre().CloseButton(False).CaptionVisible(False))
+            self.pane0 = name
+        else:
+            self._mgr.Update()
+            pn = self._mgr.GetPaneByName(self.pane0)
+            if pn.IsNotebookPage():
+                print((pn.notebook_id))
+                nbs = self._mgr.GetNotebooks()
+                if len(nbs) > pn.notebook_id:
+                    currPage = nbs[pn.notebook_id].GetSelection()
+                self._mgr.AddPane(page, aui.AuiPaneInfo().
+                              Name(caption.replace(' ', '')).Caption(caption).CloseButton(False).NotebookPage(pn.notebook_id))
+                if (not select) and len(nbs) > pn.notebook_id:
+                    self._mgr.Update()
+                    nbs[pn.notebook_id].SetSelection(currPage)
+            else:
+                self._mgr.AddPane(page, aui.AuiPaneInfo().
+                              Name(caption.replace(' ', '')).Caption(caption).CloseButton(False), target=pn)
+                
+                
+                if not select:
+                    self._mgr.Update()
+                    nb = self._mgr.GetNotebooks()[0]
+                    nb.SetSelection(0)
+
+               
+        wx.CallAfter(self._mgr.Update)
+        #self.Layout() 
+        #self.OnSize(None)
+        #self.OnSize(None)
+        
+    def OnSize(self, event):
+        #self.Layout()
+        self._mgr.Update()
+        #self.Refresh()
+        #self.Update()
+        
+    def CreateFoldPanel(self):
+        '''Create a panel of folding 'drawers' on the left side of the frame.
+        loops over all the functions defined in self.paneHooks and calls them
+        to generate the drawers.
+        '''
+        pinfo = self._mgr.GetPaneByName('sidePanel')
+        if pinfo.IsOk(): #we already have a sidepanel, clear
+            self.sidePanel.Clear()
+        else:
+            self.sidePanel = afp.foldPanel(self, -1, wx.DefaultPosition,size = wx.Size(180, 1000))
+            pinfo = aui.AuiPaneInfo().Name("sidePanel").Left().CloseButton(False).CaptionVisible(False)
+
+            self._mgr.AddPane(self.sidePanel, pinfo)
+            
+        if len(self.paneHooks) > 0:
+            pinfo.Show()
+
+            for genFcn in self.paneHooks:
+                genFcn(self.sidePanel)
+        else:
+            pinfo.Hide()
+            
+
+        self._mgr.Update()
+        self.Refresh()
+        self.Update()
+        self._mgr.Update()
+        
+    def _cleanup(self):
+        #self.timer.Stop()
+        #for some reason AUI doesn't clean itself up properly and stops the
+        #window from being garbage collected - fix this here
+        self._mgr.UnInit()
+        self._mgr._frame = None
+        #if self.glCanvas:
+        #    self.glCanvas.wantViewChangeNotification.remove(self)
+        self.Destroy()
+
+    
+        
+        
+
+class DSViewFrame(AUIFrame):
+    def __init__(self, image,  parent=None, title='', mode='LM', 
+                 size = (800,700), glCanvas=None):
+        AUIFrame.__init__(self,parent, -1, title,size=size, pos=wx.DefaultPosition)
 
         self.mode = mode
         self.glCanvas = glCanvas
-        self.paneHooks = []
+        
         self.updateHooks = []
         self.statusHooks = []
         self.installedModules = []
@@ -84,7 +194,7 @@ class DSViewFrame(wx.Frame):
         if glCanvas:
             self.glCanvas.wantViewChangeNotification.add(self)
 
-        self.pane0 = None
+        
 
         self.timer = mytimer()
         self.timer.Start(10000)
@@ -94,11 +204,7 @@ class DSViewFrame(wx.Frame):
         if not self.image.filename == None and title == '':
             self.SetTitle(self.image.filename)
 
-        self._mgr = aui.AuiManager(agwFlags = aui.AUI_MGR_DEFAULT | aui.AUI_MGR_AUTONB_NO_CAPTION)
-        atabstyle = self._mgr.GetAutoNotebookStyle()
-        self._mgr.SetAutoNotebookStyle((atabstyle ^ aui.AUI_NB_BOTTOM) | aui.AUI_NB_TOP)
-        # tell AuiManager to manage this frame
-        self._mgr.SetManagedWindow(self)
+        
 
         self.do = DisplayOpts(self.image.data)
         if self.image.data.shape[1] == 1:
@@ -151,7 +257,7 @@ class DSViewFrame(wx.Frame):
         wx.EVT_MENU(self, wx.ID_SAVE, self.OnSave)
         wx.EVT_MENU(self, wx.ID_SAVEAS, self.OnExport)
         wx.EVT_CLOSE(self, self.OnCloseWindow)
-        wx.EVT_SIZE(self, self.OnSize)
+        
 
 		
         self.statusbar = self.CreateStatusBar(1, wx.ST_SIZEGRIP)
@@ -187,7 +293,7 @@ class DSViewFrame(wx.Frame):
         self.do.WantChangeNotification.append(self.update)
 
         self.CreateFoldPanel()
-        self._mgr.Update()
+       
 
         for pn in self.panesToMinimise:
             self._mgr.MinimizePane(pn)
@@ -208,47 +314,7 @@ class DSViewFrame(wx.Frame):
         
         openViewers[self.image.filename] = self
         
-    def OnSize(self, event):
-        #self.Layout()
-        self._mgr.Update()
-        #self.Refresh()
-        #self.Update()
-
-    def AddPage(self, page=None, select=True,caption='Dummy'):
-        if self.pane0 == None:
-            name = caption.replace(' ', '')
-            self._mgr.AddPane(page, aui.AuiPaneInfo().
-                          Name(name).Caption(caption).Centre().CloseButton(False).CaptionVisible(False))
-            self.pane0 = name
-        else:
-            self._mgr.Update()
-            pn = self._mgr.GetPaneByName(self.pane0)
-            if pn.IsNotebookPage():
-                print((pn.notebook_id))
-                nbs = self._mgr.GetNotebooks()
-                if len(nbs) > pn.notebook_id:
-                    currPage = nbs[pn.notebook_id].GetSelection()
-                self._mgr.AddPane(page, aui.AuiPaneInfo().
-                              Name(caption.replace(' ', '')).Caption(caption).CloseButton(False).NotebookPage(pn.notebook_id))
-                if (not select) and len(nbs) > pn.notebook_id:
-                    self._mgr.Update()
-                    nbs[pn.notebook_id].SetSelection(currPage)
-            else:
-                self._mgr.AddPane(page, aui.AuiPaneInfo().
-                              Name(caption.replace(' ', '')).Caption(caption).CloseButton(False), target=pn)
-                
-                
-                if not select:
-                    self._mgr.Update()
-                    nb = self._mgr.GetNotebooks()[0]
-                    nb.SetSelection(0)
-
-               
-        wx.CallAfter(self._mgr.Update)
-        #self.Layout() 
-        #self.OnSize(None)
-        #self.OnSize(None)
-        
+   
 
     def CreateModuleMenu(self):
         #self.modMenuIds = {}
@@ -316,28 +382,7 @@ class DSViewFrame(wx.Frame):
 
 
 
-    def CreateFoldPanel(self):
-        pinfo = self._mgr.GetPaneByName('sidePanel')
-        if pinfo.IsOk(): #we already have a sidepanel, clear
-            self.sidePanel.Clear()
-        else:
-            self.sidePanel = afp.foldPanel(self, -1, wx.DefaultPosition,size = wx.Size(180, 1000))
-            pinfo = aui.AuiPaneInfo().Name("sidePanel").Left().CloseButton(False).CaptionVisible(False)
-
-            self._mgr.AddPane(self.sidePanel, pinfo)
-            
-        if len(self.paneHooks) > 0:
-            pinfo.Show()
-
-            for genFcn in self.paneHooks:
-                genFcn(self.sidePanel)
-        else:
-            pinfo.Hide()
-            
-
-        self._mgr.Update()
-        self.Refresh()
-        self.Update()
+    
 
 
     def update(self):
@@ -403,13 +448,8 @@ class DSViewFrame(wx.Frame):
 
     def _cleanup(self):
         self.timer.Stop()
-        #for some reason AUI doesn't clean itself up properly and stops the
-        #window from being garbage collected - fix this here
-        self._mgr.UnInit()
-        self._mgr._frame = None
-        #if self.glCanvas:
-        #    self.glCanvas.wantViewChangeNotification.remove(self)
-        self.Destroy()
+        
+        AUIFrame._cleanup(self)
 
     def dsRefresh(self):
         #zp = self.vp.do.zp #save z -position

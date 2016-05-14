@@ -22,11 +22,11 @@
 import wx
 import wx.py.shell
 
-import PYME.misc.autoFoldPanel as afp
-import wx.lib.agw.aui as aui
+#import PYME.misc.autoFoldPanel as afp
+#import wx.lib.agw.aui as aui
 
 #hacked so py2exe works
-from PYME.DSView.dsviewer import View3D
+#from PYME.DSView.dsviewer import View3D
 
 #from PYME.LMVis import gl_render
 #from PYME.LMVis import workspaceTree
@@ -36,7 +36,7 @@ import pylab
 from PYME.misc import extraCMaps
 from PYME.FileUtils import nameUtils
 
-import os
+#import os
 from PYME.LMVis import gl_render3D
 
 from PYME.LMVis import colourPanel
@@ -56,21 +56,19 @@ from PYME.DSView import eventLogViewer
 from PYME.LMVis import statusLog
 from PYME.LMVis import visCore
 
+from PYME.DSView.dsviewer import AUIFrame
 ####################################        
 #defines the main GUI class fo VisGUI
 
-class VisGUIFrame(wx.Frame, visCore.VisGUICore):
+class VisGUIFrame(AUIFrame, visCore.VisGUICore):
     '''The main GUI frame for VisGUI. Note that much of the functionality is shared 
     with the LMDisplay module used for online display and has been factored out into the visCore module'''    
     def __init__(self, parent, filename=None, id=wx.ID_ANY, 
                  title="PYME Visualise", pos=wx.DefaultPosition,
                  size=(700,650), style=wx.DEFAULT_FRAME_STYLE):
 
-        wx.Frame.__init__(self, parent, id, title, pos, size, style)
-        self._mgr = aui.AuiManager(agwFlags = aui.AUI_MGR_DEFAULT | aui.AUI_MGR_AUTONB_NO_CAPTION)
-        atabstyle = self._mgr.GetAutoNotebookStyle()
-        self._mgr.SetAutoNotebookStyle((atabstyle ^ aui.AUI_NB_BOTTOM) | aui.AUI_NB_TOP)
-        self._mgr.SetManagedWindow(self)
+        AUIFrame.__init__(self, parent, id, title, pos, size, style)
+        
 
         self._flags = 0
         
@@ -84,8 +82,8 @@ class VisGUIFrame(wx.Frame, visCore.VisGUICore):
 
         self.statusbar.SetStatusText("", 0)
        
-        self._leftWindow1 = wx.Panel(self, -1, size = wx.Size(220, 1000))
-        self._pnl = 0
+        #self._leftWindow1 = wx.Panel(self, -1, size = wx.Size(220, 1000))
+        #self._pnl = 0
         
         
 
@@ -94,9 +92,10 @@ class VisGUIFrame(wx.Frame, visCore.VisGUICore):
               parent=self, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
               introText='Python SMI bindings - note that help, license etc below is for Python, not PySMI\n\n')
 
-        self._mgr.AddPane(self.sh, aui.AuiPaneInfo().
-                          Name("Shell").Caption("Console").Centre().CloseButton(False).CaptionVisible(False))
+        #self._mgr.AddPane(self.sh, aui.AuiPaneInfo().
+        #                  Name("Shell").Caption("Console").Centre().CloseButton(False).CaptionVisible(False))
 
+        self.AddPage(self.sh, caption='Shell')
         #initialize the common parts
         ###############################
         #NB: this has to come after the shell has been generated, but before the fold panel
@@ -151,12 +150,11 @@ class VisGUIFrame(wx.Frame, visCore.VisGUICore):
         #self.refv = False
 
         statusLog.SetStatusDispFcn(self.SetStatus)
-
+        
+        
+        self.paneHooks.append(self.GenPanels)
         self.CreateFoldPanel()
-        self._mgr.AddPane(self._leftWindow1, aui.AuiPaneInfo().
-                          Name("sidebar").Left().CloseButton(False).CaptionVisible(False))
 
-        self._mgr.Update()
 
         if not filename==None:
             self.OpenFile(filename)
@@ -164,28 +162,6 @@ class VisGUIFrame(wx.Frame, visCore.VisGUICore):
         nb = self._mgr.GetNotebooks()[0]
         nb.SetSelection(0)
         
-        
-
-
-    def AddPage(self, page=None, select=False,caption='Dummy', update=True):
-        if update:
-            self._mgr.Update()
-        pn = self._mgr.GetPaneByName("Shell")
-        if pn.IsNotebookPage():
-            #print pn.notebook_id
-            nbs = self._mgr.GetNotebooks()
-            if len(nbs) > pn.notebook_id:
-                currPage = nbs[pn.notebook_id].GetSelection()
-            self._mgr.AddPane(page, aui.AuiPaneInfo().
-                          Name(caption.replace(' ', '')).Caption(caption).CloseButton(False).NotebookPage(pn.notebook_id))
-            if (not select) and len(nbs) > pn.notebook_id:
-                nbs[pn.notebook_id].SetSelection(currPage)
-        else:
-            self._mgr.AddPane(page, aui.AuiPaneInfo().
-                          Name(caption.replace(' ', '')).Caption(caption).CloseButton(False), target=pn)
-
-        if update:        
-            self._mgr.Update()
 
     def OnMove(self, event):
         self.Refresh()
@@ -197,7 +173,7 @@ class VisGUIFrame(wx.Frame, visCore.VisGUICore):
             self.pipeline.filesToClose.pop().close()
 
         pylab.close('all')
-        self.Destroy()
+        self._cleanup()
 
 
     def OnAbout(self, event):
@@ -209,41 +185,10 @@ class VisGUIFrame(wx.Frame, visCore.VisGUICore):
         dlg.ShowModal()
         dlg.Destroy()
 
-    def OnToggleWindow(self, event):
-        self._mgr.ShowPane(self._leftWindow1,not self._leftWindow1.IsShown())
-        self.glCanvas.Refresh()  
-        
-   
-
-    def CreateFoldPanel(self):
-        # delete earlier panel
-        self._leftWindow1.DestroyChildren()
-
-        # recreate the foldpanelbar
-        hsizer = wx.BoxSizer(wx.VERTICAL)
-
-        s = self._leftWindow1.GetBestSize()
-
-        self._pnl = afp.foldPanel(self._leftWindow1, -1, wx.DefaultPosition,s)
-
-        self.GenPanels(self._pnl)
-        
-        hsizer.Add(self._pnl, 1, wx.EXPAND, 0)
-        self._leftWindow1.SetSizerAndFit(hsizer)
-        
-        #self.glCanvas.Refresh()
-        
-
-    
-
-
-   
-
-    
-
-    
-
-    
+#    def OnToggleWindow(self, event):
+#        self._mgr.ShowPane(self._leftWindow1,not self._leftWindow1.IsShown())
+#        self.glCanvas.Refresh()  
+            
 
     def OnView3DPoints(self,event):
         if 'z' in self.pipeline.keys():
@@ -355,62 +300,7 @@ class VisGUIFrame(wx.Frame, visCore.VisGUICore):
             
         
             
-    def OpenFile(self, filename):
-        args = {}
-        
-        if os.path.splitext(filename)[1] == '.h5r':
-            pass
-        elif os.path.splitext(filename)[1] == '.mat':
-            from PYME.LMVis import importTextDialog
-            from scipy.io import loadmat
-            
-            mf = loadmat(filename)
 
-            dlg = importTextDialog.ImportMatDialog(self, [k for k in mf.keys() if not k.startswith('__')])
-            ret = dlg.ShowModal()
-
-            if not ret == wx.ID_OK:
-                dlg.Destroy()
-                return #we cancelled
-                
-            args['FieldNames'] = dlg.GetFieldNames()
-            args['VarName'] = dlg.GetVarName()
-            args['PixelSize'] = dlg.GetPixelSize()
-            
-            
-            dlg.Destroy()
-
-        else: #assume it's a text file
-            from PYME.LMVis import importTextDialog
-            
-            dlg = importTextDialog.ImportTextDialog(self, filename)
-            ret = dlg.ShowModal()
-
-            if not ret == wx.ID_OK:
-                dlg.Destroy()
-                return #we cancelled
-                
-            args['FieldNames'] = dlg.GetFieldNames()
-            args['SkipRows'] = dlg.GetNumberComments()
-            args['PixelSize'] = dlg.GetPixelSize()
-            
-            #print 'Skipping %d rows' %args['SkipRows']
-            dlg.Destroy()
-
-        print('Creating Pipeline')
-        self.pipeline.OpenFile(filename, **args)
-        print('Pipeline Created')
-        self.SetTitle('PYME Visualise - ' + filename)
-        
-        #############################
-        #now do all the gui stuff
-        self._removeOldTabs()
-        self._createNewTabs()
-        
-        self.CreateFoldPanel()
-        print('Gui stuff done')
-        
-        self.SetFit()
             
 
     def OnOpenChannel(self, event):

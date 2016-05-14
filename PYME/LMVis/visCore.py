@@ -536,4 +536,63 @@ class VisGUICore(object):
         if HAVE_DRIFT_CORRECTION and 'x' in self.pipeline.mapping.mappings.keys(): #drift correction has been applied
             self.driftPane.dp.SaveMetadata(mdh)
 
+    def OpenFile(self, filename):
+        args = {}
+        
+        if os.path.splitext(filename)[1] == '.h5r':
+            pass
+        elif os.path.splitext(filename)[1] == '.mat':
+            from PYME.LMVis import importTextDialog
+            from scipy.io import loadmat
+            
+            mf = loadmat(filename)
+
+            dlg = importTextDialog.ImportMatDialog(self, [k for k in mf.keys() if not k.startswith('__')])
+            ret = dlg.ShowModal()
+
+            if not ret == wx.ID_OK:
+                dlg.Destroy()
+                return #we cancelled
+                
+            args['FieldNames'] = dlg.GetFieldNames()
+            args['VarName'] = dlg.GetVarName()
+            args['PixelSize'] = dlg.GetPixelSize()
+            
+            
+            dlg.Destroy()
+
+        else: #assume it's a text file
+            from PYME.LMVis import importTextDialog
+            
+            dlg = importTextDialog.ImportTextDialog(self, filename)
+            ret = dlg.ShowModal()
+
+            if not ret == wx.ID_OK:
+                dlg.Destroy()
+                return #we cancelled
+                
+            args['FieldNames'] = dlg.GetFieldNames()
+            args['SkipRows'] = dlg.GetNumberComments()
+            args['PixelSize'] = dlg.GetPixelSize()
+            
+            #print 'Skipping %d rows' %args['SkipRows']
+            dlg.Destroy()
+
+        print('Creating Pipeline')
+        self.pipeline.OpenFile(filename, **args)
+        print('Pipeline Created')
+        
+        
+        #############################
+        #now do all the gui stuff
+        if isinstance(self, wx.Frame):
+            #run this if only we are the main frame
+            self.SetTitle('PYME Visualise - ' + filename)
+            self._removeOldTabs()
+            self._createNewTabs()
+            
+            self.CreateFoldPanel()
+            print('Gui stuff done')
+        
+        self.SetFit()
         
