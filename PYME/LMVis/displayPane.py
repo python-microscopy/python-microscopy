@@ -62,69 +62,78 @@ class DisplayPane(afp.foldingPane):
         ##
         pan = wx.Panel(self, -1)
 
-        box = wx.StaticBox(pan, -1, 'Colourmap:')
-        bsizer = wx.StaticBoxSizer(box)
+        #box = wx.StaticBox(pan, -1, 'Colourmap:')
+        #bsizer = wx.StaticBoxSizer(box)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        
+        hsizer.Add(wx.StaticText(pan, wx.ID_ANY, 'LUT:'), 0, wx.ALL, 2)
 
         self.cColourmap = wx.Choice(pan, -1, choices=cmapnames)
         self.cColourmap.SetSelection(cmInd)
 
-        hsizer.Add(self.cColourmap, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(self.cColourmap, 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
 
-        self.cbCmapReverse = wx.CheckBox(pan, -1, 'Invert')
-        self.cbCmapReverse.SetValue(cmapReversed)
+        #self.cbCmapReverse = wx.CheckBox(pan, -1, 'Invert')
+        #self.cbCmapReverse.SetValue(cmapReversed)
 
-        hsizer.Add(self.cbCmapReverse, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        #hsizer.Add(self.cbCmapReverse, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
-        bsizer.Add(hsizer, 0, wx.ALL, 0)
+        #bsizer.Add(hsizer, 0, wx.ALL, 0)
 
-        bdsizer = wx.BoxSizer()
-        bdsizer.Add(bsizer, 1, wx.EXPAND|wx.ALL, 0)
+        #bdsizer = wx.BoxSizer()
+        #bdsizer.Add(bsizer, 1, wx.EXPAND|wx.ALL, 0)
 
-        pan.SetSizer(bdsizer)
-        bdsizer.Fit(pan)
+        cbLUTDraw = wx.CheckBox(pan, -1, 'Show')
+        cbLUTDraw.SetValue(self.glCanvas.LUTDraw)
+
+        cbLUTDraw.Bind(wx.EVT_CHECKBOX, self.OnLUTDrawCB)
+        
+        hsizer.Add(cbLUTDraw, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+
+        pan.SetSizerAndFit(hsizer)
+        
 
 
         #self._pnl.AddFoldPanelWindow(self, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 5)
         self.AddNewElement(pan)
 
         self.cColourmap.Bind(wx.EVT_CHOICE, self.OnCMapChange)
-        self.cbCmapReverse.Bind(wx.EVT_CHECKBOX, self.OnCMapChange)
+        #self.cbCmapReverse.Bind(wx.EVT_CHECKBOX, self.OnCMapChange)
 
 
         #CLim
         pan = wx.Panel(self, -1)
 
-        box = wx.StaticBox(pan, -1, 'CLim:')
+        box = wx.StaticBox(pan, -1, 'Display range:')
         bsizer = wx.StaticBoxSizer(box, wx.VERTICAL)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        hsizer.Add(wx.StaticText(pan, -1, 'Min: '), 0, wx.LEFT|wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(wx.StaticText(pan, -1, 'Min: '), 0, wx.LEFT|wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL, 1)
 
         self.tCLimMin = wx.TextCtrl(pan, -1, '%3.2f' % self.glCanvas.clim[0], size=(40,-1))
-        hsizer.Add(self.tCLimMin, 0,wx.RIGHT|wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(self.tCLimMin, 1,wx.RIGHT|wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL, 1)
 
-        hsizer.Add(wx.StaticText(pan, -1, '  Max: '), 0, wx.LEFT|wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(wx.StaticText(pan, -1, '  Max: '), 0, wx.LEFT|wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL, 1)
 
         self.tCLimMax = wx.TextCtrl(pan, -1, '%3.2f' % self.glCanvas.clim[1], size=(40,-1))
-        hsizer.Add(self.tCLimMax, 0, wx.RIGHT|wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(self.tCLimMax, 1, wx.RIGHT|wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL,1)
 
-        bsizer.Add(hsizer, 0, wx.ALL, 0)
+        bsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
 
         self.hlCLim = histLimits.HistLimitPanel(pan, -1, np.array(self.glCanvas.c), self.glCanvas.clim[0], self.glCanvas.clim[1], size=(150, 100))
-        bsizer.Add(self.hlCLim, 0, wx.ALL|wx.EXPAND, 5)
+        bsizer.Add(self.hlCLim, 0, wx.ALL|wx.EXPAND, 1)
 
 
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        self.tPercentileCLim = wx.TextCtrl(pan, -1, '.95', size=(40,-1))
-        hsizer.Add(self.tPercentileCLim, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        bPercentile = wx.Button(pan, -1, 'Set Percentile')
-        hsizer.Add(bPercentile, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        bsizer.Add(hsizer, 0, wx.ALL, 0)
+#        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+#
+#        self.tPercentileCLim = wx.TextCtrl(pan, -1, '.95', size=(40,-1))
+#        hsizer.Add(self.tPercentileCLim, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+#
+#        bPercentile = wx.Button(pan, -1, 'Set Percentile')
+#        hsizer.Add(bPercentile, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+#
+#        bsizer.Add(hsizer, 0, wx.ALL, 0)
 
         bdsizer = wx.BoxSizer()
         bdsizer.Add(bsizer, 1, wx.EXPAND|wx.ALL, 0)
@@ -142,18 +151,13 @@ class DisplayPane(afp.foldingPane):
 
         self.hlCLim.Bind(histLimits.EVT_LIMIT_CHANGE, self.OnCLimHistChange)
 
-        bPercentile.Bind(wx.EVT_BUTTON, self.OnPercentileCLim)
+        #bPercentile.Bind(wx.EVT_BUTTON, self.OnPercentileCLim)
 
         #self._pnl.AddFoldPanelSeparator(self)
 
 
         #LUT
-        cbLUTDraw = wx.CheckBox(self, -1, 'Show LUT')
-        cbLUTDraw.SetValue(self.glCanvas.LUTDraw)
-        self.AddNewElement(cbLUTDraw)
-        #self._pnl.AddFoldPanelWindow(self, cbLUTDraw, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
-
-        cbLUTDraw.Bind(wx.EVT_CHECKBOX, self.OnLUTDrawCB)
+        
 
 
         #Scale Bar
@@ -216,7 +220,7 @@ class DisplayPane(afp.foldingPane):
         self.tCLimMin.SetValue('%3.2f' % self.glCanvas.clim[0])
 
     def OnPercentileCLim(self, event):
-        pc = float(self.tPercentileCLim.GetValue())
+        pc = .95#float(self.tPercentileCLim.GetValue())
 
         self.glCanvas.setPercentileCLim(pc)
 

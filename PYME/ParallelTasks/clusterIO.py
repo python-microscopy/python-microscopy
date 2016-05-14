@@ -79,6 +79,7 @@ def locateFile(filename, serverfilter=''):
         if (len(dirname) >=1):
             dirname = dirname + '/'
         
+        #print ns.advertised_services.keys()        
         for name, info in ns.advertised_services.items():
             if serverfilter in name:
                 dirurl = 'http://%s:%d/%s' %(socket.inet_ntoa(info.address), info.port, dirname) 
@@ -188,6 +189,7 @@ def getFile(filename, serverfilter='', numRetries=3):
     
     if (len(locs) ==0):
         #we did not find the file
+        print ns.list()
         raise IOError("Specified file could not be found")
     else:
         url = _chooseLocation(locs)

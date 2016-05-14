@@ -251,12 +251,15 @@ class DSViewFrame(wx.Frame):
         
 
     def CreateModuleMenu(self):
-        self.modMenuIds = {}
+        #self.modMenuIds = {}
+        self.moduleNameByID = {}
+        self.moduleMenuIDByName = {}
         self.mModules = wx.Menu()
         for mn in modules.allmodules():
             id = wx.NewId()
             self.mModules.AppendCheckItem(id, mn)
-            self.modMenuIds[id] = mn
+            self.moduleNameByID[id] = mn
+            self.moduleMenuIDByName[mn] = id
             if mn in self.installedModules:
                 self.mModules.Check(id, True)
 
@@ -283,15 +286,25 @@ class DSViewFrame(wx.Frame):
 
     def OnToggleModule(self, event):
         id = event.GetId()
-        mn = self.modMenuIds[id]
+        mn = self.moduleNameByID[id]
         #if self.mModules.IsChecked(id):
-        modules.loadModule(mn, self)
+        
+        self.LoadModule(mn)
+         
+        
+    def LoadModule(self, moduleName):
+        '''Load a module with the given name and update GUI
+        '''
+        
+        modules.loadModule(moduleName, self)
 
-        if mn in self.installedModules:
+        if moduleName in self.installedModules:
+            id = self.moduleMenuIDByName[moduleName]
             self.mModules.Check(id, True)
 
         self.CreateFoldPanel()
         self._mgr.Update()
+        
 
     def GetSelectedPage(self):
         nbs = self._mgr.GetNotebooks()

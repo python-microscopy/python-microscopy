@@ -149,6 +149,8 @@ class LMAnalyser:
         
         dsviewer.pipeline = pipeline.Pipeline()
         self.ds = None
+        
+        self.foldAnalPanes = False
 
         dsviewer.paneHooks.append(self.GenPointFindingPanel)
         dsviewer.paneHooks.append(self.GenAnalysisPanel)
@@ -285,7 +287,7 @@ class LMAnalyser:
         
 
     def GenAnalysisPanel(self, _pnl):
-        item = afp.foldingPane(_pnl, -1, caption="Analysis", pinned = True)
+        item = afp.foldingPane(_pnl, -1, caption="Analysis", pinned = not(self.foldAnalPanes))
         
         ##############################
         pan = wx.Panel(item, -1)
@@ -479,14 +481,17 @@ class LMAnalyser:
         self.timer.WantNotification.append(self.analRefresh)
         self.bGo.Enable(False)
         
+        self.foldAnalPanes = True
+        
         #auto load VisGUI display
-        from PYME.DSView import modules
-        modules.loadModule('LMDisplay', self.dsviewer)
+        #from PYME.DSView import modules
+        #modules.loadModule('LMDisplay', self.dsviewer)
+        self.dsviewer.LoadModule('LMDisplay')
         
         #_pnl.Collapse(self.analysisPanel)
 
     def GenPointFindingPanel(self, _pnl):
-        item = afp.foldingPane(_pnl, -1, caption="Point Finding", pinned = True)
+        item = afp.foldingPane(_pnl, -1, caption="Point Finding", pinned = not(self.foldAnalPanes))
 #        item = _pnl.AddFoldPanel("Point Finding", collapsed=False,
 #                                      foldIcons=self.Images)
 
@@ -540,32 +545,32 @@ class LMAnalyser:
     def GenFitStatusPanel(self, _pnl):
         item = afp.foldingPane(_pnl, -1, caption="Fit Status", pinned = True)
 
-        pan = wx.Panel(item, -1, size = (160, 300))
+        pan = wx.Panel(item, -1)#, size = (160, 200))
 
         vsizer = wx.BoxSizer(wx.VERTICAL)
 
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(pan, -1, 'Colour:'), 0, wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+#        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+#        hsizer.Add(wx.StaticText(pan, -1, 'Colour:'), 0, wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+#
+#        self.chProgDispColour = wx.Choice(pan, -1, choices = ['z', 'gFrac', 't'], size=(60, -1))
+#        self.chProgDispColour.Bind(wx.EVT_CHOICE, self.OnProgDispColourChange)
+#        hsizer.Add(self.chProgDispColour, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+#
+#        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 2)
+#
+#        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+#        hsizer.Add(wx.StaticText(pan, -1, 'CMap:'), 0, wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+#
+#        self.chProgDispCMap = wx.Choice(pan, -1, choices = ['gist_rainbow', 'RdYlGn'], size=(60, -1))
+#        self.chProgDispCMap.Bind(wx.EVT_CHOICE, self.OnProgDispCMapChange)
+#        hsizer.Add(self.chProgDispCMap, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+#
+#        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 7)
 
-        self.chProgDispColour = wx.Choice(pan, -1, choices = ['z', 'gFrac', 't'], size=(60, -1))
-        self.chProgDispColour.Bind(wx.EVT_CHOICE, self.OnProgDispColourChange)
-        hsizer.Add(self.chProgDispColour, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
-
-        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 2)
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(pan, -1, 'CMap:'), 0, wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        self.chProgDispCMap = wx.Choice(pan, -1, choices = ['gist_rainbow', 'RdYlGn'], size=(60, -1))
-        self.chProgDispCMap.Bind(wx.EVT_CHOICE, self.OnProgDispCMapChange)
-        hsizer.Add(self.chProgDispCMap, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
-
-        vsizer.Add(hsizer, 0,wx.BOTTOM|wx.EXPAND, 7)
-
-        self.progPan = progGraph.progPanel(pan, self.fitResults, size=(220, 250))
+        self.progPan = progGraph.progPanel(pan, self.fitResults, size=(220, 100))
         self.progPan.draw()
 
-        vsizer.Add(self.progPan, 1,wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.EXPAND, 0)
+        vsizer.Add(self.progPan, 0,wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 0)
 
         pan.SetSizer(vsizer)
         vsizer.Fit(pan)
@@ -633,6 +638,7 @@ class LMAnalyser:
                     self.fitResults = newResults
                     self.ds = inpFilt.fitResultsSource(self.fitResults)
                     self.dsviewer.pipeline.OpenFile(ds=self.ds, imBounds = self.dsviewer.image.imgBounds)
+                    self.dsviewer.pipeline.mdh = self.resultsMdh
                 else:
                     self.fitResults = numpy.concatenate((self.fitResults, newResults))
                     self.ds.setResults(self.fitResults)
@@ -750,6 +756,8 @@ class LMAnalyser:
 #        if len(evts) > 0:
 #            self.tq.addQueueEvents(self.image.seriesName, evts)
 
+        self.resultsMdh = mdhQ
+
         self.tq.releaseTasks(self.queueName, startingAt)
 
 
@@ -758,6 +766,7 @@ class LMAnalyser:
         self.image.mdh.setEntry('Analysis.FitModule', fitFcn)
         self.image.mdh.setEntry('Analysis.DataFileID', fileID.genDataSourceID(self.image.dataSource))
         self.queueName = self.image.seriesName
+        self.resultsMdh = self.image.mdh
         self.tq.releaseTasks(self.image.seriesName, startingAt)
 
     def pushImagesDS(self, startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
@@ -770,6 +779,8 @@ class LMAnalyser:
         mdh.setEntry('Analysis.DetectionThreshold', detThresh)
         mdh.setEntry('Analysis.FitModule', fitFcn)
         mdh.setEntry('Analysis.DataFileID', fileID.genDataSourceID(self.image.dataSource))
+        
+        self.resultsMdh = mdh
         
         mn = self.image.dataSource.moduleName
         #dsID = self.image.seriesName
