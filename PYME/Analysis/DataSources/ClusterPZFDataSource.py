@@ -41,11 +41,15 @@ from PYME.Acquire import MetaDataHandler
 class DataSource(BaseDataSource):
     moduleName = 'ClusterPZFDataSource'
     def __init__(self, url, queue=None):
+        self.seriesName = url
+        print url
         self.clusterfilter = url.split('://')[1].split('/')[0]
-        self.seriesName = url.split('://%s/' % self.clusterfilter)[1]
+        print self.clusterfilter
+        self.sequenceName = url.split('://%s/' % self.clusterfilter)[1]
+        print self.sequenceName
         self.lastShapeTime = 0
         
-        mdfn = '/'.join([self.seriesName, 'metadata.json'])  
+        mdfn = '/'.join([self.sequenceName, 'metadata.json'])  
         
         print mdfn
         
@@ -57,12 +61,12 @@ class DataSource(BaseDataSource):
         self._getNumFrames()
     
     def _getNumFrames(self):
-        frameNames = [f for f in clusterIO.listdir(self.seriesName, self.clusterfilter) if f.endswith('.pzf')]
+        frameNames = [f for f in clusterIO.listdir(self.sequenceName, self.clusterfilter) if f.endswith('.pzf')]
         self.numFrames = len(frameNames)
         self.lastShapeTime = time.time()
     
     def getSlice(self, ind):
-        frameName = '%s/frame%05d.pzf' % (self.seriesName, ind)
+        frameName = '%s/frame%05d.pzf' % (self.sequenceName, ind)
         sl = PZFFormat.loads(clusterIO.getFile(frameName, self.clusterfilter))[0]
         
         #print sl.shape, sl.dtype
@@ -79,7 +83,7 @@ class DataSource(BaseDataSource):
         return self.numFrames
 
     def getEvents(self):
-        eventFileName = self.seriesName + '/events.json'
+        eventFileName = self.sequenceName + '/events.json'
         return json.loads(clusterIO.getFile(eventFileName, self.clusterfilter))
         
     def getMetadata(self):

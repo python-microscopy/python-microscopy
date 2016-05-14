@@ -26,9 +26,9 @@ build:
   entry_points:
     # This creates an entry point named bsdiff4 that calls
     # bsdiff4.cli.main_bsdiff4()
-    - dh5view = PYME.DSView.dsviewer_npy_nb:main
+    - dh5view = PYME.DSView.dsviewer:main
     - PYMEAcquire = PYME.Acquire.PYMEAcquire:main
-    - VisGUI = PYME.Analysis.LMVis.VisGUI:main
+    - VisGUI = PYME.LMVis.VisGUI:main
     - launchWorkers = PYME.ParallelTasks.launchWorkers:main
     - PYMEBatch = PYME.Analysis.Modules.batchProcess:main
     - bakeshop = PYME.Analysis.Modules.bakeshop:main

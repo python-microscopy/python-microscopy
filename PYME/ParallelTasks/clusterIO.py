@@ -23,7 +23,7 @@ import sys
 if not 'sphinx' in sys.modules.keys():
     #do not start zeroconf if running under sphinx
     ns = pzc.getNS('_pyme-http')
-    time.sleep(1.5) #wait for ns resonses
+    time.sleep(1.5 + np.random.rand()) #wait for ns resonses
 
 from collections import OrderedDict
 class LimitedSizeDict(OrderedDict):
@@ -54,7 +54,7 @@ def _listSingleDir(dirurl):
             raise RuntimeError('key is expired')
     except (KeyError, RuntimeError):
         #t = time.time()
-        r = requests.get(dirurl.encode(), timeout=.1)
+        r = requests.get(dirurl.encode(), timeout=1)
         dt = time.time() - t
         try:
             dirL = r.json()
@@ -183,7 +183,7 @@ def _chooseLocation(locs):
     
     return locs[cost.argmin()][0]
     
-def getFile(filename, serverfilter=''):
+def getFile(filename, serverfilter='', numRetries=3):
     locs = locateFile(filename)
     
     if (len(locs) ==0):
