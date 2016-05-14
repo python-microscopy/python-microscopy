@@ -9,52 +9,23 @@ import wx
 
 import os
 
-from pylab import *
+#from pylab import *
 
 
 import numpy
 import pylab
 
-import PYME.misc.autoFoldPanel as afp
+#import PYME.misc.autoFoldPanel as afp
 
 from PYME.DSView import fitInfo
 from PYME.DSView.OverlaysPanel import OverlayPanel
 import wx.lib.agw.aui as aui
 
-from PYME.LMVis import gl_render
-#from PYME.LMVis import workspaceTree
-#import sys
-
-#import pylab
 from PYME.misc import extraCMaps
-from PYME.FileUtils import nameUtils
 
-#import os
-#from PYME.LMVis import gl_render3D
 
-from PYME.LMVis import renderers
 from PYME.LMVis import pipeline
 
-
-#try importing our drift correction stuff
-HAVE_DRIFT_CORRECTION = False
-try:
-    from PYMEnf.DriftCorrection.driftGUI import CreateDriftPane
-    HAVE_DRIFT_CORRECTION = True
-    #from PYMEnf.DriftCorrection import driftGUI
-    #renderers.renderMetadataProviders.append(driftGUI.dp.SaveMetadata)
-except:
-    pass
-
-from PYME.LMVis.colourFilterGUI import CreateColourFilterPane
-from PYME.LMVis.displayPane import CreateDisplayPane
-from PYME.LMVis.filterPane import CreateFilterPane
-
-from PYME.LMVis import pointSettingsPanel
-from PYME.LMVis import quadTreeSettings
-from PYME.LMVis import triBlobs
-
-#from PYME.LMVis import progGraph as progGraph
 
 
 import numpy as np
@@ -65,10 +36,10 @@ def debugPrint(msg):
     if debug:
         print(msg)
         
-from PYME.Analysis.VisGUI import VisGUICore
 
+from PYME.LMVis import visCore
 
-class LMDisplay(VisGUICore):    
+class LMDisplay(visCore.VisGUICore):    
     def __init__(self, dsviewer):
         self.dsviewer = dsviewer
         
@@ -85,17 +56,9 @@ class LMDisplay(VisGUICore):
             self.resultsMdh = self.image.resultsMdh
 
 
-
-        #self.analDispMode = 'z'
-
-        #self.numAnalysed = 0
-        #self.numEvents = 0
-
-        #dsviewer.paneHooks.append(self.GenFitStatusPanel)
         dsviewer.paneHooks.append(self.GenPanels)
-
         dsviewer.updateHooks.append(self.update)
-        #dsviewer.statusHooks.append(self.GetStatusText)
+
 
         
         if (len(self.fitResults) > 0) and not 'PYME_BUGGYOPENGL' in os.environ.keys():
@@ -110,122 +73,26 @@ class LMDisplay(VisGUICore):
         #self.Quads = None
         dsviewer.menubar.Insert(dsviewer.menubar.GetMenuCount()-1, self.CreateMenuBar(subMenu=True), 'Points')      
 
-        self.viewMode = 'points' #one of points, triangles, quads, or voronoi
-        #self.colData = 't'
-        
-        self.pointDisplaySettings = pointSettingsPanel.PointDisplaySettings()
-        self.pointDisplaySettings.on_trait_change(self.RefreshView)
-        
-        self.quadTreeSettings = quadTreeSettings.QuadTreeSettings()
-        self.quadTreeSettings.on_trait_change(self.RefreshView)
-        
-        self.pipeline.blobSettings.on_trait_change(self.RefreshView)
-        
-#        if 'PYME_BUGGYOPENGL' in os.environ.keys():
-#            pylab.plot(pylab.randn(10))
 
-
-        self.glCanvas = gl_render.LMGLCanvas(self.dsviewer)
-        self.dsviewer.AddPage(page=self.glCanvas, select=True, caption='View')
-        self.glCanvas.cmap = pylab.cm.gist_rainbow #pylab.cm.hot
 
         #self.Bind(wx.EVT_IDLE, self.OnIdle)
-        self.refv = False
+
         self._sf = False
 
         #statusLog.SetStatusDispFcn(self.SetStatus)
+    
+        #initialize the common parts
+        visCore.VisGUICore.__init__(self)
         
-        renderers.renderMetadataProviders.append(self.SaveMetadata)
-        #
 
-    def OnIdle(self, event):
-        if self.glCanvas.init and not self.refv:
-            self.refv = True
-            print((self.viewMode, self.pointDisplaySettings.colourDataKey))
-            self.SetFit()
-            
-            self.RefreshView()
-            self.displayPane.OnPercentileCLim(None)
-            self.Refresh()
-            self.Update()
-            print('refreshed')
+
 
         
-    def SaveMetadata(self, mdh):
-        mdh['Filter.Keys'] = self.pipeline.filterKeys      
-        
-        if HAVE_DRIFT_CORRECTION and 'x' in self.pipeline.mapping.mappings.keys(): #drift correction has been applied
-            self.driftPane.dp.SaveMetadata(mdh)
             
     def CreateFoldPanel(self):
         self.dsviewer.CreateFoldPanel()
 
-    def GenPanels(self, sidePanel):    
-        self.GenDataSourcePanel(sidePanel)
-
-        self.filterPane = CreateFilterPane(sidePanel, self.pipeline.filterKeys, self.pipeline, self)
-
-        if HAVE_DRIFT_CORRECTION:
-            self.driftPane = CreateDriftPane(sidePanel, self.pipeline.mapping, self.pipeline)
-            
-        self.colourFilterPane = CreateColourFilterPane(sidePanel, self.pipeline.colourFilter, self.pipeline)
-        self.displayPane = CreateDisplayPane(sidePanel, self.glCanvas, self)
-        
-        if self.viewMode == 'quads':
-            quadTreeSettings.GenQuadTreePanel(self, sidePanel)
-
-        if self.viewMode == 'points' or self.viewMode == 'tracks':
-            pass
-            pointSettingsPanel.GenPointsPanel(self, sidePanel)
-
-        if self.viewMode == 'blobs':
-            triBlobs.GenBlobPanel(self, sidePanel)
-
-        if self.viewMode == 'interp_triangles':
-            pointSettingsPanel.GenPointsPanel(self, sidePanel,'Vertex Colours')
-
-        
-        self.glCanvas.Refresh()
-
-    def GenDataSourcePanel(self, pnl):
-        item = afp.foldingPane(pnl, -1, caption="Data Source", pinned = False)
-
-        self.dsRadioIds = []
-        for ds in self.pipeline.dataSources:
-            rbid = wx.NewId()
-            self.dsRadioIds.append(rbid)
-            rb = wx.RadioButton(item, rbid, ds._name)
-            rb.SetValue(ds == self.pipeline.selectedDataSource)
-
-            rb.Bind(wx.EVT_RADIOBUTTON, self.OnSourceChange)
-            item.AddNewElement(rb)
-
-        pnl.AddPane(item)
-
-
-    def OnSourceChange(self, event):
-        dsind = self.dsRadioIds.index(event.GetId())
-        self.pipeline.selectedDataSource = self.pipeline.dataSources[dsind]
-        self.RegenFilter()
-        
-
-
-    def pointColour(self):
-        pointColour = None
-        
-        colData = self.pointDisplaySettings.colourDataKey
-        
-        if colData == '<None>':
-            pointColour = None
-        elif not self.pipeline.colourFilter == None:
-            if colData in self.pipeline.keys():
-                pointColour = self.pipeline[colData]
-            elif colData in self.pipeline.GeneratedMeasures.keys():
-                pointColour = self.pipeline.GeneratedMeasures[colData]
-            else:
-                pointColour = None
-
-        return pointColour
+    
         
     def Bind(self, *args, **kwargs):
         self.dsviewer.Bind(*args, **kwargs)
@@ -244,220 +111,8 @@ class LMDisplay(VisGUICore):
         self.extras_menu.Append(ID_NEWITEM, label)
         self.dsviewer.Bind(wx.EVT_MENU, callback, id=ID_NEWITEM)
 
-    def CreateMenuBar(self, subMenu = False):
+    
 
-        # Make a menubar
-        file_menu = wx.Menu()
-
-        ID_OPEN = wx.ID_OPEN
-        #ID_SAVE_MEASUREMENTS = wx.ID_SAVE
-        #ID_QUIT = wx.ID_EXIT
-
-        #ID_OPEN_RAW = wx.NewId()
-        ID_OPEN_CHANNEL = wx.NewId()
-
-        ID_VIEW_POINTS = wx.NewId()
-        ID_VIEW_TRIANGS = wx.NewId()
-        ID_VIEW_QUADS = wx.NewId()
-
-        ID_VIEW_BLOBS = wx.NewId()
-
-        ID_VIEW_VORONOI = wx.NewId()
-        ID_VIEW_INTERP_TRIANGS = wx.NewId()
-        ID_VIEW_TRACKS = wx.NewId()
-
-        ID_VIEW_FIT = wx.NewId()
-        ID_VIEW_FIT_ROI = wx.NewId()
-        
-
-        ID_TOGGLE_SETTINGS = wx.NewId()
-
-        #ID_ABOUT = wx.ID_ABOUT
-
-        ID_VIEW_3D_POINTS = wx.NewId()
-        ID_VIEW_3D_TRIANGS = wx.NewId()
-        ID_VIEW_3D_BLOBS = wx.NewId()
-
-        ID_VIEW_BLOBS = wx.NewId()
-        
-        
-        file_menu.Append(ID_OPEN, "&Open")
-        #file_menu.Append(ID_OPEN_RAW, "Open &Raw/Prebleach Data")
-        file_menu.Append(ID_OPEN_CHANNEL, "Open Extra &Channel")
-        
-        #file_menu.AppendSeparator()
-        #file_menu.Append(ID_SAVE_MEASUREMENTS, "&Save Measurements")
-
-        #file_menu.AppendSeparator()
-        
-        #file_menu.Append(ID_QUIT, "&Exit")
-
-        self.view_menu = wx.Menu()
-
-        try: #stop us bombing on Mac
-            self.view_menu.AppendRadioItem(ID_VIEW_POINTS, '&Points')
-            self.view_menu.AppendRadioItem(ID_VIEW_TRIANGS, '&Triangles')
-            self.view_menu.AppendRadioItem(ID_VIEW_QUADS, '&Quad Tree')
-            self.view_menu.AppendRadioItem(ID_VIEW_VORONOI, '&Voronoi')
-            self.view_menu.AppendRadioItem(ID_VIEW_INTERP_TRIANGS, '&Interpolated Triangles')
-            self.view_menu.AppendRadioItem(ID_VIEW_BLOBS, '&Blobs')
-            self.view_menu.AppendRadioItem(ID_VIEW_TRACKS, '&Tracks')
-        except:
-            self.view_menu.Append(ID_VIEW_POINTS, '&Points')
-            self.view_menu.Append(ID_VIEW_TRIANGS, '&Triangles')
-            self.view_menu.Append(ID_VIEW_QUADS, '&Quad Tree')
-            self.view_menu.Append(ID_VIEW_VORONOI, '&Voronoi')
-            self.view_menu.Append(ID_VIEW_INTERP_TRIANGS, '&Interpolated Triangles')
-            self.view_menu.Append(ID_VIEW_BLOBS, '&Blobs')
-            self.view_menu.Append(ID_VIEW_TRACKS, '&Tracks')
-
-        self.view_menu.Check(ID_VIEW_POINTS, True)
-        #self.view_menu.Enable(ID_VIEW_QUADS, False)
-
-        self.view_menu.AppendSeparator()
-        self.view_menu.Append(ID_VIEW_FIT, '&Fit')
-        self.view_menu.Append(ID_VIEW_FIT_ROI, 'Fit &ROI')
-
-        self.ID_VIEW_CLIP_ROI = wx.NewId()
-        self.view_menu.Append(self.ID_VIEW_CLIP_ROI, 'Clip to ROI\tF8')
-
-
-        self.view_menu.AppendSeparator()
-        self.view_menu.AppendCheckItem(ID_TOGGLE_SETTINGS, "Show Settings")
-        self.view_menu.Check(ID_TOGGLE_SETTINGS, True)
-
-        #self.view3d_menu = wx.Menu()
-
-#        try: #stop us bombing on Mac
-#            self.view3d_menu.AppendRadioItem(ID_VIEW_3D_POINTS, '&Points')
-#            self.view3d_menu.AppendRadioItem(ID_VIEW_3D_TRIANGS, '&Triangles')
-#            self.view3d_menu.AppendRadioItem(ID_VIEW_3D_BLOBS, '&Blobs')
-#        except:
-        #self.view3d_menu.Append(ID_VIEW_3D_POINTS, '&Points')
-        #self.view3d_menu.Append(ID_VIEW_3D_TRIANGS, '&Triangles')
-        #self.view3d_menu.Append(ID_VIEW_3D_BLOBS, '&Blobs')
-
-        #self.view3d_menu.Enable(ID_VIEW_3D_TRIANGS, False)
-        #self.view3d_menu.Enable(ID_VIEW_3D_BLOBS, False)
-
-        #self.view_menu.Check(ID_VIEW_3D_POINTS, True)
-
-        self.gen_menu = wx.Menu()
-        renderers.init_renderers(self, self.dsviewer)
-
-        self.extras_menu = wx.Menu()
-        from PYME.LMVis import Extras
-        Extras.InitPlugins(self)
-        
-        try:
-            #see if we can find any 'non free' plugins
-            from PYMEnf.Analysis.LMVis import Extras
-            #Extras.InitPlugins(self)
-        except ImportError:
-            pass
-
-        #help_menu = wx.Menu()
-        #help_menu.Append(ID_ABOUT, "&About")
-
-        if subMenu:
-            menu_bar = wx.Menu()
-            menu_bar.AppendSubMenu(file_menu, "&File")
-            menu_bar.AppendSubMenu(self.view_menu, "&View")
-            menu_bar.AppendSubMenu(self.gen_menu, "&Generate Image")
-            menu_bar.AppendSubMenu(self.extras_menu, "&Extras")
-            #menu_bar.AppendSubMenu(self.view3d_menu, "View &3D")
-        else:
-            menu_bar = wx.MenuBar()
-
-            menu_bar.Append(file_menu, "&File")
-            menu_bar.Append(self.view_menu, "&View")
-            menu_bar.Append(self.gen_menu, "&Generate Image")
-            menu_bar.Append(self.extras_menu, "&Extras")
-            #menu_bar.Append(self.view3d_menu, "View &3D")
-            
-        #menu_bar.Append(help_menu, "&Help")
-
-        #self.dsviewer.Bind(wx.EVT_MENU, self.OnAbout, id=ID_ABOUT)
-        #self.dsviewer.Bind(wx.EVT_MENU, self.OnQuit, id=ID_QUIT)
-        #self.dsviewer.Bind(wx.EVT_MENU, self.OnToggleWindow, id=ID_TOGGLE_SETTINGS)
-
-        self.dsviewer.Bind(wx.EVT_MENU, self.OnOpenFile, id=ID_OPEN)
-        #self.dsviewer.Bind(wx.EVT_MENU, self.OnOpenChannel, id=ID_OPEN_CHANNEL)
-        #self.dsviewer.Bind(wx.EVT_MENU, self.OnOpenRaw, id=ID_OPEN_RAW)
-
-        #self.dsviewer.Bind(wx.EVT_MENU, self.OnSaveMeasurements, id=ID_SAVE_MEASUREMENTS)
-
-        self.dsviewer.Bind(wx.EVT_MENU, self.OnViewPoints, id=ID_VIEW_POINTS)
-        self.dsviewer.Bind(wx.EVT_MENU, self.OnViewTriangles, id=ID_VIEW_TRIANGS)
-        self.dsviewer.Bind(wx.EVT_MENU, self.OnViewQuads, id=ID_VIEW_QUADS)
-        self.dsviewer.Bind(wx.EVT_MENU, self.OnViewVoronoi, id=ID_VIEW_VORONOI)
-        self.dsviewer.Bind(wx.EVT_MENU, self.OnViewInterpTriangles, id=ID_VIEW_INTERP_TRIANGS)
-
-        self.dsviewer.Bind(wx.EVT_MENU, self.OnViewBlobs, id=ID_VIEW_BLOBS)
-        self.dsviewer.Bind(wx.EVT_MENU, self.OnViewTracks, id=ID_VIEW_TRACKS)
-
-        self.dsviewer.Bind(wx.EVT_MENU, self.SetFit, id=ID_VIEW_FIT)
-        self.dsviewer.Bind(wx.EVT_MENU, self.OnFitROI, id=ID_VIEW_FIT_ROI)
-
-        #self.dsviewer.Bind(wx.EVT_MENU, self.OnView3DPoints, id=ID_VIEW_3D_POINTS)
-        #self.dsviewer.Bind(wx.EVT_MENU, self.OnView3DTriangles, id=ID_VIEW_3D_TRIANGS)
-        #self.Bind(wx.EVT_MENU, self.OnView3DBlobs, id=ID_VIEW_3D_BLOBS)
-
-        return menu_bar
-
-    def OnViewPoints(self,event):
-        self.viewMode = 'points'
-        #self.glCanvas.cmap = pylab.cm.hsv
-        self.RefreshView()
-        self.CreateFoldPanel()
-        self.displayPane.OnPercentileCLim(None)
-
-    def OnViewTracks(self,event):
-        self.viewMode = 'tracks'
-        #self.glCanvas.cmap = pylab.cm.hsv
-        self.RefreshView()
-        self.CreateFoldPanel()
-        self.displayPane.OnPercentileCLim(None)
-
-    def OnViewBlobs(self,event):
-        self.viewMode = 'blobs'
-        self.RefreshView()
-        self.CreateFoldPanel()
-        #self.OnPercentileCLim(None)
-
-    def OnViewTriangles(self,event):
-        self.viewMode = 'triangles'
-        self.RefreshView()
-        self.CreateFoldPanel()
-        self.displayPane.OnPercentileCLim(None)
-
-    def OnViewQuads(self,event):
-        self.viewMode = 'quads'
-        self.RefreshView()
-        self.CreateFoldPanel()
-        self.displayPane.OnPercentileCLim(None)
-
-    def OnViewVoronoi(self,event):
-        self.viewMode = 'voronoi'
-        self.RefreshView()
-        self.CreateFoldPanel()
-        self.displayPane.OnPercentileCLim(None)
-
-    def OnViewInterpTriangles(self,event):
-        self.viewMode = 'interp_triangles'
-        self.RefreshView()
-        self.CreateFoldPanel()
-        self.displayPane.OnPercentileCLim(None)
-
-    def OnOpenFile(self, event):
-        filename = wx.FileSelector("Choose a file to open", 
-                                   nameUtils.genResultDirectoryPath(), 
-                                   default_extension='h5r', 
-                                   wildcard='PYME Results Files (*.h5r)|*.h5r|Tab Formatted Text (*.txt)|*.txt|Matlab data (*.mat)|*.mat|Comma separated values (*.csv)|*.csv')
-
-        #print filename
-        if not filename == '':
-            self.OpenFile(filename)
             
       
             
@@ -520,142 +175,11 @@ class LMDisplay(VisGUICore):
 
         
 
-    def RegenFilter(self):
-        self.pipeline.Rebuild()
-
-        self.filterPane.stFilterNumPoints.SetLabel('%d of %d events' % (len(self.pipeline.filter['x']), len(self.pipeline.selectedDataSource['x'])))
-
-        self.RefreshView()
+   
 
 
-    def RefreshView(self):
-        if not self.pipeline.ready:
-            return #get out of here
 
-        if len(self.pipeline['x']) == 0:
-            wx.MessageBox('No data points - try adjusting the filter', 
-                          "len(filter['x']) ==0")
-            return
-
-        if self.glCanvas.init == 0: #glcanvas is not initialised
-            return
-
-        bCurr = wx.BusyCursor()
-
-        if self.pipeline.objects == None:
-#            if 'bObjMeasure' in dir(self):
-#                self.bObjMeasure.Enable(False)
-            self.objectMeasures = None
-
-#            if not self.rav == None: #remove previous event viewer
-#                i = 0
-#                found = False
-#                while not found and i < self.notebook.GetPageCount():
-#                    if self.notebook.GetPage(i) == self.rav:
-#                        self.notebook.DeletePage(i)
-#                        found = True
-#                    else:
-#                        i += 1
-#                        
-#                self.rav = None
-
-        if self.viewMode == 'points':
-            self.glCanvas.setPoints(self.pipeline['x'], 
-                                    self.pipeline['y'], self.pointColour())
-                                    
-            if 'glCanvas3D' in dir(self):
-                self.glCanvas3D.setPoints(self.pipeline['x'], 
-                                      self.pipeline['y'], 
-                                      self.pipeline['z'], 
-                                      self.pointColour())
-                self.glCanvas3D.setCLim(self.glCanvas.clim, (-5e5, -5e5))
-        elif self.viewMode == 'tracks':
-            self.glCanvas.setTracks(self.pipeline['x'], 
-                                    self.pipeline['y'], 
-                                    self.pipeline['clumpIndex'], 
-                                    self.pointColour())
-                                    
-        elif self.viewMode == 'triangles':
-            self.glCanvas.setTriang(self.pipeline.getTriangles())
-
-        elif self.viewMode == 'voronoi':
-            status = statusLog.StatusLogger("Generating Voronoi Diagram ... ")
-            self.glCanvas.setVoronoi(self.pipeline.getTriangles())
-            
-
-        elif self.viewMode == 'quads':
-            if self.pipeline.Quads == None:
-                status = statusLog.StatusLogger("Generating QuadTree ...")
-                self.pipeline.GenQuads()
-                
-
-            self.glCanvas.setQuads(self.pipeline.Quads)
-
-        elif self.viewMode == 'interp_triangles':
-            self.glCanvas.setIntTriang(self.pipeline.getTriangles(), self.pointColour())
-
-        elif self.viewMode == 'blobs':
-            if self.pipeline.objects == None:
-                #check to see that we don't have too many points
-                if len(self.pipeline['x']) > 1e5:
-                    goAhead = wx.MessageBox('You have %d events in the selected ROI;\nThis could take a LONG time ...' % len(self.pipeline['x']), 'Continue with blob detection', wx.YES_NO|wx.ICON_EXCLAMATION)
-    
-                    if not goAhead == wx.YES:
-                        return
-
-            self.glCanvas.setBlobs(*self.pipeline.getBlobs())
-            self.objCInd = self.glCanvas.c
-
-        self.displayPane.hlCLim.SetData(self.glCanvas.c, self.glCanvas.clim[0], 
-                                        self.glCanvas.clim[1])
-
-        #if not self.colp == None and self.colp.IsShown():
-        #    self.colp.refresh()
-
-        #self.sh.shell.user_ns.update(self.__dict__)
-        if not self._sf:
-            if len(self.pipeline['x'] > 5):
-                self.SetFit()
-                self._sf = True
-        wx.EndBusyCursor()
-        #self.workspaceView.RefreshItems()
-
-
-    def SetFit(self,event = None):
-        xsc = self.pipeline.imageBounds.width()*1./self.glCanvas.Size[0]
-        ysc = self.pipeline.imageBounds.height()*1./self.glCanvas.Size[1]
-
-        if xsc > ysc:
-            self.glCanvas.setView(self.pipeline.imageBounds.x0, self.pipeline.imageBounds.x1, 
-                                  self.pipeline.imageBounds.y0, self.pipeline.imageBounds.y0 + xsc*self.glCanvas.Size[1])
-        else:
-            self.glCanvas.setView(self.pipeline.imageBounds.x0, self.pipeline.imageBounds.x0 + ysc*self.glCanvas.Size[0], 
-                                  self.pipeline.imageBounds.y0, self.pipeline.imageBounds.y1)
-
-    def OnFitROI(self,event = None):
-        if 'x' in self.pipeline.filterKeys.keys():
-            xbounds = self.pipeline.filterKeys['x']
-        else:
-            xbounds = (self.pipeline.imageBounds.x0, self.pipeline.imageBounds.x1)
-
-        if 'y' in self.pipeline.filterKeys.keys():
-            ybounds = self.pipeline.filterKeys['y']
-        else:
-            ybounds = (self.pipeline.imageBounds.y0, self.pipeline.imageBounds.y1)
-        
-        xsc = (xbounds[1] - xbounds[0])*1./self.glCanvas.Size[0]
-        ysc = (ybounds[1] - ybounds[0])*1./self.glCanvas.Size[1]
-
-        if xsc > ysc:
-            self.glCanvas.setView(xbounds[0], xbounds[1], ybounds[0], 
-                                  ybounds[0] + xsc*self.glCanvas.Size[1])
-        else:
-            self.glCanvas.setView(xbounds[0], xbounds[0] + ysc*self.glCanvas.Size[0], 
-                                  ybounds[0], ybounds[1])
-
-
-    def SetStatus(self, statusText):
-        self.statusbar.SetStatusText(statusText, 0)
+   
 
     def GenResultsView(self):
         voxx = 1e3*self.image.mdh.getEntry('voxelsize.x')
