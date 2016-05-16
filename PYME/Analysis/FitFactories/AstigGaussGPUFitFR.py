@@ -206,4 +206,4 @@ PARAMETERS = [#mde.ChoiceParam('Analysis.InterpModule','Interp:','LinearInterpol
               
 DESCRIPTION = 'Astigmatic Gaussian fitting performed at warp-speed on the GPU'
 LONG_DESCRIPTION = 'Astigmatic Gaussian fitting on the GPU: Fits astigmatic gaussian with sCMOS noise model. Uses it\'s own object detection routine'
-USE_FOR = '2D Astigmatism with sCMOS noise model'
+USE_FOR = '3D via Astigmatism, with sCMOS noise model'
