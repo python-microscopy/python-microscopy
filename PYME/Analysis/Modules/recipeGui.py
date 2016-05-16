@@ -57,6 +57,9 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
         self.figure.canvas.mpl_connect('pick_event', self.parent.OnPick)
 
     def draw(self):
+        if not self.IsShownOnScreen():
+            return
+            
         if not hasattr( self, 'ax' ):
             self.ax = self.figure.add_axes([0, 0, 1, 1])
 

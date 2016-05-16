@@ -57,6 +57,7 @@ flag, and the actual resizing of the figure is triggered by an Idle event."""
 
     def _onSize( self, event ):
         #self._resizeflag = True
+        #print 'Resizing Plot'
         self._SetSize()
 
     def _onIdle( self, evt ):
@@ -66,14 +67,15 @@ flag, and the actual resizing of the figure is triggered by an Idle event."""
 
     def _SetSize( self ):
         pixels = tuple( self.GetClientSize() )
-        self.SetSize( pixels )
-        self.canvas.SetSize( pixels )
-        self.figure.set_size_inches( float( pixels[0] )/self.figure.get_dpi(),
-                                     float( pixels[1] )/self.figure.get_dpi() )
-        try:                                 
-            self.draw()
-        except:
-            pass
+        if not tuple(self.canvas.GetSize()) == pixels:
+            self.SetSize( pixels )
+            self.canvas.SetSize( pixels )
+            self.figure.set_size_inches( float( pixels[0] )/self.figure.get_dpi(),
+                                         float( pixels[1] )/self.figure.get_dpi() )
+            try:                                 
+                self.draw()
+            except:
+                pass
 
     def draw(self): pass # abstract, to be overridden by child classes
 
