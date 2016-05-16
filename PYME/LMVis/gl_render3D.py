@@ -24,17 +24,13 @@
 from wx.glcanvas import GLCanvas
 import wx.glcanvas
 import wx
-#from OpenGL.GLUT import *
-#from OpenGL.GLU import *
+
 from OpenGL.GL import *
 from OpenGL.GLU import *
-import sys,math
-#import sys
+#import sys,math
+
 import numpy
-#import Image
-#from matplotlib import delaunay
-#from PYME.Analysis.QuadTree import pointQT
-#import scipy
+
 import pylab
 
 try:
@@ -66,7 +62,7 @@ cm_grey = cmap_mult(numpy.ones(3), [0, 0, 0])
 
     
 class RenderLayer(object):
-    drawModes = {'triang':GL_TRIANGLES, 'quads':GL_QUADS, 'edges':GL_LINES, 'points':GL_POINTS, 'wireframe':GL_TRIANGLES}
+    drawModes = {'triang':GL_TRIANGLES, 'quads':GL_QUADS, 'edges':GL_LINES, 'points':GL_POINTS, 'wireframe':GL_TRIANGLES, 'tracks':GL_LINE_STRIP}
     
     def __init__(self, vertices, normals, colours, cmap, clim, mode='triang', pointsize=5, alpha=1):
         self.verts = vertices
@@ -113,6 +109,19 @@ class RenderLayer(object):
 
         glPopMatrix ()
         
+class TrackLayer(RenderLayer):
+    def render(self):
+        glDisable(GL_LIGHTING)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+        
+        self.vs_ = glVertexPointerf(self.verts)
+        self.n_ = glNormalPointerf(self.normals)
+        self.c_ = glColorPointerf(self.cs)
+        
+        for i, cl in enumerate(self.clumpSizes):
+            if cl > 0:
+                glDrawArrays(self.drawModes['tracks'], self.clumpStarts[i], cl)
+
 
 class LMGLCanvas(GLCanvas):
     def __init__(self, parent):
@@ -145,12 +154,12 @@ class LMGLCanvas(GLCanvas):
 
         self.pointSize=5 #default point size = 5nm
 
-        self.pixelsize = 5./800
+        #self.pixelsize = 5./800
 
-        self.xmin =0
-        self.xmax = self.pixelsize*self.Size[0]
-        self.ymin = 0
-        self.ymax = self.pixelsize*self.Size[1]
+        #self.xmin =0
+        #self.xmax = self.pixelsize*self.Size[0]
+        #self.ymin = 0
+        #self.ymax = self.pixelsize*self.Size[1]
 
         self.scaleBarLength = 200
 
@@ -215,8 +224,9 @@ class LMGLCanvas(GLCanvas):
         #self.SetCurrent(self.gl_context)
         #glViewport(0,0, self.Size[0], self.Size[1])
 
-        self.xmax = self.xmin + self.Size[0]*self.pixelsize
-        self.ymax = self.ymin + self.Size[1]*self.pixelsize
+        #self.xmax = self.xmin + self.Size[0]*self.pixelsize
+        #self.ymax = self.ymin + self.Size[1]*self.pixelsize
+        pass
         
         #self.interlace_stencil()
         
@@ -479,11 +489,16 @@ class LMGLCanvas(GLCanvas):
         glPopMatrix ()
         glEnable(GL_LIGHTING)
 
-    def setBlob(self, x,y,z, sizeCutoff=1000., zrescale=1, smooth=False, smScale=[10,10,10]):
+    def setBlob3D(self, x,y,z, sizeCutoff=1000., zrescale=1, smooth=False, smScale=[10,10,10], recenter=True):
         #center data
-        x = x - x.mean()
-        y = y - y.mean()
-        z = z - z.mean()
+        x = x #- x.mean()
+        y = y #- y.mean()
+        z = z #- z.mean()
+        
+        if recenter:        
+            self.xc = x.mean()
+            self.yc = y.mean()
+            self.zc = z.mean()
 
         P, A, N = gen3DBlobs(x,y,z/zrescale, sizeCutoff, smooth, smScale)
         P[:,2] = P[:,2]*zrescale
@@ -501,11 +516,16 @@ class LMGLCanvas(GLCanvas):
         self.layers.append(RenderLayer(vs, N, self.c, self.cmap, [self.c.min(), self.c.max()]))
         
 
-    def setTriang(self, x,y,z, c = None, sizeCutoff=1000., zrescale=1, internalCull = True, wireframe=False, alpha=1):
+    def setTriang3D(self, x,y,z, c = None, sizeCutoff=1000., zrescale=1, internalCull = True, wireframe=False, alpha=1, recenter=True):
         #center data
-        x = x - x.mean()
-        y = y - y.mean()
-        z = z - z.mean()
+        x = x #- x.mean()
+        y = y #- y.mean()
+        z = z #- z.mean()
+        
+        if recenter:        
+            self.xc = x.mean()
+            self.yc = y.mean()
+            self.zc = z.mean()
         
         self.sx = x.max() - x.min()
         self.sy = y.max() - y.min()
@@ -516,9 +536,7 @@ class LMGLCanvas(GLCanvas):
 
         self.scale = 10./(x.max() - x.min())
 
-        self.xc = 0
-        self.yc = 0
-        self.zc = 0
+
 
         self.vecUp = numpy.array([0,1,0])
         self.vecRight = numpy.array([1,0,0])
@@ -542,13 +560,81 @@ class LMGLCanvas(GLCanvas):
                         
         self.layers.append(RenderLayer(vs, N, self.c, self.cmap, [self.c.min(), self.c.max()], mode=mode, alpha = alpha))
         self.Refresh()
-
-
-    def setPoints(self, x, y, z, c = None, a = None):
+        
+    def setTriang(self, T, c = None, sizeCutoff=1000., zrescale=1, internalCull = True, wireframe=False, alpha=1, recenter=True):
         #center data
-        x = x - x.mean()
-        y = y - y.mean()
-        z = z - z.mean()
+        #x = x #- x.mean()
+        #y = y #- y.mean()
+        x = T.x
+        y = T.y
+        xs = x[T.triangle_nodes]
+        ys = y[T.triangle_nodes]
+        zs = np.zeros_like(xs) #- z.mean()
+        
+        if recenter:        
+            self.xc = x.mean()
+            self.yc = y.mean()
+            self.zc = 0#z.mean()
+        
+        self.sx = x.max() - x.min()
+        self.sy = y.max() - y.min()
+        self.sz = 0#z.max() - z.min()
+        
+        self.scale = 10./(max(self.sx, self.sy))
+
+        if c is None:
+            a = numpy.vstack((xs[:,0] - xs[:,1], ys[:,0] - ys[:,1])).T
+            b = numpy.vstack((xs[:,0] - xs[:,2], ys[:,0] - ys[:,2])).T
+            b2 = numpy.vstack((xs[:,1] - xs[:,2], ys[:,1] - ys[:,2])).T
+            
+            c = numpy.median([(b * b).sum(1), (a * a).sum(1), (b2 * b2).sum(1)], 0)
+            c = 1.0/(c + 1)
+            
+        self.c = numpy.vstack((c,c,c)).T.ravel()
+        
+        vs = numpy.vstack((xs.ravel(), ys.ravel(), zs.ravel()))
+        vs = vs.T.ravel().reshape(len(xs.ravel()), 2)
+        
+        N = -0.69*numpy.ones_like(vs)
+            
+
+        self.vecUp = numpy.array([0,1,0])
+        self.vecRight = numpy.array([1,0,0])
+        self.vecBack = numpy.array([0,0,1])
+
+        #if c == 'z':
+        #    self.c = P[:,2]
+        #else:
+        #    self.c = 1./A
+            
+        #self.a = 1./A
+        #self.a = alpha*numpy.ones_like(c)
+        #vs = P
+
+        self.SetCurrent()
+        
+        if wireframe:
+            mode = 'wireframe'
+        else:
+            mode = 'triang'
+                        
+        self.layers.append(RenderLayer(vs, N, self.c, self.cmap, [self.c.min(), self.c.max()], mode=mode, alpha = alpha))
+        self.Refresh()
+        
+    def setTriangEdges(self, T):
+        self.setTriang(T, wireframe=True)
+
+
+    def setPoints3D(self, x, y, z, c = None, a = None, recenter=True):
+        #center data
+        x = x #- x.mean()
+        y = y #- y.mean()
+        z = z #- z.mean()
+        
+        if recenter:        
+            self.xc = x.mean()
+            self.yc = y.mean()
+            self.zc = z.mean()
 
         if c == None:
             self.c = numpy.ones(x.shape).ravel()
@@ -570,7 +656,48 @@ class LMGLCanvas(GLCanvas):
         
         self.layers.append(RenderLayer(vs, -0.69*numpy.ones(vs.shape), self.c, self.cmap, [self.c.min(), self.c.max()], mode='points'))
         self.Refresh()
+        
+    def setPoints(self, x, y, c = None, a = None, recenter=True):
+        '''Set 2D points'''
+        self.setPoints3D(x, y, 0*x, c, a, recenter)
+        
+    def setTracks3D(self, x, y, z, ci, c = None):
+        NClumps = int(ci.max())
+        
+        clist = [[] for i in xrange(NClumps)]
+        for i, cl_i in enumerate(ci):
+            clist[int(cl_i-1)].append(i)
 
+
+        self.clumpSizes = [len(cl_i) for cl_i in clist]
+        self.clumpStarts = numpy.cumsum([0,] + self.clumpSizes)
+
+        I = numpy.hstack([numpy.array(cl) for cl in clist])
+
+        if c is None:
+            self.c = numpy.ones(x.shape).ravel()
+        else:
+            self.c = numpy.array(c)[I]
+
+        x = x[I]
+        y = y[I]
+        z = z[I]
+        ci = ci[I]
+        
+        #there may be a different number of points in each clump; generate a lookup
+        #table for clump numbers so we can index into our list of results to get
+        #all the points within a certain range of clumps
+
+        vs = numpy.vstack((x.ravel(), y.ravel(), z.ravel()))
+        vs = vs.T.ravel().reshape(len(x.ravel()), 3)
+        
+        self.layers.append(TrackLayer(vs, -0.69*numpy.ones(vs.shape), self.c, self.cmap, [self.c.min(), self.c.max()], mode='tracks'))
+        self.Refresh()
+        
+    def setTracks(self, x, y, ci, c = None):
+        self.setTracks3D(self, x, y, np.zeros_like(x), ci, c)
+        
+       
         
     def ResetView(self):
         self.xc = 0
@@ -618,19 +745,46 @@ class LMGLCanvas(GLCanvas):
             self.alim = alim
         self.setColour()
 
+    @property
+    def xmin(self):
+        return self.xc - 0.5*self.pixelsize*self.Size[0]
+    
+    @property
+    def xmax(self):
+        return self.xc + 0.5*self.pixelsize*self.Size[0]
+        
+    @property
+    def ymin(self):
+        return self.yc - 0.5*self.pixelsize*self.Size[1]
+        
+    @property
+    def ymax(self):
+        return self.yc + 0.5*self.pixelsize*self.Size[1]
+        
+    @property
+    def pixelsize(self):
+        return 10.*self.scale/self.Size[0]
 
     def setView(self, xmin, xmax, ymin, ymax):
-        self.xmin = xmin
-        self.xmax = xmax
-        self.ymin = ymin
-        self.ymax = ymax
+        #self.xmin = xmin
+        #self.xmax = xmax
+        #self.ymin = ymin
+        #self.ymax = ymax
+        
+        self.xc = (xmin + xmax)/2.0
+        self.yc = (ymin + ymax)/2.0
+        #self.zc = z.mean() 
+        
+        self.scale = 10./(x.max() - x.min())
 
-        self.pixelsize = (xmax - xmin)*1./self.Size[0]
 
         self.Refresh()
         if 'OnGLViewChanged' in dir(self.parent):
             self.parent.OnGLViewChanged()
 
+    def moveView(self, dx, dy):
+        return self.pan(dx, dy)
+    
     def pan(self, dx, dy):
         self.setView(self.xmin + dx, self.xmax + dx, self.ymin + dy, self.ymax + dy)
 
@@ -847,20 +1001,28 @@ def showGLFrame():
     return c
 
 
-
+class TestApp(wx.App):
+    def __init__(self, *args):
+        wx.App.__init__(self, *args)
+        
+        
+    def OnInit(self):
+        #wx.InitAllImageHandlers()
+        frame = wx.Frame(None,-1,'ball_wx',wx.DefaultPosition,wx.Size(800,800))
+        canvas = LMGLCanvas(frame)
+        #glcontext = wx.glcanvas.GLContext(canvas)
+        #glcontext.SetCurrent(canvas)
+        to = testObj()
+        canvas.setPoints3D(to[0], to[1], to[2])
+        canvas.setTriang3D(to[0], to[1], to[2], sizeCutoff = 6e3, alpha=0.5)
+        canvas.setTriang3D(to[0], to[1], to[2], sizeCutoff = 6e3, wireframe=True)
+        frame.Show()
+        self.SetTopWindow(frame)
+        return True
 
 
 def main():
-    app = wx.PySimpleApp()
-    frame = wx.Frame(None,-1,'ball_wx',wx.DefaultPosition,wx.Size(800,800))
-    canvas = LMGLCanvas(frame)
-    #glcontext = wx.glcanvas.GLContext(canvas)
-    #glcontext.SetCurrent(canvas)
-    to = testObj()
-    canvas.setPoints(to[0], to[1], to[2])
-    canvas.setTriang(to[0], to[1], to[2], sizeCutoff = 6e3, alpha=0.5)
-    canvas.setTriang(to[0], to[1], to[2], sizeCutoff = 6e3, wireframe=True)
-    frame.Show()
+    app = TestApp()
     app.MainLoop()
 
 if __name__ == '__main__': main()

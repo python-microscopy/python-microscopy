@@ -196,6 +196,10 @@ class LMGLCanvas(GLCanvas):
 
                 if nf > ns:
                     glDrawArrays(self.drawModes[self.mode], ns, nf-ns)
+        elif self.mode == 'tracks2':
+            for i, cl in enumerate(self.clumpSizes):
+                if cl > 0:
+                    glDrawArrays(self.drawModes['tracks'], self.clumpStarts[i], cl)
         else:
             if self.mode == 'points':
                 glPointSize(self.pointSize*(float(self.Size[0])/(self.xmax - self.xmin)))
@@ -333,7 +337,7 @@ class LMGLCanvas(GLCanvas):
         #c = numpy.maximum(((b*b).sum(1)),((a*a).sum(1)))
 
         if c is None:
-            if numpy.version.version > '1.2':
+            if True:#numpy.version.version > '1.2':
                 c = numpy.median([(b * b).sum(1), (a * a).sum(1), (b2 * b2).sum(1)], 0)
             else:
                 c = numpy.median([(b * b).sum(1), (a * a).sum(1), (b2 * b2).sum(1)])
@@ -386,7 +390,7 @@ class LMGLCanvas(GLCanvas):
         self.nVertices = vs.shape[0]
         self.setColour(self.IScale, self.zeroPt)
 
-    def setTracks(self, x, y, ci, c = None):
+    def setTracks_(self, x, y, ci, c = None):
         #if not self.init:
         #    self.InitGL()
         #    self.init = 1
@@ -438,6 +442,72 @@ class LMGLCanvas(GLCanvas):
         #cs_ = glColorPointerf(cs)
 
         self.mode = 'tracks'
+
+        self.nVertices = vs.shape[0]
+        self.setColour(self.IScale, self.zeroPt)
+        
+    def setTracks(self, x, y, ci, c = None):
+        #if not self.init:
+        #    self.InitGL()
+        #    self.init = 1
+
+        #I = ci.argsort()
+        NClumps = int(ci.max())
+        
+        clist = [[] for i in xrange(NClumps)]
+        for i, cl_i in enumerate(ci):
+            clist[int(cl_i-1)].append(i)
+
+        #indices = numpy.arange(len(x))
+        #I = []
+
+        self.clumpSizes = [len(cl_i) for cl_i in clist]
+        self.clumpStarts = numpy.cumsum([0,] + self.clumpSizes)
+
+        #self.clumps = set(ci)
+        #self.clumpIndices = {}
+
+        #ns = 0
+        #for cl in self.clumps:
+        #    inds = indices[ci == cl]
+        #    I.append(inds)
+        #    nf = ns + len(inds)
+        #    self.clumpIndices[cl] = (ns, nf)
+        #    ns = nf
+
+        I = numpy.hstack([numpy.array(cl) for cl in clist])
+        #print I
+        #print c.shape
+
+        if c is None:
+            self.c = numpy.ones(x.shape).ravel()
+        else:
+            self.c = numpy.array(c)[I]
+
+        x = x[I]
+        y = y[I]
+        ci = ci[I]
+        
+        nPts = len(x)
+
+        #there may be a different number of points in each clump; generate a lookup
+        #table for clump numbers so we can index into our list of results to get
+        #all the points within a certain range of clumps
+        #self.clumpIndices = (nPts + 2)*numpy.ones(ci.max() + 10, 'int32')
+        #self.cimax = ci.max()
+
+        #for c_i, i in zip(ci, range(nPts)):
+        #    self.clumpIndices[:(c_i+1)] = numpy.minimum(self.clumpIndices[:(c_i+1)], i)
+
+        vs = numpy.vstack((x.ravel(), y.ravel()))
+        vs = vs.T.ravel().reshape(len(x.ravel()), 2)
+        self.vs_ = glVertexPointerf(vs)
+
+        #cs = numpy.minimum(numpy.vstack((self.IScale[0]*c,self.IScale[1]*c,self.IScale[2]*c)), 1).astype('f')
+        #cs = cs.T.ravel().reshape(len(c), 3)
+        #cs_ = glColorPointerf(cs)
+
+        self.mode = 'tracks2'
 
         self.nVertices = vs.shape[0]
         self.setColour(self.IScale, self.zeroPt)

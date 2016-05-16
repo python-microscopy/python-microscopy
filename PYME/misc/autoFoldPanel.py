@@ -373,6 +373,10 @@ class foldingPane(wx.Panel):
 
             self.folded = True
             self.stCaption.Refresh()
+            
+            return True
+        else:
+            return False
 
             #self.Layout()
 
@@ -388,6 +392,10 @@ class foldingPane(wx.Panel):
 
             self.folded = False
             self.stCaption.Refresh()
+            
+            return True
+        else:
+            return False
 
             #self.Layout()
 
@@ -493,7 +501,7 @@ class foldPanel(wx.Panel):
         self.sizer = wx.BoxSizer(self.orientation)
         self.SetSizer(self.sizer)
 
-        self.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseLeave)
+        #self.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseLeave)
 
     def AddPane(self, window, priority=0):
         self.panes.append(window)
@@ -539,12 +547,9 @@ class foldPanel(wx.Panel):
         
         #if not pane.GetClientRect().Inside(event.GetPosition())
         #print 'enter', pane
-        pane.Unfold()
-
-        #pane.Unfold()
-
-        #event.Skip()
-        self.Layout()
+        if pane.Unfold():
+             #only re-do layout if we change state
+             self.Layout()
         #self.RegenSizer()
 
     def OnMouseLeavePane(self, event):
@@ -553,9 +558,10 @@ class foldPanel(wx.Panel):
         #self.priorities[ind] = 1
         #print pane.GetClientRect()
         if not pane.GetClientRect().Inside(event.GetPosition()):
-            pane.Fold()
+            if pane.Fold():
+                self.Layout()
         #event.Skip()
-        self.Layout()
+        
 
     def OnMouseLeave(self, event):
         self.Layout()

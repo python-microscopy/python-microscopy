@@ -42,6 +42,9 @@ class ImagePanel(wx.Panel):
         pass
 
     def OnPaint(self,event):
+        if not self.IsShownOnScreen():
+            return
+            
         DC = wx.PaintDC(self)
         #self.PrepareDC(DC)
         
@@ -159,8 +162,9 @@ class ScrolledImagePanel(wx.Panel):
         self.imagepanel.Refresh()
 
     def OnSize(self, event):
-        self.Layout()
-        self.RefreshScrollbars()
+        if self.IsShownOnScreen():
+            self.Layout()
+            self.RefreshScrollbars()
         event.Skip()
 
     def Scroll(self, dx, dy):

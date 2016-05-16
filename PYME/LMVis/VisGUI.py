@@ -85,7 +85,12 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         #self._leftWindow1 = wx.Panel(self, -1, size = wx.Size(220, 1000))
         #self._pnl = 0
         
-        
+        #initialize the common parts
+        ###############################
+        #NB: this has to come after the shell has been generated, but before the fold panel
+        visCore.VisGUICore.__init__(self)
+
+        ################################   
 
         self.MainWindow = self #so we can access from shell
         self.sh = wx.py.shell.Shell(id=-1,
@@ -96,12 +101,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         #                  Name("Shell").Caption("Console").Centre().CloseButton(False).CaptionVisible(False))
 
         self.AddPage(self.sh, caption='Shell')
-        #initialize the common parts
-        ###############################
-        #NB: this has to come after the shell has been generated, but before the fold panel
-        visCore.VisGUICore.__init__(self)
-
-        ################################        
+             
         
         self.elv = None
         self.colp = None
@@ -158,6 +158,8 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
 
         if not filename==None:
             self.OpenFile(filename)
+            #self.refv = False
+            wx.CallAfter(self.RefreshView)
 
         nb = self._mgr.GetNotebooks()[0]
         nb.SetSelection(0)
@@ -198,7 +200,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
                 self.glCanvas3D = gl_render3D.showGLFrame()
 
             #else:            
-            self.glCanvas3D.setPoints(self.pipeline['x'], 
+            self.glCanvas3D.setPoints3D(self.pipeline['x'], 
                                   self.pipeline['y'], 
                                   self.pipeline['z'], 
                                   self.pointColour())
@@ -211,7 +213,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
                 #self.AddPage(page=self.glCanvas3D, select=True, caption='3D')
                 self.glCanvas3D = gl_render3D.showGLFrame()
 
-            self.glCanvas3D.setTriang(self.pipeline['x'], 
+            self.glCanvas3D.setTriang3D(self.pipeline['x'], 
                                       self.pipeline['y'], 
                                       self.pipeline['z'], 'z', 
                                       sizeCutoff=self.glCanvas3D.edgeThreshold)

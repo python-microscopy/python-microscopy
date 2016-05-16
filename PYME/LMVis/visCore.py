@@ -12,11 +12,11 @@ import PYME.misc.autoFoldPanel as afp
 import wx.lib.agw.aui as aui
 
 #hacked so py2exe works
-from PYME.DSView.dsviewer import View3D
+#from PYME.DSView.dsviewer import View3D
 
 from PYME.LMVis import gl_render
 #from PYME.LMVis import workspaceTree
-import sys
+#import sys
 
 import pylab
 from PYME.misc import extraCMaps
@@ -25,9 +25,9 @@ from PYME.FileUtils import nameUtils
 import os
 from PYME.LMVis import gl_render3D
 
-from PYME.LMVis import colourPanel
+#from PYME.LMVis import colourPanel
 from PYME.LMVis import renderers
-from PYME.LMVis import pipeline
+#from PYME.LMVis import pipeline
 
 #try:
 #    from PYME.LMVis import recArrayView
@@ -57,7 +57,7 @@ from PYME.LMVis import triBlobs
 import numpy as np
 #import scipy.special
 
-from PYME.DSView import eventLogViewer
+#from PYME.DSView import eventLogViewer
 
 from PYME.LMVis import statusLog
 
@@ -74,8 +74,13 @@ class VisGUICore(object):
         self.pipeline.blobSettings.on_trait_change(self.RefreshView)
         
         #initialize the gl canvas
-        self.glCanvas = gl_render.LMGLCanvas(self)
-        self.AddPage(page=self.glCanvas, select=True, caption='View')
+        if isinstance(self, wx.Window):
+            win = self
+        else:
+            win = self.dsviewer
+            
+        self.glCanvas = gl_render.LMGLCanvas(win)
+        win.AddPage(page=self.glCanvas, select=True, caption='View')
         self.glCanvas.cmap = pylab.cm.gist_rainbow #pylab.cm.hot
         
         self.refv = False
@@ -314,7 +319,7 @@ class VisGUICore(object):
         if not subMenu:
             parent.Bind(wx.EVT_MENU, self.OnAbout, id=ID_ABOUT)
             parent.Bind(wx.EVT_MENU, self.OnQuit, id=ID_QUIT)
-            parent.Bind(wx.EVT_MENU, self.OnToggleWindow, id=ID_TOGGLE_SETTINGS)
+            #parent.Bind(wx.EVT_MENU, self.OnToggleWindow, id=ID_TOGGLE_SETTINGS)
     
             
             parent.Bind(wx.EVT_MENU, self.OnOpenChannel, id=ID_OPEN_CHANNEL)
