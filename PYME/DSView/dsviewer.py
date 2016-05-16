@@ -85,7 +85,7 @@ class AUIFrame(wx.Frame):
         self.pane0 = None
 
         
-    def AddPage(self, page=None, select=True,caption='Dummy'):
+    def AddPage(self, page=None, select=True,caption='Dummy', update=None):
         '''Add a page to the auto-notebook
         
         page: a wx.Window (ususally a panel) - the page to add
@@ -93,6 +93,9 @@ class AUIFrame(wx.Frame):
         caption: (string) the page caption
         
         '''
+        if not update is None:
+            select = update
+            
         if self.pane0 == None:
             name = caption.replace(' ', '')
             self._mgr.AddPane(page, aui.AuiPaneInfo().

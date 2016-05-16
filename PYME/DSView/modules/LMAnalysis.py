@@ -747,7 +747,7 @@ class LMAnalyser:
 
         self.tq.createQueue('HDFTaskQueue', self.queueName, dataFilename = dataFilename, resultsFilename=resultsFilename, startAt = 'notYet')
 
-        mdhQ = MetaDataHandler.QueueMDHandler(self.tq, self.image.seriesName, self.image.mdh)
+        mdhQ = MetaDataHandler.QueueMDHandler(self.tq, self.queueName, self.image.mdh)
         mdhQ.setEntry('Analysis.DetectionThreshold', detThresh)
         mdhQ.setEntry('Analysis.FitModule', fitFcn)
         mdhQ.setEntry('Analysis.DataFileID', fileID.genDataSourceID(self.image.dataSource))

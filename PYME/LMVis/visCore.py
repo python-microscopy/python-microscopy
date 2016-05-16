@@ -314,7 +314,7 @@ class VisGUICore(object):
         if not subMenu:
             parent.Bind(wx.EVT_MENU, self.OnAbout, id=ID_ABOUT)
             parent.Bind(wx.EVT_MENU, self.OnQuit, id=ID_QUIT)
-            parent.Bind(wx.EVT_MENU, self.OnToggleWindow, id=ID_TOGGLE_SETTINGS)
+            #parent.Bind(wx.EVT_MENU, self.OnToggleWindow, id=ID_TOGGLE_SETTINGS)
     
             
             parent.Bind(wx.EVT_MENU, self.OnOpenChannel, id=ID_OPEN_CHANNEL)
