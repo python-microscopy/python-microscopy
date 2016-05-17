@@ -131,7 +131,7 @@ class GaussianFitFactory:
         return NRFilter(x, y, vals, self.gLUT2)
             
 
-    def FindAndFit(self, threshold=2, gui=False):
+    def FindAndFit(self, threshold=2, gui=False, cameraMaps = None):
         #average in z
         dataMean = self.data.mean(2) - self.metadata.getOrDefault('Camera.ADOffset', 0)
 

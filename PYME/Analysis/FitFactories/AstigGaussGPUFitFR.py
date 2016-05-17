@@ -1,4 +1,4 @@
-    #!/usr/bin/python
+#!/usr/bin/python
 
 ##################
 # AstigGaussGPUFitFR.py
@@ -10,8 +10,8 @@
 # interested, please contact David Baddeley or Joerg Bewersdorf.
 # The fitting itself is described in DOI: 10.1038/nmeth.2488
 #
-# Copyright David Baddeley, 2009
-# d.baddeley@auckland.ac.nz
+# Copyright David Baddeley, Andrew Barentine 2016
+# david.baddeley@yale.edu
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,11 +32,6 @@
 
 
 from PYME.Analysis._fithelpers import *
-
-try:
-    from warpDrive import *
-except ImportError:
-    print("GPU fitting available on-request for academic use. Please contact David Baddeley or Joerg Bewersdorf.")
 
 ##################
 # Model Function, only for reference in this case.
@@ -74,6 +69,13 @@ def GaussianFitResultR(fitResults, metadata, resultCode=-1, fitErr=None, LLH=Non
 
 _warpDrive = None
 
+missing_warpDrive_msg = '''
+Could not import the warpDrive module. GPU fitting requires the warpDrive module, 
+which is distributed separately due to licensing issues. The warpDrive module is
+available on request and is free for academic use. Please contact David Baddeley
+or Joerg Bewersdorf.
+'''
+
 class GaussianFitFactory:
     X = None
     Y = None
@@ -94,6 +96,13 @@ class GaussianFitFactory:
 
 
     def FindAndFit(self, threshold=4, gui=False, cameraMaps=None):
+        try:
+            import warpDrive
+        except ImportError:
+            print("GPU fitting available on-request for academic use. Please contact David Baddeley or Joerg Bewersdorf.")
+            
+            raise RuntimeError(missing_warpDrive_msg)
+        
         global _warpDrive  # One warpDrive instance for each taskWorker instance
 
         # get varmap and flatmap
@@ -118,13 +127,14 @@ class GaussianFitFactory:
         # Account for any changes we need to make in memory allocation on the GPU
         if not _warpDrive:
             #Initialize new detector object for this CPU thread, we're going plaid
-            dfilter1 = normUnifFilter(12)
-            dfilter2 = normUnifFilter(6)
-            _warpDrive = detector(np.shape(self.data), self.data.dtype.itemsize, dfilter1, dfilter2)
+            dfilter1 = warpDrive.normUnifFilter(12)
+            dfilter2 = warpDrive.normUnifFilter(6)
+            _warpDrive = warpDrive.detector(np.shape(self.data), self.data.dtype.itemsize, dfilter1, dfilter2)
             _warpDrive.allocateMem()
             _warpDrive.prepvar(self.varmap, self.flatmap)
-            ''' If the data is coming from a different region of the camera, reallocate
-            note that 'and' is short circuiting in Python. Just check the first 20x20 elements'''
+            
+            #If the data is coming from a different region of the camera, reallocate
+            #note that 'and' is short circuiting in Python. Just check the first 20x20 elements
         elif _warpDrive.data.shape == self.data.shape:
             if (not np.array_equal(self.varmap[:20, :20], _warpDrive.varmap[:20, :20])):
                 _warpDrive.prepvar(self.varmap, self.flatmap)
