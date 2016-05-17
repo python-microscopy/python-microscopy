@@ -101,9 +101,9 @@ class GaussianFitFactory:
         except ImportError:
             print("GPU fitting available on-request for academic use. Please contact David Baddeley or Joerg Bewersdorf.")
             
-            raise RuntimeError(missing_warpDrive_msg)
+            raise ImportError(missing_warpDrive_msg)
         
-        global _warpDrive  # One warpDrive instance for each taskWorker instance
+        global _warpDrive  # One warpDrive instance for each process, re-used for subsequent fits.
 
         # get varmap and flatmap
         varmap = cameraMaps.getVarianceMap(self.metadata)
@@ -126,7 +126,7 @@ class GaussianFitFactory:
 
         # Account for any changes we need to make in memory allocation on the GPU
         if not _warpDrive:
-            #Initialize new detector object for this CPU thread, we're going plaid
+            #Initialize new detector object for this process
             dfilter1 = warpDrive.normUnifFilter(12)
             dfilter2 = warpDrive.normUnifFilter(6)
             _warpDrive = warpDrive.detector(np.shape(self.data), self.data.dtype.itemsize, dfilter1, dfilter2)
@@ -138,7 +138,7 @@ class GaussianFitFactory:
         elif _warpDrive.data.shape == self.data.shape:
             if (not np.array_equal(self.varmap[:20, :20], _warpDrive.varmap[:20, :20])):
                 _warpDrive.prepvar(self.varmap, self.flatmap)
-        else:  # we know that we need to allocate and prepvar
+        else:  # data is a different shape - we know that we need to re-allocate and prepvar
             _warpDrive.allocateMem()
             _warpDrive.prepvar(self.varmap, self.varmap)
 
