@@ -404,7 +404,8 @@ class Pipeline:
             self.selectedDataSource.foreShort = 1.
 
         if not 'focus' in self.selectedDataSource.mappings.keys():
-            self.selectedDataSource.focus= np.zeros(self.selectedDataSource['x'].shape)
+            #self.selectedDataSource.focus= np.zeros(self.selectedDataSource['x'].shape)
+            self.selectedDataSource.setMapping('focus', '0*x')
             
         if 'fitResults_z0' in self.selectedDataSource.keys():
             self.selectedDataSource.setMapping('z', 'fitResults_z0 + foreShort*focus')

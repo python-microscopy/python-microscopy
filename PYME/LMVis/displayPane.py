@@ -21,11 +21,15 @@
 ##################
 
 import wx
+import wx.lib.newevent
+
 import PYME.misc.autoFoldPanel as afp
 import pylab
 import numpy as np
 
 from PYME.LMVis import histLimits
+
+DisplayInvalidEvent, EVT_DISPLAY_CHANGE = wx.lib.newevent.NewCommandEvent()
 
 def CreateDisplayPane(panel, mapping, visFr):
     pane = DisplayPane(panel, mapping, visFr)
@@ -50,20 +54,35 @@ class DisplayPane(afp.foldingPane):
         #curCMapName = self.glCanvas.cmap.name
         curCMapName = 'hot'
 
-        cmapReversed = False
+        #cmapReversed = False
 
         if curCMapName[-2:] == '_r':
-            cmapReversed = True
+            #cmapReversed = True
             curCMapName = curCMapName[:-2]
 
         cmInd = cmapnames.index(curCMapName)
 
 
         ##
-        pan = wx.Panel(self, -1)
+        
 
         #box = wx.StaticBox(pan, -1, 'Colourmap:')
         #bsizer = wx.StaticBoxSizer(box)
+        #hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        
+        
+        #self.AddNewElement(self.r3DMode)
+        
+        pan = wx.Panel(self, -1)
+        
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.r3DMode = wx.RadioBox(pan, choices=['2D','3D'])
+        self.r3DMode.Bind(wx.EVT_RADIOBOX, self.OnChange3D)
+        hsizer.Add(self.r3DMode, 1, wx.ALL, 2)
+        
+        vsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         
@@ -90,8 +109,10 @@ class DisplayPane(afp.foldingPane):
         cbLUTDraw.Bind(wx.EVT_CHECKBOX, self.OnLUTDrawCB)
         
         hsizer.Add(cbLUTDraw, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        
+        vsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
 
-        pan.SetSizerAndFit(hsizer)
+        pan.SetSizerAndFit(vsizer)
         
 
 
@@ -187,11 +208,13 @@ class DisplayPane(afp.foldingPane):
 
     def OnCMapChange(self, event):
         cmapname = pylab.cm.cmapnames[self.cColourmap.GetSelection()]
-        if self.cbCmapReverse.GetValue():
-            cmapname += '_r'
+        #if self.cbCmapReverse.GetValue():
+        #    cmapname += '_r'
 
         self.glCanvas.setCMap(pylab.cm.__dict__[cmapname])
         #self.visFr.OnGLViewChanged()
+        evt = DisplayInvalidEvent(self.GetId())
+        self.ProcessEvent(evt)
 
     def OnLUTDrawCB(self, event):
         self.glCanvas.LUTDraw = event.IsChecked()
@@ -199,6 +222,10 @@ class DisplayPane(afp.foldingPane):
 
     def OnChangeScaleBar(self, event):
         self.glCanvas.scaleBarLength = self.scaleBarLengths[event.GetString()]
+        self.glCanvas.Refresh()
+        
+    def OnChange3D(self, event):
+        self.glCanvas.displayMode = self.r3DMode.GetString(self.r3DMode.GetSelection())
         self.glCanvas.Refresh()
 
     def OnCLimChange(self, event):
@@ -211,6 +238,9 @@ class DisplayPane(afp.foldingPane):
             self.hlCLim.SetValue((cmin, cmax))
 
             self.glCanvas.setCLim((cmin, cmax))
+            
+            evt = DisplayInvalidEvent(self.GetId())
+            self.ProcessEvent(evt)
 
     def OnCLimHistChange(self, event):
         self.glCanvas.setCLim((event.lower, event.upper))
@@ -218,17 +248,20 @@ class DisplayPane(afp.foldingPane):
         self.tCLimMax.SetValue('%3.2f' % self.glCanvas.clim[1])
         self._pc_clim_change = True
         self.tCLimMin.SetValue('%3.2f' % self.glCanvas.clim[0])
+        evt = DisplayInvalidEvent(self.GetId())
+        self.ProcessEvent(evt)
 
     def OnPercentileCLim(self, event):
-        pc = .95#float(self.tPercentileCLim.GetValue())
+        self.hlCLim.SetMinMax()
+        #pc = .95#float(self.tPercentileCLim.GetValue())
 
-        self.glCanvas.setPercentileCLim(pc)
+        #self.glCanvas.setPercentileCLim(pc)
 
-        self._pc_clim_change = True
-        self.tCLimMax.SetValue('%3.2f' % self.glCanvas.clim[1])
-        self._pc_clim_change = True
-        self.tCLimMin.SetValue('%3.2f' % self.glCanvas.clim[0])
+        #self._pc_clim_change = True
+        #self.tCLimMax.SetValue('%3.2f' % self.glCanvas.clim[1])
+        #self._pc_clim_change = True
+        #self.tCLimMin.SetValue('%3.2f' % self.glCanvas.clim[0])
 
-        self.hlCLim.SetValue(self.glCanvas.clim)
+        #self.hlCLim.SetValue(self.glCanvas.clim)
 
 

@@ -146,7 +146,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         self.Bind(wx.EVT_MOVE, self.OnMove)
         self.Bind(wx.EVT_CLOSE, self.OnQuit)
 
-        self.Bind(wx.EVT_IDLE, self.OnIdle)
+        #self.Bind(wx.EVT_IDLE, self.OnIdle)
         #self.refv = False
 
         statusLog.SetStatusDispFcn(self.SetStatus)
@@ -192,33 +192,33 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
 #        self.glCanvas.Refresh()  
             
 
-    def OnView3DPoints(self,event):
-        if 'z' in self.pipeline.keys():
-            if not 'glCanvas3D' in dir(self):
-                #self.glCanvas3D = gl_render3D.LMGLCanvas(self)
-                #self.AddPage(page=self.glCanvas3D, select=True, caption='3D')
-                self.glCanvas3D = gl_render3D.showGLFrame()
+    # def OnView3DPoints(self,event):
+    #     if 'z' in self.pipeline.keys():
+    #         if not 'glCanvas3D' in dir(self):
+    #             #self.glCanvas3D = gl_render3D.LMGLCanvas(self)
+    #             #self.AddPage(page=self.glCanvas3D, select=True, caption='3D')
+    #             self.glCanvas3D = gl_render3D.showGLFrame()
 
-            #else:            
-            self.glCanvas3D.setPoints3D(self.pipeline['x'], 
-                                  self.pipeline['y'], 
-                                  self.pipeline['z'], 
-                                  self.pointColour())
-            self.glCanvas3D.setCLim(self.glCanvas.clim, (-5e5, -5e5))
+    #         #else:            
+    #         self.glCanvas3D.setPoints3D(self.pipeline['x'], 
+    #                               self.pipeline['y'], 
+    #                               self.pipeline['z'], 
+    #                               self.pointColour())
+    #         self.glCanvas3D.setCLim(self.glCanvas.clim, (-5e5, -5e5))
 
-    def OnView3DTriangles(self,event):
-        if 'z' in self.pipeline.keys():
-            if not 'glCanvas3D' in dir(self):
-                #self.glCanvas3D = gl_render3D.LMGLCanvas(self)
-                #self.AddPage(page=self.glCanvas3D, select=True, caption='3D')
-                self.glCanvas3D = gl_render3D.showGLFrame()
+    # def OnView3DTriangles(self,event):
+    #     if 'z' in self.pipeline.keys():
+    #         if not 'glCanvas3D' in dir(self):
+    #             #self.glCanvas3D = gl_render3D.LMGLCanvas(self)
+    #             #self.AddPage(page=self.glCanvas3D, select=True, caption='3D')
+    #             self.glCanvas3D = gl_render3D.showGLFrame()
 
-            self.glCanvas3D.setTriang3D(self.pipeline['x'], 
-                                      self.pipeline['y'], 
-                                      self.pipeline['z'], 'z', 
-                                      sizeCutoff=self.glCanvas3D.edgeThreshold)
+    #         self.glCanvas3D.setTriang3D(self.pipeline['x'], 
+    #                                   self.pipeline['y'], 
+    #                                   self.pipeline['z'], 'z', 
+    #                                   sizeCutoff=self.glCanvas3D.edgeThreshold)
                                       
-            self.glCanvas3D.setCLim(self.glCanvas3D.clim, (0, 5e-5))
+    #         self.glCanvas3D.setCLim(self.glCanvas3D.clim, (0, 5e-5))
 
    
     def OnSaveMeasurements(self, event):

@@ -47,7 +47,7 @@ class ParticleTracker:
         visFr = self.visFr
         pipeline = visFr.pipeline
 
-        bCurr = wx.BusyCursor()
+        #bCurr = wx.BusyCursor()
         dlg = deClumpGUI.deClumpDialog(None)
 
         ret = dlg.ShowModal()

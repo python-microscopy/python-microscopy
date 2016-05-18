@@ -113,7 +113,7 @@ class CurrentRenderer:
         dlg = genImageDialog.GenImageDialog(self.mainWind, mode=self.mode)
         ret = dlg.ShowModal()
 
-        bCurr = wx.BusyCursor()
+        #bCurr = wx.BusyCursor()
 
         if ret == wx.ID_OK:
             mdh = MetaDataHandler.NestedClassMDHandler()
@@ -176,7 +176,7 @@ class ColourRenderer(CurrentRenderer):
         dlg = genImageDialog.GenImageDialog(self.mainWind, mode=self.mode, defaultPixelSize=self._defaultPixelSize, colours=self.pipeline.colourFilter.getColourChans(), zvals = zvals, jitterVariables = jitVars, jitterVarDefault=self._getDefaultJitVar(jitVars), jitterVarDefaultZ=self._getDefaultZJitVar(jitVars))
         ret = dlg.ShowModal()
 
-        bCurr = wx.BusyCursor()
+        #bCurr = wx.BusyCursor()
 
         if ret == wx.ID_OK:
             mdh = MetaDataHandler.NestedClassMDHandler()

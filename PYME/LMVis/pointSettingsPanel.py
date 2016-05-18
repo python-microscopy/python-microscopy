@@ -19,6 +19,7 @@ except ImportError:
 class PointDisplaySettings(HasTraits):
     pointSize = Float(5.0)
     colourDataKey = CStr('t')
+    alpha = Float(1.0)
     
     
 def _getPossibleKeys(pipeline):
@@ -108,6 +109,7 @@ class PointSettingsPanel(wx.Panel):
 
     def OnChangePointColour(self, event):
         self.pointDisplaySettings.colourDataKey = event.GetString()
+        
         
         
 def GenPointsPanel(visgui, pnl, title='Points'):

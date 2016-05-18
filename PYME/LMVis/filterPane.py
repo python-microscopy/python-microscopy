@@ -153,8 +153,14 @@ class FilterPane(afp.foldingPane):
 
             self.bClipToSelection.SetLabel('Clip to Selection')
         else:
-            x0, y0 = self.visFr.glCanvas.selectionStart
-            x1, y1 = self.visFr.glCanvas.selectionFinish
+            try:
+                #old glcanvas
+                x0, y0 = self.visFr.glCanvas.selectionStart
+                x1, y1 = self.visFr.glCanvas.selectionFinish
+            except AttributeError:
+                #new glcanvas
+                x0, y0 = self.visFr.glCanvas.selectionSettings.start
+                x1, y1 = self.visFr.glCanvas.selectionSettings.finish
 
             if not 'x' in self.filterKeys.keys():
                 indx = self.lFiltKeys.InsertStringItem(sys.maxint, 'x')

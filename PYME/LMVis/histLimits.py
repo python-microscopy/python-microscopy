@@ -269,6 +269,24 @@ class HistLimitPanel(wx.Panel):
     def OnSize(self, event):
         self.Refresh()
         self.Update()
+        
+    def SetPercentile(self):
+        self.limit_lower = self.lower_pctile
+        self.limit_upper = self.upper_pctile
+        self.GenHist()
+        self.Refresh()
+        self.Update()
+        evt = LimitChangeEvent(self.GetId(), upper=self.limit_upper, lower=self.limit_lower)
+        self.ProcessEvent(evt)
+        
+    def SetMinMax(self):
+        self.limit_lower = float(self.data.min())
+        self.limit_upper = float(self.data.max())
+        self.GenHist()
+        self.Refresh()
+        self.Update()
+        evt = LimitChangeEvent(self.GetId(), upper=self.limit_upper, lower=self.limit_lower)
+        self.ProcessEvent(evt)
 
     def OnKeyPress(self, event):
         if event.GetKeyCode() == 76: #L - toggle log y axis
@@ -277,21 +295,9 @@ class HistLimitPanel(wx.Panel):
             self.Refresh()
             self.Update()
         elif event.GetKeyCode() == 77: #M - set min-max
-            self.limit_lower = float(self.data.min())
-            self.limit_upper = float(self.data.max())
-            self.GenHist()
-            self.Refresh()
-            self.Update()
-            evt = LimitChangeEvent(self.GetId(), upper=self.limit_upper, lower=self.limit_lower)
-            self.ProcessEvent(evt)
+            self.SetMinMax()
         elif event.GetKeyCode() == 80: #P - set percentile
-            self.limit_lower = self.lower_pctile
-            self.limit_upper = self.upper_pctile
-            self.GenHist()
-            self.Refresh()
-            self.Update()
-            evt = LimitChangeEvent(self.GetId(), upper=self.limit_upper, lower=self.limit_lower)
-            self.ProcessEvent(evt)
+            self.SetPercentile()
         elif event.GetKeyCode() == 84: #T - toggle threshold mode
             self.threshMode = not self.threshMode
             if self.threshMode:

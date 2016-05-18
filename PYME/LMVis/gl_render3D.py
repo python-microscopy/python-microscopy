@@ -3,7 +3,7 @@
 ##################
 # gl_render3D.py
 #
-# Copyright David Baddeley, 2009
+# Copyright David Baddeley, 209
 # d.baddeley@auckland.ac.nz
 #
 # This program is free software: you can redistribute it and/or modify
@@ -29,14 +29,34 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 #import sys,math
 
+
 import numpy
+import numpy as np
 
 import pylab
+
 
 try:
     from gen3DTriangs import gen3DTriangs, gen3DBlobs, testObj
 except:
     pass
+
+try:
+    # location in Python 2.7 and 3.1
+    from weakref import WeakSet
+except ImportError:
+    # separately installed
+    from weakrefset import WeakSet
+
+#import time
+
+import sys
+if sys.platform == 'darwin':
+    #osx gives us LOTS of scroll events
+    #ajust the mag in smaller increments
+    ZOOM_FACTOR = 1.1
+else:
+    ZOOM_FACTOR = 2.0
 
 #import statusLog
 
@@ -82,11 +102,15 @@ class RenderLayer(object):
         self.mode = mode
         self.pointSize=pointsize
         
-    def render(self):
+        
+    def render(self, glcanvas=None):
         if self.mode in ['points']:
             glDisable(GL_LIGHTING)
             #glPointSize(self.pointSize*self.scale*(self.xmax - self.xmin))
-            glPointSize(self.pointSize)
+            if glcanvas:
+                glPointSize(self.pointSize/glcanvas.pixelsize)
+            else:
+                glPointSize(self.pointSize)
         else:
             glEnable(GL_LIGHTING)
             pass        
@@ -110,17 +134,64 @@ class RenderLayer(object):
         glPopMatrix ()
         
 class TrackLayer(RenderLayer):
-    def render(self):
+    def __init__(self, vertices, colours, cmap, clim, clumpSizes, clumpStarts, alpha=1):
+        self.verts = vertices
+        self.cols = colours
+        self.clumpSizes = clumpSizes
+        self.clumpStarts = clumpStarts
+        
+        self.cmap = cmap
+        self.clim = clim
+        self.alpha = alpha
+        
+        cs_ = ((self.cols - self.clim[0])/(self.clim[1] - self.clim[0]))
+        cs = self.cmap(cs_)
+        cs[:,3] = self.alpha
+        
+        self.cs = cs.ravel().reshape(len(self.cols), 4)
+
+    def render(self, glcanvas=None):
         glDisable(GL_LIGHTING)
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
         
         self.vs_ = glVertexPointerf(self.verts)
-        self.n_ = glNormalPointerf(self.normals)
+        #self.n_ = glNormalPointerf(self.normals)
         self.c_ = glColorPointerf(self.cs)
+
+        glPushMatrix ()
+        glColor4f(0,0.5,0, 1)
         
         for i, cl in enumerate(self.clumpSizes):
             if cl > 0:
                 glDrawArrays(self.drawModes['tracks'], self.clumpStarts[i], cl)
+
+        glPopMatrix ()
+
+class SelectionSettings(object):
+    def __init__(self):
+        self.start = (0,0)
+        self.finish = (0,0)
+        self.colour = [1,1,0]
+        self.show = False
+
+class SelectionOverlay(object):
+    def __init__(self, selectionSettings):
+        self.selectionSettings = selectionSettings
+
+    def render(self, glcanvas):
+        if self.selectionSettings.show:
+            glDisable(GL_LIGHTING)
+            x0, y0 = self.selectionSettings.start
+            x1, y1 = self.selectionSettings.finish
+
+            glColor3fv(self.selectionSettings.colour)
+            glBegin(GL_LINE_LOOP)
+            glVertex3f(x0, y0, glcanvas.zc)
+            glVertex3f(x1, y0, glcanvas.zc)
+            glVertex3f(x1, y1, glcanvas.zc)
+            glVertex3f(x0, y1, glcanvas.zc)
+            glEnd()
+
 
 
 class LMGLCanvas(GLCanvas):
@@ -134,6 +205,8 @@ class LMGLCanvas(GLCanvas):
         wx.EVT_LEFT_UP(self, self.OnLeftUp)
         wx.EVT_MIDDLE_DOWN(self, self.OnMiddleDown)
         wx.EVT_MIDDLE_UP(self, self.OnMiddleUp)
+        wx.EVT_RIGHT_DOWN(self, self.OnMiddleDown)
+        wx.EVT_RIGHT_UP(self, self.OnMiddleUp)
         wx.EVT_MOTION(self, self.OnMouseMove)
         wx.EVT_KEY_DOWN(self, self.OnKeyPress)
         #wx.EVT_MOVE(self, self.OnMove)
@@ -147,6 +220,8 @@ class LMGLCanvas(GLCanvas):
         self.cmap = pylab.cm.hsv
         self.clim = [0,1]
         self.alim = [0,1]
+
+        self.displayMode = '2D'#3DPersp' #one of 3DPersp, 3DOrtho, 2D
         
         self.wireframe = False
 
@@ -161,11 +236,13 @@ class LMGLCanvas(GLCanvas):
         #self.ymin = 0
         #self.ymax = self.pixelsize*self.Size[1]
 
-        self.scaleBarLength = 200
+        self.scaleBarLength = 1000
 
-        self.scaleBarOffset = (20.0, 20.0) #pixels from corner
+        self.scaleBarOffset = (10, 10) #pixels from corner
         self.scaleBarDepth = 10.0 #pixels
         self.scaleBarColour = [1,1,0]
+
+        self.LUTDraw = True
 
         self.mode = 'triang'
 
@@ -189,17 +266,32 @@ class LMGLCanvas(GLCanvas):
         self.yc = 0
         self.zc = 0
 
+        self.zc_o = 0
+
+        self.sx = 100
+        self.sy = 100
+
         self.scale = 1
-        self.stereo = True
+        self.stereo = False
         
-        self.eye_dist = .1
+        self.eye_dist = .01
         
         self.dragging = False
         self.panning = False
 
-        self.edgeThreshold = 200
+        self.edgeThreshold = 20
+
+        self.selectionSettings = SelectionSettings()
+        self.selectionDragging = False
         
         self.layers = []
+        self.overlays = []
+
+        self.overlays.append(SelectionOverlay(self.selectionSettings))
+
+
+        self.wantViewChangeNotification = WeakSet()
+        self.pointSelectionCallbacks = []
 
         return
 
@@ -207,7 +299,7 @@ class LMGLCanvas(GLCanvas):
         if not self.IsShown():
             print('ns')
             return
-        print('foo')
+        #print('foo')
         #raise Exception('foo')
         dc = wx.PaintDC(self)
         #print self.GetContext()
@@ -280,8 +372,10 @@ class LMGLCanvas(GLCanvas):
         glClear(GL_COLOR_BUFFER_BIT)
         
         #print 'od'
-        
-        if self.stereo:
+
+        if self.displayMode == '2D':
+            views = ['2D']
+        elif self.stereo:
             views = ['left', 'right']
         else:
             views = ['centre']
@@ -301,71 +395,47 @@ class LMGLCanvas(GLCanvas):
             glLoadIdentity()
             glMatrixMode(GL_PROJECTION)        
             glLoadIdentity()
-            #glOrtho(-10,10,-10,10,-1000,1000)
-            glFrustum(-1 + eye,1 + eye,-1,1,1.5,20)
-            #glFrustum(
-            #       (-(1+eye) *(ps.znear/ps.zscreen)*xfactor,
-            #       (ps.w/(2.0*PIXELS_PER_INCH)+Eye)    *(ps.znear/ps.zscreen)*xfactor,
-            #       -(ps.h/(2.0*PIXELS_PER_INCH))*(ps.znear/ps.zscreen)*yfactor,
-            #       (ps.h/(2.0*PIXELS_PER_INCH))*(ps.znear/ps.zscreen)*yfactor,
-            #       ps.znear, ps.zfar);
-            #gluPerspective(60, 1, 1.5, 20)
+
+            ys = float(self.Size[1])/float(self.Size[0])
+
+            if self.displayMode == '3DPersp':
+                glFrustum(-1 + eye,1 + eye,-ys,ys,8.5,11.5)
+            else:
+                glOrtho(-1,1,-ys,ys,-1000,1000)
+
             
             glMatrixMode(GL_MODELVIEW)
             glTranslatef(eye,0.0,0.0)
     
             self.setupLights()
 
-            trafMatrix = numpy.array([numpy.hstack((self.vecRight, 0)), numpy.hstack((self.vecUp, 0)), numpy.hstack((self.vecBack, 0)), [0,0,0, 1]])
-            self.drawAxes(trafMatrix)            
-            
-            glTranslatef(-self.xc, -self.yc, -self.zc)             
             glTranslatef(0, 0, -10)
 
-    
-            glMultMatrixf(trafMatrix)
-    
+            if not self.displayMode == '2D':
+                self.trafMatrix = numpy.array([numpy.hstack((self.vecRight, 0)), numpy.hstack((self.vecUp, 0)), numpy.hstack((self.vecBack, 0)), [0,0,0, 1]])
+                self.drawAxes(self.trafMatrix, ys)
+            else:
+                self.trafMatrix = numpy.eye(4)            
+            
+            #glTranslatef(-self.xc, -self.yc, -self.zc) 
             glScalef(self.scale, self.scale, self.scale)
 
-              
-            #glPushMatrix()
-            #color = [1.0,0.,0.,1.]
-            #glMaterialfv(GL_FRONT,GL_DIFFUSE,color)
-            #glutSolidSphere(2,20,20)
-            #glColor3f(1,0,0)
+            self.drawScaleBar()
+            self.drawLUT()            
+
+            if not self.displayMode == '2D':
+                glMultMatrixf(self.trafMatrix)
     
-            #glBegin(GL_POLYGON)
-            #glVertex2f(0, 0)
-            #glVertex2f(1,0)
-            #glVertex2f(1,1)
-            #glVertex2f(0,1)
-            #glEnd()
-    
-#            #print self.scale
-#            if self.wireframe:
-#                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-#            else:
-#                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-#    
-#            if self.mode in  ['points']:
-#                glDisable(GL_LIGHTING)
-#                #glPointSize(self.pointSize*self.scale*(self.xmax - self.xmin))
-#                glPointSize(self.pointSize)
-#            else:
-#                pass
-#                #glEnable(GL_LIGHTING)
-#    
-#            #glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-#            glPushMatrix ()
-#    
-#            glColor4f(0,0.5,0, 1)
-#    
-#            glDrawArrays(self.drawModes[self.mode], 0, self.nVertices)
-#    
-#            glPopMatrix ()
+            
+            glTranslatef(-self.xc, -self.yc, -self.zc)
             
             for l in self.layers:
-                l.render()
+                l.render(self)
+
+            for o in self.overlays:
+                o.render(self)
+
+
         
 
         glFlush()
@@ -380,7 +450,7 @@ class LMGLCanvas(GLCanvas):
         # set viewing projection
         light_diffuse = [0.8, 0.8, 0.8, 1.0]
         #light_diffuse = [1., 1., 1., 1.0]
-        light_position = [20.0, 20.00, 20.0, 0.0]
+        light_position = [2.0, 2.00, 2.0, 0.0]
 
         glLightModelfv(GL_LIGHT_MODEL_AMBIENT, [0.5, 0.5, 0.5, 1.0]);
         glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE)
@@ -397,7 +467,7 @@ class LMGLCanvas(GLCanvas):
 #        # set viewing projection
 #        light_diffuse = [0.5, 0.5, 0.5, 1.0]
 #        #light_diffuse = [1., 1., 1., 1.0]
-#        light_position = [20.0, 20.00, 20.0, 0.0]
+#        light_position = [2.0, 2.00, 2.0, 0.0]
 #
 #        #glLightModelfv(GL_LIGHT_MODEL_AMBIENT, [0.5, 0.5, 0.5, 1.0]);
 #        glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE)
@@ -457,13 +527,13 @@ class LMGLCanvas(GLCanvas):
         #          0.0, 1.0, 0.0)
         return
 
-    def drawAxes(self,trafMatrix):
+    def drawAxes(self,trafMatrix, ys=1.0):
         glDisable(GL_LIGHTING)
         glPushMatrix ()
 
-        glTranslatef(.8, -.85, -2)
+        glTranslatef(.9, .1 - ys, 0)
         glScalef(.1, .1, .1)
-        glLineWidth(2)
+        glLineWidth(3)
         glMultMatrixf(trafMatrix)
 
         glColor3fv([1,.5,.5])
@@ -514,9 +584,33 @@ class LMGLCanvas(GLCanvas):
         self.SetCurrent()
         
         self.layers.append(RenderLayer(vs, N, self.c, self.cmap, [self.c.min(), self.c.max()]))
+
+    def setBlobs(self, objects, sizeCutoff):
+        import gen3DTriangs
+
+        vs, self.c = gen3DTriangs.blobify2D(objects, sizeCutoff)
+
+        #vs = vs.ravel()
+        #self.vs_ = glVertexPointerf(vs)
+
+        #cs = numpy.minimum(numpy.vstack((self.IScale[0]*c,self.IScale[1]*c,self.IScale[2]*c)), 1).astype('f')
+        #cs = cs.T.ravel().reshape(len(c), 3)
+        #cs_ = glColorPointerf(cs)
+
+        #self.mode = 'triang'
+
+        #self.nVertices = vs.shape[0]
+        #self.setColour(self.IScale, self.zeroPt)
+        #self.setCLim((0, len(objects)))
+        N = vs.shape[0]
+
+        vs = np.vstack([vs, 0*vs[:,0]])
+
+        self.SetCurrent()
+        self.layers.append(RenderLayer(vs, N, self.c, self.cmap, [self.c.min(), self.c.max()]))
         
 
-    def setTriang3D(self, x,y,z, c = None, sizeCutoff=1000., zrescale=1, internalCull = True, wireframe=False, alpha=1, recenter=True):
+    def setTriang3D(self, x,y,z, c = None, sizeCutoff=1000., zrescale=1, internalCull = True, wireframe=True, alpha=1, recenter=True):
         #center data
         x = x #- x.mean()
         y = y #- y.mean()
@@ -534,7 +628,7 @@ class LMGLCanvas(GLCanvas):
         P, A, N = gen3DTriangs(x,y,z/zrescale, sizeCutoff, internalCull=internalCull)
         P[:,2] = P[:,2]*zrescale
 
-        self.scale = 10./(x.max() - x.min())
+        self.scale = 2./(x.max() - x.min())
 
 
 
@@ -576,11 +670,11 @@ class LMGLCanvas(GLCanvas):
             self.yc = y.mean()
             self.zc = 0#z.mean()
         
-        self.sx = x.max() - x.min()
-        self.sy = y.max() - y.min()
-        self.sz = 0#z.max() - z.min()
-        
-        self.scale = 10./(max(self.sx, self.sy))
+            self.sx = x.max() - x.min()
+            self.sy = y.max() - y.min()
+            self.sz = 0#z.max() - z.min()
+            
+            self.scale = 2./(max(self.sx, self.sy))
 
         if c is None:
             a = numpy.vstack((xs[:,0] - xs[:,1], ys[:,0] - ys[:,1])).T
@@ -593,7 +687,7 @@ class LMGLCanvas(GLCanvas):
         self.c = numpy.vstack((c,c,c)).T.ravel()
         
         vs = numpy.vstack((xs.ravel(), ys.ravel(), zs.ravel()))
-        vs = vs.T.ravel().reshape(len(xs.ravel()), 2)
+        vs = vs.T.ravel().reshape(len(xs.ravel()), 3)
         
         N = -0.69*numpy.ones_like(vs)
             
@@ -618,14 +712,14 @@ class LMGLCanvas(GLCanvas):
         else:
             mode = 'triang'
                         
-        self.layers.append(RenderLayer(vs, N, self.c, self.cmap, [self.c.min(), self.c.max()], mode=mode, alpha = alpha))
+        self.layers.append(RenderLayer(vs, N, self.c, self.cmap, self.clim, mode=mode, alpha = alpha))
         self.Refresh()
         
     def setTriangEdges(self, T):
         self.setTriang(T, wireframe=True)
 
 
-    def setPoints3D(self, x, y, z, c = None, a = None, recenter=True):
+    def setPoints3D(self, x, y, z, c = None, a = None, recenter=False, alpha = 1.0):#, clim=None):
         #center data
         x = x #- x.mean()
         y = y #- y.mean()
@@ -634,9 +728,11 @@ class LMGLCanvas(GLCanvas):
         if recenter:        
             self.xc = x.mean()
             self.yc = y.mean()
-            self.zc = z.mean()
+        
+        self.zc = z.mean()
+        self.zc_o = 1.0*self.zc
 
-        if c == None:
+        if c is None:
             self.c = numpy.ones(x.shape).ravel()
         else:
             self.c = c
@@ -645,6 +741,9 @@ class LMGLCanvas(GLCanvas):
             self.a = a
         else:
             self.a = numpy.ones(x.shape).ravel()
+
+        #if clim == None:
+        #    clim = [self.c.min(), self.c.max()]
             
         self.sx = x.max() - x.min()
         self.sy = y.max() - y.min()
@@ -654,12 +753,12 @@ class LMGLCanvas(GLCanvas):
         vs = numpy.vstack((x.ravel(), y.ravel(), z.ravel()))
         vs = vs.T.ravel().reshape(len(x.ravel()), 3)
         
-        self.layers.append(RenderLayer(vs, -0.69*numpy.ones(vs.shape), self.c, self.cmap, [self.c.min(), self.c.max()], mode='points'))
+        self.layers.append(RenderLayer(vs, -0.69*numpy.ones(vs.shape), self.c, self.cmap, self.clim, mode='points', pointsize=self.pointSize, alpha=alpha))
         self.Refresh()
         
-    def setPoints(self, x, y, c = None, a = None, recenter=True):
+    def setPoints(self, x, y, c = None, a = None, recenter=True, alpha=1.0):
         '''Set 2D points'''
-        self.setPoints3D(x, y, 0*x, c, a, recenter)
+        self.setPoints3D(x, y, 0*x, c, a, recenter, alpha)
         
     def setTracks3D(self, x, y, z, ci, c = None):
         NClumps = int(ci.max())
@@ -669,8 +768,8 @@ class LMGLCanvas(GLCanvas):
             clist[int(cl_i-1)].append(i)
 
 
-        self.clumpSizes = [len(cl_i) for cl_i in clist]
-        self.clumpStarts = numpy.cumsum([0,] + self.clumpSizes)
+        clumpSizes = [len(cl_i) for cl_i in clist]
+        clumpStarts = numpy.cumsum([0,] + clumpSizes)
 
         I = numpy.hstack([numpy.array(cl) for cl in clist])
 
@@ -691,25 +790,29 @@ class LMGLCanvas(GLCanvas):
         vs = numpy.vstack((x.ravel(), y.ravel(), z.ravel()))
         vs = vs.T.ravel().reshape(len(x.ravel()), 3)
         
-        self.layers.append(TrackLayer(vs, -0.69*numpy.ones(vs.shape), self.c, self.cmap, [self.c.min(), self.c.max()], mode='tracks'))
+        #self.layers.append(TrackLayer(vs, -0.69*numpy.ones(vs.shape), self.c, self.cmap, [self.c.min(), self.c.max()], mode='tracks'))
+        self.layers.append(TrackLayer(vs, self.c, self.cmap, self.clim, clumpSizes, clumpStarts))
+        
         self.Refresh()
         
     def setTracks(self, x, y, ci, c = None):
-        self.setTracks3D(self, x, y, np.zeros_like(x), ci, c)
+        self.setTracks3D(x, y, np.zeros_like(x), ci, c)
         
        
         
     def ResetView(self):
-        self.xc = 0
-        self.yc = 0
-        self.zc = 0
+        #self.xc = self.sx/2
+        #self.yc = self.sy/2
+        #self.zc = 0
 
         self.vecUp = numpy.array([0,1,0])
         self.vecRight = numpy.array([1,0,0])
         self.vecBack = numpy.array([0,0,1])
 
 
-        self.scale = 5./(self.sx)
+        #self.scale = 2./(self.sx)
+
+        self.Refresh()
 
 
     
@@ -718,18 +821,18 @@ class LMGLCanvas(GLCanvas):
         #self.zeroPt = zeroPt
 
         #cs = numpy.minimum(numpy.vstack((IScale[0]*self.c - zeroPt[0],IScale[1]*self.c - zeroPt[1],IScale[2]*self.c - zeroPt[2])), 1).astype('f')
-        cs_ = ((self.c - self.clim[0])/(self.clim[1] - self.clim[0]))
-        csa_ = ((self.a - self.alim[0])/(self.alim[1] - self.alim[0]))
-        csa_ = numpy.minimum(csa_, 1.)
-        csa_ = numpy.maximum(csa_, 0.)
-        cs = self.cmap(cs_)
-        cs[:,3] = csa_
+        #cs_ = ((self.c - self.clim[0])/(self.clim[1] - self.clim[0]))
+        #csa_ = ((self.a - self.alim[0])/(self.alim[1] - self.alim[0]))
+        #csa_ = numpy.minimum(csa_, 1.)
+        #csa_ = numpy.maximum(csa_, 0.)
+        #cs = self.cmap(cs_)
+        #cs[:,3] = csa_
         #print cs.shape
         #print cs.shape
         #print cs.strides
         #cs = cs[:, :3] #if we have an alpha component chuck it
-        cs = cs.ravel().reshape(len(self.c), 4)
-        self.cs_ = glColorPointerf(cs)
+        #cs = cs.ravel().reshape(len(self.c), 4)
+        #self.cs_ = glColorPointerf(cs)
 
         self.Refresh()
 
@@ -763,7 +866,7 @@ class LMGLCanvas(GLCanvas):
         
     @property
     def pixelsize(self):
-        return 10.*self.scale/self.Size[0]
+        return 2./(self.scale*self.Size[0])
 
     def setView(self, xmin, xmax, ymin, ymax):
         #self.xmin = xmin
@@ -773,39 +876,82 @@ class LMGLCanvas(GLCanvas):
         
         self.xc = (xmin + xmax)/2.0
         self.yc = (ymin + ymax)/2.0
-        #self.zc = z.mean() 
+        self.zc = self.zc_o# 0#z.mean() 
         
-        self.scale = 10./(x.max() - x.min())
+        self.scale = 2./(xmax - xmin)
 
 
         self.Refresh()
         if 'OnGLViewChanged' in dir(self.parent):
             self.parent.OnGLViewChanged()
 
-    def moveView(self, dx, dy):
-        return self.pan(dx, dy)
+    def moveView(self, dx, dy, dz=0):
+        return self.pan(dx, dy, dz)
     
-    def pan(self, dx, dy):
-        self.setView(self.xmin + dx, self.xmax + dx, self.ymin + dy, self.ymax + dy)
+    def pan(self, dx, dy, dz=0):
+        #self.setView(self.xmin + dx, self.xmax + dx, self.ymin + dy, self.ymax + dy)
+        self.xc += dx
+        self.yx += dy
+        self.zc += dz
 
     def drawScaleBar(self):
         if not self.scaleBarLength == None:
             view_size_x = self.xmax - self.xmin
             view_size_y = self.ymax - self.ymin
 
-            sb_ur_x = self.xmax - self.scaleBarOffset[0]*view_size_x/self.Size[0]
-            sb_ur_y = self.ymax - self.scaleBarOffset[1]*view_size_y/self.Size[1]
+            sb_ur_x = -self.xc + self.xmax - self.scaleBarOffset[0]*view_size_x/self.Size[0]
+            sb_ur_y = - self.yc + self.ymax - self.scaleBarOffset[1]*view_size_y/self.Size[1]
             sb_depth = self.scaleBarDepth*view_size_y/self.Size[1]
+
+            glDisable(GL_LIGHTING)
 
             glColor3fv(self.scaleBarColour)
             glBegin(GL_POLYGON)
-            glVertex2f(sb_ur_x, sb_ur_y)
-            glVertex2f(sb_ur_x, sb_ur_y - sb_depth)
-            glVertex2f(sb_ur_x - self.scaleBarLength, sb_ur_y - sb_depth)
-            glVertex2f(sb_ur_x - self.scaleBarLength, sb_ur_y)
+            glVertex3f(sb_ur_x, sb_ur_y, 0)
+            glVertex3f(sb_ur_x, sb_ur_y - sb_depth, 0)
+            glVertex3f(sb_ur_x - self.scaleBarLength, sb_ur_y - sb_depth, 0)
+            glVertex3f(sb_ur_x - self.scaleBarLength, sb_ur_y, 0)
             glEnd()
 
+    def drawLUT(self):
+        if self.LUTDraw == True:
+            mx = self.c.max()
 
+            view_size_x = self.xmax - self.xmin
+            view_size_y = self.ymax - self.ymin
+
+            lb_ur_x = -self.xc + self.xmax - self.scaleBarOffset[0]*view_size_x/self.Size[0]
+            lb_ur_y = .4*view_size_y  #- #3*self.scaleBarOffset[1]*view_size_y/self.Size[1]
+
+            lb_lr_y = -.4*view_size_y #self.ymin #+ 3*self.scaleBarOffset[1]*view_size_y/self.Size[1]
+            lb_width = 2*self.scaleBarDepth*view_size_x/self.Size[0]
+            lb_ul_x = lb_ur_x - lb_width
+
+            lb_len = lb_ur_y - lb_lr_y
+
+            #sc = mx*numpy.array(self.IScale)
+            #zp = numpy.array(self.zeroPt)
+            #sc = mx
+            glDisable(GL_LIGHTING)
+
+            glBegin(GL_QUAD_STRIP)
+
+            for i in numpy.arange(0,1, .01):
+                #glColor3fv(i*sc - zp)
+                #glColor3fv(self.cmap((i*mx - self.clim[0])/(self.clim[1] - self.clim[0]))[:3])
+                glColor3fv(self.cmap(i)[:3])
+                glVertex2f(lb_ul_x, lb_lr_y + i*lb_len)
+                glVertex2f(lb_ur_x, lb_lr_y + i*lb_len)
+
+            glEnd()
+
+            glBegin(GL_LINE_LOOP)
+            glColor3f(.5,.5,0)
+            glVertex2f(lb_ul_x, lb_lr_y)
+            glVertex2f(lb_ur_x, lb_lr_y)
+            glVertex2f(lb_ur_x, lb_ur_y)
+            glVertex2f(lb_ul_x, lb_ur_y)
+            glEnd()
 
 
     def OnWheel(self, event):
@@ -814,29 +960,50 @@ class LMGLCanvas(GLCanvas):
         #view_size_y = self.ymax - self.ymin
 
         #get translated coordinates
-        xp = 1*(event.GetX() - self.Size[0]/2)/float(self.Size[0])
-        yp = 1*(self.Size[1]/2 - event.GetY())/float(self.Size[1])
+        #xp = 1*(event.GetX() - self.Size[0]/2)/float(self.Size[0])
+        #yp = 1*(self.Size[1]/2 - event.GetY())/float(self.Size[1])
+
+        #x, y = event.GetX(), event.GetY()
+        xp, yp = self._ScreenCoordinatesToNm(event.GetX(), event.GetY())
+
+        dx, dy = (xp - self.xc), (yp - self.yc)
+
+        dx_, dy_, dz_, c_ = numpy.dot(self.trafMatrix, [dx, dy, 0, 0])
+
+        xp_, yp_, zp_ = (self.xc + dx_), (self.yc + dy_), (self.zc + dz_)
 
         #print xp
         #print yp
         if event.MiddleIsDown():
-            self.WheelFocus(rot, xp, yp)
+            self.WheelFocus(rot, xp_, yp_, zp_)
         else:
-            self.WheelZoom(rot, xp, yp)
+            self.WheelZoom(rot, xp_, yp_, zp_)
         self.Refresh()
 
     
 
-    def WheelZoom(self, rot, xp, yp):
+    def WheelZoom(self, rot, xp, yp, zp=0):
+        dx = xp - self.xc
+        dy = yp - self.yc
+        dz = zp - self.zc
+
         if rot > 0:
             #zoom out
-            self.scale *=2.
+            self.scale *=ZOOM_FACTOR
+
+            self.xc += dx*(1.- 1./ZOOM_FACTOR)
+            self.yc += dy*(1.- 1./ZOOM_FACTOR)
+            self.zc += dz*(1.- 1./ZOOM_FACTOR)
 
         if rot < 0:
             #zoom in
-            self.scale /=2.
+            self.scale /=ZOOM_FACTOR
+
+            self.xc += dx*(1.- ZOOM_FACTOR)
+            self.yc += dy*(1.- ZOOM_FACTOR)
+            self.zc += dz*(1.- ZOOM_FACTOR)
             
-    def WheelFocus(self, rot, xp, yp):
+    def WheelFocus(self, rot, xp, yp, zp = 0):
         if rot > 0:
             #zoom out
             self.zc -= 1.
@@ -848,18 +1015,45 @@ class LMGLCanvas(GLCanvas):
 
 
     def OnLeftDown(self, event):
-        self.xDragStart = event.GetX()
-        self.yDragStart = event.GetY()
+        if not self.displayMode == '2D':
+            #dragging the mouse rotates the object
+            self.xDragStart = event.GetX()
+            self.yDragStart = event.GetY()
 
-        self.angyst = self.angup
-        self.angxst = self.angright
+            self.angyst = self.angup
+            self.angxst = self.angright
 
-        self.dragging = True
+            self.dragging = True
+        else: #2D
+            #dragging the mouse sets an ROI
+            xp, yp = self._ScreenCoordinatesToNm(event.GetX(), event.GetY())
+            if True:#self.vp is None:
+                self.selectionDragging = True
+                self.selectionSettings.show = True
+
+                self.selectionSettings.start = (xp, yp)
+                self.selectionSettings.finish = (xp, yp)
+            else:
+                self.vp.xp = xp/self.vpVoxSize
+                self.vp.yp = yp/self.vpVoxSize
+
+                self.Refresh()
+                self.Update()
 
         event.Skip()
 
     def OnLeftUp(self, event):
         self.dragging=False
+
+        if self.selectionDragging:
+            xp, yp = self._ScreenCoordinatesToNm(event.GetX(), event.GetY())
+            
+            self.selectionSettings.finish = (xp, yp)
+            self.selectionDragging=False
+            
+            self.Refresh()
+            self.Update()
+
         event.Skip()
         
     def OnMiddleDown(self, event):
@@ -873,11 +1067,24 @@ class LMGLCanvas(GLCanvas):
         self.panning=False
         event.Skip()
 
-    def OnMouseMove(self, event):
-        if self.dragging:
-            x = event.GetX()
-            y = event.GetY()
+    def _ScreenCoordinatesToNm(self, x, y):
+        #FIXME!!!
+        x_ = self.pixelsize*(x - 0.5*float(self.Size[0])) + self.xc
+        y_ = -self.pixelsize*(y - 0.5*float(self.Size[1])) + self.yc
+        #print x_, y_
+        return x_, y_ 
 
+    def OnMouseMove(self, event):
+        x = event.GetX()
+        y = event.GetY()
+        
+        if self.selectionDragging:
+            self.selectionSettings.finish = self._ScreenCoordinatesToNm(x, y)
+
+            self.Refresh()
+            event.Skip()
+
+        elif self.dragging:    
             #self.angup = self.angyst + x - self.xDragStart
             #self.angright = self.angxst + y - self.yDragStart
 
@@ -908,26 +1115,27 @@ class LMGLCanvas(GLCanvas):
             self.yDragStart = y
 
             self.Refresh()
-
             event.Skip()
             
         elif self.panning:
-            x = event.GetX()
-            y = event.GetY()
+            #x = event.GetX()
+            #y = event.GetY()
             
-            dx = 10*(x - self.xDragStart)/float(self.Size[0])
-            dy = 10*(y - self.yDragStart)/float(self.Size[1])
+            dx = self.pixelsize*(x - self.xDragStart)
+            dy = -self.pixelsize*(y - self.yDragStart)
             
             #print dx
+
+            dx_, dy_, dz_, c_ = numpy.dot(self.trafMatrix, [dx, dy, 0, 0])
             
-            self.xc -= dx
-            self.yc += dy
+            self.xc -= dx_
+            self.yc -= dy_
+            self.zc -= dz_
 
             self.xDragStart = x
             self.yDragStart = y
 
             self.Refresh()
-
             event.Skip()
             
     def OnKeyPress(self, event):
@@ -936,9 +1144,9 @@ class LMGLCanvas(GLCanvas):
             self.stereo = not self.stereo
             self.Refresh()
         elif event.GetKeyCode() == 67: #C - centre
-            self.xc = 0
-            self.yc = 0
-            self.zc = 0
+            self.xc = self.sx/2
+            self.yc = self.sy/2
+            self.zc = self.sz/2
             self.Refresh()
             
         elif event.GetKeyCode() == 91: #[ decrease eye separation
@@ -955,26 +1163,26 @@ class LMGLCanvas(GLCanvas):
             
         elif event.GetKeyCode() == 314: #left
             pos = numpy.array([self.xc, self.yc, self.zc], 'f')
-            pos -= .1*self.vecRight
+            pos -= 300*self.vecRight
             self.xc, self.yc, self.zc = pos
             print 'l'
             self.Refresh()
             
         elif event.GetKeyCode() == 315: #up
             pos = numpy.array([self.xc, self.yc, self.zc])
-            pos -= .1*self.vecBack
+            pos -= 300*self.vecBack
             self.xc, self.yc, self.zc = pos
             self.Refresh()
             
         elif event.GetKeyCode() == 316: #right
             pos = numpy.array([self.xc, self.yc, self.zc])
-            pos += .1*self.vecRight
+            pos += 300*self.vecRight
             self.xc, self.yc, self.zc = pos
             self.Refresh()
             
         elif event.GetKeyCode() == 317: #down
             pos = numpy.array([self.xc, self.yc, self.zc])
-            pos += .1*self.vecBack
+            pos += 300*self.vecBack
             self.xc, self.yc, self.zc = pos
             self.Refresh()
             
@@ -1016,6 +1224,7 @@ class TestApp(wx.App):
         canvas.setPoints3D(to[0], to[1], to[2])
         canvas.setTriang3D(to[0], to[1], to[2], sizeCutoff = 6e3, alpha=0.5)
         canvas.setTriang3D(to[0], to[1], to[2], sizeCutoff = 6e3, wireframe=True)
+        canvas.Refresh()
         frame.Show()
         self.SetTopWindow(frame)
         return True

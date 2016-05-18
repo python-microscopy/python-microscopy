@@ -639,6 +639,10 @@ class LMAnalyser:
                     self.ds = inpFilt.fitResultsSource(self.fitResults)
                     self.dsviewer.pipeline.OpenFile(ds=self.ds, imBounds = self.dsviewer.image.imgBounds)
                     self.dsviewer.pipeline.mdh = self.resultsMdh
+                    try:
+                        self.dsviewer.LMDisplay.SetFit()
+                    except:
+                        pass
                 else:
                     self.fitResults = numpy.concatenate((self.fitResults, newResults))
                     self.ds.setResults(self.fitResults)

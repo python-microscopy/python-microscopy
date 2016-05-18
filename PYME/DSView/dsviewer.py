@@ -85,7 +85,7 @@ class AUIFrame(wx.Frame):
         self.pane0 = None
 
         
-    def AddPage(self, page=None, select=True,caption='Dummy', update=None):
+    def AddPage(self, page=None, select=True,caption='Dummy', update=True):
         '''Add a page to the auto-notebook
         
         page: a wx.Window (ususally a panel) - the page to add
@@ -93,8 +93,8 @@ class AUIFrame(wx.Frame):
         caption: (string) the page caption
         
         '''
-        if not update is None:
-            select = update
+        #if update:
+        #    self._mgr.Update()
             
         if self.pane0 == None:
             name = caption.replace(' ', '')
@@ -110,22 +110,23 @@ class AUIFrame(wx.Frame):
                 if len(nbs) > pn.notebook_id:
                     currPage = nbs[pn.notebook_id].GetSelection()
                 self._mgr.AddPane(page, aui.AuiPaneInfo().
-                              Name(caption.replace(' ', '')).Caption(caption).CloseButton(False).NotebookPage(pn.notebook_id))
+                              Name(caption.replace(' ', '')).Caption(caption).CloseButton(False).CaptionVisible(False).NotebookPage(pn.notebook_id))
                 if (not select) and len(nbs) > pn.notebook_id:
                     self._mgr.Update()
                     nbs[pn.notebook_id].SetSelection(currPage)
             else:
                 self._mgr.AddPane(page, aui.AuiPaneInfo().
-                              Name(caption.replace(' ', '')).Caption(caption).CloseButton(False), target=pn)
+                              Name(caption.replace(' ', '')).Caption(caption).CloseButton(False).CaptionVisible(False), target=pn)
                 
                 
                 if not select:
                     self._mgr.Update()
                     nb = self._mgr.GetNotebooks()[0]
                     nb.SetSelection(0)
-
+        if update:
+            self._mgr.Update()
                
-        wx.CallAfter(self._mgr.Update)
+        #wx.CallAfter(self._mgr.Update)
         #self.Layout() 
         #self.OnSize(None)
         #self.OnSize(None)

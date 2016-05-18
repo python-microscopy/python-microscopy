@@ -14,7 +14,7 @@ import wx.lib.agw.aui as aui
 #hacked so py2exe works
 #from PYME.DSView.dsviewer import View3D
 
-from PYME.LMVis import gl_render
+from PYME.LMVis import gl_render3D as gl_render
 #from PYME.LMVis import workspaceTree
 #import sys
 
@@ -45,7 +45,7 @@ except:
     pass
 
 from PYME.LMVis.colourFilterGUI import CreateColourFilterPane
-from PYME.LMVis.displayPane import CreateDisplayPane
+from PYME.LMVis import displayPane
 from PYME.LMVis.filterPane import CreateFilterPane
 
 from PYME.LMVis import pointSettingsPanel
@@ -58,6 +58,8 @@ import numpy as np
 #import scipy.special
 
 #from PYME.DSView import eventLogViewer
+
+
 
 from PYME.LMVis import statusLog
 
@@ -80,15 +82,19 @@ class VisGUICore(object):
             win = self.dsviewer
             
         self.glCanvas = gl_render.LMGLCanvas(win)
-        win.AddPage(page=self.glCanvas, select=True, caption='View')
+        win.AddPage(page=self.glCanvas, caption='View')#, select=True)
         self.glCanvas.cmap = pylab.cm.gist_rainbow #pylab.cm.hot
         
         self.refv = False
         
         renderers.renderMetadataProviders.append(self.SaveMetadata)
         
+        
+        wx.CallLater(100, self.OnIdle)
+        
     
-    def OnIdle(self, event):
+    def OnIdle(self, event=None):
+        print 'Ev Idle'
         if self.glCanvas.init and not self.refv:
             self.refv = True
             print((self.viewMode, self.pointDisplaySettings.colourDataKey))
@@ -109,7 +115,8 @@ class VisGUICore(object):
             self.driftPane = CreateDriftPane(sidePanel, self.pipeline.mapping, self.pipeline)
             
         self.colourFilterPane = CreateColourFilterPane(sidePanel, self.pipeline.colourFilter, self.pipeline)
-        self.displayPane = CreateDisplayPane(sidePanel, self.glCanvas, self)
+        self.displayPane = displayPane.CreateDisplayPane(sidePanel, self.glCanvas, self)
+        self.displayPane.Bind(displayPane.EVT_DISPLAY_CHANGE, self.RefreshView)
         
         if self.viewMode == 'quads':
             quadTreeSettings.GenQuadTreePanel(self, sidePanel)
@@ -229,6 +236,7 @@ class VisGUICore(object):
         try: #stop us bombing on Mac
             self.view_menu.AppendRadioItem(ID_VIEW_POINTS, '&Points')
             self.view_menu.AppendRadioItem(ID_VIEW_TRIANGS, '&Triangles')
+            self.view_menu.AppendRadioItem(ID_VIEW_3D_TRIANGS, '3D Triangles')
             self.view_menu.AppendRadioItem(ID_VIEW_QUADS, '&Quad Tree')
             self.view_menu.AppendRadioItem(ID_VIEW_VORONOI, '&Voronoi')
             self.view_menu.AppendRadioItem(ID_VIEW_INTERP_TRIANGS, '&Interpolated Triangles')
@@ -237,6 +245,7 @@ class VisGUICore(object):
         except:
             self.view_menu.Append(ID_VIEW_POINTS, '&Points')
             self.view_menu.Append(ID_VIEW_TRIANGS, '&Triangles')
+            self.view_menu.Append(ID_VIEW_3D_TRIANGS, '3D Triangles')
             self.view_menu.Append(ID_VIEW_QUADS, '&Quad Tree')
             self.view_menu.Append(ID_VIEW_VORONOI, '&Voronoi')
             self.view_menu.Append(ID_VIEW_INTERP_TRIANGS, '&Interpolated Triangles')
@@ -258,22 +267,22 @@ class VisGUICore(object):
         self.view_menu.AppendCheckItem(ID_TOGGLE_SETTINGS, "Show Settings")
         self.view_menu.Check(ID_TOGGLE_SETTINGS, True)
 
-        if not subMenu:        
-            self.view3d_menu = wx.Menu()
+    #     if not subMenu:        
+    #         self.view3d_menu = wx.Menu()
     
-    #        try: #stop us bombing on Mac
-    #            self.view3d_menu.AppendRadioItem(ID_VIEW_3D_POINTS, '&Points')
-    #            self.view3d_menu.AppendRadioItem(ID_VIEW_3D_TRIANGS, '&Triangles')
-    #            self.view3d_menu.AppendRadioItem(ID_VIEW_3D_BLOBS, '&Blobs')
-    #        except:
-            self.view3d_menu.Append(ID_VIEW_3D_POINTS, '&Points')
-            self.view3d_menu.Append(ID_VIEW_3D_TRIANGS, '&Triangles')
-            self.view3d_menu.Append(ID_VIEW_3D_BLOBS, '&Blobs')
+    # #        try: #stop us bombing on Mac
+    # #            self.view3d_menu.AppendRadioItem(ID_VIEW_3D_POINTS, '&Points')
+    # #            self.view3d_menu.AppendRadioItem(ID_VIEW_3D_TRIANGS, '&Triangles')
+    # #            self.view3d_menu.AppendRadioItem(ID_VIEW_3D_BLOBS, '&Blobs')
+    # #        except:
+    #         self.view3d_menu.Append(ID_VIEW_3D_POINTS, '&Points')
+    #         self.view3d_menu.Append(ID_VIEW_3D_TRIANGS, '&Triangles')
+    #         self.view3d_menu.Append(ID_VIEW_3D_BLOBS, '&Blobs')
     
-            #self.view3d_menu.Enable(ID_VIEW_3D_TRIANGS, False)
-            self.view3d_menu.Enable(ID_VIEW_3D_BLOBS, False)
+    #         #self.view3d_menu.Enable(ID_VIEW_3D_TRIANGS, False)
+    #         self.view3d_menu.Enable(ID_VIEW_3D_BLOBS, False)
     
-            #self.view_menu.Check(ID_VIEW_3D_POINTS, True)
+    #         #self.view_menu.Check(ID_VIEW_3D_POINTS, True)
 
         self.gen_menu = wx.Menu()
         
@@ -310,7 +319,7 @@ class VisGUICore(object):
             menu_bar.Append(self.view_menu, "&View")
             menu_bar.Append(self.gen_menu, "&Generate Image")
             menu_bar.Append(self.extras_menu, "&Extras")
-            menu_bar.Append(self.view3d_menu, "View &3D")
+            #menu_bar.Append(self.view3d_menu, "View &3D")
             
             menu_bar.Append(help_menu, "&Help")
 
@@ -329,6 +338,7 @@ class VisGUICore(object):
 
         parent.Bind(wx.EVT_MENU, self.OnViewPoints, id=ID_VIEW_POINTS)
         parent.Bind(wx.EVT_MENU, self.OnViewTriangles, id=ID_VIEW_TRIANGS)
+        parent.Bind(wx.EVT_MENU, self.OnViewTriangles3D, id=ID_VIEW_3D_TRIANGS)
         parent.Bind(wx.EVT_MENU, self.OnViewQuads, id=ID_VIEW_QUADS)
         parent.Bind(wx.EVT_MENU, self.OnViewVoronoi, id=ID_VIEW_VORONOI)
         parent.Bind(wx.EVT_MENU, self.OnViewInterpTriangles, id=ID_VIEW_INTERP_TRIANGS)
@@ -339,10 +349,10 @@ class VisGUICore(object):
         parent.Bind(wx.EVT_MENU, self.SetFit, id=ID_VIEW_FIT)
         parent.Bind(wx.EVT_MENU, self.OnFitROI, id=ID_VIEW_FIT_ROI)
 
-        if not subMenu:        
-            parent.Bind(wx.EVT_MENU, self.OnView3DPoints, id=ID_VIEW_3D_POINTS)
-            parent.Bind(wx.EVT_MENU, self.OnView3DTriangles, id=ID_VIEW_3D_TRIANGS)
-            #self.Bind(wx.EVT_MENU, self.OnView3DBlobs, id=ID_VIEW_3D_BLOBS)
+        # if not subMenu:        
+        #     parent.Bind(wx.EVT_MENU, self.OnView3DPoints, id=ID_VIEW_3D_POINTS)
+        #     parent.Bind(wx.EVT_MENU, self.OnView3DTriangles, id=ID_VIEW_3D_TRIANGS)
+        #     #self.Bind(wx.EVT_MENU, self.OnView3DBlobs, id=ID_VIEW_3D_BLOBS)
 
         return menu_bar
         
@@ -368,6 +378,12 @@ class VisGUICore(object):
 
     def OnViewTriangles(self,event):
         self.viewMode = 'triangles'
+        self.RefreshView()
+        self.CreateFoldPanel()
+        self.displayPane.OnPercentileCLim(None)
+
+    def OnViewTriangles3D(self,event):
+        self.viewMode = 'triangles3D'
         self.RefreshView()
         self.CreateFoldPanel()
         self.displayPane.OnPercentileCLim(None)
@@ -407,7 +423,7 @@ class VisGUICore(object):
 
         self.RefreshView()
         
-    def RefreshView(self):
+    def RefreshView(self, event=None):
         if not self.pipeline.ready:
             return #get out of here
 
@@ -419,7 +435,11 @@ class VisGUICore(object):
         if self.glCanvas.init == 0: #glcanvas is not initialised
             return
 
-        bCurr = wx.BusyCursor()
+        #bCurr = wx.BusyCursor()
+
+        #delete previous layers (new view)
+        self.glCanvas.layers = []
+        self.glCanvas.pointSize = self.pointDisplaySettings.pointSize
 
         if self.pipeline.objects == None:
 #            if 'bObjMeasure' in dir(self):
@@ -439,23 +459,37 @@ class VisGUICore(object):
                 self.rav = None
 
         if self.viewMode == 'points':
-            self.glCanvas.setPoints(self.pipeline['x'], 
-                                    self.pipeline['y'], self.pointColour())
-                                    
-            if 'glCanvas3D' in dir(self):
-                self.glCanvas3D.setPoints(self.pipeline['x'], 
+            if 'setPoints3D' in dir(self.glCanvas) and 'z' in self.pipeline.keys():
+                #new mode
+                self.glCanvas.setPoints3D(self.pipeline['x'], 
                                       self.pipeline['y'], 
                                       self.pipeline['z'], 
                                       self.pointColour())
-                self.glCanvas3D.setCLim(self.glCanvas.clim, (-5e5, -5e5))
+            else:
+                self.glCanvas.setPoints(self.pipeline['x'], 
+                                    self.pipeline['y'], self.pointColour())
+                                    
         elif self.viewMode == 'tracks':
-            self.glCanvas.setTracks(self.pipeline['x'], 
+            if 'setTracks3D' in dir(self.glCanvas) and 'z' in self.pipeline.keys():
+                self.glCanvas.setTracks3D(self.pipeline['x'], 
+                                    self.pipeline['y'], 
+                                    self.pipeline['z'],
+                                    self.pipeline['clumpIndex'], 
+                                    self.pointColour())
+            else:
+                self.glCanvas.setTracks(self.pipeline['x'], 
                                     self.pipeline['y'], 
                                     self.pipeline['clumpIndex'], 
                                     self.pointColour())
                                     
         elif self.viewMode == 'triangles':
             self.glCanvas.setTriang(self.pipeline.getTriangles())
+
+        elif self.viewMode == 'triangles3D':
+            self.glCanvas.setTriang3D(self.pipeline['x'], 
+                                      self.pipeline['y'], 
+                                      self.pipeline['z'], 'z', 
+                                      sizeCutoff=self.glCanvas.edgeThreshold)
 
         elif self.viewMode == 'voronoi':
             status = statusLog.StatusLogger("Generating Voronoi Diagram ... ")
@@ -488,11 +522,11 @@ class VisGUICore(object):
         self.displayPane.hlCLim.SetData(self.glCanvas.c, self.glCanvas.clim[0], 
                                         self.glCanvas.clim[1])
 
-        if not self.colp == None and self.colp.IsShown():
+        if 'colp' in dir(self) and not self.colp == None and self.colp.IsShown():
             self.colp.refresh()
 
         #self.sh.shell.user_ns.update(self.__dict__)
-        wx.EndBusyCursor()
+        #wx.EndBusyCursor()
         #self.workspaceView.RefreshItems()
         
         
@@ -600,4 +634,6 @@ class VisGUICore(object):
             print('Gui stuff done')
         
         self.SetFit()
+        
+        #wx.CallAfter(self.RefreshView)
         
