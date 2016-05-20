@@ -372,7 +372,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             if 'clumpIndex' in self.filter.keys():
                 colInds = self.filter['clumpIndex'][IFoc] %len(self.labelPens)
             else:
-                colInds = numpy.zeros(len(contours), 'i')
+                colInds = numpy.zeros(len(contours), 'i') #%len(self.labelPens)
             for c, colI in zip(contours, colInds):
                 xc, yc = c.T
                 dc.SetPen(self.labelPens[int(colI)])

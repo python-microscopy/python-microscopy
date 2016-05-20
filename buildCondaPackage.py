@@ -17,4 +17,4 @@ from PYME import version
 
 os.environ['PYME_VERSION'] = version.version
 
-os.system('conda build .')
+os.system('conda build . --numpy 1.9')

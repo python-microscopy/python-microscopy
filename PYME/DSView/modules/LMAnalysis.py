@@ -353,11 +353,12 @@ class LMAnalyser:
         
         if 'Analysis.FitModule' in self.image.mdh.getEntryNames():
             #has already been analysed - most likely to want the same method again
-            if self.image.mdh['Analysis.FitModule'] in self.fitFactories:
+            try:
                 self.cFitType.SetSelection(self.fitFactories.index(self.image.mdh['Analysis.FitModule']))
-            else:
+                self.tThreshold.SetValue('%s' % self.image.mdh.getOrDefault('Analysis.DetectionThreshold', 1))
+            except ValueError:
                 self.cFitType.SetSelection(self.fitFactories.index('LatGaussFitFR'))
-            self.tThreshold.SetValue('%s' % self.image.mdh.getOrDefault('Analysis.DetectionThreshold', 1))
+                
         #elif 'Camera.ROIPosY' in self.image.mdh.getEntryNames() and (self.image.mdh.getEntry('Camera.ROIHeight') + 1 + 2*(self.image.mdh.getEntry('Camera.ROIPosY')-1)) == 512:
         #    #we have a symetrical ROI about the centre - most likely want to analyse using splitter
         #    self.cFitType.SetSelection(self.fitFactories.index('SplitterFitQR'))

@@ -67,8 +67,8 @@ def cpuCount():
 
 #SERVER_PROC = 'taskServerMP.py'
 #WORKER_PROC = 'taskWorkerMP.py'
-SERVER_PROC = 'taskServerZC.py'
-WORKER_PROC = 'taskWorkerZC.py'
+SERVER_PROC = 'taskServerZC'
+WORKER_PROC = 'taskWorkerZC'
 
 fstub = os.path.split(__file__)[0]
 
@@ -102,7 +102,7 @@ def main():
     
     if sys.platform == 'win32':
         print 'Launching server ...'
-        subprocess.Popen('python %s\\%s' % (fstub, SERVER_PROC), shell=True)
+        subprocess.Popen('python %s\\%s.py' % (fstub, SERVER_PROC), shell=True)
     
         print 'Waiting for server to come up ...'
         time.sleep(10)
@@ -112,7 +112,7 @@ def main():
     
         print 'Launching %d workers ...' % numProcessors
         for i in range(numProcessors):
-            subprocess.Popen('python %s\\%s' % (fstub, WORKER_PROC), shell=True)
+            subprocess.Popen('python %s\\%s.py' % (fstub, WORKER_PROC), shell=True)
     elif sys.platform == 'darwin':
         import psutil
         
@@ -129,7 +129,7 @@ def main():
                 pass
             
     
-        subprocess.Popen('%s %s' % (sys.executable, os.path.join(fstub, SERVER_PROC)), shell=True)
+        subprocess.Popen('%s %s.py' % (sys.executable, os.path.join(fstub, SERVER_PROC)), shell=True)
     
         time.sleep(3)
     
@@ -139,6 +139,7 @@ def main():
             subprocess.Popen('%s %s' % (sys.executable, os.path.join(fstub,WORKER_PROC)), shell=True)
     else: #operating systems which can launch python scripts directly
         #get rid of any previously started queues etc...
+<<<<<<< local
         if sys.platform == 'darwin':
             killall = 'pkill -f'
         else:
@@ -146,12 +147,17 @@ def main():
         os.system('%s %s' % (killall,SERVER_PROC))
         os.system('%s %s' % (killall,WORKER_PROC))
         os.system('%s fitMonP.py' % killall)
+=======
+        os.system('killall %s' % SERVER_PROC)
+        os.system('killall %s' % WORKER_PROC)
+        os.system('killall fitMonP')
+>>>>>>> other
     
         subprocess.Popen(SERVER_PROC, shell=True)
     
         time.sleep(3)
     
-        subprocess.Popen('fitMonP.py', shell=True)
+        subprocess.Popen('fitMonP', shell=True)
     
         for i in range(numProcessors):
             subprocess.Popen(WORKER_PROC, shell=True)

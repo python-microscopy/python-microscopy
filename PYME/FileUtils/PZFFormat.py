@@ -104,7 +104,7 @@ def ChunkedHuffmanDecompress(datastring):
 #    pass
 
 FILE_FORMAT_ID = 'BD'
-FORMAT_VERSION = 0
+FORMAT_VERSION = 1
 
 DATA_FMT_UINT8 = 0
 DATA_FMT_UINT16 = 1
@@ -116,6 +116,9 @@ DATA_FMTS_SIZES = [1,2,4]
 DATA_COMP_RAW = 0
 DATA_COMP_HUFFCODE = 1
 DATA_COMP_HUFFCODE_CHUNKS = 2
+
+DATA_QUANT_NONE = 0
+DATA_QUANT_SQRT = 1
 
 ##############
 # Definition of file header
@@ -141,13 +144,18 @@ DATA_COMP_HUFFCODE_CHUNKS = 2
 #        take a significant ammount of extra space, but gives us flexibility for
 #        the future.
 
-header_dtype = [('ID', 'S2'), ('Version', 'u1') , ('DataFormat', 'u1'), ('DataCompression', 'u1'), ('RESERVED0', 'S3'), ('SequenceID', 'i8'), 
+#header_dtype = [('ID', 'S2'), ('Version', 'u1') , ('DataFormat', 'u1'), ('DataCompression', 'u1'), ('RESERVED0', 'S3'), ('SequenceID', 'i8'), 
+#                ('FrameNum', 'u4'), ('Width', 'u4'), ('Height', 'u4'), ('Depth', 'u4'), 
+#                ('FrameTimestamp', 'u8'), ('RESERVED1', 'u8')]
+                
+header_dtype = [('ID', 'S2'), ('Version', 'u1') , ('DataFormat', 'u1'), ('DataCompression', 'u1'), 
+                ('DataQuantization', 'u1'),('RESERVED0', 'S2'), ('SequenceID', 'i8'), 
                 ('FrameNum', 'u4'), ('Width', 'u4'), ('Height', 'u4'), ('Depth', 'u4'), 
-                ('FrameTimestamp', 'u8'), ('RESERVED1', 'u8')]
+                ('FrameTimestamp', 'u8'), ('QuantOffset', 'f4'), ('QuantScale', 'f4')]
                 
 HEADER_LENGTH = np.zeros(1, header_dtype).nbytes            
 
-def dumps(data, sequenceID=0, frameNum=0, frameTimestamp=0, compression = 'none'):
+def dumps(data, sequenceID=0, frameNum=0, frameTimestamp=0, compression = DATA_COMP_RAW, quantization=DATA_QUANT_NONE, quantizationOffset=0, quantizationScale=1):
     '''dump an image frame (supplied as a numpy array) into a string in PZF format
     
     Parameters
@@ -163,7 +171,18 @@ def dumps(data, sequenceID=0, frameNum=0, frameTimestamp=0, compression = 'none'
     
     frameTimestamp:  A timestamp for the frame (if provided by the camera)
     
-    compression:  compression method to use - one of: 'none' of 'huffman'
+    compression:  compression method to use - one of: PZFFormat.DATA_COMP_RAW,
+                  PZFFormat.DATA_COMP_HUFFCODE, or PZFFormat.DATA_COMP_HUFFCODE_CHUNKS
+                  Where raw stores the data with no compression, huffcode uses
+                  Huffman coding, and huffcode chunks breaks the data into chunks 
+                  first, with each chunk meing encodes by a separate thread.
+                  
+    quantization: Whether or not the data is quantized before saving.
+                  One of DATA_QUANT_NONE or DATA_QUANT_SQRT. If DATA_QUANT_SQRT
+                  is selected, then the data is quantized as follows prior to 
+                  compression:
+                  
+                  $data_quant =  \sqrt(data - data)
     '''
     
     header = np.zeros(1, header_dtype)
@@ -191,12 +210,21 @@ def dumps(data, sequenceID=0, frameNum=0, frameTimestamp=0, compression = 'none'
         header['Depth'] = data.shape[2]
     else:
         header['Depth'] = 1
+        
+    if quantization == DATA_QUANT_SQRT:
+        #sqrt- quantize the data
+        header['DataQuantization'] = DATA_QUANT_SQRT
+        header['QuantOffset'] = quantizationOffset
+        header['QuantScale'] = quantizationScale
+        
+        qs = 1.0/quantizationScale
+        data = (np.sqrt(np.maximum(data-quantizationOffset,0))*qs).astype('uint8')
     
-    if compression == 'huffman':
+    if compression == DATA_COMP_HUFFCODE:
         header['DataCompression'] = DATA_COMP_HUFFCODE
         
         dataString = bcl.HuffmanCompress(data.data).tostring()
-    elif compression == 'huffman_chunks':
+    elif compression == DATA_COMP_HUFFCODE_CHUNKS:
         header['DataCompression'] = DATA_COMP_HUFFCODE_CHUNKS
         
         dataString = ChunkedHuffmanCompress(data)
@@ -215,16 +243,23 @@ def loads(datastring):
         
     w, h, d = header['Width'], header['Height'], header['Depth']
     
+    data_s = datastring[HEADER_LENGTH:]
+    
     if header['DataCompression'] == DATA_COMP_RAW:
         #no need to decompress
-        data = np.fromstring(datastring[HEADER_LENGTH:], DATA_FMTS[header['DataFormat']])
+        data = np.fromstring(data_s, 'u1')
     elif header['DataCompression'] == DATA_COMP_HUFFCODE:
-        data = bcl.HuffmanDecompress(np.fromstring(datastring[HEADER_LENGTH:], 'u1'), w*h*d*DATA_FMTS_SIZES[header['DataFormat']]).view(DATA_FMTS[header['DataFormat']])
+        data = bcl.HuffmanDecompress(np.fromstring(data_s, 'u1'), len(data_s))
     elif header['DataCompression'] == DATA_COMP_HUFFCODE_CHUNKS:
-        data = ChunkedHuffmanDecompress(datastring[HEADER_LENGTH:]).view(DATA_FMTS[header['DataFormat']])
+        data = ChunkedHuffmanDecompress(data_s)
     else:
         raise RuntimeError('Compression type not understood')
+        
+    if header['DataQuantization'] == DATA_QUANT_SQRT:
+        #un-quantize data
+        data = data*header['QuantScale']
+        data = (data*data + header['QuantOffset']).astype(DATA_FMTS[header['DataFormat']])
     
-    data = data.reshape([w,h,d])
+    data = data.view(DATA_FMTS[header['DataFormat']]).reshape([w,h,d])
     
     return data, header

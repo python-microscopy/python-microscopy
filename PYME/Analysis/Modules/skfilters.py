@@ -18,7 +18,13 @@ class SKFilter(Filter):
         #    pass
         
         def applyFilter(self, data, chanNum, frNum, im):
-            return getattr(skf, self._filtName)(data, **self.kwargs())
+            ret =  getattr(skf, self._filtName)(data, **self.kwargs())
+            if 'threshold' in self._filtName:
+                #thresholding functions return the threshold value, not a mask
+                #we want a mask
+                return data > ret
+            else:
+                return ret
         
         def completeMetadata(self, im):
             im.mdh['Processing.' + self._filterID] = self._getargmd()
