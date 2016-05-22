@@ -173,7 +173,7 @@ def joinBGInit():
     threads to complete.
     '''
     for t in bgInitThreads:
-        print(t)
+        #print(t)
         t.join()
 
 def InitGUI(code):

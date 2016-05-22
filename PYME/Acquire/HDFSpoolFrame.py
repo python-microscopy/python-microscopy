@@ -360,19 +360,26 @@ class PanSpool(wx.Panel):
         
 
         #spoolType = self.rbQueue.GetStringSelection()        
-        #if self.cbQueue.GetValue():        
+        #if self.cbQueue.GetValue():  
+
+        if self.scope.cam.__class__.__name__ == 'FakeCamera':
+            fakeCycleTime = self.scope.cam.GetIntegTime()
+        else:
+            fakeCycleTime = None
+            
+        frameShape = (self.scope.cam.GetPicWidth(), self.scope.cam.GetPicHeight())
         
         if self.spoolType == 'Queue':
             self.queueName = getRelFilename(self.dirname + fn + '.h5')
-            self.spooler = QueueSpooler.Spooler(self.scope, self.queueName, self.scope.pa, protocol, guiUpdateCallback=self.Tick, complevel=compLevel)
+            self.spooler = QueueSpooler.Spooler(self.queueName, self.scope.pa.onFrame, frameShape = frameShape, protocol=protocol, guiUpdateCallback=self.Tick, complevel=compLevel, fakeCamCycleTime=fakeCycleTime)
             self.bAnalyse.Enable(True)
         elif self.spoolType == 'HTTP':
             #self.queueName = self.dirname + fn + '.h5'
             self.queueName = getRelFilename(self.dirname + fn + '.h5')
-            self.spooler = HTTPSpooler.Spooler(self.scope, self.queueName, self.scope.pa, protocol, guiUpdateCallback=self.Tick, complevel=compLevel)
+            self.spooler = HTTPSpooler.Spooler(self.queueName, self.scope.pa.onFrame, frameShape = frameShape, protocol=protocol, guiUpdateCallback=self.Tick, complevel=compLevel, fakeCamCycleTime=fakeCycleTime)
             self.bAnalyse.Enable(True)
         else:
-            self.spooler = HDFSpooler.Spooler(self.scope, self.dirname + fn + '.h5', self.scope.pa, protocol, guiUpdateCallback=self.Tick, complevel=compLevel)
+            self.spooler = HDFSpooler.Spooler(self.dirname + fn + '.h5', self.scope.pa.onFrame, frameShape = frameShape, protocol=protocol, guiUpdateCallback=self.Tick, complevel=compLevel, fakeCamCycleTime=fakeCycleTime)
 
         #if stack:
         #    self.spooler.md.setEntry('ZStack', True)

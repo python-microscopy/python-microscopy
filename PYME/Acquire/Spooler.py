@@ -69,17 +69,39 @@ class EventLogger:
 
 class Spooler:
     '''Spooler base class'''
-    def __init__(self, scope, filename, acquisator, protocol = p.NullProtocol, guiUpdateCallback=None):
-       global timeFcn
-       self.scope = scope
-       self.filename=filename
-       self.acq = acquisator
-       self.guiUpdateCallback = guiUpdateCallback
-       self.protocol = protocol
-       
-       #if we've got a fake camera - the cycle time will be wrong - fake our time sig to make up for this
-       if scope.cam.__class__.__name__ == 'FakeCamera':
-           timeFcn = self.fakeTime
+    def __init__(self, filename, frameSource, protocol = p.NullProtocol, guiUpdateCallback=None, fakeCamCycleTime=None, **kwargs):
+        '''Create a new spooler.
+        
+        Parameters
+        ----------
+        scope : PYME.Acquire.microscope.microscope object
+            The microscope providing the data
+        filename : string
+            The file into which to spool
+        frameSource : dispatch.Signal object
+            A source of frames we can subscribe to. It should implement a "connect"
+            method allowing us to register a callback and then call the callback with
+            the frame data in a "frameData" kwarg.
+        protocol : PYME.Acquire.protocol.TaskListProtocol object
+            The acquisition protocol
+        guiUpdateCallback : function
+            a function to call when the spooling GUI needs updating
+            
+        '''
+        global timeFcn
+        #self.scope = scope
+        self.filename=filename
+        self.frameSource = frameSource
+        self.guiUpdateCallback = guiUpdateCallback
+        self.protocol = protocol
+    
+        #if we've got a fake camera - the cycle time will be wrong - fake our time sig to make up for this
+        #if scope.cam.__class__.__name__ == 'FakeCamera':
+        #    timeFcn = self.fakeTime
+            
+        if not fakeCamCycleTime == None:
+            self.fakeCamCycleTime = fakeCamCycleTime
+            timeFcn = self.fakeTime
 
        
 
@@ -92,12 +114,12 @@ class Spooler:
        
        self.doStartLog()
        
-       self.acq.onFrame.connect(self.OnFrame)
+       self.frameSource.connect(self.OnFrame)
        self.spoolOn = True
        
     def StopSpool(self):
         try:
-            self.acq.onFrame.disconnect(self.OnFrame)
+            self.frameSource.disconnect(self.OnFrame)
         except:
             pass
 
@@ -116,11 +138,12 @@ class Spooler:
         
         self.spoolOn = False
 
-    def OnFrame(self, sender, **kwargs):
-        '''Called on every frame'''
+    def OnFrame(self, **kwargs):
+        '''Callback which should be called on every frame'''
         self.imNum += 1
         if not self.guiUpdateCallback is None:
             self.guiUpdateCallback()
+            
         self.protocol.OnFrame(self.imNum)
 
         if self.imNum == 2 and sampleInformation and sampleInformation.currentSlide[0]: #have first frame and should thus have an imageID
@@ -163,7 +186,8 @@ class Spooler:
     def fakeTime(self):
         '''Generate a fake timestamp for use with the simulator where the camera 
         cycle time does not match the actual time elapsed to generate the frame'''
-        return self.tStart + self.imNum*self.scope.cam.GetIntegTime()
+        #return self.tStart + self.imNum*self.scope.cam.GetIntegTime()
+        return self.tStart + self.imNum*self.fakeCamCycleTime
 
     def FlushBuffer(self):
         pass

@@ -460,11 +460,11 @@ class PYMEMainFrame(wx.Frame):
         self.time1.WantNotification.append(self.StatusBarUpdate)
 
         for t in self.toolPanels:
-            print(t)
+            #print(t)
             self.AddTool(*t)
 
         for t in self.camPanels:
-            print(t)
+            #print(t)
             self.AddCamTool(*t)
 
         #self.splash.Destroy()

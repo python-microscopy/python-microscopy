@@ -33,22 +33,22 @@ import dispatch
 
 from PYME.Acquire import eventLog
 
-class dsFake(object):
-    def __init__(self, width, height, length, nChans):
-        self.width = width
-        self.height = height
-        self.length = length
-        self.nChans = nChans
+#class dsFake(object):
+#    def __init__(self, width, height, length, nChans):
+#        self.width = width
+#        self.height = height
+#        self.length = length
+#        self.nChans = nChans
         
         
 
 
 class PreviewAquisator(wx.Timer):
-    BW = 1
-    RED = 2
-    GREEN1 = 4
-    GREEN2 = 8
-    BLUE = 16
+#    BW = 1
+#    RED = 2
+#    GREEN1 = 4
+#    GREEN2 = 8
+#    BLUE = 16
 
     def __init__(self, _chans, _cam, _shutters, _ds = None):
         wx.Timer.__init__(self)
@@ -83,16 +83,30 @@ class PreviewAquisator(wx.Timer):
         #will be needed to allow the display load to be minimised by, e.g. only updating display once per poll rather than once per frame
         #self.WantFrameGroupNotification = [] 
         
+        
+        #Signals
+        ##########################
+        # these allow other files to listen to key events happingin within the acquisiotn        
         #new style signals - these will replace the WantFrameNotification etc ...
         #which are currently being kept for backwards compatibility
         
-        self.onFrame = dispatch.Signal(['frameData'])
-        self.onFrameGroup = dispatch.Signal()
+        self.onFrame = dispatch.Signal(['frameData']) #called each time a new frame appears in our buffer
+        self.onFrameGroup = dispatch.Signal() #called on each new frame group (once per polling interval) - use for updateing GUIs etc.
         self.onStop = dispatch.Signal()
         self.onStart = dispatch.Signal()
         
 
     def Prepare(self, keepds=False):
+        '''Prepare for acquisition by allocating the buffer which will store the
+        data we recieve. The buffer stores a single frame, and all frames pass
+        through this buffer. The current state of the buffer is accessible via
+        the currentFrame variable.
+
+        Parameters
+        ----------
+        keepds: Whether or not to keep the previously allocated array        
+        
+        '''
         self.looppos=0
         self.curMemChn=0
         
@@ -115,6 +129,7 @@ class PreviewAquisator(wx.Timer):
 
             
     def getFrame(self, colours=None):
+        '''Ask the camera to put a frame into our buffer''' 
         #print self.zPos
         if ('numpy_frames' in dir(self.cam)):
             cs = self.dsa[:,:,self.zPos]
@@ -129,6 +144,7 @@ class PreviewAquisator(wx.Timer):
         self.cam.ExtractColor(cs,0)
 
     def purge(self):
+        '''purge (and discard) all remaining frames in the camera buffer'''
         while(self.cam.ExpReady()):
             self.curMemChn = 0
             self.getFrame(self.BW)
@@ -205,24 +221,28 @@ class PreviewAquisator(wx.Timer):
 
     def getReqMemChans(self, colours):
         """  Use this function to calc how may channels to allocate when creating a new data stack """
+        return 1
 
-        t = 0
-        for c in colours:
-            if(c & self.BW): 
-                t = t + 1
-            if(c & self.RED):
-                t = t + 1
-            if(c & self.GREEN1):
-                t = t + 1
-            if(c & self.GREEN2):
-                t = t + 1
-            if(c & self.BLUE):
-                t = t + 1
-
-        return t
+#        t = 0
+#        for c in colours:
+#            if(c & self.BW): 
+#                t = t + 1
+#            if(c & self.RED):
+#                t = t + 1
+#            if(c & self.GREEN1):
+#                t = t + 1
+#            if(c & self.GREEN2):
+#                t = t + 1
+#            if(c & self.BLUE):
+#                t = t + 1
+#
+#        return t
 
 
     def Notify(self):
+        '''Callback which is called regularly by a system timer to poll the 
+        camera'''
+        
         #check to see if we are already running
         if self.inNotify:
             print('Already in notify, skip for now')
@@ -300,9 +320,6 @@ class PreviewAquisator(wx.Timer):
                     self.tLastFrame = self.tThisFrame
                     self.nFrames = nFrames
                     self.tThisFrame = time.clock()
-    
-                    #for a in self.WantFrameGroupNotification:
-                    #	a(self)
                      
                     self.onFrameGroup.send_robust(self)
             else:
@@ -321,6 +338,10 @@ class PreviewAquisator(wx.Timer):
         return self.dsa
 
     def checkHardware(self):
+        '''Check to see if our hardware is ready for us to take the next frame
+        
+        NB: This is largely legacy code, as the camera is usually used in 
+        free-running mode.'''
         for callback in self.HardwareChecks:
             if not callback():
                 print 'Waiting for hardware'
@@ -339,16 +360,13 @@ class PreviewAquisator(wx.Timer):
             self.cam.StopAq()
 
         self.shutters.closeShutters(self.shutters.ALL)
-        #self.cam.StopLifePreview()
-        #self.ds.setZPos(0)
+
         self.zPos = 0
 
         self.piezoGoHome()
 
         self.doStopLog()
 
-        #for a in self.WantStopNotification:
-        #        a(self)
                 
         self.onStop.send_robust(self)
 
@@ -370,12 +388,7 @@ class PreviewAquisator(wx.Timer):
 
         self.doStartLog()
         
-        #for cb in self.WantStartNotification:
-        #    cb(self)
-        
         self.onStart.send_robust(self)
-
-        #self.Wait(1000)  # Warten, so dass Piezotisch wieder in Ruhe
 
         if ('itimes' in dir(self.chans)): #maintain compatibility with old versions
             self.cam.SetIntegTime(self.chans.itimes[self.looppos])
@@ -397,15 +410,15 @@ class PreviewAquisator(wx.Timer):
         return True
 
 
-    def Wait(self,iTime):
-        """ Dirty delay routine - blocks until given no of milliseconds has elapsed\n 
-            Probably best not to use with a delay of more than about a second or windows\n
-            could rightly assume that the programme is <not responding> """
-        time.sleep(iTime/1000)
-        #FirstTime = time.clock()
-        #dc = 0
-        #while(time.clock() < (FirstTime + iTime/1000)):
-        #    dc = dc + 1
+#    def Wait(self,iTime):
+#        """ Dirty delay routine - blocks until given no of milliseconds has elapsed\n 
+#            Probably best not to use with a delay of more than about a second or windows\n
+#            could rightly assume that the programme is <not responding> """
+#        time.sleep(iTime/1000)
+#        #FirstTime = time.clock()
+#        #dc = 0
+#        #while(time.clock() < (FirstTime + iTime/1000)):
+#        #    dc = dc + 1
 
     def isRunning(self):
         return self.aqOn
