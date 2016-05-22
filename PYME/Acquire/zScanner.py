@@ -52,15 +52,17 @@ class zScanner:
         self.onStack = dispatch.Signal() #dispatched on completion of a stack
         self.onSingleFrame = dispatch.Signal()  #dispatched when a frame is ready
         
-    def _endSingle(self):
+    def _endSingle(self, **kwargs):
         print ('es')
         self.Stop()
-        self.WantFrameNotification.remove(self._endSingle)
+        #self.WantFrameNotification.remove(self._endSingle)
+        self.onStack.disconnect(self._endSingle)
         self.sa.piezoGoHome()
         
     def Single(self):
         self.sa.SetPrevPos(self.sa._CurPos())
-        self.WantFrameNotification.append(self._endSingle)
+        #self.WantFrameNotification.append(self._endSingle)
+        self.onStack.connect(self._endSingle)
         self.Start()
         
     def Start(self):

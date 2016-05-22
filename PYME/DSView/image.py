@@ -132,7 +132,7 @@ class ImageStack(object):
             self.mdh = None
             self.FindAndParseMetadata(mdh)
         
-        if (data == None):
+        if (data is None):
             #if we've supplied data, use that, otherwise load from file
             self.Load(filename)
 
@@ -140,14 +140,14 @@ class ImageStack(object):
         self.SetData(self.data)
 
         #generate a placeholder filename / window title        
-        if self.filename == None:
+        if self.filename is None:
             self.filename = '%s %d' % (titleStub, nUntitled[titleStub])
             nUntitled[titleStub] += 1
             
             self.seriesName = self.filename
 
         #generate some empty metadata if we don't have any        
-        if self.mdh == None:
+        if self.mdh is None:
             self.mdh = MetaDataHandler.NestedClassMDHandler()
 
         #hack to make spectral data behave right - doesn't really belong here        
@@ -285,7 +285,7 @@ class ImageStack(object):
         from PYME.misc.computerName import GetComputerName
         compName = GetComputerName()
 
-        if self.queueURI == None:
+        if self.queueURI is None:
             #do a lookup
             taskQueueName = 'TaskQueues.%s' % compName
             
@@ -466,7 +466,7 @@ class ImageStack(object):
         for details.'''
         import xml.parsers.expat 
         
-        if not self.mdh == None:
+        if not self.mdh is None:
             return #we already have metadata (probably passed in on command line)
         
         mdf = None
@@ -717,7 +717,7 @@ class ImageStack(object):
 
     def Load(self, filename=None):
         print('filename == %s' % filename)
-        if (filename == None or filename == ''):
+        if (filename is None or filename == ''):
             import wx #only introduce wx dependency here - so can be used non-interactively
             global lastdir
             
@@ -734,14 +734,14 @@ class ImageStack(object):
                                        wildcard='Image Data|*.h5;*.tif;*.lsm;*.kdf;*.md;*.psf;*.npy;*.dbl|All files|*.*', 
                                         default_path = lastdir)            
             
-            if filename == None or filename == '':
+            if filename is None or filename == '':
                 raise RuntimeError('No file selected')
                 pass
             else:
                 lastdir = os.path.split(filename)[0]
             #print(succ, filename)
 
-        if not filename == None:
+        if not filename is None:
             if filename.startswith('QUEUE://'):
                 self.LoadQueue(filename)
             elif filename.startswith('http://'):
@@ -784,7 +784,7 @@ class ImageStack(object):
                 self.filename = dataExporter.ExportData(self.data, self.mdh, self.events, filename=filename)
             #self.SetTitle(fn)
 
-            if not (self.filename == None):
+            if not (self.filename is None):
                 self.saved = True
 
                 openImages.pop(ofn)

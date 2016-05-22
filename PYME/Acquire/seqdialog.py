@@ -232,7 +232,7 @@ class seqPanel(wx.Panel):
         #self.scope.zs.WantTickNotification.append(self.dlgAqProg.Tick)
         self.scope.zs.onSingleFrame.connect(self.dlgAqProg.Tick)
         
-    def OnSingleEnd(self):
+    def OnSingleEnd(self, **kwargs):
         #wx.MessageBox('Acquisition Finished')
         #self.scope.zs.WantFrameNotification.remove(self.OnSingleEnd)
         #self.scope.zs.WantTickNotification.remove(self.dlgAqProg.Tick)
@@ -409,7 +409,7 @@ class SeqProgressPanel(wx.Panel):
     #    self.cancelled = True
         #self.EndModal(wx.ID_CANCEL)
 
-    def Tick(self):
+    def Tick(self, **kwargs):
         if not self.cancelled:
             self.gProgress.SetValue(self.zs.frameNum)
             return True
