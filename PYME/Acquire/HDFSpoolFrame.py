@@ -364,15 +364,15 @@ class PanSpool(wx.Panel):
         
         if self.spoolType == 'Queue':
             self.queueName = getRelFilename(self.dirname + fn + '.h5')
-            self.spooler = QueueSpooler.Spooler(self.scope, self.queueName, self.scope.pa, protocol, self, complevel=compLevel)
+            self.spooler = QueueSpooler.Spooler(self.scope, self.queueName, self.scope.pa, protocol, guiUpdateCallback=self.Tick, complevel=compLevel)
             self.bAnalyse.Enable(True)
         elif self.spoolType == 'HTTP':
             #self.queueName = self.dirname + fn + '.h5'
             self.queueName = getRelFilename(self.dirname + fn + '.h5')
-            self.spooler = HTTPSpooler.Spooler(self.scope, self.queueName, self.scope.pa, protocol, self, complevel=compLevel)
+            self.spooler = HTTPSpooler.Spooler(self.scope, self.queueName, self.scope.pa, protocol, guiUpdateCallback=self.Tick, complevel=compLevel)
             self.bAnalyse.Enable(True)
         else:
-            self.spooler = HDFSpooler.Spooler(self.scope, self.dirname + fn + '.h5', self.scope.pa, protocol, self, complevel=compLevel)
+            self.spooler = HDFSpooler.Spooler(self.scope, self.dirname + fn + '.h5', self.scope.pa, protocol, guiUpdateCallback=self.Tick, complevel=compLevel)
 
         #if stack:
         #    self.spooler.md.setEntry('ZStack', True)

@@ -79,7 +79,7 @@ class HttpSpoolMDHandler(MetaDataHandler.MDHandlerBase):
 SERVERNAME='127.0.0.1:8080'      
 
 class Spooler(sp.Spooler):
-    def __init__(self, scope, filename, acquisator, protocol = p.NullProtocol, parent=None, complevel=2, complib='zlib'):
+    def __init__(self, scope, filename, acquisator, protocol = p.NullProtocol, guiUpdateCallback=None, complevel=2, complib='zlib'):
         #       if 'PYME_TASKQUEUENAME' in os.environ.keys():
         #            taskQueueName = os.environ['PYME_TASKQUEUENAME']
         #       else:
@@ -113,7 +113,7 @@ class Spooler(sp.Spooler):
         self.evtLogger = EventLogger(self, scope)
         
         
-        sp.Spooler.__init__(self, scope, filename, acquisator, protocol, parent)
+        sp.Spooler.__init__(self, scope, filename, acquisator, protocol, guiUpdateCallback=guiUpdateCallback)
         
     def __queuePoll(self):
         self.conn = httplib.HTTPConnection(SERVERNAME, timeout=5)
@@ -181,8 +181,8 @@ class Spooler(sp.Spooler):
         sp.Spooler.StopSpool(self)
         
         
-    def Tick(self, caller):
-      self.buffer.append(caller.dsa.reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()).copy())
+    def OnFrame(self, sender, **kwargs):
+      self.buffer.append(sender.dsa.reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()).copy())
 
       if self.imNum == 0: #first frame
           self.md.setEntry('imageID', fileID.genFrameID(self.buffer[-1].squeeze()))
@@ -191,7 +191,7 @@ class Spooler(sp.Spooler):
       if len(self.buffer) >= self.buflen:
           self.FlushBuffer()
 
-      sp.Spooler.Tick(self, caller)
+      sp.Spooler.OnFrame(self, sender)
       
     def FlushBuffer(self):
       t1 = time.time()

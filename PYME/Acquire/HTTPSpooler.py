@@ -86,7 +86,7 @@ def exists(seriesName):
 NUM_POLL_THREADS = 10
 
 class Spooler(sp.Spooler):
-    def __init__(self, scope, filename, acquisator, protocol = p.NullProtocol, parent=None, complevel=2, complib='zlib'):
+    def __init__(self, scope, filename, acquisator, protocol = p.NullProtocol, guiUpdateCallback=None, complevel=2, complib='zlib'):
         
         #filename = filename[len(nameUtils.datadir):]
         
@@ -116,7 +116,7 @@ class Spooler(sp.Spooler):
         self.sequenceID = genSequenceID()
         self.md['imageID'] = self.sequenceID  
         
-        sp.Spooler.__init__(self, scope, filename, acquisator, protocol, parent)
+        sp.Spooler.__init__(self, scope, filename, acquisator, protocol, guiUpdateCallback=guiUpdateCallback)
         
             
     def _queuePoll(self):
@@ -155,13 +155,13 @@ class Spooler(sp.Spooler):
         clusterIO.putFile(self.seriesName  + '/events.json', self.evtLogger.to_JSON())
         
         
-    def Tick(self, caller): 
-        self.buffer.append((self.imNum, caller.dsa.copy()))
+    def OnFrame(self, sender, **kwargs): 
+        self.buffer.append((self.imNum, sender.dsa.copy()))
 
         if len(self.buffer) >= self.buflen:
             self.FlushBuffer()
         
-        sp.Spooler.Tick(self, caller)
+        sp.Spooler.OnFrame(self, sender)
       
     def FlushBuffer(self):
       self.postQueue.put(self.buffer)

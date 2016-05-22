@@ -46,23 +46,28 @@ class fastTiler:
 
         self.visfr = View3D(self.data, title='tiled image')
         #self.GotoStart()
-        self.scope.pa.WantFrameNotification.append(self.OnTick)
-        self.scope.pa.WantFrameGroupNotification.append(self.updateView)
+        #self.scope.pa.WantFrameNotification.append(self.OnTick)
+        #self.scope.pa.WantFrameGroupNotification.append(self.updateView)
+        
+        self.scope.pa.onFrame.connect(self.OnTick)
+        self.scope.pa.onFrameGroup.connect(self.updateView)
 
-    def updateView(self, caller=None):
+    def updateView(self, **kwargs):
         self.visfr.vp.Refresh()
 
     def detach(self):
-        self.scope.pa.WantFrameNotification.remove(self.OnTick)
-        self.scope.pa.WantFrameGroupNotification.remove(self.updateView)
+        #self.scope.pa.WantFrameNotification.remove(self.OnTick)
+        #self.scope.pa.WantFrameGroupNotification.remove(self.updateView)
+        self.scope.pa.onFrame.disconnect(self.OnTick)
+        self.scope.pa.onFrameGroup.disconnect(self.updateView)
 
 
-    def OnTick(self, caller=None):
+    def OnTick(self, sender, frameData, **kwargs):
         #if self.scope.stage.moving[0]:
         #    print self.i
         if self.runInProgress and self.i >=0 and self.i < (self.data.shape[1]-32):# and self.scope.stage.moving[1] and not self.scope.stage.moving[0]:
             #print self.i, self.j
-            self.data[self.j:(self.j+32), floor(self.i):(floor(self.i) + 15)] = np.maximum(self.scope.pa.dsa[:,1:16,0] - (self.scope.cam.ADOffset), 0)
+            self.data[self.j:(self.j+32), floor(self.i):(floor(self.i) + 15)] = np.maximum(frameData[:,1:16,0] - (self.scope.cam.ADOffset), 0)
             self.i += self.dir*self.yspeed
             if self.yspeed < self.ystep:
                 self.yspeed += 1
@@ -80,8 +85,10 @@ class fastTiler:
                 self.scope.stage.MoveTo(1, nextY)
                 self.scope.stage.moving = [1,1]
             else: #gone through all start positions -> we're done
-                self.scope.pa.WantFrameNotification.remove(self.OnTick)
-                self.scope.pa.WantFrameGroupNotification.remove(self.updateView)
+                #self.scope.pa.WantFrameNotification.remove(self.OnTick)
+                #self.scope.pa.WantFrameGroupNotification.remove(self.updateView)
+                self.scope.pa.onFrame.disconnect(self.OnTick)
+                self.scope.pa.onFrameGroup.disconnect(self.updateView)
                 #View3D(self.data, title='tiled image')
             self.scope.pa.start()
 

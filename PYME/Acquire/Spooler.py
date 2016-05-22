@@ -69,12 +69,12 @@ class EventLogger:
 
 class Spooler:
     '''Spooler base class'''
-    def __init__(self, scope, filename, acquisator, protocol = p.NullProtocol, parent=None):
+    def __init__(self, scope, filename, acquisator, protocol = p.NullProtocol, guiUpdateCallback=None):
        global timeFcn
        self.scope = scope
        self.filename=filename
        self.acq = acquisator
-       self.parent = parent
+       self.guiUpdateCallback = guiUpdateCallback
        self.protocol = protocol
        
        #if we've got a fake camera - the cycle time will be wrong - fake our time sig to make up for this
@@ -92,13 +92,13 @@ class Spooler:
        
        self.doStartLog()
        
-       self.acq.WantFrameNotification.append(self.Tick)
+       self.acq.onFrame.connect(self.OnFrame)
        self.spoolOn = True
        
     def StopSpool(self):
         try:
-            self.acq.WantFrameNotification.remove(self.Tick)
-        except ValueError:
+            self.acq.onFrame.disconnect(self.OnFrame)
+        except:
             pass
 
         try:
@@ -116,11 +116,11 @@ class Spooler:
         
         self.spoolOn = False
 
-    def Tick(self, caller):
+    def OnFrame(self, sender, **kwargs):
         '''Called on every frame'''
         self.imNum += 1
-        if not self.parent == None:
-            self.parent.Tick()
+        if not self.guiUpdateCallback is None:
+            self.guiUpdateCallback()
         self.protocol.OnFrame(self.imNum)
 
         if self.imNum == 2 and sampleInformation and sampleInformation.currentSlide[0]: #have first frame and should thus have an imageID
@@ -161,10 +161,12 @@ class Spooler:
            mdgen(self.md)
 
     def fakeTime(self):
-       return self.tStart + self.imNum*self.scope.cam.GetIntegTime()
+        '''Generate a fake timestamp for use with the simulator where the camera 
+        cycle time does not match the actual time elapsed to generate the frame'''
+        return self.tStart + self.imNum*self.scope.cam.GetIntegTime()
 
     def FlushBuffer(self):
-       pass
+        pass
         
         
     def __del__(self):

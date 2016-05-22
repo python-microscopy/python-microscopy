@@ -66,7 +66,7 @@ class correlator(object):
         #self.initialise()
         
     def initialise(self):
-        d = 1.0*self.scope.pa.dsa.squeeze()        
+        d = 1.0*self.scope.pa.currentFrame.squeeze()        
         
         self.X, self.Y = np.mgrid[0.0:d.shape[0], 0.0:d.shape[1]]
         self.X -= d.shape[0]/2
@@ -96,18 +96,18 @@ class correlator(object):
 
         
     def setRefA(self):
-        d = 1.0*self.scope.pa.dsa.squeeze()
+        d = 1.0*self.scope.pa.currentFrame.squeeze()
         self.refA = d/d.mean() - 1        
         self.FA = ifftn(self.refA)
         self.refA *= self.mask
         
     def setRefB(self):
-        d = 1.0*self.scope.pa.dsa.squeeze()
+        d = 1.0*self.scope.pa.currentFrame.squeeze()
         self.refB = d/d.mean() - 1
         self.refB *= self.mask        
         
     def setRefC(self):
-        d = 1.0*self.scope.pa.dsa.squeeze()
+        d = 1.0*self.scope.pa.currentFrame.squeeze()
         self.refC = d/d.mean() - 1
         self.refC *= self.mask
         
@@ -115,7 +115,7 @@ class correlator(object):
         self.dzn = 2./np.dot(self.dz, self.dz)
         
     def setRefN(self, N):
-        d = 1.0*self.scope.pa.dsa.squeeze()
+        d = 1.0*self.scope.pa.currentFrame.squeeze()
         ref = d/d.mean() - 1        
         self.calFTs[:,:,N] = ifftn(ref)
         self.calImages[:,:,N] = ref*self.mask
@@ -127,7 +127,7 @@ class correlator(object):
         
         
     def compare(self):
-        d = 1.0*self.scope.pa.dsa.squeeze()
+        d = 1.0*self.scope.pa.currentFrame.squeeze()
         dm = d/d.mean() - 1
         
         #where is the piezo suppposed to be
@@ -176,8 +176,8 @@ class correlator(object):
         return dx, dy, dz, Cm
         
     
-    def tick(self, caller=None):
-        if not 'mask' in dir(self) or not self.scope.pa.dsa.shape[:2] == self.mask.shape[:2]:
+    def tick(self, **kwargs):
+        if not 'mask' in dir(self) or not self.scope.pa.currentFrame.shape[:2] == self.mask.shape[:2]:
             self.initialise()
             
         #called on a new frame becoming available
@@ -246,10 +246,12 @@ class correlator(object):
         self.corrRef = 0
         
     def register(self):
-        self.scope.pa.WantFrameGroupNotification.append(self.tick)
+        #self.scope.pa.WantFrameGroupNotification.append(self.tick)
+        self.scope.pa.onFrameGroup.connect(self.tick)
         
     def deregister(self):
-        self.scope.pa.WantFrameGroupNotification.remove(self.tick)
+        #self.scope.pa.WantFrameGroupNotification.remove(self.tick)
+        self.scope.pa.onFrameGroup.disconnect(self.tick)
     
     def setRefs(self, piezo):
         time.sleep(0.5)

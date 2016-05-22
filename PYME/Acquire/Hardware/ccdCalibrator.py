@@ -78,7 +78,8 @@ class ccdCalibrator:
         self.pa.stop()
         #self.cam.SetAcquisitionMode(self.cam.MODE_SINGLE_SHOT)
 
-        self.pa.WantFrameNotification.append(self.tick)
+        #self.pa.WantFrameNotification.append(self.tick)
+        self.pa.onFrame.connect(self.tick)
         self.cam.SetShutter(0)
 
         self.cam.SetBaselineClamp(True) #otherwise baseline changes with em gain
@@ -90,7 +91,7 @@ class ccdCalibrator:
 
     def finish(self):
         #self.pa.stop()
-        self.pa.WantFrameNotification.remove(self.tick)
+        self.pa.onFrame.disconnect(self.tick)
         
         #if self.contMode:
         #    self.cam.SetAcquisitionMode(self.cam.MODE_CONTINUOUS)
@@ -108,9 +109,9 @@ class ccdCalibrator:
 
         #self.pa.start()
 
-    def tick(self, caller):
+    def tick(self, sender, frameData, **kwargs):
         self.pa.stop()
-        imMean = self.dsa.mean()
+        imMean = frameData.mean()
         if self.pos == -1: #calculate background
             self.offset = imMean
             self.cam.SetShutter(1)

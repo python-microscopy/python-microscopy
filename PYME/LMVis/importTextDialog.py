@@ -111,7 +111,7 @@ class ImportTextDialog(wx.Dialog):
                 dataLines.append(line.split(delim))
                 n += 1
                 
-        #self.numCommentLines = len(commentLines)
+        self.numCommentLines = len(commentLines)
 
         numCols = len(dataLines[0])
         

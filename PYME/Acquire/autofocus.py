@@ -20,8 +20,8 @@ class AutoFocus(object):
         
         self.lastStep = .5
         
-    def tick(self, caller):
-        m = self.scope.pa.dsa.std()
+    def OnFrameGroup(self, **kwargs):
+        m = self.scope.pa.currentFrame.std()
         if m > self.lastMax:
             #continue
             self.lastMax = m
@@ -34,7 +34,8 @@ class AutoFocus(object):
             else:
                 #already runing backwards
                 self.scope.SetPos(z=self.lastMaxPos)
-                self.scope.pa.WantFrameGroupNotification.remove(self.tick)
+                #self.scope.pa.WantFrameGroupNotification.remove(self.tick)
+                self.scope.pa.onFrameGroup.disconnect(self.OnFrameGroup)
             
         self.scope.SetPos(z=self.lastMaxPos + self.incr)
         
@@ -43,4 +44,5 @@ class AutoFocus(object):
     def af(self, incr=0.5):
         self.lastMax = 0
         self.incr = incr
-        self.scope.pa.WantFrameGroupNotification.append(self.tick)
+        #self.scope.pa.WantFrameGroupNotification.append(self.tick)
+        self.scope.pa.onFrameGroup.connect(self.OnFrameGroup)

@@ -976,7 +976,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             
         return sig
     
-    def Redraw(self, caller=None):
+    def Redraw(self, sender=None, **kwargs):
         self._oldImSig = None
         self.Refresh()
         self.Update()

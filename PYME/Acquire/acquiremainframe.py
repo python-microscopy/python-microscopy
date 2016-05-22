@@ -389,7 +389,8 @@ class PYMEMainFrame(wx.Frame):
 
                 self.AddCamTool(self.vsp, 'Display')
 
-            self.scope.pa.WantFrameGroupNotification.append(self.vp.Redraw)
+            #self.scope.pa.WantFrameGroupNotification.append(self.vp.Redraw)
+            self.scope.pa.onFrameGroup.connect(self.vp.Redraw)
 
         else:
             #1d data - use graph instead
@@ -401,7 +402,8 @@ class PYMEMainFrame(wx.Frame):
 
                 self.AddPage(page=self.sp, select=True,caption='Preview')
 
-            self.scope.pa.WantFrameGroupNotification.append(self.sp.refr)
+            #self.scope.pa.WantFrameGroupNotification.append(self.sp.refr)
+            self.scope.pa.onFrameGroup.connect(self.sp.refr)
             
         self.scope.PACallbacks.append(self._refreshDataStack)
 

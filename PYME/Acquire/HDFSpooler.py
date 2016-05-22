@@ -98,7 +98,7 @@ class EventLogger:
 class Spooler(sp.Spooler):
     '''Responsible for the mechanics of spooling to a pytables/hdf file.
     '''
-    def __init__(self, scope, filename, acquisator, protocol = p.NullProtocol, parent=None, complevel=6, complib='zlib'):
+    def __init__(self, scope, filename, acquisator, protocol = p.NullProtocol, guiUpdateCallback=None, complevel=6, complib='zlib'):
         self.h5File = tables.openFile(filename, 'w')
            
         filt = tables.Filters(complevel, complib, shuffle=True)
@@ -107,7 +107,7 @@ class Spooler(sp.Spooler):
         self.md = MetaDataHandler.HDFMDHandler(self.h5File)
         self.evtLogger = EventLogger(self, scope, self.h5File)
         
-        sp.Spooler.__init__(self, scope, filename, acquisator, protocol, parent)
+        sp.Spooler.__init__(self, scope, filename, acquisator, protocol, guiUpdateCallback=guiUpdateCallback)
 
     def StopSpool(self):
         '''Stop spooling and close file'''
@@ -116,14 +116,15 @@ class Spooler(sp.Spooler):
         self.h5File.flush()
         self.h5File.close()
         
-    def Tick(self, caller):
+    def OnFrame(self, sender, frameData, **kwargs):
         '''Called on each frame'''
-        self.imageData.append(caller.dsa.reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()))
+        #print 'f'
+        self.imageData.append(frameData.reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()))
         self.h5File.flush()
         if self.imNum == 0: #first frame
             self.md.setEntry('imageID', fileID.genFrameID(self.imageData[0,:,:]))
             
-        sp.Spooler.Tick(self, caller)
+        sp.Spooler.OnFrame(self, sender)
         
     def __del__(self):
         if self.spoolOn:

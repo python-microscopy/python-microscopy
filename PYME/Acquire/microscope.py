@@ -245,7 +245,8 @@ class microscope(object):
         self.pa.Prepare()
 
         if 'shutterOpen' in dir(self.cam):
-            self.pa.WantFrameGroupNotification.append(self.satCheck)
+            #self.pa.WantFrameGroupNotification.append(self.satCheck)
+            self.pa.onFrameGroup.connect(self.satCheck)
             
         self.pa.start()
         

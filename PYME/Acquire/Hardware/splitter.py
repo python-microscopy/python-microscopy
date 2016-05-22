@@ -258,8 +258,9 @@ class Splitter:
         else:
             self.f.vp.do.Optimise()
             
-        if not self.f.update in self.scope.pa.WantFrameGroupNotification:
-            self.scope.pa.WantFrameGroupNotification.append(self.f.update)
+        #if not self.f.update in self.scope.pa.WantFrameGroupNotification:
+        #    self.scope.pa.WantFrameGroupNotification.append(self.f.update)
+        self.scope.pa.onFrameGroup.connect(self.f.update)
 
 
     def OnSetShiftField(self, event):
@@ -337,11 +338,12 @@ class UnMixSettingsPanel(wx.Panel):
         self.SetSizerAndFit(vsizer)
 
         self.bGrabOffset.Bind(wx.EVT_BUTTON, self.OnGrabOffsetFromCamera)
-        self.splitter.scope.pa.WantFrameGroupNotification.append(self.OnUpdateMix)
+        #self.splitter.scope.pa.WantFrameGroupNotification.append(self.OnUpdateMix)
+        self.splitter.scope.pa.onFrameGroup.connect(self.OnUpdateMix)
 
 
 
-    def OnUpdateMix(self, event=None):
+    def OnUpdateMix(self, event=None, **kwargs):
         self.splitter.mixMatrix[0,0]= float(self.tMM00.GetValue())
         self.splitter.mixMatrix[0,1]= float(self.tMM01.GetValue())
         self.splitter.mixMatrix[1,0]= float(self.tMM10.GetValue())
@@ -430,7 +432,7 @@ class UnMixPanel(wx.Panel):
         
 
 
-    def update(self, caller=None):
+    def update(self, caller=None, **kwargs):
         #print 'u'
         #print self.tMM00.GetValue(), self.tMM01.GetValue()
 #        self.splitter.mixMatrix[0,0]= float(self.tMM00.GetValue())
@@ -445,7 +447,9 @@ class UnMixPanel(wx.Panel):
             self.vp.Redraw()#imagepanel.Refresh()
 
     def OnCloseWindow(self, event):
-        self.splitter.scope.pa.WantFrameGroupNotification.remove(self.update)
+        #self.splitter.scope.pa.WantFrameGroupNotification.remove(self.update)
+        self.splitter.scope.pa.onFrameGroup.disconnect(self.update)
+        
         self.splitter.f = None
         self.Destroy()
 

@@ -60,7 +60,7 @@ class EventLogger:
       
 
 class Spooler(sp.Spooler):
-   def __init__(self, scope, filename, acquisator, protocol = p.NullProtocol, parent=None, complevel=2, complib='zlib'):
+   def __init__(self, scope, filename, acquisator, protocol = p.NullProtocol, guiUpdateCallback=None, complevel=2, complib='zlib'):
 #       if 'PYME_TASKQUEUENAME' in os.environ.keys():
 #            taskQueueName = os.environ['PYME_TASKQUEUENAME']
 #       else:
@@ -87,11 +87,11 @@ class Spooler(sp.Spooler):
        self.md = MetaDataHandler.QueueMDHandler(self.tq, self.seriesName)
        self.evtLogger = EventLogger(self, scope, self.tq, self.seriesName)
 
-       sp.Spooler.__init__(self, scope, filename, acquisator, protocol, parent)
+       sp.Spooler.__init__(self, scope, filename, acquisator, protocol, guiUpdateCallback=guiUpdateCallback)
    
-   def Tick(self, caller):
+   def OnFrame(self, sender, **kwargs):
       #self.tq.postTask(cSMI.CDataStack_AsArray(caller.ds, 0).reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()), self.seriesName)
-      self.buffer.append(caller.dsa.reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()).copy())
+      self.buffer.append(sender.dsa.reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()).copy())
 
       if self.imNum == 0: #first frame
           self.md.setEntry('imageID', fileID.genFrameID(self.buffer[-1].squeeze()))
@@ -99,7 +99,7 @@ class Spooler(sp.Spooler):
       if len(self.buffer) >= self.buflen:
           self.FlushBuffer()
 
-      sp.Spooler.Tick(self, caller)
+      sp.Spooler.OnFrame(self, sender)
       
    def FlushBuffer(self):
       t1 = time.time()

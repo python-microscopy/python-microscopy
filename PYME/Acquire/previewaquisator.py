@@ -29,6 +29,8 @@ import numpy as np
 import time
 import traceback
 
+import dispatch
+
 from PYME.Acquire import eventLog
 
 class dsFake(object):
@@ -61,7 +63,7 @@ class PreviewAquisator(wx.Timer):
         self.loopnuf = 0
         self.aqOn = False
         #lists of functions to call on a new frame, and when the aquisition ends
-        self.WantFrameNotification = []
+        #self.WantFrameNotification = []
         self.WantStopNotification = []
         self.WantStartNotification = []
         #list of functions to call to see if we ought to wait on any hardware
@@ -80,6 +82,15 @@ class PreviewAquisator(wx.Timer):
         
         #will be needed to allow the display load to be minimised by, e.g. only updating display once per poll rather than once per frame
         self.WantFrameGroupNotification = [] 
+        
+        #new style signals - these will replace the WantFrameNotification etc ...
+        #which are currently being kept for backwards compatibility
+        
+        self.onFrame = dispatch.Signal(['frameData'])
+        self.onFrameGroup = dispatch.Signal()
+        self.onStop = dispatch.Signal()
+        self.onStart = dispatch.Signal()
+        
 
     def Prepare(self, keepds=False):
         self.looppos=0
@@ -101,71 +112,7 @@ class PreviewAquisator(wx.Timer):
             self.dsa = np.zeros([self.cam.GetPicWidth(), self.cam.GetPicHeight(), 
                                  self.GetSeqLength()], dtype = 'uint16', order = order)
    
-#        if (self.ds == None or keepds == False):
-#            self.ds = None
-#            self.ds = CDataStack(self.cam.GetPicWidth(), self.cam.GetPicHeight(), 
-#                self.GetSeqLength(),self.getReqMemChans(self.cols))
-#            self.dsa = CDataStack_AsArray(self.ds, 0)
 
-#            i = 0
-#            for j in range(len(self.cols)):
-#                a = self.chans.names[j]
-#                c = self.chans.cols[j]
-#                #for (a,c) in (self.chans.names, self.chans.cols):
-#
-#                if(c & self.BW):
-#                    self.ds.setChannelName(i, (a + "_BW").encode())
-#                    i = i + 1
-#                if(c & self.RED):
-#                    self.ds.setChannelName(i, (a + "_R").encode())
-#                    i = i + 1
-#                if(c & self.GREEN1):
-#                    self.ds.setChannelName(i, (a + "_G1").encode())
-#                    i = i + 1
-#                if(c & self.GREEN2):
-#                    self.ds.setChannelName(i, (a + "_G2").encode())
-#                    i = i + 1
-#                if(c & self.BLUE):
-#                    self.ds.setChannelName(i, (a + "_B").encode())
-#                    i = i + 1
-#
-#
-#        
-#        #Check to see if the DataStack is big enough!
-#        if (self.ds.getNumChannels() < self.getReqMemChans(self.cols)):
-#            raise RuntimeError("Not enough channels in Data Stack")
-#
-#        self.shutters.closeShutters(self.shutters.ALL)
-
-#    def getFrame(self, colours):
-#        """ Get a frame from the camera and extract the channels we want,
-#            putting them into ds. """
-##        if ('numpy_frames' in dir(self.cam)):
-##            getChanSlice = lambda ds,chan: CDataStack_AsArray(ds, chan)[:,:,ds.getZPos()]
-##        else:
-##            getChanSlice = lambda ds,chan: ds.getCurrentChannelSlice(chan)
-#            
-#        if ('numpy_frames' in dir(self.cam)):
-#            getChanSlice = lambda ds,chan: self.dsa[:,:,ds.getZPos()]
-#        else:
-#            getChanSlice = lambda ds,chan: self.dsa[:,:,ds.getZPos()].ctypes.data
-#
-#        if(colours & self.BW):
-#            cs = getChanSlice(self.ds,self.curMemChn)
-#            self.cam.ExtractColor(cs,0)
-#            self.curMemChn = self.curMemChn + 1	
-#        if(colours & self.RED):
-#            self.cam.ExtractColor(getChanSlice(self.ds,self.curMemChn),1)
-#            self.curMemChn = self.curMemChn + 1
-#        if(colours & self.GREEN1):
-#            self.cam.ExtractColor(getChanSlice(self.ds,self.curMemChn),2)
-#            self.curMemChn = self.curMemChn + 1
-#        if(colours & self.GREEN2):
-#            self.cam.ExtractColor(getChanSlice(self.ds,self.curMemChn),4)
-#            self.curMemChn = self.curMemChn + 1
-#        if(colours & self.BLUE):
-#            self.cam.ExtractColor(getChanSlice(self.ds,self.curMemChn),3)
-#            self.curMemChn = self.curMemChn + 1
             
     def getFrame(self, colours=None):
         #print self.zPos
@@ -239,8 +186,11 @@ class PreviewAquisator(wx.Timer):
                 self.looppos = 0
                 self.curMemChn = 0
 
-                for a in self.WantFrameNotification:
-                    a(self)
+                #for a in self.WantFrameNotification:
+                #    a(self)
+                    
+                #print 'onFrame'
+                self.onFrame.send(sender=self, frameData=self.dsa)
 
             # If we're at the end of the Data Stack, then stop
             # Note that in normal sequence aquisition this is the line which determines how long to 
@@ -250,8 +200,6 @@ class PreviewAquisator(wx.Timer):
             # in CRealAquisator it's overridden to behave in the right way.
             if not (self.getNextDsSlice()):
                  self.stop()
-
-           
 
 
 
@@ -353,14 +301,24 @@ class PreviewAquisator(wx.Timer):
                     self.nFrames = nFrames
                     self.tThisFrame = time.clock()
     
-                    for a in self.WantFrameGroupNotification:
-                    	a(self)
+                    #for a in self.WantFrameGroupNotification:
+                    #	a(self)
+                     
+                    self.onFrameGroup.send_robust(self)
             else:
                  self._stop()
         except:
             traceback.print_exc()
         finally:     
             self.inNotify = False
+            
+    @property
+    def currentFrame(self):
+        '''Whatever frame is currently passing through the acquisition queue
+        
+        NB: this is an attempt to give a more user friendly name to  .dsa       
+        '''
+        return self.dsa
 
     def checkHardware(self):
         for callback in self.HardwareChecks:
@@ -391,6 +349,8 @@ class PreviewAquisator(wx.Timer):
 
         for a in self.WantStopNotification:
                 a(self)
+                
+        self.onStop.send_robust(self)
 
     def start(self, tiint = 100):
         "Start aquisition"
@@ -412,6 +372,8 @@ class PreviewAquisator(wx.Timer):
         
         for cb in self.WantStartNotification:
             cb(self)
+        
+        self.onStart.send_robust(self)
 
         #self.Wait(1000)  # Warten, so dass Piezotisch wieder in Ruhe
 
