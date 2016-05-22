@@ -63,6 +63,7 @@ dateDict = {'username' : getUsername(), 'day' : dtn.day, 'month' : dtn.month, 'y
 
 #\\ / and * will be replaced with os dependant separator
 datadirPattern = '%(dataDir)s/%(username)s/%(year)d_%(month)d_%(day)d%(dirSuffix)s'
+clusterDirPattern = '%(username)s/%(year)d_%(month)d_%(day)d%(dirSuffix)s'
 filePattern = '%(day)d_%(month)d_series'
 
 #resultsdirPattern = '%(homeDir)s/analysis/%(dday)d-%(dmonth)d-%(dyear)d'
@@ -86,6 +87,9 @@ def genHDFDataFilepath(create=True):
         os.makedirs(p)
 
     return os.path.normpath(p)
+    
+def genClusterDataFilepath():
+    return clusterDirPattern % dateDict
 
 def genResultFileName(dataFileName, create=True):
     fn, ext = os.path.splitext(dataFileName) #remove extension
@@ -108,3 +112,32 @@ def genResultDirectoryPath():
 
 def genShiftFieldDirectoryPath():
     return os.path.join(datadir, 'shiftmaps')
+
+def baseconvert(number,todigits):
+    '''Converts a number to an arbtrary base.
+    
+    Parameters
+    ----------
+    number : int
+        The number to convert
+    todigits : iterable or string
+        The digits of the base e.g. '0123456' (base 7) 
+        or 'ABCDEFGHIJK' (non-numeric base 11)
+    '''
+    x = number
+
+    # create the result in base 'len(todigits)'
+    res=""
+
+    if x == 0:
+        res=todigits[0]
+    
+    while x>0:
+        digit = x % len(todigits)
+        res = todigits[digit] + res
+        x /= len(todigits)
+
+    return res
+    
+def numToAlpha(num):
+    return baseconvert(num, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')

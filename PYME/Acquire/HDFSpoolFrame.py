@@ -36,6 +36,7 @@ except:
     sampInf = False
 #import win32api
 from PYME.FileUtils import nameUtils
+from PYME.FileUtils.nameUtils import numToAlpha
 from PYME.FileUtils.freeSpace import get_free_space
 from PYME.ParallelTasks.relativeFiles import getRelFilename
 
@@ -59,31 +60,7 @@ def create(parent):
  wxID_FRSPOOLSTSPOOLINGTO, wxID_FRSPOOLTCSPOOLFILE, 
 ] = [wx.NewId() for _init_ctrls in range(14)]
 
-def baseconvert(number,todigits):
-    '''Converts a number to an arbtrary base.
-    
-    Parameters
-    ----------
-    number : int
-        The number to convert
-    todigits : iterable or string
-        The digits of the base e.g. '0123456' (base 7) 
-        or 'ABCDEFGHIJK' (non-numeric base 11)
-    '''
-    x = number
 
-    # create the result in base 'len(todigits)'
-    res=""
-
-    if x == 0:
-        res=todigits[0]
-    
-    while x>0:
-        digit = x % len(todigits)
-        res = todigits[digit] + res
-        x /= len(todigits)
-
-    return res
 
 
 #class FrSpool(wx.Frame):
@@ -276,10 +253,10 @@ class PanSpool(wx.Panel):
         self.UpdateFreeSpace()
 
     def _GenSeriesName(self):
-        return self.seriesStub + '_' + self._NumToAlph(self.seriesCounter)
+        return self.seriesStub + '_' + numToAlpha(self.seriesCounter)
 
-    def _NumToAlph(self, num):
-        return baseconvert(num, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')
+    #def _NumToAlph(self, num):
+    #    return baseconvert(num, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')
 
     def UpdateFreeSpace(self, event=None):
         '''Updates the free space display. 
