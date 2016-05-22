@@ -229,12 +229,17 @@ class seqPanel(wx.Panel):
         self.scope.zs.view._mgr.AddPane(self.dlgAqProg, self.pinfo1)
         self.scope.zs.view._mgr.Update()
         
-        self.scope.zs.WantTickNotification.append(self.dlgAqProg.Tick)
+        #self.scope.zs.WantTickNotification.append(self.dlgAqProg.Tick)
+        self.scope.zs.onSingleFrame.connect(self.dlgAqProg.Tick)
         
     def OnSingleEnd(self):
         #wx.MessageBox('Acquisition Finished')
-        self.scope.zs.WantFrameNotification.remove(self.OnSingleEnd)
-        self.scope.zs.WantTickNotification.remove(self.dlgAqProg.Tick)
+        #self.scope.zs.WantFrameNotification.remove(self.OnSingleEnd)
+        #self.scope.zs.WantTickNotification.remove(self.dlgAqProg.Tick)
+        
+        self.scope.zs.onStack.disconnect(self.OnSingleEnd)
+        self.scope.zs.onSingleFrame.disconnect(self.dlgAqProg.Tick)
+        
         self.bStart.Enable(True)
         self.bLive.SetLabel('Live')
         
@@ -270,7 +275,8 @@ class seqPanel(wx.Panel):
                     dialog.ShowModal()
                 
                 if single:
-                    self.scope.zs.WantFrameNotification.append(self.OnSingleEnd)
+                    #self.scope.zs.WantFrameNotification.append(self.OnSingleEnd)
+                    self.scope.zs.onStack.connect(self.OnSingleEnd)
                     self.scope.zs.Single()
                 else:
                     self.scope.zs.Start()

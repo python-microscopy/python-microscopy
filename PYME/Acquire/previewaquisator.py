@@ -64,8 +64,8 @@ class PreviewAquisator(wx.Timer):
         self.aqOn = False
         #lists of functions to call on a new frame, and when the aquisition ends
         #self.WantFrameNotification = []
-        self.WantStopNotification = []
-        self.WantStartNotification = []
+        #self.WantStopNotification = []
+        #self.WantStartNotification = []
         #list of functions to call to see if we ought to wait on any hardware
         self.HardwareChecks = []
         #should we start a new exposure on the next timer check?
@@ -81,7 +81,7 @@ class PreviewAquisator(wx.Timer):
         self.zPos = 0
         
         #will be needed to allow the display load to be minimised by, e.g. only updating display once per poll rather than once per frame
-        self.WantFrameGroupNotification = [] 
+        #self.WantFrameGroupNotification = [] 
         
         #new style signals - these will replace the WantFrameNotification etc ...
         #which are currently being kept for backwards compatibility
@@ -347,8 +347,8 @@ class PreviewAquisator(wx.Timer):
 
         self.doStopLog()
 
-        for a in self.WantStopNotification:
-                a(self)
+        #for a in self.WantStopNotification:
+        #        a(self)
                 
         self.onStop.send_robust(self)
 
@@ -370,8 +370,8 @@ class PreviewAquisator(wx.Timer):
 
         self.doStartLog()
         
-        for cb in self.WantStartNotification:
-            cb(self)
+        #for cb in self.WantStartNotification:
+        #    cb(self)
         
         self.onStart.send_robust(self)
 

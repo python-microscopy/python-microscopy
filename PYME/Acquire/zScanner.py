@@ -28,6 +28,8 @@ from math import floor
 from PYME.Acquire import MetaDataHandler
 import time
 
+import dispatch
+
 class zScanner:
     def __init__(self, scope):
         self.scope = scope
@@ -38,12 +40,17 @@ class zScanner:
         
         self.frameNum = 0
         
-        self.ds = scope.pa.dsa
+        self.ds = scope.pa.currentFrame
         
         self.running = False
  
-        self.WantFrameNotification = []
-        self.WantTickNotification = []
+        #legacy signalling - don't use in new code.        
+        #self.WantFrameNotification = []
+        #self.WantTickNotification = []
+        
+        #These signals should instead of the notification lists above
+        self.onStack = dispatch.Signal() #dispatched on completion of a stack
+        self.onSingleFrame = dispatch.Signal()  #dispatched when a frame is ready
         
     def _endSingle(self):
         print ('es')
@@ -69,22 +76,32 @@ class zScanner:
         self.startPos = self.piezo.GetPos(self.piezoChan)
         
         self.scope.pa.stop()
-        self.scope.pa.WantFrameNotification.append(self.tick)
-        self.scope.pa.WantStartNotification.append(self.OnAqStart)
-        self.scope.pa.WantStopNotification.append(self.OnAqStop)
+        #self.scope.pa.WantFrameNotification.append(self.tick)
+        #self.scope.pa.WantStartNotification.append(self.OnAqStart)
+        #self.scope.pa.WantStopNotification.append(self.OnAqStop)
+
+        self.scope.pa.onFrame.connect(self.OnCameraFrame)
+        self.scope.pa.onStart.connect(self.OnAqStart)
+        self.scope.pa.onStop.connect(self.OnAqStop)        
+        
         self.scope.pa.start()
         
     def Stop(self):
         self.scope.pa.stop()
-        self.scope.pa.WantFrameNotification.remove(self.tick)
-        self.scope.pa.WantStartNotification.remove(self.OnAqStart)
-        self.scope.pa.WantStopNotification.remove(self.OnAqStop)
+        #self.scope.pa.WantFrameNotification.remove(self.tick)
+        #self.scope.pa.WantStartNotification.remove(self.OnAqStart)
+        #self.scope.pa.WantStopNotification.remove(self.OnAqStop)
+        
+        self.scope.pa.onFrame.disconnect(self.OnCameraFrame)
+        self.scope.pa.onStart.disconnect(self.OnAqStart)
+        self.scope.pa.onStop.disconnect(self.OnAqStop)
+        
         self.scope.pa.start()
         
         self.running = False
         
         
-    def OnAqStart(self, caller=None):      
+    def OnAqStart(self, **kwargs):      
         self.pos = 0
         self.callNum = 0
 
@@ -115,7 +132,7 @@ class zScanner:
         self.piezo.MoveTo(self.piezoChan, self.zPoss[self.pos])
 
 
-    def tick(self, caller=None):
+    def OnCameraFrame(self, **kwargs):
         fn = floor(self.callNum) % len(self.zPoss)
         self.frameNum = fn
         #print fn
@@ -136,24 +153,28 @@ class zScanner:
         
         if fn == 0: #we've wrapped around 
             #make a copy of callbacks so that if we remove one, we still call the others
-            callbacks = [] + self.WantFrameNotification              
-            for cb in callbacks:
-                cb()
+            #callbacks = [] + self.WantFrameNotification              
+            #for cb in callbacks:
+            #    cb()
+                
+            self.onStack.send(self)
                 
             
             if 'decView' in dir(self.view):
                 self.view.decView.wienerPanel.OnCalculate()
         #self.view_xz.Refresh()
         #self.view_yz.Refresh()
-        for cb in self.WantTickNotification:
-            cb()
+        #for cb in self.WantTickNotification:
+        #    cb()
+            
+        self.onSingleFrame.send(self)
             
         self.view.Refresh()
 
     def _movePiezo(self, fn):
         self.piezo.MoveTo(self.piezoChan, self.zPoss[fn])
         
-    def OnAqStop(self, caller=None):
+    def OnAqStop(self, **kwargs):
         self.view.image.mdh.setEntry('EndTime', time.time())
 
         #loop over all providers of metadata
