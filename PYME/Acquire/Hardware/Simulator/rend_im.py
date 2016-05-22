@@ -305,7 +305,7 @@ def patternIllumFcn(fluors, postion):
     global illPKey, illPCache
     key = hash((fluors[0]['x'], fluors[0]['y'], fluors[0]['z']))
     
-    if not illPCache == None and illPKey == key:
+    if not illPCache is None and illPKey == key:
         return illPCache
     else:
         illPKey = key
@@ -337,7 +337,7 @@ def SIMIllumFcn(fluors, postion):
 def simPalmIm(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=10, laserPowers = [.1,1]):
     im = zeros((len(X), len(Y)), 'f')
 
-    if fluors == None:
+    if fluors is None:
         return im
 
     P = arange(0,1.01,.1)
@@ -357,7 +357,7 @@ def simPalmIm(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=10, laserPower
 def simPalmImF(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=10, laserPowers = [.1,1]):
     im = zeros((len(X), len(Y)), 'f')
     
-    if fluors == None:
+    if fluors is None:
         return im
 
     P = arange(0,1.01,.1)
@@ -386,12 +386,12 @@ def simPalmImF(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=10, laserPowe
 
 
 def simPalmImFI_(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=15, laserPowers = [.1,1], position=[0,0,0], illuminationFunction='ConstIllum'):
-    if interpModel == None:
+    if interpModel is None:
         genTheoreticalModel(MetaData.TIRFDefault)
         
     im = zeros((len(X), len(Y)), 'f')
     
-    if fluors == None:
+    if fluors is None:
         return im
     
     #P = arange(0,1.01,.1)
@@ -473,12 +473,12 @@ def _rFluorSubset(im, fl, A, x0, y0, z, roiSize, dx, dy, dz, Chan2XOffset=0, Cha
         cInterp.InterpolateInplaceM(interpModel, im, (fl['x'] - x0+ Chan2XOffset),(fl['y'] - y0 ),  z+Chan2ZOffset, A*fl['spec'][:,1], roiSize,dx,dy,dz)
 
 def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=100, laserPowers = [.1,1], position=[0,0,0], illuminationFunction='ConstIllum', Chan2XOffset=0, Chan2ZOffset=0):
-    if interpModel == None:
+    if interpModel is None:
         genTheoreticalModel(MetaData.TIRFDefault)
         
     im = zeros((len(X), len(Y)), 'f')
     
-    if fluors == None:
+    if fluors is None:
         return im
     
     
@@ -553,7 +553,7 @@ def simPalmImFSpec(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=10, laser
     deltaY = (Y[1] - Y[0])*deltaY #convert to nm
     #print deltaY
     
-    if fluors == None:
+    if fluors is None:
         return im
 
     P = arange(0,1.01,.1)
@@ -583,7 +583,7 @@ def simPalmImFSpec(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=10, laser
     return im
 
 def simPalmImFSpecI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=10, laserPowers = [.1,1], deltaY=64, deltaZ = 300):
-    if interpModel == None:
+    if interpModel is None:
         genTheoreticalModel(MetaData.TIRFDefault)
         
     im = zeros((len(X), len(Y)), 'f')
@@ -591,7 +591,7 @@ def simPalmImFSpecI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=10, lase
     deltaY = (Y[1] - Y[0])*deltaY #convert to nm
     #print deltaY
 
-    if fluors == None:
+    if fluors is None:
         return im
 
     P = arange(0,1.01,.1)
@@ -630,7 +630,7 @@ def simPalmImFBP(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=10, laserPo
     deltaY = (Y[1] - Y[0])*deltaY #convert to nm
     #print deltaY
 
-    if fluors == None:
+    if fluors is None:
         return im
 
     P = arange(0,1.01,.1)
