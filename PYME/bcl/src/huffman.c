@@ -180,35 +180,35 @@ static unsigned int _Huffman_Read8Bits( huff_bitstream_t *stream )
 * _Huffman_WriteBits() - Write bits to a bitstream.
 *************************************************************************/
 
-//static void _Huffman_WriteBits( huff_bitstream_t *stream, unsigned int x,
-//  unsigned int bits )
-//{
-//  unsigned int  bit, count;
-//  unsigned char *buf;
-//  unsigned int  mask;
-//
-//  /* Get current stream state */
-//  buf = stream->BytePtr;
-//  bit = stream->BitPos;
-//
-//  /* Append bits */
-//  mask = 1 << (bits-1);
-//  for( count = 0; count < bits; ++ count )
-//  {
-//    *buf = (*buf & (0xff^(1<<(7-bit)))) +
-//            ((x & mask ? 1 : 0) << (7-bit));
-//    x <<= 1;
-//    bit = (bit+1) & 7;
-//    if( !bit )
-//    {
-//      ++ buf;
-//    }
-//  }
-//
-//  /* Store new stream state */
-//  stream->BytePtr = buf;
-//  stream->BitPos  = bit;
-//}
+static void _Huffman_WriteBits_orig( huff_bitstream_t *stream, unsigned int x,
+ unsigned int bits )
+{
+ unsigned int  bit, count;
+ unsigned char *buf;
+ unsigned int  mask;
+
+ /* Get current stream state */
+ buf = stream->BytePtr;
+ bit = stream->BitPos;
+
+ /* Append bits */
+ mask = 1 << (bits-1);
+ for( count = 0; count < bits; ++ count )
+ {
+   *buf = (*buf & (0xff^(1<<(7-bit)))) +
+           ((x & mask ? 1 : 0) << (7-bit));
+   x <<= 1;
+   bit = (bit+1) & 7;
+   if( !bit )
+   {
+     ++ buf;
+   }
+ }
+
+ /* Store new stream state */
+ stream->BytePtr = buf;
+ stream->BitPos  = bit;
+}
 
 ///*************************************************************************
 // * _Huffman_WriteBits() - Write bits to a bitstream.
@@ -605,7 +605,7 @@ int Huffman_Compress_( unsigned char *in, unsigned char *out,
       code = sym[symbol].Code;
       nbits =sym[symbol].Bits;
       
-    _Huffman_WriteBits( &stream, code,nbits);
+    _Huffman_WriteBits_orig( &stream, code,nbits);
   }
 
   /* Calculate size of output data */

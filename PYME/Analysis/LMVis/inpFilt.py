@@ -236,6 +236,11 @@ class h5rDSource(inputFilter):
 
         if not 'DriftResults' in dir(self.h5f.root):
             raise RuntimeError('Was expecting to find a "DriftResults" table')
+            
+        self.driftResults = self.h5f.root.DriftResults[:]
+
+        #sort by time
+        self.driftResults.sort(order='tIndex')
 
         #allow access using unnested original names
         self._keys = unNestNames(self.h5f.root.DriftResults.description._v_nestedNames)
@@ -261,11 +266,11 @@ class h5rDSource(inputFilter):
         k = key.split('_')
         
         if len(k) == 1:
-            return self.h5f.root.DriftResults[sl][k[0]].astype('f')
+            return self.driftResults[sl][k[0]].astype('f')
         elif len(k) == 2:
-            return self.h5f.root.DriftResults[sl][k[0]][k[1]].astype('f')
+            return self.driftResults[sl][k[0]][k[1]].astype('f')
         elif len(k) == 3:
-            return self.h5f.root.DriftResults[sl][k[0]][k[1]][k[2]].astype('f')
+            return self.driftResults[sl][k[0]][k[1]][k[2]].astype('f')
         else:
             raise RuntimeError("Don't know about deeper nesting yet")
         

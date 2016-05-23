@@ -257,7 +257,7 @@ class Filter(ModuleBase):
     inputName = CStr('input')
     outputName = CStr('filtered_image')
     
-    processFramesIndividually = Bool(False)
+    processFramesIndividually = Bool(True)
     
     def filter(self, image):
         if self.processFramesIndividually:
@@ -415,6 +415,39 @@ class Scale(Filter):
     def applyFilter(self, data, chanNum, i, image0):
         
         return self.scale*data
+        
+@register_module('Normalize')    
+class Normalize(Filter):
+    '''Normalize an image so that the maximum is 1'''
+    
+    #scale = Float(1)
+    
+    def applyFilter(self, data, chanNum, i, image0):
+        
+        return data/float(data.max())
+        
+@register_module('NormalizeMean')    
+class NormalizeMean(Filter):
+    '''Normalize an image so that the maximum is 1'''
+    
+    offset = Float(0)
+    
+    def applyFilter(self, data, chanNum, i, image0):
+        
+        data = data - self.offset
+        
+        return data/float(data.mean())
+        
+        
+@register_module('Invert')    
+class Invert(Filter):
+    '''Invert image'''
+    
+    #scale = Float(1)
+    
+    def applyFilter(self, data, chanNum, i, image0):
+        
+        return 1 - data
         
 @register_module('BinaryOr')    
 class BinaryOr(ArithmaticFilter):

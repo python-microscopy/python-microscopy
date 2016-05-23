@@ -284,8 +284,8 @@ class DSViewFrame(wx.Frame):
     def OnToggleModule(self, event):
         id = event.GetId()
         mn = self.modMenuIds[id]
-        if self.mModules.IsChecked(id):
-            modules.loadModule(mn, self)
+        #if self.mModules.IsChecked(id):
+        modules.loadModule(mn, self)
 
         if mn in self.installedModules:
             self.mModules.Check(id, True)

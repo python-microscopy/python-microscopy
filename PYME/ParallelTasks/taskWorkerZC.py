@@ -48,98 +48,102 @@ Pyro.config.PYRO_MOBILE_CODE=0
 #    taskQueueName = os.environ['PYME_TASKQUEUENAME']
 #else:
 #    taskQueueName = 'taskQueue'
-    
-#ns=Pyro.naming.NameServerLocator().getNS()
-ns = pzc.getNS()
 
-#tq = Pyro.core.getProxyForURI("PYRONAME://" + taskQueueName)
+def main():    
+    #ns=Pyro.naming.NameServerLocator().getNS()
+    ns = pzc.getNS()
 
-procName = compName + ' - PID:%d' % os.getpid()
-import logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger('')
+    #tq = Pyro.core.getProxyForURI("PYRONAME://" + taskQueueName)
 
-serverFails = {}
+    procName = compName + ' - PID:%d' % os.getpid()
+    import logging
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger('')
 
-#loop forever asking for tasks
-while 1:
-    queueNames = ns.list('TaskQueues')
-    
-    #print queueNames
+    serverFails = {}
 
-    tasks = []
-
-    #loop over all queues, looking for tasks to process
-    while len(tasks) == 0 and len(queueNames) > 0:
-        #try queue on current machine first
+    #loop forever asking for tasks
+    while 1:
+        queueNames = ns.list('TaskQueues')
+        
         #print queueNames
-        if compName in queueNames:
-            qName = compName
-            queueNames.remove(qName)
-        else: #pick a queue at random
-            qName = queueNames.pop(random.randint(0, len(queueNames)-1))
 
-        try:
-            #print qName
-            tq = Pyro.core.getProxyForURI(ns.resolve(qName))
-            tq._setTimeout(1)
-            tq._setOneway(['returnCompletedTask'])
-            #print qName
+        tasks = []
 
-            #ask the queue for tasks
-            tasks = tq.getTasks(procName, PYME.version.version)
+        #loop over all queues, looking for tasks to process
+        while len(tasks) == 0 and len(queueNames) > 0:
+            #try queue on current machine first
+            #print queueNames
+            if compName in queueNames:
+                qName = compName
+                queueNames.remove(qName)
+            else: #pick a queue at random
+                qName = queueNames.pop(random.randint(0, len(queueNames)-1))
 
-            #we succesfully contacted the server, so reset it's fail count
-            serverFails[qName] = 0
-        except Pyro.core.ProtocolError as e:
-            if e.message == 'connection failed':
-                #remember that the server failed - and put it 'on notice'
-                nFails = 1
-                if qName in serverFails.keys():
-                    nFails += serverFails[qName]
+            try:
+                #print qName
+                tq = Pyro.core.getProxyForURI(ns.resolve(qName))
+                tq._setTimeout(1)
+                tq._setOneway(['returnCompletedTask'])
+                #print qName
 
-                serverFails[qName] = nFails
+                #ask the queue for tasks
+                tasks = tq.getTasks(procName, PYME.version.version)
 
-                if False:#nFails >= 4:
-                    #server is dead in the water - put it out of it's misery
-                    print(('Killing:', qName))
-                    try:
-                        ns.unregister('TaskQueues.%s' % qName)
-                    except Pyro.errors.NamingError:
-                        pass
-        except Exception:
-            import traceback
-            logger.exception(traceback.format_exc())
+                #we succesfully contacted the server, so reset it's fail count
+                serverFails[qName] = 0
+            except Pyro.core.ProtocolError as e:
+                if e.message == 'connection failed':
+                    #remember that the server failed - and put it 'on notice'
+                    nFails = 1
+                    if qName in serverFails.keys():
+                        nFails += serverFails[qName]
+
+                    serverFails[qName] = nFails
+
+                    if False:#nFails >= 4:
+                        #server is dead in the water - put it out of it's misery
+                        print(('Killing:', qName))
+                        try:
+                            ns.unregister('TaskQueues.%s' % qName)
+                        except Pyro.errors.NamingError:
+                            pass
+            except Exception:
+                import traceback
+                logger.exception(traceback.format_exc())
+            
+                #pass
+            
         
-            #pass
         
-    
-    
-    if len(tasks) == 0: #no queues had tasks
-        time.sleep(1) #put ourselves to sleep to avoid constant polling
-    #else:
-    #    print qName, len(tasks)
+        if len(tasks) == 0: #no queues had tasks
+            time.sleep(1) #put ourselves to sleep to avoid constant polling
+        #else:
+        #    print qName, len(tasks)
 
-    #results = []
+        #results = []
 
-    #loop over tasks - we pop each task and then delete it after processing
-    #to keep memory usage down
-    while len(tasks) > 0:
-        #get the next task (a task is a function, or more generally, a class with
-        #a __call__ method
-        task = tasks.pop(0)
-        try:
-            #execute the task,
-            t1 = time.time()
-            res = task(taskQueue=tq)
-            t2 = time.time()
-            tq.returnCompletedTask(res, procName, t2-t1)
-        except:
-            import traceback
-            traceback.print_exc()
-        
-        del task
-        
-    #tq.returnCompletedTasks(results, name)
-    del tasks
-    #del results
+        #loop over tasks - we pop each task and then delete it after processing
+        #to keep memory usage down
+        while len(tasks) > 0:
+            #get the next task (a task is a function, or more generally, a class with
+            #a __call__ method
+            task = tasks.pop(0)
+            try:
+                #execute the task,
+                t1 = time.time()
+                res = task(taskQueue=tq)
+                t2 = time.time()
+                tq.returnCompletedTask(res, procName, t2-t1)
+            except:
+                import traceback
+                traceback.print_exc()
+            
+            del task
+            
+        #tq.returnCompletedTasks(results, name)
+        del tasks
+        #del results
+
+if __name__ == '__main__':
+    main()
