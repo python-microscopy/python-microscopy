@@ -77,7 +77,7 @@ def getThumbnail(filename):
             #print ext
             #try:
             #thumbMod = __import__(thumbnailers[ext])
-            thumbMod = __import__('PYME.io.FileUtils.' + thumbnailers[ext], fromlist=['PYME', 'FileUtils'])
+            thumbMod = __import__('PYME.io.FileUtils.' + thumbnailers[ext], fromlist=['PYME', 'io', 'FileUtils'])
 
             ret = thumbMod.generateThumbnail(filename, THUMBSIZE)
 

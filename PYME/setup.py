@@ -34,7 +34,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('PSFGen')
     #config.add_subpackage('cSMI')
     config.add_subpackage('ParallelTasks')
-    config.add_subpackage('FileUtils')
+    config.add_subpackage('io')
     config.add_subpackage('Deconv')
     config.add_subpackage('PSFEst')
     config.add_subpackage('mProfile')
