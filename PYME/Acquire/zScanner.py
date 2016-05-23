@@ -264,7 +264,7 @@ class wavetableZScanner(zScanner):
 def getBestScanner(scope):
     piezo = scope.positioning[scope.stackSettings.GetScanChannel()][0]
     
-    if 'StartWaveOutput' in dir(piezo) and not scope.sa.GetSeqLength() > piezo.MAXWAVEPOINTS: #piezo supports wavetable output
+    if 'StartWaveOutput' in dir(piezo) and not scope.stackSettings.GetSeqLength() > piezo.MAXWAVEPOINTS: #piezo supports wavetable output
         return wavetableZScanner(scope, piezo.hasTrigger)
     else: #no wavetable - possibly poorly synchronised
         return zScanner(scope)

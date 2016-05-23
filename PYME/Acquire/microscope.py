@@ -286,8 +286,8 @@ class microscope(object):
         self.camControls[camName].GetParent().Show()#GetParent().PinOpen()
         self.camControls[camName].GetParent().GetParent().Layout()
 
-        if 'sa' in dir(self):
-            self.sa.cam = self.cam
+        #if 'sa' in dir(self):
+        #    self.sa.cam = self.cam
 
         if 'pa' in dir(self):
             self.pa.cam = self.cam

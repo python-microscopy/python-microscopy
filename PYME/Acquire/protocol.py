@@ -148,12 +148,12 @@ class ZStackTaskListProtocol(TaskListProtocol):
         self.randomise = randomise
 
     def Init(self, spooler):
-        self.zPoss = np.arange(scope.sa.GetStartPos(), scope.sa.GetEndPos()+.95*scope.sa.GetStepSize(),scope.sa.GetStepSize()*scope.sa.GetDirection())
+        self.zPoss = np.arange(scope.stackSettings.GetStartPos(), scope.stackSettings.GetEndPos()+.95*scope.stackSettings.GetStepSize(),scope.stackSettings.GetStepSize()*scope.stackSettings.GetDirection())
 
         if self.randomise:
             self.zPoss = self.zPoss[np.argsort(np.random.rand(len(self.zPoss)))]
 
-        piezo = scope.sa.piezos[scope.sa.GetScanChannel()]
+        piezo = scope.positioning[scope.stackSettings.GetScanChannel()]
         self.piezo = piezo[0]
         self.piezoChan = piezo[1]
         self.startPos = self.piezo.GetPos(self.piezoChan)

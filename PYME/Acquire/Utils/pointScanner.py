@@ -201,7 +201,7 @@ class PointScanner3D:
             self.yp = self.pixels[1]
 
         #get z range from normal z controls
-        self.zp = np.arange(self.scope.sa.GetStartPos(), self.scope.sa.GetEndPos()+.95*self.scope.sa.GetStepSize(),self.scope.sa.GetStepSize())
+        self.zp = np.arange(self.scope.stackSettings.GetStartPos(), self.scope.stackSettings.GetEndPos()+.95*self.scope.stackSettings.GetStepSize(),self.scope.stackSettings.GetStepSize())
 
         self.nx = len(self.xp)
         self.ny = len(self.yp)

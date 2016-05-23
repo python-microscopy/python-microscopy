@@ -80,75 +80,91 @@ class seqPanel(wx.Panel):
 
         vsizer = wx.BoxSizer(wx.VERTICAL)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        
+        hsizer.Add(wx.StaticText(self, -1, u'Piezo Channel:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
 
-        sPiezo = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Piezo Channel'), wx.HORIZONTAL)
+        #sPiezo = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Piezo Channel'), wx.HORIZONTAL)
 
         self.chPiezo = wx.Choice(self, -1, choices=[], size=(-1,-1))
         self.chPiezo.Bind(wx.EVT_CHOICE, self.OnChPiezoChoice)
 
-        sPiezo.Add(self.chPiezo, 1,wx.ALIGN_CENTER_VERTICAL,0)
-        hsizer.Add(sPiezo, 1, wx.EXPAND|wx.RIGHT, 5)
+        hsizer.Add(self.chPiezo, 1,wx.ALIGN_CENTER_VERTICAL|wx.LEFT,2)
+        #hsizer.Add(sPiezo, 1, wx.EXPAND|wx.RIGHT, 5)
+        vsizer.Add(hsizer, 0, wx.EXPAND|wx.BOTTOM, 5)
+        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        
+        #hsizer.Add(wx.StaticText(self, -1, u'Type:'), 0, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 1)
 
-        sType = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Type'), wx.VERTICAL)
+        #sType = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Type'), wx.VERTICAL)
 
         self.bSt_end = wx.RadioButton(self, -1,'Start and End', size=(-1,-1))
         self.bSt_end.SetValue(True)
         self.bSt_end.Bind(wx.EVT_RADIOBUTTON, self.OnBSt_endRadiobutton)
 
-        sType.Add(self.bSt_end, 1,0,0)
+        hsizer.Add(self.bSt_end, 1,wx.ALIGN_CENTER_VERTICAL,0)
 
         self.bMid_num = wx.RadioButton(self, -1, 'Middle and #', size=(-1,-1))
         self.bMid_num.SetValue(False)
         self.bMid_num.Bind(wx.EVT_RADIOBUTTON, self.OnBMid_numRadiobutton)
 
-        sType.Add(self.bMid_num, 1,0,0)
-        hsizer.Add(sType, 1, wx.EXPAND, 0)
+        hsizer.Add(self.bMid_num, 1,wx.ALIGN_CENTER_VERTICAL,0)
+        #hsizer.Add(sType, 1, wx.EXPAND, 0)
 
-        vsizer.Add(hsizer, 1, wx.EXPAND, 0)
+        vsizer.Add(hsizer, 0, wx.EXPAND|wx.BOTTOM, 10)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        
+        hsizer.Add(wx.StaticText(self, -1, u'Start [\u03BCm]:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
 
-        sStart = wx.StaticBoxSizer(wx.StaticBox(self, -1, u'Start Pos [\u03BCm]'), wx.HORIZONTAL)
+        #sStart = wx.StaticBoxSizer(wx.StaticBox(self, -1, u'Start Pos [\u03BCm]'), wx.HORIZONTAL)
 
         self.tStPos = wx.TextCtrl(self, -1, value='40', size=(40,-1))
         self.tStPos.Bind(wx.EVT_KILL_FOCUS, self.OnTStPosKillFocus)
-        sStart.Add(self.tStPos, 2, wx.RIGHT, 5)
+        hsizer.Add(self.tStPos, 2, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.bStartHere = wx.Button(self, -1,'Here', size=(10,10))
         self.bStartHere.Bind(wx.EVT_BUTTON, self.OnBStartHereButton)
-        sStart.Add(self.bStartHere, 1, wx.EXPAND, 0)
+        hsizer.Add(self.bStartHere, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        hsizer.Add(sStart, 1, wx.RIGHT, 5)
-
-        sEnd = wx.StaticBoxSizer(wx.StaticBox(self, -1, u'End Pos [\u03BCm]'), wx.HORIZONTAL)
-
-        self.tEndPos = wx.TextCtrl(self, -1, value='40', size=(40,-1))
-        self.tEndPos.Bind(wx.EVT_KILL_FOCUS, self.OnTEndPosKillFocus)
-        sEnd.Add(self.tEndPos, 2, wx.RIGHT, 5)
-
-        self.bEndHere = wx.Button(self, -1,'Here', size=(10,10))
-        self.bEndHere.Bind(wx.EVT_BUTTON, self.OnBEndHereButton)
-        sEnd.Add(self.bEndHere, 1, wx.EXPAND, 0)
-
-        hsizer.Add(sEnd, 1, 0, 0)
+        #hsizer.Add(sStart, 1, wx.RIGHT, 5)
         vsizer.Add(hsizer, 0, wx.EXPAND, 0)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        sStep = wx.StaticBoxSizer(wx.StaticBox(self, -1, u'Step Size [\u03BCm]'), wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, u'End [\u03BCm]:  '), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)        
+        #sEnd = wx.StaticBoxSizer(wx.StaticBox(self, -1, u'End Pos [\u03BCm]'), wx.HORIZONTAL)
+
+        self.tEndPos = wx.TextCtrl(self, -1, value='40', size=(40,-1))
+        self.tEndPos.Bind(wx.EVT_KILL_FOCUS, self.OnTEndPosKillFocus)
+        hsizer.Add(self.tEndPos, 2, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        self.bEndHere = wx.Button(self, -1,'Here', size=(10,10))
+        self.bEndHere.Bind(wx.EVT_BUTTON, self.OnBEndHereButton)
+        hsizer.Add(self.bEndHere, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        #hsizer.Add(sEnd, 1, 0, 0)
+        vsizer.Add(hsizer, 0, wx.EXPAND|wx.BOTTOM, 2)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        hsizer.Add(wx.StaticText(self, -1, u'Step [\u03BCm]: '), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+        #sStep = wx.StaticBoxSizer(wx.StaticBox(self, -1, u'Step Size [\u03BCm]'), wx.HORIZONTAL)
 
         self.tStepSize = wx.TextCtrl(self, -1, value='0.2', size=(40,-1))
         self.tStepSize.Bind(wx.EVT_KILL_FOCUS, self.OnTStepSizeKillFocus)
-        sStep.Add(self.tStepSize, 1, 0, 0)
+        hsizer.Add(self.tStepSize, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        hsizer.Add(sStep, 1, wx.RIGHT, 5)
+        #hsizer.Add(sStep, 1, wx.RIGHT, 5)
+        #vsizer.Add(hsizer, 0, wx.EXPAND, 0)
+        #hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        sNSlices = wx.StaticBoxSizer(wx.StaticBox(self, -1, '# Slices'), wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, u' # Slices:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)        
+        #sNSlices = wx.StaticBoxSizer(wx.StaticBox(self, -1, '# Slices'), wx.HORIZONTAL)
 
         self.tNumSlices = wx.TextCtrl(self, -1, value='100', size=(40,-1))
         self.tNumSlices.Bind(wx.EVT_KILL_FOCUS, self.OnTNumSlicesKillFocus)
-        sNSlices.Add(self.tNumSlices, 1, 0, 0)
+        hsizer.Add(self.tNumSlices, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        hsizer.Add(sNSlices, 1, 0, 0)
-        vsizer.Add(hsizer, 0, wx.EXPAND, 0)
+        #hsizer.Add(sNSlices, 1, 0, 0)
+        vsizer.Add(hsizer, 0, wx.EXPAND|wx.BOTTOM, 5)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         self.stMemory = wx.StaticText(self, -1, '')
         hsizer.Add(self.stMemory, 1, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
