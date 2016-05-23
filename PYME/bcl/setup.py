@@ -8,7 +8,10 @@ else:
 
 #windows VC++ has really shocking c standard support so we need to include
 #custom stdint.h and intypes.h files from https://code.google.com/archive/p/msinttypes
-if sys.platform == 'win32':
+
+# THE NEXT is a TEMPORARY HACK!!!!
+# ideally we want compiler detection or at minimum use of an environment variable
+if sys.platform == 'win32' and False:
 	extra_include_dirs = ['win_incl']
 else:
 	extra_include_dirs = []
