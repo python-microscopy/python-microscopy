@@ -21,6 +21,9 @@
 ##################
 import wx
 import Pyro.core
+from PYME.misc import pyro_tracebacks
+
+#import Pyro.util
 from PYME.Analysis import remFitBuf
 import os
 from PYME.Acquire import MetaDataHandler
@@ -37,7 +40,9 @@ from PYME.LMVis import progGraph as progGraph
 #import sys
 
 
-from PYME.misc import extraCMaps
+
+
+#from PYME.misc import extraCMaps
 
 
 import numpy as np
