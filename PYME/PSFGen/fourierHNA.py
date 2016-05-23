@@ -273,7 +273,7 @@ def GenWidefieldPSFA(zs, dx=5, lamb=700, n=1.51, NA = 1.47,field_x=0, field_y=0,
     return abs(ps**2)
     
 
-def PsfFromPupil(pupil, zs, dx, lamb):
+def PsfFromPupil(pupil, zs, dx, lamb, apodization=None, n=1.51, NA=1.51):
     dx = float(dx)
     X, Y = meshgrid(dx*arange(-pupil.shape[0]/2, pupil.shape[0]/2),dx*arange(-pupil.shape[1]/2, pupil.shape[1]/2))
     print((X.min(), X.max()))
@@ -289,16 +289,23 @@ def PsfFromPupil(pupil, zs, dx, lamb):
     
     k = 2*pi*n/lamb
 
-    #R = sqrt(u**2 + v**2)
+    
     #M = 1.0*(R < (NA/(n*lamb))) # NA/lambda
 
-    FP = FourierPropagator(u,v,k, lamb) 
+    #if apodization is None:
+    #    M = 1.0*(R < (NA/n)) # NA/lambda
+    if apodization == 'sine':
+        R = sqrt(u**2 + v**2)
+        M = 1.0*(R < (NA/n))*sqrt(cos(.5*pi*np.minimum(R, 1)))
+        pupil = pupil*M
+
+    FP = FourierPropagator(u,v,k, lamb)
     
     ps = concatenate([FP.propagate(pupil, z)[:,:,None] for z in zs], 2)
 
     return abs(ps**2)
     
-def PsfFromPupilVect(pupil, zs, dx, lamb, shape = [61,61]):
+def PsfFromPupilVect(pupil, zs, dx, lamb, shape = [61,61], apodization=None, n=1.51, NA=1.51):
     dx = float(dx)
     X, Y = meshgrid(dx*arange(-pupil.shape[0]/2, pupil.shape[0]/2),dx*arange(-pupil.shape[1]/2, pupil.shape[1]/2))
     print((X.min(), X.max()))
@@ -324,7 +331,8 @@ def PsfFromPupilVect(pupil, zs, dx, lamb, shape = [61,61]):
     R = sqrt(u**2 + v**2)
     
     phi = angle(u+ 1j*v)
-    theta = arcsin(minimum(R*lamb, 1))
+    #theta = arcsin(minimum(R*lamb, 1))
+    theta = arcsin(minimum(R, 1))
     
     #figure()
     #imshow(phi)
@@ -338,6 +346,11 @@ def PsfFromPupilVect(pupil, zs, dx, lamb, shape = [61,61]):
     sp = sin(phi)
     
     k = 2*pi*n/lamb
+    
+    if apodization == 'sine':
+        R = sqrt(u**2 + v**2)
+        M = 1.0*(R < (NA/n))*sqrt(cos(.5*pi*np.minimum(R, 1)))
+        pupil = pupil*M
     
     
     #M = 1.0*(R < (NA/(n*lamb))) # NA/lambda
@@ -370,8 +383,7 @@ def PsfFromPupilVect(pupil, zs, dx, lamb, shape = [61,61]):
 
     return p[ox:ex, oy:ey, :] #abs(ps**2)
     
-def PsfFromPupilVectFP(X, Y, R, FP, u, v, n, pupil, zs):
-    
+def PsfFromPupilVectFP(X, Y, R, FP, u, v, n, pupil, zs):    
     phi = angle(u+ 1j*v)
     theta = arcsin(minimum(R/n, 1))
     
@@ -414,13 +426,12 @@ def PsfFromPupilVectFP(X, Y, R, FP, u, v, n, pupil, zs):
     return p#p[ox:ex, oy:ey, :] #abs(ps**2)
 
 def PsfFromPupilFP(X, Y, R, FP, u, v, n, pupil, zs):
-
     ps = concatenate([FP.propagate(pupil, z)[:,:,None] for z in zs], 2)
     p = abs(ps**2)
 
     return p#p[ox:ex, oy:ey, :] #abs(ps**2)
    
-def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters = 50, size=5e3):
+def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters = 50, size=5e3, intermediateUpdates=False):
     dx = float(dx)
     if not size:
         X, Y = meshgrid(float(dx)*arange(-ps.shape[0]/2, ps.shape[0]/2),float(dx)*arange(-ps.shape[1]/2, ps.shape[1]/2))
@@ -447,12 +458,12 @@ def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters = 50, size=5e3):
     R = sqrt(u**2 + v**2)
     M = 1.0*(R < (NA/n)) # NA/lambda
     
-    figure()
-    imshow(R)
+    #figure()
+    #imshow(R)
     
-    colorbar()
-    contour(M, [0.5])
-    figure()
+    #colorbar()
+    #contour(M, [0.5])
+    #figure()
     
     k = 2*pi*n/lamb
 
@@ -462,21 +473,27 @@ def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters = 50, size=5e3):
     
     sps = sqrt(ps)
     
-    View3D(sps)
+    #normalize
+    sps = np.pi*M.sum()*sps/sps.sum(1).sum(0)[None,None,:]
+    
+    #View3D(sps)
     
     for i in range(nIters):
         new_pupil = 0*pupil
         
-        bps = []
-        abp = []
+        #bps = []
+        #abp = []
         
         print(i)#, abs(pupil).sum()
         
         #figure()
         #imshow(abs(pupil))
         res = 0
+
+        jr = np.argsort(np.random.rand(ps.shape[2]))
+                
         
-        for j in range(ps.shape[2]):
+        for j in jr:#range(ps.shape[2]):
             #propogate to focal plane
             prop_j  = FP.propagate(pupil, zs[j])
             
@@ -490,22 +507,41 @@ def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters = 50, size=5e3):
             
                         
             #print prop_j[ox:ex, oy:ey].shape, sps[:,:,j].shape
+            #print abs(prop_j[ox:ex, oy:ey]).sum(), sps[:,:,j].sum()
+            pj= prop_j[ox:ex, oy:ey]
+            pj_mag = abs(pj)
+            sps_j = sps[:,:,j]
             
-            res += ((abs(prop_j[ox:ex, oy:ey]) - sps[:,:,j])**2).sum()
+            #A = np.vstack([sps_j.ravel(), np.ones_like(sps_j.ravel())]).T
+            #print A.shape
+            
+            #x, resi, rank, s = np.linalg.lstsq(A, pj_mag.ravel())
+            
+            #print x, resi
+            
+            #res += resi
+            
+            #sps_j = (x[0]*sps_j - x[1]).clip(0)
+            res += ((pj_mag - sps_j)**2).sum()
+            
             #replace amplitude, but keep phase
-            prop_j[ox:ex, oy:ey] = sps[:,:,j]*exp(1j*angle(prop_j[ox:ex, oy:ey]))
+            prop_j[ox:ex, oy:ey] = sps_j*exp(1j*angle(pj))
             
             #print abs(prop_j).sum()
             
             #propagate back
             bp = FP.propagate_r(prop_j, zs[j])
+            
+            #print abs(bp).sum()
             #figure()
-            bps.append(abs(bp))
-            abp.append(angle(bp))
+            #bps.append(abs(bp))
+            #abp.append(angle(bp))
             new_pupil += bp
             
             #figure()            
             #imshow(abs(new_pupil))
+            if intermediateUpdates:
+                pupil = M*exp(1j*M*angle(bp))
             
         new_pupil /= ps.shape[2]
         
@@ -530,7 +566,11 @@ def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters = 50, size=5e3):
         #new_pupil = new_pupil*M
         
         #pupil = np_A*exp(1j*np_P)
-        pupil = new_pupil*M
+        
+        #pupil = new_pupil*M
+        
+        #only fit the phase
+        pupil = M*exp(1j*M*angle(new_pupil))
     
     return pupil
     

@@ -25,11 +25,11 @@ import wx.grid
 #import pylab
 #from PYME.io.image import ImageStack
 try:
-    from enthought.traits.api import HasTraits, Float, Int
+    from enthought.traits.api import HasTraits, Float, Int, CStr, Bool
     from enthought.traits.ui.api import View, Item
     from enthought.traits.ui.menu import OKButton
 except ImportError:
-    from traits.api import HasTraits, Float, Int
+    from traits.api import HasTraits, Float, Int, CStr, Bool
     from traitsui.api import View, Item
     from traitsui.menu import OKButton
 
@@ -98,16 +98,21 @@ class ZernikeView(wx.ScrolledWindow):
 
 class PupilTools(HasTraits):
     wavelength = Float(700)
-    #NA = Float(1.49)
+    NA = Float(1.49)
     sizeX = Int(61)
     sizeZ = Int(61)
-    zSpacing = Float(50)    
+    zSpacing = Float(50) 
+    apodization = CStr('sine')
+    vectorial = Bool(False)
     
     view = View(Item('wavelength'),
-                #Item('NA'),
+                Item('NA'),
                 Item('zSpacing'),
                 Item('sizeZ'),
-                Item('sizeX'),buttons=[OKButton])
+                Item('sizeX'),
+                Item('apodization'),
+                Item('vectorial'),
+                buttons=[OKButton])
 
     def __init__(self, dsviewer):
         self.dsviewer = dsviewer
@@ -130,9 +135,15 @@ class PupilTools(HasTraits):
         z_ = np.arange(self.sizeZ)*float(self.zSpacing)
         z_ -= z_.mean()        
         
-        ps = fourierHNA.PsfFromPupil(self.image.data[:,:], z_, self.image.mdh['voxelsize.x']*1e3, self.wavelength)#, shape = [self.sizeX, self.sizeX])
+        if self.vectorial:
+            ps = fourierHNA.PsfFromPupilVect(self.image.data[:,:], z_, self.image.mdh['voxelsize.x']*1e3, self.wavelength, apodization=self.apodization, NA=self.NA)#, shape = [self.sizeX, self.sizeX])
+            #ps = abs(ps*np.conj(ps))
+        else:
+            ps = fourierHNA.PsfFromPupil(self.image.data[:,:], z_, self.image.mdh['voxelsize.x']*1e3, self.wavelength, apodization=self.apodization, NA=self.NA)#, shape = [self.sizeX, self.sizeX])
         
-        ps = ps/ps[:,:,self.sizeZ/2].sum()
+        #ps = ps/ps[:,:,self.sizeZ/2].sum()
+        
+        ps = ps/ps.max()
         
         im = ImageStack(ps, titleStub = 'Generated PSF')
         im.mdh.copyEntriesFrom(self.image.mdh)
