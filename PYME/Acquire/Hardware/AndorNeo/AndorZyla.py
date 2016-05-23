@@ -112,7 +112,7 @@ class AndorBase(SDK3Camera):
         self.defBuffers = 100
        
         
-        self.contMode = True
+        #self.contMode = True
         self.burstMode = False
         
         self._temp = 0
@@ -150,6 +150,9 @@ class AndorBase(SDK3Camera):
         bufSize = self.ImageSizeBytes.getValue()
         vRed = int(self.SensorHeight.getValue()/self.AOIHeight.getValue())
         self.nBuffers = vRed*self.defBuffers
+        
+        if not self.contMode:
+            self.nBuffers = 2
         #print bufSize
         for i in range(self.nBuffers):
             #buf = np.empty(bufSize, 'uint8')
@@ -277,6 +280,21 @@ class AndorBase(SDK3Camera):
         
         #recycle buffer
         self._queueBuffer(buf)
+        
+#    def SetContinuousMode(self, value=True):
+#        if value:
+#            self.CycleMode.setString(u'Continuous')
+#            self.contMode = True
+#        else:
+#            self.CycleMode.setString(u'Fixed')
+#            self.contMode = False
+#            
+#    def GetContinuousMode(self):
+#        return self.contMode
+        
+    @property
+    def contMode(self):
+        return self.CycleMode.getString() == u'Continuous'
         
     def GetSerialNumber(self):
         return self.SerialNumber.getValue()
