@@ -21,4 +21,4 @@
 #
 ################
 from dsviewer import View3D, ViewIm3D
-from image import ImageStack
+from PYME.io.image import ImageStack

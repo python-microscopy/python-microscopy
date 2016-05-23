@@ -6,7 +6,7 @@ Created on Fri Feb 20 17:11:05 2015
 """
 from .base import register_module, ModuleBase, Filter, Float, Enum, CStr, Bool, Int, View, Item, Group
 from scipy import ndimage
-#from PYME.DSView.image import ImageStack
+#from PYME.io.image import ImageStack
 import numpy as np
 import skimage.filters as skf
 import inspect

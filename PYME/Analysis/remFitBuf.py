@@ -36,7 +36,7 @@ from PYME.Analysis import ofind_xcorr
 from PYME.Analysis import ofind_pri
 
 from PYME.Analysis import buffers
-from PYME.DSView.image import ImageStack
+from PYME.io.image import ImageStack
     
 import numpy
 import numpy as np

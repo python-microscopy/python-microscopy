@@ -23,13 +23,13 @@
 import wx
 import wx.grid
 #import pylab
-#from PYME.DSView.image import ImageStack
+#from PYME.io.image import ImageStack
 from enthought.traits.api import HasTraits, Float, Int, List, Instance, Property
 from enthought.traits.ui.api import View, Item, InstanceEditor
 from enthought.traits.ui.menu import OKButton
 
 from PYME.PSFGen import fourierHNA
-from PYME.DSView import image
+from PYME.io import image
 from PYME.LMVis.Extras.pointSetGeneration import WRDictEnum
 from PYME.misc import zernike
 

@@ -5,7 +5,7 @@ Created on Tue Dec 29 19:59:15 2015
 @author: david
 """
 from .base import register_module, ModuleBase, Filter, Float, Enum, CStr, Bool, Int, View, Item, Group
-##from PYME.DSView.image import ImageStack
+##from PYME.io.image import ImageStack
 import numpy as np
 import pandas as pd
 

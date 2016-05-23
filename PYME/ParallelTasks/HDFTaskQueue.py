@@ -504,7 +504,7 @@ class HDFResultsTaskQueue(TaskQueue):
         elif fieldName == 'MAP':
             mapName, = args
             from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
-            from PYME.DSView.image import ImageStack
+            from PYME.io.image import ImageStack
 
             print('Serving map: %s' %mapName)            
             fn = getFullExistingFilename(mapName)

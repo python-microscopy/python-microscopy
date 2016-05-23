@@ -20,7 +20,7 @@
 #
 ##################
 from PYME.LMVis.visHelpers import ImageBounds#, GeneratedImage
-from PYME.DSView.image import GeneratedImage
+from PYME.io.image import GeneratedImage
 from PYME.LMVis import genImageDialog
 from PYME.LMVis import visHelpers
 #from PYME.LMVis import imageView

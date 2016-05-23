@@ -18,7 +18,7 @@ class ImageFrameSource(object):
         
     def spoolImageFromFile(self, filename):
         '''Load an image file and then spool'''
-        from PYME.DSView import image
+        from PYME.io import image
         
         self.spoolImage(image.ImageStack(filename).data)
         
@@ -56,7 +56,7 @@ def ExportImageToCluster(image, filename, progCallback=None):
     Parameters
     ----------
     
-    image : PYME.DSView.image.ImageStack object
+    image : PYME.io.image.ImageStack object
         the source image
     filename : string
         the filename on the cluster

@@ -84,7 +84,7 @@ class ImageBounds:
 class dummy:
     pass
 
-#from PYME.DSView.image import ImageStack
+#from PYME.io.image import ImageStack
 #def GeneratedImage(img, imgBounds, pixelSize, sliceSize, channelNames):
 #    image = ImageStack(img)
 #    image.pixelSize = pixelSize

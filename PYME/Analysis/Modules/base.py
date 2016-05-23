@@ -12,7 +12,7 @@ except ImportError:
     from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, ListInstance, on_trait_change
     from traitsui.api import View, Item, EnumEditor, InstanceEditor, Group
 
-from PYME.DSView.image import ImageStack
+from PYME.io.image import ImageStack
 #from scipy import ndimage
 import numpy as np
 #import os

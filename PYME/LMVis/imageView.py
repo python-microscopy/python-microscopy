@@ -38,7 +38,7 @@ import scipy.misc
 #from PYME.DSView.arrayViewPanel import ArrayViewPanel
 from PYME.DSView.displayOptions import DisplayOpts
 from PYME.DSView.DisplayOptionsPanel import OptionsPanel
-#from PYME.DSView.image import ImageStack
+#from PYME.io.image import ImageStack
 
 #from PYME.misc.auiFloatBook import AuiNotebookWithFloatingPages
 

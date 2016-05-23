@@ -8,7 +8,7 @@ Created on Fri May  8 10:07:57 2015
 import matplotlib
 from PYME.Analysis.Modules import modules
 from argparse import ArgumentParser
-from PYME.DSView.image import ImageStack
+from PYME.io.image import ImageStack
 import pandas as pd
 import numpy as np
 #import sys

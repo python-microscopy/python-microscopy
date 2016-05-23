@@ -27,7 +27,7 @@ if __name__ == '__main__':
     mProfile.profileOn(['tq_block_dec.py', 'dec.py'])
     
     from PYME.DSView import View3D, ViewIm3D
-    from PYME.DSView.image import ImageStack
+    from PYME.io.image import ImageStack
     
     image = ImageStack(filename = '/data/zar_cropped.tif')
     

@@ -25,7 +25,8 @@ import wx.lib.mixins.listctrl  as  listmix
 import os
 #import pylab
 from PYME.Acquire import MetaDataHandler
-from PYME.DSView import image, View3D
+from PYME.io import image
+from PYME.DSView import View3D
 from PYME.DSView import dataWrap
 
 import wx.lib.agw.aui as aui

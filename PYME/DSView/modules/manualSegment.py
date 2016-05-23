@@ -52,7 +52,7 @@ class manualSegment:
         #lx, ly, hx, hy = self.do.GetSliceSelection()
         import numpy as np
         #from scipy import ndimage
-        from PYME.DSView.image import ImageStack
+        from PYME.io.image import ImageStack
         from PYME.DSView import ViewIm3D
 
         #sp = self.image.data.shape[:3]

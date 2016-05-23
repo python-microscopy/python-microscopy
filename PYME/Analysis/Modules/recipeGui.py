@@ -13,7 +13,7 @@ from PYME.Analysis.Modules import modules
 from PYME.Analysis.Modules import batchProcess
 
 import pylab
-from PYME.DSView.image import ImageStack
+from PYME.io.image import ImageStack
 from PYME.DSView import ViewIm3D
 
 from PYME.contrib import wxPlotPanel

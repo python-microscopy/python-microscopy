@@ -29,7 +29,7 @@ except ImportError:
     from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, Str
     from traitsui.api import View, Item, EnumEditor, InstanceEditor
     
-from PYME.DSView import image
+from PYME.io import image
 
 #class PointGenerationPanel(wx.Panel):
 #    def __init__(self, parent, generator):

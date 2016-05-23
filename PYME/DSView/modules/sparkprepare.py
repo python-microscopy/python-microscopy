@@ -22,7 +22,7 @@
 #import numpy
 import wx
 #import pylab
-#from PYME.DSView.image import ImageStack
+#from PYME.io.image import ImageStack
 
 class filterer:
     def __init__(self, dsviewer):
@@ -41,7 +41,7 @@ class filterer:
     def OnGaussianFilter(self, event):
         import numpy as np
         from scipy.ndimage import gaussian_filter1d, convolve1d
-        from PYME.DSView.image import ImageStack
+        from PYME.io.image import ImageStack
         from PYME.DSView import ViewIm3D
 
         #dlg = wx.TextEntryDialog(self.dsviewer, 'Blur size [pixels]:', 'Gaussian Blur', '[1,1,1]')

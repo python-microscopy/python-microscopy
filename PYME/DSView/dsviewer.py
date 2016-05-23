@@ -44,7 +44,7 @@ import PYME.misc.autoFoldPanel as afp
 from PYME.DSView.displayOptions import DisplayOpts
 from PYME.DSView.DisplayOptionsPanel import OptionsPanel
 #from PYME.DSView.OverlaysPanel import OverlayPanel
-from PYME.DSView.image import ImageStack
+from PYME.io.image import ImageStack
 
 from PYME.Acquire.mytimer import mytimer
 from PYME.Analysis import piecewiseMapping

@@ -23,7 +23,7 @@
 import wx
 import wx.grid
 #import pylab
-#from PYME.DSView.image import ImageStack
+#from PYME.io.image import ImageStack
 try:
     from enthought.traits.api import HasTraits, Float, Int
     from enthought.traits.ui.api import View, Item
@@ -122,7 +122,7 @@ class PupilTools(HasTraits):
         #import pylab
         from PYME.PSFGen import fourierHNA
         
-        from PYME.DSView.image import ImageStack
+        from PYME.io.image import ImageStack
         from PYME.DSView import ViewIm3D
         
         self.configure_traits(kind='modal')
