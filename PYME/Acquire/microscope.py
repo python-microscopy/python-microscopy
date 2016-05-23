@@ -90,6 +90,14 @@ class microscope(object):
         for k, v in kwargs.items():
             p, c, m = self.positioning[k]
             p.MoveTo(c, v/m)
+            
+    def GetPosRange(self):
+        res = {}
+        for k in self.positioning.keys():
+            p, c, m = self.positioning[k]
+            res[k] = (p.GetMin(c)*m,p.GetMax(c)*m) 
+
+        return res
         
 
     def _OpenSettingsDB(self):

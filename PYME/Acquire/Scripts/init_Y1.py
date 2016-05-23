@@ -101,7 +101,7 @@ scope.LC.SetStatic(255)
 InitGUI('''
 from PYMEnf.Hardware import DMDGui
 LCGui = DMDGui.DMDPanel(MainFrame,scope.LC, scope)
-camPanels.append((LCGui, 'DMD Control'))
+camPanels.append((LCGui, 'DMD Control', False))
 ''')
 
 #PIFoc

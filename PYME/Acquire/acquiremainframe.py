@@ -45,6 +45,7 @@ from PYME.DSView import arrayViewPanel
 
 from PYME.Acquire import mytimer
 from PYME.Acquire import psliders
+from PYME.Acquire import positionUI
 from PYME.Acquire import intsliders
 from PYME.Acquire import seqdialog
 #from PYME.Acquire import timeseqdialog
@@ -415,11 +416,15 @@ class PYMEMainFrame(wx.Frame):
             for cl in cm.split('\n'):
                 self.sh.run(cl)
 
-        if len(self.scope.piezos) > 0.5:
-            self.piezo_sl = psliders.PiezoSliders(self.scope.piezos, self, self.scope.joystick)
-            self.time1.WantNotification.append(self.piezo_sl.update)
+        #if len(self.scope.piezos) > 0.5:
+        #    self.piezo_sl = psliders.PiezoSliders(self.scope.piezos, self, self.scope.joystick)
+        #    self.time1.WantNotification.append(self.piezo_sl.update)
+            
+        if len(self.scope.positioning.keys()) > 0.5:
+            self.pos_sl = positionUI.PositionSliders(self.scope, self, self.scope.joystick)
+            self.time1.WantNotification.append(self.pos_sl.update)
 
-            self.AddTool(self.piezo_sl, 'Positioning')
+            self.AddTool(self.pos_sl, 'Positioning')
 
             #self.notebook1.AddPage( page=self.piezo_sl, select=False, caption='Piezo Control')
             #self.notebook1.Split(self.notebook1.GetPageCount() -1, wx.DOWN)
@@ -547,7 +552,7 @@ class PYMEMainFrame(wx.Frame):
 
 
 
-    def AddTool(self, panel, title):
+    def AddTool(self, panel, title, pinned=True):
         '''Adds a pane to the tools section of the GUI
         
         Parameters
@@ -557,7 +562,7 @@ class PYMEMainFrame(wx.Frame):
         title : string
             The caption for the panel.
         '''
-        item = afp.foldingPane(self.toolPanel, -1, caption=title, pinned = True)
+        item = afp.foldingPane(self.toolPanel, -1, caption=title, pinned = pinned)
         panel.Reparent(item)
         item.AddNewElement(panel)
         self.toolPanel.AddPane(item)
@@ -566,7 +571,7 @@ class PYMEMainFrame(wx.Frame):
 #        self.toolPanel.AddFoldPanelWindow(item, panel, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
         #wx.LayoutAlgorithm().LayoutWindow(self, self._leftWindow1)
 
-    def AddCamTool(self, panel, title):
+    def AddCamTool(self, panel, title, pinned=True):
         '''Adds a pane to the Camera section of the GUI
         
         Parameters
@@ -577,13 +582,13 @@ class PYMEMainFrame(wx.Frame):
             The caption for the panel.
         '''
         #item = self.camPanel.AddFoldPanel(title, collapsed=False, foldIcons=self.Images)
-        item = afp.foldingPane(self.camPanel, -1, caption=title, pinned = True)
+        item = afp.foldingPane(self.camPanel, -1, caption=title, pinned = pinned)
         panel.Reparent(item)
         item.AddNewElement(panel)
         self.camPanel.AddPane(item)
         #self.camPanel.AddFoldPanelWindow(item, panel, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
 
-    def AddAqTool(self, panel, title):
+    def AddAqTool(self, panel, title, pinned=True):
         '''Adds a pane to the Acquisition section of the GUI
         
         Parameters
@@ -593,7 +598,7 @@ class PYMEMainFrame(wx.Frame):
         title : string
             The caption for the panel.
         '''
-        item = afp.foldingPane(self.aqPanel, -1, caption=title, pinned = True)
+        item = afp.foldingPane(self.aqPanel, -1, caption=title, pinned = pinned)
         panel.Reparent(item)
         item.AddNewElement(panel)
         self.aqPanel.AddPane(item)

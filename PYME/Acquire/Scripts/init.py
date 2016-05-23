@@ -40,6 +40,10 @@ scope.piezos.append((scope.fakeXPiezo, 1, 'Fake x-piezo'))
 scope.fakeYPiezo = fakePiezo.FakePiezo(10)
 scope.piezos.append((scope.fakeYPiezo, 1, 'Fake y-piezo'))
 #time.sleep(5)
+
+scope.positioning['x'] = (scope.fakeXPiezo, 1, 1)
+scope.positioning['y'] = (scope.fakeYPiezo, 1, 1)
+scope.positioning['z'] = (scope.fakePiezo, 1, 1)
 ''')
 
 pz.join() #piezo must be there before we start camera
@@ -98,7 +102,7 @@ from PYMEnf.Hardware import FakeDMD, DMDGui
 scope.LC = FakeDMD.FakeDMD(scope)
 
 LCGui = DMDGui.DMDPanel(MainFrame,scope.LC, scope)
-camPanels.append((LCGui, 'DMD Control'))
+camPanels.append((LCGui, 'DMD Control', False))
 ''')
 
 #InitGUI('''
