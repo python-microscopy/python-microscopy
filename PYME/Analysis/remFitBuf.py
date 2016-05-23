@@ -74,7 +74,7 @@ class BufferManager(object):
         
     def updateBuffers(self, md, dataSourceModule, bufferLen):
         '''Update the various buffers. '''
-        DataSource = __import__('PYME.Analysis.DataSources.' + dataSourceModule, fromlist=['DataSource']).DataSource #import our data source
+        DataSource = __import__('PYME.io.DataSources.' + dataSourceModule, fromlist=['DataSource']).DataSource #import our data source
         #read the data
         if not self.dataSourceID == md.dataSourceID: #avoid unnecessary opening and closing 
             self.dBuffer = buffers.dataBuffer(DataSource(md.dataSourceID, md.taskQueue), bufferLen)

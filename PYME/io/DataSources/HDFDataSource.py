@@ -26,7 +26,7 @@ import tables
 from .BaseDataSource import BaseDataSource
 
 try:
-    from PYME.FileUtils import PZFFormat
+    from PYME.io import PZFFormat
 except ImportError:
     pass
 

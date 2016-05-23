@@ -38,7 +38,7 @@ import weakref
 from PYME.Acquire import MetaDataHandler
 from PYME.Analysis import MetaData
 from PYME.DSView import dataWrap
-from PYME.Analysis.DataSources import BufferedDataSource
+from PYME.io.DataSources import BufferedDataSource
 from PYME.LMVis.visHelpers import ImageBounds
 
 
@@ -86,7 +86,7 @@ class ImageStack(object):
         Parameters:
             data    Image data. Something that supports ndarray like slicing and exposes
                     a .shape parameter, something implementing the
-                    PYME.Analysis.DataSources interface, or a list of either
+                    PYME.io.DataSources interface, or a list of either
                     of the above. Dimensionality can be between 1 and 4, with
                     the dimensions being interpreted as x, y, z/t, colour.
                     A mangled (will support slicing, but not necessarily other array 
@@ -281,7 +281,7 @@ class ImageStack(object):
         
         '''
         import Pyro.core
-        from PYME.Analysis.DataSources import TQDataSource
+        from PYME.io.DataSources import TQDataSource
         from PYME.misc.computerName import GetComputerName
         compName = GetComputerName()
 
@@ -316,7 +316,7 @@ class ImageStack(object):
         '''Load PYMEs semi-custom HDF5 image data format. Offloads all the
         hard work to the HDFDataSource class'''
         import tables
-        from PYME.Analysis.DataSources import HDFDataSource, BGSDataSource
+        from PYME.io.DataSources import HDFDataSource, BGSDataSource
         from PYME.LMVis import inpFilt
         
         #open hdf5 file
@@ -360,7 +360,7 @@ class ImageStack(object):
         '''Load PYMEs semi-custom HDF5 image data format. Offloads all the
         hard work to the HDFDataSource class'''
         import tables
-        from PYME.Analysis.DataSources import HTTPDataSource, BGSDataSource
+        from PYME.io.DataSources import HTTPDataSource, BGSDataSource
         #from PYME.LMVis import inpFilt
         
         #open hdf5 file
@@ -390,7 +390,7 @@ class ImageStack(object):
         '''Load PYMEs semi-custom HDF5 image data format. Offloads all the
         hard work to the HDFDataSource class'''
 
-        from PYME.Analysis.DataSources import ClusterPZFDataSource, BGSDataSource
+        from PYME.io.DataSources import ClusterPZFDataSource, BGSDataSource
 
         self.dataSource = ClusterPZFDataSource.DataSource(filename)
         #chain on a background subtraction data source, so we can easily do 
@@ -611,7 +611,7 @@ class ImageStack(object):
 
     def LoadTiff(self, filename):
         #from PYME.FileUtils import readTiff
-        from PYME.Analysis.DataSources import TiffDataSource
+        from PYME.io.DataSources import TiffDataSource
 
         mdfn = self.FindAndParseMetadata(filename)
 
@@ -671,7 +671,7 @@ class ImageStack(object):
         
     def LoadBioformats(self, filename):
         #from PYME.FileUtils import readTiff
-        from PYME.Analysis.DataSources import BioformatsDataSource
+        from PYME.io.DataSources import BioformatsDataSource
         import bioformats
 
         #mdfn = self.FindAndParseMetadata(filename)
@@ -701,7 +701,7 @@ class ImageStack(object):
         
     def LoadImageSeries(self, filename):
         #from PYME.FileUtils import readTiff
-        from PYME.Analysis.DataSources import ImageSeriesDataSource
+        from PYME.io.DataSources import ImageSeriesDataSource
 
         self.dataSource = ImageSeriesDataSource.DataSource(filename, None)
         self.dataSource = BufferedDataSource.DataSource(self.dataSource, min(self.dataSource.getNumSlices(), 50))

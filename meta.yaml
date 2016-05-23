@@ -36,7 +36,7 @@ build:
     - taskWorkerZC = PYME.ParallelTasks.taskWorkerZC:main
     - taskServerZC = PYME.ParallelTasks.taskServerZC:main
     - PYMEDataServer = PYME.ParallelTasks.HTTPDataServer:main
-    - PYMEClusterDup = PYME.ParallelTasks.clusterDuplication:main
+    - PYMEClusterDup = PYME.io.clusterDuplication:main
 
 
 

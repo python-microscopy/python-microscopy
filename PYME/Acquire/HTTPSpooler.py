@@ -36,8 +36,8 @@ from PYME.ParallelTasks.relativeFiles import getRelFilename
 import threading
 import Queue
 
-from PYME.ParallelTasks import clusterIO
-from PYME.FileUtils import PZFFormat
+from PYME.io import clusterIO
+from PYME.io import PZFFormat
 
 import numpy as np
 import random

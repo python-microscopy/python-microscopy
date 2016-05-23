@@ -802,7 +802,7 @@ class compositor:
         #    names = self.image.mdh.getEntry('ChannelNames')
         #except:
         #    names = ['%d' % d for d in range(self.image.data.shape[3])]
-        from PYME.Analysis.DataSources import AlignDataSource
+        from PYME.io.DataSources import AlignDataSource
         import PYME.DSView.dataWrap
         
         if isinstance(self.image.data, PYME.DSView.dataWrap.ListWrap):

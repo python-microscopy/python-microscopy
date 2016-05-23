@@ -28,7 +28,7 @@ class ImageFrameSource(object):
         Parameters
         ----------
         
-        data : PYME.Analysis.DataSources.DataSource object
+        data : PYME.io.DataSources.DataSource object
             the data source. Needs to implement the getNumSlices() and getSlice()
             methods.
         '''

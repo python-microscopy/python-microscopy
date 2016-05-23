@@ -7,7 +7,7 @@ from PYME.ParallelTasks import HDFTaskQueue
 import time
 import cPickle as pickle
 
-from PYME.FileUtils import PZFFormat
+from PYME.io import PZFFormat
 
 import tables
 import json

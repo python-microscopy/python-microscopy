@@ -34,8 +34,8 @@ import json
 
 SHAPE_LIFESPAN = 30
 
-from PYME.ParallelTasks import clusterIO
-from PYME.FileUtils import PZFFormat
+from PYME.io import clusterIO
+from PYME.io import PZFFormat
 from PYME.Acquire import MetaDataHandler
 
 class DataSource(BaseDataSource):

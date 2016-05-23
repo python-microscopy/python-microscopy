@@ -28,7 +28,7 @@ import os
 import sys
 
 from PYME.Acquire import MetaDataHandler
-from PYME.Analysis.DataSources import HDFDataSource
+from PYME.io.DataSources import HDFDataSource
 
 class SpoolEvent(tables.IsDescription):
    EventName = tables.StringCol(32)

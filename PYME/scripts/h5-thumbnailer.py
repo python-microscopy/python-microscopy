@@ -32,7 +32,7 @@ from PIL import Image
 
 from PYME.Analysis import MetaData
 from PYME.Acquire import MetaDataHandler
-from PYME.Analysis.DataSources import HDFDataSource
+from PYME.io.DataSources import HDFDataSource
 
 #import logging
 #LOG_FILENAME = '/tmp/h5r-thumbnailer.log'
