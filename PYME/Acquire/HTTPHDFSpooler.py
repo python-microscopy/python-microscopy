@@ -30,7 +30,7 @@ import time
 
 import PYME.Acquire.Spooler as sp
 #from PYME.Acquire import protocol as p
-from PYME.FileUtils import fileID, nameUtils
+from PYME.io.FileUtils import fileID, nameUtils
 from PYME.ParallelTasks.relativeFiles import getRelFilename
 
 import httplib

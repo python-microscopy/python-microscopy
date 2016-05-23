@@ -442,7 +442,7 @@ def prepPipeline(pipeline):
 def selectAndPlotEvents(pipeline, outputdir='/Users/david/FusionAnalysis', speckleFile = None):
     import os
     import pandas as pd
-    from PYME.FileUtils.readSpeckle import readSpeckles    
+    from PYME.io.FileUtils.readSpeckle import readSpeckles    
     #now iterate through our clumps
     clumpIndices = list(set(pipeline['clumpIndex']))
     

@@ -257,7 +257,7 @@ class File(models.Model):
         try:
             tn = cls.objects.get(filename=filename)
         except:
-            import PYME.FileUtils.fileID as file_ID
+            import PYME.io.FileUtils.fileID as file_ID
 
             print(filename)
 

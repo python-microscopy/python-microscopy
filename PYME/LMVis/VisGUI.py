@@ -34,7 +34,7 @@ import sys
 
 import pylab
 from PYME.misc import extraCMaps
-from PYME.FileUtils import nameUtils
+from PYME.io.FileUtils import nameUtils
 
 #import os
 from PYME.LMVis import gl_render3D

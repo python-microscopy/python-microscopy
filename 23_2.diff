@@ -3147,7 +3147,7 @@
 --- ./PYME/DSView/loft/fth5.py	(original)
 +++ ./PYME/DSView/loft/fth5.py	(refactored)
 @@ -21,7 +21,7 @@
- from PYME.FileUtils.nameUtils import genResultFileName
+ from PYME.io.FileUtils.nameUtils import genResultFileName
  
  if not 'tq' in locals():
 -    if 'PYME_TASKQUEUENAME' in os.environ.keys():
@@ -3929,8 +3929,8 @@
  
  fftwWisdom.load_wisdom()
  
---- ./PYME/FileUtils/KdfSeqToHdf5.py	(original)
-+++ ./PYME/FileUtils/KdfSeqToHdf5.py	(refactored)
+--- ./PYME.io.FileUtils/KdfSeqToHdf5.py	(original)
++++ ./PYME.io.FileUtils/KdfSeqToHdf5.py	(refactored)
 @@ -23,7 +23,7 @@
  
  #!/usr/bin/python
@@ -3940,8 +3940,8 @@
  import tables
  import os
  import sys
---- ./PYME/FileUtils/KdfStackToHdf5.py	(original)
-+++ ./PYME/FileUtils/KdfStackToHdf5.py	(refactored)
+--- ./PYME.io.FileUtils/KdfStackToHdf5.py	(original)
++++ ./PYME.io.FileUtils/KdfStackToHdf5.py	(refactored)
 @@ -23,7 +23,7 @@
  
  #!/usr/bin/python
@@ -3951,8 +3951,8 @@
  import tables
  import os
  import sys
---- ./PYME/FileUtils/RawToHdf5.py	(original)
-+++ ./PYME/FileUtils/RawToHdf5.py	(refactored)
+--- ./PYME.io.FileUtils/RawToHdf5.py	(original)
++++ ./PYME.io.FileUtils/RawToHdf5.py	(refactored)
 @@ -23,7 +23,7 @@
  
  #!/usr/bin/python
@@ -3962,8 +3962,8 @@
  import tables
  import os
  import sys
---- ./PYME/FileUtils/batchConvertKdf.py	(original)
-+++ ./PYME/FileUtils/batchConvertKdf.py	(refactored)
+--- ./PYME.io.FileUtils/batchConvertKdf.py	(original)
++++ ./PYME.io.FileUtils/batchConvertKdf.py	(refactored)
 @@ -24,7 +24,7 @@
  import sys
  import os
@@ -3973,8 +3973,8 @@
  
  
  if __name__ == '__main__':
---- ./PYME/FileUtils/h5r-thumbnailer.py	(original)
-+++ ./PYME/FileUtils/h5r-thumbnailer.py	(refactored)
+--- ./PYME.io.FileUtils/h5r-thumbnailer.py	(original)
++++ ./PYME.io.FileUtils/h5r-thumbnailer.py	(refactored)
 @@ -48,7 +48,7 @@
  
      #print f1.keys()
@@ -3999,8 +3999,8 @@
          threeD = True
  
      if 'Events' in dir(f1.h5f.root):
---- ./PYME/FileUtils/h5rToTxt.py	(original)
-+++ ./PYME/FileUtils/h5rToTxt.py	(refactored)
+--- ./PYME.io.FileUtils/h5rToTxt.py	(original)
++++ ./PYME.io.FileUtils/h5rToTxt.py	(refactored)
 @@ -29,7 +29,7 @@
  def convertFile(inFile, outFile):
      ds = inpFilt.h5rSource(inFile)
@@ -4019,8 +4019,8 @@
  
      #nRecords = len(ds[keys[0]])
  
---- ./PYME/FileUtils/kdfToFloat32Tiff.py	(original)
-+++ ./PYME/FileUtils/kdfToFloat32Tiff.py	(refactored)
+--- ./PYME.io.FileUtils/kdfToFloat32Tiff.py	(original)
++++ ./PYME.io.FileUtils/kdfToFloat32Tiff.py	(refactored)
 @@ -22,7 +22,7 @@
  ##################
  
@@ -4030,8 +4030,8 @@
  
  if not (len(sys.argv) == 3):
      raise RuntimeError('Usage: procStack inDir resDir')
---- ./PYME/FileUtils/kdfToImage.py	(original)
-+++ ./PYME/FileUtils/kdfToImage.py	(refactored)
+--- ./PYME.io.FileUtils/kdfToImage.py	(original)
++++ ./PYME.io.FileUtils/kdfToImage.py	(refactored)
 @@ -22,7 +22,7 @@
  ##################
  
@@ -4041,8 +4041,8 @@
  import sys
  
  if not (len(sys.argv) == 3):
---- ./PYME/FileUtils/nameUtils.py	(original)
-+++ ./PYME/FileUtils/nameUtils.py	(refactored)
+--- ./PYME.io.FileUtils/nameUtils.py	(original)
++++ ./PYME.io.FileUtils/nameUtils.py	(refactored)
 @@ -45,15 +45,15 @@
  dtn = datetime.datetime.now()
  
@@ -4062,8 +4062,8 @@
      dirSuffix = '_' + os.environ['PYMEDIRSUFFIX']
  
          
---- ./PYME/FileUtils/sf-thumbnailer.py	(original)
-+++ ./PYME/FileUtils/sf-thumbnailer.py	(refactored)
+--- ./PYME.io.FileUtils/sf-thumbnailer.py	(original)
++++ ./PYME.io.FileUtils/sf-thumbnailer.py	(refactored)
 @@ -30,7 +30,7 @@
  import sys
  import gnomevfs
@@ -4082,8 +4082,8 @@
  fid.close()
  
  f = figure(figsize=(thumbSize/dpi, 0.5*thumbSize/dpi))
---- ./PYME/FileUtils/thumbnailDatabase.py	(original)
-+++ ./PYME/FileUtils/thumbnailDatabase.py	(refactored)
+--- ./PYME.io.FileUtils/thumbnailDatabase.py	(original)
++++ ./PYME.io.FileUtils/thumbnailDatabase.py	(refactored)
 @@ -22,7 +22,7 @@
  ##################
  
@@ -4200,7 +4200,7 @@
 -import Queue
 +import queue
  
- from PYME.FileUtils.nameUtils import genResultFileName
+ from PYME.io.FileUtils.nameUtils import genResultFileName
  from PYME.ParallelTasks.relativeFiles import getFullFilename
 @@ -87,7 +87,7 @@
          global bufferMisses

@@ -32,7 +32,7 @@ from PYME.Acquire import MetaDataHandler
 import PYME.Acquire.Spooler as sp
 #from PYME.Acquire import protocol as p
 
-from PYME.FileUtils import fileID
+from PYME.io.FileUtils import fileID
 
 class SpoolEvent(tables.IsDescription):
     '''Pytables description for Events table in spooled dataset'''

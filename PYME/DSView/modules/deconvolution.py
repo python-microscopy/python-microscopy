@@ -350,7 +350,7 @@ class deconvolver:
         if (succ == wx.ID_OK):
             outFilename = fdialog.GetPath()
 
-            from PYME.FileUtils import saveTiffStack
+            from PYME.io.FileUtils import saveTiffStack
 
             saveTiffStack.saveTiffMultipage(self.dec.res, outFilename)
 

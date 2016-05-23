@@ -42,7 +42,7 @@ class PerFrameVar:
     def OnPerFrame(self, event):
         import numpy as np
         import os
-        from PYME.FileUtils import nameUtils
+        from PYME.io.FileUtils import nameUtils
         
         filename = wx.FileSelector("Choose a per frame variable to open", 
                                    nameUtils.genResultDirectoryPath(), 

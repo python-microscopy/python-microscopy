@@ -35,7 +35,7 @@ except ImportError:
     
 import time
 import traceback
-from PYME.FileUtils import nameUtils
+from PYME.io.FileUtils import nameUtils
 
 from fftw3f import create_aligned_array
 

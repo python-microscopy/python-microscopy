@@ -23,7 +23,7 @@
 
 from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
 from PYME.Acquire import MetaDataHandler
-#from PYME.FileUtils import readTiff
+#from PYME.io.FileUtils import readTiff
 from PIL import Image
 import glob
 import os

@@ -30,7 +30,7 @@ import time
 
 import PYME.Acquire.Spooler as sp
 #from PYME.Acquire import protocol as p
-from PYME.FileUtils import fileID
+from PYME.io.FileUtils import fileID
 
 try:
     from PYME.misc import pyme_zeroconf

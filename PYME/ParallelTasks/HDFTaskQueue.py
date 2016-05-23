@@ -37,7 +37,7 @@ import logging
 import time
 import Queue
 
-from PYME.FileUtils.nameUtils import genResultFileName
+from PYME.io.FileUtils.nameUtils import genResultFileName
 from PYME.ParallelTasks.relativeFiles import getFullFilename
 
 CHUNKSIZE = 50

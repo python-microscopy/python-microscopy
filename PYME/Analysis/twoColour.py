@@ -21,7 +21,7 @@
 #
 ##################
 
-#from PYME.FileUtils.read_kdf import ReadKdfData
+#from PYME.io.FileUtils.read_kdf import ReadKdfData
 import numpy as np
 import scipy as sp
 from PYME.Analysis import ofind

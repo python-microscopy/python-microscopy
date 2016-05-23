@@ -117,7 +117,7 @@ Optionally associate .h5 files with dh5view (will also open .tif,  .kdf & .psf
 if you want) and .h5r files with VisGUI. I typically do this by clicking on 
 one of the files, using the 'Open With' option, and telling it to remember. 
 If you're using the sample database, you can also associate .pmu files with 
-``PYME\FileUtils\pymeUrlOpener.cmd``.
+``PYME.io.FileUtils\pymeUrlOpener.cmd``.
 
 Pyro Nameserver
 ---------------

@@ -1088,124 +1088,124 @@ Traceback (most recent call last):
   File "/Users/david/python-microscopy/PYME/Deconv/tcluster.py", line 26, in <module>
     import scipy.cow.sync_cluster
 ImportError: No module named sync_cluster
-/Users/david/python-microscopy/doc/api/FileUtils/PYME.FileUtils.KdfSeqToHdf5.rst:4: WARNING: autodoc: failed to import module u'PYME.FileUtils.KdfSeqToHdf5'; the following exception was raised:
+/Users/david/python-microscopy/doc/api/FileUtils/PYME.io.FileUtils.KdfSeqToHdf5.rst:4: WARNING: autodoc: failed to import module u'PYME.io.FileUtils.KdfSeqToHdf5'; the following exception was raised:
 Traceback (most recent call last):
   File "/Users/david/anaconda/lib/python2.7/site-packages/Sphinx-1.3.1-py2.7.egg/sphinx/ext/autodoc.py", line 385, in import_object
     __import__(self.modname)
-  File "/Users/david/python-microscopy/PYME/FileUtils/KdfSeqToHdf5.py", line 26, in <module>
+  File "/Users/david/python-microscopy/PYME.io.FileUtils/KdfSeqToHdf5.py", line 26, in <module>
     import read_kdf
-  File "/Users/david/python-microscopy/PYME/FileUtils/read_kdf.py", line 28, in <module>
+  File "/Users/david/python-microscopy/PYME.io.FileUtils/read_kdf.py", line 28, in <module>
     from scipy.io.numpyio import *
 ImportError: No module named numpyio
-/Users/david/python-microscopy/doc/api/FileUtils/PYME.FileUtils.KdfStackToHdf5.rst:4: WARNING: autodoc: failed to import module u'PYME.FileUtils.KdfStackToHdf5'; the following exception was raised:
+/Users/david/python-microscopy/doc/api/FileUtils/PYME.io.FileUtils.KdfStackToHdf5.rst:4: WARNING: autodoc: failed to import module u'PYME.io.FileUtils.KdfStackToHdf5'; the following exception was raised:
 Traceback (most recent call last):
   File "/Users/david/anaconda/lib/python2.7/site-packages/Sphinx-1.3.1-py2.7.egg/sphinx/ext/autodoc.py", line 385, in import_object
     __import__(self.modname)
-  File "/Users/david/python-microscopy/PYME/FileUtils/KdfStackToHdf5.py", line 26, in <module>
+  File "/Users/david/python-microscopy/PYME.io.FileUtils/KdfStackToHdf5.py", line 26, in <module>
     import read_kdf
-  File "/Users/david/python-microscopy/PYME/FileUtils/read_kdf.py", line 28, in <module>
+  File "/Users/david/python-microscopy/PYME.io.FileUtils/read_kdf.py", line 28, in <module>
     from scipy.io.numpyio import *
 ImportError: No module named numpyio
-/Users/david/python-microscopy/doc/api/FileUtils/PYME.FileUtils.RawToHdf5.rst:4: WARNING: autodoc: failed to import module u'PYME.FileUtils.RawToHdf5'; the following exception was raised:
+/Users/david/python-microscopy/doc/api/FileUtils/PYME.io.FileUtils.RawToHdf5.rst:4: WARNING: autodoc: failed to import module u'PYME.io.FileUtils.RawToHdf5'; the following exception was raised:
 Traceback (most recent call last):
   File "/Users/david/anaconda/lib/python2.7/site-packages/Sphinx-1.3.1-py2.7.egg/sphinx/ext/autodoc.py", line 385, in import_object
     __import__(self.modname)
-  File "/Users/david/python-microscopy/PYME/FileUtils/RawToHdf5.py", line 26, in <module>
+  File "/Users/david/python-microscopy/PYME.io.FileUtils/RawToHdf5.py", line 26, in <module>
     import read_kdf
-  File "/Users/david/python-microscopy/PYME/FileUtils/read_kdf.py", line 28, in <module>
+  File "/Users/david/python-microscopy/PYME.io.FileUtils/read_kdf.py", line 28, in <module>
     from scipy.io.numpyio import *
 ImportError: No module named numpyio
-/Users/david/python-microscopy/doc/api/FileUtils/PYME.FileUtils.abf.rst:14: WARNING: autodoc: failed to import module u'PYME.FileUtils.abf'; the following exception was raised:
+/Users/david/python-microscopy/doc/api/FileUtils/PYME.io.FileUtils.abf.rst:14: WARNING: autodoc: failed to import module u'PYME.io.FileUtils.abf'; the following exception was raised:
 Traceback (most recent call last):
   File "/Users/david/anaconda/lib/python2.7/site-packages/Sphinx-1.3.1-py2.7.egg/sphinx/ext/autodoc.py", line 385, in import_object
     __import__(self.modname)
-  File "/Users/david/python-microscopy/PYME/FileUtils/abf/__init__.py", line 26, in <module>
+  File "/Users/david/python-microscopy/PYME.io.FileUtils/abf/__init__.py", line 26, in <module>
     from abf import *
 ImportError: No module named abf
-/Users/david/python-microscopy/doc/api/FileUtils/PYME.FileUtils.abf.setup.rst:4: WARNING: autodoc: failed to import module u'PYME.FileUtils.abf.setup'; the following exception was raised:
+/Users/david/python-microscopy/doc/api/FileUtils/PYME.io.FileUtils.abf.setup.rst:4: WARNING: autodoc: failed to import module u'PYME.io.FileUtils.abf.setup'; the following exception was raised:
 Traceback (most recent call last):
   File "/Users/david/anaconda/lib/python2.7/site-packages/Sphinx-1.3.1-py2.7.egg/sphinx/ext/autodoc.py", line 385, in import_object
     __import__(self.modname)
-  File "/Users/david/python-microscopy/PYME/FileUtils/abf/__init__.py", line 26, in <module>
+  File "/Users/david/python-microscopy/PYME.io.FileUtils/abf/__init__.py", line 26, in <module>
     from abf import *
 ImportError: No module named abf
-/Users/david/python-microscopy/doc/api/FileUtils/PYME.FileUtils.batchConvertKdf.rst:4: WARNING: autodoc: failed to import module u'PYME.FileUtils.batchConvertKdf'; the following exception was raised:
+/Users/david/python-microscopy/doc/api/FileUtils/PYME.io.FileUtils.batchConvertKdf.rst:4: WARNING: autodoc: failed to import module u'PYME.io.FileUtils.batchConvertKdf'; the following exception was raised:
 Traceback (most recent call last):
   File "/Users/david/anaconda/lib/python2.7/site-packages/Sphinx-1.3.1-py2.7.egg/sphinx/ext/autodoc.py", line 385, in import_object
     __import__(self.modname)
-  File "/Users/david/python-microscopy/PYME/FileUtils/batchConvertKdf.py", line 27, in <module>
+  File "/Users/david/python-microscopy/PYME.io.FileUtils/batchConvertKdf.py", line 27, in <module>
     import KdfStackToHdf5
-  File "/Users/david/python-microscopy/PYME/FileUtils/KdfStackToHdf5.py", line 26, in <module>
+  File "/Users/david/python-microscopy/PYME.io.FileUtils/KdfStackToHdf5.py", line 26, in <module>
     import read_kdf
-  File "/Users/david/python-microscopy/PYME/FileUtils/read_kdf.py", line 28, in <module>
+  File "/Users/david/python-microscopy/PYME.io.FileUtils/read_kdf.py", line 28, in <module>
     from scipy.io.numpyio import *
 ImportError: No module named numpyio
-/Users/david/python-microscopy/doc/api/FileUtils/PYME.FileUtils.compHdf.rst:4: WARNING: autodoc: failed to import module u'PYME.FileUtils.compHdf'; the following exception was raised:
+/Users/david/python-microscopy/doc/api/FileUtils/PYME.io.FileUtils.compHdf.rst:4: WARNING: autodoc: failed to import module u'PYME.io.FileUtils.compHdf'; the following exception was raised:
 Traceback (most recent call last):
   File "/Users/david/anaconda/lib/python2.7/site-packages/Sphinx-1.3.1-py2.7.egg/sphinx/ext/autodoc.py", line 385, in import_object
     __import__(self.modname)
-  File "/Users/david/python-microscopy/PYME/FileUtils/compHdf.py", line 26, in <module>
+  File "/Users/david/python-microscopy/PYME.io.FileUtils/compHdf.py", line 26, in <module>
     if not (len(sys.argv) in [2,3]):
 NameError: name 'sys' is not defined
-/Users/david/python-microscopy/doc/api/FileUtils/PYME.FileUtils.h5-thumbnailer.rst:4: WARNING: invalid signature for automodule (u'PYME.FileUtils.h5-thumbnailer')
-/Users/david/python-microscopy/doc/api/FileUtils/PYME.FileUtils.h5-thumbnailer.rst:4: WARNING: don't know which module to import for autodocumenting u'PYME.FileUtils.h5-thumbnailer' (try placing a "module" or "currentmodule" directive in the document, or giving an explicit module name)
-/Users/david/python-microscopy/doc/api/FileUtils/PYME.FileUtils.h5ToTiffSeries.rst:4: WARNING: autodoc: failed to import module u'PYME.FileUtils.h5ToTiffSeries'; the following exception was raised:
+/Users/david/python-microscopy/doc/api/FileUtils/PYME.io.FileUtils.h5-thumbnailer.rst:4: WARNING: invalid signature for automodule (u'PYME.io.FileUtils.h5-thumbnailer')
+/Users/david/python-microscopy/doc/api/FileUtils/PYME.io.FileUtils.h5-thumbnailer.rst:4: WARNING: don't know which module to import for autodocumenting u'PYME.io.FileUtils.h5-thumbnailer' (try placing a "module" or "currentmodule" directive in the document, or giving an explicit module name)
+/Users/david/python-microscopy/doc/api/FileUtils/PYME.io.FileUtils.h5ToTiffSeries.rst:4: WARNING: autodoc: failed to import module u'PYME.io.FileUtils.h5ToTiffSeries'; the following exception was raised:
 Traceback (most recent call last):
   File "/Users/david/anaconda/lib/python2.7/site-packages/Sphinx-1.3.1-py2.7.egg/sphinx/ext/autodoc.py", line 385, in import_object
     __import__(self.modname)
-  File "/Users/david/python-microscopy/PYME/FileUtils/h5ToTiffSeries.py", line 30, in <module>
+  File "/Users/david/python-microscopy/PYME.io.FileUtils/h5ToTiffSeries.py", line 30, in <module>
     raise RuntimeError('Usage: h5ToTiffSeries infile outdir')
 RuntimeError: Usage: h5ToTiffSeries infile outdir
-/Users/david/python-microscopy/doc/api/FileUtils/PYME.FileUtils.h5r-thumbnailer.rst:4: WARNING: invalid signature for automodule (u'PYME.FileUtils.h5r-thumbnailer')
-/Users/david/python-microscopy/doc/api/FileUtils/PYME.FileUtils.h5r-thumbnailer.rst:4: WARNING: don't know which module to import for autodocumenting u'PYME.FileUtils.h5r-thumbnailer' (try placing a "module" or "currentmodule" directive in the document, or giving an explicit module name)
-/Users/david/python-microscopy/doc/api/FileUtils/PYME.FileUtils.h5rFormatDef.rst:4: WARNING: autodoc: failed to import module u'PYME.FileUtils.h5rFormatDef'; the following exception was raised:
+/Users/david/python-microscopy/doc/api/FileUtils/PYME.io.FileUtils.h5r-thumbnailer.rst:4: WARNING: invalid signature for automodule (u'PYME.io.FileUtils.h5r-thumbnailer')
+/Users/david/python-microscopy/doc/api/FileUtils/PYME.io.FileUtils.h5r-thumbnailer.rst:4: WARNING: don't know which module to import for autodocumenting u'PYME.io.FileUtils.h5r-thumbnailer' (try placing a "module" or "currentmodule" directive in the document, or giving an explicit module name)
+/Users/david/python-microscopy/doc/api/FileUtils/PYME.io.FileUtils.h5rFormatDef.rst:4: WARNING: autodoc: failed to import module u'PYME.io.FileUtils.h5rFormatDef'; the following exception was raised:
 Traceback (most recent call last):
   File "/Users/david/anaconda/lib/python2.7/site-packages/Sphinx-1.3.1-py2.7.egg/sphinx/ext/autodoc.py", line 385, in import_object
     __import__(self.modname)
-  File "/Users/david/python-microscopy/PYME/FileUtils/h5rFormatDef.py", line 29, in <module>
+  File "/Users/david/python-microscopy/PYME.io.FileUtils/h5rFormatDef.py", line 29, in <module>
     h5ResultsFile = tables.openFile(resultsFilename, 'w')
 NameError: name 'resultsFilename' is not defined
-/Users/david/python-microscopy/doc/api/FileUtils/PYME.FileUtils.kdf-thumbnailer.rst:4: WARNING: invalid signature for automodule (u'PYME.FileUtils.kdf-thumbnailer')
-/Users/david/python-microscopy/doc/api/FileUtils/PYME.FileUtils.kdf-thumbnailer.rst:4: WARNING: don't know which module to import for autodocumenting u'PYME.FileUtils.kdf-thumbnailer' (try placing a "module" or "currentmodule" directive in the document, or giving an explicit module name)
-/Users/david/python-microscopy/doc/api/FileUtils/PYME.FileUtils.kdfToFloat32Tiff.rst:4: WARNING: autodoc: failed to import module u'PYME.FileUtils.kdfToFloat32Tiff'; the following exception was raised:
+/Users/david/python-microscopy/doc/api/FileUtils/PYME.io.FileUtils.kdf-thumbnailer.rst:4: WARNING: invalid signature for automodule (u'PYME.io.FileUtils.kdf-thumbnailer')
+/Users/david/python-microscopy/doc/api/FileUtils/PYME.io.FileUtils.kdf-thumbnailer.rst:4: WARNING: don't know which module to import for autodocumenting u'PYME.io.FileUtils.kdf-thumbnailer' (try placing a "module" or "currentmodule" directive in the document, or giving an explicit module name)
+/Users/david/python-microscopy/doc/api/FileUtils/PYME.io.FileUtils.kdfToFloat32Tiff.rst:4: WARNING: autodoc: failed to import module u'PYME.io.FileUtils.kdfToFloat32Tiff'; the following exception was raised:
 Traceback (most recent call last):
   File "/Users/david/anaconda/lib/python2.7/site-packages/Sphinx-1.3.1-py2.7.egg/sphinx/ext/autodoc.py", line 385, in import_object
     __import__(self.modname)
-  File "/Users/david/python-microscopy/PYME/FileUtils/kdfToFloat32Tiff.py", line 25, in <module>
+  File "/Users/david/python-microscopy/PYME.io.FileUtils/kdfToFloat32Tiff.py", line 25, in <module>
     import read_kdf
-  File "/Users/david/python-microscopy/PYME/FileUtils/read_kdf.py", line 28, in <module>
+  File "/Users/david/python-microscopy/PYME.io.FileUtils/read_kdf.py", line 28, in <module>
     from scipy.io.numpyio import *
 ImportError: No module named numpyio
-/Users/david/python-microscopy/doc/api/FileUtils/PYME.FileUtils.kdfToImage.rst:4: WARNING: autodoc: failed to import module u'PYME.FileUtils.kdfToImage'; the following exception was raised:
+/Users/david/python-microscopy/doc/api/FileUtils/PYME.io.FileUtils.kdfToImage.rst:4: WARNING: autodoc: failed to import module u'PYME.io.FileUtils.kdfToImage'; the following exception was raised:
 Traceback (most recent call last):
   File "/Users/david/anaconda/lib/python2.7/site-packages/Sphinx-1.3.1-py2.7.egg/sphinx/ext/autodoc.py", line 385, in import_object
     __import__(self.modname)
-  File "/Users/david/python-microscopy/PYME/FileUtils/kdfToImage.py", line 25, in <module>
+  File "/Users/david/python-microscopy/PYME.io.FileUtils/kdfToImage.py", line 25, in <module>
     import read_kdf
-  File "/Users/david/python-microscopy/PYME/FileUtils/read_kdf.py", line 28, in <module>
+  File "/Users/david/python-microscopy/PYME.io.FileUtils/read_kdf.py", line 28, in <module>
     from scipy.io.numpyio import *
 ImportError: No module named numpyio
-/Users/david/python-microscopy/doc/api/FileUtils/PYME.FileUtils.read_kdf.rst:4: WARNING: autodoc: failed to import module u'PYME.FileUtils.read_kdf'; the following exception was raised:
+/Users/david/python-microscopy/doc/api/FileUtils/PYME.io.FileUtils.read_kdf.rst:4: WARNING: autodoc: failed to import module u'PYME.io.FileUtils.read_kdf'; the following exception was raised:
 Traceback (most recent call last):
   File "/Users/david/anaconda/lib/python2.7/site-packages/Sphinx-1.3.1-py2.7.egg/sphinx/ext/autodoc.py", line 385, in import_object
     __import__(self.modname)
-  File "/Users/david/python-microscopy/PYME/FileUtils/read_kdf.py", line 28, in <module>
+  File "/Users/david/python-microscopy/PYME.io.FileUtils/read_kdf.py", line 28, in <module>
     from scipy.io.numpyio import *
 ImportError: No module named numpyio
-/Users/david/python-microscopy/doc/api/FileUtils/PYME.FileUtils.sf-thumbnailer.rst:4: WARNING: invalid signature for automodule (u'PYME.FileUtils.sf-thumbnailer')
-/Users/david/python-microscopy/doc/api/FileUtils/PYME.FileUtils.sf-thumbnailer.rst:4: WARNING: don't know which module to import for autodocumenting u'PYME.FileUtils.sf-thumbnailer' (try placing a "module" or "currentmodule" directive in the document, or giving an explicit module name)
-/Users/david/python-microscopy/doc/api/FileUtils/PYME.FileUtils.thumbnailDatabase.rst:4: WARNING: autodoc: failed to import module u'PYME.FileUtils.thumbnailDatabase'; the following exception was raised:
+/Users/david/python-microscopy/doc/api/FileUtils/PYME.io.FileUtils.sf-thumbnailer.rst:4: WARNING: invalid signature for automodule (u'PYME.io.FileUtils.sf-thumbnailer')
+/Users/david/python-microscopy/doc/api/FileUtils/PYME.io.FileUtils.sf-thumbnailer.rst:4: WARNING: don't know which module to import for autodocumenting u'PYME.io.FileUtils.sf-thumbnailer' (try placing a "module" or "currentmodule" directive in the document, or giving an explicit module name)
+/Users/david/python-microscopy/doc/api/FileUtils/PYME.io.FileUtils.thumbnailDatabase.rst:4: WARNING: autodoc: failed to import module u'PYME.io.FileUtils.thumbnailDatabase'; the following exception was raised:
 Traceback (most recent call last):
   File "/Users/david/anaconda/lib/python2.7/site-packages/Sphinx-1.3.1-py2.7.egg/sphinx/ext/autodoc.py", line 385, in import_object
     __import__(self.modname)
-  File "/Users/david/python-microscopy/PYME/FileUtils/thumbnailDatabase.py", line 44, in <module>
+  File "/Users/david/python-microscopy/PYME.io.FileUtils/thumbnailDatabase.py", line 44, in <module>
     thumbDB = sqlite3.connect('/srv/PYME/PYMEThumbnails.db', detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 OperationalError: unable to open database file
-/Users/david/python-microscopy/doc/api/FileUtils/PYME.FileUtils.write_kdf.rst:4: WARNING: autodoc: failed to import module u'PYME.FileUtils.write_kdf'; the following exception was raised:
+/Users/david/python-microscopy/doc/api/FileUtils/PYME.io.FileUtils.write_kdf.rst:4: WARNING: autodoc: failed to import module u'PYME.io.FileUtils.write_kdf'; the following exception was raised:
 Traceback (most recent call last):
   File "/Users/david/anaconda/lib/python2.7/site-packages/Sphinx-1.3.1-py2.7.egg/sphinx/ext/autodoc.py", line 385, in import_object
     __import__(self.modname)
-  File "/Users/david/python-microscopy/PYME/FileUtils/write_kdf.py", line 33, in <module>
+  File "/Users/david/python-microscopy/PYME.io.FileUtils/write_kdf.py", line 33, in <module>
     if int(scipy.version.version.split('.')[1]) > 5:
 TypeError: 'Mock' object does not support indexing
 /Users/david/python-microscopy/doc/api/PYME.rst:7: WARNING: toctree contains reference to nonexisting document u'api/PYME.JythonDummies'

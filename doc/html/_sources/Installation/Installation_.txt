@@ -126,12 +126,12 @@ Create shortcuts somewhere (eg the start menu), to the following scripts:
 - ``PYME\DSView\dh5view.cmd`` (raw data viewer)
 - ``PYME\Analysis\LMVis\VisGUI.cmd`` (analysed data viewer)
 
-Optionally associate .h5 files with dh5view (will also open .tif,  .kdf & .psf if you want) and .h5r files with VisGUI. I typically do this by clicking on one of the files, using the 'Open With' option, and telling it to remember. If you're using the sample database, you can also associate .pmu files with ``PYME\FileUtils\pymeUrlOpener.cmd``.
+Optionally associate .h5 files with dh5view (will also open .tif,  .kdf & .psf if you want) and .h5r files with VisGUI. I typically do this by clicking on one of the files, using the 'Open With' option, and telling it to remember. If you're using the sample database, you can also associate .pmu files with ``PYME.io.FileUtils\pymeUrlOpener.cmd``.
 
 Linux (Gnome)
 -------------
 
-Change to the ``PYME/FileUtils`` directory and run ``install_gnome.sh``. This should (hopefully) create links to the relevant programs in ``~/bin`` and set up associations and :) thumbnailing! With any luck, file permissions should be OK out of the repository, but there's a chance you're going to have to make a couple of the scripts executable.
+Change to the ``PYME.io.FileUtils`` directory and run ``install_gnome.sh``. This should (hopefully) create links to the relevant programs in ``~/bin`` and set up associations and :) thumbnailing! With any luck, file permissions should be OK out of the repository, but there's a chance you're going to have to make a couple of the scripts executable.
 
 .. _basicconfig:
 

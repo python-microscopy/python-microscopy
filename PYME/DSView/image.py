@@ -610,7 +610,7 @@ class ImageStack(object):
         return mdf
 
     def LoadTiff(self, filename):
-        #from PYME.FileUtils import readTiff
+        #from PYME.io.FileUtils import readTiff
         from PYME.io.DataSources import TiffDataSource
 
         mdfn = self.FindAndParseMetadata(filename)
@@ -670,7 +670,7 @@ class ImageStack(object):
         self.mode = 'default'
         
     def LoadBioformats(self, filename):
-        #from PYME.FileUtils import readTiff
+        #from PYME.io.FileUtils import readTiff
         from PYME.io.DataSources import BioformatsDataSource
         import bioformats
 
@@ -700,7 +700,7 @@ class ImageStack(object):
         
         
     def LoadImageSeries(self, filename):
-        #from PYME.FileUtils import readTiff
+        #from PYME.io.FileUtils import readTiff
         from PYME.io.DataSources import ImageSeriesDataSource
 
         self.dataSource = ImageSeriesDataSource.DataSource(filename, None)

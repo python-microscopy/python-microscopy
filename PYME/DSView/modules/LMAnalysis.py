@@ -28,8 +28,8 @@ import PYME.Analysis.FitFactories
 
 from PYME.Analysis import MetaDataEdit as mde
 #from pylab import *
-from PYME.FileUtils import fileID
-from PYME.FileUtils.nameUtils import genResultFileName
+from PYME.io.FileUtils import fileID
+from PYME.io.FileUtils.nameUtils import genResultFileName
 from PYME.LMVis import progGraph as progGraph
 
 #from PYME.LMVis import gl_render

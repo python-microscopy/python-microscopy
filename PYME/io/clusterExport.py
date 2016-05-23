@@ -89,7 +89,7 @@ def ExportImageToCluster(image, filename, progCallback=None):
 SERIES_PATTERN = '%(day)d_%(month)d_series_%(counter)'
 
 def _getFilenameSuggestion(dirname='', seriesname = SERIES_PATTERN):
-    from PYME.FileUtils import nameUtils
+    from PYME.io.FileUtils import nameUtils
     from PYME.ParallelTasks import clusterIO
     import os
     

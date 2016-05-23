@@ -99,7 +99,7 @@ Converting the data to PYMEs native ``.h5`` (old method)
 ========================================================
 
 There are a number of scripts to convert different data types (currently Raw, Tiff
-sequences, kdf stacks, and sequences of kdfs) to ``.h5`` in the ``PYME.FileUtils``
+sequences, kdf stacks, and sequences of kdfs) to ``.h5`` in the ``PYME.io.FileUtils``
 folder. This approach is a little inelegant, because you need to add all the metadata entries
 manually in ``dh5view``, but can be useful in some circumstances (notably there is not
 yet support for directly analysing raw of kdf data).

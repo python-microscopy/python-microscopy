@@ -24,7 +24,7 @@
 import os
 import string
 import re
-from PYME.FileUtils import nameUtils 
+from PYME.io.FileUtils import nameUtils 
 
 seps = re.compile('[\\\\/]')
 

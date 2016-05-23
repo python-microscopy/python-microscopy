@@ -23,7 +23,7 @@ import pylab
 from enthought.mayavi import mlab
 import os
 import tempfile
-#from PYME.FileUtils.readTiff import read3DTiff
+#from PYME.io.FileUtils.readTiff import read3DTiff
 
 try:
     import Image

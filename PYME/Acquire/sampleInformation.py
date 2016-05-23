@@ -32,7 +32,7 @@ import logging
 logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
-from PYME.FileUtils import nameUtils
+from PYME.io.FileUtils import nameUtils
 from PYME.contrib import TextCtrlAutoComplete
 
 #from PYME.SampleDB2 import populate #just to setup the Django environment

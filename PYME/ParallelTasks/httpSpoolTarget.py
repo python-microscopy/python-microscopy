@@ -1,7 +1,7 @@
 from BaseHTTPServer import BaseHTTPRequestHandler
 import urlparse
 import os
-from PYME.FileUtils import nameUtils
+from PYME.io.FileUtils import nameUtils
 from PYME.Acquire import MetaDataHandler
 from PYME.ParallelTasks import HDFTaskQueue
 import time

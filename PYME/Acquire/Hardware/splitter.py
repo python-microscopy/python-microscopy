@@ -28,7 +28,7 @@ import numpy
 import os
 import wx.lib.agw.aui as aui
 from PYME.Acquire import MetaDataHandler
-from PYME.FileUtils import nameUtils
+from PYME.io.FileUtils import nameUtils
 
 def LoadShiftField(filename = None):
     if not filename:

@@ -2678,7 +2678,7 @@
 --- ./PYME/Analysis/twoColour.py	(original)
 +++ ./PYME/Analysis/twoColour.py	(refactored)
 @@ -24,9 +24,9 @@
- #from PYME.FileUtils.read_kdf import ReadKdfData
+ #from PYME.io.FileUtils.read_kdf import ReadKdfData
  import numpy as np
  import scipy as sp
 -import ofind
@@ -6641,7 +6641,7 @@
 --- ./PYME/DSView/loft/fth5.py	(original)
 +++ ./PYME/DSView/loft/fth5.py	(refactored)
 @@ -21,7 +21,7 @@
- from PYME.FileUtils.nameUtils import genResultFileName
+ from PYME.io.FileUtils.nameUtils import genResultFileName
  
  if not 'tq' in locals():
 -    if 'PYME_TASKQUEUENAME' in os.environ.keys():
@@ -7969,8 +7969,8 @@
          error()
      
      
---- ./PYME/FileUtils/KdfSeqToHdf5.py	(original)
-+++ ./PYME/FileUtils/KdfSeqToHdf5.py	(refactored)
+--- ./PYME.io.FileUtils/KdfSeqToHdf5.py	(original)
++++ ./PYME.io.FileUtils/KdfSeqToHdf5.py	(refactored)
 @@ -23,7 +23,7 @@
  
  #!/usr/bin/python
@@ -7980,8 +7980,8 @@
  import tables
  import os
  import sys
---- ./PYME/FileUtils/KdfStackToHdf5.py	(original)
-+++ ./PYME/FileUtils/KdfStackToHdf5.py	(refactored)
+--- ./PYME.io.FileUtils/KdfStackToHdf5.py	(original)
++++ ./PYME.io.FileUtils/KdfStackToHdf5.py	(refactored)
 @@ -23,7 +23,7 @@
  
  #!/usr/bin/python
@@ -7991,8 +7991,8 @@
  import tables
  import os
  import sys
---- ./PYME/FileUtils/RawToHdf5.py	(original)
-+++ ./PYME/FileUtils/RawToHdf5.py	(refactored)
+--- ./PYME.io.FileUtils/RawToHdf5.py	(original)
++++ ./PYME.io.FileUtils/RawToHdf5.py	(refactored)
 @@ -23,7 +23,7 @@
  
  #!/usr/bin/python
@@ -8011,8 +8011,8 @@
  
          f1.close()
  
---- ./PYME/FileUtils/batchConvertKdf.py	(original)
-+++ ./PYME/FileUtils/batchConvertKdf.py	(refactored)
+--- ./PYME.io.FileUtils/batchConvertKdf.py	(original)
++++ ./PYME.io.FileUtils/batchConvertKdf.py	(refactored)
 @@ -24,7 +24,7 @@
  import sys
  import os
@@ -8022,8 +8022,8 @@
  
  
  if __name__ == '__main__':
---- ./PYME/FileUtils/h5r-thumbnailer.py	(original)
-+++ ./PYME/FileUtils/h5r-thumbnailer.py	(refactored)
+--- ./PYME.io.FileUtils/h5r-thumbnailer.py	(original)
++++ ./PYME.io.FileUtils/h5r-thumbnailer.py	(refactored)
 @@ -48,7 +48,7 @@
  
      #print f1.keys()
@@ -8048,8 +8048,8 @@
          threeD = True
  
      if 'Events' in dir(f1.h5f.root):
---- ./PYME/FileUtils/h5rToTxt.py	(original)
-+++ ./PYME/FileUtils/h5rToTxt.py	(refactored)
+--- ./PYME.io.FileUtils/h5rToTxt.py	(original)
++++ ./PYME.io.FileUtils/h5rToTxt.py	(refactored)
 @@ -29,7 +29,7 @@
  def convertFile(inFile, outFile):
      ds = inpFilt.h5rSource(inFile)
@@ -8076,8 +8076,8 @@
 +        print('Output file already exists - please remove')
      else:
          convertFile(inFile, outFile)
---- ./PYME/FileUtils/kdfToFloat32Tiff.py	(original)
-+++ ./PYME/FileUtils/kdfToFloat32Tiff.py	(refactored)
+--- ./PYME.io.FileUtils/kdfToFloat32Tiff.py	(original)
++++ ./PYME.io.FileUtils/kdfToFloat32Tiff.py	(refactored)
 @@ -22,7 +22,7 @@
  ##################
  
@@ -8087,8 +8087,8 @@
  
  if not (len(sys.argv) == 3):
      raise RuntimeError('Usage: procStack inDir resDir')
---- ./PYME/FileUtils/kdfToImage.py	(original)
-+++ ./PYME/FileUtils/kdfToImage.py	(refactored)
+--- ./PYME.io.FileUtils/kdfToImage.py	(original)
++++ ./PYME.io.FileUtils/kdfToImage.py	(refactored)
 @@ -22,7 +22,7 @@
  ##################
  
@@ -8098,8 +8098,8 @@
  import sys
  
  if not (len(sys.argv) == 3):
---- ./PYME/FileUtils/nameUtils.py	(original)
-+++ ./PYME/FileUtils/nameUtils.py	(refactored)
+--- ./PYME.io.FileUtils/nameUtils.py	(original)
++++ ./PYME.io.FileUtils/nameUtils.py	(refactored)
 @@ -45,15 +45,15 @@
  dtn = datetime.datetime.now()
  
@@ -8119,8 +8119,8 @@
      dirSuffix = '_' + os.environ['PYMEDIRSUFFIX']
  
          
---- ./PYME/FileUtils/readTiff.py	(original)
-+++ ./PYME/FileUtils/readTiff.py	(refactored)
+--- ./PYME.io.FileUtils/readTiff.py	(original)
++++ ./PYME.io.FileUtils/readTiff.py	(refactored)
 @@ -42,7 +42,7 @@
      #ima = np.array(im.getdata(), 'int16').newbyteorder('BE')
      ima = np.array(im.getdata()).newbyteorder(endedness)
@@ -8130,8 +8130,8 @@
      
      #print ima.shape
  
---- ./PYME/FileUtils/sf-thumbnailer.py	(original)
-+++ ./PYME/FileUtils/sf-thumbnailer.py	(refactored)
+--- ./PYME.io.FileUtils/sf-thumbnailer.py	(original)
++++ ./PYME.io.FileUtils/sf-thumbnailer.py	(refactored)
 @@ -30,7 +30,7 @@
  import sys
  import gnomevfs
@@ -8150,8 +8150,8 @@
  fid.close()
  
  f = figure(figsize=(thumbSize/dpi, 0.5*thumbSize/dpi))
---- ./PYME/FileUtils/thumbnailDatabase.py	(original)
-+++ ./PYME/FileUtils/thumbnailDatabase.py	(refactored)
+--- ./PYME.io.FileUtils/thumbnailDatabase.py	(original)
++++ ./PYME.io.FileUtils/thumbnailDatabase.py	(refactored)
 @@ -22,7 +22,7 @@
  ##################
  
@@ -8170,8 +8170,8 @@
              #print ext
              #try:
              #thumbMod = __import__(thumbnailers[ext])
---- ./PYME/FileUtils/write_kdf.py	(original)
-+++ ./PYME/FileUtils/write_kdf.py	(refactored)
+--- ./PYME.io.FileUtils/write_kdf.py	(original)
++++ ./PYME.io.FileUtils/write_kdf.py	(refactored)
 @@ -171,7 +171,7 @@
          TypeString = 'Unsigned Short'
      else:
@@ -8409,7 +8409,7 @@
 -import Queue
 +import queue
  
- from PYME.FileUtils.nameUtils import genResultFileName
+ from PYME.io.FileUtils.nameUtils import genResultFileName
  from PYME.ParallelTasks.relativeFiles import getFullFilename
 @@ -87,7 +87,7 @@
          global bufferMisses
@@ -9777,7 +9777,7 @@
      def GetOrCreate(cls, filename, fileID=None, imageID=None):
 @@ -256,7 +256,7 @@
          except:
-             import PYME.FileUtils.fileID as file_ID
+             import PYME.io.FileUtils.fileID as file_ID
  
 -            print filename
 +            print(filename)

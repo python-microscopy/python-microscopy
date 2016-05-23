@@ -11,7 +11,7 @@ Subpackages
     Analysis/PYME.Analysis
     DSView/PYME.DSView
     Deconv/PYME.Deconv
-    FileUtils/PYME.FileUtils
+    FileUtils/PYME.io.FileUtils
     PYME.JythonDummies
     PYME.PSFEst
     PYME.PSFGen

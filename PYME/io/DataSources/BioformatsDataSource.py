@@ -47,7 +47,7 @@ def release_VM():
 
 
 from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
-#from PYME.FileUtils import readTiff
+#from PYME.io.FileUtils import readTiff
 #import Image
 #from PYME.misc import TiffImagePlugin #monkey patch PIL with improved tiff support from Priithon
 

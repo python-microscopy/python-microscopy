@@ -57,7 +57,7 @@ from PYME.DSView import dsviewer as dsviewer
 from PYME.Acquire import MetaDataHandler
 #from PYME.Acquire import chanfr
 from PYME.Acquire import HDFSpoolFrame
-from PYME.FileUtils import nameUtils
+from PYME.io.FileUtils import nameUtils
 
 from PYME.Acquire import splashScreen
 import time

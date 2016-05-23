@@ -35,9 +35,9 @@ except:
     print('Could not connect to the sample information database')
     sampInf = False
 #import win32api
-from PYME.FileUtils import nameUtils
-from PYME.FileUtils.nameUtils import numToAlpha
-from PYME.FileUtils.freeSpace import get_free_space
+from PYME.io.FileUtils import nameUtils
+from PYME.io.FileUtils.nameUtils import numToAlpha
+from PYME.io.FileUtils.freeSpace import get_free_space
 from PYME.ParallelTasks.relativeFiles import getRelFilename
 
 import PYME.Acquire.Protocols

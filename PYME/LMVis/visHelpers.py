@@ -28,7 +28,7 @@ import numpy.ctypeslib
 
 
 #import subprocess
-#from PYME.FileUtils import saveTiffStack
+#from PYME.io.FileUtils import saveTiffStack
 from matplotlib import delaunay
 from PYME.Analysis.qHull.triangWrap import RenderTetrahedra
 
@@ -143,7 +143,7 @@ class dummy:
 ##        # remove frame files here
 ##        subprocess.call('rm /tmp/frame*.tif', shell=True)
 #
-#        #from PYME.FileUtils import saveTiffStack
+#        #from PYME.io.FileUtils import saveTiffStack
 #
 #        saveTiffStack.saveTiffMultipage(self.img, filename)
 

@@ -148,7 +148,7 @@ class Unmixer:
 
 
     def OnSetShiftField(self, event=None):
-        from PYME.FileUtils import nameUtils
+        from PYME.io.FileUtils import nameUtils
         fdialog = wx.FileDialog(None, 'Please select shift field to use ...',
                     wildcard='Shift fields|*.sf', style=wx.OPEN, defaultDir = nameUtils.genShiftFieldDirectoryPath())
         succ = fdialog.ShowModal()
