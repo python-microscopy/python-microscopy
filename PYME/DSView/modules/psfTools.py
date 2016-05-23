@@ -25,11 +25,11 @@ import wx.grid
 #import pylab
 #from PYME.io.image import ImageStack
 try:
-    from enthought.traits.api import HasTraits, Float, Int
+    from enthought.traits.api import HasTraits, Float, Int, Bool
     from enthought.traits.ui.api import View, Item
     from enthought.traits.ui.menu import OKButton
 except ImportError:
-    from traits.api import HasTraits, Float, Int
+    from traits.api import HasTraits, Float, Int, Bool
     from traitsui.api import View, Item
     from traitsui.menu import OKButton
 
@@ -218,11 +218,14 @@ class PSFTools(HasTraits):
     NA = Float(1.49)
     pupilSize = Float(0)
     iterations = Int(50)
+    intermediateUpdates = Bool(False)
     
     view = View(Item('wavelength'),
                 Item('NA'),
                 Item('pupilSize'),
-                Item('iterations'), buttons=[OKButton])
+                Item('iterations'), 
+                Item('intermediateUpdates'),
+                buttons=[OKButton])
     
     def __init__(self, dsviewer):
         self.dsviewer = dsviewer
@@ -248,7 +251,10 @@ class PSFTools(HasTraits):
         
         self.configure_traits(kind='modal')
         
-        pupil = fourierHNA.ExtractPupil(np.maximum(self.image.data[:,:,:] - .001, 0), z_, self.image.mdh['voxelsize.x']*1e3, self.wavelength, self.NA, nIters=self.iterations, size=self.pupilSize)
+        #pupil = fourierHNA.ExtractPupil(np.maximum(self.image.data[:,:,:] - .001, 0), z_, self.image.mdh['voxelsize.x']*1e3, self.wavelength, self.NA, nIters=self.iterations, size=self.pupilSize)
+
+        pupil = fourierHNA.ExtractPupil(self.image.data[:,:,:], z_, self.image.mdh['voxelsize.x']*1e3, self.wavelength, self.NA, nIters=self.iterations, size=self.pupilSize, intermediateUpdates=self.intermediateUpdates)
+                
         
         pylab.figure()
         pylab.subplot(121)
