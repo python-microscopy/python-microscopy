@@ -731,12 +731,28 @@ def datafrompipeline(datasource,pipeline, ctr, boxsize = 7):
 
 import StringIO
 def darkAnalysisRawPlusPipeline(datasource,pipeline,boxsize = 7, doplot = True, threshfactor=0.45, mdh=None, debug=1):
-    xp = pipeline['x']
+    xp = pipeline['x'] # in new code use 'x_raw' and 'y_raw'!
     yp = pipeline['y']
     if mdh is None: # there may be other ways to get at the mdh, e.g. via pipeline?
         mdh = getmdh(inmodule=True)
     xpix = 1e3*mdh['voxelsize.x']
     ypix = 1e3*mdh['voxelsize.y']
+
+# we need a new strategy for the pixel center selection
+# and inclusion of drift
+# strategy:
+# 1. if we have filterkeys x and y (look up where to find these!) use the center of that ROI
+# 2. if we have a drift time course calculate a centerpix(t), i.e. centerpix as a function of x
+
+# for 1: use pipeline.filterKeys['x'] and pipeline.filterKeys['y']
+# for 2: for a given xctr and yctr find the x_raw and y_raw; question: how to do that?
+# for 2: we will have to get timecourse of shift as (1) x = x_raw + dx(t)
+# for 2: if we manage to get (1) we will get (2) xctr_raw(t) = xctr-dx(t)
+
+# for 2: (2) needs texting with bead sample
+
+# for 2: once we have xctr_raw(t), yctr_raw(t) we need to modify datafrompipeline
+# for 2: make datafrompipeline so that it accepts ctr(t) = [xctr(t),yctr(t)]!!
 
     bbox = [xp.min(),xp.max(),yp.min(),yp.max()]
     bboxpix = [bbox[0]/xpix,bbox[1]/xpix,bbox[2]/ypix,bbox[3]/ypix]
