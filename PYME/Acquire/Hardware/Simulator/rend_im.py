@@ -36,7 +36,7 @@ except ImportError:
 from scipy import ndimage
 import numpy as np
 
-from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
+from PYME.io.FileUtils.nameUtils import getFullExistingFilename
 import multiprocessing
 import threading
 from PYME.Deconv.wiener import resizePSF

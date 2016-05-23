@@ -21,7 +21,7 @@
 #
 ##################
 
-from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
+from PYME.io.FileUtils.nameUtils import getFullExistingFilename
 from .BaseDataSource import BaseDataSource
 
 import dcimg
@@ -29,7 +29,7 @@ import dcimg
 class DataSource(BaseDataSource):
     moduleName = 'DcimgDataSource'
     def __init__(self, filename, taskQueue=None):
-        self.filename = getFullExisitngFilename(filename)#convert relative path to full path
+        self.filename = getFullExistingFilename(filename)#convert relative path to full path
         
         self.DCIFile = dcimg.DCIMGFile(self.filename)
         

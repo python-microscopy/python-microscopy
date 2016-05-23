@@ -41,6 +41,7 @@ from PYME.io import dataWrap
 from PYME.io.DataSources import BufferedDataSource
 from PYME.LMVis.visHelpers import ImageBounds
 
+from PYME.io.FileUtils.nameUtils import getRelFilename
 
 
 lastdir = ''
@@ -337,7 +338,7 @@ class ImageStack(object):
         MetaData.fillInBlanks(self.mdh, self.dataSource)
 
         #calculate the name to use when we do batch analysis on this        
-        from PYME.ParallelTasks.relativeFiles import getRelFilename
+        #from PYME.io.FileUtils.nameUtils import getRelFilename
         self.seriesName = getRelFilename(filename)
 
         #try and find a previously performed analysis
@@ -425,7 +426,7 @@ class ImageStack(object):
         self.mdh.setEntry('voxelsize.z', vox.z)
 
 
-        from PYME.ParallelTasks.relativeFiles import getRelFilename
+        #from PYME.ParallelTasks.relativeFiles import getRelFilename
         self.seriesName = getRelFilename(filename)
 
         self.mode = 'psf'
@@ -440,7 +441,7 @@ class ImageStack(object):
         self.data = numpy.load(filename)
 
 
-        from PYME.ParallelTasks.relativeFiles import getRelFilename
+        #from PYME.ParallelTasks.relativeFiles import getRelFilename
         self.seriesName = getRelFilename(filename)
 
         self.mode = 'default'
@@ -454,7 +455,7 @@ class ImageStack(object):
         self.data = numpy.memmap(filename, dtype='<f4', mode='r', offset=128, shape=(self.mdh['Camera.ROIWidth'],self.mdh['Camera.ROIHeight'],self.mdh['NumImages']), order='F')
 
 
-        from PYME.ParallelTasks.relativeFiles import getRelFilename
+        #from PYME.ParallelTasks.relativeFiles import getRelFilename
         self.seriesName = getRelFilename(filename)
 
         self.mode = 'default'
@@ -664,7 +665,7 @@ class ImageStack(object):
             self.data = ListWrap(chans)
 
 
-        from PYME.ParallelTasks.relativeFiles import getRelFilename
+        #from PYME.ParallelTasks.relativeFiles import getRelFilename
         self.seriesName = getRelFilename(filename)
 
         self.mode = 'default'
@@ -693,7 +694,7 @@ class ImageStack(object):
         
         print self.data.shape
 
-        from PYME.ParallelTasks.relativeFiles import getRelFilename
+        #from PYME.ParallelTasks.relativeFiles import getRelFilename
         self.seriesName = getRelFilename(filename)
 
         self.mode = 'default'
@@ -710,7 +711,7 @@ class ImageStack(object):
 
         self.FindAndParseMetadata(filename)
 
-        from PYME.ParallelTasks.relativeFiles import getRelFilename
+        #from PYME.ParallelTasks.relativeFiles import getRelFilename
         self.seriesName = getRelFilename(filename)
 
         self.mode = 'default'

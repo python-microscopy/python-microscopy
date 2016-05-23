@@ -27,7 +27,7 @@ import math
 from scipy import ndimage
 from scipy.ndimage import _nd_image, _ni_support
 from scipy.spatial import ckdtree
-from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
+from PYME.io.FileUtils.nameUtils import getFullExistingFilename
 
 try:
     import cPickle as pickle

@@ -36,9 +36,9 @@ except:
     sampInf = False
 #import win32api
 from PYME.io.FileUtils import nameUtils
-from PYME.io.FileUtils.nameUtils import numToAlpha
+from PYME.io.FileUtils.nameUtils import numToAlpha, getRelFilename
 from PYME.io.FileUtils.freeSpace import get_free_space
-from PYME.ParallelTasks.relativeFiles import getRelFilename
+
 
 import PYME.Acquire.Protocols
 import PYME.Acquire.protocol as prot

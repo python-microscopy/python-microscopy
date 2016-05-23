@@ -33,7 +33,7 @@ except ImportError:
     
 from scipy.fftpack import fftn, ifftn, ifftshift
 from PYME.contrib import pad
-from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
+from PYME.io.FileUtils.nameUtils import getFullExistingFilename
 from scipy.spatial import kdtree
 
 #import pylab

@@ -21,7 +21,7 @@
 #
 ##################
 
-from PYME.ParallelTasks.relativeFiles import getFullFilename
+#from PYME.io.FileUtils.nameUtils import getFullFilename
 from .BaseDataSource import BaseDataSource
 #import tables
 

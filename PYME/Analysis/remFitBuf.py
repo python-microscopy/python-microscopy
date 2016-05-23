@@ -41,7 +41,7 @@ from PYME.io.image import ImageStack
 import numpy
 import numpy as np
 
-from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
+from PYME.io.FileUtils.nameUtils import getFullExistingFilename
 
 bufferMisses = 0
 nTasksProcessed = 0

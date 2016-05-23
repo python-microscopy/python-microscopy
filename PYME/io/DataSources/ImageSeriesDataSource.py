@@ -21,7 +21,7 @@
 #
 ##################
 
-from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
+from PYME.io.FileUtils.nameUtils import getFullExistingFilename
 from PYME.Acquire import MetaDataHandler
 #from PYME.io.FileUtils import readTiff
 from PIL import Image

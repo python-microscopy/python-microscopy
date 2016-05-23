@@ -22,7 +22,7 @@
 ################
 from numpy import *
 #import cPickle
-from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
+from PYME.io.FileUtils.nameUtils import getFullExistingFilename
 
 class dummy(object):
     pass

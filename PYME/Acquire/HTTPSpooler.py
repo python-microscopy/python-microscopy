@@ -30,8 +30,8 @@ import time
 
 import PYME.Acquire.Spooler as sp
 #from PYME.Acquire import protocol as p
-from PYME.io.FileUtils import fileID, nameUtils
-from PYME.ParallelTasks.relativeFiles import getRelFilename
+#from PYME.io.FileUtils import fileID, nameUtils
+#from PYME.ParallelTasks.relativeFiles import getRelFilename
 
 import threading
 import Queue
