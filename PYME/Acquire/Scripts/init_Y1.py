@@ -120,6 +120,7 @@ pst = offsetPiezo.ServerThread(scope.piFoc)
 pst.start()
 scope.CleanupFunctions.append(pst.cleanup)
 ''')
+
 InitBG('XY Stage', '''
 #XY Stage
 from PYME.Acquire.Hardware.Piezos import piezo_c867

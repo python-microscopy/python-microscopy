@@ -95,7 +95,10 @@ class microscope(object):
         res = {}
         for k in self.positioning.keys():
             p, c, m = self.positioning[k]
-            res[k] = (p.GetMin(c)*m,p.GetMax(c)*m) 
+            if m > 0: 
+                res[k] = (p.GetMin(c)*m,p.GetMax(c)*m)
+            else:
+                res[k] = (p.GetMax(c)*m,p.GetMin(c)*m)
 
         return res
         

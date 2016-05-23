@@ -284,7 +284,7 @@ def putFile(filename, data, serverfilter=''):
     r.close()
         
     
-    _lastwritespeed[name] = len(data)/dt
+    _lastwritespeed[name] = len(data)/(dt + .001)
         
 def putFiles(files, serverfilter=''):
     '''put a bunch of files to a single server in the cluster (chosen by algorithm)
@@ -305,7 +305,7 @@ def putFiles(files, serverfilter=''):
             raise RuntimeError('Put failed with %d: %s' % (r.status_code, r.content))
             
         
-        _lastwritespeed[name] = len(data)/dt
+        _lastwritespeed[name] = len(data)/(dt + .001)
         
     r.close()
     
