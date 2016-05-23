@@ -156,23 +156,24 @@ class GaussianFitFactory:
 
         # LLH: (N); dpars and CRLB (N, 6)
         #convert pixels to nm; voxelsize in units of um
-        _warpDrive.dpars[:, 0] *= (1000*self.metadata.voxelsize.y)
-        _warpDrive.dpars[:, 1] *= (1000*self.metadata.voxelsize.x)
-        _warpDrive.dpars[:, 4] *= (1000*self.metadata.voxelsize.y)
-        _warpDrive.dpars[:, 5] *= (1000*self.metadata.voxelsize.x)
+        dpars = _warpDrive.dpars[:_warpDrive.candCount, :]
+        dpars[:, 0] *= (1000*self.metadata.voxelsize.y)
+        dpars[:, 1] *= (1000*self.metadata.voxelsize.x)
+        dpars[:, 4] *= (1000*self.metadata.voxelsize.y)
+        dpars[:, 5] *= (1000*self.metadata.voxelsize.x)
 
         fitErrors=None
         LLH = None
 
 
         if _warpDrive.calcCRLB:
-            LLH = _warpDrive.LLH
+            LLH = _warpDrive.LLH[:_warpDrive.candCount]
+            CRLB = _warpDrive.CRLB[:_warpDrive.candCount, :]
             # fixme: Should never have negative CRLB, yet Yu reports ocassional instances in Matlab verison, check
-            _warpDrive.CRLB[:, 0] = np.sqrt(np.abs(_warpDrive.CRLB[:, 0]))*(1000*self.metadata.voxelsize.y)
-            _warpDrive.CRLB[:, 1] = np.sqrt(np.abs(_warpDrive.CRLB[:, 1]))*(1000*self.metadata.voxelsize.x)
-            _warpDrive.CRLB[:, 4] = np.sqrt(np.abs(_warpDrive.CRLB[:, 4]))*(1000*self.metadata.voxelsize.y)
-            _warpDrive.CRLB[:, 5] = np.sqrt(np.abs(_warpDrive.CRLB[:, 5]))*(1000*self.metadata.voxelsize.x)
-            fitErrors = _warpDrive.CRLB
+            CRLB[:, 0] = np.sqrt(np.abs(CRLB[:, 0]))*(1000*self.metadata.voxelsize.y)
+            CRLB[:, 1] = np.sqrt(np.abs(CRLB[:, 1]))*(1000*self.metadata.voxelsize.x)
+            CRLB[:, 4] = np.sqrt(np.abs(CRLB[:, 4]))*(1000*self.metadata.voxelsize.y)
+            CRLB[:, 5] = np.sqrt(np.abs(CRLB[:, 5]))*(1000*self.metadata.voxelsize.x)
 
         #return self.chan1.dpars # each fit produces column vector of results, append them all horizontally for return
         resList = np.empty(_warpDrive.candCount, FitResultsDType)
@@ -180,7 +181,7 @@ class GaussianFitFactory:
 
         # package our results with the right labels
         for ii in range(_warpDrive.candCount):
-            resList[ii] = GaussianFitResultR(_warpDrive.dpars[ii, :], self.metadata, resultCode, fitErrors[ii, :], LLH[ii], _warpDrive.candCount)
+            resList[ii] = GaussianFitResultR(_warpDrive.dpars[ii, :], self.metadata, resultCode, CRLB[ii, :], LLH[ii], _warpDrive.candCount)
 
         return np.hstack(resList)
 
