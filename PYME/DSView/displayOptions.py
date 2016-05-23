@@ -25,7 +25,7 @@ from matplotlib import cm
 import numpy as np
 #import tables
 
-from PYME.DSView import dataWrap
+from PYME.io import dataWrap
 
 try:
     # location in Python 2.7 and 3.1

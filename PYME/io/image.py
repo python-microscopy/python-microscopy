@@ -37,7 +37,7 @@ import weakref
 
 from PYME.Acquire import MetaDataHandler
 from PYME.Analysis import MetaData
-from PYME.DSView import dataWrap
+from PYME.io import dataWrap
 from PYME.io.DataSources import BufferedDataSource
 from PYME.LMVis.visHelpers import ImageBounds
 
@@ -626,7 +626,7 @@ class ImageStack(object):
         #if we have a multi channel data set, try and pull in all the channels
         if 'ChannelFiles' in self.mdh.getEntryNames() and not len(self.mdh['ChannelFiles']) == self.data.shape[3]:
             try:
-                from PYME.DSView.dataWrap import ListWrap
+                from PYME.io.dataWrap import ListWrap
                 #pull in all channels
 
                 chans = []
@@ -646,11 +646,11 @@ class ImageStack(object):
                 pass
             
         elif 'ChannelNames' in self.mdh.getEntryNames() and len(self.mdh['ChannelNames']) == self.data.getNumSlices():
-            from PYME.DSView.dataWrap import ListWrap
+            from PYME.io.dataWrap import ListWrap
             chans = [numpy.atleast_3d(self.data.getSlice(i)) for i in range(len(self.mdh['ChannelNames']))]
             self.data = ListWrap(chans)
         elif filename.endswith('.lsm') and 'LSM.images_number_channels' in self.mdh.keys() and self.mdh['LSM.images_number_channels'] > 1:
-            from PYME.DSView.dataWrap import ListWrap
+            from PYME.io.dataWrap import ListWrap
             nChans = self.mdh['LSM.images_number_channels']
             
             chans = []
@@ -771,7 +771,7 @@ class ImageStack(object):
             self.saved = True
 
     def Save(self, filename=None, crop=False, view=None):
-        import dataExporter
+        from PYME.io import dataExporter
 
         ofn = self.filename
 

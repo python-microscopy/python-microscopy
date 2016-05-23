@@ -196,7 +196,7 @@ class OMETiffExporter(Exporter):
 
     def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
         from PYME.contrib.gohlke import tifffile
-        import dataWrap
+        from PYME.io import dataWrap
         
         dw = dataWrap.ListWrap([data[xslice, yslice, zslice, i] for i in range(data.shape[3])])
         #xmd = None

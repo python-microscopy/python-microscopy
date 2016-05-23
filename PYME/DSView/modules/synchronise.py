@@ -25,7 +25,7 @@ import os
 #import pylab
 #from PYME.Acquire import MetaDataHandler
 #from PYME.DSView import image, View3D
-#from PYME.DSView import dataWrap
+#from PYME.io import dataWrap
 from PYME.DSView import dsviewer
 
 
