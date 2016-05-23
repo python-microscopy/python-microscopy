@@ -72,10 +72,12 @@ class zScanner:
         self.running = True
         
         self.zPoss = np.arange(self.stackSettings.GetStartPos(), self.stackSettings.GetEndPos()+.95*self.stackSettings.GetStepSize(),self.stackSettings.GetStepSize()*self.stackSettings.GetDirection())
-        piezo = self.scope.positioning[self.stackSettings.GetScanChannel()]
-        self.piezo = piezo[0]
-        self.piezoChan = piezo[1]
-        self.startPos = self.piezo.GetPos(self.piezoChan)
+        #piezo = self.scope.positioning[self.stackSettings.GetScanChannel()]
+        #self.piezo = piezo[0]
+        #self.piezoChan = piezo[1]
+        self.posChan = self.stackSettings.GetScanChannel()
+        #self.startPos = self.piezo.GetPos(self.piezoChan)
+        self.startPos = self.scope.GetPos()[self.posChan]
         
         self.scope.pa.stop()
         #self.scope.pa.WantFrameNotification.append(self.tick)
@@ -131,7 +133,8 @@ class zScanner:
         #self.view_yz.do.yp = self.ds.shape[1]/2
         #self.view_yz.do.xp = self.ds.shape[0]/2
 
-        self.piezo.MoveTo(self.piezoChan, self.zPoss[self.pos])
+        #self.piezo.MoveTo(self.piezoChan, self.zPoss[self.pos])
+        self.scope.SetPos(**{self.posChan : self.zPoss[self.pos]})
 
 
     def OnCameraFrame(self, **kwargs):
@@ -174,7 +177,8 @@ class zScanner:
         self.view.Refresh()
 
     def _movePiezo(self, fn):
-        self.piezo.MoveTo(self.piezoChan, self.zPoss[fn])
+        #self.piezo.MoveTo(self.piezoChan, self.zPoss[fn])
+        self.scope.SetPos(**{self.posChan : self.zPoss[fn]})
         
     def OnAqStop(self, **kwargs):
         self.view.image.mdh.setEntry('EndTime', time.time())

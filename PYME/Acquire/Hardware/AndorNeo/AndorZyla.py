@@ -152,7 +152,7 @@ class AndorBase(SDK3Camera):
         self.nBuffers = vRed*self.defBuffers
         
         if not self.contMode:
-            self.nBuffers = 2
+            self.nBuffers = 5
         #print bufSize
         for i in range(self.nBuffers):
             #buf = np.empty(bufSize, 'uint8')
