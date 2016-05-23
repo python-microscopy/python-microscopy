@@ -77,7 +77,8 @@ class ZylaControl(wx.Panel):
                       EnumControl(self, cam.PixelEncoding),
                       EnumControl(self, cam.PixelReadoutRate),
                       BoolControl(self, cam.SpuriousNoiseFilter),
-                      BoolControl(self, cam.StaticBlemishCorrection),]
+                      BoolControl(self, cam.StaticBlemishCorrection),
+                      EnumControl(self, cam.CycleMode),]
         
         self._init_ctrls()
         

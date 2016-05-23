@@ -56,7 +56,7 @@ class DataSource(BaseDataSource):
         self.mdh = MetaDataHandler.NestedClassMDHandler()
         self.mdh.update(json.loads(clusterIO.getFile(mdfn, self.clusterfilter)))
         
-        self.fshape = (self.mdh['Camera.ROIWidth'],self.mdh['Camera.ROIHeight'])
+        self.fshape = None#(self.mdh['Camera.ROIWidth'],self.mdh['Camera.ROIHeight'])
         
         self._getNumFrames()
     
@@ -73,6 +73,8 @@ class DataSource(BaseDataSource):
         return sl.squeeze()
 
     def getSliceShape(self):
+        if self.fshape is None:
+            self.fshape = self.getSlice(0).shape
         return self.fshape
         
     def getNumSlices(self):
@@ -84,7 +86,11 @@ class DataSource(BaseDataSource):
 
     def getEvents(self):
         eventFileName = self.sequenceName + '/events.json'
-        return json.loads(clusterIO.getFile(eventFileName, self.clusterfilter))
+        try:
+            return json.loads(clusterIO.getFile(eventFileName, self.clusterfilter))
+        except IOError:
+            #our series might not have any events
+            return []
         
     def getMetadata(self):
         return self.mdh

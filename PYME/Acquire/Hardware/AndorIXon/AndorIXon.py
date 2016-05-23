@@ -283,6 +283,16 @@ class iXonCamera:
         self.fastestRecVSInd = int(tNum.value)
 
 
+#    def SetContinuousMode(self, value=True):
+#        if value:
+#            self.SetAcquisitionMode(self.MODE_CONTINUOUS)
+#        else:
+#            self.SetAcquisitionMode(self.MODE_SINGLE_SHOT)
+#
+#            
+#    def GetContinuousMode(self):
+#        return self.contMode    
+    
     def GetCamType(*args):
         raise Exception('Not implemented yet!!')
 
