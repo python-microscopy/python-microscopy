@@ -114,32 +114,36 @@ class seqPanel(wx.Panel):
         vsizer.Add(hsizer, 0, wx.EXPAND|wx.BOTTOM, 10)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         
-        hsizer.Add(wx.StaticText(self, -1, u'Start [\u03BCm]:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+        #hsizer.Add(wx.StaticText(self, -1, u'Start [\u03BCm]:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+        
+        self.bStartHere = wx.Button(self, -1,'Start', size=(30,-1), style=wx.BU_EXACTFIT)
+        self.bStartHere.Bind(wx.EVT_BUTTON, self.OnBStartHereButton)
+        hsizer.Add(self.bStartHere, 1, wx.ALIGN_CENTER_VERTICAL|wx.EXPAND|wx.RIGHT, 2)
 
         #sStart = wx.StaticBoxSizer(wx.StaticBox(self, -1, u'Start Pos [\u03BCm]'), wx.HORIZONTAL)
 
-        self.tStPos = wx.TextCtrl(self, -1, value='40', size=(40,-1))
+        self.tStPos = wx.TextCtrl(self, -1, value='40', size=(10,-1))
         self.tStPos.Bind(wx.EVT_KILL_FOCUS, self.OnTStPosKillFocus)
-        hsizer.Add(self.tStPos, 2, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(self.tStPos, 1, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
 
-        self.bStartHere = wx.Button(self, -1,'Here', size=(10,10))
-        self.bStartHere.Bind(wx.EVT_BUTTON, self.OnBStartHereButton)
-        hsizer.Add(self.bStartHere, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        
 
         #hsizer.Add(sStart, 1, wx.RIGHT, 5)
-        vsizer.Add(hsizer, 0, wx.EXPAND, 0)
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        #vsizer.Add(hsizer, 0, wx.EXPAND, 0)
+        #hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        hsizer.Add(wx.StaticText(self, -1, u'End [\u03BCm]:  '), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)        
+        #hsizer.Add(wx.StaticText(self, -1, u'End [\u03BCm]:  '), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)        
         #sEnd = wx.StaticBoxSizer(wx.StaticBox(self, -1, u'End Pos [\u03BCm]'), wx.HORIZONTAL)
-
-        self.tEndPos = wx.TextCtrl(self, -1, value='40', size=(40,-1))
-        self.tEndPos.Bind(wx.EVT_KILL_FOCUS, self.OnTEndPosKillFocus)
-        hsizer.Add(self.tEndPos, 2, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        self.bEndHere = wx.Button(self, -1,'Here', size=(10,10))
+        
+        self.bEndHere = wx.Button(self, -1,'End', size=(30,-1), style=wx.BU_EXACTFIT)
         self.bEndHere.Bind(wx.EVT_BUTTON, self.OnBEndHereButton)
-        hsizer.Add(self.bEndHere, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        hsizer.Add(self.bEndHere, 1, wx.ALIGN_CENTER_VERTICAL|wx.EXPAND|wx.LEFT, 5)
+
+        self.tEndPos = wx.TextCtrl(self, -1, value='40', size=(10,-1))
+        self.tEndPos.Bind(wx.EVT_KILL_FOCUS, self.OnTEndPosKillFocus)
+        hsizer.Add(self.tEndPos, 1, wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        
 
         #hsizer.Add(sEnd, 1, 0, 0)
         vsizer.Add(hsizer, 0, wx.EXPAND|wx.BOTTOM, 2)

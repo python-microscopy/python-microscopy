@@ -48,7 +48,7 @@ class SplashPanel(wx.Panel):
 
         self.bmLogo = wx.Bitmap(logofilename, wx.BITMAP_TYPE_PNG)
         
-        logofilename = resources.getIconPath('ysm_shield.png')
+        logofilename = resources.getIconPath('YSM_Shield.png')
 
         self.bmLogo2 = wx.Bitmap(logofilename, wx.BITMAP_TYPE_PNG)
         
