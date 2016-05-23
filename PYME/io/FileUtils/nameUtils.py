@@ -20,6 +20,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
+'''A selection of tools for automatically generating paths to either save or find
+data'''
 
 import os
 import re
@@ -31,7 +33,7 @@ seps = re.compile('[\\\\/*]')
 
 def getUsername():
     '''
-    Returns the user name in a platform dependant way
+    Returns the user name in a platform independant way
     '''
     if sys.platform == 'win32':
         import win32api
@@ -76,6 +78,8 @@ resultsdirPatternShort = '%(dataDir)s/%(username)s/analysis/'
 calibrationdirPattern = '%(dataDir)s/CALIBRATION/%(serialNum)s/'
 
 def getCalibrationDir(serialNum, create=True):
+    '''Returns the default directory where we would expect to find calibration
+    data - e.g. sCMOS calibration maps'''
     p =  os.path.join(*seps.split(calibrationdirPattern)) % {'dataDir':datadir, 'serialNum':serialNum}
     if create and not os.path.exists(p): #create the necessary directories
         os.makedirs(p)
@@ -83,6 +87,8 @@ def getCalibrationDir(serialNum, create=True):
     return os.path.normpath(p)
 
 def genHDFDataFilepath(create=True):
+    '''Generate a default path for saving HDF formatted raw data on the local
+    hard drive'''
     p =  os.path.join(*seps.split(datadirPattern)) % dateDict
     if create and not os.path.exists(p): #create the necessary directories
         os.makedirs(p)
@@ -90,9 +96,12 @@ def genHDFDataFilepath(create=True):
     return os.path.normpath(p)
     
 def genClusterDataFilepath():
+    '''Generates a default path for saving raw data on the cluster'''
     return clusterDirPattern % dateDict
 
 def genResultFileName(dataFileName, create=True):
+    '''Generates a filename for saving fit results based on the original image
+    filename'''
     fn, ext = os.path.splitext(dataFileName) #remove extension
     fn = fn.replace(':', '/')
     #print os.path.join(*seps.split(resultsdirPatternShort)) % dateDict
@@ -104,6 +113,7 @@ def genResultFileName(dataFileName, create=True):
     return p + '.h5r'
 
 def genResultDirectoryPath():
+    '''Returns the default destination for saving fit reults'''
     
     #print os.path.join(*seps.split(resultsdirPatternShort)) % dateDict
     p = os.path.join(*(seps.split(resultsdirPatternShort) )) %dateDict
@@ -112,6 +122,7 @@ def genResultDirectoryPath():
 
 
 def genShiftFieldDirectoryPath():
+    '''Returns the default directory for shiftmaps'''
     return os.path.join(datadir, 'shiftmaps')
 
 def baseconvert(number,todigits):
@@ -141,21 +152,26 @@ def baseconvert(number,todigits):
     return res
     
 def numToAlpha(num):
+    '''Convert a number to an alphabetic code'''
     return baseconvert(num, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')
     
 ########################
 #Previous relativeFiles
 #from PYME.io.FileUtils import nameUtils 
 
-seps = re.compile('[\\\\/]')
+seps2 = re.compile('[\\\\/]')
 
 def translateSeparators(filename):
+    '''Convert a filename which might use mixed separators / slashes to os
+    native form.
+    '''
+    
     #return string.translate(filename, string.maketrans('\\/', os.sep + os.sep))
     #print seps.split(filename)
     #fn = os.path.join(*seps.split(filename))
     #if filename[0] == '/': #replace leading /, if present
     #    fn = '/' + fn
-    fn = string.join(seps.split(filename), os.sep)
+    fn = string.join(seps2.split(filename), os.sep)
 
     return fn
 
@@ -174,7 +190,7 @@ def getFullFilename(relFilename):
 def getFullExistingFilename(relFilename):
     ''' returns a fully resolved filename given a filename relative to
     the environment variable PYMEDATADIR. If environment variable not defined,
-    assumes path is absolute.'''
+    or the absolute path exists, assumes path is absolute.'''
 
     if os.path.exists(relFilename):
         return relFilename
@@ -186,7 +202,8 @@ def getFullExistingFilename(relFilename):
 
 
 def getRelFilename(filename):
-    '''returns the tail of filename'''
+    '''returns the tail of filename - ie that portion which is underneath the 
+    PYMEDATADIR directory'''
     filename = translateSeparators(filename)
     #print filename
     

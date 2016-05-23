@@ -20,3 +20,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
+'''Data sources are a modular method for reading data (i.e. input plugins)
+
+Each DataSource should implement at least the following functions:
+
+getSlice(ind)  
+getSliceShape()
+getNumSlices()
+
+For more details see BaseDataSource
+
+'''
+    

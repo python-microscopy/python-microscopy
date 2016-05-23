@@ -44,26 +44,46 @@ class BaseDataSource(object):
     
     @property
     def nTrueDims(self):
+        '''The number of dimensions which are truely present within the data,
+        rather than just faked'''
         return 2 + len(self.additionalDims)
     
     @property
     def shape(self):
+        '''The 4D shape of the datasource'''
         #if self.type == 'DataSource':
         return DefaultList(self.getSliceShape() + (self.getNumSlices()/self.sizeC,self.sizeC) )
         
     def getSlice(self, ind):
+        '''Return the nth 2D slice of the DataSource where the higher dimensions
+        have been flattened.
+        
+        equivalent to indexing contiguous 4D data with data[:,:,ind%data.shape[2], ind/data.shape[3]]
+        
+        e.g. for a 100x100x50x2 DataSource, getSlice(20) would return data[:,:,20,0].squeeze()
+        whereas getSlice(75) would return data[:,:,25, 1].squeeze()
+        '''
         raise NotImplementedError
 
     def getSliceShape(self):
+        '''Return the 2D shape of a slice''' 
         raise NotImplementedError
 
     def getNumSlices(self):
+        '''Return the number of 2D slices. This is the product of the 
+        dimensions > 2
+        '''
         raise NotImplementedError
 
     def getEvents(self):
+        '''Return any events which are ascociated with this DataSource'''
         raise NotImplementedError
         
     def __getitem__(self, keys):
+        '''Allows slicing into the DataSource as though it were a numpy ndarray.
+        
+        We ignore any dimensions higher than the dimensionaltyof the data.
+        '''
         keys = list(keys)
         #print keys
         for i in range(len(keys)):
