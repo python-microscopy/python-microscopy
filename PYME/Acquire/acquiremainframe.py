@@ -44,7 +44,7 @@ import PYME.DSView.displaySettingsPanel as disppanel
 from PYME.DSView import arrayViewPanel
 
 from PYME.Acquire import mytimer
-from PYME.Acquire import psliders
+#from PYME.Acquire import psliders
 from PYME.Acquire import positionUI
 from PYME.Acquire import intsliders
 from PYME.Acquire import seqdialog
