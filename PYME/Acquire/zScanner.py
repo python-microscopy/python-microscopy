@@ -33,7 +33,7 @@ import dispatch
 class zScanner:
     def __init__(self, scope):
         self.scope = scope
-        self.sa = scope.sa
+        self.stackSettings = scope.stackSettings
         self.off = 0
         self.sc = 100
         self.sqrt = False
@@ -57,10 +57,10 @@ class zScanner:
         self.Stop()
         #self.WantFrameNotification.remove(self._endSingle)
         self.onStack.disconnect(self._endSingle)
-        self.sa.piezoGoHome()
+        self.stackSettings.piezoGoHome()
         
     def Single(self):
-        self.sa.SetPrevPos(self.sa._CurPos())
+        self.stackSettings.SetPrevPos(self.stackSettings._CurPos())
         #self.WantFrameNotification.append(self._endSingle)
         self.onStack.connect(self._endSingle)
         self.Start()
@@ -71,8 +71,8 @@ class zScanner:
         self.view = View3D(self.image, 'Live Stack')
         self.running = True
         
-        self.zPoss = np.arange(self.sa.GetStartPos(), self.sa.GetEndPos()+.95*self.sa.GetStepSize(),self.sa.GetStepSize()*self.sa.GetDirection())
-        piezo = self.sa.piezos[self.sa.GetScanChannel()]
+        self.zPoss = np.arange(self.stackSettings.GetStartPos(), self.stackSettings.GetEndPos()+.95*self.stackSettings.GetStepSize(),self.stackSettings.GetStepSize()*self.stackSettings.GetDirection())
+        piezo = self.scope.positioning[self.stackSettings.GetScanChannel()]
         self.piezo = piezo[0]
         self.piezoChan = piezo[1]
         self.startPos = self.piezo.GetPos(self.piezoChan)
@@ -262,7 +262,7 @@ class wavetableZScanner(zScanner):
         pass
 
 def getBestScanner(scope):
-    piezo = scope.sa.piezos[scope.sa.GetScanChannel()][0]
+    piezo = scope.positioning[scope.stackSettings.GetScanChannel()][0]
     
     if 'StartWaveOutput' in dir(piezo) and not scope.sa.GetSeqLength() > piezo.MAXWAVEPOINTS: #piezo supports wavetable output
         return wavetableZScanner(scope, piezo.hasTrigger)

@@ -26,7 +26,8 @@
 import wx
 import wx.lib.agw.aui as aui
 
-from PYME.Acquire import simplesequenceaquisator
+#from PYME.Acquire import simplesequenceaquisator
+from PYME.Acquire import stackSettings
 #from PYME.Acquire import MetaDataHandler
 
 #redefine wxFrame with a version that hides when someone tries to close it
@@ -168,38 +169,46 @@ class seqPanel(wx.Panel):
         self.scope = scope
         self._init_ctrls(parent)
 
-        if not ('sa' in self.scope.__dict__):
-            self.scope.sa = simplesequenceaquisator.SimpleSequenceAquisitor(self.scope.chaninfo, self.scope.cam, self.scope.shutters, self.scope.piezos)
+        #if not ('sa' in self.scope.__dict__):
+        #    self.stackSettings = simplesequenceaquisator.SimpleSequenceAquisitor(self.scope.chaninfo, self.scope.cam, self.scope.shutters, self.scope.piezos)
+        if not 'stackSettings' in dir(self.scope):
+            #inject stack settings into the scope object
+            self.scope.stackSettings = stackSettings.StackSettings(scope)
+        #for pz in self.scope.piezos:
+        #    self.chPiezo.Append(pz[2])
+            
+        self.stackSettings = self.scope.stackSettings
+        
+        self.scanDirs = self.scope.positioning.keys()
 
-        for pz in self.scope.piezos:
-            self.chPiezo.Append(pz[2])
+        self.chPiezo.SetItems(self.scanDirs)
 
         self.UpdateDisp()   
 
         
     def OnBEndHereButton(self, event):
-        self.scope.sa.SetEndPos(self.scope.piezos[self.scope.sa.GetScanChannel()][0].GetPos(self.scope.piezos[self.scope.sa.GetScanChannel()][1]))
+        self.stackSettings.SetEndPos(self.scope.GetPos()[self.stackSettings.GetScanChannel()])
         self.UpdateDisp()
 
 
     def OnBStartHereButton(self, event):
-        self.scope.sa.SetStartPos(self.scope.piezos[self.scope.sa.GetScanChannel()][0].GetPos(self.scope.piezos[self.scope.sa.GetScanChannel()][1]))
+        self.stackSettings.SetStartPos(self.scope.GetPos()[self.stackSettings.GetScanChannel()])
         self.UpdateDisp()
 
 
 #    def OnBStartButton(self, event):
-#        res = self.scope.sa.Verify()
+#        res = self.stackSettings.Verify()
 #
 #        if res[0]:
 #            self.scope.pa.stop()
 #            
-#            self.scope.sa.Prepare()
-#            self.scope.sa.WantFrameNotification=[]
-#            self.scope.sa.WantFrameNotification.append(self.scope.aq_refr)
-#            self.scope.sa.WantStopNotification=[]
-#            self.scope.sa.WantStopNotification.append(self.scope.aq_end)
-#            self.scope.sa.start()
-#            self.scope.pb = wx.ProgressDialog('Aquisition in progress ...', 'Slice 1 of %d' % self.scope.sa.ds.getDepth(), self.scope.sa.ds.getDepth(), style = wx.PD_APP_MODAL|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
+#            self.stackSettings.Prepare()
+#            self.stackSettings.WantFrameNotification=[]
+#            self.stackSettings.WantFrameNotification.append(self.scope.aq_refr)
+#            self.stackSettings.WantStopNotification=[]
+#            self.stackSettings.WantStopNotification.append(self.scope.aq_end)
+#            self.stackSettings.start()
+#            self.scope.pb = wx.ProgressDialog('Aquisition in progress ...', 'Slice 1 of %d' % self.stackSettings.ds.getDepth(), self.stackSettings.ds.getDepth(), style = wx.PD_APP_MODAL|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
 #
 #        else:
 #            dialog = wx.MessageDialog(None, res[2] + ' (%2.3f)'% res[3], "Parameter Error", wx.OK)
@@ -208,7 +217,7 @@ class seqPanel(wx.Panel):
 #            if res[1] == 'StepSize':
 #                self.tStepSize.SetFocus()
 #
-#            elif (self.scope.sa.GetStartMode() == self.scope.sa.CENTRE_AND_LENGTH):
+#            elif (self.stackSettings.GetStartMode() == self.stackSettings.CENTRE_AND_LENGTH):
 #                self.tNumSlices.SetFocus()
 #
 #            elif (res[1] == 'StartPos'):
@@ -258,14 +267,14 @@ class seqPanel(wx.Panel):
             self.bStart.Enable(True)
             
         else:
-            res = self.scope.sa.Verify()
+            res = self.stackSettings.Verify()
             
             if res[0]:                
                 
                 self.scope.zs = zScanner.getBestScanner(self.scope)
                 
                 if not isinstance(self.scope.zs, zScanner.wavetableZScanner):
-                    pz = self.scope.sa.piezos[self.scope.sa.GetScanChannel()][0]
+                    pz = self.scope.positioning[self.stackSettings.GetScanChannel()][0]
                     if 'MAXWAVEPOINTS' in dir(pz):
                         msg = MSG_LONG_WAVETABLE % pz.MAXWAVEPOINTS
                     else:
@@ -290,7 +299,7 @@ class seqPanel(wx.Panel):
                 if res[1] == 'StepSize':
                     self.tStepSize.SetFocus()
     
-                elif (self.scope.sa.GetStartMode() == self.scope.sa.CENTRE_AND_LENGTH):
+                elif (self.stackSettings.GetStartMode() == self.stackSettings.CENTRE_AND_LENGTH):
                     self.tNumSlices.SetFocus()
     
                 elif (res[1] == 'StartPos'):
@@ -303,43 +312,43 @@ class seqPanel(wx.Panel):
     
 
     def OnChPiezoChoice(self, event):
-        self.scope.sa.SetScanChannel(self.chPiezo.GetSelection())
+        self.stackSettings.SetScanChannel(self.chPiezo.GetStringSelection())
         self.UpdateDisp()
 
         event.Skip()
 
     def OnBSt_endRadiobutton(self, event):
-        self.scope.sa.SetStartMode(1)
+        self.stackSettings.SetStartMode(1)
         self.UpdateDisp()
 
         event.Skip()
 
     def OnBMid_numRadiobutton(self, event):
-        self.scope.sa.SetStartMode(0)
+        self.stackSettings.SetStartMode(0)
         self.UpdateDisp()
 
         event.Skip()
 
     def OnTEndPosKillFocus(self, event):
-        self.scope.sa.SetEndPos(float(self.tEndPos.GetValue()))
+        self.stackSettings.SetEndPos(float(self.tEndPos.GetValue()))
         self.UpdateDisp()
 
         event.Skip()
 
     def OnTStPosKillFocus(self, event):
-        self.scope.sa.SetStartPos(float(self.tStPos.GetValue()))
+        self.stackSettings.SetStartPos(float(self.tStPos.GetValue()))
         self.UpdateDisp()
 
         event.Skip()
 
     def OnTNumSlicesKillFocus(self, event):
-        self.scope.sa.SetSeqLength(int(self.tNumSlices.GetValue()))
+        self.stackSettings.SetSeqLength(int(self.tNumSlices.GetValue()))
         self.UpdateDisp()
 
         event.Skip()
 
     def OnTStepSizeKillFocus(self, event):
-        self.scope.sa.SetStepSize(float(self.tStepSize.GetValue()))
+        self.stackSettings.SetStepSize(float(self.tStepSize.GetValue()))
         self.UpdateDisp()
 
         event.Skip()
@@ -348,9 +357,9 @@ class seqPanel(wx.Panel):
 
     def UpdateDisp(self):
         print 'seqd: update display'
-        self.chPiezo.SetSelection(self.scope.sa.GetScanChannel())
+        self.chPiezo.SetSelection(self.scanDirs.index(self.stackSettings.GetScanChannel()))
 
-        if self.scope.sa.GetStartMode() == self.scope.sa.START_AND_END:
+        if self.stackSettings.GetStartMode() == self.stackSettings.START_AND_END:
             self.bSt_end.SetValue(True)
             self.bMid_num.SetValue(False)
             
@@ -370,11 +379,11 @@ class seqPanel(wx.Panel):
             self.bStartHere.Enable(False)
             self.bEndHere.Enable(False)
 
-        self.tStPos.SetValue('%2.3f' % self.scope.sa.GetStartPos())
-        self.tEndPos.SetValue('%2.3f' % self.scope.sa.GetEndPos())
-        self.tStepSize.SetValue('%2.3f' % self.scope.sa.GetStepSize())
-        self.tNumSlices.SetValue('%d' % self.scope.sa.GetSeqLength())
-        self.stMemory.SetLabel('Mem: %2.1f MB' % (self.scope.cam.GetPicWidth()*self.scope.cam.GetPicHeight()*self.scope.sa.GetSeqLength()*2*self.scope.sa.getReqMemChans(self.scope.sa.chans.cols)/(1024.0*1024.0)))
+        self.tStPos.SetValue('%2.3f' % self.stackSettings.GetStartPos())
+        self.tEndPos.SetValue('%2.3f' % self.stackSettings.GetEndPos())
+        self.tStepSize.SetValue('%2.3f' % self.stackSettings.GetStepSize())
+        self.tNumSlices.SetValue('%d' % self.stackSettings.GetSeqLength())
+        self.stMemory.SetLabel('Mem: %2.1f MB' % (self.scope.cam.GetPicWidth()*self.scope.cam.GetPicHeight()*self.stackSettings.GetSeqLength()*2*1/(1024.0*1024.0)))
 
 
 class SeqProgressPanel(wx.Panel):
