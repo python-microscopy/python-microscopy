@@ -45,12 +45,12 @@ from PYME.DSView import arrayViewPanel
 
 from PYME.Acquire import mytimer
 #from PYME.Acquire import psliders
-from PYME.Acquire import positionUI
-from PYME.Acquire import intsliders
-from PYME.Acquire import seqdialog
+from PYME.Acquire.ui import positionUI
+from PYME.Acquire.ui import intsliders
+from PYME.Acquire.ui import seqdialog
 #from PYME.Acquire import timeseqdialog
 #from PYME.Acquire import stepDialog
-from PYME.Acquire import selectCameraPanel
+from PYME.Acquire.ui import selectCameraPanel
 from PYME.Acquire import microscope
 #import PYME.DSView.dsviewer_npy as dsviewer
 from PYME.DSView import dsviewer as dsviewer
@@ -60,7 +60,7 @@ from PYME.io import MetaDataHandler
 from PYME.Acquire import HDFSpoolFrame
 from PYME.io.FileUtils import nameUtils
 
-from PYME.Acquire import splashScreen
+from PYME.Acquire.ui import splashScreen
 import time
 
 import PYME.Acquire.protocol as protocol
@@ -695,7 +695,7 @@ class PYMEMainFrame(wx.Frame):
         #event.Skip()
 
     def OnMCamSetPixelSize(self, event):
-        from PYME.Acquire import voxelSizeDialog
+        from PYME.Acquire.ui import voxelSizeDialog
 
         dlg = voxelSizeDialog.VoxelSizeDialog(self, self.scope)
         dlg.ShowModal()

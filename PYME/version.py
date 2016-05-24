@@ -2,4 +2,4 @@
 version = '16.05.24'
 
 #Mercurial changeset id
-changeset = '1689861c1f5b+'
+changeset = '366e4309d790+'

@@ -217,7 +217,7 @@ scope.lasers.append(scope.arclamp)
 
 
 InitGUI('''
-from PYME.Acquire import lasersliders
+from PYME.Acquire.ui import lasersliders
 lsf = lasersliders.LaserSliders(toolPanel, scope.lasers)
 time1.WantNotification.append(lsf.update)
 #lsf.update()

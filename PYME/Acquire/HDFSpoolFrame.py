@@ -42,7 +42,7 @@ from PYME.io.FileUtils.freeSpace import get_free_space
 
 import PYME.Acquire.Protocols
 import PYME.Acquire.protocol as prot
-from PYME.Acquire import preflight
+from PYME.Acquire.ui import preflight
 
 import os
 import sys
