@@ -194,6 +194,7 @@ class PreviewAquisator(wx.Timer):
         
             if not contMode:
                 #flag the need to start a new exposure
+                print 'se'
                 self.needExposureStart = True
                 #self.cam.StartExposure()
 

@@ -26,7 +26,7 @@ from PYME.Acquire.protocol import *
 import numpy
 import wx
 
-from PYME.Acquire.pointScanner import PointScanner
+from PYME.Acquire.Utils.pointScanner import PointScanner
 from PYME.contrib.wxPlotPanel import PlotPanel
 #from PYME.Analysis import ofind
 
