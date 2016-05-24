@@ -24,9 +24,15 @@ import wx
 import wx.grid
 #import pylab
 #from PYME.io.image import ImageStack
-from enthought.traits.api import HasTraits, Float, Int, List, Instance, Property
-from enthought.traits.ui.api import View, Item, InstanceEditor
-from enthought.traits.ui.menu import OKButton
+
+try:
+    from enthought.traits.api import HasTraits, Float, Int, List, Instance, Property
+    from enthought.traits.ui.api import View, Item, InstanceEditor
+    from enthought.traits.ui.menu import OKButton
+except ImportError:
+    from traits.api import HasTraits, Float, Int, List, Instance, Property
+    from traitsui.api import View, Item, InstanceEditor
+    from traitsui.menu import OKButton
 
 from PYME.PSFGen import fourierHNA
 from PYME.io import image
@@ -109,7 +115,7 @@ class PupilGenerator(HasTraits):
 
 
 def Plug(dsviewer):
-    dsviewer.PSFTools = PSFTools(dsviewer)
+    dsviewer.PSFGen = PSFG(dsviewer)
     
     dsviewer.crbv = CRBViewPanel(dsviewer, dsviewer.image)
     dsviewer.dataChangeHooks.append(dsviewer.crbv.calcCRB)
