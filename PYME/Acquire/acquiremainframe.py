@@ -363,17 +363,17 @@ class PYMEMainFrame(wx.Frame):
     
     def _refreshDataStack(self):
         if 'vp' in dir(self):
-            if not (self.vp.do.ds.data is self.scope.pa.dsa):
-                self.vp.SetDataStack(self.scope.pa.dsa)
+            if not (self.vp.do.ds.data is self.scope.frameWrangler.currentFrame):
+                self.vp.SetDataStack(self.scope.frameWrangler.currentFrame)
         
     def livepreview(self):
         self.scope.startAquisistion()
 
         if self.scope.cam.GetPicHeight() > 1:
             if 'vp' in dir(self):
-                    self.vp.SetDataStack(self.scope.pa.dsa)
+                    self.vp.SetDataStack(self.scope.frameWrangler.currentFrame)
             else:
-                self.vp = arrayViewPanel.ArrayViewPanel(self, self.scope.pa.dsa)
+                self.vp = arrayViewPanel.ArrayViewPanel(self, self.scope.frameWrangler.currentFrame)
                 self.vp.crosshairs = False
                 self.vp.showScaleBar = False
                 self.vp.do.leftButtonAction = self.vp.do.ACTION_SELECTION
@@ -390,8 +390,8 @@ class PYMEMainFrame(wx.Frame):
 
                 self.AddCamTool(self.vsp, 'Display')
 
-            #self.scope.pa.WantFrameGroupNotification.append(self.vp.Redraw)
-            self.scope.pa.onFrameGroup.connect(self.vp.Redraw)
+            #self.scope.frameWrangler.WantFrameGroupNotification.append(self.vp.Redraw)
+            self.scope.frameWrangler.onFrameGroup.connect(self.vp.Redraw)
 
         else:
             #1d data - use graph instead
@@ -403,8 +403,8 @@ class PYMEMainFrame(wx.Frame):
 
                 self.AddPage(page=self.sp, select=True,caption='Preview')
 
-            #self.scope.pa.WantFrameGroupNotification.append(self.sp.refr)
-            self.scope.pa.onFrameGroup.connect(self.sp.refr)
+            #self.scope.frameWrangler.WantFrameGroupNotification.append(self.sp.refr)
+            self.scope.frameWrangler.onFrameGroup.connect(self.sp.refr)
             
         self.scope.PACallbacks.append(self._refreshDataStack)
 
@@ -630,8 +630,8 @@ class PYMEMainFrame(wx.Frame):
 
     def OnMAquireOnePic(self, event):
         import numpy as np
-        self.scope.pa.stop()
-        ds2 = np.atleast_3d(self.scope.pa.dsa.reshape(self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()).copy())
+        self.scope.frameWrangler.stop()
+        ds2 = np.atleast_3d(self.scope.frameWrangler.currentFrame.reshape(self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()).copy())
 
 
         #metadata handling
@@ -654,8 +654,8 @@ class PYMEMainFrame(wx.Frame):
 
         self.snapNum += 1
 
-        self.scope.pa.Prepare(True)
-        self.scope.pa.start()
+        self.scope.frameWrangler.Prepare(True)
+        self.scope.frameWrangler.start()
 
         #event.Skip()
 
@@ -675,7 +675,7 @@ class PYMEMainFrame(wx.Frame):
         #event.Skip()
 
     def OnMCamBin(self, event):
-        self.scope.pa.stop()
+        self.scope.frameWrangler.stop()
         if (self.bin_on):
             self.scope.cam.SetHorizBin(1)
             self.scope.cam.SetVertBin(1)
@@ -689,8 +689,8 @@ class PYMEMainFrame(wx.Frame):
             
         self.scope.cam.SetCOC()
         self.scope.cam.GetStatus()
-        self.scope.pa.Prepare()
-        self.vp.SetDataStack(self.scope.pa.dsa)
+        self.scope.frameWrangler.Prepare()
+        self.vp.SetDataStack(self.scope.frameWrangler.currentFrame)
         self.pa.start()
         #event.Skip()
 
@@ -702,7 +702,7 @@ class PYMEMainFrame(wx.Frame):
 
     def OnMCamChans(self, event):
         #return
-        self.scope.pa.stop()
+        self.scope.frameWrangler.stop()
         
         chand = chanfr.ChanFrame(self, self.scope.chaninfo)
         chand.ShowModal()
@@ -711,13 +711,13 @@ class PYMEMainFrame(wx.Frame):
         self.int_sl = intsliders.IntegrationSliders(self.scope.chaninfo,self)
         self.int_sl.Show()
             
-        self.scope.pa.Prepare()
-        self.vp.SetDataStack(self.scope.pa.dsa)
-        self.scope.pa.start()
+        self.scope.frameWrangler.Prepare()
+        self.vp.SetDataStack(self.scope.frameWrangler.currentFrame)
+        self.scope.frameWrangler.start()
         #event.Skip()
 
     def OnMCamRoi(self, event):
-        self.scope.pa.stop()
+        self.scope.frameWrangler.stop()
         
         #print (self.scope.vp.selection_begin_x, self.scope.vp.selection_begin_y, self.scope.vp.selection_end_x, self.scope.vp.selection_end_y)
 
@@ -780,8 +780,8 @@ class PYMEMainFrame(wx.Frame):
         print('about to set COC')
         self.scope.cam.SetCOC()
         self.scope.cam.GetStatus()
-        self.scope.pa.Prepare()
-        self.vp.SetDataStack(self.scope.pa.dsa)
+        self.scope.frameWrangler.Prepare()
+        self.vp.SetDataStack(self.scope.frameWrangler.currentFrame)
         
         #self.scope.vp.selection_begin_x = x1
         #self.scope.vp.selection_begin_y = y1
@@ -789,13 +789,13 @@ class PYMEMainFrame(wx.Frame):
         #self.scope.vp.selection_end_y = y2
         self.vp.do.SetSelection((x1,y1,0), (x2,y2,0))
 
-        self.scope.pa.start()
+        self.scope.frameWrangler.start()
         self.vp.Refresh()
         self.vp.GetParent().Refresh()
         #event.Skip()
 
     def SetCentredRoi(self, event=None, halfwidth=5):
-        self.scope.pa.stop()
+        self.scope.frameWrangler.stop()
 
         #print (self.scope.vp.selection_begin_x, self.scope.vp.selection_begin_y, self.scope.vp.selection_end_x, self.scope.vp.selection_end_y)
 
@@ -819,15 +819,15 @@ class PYMEMainFrame(wx.Frame):
 
         self.scope.cam.SetCOC()
         self.scope.cam.GetStatus()
-        self.scope.pa.Prepare()
-        self.vp.SetDataStack(self.scope.pa.dsa)
+        self.scope.frameWrangler.Prepare()
+        self.vp.SetDataStack(self.scope.frameWrangler.currentFrame)
 
         self.vp.selection_begin_x = x1
         self.vp.selection_begin_y = y1
         self.vp.selection_end_x = x2
         self.vp.selection_end_y = y2
 
-        self.scope.pa.start()
+        self.scope.frameWrangler.start()
         self.vp.Refresh()
         self.vp.GetParent().Refresh()
         #event.Skip()
@@ -847,7 +847,7 @@ class PYMEMainFrame(wx.Frame):
         #event.Skip()
 
     def OnCloseWindow(self, event):   
-        self.scope.pa.stop()
+        self.scope.frameWrangler.stop()
         self.time1.Stop()
         if 'cameras' in dir(self.scope):
             for c in self.scope.cameras.values():

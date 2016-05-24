@@ -121,7 +121,7 @@ class PositionTracker:
             else:
                 positions[i+1] = p[0].GetPos(p[1])
                 
-        positions[-1] = np.std(self.scope.pa.dsa)
+        positions[-1] = np.std(self.scope.frameWrangler.currentFrame)
         
         t, z, x, y, s = positions
         xi = int(np.round(x/self.ps))

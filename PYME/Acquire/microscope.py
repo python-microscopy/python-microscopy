@@ -267,7 +267,8 @@ class microscope(object):
 
     @property
     def pa(self):
-        warnings.warn(".pa is deprecated, please use .frameWrangler instead", UserWarning)
+        '''property to catch access of what was previously called the scope.frameWrangler (the PreviewAcquisator)'''
+        warnings.warn(".pa is deprecated, please use .frameWrangler instead", DeprecationWarning)
         return self.frameWrangler
     
     def startAquisistion(self):

@@ -57,9 +57,9 @@ class FocusKeys:
         #p = self.piezo[0].GetPos(self.piezo[1])
         if self.scope and 'zs' in dir(self.scope) and self.scope.zs.running:
             #special case for when we are using a wavetable - move whole stack
-            self.scope.pa.stop()
+            self.scope.frameWrangler.stop()
             self.scope.zs.zPoss -= self.focusIncrement
-            self.scope.pa.start()
+            self.scope.frameWrangler.start()
         else:
             if 'lastPos' in dir(self.piezo[0]):
                 p = self.piezo[0].lastPos
@@ -71,9 +71,9 @@ class FocusKeys:
     def OnFocUp(self,event):
         if self.scope and 'zs' in dir(self.scope) and self.scope.zs.running:
             #special case for when we are using a wavetable - move whole stack
-            self.scope.pa.stop()
+            self.scope.frameWrangler.stop()
             self.scope.zs.zPoss += self.focusIncrement
-            self.scope.pa.start()
+            self.scope.frameWrangler.start()
         else:
             if 'lastPos' in dir(self.piezo[0]):
                 p = self.piezo[0].lastPos

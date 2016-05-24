@@ -236,4 +236,4 @@ class SpecGraphPanel(FastGraphPanel):
         self.scope = scope
 
     def refr(self, sender=None, **kwargs):
-        self.SetData(self.scope.cam.XVals, self.scope.pa.currentFrame)
+        self.SetData(self.scope.cam.XVals, self.scope.frameWrangler.currentFrame)

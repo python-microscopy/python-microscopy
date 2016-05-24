@@ -290,7 +290,7 @@ class PanSpool(wx.Panel):
         
         #fn = wx.FileSelector('Save spooled data as ...', default_extension='.log',wildcard='*.log')
         #if not fn == '': #if the user cancelled 
-        #    self.spooler = Spooler.Spooler(self.scope, fn, self.scope.pa, self)
+        #    self.spooler = Spooler.Spooler(self.scope, fn, self.scope.frameWrangler, self)
         #    self.bStartSpool.Enable(False)
         #    self.bStopSpooling.Enable(True)
         #    self.stSpoolingTo.Enable(True)
@@ -348,15 +348,15 @@ class PanSpool(wx.Panel):
         
         if self.spoolType == 'Queue':
             self.queueName = getRelFilename(self.dirname + fn + '.h5')
-            self.spooler = QueueSpooler.Spooler(self.queueName, self.scope.pa.onFrame, frameShape = frameShape, protocol=protocol, guiUpdateCallback=self.Tick, complevel=compLevel, fakeCamCycleTime=fakeCycleTime)
+            self.spooler = QueueSpooler.Spooler(self.queueName, self.scope.frameWrangler.onFrame, frameShape = frameShape, protocol=protocol, guiUpdateCallback=self.Tick, complevel=compLevel, fakeCamCycleTime=fakeCycleTime)
             self.bAnalyse.Enable(True)
         elif self.spoolType == 'HTTP':
             #self.queueName = self.dirname + fn + '.h5'
             self.queueName = getRelFilename(self.dirname + fn + '.h5')
-            self.spooler = HTTPSpooler.Spooler(self.queueName, self.scope.pa.onFrame, frameShape = frameShape, protocol=protocol, guiUpdateCallback=self.Tick, complevel=compLevel, fakeCamCycleTime=fakeCycleTime)
+            self.spooler = HTTPSpooler.Spooler(self.queueName, self.scope.frameWrangler.onFrame, frameShape = frameShape, protocol=protocol, guiUpdateCallback=self.Tick, complevel=compLevel, fakeCamCycleTime=fakeCycleTime)
             self.bAnalyse.Enable(True)
         else:
-            self.spooler = HDFSpooler.Spooler(self.dirname + fn + '.h5', self.scope.pa.onFrame, frameShape = frameShape, protocol=protocol, guiUpdateCallback=self.Tick, complevel=compLevel, fakeCamCycleTime=fakeCycleTime)
+            self.spooler = HDFSpooler.Spooler(self.dirname + fn + '.h5', self.scope.frameWrangler.onFrame, frameShape = frameShape, protocol=protocol, guiUpdateCallback=self.Tick, complevel=compLevel, fakeCamCycleTime=fakeCycleTime)
 
         #if stack:
         #    self.spooler.md.setEntry('ZStack', True)

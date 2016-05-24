@@ -220,7 +220,7 @@ class seqPanel(wx.Panel):
 #        res = self.stackSettings.Verify()
 #
 #        if res[0]:
-#            self.scope.pa.stop()
+#            self.scope.frameWrangler.stop()
 #            
 #            self.stackSettings.Prepare()
 #            self.stackSettings.WantFrameNotification=[]

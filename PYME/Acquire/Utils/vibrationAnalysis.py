@@ -21,7 +21,7 @@ class VibrAnal:
         self.threshold = threshold
         
         self.mdh['tIndex'] = 0
-        self.mdh['Camera.ADOffset'] = scope.pa.dsa.min()
+        self.mdh['Camera.ADOffset'] = scope.frameWrangler.currentFrame.min()
         self.i = 0
         self.dt = np.zeros(512, ConfocCOIR.FitResultsDType)
         
@@ -36,13 +36,13 @@ class VibrAnal:
         self.vy = View3D(self.y, mode='fgraph')
         self.vfy = View3D(self.fy, mode='fgraph')
         
-        #scope.pa.WantFrameNotification.append(self.frameCOI)
-        #scope.pa.WantFrameGroupNotification.append(self.OnFrameGroup)
-        self.scope.pa.onFrame.connect(self.frameCOI)
-        self.scope.pa.onFrameGroup.connect(self.OnFrameGroup)
+        #scope.frameWrangler.WantFrameNotification.append(self.frameCOI)
+        #scope.frameWrangler.WantFrameGroupNotification.append(self.OnFrameGroup)
+        self.scope.frameWrangler.onFrame.connect(self.frameCOI)
+        self.scope.frameWrangler.onFrameGroup.connect(self.OnFrameGroup)
         
     def frameCOI(self, **kwargs):  
-        self.dt[self.i] = ConfocCOIR.FitFactory(self.scope.pa.currentFrame, self.mdh, self.threshold)
+        self.dt[self.i] = ConfocCOIR.FitFactory(self.scope.frameWrangler.currentFrame, self.mdh, self.threshold)
         self.i +=1
         self.i %= 512
         if self.i == 0:
@@ -57,9 +57,9 @@ class VibrAnal:
         self.vfy.do.OnChange()
         
     def Detach(self):
-        #self.scope.pa.WantFrameGroupNotification.remove(self.OnFrameGroup)
-        #self.scope.pa.WantFrameNotification.remove(self.frameCOI)
-        self.scope.pa.onFrame.disconnect(self.frameCOI)
-        self.scope.pa.onFrameGroup.disconnect(self.OnFrameGroup)
+        #self.scope.frameWrangler.WantFrameGroupNotification.remove(self.OnFrameGroup)
+        #self.scope.frameWrangler.WantFrameNotification.remove(self.frameCOI)
+        self.scope.frameWrangler.onFrame.disconnect(self.frameCOI)
+        self.scope.frameWrangler.onFrameGroup.disconnect(self.OnFrameGroup)
         
     

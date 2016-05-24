@@ -98,8 +98,8 @@ class IntegrationSliders(wx.Panel):
         self.chaninfo.itimes[ind] = sl.GetValue()
         self.cboxes[ind].SetValue('%d' % sl.GetValue())
         self.sliders[ind].SetRange(1, min(5*self.chaninfo.itimes[ind], 10000))
-        self.scope.pa.stop()
-        self.scope.pa.start()
+        self.scope.frameWrangler.stop()
+        self.scope.frameWrangler.start()
 
     def onCombobox(self, event):
         cb = event.GetEventObject()
@@ -108,8 +108,8 @@ class IntegrationSliders(wx.Panel):
         self.chaninfo.itimes[ind] = float(cb.GetValue())
         self.sliders[ind].SetValue(self.chaninfo.itimes[ind])
         self.sliders[ind].SetRange(1, min(5*self.chaninfo.itimes[ind], 10000))
-        self.scope.pa.stop()
-        self.scope.pa.start()
+        self.scope.frameWrangler.stop()
+        self.scope.frameWrangler.start()
 
 
     def update(self):

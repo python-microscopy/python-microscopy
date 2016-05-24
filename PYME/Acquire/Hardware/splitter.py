@@ -258,9 +258,9 @@ class Splitter:
         else:
             self.f.vp.do.Optimise()
             
-        #if not self.f.update in self.scope.pa.WantFrameGroupNotification:
-        #    self.scope.pa.WantFrameGroupNotification.append(self.f.update)
-        self.scope.pa.onFrameGroup.connect(self.f.update)
+        #if not self.f.update in self.scope.frameWrangler.WantFrameGroupNotification:
+        #    self.scope.frameWrangler.WantFrameGroupNotification.append(self.f.update)
+        self.scope.frameWrangler.onFrameGroup.connect(self.f.update)
 
 
     def OnSetShiftField(self, event):
@@ -279,7 +279,7 @@ class Splitter:
 
 
     def Unmix(self):
-        dsa = self.scope.pa.dsa.squeeze()
+        dsa = self.scope.frameWrangler.currentFrame.squeeze()
 
         return self.unmixer.Unmix(dsa, self.mixMatrix, self.offset, ROI=[self.scope.cam.GetROIX1(),self.scope.cam.GetROIY1(),self.scope.cam.GetROIX2(), self.scope.cam.GetROIY2()])
 
@@ -338,8 +338,8 @@ class UnMixSettingsPanel(wx.Panel):
         self.SetSizerAndFit(vsizer)
 
         self.bGrabOffset.Bind(wx.EVT_BUTTON, self.OnGrabOffsetFromCamera)
-        #self.splitter.scope.pa.WantFrameGroupNotification.append(self.OnUpdateMix)
-        self.splitter.scope.pa.onFrameGroup.connect(self.OnUpdateMix)
+        #self.splitter.scope.frameWrangler.WantFrameGroupNotification.append(self.OnUpdateMix)
+        self.splitter.scope.frameWrangler.onFrameGroup.connect(self.OnUpdateMix)
 
 
 
@@ -447,8 +447,8 @@ class UnMixPanel(wx.Panel):
             self.vp.Redraw()#imagepanel.Refresh()
 
     def OnCloseWindow(self, event):
-        #self.splitter.scope.pa.WantFrameGroupNotification.remove(self.update)
-        self.splitter.scope.pa.onFrameGroup.disconnect(self.update)
+        #self.splitter.scope.frameWrangler.WantFrameGroupNotification.remove(self.update)
+        self.splitter.scope.frameWrangler.onFrameGroup.disconnect(self.update)
         
         self.splitter.f = None
         self.Destroy()

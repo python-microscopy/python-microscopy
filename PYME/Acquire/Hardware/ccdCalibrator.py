@@ -54,11 +54,11 @@ class ccdCalibrator:
       histogram display.
     - instantiate the class on the console - ie:
       from PYME.Hardware import ccdCalibrator
-      ccdCal = ccdCalibrator.ccdCalibrator(scope.pa, scope.cam)
+      ccdCal = ccdCalibrator.ccdCalibrator(scope.frameWrangler, scope.cam)
     '''
     def __init__(self, gains = np.arange(0, 220, 5)):
         global scope
-        self.pa = scope.pa
+        self.pa = scope.frameWrangler
         self.cam = scope.cam
 
         self.gains = gains

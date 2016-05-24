@@ -47,7 +47,7 @@ class SFGenPlotPanel(PlotPanel):
         if not hasattr( self, 'subplot' ):
                 self.subplot = self.figure.add_subplot( 111 )
 
-        #ofd = ofind.ObjectIdentifier(scope.pa.dsa.astype('f').squeeze().T)
+        #ofd = ofind.ObjectIdentifier(scope.frameWrangler.currentFrame.astype('f').squeeze().T)
         #ofd.FindObjects(70, 0, splitter=True)
 
         #print len(ofd)

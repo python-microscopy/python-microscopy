@@ -159,7 +159,7 @@ camPanels.append((dtp, 'Focus Lock'))
 
 
 
-#scope.pa.WantFrameNotification.append(calcSum)
+#scope.frameWrangler.WantFrameNotification.append(calcSum)
 
 #must be here!!!
 joinBGInit() #wait for anyhting which was being done in a separate thread

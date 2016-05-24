@@ -47,7 +47,7 @@ class SarcomereChecker:
         voxx = 0.07
         voxy = 0.07
         
-        im = scope.pa.dsa
+        im = scope.frameWrangler.currentFrame
         F = (abs(fftshift(fftn(im - im.mean()))) + 1e-2).squeeze()
 
         currVoxelSizeID = self.scope.settingsDB.execute("SELECT sizeID FROM VoxelSizeHistory ORDER BY time DESC").fetchone()
