@@ -422,7 +422,7 @@ class ColourImageViewPanel(ImageViewPanel):
             dc.SetPen(wx.NullPen)
         
         
-#from PYME.Acquire.MetaDataHandler import NestedClassMDHandler
+#from PYME.io.MetaDataHandler import NestedClassMDHandler
 #from PYME.DSView import modules as dsvmods
 #from PYME.DSView import ViewIm3D
 

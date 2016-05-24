@@ -25,7 +25,7 @@ from PYME.DSView import View3D
 import numpy as np
 #from PYME.Acquire import eventLog
 from math import floor
-from PYME.Acquire import MetaDataHandler
+from PYME.io import MetaDataHandler
 import time
 
 import dispatch

@@ -24,7 +24,7 @@
 import  wx
 import  wx.gizmos as gizmos
 
-from PYME.Acquire.MetaDataHandler import NestedClassMDHandler
+from PYME.io.MetaDataHandler import NestedClassMDHandler
 
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------

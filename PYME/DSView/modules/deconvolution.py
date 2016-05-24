@@ -28,7 +28,7 @@ from scipy import ndimage
 from PYME.DSView import View3D, ViewIm3D, ImageStack
 import time
 import os
-from PYME.Acquire import MetaDataHandler
+from PYME.io import MetaDataHandler
 
 def _pt(sl):
     dec, psf, d, regLambda, nIter, weights = sl

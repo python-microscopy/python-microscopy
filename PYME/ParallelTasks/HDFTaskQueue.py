@@ -26,7 +26,7 @@ from taskQueue import *
 from PYME.Analysis.remFitBuf import fitTask
 
 from PYME.Analysis import MetaData
-from PYME.Acquire import MetaDataHandler
+from PYME.io import MetaDataHandler
 
 import os
 import sys

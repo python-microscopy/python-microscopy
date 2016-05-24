@@ -22,7 +22,7 @@
 ##################
 
 from PYME.io.FileUtils.nameUtils import getFullExistingFilename
-from PYME.Acquire import MetaDataHandler
+from PYME.io import MetaDataHandler
 #from PYME.io.FileUtils import readTiff
 from PIL import Image
 import glob

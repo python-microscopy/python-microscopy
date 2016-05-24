@@ -23,7 +23,7 @@
 import wx
 import os
 #import pylab
-#from PYME.Acquire import MetaDataHandler
+#from PYME.io import MetaDataHandler
 #from PYME.DSView import image, View3D
 #from PYME.io import dataWrap
 from PYME.DSView import dsviewer

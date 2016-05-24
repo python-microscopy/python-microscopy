@@ -15,7 +15,7 @@ import Pyro.core
 from PYME.Analysis import remFitBuf
 import os
 import wx
-from PYME.Acquire import MetaDataHandler
+from PYME.io import MetaDataHandler
 from pylab import *
 from PYME.io.FileUtils import fileID
 from PYME.io.FileUtils.nameUtils import genResultFileName

@@ -214,7 +214,7 @@ class blobFinder:
 
     def OnFitObjects(self, event):
         import PYME.Analysis.FitFactories.Gauss3DFitR as fitMod
-        from PYME.Acquire import MetaDataHandler
+        from PYME.io import MetaDataHandler
         chnum = self.chChannel.GetSelection()
         
         mdh = MetaDataHandler.NestedClassMDHandler(self.image.mdh)

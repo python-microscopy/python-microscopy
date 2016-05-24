@@ -22,12 +22,12 @@
 ##################
 
 import math
-#import datetime
-#from PYME.Acquire.previewaquisator import PreviewAquisator
+
 import time
-from PYME.Acquire import MetaDataHandler
+from PYME.io import MetaDataHandler
 
 class StackSettings(object):
+    '''A class to keep settings for acquiring z-stacks'''
     # 'Constants'
     PHASE = 1
     OBJECT = 0

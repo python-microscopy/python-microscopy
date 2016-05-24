@@ -49,13 +49,13 @@ from PYME.Acquire import positionUI
 from PYME.Acquire import intsliders
 from PYME.Acquire import seqdialog
 #from PYME.Acquire import timeseqdialog
-from PYME.Acquire import stepDialog
+#from PYME.Acquire import stepDialog
 from PYME.Acquire import selectCameraPanel
 from PYME.Acquire import microscope
 #import PYME.DSView.dsviewer_npy as dsviewer
 from PYME.DSView import dsviewer as dsviewer
 #from PYME.cSMI import CDataStack_AsArray
-from PYME.Acquire import MetaDataHandler
+from PYME.io import MetaDataHandler
 #from PYME.Acquire import chanfr
 from PYME.Acquire import HDFSpoolFrame
 from PYME.io.FileUtils import nameUtils
@@ -457,10 +457,10 @@ class PYMEMainFrame(wx.Frame):
 
         
             
-        if 'step' in self.scope.__dict__:
-            self.step_d = stepDialog.stepPanel(self, self.scope)
-            #self.step_d.Show()
-            self.AddTool(self.step_d, 'Stepper Motors')
+#        if 'step' in self.scope.__dict__:
+#            self.step_d = stepDialog.stepPanel(self, self.scope)
+#            #self.step_d.Show()
+#            self.AddTool(self.step_d, 'Stepper Motors')
         
         self.time1.WantNotification.append(self.StatusBarUpdate)
 

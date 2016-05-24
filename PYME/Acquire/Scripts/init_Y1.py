@@ -40,7 +40,7 @@ def GetComputerName():
 
 #scope.cameras = {}
 #scope.camControls = {}
-from PYME.Acquire import MetaDataHandler
+from PYME.io import MetaDataHandler
 
 InitBG('EMCCD Camera', '''
 scope.cameras['A - Left'] = AndorIXon.iXonCamera(0)

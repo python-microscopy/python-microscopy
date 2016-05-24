@@ -26,7 +26,7 @@ from PYME.misc import pyro_tracebacks
 #import Pyro.util
 from PYME.Analysis import remFitBuf
 import os
-from PYME.Acquire import MetaDataHandler
+from PYME.io import MetaDataHandler
 import PYME.Analysis.FitFactories
 
 from PYME.Analysis import MetaDataEdit as mde

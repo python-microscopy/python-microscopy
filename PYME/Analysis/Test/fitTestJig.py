@@ -29,7 +29,7 @@ splitterFitModules = ['SplitterFitFR','SplitterFitQR','SplitterFitCOIR', 'Biplan
 
 from pylab import *
 import copy
-from PYME.Acquire import MetaDataHandler
+from PYME.io import MetaDataHandler
 from PYME.Acquire.Hardware import EMCCDTheory
 from scipy import optimize
 

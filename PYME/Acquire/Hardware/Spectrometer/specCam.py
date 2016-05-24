@@ -26,7 +26,7 @@ import numpy as np
 
 import time
 
-from PYME.Acquire import MetaDataHandler
+from PYME.io import MetaDataHandler
 from PYME.Acquire import eventLog
 
 from .spectrometerClient import SpecClient

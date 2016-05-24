@@ -39,7 +39,7 @@ def GetComputerName():
 
 #scope.cameras = {}
 #scope.camControls = {}
-from PYME.Acquire import MetaDataHandler
+from PYME.io import MetaDataHandler
 
 InitBG('EMCCD Cameras', '''
 scope.cameras['A - Left'] = uCam480.uc480Camera(2)

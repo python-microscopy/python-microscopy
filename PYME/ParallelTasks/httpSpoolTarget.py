@@ -2,7 +2,7 @@ from BaseHTTPServer import BaseHTTPRequestHandler
 import urlparse
 import os
 from PYME.io.FileUtils import nameUtils
-from PYME.Acquire import MetaDataHandler
+from PYME.io import MetaDataHandler
 from PYME.ParallelTasks import HDFTaskQueue
 import time
 import cPickle as pickle

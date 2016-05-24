@@ -30,7 +30,7 @@ import wx
 from PYME.Acquire.frameWrangler import FrameWrangler
 
 import PYME.Acquire.protocol as protocol
-from PYME.Acquire import MetaDataHandler
+from PYME.io import MetaDataHandler
 from PYME.Acquire.Hardware import ccdCalibrator
 
 import sqlite3

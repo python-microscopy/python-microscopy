@@ -27,7 +27,7 @@ from PYME.DSView.arrayViewPanel import ArrayViewPanel, OptionsPanel
 import numpy
 import os
 import wx.lib.agw.aui as aui
-from PYME.Acquire import MetaDataHandler
+from PYME.io import MetaDataHandler
 from PYME.io.FileUtils import nameUtils
 
 def LoadShiftField(filename = None):
@@ -48,7 +48,7 @@ def LoadShiftField(filename = None):
         #try and extract shiftfield from h5 / h5r file
         try:
             import tables
-            from PYME.Acquire.MetaDataHandler import HDFMDHandler
+            from PYME.io.MetaDataHandler import HDFMDHandler
             
             h5file = tables.openFile(filename)
             mdh = HDFMDHandler(h5file)

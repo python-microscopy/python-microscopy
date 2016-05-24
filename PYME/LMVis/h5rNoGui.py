@@ -28,7 +28,7 @@ from PYME.Analysis import piecewiseMapping
 import numpy as np
 import scipy.special
 
-from PYME.Acquire import MetaDataHandler
+from PYME.io import MetaDataHandler
 
 from PYME.LMVis.visHelpers import ImageBounds
 from PYME.LMVis import dyeRatios

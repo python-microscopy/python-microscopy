@@ -31,7 +31,7 @@ except ImportError:
     from PIL import Image
 import os
 from PYME.io.FileUtils import saveTiffStack
-from PYME.Acquire import MetaDataHandler
+from PYME.io import MetaDataHandler
 
 class SpoolEvent(tables.IsDescription):
    EventName = tables.StringCol(32)

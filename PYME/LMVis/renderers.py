@@ -26,7 +26,7 @@ from PYME.LMVis import visHelpers
 #from PYME.LMVis import imageView
 from PYME.LMVis import statusLog
 
-from PYME.Acquire import MetaDataHandler
+from PYME.io import MetaDataHandler
 
 from PYME.DSView import ViewIm3D
 

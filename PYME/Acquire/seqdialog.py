@@ -28,7 +28,7 @@ import wx.lib.agw.aui as aui
 
 #from PYME.Acquire import simplesequenceaquisator
 from PYME.Acquire import stackSettings
-#from PYME.Acquire import MetaDataHandler
+#from PYME.io import MetaDataHandler
 
 #redefine wxFrame with a version that hides when someone tries to close it
 
