@@ -109,10 +109,10 @@ class Spooler:
        eventLog.WantEventNotification.append(self.evtLogger)
 
        self.imNum = 0
-
-       self.protocol.Init(self)
        
        self.doStartLog()
+
+       self.protocol.Init(self)
        
        self.frameSource.connect(self.OnFrame)
        self.spoolOn = True

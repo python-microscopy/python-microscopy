@@ -205,6 +205,7 @@ class FakeCamera:
     numpy_frames=1
     MODE_CONTINUOUS=True
     MODE_SINGLE_SHOT=False
+    
     def __init__(self, XVals, YVals, noiseMaker, zPiezo, zOffset=50.0, fluors=None, laserPowers=[0,50], xpiezo=None, ypiezo=None, illumFcn = 'ConstIllum'):
         self.XVals = XVals
         self.YVals = YVals
@@ -493,7 +494,7 @@ class FakeCamera:
         self.noiseMaker.EMGain = gain
         #pass
 
-    def SetAquisitionMode(self, mode):
+    def SetAcquisitionMode(self, mode):
         self.contMode = mode
         self.compT.contMode = mode
 

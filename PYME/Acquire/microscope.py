@@ -40,6 +40,10 @@ import datetime
 #register handlers for ndarrays
 from PYME.misc import sqlitendarray
 
+#class DummyJoystick(object):
+#    def enable(*args, **kwargs):
+#        pass
+
 class microscope(object):
     def __init__(self):
         #list of tuples  of form (class, chan, name) describing the instaled piezo channels
@@ -77,6 +81,10 @@ class microscope(object):
         
         #provision to set global metadata values in startup script
         self.mdh = MetaDataHandler.NestedClassMDHandler()
+        
+    def EnableJoystick(self, enable=True):
+        if not self.joystick is None:
+            self.joystick.Enable(enable)
         
     def GetPos(self):
         res = {}

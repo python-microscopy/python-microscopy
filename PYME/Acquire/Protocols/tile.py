@@ -32,13 +32,13 @@ from PYME.contrib.wxPlotPanel import PlotPanel
 
 #calculate tile sizes
 vsx, vsy = scope.GetPixelSize()
-tsx = vsx*scope.cam.GetPicWidth()*1e-3
-tsy = vsy*scope.cam.GetPicHeight()*1e-3
+tsx = vsx*scope.cam.GetPicWidth()#*1e-3
+tsy = vsy*scope.cam.GetPicHeight()#*1e-3
 
 if 'splitting'in dir(scope.cam) and scope.cam.splitting =='up_down':
     tsy *= 0.5
     
-ps = PointScanner(scope.piezos[1], scope.piezos[2], scope, pixels = [10,10], pixelsize=numpy.array([tsx*.7, tsy*.7]), dwelltime=1, avg=False, evtLog = True, sync=True)
+ps = PointScanner(scope, pixels = [10,10], pixelsize=numpy.array([tsx*.7, tsy*.7]), dwelltime=1, avg=False, evtLog = True, sync=True)
 
 class SFGenPlotPanel(PlotPanel):
     def draw(self):
@@ -50,18 +50,19 @@ class SFGenPlotPanel(PlotPanel):
 
         #print len(ofd)
         vsx, vsy = scope.GetPixelSize()
-        ox = scope.pa.dsa.shape[0]*numpy.array([0,1,1,0,0])*vsx
-        oy = scope.pa.dsa.shape[1]*numpy.array([0,0,1,1,0])*vsy
+        ox = tsx*(numpy.array([0,1,1,0,0]) - .5)
+        oy = tsy*(numpy.array([0,0,1,1,0]) - .5)
 
         if 'splitting'in dir(scope.cam) and scope.cam.splitting =='up_down':
             oy *= .5
 
-        X = (((ps.xp - ps.currPos[0])*1e3)[:, None]*numpy.ones(ps.yp.shape)[None, :]).ravel()
-        Y = (((ps.yp - ps.currPos[1])*1e3)[None, :]*numpy.ones(ps.xp.shape)[:, None]).ravel()
+        X = (((ps.xp - ps.currPos['x']))[:, None]*numpy.ones(ps.yp.shape)[None, :]).ravel()
+        Y = (((ps.yp - ps.currPos['y']))[None, :]*numpy.ones(ps.xp.shape)[:, None]).ravel()
 
         self.subplot.cla()
 
         for i in xrange(X.size):
+            #print 'plt'
             self.subplot.plot(ox + X[i], oy + Y[i])#, c=i)
 
         #self.subplot.set_xlim(0, 512)
@@ -166,7 +167,7 @@ def ShowSFDialog():
 #when is the frame number, what is a function to be called, and *args are any
 #additional arguments
 taskList = [
-T(-1, scope.joystick.Enable, False),
+T(-1, scope.EnableJoystick, False),
 T(-1, SetContinuousMode, False),
 T(-1, ShowSFDialog),
 T(-1, SetCameraShutter,False),
@@ -175,7 +176,7 @@ T(12, ps.start),
 T(30, MainFrame.pan_spool.OnBAnalyse, None),
 stopTask,
 #T(maxint, ps.stop),
-T(maxint, scope.joystick.Enable, True),
+T(maxint, scope.EnableJoystick, True),
 T(maxint, SetContinuousMode, True),
 ]
 

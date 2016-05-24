@@ -126,7 +126,7 @@ class AndorBase(SDK3Camera):
         SDK3Camera.Init(self)        
         
         #set some intial parameters
-        #self.FrameCount.setValue(1)
+        self.FrameCount.setValue(1)
         self.CycleMode.setString(u'Continuous')
         
         self.SimplePreAmpGainControl.setString(u'12-bit (low noise)')
@@ -204,7 +204,7 @@ class AndorBase(SDK3Camera):
     def _pollBuffer(self):
         try:
             #self.fLog.write('%f\tp\n' % time.time())
-            pData, lData = SDK3.WaitBuffer(self.handle, 100)
+            pData, lData = SDK3.WaitBuffer(self.handle, 10)
             #self.fLog.write('%f\tb\n' % time.time())
         except SDK3.TimeoutError as e:
             #Both AT_ERR_TIMEDOUT and AT_ERR_NODATA
@@ -292,6 +292,14 @@ class AndorBase(SDK3Camera):
 #    def GetContinuousMode(self):
 #        return self.contMode
         
+    def SetAcquisitionMode(self, mode):
+        if mode == self.MODE_CONTINUOUS:
+            if not self.contMode:
+                self.CycleMode.setString('uContinuous')
+        elif self.contMode:
+            self.CycleMode.setString('uFixed')
+            self.FrameCount.setValue(1)
+    
     @property
     def contMode(self):
         return self.CycleMode.getString() == u'Continuous'
