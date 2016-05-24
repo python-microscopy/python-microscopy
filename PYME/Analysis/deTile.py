@@ -93,7 +93,7 @@ def guessFlat(ds, mdh, dark):
         flt +=  ds[:,:,i]
         n+=1
 
-    print((flt.shape, dark.shape))
+    #print((flt.shape, dark.shape))
 
     flt = flt/n - dark
     print((flt.shape, flt.mean()))
@@ -115,18 +115,29 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
     xps = xm(np.arange(numFrames))
     yps = ym(np.arange(numFrames))
 
+    if mdh.getOrDefault('CameraOrientation.FlipX', False):
+        xps = -xps
+
+    if mdh.getOrDefault('CameraOrientation.FlipY', False):
+        yps = -yps
+
+
     #give some room at the edges
     bufSize = 0
     if correlate:
         bufSize = 300
     
     #convert to pixels
-    xdp = bufSize + ((xps - xps.min()) / (1e-3*mdh.getEntry('voxelsize.x'))).round()
-    ydp = bufSize + ((yps - yps.min()) / (1e-3*mdh.getEntry('voxelsize.y'))).round()
+    xdp = bufSize + ((xps - xps.min()) / (mdh.getEntry('voxelsize.x'))).round()
+    ydp = bufSize + ((yps - yps.min()) / (mdh.getEntry('voxelsize.y'))).round()
+
+    print (xps - xps.min()), mdh.getEntry('voxelsize.x')
 
     #work out how big our tiled image is going to be
     imageSizeX = np.ceil(xdp.max() + frameSizeX + bufSize)
     imageSizeY = np.ceil(ydp.max() + frameSizeY + bufSize)
+
+    print imageSizeX, imageSizeY
 
     #allocate an empty array for the image
     im = np.zeros([imageSizeX, imageSizeY, nchans])

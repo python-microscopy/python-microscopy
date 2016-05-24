@@ -152,6 +152,10 @@ class microscope(object):
             
         for k, v in self.GetPos().items():
             mdh.setEntry('Positioning.%s' % k.replace(' ', '_').replace('-', '_'), v)
+
+        mdh['CameraOrientation.Rotate'] = self.cam.orientation['rotate']
+        mdh['CameraOrientation.FlipX'] = self.cam.orientation['flipx']
+        mdh['CameraOrientation.FlipY'] = self.cam.orientation['flipy']
             
         mdh.copyEntriesFrom(self.mdh)
 

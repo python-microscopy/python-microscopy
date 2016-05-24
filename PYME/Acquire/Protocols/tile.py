@@ -167,7 +167,7 @@ def ShowSFDialog():
 #when is the frame number, what is a function to be called, and *args are any
 #additional arguments
 taskList = [
-T(-1, scope.EnableJoystick, False),
+#T(-1, scope.EnableJoystick, False),
 T(-1, SetContinuousMode, False),
 T(-1, ShowSFDialog),
 T(-1, SetCameraShutter,False),
@@ -176,7 +176,7 @@ T(12, ps.start),
 T(30, MainFrame.pan_spool.OnBAnalyse, None),
 stopTask,
 #T(maxint, ps.stop),
-T(maxint, scope.EnableJoystick, True),
+#T(maxint, scope.EnableJoystick, True),
 T(maxint, SetContinuousMode, True),
 ]
 
