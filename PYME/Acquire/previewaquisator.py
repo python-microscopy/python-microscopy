@@ -43,7 +43,7 @@ from PYME.Acquire import eventLog
         
 
 
-class PreviewAquisator(wx.Timer):
+class PreviewAquisator(wx.EvtHandler):
 #    BW = 1
 #    RED = 2
 #    GREEN1 = 4
@@ -51,7 +51,9 @@ class PreviewAquisator(wx.Timer):
 #    BLUE = 16
 
     def __init__(self, _chans, _cam, _shutters, _ds = None):
-        wx.Timer.__init__(self)
+        wx.EvtHandler.__init__(self)
+        self.timer = wx.Timer(self)
+        self.Bind(wx.EVT_TIMER, self.Notify)
         
         self.chans = _chans
         #self.hwChans = _chans.hw
@@ -194,7 +196,7 @@ class PreviewAquisator(wx.Timer):
         
             if not contMode:
                 #flag the need to start a new exposure
-                print 'se'
+                #print 'se'
                 self.needExposureStart = True
                 #self.cam.StartExposure()
 
@@ -240,7 +242,7 @@ class PreviewAquisator(wx.Timer):
 #        return t
 
 
-    def Notify(self):
+    def Notify(self, event=None):
         '''Callback which is called regularly by a system timer to poll the 
         camera'''
         
@@ -249,7 +251,7 @@ class PreviewAquisator(wx.Timer):
             print('Already in notify, skip for now')
             return
             
-        try:
+        try:            
             self.inNotify = True
             "Should be called on each timer tick"
             self.te = time.clock()
@@ -329,6 +331,9 @@ class PreviewAquisator(wx.Timer):
             traceback.print_exc()
         finally:     
             self.inNotify = False
+            #self.timer.StartOnce(self.tiint)
+            self.timer.Start(self.tiint, wx.TIMER_ONE_SHOT)
+            
             
     @property
     def currentFrame(self):
@@ -353,7 +358,7 @@ class PreviewAquisator(wx.Timer):
     def stop(self):
         "Stop sequence aquisition"
 
-        wx.Timer.Stop(self)
+        self.timer.Stop()
 
         self.aqOn = False
 
@@ -373,6 +378,7 @@ class PreviewAquisator(wx.Timer):
 
     def start(self, tiint = 100):
         "Start aquisition"
+        self.tiint = tiint
 
         self.looppos = 0
         #self.ds.setZPos(0) #go to start of data stack
@@ -407,7 +413,7 @@ class PreviewAquisator(wx.Timer):
         self.t_old = time.time()
         self.n_Frames = 0
 
-        wx.Timer.Start(self,tiint)
+        self.timer.Start(self.tiint, wx.TIMER_ONE_SHOT)
         return True
 
 
