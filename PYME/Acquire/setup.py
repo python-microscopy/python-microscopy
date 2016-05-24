@@ -30,6 +30,8 @@ def configuration(parent_package = '', top_path = None):
     config.add_subpackage('Hardware')
     config.add_subpackage('Protocols')
     config.add_data_dir('Scripts')
+    config.add_subpackage('ui')
+    config.add_subpackage('Utils')
     #config.add_data_files('logo.png')
 
     return config

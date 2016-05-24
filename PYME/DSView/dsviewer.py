@@ -79,10 +79,15 @@ class AUIFrame(wx.Frame):
         # tell AuiManager to manage this frame
         self._mgr.SetManagedWindow(self)
         
-        wx.EVT_SIZE(self, self.OnSize)
+        #wx.EVT_SIZE(self, self.OnSize)
         
         self.paneHooks = []
         self.pane0 = None
+
+        self._menus = {}
+        # Menu Bar
+        self.menubar = wx.MenuBar()
+        self.SetMenuBar(self.menubar)
 
         
     def AddPage(self, page=None, select=True,caption='Dummy', update=True):
@@ -164,6 +169,35 @@ class AUIFrame(wx.Frame):
         self.Refresh()
         self.Update()
         self._mgr.Update()
+
+    def AddMenuItem(self, menuName, itemName='', itemCallback = None, itemType='normal', helpText = '', id = wx.ID_ANY):   
+        mItem = None
+        if not menuName in self._menus.keys():
+            menu = wx.Menu()
+
+            #put new menus to the left of help or modules menus
+            lp = 0
+            if 'Help' in self._menus.keys():
+                lp +=1
+
+            if '&Modules' in self._menus.keys():
+                lp += 1
+
+            self.menubar.Insert(self.menubar.GetMenuCount()-lp, menu, menuName)
+            self._menus[menuName] = menu
+        else:
+            menu = self._menus[menuName]
+        
+        if itemType == 'normal':        
+            mItem = menu.Append(id, itemName, helpText, wx.ITEM_NORMAL)
+            self.Bind(wx.EVT_MENU, itemCallback, mItem)
+        elif itemType == 'check':
+            mItem = menu.Append(id, itemName, helpText, wx.ITEM_CHECK)
+            self.Bind(wx.EVT_MENU, itemCallback, mItem)
+        elif itemType == 'separator':
+            menu.AppendSeparator()
+            
+        return mItem
         
     def _cleanup(self):
         #self.timer.Stop()
@@ -229,10 +263,7 @@ class DSViewFrame(AUIFrame):
         self.mainFrame = weakref.ref(self)
         #self.do = self.vp.do
         
-        self._menus = {}
-        # Menu Bar
-        self.menubar = wx.MenuBar()
-        self.SetMenuBar(self.menubar)
+        
         tmp_menu = wx.Menu()
         tmp_menu.Append(wx.ID_OPEN, '&Open', "", wx.ITEM_NORMAL)
         tmp_menu.Append(wx.ID_SAVE, "&Save As", "", wx.ITEM_NORMAL)
@@ -337,25 +368,10 @@ class DSViewFrame(AUIFrame):
                 self.mModules.Check(id, True)
 
             wx.EVT_MENU(self, id, self.OnToggleModule)
-            
+
         self.menubar.Append(self.mModules, "&Modules")
+        self._menus["&Modules"] = self.mModules
         
-    def AddMenuItem(self, menuName, itemName='', itemCallback = None, itemType='normal', helpText = ''):   
-        mItem = None
-        if not menuName in self._menus.keys():
-            menu = wx.Menu()
-            self.menubar.Insert(self.menubar.GetMenuCount()-1, menu, menuName)
-            self._menus[menuName] = menu
-        else:
-            menu = self._menus[menuName]
-        
-        if itemType == 'normal':        
-            mItem = menu.Append(wx.ID_ANY, itemName, helpText, wx.ITEM_NORMAL)
-            self.Bind(wx.EVT_MENU, itemCallback, mItem)
-        elif itemType == 'separator':
-            menu.AppendSeparator()
-            
-        return mItem
 
     def OnToggleModule(self, event):
         id = event.GetId()

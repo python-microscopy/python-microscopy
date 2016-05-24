@@ -30,6 +30,7 @@ import wx
 from PYME.Acquire.frameWrangler import FrameWrangler
 
 import PYME.Acquire.protocol as protocol
+
 from PYME.io import MetaDataHandler
 from PYME.Acquire.Hardware import ccdCalibrator
 

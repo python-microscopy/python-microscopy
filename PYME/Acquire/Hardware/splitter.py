@@ -178,32 +178,37 @@ class Splitter:
 
         self.constrainROI = False
         self.flipView = False
+        
+        self.miConstrROI = parent.AddMenuItem('Splitter', 'Constrain ROI', self.OnConstrainROI, itemType = 'check')
+        parent.AddMenuItem('Splitter', 'Flip view', self.OnFlipView)
+        parent.AddMenuItem('Splitter', 'Unmix\tF7', self.OnUnmix)
+        parent.AddMenuItem('Splitter', 'SetShiftField', self.OnSetShiftField)
 
-        idConstROI = wx.NewId()
-        idFlipView = wx.NewId()
-        idUnmix = wx.NewId()
-        idShiftfield = wx.NewId()
-
-        self.menu = wx.Menu(title = '')
-        self.f = None
-
-        self.menu.AppendCheckItem(idConstROI, 'Constrain ROI')
-        wx.EVT_MENU(parent, idConstROI, self.OnConstrainROI)
-
-        self.menu.AppendCheckItem(idFlipView, 'Flip view')
-        wx.EVT_MENU(parent, idFlipView, self.OnFlipView)
-        self.menu.Append(idUnmix, 'Unmix\tF7')
-        wx.EVT_MENU(parent, idUnmix, self.OnUnmix)
-
-        self.menu.Append(idShiftfield, 'Set Shift Field')
-        wx.EVT_MENU(parent, idShiftfield, self.OnSetShiftField)
-
-        menu.AppendSeparator()
-        menu.AppendMenu(-1, '&Splitter', self.menu)
+#        idConstROI = wx.NewId()
+#        idFlipView = wx.NewId()
+#        idUnmix = wx.NewId()
+#        idShiftfield = wx.NewId()
+#
+#        self.menu = wx.Menu(title = '')
+#        self.f = None
+#
+#        self.menu.AppendCheckItem(idConstROI, 'Constrain ROI')
+#        wx.EVT_MENU(parent, idConstROI, self.OnConstrainROI)
+#
+#        self.menu.AppendCheckItem(idFlipView, 'Flip view')
+#        wx.EVT_MENU(parent, idFlipView, self.OnFlipView)
+#        self.menu.Append(idUnmix, 'Unmix\tF7')
+#        wx.EVT_MENU(parent, idUnmix, self.OnUnmix)
+#
+#        self.menu.Append(idShiftfield, 'Set Shift Field')
+#        wx.EVT_MENU(parent, idShiftfield, self.OnSetShiftField)
+#
+#        menu.AppendSeparator()
+#        menu.AppendMenu(-1, '&Splitter', self.menu)
 
         if constrain:
             self.OnConstrainROI()
-            self.menu.Check(idConstROI, True)
+            #self.menu.Check(idConstROI, True)
         
 
     def ProvideMetadata(self, mdh):

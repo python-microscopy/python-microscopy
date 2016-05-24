@@ -28,29 +28,34 @@ class FocusKeys:
         self.piezo = piezo
         self.focusIncrement = 0.2
         self.scope = scope
+        
+        parent.AddMenuItem('Focus', 'Focus Down\t%s' % keys[0], self.OnFocDown)
+        parent.AddMenuItem('Focus', 'Focus Up\t%s' % keys[1], self.OnFocUp)
+        parent.AddMenuItem('Focus', 'Sensitivity Down\t%s' % keys[2], self.OnSensDown)
+        parent.AddMenuItem('Focus', 'Sensitivity Up\t%s' % keys[3], self.OnSensUp)
 
-        idFocUp = wx.NewId()
-        idFocDown = wx.NewId()
-        idSensUp = wx.NewId()
-        idSensDown = wx.NewId()
+#        idFocUp = wx.NewId()
+#        idFocDown = wx.NewId()
+#        idSensUp = wx.NewId()
+#        idSensDown = wx.NewId()
 
-        self.menu = wx.Menu(title = '')
-
-        self.menu.Append(idFocDown, 'Focus Down\t%s' % keys[0])
-        wx.EVT_MENU(parent, idFocDown, self.OnFocDown)
-
-        self.menu.Append(idFocUp, 'Focus Up\t%s' % keys[1])
-        wx.EVT_MENU(parent, idFocUp, self.OnFocUp)
-
-        self.menu.Append(idSensDown, 'Sensitivity Down\t%s' % keys[2])
-        wx.EVT_MENU(parent, idSensDown, self.OnSensDown)
-
-        self.menu.Append(idSensUp, 'Sensitivity Up\t%s' % keys[3])
-        wx.EVT_MENU(parent, idSensUp, self.OnSensUp)
-
-        menu.Append(menu=self.menu, title = 'Focus')
-        self.mbar = menu
-        self.mpos = menu.GetMenuCount() - 1
+#        self.menu = wx.Menu(title = '')
+#
+#        self.menu.Append(idFocDown, 'Focus Down\t%s' % keys[0])
+#        wx.EVT_MENU(parent, idFocDown, self.OnFocDown)
+#
+#        self.menu.Append(idFocUp, 'Focus Up\t%s' % keys[1])
+#        wx.EVT_MENU(parent, idFocUp, self.OnFocUp)
+#
+#        self.menu.Append(idSensDown, 'Sensitivity Down\t%s' % keys[2])
+#        wx.EVT_MENU(parent, idSensDown, self.OnSensDown)
+#
+#        self.menu.Append(idSensUp, 'Sensitivity Up\t%s' % keys[3])
+#        wx.EVT_MENU(parent, idSensUp, self.OnSensUp)
+#
+#        menu.Append(menu=self.menu, title = 'Focus')
+#        self.mbar = menu
+#        self.mpos = menu.GetMenuCount() - 1
 
 
     def OnFocDown(self,event):
