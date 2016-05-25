@@ -22,7 +22,7 @@
 import wx
 import wx.py.shell
 
-#import PYME.misc.autoFoldPanel as afp
+#import PYME.ui.autoFoldPanel as afp
 #import wx.lib.agw.aui as aui
 
 #hacked so py2exe works
@@ -46,7 +46,7 @@ from PYME.LMVis import pipeline
 
 
 
-from PYME.Analysis import MetadataTree
+from PYME.ui import MetadataTree
 
 import numpy as np
 

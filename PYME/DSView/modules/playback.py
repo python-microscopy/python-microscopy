@@ -22,7 +22,7 @@
 import wx
 import os
 from PYME.Acquire.mytimer import mytimer
-import PYME.misc.autoFoldPanel as afp
+import PYME.ui.autoFoldPanel as afp
 from PYME import resources
 
 class PlayPanel(wx.Panel):

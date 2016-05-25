@@ -35,7 +35,7 @@ multiProc = False
 
 try:
     import multiprocessing
-    from PYME.shmarray import shmarray
+    from PYME.util.shmarray import shmarray
     multiProc = True
 except:
     multiProc = False

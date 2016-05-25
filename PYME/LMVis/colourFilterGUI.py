@@ -20,7 +20,7 @@
 #
 ##################
 import wx
-import PYME.misc.autoFoldPanel as afp
+import PYME.ui.autoFoldPanel as afp
 
 def CreateColourFilterPane(panel, mapping, visFr):
     pane = ColourFilterPane(panel, mapping, visFr)

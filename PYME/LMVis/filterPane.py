@@ -22,7 +22,7 @@
 
 import wx
 import sys
-import PYME.misc.autoFoldPanel as afp
+import PYME.ui.autoFoldPanel as afp
 import numpy as np
 
 from PYME.ui import histLimits

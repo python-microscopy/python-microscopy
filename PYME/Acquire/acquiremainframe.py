@@ -27,7 +27,7 @@ import wx
 import wx.py.shell
 import wx.lib.agw.aui as aui
 
-import PYME.misc.autoFoldPanel as afp
+import PYME.ui.autoFoldPanel as afp
 import os
 import time
 

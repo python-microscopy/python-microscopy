@@ -8,7 +8,7 @@ Created on Sat May 14 14:54:52 2016
 import wx
 import wx.py.shell
 
-import PYME.misc.autoFoldPanel as afp
+import PYME.ui.autoFoldPanel as afp
 import wx.lib.agw.aui as aui
 
 #hacked so py2exe works

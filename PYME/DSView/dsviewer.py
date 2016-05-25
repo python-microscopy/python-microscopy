@@ -38,7 +38,7 @@ try:
 except ImportError:
     pass
 
-#import PYME.misc.autoFoldPanel as afp
+#import PYME.ui.autoFoldPanel as afp
 
 from PYME.DSView.displayOptions import DisplayOpts
 from PYME.DSView.DisplayOptionsPanel import OptionsPanel

@@ -19,7 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-from PYME.Analysis import MetadataTree
+from PYME.ui import MetadataTree
 
 def Plug(dsviewer):
     mdv = MetadataTree.MetadataPanel(dsviewer, dsviewer.image.mdh)

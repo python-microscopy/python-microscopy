@@ -23,7 +23,7 @@
 import wx
 import wx.lib.newevent
 
-import PYME.misc.autoFoldPanel as afp
+import PYME.ui.autoFoldPanel as afp
 import pylab
 import numpy as np
 

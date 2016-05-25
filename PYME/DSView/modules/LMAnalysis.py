@@ -52,7 +52,7 @@ from PYME.LMVis import pipeline, inpFilt
 import numpy
 import pylab
 
-import PYME.misc.autoFoldPanel as afp
+import PYME.ui.autoFoldPanel as afp
 from PYME.Acquire.mytimer import mytimer
 from PYME.DSView import fitInfo
 from PYME.DSView.OverlaysPanel import OverlayPanel

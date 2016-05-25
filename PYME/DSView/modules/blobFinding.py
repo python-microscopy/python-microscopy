@@ -21,8 +21,8 @@
 ##################
 
 import wx
-import PYME.misc.autoFoldPanel as afp
-from PYME.LMVis import recArrayView
+import PYME.ui.autoFoldPanel as afp
+from PYME.ui import recArrayView
 import numpy
 from PYME.DSView.OverlaysPanel import OverlayPanel
 import wx.lib.agw.aui as aui

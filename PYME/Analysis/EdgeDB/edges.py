@@ -33,7 +33,7 @@ class EdgeDB:
     def __init__(self, T, shm=False, extraSpaceFactor=1.5, calcDistances=True):
         self.Nverts = len(T.x)
         if shm:
-            from PYME.shmarray import shmarray
+            from PYME.util.shmarray import shmarray
             self.edgeArray = shmarray.zeros(int(extraSpaceFactor*self.Nverts), dtype)
         else:
             self.edgeArray = numpy.zeros(int(extraSpaceFactor*self.Nverts), dtype)

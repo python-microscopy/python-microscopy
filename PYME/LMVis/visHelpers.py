@@ -45,7 +45,7 @@ multiProc = False
 try:
     import multiprocessing
     #import multiprocessing.sharedctypes
-    from PYME.shmarray import shmarray
+    from PYME.util.shmarray import shmarray
     multiProc = True
 except:
     multiProc = False
