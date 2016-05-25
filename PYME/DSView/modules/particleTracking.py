@@ -428,6 +428,8 @@ class ParticleTrackingView(HasTraits):
 
 def Plug(dsviewer):
     from PYME.DSView import htmlServe #ensure that our local cherrypy server is running
+    htmlServe.StartServing()
+    
     dsviewer.tracker = ParticleTrackingView(dsviewer)
     cherrypy.tree.mount(dsviewer.tracker, '/tracks')
     dsviewer.tracker.trackview.LoadURL(htmlServe.getURL() + 'tracks/')

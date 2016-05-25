@@ -21,7 +21,7 @@
 #
 ################
 import numpy as np
-from PYME.DSView.dsviewer_npy import View3D
+from PYME.DSView.dsviewer import View3D
 from math import floor
 
 PIXELSIZE = (16*1.5*.072)/1e3

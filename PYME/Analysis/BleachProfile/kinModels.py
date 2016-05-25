@@ -20,7 +20,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
-from pylab import *
+#from pylab import *
+import pylab
+import numpy as np
 from PYME.Analysis._fithelpers import *
 from PYME.Analysis.points.DeClump import deClump
 from scipy.special import erf
@@ -82,13 +84,13 @@ def getPhotonNums(colourFilter, metadata):
 @goalfcn('n')
 def eimod(A, tau, n):
     #A, tau = p
-    return A*tau*(exp(-(n-1)/tau) - exp(-n/tau))
+    return A*tau*(np.exp(-(n-1)/tau) - np.exp(-n/tau))
 
 @goalfcn('n, dT, nAvg')
 def ei2mod(A, tau, n, dT, nAvg=30):
     #A, tau = p
     #print A, tau
-    ret =  A*tau*(exp(-sqrt((n-dT)/tau)) - exp(-sqrt(n/tau)))*maximum(1 - n/(dT*nAvg), 0)
+    ret =  A*tau*(np.exp(-np.sqrt((n-dT)/tau)) - np.exp(-np.sqrt(n/tau)))*np.maximum(1 - n/(dT*nAvg), 0)
     
     #print n, sqrt((n-dT)/tau)
 
@@ -98,7 +100,7 @@ def ei2mod(A, tau, n, dT, nAvg=30):
 def ei3mod(A, tau, n, dT, nAvg=30, nDet = 0.7, tDet = .1):#,nDet=.7, tDet = .2):
     #A, tau = p
     #print A, tau
-    ret =  A*tau*(exp(-sqrt((n-dT)/tau)) - exp(-sqrt(n/tau)))*(1 + erf((sqrt(maximum(1 - n/(dT*nAvg), 0)) - nDet))/tDet)
+    ret =  A*tau*(np.exp(-np.sqrt((n-dT)/tau)) - np.exp(-np.sqrt(n/tau)))*(1 + erf((np.sqrt(np.maximum(1 - n/(dT*nAvg), 0)) - nDet))/tDet)
 
     #print n, sqrt((n-dT)/tau)
 
@@ -109,8 +111,8 @@ def ei3mod(A, tau, n, dT, nAvg=30, nDet = 0.7, tDet = .1):#,nDet=.7, tDet = .2):
 def e2mod(A, tau, b, Dt, sT, t, Nm):
     #A, tau, b, Dt, sT = p
     b = 0.5*(1+erf(b))*Nm
-    Dt = sqrt(Dt**2 + 1) - 1
-    N =  A*exp(-sqrt(t/tau)) + b
+    Dt = np.sqrt(Dt**2 + 1) - 1
+    N =  A*np.exp(-np.sqrt(t/tau)) + b
     return N*0.5*(1 + erf((Nm + Dt - N)/sT))
 #e2mod. = 'A, tau, b, Dt, sT'
     
@@ -118,73 +120,73 @@ def e2mod(A, tau, b, Dt, sT, t, Nm):
 def emod(A, tau, b, Dt, sT, t, Nm):
     #A, tau, b, Dt, sT = p
     b = 0.5*(1+erf(b))*Nm
-    Dt = sqrt(Dt**2 + 1) - 1
-    N =  A*exp(-(t/tau)) + b**2
+    Dt = np.sqrt(Dt**2 + 1) - 1
+    N =  A*np.exp(-(t/tau)) + b**2
     return N*0.5*(1 + erf((Nm + Dt - N)/sT))
     
 @goalfcn('t, Nm')
 def hmod(A, tau, b, Dt, sT, t, Nm):
     #A, tau, b, Dt, sT = p
     b = 0.5*(1+erf(b))*Nm
-    Dt = sqrt(Dt**2 + 1) - 1
+    Dt = np.sqrt(Dt**2 + 1) - 1
     N =  A/(t/tau + 1) + b**2
     return N*0.5*(1 + erf((Nm + Dt - N)/sT))
 
 @goalfcn('t')
 def e3mod(A, tau, b, t):
     #A, tau, b = p
-    N =  A*exp(-sqrt(t/tau)) + b**2
+    N =  A*np.exp(-np.sqrt(t/tau)) + b**2
     return N
     
 @goalfcn('t, A')
 def e4mod(tau, b, t, A):
     #tau, b = p
-    N =  A*exp(-sqrt(t/tau)) + b**2
+    N =  A*np.exp(-np.sqrt(t/tau)) + b**2
     return N
 
 #Event amplitudes
 @goalfcn('N')
 def fImod(A, Ndet, tauDet, tauI, N):
     #A, Ndet, tauDet, tauI = p
-    return A*(1 + erf((sqrt(N)-Ndet)/tauDet**2))*exp(-N/tauI)
+    return A*(1 + erf((np.sqrt(N)-Ndet)/tauDet**2))*np.exp(-N/tauI)
 
 @goalfcn('N, t, Nco')    
 def fITmod(A, Ndet, lamb, tauI, a, Acrit, bg, k, k3, N, t, Nco):
     #A, Ndet, lamb, tauI, a, Acrit, bg, k, k3 = p
     
     #constraints
-    Ndet = sqrt(Ndet**2 + 1) - 1 #+ve
-    bg = sqrt(bg**2 + 1) - 1
-    Acrit = sqrt(Acrit**2 + 1) - 1   
+    Ndet = np.sqrt(Ndet**2 + 1) - 1 #+ve
+    bg = np.sqrt(bg**2 + 1) - 1
+    Acrit = np.sqrt(Acrit**2 + 1) - 1   
     a = (1+erf(a))/2 # [0,1]
-    bg = sqrt(bg**2 + 1) - 1
-    k = sqrt(k**2 + 1) - 1
+    bg = np.sqrt(bg**2 + 1) - 1
+    k = np.sqrt(k**2 + 1) - 1
     
     #k2 = sqrt(k2**2 + 1) - 1
     
     r = 1./((t/tauI)**a + 1)
     Ar = A*r
-    snr = N/sqrt(N + Ar*Acrit + bg)
-    return (N> Nco)*Ar*(1 - exp(-(snr)/Ndet))*(1 + erf((k3 - sqrt(Ar)/k)))*exp(-N/lamb)
+    snr = N/np.sqrt(N + Ar*Acrit + bg)
+    return (N> Nco)*Ar*(1 - np.exp(-(snr)/Ndet))*(1 + erf((k3 - np.sqrt(Ar)/k)))*np.exp(-N/lamb)
     
 @goalfcn('N, t, Nco')    
 def fITmod2(A, Ndet, lamb, tauI, a, Acrit, bg, N, t, Nco):
     #A, Ndet, lamb, tauI, a, Acrit, bg, k, k3 = p
     
     #constraints
-    Ndet = sqrt(Ndet**2 + 1) - 1 #+ve
-    bg = sqrt(bg**2 + 1) - 1
-    Acrit = sqrt(Acrit**2 + 1) - 1   
+    Ndet = np.sqrt(Ndet**2 + 1) - 1 #+ve
+    bg = np.sqrt(bg**2 + 1) - 1
+    Acrit = np.sqrt(Acrit**2 + 1) - 1   
     a = (1+erf(a))/2 # [0,1]
-    bg = sqrt(bg**2 + 1) - 1
+    bg = np.sqrt(bg**2 + 1) - 1
     #k = sqrt(k**2 + 1) - 1
     
     #k2 = sqrt(k2**2 + 1) - 1
     
     r = 1./((t/tauI)**a + 1)
     Ar = A*r
-    snr = N/sqrt(N + Ar*Acrit + bg)
-    return (N> Nco)*Ar*(1 - exp(-(snr)/Ndet))*exp(-N/lamb)
+    snr = N/np.sqrt(N + Ar*Acrit + bg)
+    return (N> Nco)*Ar*(1 - np.exp(-(snr)/Ndet))*np.exp(-N/lamb)
 
 
 #########################
@@ -246,7 +248,7 @@ def fitDecay(colourFilter, metadata, channame='', i=0):
     #get frames in which events occured and convert into seconds
     t = colourFilter['t']*metadata.getEntry('Camera.CycleTime')
 
-    n,bins = histogram(t, 100)
+    n,bins = np.histogram(t, 100)
 
     b1 = bins[:-1]
     Nm = n.max()
@@ -274,35 +276,35 @@ def fitDecay(colourFilter, metadata, channame='', i=0):
     PL.AddRecord('/Photophysics/Decay/e2mod_p', munge_res(e2mod, r4, mse=mse, ch2=ch2))
 
     if USE_GUI:        
-        bar(b1/60, n, width=(b1[1]-b1[0])/60, alpha=0.4, fc=colours[i])
-        plot(b1/60, e2mod(res[0], b1, Nm), colours[i], lw=3)
-        plot(b1/60, emod(res2[0], b1, Nm), colours[i], lw=2, ls='--')
-        plot(b1/60, hmod(res3[0], b1, Nm), colours[i], lw=2, ls=':')
-        plot(b1/60, e2mod(r4[0], b1, Nm), colours[i], lw=1)
-        ylabel('Events')
-        xlabel('Acquisition Time [mins]')
-        title('Event Rate')
+        pylab.bar(b1/60, n, width=(b1[1]-b1[0])/60, alpha=0.4, fc=colours[i])
+        pylab.plot(b1/60, e2mod(res[0], b1, Nm), colours[i], lw=3)
+        pylab.plot(b1/60, emod(res2[0], b1, Nm), colours[i], lw=2, ls='--')
+        pylab.plot(b1/60, hmod(res3[0], b1, Nm), colours[i], lw=2, ls=':')
+        pylab.plot(b1/60, e2mod(r4[0], b1, Nm), colours[i], lw=1)
+        pylab.ylabel('Events')
+        pylab.xlabel('Acquisition Time [mins]')
+        pylab.title('Event Rate')
         
         b = 0.5*(1+erf(res[0][2]))*Nm
     
-        figtext(.4,.8 -.05*i, channame + '\t$\\tau = %3.2fs,\\;b = %3.2f$' % (res[0][1], b/res[0][0]), size=18, color=colours[i])
+        pylab.figtext(.4,.8 -.05*i, channame + '\t$\\tau = %3.2fs,\\;b = %3.2f$' % (res[0][1], b/res[0][0]), size=18, color=colours[i])
 
 
 @applyByChannel
 def fitOnTimes(colourFilter, metadata, channame='', i=0):    
     numPerClump = colourFilter['clumpSize']
 
-    n, bins = histogram(numPerClump, arange(20)+.001)
+    n, bins = np.histogram(numPerClump, arange(20)+.001)
     n = n/arange(1, 20)
 
     cycTime = metadata.getEntry('Camera.CycleTime')
 
     
-    res = FitModelWeighted(eimod, [n[0], .2], n[1:], 1./(sqrt(n[1:]) + 1), bins[2:]*cycTime)
+    res = FitModelWeighted(eimod, [n[0], .2], n[1:], 1./(np.sqrt(n[1:]) + 1), bins[2:]*cycTime)
     #res = FitModelPoisson(eimod, [n[0], .2], n[1:], bins[2:]*cycTime)
     ch2, mse = chi2_mse(eimod, n[1:], res, bins[2:]*cycTime)
     #mse = (res[2]['fvec']**2).mean()
-    res2 = FitModelWeighted(ei2mod, [n[0], .2], n[1:], 1./(sqrt(n[1:]) + 1), bins[2:]*cycTime, cycTime)
+    res2 = FitModelWeighted(ei2mod, [n[0], .2], n[1:], 1./(np.sqrt(n[1:]) + 1), bins[2:]*cycTime, cycTime)
     ch22, mse2 = chi2_mse(ei2mod, n[1:], res2, bins[2:]*cycTime, cycTime)
     
     
@@ -314,18 +316,18 @@ def fitOnTimes(colourFilter, metadata, channame='', i=0):
     #figure()
 
     if USE_GUI:
-        semilogy()
+        pylab.semilogy()
 
-        bar(bins[:-1]*cycTime, n, width=cycTime, alpha=0.4, fc=colours[i])
+        pylab.bar(bins[:-1]*cycTime, n, width=cycTime, alpha=0.4, fc=colours[i])
 
-        plot(linspace(1, 20, 50)*cycTime, ei2mod(res2[0], linspace(1, 20, 50)*cycTime, cycTime), colours[i], lw=3, ls='--')
-        plot(linspace(1, 20, 50)*cycTime, eimod(res[0], linspace(1, 20, 50)*cycTime), colours[i], lw=3)
-        ylabel('Events')
-        xlabel('Event Duration [s]')
-        ylim((1, ylim()[1]))
-        title('Event Duration - CAUTION: unreliable if $\\tau <\\sim$ exposure time')
+        pylab.plot(np.linspace(1, 20, 50)*cycTime, ei2mod(res2[0], np.linspace(1, 20, 50)*cycTime, cycTime), colours[i], lw=3, ls='--')
+        pylab.plot(np.linspace(1, 20, 50)*cycTime, eimod(res[0], np.linspace(1, 20, 50)*cycTime), colours[i], lw=3)
+        pylab.ylabel('Events')
+        pylab.xlabel('Event Duration [s]')
+        pylab.ylim((1, ylim()[1]))
+        pylab.title('Event Duration - CAUTION: unreliable if $\\tau <\\sim$ exposure time')
     
-        figtext(.6,.8 -.05*i, channame + '\t$\\tau = %3.4fs$' % (res[0][1], ), size=18, color=colours[i])
+        pylab.figtext(.6,.8 -.05*i, channame + '\t$\\tau = %3.4fs$' % (res[0][1], ), size=18, color=colours[i])
 
 
 
@@ -338,7 +340,7 @@ def fitFluorBrightness(colourFilter, metadata, channame='', i=0, rng = None):
     if rng == None:
         rng = nPh.mean()*6
         
-    n, bins = histogram(nPh, linspace(0, rng, 100))
+    n, bins = np.histogram(nPh, np.linspace(0, rng, 100))
 
     bins = bins[:-1]
 
@@ -349,16 +351,16 @@ def fitFluorBrightness(colourFilter, metadata, channame='', i=0, rng = None):
     #figure()
     #semilogy()
     if USE_GUI:
-        bar(bins, n, width=bins[1]-bins[0], alpha=0.4, fc=colours[i])
+        pylab.bar(bins, n, width=bins[1]-bins[0], alpha=0.4, fc=colours[i])
     
-        plot(bins, fImod(res[0], bins), colours[i], lw=3)
-        ylabel('Events')
-        xlabel('Intensity [photons]')
+        pylab.plot(bins, fImod(res[0], bins), colours[i], lw=3)
+        pylab.ylabel('Events')
+        pylab.xlabel('Intensity [photons]')
         #ylim((1, ylim()[1]))
-        title('Event Intensity - CAUTION - unreliable if evt. duration $>\\sim$ exposure time')
+        pylab.title('Event Intensity - CAUTION - unreliable if evt. duration $>\\sim$ exposure time')
         #print res[0][2]
     
-        figtext(.4,.8 -.05*i, channame + '\t$N_{det} = %3.0f\\;\\lambda = %3.0f$' % (res[0][1], res[0][3]), size=18, color=colours[i])
+        pylab.figtext(.4,.8 -.05*i, channame + '\t$N_{det} = %3.0f\\;\\lambda = %3.0f$' % (res[0][1], res[0][3]), size=18, color=colours[i])
 
 @applyByChannel    
 def fitFluorBrightnessT(colourFilter, metadata, channame='', i=0, rng = None):
@@ -374,11 +376,11 @@ def fitFluorBrightnessT(colourFilter, metadata, channame='', i=0, rng = None):
         
     Nco = nPh.min()
         
-    n, xbins, ybins = histogram2d(nPh, t, [linspace(0, rng, 50), linspace(0, t.max(), 20)])
+    n, xbins, ybins = np.histogram2d(nPh, t, [np.linspace(0, rng, 50), np.linspace(0, t.max(), 20)])
     bins = xbins[:-1]
     
-    xb = xbins[:-1][:,None]*ones([1,ybins.size - 1])
-    yb = ybins[:-1][None, :]*ones([xbins.size - 1, 1])    
+    xb = xbins[:-1][:,None]*np.ones([1,ybins.size - 1])
+    yb = ybins[:-1][None, :]*np.ones([xbins.size - 1, 1])    
     
     res0 = FitModel(fITmod2, [n.max()*3, 1, np.median(nPh), 20, 1e2, 1e2, 100], n, xb, yb, Nco)
     print((res0[0]))
@@ -391,9 +393,9 @@ def fitFluorBrightnessT(colourFilter, metadata, channame='', i=0, rng = None):
     #Acrit = Acrit**2
     #a = (1+erf(a))/2
     
-    Ndet = sqrt(Ndet**2 + 1) - 1 #+ve
-    bg = sqrt(bg**2 + 1) - 1
-    Acrit = sqrt(Acrit**2 + 1) - 1   
+    Ndet = np.sqrt(Ndet**2 + 1) - 1 #+ve
+    bg = np.sqrt(bg**2 + 1) - 1
+    Acrit = np.sqrt(Acrit**2 + 1) - 1   
     a = (1+erf(a))/2 # [0,1]
     #bg = sqrt(bg**2 + 1) - 1
     #k = sqrt(k**2 + 1) - 1
@@ -403,40 +405,40 @@ def fitFluorBrightnessT(colourFilter, metadata, channame='', i=0, rng = None):
     rr = fITmod2(res0[0], xb, yb, Nco)
     if USE_GUI:
     
-        figure()
-        subplot(131)
-        imshow(n, interpolation='nearest')
-        colorbar()
+        pylab.figure()
+        pylab.subplot(131)
+        pylab.imshow(n, interpolation='nearest')
+        pylab.colorbar()
         
-        subplot(132)
-        imshow(rr, interpolation='nearest')
-        colorbar()
+        pylab.subplot(132)
+        pylab.imshow(rr, interpolation='nearest')
+        pylab.colorbar()
         
-        subplot(133)
-        imshow(n - rr, interpolation='nearest')
-        colorbar()
+        pylab.subplot(133)
+        pylab.imshow(n - rr, interpolation='nearest')
+        pylab.colorbar()
         
-        title(channame)
+        pylab.title(channame)
         
-        figure()
+        pylab.figure()
         
-        t_ = linspace(t[0], t[-1], 100)
+        t_ = np.linspace(t[0], t[-1], 100)
         
         #sc = (lamb/(ybins[1] - ybins[0]))
         #sc = len(ybins)
-        sc = 1./(1 - exp(-(ybins[1] - ybins[0])/lamb))
+        sc = 1./(1 - np.exp(-(ybins[1] - ybins[0])/lamb))
         print(('sc = ', sc))
         y1 = sc*A/((t_/tauI)**a + 1)
-        plot(t_, y1)
-        plot(t_, sc*(Ndet/((t_/tauI)**a + 1) + NDetM))
+        pylab.plot(t_, y1)
+        pylab.plot(t_, sc*(Ndet/((t_/tauI)**a + 1) + NDetM))
         
-        bar(ybins[:-1], n.sum(0), width=ybins[1]-ybins[0], alpha=0.5)
-        plot(ybins[:-1], rr.sum(0), lw=2)
+        pylab.bar(ybins[:-1], n.sum(0), width=ybins[1]-ybins[0], alpha=0.5)
+        pylab.plot(ybins[:-1], rr.sum(0), lw=2)
         
-        title(channame)
-        xlabel('Time [s]')
+        pylab.title(channame)
+        pylab.xlabel('Time [s]')
         
-        figtext(.2,.7 , '$A = %3.0f\\;N_{det} = %3.2f\\;\\lambda = %3.0f\\;\\tau = %3.0f$\n$\\alpha = %3.3f\\;A_{crit} = %3.2f\\;N_{det_0} = %3.2f$' % (A, Ndet, lamb, tauI, a, Acrit, NDetM), size=18)
+        pylab.figtext(.2,.7 , '$A = %3.0f\\;N_{det} = %3.2f\\;\\lambda = %3.0f\\;\\tau = %3.0f$\n$\\alpha = %3.3f\\;A_{crit} = %3.2f\\;N_{det_0} = %3.2f$' % (A, Ndet, lamb, tauI, a, Acrit, NDetM), size=18)
         
     #    f = figure()
     #    ax = Axes3D(f)
@@ -451,7 +453,7 @@ def fitFluorBrightnessT(colourFilter, metadata, channame='', i=0, rng = None):
     #
     #        ax.bar(bins, n[:,j], zs = j, zdir='y', color = cm.hsv(j/20.), width=bins[1]-bins[0], alpha=0.5)
     #
-    #        ax.plot(bins, ones(bins.shape)*j, fImod(res[0], bins), color = array(cm.hsv(j/20.))*.5, lw=3)
+    #        ax.plot(bins, np.ones(bins.shape)*j, fImod(res[0], bins), color = array(cm.hsv(j/20.))*.5, lw=3)
     #        
     #    ylabel('Events')
     #    xlabel('Intensity [photons]')

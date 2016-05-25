@@ -45,7 +45,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('Tracking')
     
     config.add_subpackage('PSFEst')
-    config.add_subpackage('PSFEst')
+    config.add_subpackage('PSFGen')
     
     #config.add_data_dir('Modules/Recipes')
 

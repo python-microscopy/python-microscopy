@@ -20,8 +20,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
-import time
-from PYME.DSView.dsviewer_npy import View3D
+#import time
+#from PYME.DSView.dsviewer import View3D
 
 import numpy as np
 from PYME.Acquire import eventLog

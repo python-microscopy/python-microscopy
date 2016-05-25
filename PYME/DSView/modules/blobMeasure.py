@@ -854,6 +854,8 @@ class Measurements(wx.Panel):
     def StartServing(self):
         from PYME.DSView import htmlServe #ensure that our local cherrypy server is running
         import cherrypy
+        
+        htmlServe.StartServing()
         cherrypy.tree.mount(self, '/measure/%d' % self.ID)
                     
         
@@ -892,6 +894,7 @@ class Measurements(wx.Panel):
     def OnView(self, event):
         import webbrowser
         from PYME.DSView import htmlServe
+        
         webbrowser.open('%smeasure/%d' % (htmlServe.getURL(), self.ID))
         
     def OnSaveObjects(self, event):

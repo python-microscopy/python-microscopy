@@ -17,12 +17,16 @@ import mock
 import numpy
 import PYME.version
  
-MOCK_MODULES = ['numpy', 'tables', 'scipy', 'scipy.interpolate', 'scipy.special', 'scipy.io', 
-				'scipy.cow', 'scipy.fftpack', 'scipy.ndimage', 'scipy.linalg', 'scipy.spatial',
-				'scipy.misc', 'pylab', 'win32api', ]
-MOCK_MODULES += ['matplotlib', 'matplotlib.pyplot', 'matplotlib.colors', 'fftw3f', 'pywinusb']
-for mod_name in MOCK_MODULES:
-    sys.modules[mod_name] = mock.Mock()
+#MOCK_MODULES = ['numpy', 'tables', 'scipy', 'scipy.interpolate', 'scipy.special', 'scipy.io', 
+#				'scipy.cow', 'scipy.fftpack', 'scipy.ndimage', 'scipy.linalg', 'scipy.spatial',
+#				'scipy.misc', 'pylab', 'win32api', ]
+#MOCK_MODULES += ['matplotlib', 'matplotlib.pyplot', 'matplotlib.colors', 'fftw3f', 'pywinusb']
+#for mod_name in MOCK_MODULES:
+#    sys.modules[mod_name] = mock.Mock()
+
+#traitsui causes lots of crashes when imported without a GUI. Circumvent it by 
+from PYME.misc import mock_traitsui
+sys.modules['traitsui.api'] = mock_traitsui
     
 import wx
 import wx.py.shell

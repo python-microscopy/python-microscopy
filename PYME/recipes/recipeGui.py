@@ -19,7 +19,12 @@ from PYME.DSView import ViewIm3D
 from PYME.contrib import wxPlotPanel
 from PYME.misc import depGraph
 
-from traitsui.api import Controller
+try:
+    from traitsui.api import Controller
+except SystemExit:
+    def Controller(*args, **kwargs):
+        '''Spoofed traitsui Controller'''
+        pass
 
 import os
 import glob

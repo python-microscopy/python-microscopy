@@ -30,7 +30,7 @@ from numpy import *
 import numpy as np
 #import matplotlib.delaunay
 
-from PYME.Analysis import SoftRend
+from PYME.Analysis.points import SoftRend
 
 def calcMeanEdge(f):
     #f = array(T.facets)

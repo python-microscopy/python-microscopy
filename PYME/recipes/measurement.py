@@ -4,7 +4,7 @@ Created on Mon May 25 17:10:02 2015
 
 @author: david
 """
-from .base import ModuleBase, register_module, Filter, Float, Enum, CStr, Bool, Int, View, Item, Group
+from .base import ModuleBase, register_module, Filter, Float, Enum, CStr, Bool, Int, View, Item#, Group
 import numpy as np
 import pandas as pd
 from PYME.LMVis import inpFilt

@@ -22,7 +22,7 @@
 ##################
 
 import pointQT
-import MetaData
+from PYME.Analysis import MetaData
 
 def compareOriginalWithRec(ofd, qt, radius = 250, md = MetaData.TIRFDefault):
     I_origs = []

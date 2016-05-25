@@ -11,7 +11,7 @@ import glob
 import numpy as np
 
 from jinja2 import Environment, PackageLoader
-env = Environment(loader=PackageLoader('PYME.Analysis.RandomPresent', 'templates'))
+env = Environment(loader=PackageLoader('PYME.experimental.RandomPresent', 'templates'))
 
 class img(object):
     def __init__(self, fn):

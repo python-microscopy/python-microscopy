@@ -24,7 +24,7 @@
 from PYME.io.FileUtils.nameUtils import getFullExistingFilename
 from .BaseDataSource import BaseDataSource
 
-import dcimg
+from PYME.io import dcimg
 
 class DataSource(BaseDataSource):
     moduleName = 'DcimgDataSource'
