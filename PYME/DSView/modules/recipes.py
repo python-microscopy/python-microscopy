@@ -26,8 +26,8 @@ import wx.lib.agw.aui as aui
 import wx
 import numpy as np
 
-#from PYME.Analysis.Modules import modules
-from PYME.Analysis.Modules import recipeGui
+#from PYME.recipes import modules
+from PYME.recipes import recipeGui
 from PYME.io.image import ImageStack
 from PYME.DSView import ViewIm3D
 
@@ -128,7 +128,7 @@ class RecipePlugin(recipeGui.RecipeManager):
         self.RunCurrentRecipe()
         
     def OnSaveOutputs(self, event):
-        from PYME.Analysis.Modules import runRecipe
+        from PYME.recipes import runRecipe
         
         filename = wx.FileSelector('Save results as ...', 
                                    wildcard="CSV files (*.csv)|*.csv|Excell files (*.xlsx)|*.xlsx|HDF5 files (*.hdf)|*.hdf", 

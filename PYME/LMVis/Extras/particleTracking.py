@@ -88,7 +88,7 @@ class ParticleTracker:
     def OnCalcMSDs(self,event):
         import pylab
         from PYME.Analysis._fithelpers import *
-        from PYME.Analysis.DistHist import msdHistogram
+        from PYME.Analysis.points.DistHist import msdHistogram
 
         def powerMod(p,t):
             D, alpha = p

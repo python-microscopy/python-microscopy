@@ -23,7 +23,7 @@ import numpy as np
 import scipy as sp
 from scipy.fftpack import fftn, ifftn, ifftshift
 
-from PYME.PSFGen import genWidefieldPSF
+from PYME.Analysis.PSFGen import genWidefieldPSF
 
 def widefieldify(image, voxelsize, wavelength=680, maxPhotonNum = 1000, backgroundLevel=.2):
     X = np.arange(image.shape[0])*voxelsize[0]

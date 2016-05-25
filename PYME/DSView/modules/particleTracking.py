@@ -14,7 +14,7 @@ import numpy as np
 #import pandas as pd
 import pylab
 
-from PYME.Analysis.Modules.tracking import TrackFeatures
+from PYME.recipes.tracking import TrackFeatures
 
 import cherrypy
 

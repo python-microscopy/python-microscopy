@@ -14,7 +14,7 @@ import scipy
 from scipy.signal import interpolate
 import scipy.ndimage as ndimage
 from pylab import *
-from PYME.PSFGen.ps_app import *
+from PYME.Analysis.PSFGen.ps_app import *
 
 from _fithelpers import *
 

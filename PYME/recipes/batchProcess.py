@@ -8,8 +8,8 @@ Created on Sat May  9 12:23:57 2015
 import matplotlib
 matplotlib.use('Cairo')
 
-from PYME.Analysis.Modules import runRecipe
-from PYME.Analysis.Modules import modules
+from PYME.recipes import runRecipe
+from PYME.recipes import modules
 import os
 import glob
 from argparse import ArgumentParser

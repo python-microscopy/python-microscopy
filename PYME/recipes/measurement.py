@@ -148,7 +148,7 @@ class PairwiseDistanceHistogram(ModuleBase):
     binSize = Float(50.)
     
     def execute(self, namespace):
-        from PYME.Analysis import DistHist
+        from PYME.Analysis.points import DistHist
         
         pos = namespace[self.inputPositions]
         

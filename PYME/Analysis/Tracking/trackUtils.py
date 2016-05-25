@@ -178,7 +178,7 @@ class Track(Clump):
     @property
     def msdinfo(self):
         if not '_msdinfo' in dir(self):
-            from PYME.Analysis.DistHist import msdHistogram
+            from PYME.Analysis.points.DistHist import msdHistogram
             from PYME.Analysis._fithelpers import FitModel
             
             x = self['x']

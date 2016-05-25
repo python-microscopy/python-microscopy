@@ -21,7 +21,7 @@
 #
 ##################
 
-from PYME.PSFGen import *
+from PYME.Analysis.PSFGen import *
 from scipy import *
 from pylab import ifftshift, fftn, ifftn
 from . import fluor

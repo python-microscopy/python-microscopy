@@ -34,7 +34,7 @@ except ImportError:
     from traitsui.api import View, Item, InstanceEditor
     from traitsui.menu import OKButton
 
-from PYME.PSFGen import fourierHNA
+from PYME.Analysis.PSFGen import fourierHNA
 from PYME.io import image
 from PYME.LMVis.Extras.pointSetGeneration import WRDictEnum
 from PYME.misc import zernike

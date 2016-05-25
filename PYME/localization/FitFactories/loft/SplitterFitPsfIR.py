@@ -24,7 +24,7 @@ import cPickle
 from PYME.localization.cModels.gauss_app import *
 
 #from PYME.localization.cModels.gauss_app import *
-from PYME.PSFGen.ps_app import *
+from PYME.Analysis.PSFGen.ps_app import *
 from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
 
 

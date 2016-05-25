@@ -19,12 +19,12 @@ import numpy
 import types
 import cPickle
 
-from PYME.Analysis import twist
+from PYME.localization import twist
 
 import PYME.Analysis.points.twoColour as twoColour
 
 #from PYME.localization.cModels.gauss_app import *
-from PYME.PSFGen.ps_app import *
+from PYME.Analysis.PSFGen.ps_app import *
 from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
 
 

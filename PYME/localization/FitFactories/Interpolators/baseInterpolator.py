@@ -125,7 +125,7 @@ class __interpolator:
         self._precompute()
         
     def genTheoreticalModelZernike(self, md, zmodes={}, nDesign=1.51, nSample=1.51, NA=1.47, wavelength=700):
-        from PYME.PSFGen import fourierHNA
+        from PYME.Analysis.PSFGen import fourierHNA
         zs = arange(-1e3, 1e3, 50)
         
         voxelsize = dummy()
@@ -138,7 +138,7 @@ class __interpolator:
         return ps, voxelsize
 
     def genTheoreticalModel(self, md):
-        from PYME.PSFGen.ps_app import *
+        from PYME.Analysis.PSFGen.ps_app import *
 
         if not self.dx == md.voxelsize.x*1e3 and not self.dy == md.voxelsize.y*1e3 and not self.dz == md.voxelsize.z*1e3:
 

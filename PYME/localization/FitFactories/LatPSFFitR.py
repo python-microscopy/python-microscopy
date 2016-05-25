@@ -23,7 +23,7 @@
 
 import numpy as np
 
-from PYME.PSFGen.ps_app import genWidefieldPSF
+from PYME.Analysis.PSFGen.ps_app import genWidefieldPSF
 from PYME.Analysis._fithelpers import FitModelWeighted
 
 from .fitCommon import fmtSlicesUsed

@@ -8,9 +8,9 @@ Created on Fri May 29 16:33:47 2015
 import wx
 import numpy as np
 
-from PYME.Analysis.Modules import modules
-#from PYME.Analysis.Modules import runRecipe
-from PYME.Analysis.Modules import batchProcess
+from PYME.recipes import modules
+#from PYME.recipes import runRecipe
+from PYME.recipes import batchProcess
 
 import pylab
 from PYME.io.image import ImageStack

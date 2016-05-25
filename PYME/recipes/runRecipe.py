@@ -6,7 +6,7 @@ Created on Fri May  8 10:07:57 2015
 @author: david
 """
 import matplotlib
-from PYME.Analysis.Modules import modules
+from PYME.recipes import modules
 from argparse import ArgumentParser
 from PYME.io.image import ImageStack
 import pandas as pd
@@ -55,7 +55,7 @@ def runRecipe(recipe, inputs, outputs):
     
     Parameters
     ----------
-      - recipe  : an instance of PYME.Analysis.Modules.filters.ModuleCollection
+      - recipe  : an instance of PYME.recipes.filters.ModuleCollection
       - inputs  : a dictionary mapping recipe input names to filenames. These
                   are loaded and inserted into the namespace before running the
                   recipe.

@@ -34,7 +34,7 @@ except ImportError:
     from traitsui.menu import OKButton
 
 from graphViewPanel import *
-from PYME.PSFEst import psfQuality
+from PYME.Analysis.PSFEst import psfQuality
 
 def remove_newlines(s):
     s = '<>'.join(s.split('\n\n'))
@@ -156,7 +156,7 @@ class CRBViewPanel(wx.Panel):
         
     def calcCRB(self, caller=None):
         from PYME.Analysis import cramerRao
-        from PYME.PSFGen import fourierHNA
+        from PYME.Analysis.PSFGen import fourierHNA
         #print 'b'
         import numpy as np
         d = self.image.data[:,:,:]
@@ -241,7 +241,7 @@ class PSFTools(HasTraits):
     def OnExtractPupil(self, event):
         import numpy as np
         import pylab
-        from PYME.PSFGen import fourierHNA
+        from PYME.Analysis.PSFGen import fourierHNA
         
         from PYME.io.image import ImageStack
         from PYME.DSView import ViewIm3D
@@ -277,7 +277,7 @@ class PSFTools(HasTraits):
     def OnSubtractBackground(self, event):
         from PYME.io.image import ImageStack
         from PYME.DSView import ViewIm3D
-        from PYME.PSFEst import extractImages
+        from PYME.Analysis.PSFEst import extractImages
 
         d_bg = extractImages.backgroundCorrectPSFWF(self.image.data[:,:,:])
         
@@ -293,7 +293,7 @@ class PSFTools(HasTraits):
     def OnCalcCRB(self, event):
         #print 'f'
         from PYME.Analysis import cramerRao
-        from PYME.PSFGen import fourierHNA
+        from PYME.Analysis.PSFGen import fourierHNA
         #print 'b'
         import numpy as np
         
@@ -333,7 +333,7 @@ class PSFTools(HasTraits):
         
     def OnCalcCRB3DvsBG(self, event):
         from PYME.Analysis import cramerRao
-        from PYME.PSFGen import fourierHNA
+        from PYME.Analysis.PSFGen import fourierHNA
         #print 'b'
         import numpy as np
         

@@ -7,7 +7,7 @@ Created on Mon Jun  8 16:06:17 2015
 """
 
 import wx
-from PYME.Analysis.Modules import recipeGui
+from PYME.recipes import recipeGui
 
 class BakeshopApp(wx.App):        
     def OnInit(self):

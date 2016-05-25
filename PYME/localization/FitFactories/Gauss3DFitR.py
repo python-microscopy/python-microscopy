@@ -24,7 +24,7 @@
 import numpy as np
 
 #from pylab import *
-from PYME.PSFGen.ps_app import *
+from PYME.Analysis.PSFGen.ps_app import *
 from PYME.Analysis._fithelpers import *
 
 from .fitCommon import fmtSlicesUsed
