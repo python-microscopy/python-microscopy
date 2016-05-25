@@ -26,9 +26,9 @@ import numpy
 import os
 #import sys
 import wx
-import wx.lib.agw.aui as aui
+#import wx.lib.agw.aui as aui
 #import histLimits
-import pylab
+#import pylab
 import scipy.misc
 #import subprocess
 

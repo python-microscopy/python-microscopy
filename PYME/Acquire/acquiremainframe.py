@@ -54,7 +54,7 @@ from PYME.io import MetaDataHandler
 from PYME.io.FileUtils import nameUtils
 
 
-from PYME.DSView.dsviewer import AUIFrame
+from PYME.ui.AUIFrame import AUIFrame
 
 def create(parent, options = None):
     return PYMEMainFrame(parent, options)
@@ -199,7 +199,7 @@ class PYMEMainFrame(AUIFrame):
 
         else:
             #1d data - use graph instead
-            from PYME.LMVis import fastGraph
+            from PYME.ui import fastGraph
             if 'sp' in dir(self):
                     pass
             else:

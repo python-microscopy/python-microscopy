@@ -56,7 +56,7 @@ from PYME.DSView import eventLogViewer
 from PYME.LMVis import statusLog
 from PYME.LMVis import visCore
 
-from PYME.DSView.dsviewer import AUIFrame
+from PYME.ui.AUIFrame import AUIFrame
 ####################################        
 #defines the main GUI class fo VisGUI
 

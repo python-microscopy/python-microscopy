@@ -25,7 +25,7 @@ import sys
 import PYME.misc.autoFoldPanel as afp
 import numpy as np
 
-from PYME.LMVis import histLimits
+from PYME.ui import histLimits
 from PYME.LMVis import editFilterDialog
 
 def CreateFilterPane(panel, mapping, pipeline, visFr):

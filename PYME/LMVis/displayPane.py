@@ -27,7 +27,7 @@ import PYME.misc.autoFoldPanel as afp
 import pylab
 import numpy as np
 
-from PYME.LMVis import histLimits
+from PYME.ui import histLimits
 
 DisplayInvalidEvent, EVT_DISPLAY_CHANGE = wx.lib.newevent.NewCommandEvent()
 
