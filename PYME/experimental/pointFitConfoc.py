@@ -25,8 +25,8 @@
 '''Script to find and measure small objects in a 3D confocal data set. Call as follows: pointFitConfoc.py inFile threshold outFile'''
 from PYME.io.FileUtils import readTiff
 from PYME.Analysis import MetaData
-from PYME.Analysis.ofind3d import ObjectIdentifier
-from PYME.Analysis.FitFactories.Gauss3DFitR import FitFactory
+from PYME.localization.ofind3d import ObjectIdentifier
+from PYME.localization.FitFactories.Gauss3DFitR import FitFactory
 
 import os
 import sys

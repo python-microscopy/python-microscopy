@@ -81,7 +81,7 @@ env.filters['movieplot'] = movieplot
 
 
 #from PYME.Analysis.Tracking import tracking
-#from PYME.Analysis import trackUtils
+#from PYME.Analysis.Tracking import trackUtils
 
 from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, ListInstance, on_trait_change
 from traitsui.api import View, Item, Group

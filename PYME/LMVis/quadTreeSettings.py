@@ -16,7 +16,7 @@ except ImportError:
     #from traitsui.api import View, Item, EnumEditor, InstanceEditor, Group
 
 
-#from PYME.Analysis.QuadTree import pointQT
+#from PYME.Analysis.points.QuadTree import pointQT
 
 class QuadTreeSettings(HasTraits):
     leafSize = Int(10)
@@ -72,7 +72,7 @@ class QuadTreeSettingsPanel(wx.Panel):
         self.tQTLeafSize.Bind(wx.EVT_TEXT, self.OnQTLeafChange)
         
     def OnQTLeafChange(self, event):
-        #from PYME.Analysis.QuadTree import pointQT
+        #from PYME.Analysis.points.QuadTree import pointQT
         
         leafSize = int(self.tQTLeafSize.GetValue())
         if not leafSize >= 1:

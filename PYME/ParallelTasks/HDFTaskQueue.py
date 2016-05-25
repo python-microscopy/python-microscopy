@@ -23,7 +23,7 @@
 
 import tables
 from taskQueue import *
-from PYME.Analysis.remFitBuf import fitTask
+from PYME.localization.remFitBuf import fitTask
 
 from PYME.Analysis import MetaData
 from PYME.io import MetaDataHandler

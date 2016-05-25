@@ -330,7 +330,7 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
                 self.subplot1.imshow(imd, interpolation='nearest', cmap=pylab.cm.hot)
                 self.subplot1.set_title('Data')
 
-                fitMod = __import__('PYME.Analysis.FitFactories.' + self.mdh.getEntry('Analysis.FitModule'), fromlist=['PYME', 'Analysis','FitFactories']) #import our fitting module
+                fitMod = __import__('PYME.localization.FitFactories.' + self.mdh.getEntry('Analysis.FitModule'), fromlist=['PYME', 'localization', 'FitFactories']) #import our fitting module
                 #print dir()
 
                 if 'genFitImage' in dir(fitMod):

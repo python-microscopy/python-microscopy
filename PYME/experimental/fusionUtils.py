@@ -8,7 +8,7 @@ Created on Thu Jul  9 00:55:38 2015
 import numpy as np
 import pylab as pl
 from PYME.io import image
-import PYME.Analysis.trackUtils as trackUtils
+import PYME.Analysis.Tracking.trackUtils as trackUtils
 import json
 
 def plotEvent(clump, pipeline, rawData = None, plotRaw = True):

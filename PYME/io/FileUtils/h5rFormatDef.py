@@ -54,7 +54,7 @@ resultsEvents = h5ResultsFile.createTable(h5ResultsFile.root, 'Events', SpoolEve
 #molecule positions get saved. The results should be in a numpy record array (ie with a 
 #dtype specifying column names) 
 
-#this is the data type I use for 2D fits (see PYME/Analysis/FitFactories/LatGaussFitFR.py). 
+#this is the data type I use for 2D fits (see PYME/localization.FitFactories/LatGaussFitFR.py). 
 #Some of this is superfluous (notably 
 #resultCode and slicesUsed) and you can add whatever additional information you like
 #and it will be available in VisGUI. That said, the format is somewhat more prescriptive
@@ -73,7 +73,7 @@ fresultdtype=[('tIndex', '<i4'),
 
 
 #an example of how you might fill the results - this is a little laborious - have 
-#a look at e.g. PYME/Analysis/FitFactories/LatGaussFitFR.py to see how I do it
+#a look at e.g. PYME/localization.FitFactories/LatGaussFitFR.py to see how I do it
 result1 = np.zeros(1, fresultdtype)
 result1['fitResults']['x0'] = 5.34
 result1['fitResults']['y0'] = 343.87

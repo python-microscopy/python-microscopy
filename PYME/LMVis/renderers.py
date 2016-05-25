@@ -30,7 +30,7 @@ from PYME.io import MetaDataHandler
 
 from PYME.DSView import ViewIm3D
 
-from PYME.Analysis.QuadTree import QTrend
+from PYME.Analysis.points.QuadTree import QTrend
 
 import wx
 import pylab

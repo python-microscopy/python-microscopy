@@ -20,7 +20,7 @@ class MultifitBlobs(ModuleBase):
     scale = Float(1000)
     
     def execute(self, namespace):
-        from PYME.Analysis.FitFactories import GaussMultifitSR
+        from PYME.localization.FitFactories import GaussMultifitSR
         img = namespace[self.inputImage]
         
         img.mdh['Analysis.PSFSigma'] = self.blobSigma
@@ -46,7 +46,7 @@ class FitDumbells(ModuleBase):
     outputName = CStr('fitResults')
     
     def execute(self, namespace):
-        from PYME.Analysis.FitFactories import DumbellFitR
+        from PYME.localization.FitFactories import DumbellFitR
         from PYME.io import MetaDataHandler
         img = namespace[self.inputImage]
         

@@ -22,7 +22,7 @@
 ##################
 
 from scipy import *
-from PYME.Analysis.cModels.gauss_app import *
+from PYME.localization.cModels.gauss_app import *
 
 #def Gauss2D(Xv,Yv, A,x0,y0,s):
 #    Xv = mat(Xv)

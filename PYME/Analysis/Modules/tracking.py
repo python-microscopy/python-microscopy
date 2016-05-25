@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 from PYME.Analysis.Tracking import tracking
-from PYME.Analysis import trackUtils
+from PYME.Analysis.Tracking import trackUtils
 from traits.api import on_trait_change
 
 @register_module('TrackFeatures')

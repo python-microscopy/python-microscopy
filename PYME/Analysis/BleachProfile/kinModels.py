@@ -22,7 +22,7 @@
 ################
 from pylab import *
 from PYME.Analysis._fithelpers import *
-from PYME.Analysis.DeClump import deClump
+from PYME.Analysis.points.DeClump import deClump
 from scipy.special import erf
 from PYME.Analysis.processLogger import PL
 import inspect

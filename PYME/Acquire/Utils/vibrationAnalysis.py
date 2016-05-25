@@ -10,7 +10,7 @@
 #
 ##################
 from PYME.Analysis import MetaData
-from PYME.Analysis.FitFactories import ConfocCOIR
+from PYME.localization.FitFactories import ConfocCOIR
 import numpy as np
 from PYME.DSView import View3D
 

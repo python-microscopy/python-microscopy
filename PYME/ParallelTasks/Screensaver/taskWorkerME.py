@@ -31,9 +31,9 @@ import os
 
 #make sure we have our dependencies
 from PYME.Analysis import remFitBuf, MetaData
-from PYME.Analysis.FitFactories import *
-from PYME.Analysis.FitFactories.Interpolators import *
-from PYME.Analysis.FitFactories.zEstimators import *
+from PYME.localization.FitFactories import *
+from PYME.localization.FitFactories.Interpolators import *
+from PYME.localization.FitFactories.zEstimators import *
 from PYME.Analysis.DataSources import HDFDataSource, TQDataSource
 import matplotlib.backends.backend_wxagg
 

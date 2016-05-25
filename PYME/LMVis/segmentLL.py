@@ -15,7 +15,7 @@ import numpy as np
 from scipy.spatial import ckdtree
 
 def Gauss2D(Xv,Yv, A,x0,y0,s):
-    from PYME.Analysis.cModels.gauss_app import genGauss
+    from PYME.localization.cModels.gauss_app import genGauss
     r = genGauss(Xv,Yv,A,x0,y0,s,0,0,0)
     #r.strides = r.strides #Really dodgy hack to get around something which numpy is not doing right ....
     return r

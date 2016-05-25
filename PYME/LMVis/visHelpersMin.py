@@ -28,8 +28,8 @@ from math import floor
 
 from matplotlib import delaunay
 
-from PYME.Analysis.qHull.triangWrap import RenderTetrahedra
-from PYME.Analysis import EdgeDB
+from PYME.Analysis.points.qHull.triangWrap import RenderTetrahedra
+from PYME.Analysis.points import EdgeDB
 
 multiProc = False
 
@@ -71,7 +71,7 @@ def calcNeighbourDists(T):
 
 
 def rendTri(T, imageBounds, pixelSize, c=None, im=None):
-    from PYME.Analysis.SoftRend import drawTriang, drawTriangles
+    from PYME.Analysis.points.SoftRend import drawTriang, drawTriangles
     xs = T.x[T.triangle_nodes]
     ys = T.y[T.triangle_nodes]
 

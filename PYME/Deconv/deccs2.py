@@ -436,7 +436,7 @@ class dec_subsamp(dec_conv):
         
     Ahfuncs = Ahfunc
 
-from PYME.Analysis.cInterp import cInterp
+from PYME.localization.cInterp import cInterp
 class dec_sparse(dec):
     '''Classical deconvolution with a stationary PSF'''
     lw = 1
