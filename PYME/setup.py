@@ -42,6 +42,9 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('LMVis')
     config.add_subpackage('ui')
     config.add_subpackage('util')
+    config.add_subpackage('util.shmarray')
+    config.add_subpackage('util.mProfile')
+    config.add_subpackage('localization')
     
     #config.add_subpackage('pad')
     #config.add_subpackage('bcl')
