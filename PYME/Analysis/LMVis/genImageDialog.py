@@ -47,7 +47,7 @@ class GenImageDialog(wx.Dialog):
         sizer2.Add(self.cbPixelSize, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
         sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
         
-        if not zvals == None:
+        if not zvals is None:
             nZlevels = len(set(zvals))
         else:
             nZlevels = 0

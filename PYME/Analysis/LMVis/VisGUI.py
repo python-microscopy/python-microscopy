@@ -787,14 +787,14 @@ class VisGUIFrame(wx.Frame):
 
             if outFilename.endswith('.txt'):
                 of = open(outFilename, 'w')
-                of.write('\t'.join(self.objectMeasures.dtype.names) + '\n')
+                of.write('\t'.join(self.pipeline.objectMeasures.dtype.names) + '\n')
 
-                for obj in self.objectMeasures:
+                for obj in self.pipeline.objectMeasures:
                     of.write('\t'.join([repr(v) for v in obj]) + '\n')
                 of.close()
 
             else:
-                np.save(outFilename, self.objectMeasures)
+                np.save(outFilename, self.pipeline.objectMeasures['Everything']) # we are assuming single channel here!
 
 
     def OnOpenFile(self, event):
@@ -853,7 +853,7 @@ class VisGUIFrame(wx.Frame):
             self.AddPage(self.colp, caption='Colour', update=False)
             
         #print 'ev'
-        if not self.pipeline.events == None:
+        if not self.pipeline.events is None:
             self.elv = eventLogViewer.eventLogPanel(self, self.pipeline.events, 
                                                         self.pipeline.mdh, 
                                                         [0, self.pipeline.selectedDataSource['tIndex'].max()])

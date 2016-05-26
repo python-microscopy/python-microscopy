@@ -283,7 +283,7 @@ class LMGLCanvas(GLCanvas):
             #if we already have a background image, free it
             glDeleteTextures([1])
 
-        if image == None:
+        if image is None:
             self.backgroundImage = False
             return
 
@@ -339,7 +339,7 @@ class LMGLCanvas(GLCanvas):
 
         #c = numpy.maximum(((b*b).sum(1)),((a*a).sum(1)))
 
-        if c == None:
+        if c is None:
             if numpy.version.version > '1.2':
                 c = numpy.median([(b * b).sum(1), (a * a).sum(1), (b2 * b2).sum(1)], 0)
             else:
@@ -375,7 +375,7 @@ class LMGLCanvas(GLCanvas):
         #    self.InitGL()
         #    self.init = 1
 
-        if c == None:
+        if c is None:
             self.c = numpy.ones(x.shape).ravel()
         else:
             self.c = c
@@ -416,7 +416,7 @@ class LMGLCanvas(GLCanvas):
 
         I = numpy.hstack(I)
 
-        if c == None:
+        if c is None:
             self.c = numpy.ones(x.shape).ravel()
         else:
             self.c = c[I]
@@ -450,7 +450,7 @@ class LMGLCanvas(GLCanvas):
         self.setColour(self.IScale, self.zeroPt)
 
     def setPoints3d(self, x, y, z, c = None):
-        if c == None:
+        if c is None:
             self.c = numpy.ones(x.shape).ravel()
         else:
             self.c = c
@@ -487,7 +487,7 @@ class LMGLCanvas(GLCanvas):
 
         area_colouring= True
 
-        if not cp == None:
+        if not cp is None:
             area_colouring=False
 
         for i in range(len(T.x)):
@@ -527,7 +527,7 @@ class LMGLCanvas(GLCanvas):
                 #print xs.shape
                 #print c.shape
 
-                if xs_ == None:
+                if xs_ is None:
                     xs_ = xs
                     ys_ = ys
                     c_ = c
@@ -604,7 +604,7 @@ class LMGLCanvas(GLCanvas):
 
     def setIntTriang(self, T, cs= None):
 
-        if cs == None:
+        if cs is None:
             #make ourselves a quicker way of getting at edge info.
             edb = []
             for i in range(len(T.x)):
@@ -798,7 +798,7 @@ class LMGLCanvas(GLCanvas):
         self.setView(self.xmin + dx, self.xmax + dx, self.ymin + dy, self.ymax + dy)
 
     def drawScaleBar(self):
-        if not self.scaleBarLength == None:
+        if not self.scaleBarLength is None:
             view_size_x = self.xmax - self.xmin
             view_size_y = self.ymax - self.ymin
 
@@ -835,7 +835,7 @@ class LMGLCanvas(GLCanvas):
             glEnd()
 
     def drawCrosshairs(self):
-        if not self.vp == None:
+        if not self.vp is None:
             x = self.vp.xp*self.vpVoxSize
             y = self.vp.yp*self.vpVoxSize
 
@@ -912,7 +912,7 @@ class LMGLCanvas(GLCanvas):
         xp = event.GetX()*view_size_x/self.Size[0] + self.xmin
         yp = (self.Size[1] - event.GetY())*view_size_y/self.Size[1] + self.ymin
 
-        if self.vp == None:
+        if self.vp is None:
             self.selectionDragging = True
             self.selection = True
 
@@ -1112,7 +1112,7 @@ class LMGLCanvas(GLCanvas):
         return h_/n
 
     def getIm(self, pixelSize=None):
-        if pixelSize == None: #use current pixel size
+        if pixelSize is None: #use current pixel size
             self.OnDraw()
             return self.getSnapshot(GL_RGB)
         else:

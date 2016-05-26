@@ -17,7 +17,7 @@ source:
 
 build:
   # The build number should be incremented for new builds of the same version
-  number: 1       # (defaults to 0)
+  number: 0       # (defaults to 0)
   #string: abc     # (defaults to default conda build string plus the build
                   # number)
                   # The build string cannot contain a dash '-' character
@@ -32,6 +32,13 @@ build:
     - launchWorkers = PYME.ParallelTasks.launchWorkers:main
     - PYMEBatch = PYME.Analysis.Modules.batchProcess:main
     - bakeshop = PYME.Analysis.Modules.bakeshop:main
+    - fitMonP = PYME.ParallelTasks.fitMonP:main
+    - taskWorkerZC = PYME.ParallelTasks.taskWorkerZC:main
+    - taskServerZC = PYME.ParallelTasks.taskServerZC:main
+    - PYMEDataServer = PYME.ParallelTasks.HTTPDataServer:main
+    - PYMEClusterDup = PYME.ParallelTasks.clusterDuplication:main
+
+
 
     #- bspatch4 = bsdiff4.cli:main_bspatch4
 
@@ -117,16 +124,16 @@ requirements:
   # listed explicitly if they are required.
   build:
     - python
-    - numpy
+    - numpy x.x
     - matplotlib
-    - mingw # [win]
+    #- mingw # [win]
   # Packages required to run the package. These are the dependencies that
   # will be installed automatically whenever the package is installed.
   # Package names should be any valid conda spec (see "Specifying versions
   # in requirements" below).
   run:
     - python
-    - numpy
+    - numpy x.x
     - scipy
     - matplotlib
     - wxpython
@@ -145,6 +152,10 @@ requirements:
     - scikit-image
     - scikit-learn
     - shapely         [osx]
+    - zeroconf
+    - requests
+    - pandas
+    - yaml
 
   #unfortunately not availible through conda on windows ##FIXME
 

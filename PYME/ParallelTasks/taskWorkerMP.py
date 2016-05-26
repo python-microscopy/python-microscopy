@@ -28,6 +28,7 @@ import random
 import time
 
 import PYME.version
+import PYME.misc.pyme_zeroconf as pzc
 
 import os
 
@@ -49,6 +50,7 @@ Pyro.config.PYRO_MOBILE_CODE=0
 #    taskQueueName = 'taskQueue'
     
 ns=Pyro.naming.NameServerLocator().getNS()
+#ns = pzc.getNS()
 
 #tq = Pyro.core.getProxyForURI("PYRONAME://" + taskQueueName)
 

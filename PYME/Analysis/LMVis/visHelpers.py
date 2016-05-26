@@ -370,8 +370,9 @@ def rendTri(T, imageBounds, pixelSize, c=None, im=None):
 
     #c = numpy.maximum(((b*b).sum(1)),((a*a).sum(1)))
 
-    if c == None:
-        if numpy.version.version > '1.2':
+    if c is None:
+        if True: #numpy.version.version > '1.2':
+            #previous comparison fails on numpy > 1.10.X - drop support for numpy versions older than 1.2
             c = numpy.median([(b * b).sum(1), (a * a).sum(1), (b2 * b2).sum(1)], 0)
         else:
             c = numpy.median([(b * b).sum(1), (a * a).sum(1), (b2 * b2).sum(1)])
@@ -383,6 +384,7 @@ def rendTri(T, imageBounds, pixelSize, c=None, im=None):
     #c = 1.0/(c + c_neighbours + 1)
     #c = numpy.maximum(c, self.pixelsize**2)
     c = 1.0/(c + 1)
+    #print c, a.shape, b.shape, xs.shape, T.x.shape
 
     sizeX = (imageBounds.x1 - imageBounds.x0)/pixelSize
     sizeY = (imageBounds.y1 - imageBounds.y0)/pixelSize
@@ -390,7 +392,8 @@ def rendTri(T, imageBounds, pixelSize, c=None, im=None):
     xs = (xs - imageBounds.x0)/pixelSize
     ys = (ys - imageBounds.y0)/pixelSize
 
-    if im == None:
+    if im is None:
+        print 'Some thing is wrong - we should already have allocated memory'
         im = numpy.zeros((sizeX, sizeY))
 
 #    for i in range(xs.shape[0]):
@@ -489,6 +492,8 @@ def rendJitTri(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1):
         scipy.random.seed()
 
         Imc = scipy.rand(len(x)) < mcp
+        
+        #print x[0], y[0]
         #print len(jsig), type(jsig)
         if isinstance(jsig, numpy.ndarray):
             print((jsig.shape, Imc.shape))
@@ -499,6 +504,8 @@ def rendJitTri(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1):
 
         #return T
         rendTri(T, imageBounds, pixelSize, im=im)
+        
+        im [:20, 0] += scipy.rand(20)
 
 
 
@@ -510,6 +517,7 @@ if multiProc:
         sizeY = int((imageBounds.y1 - imageBounds.y0)/pixelSize)
 
         im = shmarray.zeros((sizeX, sizeY))
+        print im.min(), im.max()
 
         x = shmarray.create_copy(x)
         y = shmarray.create_copy(y)
@@ -533,6 +541,7 @@ if multiProc:
         for p in processes:
             p.join()
 
+        print im.min(), im.max()
         return im/n
 else:
     def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize):

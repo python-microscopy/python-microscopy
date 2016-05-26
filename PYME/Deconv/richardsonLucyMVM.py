@@ -109,7 +109,7 @@ class rldec:
             #pl.plot(upd)
             velx[:] = ndimage.gaussian_filter(velx + upd, 50)
     
-    def deconv(self, views, lamb, num_iters=10, weights = 1, bg = 0):
+    def deconv(self, views, lamb, num_iters=10, weights = 1, bg = 0, vx = 0):
         '''This is what you actually call to do the deconvolution.
         parameters are:
 
@@ -140,7 +140,7 @@ class rldec:
         #weights = weights.ravel()
         #print 'dc3'
         
-        self.vx = np.zeros_like(self.f) #- 1.0#1.0
+        self.vx = vx*np.ones_like(self.f) #- 1.0#1.0
 
         mask = 1 - weights
         
@@ -152,7 +152,8 @@ class rldec:
 
         while self.loopcount  < num_iters:
             self.loopcount += 1
-            adjF = 1.0
+            adjF = 0#1.0
+            #adjF = 1.0
             for j in range(len(views)):
 
                 #the residuals
@@ -162,7 +163,7 @@ class rldec:
                 pred = self.pd(pred, self.vx, self.tVals[j:j+1]).squeeze()
                 #pl.plot(pred)
                 #pred = pred/pred.sum()
-                self.res = weights*(vj/(pred +1e-12 + 0+ bg)) +  mask;
+                self.res = weights*(vj/(pred +1e-1 + 0+ bg)) +  mask;
                 
                 #adjF *= self.res
                 #print vj.sum(), pred.sum()
@@ -171,7 +172,9 @@ class rldec:
                 adjFact = self.Ahfunc(self.res)
                 adjFact = self.pd(adjFact, -self.vx, self.tVals[j:j+1]).squeeze()
                 
-                adjF *= adjFact
+                #adjF += adjFact
+                adjF += adjFact
+                #adjF = adjF*(.2 + .8*adjFact)
                 #pl.figure()
                 #pl.plot(self.res)
                 #pl.plot(pred)
@@ -179,23 +182,24 @@ class rldec:
                 
                 #pl.figure()
                 #pl.plot(adjF)
-                fnew = self.f*adjFact
-                fnew = fnew*self.f.sum()/fnew.sum()
+                #fnew = self.f*adjFact
+                #fnew = fnew*self.f.sum()/fnew.sum()
     
             #fnew = self.f*adjF**(1./len(views))
+            fnew = self.f*adjF*(1./len(views))
         
-            #fnew = fnew*self.f.sum()/fnew.sum()
+            fnew = fnew*self.f.sum()/fnew.sum()
 
 
            #set the current estimate to out new estimate
             self.f[:] = fnew
             
             #self.vx[:] = 0
-            self.updateVX(np.vstack(views), self.f, self.vx, self.tVals)
-            pl.subplot(211)
-            pl.plot(self.vx)
-            pl.subplot(212)    
-            pl.plot(fnew)
+            #self.updateVX(np.vstack(views), self.f, self.vx, self.tVals)
+            #pl.subplot(311)
+            #pl.plot(self.vx)
+            #pl.subplot(312)    
+            #pl.plot(fnew)
                 #print(('Sum = %f' % self.f.sum()))
             
         #print 'dc3'

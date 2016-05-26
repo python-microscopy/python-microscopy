@@ -23,6 +23,7 @@
 import wx
 import sys
 import PYME.misc.autoFoldPanel as afp
+import numpy as np
 
 from PYME.Analysis.LMVis import histLimits
 from PYME.Analysis.LMVis import editFilterDialog
@@ -220,7 +221,7 @@ class FilterPane(afp.foldingPane):
         key = self.lFiltKeys.GetItem(self.currentFilterItem).GetText()
 
         #dlg = editFilterDialog.FilterEditDialog(self, mode='edit', possibleKeys=[], key=key, minVal=self.filterKeys[key][0], maxVal=self.filterKeys[key][1])
-        dlg = histLimits.HistLimitDialog(self, self.pipeline.selectedDataSource[key], self.filterKeys[key][0], self.filterKeys[key][1], title=key)
+        dlg = histLimits.HistLimitDialog(self, np.array(self.pipeline.selectedDataSource[key]), self.filterKeys[key][0], self.filterKeys[key][1], title=key)
         ret = dlg.ShowModal()
 
         if ret == wx.ID_OK:

@@ -495,23 +495,26 @@ def correltrack(data,start=0,avgover=10,pixelsize=70.0,centersize=7,centroidfrac
     return t, sh, xctw
 
 # we ignore centroidfrac by default
-def correltrack2(data,start=0,avgover=10,pixelsize=70.0,centersize=15,centroidfac=0.6):
+def correltrack2(data,start=0,avgover=10,pixelsize=70.0,centersize=15,centroidfac=0.6,roi=[0,None,0,None]):
     cs = centersize
     shp = [d for d in data.shape if d > 1]
     nsteps = long((shp[2]-start)/avgover)
-    shh = (shp[0]/2,shp[1]/2)
     xctw=np.zeros((2*centersize+1,2*centersize+1,nsteps))
     shifts = []
     if avgover > 1:
         ref = data[:,:,start:start+avgover].squeeze().mean(axis=2)
     else:
         ref = data[:,:,start].squeeze()
+    ref = ref[roi[0]:roi[3],roi[1]:roi[3]]
     refn = ref/ref.mean() - 1
     Frefn = fftn(refn)
+    shh = (ref.shape[0]/2,ref.shape[1]/2)
+
     for i in range(nsteps):
         comp = data[:,:,start+i*avgover:start+(i+1)*avgover].squeeze()
         if len(comp.shape) > 2:
             comp = comp.mean(axis=2)
+        comp = comp[roi[0]:roi[3],roi[1]:roi[3]]
         compn = comp/comp.mean() - 1
         xc = ifftshift(np.abs(ifftn(Frefn*ifftn(compn))))
         xcm = xc.max()
@@ -664,10 +667,27 @@ def darktimes(pipeline, mdh=None, plot=True, report=True):
     voxy = 1e3*mdh['voxelsize.y']
     bbszx = bbx[1]-bbx[0]
     bbszy = bby[1]-bby[0]
+    maxtd = dtg.max()
+    binedges = np.arange(0,maxtd,5)
+    binctrs = 0.5*(binedges[0:-1]+binedges[1:])
+    h,be2 = np.histogram(dtg,bins=binedges)
+    hc = np.cumsum(h)
+    hcg = hc[h>0]/float(nts) # only nonzero bins and normalise
+    binctrsg = binctrs[h>0]
+    popth,pcovh = curve_fit(cumuexpfit,binctrsg,hcg, p0=(300.0))
     popt,pcov = curve_fit(cumuexpfit,cumux,cumuy, p0=(300.0))
     if plot:
+        plt.subplot(211)
         plt.plot(cumux,cumuy,'o')
         plt.plot(cumux,cumuexpfit(cumux,popt[0]))
+        plt.plot(binctrs,hc/float(nts),'o')
+        plt.plot(binctrs,cumuexpfit(binctrs,popth[0]))
+        plt.ylim(-0.2,1.2)
+        plt.subplot(212)
+        plt.semilogx(cumux,cumuy,'o')
+        plt.semilogx(cumux,cumuexpfit(cumux,popt[0]))
+        plt.semilogx(binctrs,hc/float(nts),'o')
+        plt.semilogx(binctrs,cumuexpfit(binctrs,popth[0]))
         plt.ylim(-0.2,1.2)
         plt.show()
     if report:
@@ -675,9 +695,10 @@ def darktimes(pipeline, mdh=None, plot=True, report=True):
         print "dark times: %d" % nts
         print "region: %d x %d nm (%d x %d pixel)" % (bbszx,bbszy,bbszx/voxx,bbszy/voxy)
         print "centered at %d,%d (%d,%d pixels)" % (x.mean(),y.mean(),x.mean()/voxx,y.mean()/voxy)
-        print "darktime: %.1f frames" % popt[0]
+        print "darktime: %.1f (%.1f) frames" % (popt[0],popth[0])
+        print "qunits: %.2f" % (200/(popt[0]+popth[0]))
 
-    return (cumux,cumuy,popt[0])
+    return (cumux,cumuy,popt[0],pcov)
 
 def darktimehist(ton):
     # determine darktime from gaps and reject zeros (no real gaps) 
@@ -687,5 +708,116 @@ def darktimehist(ton):
     # now make a cumulative histogram from these
     cumux = np.sort(dtg+0.01*np.random.random(nts)) # hack: adding random noise helps us ensure uniqueness of x values
     cumuy = (1.0+np.arange(nts))/np.float(nts)
+    popt,pcov = curve_fit(cumuexpfit,cumux,cumuy, p0=(300.0))
+    
+    return (cumux,cumuy,cumuexpfit(cumux,popt[0]),popt[0])
 
-    return (cumux,cumuy)
+
+def analyze1dSeries(series,chunklength=500):
+    offset = series.mean()
+    chunks = int(len(series)/chunklength)
+    chunkmaxs = np.array([max(series[chunk*chunklength:(chunk+1)*chunklength]) for chunk in range(chunks)])
+    peakaverage = chunkmaxs.mean()
+    offset = series[series < (offset+0.5*(peakaverage-offset))].mean()
+    return (offset,peakaverage)
+
+def datafrompipeline(datasource,pipeline, ctr, boxsize = 7):
+    tser = np.arange(datasource.shape[2])
+    bszh = int(boxsize/2)
+    rawser = np.zeros((2*bszh+1,2*bszh+1,tser.shape[0]))
+    for t in range(len(tser)):
+        rawser[:,:,t] = datasource[int(ctr[0])-bszh:int(ctr[0])+bszh+1,int(ctr[1])-bszh:int(ctr[1])+bszh+1,t].squeeze()
+    return (tser, rawser)
+
+import StringIO
+def darkAnalysisRawPlusPipeline(datasource,pipeline,boxsize = 7, doplot = True, threshfactor=0.45, mdh=None, debug=1):
+    xp = pipeline['x'] # in new code use 'x_raw' and 'y_raw'!
+    yp = pipeline['y']
+    if mdh is None: # there may be other ways to get at the mdh, e.g. via pipeline?
+        mdh = getmdh(inmodule=True)
+    xpix = 1e3*mdh['voxelsize.x']
+    ypix = 1e3*mdh['voxelsize.y']
+
+# we need a new strategy for the pixel center selection
+# and inclusion of drift
+# strategy:
+# 1. if we have filterkeys x and y (look up where to find these!) use the center of that ROI
+# 2. if we have a drift time course calculate a centerpix(t), i.e. centerpix as a function of x
+
+# for 1: use pipeline.filterKeys['x'] and pipeline.filterKeys['y']
+# for 2: for a given xctr and yctr find the x_raw and y_raw; question: how to do that?
+# for 2: we will have to get timecourse of shift as (1) x = x_raw + dx(t)
+# for 2: if we manage to get (1) we will get (2) xctr_raw(t) = xctr-dx(t)
+
+# for 2: (2) needs texting with bead sample
+
+# for 2: once we have xctr_raw(t), yctr_raw(t) we need to modify datafrompipeline
+# for 2: make datafrompipeline so that it accepts ctr(t) = [xctr(t),yctr(t)]!!
+
+    bbox = [xp.min(),xp.max(),yp.min(),yp.max()]
+    bboxpix = [bbox[0]/xpix,bbox[1]/xpix,bbox[2]/ypix,bbox[3]/ypix]
+    ctrpix = [0.5*(bboxpix[0]+bboxpix[1]),0.5*(bboxpix[2]+bboxpix[3])]
+    ctr = np.rint(np.array(ctrpix))
+
+    if debug:
+        print 'BBox (nm): ',bbox
+        print 'BBox (pix): ',bboxpix
+        print 'Ctr (pix): ',ctr
+
+    print 'extracting region from data...'
+    tser, rawser = datafrompipeline(datasource,pipeline,ctr,boxsize = boxsize)
+    rawm = rawser.mean(axis=0).mean(axis=0)
+
+    print 'analyzing data...'
+    offset, peakav = analyze1dSeries(rawm,chunklength=500)
+    rawm = rawm-offset
+    peakav = peakav-offset
+
+    tp = pipeline['t']
+    th = tser[rawm > (threshfactor * peakav)]
+
+    ctp, chip, chipfit, taup = darktimehist(tp)
+    ctr, chir, chirfit, taur = darktimehist(th)
+    
+    outstr = StringIO.StringIO()
+
+    print >>outstr, "events: %d (%d raw)" % (tp.shape[0],th.shape[0])
+    print >>outstr, "dark times: %d (%d raw)" % (ctp.shape[0],ctr.shape[0])
+    #print >>outstr, "region: %d x %d nm (%d x %d pixel)" % (bbszx,bbszy,bbszx/voxx,bbszy/voxy)
+    #print >>outstr, "centered at %d,%d (%d,%d pixels)" % (x.mean(),y.mean(),x.mean()/voxx,y.mean()/voxy)
+    print >>outstr, "darktime: ev %.1f (raw %.1f) frames" % (taup,taur)
+    print >>outstr, "qunits: ev %.2f (raw %.2f), eunits: %.2f" % (200.0/taup,200.0/taur,tp.shape[0]/500.0)
+
+    labelstr = outstr.getvalue()
+
+    if debug:
+        print labelstr
+
+    if doplot:
+        plt.figure()
+        plt.plot(tser, rawm)
+        plt.plot(tser, peakav*np.ones(tser.shape), '--')
+        plt.plot(tp, 0.5*peakav*np.ones(tp.shape),'o')
+        plt.plot(th, threshfactor * peakav * np.ones(th.shape),'+')
+
+        plt.figure()
+        plt.semilogx(ctp, chip, 'o')
+        plt.semilogx(ctp, chipfit)
+        plt.semilogx(ctr, chir, 'x')
+        plt.semilogx(ctr, chirfit)
+        plt.ylim(-0.2,1.2)
+        plt.annotate(labelstr, xy=(0.5, 0.1), xycoords='axes fraction',
+                     fontsize=10)
+
+    return (rawser,rawm, peakav, (ctp, chip, chipfit, taup), (ctr, chir, chirfit, taur))
+
+import pickle
+def savepickled(object,fname):
+    fi = open(fname,'wb')
+    pickle.dump(object,fi)
+    fi.close()
+
+def loadpickled(fname):
+    fi = open(fname,'r')
+    return pickle.load(fi)
+

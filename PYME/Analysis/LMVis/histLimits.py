@@ -25,7 +25,7 @@ import wx
 import wx.lib.newevent
 
 import sys,math
-import numpy
+import numpy as np
 import os
 
 LimitChangeEvent, EVT_LIMIT_CHANGE = wx.lib.newevent.NewCommandEvent()
@@ -39,7 +39,7 @@ class HistLimitPanel(wx.Panel):
         self.dragging = None
         self.binSize=None
         
-        dSort = numpy.argsort(data)
+        dSort = np.argsort(data)
         
         self.upper_pctile = float(data[dSort[int(len(data)*.99)]])
         self.lower_pctile = float(data[dSort[int(len(data)*.01)]])
@@ -72,9 +72,9 @@ class HistLimitPanel(wx.Panel):
         wx.EVT_KEY_DOWN(self, self.OnKeyPress)
 
     def SetData(self, data, lower, upper):
-        self.data = data.ravel()
+        self.data = np.array(data).ravel()
 
-        dSort = numpy.argsort(data)
+        dSort = np.argsort(data)
 
         self.upper_pctile = float(data[dSort[int(len(data)*.99)]])
         self.lower_pctile = float(data[dSort[int(len(data)*.01)]])
@@ -171,10 +171,10 @@ class HistLimitPanel(wx.Panel):
         #print self.hmin, self.hmax, self.hstep, self.Size[0], self.limit_lower, self.limit_upper
 
         
-        self.h, self.edges = numpy.histogram(self.data, numpy.arange(self.hmin, self.hmax, self.hstep))
+        self.h, self.edges = np.histogram(self.data, np.arange(self.hmin, self.hmax, self.hstep))
 
         if self.log:
-            self.h = numpy.log10(self.h+.01) - numpy.log10(.01)
+            self.h = np.log10(self.h+.01) - np.log10(.01)
 
         self.dmean = self.data.mean()
         
@@ -195,7 +195,7 @@ class HistLimitPanel(wx.Panel):
 
         #when being used to determine histogram bins
         if not self.binSize == None:
-            binEdges = numpy.arange(self.hmin, self.hmax + self.binSize, self.binSize)
+            binEdges = np.arange(self.hmin, self.hmax + self.binSize, self.binSize)
 
             for i in range(len(binEdges) -1):
                 llx = math.floor((binEdges[i] - self.hmin)/self.hstep)

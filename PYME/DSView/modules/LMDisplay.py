@@ -649,7 +649,7 @@ class LMDisplay(object):
         filename = wx.FileSelector("Choose a file to open", 
                                    nameUtils.genResultDirectoryPath(), 
                                    default_extension='h5r', 
-                                   wildcard='PYME Results Files (*.h5r)|*.h5r|Tab Formatted Text (*.txt)|*.txt|Matlab data (*.mat)|*.mat')
+                                   wildcard='PYME Results Files (*.h5r)|*.h5r|Tab Formatted Text (*.txt)|*.txt|Matlab data (*.mat)|*.mat|Comma separated values (*.csv)|*.csv')
 
         #print filename
         if not filename == '':
@@ -713,9 +713,6 @@ class LMDisplay(object):
         #print('Gui stuff done')
         
         self.SetFit()
-            
-
-
 
         
 

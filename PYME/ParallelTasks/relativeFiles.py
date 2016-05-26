@@ -24,6 +24,7 @@
 import os
 import string
 import re
+from PYME.FileUtils import nameUtils 
 
 seps = re.compile('[\\\\/]')
 
@@ -43,10 +44,11 @@ def getFullFilename(relFilename):
     assumes path is absolute.'''
     relFilename = translateSeparators(relFilename)
 
-    if 'PYMEDATADIR' in os.environ.keys():
-        return os.path.join(os.environ['PYMEDATADIR'], relFilename)
-    else:
-        return relFilename
+    #if 'PYMEDATADIR' in os.environ.keys():
+    #    return os.path.join(os.environ['PYMEDATADIR'], relFilename)
+    #else:
+    #    return relFilename
+    return os.path.join(nameUtils.datadir, relFilename)
 
 def getFullExistingFilename(relFilename):
     ''' returns a fully resolved filename given a filename relative to
@@ -73,13 +75,13 @@ def getRelFilename(filename):
         filename= os.path.abspath(filename)
 
     #print filename
-    if 'PYMEDATADIR' in os.environ.keys():
-        dataDir = os.environ['PYMEDATADIR']
-        if not dataDir[-1] in [os.sep, os.altsep]:
-            dataDir = dataDir + os.sep
+    #if 'PYMEDATADIR' in os.environ.keys():
+    dataDir = nameUtils.datadir
+    if not dataDir[-1] in [os.sep, os.altsep]:
+        dataDir = dataDir + os.sep
 
-        if filename.startswith(dataDir): #if we've selected something which isn't under our data directory we're going to have to stick with an absolute path
-            return filename[len(dataDir):]
+    if filename.startswith(dataDir): #if we've selected something which isn't under our data directory we're going to have to stick with an absolute path
+        return filename[len(dataDir):]
 
     return filename
 

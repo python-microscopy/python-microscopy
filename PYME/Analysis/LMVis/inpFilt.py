@@ -169,7 +169,7 @@ class h5rSource(inputFilter):
         if type(h5fFile) == tables.file.File:
             self.h5f = h5fFile
         else:
-            self.h5f = tables.openFile(h5fFile)
+            self.h5f = tables.open_file(h5fFile)
         
         if not 'FitResults' in dir(self.h5f.root):
             raise RuntimeError('Was expecting to find a "FitResults" table')
@@ -236,6 +236,11 @@ class h5rDSource(inputFilter):
 
         if not 'DriftResults' in dir(self.h5f.root):
             raise RuntimeError('Was expecting to find a "DriftResults" table')
+            
+        self.driftResults = self.h5f.root.DriftResults[:]
+
+        #sort by time
+        self.driftResults.sort(order='tIndex')
 
         #allow access using unnested original names
         self._keys = unNestNames(self.h5f.root.DriftResults.description._v_nestedNames)
@@ -261,11 +266,11 @@ class h5rDSource(inputFilter):
         k = key.split('_')
         
         if len(k) == 1:
-            return self.h5f.root.DriftResults[sl][k[0]].astype('f')
+            return self.driftResults[sl][k[0]].astype('f')
         elif len(k) == 2:
-            return self.h5f.root.DriftResults[sl][k[0]][k[1]].astype('f')
+            return self.driftResults[sl][k[0]][k[1]].astype('f')
         elif len(k) == 3:
-            return self.h5f.root.DriftResults[sl][k[0]][k[1]][k[2]].astype('f')
+            return self.driftResults[sl][k[0]][k[1]][k[2]].astype('f')
         else:
             raise RuntimeError("Don't know about deeper nesting yet")
         
@@ -412,7 +417,7 @@ class cachingResultsFilter(inputFilter):
         if key in self.cache.keys():
             return self.cache[key][sl]
         else:
-            res = self.resultsSource[key][self.Index]
+            res = np.array(self.resultsSource[key])[self.Index]
             self.cache[key] = res
             return res[sl]
 
