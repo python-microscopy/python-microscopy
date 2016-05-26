@@ -52,8 +52,6 @@ Technical Details:
    
    DataFormats
    SampleDB
-
-..
    api/modules
 
 

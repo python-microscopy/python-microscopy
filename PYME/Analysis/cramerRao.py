@@ -21,30 +21,31 @@
 ##################
 '''tools for estimating the Fisher information matrix and Cramer-Rao lower bound'''
 
-from pylab import *
+#from pylab import *
+import numpy as np
 from scipy.special import gammaln
 
 def lp_poisson(lam, k):
     '''log of poisson likelihood fcn'''
-    return k[None,None,None,:]*log(lam)[:,:,:,None] - gammaln(k+1)[None,None,None,:] - lam[:,:,:,None]
+    return k[None,None,None,:]*np.log(lam)[:,:,:,None] - gammaln(k+1)[None,None,None,:] - lam[:,:,:,None]
     
 def lp_poisson_n(lam, k):
     '''log of poisson likelihood fcn'''
-    return k*log(lam) - gammaln(k+1) - lam
+    return k*np.log(lam) - gammaln(k+1) - lam
 
 def p_poisson(lam, k):
     '''poisson likelihood fcn - calculated from log lhood for numerical stability'''
-    return exp(lp_poisson(lam, k))
+    return np.exp(lp_poisson(lam, k))
 
 def CalcFisherInformZ(lam, maxK=500, voxelsize=[1,1,1]):
-    k = arange(maxK).astype('f')
+    k = np.arange(maxK).astype('f')
 
     lpk = lp_poisson(lam, k)
     pk = p_poisson(lam, k)
 
     print(('number of NaNs = %d' % isnan(pk).sum()))
 
-    dx, dy, dz, dk = gradient(lpk)
+    dx, dy, dz, dk = np.gradient(lpk)
     dx *= 1./voxelsize[0]
     dy *= 1./voxelsize[1]
     dz *= 1./voxelsize[2]
@@ -59,17 +60,17 @@ def CalcFisherInformZ(lam, maxK=500, voxelsize=[1,1,1]):
     Exz = (dx*dz*pk).sum(3).sum(1).sum(0)
     Eyz = (dy*dz*pk).sum(3).sum(1).sum(0)
 
-    FIz = [array([[Exx[i], Exy[i], Exz[i]],[Exy[i],Eyy[i], Eyz[i]],[Exz[i],Eyz[i], Ezz[i]]]) for i in range(lam.shape[2])]
+    FIz = [np.array([[Exx[i], Exy[i], Exz[i]],[Exy[i],Eyy[i], Eyz[i]],[Exz[i],Eyz[i], Ezz[i]]]) for i in range(lam.shape[2])]
 
     return FIz
     
 def FIkz(lam, k, voxelsize):
     lpk = lp_poisson_n(lam, k)
-    pk = exp(lpk)
+    pk = np.exp(lpk)
 
     #print 'number of NaNs = %d' % isnan(pk).sum()
 
-    dx, dy, dz = gradient(lpk)
+    dx, dy, dz = np.gradient(lpk)
     dx *= 1./voxelsize[0]
     dy *= 1./voxelsize[1]
     dz *= 1./voxelsize[2]
@@ -81,19 +82,19 @@ def FIkz(lam, k, voxelsize):
     Exz = (dx*dz*pk).sum(1).sum(0)
     Eyz = (dy*dz*pk).sum(1).sum(0)
 
-    return array([([[Exx[i], Exy[i], Exz[i]],[Exy[i],Eyy[i], Eyz[i]],[Exz[i],Eyz[i], Ezz[i]]]) for i in range(lam.shape[2])])
+    return np.array([([[Exx[i], Exy[i], Exz[i]],[Exy[i],Eyy[i], Eyz[i]],[Exz[i],Eyz[i], Ezz[i]]]) for i in range(lam.shape[2])])
     
 def CalcFisherInformZn(lam, maxK=500, voxelsize=[1,1,1]):
-    kv = arange(maxK).astype('f')
+    kv = np.arange(maxK).astype('f')
     FIz = np.zeros([lam.shape[2],3,3])
     
     for k in kv:
         lpk = lp_poisson_n(lam, k)
-        pk = exp(lpk)
+        pk = np.exp(lpk)
     
         #print 'number of NaNs = %d' % isnan(pk).sum()
     
-        dx, dy, dz = gradient(lpk)
+        dx, dy, dz = np.gradient(lpk)
         dx *= 1./voxelsize[0]
         dy *= 1./voxelsize[1]
         dz *= 1./voxelsize[2]
@@ -105,19 +106,19 @@ def CalcFisherInformZn(lam, maxK=500, voxelsize=[1,1,1]):
         Exz = (dx*dz*pk).sum(1).sum(0)
         Eyz = (dy*dz*pk).sum(1).sum(0)
     
-        FIz += array([([[Exx[i], Exy[i], Exz[i]],[Exy[i],Eyy[i], Eyz[i]],[Exz[i],Eyz[i], Ezz[i]]]) for i in range(lam.shape[2])])
+        FIz += np.array([([[Exx[i], Exy[i], Exz[i]],[Exy[i],Eyy[i], Eyz[i]],[Exz[i],Eyz[i], Ezz[i]]]) for i in range(lam.shape[2])])
 
     return FIz
     
 def CalcFisherInformZn2(lam, maxK=500, voxelsize=[1,1,1]):
-    from PYME.DSView import View3D
+    #from PYME.DSView import View3D
     lam = lam.astype('d') +  1e-2 #to prevent div/0
     fact = (1./lam)
     #print lam.max()
 
     #print 'number of NaNs = %d' % isnan(pk).sum()
 
-    dx, dy, dz = gradient(lam)
+    dx, dy, dz = np.gradient(lam)
     dx *= 1./voxelsize[0]
     dy *= 1./voxelsize[1]
     dz *= 1./voxelsize[2]
@@ -131,14 +132,14 @@ def CalcFisherInformZn2(lam, maxK=500, voxelsize=[1,1,1]):
     Exz = (dx*dz*fact).sum(1).sum(0)
     Eyz = (dy*dz*fact).sum(1).sum(0)
     
-    FIz = array([([[Exx[i], Exy[i], Exz[i]],[Exy[i],Eyy[i], Eyz[i]],[Exz[i],Eyz[i], Ezz[i]]]) for i in range(lam.shape[2])])
+    FIz = np.array([([[Exx[i], Exy[i], Exz[i]],[Exy[i],Eyy[i], Eyz[i]],[Exz[i],Eyz[i], Ezz[i]]]) for i in range(lam.shape[2])])
 
     return FIz
     
 
 def CalcCramerReoZ(FIz):
     '''CRB is the diagonal elements of the inverse of the Fisher information matrix'''
-    return array([diag(inv(FI)) for FI in FIz])
+    return np.array([np.diag(np.linalg.inv(FI)) for FI in FIz])
 
 
 

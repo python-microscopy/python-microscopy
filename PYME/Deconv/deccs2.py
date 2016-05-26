@@ -21,8 +21,8 @@
 #
 ##################
 
-from scipy import * 
-from scipy.linalg import *
+#from scipy import * 
+#from scipy.linalg import *
 from scipy.fftpack import fftn, ifftn, fftshift, ifftshift
 from scipy import ndimage
 import fftw3f
@@ -35,12 +35,12 @@ fftwWisdom.load_wisdom()
 import numpy
 import numpy as np
 
-from pylab import *
+#from pylab import *
 
 from wiener import resizePSF
 
 show_plots = False
-from PYME.DSView import View3D
+#from PYME.DSView import View3D
 
 class dec:
     '''Base deconvolution class, implementing a variant of the ICTM algorithm.

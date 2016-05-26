@@ -22,7 +22,7 @@
 import numpy as np
 from scipy import ndimage
 from . import correlationCoeffs
-from pylab import *
+from pylab import rand
 from . import edtColoc
 from PIL import Image
 
@@ -40,6 +40,8 @@ def rendS(imR, imG, x, y, w):
 
 
 def corrScale(s, imR, imG):
+    from pylab import *
+    
     bR = ndimage.gaussian_filter(imR, s)
     bG = ndimage.gaussian_filter(imG, s)
     figure(2)
@@ -90,6 +92,7 @@ def genImR2(size=500, w=30):
     return imR, imG
 
 def genPlots():
+    from pylab import *
     imR, imG = genIm()
 
     close('all')

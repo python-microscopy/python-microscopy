@@ -27,6 +27,9 @@ import PYME.version
 #traitsui causes lots of crashes when imported without a GUI. Circumvent it by 
 from PYME.misc import mock_traitsui
 sys.modules['traitsui.api'] = mock_traitsui
+
+from PYME.misc import mock_ctypes
+sys.modules['ctypes'] = mock_ctypes
     
 import wx
 import wx.py.shell
@@ -112,7 +115,7 @@ pygments_style = 'sphinx'
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []
 
-numpydoc_show_class_members = False
+numpydoc_show_class_members = True
 
 
 # -- Options for HTML output ---------------------------------------------------
@@ -138,7 +141,7 @@ html_theme = 'sphinxdoc'#'default'
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-#html_logo = None
+html_logo = '../PYME/resources/icons/pymeLogo.png'
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
@@ -166,16 +169,16 @@ html_static_path = ['_static']
 #html_additional_pages = {}
 
 # If false, no module index is generated.
-#html_use_modindex = True
+html_use_modindex = True
 
 # If false, no index is generated.
-#html_use_index = True
+html_use_index = True
 
 # If true, the index is split into individual pages for each letter.
 #html_split_index = False
 
 # If true, links to the reST sources are added to the pages.
-#html_show_sourcelink = True
+html_show_sourcelink = False
 
 # If true, an OpenSearch description file will be output, and all pages will
 # contain a <link> tag referring to it.  The value of this option must be the

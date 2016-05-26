@@ -21,8 +21,8 @@
 #
 ##################
 
-from scipy import * 
-from scipy.linalg import *
+#from scipy import * 
+#from scipy.linalg import *
 from scipy.fftpack import fftn, ifftn, fftshift, ifftshift
 from scipy import ndimage
 import fftw3f
@@ -33,13 +33,14 @@ fftwWisdom.load_wisdom()
 #import cDec
 #from PYME import pad
 import numpy
+import numpy as np
 
-from pylab import *
+#from pylab import *
 
 from wiener import resizePSF
 
 show_plots = False
-from PYME.DSView import View3D
+#from PYME.DSView import View3D
 
 class dec:
     '''Base deconvolution class, implementing a variant of the ICTM algorithm.
@@ -69,52 +70,52 @@ class dec:
         '''minimise in subspace - this is the bit which gets called on each iteration
         to work out what the next step is going to be. See Inverse Problems text for details.
         '''
-        nsrch = size(S,1)
+        nsrch = np.size(S,1)
         pref = Lfunc(f0-fdef)
-        w0 = dot(pref, pref)
-        c0 = dot(res,res)
+        w0 = np.dot(pref, pref)
+        c0 = np.dot(res,res)
 
-        AS = zeros((size(res), nsrch), 'f')
-        LS = zeros((size(pref), nsrch), 'f')
+        AS = np.zeros((np.size(res), nsrch), 'f')
+        LS = np.zeros((np.size(pref), nsrch), 'f')
 
         for k in range(nsrch):
             AS[:,k] = Afunc(S[:,k])[self.mask]
             LS[:,k] = Lfunc(S[:,k])
         
         if show_plots:
-            figure(1)
-            clf()
-            subplot(311)
-            plot(S)
-            subplot(312)
-            plot(AS)
-            subplot(313)
-            plot(LS)
+            plt.figure(1)
+            plt.clf()
+            plt.subplot(311)
+            plt.plot(S)
+            plt.subplot(312)
+            plt.plot(AS)
+            plt.subplot(313)
+            plt.plot(LS)
         
         
 
-        Hc = dot(transpose(AS), AS)
-        Hw = dot(transpose(LS), LS)
-        Gc = dot(transpose(AS), res)
-        Gw = dot(transpose(-LS), pref)
+        Hc = np.dot(np.transpose(AS), AS)
+        Hw = np.dot(np.transpose(LS), LS)
+        Gc = np.dot(np.transpose(AS), res)
+        Gw = np.dot(np.transpose(-LS), pref)
         
         #print Hc, Hw, Gc, Gw
 
-        c = solve(Hc + lam2*Hw, Gc + lam2*Gw)
+        c = np.linalg.solve(Hc + lam2*Hw, Gc + lam2*Gw)
         #print c
 
-        cpred = c0 + dot(dot(transpose(c), Hc), c) - dot(transpose(c), Gc)
-        wpred = w0 + dot(dot(transpose(c), Hw), c) - dot(transpose(c), Gw)
+        cpred = c0 + np.dot(np.dot(np.transpose(c), Hc), c) - np.dot(np.transpose(c), Gc)
+        wpred = w0 + np.dot(np.dot(np.transpose(c), Hw), c) - np.dot(np.transpose(c), Gw)
 
-        fnew = f0 + dot(S, c) - self.k
+        fnew = f0 + np.dot(S, c) - self.k
         
         if show_plots:
-            figure(3)
-            clf()
-            plot(f0)
-            plot(res)
-            plot(fnew - f0)
-            plot(fnew)
+            plt.figure(3)
+            plt.clf()
+            plt.plot(f0)
+            plt.plot(res)
+            plt.plot(fnew - f0)
+            plt.plot(fnew)
 
         return (fnew, cpred, wpred)
 
@@ -153,27 +154,27 @@ class dec:
         if not numpy.isscalar(weights):
             self.mask = weights > 0
         else:
-            self.mask = numpy.isfinite(data.ravel())
+            self.mask = numpy.isfinite(data.np.ravel(())
 
         #guess a starting estimate for the object
-        self.f = self.startGuess(data).ravel()
+        self.f = self.startGuess(data).np.ravel(()
         self.res = 0*self.f
 
         self.fs = self.f.reshape(self.shape)
 
         #make things 1 dimensional
-        #self.f = self.f.ravel()
-        data = data.ravel()
+        #self.f = self.f.np.ravel(()
+        data = data.np.ravel(()
 
         #print data.mean(), weights, lamb
         #print abs(self.H).sum()
         #print abs(self.Ht).sum()
 
         #use 0 as the default solution - should probably be refactored like the starting guess
-        fdef = zeros(self.f.shape, 'f')
+        fdef = np.zeros(self.f.shape, 'f')
 
         #initial search directions
-        S = zeros((size(self.f), 3), 'f')
+        S = np.zeros((np.size(self.f), 3), 'f')
 
         #number of search directions
         nsrch = 2
@@ -195,30 +196,30 @@ class dec:
             #infinite weight to zeros. As most devices have some form of readout noise
             #justifying the eps shouldn't be too tricky
             self.res[:] = (weights*(data - self.Afunc(self.f)))
-            #figure(4)
+            #plt.figure(4)
             #worry about the residuals only if they are large
-            #plot(self.res)
-            self.res[:] = self.res#*(abs(self.res) > 1)#(1 - exp(-(self.res**2)/2))#(abs(self.res) > 1)#
-            #self.res[:] = (1 - exp(-(self.res**2)/2))#(abs(self.res) > 1)
-            #plot(self.res)
+            #plt.plot(self.res)
+            self.res[:] = self.res#*(abs(self.res) > 1)#(1 - np.exp(-(self.res**2)/2))#(abs(self.res) > 1)#
+            #self.res[:] = (1 - np.exp(-(self.res**2)/2))#(abs(self.res) > 1)
+            #plt.plot(self.res)
             
             #resulting search directions
             #note that the use of the Likelihood fuction/prior as a search direction
             #is where this method departs from the classical conjugate gradient approach
             S[:,0] = self.Ahfunc(self.res) - self.k2
             #S[:,0] = S[:,0] == S[:,0].max()
-            #S[:,0] = S[:,0]*((self.f > 0) + (self.f < 0)*(S[:,0] ==ndimage.maximum_filter(S[:,0].reshape(self.shape), 32).ravel())*(S[:,0] > S[:,0].max()/10))
+            #S[:,0] = S[:,0]*((self.f > 0) + (self.f < 0)*(S[:,0] ==ndimage.maximum_filter(S[:,0].reshape(self.shape), 32).np.ravel(())*(S[:,0] > S[:,0].max()/10))
             S[:,1] = -self.Lhfunc(pref)#/np.maximum(abs(self.res), .1)
 
             #check to see if the two search directions are orthogonal
             #this can be used as a measure of convergence and a stopping criteria
-            test = 1 - abs(dot(S[:,0], S[:,1])/(norm(S[:,0])*norm(S[:,1])))
+            test = 1 - abs(np.dot(S[:,0], S[:,1])/(np.linalg.norm(S[:,0])*np.linalg.norm(S[:,1])))
 
             #print & log some statistics
             print(('Test Statistic %f' % (test,)))
             self.tests.append(test)
-            self.ress.append(norm(self.res))
-            self.prefs.append(norm(pref))
+            self.ress.append(np.linalg.norm(self.res))
+            self.prefs.append(np.linalg.norm(pref))
 
             #minimise along search directions to find new estimate
             (fnew, cpred, spred) = self.subsearch(self.f, self.res[self.mask], fdef, self.Afunc, self.Lfunc, lamb2, S[:, 0:nsrch])
@@ -244,27 +245,27 @@ class dec:
             #set the current estimate to out new estimate
             self.f[:] = fnew
             
-            #figure(2)
-            #plot(self.f)
+            #plt.figure(2)
+            #plt.plot(self.f)
             
             if show_plots:
-                figure(2)
-                clf()
-                plot(self.f)
-                plot(fn)
-                plot(fn1)
+                plt.figure(2)
+                plt.clf()
+                plt.plot(self.f)
+                plt.plot(fn)
+                plt.plot(fn1)
                 raw_input()
             
             #v.view.Redraw()
             #raw_input()
 
-        return real(self.fs)
+        return np.real(self.fs)
         
     def sim_pic(self,data,alpha):
         '''Do the forward transform to simulate a picture. Currently with 4Pi cruft.'''
         self.alpha = alpha
-        self.e1 = fftshift(exp(1j*self.alpha))
-        self.e2 = fftshift(exp(2j*self.alpha))
+        self.e1 = fftshift(np.exp(1j*self.alpha))
+        self.e2 = fftshift(np.exp(2j*self.alpha))
         
         return self.Afunc(data)
 
@@ -306,9 +307,9 @@ class dec_conv(dec):
         #allocate memory
         self.H = fftw3f.create_aligned_array(self.FTshape, 'complex64')
         self.Ht = fftw3f.create_aligned_array(self.FTshape, 'complex64')
-        #self.f = zeros(self.shape, 'f4')
-        #self.res = zeros(self.shape, 'f4')
-        #self.S = zeros((size(self.f), 3), 'f4')
+        #self.f = np.zeros(self.shape, 'f4')
+        #self.res = np.zeros(self.shape, 'f4')
+        #self.S = np.zeros((np.size(self.f), 3), 'f4')
 
         #self._F = fftw3f.create_aligned_array(self.FTshape, 'complex64')
         #self._r = fftw3f.create_aligned_array(self.shape, 'f4')
@@ -327,7 +328,7 @@ class dec_conv(dec):
 
 
     def Lfunc(self, f):
-        return f#exp(-f) #return sign(f)*(abs(f)**.2 + .001)
+        return f#np.exp(-f) #return sign(f)*(abs(f)**.2 + .001)
 
     Lhfunc=Lfunc
     
@@ -336,7 +337,7 @@ class dec_conv(dec):
 
     def Afunc(self, f):
         '''Forward transform - convolve with the PSF'''
-        #fs = reshape(f, (self.height, self.width, self.depth))
+        #fs = np.reshape(f, (self.height, self.width, self.depth))
         self._r[:] = f.reshape(self._r.shape)
 
         #F = fftn(fs)
@@ -346,24 +347,24 @@ class dec_conv(dec):
         self._F *= self.H
         self._plan_F_r()
 
-        #d = real(d);
-        return ravel(ifftshift(self._r))
+        #d = np.real(d);
+        return np.ravel((ifftshift(self._r))
 
     def Ahfunc(self, f):
         '''Conjugate transform - convolve with conj. PSF'''
-#        fs = reshape(f, (self.height, self.width, self.depth))
+#        fs = np.reshape(f, (self.height, self.width, self.depth))
 #
 #        F = fftn(fs)
 #        d = ifftshift(ifftn(F*self.Ht));
-#        d = real(d);
-#        return ravel(d)
+#        d = np.real(d);
+#        return np.ravel((d)
         self._r[:] = f.reshape(self._r.shape)
 
         self._plan_r_F()
         self._F *= self.Ht#/(self.Ht*self.H + self.lw**2)
         self._plan_F_r()
 
-        return ravel(ifftshift(self._r))
+        return np.ravel((ifftshift(self._r))
 
 class dec_bead(dec):
     '''Classical deconvolution using non-fft convolution - pot. faster for
@@ -392,20 +393,20 @@ class dec_bead(dec):
 
     def Afunc(self, f):
         '''Forward transform - convolve with the PSF'''
-        fs = reshape(f, (self.height, self.width, self.depth))
+        fs = np.reshape(f, (self.height, self.width, self.depth))
 
         d = ndimage.convolve(fs, self.g)
 
-        #d = real(d);
-        return ravel(d)
+        #d = np.real(d);
+        return np.ravel((d)
 
     def Ahfunc(self, f):
         '''Conjugate transform - convolve with conj. PSF'''
-        fs = reshape(f, (self.height, self.width, self.depth))
+        fs = np.reshape(f, (self.height, self.width, self.depth))
 
         d = ndimage.correlate(fs, self.g)
         
-        return ravel(d)
+        return np.ravel((d)
 
 #from scipy import ndimage    
 
@@ -415,13 +416,13 @@ def calc_gauss_weights(sigma):
     # make the length of the filter equal to 4 times the standard
     # deviations:
     lw = int(3.0 * sd + 0.5)
-    weights = numpy.zeros(2 * lw + 1, 'float64')
+    weights = numpy.np.zeros(2 * lw + 1, 'float64')
     weights[lw] = 1.0
     sum = 1.0
     sd = sd * sd
     # calculate the kernel:
     for ii in range(1, lw + 1):
-        tmp = math.exp(-0.5 * float(ii * ii) / sd)
+        tmp = math.np.exp(-0.5 * float(ii * ii) / sd)
         weights[lw + ii] = tmp
         weights[lw - ii] = tmp
         sum += 2.0 * tmp
@@ -462,7 +463,7 @@ class dec_gauss(dec):
 #        #return sign(f)*(abs(f)**.2 + .001)
         
 #    def Lfunc(self, f):
-#        fs = reshape(f, (self.height, self.width, self.depth))
+#        fs = np.reshape(f, (self.height, self.width, self.depth))
 #        a = fs
 #    
 #        a[:,:,0:-1] += fs[:,:,1:]
@@ -474,19 +475,19 @@ class dec_gauss(dec):
 #        #a[0:-1,:,:] += fs[1:,:,:]
 #        #a[1:,:,:] += fs[0:-1,:,:]
 #
-#        return ravel(cast['f'](a/5.))
+#        return np.ravel((cast['f'](a/5.))
 
 #    def Lfunc(self, f):
-#        fs = reshape(f, (self.height, self.width, self.depth))
+#        fs = np.reshape(f, (self.height, self.width, self.depth))
 #        
 #
-#        return ndimage.uniform_filter(fs).ravel()
+#        return ndimage.uniform_filter(fs).np.ravel(()
 
     Lhfunc=Lfunc
 
     def Afunc(self, f):
         '''Forward transform - convolve with the PSF'''
-        fs = reshape(f, (self.height, self.width, self.depth))
+        fs = np.reshape(f, (self.height, self.width, self.depth))
 
         #d = ndimage.gaussian_filter(fs, self.sigma)
         mode = _ni_support._extend_mode_to_code("reflect")
@@ -500,12 +501,12 @@ class dec_gauss(dec):
         
         #ndimage.uniform_filter(output, self.oversamp, output=output)
 
-        #d = real(d);
-        return ravel(output)#[::oversamp,::oversamp,:])
+        #d = np.real(d);
+        return np.ravel((output)#[::oversamp,::oversamp,:])
         
     Ahfunc=Afunc
 #    def Ahfunc(self, f):
-#        fs = np.zeros((self.height, self.width, self.depth), 'f')
+#        fs = np.np.zeros((self.height, self.width, self.depth), 'f')
 #        fs[::oversamp,::oversamp,:] = f.reshape(self.dataShape)
 #        
 #        mode = _ni_support._extend_mode_to_code("reflect")
@@ -517,14 +518,14 @@ class dec_gauss(dec):
 #        _nd_image.correlate1d(fs, self.kernel, 0, output, mode, 0,0)
 #        _nd_image.correlate1d(output, self.kernel, 1, output, mode, 0,0)
 #        
-#        return oversamp*oversamp*output.ravel()
+#        return oversamp*oversamp*output.np.ravel(()
 
     #def Ahfunc(self, f):
         #'''Conjugate transform - convolve with conj. PSF'''
-        #fs = reshape(f, (self.height, self.width, self.depth))
+        #fs = np.reshape(f, (self.height, self.width, self.depth))
 
         #d = ndimage.gaussian_filter(fs, self.sigma)
         
-        #return ravel(d)
+        #return np.ravel((d)
   
         

@@ -4,9 +4,9 @@ import PYME.ui.autoFoldPanel as afp
 
 class AUIFrame(wx.Frame):
     '''A class which encapsulated the common frame layout code used by
-    dsviewer and VisGUI
+    dsviewer, VisGUI, and PYMEAcquire.
     
-    Note: this class will probably move to a common ui location.'''
+    '''
     def __init__(self, *args, **kwargs):
         wx.Frame.__init__(self, *args, **kwargs)
         
@@ -32,9 +32,16 @@ class AUIFrame(wx.Frame):
     def AddPage(self, page=None, select=True,caption='Dummy', update=True):
         '''Add a page to the auto-notebook
         
-        page: a wx.Window (ususally a panel) - the page to add
-        select: (bool) bring the new page to the top
-        caption: (string) the page caption
+
+        Parameters
+        ----------
+        page : wx.Window instance  
+            The page to add, usually a wx.Panel. The window should have been
+            created with this window as the parent.
+        select : bool 
+            Should the page be displayed above previous pages?
+        caption : string 
+            The caption to appear in the notebook tab 
         
         '''
         #if update:

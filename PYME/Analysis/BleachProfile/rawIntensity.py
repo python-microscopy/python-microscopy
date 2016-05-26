@@ -22,7 +22,7 @@
 ################
 
 
-from pylab import *
+#from pylab import *
 from PYME.Analysis._fithelpers import *
 
 def dyedyemod(p, t):
@@ -113,6 +113,8 @@ def linMod(p, t):
     
 
 def processIntensityTrace(I, mdh, dt=1):
+    from pylab import *
+    
     t = arange(len(I))*dt
     dfb, dfe = mdh['Protocol.DarkFrameRange']
     dk_emgain = I[dfb:dfe].mean()

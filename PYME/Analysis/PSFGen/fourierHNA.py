@@ -19,13 +19,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-'''generate a phase ramp psf using fourier optics'''
-from pylab import *
+'''generate a phase ramp psf unp.sing fourier optics'''
+#from pylab import *
+import matplotlib.pyplot as plt
+import numpy as np
+from pylab import ifftshift, ifftn, fftn, fftshift
+
 import fftw3f
 from PYME.Deconv import fftwWisdom
-from scipy import ndimage
 
-from PYME.DSView import View3D
+#from scipy import ndimage
+
+#from PYME.DSView import View3D
 
 fftwWisdom.load_wisdom()
 
@@ -34,7 +39,7 @@ FFTWFLAGS = ['measure']
 
 n = 1.51
 lamb = 680
-k = 2*pi*n/lamb #k at 488nm
+k = 2*np.pi*n/lamb #k at 488nm
 
 j = np.complex64(1j)
 
@@ -43,16 +48,16 @@ class FourierPropagator:
          self.propFac = -1j*(2*2**2*(u**2 + v**2)/k)
 
     def propagate(self, F, z):
-        return ifftshift(ifftn(F*exp(self.propFac*z)))
+        return ifftshift(ifftn(F*np.exp(self.propFac*z)))
         
 class FourierPropagatorHNA:
     def __init__(self, u,v,k, lamb = 488, n=1.51):
         #print k**2
         #m = (u**2 + v**2) <= (n/lamb**2)
         #self.propFac = fftw3f.create_aligned_array(u.shape, 'complex64')
-        #self.propFac = 1j*8*pi*sqrt(np.maximum((n/lamb)**2 - (u**2 + v**2), 0))
-        #self.propFac = ((2*pi*n/lamb)*sqrt(np.maximum(1 - (u**2 + v**2), 0))).astype('f')
-        self.propFac = ((2*pi*n/lamb)*cos(.5*pi*sqrt((u**2 + v**2)))).astype('f')
+        #self.propFac = 1j*8*np.pi*np.sqrt(np.maximum((n/lamb)**2 - (u**2 + v**2), 0))
+        #self.propFac = ((2*np.pi*n/lamb)*np.sqrt(np.maximum(1 - (u**2 + v**2), 0))).astype('f')
+        self.propFac = ((2*np.pi*n/lamb)*np.cos(.5*np.pi*np.sqrt((u**2 + v**2)))).astype('f')
         self.pfm =(self.propFac > 0).astype('f')
 
         self._F = fftw3f.create_aligned_array(u.shape, 'complex64')
@@ -71,27 +76,27 @@ class FourierPropagatorHNA:
          #print isnan(self.propFac).sum()
 
     def propagate(self, F, z):
-        #return ifftshift(ifftn(F*exp(self.propFac*z)))
+        #return ifftshift(ifftn(F*np.exp(self.propFac*z)))
         #print abs(F).sum()
         pf = self.propFac*float(z)
-        fs = F*self.pfm*(cos(pf) + j*sin(pf))
+        fs = F*self.pfm*(np.cos(pf) + j*np.sin(pf))
         self._F[:] = fftshift(fs)
         #self._F[:] = (fs)
         self._plan_F_f()
         #print abs(self._f).sum()
-        return ifftshift(self._f/sqrt(self._f.size))
-        #return (self._f/sqrt(self._f.size))
+        return ifftshift(self._f/np.sqrt(self._f.size))
+        #return (self._f/np.sqrt(self._f.size))
         
     def propagate_r(self, f, z):
-        #return ifftshift(ifftn(F*exp(self.propFac*z)))
+        #return ifftshift(ifftn(F*np.exp(self.propFac*z)))
         #figure()
-        #imshow(angle(f))
+        #plt.imshow(np.angle(f))
         self._f[:] = fftshift(f)
         self._plan_f_F()
         #figure()
-        #imshow(angle(self._F))
+        #plt.imshow(np.angle(self._F))
         pf = -self.propFac*float(z)
-        return (ifftshift(self._F)*(cos(pf)+j*sin(pf)))/sqrt(self._f.size)
+        return (ifftshift(self._F)*(np.cos(pf)+j*np.sin(pf)))/np.sqrt(self._f.size)
         
 FourierPropagator = FourierPropagatorHNA
 
@@ -100,9 +105,9 @@ class FourierPropagatorClipHNA:
         #print k**2
         #m = (u**2 + v**2) <= (n/lamb**2)
         #self.propFac = fftw3f.create_aligned_array(u.shape, 'complex64')
-        #self.propFac = 1j*8*pi*sqrt(np.maximum((n/lamb)**2 - (u**2 + v**2), 0))
-        #self.propFac = ((2*pi*n/lamb)*sqrt(np.maximum(1 - (u**2 + v**2), 0))).astype('f')
-        self.propFac = ((2*pi*n/lamb)*cos(.5*pi*sqrt((u**2 + v**2)))).astype('f')
+        #self.propFac = 1j*8*np.pi*np.sqrt(np.maximum((n/lamb)**2 - (u**2 + v**2), 0))
+        #self.propFac = ((2*np.pi*n/lamb)*np.sqrt(np.maximum(1 - (u**2 + v**2), 0))).astype('f')
+        self.propFac = ((2*np.pi*n/lamb)*np.cos(.5*np.pi*np.sqrt((u**2 + v**2)))).astype('f')
         self.pfm =(self.propFac > 0).astype('f')
         
         #self.field_x = field_x
@@ -128,37 +133,37 @@ class FourierPropagatorClipHNA:
          #print isnan(self.propFac).sum()
 
     def propagate(self, F, z):
-        #return ifftshift(ifftn(F*exp(self.propFac*z)))
+        #return ifftshift(ifftn(F*np.exp(self.propFac*z)))
         #print abs(F).sum()
         pf = self.propFac*float(z)
         r = max(self.appR*(1 -self.apertureZGrad*z), 0)
         #print z, r
         M = (self.x*self.x + self.y*self.y) < (r*r)
-        fs = F*M*self.pfm*(cos(pf) + j*sin(pf))
+        fs = F*M*self.pfm*(np.cos(pf) + j*np.sin(pf))
         self._F[:] = fftshift(fs)
         #self._F[:] = (fs)
         self._plan_F_f()
         #print abs(self._f).sum()
-        return ifftshift(self._f/sqrt(self._f.size))
-        #return (self._f/sqrt(self._f.size))
+        return ifftshift(self._f/np.sqrt(self._f.size))
+        #return (self._f/np.sqrt(self._f.size))
         
     def propagate_r(self, f, z):
-        #return ifftshift(ifftn(F*exp(self.propFac*z)))
+        #return ifftshift(ifftn(F*np.exp(self.propFac*z)))
         #figure()
-        #imshow(angle(f))
+        #plt.imshow(np.angle(f))
         self._f[:] = fftshift(f)
         self._plan_f_F()
         #figure()
-        #imshow(angle(self._F))
+        #plt.imshow(np.angle(self._F))
         pf = -self.propFac*float(z)
-        return (ifftshift(self._F)*(cos(pf)+j*sin(pf)))/sqrt(self._f.size)
+        return (ifftshift(self._F)*(np.cos(pf)+j*np.sin(pf)))/np.sqrt(self._f.size)
 
 
-def GenWidefieldAP(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47, apodization='sine'):
+def GenWidefieldAP(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47, apodization='np.sine'):
     if X == None or Y == None:
-        X, Y = meshgrid(arange(-2000, 2000., dx),arange(-2000, 2000., dx))
+        X, Y = np.meshgrid(arange(-2000, 2000., dx),arange(-2000, 2000., dx))
     else:
-        X, Y = meshgrid(X,Y)
+        X, Y = np.meshgrid(X,Y)
     
     X = X - X.mean()
     Y = Y - Y.mean()
@@ -167,48 +172,48 @@ def GenWidefieldAP(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47, apodizat
     v = Y*lamb/(n*X.shape[1]*dx*dx)
     #print u.min()
 
-    R = sqrt(u**2 + v**2)
+    R = np.sqrt(u**2 + v**2)
     
     #print R.max()*lamb
     #print(((R/(n*lamb)).max()))
     
-    #imshow(R*lamb)
+    #plt.imshow(R*lamb)
     #colorbar()
 #    figure()
 #    u_ = u[u.shape[0]/2, :]
 #    plot(u_, u_)
-#    plot(u_, sqrt(1 - u_**2))
-#    plot(u_, sqrt(u_**2) < 1.49/2 )
-#    plot(u_, sqrt(u_**2) < 1.49/n )
+#    plot(u_, np.sqrt(1 - u_**2))
+#    plot(u_, np.sqrt(u_**2) < 1.49/2 )
+#    plot(u_, np.sqrt(u_**2) < 1.49/n )
 #    figure()
     
-    k = 2*pi*n/lamb
+    k = 2*np.pi*n/lamb
 
     FP = FourierPropagator(u,v,k, lamb)
 
     #clf()
-    #imshow(imag(FP.propFac))
+    #plt.imshow(imag(FP.propFac))
     #colorbar()
 
     #apperture mask
     if apodization == None:
         M = 1.0*(R < (NA/n)) # NA/lambda
-    elif apodization == 'sine':
-        M = 1.0*(R < (NA/n))*sqrt(cos(.5*pi*np.minimum(R, 1)))
+    elif apodization == 'np.sine':
+        M = 1.0*(R < (NA/n))*np.sqrt(np.cos(.5*np.pi*np.minimum(R, 1)))
     
     
     
     #M = M/M.sum()
     
-    #imshow(M)
+    #plt.imshow(M)
 
     return X, Y, R, FP, M, u, v
     
-def GenWidefieldAPA(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47, field_x=0, field_y=0, apertureNA=1.5, apertureZGradient = 0, apodizisation='sine'):
+def GenWidefieldAPA(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47, field_x=0, field_y=0, apertureNA=1.5, apertureZGradient = 0, apodizisation='np.sine'):
     if X == None or Y == None:
-        X, Y = meshgrid(arange(-2000, 2000., dx),arange(-2000, 2000., dx))
+        X, Y = np.meshgrid(arange(-2000, 2000., dx),arange(-2000, 2000., dx))
     else:
-        X, Y = meshgrid(X,Y)
+        X, Y = np.meshgrid(X,Y)
     
     X = X - X.mean()
     Y = Y - Y.mean()
@@ -217,27 +222,27 @@ def GenWidefieldAPA(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47, field_x
     v = Y*lamb/(n*X.shape[1]*dx*dx)
     #print u.min()
 
-    R = sqrt(u**2 + v**2)
+    R = np.sqrt(u**2 + v**2)
     
     #print R.max()*lamb
     #print(((R/(n*lamb)).max()))
     
-    #imshow(R*lamb)
+    #plt.imshow(R*lamb)
     #colorbar()
 #    figure()
 #    u_ = u[u.shape[0]/2, :]
 #    plot(u_, u_)
-#    plot(u_, sqrt(1 - u_**2))
-#    plot(u_, sqrt(u_**2) < 1.49/2 )
-#    plot(u_, sqrt(u_**2) < 1.49/n )
+#    plot(u_, np.sqrt(1 - u_**2))
+#    plot(u_, np.sqrt(u_**2) < 1.49/2 )
+#    plot(u_, np.sqrt(u_**2) < 1.49/n )
 #    figure()
     
-    k = 2*pi*n/lamb
+    k = 2*np.pi*n/lamb
 
     FP = FourierPropagatorClipHNA(u,v,k, lamb, n, field_x, field_y, apertureNA, apertureZGradient)
 
     #clf()
-    #imshow(imag(FP.propFac))
+    #plt.imshow(imag(FP.propFac))
     #colorbar()
 
     #apperture mask
@@ -245,37 +250,37 @@ def GenWidefieldAPA(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47, field_x
     
     if apodizisation == None:
         M = 1.0*(R < (NA/n)) # NA/lambda
-    elif apodizisation == 'sine':
-        M = 1.0*(R < (NA/n))*sqrt(cos(.5*pi*np.minimum(R, 1)))
+    elif apodizisation == 'np.sine':
+        M = 1.0*(R < (NA/n))*np.sqrt(np.cos(.5*np.pi*np.minimum(R, 1)))
     
     #M = M/M.sum()
     
-    #imshow(M)
+    #plt.imshow(M)
 
     return X, Y, R, FP, M, u, v
 
 def GenWidefieldPSF(zs, dx=5, lamb=700, n=1.51, NA = 1.47,apodization=None):
     X, Y, R, FP, F, u, v = GenWidefieldAP(dx, lamb=lamb, n=n, NA = NA, apodization=apodization)
     #figure()
-    #imshow(abs(F))
+    #plt.imshow(abs(F))
 
-    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 
     return abs(ps**2)
     
 def GenWidefieldPSFA(zs, dx=5, lamb=700, n=1.51, NA = 1.47,field_x=0, field_y=0, apertureNA=1.5, apertureZGradient = 0):
     X, Y, R, FP, F, u, v = GenWidefieldAPA(dx, lamb=lamb, n=n, NA = NA, field_x=field_x, field_y=field_y, apertureNA=apertureNA, apertureZGradient = apertureZGradient)
     #figure()
-    #imshow(abs(F))
+    #plt.imshow(abs(F))
 
-    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 
     return abs(ps**2)
     
 
 def PsfFromPupil(pupil, zs, dx, lamb, apodization=None, n=1.51, NA=1.51):
     dx = float(dx)
-    X, Y = meshgrid(dx*arange(-pupil.shape[0]/2, pupil.shape[0]/2),dx*arange(-pupil.shape[1]/2, pupil.shape[1]/2))
+    X, Y = np.meshgrid(dx*arange(-pupil.shape[0]/2, pupil.shape[0]/2),dx*arange(-pupil.shape[1]/2, pupil.shape[1]/2))
     print((X.min(), X.max()))
     
     X = X - X.mean()
@@ -287,27 +292,27 @@ def PsfFromPupil(pupil, zs, dx, lamb, apodization=None, n=1.51, NA=1.51):
     u = X*lamb/(n*X.shape[0]*dx*dx)
     v = Y*lamb/(n*X.shape[1]*dx*dx)
     
-    k = 2*pi*n/lamb
+    k = 2*np.pi*n/lamb
 
     
     #M = 1.0*(R < (NA/(n*lamb))) # NA/lambda
 
     #if apodization is None:
     #    M = 1.0*(R < (NA/n)) # NA/lambda
-    if apodization == 'sine':
-        R = sqrt(u**2 + v**2)
-        M = 1.0*(R < (NA/n))*sqrt(cos(.5*pi*np.minimum(R, 1)))
+    if apodization == 'np.sine':
+        R = np.sqrt(u**2 + v**2)
+        M = 1.0*(R < (NA/n))*np.sqrt(np.cos(.5*np.pi*np.minimum(R, 1)))
         pupil = pupil*M
 
     FP = FourierPropagator(u,v,k, lamb)
     
-    ps = concatenate([FP.propagate(pupil, z)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(pupil, z)[:,:,None] for z in zs], 2)
 
     return abs(ps**2)
     
 def PsfFromPupilVect(pupil, zs, dx, lamb, shape = [61,61], apodization=None, n=1.51, NA=1.51):
     dx = float(dx)
-    X, Y = meshgrid(dx*arange(-pupil.shape[0]/2, pupil.shape[0]/2),dx*arange(-pupil.shape[1]/2, pupil.shape[1]/2))
+    X, Y = np.meshgrid(dx*arange(-pupil.shape[0]/2, pupil.shape[0]/2),dx*arange(-pupil.shape[1]/2, pupil.shape[1]/2))
     print((X.min(), X.max()))
     
     X = X - X.mean()
@@ -328,28 +333,28 @@ def PsfFromPupilVect(pupil, zs, dx, lamb, shape = [61,61], apodization=None, n=1
     u = X*lamb/(n*X.shape[0]*dx*dx)
     v = Y*lamb/(n*X.shape[1]*dx*dx)
 
-    R = sqrt(u**2 + v**2)
+    R = np.sqrt(u**2 + v**2)
     
-    phi = angle(u+ 1j*v)
-    #theta = arcsin(minimum(R*lamb, 1))
-    theta = arcsin(minimum(R, 1))
-    
-    #figure()
-    #imshow(phi)
+    phi = np.angle(u+ 1j*v)
+    #theta = np.arcsin(minimum(R*lamb, 1))
+    theta = np.arcsin(minimum(R, 1))
     
     #figure()
-    #imshow(theta)
+    #plt.imshow(phi)
     
-    ct = cos(theta)
-    st = sin(theta)
-    cp = cos(phi)
-    sp = sin(phi)
+    #figure()
+    #plt.imshow(theta)
     
-    k = 2*pi*n/lamb
+    ct = np.cos(theta)
+    st = np.sin(theta)
+    cp = np.cos(phi)
+    sp = np.sin(phi)
     
-    if apodization == 'sine':
-        R = sqrt(u**2 + v**2)
-        M = 1.0*(R < (NA/n))*sqrt(cos(.5*pi*np.minimum(R, 1)))
+    k = 2*np.pi*n/lamb
+    
+    if apodization == 'np.sine':
+        R = np.sqrt(u**2 + v**2)
+        M = 1.0*(R < (NA/n))*np.sqrt(np.cos(.5*np.pi*np.minimum(R, 1)))
         pupil = pupil*M
     
     
@@ -358,75 +363,75 @@ def PsfFromPupilVect(pupil, zs, dx, lamb, shape = [61,61], apodization=None, n=1
     FP = FourierPropagator(u,v,k, lamb) 
     
     fac = ct*cp**2 + sp**2
-    ps = concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
     p = abs(ps**2)
     
     fac = (ct - 1)*cp*sp
-    ps = concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
     p += abs(ps**2)
     
     fac = (ct - 1)*cp*sp
-    ps = concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
     p += abs(ps**2)
     
     fac = ct*sp**2 + cp**2
-    ps = concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
     p += abs(ps**2)
     
     fac = st*cp
-    ps = concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
     p += abs(ps**2)
     
     fac = st*sp
-    ps = concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
     p += abs(ps**2)
 
     return p[ox:ex, oy:ey, :] #abs(ps**2)
     
 def PsfFromPupilVectFP(X, Y, R, FP, u, v, n, pupil, zs):    
-    phi = angle(u+ 1j*v)
-    theta = arcsin(minimum(R/n, 1))
+    phi = np.angle(u+ 1j*v)
+    theta = np.arcsin(minimum(R/n, 1))
     
     #figure()
-    #imshow(phi)
+    #plt.imshow(phi)
     
     figure()
-    #imshow(theta)
+    #plt.imshow(theta)
     print theta.min(), theta.max()
     
-    ct = cos(theta)
-    st = sin(theta)
-    cp = cos(phi)
-    sp = sin(phi) 
+    ct = np.cos(theta)
+    st = np.sin(theta)
+    cp = np.cos(phi)
+    sp = np.sin(phi) 
     
     fac = ct*cp**2 + sp**2
-    ps = concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
     p = abs(ps**2)
     
     fac = (ct - 1)*cp*sp
-    ps = concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
     p += abs(ps**2)
     
     fac = (ct - 1)*cp*sp
-    ps = concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
     p += abs(ps**2)
     
     fac = ct*sp**2 + cp**2
-    ps = concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
     p += abs(ps**2)
     
     fac = st*cp
-    ps = concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
     p += abs(ps**2)
     
     fac = st*sp
-    ps = concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
     p += abs(ps**2)
 
     return p#p[ox:ex, oy:ey, :] #abs(ps**2)
 
 def PsfFromPupilFP(X, Y, R, FP, u, v, n, pupil, zs):
-    ps = concatenate([FP.propagate(pupil, z)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(pupil, z)[:,:,None] for z in zs], 2)
     p = abs(ps**2)
 
     return p#p[ox:ex, oy:ey, :] #abs(ps**2)
@@ -434,9 +439,9 @@ def PsfFromPupilFP(X, Y, R, FP, u, v, n, pupil, zs):
 def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters = 50, size=5e3, intermediateUpdates=False):
     dx = float(dx)
     if not size:
-        X, Y = meshgrid(float(dx)*arange(-ps.shape[0]/2, ps.shape[0]/2),float(dx)*arange(-ps.shape[1]/2, ps.shape[1]/2))
+        X, Y = np.meshgrid(float(dx)*arange(-ps.shape[0]/2, ps.shape[0]/2),float(dx)*arange(-ps.shape[1]/2, ps.shape[1]/2))
     else:
-        X, Y = meshgrid(arange(-size, size, dx),arange(-size, size, dx))
+        X, Y = np.meshgrid(arange(-size, size, dx),arange(-size, size, dx))
         
     X = X - X.mean()
     Y = Y - Y.mean()
@@ -455,23 +460,23 @@ def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters = 50, size=5e3, in
     
     
 
-    R = sqrt(u**2 + v**2)
+    R = np.sqrt(u**2 + v**2)
     M = 1.0*(R < (NA/n)) # NA/lambda
     
     #figure()
-    #imshow(R)
+    #plt.imshow(R)
     
     #colorbar()
     #contour(M, [0.5])
     #figure()
     
-    k = 2*pi*n/lamb
+    k = 2*np.pi*n/lamb
 
     FP = FourierPropagator(u,v,k, lamb)
 
-    pupil = M*exp(1j*0)
+    pupil = M*np.exp(1j*0)
     
-    sps = sqrt(ps)
+    sps = np.sqrt(ps)
     
     #normalize
     sps = np.pi*M.sum()*sps/sps.sum(1).sum(0)[None,None,:]
@@ -487,7 +492,7 @@ def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters = 50, size=5e3, in
         print(i)#, abs(pupil).sum()
         
         #figure()
-        #imshow(abs(pupil))
+        #plt.imshow(abs(pupil))
         res = 0
 
         jr = np.argsort(np.random.rand(ps.shape[2]))
@@ -497,13 +502,13 @@ def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters = 50, size=5e3, in
             #propogate to focal plane
             prop_j  = FP.propagate(pupil, zs[j])
             
-            #print abs(prop_j).sum(), sqrt(ps[:,:,j]).sum()
+            #print abs(prop_j).sum(), np.sqrt(ps[:,:,j]).sum()
             
             #print ps[:,:,j].shape
             #print prop_j.shape
             
             #figure()
-            #imshow(angle(prop_j))
+            #plt.imshow(np.angle(prop_j))
             
                         
             #print prop_j[ox:ex, oy:ey].shape, sps[:,:,j].shape
@@ -525,7 +530,7 @@ def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters = 50, size=5e3, in
             res += ((pj_mag - sps_j)**2).sum()
             
             #replace amplitude, but keep phase
-            prop_j[ox:ex, oy:ey] = sps_j*exp(1j*angle(pj))
+            prop_j[ox:ex, oy:ey] = sps_j*np.exp(1j*np.angle(pj))
             
             #print abs(prop_j).sum()
             
@@ -535,13 +540,13 @@ def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters = 50, size=5e3, in
             #print abs(bp).sum()
             #figure()
             #bps.append(abs(bp))
-            #abp.append(angle(bp))
+            #abp.append(np.angle(bp))
             new_pupil += bp
             
             #figure()            
-            #imshow(abs(new_pupil))
+            #plt.imshow(abs(new_pupil))
             if intermediateUpdates:
-                pupil = M*exp(1j*M*angle(bp))
+                pupil = M*np.exp(1j*M*np.angle(bp))
             
         new_pupil /= ps.shape[2]
         
@@ -555,22 +560,22 @@ def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters = 50, size=5e3, in
         #np_A = ndimage.gaussian_filter(np_A,.5)
         #np_A *= M
         
-        #np_P = angle(new_pupil)
+        #np_P = np.angle(new_pupil)
         #np_P *= M
         #np_P = ndimage.gaussian_filter(np_P, .5)
         
         
-        #imshow(abs(new_pupil))
+        #plt.imshow(abs(new_pupil))
         
         #crop to NA
         #new_pupil = new_pupil*M
         
-        #pupil = np_A*exp(1j*np_P)
+        #pupil = np_A*np.exp(1j*np_P)
         
         #pupil = new_pupil*M
         
         #only fit the phase
-        pupil = M*exp(1j*M*angle(new_pupil))
+        pupil = M*np.exp(1j*M*np.angle(new_pupil))
     
     return pupil
     
@@ -580,7 +585,7 @@ def GenZernikePSF(zs, dx = 5, zernikeCoeffs = []):
     from PYME.misc import zernike
     X, Y, R, FP, F, u, v = GenWidefieldAP(dx)
     
-    theta = angle(X + 1j*Y)
+    theta = np.angle(X + 1j*Y)
     r = R/R[abs(F)>0].max()
     
     ang = 0
@@ -589,14 +594,14 @@ def GenZernikePSF(zs, dx = 5, zernikeCoeffs = []):
         ang = ang + c*zernike.zernike(i, r, theta)
         
     clf()
-    imshow(angle(exp(1j*ang)))
+    plt.imshow(np.angle(np.exp(1j*ang)))
         
-    F = F.astype('d')*exp(-1j*ang)
+    F = F.astype('d')*np.exp(-1j*ang)
         
     figure()
-    imshow(angle(F))
+    plt.imshow(np.angle(F))
 
-    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 
     return abs(ps**2)
     
@@ -604,34 +609,34 @@ def GenZernikeDPSF(zs, dx = 5, zernikeCoeffs = {}, lamb=700, n=1.51, NA = 1.47, 
     from PYME.misc import zernike, snells
     X, Y, R, FP, F, u, v = GenWidefieldAP(dx, lamb=lamb, n = n, NA = NA, apodization=apodization)
     
-    theta = angle(X + 1j*Y)
+    theta = np.angle(X + 1j*Y)
     r = R/R[abs(F)>0].max()
     
     if ns == n:
         T = 1.0*F
     else:
-        #find angles    
-        t_t = np.minimum(r*arcsin(NA/n), np.pi/2)
+        #find np.angles    
+        t_t = np.minimum(r*np.arcsin(NA/n), np.pi/2)
         
-        #corresponding angle in sample with mismatch
+        #corresponding np.angle in sample with mismatch
         t_i = snells.theta_t(t_t, n, ns)
         
         #Transmission at interface (average of S and P)
         T = 0.5*(snells.Ts(t_i, ns, n) + snells.Tp(t_i, ns, n))
-        #concentration of high angle rays:
+        #concentration of high np.angle rays:
         T = T*F/(n*np.cos(t_t)/np.sqrt(ns*2 - (n*np.sin(t_t))**2))
     
     
     
-    #imshow(T*(-t_i + snells.theta_t(t_t+.001, n, ns)))
-    #imshow(F)
+    #plt.imshow(T*(-t_i + snells.theta_t(t_t+.001, n, ns)))
+    #plt.imshow(F)
     #colorbar()
     #figure()
-    #imshow(T, clim=(.8, 1.2))
+    #plt.imshow(T, clim=(.8, 1.2))
     #colorbar()
     #figure()
-    #imshow(T*(-t_i + snells.theta_t(t_t+.01, n, ns)))
-    #imshow(t_i - t_t)
+    #plt.imshow(T*(-t_i + snells.theta_t(t_t+.01, n, ns)))
+    #plt.imshow(t_i - t_t)
     
     ang = 0
     
@@ -639,19 +644,19 @@ def GenZernikeDPSF(zs, dx = 5, zernikeCoeffs = {}, lamb=700, n=1.51, NA = 1.47, 
         ang = ang + c*zernike.zernike(i, r, theta)
         
     #clf()
-    #imshow(angle(exp(1j*ang)))
+    #plt.imshow(np.angle(np.exp(1j*ang)))
         
-    F = T*exp(-1j*ang)
+    F = T*np.exp(-1j*ang)
         
     #figure()
-    #imshow(angle(F))
+    #plt.imshow(np.angle(F))
         
     if vect:
         return PsfFromPupilVectFP(X,Y,R, FP, u,v, n, F, zs)
     else:
         return PsfFromPupilFP(X,Y,R, FP, u,v, n, F, zs)
 
-#    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+#    ps = np.concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 #    
 #    if beadsize == 0:
 #        return abs(ps**2)
@@ -664,34 +669,34 @@ def GenZernikeDAPSF(zs, dx = 5, X=None, Y=None, zernikeCoeffs = {}, lamb=700, n=
     from PYME.misc import zernike, snells
     X, Y, R, FP, F, u, v = GenWidefieldAPA(dx, X = X, Y=Y, lamb=lamb, n = n, NA = NA, field_x=field_x, field_y=field_y, apertureNA=apertureNA, apertureZGradient = apertureZGradient, apodizisation=apodizisation)
     
-    theta = angle(X + 1j*Y)
+    theta = np.angle(X + 1j*Y)
     r = R/R[abs(F)>0].max()
     
     if ns == n:
         T = 1.0*F
     else:
-        #find angles    
-        t_t = np.minimum(r*arcsin(NA/n), np.pi/2)
+        #find np.angles    
+        t_t = np.minimum(r*np.arcsin(NA/n), np.pi/2)
         
-        #corresponding angle in sample with mismatch
+        #corresponding np.angle in sample with mismatch
         t_i = snells.theta_t(t_t, n, ns)
         
         #Transmission at interface (average of S and P)
         T = 0.5*(snells.Ts(t_i, ns, n) + snells.Tp(t_i, ns, n))
-        #concentration of high angle rays:
+        #concentration of high np.angle rays:
         T = T*F/(n*np.cos(t_t)/np.sqrt(ns*2 - (n*np.sin(t_t))**2))
     
     
     
-    #imshow(T*(-t_i + snells.theta_t(t_t+.001, n, ns)))
-    #imshow(F)
+    #plt.imshow(T*(-t_i + snells.theta_t(t_t+.001, n, ns)))
+    #plt.imshow(F)
     #colorbar()
     #figure()
-    #imshow(T, clim=(.8, 1.2))
+    #plt.imshow(T, clim=(.8, 1.2))
     #colorbar()
     #figure()
-    #imshow(T*(-t_i + snells.theta_t(t_t+.01, n, ns)))
-    #imshow(t_i - t_t)
+    #plt.imshow(T*(-t_i + snells.theta_t(t_t+.01, n, ns)))
+    #plt.imshow(t_i - t_t)
     
     ang = 0
     
@@ -699,19 +704,19 @@ def GenZernikeDAPSF(zs, dx = 5, X=None, Y=None, zernikeCoeffs = {}, lamb=700, n=
         ang = ang + c*zernike.zernike(i, r, theta)
         
     #clf()
-    #imshow(angle(exp(1j*ang)))
+    #plt.imshow(np.angle(np.exp(1j*ang)))
         
-    F = T*exp(-1j*ang)
+    F = T*np.exp(-1j*ang)
         
     #figure()
-    #imshow(angle(F))
+    #plt.imshow(np.angle(F))
         
     if vect:
         return PsfFromPupilVectFP(X,Y,R, FP, u,v, n, F, zs)
     else:
         return PsfFromPupilFP(X,Y,R, FP, u,v, n, F, zs)
 
-    #ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+    #ps = np.concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 
     #return abs(ps**2)
 
@@ -719,11 +724,11 @@ def GenPRIPSF(zs, dx = 5, strength=1.0, dp=0, lamb=700, n=1.51, NA = 1.47, ns=1.
     #X, Y, R, FP, F, u, v = GenWidefieldAP(dx, NA=NA)
     X, Y, R, FP, F, u, v = GenWidefieldAP(dx, lamb=lamb, n = n, NA = NA, apodization=apodization)
 
-    F = F * exp(-1j*sign(X)*(10*strength*v + dp/2))
+    F = F * np.exp(-1j*np.sign(X)*(10*strength*v + dp/2))
     #clf()
-    #imshow(angle(F))
+    #plt.imshow(np.angle(F))
 
-    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 
     return abs(ps**2)
     
@@ -731,11 +736,11 @@ def GenPRIEField(zs, dx = 5, strength=1.0, dp=0, lamb=700, n=1.51, NA = 1.47, ns
     #X, Y, R, FP, F, u, v = GenWidefieldAP(dx, NA=NA)
     X, Y, R, FP, F, u, v = GenWidefieldAP(dx, lamb=lamb, n = n, NA = NA, apodization=apodization)
 
-    F = F * exp(-1j*sign(X)*(10*strength*v + dp/2))
+    F = F * np.exp(-1j*np.sign(X)*(10*strength*v + dp/2))
     #clf()
-    #imshow(angle(F))
+    #plt.imshow(np.angle(F))
 
-    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 
     return ps
     #return abs(ps**2)
@@ -743,44 +748,44 @@ def GenPRIEField(zs, dx = 5, strength=1.0, dp=0, lamb=700, n=1.51, NA = 1.47, ns
 def GenICPRIPSF(zs, dx = 5, strength=1.0, NA=1.47):
     X, Y, R, FP, F, u, v = GenWidefieldAP(dx, NA = NA)
 
-    F = F * exp(-1j*sign(X)*10*strength*v)
+    F = F * np.exp(-1j*np.sign(X)*10*strength*v)
     #clf()
-    #imshow(angle(F))
+    #plt.imshow(np.angle(F))
     
     F_ = F
     F = F*(X >= 0)
 
-    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 
     p1 = abs(ps**2)
     
     F = F_*(X < 0)
 
-    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 
     return  p1 + abs(ps**2)
     
 def GenColourPRIPSF(zs, dx = 5, strength=1.0, transmit = [1,1]):
     X, Y, R, FP, F, u, v = GenWidefieldAP(dx)
 
-    F = F * exp(-1j*sign(X)*10*strength*v)
+    F = F * np.exp(-1j*np.sign(X)*10*strength*v)
     
-    F = F*(sqrt(transmit[0])*(X < 0) +  sqrt(transmit[1])*(X >=0))
+    F = F*(np.sqrt(transmit[0])*(X < 0) +  np.sqrt(transmit[1])*(X >=0))
     #clf()
-    imshow(angle(F))
+    plt.imshow(np.angle(F))
 
-    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 
     return abs(ps**2)
 
 def GenAstigPSF(zs, dx=5, strength=1.0, X=None, Y=None, lamb=700, n=1.51, NA = 1.47):
     X, Y, R, FP, F, u, v = GenWidefieldAP(dx, X, Y, lamb=lamb, n=n, NA = NA)
 
-    F = F * exp(-1j*((strength*v)**2 - 0.5*(strength*R)**2))
+    F = F * np.exp(-1j*((strength*v)**2 - 0.5*(strength*R)**2))
     #clf()
-    #imshow(angle(F))
+    #plt.imshow(np.angle(F))
 
-    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 
     return abs(ps**2)
     
@@ -789,15 +794,15 @@ def GenSAPSF(zs, dx=5, strength=1.0, X=None, Y=None, lamb=700, n=1.51, NA = 1.47
     X, Y, R, FP, F, u, v = GenWidefieldAP(dx, X, Y, lamb=lamb, n=n, NA = NA)
     
     r = R/R[abs(F)>0].max()
-    theta = angle(X + 1j*Y)
+    theta = np.angle(X + 1j*Y)
     
     z8 = zernike.zernike(8, r, theta)
 
-    F = F * exp(-1j*strength*z8)
+    F = F * np.exp(-1j*strength*z8)
     #clf()
-    #imshow(angle(F))
+    #plt.imshow(np.angle(F))
 
-    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 
     return abs(ps**2)
     
@@ -806,15 +811,15 @@ def GenR3PSF(zs, dx=5, strength=1.0, X=None, Y=None, lamb=700, n=1.51, NA = 1.47
     X, Y, R, FP, F, u, v = GenWidefieldAP(dx, X, Y, lamb=lamb, n=n, NA = NA)
     
     r = R/R[abs(F)>0].max()
-    theta = angle(X + 1j*Y)
+    theta = np.angle(X + 1j*Y)
     
     z8 = r**3#zernike.zernike(8, r, theta)
 
-    F = F * exp(-1j*strength*z8)
+    F = F * np.exp(-1j*strength*z8)
     #clf()
-    #imshow(angle(F))
+    #plt.imshow(np.angle(F))
 
-    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 
     return abs(ps**2)
     
@@ -823,15 +828,15 @@ def GenBesselPSF(zs, dx=5, rad=.95, X=None, Y=None, lamb=700, n=1.51, NA = 1.47)
     X, Y, R, FP, F, u, v = GenWidefieldAP(dx, X, Y, lamb=lamb, n=n, NA = NA)
     
     r = R/R[abs(F)>0].max()
-    #theta = angle(X + 1j*Y)
+    #theta = np.angle(X + 1j*Y)
     
     #z8 = zernike.zernike(8, r, theta)
 
-    F = F * (r > rad)#exp(-1j*strength*z8)
+    F = F * (r > rad)#np.exp(-1j*strength*z8)
     #clf()
-    #imshow(angle(F))
+    #plt.imshow(np.angle(F))
 
-    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 
     return abs(ps**2)
     
@@ -840,15 +845,15 @@ def GenSABesselPSF(zs, dx=5, rad=.95, strength=1.0, X=None, Y=None, lamb=700, n=
     X, Y, R, FP, F, u, v = GenWidefieldAP(dx, X, Y, lamb=lamb, n=n, NA = NA)
     
     r = R/R[abs(F)>0].max()
-    theta = angle(X + 1j*Y)
+    theta = np.angle(X + 1j*Y)
     
     z8 = zernike.zernike(8, r, theta)
 
-    F = F * (r > rad)*exp(-1j*strength*z8)
+    F = F * (r > rad)*np.exp(-1j*strength*z8)
     #clf()
-    #imshow(angle(F))
+    #plt.imshow(np.angle(F))
 
-    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 
     return abs(ps**2)
 
@@ -864,7 +869,7 @@ def GenSAAstigPSF(zs, dx=5, strength=1.0, SA=0, X=None, Y=None, lamb=700, n=1.51
         fpset = GenWidefieldAP(dx, X, Y, lamb=lamb, n=n, NA = NA)
         X, Y, R, FP, F, u, v = fpset
         r = R/R[abs(F)>0].max()
-        theta = angle(X + 1j*Y)
+        theta = np.angle(X + 1j*Y)
         
         z8 = zernike.zernike(8, r, theta)
         a_s = (v**2 - 0.5*R**2)
@@ -875,14 +880,14 @@ def GenSAAstigPSF(zs, dx=5, strength=1.0, SA=0, X=None, Y=None, lamb=700, n=1.51
         X, Y, R, FP, F, u, v = fpset #GenWidefieldAP(dx, X, Y)
     
 
-    #F = F * exp(-1j*(strength*a_s + SA*z8))
+    #F = F * np.exp(-1j*(strength*a_s + SA*z8))
     pf = -(strength*a_s + SA*z8)
-    F = F *(cos(pf) + j*sin(pf))
+    F = F *(np.cos(pf) + j*np.sin(pf))
     
     #clf()
-    #imshow(angle(F))
+    #plt.imshow(np.angle(F))
 
-    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 
     return abs(ps**2)
     
@@ -898,18 +903,18 @@ def GenSAPRIPSF(zs, dx=5, strength=1.0, SA=0, X=None, Y=None, lamb=700, n=1.51, 
     X, Y, R, FP, F, u, v = fpset #GenWidefieldAP(dx, X, Y)
     r = R/R[abs(F)>0].max()
 
-    F = F * exp(-1j*sign(X)*10*strength*v)
+    F = F * np.exp(-1j*np.sign(X)*10*strength*v)
     
-    theta = angle(X + 1j*Y)
+    theta = np.angle(X + 1j*Y)
     
                 
     ang = SA*zernike.zernike(8, r, theta)
             
-    F = F*exp(-1j*ang)
+    F = F*np.exp(-1j*ang)
     #clf()
-    #imshow(angle(F))
+    #plt.imshow(np.angle(F))
 
-    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 
     return abs(ps**2)
     
@@ -920,35 +925,35 @@ def GenDHPSF(zs, dx=5, vortices=[0.0], lamb=700, n=1.51, NA = 1.47, ns=1.51, bea
     
     for i, vc in enumerate(vortices):
         sgn = 1#abs(vc)*(i%2)
-        ph += sgn*angle((u - vc) + 1j*v)
+        ph += sgn*np.angle((u - vc) + 1j*v)
 
-    F = F * exp(-1j*ph)
+    F = F * np.exp(-1j*ph)
     #clf()
-    #imshow(angle(F))
+    #plt.imshow(np.angle(F))
 
-    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 
     return abs(ps**2)
     
 def GenCubicPhasePSF(zs, dx=5, strength=1.0, X = None, Y = None, n=1.51, NA = 1.47):
     X, Y, R, FP, F, u, v = GenWidefieldAP(dx, X, Y, n = n, NA = NA)
 
-    F = F * exp(-1j*strength*(u**3 + v**3))
+    F = F * np.exp(-1j*strength*(u**3 + v**3))
     #clf()
-    #imshow(angle(F))
+    #plt.imshow(np.angle(F))
 
-    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 
     return abs(ps**2)
 
 def GenShiftedPSF(zs, dx = 5):
     X, Y, R, FP, F, u, v = GenWidefieldAP(dx)
 
-    F = F * exp(-1j*.01*Y)
+    F = F * np.exp(-1j*.01*Y)
     #clf()
-    #imshow(angle(F))
+    #plt.imshow(np.angle(F))
 
-    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 
     return abs(ps**2)
     
@@ -956,30 +961,30 @@ def GenBiplanePSF(zs, dx = 5, zshift = 500, xshift = 1, NA=1.47):
     X, Y, R, FP, F, u, v = GenWidefieldAP(dx, NA=NA)
     F_ = F
 
-    F = F * exp(-1j*.01*xshift*Y)
+    F = F * np.exp(-1j*.01*xshift*Y)
     #clf()
-    #imshow(angle(F))
+    #plt.imshow(np.angle(F))
 
-    ps = concatenate([FP.propagate(F, z-zshift/2)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(F, z-zshift/2)[:,:,None] for z in zs], 2)
 
     ps1 = abs(ps**2)
     
-    F = F_ * exp(1j*.01*xshift*Y) 
+    F = F_ * np.exp(1j*.01*xshift*Y) 
     
     #clf()
-    #imshow(angle(F))
+    #plt.imshow(np.angle(F))
 
-    ps = concatenate([FP.propagate(F, z+zshift/2)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(F, z+zshift/2)[:,:,None] for z in zs], 2)
     return 0.5*ps1 +0.5*abs(ps**2)
 
 def GenStripePRIPSF(zs, dx = 5):
     X, Y, R, FP, F, u, v = GenWidefieldAP(dx)
 
-    F = F * exp(-1j*sign(sin(X))*.005*Y)
+    F = F * np.exp(-1j*np.sign(np.sin(X))*.005*Y)
     #clf()
-    #imshow(angle(F), cmap=cm.hsv)
+    #plt.imshow(np.angle(F), cmap=cm.hsv)
 
-    ps = concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+    ps = np.concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
 
     return abs(ps**2)
    
