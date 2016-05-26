@@ -182,10 +182,10 @@ class microscope(object):
         self.settingsDB.commit()
 
 
-    def satCheck(self, source): # check for saturation
+    def satCheck(self, source, **kwargs): # check for saturation
         if not 'shutterOpen' in dir(self.cam):
             return
-        im = source.dsa
+        im = source.currentFrame
         IMax = im.max()
 
         if not self.cam.shutterOpen:
@@ -286,7 +286,8 @@ class microscope(object):
 
         if 'shutterOpen' in dir(self.cam):
             #self.pa.WantFrameGroupNotification.append(self.satCheck)
-            self.frameWrangler.onFrameGroup.connect(self.satCheck)
+            #self.frameWrangler.onFrameGroup.connect(self.satCheck)
+            pass
             
         self.frameWrangler.start()
         

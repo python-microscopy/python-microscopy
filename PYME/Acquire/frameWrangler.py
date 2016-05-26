@@ -247,7 +247,7 @@ class FrameWrangler(wx.EvtHandler):
                     self.nFrames = nFrames
                     self.tThisFrame = time.clock()
                      
-                    self.onFrameGroup.send_robust(self)
+                    self.onFrameGroup.send(self)
             else:
                  self.stop()
         except:
