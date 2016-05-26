@@ -35,7 +35,7 @@ import numpy
 
 import weakref
 
-from PYME.Acquire import MetaDataHandler
+from PYME.io import MetaDataHandler
 from PYME.Analysis import MetaData
 from PYME.io import dataWrap
 from PYME.io.DataSources import BufferedDataSource
@@ -94,7 +94,7 @@ class ImageStack(object):
                     operations) version of the data will be stored as the .data 
                     member of the class.
                     
-            mdh     something derived from PYME.Acquire.MetaDataHandler.MDHandlerBase
+            mdh     something derived from PYME.io.MetaDataHandler.MDHandlerBase
                     If None, and empty one will be created.
             
             filename    filename of the data to load (see Load), or PYME queue identifier

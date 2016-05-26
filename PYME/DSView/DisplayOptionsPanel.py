@@ -33,7 +33,7 @@ except:
     pass
 import numpy as np
 #from matplotlib import cm
-from PYME.LMVis import histLimits
+from PYME.ui import histLimits
 from displayOptions import DisplayOpts, fast_grey, labeled
 
 import os

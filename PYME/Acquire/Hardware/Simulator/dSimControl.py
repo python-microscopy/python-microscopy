@@ -395,11 +395,11 @@ class dSimControl(wx.Panel):
         #event.Skip()
 
     def OnBPauseButton(self, event):
-        if self.scope.pa.isRunning():
-            self.scope.pa.stop()
+        if self.scope.frameWrangler.isRunning():
+            self.scope.frameWrangler.stop()
             self.bPause.SetLabel('Resume')
         else:
-            self.scope.pa.start()
+            self.scope.frameWrangler.start()
             self.bPause.SetLabel('Pause')
         #event.Skip()
 

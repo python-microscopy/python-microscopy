@@ -26,16 +26,20 @@
 #sys.path.append(".")
 
 import wx
-from PYME.Acquire import previewaquisator as previewaquisator
+#from PYME.Acquire import previewaquisator as previewaquisator
+from PYME.Acquire.frameWrangler import FrameWrangler
 
 import PYME.Acquire.protocol as protocol
-from PYME.Acquire import MetaDataHandler
+
+from PYME.io import MetaDataHandler
 from PYME.Acquire.Hardware import ccdCalibrator
 
 import sqlite3
 
 import os
 import datetime
+
+import warnings
 
 #register handlers for ndarrays
 from PYME.misc import sqlitendarray
@@ -152,10 +156,13 @@ class microscope(object):
             
         for k, v in self.GetPos().items():
             mdh.setEntry('Positioning.%s' % k.replace(' ', '_').replace('-', '_'), v)
-
-        mdh['CameraOrientation.Rotate'] = self.cam.orientation['rotate']
-        mdh['CameraOrientation.FlipX'] = self.cam.orientation['flipx']
-        mdh['CameraOrientation.FlipY'] = self.cam.orientation['flipy']
+        
+        try:
+            mdh['CameraOrientation.Rotate'] = self.cam.orientation['rotate']
+            mdh['CameraOrientation.FlipX'] = self.cam.orientation['flipx']
+            mdh['CameraOrientation.FlipY'] = self.cam.orientation['flipy']
+        except AttributeError:
+            pass
             
         mdh.copyEntriesFrom(self.mdh)
 
@@ -246,11 +253,11 @@ class microscope(object):
                 stext = stext + '    ' + self.saturatedMessage
         if 'step' in dir(self):
             stext = stext + '   Stepper: (XPos: %1.2f  YPos: %1.2f  ZPos: %1.2f)' % (self.step.GetPosX(), self.step.GetPosY(), self.step.GetPosZ())
-        if self.pa.isRunning():
+        if self.frameWrangler.isRunning():
             if 'GetFPS' in dir(self.cam):
-                stext = stext + '    FPS = (%2.2f/%2.2f)' % (self.cam.GetFPS(),self.pa.getFPS())
+                stext = stext + '    FPS = (%2.2f/%2.2f)' % (self.cam.GetFPS(),self.frameWrangler.getFPS())
             else:
-                stext = stext + '    FPS = %2.2f' % self.pa.getFPS()
+                stext = stext + '    FPS = %2.2f' % self.frameWrangler.getFPS()
 
             if 'GetNumImsBuffered' in dir(self.cam):
 				stext = stext + '    Buffer Level: %d of %d' % (self.cam.GetNumImsBuffered(), self.cam.GetBufferSize())
@@ -259,26 +266,38 @@ class microscope(object):
                 stext = stext + '    ' + sic()       
         return stext
 
+    @property
+    def pa(self):
+        '''property to catch access of what was previously called the scope.frameWrangler (the PreviewAcquisator)'''
+        warnings.warn(".pa is deprecated, please use .frameWrangler instead", DeprecationWarning)
+        return self.frameWrangler
+    
     def startAquisistion(self):
-        if 'pa' in dir(self):
-            self.pa.stop() #stop old acquisition
+        #stop an old acquisition
+        try:
+            self.frameWrangler.stop()
+        except AttributeError:
+            pass
         
-        self.pa = previewaquisator.PreviewAquisator(self.chaninfo,self.cam, self.shutters)
-        self.pa.HardwareChecks.extend(self.hardwareChecks)
-        self.pa.Prepare()
+        #self.pa = previewaquisator.PreviewAquisator(self.chaninfo,self.cam, self.shutters)
+        self.frameWrangler = FrameWrangler(self.cam)
+        self.frameWrangler.HardwareChecks.extend(self.hardwareChecks)
+        self.frameWrangler.Prepare()
 
         if 'shutterOpen' in dir(self.cam):
             #self.pa.WantFrameGroupNotification.append(self.satCheck)
-            self.pa.onFrameGroup.connect(self.satCheck)
+            self.frameWrangler.onFrameGroup.connect(self.satCheck)
             
-        self.pa.start()
+        self.frameWrangler.start()
         
         for cb in self.PACallbacks:
             cb()
 
     def SetCamera(self, camName):
-        if 'pa' in dir(self):
-            self.pa.stop()
+        try:
+            self.frameWrangler.stop()
+        except AttributeError:
+            pass
 
         #deactivate cameras
         for c in self.cameras.values():
@@ -301,14 +320,14 @@ class microscope(object):
         self.camControls[camName].GetParent().Show()#GetParent().PinOpen()
         self.camControls[camName].GetParent().GetParent().Layout()
 
-        #if 'sa' in dir(self):
-        #    self.sa.cam = self.cam
-
-        if 'pa' in dir(self):
-            self.pa.cam = self.cam
-            self.pa.Prepare()
+        try:
+            self.frameWrangler.cam = self.cam
+            self.frameWrangler.Prepare()
             
-            self.pa.start()
+            self.frameWrangler.start()
+        except AttributeError:
+            pass
+            
             
         
             

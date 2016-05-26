@@ -22,7 +22,7 @@
 ##################
 
 import wx
-from PYME.LMVis import histLimits
+from PYME.ui import histLimits
 
 class dispSettingsFrame(wx.Frame):
     def __init__(self, parent, vp):

@@ -25,7 +25,7 @@ import numpy as np
 from scipy import fftpack, ndimage
 from PYME.Acquire.Hardware import splitter
 
-from pylab import *
+from pylab import ifftshift, ifftn, fftn, fftshift
 
 
 def findRectangularROIs(mask):
@@ -151,10 +151,10 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
     weights[:, -10:, :] = 0
 
     #print weights[:20, :].shape
-    weights[:100, :, :] *= linspace(0,1, 100)[:,None, None]
-    weights[-100:, :,:] *= linspace(1,0, 100)[:,None, None]
-    weights[:,10:110,:] *= linspace(0,1, 100)[None, :, None]
-    weights[:,-110:-10,:] *= linspace(1,0, 100)[None,:, None]
+    weights[:100, :, :] *= np.linspace(0,1, 100)[:,None, None]
+    weights[-100:, :,:] *= np.linspace(1,0, 100)[:,None, None]
+    weights[:,10:110,:] *= np.linspace(0,1, 100)[None, :, None]
+    weights[:,-110:-10,:] *= np.linspace(1,0, 100)[None,:, None]
 
     ROIX1 = mdh.getEntry('Camera.ROIPosX')
     ROIY1 = mdh.getEntry('Camera.ROIPosY')
@@ -206,7 +206,7 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
                 else:
                     r1 = r1/ (d[:,:,1][alreadyThere]).sum()
 
-                rt = array([r0, r1])
+                rt = np.array([r0, r1])
 
                 imr = imr.sum(2)
             else:
@@ -216,7 +216,7 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
                 else:
                     rt = rt/ (d[:,:,0][alreadyThere]).sum()
 
-                rt = array([rt])
+                rt = np.array([rt])
 
             #print rt
 

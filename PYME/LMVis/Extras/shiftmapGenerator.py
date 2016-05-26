@@ -40,7 +40,7 @@ class ShiftmapGenerator:
         visFr.Bind(wx.EVT_MENU, self.OnGenShiftmapQuadz, id=ID_GEN_SHIFTMAP_QZ)
 
     def OnGenShiftmap(self, event):
-        from PYME.Analysis import twoColour, twoColourPlot
+        from PYME.Analysis.points import twoColour, twoColourPlot
 
         pipeline = self.visFr.pipeline
 
@@ -69,7 +69,7 @@ class ShiftmapGenerator:
             fid.close()
             
     def OnGenShiftmapQuad(self, event):
-        from PYME.Analysis import twoColour, twoColourPlot
+        from PYME.Analysis.points import twoColour, twoColourPlot
 
         pipeline = self.visFr.pipeline
 
@@ -101,7 +101,7 @@ class ShiftmapGenerator:
             fid.close()
             
     def OnGenShiftmapQuadz(self, event):
-        from PYME.Analysis import twoColour, twoColourPlot
+        from PYME.Analysis.points import twoColour, twoColourPlot
 
         pipeline = self.visFr.pipeline
 

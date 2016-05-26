@@ -44,15 +44,21 @@ def _serve():
     cherrypy.engine.block()
     
     
+isServing = False
+
+
 def StartServing():
-    try: 
-        import threading
-        serveThread = threading.Thread(target=_serve)
-        serveThread.start()
-    except ImportError:
-        pass
+    global isServing
+    if not isServing:
+        try: 
+            import threading
+            serveThread = threading.Thread(target=_serve)
+            serveThread.start()
+            isServing = True
+        except ImportError:
+            pass
     
-StartServing()
+#StartServing()
 
 def getURL():
     return 'http://%s:%d/' % cherrypy.server.httpserver.socket.getsockname()

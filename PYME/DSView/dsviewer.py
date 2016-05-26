@@ -23,7 +23,7 @@
 import wx
 import wx.lib.agw.aui as aui
 #import PYME.misc.aui as aui
-import sys
+#import sys
 import matplotlib
 matplotlib.use('WxAgg')
 
@@ -38,9 +38,8 @@ try:
 except ImportError:
     pass
 
-import PYME.misc.autoFoldPanel as afp
-#from PYME.DSView.arrayViewPanel import ArraySettingsAndViewPanel
-#from PYME.DSView.arrayViewPanel import ArrayViewPanel
+#import PYME.ui.autoFoldPanel as afp
+
 from PYME.DSView.displayOptions import DisplayOpts
 from PYME.DSView.DisplayOptionsPanel import OptionsPanel
 #from PYME.DSView.OverlaysPanel import OverlayPanel
@@ -48,6 +47,8 @@ from PYME.io.image import ImageStack
 
 from PYME.Acquire.mytimer import mytimer
 from PYME.Analysis import piecewiseMapping
+
+from PYME.ui.AUIFrame import AUIFrame
 
 import weakref
 openViewers = weakref.WeakValueDictionary()
@@ -61,123 +62,7 @@ class dt(wx.FileDropTarget):
             ViewIm3D(im)
             
 #drop = dt()
-            
-
-class AUIFrame(wx.Frame):
-    '''A class which encapsulated the common frame layout code used by
-    dsviewer and VisGUI
-    
-    Note: this class will probably move to a common ui location.'''
-    def __init__(self, *args, **kwargs):
-        wx.Frame.__init__(self, *args, **kwargs)
-        
-        self.SetAutoLayout(True)
-        
-        self._mgr = aui.AuiManager(agwFlags = aui.AUI_MGR_DEFAULT | aui.AUI_MGR_AUTONB_NO_CAPTION)
-        atabstyle = self._mgr.GetAutoNotebookStyle()
-        self._mgr.SetAutoNotebookStyle((atabstyle ^ aui.AUI_NB_BOTTOM) | aui.AUI_NB_TOP)
-        # tell AuiManager to manage this frame
-        self._mgr.SetManagedWindow(self)
-        
-        wx.EVT_SIZE(self, self.OnSize)
-        
-        self.paneHooks = []
-        self.pane0 = None
-
-        
-    def AddPage(self, page=None, select=True,caption='Dummy', update=True):
-        '''Add a page to the auto-notebook
-        
-        page: a wx.Window (ususally a panel) - the page to add
-        select: (bool) bring the new page to the top
-        caption: (string) the page caption
-        
-        '''
-        #if update:
-        #    self._mgr.Update()
-            
-        if self.pane0 == None:
-            name = caption.replace(' ', '')
-            self._mgr.AddPane(page, aui.AuiPaneInfo().
-                          Name(name).Caption(caption).Centre().CloseButton(False).CaptionVisible(False))
-            self.pane0 = name
-        else:
-            self._mgr.Update()
-            pn = self._mgr.GetPaneByName(self.pane0)
-            if pn.IsNotebookPage():
-                print((pn.notebook_id))
-                nbs = self._mgr.GetNotebooks()
-                if len(nbs) > pn.notebook_id:
-                    currPage = nbs[pn.notebook_id].GetSelection()
-                self._mgr.AddPane(page, aui.AuiPaneInfo().
-                              Name(caption.replace(' ', '')).Caption(caption).CloseButton(False).CaptionVisible(False).NotebookPage(pn.notebook_id))
-                if (not select) and len(nbs) > pn.notebook_id:
-                    self._mgr.Update()
-                    nbs[pn.notebook_id].SetSelection(currPage)
-            else:
-                self._mgr.AddPane(page, aui.AuiPaneInfo().
-                              Name(caption.replace(' ', '')).Caption(caption).CloseButton(False).CaptionVisible(False), target=pn)
-                
-                
-                if not select:
-                    self._mgr.Update()
-                    nb = self._mgr.GetNotebooks()[0]
-                    nb.SetSelection(0)
-        if update:
-            self._mgr.Update()
-               
-        #wx.CallAfter(self._mgr.Update)
-        #self.Layout() 
-        #self.OnSize(None)
-        #self.OnSize(None)
-        
-    def OnSize(self, event):
-        #self.Layout()
-        self._mgr.Update()
-        #self.Refresh()
-        #self.Update()
-        
-    def CreateFoldPanel(self):
-        '''Create a panel of folding 'drawers' on the left side of the frame.
-        loops over all the functions defined in self.paneHooks and calls them
-        to generate the drawers.
-        '''
-        pinfo = self._mgr.GetPaneByName('sidePanel')
-        if pinfo.IsOk(): #we already have a sidepanel, clear
-            self.sidePanel.Clear()
-        else:
-            self.sidePanel = afp.foldPanel(self, -1, wx.DefaultPosition,size = wx.Size(180, 1000))
-            pinfo = aui.AuiPaneInfo().Name("sidePanel").Left().CloseButton(False).CaptionVisible(False)
-
-            self._mgr.AddPane(self.sidePanel, pinfo)
-            
-        if len(self.paneHooks) > 0:
-            pinfo.Show()
-
-            for genFcn in self.paneHooks:
-                genFcn(self.sidePanel)
-        else:
-            pinfo.Hide()
-            
-
-        self._mgr.Update()
-        self.Refresh()
-        self.Update()
-        self._mgr.Update()
-        
-    def _cleanup(self):
-        #self.timer.Stop()
-        #for some reason AUI doesn't clean itself up properly and stops the
-        #window from being garbage collected - fix this here
-        self._mgr.UnInit()
-        self._mgr._frame = None
-        #if self.glCanvas:
-        #    self.glCanvas.wantViewChangeNotification.remove(self)
-        self.Destroy()
-
-    
-        
-        
+                   
 
 class DSViewFrame(AUIFrame):
     def __init__(self, image,  parent=None, title='', mode='LM', 
@@ -229,10 +114,7 @@ class DSViewFrame(AUIFrame):
         self.mainFrame = weakref.ref(self)
         #self.do = self.vp.do
         
-        self._menus = {}
-        # Menu Bar
-        self.menubar = wx.MenuBar()
-        self.SetMenuBar(self.menubar)
+        
         tmp_menu = wx.Menu()
         tmp_menu.Append(wx.ID_OPEN, '&Open', "", wx.ITEM_NORMAL)
         tmp_menu.Append(wx.ID_SAVE, "&Save As", "", wx.ITEM_NORMAL)
@@ -337,25 +219,10 @@ class DSViewFrame(AUIFrame):
                 self.mModules.Check(id, True)
 
             wx.EVT_MENU(self, id, self.OnToggleModule)
-            
+
         self.menubar.Append(self.mModules, "&Modules")
+        self._menus["&Modules"] = self.mModules
         
-    def AddMenuItem(self, menuName, itemName='', itemCallback = None, itemType='normal', helpText = ''):   
-        mItem = None
-        if not menuName in self._menus.keys():
-            menu = wx.Menu()
-            self.menubar.Insert(self.menubar.GetMenuCount()-1, menu, menuName)
-            self._menus[menuName] = menu
-        else:
-            menu = self._menus[menuName]
-        
-        if itemType == 'normal':        
-            mItem = menu.Append(wx.ID_ANY, itemName, helpText, wx.ITEM_NORMAL)
-            self.Bind(wx.EVT_MENU, itemCallback, mItem)
-        elif itemType == 'separator':
-            menu.AppendSeparator()
-            
-        return mItem
 
     def OnToggleModule(self, event):
         id = event.GetId()

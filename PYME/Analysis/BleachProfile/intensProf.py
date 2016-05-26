@@ -21,15 +21,17 @@
 #
 ##################
 
-from scipy import *
+#from scipy import *
 #from PYME.io.FileUtils.read_kdf import *
 import wx
-from pylab import *
+#from pylab import *
+import numpy as np
+import pylab
 
 from . import deMod
 
 def calcProf(fn_list):
-    sm = zeros(len(fn_list), 'f')
+    sm = np.zeros(len(fn_list), 'f')
 
     inWxApp = not (wx.GetApp() == None)
 
@@ -56,9 +58,9 @@ def calcProf(fn_list):
 
 def calcTs(prof, thresh):
     lOn = (prof > thresh).astype('f')
-    dlOn = diff(lOn)
+    dlOn = np.diff(lOn)
 
-    T = arange(len(dlOn))
+    T = np.arange(len(dlOn))
     Ton = T[dlOn > 0.5]
     
     Toff = T[dlOn < -0.5]
@@ -73,43 +75,43 @@ def calcTs(prof, thresh):
 
 def eMod(p, t):
     A, tau = p
-    return A*(1 - exp(-t/tau))
+    return A*(1 - np.exp(-t/tau))
 
 def eMod5(p, t):
     A, t0, tau = p
-    return A*(1 - exp(-(t-t0)/tau))
+    return A*(1 - np.exp(-(t-t0)/tau))
 
 def eMod2(p, t):
     A, tau , b = p
-    return A*(1 - b*exp(-t/tau))
+    return A*(1 - b*np.exp(-t/tau))
 
 def eMod3(p, t):
     A, tau , m = p
-    return A*(1 - exp(-t/tau)) + m*t
+    return A*(1 - np.exp(-t/tau)) + m*t
 
 def eMod4(p, t):
     A, tau1, tau2, r = p
-    return A*r*(1 - exp(-t/tau1)) + A*(1-r)*(1 - exp(-t/tau2)) 
+    return A*r*(1 - np.exp(-t/tau1)) + A*(1-r)*(1 - np.exp(-t/tau2)) 
     
 
 def doTraceDisp(prof, lOn, dt):
-    T = arange(len(prof))*dt
+    T = np.arange(len(prof))*dt
 
-    clf()
-    a1 = axes([.1, .3,.8,.6])
+    pylab.clf()
+    a1 = pylab.axes([.1, .3,.8,.6])
     a1.plot(T, prof)
     a1.grid()
     a1.set_ylabel('Fluorescence Intensity [a.u.]')
     
 
-    a2 = axes([.1, .1,.8,.1], sharex=a1)
+    a2 = pylab.axes([.1, .1,.8,.1], sharex=a1)
     a2.plot(T, lOn)
     a2.set_ylim(-.1, 1.1)
     a2.set_xlabel('Time [s]')
     a2.set_ylabel('Illumination')
 
     a1.set_xlim(0, T.max())
-    show()
+    pylab.show()
 
     return (a1, a2)
 
@@ -119,35 +121,35 @@ def lNofcn(t, t0, No0, Nd0, aod, aob, ado):
     '''Function to calculate number of fluorophores in on state when laser is on.'''
     tn = t - t0
     
-    beta = sqrt(aod**2 + 2*(aob + ado)*aod +aob**2 - 2*ado*aob + ado**2)
+    beta = np.sqrt(aod**2 + 2*(aob + ado)*aod +aob**2 - 2*ado*aob + ado**2)
 
-    return exp(-(aod + aob + ado)*tn/2)*((2*(No0 + Nd0)*ado - No0*(aod+aob + ado))*sinh(beta*tn/2)/beta + No0*cosh(beta*tn/2))
+    return np.exp(-(aod + aob + ado)*tn/2)*((2*(No0 + Nd0)*ado - No0*(aod+aob + ado))*np.sinh(beta*tn/2)/beta + No0*np.cosh(beta*tn/2))
 
 
 def dNofcn(t, t0, No0, Nd0, ado):
     '''Function to calculate number of fluorophores in on state when laser is off.'''
     tn = t - t0
 
-    return No0 + Nd0 - Nd0*exp(-ado*tn)
+    return No0 + Nd0 - Nd0*np.exp(-ado*tn)
 
 def lNdfcn(t, t0, No0, Nd0, aod, aob, ado):
     '''Function to calculate number of fluorophores in dark state when laser is on.'''
     tn = t - t0
     
-    beta = sqrt(aod**2 + 2*(aob + ado)*aod + aob**2 - 2*ado*aob + ado**2)
+    beta = np.sqrt(aod**2 + 2*(aob + ado)*aod + aob**2 - 2*ado*aob + ado**2)
 
-    return exp(-(aod + aob + ado)*tn/2)*((2*((No0 + Nd0)*aod +Nd0*aob)- Nd0*(aod+aob + ado))*sinh(beta*tn/2)/beta + Nd0*cosh(beta*tn/2))
+    return np.exp(-(aod + aob + ado)*tn/2)*((2*((No0 + Nd0)*aod +Nd0*aob)- Nd0*(aod+aob + ado))*np.sinh(beta*tn/2)/beta + Nd0*np.cosh(beta*tn/2))
 
 
 def dNdfcn(t, t0, No0, Nd0, ado):
     '''Function to calculate number of fluorophores in dark state when laser is off.'''
     tn = t - t0
 
-    return Nd0*exp(-ado*tn)
+    return Nd0*np.exp(-ado*tn)
 
 
 def genTraces(Ton, Toff, No0, Nd0, aod,aob, ado, dt, len_trace):
-    res = zeros(len_trace)
+    res = np.zeros(len_trace)
 
     No = No0
     Nd = Nd0
@@ -169,7 +171,7 @@ def genTraces(Ton, Toff, No0, Nd0, aod,aob, ado, dt, len_trace):
         #print No, Nd
 
         #now see what happens to intensity while laser is on
-        res[Ton[i]:Toff[i+1]] = lNofcn(arange(Ton[i], Toff[i+1])*dt, Ton[i]*dt, No, Nd, aod, aob, ado)
+        res[Ton[i]:Toff[i+1]] = lNofcn(np.arange(Ton[i], Toff[i+1])*dt, Ton[i]*dt, No, Nd, aod, aob, ado)
 
         #figure out what our occupancies should be at the end of the on time
         No_ = lNofcn((Toff[i+1] - Ton[i])*dt, 0, No, Nd, aod, aob, ado)
@@ -198,7 +200,7 @@ def traceModel(p, Ton, Toff, dt, len_trace):
 def traceModelDE(p, Ton, Toff, t, lOn):
     No0, Nd0, aod,aob, ado, bg, sc = p
 
-    a = integrate.odeint(deMod.flFsq, [No0, Nd0], t, ((aob, aod, ado),lOn), hmax = 0.007)
+    a = scipy.integrate.odeint(deMod.flFsq, [No0, Nd0], t, ((aob, aod, ado),lOn), hmax = 0.007)
 
     res = sc*a[:,0]*lOn
 
@@ -210,12 +212,12 @@ def traceModelDE(p, Ton, Toff, t, lOn):
 
 def lNofcnDE(t, t0, No0, Nd0, aod, aob, ado, pow):
     '''Function to calculate number of fluorophores in on state when laser is on.'''
-    tn = concatenate(((0.0,), (t - t0).reshape(-1)))
+    tn = np.concatenate(((0.0,), (t - t0).reshape(-1)))
     
    
     #print tn
     #print No0, Nd0
-    a = integrate.odeint(deMod.flFpow, [No0, Nd0], tn, ((aob, aod, ado,1, pow),))
+    a = scipy.integrate.odeint(deMod.flFpow, [No0, Nd0], tn, ((aob, aod, ado,1, pow),))
 
     return a[1:,0]
 
@@ -236,7 +238,7 @@ def lNdfcnDE(t, t0, No0, Nd0, aod, aob, ado, pow):
 
 
 def genTracesDE(Ton, Toff, No0, Nd0, aod,aob, ado, pow, dt, len_trace):
-    res = zeros(len_trace)
+    res = np.zeros(len_trace)
 
     No = No0
     Nd = Nd0
@@ -260,9 +262,9 @@ def genTracesDE(Ton, Toff, No0, Nd0, aod,aob, ado, pow, dt, len_trace):
         #print Ton[i], Toff[i+1]
 
         #now see what happens to intensity while laser is on
-        #resSeg = lNofcnDE(arange(0, Toff[i+1] - Ton[i])*dt, 0*dt, No, Nd, aod, aob, ado)
+        #resSeg = lNofcnDE(np.arange(0, Toff[i+1] - Ton[i])*dt, 0*dt, No, Nd, aod, aob, ado)
         #print resSeg
-        res[Ton[i]:Toff[i+1]] = lNofcnDE(arange(Ton[i], Toff[i+1])*dt, Ton[i]*dt, No, Nd, aod, aob, ado, pow)
+        res[Ton[i]:Toff[i+1]] = lNofcnDE(np.arange(Ton[i], Toff[i+1])*dt, Ton[i]*dt, No, Nd, aod, aob, ado, pow)
 
         #figure out what our occupancies should be at the end of the on time
         No_ = lNofcnDE((Toff[i+1] - Ton[i])*dt, 0, No, Nd, aod, aob, ado, pow)
@@ -325,7 +327,7 @@ def recolor( obj, col ):
 
 
 def doTraceDispdl2(prof, lOn, dt, Ton, Toff, Ibefore, Iafter, r, ipm, dt_ipm, dat, slx, sly, slt_init, slt_ss):
-    T = arange(len(prof))*dt
+    T = np.arange(len(prof))*dt
 
     clf()
     a1 = axes([.1, .1,.5,.35])
@@ -333,7 +335,7 @@ def doTraceDispdl2(prof, lOn, dt, Ton, Toff, Ibefore, Iafter, r, ipm, dt_ipm, da
 
     for i in range(len(Ton)/2 + 1):
         rt = dt*(Ton[i] - Toff[i])
-        a1.plot(dt*(arange(Toff[i+1] - Ton[i] + 400) - 200) + 4*i + 0.0*rt,prof[(Ton[i] - 200):(Toff[i+1] + 200)] + 2*i + .00*rt, 'k')
+        a1.plot(dt*(np.arange(Toff[i+1] - Ton[i] + 400) - 200) + 4*i + 0.0*rt,prof[(Ton[i] - 200):(Toff[i+1] + 200)] + 2*i + .00*rt, 'k')
         a1.text(4*i + 0.0*rt + dt*(Toff[i+1] - Ton[i] + .3e3),  2*i + 0.0*rt, '%d s' % (round(rt/10)*10), va='center', fontsize=10)
     #a1.grid()
     a1.set_ylabel('Fluorescence Intensity')
@@ -360,7 +362,7 @@ def doTraceDispdl2(prof, lOn, dt, Ton, Toff, Ibefore, Iafter, r, ipm, dt_ipm, da
 
     a3 = axes([.1, .55, .5,.35])
     #midPeak = prof[(Ton[6] - 400):(Toff[7] + 400)]
-    a3.plot((arange(len(ipm[:1000]))-85)*dt_ipm, ipm[:1000],'k')
+    a3.plot((np.arange(len(ipm[:1000]))-85)*dt_ipm, ipm[:1000],'k')
 
     a3.plot((array(slt_init) -85)*dt_ipm, [-1, -1], 'k',lw=2)
     a3.text((slt_init[1] - 85)*dt_ipm + 0.15, -1,'I', va='center') 
@@ -374,7 +376,7 @@ def doTraceDispdl2(prof, lOn, dt, Ton, Toff, Ibefore, Iafter, r, ipm, dt_ipm, da
     
     a3_2 = twiny(a3)
     #midPeak_z = prof[(Ton[6] - 50):(Ton[6] + 200)]
-    a3_2.plot((arange(len(ipm[85:120])))*dt_ipm, ipm[85:120],':.', color=[.5,.5,.5])
+    a3_2.plot((np.arange(len(ipm[85:120])))*dt_ipm, ipm[85:120],':.', color=[.5,.5,.5])
 
     a3_2.plot((array(slt_init) -85)*dt_ipm, [24, 24], color=[.5,.5,.5] , lw=2)
     a3_2.text((slt_init[1] - 85)*dt_ipm + 0.01, 24,'I', va='center',color=[.5,.5,.5])
@@ -390,7 +392,7 @@ def doTraceDispdl2(prof, lOn, dt, Ton, Toff, Ibefore, Iafter, r, ipm, dt_ipm, da
     #a4 = axes([.7, .1, .25, .35])
     #a4.plot(((Ton - Toff)*dt)[:7], (Iafter - Ibefore)[:7]/r[0][0], 'xk')
     #a4.plot(((Ton - Toff)*dt)[7:], (Iafter - Ibefore)[7:]/r[0][0], '+k')
-    #a4.plot(arange(1200), eMod(r[0], arange(1200))/r[0][0], 'k')
+    #a4.plot(np.arange(1200), eMod(r[0], np.arange(1200))/r[0][0], 'k')
     #a4.set_xlabel('Time [s]')
     #a4.set_ylabel('Normalised fluorescence recovery')
 
@@ -437,7 +439,7 @@ def doTraceDispdl2(prof, lOn, dt, Ton, Toff, Ibefore, Iafter, r, ipm, dt_ipm, da
 
 
 def doTraceDispdl(prof, lOn, dt, Ton, Toff, Ibefore, Iafter, r):
-    T = arange(len(prof))*dt
+    T = np.arange(len(prof))*dt
 
     clf()
     a1 = axes([.1, .3,.5,.6])
@@ -460,7 +462,7 @@ def doTraceDispdl(prof, lOn, dt, Ton, Toff, Ibefore, Iafter, r):
 
     a3 = axes([.7, .55, .25,.35])
     midPeak = prof[(Ton[6] - 400):(Toff[7] + 400)]
-    a3.plot((arange(len(midPeak)) - 400)*dt, midPeak,'k')
+    a3.plot((np.arange(len(midPeak)) - 400)*dt, midPeak,'k')
     a3.set_xlabel('Time [s]')
     a3.set_ylabel('Fluorescence Intensity [a.u.]')
     a3.set_xlim(-2,12)
@@ -470,7 +472,7 @@ def doTraceDispdl(prof, lOn, dt, Ton, Toff, Ibefore, Iafter, r):
 )[:7]/r[0][0], 'xk')
     a4.plot(((Ton - Toff)*dt)[7:], (Iafter - Ibefore
 )[7:]/r[0][0], '+k')
-    a4.plot(arange(1200), eMod2(r[0], arange(1200))/r[0][0], 'k')
+    a4.plot(np.arange(1200), eMod2(r[0], np.arange(1200))/r[0][0], 'k')
     a4.set_xlabel('Time [s]')
     a4.set_ylabel('Normalised fluorescence recovery')
 
@@ -485,7 +487,7 @@ def doTraceDispdl(prof, lOn, dt, Ton, Toff, Ibefore, Iafter, r):
 
 def eth_mod2(p, t):
     A, b, aod, ado, aob, dt = p
-    theta = arange(-pi/2, pi/2, 0.1)
+    theta = np.arange(-pi/2, pi/2, 0.1)
     return A*array([ethet3(theta, ti,aod, ado, aob).sum() + ethet3(theta, ti+1,aod, ado, aob).sum() for ti in t+dt])*0.1/(2*pi) + b
 
 
@@ -496,7 +498,7 @@ def ethet3(theta,t, aod, ado, aob):
 def bf_int(func, lb, ub, *args, **kwargs):
     step = 0.1
     #step = kwargs['step']
-    x = arange(lb,ub,step)
+    x = np.arange(lb,ub,step)
     v = func(x[0], *args)
     for xi in x[1:]:
         v = v + func(xi, *args)

@@ -9,12 +9,12 @@ import wx
 import wx.html2
 import wx.lib.mixins.listctrl as listmix
 
-import PYME.misc.autoFoldPanel as afp
+import PYME.ui.autoFoldPanel as afp
 import numpy as np
 #import pandas as pd
 import pylab
 
-from PYME.Analysis.Modules.tracking import TrackFeatures
+from PYME.recipes.tracking import TrackFeatures
 
 import cherrypy
 
@@ -81,7 +81,7 @@ env.filters['movieplot'] = movieplot
 
 
 #from PYME.Analysis.Tracking import tracking
-#from PYME.Analysis import trackUtils
+#from PYME.Analysis.Tracking import trackUtils
 
 from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, ListInstance, on_trait_change
 from traitsui.api import View, Item, Group
@@ -428,6 +428,8 @@ class ParticleTrackingView(HasTraits):
 
 def Plug(dsviewer):
     from PYME.DSView import htmlServe #ensure that our local cherrypy server is running
+    htmlServe.StartServing()
+    
     dsviewer.tracker = ParticleTrackingView(dsviewer)
     cherrypy.tree.mount(dsviewer.tracker, '/tracks')
     dsviewer.tracker.trackview.LoadURL(htmlServe.getURL() + 'tracks/')

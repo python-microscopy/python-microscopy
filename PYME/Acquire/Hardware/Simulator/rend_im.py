@@ -21,12 +21,12 @@
 #
 ##################
 
-from PYME.PSFGen import *
+from PYME.Analysis.PSFGen import *
 from scipy import *
 from pylab import ifftshift, fftn, ifftn
 from . import fluor
 from PYME.Analysis import MetaData
-from PYME.Analysis import cInterp
+from PYME.localization import cInterp
 
 try:
     import cPickle as pickle

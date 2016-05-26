@@ -126,7 +126,7 @@ class PupilTools(HasTraits):
     def OnPSFFromPupil(self, event):
         import numpy as np
         #import pylab
-        from PYME.PSFGen import fourierHNA
+        from PYME.Analysis.PSFGen import fourierHNA
         
         from PYME.io.image import ImageStack
         from PYME.DSView import ViewIm3D
@@ -157,7 +157,7 @@ class PupilTools(HasTraits):
     def OnPSFFromZernikeModes(self, event):
         import numpy as np
         #import pylab
-        from PYME.PSFGen import fourierHNA
+        from PYME.Analysis.PSFGen import fourierHNA
         
         from PYME.io.image import ImageStack
         from PYME.DSView import ViewIm3D

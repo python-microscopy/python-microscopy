@@ -40,9 +40,9 @@ class ParticleTracker:
         visFr.Bind(wx.EVT_MENU, self.OnCoalesce, id=ID_COALESCE)
 
     def OnTrackMolecules(self, event):
-        import PYME.Analysis.DeClump.deClumpGUI as deClumpGUI
-        #import PYME.Analysis.DeClump.deClump as deClump
-        import PYME.Analysis.trackUtils as trackUtils
+        import PYME.Analysis.points.DeClump.deClumpGUI as deClumpGUI
+        #import PYME.Analysis.points.DeClump.deClump as deClump
+        import PYME.Analysis.Tracking.trackUtils as trackUtils
 
         visFr = self.visFr
         pipeline = visFr.pipeline
@@ -88,7 +88,7 @@ class ParticleTracker:
     def OnCalcMSDs(self,event):
         import pylab
         from PYME.Analysis._fithelpers import *
-        from PYME.Analysis.DistHist import msdHistogram
+        from PYME.Analysis.points.DistHist import msdHistogram
 
         def powerMod(p,t):
             D, alpha = p
@@ -155,7 +155,7 @@ class ParticleTracker:
         
     def OnCoalesce(self, event):
         from PYME.LMVis import inpFilt
-        from PYME.Analysis.DeClump import pyDeClump
+        from PYME.Analysis.points.DeClump import pyDeClump
         
         pipeline = self.visFr.pipeline
         

@@ -39,7 +39,7 @@ def GetComputerName():
 
 #scope.cameras = {}
 #scope.camControls = {}
-from PYME.Acquire import MetaDataHandler
+from PYME.io import MetaDataHandler
 
 # Let the software know about the noise characteristics of the camera
 # these can be found in the documentation that comes with the camera

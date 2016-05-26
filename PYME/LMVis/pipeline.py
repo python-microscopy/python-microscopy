@@ -28,7 +28,7 @@ from PYME.LMVis import renderers
 from PYME.LMVis.triBlobs import BlobSettings
 
 from PYME.Analysis import piecewiseMapping
-from PYME.Acquire import MetaDataHandler
+from PYME.io import MetaDataHandler
 
 import numpy as np
 import scipy.special
@@ -500,14 +500,14 @@ class Pipeline:
         return self.Triangles
         
     def getEdb(self):
-        from PYME.Analysis.EdgeDB import edges
+        from PYME.Analysis.points.EdgeDB import edges
         if self.edb is None:
             self.edb = edges.EdgeDB(self.getTriangles())
             
         return self.edb
             
     def getBlobs(self):
-        from PYME.Analysis.EdgeDB import edges
+        from PYME.Analysis.points.EdgeDB import edges
         
         tri = self.getTriangles()        
         edb = self.getEdb()
@@ -533,7 +533,7 @@ class Pipeline:
         return self.objects, self.blobSettings.distThreshold
         
     def getQuads(self):
-        from PYME.Analysis.QuadTree import pointQT
+        from PYME.Analysis.points.QuadTree import pointQT
         
         di = max(self.imageBounds.x1 - self.imageBounds.x0, 
                  self.imageBounds.y1 - self.imageBounds.y0)

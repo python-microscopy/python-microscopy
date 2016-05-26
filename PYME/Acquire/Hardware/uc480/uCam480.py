@@ -26,7 +26,7 @@ from ctypes import *
 import ctypes
 import time
 import sys
-from PYME.Acquire import MetaDataHandler
+from PYME.io import MetaDataHandler
 from PYME.Acquire.Hardware import ccdCalibrator
 
 import os

@@ -40,21 +40,28 @@ def convert_numarray(s):
 sqlite3.register_adapter(ndarray, adapt_numarray)
 sqlite3.register_converter("ndarray", convert_numarray)
 
+dbOpen = False
 
-thumbDB = sqlite3.connect('/srv/PYME/PYMEThumbnails.db', detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-thumbDB.isolation_level = None
-
-#see what tables we've got defined
-tableNames = [a[0] for a in thumbDB.execute('SELECT name FROM sqlite_master WHERE type="table"').fetchall()]
-
-#if we haven't already got a thumbnail database, create one
-if not 'Thumbnails' in tableNames:
-    thumbDB.execute("CREATE TABLE Thumbnails (filename text, thumbnail ndarray)")
+def openDB():
+    global dbOpen
+    
+    if not dbOpen:
+        dbOpen = True
+        thumbDB = sqlite3.connect('/srv/PYME/PYMEThumbnails.db', detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+        thumbDB.isolation_level = None
+        
+        #see what tables we've got defined
+        tableNames = [a[0] for a in thumbDB.execute('SELECT name FROM sqlite_master WHERE type="table"').fetchall()]
+        
+        #if we haven't already got a thumbnail database, create one
+        if not 'Thumbnails' in tableNames:
+            thumbDB.execute("CREATE TABLE Thumbnails (filename text, thumbnail ndarray)")
 
 
 
 
 def getThumbnail(filename):
+    openDB()
     #strip extra leading / (inserted for some reason by test server)
     if filename.startswith('//'):
         filename = filename[1:]

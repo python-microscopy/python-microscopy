@@ -20,7 +20,7 @@
 #
 ##################
 import wx
-import PYME.misc.autoFoldPanel as afp
+import PYME.ui.autoFoldPanel as afp
 import numpy
 
 class psfExtractor:
@@ -138,7 +138,7 @@ class psfExtractor:
 
 
     def OnTagPSF(self, event):
-        from PYME.PSFEst import extractImages
+        from PYME.Analysis.PSFEst import extractImages
         #if we already have a location there, un-tag it
         for i, p in enumerate(self.PSFLocs):
             if ((numpy.array(p[:2]) - numpy.array((self.do.xp, self.do.yp)))**2).sum() < 100:
@@ -158,7 +158,7 @@ class psfExtractor:
         self.view.Refresh()
 
     def OnTagPoints(self, event):
-        from PYME.PSFEst import extractImages
+        from PYME.Analysis.PSFEst import extractImages
         chnum = self.chChannel.GetSelection()
         rsx, rsy, rsz = [int(s) for s in self.tPSFROI.GetValue().split(',')]
         for xp, yp, zp in self.view.points:
@@ -246,7 +246,7 @@ class psfExtractor:
 
     def OnExtractPSF(self, event):
         if (len(self.PSFLocs) > 0):
-            from PYME.PSFEst import extractImages
+            from PYME.Analysis.PSFEst import extractImages
             chnum = self.chChannel.GetSelection()
 
             psfROISize = [int(s) for s in self.tPSFROI.GetValue().split(',')]
@@ -270,7 +270,7 @@ class psfExtractor:
             
     def OnExtractSplitPSF(self, event):
         if (len(self.PSFLocs) > 0):
-            from PYME.PSFEst import extractImages
+            from PYME.Analysis.PSFEst import extractImages
             chnum = self.chChannel.GetSelection()
 
             psfROISize = [int(s) for s in self.tPSFROI.GetValue().split(',')]

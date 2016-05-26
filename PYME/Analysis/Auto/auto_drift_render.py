@@ -8,7 +8,7 @@ import os
 from PYME.LMVis.pipeline import Pipeline
 from PYME.LMVis import visHelpers
 from PYME.Analysis.processLogger import PL, TablesBackend, dictToRecarray
-from PYME.Analysis import trackUtils
+from PYME.Analysis.Tracking import trackUtils
 
 from PYMEnf.DriftCorrection import autoDrift
 import numpy as np

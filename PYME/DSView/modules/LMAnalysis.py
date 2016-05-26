@@ -24,12 +24,12 @@ import Pyro.core
 from PYME.misc import pyro_tracebacks
 
 #import Pyro.util
-from PYME.Analysis import remFitBuf
+from PYME.localization import remFitBuf
 import os
-from PYME.Acquire import MetaDataHandler
-import PYME.Analysis.FitFactories
+from PYME.io import MetaDataHandler
+import PYME.localization.FitFactories
 
-from PYME.Analysis import MetaDataEdit as mde
+from PYME.localization import MetaDataEdit as mde
 #from pylab import *
 from PYME.io.FileUtils import fileID
 from PYME.io.FileUtils.nameUtils import genResultFileName
@@ -52,7 +52,7 @@ from PYME.LMVis import pipeline, inpFilt
 import numpy
 import pylab
 
-import PYME.misc.autoFoldPanel as afp
+import PYME.ui.autoFoldPanel as afp
 from PYME.Acquire.mytimer import mytimer
 from PYME.DSView import fitInfo
 from PYME.DSView.OverlaysPanel import OverlayPanel
@@ -275,7 +275,7 @@ class LMAnalyser:
     def _populateCustomAnalysisPanel(self, pan, vsizer):
         try:
             fitMod = self.fitFactories[self.cFitType.GetSelection()]
-            fm = __import__('PYME.Analysis.FitFactories.' + fitMod, fromlist=['PYME', 'Analysis', 'FitFactories'])
+            fm = __import__('PYME.localization.FitFactories.' + fitMod, fromlist=['PYME', 'localization', 'FitFactories'])
             
             #vsizer = wx.BoxSizer(wx.VERTICAL)
             for param in fm.PARAMETERS:
@@ -345,14 +345,14 @@ class LMAnalyser:
         pan = wx.Panel(item, -1)
 
         #find out what fit factories we have
-        self.fitFactories = PYME.Analysis.FitFactories.resFitFactories
+        self.fitFactories = PYME.localization.FitFactories.resFitFactories
         print((self.fitFactories))
 
         vsizer = wx.BoxSizer(wx.VERTICAL)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
         hsizer.Add(wx.StaticText(pan, -1, 'Type:'), 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-        self.cFitType = wx.Choice(pan, -1, choices = ['{:<35} \t- {:} '.format(f, PYME.Analysis.FitFactories.useFor[f]) for f in self.fitFactories], size=(110, -1))
+        self.cFitType = wx.Choice(pan, -1, choices = ['{:<35} \t- {:} '.format(f, PYME.localization.FitFactories.useFor[f]) for f in self.fitFactories], size=(110, -1))
         
         if 'Analysis.FitModule' in self.image.mdh.getEntryNames():
             #has already been analysed - most likely to want the same method again
@@ -422,7 +422,7 @@ class LMAnalyser:
             
             
         fitMod = self.fitFactories[self.cFitType.GetSelection()]
-        fm = __import__('PYME.Analysis.FitFactories.' + fitMod, fromlist=['PYME', 'Analysis', 'FitFactories'])
+        fm = __import__('PYME.localization.FitFactories.' + fitMod, fromlist=['PYME', 'localization', 'FitFactories'])
         
         try: 
             plist = fm.PARAMETERS

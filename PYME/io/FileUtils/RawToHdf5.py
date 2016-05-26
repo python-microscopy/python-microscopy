@@ -23,7 +23,7 @@
 
 #!/usr/bin/python
 
-import read_kdf
+#import read_kdf
 import tables
 import os
 import sys

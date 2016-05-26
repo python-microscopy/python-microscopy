@@ -21,8 +21,8 @@
 ##################
 
 import wx
-import PYME.misc.autoFoldPanel as afp
-from PYME.LMVis import recArrayView
+import PYME.ui.autoFoldPanel as afp
+from PYME.ui import recArrayView
 import numpy
 from PYME.DSView.OverlaysPanel import OverlayPanel
 import wx.lib.agw.aui as aui
@@ -150,7 +150,7 @@ class blobFinder:
         threshold = float(self.tThreshold.GetValue())
         chnum = self.chChannel.GetSelection()
 
-        from PYME.Analysis.ofind3d import ObjectIdentifier
+        from PYME.localization.ofind3d import ObjectIdentifier
 
         if not 'ofd' in dir(self) or not self.ofd.chnum == chnum:
             #create an object identifier
@@ -213,8 +213,8 @@ class blobFinder:
         _pnl.AddPane(item)
 
     def OnFitObjects(self, event):
-        import PYME.Analysis.FitFactories.Gauss3DFitR as fitMod
-        from PYME.Acquire import MetaDataHandler
+        import PYME.localization.FitFactories.Gauss3DFitR as fitMod
+        from PYME.io import MetaDataHandler
         chnum = self.chChannel.GetSelection()
         
         mdh = MetaDataHandler.NestedClassMDHandler(self.image.mdh)
@@ -251,7 +251,7 @@ class blobFinder:
         self.dsviewer.update()
         
     def OnCalcShiftmap(self, event):
-        from PYME.Analysis import twoColour, twoColourPlot
+        from PYME.Analysis.points import twoColour, twoColourPlot
         import pylab
         masterChan = self.chChannel.GetSelection()
         

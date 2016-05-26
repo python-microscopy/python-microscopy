@@ -22,7 +22,7 @@
 ##################
 
 import numpy as np
-from pylab import *
+import matplotlib.pyplot as plt
 
 def binAvg(binVar, indepVar, bins):
     bm = np.zeros(len(bins) - 1)
@@ -64,30 +64,30 @@ def binMedian(binVar, indepVar, bins):
 def errorPlot(filter, bins):
     x = (bins[:-1] + bins[1:])/2.
 
-    a1 = axes()
+    a1 = plt.axes()
 
     bn, bm, bs = binAvg(filter['fitResults_z0'], filter['fitError_x0'], bins)
 
     a1.plot(x, bm, lw=2, c='b', label='x')
-    a1.fill_between(x, maximum(bm-bs, 0), bm + bs, facecolor='b', alpha=0.2)
+    a1.fill_between(x, np.maximum(bm-bs, 0), bm + bs, facecolor='b', alpha=0.2)
 
     bn, bm, bs = binAvg(filter['fitResults_z0'], filter['fitError_y0'], bins)
 
     a1.plot(x, bm, lw=2, c='g', label='y')
-    a1.fill_between(x, maximum(bm-bs, 0), bm + bs, facecolor='g', alpha=0.2)
+    a1.fill_between(x, np.maximum(bm-bs, 0), bm + bs, facecolor='g', alpha=0.2)
 
     bn, bm, bs = binAvg(filter['fitResults_z0'], filter['fitError_z0'], bins)
 
     a1.plot(x, bm, lw=2, c='r', label='z')
-    a1.fill_between(x, maximum(bm-bs, 0), bm + bs, facecolor='r', alpha=0.2)
+    a1.fill_between(x, np.maximum(bm-bs, 0), bm + bs, facecolor='r', alpha=0.2)
 
-    ylabel('Fit Error [nm]')
-    xlabel('Defocus [nm]')
-    legend()
-    ylim(0, 120)
+    plt.ylabel('Fit Error [nm]')
+    plt.xlabel('Defocus [nm]')
+    plt.legend()
+    plt.ylim(0, 120)
 
 
-    a2 = twinx()
+    a2 = plt.twinx()
 
     a2.plot(x, bn, 'k')
-    ylabel('Number of fitted events')
+    plt.ylabel('Number of fitted events')

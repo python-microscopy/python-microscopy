@@ -27,7 +27,7 @@
 
 import wx
 from PYME.Acquire.Hardware import ccdCalibrator
-from PYME.misc.autoFoldPanel import collapsingPane
+from PYME.ui.autoFoldPanel import collapsingPane
 
 
 
@@ -206,66 +206,66 @@ class AndorPanel(wx.Panel):
         self.OnEMGainTextChange(None)
 
     def OnBSetTempButton(self, event):
-        self.scope.pa.stop()
+        self.scope.frameWrangler.stop()
         self.cam.SetCCDTemp(int(self.tCCDTemp.GetValue()))
         self.OnEMGainTextChange(None)
-        self.scope.pa.start()
+        self.scope.frameWrangler.start()
 
     def OnBSetGainButton(self, event):
-        self.scope.pa.stop()
+        self.scope.frameWrangler.stop()
         self.cam.SetEMGain(int(self.tEMGain.GetValue()))
-        self.scope.pa.start()
+        self.scope.frameWrangler.start()
 
     def OnBStartSpoolingButton(self, event):
         #event.Skip()
         fname = wx.FileSelector('Save Images as ... (image # and .dat will be appended to filename)')
     
         if not fname == None:
-            self.scope.pa.stop()
+            self.scope.frameWrangler.stop()
             self.cam.SpoolOn(fname)
 
             wx.MessageBox('Click cancel to stop spooling', 'Spooling to disk', wx.CANCEL)
             self.cam.SpoolOff()
-            self.scope.pa.start()
+            self.scope.frameWrangler.start()
 
     def OnBUpdateIntButton(self, event):
         #event.Skip()
-        self.scope.pa.stop()
-        self.scope.pa.start()
+        self.scope.frameWrangler.stop()
+        self.scope.frameWrangler.start()
 
     def OnRbSingleShotRadiobutton(self, event):
         #event.Skip()
         if self.cam.contMode:
-            self.scope.pa.stop()
+            self.scope.frameWrangler.stop()
             self.cam.SetAcquisitionMode(self.cam.MODE_SINGLE_SHOT)
             #self.bUpdateInt.Enable(False)
-            self.scope.pa.start()
+            self.scope.frameWrangler.start()
 
     def OnRbContinRadiobutton(self, event):
         #event.Skip()
         if not self.cam.contMode:
-            self.scope.pa.stop()
+            self.scope.frameWrangler.stop()
             self.cam.SetAcquisitionMode(self.cam.MODE_CONTINUOUS)
             #self.bUpdateInt.Enable(True)
-            self.scope.pa.start()
+            self.scope.frameWrangler.start()
 
     def OnChHorizClockChoice(self, event):
         #event.Skip()
-        self.scope.pa.stop()
+        self.scope.frameWrangler.stop()
         self.cam.SetHorizShiftSpeed(self.chHorizClock.GetSelection())
-        self.scope.pa.start()
+        self.scope.frameWrangler.start()
 
     def OnChVertClockChoice(self, event):
         #event.Skip()
-        self.scope.pa.stop()
+        self.scope.frameWrangler.stop()
         self.cam.SetVerticalShiftSpeed(self.chVertClock.GetSelection())
-        self.scope.pa.start()
+        self.scope.frameWrangler.start()
 
     def OnCbFrameTransferCheckbox(self, event):
         #event.Skip()
-        self.scope.pa.stop()
+        self.scope.frameWrangler.stop()
         self.cam.SetFrameTransfer(self.cbFrameTransfer.GetValue())
-        self.scope.pa.start()
+        self.scope.frameWrangler.start()
 
     def _PopulateSpeeds(self):
         for hs in self.cam.HorizShiftSpeeds[0][0]:
@@ -283,16 +283,16 @@ class AndorPanel(wx.Panel):
         self.cbFrameTransfer.SetValue(self.cam.frameTransferMode)
 
     def OnCbShutterCheckbox(self, event):
-        self.scope.pa.stop()
+        self.scope.frameWrangler.stop()
         self.cam.SetShutter(self.cbShutter.GetValue())
-        self.scope.pa.start()
+        self.scope.frameWrangler.start()
         #event.Skip()
 
     def OnCbBaselineClampCheckbox(self, event):
         #event.Skip()
-        self.scope.pa.stop()
+        self.scope.frameWrangler.stop()
         self.cam.SetBaselineClamp(self.cbBaselineClamp.GetValue())
-        self.scope.pa.start()
+        self.scope.frameWrangler.start()
 
     def OnEMGainTextChange(self, event):
         calEMGain = ccdCalibrator.getCalibratedCCDGain(float(self.tEMGain.GetValue()), self.cam.GetCCDTempSetPoint())

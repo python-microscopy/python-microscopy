@@ -65,7 +65,7 @@ def main():
     application.MainLoop()
 
 if __name__ == '__main__':
-    from PYME import mProfile
+    from PYME.util import mProfile
     mProfile.profileOn(['previewacquisator.py'])
     main()
     mProfile.report()

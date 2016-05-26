@@ -45,7 +45,7 @@ currentSlide = [None]
 
 WantSlideChangeNotification = []
 
-from PYME.Acquire.MetaDataHandler import NestedClassMDHandler
+from PYME.io.MetaDataHandler import NestedClassMDHandler
 
 slideMD = NestedClassMDHandler()
 

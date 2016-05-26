@@ -40,7 +40,7 @@ def GetComputerName():
 
 #scope.cameras = {}
 #scope.camControls = {}
-from PYME.Acquire import MetaDataHandler
+from PYME.io import MetaDataHandler
 
 InitBG('EMCCD Camera', '''
 scope.cameras['A - Left'] = AndorIXon.iXonCamera(0)
@@ -217,7 +217,7 @@ scope.lasers.append(scope.arclamp)
 
 
 InitGUI('''
-from PYME.Acquire import lasersliders
+from PYME.Acquire.ui import lasersliders
 lsf = lasersliders.LaserSliders(toolPanel, scope.lasers)
 time1.WantNotification.append(lsf.update)
 #lsf.update()

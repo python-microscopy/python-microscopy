@@ -22,7 +22,7 @@
 ##################
 
 import wx
-from . import histLimits
+from PYME.ui import histLimits
 
 
 class GenImageDialog(wx.Dialog):

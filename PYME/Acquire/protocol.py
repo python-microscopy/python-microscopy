@@ -67,32 +67,32 @@ def Ex(str):
     exec(str)
 
 def SetEMGain(emGain):
-    scope.pa.stop()
+    scope.frameWrangler.stop()
     scope.cam.SetEMGain(emGain)
-    scope.pa.start()
+    scope.frameWrangler.start()
     
 def SetIntegTime(iTime):
-    scope.pa.stop()
+    scope.frameWrangler.stop()
     scope.cam.SetIntegTime(iTime)
-    scope.pa.start()
+    scope.frameWrangler.start()
 
 def SetCameraShutter(open):
-    scope.pa.stop()
+    scope.frameWrangler.stop()
     scope.cam.SetShutter(open)
-    scope.pa.start()
+    scope.frameWrangler.start()
 
 def SetContinuousMode(contMode):
     if not (scope.cam.contMode == contMode):
         if contMode:
-            scope.pa.stop()
+            scope.frameWrangler.stop()
             scope.cam.SetAcquisitionMode(scope.cam.MODE_CONTINOUS)
             #self.bUpdateInt.Enable(False)
-            scope.pa.start()
+            scope.frameWrangler.start()
         else:
-            scope.pa.stop()
+            scope.frameWrangler.stop()
             scope.cam.SetAcquisitionMode(scope.cam.MODE_SINGLE_SHOT)
             #self.bUpdateInt.Enable(False)
-            scope.pa.start()
+            scope.frameWrangler.start()
 
 
 class TaskListProtocol(Protocol):

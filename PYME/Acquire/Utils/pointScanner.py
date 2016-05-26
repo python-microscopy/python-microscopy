@@ -100,7 +100,7 @@ class PointScanner:
         if self.avg:
             self.image = np.zeros((self.nx, self.ny))
 
-            #self.ds = scope.pa.dsa
+            #self.ds = scope.frameWrangler.currentFrame
 
             self.view = View3D(self.image)
 
@@ -118,11 +118,11 @@ class PointScanner:
                 eventLog.logEvent('ScannerYPos', '%3.6f' % self.yp[0])
 
 
-        #self.scope.pa.WantFrameNotification.append(self.tick)
-        self.scope.pa.onFrame.connect(self.tick)
+        #self.scope.frameWrangler.WantFrameNotification.append(self.tick)
+        self.scope.frameWrangler.onFrame.connect(self.tick)
         
         #if self.sync:
-        #    self.scope.pa.HardwareChecks.append(self.onTarget)
+        #    self.scope.frameWrangler.HardwareChecks.append(self.onTarget)
 
     def onTarget(self):
         return self.xpiezo[0].onTarget
@@ -156,7 +156,7 @@ class PointScanner:
         self.callNum += 1
 
     #def __del__(self):
-    #    self.scope.pa.WantFrameNotification.remove(self.tick)
+    #    self.scope.frameWrangler.WantFrameNotification.remove(self.tick)
     def stop(self):
         #self.xpiezo[0].MoveTo(self.xpiezo[1], self.currPos[0])
         #self.ypiezo[0].MoveTo(self.ypiezo[1], self.currPos[1])
@@ -164,10 +164,10 @@ class PointScanner:
         self.scope.SetPos(**self.currPos)
         
         try:
-            #self.scope.pa.WantFrameNotification.remove(self.tick)
-            self.scope.pa.onFrame.disconnect(self.tick)
+            #self.scope.frameWrangler.WantFrameNotification.remove(self.tick)
+            self.scope.frameWrangler.onFrame.disconnect(self.tick)
             #if self.sync:
-            #    self.scope.pa.HardwareChecks.remove(self.onTarget)
+            #    self.scope.frameWrangler.HardwareChecks.remove(self.onTarget)
         finally:
             pass
 
@@ -253,7 +253,7 @@ class PointScanner3D:
         if self.avg:
             self.image = np.zeros((self.nx, self.ny, self.nz))
 
-            self.ds = scope.pa.dsa
+            self.ds = scope.frameWrangler.currentFrame
 
             self.view = View3D(self.image)
 
@@ -274,10 +274,10 @@ class PointScanner3D:
                 eventLog.logEvent('ScannerZPos', '%3.6f' % self.zp[0])
 
 
-        self.scope.pa.WantFrameNotification.append(self.tick)
+        self.scope.frameWrangler.WantFrameNotification.append(self.tick)
 
         if self.sync:
-            self.scope.pa.HardwareChecks.append(self.onTarget)
+            self.scope.frameWrangler.HardwareChecks.append(self.onTarget)
 
     def onTarget(self):
         return self.xpiezo[0].onTarget
@@ -332,16 +332,16 @@ class PointScanner3D:
         self.callNum += 1
 
     #def __del__(self):
-    #    self.scope.pa.WantFrameNotification.remove(self.tick)
+    #    self.scope.frameWrangler.WantFrameNotification.remove(self.tick)
     def stop(self):
         self.xpiezo[0].MoveTo(self.xpiezo[1], self.currPos[0])
         self.ypiezo[0].MoveTo(self.ypiezo[1], self.currPos[1])
         self.zpiezo[0].MoveTo(self.zpiezo[1], self.currPos[2])
 
         try:
-            self.scope.pa.WantFrameNotification.remove(self.tick)
+            self.scope.frameWrangler.WantFrameNotification.remove(self.tick)
             if self.sync:
-                self.scope.pa.HardwareChecks.remove(self.onTarget)
+                self.scope.frameWrangler.HardwareChecks.remove(self.onTarget)
         finally:
             pass
         

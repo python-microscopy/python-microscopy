@@ -242,6 +242,8 @@ class LMGLCanvas(GLCanvas):
         self.scaleBarDepth = 10.0 #pixels
         self.scaleBarColour = [1,1,0]
 
+        self.centreCross=False
+
         self.LUTDraw = True
 
         self.mode = 'triang'

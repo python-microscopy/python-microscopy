@@ -25,7 +25,7 @@ from PYME.DSView import View3D
 import numpy as np
 #from PYME.Acquire import eventLog
 from math import floor
-from PYME.Acquire import MetaDataHandler
+from PYME.io import MetaDataHandler
 import time
 
 import dispatch
@@ -40,7 +40,7 @@ class zScanner:
         
         self.frameNum = 0
         
-        self.ds = scope.pa.currentFrame
+        self.ds = scope.frameWrangler.currentFrame
         
         self.running = False
  
@@ -79,28 +79,28 @@ class zScanner:
         #self.startPos = self.piezo.GetPos(self.piezoChan)
         self.startPos = self.scope.GetPos()[self.posChan]
         
-        self.scope.pa.stop()
-        #self.scope.pa.WantFrameNotification.append(self.tick)
-        #self.scope.pa.WantStartNotification.append(self.OnAqStart)
-        #self.scope.pa.WantStopNotification.append(self.OnAqStop)
+        self.scope.frameWrangler.stop()
+        #self.scope.frameWrangler.WantFrameNotification.append(self.tick)
+        #self.scope.frameWrangler.WantStartNotification.append(self.OnAqStart)
+        #self.scope.frameWrangler.WantStopNotification.append(self.OnAqStop)
 
-        self.scope.pa.onFrame.connect(self.OnCameraFrame)
-        self.scope.pa.onStart.connect(self.OnAqStart)
-        self.scope.pa.onStop.connect(self.OnAqStop)        
+        self.scope.frameWrangler.onFrame.connect(self.OnCameraFrame)
+        self.scope.frameWrangler.onStart.connect(self.OnAqStart)
+        self.scope.frameWrangler.onStop.connect(self.OnAqStop)        
         
-        self.scope.pa.start()
+        self.scope.frameWrangler.start()
         
     def Stop(self):
-        self.scope.pa.stop()
-        #self.scope.pa.WantFrameNotification.remove(self.tick)
-        #self.scope.pa.WantStartNotification.remove(self.OnAqStart)
-        #self.scope.pa.WantStopNotification.remove(self.OnAqStop)
+        self.scope.frameWrangler.stop()
+        #self.scope.frameWrangler.WantFrameNotification.remove(self.tick)
+        #self.scope.frameWrangler.WantStartNotification.remove(self.OnAqStart)
+        #self.scope.frameWrangler.WantStopNotification.remove(self.OnAqStop)
         
-        self.scope.pa.onFrame.disconnect(self.OnCameraFrame)
-        self.scope.pa.onStart.disconnect(self.OnAqStart)
-        self.scope.pa.onStop.disconnect(self.OnAqStop)
+        self.scope.frameWrangler.onFrame.disconnect(self.OnCameraFrame)
+        self.scope.frameWrangler.onStart.disconnect(self.OnAqStart)
+        self.scope.frameWrangler.onStop.disconnect(self.OnAqStop)
         
-        self.scope.pa.start()
+        self.scope.frameWrangler.start()
         
         self.running = False
         
@@ -214,7 +214,7 @@ class zScanner:
     def center(self):
         dx, dy, dz = self.getCentroid()
         
-        self.scope.pa.stop()
+        self.scope.frameWrangler.stop()
         
         self.zPoss -= dz
         
@@ -227,7 +227,7 @@ class zScanner:
         
         self.scope.cam.SetROI(x1 - dx - 1,y1-dy - 1,x2-dx,y2-dy)
         
-        self.scope.pa.start()
+        self.scope.frameWrangler.start()
 
         #self.view.Destroy()
         #self.view_xz.Destroy()
@@ -244,7 +244,7 @@ class wavetableZScanner(zScanner):
 
         self.piezo.PopulateWaveTable(self.piezoChan, self.zPoss)
 
-        #self.scope.pa.stop()
+        #self.scope.frameWrangler.stop()
 
         if self.triggered:
             #if we've got a hardware trigger rigged up, use it
@@ -253,7 +253,7 @@ class wavetableZScanner(zScanner):
             #otherwise fudge so that step time is nominally the same as exposure time
             self.piezo.StartWaveOutput(self.piezoChan, self.scope.cam.tKin*1e3)
 
-        #self.scope.pa.start()
+        #self.scope.frameWrangler.start()
         
     def OnAqStop(self, caller=None):
         self.piezo.StopWaveOutput()

@@ -56,7 +56,7 @@ if 'PYME_LOCAL_ONLY' in os.environ.keys():
 #    Pyro.config.PYRO_NS_HOSTNAME=os.environ['PYRO_NS_HOSTNAME']
 #    print((Pyro.config.PYRO_NS_HOSTNAME))
 
-from PYME import mProfile
+from PYME.util import mProfile
 #mProfile.profileOn(['taskServerMP.py', 'HDFTaskQueue.py'])
 
 #if 'PYME_TASKQUEUENAME' in os.environ.keys():
@@ -337,7 +337,7 @@ def main():
     if len(sys.argv) > 1 and sys.argv[1] == '-p':
         print('profiling')
         profile = True
-        from PYME.mProfile import mProfile
+        from PYME.util.mProfile import mProfile
         mProfile.profileOn(['taskServerMP.py', 'HDFTaskQueue.py', 'TaskQueue.py'])
 
     Pyro.config.PYRO_MOBILE_CODE = 0

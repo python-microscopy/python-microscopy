@@ -28,7 +28,7 @@ import wx
 
 from PYME.Acquire.Utils.pointScanner import PointScanner
 from PYME.contrib.wxPlotPanel import PlotPanel
-from PYME.Analysis import ofind
+from PYME.localization import ofind
 
 #ps = PointScanner(scope.piezos[1], scope.piezos[2], scope, pixels = [10,10], pixelsize=0.001, dwelltime=2, avg=False)
 
@@ -47,7 +47,7 @@ class SFGenPlotPanel(PlotPanel):
         if not hasattr( self, 'subplot' ):
                 self.subplot = self.figure.add_subplot( 111 )
 
-        #ofd = ofind.ObjectIdentifier(scope.pa.dsa.astype('f').squeeze().T)
+        #ofd = ofind.ObjectIdentifier(scope.frameWrangler.currentFrame.astype('f').squeeze().T)
         #ofd.FindObjects(70, 0, splitter=True)
 
         #print len(ofd)

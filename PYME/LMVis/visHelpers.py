@@ -30,7 +30,7 @@ import numpy.ctypeslib
 #import subprocess
 #from PYME.io.FileUtils import saveTiffStack
 from matplotlib import delaunay
-from PYME.Analysis.qHull.triangWrap import RenderTetrahedra
+from PYME.Analysis.points.qHull.triangWrap import RenderTetrahedra
 
 from math import floor
 
@@ -45,7 +45,7 @@ multiProc = False
 try:
     import multiprocessing
     #import multiprocessing.sharedctypes
-    from PYME.shmarray import shmarray
+    from PYME.util.shmarray import shmarray
     multiProc = True
 except:
     multiProc = False
@@ -245,7 +245,7 @@ def calcNeighbourDistPart(di, x, y, edb, nStart, nEnd):
 #        return di
 #else:
 def calcNeighbourDists(T):
-    from PYME.Analysis import EdgeDB
+    from PYME.Analysis.points import EdgeDB
     #edb = genEdgeDB(T)
 
     edb = EdgeDB.EdgeDB(T)
@@ -261,7 +261,7 @@ def calcNeighbourDists(T):
 
 
 def Gauss2D(Xv,Yv, A,x0,y0,s):
-    from PYME.Analysis.cModels.gauss_app import genGauss
+    from PYME.localization.cModels.gauss_app import genGauss
     r = genGauss(Xv,Yv,A,x0,y0,s,0,0,0)
     return r
 
@@ -355,7 +355,7 @@ def rendGaussProd(x,y, sx, imageBounds, pixelSize):
 
 
 def rendTri(T, imageBounds, pixelSize, c=None, im=None):
-    from PYME.Analysis.SoftRend import drawTriang, drawTriangles
+    from PYME.Analysis.points.SoftRend import drawTriang, drawTriangles
     xs = T.x[T.triangle_nodes]
     ys = T.y[T.triangle_nodes]
 
@@ -418,7 +418,7 @@ def rendTri(T, imageBounds, pixelSize, c=None, im=None):
     return im
     
 def rendTri2(T, imageBounds, pixelSize, c=None, im=None, im1=None):
-    from PYME.Analysis.SoftRend import drawTriang, drawTriangles
+    from PYME.Analysis.points.SoftRend import drawTriang, drawTriangles
     xs = T.x[T.triangle_nodes]
     ys = T.y[T.triangle_nodes]
 
@@ -764,7 +764,7 @@ def Gauss3d(X, Y, Z, x0, y0, z0, wxy, wz):
     return scipy.exp(-((X[:,None]-x0)**2 + (Y[None,:] - y0)**2)/(2*wxy**2) - ((Z-z0)**2)/(2*wz**2))/((2*scipy.pi*wxy**2)*scipy.sqrt(2*scipy.pi*wz**2))
 
 def rendGauss3D(x,y, z, sx, sz, imageBounds, pixelSize, zb, sliceSize=100):
-    from PYME.Analysis.cModels.gauss_app import genGauss3D
+    from PYME.localization.cModels.gauss_app import genGauss3D
     fuzz = 3*scipy.median(sx)
     roiSize = int(fuzz/pixelSize)
     fuzz = pixelSize*roiSize

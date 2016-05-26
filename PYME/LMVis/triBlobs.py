@@ -5,11 +5,11 @@ Created on Sat May 14 12:40:45 2016
 @author: david
 """
 import wx
-import PYME.misc.autoFoldPanel as afp
+import PYME.ui.autoFoldPanel as afp
 import numpy as np
 
 try:
-    from PYME.LMVis import recArrayView
+    from PYME.ui import recArrayView
 except:
     pass
 

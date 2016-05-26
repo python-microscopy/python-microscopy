@@ -143,13 +143,13 @@ ssp = sarcSpacing.SarcomereChecker(MainFrame, menuBar1, scope)
 
 InitGUI('''
 from PYME.Acquire.Hardware import focusKeys
-fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[0])
-time1.WantNotification.append(fk.refresh)
+fk = focusKeys.FocusKeys(MainFrame, None, scope.piezos[0])
+#time1.WantNotification.append(fk.refresh)
 ''')
 
 InitGUI('''
 from PYME.Acquire.Hardware import splitter
-splt = splitter.Splitter(MainFrame, mControls, scope)
+splt = splitter.Splitter(MainFrame, None, scope, scope.cam)
 ''')
 
 #from PYME import cSMI
@@ -159,7 +159,7 @@ splt = splitter.Splitter(MainFrame, mControls, scope)
 #def calcSum(caller):
 #    Is.append(cSMI.CDataStack_AsArray(caller.ds, 0).sum())
 
-#scope.pa.WantFrameNotification.append(calcSum)
+#scope.frameWrangler.WantFrameNotification.append(calcSum)
 
 #must be here!!!
 joinBGInit() #wait for anyhting which was being done in a separate thread

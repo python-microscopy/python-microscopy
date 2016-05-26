@@ -1124,7 +1124,7 @@ class LMGLCanvas(GLCanvas):
 
 
     def jitMCQ(self,x,y,jsig, mcp):
-        from PYME.Analysis.QuadTree import pointQT
+        from PYME.Analysis.points.QuadTree import pointQT
         Imc = numpy.rand(len(x)) < mcp
         qt = pointQT.qtRoot(-250,250, 0, 500)
         if type(jsig) == numpy.ndarray:

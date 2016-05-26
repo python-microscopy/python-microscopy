@@ -39,7 +39,7 @@ from PYME.io.FileUtils import nameUtils
 
 from fftw3f import create_aligned_array
 
-from PYME.Acquire import MetaDataHandler
+from PYME.io import MetaDataHandler
 from PYME.Acquire import eventLog
 
 class AndorBase(SDK3Camera):

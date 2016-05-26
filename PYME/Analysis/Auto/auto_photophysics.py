@@ -7,7 +7,7 @@ Created on Wed Oct 16 22:05:41 2013
 import os
 from PYME.LMVis.pipeline import Pipeline
 from PYME.Analysis.processLogger import PL, TablesBackend, dictToRecarray
-from PYME.Analysis import trackUtils
+from PYME.Analysis.Tracking import trackUtils
 import numpy as np
 
 from PYME.Analysis.BleachProfile import kinModels

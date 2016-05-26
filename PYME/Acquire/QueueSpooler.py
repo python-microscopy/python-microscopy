@@ -22,7 +22,7 @@
 ##################
 
 import tables
-from PYME.Acquire import MetaDataHandler
+from PYME.io import MetaDataHandler
 
 import Pyro.core
 import os

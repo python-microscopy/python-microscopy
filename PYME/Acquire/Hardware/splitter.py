@@ -27,7 +27,7 @@ from PYME.DSView.arrayViewPanel import ArrayViewPanel, OptionsPanel
 import numpy
 import os
 import wx.lib.agw.aui as aui
-from PYME.Acquire import MetaDataHandler
+from PYME.io import MetaDataHandler
 from PYME.io.FileUtils import nameUtils
 
 def LoadShiftField(filename = None):
@@ -48,7 +48,7 @@ def LoadShiftField(filename = None):
         #try and extract shiftfield from h5 / h5r file
         try:
             import tables
-            from PYME.Acquire.MetaDataHandler import HDFMDHandler
+            from PYME.io.MetaDataHandler import HDFMDHandler
             
             h5file = tables.openFile(filename)
             mdh = HDFMDHandler(h5file)
@@ -178,32 +178,37 @@ class Splitter:
 
         self.constrainROI = False
         self.flipView = False
+        
+        self.miConstrROI = parent.AddMenuItem('Splitter', 'Constrain ROI', self.OnConstrainROI, itemType = 'check')
+        parent.AddMenuItem('Splitter', 'Flip view', self.OnFlipView)
+        parent.AddMenuItem('Splitter', 'Unmix\tF7', self.OnUnmix)
+        parent.AddMenuItem('Splitter', 'SetShiftField', self.OnSetShiftField)
 
-        idConstROI = wx.NewId()
-        idFlipView = wx.NewId()
-        idUnmix = wx.NewId()
-        idShiftfield = wx.NewId()
-
-        self.menu = wx.Menu(title = '')
-        self.f = None
-
-        self.menu.AppendCheckItem(idConstROI, 'Constrain ROI')
-        wx.EVT_MENU(parent, idConstROI, self.OnConstrainROI)
-
-        self.menu.AppendCheckItem(idFlipView, 'Flip view')
-        wx.EVT_MENU(parent, idFlipView, self.OnFlipView)
-        self.menu.Append(idUnmix, 'Unmix\tF7')
-        wx.EVT_MENU(parent, idUnmix, self.OnUnmix)
-
-        self.menu.Append(idShiftfield, 'Set Shift Field')
-        wx.EVT_MENU(parent, idShiftfield, self.OnSetShiftField)
-
-        menu.AppendSeparator()
-        menu.AppendMenu(-1, '&Splitter', self.menu)
+#        idConstROI = wx.NewId()
+#        idFlipView = wx.NewId()
+#        idUnmix = wx.NewId()
+#        idShiftfield = wx.NewId()
+#
+#        self.menu = wx.Menu(title = '')
+#        self.f = None
+#
+#        self.menu.AppendCheckItem(idConstROI, 'Constrain ROI')
+#        wx.EVT_MENU(parent, idConstROI, self.OnConstrainROI)
+#
+#        self.menu.AppendCheckItem(idFlipView, 'Flip view')
+#        wx.EVT_MENU(parent, idFlipView, self.OnFlipView)
+#        self.menu.Append(idUnmix, 'Unmix\tF7')
+#        wx.EVT_MENU(parent, idUnmix, self.OnUnmix)
+#
+#        self.menu.Append(idShiftfield, 'Set Shift Field')
+#        wx.EVT_MENU(parent, idShiftfield, self.OnSetShiftField)
+#
+#        menu.AppendSeparator()
+#        menu.AppendMenu(-1, '&Splitter', self.menu)
 
         if constrain:
             self.OnConstrainROI()
-            self.menu.Check(idConstROI, True)
+            #self.menu.Check(idConstROI, True)
         
 
     def ProvideMetadata(self, mdh):
@@ -258,9 +263,9 @@ class Splitter:
         else:
             self.f.vp.do.Optimise()
             
-        #if not self.f.update in self.scope.pa.WantFrameGroupNotification:
-        #    self.scope.pa.WantFrameGroupNotification.append(self.f.update)
-        self.scope.pa.onFrameGroup.connect(self.f.update)
+        #if not self.f.update in self.scope.frameWrangler.WantFrameGroupNotification:
+        #    self.scope.frameWrangler.WantFrameGroupNotification.append(self.f.update)
+        self.scope.frameWrangler.onFrameGroup.connect(self.f.update)
 
 
     def OnSetShiftField(self, event):
@@ -279,7 +284,7 @@ class Splitter:
 
 
     def Unmix(self):
-        dsa = self.scope.pa.dsa.squeeze()
+        dsa = self.scope.frameWrangler.currentFrame.squeeze()
 
         return self.unmixer.Unmix(dsa, self.mixMatrix, self.offset, ROI=[self.scope.cam.GetROIX1(),self.scope.cam.GetROIY1(),self.scope.cam.GetROIX2(), self.scope.cam.GetROIY2()])
 
@@ -338,8 +343,8 @@ class UnMixSettingsPanel(wx.Panel):
         self.SetSizerAndFit(vsizer)
 
         self.bGrabOffset.Bind(wx.EVT_BUTTON, self.OnGrabOffsetFromCamera)
-        #self.splitter.scope.pa.WantFrameGroupNotification.append(self.OnUpdateMix)
-        self.splitter.scope.pa.onFrameGroup.connect(self.OnUpdateMix)
+        #self.splitter.scope.frameWrangler.WantFrameGroupNotification.append(self.OnUpdateMix)
+        self.splitter.scope.frameWrangler.onFrameGroup.connect(self.OnUpdateMix)
 
 
 
@@ -447,8 +452,8 @@ class UnMixPanel(wx.Panel):
             self.vp.Redraw()#imagepanel.Refresh()
 
     def OnCloseWindow(self, event):
-        #self.splitter.scope.pa.WantFrameGroupNotification.remove(self.update)
-        self.splitter.scope.pa.onFrameGroup.disconnect(self.update)
+        #self.splitter.scope.frameWrangler.WantFrameGroupNotification.remove(self.update)
+        self.splitter.scope.frameWrangler.onFrameGroup.disconnect(self.update)
         
         self.splitter.f = None
         self.Destroy()

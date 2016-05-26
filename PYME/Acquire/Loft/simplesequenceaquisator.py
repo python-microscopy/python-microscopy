@@ -25,7 +25,7 @@ import math
 #import datetime
 from PYME.Acquire.previewaquisator import PreviewAquisator
 import time
-from PYME.Acquire import MetaDataHandler
+from PYME.io import MetaDataHandler
 
 class SimpleSequenceAquisitor(PreviewAquisator):
     # 'Constants'

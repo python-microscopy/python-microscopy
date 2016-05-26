@@ -26,7 +26,7 @@ import numpy
 import os
 #import sys
 import wx
-import wx.lib.agw.aui as aui
+#import wx.lib.agw.aui as aui
 #import histLimits
 import pylab
 import scipy.misc
@@ -422,7 +422,7 @@ class ColourImageViewPanel(ImageViewPanel):
             dc.SetPen(wx.NullPen)
         
         
-#from PYME.Acquire.MetaDataHandler import NestedClassMDHandler
+#from PYME.io.MetaDataHandler import NestedClassMDHandler
 #from PYME.DSView import modules as dsvmods
 #from PYME.DSView import ViewIm3D
 
