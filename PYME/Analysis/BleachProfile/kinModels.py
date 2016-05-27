@@ -30,6 +30,7 @@ from PYME.Analysis.processLogger import PL
 import inspect
 import numpy as np
 import os
+import math
 
 colours = ['r', 'g', 'b']
 
