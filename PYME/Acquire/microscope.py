@@ -184,8 +184,11 @@ class StateManager(object):
         
         
         if stopCamera:
-            restartCamera = self.scope().frameWrangler.isRunning()
-            self.scope().frameWrangler.stop()
+            try:
+                restartCamera = self.scope().frameWrangler.isRunning()
+                self.scope().frameWrangler.stop()
+            except AttributeError:
+                print "We don't have a camera yet"
             
         
         for key, value in stateDict.items():
@@ -195,9 +198,12 @@ class StateManager(object):
                     #our hardware absolutely needs a camera restart - 
                     #e.g. changing integration time on IXon. Override stopCamera
                     #setting and force a restart.
-                    if self.scope().frameWrangler.isRunning():
-                       self.scope().frameWrangler.stop()
-                       restartCamera = True
+                    try:
+                        if self.scope().frameWrangler.isRunning():
+                           self.scope().frameWrangler.stop()
+                           restartCamera = True
+                    except AttributeError:
+                        print "We don't have a camera yet"
                        
                 handler.setValue(value, force)
             except KeyError:
@@ -301,10 +307,12 @@ class microscope(object):
         self.StatusCallbacks = [] #list of functions which provide status information
         self.CleanupFunctions = [] #list of functions to be called at exit
         self.PACallbacks = [] #list of functions to be called when a new aquisator is created
-        #preview
+        
+        
         self.saturationThreshold = 16383 #14 bit
         self.lastFrameSaturated = False
         #self.cam.saturationIntervened = False
+        
         self.saturatedMessage = ''
 
         protocol.scope = self
@@ -314,6 +322,8 @@ class microscope(object):
         self._OpenSettingsDB()
         
         self.state = StateManager(self)
+        
+        self.state.registerHandler('ActiveCamera', self.GetActiveCameraName, self._SetCamera, True)
 
         MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
         
@@ -322,8 +332,7 @@ class microscope(object):
         
     def EnableJoystick(self, enable=True):
         if not self.joystick is None:
-            self.joystick.Enable(enable)
-    
+            self.joystick.Enable(enable)   
         
     def GetPos(self):
         res = {}
@@ -373,11 +382,27 @@ class microscope(object):
         self.settingsDB.commit()
 
     def GetPixelSize(self):
+        '''Get the (sample space) pixel size for the current camera
+        
+        Returns
+        -------
+        
+        pixelsize : tuple
+            the pixel size in the x and y axes, in um
+        '''
         currVoxelSizeID = self.settingsDB.execute("SELECT sizeID FROM VoxelSizeHistory2 WHERE camSerial=? ORDER BY time DESC", (self.cam.GetSerialNumber(),)).fetchone()
         if not currVoxelSizeID == None:
             return self.settingsDB.execute("SELECT x,y FROM VoxelSizes WHERE ID=?", currVoxelSizeID).fetchone()
 
     def GenStartMetadata(self, mdh):
+        '''Collects the metadata we want to record at the start of a sequence
+        
+        Parameters
+        ----------
+        
+        mdh : object derived from PYME.io.MetaDataHandler.MDHandlerBase
+            The metadata handler to which we should write our metadata         
+        '''
         try:
             voxx, voxy = self.GetPixelSize()
             mdh.setEntry('voxelsize.x', voxx)
@@ -403,11 +428,39 @@ class microscope(object):
         mdh.copyEntriesFrom(self.mdh)
 
     def AddVoxelSizeSetting(self, name, x, y):
+        ''' Adds a new voxel size setting.
+        
+        The reason for multiple settings is to easily support switching between 
+        different cameras and/or optical configurations such as tube lenses, splitters,
+        etc ...
+        
+        Parameters
+        ----------
+        
+        name : string
+            The name to use for the new setting
+        x : float
+            the pixelsize along the x axis in um
+        y : float
+            the pixelsize along the y axis in um
+        '''
         self.settingsDB.execute("INSERT INTO VoxelSizes (name, x, y) VALUES (?, ?, ?)", (name, x, y))
         self.settingsDB.commit()
         
 
     def SetVoxelSize(self, voxelsizename, camName=None):
+        '''Set the camera voxel size, from a pre-existing voxel size seting.
+        
+        Parameters
+        ----------
+        
+        voxelsizename : string
+            The name of the voxelsize setting to use. This should have been created
+            using the **AddVoxelSize** function.
+        camName : string
+            The name of the camera to ascociate the setting with. If None, then
+            the currently selected camera is used.
+        '''
         if camName == None:
             cam = self.cam
         else:
@@ -419,6 +472,11 @@ class microscope(object):
 
 
     def satCheck(self, source, **kwargs): # check for saturation
+        '''Check to see if the current frame is saturated and stop the camera/
+        close the shutter if necessary
+        
+        TODO: could use a rewrite / new inspection.        
+        '''
         if not 'shutterOpen' in dir(self.cam):
             return
         im = source.currentFrame
@@ -514,7 +572,10 @@ class microscope(object):
         warnings.warn(".pa is deprecated, please use .frameWrangler instead", DeprecationWarning)
         return self.frameWrangler
     
-    def startAquisistion(self):
+    def startFrameWrangler(self):
+        '''Start the frame wrangler. Gets called during post-init phase of aquiremainframe.
+        
+        '''
         #stop an old acquisition
         try:
             self.frameWrangler.stop()
@@ -535,15 +596,22 @@ class microscope(object):
         for cb in self.PACallbacks:
             cb()
 
-    def SetCamera(self, camName):
+    def _SetCamera(self, camName):
         '''Set the currently used camera by name, selecting from the dictionary
-        self.cameras
+        self.cameras. Calling code should use self.state['ActiveCamera']= camName
+        instead.
+        
+        Parameters
+        ----------
+        
+        camName : string
+            The name of the camera to switch to
         
         '''
-        try:
-            self.frameWrangler.stop()
-        except AttributeError:
-            pass
+        #try:
+        #    self.frameWrangler.stop()
+        #except AttributeError:
+        #    pass
 
         #deactivate cameras
         for c in self.cameras.values():
@@ -572,9 +640,15 @@ class microscope(object):
             self.frameWrangler.cam = self.cam
             self.frameWrangler.Prepare()
             
-            self.frameWrangler.start()
+            #self.frameWrangler.start()
         except AttributeError:
             pass
+    
+    def GetActiveCameraName(self):
+        '''Get the name / key of the currently active camera'''
+        for name, cam in self.cameras.items():
+            if cam is self.cam:
+                return name
             
             
         
@@ -584,6 +658,7 @@ class microscope(object):
         camera, correcting for any differences in rotation and mirroring between 
         camera and stage axes.
         
+        TODO: fix to use state based position setting
         '''
         vx, vy = self.GetPixelSize()
         
@@ -606,6 +681,10 @@ class microscope(object):
 
 
     def turnAllLasersOff(self):
+        '''Turn all attached lasers off. 
+        
+        TODO - does this fit with the new state based paradigm?
+        '''
         import re
         for k in self.state.keys():
             if re.match(r'Lasers\.(?P<laser_name>.*)\.On', k):

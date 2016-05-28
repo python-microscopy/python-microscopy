@@ -40,5 +40,5 @@ class CameraChooserPanel(wx.Panel):
         self.SetSizerAndFit(hsizer)
 
     def OnCCamera(self, event):
-        self.scope.SetCamera(self.cCamera.GetStringSelection())
+        self.scope.state['ActiveCamera'] = self.cCamera.GetStringSelection()
         

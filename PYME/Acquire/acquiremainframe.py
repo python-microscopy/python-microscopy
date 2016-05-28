@@ -170,8 +170,12 @@ class PYMEMainFrame(AUIFrame):
             if not (self.vp.do.ds.data is self.scope.frameWrangler.currentFrame):
                 self.vp.SetDataStack(self.scope.frameWrangler.currentFrame)
         
-    def livepreview(self):
-        self.scope.startAquisistion()
+    def _start_polling_camera(self):
+        '''Gets called once during post-init to start pulling data from the
+        camera
+        
+        '''
+        self.scope.startFrameWrangler()
 
         if self.scope.cam.GetPicHeight() > 1:
             if 'vp' in dir(self):
@@ -210,7 +214,7 @@ class PYMEMainFrame(AUIFrame):
             #self.scope.frameWrangler.WantFrameGroupNotification.append(self.sp.refr)
             self.scope.frameWrangler.onFrameGroup.connect(self.sp.refr)
             
-        self.scope.PACallbacks.append(self._refreshDataStack)
+        #self.scope.PACallbacks.append(self._refreshDataStack)
 
 
     def doPostInit(self):
@@ -234,8 +238,8 @@ class PYMEMainFrame(AUIFrame):
             self.AddAqTool(self.seq_d, 'Z-Stack')
             #self.seq_d.Show()
 
-        if (self.scope.cam.CamReady() and ('chaninfo' in self.scope.__dict__)):
-            self.livepreview()
+        if self.scope.cam.CamReady():# and ('chaninfo' in self.scope.__dict__)):
+            self._start_polling_camera()
             
 
             self.int_sl = intsliders.IntegrationSliders(self, self.scope)
