@@ -27,7 +27,7 @@ import serial
 from PYME.Acquire.Hardware.lasers import Laser
 
 class CobaltLaser(Laser):
-    def __init__(self, name,turnOn=False, portname='COM1', maxpower=0.1):
+    def __init__(self, name,turnOn=False, portname='COM1', maxpower=0.1, **kwargs):
         self.ser_args = dict(port=portname, baudrate=115200, timeout=2, writeTimeout=2)
         #ser = serial.Serial(portname, 115200, 
         #                              timeout=2, writeTimeout=2)
@@ -39,7 +39,7 @@ class CobaltLaser(Laser):
         
         self._TurnOn()
 
-        Laser.__init__(self, name, turnOn)
+        Laser.__init__(self, name, turnOn, **kwargs)
 
     def IsOn(self):
         return self.isOn

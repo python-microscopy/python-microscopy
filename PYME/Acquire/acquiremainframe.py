@@ -182,7 +182,7 @@ class PYMEMainFrame(AUIFrame):
                 self.vp.showScaleBar = False
                 self.vp.do.leftButtonAction = self.vp.do.ACTION_SELECTION
                 self.vp.do.showSelection = True
-                self.vp.CenteringHandlers.append(self.scope.centreView)
+                self.vp.CenteringHandlers.append(self.scope.PanCamera)
 
                 self.vsp = disppanel.dispSettingsPanel2(self, self.vp)
 
@@ -238,7 +238,7 @@ class PYMEMainFrame(AUIFrame):
             self.livepreview()
             
 
-            self.int_sl = intsliders.IntegrationSliders(self.scope.chaninfo,self, self.scope)
+            self.int_sl = intsliders.IntegrationSliders(self, self.scope)
             self.AddCamTool(self.int_sl, 'Integration Time')
 
             if len(self.scope.cameras) > 1:

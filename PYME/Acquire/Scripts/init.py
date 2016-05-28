@@ -24,7 +24,7 @@
 #!/usr/bin/python
 
 import scipy
-from PYME.Acquire.Hardware.Simulator import fakeCam, fakePiezo, lasersliders, dSimControl
+from PYME.Acquire.Hardware.Simulator import fakeCam, fakePiezo, dSimControl
 from PYME.Acquire.Hardware import fakeShutters
 import time
 
@@ -44,6 +44,10 @@ scope.piezos.append((scope.fakeYPiezo, 1, 'Fake y-piezo'))
 scope.positioning['x'] = (scope.fakeXPiezo, 1, 1)
 scope.positioning['y'] = (scope.fakeYPiezo, 1, 1)
 scope.positioning['z'] = (scope.fakePiezo, 1, 1)
+
+scope.state.registerHandler('Positioning.x', lambda : scope.GetPos()['x'], lambda v : scope.SetPos(x=v))
+scope.state.registerHandler('Positioning.y', lambda : scope.GetPos()['y'], lambda v : scope.SetPos(y=v))
+scope.state.registerHandler('Positioning.z', lambda : scope.GetPos()['z'], lambda v : scope.SetPos(z=v))
 ''')
 
 pz.join() #piezo must be there before we start camera
@@ -51,6 +55,8 @@ cm = InitBG('Fake Camera', '''
 scope.cam = fakeCam.FakeCamera(70*scipy.arange(-128.0, 128.0), 70*scipy.arange(-128.0, 128.0), fakeCam.NoiseMaker(), scope.fakePiezo, xpiezo = scope.fakeXPiezo, ypiezo = scope.fakeYPiezo)
 scope.cameras['Fake Camera'] = scope.cam
 #time.sleep(5)
+
+scope.state.registerHandler('Camera.IntegrationTime', scope.cam.GetIntegTime, scope.cam.SetIntegTime, needCamRestart=True)
 ''')
 
 #setup for the channels to aquire - b/w camera, no shutters
@@ -118,28 +124,29 @@ camPanels.append((LCGui, 'DMD Control', False))
 
 cm.join()
 from PYME.Acquire.Hardware import lasers
-scope.l488 = lasers.FakeLaser('488',scope.cam,1, initPower=10)
-scope.l405 = lasers.FakeLaser('405',scope.cam,0, initPower=10)
+scope.l488 = lasers.FakeLaser('l488',scope.cam,1, initPower=10, scopeState = scope.state)
+scope.l405 = lasers.FakeLaser('l405',scope.cam,0, initPower=10, scopeState = scope.state)
 
 scope.lasers = [scope.l405, scope.l488]
 
-InitGUI('''
-from PYME.Acquire.Hardware import LaserControlFrame
-lcf = LaserControlFrame.LaserControlLight(MainFrame,scope.lasers)
-time1.WantNotification.append(lcf.refresh)
-#lcf.Show()
-camPanels.append((lcf, 'Laser Control'))
-''')
+
 
 InitGUI('''
-lsf = lasersliders.LaserSliders(toolPanel, scope.lasers)
+from PYME.Acquire.ui import lasersliders
+
+lcf = lasersliders.LaserToggles(toolPanel, scope.state)
+time1.WantNotification.append(lcf.update)
+camPanels.append((lcf, 'Laser Control'))
+
+lsf = lasersliders.LaserSliders(toolPanel, scope.state)
+time1.WantNotification.append(lsf.update)
 camPanels.append((lsf, 'Laser Powers'))
 ''')
 
-InitGUI('''
-from PYME.Acquire import sarcSpacing
-ssp = sarcSpacing.SarcomereChecker(MainFrame, menuBar1, scope)
-''')
+#InitGUI('''
+#from PYME.Acquire import sarcSpacing
+#ssp = sarcSpacing.SarcomereChecker(MainFrame, menuBar1, scope)
+#''')
 
 InitGUI('''
 from PYME.Acquire.Hardware import focusKeys

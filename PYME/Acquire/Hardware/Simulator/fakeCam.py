@@ -290,8 +290,8 @@ class FakeCamera:
         raise Exception('Not implemented yet!!')
     
     def SetIntegTime(self, iTime): 
-        self.intTime=iTime*1e-3
-        self.compT.intTime = iTime*1e-3
+        self.intTime=iTime#*1e-3
+        self.compT.intTime = iTime#*1e-3
     def GetIntegTime(self): 
         return self.intTime
     

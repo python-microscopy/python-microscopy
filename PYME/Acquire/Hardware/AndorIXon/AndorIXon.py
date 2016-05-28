@@ -335,7 +335,7 @@ class iXonCamera:
 
     def SetIntegTime(self, iTime):
         self.__selectCamera()
-        ret = ac.SetExposureTime(iTime*1e-3)
+        ret = ac.SetExposureTime(iTime)
         if not ret == ac.DRV_SUCCESS:
             raise RuntimeError('Error setting exp time: %s' % ac.errorCodes[ret])
 

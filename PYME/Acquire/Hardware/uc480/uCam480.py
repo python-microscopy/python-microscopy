@@ -353,15 +353,15 @@ class uc480Camera:
         #self.__selectCamera()
         newExp = c_double(0)
         newFrameRate = c_double(0)
-        ret = uc480.CALL('SetFrameRate', self.boardHandle, c_double(1.0e3/iTime), byref(newFrameRate))
+        ret = uc480.CALL('SetFrameRate', self.boardHandle, c_double(1.0/iTime), byref(newFrameRate))
         if not ret == 0:
             raise RuntimeError('Error setting exp time: %d: %s' % GetError(self.boardHandle))
         
-        ret = uc480.CALL('SetExposureTime', self.boardHandle, c_double(iTime), ctypes.byref(newExp))
+        ret = uc480.CALL('SetExposureTime', self.boardHandle, c_double(iTime/1e3), ctypes.byref(newExp))
         if not ret == 0:
             raise RuntimeError('Error setting exp time: %d: %s' % GetError(self.boardHandle))
             
-        self.expTime = newExp.value
+        self.expTime = 1e3*newExp.value
 
     def GetIntegTime(self):
         #self.__selectCamera()

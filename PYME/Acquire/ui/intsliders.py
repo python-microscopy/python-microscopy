@@ -35,7 +35,7 @@ import wx
 
 timeChoices = ['10', '25', '50', '100', '250', '500', '1000', '2500']
 
-class IntegrationSliders(wx.Panel):
+class IntegrationSliders_(wx.Panel):
     def __init__(self, chaninfo, parent, scope, winid=-1):
         # begin wxGlade: MyFrame1.__init__
         #kwds["style"] = wx.DEFAULT_FRAME_STYLE
@@ -118,5 +118,97 @@ class IntegrationSliders(wx.Panel):
             self.sliders[ind].SetRange(1, min(5*self.chaninfo.itimes[ind], 10000))
 
             
+class IntegrationSliders(wx.Panel):
+    def __init__(self, parent, scope, winid=-1):
+        # begin wxGlade: MyFrame1.__init__
+        #kwds["style"] = wx.DEFAULT_FRAME_STYLE
+        wx.Panel.__init__(self, parent, winid)
 
+        #self.chaninfo = chaninfo
+        self.sliders = []
+        self.cboxes = []
+        self.scope = scope
+        #self.SetTitle("Piezo Control")
+        
+        sizer_2 = wx.BoxSizer(wx.VERTICAL)
+
+        nsliders = 1#len(self.chaninfo.itimes)
+        
+        #for c in range(nsliders):
+        c = 1
+        
+        itime = 1e3*self.scope.state['Camera.IntegrationTime']
+
+        
+        sl = wx.Slider(self, -1, itime, 1, min(5*itime, 10000), size=wx.Size(100,-1),style=wx.SL_HORIZONTAL)#|wx.SL_AUTOTICKS)#|wx.SL_LABELS)
+        
+        sl_val = wx.ComboBox(self, -1, choices = timeChoices, value = '%d' % itime, size=(65, -1), style=wx.CB_DROPDOWN|wx.TE_PROCESS_ENTER)
+ 
+        #sl.SetSize((800,20))
+        sl.SetTickFreq(100,1)
+
+        if nsliders > 1:
+            sz = wx.StaticBoxSizer(wx.StaticBox(self, -1, self.chaninfo.names[c] + " (ms)"), wx.HORIZONTAl)
+        else:
+            sz = wx.BoxSizer(wx.HORIZONTAL)
+
+        sz.Add(sl, 1, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 2)
+        sz.Add(sl_val, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        sz.Add(wx.StaticText(self, -1, 'ms'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        sizer_2.Add(sz,1,wx.EXPAND,0)
+
+        self.sliders.append(sl)
+        self.cboxes.append(sl_val)
+
+        sl_val.Bind(wx.EVT_COMBOBOX, self.onCombobox)
+        sl_val.Bind(wx.EVT_TEXT_ENTER, self.onCombobox)
+
+        sizer_2.AddSpacer(5)
+        #wx.EVT_SCROLL_CHANGED(self,self.onSlide)
+        sl.Bind(wx.EVT_SCROLL_THUMBRELEASE, self.onSlide)
+        
+        self.scope.state.registerChangeListener('Camera.IntegrationTime', self.update)
+                
+       
+        #self.SetAutoLayout(1)
+        self.SetSizer(sizer_2)
+        sizer_2.Fit(self)
+        #sizer_2.SetSizeHints(self)
+        
+        #self.Layout()
+        # end wxGlade
+
+    def onSlide(self, event):
+        sl = event.GetEventObject()
+        ind = self.sliders.index(sl)
+        self.sl = sl
+        self.ind = ind
+        #self.chaninfo.itimes[ind] = sl.GetValue()
+        self.scope.state['Camera.IntegrationTime'] = sl.GetValue()/1e3
+        #print self.scope.state
+        self.cboxes[ind].SetValue('%d' % sl.GetValue())
+        self.sliders[ind].SetRange(1, min(5*self.scope.state['Camera.IntegrationTime']*1e3, 10000))
+        #self.scope.frameWrangler.stop()
+        #self.scope.frameWrangler.start()
+
+    def onCombobox(self, event):
+        cb = event.GetEventObject()
+        ind = self.cboxes.index(cb)
+        #   print((cb.GetValue()))
+        itime = float(cb.GetValue())
+        self.scope.state['Camera.IntegrationTime'] = itime/1e3
+        self.sliders[ind].SetValue(itime)
+        self.sliders[ind].SetRange(1, min(5*itime, 10000))
+        #self.scope.frameWrangler.stop()
+        #self.scope.frameWrangler.start()
+
+
+    def update(self, value, **kwargs):
+        ind = 0
+        #print 'update: ', value
+        value = value*1e3
+        
+        self.sliders[ind].SetValue(value)
+        self.sliders[ind].SetRange(1, min(5*value, 10000))
+        self.cboxes[ind].SetValue('%d' % value)
 

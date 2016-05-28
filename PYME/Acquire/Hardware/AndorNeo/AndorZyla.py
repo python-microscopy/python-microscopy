@@ -308,7 +308,7 @@ class AndorBase(SDK3Camera):
         return self.SerialNumber.getValue()
     
     def SetIntegTime(self, iTime): 
-        self.ExposureTime.setValue(iTime*1e-3)
+        self.ExposureTime.setValue(iTime)
         self.FrameRate.setValue(self.FrameRate.max())
         
     def GetIntegTime(self): 

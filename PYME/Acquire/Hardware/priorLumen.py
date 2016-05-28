@@ -28,7 +28,7 @@ from PYME.Acquire.Hardware.lasers import Laser
 
 class PriorLumen(Laser):
     '''Pretend we're a laser so that we can re-use the laser GUI controls'''
-    def __init__(self, name,turnOn=False, portname='COM1'):
+    def __init__(self, name,turnOn=False, portname='COM1', **kwargs):
         self.portname = portname
         self.ser_port = serial.Serial(None, 
                                       timeout=.01, writeTimeout=.01, xonxoff=0, rtscts=0)
@@ -36,7 +36,7 @@ class PriorLumen(Laser):
         self.powerControlable = False
         self.isOn=False
 
-        Laser.__init__(self, name, turnOn)
+        Laser.__init__(self, name, turnOn, **kwargs)
         
     def _read(self):
         c = ''
