@@ -48,7 +48,7 @@ class BoaApp(wx.App):
     def OnInit(self):
         #wx.InitAllImageHandlers()
         self.main = acquiremainframe.create(None, self.options)
-        self.main.Show()
+        #self.main.Show()
         self.SetTopWindow(self.main)
         return True
 
@@ -66,6 +66,6 @@ def main():
 
 if __name__ == '__main__':
     from PYME.util import mProfile
-    mProfile.profileOn(['previewacquisator.py'])
+    mProfile.profileOn(['acquiremainframe.py', 'init.py', 'fakeCam.py', 'rend_im.py'])
     main()
     mProfile.report()

@@ -24,8 +24,8 @@
 #!/usr/bin/python
 
 import scipy
-from PYME.Acquire.Hardware.Simulator import fakeCam, fakePiezo, dSimControl
-from PYME.Acquire.Hardware import fakeShutters
+from PYME.Acquire.Hardware.Simulator import fakePiezo
+#from PYME.Acquire.Hardware import fakeShutters
 import time
 
 #import PYME.cSMI as example
@@ -45,13 +45,14 @@ scope.positioning['x'] = (scope.fakeXPiezo, 1, 1)
 scope.positioning['y'] = (scope.fakeYPiezo, 1, 1)
 scope.positioning['z'] = (scope.fakePiezo, 1, 1)
 
-scope.state.registerHandler('Positioning.x', lambda : scope.GetPos()['x'], lambda v : scope.SetPos(x=v))
-scope.state.registerHandler('Positioning.y', lambda : scope.GetPos()['y'], lambda v : scope.SetPos(y=v))
-scope.state.registerHandler('Positioning.z', lambda : scope.GetPos()['z'], lambda v : scope.SetPos(z=v))
+scope.state.registerHandler('Positioning.x', lambda : scope.fakeXPiezo.GetPos(1), lambda v : scope.fakeXPiezo.MoveTo(1, v))
+scope.state.registerHandler('Positioning.y', lambda : scope.fakeYPiezo.GetPos(1), lambda v : scope.fakeYPiezo.MoveTo(1, v))
+scope.state.registerHandler('Positioning.z', lambda : scope.fakePiezo.GetPos(1), lambda v : scope.fakePiezo.MoveTo(1, v))
 ''')
 
 pz.join() #piezo must be there before we start camera
 cm = InitBG('Fake Camera', '''
+from PYME.Acquire.Hardware.Simulator import fakeCam, dSimControl
 scope.cam = fakeCam.FakeCamera(70*scipy.arange(-128.0, 128.0), 70*scipy.arange(-128.0, 128.0), fakeCam.NoiseMaker(), scope.fakePiezo, xpiezo = scope.fakeXPiezo, ypiezo = scope.fakeYPiezo)
 scope.cameras['Fake Camera'] = scope.cam
 #time.sleep(5)
@@ -59,15 +60,15 @@ scope.cameras['Fake Camera'] = scope.cam
 ''')
 
 #setup for the channels to aquire - b/w camera, no shutters
-class chaninfo:
-    names = ['bw']
-    cols = [1] #1 = b/w, 2 = R, 4 = G1, 8 = G2, 16 = B
-    hw = [0] #unimportant - as we have no shutters
-    itimes = [100]
-
-scope.chaninfo = chaninfo
-
-scope.shutters = fakeShutters
+#class chaninfo:
+#    names = ['bw']
+#    cols = [1] #1 = b/w, 2 = R, 4 = G1, 8 = G2, 16 = B
+#    hw = [0] #unimportant - as we have no shutters
+#    itimes = [100]
+#
+#scope.chaninfo = chaninfo
+#
+#scope.shutters = fakeShutters
 
 #scope.EnableJoystick = 'foo'
 
@@ -84,6 +85,7 @@ scope.shutters = fakeShutters
 
 #Gui stuff can't be done in background
 InitGUI('''
+from PYME.Acquire.Hardware.Simulator import dSimControl
 dsc = dSimControl.dSimControl(MainFrame, scope)
 #import wx
 #dsc = wx.TextCtrl(MainFrame, -1, 'foo')
@@ -158,14 +160,7 @@ from PYME.Acquire.Hardware import splitter
 splt = splitter.Splitter(MainFrame, None, scope, scope.cam)
 ''')
 
-#from PYME import cSMI
-#
-#Is = []
-#
-#def calcSum(caller):
-#    Is.append(cSMI.CDataStack_AsArray(caller.ds, 0).sum())
 
-#scope.frameWrangler.WantFrameNotification.append(calcSum)
 
 #must be here!!!
 joinBGInit() #wait for anyhting which was being done in a separate thread
@@ -176,7 +171,7 @@ joinBGInit() #wait for anyhting which was being done in a separate thread
 #from PYME.Analysis import MetaData
 #fakeCam.rend_im.setModel(psf, MetaData.TIRFDefault)
 
-time.sleep(.5)
+#time.sleep(.5)
 scope.initDone = True
 
 

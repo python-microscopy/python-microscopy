@@ -134,10 +134,9 @@ class PYMEMainFrame(AUIFrame):
         
         self.time1 = mytimer.mytimer()
         
-        self.time1.Start(500)
+        self.time1.Start(50)
 
         self.time1.WantNotification.append(self.runInitScript)
-        self.time1.WantNotification.append(self.checkInitDone)
         self.time1.WantNotification.append(self.splash.Tick)
 
 
@@ -156,6 +155,8 @@ class PYMEMainFrame(AUIFrame):
         self.sh.run('from PYME.Acquire.ExecTools import InitBG, joinBGInit, InitGUI, HWNotPresent')
         #self.sh.run('''def InitGUI(code):\n\tpostInit.append(code)\n\n\n''')
         self.sh.run('ExecTools.execFileBG("%s", locals(), globals())' % initFile)
+        
+        self.time1.WantNotification.append(self.checkInitDone)
 
         
 
@@ -275,6 +276,8 @@ class PYMEMainFrame(AUIFrame):
             self.pCamChoose.OnCCamera(None)
             
         logging.debug('Finished post-init')
+        
+        self.Show()
 
         #fudge to get layout right
 #        panes = self.notebook1.GetAuiManager().AllPanes

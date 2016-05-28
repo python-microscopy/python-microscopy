@@ -199,8 +199,9 @@ class zScanner:
         im2s = im2.sum()
         
         z0 = (im2*self.zPoss[None,None,:]).sum()/im2s
-        x_1, x_2 = self.scope.cam.ROIx
-        y_1, y_2 = self.scope.cam.ROIy
+        #x_1, x_2 = self.scope.cam.ROIx
+        #y_1, y_2 = self.scope.cam.ROIy
+        x_1, y_1, x_2, y_2 = self.scope.state['Camera.ROI']
         x = np.arange(float(x_1), x_2+1)
         y = np.arange(float(y_1), y_2+1)
         x0 = (im2*x[:,None,None]).sum()/im2s
@@ -214,20 +215,23 @@ class zScanner:
     def center(self):
         dx, dy, dz = self.getCentroid()
         
-        self.scope.frameWrangler.stop()
+        #self.scope.frameWrangler.stop()
         
         self.zPoss -= dz
         
-        x1, x2 = self.scope.cam.ROIx
-        y1, y2 = self.scope.cam.ROIy
+        #x1, x2 = self.scope.cam.ROIx
+        #y1, y2 = self.scope.cam.ROIy
+        
+        x1, y1, x2, y2 = self.scope.state['Camera.ROI']
         
         dx = int(dx)
         dy = int(dy)
         #print dx, dy, x1 - dx,y1-dy,x2-dx,y2-dy
         
-        self.scope.cam.SetROI(x1 - dx - 1,y1-dy - 1,x2-dx,y2-dy)
+        #self.scope.cam.SetROI(x1 - dx - 1,y1-dy - 1,x2-dx,y2-dy)
+        self.scope.state['Camera.ROI'] = (x1 - dx - 1,y1-dy - 1,x2-dx,y2-dy)
         
-        self.scope.frameWrangler.start()
+        #self.scope.frameWrangler.start()
 
         #self.view.Destroy()
         #self.view_xz.Destroy()

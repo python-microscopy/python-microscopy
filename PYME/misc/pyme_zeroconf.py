@@ -91,8 +91,11 @@ class ZeroConfNS(object):
         
             
     def __del__(self):
-        self.zeroconf.unregister_all_services()
-        self.zeroconf.close()
+        try:
+            self.zeroconf.unregister_all_services()
+            self.zeroconf.close()
+        except:
+            pass
         
 nsd = {}
 

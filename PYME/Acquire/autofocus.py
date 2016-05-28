@@ -25,7 +25,7 @@ class AutoFocus(object):
         if m > self.lastMax:
             #continue
             self.lastMax = m
-            self.lastMaxPos = self.scope.GetPos()['z']
+            self.lastMaxPos = self.scope.state['Positioning.z']
             
         else:
             if self.incr > 0:
@@ -33,11 +33,12 @@ class AutoFocus(object):
                 self.incr = -self.incr
             else:
                 #already runing backwards
-                self.scope.SetPos(z=self.lastMaxPos)
+                self.scope.state['Positioning.z']=self.lastMaxPos
                 #self.scope.frameWrangler.WantFrameGroupNotification.remove(self.tick)
                 self.scope.frameWrangler.onFrameGroup.disconnect(self.OnFrameGroup)
             
-        self.scope.SetPos(z=self.lastMaxPos + self.incr)
+        #self.scope.SetPos(z=self.lastMaxPos + self.incr)
+        self.scope.state['Positioning.z'] = self.lastMaxPos + self.incr
         
         print 'af'
         

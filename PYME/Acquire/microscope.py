@@ -46,6 +46,7 @@ import dispatch
 from PYME.misc import sqlitendarray
 
 import weakref
+import re
 
 #class DummyJoystick(object):
 #    def enable(*args, **kwargs):
@@ -339,18 +340,20 @@ class microscope(object):
         
     def GetPos(self):
         res = {}
-        for k in self.positioning.keys():
-            p, c, m = self.positioning[k]
-            res[k] = p.GetPos(c)*m
+        
+        axes = [k.split('.')[-1] for k in self.state.keys() if k.startswith('Positioning.')]
+        
+        for k in axes:
+            res[k] = self.state['Positioning.%s' % k]
             
         return res
         
     def SetPos(self, **kwargs):
         for k, v in kwargs.items():
-            p, c, m = self.positioning[k]
-            p.MoveTo(c, v/m)
+            self.state['Positioning.%s' % k] = v
             
     def GetPosRange(self):
+        #Todo - fix to use positioning
         res = {}
         for k in self.positioning.keys():
             p, c, m = self.positioning[k]
@@ -700,10 +703,10 @@ class microscope(object):
             The co-ordinates (in pixels) of the ROI, in the form (x0, y0, x1, y1)       
         
         '''
-        x1 = self.scope.cam.GetROIX1()
-        y1 = self.scope.cam.GetROIY1()
-        x2 = self.scope.cam.GetROIX2()
-        y2 = self.scope.cam.GetROIY2()
+        x1 = self.cam.GetROIX1()
+        y1 = self.cam.GetROIY1()
+        x2 = self.cam.GetROIX2()
+        y2 = self.cam.GetROIY2()
         
         return (x1, y1, x2, y2)
         

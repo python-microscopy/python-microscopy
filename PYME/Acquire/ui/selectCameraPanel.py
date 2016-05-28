@@ -30,9 +30,11 @@ class CameraChooserPanel(wx.Panel):
         self.scope = scope
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        
+        cameraNames = list(scope.cameras.keys())
 
-        self.cCamera = wx.Choice(self, -1, choices = list(scope.cameras.keys()))
-        self.cCamera.SetSelection(list(scope.cameras.values()).index(scope.cam))
+        self.cCamera = wx.Choice(self, -1, choices = cameraNames)
+        self.cCamera.SetSelection(cameraNames.index(self.scope.state['ActiveCamera']))
         self.cCamera.Bind(wx.EVT_CHOICE, self.OnCCamera)
 
         hsizer.Add(self.cCamera, 1, wx.ALL, 2)

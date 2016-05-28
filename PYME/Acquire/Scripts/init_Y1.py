@@ -113,12 +113,15 @@ scope.hardwareChecks.append(scope._piFoc.OnTarget)
 scope.CleanupFunctions.append(scope._piFoc.close)
 scope.piFoc = offsetPiezo.piezoOffsetProxy(scope._piFoc)
 scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
+
 scope.positioning['z'] = (scope.piFoc, 1, 1)
 
 #server so drift correction can connect to the piezo
 pst = offsetPiezo.ServerThread(scope.piFoc)
 pst.start()
 scope.CleanupFunctions.append(pst.cleanup)
+
+scope.state.registerHandler('Positioning.z', lambda : scope.piFoc.GetPos(1), lambda v : scope.piFoc.SetPos(1, v))
 ''')
 
 InitBG('XY Stage', '''
@@ -134,6 +137,9 @@ scope.CleanupFunctions.append(scope.xystage.close)
 
 scope.positioning['x'] = (scope.xystage, 1, 1000)
 scope.positioning['y'] = (scope.xystage, 2, -1000)
+
+scope.state.registerHandler('Positioning.x', lambda : scope.xystage.GetPos(1), lambda v : scope.xystage.MoveTo(1, v*1e-3))
+scope.state.registerHandler('Positioning.y', lambda : -1000*scope.xystage.GetPos(2), lambda v : scope.xystage.MoveTo(2, -v*1e-3))
 ''')
 
 
@@ -200,38 +206,43 @@ except:
 
 #DigiData
 from PYME.Acquire.Hardware import phoxxLaser, cobaltLaser, ioslave
-scope.l642 = phoxxLaser.PhoxxLaser('642',portname='COM4')
+scope.l642 = phoxxLaser.PhoxxLaser('l642',portname='COM4', scopeState = scope.state)
 scope.CleanupFunctions.append(scope.l642.Close)
-scope.l488 = phoxxLaser.PhoxxLaser('488',portname='COM5')
+scope.l488 = phoxxLaser.PhoxxLaser('l488',portname='COM5', scopeState = scope.state)
 scope.CleanupFunctions.append(scope.l488.Close)
-scope.l405 = phoxxLaser.PhoxxLaser('405',portname='COM6')
+scope.l405 = phoxxLaser.PhoxxLaser('l405',portname='COM6', scopeState = scope.state)
 scope.CleanupFunctions.append(scope.l405.Close)
-scope.l561 = cobaltLaser.CobaltLaser('561',portname='COM7')
-scope.lAOM = ioslave.AOMLaser('AOM')
+scope.l561 = cobaltLaser.CobaltLaser('l561',portname='COM7', scopeState = scope.state)
+scope.lAOM = ioslave.AOMLaser('AOM', scopeState = scope.state)
 scope.lasers = [scope.l405,scope.l488,scope.l561, scope.lAOM, scope.l642]
 
 from PYME.Acquire.Hardware import priorLumen
-scope.arclamp = priorLumen.PriorLumen('Arc Lamp', portname='COM1')
+scope.arclamp = priorLumen.PriorLumen('Arc Lamp', portname='COM1', scopeState = scope.state)
 scope.lasers.append(scope.arclamp)
 
 
 
 InitGUI('''
 from PYME.Acquire.ui import lasersliders
-lsf = lasersliders.LaserSliders(toolPanel, scope.lasers)
+lsf = lasersliders.LaserSliders(toolPanel, scope.state)
 time1.WantNotification.append(lsf.update)
 #lsf.update()
 camPanels.append((lsf, 'Laser Powers'))
-''')
 
-InitGUI('''
-if 'lasers'in dir(scope):
-    from PYME.Acquire.Hardware import LaserControlFrame
-    lcf = LaserControlFrame.LaserControlLight(MainFrame,scope.lasers)
-    time1.WantNotification.append(lcf.refresh)
-    #lcf.refresh()
+if 'lasers' in dir(self:)
+    lcf = lasersliders.LaserToggles(toolPanel, scope.state)
+    time1.WantNotification.append(lcf.update)
     camPanels.append((lcf, 'Laser Control'))
 ''')
+
+#InitGUI('''
+#if 'lasers'in dir(scope):
+#    from PYME.Acquire.Hardware import LaserControlFrame
+#    lcf = LaserControlFrame.LaserControlLight(MainFrame,scope.lasers)
+#    time1.WantNotification.append(lcf.refresh)
+#    #lcf.refresh()
+#    camPanels.append((lcf, 'Laser Control'))
+#''')
 
 
 

@@ -98,7 +98,7 @@ def genTheoreticalModel(md):
         
         #print('bar')
 
-genTheoreticalModel(MetaData.TIRFDefault)
+#genTheoreticalModel(MetaData.TIRFDefault)
 
 #def setModel(mod, md):
 #    global IntXVals, IntYVals, IntZVals, interpModel, dx, dy, dz
