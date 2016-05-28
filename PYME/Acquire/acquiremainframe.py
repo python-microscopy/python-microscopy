@@ -502,12 +502,15 @@ class PYMEMainFrame(AUIFrame):
         
         else:
             if (self.roi_on):
-                x1 = self.scope.cam.GetROIX1()
-                y1 = self.scope.cam.GetROIY1()
-                x2 = self.scope.cam.GetROIX2()
-                y2 = self.scope.cam.GetROIY2()
+#                x1 = self.scope.cam.GetROIX1()
+#                y1 = self.scope.cam.GetROIY1()
+#                x2 = self.scope.cam.GetROIX2()
+#                y2 = self.scope.cam.GetROIY2()
+                
+                x1, y1, x2, y2 = self.scope.state['Camera.ROI']
     
-                self.scope.cam.SetROI(0,0, self.scope.cam.GetCCDWidth(), self.scope.cam.GetCCDHeight())
+                #self.scope.cam.SetROI(0,0, self.scope.cam.GetCCDWidth(), self.scope.cam.GetCCDHeight())
+                self.scope.state['Camera.ROI'] = (0,0, self.scope.cam.GetCCDWidth(), self.scope.cam.GetCCDHeight())
                 #self.mCam.SetLabel(wxID_SMIMAINFRAMEMCAMROI, 'Set ROI\tF8')
                 self.roi_on = False
             else:
@@ -527,7 +530,8 @@ class PYMEMainFrame(AUIFrame):
                             y1 = 0
                             y2 = self.scope.cam.GetCCDHeight()
                         
-                self.scope.cam.SetROI(x1,y1,x2,y2)
+                #self.scope.cam.SetROI(x1,y1,x2,y2)
+                self.scope.state['Camera.ROI'] = (x1,y1,x2,y2)
                 #self.mCam.SetLabel(wxID_SMIMAINFRAMEMCAMROI, 'Clear ROI\tF8')
                 self.roi_on = True
     
@@ -563,7 +567,8 @@ class PYMEMainFrame(AUIFrame):
         x2 = w/2 + halfwidth
         y2 = h/2 + halfwidth
 
-        self.scope.cam.SetROI(x1,y1,x2,y2)
+        #self.scope.cam.SetROI(x1,y1,x2,y2)
+        self.scope.state['Camera.ROI'] = (x1,y1,x2,y2)
         #self.mCam.SetLabel(wxID_SMIMAINFRAMEMCAMROI, 'Clear ROI\tF8')
         self.roi_on = True
 

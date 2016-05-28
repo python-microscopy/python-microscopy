@@ -324,6 +324,9 @@ class microscope(object):
         self.state = StateManager(self)
         
         self.state.registerHandler('ActiveCamera', self.GetActiveCameraName, self._SetCamera, True)
+        self.state.registerHandler('Camera.IntegrationTime', self._GetActiveCameraIntegrationTime, self._SetActiveCameraIntegrationTime, True)
+        self.state.registerHandler('Camera.ROI', self._GetActiveCameraROI, self._SetActiveCameraROI, True)
+        
 
         MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
         
@@ -595,6 +598,14 @@ class microscope(object):
         
         for cb in self.PACallbacks:
             cb()
+            
+    ##############################
+    # The microscope object manages multiple cameras
+    #
+    # The following functions deal with selecting the active camera and
+    # performing operations on the currently active camera
+    # The integration time and ROI setting functions can be thought of as
+    # proxying the underlying calls to the camera
 
     def _SetCamera(self, camName):
         '''Set the currently used camera by name, selecting from the dictionary
@@ -649,8 +660,52 @@ class microscope(object):
         for name, cam in self.cameras.items():
             if cam is self.cam:
                 return name
-            
-            
+                
+    def _SetActiveCameraIntegrationTime(self, integrationTime):
+        '''Sets the integration time for the active camera (in ms)
+
+        NB: This is a state handler, use 
+        `scope.state['Camera.IntegrationTime'] = integrationTime` 
+        instead of calling directly        
+        '''
+        self.cam.SetIntegTime(integrationTime)
+    
+    def _GetActiveCameraIntegrationTime(self):
+        '''Gets the integration time for the active camera (in ms)'''
+        return self.cam.GetIntegTime()
+        
+    def _SetActiveCameraROI(self, ROI):
+        '''Sets the ROI for the active camera
+        
+        NB: This is a state handler, use 
+        `scope.state['Camera.ROI'] = ROI` 
+        instead of calling directly 
+        
+        Parameters
+        ----------
+
+        ROI : tuple / sequence
+            The co-ordinates (in pixels) of the ROI, in the form (x0, y0, x1, y1)       
+        
+        '''
+        self.cam.SetROI(*ROI)
+        
+    def _GetActiveCameraROI(self):
+        '''Gets the ROI for the active camera
+        
+        Parameters
+        ----------
+
+        ROI : tuple / sequence
+            The co-ordinates (in pixels) of the ROI, in the form (x0, y0, x1, y1)       
+        
+        '''
+        x1 = self.scope.cam.GetROIX1()
+        y1 = self.scope.cam.GetROIY1()
+        x2 = self.scope.cam.GetROIX2()
+        y2 = self.scope.cam.GetROIY2()
+        
+        return (x1, y1, x2, y2)
         
             
     def PanCamera(self, dx, dy):

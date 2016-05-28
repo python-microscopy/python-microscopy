@@ -56,7 +56,6 @@ scope.cam = fakeCam.FakeCamera(70*scipy.arange(-128.0, 128.0), 70*scipy.arange(-
 scope.cameras['Fake Camera'] = scope.cam
 #time.sleep(5)
 
-scope.state.registerHandler('Camera.IntegrationTime', scope.cam.GetIntegTime, scope.cam.SetIntegTime, needCamRestart=True)
 ''')
 
 #setup for the channels to aquire - b/w camera, no shutters
