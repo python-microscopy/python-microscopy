@@ -33,6 +33,7 @@ import PYME.Acquire.protocol as protocol
 
 from PYME.io import MetaDataHandler
 from PYME.Acquire.Hardware import ccdCalibrator
+from PYME.Acquire.SpoolController import SpoolController
 
 import sqlite3
 
@@ -321,6 +322,8 @@ class microscope(object):
         self.initDone = False
 
         self._OpenSettingsDB()
+        
+        self.spoolController = SpoolController(self)#, defDir, **kwargs)
         
         self.state = StateManager(self)
         

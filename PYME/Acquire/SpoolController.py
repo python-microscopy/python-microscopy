@@ -17,7 +17,7 @@ except:
     sampInf = False
 #import win32api
 from PYME.io.FileUtils import nameUtils
-from PYME.io.FileUtils.nameUtils import numToAlpha, getRelFilename
+from PYME.io.FileUtils.nameUtils import numToAlpha, getRelFilename, genHDFDataFilepath
 #from PYME.io.FileUtils.freeSpace import get_free_space
 
 
@@ -34,7 +34,7 @@ import subprocess
 import dispatch
 
 class SpoolController(object):
-    def __init__(self, scope, defDir, defSeries='%(day)d_%(month)d_series'):
+    def __init__(self, scope, defDir=genHDFDataFilepath(), defSeries='%(day)d_%(month)d_series'):
         '''Initialise the spooling controller.
         
         Parameters
@@ -100,7 +100,7 @@ class SpoolController(object):
         self.onSpoolProgress.send(self)
 
 
-    def StartSpooling(self, fn, stack=False, compLevel = 2, doPreflightCheck=True):
+    def StartSpooling(self, fn, stack=False, compLevel = 2, doPreflightCheck=True, maxFrames = sys.maxsize):
         '''Start spooling
         '''       
 
@@ -145,20 +145,20 @@ class SpoolController(object):
             self.spooler = QueueSpooler.Spooler(self.queueName, self.scope.frameWrangler.onFrame, 
                                                 frameShape = frameShape, protocol=protocol, 
                                                 guiUpdateCallback=self._ProgressUpate, complevel=compLevel, 
-                                                fakeCamCycleTime=fakeCycleTime)
+                                                fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames)
         elif self.spoolType == 'HTTP':
             #self.queueName = self.dirname + fn + '.h5'
             self.queueName = getRelFilename(self.dirname + fn + '.h5')
             self.spooler = HTTPSpooler.Spooler(self.queueName, self.scope.frameWrangler.onFrame, 
                                                frameShape = frameShape, protocol=protocol, 
                                                guiUpdateCallback=self._ProgressUpate, complevel=compLevel, 
-                                               fakeCamCycleTime=fakeCycleTime)
+                                               fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames)
            
         else:
             self.spooler = HDFSpooler.Spooler(self.dirname + fn + '.h5', self.scope.frameWrangler.onFrame, 
                                               frameShape = frameShape, protocol=protocol, 
                                               guiUpdateCallback=self._ProgressUpate, complevel=compLevel, 
-                                              fakeCamCycleTime=fakeCycleTime)
+                                              fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames)
 
        
         if sampInf:

@@ -251,7 +251,7 @@ class PYMEMainFrame(AUIFrame):
                 self.AddCamTool(self.pCamChoose, 'Camera Selection')
 
 
-            self.pan_spool = HDFSpoolFrame.PanSpool(self, self.scope, nameUtils.genHDFDataFilepath())
+            self.pan_spool = HDFSpoolFrame.PanSpool(self, self.scope)
             self.AddAqTool(self.pan_spool, 'Spooling')
 
         

@@ -69,7 +69,8 @@ class EventLogger:
 
 class Spooler:
     '''Spooler base class'''
-    def __init__(self, filename, frameSource, protocol = p.NullProtocol, guiUpdateCallback=None, fakeCamCycleTime=None, **kwargs):
+    def __init__(self, filename, frameSource, protocol = p.NullProtocol, 
+                 guiUpdateCallback=None, fakeCamCycleTime=None, maxFrames = p.maxint, **kwargs):
         '''Create a new spooler.
         
         Parameters
@@ -94,6 +95,8 @@ class Spooler:
         self.frameSource = frameSource
         self.guiUpdateCallback = guiUpdateCallback
         self.protocol = protocol
+        
+        self.maxFrames = maxFrames
     
         #if we've got a fake camera - the cycle time will be wrong - fake our time sig to make up for this
         #if scope.cam.__class__.__name__ == 'FakeCamera':
@@ -157,6 +160,9 @@ class Spooler:
 
         if self.imNum == 2 and sampleInformation and sampleInformation.currentSlide[0]: #have first frame and should thus have an imageID
             sampleInformation.createImage(self.md, sampleInformation.currentSlide[0])
+            
+        if self.imNum >= self.maxFrames:
+            self.StopSpool()
 
     def doStartLog(self):
         '''Record pertinant information to metadata at start of acquisition.

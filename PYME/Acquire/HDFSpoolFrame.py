@@ -30,7 +30,7 @@ import datetime
 from PYME.io.FileUtils.freeSpace import get_free_space
 
 import PYME.Acquire.Protocols
-from PYME.Acquire.SpoolController import SpoolController
+#from PYME.Acquire.SpoolController import SpoolController
 
 import os
 import glob
@@ -176,7 +176,7 @@ class PanSpool(wx.Panel):
         self.SetSizer(vsizer)
         vsizer.Fit(self)
 
-    def __init__(self, parent, scope, defDir, **kwargs):
+    def __init__(self, parent, scope, **kwargs):
         '''Initialise the spooling panel.
         
         Parameters
@@ -195,7 +195,8 @@ class PanSpool(wx.Panel):
         self._init_ctrls(parent)
         self.scope = scope
         
-        self.spoolController = SpoolController(scope, defDir, **kwargs)
+        #self.spoolController = SpoolController(scope, defDir, **kwargs)
+        self.spoolController = scope.spoolController
         self.spoolController.onSpoolProgress.connect(self.Tick)
 
         self.stSpoolDirName.SetLabel(self.spoolController.dirname)
