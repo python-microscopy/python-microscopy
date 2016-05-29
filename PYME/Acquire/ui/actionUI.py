@@ -20,21 +20,26 @@ class ActionList(wx.ListCtrl):
         self.InsertColumn(3, "Expiry")
         
         self.SetColumnWidth(0, 50)
-        self.SetColumnWidth(1, 250)
-        self.SetColumnWidth(2, 500)
-        self.SetColumnWidth(3, 150)
+        self.SetColumnWidth(1, 150)
+        self.SetColumnWidth(2, 300)
+        self.SetColumnWidth(3, 50)
 
 
     def OnGetItemText(self, item, col):
-        vals = self.actionManager.actionQueue.queue[item]
+        vals = self._queueItems[item]
         
         val = vals[col]
         return repr(val)
         
     def update(self, **kwargs):
-        self.SetItemCount(self.actionManager.actionQueue.qsize())
+        self._queueItems = list(self.actionManager.actionQueue.queue)
+        self._queueItems.sort()
+        self.SetItemCount(len(self._queueItems))
         self.Refresh()
 
+ACTION_DEFAULTS = ['spoolController.StartSpooling',
+                   'state.update',
+                   ]
 
 class ActionPanel(wx.Panel):
     def __init__(self, parent, actionManager):#, scope):
@@ -44,6 +49,30 @@ class ActionPanel(wx.Panel):
         vsizer = wx.BoxSizer(wx.VERTICAL)
         self.actionList = ActionList(self, self.actionManager)
         vsizer.Add(self.actionList, 1, wx.EXPAND, 0)
+        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        
+        hsizer.Add(wx.StaticText(self, -1, 'Nice:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        self.tNice = wx.TextCtrl(self, -1, '10', size=(30, -1))
+        hsizer.Add(self.tNice, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        
+        hsizer.Add(wx.StaticText(self, -1, 'Function:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        self.tFunction = wx.ComboBox(self, -1, '', choices=ACTION_DEFAULTS,size=(150, -1))
+        hsizer.Add(self.tFunction, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        
+        hsizer.Add(wx.StaticText(self, -1, 'Args:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        self.tArgs = wx.TextCtrl(self, -1, '', size=(150, -1))
+        hsizer.Add(self.tArgs, 1, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        
+        hsizer.Add(wx.StaticText(self, -1, 'Timeout [s]:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        self.tTimeout = wx.TextCtrl(self, -1, '1000000', size=(30, -1))
+        hsizer.Add(self.tTimeout, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        
+        self.bAdd = wx.Button(self, -1, 'Add', style=wx.BU_EXACTFIT)
+        self.bAdd.Bind(wx.EVT_BUTTON, self.OnAddAction)
+        hsizer.Add(self.bAdd, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        
+        vsizer.Add(hsizer, 0, wx.EXPAND, 0)
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         self.bPause = wx.Button(self, -1, 'Pause')
@@ -66,5 +95,12 @@ class ActionPanel(wx.Panel):
         else:
             self.actionManager.paused = True
             self.bPause.SetLabel('Resume')
+    
+    def OnAddAction(self, event):
+        nice = float(self.tNice.GetValue())
+        functionName = self.tFunction.GetValue()
+        args = eval('dict(%s)' % self.tArgs.GetValue())
+        timeout = float(self.tTimeout.GetValue())
+        self.actionManager.QueueAction(functionName, args, nice, timeout)
 
    

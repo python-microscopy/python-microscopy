@@ -75,9 +75,13 @@ class ActionManager(object):
             becomes irrelevant and should be ignored.
             
         '''
-            
-        expiry = time.time() + timeout
-        self.actionQueue.put_nowait((nice, functionName, args, expiry))
+        curTime = time.time()    
+        expiry = curTime + timeout
+        
+        #ensure FIFO behaviour for events with the same priority
+        nice_ = nice + curTime*1e-10
+        
+        self.actionQueue.put_nowait((nice_, functionName, args, expiry))
         self.onQueueChange.send(self)
         
         
@@ -100,6 +104,7 @@ class ActionManager(object):
                 return
             
             if expiry > time.time():
+                print self.currentTask, functionName
                 fcn = eval('.'.join(['self.scope()', functionName]))
                 self.isLastTaskDone = fcn(**args)
                 

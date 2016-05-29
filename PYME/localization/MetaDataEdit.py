@@ -10,13 +10,26 @@
 #
 ##################
 
-class FloatParam(object):
-    def __init__(self, paramName, guiName, default=0, helpText=''):
+class MDParam(object):
+    def __init__(self):
+        pass
+        #, mdToUpdate=None):
+        #self.mdToUpdate = mdToUpdate
+
+    #def OnChange(self, event=None):
+    #    if not self.mdToUpdate is None:
+    #        self.retrieveValue(self.mdToUpdate)
+
+
+class FloatParam(MDParam):
+    def __init__(self, paramName, guiName, default=0, helpText='', **kwargs):
         self.paramName = paramName
         self.guiName = guiName
         self.default = default
+
+        MDParam.__init__(self, **kwargs)
         
-    def createGUI(self, parent, mdh):
+    def createGUI(self, parent, mdh, syncMdh=False):
         import wx
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -24,6 +37,9 @@ class FloatParam(object):
         hsizer.Add(wx.StaticText(parent, -1, self.guiName), 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
         self.tValue = wx.TextCtrl(parent, -1, value='0', size=(50, -1))
         self.tValue.SetValue('%3.2f' % mdh.getOrDefault(self.paramName, self.default))
+        if syncMdh:
+            self.retrieveValue(mdh)
+            self.tValue.Bind(wx.EVT_TEXT, lambda e : self.retrieveValue(mdh))
 
         hsizer.Add(self.tValue, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
         
@@ -33,13 +49,15 @@ class FloatParam(object):
         mdh[self.paramName] = float(self.tValue.GetValue())
         
 
-class IntParam(object):
-    def __init__(self, paramName, guiName, default=0, helpText=''):
+class IntParam(MDParam):
+    def __init__(self, paramName, guiName, default=0, helpText='', **kwargs):
         self.paramName = paramName
         self.guiName = guiName
         self.default = default
+
+        MDParam.__init__(self, **kwargs)
         
-    def createGUI(self, parent, mdh):
+    def createGUI(self, parent, mdh, syncMdh=False):
         import wx
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -47,6 +65,9 @@ class IntParam(object):
         hsizer.Add(wx.StaticText(parent, -1, self.guiName), 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
         self.tValue = wx.TextCtrl(parent, -1, value='0', size=(50, -1))
         self.tValue.SetValue('%d' % mdh.getOrDefault(self.paramName, self.default))
+        if syncMdh:
+            self.retrieveValue(mdh)
+            self.tValue.Bind(wx.EVT_TEXT, lambda e : self.retrieveValue(mdh))
 
         hsizer.Add(self.tValue, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
         
@@ -54,14 +75,44 @@ class IntParam(object):
         
     def retrieveValue(self, mdh):
         mdh[self.paramName] = int(self.tValue.GetValue())
-        
-class StringParam(object):
-    def __init__(self, paramName, guiName, default='', helpText=''):
+
+class RangeParam(MDParam):
+    def __init__(self, paramName, guiName, default=[0, 0], helpText='', **kwargs):
         self.paramName = paramName
         self.guiName = guiName
         self.default = default
+
+        MDParam.__init__(self, **kwargs)
         
-    def createGUI(self, parent, mdh):
+    def createGUI(self, parent, mdh, syncMdh=False):
+        import wx
+        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        hsizer.Add(wx.StaticText(parent, -1, self.guiName), 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tValue = wx.TextCtrl(parent, -1, value='', size=(50, -1))
+        val = ':'.join(['%d' % v for v in mdh.getOrDefault(self.paramName, self.default)])
+        self.tValue.SetValue(val)
+        if syncMdh:
+            self.retrieveValue(mdh)
+            self.tValue.Bind(wx.EVT_TEXT, lambda e : self.retrieveValue(mdh))
+
+        hsizer.Add(self.tValue, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+        
+        return hsizer
+        
+    def retrieveValue(self, mdh):
+        mdh[self.paramName] = tuple([int(v) for v in self.tValue.GetValue().split(':')])
+        
+class StringParam(MDParam):
+    def __init__(self, paramName, guiName, default='', helpText='', **kwargs):
+        self.paramName = paramName
+        self.guiName = guiName
+        self.default = default
+
+        MDParam.__init__(self, **kwargs)
+        
+    def createGUI(self, parent, mdh, syncMdh=False):
         import wx
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -69,6 +120,9 @@ class StringParam(object):
         hsizer.Add(wx.StaticText(parent, -1, self.guiName), 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
         self.tValue = wx.TextCtrl(parent, -1, value='0', size=(50, -1))
         self.tValue.SetValue(mdh.getOrDefault(self.paramName, self.default))
+        if syncMdh:
+            self.retrieveValue(mdh)
+            self.tValue.Bind(wx.EVT_TEXT, lambda e : self.retrieveValue(mdh))
 
         hsizer.Add(self.tValue, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
         
@@ -77,11 +131,13 @@ class StringParam(object):
     def retrieveValue(self, mdh):
         mdh[self.paramName] = self.tValue.GetValue()
         
-class FloatListParam(object):
-    def __init__(self, paramName, guiName, default='', helpText=''):
+class FloatListParam(MDParam):
+    def __init__(self, paramName, guiName, default='', helpText='', **kwargs):
         self.paramName = paramName
         self.guiName = guiName
         self.default = default
+
+        MDParam.__init__(self, **kwargs)
         
     def _valToString(self, values):
         return ''.join(['%3.2f' % v for v in values])
@@ -90,7 +146,7 @@ class FloatListParam(object):
         sl = s.split(',')
         return [float(si) for si in sl]
         
-    def createGUI(self, parent, mdh):
+    def createGUI(self, parent, mdh, syncMdh=False):
         import wx
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -98,6 +154,9 @@ class FloatListParam(object):
         hsizer.Add(wx.StaticText(parent, -1, self.guiName), 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
         self.tValue = wx.TextCtrl(parent, -1, value='0', size=(50, -1))
         self.tValue.SetValue(self._valToString(mdh.getOrDefault(self.paramName, self.default)))
+        if syncMdh:
+            self.retrieveValue(mdh)
+            self.tValue.Bind(wx.EVT_TEXT, lambda e : self.retrieveValue(mdh))
 
         hsizer.Add(self.tValue, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
         
@@ -107,8 +166,8 @@ class FloatListParam(object):
         mdh[self.paramName] = self._strToVal(self.tValue.GetValue())
         
 
-class ChoiceParam(object):
-    def __init__(self, paramName, guiName, default='', helpText='', choices = [], choiceNames = []):
+class ChoiceParam(MDParam):
+    def __init__(self, paramName, guiName, default='', helpText='', choices = [], choiceNames = [], **kwargs):
         self.paramName = paramName
         self.guiName = guiName
         self.default = default
@@ -116,8 +175,10 @@ class ChoiceParam(object):
         self.choiceNames = choiceNames
         if choiceNames == []:
             self.choiceNames = choices
+
+        MDParam.__init__(self, **kwargs)
         
-    def createGUI(self, parent, mdh):
+    def createGUI(self, parent, mdh, syncMdh=False):
         import wx
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -126,7 +187,9 @@ class ChoiceParam(object):
         self.cValue = wx.Choice(parent, -1, choices = self.choiceNames, size=(100, -1))
 
         self.cValue.SetSelection(self.choices.index(mdh.getOrDefault(self.paramName, self.default)))
-
+        if syncMdh:
+            self.retrieveValue(mdh)
+            self.cValue.Bind(wx.EVT_CHOICE, lambda e : self.retrieveValue(mdh))
         hsizer.Add(self.cValue, 1,wx.ALIGN_CENTER_VERTICAL, 0)
         
         return hsizer
@@ -135,8 +198,9 @@ class ChoiceParam(object):
         mdh[self.paramName] = self.choices[self.cValue.GetSelection()]
         
         
-class FilenameParam(object):
-    def __init__(self, paramName, guiName, default='<none>', helpText='', prompt='Please select file', wildcard='All files|*.*', filename = None):
+class FilenameParam(MDParam):
+    def __init__(self, paramName, guiName, default='<none>', helpText='', 
+                    prompt='Please select file', wildcard='All files|*.*', filename = None, **kwargs):
         self.paramName = paramName
         self.guiName = guiName
         self.default = default
@@ -145,8 +209,10 @@ class FilenameParam(object):
             self.filename = filename
         self.prompt = prompt
         self.wildcard = wildcard
+
+        MDParam.__init__(self, **kwargs)
         
-    def createGUI(self, parent, mdh):
+    def createGUI(self, parent, mdh, syncMdh=False):
         import wx, os
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -167,7 +233,9 @@ class FilenameParam(object):
         hsizer.Add(self.stFilename, 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
 
         bSetFile = wx.Button(parent, -1, 'Set', style=wx.BU_EXACTFIT)
-        bSetFile.Bind(wx.EVT_BUTTON, self._setFile)
+        if syncMdh:
+            self.retrieveValue(mdh)
+            bSetFile.Bind(wx.EVT_BUTTON, self._setFile)
         hsizer.Add(bSetFile, 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
 
         return hsizer
@@ -187,6 +255,10 @@ class FilenameParam(object):
             #self.md.setEntry('PSFFile', psfFilename)
             self.stFilename.SetLabel('%s %s' % (self.guiName, os.path.split(self.filename)[1]))
             self.stFilename.SetForegroundColour(wx.Colour(0, 128, 0))
+
+            if self.mdToUpdate and not (self.filename == self.default):
+                self.OnChange()
+
             return True
         else:
             return False
@@ -217,19 +289,24 @@ class ShiftFieldParam(FilenameParam):
             mdh.setEntry('chroma.dy', dy)
         
 
-class BoolParam(object):
-    def __init__(self, paramName, guiName, default=False, helpText=''):
+class BoolParam(MDParam):
+    def __init__(self, paramName, guiName, default=False, helpText='', **kwargs):
         self.paramName = paramName
         self.guiName = guiName
         self.default = default
+
+        MDParam.__init__(self, **kwargs)
         
-    def createGUI(self, parent, mdh):
+    def createGUI(self, parent, mdh, syncMdh=False):
         import wx
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         
         self.cbValue = wx.CheckBox(parent, -1, self.guiName)
         self.cbValue.SetValue(self.default)
+        if syncMdh:
+            self.retrieveValue(mdh)
+            self.cbValue.Bind(wx.EVT_CHECKBOX, lambda e : self.retrieveValue(mdh))
 
         hsizer.Add(self.cbValue, 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
         
@@ -238,26 +315,34 @@ class BoolParam(object):
     def retrieveValue(self, mdh):
         mdh[self.paramName] = self.cbValue.GetValue()   
 
-class BoolFloatParam(object):
-    def __init__(self, paramName, guiName, default=False, helpText='', ondefault=0, offvalue=0):
+class BoolFloatParam(MDParam):
+    def __init__(self, paramName, guiName, default=False, helpText='', ondefault=0, offvalue=0, **kwargs):
         self.paramName = paramName
         self.guiName = guiName
         self.default = default
         self.ondefault = ondefault
         self.offvalue = offvalue
+
+        MDParam.__init__(self, **kwargs)
         
-    def createGUI(self, parent, mdh):
+    def createGUI(self, parent, mdh, syncMdh=False):
         import wx
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
         self.cbValue = wx.CheckBox(parent, -1, self.guiName)
         self.cbValue.SetValue(self.default)
+        if syncMdh:
+            #self.retrieveValue(mdh)
+            self.cbValue.Bind(wx.EVT_CHECKBOX, lambda e : self.retrieveValue(mdh))
 
         hsizer.Add(self.cbValue, 1,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
         
         self.tValue = wx.TextCtrl(parent, -1, value='0', size=(50, -1))
         self.tValue.SetValue('%3.2f' % mdh.getOrDefault(self.paramName, self.ondefault))
+        if syncMdh:
+            self.retrieveValue(mdh)
+            self.tValue.Bind(wx.EVT_TEXT, lambda e : self.retrieveValue(mdh))
 
         hsizer.Add(self.tValue, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
         

@@ -30,10 +30,12 @@ import numpy
 #additional arguments
 taskList = [
 T(-1, scope.turnAllLasersOff),
-T(20, scope.l488.SetPower, 1000),
-T(20, scope.l405.SetPower, 50),
-T(20, scope.l488.TurnOn),
-T(20, scope.l405.TurnOn),
+#T(20, scope.l488.SetPower, 1000),
+#T(20, scope.l405.SetPower, 50),
+#T(20, scope.l488.TurnOn),
+#T(20, scope.l405.TurnOn),
+T(20, scope.state.update, {'Lasers.l488.Power' : 1000, 'Lasers.l405.Power' : 50, 
+                           'Lasers.l488.On' : True, 'Lasers.l405.On' : True}),
 T(30, MainFrame.pan_spool.OnBAnalyse, None)
 ]
 
@@ -47,7 +49,7 @@ metaData = [
 #a list of checks which should be performed prior to launching the protocol
 #syntax: C(expression to evaluate (quoted, should have boolean return), message to display on failure),
 preflight = [
-C('scope.cam.GetEMGain() == 150', 'Was expecting an intial e.m. gain of 150'),
+#C('scope.cam.GetEMGain() == 150', 'Was expecting an intial e.m. gain of 150'),
 #C('scope.cam.GetROIX1() > 0', 'Looks like no ROI has been set'),
 #C('scope.cam.GetIntegTime() <= 50', 'Camera integration time may be too long'),
 ]

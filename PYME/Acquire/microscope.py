@@ -224,8 +224,16 @@ class StateManager(object):
         return lambda : True
                    
             
-    def update(self, stateDict):
-        return self.setItems(stateDict)
+    def update(self, state):
+        '''Update state from a dictionary
+        
+        Parameters
+        ----------
+        
+        state : dict
+            A dictionary containing the new state
+        '''
+        return self.setItems(state)
         
     def __len__(self):
         return len(self._stateHandlers)
