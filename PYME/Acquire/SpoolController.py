@@ -180,7 +180,7 @@ class SpoolController(object):
         self.onSpoolStart.send(self)
         
         #return a function which can be called to indicate if we are done
-        return lambda : self.spooler.spoolOn
+        return lambda : not self.spooler.spoolOn
 
         
 

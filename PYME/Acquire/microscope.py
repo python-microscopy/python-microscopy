@@ -34,6 +34,7 @@ import PYME.Acquire.protocol as protocol
 from PYME.io import MetaDataHandler
 from PYME.Acquire.Hardware import ccdCalibrator
 from PYME.Acquire.SpoolController import SpoolController
+from PYME.Acquire.ActionManager import ActionManager
 
 import sqlite3
 
@@ -334,7 +335,8 @@ class microscope(object):
         self.state.registerHandler('Camera.IntegrationTime', self._GetActiveCameraIntegrationTime, self._SetActiveCameraIntegrationTime, True)
         self.state.registerHandler('Camera.ROI', self._GetActiveCameraROI, self._SetActiveCameraROI, True)
         
-
+        self.actions = ActionManager(self)
+        
         MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
         
         #provision to set global metadata values in startup script

@@ -160,7 +160,12 @@ fk = focusKeys.FocusKeys(MainFrame, None, scope.piezos[0])
 #splt = splitter.Splitter(MainFrame, None, scope, scope.cam)
 #''')
 
+InitGUI('''
+from PYME.Acquire.ui import actionUI
 
+ap = actionUI.ActionPanel(MainFrame, scope.actions)
+MainFrame.AddPage(ap, caption='Queued Actions')
+''')
 
 #must be here!!!
 joinBGInit() #wait for anyhting which was being done in a separate thread

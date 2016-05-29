@@ -269,7 +269,7 @@ class PYMEMainFrame(AUIFrame):
 
         #self.splash.Destroy()
 
-        
+        self.time1.WantNotification.append(self.scope.actions.Tick)
         
         self.initDone = True
         self._mgr.Update()
