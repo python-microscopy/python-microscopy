@@ -154,14 +154,19 @@ class ZStackTaskListProtocol(TaskListProtocol):
         if self.randomise:
             self.zPoss = self.zPoss[np.argsort(np.random.rand(len(self.zPoss)))]
 
-        piezo = scope.positioning[scope.stackSettings.GetScanChannel()]
-        self.piezo = piezo[0]
-        self.piezoChan = piezo[1]
-        self.startPos = self.piezo.GetPos(self.piezoChan)
+        #piezo = scope.positioning[scope.stackSettings.GetScanChannel()]
+        self.piezoName = 'Positioning.%s' % scope.stackSettings.GetScanChannel()
+        #self.piezo = piezo[0]
+        #self.piezoChan = piezo[1]
+        #self.startPos = self.piezo.GetPos(self.piezoChan)
+        self.startPos = scope.state[self.piezoName]
         self.pos = 0
 
-        spooler.md.setEntry('Protocol.PiezoStartPos', self.piezo.GetPos(self.piezoChan))
+        spooler.md.setEntry('Protocol.PiezoStartPos', self.startPos)
         spooler.md.setEntry('Protocol.ZStack', True)
+        
+        scope.state.setItem(self.piezoName, self.zPoss[self.pos], stopCamera=True)
+        eventLog.logEvent('ProtocolFocus', '%d, %3.3f' % (0, self.zPoss[self.pos]))
 
         TaskListProtocol.Init(self,spooler)
 
@@ -170,14 +175,16 @@ class ZStackTaskListProtocol(TaskListProtocol):
             fn = floor((frameNum - self.startFrame)/self.dwellTime) % len(self.zPoss)
             if not fn == self.pos:
                 self.pos = fn
-                self.piezo.MoveTo(self.piezoChan, self.zPoss[self.pos])
+                #self.piezo.MoveTo(self.piezoChan, self.zPoss[self.pos])
+                scope.state.setItem(self.piezoName, self.zPoss[self.pos], stopCamera=True)
                 eventLog.logEvent('ProtocolFocus', '%d, %3.3f' % (frameNum, self.zPoss[self.pos]))
                 
         TaskListProtocol.OnFrame(self, frameNum)
 
     def OnFinish(self):
         #return piezo to start position
-        self.piezo.MoveTo(self.piezoChan, self.startPos)
+        #self.piezo.MoveTo(self.piezoChan, self.startPos)
+        scope.state.setItem(self.piezoName, self.startPos, stopCamera=True)
 
         TaskListProtocol.OnFinish(self)
 

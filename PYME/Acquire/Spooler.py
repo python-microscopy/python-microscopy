@@ -38,6 +38,8 @@ import time
 global timeFcn
 timeFcn = time.time
 
+import dispatch
+
 from PYME.Acquire import eventLog
 from PYME.Acquire import protocol as p
 
@@ -97,6 +99,8 @@ class Spooler:
         self.protocol = protocol
         
         self.maxFrames = maxFrames
+        
+        self.onSpoolStop = dispatch.Signal()
     
         #if we've got a fake camera - the cycle time will be wrong - fake our time sig to make up for this
         #if scope.cam.__class__.__name__ == 'FakeCamera':
@@ -145,6 +149,8 @@ class Spooler:
             pass
         
         self.spoolOn = False
+        
+        self.onSpoolStop.send(self)
 
     def OnFrame(self, **kwargs):
         '''Callback which should be called on every frame'''
@@ -163,6 +169,7 @@ class Spooler:
             
         if self.imNum >= self.maxFrames:
             self.StopSpool()
+            
 
     def doStartLog(self):
         '''Record pertinant information to metadata at start of acquisition.

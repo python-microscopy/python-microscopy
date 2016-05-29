@@ -198,6 +198,8 @@ class PanSpool(wx.Panel):
         #self.spoolController = SpoolController(scope, defDir, **kwargs)
         self.spoolController = scope.spoolController
         self.spoolController.onSpoolProgress.connect(self.Tick)
+        self.spoolController.onSpoolStart.connect(self.OnSpoolingStarted)
+        self.spoolController.onSpoolStop.connect(self.OnSpoolingStopped)
 
         self.stSpoolDirName.SetLabel(self.spoolController.dirname)
         self.tcSpoolFile.SetValue(self.spoolController.seriesName)
@@ -239,20 +241,24 @@ class PanSpool(wx.Panel):
 
         try:
             self.spoolController.StartSpooling(fn, stack=stack, compLevel = compLevel)
-            
-            if self.spoolController.spoolType in ['Queue', 'HTTP']:
-                self.bAnalyse.Enable()
-    
-            self.bStartSpool.Enable(False)
-            self.bStartStack.Enable(False)
-            self.bStopSpooling.Enable(True)
-            self.stSpoolingTo.Enable(True)
-            self.stNImages.Enable(True)
-            self.stSpoolingTo.SetLabel('Spooling to ' + fn)
-            self.stNImages.SetLabel('0 images spooled in 0 minutes')
         except IOError:
             ans = wx.MessageBox('A series with the same name already exists', 'Error', wx.OK)
             self.tcSpoolFile.SetValue(self.spoolController.seriesName)
+            
+            
+            
+    def OnSpoolingStarted(self, **kwargs):
+        if self.spoolController.spoolType in ['Queue', 'HTTP']:
+            self.bAnalyse.Enable()
+
+        self.bStartSpool.Enable(False)
+        self.bStartStack.Enable(False)
+        self.bStopSpooling.Enable(True)
+        self.stSpoolingTo.Enable(True)
+        self.stNImages.Enable(True)
+        self.stSpoolingTo.SetLabel('Spooling to ' + self.spoolController.seriesName)
+        self.stNImages.SetLabel('0 images spooled in 0 minutes')
+        
         
 
     def OnBStartStackButton(self, event=None):
@@ -263,7 +269,7 @@ class PanSpool(wx.Panel):
     def OnBStopSpoolingButton(self, event):
         '''GUI callback to stop spooling.'''
         self.spoolController.StopSpooling()
-        self.OnSpoolingStopped()
+        #self.OnSpoolingStopped()
         
     def OnSpoolingStopped(self, **kwargs):
         self.bStartSpool.Enable(True)
@@ -315,6 +321,9 @@ class PanSpool(wx.Panel):
         pDlg.Destroy()
 
     def OnTcSpoolFileText(self, event):
+        fn = self.tcSpoolFile.GetValue()
+        if not fn == '':
+            self.spoolController.seriesName = fn
         event.Skip()
         
     def OnSpoolMethodChanged(self, event):

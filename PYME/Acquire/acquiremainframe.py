@@ -45,13 +45,13 @@ from PYME.Acquire.ui import intsliders
 from PYME.Acquire.ui import seqdialog
 from PYME.Acquire.ui import selectCameraPanel
 from PYME.Acquire.ui import splashScreen
+from PYME.Acquire.ui import HDFSpoolFrame
 
 from PYME.Acquire import microscope
 from PYME.Acquire import protocol
-from PYME.Acquire import HDFSpoolFrame
 
 from PYME.io import MetaDataHandler
-from PYME.io.FileUtils import nameUtils
+#from PYME.io.FileUtils import nameUtils
 
 
 from PYME.ui.AUIFrame import AUIFrame
@@ -165,6 +165,8 @@ class PYMEMainFrame(AUIFrame):
             self.time1.WantNotification.remove(self.checkInitDone)
             #self.time1.WantNotification.remove(self.splash.Tick)
             self.doPostInit()
+            self.time1.Stop()
+            self.time1.Start(500)
     
     def _refreshDataStack(self):
         if 'vp' in dir(self):

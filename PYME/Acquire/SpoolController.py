@@ -65,6 +65,8 @@ class SpoolController(object):
         self.protocolZ = prot.NullZProtocol
         
         self.onSpoolProgress = dispatch.Signal()
+        self.onSpoolStart = dispatch.Signal()
+        self.onSpoolStop = dispatch.Signal()
 
         
         #if we've had to quit for whatever reason start where we left off
@@ -100,13 +102,14 @@ class SpoolController(object):
         self.onSpoolProgress.send(self)
 
 
-    def StartSpooling(self, fn, stack=False, compLevel = 2, doPreflightCheck=True, maxFrames = sys.maxsize):
+    def StartSpooling(self, fn=None, stack=False, compLevel = 2, zDwellTime = None, doPreflightCheck=True, maxFrames = sys.maxsize):
         '''Start spooling
         '''       
 
-        if fn == '': #sanity checking
-            raise RuntimeError('No output file specified')
-            return #bail
+        if fn in ['', None]: #sanity checking
+            fn = self.seriesName
+            #raise RuntimeError('No output file specified')
+            #return #bail
         
         if not (self.spoolType == 'HTTP' or os.path.exists(self.dirname)):
             os.makedirs(self.dirname)
@@ -124,6 +127,8 @@ class SpoolController(object):
 
         if stack:
             protocol = self.protocolZ
+            if not zDwellTime is None:
+                protocol.dwellTime = zDwellTime
             print(protocol)
         else:
             protocol = self.protocol
@@ -169,16 +174,25 @@ class SpoolController(object):
                 #FIXME: catch the right exception (or delegate handling to sampleInformation module)
                 pass
             
+        self.spooler.onSpoolStop.connect(self.SpoolStopped)
         self.spooler.StartSpool()
+        
+        self.onSpoolStart.send(self)
+        
+        #return a function which can be called to indicate if we are done
+        return lambda : self.spooler.spoolOn
 
         
 
     def StopSpooling(self):
         '''GUI callback to stop spooling.'''
         self.spooler.StopSpool()
-
+        
+    def SpoolStopped(self, **kwargs):
         self.seriesCounter +=1
-        self.seriesName = self._GenSeriesName() 
+        self.seriesName = self._GenSeriesName()
+        
+        self.onSpoolStop.send(self)
         
 
     def LaunchAnalysis(self, autostart=False):

@@ -157,7 +157,7 @@ class StateManager(object):
         
         """
             
-        self.setItems({key:value}, stopCamera, force)
+        return self.setItems({key:value}, stopCamera, force)
         
     def setItems(self, stateDict, stopCamera = False, force=False, ignoreMissing=False):
         """Set multiple items at once - see setItem for details.
@@ -218,6 +218,9 @@ class StateManager(object):
             
         if restartCamera:
             self.scope().frameWrangler.start()
+        
+        #return a function which tells us if we're done (for use as a task)
+        return lambda : True
                    
             
     def update(self, stateDict):
