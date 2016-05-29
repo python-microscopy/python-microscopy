@@ -471,13 +471,6 @@ class LMAnalyser2(object):
         self.dsviewer.do.zp = self.fitResults['tIndex'][cand]
         
 
-    def OnIdle(self,event):
-        if not self.pointsAdded:
-            self.pointsAdded = True
-
-            self.glCanvas.setPoints(self.fitResults['fitResults']['x0'],self.fitResults['fitResults']['y0'],self.fitResults['tIndex'].astype('f'))
-            self.glCanvas.setCLim((0, self.fitResults['tIndex'].max()))
-
     def OnToggleBackground(self, event):
         self.SetMDItems()
         if self.do.ds.bgRange == None:
