@@ -50,14 +50,16 @@ class SFGenPlotPanel(PlotPanel):
 
         #print len(ofd)
         vsx, vsy = scope.GetPixelSize()
+        tsx = vsx*scope.cam.GetPicWidth()#*1e-3
+        tsy = vsy*scope.cam.GetPicHeight()
         ox = tsx*(numpy.array([0,1,1,0,0]) - .5)
         oy = tsy*(numpy.array([0,0,1,1,0]) - .5)
 
         if 'splitting'in dir(scope.cam) and scope.cam.splitting =='up_down':
             oy *= .5
 
-        X = (((ps.xp - ps.currPos['x']))[:, None]*numpy.ones(ps.yp.shape)[None, :]).ravel()
-        Y = (((ps.yp - ps.currPos['y']))[None, :]*numpy.ones(ps.xp.shape)[:, None]).ravel()
+        X = (((ps.xp ))[:, None]*numpy.ones(ps.yp.shape)[None, :]).ravel()
+        Y = (((ps.yp ))[None, :]*numpy.ones(ps.xp.shape)[:, None]).ravel()
 
         self.subplot.cla()
 
@@ -143,6 +145,7 @@ class ShiftfieldPreviewDialog(wx.Dialog):
 
 
 def stop():
+    #scope.frameWrangler.stop()
     ps.stop()
     MainFrame.pan_spool.OnBStopSpoolingButton(None)
 
@@ -150,6 +153,13 @@ def stop():
 stopTask = T(500, stop)
 
 def ShowSFDialog():
+    #ps.pixelsize[0] = float(scope.cam.GetPicWidth())
+    vsx, vsy = scope.GetPixelSize()
+    tsx = 0.7*vsx*scope.cam.GetPicWidth()#*1e-3
+    tsy = 0.7*vsy*scope.cam.GetPicHeight()
+    
+    ps.pixelsize = np.array([tsx, tsy])
+    
     ps.genCoords()
     dlg = ShiftfieldPreviewDialog()
     ret = dlg.ShowModal()
@@ -168,16 +178,17 @@ def ShowSFDialog():
 #additional arguments
 taskList = [
 #T(-1, scope.EnableJoystick, False),
-T(-1, SetContinuousMode, False),
+#T(-1, SetContinuousMode, False),
 T(-1, ShowSFDialog),
 T(-1, SetCameraShutter,False),
 T(11, SetCameraShutter, True),
 T(12, ps.start),
-T(30, MainFrame.pan_spool.OnBAnalyse, None),
+#T(30, MainFrame.pan_spool.OnBAnalyse, None),
 stopTask,
 #T(maxint, ps.stop),
 #T(maxint, scope.EnableJoystick, True),
-T(maxint, SetContinuousMode, True),
+#T(maxint, SetContinuousMode, True),
+T(maxint, MainFrame.pan_spool.OnBAnalyse, None),
 ]
 
 #optional - metadata entries

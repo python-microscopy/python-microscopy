@@ -26,32 +26,16 @@
 
 import wx
 import datetime
-from PYME.Acquire import HDFSpooler
-from PYME.Acquire import QueueSpooler, HTTPSpooler
-try:
-    from PYME.Acquire import sampleInformation
-    sampInf = True
-except:
-    print('Could not connect to the sample information database')
-    sampInf = False
-#import win32api
-from PYME.io.FileUtils import nameUtils
-from PYME.io.FileUtils.nameUtils import numToAlpha, getRelFilename
+
 from PYME.io.FileUtils.freeSpace import get_free_space
 
-
 import PYME.Acquire.Protocols
-import PYME.Acquire.protocol as prot
-from PYME.Acquire.ui import preflight
+from PYME.Acquire.SpoolController import SpoolController
 
 import os
-import sys
 import glob
 
-import subprocess
 
-def create(parent):
-    return FrSpool(parent)
 
 [wxID_FRSPOOL, wxID_FRSPOOLBSETSPOOLDIR, wxID_FRSPOOLBSTARTSPOOL, 
  wxID_FRSPOOLBSTOPSPOOLING, wxID_FRSPOOLCBCOMPRESS, wxID_FRSPOOLCBQUEUE, 
@@ -59,27 +43,7 @@ def create(parent):
  wxID_FRSPOOLSTATICTEXT1, wxID_FRSPOOLSTNIMAGES, wxID_FRSPOOLSTSPOOLDIRNAME, 
  wxID_FRSPOOLSTSPOOLINGTO, wxID_FRSPOOLTCSPOOLFILE, 
 ] = [wx.NewId() for _init_ctrls in range(14)]
-
-
-
-
-#class FrSpool(wx.Frame):
-#    '''A standalone frame containing the spool panel. Mostly historical as 
-#    the panel is now embedded directly within the main GUI frame.'''
-#    def __init__(self, parent, scope, defDir, defSeries='%(day)d_%(month)d_series'):
-#        wx.Frame.__init__(self, id=wxID_FRSPOOL, name='FrSpool', parent=parent,
-#              pos=wx.Point(543, 403), size=wx.Size(285, 253),
-#              style=wx.DEFAULT_FRAME_STYLE, title='Spooling')
-#        #self.SetClientSize(wx.Size(277, 226))
-#
-#        vsizer = wx.BoxSizer(wx.VERTICAL)
-#
-#        self.spPan = PanSpool(self, scope, defDir, defSeries='%(day)d_%(month)d_series')
-#
-#        vsizer.Add(self.spPan, 0, wx.ALL, 0)
-#        self.SetSizer(vsizer)
-#        vsizer.Fit(self)
-
+    
     
 
 class PanSpool(wx.Panel):
@@ -184,6 +148,8 @@ class PanSpool(wx.Panel):
 
         self.rbQueue = wx.RadioBox(self, -1,'Spool to:', choices=['File', 'Queue', 'HTTP'])
         self.rbQueue.SetSelection(1)
+        
+        self.rbQueue.Bind(wx.EVT_RADIOBOX, self.OnSpoolMethodChanged)
 
         hsizer.Add(self.rbQueue, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
@@ -210,7 +176,7 @@ class PanSpool(wx.Panel):
         self.SetSizer(vsizer)
         vsizer.Fit(self)
 
-    def __init__(self, parent, scope, defDir, defSeries='%(day)d_%(month)d_series'):
+    def __init__(self, parent, scope, defDir, **kwargs):
         '''Initialise the spooling panel.
         
         Parameters
@@ -229,34 +195,15 @@ class PanSpool(wx.Panel):
         self._init_ctrls(parent)
         self.scope = scope
         
-        dtn = datetime.datetime.now()
-        
-        #dateDict = {'username' : win32api.GetUserName(), 'day' : dtn.day, 'month' : dtn.month, 'year':dtn.year}
-        
-        self.dirname = defDir % nameUtils.dateDict
-        self.seriesStub = defSeries % nameUtils.dateDict
+        self.spoolController = SpoolController(scope, defDir, **kwargs)
+        self.spoolController.onSpoolProgress.connect(self.Tick)
 
-        self.seriesCounter = 0
-        self.seriesName = self._GenSeriesName()
-
-        self.protocol = prot.NullProtocol
-        self.protocolZ = prot.NullZProtocol
-
-        
-        #if we've had to quit for whatever reason start where we left off
-        while os.path.exists(os.path.join(self.dirname, self.seriesName + '.h5')):
-            self.seriesCounter +=1
-            self.seriesName = self._GenSeriesName()
-        
-        self.stSpoolDirName.SetLabel(self.dirname)
-        self.tcSpoolFile.SetValue(self.seriesName)
+        self.stSpoolDirName.SetLabel(self.spoolController.dirname)
+        self.tcSpoolFile.SetValue(self.spoolController.seriesName)
         self.UpdateFreeSpace()
+        
 
-    def _GenSeriesName(self):
-        return self.seriesStub + '_' + numToAlpha(self.seriesCounter)
 
-    #def _NumToAlph(self, num):
-    #    return baseconvert(num, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')
 
     def UpdateFreeSpace(self, event=None):
         '''Updates the free space display. 
@@ -264,60 +211,24 @@ class PanSpool(wx.Panel):
         Designed to be used as a callback with one of the system timers, but 
         can be called separately
         '''
-        freeGB = get_free_space(self.dirname)/1e9
+        freeGB = get_free_space(self.spoolController.dirname)/1e9
         self.stDiskSpace.SetLabel('Free Space: %3.2f GB' % freeGB)
         if freeGB < 5:
             self.stDiskSpace.SetForegroundColour(wx.Colour(200, 0,0))
         else:
             self.stDiskSpace.SetForegroundColour(wx.BLACK)
-
-    @property
-    def spoolType(self):
-       return self.rbQueue.GetStringSelection()
        
-    def _checkOutputExists(self, fn):
-        if self.spoolType == 'HTTP':
-            #special case for HTTP spooling
-            return HTTPSpooler.exists(getRelFilename(self.dirname + fn + '.h5'))
-            #return (fn + '.h5/') in HTTPSpooler.clusterIO.listdir(self.dirname)
-        else:
-            return (fn + '.h5') in os.listdir(self.dirname)
 
     def OnBStartSpoolButton(self, event=None, stack=False):
         '''GUI callback to start spooling.
         
         NB: this is also called programatically by the start stack button.'''
         
-        #fn = wx.FileSelector('Save spooled data as ...', default_extension='.log',wildcard='*.log')
-        #if not fn == '': #if the user cancelled 
-        #    self.spooler = Spooler.Spooler(self.scope, fn, self.scope.frameWrangler, self)
-        #    self.bStartSpool.Enable(False)
-        #    self.bStopSpooling.Enable(True)
-        #    self.stSpoolingTo.Enable(True)
-        #    self.stNImages.Enable(True)
-        #    self.stSpoolingTo.SetLabel('Spooling to ' + fn)
-        #    self.stNImages.SetLabel('0 images spooled in 0 minutes')
         
         fn = self.tcSpoolFile.GetValue()
 
         if fn == '': #sanity checking
             wx.MessageBox('Please enter a series name', 'No series name given', wx.OK)
-            return #bail
-        
-        if not os.path.exists(self.dirname):
-            os.makedirs(self.dirname)
-
-        if not self.dirname[-1] == os.sep:
-            self.dirname += os.sep
-
-        if self._checkOutputExists(fn): #check to see if data with the same name exists
-            ans = wx.MessageBox('A series with the same name already exists', 'Error', wx.OK)
-            #overwriting doesn't work ... so just bail
-            #increment the series counter first, though, so hopefully we don't get the same error on the next try
-            self.seriesCounter +=1
-            self.seriesName = self._GenSeriesName()
-            self.tcSpoolFile.SetValue(self.seriesName)
-            #if ans == wx.NO:
             return #bail
             
         if self.cbCompress.GetValue():
@@ -325,59 +236,22 @@ class PanSpool(wx.Panel):
         else:
             compLevel = 0
 
-        if stack:
-            protocol = self.protocolZ
-            print(protocol)
-        else:
-            protocol = self.protocol
-
-        if not preflight.ShowPreflightResults(self, self.protocol.PreflightCheck()):
-            return #bail if we failed the pre flight check, and the user didn't choose to continue
+        try:
+            self.spoolController.StartSpooling(fn, stack=stack, compLevel = compLevel)
             
-        
-
-        #spoolType = self.rbQueue.GetStringSelection()        
-        #if self.cbQueue.GetValue():  
-
-        if self.scope.cam.__class__.__name__ == 'FakeCamera':
-            fakeCycleTime = self.scope.cam.GetIntegTime()
-        else:
-            fakeCycleTime = None
-            
-        frameShape = (self.scope.cam.GetPicWidth(), self.scope.cam.GetPicHeight())
-        
-        if self.spoolType == 'Queue':
-            self.queueName = getRelFilename(self.dirname + fn + '.h5')
-            self.spooler = QueueSpooler.Spooler(self.queueName, self.scope.frameWrangler.onFrame, frameShape = frameShape, protocol=protocol, guiUpdateCallback=self.Tick, complevel=compLevel, fakeCamCycleTime=fakeCycleTime)
-            self.bAnalyse.Enable(True)
-        elif self.spoolType == 'HTTP':
-            #self.queueName = self.dirname + fn + '.h5'
-            self.queueName = getRelFilename(self.dirname + fn + '.h5')
-            self.spooler = HTTPSpooler.Spooler(self.queueName, self.scope.frameWrangler.onFrame, frameShape = frameShape, protocol=protocol, guiUpdateCallback=self.Tick, complevel=compLevel, fakeCamCycleTime=fakeCycleTime)
-            self.bAnalyse.Enable(True)
-        else:
-            self.spooler = HDFSpooler.Spooler(self.dirname + fn + '.h5', self.scope.frameWrangler.onFrame, frameShape = frameShape, protocol=protocol, guiUpdateCallback=self.Tick, complevel=compLevel, fakeCamCycleTime=fakeCycleTime)
-
-        #if stack:
-        #    self.spooler.md.setEntry('ZStack', True)
-        if sampInf:
-            try:
-                sampleInformation.getSampleData(self, self.spooler.md)
-            except:
-                #the connection to the database will timeout if not present
-                #FIXME: catch the right exception (or delegate handling to sampleInformation module)
-                pass
-            
-        self.spooler.StartSpool()
-
-        self.bStartSpool.Enable(False)
-        self.bStartStack.Enable(False)
-        self.bStopSpooling.Enable(True)
-        self.stSpoolingTo.Enable(True)
-        self.stNImages.Enable(True)
-        self.stSpoolingTo.SetLabel('Spooling to ' + fn)
-        self.stNImages.SetLabel('0 images spooled in 0 minutes')
-
+            if self.spoolController.spoolType in ['Queue', 'HTTP']:
+                self.bAnalyse.Enable()
+    
+            self.bStartSpool.Enable(False)
+            self.bStartStack.Enable(False)
+            self.bStopSpooling.Enable(True)
+            self.stSpoolingTo.Enable(True)
+            self.stNImages.Enable(True)
+            self.stSpoolingTo.SetLabel('Spooling to ' + fn)
+            self.stNImages.SetLabel('0 images spooled in 0 minutes')
+        except IOError:
+            ans = wx.MessageBox('A series with the same name already exists', 'Error', wx.OK)
+            self.tcSpoolFile.SetValue(self.spoolController.seriesName)
         
 
     def OnBStartStackButton(self, event=None):
@@ -387,64 +261,39 @@ class PanSpool(wx.Panel):
 
     def OnBStopSpoolingButton(self, event):
         '''GUI callback to stop spooling.'''
-        self.spooler.StopSpool()
+        self.spoolController.StopSpooling()
+        self.OnSpoolingStopped()
+        
+    def OnSpoolingStopped(self, **kwargs):
         self.bStartSpool.Enable(True)
         self.bStartStack.Enable(True)
         self.bStopSpooling.Enable(False)
         self.stSpoolingTo.Enable(False)
         self.stNImages.Enable(False)
 
-        self.seriesCounter +=1
-        self.seriesName = self._GenSeriesName() 
-        self.tcSpoolFile.SetValue(self.seriesName)
+        self.tcSpoolFile.SetValue(self.spoolController.seriesName)
         self.UpdateFreeSpace()
 
     def OnBAnalyse(self, event):
-        '''GUI callback to launch data analysis.
+        self.spoolController.LaunchAnalysis()
         
-        NB: this is often called programatically from within protocols to 
-        automatically launch the analysis. TODO - factor this functionality 
-        out of the view'''
-        if isinstance(self.spooler, QueueSpooler.Spooler): #queue or not
-            if sys.platform == 'win32':
-                subprocess.Popen('dh5view.cmd -q %s QUEUE://%s' % (self.spooler.tq.URI, self.queueName), shell=True)
-            elif sys.platform == 'darwin':
-                subprocess.Popen('dh5view -q %s QUEUE://%s' % (self.spooler.tq.URI, self.queueName), shell=True)
-            else:
-                subprocess.Popen('dh5view -q %s QUEUE://%s' % (self.spooler.tq.URI, self.queueName), shell=True)
-        elif isinstance(self.spooler, HTTPSpooler.Spooler): #queue or not
-            if sys.platform == 'win32':
-                subprocess.Popen('dh5view.cmd %s' % self.spooler.getURL(), shell=True)
-            else:
-                subprocess.Popen('dh5view %s' % self.spooler.getURL(), shell=True) 
-#        else:
-#            if sys.platform == 'win32':
-#                subprocess.Popen('..\\DSView\\dh5view.cmd %s' % self.spooler.filename, shell=True)
-#            else:
-#                subprocess.Popen('../DSView/dh5view.py %s' % self.spooler.filename, shell=True)
-        
-    def Tick(self):
+    def Tick(self, **kwargs):
         '''Called with each new frame. Updates the number of frames spooled 
         and disk space remaining'''
         dtn = datetime.datetime.now()
         
-        dtt = dtn - self.spooler.dtStart
+        dtt = dtn - self.spoolController.spooler.dtStart
         
-        self.stNImages.SetLabel('%d images spooled in %d seconds' % (self.spooler.imNum, dtt.seconds))
+        self.stNImages.SetLabel('%d images spooled in %d seconds' % (self.spoolController.spooler.imNum, dtt.seconds))
         self.UpdateFreeSpace()
 
     def OnBSetSpoolDirButton(self, event):
         '''Set the directory we're spooling into (GUI callback).'''
         ndir = wx.DirSelector()
         if not ndir == '':
-            self.dirname = ndir + os.sep
-            self.stSpoolDirName.SetLabel(self.dirname)
-
-            #if we've had to quit for whatever reason start where we left off
-            while os.path.exists(os.path.join(self.dirname, self.seriesName + '.h5' )):
-                self.seriesCounter +=1
-                self.seriesName = self._GenSeriesName()
-                self.tcSpoolFile.SetValue(self.seriesName)
+            self.spoolController.SetSpoolDir(ndir)
+            self.stSpoolDirName.SetLabel(self.spoolController.dirname)
+            self.tcSpoolFile.SetValue(self.spoolController.seriesName)
 
             self.UpdateFreeSpace()
 
@@ -459,22 +308,18 @@ class PanSpool(wx.Panel):
         if pDlg.ShowModal() == wx.ID_OK:
             pname = pDlg.GetStringSelection()
             self.stAqProtocol.SetLabel(pname)
-
-            if pname == '<None>':
-                self.protocol = prot.NullProtocol
-                self.protocolZ = prot.NullZProtocol
-            else:
-                pmod = __import__('PYME.Acquire.Protocols.' + pname.split('.')[0],fromlist=['PYME', 'Acquire','Protocols'])
-                reload(pmod) #force module to be reloaded so that changes in the protocol will be recognised
-
-                self.protocol = pmod.PROTOCOL
-                self.protocol.filename = pname
-                
-                self.protocolZ = pmod.PROTOCOL_STACK
-                self.protocolZ.filename = pname
+            
+            self.spoolController.SetProtocol(pname)
 
         pDlg.Destroy()
 
     def OnTcSpoolFileText(self, event):
         event.Skip()
+        
+    def OnSpoolMethodChanged(self, event):
+        self.spoolController.SetSpoolMethod(self.rbQueue.GetStringSelection())
+        self.stSpoolDirName.SetLabel(self.spoolController.dirname)
+        self.tcSpoolFile.SetValue(self.spoolController.seriesName)
+
+        self.UpdateFreeSpace()
         

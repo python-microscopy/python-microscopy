@@ -155,10 +155,10 @@ fk = focusKeys.FocusKeys(MainFrame, None, scope.piezos[0])
 #time1.WantNotification.append(fk.refresh)
 ''')
 
-InitGUI('''
-from PYME.Acquire.Hardware import splitter
-splt = splitter.Splitter(MainFrame, None, scope, scope.cam)
-''')
+#InitGUI('''
+#from PYME.Acquire.Hardware import splitter
+#splt = splitter.Splitter(MainFrame, None, scope, scope.cam)
+#''')
 
 
 

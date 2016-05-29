@@ -355,7 +355,7 @@ class FakeCamera:
         #print running
         #print self.compT.laserPowers
 
-        self.compT = compThread(self.XVals[self.ROIx[0]:self.ROIx[1]], self.YVals[self.ROIy[0]:self.ROIy[1]], self.zPiezo, self.zOffset, self.fluors, self.noiseMaker, laserPowers=self.compT.laserPowers, intTime=self.intTime*1e-3, xpiezo=self.xPiezo, ypiezo=self.yPiezo, illumFcn=self.illumFcn)
+        self.compT = compThread(self.XVals[self.ROIx[0]:self.ROIx[1]], self.YVals[self.ROIy[0]:self.ROIy[1]], self.zPiezo, self.zOffset, self.fluors, self.noiseMaker, laserPowers=self.compT.laserPowers, intTime=self.intTime, xpiezo=self.xPiezo, ypiezo=self.yPiezo, illumFcn=self.illumFcn)
         self.compT.start()
 
         #print (self.fluors.fl['state'] == 2).sum()

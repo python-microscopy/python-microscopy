@@ -131,9 +131,10 @@ class TaskListProtocol(Protocol):
     def OnFinish(self):
         while not  self.listPos >= len(self.taskList):
             t = self.taskList[self.listPos]
+            self.listPos += 1
             t.what(*t.params)
             eventLog.logEvent('ProtocolTask', '%s, ' % ( t.what.__name__,) + ', '.join(['%s' % p for p in t.params]))
-            self.listPos += 1
+            
 
 
 

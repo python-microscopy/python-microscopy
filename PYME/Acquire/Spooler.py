@@ -106,22 +106,27 @@ class Spooler:
        
 
     def StartSpool(self):
-       eventLog.WantEventNotification.append(self.evtLogger)
+        self.watchingFrames = True
+        eventLog.WantEventNotification.append(self.evtLogger)
 
-       self.imNum = 0
-       
-       self.doStartLog()
+        self.imNum = 0
+   
+        self.doStartLog()
 
-       self.protocol.Init(self)
-       
-       self.frameSource.connect(self.OnFrame)
-       self.spoolOn = True
+        self.protocol.Init(self)
+   
+        self.frameSource.connect(self.OnFrame)
+        self.spoolOn = True
        
     def StopSpool(self):
-        try:
-            self.frameSource.disconnect(self.OnFrame)
-        except:
-            pass
+        #try:
+        self.frameSource.disconnect(self.OnFrame)
+        
+        #there is a race condition on disconnect - ignore any additional frames
+        self.watchingFrames = False 
+        
+        #except:
+        #    pass
 
         try:
             self.protocol.OnFinish()#this may still cause events
@@ -140,6 +145,10 @@ class Spooler:
 
     def OnFrame(self, **kwargs):
         '''Callback which should be called on every frame'''
+        if not self.watchingFrames:
+            #we have allready disconnected - ignore any new frames
+            return
+            
         self.imNum += 1
         if not self.guiUpdateCallback is None:
             self.guiUpdateCallback()

@@ -43,6 +43,8 @@ class PointScanner:
 
         self.evtLog = evtLog
         self.sync = sync
+        
+        self.running = False
 
     def genCoords(self):
         self.currPos = self.scope.GetPos()
@@ -69,8 +71,10 @@ class PointScanner:
         #self.currPos = (self.xpiezo[0].GetPos(self.xpiezo[1]), self.ypiezo[0].GetPos(self.ypiezo[1]))
 
         self.imsize = self.nx*self.ny
+        
 
     def start(self):
+        self.running = True
         
         #pixels = np.array(pixels)
 
@@ -107,7 +111,8 @@ class PointScanner:
         #self.xpiezo[0].MoveTo(self.xpiezo[1], self.xp[0])
         #self.ypiezo[0].MoveTo(self.ypiezo[1], self.yp[0])
 
-        self.scope.SetPos(x=self.xp[0], y = self.yp[0])
+        #self.scope.SetPos(x=self.xp[0], y = self.yp[0])
+        self.scope.state.setItems({'Positioning.x' : self.xp[0], 'Positioning.y' : self.yp[0]}, stopCamera = True)
 
         #if self.sync:
         #    while not self.xpiezo[0].IsOnTarget(): #wait for stage to move
@@ -128,6 +133,8 @@ class PointScanner:
         return self.xpiezo[0].onTarget
 
     def tick(self, frameData, **kwargs):
+        if not self.running:
+            return
         #print self.callNum
         if (self.callNum % self.dwellTime) == 0:
             #record pixel in overview
@@ -143,11 +150,18 @@ class PointScanner:
             #self.xpiezo[0].MoveTo(self.xpiezo[1], self.xp[callN % self.nx])
             #self.ypiezo[0].MoveTo(self.ypiezo[1], self.yp[(callN % (self.imsize))/self.nx])
             
-            self.scope.SetPos(x=self.xp[callN % self.nx], y = self.yp[(callN % (self.imsize))/self.nx])
+            #self.scope.SetPos(x=self.xp[callN % self.nx], y = self.yp[(callN % (self.imsize))/self.nx])
+            self.scope.state.setItems({'Positioning.x' : self.xp[callN % self.nx], 
+                                       'Positioning.y' : self.yp[(callN % (self.imsize))/self.nx]
+                                       }, stopCamera = True)
+                                       
+            #print 'SetP'
             
             if self.evtLog:
-                eventLog.logEvent('ScannerXPos', '%3.6f' % self.xp[callN % self.nx])
-                eventLog.logEvent('ScannerYPos', '%3.6f' % self.yp[(callN % (self.imsize))/self.nx])
+                #eventLog.logEvent('ScannerXPos', '%3.6f' % self.xp[callN % self.nx])
+                #eventLog.logEvent('ScannerYPos', '%3.6f' % self.yp[(callN % (self.imsize))/self.nx])
+                eventLog.logEvent('ScannerXPos', '%3.6f' % self.scope.state['Positioning.x'])
+                eventLog.logEvent('ScannerYPos', '%3.6f' % self.scope.state['Positioning.y'])
 
 #            if self.sync:
 #                while not self.xpiezo[0].IsOnTarget(): #wait for stage to move
@@ -158,11 +172,11 @@ class PointScanner:
     #def __del__(self):
     #    self.scope.frameWrangler.WantFrameNotification.remove(self.tick)
     def stop(self):
+        self.running = False
         #self.xpiezo[0].MoveTo(self.xpiezo[1], self.currPos[0])
         #self.ypiezo[0].MoveTo(self.ypiezo[1], self.currPos[1])
     
-        self.scope.SetPos(**self.currPos)
-        
+        #self.scope.SetPos(**self.currPos)
         try:
             #self.scope.frameWrangler.WantFrameNotification.remove(self.tick)
             self.scope.frameWrangler.onFrame.disconnect(self.tick)
@@ -170,6 +184,15 @@ class PointScanner:
             #    self.scope.frameWrangler.HardwareChecks.remove(self.onTarget)
         finally:
             pass
+    
+        print 'Returning home : ', self.currPos
+        
+        self.scope.state.setItems({'Positioning.x' : self.currPos['x'], 
+                                       'Positioning.y' : self.currPos['y'],
+                                       }, stopCamera = True)
+                                       
+        
+        
 
 
 
@@ -253,7 +276,7 @@ class PointScanner3D:
         if self.avg:
             self.image = np.zeros((self.nx, self.ny, self.nz))
 
-            self.ds = scope.frameWrangler.currentFrame
+            self.ds = self.scope.frameWrangler.currentFrame
 
             self.view = View3D(self.image)
 

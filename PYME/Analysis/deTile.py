@@ -128,8 +128,8 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
         bufSize = 300
     
     #convert to pixels
-    xdp = bufSize + ((xps - xps.min()) / (mdh.getEntry('voxelsize.x'))).round()
-    ydp = bufSize + ((yps - yps.min()) / (mdh.getEntry('voxelsize.y'))).round()
+    xdp = (bufSize + ((xps - xps.min()) / (mdh.getEntry('voxelsize.x'))).round()).astype('i')
+    ydp = (bufSize + ((yps - yps.min()) / (mdh.getEntry('voxelsize.y'))).round()).astype('i')
 
     print (xps - xps.min()), mdh.getEntry('voxelsize.x')
 
@@ -147,14 +147,15 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
 
     #calculate a weighting matrix (to allow feathering at the edges - TODO)
     weights = np.ones((frameSizeX, frameSizeY, nchans))
-    weights[:, :10, :] = 0 #avoid splitter edge artefacts
-    weights[:, -10:, :] = 0
+    #weights[:, :10, :] = 0 #avoid splitter edge artefacts
+    #weights[:, -10:, :] = 0
 
     #print weights[:20, :].shape
-    weights[:100, :, :] *= np.linspace(0,1, 100)[:,None, None]
-    weights[-100:, :,:] *= np.linspace(1,0, 100)[:,None, None]
-    weights[:,10:110,:] *= np.linspace(0,1, 100)[None, :, None]
-    weights[:,-110:-10,:] *= np.linspace(1,0, 100)[None,:, None]
+    edgeRamp = min(100, int(.5*ds.shape[0]))
+    weights[:edgeRamp, :, :] *= np.linspace(0,1, edgeRamp)[:,None, None]
+    weights[-edgeRamp:, :,:] *= np.linspace(1,0, edgeRamp)[:,None, None]
+    weights[:,:edgeRamp,:] *= np.linspace(0,1, edgeRamp)[None, :, None]
+    weights[:,-edgeRamp:,:] *= np.linspace(1,0, edgeRamp)[None,:, None]
 
     ROIX1 = mdh.getEntry('Camera.ROIPosX')
     ROIY1 = mdh.getEntry('Camera.ROIPosY')
@@ -163,9 +164,9 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
     ROIY2 = ROIY1 + mdh.getEntry('Camera.ROIHeight')
 
     if dark == None:
-        offset = mdh.getEntry('Camera.ADOffset')
+        offset = float(mdh.getEntry('Camera.ADOffset'))
     else:
-        offset = 0
+        offset = 0.
 
 #    #get a sorted list of x and y values
 #    xvs = list(set(xdp))
@@ -176,7 +177,7 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
 
     for i in range(mdh.getEntry('Protocol.DataStartsAt'), numFrames):
         if xdp[i - 1] == xdp[i] or not skipMoveFrames:
-            d = ds[:,:,i]
+            d = ds[:,:,i].astype('f')
             if not dark == None:
                 d = d - dark
             if not flat == None:

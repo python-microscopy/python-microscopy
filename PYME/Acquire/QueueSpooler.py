@@ -90,13 +90,17 @@ class Spooler(sp.Spooler):
        sp.Spooler.__init__(self, filename, frameSource, **kwargs)
    
    def OnFrame(self, sender, frameData, **kwargs):
+      if not self.watchingFrames:
+          #we have already disconnected
+          return
+          
       #self.tq.postTask(cSMI.CDataStack_AsArray(caller.ds, 0).reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()), self.seriesName)
       self.buffer.append(frameData.reshape(1,frameData.shape[0],frameData.shape[1]).copy())
 
       if self.imNum == 0: #first frame
           self.md.setEntry('imageID', fileID.genFrameID(self.buffer[-1].squeeze()))
 
-      if len(self.buffer) >= self.buflen:
+      if (len(self.buffer) >= self.buflen):
           self.FlushBuffer()
 
       sp.Spooler.OnFrame(self)
