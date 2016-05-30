@@ -25,9 +25,6 @@ import wx.lib.agw.aui as aui
 import os
 import numpy as np
 
-import numpy
-import pylab
-
 import Pyro.core
 from PYME.misc import pyro_tracebacks
 
@@ -78,25 +75,41 @@ def _verifyResultsFilename(resultsFilename):
 
 
 class AnalysisSettingsView(object):
+    FINDING_PARAMS = [mde.FloatParam('Analysis.DetectionThreshold', 'Thresh:', 1.0),
+                      mde.IntParam('Analysis.DebounceRadius', 'Debounce rad:', 4),
+    ]
+    
+    DEFAULT_PARAMS = [mde.IntParam('Analysis.StartAt', 'Start at:', default=30),
+                      mde.RangeParam('Analysis.BGRange', 'Background:', default=(-30,0)),
+                      mde.BoolParam('Analysis.subtractBackground', 'Subtract background in fit', default=True),
+                      mde.BoolFloatParam('Analysis.PCTBackground' , 'Use percentile for background', default=False, helpText='', ondefault=0.25, offvalue=0),
+                      mde.FilenameParam('Camera.VarianceMapID', 'Variance Map:', prompt='Please select variance map to use ...', wildcard='TIFF Files|*.tif', filename=''),
+                      mde.FilenameParam('Camera.DarkMapID', 'Dark Map:', prompt='Please select dark map to use ...', wildcard='TIFF Files|*.tif', filename=''),
+                      mde.FilenameParam('Camera.FlatfieldMapID', 'Flatfield Map:', prompt='Please select flatfield map to use ...', wildcard='TIFF Files|*.tif', filename=''),
+                      mde.BoolParam('Analysis.TrackFiducials', 'Track Fiducials', default=False),
+                      mde.FloatParam('Analysis.FiducialThreshold', 'Fiducial Threshold', default=1.8),
+    ]
+    
     def __init__(self, dsviewer, analysisController, lmanal=None):
         self.foldAnalPanes = False
 
         self.analysisController = analysisController
+        self.analysisMDH = analysisController.analysisMDH
         self.lmanal = lmanal
 
         dsviewer.paneHooks.append(self.GenPointFindingPanel)
         dsviewer.paneHooks.append(self.GenAnalysisPanel)
 
     def _populateStdOptionsPanel(self, pan, vsizer):
-        for param in self.analysisController.DEFAULT_PARAMS:
-            pg = param.createGUI(pan, self.analysisController.analysisMDH, syncMdh=True, 
+        for param in self.DEFAULT_PARAMS:
+            pg = param.createGUI(pan, self.analysisMDH, syncMdh=True, 
                                  mdhChangedSignal = self.analysisController.onMetaDataChange)
             vsizer.Add(pg, 0,wx.BOTTOM|wx.EXPAND, 5)
         vsizer.Fit(pan)
             
     def _populateFindOptionsPanel(self, pan, vsizer):
-        for param in self.analysisController.FINDING_PARAMS:
-            pg = param.createGUI(pan, self.analysisController.analysisMDH, syncMdh=True, 
+        for param in self.FINDING_PARAMS:
+            pg = param.createGUI(pan, self.analysisMDH, syncMdh=True, 
                                  mdhChangedSignal = self.analysisController.onMetaDataChange)
             vsizer.Add(pg, 0,wx.BOTTOM|wx.EXPAND, 5)    
         
@@ -107,7 +120,7 @@ class AnalysisSettingsView(object):
             
             #vsizer = wx.BoxSizer(wx.VERTICAL)
             for param in fm.PARAMETERS:
-                pg = param.createGUI(pan, self.analysisController.analysisMDH, syncMdh=True, 
+                pg = param.createGUI(pan, self.analysisMDH, syncMdh=True, 
                                  mdhChangedSignal = self.analysisController.onMetaDataChange)
                 vsizer.Add(pg, 0,wx.BOTTOM|wx.EXPAND, 5)
             vsizer.Fit(pan)
@@ -118,7 +131,7 @@ class AnalysisSettingsView(object):
     def OnFitModuleChanged(self, event):
         self.customOptionsSizer.Clear(True)
         self._populateCustomAnalysisPanel(self.customOptionsPan, self.customOptionsSizer)
-        self.analysisController.analysisMDH['Analysis.FitModule'] = self.fitFactories[self.cFitType.GetSelection()]
+        self.analysisMDH['Analysis.FitModule'] = self.fitFactories[self.cFitType.GetSelection()]
 
     def GenAnalysisPanel(self, _pnl):
         item = afp.foldingPane(_pnl, -1, caption="Analysis", pinned = not(self.foldAnalPanes))
@@ -148,10 +161,10 @@ class AnalysisSettingsView(object):
         hsizer.Add(wx.StaticText(pan, -1, 'Type:'), 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
         self.cFitType = wx.Choice(pan, -1, choices = ['{:<35} \t- {:} '.format(f, PYME.localization.FitFactories.useFor[f]) for f in self.fitFactories], size=(110, -1))
         
-        if 'Analysis.FitModule' in self.analysisController.analysisMDH.getEntryNames():
+        if 'Analysis.FitModule' in self.analysisMDH.getEntryNames():
             #has already been analysed - most likely to want the same method again
             try:
-                self.cFitType.SetSelection(self.fitFactories.index(self.analysisController.analysisMDH['Analysis.FitModule']))
+                self.cFitType.SetSelection(self.fitFactories.index(self.analysisMDH['Analysis.FitModule']))
                 #self.tThreshold.SetValue('%s' % self.image.mdh.getOrDefault('Analysis.DetectionThreshold', 1))
             except ValueError:
                 self.cFitType.SetSelection(self.fitFactories.index('LatGaussFitFR'))
@@ -226,22 +239,6 @@ class AnalysisSettingsView(object):
 
         
 class AnalysisController(object):
-    FINDING_PARAMS = [mde.FloatParam('Analysis.DetectionThreshold', 'Thresh:', 1.0),
-                      mde.IntParam('Analysis.DebounceRadius', 'Debounce rad:', 4),
-    ]
-    
-    DEFAULT_PARAMS = [mde.IntParam('Analysis.StartAt', 'Start at:', default=30),
-                      mde.RangeParam('Analysis.BGRange', 'Background:', default=(-30,0)),
-                      mde.BoolParam('Analysis.subtractBackground', 'Subtract background in fit', default=True),
-                      mde.BoolFloatParam('Analysis.PCTBackground' , 'Use percentile for background', default=False, helpText='', ondefault=0.25, offvalue=0),
-                      mde.FilenameParam('Camera.VarianceMapID', 'Variance Map:', prompt='Please select variance map to use ...', wildcard='TIFF Files|*.tif', filename=''),
-                      mde.FilenameParam('Camera.DarkMapID', 'Dark Map:', prompt='Please select dark map to use ...', wildcard='TIFF Files|*.tif', filename=''),
-                      mde.FilenameParam('Camera.FlatfieldMapID', 'Flatfiled Map:', prompt='Please select flatfield map to use ...', wildcard='TIFF Files|*.tif', filename=''),
-                      mde.BoolParam('Analysis.TrackFiducials', 'Track Fiducials', default=False),
-                      mde.FloatParam('Analysis.FiducialThreshold', 'Fiducial Threshold', default=1.8),
-    ]
-    
-    
     def __init__(self, imageMdh=None, tq = None):
         self.analysisMDH = MetaDataHandler.NestedClassMDHandler(imageMdh)
         self.onImagesPushed = dispatch.Signal()
@@ -450,12 +447,16 @@ class LMAnalyser2(object):
         dsviewer.statusHooks.append(self.GetStatusText)
 
         self.dsviewer.AddMenuItem('View', "SubtractBackground", self.OnToggleBackground)
+        
+        #if ('auto_start_analysis' in dir(dsviewer)) and dsviewer.auto_start_analysis:
+        #    print 'Automatically starting analysis'
+        #    wx.CallLater(50,self.OnGo)
 
     def SetFitInfo(self):
         self.view.pointMode = 'lm'
         voxx = 1e3*self.image.mdh.getEntry('voxelsize.x')
         voxy = 1e3*self.image.mdh.getEntry('voxelsize.y')
-        self.view.points = numpy.vstack((self.fitResults['fitResults']['x0']/voxx, self.fitResults['fitResults']['y0']/voxy, self.fitResults['tIndex'])).T
+        self.view.points = np.vstack((self.fitResults['fitResults']['x0']/voxx, self.fitResults['fitResults']['y0']/voxy, self.fitResults['tIndex'])).T
 
         if 'Splitter' in self.image.mdh.getEntry('Analysis.FitModule'):
             self.view.pointMode = 'splitter'
@@ -514,7 +515,7 @@ class LMAnalyser2(object):
         
         self.SetFitInfo()
 
-    def OnGo(self, event):
+    def OnGo(self, event=None):
         self.analysisController.pushImages(self.image)
 
     def OnImagesPushed(self, **kwargs):
@@ -579,14 +580,14 @@ class LMAnalyser2(object):
                     except:
                         pass
                 else:
-                    self.fitResults = numpy.concatenate((self.fitResults, newResults))
+                    self.fitResults = np.concatenate((self.fitResults, newResults))
                     self.ds.setResults(self.fitResults)
                     self.dsviewer.pipeline.Rebuild()
                     
                 
                 self.progPan.fitResults = self.fitResults
 
-                self.view.points = numpy.vstack((self.fitResults['fitResults']['x0'], self.fitResults['fitResults']['y0'], self.fitResults['tIndex'])).T
+                self.view.points = np.vstack((self.fitResults['fitResults']['x0'], self.fitResults['fitResults']['y0'], self.fitResults['tIndex'])).T
 
                 self.numEvents = len(self.fitResults)
                 

@@ -105,6 +105,11 @@ camPanels.append((sampPan, 'Current Slide'))
 ''')
 
 InitGUI('''
+from PYME.Acquire.ui import AnalysisSettingsUI
+AnalysisSettingsUI.Plug(scope, MainFrame)
+''')
+
+InitGUI('''
 from PYMEnf.Hardware import FakeDMD, DMDGui
 scope.LC = FakeDMD.FakeDMD(scope)
 

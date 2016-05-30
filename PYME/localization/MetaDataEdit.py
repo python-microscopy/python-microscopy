@@ -40,7 +40,7 @@ class FloatParam(MDParam):
         hsizer.Add(self.tValue, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
         
         self.updateValue(mdh)
-        
+
         if syncMdh:
             if mdhChangedSignal:
                 mdhChangedSignal.connect(self.updateValue)
@@ -435,7 +435,7 @@ class BoolFloatParam(MDParam):
                 cval = False
             else:
                 cval = True
-        except KeyError:
+        except (KeyError, AttributeError):
             fval = self.ondefault
             cval = self.default
 

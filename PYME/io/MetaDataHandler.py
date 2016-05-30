@@ -163,7 +163,7 @@ class MDHandlerBase(DictMixin):
         '''
         try: 
             return self.getEntry(name)
-        except AttributeError:
+        except (KeyError, AttributeError):
             return default
 
     def keys(self):
@@ -358,6 +358,10 @@ class NestedClassMDHandler(MDHandlerBase):
     
     def getEntry(self,entryName):
         return eval('self.'+entryName)
+#        try:
+#            return eval('self.'+entryName)
+#        except AttributeError:
+#            raise KeyError('No entry found for %s' % entryName)
 
 
     def getEntryNames(self):

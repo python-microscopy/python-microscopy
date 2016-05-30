@@ -95,30 +95,33 @@ class PanSpool(wx.Panel):
 
         ### Spooling Progress
 
-        self.sbSpoolProgress = wx.StaticBox(self, -1, 'Spooling Progress')
+        self.spoolProgPan = wx.Panel(self, -1)
+        vsizer_sp = wx.BoxSizer(wx.VERTICAL)
+
+        self.sbSpoolProgress = wx.StaticBox(self.spoolProgPan, -1, 'Spooling Progress')
         self.sbSpoolProgress.Enable(False)
 
         spoolProgSizer = wx.StaticBoxSizer(self.sbSpoolProgress, wx.VERTICAL)
 
-        self.stSpoolingTo = wx.StaticText(self, -1, 'Spooling to .....')
+        self.stSpoolingTo = wx.StaticText(self.spoolProgPan, -1, 'Spooling to .....')
         self.stSpoolingTo.Enable(False)
 
         spoolProgSizer.Add(self.stSpoolingTo, 0, wx.ALL, 0)
 
-        self.stNImages = wx.StaticText(self, -1, 'NNNNN images spooled in MM minutes')
+        self.stNImages = wx.StaticText(self.spoolProgPan, -1, 'NNNNN images spooled in MM minutes')
         self.stNImages.Enable(False)
 
         spoolProgSizer.Add(self.stNImages, 0, wx.ALL, 0)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.bStopSpooling = wx.Button(self, -1, 'Stop',style=wx.BU_EXACTFIT)
+        self.bStopSpooling = wx.Button(self.spoolProgPan, -1, 'Stop',style=wx.BU_EXACTFIT)
         self.bStopSpooling.Enable(False)
         self.bStopSpooling.Bind(wx.EVT_BUTTON, self.OnBStopSpoolingButton)
 
         hsizer.Add(self.bStopSpooling, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
-        self.bAnalyse = wx.Button(self, -1, 'Analyse',style=wx.BU_EXACTFIT)
+        self.bAnalyse = wx.Button(self.spoolProgPan, -1, 'Analyse',style=wx.BU_EXACTFIT)
         self.bAnalyse.Enable(False)
         self.bAnalyse.Bind(wx.EVT_BUTTON, self.OnBAnalyse)
 
@@ -126,7 +129,11 @@ class PanSpool(wx.Panel):
 
         spoolProgSizer.Add(hsizer, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 0)
 
-        vsizer.Add(spoolProgSizer, 0, wx.ALL|wx.EXPAND, 0)
+        vsizer_sp.Add(spoolProgSizer, 0, wx.ALL|wx.EXPAND, 0)
+        
+        self.spoolProgPan.SetSizerAndFit(vsizer_sp)
+        
+        vsizer.Add(self.spoolProgPan, 0, wx.ALL|wx.EXPAND, 0)
 
 
         ###Spool directory

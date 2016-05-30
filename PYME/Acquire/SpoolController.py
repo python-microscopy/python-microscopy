@@ -194,27 +194,29 @@ class SpoolController(object):
         
         self.onSpoolStop.send(self)
         
+    @property
+    def autostart_analysis(self):
+        if 'analysisSettings' in dir(self.scope):
+            return self.scope.analysisSettings.propagateToAcquisisitonMetadata
+        else:
+            return False
+        
 
-    def LaunchAnalysis(self, autostart=False):
+    def LaunchAnalysis(self):
         '''Launch analysis
         '''
+        
+        dh5view_cmd = 'dh5view'
+        if sys.platform == 'win32':
+            dh5view_cmd = 'dh5view.cmd'
+            
+        if self.autostart_analysis:
+            dh5view_cmd += ' -g'
+        
         if isinstance(self.spooler, QueueSpooler.Spooler): #queue or not
-            if sys.platform == 'win32':
-                subprocess.Popen('dh5view.cmd -q %s QUEUE://%s' % (self.spooler.tq.URI, self.queueName), shell=True)
-            elif sys.platform == 'darwin':
-                subprocess.Popen('dh5view -q %s QUEUE://%s' % (self.spooler.tq.URI, self.queueName), shell=True)
-            else:
-                subprocess.Popen('dh5view -q %s QUEUE://%s' % (self.spooler.tq.URI, self.queueName), shell=True)
+            subprocess.Popen('%s -q %s QUEUE://%s' % (dh5view_cmd, self.spooler.tq.URI, self.queueName), shell=True)
         elif isinstance(self.spooler, HTTPSpooler.Spooler): #queue or not
-            if sys.platform == 'win32':
-                subprocess.Popen('dh5view.cmd %s' % self.spooler.getURL(), shell=True)
-            else:
-                subprocess.Popen('dh5view %s' % self.spooler.getURL(), shell=True) 
-#        else:
-#            if sys.platform == 'win32':
-#                subprocess.Popen('..\\DSView\\dh5view.cmd %s' % self.spooler.filename, shell=True)
-#            else:
-#                subprocess.Popen('../DSView/dh5view.py %s' % self.spooler.filename, shell=True)
+            subprocess.Popen('%s %s' % (dh5view_cmd, self.spooler.getURL()), shell=True) 
         
 
 

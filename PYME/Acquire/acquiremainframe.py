@@ -110,6 +110,7 @@ class PYMEMainFrame(AUIFrame):
 
         self.toolPanels = []
         self.camPanels = []
+        self.aqPanels = []
         self.postInit = []
 
         self.initDone = False
@@ -266,6 +267,10 @@ class PYMEMainFrame(AUIFrame):
         for t in self.camPanels:
             #print(t)
             self.AddCamTool(*t)
+            
+            
+        for t in self.aqPanels:
+            self.AddAqTool(*t)
 
         #self.splash.Destroy()
 
@@ -329,14 +334,7 @@ class PYMEMainFrame(AUIFrame):
         #cpinfo.dock_proportion  = int(cpinfo.dock_proportion*1.6)
         
         self._mgr.AddPane(self.camPanel, cpinfo)
-
-        self.aqPanel = afp.foldPanel(self, -1, wx.DefaultPosition,
-                                     wx.Size(240,1000))
-
-        aqinfo = aui.AuiPaneInfo().Name("aqControls").Caption("Acquisition").Layer(2).Position(0).Right().CloseButton(False)
         
-        self._mgr.AddPane(self.aqPanel, aqinfo)
-
         self.toolPanel = afp.foldPanel(self, -1, wx.DefaultPosition,
                                      wx.Size(240,1000))
 #        self.toolPanel = fpb.FoldPanelBar(self, -1, wx.DefaultPosition,
@@ -345,6 +343,15 @@ class PYMEMainFrame(AUIFrame):
         self._mgr.AddPane(self.toolPanel, aui.AuiPaneInfo().
                           Name("hardwareControls").Caption("Hardware").Layer(2).Position(1).Right().CloseButton(False).BestSize(240, 250))
 
+
+        self.aqPanel = afp.foldPanel(self, -1, wx.DefaultPosition,
+                                     wx.Size(240,1000))
+
+        aqinfo = aui.AuiPaneInfo().Name("aqControls").Caption("Acquisition").Layer(2).Position(0).Right().CloseButton(False)
+        
+        self._mgr.AddPane(self.aqPanel, aqinfo)
+
+        
         aqinfo.dock_proportion  = int(aqinfo.dock_proportion*1.3)
 
 

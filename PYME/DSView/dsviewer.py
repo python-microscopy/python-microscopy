@@ -379,6 +379,7 @@ class MyApp(wx.App):
         op.add_option('-q', '--queueURI', dest='queueURI', help="the Pyro URI of the task queue - to avoid having to use the nameserver lookup")
         op.add_option('-t', '--test', dest='test', help="Show a test image", action="store_true", default=False)
         op.add_option('-d', '--metadata', dest='metadata', help="Load image with specified metadata file", default=None)
+        op.add_option('-g', '--start-analysis', dest='start_analysis', action="store_true", help="Automatically start the analysis (where appropriate)", default=False)
 
         options, args = op.parse_args()
         
@@ -401,6 +402,11 @@ class MyApp(wx.App):
                 mode = options.mode
     
             vframe = DSViewFrame(im, None, im.filename, mode = mode)
+            
+            #this is a bit of a hack - requires explicit knowledge of the LMAnalysis module here
+            if options.start_analysis and 'LMAnalyser' in dir(vframe):
+                print 'Automatically starting analysis'
+                wx.CallLater(5,vframe.LMAnalyser.OnGo)
     
             self.SetTopWindow(vframe)
             vframe.Show(1)
