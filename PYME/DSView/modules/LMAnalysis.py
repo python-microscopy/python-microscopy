@@ -20,43 +20,38 @@
 #
 ##################
 import wx
-import Pyro.core
-from PYME.misc import pyro_tracebacks
+import wx.lib.agw.aui as aui
 
-#import Pyro.util
-from PYME.localization import remFitBuf
 import os
-from PYME.io import MetaDataHandler
-import PYME.localization.FitFactories
-
-from PYME.localization import MetaDataEdit as mde
-#from pylab import *
-from PYME.io.FileUtils import fileID
-from PYME.io.FileUtils.nameUtils import genResultFileName
-from PYME.LMVis import progGraph as progGraph
-
-#from PYME.LMVis import gl_render
-#from PYME.LMVis import workspaceTree
-#import sys
-
-
-
-
-#from PYME.misc import extraCMaps
-
-
 import numpy as np
-
-from PYME.LMVis import pipeline, inpFilt
 
 import numpy
 import pylab
 
+import Pyro.core
+from PYME.misc import pyro_tracebacks
+
+import PYME.localization.FitFactories
+from PYME.localization import remFitBuf
+from PYME.localization import MetaDataEdit as mde
+
+
+from PYME.io import MetaDataHandler
+from PYME.io.FileUtils import fileID
+from PYME.io.FileUtils.nameUtils import genResultFileName
+
+from PYME.LMVis import progGraph as progGraph
+from PYME.LMVis import pipeline, inpFilt
+
+import dispatch
+
 import PYME.ui.autoFoldPanel as afp
+
 from PYME.Acquire.mytimer import mytimer
+
 from PYME.DSView import fitInfo
 from PYME.DSView.OverlaysPanel import OverlayPanel
-import wx.lib.agw.aui as aui
+
 
 debug = True
 
@@ -94,13 +89,15 @@ class AnalysisSettingsView(object):
 
     def _populateStdOptionsPanel(self, pan, vsizer):
         for param in self.analysisController.DEFAULT_PARAMS:
-            pg = param.createGUI(pan, self.analysisController.analysisMDH, syncMdh=True)
+            pg = param.createGUI(pan, self.analysisController.analysisMDH, syncMdh=True, 
+                                 mdhChangedSignal = self.analysisController.onMetaDataChange)
             vsizer.Add(pg, 0,wx.BOTTOM|wx.EXPAND, 5)
         vsizer.Fit(pan)
             
     def _populateFindOptionsPanel(self, pan, vsizer):
         for param in self.analysisController.FINDING_PARAMS:
-            pg = param.createGUI(pan, self.analysisController.analysisMDH, syncMdh=True)
+            pg = param.createGUI(pan, self.analysisController.analysisMDH, syncMdh=True, 
+                                 mdhChangedSignal = self.analysisController.onMetaDataChange)
             vsizer.Add(pg, 0,wx.BOTTOM|wx.EXPAND, 5)    
         
     def _populateCustomAnalysisPanel(self, pan, vsizer):
@@ -110,7 +107,8 @@ class AnalysisSettingsView(object):
             
             #vsizer = wx.BoxSizer(wx.VERTICAL)
             for param in fm.PARAMETERS:
-                pg = param.createGUI(pan, self.analysisController.analysisMDH, syncMdh=True)
+                pg = param.createGUI(pan, self.analysisController.analysisMDH, syncMdh=True, 
+                                 mdhChangedSignal = self.analysisController.onMetaDataChange)
                 vsizer.Add(pg, 0,wx.BOTTOM|wx.EXPAND, 5)
             vsizer.Fit(pan)
                 
@@ -225,7 +223,7 @@ class AnalysisSettingsView(object):
         
 
 
-import dispatch
+
         
 class AnalysisController(object):
     FINDING_PARAMS = [mde.FloatParam('Analysis.DetectionThreshold', 'Thresh:', 1.0),
@@ -247,11 +245,10 @@ class AnalysisController(object):
     def __init__(self, imageMdh=None, tq = None):
         self.analysisMDH = MetaDataHandler.NestedClassMDHandler(imageMdh)
         self.onImagesPushed = dispatch.Signal()
+        self.onMetaDataChange = dispatch.Signal()
 
         self.tq = tq
 
-    #def Go(self):
-    #    self.pushImages(self.image)
 
     def pushImages(self, image):
         self._checkTQ()
@@ -353,6 +350,7 @@ class AnalysisController(object):
 class FitDefaults(object):
     def __init__(self, dsviewer, analysisController):
         self.dsviewer = dsviewer
+        self.onMetaDataChange = analysisController.onMetaDataChange
         self.analysisMDH = analysisController.analysisMDH
 
         self.dsviewer.AddMenuItem('Analysis defaults', "Normal 2D analysis", self.OnStandard2D)
@@ -370,33 +368,45 @@ class FitDefaults(object):
         self.analysisMDH['Analysis.ChunkSize'] = 1
         self.analysisMDH['Analysis.ROISize'] = 11
 
+        self.onMetaDataChange.send(self, mdh=self.analysisMDH)
+
     def OnStandard2D(self, event):
         self.analysisMDH['Analysis.FitModule'] = 'LatGaussFitFR'
         self.analysisMDH['Analysis.BGRange'] = (-30,0)
         self.analysisMDH['Analysis.SubtractBackground'] = True
         self.analysisMDH['Analysis.DetectionThreshold'] = 1.
+
+        self.onMetaDataChange.send(self, mdh=self.analysisMDH)
         
     def OnSplitter2D(self, event):
         self.analysisMDH['Analysis.FitModule'] = 'SplitterFitQR'
         self.analysisMDH['Analysis.BGRange'] = (-30,0)
         self.analysisMDH['Analysis.SubtractBackground'] = True
         self.analysisMDH['Analysis.DetectionThreshold'] = 1.
+
+        self.onMetaDataChange.send(self, mdh=self.analysisMDH)
     
     def OnStandard3D(self, event):
         self.analysisMDH['Analysis.FitModule'] = 'InterpFitR'
         self.analysisMDH['Analysis.BGRange'] = (-30,0)
         self.analysisMDH['Analysis.SubtractBackground'] = True
         self.analysisMDH['Analysis.DetectionThreshold'] = 1.
+
+        self.onMetaDataChange.send(self, mdh=self.analysisMDH)
     
     def OnSplitter3D(self, event):
         self.analysisMDH['Analysis.FitModule'] = 'SplitterFitInterpNR'
         self.analysisMDH['Analysis.BGRange'] = (-30,0)
         self.analysisMDH['Analysis.SubtractBackground'] = True
         self.analysisMDH['Analysis.DetectionThreshold'] = 1.
+
+        self.onMetaDataChange.send(self, mdh=self.analysisMDH)
         
     def OnPRI3D(self, event):
         self.analysisMDH['PRI.Axis'] = 'y'
         self.analysisMDH['Analysis.EstimatorModule'] = 'priEstimator'
+
+        self.onMetaDataChange.send(self, mdh=self.analysisMDH)
 
 
 
