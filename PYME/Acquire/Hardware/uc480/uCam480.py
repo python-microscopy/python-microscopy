@@ -191,6 +191,11 @@ class uc480Camera:
         if os.path.exists(ffname):
             self.flatfield = np.load(ffname).squeeze()
             self.flat = self.flatfield
+
+        darkname = os.path.join(calpath, 'dark.npy')
+        if os.path.exists(darkname):
+            self.dark = np.load(darkname).squeeze()
+            self.background = self.dark
         
         self.SetROI(0,0, self.CCDSize[0],self.CCDSize[1])
         #self.ROIx=(1,self.CCDSize[0])
@@ -209,6 +214,7 @@ class uc480Camera:
         
         
         self.Init()
+        self.SetIntegTime(.1)
         
     def Init(self):        
         #set up polling thread        
@@ -216,6 +222,7 @@ class uc480Camera:
         self.pollLoopActive = True
         self.pollThread = threading.Thread(target = self._pollLoop)
         self.pollThread.start()
+
         
     def InitBuffers(self, nBuffers = 50, nAccumBuffers = 50):
         for i in range(nBuffers):
@@ -357,11 +364,13 @@ class uc480Camera:
         if not ret == 0:
             raise RuntimeError('Error setting exp time: %d: %s' % GetError(self.boardHandle))
         
-        ret = uc480.CALL('SetExposureTime', self.boardHandle, c_double(iTime/1e3), ctypes.byref(newExp))
+        ret = uc480.CALL('SetExposureTime', self.boardHandle, c_double(1e3*iTime), ctypes.byref(newExp))
         if not ret == 0:
             raise RuntimeError('Error setting exp time: %d: %s' % GetError(self.boardHandle))
+
+        #print newExp.value, newFrameRate.value 
             
-        self.expTime = 1e3*newExp.value
+        self.expTime = newExp.value*1e-3
 
     def GetIntegTime(self):
         #self.__selectCamera()
@@ -497,6 +506,9 @@ class uc480Camera:
             
         if not self.flatfield == None:
             self.flat = self.flatfield[x1:x2, y1:y2]
+
+        if not self.dark == None:
+            self.background = self.dark[x1:x2, y1:y2]
 
         #raise Exception, 'Not implemented yet!!'
 

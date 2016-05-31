@@ -24,6 +24,7 @@ class AutoFocus(object):
         im_f = self.scope.frameWrangler.currentFrame.astype('f')
         self.im_d = ndimage.gaussian_filter(im_f, 1) - ndimage.gaussian_filter(im_f, 5)
         m = self.im_d.std()#self.scope.frameWrangler.currentFrame.std()
+        #m = im_f.std()
         if m > self.lastMax:
             #continue
             self.lastMax = m
