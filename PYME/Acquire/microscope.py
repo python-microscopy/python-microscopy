@@ -118,6 +118,7 @@ class StateManager(object):
         self.stateChanged = dispatch.Signal()
         
     def __getitem__(self, key):
+        #print key
         try: 
             handler = self._stateHandlers[key]
         except KeyError:

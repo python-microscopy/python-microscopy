@@ -66,6 +66,6 @@ def main():
 
 if __name__ == '__main__':
     from PYME.util import mProfile
-    mProfile.profileOn(['acquiremainframe.py', 'init.py', 'fakeCam.py', 'rend_im.py'])
+    mProfile.profileOn(['acquiremainframe.py', 'microscope.py', 'frameWrangler.py'])
     main()
     mProfile.report()

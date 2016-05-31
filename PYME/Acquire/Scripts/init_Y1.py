@@ -121,7 +121,7 @@ pst = offsetPiezo.ServerThread(scope.piFoc)
 pst.start()
 scope.CleanupFunctions.append(pst.cleanup)
 
-scope.state.registerHandler('Positioning.z', lambda : scope.piFoc.GetPos(1), lambda v : scope.piFoc.SetPos(1, v))
+scope.state.registerHandler('Positioning.z', lambda : scope.piFoc.GetPos(1), lambda v : scope.piFoc.MoveTo(1, v))
 ''')
 
 InitBG('XY Stage', '''
@@ -138,7 +138,7 @@ scope.CleanupFunctions.append(scope.xystage.close)
 scope.positioning['x'] = (scope.xystage, 1, 1000)
 scope.positioning['y'] = (scope.xystage, 2, -1000)
 
-scope.state.registerHandler('Positioning.x', lambda : scope.xystage.GetPos(1), lambda v : scope.xystage.MoveTo(1, v*1e-3))
+scope.state.registerHandler('Positioning.x', lambda : 1000*scope.xystage.GetPos(1), lambda v : scope.xystage.MoveTo(1, v*1e-3))
 scope.state.registerHandler('Positioning.y', lambda : -1000*scope.xystage.GetPos(2), lambda v : scope.xystage.MoveTo(2, -v*1e-3))
 ''')
 
@@ -217,7 +217,7 @@ scope.lAOM = ioslave.AOMLaser('AOM', scopeState = scope.state)
 scope.lasers = [scope.l405,scope.l488,scope.l561, scope.lAOM, scope.l642]
 
 from PYME.Acquire.Hardware import priorLumen
-scope.arclamp = priorLumen.PriorLumen('Arc Lamp', portname='COM1', scopeState = scope.state)
+scope.arclamp = priorLumen.PriorLumen('Arc_Lamp', portname='COM1', scopeState = scope.state)
 scope.lasers.append(scope.arclamp)
 
 
@@ -229,7 +229,7 @@ time1.WantNotification.append(lsf.update)
 #lsf.update()
 camPanels.append((lsf, 'Laser Powers'))
 
-if 'lasers' in dir(self:)
+if 'lasers' in dir(scope):
     lcf = lasersliders.LaserToggles(toolPanel, scope.state)
     time1.WantNotification.append(lcf.update)
     camPanels.append((lcf, 'Laser Control'))
@@ -244,9 +244,17 @@ if 'lasers' in dir(self:)
 #    camPanels.append((lcf, 'Laser Control'))
 #''')
 
+InitGUI('''
+from PYME.Acquire.ui import AnalysisSettingsUI
+AnalysisSettingsUI.Plug(scope, MainFrame)
+''')
 
+InitGUI('''
+from PYME.Acquire.ui import actionUI
 
-
+ap = actionUI.ActionPanel(MainFrame, scope.actions)
+MainFrame.AddPage(ap, caption='Queued Actions')
+''')
 
 
 #must be here!!!

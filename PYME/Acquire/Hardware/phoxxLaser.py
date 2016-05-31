@@ -191,5 +191,5 @@ class PhoxxLaser(Laser):
             return '%s laser power: ERR' % self.name
 
     def GetPower(self):
-        #return self.power
-        return self._getOutputPower()
+        return self.power
+        #return self._getOutputPower()

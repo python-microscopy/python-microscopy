@@ -133,7 +133,7 @@ class SpoolController(object):
         else:
             protocol = self.protocol
 
-        if doPreflightCheck and not preflight.ShowPreflightResults(self, self.protocol.PreflightCheck()):
+        if doPreflightCheck and not preflight.ShowPreflightResults(None, self.protocol.PreflightCheck()):
             return #bail if we failed the pre flight check, and the user didn't choose to continue
             
           
