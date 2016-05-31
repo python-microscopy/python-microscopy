@@ -252,7 +252,7 @@ AnalysisSettingsUI.Plug(scope, MainFrame)
 InitGUI('''
 from PYME.Acquire.ui import actionUI
 
-ap = actionUI.ActionPanel(MainFrame, scope.actions)
+ap = actionUI.ActionPanel(MainFrame, scope.actions, scope)
 MainFrame.AddPage(ap, caption='Queued Actions')
 ''')
 

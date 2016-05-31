@@ -9,7 +9,7 @@
 # This file may NOT be distributed without express permision from David Baddeley
 #
 ##################
-
+from scipy import ndimage
 
 class AutoFocus(object):
     def __init__(self, scope, increment=0.5):
@@ -21,7 +21,9 @@ class AutoFocus(object):
         self.lastStep = .5
         
     def OnFrameGroup(self, **kwargs):
-        m = self.scope.frameWrangler.currentFrame.std()
+        im_f = self.scope.frameWrangler.currentFrame.astype('f')
+        self.im_d = ndimage.gaussian_filter(im_f, 1) - ndimage.gaussian_filter(im_f, 5)
+        m = self.im_d.std()#self.scope.frameWrangler.currentFrame.std()
         if m > self.lastMax:
             #continue
             self.lastMax = m
@@ -36,11 +38,13 @@ class AutoFocus(object):
                 self.scope.state['Positioning.z']=self.lastMaxPos
                 #self.scope.frameWrangler.WantFrameGroupNotification.remove(self.tick)
                 self.scope.frameWrangler.onFrameGroup.disconnect(self.OnFrameGroup)
+
+                print 'af_done'
             
         #self.scope.SetPos(z=self.lastMaxPos + self.incr)
         self.scope.state['Positioning.z'] = self.lastMaxPos + self.incr
         
-        print 'af'
+        print 'af', m
         
     def af(self, incr=0.5):
         self.lastMax = 0

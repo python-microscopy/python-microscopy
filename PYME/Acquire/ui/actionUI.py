@@ -42,9 +42,10 @@ ACTION_DEFAULTS = ['spoolController.StartSpooling',
                    ]
 
 class ActionPanel(wx.Panel):
-    def __init__(self, parent, actionManager):#, scope):
+    def __init__(self, parent, actionManager, scope):
         wx.Panel.__init__(self, parent)
         self.actionManager = actionManager
+        self.scope = scope
 
         vsizer = wx.BoxSizer(wx.VERTICAL)
         self.actionList = ActionList(self, self.actionManager)
@@ -73,6 +74,28 @@ class ActionPanel(wx.Panel):
         hsizer.Add(self.bAdd, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
         
         vsizer.Add(hsizer, 0, wx.EXPAND, 0)
+        vsizer.Add(wx.StaticLine(self), 0, wx.EXPAND|wx.ALL, 4)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.bMoveToHere = wx.Button(self, -1, 'Add move to current location')
+        self.bMoveToHere.Bind(wx.EVT_BUTTON, self.OnAddMove)
+        hsizer.Add(self.bMoveToHere, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+
+        hsizer.AddStretchSpacer()
+
+        hsizer.Add(wx.StaticText(self, -1, 'Num frames: '), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+
+        self.tNumFrames = wx.TextCtrl(self, -1, '10000', size=(50, -1))
+        hsizer.Add(self.tNumFrames, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+
+        self.bAddAquisition = wx.Button(self, -1, 'Add acquisition')
+        self.bAddAquisition.Bind(wx.EVT_BUTTON, self.OnAddSequence)
+        hsizer.Add(self.bAddAquisition, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+
+
+        vsizer.Add(hsizer, 0, wx.EXPAND, 0)
+
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         self.bPause = wx.Button(self, -1, 'Pause')
@@ -102,5 +125,26 @@ class ActionPanel(wx.Panel):
         args = eval('dict(%s)' % self.tArgs.GetValue())
         timeout = float(self.tTimeout.GetValue())
         self.actionManager.QueueAction(functionName, args, nice, timeout)
+
+    def OnAddMove(self, event):
+        nice = float(self.tNice.GetValue())
+        #functionName = self.tFunction.GetValue()
+        #args = eval('dict(%s)' % self.tArgs.GetValue())
+
+        functionName = 'state.update'
+        args = {'state' : {'Positioning.x': self.scope.state['Positioning.x'], 
+                           'Positioning.y': self.scope.state['Positioning.y'], 
+                           'Positioning.z': self.scope.state['Positioning.z']}}
+
+        timeout = float(self.tTimeout.GetValue())
+        self.actionManager.QueueAction(functionName, args, nice, timeout)
+
+    def OnAddSequence(self, event):
+        nice = float(self.tNice.GetValue())
+        functionName = 'spoolController.StartSpooling'
+        args = {'maxFrames' : int(self.tNumFrames.GetValue())}
+        timeout = float(self.tTimeout.GetValue())
+        self.actionManager.QueueAction(functionName, args, nice, timeout)
+
 
    
