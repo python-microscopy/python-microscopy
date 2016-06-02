@@ -469,7 +469,7 @@ class fitTask(taskDef.Task):
         #Fit Fiducials NOTE: This is potentially broken        
         self.drRes = []
         if self.driftEst:
-            
+            fitFac = fitMod.FitFactory(self.data, md, noiseSigma = self.sigma)
             nToFit = min(10,len(self.ofdDr)) #don't bother fitting lots of calibration objects 
             if 'FitResultsDType' in dir(fitMod):
                 self.drRes = numpy.empty(nToFit, fitMod.FitResultsDType)
