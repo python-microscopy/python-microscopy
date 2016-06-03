@@ -157,7 +157,7 @@ class dec:
             self.mask = numpy.isfinite(data.np.ravel(())
 
         #guess a starting estimate for the object
-        self.f = self.startGuess(data).np.ravel(()
+        self.f = self.startGuess(data).np.ravel(())
         self.res = 0*self.f
 
         self.fs = self.f.reshape(self.shape)

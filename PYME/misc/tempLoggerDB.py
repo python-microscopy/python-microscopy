@@ -43,7 +43,7 @@ if __name__ == '__main__':
             v2 = dd.GetAIValue(3)*1000./2.**15 - 273.15 - 0.20
             #f.write('%3.2f\t%3.2f\n' % (time.time(), v))
             #f.flush()
-    	t = time.time()
+            t = time.time()
             tempDB.addEntry(t, v)
             tempDB.addEntry(t+.01, v1, 2)
             tempDB.addEntry(t + .02, v2, 3)
