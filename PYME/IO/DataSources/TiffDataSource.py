@@ -21,47 +21,33 @@
 #
 ##################
 
-from PYME.io.FileUtils.nameUtils import getFullExistingFilename
-from PYME.io import MetaDataHandler
-#from PYME.io.FileUtils import readTiff
-from PIL import Image
-import glob
-import os
-import numpy as np
-from .BaseDataSource import BaseDataSource
+from PYME.IO.FileUtils.nameUtils import getFullExistingFilename
+#from PYME.IO.FileUtils import readTiff
+#import Image
 #from PYME.misc import TiffImagePlugin #monkey patch PIL with improved tiff support from Priithon
 
 #import numpy as np
 
-#from PYME.misc import tifffile
+from PYME.contrib.gohlke import tifffile
+from .BaseDataSource import BaseDataSource
 
 class DataSource(BaseDataSource):
-    moduleName = 'ImageSeriesDataSource'
-    def __init__(self, filename, taskQueue=None):
+    moduleName = 'TiffDataSource'
+    def __init__(self, filename, taskQueue=None, chanNum = 0):
         self.filename = getFullExistingFilename(filename)#convert relative path to full path
+        self.chanNum = chanNum
+        
         #self.data = readTiff.read3DTiff(self.filename)
 
-        #use metadata for glob
-        md = MetaDataHandler.SimpleMDHandler(self.filename)
-
-        pattern = md.getEntry('SeriesPattern')
-
-        self.files = glob.glob(os.path.join(os.path.split(self.filename)[0], pattern))
-
-        self.files.sort()
-
-        self.im0 = Image.open(self.files[0])
+        #self.im = Image.open(filename)
 
         #self.im.seek(0)
 
         #PIL's endedness support is subtly broken - try to fix it
         #NB this is untested for floating point tiffs
-        self.endedness = 'LE'
-        if self.im0.ifd.prefix =='MM':
-            self.endedness = 'BE'
-            
-        print((self.im0.ifd.prefix))
-        print((self.endedness))
+        #self.endedness = 'LE'
+        #if self.im.ifd.prefix =='MM':
+        #    self.endedness = 'BE'
 
         #to find the number of images we have to loop over them all
         #this is obviously not ideal as PIL loads the image data into memory for each
@@ -77,24 +63,44 @@ class DataSource(BaseDataSource):
         #except EOFError:
         #    pass
 
-        #self.im = tifffile.TIFFfile(self.filename)
+        print((self.filename))
+        
+        tf = tifffile.TIFFfile(self.filename)
+
+        self.im = tf.series[0].pages
+        if tf.is_ome:
+            sh = dict(zip(tf.series[0].axes, tf.series[0].shape))
+            self.sizeC = sh['C']
+            
+            axisOrder = tf.series[0].axes[::-1]
+            
+            self.additionalDims = ''.join([a for a in axisOrder[2:] if sh[a] > 1])
+                
 
 
     def getSlice(self, ind):
         #self.im.seek(ind)
-        im = Image.open(self.files[ind])
-        ima = np.array(im.getdata())#.newbyteorder(self.endedness)
-        return ima.reshape((im.size[1], im.size[0]))
+        #ima = np.array(im.getdata()).newbyteorder(self.endedness)
+        #return ima.reshape((self.im.size[1], self.im.size[0]))
         #return self.data[:,:,ind]
-        #return self.im[ind].asarray()
+        res =  self.im[ind].asarray(False, False)
+        #if res.ndim == 3:
+        #print res.shape
+        #print self.chanNum
+        res = res[0,self.chanNum, :,:].squeeze()
+        #print res.shape
+        return res
 
     def getSliceShape(self):
-        return (self.im0.size[1], self.im0.size[0])
-        #return self.im[0].shape[1:3]
+        #return (self.im.size[1], self.im.size[0])
+        if len(self.im[0].shape) == 2:
+            return self.im[0].shape
+        else:
+            return self.im[0].shape[1:3]
         #return self.data.shape[:2]
 
     def getNumSlices(self):
-        return len(self.files)
+        return len(self.im)
 
     def getEvents(self):
         return []

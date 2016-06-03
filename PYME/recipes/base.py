@@ -22,7 +22,7 @@ except ImportError:
     except SystemExit:
         from PYME.misc.mock_traitsui import *
 
-from PYME.io.image import ImageStack
+from PYME.IO.image import ImageStack
 #from scipy import ndimage
 import numpy as np
 #import os

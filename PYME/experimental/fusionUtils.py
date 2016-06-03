@@ -7,7 +7,7 @@ Created on Thu Jul  9 00:55:38 2015
 
 import numpy as np
 import pylab as pl
-from PYME.io import image
+from PYME.IO import image
 import PYME.Analysis.Tracking.trackUtils as trackUtils
 import json
 
@@ -442,7 +442,7 @@ def prepPipeline(pipeline):
 def selectAndPlotEvents(pipeline, outputdir='/Users/david/FusionAnalysis', speckleFile = None):
     import os
     import pandas as pd
-    from PYME.io.FileUtils.readSpeckle import readSpeckles    
+    from PYME.IO.FileUtils.readSpeckle import readSpeckles    
     #now iterate through our clumps
     clumpIndices = list(set(pipeline['clumpIndex']))
     
@@ -500,7 +500,7 @@ def selectAndPlotEvents(pipeline, outputdir='/Users/david/FusionAnalysis', speck
 def main():
     import sys
     from PYME.LMVis import pipeline
-    from PYME.io.image import ImageStack     
+    from PYME.IO.image import ImageStack     
     
     resultFile, imageFile, speckles = sys.argv[1:]
     

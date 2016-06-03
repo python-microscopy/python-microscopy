@@ -18,7 +18,7 @@ class ImageFrameSource(object):
         
     def spoolImageFromFile(self, filename):
         '''Load an image file and then spool'''
-        from PYME.io import image
+        from PYME.IO import image
         
         self.spoolImage(image.ImageStack(filename).data)
         
@@ -28,7 +28,7 @@ class ImageFrameSource(object):
         Parameters
         ----------
         
-        data : PYME.io.DataSources.DataSource object
+        data : PYME.IO.DataSources.DataSource object
             the data source. Needs to implement the getNumSlices() and getSlice()
             methods.
         '''
@@ -56,7 +56,7 @@ def ExportImageToCluster(image, filename, progCallback=None):
     Parameters
     ----------
     
-    image : PYME.io.image.ImageStack object
+    image : PYME.IO.image.ImageStack object
         the source image
     filename : string
         the filename on the cluster
@@ -89,7 +89,7 @@ def ExportImageToCluster(image, filename, progCallback=None):
 SERIES_PATTERN = '%(day)d_%(month)d_series_%(counter)'
 
 def _getFilenameSuggestion(dirname='', seriesname = SERIES_PATTERN):
-    from PYME.io.FileUtils import nameUtils
+    from PYME.IO.FileUtils import nameUtils
     from PYME.ParallelTasks import clusterIO
     import os
     

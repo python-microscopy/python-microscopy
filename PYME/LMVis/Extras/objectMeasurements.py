@@ -36,7 +36,7 @@ class ParticleTracker:
         visFr.Bind(wx.EVT_MENU, self.OnMeasure, id=ID_MEASURE)
 
     def OnGetIDs(self, event):
-        from PYME.io import image
+        from PYME.IO import image
 
         visFr = self.visFr
         pipeline = visFr.pipeline

@@ -26,7 +26,7 @@ from taskQueue import *
 from PYME.localization.remFitBuf import fitTask
 
 from PYME.Analysis import MetaData
-from PYME.io import MetaDataHandler
+from PYME.IO import MetaDataHandler
 
 import os
 import sys
@@ -37,8 +37,8 @@ import logging
 import time
 import Queue
 
-from PYME.io.FileUtils.nameUtils import genResultFileName, getFullFilename
-#from PYME.io.FileUtils.nameUtils import getFullFilename
+from PYME.IO.FileUtils.nameUtils import genResultFileName, getFullFilename
+#from PYME.IO.FileUtils.nameUtils import getFullFilename
 
 CHUNKSIZE = 50
 MAXCHUNKSIZE = 100 #allow chunk size to be improved to allow better caching
@@ -504,7 +504,7 @@ class HDFResultsTaskQueue(TaskQueue):
         elif fieldName == 'MAP':
             mapName, = args
             #from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
-            from PYME.io.image import ImageStack
+            from PYME.IO.image import ImageStack
 
             print('Serving map: %s' %mapName)            
             fn = getFullExistingFilename(mapName)

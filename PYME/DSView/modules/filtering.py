@@ -22,7 +22,7 @@
 #import numpy
 import wx
 #import pylab
-#from PYME.io.image import ImageStack
+#from PYME.IO.image import ImageStack
 
 class filterer:
     def __init__(self, dsviewer):
@@ -42,7 +42,7 @@ class filterer:
     def OnGaussianFilter(self, event):
         import numpy as np
         from scipy.ndimage import gaussian_filter
-        from PYME.io.image import ImageStack
+        from PYME.IO.image import ImageStack
         from PYME.DSView import ViewIm3D
 
         dlg = wx.TextEntryDialog(self.dsviewer, 'Blur size [pixels]:', 'Gaussian Blur', '[1,1,1]')
@@ -81,7 +81,7 @@ class filterer:
     
     def Project(self, projType):
         import numpy as np
-        from PYME.io.image import ImageStack
+        from PYME.IO.image import ImageStack
         from PYME.DSView import ViewIm3D
         import os
 
@@ -111,7 +111,7 @@ class filterer:
 
     def OnApplyThreshold(self, event):
         import numpy as np
-        from PYME.io.image import ImageStack
+        from PYME.IO.image import ImageStack
         from PYME.DSView import ViewIm3D
 
        
@@ -141,7 +141,7 @@ class filterer:
     def OnLabel(self, event):
         import numpy as np
         from scipy import ndimage
-        from PYME.io.image import ImageStack
+        from PYME.IO.image import ImageStack
         from PYME.DSView import ViewIm3D
 
         filt_ims = [np.atleast_3d(self.image.data[:,:,:,chanNum].squeeze() > self.dsviewer.do.thresholds[chanNum]) for chanNum in range(self.image.data.shape[3])]
@@ -171,7 +171,7 @@ class filterer:
     def OnLabelSizeThreshold(self, event):
         import numpy as np
         from scipy import ndimage
-        from PYME.io.image import ImageStack
+        from PYME.IO.image import ImageStack
         from PYME.DSView import ViewIm3D
 
         #dlg = wx.TextEntryDialog(self.dsviewer, 'Blur size [pixels]:', 'Gaussian Blur', '[1,1,1]')
@@ -236,7 +236,7 @@ class filterer:
                 dv.do.Gains[i] = 1.0
                 
     def OnSetLabels(self, event):
-        from PYME.io import image
+        from PYME.IO import image
         names = image.openImages.keys()
         
         dlg = wx.SingleChoiceDialog(self.dsviewer, 'Select an image', 'Set Labels', names)
@@ -252,7 +252,7 @@ class filterer:
     def OnLabelWatershed(self, event):
         import numpy as np
         from PYME.contrib.cpmath import watershed
-        from PYME.io.image import ImageStack
+        from PYME.IO.image import ImageStack
         from PYME.DSView import ViewIm3D
         
         nChans = self.image.data.shape[3]

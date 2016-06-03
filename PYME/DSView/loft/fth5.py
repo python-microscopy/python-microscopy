@@ -15,10 +15,10 @@ import Pyro.core
 from PYME.Analysis import remFitBuf
 import os
 import wx
-from PYME.io import MetaDataHandler
+from PYME.IO import MetaDataHandler
 from pylab import *
-from PYME.io.FileUtils import fileID
-from PYME.io.FileUtils.nameUtils import genResultFileName
+from PYME.IO.FileUtils import fileID
+from PYME.IO.FileUtils.nameUtils import genResultFileName
 
 if not 'tq' in locals():
     if 'PYME_TASKQUEUENAME' in os.environ.keys():

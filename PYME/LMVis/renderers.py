@@ -20,13 +20,13 @@
 #
 ##################
 from PYME.LMVis.visHelpers import ImageBounds#, GeneratedImage
-from PYME.io.image import GeneratedImage
+from PYME.IO.image import GeneratedImage
 from PYME.LMVis import genImageDialog
 from PYME.LMVis import visHelpers
 #from PYME.LMVis import imageView
 from PYME.LMVis import statusLog
 
-from PYME.io import MetaDataHandler
+from PYME.IO import MetaDataHandler
 
 from PYME.DSView import ViewIm3D
 

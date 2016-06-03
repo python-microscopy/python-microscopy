@@ -38,7 +38,7 @@ import scipy.misc
 #from PYME.DSView.arrayViewPanel import ArrayViewPanel
 from PYME.DSView.displayOptions import DisplayOpts
 from PYME.DSView.DisplayOptionsPanel import OptionsPanel
-#from PYME.io.image import ImageStack
+#from PYME.IO.image import ImageStack
 
 #from PYME.misc.auiFloatBook import AuiNotebookWithFloatingPages
 
@@ -422,7 +422,7 @@ class ColourImageViewPanel(ImageViewPanel):
             dc.SetPen(wx.NullPen)
         
         
-#from PYME.io.MetaDataHandler import NestedClassMDHandler
+#from PYME.IO.MetaDataHandler import NestedClassMDHandler
 #from PYME.DSView import modules as dsvmods
 #from PYME.DSView import ViewIm3D
 

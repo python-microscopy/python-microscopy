@@ -23,7 +23,7 @@
 import wx
 import wx.grid
 #import pylab
-#from PYME.io.image import ImageStack
+#from PYME.IO.image import ImageStack
 
 try:
     from enthought.traits.api import HasTraits, Float, Int, List, Instance, Property
@@ -35,7 +35,7 @@ except ImportError:
     from traitsui.menu import OKButton
 
 from PYME.Analysis.PSFGen import fourierHNA
-from PYME.io import image
+from PYME.IO import image
 from PYME.LMVis.Extras.pointSetGeneration import WRDictEnum
 from PYME.misc import zernike
 

@@ -20,19 +20,46 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
+try:
+    import javabridge
+    import bioformats
+    #javabridge.start_vm(class_path=bioformats.JARS, run_headless=True)
+except:
+    pass
 
-from PYME.io.FileUtils.nameUtils import getFullExistingFilename
-#from PYME.io.FileUtils import readTiff
+numVMRefs = 0
+
+def ensure_VM():
+    global numVMRefs
+    
+    if numVMRefs <1:
+        javabridge.start_vm(class_path=bioformats.JARS, run_headless=True)
+    
+    numVMRefs += 1
+    
+def release_VM():
+    global numVMRefs
+    numVMRefs -=1
+    
+    if numVMRefs < 1:
+        javabridge.kill_vm()
+    
+
+
+from PYME.IO.FileUtils.nameUtils import getFullExistingFilename
+#from PYME.IO.FileUtils import readTiff
 #import Image
 #from PYME.misc import TiffImagePlugin #monkey patch PIL with improved tiff support from Priithon
 
-#import numpy as np
+import numpy as np
 
-from PYME.contrib.gohlke import tifffile
+#from PYME.gohlke import tifffile
+
+
 from .BaseDataSource import BaseDataSource
 
 class DataSource(BaseDataSource):
-    moduleName = 'TiffDataSource'
+    moduleName = 'BioformatsDataSource'
     def __init__(self, filename, taskQueue=None, chanNum = 0):
         self.filename = getFullExistingFilename(filename)#convert relative path to full path
         self.chanNum = chanNum
@@ -65,16 +92,22 @@ class DataSource(BaseDataSource):
 
         print((self.filename))
         
-        tf = tifffile.TIFFfile(self.filename)
+        #tf = tifffile.TIFFfile(self.filename)
+        ensure_VM()
+        self.bff = bioformats.ImageReader(filename)
+        
+        self.sizeX = self.bff.rdr.getSizeX()
+        self.sizeY = self.bff.rdr.getSizeY()
+        self.sizeZ = self.bff.rdr.getSizeZ()
+        self.sizeT = self.bff.rdr.getSizeT()
+        self.sizeC = self.bff.rdr.getSizeC()
+    
+        #self.shape = [self.sizeX, self.sizeY, self.sizeZ*self.sizeT, self.sizeC]
+        #axisOrder = self.bff.rdr.getDimensionOrder()
 
-        self.im = tf.series[0].pages
-        if tf.is_ome:
-            sh = dict(zip(tf.series[0].axes, tf.series[0].shape))
-            self.sizeC = sh['C']
-            
-            axisOrder = tf.series[0].axes[::-1]
-            
-            self.additionalDims = ''.join([a for a in axisOrder[2:] if sh[a] > 1])
+        #sh = {'X' : self.sizeX, 'Y':self.sizeY, 'Z':self.sizeZ, 'T':self.sizeT, 'C':self.sizeT}
+        
+        self.additionalDims = 'TC'
                 
 
 
@@ -83,24 +116,23 @@ class DataSource(BaseDataSource):
         #ima = np.array(im.getdata()).newbyteorder(self.endedness)
         #return ima.reshape((self.im.size[1], self.im.size[0]))
         #return self.data[:,:,ind]
-        res =  self.im[ind].asarray(False, False)
+        c = np.floor(ind/(self.sizeZ*self.sizeT))
+        t = np.floor(ind/(self.sizeZ))%self.sizeT
+        z = ind % self.sizeZ
+        
+        res =  self.bff.read(c, z, t, rescale=False).squeeze()
         #if res.ndim == 3:
         #print res.shape
         #print self.chanNum
-        res = res[0,self.chanNum, :,:].squeeze()
+        #res = res[0,self.chanNum, :,:].squeeze()
         #print res.shape
         return res
 
     def getSliceShape(self):
-        #return (self.im.size[1], self.im.size[0])
-        if len(self.im[0].shape) == 2:
-            return self.im[0].shape
-        else:
-            return self.im[0].shape[1:3]
-        #return self.data.shape[:2]
+        return (self.sizeX, self.sizeY)
 
     def getNumSlices(self):
-        return len(self.im)
+        return self.sizeC*self.sizeT*self.sizeZ
 
     def getEvents(self):
         return []
@@ -111,3 +143,6 @@ class DataSource(BaseDataSource):
 
     def reloadData(self):
         pass
+    
+    def __del__(self):
+        release_VM()

@@ -22,7 +22,7 @@
 '''Classes to wrap a source of data so that it looks like an array'''
 import numpy as np
 import tables
-from PYME.io.DataSources import BaseDataSource
+from PYME.IO.DataSources import BaseDataSource
 
 class DefaultList(list):
     '''List which returns a default value for items not in the list'''

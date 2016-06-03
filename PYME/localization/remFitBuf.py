@@ -36,12 +36,12 @@ from PYME.localization import ofind_xcorr
 from PYME.localization import ofind_pri
 
 from PYME.Analysis import buffers
-from PYME.io.image import ImageStack
+from PYME.IO.image import ImageStack
     
 import numpy
 import numpy as np
 
-from PYME.io.FileUtils.nameUtils import getFullExistingFilename
+from PYME.IO.FileUtils.nameUtils import getFullExistingFilename
 
 bufferMisses = 0
 nTasksProcessed = 0
@@ -74,7 +74,7 @@ class BufferManager(object):
         
     def updateBuffers(self, md, dataSourceModule, bufferLen):
         '''Update the various buffers. '''
-        DataSource = __import__('PYME.io.DataSources.' + dataSourceModule, fromlist=['DataSource']).DataSource #import our data source
+        DataSource = __import__('PYME.IO.DataSources.' + dataSourceModule, fromlist=['DataSource']).DataSource #import our data source
         #read the data
         if not self.dataSourceID == md.dataSourceID: #avoid unnecessary opening and closing 
             self.dBuffer = buffers.dataBuffer(DataSource(md.dataSourceID, md.taskQueue), bufferLen)

@@ -24,7 +24,7 @@
 
 import wx
 from PYME.Acquire.Hardware import splitter
-from PYME.io.DataSources import UnsplitDataSource
+from PYME.IO.DataSources import UnsplitDataSource
 import numpy as np
 
 #from PYME.DSView.arrayViewPanel import *

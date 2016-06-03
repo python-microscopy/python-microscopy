@@ -29,7 +29,7 @@ except ImportError:
     from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, Str
     from traitsui.api import View, Item, EnumEditor, InstanceEditor
     
-from PYME.io import image
+from PYME.IO import image
 
 #class PointGenerationPanel(wx.Panel):
 #    def __init__(self, parent, generator):
@@ -222,7 +222,7 @@ class Generator(HasTraits):
         pipeline.imageBounds = ImageBounds.estimateFromSource(pipeline.selectedDataSource)
         pipeline.dataSources.append(pipeline.selectedDataSource)
 
-        from PYME.io.MetaDataHandler import NestedClassMDHandler
+        from PYME.IO.MetaDataHandler import NestedClassMDHandler
         pipeline.mdh = NestedClassMDHandler()
         pipeline.mdh['Camera.ElectronsPerCount'] = 1
         pipeline.mdh['Camera.TrueEMGain'] = 1

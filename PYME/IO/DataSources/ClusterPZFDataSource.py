@@ -34,9 +34,9 @@ import json
 
 SHAPE_LIFESPAN = 30
 
-from PYME.io import clusterIO
-from PYME.io import PZFFormat
-from PYME.io import MetaDataHandler
+from PYME.IO import clusterIO
+from PYME.IO import PZFFormat
+from PYME.IO import MetaDataHandler
 
 class DataSource(BaseDataSource):
     moduleName = 'ClusterPZFDataSource'

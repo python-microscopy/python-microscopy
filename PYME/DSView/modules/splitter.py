@@ -25,7 +25,7 @@
 import wx
 import os
 #from PYME.Acquire.Hardware import splitter
-from PYME.io.DataSources import UnsplitDataSource
+from PYME.IO.DataSources import UnsplitDataSource
 import numpy as np
 #from PYME.DSView.arrayViewPanel import *
         
@@ -148,7 +148,7 @@ class Unmixer:
 
 
     def OnSetShiftField(self, event=None):
-        from PYME.io.FileUtils import nameUtils
+        from PYME.IO.FileUtils import nameUtils
         fdialog = wx.FileDialog(None, 'Please select shift field to use ...',
                     wildcard='Shift fields|*.sf', style=wx.OPEN, defaultDir = nameUtils.genShiftFieldDirectoryPath())
         succ = fdialog.ShowModal()

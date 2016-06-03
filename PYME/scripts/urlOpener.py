@@ -27,7 +27,7 @@ import sys
 import subprocess
 import re
 
-from PYME.io.FileUtils import nameUtils
+from PYME.IO.FileUtils import nameUtils
 
 seps = re.compile('[\\\\/*]')
 

@@ -28,7 +28,7 @@ import numpy as np
 
 #from PYME.recipes import modules
 from PYME.recipes import recipeGui
-from PYME.io.image import ImageStack
+from PYME.IO.image import ImageStack
 from PYME.DSView import ViewIm3D
 
 from PYME.LMVis import pipeline

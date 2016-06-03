@@ -22,7 +22,7 @@
 ##################
 
 #from scipy import *
-#from PYME.io.FileUtils.read_kdf import *
+#from PYME.IO.FileUtils.read_kdf import *
 import wx
 #from pylab import *
 import numpy as np

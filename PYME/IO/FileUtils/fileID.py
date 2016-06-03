@@ -25,7 +25,7 @@ import os.path
 import tables
 import os
 import numpy as np
-from PYME.io import MetaDataHandler
+from PYME.IO import MetaDataHandler
 
 from PYME.misc.hash32 import hashString32
 

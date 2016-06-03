@@ -22,7 +22,7 @@
 
 import wx
 from PYME.Analysis import piecewiseMapping
-from PYME.io import MetaDataHandler
+from PYME.IO import MetaDataHandler
 
 class tiler:
     def __init__(self, dsviewer):

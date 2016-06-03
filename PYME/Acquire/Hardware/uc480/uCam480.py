@@ -26,12 +26,12 @@ from ctypes import *
 import ctypes
 import time
 import sys
-from PYME.io import MetaDataHandler
+from PYME.IO import MetaDataHandler
 from PYME.Acquire.Hardware import ccdCalibrator
 
 import os
-#from PYME.io import image
-from PYME.io.FileUtils import nameUtils
+#from PYME.IO import image
+from PYME.IO.FileUtils import nameUtils
 
 import threading
 

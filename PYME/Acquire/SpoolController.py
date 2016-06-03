@@ -16,9 +16,9 @@ except:
     print('Could not connect to the sample information database')
     sampInf = False
 #import win32api
-from PYME.io.FileUtils import nameUtils
-from PYME.io.FileUtils.nameUtils import numToAlpha, getRelFilename, genHDFDataFilepath
-#from PYME.io.FileUtils.freeSpace import get_free_space
+from PYME.IO.FileUtils import nameUtils
+from PYME.IO.FileUtils.nameUtils import numToAlpha, getRelFilename, genHDFDataFilepath
+#from PYME.IO.FileUtils.freeSpace import get_free_space
 
 
 #import PYME.Acquire.Protocols

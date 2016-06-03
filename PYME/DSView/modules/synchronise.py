@@ -23,9 +23,9 @@
 import wx
 import os
 #import pylab
-#from PYME.io import MetaDataHandler
+#from PYME.IO import MetaDataHandler
 #from PYME.DSView import image, View3D
-#from PYME.io import dataWrap
+#from PYME.IO import dataWrap
 from PYME.DSView import dsviewer
 
 

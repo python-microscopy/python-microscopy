@@ -23,7 +23,7 @@
 
 import datetime
 import tables
-from PYME.io import MetaDataHandler
+from PYME.IO import MetaDataHandler
 
 
 #import time
@@ -32,7 +32,7 @@ from PYME.io import MetaDataHandler
 import PYME.Acquire.Spooler as sp
 #from PYME.Acquire import protocol as p
 
-from PYME.io.FileUtils import fileID
+from PYME.IO.FileUtils import fileID
 
 class SpoolEvent(tables.IsDescription):
     '''Pytables description for Events table in spooled dataset'''

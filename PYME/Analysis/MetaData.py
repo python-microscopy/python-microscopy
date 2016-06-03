@@ -22,7 +22,7 @@
 ##################
 
 import numpy
-from PYME.io.MetaDataHandler import NestedClassMDHandler, HDFMDHandler
+from PYME.IO.MetaDataHandler import NestedClassMDHandler, HDFMDHandler
 
 #class VoxelSize:
 #	def __init__(self, x, y, z, unit='um'):

@@ -35,13 +35,13 @@ import numpy
 
 import weakref
 
-from PYME.io import MetaDataHandler
+from PYME.IO import MetaDataHandler
 from PYME.Analysis import MetaData
-from PYME.io import dataWrap
-from PYME.io.DataSources import BufferedDataSource
+from PYME.IO import dataWrap
+from PYME.IO.DataSources import BufferedDataSource
 from PYME.LMVis.visHelpers import ImageBounds
 
-from PYME.io.FileUtils.nameUtils import getRelFilename
+from PYME.IO.FileUtils.nameUtils import getRelFilename
 
 
 lastdir = ''
@@ -87,14 +87,14 @@ class ImageStack(object):
         Parameters:
             data    Image data. Something that supports ndarray like slicing and exposes
                     a .shape parameter, something implementing the
-                    PYME.io.DataSources interface, or a list of either
+                    PYME.IO.DataSources interface, or a list of either
                     of the above. Dimensionality can be between 1 and 4, with
                     the dimensions being interpreted as x, y, z/t, colour.
                     A mangled (will support slicing, but not necessarily other array 
                     operations) version of the data will be stored as the .data 
                     member of the class.
                     
-            mdh     something derived from PYME.io.MetaDataHandler.MDHandlerBase
+            mdh     something derived from PYME.IO.MetaDataHandler.MDHandlerBase
                     If None, and empty one will be created.
             
             filename    filename of the data to load (see Load), or PYME queue identifier
@@ -282,7 +282,7 @@ class ImageStack(object):
         
         '''
         import Pyro.core
-        from PYME.io.DataSources import TQDataSource
+        from PYME.IO.DataSources import TQDataSource
         from PYME.misc.computerName import GetComputerName
         compName = GetComputerName()
 
@@ -317,7 +317,7 @@ class ImageStack(object):
         '''Load PYMEs semi-custom HDF5 image data format. Offloads all the
         hard work to the HDFDataSource class'''
         import tables
-        from PYME.io.DataSources import HDFDataSource, BGSDataSource
+        from PYME.IO.DataSources import HDFDataSource, BGSDataSource
         from PYME.LMVis import inpFilt
         
         #open hdf5 file
@@ -338,7 +338,7 @@ class ImageStack(object):
         MetaData.fillInBlanks(self.mdh, self.dataSource)
 
         #calculate the name to use when we do batch analysis on this        
-        #from PYME.io.FileUtils.nameUtils import getRelFilename
+        #from PYME.IO.FileUtils.nameUtils import getRelFilename
         self.seriesName = getRelFilename(filename)
 
         #try and find a previously performed analysis
@@ -361,7 +361,7 @@ class ImageStack(object):
         '''Load PYMEs semi-custom HDF5 image data format. Offloads all the
         hard work to the HDFDataSource class'''
         import tables
-        from PYME.io.DataSources import HTTPDataSource, BGSDataSource
+        from PYME.IO.DataSources import HTTPDataSource, BGSDataSource
         #from PYME.LMVis import inpFilt
         
         #open hdf5 file
@@ -391,7 +391,7 @@ class ImageStack(object):
         '''Load PYMEs semi-custom HDF5 image data format. Offloads all the
         hard work to the HDFDataSource class'''
 
-        from PYME.io.DataSources import ClusterPZFDataSource, BGSDataSource
+        from PYME.IO.DataSources import ClusterPZFDataSource, BGSDataSource
 
         self.dataSource = ClusterPZFDataSource.DataSource(filename)
         #chain on a background subtraction data source, so we can easily do 
@@ -611,8 +611,8 @@ class ImageStack(object):
         return mdf
 
     def LoadTiff(self, filename):
-        #from PYME.io.FileUtils import readTiff
-        from PYME.io.DataSources import TiffDataSource
+        #from PYME.IO.FileUtils import readTiff
+        from PYME.IO.DataSources import TiffDataSource
 
         mdfn = self.FindAndParseMetadata(filename)
 
@@ -627,7 +627,7 @@ class ImageStack(object):
         #if we have a multi channel data set, try and pull in all the channels
         if 'ChannelFiles' in self.mdh.getEntryNames() and not len(self.mdh['ChannelFiles']) == self.data.shape[3]:
             try:
-                from PYME.io.dataWrap import ListWrap
+                from PYME.IO.dataWrap import ListWrap
                 #pull in all channels
 
                 chans = []
@@ -647,11 +647,11 @@ class ImageStack(object):
                 pass
             
         elif 'ChannelNames' in self.mdh.getEntryNames() and len(self.mdh['ChannelNames']) == self.data.getNumSlices():
-            from PYME.io.dataWrap import ListWrap
+            from PYME.IO.dataWrap import ListWrap
             chans = [numpy.atleast_3d(self.data.getSlice(i)) for i in range(len(self.mdh['ChannelNames']))]
             self.data = ListWrap(chans)
         elif filename.endswith('.lsm') and 'LSM.images_number_channels' in self.mdh.keys() and self.mdh['LSM.images_number_channels'] > 1:
-            from PYME.io.dataWrap import ListWrap
+            from PYME.IO.dataWrap import ListWrap
             nChans = self.mdh['LSM.images_number_channels']
             
             chans = []
@@ -671,8 +671,8 @@ class ImageStack(object):
         self.mode = 'default'
         
     def LoadBioformats(self, filename):
-        #from PYME.io.FileUtils import readTiff
-        from PYME.io.DataSources import BioformatsDataSource
+        #from PYME.IO.FileUtils import readTiff
+        from PYME.IO.DataSources import BioformatsDataSource
         import bioformats
 
         #mdfn = self.FindAndParseMetadata(filename)
@@ -701,8 +701,8 @@ class ImageStack(object):
         
         
     def LoadImageSeries(self, filename):
-        #from PYME.io.FileUtils import readTiff
-        from PYME.io.DataSources import ImageSeriesDataSource
+        #from PYME.IO.FileUtils import readTiff
+        from PYME.IO.DataSources import ImageSeriesDataSource
 
         self.dataSource = ImageSeriesDataSource.DataSource(filename, None)
         self.dataSource = BufferedDataSource.DataSource(self.dataSource, min(self.dataSource.getNumSlices(), 50))
@@ -772,7 +772,7 @@ class ImageStack(object):
             self.saved = True
 
     def Save(self, filename=None, crop=False, view=None):
-        from PYME.io import dataExporter
+        from PYME.IO import dataExporter
 
         ofn = self.filename
 

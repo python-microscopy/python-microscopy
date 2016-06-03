@@ -33,9 +33,9 @@ from PYME.localization import remFitBuf
 from PYME.localization import MetaDataEdit as mde
 
 
-from PYME.io import MetaDataHandler
-from PYME.io.FileUtils import fileID
-from PYME.io.FileUtils.nameUtils import genResultFileName
+from PYME.IO import MetaDataHandler
+from PYME.IO.FileUtils import fileID
+from PYME.IO.FileUtils.nameUtils import genResultFileName
 
 from PYME.LMVis import progGraph as progGraph
 from PYME.LMVis import pipeline, inpFilt

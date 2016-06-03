@@ -157,7 +157,7 @@ def numToAlpha(num):
     
 ########################
 #Previous relativeFiles
-#from PYME.io.FileUtils import nameUtils 
+#from PYME.IO.FileUtils import nameUtils 
 
 seps2 = re.compile('[\\\\/]')
 

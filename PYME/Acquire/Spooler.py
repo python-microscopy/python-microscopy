@@ -25,7 +25,7 @@ import os
 #import logparser
 import datetime
 
-from PYME.io import MetaDataHandler
+from PYME.IO import MetaDataHandler
 
 
 try:
@@ -178,7 +178,7 @@ class Spooler:
         
         See Also
         --------
-        PYME.io.MetaDataHandler
+        PYME.IO.MetaDataHandler
         '''
         dt = datetime.datetime.now()
         

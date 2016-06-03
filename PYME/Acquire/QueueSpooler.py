@@ -22,7 +22,7 @@
 ##################
 
 import tables
-from PYME.io import MetaDataHandler
+from PYME.IO import MetaDataHandler
 
 import Pyro.core
 import os
@@ -30,7 +30,7 @@ import time
 
 import PYME.Acquire.Spooler as sp
 #from PYME.Acquire import protocol as p
-from PYME.io.FileUtils import fileID
+from PYME.IO.FileUtils import fileID
 
 try:
     from PYME.misc import pyme_zeroconf

@@ -31,8 +31,8 @@ from scipy import minimum, maximum
 from PIL import Image
 
 from PYME.Analysis import MetaData
-from PYME.io import MetaDataHandler
-from PYME.io.DataSources import HDFDataSource
+from PYME.IO import MetaDataHandler
+from PYME.IO.DataSources import HDFDataSource
 
 #import logging
 #LOG_FILENAME = '/tmp/h5r-thumbnailer.log'

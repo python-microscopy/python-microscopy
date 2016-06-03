@@ -30,8 +30,8 @@ try:
 except ImportError:
     from PIL import Image
 import os
-from PYME.io.FileUtils import saveTiffStack
-from PYME.io import MetaDataHandler
+from PYME.IO.FileUtils import saveTiffStack
+from PYME.IO import MetaDataHandler
 
 class SpoolEvent(tables.IsDescription):
    EventName = tables.StringCol(32)
@@ -196,7 +196,7 @@ class OMETiffExporter(Exporter):
 
     def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
         from PYME.contrib.gohlke import tifffile
-        from PYME.io import dataWrap
+        from PYME.IO import dataWrap
         
         dw = dataWrap.ListWrap([data[xslice, yslice, zslice, i] for i in range(data.shape[3])])
         #xmd = None

@@ -24,7 +24,7 @@
 from . import rend_im
 import scipy
 
-from PYME.io import MetaDataHandler
+from PYME.IO import MetaDataHandler
 from PYME.Acquire import eventLog
 
 import pylab

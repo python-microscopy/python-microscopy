@@ -27,7 +27,7 @@ import pylab
 import numpy as np
 
 from PYME.contrib import wxPlotPanel
-#from PYME.io.MetaDataHandler import NestedClassMDHandler
+#from PYME.IO.MetaDataHandler import NestedClassMDHandler
 
 class FitInfoPanel(wx.Panel):
     def __init__(self, parent, fitResults, mdh, ds=None, id=-1):

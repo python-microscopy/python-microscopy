@@ -43,7 +43,7 @@ except ImportError:
 from PYME.DSView.displayOptions import DisplayOpts
 from PYME.DSView.DisplayOptionsPanel import OptionsPanel
 #from PYME.DSView.OverlaysPanel import OverlayPanel
-from PYME.io.image import ImageStack
+from PYME.IO.image import ImageStack
 
 from PYME.Acquire.mytimer import mytimer
 from PYME.Analysis import piecewiseMapping
@@ -296,7 +296,7 @@ class DSViewFrame(AUIFrame):
         self.SetTitle(self.image.filename)
         
     def OnSaveToCluster(self, event=None):
-        from PYME.io import clusterExport
+        from PYME.IO import clusterExport
         clusterExport.SaveImageToCluster(self.image)
 
     def OnExport(self, event=None):

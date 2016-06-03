@@ -21,7 +21,7 @@ sys.path.append(".")
 import PYME.cSMI as example
 import dCrop
 import logparser
-from PYME.io.FileUtils import saveTiffStack
+from PYME.IO.FileUtils import saveTiffStack
 from myviewpanel import MyViewPanel
 import os
 

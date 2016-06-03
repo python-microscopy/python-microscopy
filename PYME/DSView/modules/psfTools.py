@@ -23,7 +23,7 @@
 import wx
 import wx.grid
 #import pylab
-#from PYME.io.image import ImageStack
+#from PYME.IO.image import ImageStack
 try:
     from enthought.traits.api import HasTraits, Float, Int, Bool
     from enthought.traits.ui.api import View, Item
@@ -243,7 +243,7 @@ class PSFTools(HasTraits):
         import pylab
         from PYME.Analysis.PSFGen import fourierHNA
         
-        from PYME.io.image import ImageStack
+        from PYME.IO.image import ImageStack
         from PYME.DSView import ViewIm3D
 
         z_ = np.arange(self.image.data.shape[2])*self.image.mdh['voxelsize.z']*1.e3
@@ -275,7 +275,7 @@ class PSFTools(HasTraits):
         
         
     def OnSubtractBackground(self, event):
-        from PYME.io.image import ImageStack
+        from PYME.IO.image import ImageStack
         from PYME.DSView import ViewIm3D
         from PYME.Analysis.PSFEst import extractImages
 

@@ -8,7 +8,7 @@ Created on Mon May 25 17:15:01 2015
 from .base import ModuleBase, register_module, Filter, Float, Enum, CStr, Bool, Int, View, Item, Group, File
 import numpy as np
 from scipy import ndimage
-from PYME.io.image import ImageStack
+from PYME.IO.image import ImageStack
 
 @register_module('SimpleThreshold') 
 class SimpleThreshold(Filter):

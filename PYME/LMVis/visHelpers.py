@@ -28,7 +28,7 @@ import numpy.ctypeslib
 
 
 #import subprocess
-#from PYME.io.FileUtils import saveTiffStack
+#from PYME.IO.FileUtils import saveTiffStack
 from matplotlib import delaunay
 from PYME.Analysis.points.qHull.triangWrap import RenderTetrahedra
 
@@ -84,7 +84,7 @@ class ImageBounds:
 class dummy:
     pass
 
-#from PYME.io.image import ImageStack
+#from PYME.IO.image import ImageStack
 #def GeneratedImage(img, imgBounds, pixelSize, sliceSize, channelNames):
 #    image = ImageStack(img)
 #    image.pixelSize = pixelSize
@@ -143,7 +143,7 @@ class dummy:
 ##        # remove frame files here
 ##        subprocess.call('rm /tmp/frame*.tif', shell=True)
 #
-#        #from PYME.io.FileUtils import saveTiffStack
+#        #from PYME.IO.FileUtils import saveTiffStack
 #
 #        saveTiffStack.saveTiffMultipage(self.img, filename)
 

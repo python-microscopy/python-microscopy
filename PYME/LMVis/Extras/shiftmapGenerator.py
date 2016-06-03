@@ -23,7 +23,7 @@ import pylab
 import wx
 import os
 
-from PYME.io.FileUtils import nameUtils
+from PYME.IO.FileUtils import nameUtils
 
 class ShiftmapGenerator:
     def __init__(self, visFr):

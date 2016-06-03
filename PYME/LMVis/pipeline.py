@@ -28,7 +28,7 @@ from PYME.LMVis import renderers
 from PYME.LMVis.triBlobs import BlobSettings
 
 from PYME.Analysis import piecewiseMapping
-from PYME.io import MetaDataHandler
+from PYME.IO import MetaDataHandler
 
 import numpy as np
 import scipy.special

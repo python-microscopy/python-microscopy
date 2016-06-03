@@ -21,10 +21,10 @@
 #
 ##################
 
-from PYME.io.FileUtils.nameUtils import getFullExistingFilename
+from PYME.IO.FileUtils.nameUtils import getFullExistingFilename
 from .BaseDataSource import BaseDataSource
 
-from PYME.io import dcimg
+from PYME.IO import dcimg
 
 class DataSource(BaseDataSource):
     moduleName = 'DcimgDataSource'

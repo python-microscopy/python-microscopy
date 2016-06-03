@@ -22,7 +22,7 @@
 ##################
 
 import tables
-from PYME.io import MetaDataHandler
+from PYME.IO import MetaDataHandler
 
 #import Pyro.core
 import os
@@ -30,8 +30,8 @@ import time
 
 import PYME.Acquire.Spooler as sp
 #from PYME.Acquire import protocol as p
-from PYME.io.FileUtils import fileID, nameUtils
-#from PYME.io.FileUtils.nameUtils import getRelFilename
+from PYME.IO.FileUtils import fileID, nameUtils
+#from PYME.IO.FileUtils.nameUtils import getRelFilename
 
 import httplib
 import cPickle as pickle

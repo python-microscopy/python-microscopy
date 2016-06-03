@@ -29,7 +29,7 @@ class DSTaskQueue(HDFResultsTaskQueue):
         
         #load data source
         self.dataSourceModule = dataSourceModule
-        DataSource = __import__('PYME.io.DataSources.' + dataSourceModule, fromlist=['PYME', 'io', 'DataSources']).DataSource #import our data source
+        DataSource = __import__('PYME.IO.DataSources.' + dataSourceModule, fromlist=['PYME', 'io', 'DataSources']).DataSource #import our data source
         self.ds = DataSource(self.dataSourceID)
         
         if dataSourceModule == 'ClusterPZFDataSource':

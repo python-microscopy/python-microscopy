@@ -8,7 +8,7 @@ from .base import ModuleBase, register_module, Filter, Float, Enum, CStr, Bool, 
 import numpy as np
 import pandas as pd
 from PYME.LMVis import inpFilt
-from PYME.io import MetaDataHandler
+from PYME.IO import MetaDataHandler
 import os
 
 @register_module('MultifitBlobs') 
@@ -47,7 +47,7 @@ class FitDumbells(ModuleBase):
     
     def execute(self, namespace):
         from PYME.localization.FitFactories import DumbellFitR
-        from PYME.io import MetaDataHandler
+        from PYME.IO import MetaDataHandler
         img = namespace[self.inputImage]
         
         md = MetaDataHandler.NestedClassMDHandler()

@@ -50,8 +50,8 @@ from PYME.Acquire.ui import HDFSpoolFrame
 from PYME.Acquire import microscope
 from PYME.Acquire import protocol
 
-from PYME.io import MetaDataHandler
-#from PYME.io.FileUtils import nameUtils
+from PYME.IO import MetaDataHandler
+#from PYME.IO.FileUtils import nameUtils
 
 
 from PYME.ui.AUIFrame import AUIFrame

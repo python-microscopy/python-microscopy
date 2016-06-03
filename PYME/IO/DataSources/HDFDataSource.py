@@ -21,12 +21,12 @@
 #
 ##################
 
-from PYME.io.FileUtils.nameUtils import getFullExistingFilename
+from PYME.IO.FileUtils.nameUtils import getFullExistingFilename
 import tables
 from .BaseDataSource import BaseDataSource
 
 try:
-    from PYME.io import PZFFormat
+    from PYME.IO import PZFFormat
 except ImportError:
     pass
 

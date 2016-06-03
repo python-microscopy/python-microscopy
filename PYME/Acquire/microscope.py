@@ -31,7 +31,7 @@ from PYME.Acquire.frameWrangler import FrameWrangler
 
 import PYME.Acquire.protocol as protocol
 
-from PYME.io import MetaDataHandler
+from PYME.IO import MetaDataHandler
 from PYME.Acquire.Hardware import ccdCalibrator
 from PYME.Acquire.SpoolController import SpoolController
 from PYME.Acquire.ActionManager import ActionManager
@@ -147,7 +147,7 @@ class StateManager(object):
         value : object 
             The value to set. This can be anything the registered handler understands
             but designing the handlers to accept something which is easily converted
-            to text for the Metadata (see PYME.io.MetaDataHandler) is advised.
+            to text for the Metadata (see PYME.IO.MetaDataHandler) is advised.
         stopCamera : bool
             Should we stop the camera before setting the value and restart afterwards.
             Useful for things like integration time  which might not be able to be 
@@ -423,7 +423,7 @@ class microscope(object):
         Parameters
         ----------
         
-        mdh : object derived from PYME.io.MetaDataHandler.MDHandlerBase
+        mdh : object derived from PYME.IO.MetaDataHandler.MDHandlerBase
             The metadata handler to which we should write our metadata         
         '''
         try:

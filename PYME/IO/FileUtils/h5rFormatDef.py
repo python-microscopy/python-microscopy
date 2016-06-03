@@ -22,7 +22,7 @@ import tables
 #this will let us write microscope and acquisition related data into the file
 #I'm not sure how much of this VisGUI actually assumes is present when dealing 
 #with h5r files, so you might not need to use this
-from PYME.io import MetaDataHandler
+from PYME.IO import MetaDataHandler
 
 
 #create a new file

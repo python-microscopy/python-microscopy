@@ -37,7 +37,7 @@ import traceback
 
 from fftw3f import create_aligned_array
 
-from PYME.io import MetaDataHandler
+from PYME.IO import MetaDataHandler
 from PYME.Acquire import eventLog
 
 class AndorBase(SDK3Camera):

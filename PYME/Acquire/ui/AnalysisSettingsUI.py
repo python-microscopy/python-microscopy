@@ -9,7 +9,7 @@ import wx
 from PYME.localization import MetaDataEdit as mde
 import PYME.localization.FitFactories
 
-from PYME.io import MetaDataHandler
+from PYME.IO import MetaDataHandler
 
 import dispatch
 

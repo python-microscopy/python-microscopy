@@ -27,7 +27,7 @@
 import wx
 import datetime
 
-from PYME.io.FileUtils.freeSpace import get_free_space
+from PYME.IO.FileUtils.freeSpace import get_free_space
 
 import PYME.Acquire.Protocols
 #from PYME.Acquire.SpoolController import SpoolController

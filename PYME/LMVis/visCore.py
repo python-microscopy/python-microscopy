@@ -20,7 +20,7 @@ from PYME.LMVis import gl_render3D as gl_render
 
 import pylab
 from PYME.misc import extraCMaps
-from PYME.io.FileUtils import nameUtils
+from PYME.IO.FileUtils import nameUtils
 
 import os
 from PYME.LMVis import gl_render3D

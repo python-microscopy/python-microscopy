@@ -22,7 +22,7 @@
 ##################
 
 import tables
-from PYME.io import MetaDataHandler
+from PYME.IO import MetaDataHandler
 
 #import Pyro.core
 import os
@@ -30,14 +30,14 @@ import time
 
 import PYME.Acquire.Spooler as sp
 #from PYME.Acquire import protocol as p
-#from PYME.io.FileUtils import fileID, nameUtils
+#from PYME.IO.FileUtils import fileID, nameUtils
 #from PYME.ParallelTasks.relativeFiles import getRelFilename
 
 import threading
 import Queue
 
-from PYME.io import clusterIO
-from PYME.io import PZFFormat
+from PYME.IO import clusterIO
+from PYME.IO import PZFFormat
 
 import numpy as np
 import random
