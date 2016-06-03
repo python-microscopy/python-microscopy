@@ -154,17 +154,17 @@ class dec:
         if not numpy.isscalar(weights):
             self.mask = weights > 0
         else:
-            self.mask = numpy.isfinite(data.np.ravel(())
+            self.mask = numpy.isfinite(data.ravel())
 
         #guess a starting estimate for the object
-        self.f = self.startGuess(data).np.ravel(())
+        self.f = self.startGuess(data).ravel()
         self.res = 0*self.f
 
         self.fs = self.f.reshape(self.shape)
 
         #make things 1 dimensional
         #self.f = self.f.np.ravel(()
-        data = data.np.ravel(()
+        data = data.ravel()
 
         #print data.mean(), weights, lamb
         #print abs(self.H).sum()
@@ -348,7 +348,7 @@ class dec_conv(dec):
         self._plan_F_r()
 
         #d = np.real(d);
-        return np.ravel((ifftshift(self._r))
+        return np.ravel(ifftshift(self._r))
 
     def Ahfunc(self, f):
         '''Conjugate transform - convolve with conj. PSF'''
@@ -364,7 +364,7 @@ class dec_conv(dec):
         self._F *= self.Ht#/(self.Ht*self.H + self.lw**2)
         self._plan_F_r()
 
-        return np.ravel((ifftshift(self._r))
+        return np.ravel(ifftshift(self._r))
 
 class dec_bead(dec):
     '''Classical deconvolution using non-fft convolution - pot. faster for
@@ -398,7 +398,7 @@ class dec_bead(dec):
         d = ndimage.convolve(fs, self.g)
 
         #d = np.real(d);
-        return np.ravel((d)
+        return np.ravel(d)
 
     def Ahfunc(self, f):
         '''Conjugate transform - convolve with conj. PSF'''
@@ -406,7 +406,7 @@ class dec_bead(dec):
 
         d = ndimage.correlate(fs, self.g)
         
-        return np.ravel((d)
+        return np.ravel(d)
 
 #from scipy import ndimage    
 
@@ -502,7 +502,7 @@ class dec_gauss(dec):
         #ndimage.uniform_filter(output, self.oversamp, output=output)
 
         #d = np.real(d);
-        return np.ravel((output)#[::oversamp,::oversamp,:])
+        return np.ravel(output)#[::oversamp,::oversamp,:])
         
     Ahfunc=Afunc
 #    def Ahfunc(self, f):
