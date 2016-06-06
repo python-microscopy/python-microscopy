@@ -175,6 +175,7 @@ class AnalysisSettingsView(object):
         #    self.tThreshold.SetValue('0.5')
         else:
             self.cFitType.SetSelection(self.fitFactories.index('LatGaussFitFR'))
+            self.analysisMDH['Analysis.FitModule'] = 'LatGaussFitFR'
             
         self.cFitType.Bind(wx.EVT_CHOICE, self.OnFitModuleChanged)
 
@@ -454,13 +455,14 @@ class LMAnalyser2(object):
 
     def SetFitInfo(self):
         self.view.pointMode = 'lm'
-        voxx = 1e3*self.image.mdh.getEntry('voxelsize.x')
-        voxy = 1e3*self.image.mdh.getEntry('voxelsize.y')
+        mdh = self.analysisController.analysisMDH
+        voxx = 1e3*mdh.getEntry('voxelsize.x')
+        voxy = 1e3*mdh.getEntry('voxelsize.y')
         self.view.points = np.vstack((self.fitResults['fitResults']['x0']/voxx, self.fitResults['fitResults']['y0']/voxy, self.fitResults['tIndex'])).T
 
-        if 'Splitter' in self.image.mdh.getEntry('Analysis.FitModule'):
+        if 'Splitter' in mdh.getEntry('Analysis.FitModule'):
             self.view.pointMode = 'splitter'
-            if 'BNR' in self.image.mdh['Analysis.FitModule']:
+            if 'BNR' in mdh['Analysis.FitModule']:
                 self.view.pointColours = self.fitResults['ratio'] > 0.5
             else:
                 self.view.pointColours = self.fitResults['fitResults']['Ag'] > self.fitResults['fitResults']['Ar']
@@ -511,7 +513,7 @@ class LMAnalyser2(object):
         ft, fr = self.testFrame()
         
         self.fitResults = fr.results
-        self.resultsMdh = self.image.mdh       
+        self.resultsMdh = self.analysisController.analysisMDH       
         
         self.SetFitInfo()
 

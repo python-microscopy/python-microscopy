@@ -44,7 +44,7 @@ class dataBuffer: #buffer our io to avoid decompressing multiple times
             sl = self.dataSource.getSlice(ind)
             self.bufferedSlices[self.insertAt] = ind
 
-            if self.buffer == None: #buffer doesn't exist yet
+            if self.buffer is None: #buffer doesn't exist yet
                 self.buffer = np.zeros((self.bLen,) + self.dataSource.getSliceShape(), sl.dtype)
                 
             self.buffer[self.insertAt, :,:] = sl

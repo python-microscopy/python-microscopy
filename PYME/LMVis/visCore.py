@@ -297,7 +297,7 @@ class VisGUICore(object):
         try:
             #see if we can find any 'non free' plugins
             from PYMEnf.Analysis.LMVis import Extras
-            #Extras.InitPlugins(self)
+            Extras.InitPlugins(self)
         except ImportError:
             pass
 
