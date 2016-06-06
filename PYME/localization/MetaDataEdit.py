@@ -257,7 +257,7 @@ class FilenameParam(MDParam):
         MDParam.__init__(self, **kwargs)
         
     def createGUI(self, parent, mdh, syncMdh=False, mdhChangedSignal=None):
-        import wx, os
+        import wx #, os
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -274,12 +274,12 @@ class FilenameParam(MDParam):
             if mdhChangedSignal:
                 mdhChangedSignal.connect(self.updateValue)
             self.retrieveValue(mdh)
-            bSetFile.Bind(wx.EVT_BUTTON, self._setFile)
+            bSetFile.Bind(wx.EVT_BUTTON, lambda e : self._setFile(mdh))
         hsizer.Add(bSetFile, 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
 
         return hsizer
         
-    def _setFile(self, event=None):
+    def _setFile(self, mdh):
         import wx,os
         fdialog = wx.FileDialog(None, self.prompt,
                     #defaultDir=os.path.split(self.image.filename)[0],
@@ -295,8 +295,11 @@ class FilenameParam(MDParam):
             self.stFilename.SetLabel('%s %s' % (self.guiName, os.path.split(self.filename)[1]))
             self.stFilename.SetForegroundColour(wx.Colour(0, 128, 0))
 
-            if self.mdToUpdate and not (self.filename == self.default):
-                self.OnChange()
+            #if self.mdToUpdate and not (self.filename == self.default):
+            #    self.OnChange()
+
+            if not self.filename == self.default:
+                mdh[self.paramName] = self.filename
 
             return True
         else:
