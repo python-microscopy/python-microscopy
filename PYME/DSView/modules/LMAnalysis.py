@@ -678,7 +678,7 @@ class LMAnalyser2(object):
     #     show()
     #     matplotlib.interactive(True)
         
-    def testFrame(self, detThresh = 0.9, offset = 0, gui=True):
+    def testFrame(self, gui=True):
         from pylab import *
         #close('all')
         if self.image.dataSource.moduleName == 'TQDataSource':
@@ -694,6 +694,7 @@ class LMAnalyser2(object):
         fitMod = analysisMDH['Analysis.FitModule']
 
         bgFrames = analysisMDH['Analysis.BGRange']
+        detThresh = analysisMDH['Analysis.DetectionThreshold']
 
         bgi = range(max(zp + bgFrames[0],analysisMDH.getEntry('EstimatedLaserOnFrameNo')), max(zp + bgFrames[1],analysisMDH.getEntry('EstimatedLaserOnFrameNo')))
         
