@@ -135,7 +135,7 @@ class DCIMGFile(object):
             raise RuntimeError("Unknown file version: %0X" % info['format_version'])
 
         info['pixel_type'] = session_head['pixel_type']
-        info['num_columns'] = session_head'num_columns']
+        info['num_columns'] = session_head['num_columns']
         info['bytes_per_row'] = session_head['bytes_per_row']
         info['bytes_per_pixel'] = info['bytes_per_row']/info['num_columns']
         info['num_rows'] = session_head['num_rows']
@@ -146,7 +146,7 @@ class DCIMGFile(object):
         try:
             #if the bytes per frame is different to the bytes per image (e.g. if there is a frame footer)
             info['bytes_per_frame'] = session_head['bytes_per_frame']
-        except KeyError:
+        except ValueError:
             info['bytes_per_frame'] = session_head['bytes_per_image']
 
 

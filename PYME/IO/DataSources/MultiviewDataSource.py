@@ -35,6 +35,7 @@ import numpy as np
 
 # default cropping info - should correspond to the Bewersdorf lab setup
 # IMPORTANT: this should be sourced from metadata, the code here serves only as an example
+
 CROP_INFO_YU = {
     'Multiview.NumROIs' : 4,
     'Multiview.ROISize' : (256, 256),
@@ -59,7 +60,7 @@ class DataSource(BaseDataSource):
         #we have set a smaller vertical ROI on the camera
         self.roiSizeY = min(self.roiSizeY, self.ds.getSliceShape()[1])
 
-        viewOrigins = [self.cropInfo['Multiview.ROI%dOrigin' % i] for i in range(self.numROIs)]
+        self.viewOrigins = [self.cropInfo['Multiview.ROI%dOrigin' % i] for i in range(self.numROIs)]
         
     def getSlice(self, ind):            
         f = self.ds.getSlice(ind)

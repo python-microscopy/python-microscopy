@@ -32,7 +32,10 @@ import wx.py.shell
 #from PYME.LMVis import workspaceTree
 import sys
 
+import matplotlib
+matplotlib.use('wxagg')
 import pylab
+
 from PYME.misc import extraCMaps
 from PYME.IO.FileUtils import nameUtils
 

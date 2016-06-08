@@ -277,8 +277,10 @@ class ImageStack(object):
         Pyro.
         
         Parameters:
+        -----------
 
-            filename    the name of the queue         
+        filename  : string
+            the name of the queue         
         
         '''
         import Pyro.core
@@ -494,9 +496,15 @@ class ImageStack(object):
             #check for simple metadata (python code with an .md extension which 
             #fills a dictionary called md)
             mdfn = os.path.splitext(filename)[0] + '.md'
+            jsonfn = os.path.splitext(filename)[0] + '.json'
             if os.path.exists(mdfn):
                 self.mdh.copyEntriesFrom(MetaDataHandler.SimpleMDHandler(mdfn))
                 mdf = mdfn
+            elif os.path.exists(jsonfn):
+                import json
+                with open(jsonfn, 'r') as f: 
+                    mdd = json.load(f)
+                    self.mdh.update(mdd)
             elif filename.endswith('.lsm'):
                 #read lsm metadata
                 from PYME.contrib.gohlke.tifffile import TIFFfile
@@ -698,6 +706,22 @@ class ImageStack(object):
         self.seriesName = getRelFilename(filename)
 
         self.mode = 'default'
+
+    def LoadDCIMG(self, filename):
+        from PYME.IO.DataSources import DcimgDataSource, MultiviewDataSource
+
+        self.FindAndParseMetadata(filename)
+
+        self.dataSource = DcimgDataSource.DataSource(filename)
+
+        if 'Multiview.NumROIs' in self.mdh.keys():
+            self.dataSource = MultiviewDataSource.DataSource(self.dataSource, self.mdh)
+        
+        self.data = self.dataSource #this will get replaced with a wrapped version
+
+        self.seriesName = getRelFilename(filename)
+
+        self.mode = 'default'
         
         
     def LoadImageSeries(self, filename):
@@ -763,6 +787,8 @@ class ImageStack(object):
                 self.LoadDBL(filename)
             elif os.path.splitext(filename)[1] in ['.tif', '.tif', '.lsm']: #try tiff
                 self.LoadTiff(filename)
+            elif filename.endswith('.dcimg'):
+                self.LoadDCIMG(filename)
             else: #try bioformats
                 self.LoadBioformats(filename)
 

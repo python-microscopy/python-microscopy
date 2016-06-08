@@ -31,6 +31,7 @@ mods = list(set([os.path.splitext(os.path.split(p)[-1])[0] for p in glob.glob(__
 def InitPlugins(visFr):
     
     for mn in mods:
+        #print mods
         m = __import__('PYME.LMVis.Extras.' + mn, fromlist=['PYME', 'LMVis', 'Extras'])
         
         m.Plug(visFr)

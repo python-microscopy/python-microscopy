@@ -201,7 +201,7 @@ def applyByChannel(fcn):
         chans = colourFilter.getColourChans()
         
         if USE_GUI:
-            figure(os.path.split(pipeline.filename)[-1] + ' - ' + fcn.__name__)
+            pylab.figure(os.path.split(pipeline.filename)[-1] + ' - ' + fcn.__name__)
     
         if len(chans) == 0:
             fcn(colourFilter, metadata)
@@ -282,6 +282,7 @@ def fitDecay(colourFilter, metadata, channame='', i=0):
         pylab.plot(b1/60, emod(res2[0], b1, Nm), colours[i], lw=2, ls='--')
         pylab.plot(b1/60, hmod(res3[0], b1, Nm), colours[i], lw=2, ls=':')
         pylab.plot(b1/60, e2mod(r4[0], b1, Nm), colours[i], lw=1)
+        pylab.ylim(0, 1.2*n.max())
         pylab.ylabel('Events')
         pylab.xlabel('Acquisition Time [mins]')
         pylab.title('Event Rate')
@@ -295,8 +296,8 @@ def fitDecay(colourFilter, metadata, channame='', i=0):
 def fitOnTimes(colourFilter, metadata, channame='', i=0):    
     numPerClump = colourFilter['clumpSize']
 
-    n, bins = np.histogram(numPerClump, arange(20)+.001)
-    n = n/arange(1, 20)
+    n, bins = np.histogram(numPerClump, np.arange(20)+.001)
+    n = n/np.arange(1, 20)
 
     cycTime = metadata.getEntry('Camera.CycleTime')
 
@@ -325,7 +326,7 @@ def fitOnTimes(colourFilter, metadata, channame='', i=0):
         pylab.plot(np.linspace(1, 20, 50)*cycTime, eimod(res[0], np.linspace(1, 20, 50)*cycTime), colours[i], lw=3)
         pylab.ylabel('Events')
         pylab.xlabel('Event Duration [s]')
-        pylab.ylim((1, ylim()[1]))
+        pylab.ylim((1, pylab.ylim()[1]))
         pylab.title('Event Duration - CAUTION: unreliable if $\\tau <\\sim$ exposure time')
     
         pylab.figtext(.6,.8 -.05*i, channame + '\t$\\tau = %3.4fs$' % (res[0][1], ), size=18, color=colours[i])
