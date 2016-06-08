@@ -34,13 +34,13 @@ class DataSource(BaseDataSource):
         self.DCIFile = dcimg.DCIMGFile(self.filename)
         
     def getSlice(self, ind):            
-        return self.DCIFile.data[:,:, ind]
+        return self.DCIFile.get_frame(ind)
 
     def getSliceShape(self):
-        return self.DCIFile.data.shape[:2]
+        return self.DCIFile.get_slice_shape()
 
     def getNumSlices(self):
-        return self.DCIFile.data.shape[2]
+        return self.DCIFile.get_num_slices()
 
     def getEvents(self):
         return []

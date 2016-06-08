@@ -69,6 +69,12 @@ class DCIMGFile(object):
 
         return frame_data
 
+    def get_slice_shape(self):
+        return (self._info['num_columns'], self._info['num_rows'])
+
+    def get_num_slices(self):
+        return self._info['num_frames']
+
     def _parse_header(self, header):
         info = {}
 
