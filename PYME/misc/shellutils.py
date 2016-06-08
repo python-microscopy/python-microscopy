@@ -722,37 +722,84 @@ def analyze1dSeries(series,chunklength=500):
     return (offset,peakaverage)
 
 def datafrompipeline(datasource,pipeline, ctr, boxsize = 7):
-    tser = np.arange(datasource.shape[2])
+    tser = np.arange(min(datasource.shape[2],pipeline['t'].max()))
     bszh = int(boxsize/2)
     rawser = np.zeros((2*bszh+1,2*bszh+1,tser.shape[0]))
     for t in range(len(tser)):
-        rawser[:,:,t] = datasource[int(ctr[0])-bszh:int(ctr[0])+bszh+1,int(ctr[1])-bszh:int(ctr[1])+bszh+1,t].squeeze()
+        ctrx = ctr[0,t]
+        ctry = ctr[1,t]
+        rawser[:,:,t] = datasource[int(ctrx)-bszh:int(ctrx)+bszh+1,int(ctry)-bszh:int(ctry)+bszh+1,t].squeeze()
     return (tser, rawser)
 
 import StringIO
-def darkAnalysisRawPlusPipeline(datasource,pipeline,boxsize = 7, doplot = True, threshfactor=0.45, mdh=None, debug=1):
-    xp = pipeline['x']
+import sys
+def darkAnalysisRawPlusPipeline(datasource, pipeline, driftPane=None, boxsize = 7, doplot = True,
+                                threshfactor=0.45, mdh=None, debug=1):
+    xp = pipeline['x'] # in new code use 'x_raw' and 'y_raw'!
     yp = pipeline['y']
     if mdh is None: # there may be other ways to get at the mdh, e.g. via pipeline?
-        mdh = getmdh(inmodule=True)
+        mdh = pipeline.mdh
     xpix = 1e3*mdh['voxelsize.x']
     ypix = 1e3*mdh['voxelsize.y']
 
-    bbox = [xp.min(),xp.max(),yp.min(),yp.max()]
-    bboxpix = [bbox[0]/xpix,bbox[1]/xpix,bbox[2]/ypix,bbox[3]/ypix]
-    ctrpix = [0.5*(bboxpix[0]+bboxpix[1]),0.5*(bboxpix[2]+bboxpix[3])]
-    ctr = np.rint(np.array(ctrpix))
+# we need a new strategy for the pixel center selection
+# and inclusion of drift
+# strategy:
+# 1. if we have filterkeys x and y (look up where to find these!) use the center of that ROI
+# 2. if we have a drift time course calculate a centerpix(t), i.e. centerpix as a function of x
+
+# for 1: use pipeline.filterKeys['x'] and pipeline.filterKeys['y']
+# for 2: for a given xctr and yctr find the x_raw and y_raw; question: how to do that?
+# for 2: we will have to get timecourse of shift as (1) x = x_raw + dx(t)
+# for 2: if we manage to get (1) we will get (2) xctr_raw(t) = xctr-dx(t)
+
+# for 2: (2) needs texting with bead sample
+
+# for 2: once we have xctr_raw(t), yctr_raw(t) we need to modify datafrompipeline
+# for 2: make datafrompipeline so that it accepts ctr(t) = [xctr(t),yctr(t)]!!
+
+    try:
+        bbox = [pipeline.filterkeys['x'][0],pipeline.filterkeys['x'][1],pipeline.filterkeys['y'][0],pipeline.filterkeys['y'][1]]
+    except:
+        bbox = [xp.min(),xp.max(),yp.min(),yp.max()]
+
+    bboxpix = [bbox[0]/xpix, bbox[1]/xpix, bbox[2]/ypix, bbox[3]/ypix] # only for diagnosis 
+    bbctr = 0.5*np.array([bbox[0]+bbox[1],bbox[2]+bbox[3]])
+    t = np.arange(0,pipeline['t'].max())
+
+    if driftPane is None:
+        bbctrt = bbctr[:,None]*(np.ones((t.shape))[None,:])
+    else:
+        dx,dy,tt = getdriftcurves(driftPane,pipeline,t) # this should now return the desired times in all cases
+        bbctrt = np.zeros((2,t.shape[0]))
+        bbctrt[0,:] = bbctr[0]-dx
+        bbctrt[1,:] = bbctr[1]-dy
+
+
+    ctrpix = np.rint(bbctrt / np.array(xpix,ypix))
 
     if debug:
         print 'BBox (nm): ',bbox
         print 'BBox (pix): ',bboxpix
-        print 'Ctr (pix): ',ctr
+        print 'Ctr (pix): ',ctrpix[:,0]
+        sys.stdout.flush()
+
+    # return (bbox, bbctrt,ctrpix,t)
 
     print 'extracting region from data...'
-    tser, rawser = datafrompipeline(datasource,pipeline,ctr,boxsize = boxsize)
-    rawm = rawser.mean(axis=0).mean(axis=0)
-
+    sys.stdout.flush()
+    tser, rawser = datafrompipeline(datasource,pipeline,ctrpix,boxsize = boxsize)
+    
     print 'analyzing data...'
+    sys.stdout.flush()
+    rawm, peakav, fitev, fitr = analyzeDataPlusEvents(tser, rawser, pipeline, doplot = doplot,
+                                                      threshfactor=threshfactor, debug=debug)
+
+    return (tser, rawser, rawm, peakav, fitev, fitr)
+
+def analyzeDataPlusEvents(tser, rawser, pipeline, doplot = True,
+                          threshfactor=0.45, debug=1):
+    rawm = rawser.mean(axis=0).mean(axis=0)
     offset, peakav = analyze1dSeries(rawm,chunklength=500)
     rawm = rawm-offset
     peakav = peakav-offset
@@ -780,20 +827,23 @@ def darkAnalysisRawPlusPipeline(datasource,pipeline,boxsize = 7, doplot = True, 
     if doplot:
         plt.figure()
         plt.plot(tser, rawm)
-        plt.plot(tser, peakav*np.ones(tser.shape), '--')
-        plt.plot(tp, 0.5*peakav*np.ones(tp.shape),'o')
-        plt.plot(th, threshfactor * peakav * np.ones(th.shape),'+')
-
+        peaklevel = plt.plot(tser, peakav*np.ones(tser.shape), '--', label = 'median peak')
+        events_h5r = plt.plot(tp, 1.2*threshfactor*peakav*np.ones(tp.shape),'o',c='red', label='events')
+        events_raw = plt.plot(th, threshfactor * peakav * np.ones(th.shape),'o',c='blue', label='raw detected')
+        plt.legend(handles=[events_raw[0], events_h5r[0], peaklevel[0]])
+        
         plt.figure()
-        plt.semilogx(ctp, chip, 'o')
-        plt.semilogx(ctp, chipfit)
-        plt.semilogx(ctr, chir, 'x')
-        plt.semilogx(ctr, chirfit)
+        events = plt.semilogx(ctp, chip, 'o', label = 'events')
+        eventfit = plt.semilogx(ctp, chipfit, label='event fit')
+        raw = plt.semilogx(ctr, chir, 'x', label='raw')
+        rawfit = plt.semilogx(ctr, chirfit, label='raw data fit')
         plt.ylim(-0.2,1.2)
         plt.annotate(labelstr, xy=(0.5, 0.1), xycoords='axes fraction',
                      fontsize=10)
+        plt.legend(handles=[events[0],raw[0],eventfit[0],rawfit[0]],loc=4)
+        
+    return (rawm, peakav, (ctp, chip, chipfit, taup), (ctr, chir, chirfit, taur))
 
-    return (rawser,rawm, peakav, (ctp, chip, chipfit, taup), (ctr, chir, chirfit, taur))
 
 import pickle
 def savepickled(object,fname):
@@ -805,3 +855,54 @@ def loadpickled(fname):
     fi = open(fname,'r')
     return pickle.load(fi)
 
+import PYME.DSView.image as dsimg
+def setdriftparsFromImg(driftPane,img = None):
+    if img is None:
+        img = dsimg.openImages[dsimg.openImages.keys()[0]]
+    destp = driftPane.dp.driftCorrParams
+    srcp = img.mdh['DriftCorrection.Parameters']
+    for key in destp.keys():
+        if key.startswith(('a','b')):
+            destp[key] = srcp[key]
+    return destp
+
+import PYMEnf.DriftCorrection.compactFit as cf
+def getdriftcurves(driftPane,pipeline,t=None):
+    if t is None:
+        t = pipeline['t']
+    if 'driftx' in driftPane.dp.driftExprX:
+        tt, dx = getdriftxyzFromEvts(pipeline,t,coordpos=0)
+        tt, dy = getdriftxyzFromEvts(pipeline,t,coordpos=1)
+        indepVars = { 't': tt, 'driftx': dx, 'drifty': dy }
+    else:
+        indepVars =  pipeline.filter
+
+    dx,dy,tt = cf.xyDriftCurves(driftPane.dp.driftCorrFcn,driftPane.dp.driftCorrParams,indepVars,t)
+    return (dx,dy,tt)
+
+
+from PYME.Analysis import piecewiseMapping
+from scipy.interpolate import interp1d
+
+def getdriftxyzFromEvts(pipeline, tframes=None, coordpos=0):
+
+    ts = []
+    cs = []
+    for e in pipeline.events[pipeline.events['EventName'] == 'ShiftMeasure']:
+        ts.append(e['Time'])
+        cs.append(float(e['EventDescr'].split(', ')[coordpos]))
+
+    if len(ts) > 0:
+        ts = np.array(ts)
+        cs = np.array(cs)
+    # convert time to frame numbers
+    tfr = piecewiseMapping.timeToFrames(ts, pipeline.events, pipeline.mdh)
+    # interpolate to desired frame set
+    if tframes is not None:
+        # finter = interp1d(tfr,cs,fill_value = 'extrapolate') # we need to check that we get no errors from this step
+                                  # at the moment it will trip on extrapolation
+        #csinter = finter(tframes)
+        csinter = np.interp(tframes,tfr,cs)
+        return (tframes,csinter)
+    else:
+        return(tfr,cs)
