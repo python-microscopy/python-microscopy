@@ -161,7 +161,7 @@ class FourierPropagatorClipHNA:
 
 def GenWidefieldAP(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47, apodization='np.sine'):
     if X == None or Y == None:
-        X, Y = np.meshgrid(arange(-2000, 2000., dx),arange(-2000, 2000., dx))
+        X, Y = np.meshgrid(np.arange(-2000, 2000., dx),np.arange(-2000, 2000., dx))
     else:
         X, Y = np.meshgrid(X,Y)
     
