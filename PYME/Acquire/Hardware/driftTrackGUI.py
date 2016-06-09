@@ -14,23 +14,22 @@ import wx
 import numpy as np
 from PYME.contrib.wxPlotPanel import PlotPanel
 
+
 class TrackerPlotPanel(PlotPanel):
     def __init__(self, parent, driftTracker, *args, **kwargs):
         self.dt = driftTracker
-        PlotPanel.__init__(self, parent, *args, **kwargs)
-
-        
+        PlotPanel.__init__(self, parent, *args, **kwargs)    
 
     def draw(self):
         if self.IsShownOnScreen():
-            if not hasattr( self, 'subplotx' ):
-                    self.subplotx = self.figure.add_subplot( 411 )
-                    self.subploty = self.figure.add_subplot( 412 )
-                    self.subplotz = self.figure.add_subplot( 413 )
-                    self.subplotc = self.figure.add_subplot( 414 )
+            if not hasattr(self, 'subplotx'):
+                self.subplotx = self.figure.add_subplot(411)
+                self.subploty = self.figure.add_subplot(412)
+                self.subplotz = self.figure.add_subplot(413)
+                self.subplotc = self.figure.add_subplot(414)
     
             #try:
-            t, dx, dy, dz, corr  = np.array(self.dt.history[-1000:]).T
+            t, dx, dy, dz, corr = np.array(self.dt.get_history(1000)).T
 
             self.subplotx.cla()
             self.subplotx.plot(t, dx, 'r')
@@ -61,12 +60,14 @@ class TrackerPlotPanel(PlotPanel):
     
             self.canvas.draw()
 
+
 class DriftTrackingControl(wx.Panel):
-    def __init__(self, parent, driftTracker, winid=-1):
+    def __init__(self, parent, driftTracker, winid=-1, showPlots=True):
         # begin wxGlade: MyFrame1.__init__
         #kwds["style"] = wx.DEFAULT_FRAME_STYLE
         wx.Panel.__init__(self, parent, winid)
         self.dt = driftTracker
+        self.showPlots = showPlots
 
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -77,23 +78,23 @@ class DriftTrackingControl(wx.Panel):
         self.cbLock = wx.CheckBox(self, -1, 'Lock')
         self.cbLock.Bind(wx.EVT_CHECKBOX, self.OnCBLock)
         hsizer.Add(self.cbLock, 0, wx.ALL, 2)        
-        sizer_1.Add(hsizer,0, wx.EXPAND, 0)
+        sizer_1.Add(hsizer, 0, wx.EXPAND, 0)
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         self.bSetPostion = wx.Button(self, -1, 'Set focus to current')
         hsizer.Add(self.bSetPostion, 0, wx.ALL, 2) 
         self.bSetPostion.Bind(wx.EVT_BUTTON, self.OnBSetPostion)
-        sizer_1.Add(hsizer,0, wx.EXPAND, 0)
+        sizer_1.Add(hsizer, 0, wx.EXPAND, 0)
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(self, -1, "Calibration:"), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
-        self.gCalib = wx.Gauge(self, -1, self.dt.NCalibStates + 1)
+        self.gCalib = wx.Gauge(self, -1, 11)
         hsizer.Add(self.gCalib, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2) 
-        sizer_1.Add(hsizer,0, wx.EXPAND, 0)
+        sizer_1.Add(hsizer, 0, wx.EXPAND, 0)
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(self, -1, "Tolerance [nm]:"), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
-        self.tTolerance = wx.TextCtrl(self, -1, '%3.0f'% (1e3*self.dt.focusTolerance), size=[30,-1])
+        self.tTolerance = wx.TextCtrl(self, -1, '%3.0f'% (1e3*self.dt.get_focus_tolerance()), size=[30,-1])
         hsizer.Add(self.tTolerance, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
         self.bSetTolerance = wx.Button(self, -1, 'Set', style=wx.BU_EXACTFIT)
         hsizer.Add(self.bSetTolerance, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2) 
@@ -106,10 +107,11 @@ class DriftTrackingControl(wx.Panel):
         hsizer.Add(self.stError, 0, wx.ALL, 2)        
         sizer_1.Add(hsizer,0, wx.EXPAND, 0)
         
-        self.trackPlot = TrackerPlotPanel(self, self.dt, size=[300, 400])
-        
-        #hsizer.Add(self.stError, 0, wx.ALL, 2)        
-        sizer_1.Add(self.trackPlot,0, wx.EXPAND, 0)
+        if self.showPlots:
+            self.trackPlot = TrackerPlotPanel(self, self.dt, size=[300, 400])
+            
+            #hsizer.Add(self.stError, 0, wx.ALL, 2)        
+            sizer_1.Add(self.trackPlot,0, wx.EXPAND, 0)
         
         self.SetAutoLayout(1)
         self.SetSizer(sizer_1)
@@ -129,18 +131,23 @@ class DriftTrackingControl(wx.Panel):
         self.dt.reCalibrate()
         
     def OnBSetTolerance(self, event):
-        self.dt.focusTolerance = float(self.tTolerance.GetValue())/1e3
+        self.dt.set_focus_tolerance(float(self.tTolerance.GetValue())/1e3)
         
     def OnCBLock(self, event):
-        self.dt.lockFocus = self.cbLock.GetValue()
+        self.dt.set_focus_lock(self.cbLock.GetValue())
 
     def refresh(self):
         try:
-            self.gCalib.SetRange(self.dt.NCalibStates + 1)
-            self.gCalib.SetValue(self.dt.calibState)
-            t, dx, dy, dz, corr = self.dt.history[-1]
-            self.stError.SetLabel('Error: x = %3.2f px\ny = %3.2f px\nz = %3.2f nm\noffset = %3.2f' % (dx, dy, dz*1000, self.dt.piezo.GetOffset()))
-            self.trackPlot.draw()
+            calibState, NStates = self.dt.get_calibration_state()
+            self.gCalib.SetRange(NStates + 1)
+            self.gCalib.SetValue(calibState)
+            t, dx, dy, dz, corr = self.dt.get_history(1)[-1]
+            self.stError.SetLabel('Error: x = %3.2f px\ny = %3.2f px\nz = %3.2f nm\noffset = %3.2f' % (dx, dy, dz*1000, self.dt.get_offset()))
+            self.cbLock.SetValue(self.dt.get_focus_lock())
+            self.cbTrack.SetValue(self.dt.is_tracking())
+
+            if self.showPlots:
+                self.trackPlot.draw()
         except AttributeError:
             pass
         except IndexError:
