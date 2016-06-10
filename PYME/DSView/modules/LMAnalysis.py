@@ -695,8 +695,10 @@ class LMAnalyser2(object):
 
         bgFrames = analysisMDH['Analysis.BGRange']
         detThresh = analysisMDH['Analysis.DetectionThreshold']
+        
+        laserOn = analysisMDH.getOrDefault('EstimatedLaserOnFrameNo', 0)
 
-        bgi = range(max(zp + bgFrames[0],analysisMDH.getEntry('EstimatedLaserOnFrameNo')), max(zp + bgFrames[1],analysisMDH.getEntry('EstimatedLaserOnFrameNo')))
+        bgi = range(max(zp + bgFrames[0],laserOn), max(zp + bgFrames[1],laserOn))
         
         mn = self.image.dataSource.moduleName
         if mn == 'BufferedDataSource':
