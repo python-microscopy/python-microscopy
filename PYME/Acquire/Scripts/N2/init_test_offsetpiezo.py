@@ -196,13 +196,6 @@ scope.StatusCallbacks.append(scope.l647.GetStatusText)
 
 scope.lasers = [scope.l671, scope.l405, scope.l647, scope.l532]
 
-InitGUI('''
-if 'lasers'in dir(scope):
-    from PYME.Acquire.Hardware import LaserControlFrame
-    lcf = LaserControlFrame.LaserControlLight(MainFrame,scope.lasers)
-    time1.WantNotification.append(lcf.refresh)
-    toolPanels.append((lcf, 'Laser Control'))
-''')
 
 InitGUI('''
 from PYME.Acquire import lasersliders
@@ -210,6 +203,14 @@ lsf = lasersliders.LaserSliders(toolPanel, scope.lasers)
 time1.WantNotification.append(lsf.update)
 #lsf.update()
 camPanels.append((lsf, 'Laser Powers'))
+''')
+
+InitGUI('''
+if 'lasers'in dir(scope):
+    from PYME.Acquire.Hardware import LaserControlFrame
+    lcf = LaserControlFrame.LaserControlLight(MainFrame,scope.lasers)
+    time1.WantNotification.append(lcf.refresh)
+    camPanels.append((lcf, 'Laser Control'))
 ''')
 
 from PYME.Acquire.Hardware.FilterWheel import WFilter, FiltFrame, FiltWheel
@@ -231,16 +232,23 @@ except:
 ''')
 
 from PYME.Acquire.Hardware import ExciterWheel
-exciterList = [WFilter(1, 'GFP', 'GFP', 0),
-    WFilter(2, 'TxRed' , 'TxRed', 0),
-    WFilter(3, 'Cy5'  , 'Cy5'  , 0),
-    WFilter(4, 'Cy5.5', 'Cy5.5', 0),
-    WFilter(5, 'Cy7'  , 'Cy7'  , 0),
-    WFilter(6, 'ND4'  , 'ND4'  , 0)]
+exciterList = [ExciterWheel.WFilter(1, 'GFP', 'GFP exciter', 0),
+    ExciterWheel.WFilter(2, 'TxRed' , 'TxRed exciter', 0),
+    ExciterWheel.WFilter(3, 'Cy5'  , 'Cy5 exciter'  , 0),
+    ExciterWheel.WFilter(4, 'Cy5.5', 'Cy5.5 exciter', 0),
+    ExciterWheel.WFilter(5, 'Cy7'  , 'Cy7 exciter'  , 0),
+    ExciterWheel.WFilter(6, 'ND4'  , 'ND4'  , 0)]
+
+filterpair = [ExciterWheel.FilterPair('GFP', 'GFP'),
+    ExciterWheel.FilterPair('TxRed', 'TxRed'),
+    ExciterWheel.FilterPair('Cy5', 'Cy5'),
+    ExciterWheel.FilterPair('Cy5.5', 'Cy5.5'),
+    ExciterWheel.FilterPair('Cy7', 'Cy7'),
+    ExciterWheel.FilterPair('To be added', 'To be added')]
 
 InitGUI('''
 try:
-    scope.exciterWheel = ExciterWheel.FiltWheel(exciterList, 'COM22', dichroic=scope.dichroic)
+    scope.exciterWheel = ExciterWheel.FiltWheel(exciterList, filterpair, 'COM22', dichroic=scope.dichroic)
     #scope.filterWheel.SetFilterPos("LF488")
     scope.exciterPan = ExciterWheel.FiltFrame(MainFrame, scope.exciterWheel)
     toolPanels.append((scope.exciterPan, 'Exciter Wheel'))
