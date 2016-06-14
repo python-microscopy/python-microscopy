@@ -792,20 +792,23 @@ def darkAnalysisRawPlusPipeline(datasource, pipeline, driftPane=None, boxsize = 
     
     print 'analyzing data...'
     sys.stdout.flush()
-    rawm, peakav, fitev, fitr = analyzeDataPlusEvents(tser, rawser, pipeline, doplot = doplot,
+    tevts = pipeline['t'].copy()
+    rawm, peakav, fitev, fitr, rawthresh = analyzeDataPlusEvents(tser, rawser, tevts, doplot = doplot,
                                                       threshfactor=threshfactor, debug=debug)
 
-    return (tser, rawser, rawm, peakav, fitev, fitr)
+    return (tser, rawser, rawm, peakav, tevts, fitev, fitr, rawthresh)
 
-def analyzeDataPlusEvents(tser, rawser, pipeline, doplot = True,
-                          threshfactor=0.45, debug=1):
+def analyzeDataPlusEvents(tser, rawser, tevts, doplot = True,
+                          threshfactor=0.45, debug=1, rawthresh=None, size=6):
     rawm = rawser.mean(axis=0).mean(axis=0)
     offset, peakav = analyze1dSeries(rawm,chunklength=500)
     rawm = rawm-offset
     peakav = peakav-offset
 
-    tp = pipeline['t']
-    th = tser[rawm > (threshfactor * peakav)]
+    tp = tevts
+    if rawthresh is None:
+        rawthresh = threshfactor * peakav
+    th = tser[rawm > (rawthresh)]
 
     ctp, chip, chipfit, taup = darktimehist(tp)
     ctr, chir, chirfit, taur = darktimehist(th)
@@ -828,21 +831,21 @@ def analyzeDataPlusEvents(tser, rawser, pipeline, doplot = True,
         plt.figure()
         plt.plot(tser, rawm)
         peaklevel = plt.plot(tser, peakav*np.ones(tser.shape), '--', label = 'median peak')
-        events_h5r = plt.plot(tp, 1.2*threshfactor*peakav*np.ones(tp.shape),'o',c='red', label='events')
-        events_raw = plt.plot(th, threshfactor * peakav * np.ones(th.shape),'o',c='blue', label='raw detected')
+        events_h5r = plt.plot(tp, 1.2*rawthresh*np.ones(tp.shape),'o',c='red', label='events')
+        events_raw = plt.plot(th, rawthresh * np.ones(th.shape),'o',c='blue', label='raw detected')
         plt.legend(handles=[events_raw[0], events_h5r[0], peaklevel[0]])
         
         plt.figure()
-        events = plt.semilogx(ctp, chip, 'o', label = 'events')
+        events = plt.semilogx(ctp, chip, 'o', c='red', alpha=.5, markersize = size, label = 'events')
         eventfit = plt.semilogx(ctp, chipfit, label='event fit')
-        raw = plt.semilogx(ctr, chir, 'x', label='raw')
+        raw = plt.semilogx(ctr, chir, 'o', c='blue', alpha=.5, markersize = size, label='raw')
         rawfit = plt.semilogx(ctr, chirfit, label='raw data fit')
         plt.ylim(-0.2,1.2)
         plt.annotate(labelstr, xy=(0.5, 0.1), xycoords='axes fraction',
                      fontsize=10)
         plt.legend(handles=[events[0],raw[0],eventfit[0],rawfit[0]],loc=4)
         
-    return (rawm, peakav, (ctp, chip, chipfit, taup), (ctr, chir, chirfit, taur))
+    return (rawm, peakav, (ctp, chip, chipfit, taup), (ctr, chir, chirfit, taur), rawthresh)
 
 
 import pickle
@@ -865,6 +868,19 @@ def setdriftparsFromImg(driftPane,img = None):
         if key.startswith(('a','b')):
             destp[key] = srcp[key]
     return destp
+
+def getOpenImages():
+    img = dsimg.openImages
+    return img
+
+def setSelectionFromFilterKeys(visFr,img):
+    glcv = visFr.glCanvas
+    fk = img.mdh['Filter.Keys']
+    x0,x1 = fk['x']
+    y0,y1 = fk['y']
+
+    glcv.selectionStart = (x0,y0)
+    glcv.selectionFinish = (x1,y1)
 
 import PYMEnf.DriftCorrection.compactFit as cf
 def getdriftcurves(driftPane,pipeline,t=None):
