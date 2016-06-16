@@ -99,9 +99,9 @@ def locateFile(filename, serverfilter=''):
 
 
 def listdir(dirname, serverfilter=''):
-    '''Lists the contents of a directory on the cluster. Similar to os.listdir,
+    """Lists the contents of a directory on the cluster. Similar to os.listdir,
     but directories are indicated by a trailing slash
-    '''
+    """
     dirlist = set()
 
     for name, info in ns.advertised_services.items():
@@ -181,12 +181,12 @@ def walk(top, topdown=True, onerror=None, followlinks=False, serverfilter=''):
 
 
 def _chooseLocation(locs):
-    '''Chose the location to load the file from
+    """Chose the location to load the file from
 
-    default to choosing the "closest" (currently the one with the shortest response 
+    default to choosing the "closest" (currently the one with the shortest response
     time to our directory query)
-    
-    '''
+
+    """
 
     cost = np.array([l[1] for l in locs])
 
@@ -216,13 +216,13 @@ def _netloc(info):
 
 
 def _chooseServer(serverfilter='', exclude_netlocs=[]):
-    '''chose a server to save to by minimizing a cost function
-    
+    """chose a server to save to by minimizing a cost function
+
     currently takes the server which has been waiting longest
-    
+
     TODO: add free disk space and improve metrics/weightings
-    
-    '''
+
+    """
     serv_candidates = [(k, v) for k, v in ns.advertised_services.items() if
                        (serverfilter in k) and not (_netloc(v) in exclude_netlocs)]
 
@@ -251,10 +251,10 @@ def _chooseServer(serverfilter='', exclude_netlocs=[]):
 
 
 def mirrorFile(filename, serverfilter=''):
-    '''Copies a given file to another server on the cluster (chosen by algorithm)
-    
+    """Copies a given file to another server on the cluster (chosen by algorithm)
+
     The actual copy is performed peer to peer.
-    '''
+    """
 
     locs = locateFile(filename, serverfilter)
 
@@ -278,10 +278,10 @@ def mirrorFile(filename, serverfilter=''):
 
 
 def putFile(filename, data, serverfilter=''):
-    '''put a file to a server in the cluster (chosen by algorithm)
-    
+    """put a file to a server in the cluster (chosen by algorithm)
+
     TODO - Add retry with a different server on failure
-    '''
+    """
     name, info = _chooseServer(serverfilter)
 
     url = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, filename)
@@ -300,10 +300,10 @@ def putFile(filename, data, serverfilter=''):
 
 
 def putFiles(files, serverfilter=''):
-    '''put a bunch of files to a single server in the cluster (chosen by algorithm)
-    
+    """put a bunch of files to a single server in the cluster (chosen by algorithm)
+
     TODO - Add retry with a different server on failure
-    '''
+    """
     name, info = _chooseServer(serverfilter)
 
     for filename, data in files:
@@ -319,4 +319,4 @@ def putFiles(files, serverfilter=''):
 
         _lastwritespeed[name] = len(data) / (dt + .001)
 
-    r.close()
+        r.close()
