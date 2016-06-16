@@ -34,6 +34,7 @@ import os
 from PYME.IO.FileUtils import nameUtils
 
 import threading
+import traceback
 
 try:
     import Queue
@@ -264,6 +265,7 @@ class uc480Camera:
             uc480.CALL('FreeImageMem', self.boardHandle, pData, bID)
             
         self.freeBuffers = None
+        self.nFull = 0
             
     
     def _pollBuffer(self):
@@ -302,7 +304,10 @@ class uc480Camera:
         while self.pollLoopActive:
             #self._queueBuffers()
             if self.doPoll: #only poll if an acquisition is running
-                self._pollBuffer()
+                try:
+                    self._pollBuffer()
+                except:
+                    traceback.print_exc()
             else:
                 #print 'w',
                 time.sleep(.05)
@@ -504,10 +509,10 @@ class uc480Camera:
         if not ret == 0:
             raise RuntimeError('Error setting ROI: %d: %s' % GetError(self.boardHandle))
             
-        if not self.flatfield == None:
+        if not self.flatfield is None:
             self.flat = self.flatfield[x1:x2, y1:y2]
 
-        if not self.dark == None:
+        if not self.dark is None:
             self.background = self.dark[x1:x2, y1:y2]
 
         #raise Exception, 'Not implemented yet!!'
@@ -565,7 +570,7 @@ class uc480Camera:
     def ExpReady(self):
         #self._pollBuffer()
         
-        return not self.fullBuffers.empty()
+        return (not self.fullBuffers is None) and (not self.fullBuffers.empty())
         
     def ExtractColor(self, chSlice, mode):
         #grab our buffer from the full buffers list
@@ -582,16 +587,17 @@ class uc480Camera:
         #chSlice[:] = self.transferBuffer[:].T #.reshape(chSlice.shape)
         chSlice[:] = buf.T
         
-        if (not self.background == None) and self.background.shape == chSlice.shape:
+        if (not self.background is None) and self.background.shape == chSlice.shape:
             chSlice[:] = (chSlice - np.minimum(chSlice, self.background))[:]
             
-        if (not self.flat == None) and self.flat.shape == chSlice.shape:
+        if (not self.flat is None) and self.flat.shape == chSlice.shape:
             chSlice[:] = (chSlice*self.flat).astype('uint16')[:]
         
         #ret = uc480.CALL('UnlockSeqBuf', self.boardHandle, uc480.IS_IGNORE_PARAMETER, pData)
 
-        #recycle buffer
-        self.freeBuffers.put(buf)
+        if not self.freeBuffers is None:
+            #recycle buffer
+            self.freeBuffers.put(buf)
         
     def CheckCoordinates(*args):
         raise Exception('Not implemented yet!!')
