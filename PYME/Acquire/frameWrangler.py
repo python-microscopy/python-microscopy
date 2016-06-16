@@ -146,7 +146,11 @@ class FrameWrangler(wx.EvtHandler):
         # Pull the existing data from the camera
         try:
             self.getFrame()
+
+            #notify anyone who cares that we've just got a new frame
+            self.onFrame.send(sender=self, frameData=self.dsa)
         except:
+            import traceback
             traceback.print_exc()
         finally:       
             if not contMode:
@@ -156,8 +160,7 @@ class FrameWrangler(wx.EvtHandler):
                 #signal complete 
                 self.needExposureStart = True
             
-            #notify anyone who cares that we've just got a new frame
-            self.onFrame.send(sender=self, frameData=self.dsa)
+            
 
 
 
@@ -211,6 +214,7 @@ class FrameWrangler(wx.EvtHandler):
                         #doing it this way _should_ stop the black frames which I guess are being caused by the reading the frame which is
                         #currently being written to
                         self.cam.StopAq()
+                        #self.needExposureStart = True
      
                     self.onExpReady()
                     nFrames += 1

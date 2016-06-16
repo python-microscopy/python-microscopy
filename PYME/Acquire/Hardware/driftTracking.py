@@ -122,11 +122,12 @@ class correlator(Pyro.core.ObjBase):
     #     self.dz = (self.refC - self.refB).ravel()
     #     self.dzn = 2./np.dot(self.dz, self.dz)
         
-    # def setRefN(self, N):
-    #     d = 1.0*self.scope.frameWrangler.currentFrame.squeeze()
-    #     ref = d/d.mean() - 1        
-    #     self.calFTs[:,:,N] = ifftn(ref)
-    #     self.calImages[:,:,N] = ref*self.mask
+    def setRefN(self, N):
+        d = 1.0*self.scope.frameWrangler.currentFrame.squeeze()
+        ref = d/d.mean() - 1        
+        self.calFTs[:,:,N] = ifftn(ref)
+        self.calImages[:,:,N] = ref*self.mask
+        
     #def setRefD(self):
     #    self.refD = (1.0*self.d).squeeze()/self.d.mean() - 1 
     #    self.refD *= self.mask
