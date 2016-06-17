@@ -506,13 +506,13 @@ class AndorBase(SDK3Camera):
     
     def SetAcquisitionMode(self, aqMode):
         self.CycleMode.setIndex(aqMode)
-        self.contMode = aqMode == self.MODE_CONTINUOUS
+        #self.contMode = aqMode == self.MODE_CONTINUOUS
 
     def SetBurst(self, burstSize):
         if burstSize > 1:
             self.SetAcquisitionMode(self.MODE_SINGLE_SHOT)
             self.FrameCount.setValue(burstSize)
-            self.contMode = True
+            #self.contMode = True
             self.burstMode = True
         else:
             self.FrameCount.setValue(1)

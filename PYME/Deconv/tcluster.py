@@ -187,7 +187,7 @@ class WatcherThread(threading.Thread):
                    cond = True
                    if not t.machine.is_running():
                        t.exit()
-                       if not t.task == None:
+                       if not t.task is None:
                            t.task_queue.put(t.task)
                 
            time.sleep(1)

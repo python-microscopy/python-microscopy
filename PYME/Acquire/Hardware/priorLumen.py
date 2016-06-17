@@ -50,23 +50,23 @@ class PriorLumen(Laser):
     def IsOn(self):
         return self.isOn
         #this doesn't seem to work ...
-        try:
-            self.ser_port.open()
-            self.ser_port.write('8 1\r')
-            self.ser_port.flush()
-            
-            time.sleep(.1)
-            
-            m = self._read()
-            print( m)
-            
-                
-            self.ser_port.close()
-                
-            return int(m) == 0
-            
-        except Exception:
-            return False
+        # try:
+        #     self.ser_port.open()
+        #     self.ser_port.write('8 1\r')
+        #     self.ser_port.flush()
+        #
+        #     time.sleep(.1)
+        #
+        #     m = self._read()
+        #     print( m)
+        #
+        #
+        #     self.ser_port.close()
+        #
+        #     return int(m) == 0
+        #
+        # except Exception:
+        #     return False
 
         #return self.isOn
 

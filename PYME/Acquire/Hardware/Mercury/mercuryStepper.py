@@ -112,7 +112,7 @@ class mercuryStepper:
             else:
                 tgt = self.maxTravel[iChan]
         else:
-            self.minTravel[iChan]
+            tgt = self.minTravel[iChan]
 
         self.onTarget = False
         m.MOV(self.connID, self.axes[iChan], [tgt])
