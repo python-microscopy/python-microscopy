@@ -20,9 +20,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-'''Calculates starting parameters for fitting to a phase ramp PSF. As it uses the
+"""Calculates starting parameters for fitting to a phase ramp PSF. As it uses the
 angle between the lobes it should also be able to be used for double helix PSFs
-with little/no modification'''
+with little/no modification"""
 
 from scipy.interpolate import splprep, splev
 from scipy import ndimage
@@ -133,7 +133,7 @@ def calibrate(interpolator, md, roiSize=5):
 
 
 def _calcParams(data, X, Y):
-    '''calculates the mean angle in the image, used for z position estimation'''
+    """calculates the mean angle in the image, used for z position estimation"""
     A = (data.max()- data.min()) #amplitude
 
     #threshold at half maximum and subtract threshold

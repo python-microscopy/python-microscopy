@@ -24,7 +24,7 @@ class QuadTreeSettings(HasTraits):
 
 
 class QuadTreeSettingsPanel(wx.Panel):
-    '''A GUI class for determining the settings to use when creating a QuadTree
+    """A GUI class for determining the settings to use when creating a QuadTree
     in VisGUI.
     
     Constructed as follows: 
@@ -36,7 +36,7 @@ class QuadTreeSettingsPanel(wx.Panel):
       quadTreeSettings is an instance of quadTreeSettings
     
     
-    '''
+    """
     
     def __init__(self, parent, pipeline, quadTreeSettings):
         wx.Panel.__init__(self, parent, -1)
@@ -87,7 +87,7 @@ class QuadTreeSettingsPanel(wx.Panel):
         
         
 def GenQuadTreePanel(visgui, pnl, title='Points'):
-    '''Generate a ponts pane and insert into the given panel'''
+    """Generate a ponts pane and insert into the given panel"""
     item = afp.foldingPane(pnl, -1, caption=title, pinned = True)
 
     pan = QuadTreeSettingsPanel(item, visgui.pipeline, visgui.quadTreeSettings)

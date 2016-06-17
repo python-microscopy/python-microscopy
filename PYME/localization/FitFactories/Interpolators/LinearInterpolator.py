@@ -26,8 +26,8 @@ from PYME.localization.cInterp import cInterp
 
 class LinearInterpolator(__interpolator):
     def _precompute(self):
-        '''function which is called after model loading and can be
-        overridden to allow for interpolation specific precomputations'''
+        """function which is called after model loading and can be
+        overridden to allow for interpolation specific precomputations"""
          #compute the gradient of the PSF for interpolated jacobians
         self.gradX, self.gradY, self.gradZ = gradient(self.interpModel)
         self.gradX /= self.dx
@@ -35,7 +35,7 @@ class LinearInterpolator(__interpolator):
         self.gradZ /= self.dz
         
     def interp(self, X, Y, Z):
-        '''do actual interpolation at values given'''
+        """do actual interpolation at values given"""
 
         #X = atleast_1d(X)
         #Y = atleast_1d(Y)
@@ -68,7 +68,7 @@ class LinearInterpolator(__interpolator):
         return r #atleast_3d(r)
         
     def interpG(self, X, Y, Z):
-        '''do actual interpolation at values given'''
+        """do actual interpolation at values given"""
 
         #X = atleast_1d(X)
         #Y = atleast_1d(Y)
@@ -101,7 +101,7 @@ class LinearInterpolator(__interpolator):
         return gX, gY, gZ #atleast_3d(r)
 
     def getCoords(self, metadata, xslice, yslice, zslice):
-        '''placeholder to be overrriden to return coordinates needed for interpolation'''
+        """placeholder to be overrriden to return coordinates needed for interpolation"""
         #generate grid to evaluate function on
         X = 1e3*metadata.voxelsize.x*mgrid[xslice]
         Y = 1e3*metadata.voxelsize.y*mgrid[yslice]

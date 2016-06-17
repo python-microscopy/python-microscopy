@@ -20,9 +20,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-'''Calculates starting parameters for fitting to an astigmatic PSF. Note that this is already
+"""Calculates starting parameters for fitting to an astigmatic PSF. Note that this is already
 somewhat more sophisticated than the entire 3D anaylsis used by 'QuickPalm' and the like as
-it attempts to correct for coupling between the lateral centroid and defocus'''
+it attempts to correct for coupling between the lateral centroid and defocus"""
 
 from scipy.interpolate import splprep, splev
 import numpy
@@ -157,7 +157,7 @@ def calibrate(interpolator, md, roiSize=5):
 
 
 def _calcParams(data, X, Y):
-    '''calculates the \sigma_x - \sigma_y term used for z position estimation'''
+    """calculates the \sigma_x - \sigma_y term used for z position estimation"""
     A = data.max(1).max(0) - data.min() #amplitude
     
     #threshold at half maximum and subtract threshold

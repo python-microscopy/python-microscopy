@@ -1,4 +1,4 @@
-''' lapjv.py - Jonker-Volgenant algorithm for linear assignment problem.
+""" lapjv.py - Jonker-Volgenant algorithm for linear assignment problem.
 
 This is an implementation of the Jonker-Volgenant algorithm for solving
 the linear assignment problem. The code is derived from the paper,
@@ -13,7 +13,7 @@ See the accompanying file LICENSE for details.
 Copyright (c) 2003-2009 Massachusetts Institute of Technology
 Copyright (c) 2009-2012 Broad Institute
 All rights reserved.
-'''
+"""
 
 __version__ = "$Revision: 1 $"
 
@@ -24,7 +24,7 @@ from _lapjv import augmenting_row_reduction
 from _lapjv import augment
 
 def lapjv(i, j, costs, wants_dual_variables = False, augmenting_row_reductions = 2):
-    '''Sparse linear assignment solution using Jonker-Volgenant algorithm
+    """Sparse linear assignment solution using Jonker-Volgenant algorithm
     
     i,j - similarly-sized vectors that pair the object at index i[n] with
           the object at index j[j]
@@ -48,7 +48,7 @@ def lapjv(i, j, costs, wants_dual_variables = False, augmenting_row_reductions =
     
     returns (x, y), the pairs of assignments that represent the solution
     or (x, y, u, v) if the dual variables are requested.
-    '''
+    """
     import os
     i = np.atleast_1d(i).astype(int)
     j = np.atleast_1d(j).astype(int)
@@ -150,7 +150,7 @@ def lapjv(i, j, costs, wants_dual_variables = False, augmenting_row_reductions =
         return x,y
     
 def slow_reduction_transfer(ii, j, idx, count, x, u, v, c):
-    '''Perform the reduction transfer step from the Jonker-Volgenant algorithm
+    """Perform the reduction transfer step from the Jonker-Volgenant algorithm
     
     The data is input in a ragged array in terms of "i" structured as a
     vector of values for each i,j combination where:
@@ -177,7 +177,7 @@ def slow_reduction_transfer(ii, j, idx, count, x, u, v, c):
     The authors note that reduction transfer can be applied in later stages
     of the algorithm but does not seem to provide a substantial benefit
     in speed.
-    '''
+    """
     for i in ii:
         j1 = x[i]
         jj = j[idx[i]:(idx[i]+count[i])]
@@ -186,7 +186,7 @@ def slow_reduction_transfer(ii, j, idx, count, x, u, v, c):
         u[i] = uu
         
 def slow_augmenting_row_reduction(n, ii, jj, idx, count, x, y, u, v, c):
-    '''Perform the augmenting row reduction step from the Jonker-Volgenaut algorithm
+    """Perform the augmenting row reduction step from the Jonker-Volgenaut algorithm
     
     n - the number of i and j in the linear assignment problem
     ii - the unassigned i
@@ -201,7 +201,7 @@ def slow_augmenting_row_reduction(n, ii, jj, idx, count, x, y, u, v, c):
     c - the cost for each entry.
     
     returns the new unassigned i
-    '''
+    """
         
     #######################################
     #
@@ -251,7 +251,7 @@ def slow_augmenting_row_reduction(n, ii, jj, idx, count, x, y, u, v, c):
     return np.array(free,np.uint32)
 
 def slow_augment(n, ii, jj, idx, count, x, y, u, v, c):
-    '''Perform the augmentation step to assign unassigned i and j
+    """Perform the augmentation step to assign unassigned i and j
     
     n - the # of i and j, also the marker of unassigned x and y
     ii - the unassigned i
@@ -262,7 +262,7 @@ def slow_augment(n, ii, jj, idx, count, x, y, u, v, c):
     y - the assignments of i for each j
     u,v - the dual variables
     c - the costs
-    '''
+    """
     
     ##################################################
     #

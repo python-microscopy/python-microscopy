@@ -153,9 +153,9 @@ class Slide(models.Model):
 
     @classmethod
     def GetOrCreate(cls, creator, reference):
-        '''trys to find a matching slide in the database, otherwise
+        """trys to find a matching slide in the database, otherwise
         creates and returns a new slide entry.
-        '''
+        """
         id = hashString32(creator + reference)
         #print id
 
@@ -169,9 +169,9 @@ class Slide(models.Model):
 
     @classmethod
     def Get(cls, creator, reference):
-        '''trys to find a matching slide in the database, otherwise
+        """trys to find a matching slide in the database, otherwise
         creates and returns a new slide entry.
-        '''
+        """
         id = hashString32(creator + reference)
         #print id
 
@@ -221,9 +221,9 @@ class Image(models.Model):
 
     @classmethod
     def GetOrCreate(cls, imageID, userGuess='N/A', slideID=None, timestamp=0):
-        '''trys to find a matching tag in the database, otherwise
+        """trys to find a matching tag in the database, otherwise
         creates and returns a new one.
-        '''
+        """
 
         try:
             im = cls.objects.get(imageID=imageID)
@@ -250,9 +250,9 @@ class File(models.Model):
 
     @classmethod
     def GetOrCreate(cls, filename, fileID=None, imageID=None):
-        '''trys to find a matching tag in the database, otherwise
+        """trys to find a matching tag in the database, otherwise
         creates and returns a new one.
-        '''
+        """
 
         try:
             tn = cls.objects.get(filename=filename)
@@ -342,9 +342,9 @@ class TagName(models.Model):
 
     @classmethod
     def GetOrCreate(cls, tagName):
-        '''trys to find a matching tag in the database, otherwise
+        """trys to find a matching tag in the database, otherwise
         creates and returns a new one.
-        '''
+        """
 
         try:
             tn = cls.objects.get(name=tagName)

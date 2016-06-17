@@ -15,7 +15,7 @@ from traits.api import on_trait_change
 
 @register_module('TrackFeatures')
 class TrackFeatures(ModuleBase):
-    '''Take just certain columns of a variable'''
+    """Take just certain columns of a variable"""
     inputMeasurements = CStr('measurements')
     outputTrackInfo = CStr('track_info')
     outputTracks = CStr('tracks') 
@@ -47,7 +47,7 @@ class TrackFeatures(ModuleBase):
         self._tracker = None
         
     def Track(self, objects, newTracker=False):
-        '''Track objects based on a given set of feature vectors'''        
+        """Track objects based on a given set of feature vectors"""
         if (self._tracker == None) or not (len(self._tracker.t) == len(objects['t'])) or newTracker:
             featNames = [s.strip() for s in self.features.split(',')]
             
@@ -114,8 +114,8 @@ class TrackFeatures(ModuleBase):
 
     
     def TrackWithPipeline(self, pipeline):
-        '''Support legacy interactive mode where we insert our results
-        into the pipeline (used when called from PYME.DSView.modules.particleTracking)'''
+        """Support legacy interactive mode where we insert our results
+        into the pipeline (used when called from PYME.DSView.modules.particleTracking)"""
         clumpInfo, clumps = self.Track(pipeline)
         
         pipeline.selectedDataSource.clumps = clumpInfo['clumpIndex']

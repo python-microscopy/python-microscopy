@@ -42,9 +42,9 @@ if __name__ == '__main__':
     	author = 'David Baddeley',
        	author_email = 'd.baddeley@auckland.ac.nz',
        	url = '',
-       	long_description = '''
+       	long_description = """
 Provides the microscope control and image acquisition components of PYME (what was previously PySMI)
-''',
+""",
           license = "Proprietary",
           **configuration(top_path='').todict()
           )

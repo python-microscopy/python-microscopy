@@ -82,10 +82,10 @@ def circular_gaussian_kernel(sd,radius):
     return kernel
 
 def fit_polynomial(pixel_data, mask):
-    '''Return an "image" which is a polynomial fit to the pixel data
+    """Return an "image" which is a polynomial fit to the pixel data
     
     Fit the image to the polynomial Ax**2+By**2+Cxy+Dx+Ey+F
-    '''
+    """
     mask = np.logical_and(mask,pixel_data > 0)
     if not np.any(mask):
         return pixel_data

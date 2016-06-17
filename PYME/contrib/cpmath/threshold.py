@@ -59,13 +59,13 @@ TM_MCT_PER_OBJECT               = "MCT PerObject"
 TM_MANUAL                       = "Manual"
 TM_MEASUREMENT                  = "Measurement"
 TM_BINARY_IMAGE                 = "Binary image"
-'''Compute a single threshold for the entire image'''
+"""Compute a single threshold for the entire image"""
 TM_GLOBAL                       = "Global"
 
-'''Compute a local thresholding matrix of the same size as the image'''
+"""Compute a local thresholding matrix of the same size as the image"""
 TM_ADAPTIVE                     = "Adaptive"
 
-'''Compute a threshold for each labeled object in the image'''
+"""Compute a threshold for each labeled object in the image"""
 TM_PER_OBJECT                   = "PerObject"
 
 TM_METHODS =  [TM_OTSU_GLOBAL, TM_OTSU_ADAPTIVE, TM_OTSU_PER_OBJECT,
@@ -614,7 +614,7 @@ def get_kapur_threshold(image, mask=None):
     return 2**((histogram_values[entry] + histogram_values[entry+1]) / 2);
 
 def get_maximum_correlation_threshold(image, mask = None, bins = 256):
-    '''Return the maximum correlation threshold of the image
+    """Return the maximum correlation threshold of the image
     
     image - image to be thresholded
     
@@ -625,7 +625,7 @@ def get_maximum_correlation_threshold(image, mask = None, bins = 256):
     This is an implementation of the maximum correlation threshold as
     described in Padmanabhan, "A novel algorithm for optimal image thresholding
     of biological data", Journal of Neuroscience Methods 193 (2010) p 380-384
-    '''
+    """
     
     if mask is not None:
         image = image[mask]
@@ -763,13 +763,13 @@ def sum_of_entropies(image, mask, threshold):
     return np.sum(hfg * np.log2(hfg)) + np.sum(hbg*np.log2(hbg))
 
 def log_transform(image):
-    '''Renormalize image intensities to log space
+    """Renormalize image intensities to log space
     
     Returns a tuple of transformed image and a dictionary to be passed into
     inverse_log_transform. The minimum and maximum from the dictionary
     can be applied to an image by the inverse_log_transform to 
     convert it back to its former intensity values.
-    '''
+    """
     orig_min, orig_max = scipy.ndimage.extrema(image)[:2]
     #
     # We add 1/2 bit noise to an 8 bit image to give the log a bottom
@@ -785,15 +785,15 @@ def log_transform(image):
     return stretch(limage), d
 
 def inverse_log_transform(image, d):
-    '''Convert the values in image back to the scale prior to log_transform
+    """Convert the values in image back to the scale prior to log_transform
     
     image - an image or value or values similarly scaled to image
     d - object returned by log_transform
-    '''
+    """
     return np.exp(unstretch(image, d["log_min"], d["log_max"]))
 
 def numpy_histogram(a, bins=10, range=None, normed=False, weights=None):
-    '''A version of numpy.histogram that accounts for numpy's version'''
+    """A version of numpy.histogram that accounts for numpy's version"""
     args = inspect.getargs(np.histogram.func_code)[0]
     if args[-1] == "new":
         return np.histogram(a, bins, range, normed, weights, new=True)

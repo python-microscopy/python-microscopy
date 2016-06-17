@@ -26,7 +26,7 @@ from pylab import *
 from PYME.Analysis._fithelpers import *
 
 def hill(p, ratio):
-    '''Modified Hills function for fitting to stress vs ratio data.
+    """Modified Hills function for fitting to stress vs ratio data.
     
     Parameters (in  array p) are:
         p[0] = n 
@@ -34,7 +34,7 @@ def hill(p, ratio):
         p[2] = Fmax
         p[3] = Fmin
     
-    '''
+    """
     n, Ka, Fmax, Fmin = p 
     return Fmin + Fmax*(ratio**n)/(Ka**n + ratio**n)
 
@@ -47,7 +47,7 @@ plot(ratio_control, stress_control, 'x', label='control')
 fit_results = FitModel(hill, [1, 2.7, 50, 1], ratio_control)
 p_control = fit_results[0]
 
-print(('''
+print(("""
 Control:
 ---------
 n = %3.2f
@@ -55,7 +55,7 @@ EC50 = %3.2f
 Fmax = %3.2f
 Fmin = %3.2f
 
-''' % p_control))
+""" % p_control))
 
 ratio = linspace(1.5, 4)
 plot(ratio, hill(p_control, ratio))
@@ -69,7 +69,7 @@ plot(ratio_cptome, stress_cptome, 'x', label='CPTOME')
 fit_results = FitModel(hill, [1, 2.7, 50, 1], ratio_cptome)
 p_cptome = fit_results[0]
 
-print(('''
+print(("""
 CPTOME:
 ---------
 n = %3.2f
@@ -77,7 +77,7 @@ EC50 = %3.2f
 Fmax = %3.2f
 Fmin = %3.2f
 
-''' % p_cptome))
+""" % p_cptome))
 
 plot(ratio, hill(p_cptome, ratio))
 

@@ -63,7 +63,7 @@ def f_Interp3d2cr(p, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, axialShif
     return numpy.concatenate((np.atleast_3d(g),np.atleast_3d(r)), 2)
     
 def f_J_Interp3d2c(p,interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, axialShift, ratio, *args):
-    '''generate the jacobian - for use with _fithelpers.weightedJacF'''
+    """generate the jacobian - for use with _fithelpers.weightedJacF"""
     if len(p) == 6:
         A, x0, y0, z0, bG, bR = p
     else: #not fitting background

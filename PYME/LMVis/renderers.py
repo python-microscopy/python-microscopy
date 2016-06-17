@@ -39,9 +39,9 @@ import numpy as np
 renderMetadataProviders = []
 
 class CurrentRenderer:
-    '''Renders current view (in black and white). Only renderer not to take care
+    """Renders current view (in black and white). Only renderer not to take care
     of colour channels. Simplest renderer and as such also the base class for all 
-    others'''
+    others"""
 
     name = 'Current'
     mode = 'current'
@@ -152,7 +152,7 @@ class CurrentRenderer:
         return im
 
 class ColourRenderer(CurrentRenderer):
-    '''Base class for all other renderers which know about the colour filter'''
+    """Base class for all other renderers which know about the colour filter"""
     
     def Generate(self, event=None):
         jitVars = ['1.0']
@@ -243,7 +243,7 @@ class ColourRenderer(CurrentRenderer):
 
 
 class HistogramRenderer(ColourRenderer):
-    '''2D histogram rendering'''
+    """2D histogram rendering"""
 
     name = 'Histogram'
     mode = 'histogram'
@@ -252,7 +252,7 @@ class HistogramRenderer(ColourRenderer):
         return visHelpers.rendHist(self.pipeline.colourFilter['x'],self.pipeline.colourFilter['y'], imb, dlg.getPixelSize())
 
 class Histogram3DRenderer(HistogramRenderer):
-    '''3D histogram rendering'''
+    """3D histogram rendering"""
 
     name = '3D Histogram'
     mode = '3Dhistogram'
@@ -263,7 +263,7 @@ class Histogram3DRenderer(HistogramRenderer):
     
 
 class GaussianRenderer(ColourRenderer):
-    '''2D Gaussian rendering'''
+    """2D Gaussian rendering"""
 
     name = 'Gaussian'
     mode = 'gaussian'
@@ -287,7 +287,7 @@ class GaussianRenderer(ColourRenderer):
         return visHelpers.rendGauss(self.pipeline.colourFilter['x'],self.pipeline.colourFilter['y'], jitVals, imb, pixelSize)
         
 class LHoodRenderer(ColourRenderer):
-    '''Log-likelihood of object'''
+    """Log-likelihood of object"""
 
     name = 'Log Likelihood'
     mode = 'gaussian'
@@ -319,7 +319,7 @@ class LHoodRenderer(ColourRenderer):
 
 
 class Gaussian3DRenderer(GaussianRenderer):
-    '''3D Gaussian rendering'''
+    """3D Gaussian rendering"""
 
     name = '3D Gaussian'
     mode = '3Dgaussian'
@@ -344,7 +344,7 @@ class Gaussian3DRenderer(GaussianRenderer):
 
 
 class TriangleRenderer(ColourRenderer):
-    '''2D triangulation rendering'''
+    """2D triangulation rendering"""
 
     name = 'Jittered Triangulation'
     mode = 'triangles'
@@ -367,7 +367,7 @@ class TriangleRenderer(ColourRenderer):
             return self.visFr.glCanvas.genJitTim(dlg.getNumSamples(),self.pipeline.colourFilter['x'],self.pipeline.colourFilter['y'], jitVals, dlg.getMCProbability(),pixelSize)
             
 class TriangleRendererW(ColourRenderer):
-    '''2D triangulation rendering - weighted'''
+    """2D triangulation rendering - weighted"""
 
     name = 'Jittered Triangulation - weighted'
     mode = 'trianglesw'
@@ -391,7 +391,7 @@ class TriangleRendererW(ColourRenderer):
 
 
 class Triangle3DRenderer(TriangleRenderer):
-    '''3D Triangularisation rendering'''
+    """3D Triangularisation rendering"""
 
     name = '3D Triangularisation'
     mode = '3Dtriangles'
@@ -416,7 +416,7 @@ class Triangle3DRenderer(TriangleRenderer):
         return visHelpers.rendJitTet(self.pipeline.colourFilter['x'],self.pipeline.colourFilter['y'],self.pipeline.colourFilter['z'], dlg.getNumSamples(), jitVals, jitValsZ, dlg.getMCProbability(), imb, pixelSize, dlg.getZBounds(), dlg.getZSliceThickness())
 
 class QuadTreeRenderer(ColourRenderer):
-    '''2D quadtree rendering'''
+    """2D quadtree rendering"""
 
     name = 'QuadTree'
     mode = 'quadtree'

@@ -20,7 +20,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
-'''Data sources are a modular method for reading data (i.e. input plugins)
+"""Data sources are a modular method for reading data (i.e. input plugins)
 
 Each DataSource should implement at least the following functions:
 
@@ -30,5 +30,5 @@ getNumSlices()
 
 For more details see BaseDataSource
 
-'''
+"""
     

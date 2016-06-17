@@ -6927,7 +6927,7 @@ PyMODINIT_FUNC PyInit__filter(void)
 
   /* "_filter.pyx":15
  * Website: http://www.cellprofiler.org
- * '''
+ * """
  * __version__="$Revision: 1 $"             # <<<<<<<<<<<<<<
  * 
  * import numpy as np
@@ -7010,7 +7010,7 @@ PyMODINIT_FUNC PyInit__filter(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "_filter.pyx":1
- * '''_filter.pyx - filtering algorithms             # <<<<<<<<<<<<<<
+ * """_filter.pyx - filtering algorithms             # <<<<<<<<<<<<<<
  * 
  * CellProfiler is distributed under the GNU General Public License,
  */

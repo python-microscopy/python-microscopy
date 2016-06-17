@@ -81,7 +81,7 @@ class Pipeline:
         #renderers.renderMetadataProviders.append(self.SaveMetadata)
             
     def __getitem__(self, keys):
-        '''gets values from the 'tail' of the pipeline (ie the colourFilter)'''
+        """gets values from the 'tail' of the pipeline (ie the colourFilter)"""
         
         return self.colourFilter[keys]
 
@@ -137,8 +137,8 @@ class Pipeline:
         
         
     def _processEvents(self):
-        '''Read data from events table and translate it into variables for, 
-        e.g. z position'''
+        """Read data from events table and translate it into variables for,
+        e.g. z position"""
         
         if not self.events is None:
             evKeyNames = set()
@@ -192,7 +192,7 @@ class Pipeline:
                 
                 
     def _processSplitter(self):
-        '''set mappings ascociated with the use of a splitter'''
+        """set mappings ascociated with the use of a splitter"""
         self.selectedDataSource.gF_zcorr = 0
         self.selectedDataSource.setMapping('A', 'fitResults_Ag + fitResults_Ar')
         self.selectedDataSource.setMapping('gFrac', 'fitResults_Ag/(fitResults_Ag + fitResults_Ar) + gF_zcorr*fitResults_z0')
@@ -217,7 +217,7 @@ class Pipeline:
         self.selectedDataSource.setMapping('ColourNorm', '1.0*colNorm')
 
     def _processPriSplit(self):
-        '''set mappings ascociated with the use of a splitter'''
+        """set mappings ascociated with the use of a splitter"""
         self.selectedDataSource.setMapping('gFrac', 'fitResults_ratio')
         self.selectedDataSource.setMapping('error_gFrac','fitError_ratio')
 
@@ -249,7 +249,7 @@ class Pipeline:
             self.filesToClose.pop().close()
 
     def OpenFile(self, filename= '', ds = None, **kwargs):
-        '''Open a file - accepts optional keyword arguments for use with files
+        """Open a file - accepts optional keyword arguments for use with files
         saved as .txt and .mat. These are:
             
             FieldNames: a list of names for the fields in the text file or
@@ -260,7 +260,7 @@ class Pipeline:
             
             PixelSize:  Pixel size if not in nm
             
-        '''
+        """
         
         #close any files we had open previously
         while len(self.filesToClose) > 0:

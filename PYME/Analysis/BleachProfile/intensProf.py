@@ -118,7 +118,7 @@ def doTraceDisp(prof, lOn, dt):
 
 
 def lNofcn(t, t0, No0, Nd0, aod, aob, ado):
-    '''Function to calculate number of fluorophores in on state when laser is on.'''
+    """Function to calculate number of fluorophores in on state when laser is on."""
     tn = t - t0
     
     beta = np.sqrt(aod**2 + 2*(aob + ado)*aod +aob**2 - 2*ado*aob + ado**2)
@@ -127,13 +127,13 @@ def lNofcn(t, t0, No0, Nd0, aod, aob, ado):
 
 
 def dNofcn(t, t0, No0, Nd0, ado):
-    '''Function to calculate number of fluorophores in on state when laser is off.'''
+    """Function to calculate number of fluorophores in on state when laser is off."""
     tn = t - t0
 
     return No0 + Nd0 - Nd0*np.exp(-ado*tn)
 
 def lNdfcn(t, t0, No0, Nd0, aod, aob, ado):
-    '''Function to calculate number of fluorophores in dark state when laser is on.'''
+    """Function to calculate number of fluorophores in dark state when laser is on."""
     tn = t - t0
     
     beta = np.sqrt(aod**2 + 2*(aob + ado)*aod + aob**2 - 2*ado*aob + ado**2)
@@ -142,7 +142,7 @@ def lNdfcn(t, t0, No0, Nd0, aod, aob, ado):
 
 
 def dNdfcn(t, t0, No0, Nd0, ado):
-    '''Function to calculate number of fluorophores in dark state when laser is off.'''
+    """Function to calculate number of fluorophores in dark state when laser is off."""
     tn = t - t0
 
     return Nd0*np.exp(-ado*tn)
@@ -187,7 +187,7 @@ def genTraces(Ton, Toff, No0, Nd0, aod,aob, ado, dt, len_trace):
 
 
 def traceModel(p, Ton, Toff, dt, len_trace):
-    '''Trace model for fitting'''
+    """Trace model for fitting"""
     No0, Nd0, aod,aob, ado, bg = p
     res = genTraces(Ton, Toff, No0, Nd0, aod,aob, ado, dt, len_trace)
 
@@ -211,7 +211,7 @@ def traceModelDE(p, Ton, Toff, t, lOn):
 
 
 def lNofcnDE(t, t0, No0, Nd0, aod, aob, ado, pow):
-    '''Function to calculate number of fluorophores in on state when laser is on.'''
+    """Function to calculate number of fluorophores in on state when laser is on."""
     tn = np.concatenate(((0.0,), (t - t0).reshape(-1)))
     
    
@@ -225,7 +225,7 @@ def lNofcnDE(t, t0, No0, Nd0, aod, aob, ado, pow):
 
 
 def lNdfcnDE(t, t0, No0, Nd0, aod, aob, ado, pow):
-    '''Function to calculate number of fluorophores in dark state when laser is on.'''
+    """Function to calculate number of fluorophores in dark state when laser is on."""
     #tn = t - t0
     tn = concatenate(((0.0,),(t - t0).reshape(-1) ))
     
@@ -281,7 +281,7 @@ def genTracesDE(Ton, Toff, No0, Nd0, aod,aob, ado, pow, dt, len_trace):
     
 
 def traceModelDE1(p, Ton, Toff, dt, len_trace, sc):
-    '''Trace model for fitting'''
+    """Trace model for fitting"""
     No0, Nd0, aod,aob, ado, pow, bg = p
     res = genTracesDE(Ton, Toff, No0, Nd0, aod,aob, ado, pow, dt, len_trace)
 

@@ -19,22 +19,22 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-'''tools for estimating the Fisher information matrix and Cramer-Rao lower bound'''
+"""tools for estimating the Fisher information matrix and Cramer-Rao lower bound"""
 
 #from pylab import *
 import numpy as np
 from scipy.special import gammaln
 
 def lp_poisson(lam, k):
-    '''log of poisson likelihood fcn'''
+    """log of poisson likelihood fcn"""
     return k[None,None,None,:]*np.log(lam)[:,:,:,None] - gammaln(k+1)[None,None,None,:] - lam[:,:,:,None]
     
 def lp_poisson_n(lam, k):
-    '''log of poisson likelihood fcn'''
+    """log of poisson likelihood fcn"""
     return k*np.log(lam) - gammaln(k+1) - lam
 
 def p_poisson(lam, k):
-    '''poisson likelihood fcn - calculated from log lhood for numerical stability'''
+    """poisson likelihood fcn - calculated from log lhood for numerical stability"""
     return np.exp(lp_poisson(lam, k))
 
 def CalcFisherInformZ(lam, maxK=500, voxelsize=[1,1,1]):
@@ -138,7 +138,7 @@ def CalcFisherInformZn2(lam, maxK=500, voxelsize=[1,1,1]):
     
 
 def CalcCramerReoZ(FIz):
-    '''CRB is the diagonal elements of the inverse of the Fisher information matrix'''
+    """CRB is the diagonal elements of the inverse of the Fisher information matrix"""
     return np.array([np.diag(np.linalg.inv(FI)) for FI in FIz])
 
 

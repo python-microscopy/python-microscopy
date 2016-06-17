@@ -20,7 +20,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-'''Estimates twist in a phase-ramp or double helix PSF'''
+"""Estimates twist in a phase-ramp or double helix PSF"""
 
 import numpy
 import scipy.ndimage

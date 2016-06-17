@@ -45,9 +45,9 @@ if __name__ == '__main__':
     	author = 'David Baddeley',
        	author_email = 'd.baddeley@auckland.ac.nz',
        	url = '',
-       	long_description = '''
+       	long_description = """
 Provides viewers for PYME's internal representation, kdf, and PYME hdf5 files
-''',
+""",
           license = "Proprietary",
           **configuration(top_path='').todict()
           )

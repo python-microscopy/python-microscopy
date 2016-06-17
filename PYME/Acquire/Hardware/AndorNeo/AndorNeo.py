@@ -390,7 +390,7 @@ class AndorBase(SDK3Camera):
         return self.nBuffers
         
     def SetActive(self, active=True):
-        '''flag the camera as active (or inactive) to dictate whether it writes it's metadata or not'''
+        """flag the camera as active (or inactive) to dictate whether it writes it's metadata or not"""
         self.active = active
 
     def GenStartMetadata(self, mdh):

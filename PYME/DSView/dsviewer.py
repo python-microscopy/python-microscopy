@@ -233,8 +233,8 @@ class DSViewFrame(AUIFrame):
          
         
     def LoadModule(self, moduleName):
-        '''Load a module with the given name and update GUI
-        '''
+        """Load a module with the given name and update GUI
+        """
         
         modules.loadModule(moduleName, self)
 
@@ -343,16 +343,16 @@ class DSViewFrame(AUIFrame):
         self.update()
 
 def OSXActivateKludge():
-    '''On OSX our main window doesn't show until you click on it's icon. Try
-    to kludge around this ...'''
+    """On OSX our main window doesn't show until you click on it's icon. Try
+    to kludge around this ..."""
     import subprocess
     import os 
-    subprocess.Popen(['osascript', '-e', '''\
+    subprocess.Popen(['osascript', '-e', """\
         tell application "System Events"
           set procName to name of first process whose unix id is %s
         end tell
         tell application procName to activate
-    ''' % os.getpid()])
+    """ % os.getpid()])
 
 class MyApp(wx.App):
     def OnInit(self):

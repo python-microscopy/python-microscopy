@@ -1,4 +1,4 @@
-'''bg_compensate - spline-base background compensation
+"""bg_compensate - spline-base background compensation
 
 CellProfiler is distributed under the GNU General Public License,
 but this file is licensed under the more permissive BSD license.
@@ -13,7 +13,7 @@ J. Lindblad and E. Bengtsson, "A comparison of methods for estimation of
 intensity nonuniformities in 2D and 3D microscope images of fluorescence 
 stained cells.", Proceedings of the 12th Scandinavian Conference on Image 
 Analysis (SCIA), pp. 264-271, Bergen, Norway, June 2001
-'''
+"""
 
 __version__="$Revision$"
 
@@ -22,20 +22,20 @@ import warnings
 from scipy import linspace
 from scipy.ndimage import affine_transform, gaussian_filter
 
-'''Automatically determine whether background is darker than foreground'''
+"""Automatically determine whether background is darker than foreground"""
 MODE_AUTO = "auto"
 
-'''Background is darker than foreground'''
+"""Background is darker than foreground"""
 MODE_DARK = "dark"
 
-'''Background is brighter than foreground'''
+"""Background is brighter than foreground"""
 MODE_BRIGHT = "bright"
 
-'''Some foreground is darker, some is lighter'''
+"""Some foreground is darker, some is lighter"""
 MODE_GRAY = "gray"
 
 def prcntiles(x,percents):
-    '''Equivalent to matlab prctile(x,p), uses linear interpolation.'''
+    """Equivalent to matlab prctile(x,p), uses linear interpolation."""
     x=np.array(x).flatten()
     listx = np.sort(x)
     xpcts=[]
@@ -64,9 +64,9 @@ def prcntiles(x,percents):
 
     
 def automode(data):
-    '''Tries to guess if the image contains dark objects on a bright background (1)
+    """Tries to guess if the image contains dark objects on a bright background (1)
 or if the image contains bright objects on a dark background (-1),
-or if it contains both dark and bright objects on a gray background (0).'''
+or if it contains both dark and bright objects on a gray background (0)."""
 
     
     
@@ -112,15 +112,15 @@ or if it contains both dark and bright objects on a gray background (0).'''
     return mode
 
 def spline_factors(u):
-    '''u is np.array'''
+    """u is np.array"""
 
     X = np.array([(1.-u)**3 , 4-(6.*(u**2))+(3.*(u**3)) , 1.+(3.*u)+(3.*(u**2))-(3.*(u**3)) , u**3]) * (1./6)
     
     return X
 
 def pick(picklist,val):
-    '''Index to first value in picklist that is larger than val.
-If none is larger, index=len(picklist).'''
+    """Index to first value in picklist that is larger than val.
+If none is larger, index=len(picklist)."""
     
     assert np.all(np.sort(picklist) == picklist), "pick list is not ordered correctly"
     val = np.array(val)
@@ -138,8 +138,8 @@ If none is larger, index=len(picklist).'''
     return p
         
 def confine(x,low,high):
-    '''Confine x to [low,high]. Values outside are set to low/high.
-See also restrict.'''
+    """Confine x to [low,high]. Values outside are set to low/high.
+See also restrict."""
 
     y=x.copy()
     y[y < low] = low
@@ -147,8 +147,8 @@ See also restrict.'''
     return y
 
 def gauss(x,m_y,sigma):
-    '''returns the gaussian with mean m_y and std. dev. sigma,
-calculated at the points of x.'''
+    """returns the gaussian with mean m_y and std. dev. sigma,
+calculated at the points of x."""
 
     e_y = [np.exp((1.0/(2*float(sigma)**2)*-(n-m_y)**2)) for n in np.array(x)]
     y = [1.0/(float(sigma) * np.sqrt(2 * np.pi)) * e for e in e_y]
@@ -156,8 +156,8 @@ calculated at the points of x.'''
     return np.array(y)
 
 def d2gauss(x,m_y,sigma):
-    '''returns the second derivative of the gaussian with mean m_y,
-and standard deviation sigma, calculated at the points of x.'''
+    """returns the second derivative of the gaussian with mean m_y,
+and standard deviation sigma, calculated at the points of x."""
 
     return gauss(x,m_y,sigma)*[-1/sigma**2 + (n-m_y)**2/sigma**4 for n in x]
 
@@ -188,8 +188,8 @@ def spline_matrix(x,px):
     return V
 
 def spline_matrix2d(x,y,px,py,mask=None):
-    '''For boundary constraints, the first two and last two spline pieces are constrained
-to be part of the same cubic curve.'''
+    """For boundary constraints, the first two and last two spline pieces are constrained
+to be part of the same cubic curve."""
     V = np.kron(spline_matrix(x,px),spline_matrix(y,py))
     
     lenV = len(V)
@@ -207,8 +207,8 @@ to be part of the same cubic curve.'''
 
 
 def splinefit2d(x, y, z, px, py, mask=None):
-    '''Make a least squares fit of the spline (px,py,pz) to the surface (x,y,z).
-If mask is given, only masked points are used for the regression.'''
+    """Make a least squares fit of the spline (px,py,pz) to the surface (x,y,z).
+If mask is given, only masked points are used for the regression."""
     
     if mask is None:
         V = np.array(spline_matrix2d(x, y, px, py))
@@ -260,7 +260,7 @@ def unbiased_std(a):
 
 def backgr(img, mask = None, mode=MODE_AUTO, thresh=2, splinepoints=5, scale=1, 
            maxiter=40, convergence = .001):
-    '''Iterative spline-based background correction.
+    """Iterative spline-based background correction.
     
     mode - one of MODE_AUTO, MODE_DARK, MODE_BRIGHT or MODE_GRAY
     thresh - thresh is threshold to cut at, in units of sigma. 
@@ -272,7 +272,7 @@ def backgr(img, mask = None, mode=MODE_AUTO, thresh=2, splinepoints=5, scale=1,
                   maximum image intensity.
 Spline mesh is splinepoints x splinepoints. Modes are
 defined by the background intensity, Larger thresh->slower but
-more stable convergence. Returns background matrix.'''
+more stable convergence. Returns background matrix."""
 
     assert img.ndim == 2, "Image must be 2-d"
     assert splinepoints >= 3, "The minimum grid size is 3x3"
@@ -371,7 +371,7 @@ more stable convergence. Returns background matrix.'''
     return output
 
 def bg_compensate(img, sigma, splinepoints, scale):
-    '''Reads file, subtracts background. Returns [compensated image, background].'''
+    """Reads file, subtracts background. Returns [compensated image, background]."""
     
     from PIL import Image
     from pylab import ceil,imshow,show

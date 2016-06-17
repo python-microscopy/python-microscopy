@@ -87,8 +87,8 @@ class FitDumbells(ModuleBase):
 
 @register_module('MeanNeighbourDistances') 
 class MeanNeighbourDistances(ModuleBase):
-    '''Calculates mean distance to nearest neighbour in a triangulation of the 
-    supplied points'''
+    """Calculates mean distance to nearest neighbour in a triangulation of the
+    supplied points"""
     inputPositions = CStr('input')
     outputName = CStr('neighbourDists')
     key = CStr('neighbourDists')
@@ -112,8 +112,8 @@ class MeanNeighbourDistances(ModuleBase):
 
 @register_module('NearestNeighbourDistances')         
 class NearestNeighbourDistances(ModuleBase):
-    '''Calculates the nearest neighbour distances between supplied points using
-    a kdtree'''
+    """Calculates the nearest neighbour distances between supplied points using
+    a kdtree"""
     inputPositions = CStr('input')
     outputName = CStr('neighbourDists')
     key = CStr('neighbourDists')
@@ -141,7 +141,7 @@ class NearestNeighbourDistances(ModuleBase):
 
 @register_module('PairwiseDistanceHistogram')         
 class PairwiseDistanceHistogram(ModuleBase):
-    '''Calculates a histogram of pairwise distances'''
+    """Calculates a histogram of pairwise distances"""
     inputPositions = CStr('input')
     outputName = CStr('distHist')
     nbins = Int(50)
@@ -166,7 +166,7 @@ class PairwiseDistanceHistogram(ModuleBase):
 
 @register_module('Histogram')         
 class Histogram(ModuleBase):
-    '''Calculates a histogram of a given measurement key'''
+    """Calculates a histogram of a given measurement key"""
     inputMeasurements = CStr('input')
     outputName = CStr('hist')
     key = CStr('key')
@@ -191,7 +191,7 @@ class Histogram(ModuleBase):
         
 @register_module('ImageHistogram')         
 class ImageHistogram(ModuleBase):
-    '''Calculates a histogram of a given measurement key'''
+    """Calculates a histogram of a given measurement key"""
     inputImage = CStr('input')
     outputName = CStr('hist')
     inputMask = CStr('')
@@ -220,7 +220,7 @@ class ImageHistogram(ModuleBase):
         
 @register_module('ImageCumulativeHistogram')         
 class ImageCumulativeHistogram(ModuleBase):
-    '''Calculates a histogram of a given measurement key'''
+    """Calculates a histogram of a given measurement key"""
     inputImage = CStr('input')
     outputName = CStr('hist')
     inputMask = CStr('')
@@ -251,7 +251,7 @@ class ImageCumulativeHistogram(ModuleBase):
 
 @register_module('Measure2D') 
 class Measure2D(ModuleBase):
-    '''Module with one image input and one image output'''
+    """Module with one image input and one image output"""
     inputLabels = CStr('labels')
     inputIntensity = CStr('data')
     outputName = CStr('measurements')
@@ -389,7 +389,7 @@ class Measure2D(ModuleBase):
 
 @register_module('SelectMeasurementColumns')         
 class SelectMeasurementColumns(ModuleBase):
-    '''Take just certain columns of a variable'''
+    """Take just certain columns of a variable"""
     inputMeasurements = CStr('measurements')
     keys = CStr('')
     outputName = CStr('selectedMeasurements') 
@@ -405,7 +405,7 @@ class SelectMeasurementColumns(ModuleBase):
         
 @register_module('Plot')         
 class Plot(ModuleBase):
-    '''Take just certain columns of a variable'''
+    """Take just certain columns of a variable"""
     input0 = CStr('measurements')
     input1 = CStr('')
     input2 = CStr('')
@@ -444,7 +444,7 @@ class Plot(ModuleBase):
 
 @register_module('AddMetadataToMeasurements')         
 class AddMetadataToMeasurements(ModuleBase):
-    '''Adds metadata entries as extra column(s) to the output'''
+    """Adds metadata entries as extra column(s) to the output"""
     inputMeasurements = CStr('measurements')
     inputImage = CStr('input')
     keys = CStr('SampleNotes')
@@ -476,8 +476,8 @@ class AddMetadataToMeasurements(ModuleBase):
 
 @register_module('AggregateMeasurements')         
 class AggregateMeasurements(ModuleBase):
-    '''Create a new composite measurement containing the results of multiple
-    previous measurements'''
+    """Create a new composite measurement containing the results of multiple
+    previous measurements"""
     inputMeasurements1 = CStr('meas1')
     suffix1 = CStr('')
     inputMeasurements2 = CStr('')

@@ -119,7 +119,7 @@ class RecipePlugin(recipeGui.RecipeManager):
                 self.dsviewer.view.filter = self.dsviewer.pipeline
                 
     def TestCurrentRecipe(self, event=None):
-        '''run recipe on current frame only as an inexpensive form of testing'''
+        """run recipe on current frame only as an inexpensive form of testing"""
         
         self.RunCurrentRecipe(testMode=True)
                 

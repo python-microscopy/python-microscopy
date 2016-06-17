@@ -94,7 +94,7 @@ class ModuleCollection(HasTraits):
         return rdg
         
     def _getAllDownstream(self, rdg, keys):
-        '''get all the downstream items which depend on the given key'''
+        """get all the downstream items which depend on the given key"""
         
         downstream = set()
         
@@ -247,11 +247,11 @@ class ModuleBase(HasTraits):
         return np.all([op in keys for op in self.outputs])
         
     def execute(self, namespace):
-        '''prototype function - should be over-ridden in derived classes
+        """prototype function - should be over-ridden in derived classes
         
         takes a namespace (a dictionary like object) from which it reads its inputs and 
         into which it writes outputs
-        '''
+        """
         pass
     
     @property
@@ -263,7 +263,7 @@ class ModuleBase(HasTraits):
         return {v for k,v in self.get().items() if k.startswith('output')}
         
 class Filter(ModuleBase):
-    '''Module with one image input and one image output'''
+    """Module with one image input and one image output"""
     inputName = CStr('input')
     outputName = CStr('filtered_image')
     
@@ -292,7 +292,7 @@ class Filter(ModuleBase):
         pass  
     
 class ArithmaticFilter(ModuleBase):
-    '''Module with one image input and one image output'''
+    """Module with one image input and one image output"""
     inputName0 = CStr('input')
     inputName1 = CStr('input')
     outputName = CStr('filtered_image')
@@ -332,7 +332,7 @@ class ArithmaticFilter(ModuleBase):
 
 @register_module('ExtractChannel')    
 class ExtractChannel(ModuleBase):
-    '''extract one channel from an image'''
+    """extract one channel from an image"""
     inputName = CStr('input')
     outputName = CStr('filtered_image')     
     
@@ -352,7 +352,7 @@ class ExtractChannel(ModuleBase):
         
 @register_module('JoinChannels')    
 class JoinChannels(ModuleBase):
-    '''extract one channel from an image'''
+    """extract one channel from an image"""
     inputChan0 = CStr('input0')
     inputChan1 = CStr('')
     inputChan2 = CStr('')
@@ -386,7 +386,7 @@ class JoinChannels(ModuleBase):
         
 @register_module('Add')    
 class Add(ArithmaticFilter):
-    '''Add two images'''
+    """Add two images"""
     
     def applyFilter(self, data0, data1, chanNum, i, image0):
         
@@ -394,7 +394,7 @@ class Add(ArithmaticFilter):
         
 @register_module('Subtract')    
 class Subtract(ArithmaticFilter):
-    '''Add two images'''
+    """Add two images"""
     
     def applyFilter(self, data0, data1, chanNum, i, image0):
         
@@ -402,7 +402,7 @@ class Subtract(ArithmaticFilter):
         
 @register_module('Multiply')    
 class Multiply(ArithmaticFilter):
-    '''Add two images'''
+    """Add two images"""
     
     def applyFilter(self, data0, data1, chanNum, i, image0):
         
@@ -410,7 +410,7 @@ class Multiply(ArithmaticFilter):
     
 @register_module('Divide')    
 class Divide(ArithmaticFilter):
-    '''Add two images'''
+    """Add two images"""
     
     def applyFilter(self, data0, data1, chanNum, i, image0):
         
@@ -418,7 +418,7 @@ class Divide(ArithmaticFilter):
         
 @register_module('Scale')    
 class Scale(Filter):
-    '''Add two images'''
+    """Add two images"""
     
     scale = Float(1)
     
@@ -428,7 +428,7 @@ class Scale(Filter):
         
 @register_module('Normalize')    
 class Normalize(Filter):
-    '''Normalize an image so that the maximum is 1'''
+    """Normalize an image so that the maximum is 1"""
     
     #scale = Float(1)
     
@@ -438,7 +438,7 @@ class Normalize(Filter):
         
 @register_module('NormalizeMean')    
 class NormalizeMean(Filter):
-    '''Normalize an image so that the mean is 1'''
+    """Normalize an image so that the mean is 1"""
     
     offset = Float(0)
     
@@ -451,7 +451,7 @@ class NormalizeMean(Filter):
         
 @register_module('Invert')    
 class Invert(Filter):
-    '''Invert image'''
+    """Invert image"""
     
     #scale = Float(1)
     
@@ -461,7 +461,7 @@ class Invert(Filter):
         
 @register_module('BinaryOr')    
 class BinaryOr(ArithmaticFilter):
-    '''Add two images'''
+    """Add two images"""
     
     def applyFilter(self, data0, data1, chanNum, i, image0):
         

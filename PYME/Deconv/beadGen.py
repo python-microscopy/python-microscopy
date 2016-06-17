@@ -19,7 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-'''Generate an 'image' of a bead of a given size to use for psf extraction'''
+"""Generate an 'image' of a bead of a given size to use for psf extraction"""
 
 import numpy as np
 from scipy import ndimage

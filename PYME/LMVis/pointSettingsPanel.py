@@ -34,7 +34,7 @@ def _getPossibleKeys(pipeline):
 
 
 class PointSettingsPanel(wx.Panel):
-    '''A GUI class for determining the settings to use when displaying points
+    """A GUI class for determining the settings to use when displaying points
     in VisGUI.
     
     Constructed as follows: 
@@ -46,7 +46,7 @@ class PointSettingsPanel(wx.Panel):
       pointDisplaySettings is an instance of PointDisplaySettings
     
     
-    '''
+    """
     
     def __init__(self, parent, pipeline, pointDisplaySettings):
         wx.Panel.__init__(self, parent, -1)
@@ -92,8 +92,8 @@ class PointSettingsPanel(wx.Panel):
         
 
     def UpdatePointColourChoices(self, event=None):
-        '''Update our choice of keys if the pipeline has changed.
-        '''
+        """Update our choice of keys if the pipeline has changed.
+        """
         colKeys = _getPossibleKeys(self.pipeline)
 
         self.chPointColour.Clear()
@@ -113,7 +113,7 @@ class PointSettingsPanel(wx.Panel):
         
         
 def GenPointsPanel(visgui, pnl, title='Points'):
-    '''Generate a ponts pane and insert into the given panel'''
+    """Generate a ponts pane and insert into the given panel"""
     item = afp.foldingPane(pnl, -1, caption=title, pinned = True)
 
     pan = PointSettingsPanel(item, visgui.pipeline, visgui.pointDisplaySettings)

@@ -212,7 +212,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         return xs, ys
         
     def _drawBoxPixelCoords(self, dc, x, y, z, w, h, d):
-        '''Draws a box in screen space given 3D co-ordinates'''        
+        """Draws a box in screen space given 3D co-ordinates"""
         if (self.do.slice == self.do.SLICE_XY):
             xs, ys = self._PixelToScreenCoordinates(x,y)
             ws, hs = (w*self.scale, h*self.scale*self.aspect)

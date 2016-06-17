@@ -42,9 +42,9 @@ if __name__ == '__main__':
     	author = 'David Baddeley',
        	author_email = 'd.baddeley@auckland.ac.nz',
        	url = '',
-       	long_description = '''
+       	long_description = """
 Functions to handle data display, internal storage, and output in kdf format
-''',
+""",
         license = "Proprietary",
 	#options={'build_ext':{'swig_cpp':True, 'swig_opts':'-c++'}},
 	#options={'swig_opts':'-c++'},

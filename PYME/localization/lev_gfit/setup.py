@@ -43,9 +43,9 @@ if __name__ == '__main__':
     	author = 'David Baddeley',
        	author_email = 'd.baddeley@auckland.ac.nz',
        	url = '',
-       	long_description = '''
+       	long_description = """
 Provides a c-funtions to allow rapid computation of models for the purposes of e.g. fitting
-''',
+""",
           license = "Proprietary",
           **configuration(top_path='').todict()
           )

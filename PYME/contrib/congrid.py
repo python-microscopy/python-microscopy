@@ -25,7 +25,7 @@ import scipy.interpolate
 import scipy.ndimage
 
 def congrid(a, newdims, method='linear', centre=False, minusone=False):
-    '''Arbitrary resampling of source array to new dimension sizes.
+    """Arbitrary resampling of source array to new dimension sizes.
     Currently only supports maintaining the same number of dimensions.
     To use 1-D arrays, first promote them to shape (x,1).
     
@@ -49,7 +49,7 @@ def congrid(a, newdims, method='linear', centre=False, minusone=False):
     False - inarray is resampled by factors of (i/x) * (j/y)
     True - inarray is resampled by(i-1)/(x-1) * (j-1)/(y-1)
     This prevents extrapolation one element beyond bounds of input array.
-    '''
+    """
     if not a.dtype in [n.float64, n.float32]:
         a = n.cast[float](a)
 

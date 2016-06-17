@@ -42,9 +42,9 @@ def Tp(theta_i, ni, nt):
     
     
 def ASF(nIm, nM, NA):
-    '''Calculate the forshortening for a given refractive index mismatch. 
+    """Calculate the forshortening for a given refractive index mismatch.
     Uses geometrical optics, rather than the paraxial approximation. Doesn't
-    really belong here, but not really worth a new file either.'''
+    really belong here, but not really worth a new file either."""
     
     #our fluorophore emits uniformly, but we'll never see anything which 
     #goes in the wrong direction

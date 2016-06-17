@@ -12,6 +12,8 @@ import requests
 import time
 import numpy as np
 
+import sys
+
 import urlparse
 
 import logging
@@ -19,7 +21,7 @@ import logging
 logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
-import sys
+
 
 if not 'sphinx' in sys.modules.keys():
     # do not start zeroconf if running under sphinx
@@ -82,7 +84,7 @@ def locateFile(filename, serverfilter=''):
         dirname = '/'.join(filename.split('/')[:-1])
         fn = filename.split('/')[-1]
         if (len(dirname) >= 1):
-            dirname = dirname + '/'
+            dirname += '/'
 
         # print ns.advertised_services.keys()
         for name, info in ns.advertised_services.items():
@@ -194,7 +196,7 @@ def _chooseLocation(locs):
 
 
 def getFile(filename, serverfilter='', numRetries=3):
-    locs = locateFile(filename)
+    locs = locateFile(filename, serverfilter)
 
     if (len(locs) == 0):
         # we did not find the file
@@ -210,6 +212,7 @@ def getFile(filename, serverfilter='', numRetries=3):
 _lastwritetime = {}
 _lastwritespeed = {}
 #_diskfreespace = {}
+
 
 def _netloc(info):
     return '%s:%s' % (socket.inet_ntoa(info.address), info.port)

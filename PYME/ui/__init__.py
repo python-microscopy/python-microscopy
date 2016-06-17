@@ -1,1 +1,1 @@
-'''Common User Interface controls / widgets that are shared between various PYME apps'''
+"""Common User Interface controls / widgets that are shared between various PYME apps"""

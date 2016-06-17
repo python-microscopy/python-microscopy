@@ -69,25 +69,25 @@ def GaussianFitResultR(fitResults, metadata, resultCode=-1, fitErr=None, LLH=Non
 
 _warpDrive = None
 
-missing_warpDrive_msg = '''
+missing_warpDrive_msg = """
 Could not import the warpDrive module. GPU fitting requires the warpDrive module, 
 which is distributed separately due to licensing issues. The warpDrive module is
 available on request and is free for academic use. Please contact David Baddeley
 or Joerg Bewersdorf.
-'''
+"""
 
 class GaussianFitFactory:
     X = None
     Y = None
     
     def __init__(self, data, metadata, fitfcn=None, background=None, noiseSigma=None):
-        '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
-        metadata. '''
+        """Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
+        metadata. """
 
         self.data = np.ascontiguousarray(np.squeeze(data), dtype=np.float32)
         self.metadata = metadata
 
-        ''' next 3 lines are currently unused '''
+        """ next 3 lines are currently unused """
         self.background = background
         self.noiseSigma = noiseSigma
         self.fitfcn = fitfcn

@@ -30,7 +30,7 @@ from scipy.spatial import ckdtree
 #import pylab
 
 def calc_gauss_weights(sigma):
-    '''calculate a gaussian filter kernel (adapted from scipy.ndimage.filters.gaussian_filter1d)'''
+    """calculate a gaussian filter kernel (adapted from scipy.ndimage.filters.gaussian_filter1d)"""
     sd = float(sigma)
     # make the length of the filter equal to 4 times the standard
     # deviations:

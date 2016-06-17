@@ -79,10 +79,10 @@ class GaussianFitResult:
 
 class GaussianFitFactory:
     def __init__(self, data, metadata, ccdReadNoise=4, noiseFactor=1, electronsPerCount=2):
-        '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in 
+        """Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
         metadata. ccdReadNoise, noiseFactor and electronsPerCount are used for estimating the error in the data, the default values are 
         appropriate for a Sensicam QE standard CCD camera (PCO). Suitable values for an Andor IXon @10Mhz & -50 degrees would be 
-        (according to spec sheet): 109.8, 1.41, and 27.32 respectively. Dark noise is ignored at present'''
+        (according to spec sheet): 109.8, 1.41, and 27.32 respectively. Dark noise is ignored at present"""
         self.data = data
         self.metadata = metadata
         self.ccdReadNoise = ccdReadNoise #readout noise in electrons

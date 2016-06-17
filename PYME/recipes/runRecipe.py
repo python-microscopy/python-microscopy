@@ -14,16 +14,16 @@ import numpy as np
 #import sys
 
 def loadInput(filename):
-    '''Load input data from a file
+    """Load input data from a file
     
     Currently only handles images (anything you can open in dh5view). TODO - 
     extend to other types.
-    '''
+    """
     #modify this to allow for different file types - currently only supports images
     return ImageStack(filename=filename, haveGUI=False)
 
 def saveDataFrame(output, filename):
-    '''Saves a pandas dataframe, inferring the destination type based on extension'''
+    """Saves a pandas dataframe, inferring the destination type based on extension"""
     if filename.endswith('.csv'):
         output.to_csv(filename)
     elif filename.endswith('.xlsx') or filename.endswith('.xls'):
@@ -35,7 +35,7 @@ def saveDataFrame(output, filename):
         output.to_hdf(filename + '.hdf', 'Data')
     
 def saveOutput(output, filename):
-    '''Save an output variable, inferring type from the file extension'''
+    """Save an output variable, inferring type from the file extension"""
     if isinstance(output, ImageStack):
         try:
             output.Save(filename)
@@ -51,7 +51,7 @@ def saveOutput(output, filename):
         saveDataFrame(pd.DataFrame(output), filename)
         
 def runRecipe(recipe, inputs, outputs):
-    '''Load inputs and run recipe, saving outputs.
+    """Load inputs and run recipe, saving outputs.
     
     Parameters
     ----------
@@ -62,7 +62,7 @@ def runRecipe(recipe, inputs, outputs):
       - outputs : a dictionary mapping recipe output names to filenames. The
                   corresponding members of the namespace are saved to disk
                   following execution of the recipe.
-    '''
+    """
     
     #the recipe instance might be re-used - clear any previous data
     recipe.namespace.clear()

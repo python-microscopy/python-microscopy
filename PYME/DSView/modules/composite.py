@@ -684,9 +684,9 @@ class compositor:
             View3D(self.image.data[:,:,:,i], '%s - %s' % (self.image.filename, names[i]), mdh=mdh, parent=wx.GetTopLevelParent(self.dsviewer))
      
     def RemapData(self, image, chan, shape, voxelsize, origin, shiftField='', ignoreZ = True, order=3):
-        '''apply a vectorial correction for chromatic shift to an image - this 
+        """apply a vectorial correction for chromatic shift to an image - this
         is a generic vectorial shift compensation, rather than the secial case 
-        correction used with the splitter.'''
+        correction used with the splitter."""
         from scipy import ndimage
         import numpy as np
         
@@ -734,9 +734,9 @@ class compositor:
         
         
     def OnApplyShiftmap(self, event):
-        '''apply a vectorial correction for chromatic shift to an image - this 
+        """apply a vectorial correction for chromatic shift to an image - this
         is a generic vectorial shift compensation, rather than the secial case 
-        correction used with the splitter.'''
+        correction used with the splitter."""
         from scipy import ndimage
         import numpy as np
         from PYME.DSView import ImageStack, ViewIm3D

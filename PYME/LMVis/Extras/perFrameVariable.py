@@ -23,7 +23,7 @@
 import wx
 
 class PerFrameVar:
-    '''
+    """
     Allows a per frame measurement (e.g. Intensity / Channel assignment / etc ... 
     which is extracted from each frame seperately from the fitting process to be 
     included in the event data.
@@ -31,7 +31,7 @@ class PerFrameVar:
     The variable should be stored as a pickled numpy object (.npy) and should have
     the same number of entries as there are frames, as it will be indexed using the
     frame number to generate per event values.
-    '''
+    """
     def __init__(self, visFr):
         self.visFr = visFr
 
@@ -81,7 +81,7 @@ class PerFrameVar:
 
 
 def Plug(visFr):
-    '''Plugs this module into the gui'''
+    """Plugs this module into the gui"""
     PerFrameVar(visFr)
 
 

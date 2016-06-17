@@ -830,7 +830,7 @@ class LMGLCanvas(GLCanvas):
         self.setColour()
 
     def setPercentileCLim(self, pctile):
-        '''set clim based on a certain percentile'''
+        """set clim based on a certain percentile"""
         clim_upper = float(self.c[numpy.argsort(self.c)[len(self.c)*pctile]])
         self.setCLim([0.0, clim_upper])
 
@@ -1264,12 +1264,12 @@ def showGLFrame():
 
 
 def genMapColouring(T):
-    '''Assigns a colour to each of the underlying points of a triangulation (T)
+    """Assigns a colour to each of the underlying points of a triangulation (T)
     such that no neighbours have the same colour. To keep complexity down, does
     not do any juggling to reduce the number of colours used to the theoretical
     4. For use with the voronoi diagram visualisation to illustrate the voronoi
     domains (use a colour map with plenty of colours & not too much intensity
-    variation - e.g. hsv).'''
+    variation - e.g. hsv)."""
 
     cols = numpy.zeros(T.x.shape)
 

@@ -44,8 +44,8 @@ class __interpolator:
         self.PSF2Offset = 0
 
     def setModelFromMetadata(self, md):
-        '''load the model from file - returns True if the model changed, False if
-        an existing model was reused'''
+        """load the model from file - returns True if the model changed, False if
+        an existing model was reused"""
         #global IntXVals, IntYVals, IntZVals, interpModel, interpModelName, dx, dy, dz
 
         modName = md.PSFFile
@@ -73,8 +73,8 @@ class __interpolator:
             return False #model not changed
 
     def setModelFromFile(self, modName, md=None):
-        '''load the model from file - returns True if the model changed, False if
-        an existing model was reused'''
+        """load the model from file - returns True if the model changed, False if
+        an existing model was reused"""
         #global IntXVals, IntYVals, IntZVals, interpModel, interpModelName, dx, dy, dz
 
         if not modName == self.interpModelName:
@@ -165,15 +165,15 @@ class __interpolator:
             return False
 
     def _precompute(self):
-        '''placeholder function which is called after model loading and can be
-        overridden to allow for interpolation specific precomputations'''
+        """placeholder function which is called after model loading and can be
+        overridden to allow for interpolation specific precomputations"""
         pass
 
     def interp(self, X, Y, Z):
-        '''placeholder to be overrriden to do actual interpolation at values given'''
+        """placeholder to be overrriden to do actual interpolation at values given"""
         raise RuntimeError('Not Implemented')
 
     def getCoords(self, metadata, xslice, yslice, zslice):
-        '''placeholder to be overrriden to return coordinates needed for interpolation'''
+        """placeholder to be overrriden to return coordinates needed for interpolation"""
         raise RuntimeError('Not Implemented')
 

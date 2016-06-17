@@ -48,7 +48,7 @@ class TempPlotter:
 
 
 def Plug(visFr):
-    '''Plugs this module into the gui'''
+    """Plugs this module into the gui"""
     TempPlotter(visFr)
 
 

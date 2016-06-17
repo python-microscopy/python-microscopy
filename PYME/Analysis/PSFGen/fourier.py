@@ -19,7 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-'''generate a phase ramp psf unp.sing fourier optics'''
+"""generate a phase ramp psf unp.sing fourier optics"""
 import matplotlib.pyplot as plt
 import numpy as np
 from pylab import ifftshift, ifftn, fftn, fftshift

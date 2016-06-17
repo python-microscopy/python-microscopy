@@ -33,9 +33,9 @@ if __name__ == '__main__':
     	author = 'David Baddeley',
        	author_email = 'david.baddeley@yale.edu',
        	url = '',
-       	long_description = '''
+       	long_description = """
 Python wrapper for the Basic compression libarary
-''',
+""",
           license = "BSD",
           **configuration(top_path='').todict()
           )

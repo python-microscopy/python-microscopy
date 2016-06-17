@@ -1,4 +1,4 @@
-'''test_lapjv.py - test the Jonker-Volgenant implementation
+"""test_lapjv.py - test the Jonker-Volgenant implementation
 
 CellProfiler is distributed under the GNU General Public License,
 but this file is licensed under the more permissive BSD license.
@@ -7,7 +7,7 @@ See the accompanying file LICENSE for details.
 Copyright (c) 2003-2009 Massachusetts Institute of Technology
 Copyright (c) 2009-2012 Broad Institute
 All rights reserved.
-'''
+"""
 
 import numpy as np
 import scipy.ndimage as scind
@@ -18,7 +18,7 @@ from PYME.cpmath.filter import permutations
 
 class TestLAPJVPYX(unittest.TestCase):
     def test_01_01_reduction_transfer(self):
-        '''Test the reduction transfer implementation'''
+        """Test the reduction transfer implementation"""
         
         cases = [
             dict(i = [ 0, 1, 2 ],
@@ -155,7 +155,7 @@ class TestLAPJV(unittest.TestCase):
                 self.assertAlmostEqual(min_cost, result_cost)
                 
     def test_01_03(self):
-        '''Regression tests of matrices that crashed lapjv'''
+        """Regression tests of matrices that crashed lapjv"""
         dd = [
             np.array([[  0.        ,   0.        ,   0.        ],
                       [  1.        ,   1.        ,   5.34621029],

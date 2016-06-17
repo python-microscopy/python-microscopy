@@ -13,14 +13,14 @@
 import numpy as np
 
 def _upstr(dt):
-        '''Force strings to a constant width dtype'''
+        """Force strings to a constant width dtype"""
         if dt.str.startswith('|S'):
             return '|S255'
         else: 
             return dt
 
 def dictToRecarray(d):
-        '''Create a 1 entry recarray from a dictionay'''
+        """Create a 1 entry recarray from a dictionay"""
         dt = np.dtype([(k, _upstr(np.array(v).dtype)) for k, v in d.items()])
         
         ra = np.zeros(1, dt)
@@ -32,13 +32,13 @@ def dictToRecarray(d):
 
 class ContextLayer(object):
     def __init__(self, parent, contextInfo):
-        '''A layer in the 'context stack'
+        """A layer in the 'context stack'
         
         Parameters:
         -----------
           parent        the preceeding layer
           contextInfo   information about current context (a numpy record array, or a dictionary of key value pairs)
-        '''
+        """
         self.parent = parent
         if isinstance(contextInfo, np.ndarray):
             self.contextInfo = contextInfo
@@ -52,7 +52,7 @@ class ContextLayer(object):
     
         
     def _reccat(self, reca, recb):
-        '''Concatenate 2 records'''
+        """Concatenate 2 records"""
         #create a composite dtype
         #print reca.dtype.descr, recb.dtype.descr
         dt = np.dtype(reca.dtype.descr + recb.dtype.descr)

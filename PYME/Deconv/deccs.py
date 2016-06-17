@@ -43,7 +43,7 @@ show_plots = False
 #from PYME.DSView import View3D
 
 class dec:
-    '''Base deconvolution class, implementing a variant of the ICTM algorithm.
+    """Base deconvolution class, implementing a variant of the ICTM algorithm.
     ie. find f such that:
        ||Af-d||^2 + lamb^2||L(f - fdef)||^2
     is minimised
@@ -59,7 +59,7 @@ class dec:
 
     see dec_conv for an implementation of conventional image deconvolution with a
     measured, spatially invariant PSF
-    '''
+    """
     def __init__(self):
         #allocate some empty lists to track our progress in
         self.tests=[]
@@ -67,9 +67,9 @@ class dec:
         self.prefs = []
         
     def subsearch(self, f0, res, fdef, Afunc, Lfunc, lam2, S):
-        '''minimise in subspace - this is the bit which gets called on each iteration
+        """minimise in subspace - this is the bit which gets called on each iteration
         to work out what the next step is going to be. See Inverse Problems text for details.
-        '''
+        """
         nsrch = np.size(S,1)
         pref = Lfunc(f0-fdef)
         w0 = np.dot(pref, pref)
@@ -120,15 +120,15 @@ class dec:
         return (fnew, cpred, wpred)
 
     def startGuess(self, data):
-        '''starting guess for deconvolution - can be overridden in derived classes
+        """starting guess for deconvolution - can be overridden in derived classes
         but the data itself is usually a pretty good guess.
-        '''
+        """
         return 0*data.copy() + 1e-3
         
 
 
     def deconv(self, data, lamb, num_iters=10, weights=1, k = 0, k2=0):
-        '''This is what you actually call to do the deconvolution.
+        """This is what you actually call to do the deconvolution.
         parameters are:
 
         data - the raw data
@@ -139,7 +139,7 @@ class dec:
 
         alpha - PSF phase - hacked in for variable phase 4Pi deconvolution, should
                 really be refactored out into the dec_4pi classes.
-        '''
+        """
         #remember what shape we are
         self.dataShape = data.shape
         self.k = k
@@ -262,7 +262,7 @@ class dec:
         return np.real(self.fs)
         
     def sim_pic(self,data,alpha):
-        '''Do the forward transform to simulate a picture. Currently with 4Pi cruft.'''
+        """Do the forward transform to simulate a picture. Currently with 4Pi cruft."""
         self.alpha = alpha
         self.e1 = fftshift(np.exp(1j*self.alpha))
         self.e2 = fftshift(np.exp(2j*self.alpha))
@@ -274,7 +274,7 @@ class dec:
 
 
 class dec_conv(dec):
-    '''Classical deconvolution with a stationary PSF'''
+    """Classical deconvolution with a stationary PSF"""
     lw = 1
     def prep(self):
         #allocate memory
@@ -288,7 +288,7 @@ class dec_conv(dec):
 
 
     def psf_calc(self, psf, data_size):
-        '''Precalculate the OTF etc...'''
+        """Precalculate the OTF etc..."""
         g = resizePSF(psf, data_size)
 
 
@@ -336,7 +336,7 @@ class dec_conv(dec):
     #    return sign(f)*(abs(f)**.2 + .001)
 
     def Afunc(self, f):
-        '''Forward transform - convolve with the PSF'''
+        """Forward transform - convolve with the PSF"""
         #fs = np.reshape(f, (self.height, self.width, self.depth))
         self._r[:] = f.reshape(self._r.shape)
 
@@ -351,7 +351,7 @@ class dec_conv(dec):
         return np.ravel(ifftshift(self._r))
 
     def Ahfunc(self, f):
-        '''Conjugate transform - convolve with conj. PSF'''
+        """Conjugate transform - convolve with conj. PSF"""
 #        fs = np.reshape(f, (self.height, self.width, self.depth))
 #
 #        F = fftn(fs)
@@ -367,8 +367,8 @@ class dec_conv(dec):
         return np.ravel(ifftshift(self._r))
 
 class dec_bead(dec):
-    '''Classical deconvolution using non-fft convolution - pot. faster for
-    v. small psfs. Note that PSF must be symetric'''
+    """Classical deconvolution using non-fft convolution - pot. faster for
+    v. small psfs. Note that PSF must be symetric"""
     def psf_calc(self, psf, data_size):
         g = psf/psf.sum()
 
@@ -392,7 +392,7 @@ class dec_bead(dec):
     Lhfunc=Lfunc
 
     def Afunc(self, f):
-        '''Forward transform - convolve with the PSF'''
+        """Forward transform - convolve with the PSF"""
         fs = np.reshape(f, (self.height, self.width, self.depth))
 
         d = ndimage.convolve(fs, self.g)
@@ -401,7 +401,7 @@ class dec_bead(dec):
         return np.ravel(d)
 
     def Ahfunc(self, f):
-        '''Conjugate transform - convolve with conj. PSF'''
+        """Conjugate transform - convolve with conj. PSF"""
         fs = np.reshape(f, (self.height, self.width, self.depth))
 
         d = ndimage.correlate(fs, self.g)
@@ -411,7 +411,7 @@ class dec_bead(dec):
 #from scipy import ndimage    
 
 def calc_gauss_weights(sigma):
-    '''calculate a gaussian filter kernel (adapted from scipy.ndimage.filters.gaussian_filter1d)'''
+    """calculate a gaussian filter kernel (adapted from scipy.ndimage.filters.gaussian_filter1d)"""
     sd = float(sigma)
     # make the length of the filter equal to 4 times the standard
     # deviations:
@@ -432,8 +432,8 @@ def calc_gauss_weights(sigma):
 from scipy.ndimage import _nd_image, _ni_support
 
 class dec_gauss(dec):
-    '''Classical deconvolution using non-fft convolution - pot. faster for
-    v. small psfs. Note that PSF must be symetric'''
+    """Classical deconvolution using non-fft convolution - pot. faster for
+    v. small psfs. Note that PSF must be symetric"""
     k = 100
     def psf_calc(self, sigma, data_size, oversamp):
         #g = psf/psf.sum()
@@ -486,7 +486,7 @@ class dec_gauss(dec):
     Lhfunc=Lfunc
 
     def Afunc(self, f):
-        '''Forward transform - convolve with the PSF'''
+        """Forward transform - convolve with the PSF"""
         fs = np.reshape(f, (self.height, self.width, self.depth))
 
         #d = ndimage.gaussian_filter(fs, self.sigma)
@@ -521,7 +521,7 @@ class dec_gauss(dec):
 #        return oversamp*oversamp*output.np.ravel(()
 
     #def Ahfunc(self, f):
-        #'''Conjugate transform - convolve with conj. PSF'''
+        #"""Conjugate transform - convolve with conj. PSF"""
         #fs = np.reshape(f, (self.height, self.width, self.depth))
 
         #d = ndimage.gaussian_filter(fs, self.sigma)

@@ -133,8 +133,8 @@ def GetSoftwareVersion():
 
 class SDK3Camera(object):         
     def __init__(self, camNum):
-        '''camera initialisation - note that this should be called  from derived classes
-        *AFTER* the properties have been defined'''
+        """camera initialisation - note that this should be called  from derived classes
+        *AFTER* the properties have been defined"""
         #camReg.regCamera() #initialise the library if needed
         self.camNum = camNum
         

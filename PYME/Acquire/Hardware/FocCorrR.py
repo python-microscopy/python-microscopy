@@ -168,8 +168,8 @@ class FocusCorrector(wx.Timer):
         self.TrackOff()
 
     def addMenuItems(self,parentWindow, menu):
-        '''Add menu items and keyboard accelerators for LED control
-        to the specified menu & parent window'''
+        """Add menu items and keyboard accelerators for LED control
+        to the specified menu & parent window"""
         #Create IDs
         self.ID_TRACK_ON = wx.NewId()
         self.ID_TRACK_ON_CALC = wx.NewId()

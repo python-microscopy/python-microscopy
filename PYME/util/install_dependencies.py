@@ -19,8 +19,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-'''install_dependencies trys to pull binary packages from the distro, if present 
-and of a suitable version, falling back on pip for any packages not found.'''
+"""install_dependencies trys to pull binary packages from the distro, if present
+and of a suitable version, falling back on pip for any packages not found."""
 
 import apt #hope this is there
 import sys

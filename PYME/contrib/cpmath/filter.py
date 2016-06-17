@@ -1,4 +1,4 @@
-'''filter.py - functions for applying filters to images
+"""filter.py - functions for applying filters to images
 
 CellProfiler is distributed under the GNU General Public License,
 but this file is licensed under the more permissive BSD license.
@@ -11,7 +11,7 @@ All rights reserved.
 Please see the AUTHORS file for credits.
 
 Website: http://www.cellprofiler.org
-'''
+"""
 __version__="$Revision$"
 
 import numpy as np
@@ -29,17 +29,17 @@ from cpmorphology import centers_of_labels
 from cpmorphology import grey_erosion, grey_reconstruction
 from cpmorphology import convex_hull_ijv, get_line_pts
 
-'''# of points handled in the first pass of the convex hull code'''
+"""# of points handled in the first pass of the convex hull code"""
 CONVEX_HULL_CHUNKSIZE = 250000
 
 def stretch(image, mask=None):
-    '''Normalize an image to make the minimum zero and maximum one
+    """Normalize an image to make the minimum zero and maximum one
     
     image - pixel data to be normalized
     mask  - optional mask of relevant pixels. None = don't mask
     
     returns the stretched image
-    '''
+    """
     image = np.array(image, float)
     if np.product(image.shape) == 0:
         return image
@@ -70,16 +70,16 @@ def stretch(image, mask=None):
         return image
 
 def unstretch(image, minval, maxval):
-    '''Perform the inverse of stretch, given a stretched image
+    """Perform the inverse of stretch, given a stretched image
     
     image - an image stretched by stretch or similarly scaled value or values
     minval - minimum of previously stretched image
     maxval - maximum of previously stretched image
-    '''
+    """
     return image * (maxval - minval) + minval
 
 def median_filter(data, mask, radius, percent=50):
-    '''Masked median filter with octagonal shape
+    """Masked median filter with octagonal shape
     
     data - array of data to be median filtered.
     mask - mask of significant pixels in data
@@ -90,7 +90,7 @@ def median_filter(data, mask, radius, percent=50):
     returns a filtered array.  In areas where the median filter does
       not overlap the mask, the filtered result is undefined, but in
       practice, it will be the lowest value in the valid area.
-    '''
+    """
     if mask is None:
         mask = np.ones_like(data, dtype=bool)
     if np.all(~ mask):
@@ -269,13 +269,13 @@ def bilateral_filter(image, mask, sigma_spatial, sigma_range,
     return image_copy
 
 def laplacian_of_gaussian(image, mask, size, sigma):
-    '''Perform the Laplacian of Gaussian transform on the image
+    """Perform the Laplacian of Gaussian transform on the image
     
     image - 2-d image array
     mask  - binary mask of significant pixels
     size  - length of side of square kernel to use
     sigma - standard deviation of the Gaussian
-    '''
+    """
     half_size = size/2
     i,j = np.mgrid[-half_size:half_size+1, 
                    -half_size:half_size+1].astype(float) / float(sigma)
@@ -306,7 +306,7 @@ def masked_convolution(data, mask, kernel):
     return _filter.masked_convolution(data, mask, kernel)
 
 def canny(image, mask, sigma, low_threshold, high_threshold):
-    '''Edge filter an image using the Canny algorithm.
+    """Edge filter an image using the Canny algorithm.
     
     sigma - the standard deviation of the Gaussian used
     low_threshold - threshold for edges that connect to high-threshold
@@ -318,7 +318,7 @@ def canny(image, mask, sigma, low_threshold, high_threshold):
     
     William Green's Canny tutorial
     http://www.pages.drexel.edu/~weg22/can_tut.html
-    '''
+    """
     #
     # The steps involved:
     #
@@ -471,7 +471,7 @@ def canny(image, mask, sigma, low_threshold, high_threshold):
     return output_mask  
 
 def roberts(image, mask=None):
-    '''Find edges using the Roberts algorithm
+    """Find edges using the Roberts algorithm
     
     image - the image to process
     mask  - mask of relevant points
@@ -485,7 +485,7 @@ def roberts(image, mask=None):
     
     The following website has a tutorial on the algorithm:
     http://homepages.inf.ed.ac.uk/rbf/HIPR2/roberts.htm
-    '''
+    """
     result = np.zeros(image.shape)
     #
     # Four quadrants and two convolutions:
@@ -514,7 +514,7 @@ def roberts(image, mask=None):
     return result
 
 def sobel(image, mask=None):
-    '''Calculate the absolute magnitude Sobel to find the edges
+    """Calculate the absolute magnitude Sobel to find the edges
     
     image - image to process
     mask - mask of relevant points
@@ -525,11 +525,11 @@ def sobel(image, mask=None):
     
     Note that scipy's Sobel returns a directional Sobel which isn't
     useful for edge detection in its raw form.
-    '''
+    """
     return np.sqrt(hsobel(image,mask)**2 + vsobel(image,mask)**2)
 
 def hsobel(image, mask=None):
-    '''Find the horizontal edges of an image using the Sobel transform
+    """Find the horizontal edges of an image using the Sobel transform
     
     image - image to process
     mask  - mask of relevant points
@@ -539,7 +539,7 @@ def hsobel(image, mask=None):
      1   2   1
      0   0   0
     -1  -2  -1
-    '''
+    """
     if mask == None:
         mask = np.ones(image.shape, bool)
     big_mask = binary_erosion(mask,
@@ -552,7 +552,7 @@ def hsobel(image, mask=None):
     return result
 
 def vsobel(image, mask=None):
-    '''Find the vertical edges of an image using the Sobel transform
+    """Find the vertical edges of an image using the Sobel transform
     
     image - image to process
     mask  - mask of relevant points
@@ -562,7 +562,7 @@ def vsobel(image, mask=None):
      1   0  -1
      2   0  -2
      1   0  -1
-    '''
+    """
     if mask == None:
         mask = np.ones(image.shape, bool)
     big_mask = binary_erosion(mask,
@@ -575,18 +575,18 @@ def vsobel(image, mask=None):
     return result
 
 def prewitt(image, mask=None):
-    '''Find the edge magnitude using the Prewitt transform
+    """Find the edge magnitude using the Prewitt transform
     
     image - image to process
     mask  - mask of relevant points
     
     Return the square root of the sum of squares of the horizontal
     and vertical Prewitt transforms.
-    '''
+    """
     return np.sqrt(hprewitt(image,mask)**2 + vprewitt(image,mask)**2)
      
 def hprewitt(image, mask=None):
-    '''Find the horizontal edges of an image using the Prewitt transform
+    """Find the horizontal edges of an image using the Prewitt transform
     
     image - image to process
     mask  - mask of relevant points
@@ -596,7 +596,7 @@ def hprewitt(image, mask=None):
      1   1   1
      0   0   0
     -1  -1  -1
-    '''
+    """
     if mask == None:
         mask = np.ones(image.shape, bool)
     big_mask = binary_erosion(mask,
@@ -609,7 +609,7 @@ def hprewitt(image, mask=None):
     return result
 
 def vprewitt(image, mask=None):
-    '''Find the vertical edges of an image using the Prewitt transform
+    """Find the vertical edges of an image using the Prewitt transform
     
     image - image to process
     mask  - mask of relevant points
@@ -619,7 +619,7 @@ def vprewitt(image, mask=None):
      1   0  -1
      1   0  -1
      1   0  -1
-    '''
+    """
     if mask == None:
         mask = np.ones(image.shape, bool)
     big_mask = binary_erosion(mask,
@@ -632,7 +632,7 @@ def vprewitt(image, mask=None):
     return result
 
 def gabor(image, labels, frequency, theta):
-    '''Gabor-filter the objects in an image
+    """Gabor-filter the objects in an image
     
     image - 2-d grayscale image to filter
     labels - a similarly shaped labels matrix
@@ -642,7 +642,7 @@ def gabor(image, labels, frequency, theta):
     Calculate the Gabor filter centered on the centroids of each object
     in the image. Summing the resulting image over the labels matrix will
     yield a texture measure per object.
-    '''
+    """
     #
     # The code inscribes the X and Y position of each pixel relative to
     # the centroid of that pixel's object. After that, the Gabor filter
@@ -683,11 +683,11 @@ def gabor(image, labels, frequency, theta):
     return g
 
 def enhance_dark_holes(image, min_radius, max_radius, mask=None):
-    '''Enhance dark holes using a rolling ball filter
+    """Enhance dark holes using a rolling ball filter
 
     image - grayscale 2-d image
     radii - a vector of radii: we enhance holes at each given radius
-    '''
+    """
     #
     # Do 4-connected erosion
     #
@@ -712,7 +712,7 @@ def enhance_dark_holes(image, min_radius, max_radius, mask=None):
     return smoothed_image
 
 def circular_average_filter(image, radius, mask=None):
-    '''Blur an image using a circular averaging filter (pillbox)  
+    """Blur an image using a circular averaging filter (pillbox)
 
     image - grayscale 2-d image
     radii - radius of filter in pixels
@@ -720,7 +720,7 @@ def circular_average_filter(image, radius, mask=None):
     The filter will be within a square matrix of side 2*radius+1
     
     This code is translated straight from MATLAB's fspecial function
-    '''
+    """
     
     crad = np.ceil(radius-0.5)
     x,y = np.mgrid[-crad:crad+1,-crad:crad+1].astype(float) 
@@ -779,7 +779,7 @@ def circular_average_filter(image, radius, mask=None):
 #
 #######################################
 class KalmanState(object):
-    '''A data structure representing the state at a frame
+    """A data structure representing the state at a frame
     
     The original method uses "feature" to mean the same thing as
     CellProfiler's "object".
@@ -822,7 +822,7 @@ class KalmanState(object):
     .state_noise_idx - the feature indexes for each state noise vector
     
     .obs_vec   - the prediction for the observed variables
-    '''
+    """
     
     def __init__(self, 
                  observation_matrix,
@@ -857,24 +857,24 @@ class KalmanState(object):
     
     @property
     def state_len(self):
-        '''# of elements in the state vector'''
+        """# of elements in the state vector"""
         return self.observation_matrix.shape[1]
     @property
     def obs_len(self):
-        '''# of elements in the observation vector'''
+        """# of elements in the observation vector"""
         return self.observation_matrix.shape[0]
 
     @property
     def has_cached_predicted_state_vec(self):
-        '''True if next state vec has been calculated'''
+        """True if next state vec has been calculated"""
         return hasattr(self, "p_state_vec")
     
     @property
     def predicted_state_vec(self):
-        '''The predicted state vector for the next time point
+        """The predicted state vector for the next time point
         
         From Welch eqn 1.9
-        '''
+        """
         if not self.has_cached_predicted_state_vec:
             self.p_state_vec = dot_n(
                 self.translation_matrix,
@@ -883,15 +883,15 @@ class KalmanState(object):
     
     @property
     def has_cached_obs_vec(self):
-        '''True if the observation vector for the next state has been calculated'''
+        """True if the observation vector for the next state has been calculated"""
         return hasattr(self, "obs_vec")
     
     @property
     def predicted_obs_vec(self):
-        '''The predicted observation vector
+        """The predicted observation vector
         
         The observation vector for the next step in the filter.
-        '''
+        """
         if not self.has_cached_obs_vec:
             self.obs_vec = dot_n(
                 self.observation_matrix,
@@ -899,11 +899,11 @@ class KalmanState(object):
         return self.obs_vec
     
     def map_frames(self, old_indices):
-        '''Rewrite the feature indexes based on the next frame's identities
+        """Rewrite the feature indexes based on the next frame's identities
         
         old_indices - for each feature in the new frame, the index of the
                       old feature
-        '''
+        """
         nfeatures = len(old_indices)
         noldfeatures = len(self.state_vec)
         if nfeatures > 0:
@@ -930,7 +930,7 @@ class KalmanState(object):
     
     def add_features(self, kept_indices, new_indices,
                      new_state_vec, new_state_cov, new_noise_var):
-        '''Add new features to the state
+        """Add new features to the state
         
         kept_indices - the mapping from all indices in the state to new
                        indices in the new version
@@ -942,7 +942,7 @@ class KalmanState(object):
         new_state_cov - the covariance matrices for the new indices
         
         new_noise_var - the noise variances for the new indices
-        '''
+        """
         assert len(kept_indices) == len(self.state_vec)
         assert len(new_indices) == len(new_state_vec)
         assert len(new_indices) == len(new_state_cov)
@@ -973,7 +973,7 @@ class KalmanState(object):
         self.noise_var = next_noise_var
         
     def deep_copy(self):
-        '''Return a deep copy of the state'''
+        """Return a deep copy of the state"""
         c = KalmanState(self.observation_matrix, self.translation_matrix)
         c.state_vec = self.state_vec.copy()
         c.state_cov = self.state_cov.copy()
@@ -986,11 +986,11 @@ LARGE_KALMAN_COV = 2000
 SMALL_KALMAN_COV = 1
 
 def velocity_kalman_model():
-    '''Return a KalmanState set up to model objects with constant velocity
+    """Return a KalmanState set up to model objects with constant velocity
     
     The observation and measurement vectors are i,j.
     The state vector is i,j,vi,vj
-    '''
+    """
     om = np.array([[1,0,0,0], [0, 1, 0, 0]])
     tm = np.array([[1,0,1,0],
                    [0,1,0,1],
@@ -999,14 +999,14 @@ def velocity_kalman_model():
     return KalmanState(om, tm)
 
 def static_kalman_model():
-    '''Return a KalmanState set up to model objects whose motion is random
+    """Return a KalmanState set up to model objects whose motion is random
     
     The observation, measurement and state vectors are all i,j
-    '''
+    """
     return KalmanState(np.eye(2), np.eye(2))
 
 def kalman_filter(kalman_state, old_indices, coordinates, q, r):
-    '''Return the kalman filter for the features in the new frame
+    """Return the kalman filter for the features in the new frame
     
     kalman_state - state from last frame
     
@@ -1025,7 +1025,7 @@ def kalman_filter(kalman_state, old_indices, coordinates, q, r):
     http://www.cs.unc.edu/~welch/media/pdf/kalman_intro.pdf
     
     for info on the algorithm.
-    '''
+    """
     assert isinstance(kalman_state, KalmanState)
     old_indices = np.array(old_indices)
     if len(old_indices) == 0:
@@ -1140,7 +1140,7 @@ def kalman_filter(kalman_state, old_indices, coordinates, q, r):
     return kalman_state
 
 def line_integration(image, angle, decay, sigma):
-    '''Integrate the image along the given angle
+    """Integrate the image along the given angle
     
     DIC images are the directional derivative of the underlying
     image. This filter reconstructs the original image by integrating
@@ -1154,7 +1154,7 @@ def line_integration(image, angle, decay, sigma):
     
     sigma - the standard deviation of a Gaussian which is used to 
             smooth the image in the direction parallel to the shear angle.
-    '''
+    """
     #
     # Normalize the image so that the mean is zero
     #
@@ -1199,7 +1199,7 @@ def line_integration(image, angle, decay, sigma):
     return result
 
 def variance_transform(img, sigma, mask=None):
-    '''Calculate a weighted variance of the image
+    """Calculate a weighted variance of the image
     
     This function caluclates the variance of an image, weighting the
     local contributions by a Gaussian.
@@ -1207,7 +1207,7 @@ def variance_transform(img, sigma, mask=None):
     img - image to be transformed
     sigma - standard deviation of the Gaussian
     mask - mask of relevant pixels in the image
-    '''
+    """
     if mask is None:
         mask = np.ones(img.shape, bool)
     else:
@@ -1280,7 +1280,7 @@ def variance_transform(img, sigma, mask=None):
     #return var
 
 def inv_n(x):
-    '''given N matrices, return N inverses'''
+    """given N matrices, return N inverses"""
     #
     # The inverse of a small matrix (e.g. 3x3) is
     #
@@ -1298,7 +1298,7 @@ def inv_n(x):
     return c / det_n(x)[:, np.newaxis, np.newaxis]
     
 def det_n(x):
-    '''given N matrices, return N determinants'''
+    """given N matrices, return N determinants"""
     assert x.ndim == 3
     assert x.shape[1] == x.shape[2]
     if x.shape[1] == 1:
@@ -1312,7 +1312,7 @@ def det_n(x):
     return result
 
 def parity(x):
-    '''The parity of a permutation
+    """The parity of a permutation
     
     The parity of a permutation is even if the permutation can be
     formed by an even number of transpositions and is odd otherwise.
@@ -1323,7 +1323,7 @@ def parity(x):
     and the cycle, (3->3). Both cycles are odd, so the parity is even:
     you can exchange 0 and 1 giving (0, 2, 1, 3) and 2 and 1 to get
     (0, 1, 2, 3)
-    '''
+    """
     
     order = np.lexsort((x,))
     hit = np.zeros(len(x), bool)
@@ -1341,11 +1341,11 @@ def parity(x):
     return 1 if p % 2 == 0 else -1
 
 def cofactor_n(x, i, j):
-    '''Return the cofactor of n matrices x[n,i,j] at position i,j
+    """Return the cofactor of n matrices x[n,i,j] at position i,j
     
     The cofactor is the determinant of the matrix formed by removing
     row i and column j.
-    '''
+    """
     m = x.shape[1]
     mr = np.arange(m)
     i_idx = mr[mr != i]
@@ -1354,7 +1354,7 @@ def cofactor_n(x, i, j):
                       j_idx[np.newaxis, :]])
     
 def dot_n(x, y):
-    '''given two tensors N x I x K and N x K x J return N dot products
+    """given two tensors N x I x K and N x K x J return N dot products
     
     If either x or y is 2-dimensional, broadcast it over all N.
     
@@ -1371,7 +1371,7 @@ def dot_n(x, y):
        [[129, 144, 159],
         [163, 182, 201],
         [197, 220, 243]]])
-    '''
+    """
     if x.ndim == 2:
         if y.ndim == 2:
             return np.dot(x, y)
@@ -1394,7 +1394,7 @@ def dot_n(x, y):
                   (y[n, k, j] if y3 else y[k,j]), 3)
     
 def permutations(x):
-    '''Given a listlike, x, return all permutations of x
+    """Given a listlike, x, return all permutations of x
     
     Returns the permutations of x in the lexical order of their indices:
     e.g.
@@ -1410,7 +1410,7 @@ def permutations(x):
     [ 2, 1, 3, 4 ]
     ...
     [ 4, 3, 2, 1 ]
-    '''
+    """
     #
     # The algorithm is attributed to Narayana Pandit from his 
     # Ganita Kaumundi (1356). The following is from
@@ -1447,7 +1447,7 @@ def permutations(x):
 def convex_hull_transform(image, levels=256, mask = None, 
                           chunksize = CONVEX_HULL_CHUNKSIZE,
                           pass_cutoff = 16):
-    '''Perform the convex hull transform of this image
+    """Perform the convex hull transform of this image
     
     image - image composed of integer intensity values
     levels - # of levels that we separate the image into
@@ -1456,7 +1456,7 @@ def convex_hull_transform(image, levels=256, mask = None,
     
     for each intensity value, find the convex hull of pixels at or above
     that value and color all pixels within the hull with that value.
-    '''
+    """
     # Scale the image into the requisite number of levels
     if mask is None:
         img_min = np.min(image)
@@ -1661,7 +1661,7 @@ def convex_hull_transform(image, levels=256, mask = None,
     return scale[image]
 
 def circular_hough(img, radius, nangles = None, mask=None):
-    '''Circular Hough transform of an image
+    """Circular Hough transform of an image
     
     img - image to be transformed.
     
@@ -1672,7 +1672,7 @@ def circular_hough(img, radius, nangles = None, mask=None):
     
     Return the Hough transform of the image which is the accumulators
     for the transform x + r cos t, y + r sin t.
-    '''
+    """
     a = np.zeros(img.shape)
     m = np.zeros(img.shape)
     if nangles == None:
@@ -1700,7 +1700,7 @@ def circular_hough(img, radius, nangles = None, mask=None):
     return a
 
 def hessian(image, return_hessian=True, return_eigenvalues=True, return_eigenvectors=True):
-    '''Calculate hessian, its eigenvalues and eigenvectors
+    """Calculate hessian, its eigenvalues and eigenvectors
     
     image - n x m image. Smooth the image with a Gaussian to get derivatives
             at different scales.
@@ -1716,7 +1716,7 @@ def hessian(image, return_hessian=True, return_eigenvalues=True, return_eigenvec
                           
     The values of the border pixels for the image are not calculated and
     are zero
-    '''
+    """
     #The Hessian, d(f(x0, x1))/dxi/dxj for i,j = [0,1] is approximated by the
     #following kernels:
     

@@ -10,7 +10,7 @@ import dispatch
 import weakref
 
 class ActionManager(object):
-    '''This implements a queue for actions which should be called sequentially.
+    """This implements a queue for actions which should be called sequentially.
     
     The main purpose of the ActionManager is to facilitate automated imaging by 
     allowing multiple operations to be queued. Rather than being strictly FIFO,
@@ -25,9 +25,9 @@ class ActionManager(object):
     
     To function correctly the Tick() method should be called regularly - e.g.
     from a GUI timer.
-    '''
+    """
     def __init__(self, scope):
-        '''Initialise our action manager
+        """Initialise our action manager
         
         Parameters
         ----------
@@ -37,7 +37,7 @@ class ActionManager(object):
             accessible within the scope namespace, and will be resolved by
             calling eval('scope.functionName')
         
-        '''
+        """
         self.actionQueue = Queue.PriorityQueue()
         self.scope = weakref.ref(scope)
         
@@ -50,7 +50,7 @@ class ActionManager(object):
         self.onQueueChange = dispatch.Signal()
         
     def QueueAction(self, functionName, args, nice=10, timeout=1e6):
-        '''Add an action to the queue
+        """Add an action to the queue
         
         Parameters
         ----------
@@ -74,7 +74,7 @@ class ActionManager(object):
             A timeout in seconds from the current time at which the action
             becomes irrelevant and should be ignored.
             
-        '''
+        """
         curTime = time.time()    
         expiry = curTime + timeout
         
@@ -86,11 +86,11 @@ class ActionManager(object):
         
         
     def Tick(self, **kwargs):
-        '''Polling function to check if the current action is finished and, if so, start the next 
+        """Polling function to check if the current action is finished and, if so, start the next
         action if available.
         
         Should be called regularly for a timer or event loop.
-        '''
+        """
         if self.paused:
             return
             

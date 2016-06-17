@@ -45,7 +45,7 @@ def read_bead_data(filename):
     return (g,r)
 
 def read_h5f_cols(h5f, slice):
-    '''extracts colours from a h5 slice - file should be open!'''
+    """extracts colours from a h5 slice - file should be open!"""
     d1 = h5f.root.ImageData[slice]
 
     g = d1[:, :256]
@@ -79,9 +79,9 @@ from scipy.optimize import fmin
 from scipy import linalg
 
 def robustLinLhood(p, x, y, var=1):
-    '''p is parameter vector, x and y as expected, and var the variance of the 
+    """p is parameter vector, x and y as expected, and var the variance of the
     y value. We use a t-distribution as our likelihood as it's long tails will
-    not overly weight outliers.'''
+    not overly weight outliers."""
     m, x0 = p
     err = (y - m*(x - x0))/var
     return -scipy.stats.t.logpdf(err, 1).sum()
@@ -114,8 +114,8 @@ class linModel(shiftModel):
         self.axis = axis
         
     def ev(self, x, y):
-        '''Mimic a bivariate spline object. Since we're assuming it is linear 
-        along one axis, we use the axis that was defined when fitting the model'''
+        """Mimic a bivariate spline object. Since we're assuming it is linear
+        along one axis, we use the axis that was defined when fitting the model"""
         if self.axis == 'x':
             return self.m*(x - self.x0)
         else:
@@ -123,9 +123,9 @@ class linModel(shiftModel):
             
             
 def robustLin2Lhood(p, x, y, dx, var=1):
-    '''p is parameter vector, x and y as expected, and var the variance of the 
+    """p is parameter vector, x and y as expected, and var the variance of the
     y value. We use a t-distribution as our likelihood as it's long tails will
-    not overly weight outliers.'''
+    not overly weight outliers."""
     mx, my, x0 = p
     err = (dx - (mx*x + my*y + x0))/var
     return -scipy.stats.t.logpdf(err, 1).sum()
@@ -142,12 +142,12 @@ class lin2Model(shiftModel):
         #self.axis = axis
         
     def ev(self, x, y):
-        '''Mimic a bivariate spline object. Since we're assuming it is linear 
-        along one axis, we use the axis that was defined when fitting the model'''
+        """Mimic a bivariate spline object. Since we're assuming it is linear
+        along one axis, we use the axis that was defined when fitting the model"""
         return self.mx*x +self.my*y + self.x0
             
 def genShiftVectorFieldLinear(x,y, dx, dy, err_sx, err_sy):
-    '''interpolates shift vectors using smoothing splines'''
+    """interpolates shift vectors using smoothing splines"""
 
     spx = lin2Model(x, y, dx, err_sx**2)
     spy = lin2Model(x, y, dy, err_sy**2)
@@ -160,9 +160,9 @@ def genShiftVectorFieldLinear(x,y, dx, dy, err_sx, err_sy):
     return spx, spy
     
 def robustLin3zLhood(p, x, y, z, dx, var=1):
-    '''p is parameter vector, x and y as expected, and var the variance of the 
+    """p is parameter vector, x and y as expected, and var the variance of the
     y value. We use a t-distribution as our likelihood as it's long tails will
-    not overly weight outliers.'''
+    not overly weight outliers."""
     mx, my, mx2, my2, mxy, mxy2, mx2y, mx3, x0, mz, mxz, myz, mxyz = p
     err = (dx - (mx*x + my*y + mx2*x*x +my2*y*y + mxy*x*y + mxy2*x*y*y + mx2y*x*x*y + mx3*x*x*x + x0 + mz*z + mxz*x*z + myz*y*z + mxyz*x*y*z))/var
     return -scipy.stats.t.logpdf(err, 1).sum()
@@ -186,8 +186,8 @@ class lin3zModel(shiftModel):
         #self.axis = axis
         
     def ev(self, x, y, z=0):
-        '''Mimic a bivariate spline object. Since we're assuming it is linear 
-        along one axis, we use the axis that was defined when fitting the model'''
+        """Mimic a bivariate spline object. Since we're assuming it is linear
+        along one axis, we use the axis that was defined when fitting the model"""
         x = x*self.sc
         y = y*self.sc
         return self.mx*x +self.my*y + self.mx2*x*x + self.my2*y*y + self.mxy*x*y + self.mxy2*x*y*y + self.mx2y*x*x*y + self.mx3*x*x*x + self.my3*y*y*y  + self.x0 + self.mz*z + self.mxz*x*z +self.myz*y*z + self.mxyz*z*x*y
@@ -196,9 +196,9 @@ class lin3zModel(shiftModel):
         return self.ev(x, y, z)
         
 def robustLin3Lhood(p, x, y, dx, var=1):
-    '''p is parameter vector, x and y as expected, and var the variance of the 
+    """p is parameter vector, x and y as expected, and var the variance of the
     y value. We use a t-distribution as our likelihood as it's long tails will
-    not overly weight outliers.'''
+    not overly weight outliers."""
     mx, my, mx2, my2, mxy, mxy2, mx2y, mx3, x0 = p
     err = (dx - (mx*x + my*y + mx2*x*x +my2*y*y + mxy*x*y + mxy2*x*y*y + mx2y*x*x*y + mx3*x*x*x + x0))/var
     return -scipy.stats.t.logpdf(err, 1).sum()
@@ -221,8 +221,8 @@ class lin3Model(shiftModel):
         #self.axis = axis
         
     def ev(self, x, y):
-        '''Mimic a bivariate spline object. Since we're assuming it is linear 
-        along one axis, we use the axis that was defined when fitting the model'''
+        """Mimic a bivariate spline object. Since we're assuming it is linear
+        along one axis, we use the axis that was defined when fitting the model"""
         x = x*self.sc
         y = y*self.sc
         return self.mx*x +self.my*y + self.mx2*x*x + self.my2*y*y + self.mxy*x*y + self.mxy2*x*y*y + self.mx2y*x*x*y + self.mx3*x*x*x + self.my3*y*y*y  + self.x0
@@ -231,7 +231,7 @@ class lin3Model(shiftModel):
         return self.ev(x, y)
             
 def genShiftVectorFieldQuad(x,y, dx, dy, err_sx, err_sy):
-    '''interpolates shift vectors using smoothing splines'''
+    """interpolates shift vectors using smoothing splines"""
 
     spx = lin3Model(x, y, dx, err_sx**2)
     spy = lin3Model(x, y, dy, err_sy**2)
@@ -244,7 +244,7 @@ def genShiftVectorFieldQuad(x,y, dx, dy, err_sx, err_sy):
     return spx, spy
     
 def genShiftVectorFieldQ(nx,ny, nsx, nsy, err_sx, err_sy, bbox=None):
-    '''interpolates shift vectors using smoothing splines'''
+    """interpolates shift vectors using smoothing splines"""
     wonky = findWonkyVectors(nx, ny, nsx, nsy, tol=2*err_sx.mean())
     #wonky = findWonkyVectors(nx, ny, nsx, nsy, tol=100)
     good = wonky == 0
@@ -269,7 +269,7 @@ def genShiftVectorFieldQ(nx,ny, nsx, nsy, err_sx, err_sy, bbox=None):
     
 
 def genShiftVectorFieldQuadz(x,y, z, dx, dy, err_sx, err_sy):
-    '''interpolates shift vectors using smoothing splines'''
+    """interpolates shift vectors using smoothing splines"""
 
     spx = lin3zModel(x, y, z, dx, err_sx**2)
     spy = lin3zModel(x, y, z, dy, err_sy**2)
@@ -282,7 +282,7 @@ def genShiftVectorFieldQuadz(x,y, z, dx, dy, err_sx, err_sy):
     return spx, spy
     
 def genShiftVectorFieldQz(nx,ny, nz, nsx, nsy, err_sx, err_sy, bbox=None):
-    '''interpolates shift vectors using smoothing splines'''
+    """interpolates shift vectors using smoothing splines"""
     wonky = findWonkyVectors(nx, ny, nsx, nsy, tol=5*err_sx.mean())
     #wonky = findWonkyVectors(nx, ny, nsx, nsy, tol=100)
     good = wonky == 0
@@ -416,7 +416,7 @@ def findWonkyVectors(x, y,dx,dy, tol=100):
 
 
 def genShiftVectorField(nx,ny, nsx, nsy):
-    '''interpolates shift vectors using radial basis functions'''
+    """interpolates shift vectors using radial basis functions"""
     rbx = Rbf(nx, ny, nsx, epsilon=1)
     rby = Rbf(nx, ny, nsy, epsilon=1)
 
@@ -429,7 +429,7 @@ def genShiftVectorField(nx,ny, nsx, nsy):
     return (dx.T, dy.T, rbx, rby)
 
 def genShiftVectorFieldSpline(nx,ny, nsx, nsy, err_sx, err_sy, bbox=None):
-    '''interpolates shift vectors using smoothing splines'''
+    """interpolates shift vectors using smoothing splines"""
     wonky = findWonkyVectors(nx, ny, nsx, nsy, tol=2*err_sx.mean())
     #wonky = findWonkyVectors(nx, ny, nsx, nsy, tol=100)
     good = wonky == 0
@@ -452,8 +452,8 @@ def genShiftVectorFieldSpline(nx,ny, nsx, nsy, err_sx, err_sy, bbox=None):
 
 
 def genShiftVectorFieldMC(nx,ny, nsx, nsy, p, Nsamp):
-    '''interpolates shift vectors using several monte-carlo subsampled 
-    sets of the vectors and averages to give a smooth field'''
+    """interpolates shift vectors using several monte-carlo subsampled
+    sets of the vectors and averages to give a smooth field"""
 
     X, Y = np.meshgrid(np.arange(0, 512*70, 100), np.arange(0, 256*70, 100))
 
@@ -477,7 +477,7 @@ def genShiftVectorFieldMC(nx,ny, nsx, nsy, p, Nsamp):
     return dx.T/nIt, dy.T/nIt
     
 def getCorrection(x,y,x_sv, y_sv):
-    '''looks up correction in calculated vector fields'''
+    """looks up correction in calculated vector fields"""
     xi = np.maximum(np.minimum(sp.round_(x/100).astype('i'), x_sv.shape[0]),0)
     yi = np.maximum(np.minimum(sp.round_(y/100).astype('i'), x_sv.shape[1]),0)
     return (x_sv[xi, yi],y_sv[xi, yi])

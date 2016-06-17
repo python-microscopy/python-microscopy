@@ -23,7 +23,7 @@ def runRec(args):
     runRecipe.runRecipe(*args)
     
 def bake(recipe, inputGlobs, output_dir, num_procs = NUM_PROCS):
-    '''Run a given recipe over using multiple proceses. 
+    """Run a given recipe over using multiple proceses.
     
     Arguments:
     ----------
@@ -34,7 +34,7 @@ def bake(recipe, inputGlobs, output_dir, num_procs = NUM_PROCS):
       output_dir:   The directory to save the output in
       num_procs:    The number of worker processes to launch (defaults to the number of CPUs)
       
-    '''
+    """
     
     #check that we've supplied the right number of images for each named input/channel
     inputLengths = [len(v) for v in inputGlobs.values()]

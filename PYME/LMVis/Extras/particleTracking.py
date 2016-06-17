@@ -171,5 +171,5 @@ class ParticleTracker:
 
 
 def Plug(visFr):
-    '''Plugs this module into the gui'''
+    """Plugs this module into the gui"""
     ParticleTracker(visFr)

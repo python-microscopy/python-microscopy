@@ -91,10 +91,10 @@ def genResultsFileID(filename):
     return  hashString32(ds)
 
 def genFileID(filename):
-    '''generate database ids for files. Where we know about the file type an ID
+    """generate database ids for files. Where we know about the file type an ID
     is generated from the data which should be persistant over copies of the file,
     otherwise a hash of the filename is used.
-    '''
+    """
 
     if os.path.exists(filename):
         ext = os.path.splitext(filename)[1]

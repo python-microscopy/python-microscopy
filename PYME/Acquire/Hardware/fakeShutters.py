@@ -22,7 +22,7 @@
 ##################
 
 #!/usr/bin/python
-''' Placeholder module for shutters, should they be reimplemented'''
+""" Placeholder module for shutters, should they be reimplemented"""
 
 CH1 = 1
 CH2 = 2
@@ -47,5 +47,6 @@ def getShutterState(shutter):
 
 def setPort(port):
     pass
-def init():
+
+def init():
     pass

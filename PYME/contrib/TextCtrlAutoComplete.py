@@ -1,5 +1,5 @@
 
-'''
+"""
 
 wxPython Custom Widget Collection 20060207
 Written By: Edward Flick (eddy -=at=- cdf-imaging -=dot=- com)
@@ -8,7 +8,7 @@ Written By: Edward Flick (eddy -=at=- cdf-imaging -=dot=- com)
 Copyright 2006 (c) CDF Inc. ( http://www.cdf-imaging.com )
 Contributed to the wxPython project under the wxPython project's license.
 
-'''
+"""
 
 import locale, wx, sys, cStringIO
 
@@ -63,11 +63,11 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
                   colFetch=-1, colSearch=0, hideOnNoMatch=True,
                   selectCallback=None, entryCallback=None, matchFunction=None,
                   **therest) :
-        '''
+        """
         Constructor works just like wx.TextCtrl except you can pass in a
         list of choices.  You can also change the choice list at any time
         by calling setChoices.
-        '''
+        """
 
         if therest.has_key('style'):
             therest['style']=wx.TE_PROCESS_ENTER | therest['style']
@@ -286,8 +286,8 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
 
     # -- Interfaces methods
     def SetMultipleChoices(self, choices, colSearch=0, colFetch=-1):
-        ''' Set multi-column choice
-        '''
+        """ Set multi-column choice
+        """
         self._multiChoices = choices
         self._choices = None
         if not isinstance(self._multiChoices, list):
@@ -330,10 +330,10 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
         self._colFetch = colFetch
 
     def SetChoices(self, choices):
-        '''
+        """
         Sets the choices available in the popup wx.ListBox.
         The items will be sorted case insensitively.
-        '''
+        """
         self._choices = choices
         self._multiChoices = None
         flags = wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_SORT_ASCENDING | wx.LC_NO_HEADER
@@ -382,10 +382,10 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
 
     #-- Internal methods
     def _setValueFromSelected( self ) :
-         '''
+         """
          Sets the wx.TextCtrl value from the selected wx.ListCtrl item.
          Will do nothing if no item is selected in the wx.ListCtrl.
-         '''
+         """
          sel = self.dropdownlistbox.GetFirstSelected()
          if sel > -1:
             if self._colFetch != -1: col = self._colFetch
@@ -405,9 +405,9 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
 
 
     def _showDropDown ( self, show = True ) :
-        '''
+        """
         Either display the drop down list (show = True) or hide it (show = False).
-        '''
+        """
         if show :
             size = self.dropdown.GetSize()
             width, height = self . GetSizeTuple()
@@ -423,9 +423,9 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
         self.dropdown.Show ( show )
 
     def _listItemVisible( self ) :
-        '''
+        """
         Moves the selected item to the top of the list ensuring it is always visible.
-        '''
+        """
         toSel =  self.dropdownlistbox.GetFirstSelected ()
         if toSel == -1: return
         self.dropdownlistbox.EnsureVisible( toSel )
@@ -544,20 +544,20 @@ class test:
         self._ctrl.SetMatchFunction(None)
 
     def onBtDynamicChoices(self, event):
-        '''
+        """
         Demonstrate dynamic adjustment of the auto-complete list, based on what's
         been typed so far:
-        '''
+        """
         self._ctrl.SetChoices(self.dynamic_choices)
         self._ctrl.SetEntryCallback(self.setDynamicChoices)
         self._ctrl.SetMatchFunction(self.match)
 
 
     def match(self, text, choice):
-        '''
+        """
         Demonstrate "smart" matching feature, by ignoring http:// and www. when doing
         matches.
-        '''
+        """
         t = text.lower()
         c = choice.lower()
         if c.startswith(t): return True

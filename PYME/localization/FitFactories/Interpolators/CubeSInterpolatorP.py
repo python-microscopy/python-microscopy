@@ -43,8 +43,8 @@ def _splcoefs(r):
 
 class CSInterpolator(__interpolator):
     def _precompute(self):
-        '''function which is called after model loading and can be
-        overridden to allow for interpolation specific precomputations'''
+        """function which is called after model loading and can be
+        overridden to allow for interpolation specific precomputations"""
          #do the spline filtering here rather than in interpolation
         self.interpModel = ndimage.spline_filter(self.interpModel)
         
@@ -53,7 +53,7 @@ class CSInterpolator(__interpolator):
             
         
     def interp(self, X, Y, Z):
-        '''do actual interpolation at values given'''
+        """do actual interpolation at values given"""
 
         X = atleast_1d(X) #ox = X[0] 
         Y = atleast_1d(Y)
@@ -98,7 +98,7 @@ class CSInterpolator(__interpolator):
         return m
 
     def getCoords(self, metadata, xslice, yslice, zslice):
-        '''placeholder to be overrriden to return coordinates needed for interpolation'''
+        """placeholder to be overrriden to return coordinates needed for interpolation"""
         #generate grid to evaluate function on
         X = 1e3*metadata.voxelsize.x*mgrid[xslice]
         Y = 1e3*metadata.voxelsize.y*mgrid[yslice]

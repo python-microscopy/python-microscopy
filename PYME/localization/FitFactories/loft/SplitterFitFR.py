@@ -127,8 +127,8 @@ def splWrap(*args):
 
 class GaussianFitFactory:
     def __init__(self, data, metadata, fitfcn=genSplitGaussInArrayPVec, background=None):
-        '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in 
-        metadata. '''
+        """Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
+        metadata. """
         self.data = data
         self.background = background
         self.metadata = metadata

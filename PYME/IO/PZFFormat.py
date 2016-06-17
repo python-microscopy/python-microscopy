@@ -156,7 +156,7 @@ header_dtype = [('ID', 'S2'), ('Version', 'u1') , ('DataFormat', 'u1'), ('DataCo
 HEADER_LENGTH = np.zeros(1, header_dtype).nbytes            
 
 def dumps(data, sequenceID=0, frameNum=0, frameTimestamp=0, compression = DATA_COMP_RAW, quantization=DATA_QUANT_NONE, quantizationOffset=0, quantizationScale=1):
-    '''dump an image frame (supplied as a numpy array) into a string in PZF format
+    """dump an image frame (supplied as a numpy array) into a string in PZF format
     
     Parameters
     ==========
@@ -183,7 +183,7 @@ def dumps(data, sequenceID=0, frameNum=0, frameTimestamp=0, compression = DATA_C
                   compression:
                   
                   $data_quant =  \sqrt(data - data)
-    '''
+    """
     
     header = np.zeros(1, header_dtype)
     

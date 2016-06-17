@@ -96,8 +96,8 @@ def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fit
 
 class GaussianFitFactory:
     def __init__(self, data, metadata, fitfcn=f_gauss2d2c, background=None):
-        '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in 
-        metadata. '''
+        """Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
+        metadata. """
         self.data = data
         self.metadata = metadata
         self.fitfcn = fitfcn #allow model function to be specified (to facilitate changing between accurate and fast exponential approwimations)

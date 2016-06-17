@@ -3,10 +3,10 @@ import wx.lib.agw.aui as aui
 import PYME.ui.autoFoldPanel as afp
 
 class AUIFrame(wx.Frame):
-    '''A class which encapsulated the common frame layout code used by
+    """A class which encapsulated the common frame layout code used by
     dsviewer, VisGUI, and PYMEAcquire.
     
-    '''
+    """
     def __init__(self, *args, **kwargs):
         wx.Frame.__init__(self, *args, **kwargs)
         
@@ -30,7 +30,7 @@ class AUIFrame(wx.Frame):
 
         
     def AddPage(self, page=None, select=True,caption='Dummy', update=True):
-        '''Add a page to the auto-notebook
+        """Add a page to the auto-notebook
         
 
         Parameters
@@ -43,7 +43,7 @@ class AUIFrame(wx.Frame):
         caption : string 
             The caption to appear in the notebook tab 
         
-        '''
+        """
         #if update:
         #    self._mgr.Update()
             
@@ -89,10 +89,10 @@ class AUIFrame(wx.Frame):
         #self.Update()
         
     def CreateFoldPanel(self):
-        '''Create a panel of folding 'drawers' on the left side of the frame.
+        """Create a panel of folding 'drawers' on the left side of the frame.
         loops over all the functions defined in self.paneHooks and calls them
         to generate the drawers.
-        '''
+        """
         pinfo = self._mgr.GetPaneByName('sidePanel')
         if pinfo.IsOk(): #we already have a sidepanel, clear
             self.sidePanel.Clear()

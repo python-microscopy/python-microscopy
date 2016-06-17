@@ -35,7 +35,7 @@ import dispatch
 
 class SpoolController(object):
     def __init__(self, scope, defDir=genHDFDataFilepath(), defSeries='%(day)d_%(month)d_series'):
-        '''Initialise the spooling controller.
+        """Initialise the spooling controller.
         
         Parameters
         ----------
@@ -47,7 +47,7 @@ class SpoolController(object):
         defSeries : string pattern
             This specifies a pattern for file naming. Keys will be substituted as for `defDir`
             
-        '''
+        """
         self.scope = scope
         self.spoolType = 'Queue'
         
@@ -90,7 +90,7 @@ class SpoolController(object):
             return (fn + '.h5') in os.listdir(self.dirname)
             
     def SetSpoolDir(self, dirname):
-        '''Set the directory we're spooling into'''
+        """Set the directory we're spooling into"""
         self.dirname = dirname + os.sep
 
         #if we've had to quit for whatever reason start where we left off
@@ -103,8 +103,8 @@ class SpoolController(object):
 
 
     def StartSpooling(self, fn=None, stack=False, compLevel = 2, zDwellTime = None, doPreflightCheck=True, maxFrames = sys.maxsize):
-        '''Start spooling
-        '''       
+        """Start spooling
+        """
 
         if fn in ['', None]: #sanity checking
             fn = self.seriesName
@@ -185,7 +185,7 @@ class SpoolController(object):
         
 
     def StopSpooling(self):
-        '''GUI callback to stop spooling.'''
+        """GUI callback to stop spooling."""
         self.spooler.StopSpool()
         
     def SpoolStopped(self, **kwargs):
@@ -203,8 +203,8 @@ class SpoolController(object):
         
 
     def LaunchAnalysis(self):
-        '''Launch analysis
-        '''
+        """Launch analysis
+        """
         
         dh5view_cmd = 'dh5view'
         if sys.platform == 'win32':
@@ -221,9 +221,9 @@ class SpoolController(object):
 
 
     def SetProtocol(self, protocolName=None, reloadProtocol=True):
-        '''Set the current protocol .
+        """Set the current protocol .
         
-        See also: PYME.Acquire.Protocols.'''
+        See also: PYME.Acquire.Protocols."""
 
         if (protocolName is None) or (protocolName == '<None>'):
             self.protocol = prot.NullProtocol
@@ -241,14 +241,14 @@ class SpoolController(object):
             self.protocolZ.filename = protocolName
             
     def SetSpoolMethod(self, method):
-        '''Set the spooling method
+        """Set the spooling method
         
         Parameters
         ----------
         
         method : string
             One of 'File', 'Queue', or 'HTTP'
-        '''
+        """
         self.spoolType = method
         
         #if we've had to quit for whatever reason start where we left off

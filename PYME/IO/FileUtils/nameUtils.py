@@ -20,8 +20,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-'''A selection of tools for automatically generating paths to either save or find
-data'''
+"""A selection of tools for automatically generating paths to either save or find
+data"""
 
 import os
 import re
@@ -32,9 +32,9 @@ import string
 seps = re.compile('[\\\\/*]')
 
 def getUsername():
-    '''
+    """
     Returns the user name in a platform independant way
-    '''
+    """
     if sys.platform == 'win32':
         import win32api
         return '_'.join(win32api.GetUserName().split(' '))
@@ -78,8 +78,8 @@ resultsdirPatternShort = '%(dataDir)s/%(username)s/analysis/'
 calibrationdirPattern = '%(dataDir)s/CALIBRATION/%(serialNum)s/'
 
 def getCalibrationDir(serialNum, create=True):
-    '''Returns the default directory where we would expect to find calibration
-    data - e.g. sCMOS calibration maps'''
+    """Returns the default directory where we would expect to find calibration
+    data - e.g. sCMOS calibration maps"""
     p =  os.path.join(*seps.split(calibrationdirPattern)) % {'dataDir':datadir, 'serialNum':serialNum}
     if create and not os.path.exists(p): #create the necessary directories
         os.makedirs(p)
@@ -87,8 +87,8 @@ def getCalibrationDir(serialNum, create=True):
     return os.path.normpath(p)
 
 def genHDFDataFilepath(create=True):
-    '''Generate a default path for saving HDF formatted raw data on the local
-    hard drive'''
+    """Generate a default path for saving HDF formatted raw data on the local
+    hard drive"""
     p =  os.path.join(*seps.split(datadirPattern)) % dateDict
     if create and not os.path.exists(p): #create the necessary directories
         os.makedirs(p)
@@ -96,12 +96,12 @@ def genHDFDataFilepath(create=True):
     return os.path.normpath(p)
     
 def genClusterDataFilepath():
-    '''Generates a default path for saving raw data on the cluster'''
+    """Generates a default path for saving raw data on the cluster"""
     return clusterDirPattern % dateDict
 
 def genResultFileName(dataFileName, create=True):
-    '''Generates a filename for saving fit results based on the original image
-    filename'''
+    """Generates a filename for saving fit results based on the original image
+    filename"""
     fn, ext = os.path.splitext(dataFileName) #remove extension
     fn = fn.replace(':', '/')
     #print os.path.join(*seps.split(resultsdirPatternShort)) % dateDict
@@ -113,7 +113,7 @@ def genResultFileName(dataFileName, create=True):
     return p + '.h5r'
 
 def genResultDirectoryPath():
-    '''Returns the default destination for saving fit reults'''
+    """Returns the default destination for saving fit reults"""
     
     #print os.path.join(*seps.split(resultsdirPatternShort)) % dateDict
     p = os.path.join(*(seps.split(resultsdirPatternShort) )) %dateDict
@@ -122,11 +122,11 @@ def genResultDirectoryPath():
 
 
 def genShiftFieldDirectoryPath():
-    '''Returns the default directory for shiftmaps'''
+    """Returns the default directory for shiftmaps"""
     return os.path.join(datadir, 'shiftmaps')
 
 def baseconvert(number,todigits):
-    '''Converts a number to an arbtrary base.
+    """Converts a number to an arbtrary base.
     
     Parameters
     ----------
@@ -135,7 +135,7 @@ def baseconvert(number,todigits):
     todigits : iterable or string
         The digits of the base e.g. '0123456' (base 7) 
         or 'ABCDEFGHIJK' (non-numeric base 11)
-    '''
+    """
     x = number
 
     # create the result in base 'len(todigits)'
@@ -152,7 +152,7 @@ def baseconvert(number,todigits):
     return res
     
 def numToAlpha(num):
-    '''Convert a number to an alphabetic code'''
+    """Convert a number to an alphabetic code"""
     return baseconvert(num, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')
     
 ########################
@@ -162,9 +162,9 @@ def numToAlpha(num):
 seps2 = re.compile('[\\\\/]')
 
 def translateSeparators(filename):
-    '''Convert a filename which might use mixed separators / slashes to os
+    """Convert a filename which might use mixed separators / slashes to os
     native form.
-    '''
+    """
     
     #return string.translate(filename, string.maketrans('\\/', os.sep + os.sep))
     #print seps.split(filename)
@@ -176,9 +176,9 @@ def translateSeparators(filename):
     return fn
 
 def getFullFilename(relFilename):
-    ''' returns a fully resolved filename given a filename relative to 
+    """ returns a fully resolved filename given a filename relative to
     the environment variable PYMEDATADIR. If environment variable not defined,
-    assumes path is absolute.'''
+    assumes path is absolute."""
     relFilename = translateSeparators(relFilename)
 
     #if 'PYMEDATADIR' in os.environ.keys():
@@ -188,9 +188,9 @@ def getFullFilename(relFilename):
     return os.path.join(datadir, relFilename)
 
 def getFullExistingFilename(relFilename):
-    ''' returns a fully resolved filename given a filename relative to
+    """ returns a fully resolved filename given a filename relative to
     the environment variable PYMEDATADIR. If environment variable not defined,
-    or the absolute path exists, assumes path is absolute.'''
+    or the absolute path exists, assumes path is absolute."""
 
     if os.path.exists(relFilename):
         return relFilename
@@ -202,8 +202,8 @@ def getFullExistingFilename(relFilename):
 
 
 def getRelFilename(filename):
-    '''returns the tail of filename - ie that portion which is underneath the 
-    PYMEDATADIR directory'''
+    """returns the tail of filename - ie that portion which is underneath the
+    PYMEDATADIR directory"""
     filename = translateSeparators(filename)
     #print filename
     

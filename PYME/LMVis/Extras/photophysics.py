@@ -67,7 +67,7 @@ class DecayAnalyser:
 
 
 def Plug(visFr):
-    '''Plugs this module into the gui'''
+    """Plugs this module into the gui"""
     DecayAnalyser(visFr)
 
 

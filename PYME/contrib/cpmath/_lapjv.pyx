@@ -1,4 +1,4 @@
-'''_lapjv.pyx - Jonker-Volgenant algorithm for linear assignment problem.
+"""_lapjv.pyx - Jonker-Volgenant algorithm for linear assignment problem.
 
 Supplementary routines for lapjv.py
 
@@ -9,7 +9,7 @@ See the accompanying file LICENSE for details.
 Copyright (c) 2003-2009 Massachusetts Institute of Technology
 Copyright (c) 2009-2012 Broad Institute
 All rights reserved.
-'''
+"""
 
 import numpy as np
 cimport numpy as np
@@ -41,7 +41,7 @@ def reduction_transfer(
     np.ndarray[dtype=np.float64_t, ndim=1, negative_indices=False, mode='c'] u,
     np.ndarray[dtype=np.float64_t, ndim=1, negative_indices=False, mode='c'] v,
     np.ndarray[dtype=np.float64_t, ndim=1, negative_indices=False, mode='c'] c):
-    '''Perform the reduction transfer step from the Jonker-Volgenant algorithm
+    """Perform the reduction transfer step from the Jonker-Volgenant algorithm
     
     The data is input in a ragged array in terms of "i" structured as a
     vector of values for each i,j combination where:
@@ -68,7 +68,7 @@ def reduction_transfer(
     The authors note that reduction transfer can be applied in later stages
     of the algorithm but does not seem to provide a substantial benefit
     in speed.
-    '''
+    """
     cdef:
         int i
         int n_i = ii.shape[0]
@@ -121,7 +121,7 @@ def augmenting_row_reduction(
     np.ndarray[dtype=np.float64_t, ndim=1, negative_indices=False, mode='c'] u,
     np.ndarray[dtype=np.float64_t, ndim=1, negative_indices=False, mode='c'] v,
     np.ndarray[dtype=np.float64_t, ndim=1, negative_indices=False, mode='c'] c):
-    '''Perform the augmenting row reduction step from the Jonker-Volgenaut algorithm
+    """Perform the augmenting row reduction step from the Jonker-Volgenaut algorithm
     
     n - the number of i and j in the linear assignment problem
     ii - the unassigned i
@@ -136,7 +136,7 @@ def augmenting_row_reduction(
     c - the cost for each entry.
     
     returns a numpy array of the new free choices.
-    '''
+    """
     free = np.ascontiguousarray(np.zeros(np.max(y)+1, np.uint32), np.uint32)
     cdef:
         int *p_i = <int *>(ii.data)
@@ -240,7 +240,7 @@ def augment(
     np.ndarray[dtype=np.float64_t, ndim=1, negative_indices=False, mode='c'] u,
     np.ndarray[dtype=np.float64_t, ndim=1, negative_indices=False, mode='c'] v,
     np.ndarray[dtype=np.float64_t, ndim=1, negative_indices=False, mode='c'] c):
-    '''Perform the augmentation step to assign unassigned i and j
+    """Perform the augmentation step to assign unassigned i and j
     
     n - the # of i and j, also the marker of unassigned x and y
     ii - the unassigned i
@@ -251,7 +251,7 @@ def augment(
     y - the assignments of i for each j
     u,v - the dual variables
     c - the costs
-    '''
+    """
     #
     # Holder for c[i,j] - v[j]
     #

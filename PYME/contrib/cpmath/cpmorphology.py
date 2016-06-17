@@ -34,13 +34,13 @@ except:
 import _convex_hull
 
 logger = logging.getLogger(__name__)
-'''A structuring element for eight-connecting a neigborhood'''
+"""A structuring element for eight-connecting a neigborhood"""
 eight_connect = scind.generate_binary_structure(2, 2)
-'''A structuring element for four-connecting a neigborhood'''
+"""A structuring element for four-connecting a neigborhood"""
 four_connect = scind.generate_binary_structure(2, 1)
 
 def fill_labeled_holes(labels, mask=None, size_fn = None):
-    '''Fill all background pixels that are holes inside the foreground
+    """Fill all background pixels that are holes inside the foreground
  
     A pixel is a hole inside a foreground object if
     
@@ -61,7 +61,7 @@ def fill_labeled_holes(labels, mask=None, size_fn = None):
               The function should return True to analyze and False to ignore
     
     returns a filled copy of the labels matrix
-    '''
+    """
     #
     # The algorithm:
     #
@@ -150,10 +150,10 @@ def fill_labeled_holes(labels, mask=None, size_fn = None):
     return labels.astype(labels_type)
     
 def adjacent(labels):
-    '''Return a binary mask of all pixels which are adjacent to a pixel of 
+    """Return a binary mask of all pixels which are adjacent to a pixel of
        a different label.
        
-    '''
+    """
     high = labels.max()+1
     if high > np.iinfo(labels.dtype).max:
         labels = labels.astype(np.int)
@@ -478,7 +478,7 @@ def relabel(image):
     return (new_image,len(unique_labels))
 
 def convex_hull_image(image):
-    '''Given a binary image, return an image of the convex hull'''
+    """Given a binary image, return an image of the convex hull"""
     labels = image.astype(int)
     points, counts = convex_hull(labels, np.array([1]))
     output = np.zeros(image.shape, int)
@@ -528,7 +528,7 @@ def convex_hull(labels, indexes=None, fast=True):
     return convex_hull_ijv(pixel_labels, indexes, fast)
 
 def convex_hull_ijv(pixel_labels, indexes, fast=True):
-    '''Return the convex hull for each label using an ijv labeling
+    """Return the convex hull for each label using an ijv labeling
     
     pixel_labels: the labeling of the pixels in i,j,v form where
                   i & j are the coordinates of a pixel and v is
@@ -541,7 +541,7 @@ def convex_hull_ijv(pixel_labels, indexes, fast=True):
     result is organized first by label, then the points are arranged
     counter-clockwise around the perimeter.
     The vector is a vector of #s of points in the convex hull per label
-    '''
+    """
     if fast:
         return _convex_hull.convex_hull_ijv(pixel_labels, indexes)
 
@@ -832,7 +832,7 @@ def draw_line(labels,pt0,pt1,value=1):
             labels[y,x] = value
 
 def get_line_pts(pt0i, pt0j, pt1i, pt1j):
-    '''Retrieve the coordinates of the points along lines
+    """Retrieve the coordinates of the points along lines
     
     pt0i, pt0j - the starting coordinates of the lines (1-d nparray)
     pt1i, pt1j - the ending coordinates of the lines (1-d nparray)
@@ -846,7 +846,7 @@ def get_line_pts(pt0i, pt0j, pt1i, pt1j):
     count is the # of points in the line
     i is the I coordinates for each point
     j is the J coordinate for each point
-    '''
+    """
     assert len(pt0i) == len(pt0j)
     assert len(pt0i) == len(pt1i)
     assert len(pt0i) == len(pt1j)
@@ -995,13 +995,13 @@ def fixup_scipy_ndimage_result(whatever_it_returned):
         return np.array([whatever_it_returned])
 
 def centers_of_labels(labels):
-    '''Return the i,j coordinates of the centers of a labels matrix
+    """Return the i,j coordinates of the centers of a labels matrix
     
     The result returned is an 2 x n numpy array where n is the number
     of the label minus one, result[0,x] is the i coordinate of the center
     and result[x,1] is the j coordinate of the center.
     You can unpack the result as "i,j = centers_of_labels(labels)"
-    '''
+    """
     max_labels = np.max(labels)
     if max_labels == 0:
         return np.zeros((2,0),int)
@@ -1016,7 +1016,7 @@ def centers_of_labels(labels):
     return result.transpose()
 
 def maximum_position_of_labels(image, labels, indices):
-    '''Return the i,j coordinates of the maximum value within each object
+    """Return the i,j coordinates of the maximum value within each object
     
     image - measure the maximum within this image
     labels - use the objects within this labels matrix
@@ -1025,7 +1025,7 @@ def maximum_position_of_labels(image, labels, indices):
     The result returned is an 2 x n numpy array where n is the number
     of the label minus one, result[0,x] is the i coordinate of the center
     and result[x,1] is the j coordinate of the center.
-    '''
+    """
     
     if len(indices) == 0:
         return np.zeros((2,0),int)
@@ -1404,7 +1404,7 @@ def minimum_enclosing_circle(labels, indexes = None,
     return centers, radii
 
 def associate_by_distance(labels_a, labels_b, distance):
-    '''Find the objects that are within a given distance of each other
+    """Find the objects that are within a given distance of each other
     
     Given two labels matrices and a distance, find pairs of objects that
     are within the given distance of each other where the distance is
@@ -1422,7 +1422,7 @@ def associate_by_distance(labels_a, labels_b, distance):
     Chin, "Optimal Algorithms for the Intersection and the Minimum Distance 
     Problems Between Planar Polygons", IEEE Transactions on Computers, 
     vol. C-32, # 12, December 1983
-    '''
+    """
     if np.max(labels_a) == 0 or np.max(labels_b) == 0:
         return np.zeros((0,2),int)
     
@@ -1541,20 +1541,20 @@ def associate_by_distance(labels_a, labels_b, distance):
             return ij_wins
 
 def minimum_distance2(hull_a, center_a, hull_b, center_b):
-    '''Return the minimum distance or 0 if overlap between 2 convex hulls
+    """Return the minimum distance or 0 if overlap between 2 convex hulls
     
     hull_a - list of points in clockwise direction
     center_a - a point within the hull
     hull_b - list of points in clockwise direction
     center_b - a point within the hull
-    '''
+    """
     if hull_a.shape[0] < 3 or hull_b.shape[0] < 3:
         return slow_minimum_distance2(hull_a, hull_b)
     else:
         return faster_minimum_distance2(hull_a, center_a, hull_b, center_b)
     
 def slow_minimum_distance2(hull_a, hull_b):
-    '''Do the minimum distance by exhaustive examination of all points'''
+    """Do the minimum distance by exhaustive examination of all points"""
     d2_min = np.iinfo(int).max
     for a in hull_a:
         if within_hull(a, hull_b):
@@ -1580,9 +1580,9 @@ def slow_minimum_distance2(hull_a, hull_b):
     return d2_min
 
 def faster_minimum_distance2(hull_a, center_a, hull_b, center_b):
-    '''Do the minimum distance using the bimodal property of hull ordering
+    """Do the minimum distance using the bimodal property of hull ordering
     
-    '''
+    """
     #
     # Find the farthest vertex in b from some point within A. Find the
     # vertices within A visible from this point in B. If the point in A
@@ -1668,10 +1668,10 @@ def faster_minimum_distance2(hull_a, center_a, hull_b, center_b):
     return d2_min
 
 def lines_intersect(pt1_p, pt2_p, pt1_q, pt2_q):
-    '''Return true if two line segments intersect
+    """Return true if two line segments intersect
     pt1_p, pt2_p - endpoints of first line segment
     pt1_q, pt2_q - endpoints of second line segment
-    '''
+    """
     #
     # The idea here is to do the cross-product of the vector from
     # point 1 to point 2 of one segment against the cross products from 
@@ -1694,12 +1694,12 @@ def lines_intersect(pt1_p, pt2_p, pt1_q, pt2_q):
     return True
 
 def colinear_intersection_test(pt1_a, pt2_a, pt_b):
-    '''Test that co-linear pt_b lies between pt1_a and pt2_a'''
+    """Test that co-linear pt_b lies between pt1_a and pt2_a"""
     da = np.sum((pt2_a-pt1_a)**2)
     return np.sum((pt1_a - pt_b)**2) < da and np.sum((pt2_a - pt_b)**2) < da
 
 def find_farthest(point, hull):
-    '''Find the vertex in hull farthest away from a point'''
+    """Find the vertex in hull farthest away from a point"""
     d_start = np.sum((point-hull[0,:])**2)
     d_end = np.sum((point-hull[-1,:])**2)
     if d_start > d_end:
@@ -1723,7 +1723,7 @@ def find_farthest(point, hull):
     return i-inc
 
 def find_visible(hull, observer, background):
-    '''Given an observer location, find the first and last visible
+    """Given an observer location, find the first and last visible
        points in the hull
        
        The observer at "observer" is looking at the hull whose most distant
@@ -1731,7 +1731,7 @@ def find_visible(hull, observer, background):
        the furthest distance from the line between observer and background.
        These will be the start and ends in the vertex chain of vertices
        visible by the observer.
-       '''
+       """
     pt_background = hull[background,:]
     vector = pt_background - observer
     i = background
@@ -1759,12 +1759,12 @@ def find_visible(hull, observer, background):
     return (i_min, i_max)
         
 def distance2_to_line(pt, l0, l1):
-    '''The perpendicular distance squared from a point to a line
+    """The perpendicular distance squared from a point to a line
     
     pt - point in question
     l0 - one point on the line
     l1 - another point on the line
-    '''
+    """
     pt = np.atleast_1d(pt)
     l0 = np.atleast_1d(l0)
     l1 = np.atleast_1d(l1)
@@ -1780,7 +1780,7 @@ def distance2_to_line(pt, l0, l1):
         
 
 def within_hull(point, hull):
-    '''Return true if the point is within the convex hull'''
+    """Return true if the point is within the convex hull"""
     h_prev_pt = hull[-1,:]
     for h_pt in hull:
         if np.cross(h_pt-h_prev_pt, point - h_pt) >= 0:
@@ -1789,7 +1789,7 @@ def within_hull(point, hull):
     return True
         
 def all_true(a, indexes):
-    '''Find which vectors have all-true elements
+    """Find which vectors have all-true elements
     
     Given an array, "a" and indexes into the first elements of vectors
     within that array, return an array where each element is true if
@@ -1798,7 +1798,7 @@ def all_true(a, indexes):
     Example: a = [ 1,1,0,1,1,1,1], indexes=[0,3]
              vectors = [[1,1,0],[1,1,1,1]]
              return = [False, True]
-    '''
+    """
     if len(indexes) == 0:
         return np.zeros(0,bool)
     elif len(indexes) == 1:
@@ -2309,14 +2309,14 @@ def block(shape, block_shape):
     return labels, indexes
 
 def white_tophat(image, radius=None, mask=None, footprint=None):
-    '''White tophat filter an image using a circular structuring element
+    """White tophat filter an image using a circular structuring element
     
     image - image in question
     radius - radius of the circular structuring element. If no radius, use
              an 8-connected structuring element.
     mask  - mask of significant pixels in the image. Points outside of
             the mask will not participate in the morphological operations
-    '''
+    """
     #
     # Subtract the opening to get the tophat
     #
@@ -2330,14 +2330,14 @@ def white_tophat(image, radius=None, mask=None, footprint=None):
     return final_image
 
 def black_tophat(image, radius=None, mask=None, footprint=None):
-    '''Black tophat filter an image using a circular structuring element
+    """Black tophat filter an image using a circular structuring element
     
     image - image in question
     radius - radius of the circular structuring element. If no radius, use
              an 8-connected structuring element.
     mask  - mask of significant pixels in the image. Points outside of
             the mask will not participate in the morphological operations
-    '''
+    """
     #
     # Subtract the image from the closing to get the bothat
     #
@@ -2351,7 +2351,7 @@ def black_tophat(image, radius=None, mask=None, footprint=None):
     return final_image
 
 def grey_erosion(image, radius=None, mask=None, footprint=None):
-    '''Perform a grey erosion with masking'''
+    """Perform a grey erosion with masking"""
     if footprint == None:
         if radius is None:
             footprint = np.ones((3,3),bool)
@@ -2376,7 +2376,7 @@ def grey_erosion(image, radius=None, mask=None, footprint=None):
     return final_image
 
 def grey_dilation(image, radius=None, mask=None, footprint=None):
-    '''Perform a grey dilation with masking'''
+    """Perform a grey dilation with masking"""
     if footprint == None:
         if radius is None:
             footprint = np.ones((3,3),bool)
@@ -2404,7 +2404,7 @@ def grey_dilation(image, radius=None, mask=None, footprint=None):
     return final_image
 
 def grey_reconstruction(image, mask, footprint=None, offset=None):
-    '''Perform a morphological reconstruction of the image
+    """Perform a morphological reconstruction of the image
     
     grey_dilate the image, constraining each pixel to have a value that is
     at most that of the mask.
@@ -2416,7 +2416,7 @@ def grey_reconstruction(image, mask, footprint=None, offset=None):
     The algorithm is taken from:
     Robinson, "Efficient morphological reconstruction: a downhill filter",
     Pattern Recognition Letters 25 (2004) 1759-1767
-    '''
+    """
     assert tuple(image.shape) == tuple(mask.shape)
     assert np.all(image <= mask)
     if footprint is None:
@@ -2523,29 +2523,29 @@ def grey_reconstruction(image, mask, footprint=None, offset=None):
     return values[inside_slices]
     
 def opening(image, radius=None, mask=None, footprint=None):
-    '''Do a morphological opening
+    """Do a morphological opening
     
     image - pixel image to operate on
     radius - use a structuring element with the given radius. If no radius,
              use an 8-connected structuring element.
     mask - if present, only use unmasked pixels for operations
-    '''
+    """
     eroded_image = grey_erosion(image, radius, mask, footprint)
     return grey_dilation(eroded_image, radius, mask, footprint)
 
 def closing(image, radius=None, mask=None, footprint = None):
-    '''Do a morphological closing
+    """Do a morphological closing
     
     image - pixel image to operate on
     radius - use a structuring element with the given radius. If no structuring
              element, use an 8-connected structuring element.
     mask - if present, only use unmasked pixels for operations
-    '''
+    """
     dilated_image = grey_dilation(image, radius, mask, footprint)
     return grey_erosion(dilated_image, radius, mask, footprint)
 
 def table_lookup(image, table, border_value, iterations = None):
-    '''Perform a morphological transform on an image, directed by its neighbors
+    """Perform a morphological transform on an image, directed by its neighbors
     
     image - a binary image
     table - a 512-element table giving the transform of each pixel given
@@ -2560,7 +2560,7 @@ def table_lookup(image, table, border_value, iterations = None):
     6 7 8
     The index at a pixel is the sum of 2**<pixel-number> for pixels
     that evaluate to true. 
-    '''
+    """
     #
     # Test for a table that never transforms a zero into a one:
     #
@@ -2624,19 +2624,19 @@ def table_lookup(image, table, border_value, iterations = None):
     return image
 
 def pattern_of(index):
-    '''Return the pattern represented by an index value'''
+    """Return the pattern represented by an index value"""
     return np.array([[index & 2**0,index & 2**1,index & 2**2],
                      [index & 2**3,index & 2**4,index & 2**5],
                      [index & 2**6,index & 2**7,index & 2**8]], bool)
 
 def index_of(pattern):
-    '''Return the index of a given pattern'''
+    """Return the index of a given pattern"""
     return (pattern[0,0] * 2**0 + pattern[0,1] * 2**1 + pattern[0,2] * 2**2 +
             pattern[1,0] * 2**3 + pattern[1,1] * 2**4 + pattern[1,2] * 2**5 +
             pattern[2,0] * 2**6 + pattern[2,1] * 2**7 + pattern[2,2] * 2**8)
     
 def make_table(value, pattern, care=np.ones((3,3),bool)):
-    '''Return a table suitable for table_lookup
+    """Return a table suitable for table_lookup
     
     value - set all table entries matching "pattern" to "value", all others
             to not "value"
@@ -2644,9 +2644,9 @@ def make_table(value, pattern, care=np.ones((3,3),bool)):
     care    - a 3x3 boolean array where each value is true if the pattern
               must match at that position and false if we don't care if
               the pattern matches at that position.
-    '''
+    """
     def fn(index, p,i,j):
-        '''Return true if bit position "p" in index matches pattern'''
+        """Return true if bit position "p" in index matches pattern"""
         return ((((index & 2**p) > 0) == pattern[i,j]) or not care[i,j])
     return np.array([value 
                      if (fn(i,0,0,0) and fn(i,1,0,1) and fn(i,2,0,2) and
@@ -2655,7 +2655,7 @@ def make_table(value, pattern, care=np.ones((3,3),bool)):
                      else not value
                      for i in range(512)], bool)
 
-'''The table for computing the branchpoints of a skeleton'''
+"""The table for computing the branchpoints of a skeleton"""
 #
 # A skeleton will only contain 3-connected pixels if the connected
 # pixels are on three separate branches. The operation is subtractive
@@ -2668,7 +2668,7 @@ branchpoints_table = np.array([pattern_of(index)[1,1] and
                                for index in range(512)])
 
 def branchpoints(image, mask=None):
-    '''Remove all pixels from an image except for branchpoints
+    """Remove all pixels from an image except for branchpoints
     
     image - a skeletonized image
     mask -  a mask of pixels excluded from consideration
@@ -2676,7 +2676,7 @@ def branchpoints(image, mask=None):
     1 0 1    ? 0 ?
     0 1 0 -> 0 1 0
     0 1 0    0 ? 0
-    '''
+    """
     global branchpoints_table
     if mask is None:
         masked_image = image
@@ -2705,7 +2705,7 @@ branchings_table = np.array([ 0 if (index & 16) == 0
                              for index in range(512)])
 
 def branchings(image, mask=None):
-    '''Count the number of branches eminating from each pixel
+    """Count the number of branches eminating from each pixel
     
     image - a binary image
     mask - optional mask of pixels not to consider
@@ -2718,7 +2718,7 @@ def branchings(image, mask=None):
     1 0 1
     0 1 0 -> 4
     1 0 1
-    '''
+    """
     global branchings_table
     if mask is None:
         masked_image = image
@@ -2737,7 +2737,7 @@ def branchings(image, mask=None):
     result = branchings_table[indexer]
     return result
 
-'''The table for computing binary bridge'''
+"""The table for computing binary bridge"""
 #
 # Either the center is already true or, if you label the pattern,
 # there are two unconnected objects in the pattern
@@ -2748,12 +2748,12 @@ bridge_table = np.array([pattern_of(index)[1,1] or
                          for index in range(512)])
 
 def bridge(image, mask=None, iterations = 1):
-    '''Fill in pixels that bridge gaps.
+    """Fill in pixels that bridge gaps.
     
     1 0 0    1 0 0
     0 0 0 -> 0 1 0
     0 0 1    0 0 1
-    '''
+    """
     global bridge_table
     if mask is None:
         masked_image = image
@@ -2771,7 +2771,7 @@ clean_table = (make_table(True, np.array([[0,0,0],[0,1,0],[0,0,0]],bool),
                make_table(False, np.array([[0,0,0],[0,1,0],[0,0,0]],bool)))
 
 def clean(image, mask=None, iterations = 1):
-    '''Remove isolated pixels
+    """Remove isolated pixels
     
     0 0 0     0 0 0
     0 1 0 ->  0 0 0
@@ -2779,7 +2779,7 @@ def clean(image, mask=None, iterations = 1):
     
     Border pixels and pixels adjoining masks are removed unless one valid
     neighbor is true.
-    '''
+    """
     global clean_table
     if mask is None:
         masked_image = image
@@ -2821,13 +2821,13 @@ diag_table = (make_table(True, np.array([[0,0,0],[0,1,0],[0,0,0]],bool),
                                          [1,1,0]])))
                                          
 def diag(image, mask=None, iterations=1):
-    '''4-connect pixels that are 8-connected
+    """4-connect pixels that are 8-connected
     
     0 0 0     0 0 ?
     0 0 1 ->  0 1 1
     0 1 0     ? 1 ?
     
-    '''
+    """
     global diag_table
     if mask is None:
         masked_image = image
@@ -2847,7 +2847,7 @@ endpoints_table = np.array([pattern_of(index)[1,1] and
                             for index in range(512)])
 
 def endpoints(image, mask=None):
-    '''Remove all pixels from an image except for endpoints
+    """Remove all pixels from an image except for endpoints
     
     image - a skeletonized image
     mask -  a mask of pixels excluded from consideration
@@ -2855,7 +2855,7 @@ def endpoints(image, mask=None):
     1 0 0    ? 0 0
     0 1 0 -> 0 1 0
     0 0 0    0 0 0
-    '''
+    """
     global endpoints_table
     if mask is None:
         masked_image = image
@@ -2873,12 +2873,12 @@ fill_table = (make_table(True, np.array([[0,0,0],[0,1,0],[0,0,0]],bool),
               make_table(True, np.array([[1,1,1],[1,0,1],[1,1,1]],bool)))
 
 def fill(image, mask=None, iterations=1):
-    '''Fill isolated black pixels
+    """Fill isolated black pixels
     
     1 1 1     1 1 1
     1 0 1 ->  1 1 1
     1 1 1     1 1 1
-    '''
+    """
     global fill_table
     if mask is None:
         masked_image = image
@@ -2898,12 +2898,12 @@ fill4_table = (make_table(True,
                          np.array([[1,1,1],[1,0,1],[1,1,1]],bool),
                          np.array([[0,1,0],[1,1,1],[0,1,0]])))
 def fill4(image, mask=None, iterations=1):
-    '''Fill 4-connected black pixels
+    """Fill 4-connected black pixels
     
     x 1 x     x 1 x
     1 0 1 ->  1 1 1
     x 1 x     x 1 x
-    '''
+    """
     global fill4_table
     if mask is None:
         masked_image = image
@@ -2922,12 +2922,12 @@ hbreak_table = (make_table(True, np.array([[0,0,0],[0,1,0],[0,0,0]],bool),
                  for i in range(512)])
 
 def hbreak(image, mask=None, iterations=1):
-    '''Remove horizontal breaks
+    """Remove horizontal breaks
     
     1 1 1     1 1 1
     0 1 0 ->  0 0 0 (this case only)
     1 1 1     1 1 1
-    '''
+    """
     global hbreak_table
     if mask is None:
         masked_image = image
@@ -2946,12 +2946,12 @@ vbreak_table = (make_table(True, np.array([[0,0,0],[0,1,0],[0,0,0]],bool),
                  for i in range(512)])
 
 def vbreak(image, mask=None, iterations=1):
-    '''Remove horizontal breaks
+    """Remove horizontal breaks
     
     1 1 1     1 1 1
     0 1 0 ->  0 0 0 (this case only)
     1 1 1     1 1 1
-    '''
+    """
     global vbreak_table
     if mask is None:
         masked_image = image
@@ -2974,9 +2974,9 @@ def life(image, mask=None, iterations=1):
 # Majority table - a pixel is 1 if the sum of it and its neighbors is > 4
 majority_table = np.array([np.sum(pattern_of(i))>4 for i in range(512)])
 def majority(image, mask=None, iterations=1):
-    '''A pixel takes the value of the majority of its neighbors
+    """A pixel takes the value of the majority of its neighbors
     
-    '''
+    """
     global majority_table
     if mask is None:
         masked_image = image
@@ -3002,12 +3002,12 @@ remove_table = (make_table(True,
                                     [0,1,0]],bool)))
 
 def remove(image, mask=None, iterations=1):
-    '''Turn 1 pixels to 0 if their 4-connected neighbors are all 0
+    """Turn 1 pixels to 0 if their 4-connected neighbors are all 0
     
     ? 1 ?     ? 1 ?
     1 1 1  -> 1 0 1
     ? 1 ?     ? 1 ?
-    '''
+    """
     global remove_table
     if mask is None:
         masked_image = image
@@ -3040,12 +3040,12 @@ spur_table_2 = np.array([(np.sum(pattern_of(i)) != 2 or
                          for i in range(512)],bool)
 
 def spur(image, mask=None, iterations=1):
-    '''Remove spur pixels from an image
+    """Remove spur pixels from an image
     
     0 0 0    0 0 0
     0 1 0 -> 0 0 0
     0 0 1    0 0 ?
-    '''
+    """
     global spur_table_1,spur_table_2
     if mask is None:
         masked_image = image
@@ -3074,7 +3074,7 @@ thicken_table = np.array([scind.label(pattern_of(i), eight_connect)[1] ==
                           ((i & 16) != 0) for i in range(512)])
                                       
 def thicken(image, mask=None, iterations=1):
-    '''Thicken the objects in an image where doing so does not connect them
+    """Thicken the objects in an image where doing so does not connect them
     
     0 0 0    ? ? ?
     0 0 0 -> ? 1 ?
@@ -3083,7 +3083,7 @@ def thicken(image, mask=None, iterations=1):
     1 0 0    ? ? ?
     0 0 0 -> ? 0 ?
     0 0 1    ? ? ?
-    '''
+    """
     global thicken_table
     if mask is None:
         masked_image = image
@@ -3118,12 +3118,12 @@ def thicken(image, mask=None, iterations=1):
 thin_table = None
 
 def thin(image, mask=None, iterations=1):
-    '''Thin an image to lines, preserving Euler number
+    """Thin an image to lines, preserving Euler number
     
     Implements thinning as described in algorithm # 1 from
     Guo, "Parallel Thinning with Two Subiteration Algorithms",
     Communications of the ACM, Vol 32 #3 page 359.
-    '''
+    """
     global thin_table, eight_connect
     if thin_table is None:
         thin_table = np.zeros((2,512),bool)
@@ -3169,7 +3169,7 @@ def thin(image, mask=None, iterations=1):
     return masked_image
 
 def find_neighbors(labels):
-    '''Find the set of objects that touch each object in a labels matrix
+    """Find the set of objects that touch each object in a labels matrix
     
     Construct a "list", per-object, of the objects 8-connected adjacent
     to that object.
@@ -3180,7 +3180,7 @@ def find_neighbors(labels):
     
     For instance, say 1 touches 2 and 3 and nobody touches 4. The arrays are:
     [ 2, 1, 1, 0], [ 0, 2, 3, 4], [ 2, 3, 1, 1]
-    '''
+    """
     max_label = np.max(labels)
     # Make a labels matrix with zeros around the edges so we can do index
     # offsets without worrying.
@@ -3245,9 +3245,9 @@ def find_neighbors(labels):
     return (v_count, v_index, v_neighbor)
 
 def distance_color_labels(labels):
-    '''Recolor a labels matrix so that adjacent labels have distant numbers
+    """Recolor a labels matrix so that adjacent labels have distant numbers
     
-    '''
+    """
     #
     # Color labels so adjacent ones are most distant
     #
@@ -3268,7 +3268,7 @@ def distance_color_labels(labels):
     return colors.astype(labels.dtype)
 
 def color_labels(labels, distance_transform = False):
-    '''Color a labels matrix so that no adjacent labels have the same color
+    """Color a labels matrix so that no adjacent labels have the same color
     
     distance_transform - if true, distance transform the labels to find out
          which objects are closest to each other.
@@ -3284,7 +3284,7 @@ def color_labels(labels, distance_transform = False):
     pixels in another.
     
     returns the color matrix
-    '''
+    """
     if distance_transform:
         i,j = scind.distance_transform_edt(labels == 0, return_distances=False,
                                            return_indices = True)
@@ -3340,13 +3340,13 @@ def color_labels(labels, distance_transform = False):
     return v_color[labels]
 
 def skeletonize(image, mask=None):
-    '''Skeletonize the image
+    """Skeletonize the image
     
     Take the distance transform.
     Order the 1 points by the distance transform.
     Remove a point if it has more than 1 neighbor and if removing it
     does not change the Euler number.
-    '''
+    """
     global eight_connect
     if mask is None:
         masked_image = image
@@ -3403,7 +3403,7 @@ def skeletonize(image, mask=None):
     return result
 
 def skeletonize_labels(labels):
-    '''Skeletonize a labels matrix'''
+    """Skeletonize a labels matrix"""
     #
     # The trick here is to separate touching labels by coloring the
     # labels matrix and then processing each color separately
@@ -3419,7 +3419,7 @@ def skeletonize_labels(labels):
     return result
 
 def label_skeleton(skeleton):
-    '''Label a skeleton so that each edge has a unique label
+    """Label a skeleton so that each edge has a unique label
     
     This operation produces a labels matrix where each edge between
     two branchpoints has a different label. If the skeleton has been
@@ -3434,7 +3434,7 @@ def label_skeleton(skeleton):
     but a point in category 3 can't connect to another point in category 3.
     
     Returns the labels matrix and the count as a tuple
-    '''
+    """
     bpts = branchpoints(skeleton)
     #
     # Count the # of neighbors per point
@@ -3499,12 +3499,12 @@ def label_skeleton(skeleton):
             0 if len(labeling) == 0 else int(np.max(labeling)) + 1)
     
 def distance_to_edge(labels):
-    '''Compute the distance of a pixel to the edge of its object
+    """Compute the distance of a pixel to the edge of its object
     
     labels - a labels matrix
     
     returns a matrix of distances
-    '''
+    """
     colors = color_labels(labels)
     max_color = np.max(colors)
     result = np.zeros(labels.shape)
@@ -3517,7 +3517,7 @@ def distance_to_edge(labels):
     return result
  
 def regional_maximum(image, mask = None, structure=None, ties_are_ok=False):
-    '''Return a binary mask containing only points that are regional maxima
+    """Return a binary mask containing only points that are regional maxima
     
     image     - image to be transformed
     mask      - mask of relevant pixels
@@ -3533,7 +3533,7 @@ def regional_maximum(image, mask = None, structure=None, ties_are_ok=False):
     
     A location cannot be a local maximum if it is touching the edge or a
     masked pixel.
-    '''
+    """
     global eight_connect
     if not ties_are_ok:
         #
@@ -3605,7 +3605,7 @@ def regional_maximum(image, mask = None, structure=None, ties_are_ok=False):
     return result
 
 def all_connected_components(i,j):
-    '''Associate each label in i with a component #
+    """Associate each label in i with a component #
     
     This function finds all connected components given an array of
     associations between labels i and j using a depth-first search.
@@ -3615,7 +3615,7 @@ def all_connected_components(i,j):
     edges in one direction (although the algorithm can withstand duplicates).
     
     returns a label for each vertex up to the maximum named vertex in i.
-    '''
+    """
     if len(i) == 0:
         return i
     i1 = np.hstack((i,j))
@@ -3637,7 +3637,7 @@ def all_connected_components(i,j):
     return labels
 
 def pairwise_permutations(i, j):
-    '''Return all permutations of a set of groups
+    """Return all permutations of a set of groups
     
     This routine takes two vectors:
     i - the label of each group
@@ -3668,7 +3668,7 @@ def pairwise_permutations(i, j):
     2 | 4  | 6
     2 | 5  | 6
     etc
-    '''
+    """
     if len(i) == 0:
         return (np.array([], int), np.array([], j.dtype), np.array([], j.dtype))
     #
@@ -3782,14 +3782,14 @@ def pairwise_permutations(i, j):
     return (d_i, d_j1, d_j2)
 
 def is_local_maximum(image, labels, footprint):
-    '''Return a boolean array of points that are local maxima
+    """Return a boolean array of points that are local maxima
     
     image - intensity image
     labels - find maxima only within labels. Zero is reserved for background.
     footprint - binary mask indicating the neighborhood to be examined
                 must be a matrix with odd dimensions, center is taken to
                 be the point in question.
-    '''
+    """
     assert((np.all(footprint.shape) & 1) == 1)
     footprint = (footprint != 0)
     footprint_extent = (np.array(footprint.shape)-1) / 2
@@ -3844,7 +3844,7 @@ def is_local_maximum(image, labels, footprint):
     return result
 
 def angular_distribution(labels, resolution=100, weights=None):
-    '''For each object in labels, compute the angular distribution
+    """For each object in labels, compute the angular distribution
     around the centers of mass.  Returns an i x j matrix, where i is
     the number of objects in the label matrix, and j is the resolution
     of the distribution (default 100), mapped from -pi to pi.
@@ -3859,7 +3859,7 @@ def angular_distribution(labels, resolution=100, weights=None):
     >>> angdist = angular_distribution(labels, resolution)
     >>> angdist2 = angdist[:, :resolution/2] + angdist[:, resolution/2] # map to widths, rather than radii
     >>> chord_ratio = np.sqrt(angdist2.max(axis=1) / angdist2.min(axis=1)) # sqrt because these are sectors, not triangles
-    '''
+    """
     if weights is None:
         weights = np.ones(labels.shape)
     maxlabel = labels.max()
@@ -3890,7 +3890,7 @@ def angular_distribution(labels, resolution=100, weights=None):
     return dist
 
 def feret_diameter(chulls, counts, indexes):
-    '''Return the minimum and maximum Feret diameter for each object
+    """Return the minimum and maximum Feret diameter for each object
     
     This function takes the convex hull data, as generated by convex_hull
     and returns the minimum and maximum Feret diameter for each convex hull.
@@ -3900,7 +3900,7 @@ def feret_diameter(chulls, counts, indexes):
     counts    - the number of points in each convex hull
     
     returns two arrays, the minimum and maximum diameter per object.
-    '''
+    """
     #
     # Method taken from Alsuwaiyel, "Algorithms, Design Techniques and
     # Analysis", World Scientific, 2003
@@ -4090,14 +4090,14 @@ def feret_diameter(chulls, counts, indexes):
     return min_distance, max_distance
 
 def is_obtuse(p1, v, p2):
-    '''Determine whether the angle, p1 - v - p2 is obtuse
+    """Determine whether the angle, p1 - v - p2 is obtuse
     
     p1 - N x 2 array of coordinates of first point on edge
     v - N x 2 array of vertex coordinates
     p2 - N x 2 array of coordinates of second point on edge
     
     returns vector of booleans
-    '''
+    """
     p1x = p1[:,1]
     p1y = p1[:,0]
     p2x = p2[:,1]
@@ -4111,14 +4111,14 @@ def is_obtuse(p1, v, p2):
     return Dvp1x * Dx + Dvp1y * Dy > 0
     
 def single_shortest_paths(start_node, weights):
-    '''Find the shortest path from the start node to all others
+    """Find the shortest path from the start node to all others
     
     start_node - index of the node to start at
     weights - n x n matrix giving the cost of going from i to j
     
     returns a vector giving the predecessor index for each node
     and a vector of the cost of reaching each node from the start node
-    '''
+    """
     
     n = weights.shape[0]
     predecessors = np.ones(n, int) * start_node

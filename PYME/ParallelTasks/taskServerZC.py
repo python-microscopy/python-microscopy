@@ -280,39 +280,39 @@ class TaskQueueSet(Pyro.core.ObjBase):
         self.taskQueues[queueName].setPopFcn(fcn)
 
     def getQueueData(self, queueName, *args):
-        '''Get data ascociated with queue - for cases when you might not want to send data with task every time e.g. to allow client side buffering of image data'''
+        """Get data ascociated with queue - for cases when you might not want to send data with task every time e.g. to allow client side buffering of image data"""
         return self.taskQueues[queueName].getQueueData(*args)
 
     def setQueueData(self, queueName, *args):
-        '''Set data ascociated with queue'''
+        """Set data ascociated with queue"""
         self.taskQueues[queueName].setQueueData(*args)
 
     def addQueueEvents(self, queueName, *args):
-        '''Set data ascociated with queue'''
+        """Set data ascociated with queue"""
         self.taskQueues[queueName].addQueueEvents(*args)
 
     def getQueueMetaData(self, queueName, *args):
-        '''Get meta-data ascociated with queue'''
+        """Get meta-data ascociated with queue"""
         return self.taskQueues[queueName].getQueueMetaData(*args)
 
     def setQueueMetaData(self, queueName, *args):
-        '''Set meta-data ascociated with queue'''
+        """Set meta-data ascociated with queue"""
         self.taskQueues[queueName].setQueueMetaData(*args)
         
     def setQueueMetaDataEntries(self, queueName, *args):
-        '''Set meta-data ascociated with queue'''
+        """Set meta-data ascociated with queue"""
         self.taskQueues[queueName].setQueueMetaDataEntries(*args)
 
     def getQueueMetaDataKeys(self, queueName, *args):
-        '''Get meta-data keys ascociated with queue'''
+        """Get meta-data keys ascociated with queue"""
         return self.taskQueues[queueName].getQueueMetaDataKeys(*args)
 
     def logQueueEvent(self, queueName, *args):
-        '''Report an event ot a queue'''
+        """Report an event ot a queue"""
         return self.taskQueues[queueName].logQueueEvent(*args)
 
     def releaseTasks(self, queueName, *args):
-        '''Release held tasks'''
+        """Release held tasks"""
         return self.taskQueues[queueName].releaseTasks(*args)
 
     def createQueue(self, queueType, queueName, *args, **kwargs):

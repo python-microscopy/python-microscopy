@@ -1,4 +1,4 @@
-'''test_threshold - test the threshold module
+"""test_threshold - test the threshold module
 
 CellProfiler is distributed under the GNU General Public License,
 but this file is licensed under the more permissive BSD license.
@@ -11,7 +11,7 @@ All rights reserved.
 Please see the AUTHORS file for credits.
 
 Website: http://www.cellprofiler.org
-'''
+"""
 __version__="$Revision: 11024 $"
 
 import numpy as np
@@ -25,7 +25,7 @@ class TestThreshold(unittest.TestCase):
         result = T.get_otsu_threshold(-np.ones((10,10)))
         
     def test_01_01_negative_log_otsu(self):
-        '''regression test of img-1466'''
+        """regression test of img-1466"""
         
         r = np.random.RandomState()
         r.seed(11)

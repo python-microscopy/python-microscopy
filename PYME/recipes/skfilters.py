@@ -11,7 +11,7 @@ import numpy as np
 import skimage.filters as skf
 import inspect
 
-'''Automagically generate filter objects for all skimage filters'''
+"""Automagically generate filter objects for all skimage filters"""
 
 class SKFilter(Filter):
         #def __init__(self, **kwargs):
@@ -35,7 +35,7 @@ class SKFilter(Filter):
         def _getargmd(self):
             return {an: repr(getattr(self, an)) for an in self._argnames}
             
-ctemplate = '''
+ctemplate = """
 @register_module("%(FilterID)s")
 class %(FilterID)s(SKFilter):
     _argnames = args
@@ -45,7 +45,7 @@ class %(FilterID)s(SKFilter):
     %(paramString)s
 
 
-'''
+"""
 
 #print ctemplate
 

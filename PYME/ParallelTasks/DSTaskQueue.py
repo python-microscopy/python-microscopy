@@ -10,7 +10,7 @@ import threading
 from .HDFTaskQueue import HDFResultsTaskQueue, doNix, popZero, CHUNKSIZE, MAXCHUNKSIZE, fitTask
 
 class DSTaskQueue(HDFResultsTaskQueue):
-    ''' task queue which, when initialised with an hdf image filename, automatically generates tasks - should also (eventually) include support for dynamically adding to data file for on the fly analysis'''
+    """ task queue which, when initialised with an hdf image filename, automatically generates tasks - should also (eventually) include support for dynamically adding to data file for on the fly analysis"""
     def __init__(self, name, mdh, dataSourceModule, dataSourceID, resultsFilename=None, onEmpty = doNix, fTaskToPop = popZero, startAt = 10):
 
         self.acceptNewTasks = False
@@ -140,7 +140,7 @@ class DSTaskQueue(HDFResultsTaskQueue):
 
         
     def getQueueData(self, fieldName, *args):
-        '''Get data, defined by fieldName and potntially additional arguments,  ascociated with queue'''
+        """Get data, defined by fieldName and potntially additional arguments,  ascociated with queue"""
         if fieldName == 'ImageShape':
             with self.dataFileLock.rlock:
                 res = self.h5DataFile.root.ImageData.shape[1:]           

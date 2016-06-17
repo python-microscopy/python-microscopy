@@ -228,10 +228,10 @@ class GetHandler(BaseHTTPRequestHandler):
                 self.send_response(200)
                 self.end_headers()
                 
-                message = '''PYME h5 data:
+                message = """PYME h5 data:
                 Data size: [%d,%d, %d]
                 NumEvents: %d
-                ''' % tuple(h5f.dshape + [h5f.nEvents])
+                """ % tuple(h5f.dshape + [h5f.nEvents])
                 
                 self.wfile.write(message)
                 return

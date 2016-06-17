@@ -228,7 +228,7 @@ class SpoolEvent(tables.IsDescription):
 
 
 class HDFResultsTaskQueue(TaskQueue):
-    '''Task queue which saves it's results to a HDF file'''
+    """Task queue which saves it's results to a HDF file"""
     def __init__(self, name, resultsFilename, initialTasks=[], onEmpty = doNix, fTaskToPop = popZero):
         if resultsFilename == None:
             resultsFilename = genResultFileName(name)
@@ -481,7 +481,7 @@ class HDFResultsTaskQueue(TaskQueue):
         
         
     def getQueueData(self, fieldName, *args):
-        '''Get data, defined by fieldName and potntially additional arguments,  ascociated with queue'''
+        """Get data, defined by fieldName and potntially additional arguments,  ascociated with queue"""
         if fieldName == 'FitResults':
             startingAt, = args
             with self.fileResultsLock.rlock:
@@ -517,7 +517,7 @@ class HDFResultsTaskQueue(TaskQueue):
 
 
 class HDFTaskQueue(HDFResultsTaskQueue):
-    ''' task queue which, when initialised with an hdf image filename, automatically generates tasks - should also (eventually) include support for dynamically adding to data file for on the fly analysis'''
+    """ task queue which, when initialised with an hdf image filename, automatically generates tasks - should also (eventually) include support for dynamically adding to data file for on the fly analysis"""
     def __init__(self, name, dataFilename = None, resultsFilename=None, onEmpty = doNix, fTaskToPop = popZero, startAt = 'guestimate', frameSize=(-1,-1), complevel=6, complib='zlib'):
         if dataFilename == None:
            self.dataFilename = genDataFilename(name)
@@ -800,7 +800,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
                     self.dataMDH.setEntry(mdk, mdv)
         
     def getQueueData(self, fieldName, *args):
-        '''Get data, defined by fieldName and potntially additional arguments,  ascociated with queue'''
+        """Get data, defined by fieldName and potntially additional arguments,  ascociated with queue"""
         if fieldName == 'ImageShape':
             with self.dataFileLock.rlock:
                 res = self.h5DataFile.root.ImageData.shape[1:]

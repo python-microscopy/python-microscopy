@@ -23,7 +23,7 @@
 
 import os
 
-copyr = '''#!/usr/bin/python
+copyr = """#!/usr/bin/python
 
 ##################
 # %s
@@ -46,7 +46,7 @@ copyr = '''#!/usr/bin/python
 #
 ##################
 
-'''
+"""
 
 def walkFunc(arg, dirname, fnames):
     for fn in fnames:

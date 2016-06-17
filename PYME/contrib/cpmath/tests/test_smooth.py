@@ -37,7 +37,7 @@ class TestSmoothWithNoise(unittest.TestCase):
         self.assertTrue(np.sum(np.abs(out-.5)< 1.0 / 32.0) > 4700) # unless we are > 3sd unlucky 
         
     def test_03_img_1201(self):
-        '''Regression test of img-1201'''
+        """Regression test of img-1201"""
         #
         # Using internal knowledge: smooth_with_noise always seeds with 0
         #

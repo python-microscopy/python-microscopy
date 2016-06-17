@@ -63,9 +63,9 @@ if __name__ == '__main__':
     	author = 'David Baddeley',
        	author_email = 'd.baddeley@auckland.ac.nz',
        	url = '',
-       	long_description = '''
+       	long_description = """
 qhull wrapper for various triangularsiation functions
-''',
+""",
           license = "Proprietary",
           **configuration(top_path='').todict()
           )

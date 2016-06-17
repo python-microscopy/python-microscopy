@@ -131,7 +131,7 @@ def getClient(compName = GetComputerName()):
     
     
 def main():
-    '''For testing only'''
+    """For testing only"""
     from PYME.Acquire.Hardware.Simulator import fakePiezo
     bp = fakePiezo.FakePiezo(100)
     st = ServerThread(bp)

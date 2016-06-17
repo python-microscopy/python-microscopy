@@ -105,8 +105,8 @@ class TextEditMixin:
 
 
     def OnChar(self, event):
-        ''' Catch the TAB, Shift-TAB, cursor DOWN/UP key code
-            so we can open the editor at the next column (if any).'''
+        """ Catch the TAB, Shift-TAB, cursor DOWN/UP key code
+            so we can open the editor at the next column (if any)."""
 
         keycode = event.GetKeyCode()
         if keycode == wx.WXK_TAB and event.ShiftDown():
@@ -139,9 +139,9 @@ class TextEditMixin:
 
 
     def OnLeftDown(self, evt=None):
-        ''' Examine the click and double
+        """ Examine the click and double
         click events to see if a row has been click on twice. If so,
-        determine the current row and columnn and open the editor.'''
+        determine the current row and columnn and open the editor."""
 
         if self.editor.IsShown():
             self.CloseEditor()
@@ -175,7 +175,7 @@ class TextEditMixin:
 
 
     def OpenEditor(self, col, row):
-        ''' Opens an editor at the current position. '''
+        """ Opens an editor at the current position. """
 
         # give the derived class a chance to Allow/Veto this edit.
         evt = wx.ListEvent(wx.wxEVT_COMMAND_LIST_BEGIN_LABEL_EDIT, self.GetId())
@@ -241,7 +241,7 @@ class TextEditMixin:
     # FIXME: this function is usually called twice - second time because
     # it is binded to wx.EVT_KILL_FOCUS. Can it be avoided? (MW)
     def CloseEditor(self, evt=None):
-        ''' Close the editor and save the new value to the ListCtrl. '''
+        """ Close the editor and save the new value to the ListCtrl. """
         if not self.editor.IsShown():
             return
         text = self.editor.GetValue()

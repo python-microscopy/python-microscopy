@@ -104,7 +104,7 @@ class Zoom(Filter):
             
 @register_module('DoGFilter')         
 class DoGFilter(Filter):
-    '''Difference of Gaussians'''
+    """Difference of Gaussians"""
     sigmaY = Float(1.0)
     sigmaX = Float(1.0)
     sigmaZ = Float(1.0)

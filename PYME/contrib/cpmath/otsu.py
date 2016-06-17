@@ -239,9 +239,9 @@ def entropy3(data, bins=128):
     return (thresholds[best_i_j[0,0]],thresholds[best_i_j[0,1]])
 
 def entropy_score(var,bins, w=None, decimate=True):
-    '''Compute entropy scores, given a variance and # of bins
+    """Compute entropy scores, given a variance and # of bins
     
-    '''
+    """
     if w is None:
         n = len(var)
         w = np.arange(0,n,n/bins) / float(n)
@@ -270,12 +270,12 @@ def otsu_entropy(cs, cs2, lo, hi):
     return w * (log (w * (mean2 - mean**2) * sqrt(2*np.pi*exp(1))))
 
 def running_variance(x):
-    '''Given a vector x, compute the variance for x[0:i]
+    """Given a vector x, compute the variance for x[0:i]
     
     Thank you http://www.johndcook.com/standard_deviation.html
     S[i] = S[i-1]+(x[i]-mean[i-1])*(x[i]-mean[i])
     var(i) = S[i] / (i-1)
-    '''
+    """
     n = len(x)
     # The mean of x[0:i]
     m = x.cumsum() / np.arange(1,n+1)

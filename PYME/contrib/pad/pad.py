@@ -34,9 +34,9 @@ __all__ = [
 
 
 class PadWidthWrongNumberOfValues(Exception):
-    '''
+    """
     Error class for the wrong number of parameters to define the pad width.
-    '''
+    """
     def __init__(self, rnk, pdw):
         self.rnk = rnk
         self.pdw = pdw
@@ -51,9 +51,9 @@ class PadWidthWrongNumberOfValues(Exception):
 
 
 class NegativePadWidth(Exception):
-    '''
+    """
     Error class for the negative pad width.
-    '''
+    """
     def __init__(self):
         pass
 
@@ -69,10 +69,10 @@ class NegativePadWidth(Exception):
 
 
 def __create_vector(vector, pad_tuple, before_val, after_val):
-    '''
+    """
     Private function which creates the padded vector to with_mean, with_maximum,
     with_minimum, and with_median.
-    '''
+    """
     vector[:pad_tuple[0]] = before_val
     if pad_tuple[1] > 0:
         vector[-pad_tuple[1]:] = after_val
@@ -80,10 +80,10 @@ def __create_vector(vector, pad_tuple, before_val, after_val):
 
 
 def __validate_tuple(vector, pad_width):
-    '''
+    """
     Private function which does some checks and reformats the pad_width
     tuple.
-    '''
+    """
     pw = None
     shapelen = len(np.shape(vector))
     if (isinstance(pad_width, (tuple, list))
@@ -109,10 +109,10 @@ def __validate_tuple(vector, pad_width):
 
 
 def __loop_across(matrix, pad_width, function, **kw):
-    '''
+    """
     Private function to prepare the data for the np.apply_along_axis command
     to move through the matrix.
-    '''
+    """
     nmatrix = np.array(matrix)
     if 'stat_len' in kw and kw['stat_len']:
         kw['stat_len'] = __validate_tuple(nmatrix, kw['stat_len'])
@@ -143,9 +143,9 @@ def __loop_across(matrix, pad_width, function, **kw):
 
 
 def __create_stat_vectors(vector, pad_tuple, iaxis, kw):
-    '''
+    """
     Returns the portion of the vector required for any statistic.
-    '''
+    """
     pt1 = -pad_tuple[1]
     if pt1 == 0:
         pt1 = None
@@ -163,9 +163,9 @@ def __create_stat_vectors(vector, pad_tuple, iaxis, kw):
 
 
 def __maximum(vector, pad_tuple, iaxis, bvec, avec, kw):
-    '''
+    """
     Private function to calculate the before/after vectors.
-    '''
+    """
     sbvec, savec = __create_stat_vectors(vector, pad_tuple, iaxis, kw)
 
     bvec[:] = max(sbvec)
@@ -174,9 +174,9 @@ def __maximum(vector, pad_tuple, iaxis, bvec, avec, kw):
 
 
 def __minimum(vector, pad_tuple, iaxis, bvec, avec, kw):
-    '''
+    """
     Private function to calculate the before/after vectors.
-    '''
+    """
     sbvec, savec = __create_stat_vectors(vector, pad_tuple, iaxis, kw)
 
     bvec[:] = min(sbvec)
@@ -185,9 +185,9 @@ def __minimum(vector, pad_tuple, iaxis, bvec, avec, kw):
 
 
 def __median(vector, pad_tuple, iaxis, bvec, avec, kw):
-    '''
+    """
     Private function to calculate the before/after vectors.
-    '''
+    """
     sbvec, savec = __create_stat_vectors(vector, pad_tuple, iaxis, kw)
 
     bvec[:] = np.median(sbvec)
@@ -196,9 +196,9 @@ def __median(vector, pad_tuple, iaxis, bvec, avec, kw):
 
 
 def __mean(vector, pad_tuple, iaxis, bvec, avec, kw):
-    '''
+    """
     Private function to calculate the before/after vectors.
-    '''
+    """
     sbvec, savec = __create_stat_vectors(vector, pad_tuple, iaxis, kw)
 
     bvec[:] = np.average(sbvec)
@@ -207,9 +207,9 @@ def __mean(vector, pad_tuple, iaxis, bvec, avec, kw):
 
 
 def __constant(vector, pad_tuple, iaxis, bvec, avec, kw):
-    '''
+    """
     Private function to calculate the before/after vectors.
-    '''
+    """
     nconstant = kw['constant_values'][iaxis]
     bvec[:] = nconstant[0]
     avec[:] = nconstant[1]
@@ -217,9 +217,9 @@ def __constant(vector, pad_tuple, iaxis, bvec, avec, kw):
 
 
 def __linear_ramp(vector, pad_tuple, iaxis, bvec, avec, kw):
-    '''
+    """
     Private function to calculate the before/after vectors.
-    '''
+    """
     end_value = kw['end_value'][iaxis]
     before_delta = ((vector[pad_tuple[0]] - end_value[0])
                     /float(pad_tuple[0]))
@@ -241,18 +241,18 @@ def __linear_ramp(vector, pad_tuple, iaxis, bvec, avec, kw):
 
 
 def __reflect(vector, pad_tuple, iaxis, bvec, avec, kw):
-    '''
+    """
     Private function to calculate the before/after vectors.
-    '''
+    """
     before_vector = (vector[pad_tuple[0] + 1:2*pad_tuple[0] + 1])[::-1]
     after_vector = (vector[-2*pad_tuple[1] - 1:-pad_tuple[1] - 1])[::-1]
     return __create_vector(vector, pad_tuple, before_vector, after_vector)
 
 
 def __wrap(vector, pad_tuple, iaxis, bvec, avec, kw):
-    '''
+    """
     Private function to calculate the before/after vectors.
-    '''
+    """
     before_vector = vector[-(pad_tuple[1] + pad_tuple[0]):-pad_tuple[1]]
     after_vector = vector[pad_tuple[0]:pad_tuple[0] + pad_tuple[1]]
     return __create_vector(vector, pad_tuple, before_vector, after_vector)
@@ -657,10 +657,10 @@ def with_wrap(matrix, pad_width=(1, )):
 
 
 if __name__ == '__main__':
-    ''' 
+    """
     This section is just used for testing.  Really you should only import
     this module.
-    '''
+    """
     arr = np.arange(100)
     print(arr)
     print((with_median(arr, (3, ))))

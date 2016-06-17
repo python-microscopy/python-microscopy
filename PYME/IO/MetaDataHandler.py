@@ -22,7 +22,7 @@
 ##################
 
 #!/usr/bin/python
-'''
+"""
 Defines metadata handlers for the saving of acquisiton metadata to a variety 
 of file formats, as well as keeping track of metadata sources. 
 
@@ -63,7 +63,7 @@ MetaData Handlers
 The format of a metadata handler is defined by the `MDHandlerBase` class. 
 
 
-'''
+"""
 from UserDict import DictMixin
 
 #lists where bits of hardware can register the fact that they are capable of 
@@ -81,16 +81,16 @@ def instanceinlist(cls, list):
     
 
 class MDHandlerBase(DictMixin):
-    '''Base class from which all metadata handlers are derived.
+    """Base class from which all metadata handlers are derived.
 
     Metadata attributes can be read and set using either a dictionary like
     interface, or by calling the `getEntry` and `setEntry` methods. 
     
     .. note:: Derived classes **MUST** override `getEntry`, `setEntry`, and `getEntryNames`.
-    '''
+    """
     #base class to make metadata behave like a dictionary
     def getEntry(self, name):
-        '''Returns the entry for a given name.
+        """Returns the entry for a given name.
         
         Parameters
         ----------
@@ -105,11 +105,11 @@ class MDHandlerBase(DictMixin):
             anything that can be pickled. strings, ints, bools and floats are
             all stored in a human readable form in the textual metadata 
             representations, wheras more complex objects are base64 encoded.
-        '''
+        """
         raise NotImplementedError('getEntry must be overridden in derived classes')
         
     def setEntry(self, name):
-        '''Sets the entry for a given name.
+        """Sets the entry for a given name.
         
         Parameters
         ----------
@@ -122,17 +122,17 @@ class MDHandlerBase(DictMixin):
             anything that can be pickled. strings, ints, bools and floats are
             all stored in a human readable form in the textual metadata 
             representations, wheras more complex objects are base64 encoded.
-        '''
+        """
         raise NotImplementedError('setEntry must be overridden in derived classes')
         
     def getEntryNames(self):
-        '''Returns a list of defined entries.
+        """Returns a list of defined entries.
             
         Returns
         -------
         names : list of string
             The keys which are defined in the metadata.
-        '''
+        """
         raise NotImplementedError('getEntryNames must be overridden in derived classes')
         
     def __setitem__(self, name, value):
@@ -142,7 +142,7 @@ class MDHandlerBase(DictMixin):
         return self.getEntry(name)
         
     def getOrDefault(self, name, default):
-        '''Returns the entry for a given name, of a default value if the key 
+        """Returns the entry for a given name, of a default value if the key
         is not present.
         
         Parameters
@@ -160,39 +160,39 @@ class MDHandlerBase(DictMixin):
             anything that can be pickled. strings, ints, bools and floats are
             all stored in a human readable form in the textual metadata 
             representations, wheras more complex objects are base64 encoded.
-        '''
+        """
         try: 
             return self.getEntry(name)
         except (KeyError, AttributeError):
             return default
 
     def keys(self):
-        '''Alias for getEntryNames to make us look like a dictionary'''
+        """Alias for getEntryNames to make us look like a dictionary"""
         return self.getEntryNames()
 
     def copyEntriesFrom(self, mdToCopy):
-        '''Copies entries from another metadata object into this one. Duplicate 
+        """Copies entries from another metadata object into this one. Duplicate
         keys will be overwritten.
         
         Parameters
         ----------
         mdToCopy : an instance of a metadata handler
             The metadata handler from which to copy entries.
-        '''
+        """
         for en in mdToCopy.getEntryNames():
             #print en
             self.setEntry(en, mdToCopy.getEntry(en))
         #self.update(mdToCopy)
 
     def mergeEntriesFrom(self, mdToCopy):
-        '''Copies entries from another metadata object into this one. Values
+        """Copies entries from another metadata object into this one. Values
         are only copied if they are not already defined locally.
         
         Parameters
         ----------
         mdToCopy : an instance of a metadata handler
             The metadata handler from which to copy entries.
-        '''
+        """
         #only copies values if not already defined
         for en in mdToCopy.getEntryNames():
             if not en in self.getEntryNames():
@@ -203,7 +203,7 @@ class MDHandlerBase(DictMixin):
         return '<%s>:\n\n' % self.__class__.__name__ + '\n'.join(s)
 
     def GetSimpleString(self):
-        '''Writes out metadata in simplfied format.
+        """Writes out metadata in simplfied format.
         
         Returns
         -------
@@ -213,7 +213,7 @@ class MDHandlerBase(DictMixin):
         See Also
         --------
         SimpleMDHandler
-        '''
+        """
         
         try:
             import cPickle as pickle
@@ -229,14 +229,14 @@ class MDHandlerBase(DictMixin):
             if val.__class__ in [str, unicode] or np.isscalar(val): #quote string
                 val = repr(val)
             elif not val.__class__ in [int, float, list, dict]: #not easily recovered from representation
-                val = "pickle.loads('''%s''')" % pickle.dumps(val)
+                val = "pickle.loads("""%s""")" % pickle.dumps(val)
 
             s.append("md['%s'] = %s\n" % (en, val))
         
         return s
     
     def WriteSimple(self, filename):
-        '''Dumps metadata to file in simplfied format.
+        """Dumps metadata to file in simplfied format.
         
         Parameters
         ----------
@@ -246,7 +246,7 @@ class MDHandlerBase(DictMixin):
         See Also
         --------
         SimpleMDHandler
-        '''
+        """
         s = self.GetSimpleString()
         f = open(filename, 'w')
         f.writelines(s)
@@ -256,7 +256,7 @@ class MDHandlerBase(DictMixin):
         import json
         
         def _jsify(obj):
-            '''call a custom to_JSON method, if available'''
+            """call a custom to_JSON method, if available"""
             try:
                 return obj.to_JSON()
             except AttributeError:
@@ -407,8 +407,8 @@ from xml.dom.minidom import getDOMImplementation, parse, parseString
 import base64
 
 class SimpleMDHandler(NestedClassMDHandler):
-    '''simple metadata format - consists of a python script with a .md extension
-    which adds entrys using the dictionary syntax to a metadata handler called md'''
+    """simple metadata format - consists of a python script with a .md extension
+    which adds entrys using the dictionary syntax to a metadata handler called md"""
 
     def __init__(self, filename = None, mdToCopy=None):
         if not filename == None:

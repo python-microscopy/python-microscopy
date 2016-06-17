@@ -17,13 +17,13 @@ class ImageFrameSource(object):
         self.spoolProgress = dispatch.Signal(['percent'])
         
     def spoolImageFromFile(self, filename):
-        '''Load an image file and then spool'''
+        """Load an image file and then spool"""
         from PYME.IO import image
         
         self.spoolImage(image.ImageStack(filename).data)
         
     def spoolData(self, data):
-        '''Extract frames from a data source.
+        """Extract frames from a data source.
         
         Parameters
         ----------
@@ -31,7 +31,7 @@ class ImageFrameSource(object):
         data : PYME.IO.DataSources.DataSource object
             the data source. Needs to implement the getNumSlices() and getSlice()
             methods.
-        '''
+        """
         nFrames = data.getNumSlices()
         for i in range(nFrames):
             self.onFrame.send(self, frameData=data.getSlice(i))
@@ -42,7 +42,7 @@ class ImageFrameSource(object):
           
 
 class MDSource(object):
-    '''Spoof a metadata source for the spooler'''
+    """Spoof a metadata source for the spooler"""
     def __init__(self, mdh):
         self.mdh = mdh
 
@@ -51,7 +51,7 @@ class MDSource(object):
          
          
 def ExportImageToCluster(image, filename, progCallback=None):
-    '''Exports the given image to a file on the cluster
+    """Exports the given image to a file on the cluster
     
     Parameters
     ----------
@@ -61,7 +61,7 @@ def ExportImageToCluster(image, filename, progCallback=None):
     filename : string
         the filename on the cluster
         
-    '''
+    """
     
     #create virtual frame and metadata sources
     imgSource = ImageFrameSource()

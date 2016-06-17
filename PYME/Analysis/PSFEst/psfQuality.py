@@ -21,7 +21,7 @@
 #
 ##################
 
-'''These functions assess a psf for quality and return a scalar 'merit' which indicates how
+"""These functions assess a psf for quality and return a scalar 'merit' which indicates how
 good or bad the psf is wrt the particular measure.
 
 Lower values are better, with the following breakpoints:
@@ -29,7 +29,7 @@ Lower values are better, with the following breakpoints:
     merit < 1           good            OK to use
     1 < merit < 2       marginal        Might work in some situations but undesirable - use with caution 
     merit > 3           unacceptable    Almost garuanteed not to work
-'''
+"""
 
 import numpy as np
 
@@ -64,45 +64,45 @@ def glob_test(fcnName):
 @loc_test('Voxelsize x')
 @dec_test('Voxelsize x')
 def voxelsize_x(image, psft):
-    '''The x pixel size should be sufficiently small to Nyquist the PSF. Making the
+    """The x pixel size should be sufficiently small to Nyquist the PSF. Making the
     pixels too large looses information whilst making them too small is empty 
     magnification and is incurs extra noise and computational cost. A high NA oil 
-    immersion objective is assumed in these calculations'''
+    immersion objective is assumed in these calculations"""
     vsx = image.mdh['voxelsize.x']*1e3
     merit = (np.abs(vsx - 70.)/20)**2    
     return vsx, merit
     
 @loc_test('Voxelsize z')
 def voxelsize_z_loc(image, psft):
-    '''3D localisation microscopy relies on capturing subtle variations in pixel shape.
+    """3D localisation microscopy relies on capturing subtle variations in pixel shape.
     Although these should nominally be captured in a Nyquist sampled PSF, it is 
     wise to oversample in z (typically using 50 nm spacing) in order to reduce 
     the sensitivity of psf shape to the interpolation algortihms used in the 
-    fitting. Oversampling also increases the effective SNR of the PSF'''
+    fitting. Oversampling also increases the effective SNR of the PSF"""
     vsz = image.mdh['voxelsize.z']*1e3
     merit = np.abs(vsz - 50.)/50 + 1.0*(vsz > 50)
     return vsz, merit
     
 @dec_test('Voxelsize z')
 def voxelsize_z_dec(image, psft):
-    '''z spacing in psfs for deconvolution purposes should match the data spacing, 
+    """z spacing in psfs for deconvolution purposes should match the data spacing,
     which should be at Nyquist for the expected frequency content of the PSF. 
     If abberated, PSFs will contain frequencies beyond the simple FWHM/2.35 
     calculalation typically used for voxel size selection. In most cases a
     z-spacing of 200 nm will be appropriate for a high NA oil immersion objective,
-    although this might sometimes want to be reduced.'''
+    although this might sometimes want to be reduced."""
     vsz = image.mdh['voxelsize.z']*1e3 
     merit = 2*(1 + (170./(370.-vsz))**4 - 2*(170./(370-vsz))**2)
     return vsz, merit
     
 @loc_test('Depth [um]')
 def depth_loc(image, psft):
-    '''A psf used for 3D localisation should be sufficiently deep to capture the
+    """A psf used for 3D localisation should be sufficiently deep to capture the
     regions of the PSF which retain sufficient intensity to allow reasonable 
     detection and localisation. In practice, a total range of 2-3um should be 
     sufficient. Due to the implementation of the object finding algorithm, very
     large axial extents are actually a disadvantage as they will interfere with 
-    reliable event detection.'''
+    reliable event detection."""
     vsz = image.mdh['voxelsize.z']
     depth = vsz*image.data.shape[2]
     merit = np.abs(depth - 3.)
@@ -110,9 +110,9 @@ def depth_loc(image, psft):
     
 @dec_test('Depth [um]')
 def depth_dec(image, psft):
-    '''Deconvolution needs a PSF which is at least 5-6 times the axial resolution
+    """Deconvolution needs a PSF which is at least 5-6 times the axial resolution
     of the data set and preferably as large as the stack to be deconvolved. 
-    In practice this means that the PSF should be at least 5 um deep.'''
+    In practice this means that the PSF should be at least 5 um deep."""
     vsz = image.mdh['voxelsize.z']
     depth = vsz*image.data.shape[2]
     merit = np.maximum((5.- depth) + 1, 0)
@@ -121,10 +121,10 @@ def depth_dec(image, psft):
 @loc_test('Background')
 @dec_test('Background')
 def background(image, psft):
-    '''This test uses the fact that the PSF should not extend to at edge of the 
+    """This test uses the fact that the PSF should not extend to at edge of the
     image to judge background levels by looking at the mean values of the pixels 
     along one edge. It assumes the PSF is normalised to a peak intensity of 1
-    (which it should be if extracted using the normal tools).'''
+    (which it should be if extracted using the normal tools)."""
     bg = image.data[0,:,:].mean()
     merit = bg/.003    
     return bg, merit
@@ -132,9 +132,9 @@ def background(image, psft):
 @loc_test('Noise')
 @dec_test('Noise')
 def noise(image, psft):
-    '''This test looks at a region to the side of the in-focus plane to assess
+    """This test looks at a region to the side of the in-focus plane to assess
     noise levels. Noise can be improved by using a longer integration time when
-    acquiring the bead images or by averaging more beads.'''
+    acquiring the bead images or by averaging more beads."""
     n = image.data[:,:,image.data.shape[2]/2][:5,:5].std()
     merit = n/.0005    
     return n, merit
@@ -142,7 +142,7 @@ def noise(image, psft):
 @loc_test('Positivity')
 @dec_test('Positivity')
 def positivity(image, psft):
-    '''The PSF should not contain any negative values'''
+    """The PSF should not contain any negative values"""
     n = image.data[:,:,:].min()
     merit = (n < 0)*3    
     return n, merit
@@ -150,11 +150,11 @@ def positivity(image, psft):
 @loc_test('3D CRB')
 #@dec_test('voxelsize x')
 def crb3d(image, psft):
-    '''The Cramar-Rao bound describes the ammount of position information 
+    """The Cramar-Rao bound describes the ammount of position information
     encoded in a PSF. This test computes the average 3D CRB (the vector norm of the 
     3 individual axis CRBs) over a 1 um depth range and compares it to that obtained
     from a simulated astigmatic PSF with 500nm lobe separation. The PSF is classed 
-    as good if the 3D CRB is less than twice that of the simulated PSF.'''
+    as good if the 3D CRB is less than twice that of the simulated PSF."""
     vsz = image.mdh['voxelsize.z']*1e3
     
     dz = 500./vsz

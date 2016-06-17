@@ -27,8 +27,8 @@ from scipy import ndimage
 
 class FFBase(object):
     def __init__(self, data, metadata, fitfcn=None, background=None, noiseSigma=None):
-        '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
-        metadata. '''
+        """Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
+        metadata. """
         self.data = data
         self.background = background
         self.metadata = metadata
@@ -36,7 +36,7 @@ class FFBase(object):
         self.noiseSigma = noiseSigma
         
     def getROIAtPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
-        '''Helper fcn to extract ROI from frame at given x,y, point. 
+        """Helper fcn to extract ROI from frame at given x,y, point.
         
         Returns:
             X - x coordinates of pixels in ROI in nm
@@ -47,7 +47,7 @@ class FFBase(object):
             xslice - x slice into original data array used to get ROI
             yslice - y slice into original data array
             zslice - z slice into original data array
-        '''
+        """
         
 
         x = int(round(x))
@@ -92,7 +92,7 @@ class FFBase(object):
         return X, Y, dataMean, bgMean, sigma, xslice, yslice, zslice
         
     def getSplitROIAtPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
-        '''Helper fcn to extract ROI from frame at given x,y, point from a multi-channel image. 
+        """Helper fcn to extract ROI from frame at given x,y, point from a multi-channel image.
         
         Returns:
             Xg - x coordinates of pixels in ROI in nm (channel 1)
@@ -106,7 +106,7 @@ class FFBase(object):
             yslice - y slice into original data array (channel 1)
             xslice2 - x slice into original data array used to get ROI (channel 2)
             yslice2 - y slice into original data array (channel 2)
-        '''
+        """
         
         x = round(x)
         y = round(y)
@@ -204,15 +204,15 @@ class FFBase(object):
         return Xg, Yg, Xr, Yr, dataROI, bgROI, sigma, xslice, yslice, xslice2, yslice2
 
     def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
-        '''This should be overridden in derived classes to actually do the fitting.
+        """This should be overridden in derived classes to actually do the fitting.
         The function which gets implemented should return a numpy record array, of the
         dtype defined in the module level FitResultsDType variable (the calling function
-        uses FitResultsDType to pre-allocate an array for the results)'''
+        uses FitResultsDType to pre-allocate an array for the results)"""
         
         raise NotImplementedError('This function should be over-ridden in derived class')
         
     def FromPoints(self, ofd):
-        '''Fit at a number of points.'''
+        """Fit at a number of points."""
         
         res = np.empty(len(self.ofd), self.FitResultsDType)
         if 'Analysis.ROISize' in self.metadata.getEntryNames():

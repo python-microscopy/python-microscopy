@@ -23,7 +23,7 @@ try:
     from traitsui.api import Controller
 except SystemExit:
     def Controller(*args, **kwargs):
-        '''Spoofed traitsui Controller'''
+        """Spoofed traitsui Controller"""
         pass
 
 import os

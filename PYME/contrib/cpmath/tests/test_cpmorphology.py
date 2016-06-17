@@ -196,12 +196,12 @@ class TestAdjacent(unittest.TestCase):
         self.assertTrue(np.all(result==expected))
         
     def test_02_01_127_objects(self):
-        '''Test that adjacency works for int8 and 127 labels
+        """Test that adjacency works for int8 and 127 labels
         
         Regression test of img-1099. Adjacent sets the background to the
         maximum value of the labels matrix + 1. For 127 and int8, it wraps
         around and uses -127.
-        '''
+        """
         # Create 127 labels
         labels = np.zeros((32,16), np.int8)
         i,j = np.mgrid[0:32, 0:16]
@@ -302,11 +302,11 @@ class TestBinaryShrink(unittest.TestCase):
         self.assertTrue(np.all(my_sum[1:] == 1))
         
     def test_07_all_patterns_of_3x3(self):
-        '''Run all patterns of 3x3 with a 1 in the middle
+        """Run all patterns of 3x3 with a 1 in the middle
         
         All of these patterns should shrink to a single pixel since
         all are 8-connected and there are no holes
-        '''
+        """
         for i in range(512):
             a = morph.pattern_of(i)
             if a[1,1]:
@@ -314,7 +314,7 @@ class TestBinaryShrink(unittest.TestCase):
                 self.assertEqual(np.sum(result),1)
     
     def test_08_labels(self):
-        '''Run a labels matrix through shrink with two touching objects'''
+        """Run a labels matrix through shrink with two touching objects"""
         labels = np.zeros((10,10),int)
         labels[2:8,2:5] = 1
         labels[2:8,5:8] = 2
@@ -586,7 +586,7 @@ class TestConvexHull(unittest.TestCase):
                                                      result[:,2]==106)))
     
     def test_05_01_missing_labels(self):
-        '''Ensure that there's an entry if a label has no corresponding points'''
+        """Ensure that there's an entry if a label has no corresponding points"""
         labels = np.zeros((10,10),int)
         labels[3:6,2:8] = 2
         result, counts = morph.convex_hull(labels, np.arange(2)+1)
@@ -595,7 +595,7 @@ class TestConvexHull(unittest.TestCase):
         self.assertEqual(counts[1], 4)
         
     def test_06_01_regression_373(self):
-        '''Regression test of IMG-374'''
+        """Regression test of IMG-374"""
         labels = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -610,7 +610,7 @@ class TestConvexHull(unittest.TestCase):
 
         
     def test_06_02_same_point_twice(self):
-        '''Regression test of convex_hull_ijv - same point twice in list'''
+        """Regression test of convex_hull_ijv - same point twice in list"""
         
         ii = [79, 11, 65, 73, 42, 26, 46, 48, 14, 53, 73, 42, 59, 12, 59, 65,  7, 66, 84, 70]
         jj = [47, 97, 98,  0, 91, 49, 42, 85, 63, 19,  0,  9, 71, 15, 50, 98, 14, 46, 89, 47]
@@ -619,7 +619,7 @@ class TestConvexHull(unittest.TestCase):
         self.assertTrue(np.any((h[:,1] == 73) & (h[:,2] == 0)))
 
     def test_07_01_new_vs_old(self):
-        '''Test Cython version vs original Python version'''
+        """Test Cython version vs original Python version"""
         labels = np.random.randint(0, 1000, (1000, 1000))
         indexes = np.arange(1, 1005)  # mix in some empty indices
         np.random.shuffle(indexes)
@@ -893,7 +893,7 @@ class TestEllipseFromSecondMoments(unittest.TestCase):
         self.assertWithinFraction(minor_axis_length[0],100,.001)
     
     def test_01_03_blob(self):
-        '''Regression test a blob against Matlab measurements'''
+        """Regression test a blob against Matlab measurements"""
         blob = np.array(
             [[0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0],
              [0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0],
@@ -969,13 +969,13 @@ class TestCalculateExtents(unittest.TestCase):
         self.assertAlmostEqual(extents,np.pi/4,2)
         
     def test_01_03_two_objects(self):
-        '''Make sure that calculate_extents works with more than one object
+        """Make sure that calculate_extents works with more than one object
         
         Regression test of a bug: was computing area like this:
         scind.sum(labels, labels, indexes)
         which works for the object that's labeled "1", but is 2x for 2, 3x
         for 3, etc... oops.
-        '''
+        """
         labels = np.zeros((10,20), int)
         labels[3:7, 2:5] = 1
         labels[3:5, 5:8] = 1
@@ -1202,23 +1202,23 @@ class TestEulerNumber(unittest.TestCase):
         self.assertEqual(result[1], 1)
 
 class TestWhiteTophat(unittest.TestCase):
-    '''Test the white_tophat function'''
+    """Test the white_tophat function"""
     def test_01_01_zeros(self):
-        '''Test white_tophat on an image of all zeros'''
+        """Test white_tophat on an image of all zeros"""
         result = morph.white_tophat(np.zeros((10,10)), 1)
         self.assertTrue(np.all(result==0))
     
     def test_01_02_ones(self):
-        '''Test white_tophat on an image of all ones'''
+        """Test white_tophat on an image of all ones"""
         result = morph.white_tophat(np.ones((10,10)), 1)
         self.assertTrue(np.all(result==0))
     
     def test_01_03_edge(self):
-        '''Test white_tophat on an image whose edge is zeros.
+        """Test white_tophat on an image whose edge is zeros.
         
         The image should erode off the sides to a depth of 1
         and then should dilate, leaving the four corners as one
-        '''
+        """
         image = np.zeros((10,10))
         image[1:9,1:9] = 1
         expected = np.zeros((10,10))
@@ -1230,7 +1230,7 @@ class TestWhiteTophat(unittest.TestCase):
         self.assertTrue(np.all(result==expected))
     
     def test_01_04_random(self):
-        '''Test that a random image has the same value as Matlab'''
+        """Test that a random image has the same value as Matlab"""
         data = base64.b64decode(
             'ypaQm7nI7z9WBQX93kDvPzxm1vSTiMM/GwFjkSLi6T8gQLbhpCLYP6x51md'
             'Locc/nLhL/Ukd1D8bOIrsnuzlPxbATk3siNY/eIJIqP881T9WGvOerQfkPw'
@@ -1838,7 +1838,7 @@ class TestWhiteTophat(unittest.TestCase):
         self.assertEqual(my_value, result[0,0])
     
     def test_02_01_mask(self):
-        '''Test white_tophat, masking the pixels that would erode'''
+        """Test white_tophat, masking the pixels that would erode"""
         image = np.zeros((10,10))
         image[1:9,1:9] = 1
         mask = image != 0
@@ -1847,7 +1847,7 @@ class TestWhiteTophat(unittest.TestCase):
     
 class TestRegionalMaximum(unittest.TestCase):
     def test_00_00_zeros(self):
-        '''An array of all zeros has a regional maximum of its center'''
+        """An array of all zeros has a regional maximum of its center"""
         result = morph.regional_maximum(np.zeros((11,11)))
         self.assertEqual(np.sum(result),1)
         self.assertTrue(result[5,5])
@@ -1857,7 +1857,7 @@ class TestRegionalMaximum(unittest.TestCase):
         self.assertTrue(np.all(result==False))
     
     def test_01_01_single_maximum(self):
-        '''Test that the regional maximum of a gradient from 5,5 is 5,5'''
+        """Test that the regional maximum of a gradient from 5,5 is 5,5"""
         #
         # Create a gradient of distance from the point 5,5 in an 11x11 array
         #
@@ -1868,7 +1868,7 @@ class TestRegionalMaximum(unittest.TestCase):
         self.assertTrue(np.all(result[image != np.max(image)]==False))
     
     def test_01_02_two_maxima(self):
-        '''Test an image with two maxima'''
+        """Test an image with two maxima"""
         i,j = np.mgrid[-5:6,-5:6].astype(float) / 5
         half_image = 1 - i**2 - j**2
         image = np.zeros((11,22))
@@ -1880,7 +1880,7 @@ class TestRegionalMaximum(unittest.TestCase):
         self.assertTrue(np.all(result[image != np.max(image)]==False))
     
     def test_02_01_mask(self):
-        '''Test that a mask eliminates one of the maxima'''
+        """Test that a mask eliminates one of the maxima"""
         i,j = np.mgrid[-5:6,-5:6].astype(float) / 5
         half_image = 1 - i**2 - j**2
         image = np.zeros((11,22))
@@ -1895,17 +1895,17 @@ class TestRegionalMaximum(unittest.TestCase):
 
 class TestBlackTophat(unittest.TestCase):
     def test_00_00_zeros(self):
-        '''Test black tophat on an array of all zeros'''
+        """Test black tophat on an array of all zeros"""
         result = morph.black_tophat(np.zeros((10,10)), 1)
         self.assertTrue(np.all(result==0))
         
     def test_00_01_zeros_masked(self):
-        '''Test black tophat on an array that is completely masked'''
+        """Test black tophat on an array that is completely masked"""
         result = morph.black_tophat(np.zeros((10,10)),1,np.zeros((10,10),bool))
         self.assertTrue(np.all(result==0))
     
     def test_01_01_single(self):
-        '''Test black tophat of a single minimum'''
+        """Test black tophat of a single minimum"""
         result = morph.black_tophat(np.array([[.9,.8,.7],
                                               [.9,.5,.7],
                                               [.7,.8,.8]]),1)
@@ -1916,7 +1916,7 @@ class TestBlackTophat(unittest.TestCase):
         self.assertTrue(np.all(np.abs(result - expected)<.00000001))
     
     def test_02_01_mask(self):
-        '''Test black tophat with a mask'''
+        """Test black tophat with a mask"""
         image = np.array([[.9, .8, .7],[.9,.5,.7],[.7,.8,.8]])
         mask = np.array([[1,1,0],[1,1,0],[1,0,1]],bool)
         expected = np.array([[0,.1,0],[0,.4,0],[.2,0,0]])
@@ -1925,17 +1925,17 @@ class TestBlackTophat(unittest.TestCase):
 
 class TestClosing(unittest.TestCase):
     def test_00_00_zeros(self):
-        '''Test closing on an array of all zeros'''
+        """Test closing on an array of all zeros"""
         result = morph.closing(np.zeros((10,10)), 1)
         self.assertTrue(np.all(result==0))
         
     def test_00_01_zeros_masked(self):
-        '''Test closing on an array that is completely masked'''
+        """Test closing on an array that is completely masked"""
         result = morph.closing(np.zeros((10,10)),1,np.zeros((10,10),bool))
         self.assertTrue(np.all(result==0))
     
     def test_01_01_single(self):
-        '''Test closing of a single minimum'''
+        """Test closing of a single minimum"""
         result = morph.closing(np.array([[.9,.8,.7],
                                          [.9,.5,.7],
                                          [.7,.8,.8]]),1)
@@ -1946,7 +1946,7 @@ class TestClosing(unittest.TestCase):
         self.assertTrue(np.all(np.abs(result - expected)<.00000001))
     
     def test_02_01_mask(self):
-        '''Test closing with a mask'''
+        """Test closing with a mask"""
         image = np.array([[.9, .8, .7],[.9,.5,.7],[.7,.8,.8]])
         mask = np.array([[1,1,0],[1,1,0],[1,0,1]],bool)
         expected = np.array([[.9,.9,.7],[.9,.9,.7],[.9,.8,.8]])
@@ -1954,7 +1954,7 @@ class TestClosing(unittest.TestCase):
         self.assertTrue(np.all(np.abs(result[mask]-expected[mask])<.0000001))
         
     def test_03_01_8_connected(self):
-        '''Test closing with an 8-connected structuring element'''
+        """Test closing with an 8-connected structuring element"""
         result = morph.closing(np.array([[.9,.8,.7],
                                          [.9,.5,.7],
                                          [.7,.8,.8]]))
@@ -1963,18 +1963,18 @@ class TestClosing(unittest.TestCase):
 
 class TestBranchpoints(unittest.TestCase):
     def test_00_00_zeros(self):
-        '''Test branchpoints on an array of all zeros'''
+        """Test branchpoints on an array of all zeros"""
         result = morph.branchpoints(np.zeros((9,11), bool))
         self.assertTrue(np.all(result == False))
         
     def test_00_01_zeros_masked(self):
-        '''Test branchpoints on an array that is completely masked'''
+        """Test branchpoints on an array that is completely masked"""
         result = morph.branchpoints(np.zeros((10,10),bool),
                                     np.zeros((10,10),bool))
         self.assertTrue(np.all(result==False))
     
     def test_01_01_branchpoints_positive(self):
-        '''Test branchpoints on positive cases'''
+        """Test branchpoints on positive cases"""
         image = np.array([[1,0,0,1,0,1,0,1,0,1,0,0,1],
                           [0,1,0,1,0,0,1,0,1,0,1,1,0],
                           [1,0,1,0,1,1,0,1,1,1,0,0,1]],bool)
@@ -1982,7 +1982,7 @@ class TestBranchpoints(unittest.TestCase):
         self.assertTrue(np.all(image[1,:] == result[1,:]))
     
     def test_01_02_branchpoints_negative(self):
-        '''Test branchpoints on negative cases'''
+        """Test branchpoints on negative cases"""
         image = np.array([[1,0,0,0,1,0,0,0,1,0,1,0,1],
                           [0,1,0,0,1,0,1,1,1,0,0,1,0],
                           [0,0,1,0,1,0,0,0,0,0,0,0,0]],bool)
@@ -1990,7 +1990,7 @@ class TestBranchpoints(unittest.TestCase):
         self.assertTrue(np.all(result==False))
         
     def test_02_01_branchpoints_masked(self):
-        '''Test that masking defeats branchpoints'''
+        """Test that masking defeats branchpoints"""
         image = np.array([[1,0,0,1,0,1,0,1,1,1,0,0,1],
                           [0,1,0,1,0,0,1,0,1,0,1,1,0],
                           [1,0,1,1,0,1,0,1,1,1,0,0,1]],bool)
@@ -2002,17 +2002,17 @@ class TestBranchpoints(unittest.TestCase):
         
 class TestBridge(unittest.TestCase):
     def test_00_00_zeros(self):
-        '''Test bridge on an array of all zeros'''
+        """Test bridge on an array of all zeros"""
         result = morph.bridge(np.zeros((10,10),bool))
         self.assertTrue(np.all(result==False))
         
     def test_00_01_zeros_masked(self):
-        '''Test bridge on an array that is completely masked'''
+        """Test bridge on an array that is completely masked"""
         result = morph.bridge(np.zeros((10,10),bool),np.zeros((10,10),bool))
         self.assertTrue(np.all(result==False))
     
     def test_01_01_bridge_positive(self):
-        '''Test some typical positive cases of bridging'''
+        """Test some typical positive cases of bridging"""
         image = np.array([[1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,1,1,0],
                           [0,0,0,0,0,0,0,0,0,1,0,1,0,0,1,0,1,0,0,0,0,0],
                           [0,0,1,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,1]],bool)
@@ -2023,7 +2023,7 @@ class TestBridge(unittest.TestCase):
         self.assertTrue(np.all(result==expected))
     
     def test_01_02_bridge_negative(self):
-        '''Test some typical negative cases of bridging'''
+        """Test some typical negative cases of bridging"""
         image = np.array([[1,1,0,0,0,1,1,0,0,0,0,0,0,0,1,1,1,0,0,1,1,0],
                           [0,0,1,0,0,1,0,0,0,1,0,1,0,0,1,0,1,0,0,1,0,0],
                           [0,0,1,0,0,1,1,0,0,1,1,1,0,0,1,1,1,0,0,1,1,1]],bool)
@@ -2035,7 +2035,7 @@ class TestBridge(unittest.TestCase):
         self.assertTrue(np.all(result==expected))
 
     def test_02_01_bridge_mask(self):
-        '''Test that a masked pixel does not cause a bridge'''
+        """Test that a masked pixel does not cause a bridge"""
         image = np.array([[1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,1,1,0],
                           [0,0,0,0,0,0,0,0,0,1,0,1,0,0,1,0,1,0,0,0,0,0],
                           [0,0,1,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,1]],bool)
@@ -2050,29 +2050,29 @@ class TestBridge(unittest.TestCase):
 
 class TestClean(unittest.TestCase):
     def test_00_00_zeros(self):
-        '''Test clean on an array of all zeros'''
+        """Test clean on an array of all zeros"""
         result = morph.clean(np.zeros((10,10),bool))
         self.assertTrue(np.all(result==False))
         
     def test_00_01_zeros_masked(self):
-        '''Test clean on an array that is completely masked'''
+        """Test clean on an array that is completely masked"""
         result = morph.clean(np.zeros((10,10),bool),np.zeros((10,10),bool))
         self.assertTrue(np.all(result==False))
     
     def test_01_01_clean_positive(self):
-        '''Test removal of a pixel using clean'''
+        """Test removal of a pixel using clean"""
         image = np.array([[0,0,0],[0,1,0],[0,0,0]],bool)
         self.assertTrue(np.all(morph.clean(image) == False))
     
     def test_01_02_clean_negative(self):
-        '''Test patterns that should not clean'''
+        """Test patterns that should not clean"""
         image = np.array([[1,0,0,0,1,0,1,0,0,0,1,0,0,0,0,0,1,0,0,1,1,0],
                           [0,1,0,0,1,0,1,0,1,1,0,1,0,0,1,0,1,0,0,1,0,0],
                           [0,0,1,0,0,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,1,1]],bool)
         self.assertTrue(np.all(image == morph.clean(image)))
     
     def test_02_01_clean_edge(self):
-        '''Test that clean removes isolated pixels on the edge of an image'''
+        """Test that clean removes isolated pixels on the edge of an image"""
         
         image = np.array([[1,0,1,0,1],
                           [0,0,0,0,0],
@@ -2082,14 +2082,14 @@ class TestClean(unittest.TestCase):
         self.assertTrue(np.all(morph.clean(image) == False))
         
     def test_02_02_clean_mask(self):
-        '''Test that clean removes pixels adjoining a mask'''
+        """Test that clean removes pixels adjoining a mask"""
         image = np.array([[0,0,0],[1,1,0],[0,0,0]],bool)
         mask  = np.array([[1,1,1],[0,1,1],[1,1,1]],bool)
         result= morph.clean(image,mask)
         self.assertEqual(result[1,1], False)
     
     def test_03_01_clean_labels(self):
-        '''Test clean on a labels matrix where two single-pixel objects touch'''
+        """Test clean on a labels matrix where two single-pixel objects touch"""
         
         image = np.zeros((10,10), int)
         image[2,2] = 1
@@ -2101,17 +2101,17 @@ class TestClean(unittest.TestCase):
 
 class TestDiag(unittest.TestCase):
     def test_00_00_zeros(self):
-        '''Test diag on an array of all zeros'''
+        """Test diag on an array of all zeros"""
         result = morph.diag(np.zeros((10,10),bool))
         self.assertTrue(np.all(result==False))
         
     def test_00_01_zeros_masked(self):
-        '''Test diag on an array that is completely masked'''
+        """Test diag on an array that is completely masked"""
         result = morph.diag(np.zeros((10,10),bool),np.zeros((10,10),bool))
         self.assertTrue(np.all(result==False))
     
     def test_01_01_diag_positive(self):
-        '''Test all cases of diag filling in a pixel'''
+        """Test all cases of diag filling in a pixel"""
         image = np.array([[0,0,0,0,0,0,0,0,0,0,0,0,0],
                           [0,0,1,0,0,1,0,0,0,0,1,0,0],
                           [0,1,0,0,0,0,1,0,0,1,0,1,0],
@@ -2126,7 +2126,7 @@ class TestDiag(unittest.TestCase):
         self.assertTrue(np.all(result == expected))
     
     def test_01_02_diag_negative(self):
-        '''Test patterns that should not diag'''
+        """Test patterns that should not diag"""
         image = np.array([[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
                           [0,1,1,0,1,0,0,0,1,0,0,1,1,0,1,0,1,0],
                           [0,0,1,0,1,1,0,1,1,0,0,1,0,0,1,1,1,0],
@@ -2134,7 +2134,7 @@ class TestDiag(unittest.TestCase):
         self.assertTrue(np.all(image == morph.diag(image)))
     
     def test_02_01_diag_edge(self):
-        '''Test that diag works on edges'''
+        """Test that diag works on edges"""
         
         image = np.array([[1,0,0,0,1],
                           [0,1,0,1,0],
@@ -2156,7 +2156,7 @@ class TestDiag(unittest.TestCase):
         
         
     def test_02_02_diag_mask(self):
-        '''Test that diag connects if one of the pixels is masked'''
+        """Test that diag connects if one of the pixels is masked"""
         image = np.array([[0,0,0],
                           [1,0,0],
                           [1,1,0]],bool)
@@ -2168,18 +2168,18 @@ class TestDiag(unittest.TestCase):
         
 class TestEndpoints(unittest.TestCase):
     def test_00_00_zeros(self):
-        '''Test endpoints on an array of all zeros'''
+        """Test endpoints on an array of all zeros"""
         result = morph.endpoints(np.zeros((9,11), bool))
         self.assertTrue(np.all(result == False))
         
     def test_00_01_zeros_masked(self):
-        '''Test endpoints on an array that is completely masked'''
+        """Test endpoints on an array that is completely masked"""
         result = morph.endpoints(np.zeros((10,10),bool),
                                  np.zeros((10,10),bool))
         self.assertTrue(np.all(result==False))
     
     def test_01_01_positive(self):
-        '''Test positive endpoint cases'''
+        """Test positive endpoint cases"""
         image = np.array([[0,0,0,1,0,1,0,0,0,0,0],
                           [0,1,0,1,0,0,1,0,1,0,1],
                           [1,0,0,0,0,0,0,0,0,1,0]],bool)
@@ -2187,7 +2187,7 @@ class TestEndpoints(unittest.TestCase):
         self.assertTrue(np.all(image[1,:] == result[1,:]))
     
     def test_01_02_negative(self):
-        '''Test negative endpoint cases'''
+        """Test negative endpoint cases"""
         image = np.array([[0,0,1,0,0,1,0,0,0,0,0,1],
                           [0,1,0,1,0,1,0,0,1,1,0,1],
                           [1,0,0,0,1,0,0,1,0,0,1,0]],bool)
@@ -2195,7 +2195,7 @@ class TestEndpoints(unittest.TestCase):
         self.assertTrue(np.all(result[1,:] == False))
         
     def test_02_02_mask(self):
-        '''Test that masked positive pixels don't change the endpoint determination'''
+        """Test that masked positive pixels don't change the endpoint determination"""
         image = np.array([[0,0,1,1,0,1,0,1,0,1,0],
                           [0,1,0,1,0,0,1,0,1,0,1],
                           [1,0,0,0,1,0,0,0,0,1,0]],bool)
@@ -2207,29 +2207,29 @@ class TestEndpoints(unittest.TestCase):
     
 class TestFill(unittest.TestCase):
     def test_00_00_zeros(self):
-        '''Test fill on an array of all zeros'''
+        """Test fill on an array of all zeros"""
         result = morph.fill(np.zeros((10,10),bool))
         self.assertTrue(np.all(result==False))
         
     def test_00_01_zeros_masked(self):
-        '''Test fill on an array that is completely masked'''
+        """Test fill on an array that is completely masked"""
         result = morph.fill(np.zeros((10,10),bool),np.zeros((10,10),bool))
         self.assertTrue(np.all(result==False))
     
     def test_01_01_fill_positive(self):
-        '''Test addition of a pixel using fill'''
+        """Test addition of a pixel using fill"""
         image = np.array([[1,1,1],[1,0,1],[1,1,1]],bool)
         self.assertTrue(np.all(morph.fill(image)))
     
     def test_01_02_fill_negative(self):
-        '''Test patterns that should not fill'''
+        """Test patterns that should not fill"""
         image = np.array([[0,1,1,1,0,1,0,1,1,1,0,1,1,1,1,1,0,1,1,0,0,1],
                           [1,0,1,1,0,1,0,1,0,0,1,0,1,1,0,1,0,1,1,0,1,1],
                           [1,1,0,1,1,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,0,0]],bool)
         self.assertTrue(np.all(image == morph.fill(image)))
     
     def test_02_01_fill_edge(self):
-        '''Test that fill fills isolated pixels on an edge'''
+        """Test that fill fills isolated pixels on an edge"""
         
         image = np.array([[0,1,0,1,0],
                           [1,1,1,1,1],
@@ -2239,7 +2239,7 @@ class TestFill(unittest.TestCase):
         self.assertTrue(np.all(morph.fill(image) == True))
         
     def test_02_02_fill_mask(self):
-        '''Test that fill adds pixels if a neighbor is masked'''
+        """Test that fill adds pixels if a neighbor is masked"""
         image = np.array([[1,1,1],
                           [0,0,1],
                           [1,1,1]],bool)
@@ -2251,17 +2251,17 @@ class TestFill(unittest.TestCase):
 
 class TestHBreak(unittest.TestCase):
     def test_00_00_zeros(self):
-        '''Test hbreak on an array of all zeros'''
+        """Test hbreak on an array of all zeros"""
         result = morph.hbreak(np.zeros((10,10),bool))
         self.assertTrue(np.all(result==False))
         
     def test_00_01_zeros_masked(self):
-        '''Test hbreak on an array that is completely masked'''
+        """Test hbreak on an array that is completely masked"""
         result = morph.hbreak(np.zeros((10,10),bool),np.zeros((10,10),bool))
         self.assertTrue(np.all(result==False))
     
     def test_01_01_hbreak_positive(self):
-        '''Test break of a horizontal line'''
+        """Test break of a horizontal line"""
         image = np.array([[1,1,1],
                           [0,1,0],
                           [1,1,1]],bool)
@@ -2271,7 +2271,7 @@ class TestHBreak(unittest.TestCase):
         self.assertTrue(np.all(morph.hbreak(image)==expected))
     
     def test_01_02_hbreak_negative(self):
-        '''Test patterns that should not hbreak'''
+        """Test patterns that should not hbreak"""
         image = np.array([[0,1,1,0,0,1,0,1,1,0,0,1,1,1,1,1,0,1,1,0,0,1,0],
                           [0,0,1,0,0,1,1,1,0,0,1,0,1,1,0,1,0,1,1,0,1,1,0],
                           [0,1,1,1,0,1,0,1,1,0,1,1,0,1,0,1,1,1,1,1,0,0,0]],bool)
@@ -2279,17 +2279,17 @@ class TestHBreak(unittest.TestCase):
     
 class TestVBreak(unittest.TestCase):
     def test_00_00_zeros(self):
-        '''Test vbreak on an array of all zeros'''
+        """Test vbreak on an array of all zeros"""
         result = morph.vbreak(np.zeros((10,10),bool))
         self.assertTrue(np.all(result==False))
         
     def test_00_01_zeros_masked(self):
-        '''Test vbreak on an array that is completely masked'''
+        """Test vbreak on an array that is completely masked"""
         result = morph.vbreak(np.zeros((10,10),bool),np.zeros((10,10),bool))
         self.assertTrue(np.all(result==False))
     
     def test_01_01_vbreak_positive(self):
-        '''Test break of a vertical line'''
+        """Test break of a vertical line"""
         image = np.array([[1,0,1],
                           [1,1,1],
                           [1,0,1]],bool)
@@ -2299,7 +2299,7 @@ class TestVBreak(unittest.TestCase):
         self.assertTrue(np.all(morph.vbreak(image)==expected))
     
     def test_01_02_vbreak_negative(self):
-        '''Test patterns that should not vbreak'''
+        """Test patterns that should not vbreak"""
         # stolen from hbreak
         image = np.array([[0,1,1,0,0,1,0,1,1,0,0,1,1,1,1,1,0,1,1,0,0,1,0],
                           [0,0,1,0,0,1,1,1,0,0,1,0,1,1,0,1,0,1,1,0,1,1,0],
@@ -2309,17 +2309,17 @@ class TestVBreak(unittest.TestCase):
     
 class TestMajority(unittest.TestCase):
     def test_00_00_zeros(self):
-        '''Test majority on an array of all zeros'''
+        """Test majority on an array of all zeros"""
         result = morph.majority(np.zeros((10,10),bool))
         self.assertTrue(np.all(result==False))
         
     def test_00_01_zeros_masked(self):
-        '''Test majority on an array that is completely masked'''
+        """Test majority on an array that is completely masked"""
         result = morph.majority(np.zeros((10,10),bool),np.zeros((10,10),bool))
         self.assertTrue(np.all(result==False))
     
     def test_01_01_majority(self):
-        '''Test majority on a random field'''
+        """Test majority on a random field"""
         np.random.seed(0)
         image = np.random.uniform(size=(10,10)) > .5
         expected = scipy.ndimage.convolve(image.astype(int), np.ones((3,3)), 
@@ -2329,17 +2329,17 @@ class TestMajority(unittest.TestCase):
                                         
 class TestRemove(unittest.TestCase):
     def test_00_00_zeros(self):
-        '''Test remove on an array of all zeros'''
+        """Test remove on an array of all zeros"""
         result = morph.remove(np.zeros((10,10),bool))
         self.assertTrue(np.all(result==False))
         
     def test_00_01_zeros_masked(self):
-        '''Test remove on an array that is completely masked'''
+        """Test remove on an array that is completely masked"""
         result = morph.remove(np.zeros((10,10),bool),np.zeros((10,10),bool))
         self.assertTrue(np.all(result==False))
     
     def test_01_01_remove_positive(self):
-        '''Test removing a pixel'''
+        """Test removing a pixel"""
         image = np.array([[0,0,0,0,0,0,0,0,0,0,0,0,0],
                           [0,0,1,0,0,0,1,1,0,1,1,1,0],
                           [0,1,1,1,0,1,1,1,0,1,1,1,0],
@@ -2354,7 +2354,7 @@ class TestRemove(unittest.TestCase):
         self.assertTrue(np.all(result == expected))
     
     def test_01_02_remove_negative(self):
-        '''Test patterns that should not diag'''
+        """Test patterns that should not diag"""
         image = np.array([[0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0],
                           [0,1,1,0,1,1,0,0,1,0,0,1,1,0,1,0,1,0],
                           [0,0,1,1,1,1,0,1,1,0,0,1,0,0,1,1,1,0],
@@ -2362,7 +2362,7 @@ class TestRemove(unittest.TestCase):
         self.assertTrue(np.all(image == morph.remove(image)))
     
     def test_02_01_remove_edge(self):
-        '''Test that remove does nothing'''
+        """Test that remove does nothing"""
         
         image = np.array([[1,1,1,1,1],
                           [1,1,0,1,1],
@@ -2372,7 +2372,7 @@ class TestRemove(unittest.TestCase):
         self.assertTrue(np.all(morph.remove(image) == image))
         
     def test_02_02_remove_mask(self):
-        '''Test that a masked pixel does not cause a remove'''
+        """Test that a masked pixel does not cause a remove"""
         image = np.array([[1,1,1],
                           [1,1,1],
                           [1,1,1]],bool)
@@ -2384,18 +2384,18 @@ class TestRemove(unittest.TestCase):
 
 class TestSkeleton(unittest.TestCase):
     def test_00_00_zeros(self):
-        '''Test skeletonize on an array of all zeros'''
+        """Test skeletonize on an array of all zeros"""
         result = morph.skeletonize(np.zeros((10,10),bool))
         self.assertTrue(np.all(result==False))
         
     def test_00_01_zeros_masked(self):
-        '''Test skeletonize on an array that is completely masked'''
+        """Test skeletonize on an array that is completely masked"""
         result = morph.skeletonize(np.zeros((10,10),bool),
                                    np.zeros((10,10),bool))
         self.assertTrue(np.all(result==False))
     
     def test_01_01_rectangle(self):
-        '''Test skeletonize on a rectangle'''
+        """Test skeletonize on a rectangle"""
         image = np.zeros((9,15),bool)
         image[1:-1,1:-1] = True
         #
@@ -2415,7 +2415,7 @@ class TestSkeleton(unittest.TestCase):
         self.assertTrue(np.all(result == expected))
     
     def test_01_02_hole(self):
-        '''Test skeletonize on a rectangle with a hole in the middle'''
+        """Test skeletonize on a rectangle with a hole in the middle"""
         image = np.zeros((9,15),bool)
         image[1:-1,1:-1] = True
         image[4,4:-4] = False
@@ -2433,17 +2433,17 @@ class TestSkeleton(unittest.TestCase):
          
 class TestSpur(unittest.TestCase):
     def test_00_00_zeros(self):
-        '''Test spur on an array of all zeros'''
+        """Test spur on an array of all zeros"""
         result = morph.spur(np.zeros((10,10),bool))
         self.assertTrue(np.all(result==False))
         
     def test_00_01_zeros_masked(self):
-        '''Test spur on an array that is completely masked'''
+        """Test spur on an array that is completely masked"""
         result = morph.spur(np.zeros((10,10),bool),np.zeros((10,10),bool))
         self.assertTrue(np.all(result==False))
     
     def test_01_01_spur_positive(self):
-        '''Test removing a spur pixel'''
+        """Test removing a spur pixel"""
         image    = np.array([[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
                              [0,0,0,0,0,1,0,0,0,1,0,1,0,0,0],
                              [0,1,1,1,0,1,0,0,1,0,0,0,1,0,0],
@@ -2458,7 +2458,7 @@ class TestSpur(unittest.TestCase):
         self.assertTrue(np.all(result == expected))
     
     def test_01_02_spur_negative(self):
-        '''Test patterns that should not spur'''
+        """Test patterns that should not spur"""
         image = np.array([[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
                           [0,1,1,0,1,0,0,0,1,0,0,1,0,0,0,1,0,0],
                           [0,0,0,0,1,0,0,1,0,0,0,0,1,0,1,1,1,0],
@@ -2470,7 +2470,7 @@ class TestSpur(unittest.TestCase):
         self.assertTrue(np.all((a==1) | (a==4)))
     
     def test_02_01_spur_edge(self):
-        '''Test that spurs on edges go away'''
+        """Test that spurs on edges go away"""
         
         image = np.array([[1,0,0,1,0,0,1],
                           [0,1,0,1,0,1,0],
@@ -2490,7 +2490,7 @@ class TestSpur(unittest.TestCase):
         self.assertTrue(np.all(result == expected))
         
     def test_02_02_spur_mask(self):
-        '''Test that a masked pixel does not prevent a spur remove'''
+        """Test that a masked pixel does not prevent a spur remove"""
         image = np.array([[1,0,0],
                           [1,1,0],
                           [0,0,0]],bool)
@@ -2502,17 +2502,17 @@ class TestSpur(unittest.TestCase):
 
 class TestThicken(unittest.TestCase):
     def test_00_00_zeros(self):
-        '''Test thicken on an array of all zeros'''
+        """Test thicken on an array of all zeros"""
         result = morph.thicken(np.zeros((10,10),bool))
         self.assertTrue(np.all(result==False))
         
     def test_00_01_zeros_masked(self):
-        '''Test thicken on an array that is completely masked'''
+        """Test thicken on an array that is completely masked"""
         result = morph.thicken(np.zeros((10,10),bool),np.zeros((10,10),bool))
         self.assertTrue(np.all(result==False))
     
     def test_01_01_thicken_positive(self):
-        '''Test thickening positive cases'''
+        """Test thickening positive cases"""
         image    = np.array([[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
                              [0,0,0,0,0,0,0,0,1,0,0,1,0,0,0],
                              [0,1,1,1,0,0,0,1,0,0,0,0,1,0,0],
@@ -2527,7 +2527,7 @@ class TestThicken(unittest.TestCase):
         self.assertTrue(np.all(result == expected))
     
     def test_01_02_thicken_negative(self):
-        '''Test patterns that should not thicken'''
+        """Test patterns that should not thicken"""
         image = np.array([[1,1,0,1],
                           [0,0,0,0],
                           [1,1,1,1],
@@ -2537,7 +2537,7 @@ class TestThicken(unittest.TestCase):
         self.assertTrue(np.all(result==image))
     
     def test_02_01_thicken_edge(self):
-        '''Test thickening to the edge'''
+        """Test thickening to the edge"""
         
         image = np.zeros((5,5),bool)
         image[1:-1,1:-1] = True
@@ -2546,17 +2546,17 @@ class TestThicken(unittest.TestCase):
         
 class TestThin(unittest.TestCase):
     def test_00_00_zeros(self):
-        '''Test thin on an array of all zeros'''
+        """Test thin on an array of all zeros"""
         result = morph.thin(np.zeros((10,10),bool))
         self.assertTrue(np.all(result==False))
         
     def test_00_01_zeros_masked(self):
-        '''Test thin on an array that is completely masked'''
+        """Test thin on an array that is completely masked"""
         result = morph.thin(np.zeros((10,10),bool),np.zeros((10,10),bool))
         self.assertTrue(np.all(result==False))
     
     def test_01_01_bar(self):
-        '''Test thin on a bar of width 3'''
+        """Test thin on a bar of width 3"""
         image = np.zeros((10,10), bool)
         image[3:6,2:8] = True
         expected = np.zeros((10,10), bool)
@@ -2565,7 +2565,7 @@ class TestThin(unittest.TestCase):
         self.assertTrue(np.all(result==expected))
     
     def test_02_01_random(self):
-        '''A random image should preserve its Euler number'''
+        """A random image should preserve its Euler number"""
         np.random.seed(0)
         for i in range(20):
             image = np.random.uniform(size=(100,100)) < .1+float(i)/30.
@@ -2583,7 +2583,7 @@ class TestThin(unittest.TestCase):
             self.assertTrue(expected_euler_number == euler_number)
     
     def test_03_01_labels(self):
-        '''Thin a labeled image'''
+        """Thin a labeled image"""
         image = np.zeros((10,10), int)
         #
         # This is two touching bars
@@ -2598,7 +2598,7 @@ class TestThin(unittest.TestCase):
 
 class TestTableLookup(unittest.TestCase):
     def test_01_01_all_centers(self):
-        '''Test table lookup at pixels off of the edge'''
+        """Test table lookup at pixels off of the edge"""
         image = np.zeros((512*3+2,5),bool)
         for i in range(512):
             pattern = morph.pattern_of(i)
@@ -2609,7 +2609,7 @@ class TestTableLookup(unittest.TestCase):
         self.assertTrue(np.all(index[2::3,2] == table))
     
     def test_01_02_all_corners(self):
-        '''Test table lookup at the corners of the image'''
+        """Test table lookup at the corners of the image"""
         np.random.seed(0)
         for iteration in range(100):
             table = np.random.uniform(size=512) > .5
@@ -2630,7 +2630,7 @@ class TestTableLookup(unittest.TestCase):
                                             (p00,p01,p10,p11))
     
     def test_01_03_all_edges(self):
-        '''Test table lookup along the edges of the image'''
+        """Test table lookup along the edges of the image"""
         image = np.zeros((32*3+2,6),bool)
         np.random.seed(0)
         for iteration in range(100):
@@ -2725,19 +2725,19 @@ class TestNeighbors(unittest.TestCase):
 
 class TestColor(unittest.TestCase):
     def test_01_01_color_zeros(self):
-        '''Color a labels matrix of all zeros'''
+        """Color a labels matrix of all zeros"""
         labels = np.zeros((10,10), int)
         colors = morph.color_labels(labels)
         self.assertTrue(np.all(colors==0))
     
     def test_01_02_color_ones(self):
-        '''color a labels matrix of all ones'''
+        """color a labels matrix of all ones"""
         labels = np.ones((10,10), int)
         colors = morph.color_labels(labels)
         self.assertTrue(np.all(colors==1))
 
     def test_01_03_color_complex(self):
-        '''Create a bunch of shapes using Voroni cells and color them'''
+        """Create a bunch of shapes using Voroni cells and color them"""
         np.random.seed(0)
         mask = np.random.uniform(size=(100,100)) < .1
         labels,count = scind.label(mask, np.ones((3,3),bool))
@@ -2753,10 +2753,10 @@ class TestColor(unittest.TestCase):
             self.assertTrue(np.all((l00 == lij) | (c00 != cij)))
             
     def test_02_01_color_127(self):
-        '''Color 127 labels stored in a int8 array
+        """Color 127 labels stored in a int8 array
         
         Regression test of img-1099
-        '''
+        """
         # Create 127 labels
         labels = np.zeros((32,16), np.int8)
         i,j = np.mgrid[0:32, 0:16]
@@ -2768,7 +2768,7 @@ class TestColor(unittest.TestCase):
             
 class TestSkeletonizeLabels(unittest.TestCase):
     def test_01_01_skeletonize_complex(self):
-        '''Skeletonize a complex field of shapes and check each individually'''
+        """Skeletonize a complex field of shapes and check each individually"""
         np.random.seed(0)
         mask = np.random.uniform(size=(100,100)) < .1
         labels,count = scind.label(mask, np.ones((3,3),bool))
@@ -2784,19 +2784,19 @@ class TestSkeletonizeLabels(unittest.TestCase):
 
 class TestAssociateByDistance(unittest.TestCase):
     def test_01_01_zeros(self):
-        '''Test two label matrices with nothing in them'''
+        """Test two label matrices with nothing in them"""
         result = morph.associate_by_distance(np.zeros((10,10),int),
                                              np.zeros((10,10),int), 0)
         self.assertEqual(result.shape[0], 0)
     
     def test_01_02_one_zero(self):
-        '''Test a labels matrix with objects against one without'''
+        """Test a labels matrix with objects against one without"""
         result = morph.associate_by_distance(np.ones((10,10),int),
                                              np.zeros((10,10),int), 0)
         self.assertEqual(result.shape[0], 0)
     
     def test_02_01_point_in_square(self):
-        '''Test a single point in a square'''
+        """Test a single point in a square"""
         #
         # Point is a special case - only one point in its convex hull
         #
@@ -2812,7 +2812,7 @@ class TestAssociateByDistance(unittest.TestCase):
         self.assertEqual(result[0,1],3)
     
     def test_02_02_line_in_square(self):
-        '''Test a line in a square'''
+        """Test a line in a square"""
         l1 = np.zeros((10,10),int)
         l1[1:5,1:5] = 1
         l1[5:9,5:9] = 2
@@ -2825,7 +2825,7 @@ class TestAssociateByDistance(unittest.TestCase):
         self.assertEqual(result[0,1],3)
     
     def test_03_01_overlap(self):
-        '''Test a square overlapped by four other squares'''
+        """Test a square overlapped by four other squares"""
         
         l1 = np.zeros((20,20),int)
         l1[5:16,5:16] = 1
@@ -2840,7 +2840,7 @@ class TestAssociateByDistance(unittest.TestCase):
         self.assertTrue(all([x in result[:,1] for x in range(1,5)]))
     
     def test_03_02_touching(self):
-        '''Test two objects touching at one point'''
+        """Test two objects touching at one point"""
         l1 = np.zeros((10,10), int)
         l1[3:6,3:6] = 1
         l2 = np.zeros((10,10), int)
@@ -2851,7 +2851,7 @@ class TestAssociateByDistance(unittest.TestCase):
         self.assertEqual(result[0,1],1)
     
     def test_04_01_distance_square(self):
-        '''Test two squares separated by a distance'''
+        """Test two squares separated by a distance"""
         l1 = np.zeros((10,20),int)
         l1[3:6,3:6] = 1
         l2 = np.zeros((10,20),int)
@@ -2862,7 +2862,7 @@ class TestAssociateByDistance(unittest.TestCase):
         self.assertEqual(result.shape[0],1)
     
     def test_04_02_distance_triangle(self):
-        '''Test a triangle and a square (edge to point)'''
+        """Test a triangle and a square (edge to point)"""
         l1 = np.zeros((10,20),int)
         l1[3:6,3:6] = 1
         l2 = np.zeros((10,20),int)
@@ -2875,14 +2875,14 @@ class TestAssociateByDistance(unittest.TestCase):
         self.assertEqual(result.shape[0],1)
 
 class TestDistanceToEdge(unittest.TestCase):
-    '''Test distance_to_edge'''
+    """Test distance_to_edge"""
     def test_01_01_zeros(self):
-        '''Test distance_to_edge with a matrix of zeros'''
+        """Test distance_to_edge with a matrix of zeros"""
         result = morph.distance_to_edge(np.zeros((10,10),int))
         self.assertTrue(np.all(result == 0))
     
     def test_01_02_square(self):
-        '''Test distance_to_edge with a 3x3 square'''
+        """Test distance_to_edge with a 3x3 square"""
         labels = np.zeros((10,10), int)
         labels[3:6,3:6] = 1
         expected = np.zeros((10,10))
@@ -2891,7 +2891,7 @@ class TestDistanceToEdge(unittest.TestCase):
         self.assertTrue(np.all(result == expected))
     
     def test_01_03_touching(self):
-        '''Test distance_to_edge when two objects touch each other'''
+        """Test distance_to_edge when two objects touch each other"""
         labels = np.zeros((10,10), int)
         labels[3:6,3:6] = 1
         labels[6:9,3:6] = 2
@@ -2902,32 +2902,32 @@ class TestDistanceToEdge(unittest.TestCase):
         self.assertTrue(np.all(result == expected))
 
 class TestGreyReconstruction(unittest.TestCase):
-    '''Test grey_reconstruction'''
+    """Test grey_reconstruction"""
     def test_01_01_zeros(self):
-        '''Test grey_reconstruction with image and mask of zeros'''
+        """Test grey_reconstruction with image and mask of zeros"""
         self.assertTrue(np.all(morph.grey_reconstruction(np.zeros((5,7)),
                                                          np.zeros((5,7))) == 0))
     
     def test_01_02_image_equals_mask(self):
-        '''Test grey_reconstruction where the image and mask are the same'''
+        """Test grey_reconstruction where the image and mask are the same"""
         self.assertTrue(np.all(morph.grey_reconstruction(np.ones((7,5)),
                                                          np.ones((7,5))) == 1))
     
     def test_01_03_image_less_than_mask(self):
-        '''Test grey_reconstruction where the image is uniform and less than mask'''
+        """Test grey_reconstruction where the image is uniform and less than mask"""
         image = np.ones((5,5))
         mask = np.ones((5,5)) * 2
         self.assertTrue(np.all(morph.grey_reconstruction(image,mask) == 1))
     
     def test_01_04_one_image_peak(self):
-        '''Test grey_reconstruction with one peak pixel'''
+        """Test grey_reconstruction with one peak pixel"""
         image = np.ones((5,5))
         image[2,2] = 2
         mask = np.ones((5,5)) * 3
         self.assertTrue(np.all(morph.grey_reconstruction(image,mask) == 2))
     
     def test_01_05_two_image_peaks(self):
-        '''Test grey_reconstruction with two peak pixels isolated by the mask'''
+        """Test grey_reconstruction with two peak pixels isolated by the mask"""
         image = np.array([[1,1,1,1,1,1,1,1],
                           [1,2,1,1,1,1,1,1],
                           [1,1,1,1,1,1,1,1],
@@ -2952,13 +2952,13 @@ class TestGreyReconstruction(unittest.TestCase):
                                expected))
     
     def test_02_01_zero_image_one_mask(self):
-        '''Test grey_reconstruction with an image of all zeros and a mask that's not'''
+        """Test grey_reconstruction with an image of all zeros and a mask that's not"""
         result = morph.grey_reconstruction(np.zeros((10,10)), np.ones((10,10)))
         self.assertTrue(np.all(result == 0))
         
 class TestGetLinePts(unittest.TestCase):
     def test_01_01_no_pts(self):
-        '''Can we call get_line_pts with zero-length vectors?'''
+        """Can we call get_line_pts with zero-length vectors?"""
         i0, j0, i1, j1 = [np.zeros((0,))] * 4
         index, count, i, j = morph.get_line_pts(i0, j0, i1, j1)
         self.assertEqual(len(index), 0)
@@ -3160,14 +3160,14 @@ class TestBranchings(unittest.TestCase):
         
 class TestLabelSkeleton(unittest.TestCase):
     def test_00_00_zeros(self):
-        '''Label a skeleton containing nothing'''
+        """Label a skeleton containing nothing"""
         skeleton = np.zeros((20,10), bool)
         result, count = morph.label_skeleton(skeleton)
         self.assertEqual(count, 0)
         self.assertTrue(np.all(result == 0))
         
     def test_01_01_point(self):
-        '''Label a skeleton consisting of a single point'''
+        """Label a skeleton consisting of a single point"""
         skeleton = np.zeros((20,10), bool)
         skeleton[5,5] = True
         expected = np.zeros((20,10), int)
@@ -3177,7 +3177,7 @@ class TestLabelSkeleton(unittest.TestCase):
         self.assertTrue(np.all(result == expected))
         
     def test_01_02_line(self):
-        '''Label a skeleton that's a line'''
+        """Label a skeleton that's a line"""
         skeleton = np.zeros((20,10), bool)
         skeleton[5:15, 5] = True
         result, count = morph.label_skeleton(skeleton)
@@ -3186,7 +3186,7 @@ class TestLabelSkeleton(unittest.TestCase):
         self.assertTrue(np.all(result[~skeleton] == 0))
         
     def test_01_03_branch(self):
-        '''Label a skeleton that has a branchpoint'''
+        """Label a skeleton that has a branchpoint"""
         skeleton = np.zeros((21,11), bool)
         i,j = np.mgrid[-10:11,-5:6]
         #
@@ -3211,7 +3211,7 @@ class TestLabelSkeleton(unittest.TestCase):
         self.assertTrue(np.all(result[(i > 0) & (j == 0)] == v3))
         
     def test_02_01_branch_and_edge(self):
-        '''A branchpoint meeting an edge at two points'''
+        """A branchpoint meeting an edge at two points"""
         
         expected = np.array(((2,0,0,0,0,1),
                              (0,2,0,0,1,0),
@@ -3230,7 +3230,7 @@ class TestLabelSkeleton(unittest.TestCase):
             self.assertEqual(len(np.unique(result[expected == i])), 1)
 
     def test_02_02_four_edges_meet(self):
-        '''Check the odd case of four edges meeting at a square
+        """Check the odd case of four edges meeting at a square
         
         The shape is something like this:
         
@@ -3242,7 +3242,7 @@ class TestLabelSkeleton(unittest.TestCase):
         .    .
         None of the points above are branchpoints - they're sort of
         half-branchpoints.
-        '''
+        """
         i,j = np.mgrid[-10:10,-10:10]
         i[i<0] += 1
         j[j<0] += 1
@@ -3297,7 +3297,7 @@ class TestPairwisePermutations(unittest.TestCase):
             self.assertTrue(np.all(x == v))
                                                        
     def test_01_04_gaps(self):
-        '''regression test of img-1485'''
+        """regression test of img-1485"""
         i = np.array([
             3585,3585,3585,3586,3586,3587,3587,3588,3588,
             3589,3589,3589,3590,3590,3591,3591,3592,3592,
@@ -4863,10 +4863,10 @@ class TestIsLocalMaximum(unittest.TestCase):
         self.assertTrue(np.all(result == expected))
         
     def test_03_01_disk_1(self):
-        '''regression test of img-1194, footprint = [1]
+        """regression test of img-1194, footprint = [1]
         
         Test is_local_maximum when every point is a local maximum
-        '''
+        """
         np.random.seed(31)
         image = np.random.uniform(size=(10,20))
         footprint = morph.strel_disk(.5)

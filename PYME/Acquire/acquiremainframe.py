@@ -20,9 +20,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-''' 
+"""
 This contains the bulk of the GUI code for the main window of PYMEAcquire.
-'''
+"""
 import wx
 import wx.py.shell
 import wx.lib.agw.aui as aui
@@ -154,7 +154,7 @@ class PYMEMainFrame(AUIFrame):
         self.sh.run('from PYME.Acquire import ExecTools')
         self.sh.run('ExecTools.setDefaultNamespace(locals(), globals())')
         self.sh.run('from PYME.Acquire.ExecTools import InitBG, joinBGInit, InitGUI, HWNotPresent')
-        #self.sh.run('''def InitGUI(code):\n\tpostInit.append(code)\n\n\n''')
+        #self.sh.run("""def InitGUI(code):\n\tpostInit.append(code)\n\n\n""")
         self.sh.run('ExecTools.execFileBG("%s", locals(), globals())' % initFile)
         
         self.time1.WantNotification.append(self.checkInitDone)
@@ -175,10 +175,10 @@ class PYMEMainFrame(AUIFrame):
                 self.vp.SetDataStack(self.scope.frameWrangler.currentFrame)
         
     def _start_polling_camera(self):
-        '''Gets called once during post-init to start pulling data from the
+        """Gets called once during post-init to start pulling data from the
         camera
         
-        '''
+        """
         self.scope.startFrameWrangler()
 
         if self.scope.cam.GetPicHeight() > 1:
@@ -357,7 +357,7 @@ class PYMEMainFrame(AUIFrame):
 
 
     def AddTool(self, panel, title, pinned=True):
-        '''Adds a pane to the tools section of the GUI
+        """Adds a pane to the tools section of the GUI
         
         Parameters
         ----------
@@ -365,7 +365,7 @@ class PYMEMainFrame(AUIFrame):
             The pane to add
         title : string
             The caption for the panel.
-        '''
+        """
         item = afp.foldingPane(self.toolPanel, -1, caption=title, pinned = pinned)
         panel.Reparent(item)
         item.AddNewElement(panel)
@@ -376,7 +376,7 @@ class PYMEMainFrame(AUIFrame):
         #wx.LayoutAlgorithm().LayoutWindow(self, self._leftWindow1)
 
     def AddCamTool(self, panel, title, pinned=True):
-        '''Adds a pane to the Camera section of the GUI
+        """Adds a pane to the Camera section of the GUI
         
         Parameters
         ----------
@@ -384,7 +384,7 @@ class PYMEMainFrame(AUIFrame):
             The pane to add
         title : string
             The caption for the panel.
-        '''
+        """
         #item = self.camPanel.AddFoldPanel(title, collapsed=False, foldIcons=self.Images)
         item = afp.foldingPane(self.camPanel, -1, caption=title, pinned = pinned)
         panel.Reparent(item)
@@ -393,7 +393,7 @@ class PYMEMainFrame(AUIFrame):
         #self.camPanel.AddFoldPanelWindow(item, panel, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
 
     def AddAqTool(self, panel, title, pinned=True):
-        '''Adds a pane to the Acquisition section of the GUI
+        """Adds a pane to the Acquisition section of the GUI
         
         Parameters
         ----------
@@ -401,7 +401,7 @@ class PYMEMainFrame(AUIFrame):
             The pane to add
         title : string
             The caption for the panel.
-        '''
+        """
         item = afp.foldingPane(self.aqPanel, -1, caption=title, pinned = pinned)
         panel.Reparent(item)
         item.AddNewElement(panel)

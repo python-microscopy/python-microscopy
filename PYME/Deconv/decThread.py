@@ -28,7 +28,7 @@ import inspect
 import ctypes
 
 def _async_raise(tid, exctype):
-    '''Raises an exception in the threads with id tid'''
+    """Raises an exception in the threads with id tid"""
     if not inspect.isclass(exctype):
         raise TypeError("Only types can be raised (not instances)")
     res = ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, ctypes.py_object(exctype))

@@ -38,15 +38,15 @@ from PYME.Acquire import stackSettings
 
 #from noclosefr import * 
 
-MSG_NO_WAVETABLE = '''Piezo does not support wavetable output.
+MSG_NO_WAVETABLE = """Piezo does not support wavetable output.
 Synchronisation between movement and frames may be poor.
                     
-Using a long integration time and/or setting the camera to single shot mode might help.'''
+Using a long integration time and/or setting the camera to single shot mode might help."""
 
-MSG_LONG_WAVETABLE = '''Piezo does not support wavetables longer than %d frames.
+MSG_LONG_WAVETABLE = """Piezo does not support wavetables longer than %d frames.
 Synchronisation between movement and frames may be poor.
                     
-Either decreasing the stack size, or using a long integration time and/or setting the camera to single shot mode might help.'''
+Either decreasing the stack size, or using a long integration time and/or setting the camera to single shot mode might help."""
 
 
 

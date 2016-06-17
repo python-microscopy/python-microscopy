@@ -68,7 +68,7 @@ def f_Interp3d2c(p, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, axialShift
     return numpy.concatenate((g,r), 2)
     
 def f_J_Interp3d2c(p,interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, axialShift, *args):
-    '''generate the jacobian - for use with _fithelpers.weightedJacF'''
+    """generate the jacobian - for use with _fithelpers.weightedJacF"""
     Ag, Ar, x0, y0, z0, bG, bR = p
 
     x0 = min(max(x0, safeRegion[0][0]), safeRegion[0][1])
@@ -140,8 +140,8 @@ def getDataErrors(im, metadata):
 
 class PSFFitFactory:
     def __init__(self, data, metadata, fitfcn=f_Interp3d2c, background=None):
-        '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in 
-        metadata. '''
+        """Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
+        metadata. """
         self.data = data
         self.metadata = metadata
         self.background = background

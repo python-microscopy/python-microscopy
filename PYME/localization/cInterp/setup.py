@@ -46,9 +46,9 @@ if __name__ == '__main__':
     	author = 'David Baddeley',
        	author_email = 'd.baddeley@auckland.ac.nz',
        	url = '',
-       	long_description = '''
+       	long_description = """
 Provides a c-funtion for the fast & memory efficeint computation of a histogram of pairwise distances
-''',
+""",
           license = "Proprietary",
           **configuration(top_path='').todict()
           )

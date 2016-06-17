@@ -96,9 +96,9 @@ def deClumpf(h5fFile):
     return deClump(fr)
 
 def findClumps(t, x, y, delta_x):
-    '''Finds clumps (or single particle trajectories) of data points in a series.
+    """Finds clumps (or single particle trajectories) of data points in a series.
     fitRsults MUST be sorted in increasing time order.
-    '''
+    """
 
     nRes = len(t)
 
@@ -133,7 +133,7 @@ def findClumps(t, x, y, delta_x):
 
 
 def coalesceClumps_(fitResults, assigned):
-    '''Agregates clumps to a single event'''
+    """Agregates clumps to a single event"""
     NClumps = int(assigned.max())
 
     #work out what the data type for our declumped data should be
@@ -165,7 +165,7 @@ def coalesceClumps_(fitResults, assigned):
     return fres
     
 def coalesceClumps(fitResults, assigned):
-    '''Agregates clumps to a single event'''
+    """Agregates clumps to a single event"""
     NClumps = int(assigned.max())
 
     #work out what the data type for our declumped data should be

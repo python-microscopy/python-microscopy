@@ -20,13 +20,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-'''Implementation of the FrameWrangler class (previously PreviewAcquisator) 
+"""Implementation of the FrameWrangler class (previously PreviewAcquisator)
 which manages the flow of information from a camera into the rest of the program,
 letting dependant parts of the program know when new data arrives via signals.
 
 As hardware control in PYMEAcquire is largely driven by and synchronized with 
 camera frames, this also encompasses the 'heart' or core of the program which 
-everything else responds to.''' 
+everything else responds to."""
 
 import wx
 
@@ -78,7 +78,7 @@ class FrameWrangler(wx.EvtHandler):
         
 
     def Prepare(self, keepds=False):
-        '''Prepare for acquisition by allocating the buffer which will store the
+        """Prepare for acquisition by allocating the buffer which will store the
         data we recieve. The buffer stores a single frame, and all frames pass
         through this buffer. The current state of the buffer is accessible via
         the currentFrame variable.
@@ -87,7 +87,7 @@ class FrameWrangler(wx.EvtHandler):
         ----------
         keepds: Whether or not to keep the previously allocated array        
         
-        '''
+        """
         
         #what byte-order does the camera use for its frames?
         try:
@@ -107,7 +107,7 @@ class FrameWrangler(wx.EvtHandler):
 
             
     def getFrame(self, colours=None):
-        '''Ask the camera to put a frame into our buffer''' 
+        """Ask the camera to put a frame into our buffer"""
         
         if ('numpy_frames' in dir(self.cam)):
             cs = self.currentFrame[:,:,0]
@@ -122,7 +122,7 @@ class FrameWrangler(wx.EvtHandler):
         self.cam.ExtractColor(cs,0)
 
     def purge(self):
-        '''purge (and discard) all remaining frames in the camera buffer'''
+        """purge (and discard) all remaining frames in the camera buffer"""
         while(self.cam.ExpReady()):
             self.curMemChn = 0
             self.getFrame(self.BW)
@@ -171,8 +171,8 @@ class FrameWrangler(wx.EvtHandler):
 
 
     def Notify(self, event=None):
-        '''Callback which is called regularly by a system timer to poll the 
-        camera'''
+        """Callback which is called regularly by a system timer to poll the
+        camera"""
         
         #check to see if we are already running
         if self.inNotify:
@@ -265,19 +265,19 @@ class FrameWrangler(wx.EvtHandler):
             
     @property
     def dsa(self):
-        '''Whatever frame is currently passing through the acquisition queue
+        """Whatever frame is currently passing through the acquisition queue
         
         NB: this new code should use the more informatively named currentFrame
         property instead
-        '''
+        """
         warnings.warn('.dsa is deprecated, use .currentFrame instead', DeprecationWarning)
         return self.currentFrame
 
     def checkHardware(self):
-        '''Check to see if our hardware is ready for us to take the next frame
+        """Check to see if our hardware is ready for us to take the next frame
         
         NB: This is largely legacy code, as the camera is usually used in 
-        free-running mode.'''
+        free-running mode."""
         for callback in self.HardwareChecks:
             if not callback():
                 print 'Waiting for hardware'

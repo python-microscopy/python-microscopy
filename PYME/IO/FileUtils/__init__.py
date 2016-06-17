@@ -21,4 +21,4 @@
 
 #
 ################
-'''Utility functions for dealing with the more esoteric parts of file io'''
+"""Utility functions for dealing with the more esoteric parts of file io"""

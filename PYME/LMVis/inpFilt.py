@@ -21,11 +21,11 @@
 #
 ##################
 
-''' import filters for localisation microscopy results. These masquerade as 
+""" import filters for localisation microscopy results. These masquerade as
 dictionaries which can be looked up to yield the desired data. The visualisation
 routines expect at least 'x' and 'y' to be defined as keys, and may also 
 understand additional values, e.g. 'error_x' 
-'''
+"""
 import types
 import numpy as np
 
@@ -61,7 +61,7 @@ class inputFilter(object):
 class randomSource(inputFilter):
     _name = "Random Source"
     def __init__(self, xmax, ymax, nsamps):
-        '''Uniform random source, for testing and as an example'''
+        """Uniform random source, for testing and as an example"""
         self.x = xmax*np.random.rand(nsamps)
         self.y = ymax*np.random.rand(nsamps)
 
@@ -162,9 +162,9 @@ class fitResultsSource(inputFilter):
 class h5rSource(inputFilter):
     _name = "h5r Data Source"
     def __init__(self, h5fFile):
-        ''' Data source for use with h5r files as saved by the PYME analysis 
+        """ Data source for use with h5r files as saved by the PYME analysis
         component. Takes either an open h5r file or a string filename to be
-        opened.'''
+        opened."""
 
         if type(h5fFile) == tables.file.File:
             self.h5f = h5fFile
@@ -226,8 +226,8 @@ class h5rSource(inputFilter):
 class h5rDSource(inputFilter):
     _name = "h5r Drift Source"
     def __init__(self, h5fFile):
-        ''' Data source for use with h5r files as saved by the PYME analysis 
-        component'''
+        """ Data source for use with h5r files as saved by the PYME analysis
+        component"""
         
         if type(h5fFile) == tables.file.File:
             self.h5f = h5fFile
@@ -284,11 +284,11 @@ class h5rDSource(inputFilter):
 class textfileSource(inputFilter):
     _name = "Text File Source"
     def __init__(self, filename, columnnames, delimiter=None, skiprows=0):
-        ''' Input filter for use with delimited text data. Defaults
+        """ Input filter for use with delimited text data. Defaults
         to whitespace delimiter. need to provide a list of variable names
         in the order that they appear in the file. Using 'x', 'y' and 'error_x'
         for the position data and it's error should ensure that this functions
-        with the visualisation backends'''
+        with the visualisation backends"""
 
         self.res = np.loadtxt(filename, dtype={'names' : columnnames, 
                                                'formats' :  ['f4' for i in range(len(columnnames))]}, delimiter = delimiter, skiprows=skiprows)
@@ -316,11 +316,11 @@ class textfileSource(inputFilter):
 class matfileSource(inputFilter):
     _name = "Matlab Source"
     def __init__(self, filename, columnnames, varName='Orte'):
-        ''' Input filter for use with matlab data. Need to provide a variable name
+        """ Input filter for use with matlab data. Need to provide a variable name
         and a list of column names
         in the order that they appear in the file. Using 'x', 'y' and 'error_x'
         for the position data and it's error should ensure that this functions
-        with the visualisation backends'''
+        with the visualisation backends"""
 
         import scipy.io
 
@@ -351,14 +351,14 @@ class matfileSource(inputFilter):
 class resultsFilter(inputFilter):
     _name = "Results Filter"
     def __init__(self, resultsSource, **kwargs):
-        '''Class to permit filtering of fit results - masquarades 
+        """Class to permit filtering of fit results - masquarades
         as a dictionary. Takes item ranges as keyword arguments, eg:
         f = resultsFliter(source, x=[0,10], error_x=[0,5]) will return
         an object that behaves like source, but with only those points with 
         an x value in the range [0, 10] and a x error in the range [0, 5].
 
         The filter class does not have any explicit knowledge of the keys
-        supported by the underlying data source.'''
+        supported by the underlying data source."""
 
         self.resultsSource = resultsSource
 
@@ -386,14 +386,14 @@ class resultsFilter(inputFilter):
 class cachingResultsFilter(inputFilter):
     _name = "Caching Results Filter"
     def __init__(self, resultsSource, **kwargs):
-        '''Class to permit filtering of fit results - masquarades
+        """Class to permit filtering of fit results - masquarades
         as a dictionary. Takes item ranges as keyword arguments, eg:
         f = resultsFliter(source, x=[0,10], error_x=[0,5]) will return
         an object that behaves like source, but with only those points with
         an x value in the range [0, 10] and a x error in the range [0, 5].
 
         The filter class does not have any explicit knowledge of the keys
-        supported by the underlying data source.'''
+        supported by the underlying data source."""
 
         self.resultsSource = resultsSource
         self.cache = {}
@@ -428,7 +428,7 @@ class cachingResultsFilter(inputFilter):
 class mappingFilter(inputFilter):
     _name = "Mapping Filter"
     def __init__(self, resultsSource, **kwargs):
-        '''Class to permit transformations (e.g. drift correction) of fit results
+        """Class to permit transformations (e.g. drift correction) of fit results
         - masquarades as a dictionary. Takes mappings as keyword arguments, eg:
         f = resultsFliter(source, xp='x + a*tIndex', yp=compile('y + b*tIndex', '/tmp/test1', 'eval'), a=1, b=2)
         will return an object that behaves like source, but has additional members
@@ -437,7 +437,7 @@ class mappingFilter(inputFilter):
         the mappings should either be code objects, strings (which will be compiled into code objects),
         or something else (which will be turned into a local variable - eg constants in above example)
 
-        '''
+        """
 
         self.resultsSource = resultsSource
 
@@ -490,8 +490,8 @@ class mappingFilter(inputFilter):
 class colourFilter(inputFilter):
     _name = "Colour Filter"
     def __init__(self, resultsSource, visFr, currentColour=None):
-        '''Class to permit filtering by colour
-        '''
+        """Class to permit filtering by colour
+        """
 
         self.resultsSource = resultsSource
         self.currentColour = currentColour
@@ -543,7 +543,7 @@ class colourFilter(inputFilter):
 class cloneSource(inputFilter):
     _name = "Cloned Source"
     def __init__(self, resultsSource):
-        '''Creates an in memory copy of a (filtered) data source'''
+        """Creates an in memory copy of a (filtered) data source"""
 
         resultsSource
         self.cache = {}

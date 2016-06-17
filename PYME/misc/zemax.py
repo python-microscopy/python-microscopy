@@ -10,12 +10,12 @@ import numpy as np
 import read_agf
 
 def decompZar(filename):
-    '''zemax .zar files are a series of concatenated, LZW compressed text-format 
+    """zemax .zar files are a series of concatenated, LZW compressed text-format
     files.
     
     This function attempts to locate and decompress each of the sections, returning
     a dictionary of strings where the keys are the origninal(uncompressed) file names.    
-    ''' 
+    """
     f = open(filename, 'rb')
     raw = f.read()
     f.close()

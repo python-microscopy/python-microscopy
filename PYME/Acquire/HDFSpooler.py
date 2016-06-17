@@ -35,13 +35,13 @@ import PYME.Acquire.Spooler as sp
 from PYME.IO.FileUtils import fileID
 
 class SpoolEvent(tables.IsDescription):
-    '''Pytables description for Events table in spooled dataset'''
+    """Pytables description for Events table in spooled dataset"""
     EventName = tables.StringCol(32)
     Time = tables.Time64Col()
     EventDescr = tables.StringCol(256)
 
 class EventLogger:
-    '''Event logging backend for hdf/pytables data storage
+    """Event logging backend for hdf/pytables data storage
         
     Parameters
     ----------
@@ -50,12 +50,12 @@ class EventLogger:
     
     hdf5File : pytables hdf file 
         The open HDF5 file to write to
-    '''
+    """
     def __init__(self, spool, hdf5File):
-      '''Create a new Events table.
+      """Create a new Events table.
       
       
-      '''
+      """
       self.spooler = spool
       #self.scope = scope
       self.hdf5File = hdf5File
@@ -63,7 +63,7 @@ class EventLogger:
       self.evts = self.hdf5File.createTable(hdf5File.root, 'Events', SpoolEvent)
 
     def logEvent(self, eventName, eventDescr = ''):
-        '''Log an event.
+        """Log an event.
           
         Parameters
         ----------
@@ -79,7 +79,7 @@ class EventLogger:
         
         In addition to the name and description, timing information is recorded
         for each event.
-        '''
+        """
         if eventName == 'StartAq':
             eventDescr = '%d' % self.spooler.imNum
               
@@ -93,8 +93,8 @@ class EventLogger:
         self.evts.flush()
 
 class Spooler(sp.Spooler):
-    '''Responsible for the mechanics of spooling to a pytables/hdf file.
-    '''
+    """Responsible for the mechanics of spooling to a pytables/hdf file.
+    """
     def __init__(self, filename, frameSource, frameShape, complevel=6, complib='zlib', **kwargs):
         self.h5File = tables.openFile(filename, 'w')
            
@@ -107,14 +107,14 @@ class Spooler(sp.Spooler):
         sp.Spooler.__init__(self, filename, frameSource, **kwargs)
 
     def StopSpool(self):
-        '''Stop spooling and close file'''
+        """Stop spooling and close file"""
         sp.Spooler.StopSpool(self)
            
         self.h5File.flush()
         self.h5File.close()
         
     def OnFrame(self, sender, frameData, **kwargs):
-        '''Called on each frame'''
+        """Called on each frame"""
         #print 'f'
         self.imageData.append(frameData.reshape(1,frameData.shape[0],frameData.shape[1]))
         self.h5File.flush()

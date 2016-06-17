@@ -20,9 +20,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-'''The GUI controls for streaming acquisiton.
+"""The GUI controls for streaming acquisiton.
 
-'''
+"""
 
 import wx
 import datetime
@@ -47,7 +47,7 @@ import glob
     
 
 class PanSpool(wx.Panel):
-    '''A Panel containing the GUI controls for spooling'''
+    """A Panel containing the GUI controls for spooling"""
     def _init_ctrls(self, prnt):
         wx.Panel.__init__(self, parent=prnt, style=wx.TAB_TRAVERSAL)
 
@@ -184,7 +184,7 @@ class PanSpool(wx.Panel):
         vsizer.Fit(self)
 
     def __init__(self, parent, scope, **kwargs):
-        '''Initialise the spooling panel.
+        """Initialise the spooling panel.
         
         Parameters
         ----------
@@ -198,7 +198,7 @@ class PanSpool(wx.Panel):
         defSeries : string pattern
             This specifies a pattern for file naming. Keys will be substituted as for `defDir`
             
-        '''
+        """
         self._init_ctrls(parent)
         self.scope = scope
         
@@ -216,11 +216,11 @@ class PanSpool(wx.Panel):
 
 
     def UpdateFreeSpace(self, event=None):
-        '''Updates the free space display. 
+        """Updates the free space display.
         
         Designed to be used as a callback with one of the system timers, but 
         can be called separately
-        '''
+        """
         freeGB = get_free_space(self.spoolController.dirname)/1e9
         self.stDiskSpace.SetLabel('Free Space: %3.2f GB' % freeGB)
         if freeGB < 5:
@@ -230,9 +230,9 @@ class PanSpool(wx.Panel):
        
 
     def OnBStartSpoolButton(self, event=None, stack=False):
-        '''GUI callback to start spooling.
+        """GUI callback to start spooling.
         
-        NB: this is also called programatically by the start stack button.'''
+        NB: this is also called programatically by the start stack button."""
         
         
         fn = self.tcSpoolFile.GetValue()
@@ -269,12 +269,12 @@ class PanSpool(wx.Panel):
         
 
     def OnBStartStackButton(self, event=None):
-        '''GUI callback to start spooling with z-stepping.'''
+        """GUI callback to start spooling with z-stepping."""
         self.OnBStartSpoolButton(stack=True)
         
 
     def OnBStopSpoolingButton(self, event):
-        '''GUI callback to stop spooling.'''
+        """GUI callback to stop spooling."""
         self.spoolController.StopSpooling()
         #self.OnSpoolingStopped()
         
@@ -292,8 +292,8 @@ class PanSpool(wx.Panel):
         self.spoolController.LaunchAnalysis()
         
     def Tick(self, **kwargs):
-        '''Called with each new frame. Updates the number of frames spooled 
-        and disk space remaining'''
+        """Called with each new frame. Updates the number of frames spooled
+        and disk space remaining"""
         dtn = datetime.datetime.now()
         
         dtt = dtn - self.spoolController.spooler.dtStart
@@ -302,7 +302,7 @@ class PanSpool(wx.Panel):
         self.UpdateFreeSpace()
 
     def OnBSetSpoolDirButton(self, event):
-        '''Set the directory we're spooling into (GUI callback).'''
+        """Set the directory we're spooling into (GUI callback)."""
         ndir = wx.DirSelector()
         if not ndir == '':
             self.spoolController.SetSpoolDir(ndir)
@@ -312,9 +312,9 @@ class PanSpool(wx.Panel):
             self.UpdateFreeSpace()
 
     def OnBSetAqProtocolButton(self, event):
-        '''Set the current protocol (GUI callback).
+        """Set the current protocol (GUI callback).
         
-        See also: PYME.Acquire.Protocols.'''
+        See also: PYME.Acquire.Protocols."""
         protocolList = glob.glob(PYME.Acquire.Protocols.__path__[0] + '/[a-zA-Z]*.py')
         protocolList = ['<None>',] + [os.path.split(p)[-1] for p in protocolList]
         pDlg = wx.SingleChoiceDialog(self, '', 'Select Protocol', protocolList)

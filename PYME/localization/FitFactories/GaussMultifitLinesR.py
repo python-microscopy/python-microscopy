@@ -78,8 +78,8 @@ class GaussianFitFactory:
     Y = None
     
     def __init__(self, data, metadata, fitfcn=f_multiGauss, background=None, noiseSigma=None):
-        '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
-        metadata. '''
+        """Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
+        metadata. """
         self.data = data
         self.background = background
         self.noiseSigma = noiseSigma

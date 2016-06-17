@@ -30,7 +30,7 @@ import time
 
 #import PYME.cSMI as example
 
-pz = InitBG('Fake Piezo(s)', '''
+pz = InitBG('Fake Piezo(s)', """
 scope.fakePiezo = fakePiezo.FakePiezo(100)
 scope.piezos.append((scope.fakePiezo, 1, 'Fake z-piezo'))
 
@@ -48,16 +48,16 @@ scope.positioning['z'] = (scope.fakePiezo, 1, 1)
 scope.state.registerHandler('Positioning.x', lambda : scope.fakeXPiezo.GetPos(1), lambda v : scope.fakeXPiezo.MoveTo(1, v))
 scope.state.registerHandler('Positioning.y', lambda : scope.fakeYPiezo.GetPos(1), lambda v : scope.fakeYPiezo.MoveTo(1, v))
 scope.state.registerHandler('Positioning.z', lambda : scope.fakePiezo.GetPos(1), lambda v : scope.fakePiezo.MoveTo(1, v))
-''')
+""")
 
 pz.join() #piezo must be there before we start camera
-cm = InitBG('Fake Camera', '''
+cm = InitBG('Fake Camera', """
 from PYME.Acquire.Hardware.Simulator import fakeCam, dSimControl
 scope.cam = fakeCam.FakeCamera(70*scipy.arange(-128.0, 128.0), 70*scipy.arange(-128.0, 128.0), fakeCam.NoiseMaker(), scope.fakePiezo, xpiezo = scope.fakeXPiezo, ypiezo = scope.fakeYPiezo)
 scope.cameras['Fake Camera'] = scope.cam
 #time.sleep(5)
 
-''')
+""")
 
 #setup for the channels to aquire - b/w camera, no shutters
 #class chaninfo:
@@ -72,52 +72,52 @@ scope.cameras['Fake Camera'] = scope.cam
 
 #scope.EnableJoystick = 'foo'
 
-#InitBG('Should Fail', '''
+#InitBG('Should Fail', """
 #raise Exception, 'test error'
 #time.sleep(1)
-#''')
+#""")
 #
-#InitBG('Should not be there', '''
+#InitBG('Should not be there', """
 #raise HWNotPresent, 'test error'
 #time.sleep(1)
-#''')
+#""")
 
 
 #Gui stuff can't be done in background
-InitGUI('''
+InitGUI("""
 from PYME.Acquire.Hardware.Simulator import dSimControl
 dsc = dSimControl.dSimControl(MainFrame, scope)
 #import wx
 #dsc = wx.TextCtrl(MainFrame, -1, 'foo')
 MainFrame.AddPage(page=dsc, select=False, caption='Simulation Settings')
-''')
+""")
 
-InitGUI('''
+InitGUI("""
 from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
 scope.camControls['Fake Camera'] = AndorControlFrame.AndorPanel(MainFrame, scope.cam, scope)
 camPanels.append((scope.camControls['Fake Camera'], 'EMCCD Properties'))
-''')
+""")
 
-InitGUI('''
+InitGUI("""
 from PYME.Acquire import sampleInformation
 sampPan = sampleInformation.slidePanel(MainFrame)
 camPanels.append((sampPan, 'Current Slide'))
-''')
+""")
 
-InitGUI('''
+InitGUI("""
 from PYME.Acquire.ui import AnalysisSettingsUI
 AnalysisSettingsUI.Plug(scope, MainFrame)
-''')
+""")
 
-InitGUI('''
+InitGUI("""
 from PYMEnf.Hardware import FakeDMD, DMDGui
 scope.LC = FakeDMD.FakeDMD(scope)
 
 LCGui = DMDGui.DMDPanel(MainFrame,scope.LC, scope)
 camPanels.append((LCGui, 'DMD Control', False))
-''')
+""")
 
-#InitGUI('''
+#InitGUI("""
 #from PYME.Acquire.Hardware import ccdAdjPanel
 ##import wx
 ##f = wx.Frame(None)
@@ -126,7 +126,7 @@ camPanels.append((LCGui, 'DMD Control', False))
 ##camPanels.append((snrPan, 'SNR etc ...'))
 ##f.Show()
 ##time1.WantNotification.append(snrPan.ccdPan.draw)
-#''')
+#""")
 
 cm.join()
 from PYME.Acquire.Hardware import lasers
@@ -137,7 +137,7 @@ scope.lasers = [scope.l405, scope.l488]
 
 
 
-InitGUI('''
+InitGUI("""
 from PYME.Acquire.ui import lasersliders
 
 lcf = lasersliders.LaserToggles(toolPanel, scope.state)
@@ -147,30 +147,30 @@ camPanels.append((lcf, 'Laser Control'))
 lsf = lasersliders.LaserSliders(toolPanel, scope.state)
 time1.WantNotification.append(lsf.update)
 camPanels.append((lsf, 'Laser Powers'))
-''')
+""")
 
-#InitGUI('''
+#InitGUI("""
 #from PYME.Acquire import sarcSpacing
 #ssp = sarcSpacing.SarcomereChecker(MainFrame, menuBar1, scope)
-#''')
+#""")
 
-InitGUI('''
+InitGUI("""
 from PYME.Acquire.Hardware import focusKeys
 fk = focusKeys.FocusKeys(MainFrame, None, scope.piezos[0])
 #time1.WantNotification.append(fk.refresh)
-''')
+""")
 
-#InitGUI('''
+#InitGUI("""
 #from PYME.Acquire.Hardware import splitter
 #splt = splitter.Splitter(MainFrame, None, scope, scope.cam)
-#''')
+#""")
 
-InitGUI('''
+InitGUI("""
 from PYME.Acquire.ui import actionUI
 
 ap = actionUI.ActionPanel(MainFrame, scope.actions)
 MainFrame.AddPage(ap, caption='Queued Actions')
-''')
+""")
 
 #must be here!!!
 joinBGInit() #wait for anyhting which was being done in a separate thread

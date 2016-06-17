@@ -1,4 +1,4 @@
-'''_filter.pyx - filtering algorithms
+"""_filter.pyx - filtering algorithms
 
 CellProfiler is distributed under the GNU General Public License,
 but this file is licensed under the more permissive BSD license.
@@ -11,7 +11,7 @@ All rights reserved.
 Please see the AUTHORS file for credits.
 
 Website: http://www.cellprofiler.org
-'''
+"""
 __version__="$Revision: 1 $"
 
 import numpy as np

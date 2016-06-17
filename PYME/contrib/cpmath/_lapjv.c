@@ -1681,7 +1681,7 @@ static PyObject *__pyx_pf_6_lapjv_1augmenting_row_reduction(PyObject *__pyx_self
 
   /* "_lapjv.pyx":140
  *     returns a numpy array of the new free choices.
- *     '''
+ *     """
  *     free = np.ascontiguousarray(np.zeros(np.max(y)+1, np.uint32), np.uint32)             # <<<<<<<<<<<<<<
  *     cdef:
  *         int *p_i = <int *>(ii.data)
@@ -6558,7 +6558,7 @@ PyMODINIT_FUNC PyInit__lapjv(void)
   /*--- Execution code ---*/
 
   /* "_lapjv.pyx":14
- * '''
+ * """
  * 
  * import numpy as np             # <<<<<<<<<<<<<<
  * cimport numpy as np
@@ -6661,7 +6661,7 @@ PyMODINIT_FUNC PyInit__lapjv(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "_lapjv.pyx":1
- * '''_lapjv.pyx - Jonker-Volgenant algorithm for linear assignment problem.             # <<<<<<<<<<<<<<
+ * """_lapjv.pyx - Jonker-Volgenant algorithm for linear assignment problem.             # <<<<<<<<<<<<<<
  * 
  * Supplementary routines for lapjv.py
  */

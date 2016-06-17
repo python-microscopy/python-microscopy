@@ -49,14 +49,14 @@ def f_gauss2dF(p, X, Y):
     return r
 
 def f_j_gauss2d(p,func, d, w, X,Y):
-    '''generate the jacobian for a 2d Gaussian'''
+    """generate the jacobian for a 2d Gaussian"""
     A, x0, y0, s, b, b_x, b_y = p
     r = genGaussJacW(X,Y,w,A,x0,y0,s,b,b_x,b_y)
     r = -r.ravel().reshape((-1,7))
     return r.T
 
 def f_J_gauss2d(p,X,Y):
-    '''generate the jacobian for a 2d Gaussian - for use with _fithelpers.weightedJacF'''
+    """generate the jacobian for a 2d Gaussian - for use with _fithelpers.weightedJacF"""
     A, x0, y0, s, b, b_x, b_y = p
     r = genGaussJac(X,Y,A,x0,y0,s,b,b_x,b_y)
     r = r.reshape((-1, 7))
@@ -102,8 +102,8 @@ def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fit
 
 class GaussianFitFactory(FFBase.FitFactory):
     def __init__(self, data, metadata, fitfcn=f_gauss2d, background=None, noiseSigma=None):
-        '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
-        metadata. '''
+        """Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
+        metadata. """
         FFBase.FitFactory.__init__(self, data, metadata, fitfcn, background, noiseSigma)
 
         if False:#'D' in dir(fitfcn): #function has jacobian
@@ -141,9 +141,9 @@ class GaussianFitFactory(FFBase.FitFactory):
 
     @classmethod
     def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):
-        '''Evaluate the model that this factory fits - given metadata and fitted parameters.
+        """Evaluate the model that this factory fits - given metadata and fitted parameters.
 
-        Used for fit visualisation'''
+        Used for fit visualisation"""
         #generate grid to evaluate function on
         X = 1e3*md.voxelsize.x*np.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
         Y = 1e3*md.voxelsize.y*np.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]

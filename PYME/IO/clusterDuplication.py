@@ -31,11 +31,11 @@ TARGETCOPIES = 2
 
 
 def duplicateFiles(targetNCopies=TARGETCOPIES, serverfilter=''):
-    '''walks the cluster and mirrors any files with a count less than the target
+    """walks the cluster and mirrors any files with a count less than the target
     
     for high duplication targets (e.g. NCopies = 3), each pass will only
     increment the copy number by 1
-    '''
+    """
 
     ncopied = 0  
     
@@ -53,11 +53,11 @@ def duplicateFiles(targetNCopies=TARGETCOPIES, serverfilter=''):
     
 
 class DupManager(Pyro.core.ObjBase):
-    ''' This class handles electing a master duplicator such that only one 
+    """ This class handles electing a master duplicator such that only one
     client is managing duplication at any given time.
     
     We use the "Bully" algorithm for leader election
-    '''
+    """
     
     def __init__(self, targetNCopies=TARGETCOPIES, serverfilter=''):
         Pyro.core.ObjBase.__init__(self)

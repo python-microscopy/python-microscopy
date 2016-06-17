@@ -1,4 +1,4 @@
-'''_cpmorphology2.pyx - support routines for cpmorphology in Cython
+"""_cpmorphology2.pyx - support routines for cpmorphology in Cython
 
 CellProfiler is distributed under the GNU General Public License,
 but this file is licensed under the more permissive BSD license.
@@ -11,7 +11,7 @@ All rights reserved.
 Please see the AUTHORS file for credits.
 
 Website: http://www.cellprofiler.org
-'''
+"""
 
 import numpy as np
 cimport numpy as np
@@ -41,7 +41,7 @@ def skeletonize_loop(np.ndarray[dtype=np.uint8_t, ndim=2,
                                 negative_indices=False, mode='c'] order,
                      np.ndarray[dtype=np.uint8_t, ndim=1,
                                 negative_indices=False, mode='c'] table):
-    '''Inner loop of skeletonize function
+    """Inner loop of skeletonize function
 
     result - on input, the image to be skeletonized, on output the skeletonized
              image
@@ -54,7 +54,7 @@ def skeletonize_loop(np.ndarray[dtype=np.uint8_t, ndim=2,
     increasing distance from the background which means a point nearer to
     the quench-line of the brushfire will be evaluated later than a
     point closer to the edge.
-    '''
+    """
     cdef:
         np.int32_t accumulator
         np.int32_t index,order_index
@@ -88,7 +88,7 @@ def skeletonize_loop(np.ndarray[dtype=np.uint8_t, ndim=2,
 @cython.boundscheck(False)
 def table_lookup_index(np.ndarray[dtype=np.uint8_t, ndim=2,
                                   negative_indices=False, mode='c'] image):
-    '''Return an index into a table per pixel of a binary image
+    """Return an index into a table per pixel of a binary image
 
     Take the sum of true neighborhood pixel values where the neighborhood
     looks like this:
@@ -102,7 +102,7 @@ def table_lookup_index(np.ndarray[dtype=np.uint8_t, ndim=2,
       4   2  1
     but this runs about twice as fast because of inlining and the
     hardwired kernel.
-    '''
+    """
     cdef:
         np.ndarray[dtype=np.int32_t, ndim=2, 
                    negative_indices=False, mode='c'] indexer
@@ -214,7 +214,7 @@ def grey_reconstruction_loop(np.ndarray[dtype=np.uint32_t, ndim=1,
                                         mode = 'c'] astrides,
                              np.int32_t current,
                              int image_stride):
-    '''The inner loop for grey_reconstruction'''
+    """The inner loop for grey_reconstruction"""
     cdef:
         np.int32_t neighbor
         np.uint32_t neighbor_value
@@ -282,7 +282,7 @@ def _all_connected_components(np.ndarray[dtype=np.uint32_t, ndim=1,
                               np.ndarray[dtype=np.uint32_t, ndim=1,
                                          negative_indices = False,
                                          mode = 'c'] label_a):
-    '''Inner loop for the all_connected_components algorithm
+    """Inner loop for the all_connected_components algorithm
     
     i,j - vectors giving the edges between vertices. These vectors must
           be pre-sorted by i then j. There should be one j,i edge for
@@ -296,7 +296,7 @@ def _all_connected_components(np.ndarray[dtype=np.uint32_t, ndim=1,
     label - one array element per vertex, the label assigned to this
             vertex's connected components. On exit, this is the vertex
             number of the first vertex processed in the connected component.
-    '''
+    """
     cdef:
         # n = # of vertices
         np.uint32_t n = counts_a.shape[0]
@@ -414,7 +414,7 @@ def index_lookup(np.ndarray[dtype=np.int32_t, ndim=1, negative_indices=False] in
                  np.ndarray[dtype=np.uint32_t, ndim=2, negative_indices=False] image,
                  table_in, 
                  iterations=None):
-    '''Perform a table lookup for only the indexed pixels
+    """Perform a table lookup for only the indexed pixels
     
     For morphological operations that only convert 1 to 0, the set of
     resulting pixels is always a subset of the input set. Therefore, when
@@ -435,7 +435,7 @@ def index_lookup(np.ndarray[dtype=np.int32_t, ndim=1, negative_indices=False] in
     The idea of index_lookup was taken from
     http://blogs.mathworks.com/steve/2008/06/13/performance-optimization-for-applylut/
     which, apparently, is how Matlab achieved its bwmorph speedup.
-    '''
+    """
     cdef:
         np.ndarray[dtype=np.uint8_t, ndim=1, negative_indices=False] table = table_in.astype(np.uint8)
         np.uint32_t center, hit_count, idx, indexer
@@ -484,14 +484,14 @@ def index_lookup(np.ndarray[dtype=np.int32_t, ndim=1, negative_indices=False] in
     return (index_i, index_j)
 
 def prepare_for_index_lookup(image, border_value):
-    '''Return the index arrays of "1" pixels and an image with an added border
+    """Return the index arrays of "1" pixels and an image with an added border
     
     The routine, index_lookup takes an array of i indexes, an array of
     j indexes and an image guaranteed to be indexed successfully by 
     index_<i,j>[:] +/- 1. This routine constructs an image with added border
     pixels... evilly, the index, 0 - 1, lands on the border because of Python's
     negative indexing convention.
-    '''
+    """
     if np.issubdtype(image.dtype, float):
         image = image.astype(bool)
     image_i, image_j = np.argwhere(image.astype(bool)).transpose().astype(np.int32) + 1
@@ -507,7 +507,7 @@ def extract_from_image_lookup(orig_image, index_i, index_j):
     return output
 
 def ptrsize():
-    '''The number of bytes in a pointer'''
+    """The number of bytes in a pointer"""
     return sizeof(int *)
 
 @cython.boundscheck(False)
@@ -521,7 +521,7 @@ def fill_labeled_holes_loop(
     np.ndarray[dtype = np.uint32_t, ndim = 1, negative_indices = False] to_do,
     int lcount,
     int to_do_count):
-    '''Run the graph loop portions of fill_labeled_holes
+    """Run the graph loop portions of fill_labeled_holes
     
     i, j - the labels of pairs of touching objects
     idx - the index to the j for a particular i
@@ -535,7 +535,7 @@ def fill_labeled_holes_loop(
             as the number on the list).
     lcount - all labels with a label # of lcount or below are objects, all above
              are background.
-    '''
+    """
     cdef:
         int ii,jj,jidx
         int n = len(is_not_hole)

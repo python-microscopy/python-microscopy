@@ -27,7 +27,7 @@ import gen3DTriangs
 from PYME.Analysis import moments
 
 def getPrincipalAxis(obj_c, numIters=10):
-    '''PCA via e.m. (ala wikipedia)'''
+    """PCA via e.m. (ala wikipedia)"""
     X = obj_c.T
     p = random.rand(2)
     

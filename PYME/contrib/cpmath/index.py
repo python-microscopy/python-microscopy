@@ -17,7 +17,7 @@ __version__="$Revision: 11052 $"
 import numpy as np
 
 class Indexes(object):
-    '''The Indexes class stores indexes for manipulating subsets on behalf of a parent set
+    """The Indexes class stores indexes for manipulating subsets on behalf of a parent set
     
     The idea here is that you have a parent set of "things", for instance
     some pixels or objects. Each of these might have, conceptually, an N-d
@@ -48,15 +48,15 @@ class Indexes(object):
                j_weights[j_indexes.fwd_idx[indexes.rev_idx] + indexes.idx[1]])
                
     sums_of_weights = np.bincount(indexes.rev_idx, weights)
-    '''
+    """
     
     def __init__(self, counts):
-        '''Constructor
+        """Constructor
         
         counts - an NxM array of dimensions of sub-arrays
                  N is the number of dimensions of the sub-object array
                  M is the number of objects.
-        '''
+        """
         counts = np.atleast_2d(counts).astype(int)
         self.__counts = counts.copy()
         if np.sum(np.prod(counts,0)) == 0:
@@ -87,44 +87,44 @@ class Indexes(object):
             
     @property
     def length(self):
-        '''The number of elements in all sub-objects
+        """The number of elements in all sub-objects
         
         Use this number to create an array that holds a value for each
         sub-object.
-        '''
+        """
         return self.__length
     
     @property
     def fwd_idx(self):
-        '''The index to the first sub object per super-object
+        """The index to the first sub object per super-object
         
         Use the fwd_idx as part of the address of the sub-object.
-        '''
+        """
         return self.__fwd_idx
     
     @property
     def rev_idx(self):
-        '''The index of the super-object per sub-object'''
+        """The index of the super-object per sub-object"""
         return self.__rev_idx
     
     @property
     def idx(self):
-        '''For each sub-object, its indexes relative to the super-object array
+        """For each sub-object, its indexes relative to the super-object array
         
         This lets you find the axis coordinates of any place in a sub-object
         array. For instance, if you have 2-d arrays of sub-objects,
         index.idx[0],index.idx[1] gives the coordinates of each sub-object
         in its array.
-        '''
+        """
         return self.__idx
 
     @property
     def counts(self):
-        '''The dimensions for each object along each of the axes
+        """The dimensions for each object along each of the axes
         
         The same values are stored here as are in the counts
         passed into the constructor.
-        '''
+        """
         return self.__counts
 
                     

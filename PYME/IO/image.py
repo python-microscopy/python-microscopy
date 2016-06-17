@@ -47,7 +47,7 @@ from PYME.IO.FileUtils.nameUtils import getRelFilename
 lastdir = ''
 
 class DefaultDict(dict):
-    '''dictionary which returns a default value (0) for items not in the list'''
+    """dictionary which returns a default value (0) for items not in the list"""
     def __init__(self, *args):
         dict.__init__(self, *args)
 
@@ -71,7 +71,7 @@ nUntitled = DefaultDict()
 
 class ImageStack(object):
     def __init__(self, data = None, mdh = None, filename = None, queueURI = None, events = [], titleStub='Untitled Image', haveGUI=True):
-        ''' Create an Image Stack.
+        """ Create an Image Stack.
         
         This is a essentially a wrapper of the image data and any ascociated 
         metadata. The class can be given a ndarray like* data source, or  
@@ -111,7 +111,7 @@ class ImageStack(object):
                         data or filename is supplied, or for missing metadata
                         entries
                     
-        '''
+        """
         global nUntitled
         self.data = data      #image data
         self.mdh = mdh        #metadata (a MetaDataHandler class)
@@ -170,8 +170,8 @@ class ImageStack(object):
     
     @property
     def voxelsize(self):
-        '''Returns voxel size, in nm, as a 3-tuple. Expects metadata voxel size
-        to be in um'''
+        """Returns voxel size, in nm, as a 3-tuple. Expects metadata voxel size
+        to be in um"""
         try:
             return 1e3*self.mdh['voxelsize.x'], 1e3*self.mdh['voxelsize.y'],  1e3*self.mdh['voxelsize.z']
         except:
@@ -203,7 +203,7 @@ class ImageStack(object):
 
     @property
     def names(self):
-        '''Return the names of the colour channels'''
+        """Return the names of the colour channels"""
         try:
             return self.mdh['ChannelNames']
         except:
@@ -215,7 +215,7 @@ class ImageStack(object):
 
     @property
     def imgBounds(self):
-        '''Return the bounds (or valid area) of the image in nm as (x0, y0, x1, y1, z0, z1)'''
+        """Return the bounds (or valid area) of the image in nm as (x0, y0, x1, y1, z0, z1)"""
         try:
             return ImageBounds(self.mdh['ImageBounds.x0'],self.mdh['ImageBounds.y0'],self.mdh['ImageBounds.x1'],self.mdh['ImageBounds.y1'],self.mdh['ImageBounds.z0'],self.mdh['ImageBounds.z1'])
         except:
@@ -273,7 +273,7 @@ class ImageStack(object):
 
 
     def LoadQueue(self, filename):
-        '''Load data from a remote PYME.ParallelTasks.HDFTaskQueue queue using
+        """Load data from a remote PYME.ParallelTasks.HDFTaskQueue queue using
         Pyro.
         
         Parameters:
@@ -282,7 +282,7 @@ class ImageStack(object):
         filename  : string
             the name of the queue         
         
-        '''
+        """
         import Pyro.core
         from PYME.IO.DataSources import TQDataSource
         from PYME.misc.computerName import GetComputerName
@@ -316,8 +316,8 @@ class ImageStack(object):
         self.events = self.dataSource.getEvents()
 
     def Loadh5(self, filename):
-        '''Load PYMEs semi-custom HDF5 image data format. Offloads all the
-        hard work to the HDFDataSource class'''
+        """Load PYMEs semi-custom HDF5 image data format. Offloads all the
+        hard work to the HDFDataSource class"""
         import tables
         from PYME.IO.DataSources import HDFDataSource, BGSDataSource
         from PYME.LMVis import inpFilt
@@ -360,8 +360,8 @@ class ImageStack(object):
         self.events = self.dataSource.getEvents()
         
     def LoadHTTP(self, filename):
-        '''Load PYMEs semi-custom HDF5 image data format. Offloads all the
-        hard work to the HDFDataSource class'''
+        """Load PYMEs semi-custom HDF5 image data format. Offloads all the
+        hard work to the HDFDataSource class"""
         import tables
         from PYME.IO.DataSources import HTTPDataSource, BGSDataSource
         #from PYME.LMVis import inpFilt
@@ -390,8 +390,8 @@ class ImageStack(object):
         self.events = self.dataSource.getEvents()
         
     def LoadClusterPZF(self, filename):
-        '''Load PYMEs semi-custom HDF5 image data format. Offloads all the
-        hard work to the HDFDataSource class'''
+        """Load PYMEs semi-custom HDF5 image data format. Offloads all the
+        hard work to the HDFDataSource class"""
 
         from PYME.IO.DataSources import ClusterPZFDataSource, BGSDataSource
 
@@ -416,10 +416,10 @@ class ImageStack(object):
     
 
     def LoadPSF(self, filename):
-        '''Load PYME .psf data.
+        """Load PYME .psf data.
         
         .psf files consist of a tuple containing the data and the voxelsize.
-        '''
+        """
         self.data, vox = numpy.load(filename)
         self.mdh = MetaData.ConfocDefault
 
@@ -434,10 +434,10 @@ class ImageStack(object):
         self.mode = 'psf'
         
     def LoadNPY(self, filename):
-        '''Load numpy .npy data.
+        """Load numpy .npy data.
         
        
-        '''
+        """
         mdfn = self.FindAndParseMetadata(filename)
         
         self.data = numpy.load(filename)
@@ -449,9 +449,9 @@ class ImageStack(object):
         self.mode = 'default'
         
     def LoadDBL(self, filename):
-        '''Load Bewersdorf custom STED data. 
+        """Load Bewersdorf custom STED data.
        
-        '''
+        """
         mdfn = self.FindAndParseMetadata(filename)
         
         self.data = numpy.memmap(filename, dtype='<f4', mode='r', offset=128, shape=(self.mdh['Camera.ROIWidth'],self.mdh['Camera.ROIHeight'],self.mdh['NumImages']), order='F')
@@ -464,9 +464,9 @@ class ImageStack(object):
         
 
     def FindAndParseMetadata(self, filename):
-        '''Try and find and load a .xml or .md metadata file that might be ascociated
+        """Try and find and load a .xml or .md metadata file that might be ascociated
         with a given image filename. See the relevant metadatahandler classes
-        for details.'''
+        for details."""
         import xml.parsers.expat 
         
         if not self.mdh is None:
@@ -822,8 +822,8 @@ class ImageStack(object):
 
 
 def GeneratedImage(img, imgBounds, pixelSize, sliceSize, channelNames, mdh=None):
-    '''Helper function for LMVis which creates an image and fills in a few 
-    metadata parameters'''
+    """Helper function for LMVis which creates an image and fills in a few
+    metadata parameters"""
     image = ImageStack(img, mdh=mdh)
     image.pixelSize = pixelSize
     image.sliceSize = sliceSize

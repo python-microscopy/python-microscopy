@@ -62,7 +62,7 @@ def f_Interp3d2c(p, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, axialShift
     return numpy.concatenate((np.atleast_3d(g),np.atleast_3d(r)), 2)
     
 def f_J_Interp3d2c(p,interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, axialShift, *args):
-    '''generate the jacobian - for use with _fithelpers.weightedJacF'''
+    """generate the jacobian - for use with _fithelpers.weightedJacF"""
     
     Ag, Ar, x0, y0, z0, bG, bR = p
 

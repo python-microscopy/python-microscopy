@@ -21,7 +21,7 @@
 #
 ################
 #!/usr/bin/python
-''' mProfile.py - Matlab(TM) style line based profiling for Python
+""" mProfile.py - Matlab(TM) style line based profiling for Python
 
 Copyright: David Baddeley 2008
 	   david_baddeley <at> yahoo.com.au
@@ -45,7 +45,7 @@ there is a substantial performance hit, although for the numeric code I wrote it
 for (lots of vectorised numpy/scipy stuff) it's only on the order of ~30%.
 
 Licensing: Take your pick of BSD or GPL
-'''
+"""
 
 import sys
 import time

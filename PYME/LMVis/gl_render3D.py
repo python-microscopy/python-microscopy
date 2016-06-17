@@ -759,7 +759,7 @@ class LMGLCanvas(GLCanvas):
         self.Refresh()
         
     def setPoints(self, x, y, c = None, a = None, recenter=True, alpha=1.0):
-        '''Set 2D points'''
+        """Set 2D points"""
         self.setPoints3D(x, y, 0*x, c, a, recenter, alpha)
         
     def setTracks3D(self, x, y, z, ci, c = None):

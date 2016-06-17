@@ -83,8 +83,8 @@ def GaussianFitResultR(fitResults, startParams, metadata, slicesUsed=None, resul
 
 class GaussianFitFactory(FFBase.FitFactory):
     def __init__(self, data, metadata, fitfcn=f_gaussAstigSlow, background=None, noiseSigma=None):
-        '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
-        metadata. '''
+        """Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
+        metadata. """
         FFBase.FitFactory.__init__(self, data, metadata, fitfcn, background, noiseSigma)
 
         if False:#'D' in dir(fitfcn): #function has jacobian
@@ -122,9 +122,9 @@ class GaussianFitFactory(FFBase.FitFactory):
 
     @classmethod
     def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):
-        '''Evaluate the model that this factory fits - given metadata and fitted parameters.
+        """Evaluate the model that this factory fits - given metadata and fitted parameters.
 
-        Used for fit visualisation'''
+        Used for fit visualisation"""
         #generate grid to evaluate function on
         X = 1e3*md.voxelsize.x*np.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
         Y = 1e3*md.voxelsize.y*np.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]

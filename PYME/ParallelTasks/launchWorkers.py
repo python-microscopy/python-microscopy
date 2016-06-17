@@ -31,10 +31,10 @@ import time
 #import Pyro.naming
 
 def cpuCount():
-    '''
+    """
     Returns the number of CPUs in the system
     borrowed from the python 'processing' package
-    '''
+    """
     if sys.platform == 'win32':
         try:
             num = int(os.environ['NUMBER_OF_PROCESSORS'])
@@ -79,7 +79,7 @@ def main():
 #    try: #try and find the name server
 #        ns=Pyro.naming.NameServerLocator().getNS()
 #    except: #launch our own
-#        print('''Could not find PYRO nameserver - launching a local copy:
+#        print("""Could not find PYRO nameserver - launching a local copy:
 #            
 #        This should work if you are only using one computer, or if you are 
 #        really, really careful not to close this process before all other 
@@ -87,7 +87,7 @@ def main():
 #        
 #        I highly recommend running the pyro nameserver as a seperate process, 
 #        ideally on a server somewhere where it's not likely to get interrupted.
-#        ''')
+#        """)
 #        
 #        subprocess.Popen('pyro-ns', shell=True)
 #        #wait for server to come up

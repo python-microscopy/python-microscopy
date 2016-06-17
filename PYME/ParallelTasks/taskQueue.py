@@ -142,7 +142,7 @@ class TaskQueue:
         self.tasksInProgress = []
 
     def setPopFcn(self, fcn):
-        ''' sets the function which determines which task to give a worker'''
+        """ sets the function which determines which task to give a worker"""
         self.fTaskToPop = fcn
 
 
@@ -156,11 +156,11 @@ class TaskQueueWithData(TaskQueue):
         return [self.getTask(workerN, NWorkers)]
 
     def getQueueData(self, fieldName, *args):
-        '''Get data, defined by fieldName and potntially additional arguments,  ascociated with queue'''
+        """Get data, defined by fieldName and potntially additional arguments,  ascociated with queue"""
 
         return self.data[fieldName]
 
     def setQueueData(self, fieldName, value):
-        '''Get data, defined by fieldName and potntially additional arguments,  ascociated with queue'''
+        """Get data, defined by fieldName and potntially additional arguments,  ascociated with queue"""
 
         self.data[fieldName] = value

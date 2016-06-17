@@ -230,7 +230,7 @@ def plotEvent3(clump, rawData = None, fitRes = None):
 from PYME.Analysis._fithelpers import FitModel, FitModelWeighted
 
 def widthMod(p, t, w0=225.):
-    '''model for width of lipid signal used to detect the time of fusion as
+    """model for width of lipid signal used to detect the time of fusion as
     indicated by the onset of the lipid difusion into the membrane
     
     the model takes two variable parameters: 
@@ -241,13 +241,13 @@ def widthMod(p, t, w0=225.):
         w0: the width of a vesicle before fusion. For diffraction limited vesicles,
             this should be constant over all vesicles. In this case, the value was
             determined by visual inspecton of a number of traces.
-    '''
+    """
     t0, adiff = p
     
     return w0 + np.sqrt(np.maximum(adiff*(t-t0), 0))
 
 def lipidMod(p, t, t0):
-    '''This is the lipid signal model from the paper (Eqn ?). The main difference
+    """This is the lipid signal model from the paper (Eqn ?). The main difference
     is that I have extended the fitting to just before fusion (in the cases where
     fusion and docking do not occur simultaeneously) to allow better estimation
     of Ifus.
@@ -264,7 +264,7 @@ def lipidMod(p, t, t0):
     An aditional fixed parameter:
         t0: the time of fusion (determined by fitting the knee in the vesicle width curve)
     
-    '''
+    """
     tb, trel, lTIRF, Ifus = p
     
     t = t - t0    
@@ -272,7 +272,7 @@ def lipidMod(p, t, t0):
     return Ifus*((t<0) + (t>=0)*(np.exp(-t/trel) + (np.exp(-t/tb) - np.exp(-t/trel))/(lTIRF*(1-trel/tb))))
     
 def cargoMod(p, t, t0, Ib = 0):
-    '''This is an emperical model for the content release events.
+    """This is an emperical model for the content release events.
     
     It consists of:
         - A  $1-e^(-t/trel)$ dequenching term
@@ -286,7 +286,7 @@ def cargoMod(p, t, t0, Ib = 0):
         t0: time of fusion
         Ib: background intensity
           
-    '''
+    """
         
     I0, trel, tbl, tbr = p
     

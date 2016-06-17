@@ -152,8 +152,8 @@ PCODefault.setEntry('Camera.TrueEMGain',1) #mostly use gain register setting of 
 #        md.setEntry('Camera.ADOffset', numpy.median(h5File.root.ImageData[:max(tLon - 1, 1), :,:].ravel()))
 #    else: #if laser was on to start with our best estimate is at maximal bleaching where the few molecules that are still on will hopefully have little influence on the median
 #        md.setEntry('Camera.ADOffset',numpy.median(h5File.root.ImageData[-5:, :,:].ravel()))
-#        print '''WARNING: No clear laser turn on signature found - assuming laser was already on
-#                 and fudging ADOffset Estimation'''
+#        print """WARNING: No clear laser turn on signature found - assuming laser was already on
+#                 and fudging ADOffset Estimation"""
 #
 #    if not 'MetaData' in h5File.root:
 #        #something went wrong - should only happen for very early (mid 2008) .h5 files or for files taken
@@ -250,8 +250,8 @@ def fillInBlanks(md, dataSource):
 
 
                 #md.setEntry('Camera.ADOffset',numpy.median(numpy.array([dataSource.getSlice(i) for i in range(dataSource.getNumSlices()-5, dataSource.getNumSlices())]).ravel()))
-                #print '''WARNING: No clear laser turn on signature found - assuming laser was already on
-                #         and fudging ADOffset Estimation'''
+                #print """WARNING: No clear laser turn on signature found - assuming laser was already on
+                #         and fudging ADOffset Estimation"""
 
 
 

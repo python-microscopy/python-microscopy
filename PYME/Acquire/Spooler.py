@@ -44,12 +44,12 @@ from PYME.Acquire import eventLog
 from PYME.Acquire import protocol as p
 
 class EventLogger:
-    '''Event logging backend base class'''
+    """Event logging backend base class"""
     def __init__(self, scope, hdf5File):
         self.scope = scope      
 
     def logEvent(self, eventName, eventDescr = ''):
-        '''Log an event. Should be overriden in derived classes.
+        """Log an event. Should be overriden in derived classes.
         
         .. note:: In addition to the name and description, timing information is recorded
         for each event.
@@ -65,15 +65,15 @@ class EventLogger:
             parameters - e.g. z positions, and should be both human readable and 
             easily parsed.
         
-        '''
+        """
         pass
 
 
 class Spooler:
-    '''Spooler base class'''
+    """Spooler base class"""
     def __init__(self, filename, frameSource, protocol = p.NullProtocol, 
                  guiUpdateCallback=None, fakeCamCycleTime=None, maxFrames = p.maxint, **kwargs):
-        '''Create a new spooler.
+        """Create a new spooler.
         
         Parameters
         ----------
@@ -90,7 +90,7 @@ class Spooler:
         guiUpdateCallback : function
             a function to call when the spooling GUI needs updating
             
-        '''
+        """
         global timeFcn
         #self.scope = scope
         self.filename=filename
@@ -153,7 +153,7 @@ class Spooler:
         self.onSpoolStop.send(self)
 
     def OnFrame(self, **kwargs):
-        '''Callback which should be called on every frame'''
+        """Callback which should be called on every frame"""
         if not self.watchingFrames:
             #we have allready disconnected - ignore any new frames
             return
@@ -172,14 +172,14 @@ class Spooler:
             
 
     def doStartLog(self):
-        '''Record pertinant information to metadata at start of acquisition.
+        """Record pertinant information to metadata at start of acquisition.
         
         Loops through all registered sources of start metadata and adds their entries.
         
         See Also
         --------
         PYME.IO.MetaDataHandler
-        '''
+        """
         dt = datetime.datetime.now()
         
         self.dtStart = dt
@@ -198,7 +198,7 @@ class Spooler:
        
 
     def doStopLog(self):
-        '''Record information to metadata at end of acquisition'''
+        """Record information to metadata at end of acquisition"""
         self.md.setEntry('EndTime', time.time())
         
         #loop over all providers of metadata
@@ -206,8 +206,8 @@ class Spooler:
            mdgen(self.md)
 
     def fakeTime(self):
-        '''Generate a fake timestamp for use with the simulator where the camera 
-        cycle time does not match the actual time elapsed to generate the frame'''
+        """Generate a fake timestamp for use with the simulator where the camera
+        cycle time does not match the actual time elapsed to generate the frame"""
         #return self.tStart + self.imNum*self.scope.cam.GetIntegTime()
         return self.tStart + self.imNum*self.fakeCamCycleTime
 

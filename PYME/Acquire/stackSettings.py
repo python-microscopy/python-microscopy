@@ -27,7 +27,7 @@ import time
 from PYME.IO import MetaDataHandler
 
 class StackSettings(object):
-    '''A class to keep settings for acquiring z-stacks'''
+    """A class to keep settings for acquiring z-stacks"""
     # 'Constants'
     PHASE = 1
     OBJECT = 0

@@ -25,7 +25,7 @@ from numpy import *
 
 class LinearInterpolator(__interpolator):
     def interp(self, X, Y, Z):
-        '''do actual interpolation at values given'''
+        """do actual interpolation at values given"""
 
         X = atleast_1d(X)
         Y = atleast_1d(Y)
@@ -72,7 +72,7 @@ class LinearInterpolator(__interpolator):
         return m
 
     def getCoords(self, metadata, xslice, yslice, zslice):
-        '''placeholder to be overrriden to return coordinates needed for interpolation'''
+        """placeholder to be overrriden to return coordinates needed for interpolation"""
         #generate grid to evaluate function on
         X = 1e3*metadata.voxelsize.x*mgrid[xslice]
         Y = 1e3*metadata.voxelsize.y*mgrid[yslice]

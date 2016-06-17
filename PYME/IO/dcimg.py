@@ -1,10 +1,10 @@
 import numpy as np
 import os
 
-'''This is a reverse-engineered reader for DCIMG files, based very loosely on:
+"""This is a reverse-engineered reader for DCIMG files, based very loosely on:
 https://github.com/StuartLittlefair/dcimg/blob/master/dcimg/Raw.py
 
-'''
+"""
 
 #best guess at the session header
 SESSION_HEADER_DTYPE = [('session_length', 'i4'), 
@@ -56,14 +56,14 @@ class DCIMGFile(object):
         # In the case of initial offset = 16777216, the 32 bytes footer included 4 pixel values to correct for [0 65535 0 65535] within the frame
 
     def get_frame(self, ind):
-        '''Get the frame at the given index, discarding a footer if needed
+        """Get the frame at the given index, discarding a footer if needed
 
         Parameters
         ----------
 
         ind : int
             The index of the frame to retrieve
-        ''' 
+        """
         frame_wo_footer = self.frames_with_footer[0:self._info['bytes_per_image'], ind]
         frame_data = frame_wo_footer.reshape([self._info['num_columns'], self._info['num_rows']], order='F')
 

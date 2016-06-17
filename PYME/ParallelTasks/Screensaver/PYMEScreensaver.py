@@ -36,10 +36,10 @@ import time
 import win32api
 
 def cpuCount():
-    '''
+    """
     Returns the number of CPUs in the system
     borrowed from the python 'processing' package
-    '''
+    """
     if sys.platform == 'win32':
         try:
             num = int(os.environ['NUMBER_OF_PROCESSORS'])

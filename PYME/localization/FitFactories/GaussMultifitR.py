@@ -94,7 +94,7 @@ def f_gauss2dF(p, X, Y):
     return r
 
 def f_j_gauss2d(p,func, d, w, X,Y):
-    '''generate the jacobian for a 2d Gaussian'''
+    """generate the jacobian for a 2d Gaussian"""
     A, x0, y0, s, b, b_x, b_y = p
     #r = genGaussJac(X,Y,A,x0,y0,s,b,b_x,b_y)
     r = genGaussJacW(X,Y,w,A,x0,y0,s,b,b_x,b_y)
@@ -104,7 +104,7 @@ def f_j_gauss2d(p,func, d, w, X,Y):
     return r.T
 
 def f_J_gauss2d(p,X,Y):
-    '''generate the jacobian for a 2d Gaussian - for use with _fithelpers.weightedJacF'''
+    """generate the jacobian for a 2d Gaussian - for use with _fithelpers.weightedJacF"""
     A, x0, y0, s, b, b_x, b_y = p
     r = genGaussJac(X,Y,A,x0,y0,s,b,b_x,b_y)
     r = r.reshape((-1, 7))
@@ -134,8 +134,8 @@ class GaussianFitFactory:
     Y = None
     
     def __init__(self, data, metadata, fitfcn=f_multiGauss, background=None):
-        '''Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
-        metadata. '''
+        """Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
+        metadata. """
         self.data = data
         self.background = background
         self.metadata = metadata

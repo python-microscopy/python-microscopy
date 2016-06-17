@@ -20,10 +20,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
-'''Placeholder module for a more complicated storage of dye ratios, including
+"""Placeholder module for a more complicated storage of dye ratios, including
 different splitter configurations.
 
-currently just uses values for the default splitter config'''
+currently just uses values for the default splitter config"""
 
 ratios = {'A647':0.85, 'A680':0.87, 'A750': 0.11, 'A700': 0.3, 'CF770': 0.11}
 PRIRatios = {'A680':0.7, 'A750': 0.5}

@@ -1,5 +1,5 @@
 #!/usr/bin/python
-'''
+"""
 auinotebookwithfloatingpages.py
 
 This module provides the class AuiNotebookWithFloatingPages, which is a
@@ -18,7 +18,7 @@ License: wxWidgets license
 Version: 0.1
 Date: August 8, 2007
 
-'''
+"""
 
 import wx, wx.aui
 

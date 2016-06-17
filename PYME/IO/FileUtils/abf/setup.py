@@ -50,7 +50,7 @@ if __name__ == '__main__':
     	author = 'David Baddeley',
        	author_email = 'd.baddeley@auckland.ac.nz',
        	url = '',
-       	long_description = ''' ''',
+       	long_description = """ """,
           license = "GPL",
           **configuration(top_path='').todict()
           )

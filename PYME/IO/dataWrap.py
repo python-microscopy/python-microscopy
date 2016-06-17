@@ -19,13 +19,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-'''Classes to wrap a source of data so that it looks like an array'''
+"""Classes to wrap a source of data so that it looks like an array"""
 import numpy as np
 import tables
 from PYME.IO.DataSources import BaseDataSource
 
 class DefaultList(list):
-    '''List which returns a default value for items not in the list'''
+    """List which returns a default value for items not in the list"""
     def __init__(self, *args):
         list.__init__(self, *args)
 
@@ -253,7 +253,7 @@ class CropDataWrap: #permit indexing with more dimensions larger than len(shape)
 
 
 def Wrap(datasource):
-    '''Wrap a data source such that it is indexable like a numpy array.'''
+    """Wrap a data source such that it is indexable like a numpy array."""
     
     if datasource.__class__ ==list:
         datasource = ListWrap(datasource)

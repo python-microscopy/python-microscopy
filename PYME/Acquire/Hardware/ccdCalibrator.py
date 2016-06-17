@@ -41,7 +41,7 @@ def getCalibratedCCDGain(nomGain, temperature):
         return np.interp(nomGain, ret[0], ret[1])
 
 class ccdCalibrator:
-    ''' class for calibrating the ccd
+    """ class for calibrating the ccd
 
     usage:
     - use transmitted light to produce a roughly uniform field
@@ -55,7 +55,7 @@ class ccdCalibrator:
     - instantiate the class on the console - ie:
       from PYME.Hardware import ccdCalibrator
       ccdCal = ccdCalibrator.ccdCalibrator(scope.frameWrangler, scope.cam)
-    '''
+    """
     def __init__(self, gains = np.arange(0, 220, 5)):
         global scope
         self.pa = scope.frameWrangler

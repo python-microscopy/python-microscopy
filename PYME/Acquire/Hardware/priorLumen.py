@@ -27,7 +27,7 @@ import time
 from PYME.Acquire.Hardware.lasers import Laser
 
 class PriorLumen(Laser):
-    '''Pretend we're a laser so that we can re-use the laser GUI controls'''
+    """Pretend we're a laser so that we can re-use the laser GUI controls"""
     def __init__(self, name,turnOn=False, portname='COM1', **kwargs):
         self.portname = portname
         self.ser_port = serial.Serial(None, 

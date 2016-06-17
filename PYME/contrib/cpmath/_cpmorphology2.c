@@ -1501,7 +1501,7 @@ static PyObject *__pyx_pf_14_cpmorphology2_skeletonize_loop(PyObject *__pyx_self
  * @cython.boundscheck(False)
  * def table_lookup_index(np.ndarray[dtype=np.uint8_t, ndim=2,             # <<<<<<<<<<<<<<
  *                                   negative_indices=False, mode='c'] image):
- *     '''Return an index into a table per pixel of a binary image
+ *     """Return an index into a table per pixel of a binary image
  */
 
 static PyObject *__pyx_pf_14_cpmorphology2_1table_lookup_index(PyObject *__pyx_self, PyObject *__pyx_v_image); /*proto*/
@@ -3929,7 +3929,7 @@ static PyObject *__pyx_pf_14_cpmorphology2_4index_lookup(PyObject *__pyx_self, P
  *                  np.ndarray[dtype=np.uint32_t, ndim=2, negative_indices=False] image,
  *                  table_in,
  *                  iterations=None):             # <<<<<<<<<<<<<<
- *     '''Perform a table lookup for only the indexed pixels
+ *     """Perform a table lookup for only the indexed pixels
  * 
  */
     values[4] = ((PyObject *)Py_None);
@@ -4032,7 +4032,7 @@ static PyObject *__pyx_pf_14_cpmorphology2_4index_lookup(PyObject *__pyx_self, P
   __pyx_bshape_0_image = __pyx_bstruct_image.shape[0]; __pyx_bshape_1_image = __pyx_bstruct_image.shape[1];
 
   /* "_cpmorphology2.pyx":440
- *     '''
+ *     """
  *     cdef:
  *         np.ndarray[dtype=np.uint8_t, ndim=1, negative_indices=False] table = table_in.astype(np.uint8)             # <<<<<<<<<<<<<<
  *         np.uint32_t center, hit_count, idx, indexer
@@ -4531,7 +4531,7 @@ static PyObject *__pyx_pf_14_cpmorphology2_4index_lookup(PyObject *__pyx_self, P
  *     return (index_i, index_j)
  * 
  * def prepare_for_index_lookup(image, border_value):             # <<<<<<<<<<<<<<
- *     '''Return the index arrays of "1" pixels and an image with an added border
+ *     """Return the index arrays of "1" pixels and an image with an added border
  * 
  */
 
@@ -4601,7 +4601,7 @@ static PyObject *__pyx_pf_14_cpmorphology2_5prepare_for_index_lookup(PyObject *_
 
   /* "_cpmorphology2.pyx":495
  *     negative indexing convention.
- *     '''
+ *     """
  *     if np.issubdtype(image.dtype, float):             # <<<<<<<<<<<<<<
  *         image = image.astype(bool)
  *     image_i, image_j = np.argwhere(image.astype(bool)).transpose().astype(np.int32) + 1
@@ -4630,7 +4630,7 @@ static PyObject *__pyx_pf_14_cpmorphology2_5prepare_for_index_lookup(PyObject *_
   if (__pyx_t_4) {
 
     /* "_cpmorphology2.pyx":496
- *     '''
+ *     """
  *     if np.issubdtype(image.dtype, float):
  *         image = image.astype(bool)             # <<<<<<<<<<<<<<
  *     image_i, image_j = np.argwhere(image.astype(bool)).transpose().astype(np.int32) + 1
@@ -5127,7 +5127,7 @@ static PyObject *__pyx_pf_14_cpmorphology2_6extract_from_image_lookup(PyObject *
  *     return output
  * 
  * def ptrsize():             # <<<<<<<<<<<<<<
- *     '''The number of bytes in a pointer'''
+ *     """The number of bytes in a pointer"""
  *     return sizeof(int *)
  */
 
@@ -5142,7 +5142,7 @@ static PyObject *__pyx_pf_14_cpmorphology2_7ptrsize(PyObject *__pyx_self, CYTHON
 
   /* "_cpmorphology2.pyx":511
  * def ptrsize():
- *     '''The number of bytes in a pointer'''
+ *     """The number of bytes in a pointer"""
  *     return sizeof(int *)             # <<<<<<<<<<<<<<
  * 
  * @cython.boundscheck(False)
@@ -8052,7 +8052,7 @@ PyMODINIT_FUNC PyInit__cpmorphology2(void)
   /*--- Execution code ---*/
 
   /* "_cpmorphology2.pyx":16
- * '''
+ * """
  * 
  * import numpy as np             # <<<<<<<<<<<<<<
  * cimport numpy as np
@@ -8089,7 +8089,7 @@ PyMODINIT_FUNC PyInit__cpmorphology2(void)
  * @cython.boundscheck(False)
  * def table_lookup_index(np.ndarray[dtype=np.uint8_t, ndim=2,             # <<<<<<<<<<<<<<
  *                                   negative_indices=False, mode='c'] image):
- *     '''Return an index into a table per pixel of a binary image
+ *     """Return an index into a table per pixel of a binary image
  */
   __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_14_cpmorphology2_1table_lookup_index, NULL, __pyx_n_s___cpmorphology2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 89; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
@@ -8136,7 +8136,7 @@ PyMODINIT_FUNC PyInit__cpmorphology2(void)
  *     return (index_i, index_j)
  * 
  * def prepare_for_index_lookup(image, border_value):             # <<<<<<<<<<<<<<
- *     '''Return the index arrays of "1" pixels and an image with an added border
+ *     """Return the index arrays of "1" pixels and an image with an added border
  * 
  */
   __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_14_cpmorphology2_5prepare_for_index_lookup, NULL, __pyx_n_s___cpmorphology2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 486; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
@@ -8160,7 +8160,7 @@ PyMODINIT_FUNC PyInit__cpmorphology2(void)
  *     return output
  * 
  * def ptrsize():             # <<<<<<<<<<<<<<
- *     '''The number of bytes in a pointer'''
+ *     """The number of bytes in a pointer"""
  *     return sizeof(int *)
  */
   __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_14_cpmorphology2_7ptrsize, NULL, __pyx_n_s___cpmorphology2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 509; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
@@ -8181,7 +8181,7 @@ PyMODINIT_FUNC PyInit__cpmorphology2(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "_cpmorphology2.pyx":1
- * '''_cpmorphology2.pyx - support routines for cpmorphology in Cython             # <<<<<<<<<<<<<<
+ * """_cpmorphology2.pyx - support routines for cpmorphology in Cython             # <<<<<<<<<<<<<<
  * 
  * CellProfiler is distributed under the GNU General Public License,
  */

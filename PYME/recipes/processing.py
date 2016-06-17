@@ -23,9 +23,9 @@ class SimpleThreshold(Filter):
         
 @register_module('FractionalThreshold') 
 class FractionalThreshold(Filter):
-    '''Chose a threshold such that the given fraction of the total labelling is 
+    """Chose a threshold such that the given fraction of the total labelling is
     included in the mask.
-    '''
+    """
     fractionThreshold = Float(0.5)
 
     def applyFilter(self, data, chanNum, frNum, im):
@@ -44,9 +44,9 @@ class FractionalThreshold(Filter):
  
 @register_module('Label')        
 class Label(Filter):
-    '''Asigns a unique integer label to each contiguous region in the input mask. 
+    """Asigns a unique integer label to each contiguous region in the input mask.
     Optionally throws away all regions which are smaller than a cutoff size.
-    '''
+    """
     minRegionPixels = Int(10)
     
     def applyFilter(self, data, chanNum, frNum, im):
@@ -73,7 +73,7 @@ class Label(Filter):
         
 @register_module('SelectLabel') 
 class SelectLabel(Filter):
-    '''Creates a mask corresponding to all pixels with the given label'''
+    """Creates a mask corresponding to all pixels with the given label"""
     label = Int(1)
     
     def applyFilter(self, data, chanNum, frNum, im):
@@ -215,7 +215,7 @@ class Gradient2D(ModuleBase):
         
 @register_module('ProjectOnVector')         
 class ProjectOnVector(ModuleBase):
-    '''Project onto a set of direction vectors, producing p and s components'''
+    """Project onto a set of direction vectors, producing p and s components"""
     inputX = CStr('inputX')
     inputY = CStr('inputY')
     inputDirX = CStr('dirX')
@@ -225,7 +225,7 @@ class ProjectOnVector(ModuleBase):
     outputNameS = CStr('proj_s')
     
     def do_proj(self, inpX, inpY, dirX, dirY):
-        '''project onto basis vectors'''
+        """project onto basis vectors"""
         norm = np.sqrt(dirX*dirX + dirY*dirY)
         dx, dy = dirX/norm, dirY/norm
         
@@ -372,7 +372,7 @@ class Deconvolve(Filter):
         return self._psfCache[psfKey]
         
     def GetDec(self, dp, vshint):
-        '''Get a (potentially cached) deconvolution object'''
+        """Get a (potentially cached) deconvolution object"""
         from PYME.Deconv import dec, richardsonLucy
         decKey = (self.psfType, self.psfFilename, self.lorentzianFWHM, self.beadDiameter, vshint, dp.shape, self.method)
         
@@ -541,7 +541,7 @@ class WhiteTophat(Filter):
 
 @register_module('Watershed')         
 class Watershed(ModuleBase):
-    '''Module with one image input and one image output'''
+    """Module with one image input and one image output"""
     inputImage = CStr('input')
     inputMarkers = CStr('markers')
     inputMask = CStr('')

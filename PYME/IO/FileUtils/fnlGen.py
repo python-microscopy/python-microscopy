@@ -25,7 +25,7 @@ import os
 import wx
 
 def genFnl(inDir):
-    '''Generates a list of files in inDir with full paths'''
+    """Generates a list of files in inDir with full paths"""
     if not (inDir[-1] == os.sep):
         inDir += os.sep #append a / to directroy name if necessary
 

@@ -66,14 +66,14 @@ class fitResult(taskDef.TaskResult):
         self.driftResults = driftResults
 
 class BufferManager(object):
-    '''Keeps track of data sources and buffering over individual fitTask instances'''
+    """Keeps track of data sources and buffering over individual fitTask instances"""
     def __init__(self):
         self.dBuffer = None
         self.bBuffer = None
         self.dataSourceID = None
         
     def updateBuffers(self, md, dataSourceModule, bufferLen):
-        '''Update the various buffers. '''
+        """Update the various buffers. """
         DataSource = __import__('PYME.IO.DataSources.' + dataSourceModule, fromlist=['DataSource']).DataSource #import our data source
         #read the data
         if not self.dataSourceID == md.dataSourceID: #avoid unnecessary opening and closing 
@@ -96,12 +96,12 @@ class BufferManager(object):
 bufferManager = BufferManager()
 
 class CameraInfoManager(object):
-    '''Manages camera information such as dark frames, variance maps, and flatfielding'''
+    """Manages camera information such as dark frames, variance maps, and flatfielding"""
     def __init__(self):
         self._cache = {}
 
     def _parseROI(self, md):
-        '''Extract ROI coordinates from metadata'''
+        """Extract ROI coordinates from metadata"""
         x0 = (md['Camera.ROIPosX'] - 1)
         y0 = (md['Camera.ROIPosY'] - 1)
         x1 = x0 + md['Camera.ROIWidth']
@@ -110,8 +110,8 @@ class CameraInfoManager(object):
         return x0, y0, x1, y1
 
     def _fetchMap(self, md, mapName):
-        '''retrive a map, with a given name. First try and get it from the Queue,
-        then try finding it locally'''
+        """retrive a map, with a given name. First try and get it from the Queue,
+        then try finding it locally"""
         try:
             varmap = md.taskQueue.getQueueData(md.dataSourceID, 'MAP',  mapName)
         except:
@@ -121,7 +121,7 @@ class CameraInfoManager(object):
         return varmap
 
     def _getMap(self, md, mapName):
-        '''Returns the map specified, from cache if possible'''
+        """Returns the map specified, from cache if possible"""
         if mapName is None or mapName == '':
             return None
 
@@ -140,8 +140,8 @@ class CameraInfoManager(object):
         return mp
 
     def getVarianceMap(self, md):
-        '''Returns the pixel variance map specified in the supplied metadata, from cache if possible.
-        The variance map should be in units of *photoelectrons*.'''
+        """Returns the pixel variance map specified in the supplied metadata, from cache if possible.
+        The variance map should be in units of *photoelectrons*."""
         varMapName = md.getOrDefault('Camera.VarianceMapID', None)
 
         mp = self._getMap(md, varMapName)
@@ -155,8 +155,8 @@ class CameraInfoManager(object):
 
 
     def getDarkMap(self, md):
-        '''Returns the dark map specified in the supplied metadata, from cache if possible.
-        The dark map is in units of camera counts'''
+        """Returns the dark map specified in the supplied metadata, from cache if possible.
+        The dark map is in units of camera counts"""
         darkMapName = md.getOrDefault('Camera.DarkMapID', None)
 
         mp = self._getMap(md, darkMapName)
@@ -166,9 +166,9 @@ class CameraInfoManager(object):
             return mp
 
     def getFlatfieldMap(self, md):
-        '''Returns the flatfield map specified in the supplied metadata, from cache if possible
+        """Returns the flatfield map specified in the supplied metadata, from cache if possible
         The flatfield is a (floating point) value which is multiplied with the image to correct
-        variations in response. It should (usually) have a mean value of 1.'''
+        variations in response. It should (usually) have a mean value of 1."""
         flatfieldMapName = md.getOrDefault('Camera.FlatfieldMapID', None)
 
         mp = self._getMap(md, flatfieldMapName)
@@ -189,7 +189,7 @@ cameraMaps = CameraInfoManager()
 
 class fitTask(taskDef.Task):
     def __init__(self, dataSourceID, index, threshold, metadata, fitModule, dataSourceModule='HDFDataSource', bgindices = [], SNThreshold = False):
-        '''Create a new fitting task, which opens data from a supplied filename.
+        """Create a new fitting task, which opens data from a supplied filename.
         -------------
         Parameters:
         filename - name of file containing the frame to be fitted
@@ -198,7 +198,7 @@ class fitTask(taskDef.Task):
         taskDef.Task.__init__(self)
         metadata - image metadata (see MetaData.py)
         fitModule - name of module defining fit factory to use
-        bgffiles - (optional) list of files to be averaged and subtracted from image prior to point detection - n.B. fitting is still performed on raw data'''
+        bgffiles - (optional) list of files to be averaged and subtracted from image prior to point detection - n.B. fitting is still performed on raw data"""
         
         taskDef.Task.__init__(self)
 

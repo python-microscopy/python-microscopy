@@ -22,21 +22,21 @@
 import numpy as np
 
 def loadRaw(filename):
-    '''Loads a series of frames from a spad output file. Despite the .txt extension
+    """Loads a series of frames from a spad output file. Despite the .txt extension
     the data files are in fact pure binary data. Frames are concatenated one after the
     other in the file. Frame size is assumed to be 32x32 pixels and the data type assumed
-    to be unsigned short.'''
+    to be unsigned short."""
     return np.fromfile(filename, 'uint16').reshape((32,32,-1), order='F')
 
 def loadDark(filename):
-    '''Loads dark count information from a specified file. Note that this is
+    """Loads dark count information from a specified file. Note that this is
     referred to as flat-field information within the acquisition gui, but as it is
-    subtracted in subsequent processing, this nomenclature is potentially misleading.'''
+    subtracted in subsequent processing, this nomenclature is potentially misleading."""
 
     return np.fromfile(filename,sep=',').reshape((32,32), order='F')
 
 def load(filename, tIntegration=0., tDead=0., nAccumulation=1., darkFile=None, clip=True):
-    '''load a series, and perform dead time and dark-count correction.'''
+    """load a series, and perform dead time and dark-count correction."""
 
     data = loadRaw(filename)
 
