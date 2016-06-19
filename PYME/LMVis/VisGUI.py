@@ -39,7 +39,7 @@ import pylab
 from PYME.misc import extraCMaps
 from PYME.IO.FileUtils import nameUtils
 
-#import os
+import os # for os.getenv below
 from PYME.LMVis import gl_render3D
 
 from PYME.LMVis import colourPanel
