@@ -27,7 +27,7 @@ import numpy
 import wx
 
 #from PYME.Acquire.pointScanner import PointScanner
-#from PYME.misc.wxPlotPanel import PlotPanel
+#from PYME.contrib.wxPlotPanel import PlotPanel
 ##from PYME.Analysis import ofind
 #
 #ps = PointScanner(scope.piezos[1], scope.piezos[2], scope, pixels = [10,10], pixelsize=numpy.array([0.03, .015]), dwelltime=3, avg=False, evtLog = True)
@@ -37,12 +37,12 @@ import wx
 #        if not hasattr( self, 'subplot' ):
 #                self.subplot = self.figure.add_subplot( 111 )
 #
-#        #ofd = ofind.ObjectIdentifier(scope.pa.dsa.astype('f').squeeze().T)
+#        #ofd = ofind.ObjectIdentifier(scope.frameWrangler.currentFrame.astype('f').squeeze().T)
 #        #ofd.FindObjects(70, 0, splitter=True)
 #
 #        #print len(ofd)
-#        ox = scope.pa.dsa.shape[0]*numpy.array([0,1,1,0,0])*.07
-#        oy = scope.pa.dsa.shape[1]*numpy.array([0,0,1,1,0])*.07
+#        ox = scope.frameWrangler.currentFrame.shape[0]*numpy.array([0,1,1,0,0])*.07
+#        oy = scope.frameWrangler.currentFrame.shape[1]*numpy.array([0,0,1,1,0])*.07
 #
 #        if scope.splitting =='up_down':
 #            oy *= .5

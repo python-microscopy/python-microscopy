@@ -42,7 +42,7 @@ NTHREADS = 8
 FFTWFLAGS = ['measure']
 
 class rldec:
-    '''Deconvolution class, implementing a variant of the Richardson-Lucy algorithm.
+    """Deconvolution class, implementing a variant of the Richardson-Lucy algorithm.
 
     Derived classed should additionally define the following methods:
     AFunc - the forward mapping (computes Af)
@@ -52,19 +52,19 @@ class rldec:
 
     see dec_conv for an implementation of conventional image deconvolution with a
     measured, spatially invariant PSF
-    '''
+    """
     def __init__(self):
        pass
 
     def startGuess(self, data):
-        '''starting guess for deconvolution - can be overridden in derived classes
+        """starting guess for deconvolution - can be overridden in derived classes
         but the data itself is usually a pretty good guess.
-        '''
+        """
         return 0*data + data.mean()
 
 
     def deconvp(self, args):
-        ''' convenience function for deconvolving in parallel using processing.Pool.map'''
+        """ convenience function for deconvolving in parallel using processing.Pool.map"""
         return self.deconv(*args)
         #return 0
     
@@ -110,7 +110,7 @@ class rldec:
             velx[:] = ndimage.gaussian_filter(velx + upd, 50)
     
     def deconv(self, views, lamb, num_iters=10, weights = 1, bg = 0, vx = 0):
-        '''This is what you actually call to do the deconvolution.
+        """This is what you actually call to do the deconvolution.
         parameters are:
 
         data - the raw data
@@ -121,7 +121,7 @@ class rldec:
 
         alpha - PSF phase - hacked in for variable phase 4Pi deconvolution, should
                 really be refactored out into the dec_4pi classes.
-        '''
+        """
         #remember what shape we are
         self.dataShape = views[0].shape
         
@@ -208,8 +208,8 @@ class rldec:
 
 #class rlbead(rl):
 class rlbead(rldec):
-    '''Classical deconvolution using non-fft convolution - pot. faster for
-    v. small psfs. Note that PSF must be symetric'''
+    """Classical deconvolution using non-fft convolution - pot. faster for
+    v. small psfs. Note that PSF must be symetric"""
     def psf_calc(self, psf, data_size):
         g = psf#/psf.sum();
 
@@ -229,7 +229,7 @@ class rlbead(rldec):
         #self.Ht = g.size*(ifftn(g));
 
     def Afunc(self, f):
-        '''Forward transform - convolve with the PSF'''
+        """Forward transform - convolve with the PSF"""
         fs = reshape(f, (self.height, self.width, self.depth))
 
         d = ndimage.convolve(fs, self.g)
@@ -238,7 +238,7 @@ class rlbead(rldec):
         return ravel(d)
 
     def Ahfunc(self, f):
-        '''Conjugate transform - convolve with conj. PSF'''
+        """Conjugate transform - convolve with conj. PSF"""
         fs = reshape(f, (self.height, self.width, self.depth))
 
         d = ndimage.correlate(fs, self.g)
@@ -246,9 +246,9 @@ class rlbead(rldec):
         return ravel(d)
 
 class dec_conv_slow(rldec):
-    '''Classical deconvolution with a stationary PSF'''
+    """Classical deconvolution with a stationary PSF"""
     def psf_calc(self, psf, data_size):
-        '''Precalculate the OTF etc...'''
+        """Precalculate the OTF etc..."""
 #        pw = (numpy.array(data_size) - psf.shape)/2.
 #        pw1 = numpy.floor(pw)
 #        pw2 = numpy.ceil(pw)
@@ -314,9 +314,9 @@ class dec_conv_slow(rldec):
 
 
     def Lfunc(self, f):
-        '''convolve with an approximate 2nd derivative likelihood operator in 3D.
+        """convolve with an approximate 2nd derivative likelihood operator in 3D.
         i.e. [[[0,0,0][0,1,0][0,0,0]],[[0,1,0][1,-6,1][0,1,0]],[[0,0,0][0,1,0][0,0,0]]]
-        '''
+        """
         #make our data 3D again
         fs = reshape(f, (self.height, self.width, self.depth))
         a = -6*fs
@@ -336,7 +336,7 @@ class dec_conv_slow(rldec):
     Lhfunc=Lfunc
 
     def Afunc(self, f):
-        '''Forward transform - convolve with the PSF'''
+        """Forward transform - convolve with the PSF"""
         fs = reshape(f, (self.height, self.width, self.depth))
 
         F = fftn(fs)
@@ -347,7 +347,7 @@ class dec_conv_slow(rldec):
         return ravel(d)
 
     def Ahfunc(self, f):
-        '''Conjugate transform - convolve with conj. PSF'''
+        """Conjugate transform - convolve with conj. PSF"""
         fs = reshape(f, (self.height, self.width, self.depth))
 
         F = fftn(fs)
@@ -356,9 +356,9 @@ class dec_conv_slow(rldec):
         return ravel(d)
 
 class dec_conv(rldec):
-    '''Classical deconvolution with a stationary PSF'''
+    """Classical deconvolution with a stationary PSF"""
     def psf_calc(self, psf, data_size):
-        '''Precalculate the OTF etc...'''
+        """Precalculate the OTF etc..."""
 #        pw = (numpy.array(data_size) - psf.shape)/2.
 #        pw1 = numpy.floor(pw)
 #        pw2 = numpy.ceil(pw)
@@ -457,9 +457,9 @@ class dec_conv(rldec):
 
 
     def Lfunc(self, f):
-        '''convolve with an approximate 2nd derivative likelihood operator in 3D.
+        """convolve with an approximate 2nd derivative likelihood operator in 3D.
         i.e. [[[0,0,0][0,1,0][0,0,0]],[[0,1,0][1,-6,1][0,1,0]],[[0,0,0][0,1,0][0,0,0]]]
-        '''
+        """
         #make our data 3D again
         fs = reshape(f, (self.height, self.width, self.depth))
         a = -6*fs
@@ -479,7 +479,7 @@ class dec_conv(rldec):
     Lhfunc=Lfunc
 
     def Afunc(self, f):
-        '''Forward transform - convolve with the PSF'''
+        """Forward transform - convolve with the PSF"""
         #fs = reshape(f, (self.height, self.width, self.depth))
         self._r[:] = f.reshape(self._r.shape)
 
@@ -494,7 +494,7 @@ class dec_conv(rldec):
         return ravel(ifftshift(self._r))
 
     def Ahfunc(self, f):
-        '''Conjugate transform - convolve with conj. PSF'''
+        """Conjugate transform - convolve with conj. PSF"""
 #        fs = reshape(f, (self.height, self.width, self.depth))
 #
 #        F = fftn(fs)

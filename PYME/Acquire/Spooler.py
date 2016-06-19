@@ -25,8 +25,8 @@ import os
 #import logparser
 import datetime
 
-from PYME.Acquire import MetaDataHandler
-#from PYME import cSMI
+from PYME.IO import MetaDataHandler
+
 
 try:
     from PYME.Acquire import sampleInformation
@@ -38,16 +38,18 @@ import time
 global timeFcn
 timeFcn = time.time
 
+import dispatch
+
 from PYME.Acquire import eventLog
 from PYME.Acquire import protocol as p
 
 class EventLogger:
-    '''Event logging backend base class'''
+    """Event logging backend base class"""
     def __init__(self, scope, hdf5File):
         self.scope = scope      
 
     def logEvent(self, eventName, eventDescr = ''):
-        '''Log an event. Should be overriden in derived classes.
+        """Log an event. Should be overriden in derived classes.
         
         .. note:: In addition to the name and description, timing information is recorded
         for each event.
@@ -63,43 +65,75 @@ class EventLogger:
             parameters - e.g. z positions, and should be both human readable and 
             easily parsed.
         
-        '''
+        """
         pass
 
 
 class Spooler:
-    '''Spooler base class'''
-    def __init__(self, scope, filename, acquisator, protocol = p.NullProtocol, parent=None):
-       global timeFcn
-       self.scope = scope
-       self.filename=filename
-       self.acq = acquisator
-       self.parent = parent
-       self.protocol = protocol
-       
-       #if we've got a fake camera - the cycle time will be wrong - fake our time sig to make up for this
-       if scope.cam.__class__.__name__ == 'FakeCamera':
-           timeFcn = self.fakeTime
+    """Spooler base class"""
+    def __init__(self, filename, frameSource, protocol = p.NullProtocol, 
+                 guiUpdateCallback=None, fakeCamCycleTime=None, maxFrames = p.maxint, **kwargs):
+        """Create a new spooler.
+        
+        Parameters
+        ----------
+        scope : PYME.Acquire.microscope.microscope object
+            The microscope providing the data
+        filename : string
+            The file into which to spool
+        frameSource : dispatch.Signal object
+            A source of frames we can subscribe to. It should implement a "connect"
+            method allowing us to register a callback and then call the callback with
+            the frame data in a "frameData" kwarg.
+        protocol : PYME.Acquire.protocol.TaskListProtocol object
+            The acquisition protocol
+        guiUpdateCallback : function
+            a function to call when the spooling GUI needs updating
+            
+        """
+        global timeFcn
+        #self.scope = scope
+        self.filename=filename
+        self.frameSource = frameSource
+        self.guiUpdateCallback = guiUpdateCallback
+        self.protocol = protocol
+        
+        self.maxFrames = maxFrames
+        
+        self.onSpoolStop = dispatch.Signal()
+    
+        #if we've got a fake camera - the cycle time will be wrong - fake our time sig to make up for this
+        #if scope.cam.__class__.__name__ == 'FakeCamera':
+        #    timeFcn = self.fakeTime
+            
+        if not fakeCamCycleTime == None:
+            self.fakeCamCycleTime = fakeCamCycleTime
+            timeFcn = self.fakeTime
 
        
 
     def StartSpool(self):
-       eventLog.WantEventNotification.append(self.evtLogger)
+        self.watchingFrames = True
+        eventLog.WantEventNotification.append(self.evtLogger)
 
-       self.imNum = 0
+        self.imNum = 0
+   
+        self.doStartLog()
 
-       self.protocol.Init(self)
-       
-       self.doStartLog()
-       
-       self.acq.WantFrameNotification.append(self.Tick)
-       self.spoolOn = True
+        self.protocol.Init(self)
+   
+        self.frameSource.connect(self.OnFrame)
+        self.spoolOn = True
        
     def StopSpool(self):
-        try:
-            self.acq.WantFrameNotification.remove(self.Tick)
-        except ValueError:
-            pass
+        #try:
+        self.frameSource.disconnect(self.OnFrame)
+        
+        #there is a race condition on disconnect - ignore any additional frames
+        self.watchingFrames = False 
+        
+        #except:
+        #    pass
 
         try:
             self.protocol.OnFinish()#this may still cause events
@@ -115,26 +149,37 @@ class Spooler:
             pass
         
         self.spoolOn = False
+        
+        self.onSpoolStop.send(self)
 
-    def Tick(self, caller):
-        '''Called on every frame'''
+    def OnFrame(self, **kwargs):
+        """Callback which should be called on every frame"""
+        if not self.watchingFrames:
+            #we have allready disconnected - ignore any new frames
+            return
+            
         self.imNum += 1
-        if not self.parent == None:
-            self.parent.Tick()
+        if not self.guiUpdateCallback is None:
+            self.guiUpdateCallback()
+            
         self.protocol.OnFrame(self.imNum)
 
         if self.imNum == 2 and sampleInformation and sampleInformation.currentSlide[0]: #have first frame and should thus have an imageID
             sampleInformation.createImage(self.md, sampleInformation.currentSlide[0])
+            
+        if self.imNum >= self.maxFrames:
+            self.StopSpool()
+            
 
     def doStartLog(self):
-        '''Record pertinant information to metadata at start of acquisition.
+        """Record pertinant information to metadata at start of acquisition.
         
         Loops through all registered sources of start metadata and adds their entries.
         
         See Also
         --------
-        PYME.Acquire.MetaDataHandler
-        '''
+        PYME.IO.MetaDataHandler
+        """
         dt = datetime.datetime.now()
         
         self.dtStart = dt
@@ -153,7 +198,7 @@ class Spooler:
        
 
     def doStopLog(self):
-        '''Record information to metadata at end of acquisition'''
+        """Record information to metadata at end of acquisition"""
         self.md.setEntry('EndTime', time.time())
         
         #loop over all providers of metadata
@@ -161,10 +206,13 @@ class Spooler:
            mdgen(self.md)
 
     def fakeTime(self):
-       return self.tStart + self.imNum*self.scope.cam.GetIntegTime()
+        """Generate a fake timestamp for use with the simulator where the camera
+        cycle time does not match the actual time elapsed to generate the frame"""
+        #return self.tStart + self.imNum*self.scope.cam.GetIntegTime()
+        return self.tStart + self.imNum*self.fakeCamCycleTime
 
     def FlushBuffer(self):
-       pass
+        pass
         
         
     def __del__(self):

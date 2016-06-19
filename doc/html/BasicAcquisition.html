@@ -6,15 +6,15 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Basic Acquisiton &mdash; PYME 0.1 documentation</title>
+    <title>Basic Acquisiton &mdash; PYME 16.05.24 documentation</title>
     
-    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.1',
+        VERSION:     '16.05.24',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,14 +23,14 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="PYME 0.1 documentation" href="index.html" />
-    <link rel="up" title="PYMEAcquire" href="PYMEAcquire.html" />
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PYME 16.05.24 documentation" href="index.html" />
+    <link rel="up" title="PYMEAcquire - Instrument control and simulation" href="PYMEAcquire.html" />
     <link rel="next" title="Simulator" href="Simulator.html" />
     <link rel="prev" title="Using PYME Acquire" href="AcquireBasicUsage.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -45,29 +45,76 @@
         <li class="right" >
           <a href="AcquireBasicUsage.html" title="Using PYME Acquire"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">PYME 0.1 documentation</a> &raquo;</li>
-          <li><a href="PYMEAcquire.html" accesskey="U">PYMEAcquire</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">PYME 16.05.24 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="PYMEAcquire.html" accesskey="U"><strong>PYMEAcquire</strong> - Instrument control and simulation</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/BasicAcquisition.rst">Edit</a> &raquo;</li>
  
 
       </ul>
-    </div>  
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/pymeLogo.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Basic Acquisiton</a><ul>
+<li><a class="reference internal" href="#before-starting">Before starting</a></li>
+<li><a class="reference internal" href="#initial-start-up">Initial start up</a></li>
+<li><a class="reference internal" href="#initial-configuration">Initial configuration</a></li>
+<li><a class="reference internal" href="#putting-your-sample-on-the-scope">Putting your sample on the scope</a><ul>
+<li><a class="reference internal" href="#setting-up-the-slide-information">Setting up the slide information</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#finding-cells">Finding cells</a><ul>
+<li><a class="reference internal" href="#finding-cells-in-multi-colour-samples">Finding cells in multi-colour samples</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#preparing-to-acquire">Preparing to acquire</a></li>
+<li><a class="reference internal" href="#acquiring">Acquiring</a></li>
+<li><a class="reference internal" href="#shutting-down">Shutting down</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="AcquireBasicUsage.html"
+                        title="previous chapter">Using PYME Acquire</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="Simulator.html"
+                        title="next chapter">Simulator</a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="basic-acquisiton">
 <h1>Basic Acquisiton<a class="headerlink" href="#basic-acquisiton" title="Permalink to this headline">¶</a></h1>
-<p>These instructions assume that you are imaging using near infrared dyes and the 671nm laser. While the same principles apply to imaging using other dye and laser combinations, there will be subtle differences. See <a class="reference internal" href="Protocols.html#protocols"><em>Acquisition Protocols</em></a> and <a href="#id1"><span class="problematic" id="id2">AdvancedImaging_</span></a>.</p>
+<p>These instructions assume that you are imaging using near infrared dyes and the 671nm laser. While the same principles apply to imaging using other dye and laser combinations, there will be subtle differences. See <a class="reference internal" href="Protocols.html#protocols"><span>Acquisition Protocols</span></a> and <a href="#id1"><span class="problematic" id="id2">AdvancedImaging_</span></a>.</p>
 <div class="section" id="before-starting">
 <h2>Before starting<a class="headerlink" href="#before-starting" title="Permalink to this headline">¶</a></h2>
 <p>Mount slides using the appropriate switching buffer. There are a few important points to consider:</p>
 <ul class="simple">
 <li>slides and coverslips should be thoroughly cleaned</li>
 <li>we can only access a small area of the slide, so the coverslip must be within this area. There is a template on the bench in the shared lab area.</li>
-<li>You should have a consistent slide naming scheme – I tend to use <tt class="docutils literal"><span class="pre">day_month_year_A</span></tt>, <tt class="docutils literal"><span class="pre">_B</span></tt>, etc...</li>
+<li>You should have a consistent slide naming scheme – I tend to use <code class="docutils literal"><span class="pre">day_month_year_A</span></code>, <code class="docutils literal"><span class="pre">_B</span></code>, etc...</li>
 <li>the nail polish must be dry before putting the sample on the microscope</li>
 </ul>
 </div>
@@ -91,9 +138,9 @@
 </div>
 <div class="section" id="initial-configuration">
 <h2>Initial configuration<a class="headerlink" href="#initial-configuration" title="Permalink to this headline">¶</a></h2>
-<p>By default, the system is set up for ratiometric imaging using the splitter, and any ROI is constrained to cover equal areas on both sides of the centre line. If you are only intending to image a single label, you should disable this feature by unchecking the <tt class="docutils literal"><span class="pre">Constrain</span> <span class="pre">ROI</span></tt> option under the <tt class="docutils literal"><span class="pre">Controls-&gt;Splitter</span></tt> menu.</p>
-<p>If you are doing multi-colour imaging, make sure you have a current shift field. If not, acquire a new one using a beads slide (see the <a href="#id3"><span class="problematic" id="id4">ShiftField_</span></a> section). Now might also be a good time to let the software know about the shiftfield using the <tt class="docutils literal"><span class="pre">Controls-&gt;Splitter-&gt;Set</span> <span class="pre">Shift</span> <span class="pre">Field</span></tt> menu item. This will mean that shifts get corrected in the live unmixing view. It will also mean <em>(NEW)</em> that the shift field data gets propagated to the analysis for you and you don&#8217;t need to enter it every time.</p>
-<p>It is useful to setup the acquisition protocol at this stage. For standard imaging with IR dyes this should be <tt class="docutils literal"><span class="pre">Prebleach671</span></tt>. If you need to do something different, see <a class="reference internal" href="Protocols.html#protocols"><em>Acquisition Protocols</em></a> or <a href="#id5"><span class="problematic" id="id6">AdvancedImaging_</span></a>.</p>
+<p>By default, the system is set up for ratiometric imaging using the splitter, and any ROI is constrained to cover equal areas on both sides of the centre line. If you are only intending to image a single label, you should disable this feature by unchecking the <code class="docutils literal"><span class="pre">Constrain</span> <span class="pre">ROI</span></code> option under the <code class="docutils literal"><span class="pre">Controls-&gt;Splitter</span></code> menu.</p>
+<p>If you are doing multi-colour imaging, make sure you have a current shift field. If not, acquire a new one using a beads slide (see the <a href="#id3"><span class="problematic" id="id4">ShiftField_</span></a> section). Now might also be a good time to let the software know about the shiftfield using the <code class="docutils literal"><span class="pre">Controls-&gt;Splitter-&gt;Set</span> <span class="pre">Shift</span> <span class="pre">Field</span></code> menu item. This will mean that shifts get corrected in the live unmixing view. It will also mean <em>(NEW)</em> that the shift field data gets propagated to the analysis for you and you don&#8217;t need to enter it every time.</p>
+<p>It is useful to setup the acquisition protocol at this stage. For standard imaging with IR dyes this should be <code class="docutils literal"><span class="pre">Prebleach671</span></code>. If you need to do something different, see <a class="reference internal" href="Protocols.html#protocols"><span>Acquisition Protocols</span></a> or <a href="#id5"><span class="problematic" id="id6">AdvancedImaging_</span></a>.</p>
 </div>
 <div class="section" id="putting-your-sample-on-the-scope">
 <h2>Putting your sample on the scope<a class="headerlink" href="#putting-your-sample-on-the-scope" title="Permalink to this headline">¶</a></h2>
@@ -113,7 +160,7 @@
 </ul>
 <div class="section" id="finding-cells-in-multi-colour-samples">
 <h3>Finding cells in multi-colour samples<a class="headerlink" href="#finding-cells-in-multi-colour-samples" title="Permalink to this headline">¶</a></h3>
-<p>Note that there are a number of useful functions for multi-colour samples. Below the Preview window you can open a live unmixing preview window using the <tt class="docutils literal"><span class="pre">Controls-&gt;Splitter-&gt;Unxmix</span></tt> menu item (shortcut F7). Note that you should load the proper shiftfield as described in <a class="reference internal" href="#initial-configuration">Initial configuration</a> above. When the unmix window comes up first you might have to set the unmixing matrix values correctly. A suitable unmixing matrix for Alexa 680 and Alexa 750 is:</p>
+<p>Note that there are a number of useful functions for multi-colour samples. Below the Preview window you can open a live unmixing preview window using the <code class="docutils literal"><span class="pre">Controls-&gt;Splitter-&gt;Unxmix</span></code> menu item (shortcut F7). Note that you should load the proper shiftfield as described in <a class="reference internal" href="#initial-configuration">Initial configuration</a> above. When the unmix window comes up first you might have to set the unmixing matrix values correctly. A suitable unmixing matrix for Alexa 680 and Alexa 750 is:</p>
 <table border="1" class="docutils">
 <colgroup>
 <col width="50%" />
@@ -147,10 +194,10 @@
 </div>
 <div class="section" id="acquiring">
 <h2>Acquiring<a class="headerlink" href="#acquiring" title="Permalink to this headline">¶</a></h2>
-<p>Before you start the acquisition make sure you have selected the appropriate acquisition protocol for your sample (usually <tt class="docutils literal"><span class="pre">Prebleach671</span></tt>).</p>
+<p>Before you start the acquisition make sure you have selected the appropriate acquisition protocol for your sample (usually <code class="docutils literal"><span class="pre">Prebleach671</span></code>).</p>
 <p>Click on <strong>Series</strong> or <strong>Z-Series</strong> for a single slice or a stack respectively,
 wait for the analysis program to come up, test the threshold, and click go</p>
-<p>Note that some protocols, including <tt class="docutils literal"><span class="pre">Prebleach671</span></tt>, will perform a sanity check of acquisition parameters and will warn you when they think they have detected a problem. You should only override this warning if you know what you are doing.</p>
+<p>Note that some protocols, including <code class="docutils literal"><span class="pre">Prebleach671</span></code>, will perform a sanity check of acquisition parameters and will warn you when they think they have detected a problem. You should only override this warning if you know what you are doing.</p>
 </div>
 <div class="section" id="shutting-down">
 <h2>Shutting down<a class="headerlink" href="#shutting-down" title="Permalink to this headline">¶</a></h2>
@@ -167,58 +214,9 @@ wait for the analysis program to come up, test the threshold, and click go</p>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
-        <div class="sphinxsidebarwrapper">
-  <h3><a href="index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Basic Acquisiton</a><ul>
-<li><a class="reference internal" href="#before-starting">Before starting</a></li>
-<li><a class="reference internal" href="#initial-start-up">Initial start up</a></li>
-<li><a class="reference internal" href="#initial-configuration">Initial configuration</a></li>
-<li><a class="reference internal" href="#putting-your-sample-on-the-scope">Putting your sample on the scope</a><ul>
-<li><a class="reference internal" href="#setting-up-the-slide-information">Setting up the slide information</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#finding-cells">Finding cells</a><ul>
-<li><a class="reference internal" href="#finding-cells-in-multi-colour-samples">Finding cells in multi-colour samples</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#preparing-to-acquire">Preparing to acquire</a></li>
-<li><a class="reference internal" href="#acquiring">Acquiring</a></li>
-<li><a class="reference internal" href="#shutting-down">Shutting down</a></li>
-</ul>
-</li>
-</ul>
-
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="AcquireBasicUsage.html"
-                        title="previous chapter">Using PYME Acquire</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="Simulator.html"
-                        title="next chapter">Simulator</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/BasicAcquisition.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
-  <h3>Quick search</h3>
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
-        </div>
-      </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -233,16 +231,16 @@ wait for the analysis program to come up, test the threshold, and click go</p>
         <li class="right" >
           <a href="AcquireBasicUsage.html" title="Using PYME Acquire"
              >previous</a> |</li>
-        <li><a href="index.html">PYME 0.1 documentation</a> &raquo;</li>
-          <li><a href="PYMEAcquire.html" >PYMEAcquire</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">PYME 16.05.24 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="PYMEAcquire.html" ><strong>PYMEAcquire</strong> - Instrument control and simulation</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/BasicAcquisition.rst">Edit</a> &raquo;</li>
  
 
       </ul>
     </div>
-    <div class="footer">
-        &copy; Copyright 2010, David Baddeley.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, David Baddeley.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
     </div>
   </body>
 </html>

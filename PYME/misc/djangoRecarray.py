@@ -25,7 +25,7 @@ import numpy as np
 
 
 def qsToRecarray(qs):
-    '''converts a django query set into a record array'''
+    """converts a django query set into a record array"""
 
     fields = qs.model._meta.fields
 

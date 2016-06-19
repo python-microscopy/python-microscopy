@@ -16,7 +16,7 @@
 import wx
 import pylab
 from PYME.misc import extraCMaps
-from PYME.Analysis.LMVis import histLimits
+from PYME.LMVis import histLimits
 
 def fast_grey(data):
     return data[:,:,None]*pylab.ones((1,1,4))

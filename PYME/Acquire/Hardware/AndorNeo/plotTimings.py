@@ -21,9 +21,8 @@
 #
 ################
 
-from pylab import *
-
 def PlotTimings():
+    from pylab import *
     f = open('poll.txt')
     
     events = {'q':[], 'p':[], 'b':[], 't':[], 'n':[]}

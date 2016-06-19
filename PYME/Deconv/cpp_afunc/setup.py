@@ -37,7 +37,7 @@ setup (name = 'cDec',
        author = 'David Baddeley',
        author_email = 'baddeley@kip.uni-heidelberg.de',
        url = '',
-       long_description = '''
+       long_description = """
 optimised routines for processor intensive parts of deconvolution
-''',
+""",
        ext_modules = [module1])

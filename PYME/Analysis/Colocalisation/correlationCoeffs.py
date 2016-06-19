@@ -32,7 +32,7 @@ def overlap(X, Y):
 
 
 def thresholdedManders(A, B, tA, tB):
-    '''Manders, as practically used with threshold determined masks'''
+    """Manders, as practically used with threshold determined masks"""
 
     MA = ((B > tB)*A).sum()/A.sum()
     MB = ((A > tA)*B).sum()/B.sum()

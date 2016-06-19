@@ -21,7 +21,6 @@
 #
 ##################
 
-#from PYME import cSMI
 import numpy as np
 import wx
 import pylab
@@ -42,7 +41,7 @@ def getCalibratedCCDGain(nomGain, temperature):
         return np.interp(nomGain, ret[0], ret[1])
 
 class ccdCalibrator:
-    ''' class for calibrating the ccd
+    """ class for calibrating the ccd
 
     usage:
     - use transmitted light to produce a roughly uniform field
@@ -55,11 +54,11 @@ class ccdCalibrator:
       histogram display.
     - instantiate the class on the console - ie:
       from PYME.Hardware import ccdCalibrator
-      ccdCal = ccdCalibrator.ccdCalibrator(scope.pa, scope.cam)
-    '''
+      ccdCal = ccdCalibrator.ccdCalibrator(scope.frameWrangler, scope.cam)
+    """
     def __init__(self, gains = np.arange(0, 220, 5)):
         global scope
-        self.pa = scope.pa
+        self.pa = scope.frameWrangler
         self.cam = scope.cam
 
         self.gains = gains
@@ -79,7 +78,8 @@ class ccdCalibrator:
         self.pa.stop()
         #self.cam.SetAcquisitionMode(self.cam.MODE_SINGLE_SHOT)
 
-        self.pa.WantFrameNotification.append(self.tick)
+        #self.pa.WantFrameNotification.append(self.tick)
+        self.pa.onFrame.connect(self.tick)
         self.cam.SetShutter(0)
 
         self.cam.SetBaselineClamp(True) #otherwise baseline changes with em gain
@@ -91,7 +91,7 @@ class ccdCalibrator:
 
     def finish(self):
         #self.pa.stop()
-        self.pa.WantFrameNotification.remove(self.tick)
+        self.pa.onFrame.disconnect(self.tick)
         
         #if self.contMode:
         #    self.cam.SetAcquisitionMode(self.cam.MODE_CONTINUOUS)
@@ -109,9 +109,9 @@ class ccdCalibrator:
 
         #self.pa.start()
 
-    def tick(self, caller):
+    def tick(self, sender, frameData, **kwargs):
         self.pa.stop()
-        imMean = self.dsa.mean()
+        imMean = frameData.mean()
         if self.pos == -1: #calculate background
             self.offset = imMean
             self.cam.SetShutter(1)

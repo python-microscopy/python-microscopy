@@ -90,8 +90,8 @@ class esp300:
         print('led off')        
     
     def addMenuItems(self,parentWindow, menu):
-        '''Add menu items and keyboard accelerators for LED control
-        to the specified menu & parent window'''
+        """Add menu items and keyboard accelerators for LED control
+        to the specified menu & parent window"""
         #Create IDs
         self.ID_stop_all = wx.NewId()
         self.ID_LED_ON = wx.NewId()

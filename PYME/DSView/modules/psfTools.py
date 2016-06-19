@@ -23,18 +23,18 @@
 import wx
 import wx.grid
 #import pylab
-#from PYME.DSView.image import ImageStack
+#from PYME.IO.image import ImageStack
 try:
-    from enthought.traits.api import HasTraits, Float, Int
+    from enthought.traits.api import HasTraits, Float, Int, Bool
     from enthought.traits.ui.api import View, Item
     from enthought.traits.ui.menu import OKButton
 except ImportError:
-    from traits.api import HasTraits, Float, Int
+    from traits.api import HasTraits, Float, Int, Bool
     from traitsui.api import View, Item
     from traitsui.menu import OKButton
 
 from graphViewPanel import *
-from PYME.PSFEst import psfQuality
+from PYME.Analysis.PSFEst import psfQuality
 
 def remove_newlines(s):
     s = '<>'.join(s.split('\n\n'))
@@ -156,7 +156,7 @@ class CRBViewPanel(wx.Panel):
         
     def calcCRB(self, caller=None):
         from PYME.Analysis import cramerRao
-        from PYME.PSFGen import fourierHNA
+        from PYME.Analysis.PSFGen import fourierHNA
         #print 'b'
         import numpy as np
         d = self.image.data[:,:,:]
@@ -218,11 +218,14 @@ class PSFTools(HasTraits):
     NA = Float(1.49)
     pupilSize = Float(0)
     iterations = Int(50)
+    intermediateUpdates = Bool(False)
     
     view = View(Item('wavelength'),
                 Item('NA'),
                 Item('pupilSize'),
-                Item('iterations'), buttons=[OKButton])
+                Item('iterations'), 
+                Item('intermediateUpdates'),
+                buttons=[OKButton])
     
     def __init__(self, dsviewer):
         self.dsviewer = dsviewer
@@ -238,9 +241,9 @@ class PSFTools(HasTraits):
     def OnExtractPupil(self, event):
         import numpy as np
         import pylab
-        from PYME.PSFGen import fourierHNA
+        from PYME.Analysis.PSFGen import fourierHNA
         
-        from PYME.DSView.image import ImageStack
+        from PYME.IO.image import ImageStack
         from PYME.DSView import ViewIm3D
 
         z_ = np.arange(self.image.data.shape[2])*self.image.mdh['voxelsize.z']*1.e3
@@ -248,7 +251,10 @@ class PSFTools(HasTraits):
         
         self.configure_traits(kind='modal')
         
-        pupil = fourierHNA.ExtractPupil(np.maximum(self.image.data[:,:,:] - .001, 0), z_, self.image.mdh['voxelsize.x']*1e3, self.wavelength, self.NA, nIters=self.iterations, size=self.pupilSize)
+        #pupil = fourierHNA.ExtractPupil(np.maximum(self.image.data[:,:,:] - .001, 0), z_, self.image.mdh['voxelsize.x']*1e3, self.wavelength, self.NA, nIters=self.iterations, size=self.pupilSize)
+
+        pupil = fourierHNA.ExtractPupil(self.image.data[:,:,:], z_, self.image.mdh['voxelsize.x']*1e3, self.wavelength, self.NA, nIters=self.iterations, size=self.pupilSize, intermediateUpdates=self.intermediateUpdates)
+                
         
         pylab.figure()
         pylab.subplot(121)
@@ -269,9 +275,9 @@ class PSFTools(HasTraits):
         
         
     def OnSubtractBackground(self, event):
-        from PYME.DSView.image import ImageStack
+        from PYME.IO.image import ImageStack
         from PYME.DSView import ViewIm3D
-        from PYME.PSFEst import extractImages
+        from PYME.Analysis.PSFEst import extractImages
 
         d_bg = extractImages.backgroundCorrectPSFWF(self.image.data[:,:,:])
         
@@ -287,7 +293,7 @@ class PSFTools(HasTraits):
     def OnCalcCRB(self, event):
         #print 'f'
         from PYME.Analysis import cramerRao
-        from PYME.PSFGen import fourierHNA
+        from PYME.Analysis.PSFGen import fourierHNA
         #print 'b'
         import numpy as np
         
@@ -327,7 +333,7 @@ class PSFTools(HasTraits):
         
     def OnCalcCRB3DvsBG(self, event):
         from PYME.Analysis import cramerRao
-        from PYME.PSFGen import fourierHNA
+        from PYME.Analysis.PSFGen import fourierHNA
         #print 'b'
         import numpy as np
         

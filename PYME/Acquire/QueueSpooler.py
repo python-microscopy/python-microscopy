@@ -22,15 +22,15 @@
 ##################
 
 import tables
-from PYME.Acquire import MetaDataHandler
-#from PYME import cSMI
+from PYME.IO import MetaDataHandler
+
 import Pyro.core
 import os
 import time
 
 import PYME.Acquire.Spooler as sp
-from PYME.Acquire import protocol as p
-from PYME.FileUtils import fileID
+#from PYME.Acquire import protocol as p
+from PYME.IO.FileUtils import fileID
 
 try:
     from PYME.misc import pyme_zeroconf
@@ -47,9 +47,9 @@ class SpoolEvent(tables.IsDescription):
    EventDescr = tables.StringCol(256)
 
 class EventLogger:
-   def __init__(self, spool, scope, tq, queueName):
+   def __init__(self, spool, tq, queueName):
       self.spooler = spool
-      self.scope = scope
+      #self.scope = scope
       self.tq = tq
       self.queueName = queueName
 
@@ -60,7 +60,7 @@ class EventLogger:
       
 
 class Spooler(sp.Spooler):
-   def __init__(self, scope, filename, acquisator, protocol = p.NullProtocol, parent=None, complevel=2, complib='zlib'):
+   def __init__(self, filename, frameSource, frameShape, complevel=6, complib='zlib', **kwargs):
 #       if 'PYME_TASKQUEUENAME' in os.environ.keys():
 #            taskQueueName = os.environ['PYME_TASKQUEUENAME']
 #       else:
@@ -82,24 +82,28 @@ class Spooler(sp.Spooler):
        self.buffer = []
        self.buflen = 30
 
-       self.tq.createQueue('HDFTaskQueue',self.seriesName, filename, frameSize = (scope.cam.GetPicWidth(), scope.cam.GetPicHeight()), complevel=complevel, complib=complib)
+       self.tq.createQueue('HDFTaskQueue',self.seriesName, filename, frameSize = frameShape, complevel=complevel, complib=complib)
 
        self.md = MetaDataHandler.QueueMDHandler(self.tq, self.seriesName)
-       self.evtLogger = EventLogger(self, scope, self.tq, self.seriesName)
+       self.evtLogger = EventLogger(self, self.tq, self.seriesName)
 
-       sp.Spooler.__init__(self, scope, filename, acquisator, protocol, parent)
+       sp.Spooler.__init__(self, filename, frameSource, **kwargs)
    
-   def Tick(self, caller):
+   def OnFrame(self, sender, frameData, **kwargs):
+      if not self.watchingFrames:
+          #we have already disconnected
+          return
+          
       #self.tq.postTask(cSMI.CDataStack_AsArray(caller.ds, 0).reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()), self.seriesName)
-      self.buffer.append(caller.dsa.reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()).copy())
+      self.buffer.append(frameData.reshape(1,frameData.shape[0],frameData.shape[1]).copy())
 
       if self.imNum == 0: #first frame
           self.md.setEntry('imageID', fileID.genFrameID(self.buffer[-1].squeeze()))
 
-      if len(self.buffer) >= self.buflen:
+      if (len(self.buffer) >= self.buflen):
           self.FlushBuffer()
 
-      sp.Spooler.Tick(self, caller)
+      sp.Spooler.OnFrame(self)
       
    def FlushBuffer(self):
       t1 = time.time()

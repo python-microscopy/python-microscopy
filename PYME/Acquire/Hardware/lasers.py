@@ -30,12 +30,15 @@ class Laser:
     powerControlable = False
     MAX_POWER = 1
 
-    def __init__(self, name,turnOn=False):
+    def __init__(self, name,turnOn=False, scopeState=None):
         self.name= name
         if turnOn:
             self.TurnOn()
         else:
             self.TurnOff()
+            
+        if scopeState:
+            self.registerStateHandlers(scopeState)
 
     def IsOn(self):
         return False
@@ -66,15 +69,22 @@ class Laser:
 
     def GetName(self):
         return self.name
+        
+    def registerStateHandlers(self, scopeState):
+        scopeState.registerHandler('Lasers.%s.On' % self.name, self.IsOn, lambda v: self.TurnOn() if v else self.TurnOff())
+        if self.IsPowerControlable():        
+            scopeState.registerHandler('Lasers.%s.Power' % self.name, self.GetPower, self.SetPower)
+            scopeState.registerHandler('Lasers.%s.MaxPower' % self.name, lambda : self.MAX_POWER)
+
 
 
 #laser which is attached to a DigiData digital io channel
 class DigiDataSwitchedLaser(Laser):
-    def __init__(self, name,digiData, digIOChan, turnOn=False):
+    def __init__(self, name,digiData, digIOChan, **kwargs):
         self.dd = digiData
         self.chan = digIOChan  
 
-        Laser.__init__(self,name,turnOn)
+        Laser.__init__(self,name, **kwargs)
 
     def IsOn(self):
         return self.dd.GetDOBit(self.chan)
@@ -88,11 +98,11 @@ class DigiDataSwitchedLaser(Laser):
 
 #laser which is attached to a DigiData digital io channel, with negative polarity (0 = on, 1 = off) 
 class DigiDataSwitchedLaserInvPol(Laser):
-    def __init__(self,name, digiData, digIOChan, turnOn=False):
+    def __init__(self,name, digiData, digIOChan, **kwargs):
         self.dd = digiData
         self.chan = digIOChan  
 
-        Laser.__init__(self,name,turnOn)
+        Laser.__init__(self,name, **kwargs)
 
     def IsOn(self):
         return not self.dd.GetDOBit(self.chan)
@@ -106,7 +116,7 @@ class DigiDataSwitchedLaserInvPol(Laser):
 
 #laser which is attached to a DigiData analog io channel
 class DigiDataSwitchedAnalogLaser(Laser):
-    def __init__(self,name, digiData, AOChan, turnOn=False, initPower=1, fullScaleAOVal = 2**14, offAOVal = 0):
+    def __init__(self,name, digiData, AOChan, initPower=1, fullScaleAOVal = 2**14, offAOVal = 0 , **kwargs):
         self.dd = digiData
         self.chan = AOChan
         self.power = initPower
@@ -115,9 +125,8 @@ class DigiDataSwitchedAnalogLaser(Laser):
         self.fullScaleAOVal = fullScaleAOVal 
         self.offAOVal = offAOVal
 
-        Laser.__init__(self,name,turnOn)
-
         self.powerControlable = True
+        Laser.__init__(self,name, **kwargs)
 
     def IsOn(self):
         return self.isOn
@@ -143,17 +152,19 @@ class DigiDataSwitchedAnalogLaser(Laser):
 
 #laser which is attached to a DigiData analog io channel
 class FakeLaser(Laser):
-    def __init__(self,name, cam, chan, turnOn=False, initPower=1, maxPower=1e3):
+    def __init__(self,name, cam, chan, turnOn=False, initPower=1, maxPower=1e3, **kwargs):
         self.cam = cam
         self.chan = chan
         self.power = initPower
 
-        Laser.__init__(self,name,turnOn)
+        
         
         self.MAX_POWER = maxPower
 
         self.powerControlable = True
         self.isOn = turnOn
+        
+        Laser.__init__(self,name,turnOn, **kwargs)
 
     def IsOn(self):
         return self.isOn
@@ -200,11 +211,11 @@ class PPort:
 
 #laser which is attached to a DigiData digital io channel
 class ParallelSwitchedLaser(Laser):
-    def __init__(self, name, pport, pinNo, turnOn=False):
+    def __init__(self, name, pport, pinNo, **kwargs):
         self.pport = pport
         self.pinNo = pinNo  
 
-        Laser.__init__(self,name,turnOn)
+        Laser.__init__(self,name, **kwargs)
 
     def IsOn(self):
         return self.pport.getPin(self.pinNo)

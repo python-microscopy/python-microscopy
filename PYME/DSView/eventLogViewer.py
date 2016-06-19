@@ -314,12 +314,12 @@ class eventLogPanel(wx.Panel):
         nFrames = self.frameRange[1] - self.frameRange[0]
 
         if rot < 0: #zoom out
-            nMin = max(yp - nFrames, self.maxRange[0])
-            nMax = min(yp + nFrames, self.maxRange[1])
+            nMin = max(yp - .6*nFrames, self.maxRange[0])
+            nMax = min(yp + .6*nFrames, self.maxRange[1])
             
         elif rot > 0: #zoom in
-            nMin = max(yp - nFrames/4, self.maxRange[0])
-            nMax = min(yp + nFrames/4, self.maxRange[1])
+            nMin = max(yp - .4*nFrames, self.maxRange[0])
+            nMax = min(yp + .4*nFrames, self.maxRange[1])
             if not nMax > (nMin + 2):
                 nMax += 1
 
@@ -622,6 +622,8 @@ class eventLogTPanel(wx.Panel):
             dc.SetPen(wx.Pen(self.lineColours[sourceEv],2))
 
             xvt = framesToTime(xv, self.eventSource, self.metaData) - self.startTime
+            
+            #print xv,xvt, vv
 
             x_0 = xvt[0]
             v_0 = vv[0]
@@ -692,12 +694,12 @@ class eventLogTPanel(wx.Panel):
         dT = self.timeRange[1] - self.timeRange[0]
 
         if rot < 0: #zoom out
-            nMin = max(yp - dT, self.maxRange[0])
-            nMax = min(yp + dT, self.maxRange[1])
+            nMin = max(yp - .6*dT, self.maxRange[0])
+            nMax = min(yp + .6*dT, self.maxRange[1])
 
         elif rot > 0: #zoom in
-            nMin = max(yp - dT/4, self.maxRange[0])
-            nMax = min(yp + dT/4, self.maxRange[1])
+            nMin = max(yp - .4*dT, self.maxRange[0])
+            nMax = min(yp + .4*dT, self.maxRange[1])
             if not nMax > (nMin + .1):
                 nMax = nMin + .1
 

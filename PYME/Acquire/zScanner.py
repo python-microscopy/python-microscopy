@@ -25,35 +25,44 @@ from PYME.DSView import View3D
 import numpy as np
 #from PYME.Acquire import eventLog
 from math import floor
-from PYME.Acquire import MetaDataHandler
+from PYME.IO import MetaDataHandler
 import time
+
+import dispatch
 
 class zScanner:
     def __init__(self, scope):
         self.scope = scope
-        self.sa = scope.sa
+        self.stackSettings = scope.stackSettings
         self.off = 0
         self.sc = 100
         self.sqrt = False
         
         self.frameNum = 0
         
-        self.ds = scope.pa.dsa
+        self.ds = scope.frameWrangler.currentFrame
         
         self.running = False
  
-        self.WantFrameNotification = []
-        self.WantTickNotification = []
+        #legacy signalling - don't use in new code.        
+        #self.WantFrameNotification = []
+        #self.WantTickNotification = []
         
-    def _endSingle(self):
+        #These signals should instead of the notification lists above
+        self.onStack = dispatch.Signal() #dispatched on completion of a stack
+        self.onSingleFrame = dispatch.Signal()  #dispatched when a frame is ready
+        
+    def _endSingle(self, **kwargs):
         print ('es')
         self.Stop()
-        self.WantFrameNotification.remove(self._endSingle)
-        self.sa.piezoGoHome()
+        #self.WantFrameNotification.remove(self._endSingle)
+        self.onStack.disconnect(self._endSingle)
+        self.stackSettings.piezoGoHome()
         
     def Single(self):
-        self.sa.SetPrevPos(self.sa._CurPos())
-        self.WantFrameNotification.append(self._endSingle)
+        self.stackSettings.SetPrevPos(self.stackSettings._CurPos())
+        #self.WantFrameNotification.append(self._endSingle)
+        self.onStack.connect(self._endSingle)
         self.Start()
         
     def Start(self):
@@ -62,29 +71,41 @@ class zScanner:
         self.view = View3D(self.image, 'Live Stack')
         self.running = True
         
-        self.zPoss = np.arange(self.sa.GetStartPos(), self.sa.GetEndPos()+.95*self.sa.GetStepSize(),self.sa.GetStepSize()*self.sa.GetDirection())
-        piezo = self.sa.piezos[self.sa.GetScanChannel()]
-        self.piezo = piezo[0]
-        self.piezoChan = piezo[1]
-        self.startPos = self.piezo.GetPos(self.piezoChan)
+        self.zPoss = np.arange(self.stackSettings.GetStartPos(), self.stackSettings.GetEndPos()+.95*self.stackSettings.GetStepSize(),self.stackSettings.GetStepSize()*self.stackSettings.GetDirection())
+        #piezo = self.scope.positioning[self.stackSettings.GetScanChannel()]
+        #self.piezo = piezo[0]
+        #self.piezoChan = piezo[1]
+        self.posChan = self.stackSettings.GetScanChannel()
+        #self.startPos = self.piezo.GetPos(self.piezoChan)
+        self.startPos = self.scope.GetPos()[self.posChan]
         
-        self.scope.pa.stop()
-        self.scope.pa.WantFrameNotification.append(self.tick)
-        self.scope.pa.WantStartNotification.append(self.OnAqStart)
-        self.scope.pa.WantStopNotification.append(self.OnAqStop)
-        self.scope.pa.start()
+        self.scope.frameWrangler.stop()
+        #self.scope.frameWrangler.WantFrameNotification.append(self.tick)
+        #self.scope.frameWrangler.WantStartNotification.append(self.OnAqStart)
+        #self.scope.frameWrangler.WantStopNotification.append(self.OnAqStop)
+
+        self.scope.frameWrangler.onFrame.connect(self.OnCameraFrame)
+        self.scope.frameWrangler.onStart.connect(self.OnAqStart)
+        self.scope.frameWrangler.onStop.connect(self.OnAqStop)        
+        
+        self.scope.frameWrangler.start()
         
     def Stop(self):
-        self.scope.pa.stop()
-        self.scope.pa.WantFrameNotification.remove(self.tick)
-        self.scope.pa.WantStartNotification.remove(self.OnAqStart)
-        self.scope.pa.WantStopNotification.remove(self.OnAqStop)
-        self.scope.pa.start()
+        self.scope.frameWrangler.stop()
+        #self.scope.frameWrangler.WantFrameNotification.remove(self.tick)
+        #self.scope.frameWrangler.WantStartNotification.remove(self.OnAqStart)
+        #self.scope.frameWrangler.WantStopNotification.remove(self.OnAqStop)
+        
+        self.scope.frameWrangler.onFrame.disconnect(self.OnCameraFrame)
+        self.scope.frameWrangler.onStart.disconnect(self.OnAqStart)
+        self.scope.frameWrangler.onStop.disconnect(self.OnAqStop)
+        
+        self.scope.frameWrangler.start()
         
         self.running = False
         
         
-    def OnAqStart(self, caller=None):      
+    def OnAqStart(self, **kwargs):      
         self.pos = 0
         self.callNum = 0
 
@@ -112,10 +133,11 @@ class zScanner:
         #self.view_yz.do.yp = self.ds.shape[1]/2
         #self.view_yz.do.xp = self.ds.shape[0]/2
 
-        self.piezo.MoveTo(self.piezoChan, self.zPoss[self.pos])
+        #self.piezo.MoveTo(self.piezoChan, self.zPoss[self.pos])
+        self.scope.SetPos(**{self.posChan : self.zPoss[self.pos]})
 
 
-    def tick(self, caller=None):
+    def OnCameraFrame(self, **kwargs):
         fn = floor(self.callNum) % len(self.zPoss)
         self.frameNum = fn
         #print fn
@@ -136,24 +158,29 @@ class zScanner:
         
         if fn == 0: #we've wrapped around 
             #make a copy of callbacks so that if we remove one, we still call the others
-            callbacks = [] + self.WantFrameNotification              
-            for cb in callbacks:
-                cb()
+            #callbacks = [] + self.WantFrameNotification              
+            #for cb in callbacks:
+            #    cb()
+                
+            self.onStack.send(self)
                 
             
             if 'decView' in dir(self.view):
                 self.view.decView.wienerPanel.OnCalculate()
         #self.view_xz.Refresh()
         #self.view_yz.Refresh()
-        for cb in self.WantTickNotification:
-            cb()
+        #for cb in self.WantTickNotification:
+        #    cb()
+            
+        self.onSingleFrame.send(self)
             
         self.view.Refresh()
 
     def _movePiezo(self, fn):
-        self.piezo.MoveTo(self.piezoChan, self.zPoss[fn])
+        #self.piezo.MoveTo(self.piezoChan, self.zPoss[fn])
+        self.scope.SetPos(**{self.posChan : self.zPoss[fn]})
         
-    def OnAqStop(self, caller=None):
+    def OnAqStop(self, **kwargs):
         self.view.image.mdh.setEntry('EndTime', time.time())
 
         #loop over all providers of metadata
@@ -172,8 +199,9 @@ class zScanner:
         im2s = im2.sum()
         
         z0 = (im2*self.zPoss[None,None,:]).sum()/im2s
-        x_1, x_2 = self.scope.cam.ROIx
-        y_1, y_2 = self.scope.cam.ROIy
+        #x_1, x_2 = self.scope.cam.ROIx
+        #y_1, y_2 = self.scope.cam.ROIy
+        x_1, y_1, x_2, y_2 = self.scope.state['Camera.ROI']
         x = np.arange(float(x_1), x_2+1)
         y = np.arange(float(y_1), y_2+1)
         x0 = (im2*x[:,None,None]).sum()/im2s
@@ -187,20 +215,23 @@ class zScanner:
     def center(self):
         dx, dy, dz = self.getCentroid()
         
-        self.scope.pa.stop()
+        #self.scope.frameWrangler.stop()
         
         self.zPoss -= dz
         
-        x1, x2 = self.scope.cam.ROIx
-        y1, y2 = self.scope.cam.ROIy
+        #x1, x2 = self.scope.cam.ROIx
+        #y1, y2 = self.scope.cam.ROIy
+        
+        x1, y1, x2, y2 = self.scope.state['Camera.ROI']
         
         dx = int(dx)
         dy = int(dy)
         #print dx, dy, x1 - dx,y1-dy,x2-dx,y2-dy
         
-        self.scope.cam.SetROI(x1 - dx - 1,y1-dy - 1,x2-dx,y2-dy)
+        #self.scope.cam.SetROI(x1 - dx - 1,y1-dy - 1,x2-dx,y2-dy)
+        self.scope.state['Camera.ROI'] = (x1 - dx - 1,y1-dy - 1,x2-dx,y2-dy)
         
-        self.scope.pa.start()
+        #self.scope.frameWrangler.start()
 
         #self.view.Destroy()
         #self.view_xz.Destroy()
@@ -217,7 +248,7 @@ class wavetableZScanner(zScanner):
 
         self.piezo.PopulateWaveTable(self.piezoChan, self.zPoss)
 
-        #self.scope.pa.stop()
+        #self.scope.frameWrangler.stop()
 
         if self.triggered:
             #if we've got a hardware trigger rigged up, use it
@@ -226,7 +257,7 @@ class wavetableZScanner(zScanner):
             #otherwise fudge so that step time is nominally the same as exposure time
             self.piezo.StartWaveOutput(self.piezoChan, self.scope.cam.tKin*1e3)
 
-        #self.scope.pa.start()
+        #self.scope.frameWrangler.start()
         
     def OnAqStop(self, caller=None):
         self.piezo.StopWaveOutput()
@@ -239,9 +270,9 @@ class wavetableZScanner(zScanner):
         pass
 
 def getBestScanner(scope):
-    piezo = scope.sa.piezos[scope.sa.GetScanChannel()][0]
+    piezo = scope.positioning[scope.stackSettings.GetScanChannel()][0]
     
-    if 'StartWaveOutput' in dir(piezo) and not scope.sa.GetSeqLength() > piezo.MAXWAVEPOINTS: #piezo supports wavetable output
+    if 'StartWaveOutput' in dir(piezo) and not scope.stackSettings.GetSeqLength() > piezo.MAXWAVEPOINTS: #piezo supports wavetable output
         return wavetableZScanner(scope, piezo.hasTrigger)
     else: #no wavetable - possibly poorly synchronised
         return zScanner(scope)

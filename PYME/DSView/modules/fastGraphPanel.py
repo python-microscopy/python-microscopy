@@ -23,7 +23,7 @@
 #import wx.lib.agw.aui as aui
 import numpy as np
 
-from PYME.Analysis.LMVis import fastGraph
+from PYME.ui import fastGraph
 from PYME.DSView.displayOptions import DisplayOpts
 
 

@@ -20,5 +20,5 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
-from dsviewer_npy_nb import View3D, ViewIm3D
-from image import ImageStack
+from dsviewer import View3D, ViewIm3D
+from PYME.IO.image import ImageStack

@@ -8,7 +8,7 @@ Created on Mon May 20 15:58:22 2013
 import numpy as np
 import socket
 from PIL import Image
-from PYME.Acquire import MetaDataHandler
+from PYME.IO import MetaDataHandler
 
 try:
     import StringIO

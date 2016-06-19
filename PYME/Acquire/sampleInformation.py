@@ -32,8 +32,8 @@ import logging
 logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
-from PYME.FileUtils import nameUtils
-from PYME.misc import TextCtrlAutoComplete
+from PYME.IO.FileUtils import nameUtils
+from PYME.contrib import TextCtrlAutoComplete
 
 #from PYME.SampleDB2 import populate #just to setup the Django environment
 #from PYME.SampleDB2.samples import models
@@ -45,7 +45,7 @@ currentSlide = [None]
 
 WantSlideChangeNotification = []
 
-from PYME.Acquire.MetaDataHandler import NestedClassMDHandler
+from PYME.IO.MetaDataHandler import NestedClassMDHandler
 
 slideMD = NestedClassMDHandler()
 

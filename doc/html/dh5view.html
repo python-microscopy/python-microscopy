@@ -6,15 +6,15 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>DSView / dh5view - A general purpose image data viewer &mdash; PYME 0.1 documentation</title>
+    <title>DSView / dh5view - A general purpose image data viewer &mdash; PYME 16.05.24 documentation</title>
     
-    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.1',
+        VERSION:     '16.05.24',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,14 +23,11 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="PYME 0.1 documentation" href="index.html" />
-    <link rel="up" title="Data Analysis" href="Analysis.html" />
-    <link rel="next" title="Analysing Localisation Microscopy data" href="LocalisationAnalysis.html" />
-    <link rel="prev" title="Data Analysis" href="Analysis.html" /> 
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PYME 16.05.24 documentation" href="index.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -39,39 +36,61 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="right" >
-          <a href="LocalisationAnalysis.html" title="Analysing Localisation Microscopy data"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="Analysis.html" title="Data Analysis"
-             accesskey="P">previous</a> |</li>
-        <li><a href="index.html">PYME 0.1 documentation</a> &raquo;</li>
-          <li><a href="Analysis.html" accesskey="U">Data Analysis</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">PYME 16.05.24 documentation</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/dh5view.rst">Edit</a> &raquo;</li>
  
 
       </ul>
-    </div>  
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/pymeLogo.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">DSView / <code class="docutils literal"><span class="pre">dh5view</span></code> - A general purpose image data viewer</a><ul>
+<li><a class="reference internal" href="#modules">Modules</a></li>
+<li><a class="reference internal" href="#modes">Modes</a></li>
+</ul>
+</li>
+</ul>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="dsview-dh5view-a-general-purpose-image-data-viewer">
-<span id="dh5view"></span><h1>DSView / <tt class="docutils literal"><span class="pre">dh5view</span></tt> - A general purpose image data viewer<a class="headerlink" href="#dsview-dh5view-a-general-purpose-image-data-viewer" title="Permalink to this headline">¶</a></h1>
-<p>DSView is a general purpose data viewer that supports all the <a class="reference internal" href="DataFormats.html#dataformats"><em>PYME Data Formats</em></a>
-and additionally the <tt class="docutils literal"><span class="pre">QUEUE</span></tt> objects used in real-time data analysis. DSView may
+<span id="dh5view"></span><h1>DSView / <code class="docutils literal"><span class="pre">dh5view</span></code> - A general purpose image data viewer<a class="headerlink" href="#dsview-dh5view-a-general-purpose-image-data-viewer" title="Permalink to this headline">¶</a></h1>
+<p>DSView is a general purpose data viewer that supports all the <a class="reference internal" href="DataFormats.html#dataformats"><span>PYME Data Formats</span></a>
+and additionally the <code class="docutils literal"><span class="pre">QUEUE</span></code> objects used in real-time data analysis. DSView may
 either be invoked with the command:</p>
 <div class="highlight-python"><div class="highlight"><pre>dh5view [options] filename
 </pre></div>
 </div>
 <p>or launched programatically by passing a <em>numpy</em> array or PYME <em>datasource</em> to
-<tt class="docutils literal"><span class="pre">PYME.DSView.View3D</span></tt>.</p>
+<code class="docutils literal"><span class="pre">PYME.DSView.View3D</span></code>.</p>
 <div class="section" id="modules">
 <h2>Modules<a class="headerlink" href="#modules" title="Permalink to this headline">¶</a></h2>
 <p>DSView has a number of modules for performing various analysis tasks,
-including <a class="reference internal" href="LocalisationAnalysis.html#localisationanalysis"><em>Localisation Analysis</em></a>, PSF Extraction, Deconvolution, and Tiling.</p>
+including <a class="reference internal" href="LocalisationAnalysis.html#localisationanalysis"><span>Localisation Analysis</span></a>, PSF Extraction, Deconvolution, and Tiling.</p>
 </div>
 <div class="section" id="modes">
 <h2>Modes<a class="headerlink" href="#modes" title="Permalink to this headline">¶</a></h2>
@@ -98,11 +117,11 @@ later from the <strong>Modules</strong> menu.</p>
 <td>no modules loaded</td>
 </tr>
 <tr class="row-odd"><td>LM</td>
-<td><tt class="docutils literal"><span class="pre">.h5</span></tt>, <tt class="docutils literal"><span class="pre">QUEUE</span></tt></td>
+<td><code class="docutils literal"><span class="pre">.h5</span></code>, <code class="docutils literal"><span class="pre">QUEUE</span></code></td>
 <td>localisation analysis</td>
 </tr>
 <tr class="row-even"><td>blob</td>
-<td><tt class="docutils literal"><span class="pre">.tif</span></tt></td>
+<td><code class="docutils literal"><span class="pre">.tif</span></code></td>
 <td>blob analysis and PSF extraction</td>
 </tr>
 <tr class="row-odd"><td>default</td>
@@ -111,7 +130,7 @@ later from the <strong>Modules</strong> menu.</p>
 </tr>
 </tbody>
 </table>
-<p>A particular mode can be forced by calling <tt class="docutils literal"><span class="pre">dh5view</span></tt> with the <tt class="docutils literal"><span class="pre">-m</span></tt> option, eg:</p>
+<p>A particular mode can be forced by calling <code class="docutils literal"><span class="pre">dh5view</span></code> with the <code class="docutils literal"><span class="pre">-m</span></code> option, eg:</p>
 <div class="highlight-python"><div class="highlight"><pre>dh5view -m LM filename
 </pre></div>
 </div>
@@ -122,46 +141,9 @@ later from the <strong>Modules</strong> menu.</p>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
-        <div class="sphinxsidebarwrapper">
-  <h3><a href="index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">DSView / <tt class="docutils literal"><span class="pre">dh5view</span></tt> - A general purpose image data viewer</a><ul>
-<li><a class="reference internal" href="#modules">Modules</a></li>
-<li><a class="reference internal" href="#modes">Modes</a></li>
-</ul>
-</li>
-</ul>
-
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="Analysis.html"
-                        title="previous chapter">Data Analysis</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="LocalisationAnalysis.html"
-                        title="next chapter">Analysing Localisation Microscopy data</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/dh5view.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
-  <h3>Quick search</h3>
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
-        </div>
-      </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -170,22 +152,15 @@ later from the <strong>Modules</strong> menu.</p>
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="right" >
-          <a href="LocalisationAnalysis.html" title="Analysing Localisation Microscopy data"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="Analysis.html" title="Data Analysis"
-             >previous</a> |</li>
-        <li><a href="index.html">PYME 0.1 documentation</a> &raquo;</li>
-          <li><a href="Analysis.html" >Data Analysis</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">PYME 16.05.24 documentation</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/dh5view.rst">Edit</a> &raquo;</li>
  
 
       </ul>
     </div>
-    <div class="footer">
-        &copy; Copyright 2010, David Baddeley.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, David Baddeley.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
     </div>
   </body>
 </html>

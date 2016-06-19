@@ -22,7 +22,7 @@
 #
 ################
 
-from PYME.Analysis.LMVis import pipeline
+from PYME.LMVis import pipeline
 from PYMEnf.DriftCorrection import driftNoGUI
 
 import sys

@@ -22,7 +22,7 @@
 import numpy as np
 
 def calcCenteredMoments(x, y, order=4):
-    '''Calculate centered moments of a point cloud'''
+    """Calculate centered moments of a point cloud"""
     xm = x.mean()
     ym = y.mean()
     
@@ -45,7 +45,7 @@ def calcCenteredMoments(x, y, order=4):
     return m #, i_s, j_s
 
 def calcMCCenteredMoments(x, y, order=4, nSamples=10):
-    '''Calculate centered moments with monte-carlo resampling to allow error estimation'''
+    """Calculate centered moments with monte-carlo resampling to allow error estimation"""
 
     ms = []
 

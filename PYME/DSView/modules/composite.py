@@ -24,9 +24,10 @@ import wx
 import wx.lib.mixins.listctrl  as  listmix
 import os
 #import pylab
-from PYME.Acquire import MetaDataHandler
-from PYME.DSView import image, View3D
-from PYME.DSView import dataWrap
+from PYME.IO import MetaDataHandler
+from PYME.IO import image
+from PYME.DSView import View3D
+from PYME.IO import dataWrap
 
 import wx.lib.agw.aui as aui
 
@@ -683,9 +684,9 @@ class compositor:
             View3D(self.image.data[:,:,:,i], '%s - %s' % (self.image.filename, names[i]), mdh=mdh, parent=wx.GetTopLevelParent(self.dsviewer))
      
     def RemapData(self, image, chan, shape, voxelsize, origin, shiftField='', ignoreZ = True, order=3):
-        '''apply a vectorial correction for chromatic shift to an image - this 
+        """apply a vectorial correction for chromatic shift to an image - this
         is a generic vectorial shift compensation, rather than the secial case 
-        correction used with the splitter.'''
+        correction used with the splitter."""
         from scipy import ndimage
         import numpy as np
         
@@ -733,9 +734,9 @@ class compositor:
         
         
     def OnApplyShiftmap(self, event):
-        '''apply a vectorial correction for chromatic shift to an image - this 
+        """apply a vectorial correction for chromatic shift to an image - this
         is a generic vectorial shift compensation, rather than the secial case 
-        correction used with the splitter.'''
+        correction used with the splitter."""
         from scipy import ndimage
         import numpy as np
         from PYME.DSView import ImageStack, ViewIm3D
@@ -802,10 +803,10 @@ class compositor:
         #    names = self.image.mdh.getEntry('ChannelNames')
         #except:
         #    names = ['%d' % d for d in range(self.image.data.shape[3])]
-        from PYME.Analysis.DataSources import AlignDataSource
-        import PYME.DSView.dataWrap
+        from PYME.IO.DataSources import AlignDataSource
+        from  PYME.IO import dataWrap
         
-        if isinstance(self.image.data, PYME.DSView.dataWrap.ListWrap):
+        if isinstance(self.image.data, dataWrap.ListWrap):
             nd = [AlignDataSource.DataSource(ds) for ds in self.image.data.wrapList]
         else:
             nd = [AlignDataSource.DataSource(dataWrap.Wrap(self.image.data[:,:,:,i])) for i in range(self.image.data.shape[3])]

@@ -5,7 +5,7 @@ Created on Tue Aug  4 13:35:18 2015
 @author: david
 """
 
-#from PYME.Analysis.LMVis import pipelineView
+#from PYME.LMVis import pipelineView
 import wx
 import wx.html2
 

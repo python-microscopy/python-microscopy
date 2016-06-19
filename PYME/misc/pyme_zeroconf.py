@@ -9,11 +9,11 @@
 # This file may NOT be distributed without express permision from David Baddeley
 #
 ##################
-'''pyme_zeroconf.py
+"""pyme_zeroconf.py
 
 This implements a decentralized nameserver for PYRO based on using the zeroconf (aka Bonjour)
 automated service discovery protocol
-'''
+"""
 
 
 import zeroconf as zc
@@ -43,7 +43,7 @@ class ZCListener(object):
         
             
 class ZeroConfNS(object):
-    '''This spoofs (but does not fully re-implement) a Pyro.naming.Nameserver'''
+    """This spoofs (but does not fully re-implement) a Pyro.naming.Nameserver"""
     def __init__(self, protocol = '_pyme-pyro'):
         self._services = {}
         self._protocol = protocol
@@ -91,8 +91,11 @@ class ZeroConfNS(object):
         
             
     def __del__(self):
-        self.zeroconf.unregister_all_services()
-        self.zeroconf.close()
+        try:
+            self.zeroconf.unregister_all_services()
+            self.zeroconf.close()
+        except:
+            pass
         
 nsd = {}
 

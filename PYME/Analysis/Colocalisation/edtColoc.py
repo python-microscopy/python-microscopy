@@ -26,7 +26,7 @@ import numpy
 from PYME.Analysis import binAvg
 
 def imageDensityAtDistance(A, mask, voxelsize = None, bins=100):
-    '''Calculates the distribution of a label at varying distances from a mask.
+    """Calculates the distribution of a label at varying distances from a mask.
     Negative distances are on the inside of the mask.
 
     Parameters:
@@ -41,7 +41,7 @@ def imageDensityAtDistance(A, mask, voxelsize = None, bins=100):
     bn - integrated intensity in distance bin
     bm - mean intensity in distance bin
     bins - the bin edges
-    '''
+    """
     
     if voxelsize == None:
         voxelsize = numpy.ones(len(A.shape))
@@ -61,7 +61,7 @@ def imageDensityAtDistance(A, mask, voxelsize = None, bins=100):
 
 
 def pointDensityAtDistance(points, mask, voxelsize, maskOffset, bins=100):
-    '''Calculates the distribution of a label at varying distances from a mask.
+    """Calculates the distribution of a label at varying distances from a mask.
     Negative distances are on the inside of the mask.
 
     Parameters:
@@ -78,7 +78,7 @@ def pointDensityAtDistance(points, mask, voxelsize, maskOffset, bins=100):
     bn - integrated intensity in distance bin
     bm - mean intensity in distance bin
     bins - the bin edges
-    '''
+    """
 
     voxelsize = numpy.array(voxelsize)
 

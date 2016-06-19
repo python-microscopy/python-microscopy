@@ -30,7 +30,9 @@ def configuration(parent_package = '', top_path = None):
     config.add_subpackage('Hardware')
     config.add_subpackage('Protocols')
     config.add_data_dir('Scripts')
-    config.add_data_files('logo.png')
+    config.add_subpackage('ui')
+    config.add_subpackage('Utils')
+    #config.add_data_files('logo.png')
 
     return config
 
@@ -40,9 +42,9 @@ if __name__ == '__main__':
     	author = 'David Baddeley',
        	author_email = 'd.baddeley@auckland.ac.nz',
        	url = '',
-       	long_description = '''
+       	long_description = """
 Provides the microscope control and image acquisition components of PYME (what was previously PySMI)
-''',
+""",
           license = "Proprietary",
           **configuration(top_path='').todict()
           )

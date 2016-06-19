@@ -22,11 +22,11 @@
 ################
 
 
-from pylab import *
+#from pylab import *
 from PYME.Analysis._fithelpers import *
 
 def dyedyemod(p, t):
-    '''Model for bleach decay when the rate is dominated by dye-dye interactions.
+    """Model for bleach decay when the rate is dominated by dye-dye interactions.
     The equation (~ 1/t) is a solution to a differential equation of the form:
         dN/dt = -k*N^2
         
@@ -35,13 +35,13 @@ def dyedyemod(p, t):
         k - the rate constant
         b - a constant background
         
-    Note that the 1/t curve is shifted to be 1 at t=0.'''
+    Note that the 1/t curve is shifted to be 1 at t=0."""
         
     A0, k, b = p
     return A0/(t/k + 1) + b
     
 def dyedyemoda(p, t):
-    '''Model for bleach decay when the rate is dominated by dye-dye interactions.
+    """Model for bleach decay when the rate is dominated by dye-dye interactions.
     The equation (~ 1/t) is a solution to a differential equation of the form:
         dN/dt = -k*N^2
         
@@ -50,13 +50,13 @@ def dyedyemoda(p, t):
         k - the rate constant
         b - a constant background
         
-    Note that the 1/t curve is shifted to be 1 at t=0.'''
+    Note that the 1/t curve is shifted to be 1 at t=0."""
         
     A0, k, b = p
     return A0**2/(t/k + 1) + b
     
 def dyedyemodt(p, t):
-    '''Model for bleach decay when the rate is dominated by dye-dye interactions.
+    """Model for bleach decay when the rate is dominated by dye-dye interactions.
     The equation (~ 1/t) is a solution to a differential equation of the form:
         dN/dt = -k*N^2
         
@@ -65,13 +65,13 @@ def dyedyemodt(p, t):
         k - the rate constant
         b - a constant background
         
-    Note that the 1/t curve is shifted to be 1 at t=0.'''
+    Note that the 1/t curve is shifted to be 1 at t=0."""
         
     A0, k, b, c = p
     return A0/((t/k)**c + 1) + b
 
 def dyedyemod2(p, t, dataStart):
-    '''Model for bleach decay when the rate is dominated by dye-dye interactions.
+    """Model for bleach decay when the rate is dominated by dye-dye interactions.
     The equation (~ 1/t) is a solution to a differential equation of the form:
         dN/dt = -k*N^2
         
@@ -83,13 +83,13 @@ def dyedyemod2(p, t, dataStart):
         
     dataStart dictates the start of the protion with high EM gain
         
-    Note that the 1/t curve is shifted to be 1 at t=0.'''
+    Note that the 1/t curve is shifted to be 1 at t=0."""
         
     A0, k, b, o = p
     return A0/(t/k + 1) + b + o*(t<dataStart)
     
 def dyedyemod3(p, t, dataStart):
-    '''Model for bleach decay when the rate is dominated by dye-dye interactions.
+    """Model for bleach decay when the rate is dominated by dye-dye interactions.
     The equation (~ 1/t) is a solution to a differential equation of the form:
         dN/dt = -k*N^2
         
@@ -101,7 +101,7 @@ def dyedyemod3(p, t, dataStart):
         
     dataStart dictates the start of the protion with high EM gain
         
-    Note that the 1/t curve is shifted to be 1 at t=0.'''
+    Note that the 1/t curve is shifted to be 1 at t=0."""
         
     A0, k, b, sc, o = p
     return ((sc - 1)*(t<dataStart) + 1)*A0/(t/k + 1) + b + o*(t<dataStart)
@@ -113,6 +113,8 @@ def linMod(p, t):
     
 
 def processIntensityTrace(I, mdh, dt=1):
+    from pylab import *
+    
     t = arange(len(I))*dt
     dfb, dfe = mdh['Protocol.DarkFrameRange']
     dk_emgain = I[dfb:dfe].mean()

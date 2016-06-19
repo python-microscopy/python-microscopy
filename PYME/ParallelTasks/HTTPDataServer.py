@@ -36,17 +36,20 @@ import json
 import PYME.misc.pyme_zeroconf as pzc
 import urlparse
 import requests
+import socket
 
 from PYME.misc.computerName import GetComputerName
+
 compName = GetComputerName()
 procName = compName + ' - PID:%d' % os.getpid()
+
 
 class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
     def do_PUT(self):
         path = self.translate_path(self.path)
-        
+
         #print self.headers
-        
+
         if os.path.exists(path):
             #Do not overwrite - we use write-once semantics
             self.send_error(405, "File already exists")
@@ -55,28 +58,28 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             dir = os.path.split(path)[0]
             if not os.path.exists(dir):
                 os.makedirs(dir)
-                
+
             query = urlparse.parse_qs(urlparse.urlparse(self.path).query)
-            
+
             if 'MirrorSource' in query.keys():
-                #File content is not in message content. This computer should 
+                #File content is not in message content. This computer should
                 #fetch the results from another computer in the cluster instead
                 #used for online duplication
-            
+
                 r = requests.get(query['MirrorSource'][0], timeout=.1)
-            
+
                 with open(path, 'wb') as f:
                     f.write(r.content)
-                    
+
             else:
                 #the standard case - use the contents of the put request
                 with open(path, 'wb') as f:
                     #shutil.copyfileobj(self.rfile, f, int(self.headers['Content-Length']))
                     f.write(self.rfile.read(int(self.headers['Content-Length'])))
-            
+
             self.send_response(200)
             return
-            
+
     def list_directory(self, path):
         """Helper to produce a directory listing (absent index.html).
 
@@ -109,10 +112,12 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         self.end_headers()
         return f
 
+
 class ThreadedHTTPServer(ThreadingMixIn, BaseHTTPServer.HTTPServer):
-    """Handle requests in a separate thread."""        
-    
-def test(protocol="HTTP/1.0"):
+    """Handle requests in a separate thread."""
+
+
+def main(protocol="HTTP/1.0"):
     """Test the HTTP request handler class.
 
     This runs an HTTP server on port 8000 (or the first command line
@@ -131,12 +136,14 @@ def test(protocol="HTTP/1.0"):
 
     sa = httpd.socket.getsockname()
 
+    ip_addr = socket.gethostbyname(socket.gethostname())
+
     ns = pzc.getNS('_pyme-http')
-    ns.register_service('PYMEDataServer: ' + procName, sa[0], sa[1])    
-    
-    print "Serving HTTP on", sa[0], "port", sa[1], "..."
+    ns.register_service('PYMEDataServer: ' + procName, ip_addr, sa[1])
+
+    print "Serving HTTP on", ip_addr, "port", sa[1], "..."
     httpd.serve_forever()
 
 
 if __name__ == '__main__':
-    test()
+    main()

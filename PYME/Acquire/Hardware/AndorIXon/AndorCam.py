@@ -29,6 +29,7 @@ _stdcall_libraries = {}
 
 arch, plat = platform.architecture()
 
+
 #if 'WinDLL' in dir():
 if plat.startswith('Windows'):
     if arch == '32bit':
@@ -54,6 +55,7 @@ else:
     HANDLE=WORD
     HWND = WORD
     #from ctypes.wintypes import HWND
+
 
 STRING = c_char_p
 

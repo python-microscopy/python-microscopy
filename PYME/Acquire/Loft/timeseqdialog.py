@@ -78,15 +78,15 @@ class seqDialog(wxFrame):
     def OnBStartButton(self, event):
         res = self.scope.ta.Verify()
         if res[0]:
-            self.scope.pa.stop()
+            self.scope.frameWrangler.stop()
             #try:
             self.scope.ta.Prepare()
             #except:
             #    dialog = wxMessageDialog(None, 'The most likely reason is a lack of memory \nTry the following: Close any open aquisitions, Chose a ROI, Delete unnecessary channels, or decrease the # of slices', "Could not start aquisition", wx.OK)
             #    dialog.ShowModal()
             #    self.scope.ta.ds=[]
-            #    self.scope.pa.Prepare(True)
-            #    self.scope.pa.start()
+            #    self.scope.frameWrangler.Prepare(True)
+            #    self.scope.frameWrangler.start()
             self.scope.ta.WantFrameNotification=[]
             self.scope.ta.WantFrameNotification.append(self.scope.aqt_refr)
             self.scope.ta.WantStopNotification=[]

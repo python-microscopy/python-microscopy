@@ -22,6 +22,7 @@
 ##################
 
 from numpy import *
+import numpy as np
 import sys
 
 def timeToFrames(t, events, mdh):
@@ -36,18 +37,29 @@ def timeToFrames(t, events, mdh):
     sfr = array([int(e['EventDescr']) for e in startEvents])
 
     si = startEvents['Time'].searchsorted(t, side='right')
+    
+    #print t    
     #print((si, startEvents, sfr))
-    try:
-        if len(si) > 1:
-            si = si[-1]
-    except:
-        pass
-    if si == len(sfr):
-        fr = sfr[si-1] + floor((t - startEvents['Time'][si-1]) / cycTime)
+    
+    #try:
+    #    if len(si) > 1:
+    #        si = si[-1]
+    #except:
+    #    pass
+    
+    #fr = np.zeros_like(t)
+    
+    
+    fr = sfr[si-1] + ((t - startEvents['Time'][si-1]) / cycTime)
+    
+    if np.isscalar(fr):
+        if si < len(sfr):
+            return minimum(fr, sfr[si])
     else:
-        fr = minimum(sfr[si-1] + floor((t - startEvents['Time'][si-1]) / cycTime), sfr[si]) 
+        M = (si < len(sfr))
+        fr[M] = minimum(fr[M], sfr[si[M]]) 
 
-    return fr
+        return fr
 
 def framesToTime(fr, events, mdh):
     cycTime = mdh.getEntry('Camera.CycleTime')
@@ -110,8 +122,16 @@ def GeneratePMFromProtocolEvents(events, metadata, x0, y0, id='setPos', idPos = 
         if ed[idPos] == id:
             x.append(e['Time'])
             y.append(float(ed[dataPos]))
+            
+    x = array(x)
+    y = array(y)
+    
+    I = np.argsort(x)
+    
+    x = x[I]
+    y = y[I]
 
-    return piecewiseMap(y0, timeToFrames(array(x), events, metadata), array(y), secsPerFrame, xIsSecs=False)
+    return piecewiseMap(y0, timeToFrames(x, events, metadata), y, secsPerFrame, xIsSecs=False)
 
 
 def GeneratePMFromEventList(events, metadata, x0, y0, eventName='ProtocolFocus', dataPos=1):
@@ -124,10 +144,18 @@ def GeneratePMFromEventList(events, metadata, x0, y0, eventName='ProtocolFocus',
         #if e['EventName'] == eventName:
         x.append(e['Time'])
         y.append(float(e['EventDescr'].split(', ')[dataPos]))
+        
+    x = array(x)
+    y = array(y)
+        
+    I = np.argsort(x)
+    
+    x = x[I]
+    y = y[I]
 
     #print array(x) - metadata.getEntry('StartTime'), timeToFrames(array(x), events, metadata)
 
-    return piecewiseMap(y0, timeToFrames(array(x), events, metadata), array(y), secsPerFrame, xIsSecs=False)
+    return piecewiseMap(y0, timeToFrames(x, events, metadata), y, secsPerFrame, xIsSecs=False)
 
 def GenerateBacklashCorrPMFromEventList(events, metadata, x0, y0, eventName='ProtocolFocus', dataPos=1, backlash=0):
     x = []

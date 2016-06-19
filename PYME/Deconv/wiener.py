@@ -82,9 +82,9 @@ def resizePSF(psf, data_size):
 
 
 class dec_wiener:
-    '''Classical deconvolution with a stationary PSF'''
+    """Classical deconvolution with a stationary PSF"""
     def psf_calc(self, psf, data_size):
-        '''Precalculate the OTF etc...'''
+        """Precalculate the OTF etc..."""
         
         g = resizePSF(psf, data_size)
         
@@ -135,13 +135,13 @@ class dec_wiener:
 
         
     def deconv(self, data, lamb, clip = False):
-        '''This is what you actually call to do the deconvolution.
+        """This is what you actually call to do the deconvolution.
         parameters are:
 
         data - the raw data
         lamb - the regularisation parameter
        
-        '''
+        """
 
         #test to see if we need to recalculate filter factor        
         if not lamb == self.lamb: 

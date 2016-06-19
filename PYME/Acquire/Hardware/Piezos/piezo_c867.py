@@ -161,7 +161,7 @@ class piezo_c867T(object):
         
         self.validRegion=validRegion
         self.onTarget = False
-        self.ptol = 5e-5
+        self.ptol = 5e-4
         
         #reboot stage
         self.ser_port.write('RBT\n')
@@ -250,7 +250,8 @@ class piezo_c867T(object):
                     self.velocity = self.targetVelocity.copy()
                     print('v')
                 
-                if not np.all(self.targetPosition == self.lastTargetPosition):
+                #if not np.all(self.targetPosition == self.lastTargetPosition):
+                if not np.allclose(self.position, self.targetPosition, atol=self.ptol):
                     #update our target position
                     pos = np.clip(self.targetPosition, 0,self.max_travel)
         
@@ -270,7 +271,7 @@ class piezo_c867T(object):
                 onT = (ont1 and ont2) or (self.servo == False)
                 self.onTarget = onT and self.onTargetLast
                 self.onTargetLast = onT
-#                self.onTarget = np.allclose(self.position, self.targetPosition, atol=self.ptol)
+                self.onTarget = np.allclose(self.position, self.targetPosition, atol=self.ptol)
                     
                 #time.sleep(.1)
                 

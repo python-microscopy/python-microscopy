@@ -25,7 +25,7 @@ from . import AndorCam as ac
 from ctypes import *
 import time
 import sys
-from PYME.Acquire import MetaDataHandler
+from PYME.IO import MetaDataHandler
 from PYME.Acquire.Hardware import ccdCalibrator
 
 #import example
@@ -295,6 +295,16 @@ class iXonCamera:
         self.fastestRecVSInd = int(tNum.value)
 
 
+#    def SetContinuousMode(self, value=True):
+#        if value:
+#            self.SetAcquisitionMode(self.MODE_CONTINUOUS)
+#        else:
+#            self.SetAcquisitionMode(self.MODE_SINGLE_SHOT)
+#
+#            
+#    def GetContinuousMode(self):
+#        return self.contMode    
+    
     def GetCamType(*args):
         raise Exception('Not implemented yet!!')
 
@@ -337,7 +347,7 @@ class iXonCamera:
 
     def SetIntegTime(self, iTime):
         self.__selectCamera()
-        ret = ac.SetExposureTime(iTime*1e-3)
+        ret = ac.SetExposureTime(iTime)
         if not ret == ac.DRV_SUCCESS:
             raise RuntimeError('Error setting exp time: %s' % ac.errorCodes[ret])
 
@@ -730,7 +740,7 @@ class iXonCamera:
         return hm.value
 
     def SetActive(self, active=True):
-        '''flag the camera as active (or inactive) to dictate whether it writes it's metadata or not'''
+        """flag the camera as active (or inactive) to dictate whether it writes it's metadata or not"""
         self.active = active
 
     def GenStartMetadata(self, mdh):

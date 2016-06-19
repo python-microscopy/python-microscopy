@@ -25,11 +25,11 @@ import wx.lib.agw.aui as aui
 import numpy as np
 #from PYME.Acquire.mytimer import mytimer
 #from scipy import ndimage
-from PYME.DSView.image import ImageStack
+from PYME.IO.image import ImageStack
 from PYME.DSView import ViewIm3D
 #import time
 from PYME.Analysis import annealThresh
-from PYME.Analysis.LMVis import histLimits
+from PYME.ui import histLimits
 
 class SegmentationPanel(wx.Panel):
     def __init__(self, parent, sourceImage, destImage):

@@ -71,8 +71,13 @@ class Server:
 
 
 def analysisTasks(request):
-    ns=Pyro.naming.NameServerLocator().getNS()
-    serverNames = [n[0] for n in ns.list('TaskQueues')]
+    try:
+        from PYME.misc import pyme_zeroconf 
+        ns = pyme_zeroconf.getNS()
+    except:
+        ns=Pyro.naming.NameServerLocator().getNS()
+        
+    serverNames = [n.split('.')[1] for n in ns.list('TaskQueues')]
 
     servers = [Server(n, ns) for n in serverNames]
 

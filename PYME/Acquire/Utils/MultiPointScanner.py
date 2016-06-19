@@ -20,9 +20,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
-import time
-from PYME.DSView.dsviewer_npy import View3D
-from PYME import cSMI
+#import time
+#from PYME.DSView.dsviewer import View3D
+
 import numpy as np
 from PYME.Acquire import eventLog
 
@@ -51,7 +51,7 @@ class PointScanner:
         
         self.SetPattern(self.x, self.y)
 
-        self.scope.pa.WantFrameNotification.append(self.tick)
+        self.scope.frameWrangler.WantFrameNotification.append(self.tick)
         
         
     def tick(self, caller=None):
@@ -66,12 +66,12 @@ class PointScanner:
         
 
     #def __del__(self):
-    #    self.scope.pa.WantFrameNotification.remove(self.tick)
+    #    self.scope.frameWrangler.WantFrameNotification.remove(self.tick)
     def stop(self):
         
         
         try:
-            self.scope.pa.WantFrameNotification.remove(self.tick)
+            self.scope.frameWrangler.WantFrameNotification.remove(self.tick)
             
         finally:
             pass

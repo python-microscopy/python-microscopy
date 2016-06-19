@@ -20,7 +20,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-'''
+"""
 This is the principle entry point for `PYMEAcquire`, the acquisition component of PYME.
 
 `PYMEAcquire` takes one option to specify the initialisation file, which should be in the 
@@ -31,7 +31,7 @@ This is the principle entry point for `PYMEAcquire`, the acquisition component o
     python PYMEAcquire.py -i <initialisation file>
     
 If run without an intialisation file it defaults to using simulated hardware.
-'''
+"""
 
 #!/usr/bin/python
 import wx
@@ -46,9 +46,9 @@ class BoaApp(wx.App):
         
         
     def OnInit(self):
-        wx.InitAllImageHandlers()
+        #wx.InitAllImageHandlers()
         self.main = acquiremainframe.create(None, self.options)
-        self.main.Show()
+        #self.main.Show()
         self.SetTopWindow(self.main)
         return True
 
@@ -65,7 +65,7 @@ def main():
     application.MainLoop()
 
 if __name__ == '__main__':
-    from PYME import mProfile
-    mProfile.profileOn(['previewacquisator.py'])
+    from PYME.util import mProfile
+    mProfile.profileOn(['acquiremainframe.py', 'microscope.py', 'frameWrangler.py'])
     main()
     mProfile.report()

@@ -24,7 +24,7 @@ import time
 import numpy as np
 import wx
 
-from PYME.misc.wxPlotPanel import PlotPanel
+from PYME.contrib.wxPlotPanel import PlotPanel
 
 class TrackerPlotPanel(PlotPanel):
     def __init__(self, parent, posTrk, *args, **kwargs):
@@ -121,7 +121,7 @@ class PositionTracker:
             else:
                 positions[i+1] = p[0].GetPos(p[1])
                 
-        positions[-1] = np.std(self.scope.pa.dsa)
+        positions[-1] = np.std(self.scope.frameWrangler.currentFrame)
         
         t, z, x, y, s = positions
         xi = int(np.round(x/self.ps))

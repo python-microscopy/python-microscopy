@@ -10,7 +10,7 @@
 #
 ##################
 from PYME.Analysis import MetaData
-from PYME.Analysis.FitFactories import ConfocCOIR
+from PYME.localization.FitFactories import ConfocCOIR
 import numpy as np
 from PYME.DSView import View3D
 
@@ -21,7 +21,7 @@ class VibrAnal:
         self.threshold = threshold
         
         self.mdh['tIndex'] = 0
-        self.mdh['Camera.ADOffset'] = scope.pa.dsa.min()
+        self.mdh['Camera.ADOffset'] = scope.frameWrangler.currentFrame.min()
         self.i = 0
         self.dt = np.zeros(512, ConfocCOIR.FitResultsDType)
         
@@ -36,18 +36,20 @@ class VibrAnal:
         self.vy = View3D(self.y, mode='fgraph')
         self.vfy = View3D(self.fy, mode='fgraph')
         
-        scope.pa.WantFrameNotification.append(self.frameCOI)
-        scope.pa.WantFrameGroupNotification.append(self.OnFrameGroup)
+        #scope.frameWrangler.WantFrameNotification.append(self.frameCOI)
+        #scope.frameWrangler.WantFrameGroupNotification.append(self.OnFrameGroup)
+        self.scope.frameWrangler.onFrame.connect(self.frameCOI)
+        self.scope.frameWrangler.onFrameGroup.connect(self.OnFrameGroup)
         
-    def frameCOI(self, caller):  
-        self.dt[self.i] = ConfocCOIR.FitFactory(self.scope.pa.dsa, self.mdh, self.threshold)
+    def frameCOI(self, **kwargs):  
+        self.dt[self.i] = ConfocCOIR.FitFactory(self.scope.frameWrangler.currentFrame, self.mdh, self.threshold)
         self.i +=1
         self.i %= 512
         if self.i == 0:
             self.fx[:] = np.maximum(np.log10(np.abs(np.fft.fft(self.x - self.x.mean())[:256])), 0)
             self.fy[:] = np.maximum(np.log10(np.abs(np.fft.fft(self.y - self.y.mean())[:256])), 0)
         
-    def OnFrameGroup(self, caller):
+    def OnFrameGroup(self, **kwargs):
         
         self.vx.do.OnChange()
         self.vfx.do.OnChange()
@@ -55,7 +57,9 @@ class VibrAnal:
         self.vfy.do.OnChange()
         
     def Detach(self):
-        self.scope.pa.WantFrameGroupNotification.remove(self.OnFrameGroup)
-        self.scope.pa.WantFrameNotification.remove(self.frameCOI)
+        #self.scope.frameWrangler.WantFrameGroupNotification.remove(self.OnFrameGroup)
+        #self.scope.frameWrangler.WantFrameNotification.remove(self.frameCOI)
+        self.scope.frameWrangler.onFrame.disconnect(self.frameCOI)
+        self.scope.frameWrangler.onFrameGroup.disconnect(self.OnFrameGroup)
         
     

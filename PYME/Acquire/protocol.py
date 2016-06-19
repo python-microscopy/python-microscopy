@@ -67,32 +67,32 @@ def Ex(str):
     exec(str)
 
 def SetEMGain(emGain):
-    scope.pa.stop()
+    scope.frameWrangler.stop()
     scope.cam.SetEMGain(emGain)
-    scope.pa.start()
+    scope.frameWrangler.start()
     
 def SetIntegTime(iTime):
-    scope.pa.stop()
+    scope.frameWrangler.stop()
     scope.cam.SetIntegTime(iTime)
-    scope.pa.start()
+    scope.frameWrangler.start()
 
 def SetCameraShutter(open):
-    scope.pa.stop()
+    scope.frameWrangler.stop()
     scope.cam.SetShutter(open)
-    scope.pa.start()
+    scope.frameWrangler.start()
 
 def SetContinuousMode(contMode):
     if not (scope.cam.contMode == contMode):
         if contMode:
-            scope.pa.stop()
+            scope.frameWrangler.stop()
             scope.cam.SetAcquisitionMode(scope.cam.MODE_CONTINOUS)
             #self.bUpdateInt.Enable(False)
-            scope.pa.start()
+            scope.frameWrangler.start()
         else:
-            scope.pa.stop()
+            scope.frameWrangler.stop()
             scope.cam.SetAcquisitionMode(scope.cam.MODE_SINGLE_SHOT)
             #self.bUpdateInt.Enable(False)
-            scope.pa.start()
+            scope.frameWrangler.start()
 
 
 class TaskListProtocol(Protocol):
@@ -135,9 +135,10 @@ class TaskListProtocol(Protocol):
     def OnFinish(self):
         while not  self.listPos >= len(self.taskList):
             t = self.taskList[self.listPos]
+            self.listPos += 1
             t.what(*t.params)
             eventLog.logEvent('ProtocolTask', '%s, ' % ( t.what.__name__,) + ', '.join(['%s' % p for p in t.params]))
-            self.listPos += 1
+            
 
 
 
@@ -153,7 +154,9 @@ class ZStackTaskListProtocol(TaskListProtocol):
 
     def Init(self, spooler):
         #self.zPoss = np.arange(scope.sa.GetStartPos(), scope.sa.GetEndPos()+.95*scope.sa.GetStepSize(),scope.sa.GetStepSize())
-        # this code changes the original saw-tooth into a zig-zag stepping
+
+      
+                 §§zag stepping
         zPoss1 = np.arange(scope.sa.GetStartPos(), scope.sa.GetEndPos()+.95*scope.sa.GetStepSize(),scope.sa.GetStepSize())
         zPoss2 = np.arange(scope.sa.GetEndPos(), scope.sa.GetStartPos()-0.95*scope.sa.GetStepSize(),-1*scope.sa.GetStepSize())
         #self.zPoss = np.asarray(zPoss1.tolist()+zPoss2.tolist()) # this should be doable more directly with array functions
@@ -162,14 +165,19 @@ class ZStackTaskListProtocol(TaskListProtocol):
         if self.randomise:
             self.zPoss = self.zPoss[np.argsort(np.random.rand(len(self.zPoss)))]
 
-        piezo = scope.sa.piezos[scope.sa.GetScanChannel()]
-        self.piezo = piezo[0]
-        self.piezoChan = piezo[1]
-        self.startPos = self.piezo.GetPos(self.piezoChan)
+        #piezo = scope.positioning[scope.stackSettings.GetScanChannel()]
+        self.piezoName = 'Positioning.%s' % scope.stackSettings.GetScanChannel()
+        #self.piezo = piezo[0]
+        #self.piezoChan = piezo[1]
+        #self.startPos = self.piezo.GetPos(self.piezoChan)
+        self.startPos = scope.state[self.piezoName]
         self.pos = 0
 
-        spooler.md.setEntry('Protocol.PiezoStartPos', self.piezo.GetPos(self.piezoChan))
+        spooler.md.setEntry('Protocol.PiezoStartPos', self.startPos)
         spooler.md.setEntry('Protocol.ZStack', True)
+        
+        scope.state.setItem(self.piezoName, self.zPoss[self.pos], stopCamera=True)
+        eventLog.logEvent('ProtocolFocus', '%d, %3.3f' % (0, self.zPoss[self.pos]))
 
         TaskListProtocol.Init(self,spooler)
 
@@ -178,14 +186,16 @@ class ZStackTaskListProtocol(TaskListProtocol):
             fn = floor((frameNum - self.startFrame)/self.dwellTime) % len(self.zPoss)
             if not fn == self.pos:
                 self.pos = fn
-                self.piezo.MoveTo(self.piezoChan, self.zPoss[self.pos])
+                #self.piezo.MoveTo(self.piezoChan, self.zPoss[self.pos])
+                scope.state.setItem(self.piezoName, self.zPoss[self.pos], stopCamera=True)
                 eventLog.logEvent('ProtocolFocus', '%d, %3.3f' % (frameNum, self.zPoss[self.pos]))
                 
         TaskListProtocol.OnFrame(self, frameNum)
 
     def OnFinish(self):
         #return piezo to start position
-        self.piezo.MoveTo(self.piezoChan, self.startPos)
+        #self.piezo.MoveTo(self.piezoChan, self.startPos)
+        scope.state.setItem(self.piezoName, self.startPos, stopCamera=True)
 
         TaskListProtocol.OnFinish(self)
 

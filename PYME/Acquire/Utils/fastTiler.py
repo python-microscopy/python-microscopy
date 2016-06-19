@@ -21,7 +21,7 @@
 #
 ################
 import numpy as np
-from PYME.DSView.dsviewer_npy import View3D
+from PYME.DSView.dsviewer import View3D
 from math import floor
 
 PIXELSIZE = (16*1.5*.072)/1e3
@@ -46,23 +46,28 @@ class fastTiler:
 
         self.visfr = View3D(self.data, title='tiled image')
         #self.GotoStart()
-        self.scope.pa.WantFrameNotification.append(self.OnTick)
-        self.scope.pa.WantFrameGroupNotification.append(self.updateView)
+        #self.scope.frameWrangler.WantFrameNotification.append(self.OnTick)
+        #self.scope.frameWrangler.WantFrameGroupNotification.append(self.updateView)
+        
+        self.scope.frameWrangler.onFrame.connect(self.OnTick)
+        self.scope.frameWrangler.onFrameGroup.connect(self.updateView)
 
-    def updateView(self, caller=None):
+    def updateView(self, **kwargs):
         self.visfr.vp.Refresh()
 
     def detach(self):
-        self.scope.pa.WantFrameNotification.remove(self.OnTick)
-        self.scope.pa.WantFrameGroupNotification.remove(self.updateView)
+        #self.scope.frameWrangler.WantFrameNotification.remove(self.OnTick)
+        #self.scope.frameWrangler.WantFrameGroupNotification.remove(self.updateView)
+        self.scope.frameWrangler.onFrame.disconnect(self.OnTick)
+        self.scope.frameWrangler.onFrameGroup.disconnect(self.updateView)
 
 
-    def OnTick(self, caller=None):
+    def OnTick(self, sender, frameData, **kwargs):
         #if self.scope.stage.moving[0]:
         #    print self.i
         if self.runInProgress and self.i >=0 and self.i < (self.data.shape[1]-32):# and self.scope.stage.moving[1] and not self.scope.stage.moving[0]:
             #print self.i, self.j
-            self.data[self.j:(self.j+32), floor(self.i):(floor(self.i) + 15)] = np.maximum(self.scope.pa.dsa[:,1:16,0] - (self.scope.cam.ADOffset), 0)
+            self.data[self.j:(self.j+32), floor(self.i):(floor(self.i) + 15)] = np.maximum(frameData[:,1:16,0] - (self.scope.cam.ADOffset), 0)
             self.i += self.dir*self.yspeed
             if self.yspeed < self.ystep:
                 self.yspeed += 1
@@ -70,7 +75,7 @@ class fastTiler:
             # positioning for the start of a run - do nothing
             pass
         elif self.runInProgress: #we've got to the end of our run - position for the next
-            self.scope.pa.stop()
+            self.scope.frameWrangler.stop()
             self.runInProgress=False
             self.i = -1
             print('foo')
@@ -80,10 +85,12 @@ class fastTiler:
                 self.scope.stage.MoveTo(1, nextY)
                 self.scope.stage.moving = [1,1]
             else: #gone through all start positions -> we're done
-                self.scope.pa.WantFrameNotification.remove(self.OnTick)
-                self.scope.pa.WantFrameGroupNotification.remove(self.updateView)
+                #self.scope.frameWrangler.WantFrameNotification.remove(self.OnTick)
+                #self.scope.frameWrangler.WantFrameGroupNotification.remove(self.updateView)
+                self.scope.frameWrangler.onFrame.disconnect(self.OnTick)
+                self.scope.frameWrangler.onFrameGroup.disconnect(self.updateView)
                 #View3D(self.data, title='tiled image')
-            self.scope.pa.start()
+            self.scope.frameWrangler.start()
 
         else: #we've got to the next starting position - fire off next run
             xp = self.scope.stage.GetPos(0)
@@ -103,14 +110,14 @@ class fastTiler:
 
             self.yspeed = self.ystep
 
-            self.scope.pa.stop()
-            #self.scope.pa.start()
-            self.scope.pa.purge()
+            self.scope.frameWrangler.stop()
+            #self.scope.frameWrangler.start()
+            self.scope.frameWrangler.purge()
             self.scope.stage.MoveTo(1, nextY)
             self.runInProgress = True
             self.scope.stage.moving = [1,1]
-            #self.scope.pa.stop()
-            self.scope.pa.start()
+            #self.scope.frameWrangler.stop()
+            self.scope.frameWrangler.start()
 
 
 

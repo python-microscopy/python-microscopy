@@ -20,6 +20,6 @@ Deconv/fftw_wisdom
 *.orig
 .DS_Store
 *.egg-info*
-dist/PYME-13\.5\.30\.tar\.gz
-doc/contrib/hackingpyme\.pdf
+doc/api/*
+
 PYME/Acquire/Scripts/Pyro_NS_URI

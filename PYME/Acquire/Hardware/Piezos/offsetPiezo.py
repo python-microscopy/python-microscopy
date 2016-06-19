@@ -66,13 +66,17 @@ class piezoOffsetProxy(Pyro.core.ObjBase):
         self.MoveTo(0, p)
         
     def LogShifts(self, dx, dy, dz):
-        eventLog.logEvent('ShiftMeasure', '%3.4f, %3.4f, %3.4f' % (dx, dy, dz))
-        #self.driftQueue.put((dx, dy, dz, time.time()))
+    	import wx
+        #eventLog.logEvent('ShiftMeasure', '%3.4f, %3.4f, %3.4f' % (dx, dy, dz))
+        wx.CallAfter(eventLog.logEvent, 'ShiftMeasure', '%3.4f, %3.4f, %3.4f' % (dx, dy, dz))
         
         
 class ServerThread(threading.Thread):
     def __init__(self, proxyPiezo):
         threading.Thread.__init__(self)
+
+        import socket
+        ip_addr = socket.gethostbyname(socket.gethostname())
         
         compName = GetComputerName()
         
@@ -95,7 +99,7 @@ class ServerThread(threading.Thread):
             except Pyro.errors.NamingError:
                 pass        
         
-        self.daemon=Pyro.core.Daemon()
+        self.daemon=Pyro.core.Daemon(host = ip_addr)
         self.daemon.useNameServer(ns)
         
         self.piezo = proxyPiezo      
@@ -130,7 +134,7 @@ def getClient(compName = GetComputerName()):
     
     
 def main():
-    '''For testing only'''
+    """For testing only"""
     from PYME.Acquire.Hardware.Simulator import fakePiezo
     bp = fakePiezo.FakePiezo(100)
     st = ServerThread(bp)

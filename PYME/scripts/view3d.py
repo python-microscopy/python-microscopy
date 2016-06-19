@@ -35,7 +35,7 @@ op.add_option('-q', '--queueURI', dest='queueURI', help="the Pyro URI of the tas
 
 
 def OpenFile(argv, show=False):
-    from PYME.DSView.dsviewer_npy_nb import ImageStack, DSViewFrame
+    from PYME.DSView.dsviewer import ImageStack, DSViewFrame
     options, args = op.parse_args(argv)
 
     if len (args) > 0:

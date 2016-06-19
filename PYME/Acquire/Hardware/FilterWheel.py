@@ -31,10 +31,10 @@ from .fw102 import FW102B as filtWheel
 
 class WFilter:
     def __init__(self, pos, name, description, OD=None):
-        '''Create a filter object given position in wheel, a short name to use in
+        """Create a filter object given position in wheel, a short name to use in
         for filter selection, a textual description,
         and the optical density of the filter (if a neutral density filter - None
-        otherwise)'''
+        otherwise)"""
         self.pos = pos
         self.name = name
         self.description = description
@@ -42,8 +42,8 @@ class WFilter:
         
 class FiltWheel(object):
     def __init__(self, installedFilters, serPort='COM3', dichroic=None):
-        '''Create a filter wheel gui object. installedFilters should be a list of
-        WFilter objects. The first item is the default'''
+        """Create a filter wheel gui object. installedFilters should be a list of
+        WFilter objects. The first item is the default"""
         self.installedFilters = installedFilters 
         
         self.fw = filtWheel(serPort)
@@ -55,8 +55,8 @@ class FiltWheel(object):
         #self.fw.setPos(installedFilters[0].pos)
         
     def SetFilterPos(self, name = None, id = None, pos = None):
-        '''Set filter by either name, position in list, or postion
-        in filter wheel'''
+        """Set filter by either name, position in list, or postion
+        in filter wheel"""
         if not name == None:
             id = [n for n, f in enumerate(self.installedFilters) if f.name == name][0]
         elif id == None:
@@ -102,8 +102,8 @@ class FiltFrame(wx.Panel):
               id=wxID_FILTFRAMECHFILTWHEEL)
 
     def __init__(self, parent, filterWheel):
-        '''Create a filter wheel gui object. installedFilters should be a list of
-        WFilter objects. The first item is the default'''
+        """Create a filter wheel gui object. installedFilters should be a list of
+        WFilter objects. The first item is the default"""
         self._init_ctrls(parent)
         
         self.fWheel = filterWheel

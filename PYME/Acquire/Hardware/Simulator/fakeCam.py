@@ -22,10 +22,9 @@
 ##################
 
 from . import rend_im
-#import PYME.cSMI as example
 import scipy
 
-from PYME.Acquire import MetaDataHandler
+from PYME.IO import MetaDataHandler
 from PYME.Acquire import eventLog
 
 import pylab
@@ -206,6 +205,7 @@ class FakeCamera:
     numpy_frames=1
     MODE_CONTINUOUS=True
     MODE_SINGLE_SHOT=False
+    
     def __init__(self, XVals, YVals, noiseMaker, zPiezo, zOffset=50.0, fluors=None, laserPowers=[0,50], xpiezo=None, ypiezo=None, illumFcn = 'ConstIllum'):
         self.XVals = XVals
         self.YVals = YVals
@@ -292,8 +292,8 @@ class FakeCamera:
         raise Exception('Not implemented yet!!')
     
     def SetIntegTime(self, iTime): 
-        self.intTime=iTime*1e-3
-        self.compT.intTime = iTime*1e-3
+        self.intTime=iTime#*1e-3
+        self.compT.intTime = iTime#*1e-3
     def GetIntegTime(self): 
         return self.intTime
     
@@ -357,7 +357,7 @@ class FakeCamera:
         #print running
         #print self.compT.laserPowers
 
-        self.compT = compThread(self.XVals[self.ROIx[0]:self.ROIx[1]], self.YVals[self.ROIy[0]:self.ROIy[1]], self.zPiezo, self.zOffset, self.fluors, self.noiseMaker, laserPowers=self.compT.laserPowers, intTime=self.intTime*1e-3, xpiezo=self.xPiezo, ypiezo=self.yPiezo, illumFcn=self.illumFcn)
+        self.compT = compThread(self.XVals[self.ROIx[0]:self.ROIx[1]], self.YVals[self.ROIy[0]:self.ROIy[1]], self.zPiezo, self.zOffset, self.fluors, self.noiseMaker, laserPowers=self.compT.laserPowers, intTime=self.intTime, xpiezo=self.xPiezo, ypiezo=self.yPiezo, illumFcn=self.illumFcn)
         self.compT.start()
 
         #print (self.fluors.fl['state'] == 2).sum()
@@ -496,7 +496,7 @@ class FakeCamera:
         self.noiseMaker.EMGain = gain
         #pass
 
-    def SetAquisitionMode(self, mode):
+    def SetAcquisitionMode(self, mode):
         self.contMode = mode
         self.compT.contMode = mode
 

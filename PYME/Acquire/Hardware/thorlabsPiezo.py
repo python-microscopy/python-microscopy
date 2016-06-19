@@ -34,7 +34,7 @@ SysWrapper = activexwrapper.MakeActiveXClass(
     eventClass=None, eventObj=None)
 
 def EnumeratePiezos():
-    '''Return serial numbers of all attached piezos'''
+    """Return serial numbers of all attached piezos"""
 
     f = wx.Frame(None)
     sy = SysWrapper(f)

@@ -87,8 +87,8 @@ class piezo_e816:
             self.driftCompensation = False
 
     def PopulateWaveTable(self,iChannel, data):
-        '''Load wavetable data to piezo controller - data should be a sequence/array of positions
-        (in um)and should have at most 64 items'''
+        """Load wavetable data to piezo controller - data should be a sequence/array of positions
+        (in um)and should have at most 64 items"""
         if len(data) > self.MAXWAVEPOINTS:
             #wave table too big
             raise RuntimeError('piezo_e816 - wave table must not have more than %d entries' % self.MAXWAVEPOINTS)
@@ -107,7 +107,7 @@ class piezo_e816:
             #print res
 
     def GetWaveTable(self):
-        '''Read wavetable back from contoller'''
+        """Read wavetable back from contoller"""
 
         data = []
 
@@ -124,9 +124,9 @@ class piezo_e816:
         return data
 
     def StartWaveOutput(self,iChannel=0, dwellTime=None):
-        '''Start wavetable output. dwellTime should be the desired dwell time in
+        """Start wavetable output. dwellTime should be the desired dwell time in
         microseconds, or None (default). If dwellTime is None then the external
-        wavetable trigger input (pin 9 on io connector) will be used.'''
+        wavetable trigger input (pin 9 on io connector) will be used."""
 
         if self.numWavePoints < 1:
             raise RuntimeError('piezo_e816 - no wave table defined')

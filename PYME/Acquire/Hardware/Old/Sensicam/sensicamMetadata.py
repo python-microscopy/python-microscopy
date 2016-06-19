@@ -21,7 +21,7 @@
 #
 ##################
 
-from PYME.Acquire import MetaDataHandler
+from PYME.IO import MetaDataHandler
 
 class sensicamMD:
     def __init__(self, cam):

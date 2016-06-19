@@ -121,8 +121,12 @@ def poisson_lhood2(p, fcn, data, bg, *args):
     mu = (fcn(p, *args) + bg)
     return -(data*np.log(mu) - mu)
     
-def FitModelPoisson(modelFcn, startParmeters, data, *args):
-    return [optimize.fmin_powell(poisson_lhood, startParmeters, ((modelFcn, data,) +args))]
+def FitModelPoisson(modelFcn, startParmeters, data, *args, **kwargs):
+    try:
+        bg = kwargs['bg']
+    except KeyError:
+        bg = 0
+    return [optimize.fmin_powell(poisson_lhood, startParmeters, ((modelFcn, data,bg) +args))]
     
 def FitModelPoissonBFGS(modelFcn, startParmeters, data, *args):
     return [optimize.fmin_bfgs(poisson_lhood, startParmeters, args=((modelFcn, data,) +args), epsilon=0.1)]

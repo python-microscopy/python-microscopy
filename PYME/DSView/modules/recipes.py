@@ -26,12 +26,12 @@ import wx.lib.agw.aui as aui
 import wx
 import numpy as np
 
-#from PYME.Analysis.Modules import modules
-from PYME.Analysis.Modules import recipeGui
-from PYME.DSView.image import ImageStack
+#from PYME.recipes import modules
+from PYME.recipes import recipeGui
+from PYME.IO.image import ImageStack
 from PYME.DSView import ViewIm3D
 
-from PYME.Analysis.LMVis import pipeline
+from PYME.LMVis import pipeline
 
 import os
         
@@ -96,7 +96,7 @@ class RecipePlugin(recipeGui.RecipeManager):
                     if not 'pipeline' in dir(dv):
                         dv.pipeline = pipeline.Pipeline()
                     
-                    from PYME.Analysis.LMVis import inpFilt
+                    from PYME.LMVis import inpFilt
                     cache = inpFilt.cachingResultsFilter(self.activeRecipe.namespace['out_meas'])
                     dv.pipeline.OpenFile(ds = cache)
                     dv.view.filter = dv.pipeline
@@ -113,13 +113,13 @@ class RecipePlugin(recipeGui.RecipeManager):
                 if not 'pipeline' in dir(self.dsviewer):
                     self.dsviewer.pipeline = pipeline.Pipeline()
                 
-                from PYME.Analysis.LMVis import inpFilt
+                from PYME.LMVis import inpFilt
                 cache = inpFilt.cachingResultsFilter(self.outp)
                 self.dsviewer.pipeline.OpenFile(ds = cache)
                 self.dsviewer.view.filter = self.dsviewer.pipeline
                 
     def TestCurrentRecipe(self, event=None):
-        '''run recipe on current frame only as an inexpensive form of testing'''
+        """run recipe on current frame only as an inexpensive form of testing"""
         
         self.RunCurrentRecipe(testMode=True)
                 
@@ -128,7 +128,7 @@ class RecipePlugin(recipeGui.RecipeManager):
         self.RunCurrentRecipe()
         
     def OnSaveOutputs(self, event):
-        from PYME.Analysis.Modules import runRecipe
+        from PYME.recipes import runRecipe
         
         filename = wx.FileSelector('Save results as ...', 
                                    wildcard="CSV files (*.csv)|*.csv|Excell files (*.xlsx)|*.xlsx|HDF5 files (*.hdf)|*.hdf", 
@@ -139,7 +139,7 @@ class RecipePlugin(recipeGui.RecipeManager):
             
     def OnLoadOutputs(self, event):
         import pandas
-        from PYME.Analysis.LMVis import inpFilt
+        from PYME.LMVis import inpFilt
         
         filename = wx.FileSelector('Save results as ...', 
                                    wildcard="CSV files (*.csv)|*.csv|Excell files (*.xlsx)|*.xlsx|HDF5 files (*.hdf)|*.hdf", 

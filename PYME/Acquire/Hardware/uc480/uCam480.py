@@ -26,12 +26,13 @@ from ctypes import *
 import ctypes
 import time
 import sys
-from PYME.Acquire import MetaDataHandler
+from PYME.IO import MetaDataHandler
 
 import os
-from PYME.FileUtils import nameUtils
+from PYME.IO.FileUtils import nameUtils
 
 import threading
+import traceback
 
 try:
     import Queue
@@ -193,6 +194,11 @@ class uc480Camera:
         if os.path.exists(ffname):
             self.flatfield = np.load(ffname).squeeze()
             self.flat = self.flatfield
+
+        darkname = os.path.join(calpath, 'dark.npy')
+        if os.path.exists(darkname):
+            self.dark = np.load(darkname).squeeze()
+            self.background = self.dark
         
         self.SetROI(0,0, self.CCDSize[0],self.CCDSize[1])
         #self.ROIx=(1,self.CCDSize[0])
@@ -209,6 +215,7 @@ class uc480Camera:
         self.nAccumCurrent = 0
         
         self.Init()
+        self.SetIntegTime(.1)
         
     def errcheck(self,value,msg,fatal=True):
         if not value == uc480.IS_SUCCESS:
@@ -223,6 +230,7 @@ class uc480Camera:
         self.pollLoopActive = True
         self.pollThread = threading.Thread(target = self._pollLoop)
         self.pollThread.start()
+
         
     def InitBuffers(self, nBuffers = 50, nAccumBuffers = 50):
         for i in range(nBuffers):
@@ -277,6 +285,7 @@ class uc480Camera:
             uc480.CALL('FreeImageMem', self.boardHandle, pData, bID)
             
         self.freeBuffers = None
+        self.nFull = 0
             
     
     def _pollBuffer(self):
@@ -315,7 +324,10 @@ class uc480Camera:
         while self.pollLoopActive:
             #self._queueBuffers()
             if self.doPoll: #only poll if an acquisition is running
-                self._pollBuffer()
+                try:
+                    self._pollBuffer()
+                except:
+                    traceback.print_exc()
             else:
                 #print 'w',
                 time.sleep(.05)
@@ -370,15 +382,17 @@ class uc480Camera:
         #self.__selectCamera()
         newExp = c_double(0)
         newFrameRate = c_double(0)
-        ret = uc480.CALL('SetFrameRate', self.boardHandle, c_double(1.0e3/iTime), byref(newFrameRate))
+        ret = uc480.CALL('SetFrameRate', self.boardHandle, c_double(1.0/iTime), byref(newFrameRate))
         if not ret == 0:
             raise RuntimeError('Error setting exp time: %d: %s' % GetError(self.boardHandle))
         
-        ret = uc480.CALL('SetExposureTime', self.boardHandle, c_double(iTime), ctypes.byref(newExp))
+        ret = uc480.CALL('SetExposureTime', self.boardHandle, c_double(1e3*iTime), ctypes.byref(newExp))
         if not ret == 0:
             raise RuntimeError('Error setting exp time: %d: %s' % GetError(self.boardHandle))
+
+        #print newExp.value, newFrameRate.value 
             
-        self.expTime = newExp.value
+        self.expTime = newExp.value*1e-3
 
     def GetIntegTime(self):
         return self.expTime
@@ -492,8 +506,11 @@ class uc480Camera:
         if not ret == 0:
             raise RuntimeError('Error setting ROI: %d: %s' % GetError(self.boardHandle))
             
-        if not self.flatfield == None:
+        if not self.flatfield is None:
             self.flat = self.flatfield[x1:x2, y1:y2]
+
+        if not self.dark is None:
+            self.background = self.dark[x1:x2, y1:y2]
 
         #raise Exception, 'Not implemented yet!!'
 
@@ -550,7 +567,7 @@ class uc480Camera:
     def ExpReady(self):
         #self._pollBuffer()
         
-        return not self.fullBuffers.empty()
+        return (not self.fullBuffers is None) and (not self.fullBuffers.empty())
         
     def ExtractColor(self, chSlice, mode):
         #grab our buffer from the full buffers list
@@ -567,16 +584,17 @@ class uc480Camera:
         #chSlice[:] = self.transferBuffer[:].T #.reshape(chSlice.shape)
         chSlice[:] = buf.T
         
-        if (not self.background == None) and self.background.shape == chSlice.shape:
+        if (not self.background is None) and self.background.shape == chSlice.shape:
             chSlice[:] = (chSlice - np.minimum(chSlice, self.background))[:]
             
-        if (not self.flat == None) and self.flat.shape == chSlice.shape:
+        if (not self.flat is None) and self.flat.shape == chSlice.shape:
             chSlice[:] = (chSlice*self.flat).astype('uint16')[:]
         
         #ret = uc480.CALL('UnlockSeqBuf', self.boardHandle, uc480.IS_IGNORE_PARAMETER, pData)
 
-        #recycle buffer
-        self.freeBuffers.put(buf)
+        if not self.freeBuffers is None:
+            #recycle buffer
+            self.freeBuffers.put(buf)
         
     def CheckCoordinates(*args):
         raise Exception('Not implemented yet!!')
@@ -642,7 +660,7 @@ class uc480Camera:
         return self.sensortype
 
     def SetActive(self, active=True):
-        '''flag the camera as active (or inactive) to dictate whether it writes it's metadata or not'''
+        """flag the camera as active (or inactive) to dictate whether it writes it's metadata or not"""
         self.active = active
 
     def GenStartMetadata(self, mdh):

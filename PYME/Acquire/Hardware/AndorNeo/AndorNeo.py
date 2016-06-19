@@ -37,7 +37,7 @@ import traceback
 
 from fftw3f import create_aligned_array
 
-from PYME.Acquire import MetaDataHandler
+from PYME.IO import MetaDataHandler
 from PYME.Acquire import eventLog
 
 class AndorBase(SDK3Camera):
@@ -309,8 +309,7 @@ class AndorBase(SDK3Camera):
         #bv = buf.view(chSlice.dtype).reshape(chSlice.shape)
         #chSlice[:] = bv
         #chSlice[:,:] = bv
-        #ctypes.cdll.msvcrt.memcpy(chSlice.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), buf.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), chSlice.nbytes)
-        ctypes.memmove(chSlice.ctypes.data_as(ctypes.c_void_p), buf.ctypes.data_as(ctypes.c_void_p), chSlice.nbytes)
+        ctypes.cdll.msvcrt.memcpy(chSlice.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), buf.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), chSlice.nbytes)
         #print 'f'
         
         #recycle buffer
@@ -505,7 +504,7 @@ class AndorBase(SDK3Camera):
         return self.nBuffers
         
     def SetActive(self, active=True):
-        '''flag the camera as active (or inactive) to dictate whether it writes it's metadata or not'''
+        """flag the camera as active (or inactive) to dictate whether it writes it's metadata or not"""
         self.active = active
 
     def GenStartMetadata(self, mdh):
@@ -661,3 +660,4 @@ class AndorSim(AndorBase):
         AndorBase.__init__(self,camNum)
 
         
+

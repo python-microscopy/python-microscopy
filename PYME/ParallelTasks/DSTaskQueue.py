@@ -10,8 +10,8 @@ import threading
 from .HDFTaskQueue import HDFResultsTaskQueue, doNix, popZero, CHUNKSIZE, MAXCHUNKSIZE, fitTask
 
 class DSTaskQueue(HDFResultsTaskQueue):
-    ''' task queue which, when initialised with an hdf image filename, automatically generates tasks - should also (eventually) include support for dynamically adding to data file for on the fly analysis'''
-    def __init__(self, name, mdh, dataSourceModule, resultsFilename=None, onEmpty = doNix, fTaskToPop = popZero, startAt = 10):
+    """ task queue which, when initialised with an hdf image filename, automatically generates tasks - should also (eventually) include support for dynamically adding to data file for on the fly analysis"""
+    def __init__(self, name, mdh, dataSourceModule, dataSourceID, resultsFilename=None, onEmpty = doNix, fTaskToPop = popZero, startAt = 10):
 
         self.acceptNewTasks = False
         self.releaseNewTasks = False
@@ -25,9 +25,22 @@ class DSTaskQueue(HDFResultsTaskQueue):
         
         self.queueID = name
         
+        self.dataSourceID = dataSourceID
+        
+        #load data source
         self.dataSourceModule = dataSourceModule
-        DataSource = __import__('PYME.Analysis.DataSources.' + dataSourceModule, fromlist=['DataSource']).DataSource #import our data source
-        self.ds = DataSource(name)      
+        DataSource = __import__('PYME.IO.DataSources.' + dataSourceModule, fromlist=['PYME', 'io', 'DataSources']).DataSource #import our data source
+        self.ds = DataSource(self.dataSourceID)
+        
+        if dataSourceModule == 'ClusterPZFDataSource':
+            #fit modules will be able to directly access the data
+            self.serveData = False
+        else:
+            self.serveData = True
+            
+            #the data source we pass to our workers should be this queue
+            self.dataSourceID = self.queueID
+            self.dataSourceModule = 'TQDataSource'
 
         self.openTasks = []
         self.frameNum = startAt
@@ -78,7 +91,9 @@ class DSTaskQueue(HDFResultsTaskQueue):
 
         bgi = range(max(taskNum + self.metaData.Analysis.BGRange[0],self.metaData.EstimatedLaserOnFrameNo), max(taskNum + self.metaData.Analysis.BGRange[1],self.metaData.EstimatedLaserOnFrameNo))
         
-        task = fitTask(self.queueID, taskNum, self.metaData['Analysis.DetectionThreshold'], self.metaData, self.metaData['Analysis.FitModule'], bgindices =bgi, SNThreshold = True, dataSourceModule = self.dataSourceModule)
+
+        print self.dataSourceID, self.dataSourceModule        
+        task = fitTask(self.dataSourceID, taskNum, self.metaData['Analysis.DetectionThreshold'], self.metaData, self.metaData['Analysis.FitModule'], bgindices =bgi, SNThreshold = True, dataSourceModule = self.dataSourceModule)
         
         task.queueID = self.queueID
         task.initializeWorkerTimeout(time.clock())
@@ -110,7 +125,7 @@ class DSTaskQueue(HDFResultsTaskQueue):
 
             bgi = range(max(taskNum + self.metaData.Analysis.BGRange[0],self.metaData.EstimatedLaserOnFrameNo), max(taskNum + self.metaData.Analysis.BGRange[1],self.metaData.EstimatedLaserOnFrameNo))
  
-            task = fitTask(self.queueID, taskNum, self.metaData['Analysis.DetectionThreshold'], self.metaData, self.metaData['Analysis.FitModule'], bgindices =bgi, SNThreshold = True, dataSourceModule = self.dataSourceModule)
+            task = fitTask(self.dataSourceID, taskNum, self.metaData['Analysis.DetectionThreshold'], self.metaData, self.metaData['Analysis.FitModule'], bgindices =bgi, SNThreshold = True, dataSourceModule = self.dataSourceModule)
             
             task.queueID = self.queueID
             task.initializeWorkerTimeout(time.clock())
@@ -125,7 +140,7 @@ class DSTaskQueue(HDFResultsTaskQueue):
 
         
     def getQueueData(self, fieldName, *args):
-        '''Get data, defined by fieldName and potntially additional arguments,  ascociated with queue'''
+        """Get data, defined by fieldName and potntially additional arguments,  ascociated with queue"""
         if fieldName == 'ImageShape':
             with self.dataFileLock.rlock:
                 res = self.h5DataFile.root.ImageData.shape[1:]           

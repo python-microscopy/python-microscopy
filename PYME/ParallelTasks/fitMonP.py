@@ -219,7 +219,7 @@ class MyFrame(wx.Frame):
     
 def main():
     app = wx.PySimpleApp(0)
-    wx.InitAllImageHandlers()
+    #wx.InitAllImageHandlers()
     fTaskMon = MyFrame(None, -1, "")
     app.SetTopWindow(fTaskMon)
     fTaskMon.Show()

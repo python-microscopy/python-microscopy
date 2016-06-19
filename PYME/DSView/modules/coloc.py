@@ -24,7 +24,7 @@ import numpy as np
 import wx
 import pylab
 
-from PYME.DSView.dsviewer_npy_nb import ViewIm3D, ImageStack
+from PYME.DSView.dsviewer import ViewIm3D, ImageStack
 
 class ColocSettingsDialog(wx.Dialog):
     def __init__(self, parent, pxSize=100, names = [], zsize=1):

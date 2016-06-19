@@ -25,7 +25,7 @@ import numpy as np
 from scipy import fftpack, ndimage
 from PYME.Acquire.Hardware import splitter
 
-from pylab import *
+from pylab import ifftshift, ifftn, fftn, fftshift
 
 
 def findRectangularROIs(mask):
@@ -93,7 +93,7 @@ def guessFlat(ds, mdh, dark):
         flt +=  ds[:,:,i]
         n+=1
 
-    print((flt.shape, dark.shape))
+    #print((flt.shape, dark.shape))
 
     flt = flt/n - dark
     print((flt.shape, flt.mean()))
@@ -115,18 +115,29 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
     xps = xm(np.arange(numFrames))
     yps = ym(np.arange(numFrames))
 
+    if mdh.getOrDefault('CameraOrientation.FlipX', False):
+        xps = -xps
+
+    if mdh.getOrDefault('CameraOrientation.FlipY', False):
+        yps = -yps
+
+
     #give some room at the edges
     bufSize = 0
     if correlate:
         bufSize = 300
     
     #convert to pixels
-    xdp = bufSize + ((xps - xps.min()) / (1e-3*mdh.getEntry('voxelsize.x'))).round()
-    ydp = bufSize + ((yps - yps.min()) / (1e-3*mdh.getEntry('voxelsize.y'))).round()
+    xdp = (bufSize + ((xps - xps.min()) / (mdh.getEntry('voxelsize.x'))).round()).astype('i')
+    ydp = (bufSize + ((yps - yps.min()) / (mdh.getEntry('voxelsize.y'))).round()).astype('i')
+
+    print (xps - xps.min()), mdh.getEntry('voxelsize.x')
 
     #work out how big our tiled image is going to be
     imageSizeX = np.ceil(xdp.max() + frameSizeX + bufSize)
     imageSizeY = np.ceil(ydp.max() + frameSizeY + bufSize)
+
+    print imageSizeX, imageSizeY
 
     #allocate an empty array for the image
     im = np.zeros([imageSizeX, imageSizeY, nchans])
@@ -136,14 +147,15 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
 
     #calculate a weighting matrix (to allow feathering at the edges - TODO)
     weights = np.ones((frameSizeX, frameSizeY, nchans))
-    weights[:, :10, :] = 0 #avoid splitter edge artefacts
-    weights[:, -10:, :] = 0
+    #weights[:, :10, :] = 0 #avoid splitter edge artefacts
+    #weights[:, -10:, :] = 0
 
     #print weights[:20, :].shape
-    weights[:100, :, :] *= linspace(0,1, 100)[:,None, None]
-    weights[-100:, :,:] *= linspace(1,0, 100)[:,None, None]
-    weights[:,10:110,:] *= linspace(0,1, 100)[None, :, None]
-    weights[:,-110:-10,:] *= linspace(1,0, 100)[None,:, None]
+    edgeRamp = min(100, int(.5*ds.shape[0]))
+    weights[:edgeRamp, :, :] *= np.linspace(0,1, edgeRamp)[:,None, None]
+    weights[-edgeRamp:, :,:] *= np.linspace(1,0, edgeRamp)[:,None, None]
+    weights[:,:edgeRamp,:] *= np.linspace(0,1, edgeRamp)[None, :, None]
+    weights[:,-edgeRamp:,:] *= np.linspace(1,0, edgeRamp)[None,:, None]
 
     ROIX1 = mdh.getEntry('Camera.ROIPosX')
     ROIY1 = mdh.getEntry('Camera.ROIPosY')
@@ -152,9 +164,9 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
     ROIY2 = ROIY1 + mdh.getEntry('Camera.ROIHeight')
 
     if dark == None:
-        offset = mdh.getEntry('Camera.ADOffset')
+        offset = float(mdh.getEntry('Camera.ADOffset'))
     else:
-        offset = 0
+        offset = 0.
 
 #    #get a sorted list of x and y values
 #    xvs = list(set(xdp))
@@ -165,7 +177,7 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
 
     for i in range(mdh.getEntry('Protocol.DataStartsAt'), numFrames):
         if xdp[i - 1] == xdp[i] or not skipMoveFrames:
-            d = ds[:,:,i]
+            d = ds[:,:,i].astype('f')
             if not dark == None:
                 d = d - dark
             if not flat == None:
@@ -195,7 +207,7 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
                 else:
                     r1 = r1/ (d[:,:,1][alreadyThere]).sum()
 
-                rt = array([r0, r1])
+                rt = np.array([r0, r1])
 
                 imr = imr.sum(2)
             else:
@@ -205,7 +217,7 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
                 else:
                     rt = rt/ (d[:,:,0][alreadyThere]).sum()
 
-                rt = array([rt])
+                rt = np.array([rt])
 
             #print rt
 
@@ -237,7 +249,7 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
                 
             else:
                 #print weights.shape, rt.shape, d.shape
-                im[xdp[i]:(xdp[i]+frameSizeX), ydp[i]:(ydp[i]+frameSizeY), :] += weights*d*rt[None, None, :]
+                im[xdp[i]:(xdp[i]+frameSizeX), ydp[i]:(ydp[i]+frameSizeY), :] += weights*d #*rt[None, None, :]
                 occupancy[xdp[i]:(xdp[i]+frameSizeX), ydp[i]:(ydp[i]+frameSizeY), :] += weights
 
     ret =  (im/occupancy).squeeze()

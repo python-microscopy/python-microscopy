@@ -56,7 +56,7 @@ if 'PYME_LOCAL_ONLY' in os.environ.keys():
 #    Pyro.config.PYRO_NS_HOSTNAME=os.environ['PYRO_NS_HOSTNAME']
 #    print((Pyro.config.PYRO_NS_HOSTNAME))
 
-from PYME import mProfile
+from PYME.util import mProfile
 #mProfile.profileOn(['taskServerMP.py', 'HDFTaskQueue.py'])
 
 #if 'PYME_TASKQUEUENAME' in os.environ.keys():
@@ -150,6 +150,7 @@ class TaskQueueSet(Pyro.core.ObjBase):
         """get task from front of list, non-blocking"""
 
         if not workerVersion == PYME.version.version:
+            print 'Worker with incorrect version asked for task - refusing'
             #versions don't match
             return []        
         
@@ -279,39 +280,39 @@ class TaskQueueSet(Pyro.core.ObjBase):
         self.taskQueues[queueName].setPopFcn(fcn)
 
     def getQueueData(self, queueName, *args):
-        '''Get data ascociated with queue - for cases when you might not want to send data with task every time e.g. to allow client side buffering of image data'''
+        """Get data ascociated with queue - for cases when you might not want to send data with task every time e.g. to allow client side buffering of image data"""
         return self.taskQueues[queueName].getQueueData(*args)
 
     def setQueueData(self, queueName, *args):
-        '''Set data ascociated with queue'''
+        """Set data ascociated with queue"""
         self.taskQueues[queueName].setQueueData(*args)
 
     def addQueueEvents(self, queueName, *args):
-        '''Set data ascociated with queue'''
+        """Set data ascociated with queue"""
         self.taskQueues[queueName].addQueueEvents(*args)
 
     def getQueueMetaData(self, queueName, *args):
-        '''Get meta-data ascociated with queue'''
+        """Get meta-data ascociated with queue"""
         return self.taskQueues[queueName].getQueueMetaData(*args)
 
     def setQueueMetaData(self, queueName, *args):
-        '''Set meta-data ascociated with queue'''
+        """Set meta-data ascociated with queue"""
         self.taskQueues[queueName].setQueueMetaData(*args)
         
     def setQueueMetaDataEntries(self, queueName, *args):
-        '''Set meta-data ascociated with queue'''
+        """Set meta-data ascociated with queue"""
         self.taskQueues[queueName].setQueueMetaDataEntries(*args)
 
     def getQueueMetaDataKeys(self, queueName, *args):
-        '''Get meta-data keys ascociated with queue'''
+        """Get meta-data keys ascociated with queue"""
         return self.taskQueues[queueName].getQueueMetaDataKeys(*args)
 
     def logQueueEvent(self, queueName, *args):
-        '''Report an event ot a queue'''
+        """Report an event ot a queue"""
         return self.taskQueues[queueName].logQueueEvent(*args)
 
     def releaseTasks(self, queueName, *args):
-        '''Release held tasks'''
+        """Release held tasks"""
         return self.taskQueues[queueName].releaseTasks(*args)
 
     def createQueue(self, queueType, queueName, *args, **kwargs):
@@ -328,19 +329,23 @@ class TaskQueueSet(Pyro.core.ObjBase):
 			
 
 def main():
-    print('foo')
+    print('Starting PYME taskServer ...')
+    import socket
+    ip_addr = socket.gethostbyname(socket.gethostname())
+    
     profile = False
     if len(sys.argv) > 1 and sys.argv[1] == '-p':
         print('profiling')
         profile = True
-        from PYME.mProfile import mProfile
+        from PYME.util.mProfile import mProfile
         mProfile.profileOn(['taskServerMP.py', 'HDFTaskQueue.py', 'TaskQueue.py'])
 
     Pyro.config.PYRO_MOBILE_CODE = 0
     Pyro.core.initServer()
     #ns=Pyro.naming.NameServerLocator().getNS()
+    
     ns = pzc.getNS()
-    daemon=Pyro.core.Daemon()
+    daemon=Pyro.core.Daemon(host = ip_addr)
     daemon.useNameServer(ns)
 
     #check to see if we've got the TaskQueues group

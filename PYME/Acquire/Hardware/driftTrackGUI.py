@@ -12,7 +12,7 @@
 import wx
 
 import numpy as np
-from PYME.misc.wxPlotPanel import PlotPanel
+from PYME.contrib.wxPlotPanel import PlotPanel
 from PYME.Acquire import MetaDataHandler
 from PYME.DSView import dsviewer_npy_nb as dsviewer
 
@@ -33,9 +33,7 @@ def Warn(parent, message, caption = 'Warning!'):
 class TrackerPlotPanel(PlotPanel):
     def __init__(self, parent, driftTracker, *args, **kwargs):
         self.dt = driftTracker
-        PlotPanel.__init__(self, parent, *args, **kwargs)
-
-        
+        PlotPanel.__init__(self, parent, *args, **kwargs)    
 
     # add 5th suplot
     # replace 4th plot with offset and
@@ -46,10 +44,10 @@ class TrackerPlotPanel(PlotPanel):
                     self.subplotxy = self.figure.add_subplot( 411 )
                     self.subplotz = self.figure.add_subplot( 412 )
                     self.subploto = self.figure.add_subplot( 413 )
-                    self.subplotc = self.figure.add_subplot( 414 )
+                self.subplotc = self.figure.add_subplot(414)
     
             #try:
-            t, dx, dy, dz, corr, corrmax, poffset, pos  = np.array(self.dt.history[-1000:]).T
+            t, dx, dy, dz, corr, corrmax, poffset, pos  = np.array(self.dt.get_history(1000)).T
 
             self.subplotxy.cla()
             self.subplotxy.plot(t, 88.0*dx, 'r')
@@ -84,12 +82,13 @@ class TrackerPlotPanel(PlotPanel):
 
 # add controls for lastAdjustment
 class DriftTrackingControl(wx.Panel):
-    def __init__(self, parent, driftTracker, winid=-1):
+    def __init__(self, parent, driftTracker, winid=-1, showPlots=True):
         # begin wxGlade: MyFrame1.__init__
         #kwds["style"] = wx.DEFAULT_FRAME_STYLE
         wx.Panel.__init__(self, parent, winid)
         self.dt = driftTracker
         self.plotInterval = 10
+        self.showPlots = showPlots
 
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -103,7 +102,7 @@ class DriftTrackingControl(wx.Panel):
         self.bSaveHist = wx.Button(self, -1, 'Save Hist')
         hsizer.Add(self.bSaveHist, 0, wx.ALL, 2) 
         self.bSaveHist.Bind(wx.EVT_BUTTON, self.OnBSaveHist)        
-        sizer_1.Add(hsizer,0, wx.EXPAND, 0)
+        sizer_1.Add(hsizer, 0, wx.EXPAND, 0)
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         self.bSetPostion = wx.Button(self, -1, 'Set focus to current')
@@ -112,17 +111,17 @@ class DriftTrackingControl(wx.Panel):
         self.bSaveCalib = wx.Button(self, -1, 'Save Cal')
         hsizer.Add(self.bSaveCalib, 0, wx.ALL, 2) 
         self.bSaveCalib.Bind(wx.EVT_BUTTON, self.OnBSaveCalib)
-        sizer_1.Add(hsizer,0, wx.EXPAND, 0)
+        sizer_1.Add(hsizer, 0, wx.EXPAND, 0)
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(self, -1, "Calibration:"), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
-        self.gCalib = wx.Gauge(self, -1, self.dt.NCalibStates + 1)
+        self.gCalib = wx.Gauge(self, -1, 11)
         hsizer.Add(self.gCalib, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2) 
-        sizer_1.Add(hsizer,0, wx.EXPAND, 0)
+        sizer_1.Add(hsizer, 0, wx.EXPAND, 0)
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(self, -1, "Tolerance [nm]:"), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
-        self.tTolerance = wx.TextCtrl(self, -1, '%3.0f'% (1e3*self.dt.focusTolerance), size=[30,-1])
+        self.tTolerance = wx.TextCtrl(self, -1, '%3.0f'% (1e3*self.dt.get_focus_tolerance()), size=[30,-1])
         hsizer.Add(self.tTolerance, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
         self.bSetTolerance = wx.Button(self, -1, 'Set', style=wx.BU_EXACTFIT)
         hsizer.Add(self.bSetTolerance, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2) 
@@ -156,10 +155,11 @@ class DriftTrackingControl(wx.Panel):
         hsizer.Add(self.stError, 0, wx.ALL, 2)        
         sizer_1.Add(hsizer,0, wx.EXPAND, 0)
         
-        self.trackPlot = TrackerPlotPanel(self, self.dt, size=[300, 500])
-        
-        #hsizer.Add(self.stError, 0, wx.ALL, 2)        
-        sizer_1.Add(self.trackPlot,0, wx.EXPAND, 0)
+        if self.showPlots:
+            self.trackPlot = TrackerPlotPanel(self, self.dt, size=[300, 500])
+            
+            #hsizer.Add(self.stError, 0, wx.ALL, 2)        
+            sizer_1.Add(self.trackPlot,0, wx.EXPAND, 0)
         
         self.SetAutoLayout(1)
         self.SetSizer(sizer_1)
@@ -222,7 +222,7 @@ class DriftTrackingControl(wx.Panel):
 
 
     def OnBSetTolerance(self, event):
-        self.dt.focusTolerance = float(self.tTolerance.GetValue())/1e3
+        self.dt.set_focus_tolerance(float(self.tTolerance.GetValue())/1e3)
         
     def OnBSetMinDelay(self, event):
         self.dt.minDelay = int(self.tMinDelay.GetValue())
@@ -231,19 +231,19 @@ class DriftTrackingControl(wx.Panel):
         self.plotInterval = int(self.tPlotInterval.GetValue())
     
     def OnCBLock(self, event):
-        self.dt.lockFocus = self.cbLock.GetValue()
+        self.dt.set_focus_lock(self.cbLock.GetValue())
 
     def refresh(self):
         try:
-            self.gCalib.SetRange(self.dt.NCalibStates + 1)
-            self.gCalib.SetValue(self.dt.calibState)
-            t, dx, dy, dz, corr, corrmax,poffset,pos = self.dt.history[-1]
+            calibState, NStates = self.dt.get_calibration_state()
+            self.gCalib.SetRange(NStates + 1)
+            t, dx, dy, dz, corr, corrmax,poffset,pos = self.dt.get_history(1)[-1]
             self.stError.SetLabel(("Error: x = %s nm y = %s nm\n" +
                                   "z = %s nm noffs = %s nm c/cm = %4.2f") %
                                   ("{:>+6.1f}".format(88.0*dx), "{:>+6.1f}".format(88.0*dy),
                                    "{:>+6.1f}".format(1e3*dz), "{:>+6.1f}".format(1e3*poffset),
                                    corr/corrmax))
-            if len(self.dt.history) % self.plotInterval == 0:
+            if (len(self.dt.get_history(1)) % self.plotInterval == 0) and slef.showPlots:
                 self.trackPlot.draw()
         except AttributeError:
             print "AttrErr"

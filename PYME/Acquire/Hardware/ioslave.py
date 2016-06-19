@@ -119,7 +119,7 @@ class AOMLaser(Laser):
     ENABLE_PIN=4
     AMPLITUDE_PIN=5
     FULL_SCALE_VOLTS = 5.0
-    def __init__(self, name,turnOn=False, ios = None, maxpower=1):
+    def __init__(self, name,turnOn=False, ios = None, maxpower=1, **kwargs):
         if ios == None:
             self.ios = IOSlave()
         else:
@@ -131,7 +131,7 @@ class AOMLaser(Laser):
 
         self.SetPower(1)
 
-        Laser.__init__(self, name, turnOn)
+        Laser.__init__(self, name, turnOn, **kwargs)
 
     def IsOn(self):
         return self.isOn

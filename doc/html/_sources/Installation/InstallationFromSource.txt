@@ -8,50 +8,68 @@ Prerequisites
 
 PYME requires:
 
-- Python 2.6 or 2.7(reccomended) *
-- a c compiler*
+- Python 2.7
+- a c compiler (on windows I recommend the free *Visual C for python*, on linux or OSX just use the platform gcc)
 - python-dev (only on Linux - has the Python development header files)
 
 and the following Python packages:
 
-- Numpy*
-- Scipy*
-- Matplotlib*
-- wxPython* (>2.8.11)
-- pytables*
-- Pyro (3.9.1 - any 3.x version should work - the newer version 4 won't)
-- PyOpenGL*
-- PIL (Python Imaging Library)*
-- pywin32* (only req. on windows)
+- Numpy
+- Scipy
+- Matplotlib
+- wxPython (>2.8.11)
+- pytables
+- Pyro (any 3.x version should work - the newer version 4 won't)
+- PyOpenGL
+- PIL (Python Imaging Library)
+- pywin32 (only req. on windows)
 
 For full functionality, the following are also useful:
 
-- PySerial
-- PyParallel
+- PySerial       [acquisition with real hardware]
 - PyFFTW3
-- MySQL-python
-- Django (>1.2)
-- Django-south
-- Mayavi2*
-- Traits*
-- Delny
-- jinja2*
+- MySQL-python   [sample DB server]
+- Django (>1.2)  [sample DB server]
+- Django-south   [sample DB server]
+- Mayavi2
+- traits
+- traits-ui
+- Delny          [some *very* rarely used segmentation code]
+- jinja2
 - cherrypy
+- scikit-image
+- scikit-learn
+- networkx
+- toposort
+- shapely
+- zeroconf
+- requests
+- pandas
+- yaml
 
-\* part of Enthought python.
+You'll also want some form of mercurial client if checking out of the repository.
 
-On Windows (and probably MacOS) the easiest way to get the pre-requisites is to
-install the `Enthought Python Distribution <http://www.enthought.com/products/epd.php>`_
-and then pull the remaining packages using ``pip`` or ``easy_install``.
-Under linux I'd use the default python install and the distribution packages for
-the rest. Depending on how old your distro is you might want to use
+
+On Windows and OSX the easiest way to get the pre-requisites is to
+install `Anaconda <https://store.continuum.io/cshop/anaconda/>`_ and to pull the remaining
+dependencies using `conda install` (see :ref:`installationAnaconda`). Other pre-packaged 
+scientific python distributions (e.g. WinPython, PythonXY, Canopy) can also be used, although
+Anaconda seems to be the easiest. I would not reccomend trying to use the system python on OSX.
+
+Under linux you have the choice of using Anaconda (or similar), or using the default python install and 
+the distribution packages for the dependencies. Depending on how old your distro is you might want to use
 pip/easy_install for some of the packages to get a more recent version instead
-(notably Pyro, and WxPython).
+(notably Pyro, and WxPython). Which choice you make is going to depend on your use case. If using it 
+just for data analysis, then Anaconda might be easier. If you want to use the sample information database
+with apache and mod-python, then its likely to be easier to use the system python. Until recently I've always
+used the system python. 
 
-There are a couple of little caveats though:
+Dependencies which cannot be fount using either the Anaconda channels, or system packages
+can be installed using `pip <http://pypi.python.org/pypi/pip>`_. If using Anaconda, add the `david_baddeley`
+channel before resorting to pip as this should have most/all of the dependencies not included in Anaconda. 
 
-- We need a very recent version of wxPython. This means that you'll probably have to 
-  upgrade the wxPython found in EPD and/or older linux distros. See upgrading wxPython below.
+There are a couple of (mostly historical) caveats:
+
 - I have had problems with getting Delny to compile/install on Win/OSX, although
   this might have been fixed in the interim. It's only required in PYME for some very rarely 
   used functionality, so can usually be safely ignored.
@@ -61,33 +79,8 @@ There are a couple of little caveats though:
   Pyro falls back on another (slower) piece of code when this the flag is set, 
   so it should be safe in any case. Can't remember exactly how to diagnose the 
   problem other than that Pyro falls over with cryptic error messages.
+- All nodes on the network need to have the same version of Pyro
 
-
-To make this whole process of finding and installing dependencies a little less painful,
-I've put together lists of required and recommended modules that can be used with
-``pip`` to pull any remaining dependencies. Thus one would execute::
-
- pip install -r recommended-modules.txt
-
-to get everything I think is going to be useful, or::
-
- pip install -r required-modules.txt
-
-to get the bare essentials. Obviously this requires `pip <http://pypi.python.org/pypi/pip>`_
-to be installed first. I would suggest installing at least numpy and scipy manually
-because pip defaults to building everything from source, which is likely to be
-somewhat painful for numpy and scipy. On Ubuntu/Debian systems running the
-``install_dependencies.py`` script will try to install the dependencies using system
-packages first and then resort to *pip* for anything left over.
-
-
-
-Pyro Nameserver
----------------
-
-You need to run a `Pyro <http://www.xs4all.nl/~irmen/pyro3/>`_ nameserver somewhere on your network segment. For testing, the easiest thing is to run ``pryo_ns`` (or ``pyro-nsd``) from the command line. There can, however, only be one nameserver on the network segment, so long term you might want to find a computer that's always on and run it on that. If it's a linux box, there might be some trickery involved to make sure it binds to the the external interface rather than localhost (specifically, the hostname has to resolve to the external interface).
-
-You'll also want some form of mercurial client if checking out of the repository.
 
 Installing
 ==========
@@ -98,7 +91,7 @@ Get the code
 The code is stored in a mercurial repository. Get the current copy by doing
 ::
 
-    hg clone https://code.google.com/p/python-microscopy/ 
+    hg clone https://bitbucket.org/david_baddeley/python-microscopy 
 
 or the equivalent using a gui client (eg `TortoiseHG <http://tortoisehg.bitbucket.org/>`_). 
 Alternatively download the tarball corresponding to a particular release and extract.
@@ -149,32 +142,6 @@ associations and :) thumbnailing! With any luck, file permissions should be OK
 out of the repository, but there's a chance you're going to have to make a 
 couple of the scripts executable.
 
-Upgrading wxPython
-------------------
-
-Linux (system python on Ubuntu/Debian)
-**************************************
-The easiest way is to add the relevant 
-`repositories <http://wiki.wxpython.org/InstallingOnUbuntuOrDebian>`_ and do 
-an ``apt-get upgrade``.
-
-Enthought Python Distribution (windows)
-***************************************
-1) Delete the existing wxPython distribution incluing all .egg files.
-   This can be done by executing the ``remove_old_wx.py`` script that ships with PYME
-   (this should be on the path after installing PYME, and can otherwise be found 
-   in the ``scripts`` folder of the source distribution).
-2) Download and install a newer wxPython from `www.wxpython.org <http://www.wxpython.org/>`_
-
-Enthought Python Distribution (OSX) (thanks to Christian)
-*********************************************************
-1) Delete the existing wxPython distribution incluing all .egg files. You're going
-   to have to dive in and manually remove the files from your ``site-packages`` directory.
-2) Download the most recent OSX build for the version of python that
-   came in your EPD distribution, and extract this to a temporary directory.
-3) Copy the relevant directories across to your EPD site packages directory. This
-   is likely to be somewhere below ``/Library/Frameworks/Python.framework/Versions/Current.``
-
 
 
 .. _basicconfig:
@@ -199,7 +166,7 @@ PYMEMICRPATH          Used with sample database to know where (on the local
 PYMENASPATH           As for PYMEMICRPATH, but for the NAS
 ==================    ======================================================
 
-You probably want to set at least PYMEDATADIR, as the default is not particularly useful.
+When useing PYME for data acquisition you probably want to set at least PYMEDATADIR, as the default is not particularly useful.
 
 You should now have a setup which works for simulation*, data analysis, & visualisation. Interfacing with hardware obviously requires a little more work - see :ref:`ConfiguringPYMEAcquire`.
 

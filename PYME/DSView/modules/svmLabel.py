@@ -35,7 +35,7 @@ try:
 except:
     pass
 
-from PYME.DSView.dsviewer_npy_nb import ViewIm3D, ImageStack
+from PYME.DSView.dsviewer import ViewIm3D, ImageStack
 
 import wx.lib.mixins.listctrl as listmix
 
@@ -145,7 +145,7 @@ class manualLabel:
         #lx, ly, hx, hy = self.do.GetSliceSelection()
         import numpy as np
         #from scipy import ndimage
-        from PYME.DSView.image import ImageStack
+        from PYME.IO.image import ImageStack
         from PYME.DSView import ViewIm3D
 
         #sp = self.image.data.shape[:3]
@@ -282,7 +282,7 @@ class manualLabel:
     def OnSVMTrain(self, event):
         from PYME.Analysis import svmSegment
         
-        #from PYME.DSView.image import ImageStack
+        #from PYME.IO.image import ImageStack
         #from PYME.DSView import ViewIm3D
         
         if not 'cf' in dir(self):

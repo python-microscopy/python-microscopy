@@ -22,16 +22,16 @@
 ##################
 
 import tables
-from PYME.Acquire import MetaDataHandler
-#from PYME import cSMI
+from PYME.IO import MetaDataHandler
+
 #import Pyro.core
 import os
 import time
 
 import PYME.Acquire.Spooler as sp
-from PYME.Acquire import protocol as p
-from PYME.FileUtils import fileID, nameUtils
-from PYME.ParallelTasks.relativeFiles import getRelFilename
+#from PYME.Acquire import protocol as p
+from PYME.IO.FileUtils import fileID, nameUtils
+#from PYME.IO.FileUtils.nameUtils import getRelFilename
 
 import httplib
 import cPickle as pickle
@@ -47,9 +47,9 @@ class SpoolEvent(tables.IsDescription):
    EventDescr = tables.StringCol(256)
 
 class EventLogger:
-   def __init__(self, spool, scope):
+   def __init__(self, spool):#), scope):
       self.spooler = spool
-      self.scope = scope
+      #self.scope = scope
 
    def logEvent(self, eventName, eventDescr = ''):
       if eventName == 'StartAq':
@@ -79,7 +79,7 @@ class HttpSpoolMDHandler(MetaDataHandler.MDHandlerBase):
 SERVERNAME='127.0.0.1:8080'      
 
 class Spooler(sp.Spooler):
-    def __init__(self, scope, filename, acquisator, protocol = p.NullProtocol, parent=None, complevel=2, complib='zlib'):
+    def __init__(self, filename, frameSource, frameShape, **kwargs):
         #       if 'PYME_TASKQUEUENAME' in os.environ.keys():
         #            taskQueueName = os.environ['PYME_TASKQUEUENAME']
         #       else:
@@ -110,10 +110,10 @@ class Spooler(sp.Spooler):
         #self.tq.createQueue('HDFTaskQueue',self.seriesName, filename, frameSize = (scope.cam.GetPicWidth(), scope.cam.GetPicHeight()), complevel=complevel, complib=complib)
         
         self.md = HttpSpoolMDHandler(self)
-        self.evtLogger = EventLogger(self, scope)
+        self.evtLogger = EventLogger(self)
         
         
-        sp.Spooler.__init__(self, scope, filename, acquisator, protocol, parent)
+        sp.Spooler.__init__(self, filename, frameSource, **kwargs)
         
     def __queuePoll(self):
         self.conn = httplib.HTTPConnection(SERVERNAME, timeout=5)
@@ -181,9 +181,8 @@ class Spooler(sp.Spooler):
         sp.Spooler.StopSpool(self)
         
         
-    def Tick(self, caller):
-      #self.tq.postTask(cSMI.CDataStack_AsArray(caller.ds, 0).reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()), self.seriesName)
-      self.buffer.append(caller.dsa.reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()).copy())
+    def OnFrame(self, sender, frameData, **kwargs):
+      self.buffer.append(frameData.reshape(1,frameData.shape[0],frameData.shape[1]).copy())
 
       if self.imNum == 0: #first frame
           self.md.setEntry('imageID', fileID.genFrameID(self.buffer[-1].squeeze()))
@@ -192,7 +191,7 @@ class Spooler(sp.Spooler):
       if len(self.buffer) >= self.buflen:
           self.FlushBuffer()
 
-      sp.Spooler.Tick(self, caller)
+      sp.Spooler.OnFrame(self)
       
     def FlushBuffer(self):
       t1 = time.time()

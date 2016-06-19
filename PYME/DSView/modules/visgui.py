@@ -20,7 +20,7 @@
 #
 ##################
 
-from PYME.Analysis.LMVis.imageView import *
+from PYME.LMVis.imageView import *
 from PYME.DSView.arrayViewPanel import ArrayViewPanel
 
 class visGuiExtras:

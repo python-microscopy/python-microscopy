@@ -20,8 +20,8 @@
 #
 ##################
 from PYME.misc.djangoRecarray import qsToRecarray
-from PYME.SampleDB import populateStats
-from PYME.SampleDB.samples import models
+from PYME.SampleDB2 import populateStats
+from PYME.SampleDB2.samples import models
 from pylab import *
 
 CHANNELS = [ 'A680', 'A647','A750',]

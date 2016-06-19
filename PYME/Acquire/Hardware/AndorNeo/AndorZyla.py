@@ -35,11 +35,11 @@ except ImportError:
     
 import time
 import traceback
-from PYME.FileUtils import nameUtils
+from PYME.IO.FileUtils import nameUtils
 
 from fftw3f import create_aligned_array
 
-from PYME.Acquire import MetaDataHandler
+from PYME.IO import MetaDataHandler
 from PYME.Acquire import eventLog
 
 class AndorBase(SDK3Camera):
@@ -138,7 +138,7 @@ class AndorBase(SDK3Camera):
         self.defBuffers = 100
        
         
-        self.contMode = True
+        #self.contMode = True
         self.burstMode = False
         
         self._temp = 0
@@ -152,7 +152,7 @@ class AndorBase(SDK3Camera):
         SDK3Camera.Init(self)        
         
         #set some intial parameters
-        #self.FrameCount.setValue(1)
+        self.FrameCount.setValue(1)
         self.CycleMode.setString(u'Continuous')
         try:
             self.SetEMGain(0) # note that this sets 'high dynamic range' mode
@@ -198,6 +198,9 @@ class AndorBase(SDK3Camera):
         bufSize = self.ImageSizeBytes.getValue()
         vRed = int(self.SensorHeight.getValue()/self.AOIHeight.getValue())
         self.nBuffers = vRed*self.defBuffers
+        
+        if not self.contMode:
+            self.nBuffers = 5
         #print bufSize
         for i in range(self.nBuffers):
             #buf = np.empty(bufSize, 'uint8')
@@ -249,7 +252,7 @@ class AndorBase(SDK3Camera):
     def _pollBuffer(self):
         try:
             #self.fLog.write('%f\tp\n' % time.time())
-            pData, lData = SDK3.WaitBuffer(self.handle, 100)
+            pData, lData = SDK3.WaitBuffer(self.handle, 10)
             #self.fLog.write('%f\tb\n' % time.time())
         except SDK3.TimeoutError as e:
             #Both AT_ERR_TIMEDOUT and AT_ERR_NODATA
@@ -326,11 +329,34 @@ class AndorBase(SDK3Camera):
         #recycle buffer
         self._queueBuffer(buf)
         
+#    def SetContinuousMode(self, value=True):
+#        if value:
+#            self.CycleMode.setString(u'Continuous')
+#            self.contMode = True
+#        else:
+#            self.CycleMode.setString(u'Fixed')
+#            self.contMode = False
+#            
+#    def GetContinuousMode(self):
+#        return self.contMode
+        
+    def SetAcquisitionMode(self, mode):
+        if mode == self.MODE_CONTINUOUS:
+            if not self.contMode:
+                self.CycleMode.setString('uContinuous')
+        elif self.contMode:
+            self.CycleMode.setString('uFixed')
+            self.FrameCount.setValue(1)
+    
+    @property
+    def contMode(self):
+        return self.CycleMode.getString() == u'Continuous'
+        
     def GetSerialNumber(self):
         return self.SerialNumber.getValue()
     
     def SetIntegTime(self, iTime): 
-        self.ExposureTime.setValue(iTime*1e-3)
+        self.ExposureTime.setValue(iTime)
         self.FrameRate.setValue(self.FrameRate.max())
         
     def GetIntegTime(self): 
@@ -502,7 +528,7 @@ class AndorBase(SDK3Camera):
         return self.nBuffers
         
     def SetActive(self, active=True):
-        '''flag the camera as active (or inactive) to dictate whether it writes it's metadata or not'''
+        """flag the camera as active (or inactive) to dictate whether it writes it's metadata or not"""
         self.active = active
 
     def GenStartMetadata(self, mdh):

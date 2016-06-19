@@ -12,6 +12,11 @@ from scipy import ndimage
 from PYME.Acquire import eventLog
 from PYME.gohlke import tifffile as tif
 
+import Pyro.core
+import Pyro.naming
+import threading
+from PYME.misc.computerName import GetComputerName
+
 def correlateFrames(A, B):
     A = A.squeeze()/A.mean() - 1
     B = B.squeeze()/B.mean() - 1
@@ -56,8 +61,9 @@ def correlateAndCompareFrames(A, B):
     return (As -B).mean(), dx, dy
     
     
-class correlator(object):
+class correlator(Pyro.core.ObjBase):
     def __init__(self, scope, piezo=None):
+        Pyro.core.ObjBase.__init__(self)
         self.scope = scope
         self.piezo = piezo
         
@@ -65,6 +71,8 @@ class correlator(object):
         self.deltaZ = 0.2 #z increment used for calibration
         self.stackHalfSize = 10
         self.NCalibStates = 2*self.stackHalfSize + 1
+
+        self.tracking = False
         #self.initialise()
 #        self.buffer = []
         self.WantRecord = False
@@ -72,7 +80,7 @@ class correlator(object):
         self.maxfac = 1.5e3
         
     def initialise(self):
-        d = 1.0*self.scope.pa.dsa.squeeze()        
+        d = 1.0*self.scope.frameWrangler.currentFrame.squeeze()        
         
         self.X, self.Y = np.mgrid[0.0:d.shape[0], 0.0:d.shape[1]]
         self.X -= d.shape[0]/2
@@ -101,40 +109,92 @@ class correlator(object):
         self.historyCorrections = []
 
         
-    def setRefA(self):
-        d = 1.0*self.scope.pa.dsa.squeeze()
-        self.refA = d/d.mean() - 1        
-        self.FA = ifftn(self.refA)
-        self.refA *= self.mask
+    # def setRefA(self):
+    #     d = 1.0*self.scope.frameWrangler.currentFrame.squeeze()
+    #     self.refA = d/d.mean() - 1        
+    #     self.FA = ifftn(self.refA)
+    #     self.refA *= self.mask
         
-    def setRefB(self):
-        d = 1.0*self.scope.pa.dsa.squeeze()
-        self.refB = d/d.mean() - 1
-        self.refB *= self.mask        
+    # def setRefB(self):
+    #     d = 1.0*self.scope.frameWrangler.currentFrame.squeeze()
+    #     self.refB = d/d.mean() - 1
+    #     self.refB *= self.mask        
         
-    def setRefC(self):
-        d = 1.0*self.scope.pa.dsa.squeeze()
-        self.refC = d/d.mean() - 1
-        self.refC *= self.mask
+    # def setRefC(self):
+    #     d = 1.0*self.scope.frameWrangler.currentFrame.squeeze()
+    #     self.refC = d/d.mean() - 1
+    #     self.refC *= self.mask
         
-        self.dz = (self.refC - self.refB).ravel()
-        self.dzn = 2./np.dot(self.dz, self.dz)
+    #     self.dz = (self.refC - self.refB).ravel()
+    #     self.dzn = 2./np.dot(self.dz, self.dz)
         
     def setRefN(self, N):
-        d = 1.0*self.scope.pa.dsa.squeeze()
+        d = 1.0*self.scope.frameWrangler.currentFrame.squeeze()
         ref = d/d.mean() - 1
         self.refImages[:,:,N] = ref        
         self.calFTs[:,:,N] = ifftn(ref)
         self.calImages[:,:,N] = ref*self.mask
+        
     #def setRefD(self):
     #    self.refD = (1.0*self.d).squeeze()/self.d.mean() - 1 
     #    self.refD *= self.mask
         
         #self.dz = (self.refC - self.refA).ravel()
-        
+
+    def set_focus_tolerance(self, tolerance):
+        """ Set the tolerance for locking position
+
+        Parameters
+        ----------
+
+        tolerance : float
+            The tolerance in um
+        """
+
+        self.focusTolerance = tolerance
+
+    def get_focus_tolerance(self):
+        return self.focusTolerance
+
+    def set_focus_lock(self, lock=True):
+        """ Set locking on or off
+
+        Parameters
+        ----------
+
+        lock : bool
+            whether the lock should be on
+        """
+
+        self.lockFocus = lock
+
+    def get_focus_lock(self):
+        return self.lockFocus
+
+    def get_history(self, length=1000):
+        return self.history[-length:]
+
+    def get_calibration_state(self):
+        """ Returns the current calibration state as a tuple:
+
+        (currentState, numStates)
+
+        calibration is complete when currentState == numStates.
+        """
+
+        return self.calibState, self.NCalibStates
+
+    def is_tracking(self):
+        return self.tracking
+
+    def get_offset(self):
+        return self.piezo.GetOffset()
+
+    def set_offset(self, offset):
+        self.piezo.SetOffset(offset)
         
     def compare(self):
-        d = 1.0*self.scope.pa.dsa.squeeze()
+        d = 1.0*self.scope.frameWrangler.currentFrame.squeeze()
         dm = d/d.mean() - 1
         
         #where is the piezo suppposed to be
@@ -196,8 +256,8 @@ class correlator(object):
         return dx, dy, dz, Cm, dz, nomPos, posInd, calPos, posDelta
         
     
-    def tick(self, caller=None):
-        if not 'mask' in dir(self) or not self.scope.pa.dsa.shape[:2] == self.mask.shape[:2]:
+    def tick(self, **kwargs):
+        if not 'mask' in dir(self) or not self.scope.frameWrangler.currentFrame.shape[:2] == self.mask.shape[:2]:
             self.initialise()
             
         #called on a new frame becoming available
@@ -281,22 +341,84 @@ class correlator(object):
         self.corrRef = 0
         
     def register(self):
-        self.scope.pa.WantFrameGroupNotification.append(self.tick)
+        #self.scope.frameWrangler.WantFrameGroupNotification.append(self.tick)
+        self.scope.frameWrangler.onFrameGroup.connect(self.tick)
+        self.tracking = True
         
     def deregister(self):
-        self.scope.pa.WantFrameGroupNotification.remove(self.tick)
+        #self.scope.frameWrangler.WantFrameGroupNotification.remove(self.tick)
+        self.scope.frameWrangler.onFrameGroup.disconnect(self.tick)
+        self.tracking = False
     
-    def setRefs(self, piezo):
-        time.sleep(0.5)
-        p = piezo.GetPos()
-        self.setRefA()
-        piezo.MoveTo(0, p -.2)
-        time.sleep(0.5)
-        self.setRefB()
-        piezo.MoveTo(0,p +.2)
-        time.sleep(0.5)
-        self.setRefC()
-        piezo.MoveTo(0, p)
+    # def setRefs(self, piezo):
+    #     time.sleep(0.5)
+    #     p = piezo.GetPos()
+    #     self.setRefA()
+    #     piezo.MoveTo(0, p -.2)
+    #     time.sleep(0.5)
+    #     self.setRefB()
+    #     piezo.MoveTo(0,p +.2)
+    #     time.sleep(0.5)
+    #     self.setRefC()
+    #     piezo.MoveTo(0, p)
     
+
+class ServerThread(threading.Thread):
+    def __init__(self, driftTracker):
+        threading.Thread.__init__(self)
+
+        import socket
+        ip_addr = socket.gethostbyname(socket.gethostname())
+        
+        compName = GetComputerName()
+        
+        Pyro.core.initServer()
+
+        pname = "%s.DriftTracker" % compName
+        
+        try:
+            from PYME.misc import pyme_zeroconf 
+            ns = pyme_zeroconf.getNS()
+        except:
+            ns=Pyro.naming.NameServerLocator().getNS()
+
+            if not compName in [n[0] for n in ns.list('')]:
+                ns.createGroup(compName)
+
+            #get rid of any previous instance
+            try:
+                ns.unregister(pname)
+            except Pyro.errors.NamingError:
+                pass        
+        
+        self.daemon=Pyro.core.Daemon(host = ip_addr)
+        self.daemon.useNameServer(ns)
+        
+        self.driftCorr = piezoOffsetProxy(driftTracker)
+        
+        #pname = "%s.Piezo" % compName
+        
+        
+        
+        uri=self.daemon.connect(self.driftCorr,pname)
+        
+    def run(self):
+        print 'foo'
+        #try:
+        self.daemon.requestLoop()
+        #finally:
+        #    daemon.shutdown(True)
+        
+    def cleanup(self):
+        print 'Shutting down drift tracking Server'
+        self.daemon.shutdown(True)
     
-    
+def getClient(compName = GetComputerName()):
+    try:
+        from PYME.misc import pyme_zeroconf 
+        ns = pyme_zeroconf.getNS()
+        URI = ns.resolve('%s.DriftTracker' % compName)
+    except:
+        URI ='PYRONAME://%s.DriftTracker'%compName
+
+    return Pyro.core.getProxyForURI(URI)

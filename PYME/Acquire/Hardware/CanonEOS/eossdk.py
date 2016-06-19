@@ -20,13 +20,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
-'''Wrapper for EDSDK.h
+"""Wrapper for EDSDK.h
 
 Generated with:
 C:\Python27\Scripts\ctypesgen.py -l EDSDK -o eos.py EDSDK.h EDSDKErrors.h EDSDKTypes.h
 
 Do not modify this file.
-'''
+"""
 
 __docformat__ =  'restructuredtext'
 
@@ -433,7 +433,7 @@ class DarwinLibraryLoader(LibraryLoader):
                 yield os.path.join(dir,name)
 
     def getdirs(self,libname):
-        '''Implements the dylib search as specified in Apple documentation:
+        """Implements the dylib search as specified in Apple documentation:
 
         http://developer.apple.com/documentation/DeveloperTools/Conceptual/
             DynamicLibraries/Articles/DynamicLibraryUsageGuidelines.html
@@ -441,7 +441,7 @@ class DarwinLibraryLoader(LibraryLoader):
         Before commencing the standard search, the method first checks
         the bundle's ``Frameworks`` directory if the application is running
         within a bundle (OS X .app).
-        '''
+        """
 
         dyld_fallback_library_path = _environ_path("DYLD_FALLBACK_LIBRARY_PATH")
         if not dyld_fallback_library_path:

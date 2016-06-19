@@ -26,9 +26,9 @@ class EnumControl(wx.Panel):
         self.SetSizerAndFit(hsizer)
         
     def onChange(self, event=None):
-        self.scope.pa.stop()
+        self.scope.frameWrangler.stop()
         self.target.setString(self.cChoice.GetStringSelection())
-        self.scope.pa.start()
+        self.scope.frameWrangler.start()
         self.parent.update()
         
     def update(self):
@@ -48,9 +48,9 @@ class BoolControl(wx.CheckBox):
         self.update()        
         
     def onChange(self, event=None):
-        self.scope.pa.stop()
+        self.scope.frameWrangler.stop()
         self.target.setValue(self.GetValue())
-        self.scope.pa.start()
+        self.scope.frameWrangler.start()
         self.parent.update()
         
     def update(self):
@@ -77,7 +77,8 @@ class ZylaControl(wx.Panel):
                       EnumControl(self, cam.PixelEncoding),
                       EnumControl(self, cam.PixelReadoutRate),
                       BoolControl(self, cam.SpuriousNoiseFilter),
-                      BoolControl(self, cam.StaticBlemishCorrection),]
+                      BoolControl(self, cam.StaticBlemishCorrection),
+                      EnumControl(self, cam.CycleMode),]
         
         self._init_ctrls()
         

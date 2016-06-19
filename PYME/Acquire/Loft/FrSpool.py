@@ -152,7 +152,7 @@ class FrSpool(wx.Frame):
     def OnBStartSpoolButton(self, event):
         #fn = wx.FileSelector('Save spooled data as ...', default_extension='.log',wildcard='*.log')
         #if not fn == '': #if the user cancelled 
-        #    self.spooler = Spooler.Spooler(self.scope, fn, self.scope.pa, self)
+        #    self.spooler = Spooler.Spooler(self.scope, fn, self.scope.frameWrangler, self)
         #    self.bStartSpool.Enable(False)
         #    self.bStopSpooling.Enable(True)
         #    self.stSpoolingTo.Enable(True)
@@ -174,7 +174,7 @@ class FrSpool(wx.Frame):
             if ans == wx.NO:
                 return #bail
 
-        self.spooler = Spooler.Spooler(self.scope, self.dirname + fn + '.log', self.scope.pa, self)
+        self.spooler = Spooler.Spooler(self.scope, self.dirname + fn + '.log', self.scope.frameWrangler, self)
         self.bStartSpool.Enable(False)
         self.bStopSpooling.Enable(True)
         self.stSpoolingTo.Enable(True)

@@ -28,7 +28,7 @@ from scipy import ndimage
 from PYME.DSView import View3D, ViewIm3D, ImageStack
 import time
 import os
-from PYME.Acquire import MetaDataHandler
+from PYME.IO import MetaDataHandler
 
 def _pt(sl):
     dec, psf, d, regLambda, nIter, weights = sl
@@ -350,7 +350,7 @@ class deconvolver:
         if (succ == wx.ID_OK):
             outFilename = fdialog.GetPath()
 
-            from PYME.FileUtils import saveTiffStack
+            from PYME.IO.FileUtils import saveTiffStack
 
             saveTiffStack.saveTiffMultipage(self.dec.res, outFilename)
 

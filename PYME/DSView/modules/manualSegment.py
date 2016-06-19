@@ -27,7 +27,7 @@ import pylab
 from scipy import ndimage
 import numpy as np
 
-from PYME.DSView.dsviewer_npy_nb import ViewIm3D, ImageStack
+from PYME.DSView.dsviewer import ViewIm3D, ImageStack
 
 class manualSegment:
     def __init__(self, dsviewer):
@@ -52,7 +52,7 @@ class manualSegment:
         #lx, ly, hx, hy = self.do.GetSliceSelection()
         import numpy as np
         #from scipy import ndimage
-        from PYME.DSView.image import ImageStack
+        from PYME.IO.image import ImageStack
         from PYME.DSView import ViewIm3D
 
         #sp = self.image.data.shape[:3]

@@ -26,19 +26,280 @@
 #sys.path.append(".")
 
 import wx
-from PYME.Acquire import previewaquisator as previewaquisator
+#from PYME.Acquire import previewaquisator as previewaquisator
+from PYME.Acquire.frameWrangler import FrameWrangler
 
 import PYME.Acquire.protocol as protocol
-from PYME.Acquire import MetaDataHandler
+
+from PYME.IO import MetaDataHandler
 from PYME.Acquire.Hardware import ccdCalibrator
+from PYME.Acquire.SpoolController import SpoolController
+from PYME.Acquire.ActionManager import ActionManager
 
 import sqlite3
 
 import os
 import datetime
 
+import warnings
+import dispatch
+
 #register handlers for ndarrays
 from PYME.misc import sqlitendarray
+
+import weakref
+import re
+
+#class DummyJoystick(object):
+#    def enable(*args, **kwargs):
+#        pass
+
+class StateHandler(object):
+    def __init__(self, key, getFcn=None, setFcn=None, needCamRestart = False):
+        """Define a state-change handler for a give state key, based on supplied
+        get and set functions which interact with the underlying hardware.
+        
+        This wrapper class serves two functions - a) allowing the get and set methods
+        to be stored under a single dictionary key in the StateManager, and b)
+        making sure a signal is fired when the state changes.
+        
+        Parameters
+        ----------
+        
+        key : string
+            The hardware key - e.g. "Positioning.x", or "Lasers.405.Power". This
+            will also be how the hardware state is recorder in the metadata.
+        getFcn : function
+            The function to call to get the value of the parameter. Should take
+            one parameter which is the value to get
+        setFcn : function
+            The function to call to set the value of the parameter. Should take
+            one parameter which is the value to set. Not providing a setFcn results
+            in a read-only property.
+        needCamRestart : bool
+            Does this absolutely need a camera restart (e.g. we are changing which 
+            camera we are using). Will override other preferences.
+        
+        """
+        self.getValue = getFcn
+        self.setFcn = setFcn
+        self.key = key
+        
+        self.needCamRestart = needCamRestart
+        
+        self.onChange = dispatch.Signal()
+        
+    def setValue(self, value, force=False):
+        """Set the state of the controlled hardware to the given value and fire
+        a signal. The underlying function will not be called if old and new values
+        are the same unless force=True.
+        """
+        if force or (not self.getValue() == value):
+            if not self.setFcn is None:
+                self.setFcn(value)
+                self.onChange.send(self, key=self.key, value=value)
+            else:
+                print 'No set method registered for key %s - assuming immutable' %  self.key
+            
+class StateManager(object):
+    """Manages object (microscope) state by calling an appropriate state-handler
+    for a given key.
+    
+    Looks and behaves like a dictionary to the user, with individual pieces of 
+    hardware registering themselves to handle individual keys.
+    """
+    def __init__(self, scope, handlers = {}):
+        self._stateHandlers = {}
+        self._cachedStates = {}
+        
+        self._stateHandlers.update(handlers)
+        
+        self.scope = weakref.ref(scope)
+        self.stateChanged = dispatch.Signal()
+        
+    def __getitem__(self, key):
+        #print key
+        try: 
+            handler = self._stateHandlers[key]
+        except KeyError:
+            raise KeyError('No handler registered for %s' % key)
+            
+        return handler.getValue()
+        
+    def __setitem__(self, key, value):
+        self.setItem(key, value)
+        #raise NotImplementedError("Cannot set items via the dictionary interface - use setItem()instead")
+        #try: 
+        #    handler = self._stateHandlers[key]
+        #except KeyError:
+        #    raise KeyError('No handler registered for %s' % key)
+        #    
+        #return handler.setState(value)
+        
+    def setItem(self, key, value, stopCamera=False, force=False):
+        """ Set the value of one of our hardware components
+        
+        Parameters
+        ----------
+        
+        key : string
+            The parameter identifier - e.g. "Positioning.x"
+        value : object 
+            The value to set. This can be anything the registered handler understands
+            but designing the handlers to accept something which is easily converted
+            to text for the Metadata (see PYME.IO.MetaDataHandler) is advised.
+        stopCamera : bool
+            Should we stop the camera before setting the value and restart afterwards.
+            Useful for things like integration time  which might not be able to be 
+            changed on the fly, but also potentially as a way of achieving hardware 
+            synchronization.
+        force : bool
+            Whether we should call the set method even if the current state is 
+            already the desired state.
+        
+        """
+            
+        return self.setItems({key:value}, stopCamera, force)
+        
+    def setItems(self, stateDict, stopCamera = False, force=False, ignoreMissing=False):
+        """Set multiple items at once - see setItem for details.
+        
+        Parameters
+        ----------
+        
+        stateDict : dictionary (or dictionary like object)
+            a dictionary of key : value pairs for each piece of hardware which
+            wants to be updated.
+        stopCamera : bool
+            Should we stop the camera before setting the values and restart afterwards?
+            Useful for things like integration time  which might not be able to be 
+            changed on the fly, but also potentially as a way of achieving hardware 
+            synchronization.
+        force : bool
+            Whether we should call the set method even if the current state is 
+            already the desired state.
+        ignoreMissing : bool
+            Should we silently ignore keys that we don't have handlers for. Used
+            when setting state from e.g. sequence metadata which might have other
+            irrelevent info.
+        """
+        
+        restartCamera = False
+        
+        
+        if stopCamera:
+            try:
+                restartCamera = self.scope().frameWrangler.isRunning()
+                self.scope().frameWrangler.stop()
+            except AttributeError:
+                print "We don't have a camera yet"
+            
+        
+        for key, value in stateDict.items():
+            try: 
+                handler = self._stateHandlers[key]
+                if handler.needCamRestart:
+                    #our hardware absolutely needs a camera restart - 
+                    #e.g. changing integration time on IXon. Override stopCamera
+                    #setting and force a restart.
+                    try:
+                        if self.scope().frameWrangler.isRunning():
+                           self.scope().frameWrangler.stop()
+                           restartCamera = True
+                    except AttributeError:
+                        print "We don't have a camera yet"
+                       
+                handler.setValue(value, force)
+            except KeyError:
+                if not ignoreMissing:
+                    raise KeyError('No handler registered for %s' % key)
+                
+            
+            
+        self.stateChanged.send(self)
+            
+        if restartCamera:
+            self.scope().frameWrangler.start()
+        
+        #return a function which tells us if we're done (for use as a task)
+        return lambda : True
+                   
+            
+    def update(self, state):
+        """Update state from a dictionary
+        
+        Parameters
+        ----------
+        
+        state : dict
+            A dictionary containing the new state
+        """
+        return self.setItems(state)
+        
+    def __len__(self):
+        return len(self._stateHandlers)
+        
+    def keys(self):
+        return self._stateHandlers.keys()
+        
+    def __repr__(self):
+        s = 'StateManager:\n'
+        for k in self.keys():
+            s += '%s : %s\n' % (repr(k), repr(self[k]))
+            
+        return s
+        
+    def registerHandler(self, key, getFcn = None, setFcn=None, needCamRestart = False):
+        """Register a harware key and the ascociated handlers
+        
+        Parameters
+        ----------
+        
+        key : string
+            The hardware key - e.g. "Positioning.x", or "Lasers.405.Power". This
+            will also be how the hardware state is recorder in the metadata.
+        getFcn : function
+            The function to call to get the value of the parameter. Should take
+            one parameter which is the value to get
+        setFcn : function
+            The function to call to set the value of the parameter. Should take
+            one parameter which is the value to set. Not providing a setFcn results
+            in a read-only property.
+        needCamRestart : bool
+            Does this absolutely need a camera restart (e.g. we are changing which 
+            camera we are using). Will override other preferences.
+            
+        Notes
+        -----
+        There are a few conventions and special key names which should be observed
+        as this is how the camera will find hardware.
+        
+        - Keys should be hierachial, separated by dots
+        - Piezos and stages should start with "Positioning.", followed by an axis
+          name, and use um as a unit. 
+        - Lasers should start with "Laser." and define both "<lasername>.Power"
+          and "<lasername>.On" (this is to allow lasers with external 
+          switches/shutters as well as )
+        
+        """
+        self._stateHandlers[key] = StateHandler(key, getFcn, setFcn, needCamRestart)
+        
+    def registerChangeListener(self, key, callback):
+        """ Registers a function to be called when the state of a particular
+        key changes.
+        
+        The *key* and *value* are provided as keyword arguments to the callback
+        the callback should accept have the signature `callback(**kwargs)`,
+        or `callback(key, value, **kwargs)`. Other keyword arguments might also
+        be given.
+        """
+        
+        self._stateHandlers[key].onChange.connect(callback)
+            
+        
+        
+        
+    
 
 class microscope(object):
     def __init__(self):
@@ -61,10 +322,12 @@ class microscope(object):
         self.StatusCallbacks = [] #list of functions which provide status information
         self.CleanupFunctions = [] #list of functions to be called at exit
         self.PACallbacks = [] #list of functions to be called when a new aquisator is created
-        #preview
+        
+        
         self.saturationThreshold = 16383 #14 bit
         self.lastFrameSaturated = False
         #self.cam.saturationIntervened = False
+        
         self.saturatedMessage = ''
 
         protocol.scope = self
@@ -72,24 +335,51 @@ class microscope(object):
         self.initDone = False
 
         self._OpenSettingsDB()
-
+        
+        self.spoolController = SpoolController(self)#, defDir, **kwargs)
+        
+        self.state = StateManager(self)
+        
+        self.state.registerHandler('ActiveCamera', self.GetActiveCameraName, self._SetCamera, True)
+        self.state.registerHandler('Camera.IntegrationTime', self._GetActiveCameraIntegrationTime, self._SetActiveCameraIntegrationTime, True)
+        self.state.registerHandler('Camera.ROI', self._GetActiveCameraROI, self._SetActiveCameraROI, True)
+        
+        self.actions = ActionManager(self)
+        
         MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
         
         #provision to set global metadata values in startup script
         self.mdh = MetaDataHandler.NestedClassMDHandler()
         
+    def EnableJoystick(self, enable=True):
+        if not self.joystick is None:
+            self.joystick.Enable(enable)   
+        
     def GetPos(self):
         res = {}
-        for k in self.positioning.keys():
-            p, c, m = self.positioning[k]
-            res[k] = p.GetPos(c)*m
+        
+        axes = [k.split('.')[-1] for k in self.state.keys() if k.startswith('Positioning.')]
+        
+        for k in axes:
+            res[k] = self.state['Positioning.%s' % k]
             
         return res
         
     def SetPos(self, **kwargs):
         for k, v in kwargs.items():
+            self.state['Positioning.%s' % k] = v
+            
+    def GetPosRange(self):
+        #Todo - fix to use positioning
+        res = {}
+        for k in self.positioning.keys():
             p, c, m = self.positioning[k]
-            p.MoveTo(c, v/m)
+            if m > 0: 
+                res[k] = (p.GetMin(c)*m,p.GetMax(c)*m)
+            else:
+                res[k] = (p.GetMax(c)*m,p.GetMin(c)*m)
+
+        return res
         
 
     def _OpenSettingsDB(self):
@@ -115,11 +405,27 @@ class microscope(object):
         self.settingsDB.commit()
 
     def GetPixelSize(self):
+        """Get the (sample space) pixel size for the current camera
+        
+        Returns
+        -------
+        
+        pixelsize : tuple
+            the pixel size in the x and y axes, in um
+        """
         currVoxelSizeID = self.settingsDB.execute("SELECT sizeID FROM VoxelSizeHistory2 WHERE camSerial=? ORDER BY time DESC", (self.cam.GetSerialNumber(),)).fetchone()
         if not currVoxelSizeID == None:
             return self.settingsDB.execute("SELECT x,y FROM VoxelSizes WHERE ID=?", currVoxelSizeID).fetchone()
 
     def GenStartMetadata(self, mdh):
+        """Collects the metadata we want to record at the start of a sequence
+        
+        Parameters
+        ----------
+        
+        mdh : object derived from PYME.IO.MetaDataHandler.MDHandlerBase
+            The metadata handler to which we should write our metadata         
+        """
         try:
             voxx, voxy = self.GetPixelSize()
             mdh.setEntry('voxelsize.x', voxx)
@@ -133,15 +439,51 @@ class microscope(object):
             
         for k, v in self.GetPos().items():
             mdh.setEntry('Positioning.%s' % k.replace(' ', '_').replace('-', '_'), v)
+        
+        try:
+            mdh['CameraOrientation.Rotate'] = self.cam.orientation['rotate']
+            mdh['CameraOrientation.FlipX'] = self.cam.orientation['flipx']
+            mdh['CameraOrientation.FlipY'] = self.cam.orientation['flipy']
+        except AttributeError:
+            pass
             
+        mdh.update(self.state)
         mdh.copyEntriesFrom(self.mdh)
 
     def AddVoxelSizeSetting(self, name, x, y):
+        """ Adds a new voxel size setting.
+        
+        The reason for multiple settings is to easily support switching between 
+        different cameras and/or optical configurations such as tube lenses, splitters,
+        etc ...
+        
+        Parameters
+        ----------
+        
+        name : string
+            The name to use for the new setting
+        x : float
+            the pixelsize along the x axis in um
+        y : float
+            the pixelsize along the y axis in um
+        """
         self.settingsDB.execute("INSERT INTO VoxelSizes (name, x, y) VALUES (?, ?, ?)", (name, x, y))
         self.settingsDB.commit()
         
 
     def SetVoxelSize(self, voxelsizename, camName=None):
+        """Set the camera voxel size, from a pre-existing voxel size seting.
+        
+        Parameters
+        ----------
+        
+        voxelsizename : string
+            The name of the voxelsize setting to use. This should have been created
+            using the **AddVoxelSize** function.
+        camName : string
+            The name of the camera to ascociate the setting with. If None, then
+            the currently selected camera is used.
+        """
         if camName == None:
             cam = self.cam
         else:
@@ -152,10 +494,15 @@ class microscope(object):
         self.settingsDB.commit()
 
 
-    def satCheck(self, source): # check for saturation
+    def satCheck(self, source, **kwargs): # check for saturation
+        """Check to see if the current frame is saturated and stop the camera/
+        close the shutter if necessary
+        
+        TODO: could use a rewrite / new inspection.        
+        """
         if not 'shutterOpen' in dir(self.cam):
             return
-        im = source.dsa
+        im = source.currentFrame
         IMax = im.max()
 
         if not self.cam.shutterOpen:
@@ -210,24 +557,30 @@ class microscope(object):
 
 
     def genStatus(self):
+        """Generate a status message. TODO - move this to the GUI?"""
         stext = ''
         if self.cam.CamReady():
             self.cam.GetStatus()
             stext = 'CCD Temp: %d' % self.cam.GetCCDTemp()
         else:
-            stext = '<Camera ERROR>'
+            stext = '<Camera ERROR>'    
+            
         if 'saturationIntervened' in dir(self.cam):
             if self.lastFrameSaturated:
                 stext = stext + '    Camera Saturated!!'
             if self.cam.saturationIntervened:
-                stext = stext + '    ' + self.saturatedMessage
-        if 'step' in dir(self):
-            stext = stext + '   Stepper: (XPos: %1.2f  YPos: %1.2f  ZPos: %1.2f)' % (self.step.GetPosX(), self.step.GetPosY(), self.step.GetPosZ())
-        if self.pa.isRunning():
+                stext = stext + '    ' + self.saturatedMessage        
+                
+        #if 'step' in dir(self):
+        #    stext = stext + '   Stepper: (XPos: %1.2f  YPos: %1.2f  ZPos: %1.2f)' % (self.step.GetPosX(), self.step.GetPosY(), self.step.GetPosZ())
+
+        #stext = stext + '    Position:        
+        
+        if self.frameWrangler.isRunning():
             if 'GetFPS' in dir(self.cam):
-                stext = stext + '    FPS = (%2.2f/%2.2f)' % (self.cam.GetFPS(),self.pa.getFPS())
+                stext = stext + '    FPS = (%2.2f/%2.2f)' % (self.cam.GetFPS(),self.frameWrangler.getFPS())
             else:
-                stext = stext + '    FPS = %2.2f' % self.pa.getFPS()
+                stext = stext + '    FPS = %2.2f' % self.frameWrangler.getFPS()
 
             if 'GetNumImsBuffered' in dir(self.cam):
 				stext = stext + '    Buffer Level: %d of %d' % (self.cam.GetNumImsBuffered(), self.cam.GetBufferSize())
@@ -236,25 +589,60 @@ class microscope(object):
                 stext = stext + '    ' + sic()       
         return stext
 
-    def startAquisistion(self):
-        if 'pa' in dir(self):
-            self.pa.stop() #stop old acquisition
+    @property
+    def pa(self):
+        """property to catch access of what was previously called the scope.frameWrangler (the PreviewAcquisator)"""
+        warnings.warn(".pa is deprecated, please use .frameWrangler instead", DeprecationWarning)
+        return self.frameWrangler
+    
+    def startFrameWrangler(self):
+        """Start the frame wrangler. Gets called during post-init phase of aquiremainframe.
         
-        self.pa = previewaquisator.PreviewAquisator(self.chaninfo,self.cam, self.shutters)
-        self.pa.HardwareChecks.extend(self.hardwareChecks)
-        self.pa.Prepare()
+        """
+        #stop an old acquisition
+        try:
+            self.frameWrangler.stop()
+        except AttributeError:
+            pass
+        
+        self.frameWrangler = FrameWrangler(self.cam)
+        self.frameWrangler.HardwareChecks.extend(self.hardwareChecks)
+        self.frameWrangler.Prepare()
 
         if 'shutterOpen' in dir(self.cam):
-            self.pa.WantFrameGroupNotification.append(self.satCheck)
+            #self.pa.WantFrameGroupNotification.append(self.satCheck)
+            #self.frameWrangler.onFrameGroup.connect(self.satCheck)
+            pass
             
-        self.pa.start()
+        self.frameWrangler.start()
         
         for cb in self.PACallbacks:
             cb()
+            
+    ##############################
+    # The microscope object manages multiple cameras
+    #
+    # The following functions deal with selecting the active camera and
+    # performing operations on the currently active camera
+    # The integration time and ROI setting functions can be thought of as
+    # proxying the underlying calls to the camera
 
-    def SetCamera(self, camName):
-        if 'pa' in dir(self):
-            self.pa.stop()
+    def _SetCamera(self, camName):
+        """Set the currently used camera by name, selecting from the dictionary
+        self.cameras. Calling code should use self.state['ActiveCamera']= camName
+        instead.
+        
+        Parameters
+        ----------
+        
+        camName : string
+            The name of the camera to switch to
+        
+        """
+        #try:
+        #    self.frameWrangler.stop()
+        #except AttributeError:
+        #    pass
 
         #deactivate cameras
         for c in self.cameras.values():
@@ -274,21 +662,79 @@ class microscope(object):
         except AttributeError:
             pass #for cameras which don't have a shutter
         
+        
+        #TODO this needs to move to the GUI        
         self.camControls[camName].GetParent().Show()#GetParent().PinOpen()
         self.camControls[camName].GetParent().GetParent().Layout()
 
-        if 'sa' in dir(self):
-            self.sa.cam = self.cam
+        try:
+            self.frameWrangler.cam = self.cam
+            self.frameWrangler.Prepare()
+            
+            #self.frameWrangler.start()
+        except AttributeError:
+            pass
+    
+    def GetActiveCameraName(self):
+        """Get the name / key of the currently active camera"""
+        for name, cam in self.cameras.items():
+            if cam is self.cam:
+                return name
+                
+    def _SetActiveCameraIntegrationTime(self, integrationTime):
+        """Sets the integration time for the active camera (in ms)
 
-        if 'pa' in dir(self):
-            self.pa.cam = self.cam
-            self.pa.Prepare()
-            
-            self.pa.start()
-            
+        NB: This is a state handler, use 
+        `scope.state['Camera.IntegrationTime'] = integrationTime` 
+        instead of calling directly        
+        """
+        self.cam.SetIntegTime(integrationTime)
+    
+    def _GetActiveCameraIntegrationTime(self):
+        """Gets the integration time for the active camera (in ms)"""
+        return self.cam.GetIntegTime()
+        
+    def _SetActiveCameraROI(self, ROI):
+        """Sets the ROI for the active camera
+        
+        NB: This is a state handler, use 
+        `scope.state['Camera.ROI'] = ROI` 
+        instead of calling directly 
+        
+        Parameters
+        ----------
+
+        ROI : tuple / sequence
+            The co-ordinates (in pixels) of the ROI, in the form (x0, y0, x1, y1)       
+        
+        """
+        self.cam.SetROI(*ROI)
+        
+    def _GetActiveCameraROI(self):
+        """Gets the ROI for the active camera
+        
+        Parameters
+        ----------
+
+        ROI : tuple / sequence
+            The co-ordinates (in pixels) of the ROI, in the form (x0, y0, x1, y1)       
+        
+        """
+        x1 = self.cam.GetROIX1()
+        y1 = self.cam.GetROIY1()
+        x2 = self.cam.GetROIX2()
+        y2 = self.cam.GetROIY2()
+        
+        return (x1, y1, x2, y2)
         
             
-    def centreView(self, dx, dy):
+    def PanCamera(self, dx, dy):
+        """Moves / pans the stage my a given offset, in pixels relative to the
+        camera, correcting for any differences in rotation and mirroring between 
+        camera and stage axes.
+        
+        TODO: fix to use state based position setting
+        """
         vx, vy = self.GetPixelSize()
         
         p = self.GetPos()
@@ -310,8 +756,16 @@ class microscope(object):
 
 
     def turnAllLasersOff(self):
-        for l in self.lasers:
-            l.TurnOff()
+        """Turn all attached lasers off.
+        
+        TODO - does this fit with the new state based paradigm?
+        """
+        import re
+        for k in self.state.keys():
+            if re.match(r'Lasers\.(?P<laser_name>.*)\.On', k):
+                self.state[k] = False
+        #for l in self.lasers:
+        #    l.TurnOff()
 
     def __del__(self):
         self.settingsDB.close()

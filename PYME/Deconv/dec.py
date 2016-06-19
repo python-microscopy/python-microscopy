@@ -37,7 +37,7 @@ import numpy
 from wiener import resizePSF
 
 class dec:
-    '''Base deconvolution class, implementing a variant of the ICTM algorithm.
+    """Base deconvolution class, implementing a variant of the ICTM algorithm.
     ie. find f such that:
        ||Af-d||^2 + lamb^2||L(f - fdef)||^2
     is minimised
@@ -53,7 +53,7 @@ class dec:
 
     see dec_conv for an implementation of conventional image deconvolution with a
     measured, spatially invariant PSF
-    '''
+    """
     def __init__(self):
         #allocate some empty lists to track our progress in
         self.tests=[]
@@ -61,9 +61,9 @@ class dec:
         self.prefs = []
         
     def subsearch(self, f0, res, fdef, Afunc, Lfunc, lam, S):
-        '''minimise in subspace - this is the bit which gets called on each iteration
+        """minimise in subspace - this is the bit which gets called on each iteration
         to work out what the next step is going to be. See Inverse Problems text for details.
-        '''
+        """
         nsrch = size(S,1)
         pref = Lfunc(f0-fdef)
         w0 = dot(pref, pref)
@@ -91,17 +91,17 @@ class dec:
         return (fnew, cpred, wpred)
 
     def startGuess(self, data):
-        '''starting guess for deconvolution - can be overridden in derived classes
+        """starting guess for deconvolution - can be overridden in derived classes
         but the data itself is usually a pretty good guess.
-        '''
+        """
         return data.copy()
 
     def deconvp(self, args):
-        ''' convenience function for deconvolving in parallel using processing.Pool.map'''
+        """ convenience function for deconvolving in parallel using processing.Pool.map"""
         self.deconv(*args)
     
     def deconv(self, data, lamb, num_iters=10, weights=1, alpha=None, bg=0):
-        '''This is what you actually call to do the deconvolution.
+        """This is what you actually call to do the deconvolution.
         parameters are:
 
         data - the raw data
@@ -112,7 +112,7 @@ class dec:
 
         alpha - PSF phase - hacked in for variable phase 4Pi deconvolution, should
                 really be refactored out into the dec_4pi classes.
-        '''
+        """
         #remember what shape we are
         self.dataShape = data.shape
 
@@ -203,7 +203,7 @@ class dec:
         return real(self.fs)
         
     def sim_pic(self,data,alpha):
-        '''Do the forward transform to simulate a picture. Currently with 4Pi cruft.'''
+        """Do the forward transform to simulate a picture. Currently with 4Pi cruft."""
         self.alpha = alpha
         self.e1 = fftshift(exp(1j*self.alpha))
         self.e2 = fftshift(exp(2j*self.alpha))
@@ -213,9 +213,9 @@ class dec:
 
 
 class dec_4pi(dec):
-    '''Variable phase 4Pi deconvolution'''
+    """Variable phase 4Pi deconvolution"""
     def psf_calc(self, psf, kz, data_size):
-        '''Pre calculate OTFs etc ...'''
+        """Pre calculate OTFs etc ..."""
         g = psf;
 
         self.height = data_size[0]
@@ -300,7 +300,7 @@ class dec_4pi(dec):
         return ravel(d)
 
 class dec_conv(dec):
-    '''Classical deconvolution with a stationary PSF'''
+    """Classical deconvolution with a stationary PSF"""
     def prep(self):
         #allocate memory
         
@@ -313,7 +313,7 @@ class dec_conv(dec):
 
 
     def psf_calc(self, psf, data_size):
-        '''Precalculate the OTF etc...'''
+        """Precalculate the OTF etc..."""
 #        pw = (numpy.array(data_size) - psf.shape)/2.
 #        pw1 = numpy.floor(pw)
 #        pw2 = numpy.ceil(pw)
@@ -399,9 +399,9 @@ class dec_conv(dec):
 
 
     def Lfunc(self, f):
-        '''convolve with an approximate 2nd derivative likelihood operator in 3D.
+        """convolve with an approximate 2nd derivative likelihood operator in 3D.
         i.e. [[[0,0,0][0,1,0][0,0,0]],[[0,1,0][1,-6,1][0,1,0]],[[0,0,0][0,1,0][0,0,0]]]
-        '''
+        """
         #make our data 3D again
         fs = reshape(f, (self.height, self.width, self.depth))
         a = -6*fs
@@ -421,7 +421,7 @@ class dec_conv(dec):
     Lhfunc=Lfunc
 
     def Afunc(self, f):
-        '''Forward transform - convolve with the PSF'''
+        """Forward transform - convolve with the PSF"""
         #fs = reshape(f, (self.height, self.width, self.depth))
         self._r[:] = f.reshape(self._r.shape)
 
@@ -436,7 +436,7 @@ class dec_conv(dec):
         return ravel(ifftshift(self._r))
 
     def Ahfunc(self, f):
-        '''Conjugate transform - convolve with conj. PSF'''
+        """Conjugate transform - convolve with conj. PSF"""
 #        fs = reshape(f, (self.height, self.width, self.depth))
 #
 #        F = fftn(fs)
@@ -452,8 +452,8 @@ class dec_conv(dec):
         return ravel(ifftshift(self._r))
 
 class dec_bead(dec):
-    '''Classical deconvolution using non-fft convolution - pot. faster for
-    v. small psfs. Note that PSF must be symetric'''
+    """Classical deconvolution using non-fft convolution - pot. faster for
+    v. small psfs. Note that PSF must be symetric"""
     def psf_calc(self, psf, data_size):
         g = psf/psf.sum()
 
@@ -472,9 +472,9 @@ class dec_bead(dec):
 
 
     def Lfunc(self, f):
-        '''convolve with an approximate 2nd derivative likelihood operator in 3D.
+        """convolve with an approximate 2nd derivative likelihood operator in 3D.
         i.e. [[[0,0,0][0,1,0][0,0,0]],[[0,1,0][1,-6,1][0,1,0]],[[0,0,0][0,1,0][0,0,0]]]
-        '''
+        """
         #make our data 3D again
         fs = reshape(f, (self.height, self.width, self.depth))
         a = -6*fs
@@ -494,7 +494,7 @@ class dec_bead(dec):
     Lhfunc=Lfunc
 
     def Afunc(self, f):
-        '''Forward transform - convolve with the PSF'''
+        """Forward transform - convolve with the PSF"""
         fs = reshape(f, (self.height, self.width, self.depth))
 
         d = ndimage.convolve(fs, self.g)
@@ -503,7 +503,7 @@ class dec_bead(dec):
         return ravel(d)
 
     def Ahfunc(self, f):
-        '''Conjugate transform - convolve with conj. PSF'''
+        """Conjugate transform - convolve with conj. PSF"""
         fs = reshape(f, (self.height, self.width, self.depth))
 
         d = ndimage.correlate(fs, self.g)

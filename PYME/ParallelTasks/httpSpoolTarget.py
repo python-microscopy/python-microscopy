@@ -1,13 +1,13 @@
 from BaseHTTPServer import BaseHTTPRequestHandler
 import urlparse
 import os
-from PYME.FileUtils import nameUtils
-from PYME.Acquire import MetaDataHandler
+from PYME.IO.FileUtils import nameUtils
+from PYME.IO import MetaDataHandler
 from PYME.ParallelTasks import HDFTaskQueue
 import time
 import cPickle as pickle
 
-from PYME.FileUtils import PZFFormat
+from PYME.IO import PZFFormat
 
 import tables
 import json
@@ -228,10 +228,10 @@ class GetHandler(BaseHTTPRequestHandler):
                 self.send_response(200)
                 self.end_headers()
                 
-                message = '''PYME h5 data:
+                message = """PYME h5 data:
                 Data size: [%d,%d, %d]
                 NumEvents: %d
-                ''' % tuple(h5f.dshape + [h5f.nEvents])
+                """ % tuple(h5f.dshape + [h5f.nEvents])
                 
                 self.wfile.write(message)
                 return

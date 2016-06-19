@@ -22,7 +22,8 @@
 import wx
 import os
 from PYME.Acquire.mytimer import mytimer
-import PYME.misc.autoFoldPanel as afp
+import PYME.ui.autoFoldPanel as afp
+from PYME import resources
 
 class PlayPanel(wx.Panel):
     def __init__(self, parent, dsviewer):
@@ -32,9 +33,9 @@ class PlayPanel(wx.Panel):
         self.do = dsviewer.do
         self.dsviewer = dsviewer
 
-        self.bmStartSeek = wx.Bitmap(os.path.join(dirname, '../icons/media-skip-backward.png'))
-        self.bmPlay = wx.Bitmap(os.path.join(dirname,'../icons/media-playback-start.png'))
-        self.bmPause = wx.Bitmap(os.path.join(dirname,'../icons/media-playback-pause.png'))
+        self.bmStartSeek = wx.Bitmap(resources.getIconPath('media-skip-backward.png'))
+        self.bmPlay = wx.Bitmap(resources.getIconPath('media-playback-start.png'))
+        self.bmPause = wx.Bitmap(resources.getIconPath('media-playback-pause.png'))
 
         self.mode = 'HORIZ'
         self.moving= False

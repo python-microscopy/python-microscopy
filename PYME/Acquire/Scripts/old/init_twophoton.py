@@ -27,13 +27,13 @@ from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
 from PYME.Acquire.Hardware import fakeShutters
 import time
 
-InitBG('EMCCD Camera', '''
+InitBG('EMCCD Camera', """
 scope.cam = AndorIXon.iXonCamera()
-''')
-InitGUI('''
+""")
+InitGUI("""
 acf = AndorControlFrame.AndorPanel(MainFrame, scope.cam, scope)
 camPanels.append((acf, 'Andor EMCCD Properties'))
-''')
+""")
 
 #setup for the channels to aquire - b/w camera, no shutters
 class chaninfo:
@@ -48,7 +48,7 @@ scope.shutters = fakeShutters
 
 
 
-InitBG('Piezos', '''
+InitBG('Piezos', """
 from PYME.Acquire.Hardware.Old import SMI1
 scope.piez = SMI1.CPiezoOp()
 scope.piez.Init(1)
@@ -57,17 +57,17 @@ scope.piez.SetMax(2, 100.)
 scope.piezos.append((scope.piez, 2, 'Object'))
 scope.piezos.append((scope.piez, 1, 'Y'))
 #scope.piezos.append((scope.piez, 3, 'Phase'))
-''')
+""")
 
-InitGUI('''
+InitGUI("""
 from PYME.Acquire.Hardware import focusKeys
 fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[0])
 time1.WantNotification.append(fk.refresh)
-''')
+""")
 
 
 #Stepper motor
-InitBG('Stepper Motor', '''
+InitBG('Stepper Motor', """
 from PYME.Acquire.Hardware.Old import SMI1
 import wx
 
@@ -81,9 +81,9 @@ if (ret == wx.ID_YES):
 else:
     scope.step.Init(2)
 
-''')
+""")
 
-InitBG('Lasers', '''
+InitBG('Lasers', """
 from PYME.Acquire.Hardware import lasers
 
 pport = lasers.PPort()
@@ -91,15 +91,15 @@ scope.l671 = lasers.ParallelSwitchedLaser('671',pport,0)
 scope.l488 = lasers.ParallelSwitchedLaser('488',pport,1)
 
 scope.lasers = [scope.l488,scope.l671]
-''')
+""")
 
-InitGUI('''
+InitGUI("""
 if 'lasers'in dir(scope):
     from PYME.Acquire.Hardware import LaserControlFrame
     lcf = LaserControlFrame.LaserControlLight(MainFrame,scope.lasers)
     time1.WantNotification.append(lcf.refresh)
     toolPanels.append((lcf, 'Laser Control'))
-''')
+""")
 
 
 

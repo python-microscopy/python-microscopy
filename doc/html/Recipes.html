@@ -6,15 +6,15 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Using recipes for data processing and quantification &mdash; PYME 0.1 documentation</title>
+    <title>Using recipes for data processing and quantification &mdash; PYME 16.05.24 documentation</title>
     
-    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.1',
+        VERSION:     '16.05.24',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,11 +23,14 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="PYME 0.1 documentation" href="index.html" /> 
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PYME 16.05.24 documentation" href="index.html" />
+    <link rel="up" title="dh5view - Image Data Analysis and Viewing" href="Analysis.html" />
+    <link rel="next" title="VisGUI - Visualising Localization Data Sets" href="VisGUI.html" />
+    <link rel="prev" title="Using an image splitting device for multi-colour ratiometric imaging" href="SplitterMulticolour.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -36,44 +39,43 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">PYME 0.1 documentation</a> &raquo;</li>
+        <li class="right" >
+          <a href="VisGUI.html" title="VisGUI - Visualising Localization Data Sets"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="SplitterMulticolour.html" title="Using an image splitting device for multi-colour ratiometric imaging"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">PYME 16.05.24 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="Analysis.html" accesskey="U"><strong>dh5view</strong> - Image Data Analysis and Viewing</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/Recipes.rst">Edit</a> &raquo;</li>
  
 
       </ul>
-    </div>  
-
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          <div class="body">
-            
-  <div class="section" id="using-recipes-for-data-processing-and-quantification">
-<h1>Using recipes for data processing and quantification<a class="headerlink" href="#using-recipes-for-data-processing-and-quantification" title="Permalink to this headline">¶</a></h1>
-<dl class="docutils">
-<dt>Recipes are an experimental feature of PYME for automating image post-processing and anaylsis tasks, for both super-resolution and conventional microscopy data. They allow you do define a processing workflow consisting of multiple different tasks such as filtering or quantification and to run each of these tasks automatically over a set of images. The concept is broadly similar to the &#8216;block&#8217; or &#8216;pipeline&#8217; processing models used in e.g. OpenInventor, Simulink, Khorus/Cantata, or CellProfiler. My motivation behind developing recipes was to allow image processing scripts to be written quickly without having to worry about file I/O, and keeping track of e.g. metadata, and for these scripts to be able to be run in a variety of environments, with or without a GUI. The principle conceptual differences are thus:</dt>
-<dd><ul class="first last simple">
-<li>PYME recipes have been designed around an easily edited textual representation (although a GUI is also available).</li>
-<li>Image metadata (e.g. pixel sizes) is automatically propagated with the images.</li>
-<li>many modules are very thin wrappers around the corresponding functions in either scipy or scikits-image.</li>
-</ul>
-</dd>
-</dl>
-<p>An example of a recipe (as displayed in the GUI) is shown below.</p>
-</div>
-
-
-          </div>
-        </div>
-      </div>
-      <div class="sphinxsidebar">
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/Recipes.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/pymeLogo.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Using recipes for data processing and quantification</a><ul>
+<li><a class="reference internal" href="#connections-between-modules-execution-order-and-dependencies">Connections between modules, execution order, and dependencies</a></li>
+<li><a class="reference internal" href="#batch-processing">Batch Processing</a><ul>
+<li><a class="reference internal" href="#command-line-interface">Command line interface</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="SplitterMulticolour.html"
+                        title="previous chapter">Using an image splitting device for multi-colour ratiometric imaging</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="VisGUI.html"
+                        title="next chapter"><strong>VisGUI</strong> - Visualising Localization Data Sets</a></p>
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
       <input type="text" name="q" />
@@ -88,9 +90,50 @@
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
       </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="using-recipes-for-data-processing-and-quantification">
+<h1>Using recipes for data processing and quantification<a class="headerlink" href="#using-recipes-for-data-processing-and-quantification" title="Permalink to this headline">¶</a></h1>
+<dl class="docutils">
+<dt>Recipes are an experimental feature of PYME for automating image post-processing and anaylsis tasks, for both super-resolution and conventional microscopy data. They allow you do define a processing workflow consisting of multiple different tasks such as filtering or quantification and to run each of these tasks automatically over a set of images. The concept is broadly similar to the &#8216;block&#8217; or &#8216;pipeline&#8217; processing models used in e.g. OpenInventor, Simulink, Khorus/Cantata, or CellProfiler. My motivation behind developing recipes was to allow image processing scripts to be written quickly without having to worry about file I/O, and keeping track of e.g. metadata, and for these scripts to be able to be run in a variety of environments, with or without a GUI. The principle conceptual differences are thus:</dt>
+<dd><ul class="first last simple">
+<li>PYME recipes have been designed around an easily edited textual representation (although a GUI is also available).</li>
+<li>Image metadata (e.g. pixel sizes) is automatically propagated with the images.</li>
+<li>many modules are very thin wrappers around the corresponding functions in either scipy or scikits-image.</li>
+</ul>
+</dd>
+</dl>
+<p>An example of a recipe (as displayed in the GUI) is shown below.</p>
+<img alt="_images/recipe.png" src="_images/recipe.png" />
+<div class="section" id="connections-between-modules-execution-order-and-dependencies">
+<h2>Connections between modules, execution order, and dependencies<a class="headerlink" href="#connections-between-modules-execution-order-and-dependencies" title="Permalink to this headline">¶</a></h2>
+<p>Recipes differ from many of the existing block or pipeline architectures in that connections between modules and the order in which modules are executed are both defined implicitly. Inputs and outputs to each module are assigned names, or keys, which are then used to find locate each modules input data in a common namespace (implemented as a python dictionary) and to store the modules output(s) in the same namespace. The connections between modules are then inferred my matching input and output names, and the execution order determined using a dependency solver such that modules do not execute before their inputs have been generated. This allows for a compact and quickly adaptable representation of the recipe, which can easily be altered without having to manually re-connect a complex net. To link two modules, you simply have to set the input name on the second module to the output name of the first.</p>
+<p>Module names can be pretty much anything you choose, and should be descriptive. Avoiding spaces and non-alphanumeric characters however is advised, particularly for input and output names. When used for batch processing, all names beginning with <strong>in</strong> are considered to be inputs, and all names beginning with <strong>out</strong> are marked as outputs, and will be saved to disk in the output directory. When operating within <em>dh5view</em>, recipes currently only support one input (called <strong>input</strong>) and one output (<strong>output</strong>). In this case the <strong>input</strong> image is the currently open image, and the <strong>output</strong> is displayed in a new window (or, in the case of measurement data as annotations to the current image).</p>
+</div>
+<div class="section" id="batch-processing">
+<h2>Batch Processing<a class="headerlink" href="#batch-processing" title="Permalink to this headline">¶</a></h2>
+<p>Batch processing allows you to automatically run a pre-defined recipe over a series of input files.</p>
+<div class="section" id="command-line-interface">
+<h3>Command line interface<a class="headerlink" href="#command-line-interface" title="Permalink to this headline">¶</a></h3>
+<p>The command line interface to batch processing is the script located at <a href="#id1"><span class="problematic" id="id2">``</span></a>PYME/Analysis/Modules/batchProcess.py&#8221;, and can be called, for example as follows:</p>
+<div class="highlight-bash"><div class="highlight"><pre>python /path/to/batchProcess.py -input1<span class="o">=</span>/path/to/input/channel1*.tif -input2<span class="o">=</span>/path/to/input/channel2*.tif recipe.yaml /path/to/output/dir
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -99,15 +142,22 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">PYME 0.1 documentation</a> &raquo;</li>
+        <li class="right" >
+          <a href="VisGUI.html" title="VisGUI - Visualising Localization Data Sets"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="SplitterMulticolour.html" title="Using an image splitting device for multi-colour ratiometric imaging"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">PYME 16.05.24 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="Analysis.html" ><strong>dh5view</strong> - Image Data Analysis and Viewing</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/Recipes.rst">Edit</a> &raquo;</li>
  
 
       </ul>
     </div>
-    <div class="footer">
-        &copy; Copyright 2010, David Baddeley.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, David Baddeley.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
     </div>
   </body>
 </html>

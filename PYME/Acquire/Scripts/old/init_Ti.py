@@ -37,34 +37,34 @@ def GetComputerName():
 
 #scope.cameras = {}
 #scope.camControls = {}
-from PYME.Acquire import MetaDataHandler
+from PYME.IO import MetaDataHandler
 
-InitBG('EMCCD Cameras', '''
+InitBG('EMCCD Cameras', """
 scope.cameras['A - Left'] = AndorIXon.iXonCamera(0)
 #scope.cameras['B - Right'] = AndorIXon.iXonCamera(0)
 #scope.cameras['B - Right'].SetShutter(False)
 #scope.cameras['B - Right'].SetActive(False)
 scope.cam = scope.cameras['A - Left']
-''')
+""")
 
-#InitBG('EMCCD Camera 2', '''
+#InitBG('EMCCD Camera 2', """
 #scope.cameras['B'] = AndorIXon.iXonCamera(0)
-#''')
+#""")
 
-InitGUI('''
+InitGUI("""
 scope.camControls['A - Left'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['A - Left'], scope)
 camPanels.append((scope.camControls['A - Left'], 'EMCCD A Properties'))
 
 #scope.camControls['B - Right'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['B - Right'], scope)
 #camPanels.append((scope.camControls['B - Right'], 'EMCCD B Properties'))
 
-''')
+""")
 
-InitGUI('''
+InitGUI("""
 from PYME.Acquire import sampleInformation
 sampPan = sampleInformation.slidePanel(MainFrame)
 camPanels.append((sampPan, 'Current Slide'))
-''')
+""")
 
 #setup for the channels to aquire - b/w camera, no shutters
 class chaninfo:
@@ -78,13 +78,13 @@ scope.shutters = fakeShutters
 
 
 #PIFoc
-InitBG('PIFoc', '''
+InitBG('PIFoc', """
 from PYME.Acquire.Hardware.Piezos import piezo_e816
 scope.piFoc = piezo_e816.piezo_e816('COM1', 400, 0, True)
 scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
-''')
+""")
 
-#InitBG('Stage Stepper Motors', '''
+#InitBG('Stage Stepper Motors', """
 #from PYME.Acquire.Hardware.Mercury import mercuryStepper
 #scope.stage = mercuryStepper.mercuryStepper(comPort=5, axes=['A', 'B'], steppers=['M-229.25S', 'M-229.25S'])
 #scope.stage.SetSoftLimits(0, [1.06, 20.7])
@@ -94,43 +94,43 @@ scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
 #scope.joystick = scope.stage.joystick
 #scope.joystick.Enable(True)
 #scope.CleanupFunctions.append(scope.stage.Cleanup)
-#''')
+#""")
 
-InitGUI('''
+InitGUI("""
 from PYME.Acquire import sarcSpacing
 ssp = sarcSpacing.SarcomereChecker(MainFrame, menuBar1, scope)
-''')
+""")
 
 
 
-#InitGUI('''
+#InitGUI("""
 #from PYME.Acquire import positionTracker
 #pt = positionTracker.PositionTracker(scope, time1)
 #pv = positionTracker.TrackerPanel(MainFrame, pt)
 #MainFrame.AddPage(page=pv, select=False, caption='Track')
 #time1.WantNotification.append(pv.draw)
-#''')
+#""")
 
 #splitter
-#InitGUI('''
+#InitGUI("""
 #from PYME.Acquire.Hardware import splitter
 #splt = splitter.Splitter(MainFrame, mControls, scope, scope.cam, flipChan = 0, dichroic = 'NotYet' , transLocOnCamera = 'Top', flip=False)
-#''')
+#""")
 
 #we don't have a splitter - make sure that the analysis knows this
 #scope.mdh['Splitter.Flip'] = False
 
 #Z stage
-#InitGUI('''
+#InitGUI("""
 #from PYME.Acquire.Hardware import NikonTi
 #scope.zStage = NikonTi.zDrive()
 #import Pyro.core
 #scope.zStage = Pyro.core.getProxyForURI('PYRONAME://%s.ZDrive'  % GetComputerName())
 #scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
-#''')# % GetComputerName())
+#""")# % GetComputerName())
 
 #Nikon Ti motorised controls
-InitGUI('''
+InitGUI("""
 from PYME.Acquire.Hardware import NikonTi, NikonTiGUI
 scope.dichroic = NikonTi.FilterChanger()
 scope.lightpath = NikonTi.LightPath()
@@ -141,20 +141,20 @@ time1.WantNotification.append(TiPanel.SetSelections)
 
 MetaDataHandler.provideStartMetadata.append(scope.dichroic.ProvideMetadata)
 MetaDataHandler.provideStartMetadata.append(scope.lightpath.ProvideMetadata)
-''')# % GetComputerName())
+""")# % GetComputerName())
 
-InitGUI('''
+InitGUI("""
 from PYME.Acquire.Hardware import focusKeys
 fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[0], scope=scope)
 time1.WantNotification.append(fk.refresh)
-''')
+""")
 
 #from PYME.Acquire.Hardware import frZStage
 #frz = frZStage.frZStepper(MainFrame, scope.zStage)
 #frz.Show()
 
 ##3-axis piezo
-#InitBG('Thorlabs Piezo', '''
+#InitBG('Thorlabs Piezo', """
 #from PYME.Acquire.Hardware import thorlabsPiezo
 #
 ##check to see what we've got attached
@@ -175,7 +175,7 @@ time1.WantNotification.append(fk.refresh)
 #else:
 #    raise HWNotPresent
 #
-#''')
+#""")
     
 from PYME.Acquire.Hardware.FilterWheel import WFilter, FiltFrame
 filtList = [WFilter(1, 'EMPTY', 'EMPTY', 0),
@@ -185,14 +185,14 @@ filtList = [WFilter(1, 'EMPTY', 'EMPTY', 0),
     WFilter(5, 'ND3'  , 'UVND 3'  , 3),
     WFilter(6, 'ND4'  , 'UVND 4'  , 4)]
 
-InitGUI('''
+InitGUI("""
 try:
     scope.filterWheel = FiltFrame(MainFrame, filtList, 'COM4')
     scope.filterWheel.SetFilterPos("ND4")
     toolPanels.append((scope.filterWheel, 'Filter Wheel'))
 except:
     print 'Error starting filter wheel ...'
-''')
+""")
 
 
 #DigiData
@@ -201,7 +201,7 @@ scope.l642 = phoxxLaser.PhoxxLaser('642')
 scope.StatusCallbacks.append(scope.l642.GetStatusText)
 scope.lasers = [scope.l642]
 # scope.lasers = []
-#InitBG('DigiData', '''
+#InitBG('DigiData', """
 #from PYME.Acquire.Hardware.DigiData import DigiDataClient
 #dd = DigiDataClient.getDDClient()
 #
@@ -217,15 +217,15 @@ scope.lasers = [scope.l642]
 #scope.l532 = lasers.ParallelSwitchedLaser('532',pport,1)
 #
 #scope.lasers = [scope.l405,scope.l532,scope.l671, scope.l490]
-#''')
+#""")
 
-InitGUI('''
+InitGUI("""
 if 'lasers'in dir(scope):
     from PYME.Acquire.Hardware import LaserControlFrame
     lcf = LaserControlFrame.LaserControlLight(MainFrame,scope.lasers)
     time1.WantNotification.append(lcf.refresh)
     toolPanels.append((lcf, 'Laser Control'))
-''')
+""")
 #
 #from PYME.Acquire.Hardware import PM100USB
 #
@@ -235,15 +235,15 @@ if 'lasers'in dir(scope):
 
 ##Focus tracking
 #from PYME.Acquire.Hardware import FocCorrR
-#InitBG('Focus Corrector', '''
+#InitBG('Focus Corrector', """
 #scope.fc = FocCorrR.FocusCorrector(scope.zStage, tolerance=0.20000000000000001, estSlopeDyn=False, recDrift=False, axis='Y', guideLaser=l488)
 #scope.StatusCallbacks.append(fc.GetStatus)
-#''')
-#InitGUI('''
+#""")
+#InitGUI("""
 #if 'fc' in dir(scope):
 #    scope.fc.addMenuItems(MainFrame, MainMenu)
 #    scope.fc.Start(2000)
-#''')
+#""")
 
 
 

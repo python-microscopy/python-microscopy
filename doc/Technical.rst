@@ -5,4 +5,5 @@ Technical Details
    :maxdepth: 1
 
    DataFormats
+   SampleDB
    FitModules

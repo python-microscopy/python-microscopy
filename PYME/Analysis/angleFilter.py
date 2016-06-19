@@ -10,7 +10,7 @@
 #
 ##################
 
-'''To be run by invoking:
+"""To be run by invoking:
     
     python angleFilter.py <file1> <file2> <file3> etc ....
     
@@ -22,7 +22,7 @@
     The calculated histograms are output as tab formatted txt, with the columns being
     left hand bin edge (in degrees), raw count, and normalised count respectively.
     
-'''
+"""
 from scipy import linalg, ndimage
 import numpy as np
 import pylab as pl
@@ -41,7 +41,7 @@ def th(data, FILT_SIZE, x, y, b, ang):
     return (data*ang).sum()/data.sum()
 
 def th2(data, FILT_SIZE, x, y, b, ang):
-    '''calculate principle axis of ROI using SVD'''
+    """calculate principle axis of ROI using SVD"""
     if (data > 0).sum() < 2:
         #not enough data to calculate PA
         return -1
@@ -50,8 +50,8 @@ def th2(data, FILT_SIZE, x, y, b, ang):
     return np.angle(pa[0] + 1j*pa[1])%np.pi
     
 def width(data,FILT_SIZE, x, y, b, ang):
-    '''calculate orthogonal width of data segment using data itself
-    to define principle axis'''
+    """calculate orthogonal width of data segment using data itself
+    to define principle axis"""
     if (data > 0).sum() < 2:
         #not enough data to calculate PA
         return -1
@@ -93,10 +93,10 @@ def width(data,FILT_SIZE, x, y, b, ang):
     return mad
     
 def width_o(data, FILT_SIZE, x, y, b, ang):
-    '''calculate orthogonal width of data segment based on 3D data
+    """calculate orthogonal width of data segment based on 3D data
     where first slice is the intensities, and second slice is the angle 
     in each pixel.
-    '''
+    """
     data = data.reshape(FILT_SIZE, FILT_SIZE, 2)
     #if (data > 0).sum() < 2:
     #    #not enough data to calculate PA
@@ -220,7 +220,7 @@ def angHist2(theta):
     
     
 def procSkelFile(filename, disp=True):
-    from PYME.gohlke import tifffile
+    from PYME.contrib.gohlke import tifffile
     import os
     
     #generate a stub for our output files

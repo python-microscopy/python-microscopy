@@ -74,7 +74,7 @@ def loadModule(modName, dsviewer):
 
 
 def loadMode(mode, dsviewer):
-    '''install the relevant modules for a particular mode'''
+    """install the relevant modules for a particular mode"""
 
     if mode in modeModules.keys():
         mods = modeModules[mode]

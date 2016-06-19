@@ -27,29 +27,29 @@ from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
 from PYME.Acquire.Hardware import fakeShutters
 import time
 
-cm = InitBG('Andor Neo', '''
+cm = InitBG('Andor Neo', """
 from PYME.Acquire.Hardware.AndorNeo import AndorNeo
 scope.cam = AndorNeo.AndorNeo(0)
 scope.cam.Init()
 scope.cameras['Neo'] = scope.cam
 #time.sleep(5)
-''')
+""")
 
-#InitGUI('''scope.cam.Init()''')
+#InitGUI("""scope.cam.Init()""")
 
-InitBG('EMCCD Cameras', '''
+InitBG('EMCCD Cameras', """
 #scope.cameras['A - Left'] = AndorIXon.iXonCamera(0)
 scope.cameras['Ixon'] = AndorIXon.iXonCamera(0)
 scope.cameras['Ixon'].SetShutter(False)
 scope.cameras['Ixon'].SetActive(False)
 #scope.cam = scope.cameras['A - Left']
-''')
+""")
 
-#InitBG('EMCCD Camera 2', '''
+#InitBG('EMCCD Camera 2', """
 #scope.cameras['B'] = AndorIXon.iXonCamera(0)
-#''')
+#""")
 
-InitGUI('''
+InitGUI("""
 #scope.camControls['A - Left'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['A - Left'], scope)
 #camPanels.append((scope.camControls['A - Left'], 'EMCCD A Properties'))
 scope.camControls['Neo'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['Ixon'], scope)
@@ -58,13 +58,13 @@ camPanels.append((scope.camControls['Neo'], 'Neo Properties'))
 scope.camControls['Ixon'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['Ixon'], scope)
 camPanels.append((scope.camControls['Ixon'], 'EMCCD Properties'))
 
-''')
+""")
 
-InitGUI('''
+InitGUI("""
 import sampleInformation
 sampPan = sampleInformation.slidePanel(MainFrame)
 camPanels.append((sampPan, 'Current Slide'))
-''')
+""")
 
 #setup for the channels to aquire - b/w camera, no shutters
 class chaninfo:
@@ -78,13 +78,13 @@ scope.shutters = fakeShutters
 
 
 #PIFoc
-InitBG('PIFoc', '''
+InitBG('PIFoc', """
 from PYME.Acquire.Hardware.Piezos import piezo_e816
 scope.piFoc = piezo_e816.piezo_e816('COM2', 400, -0.399)
 scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
-''')
+""")
 
-InitBG('Stage Stepper Motors', '''
+InitBG('Stage Stepper Motors', """
 from PYME.Acquire.Hardware.Mercury import mercuryStepper
 scope.stage = mercuryStepper.mercuryStepper(comPort=5, axes=['A', 'B'], steppers=['M-229.25S', 'M-229.25S'])
 scope.stage.SetSoftLimits(0, [1.06, 20.7])
@@ -94,46 +94,46 @@ scope.piezos.append((scope.stage, 1, 'Stage Y'))
 scope.joystick = scope.stage.joystick
 scope.joystick.Enable(True)
 scope.CleanupFunctions.append(scope.stage.Cleanup)
-''')
+""")
 
-#InitGUI('''
+#InitGUI("""
 #from PYME.Acquire import sarcSpacing
 #ssp = sarcSpacing.SarcomereChecker(MainFrame, menuBar1, scope)
-#''')
+#""")
 
-InitGUI('''
+InitGUI("""
 from PYME.Acquire.Hardware import focusKeys
 fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[0])
 time1.WantNotification.append(fk.refresh)
-''')
+""")
 
-#InitGUI('''
+#InitGUI("""
 #from PYME.Acquire import positionTracker
 #pt = positionTracker.PositionTracker(scope, time1)
 #pv = positionTracker.TrackerPanel(MainFrame, pt)
 #MainFrame.AddPage(page=pv, select=False, caption='Track')
 #time1.WantNotification.append(pv.draw)
-#''')
+#""")
 
 #splitter
-InitGUI('''
+InitGUI("""
 from PYME.Acquire.Hardware import splitter
 splt = splitter.Splitter(MainFrame, mControls, scope, scope.cam, dichroic = 'FF741-Di01' , transLocOnCamera = 'Top')
-''')
+""")
 
 #Z stage
-#InitBG('Nikon Z-Stage', '''
+#InitBG('Nikon Z-Stage', """
 #from PYME.Acquire.Hardware import NikonTE2000
 #scope.zStage = NikonTE2000.zDrive()
 #scope.piezos.append((scope.zStage, 1, 'Z Stepper'))
-#''')
+#""")
 
 #from PYME.Acquire.Hardware import frZStage
 #frz = frZStage.frZStepper(MainFrame, scope.zStage)
 #frz.Show()
 
 ##3-axis piezo
-#InitBG('Thorlabs Piezo', '''
+#InitBG('Thorlabs Piezo', """
 #from PYME.Acquire.Hardware import thorlabsPiezo
 #
 ##check to see what we've got attached
@@ -154,7 +154,7 @@ splt = splitter.Splitter(MainFrame, mControls, scope, scope.cam, dichroic = 'FF7
 #else:
 #    raise HWNotPresent
 #
-#''')
+#""")
     
 from PYME.Acquire.Hardware.FilterWheel import WFilter, FiltFrame
 filtList = [WFilter(1, 'EMPTY', 'EMPTY', 0),
@@ -164,19 +164,19 @@ filtList = [WFilter(1, 'EMPTY', 'EMPTY', 0),
     WFilter(5, 'ND2'  , 'UVND 2'  , 2),
     WFilter(6, 'ND4.5'  , 'UVND 4.5'  , 4.5)]
 
-InitGUI('''
+InitGUI("""
 try:
     scope.filterWheel = FiltFrame(MainFrame, filtList)
     scope.filterWheel.SetFilterPos("ND4.5")
     toolPanels.append((scope.filterWheel, 'Filter Wheel'))
 except:
     print 'Error starting filter wheel ...'
-''')
+""")
 
 
 #DigiData
 #scope.lasers = []
-InitBG('DigiData', '''
+InitBG('DigiData', """
 from PYME.Acquire.Hardware.DigiData import DigiDataClient
 dd = DigiDataClient.getDDClient()
 
@@ -193,15 +193,15 @@ scope.l671 = lasers.ParallelSwitchedLaser('671',pport,0)
 scope.l532 = lasers.ParallelSwitchedLaser('532',pport,1)
 
 scope.lasers = [scope.l405,scope.l532,scope.l671, scope.l490, scope.l491]
-''')
+""")
 
-InitGUI('''
+InitGUI("""
 if 'lasers'in dir(scope):
     from PYME.Acquire.Hardware import LaserControlFrame
     lcf = LaserControlFrame.LaserControlLight(MainFrame,scope.lasers)
     time1.WantNotification.append(lcf.refresh)
     toolPanels.append((lcf, 'Laser Control'))
-''')
+""")
 
 from PYME.Acquire.Hardware import PM100USB
 
@@ -214,15 +214,15 @@ except:
 
 ##Focus tracking
 #from PYME.Acquire.Hardware import FocCorrR
-#InitBG('Focus Corrector', '''
+#InitBG('Focus Corrector', """
 #scope.fc = FocCorrR.FocusCorrector(scope.zStage, tolerance=0.20000000000000001, estSlopeDyn=False, recDrift=False, axis='Y', guideLaser=l488)
 #scope.StatusCallbacks.append(fc.GetStatus)
-#''')
-#InitGUI('''
+#""")
+#InitGUI("""
 #if 'fc' in dir(scope):
 #    scope.fc.addMenuItems(MainFrame, MainMenu)
 #    scope.fc.Start(2000)
-#''')
+#""")
 
 #from PYME import cSMI
 #

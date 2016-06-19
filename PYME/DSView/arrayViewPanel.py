@@ -57,10 +57,10 @@ def getLUT(cmap):
 class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
     def __init__(self, parent, dstack = None, aspect=1, do = None, voxelsize=[1,1,1]):
         
-        if (dstack == None and do == None):
+        if (dstack is None and do is None):
             dstack = scipy.zeros((10,10))
 
-        if do == None:
+        if do is None:
             self.do = DisplayOpts(dstack, aspect=aspect)
             self.do.Optimise()
         else:
@@ -116,7 +116,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         
         self.labelPens = [wx.Pen(wx.Colour(*pylab.cm.hsv(v, alpha=.5, bytes=True)), 2) for v in numpy.linspace(0, 1, 16)]
 
-#        if not aspect == None:
+#        if not aspect is None:
 #            if scipy.isscalar(aspect):
 #                self.do.aspects[2] = aspect
 #            elif len(aspect) == 3:
@@ -212,7 +212,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         return xs, ys
         
     def _drawBoxPixelCoords(self, dc, x, y, z, w, h, d):
-        '''Draws a box in screen space given 3D co-ordinates'''        
+        """Draws a box in screen space given 3D co-ordinates"""
         if (self.do.slice == self.do.SLICE_XY):
             xs, ys = self._PixelToScreenCoordinates(x,y)
             ws, hs = (w*self.scale, h*self.scale*self.aspect)
@@ -661,7 +661,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             if not self.slice == self.do.slice:
                 #if the slice has changed, change our aspect and do some
                 self.slice = self.do.slice
-                #if not event == None and event.GetId() in [self.cbSlice.GetId(), self.cbScale.GetId()]:
+                #if not event is None and event.GetId() in [self.cbSlice.GetId(), self.cbScale.GetId()]:
                 #recenter the view
                 if(self.do.slice == self.do.SLICE_XY):
                     lx = self.do.xp
@@ -976,7 +976,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             
         return sig
     
-    def Redraw(self, caller=None):
+    def Redraw(self, sender=None, **kwargs):
         self._oldImSig = None
         self.Refresh()
         self.Update()
@@ -987,7 +987,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         sX, sY = self.imagepanel.Size
         
         sig = self._gensig(x0, y0, sX, sY, self.do)
-        if sig == self._oldImSig:# and not self._oldIm == None:
+        if sig == self._oldImSig:# and not self._oldIm is None:
             #if nothing has changed, don't re-render
             return self._oldIm
 
@@ -1108,7 +1108,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
 
 #    def GetProfile(self,halfLength=10,axis = 2, pos=None, roi=[2,2], background=None):
-#        if not pos == None:
+#        if not pos is None:
 #            px, py, pz = pos
 #        else:
 #            px, py, pz = self.do.xp, self.do.yp, self.do.zp
@@ -1126,7 +1126,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 #                pts = numpy.where((abs(points[:,0] - px) < 2*roi[0])*(abs(points[:,1] - py) < 2*roi[1])*(abs(points[:,2] - pz) < halfLength))
 #            #print p.shape
 #            #p = p.mean(1).mean(0)
-#            if not background == None:
+#            if not background is None:
 #                p -= self.do.ds[(px - background[0]):(px + background[0]),(py - background[1]):(py + background[1]),(pz - halfLength):(pz + halfLength)].mean(2).mean(1)
 #        elif axis == 1: #y
 #            p = self.do.ds[(px - roi[0]):(px + roi[0]),(py - halfLength):(py + halfLength),(pz - roi[1]):(pz + roi[1])].mean(1).mean(0)
@@ -1135,7 +1135,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 #                d = numpy.array([((abs(points[:,1] - py) < 2*roi[0])*(abs(points[:,2] - pz) < 2*roi[1])*(points[:,0] == z)).sum() for z in x])
 #
 #                pts = numpy.where((abs(points[:,0] - px) < 2*roi[0])*(abs(points[:,1] - py) < halfLength)*(abs(points[:,2] - pz) < 2*roi[1]))
-#            if not background == None:
+#            if not background is None:
 #                p -= self.do.ds[(px - background[0]):(px + background[0]),(py - halfLength):(py + halfLength),(pz - background[1]):(pz + background[1]),(pz - halfLength):(pz + halfLength)].mean(1).mean(0)
 #        elif axis == 0: #x
 #            p = self.do.ds[(px - halfLength):(px + halfLength), (py - roi[0]):(py + roi[0]),(pz - roi[1]):(pz + roi[1])].mean(2).mean(0)
@@ -1144,7 +1144,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 #                d = numpy.array([((abs(points[:,0] - px) < 2*roi[0])*(abs(points[:,2] - pz) < 2*roi[1])*(points[:,1] == z)).sum() for z in x])
 #
 #                pts = numpy.where((abs(points[:,0] - px) < halfLength)*(abs(points[:,1] - py) < 2*roi[0])*(abs(points[:,2] - pz) < 2*roi[1]))
-#            if not background == None:
+#            if not background is None:
 #                p -= self.do.ds[(px - halfLength):(px + halfLength),(py - background[0]):(py + background[0]),(pz - background[1]):(pz + background[1])].mean(2).mean(0)
 #
 #        return x,p,d, pts

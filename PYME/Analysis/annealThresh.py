@@ -24,14 +24,14 @@ import numpy as np
 from scipy import ndimage
 
 def genDefaultMask(nDim):
-    '''default mask is a n-dimensional donut around point'''
+    """default mask is a n-dimensional donut around point"""
     m = np.ones([3]*nDim, 'f')
     m.__setitem__((1,)*nDim,0)
 
     return m
     
 def gen2DMask(nDim):
-    '''default mask is a n-dimensional donut around point'''
+    """default mask is a n-dimensional donut around point"""
     m = np.ones([3]*nDim, 'f')
     m.__setitem__((1,)*nDim,0)
     
@@ -41,7 +41,7 @@ def gen2DMask(nDim):
     return m
 
 def annealThresh(image, valP50, valPslope=1, neighP50=4, neighSlope=.25, mask=None, nIters=10):
-    '''segment an image based on both intensity and neighbourbood relationships'''
+    """segment an image based on both intensity and neighbourbood relationships"""
 
     #if no mask then use default
     if mask == None:
@@ -73,7 +73,7 @@ def annealThresh(image, valP50, valPslope=1, neighP50=4, neighSlope=.25, mask=No
 
 
 def annealThresh2(image, valP50, valPslope=1, neighP50=.5, neighSlope=1, mask=None, nIters=10, out = None):
-    '''segment an image based on both intensity and neighbourbood relationships'''
+    """segment an image based on both intensity and neighbourbood relationships"""
 
     #if no mask then use default
     if mask == None:
@@ -115,7 +115,7 @@ def annealThresh2(image, valP50, valPslope=1, neighP50=.5, neighSlope=1, mask=No
     return out
     
 def annealThresh2D(image, valP50, valPslope=1, neighP50=.5, neighSlope=1, mask=None, nIters=10, out = None):
-    '''segment an image based on both intensity and neighbourbood relationships'''
+    """segment an image based on both intensity and neighbourbood relationships"""
 
     #if no mask then use default
     if mask == None:

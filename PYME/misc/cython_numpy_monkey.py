@@ -8,12 +8,12 @@ from numpy.distutils import log
 
 
 def generate_a_pyrex_source(self, base, ext_name, source, extension):
-    ''' Monkey patch for numpy build_src.build_src method
+    """ Monkey patch for numpy build_src.build_src method
 
     Uses Cython instead of Pyrex.
 
     Assumes Cython is present
-    '''
+    """
     if self.inplace:
         target_dir = dirname(base)
     else:

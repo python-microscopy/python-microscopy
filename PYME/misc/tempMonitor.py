@@ -23,12 +23,14 @@
 import wx
 from PYME.Acquire.Hardware.DigiData.DigiDataClient import getDDClient
 
-dd = getDDClient()
+
 
 class MyFrame(wx.MiniFrame):
     def __init__(self, *args, **kwds):
         kwds["style"] = wx.DEFAULT_FRAME_STYLE
         wx.Frame.__init__(self, *args, **kwds)
+        
+        self.dd = kwds['dd']
 
         vsizer = wx.BoxSizer(wx.VERTICAL)
         panel = wx.Panel(self, -1)
@@ -54,15 +56,17 @@ class MyFrame(wx.MiniFrame):
 
 
     def onTimer(self, ev = None):
-        temp = dd.GetAIValue(1)*1000./2.**15 - 273.15
+        temp = self.dd.GetAIValue(1)*1000./2.**15 - 273.15
 
         self.stTemp.SetLabel('%3.2f C' % temp)
 
 
 if __name__ == "__main__":
+    dd = getDDClient()
+    
     app = wx.PySimpleApp(0)
     wx.InitAllImageHandlers()
-    fTaskMon = MyFrame(None, -1, "Temperature")
+    fTaskMon = MyFrame(None, -1, "Temperature", dd = dd)
     app.SetTopWindow(fTaskMon)
     fTaskMon.Show()
     app.MainLoop()

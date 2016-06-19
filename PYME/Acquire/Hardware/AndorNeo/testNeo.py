@@ -21,42 +21,41 @@
 #
 ################
 
-
-print 'Importing Camera ... '
-import AndorNeo
-import time
-import numpy as np
-
-print 'Initialising Camera ... '
-cam = AndorNeo.AndorNeo(0)
-cam.Init()
-
-cam.SetIntegTime(100)
-#cam.PixelReadoutRate.setIndex(2)
-
-cam.SetROIIndex(7)
-print 'Starting Exposure ...'
-cam.StartExposure()
-
-buf = np.empty((cam.GetPicHeight(),cam.GetPicWidth()), 'uint16')
-
-print '\nStarting Extraction loop ...'
-for i in range(20):
-    print i,
-    while cam.ExpReady():
-        cam.ExtractColor(buf, 1)
-        print 'e',
+def testNeo():
+    print('Importing Camera ... ')
+    import AndorNeo
+    import time
+    import numpy as np
     
-    time.sleep(.2)
+    print('Initialising Camera ... ')
+    cam = AndorNeo.AndorNeo(0)
+    cam.Init()
+    
+    cam.SetIntegTime(100)
+    #cam.PixelReadoutRate.setIndex(2)
+    
+    print('Starting Exposure ...')
+    cam.StartExposure()
+    
+    buf = np.empty((cam.GetPicWidth(), cam.GetPicHeight()), 'uint16')
+    
+    print('\nStarting Extraction loop ...')
+    for i in range(200):
+        #print(i, end=' ')
+        while cam.ExpReady():
+            cam.ExtractColor(buf, 1)
+            #print('e', end=' ')
         
-time.sleep(20)
-
-cam.Shutdown()
-time.sleep(.5)
-AndorNeo.camReg.unregCamera()
-
-#import plotTimings
-#plotTimings.PlotTimings()
+        time.sleep(.2)
+            
+    time.sleep(20)
+    
+    cam.Shutdown()
+    time.sleep(.5)
+    AndorNeo.camReg.unregCamera()
+    
+    import plotTimings
+    plotTimings.PlotTimings()
         
         
         

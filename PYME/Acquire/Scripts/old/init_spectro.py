@@ -33,20 +33,20 @@ from Hardware.OrielCornerstone import Cornerstone7400
 import subprocess
 import os
 
-pz = InitBG('Monochromator', '''
+pz = InitBG('Monochromator', """
 scope.monochromator = Cornerstone7400()
 scope.monochromator.MoveTo(0,500)
 scope.piezos.append((scope.monochromator, 1, 'Monochromator'))
 scope.lasers = [scope.monochromator]
-''')
+""")
 
-cm = InitBG('Spectrometer', '''
+cm = InitBG('Spectrometer', """
 os.system('killall jythonOD') #kill off any previous spectrometer process
 subprocess.Popen('jythonOD /home/david/PYME/PYME/Acquire/Hardware/Spectrometer/remoteSpectrometer.py', shell=True)
 time.sleep(10) #wait for spectrometer process to start
 scope.cam = specCam.SpecCamera()
 #time.sleep(5)
-''')
+""")
 
 #setup for the channels to aquire - b/w camera, no shutters
 class chaninfo:
@@ -62,13 +62,13 @@ scope.shutters = fakeShutters
 #cm.join()
 
 
-InitGUI('''
+InitGUI("""
 from PYME.Acquire.Hardware import LaserControlFrame
 lcf = LaserControlFrame.LaserControlLight(MainFrame,scope.lasers)
 time1.WantNotification.append(lcf.refresh)
 lcf.Show()
 toolPanels.append((lcf, 'Laser Control'))
-''')
+""")
 
 #must be here!!!
 joinBGInit() #wait for anyhting which was being done in a separate thread

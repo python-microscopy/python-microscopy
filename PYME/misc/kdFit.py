@@ -43,7 +43,7 @@ def fitKD(filename):
     semilogx(c, f, 'x')
     
     r = FitModel(efunc, [10, 1, 0, 1], f, c)
-    print(('''
+    print(("""
     Fit Results:
     --------------------
      R_bound   = %3.2f
@@ -51,7 +51,7 @@ def fitKD(filename):
      C50       = %3.3f
      sigma     = %3.2f
      
-     ''' % (r[0][0], r[0][1], 10**r[0][2], r[0][3])))
+     """ % (r[0][0], r[0][1], 10**r[0][2], r[0][3])))
         
     
     #print log10(c[0] + .01), log10(c[-1])

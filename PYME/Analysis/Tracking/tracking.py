@@ -30,7 +30,7 @@ class Tracker(object):
         self.indicesByT = [self.objIndex[t==i] for i in xrange(t.max()+1)]
 
     def calcLinkageMatrix(self, i, j, manualLinkages = []):
-        '''Compare this frame (i) with another frame (j) '''
+        """Compare this frame (i) with another frame (j) """
         #calculate distances 
         #print i, j
         if i >= len(self.xvsByT):

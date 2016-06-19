@@ -31,7 +31,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('PSFGen')
     config.add_subpackage('cSMI')
     config.add_subpackage('ParallelTasks')
-    config.add_subpackage('FileUtils')
+    config.add_subpackage('io')
     config.add_subpackage('misc')
     config.add_subpackage('pad')
     config.add_subpackage('dataBrowser')
@@ -46,7 +46,7 @@ if __name__ == '__main__':
 
     from cx_Freeze import setup, Executable
     import matplotlib
-    setup(executables=[Executable('Analysis/LMVis/VisGUI.py'),Executable('Acquire/PYMEAquire.py'),Executable('DSView/dh5view.py')],
+    setup(executables=[Executable('LMVis/VisGUI.py'),Executable('Acquire/PYMEAquire.py'),Executable('DSView/dh5view.py')],
         options= {'build_exe' : {
           'excludes' : ['pyreadline', 'Tkconstants', 'Tkinter', 'tcl', '_imagingtk', 'PIL._imagingtk', 'ImageTK', 'PIL.ImageTK', 'FixTk'],
           'packages' : ['OpenGL', 'OpenGL.platform', 'OpenGL.arrays']}},

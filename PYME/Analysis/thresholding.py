@@ -24,12 +24,12 @@
 import numpy
 
 def isodata_f(img, nbins=255):
-    '''calculate isodata threshold - does iterations on histogrammed data rather than
+    """calculate isodata threshold - does iterations on histogrammed data rather than
     raw data to improve speed
     
     img - the image data
     nbins - the number of bins used for the histogram
-    '''
+    """
 
     N, bins = numpy.histogram(img, nbins)
     
@@ -56,9 +56,9 @@ def isodata_f(img, nbins=255):
 
 
 def isodata(img, tol = 1e-3):
-    '''correct isodata implementation - slower than above
+    """correct isodata implementation - slower than above
     tolerance indicates fraction of data range when delta is deemed not to have changed
-    '''
+    """
 
     imin = img.min()
     imax = img.max()
@@ -79,7 +79,7 @@ def isodata(img, tol = 1e-3):
     return t
 
 def signalFraction(img, frac, nbins = 5000):
-    ''' threshold to include a certain fraction of the total signal'''
+    """ threshold to include a certain fraction of the total signal"""
 
     N, bins = numpy.histogram(img, nbins)
 

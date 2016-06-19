@@ -49,6 +49,44 @@ def extractFeatures(im):
     
     return fv
     
+def extractFeatures2(im):
+    feats = []
+    
+    radii = [3, 5, 7, 9, 11, 15, 19, 25, 35]#, 51, 75, 99]
+    
+    feats.append(im)
+    
+    cm  = im
+    
+    for i in radii:
+        m = ndimage.uniform_filter(im, i)
+        feats.append(m - cm)
+        
+        cm = m
+        
+        d = im - m
+        feats.append(ndimage.uniform_filter(d*d, i))
+        
+        #measure displacement of ROI centre of mass
+        #x, y = np.mgrid[-i:(i+1), -i:(i+1)]  
+        #k = np.sqrt(1.0*x*x + 1.0*y*y)
+        #k = np.abs(np.arange(-i, i + 1))
+        #r = ndimage.convolve1d(ndimage.convolve1d(im, k, 0), k, 1)
+
+        #r = ndimage.convolve(d, k)        
+        
+        #feats.append(r/(m + .0001))
+    
+    
+    #feats.append(np.abs(feats[0] - feats[3]))
+    
+    fa = np.array(feats)
+    
+    fv = fa.reshape(fa.shape[0], -1)
+    #fv = (fv-fvm[:, None])/fvs[:,None]
+    
+    return fv
+    
 def normalizeFeatures(fv, normalization= None):
     if normalization == None:
         fvm = fv.mean(1)
@@ -91,7 +129,7 @@ class svmClassifier(object):
             
     def _getNormalizedFeatures(self, im):
         print 'Extracting features ...'
-        features, self.normalization = normalizeFeatures(extractFeatures(im), self.normalization)
+        features, self.normalization = normalizeFeatures(extractFeatures2(im), self.normalization)
         return features
             
     def _getAndCacheFeatures(self, im):

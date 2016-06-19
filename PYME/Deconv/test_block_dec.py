@@ -23,11 +23,11 @@
 ################
 __test__ = False
 if __name__ == '__main__':
-    from PYME import mProfile
+    from PYME.util import mProfile
     mProfile.profileOn(['tq_block_dec.py', 'dec.py'])
     
     from PYME.DSView import View3D, ViewIm3D
-    from PYME.DSView.image import ImageStack
+    from PYME.IO.image import ImageStack
     
     image = ImageStack(filename = '/data/zar_cropped.tif')
     

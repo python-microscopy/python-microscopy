@@ -23,10 +23,10 @@
 
 import tables
 from taskQueue import *
-from PYME.Analysis.remFitBuf import fitTask
+from PYME.localization.remFitBuf import fitTask
 
 from PYME.Analysis import MetaData
-from PYME.Acquire import MetaDataHandler
+from PYME.IO import MetaDataHandler
 
 import os
 import sys
@@ -37,8 +37,8 @@ import logging
 import time
 import Queue
 
-from PYME.FileUtils.nameUtils import genResultFileName
-from PYME.ParallelTasks.relativeFiles import getFullFilename
+from PYME.IO.FileUtils.nameUtils import genResultFileName, getFullFilename
+#from PYME.IO.FileUtils.nameUtils import getFullFilename
 
 CHUNKSIZE = 50
 MAXCHUNKSIZE = 100 #allow chunk size to be improved to allow better caching
@@ -228,7 +228,7 @@ class SpoolEvent(tables.IsDescription):
 
 
 class HDFResultsTaskQueue(TaskQueue):
-    '''Task queue which saves it's results to a HDF file'''
+    """Task queue which saves it's results to a HDF file"""
     def __init__(self, name, resultsFilename, initialTasks=[], onEmpty = doNix, fTaskToPop = popZero):
         if resultsFilename == None:
             resultsFilename = genResultFileName(name)
@@ -481,7 +481,7 @@ class HDFResultsTaskQueue(TaskQueue):
         
         
     def getQueueData(self, fieldName, *args):
-        '''Get data, defined by fieldName and potntially additional arguments,  ascociated with queue'''
+        """Get data, defined by fieldName and potntially additional arguments,  ascociated with queue"""
         if fieldName == 'FitResults':
             startingAt, = args
             with self.fileResultsLock.rlock:
@@ -492,7 +492,7 @@ class HDFResultsTaskQueue(TaskQueue):
             
             return res
         elif fieldName == 'PSF':
-            from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
+            #from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
             res = None
 
             modName = self.resultsMDH.getEntry('PSFFile')
@@ -503,8 +503,8 @@ class HDFResultsTaskQueue(TaskQueue):
             return res
         elif fieldName == 'MAP':
             mapName, = args
-            from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
-            from PYME.DSView.image import ImageStack
+            #from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
+            from PYME.IO.image import ImageStack
 
             print('Serving map: %s' %mapName)            
             fn = getFullExistingFilename(mapName)
@@ -517,7 +517,7 @@ class HDFResultsTaskQueue(TaskQueue):
 
 
 class HDFTaskQueue(HDFResultsTaskQueue):
-    ''' task queue which, when initialised with an hdf image filename, automatically generates tasks - should also (eventually) include support for dynamically adding to data file for on the fly analysis'''
+    """ task queue which, when initialised with an hdf image filename, automatically generates tasks - should also (eventually) include support for dynamically adding to data file for on the fly analysis"""
     def __init__(self, name, dataFilename = None, resultsFilename=None, onEmpty = doNix, fTaskToPop = popZero, startAt = 'guestimate', frameSize=(-1,-1), complevel=6, complib='zlib'):
         if dataFilename == None:
            self.dataFilename = genDataFilename(name)
@@ -800,7 +800,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
                     self.dataMDH.setEntry(mdk, mdv)
         
     def getQueueData(self, fieldName, *args):
-        '''Get data, defined by fieldName and potntially additional arguments,  ascociated with queue'''
+        """Get data, defined by fieldName and potntially additional arguments,  ascociated with queue"""
         if fieldName == 'ImageShape':
             with self.dataFileLock.rlock:
                 res = self.h5DataFile.root.ImageData.shape[1:]

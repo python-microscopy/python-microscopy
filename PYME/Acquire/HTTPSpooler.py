@@ -22,22 +22,22 @@
 ##################
 
 import tables
-from PYME.Acquire import MetaDataHandler
-#from PYME import cSMI
+from PYME.IO import MetaDataHandler
+
 #import Pyro.core
 import os
 import time
 
 import PYME.Acquire.Spooler as sp
-from PYME.Acquire import protocol as p
-from PYME.FileUtils import fileID, nameUtils
-from PYME.ParallelTasks.relativeFiles import getRelFilename
+#from PYME.Acquire import protocol as p
+#from PYME.IO.FileUtils import fileID, nameUtils
+#from PYME.ParallelTasks.relativeFiles import getRelFilename
 
 import threading
 import Queue
 
-from PYME.ParallelTasks import clusterIO
-from PYME.FileUtils import PZFFormat
+from PYME.IO import clusterIO
+from PYME.IO import PZFFormat
 
 import numpy as np
 import random
@@ -45,9 +45,9 @@ import random
 import json
 
 class EventLogger:
-    def __init__(self, spool, scope):
+    def __init__(self, spool):#, scope):
         self.spooler = spool
-        self.scope = scope
+        #self.scope = scope
           
         self._events = []
     
@@ -86,7 +86,7 @@ def exists(seriesName):
 NUM_POLL_THREADS = 10
 
 class Spooler(sp.Spooler):
-    def __init__(self, scope, filename, acquisator, protocol = p.NullProtocol, parent=None, complevel=2, complib='zlib'):
+    def __init__(self, filename, frameSource, frameShape, **kwargs):
         
         #filename = filename[len(nameUtils.datadir):]
         
@@ -111,12 +111,12 @@ class Spooler(sp.Spooler):
             self.pollThreads.append(pt)
         
         self.md = MetaDataHandler.NestedClassMDHandler()
-        self.evtLogger = EventLogger(self, scope)
+        self.evtLogger = EventLogger(self)
         
         self.sequenceID = genSequenceID()
         self.md['imageID'] = self.sequenceID  
         
-        sp.Spooler.__init__(self, scope, filename, acquisator, protocol, parent)
+        sp.Spooler.__init__(self, filename, frameSource, **kwargs)
         
             
     def _queuePoll(self):
@@ -155,13 +155,13 @@ class Spooler(sp.Spooler):
         clusterIO.putFile(self.seriesName  + '/events.json', self.evtLogger.to_JSON())
         
         
-    def Tick(self, caller): 
-        self.buffer.append((self.imNum, caller.dsa.copy()))
+    def OnFrame(self, sender, frameData, **kwargs): 
+        self.buffer.append((self.imNum, frameData.reshape(1,frameData.shape[0],frameData.shape[1]).copy()))
 
         if len(self.buffer) >= self.buflen:
             self.FlushBuffer()
         
-        sp.Spooler.Tick(self, caller)
+        sp.Spooler.OnFrame(self)
       
     def FlushBuffer(self):
       self.postQueue.put(self.buffer)

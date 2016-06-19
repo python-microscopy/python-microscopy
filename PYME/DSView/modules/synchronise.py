@@ -23,10 +23,10 @@
 import wx
 import os
 #import pylab
-#from PYME.Acquire import MetaDataHandler
+#from PYME.IO import MetaDataHandler
 #from PYME.DSView import image, View3D
-#from PYME.DSView import dataWrap
-from PYME.DSView import dsviewer_npy_nb
+#from PYME.IO import dataWrap
+from PYME.DSView import dsviewer
 
 
 class syncer:
@@ -43,12 +43,12 @@ class syncer:
     def OnSynchronise(self, event):
         dlg = wx.SingleChoiceDialog(
                 self.dsviewer, 'choose the image to composite with', 'Make Composite',
-                dsviewer_npy_nb.openViewers.keys(),
+                dsviewer.openViewers.keys(),
                 wx.CHOICEDLG_STYLE
                 )
 
         if dlg.ShowModal() == wx.ID_OK:
-            other = dsviewer_npy_nb.openViewers[dlg.GetStringSelection()]
+            other = dsviewer.openViewers[dlg.GetStringSelection()]
 
             other.do.syncedWith.append(self.do)
 

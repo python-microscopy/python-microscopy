@@ -22,7 +22,7 @@
 #import numpy
 import wx
 #import pylab
-#from PYME.DSView.image import ImageStack
+#from PYME.IO.image import ImageStack
 
 class cropper:
     def __init__(self, dsviewer):
@@ -37,7 +37,7 @@ class cropper:
     def OnCrop(self, event):
         import numpy as np
         #from scipy.ndimage import gaussian_filter
-        from PYME.DSView.image import ImageStack
+        from PYME.IO.image import ImageStack
         from PYME.DSView import ViewIm3D
 
         #dlg = wx.TextEntryDialog(self.dsviewer, 'Blur size [pixels]:', 'Gaussian Blur', '[1,1,1]')
@@ -84,7 +84,7 @@ class cropper:
     def OnDiagSplit(self, event):
         import numpy as np
         #from scipy.ndimage import gaussian_filter
-        from PYME.DSView.image import ImageStack
+        from PYME.IO.image import ImageStack
         from PYME.DSView import ViewIm3D
 
         #dlg = wx.TextEntryDialog(self.dsviewer, 'Blur size [pixels]:', 'Gaussian Blur', '[1,1,1]')

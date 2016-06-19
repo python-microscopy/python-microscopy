@@ -39,7 +39,7 @@ class CobaltLaser(Laser):
 
     #    self._TurnOn()  # note: why is the TurnOn() command commented out here? 
 
-        Laser.__init__(self, name, turnOn)
+        Laser.__init__(self, name, turnOn, **kwargs)
 
     def IsOn(self):
         return self.isOn
