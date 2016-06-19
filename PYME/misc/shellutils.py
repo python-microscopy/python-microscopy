@@ -858,10 +858,10 @@ def loadpickled(fname):
     fi = open(fname,'r')
     return pickle.load(fi)
 
-import PYME.DSView.image as dsimg
+from PYME.DSView import dsviewer
 def setdriftparsFromImg(driftPane,img = None):
     if img is None:
-        img = dsimg.openImages[dsimg.openImages.keys()[0]]
+        img = dsviewer.openViewers[dsviewer.openViewers.keys()[0]].image
     destp = driftPane.dp.driftCorrParams
     srcp = img.mdh['DriftCorrection.Parameters']
     for key in destp.keys():
@@ -870,7 +870,7 @@ def setdriftparsFromImg(driftPane,img = None):
     return destp
 
 def getOpenImages():
-    img = dsimg.openImages
+    img = dsviewer.openViewers
     return img
 
 def setSelectionFromFilterKeys(visFr,img):
