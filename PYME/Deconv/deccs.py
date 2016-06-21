@@ -83,6 +83,7 @@ class dec:
             LS[:,k] = Lfunc(S[:,k])
         
         if show_plots:
+            import pylab as plt
             plt.figure(1)
             plt.clf()
             plt.subplot(311)
@@ -422,7 +423,7 @@ def calc_gauss_weights(sigma):
     sd = sd * sd
     # calculate the kernel:
     for ii in range(1, lw + 1):
-        tmp = math.np.exp(-0.5 * float(ii * ii) / sd)
+        tmp = np.exp(-0.5 * float(ii * ii) / sd)
         weights[lw + ii] = tmp
         weights[lw - ii] = tmp
         sum += 2.0 * tmp

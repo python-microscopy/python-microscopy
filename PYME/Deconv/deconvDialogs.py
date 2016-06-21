@@ -320,7 +320,7 @@ class DeconvSettingsDialog(wx.Dialog):
             X, Y = np.mgrid[-30.:31., -30.:31.]
             R = np.sqrt(X*X + Y*Y)
             
-            if not vshint == None:
+            if not vshint is None:
                 vx = vshint*1e3
             else:
                 vx = sc/2.

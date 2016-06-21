@@ -238,7 +238,7 @@ class MDHandlerBase(DictMixin):
             if val.__class__ in [str, unicode] or np.isscalar(val): #quote string
                 val = repr(val)
             elif not val.__class__ in [int, float, list, dict]: #not easily recovered from representation
-                val = "pickle.loads('%s')" % pickle.dumps(val)
+                val = "pickle.loads('''%s''')" % pickle.dumps(val)
 
             s.append("md['%s'] = %s\n" % (en, val))
         

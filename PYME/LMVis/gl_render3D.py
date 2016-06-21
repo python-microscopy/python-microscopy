@@ -887,6 +887,9 @@ class LMGLCanvas(GLCanvas):
         if 'OnGLViewChanged' in dir(self.parent):
             self.parent.OnGLViewChanged()
 
+        for callback in self.wantViewChangeNotification:
+            callback.Refresh()
+
     def moveView(self, dx, dy, dz=0):
         return self.pan(dx, dy, dz)
     
@@ -895,6 +898,9 @@ class LMGLCanvas(GLCanvas):
         self.xc += dx
         self.yx += dy
         self.zc += dz
+
+        for callback in self.wantViewChangeNotification:
+            callback.Refresh()
 
     def drawScaleBar(self):
         if not self.scaleBarLength == None:
@@ -980,7 +986,7 @@ class LMGLCanvas(GLCanvas):
             self.WheelFocus(rot, xp_, yp_, zp_)
         else:
             self.WheelZoom(rot, xp_, yp_, zp_)
-        self.Refresh()
+
 
     
 
@@ -1004,6 +1010,11 @@ class LMGLCanvas(GLCanvas):
             self.xc += dx*(1.- ZOOM_FACTOR)
             self.yc += dy*(1.- ZOOM_FACTOR)
             self.zc += dz*(1.- ZOOM_FACTOR)
+
+        self.Refresh()
+
+        for callback in self.wantViewChangeNotification:
+            callback.Refresh()
             
     def WheelFocus(self, rot, xp, yp, zp = 0):
         if rot > 0:
@@ -1013,6 +1024,11 @@ class LMGLCanvas(GLCanvas):
         if rot < 0:
             #zoom in
             self.zc +=1.
+
+        self.Refresh()
+
+        for callback in self.wantViewChangeNotification:
+            callback.Refresh()
  
 
 
@@ -1138,6 +1154,10 @@ class LMGLCanvas(GLCanvas):
             self.yDragStart = y
 
             self.Refresh()
+
+            for callback in self.wantViewChangeNotification:
+                callback.Refresh()
+
             event.Skip()
             
     def OnKeyPress(self, event):

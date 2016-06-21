@@ -23,4 +23,44 @@ def readSpeckles(filename):
                 currentSpeckle.append([float(val) for val in l.split('\t')])
                 
         return [np.array(s) for s in speckles]
-            
+
+
+def gen_traces_from_speckles(speckles, leadFrames=10, followFrames=50, seriesLength=1000000):
+    """ Generate pseudo particle trajectories from speckle data.
+
+     These trajectories look like they were generated using the normal particle tracking methods, but are centered
+     at the detected speckle position. They extend before the start of the speckle trace (to establish a baseline), and
+     after the end of the speckle trace (to look at the diffusion of the membrane label away from the point of fusion.
+
+    Parameters
+    ----------
+    speckles : list
+        list of [x,y,t]xN arrays containing the trace for each speckle
+    leadFrames : int
+        Number of frames to extract before the start of the speckle for establishing the baseline
+    followFrames : int
+        Number of frames to extract after the end of the speckle to follow the diffusion of the fused dyes.
+    seriesLength : int
+        the length of the image series - traces will not extend beyond the end of the series.
+
+    Returns
+    -------
+    a numpy recarray containing x, y, t, and clumpIndex columns
+    """
+
+    point_dtype = np.dtype([('x_pixels', 'f4'), ('y_pixels', 'f4'), ('t', 'f4'), ('clumpIndex', 'f4')])
+
+    extended_speckles = []
+
+    for i, speck in enumerate(speckles):
+        x_, y_, t_ = speck.T
+        trace_start = int(max(t_[0] - leadFrames, 0))
+        trace_end = int(min(t_[-1] + followFrames, seriesLength))
+
+        xm, ym = x_.mean(), y_.mean()
+
+        for j in range(trace_start, trace_end):
+            extended_speckles.append(np.array([xm, ym, j, i], dtype='f4').view(point_dtype))
+
+    return np.hstack(extended_speckles)
+
