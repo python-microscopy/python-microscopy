@@ -896,8 +896,10 @@ class LMGLCanvas(GLCanvas):
     def pan(self, dx, dy, dz=0):
         #self.setView(self.xmin + dx, self.xmax + dx, self.ymin + dy, self.ymax + dy)
         self.xc += dx
-        self.yx += dy
+        self.yc += dy
         self.zc += dz
+
+        self.Refresh()
 
         for callback in self.wantViewChangeNotification:
             callback.Refresh()
@@ -1146,17 +1148,19 @@ class LMGLCanvas(GLCanvas):
 
             dx_, dy_, dz_, c_ = numpy.dot(self.trafMatrix, [dx, dy, 0, 0])
             
-            self.xc -= dx_
-            self.yc -= dy_
-            self.zc -= dz_
+            #self.xc -= dx_
+            #self.yc -= dy_
+            #self.zc -= dz_
 
             self.xDragStart = x
             self.yDragStart = y
 
-            self.Refresh()
+            self.pan(-dx_, -dy_, -dz_)
 
-            for callback in self.wantViewChangeNotification:
-                callback.Refresh()
+            #self.Refresh()
+
+            #for callback in self.wantViewChangeNotification:
+            #    callback.Refresh()
 
             event.Skip()
             

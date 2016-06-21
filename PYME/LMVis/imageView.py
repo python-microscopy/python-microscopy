@@ -60,9 +60,12 @@ class ImageViewPanel(wx.Panel):
 
         wx.EVT_LEFT_DOWN(self, self.OnLeftDown)
         wx.EVT_LEFT_UP(self, self.OnLeftUp)
+        wx.EVT_MIDDLE_DOWN(self, self.OnMiddleDown)
+        wx.EVT_MIDDLE_UP(self, self.OnMiddleUp)
         wx.EVT_MOTION(self, self.OnMotion)
 
         self.selecting=False
+        self.panning = False
 
         self.do.WantChangeNotification.append(self.Refresh)
 
@@ -268,6 +271,18 @@ class ImageViewPanel(wx.Panel):
             #self.OnSetPosition(event)
         event.Skip()
 
+    def OnMiddleDown(self, event):
+        x, y = self._ScreenToAbsCoordinates(event.GetX(), event.GetY())
+        self.xDragStart = x
+        self.yDragStart = y
+
+        self.panning = True
+        event.Skip()
+
+    def OnMiddleUp(self, event):
+        self.panning = False
+        event.Skip()
+
     def StartSelection(self,event):
         self.selecting = True
 
@@ -282,6 +297,19 @@ class ImageViewPanel(wx.Panel):
     def OnMotion(self, event):
         if event.Dragging() and self.selecting:
             self.ProgressSelection(event)
+
+        elif event.Dragging() and self.panning:
+            x, y = self._ScreenToAbsCoordinates(event.GetX(), event.GetY())
+            #x = event.GetX()
+            #y = event.GetY()
+
+            dx = (x - self.xDragStart)
+            dy = (y - self.yDragStart)
+
+            self.xDragStart = x
+            self.yDragStart = y
+
+            self.glCanvas.pan(-dx, -dy)
 
     def ProgressSelection(self,event):
         xp, yp = self._ScreenToPixelCoordinates(event.GetX(), event.GetY())
