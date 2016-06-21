@@ -92,7 +92,7 @@ ssp = sarcSpacing.SarcomereChecker(MainFrame, menuBar1, scope)
 InitBG('Z Piezo', '''
 from PYME.Acquire.Hardware.Piezos import piezo_e709, offsetPiezo
 
-scope._piFoc = piezo_e709.piezo_e709T('COM20', 400, 0, True)
+scope._piFoc = piezo_e709.piezo_e709T('COM12', 400, 0, True)
 scope.hardwareChecks.append(scope._piFoc.OnTarget)
 scope.CleanupFunctions.append(scope._piFoc.close)
 scope.piFoc = offsetPiezo.piezoOffsetProxy(scope._piFoc)
@@ -183,15 +183,15 @@ time1.WantNotification.append(fk.refresh)
 ##scope.lasers = []
 
 from PYME.Acquire.Hardware import lasers
-sb = lasers.SBox(com_port='COM19')
+sb = lasers.SBox(com_port='COM5')
 scope.l671 = lasers.SerialSwitchedLaser('671',sb,0)
 scope.l532 = lasers.SerialSwitchedLaser('532',sb,2)
 
 from PYME.Acquire.Hardware import matchboxLaser
-scope.l405 = matchboxLaser.MatchboxLaser('405',portname='COM11')
+scope.l405 = matchboxLaser.MatchboxLaser('405',portname='COM4')
 
 from PYME.Acquire.Hardware import phoxxLaserOLD
-scope.l647 = phoxxLaserOLD.PhoxxLaser('647',portname='COM15')
+scope.l647 = phoxxLaserOLD.PhoxxLaser('647',portname='COM6')
 scope.StatusCallbacks.append(scope.l647.GetStatusText)
 
 scope.lasers = [scope.l671, scope.l405, scope.l647, scope.l532]
@@ -223,7 +223,7 @@ filtList = [WFilter(1, 'EMPTY', 'EMPTY', 0),
 
 InitGUI('''
 try:
-    scope.filterWheel = FiltWheel(filtList, 'COM21')
+    scope.filterWheel = FiltWheel(filtList, 'COM7')
     #scope.filterWheel.SetFilterPos("LF488")
     scope.filtPan = FiltFrame(MainFrame, scope.filterWheel)
     toolPanels.append((scope.filtPan, 'Filter Wheel'))
@@ -248,7 +248,7 @@ filterpair = [ExciterWheel.FilterPair('GFP', 'GFP'),
 
 InitGUI('''
 try:
-    scope.exciterWheel = ExciterWheel.FiltWheel(exciterList, filterpair, 'COM22', dichroic=scope.dichroic)
+    scope.exciterWheel = ExciterWheel.FiltWheel(exciterList, filterpair, 'COM14', dichroic=scope.dichroic)
     #scope.filterWheel.SetFilterPos("LF488")
     scope.exciterPan = ExciterWheel.FiltFrame(MainFrame, scope.exciterWheel)
     toolPanels.append((scope.exciterPan, 'Exciter Wheel'))
@@ -260,7 +260,7 @@ except:
 InitBG('XY Stage', '''
 #XY Stage
 from PYME.Acquire.Hardware.Piezos import piezo_c867
-scope.xystage = piezo_c867.piezo_c867T('COM16')
+scope.xystage = piezo_c867.piezo_c867T('COM13')
 scope.piezos.append((scope.xystage, 2, 'Stage_X'))
 scope.piezos.append((scope.xystage, 1, 'Stage_Y'))
 scope.joystick = piezo_c867.c867Joystick(scope.xystage)
