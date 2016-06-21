@@ -162,7 +162,7 @@ fk = focusKeys.FocusKeys(MainFrame, None, scope.piezos[0])
 
 #InitGUI("""
 #from PYME.Acquire.Hardware import splitter
-splt = splitter.Splitter(MainFrame, mControls, scope, scope.cam, dichroic = 'FF741-Di01' , transLocOnCamera = 'Top')
+#splt = splitter.Splitter(MainFrame, mControls, scope, scope.cam, dichroic = 'FF741-Di01' , transLocOnCamera = 'Top')
 #""")
 
 InitGUI("""
