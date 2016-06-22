@@ -21,13 +21,11 @@
 #
 ##################
 
-#import numpy
 from PYME.Acquire.Hardware.Simulator.fakeCam import NoiseMaker
-#import numpy as np
 
 splitterFitModules = ['SplitterFitFR','SplitterFitQR','SplitterFitCOIR', 'BiplaneFitR', 'SplitterShiftEstFR', 'SplitterObjFindR', 'SplitterFitPsfIR']
 
-#from pylab import *
+
 import copy
 from PYME.IO import MetaDataHandler
 from PYME.Acquire.Hardware import EMCCDTheory
@@ -44,7 +42,35 @@ def IQR(x):
 #[A, x0, y0, 250/2.35, dataMean.min(), .001, .001]
 
 class fitTestJig(object):
+    """
+    A class for testing fits.
+
+    Reads both simulation and analysis settings out of a metadata file, looking for the special metadata keys:
+      "Test.DefaultParams" - a vector containing the mean values of each  model parameter to use when generating the
+                             test data.
+      "Test.ParamJitter" - a vector containing the magnitude of variation to add to each parameter. Each test image is
+                           generated with a different the model parameters randomly jittered in the range
+                           [DefaultParams - ParamJitter : DefaultParams + ParamJitter]. To generate data with a fixed
+                           set of parameter values, set ParamJitter to zeros
+      "Test.SimModule" - the name of the module used to simulate the data (if different from the analysis module)
+      "Test.Background" - an additional background to add before noise generation and then subtract, to be used with fits
+                          which do not have a background parameter and rely on the running background subtraction to
+                          provide an essentially background free image (some of the 3D fits).
+      "Test.PSFFile" - the name of a PSF file to use for simulation if not simulating with the same PSF which is used
+                       for analysis [3D fits].
+    """
     def __init__(self, metadata, fitModule = None):
+        """
+        Initialize the fit test jig from metadata file
+
+        Parameters
+        ----------
+        metadata - PYME.IO.MetadataHandler.MetaDataHandler object
+            The metadata containing simulation and analysis settings. See custom 'Test.XX' keys in class description
+        fitModule - sting [optional, deprecated]
+            The name of the fit module to use. This overrides the settings in the metadata, but is only retained for
+            backwards compatibility. You should set the fit module in the metadata.
+        """
         self.md = copy.copy(metadata)
         if fitModule == None:
             self.fitModule = self.md.getEntry('Analysis.FitModule')
@@ -75,27 +101,68 @@ class fitTestJig(object):
             self.variance = self.variance[:_roiWidth, :_roiWidth]
             self.gain = self.gain[:_roiWidth,:_roiWidth]
         except TypeError:
-            #if no gain maps are specified, self.dark etc ... will be scalar
+            #if no gain maps are specified (i.e. EMCCD case), self.dark etc ... will be scalar
             pass
 
-            
-        #emGain = optimize.fmin(emg, 150, args=(float(self.md.Camera.TrueEMGain),))[0]
+        #by still including emGain estimation etc ... we can use the same code for sCMOS and EMCCD estimation. This will
+        #evaluate to 1 in the sCMOS case
+        emGain = optimize.fmin(emg, 150, args=(float(self.md.Camera.TrueEMGain),))[0]
 
         self.noiseM = NoiseMaker(floor=self.dark, readoutNoise=np.sqrt(self.variance),
-                                 ADGain= self.md['Camera.ElectronsPerCount']*self.gain, background=self.bg, QE=1.0, )
+                                 ADGain= self.md['Camera.ElectronsPerCount']*self.gain,
+                                 background=self.bg, QE=1.0, EMGain=emGain)
 
 
     @classmethod
     def fromMDFile(cls, mdfile):
+        """
+        Create a new fit test jig from a metadata file
+
+        Parameters
+        ----------
+        mdfile - string
+            the filename of the metadata file to use. The file should be in PYMEs 'SimpleMDHandler' (*.md) format.
+
+        Returns
+        -------
+        fitTestJig instance
+
+        """
         return cls(MetaDataHandler.SimpleMDHandler(mdfile))
 
 
     def runTests(self, params=None, param_jit=None, nTests=100):
+        """
+        Simulate and fit multiple single molecules. The results are stored in the class itself and can be accessed by
+        other methods.
+
+        Parameters
+        ----------
+        params - array
+            The mean value of the parameters. Overrides settings in metadata if provided
+        param_jit - array
+            The amount of parameter jitter. Overrides settings in metadata if provided
+        nTests - int
+            The number of molecules to simulate
+
+        Returns
+        -------
+
+        self.sim_params contains the parameters used for simulation
+        self.results contains the full fit results
+        self.result_params contains the fitted params
+        self.d2 is a list of the simulated data frames
+
+        NB: the x and y params in both results and result_params will be offset by half the region of interest size. i.e.
+        simulation co-ordinates are taken from the ROI centre and fitting coordinates are taken from the top left corner.
+
+        """
         if not params:
             params = self.md['Test.DefaultParams']
         if not param_jit:
             param_jit = self.md['Test.ParamJitter']
-            
+
+        #load the modules used for simulation and fitting
         self.fitMod = __import__('PYME.localization.FitFactories.' + self.fitModule, fromlist=['PYME', 'localization', 'FitFactories']) #import our fitting module
         self.simMod = __import__('PYME.localization.FitFactories.' + self.simModule, fromlist=['PYME', 'localization', 'FitFactories']) #import our simulation
 
@@ -146,9 +213,35 @@ class fitTestJig(object):
                 
             me = ((self.ps[varName].ravel() - yv)**2).mean()
             print(('%s: %3.2f' % (varName, me)))
+
+    #these properties are just making the results available under more sensible names
+    @property
+    def sim_params(self):
+        return self.ps
+
+    @property
+    def results(self):
+        return self.res
+
+    @property
+    def result_params(self):
+        return self.res['fitResults']
             
             
     def error(self, varName):
+        """
+        Calculate the error (fitted - expected) for the parameter given by varName
+
+        Parameters
+        ----------
+        varName - string
+            the name of the parameter to calculate the error for
+
+        Returns
+        -------
+        array of differences between fitted and model values
+
+        """
         xv = self.ps[varName].ravel()
         yv = self.res['fitResults'][varName]
         if hasattr(self, varName):
@@ -158,6 +251,21 @@ class fitTestJig(object):
 
 
     def plotRes(self, varName):
+        """
+        Plot a scatter plot of the fitted vs the simulated values.
+
+        Note that this version also attempts to plot the starting parameters used in the fit, so will not work with
+        fits which do not record their starting parameters (e.g. latGaussFitFR)
+
+        Parameters
+        ----------
+        varName - string
+            the name of the parameter to plot
+
+        Returns
+        -------
+
+        """
         #print self.ps
         #from pylab import *
         import matplotlib.pyplot as plt
@@ -199,6 +307,20 @@ class fitTestJig(object):
         
         
     def plotResSimp(self, varName):
+        """
+        Plot a scatter plot of the fitted vs the simulated values (simple version).
+
+        This just plots the fitted vs model values without errorbars or starting positions, so should work for all fits.
+
+        Parameters
+        ----------
+        varName - string
+            the name of the parameter to plot
+
+        Returns
+        -------
+
+        """
         #print self.ps
         #from pylab import *
         import matplotlib.pyplot as plt
