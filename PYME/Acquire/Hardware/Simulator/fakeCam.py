@@ -62,6 +62,7 @@ class NoiseMaker:
         #print im.min(), F2, self.QE, self.background
         #print F2
         #print im.max()
+        #print M, F2
         return self.ADOffset + \
                M*scipy.random.poisson(int(self.shutterOpen)*(im + self.background)*self.QE*F2)/(self.ElectronsPerCount*F2) + \
                self.ReadoutNoise*scipy.random.standard_normal(im.shape)/self.ElectronsPerCount
