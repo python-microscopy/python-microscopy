@@ -59,6 +59,10 @@ class fitTestJig(object):
                           provide an essentially background free image (some of the 3D fits).
       "Test.PSFFile" - the name of a PSF file to use for simulation if not simulating with the same PSF which is used
                        for analysis [3D fits].
+      "Test.VarianceMapID" - variance map to use for simulation (if different from analysis)
+      "Test.DarkMapID" - dark map to use for simulation (if different from analysis)
+      "Test.FlatfieldMapID" - dark map to use for simulation (if different from analysis)
+
     """
     def __init__(self, metadata, fitModule = None):
         """
@@ -90,20 +94,7 @@ class fitTestJig(object):
 
         self.rs=self.md.getOrDefault('Test.ROISize', 7)
 
-        #get camera maps using metadata
-        self.dark = remFitBuf.cameraMaps.getDarkMap(self.md)
-        self.variance = remFitBuf.cameraMaps.getVarianceMap(self.md)
-        self.gain = 1.0/remFitBuf.cameraMaps.getFlatfieldMap(self.md)
-
-        #crop the maps to the ROI size
-        try:
-            _roiWidth = 2 * self.rs + 1
-            self.dark = self.dark[:_roiWidth, :_roiWidth]
-            self.variance = self.variance[:_roiWidth, :_roiWidth]
-            self.gain = self.gain[:_roiWidth,:_roiWidth]
-        except TypeError:
-            #if no gain maps are specified (i.e. EMCCD case), self.dark etc ... will be scalar
-            pass
+        self._prepSimulationCameraMaps()
 
         #by still including emGain estimation etc ... we can use the same code for sCMOS and EMCCD estimation. This will
         #evaluate to 1 in the sCMOS case
@@ -112,6 +103,52 @@ class fitTestJig(object):
         self.noiseM = NoiseMaker(floor=self.dark, readoutNoise=np.sqrt(self.variance),
                                  ADGain= self.md['Camera.ElectronsPerCount']*self.gain,
                                  background=self.bg, QE=1.0, EMGain=emGain)
+
+    def _prepSimulationCameraMaps(self):
+        md2 = MetaDataHandler.NestedClassMDHandler(self.md)
+        self.cameraMaps = remFitBuf.CameraInfoManager()
+
+        #if we have set different camera maps for simulation, use those, otherwise use the ones defined for analysis
+        try:
+            md2['Camera.VarianceMapID'] = md2['Test.VarianceMapID']
+        except (KeyError, AttributeError):
+            pass
+
+        try:
+            md2['Camera.DarkMapID'] = md2['Test.DarkMapID']
+        except (KeyError, AttributeError):
+            pass
+
+        try:
+            md2['Camera.FlatfieldMapID'] = md2['Test.FlatfieldMapID']
+        except (KeyError, AttributeError):
+            pass
+
+        #get camera maps using metadata
+        self.dark = self.cameraMaps.getDarkMap(md2)
+        self.variance = self.cameraMaps.getVarianceMap(md2)
+        self.gain = 1.0 / self.cameraMaps.getFlatfieldMap(md2)
+
+        #crop the maps to the ROI size
+        _roiWidth = 2 * self.rs + 1
+        try:
+            self.dark = self.dark[:_roiWidth, :_roiWidth]
+        except TypeError:
+            #if no gain maps are specified (i.e. EMCCD case), self.dark etc ... will be scalar
+            pass
+
+        try:
+            self.variance = self.variance[:_roiWidth, :_roiWidth]
+        except TypeError:
+            #if no gain maps are specified (i.e. EMCCD case), self.dark etc ... will be scalar
+            pass
+
+        try:
+            self.gain = self.gain[:_roiWidth, :_roiWidth]
+        except TypeError:
+            #if no gain maps are specified (i.e. EMCCD case), self.dark etc ... will be scalar
+            pass
+
 
 
     @classmethod
@@ -172,7 +209,8 @@ class fitTestJig(object):
         ps = np.zeros((nTests, len(params)), 'f4')
 
         #create a copy of our metadata to use for simulating the data. This can use a different PSF to the analysis
-        md2 = copy.copy(self.md)
+        #md2 = copy.copy(self.md)
+        md2 = MetaDataHandler.NestedClassMDHandler(self.md)
         if 'Test.PSFFile' in self.md.getEntryNames():
             md2['PSFFile'] = self.md['Test.PSFFile']
         
@@ -189,15 +227,16 @@ class fitTestJig(object):
 
             
         #calculate our background
-        bg = self.bg*1.0/(self.md.Camera.TrueEMGain/self.md.Camera.ElectronsPerCount) + self.md.Camera.ADOffset
+        #bg = self.bg*1.0/(self.md.Camera.TrueEMGain/self.md.Camera.ElectronsPerCount) + self.md.Camera.ADOffset
         #print((bg, self.noiseM.getbg()))
-        bg = self.noiseM.getbg()
+        #bg = self.noiseM.getbg()
+        bg = remFitBuf.cameraMaps.getDarkMap(self.md)
 
         #calculate the fits
         ###################
         for i in range(nTests):
-            sigma = remFitBuf.fitTask.calcSigma(self.md, np.atleast_3d(self.d2[i]))
-            self.fitFac = self.fitMod.FitFactory(np.atleast_3d(self.d2[i]), self.md, background = bg, noiseSigma = sigma)
+            self.sigma = remFitBuf.fitTask.calcSigma(self.md, np.atleast_3d(self.d2[i] - self.md['Camera.ADOffset']))
+            self.fitFac = self.fitMod.FitFactory(np.atleast_3d(self.d2[i]), self.md, background = bg, noiseSigma = self.sigma)
             self.res[i] = self.fitFac.FromPoint(self.rs, self.rs, roiHalfSize=self.rs)
 
         

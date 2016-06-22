@@ -117,6 +117,8 @@ class GaussianFitFactory(FFBase.FitFactory):
 
         dataMean = data - background
 
+        #print dataMean.min(), dataMean.max()
+
         #estimate some start parameters...
         A = data.max() - data.min() #amplitude
 
