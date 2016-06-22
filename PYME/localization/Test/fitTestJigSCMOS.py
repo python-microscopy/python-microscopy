@@ -21,18 +21,19 @@
 #
 ##################
 
-import numpy
+#import numpy
 from PYME.Acquire.Hardware.Simulator.fakeCam import NoiseMaker
 #import numpy as np
 
 splitterFitModules = ['SplitterFitFR','SplitterFitQR','SplitterFitCOIR', 'BiplaneFitR', 'SplitterShiftEstFR', 'SplitterObjFindR', 'SplitterFitPsfIR']
 
-from pylab import *
+#from pylab import *
 import copy
 from PYME.IO import MetaDataHandler
 from PYME.Acquire.Hardware import EMCCDTheory
 from scipy import optimize
 import numpy as np
+from PYME.localization import remFitBuf
 
 def emg(v, rg):
     return (EMCCDTheory.M((80. + v)/(255 + 80.), 6.6, -70, 536, 2.2) - rg)**2
@@ -59,10 +60,29 @@ class fitTestJig(object):
         self.bg = 0
         if 'Test.Background' in self.md.getEntryNames():
             self.bg = float(self.md['Test.Background'])
-            
-        emGain = optimize.fmin(emg, 150, args=(float(self.md.Camera.TrueEMGain),))[0]
 
-        self.noiseM = NoiseMaker(EMGain=emGain, floor=self.md.Camera.ADOffset, background=self.bg, QE=1.0)
+        self.rs=self.md.getOrDefault('Test.ROISize', 7)
+
+        #get camera maps using metadata
+        self.dark = remFitBuf.cameraMaps.getDarkMap(self.md)
+        self.variance = remFitBuf.cameraMaps.getVarianceMap(self.md)
+        self.gain = 1.0/remFitBuf.cameraMaps.getFlatfieldMap(self.md)
+
+        #crop the maps to the ROI size
+        try:
+            _roiWidth = 2 * self.rs + 1
+            self.dark = self.dark[:_roiWidth, :_roiWidth]
+            self.variance = self.variance[:_roiWidth, :_roiWidth]
+            self.gain = self.gain[:_roiWidth,:_roiWidth]
+        except TypeError:
+            #if no gain maps are specified, self.dark etc ... will be scalar
+            pass
+
+            
+        #emGain = optimize.fmin(emg, 150, args=(float(self.md.Camera.TrueEMGain),))[0]
+
+        self.noiseM = NoiseMaker(floor=self.dark, readoutNoise=np.sqrt(self.variance),
+                                 ADGain= self.md['Camera.ElectronsPerCount']*self.gain, background=self.bg, QE=1.0, )
 
 
     @classmethod
@@ -78,45 +98,39 @@ class fitTestJig(object):
             
         self.fitMod = __import__('PYME.localization.FitFactories.' + self.fitModule, fromlist=['PYME', 'localization', 'FitFactories']) #import our fitting module
         self.simMod = __import__('PYME.localization.FitFactories.' + self.simModule, fromlist=['PYME', 'localization', 'FitFactories']) #import our simulation
-        self.res = numpy.empty(nTests, self.fitMod.FitResultsDType)
-        ps = numpy.zeros((nTests, len(params)), 'f4')
 
-        rs=self.md.getOrDefault('Test.ROISize', 7)
-        
-        
-        
+        #generate empty arrays for parameters and results
+        self.res = np.empty(nTests, self.fitMod.FitResultsDType)
+        ps = np.zeros((nTests, len(params)), 'f4')
+
+        #create a copy of our metadata to use for simulating the data. This can use a different PSF to the analysis
         md2 = copy.copy(self.md)
         if 'Test.PSFFile' in self.md.getEntryNames():
             md2['PSFFile'] = self.md['Test.PSFFile']
         
         self.d2 = []
-        
+
+        #generate our data
+        ####################
         for i in range(nTests):
-            p = array(params) + array(param_jit)*(2*rand(len(param_jit)) - 1)
+            p = np.array(params) + np.array(param_jit)*(2*np.random.rand(len(param_jit)) - 1)
             p[0] = abs(p[0])
             ps[i, :] = p
-            self.data, self.x0, self.y0, self.z0 = self.simMod.FitFactory.evalModel(p, md2, roiHalfSize=rs)#, roiHalfSize= roiHalfWidth))
-            
-            #print self.data.shape
-            
-            #from PYME.DSView import View3D
-            #View3D(self.data)
-
+            self.data, self.x0, self.y0, self.z0 = self.simMod.FitFactory.evalModel(p, md2, roiHalfSize=self.rs)#, roiHalfSize= roiHalfWidth))
             self.d2.append(self.md.Camera.ADOffset + 1*(self.noiseM.noisify(self.data) - self.md.Camera.ADOffset))
-            #print self.d2.min(), self.d2.max(), self.data.min(), self.data.max()
+
             
-            #print self.d2.shape
-            
+        #calculate our background
         bg = self.bg*1.0/(self.md.Camera.TrueEMGain/self.md.Camera.ElectronsPerCount) + self.md.Camera.ADOffset
-        
-        print((bg, self.noiseM.getbg()))
-        
+        #print((bg, self.noiseM.getbg()))
         bg = self.noiseM.getbg()
-            
-        #print bg, self.md.Camera.ADOffset
+
+        #calculate the fits
+        ###################
         for i in range(nTests):
-            self.fitFac = self.fitMod.FitFactory(atleast_3d(self.d2[i]), self.md, background = bg)
-            self.res[i] = self.fitFac.FromPoint(rs, rs, roiHalfSize=rs)
+            sigma = remFitBuf.fitTask.calcSigma(self.md, np.atleast_3d(self.d2[i]))
+            self.fitFac = self.fitMod.FitFactory(np.atleast_3d(self.d2[i]), self.md, background = bg, noiseSigma = sigma)
+            self.res[i] = self.fitFac.FromPoint(self.rs, self.rs, roiHalfSize=self.rs)
 
         
         self.ps = ps.view(np.dtype(self.simMod.FitResultsDType)['fitResults'])
@@ -168,7 +182,7 @@ class fitTestJig(object):
         plt.plot(xv, yv, 'xg', label='Fitted')
         plt.plot([xv.min(), xv.max()], [xv.min(), xv.max()])
 
-        plt.ylim((yv - maximum(err, 0)).min(), (yv + maximum(err, 0)).max())
+        plt.ylim((yv - np.maximum(err, 0)).min(), (yv + np.maximum(err, 0)).max())
         plt.legend()
 
         plt.title(varName)
@@ -186,8 +200,9 @@ class fitTestJig(object):
         
     def plotResSimp(self, varName):
         #print self.ps
-        from pylab import *
-        figure()
+        #from pylab import *
+        import matplotlib.pyplot as plt
+        plt.figure()
         #print varName
         xv = self.ps[varName].ravel()
         
@@ -200,16 +215,16 @@ class fitTestJig(object):
 
         #err = self.res['fitError'][varName]
 
-        plot([xv.min(), xv.max()], [xv.min(), xv.max()])
+        plt.plot([xv.min(), xv.max()], [xv.min(), xv.max()])
         #plot(xv, sp, '+', label='Start Est')
-        plot(xv, yv, 'x', label='Fitted')
+        plt.plot(xv, yv, 'x', label='Fitted')
 
-        ylim((yv).min(), (yv).max())
+        plt.ylim((yv).min(), (yv).max())
         #legend()
 
-        title(varName)
-        xlabel('True Position')
-        ylabel('Estimated Position')
+        plt.title(varName)
+        plt.xlabel('True Position')
+        plt.ylabel('Estimated Position')
 
 
 

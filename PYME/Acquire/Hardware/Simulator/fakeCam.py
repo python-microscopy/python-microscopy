@@ -41,7 +41,8 @@ from PYME.Acquire.Hardware import ccdCalibrator
 #        return example.CDataStack_AsArray(self, curMemChn)[:,:,self.getZPos()]
 
 class NoiseMaker:
-    def __init__(self, QE=.8, ADGain=27.32, readoutNoise=109.8, EMGain=0, background=0., floor=967, shutterOpen = True, numGainElements=536, vbreakdown=6.6, temperature = -70.):
+    def __init__(self, QE=.8, ADGain=27.32, readoutNoise=109.8, EMGain=0, background=0., floor=967, shutterOpen = True,
+                 numGainElements=536, vbreakdown=6.6, temperature = -70.):
         self.QE = QE
         self.ElectronsPerCount = ADGain
         self.ReadoutNoise=readoutNoise
@@ -61,7 +62,9 @@ class NoiseMaker:
         #print im.min(), F2, self.QE, self.background
         #print F2
         #print im.max()
-        return self.ADOffset + M*scipy.random.poisson(int(self.shutterOpen)*(im + self.background)*self.QE*F2)/(self.ElectronsPerCount*F2) + self.ReadoutNoise*scipy.random.standard_normal(im.shape)/self.ElectronsPerCount
+        return self.ADOffset + \
+               M*scipy.random.poisson(int(self.shutterOpen)*(im + self.background)*self.QE*F2)/(self.ElectronsPerCount*F2) + \
+               self.ReadoutNoise*scipy.random.standard_normal(im.shape)/self.ElectronsPerCount
         
     def getbg(self):
         M = EMCCDTheory.M((80. + self.EMGain)/(255 + 80.), self.vbreakdown, self.temperature, self.NGainElements, 2.2)
