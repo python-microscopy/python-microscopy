@@ -484,8 +484,8 @@ class fitTask(taskDef.Task):
 
         return fitResult(self, self.res, self.drRes)
 
-
-    def calcSigma(self, md, data):
+    @classmethod
+    def calcSigma(cls, md, data):
         var = np.atleast_3d(cameraMaps.getVarianceMap(md))
         return np.sqrt(var + (md.Camera.NoiseFactor**2)*(md.Camera.ElectronsPerCount*md.Camera.TrueEMGain*np.maximum(data, 1) + md.Camera.TrueEMGain*md.Camera.TrueEMGain))/md.Camera.ElectronsPerCount    
     
