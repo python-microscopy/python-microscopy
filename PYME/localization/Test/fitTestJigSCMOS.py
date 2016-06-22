@@ -52,6 +52,7 @@ class fitTestJig(object):
                            generated with a different the model parameters randomly jittered in the range
                            [DefaultParams - ParamJitter : DefaultParams + ParamJitter]. To generate data with a fixed
                            set of parameter values, set ParamJitter to zeros
+      "Test.ROISize"    - the half-size fo the ROI to simulate
       "Test.SimModule" - the name of the module used to simulate the data (if different from the analysis module)
       "Test.Background" - an additional background to add before noise generation and then subtract, to be used with fits
                           which do not have a background parameter and rely on the running background subtraction to
