@@ -103,6 +103,8 @@ scope.positioning['z'] = (scope.piFoc, 1, 1)
 scope.pst = offsetPiezo.ServerThread(scope.piFoc)
 scope.pst.start()
 scope.CleanupFunctions.append(scope.pst.cleanup)
+
+scope.state.registerHandler('Positioning.z', lambda : scope.piFoc.GetPos(1), lambda v : scope.piFoc.MoveTo(1, v))
 ''')
 
 #Nikon Ti motorised controls
@@ -270,6 +272,9 @@ scope.CleanupFunctions.append(scope.xystage.close)
 
 scope.positioning['x'] = (scope.xystage, 1, 1000)
 scope.positioning['y'] = (scope.xystage, 2, -1000)
+
+scope.state.registerHandler('Positioning.x', lambda : 1000*scope.xystage.GetPos(1), lambda v : scope.xystage.MoveTo(1, v*1e-3))
+scope.state.registerHandler('Positioning.y', lambda : -1000*scope.xystage.GetPos(2), lambda v : scope.xystage.MoveTo(2, -v*1e-3))
 ''')
 
 InitGUI('''
@@ -296,6 +301,18 @@ try:
 except:
     print 'Error starting arc-lamp shutter ...'
 ''')
+
+InitGUI("""
+from PYME.Acquire.ui import actionUI
+
+ap = actionUI.ActionPanel(MainFrame, scope.actions, scope)
+MainFrame.AddPage(ap, caption='Queued Actions')
+""")
+
+InitGUI("""
+from PYME.Acquire.ui import AnalysisSettingsUI
+AnalysisSettingsUI.Plug(scope, MainFrame)
+""")
 
 # InitBG('DMD', '''
 # from PYME.Acquire.Hardware import TiLightCrafter
