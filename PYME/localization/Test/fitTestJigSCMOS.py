@@ -223,7 +223,7 @@ class fitTestJig(object):
             p[0] = abs(p[0])
             ps[i, :] = p
             self.data, self.x0, self.y0, self.z0 = self.simMod.FitFactory.evalModel(p, md2, roiHalfSize=self.rs)#, roiHalfSize= roiHalfWidth))
-            self.d2.append(self.md.Camera.ADOffset + 1*(self.noiseM.noisify(self.data) - self.md.Camera.ADOffset))
+            self.d2.append(self.md.Camera.ADOffset + 1*(self.noiseM.noisify(self.data.squeeze()) - self.md.Camera.ADOffset))
 
             
         #calculate our background
@@ -325,7 +325,7 @@ class fitTestJig(object):
         plt.subplot(121)
 
         
-       # plot(xv, sp, '+', label='Start Est')
+        plt.plot(xv, sp, '+', label='Start Est')
         plt.errorbar(xv, yv, err, fmt='r.', label='Fitted')
         plt.plot(xv, yv, 'xg', label='Fitted')
         plt.plot([xv.min(), xv.max()], [xv.min(), xv.max()])
@@ -379,9 +379,10 @@ class fitTestJig(object):
 
         plt.plot([xv.min(), xv.max()], [xv.min(), xv.max()])
         #plot(xv, sp, '+', label='Start Est')
-        plt.plot(xv, yv, 'x', label='Fitted')
+        plt.plot(xv, np.clip(yv, xv.min()*1.1, xv.max()*1.1), 'x', label='Fitted')
 
-        plt.ylim((yv).min(), (yv).max())
+        #plt.ylim((yv).min(), (yv).max())
+        plt.ylim(xv.min()*1.15, xv.max()*1.15)
         #legend()
 
         plt.title(varName)
