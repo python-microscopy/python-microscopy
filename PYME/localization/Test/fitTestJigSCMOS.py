@@ -229,14 +229,15 @@ class fitTestJig(object):
         #calculate our background
         #bg = self.bg*1.0/(self.md.Camera.TrueEMGain/self.md.Camera.ElectronsPerCount) + self.md.Camera.ADOffset
         #print((bg, self.noiseM.getbg()))
-        #bg = self.noiseM.getbg()
-        bg = remFitBuf.cameraMaps.getDarkMap(self.md)
+        bg = self.noiseM.getbg()
+        #bg = remFitBuf.cameraMaps.getDarkMap(self.md)
 
         #calculate the fits
         ###################
         for i in range(nTests):
             self.sigma = remFitBuf.fitTask.calcSigma(self.md, np.atleast_3d(self.d2[i] - self.md['Camera.ADOffset']))
-            self.fitFac = self.fitMod.FitFactory(np.atleast_3d(self.d2[i]), self.md, background = bg, noiseSigma = self.sigma)
+            d2_i = remFitBuf.cameraMaps.correctImage(self.md, self.d2[i])
+            self.fitFac = self.fitMod.FitFactory(np.atleast_3d(d2_i), self.md, background = bg, noiseSigma = self.sigma)
             self.res[i] = self.fitFac.FromPoint(self.rs, self.rs, roiHalfSize=self.rs)
 
         
@@ -325,7 +326,7 @@ class fitTestJig(object):
         plt.subplot(121)
 
         
-       # plot(xv, sp, '+', label='Start Est')
+        plt.plot(xv, sp, '+', label='Start Est')
         plt.errorbar(xv, yv, err, fmt='r.', label='Fitted')
         plt.plot(xv, yv, 'xg', label='Fitted')
         plt.plot([xv.min(), xv.max()], [xv.min(), xv.max()])
