@@ -29,8 +29,6 @@ from PYME.Acquire.Hardware.lasers import Laser
 class CobaltLaser(Laser):
     def __init__(self, name,turnOn=False, portname='COM1', minpower=0.001, maxpower=0.1): # minpower, maxpower in Watts
         self.ser_args = dict(port=portname, baudrate=115200, timeout=2, writeTimeout=2)
-        #ser = serial.Serial(portname, 115200, 
-        #                              timeout=2, writeTimeout=2)
         self.powerControlable = True
         self.isOn=True
         self.maxpower = maxpower

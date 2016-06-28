@@ -26,10 +26,14 @@ it attempts to correct for coupling between the lateral centroid and defocus"""
 
 from scipy.interpolate import splprep, splev
 import numpy
+import numpy as np
+#from scipy import ndimage
 #from pylab import *
 
 splines = {}
 rawMeas = {}
+
+derivedMeas = {}
 
 sintheta = 0
 costheta = 1
@@ -95,13 +99,21 @@ def calibrate(interpolator, md, roiSize=5):
     dw2 = splev(z, sp)[0] #evaluate to give smoothed dw values
 
     #unfortunately dw is not always monotonic - pull out the central section that is
-    d_dw = numpy.diff(splev(numpy.arange(-1000, 1001, 10), sp)[0])
+    d_dw = numpy.diff(splev(numpy.arange(-1000, 1000, 10), sp)[0])
 
     #find whether gradient is +ve or negative
     sgn = numpy.sign(d_dw)
 
     #take all bits having the same gradient sign as the central bit
     mask = sgn == sgn[len(sgn)/2]
+
+    #make sure to only take the middle contiguous section
+    segNo = np.cumsum(np.diff(mask))
+    #print len(z), len(d_dw), len(mask), len(segNo)
+    mask = segNo == segNo[len(sgn)/2]
+
+    derivedMeas['d_dw'] = d_dw
+    derivedMeas['mask'] = mask
 
     zm = z[mask]
     dwm = dw2[mask]
