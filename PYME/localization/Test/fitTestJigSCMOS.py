@@ -223,7 +223,7 @@ class fitTestJig(object):
             p[0] = abs(p[0])
             ps[i, :] = p
             self.data, self.x0, self.y0, self.z0 = self.simMod.FitFactory.evalModel(p, md2, roiHalfSize=self.rs)#, roiHalfSize= roiHalfWidth))
-            self.d2.append(self.md.Camera.ADOffset + 1*(self.noiseM.noisify(self.data) - self.md.Camera.ADOffset))
+            self.d2.append(self.md.Camera.ADOffset + 1*(self.noiseM.noisify(self.data.squeeze()) - self.md.Camera.ADOffset))
 
             
         #calculate our background
