@@ -182,7 +182,7 @@ class AndorBase(SDK3Camera):
 
         # this one to deal with the requirement to have width divisible by 10
         if not self._fixed_ROIs:
-            self.SetROI(1,1, self.GetCCDWidth(), self.GetCCDHeight())
+            self.SetROI(0,0, self.GetCCDWidth(), self.GetCCDHeight())
         #set up polling thread        
         self.doPoll = False
         self.pollLoopActive = True

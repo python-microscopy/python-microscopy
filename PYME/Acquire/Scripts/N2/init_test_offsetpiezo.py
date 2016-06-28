@@ -123,12 +123,30 @@ MetaDataHandler.provideStartMetadata.append(scope.dichroic.ProvideMetadata)
 MetaDataHandler.provideStartMetadata.append(scope.lightpath.ProvideMetadata)
 ''')# % GetComputerName())
 
+InitGUI("""
+from PYME.Acquire import positionTracker
+pt = positionTracker.PositionTracker(scope, time1)
+pv = positionTracker.TrackerPanel(MainFrame, pt)
+MainFrame.AddPage(page=pv, select=False, caption='Track')
+time1.WantNotification.append(pv.draw)
+""")
+
+#splitter
+InitGUI("""
+from PYME.Acquire.Hardware import splitter
+splt = splitter.Splitter(MainFrame, scope, scope.cam, flipChan = 0, transLocOnCamera = 'Left', flip=False, dir='left_right', constrain=False)
+""")
+
 InitGUI('''
 from PYME.Acquire.Hardware import focusKeys
-fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[0], scope=scope)
+fk = focusKeys.FocusKeys(MainFrame, scope.piezos[0], scope=scope)
 time1.WantNotification.append(fk.refresh)
 ''')
 
+
+
+#we don't have a splitter - make sure that the analysis knows this
+#scope.mdh['Splitter.Flip'] = False
 
 
 #from PYME.Acquire.Hardware import frZStage
