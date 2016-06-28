@@ -101,7 +101,7 @@ class fitTestJig(object):
         emGain = optimize.fmin(emg, 150, args=(float(self.md.Camera.TrueEMGain),))[0]
 
         self.noiseM = NoiseMaker(floor=self.dark, readoutNoise=np.sqrt(self.variance),
-                                 ADGain= self.md['Camera.ElectronsPerCount']*self.gain,
+                                 electronsPerCount= self.md['Camera.ElectronsPerCount']/self.gain,
                                  background=self.bg, QE=1.0, EMGain=emGain)
 
     def _prepSimulationCameraMaps(self):
