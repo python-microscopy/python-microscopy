@@ -325,13 +325,15 @@ class fitTestJig(object):
 
         plt.subplot(121)
 
+        x_min, x_max = min(sp.min(), xv.min()), max(sp.max(), xv.max())
         
         plt.plot(xv, sp, '+', label='Start Est')
         plt.errorbar(xv, yv, err, fmt='r.', label='Fitted')
-        plt.plot(xv, yv, 'xg', label='Fitted')
+        plt.plot(xv, np.clip(yv, 1.2*x_min, 1.2*x_max), 'xg', label='Fitted')
         plt.plot([xv.min(), xv.max()], [xv.min(), xv.max()])
 
-        plt.ylim((yv - np.maximum(err, 0)).min(), (yv + np.maximum(err, 0)).max())
+        #plt.ylim((yv - np.maximum(err, 0)).min(), (yv + np.maximum(err, 0)).max())
+        plt.ylim(1.3 * x_min, 1.3 * x_max)
         plt.legend()
 
         plt.title(varName)

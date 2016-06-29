@@ -56,10 +56,10 @@ fresultdtype=[('tIndex', '<i4'),
     ('startParams', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('background', '<f4')]), ('nchi2', '<f4')]
 
 def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None, startParams=None, nchi2=-1):
-	if fitErr == None:
+	if fitErr is None:
 		fitErr = -5e3*np.ones(fitResults.shape, 'f')
 
-	if startParams == None:
+	if startParams is None:
 		startParams = -5e3*np.ones(fitResults.shape, 'f')
 
 	tIndex = metadata.tIndex
