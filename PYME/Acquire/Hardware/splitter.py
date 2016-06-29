@@ -153,7 +153,7 @@ class Unmixer:
 
 
 class Splitter:
-    def __init__(self, parent, menu, scope, cam, dir='up_down', flipChan=1, dichroic = 'Unspecified', transLocOnCamera = 'Top', constrain=True, flip = True):
+    def __init__(self, parent, scope, cam, dir='up_down', flipChan=1, dichroic = 'Unspecified', transLocOnCamera = 'Top', constrain=True, flip = True):
         self.dir = dir
         self.scope = scope
         self.cam = cam
@@ -178,6 +178,7 @@ class Splitter:
 
         self.constrainROI = False
         self.flipView = False
+        self.f = None
         
         self.miConstrROI = parent.AddMenuItem('Splitter', 'Constrain ROI', self.OnConstrainROI, itemType = 'check')
         parent.AddMenuItem('Splitter', 'Flip view', self.OnFlipView)
@@ -190,7 +191,7 @@ class Splitter:
 #        idShiftfield = wx.NewId()
 #
 #        self.menu = wx.Menu(title = '')
-#        self.f = None
+        
 #
 #        self.menu.AppendCheckItem(idConstROI, 'Constrain ROI')
 #        wx.EVT_MENU(parent, idConstROI, self.OnConstrainROI)

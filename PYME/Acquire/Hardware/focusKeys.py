@@ -24,7 +24,7 @@
 import wx
 
 class FocusKeys:
-    def __init__(self, parent, menu, piezo, keys = ['F1', 'F2', 'F3', 'F4'], scope = None):
+    def __init__(self, parent, piezo, keys = ['F1', 'F2', 'F3', 'F4'], scope = None):
         self.piezo = piezo
         self.focusIncrement = 0.2
         self.scope = scope
@@ -54,8 +54,8 @@ class FocusKeys:
 #        wx.EVT_MENU(parent, idSensUp, self.OnSensUp)
 #
 #        menu.Append(menu=self.menu, title = 'Focus')
-#        self.mbar = menu
-#        self.mpos = menu.GetMenuCount() - 1
+        self.mbar = parent.menubar
+        self.mpos = self.mbar.GetMenuCount() - 1
 
 
     def OnFocDown(self,event):
