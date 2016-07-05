@@ -166,7 +166,7 @@ class SpoolController(object):
                                               fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames)
 
        
-        if sampInf:
+        if sampInf and False: # with proper use of provideStartMetadata this should not be necessary?
             try:
                 sampleInformation.getSampleData(self, self.spooler.md)
             except:

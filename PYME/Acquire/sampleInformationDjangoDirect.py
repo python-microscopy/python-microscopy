@@ -383,11 +383,14 @@ class slidePanel(wx.Panel):
 
 def prefillSampleData(parent):
     #global currentSlide
+    global slideMD
 
     dlg = SampleInfoDialog(parent, acquiring=False)
+    slideMD = NestedClassMDHandler() # provide a new clean copy - otherwise we keep unset fields from last run
 
     if dlg.ShowModal() == wx.ID_OK:
         dlg.PopulateMetadata(slideMD, False)
+        # print slideMD
         print('bar')
         print((dlg.slide))
         currentSlide[0] = dlg.slide
@@ -408,6 +411,7 @@ def getSampleData(parent, mdh):
         #dlg = SampleInfoDialog(parent, (cs.creator, cs.reference, ''))
         mdh.copyEntriesFrom(slideMD)
         #createImage(mdh, cs)
+        # print mdh
     else:
         dlg = SampleInfoDialog(parent)
 
