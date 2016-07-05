@@ -99,7 +99,7 @@ camPanels.append((scope.camControls['Fake Camera'], 'EMCCD Properties'))
 """)
 
 InitGUI("""
-from PYME.Acquire import sampleInformation
+from PYME.Acquire import sampleInformationDjangoDirect as sampleInformation
 sampPan = sampleInformation.slidePanel(MainFrame)
 camPanels.append((sampPan, 'Current Slide'))
 """)
@@ -131,7 +131,7 @@ camPanels.append((LCGui, 'DMD Control', False))
 cm.join()
 from PYME.Acquire.Hardware import lasers
 scope.l488 = lasers.FakeLaser('l488',scope.cam,1, initPower=10, scopeState = scope.state)
-scope.l405 = lasers.FakeLaser('405',scope.cam,0, initPower=5, maxPower=100, scopeState = scope.state)
+scope.l405 = lasers.FakeLaser('l405',scope.cam,0, initPower=5, maxPower=100, scopeState = scope.state)
 
 scope.lasers = [scope.l405, scope.l488]
 
