@@ -10,7 +10,7 @@ Created on Sat May 28 20:42:16 2016
 from PYME.Acquire import HDFSpooler
 from PYME.Acquire import QueueSpooler, HTTPSpooler
 try:
-    from PYME.Acquire import sampleInformation
+    from PYME.Acquire import sampleInformationDjangoDirect as sampleInformation
     sampInf = True
 except:
     print('Could not connect to the sample information database')

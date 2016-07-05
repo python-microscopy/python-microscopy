@@ -161,8 +161,8 @@ def findSlide(mdh=None):
     except:
         return None
 
-    from PYME.Acquire import sampleInformation
-    from PYME.SampleDB.samples import models
+    from PYME.Acquire import sampleInformationDjangoDirect as sampleInformation
+    from PYME.SampleDB2.samples import models
 
     matches = models.Slide.objects.filter(reference__contains=slideref)
     slide = matches[0]
