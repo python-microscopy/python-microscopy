@@ -401,6 +401,17 @@ def prefillSampleData(parent):
     dlg.Destroy()
 
 
+# this func is the external interface
+# and should really learn properly to handle failing to make contact
+# with the database (server)
+def getSampleDataFailesafe(parent, mdh):
+    try:
+        getSampleData(parent, mdh)
+    except:
+        #the connection to the database will timeout if not present
+        #FIXME: catch the right exception (or delegate handling to sampleInformation module)
+        pass
+
 def getSampleData(parent, mdh):
     #global currentSlide
 

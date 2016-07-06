@@ -9,12 +9,15 @@ Created on Sat May 28 20:42:16 2016
 #import datetime
 from PYME.Acquire import HDFSpooler
 from PYME.Acquire import QueueSpooler, HTTPSpooler
-try:
-    from PYME.Acquire import sampleInformationDjangoDirect as sampleInformation
-    sampInf = True
-except:
-    print('Could not connect to the sample information database')
-    sampInf = False
+# the following is now done by registering the suitable handler with
+#   MetaDataHandler.provideStartMetadata from the init file when
+#   loading the sampleinfo interface, see Acquire/Scripts/init.py
+#try:
+#     from PYME.Acquire import sampleInformationDjangoDirect as sampleInformation
+#     sampInf = True
+# except:
+#     print('Could not connect to the sample information database')
+#     sampInf = False
 #import win32api
 from PYME.IO.FileUtils import nameUtils
 from PYME.IO.FileUtils.nameUtils import numToAlpha, getRelFilename, genHDFDataFilepath
@@ -166,13 +169,13 @@ class SpoolController(object):
                                               fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames)
 
        
-        if sampInf and False: # with proper use of provideStartMetadata this should not be necessary?
-            try:
-                sampleInformation.getSampleData(self, self.spooler.md)
-            except:
-                #the connection to the database will timeout if not present
-                #FIXME: catch the right exception (or delegate handling to sampleInformation module)
-                pass
+        # if sampInf and False: # with proper use of provideStartMetadata this should not be necessary?
+        #     try:
+        #         sampleInformation.getSampleData(self, self.spooler.md)
+        #     except:
+        #         #the connection to the database will timeout if not present
+        #         #FIXME: catch the right exception (or delegate handling to sampleInformation module)
+        #         pass
             
         self.spooler.onSpoolStop.connect(self.SpoolStopped)
         self.spooler.StartSpool()
