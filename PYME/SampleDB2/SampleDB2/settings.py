@@ -20,7 +20,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 SECRET_KEY = '3#d-g6g@kva0au8smne=_pjyc_++9@nw2kr+k#j37y!3j8_2mv'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 TEMPLATE_DEBUG = DEBUG
 
@@ -58,7 +58,7 @@ WSGI_APPLICATION = 'SampleDB2.wsgi.application'
 
 DATABASE_HOST = ''
 #look for database host in environment variable
-DATABASE_HOST = os.getenv('PYME_DATABASE_HOST','')
+DATABASE_HOST = os.getenv('PYME_DATABASE_HOST','phy-lmsrv2')
 DATABASE_USER = os.getenv('PYME_DATABASE_USER','sample_db')
 DATABASE_PWD = os.getenv('PYME_DATABASE_PWD','PYMEUSER')
 

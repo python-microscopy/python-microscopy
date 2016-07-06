@@ -68,12 +68,19 @@ class rldec:
         return self.deconv(*args)
         #return 0
     
-    def pd(self, g, velx, tvals):
-        xv = np.arange(len(g))
-        shifts = velx[:,None]*tvals[None,:]
-        coords = np.array([(xv[:, None] + shifts).T])
-        #print coords.shape, shifts
-        return ndimage.map_coordinates(g, coords, mode='reflect')
+    def pd(self, g, velx, vely, tvals):
+        g_ = g.reshape(self.dataShape[0], self.dataShape[1], -1)
+        velx_ = velx.reshape(self.dataShape)
+        vely_ = vely.reshape(self.dataShape)
+        #print self.xv.shape, velx_.shape, tvals.shape
+
+        #xv = np.arange(len(g))
+        x_new = self.xv[:,:,None] + velx_[:, :, None] * tvals[None, None, :]
+        y_new = self.yv[:,:,None] + vely_[:, :, None] * tvals[None, None, :]
+        #coords = np.array([(self.xv[:, None] + shifts).T])
+        coords = np.concatenate([x_new[None, :,:,:], y_new[None, :,:,:], 0*y_new[None, :,:,:]], 0)
+        #print coords.shape, g_.shape, coords.T.shape
+        return ndimage.map_coordinates(g_, coords, mode='wrap').ravel()
         
     def dlHd(self,data, g, velx, tvals):
         pred = self.pd(g, velx, tvals)
@@ -109,7 +116,7 @@ class rldec:
             #pl.plot(upd)
             velx[:] = ndimage.gaussian_filter(velx + upd, 50)
     
-    def deconv(self, views, lamb, num_iters=10, weights = 1, bg = 0, vx = 0):
+    def deconv(self, views, lamb, num_iters=10, weights = 1, bg = 0, vx = 0, vy=0):
         """This is what you actually call to do the deconvolution.
         parameters are:
 
@@ -139,8 +146,16 @@ class rldec:
         #data = data.ravel()
         #weights = weights.ravel()
         #print 'dc3'
-        
-        self.vx = vx*np.ones_like(self.f) #- 1.0#1.0
+
+        if not np.shape(vx) == self.dataShape:
+            self.vx = vx*np.ones_like(views[0]) #- 1.0#1.0
+            self.vy = vy*np.ones_like(views[0])
+        else:
+            self.vx = vx #.ravel()
+            self.vy = vy #.ravel()
+
+        self.xv, self.yv = np.mgrid[0.:self.dataShape[0], 0.:self.dataShape[1]]
+        #self.xv, self.yv = xv.ravel(), yv.ravel()
 
         mask = 1 - weights
         
@@ -160,7 +175,7 @@ class rldec:
                 vj = views[j]
                 #vj = vj/vj.sum()
                 pred =  self.Afunc(self.f)
-                pred = self.pd(pred, self.vx, self.tVals[j:j+1]).squeeze()
+                pred = self.pd(pred, self.vx, self.vy, self.tVals[j:j+1]).squeeze()
                 #pl.plot(pred)
                 #pred = pred/pred.sum()
                 self.res = weights*(vj/(pred +1e-1 + 0+ bg)) +  mask;
@@ -170,7 +185,7 @@ class rldec:
     
                 #adjustment
                 adjFact = self.Ahfunc(self.res)
-                adjFact = self.pd(adjFact, -self.vx, self.tVals[j:j+1]).squeeze()
+                adjFact = self.pd(adjFact, -self.vx, -self.vy, self.tVals[j:j+1]).squeeze()
                 
                 #adjF += adjFact
                 adjF += adjFact

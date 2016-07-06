@@ -161,8 +161,8 @@ def findSlide(mdh=None):
     except:
         return None
 
-    from PYME.Acquire import sampleInformation
-    from PYME.SampleDB.samples import models
+    from PYME.Acquire import sampleInformationDjangoDirect as sampleInformation
+    from PYME.SampleDB2.samples import models
 
     matches = models.Slide.objects.filter(reference__contains=slideref)
     slide = matches[0]
@@ -603,7 +603,7 @@ def subsampidx(arraylen, percentage=10):
 
 from scipy.stats import gaussian_kde
 import pylab
-def scatterdens(x,y,subsample=1.0):
+def scatterdens(x,y,subsample=1.0, s=40, **kwargs):
     xf = x.flatten()
     yf = y.flatten()
     if subsample < 1.0:
@@ -616,7 +616,8 @@ def scatterdens(x,y,subsample=1.0):
         
     estimator = gaussian_kde([xs,ys]) 
     density = estimator.evaluate([xf,yf])
-    pylab.scatter(xf,yf,c=density,marker='o',linewidth='0',zorder=3,s=40)
+    print "density min, max: %f, %f" % (density.min(), density.max())
+    pylab.scatter(xf,yf,c=density,marker='o',linewidth='0',zorder=3,s=s,**kwargs)
 
 def intdens(image,framenum=0):
     mdh = image.mdh
@@ -858,10 +859,10 @@ def loadpickled(fname):
     fi = open(fname,'r')
     return pickle.load(fi)
 
-import PYME.DSView.image as dsimg
+from PYME.DSView import dsviewer
 def setdriftparsFromImg(driftPane,img = None):
     if img is None:
-        img = dsimg.openImages[dsimg.openImages.keys()[0]]
+        img = dsviewer.openViewers[dsviewer.openViewers.keys()[0]].image
     destp = driftPane.dp.driftCorrParams
     srcp = img.mdh['DriftCorrection.Parameters']
     for key in destp.keys():
@@ -870,7 +871,7 @@ def setdriftparsFromImg(driftPane,img = None):
     return destp
 
 def getOpenImages():
-    img = dsimg.openImages
+    img = dsviewer.openViewers
     return img
 
 def setSelectionFromFilterKeys(visFr,img):

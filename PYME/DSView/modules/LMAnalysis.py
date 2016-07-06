@@ -92,12 +92,6 @@ class AnalysisSettingsView(object):
     
     def __init__(self, dsviewer, analysisController, lmanal=None):
         self.foldAnalPanes = False
-        TASKS_STANDARD_2D_Zyla = wx.NewId()
-        TASKS_PRIscmos = wx.NewId()
-        mTasks.Append(TASKS_STANDARD_2D_Zyla, "Normal 2D analysis for Zyla", "", wx.ITEM_NORMAL)
-        mTasks.Append(TASKS_PRIscmos, "PRIscmos", "", wx.ITEM_NORMAL)
-        wx.EVT_MENU(self.dsviewer, TASKS_STANDARD_2D_Zyla, self.OnStandard2DforZyla)
-        wx.EVT_MENU(self.dsviewer, TASKS_PRIscmos, self.OnPRI3Dscmos)
 
         self.analysisController = analysisController
         self.analysisMDH = analysisController.analysisMDH
@@ -572,20 +566,6 @@ class LMAnalyser2(object):
         #for backwards compatibility
         return self.analysisController.tq
 
-    def OnStandard2DforZyla(self, event):
-        self.cFitType.SetSelection(self.fitFactories.index('LatGaussFitFRforZyla'))
-        self.tBackgroundFrames.SetValue('-30:0')
-        self.cbSubtractBackground.SetValue(True)
-        self.tThreshold.SetValue('0.6')
-        
-    def OnPRI3Dscmos(self, event):
-        #self.cFitType.SetSelection(self.fitFactories.index('SplitterFitInterpR'))
-        #self.tBackgroundFrames.SetValue('-30:0')
-        #self.cbSubtractBackground.SetValue(True)
-        #self.tThreshold.SetValue('1.0')
-        self.image.mdh['PRI.Axis'] = 'x'
-        self.image.mdh['Analysis.EstimatorModule'] = 'priEstimator'
-
     def analRefresh(self):
         newNumAnalysed = self.tq.getNumberTasksCompleted(self.queueName)
         if newNumAnalysed > self.numAnalysed:
@@ -663,7 +643,6 @@ class LMAnalyser2(object):
 
     #         if 'Splitter' in fitMod:
     #             ft = remFitBuf.fitTask(self.image.seriesName, zps[i], detThresh, MetaDataHandler.NestedClassMDHandler(self.image.mdh), 'SplitterObjFindR', bgindices=bgi, SNThreshold=True,dataSourceModule=mn)
-
     #         else:
     #             ft = remFitBuf.fitTask(self.image.seriesName, zps[i], detThresh, MetaDataHandler.NestedClassMDHandler(self.image.mdh), 'LatObjFindFR', bgindices=bgi, SNThreshold=True,dataSourceModule=mn)
     #         res = ft(taskQueue=self.tq)
@@ -698,9 +677,6 @@ class LMAnalyser2(object):
     #         yticks([])
     #     show()
     #     matplotlib.interactive(True)
-                if self.image.mdh.getEntry('Splitter.Flip'):
-                else:
-                    plot([p.x for p in ft.ofd], [ p.y + d.shape[0]/2 for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
         
     def testFrame(self, gui=True):
         from pylab import *

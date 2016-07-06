@@ -28,6 +28,8 @@ from PYME.Acquire.Hardware.Simulator import fakePiezo
 #from PYME.Acquire.Hardware import fakeShutters
 import time
 
+from PYME.IO import MetaDataHandler
+
 #import PYME.cSMI as example
 
 pz = InitBG('Fake Piezo(s)', """
@@ -99,8 +101,9 @@ camPanels.append((scope.camControls['Fake Camera'], 'EMCCD Properties'))
 """)
 
 InitGUI("""
-from PYME.Acquire import sampleInformation
+from PYME.Acquire import sampleInformationDjangoDirect as sampleInformation
 sampPan = sampleInformation.slidePanel(MainFrame)
+MetaDataHandler.provideStartMetadata.append(lambda mdh: sampleInformation.getSampleDataFailesafe(MainFrame,mdh))
 camPanels.append((sampPan, 'Current Slide'))
 """)
 
@@ -131,7 +134,7 @@ camPanels.append((LCGui, 'DMD Control', False))
 cm.join()
 from PYME.Acquire.Hardware import lasers
 scope.l488 = lasers.FakeLaser('l488',scope.cam,1, initPower=10, scopeState = scope.state)
-scope.l405 = lasers.FakeLaser('405',scope.cam,0, initPower=5, maxPower=100, scopeState = scope.state)
+scope.l405 = lasers.FakeLaser('l405',scope.cam,0, initPower=5, maxPower=100, scopeState = scope.state)
 
 scope.lasers = [scope.l405, scope.l488]
 
@@ -162,7 +165,7 @@ fk = focusKeys.FocusKeys(MainFrame, None, scope.piezos[0])
 
 #InitGUI("""
 #from PYME.Acquire.Hardware import splitter
-splt = splitter.Splitter(MainFrame, mControls, scope, scope.cam, dichroic = 'FF741-Di01' , transLocOnCamera = 'Top')
+#splt = splitter.Splitter(MainFrame, mControls, scope, scope.cam, dichroic = 'FF741-Di01' , transLocOnCamera = 'Top')
 #""")
 
 InitGUI("""

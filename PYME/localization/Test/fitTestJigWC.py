@@ -32,6 +32,7 @@ import copy
 from PYME.IO import MetaDataHandler
 from PYME.Acquire.Hardware import EMCCDTheory
 from scipy import optimize
+import numpy as np
 
 def emg(v, rg):
     return (EMCCDTheory.M((80. + v)/(255 + 80.), 6.6, -70, 536, 2.2) - rg)**2
@@ -108,11 +109,11 @@ class fitTestJig(object):
             
         bg = self.bg*1.0/(self.md.Camera.TrueEMGain/self.md.Camera.ElectronsPerCount) + self.md.Camera.ADOffset
         
-        print bg, self.noiseM.getbg()
+        print((bg, self.noiseM.getbg()))
         
         bg = self.noiseM.getbg()
             
-            #print bg, self.md.Camera.ADOffset
+        #print bg, self.md.Camera.ADOffset
         for i in range(nTests):
             self.fitFac = self.fitMod.FitFactory(atleast_3d(self.d2[i]), self.md, background = bg)
             self.res[i] = self.fitFac.FromPoint(rs, rs, roiHalfSize=rs)
@@ -144,8 +145,9 @@ class fitTestJig(object):
 
     def plotRes(self, varName):
         #print self.ps
-        from pylab import *
-        figure(figsize=(14,5))
+        #from pylab import *
+        import matplotlib.pyplot as plt
+        plt.figure(figsize=(14,5))
         #print varName
         xv = self.ps[varName].ravel()
         
@@ -157,29 +159,29 @@ class fitTestJig(object):
             yv = yv + self.__getattribute__(varName)
 
         err = self.res['fitError'][varName]
-        
-        subplot(121)
+
+        plt.subplot(121)
 
         
        # plot(xv, sp, '+', label='Start Est')
-        errorbar(xv, yv, err, fmt='r.', label='Fitted')
-        plot(xv, yv, 'xg', label='Fitted')
-        plot([xv.min(), xv.max()], [xv.min(), xv.max()])
+        plt.errorbar(xv, yv, err, fmt='r.', label='Fitted')
+        plt.plot(xv, yv, 'xg', label='Fitted')
+        plt.plot([xv.min(), xv.max()], [xv.min(), xv.max()])
 
-        ylim((yv - maximum(err, 0)).min(), (yv + maximum(err, 0)).max())
-        legend()
+        plt.ylim((yv - maximum(err, 0)).min(), (yv + maximum(err, 0)).max())
+        plt.legend()
 
-        title(varName)
-        xlabel('True Position')
-        ylabel('Estimated Position')
-        
-        subplot(122)
+        plt.title(varName)
+        plt.xlabel('True Position')
+        plt.ylabel('Estimated Position')
+
+        plt.subplot(122)
         dv = yv - xv
         iq = IQR(dv)
-        print 'Mean: %f, std. dev: %f, IQR: %f' % (dv.mean(), dv.std(), iq)
-        hist(dv, linspace(dv.mean()-3*iq, dv.mean() + 3*iq))
-        xlabel('Position Error [nm]')
-        ylabel('Frequency')
+        print('Mean: %f, std. dev: %f, IQR: %f' % (dv.mean(), dv.std(), iq))
+        plt.hist(dv, np.linspace(dv.mean()-3*iq, dv.mean() + 3*iq))
+        plt.xlabel('Position Error [nm]')
+        plt.ylabel('Frequency')
         
         
     def plotResSimp(self, varName):

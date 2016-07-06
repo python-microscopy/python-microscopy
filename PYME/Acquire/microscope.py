@@ -539,7 +539,7 @@ class microscope(object):
                 self.lastFrameSaturated = True
                 self.cam.saturationIntervened = True
                 wx.MessageBox(self.saturatedMessage, "Saturation detected", wx.OK|wx.ICON_HAND)
-                return
+                #return
             else:
                 if 'SetShutter' in dir(source.cam):
                     source.cam.SetShutter(False)
@@ -548,7 +548,7 @@ class microscope(object):
                 self.lastFrameSaturated = True
                 self.cam.saturationIntervened = True
                 wx.MessageBox(self.saturatedMessage, "Saturation detected", wx.OK|wx.ICON_HAND)
-                return
+                #return
 
             self.lastFrameSaturated = True
 

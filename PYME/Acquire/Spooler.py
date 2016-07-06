@@ -29,7 +29,7 @@ from PYME.IO import MetaDataHandler
 
 
 try:
-    from PYME.Acquire import sampleInformation
+    from PYME.Acquire import sampleInformationDjangoDirect as sampleInformation
 except:
     sampleInformation= None
 

@@ -37,19 +37,19 @@ class ObjectSegmenter:
         visFr.Bind(wx.EVT_MENU, self.OnMeasure, id=ID_MEASURE)
 
     def OnGetIDs(self, event):
-        from PYME.DSView import image
+        from PYME.DSView import dsviewer
 
         visFr = self.visFr
         pipeline = visFr.pipeline
 
         dlg = wx.SingleChoiceDialog(
                 None, 'choose the image which contains labels', 'Use Segmentation',
-                image.openImages.keys(),
+                dsviewer.openViewers.keys(),
                 wx.CHOICEDLG_STYLE
                 )
 
         if dlg.ShowModal() == wx.ID_OK:
-            img = image.openImages[dlg.GetStringSelection()]
+            img = dsviewer.openViewers[dlg.GetStringSelection()].image
             
             #account for ROIs
             #dRx = pipeline.mdh['Camera.ROIPosX']*pipeline.mdh['voxelsize.x']*1e3 - img.mdh['Camera.ROIPosX']*img.mdh['voxelsize.x']*1e3

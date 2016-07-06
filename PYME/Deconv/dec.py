@@ -129,7 +129,7 @@ class dec:
 
         #if doing 4Pi dec, do some phase related precomputation
         #TODO move this to the 4Pi_dec classes
-        if (not alpha == None):
+        if (not alpha is None):
             self.alpha = alpha
             self.e1 = fftshift(exp(1j*self.alpha))
             self.e2 = fftshift(exp(2j*self.alpha))
@@ -225,11 +225,11 @@ class dec_4pi(dec):
         (x,y,z) = mgrid[-floor(self.height/2.0):(ceil(self.height/2.0)), -floor(self.width/2.0):(ceil(self.width/2.0)), -floor(self.depth/2.0):(ceil(self.depth/2.0))]
         
        
-        gs = shape(g);
+        gs = shape(g)
         g = g[int(floor((gs[0] - self.height)/2)):int(self.height + floor((gs[0] - self.height)/2)), int(floor((gs[1] - self.width)/2)):int(self.width + floor((gs[1] - self.width)/2)), int(floor((gs[2] - self.depth)/2)):int(self.depth + floor((gs[2] - self.depth)/2))]
 	
-        g = abs(ifftshift(ifftn(abs(fftn(g)))));
-        g = (g/sum(sum(sum(g))));
+        g = abs(ifftshift(ifftn(abs(fftn(g)))))
+        g = (g/sum(sum(sum(g))))
 	
         self.g = g;
         
