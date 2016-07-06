@@ -45,6 +45,7 @@ procName = compName + ' - PID:%d' % os.getpid()
 
 
 class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+    protocol_version = "HTTP/1.1"
     def do_PUT(self):
         path = self.translate_path(self.path)
 
@@ -52,7 +53,10 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
         if os.path.exists(path):
             #Do not overwrite - we use write-once semantics
+            self.send_header("Content-Length", str(len("File already exists")))
             self.send_error(405, "File already exists")
+
+            #self.end_headers()
             return None
         else:
             dir = os.path.split(path)[0]
@@ -78,6 +82,8 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                     f.write(self.rfile.read(int(self.headers['Content-Length'])))
 
             self.send_response(200)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
             return
 
     def list_directory(self, path):
@@ -117,7 +123,7 @@ class ThreadedHTTPServer(ThreadingMixIn, BaseHTTPServer.HTTPServer):
     """Handle requests in a separate thread."""
 
 
-def main(protocol="HTTP/1.0"):
+def main(protocol="HTTP/1.1"):
     """Test the HTTP request handler class.
 
     This runs an HTTP server on port 8000 (or the first command line
