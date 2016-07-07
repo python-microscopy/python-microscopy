@@ -63,7 +63,6 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
         if os.path.exists(path):
             #Do not overwrite - we use write-once semantics
-            self.send_header("Content-Length", str(len("File already exists")))
             self.send_error(405, "File already exists")
 
             #self.end_headers()
@@ -135,8 +134,51 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
         """
         if LOG_REQUESTS:
-            self.log_message('"%s" %s %s',
-                         self.requestline, str(code), str(size))
+            self.log_message('"%s" %s %s', self.requestline, str(code), str(size))
+
+    def send_error(self, code, message=None):
+        """Send and log an error reply.
+
+        Arguments are the error code, and a detailed message.
+        The detailed message defaults to the short entry matching the
+        response code.
+
+        This sends an error response (so it must be called before any
+        output has been generated), logs the error, and finally sends
+        a piece of HTML explaining the error to the user.
+
+        """
+
+        try:
+            short, long = self.responses[code]
+        except KeyError:
+            short, long = '???', '???'
+        if message is None:
+            message = short
+        explain = long
+        self.log_error("code %d, message %s", code, message)
+        self.send_response(code, message)
+        #self.send_header('Connection', 'close')
+
+        # Message body is omitted for cases described in:
+        #  - RFC7230: 3.3. 1xx, 204(No Content), 304(Not Modified)
+        #  - RFC7231: 6.3.6. 205(Reset Content)
+        content = None
+        if code >= 200 and code not in (204, 205, 304):
+            # HTML encode to prevent Cross Site Scripting attacks
+            # (see bug #1100201)
+            content = (self.error_message_format % {
+                'code': code,
+                'message': BaseHTTPServer._quote_html(message),
+                'explain': explain
+            })
+            self.send_header("Content-Type", self.error_content_type)
+            self.send_header("Content-Length", str(len(content)))
+
+        self.end_headers()
+
+        if self.command != 'HEAD' and content:
+            self.wfile.write(content)
 
 
 class ThreadedHTTPServer(ThreadingMixIn, BaseHTTPServer.HTTPServer):
