@@ -43,9 +43,19 @@ from PYME.misc.computerName import GetComputerName
 compName = GetComputerName()
 procName = compName + ' - PID:%d' % os.getpid()
 
+LOG_REQUESTS = False#True
+
 
 class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
+
+    # def do_PUT(self):
+    #     r = self.rfile.read(int(self.headers['Content-Length']))
+    #     self.send_response(200)
+    #     self.send_header("Content-Length", "0")
+    #     self.end_headers()
+    #     return
+
     def do_PUT(self):
         path = self.translate_path(self.path)
 
@@ -117,6 +127,16 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         self.send_header("Content-Length", str(length))
         self.end_headers()
         return f
+
+    def log_request(self, code='-', size='-'):
+        """Log an accepted request.
+
+        This is called by send_response().
+
+        """
+        if LOG_REQUESTS:
+            self.log_message('"%s" %s %s',
+                         self.requestline, str(code), str(size))
 
 
 class ThreadedHTTPServer(ThreadingMixIn, BaseHTTPServer.HTTPServer):
