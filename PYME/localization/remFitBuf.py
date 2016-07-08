@@ -161,7 +161,7 @@ class CameraInfoManager(object):
 
         mp = self._getMap(md, darkMapName)
         if (mp is None):
-            return md.getOrDefault('Camera.ADOffset', 0)
+            return float(md.getOrDefault('Camera.ADOffset', 0))
         else:
             return mp
 
@@ -182,7 +182,7 @@ class CameraInfoManager(object):
         dk = self.getDarkMap(md)
         flat = self.getFlatfieldMap(md)
 
-        return (img-dk)*flat
+        return (img.astype('f')-dk)*flat
 
 cameraMaps = CameraInfoManager()
 
