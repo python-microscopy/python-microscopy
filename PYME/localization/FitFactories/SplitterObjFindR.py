@@ -112,7 +112,7 @@ class GaussianFitFactory:
         xslice, yslice, zslice, x, y, z = key
 
         #cut region out of data stack
-        dataROI = self.data[xslice, yslice, zslice] - self.metadata.Camera.ADOffset
+        dataROI = self.data[xslice, yslice, zslice]
 
         #average in z
         #dataMean = dataROI.mean(2) - self.metadata.CCD.ADOffset

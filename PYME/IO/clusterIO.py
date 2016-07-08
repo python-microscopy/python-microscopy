@@ -22,7 +22,6 @@ logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 
-
 if not 'sphinx' in sys.modules.keys():
     # do not start zeroconf if running under sphinx
     ns = pzc.getNS('_pyme-http')
@@ -51,6 +50,18 @@ _locateCache = LimitedSizeDict(size_limit=500)
 _dirCache = LimitedSizeDict(size_limit=100)
 DIR_CACHE_TIME = 20
 
+#use one session for each server (to allow http keep-alives)
+sessions = {}
+def _getSession(url):
+    servinfo = url.split('/')[2]
+    try:
+        session = sessions[servinfo]
+    except KeyError:
+        session = requests.Session()
+        sessions[servinfo] = session
+
+    return session
+
 
 def _listSingleDir(dirurl):
     t = time.time()
@@ -61,7 +72,9 @@ def _listSingleDir(dirurl):
             raise RuntimeError('key is expired')
     except (KeyError, RuntimeError):
         # t = time.time()
-        r = requests.get(dirurl.encode(), timeout=1)
+        url = dirurl.encode()
+        s = _getSession(url)
+        r = s.get(url, timeout=1)
         dt = time.time() - t
         try:
             dirL = r.json()
@@ -203,8 +216,9 @@ def getFile(filename, serverfilter='', numRetries=3):
         print ns.list()
         raise IOError("Specified file could not be found")
     else:
-        url = _chooseLocation(locs)
-        r = requests.get(url.encode(), timeout=.1)
+        url = _chooseLocation(locs).encode()
+        s = _getSession(url)
+        r = s.get(url, timeout=.1)
 
         return r.content
 
@@ -271,8 +285,9 @@ def mirrorFile(filename, serverfilter=''):
     sourceUrl = _chooseLocation(locs)
 
     url = 'http://%s:%d/%s?MirrorSource=%s' % (socket.inet_ntoa(destInfo.address), destInfo.port, filename, sourceUrl)
-
-    r = requests.put(url.encode(), timeout=1)
+    url = url.encode()
+    s = _getSession(url)
+    r = s.put(url, timeout=1)
 
     if not r.status_code == 200:
         raise RuntimeError('Mirror failed with %d: %s' % (r.status_code, r.content))
@@ -291,7 +306,10 @@ def putFile(filename, data, serverfilter=''):
 
     t = time.time()
     _lastwritetime[name] = t
-    r = requests.put(url.encode(), data=data, timeout=1)
+
+    url = url.encode()
+    s = _getSession(url)
+    r = s.put(url, data=data, timeout=1)
     dt = time.time() - t
     #print r.status_code
     if not r.status_code == 200:
@@ -314,7 +332,9 @@ def putFiles(files, serverfilter=''):
 
         t = time.time()
         _lastwritetime[name] = t
-        r = requests.put(url.encode(), data=data, timeout=1)
+        url = url.encode()
+        s = _getSession(url)
+        r = s.put(url, data=data, timeout=1)
         dt = time.time() - t
         #print r.status_code
         if not r.status_code == 200:

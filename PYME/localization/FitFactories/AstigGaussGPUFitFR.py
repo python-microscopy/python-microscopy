@@ -121,8 +121,12 @@ class GaussianFitFactory:
             self.flatmap = (1./flatmap)*np.ones_like(self.data)
 
         # subtract darkmap
-        darkmap = cameraMaps.getDarkMap(self.metadata)
-        self.data -= darkmap #same op for scalar or array
+        #### DB - Dark map is already subtracted by remFitBuf!!!! NOTE: flatfielding will also have been done, so undo
+        #darkmap = cameraMaps.getDarkMap(self.metadata)
+        #self.data -= darkmap #same op for scalar or array
+
+        ### Undo the flatfielding we did in remFitBuf
+        self.data = self.data*self.flatmap
 
         # Account for any changes we need to make in memory allocation on the GPU
         if not _warpDrive:

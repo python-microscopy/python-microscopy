@@ -178,7 +178,7 @@ class GaussianFitFactory:
 
     def FindAndFit(self, threshold=2, gui=False):
         #average in z
-        data = self.data - self.metadata.Camera.ADOffset
+        data = self.data
 
 	
         #estimate errors in data
@@ -188,7 +188,7 @@ class GaussianFitFactory:
 
         if not self.background == None and len(numpy.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
             #average in z
-            bgM = self.background - self.metadata.Camera.ADOffset
+            bgM = self.background
             
             data = data - bgM
             

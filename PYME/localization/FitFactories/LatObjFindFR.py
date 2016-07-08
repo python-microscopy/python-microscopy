@@ -60,7 +60,7 @@ class GaussianFitFactory(FFBase.FitFactory):
         dataROI = self.data[xslice, yslice, zslice]
 
         #average in z
-        dataMean = dataROI.mean(2) - self.metadata.Camera.ADOffset
+        dataMean = dataROI.mean(2)
 
         #estimate some start parameters...
         A = dataMean.max() - dataMean.min() #amplitude

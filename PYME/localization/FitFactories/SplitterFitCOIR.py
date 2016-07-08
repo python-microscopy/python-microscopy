@@ -59,7 +59,7 @@ class COIFitFactory(FFBase.FitFactory):
         xslice, yslice, zslice = key
 
         #cut region out of data stack
-        dataROI = self.data[xslice, yslice, zslice] - self.metadata.Camera.ADOffset
+        dataROI = self.data[xslice, yslice, zslice]
 
         #average in z
         #dataMean = dataROI.mean(2) - self.metadata.CCD.ADOffset
@@ -86,7 +86,7 @@ class COIFitFactory(FFBase.FitFactory):
 
 
         if not self.background == None and len(numpy.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
-            bgROI = self.background[xslice, yslice, zslice] - self.metadata.Camera.ADOffset
+            bgROI = self.background[xslice, yslice, zslice]
 
             dataROI = dataROI - bgROI
 

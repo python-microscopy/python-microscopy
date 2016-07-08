@@ -65,7 +65,7 @@ class FFBase(object):
         dataROI = self.data[xslice, yslice, zslice]
 
         #average in z
-        dataMean = dataROI.mean(2) - self.metadata.Camera.ADOffset
+        dataMean = dataROI.mean(2)
 
         #generate grid to evaluate function on        
         X = 1e3*self.metadata.voxelsize.x*np.mgrid[xslice]
@@ -85,7 +85,7 @@ class FFBase(object):
             bgROI = self.background[xslice, yslice, zslice]
 
             #average in z
-            bgMean = bgROI.mean(2) - self.metadata.Camera.ADOffset            
+            bgMean = bgROI.mean(2)
         else: 
             bgMean = 0
             
@@ -154,9 +154,9 @@ class FFBase(object):
         
 
          #cut region out of data stack
-        dataROI = self.data[xslice, yslice, 0:2] - self.metadata.Camera.ADOffset
+        dataROI = self.data[xslice, yslice, 0:2]
         #print dataROI.shape
-        dataROI[:,:,1] = self.data[xslice2, yslice2, 1] - self.metadata.Camera.ADOffset
+        dataROI[:,:,1] = self.data[xslice2, yslice2, 1]
         
         nSlices = 1
         #sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataROI, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
@@ -175,10 +175,10 @@ class FFBase(object):
         if self.metadata.getOrDefault('Analysis.subtractBackground', True) :
             #print 'bgs'
             if not self.background is None and len(np.shape(self.background)) > 1:
-                bgROI = self.background[xslice, yslice, 0:2] - self.metadata.Camera.ADOffset
-                bgROI[:,:,1] = self.background[xslice2, yslice2, 1] - self.metadata.Camera.ADOffset
+                bgROI = self.background[xslice, yslice, 0:2]
+                bgROI[:,:,1] = self.background[xslice2, yslice2, 1]
             else:
-                bgROI = np.zeros_like(dataROI) + self.background - self.metadata.Camera.ADOffset
+                bgROI = np.zeros_like(dataROI) + self.background
         else:
             bgROI = np.zeros_like(dataROI)
 

@@ -28,6 +28,7 @@ from PYME.IO import MetaDataHandler
 from PYME.Acquire import eventLog
 
 import pylab
+import numpy as np
 
 import threading
 #import processing
@@ -471,7 +472,7 @@ class FakeCamera:
         mdh.setEntry('Camera.ReadNoise', self.noiseMaker.ReadoutNoise)
         mdh.setEntry('Camera.NoiseFactor', 1.41)
         mdh.setEntry('Camera.ElectronsPerCount', self.noiseMaker.ElectronsPerCount)
-        mdh.setEntry('Camera.ADOffset', self.noiseMaker.ADOffset)
+        mdh.setEntry('Camera.ADOffset', np.mean(self.noiseMaker.ADOffset))
 
         #mdh.setEntry('Simulation.Fluorophores', self.fluors.fl)
         #mdh.setEntry('Simulation.LaserPowers', self.laserPowers)

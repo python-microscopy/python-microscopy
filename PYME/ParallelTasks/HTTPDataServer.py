@@ -43,8 +43,19 @@ from PYME.misc.computerName import GetComputerName
 compName = GetComputerName()
 procName = compName + ' - PID:%d' % os.getpid()
 
+LOG_REQUESTS = False#True
+
 
 class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+    protocol_version = "HTTP/1.1"
+
+    # def do_PUT(self):
+    #     r = self.rfile.read(int(self.headers['Content-Length']))
+    #     self.send_response(200)
+    #     self.send_header("Content-Length", "0")
+    #     self.end_headers()
+    #     return
+
     def do_PUT(self):
         path = self.translate_path(self.path)
 
@@ -53,6 +64,8 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         if os.path.exists(path):
             #Do not overwrite - we use write-once semantics
             self.send_error(405, "File already exists")
+
+            #self.end_headers()
             return None
         else:
             dir = os.path.split(path)[0]
@@ -78,7 +91,62 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                     f.write(self.rfile.read(int(self.headers['Content-Length'])))
 
             self.send_response(200)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
             return
+
+    def send_head(self):
+        """Common code for GET and HEAD commands.
+
+        This sends the response code and MIME headers.
+
+        Return value is either a file object (which has to be copied
+        to the outputfile by the caller unless the command was HEAD,
+        and must be closed by the caller under all circumstances), or
+        None, in which case the caller has nothing further to do.
+
+        """
+        path = self.translate_path(self.path)
+        f = None
+        if os.path.isdir(path):
+            parts = urlparse.urlsplit(self.path)
+            if not parts.path.endswith('/'):
+                # redirect browser - doing basically what apache does
+                self.send_response(301)
+                new_parts = (parts[0], parts[1], parts[2] + '/',
+                             parts[3], parts[4])
+                new_url = urlparse.urlunsplit(new_parts)
+                self.send_header("Content-Length", "0") # we need to set this
+                self.send_header("Location", new_url)
+                self.end_headers()
+                return None
+            for index in "index.html", "index.htm":
+                index = os.path.join(path, index)
+                if os.path.exists(index):
+                    path = index
+                    break
+            else:
+                return self.list_directory(path)
+        ctype = self.guess_type(path)
+        try:
+            # Always read in binary mode. Opening files in text mode may cause
+            # newline translations, making the actual size of the content
+            # transmitted *less* than the content-length!
+            f = open(path, 'rb')
+        except IOError:
+            self.send_error(404, "File not found")
+            return None
+        try:
+            self.send_response(200)
+            self.send_header("Content-type", ctype)
+            fs = os.fstat(f.fileno())
+            self.send_header("Content-Length", str(fs[6]))
+            self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))
+            self.end_headers()
+            return f
+        except:
+            f.close()
+            raise
 
     def list_directory(self, path):
         """Helper to produce a directory listing (absent index.html).
@@ -112,12 +180,65 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         self.end_headers()
         return f
 
+    def log_request(self, code='-', size='-'):
+        """Log an accepted request.
+
+        This is called by send_response().
+
+        """
+        if LOG_REQUESTS:
+            self.log_message('"%s" %s %s', self.requestline, str(code), str(size))
+
+    def send_error(self, code, message=None):
+        """Send and log an error reply.
+
+        Arguments are the error code, and a detailed message.
+        The detailed message defaults to the short entry matching the
+        response code.
+
+        This sends an error response (so it must be called before any
+        output has been generated), logs the error, and finally sends
+        a piece of HTML explaining the error to the user.
+
+        """
+
+        try:
+            short, long = self.responses[code]
+        except KeyError:
+            short, long = '???', '???'
+        if message is None:
+            message = short
+        explain = long
+        self.log_error("code %d, message %s", code, message)
+        self.send_response(code, message)
+        #self.send_header('Connection', 'close')
+
+        # Message body is omitted for cases described in:
+        #  - RFC7230: 3.3. 1xx, 204(No Content), 304(Not Modified)
+        #  - RFC7231: 6.3.6. 205(Reset Content)
+        content = None
+        if code >= 200 and code not in (204, 205, 304):
+            # HTML encode to prevent Cross Site Scripting attacks
+            # (see bug #1100201)
+            content = (self.error_message_format % {
+                'code': code,
+                'message': BaseHTTPServer._quote_html(message),
+                'explain': explain
+            })
+            self.send_header("Content-Type", self.error_content_type)
+            self.send_header("Content-Length", str(len(content)))
+
+        self.end_headers()
+
+        if self.command != 'HEAD' and content:
+            self.wfile.write(content)
+
 
 class ThreadedHTTPServer(ThreadingMixIn, BaseHTTPServer.HTTPServer):
     """Handle requests in a separate thread."""
 
 
-def main(protocol="HTTP/1.0"):
+def main(protocol="HTTP/1.1"):
     """Test the HTTP request handler class.
 
     This runs an HTTP server on port 8000 (or the first command line

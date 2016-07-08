@@ -133,7 +133,7 @@ class GaussianFitFactory:
 
     def FindAndFit(self, threshold=2, gui=False):
         #average in z
-        dataMean = self.data.mean(2) - self.metadata.getOrDefault('Camera.ADOffset', 0)
+        dataMean = self.data.mean(2)
 
 	
         #estimate errors in data

@@ -161,7 +161,7 @@ class CameraInfoManager(object):
 
         mp = self._getMap(md, darkMapName)
         if (mp is None):
-            return 0
+            return md.getOrDefault('Camera.ADOffset', 0)
         else:
             return mp
 
@@ -366,15 +366,16 @@ class fitTask(taskDef.Task):
             return fitResult(self, [])
         
         #squash 4th dimension
+        #NB - this now subtracts the ADOffset
         self.data = cameraMaps.correctImage(md, self.data.squeeze()).reshape((self.data.shape[0], self.data.shape[1],1))
 
         #calculate background
-        self.bg = self.md['Camera.ADOffset']
+        self.bg = 0
         if not len(self.bgindices) == 0:
             self.bg = cameraMaps.correctImage(md, bufferManager.bBuffer.getBackground(self.bgindices)).reshape(self.data.shape)
 
         #calculate noise
-        self.sigma = self.calcSigma(md, self.data - self.md['Camera.ADOffset'])      
+        self.sigma = self.calcSigma(md, self.data)
         
         #############################################
         # Special cases - defer object finding to fit module

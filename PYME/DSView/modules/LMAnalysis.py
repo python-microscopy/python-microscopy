@@ -292,7 +292,7 @@ class AnalysisController(object):
         self.onImagesPushed.send(self)
 
     def pushImagesDS(self, image):
-        resultsFilename = self._verifyResultsFilename(genResultFileName(image.seriesName))
+        resultsFilename = _verifyResultsFilename(genResultFileName(image.seriesName))
         self.queueName = resultsFilename
             
         debugPrint('Results file = %s' % resultsFilename) 
