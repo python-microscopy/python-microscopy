@@ -159,6 +159,7 @@ def BlankResult(metadata):
 		
 
 def getDataErrors(im, metadata):
+    # TODO - Fix me for camera maps (ie use correctImage function not ADOffset) or remove
     dataROI = im - metadata.getEntry('Camera.ADOffset')
 
     return scipy.sqrt(metadata.getEntry('Camera.ReadNoise')**2 + (metadata.getEntry('Camera.NoiseFactor')**2)*metadata.getEntry('Camera.ElectronsPerCount')*metadata.getEntry('Camera.TrueEMGain')*dataROI)/metadata.getEntry('Camera.ElectronsPerCount')    

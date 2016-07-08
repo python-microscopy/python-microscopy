@@ -44,7 +44,7 @@ def COIFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=N
 		
 
 def ConfocCOI(data, metadata, thresh=5, background=None):
-    dataROI = data.squeeze() - metadata.Camera.ADOffset
+    dataROI = data.squeeze()
 
     #average in z
     #dataMean = dataROI.mean(2) - self.metadata.CCD.ADOffset
@@ -56,7 +56,7 @@ def ConfocCOI(data, metadata, thresh=5, background=None):
 
 
     if not background == None and len(numpy.shape(background)) > 1 and not ('Analysis.subtractBackground' in metadata.getEntryNames() and metadata.Analysis.subtractBackground == False):
-        bgROI = background.squeeze() - metadata.Camera.ADOffset
+        bgROI = background.squeeze()
 
         dataROI = dataROI - bgROI
 

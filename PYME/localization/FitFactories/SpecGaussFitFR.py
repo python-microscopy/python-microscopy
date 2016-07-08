@@ -109,7 +109,7 @@ class GaussianFitFactory:
         dataROI = self.data[xslice, y, zslice]
 
         #average in z
-        dataMean = dataROI.mean(1) - self.metadata.Camera.ADOffset
+        dataMean = dataROI.mean(1)
 
         #generate grid to evaluate function on        
         X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[xslice]
@@ -134,7 +134,7 @@ class GaussianFitFactory:
             bgROI = self.background[xslice, yslice, zslice]
 
             #average in z
-            bgMean = bgROI.mean(1) - self.metadata.Camera.ADOffset
+            bgMean = bgROI.mean(1)
             
             dataMean = dataMean - bgMean
 

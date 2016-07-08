@@ -223,7 +223,7 @@ class fitTestJig(object):
             p[0] = abs(p[0])
             ps[i, :] = p
             self.data, self.x0, self.y0, self.z0 = self.simMod.FitFactory.evalModel(p, md2, roiHalfSize=self.rs)#, roiHalfSize= roiHalfWidth))
-            self.d2.append(self.md.Camera.ADOffset + 1*(self.noiseM.noisify(self.data.squeeze()) - self.md.Camera.ADOffset))
+            self.d2.append(self.noiseM.noisify(self.data.squeeze()))
 
             
         #calculate our background
@@ -235,8 +235,9 @@ class fitTestJig(object):
         #calculate the fits
         ###################
         for i in range(nTests):
-            self.sigma = remFitBuf.fitTask.calcSigma(self.md, np.atleast_3d(self.d2[i] - self.md['Camera.ADOffset']))
             d2_i = remFitBuf.cameraMaps.correctImage(self.md, self.d2[i])
+            self.sigma = remFitBuf.fitTask.calcSigma(self.md, np.atleast_3d(d2_i))
+
             self.fitFac = self.fitMod.FitFactory(np.atleast_3d(d2_i), self.md, background = bg, noiseSigma = self.sigma)
             self.res[i] = self.fitFac.FromPoint(self.rs, self.rs, roiHalfSize=self.rs)
 

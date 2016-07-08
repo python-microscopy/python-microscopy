@@ -98,7 +98,7 @@ def Gauss3dFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitE
 
 class Gauss3dFitFactory:
     def __init__(self, data, metadata, background=None):
-        self.data = data - metadata.Camera.ADOffset
+        self.data = data
         self.metadata = metadata
         self.background = background
 

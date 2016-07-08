@@ -115,7 +115,7 @@ class GaussianFitFactory:
         dataROI = self.data[xslice, yslice, zslice]
 
         #average in z
-        dataMean = dataROI.mean(2) - self.metadata.CCD.ADOffset
+        dataMean = dataROI.mean(2)
 
         #generate grid to evaluate function on        
 	X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[xslice]
