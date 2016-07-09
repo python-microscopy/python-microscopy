@@ -190,6 +190,15 @@ class ModuleCollection(HasTraits):
             l.append({module_names[mod.__class__]: mod.get()})
             
         return yaml.dump(l, default_flow_style=False)
+        
+    def toJSON(self):
+        import json
+        l = []
+        for mod in self.modules:
+            #l.append({mod.__class__.__name__: mod.get()})
+            l.append({module_names[mod.__class__]: mod.get()})
+            
+        return json.dumps(l)
     
     @classmethod
     def fromYAML(cls, data):
