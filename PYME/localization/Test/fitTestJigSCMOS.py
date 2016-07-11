@@ -169,6 +169,47 @@ class fitTestJig(object):
         return cls(MetaDataHandler.SimpleMDHandler(mdfile))
 
 
+    def evalParams(self, params=None, param_jit=None):
+        """
+        Evaluate the given parameters (including parameter jitter if given)
+
+        Parameters
+        ----------
+        params - array
+            The mean value of the parameters. Overrides settings in metadata if provided
+        param_jit - array
+            The amount of parameter jitter. Overrides settings in metadata if provided
+
+        Returns
+        -------
+
+        data, x0, y0, z0, p
+
+        data is the array containing the evaluated model
+        x0, y0 and z0 are the associated x y and z coordinates returned from evaluating the model
+        p is the parameter set used to evaluate the model
+
+        The primary use of this routine is to test parameter choices in the setup of a simulation,
+        i.e. merely a convenience routine.
+
+        Note that this method has some code duplication with runTests which is a bit unwieldy, 
+        ideally this should be turned into a helper method used by runTests.
+        """
+
+        if not params:
+            params = self.md['Test.DefaultParams']
+        if not param_jit:
+            param_jit = self.md['Test.ParamJitter']
+
+        #load the module used for simulation
+        self.simMod = __import__('PYME.localization.FitFactories.' + self.simModule, fromlist=['PYME', 'localization', 'FitFactories']) #import our simulation
+
+        p = np.array(params) + np.array(param_jit)*(2*np.random.rand(len(param_jit)) - 1)
+        p[0] = abs(p[0])
+        data, x0, y0, z0 = self.simMod.FitFactory.evalModel(p, self.md, roiHalfSize=self.rs)#, roiHalfSize= roiHalfWidth))
+
+        return (data, x0, y0, z0, p)
+
     def runTests(self, params=None, param_jit=None, nTests=100):
         """
         Simulate and fit multiple single molecules. The results are stored in the class itself and can be accessed by
@@ -292,7 +333,7 @@ class fitTestJig(object):
         return yv - xv
 
 
-    def plotRes(self, varName):
+    def plotRes(self, varName, errThreshold=None):
         """
         Plot a scatter plot of the fitted vs the simulated values.
 
@@ -303,6 +344,9 @@ class fitTestJig(object):
         ----------
         varName - string
             the name of the parameter to plot
+        errThreshold - float
+            optional, error threshold to filter fitResults only for events with fitError < errThreshold
+            default: None (no filtering)
 
         Returns
         -------
@@ -324,6 +368,13 @@ class fitTestJig(object):
 
         err = self.res['fitError'][varName]
 
+        if errThreshold is not None:
+            good = np.abs(err) < errThreshold
+            sp = sp[good]
+            xv = xv[good]
+            yv = yv[good]
+            err = err[good]
+
         plt.subplot(121)
 
         x_min, x_max = min(sp.min(), xv.min()), max(sp.max(), xv.max())
@@ -344,7 +395,10 @@ class fitTestJig(object):
         plt.subplot(122)
         dv = yv - xv
         iq = IQR(dv)
-        print('Mean: %f, std. dev: %f, IQR: %f' % (dv.mean(), dv.std(), iq))
+        msginfo = 'Mean: %f, std. dev: %f, IQR: %f' % (dv.mean(), dv.std(), iq)
+        if errThreshold is not None:
+            msginfo += ', %d bad fits (fitError > %d)' %(good.size-np.sum(good),errThreshold)
+        print msginfo
         plt.hist(dv, np.linspace(dv.mean()-3*iq, dv.mean() + 3*iq))
         plt.xlabel('Position Error [nm]')
         plt.ylabel('Frequency')
@@ -368,7 +422,8 @@ class fitTestJig(object):
         #print self.ps
         #from pylab import *
         import matplotlib.pyplot as plt
-        plt.figure()
+        # remove figure() call to enable use in supblots
+        #plt.figure()
         #print varName
         xv = self.ps[varName].ravel()
         
