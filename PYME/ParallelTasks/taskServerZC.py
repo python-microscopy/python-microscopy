@@ -112,6 +112,17 @@ class TaskQueueSet(Pyro.core.ObjBase):
 
 
     def postTask(self, task, queueName='Default'):
+        """
+        Post a task to the queue of the given name. A task represents a chunk of work to be done.
+        Parameters
+        ----------
+        task
+        queueName
+
+        Returns
+        -------
+
+        """
         #print queueName
         if not queueName in self.taskQueues.keys():
             self.taskQueues[queueName] = TaskQueue(queueName)
