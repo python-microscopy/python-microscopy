@@ -135,6 +135,8 @@ class AndorBase(SDK3Camera):
         #self.TemperatureControl.setString('-30.00')
         #self.PixelReadoutRate.setIndex(1)
         
+        self.SetIntegTime(.100)
+        
         #set up polling thread        
         self.doPoll = False
         self.pollLoopActive = True

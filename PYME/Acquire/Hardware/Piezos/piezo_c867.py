@@ -23,6 +23,8 @@
 
 import serial;
 import time
+import logging
+logger = logging.getLogger(__name__)
 
 #C867 controller for PiLine piezo linear motor stages
 #NB units are mm not um as for piezos
@@ -225,7 +227,8 @@ class piezo_c867T(object):
                 self.errCode = int(self.ser_port.readline())
                 
                 if not self.errCode == 0:
-                    print(('Stage Error: %d' %self.errCode))
+                    #print(('Stage Error: %d' %self.errCode))
+                    logger.error('Stage Error: %d' %self.errCode)
                 
                 #print self.targetPosition, self.stopMove
                 
@@ -248,7 +251,8 @@ class piezo_c867T(object):
                     for i, vel in enumerate(self.targetVelocity):
                         self.ser_port.write('VEL %d %3.9f\n' % (i+1, vel))
                     self.velocity = self.targetVelocity.copy()
-                    print('v')
+                    #print('v')
+                    logger.debug('Setting stage target vel: %s' % self.targetVelocity)
                 
                 #if not np.all(self.targetPosition == self.lastTargetPosition):
                 if not np.allclose(self.position, self.targetPosition, atol=self.ptol):
@@ -257,7 +261,8 @@ class piezo_c867T(object):
         
                     self.ser_port.write('MOV 1 %3.9f 2 %3.9f\n' % (pos[0], pos[1]))
                     self.lastTargetPosition = pos.copy()
-                    print('p')
+                    #print('p')
+                    logger.debug('Setting stage target pos: %s' % pos)
                     
                 #check to see if we're on target
                 self.ser_port.write('ONT?\n')
@@ -276,17 +281,23 @@ class piezo_c867T(object):
                 #time.sleep(.1)
                 
             except serial.SerialTimeoutException:
-                print('Serial Timeout')
+                #print('Serial Timeout')
+                logger.debug('Serial Timeout')
                 pass
             finally:
                 self.stopMove = False
                 self.lock.release()
                 
+        #close port on loop exit
+        self.ser_port.close()
+        logger.info("Stage serial port closed")
+                
     def close(self):
         print "Shutting down XY Stage"
         with self.lock:
             self.loopActive = False
-            self.ser_port.close()            
+            #time.sleep(.01)
+            #self.ser_port.close()            
                 
         
     def SetServo(self, state=1):

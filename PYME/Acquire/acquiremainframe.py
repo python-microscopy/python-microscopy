@@ -499,10 +499,11 @@ class PYMEMainFrame(AUIFrame):
 
         if 'validROIS' in dir(self.scope.cam):
             #special case for cameras with restricted ROIs - eg Neo
-            print('setting ROI')
+            #print('setting ROI')
+            logging.debug('setting ROI')
             dlg = wx.SingleChoiceDialog(self, 'Please select the ROI size', 'Camera ROI', ['%dx%d at (%d, %d)' % roi for roi in self.scope.cam.validROIS])
             dlg.ShowModal()
-            print('Dlg Shown')
+            logging.debug('Dlg Shown')
             self.scope.cam.SetROIIndex(dlg.GetSelection())
             dlg.Destroy()
             
@@ -510,7 +511,7 @@ class PYMEMainFrame(AUIFrame):
             y1 = 0
             x2 = self.scope.cam.GetPicWidth()
             y2 = self.scope.cam.GetPicHeight()
-            print ('ROI Set')
+            logging.debug('ROI Set')
         
         else:
             if (self.roi_on):
@@ -553,7 +554,7 @@ class PYMEMainFrame(AUIFrame):
                 y2 = self.scope.cam.GetPicHeight()
 
             
-        print('about to set COC')
+        logging.debug('about to set COC')
         self.scope.cam.SetCOC()
         self.scope.cam.GetStatus()
         self.scope.frameWrangler.Prepare()
@@ -615,17 +616,20 @@ class PYMEMainFrame(AUIFrame):
                 c.Shutdown()
         else:
             self.scope.cam.Shutdown()
+            
         for f in self.scope.CleanupFunctions:
             f()
             
-        print 'All cleanup functions called'
+        logging.info('All cleanup functions called')
         
         time.sleep(1)
         
         import threading
-        print 'Remaining Threads:'
+        msg = 'Remaining Threads:\n'
         for t in threading.enumerate():
-            print t, t._Thread__target
+            msg += '%s, %s\n' % (t, t._Thread__target)
+            
+        logging.info(msg)
 
         self.Destroy()
         wx.Exit()
