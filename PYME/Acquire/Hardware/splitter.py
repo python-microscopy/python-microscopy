@@ -246,7 +246,7 @@ class Splitter:
 
     def OnUnmix(self,event):
         #self.Unmix()
-        if self.f == None:
+        if (not 'f' in dir(self)) or (self.f is None):
             self.f = UnMixPanel(self.parent, splitter = self, size=(500, 275))
             #self.o = OptionsPanel(self.parent, self.f.vp.do, horizOrientation=True)
             self.o = UnMixSettingsPanel(self.parent, splitter = self, size=(240, 300))
