@@ -333,7 +333,7 @@ class fitTestJig(object):
         return yv - xv
 
 
-    def plotRes(self, varName, errThreshold=None):
+    def plotRes(self, varName, errThreshold=None, nPlotEvents=500, y1range=None):
         """
         Plot a scatter plot of the fitted vs the simulated values.
 
@@ -375,6 +375,12 @@ class fitTestJig(object):
             yv = yv[good]
             err = err[good]
 
+        if sp.size > nPlotEvents:
+            sp = sp[0:nPlotEvents]
+            xv = xv[0:nPlotEvents]
+            yv = yv[0:nPlotEvents]
+            err = err[0:nPlotEvents]
+
         plt.subplot(121)
 
         x_min, x_max = min(sp.min(), xv.min()), max(sp.max(), xv.max())
@@ -385,7 +391,10 @@ class fitTestJig(object):
         plt.plot([xv.min(), xv.max()], [xv.min(), xv.max()])
 
         #plt.ylim((yv - np.maximum(err, 0)).min(), (yv + np.maximum(err, 0)).max())
-        plt.ylim(1.3 * x_min, 1.3 * x_max)
+        if y1range is None:
+            plt.ylim(1.3 * x_min, 1.3 * x_max)
+        else:
+            plt.ylim(*y1range)
         plt.legend()
 
         plt.title(varName)
@@ -402,8 +411,7 @@ class fitTestJig(object):
         plt.hist(dv, np.linspace(dv.mean()-3*iq, dv.mean() + 3*iq))
         plt.xlabel('Position Error [nm]')
         plt.ylabel('Frequency')
-        
-        
+
     def plotResSimp(self, varName):
         """
         Plot a scatter plot of the fitted vs the simulated values (simple version).
