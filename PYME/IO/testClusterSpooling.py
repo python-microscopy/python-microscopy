@@ -1,3 +1,24 @@
+"""
+This file provides a minimal test for spooling into the cluster with fake data, and with a multi-threaded spooler
+
+Setup and Usage:
+=================
+- Run PYMEDataServer instances (on either local or remote host) with a -t option. This activates a testing mode where
+  data is dumped on arrival rather than being written to disk.
+- Optionally use -p portNum and -v HTTP_version options on server
+- Adjust the frame size (below) as appropriate. 2k by 2k should be the standard initial benchmark as at this size per-frame
+  overhead should not be excessive. We can optimize for per-frame overhead later. TODO - make this a command line option.
+- Run this file
+
+Performance on Macbook to 10 local servers (19/7/2016):
+========================================================================
+2kx2k frames - 420 MB/s (HTTP/1.0) / 455 MB/s (HTTP1.1 with keep alives)
+200x800 frames - 133 MB/s
+
+Target: 800 MB/s
+
+"""
+
 import glob
 import json
 import time
