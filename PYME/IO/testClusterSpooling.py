@@ -10,13 +10,22 @@ Setup and Usage:
   overhead should not be excessive. We can optimize for per-frame overhead later. TODO - make this a command line option.
 - Run this file
 
-Performance on Macbook to 10 local servers (19/7/2016):
+Performance on Macbook to 10 local servers (as of 19/7/2016):
 ========================================================================
-2kx2k frames - 420 MB/s (HTTP/1.0) / 455 MB/s (HTTP1.1 with keep alives)
-200x800 frames - 133 MB/s
+-----------------------------------------------------------------
+|                 | HTTP/1.0      | HTTP/1.1 with keep-alive    |
+-----------------------------------------------------------------
+| 2kx2k frames    | 420 MB/s      | 455 MB/s                    |
+| 200x800 frames  | 133 MB/s      | 372 MB/s                    |
+-----------------------------------------------------------------
 
 Target: 800 MB/s
+================
 
+
+Notes
+=====
+- Occasional connection timeout bug. Seems to be worse with HTTP/1.1
 """
 
 import glob
