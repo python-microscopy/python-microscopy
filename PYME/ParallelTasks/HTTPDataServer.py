@@ -47,7 +47,9 @@ LOG_REQUESTS = False#True
 
 
 class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
-    protocol_version = "HTTP/1.1"
+    protocol_version = "HTTP/1.0"
+    bandwidthTesting = False
+    logrequests = False
 
     # def do_PUT(self):
     #     r = self.rfile.read(int(self.headers['Content-Length']))
@@ -57,6 +59,14 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
     #     return
 
     def do_PUT(self):
+        if self.bandwidthTesting:
+            #just read file and dump contents
+            r = self.rfile.read(int(self.headers['Content-Length']))
+            self.send_response(200)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
+
         path = self.translate_path(self.path)
 
         #print self.headers
@@ -186,7 +196,7 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         This is called by send_response().
 
         """
-        if LOG_REQUESTS:
+        if self.logrequests:
             self.log_message('"%s" %s %s', self.requestline, str(code), str(size))
 
     def send_error(self, code, message=None):
@@ -238,21 +248,32 @@ class ThreadedHTTPServer(ThreadingMixIn, BaseHTTPServer.HTTPServer):
     """Handle requests in a separate thread."""
 
 
-def main(protocol="HTTP/1.1"):
+def main(protocol="HTTP/1.0"):
     """Test the HTTP request handler class.
 
     This runs an HTTP server on port 8000 (or the first command line
     argument).
 
     """
+    from optparse import OptionParser
 
-    if sys.argv[1:]:
-        port = int(sys.argv[1])
-    else:
-        port = 8000
-    server_address = ('', port)
+    op = OptionParser(usage='usage: %s [options] [filename]' % sys.argv[0])
 
-    PYMEHTTPRequestHandler.protocol_version = protocol
+    op.add_option('-p', '--port', dest='port', default=8000,
+                  help="port number to serve on")
+    op.add_option('-t', '--test', dest='test', help="Set up for bandwidth test (don't save files)", action="store_true", default=False)
+    op.add_option('-v', '--protocol', dest='protocol', help="HTTP protocol version", default="1.0")
+    op.add_option('-l', '--log-requests', dest='log_requests', help="Display http request info", default=False, action="store_true")
+
+
+    options, args = op.parse_args()
+
+    server_address = ('', int(options.port))
+
+    PYMEHTTPRequestHandler.protocol_version = 'HTTP/%s' % options.protocol
+    PYMEHTTPRequestHandler.bandwidthTesting = options.test
+    PYMEHTTPRequestHandler.logrequests = options.log_requests
+
     httpd = ThreadedHTTPServer(server_address, PYMEHTTPRequestHandler)
 
     sa = httpd.socket.getsockname()

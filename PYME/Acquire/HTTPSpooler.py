@@ -120,20 +120,24 @@ class Spooler(sp.Spooler):
         
             
     def _queuePoll(self):
-        while self.dPoll:            
-            data = self.postQueue.get()
-            
-            files = []
-            for imNum, frame in data:
-                fn = '/'.join([self.seriesName, 'frame%05d.pzf' % imNum])
-                pzf = PZFFormat.dumps(frame, sequenceID=self.sequenceID, frameNum = imNum, compression='huffman')
-                
-                files.append((fn, pzf))
-                
-            if len(files) > 0:
-                clusterIO.putFiles(files)
-                
-            time.sleep(.01)
+        while self.dPoll:
+            try:
+                data = self.postQueue.get_nowait()
+
+                files = []
+                for imNum, frame in data:
+                    fn = '/'.join([self.seriesName, 'frame%05d.pzf' % imNum])
+                    pzf = PZFFormat.dumps(frame, sequenceID=self.sequenceID, frameNum = imNum, compression='huffman')
+
+                    files.append((fn, pzf))
+
+                if len(files) > 0:
+                    clusterIO.putFiles(files)
+
+                time.sleep(.01)
+                print 't', len(data)
+            except Queue.Empty:
+                time.sleep(.01)
 
         
     def getURL(self):

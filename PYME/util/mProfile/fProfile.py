@@ -57,6 +57,10 @@ import threading
 
 import re
 
+import site
+
+lib_prefix = site.getsitepackages()[0]
+len_lib_prefix = len(lib_prefix)
 
 class thread_profiler(object):
     def __init__(self):
@@ -79,8 +83,11 @@ class thread_profiler(object):
         self.outfile.close()
 
     def prof_callback(self, frame, event, arg):
-        if not frame.f_code.co_filename == __file__ and self.regex.match(frame.f_code.co_filename):
+        if event in ['call', 'return'] and (not frame.f_code.co_filename == __file__) and self.regex.match(frame.f_code.co_filename):
             fn = frame.f_code.co_filename #.split(os.sep)[-1]
+            if fn.startswith(lib_prefix):
+                fn = fn[len_lib_prefix:]
+
             funcName = fn + '\t' + frame.f_code.co_name
 
             t = time.clock()
