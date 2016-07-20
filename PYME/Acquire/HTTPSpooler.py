@@ -117,7 +117,8 @@ class Spooler(sp.Spooler):
         self.md['imageID'] = self.sequenceID  
         
         sp.Spooler.__init__(self, filename, frameSource, **kwargs)
-        
+
+        self._lastFrameTime = 1e12
             
     def _queuePoll(self):
         while self.dPoll:
@@ -135,7 +136,7 @@ class Spooler(sp.Spooler):
                     clusterIO.putFiles(files)
 
                 time.sleep(.01)
-                print 't', len(data)
+                #print 't', len(data)
             except Queue.Empty:
                 time.sleep(.01)
 
@@ -162,8 +163,13 @@ class Spooler(sp.Spooler):
     def OnFrame(self, sender, frameData, **kwargs): 
         self.buffer.append((self.imNum, frameData.reshape(1,frameData.shape[0],frameData.shape[1]).copy()))
 
-        if len(self.buffer) >= self.buflen:
+        #print len(self.buffer)
+        t = time.time()
+
+        #purge buffer if more than  self.buflen frames have been added, or more than 1 second elapsed
+        if (len(self.buffer) >= self.buflen) or ((t - self._lastFrameTime) > 1):
             self.FlushBuffer()
+            self._lastFrameTime = t
         
         sp.Spooler.OnFrame(self)
       
