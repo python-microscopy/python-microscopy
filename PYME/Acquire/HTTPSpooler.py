@@ -160,8 +160,9 @@ class Spooler(sp.Spooler):
         clusterIO.putFile(self.seriesName  + '/events.json', self.evtLogger.to_JSON())
         
         
-    def OnFrame(self, sender, frameData, **kwargs): 
-        self.buffer.append((self.imNum, frameData.reshape(1,frameData.shape[0],frameData.shape[1]).copy()))
+    def OnFrame(self, sender, frameData, **kwargs):
+        # NOTE: copy is now performed in frameWrangler, so we don't need to worry about it here
+        self.buffer.append((self.imNum, frameData.reshape(1,frameData.shape[0],frameData.shape[1])))
 
         #print len(self.buffer)
         t = time.time()

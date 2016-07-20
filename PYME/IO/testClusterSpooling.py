@@ -47,6 +47,8 @@ TEST_CHUNK_SIZE = 50
 
 import numpy as np
 
+from PYME.util.mProfile import fProfile
+
 # class DCIMGSpooler(object):
 class TestSpooler:
     def __init__(self, testFrameSize = TEST_FRAME_SIZE):
@@ -107,11 +109,23 @@ class TestSpooler:
                 time.sleep(interval)
 
 
+PROFILE = False
 
 
 if __name__ == '__main__':
+    prof = fProfile.thread_profiler()
+
+
+    if PROFILE:
+        prof.profileOn('.*PYME.*|.*requests.*|.*socket.*', '/Users/david/prof_spool.txt')
+
     ts = TestSpooler()
     ts.run()
+
+    if PROFILE:
+        prof.profileOff()
+
+
 
 
 
