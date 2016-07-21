@@ -47,7 +47,7 @@ TEST_CHUNK_SIZE = 50
 
 import numpy as np
 
-from PYME.util.mProfile import fProfile
+from PYME.util import fProfile
 
 # class DCIMGSpooler(object):
 class TestSpooler:

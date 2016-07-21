@@ -259,7 +259,7 @@ class Measure2D(ModuleBase):
     measureContour = Bool(True)    
         
     def execute(self, namespace):       
-        labels = namespace[self.inputLabels]
+        labels = namespace[self.inputLabels].astype('i')
         
         #define the measurement class, which behaves like an input filter        
         class measurements(inpFilt.inputFilter):

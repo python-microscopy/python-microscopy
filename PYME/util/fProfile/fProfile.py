@@ -95,14 +95,4 @@ class thread_profiler(object):
             self.outfile.write('%f\t%s\t%s\t%s\n' % (t, threading.current_thread().getName(), funcName, event))
 
 
-
-    def report(self):
-        tpath = os.path.join(tempfile.gettempdir(), 'mProf')
-        if not os.path.exists(tpath):
-            os.makedirs(tpath)
-
-        for f in filenames:
-            tfn = os.path.join(tpath,  f + '.html')
-            colorize_db_t.colorize_file(files[f], linecounts[f], fullfilenames[f],open(tfn, 'w'))
-            webbrowser.open('file://' + tfn, 2)
         

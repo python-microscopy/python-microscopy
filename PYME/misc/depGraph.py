@@ -101,7 +101,10 @@ def arrangeNodes(dg):
                             
                                 for inp_i in cnode_inputs:
                                     #find the computational nodes which generate these outputs
-                                    gnodes = list(dg[inp_i])
+                                    try:
+                                        gnodes = list(dg[inp_i])
+                                    except KeyError:
+                                        gnodes = []
                             
                                     fd_ys += [ips[rr][1] for rr in gnodes if rr in ips.keys()]
                 
