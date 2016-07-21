@@ -21,4 +21,5 @@ Deconv/fftw_wisdom
 .DS_Store
 *.egg-info*
 doc/api/*
+.idea
 
