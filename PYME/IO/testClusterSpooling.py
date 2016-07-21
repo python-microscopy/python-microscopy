@@ -109,18 +109,32 @@ class TestSpooler:
                 time.sleep(interval)
 
 
-PROFILE = False
+#PROFILE = False
 
 
 if __name__ == '__main__':
     prof = fProfile.thread_profiler()
 
+    from optparse import OptionParser
+    op = OptionParser(usage='usage: %s [options] [filename]' % sys.argv[0])
 
-    if PROFILE:
-        prof.profileOn('.*PYME.*|.*requests.*|.*socket.*', '/Users/david/prof_spool.txt')
+    op.add_option('-n', '--num-frames', dest='nframes', default=2000,
+                  help="Number of frames to spool")
+    op.add_option('-p', '--profile-output', dest='profile_out', help="Filename to save profiling info. NB this will slow down the server",
+                  default=None)
+    op.add_option('-s', '--frame-size', dest='frame_size', help="The frame size in an AxB format", default="2000x2000")
 
-    ts = TestSpooler()
-    ts.run()
+    options, args = op.parse_args()
+
+    PROFILE = False
+
+    if not options.profile_out is None:
+        prof.profileOn('.*PYME.*|.*requests.*|.*socket.*', options.profile_out)
+        PROFILE = True
+
+    frameSize = [int(s) for s in options.frame_size.split('x')]
+    ts = TestSpooler(testFrameSize=frameSize)
+    ts.run(int(options.nframes))
 
     if PROFILE:
         prof.profileOff()
