@@ -1,5 +1,5 @@
 var display_params = {
-    OVERVIEW_HEIGHT : 30,
+    OVERVIEW_HEIGHT : 20,
     ZOOM_HEIGHT : 100
 };
 
@@ -120,7 +120,7 @@ var svg = d3.select("#chart_d3").append("svg")
 
 var xs = d3.scale.linear().range([0, $("#chart_d3").width()]);
 var xs_z = d3.scale.linear().range([0, $("#chart_d3").width()]);
-var ys = d3.scale.linear().range([10, display_params.OVERVIEW_HEIGHT]);
+var ys = d3.scale.linear().range([5, display_params.OVERVIEW_HEIGHT]);
 var ys_z = d3.scale.linear().range([20, display_params.ZOOM_HEIGHT]);
 
 //Overview
