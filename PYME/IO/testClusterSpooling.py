@@ -32,6 +32,7 @@ import glob
 import json
 import time
 import os
+import sys
 
 from PYME.IO.clusterExport import ImageFrameSource, MDSource
 from PYME.IO import MetaDataHandler
