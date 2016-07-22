@@ -135,7 +135,7 @@ if __name__ == '__main__':
 
     frameSize = [int(s) for s in options.frame_size.split('x')]
     ts = TestSpooler(testFrameSize=frameSize)
-    ts.run(int(options.nframes))
+    ts.run(nFrames=int(options.nframes))
 
     if PROFILE:
         prof.profileOff()
