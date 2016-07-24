@@ -55,7 +55,8 @@ void quantize_u16_avx( uint16_t * data, uint8_t * out, int size, float offset, f
         xlo = _mm_unpacklo_epi16(t2, _mm_set1_epi16(0));
         xhi = _mm_unpackhi_epi16(t2, _mm_set1_epi16(0));
         //xhi = _mm_unpackhi_epi16( _mm_set1_epi16(0), t2);
-        combined = (__m256i)_mm256_loadu2_m128i (&xhi, &xlo);
+        //combined = (__m256i)_mm256_loadu2_m128i (&xhi, &xlo);
+        combined = _mm256_inserti128_si256(_mm256_castsi128_si256(_mm_loadu_si128(&xlo)),_mm_loadu_si128(&xhi),1);
         x = (__m256)_mm256_cvtepi32_ps(combined);
         x1 = (__m256)_mm256_sub_ps(x, offs);
         xs = (__m256)_mm256_mul_ps(_mm256_mul_ps(_mm256_rsqrt_ps(x1),x1), sc);
@@ -75,7 +76,8 @@ void quantize_u16_avx( uint16_t * data, uint8_t * out, int size, float offset, f
         t2 = _mm_load_si128((__m128i *) (&(data[i+8])));
         xlo = _mm_unpacklo_epi16(t2, _mm_set1_epi16(0));
         xhi = _mm_unpackhi_epi16(t2, _mm_set1_epi16(0));
-        combined = (__m256i)_mm256_loadu2_m128i (&xhi, &xlo);
+        //combined = (__m256i)_mm256_loadu2_m128i (&xhi, &xlo);
+        combined = _mm256_inserti128_si256(_mm256_castsi128_si256(_mm_loadu_si128(&xlo)),_mm_loadu_si128(&xhi),1);
         x = (__m256)_mm256_cvtepi32_ps(combined);
         x1 = (__m256)_mm256_sub_ps(x, offs);
         xs = (__m256)_mm256_mul_ps(_mm256_mul_ps(_mm256_rsqrt_ps(x1),x1), sc);
