@@ -9,7 +9,16 @@
 #include <stdlib.h>
 #include <math.h>
 //#include <x86intrin.h>
+#include <immintrin.h>
 #include "quantize.h"
+
+#ifdef __AVX__
+#pragma message "AVX defined"
+#endif
+
+#ifdef __AVX2__
+#pragma message "AVX2 defined"
+#endif
 
 //#include "systimer.h"
 
@@ -34,7 +43,7 @@ uses avx command set to process 16 values in parallel
 */
 void quantize_u16_avx( uint16_t * data, uint8_t * out, int size, float offset, float scale)
 {
-    float qs = 1.0/scale;
+    //float qs = 1.0/scale;
     int i = 0;
 
     __m256 x, x1, xs;
@@ -56,7 +65,7 @@ void quantize_u16_avx( uint16_t * data, uint8_t * out, int size, float offset, f
         xhi = _mm_unpackhi_epi16(t2, _mm_set1_epi16(0));
         //xhi = _mm_unpackhi_epi16( _mm_set1_epi16(0), t2);
         //combined = (__m256i)_mm256_loadu2_m128i (&xhi, &xlo);
-        combined = _mm256_inserti128_si256(_mm256_castsi128_si256(_mm_loadu_si128(&xlo)),_mm_loadu_si128(&xhi),1);
+        combined = _mm256_insertf128_si256(_mm256_castsi128_si256(_mm_loadu_si128(&xlo)),_mm_loadu_si128(&xhi),1);
         x = (__m256)_mm256_cvtepi32_ps(combined);
         x1 = (__m256)_mm256_sub_ps(x, offs);
         xs = (__m256)_mm256_mul_ps(_mm256_mul_ps(_mm256_rsqrt_ps(x1),x1), sc);
@@ -77,7 +86,7 @@ void quantize_u16_avx( uint16_t * data, uint8_t * out, int size, float offset, f
         xlo = _mm_unpacklo_epi16(t2, _mm_set1_epi16(0));
         xhi = _mm_unpackhi_epi16(t2, _mm_set1_epi16(0));
         //combined = (__m256i)_mm256_loadu2_m128i (&xhi, &xlo);
-        combined = _mm256_inserti128_si256(_mm256_castsi128_si256(_mm_loadu_si128(&xlo)),_mm_loadu_si128(&xhi),1);
+        combined = _mm256_insertf128_si256(_mm256_castsi128_si256(_mm_loadu_si128(&xlo)),_mm_loadu_si128(&xhi),1);
         x = (__m256)_mm256_cvtepi32_ps(combined);
         x1 = (__m256)_mm256_sub_ps(x, offs);
         xs = (__m256)_mm256_mul_ps(_mm256_mul_ps(_mm256_rsqrt_ps(x1),x1), sc);
