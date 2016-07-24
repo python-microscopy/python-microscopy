@@ -19,6 +19,16 @@ Performance on Macbook to 10 local servers (as of 19/7/2016):
 | 200x800 frames  | 133 MB/s      | 372 MB/s                    |
 -----------------------------------------------------------------
 
+New benchmark on macbook to 10 local servers (25/7/2016) using raw sockets (HTTP/1.1 only)
+===========================================================================================
+
+-----------------------------------------------------------------
+|                 | HTTP/1.0      | HTTP/1.1 with keep-alive    |
+-----------------------------------------------------------------
+| 2kx2k frames    | N/A           | 533 MB/s  (69 FPS)          |
+| 200x800 frames  | N/A           | 723 MB/s  (2260 FPS)        |
+-----------------------------------------------------------------
+
 Target: 800 MB/s
 ================
 
@@ -94,6 +104,7 @@ class TestSpooler:
 
         print('######################################')
         print('%d frames spooled in %f seconds' % (nFrames, duration))
+        print('%3.0f frames per second' % (nFrames/duration))
         print('Avg throughput: %3.0f MB/s' % (nFrames*self.testData.nbytes/(1e6*duration)))
 
         self.spooler.StopSpool()

@@ -262,7 +262,7 @@ def main(protocol="HTTP/1.0"):
     op.add_option('-p', '--port', dest='port', default=8000,
                   help="port number to serve on")
     op.add_option('-t', '--test', dest='test', help="Set up for bandwidth test (don't save files)", action="store_true", default=False)
-    op.add_option('-v', '--protocol', dest='protocol', help="HTTP protocol version", default="1.0")
+    op.add_option('-v', '--protocol', dest='protocol', help="HTTP protocol version", default="1.1")
     op.add_option('-l', '--log-requests', dest='log_requests', help="Display http request info", default=False, action="store_true")
 
 

@@ -12,6 +12,11 @@ import requests
 import time
 import numpy as np
 
+import socket
+
+USE_RAW_SOCKETS = True
+
+
 import sys
 
 import urlparse
@@ -319,27 +324,73 @@ def putFile(filename, data, serverfilter=''):
 
     _lastwritespeed[name] = len(data) / (dt + .001)
 
+if USE_RAW_SOCKETS:
+    def putFiles(files, serverfilter=''):
+        """put a bunch of files to a single server in the cluster (chosen by algorithm)
 
-def putFiles(files, serverfilter=''):
-    """put a bunch of files to a single server in the cluster (chosen by algorithm)
+        TODO - Add retry with a different server on failure
+        """
+        name, info = _chooseServer(serverfilter)
 
-    TODO - Add retry with a different server on failure
-    """
-    name, info = _chooseServer(serverfilter)
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(5.0)
 
-    for filename, data in files:
-        url = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, filename)
+        #conect to the server
+        s.connect((socket.inet_ntoa(info.address), info.port))
+
+
+        datalen = 0
 
         t = time.time()
         _lastwritetime[name] = t
-        url = url.encode()
-        s = _getSession(url)
-        r = s.put(url, data=data, timeout=1)
+
+        rs = []
+
+        #pipeline the sends
+        for filename, data in files:
+            dl = len(data)
+            header = 'PUT /%s HTTP/1.1\r\nContent-Length: %d\r\n\r\n' % (filename, dl)
+            s.sendall(header)
+            s.sendall(data)
+
+
+            datalen += dl
+
+        s.sendall('\r\n')
+
+        #perform all the recieves at once
+        resp = s.recv(4096)
+        while len(resp) > 0:
+            resp = s.recv(4096)
+        #print resp
+        #TODO: Parse responses
+        s.close()
+
         dt = time.time() - t
-        #print r.status_code
-        if not r.status_code == 200:
-            raise RuntimeError('Put failed with %d: %s' % (r.status_code, r.content))
+        _lastwritespeed[name] = datalen / (dt + .001)
 
-        _lastwritespeed[name] = len(data) / (dt + .001)
+            #r.close()
+else:
+    def putFiles(files, serverfilter=''):
+        """put a bunch of files to a single server in the cluster (chosen by algorithm)
 
-        r.close()
+        TODO - Add retry with a different server on failure
+        """
+        name, info = _chooseServer(serverfilter)
+
+        for filename, data in files:
+            url = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, filename)
+
+            t = time.time()
+            _lastwritetime[name] = t
+            url = url.encode()
+            s = _getSession(url)
+            r = s.put(url, data=data, timeout=1)
+            dt = time.time() - t
+            #print r.status_code
+            if not r.status_code == 200:
+                raise RuntimeError('Put failed with %d: %s' % (r.status_code, r.content))
+
+            _lastwritespeed[name] = len(data) / (dt + .001)
+
+            r.close()
