@@ -73,7 +73,7 @@ class TestSpooler:
         self.mdh = MetaDataHandler.NestedClassMDHandler()
 
 
-    def run(self, filename=None, nFrames = 2000, interval=0):
+    def run(self, filename=None, nFrames = 2000, interval=0, compression=False):
         if filename is None:
             filename = 'test_%3.1f' % time.time()
 
@@ -82,7 +82,13 @@ class TestSpooler:
         MetaDataHandler.provideStartMetadata.append(self.metadataSource)
 
         #generate the spooler
-        self.spooler = HTTPSpooler.Spooler(filename, self.onFrame, frameShape = None)
+        if compression:
+            self.spooler = HTTPSpooler.Spooler(filename, self.onFrame, frameShape = None)
+        else:
+            self.spooler = HTTPSpooler.Spooler(filename, self.onFrame,
+                                               frameShape = None,
+                                               compressionSettings={'compression': HTTPSpooler.PZFFormat.DATA_COMP_RAW,
+                                                                    'quantization':HTTPSpooler.PZFFormat.DATA_QUANT_NONE})
         
         #spool our data    
         self.spooler.StartSpool()
@@ -136,6 +142,7 @@ if __name__ == '__main__':
     op.add_option('-p', '--profile-output', dest='profile_out', help="Filename to save profiling info. NB this will slow down the server",
                   default=None)
     op.add_option('-s', '--frame-size', dest='frame_size', help="The frame size in an AxB format", default="2000x2000")
+    op.add_option('-c', '--compression', dest='compression', help="Use compression", default=False, action='store_true')
 
     options, args = op.parse_args()
 
@@ -147,7 +154,7 @@ if __name__ == '__main__':
 
     frameSize = [int(s) for s in options.frame_size.split('x')]
     ts = TestSpooler(testFrameSize=frameSize)
-    ts.run(nFrames=int(options.nframes))
+    ts.run(nFrames=int(options.nframes), compression=options.compression)
 
     if PROFILE:
         prof.profileOff()

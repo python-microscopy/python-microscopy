@@ -130,10 +130,12 @@ class Spooler(sp.Spooler):
 
         self._lastFrameTime = 1e12
 
+        self.compSettings = {}
+        self.compSettings.update(defaultCompSettings)
         try:
-            self.compSettings = kwargs['compressionSettings']
+            self.compSettings.update(kwargs['compressionSettings'])
         except KeyError:
-            self.compSettings = defaultCompSettings
+            pass
             
     def _queuePoll(self):
         while self.dPoll:
