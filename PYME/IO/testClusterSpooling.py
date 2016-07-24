@@ -96,7 +96,7 @@ class TestSpooler:
         #wait until we've sent everything
         #this is a bit of a hack
         time.sleep(.1)
-        while not self.spooler.postQueue.empty():
+        while not self.spooler.postQueue.empty() or (self.spooler.numThreadsProcessing > 0):
             time.sleep(.1)
 
         endTime = time.time()

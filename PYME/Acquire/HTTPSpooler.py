@@ -103,6 +103,9 @@ class Spooler(sp.Spooler):
         
         self.postQueue = Queue.Queue()
         self.dPoll = True
+        self._lock = threading.Lock()
+
+        self.numThreadsProcessing = 0
         
         self.pollThreads = []
         for i in range(NUM_POLL_THREADS):
@@ -125,15 +128,23 @@ class Spooler(sp.Spooler):
             try:
                 data = self.postQueue.get_nowait()
 
-                files = []
-                for imNum, frame in data:
-                    fn = '/'.join([self.seriesName, 'frame%05d.pzf' % imNum])
-                    pzf = PZFFormat.dumps(frame, sequenceID=self.sequenceID, frameNum = imNum, compression='huffman')
+                with self._lock:
+                    self.numThreadsProcessing += 1
 
-                    files.append((fn, pzf))
+                try:
+                    files = []
+                    for imNum, frame in data:
+                        fn = '/'.join([self.seriesName, 'frame%05d.pzf' % imNum])
+                        pzf = PZFFormat.dumps(frame, sequenceID=self.sequenceID, frameNum = imNum, compression='huffman')
 
-                if len(files) > 0:
-                    clusterIO.putFiles(files)
+                        files.append((fn, pzf))
+
+                    if len(files) > 0:
+                        clusterIO.putFiles(files)
+
+                finally:
+                    with self._lock:
+                        self.numThreadsProcessing -= 1
 
                 time.sleep(.01)
                 #print 't', len(data)

@@ -333,6 +333,7 @@ if USE_RAW_SOCKETS:
         name, info = _chooseServer(serverfilter)
 
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         s.settimeout(5.0)
 
         #conect to the server
