@@ -85,6 +85,13 @@ def exists(seriesName):
 #a "safe" maximum number of nodes that could access data
 NUM_POLL_THREADS = 10
 
+defaultCompSettings = {
+    'compression' : PZFFormat.DATA_COMP_HUFFCODE,
+    'quantization' : PZFFormat.DATA_QUANT_SQRT,
+    'quantizationOffset' : 0.0,
+    'quantizationScale' : 1.0
+}
+
 class Spooler(sp.Spooler):
     def __init__(self, filename, frameSource, frameShape, **kwargs):
         
@@ -122,6 +129,11 @@ class Spooler(sp.Spooler):
         sp.Spooler.__init__(self, filename, frameSource, **kwargs)
 
         self._lastFrameTime = 1e12
+
+        try:
+            self.compSettings = kwargs['compressionSettings']
+        except KeyError:
+            self.compSettings = defaultCompSettings
             
     def _queuePoll(self):
         while self.dPoll:
@@ -135,7 +147,7 @@ class Spooler(sp.Spooler):
                     files = []
                     for imNum, frame in data:
                         fn = '/'.join([self.seriesName, 'frame%05d.pzf' % imNum])
-                        pzf = PZFFormat.dumps(frame, sequenceID=self.sequenceID, frameNum = imNum, compression='huffman')
+                        pzf = PZFFormat.dumps(frame, sequenceID=self.sequenceID, frameNum = imNum, **self.compSettings)
 
                         files.append((fn, pzf))
 

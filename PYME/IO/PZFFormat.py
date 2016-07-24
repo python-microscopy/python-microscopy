@@ -22,7 +22,7 @@ NUM_COMP_THREADS = 2#cpu_count()
 
 compPool = ThreadPool(NUM_COMP_THREADS)
 
-def ChunkedHuffmanCompress(data):
+def ChunkedHuffmanCompress(data, quantization=None):
     num_chunks = NUM_COMP_THREADS
     
     chunk_size = int(np.ceil(float(len(data))/num_chunks))
@@ -31,11 +31,17 @@ def ChunkedHuffmanCompress(data):
     #compPool = ThreadPool(NUM_COMP_THREADS)
     
     comp_chunk_d = {}
-    
-    def _compChunk(c, j):
-        comp_chunk_d[j] = bcl.HuffmanCompress(c)
-    
-    threads = [threading.Thread(target = _compChunk, args=(rc, j)) for j, rc in enumerate(raw_chunks)]
+
+    if quantization is None:
+        def _compChunk(c, j):
+            comp_chunk_d[j] = bcl.HuffmanCompress(c)
+
+        threads = [threading.Thread(target = _compChunk, args=(rc, j)) for j, rc in enumerate(raw_chunks)]
+    else:
+        def _compChunk(c, j):
+            comp_chunk_d[j] = bcl.HuffmanCompressQuant(c, *quantization)
+
+        threads = [threading.Thread(target=_compChunk, args=(rc, j)) for j, rc in enumerate(raw_chunks)]
             
     for p in threads:
         #print p
@@ -217,13 +223,16 @@ def dumps(data, sequenceID=0, frameNum=0, frameTimestamp=0, compression = DATA_C
         header['QuantOffset'] = quantizationOffset
         header['QuantScale'] = quantizationScale
         
-        qs = 1.0/quantizationScale
-        data = (np.sqrt(np.maximum(data-quantizationOffset,0))*qs).astype('uint8')
+     #   qs = 1.0/quantizationScale
+     #   data = (np.sqrt(np.maximum(data-quantizationOffset,0))*qs).astype('uint8')
     
     if compression == DATA_COMP_HUFFCODE:
         header['DataCompression'] = DATA_COMP_HUFFCODE
-        
-        dataString = bcl.HuffmanCompress(data.data).tostring()
+
+        if quantization:
+            dataString = bcl.HuffmanCompressQuant(data.ravel(), quantizationOffset, quantizationScale).tostring()
+        else:
+            dataString = bcl.HuffmanCompress(data.data).tostring()
     elif compression == DATA_COMP_HUFFCODE_CHUNKS:
         header['DataCompression'] = DATA_COMP_HUFFCODE_CHUNKS
         

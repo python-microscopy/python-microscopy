@@ -236,7 +236,9 @@ static CYTHON_INLINE float __PYX_NAN() {
 
 #define __PYX_HAVE__bcl__bcl
 #define __PYX_HAVE_API__bcl__bcl
+#include "stdint.h"
 #include "huffman.h"
+#include "quantize.h"
 #include "pythread.h"
 #include "string.h"
 #include "stdlib.h"
@@ -1003,6 +1005,8 @@ static int __Pyx_ValidateAndInit_memviewslice(
 
 static CYTHON_INLINE __Pyx_memviewslice __Pyx_PyObject_to_MemoryviewSlice_ds_unsigned_char(PyObject *);
 
+static CYTHON_INLINE __Pyx_memviewslice __Pyx_PyObject_to_MemoryviewSlice_ds_unsigned_short(PyObject *);
+
 static CYTHON_INLINE unsigned int __Pyx_PyInt_As_unsigned_int(PyObject *);
 
 static CYTHON_INLINE PyObject* __Pyx_PyInt_From_unsigned_int(unsigned int value);
@@ -1050,6 +1054,8 @@ static PyObject *__pyx_memoryviewslice_assign_item_from_object(struct __pyx_memo
 
 /* Module declarations from 'cython' */
 
+/* Module declarations from 'libc.stdint' */
+
 /* Module declarations from 'bcl.bcl' */
 static PyTypeObject *__pyx_array_type = 0;
 static PyTypeObject *__pyx_MemviewEnum_type = 0;
@@ -1093,6 +1099,7 @@ static void __pyx_memoryview_refcount_objects_in_slice(char *, Py_ssize_t *, Py_
 static void __pyx_memoryview_slice_assign_scalar(__Pyx_memviewslice *, int, size_t, void *, int); /*proto*/
 static void __pyx_memoryview__slice_assign_scalar(char *, Py_ssize_t *, Py_ssize_t *, int, size_t, void *); /*proto*/
 static __Pyx_TypeInfo __Pyx_TypeInfo_unsigned_char = { "unsigned char", NULL, sizeof(unsigned char), { 0 }, 0, IS_UNSIGNED(unsigned char) ? 'U' : 'I', IS_UNSIGNED(unsigned char), 0 };
+static __Pyx_TypeInfo __Pyx_TypeInfo_unsigned_short = { "unsigned short", NULL, sizeof(unsigned short), { 0 }, 0, IS_UNSIGNED(unsigned short) ? 'U' : 'I', IS_UNSIGNED(unsigned short), 0 };
 #define __Pyx_MODULE_NAME "bcl.bcl"
 int __pyx_module_is_main_bcl__bcl = 0;
 
@@ -1111,6 +1118,7 @@ static char __pyx_k_id[] = "id";
 static char __pyx_k_nb[] = "nb";
 static char __pyx_k_np[] = "np";
 static char __pyx_k_ov[] = "ov";
+static char __pyx_k_qv[] = "qv";
 static char __pyx_k_obj[] = "obj";
 static char __pyx_k_out[] = "out";
 static char __pyx_k_base[] = "base";
@@ -1130,7 +1138,9 @@ static char __pyx_k_dsize[] = "dsize";
 static char __pyx_k_error[] = "error";
 static char __pyx_k_flags[] = "flags";
 static char __pyx_k_numpy[] = "numpy";
+static char __pyx_k_quant[] = "quant";
 static char __pyx_k_range[] = "range";
+static char __pyx_k_scale[] = "scale";
 static char __pyx_k_shape[] = "shape";
 static char __pyx_k_start[] = "start";
 static char __pyx_k_uint8[] = "uint8";
@@ -1140,6 +1150,7 @@ static char __pyx_k_format[] = "format";
 static char __pyx_k_import[] = "__import__";
 static char __pyx_k_insize[] = "insize";
 static char __pyx_k_name_2[] = "__name__";
+static char __pyx_k_offset[] = "offset";
 static char __pyx_k_struct[] = "struct";
 static char __pyx_k_unpack[] = "unpack";
 static char __pyx_k_bcl_bcl[] = "bcl.bcl";
@@ -1161,6 +1172,7 @@ static char __pyx_k_dtype_is_object[] = "dtype_is_object";
 static char __pyx_k_HuffmanDecompress[] = "HuffmanDecompress";
 static char __pyx_k_strided_and_direct[] = "<strided and direct>";
 static char __pyx_k_HuffmanCompressOrig[] = "HuffmanCompressOrig";
+static char __pyx_k_HuffmanCompressQuant[] = "HuffmanCompressQuant";
 static char __pyx_k_strided_and_indirect[] = "<strided and indirect>";
 static char __pyx_k_contiguous_and_direct[] = "<contiguous and direct>";
 static char __pyx_k_MemoryView_of_r_object[] = "<MemoryView of %r object>";
@@ -1175,7 +1187,7 @@ static char __pyx_k_Step_may_not_be_zero_axis_d[] = "Step may not be zero (axis 
 static char __pyx_k_itemsize_0_for_cython_array[] = "itemsize <= 0 for cython.array";
 static char __pyx_k_unable_to_allocate_array_data[] = "unable to allocate array data.";
 static char __pyx_k_strided_and_direct_or_indirect[] = "<strided and direct or indirect>";
-static char __pyx_k_Users_david_python_microscopy_P[] = "/Users/david/python-microscopy/PYME/bcl/bcl.pyx";
+static char __pyx_k_Users_david_python_microscopy_P[] = "/Users/david/python-microscopy/PYME/contrib/bcl/bcl.pyx";
 static char __pyx_k_All_dimensions_preceding_dimensi[] = "All dimensions preceding dimension %d must be indexed and not sliced";
 static char __pyx_k_Buffer_view_does_not_expose_stri[] = "Buffer view does not expose strides";
 static char __pyx_k_Can_only_create_a_buffer_that_is[] = "Can only create a buffer that is contiguous in memory.";
@@ -1195,6 +1207,7 @@ static PyObject *__pyx_n_s_Ellipsis;
 static PyObject *__pyx_kp_s_Empty_shape_tuple_for_cython_arr;
 static PyObject *__pyx_n_s_HuffmanCompress;
 static PyObject *__pyx_n_s_HuffmanCompressOrig;
+static PyObject *__pyx_n_s_HuffmanCompressQuant;
 static PyObject *__pyx_n_s_HuffmanDecompress;
 static PyObject *__pyx_n_s_IndexError;
 static PyObject *__pyx_kp_s_Indirect_dimensions_not_supporte;
@@ -1243,13 +1256,17 @@ static PyObject *__pyx_n_s_ndim;
 static PyObject *__pyx_n_s_np;
 static PyObject *__pyx_n_s_numpy;
 static PyObject *__pyx_n_s_obj;
+static PyObject *__pyx_n_s_offset;
 static PyObject *__pyx_n_s_out;
 static PyObject *__pyx_n_s_outsize;
 static PyObject *__pyx_n_s_ov;
 static PyObject *__pyx_n_s_pack;
 static PyObject *__pyx_n_s_pyx_getbuffer;
 static PyObject *__pyx_n_s_pyx_vtable;
+static PyObject *__pyx_n_s_quant;
+static PyObject *__pyx_n_s_qv;
 static PyObject *__pyx_n_s_range;
+static PyObject *__pyx_n_s_scale;
 static PyObject *__pyx_n_s_shape;
 static PyObject *__pyx_n_s_size;
 static PyObject *__pyx_n_s_start;
@@ -1266,8 +1283,9 @@ static PyObject *__pyx_kp_s_unable_to_allocate_shape_and_str;
 static PyObject *__pyx_n_s_unpack;
 static PyObject *__pyx_n_s_zeros;
 static PyObject *__pyx_pf_3bcl_3bcl_HuffmanCompress(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_data); /* proto */
-static PyObject *__pyx_pf_3bcl_3bcl_2HuffmanCompressOrig(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_data); /* proto */
-static PyObject *__pyx_pf_3bcl_3bcl_4HuffmanDecompress(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_data, unsigned int __pyx_v_outsize); /* proto */
+static PyObject *__pyx_pf_3bcl_3bcl_2HuffmanCompressQuant(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_data, float __pyx_v_offset, float __pyx_v_scale); /* proto */
+static PyObject *__pyx_pf_3bcl_3bcl_4HuffmanCompressOrig(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_data); /* proto */
+static PyObject *__pyx_pf_3bcl_3bcl_6HuffmanDecompress(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_data, unsigned int __pyx_v_outsize); /* proto */
 static int __pyx_array___pyx_pf_15View_dot_MemoryView_5array___cinit__(struct __pyx_array_obj *__pyx_v_self, PyObject *__pyx_v_shape, Py_ssize_t __pyx_v_itemsize, PyObject *__pyx_v_format, PyObject *__pyx_v_mode, int __pyx_v_allocate_buffer); /* proto */
 static int __pyx_array___pyx_pf_15View_dot_MemoryView_5array_2__getbuffer__(struct __pyx_array_obj *__pyx_v_self, Py_buffer *__pyx_v_info, int __pyx_v_flags); /* proto */
 static void __pyx_array___pyx_pf_15View_dot_MemoryView_5array_4__dealloc__(struct __pyx_array_obj *__pyx_v_self); /* proto */
@@ -1324,15 +1342,17 @@ static PyObject *__pyx_tuple__14;
 static PyObject *__pyx_tuple__16;
 static PyObject *__pyx_tuple__18;
 static PyObject *__pyx_tuple__20;
-static PyObject *__pyx_tuple__21;
 static PyObject *__pyx_tuple__22;
 static PyObject *__pyx_tuple__23;
 static PyObject *__pyx_tuple__24;
+static PyObject *__pyx_tuple__25;
+static PyObject *__pyx_tuple__26;
 static PyObject *__pyx_codeobj__15;
 static PyObject *__pyx_codeobj__17;
 static PyObject *__pyx_codeobj__19;
+static PyObject *__pyx_codeobj__21;
 
-/* "bcl/bcl.pyx":11
+/* "bcl/bcl.pyx":16
  * 
  * @cython.boundscheck(False)
  * def HuffmanCompress(unsigned char[:] data):             # <<<<<<<<<<<<<<
@@ -1352,7 +1372,7 @@ static PyObject *__pyx_pw_3bcl_3bcl_1HuffmanCompress(PyObject *__pyx_self, PyObj
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("HuffmanCompress (wrapper)", 0);
   assert(__pyx_arg_data); {
-    __pyx_v_data = __Pyx_PyObject_to_MemoryviewSlice_ds_unsigned_char(__pyx_arg_data); if (unlikely(!__pyx_v_data.memview)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 11; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    __pyx_v_data = __Pyx_PyObject_to_MemoryviewSlice_ds_unsigned_char(__pyx_arg_data); if (unlikely(!__pyx_v_data.memview)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 16; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -1388,26 +1408,26 @@ static PyObject *__pyx_pf_3bcl_3bcl_HuffmanCompress(CYTHON_UNUSED PyObject *__py
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("HuffmanCompress", 0);
 
-  /* "bcl/bcl.pyx":12
+  /* "bcl/bcl.pyx":17
  * @cython.boundscheck(False)
  * def HuffmanCompress(unsigned char[:] data):
  *     out = np.zeros(int(data.shape[0]*1.01 + 320),'uint8')             # <<<<<<<<<<<<<<
  *     cdef unsigned char [:] ov = out
  *     cdef int dsize = data.shape[0]
  */
-  __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_np); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 12; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_np); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 17; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_zeros); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 12; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_zeros); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 17; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = PyFloat_FromDouble((((__pyx_v_data.shape[0]) * 1.01) + 320.0)); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 12; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = PyFloat_FromDouble((((__pyx_v_data.shape[0]) * 1.01) + 320.0)); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 17; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = PyTuple_New(1); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 12; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_4 = PyTuple_New(1); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 17; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_GIVEREF(__pyx_t_2);
   PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_2);
   __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_Call(((PyObject *)(&PyInt_Type)), __pyx_t_4, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 12; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_PyObject_Call(((PyObject *)(&PyInt_Type)), __pyx_t_4, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 17; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_4 = NULL;
@@ -1422,7 +1442,7 @@ static PyObject *__pyx_pf_3bcl_3bcl_HuffmanCompress(CYTHON_UNUSED PyObject *__py
       __pyx_t_5 = 1;
     }
   }
-  __pyx_t_6 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 12; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_6 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 17; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_6);
   if (__pyx_t_4) {
     __Pyx_GIVEREF(__pyx_t_4); PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_4); __pyx_t_4 = NULL;
@@ -1433,14 +1453,14 @@ static PyObject *__pyx_pf_3bcl_3bcl_HuffmanCompress(CYTHON_UNUSED PyObject *__py
   __Pyx_GIVEREF(__pyx_n_s_uint8);
   PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_5, __pyx_n_s_uint8);
   __pyx_t_2 = 0;
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_6, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 12; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_6, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 17; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_v_out = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "bcl/bcl.pyx":13
+  /* "bcl/bcl.pyx":18
  * def HuffmanCompress(unsigned char[:] data):
  *     out = np.zeros(int(data.shape[0]*1.01 + 320),'uint8')
  *     cdef unsigned char [:] ov = out             # <<<<<<<<<<<<<<
@@ -1448,12 +1468,12 @@ static PyObject *__pyx_pf_3bcl_3bcl_HuffmanCompress(CYTHON_UNUSED PyObject *__py
  *     with nogil:
  */
   __pyx_t_7 = __Pyx_PyObject_to_MemoryviewSlice_ds_unsigned_char(__pyx_v_out);
-  if (unlikely(!__pyx_t_7.memview)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 13; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__pyx_t_7.memview)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 18; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_ov = __pyx_t_7;
   __pyx_t_7.memview = NULL;
   __pyx_t_7.data = NULL;
 
-  /* "bcl/bcl.pyx":14
+  /* "bcl/bcl.pyx":19
  *     out = np.zeros(int(data.shape[0]*1.01 + 320),'uint8')
  *     cdef unsigned char [:] ov = out
  *     cdef int dsize = data.shape[0]             # <<<<<<<<<<<<<<
@@ -1462,7 +1482,7 @@ static PyObject *__pyx_pf_3bcl_3bcl_HuffmanCompress(CYTHON_UNUSED PyObject *__py
  */
   __pyx_v_dsize = (__pyx_v_data.shape[0]);
 
-  /* "bcl/bcl.pyx":15
+  /* "bcl/bcl.pyx":20
  *     cdef unsigned char [:] ov = out
  *     cdef int dsize = data.shape[0]
  *     with nogil:             # <<<<<<<<<<<<<<
@@ -1476,7 +1496,7 @@ static PyObject *__pyx_pf_3bcl_3bcl_HuffmanCompress(CYTHON_UNUSED PyObject *__py
       #endif
       /*try:*/ {
 
-        /* "bcl/bcl.pyx":17
+        /* "bcl/bcl.pyx":22
  *     with nogil:
  * 
  *         nb = Huffman_Compress(&data[0], &ov[0], dsize)             # <<<<<<<<<<<<<<
@@ -1490,7 +1510,7 @@ static PyObject *__pyx_pf_3bcl_3bcl_HuffmanCompress(CYTHON_UNUSED PyObject *__py
         __pyx_v_nb = Huffman_Compress((&(*((unsigned char *) ( /* dim=0 */ (__pyx_v_data.data + __pyx_t_8 * __pyx_v_data.strides[0]) )))), (&(*((unsigned char *) ( /* dim=0 */ (__pyx_v_ov.data + __pyx_t_9 * __pyx_v_ov.strides[0]) )))), __pyx_v_dsize);
       }
 
-      /* "bcl/bcl.pyx":15
+      /* "bcl/bcl.pyx":20
  *     cdef unsigned char [:] ov = out
  *     cdef int dsize = data.shape[0]
  *     with nogil:             # <<<<<<<<<<<<<<
@@ -1508,7 +1528,7 @@ static PyObject *__pyx_pf_3bcl_3bcl_HuffmanCompress(CYTHON_UNUSED PyObject *__py
       }
   }
 
-  /* "bcl/bcl.pyx":18
+  /* "bcl/bcl.pyx":23
  * 
  *         nb = Huffman_Compress(&data[0], &ov[0], dsize)
  *     return out[:nb]             # <<<<<<<<<<<<<<
@@ -1516,13 +1536,13 @@ static PyObject *__pyx_pf_3bcl_3bcl_HuffmanCompress(CYTHON_UNUSED PyObject *__py
  * @cython.boundscheck(False)
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyObject_GetSlice(__pyx_v_out, 0, __pyx_v_nb, NULL, NULL, NULL, 0, 1, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 18; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyObject_GetSlice(__pyx_v_out, 0, __pyx_v_nb, NULL, NULL, NULL, 0, 1, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 23; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "bcl/bcl.pyx":11
+  /* "bcl/bcl.pyx":16
  * 
  * @cython.boundscheck(False)
  * def HuffmanCompress(unsigned char[:] data):             # <<<<<<<<<<<<<<
@@ -1549,7 +1569,344 @@ static PyObject *__pyx_pf_3bcl_3bcl_HuffmanCompress(CYTHON_UNUSED PyObject *__py
   return __pyx_r;
 }
 
-/* "bcl/bcl.pyx":21
+/* "bcl/bcl.pyx":26
+ * 
+ * @cython.boundscheck(False)
+ * def HuffmanCompressQuant(unsigned short[:] data, float offset, float scale):             # <<<<<<<<<<<<<<
+ *     out = np.zeros(int(data.shape[0]*1.01 + 320),'uint8')
+ *     quant = np.zeros(data.shape[0], 'uint8')
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_3bcl_3bcl_3HuffmanCompressQuant(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyMethodDef __pyx_mdef_3bcl_3bcl_3HuffmanCompressQuant = {"HuffmanCompressQuant", (PyCFunction)__pyx_pw_3bcl_3bcl_3HuffmanCompressQuant, METH_VARARGS|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_3bcl_3bcl_3HuffmanCompressQuant(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+  __Pyx_memviewslice __pyx_v_data = { 0, 0, { 0 }, { 0 }, { 0 } };
+  float __pyx_v_offset;
+  float __pyx_v_scale;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("HuffmanCompressQuant (wrapper)", 0);
+  {
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_data,&__pyx_n_s_offset,&__pyx_n_s_scale,0};
+    PyObject* values[3] = {0,0,0};
+    if (unlikely(__pyx_kwds)) {
+      Py_ssize_t kw_args;
+      const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
+      switch (pos_args) {
+        case  3: values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
+        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      kw_args = PyDict_Size(__pyx_kwds);
+      switch (pos_args) {
+        case  0:
+        if (likely((values[0] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_data)) != 0)) kw_args--;
+        else goto __pyx_L5_argtuple_error;
+        case  1:
+        if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_offset)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("HuffmanCompressQuant", 1, 3, 3, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 26; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        }
+        case  2:
+        if (likely((values[2] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_scale)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("HuffmanCompressQuant", 1, 3, 3, 2); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 26; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        }
+      }
+      if (unlikely(kw_args > 0)) {
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "HuffmanCompressQuant") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 26; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+      }
+    } else if (PyTuple_GET_SIZE(__pyx_args) != 3) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+      values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+      values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
+    }
+    __pyx_v_data = __Pyx_PyObject_to_MemoryviewSlice_ds_unsigned_short(values[0]); if (unlikely(!__pyx_v_data.memview)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 26; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    __pyx_v_offset = __pyx_PyFloat_AsFloat(values[1]); if (unlikely((__pyx_v_offset == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 26; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    __pyx_v_scale = __pyx_PyFloat_AsFloat(values[2]); if (unlikely((__pyx_v_scale == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 26; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  }
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("HuffmanCompressQuant", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 26; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __pyx_L3_error:;
+  __Pyx_AddTraceback("bcl.bcl.HuffmanCompressQuant", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  __pyx_r = __pyx_pf_3bcl_3bcl_2HuffmanCompressQuant(__pyx_self, __pyx_v_data, __pyx_v_offset, __pyx_v_scale);
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_3bcl_3bcl_2HuffmanCompressQuant(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_data, float __pyx_v_offset, float __pyx_v_scale) {
+  PyObject *__pyx_v_out = NULL;
+  PyObject *__pyx_v_quant = NULL;
+  __Pyx_memviewslice __pyx_v_ov = { 0, 0, { 0 }, { 0 }, { 0 } };
+  __Pyx_memviewslice __pyx_v_qv = { 0, 0, { 0 }, { 0 }, { 0 } };
+  int __pyx_v_dsize;
+  int __pyx_v_nb;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  Py_ssize_t __pyx_t_5;
+  PyObject *__pyx_t_6 = NULL;
+  __Pyx_memviewslice __pyx_t_7 = { 0, 0, { 0 }, { 0 }, { 0 } };
+  Py_ssize_t __pyx_t_8;
+  Py_ssize_t __pyx_t_9;
+  Py_ssize_t __pyx_t_10;
+  Py_ssize_t __pyx_t_11;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("HuffmanCompressQuant", 0);
+
+  /* "bcl/bcl.pyx":27
+ * @cython.boundscheck(False)
+ * def HuffmanCompressQuant(unsigned short[:] data, float offset, float scale):
+ *     out = np.zeros(int(data.shape[0]*1.01 + 320),'uint8')             # <<<<<<<<<<<<<<
+ *     quant = np.zeros(data.shape[0], 'uint8')
+ *     cdef unsigned char [:] ov = out
+ */
+  __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_np); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 27; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_zeros); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 27; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = PyFloat_FromDouble((((__pyx_v_data.shape[0]) * 1.01) + 320.0)); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 27; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_4 = PyTuple_New(1); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 27; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_GIVEREF(__pyx_t_2);
+  PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_2);
+  __pyx_t_2 = 0;
+  __pyx_t_2 = __Pyx_PyObject_Call(((PyObject *)(&PyInt_Type)), __pyx_t_4, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 27; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __pyx_t_4 = NULL;
+  __pyx_t_5 = 0;
+  if (CYTHON_COMPILING_IN_CPYTHON && unlikely(PyMethod_Check(__pyx_t_3))) {
+    __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_3);
+    if (likely(__pyx_t_4)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
+      __Pyx_INCREF(__pyx_t_4);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_3, function);
+      __pyx_t_5 = 1;
+    }
+  }
+  __pyx_t_6 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 27; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_6);
+  if (__pyx_t_4) {
+    __Pyx_GIVEREF(__pyx_t_4); PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_4); __pyx_t_4 = NULL;
+  }
+  __Pyx_GIVEREF(__pyx_t_2);
+  PyTuple_SET_ITEM(__pyx_t_6, 0+__pyx_t_5, __pyx_t_2);
+  __Pyx_INCREF(__pyx_n_s_uint8);
+  __Pyx_GIVEREF(__pyx_n_s_uint8);
+  PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_5, __pyx_n_s_uint8);
+  __pyx_t_2 = 0;
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_6, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 27; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_v_out = __pyx_t_1;
+  __pyx_t_1 = 0;
+
+  /* "bcl/bcl.pyx":28
+ * def HuffmanCompressQuant(unsigned short[:] data, float offset, float scale):
+ *     out = np.zeros(int(data.shape[0]*1.01 + 320),'uint8')
+ *     quant = np.zeros(data.shape[0], 'uint8')             # <<<<<<<<<<<<<<
+ *     cdef unsigned char [:] ov = out
+ *     cdef unsigned char [:] qv = quant
+ */
+  __pyx_t_3 = __Pyx_GetModuleGlobalName(__pyx_n_s_np); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 28; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_zeros); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 28; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_6);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_3 = PyInt_FromSsize_t((__pyx_v_data.shape[0])); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 28; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_2 = NULL;
+  __pyx_t_5 = 0;
+  if (CYTHON_COMPILING_IN_CPYTHON && unlikely(PyMethod_Check(__pyx_t_6))) {
+    __pyx_t_2 = PyMethod_GET_SELF(__pyx_t_6);
+    if (likely(__pyx_t_2)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_6);
+      __Pyx_INCREF(__pyx_t_2);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_6, function);
+      __pyx_t_5 = 1;
+    }
+  }
+  __pyx_t_4 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 28; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_4);
+  if (__pyx_t_2) {
+    __Pyx_GIVEREF(__pyx_t_2); PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_2); __pyx_t_2 = NULL;
+  }
+  __Pyx_GIVEREF(__pyx_t_3);
+  PyTuple_SET_ITEM(__pyx_t_4, 0+__pyx_t_5, __pyx_t_3);
+  __Pyx_INCREF(__pyx_n_s_uint8);
+  __Pyx_GIVEREF(__pyx_n_s_uint8);
+  PyTuple_SET_ITEM(__pyx_t_4, 1+__pyx_t_5, __pyx_n_s_uint8);
+  __pyx_t_3 = 0;
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_t_4, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 28; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+  __pyx_v_quant = __pyx_t_1;
+  __pyx_t_1 = 0;
+
+  /* "bcl/bcl.pyx":29
+ *     out = np.zeros(int(data.shape[0]*1.01 + 320),'uint8')
+ *     quant = np.zeros(data.shape[0], 'uint8')
+ *     cdef unsigned char [:] ov = out             # <<<<<<<<<<<<<<
+ *     cdef unsigned char [:] qv = quant
+ *     cdef int dsize = data.shape[0]
+ */
+  __pyx_t_7 = __Pyx_PyObject_to_MemoryviewSlice_ds_unsigned_char(__pyx_v_out);
+  if (unlikely(!__pyx_t_7.memview)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 29; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_v_ov = __pyx_t_7;
+  __pyx_t_7.memview = NULL;
+  __pyx_t_7.data = NULL;
+
+  /* "bcl/bcl.pyx":30
+ *     quant = np.zeros(data.shape[0], 'uint8')
+ *     cdef unsigned char [:] ov = out
+ *     cdef unsigned char [:] qv = quant             # <<<<<<<<<<<<<<
+ *     cdef int dsize = data.shape[0]
+ *     with nogil:
+ */
+  __pyx_t_7 = __Pyx_PyObject_to_MemoryviewSlice_ds_unsigned_char(__pyx_v_quant);
+  if (unlikely(!__pyx_t_7.memview)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 30; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_v_qv = __pyx_t_7;
+  __pyx_t_7.memview = NULL;
+  __pyx_t_7.data = NULL;
+
+  /* "bcl/bcl.pyx":31
+ *     cdef unsigned char [:] ov = out
+ *     cdef unsigned char [:] qv = quant
+ *     cdef int dsize = data.shape[0]             # <<<<<<<<<<<<<<
+ *     with nogil:
+ *         quantize_u16_avx(&data[0], &qv[0], dsize, offset, scale)
+ */
+  __pyx_v_dsize = (__pyx_v_data.shape[0]);
+
+  /* "bcl/bcl.pyx":32
+ *     cdef unsigned char [:] qv = quant
+ *     cdef int dsize = data.shape[0]
+ *     with nogil:             # <<<<<<<<<<<<<<
+ *         quantize_u16_avx(&data[0], &qv[0], dsize, offset, scale)
+ *         nb = Huffman_Compress(&qv[0], &ov[0], dsize)
+ */
+  {
+      #ifdef WITH_THREAD
+      PyThreadState *_save;
+      Py_UNBLOCK_THREADS
+      #endif
+      /*try:*/ {
+
+        /* "bcl/bcl.pyx":33
+ *     cdef int dsize = data.shape[0]
+ *     with nogil:
+ *         quantize_u16_avx(&data[0], &qv[0], dsize, offset, scale)             # <<<<<<<<<<<<<<
+ *         nb = Huffman_Compress(&qv[0], &ov[0], dsize)
+ *     return out[:nb]
+ */
+        __pyx_t_8 = 0;
+        if (__pyx_t_8 < 0) __pyx_t_8 += __pyx_v_data.shape[0];
+        __pyx_t_9 = 0;
+        if (__pyx_t_9 < 0) __pyx_t_9 += __pyx_v_qv.shape[0];
+        quantize_u16_avx((&(*((unsigned short *) ( /* dim=0 */ (__pyx_v_data.data + __pyx_t_8 * __pyx_v_data.strides[0]) )))), (&(*((unsigned char *) ( /* dim=0 */ (__pyx_v_qv.data + __pyx_t_9 * __pyx_v_qv.strides[0]) )))), __pyx_v_dsize, __pyx_v_offset, __pyx_v_scale);
+
+        /* "bcl/bcl.pyx":34
+ *     with nogil:
+ *         quantize_u16_avx(&data[0], &qv[0], dsize, offset, scale)
+ *         nb = Huffman_Compress(&qv[0], &ov[0], dsize)             # <<<<<<<<<<<<<<
+ *     return out[:nb]
+ * 
+ */
+        __pyx_t_10 = 0;
+        if (__pyx_t_10 < 0) __pyx_t_10 += __pyx_v_qv.shape[0];
+        __pyx_t_11 = 0;
+        if (__pyx_t_11 < 0) __pyx_t_11 += __pyx_v_ov.shape[0];
+        __pyx_v_nb = Huffman_Compress((&(*((unsigned char *) ( /* dim=0 */ (__pyx_v_qv.data + __pyx_t_10 * __pyx_v_qv.strides[0]) )))), (&(*((unsigned char *) ( /* dim=0 */ (__pyx_v_ov.data + __pyx_t_11 * __pyx_v_ov.strides[0]) )))), __pyx_v_dsize);
+      }
+
+      /* "bcl/bcl.pyx":32
+ *     cdef unsigned char [:] qv = quant
+ *     cdef int dsize = data.shape[0]
+ *     with nogil:             # <<<<<<<<<<<<<<
+ *         quantize_u16_avx(&data[0], &qv[0], dsize, offset, scale)
+ *         nb = Huffman_Compress(&qv[0], &ov[0], dsize)
+ */
+      /*finally:*/ {
+        /*normal exit:*/{
+          #ifdef WITH_THREAD
+          Py_BLOCK_THREADS
+          #endif
+          goto __pyx_L5;
+        }
+        __pyx_L5:;
+      }
+  }
+
+  /* "bcl/bcl.pyx":35
+ *         quantize_u16_avx(&data[0], &qv[0], dsize, offset, scale)
+ *         nb = Huffman_Compress(&qv[0], &ov[0], dsize)
+ *     return out[:nb]             # <<<<<<<<<<<<<<
+ * 
+ * @cython.boundscheck(False)
+ */
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = __Pyx_PyObject_GetSlice(__pyx_v_out, 0, __pyx_v_nb, NULL, NULL, NULL, 0, 1, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 35; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* "bcl/bcl.pyx":26
+ * 
+ * @cython.boundscheck(False)
+ * def HuffmanCompressQuant(unsigned short[:] data, float offset, float scale):             # <<<<<<<<<<<<<<
+ *     out = np.zeros(int(data.shape[0]*1.01 + 320),'uint8')
+ *     quant = np.zeros(data.shape[0], 'uint8')
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_XDECREF(__pyx_t_6);
+  __PYX_XDEC_MEMVIEW(&__pyx_t_7, 1);
+  __Pyx_AddTraceback("bcl.bcl.HuffmanCompressQuant", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_out);
+  __Pyx_XDECREF(__pyx_v_quant);
+  __PYX_XDEC_MEMVIEW(&__pyx_v_ov, 1);
+  __PYX_XDEC_MEMVIEW(&__pyx_v_qv, 1);
+  __PYX_XDEC_MEMVIEW(&__pyx_v_data, 1);
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "bcl/bcl.pyx":38
  * 
  * @cython.boundscheck(False)
  * def HuffmanCompressOrig(unsigned char[:] data):             # <<<<<<<<<<<<<<
@@ -1558,9 +1915,9 @@ static PyObject *__pyx_pf_3bcl_3bcl_HuffmanCompress(CYTHON_UNUSED PyObject *__py
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_3bcl_3bcl_3HuffmanCompressOrig(PyObject *__pyx_self, PyObject *__pyx_arg_data); /*proto*/
-static PyMethodDef __pyx_mdef_3bcl_3bcl_3HuffmanCompressOrig = {"HuffmanCompressOrig", (PyCFunction)__pyx_pw_3bcl_3bcl_3HuffmanCompressOrig, METH_O, 0};
-static PyObject *__pyx_pw_3bcl_3bcl_3HuffmanCompressOrig(PyObject *__pyx_self, PyObject *__pyx_arg_data) {
+static PyObject *__pyx_pw_3bcl_3bcl_5HuffmanCompressOrig(PyObject *__pyx_self, PyObject *__pyx_arg_data); /*proto*/
+static PyMethodDef __pyx_mdef_3bcl_3bcl_5HuffmanCompressOrig = {"HuffmanCompressOrig", (PyCFunction)__pyx_pw_3bcl_3bcl_5HuffmanCompressOrig, METH_O, 0};
+static PyObject *__pyx_pw_3bcl_3bcl_5HuffmanCompressOrig(PyObject *__pyx_self, PyObject *__pyx_arg_data) {
   __Pyx_memviewslice __pyx_v_data = { 0, 0, { 0 }, { 0 }, { 0 } };
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
@@ -1569,7 +1926,7 @@ static PyObject *__pyx_pw_3bcl_3bcl_3HuffmanCompressOrig(PyObject *__pyx_self, P
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("HuffmanCompressOrig (wrapper)", 0);
   assert(__pyx_arg_data); {
-    __pyx_v_data = __Pyx_PyObject_to_MemoryviewSlice_ds_unsigned_char(__pyx_arg_data); if (unlikely(!__pyx_v_data.memview)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 21; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    __pyx_v_data = __Pyx_PyObject_to_MemoryviewSlice_ds_unsigned_char(__pyx_arg_data); if (unlikely(!__pyx_v_data.memview)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 38; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -1577,14 +1934,14 @@ static PyObject *__pyx_pw_3bcl_3bcl_3HuffmanCompressOrig(PyObject *__pyx_self, P
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_3bcl_3bcl_2HuffmanCompressOrig(__pyx_self, __pyx_v_data);
+  __pyx_r = __pyx_pf_3bcl_3bcl_4HuffmanCompressOrig(__pyx_self, __pyx_v_data);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_3bcl_3bcl_2HuffmanCompressOrig(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_data) {
+static PyObject *__pyx_pf_3bcl_3bcl_4HuffmanCompressOrig(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_data) {
   PyObject *__pyx_v_out = NULL;
   __Pyx_memviewslice __pyx_v_ov = { 0, 0, { 0 }, { 0 }, { 0 } };
   int __pyx_v_dsize;
@@ -1605,26 +1962,26 @@ static PyObject *__pyx_pf_3bcl_3bcl_2HuffmanCompressOrig(CYTHON_UNUSED PyObject 
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("HuffmanCompressOrig", 0);
 
-  /* "bcl/bcl.pyx":22
+  /* "bcl/bcl.pyx":39
  * @cython.boundscheck(False)
  * def HuffmanCompressOrig(unsigned char[:] data):
  *     out = np.zeros(int(data.shape[0]*1.01 + 320),'uint8')             # <<<<<<<<<<<<<<
  *     cdef unsigned char [:] ov = out
  *     cdef int dsize = data.shape[0]
  */
-  __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_np); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 22; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_np); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 39; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_zeros); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 22; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_zeros); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 39; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = PyFloat_FromDouble((((__pyx_v_data.shape[0]) * 1.01) + 320.0)); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 22; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = PyFloat_FromDouble((((__pyx_v_data.shape[0]) * 1.01) + 320.0)); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 39; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = PyTuple_New(1); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 22; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_4 = PyTuple_New(1); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 39; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_GIVEREF(__pyx_t_2);
   PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_2);
   __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_Call(((PyObject *)(&PyInt_Type)), __pyx_t_4, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 22; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_PyObject_Call(((PyObject *)(&PyInt_Type)), __pyx_t_4, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 39; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_4 = NULL;
@@ -1639,7 +1996,7 @@ static PyObject *__pyx_pf_3bcl_3bcl_2HuffmanCompressOrig(CYTHON_UNUSED PyObject 
       __pyx_t_5 = 1;
     }
   }
-  __pyx_t_6 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 22; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_6 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 39; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_6);
   if (__pyx_t_4) {
     __Pyx_GIVEREF(__pyx_t_4); PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_4); __pyx_t_4 = NULL;
@@ -1650,14 +2007,14 @@ static PyObject *__pyx_pf_3bcl_3bcl_2HuffmanCompressOrig(CYTHON_UNUSED PyObject 
   __Pyx_GIVEREF(__pyx_n_s_uint8);
   PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_5, __pyx_n_s_uint8);
   __pyx_t_2 = 0;
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_6, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 22; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_6, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 39; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_v_out = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "bcl/bcl.pyx":23
+  /* "bcl/bcl.pyx":40
  * def HuffmanCompressOrig(unsigned char[:] data):
  *     out = np.zeros(int(data.shape[0]*1.01 + 320),'uint8')
  *     cdef unsigned char [:] ov = out             # <<<<<<<<<<<<<<
@@ -1665,12 +2022,12 @@ static PyObject *__pyx_pf_3bcl_3bcl_2HuffmanCompressOrig(CYTHON_UNUSED PyObject 
  *     with nogil:
  */
   __pyx_t_7 = __Pyx_PyObject_to_MemoryviewSlice_ds_unsigned_char(__pyx_v_out);
-  if (unlikely(!__pyx_t_7.memview)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 23; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__pyx_t_7.memview)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 40; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_ov = __pyx_t_7;
   __pyx_t_7.memview = NULL;
   __pyx_t_7.data = NULL;
 
-  /* "bcl/bcl.pyx":24
+  /* "bcl/bcl.pyx":41
  *     out = np.zeros(int(data.shape[0]*1.01 + 320),'uint8')
  *     cdef unsigned char [:] ov = out
  *     cdef int dsize = data.shape[0]             # <<<<<<<<<<<<<<
@@ -1679,7 +2036,7 @@ static PyObject *__pyx_pf_3bcl_3bcl_2HuffmanCompressOrig(CYTHON_UNUSED PyObject 
  */
   __pyx_v_dsize = (__pyx_v_data.shape[0]);
 
-  /* "bcl/bcl.pyx":25
+  /* "bcl/bcl.pyx":42
  *     cdef unsigned char [:] ov = out
  *     cdef int dsize = data.shape[0]
  *     with nogil:             # <<<<<<<<<<<<<<
@@ -1693,7 +2050,7 @@ static PyObject *__pyx_pf_3bcl_3bcl_2HuffmanCompressOrig(CYTHON_UNUSED PyObject 
       #endif
       /*try:*/ {
 
-        /* "bcl/bcl.pyx":27
+        /* "bcl/bcl.pyx":44
  *     with nogil:
  * 
  *         nb = Huffman_Compress_(&data[0], &ov[0], dsize)             # <<<<<<<<<<<<<<
@@ -1707,7 +2064,7 @@ static PyObject *__pyx_pf_3bcl_3bcl_2HuffmanCompressOrig(CYTHON_UNUSED PyObject 
         __pyx_v_nb = Huffman_Compress_((&(*((unsigned char *) ( /* dim=0 */ (__pyx_v_data.data + __pyx_t_8 * __pyx_v_data.strides[0]) )))), (&(*((unsigned char *) ( /* dim=0 */ (__pyx_v_ov.data + __pyx_t_9 * __pyx_v_ov.strides[0]) )))), __pyx_v_dsize);
       }
 
-      /* "bcl/bcl.pyx":25
+      /* "bcl/bcl.pyx":42
  *     cdef unsigned char [:] ov = out
  *     cdef int dsize = data.shape[0]
  *     with nogil:             # <<<<<<<<<<<<<<
@@ -1725,7 +2082,7 @@ static PyObject *__pyx_pf_3bcl_3bcl_2HuffmanCompressOrig(CYTHON_UNUSED PyObject 
       }
   }
 
-  /* "bcl/bcl.pyx":28
+  /* "bcl/bcl.pyx":45
  * 
  *         nb = Huffman_Compress_(&data[0], &ov[0], dsize)
  *     return out[:nb]             # <<<<<<<<<<<<<<
@@ -1733,13 +2090,13 @@ static PyObject *__pyx_pf_3bcl_3bcl_2HuffmanCompressOrig(CYTHON_UNUSED PyObject 
  * @cython.boundscheck(False)
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyObject_GetSlice(__pyx_v_out, 0, __pyx_v_nb, NULL, NULL, NULL, 0, 1, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 28; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyObject_GetSlice(__pyx_v_out, 0, __pyx_v_nb, NULL, NULL, NULL, 0, 1, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 45; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "bcl/bcl.pyx":21
+  /* "bcl/bcl.pyx":38
  * 
  * @cython.boundscheck(False)
  * def HuffmanCompressOrig(unsigned char[:] data):             # <<<<<<<<<<<<<<
@@ -1766,7 +2123,7 @@ static PyObject *__pyx_pf_3bcl_3bcl_2HuffmanCompressOrig(CYTHON_UNUSED PyObject 
   return __pyx_r;
 }
 
-/* "bcl/bcl.pyx":31
+/* "bcl/bcl.pyx":48
  * 
  * @cython.boundscheck(False)
  * def HuffmanDecompress(unsigned char[:] data, unsigned int outsize):             # <<<<<<<<<<<<<<
@@ -1775,9 +2132,9 @@ static PyObject *__pyx_pf_3bcl_3bcl_2HuffmanCompressOrig(CYTHON_UNUSED PyObject 
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_3bcl_3bcl_5HuffmanDecompress(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyMethodDef __pyx_mdef_3bcl_3bcl_5HuffmanDecompress = {"HuffmanDecompress", (PyCFunction)__pyx_pw_3bcl_3bcl_5HuffmanDecompress, METH_VARARGS|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_3bcl_3bcl_5HuffmanDecompress(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_3bcl_3bcl_7HuffmanDecompress(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyMethodDef __pyx_mdef_3bcl_3bcl_7HuffmanDecompress = {"HuffmanDecompress", (PyCFunction)__pyx_pw_3bcl_3bcl_7HuffmanDecompress, METH_VARARGS|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_3bcl_3bcl_7HuffmanDecompress(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   __Pyx_memviewslice __pyx_v_data = { 0, 0, { 0 }, { 0 }, { 0 } };
   unsigned int __pyx_v_outsize;
   int __pyx_lineno = 0;
@@ -1806,11 +2163,11 @@ static PyObject *__pyx_pw_3bcl_3bcl_5HuffmanDecompress(PyObject *__pyx_self, PyO
         case  1:
         if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_outsize)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("HuffmanDecompress", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 31; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("HuffmanDecompress", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 48; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "HuffmanDecompress") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 31; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "HuffmanDecompress") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 48; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -1818,25 +2175,25 @@ static PyObject *__pyx_pw_3bcl_3bcl_5HuffmanDecompress(PyObject *__pyx_self, PyO
       values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
       values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
     }
-    __pyx_v_data = __Pyx_PyObject_to_MemoryviewSlice_ds_unsigned_char(values[0]); if (unlikely(!__pyx_v_data.memview)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 31; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
-    __pyx_v_outsize = __Pyx_PyInt_As_unsigned_int(values[1]); if (unlikely((__pyx_v_outsize == (unsigned int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 31; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    __pyx_v_data = __Pyx_PyObject_to_MemoryviewSlice_ds_unsigned_char(values[0]); if (unlikely(!__pyx_v_data.memview)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 48; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    __pyx_v_outsize = __Pyx_PyInt_As_unsigned_int(values[1]); if (unlikely((__pyx_v_outsize == (unsigned int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 48; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("HuffmanDecompress", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 31; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("HuffmanDecompress", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 48; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
   __Pyx_AddTraceback("bcl.bcl.HuffmanDecompress", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_3bcl_3bcl_4HuffmanDecompress(__pyx_self, __pyx_v_data, __pyx_v_outsize);
+  __pyx_r = __pyx_pf_3bcl_3bcl_6HuffmanDecompress(__pyx_self, __pyx_v_data, __pyx_v_outsize);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_3bcl_3bcl_4HuffmanDecompress(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_data, unsigned int __pyx_v_outsize) {
+static PyObject *__pyx_pf_3bcl_3bcl_6HuffmanDecompress(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_data, unsigned int __pyx_v_outsize) {
   PyObject *__pyx_v_out = NULL;
   __Pyx_memviewslice __pyx_v_ov = { 0, 0, { 0 }, { 0 }, { 0 } };
   int __pyx_v_insize;
@@ -1856,19 +2213,19 @@ static PyObject *__pyx_pf_3bcl_3bcl_4HuffmanDecompress(CYTHON_UNUSED PyObject *_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("HuffmanDecompress", 0);
 
-  /* "bcl/bcl.pyx":32
+  /* "bcl/bcl.pyx":49
  * @cython.boundscheck(False)
  * def HuffmanDecompress(unsigned char[:] data, unsigned int outsize):
  *     out = np.zeros(outsize,'uint8')             # <<<<<<<<<<<<<<
  *     cdef unsigned char [:] ov = out
  *     cdef int insize = data.shape[0]
  */
-  __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_np); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 32; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_np); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_zeros); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 32; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_zeros); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyInt_From_unsigned_int(__pyx_v_outsize); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 32; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_PyInt_From_unsigned_int(__pyx_v_outsize); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_4 = NULL;
   __pyx_t_5 = 0;
@@ -1882,7 +2239,7 @@ static PyObject *__pyx_pf_3bcl_3bcl_4HuffmanDecompress(CYTHON_UNUSED PyObject *_
       __pyx_t_5 = 1;
     }
   }
-  __pyx_t_6 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 32; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_6 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_6);
   if (__pyx_t_4) {
     __Pyx_GIVEREF(__pyx_t_4); PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_4); __pyx_t_4 = NULL;
@@ -1893,14 +2250,14 @@ static PyObject *__pyx_pf_3bcl_3bcl_4HuffmanDecompress(CYTHON_UNUSED PyObject *_
   __Pyx_GIVEREF(__pyx_n_s_uint8);
   PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_5, __pyx_n_s_uint8);
   __pyx_t_2 = 0;
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_6, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 32; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_6, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_v_out = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "bcl/bcl.pyx":33
+  /* "bcl/bcl.pyx":50
  * def HuffmanDecompress(unsigned char[:] data, unsigned int outsize):
  *     out = np.zeros(outsize,'uint8')
  *     cdef unsigned char [:] ov = out             # <<<<<<<<<<<<<<
@@ -1908,12 +2265,12 @@ static PyObject *__pyx_pf_3bcl_3bcl_4HuffmanDecompress(CYTHON_UNUSED PyObject *_
  *     #cdef int outsize = outsize
  */
   __pyx_t_7 = __Pyx_PyObject_to_MemoryviewSlice_ds_unsigned_char(__pyx_v_out);
-  if (unlikely(!__pyx_t_7.memview)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 33; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__pyx_t_7.memview)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 50; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_ov = __pyx_t_7;
   __pyx_t_7.memview = NULL;
   __pyx_t_7.data = NULL;
 
-  /* "bcl/bcl.pyx":34
+  /* "bcl/bcl.pyx":51
  *     out = np.zeros(outsize,'uint8')
  *     cdef unsigned char [:] ov = out
  *     cdef int insize = data.shape[0]             # <<<<<<<<<<<<<<
@@ -1922,7 +2279,7 @@ static PyObject *__pyx_pf_3bcl_3bcl_4HuffmanDecompress(CYTHON_UNUSED PyObject *_
  */
   __pyx_v_insize = (__pyx_v_data.shape[0]);
 
-  /* "bcl/bcl.pyx":36
+  /* "bcl/bcl.pyx":53
  *     cdef int insize = data.shape[0]
  *     #cdef int outsize = outsize
  *     with nogil:             # <<<<<<<<<<<<<<
@@ -1936,7 +2293,7 @@ static PyObject *__pyx_pf_3bcl_3bcl_4HuffmanDecompress(CYTHON_UNUSED PyObject *_
       #endif
       /*try:*/ {
 
-        /* "bcl/bcl.pyx":38
+        /* "bcl/bcl.pyx":55
  *     with nogil:
  * 
  *         Huffman_Uncompress(&data[0], &ov[0], insize, outsize)             # <<<<<<<<<<<<<<
@@ -1950,7 +2307,7 @@ static PyObject *__pyx_pf_3bcl_3bcl_4HuffmanDecompress(CYTHON_UNUSED PyObject *_
         Huffman_Uncompress((&(*((unsigned char *) ( /* dim=0 */ (__pyx_v_data.data + __pyx_t_8 * __pyx_v_data.strides[0]) )))), (&(*((unsigned char *) ( /* dim=0 */ (__pyx_v_ov.data + __pyx_t_9 * __pyx_v_ov.strides[0]) )))), __pyx_v_insize, __pyx_v_outsize);
       }
 
-      /* "bcl/bcl.pyx":36
+      /* "bcl/bcl.pyx":53
  *     cdef int insize = data.shape[0]
  *     #cdef int outsize = outsize
  *     with nogil:             # <<<<<<<<<<<<<<
@@ -1968,7 +2325,7 @@ static PyObject *__pyx_pf_3bcl_3bcl_4HuffmanDecompress(CYTHON_UNUSED PyObject *_
       }
   }
 
-  /* "bcl/bcl.pyx":39
+  /* "bcl/bcl.pyx":56
  * 
  *         Huffman_Uncompress(&data[0], &ov[0], insize, outsize)
  *     return out             # <<<<<<<<<<<<<<
@@ -1980,7 +2337,7 @@ static PyObject *__pyx_pf_3bcl_3bcl_4HuffmanDecompress(CYTHON_UNUSED PyObject *_
   __pyx_r = __pyx_v_out;
   goto __pyx_L0;
 
-  /* "bcl/bcl.pyx":31
+  /* "bcl/bcl.pyx":48
  * 
  * @cython.boundscheck(False)
  * def HuffmanDecompress(unsigned char[:] data, unsigned int outsize):             # <<<<<<<<<<<<<<
@@ -14218,6 +14575,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_kp_s_Empty_shape_tuple_for_cython_arr, __pyx_k_Empty_shape_tuple_for_cython_arr, sizeof(__pyx_k_Empty_shape_tuple_for_cython_arr), 0, 0, 1, 0},
   {&__pyx_n_s_HuffmanCompress, __pyx_k_HuffmanCompress, sizeof(__pyx_k_HuffmanCompress), 0, 0, 1, 1},
   {&__pyx_n_s_HuffmanCompressOrig, __pyx_k_HuffmanCompressOrig, sizeof(__pyx_k_HuffmanCompressOrig), 0, 0, 1, 1},
+  {&__pyx_n_s_HuffmanCompressQuant, __pyx_k_HuffmanCompressQuant, sizeof(__pyx_k_HuffmanCompressQuant), 0, 0, 1, 1},
   {&__pyx_n_s_HuffmanDecompress, __pyx_k_HuffmanDecompress, sizeof(__pyx_k_HuffmanDecompress), 0, 0, 1, 1},
   {&__pyx_n_s_IndexError, __pyx_k_IndexError, sizeof(__pyx_k_IndexError), 0, 0, 1, 1},
   {&__pyx_kp_s_Indirect_dimensions_not_supporte, __pyx_k_Indirect_dimensions_not_supporte, sizeof(__pyx_k_Indirect_dimensions_not_supporte), 0, 0, 1, 0},
@@ -14266,13 +14624,17 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_np, __pyx_k_np, sizeof(__pyx_k_np), 0, 0, 1, 1},
   {&__pyx_n_s_numpy, __pyx_k_numpy, sizeof(__pyx_k_numpy), 0, 0, 1, 1},
   {&__pyx_n_s_obj, __pyx_k_obj, sizeof(__pyx_k_obj), 0, 0, 1, 1},
+  {&__pyx_n_s_offset, __pyx_k_offset, sizeof(__pyx_k_offset), 0, 0, 1, 1},
   {&__pyx_n_s_out, __pyx_k_out, sizeof(__pyx_k_out), 0, 0, 1, 1},
   {&__pyx_n_s_outsize, __pyx_k_outsize, sizeof(__pyx_k_outsize), 0, 0, 1, 1},
   {&__pyx_n_s_ov, __pyx_k_ov, sizeof(__pyx_k_ov), 0, 0, 1, 1},
   {&__pyx_n_s_pack, __pyx_k_pack, sizeof(__pyx_k_pack), 0, 0, 1, 1},
   {&__pyx_n_s_pyx_getbuffer, __pyx_k_pyx_getbuffer, sizeof(__pyx_k_pyx_getbuffer), 0, 0, 1, 1},
   {&__pyx_n_s_pyx_vtable, __pyx_k_pyx_vtable, sizeof(__pyx_k_pyx_vtable), 0, 0, 1, 1},
+  {&__pyx_n_s_quant, __pyx_k_quant, sizeof(__pyx_k_quant), 0, 0, 1, 1},
+  {&__pyx_n_s_qv, __pyx_k_qv, sizeof(__pyx_k_qv), 0, 0, 1, 1},
   {&__pyx_n_s_range, __pyx_k_range, sizeof(__pyx_k_range), 0, 0, 1, 1},
+  {&__pyx_n_s_scale, __pyx_k_scale, sizeof(__pyx_k_scale), 0, 0, 1, 1},
   {&__pyx_n_s_shape, __pyx_k_shape, sizeof(__pyx_k_shape), 0, 0, 1, 1},
   {&__pyx_n_s_size, __pyx_k_size, sizeof(__pyx_k_size), 0, 0, 1, 1},
   {&__pyx_n_s_start, __pyx_k_start, sizeof(__pyx_k_start), 0, 0, 1, 1},
@@ -14454,41 +14816,53 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__13);
   __Pyx_GIVEREF(__pyx_tuple__13);
 
-  /* "bcl/bcl.pyx":11
+  /* "bcl/bcl.pyx":16
  * 
  * @cython.boundscheck(False)
  * def HuffmanCompress(unsigned char[:] data):             # <<<<<<<<<<<<<<
  *     out = np.zeros(int(data.shape[0]*1.01 + 320),'uint8')
  *     cdef unsigned char [:] ov = out
  */
-  __pyx_tuple__14 = PyTuple_Pack(6, __pyx_n_s_data, __pyx_n_s_data, __pyx_n_s_out, __pyx_n_s_ov, __pyx_n_s_dsize, __pyx_n_s_nb); if (unlikely(!__pyx_tuple__14)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 11; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_tuple__14 = PyTuple_Pack(6, __pyx_n_s_data, __pyx_n_s_data, __pyx_n_s_out, __pyx_n_s_ov, __pyx_n_s_dsize, __pyx_n_s_nb); if (unlikely(!__pyx_tuple__14)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 16; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_tuple__14);
   __Pyx_GIVEREF(__pyx_tuple__14);
-  __pyx_codeobj__15 = (PyObject*)__Pyx_PyCode_New(1, 0, 6, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__14, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_david_python_microscopy_P, __pyx_n_s_HuffmanCompress, 11, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__15)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 11; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_codeobj__15 = (PyObject*)__Pyx_PyCode_New(1, 0, 6, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__14, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_david_python_microscopy_P, __pyx_n_s_HuffmanCompress, 16, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__15)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 16; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
-  /* "bcl/bcl.pyx":21
+  /* "bcl/bcl.pyx":26
+ * 
+ * @cython.boundscheck(False)
+ * def HuffmanCompressQuant(unsigned short[:] data, float offset, float scale):             # <<<<<<<<<<<<<<
+ *     out = np.zeros(int(data.shape[0]*1.01 + 320),'uint8')
+ *     quant = np.zeros(data.shape[0], 'uint8')
+ */
+  __pyx_tuple__16 = PyTuple_Pack(9, __pyx_n_s_data, __pyx_n_s_offset, __pyx_n_s_scale, __pyx_n_s_out, __pyx_n_s_quant, __pyx_n_s_ov, __pyx_n_s_qv, __pyx_n_s_dsize, __pyx_n_s_nb); if (unlikely(!__pyx_tuple__16)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 26; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_tuple__16);
+  __Pyx_GIVEREF(__pyx_tuple__16);
+  __pyx_codeobj__17 = (PyObject*)__Pyx_PyCode_New(3, 0, 9, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__16, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_david_python_microscopy_P, __pyx_n_s_HuffmanCompressQuant, 26, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__17)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 26; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+
+  /* "bcl/bcl.pyx":38
  * 
  * @cython.boundscheck(False)
  * def HuffmanCompressOrig(unsigned char[:] data):             # <<<<<<<<<<<<<<
  *     out = np.zeros(int(data.shape[0]*1.01 + 320),'uint8')
  *     cdef unsigned char [:] ov = out
  */
-  __pyx_tuple__16 = PyTuple_Pack(6, __pyx_n_s_data, __pyx_n_s_data, __pyx_n_s_out, __pyx_n_s_ov, __pyx_n_s_dsize, __pyx_n_s_nb); if (unlikely(!__pyx_tuple__16)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 21; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_tuple__16);
-  __Pyx_GIVEREF(__pyx_tuple__16);
-  __pyx_codeobj__17 = (PyObject*)__Pyx_PyCode_New(1, 0, 6, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__16, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_david_python_microscopy_P, __pyx_n_s_HuffmanCompressOrig, 21, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__17)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 21; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_tuple__18 = PyTuple_Pack(6, __pyx_n_s_data, __pyx_n_s_data, __pyx_n_s_out, __pyx_n_s_ov, __pyx_n_s_dsize, __pyx_n_s_nb); if (unlikely(!__pyx_tuple__18)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 38; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_tuple__18);
+  __Pyx_GIVEREF(__pyx_tuple__18);
+  __pyx_codeobj__19 = (PyObject*)__Pyx_PyCode_New(1, 0, 6, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__18, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_david_python_microscopy_P, __pyx_n_s_HuffmanCompressOrig, 38, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__19)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 38; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
-  /* "bcl/bcl.pyx":31
+  /* "bcl/bcl.pyx":48
  * 
  * @cython.boundscheck(False)
  * def HuffmanDecompress(unsigned char[:] data, unsigned int outsize):             # <<<<<<<<<<<<<<
  *     out = np.zeros(outsize,'uint8')
  *     cdef unsigned char [:] ov = out
  */
-  __pyx_tuple__18 = PyTuple_Pack(5, __pyx_n_s_data, __pyx_n_s_outsize, __pyx_n_s_out, __pyx_n_s_ov, __pyx_n_s_insize); if (unlikely(!__pyx_tuple__18)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 31; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_tuple__18);
-  __Pyx_GIVEREF(__pyx_tuple__18);
-  __pyx_codeobj__19 = (PyObject*)__Pyx_PyCode_New(2, 0, 5, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__18, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_david_python_microscopy_P, __pyx_n_s_HuffmanDecompress, 31, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__19)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 31; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_tuple__20 = PyTuple_Pack(5, __pyx_n_s_data, __pyx_n_s_outsize, __pyx_n_s_out, __pyx_n_s_ov, __pyx_n_s_insize); if (unlikely(!__pyx_tuple__20)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 48; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_tuple__20);
+  __Pyx_GIVEREF(__pyx_tuple__20);
+  __pyx_codeobj__21 = (PyObject*)__Pyx_PyCode_New(2, 0, 5, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__20, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_david_python_microscopy_P, __pyx_n_s_HuffmanDecompress, 48, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__21)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 48; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
   /* "View.MemoryView":278
  *         return self.name
@@ -14497,9 +14871,9 @@ static int __Pyx_InitCachedConstants(void) {
  * cdef strided = Enum("<strided and direct>") # default
  * cdef indirect = Enum("<strided and indirect>")
  */
-  __pyx_tuple__20 = PyTuple_Pack(1, __pyx_kp_s_strided_and_direct_or_indirect); if (unlikely(!__pyx_tuple__20)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 278; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_tuple__20);
-  __Pyx_GIVEREF(__pyx_tuple__20);
+  __pyx_tuple__22 = PyTuple_Pack(1, __pyx_kp_s_strided_and_direct_or_indirect); if (unlikely(!__pyx_tuple__22)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 278; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_tuple__22);
+  __Pyx_GIVEREF(__pyx_tuple__22);
 
   /* "View.MemoryView":279
  * 
@@ -14508,9 +14882,9 @@ static int __Pyx_InitCachedConstants(void) {
  * cdef indirect = Enum("<strided and indirect>")
  * 
  */
-  __pyx_tuple__21 = PyTuple_Pack(1, __pyx_kp_s_strided_and_direct); if (unlikely(!__pyx_tuple__21)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 279; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_tuple__21);
-  __Pyx_GIVEREF(__pyx_tuple__21);
+  __pyx_tuple__23 = PyTuple_Pack(1, __pyx_kp_s_strided_and_direct); if (unlikely(!__pyx_tuple__23)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 279; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_tuple__23);
+  __Pyx_GIVEREF(__pyx_tuple__23);
 
   /* "View.MemoryView":280
  * cdef generic = Enum("<strided and direct or indirect>")
@@ -14519,9 +14893,9 @@ static int __Pyx_InitCachedConstants(void) {
  * 
  * 
  */
-  __pyx_tuple__22 = PyTuple_Pack(1, __pyx_kp_s_strided_and_indirect); if (unlikely(!__pyx_tuple__22)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 280; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_tuple__22);
-  __Pyx_GIVEREF(__pyx_tuple__22);
+  __pyx_tuple__24 = PyTuple_Pack(1, __pyx_kp_s_strided_and_indirect); if (unlikely(!__pyx_tuple__24)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 280; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_tuple__24);
+  __Pyx_GIVEREF(__pyx_tuple__24);
 
   /* "View.MemoryView":283
  * 
@@ -14530,9 +14904,9 @@ static int __Pyx_InitCachedConstants(void) {
  * cdef indirect_contiguous = Enum("<contiguous and indirect>")
  * 
  */
-  __pyx_tuple__23 = PyTuple_Pack(1, __pyx_kp_s_contiguous_and_direct); if (unlikely(!__pyx_tuple__23)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 283; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_tuple__23);
-  __Pyx_GIVEREF(__pyx_tuple__23);
+  __pyx_tuple__25 = PyTuple_Pack(1, __pyx_kp_s_contiguous_and_direct); if (unlikely(!__pyx_tuple__25)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 283; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_tuple__25);
+  __Pyx_GIVEREF(__pyx_tuple__25);
 
   /* "View.MemoryView":284
  * 
@@ -14541,9 +14915,9 @@ static int __Pyx_InitCachedConstants(void) {
  * 
  * 
  */
-  __pyx_tuple__24 = PyTuple_Pack(1, __pyx_kp_s_contiguous_and_indirect); if (unlikely(!__pyx_tuple__24)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 284; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_tuple__24);
-  __Pyx_GIVEREF(__pyx_tuple__24);
+  __pyx_tuple__26 = PyTuple_Pack(1, __pyx_kp_s_contiguous_and_indirect); if (unlikely(!__pyx_tuple__26)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 284; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_tuple__26);
+  __Pyx_GIVEREF(__pyx_tuple__26);
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -14697,40 +15071,52 @@ PyMODINIT_FUNC PyInit_bcl(void)
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_np, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "bcl/bcl.pyx":11
+  /* "bcl/bcl.pyx":16
  * 
  * @cython.boundscheck(False)
  * def HuffmanCompress(unsigned char[:] data):             # <<<<<<<<<<<<<<
  *     out = np.zeros(int(data.shape[0]*1.01 + 320),'uint8')
  *     cdef unsigned char [:] ov = out
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_3bcl_3bcl_1HuffmanCompress, NULL, __pyx_n_s_bcl_bcl); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 11; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_3bcl_3bcl_1HuffmanCompress, NULL, __pyx_n_s_bcl_bcl); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 16; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_HuffmanCompress, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 11; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_HuffmanCompress, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 16; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "bcl/bcl.pyx":21
+  /* "bcl/bcl.pyx":26
+ * 
+ * @cython.boundscheck(False)
+ * def HuffmanCompressQuant(unsigned short[:] data, float offset, float scale):             # <<<<<<<<<<<<<<
+ *     out = np.zeros(int(data.shape[0]*1.01 + 320),'uint8')
+ *     quant = np.zeros(data.shape[0], 'uint8')
+ */
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_3bcl_3bcl_3HuffmanCompressQuant, NULL, __pyx_n_s_bcl_bcl); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 26; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_HuffmanCompressQuant, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 26; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+  /* "bcl/bcl.pyx":38
  * 
  * @cython.boundscheck(False)
  * def HuffmanCompressOrig(unsigned char[:] data):             # <<<<<<<<<<<<<<
  *     out = np.zeros(int(data.shape[0]*1.01 + 320),'uint8')
  *     cdef unsigned char [:] ov = out
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_3bcl_3bcl_3HuffmanCompressOrig, NULL, __pyx_n_s_bcl_bcl); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 21; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_3bcl_3bcl_5HuffmanCompressOrig, NULL, __pyx_n_s_bcl_bcl); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 38; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_HuffmanCompressOrig, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 21; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_HuffmanCompressOrig, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 38; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "bcl/bcl.pyx":31
+  /* "bcl/bcl.pyx":48
  * 
  * @cython.boundscheck(False)
  * def HuffmanDecompress(unsigned char[:] data, unsigned int outsize):             # <<<<<<<<<<<<<<
  *     out = np.zeros(outsize,'uint8')
  *     cdef unsigned char [:] ov = out
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_3bcl_3bcl_5HuffmanDecompress, NULL, __pyx_n_s_bcl_bcl); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 31; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_3bcl_3bcl_7HuffmanDecompress, NULL, __pyx_n_s_bcl_bcl); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 48; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_HuffmanDecompress, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 31; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_HuffmanDecompress, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 48; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "bcl/bcl.pyx":1
@@ -14763,7 +15149,7 @@ PyMODINIT_FUNC PyInit_bcl(void)
  * cdef strided = Enum("<strided and direct>") # default
  * cdef indirect = Enum("<strided and indirect>")
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__20, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 278; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__22, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 278; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_XGOTREF(generic);
   __Pyx_DECREF_SET(generic, __pyx_t_1);
@@ -14777,7 +15163,7 @@ PyMODINIT_FUNC PyInit_bcl(void)
  * cdef indirect = Enum("<strided and indirect>")
  * 
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__21, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 279; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__23, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 279; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_XGOTREF(strided);
   __Pyx_DECREF_SET(strided, __pyx_t_1);
@@ -14791,7 +15177,7 @@ PyMODINIT_FUNC PyInit_bcl(void)
  * 
  * 
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__22, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 280; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__24, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 280; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_XGOTREF(indirect);
   __Pyx_DECREF_SET(indirect, __pyx_t_1);
@@ -14805,7 +15191,7 @@ PyMODINIT_FUNC PyInit_bcl(void)
  * cdef indirect_contiguous = Enum("<contiguous and indirect>")
  * 
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__23, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 283; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__25, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 283; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_XGOTREF(contiguous);
   __Pyx_DECREF_SET(contiguous, __pyx_t_1);
@@ -14819,7 +15205,7 @@ PyMODINIT_FUNC PyInit_bcl(void)
  * 
  * 
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__24, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 284; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__26, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 284; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_XGOTREF(indirect_contiguous);
   __Pyx_DECREF_SET(indirect_contiguous, __pyx_t_1);
@@ -17174,6 +17560,28 @@ static CYTHON_INLINE __Pyx_memviewslice __Pyx_PyObject_to_MemoryviewSlice_ds_uns
     retcode = __Pyx_ValidateAndInit_memviewslice(axes_specs, 0,
                                                  PyBUF_RECORDS, 1,
                                                  &__Pyx_TypeInfo_unsigned_char, stack,
+                                                 &result, obj);
+    if (unlikely(retcode == -1))
+        goto __pyx_fail;
+    return result;
+__pyx_fail:
+    result.memview = NULL;
+    result.data = NULL;
+    return result;
+}
+
+static CYTHON_INLINE __Pyx_memviewslice __Pyx_PyObject_to_MemoryviewSlice_ds_unsigned_short(PyObject *obj) {
+    __Pyx_memviewslice result = { 0, 0, { 0 }, { 0 }, { 0 } };
+    __Pyx_BufFmt_StackElem stack[1];
+    int axes_specs[] = { (__Pyx_MEMVIEW_DIRECT | __Pyx_MEMVIEW_STRIDED) };
+    int retcode;
+    if (obj == Py_None) {
+        result.memview = (struct __pyx_memoryview_obj *) Py_None;
+        return result;
+    }
+    retcode = __Pyx_ValidateAndInit_memviewslice(axes_specs, 0,
+                                                 PyBUF_RECORDS, 1,
+                                                 &__Pyx_TypeInfo_unsigned_short, stack,
                                                  &result, obj);
     if (unlikely(retcode == -1))
         goto __pyx_fail;

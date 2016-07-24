@@ -13,14 +13,17 @@ if sys.platform == 'win32':
 else:
 	extra_include_dirs = []
 
-#from PYME.misc import cython_numpy_monkey
+from PYME.misc import cython_numpy_monkey
+#import setuptools
+
+#from Cython.Distutils import build_ext
 
 def configuration(parent_package = '', top_path = None):
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
     config = Configuration('bcl', parent_package, top_path)
 
     config.add_extension('bcl',
-        sources=['bcl.pyx', 'src/huffman.c'],
+        sources=['bcl.pyx', 'src/huffman.c', 'quantize.c'],
         include_dirs = ['src', get_numpy_include_dirs()] + extra_include_dirs,
 	extra_compile_args = ['-O3', '-fno-exceptions', '-ffast-math', '-march=native', '-mtune=native'],
         extra_link_args=linkArgs)
