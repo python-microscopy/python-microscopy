@@ -333,7 +333,7 @@ class fitTestJig(object):
         return yv - xv
 
 
-    def plotRes(self, varName, errThreshold=None, nPlotEvents=500, y1range=None):
+    def plotRes(self, varName, showStartParams=True, errThreshold=None, nPlotEvents=500, y1range=None):
         """
         Plot a scatter plot of the fitted vs the simulated values.
 
@@ -385,7 +385,8 @@ class fitTestJig(object):
 
         x_min, x_max = min(sp.min(), xv.min()), max(sp.max(), xv.max())
         
-        plt.plot(xv, sp, '+', label='Start Est')
+        if showStartParams:
+            plt.plot(xv, sp, '+', label='Start Est')
         plt.errorbar(xv, yv, err, fmt='r.', label='Fitted')
         plt.plot(xv, np.clip(yv, 1.2*x_min, 1.2*x_max), 'xg', label='Fitted')
         plt.plot([xv.min(), xv.max()], [xv.min(), xv.max()])
