@@ -13,7 +13,7 @@ if sys.platform == 'win32':
 else:
 	extra_include_dirs = []
 
-from PYME.misc import cython_numpy_monkey
+#from PYME.misc import cython_numpy_monkey
 #import setuptools
 
 #from Cython.Distutils import build_ext
