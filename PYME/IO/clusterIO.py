@@ -347,17 +347,26 @@ if USE_RAW_SOCKETS:
 
         rs = []
 
+        nChunksRemaining = len(files)
+        connection = 'keep-alive'
         #pipeline the sends
         for filename, data in files:
             dl = len(data)
-            header = 'PUT /%s HTTP/1.1\r\nContent-Length: %d\r\n\r\n' % (filename, dl)
+            if nChunksRemaining <= 1:
+                connection = 'close'
+
+            header = 'PUT /%s HTTP/1.1\r\nConnection: %s\r\nContent-Length: %d\r\n\r\n' % (filename, connection, dl)
             s.sendall(header)
             s.sendall(data)
 
-
             datalen += dl
+            nChunksRemaining -= 1
 
-        s.sendall('\r\n')
+        # this causes the far end to close the connection after sending all the replies
+        # it is important for the connection to close, otherwise the subsequent recieves will block forever
+        # TODO: This is probably a bug/feature of SimpleHTTPServer. The correct way of doing this is probably to send
+        # a "Connection: close" header in the last request.
+        # s.sendall('\r\n')
 
         #perform all the recieves at once
         resp = s.recv(4096)
