@@ -21,7 +21,7 @@ class ImageFrameSource(object):
         """Load an image file and then spool"""
         from PYME.IO import image
         
-        self.spoolImage(image.ImageStack(filename).data)
+        self.spoolData(image.ImageStack(filename).data)
         
     def spoolData(self, data):
         """Extract frames from a data source.
