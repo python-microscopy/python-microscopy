@@ -61,7 +61,9 @@ def arrangeNodes(dg):
                 ri = list(dg[si])
                 
                 #assign a y position as the mean of the dependancies y positions
-                yp = np.mean([ips[rr][1] for rr in ri])
+                #yp = np.mean([ips[rr][1] for rr in ri])
+                w = np.array([1.0/(1 + (xc - ips[rr][0])) for rr in ri])
+                yp = np.sum(np.array([ips[rr][1] for rr in ri])*w)/w.sum()
                 ypw.append(1.)
             else:
                 #else assign a position of 0
@@ -76,6 +78,7 @@ def arrangeNodes(dg):
             if si in forward_deps.keys():
                 outputs = forward_deps[si]
                 fd_ys = []
+                fd_ws = []
                 
                 if (isinstance(si, str) or isinstance(si, unicode)):
                     pass
@@ -107,9 +110,12 @@ def arrangeNodes(dg):
                                         gnodes = []
                             
                                     fd_ys += [ips[rr][1] for rr in gnodes if rr in ips.keys()]
+                                    fd_ws += [1.0/(1 + ips[rr][0] - xc) for rr in gnodes if rr in ips.keys()]
                 
-                if len(fd_ys) > 0:                
+                if len(fd_ys) > 0:
                     ypf = np.mean(fd_ys)
+                    #fd_ws = np.array(fd_ws)
+                    #ypf = np.sum(np.array(fd_ys)*fd_ws)/np.sum(fd_ws)
                     
                     #print ypf
     
@@ -118,7 +124,7 @@ def arrangeNodes(dg):
                     else:
                         yp = ypf
             
-            print yp, ypf            
+            #print yp, ypf
             yps.append(yp)
             ypfs.append(ypf)
             
@@ -182,6 +188,125 @@ def arrangeNodes(dg):
         yvs.append(yest[np.argsort(yest)])
         
     return ips, yvs
+
+
+def _vertCost(yvs, vert_neighbours, ysize=1.0):
+    #ynn = [yvs[n] for n in vert_neighbours]
+
+    cost = []
+    for y, n in zip(yvs, vert_neighbours):
+        c = np.max(np.max(y - (yvs[n] - ysize)), 0)*np.max(np.max(-y + (yvs[n] + ysize)), 0)
+        cost.append(c)
+
+    return np.array(cost)
+
+def _vertForce(yvs, vert_neighbours, ysize=1.0):
+    #ynn = [yvs[n] for n in vert_neighbours]
+
+    force = 0*yvs
+    for i, y, n in zip(xrange(len(yvs)), yvs, vert_neighbours):
+        if len(n) > 0:
+            yn = yvs[n]
+            f1 = np.sum(np.max(y - (yn + ysize), 0)*(y < (yn + ysize)))
+            f2 = np.sum(np.max(-y + (yn - ysize), 0)*(y > (yn - ysize)))
+
+            ft = f1*f2
+            if (ft) > 0:
+                c = (2.0*(f1 > f2) - 1)
+                force[i] = c
+
+    return force
+
+def __edgeCost(yvs, xvs, edges):
+    dy = np.diff(yvs[edges],1)
+    dx = np.diff(xvs[edges],1)
+
+    return np.sqrt(dx*dx + dy*dy)
+
+def _edgeForce(yvs, xvs, edges):
+    force = 0*yvs
+    for x, y, e, i in zip(xvs, yvs, edges, xrange(len(yvs))):
+        dx = x - xvs[e]
+        dy = y - yvs[e]
+
+        r = np.sqrt(dx*dx + dy*dy)
+        force[i] = np.sum(-dy/r)
+
+    return force
+
+def _totForce(yvs, xvs, edges, vert_neighbours, vsize=1.0):
+    return _vertForce(yvs, vert_neighbours, ysize=1.0) + _edgeForce(yvs, xvs, edges)
+
+
+
+def _totCost(yvs, xvs, edges, vert_neighbours, vsize=1.0):
+    return _vertCost(yvs, vert_neighbours, ysize=1.0).sum() + _edgeCost(yvs, xvs, edges).sum()
+
+
+def arrangeNodes_(dg):
+    ts = list(toposort.toposort(dg))
+    xc = 0
+    ips = {}
+
+    i = 0
+
+    yvs = []
+    xvs = []
+    nodes = []
+
+    vert_neighbours = []
+
+    node_nums = {}
+
+    edge_db = {}
+    edges = []
+
+
+    #ts gives a list of all the steps of the computation
+    for step in ts:
+        #iterate over the steps
+        step = list(step)
+
+        yis = []
+        #loop over items to be calculated at each step
+        #and work out a preferred position
+        for si in step:
+            xvs.append(xc)
+            yvs.append(np.random.randn())
+            nodes.append(si)
+
+            node_nums[si] = i
+            yis.append(i)
+
+            #see what the dependancies of this item are
+            #record the edges
+            if si in dg.keys():
+                ri = list(dg[si])
+                for r in ri:
+                    n = node_nums[r]
+                    edges.append((n, i))
+
+                    old_edges = edge_db.get(i, [])
+                    edge_db[i] = old_edges + [n,]
+
+                    old_edges = edge_db.get(n, [])
+                    edge_db[n] = old_edges + [i, ]
+
+            i += 1
+
+        for yi in yis:
+            vert_neighbours.append([yi_ for yi_ in yis if not yi_  == yi])
+
+        #vert_neighbours.append(yis)
+
+        xc += 1
+
+    edgel = [edge_db[k] for k in range(i)]
+
+    return np.array(xvs), np.array(yvs), nodes, vert_neighbours, edgel, edges
+
+
+
     
 def drawGraph(dg):
     ips = arrangeNodes(dg)
