@@ -11,7 +11,7 @@ Defines a 'wire' format for transmitting or saving image frame data.
 import numpy as np
 
 #try:
-from PYME.contrib.bcl import bcl
+from pymecompress import bcl
 
 from multiprocessing.pool import ThreadPool
 from multiprocessing import cpu_count
