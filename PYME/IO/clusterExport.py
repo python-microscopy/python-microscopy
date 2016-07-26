@@ -91,7 +91,7 @@ SERIES_PATTERN = '%(day)d_%(month)d_series_%(counter)'
 
 def _getFilenameSuggestion(dirname='', seriesname = SERIES_PATTERN):
     from PYME.IO.FileUtils import nameUtils
-    from PYME.ParallelTasks import clusterIO
+    from PYME.IO import clusterIO
     import os
     
     if dirname == '':   

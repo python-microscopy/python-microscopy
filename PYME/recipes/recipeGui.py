@@ -40,7 +40,7 @@ def _path_lh(y, yprev, ygoal, yvs, ytol):
     d_ygoal = (y-ygoal)**2
     d_obstructions = (((y-yvs)/ytol)**2).min()
     
-    return 3*d_yprev*(d_yprev < .3**2) + 0*d_ygoal - 10*d_obstructions*(d_obstructions < 1)
+    return 10*d_yprev*(d_yprev < .3**2) + 0*d_ygoal - 10*d_obstructions*(d_obstructions < 1)
     
 def _path_v_lh(x, xtarget, y, vlines, vdir):
     d_x = np.array([((x - vl[0,0])/0.1)**2 for vl in vlines])
@@ -74,6 +74,7 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
         ips, yvs = depGraph.arrangeNodes(dg)
         
         yvs = [list(yi) for yi in yvs]
+        yvs_e = [{} for yi in yvs]
         yvtol = [list(0*np.array(yi) + .35) for yi in yvs]
         
         axisWidth = self.ax.get_window_extent().width
@@ -160,9 +161,16 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
                     
                     for i, x_i in enumerate(range(x0+1, x1, 2)):
                         #print i, x_i
-                        yvo = 1.0*yv_[-1]
-                        yn = optimize.fmin(_path_lh, yvo, (yvo, y1, np.array(yvs[x_i]), np.array(yvtol[x_i])), disp=0)[0]
+                        yvo = 1.0 * yv_[-1]
+                        try:
+                            yn = yvs_e[x_i][e]
+                            recycling_y = True
+                        except KeyError:
+                            yn = optimize.fmin(_path_lh, yvo+.02*np.random.randn(), (yvo, y1, np.array(yvs[x_i]), np.array(yvtol[x_i])), disp=0)[0]
+                            recycling_y = False
+
                         xn = x_i -.4
+
                         #find vertical lines which might interfere
                         vl = [l[0] for l in vlines[x_i] if (not l[1] == e) and (max(yn, yvo) > (min(l[0][1,:]) - .05)) and (min(yn, yvo) < (max(l[0][1,:]) + .05))]
                         if len(vl) > 0:
@@ -175,11 +183,16 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
                             xv_.append(xn)
                             vlines[x_i].append((np.array([[xn, xn], [yvo, yn]]), e))
                             #print np.array([[xn, xn], [yvo, yn]])[1,:]
-                            yvs[x_i].append(yn)
-                            yvtol[x_i].append(.1)
+
+                            if not recycling_y:
+                                yvs[x_i].append(yn)
+                                yvs_e[x_i][e] = yn
+                                yvtol[x_i].append(.1)
                         else:
-                            yvs[x_i].append(yvo)
-                            yvtol[x_i].append(.1)
+                            if not recycling_y:
+                                yvs[x_i].append(yvo)
+                                yvs_e[x_i][e] = yvo
+                                yvtol[x_i].append(.1)
                             
                     
                     xn = x1 -.4    
