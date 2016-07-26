@@ -1,7 +1,8 @@
 :: "%PYTHON%" setup.py build_ext -c mingw32
 "%PYTHON%" setup.py install
 
-"%PYTHON%" pymecompress\setup.py install --compiler=mingw32
+"%PYTHON%" pymecompress\setup.py build --compiler=mingw32
+"%PYTHON%" pymecompress\setup.py install 
 
 if errorlevel 1 exit 1
 
