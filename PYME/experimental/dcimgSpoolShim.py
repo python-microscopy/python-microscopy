@@ -70,7 +70,7 @@ class DCIMGSpoolShim:
         MetaDataHandler.provideStartMetadata.append(self.metadataSource)
 
         #generate the spooler
-        self.spooler = HTTPSpooler.Spooler(filename, self.imgSource.onFrame) #, frameShape = FIXME)
+        self.spooler = HTTPSpooler.Spooler(filename, self.imgSource.onFrame, frameShape=None)
 
         #spool our data
         self.spooler.StartSpool()
