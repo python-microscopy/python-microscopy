@@ -38,13 +38,16 @@ class venerableFileChucker:
                     self.spooler.OnDCIMGChunkDetected(chunkPath)
                     if delAfterSpool:
                         os.remove(chunkPath)
-
+                # spool events.json
+                events = self.flist[np.where(np.bitwise_and([fileName.endswith('_events.json') for fileName in self.flist],
+                                   [fileName.startswith(mdFile.strip('.json')) for fileName in self.flist]))]
+                eventsPath = os.path.join(self.folder, events[0])
+                self.spooler.OnSeriesComplete(eventsPath)
                 # TODO: Add Feedback from cluster and also speed up writing in cluster
-                # time.sleep(10)
-                self.spooler.OnSeriesComplete()
+                # time.sleep(10)              
                 if delAfterSpool:
                     os.remove(mdPath)
-
+                    os.remove(eventsPath)
 
         ignoreList = mdList
 
@@ -55,7 +58,9 @@ class venerableFileChucker:
             try:
                 mdList = self.flist[np.where(np.bitwise_and([fileName.endswith('.json') for fileName in self.flist],
                                 np.invert([fileName.endswith('_events.json') for fileName in self.flist])))]
-                mdFile = list(set(mdList).difference(set(ignoreList)))[0]
+                mdList = list(set(mdList).difference(set(ignoreList)))
+                mdList.sort(reverse=True)
+                mdFile = mdList[0]
                 mdPath = os.path.join(self.folder, mdFile)
                 self.spooler.OnNewSeries(mdPath)
                 breaker = None
@@ -74,7 +79,7 @@ class venerableFileChucker:
                         # time.sleep(1)
                         if delAfterSpool:
                             # TODO: update this to only delete files if they are sent successfully
-                            os.remove(os.path.join(chunkPath))
+                            os.remove(chunkPath)
 
                     except IndexError:
                         # this means we have sent off all chunks. will still raise other errors
@@ -82,16 +87,13 @@ class venerableFileChucker:
                             # Check if events file is ready
                             events_log = events[0]
                             breaker = True
+                            eventsPath = os.path.join(self.folder, events_log)
+                            self.spooler.OnSeriesComplete(eventsPath)
                             if delAfterSpool:
-                                os.remove(os.path.join(self.folder, mdFile))
-                                os.remove(os.path.join(self.folder, events_log))
+                                os.remove(mdPath)
+                                os.remove(eventsPath)
                         except IndexError:
                             pass
-
-
-                self.spooler.OnSeriesComplete()
-                if delAfterSpool:
-                    os.remove(mdPath)
 
             except:
                 pass
