@@ -61,9 +61,9 @@ def tqPopFcn(workerN, NWorkers, NTasks):
 class fitResult(taskDef.TaskResult):
     def __init__(self, task, results, driftResults):
         taskDef.TaskResult.__init__(self, task)
-        self.index = task.index
-        self.results = results
-        self.driftResults = driftResults
+        self.index = task.index #the task number so that the taskQueue know which task this was (used to manage the list of in-progress tasks)
+        self.results = results # a numpy ndarray with the positions of the fitted molecules
+        self.driftResults = driftResults # a numpy ndarray with the positions of fiducials used to track drift
 
 class BufferManager(object):
     """Keeps track of data sources and buffering over individual fitTask instances"""

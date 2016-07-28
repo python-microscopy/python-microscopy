@@ -1,0 +1,64 @@
+<!doctype html>
+<html class="no-js" lang="">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <title></title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+        <link rel="stylesheet" href="css/normalize.min.css">
+        <link rel="stylesheet" href="css/main.css">
+
+        <script src="js/vendor/modernizr-2.8.3.min.js"></script>
+    </head>
+    <body>
+        <!--[if lt IE 8]>
+            <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+        <![endif]-->
+        <div class="content">
+            <h2>PYME Profile Viewer</h2>
+
+            <div class="usage">
+                <b>Usage</b>
+                <p>The profile viewer allows us to visualize multi-threaded call traces made using the fProfile module.
+                Before viewing, these traces must be converted from their original raw .txt output to a .json format
+                that has re-built the call tree. This is accomplished by using the convertProfile.py script</p>
+                <ul>
+                    <li>Each line represents the activity of a single thread</li>
+                    <li>The top condensed rows show an overview the entire process duration. Selecting a region/ "brush" in these
+                    rows restricts the time window of the low, detail views. Make this selection by dragging with the mouse within
+                    the upper rows.</li>
+                    <li>Each block corresponds to a single function call. Hovering over a block shows the method name
+                    and the source file it is defined in. <span class="note">NOTE: only those method calls matching the
+                            regex used when running fProfile are shown.</span></li>
+                </ul>
+                <p></p>
+            </div>
+
+
+            <form>
+                <p>Please specify the .json formatted profile file to use</p>
+                <input type="file" name="datafile" size="200" id="file_upload" onchange="OnFileUpload()">
+                <div id="load_status"></div>
+            </form>
+
+            <hr>
+            <br>
+
+            <div class="profile_view">
+                <div id="chart_d3"/>
+                <div id="info"/>
+            </div>
+
+        </div>
+
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+        <script>window.jQuery || document.write('<script src="js/vendor/jquery-1.11.2.min.js"><\/script>')</script>
+        <script src="//d3js.org/d3.v3.min.js"></script>
+        <script src="js/plugins.js"></script>
+        <script src="js/main.js"></script>
+
+    </body>
+</html>

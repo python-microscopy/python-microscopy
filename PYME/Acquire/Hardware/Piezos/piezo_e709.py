@@ -23,6 +23,7 @@
 
 import serial;
 import time
+import logging
 
 class piezo_e709:    
     def __init__(self, portname='COM1', maxtravel = 400.00, Osen=None, hasTrigger=False):
@@ -241,7 +242,7 @@ class piezo_e709T(object):
                 self.errCode = int(self.ser_port.readline())
                 
                 if not self.errCode == 0:
-                    print(('Stage Error: %d' %self.errCode))
+                    logging.info(('Stage Error: %d' %self.errCode))
                 
                 #print self.targetPosition, self.stopMove
                 
@@ -272,7 +273,8 @@ class piezo_e709T(object):
         
                     self.ser_port.write('MOV Z %3.9f\n' % (pos[0], ))
                     self.lastTargetPosition = pos.copy()
-                    print('p')
+                    #print('p')
+                    logging.debug('Moving piezo to target: %f' % (pos[0],))
                     
                 #check to see if we're on target
                 self.ser_port.write('ONT? Z\n')
@@ -292,11 +294,17 @@ class piezo_e709T(object):
                 self.stopMove = False
                 self.lock.release()
                 
+        #close port on loop exit
+        self.ser_port.close()
+        logging.info("Piezo serial port closed")
+        
+                
     def close(self):
         print "Shutting down piezo"
         with self.lock:
             self.loopActive = False
-            self.ser_port.close()            
+            #time.sleep(.01)
+            #self.ser_port.close()            
                 
         
     def SetServo(self, state=1):

@@ -37,7 +37,7 @@ entry_points={
         #'taskServerZC = PYME.ParallelTasks.taskServerZC:main',
         #'taskWorkerZC = PYME.ParallelTasks.taskWorkerZC:main',
         'fitMonP = PYME.ParallelTasks.fitMonP:main',
-        'bakeshop = PYME.Analysis.Modules.bakeshop:main',
+        'bakeshop = PYME.recipes.bakeshop:main',
     ]
 }
 

@@ -85,6 +85,13 @@ def exists(seriesName):
 #a "safe" maximum number of nodes that could access data
 NUM_POLL_THREADS = 10
 
+defaultCompSettings = {
+    'compression' : PZFFormat.DATA_COMP_HUFFCODE,
+    'quantization' : PZFFormat.DATA_QUANT_SQRT,
+    'quantizationOffset' : 0.0,
+    'quantizationScale' : 1.0
+}
+
 class Spooler(sp.Spooler):
     def __init__(self, filename, frameSource, frameShape, **kwargs):
         
@@ -103,6 +110,9 @@ class Spooler(sp.Spooler):
         
         self.postQueue = Queue.Queue()
         self.dPoll = True
+        self._lock = threading.Lock()
+
+        self.numThreadsProcessing = 0
         
         self.pollThreads = []
         for i in range(NUM_POLL_THREADS):
@@ -117,23 +127,43 @@ class Spooler(sp.Spooler):
         self.md['imageID'] = self.sequenceID  
         
         sp.Spooler.__init__(self, filename, frameSource, **kwargs)
-        
+
+        self._lastFrameTime = 1e12
+
+        self.compSettings = {}
+        self.compSettings.update(defaultCompSettings)
+        try:
+            self.compSettings.update(kwargs['compressionSettings'])
+        except KeyError:
+            pass
             
     def _queuePoll(self):
-        while self.dPoll:            
-            data = self.postQueue.get()
-            
-            files = []
-            for imNum, frame in data:
-                fn = '/'.join([self.seriesName, 'frame%05d.pzf' % imNum])
-                pzf = PZFFormat.dumps(frame, sequenceID=self.sequenceID, frameNum = imNum, compression='huffman')
-                
-                files.append((fn, pzf))
-                
-            if len(files) > 0:
-                clusterIO.putFiles(files)
-                
-            time.sleep(.01)
+        while self.dPoll:
+            try:
+                data = self.postQueue.get_nowait()
+
+                with self._lock:
+                    self.numThreadsProcessing += 1
+
+                try:
+                    files = []
+                    for imNum, frame in data:
+                        fn = '/'.join([self.seriesName, 'frame%05d.pzf' % imNum])
+                        pzf = PZFFormat.dumps(frame, sequenceID=self.sequenceID, frameNum = imNum, **self.compSettings)
+
+                        files.append((fn, pzf))
+
+                    if len(files) > 0:
+                        clusterIO.putFiles(files)
+
+                finally:
+                    with self._lock:
+                        self.numThreadsProcessing -= 1
+
+                time.sleep(.01)
+                #print 't', len(data)
+            except Queue.Empty:
+                time.sleep(.01)
 
         
     def getURL(self):
@@ -155,11 +185,17 @@ class Spooler(sp.Spooler):
         clusterIO.putFile(self.seriesName  + '/events.json', self.evtLogger.to_JSON())
         
         
-    def OnFrame(self, sender, frameData, **kwargs): 
-        self.buffer.append((self.imNum, frameData.reshape(1,frameData.shape[0],frameData.shape[1]).copy()))
+    def OnFrame(self, sender, frameData, **kwargs):
+        # NOTE: copy is now performed in frameWrangler, so we don't need to worry about it here
+        self.buffer.append((self.imNum, frameData.reshape(1,frameData.shape[0],frameData.shape[1])))
 
-        if len(self.buffer) >= self.buflen:
+        #print len(self.buffer)
+        t = time.time()
+
+        #purge buffer if more than  self.buflen frames have been added, or more than 1 second elapsed
+        if (len(self.buffer) >= self.buflen) or ((t - self._lastFrameTime) > 1):
             self.FlushBuffer()
+            self._lastFrameTime = t
         
         sp.Spooler.OnFrame(self)
       

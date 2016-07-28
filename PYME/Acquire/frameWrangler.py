@@ -148,7 +148,9 @@ class FrameWrangler(wx.EvtHandler):
             self.getFrame()
 
             #notify anyone who cares that we've just got a new frame
-            self.onFrame.send(sender=self, frameData=self.dsa)
+            ### NEW: now send a copy so that receivers don't need to copy it. This results in a) more predictable behaviour
+            # and b) sets the stage for passing raw frames to spoolers without any copying
+            self.onFrame.send(sender=self, frameData=self.dsa.copy())
         except:
             import traceback
             traceback.print_exc()

@@ -180,7 +180,8 @@ class AndorBase(SDK3Camera):
         self._fixed_ROIs = not self.FullAOIControl.isImplemented() or not self.FullAOIControl.getValue()
         self.noiseProps = self.NoiseProperties[self.GetGainMode()] # gain mode has been set via EMGain above
 
-        # this one to deal with the requirement to have width divisible by 10
+        self.SetIntegTime(.100)
+        
         if not self._fixed_ROIs:
             self.SetROI(0,0, self.GetCCDWidth(), self.GetCCDHeight())
         #set up polling thread        

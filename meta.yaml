@@ -126,7 +126,7 @@ requirements:
     - python
     - numpy x.x
     - matplotlib
-    #- mingw # [win]
+    #- mingw  [win]
   # Packages required to run the package. These are the dependencies that
   # will be installed automatically whenever the package is installed.
   # Package names should be any valid conda spec (see "Specifying versions
@@ -157,6 +157,7 @@ requirements:
     - pandas
     - yaml
     - dispatch
+    - pymecompress
 
   #unfortunately not availible through conda on windows ##FIXME
 

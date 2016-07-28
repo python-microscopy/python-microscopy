@@ -95,7 +95,9 @@ class Spooler(sp.Spooler):
           return
           
       #self.tq.postTask(cSMI.CDataStack_AsArray(caller.ds, 0).reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()), self.seriesName)
-      self.buffer.append(frameData.reshape(1,frameData.shape[0],frameData.shape[1]).copy())
+
+      # NOTE: copy is now performed in frameWrangler, so we don't need to worry about it here
+      self.buffer.append(frameData.reshape(1,frameData.shape[0],frameData.shape[1]))
 
       if self.imNum == 0: #first frame
           self.md.setEntry('imageID', fileID.genFrameID(self.buffer[-1].squeeze()))

@@ -247,6 +247,49 @@ class ImageCumulativeHistogram(ModuleBase):
             res.mdh = v.mdh
         
         namespace[self.outputName] = res
+
+@register_module('BinnedHistogram')
+class BinnedHistogram(ModuleBase):
+    """Calculates a histogram of a given measurement key, binned by a separate value"""
+    inputImage = CStr('input')
+    binBy = CStr('indepvar')
+    outputName = CStr('hist')
+    inputMask = CStr('')
+
+    nbins = Int(50)
+    left = Float(0.)
+    right = Float(1000)
+
+    def execute(self, namespace):
+        from PYME.Analysis import binAvg
+
+        v = namespace[self.inputImage]
+        vals = v.data[:, :, :].ravel()
+
+        binby = namespace[self.binBy]
+        binby = binby.data[:,:,:].ravel()
+
+        if not self.inputMask == '':
+            m = namespace[self.inputMask].data[:, :, :].ravel() > 0
+
+            vals = vals[m]
+            binby = binby[m]
+
+        #mask out NaNs
+        m2 = ~np.isnan(vals)
+        vals = vals[m2]
+        binby = binby[m2]
+
+        edges = np.linspace(self.left, self.right, self.nbins)
+
+        bn, bm, bs = binAvg.binAvg(binby, vals, edges)
+
+        res = pd.DataFrame({'bins': 0.5*(edges[:-1] + edges[1:]), 'counts': bn, 'means' : bm})
+        if 'mdh' in dir(v):
+            res.mdh = v.mdh
+
+        namespace[self.outputName] = res
+
         
 
 @register_module('Measure2D') 
@@ -259,7 +302,7 @@ class Measure2D(ModuleBase):
     measureContour = Bool(True)    
         
     def execute(self, namespace):       
-        labels = namespace[self.inputLabels]
+        labels = namespace[self.inputLabels].astype('i')
         
         #define the measurement class, which behaves like an input filter        
         class measurements(inpFilt.inputFilter):
