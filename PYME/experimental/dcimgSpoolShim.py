@@ -88,9 +88,16 @@ class DCIMGSpoolShim:
         self.imgSource.spoolData(croppedChunk)
         self.spooler.FlushBuffer()
 
-    def OnSeriesComplete(self):
+    def OnSeriesComplete(self, eventsFilename):
         '''Called when the series is finished (ie we have seen)
         the events file'''
+        # Update event Log with events.json
+        with open(eventsFilename, 'r') as f:
+             events = json.load(f)
+        log_start_frame_eachz = events.keys()[0]
+        start_frame_eachz = events.values()[0]
+        self.spooler.evtLogger.logEvent(eventName=log_start_frame_eachz, eventDescr=start_frame_eachz)
+        
         self.spooler.StopSpool()
         self.spooler.FlushBuffer()
 
