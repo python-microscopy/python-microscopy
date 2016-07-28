@@ -556,20 +556,6 @@ class ImageStack(object):
             elif filename.endswith('.dbl'): #Bewersdorf lab STED
                 mdfn = filename[:-4] + '.txt'
                 entrydict = {}
-
-                try: #try to read in extra metadata if possible
-                    with open(mdfn, 'r') as mf:
-                        for line in mf:
-                            s = line.split(':')
-                            if len(s) == 2:
-                                entrydict[s[0]] = s[1]
-
-                except IOError:
-                    pass
-
-            elif filename.endswith('.dbl'): #Bewersdorf lab STED
-                mdfn = filename[:-4] + '.txt'
-                entrydict = {}
                 
                 try: #try to read in extra metadata if possible
                     with open(mdfn, 'r') as mf:
