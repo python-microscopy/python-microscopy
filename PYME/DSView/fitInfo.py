@@ -85,7 +85,7 @@ class FitInfoPanel(wx.Panel):
 
         #print nl
 
-        if index:
+        if not index is None:
             index = int(index)
             r = self.fitResults[index]
             #print r
@@ -319,7 +319,7 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
 #            self.subplot1.plot(ed[:-1], a/float(numpy.diff(ed[:2])), color='b' )
 #            self.subplot1.set_xticks([0, ed.max()])
 #            self.subplot1.set_yticks([0, numpy.floor(a.max()/float(numpy.diff(ed[:2])))])
-            if i:
+            if not i is None:
                 fri = self.fitResults[i]
                 #print fri
                 #print fri['tIndex'], slice(*fri['slicesUsed']['x']), slice(*fri['slicesUsed']['y'])
