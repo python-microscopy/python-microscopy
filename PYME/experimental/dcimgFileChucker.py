@@ -3,7 +3,6 @@
 import os
 import numpy as np
 import PYME.experimental.dcimgSpoolShim as DCIMGSpool
-import time
 
 class venerableFileChucker:
     """
