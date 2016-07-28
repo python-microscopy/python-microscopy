@@ -539,7 +539,20 @@ class ImageStack(object):
                         self.mdh.copyEntriesFrom(omemdh)
                     except IndexError:
                         pass
-                
+
+            elif filename.endswith('.dcimg'): #Bewersdorf lab Biplane
+                # FIXME load seriesXX.json for seriesXX_chunkXX.dcimg files more elegantly
+                jsonfn = filename[:-22] + '.json'
+
+                import json
+                try:
+                    with open(jsonfn, 'r') as f:
+                        mdd = json.load(f)
+                        self.mdh.update(mdd)
+
+                except IOError:
+                    pass
+
             elif filename.endswith('.dbl'): #Bewersdorf lab STED
                 mdfn = filename[:-4] + '.txt'
                 entrydict = {}
