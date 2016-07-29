@@ -207,13 +207,17 @@ def _vertForce(yvs, vert_neighbours, ysize=1.0):
     for i, y, n in zip(xrange(len(yvs)), yvs, vert_neighbours):
         if len(n) > 0:
             yn = yvs[n]
-            f1 = np.sum(np.max(y - (yn + ysize), 0)*(y < (yn + ysize)))
-            f2 = np.sum(np.max(-y + (yn - ysize), 0)*(y > (yn - ysize)))
+            #f1 = np.sum(np.max(y - (yn + ysize), 0)*(y < (yn + ysize)))
+            #f2 = np.sum(np.max(-y + (yn - ysize), 0)*(y > (yn - ysize)))
 
-            ft = f1*f2
-            if (ft) > 0:
-                c = (2.0*(f1 > f2) - 1)
-                force[i] = c
+            #ft = f1*f2
+            #if (ft) > 0:
+            #    c = (2.0*(f1 > f2) - 1)
+            #    force[i] = c
+
+            #force[i] = np.sum(1.0*(y>yn)*(y<(yn+ysize)) - 1.0*(y<=yn)*(y>(yn-ysize)))
+
+            force[i] = np.sum(0.5*(1 + np.tanh((-abs(y-yn) + ysize)*5))*(2.0*(y>yn) - 1))
 
     return force
 
@@ -230,12 +234,14 @@ def _edgeForce(yvs, xvs, edges):
         dy = y - yvs[e]
 
         r = np.sqrt(dx*dx + dy*dy)
-        force[i] = np.sum(-dy/r)
+        force[i] = np.sum(-dy/r*r)/np.sum(1.0/r)
+        #mi = np.argmax(abs(dy)/r)
+        #force[i] = -dy[mi]/r[mi]
 
     return force
 
-def _totForce(yvs, xvs, edges, vert_neighbours, vsize=1.0):
-    return _vertForce(yvs, vert_neighbours, ysize=1.0) + _edgeForce(yvs, xvs, edges)
+def _totForce(yvs, xvs, edges, vert_neighbours, vsize=1.0, vert_weight=1.0):
+    return vert_weight*_vertForce(yvs, vert_neighbours, ysize=1.0) + _edgeForce(yvs, xvs, edges)
 
 
 
