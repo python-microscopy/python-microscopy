@@ -83,7 +83,7 @@ class DCIMGSpoolShim:
             raise UserWarning('dcimg file is taking too long to finish writing')
 
         chunk = DcimgDataSource.DataSource(chunkFilename)
-        croppedChunk = MultiviewDataSource.DataSource(chunk)
+        croppedChunk = MultiviewDataSource.DataSource(chunk, self.mdh)
 
         self.imgSource.spoolData(croppedChunk)
         self.spooler.FlushBuffer()
