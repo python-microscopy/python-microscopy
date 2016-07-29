@@ -48,18 +48,33 @@ CROP_INFO_YU = {
 
 class DataSource(BaseDataSource):
     moduleName = 'MultiviewDataSource'
-    def __init__(self, dataSource, mdh=CROP_INFO_YU):
+    def __init__(self, dataSource, croppingInfo):
+        """
+        Create a new Multiview data source in which multiple ROIs are cropped from an original image and concatenated. Used principally for cutting 
+        horizontally spaced ROIs out of a vertical band of the sCMOS chip, where there is dark space between the images and we want to avoid saving
+        and transmitting this dark data.
+        
+        Parameters
+        ==========
+        dataSource : PYME.IO.DataSources.X data source object
+            The DataSource to crop from
+        croppingInfo : "dictionary like" object
+            Information about how to crop the image. Can either be a dictionary, or something which behaves like a dictionary (e.g. a MetaDataHandler).
+            The cropping info should define the keys defined in CROP_INFO_YU above.
+        
+        """
         self.ds = dataSource
+        self.croppingInfo = croppingInfo
 
-        self.numROIs = mdh['Multiview.NumROIs']
-        self.roiSizeX, self.roiSizeY = mdh['Multiview.ROISize']
+        self.numROIs = croppingInfo['Multiview.NumROIs']
+        self.roiSizeX, self.roiSizeY = croppingInfo['Multiview.ROISize']
 
         #set vertical ROI size to the minimum of the specified vertical ROI size and the
         #vertical size of the raw data. This allows us to re-use roi settings even if 
         #we have set a smaller vertical ROI on the camera
         self.roiSizeY = min(self.roiSizeY, self.ds.getSliceShape()[1])
 
-        self.viewOrigins = [mdh['Multiview.ROI%dOrigin' % i] for i in range(self.numROIs)]
+        self.viewOrigins = [croppingInfo['Multiview.ROI%dOrigin' % i] for i in range(self.numROIs)]
         
     def getSlice(self, ind):            
         f = self.ds.getSlice(ind)
