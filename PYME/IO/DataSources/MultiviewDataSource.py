@@ -48,19 +48,18 @@ CROP_INFO_YU = {
 
 class DataSource(BaseDataSource):
     moduleName = 'MultiviewDataSource'
-    def __init__(self, dataSource, croppingInfo=CROP_INFO_YU):
+    def __init__(self, dataSource, mdh):
         self.ds = dataSource
-        self.cropInfo = croppingInfo
 
-        self.numROIs = self.cropInfo['Multiview.NumROIs']
-        self.roiSizeX, self.roiSizeY = self.cropInfo['Multiview.ROISize']
+        self.numROIs = mdh['Multiview.NumROIs']
+        self.roiSizeX, self.roiSizeY = mdh['Multiview.ROISize']
 
         #set vertical ROI size to the minimum of the specified vertical ROI size and the
         #vertical size of the raw data. This allows us to re-use roi settings even if 
         #we have set a smaller vertical ROI on the camera
         self.roiSizeY = min(self.roiSizeY, self.ds.getSliceShape()[1])
 
-        self.viewOrigins = [self.cropInfo['Multiview.ROI%dOrigin' % i] for i in range(self.numROIs)]
+        self.viewOrigins = [mdh['Multiview.ROI%dOrigin' % i] for i in range(self.numROIs)]
         
     def getSlice(self, ind):            
         f = self.ds.getSlice(ind)
