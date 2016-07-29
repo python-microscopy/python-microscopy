@@ -48,7 +48,7 @@ CROP_INFO_YU = {
 
 class DataSource(BaseDataSource):
     moduleName = 'MultiviewDataSource'
-    def __init__(self, dataSource, mdh):
+    def __init__(self, dataSource, mdh=CROP_INFO_YU):
         self.ds = dataSource
 
         self.numROIs = mdh['Multiview.NumROIs']
