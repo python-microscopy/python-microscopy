@@ -258,7 +258,7 @@ def loads(datastring):
         #quantized data is always 8 bit
         outsize = w * h * d
     else:
-        outsize = w*h*d*DATA_FMTS[header['DataFormat']]
+        outsize = w*h*d*DATA_FMTS_SIZES[header['DataFormat']]
     
     data_s = datastring[HEADER_LENGTH:]
 
