@@ -98,8 +98,15 @@ class venerableFileChucker:
 
 
 if __name__ == "__main__":
-    #TODO: add testfolder, spoolOnlyNew, and deleteAfterSpool as command line arguments
-    testFolder = 'C:\PYMEtestData\\2016_6_15_DIMCG_with_JSON'
-    searcher = venerableFileChucker(testFolder)
-    # searcher.searchAndHuck(onlySpoolNew=True, delAfterSpool=None)
-    searcher.searchAndHuck()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-n', dest='onlySpoolNew', action='store_true',
+                        help='Only spool new files as they are saved')
+    parser.add_argument('-d', dest='delAfterSpool', action='store_true',
+                        help='Delete files after they are spooled to the cluster')
+    parser.add_argument('testFolder', metavar='testFolder', type=str,
+                        help='Folder for fileChucker to monitor')
+    args = parser.parse_args()
+
+    searcher = venerableFileChucker(args.testFolder)
+    searcher.searchAndHuck(args.onlySpoolNew, args.delAfterSpool)
