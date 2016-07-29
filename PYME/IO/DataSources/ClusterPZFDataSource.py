@@ -31,7 +31,8 @@ from .BaseDataSource import BaseDataSource
 #import cPickle as pickle
 import time
 import json
-
+import pandas as pd
+import numpy as np
 SHAPE_LIFESPAN = 30
 
 from PYME.IO import clusterIO
@@ -87,7 +88,15 @@ class DataSource(BaseDataSource):
     def getEvents(self):
         eventFileName = self.sequenceName + '/events.json'
         try:
-            return json.loads(clusterIO.getFile(eventFileName, self.clusterfilter))
+            #return json.loads(clusterIO.getFile(eventFileName, self.clusterfilter))
+            ev = pd.read_json(clusterIO.getFile(eventFileName, self.clusterfilter))
+            ev.columns = ['EventName', 'EventDescr', 'Time']
+
+            evts = np.empty(len(ev), dtype=[('EventName', 'S32'), ('EventDescr', 'S256'), ('Time', 'f8')])
+            evts['EventName'] = ev['EventName']
+            evts['EventDescr'] = ev['EventDescr']
+            evts['Time'] = ev['Time']
+            return evts
         except IOError:
             #our series might not have any events
             return []
