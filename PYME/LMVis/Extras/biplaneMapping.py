@@ -13,24 +13,36 @@ def foldX(pipeline):
     mvQuad = np.floor(xOG / roiSizeNM)
 
     pipeline.mapping.setMapping('xFolded', xfold)
-    pipeline.mapping.setMapping('multiviewQuadrant', mvQuad)
+    pipeline.mapping.setMapping('whichFOV', mvQuad)
     return
 
-def pairMolecules(xFold, y):
+def pairMolecules(xFold, y, FOV):
     numMol = len(xFold)
     dist = np.zeros((numMol, numMol))
-    for ind in range(len(dist)):
-        for ii in range(len(dist)):
+    for ind in range(numMol):
+        for ii in range(numMol):
             dist[ind, ii] = np.sqrt((xFold[ind] - xFold[ii])**2 + (y[ind] - y[ii])**2)
     dist = dist + (dist == 0)*999999
     minDist = dist.min(axis=0)
     minLoc = dist.argmin(axis=0)
 
+    keepList = np.where(FOV[minLoc] != FOV)
+    '''
+    keepList = []  # np.zeros(numMol, dtype=bool)
+    for ind in range(numMol):
+        # ignore molecules whose nearest neighbors are in the same FOV
+        # keepList[ind] = (FOV[minLoc[ind]] == FOV[ind])
+        if (FOV[minLoc[ind]] == FOV[ind]):
+            keepList.append(ind)
+    '''
+    numKept = len(keepList)
+
     import matplotlib.pyplot as plt
-    plt.figure()
-    plt.scatter(xFold, y)
-    for ii in range(numMol):
-        plt.plot([xFold[ii], xFold[minLoc[ii]]], [y[ii], y[minLoc[ii]]], color='red')
+    #plt.figure()
+    #plt.scatter(xFold, y)
+
+    for ii in range(numKept):
+        plt.plot([xFold[keepList[ii]], xFold[minLoc[keepList[ii]]]], [y[keepList[ii]], y[minLoc[keepList[ii]]]], color='red')
     #plt.show()
 
 class biplaneMapper:
@@ -52,12 +64,12 @@ class biplaneMapper:
         foldX(pipeline)
 
         print('length is %i, max is %d' % (len(pipeline.mapping.__dict__['xFolded']), np.max(pipeline.mapping.__dict__['xFolded'])))
-        print('Number of ROIs: %f' % np.max(pipeline.mapping.__dict__['multiviewQuadrant']))
+        print('Number of ROIs: %f' % np.max(pipeline.mapping.__dict__['whichFOV']))
         self.plotRegistered(pipeline.mapping.__dict__['xFolded'], pipeline['y'],
-                            pipeline.mapping.__dict__['multiviewQuadrant'], 'Raw')
+                            pipeline.mapping.__dict__['whichFOV'], 'Raw')
 
         # Now we need to match up molecules
-        pairMolecules(pipeline.mapping.__dict__['xFolded'], pipeline['y'])
+        pairMolecules(pipeline.mapping.__dict__['xFolded'], pipeline['y'], pipeline.mapping.__dict__['whichFOV'])
 
 
     def plotRegistered(self, regX, regY, multiviewChannels, title=''):
