@@ -17,6 +17,8 @@ from multiprocessing.pool import ThreadPool
 from multiprocessing import cpu_count
 
 import threading
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
 NUM_COMP_THREADS = 2#cpu_count()
 
@@ -251,24 +253,40 @@ def loads(datastring):
         raise RuntimeError("Invalid format: This doesn't appear to be a PZF file")
         
     w, h, d = header['Width'], header['Height'], header['Depth']
+
+    if header['DataQuantization'] == DATA_QUANT_SQRT:
+        #quantized data is always 8 bit
+        outsize = w * h * d
+    else:
+        outsize = w*h*d*DATA_FMTS_SIZES[int(header['DataFormat'])]
     
     data_s = datastring[HEADER_LENGTH:]
+
+    #logging.debug('About to decompress')
+    #logging.debug({k:header[0][k] for k in header.dtype.names})
+
+    #logging.debug('Compressed size: %s' % len(data_s))
     
     if header['DataCompression'] == DATA_COMP_RAW:
         #no need to decompress
         data = np.fromstring(data_s, 'u1')
     elif header['DataCompression'] == DATA_COMP_HUFFCODE:
-        data = bcl.HuffmanDecompress(np.fromstring(data_s, 'u1'), len(data_s))
+        #logging.debug('Decompressing ...')
+        data = bcl.HuffmanDecompress(np.fromstring(data_s, 'u1'), outsize)
     elif header['DataCompression'] == DATA_COMP_HUFFCODE_CHUNKS:
         data = ChunkedHuffmanDecompress(data_s)
     else:
         raise RuntimeError('Compression type not understood')
+
+    #logging.debug('Uncompressed shape: %s, %s, (%d, %d, %d)' % (data.shape, w * h * d, w, h, d))
         
     if header['DataQuantization'] == DATA_QUANT_SQRT:
         #un-quantize data
+        #logging.debug('Dequantizing')
+
         data = data*header['QuantScale']
-        data = (data*data + header['QuantOffset']).astype(DATA_FMTS[header['DataFormat']])
+        data = (data*data + header['QuantOffset']).astype(DATA_FMTS[int(header['DataFormat'])])
     
-    data = data.view(DATA_FMTS[header['DataFormat']]).reshape([w,h,d])
+    data = data.view(DATA_FMTS[int(header['DataFormat'])]).reshape([w,h,d])
     
     return data, header

@@ -10,6 +10,7 @@ from . import filters
 from . import processing
 from . import measurement
 from . import tracking
+from . import tablefilters
 try:
     from . import skfilters
 except ImportError:

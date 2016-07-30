@@ -21,7 +21,7 @@
 #
 ################
 
-def test():
+def run_t():
     from pylab import *
     from PYME.DSView.dsviewer import View3D
     from PYME.LMVis import gen3DTriangs
@@ -37,4 +37,4 @@ def test():
     View3D(im)
     
 if __name__ == '__main__':
-    test()
+    run_t()
