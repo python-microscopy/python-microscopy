@@ -187,6 +187,27 @@ def CalcCramerReoZ(FIz):
 
 
 def CalcFisherInfoModel(params, param_delta, modelFunc, modelargs = ()):
+    """
+    Calculate the Cramer-Rao bound under Poisson noise for a given model function
+    (at a given point), using a numerical derivative.
+
+    Parameters
+    ----------
+    params : array / list
+        The parameters
+    param_delta : array / list
+        The amount to add to the parameters when calculating the numerical gradient
+    modelFunc : function
+        A function describing the model. The output should be calibrated in photo-electrons
+    modelargs : iterable
+        A list of additional arguments to pass to the model function
+
+    Returns
+    -------
+
+    The NparamsxNparams Fisher information matrix
+
+    """
     params = np.array(params)
 
     lam = modelFunc(params)
@@ -210,6 +231,20 @@ def CalcFisherInfoModel(params, param_delta, modelFunc, modelargs = ()):
     return FI
 
 def CalcCramerRao(FI):
+    """
+    Calculate the Cramer-Rao bound for a given Fisher information matrix
+
+    Parameters
+    ----------
+    FI : array
+        an NparamsxNparams Fisher information matrix
+
+    Returns
+    -------
+
+    an array of lower bounds on variances (NB the CRLB is given as a variance, rather than std. deviation).
+
+    """
     return np.diag(np.linalg.inv(FI))
 
 
