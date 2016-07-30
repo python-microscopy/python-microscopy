@@ -21,7 +21,7 @@
 #
 ################
 
-def testNeo():
+def debugNeo():
     print('Importing Camera ... ')
     import AndorNeo
     import time

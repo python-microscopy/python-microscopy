@@ -258,7 +258,7 @@ def loads(datastring):
         #quantized data is always 8 bit
         outsize = w * h * d
     else:
-        outsize = w*h*d*DATA_FMTS_SIZES[header['DataFormat']]
+        outsize = w*h*d*DATA_FMTS_SIZES[int(header['DataFormat'])]
     
     data_s = datastring[HEADER_LENGTH:]
 
@@ -285,7 +285,7 @@ def loads(datastring):
         #logging.debug('Dequantizing')
 
         data = data*header['QuantScale']
-        data = (data*data + header['QuantOffset']).astype(DATA_FMTS[header['DataFormat']])
+        data = (data*data + header['QuantOffset']).astype(DATA_FMTS[int(header['DataFormat'])])
     
     data = data.view(DATA_FMTS[int(header['DataFormat'])]).reshape([w,h,d])
     
