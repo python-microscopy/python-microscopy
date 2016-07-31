@@ -123,6 +123,7 @@ class FitPoints(ModuleBase):
         ff_t = -1
 
         ps = img.pixelSize
+        print('pixel size: %s' % ps)
 
         for x, y, t, i in zip(inp['x'], inp['y'], inp['t'], range(len(inp['x']))):
             if not t == ff_t:
@@ -130,9 +131,10 @@ class FitPoints(ModuleBase):
                 ff = fitMod.FitFactory(img.data[:, :, t], md)
                 ff_t = t
 
-            r[i] = ff.FromPoint(x / ps, y / ps)
+            #print x/ps, y/ps
+            r[i] = ff.FromPoint(x/ps, y/ps)
 
-        res = inpFilt.fitResultsSource(r)
+        res = inpFilt.fitResultsSource(r, sort=False)
         res.mdh = md
 
         namespace[self.outputName] = res

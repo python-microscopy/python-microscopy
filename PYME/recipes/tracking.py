@@ -199,12 +199,12 @@ class ExtractTracks(ModuleBase):
         #print 'data.keys', data.keys()
         clumpIndex = data['clumpIndex']
 
-        clumpSizes = np.zeros_like(clumpIndex)
+        #clumpSizes = np.zeros_like(clumpIndex)
 
-        for i in set(clumpIndex):
-            ind = (clumpIndex == i)
+        #for i in set(clumpIndex):
+        #    ind = (clumpIndex == i)
 
-            clumpSizes[ind] = ind.sum()
+         #   clumpSizes[ind] = ind.sum()
 
         #trackVelocities = trackUtils.calcTrackVelocity(data['x'], data['y'], clumpIndex, data['t'])
 

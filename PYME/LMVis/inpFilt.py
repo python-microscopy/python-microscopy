@@ -106,14 +106,15 @@ def unNestDtype(descr, parent=''):
 
 class fitResultsSource(inputFilter):
     _name = "recarrayfi Source"
-    def __init__(self, fitResults):
-        self.setResults(fitResults)
+    def __init__(self, fitResults, sort=True):
+        self.setResults(fitResults, sort=sort)
         
-    def setResults(self, fitResults):
+    def setResults(self, fitResults, sort=True):
         self.fitResults = fitResults
 
-        #sort by time
-        self.fitResults.sort(order='tIndex')
+        if sort:
+            #sort by time
+            self.fitResults.sort(order='tIndex')
 
         #allow access using unnested original names
         self._keys = unNestDtype(self.fitResults.dtype.descr)
