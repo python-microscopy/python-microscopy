@@ -27,35 +27,53 @@ def plotRegistered(regX, regY, multiviewChannels, title=''):
     plt.title(title)
     return
 
-def pairMolecules(xFold, y, FOV):
-    numMol = len(xFold)
+def pairMolecules(xFold, y, whichFOV, FOV1=0, FOV2=1, combineDist):
+    """
+
+    Args:
+        xFold:
+        y:
+        whichFOV:
+        FOV1:
+        FOV2:
+        combineDist:
+
+    Returns:
+
+    """
+    interestingMolecules = np.logical_or(whichFOV == FOV1, whichFOV == FOV2)
+    xx = xFold[interestingMolecules]
+    yy = y[interestingMolecules]
+    chan = whichFOV[interestingMolecules]
+    numMol = len(xx)
     dist = np.zeros((numMol, numMol))
     for ind in range(numMol):
         for ii in range(numMol):
-            dist[ind, ii] = np.sqrt((xFold[ind] - xFold[ii])**2 + (y[ind] - y[ii])**2)
+            dist[ind, ii] = np.sqrt((xx[ind] - xx[ii])**2 + (yy[ind] - yy[ii])**2)
     dist = dist + (dist == 0)*999999
     minDist = dist.min(axis=0)
     minLoc = dist.argmin(axis=0)
 
-    # only keep molecule pairs heterozygous in planes and who are mutually nearest neighbors
-    keepList = np.where(np.logical_and(FOV[minLoc] != FOV, minLoc[range(numMol)] == minLoc[minLoc[range(numMol)]]))
-    '''
-    keepList = []  # np.zeros(numMol, dtype=bool)
-    for ind in range(numMol):
-        # ignore molecules whose nearest neighbors are in the same FOV
-        # keepList[ind] = (FOV[minLoc[ind]] == FOV[ind])
-        if (FOV[minLoc[ind]] == FOV[ind]):
-            keepList.append(ind)
-    '''
+    # keepList = np.where(np.logical_and(FOV[minLoc] != FOV, minLoc[range(numMol)] == minLoc[minLoc[range(numMol)]]))
+
+    # only keep molecule pairs that are mutually nearest neighbors, within a certain distance, and heterozygous in planes
+    keep = np.logical_and(minLoc[range(numMol)] == minLoc[minLoc[range(numMol)]],
+                          np.logical_and(minDist <= combineDist, chan != chan[minLoc]))
+    keepList = np.where(keep)
+
+    minLocKept = minLoc[keep]
+
     numKept = len(keepList)
+    chan1Keep = np.logical_and(keep, whichFOV == FOV1)
+    pairs = minLocKept[chan1Keep]
+    # chan2Keep = minLocKept[~chan1Keep] #  np.logical_and(keep, whichFOV == FOV2)
+    x1 = xFold[chan1Keep]
+    y1 = y[chan1Keep]
+    x2 = xFold[pairs]
+    y2 = y[pairs]
 
-    import matplotlib.pyplot as plt
-    #plt.figure()
-    #plt.scatter(xFold, y)
 
-    for ii in range(numKept):
-        plt.plot([xFold[keepList[ii]], xFold[minLoc[keepList[ii]]]], [y[keepList[ii]], y[minLoc[keepList[ii]]]], color='red')
-    #plt.show()
+    return x1, y1, x2, y2
 
 class biplaneMapper:
     def __init__(self, visFr):
@@ -90,7 +108,6 @@ class biplaneMapper:
         except KeyError:
             raise UserWarning('Shiftmaps or number of FOVs not found in metadata')
             return
-            #self.viewOrigins = [croppingInfo['Multiview.ROI%dOrigin' % i] for i in range(self.numROIs)]
 
         foldX(pipeline)
 
@@ -103,6 +120,7 @@ class biplaneMapper:
                             pipeline.mapping.__dict__['whichFOV'], numFOV)
 
     def OnRegisterBiplane(self, event):
+        from PYME.Analysis.points import twoColour
         pipeline = self.visFr.pipeline
 
         try:
@@ -115,13 +133,25 @@ class biplaneMapper:
 
         print('length is %i, max is %d' % (len(pipeline.mapping.__dict__['xFolded']), np.max(pipeline.mapping.__dict__['xFolded'])))
         print('Number of ROIs: %f' % np.max(pipeline.mapping.__dict__['whichFOV']))
-        plotRegistered(pipeline.mapping.__dict__['xFolded'], pipeline['y'],
-                            pipeline.mapping.__dict__['whichFOV'], 'Raw')
 
         # Now we need to match up molecules
-        pairMolecules(pipeline.mapping.__dict__['xFolded'], pipeline['y'], pipeline.mapping.__dict__['whichFOV'])
+        x1, y1, x2, y2 = pairMolecules(pipeline.mapping.__dict__['xFolded'], pipeline['y'],
+                                      pipeline.mapping.__dict__['whichFOV'], 20)
 
+        # Generate raw shift vectors (map of displacements between channels) for each FOV
+        xRawShifts = [twoColour.genShiftVectors(xFold[FOV == 0], xFold[FOV == ii]) for ii in range(1, numFOV)]
+        yRawShifts = [twoColour.genShiftVectors(y[FOV == 0], y[FOV == ii]) for ii in range(1, numFOV)]
 
+        # Generate shiftmaps
+
+        # apply shiftmaps
+
+        # plot unshifted and shifted
+        plotRegistered(pipeline.mapping.__dict__['xFolded'], pipeline['y'],
+                            pipeline.mapping.__dict__['whichFOV'], 'Raw Folding')
+
+        plotRegistered(pipeline.mapping.__dict__['xReg'], pipeline['yReg'],
+                            pipeline.mapping.__dict__['whichFOV'], 'After Registration')
 
 
 
