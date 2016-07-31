@@ -2,6 +2,9 @@
 import wx
 import numpy as np
 from PYME.Analysis.points import twoColour
+from PYME.Analysis.points.DeClump import pyDeClump
+import os
+from PYME.IO.FileUtils import nameUtils
 
 def foldX(pipeline):
     """
@@ -27,19 +30,10 @@ def plotRegistered(regX, regY, multiviewChannels, title=''):
     plt.title(title)
     return
 
-def pairMolecules(xFold, y, whichFOV, FOV1=0, FOV2=1, combineDist):
+def pairMolecules_old(xFold, y, whichFOV, FOV1=0, FOV2=1, combineDist):
     """
-
-    Args:
-        xFold:
-        y:
-        whichFOV:
-        FOV1:
-        FOV2:
-        combineDist:
-
-    Returns:
-
+    This function will be depreciated, as it is not C-accelerated. Additionally,
+    this function would need to be called nROI-1 times, as opposed to once.
     """
     interestingMolecules = np.logical_or(whichFOV == FOV1, whichFOV == FOV2)
     xx = xFold[interestingMolecules]
@@ -63,7 +57,7 @@ def pairMolecules(xFold, y, whichFOV, FOV1=0, FOV2=1, combineDist):
 
     minLocKept = minLoc[keep]
 
-    numKept = len(keepList)
+    # numKept = len(keepList)
     chan1Keep = np.logical_and(keep, whichFOV == FOV1)
     pairs = minLocKept[chan1Keep]
     # chan2Keep = minLocKept[~chan1Keep] #  np.logical_and(keep, whichFOV == FOV2)
@@ -74,6 +68,29 @@ def pairMolecules(xFold, y, whichFOV, FOV1=0, FOV2=1, combineDist):
 
 
     return x1, y1, x2, y2
+
+def pairMolecules(tIndex, x, y, whichFOV, combineDist, numFOV):
+    # sort everything in frame order
+    I = tIndex.argsort()
+    tIndex = tIndex[I]
+    x = x[I]
+    y = y[I]
+    whichFOV = whichFOV[I]
+
+
+    # group localizations
+    assigned = pyDeClump.findClumps(tIndex, x, y, combineDist)
+
+    # only look at clumps with N=numFOVs, where each FOV is represented
+    # clumps, nInClump = np.unique(assigned, return_counts=True)
+    clumps = np.unique(assigned)
+    keptClumps = [np.sort(whichFOV[assigned == clumps[ii]]) == range(numFOV) for ii in range(len(clumps))]
+
+    keptMoles = assigned in clumps[keptClumps]
+    # assigned == np.any(clumps[keptClumps])
+
+    return x[keptMoles], y[keptMoles], whichFOV[keptMoles], clumps[keptClumps]
+
 
 class biplaneMapper:
     def __init__(self, visFr):
@@ -88,11 +105,11 @@ class biplaneMapper:
         visFr.Bind(wx.EVT_MENU, self.OnFoldAndMap, id=ID_MAP_BIPLANE)
         return
 
-    def applyShiftmaps(self, xFolded, y, whichFOV, numFOV):
+    def applyShiftmaps(self, shiftMapsX, shiftMapsY, xFolded, y, whichFOV, numFOV):
         pipeline = self.visFr.pipeline
 
-        xReg = xFolded + [(whichFOV == ii)*self.shiftMapsX[ii](xFolded) for ii in range(numFOV)]
-        yReg = y + [(whichFOV == ii)*self.shiftMapsY[ii](y) for ii in range(numFOV)]
+        xReg = xFolded + [(whichFOV == ii)*shiftMapsX[ii](xFolded) for ii in range(numFOV)]
+        yReg = y + [(whichFOV == ii)*shiftMapsY[ii](y) for ii in range(numFOV)]
 
         pipeline.mapping.setMapping('xReg', xReg)
         pipeline.mapping.setMapping('yReg', yReg)
@@ -135,16 +152,34 @@ class biplaneMapper:
         print('Number of ROIs: %f' % np.max(pipeline.mapping.__dict__['whichFOV']))
 
         # Now we need to match up molecules
-        x1, y1, x2, y2 = pairMolecules(pipeline.mapping.__dict__['xFolded'], pipeline['y'],
-                                      pipeline.mapping.__dict__['whichFOV'], 20)
+        combineDist = 20
+        x, y, FOV, clumps = pairMolecules(pipeline['tIndex'], pipeline.mapping.__dict__['xFolded'], pipeline['y'],
+                      pipeline.mapping.__dict__['whichFOV'], combineDist, numFOV)
 
         # Generate raw shift vectors (map of displacements between channels) for each FOV
-        xRawShifts = [twoColour.genShiftVectors(xFold[FOV == 0], xFold[FOV == ii]) for ii in range(1, numFOV)]
-        yRawShifts = [twoColour.genShiftVectors(y[FOV == 0], y[FOV == ii]) for ii in range(1, numFOV)]
+        #xRawShiftVec = [twoColour.genShiftVectors(x[FOV == 0], x[FOV == ii]) for ii in range(1, numFOV)]
+        #yRawShiftVec = [twoColour.genShiftVectors(y[FOV == 0], y[FOV == ii]) for ii in range(1, numFOV)]
+        numClumps = len(clumps)
+        chan1 = (FOV == 0)
+        dx = np.zeros(numFOV - 1, numClumps)
+        dy = np.zeros_like(dx)
+        dxErr = np.ones_like(dx)
+        dyErr = np.ones_like(dx)
+        for ii in range(numFOV-1):
+            chan = (FOV == (ii+1))
+            dx[ii, :] = x[chan] - x[chan1]
+            dy[ii, :] = y[chan] - y[chan1]
+            # TODO: weight dx and dy estimates on x and y localization uncertainty
+            # dxErr =
+            # dyErr =
 
         # Generate shiftmaps
 
+        dxx, dyy, spx, spy, good = [twoColour.genShiftVectorFieldQ(x[chan1], y[chan1], dx[ii, :], dy[ii, :], dxErr[ii, :], dyErr[ii, :]) for ii in range(numFOV-1)]
+
         # apply shiftmaps
+        # possible fixme: do we want to plot only results used for generating shiftmap?
+        self.applyShiftmaps(spx, spy, x, y, FOV, numFOV)
 
         # plot unshifted and shifted
         plotRegistered(pipeline.mapping.__dict__['xFolded'], pipeline['y'],
@@ -153,6 +188,21 @@ class biplaneMapper:
         plotRegistered(pipeline.mapping.__dict__['xReg'], pipeline['yReg'],
                             pipeline.mapping.__dict__['whichFOV'], 'After Registration')
 
+        # save shiftmaps (spx and spy)
+        import cPickle
+
+        defFile = os.path.splitext(os.path.split(self.visFr.GetTitle())[-1])[0] + '.sf'
+
+        fdialog = wx.FileDialog(None, 'Save shift field as ...',
+            wildcard='Shift Field file (*.sf)|*.sf', style=wx.SAVE, defaultDir = nameUtils.genShiftFieldDirectoryPath(), defaultFile=defFile)
+        succ = fdialog.ShowModal()
+        if (succ == wx.ID_OK):
+            fpath = fdialog.GetPath()
+            #save as a pickle containing the data and voxelsize
+
+            fid = open(fpath, 'wb')
+            cPickle.dump((spx, spy), fid, 2)
+            fid.close()
 
 
 def Plug(visFr):
