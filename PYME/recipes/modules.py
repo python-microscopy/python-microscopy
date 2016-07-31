@@ -11,6 +11,7 @@ from . import processing
 from . import measurement
 from . import tracking
 from . import tablefilters
+from . import inputoutput
 try:
     from . import skfilters
 except ImportError:

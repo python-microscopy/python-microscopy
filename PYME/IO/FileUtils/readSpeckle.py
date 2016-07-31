@@ -48,19 +48,27 @@ def gen_traces_from_speckles(speckles, leadFrames=10, followFrames=50, seriesLen
     a numpy recarray containing x, y, t, and clumpIndex columns
     """
 
-    point_dtype = np.dtype([('x_pixels', 'f4'), ('y_pixels', 'f4'), ('t', 'f4'), ('clumpIndex', 'f4')])
+    point_dtype = np.dtype([('x_pixels', 'f4'), ('y_pixels', 'f4'), ('t', 'i4'), ('clumpIndex', 'i4')])
 
     extended_speckles = []
 
     for i, speck in enumerate(speckles):
-        x_, y_, t_ = speck.T
+        y_, x_, t_ = speck.T
         trace_start = int(max(t_[0] - leadFrames, 0))
         trace_end = int(min(t_[-1] + followFrames, seriesLength))
 
         xm, ym = x_.mean(), y_.mean()
 
         for j in range(trace_start, trace_end):
-            extended_speckles.append(np.array([xm, ym, j, i], dtype='f4').view(point_dtype))
+            s_ = np.zeros(1, dtype=point_dtype)
+            s_['x_pixels'] = xm
+            s_['y_pixels'] = ym
+            s_['t'] = j
+            s_['clumpIndex'] = i
+            extended_speckles.append(s_)
 
-    return np.hstack(extended_speckles)
+    sp = np.hstack(extended_speckles)
+
+    I = np.argsort(sp['t'])
+    return sp[I]
 

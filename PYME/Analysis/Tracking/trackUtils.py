@@ -37,7 +37,7 @@ class FeaturePlot(object):
         data = self.clump[key]
             
         plt.ioff()
-        f = plt.figure(figsize=(6,1))        
+        f = plt.figure(figsize=(6,2))
         
         if 't' in self.clump.keys():        
             plt.plot(self.clump['t'], data)
@@ -108,7 +108,7 @@ class Clump(object):
 
     def __getitem__(self, key):
         if not key in self.keys():
-            raise RuntimeError('Key not defined')
+            raise KeyError('Key not defined: % s' % key)
         
         if not key in self.cache.keys():
             self.cache[key] = np.array(self.pipeline[key][self.index])
@@ -187,7 +187,7 @@ class Track(Clump):
             
             dt = self.pipeline.mdh.getOrDefault('Camera.CycleTime', 1.0)
             
-            nT = (t.max() - t.min())/2
+            nT = int((t.max() - t.min())/2)
             
             h = msdHistogram(x, y, t, nT)
             t_ = dt*np.arange(len(h))
