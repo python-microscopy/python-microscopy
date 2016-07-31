@@ -559,3 +559,23 @@ class cloneSource(inputFilter):
 
     def keys(self):
         return self.cache.keys()
+
+class recArrayInput(inputFilter):
+    _name = 'RecArray Source'
+    def __init__(self, recordArray):
+        self.recArray = recordArray
+        self._keys = self.recArray.dtype.names
+
+    def keys(self):
+        return self._keys
+
+    def __getitem__(self, keys):
+        key, sl = self._getKeySlice(keys)
+
+        if not key in self._keys:
+            raise RuntimeError('Key not found')
+
+        return self.recArray[key][sl]
+
+    def getInfo(self):
+        return 'Record Array Source\n\n %d points' % len(self.recArray['x'])

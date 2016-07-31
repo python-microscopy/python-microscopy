@@ -187,7 +187,7 @@ class Track(Clump):
             
             dt = self.pipeline.mdh.getOrDefault('Camera.CycleTime', 1.0)
             
-            nT = (t.max() - t.min())/2
+            nT = int((t.max() - t.min())/2)
             
             h = msdHistogram(x, y, t, nT)
             t_ = dt*np.arange(len(h))

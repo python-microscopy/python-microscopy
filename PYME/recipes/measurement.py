@@ -85,6 +85,58 @@ class FitDumbells(ModuleBase):
         
         namespace[self.outputName] = res
 
+
+@register_module('FitPoints')
+class FitPoints(ModuleBase):
+    """ Apply one of the fit modules from PYME.localization.FitFactories to each of the points in the provided
+    in inputPositions
+    """
+    inputImage = CStr('input')
+    inputPositions = CStr('objPostiions')
+    outputName = CStr('fitResults')
+    fitModule = CStr('LatGaussFitFR')
+
+    def execute(self, namespace):
+        #from PYME.localization.FitFactories import DumbellFitR
+        from PYME.IO import MetaDataHandler
+        img = namespace[self.inputImage]
+
+        md = MetaDataHandler.NestedClassMDHandler()
+        #set metadata entries needed for fitting to suitable defaults
+        md['Camera.ADOffset'] = img.data[:, :, 0].min()
+        md['Camera.TrueEMGain'] = 1.0
+        md['Camera.ElectronsPerCount'] = 1.0
+        md['Camera.ReadNoise'] = 1.0
+        md['Camera.NoiseFactor'] = 1.0
+
+        #copy across the entries from the real image, replacing the defaults
+        #if necessary
+        md.copyEntriesFrom(img.mdh)
+
+        inp = namespace[self.inputPositions]
+
+        fitMod = __import__('PYME.localization.FitFactories.' + self.fitModule,
+                            fromlist=['PYME', 'localization', 'FitFactories']) #import our fitting module
+
+        r = np.zeros(len(inp['x']), dtype=fitMod.FitResultsDType)
+
+        ff_t = -1
+
+        ps = img.pixelSize
+
+        for x, y, t, i in zip(inp['x'], inp['y'], inp['t'], range(len(inp['x']))):
+            if not t == ff_t:
+                md['tIndex'] = t
+                ff = fitMod.FitFactory(img.data[:, :, t], md)
+                ff_t = t
+
+            r[i] = ff.FromPoint(x / ps, y / ps)
+
+        res = inpFilt.fitResultsSource(r)
+        res.mdh = md
+
+        namespace[self.outputName] = res
+
 @register_module('MeanNeighbourDistances') 
 class MeanNeighbourDistances(ModuleBase):
     """Calculates mean distance to nearest neighbour in a triangulation of the
