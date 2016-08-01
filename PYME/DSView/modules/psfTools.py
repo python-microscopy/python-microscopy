@@ -236,6 +236,7 @@ class PSFTools(HasTraits):
         dsviewer.AddMenuItem('Processing', "Extract &Pupil Function", self.OnExtractPupil)
         dsviewer.AddMenuItem('Processing', "Cramer-Rao Bound vs Background ", self.OnCalcCRB3DvsBG)
         dsviewer.AddMenuItem('Processing', "PSF Background Correction", self.OnSubtractBackground)
+        dsviewer.AddMenuItem('Processing', "Perform Astigmatic Calibration", self.OnCalibrateAstigmatism)
         #wx.EVT_MENU(dsviewer, PROC_LABEL, self.OnLabel)
 
     def OnExtractPupil(self, event):
@@ -272,6 +273,49 @@ class PSFTools(HasTraits):
         mode = 'pupil'
 
         dv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
+
+    def OnCalibrateAstigmatism(self, event):
+        from PYME.recipes.measurement import FitPoints
+        import matplotlib.pyplot as plt
+        ps = self.image.pixelSize
+
+        objPositions = {}
+
+        objPositions['x'] = ps*self.image.data.shape[0]*0.5*np.ones(self.image.data.shape[2])
+        objPositions['y'] = ps * self.image.data.shape[1] * 0.5 * np.ones(self.image.data.shape[2])
+        objPositions['t'] = np.arange(self.image.data.shape[2])
+        z = np.arange(self.image.data.shape[2]) * self.image.mdh['voxelsize.z'] * 1.e3
+        objPositions['z'] = z - z.mean()
+
+        ptFitter = FitPoints()
+        ptFitter.set(fitModule='AstigGaussFitFR')
+
+        namespace = {'input' : self.image, 'objPositions' : objPositions}
+        ptFitter.execute(namespace)
+
+        res = namespace['fitResults']
+
+        dsigma = res['fitResults_sigmax'] - res['fitResults_sigmay']
+
+        #do plotting
+        #plt.ioff()
+        f = plt.figure()
+
+        plt.plot(objPositions['z'], res['fitResults_sigmax'])
+        plt.plot(objPositions['z'], res['fitResults_sigmay'])
+        plt.plot(objPositions['z'], dsigma, lw=2)
+        plt.ylim(-200, 400)
+        plt.grid()
+        plt.xlabel('z position [nm]')
+        plt.ylabel('sigma [nm]')
+        plt.legend(['x', 'y', 'x-y'])
+
+        plt.tight_layout()
+
+        #plt.ion()
+
+        #return mpld3.fig_to_html(f)
+
         
         
     def OnSubtractBackground(self, event):

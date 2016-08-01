@@ -78,7 +78,7 @@ class Clump(object):
         self.pipeline = pipeline
         self.clumpID = clumpID
         
-        self.index = pipeline['clumpIndex'] == clumpID
+        self.index = np.array(pipeline['clumpIndex'] == clumpID, dtype=np.bool)
         self.nEvents = self.index.sum()
         self.enabled = True
         self.cache = {}
