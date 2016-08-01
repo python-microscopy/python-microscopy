@@ -21,7 +21,11 @@
 ##################
 #import numpy
 import wx
+import wx.html2
 import wx.grid
+
+from jinja2 import Environment, PackageLoader
+env = Environment(loader=PackageLoader('PYME.DSView.modules', 'templates'))
 #import pylab
 #from PYME.IO.image import ImageStack
 try:
@@ -277,6 +281,9 @@ class PSFTools(HasTraits):
     def OnCalibrateAstigmatism(self, event):
         from PYME.recipes.measurement import FitPoints
         import matplotlib.pyplot as plt
+        import mpld3
+        import json
+
         ps = self.image.pixelSize
 
         objPositions = {}
@@ -297,24 +304,43 @@ class PSFTools(HasTraits):
 
         dsigma = res['fitResults_sigmax'] - res['fitResults_sigmay']
 
-        #do plotting
-        #plt.ioff()
-        f = plt.figure()
+        valid = ((res['fitError_sigmax'] > 0) * (res['fitError_sigmax'] < 100)* (res['fitError_sigmay'] < 100)*(res['fitResults_A'] > 0) > 0)
 
-        plt.plot(objPositions['z'], res['fitResults_sigmax'])
-        plt.plot(objPositions['z'], res['fitResults_sigmay'])
-        plt.plot(objPositions['z'], dsigma, lw=2)
-        plt.ylim(-200, 400)
+        #generate new tab to show results
+        if not '_astig_view' in dir(self):
+            self._astig_view= wx.html2.WebView.New(self.dsviewer)
+            self.dsviewer.AddPage(self._astig_view, True, 'Astigmatic calibration')
+
+        #do plotting
+        plt.ioff()
+        f = plt.figure(figsize=(10, 4))
+
+        plt.subplot(121)
+        plt.plot(objPositions['z'][valid], res['fitResults_sigmax'][valid])
+        plt.plot(objPositions['z'][valid], res['fitResults_sigmay'][valid])
+
+        #plt.ylim(-200, 400)
         plt.grid()
         plt.xlabel('z position [nm]')
-        plt.ylabel('sigma [nm]')
-        plt.legend(['x', 'y', 'x-y'])
+        plt.ylabel('Sigma [nm]')
+        plt.legend(['x', 'y'])
+
+        plt.subplot(122)
+        plt.plot(objPositions['z'][valid], dsigma[valid], lw=2)
+        plt.grid()
+        plt.xlabel('z position [nm]')
+        plt.ylabel('Sigma y - Sigma y [nm]')
 
         plt.tight_layout()
 
-        #plt.ion()
+        plt.ion()
 
-        #return mpld3.fig_to_html(f)
+        fig =  mpld3.fig_to_html(f)
+        data = json.dumps({'z' : objPositions['z'][valid].tolist(), 'sigmax' : res['fitResults_sigmax'][valid].tolist(),
+                           'sigmay' : res['fitResults_sigmay'][valid].tolist(), 'dsigma' : dsigma[valid].tolist()})
+
+        template = env.get_template('astigCal.html')
+        self._astig_view.SetPage(template.render(astigplot=fig, data=data), '')
 
         
         
