@@ -78,20 +78,25 @@ def pairMolecules(tIndex, x, y, deltaX, whichFOV, numFOV):
     y = y[I]
     whichFOV = whichFOV[I]
 
-
+    # group within 100nm
+    dX = 100.*np.ones_like(deltaX)
     # group localizations
-    assigned = pyDeClump.findClumps(tIndex, x, y, 10*deltaX)
+    assigned = pyDeClump.findClumps(tIndex, x, y, dX)
 
     # only look at clumps with N=numFOVs, where each FOV is represented
     # clumps, nInClump = np.unique(assigned, return_counts=True)
     clumps = np.unique(assigned)
     keptClumps = [np.array_equal(np.unique(whichFOV[assigned == clumps[ii]]), np.arange(numFOV)) for ii in range(len(clumps))]
 
-    keptMoles = clumps[np.where(keptClumps)]
+    keptMoles = []# assigned in clumps[np.where(keptClumps)]
+    # np.array_equal(clumps, np.arange(1, np.max(assigned) + 1)) equaluates to True
     # assigned == np.any(clumps[keptClumps])
+    for elem in assigned:
+        keptMoles.append(elem in clumps[np.where(keptClumps)])
+    keep = np.where(keptMoles)
 
-    return x[keptMoles], y[keptMoles], whichFOV[keptMoles], clumps[keptClumps]
-
+    #return x[keptMoles], y[keptMoles], whichFOV[keptMoles], clumps[keptClumps]
+    return x[keep], y[keep], whichFOV[keep], clumps[np.where(keptClumps)]
 
 class biplaneMapper:
     def __init__(self, visFr):
