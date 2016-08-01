@@ -80,12 +80,12 @@ def pairMolecules(tIndex, x, y, deltaX, whichFOV, numFOV):
 
 
     # group localizations
-    assigned = pyDeClump.findClumps(tIndex, x, y, deltaX)
+    assigned = pyDeClump.findClumps(tIndex, x, y, 10*deltaX)
 
     # only look at clumps with N=numFOVs, where each FOV is represented
     # clumps, nInClump = np.unique(assigned, return_counts=True)
     clumps = np.unique(assigned)
-    keptClumps = np.array([np.sort(whichFOV[assigned == clumps[ii]]) == np.arange(numFOV) for ii in range(len(clumps))], dtype=bool)
+    keptClumps = [np.array_equal(np.unique(whichFOV[assigned == clumps[ii]]), np.arange(numFOV)) for ii in range(len(clumps))]
 
     keptMoles = assigned in clumps[keptClumps]
     # assigned == np.any(clumps[keptClumps])
@@ -166,7 +166,7 @@ class biplaneMapper:
         #yRawShiftVec = [twoColour.genShiftVectors(y[FOV == 0], y[FOV == ii]) for ii in range(1, numFOV)]
         numClumps = len(clumps)
         chan1 = (FOV == 0)
-        dx = np.zeros(numFOV - 1, numClumps)
+        dx = np.zeros((numFOV - 1, numClumps))
         dy = np.zeros_like(dx)
         dxErr = np.ones_like(dx)
         dyErr = np.ones_like(dx)
