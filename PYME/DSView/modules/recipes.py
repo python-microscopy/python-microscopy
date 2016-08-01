@@ -126,6 +126,8 @@ class RecipePlugin(recipeGui.RecipeManager):
                 from PYME.LMVis import inpFilt
                 cache = inpFilt.cachingResultsFilter(self.outp)
                 self.dsviewer.pipeline.OpenFile(ds = cache)
+                self.dsviewer.pipeline.filterKeys = {}
+                self.dsviewer.pipeline.Rebuild()
                 self.dsviewer.view.filter = self.dsviewer.pipeline
 
                 
