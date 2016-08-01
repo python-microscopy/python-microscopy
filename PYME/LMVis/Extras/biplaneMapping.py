@@ -96,7 +96,7 @@ def pairMolecules(tIndex, x, y, deltaX, whichFOV, numFOV):
     keep = np.where(keptMoles)
 
     #return x[keptMoles], y[keptMoles], whichFOV[keptMoles], clumps[keptClumps]
-    return x[keep], y[keep], whichFOV[keep], clumps[np.where(keptClumps)]
+    return x[keep], y[keep], whichFOV[keep], assigned[keep] #  , clumps[np.where(keptClumps)]
 
 class biplaneMapper:
     def __init__(self, visFr):
@@ -163,57 +163,83 @@ class biplaneMapper:
 
         # Now we need to match up molecules
         #combineDist = 20
-        x, y, FOV, clumps = pairMolecules(pipeline['tIndex'], pipeline.mapping.__dict__['xFolded'], pipeline['y'],
+        x, y, FOV, clumpID, = pairMolecules(pipeline['tIndex'], pipeline.mapping.__dict__['xFolded'], pipeline['y'],
                       pipeline['error_x'], pipeline.mapping.__dict__['whichFOV'], numFOV)
+
+        # merge clumps within channels
+        molList = np.unique(clumpID)
+        numMoles = len(molList)
+        #xClumped = [[np.mean(x[np.logical_and(clumpID == ii, FOV == ind)]) for ii in range(numMoles)] for ind in range(numFOV)]
+        #yClumped = [[np.mean(y[np.logical_and(clumpID == ii, FOV == ind)]) for ii in range(numMoles)] for ind in range(numFOV)]
 
         # Generate raw shift vectors (map of displacements between channels) for each FOV
         #xRawShiftVec = [twoColour.genShiftVectors(x[FOV == 0], x[FOV == ii]) for ii in range(1, numFOV)]
         #yRawShiftVec = [twoColour.genShiftVectors(y[FOV == 0], y[FOV == ii]) for ii in range(1, numFOV)]
-        numClumps = len(clumps)
-        chan1 = (FOV == 0)
-        dx = np.zeros((numFOV - 1, numClumps))
+        #chan1 = (FOV == 0)
+        dx = np.zeros((numFOV - 1, numMoles))
         dy = np.zeros_like(dx)
-        dxErr = np.ones_like(dx)
-        dyErr = np.ones_like(dx)
-        for ii in range(numFOV-1):
+        dxErr = np.zeros_like(dx)
+        dyErr = np.zeros_like(dx)
+        xClump, yClump, xStd, yStd = [], [], [], []
+        for ii in range(numFOV):
             chan = (FOV == (ii+1))
-            dx[ii, :] = x[chan] - x[chan1]
-            dy[ii, :] = y[chan] - y[chan1]
-            # TODO: weight dx and dy estimates on x and y localization uncertainty
-            # dxErr =
-            # dyErr =
+            #numInChan = len(np.unique(clumpID[chan]))
+            xChan = np.zeros(numMoles)
+            yChan = np.zeros(numMoles)
+            xChanStd = np.zeros(numMoles)
+            yChanStd = np.zeros(numMoles)
 
-        # Generate shiftmaps
 
-        dxx, dyy, spx, spy, good = [twoColour.genShiftVectorFieldQ(x[chan1], y[chan1], dx[ii, :], dy[ii, :], dxErr[ii, :], dyErr[ii, :]) for ii in range(numFOV-1)]
+            for ind in range(numMoles):
+                clumpMask = np.where(np.logical_and(chan, clumpID == molList[ind]))
+                xChan[ind] = x[clumpMask].mean()
+                yChan[ind] = y[clumpMask].mean()
+                xChanStd[ind] = x[clumpMask].std()
+                yChanStd[ind] = y[clumpMask].std()
+
+            xClump.append(xChan)
+            yClump.append(yChan)
+            xStd.append(xChanStd)
+            yStd.append(yChanStd)
+
+            if ii > 0:
+                # todo: just use lists of arrays here to make things consistent
+                dx[ii - 1, :] = xChan[ii] - xChan[0]
+                dy[ii - 1, :] = yChan[ii] - yChan[0]
+                dxErr[ii - 1, :] = np.sqrt(xStd[ii]**2 + xStd[0]**2)
+                dyErr[ii - 1, :] = np.sqrt(yStd[ii]**2 + yStd[0]**2)
+                dxx, dyy, spx, spy, good = twoColour.genShiftVectorFieldQ(xClump[0], yClump[0], dx[ii-1, :], dy[ii-1, :], dxErr[ii-1, :], dyErr[ii-1, :])
+
+                # store shiftmaps in metadata
+                pipeline.mdh.setEntry('Shiftmap.ROI0%s' % ii, [spx, spy])
+                # store shiftvectors in metadata
+                pipeline.mdh.setEntry('chroma.dx0%s' % ii, dxx)
+                pipeline.mdh.setEntry('chroma.dy0%s' % ii, dyy)
+                # save shiftmaps (spx and spy)
+                defFile = os.path.splitext(os.path.split(self.visFr.GetTitle())[-1])[0] + '.sf'
+
+                fdialog = wx.FileDialog(None, 'Save shift field as ...',
+                    wildcard='Shift Field file (*.sf)|*.sf', style=wx.SAVE, defaultDir=nameUtils.genShiftFieldDirectoryPath(), defaultFile=defFile)
+                succ = fdialog.ShowModal()
+                if (succ == wx.ID_OK):
+                    fpath = fdialog.GetPath()
+                    #save as a pickle containing the data and voxelsize
+
+                    fid = open(fpath, 'wb')
+                    cPickle.dump((spx, spy), fid, 2)
+                    fid.close()
 
         # apply shiftmaps
-        # possible fixme: do we want to plot only results used for generating shiftmap?
         self.applyShiftmaps(spx, spy, x, y, FOV, numFOV)
 
-        # plot unshifted and shifted
+        # plot unshifted and shifted (for clumps we based shift calculations on)
         plotRegistered(pipeline.mapping.__dict__['xFolded'], pipeline['y'],
                             pipeline.mapping.__dict__['whichFOV'], 'Raw Folding')
 
         plotRegistered(pipeline.mapping.__dict__['xReg'], pipeline['yReg'],
                             pipeline.mapping.__dict__['whichFOV'], 'After Registration')
 
-        # store shiftmaps in metadata
-        pipeline.mdh.setEntry('chroma.dx', dxx)
-        pipeline.mdh.setEntry('chroma.dy', dyy)
-        # save shiftmaps (spx and spy)
-        defFile = os.path.splitext(os.path.split(self.visFr.GetTitle())[-1])[0] + '.sf'
 
-        fdialog = wx.FileDialog(None, 'Save shift field as ...',
-            wildcard='Shift Field file (*.sf)|*.sf', style=wx.SAVE, defaultDir = nameUtils.genShiftFieldDirectoryPath(), defaultFile=defFile)
-        succ = fdialog.ShowModal()
-        if (succ == wx.ID_OK):
-            fpath = fdialog.GetPath()
-            #save as a pickle containing the data and voxelsize
-
-            fid = open(fpath, 'wb')
-            cPickle.dump((spx, spy), fid, 2)
-            fid.close()
 
 
 def Plug(visFr):
