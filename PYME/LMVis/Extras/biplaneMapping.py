@@ -31,7 +31,7 @@ def plotRegistered(regX, regY, multiviewChannels, title=''):
     plt.title(title)
     return
 
-def pairMolecules_old(xFold, y, whichFOV, FOV1=0, FOV2=1, combineDist):
+def pairMolecules_old(xFold, y, whichFOV, combineDist, FOV1=0, FOV2=1):
     """
     This function will be depreciated, as it is not C-accelerated. Additionally,
     this function would need to be called nROI-1 times, as opposed to once.
@@ -70,7 +70,7 @@ def pairMolecules_old(xFold, y, whichFOV, FOV1=0, FOV2=1, combineDist):
 
     return x1, y1, x2, y2
 
-def pairMolecules(tIndex, x, y, whichFOV, combineDist, numFOV):
+def pairMolecules(tIndex, x, y, deltaX, whichFOV, numFOV):
     # sort everything in frame order
     I = tIndex.argsort()
     tIndex = tIndex[I]
@@ -80,12 +80,12 @@ def pairMolecules(tIndex, x, y, whichFOV, combineDist, numFOV):
 
 
     # group localizations
-    assigned = pyDeClump.findClumps(tIndex, x, y, combineDist)
+    assigned = pyDeClump.findClumps(tIndex, x, y, deltaX)
 
     # only look at clumps with N=numFOVs, where each FOV is represented
     # clumps, nInClump = np.unique(assigned, return_counts=True)
     clumps = np.unique(assigned)
-    keptClumps = [np.sort(whichFOV[assigned == clumps[ii]]) == range(numFOV) for ii in range(len(clumps))]
+    keptClumps = np.array([np.sort(whichFOV[assigned == clumps[ii]]) == np.arange(numFOV) for ii in range(len(clumps))], dtype=bool)
 
     keptMoles = assigned in clumps[keptClumps]
     # assigned == np.any(clumps[keptClumps])
@@ -159,7 +159,7 @@ class biplaneMapper:
         # Now we need to match up molecules
         combineDist = 20
         x, y, FOV, clumps = pairMolecules(pipeline['tIndex'], pipeline.mapping.__dict__['xFolded'], pipeline['y'],
-                      pipeline.mapping.__dict__['whichFOV'], combineDist, numFOV)
+                      pipeline['error_x'], pipeline.mapping.__dict__['whichFOV'], numFOV)
 
         # Generate raw shift vectors (map of displacements between channels) for each FOV
         #xRawShiftVec = [twoColour.genShiftVectors(x[FOV == 0], x[FOV == ii]) for ii in range(1, numFOV)]
