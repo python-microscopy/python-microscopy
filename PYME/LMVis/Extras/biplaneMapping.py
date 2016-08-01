@@ -87,7 +87,7 @@ def pairMolecules(tIndex, x, y, deltaX, whichFOV, numFOV):
     clumps = np.unique(assigned)
     keptClumps = [np.array_equal(np.unique(whichFOV[assigned == clumps[ii]]), np.arange(numFOV)) for ii in range(len(clumps))]
 
-    keptMoles = assigned in clumps[keptClumps]
+    keptMoles = clumps[np.where(keptClumps)]
     # assigned == np.any(clumps[keptClumps])
 
     return x[keptMoles], y[keptMoles], whichFOV[keptMoles], clumps[keptClumps]
@@ -157,7 +157,7 @@ class biplaneMapper:
         print('Number of ROIs: %f' % np.max(pipeline.mapping.__dict__['whichFOV']))
 
         # Now we need to match up molecules
-        combineDist = 20
+        #combineDist = 20
         x, y, FOV, clumps = pairMolecules(pipeline['tIndex'], pipeline.mapping.__dict__['xFolded'], pipeline['y'],
                       pipeline['error_x'], pipeline.mapping.__dict__['whichFOV'], numFOV)
 
