@@ -5,6 +5,7 @@ from PYME.Analysis.points import twoColour
 from PYME.Analysis.points.DeClump import pyDeClump
 import os
 from PYME.IO.FileUtils import nameUtils
+import cPickle
 
 def foldX(pipeline):
     """
@@ -122,6 +123,10 @@ class biplaneMapper:
             numFOV = pipeline.mdh['Multiview.NumROIs']
             self.shiftMapsX = [pipeline.mdh['shiftMapsX.FOV%d' % ii] for ii in range(numFOV)]
             self.shiftMapsY = [pipeline.mdh['shiftMapsY.FOV%d' % ii] for ii in range(numFOV)]
+
+            fid = open(inputFile)
+            spx, spy = cPickle.load(fid)
+            fid.close()
         except KeyError:
             raise UserWarning('Shiftmaps or number of FOVs not found in metadata')
             return
@@ -188,9 +193,10 @@ class biplaneMapper:
         plotRegistered(pipeline.mapping.__dict__['xReg'], pipeline['yReg'],
                             pipeline.mapping.__dict__['whichFOV'], 'After Registration')
 
+        # store shiftmaps in metadata
+        pipeline.mdh.setEntry('chroma.dx', dxx)
+        pipeline.mdh.setEntry('chroma.dy', dyy)
         # save shiftmaps (spx and spy)
-        import cPickle
-
         defFile = os.path.splitext(os.path.split(self.visFr.GetTitle())[-1])[0] + '.sf'
 
         fdialog = wx.FileDialog(None, 'Save shift field as ...',
