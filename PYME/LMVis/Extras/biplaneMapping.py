@@ -182,7 +182,7 @@ class biplaneMapper:
         dyErr = np.zeros_like(dx)
         xClump, yClump, xStd, yStd = [], [], [], []
         for ii in range(numFOV):
-            chan = (FOV == (ii+1))
+            chan = (FOV == ii)
             #numInChan = len(np.unique(clumpID[chan]))
             xChan = np.zeros(numMoles)
             yChan = np.zeros(numMoles)
@@ -211,12 +211,12 @@ class biplaneMapper:
                 dxx, dyy, spx, spy, good = twoColour.genShiftVectorFieldQ(xClump[0], yClump[0], dx[ii-1, :], dy[ii-1, :], dxErr[ii-1, :], dyErr[ii-1, :])
 
                 # store shiftmaps in metadata
-                pipeline.mdh.setEntry('Shiftmap.ROI0%s' % ii, [spx, spy])
+                pipeline.mdh.__dict__.__setitem__('Shiftmap.ROI0%s' % ii, [spx, spy])
                 # store shiftvectors in metadata
-                pipeline.mdh.setEntry('chroma.dx0%s' % ii, dxx)
-                pipeline.mdh.setEntry('chroma.dy0%s' % ii, dyy)
+                pipeline.mdh.__dict__.__setitem__('chroma.dx0%s' % ii, dxx)
+                pipeline.mdh.__dict__.__setitem__('chroma.dy0%s' % ii, dyy)
                 # save shiftmaps (spx and spy)
-                defFile = os.path.splitext(os.path.split(self.visFr.GetTitle())[-1])[0] + '.sf'
+                defFile = os.path.splitext(os.path.split(self.visFr.GetTitle())[-1])[0] + ('FOV0%s.sf' % ii)
 
                 fdialog = wx.FileDialog(None, 'Save shift field as ...',
                     wildcard='Shift Field file (*.sf)|*.sf', style=wx.SAVE, defaultDir=nameUtils.genShiftFieldDirectoryPath(), defaultFile=defFile)
