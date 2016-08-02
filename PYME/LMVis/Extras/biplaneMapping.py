@@ -140,18 +140,20 @@ class biplaneMapper:
     def OnFoldAndMap(self, event):
         pipeline = self.visFr.pipeline
 
-        try:  # load shiftmaps, if present
-            numFOV = pipeline.mdh['Multiview.NumROIs']
-            self.shiftMapsX = [pipeline.mdh['shiftMapsX.FOV%d' % ii] for ii in range(numFOV)]
-            self.shiftMapsY = [pipeline.mdh['shiftMapsY.FOV%d' % ii] for ii in range(numFOV)]
-
-            fid = open(inputFile)
-            spx, spy = cPickle.load(fid)
-            fid.close()
+        try:  # load shiftmaps from metadata, if present
+            # numFOV = pipeline.mdh['Multiview.NumROIs']
+            self.shiftMaps = pipeline.mdh.__dict__['Shiftmap']
         except KeyError:
-            raise UserWarning('Shiftmaps or number of FOVs not found in metadata')
-            return
+            try:
+                # FIXME: add dialogue or default selection of shiftmaps if not saved in metadata
+                fid = open(inputFile)
+                spx, spy = cPickle.load(fid)
+                fid.close()
+            except KeyError:
+                raise UserWarning('Shiftmaps not found in metadata and could not be loaded from file')
+                return
 
+        numFOV = pipeline.mdh['Multiview.NumROIs']
         foldX(pipeline)
 
         print('length is %i, max is %d' % (len(pipeline.mapping.__dict__['xFolded']), np.max(pipeline.mapping.__dict__['xFolded'])))
@@ -159,8 +161,16 @@ class biplaneMapper:
         plotFolded(pipeline.mapping.__dict__['xFolded'], pipeline['y'],
                             pipeline.mapping.__dict__['whichFOV'], 'Raw')
 
-        self.applyShiftmaps(pipeline.mapping.__dict__['xFolded'], pipeline['y'],
-                            pipeline.mapping.__dict__['whichFOV'], numFOV)
+        #self.applyShiftmaps(pipeline.mapping.__dict__['xFolded'], pipeline['y'],
+        #                    pipeline.mapping.__dict__['whichFOV'], numFOV)
+        xfold, yfold = [], []
+        for ii in range(numFOV):
+            xfold.append(pipeline.mapping.__dict__['xFolded'][np.where(pipeline.mapping.__dict__['whichFOV'] == ii)])
+            yfold.append(pipeline['y'][np.where(pipeline.mapping.__dict__['whichFOV'] == ii)])
+        self.applyShiftmaps(xfold, yfold, numFOV)
+
+        plotRegistered(pipeline.mapping.__dict__['xReg'], pipeline.mapping.__dict__['yReg'],
+                            numFOV, 'After Registration')
 
     def OnRegisterBiplane(self, event):
         from PYME.Analysis.points import twoColour
