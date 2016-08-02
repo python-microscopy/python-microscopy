@@ -33,7 +33,7 @@ def plotFolded(regX, regY, multiviewChannels, title=''):
 
 def plotRegistered(regX, regY, numFOV, title=''):
     import matplotlib.pyplot as plt
-
+    plt.figure()
     c = iter(plt.cm.rainbow(np.linspace(0, 1, numFOV)))
     for ii in range(numFOV):
         plt.scatter(regX[ii], regY[ii], c=next(c), label='FOV #%i' % ii)
@@ -220,8 +220,8 @@ class biplaneMapper:
 
             if ii > 0:
                 # todo: just use lists of arrays here to make things consistent
-                dx[ii - 1, :] = xClump[ii] - xClump[0]  # fixme: check if this is consistent with shiftfield generation
-                dy[ii - 1, :] = yClump[ii] - yClump[0]
+                dx[ii - 1, :] = xClump[0] - xClump[ii]  # fixme: check if this is consistent with shiftfield generation
+                dy[ii - 1, :] = yClump[0] - yClump[ii]
                 dxErr[ii - 1, :] = np.sqrt(xStd[ii]**2 + xStd[0]**2)
                 dyErr[ii - 1, :] = np.sqrt(yStd[ii]**2 + yStd[0]**2)
                 dxx, dyy, spx, spy, good = twoColour.genShiftVectorFieldQ(xClump[0], yClump[0], dx[ii-1, :], dy[ii-1, :], dxErr[ii-1, :], dyErr[ii-1, :])
@@ -251,6 +251,14 @@ class biplaneMapper:
         # plot unshifted and shifted (for clumps we based shift calculations on)
         #plotRegistered(pipeline.mapping.__dict__['xFolded'], pipeline['y'],
         #                    pipeline.mapping.__dict__['whichFOV'], 'Raw Folding')
+        xfold, yfold = [], []
+        for ii in range(numFOV):
+            xfold.append(pipeline.mapping.__dict__['xFolded'][np.where(pipeline.mapping.__dict__['whichFOV'] == ii)])
+            yfold.append(pipeline['y'][np.where(pipeline.mapping.__dict__['whichFOV'] == ii)])
+
+        plotRegistered(xfold, yfold, numFOV, 'Raw')
+
+        plotRegistered(xClump, yClump, numFOV, 'Clumped')
 
         plotRegistered(pipeline.mapping.__dict__['xReg'], pipeline.mapping.__dict__['yReg'],
                             numFOV, 'After Registration')
