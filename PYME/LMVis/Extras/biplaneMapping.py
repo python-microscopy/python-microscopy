@@ -127,8 +127,8 @@ class biplaneMapper:
         #yReg = [y[ii] + pipeline.mdh.__dict__['Shiftmap.FOV0%s' % ii][1].ev(x[ii], y[ii]) for ii in range(1, numFOV)]
         xReg, yReg = [x[0]], [y[0]]
         for ii in range(1, numFOV):
-            xReg.append(x[ii] + pipeline.mdh.__dict__['Shiftmap.FOV0%s' % ii][0].ev(x[ii], y[ii]))
-            yReg.append(y[ii] + pipeline.mdh.__dict__['Shiftmap.FOV0%s' % ii][1].ev(x[ii], y[ii]))
+            xReg.append(x[ii] + pipeline.mdh.__dict__['Shiftmap']['FOV0%s' % ii][0].ev(x[ii], y[ii]))
+            yReg.append(y[ii] + pipeline.mdh.__dict__['Shiftmap']['FOV0%s' % ii][1].ev(x[ii], y[ii]))
 
         #xReg = x + [(whichFOV == ii)*shiftMapsX[ii](x) for ii in range(numFOV)]
         #yReg = y + [(whichFOV == ii)*shiftMapsY[ii](y) for ii in range(numFOV)]
@@ -197,6 +197,8 @@ class biplaneMapper:
         dxErr = np.zeros_like(dx)
         dyErr = np.zeros_like(dx)
         xClump, yClump, xStd, yStd = [], [], [], []
+        shiftWallet = {}
+        dxWallet, dyWallet = {}, {}
         for ii in range(numFOV):
             chan = (FOV == ii)
             #numInChan = len(np.unique(clumpID[chan]))
@@ -219,38 +221,36 @@ class biplaneMapper:
             yStd.append(yChanStd)
 
             if ii > 0:
-                # todo: just use lists of arrays here to make things consistent
-                dx[ii - 1, :] = xClump[0] - xClump[ii]  # fixme: check if this is consistent with shiftfield generation
+                dx[ii - 1, :] = xClump[0] - xClump[ii]
                 dy[ii - 1, :] = yClump[0] - yClump[ii]
                 dxErr[ii - 1, :] = np.sqrt(xStd[ii]**2 + xStd[0]**2)
                 dyErr[ii - 1, :] = np.sqrt(yStd[ii]**2 + yStd[0]**2)
                 dxx, dyy, spx, spy, good = twoColour.genShiftVectorFieldQ(xClump[0], yClump[0], dx[ii-1, :], dy[ii-1, :], dxErr[ii-1, :], dyErr[ii-1, :])
+                shiftWallet['FOV0%s' % ii] = [spx, spy]
+                dxWallet['FOV0%s' % ii], dyWallet['FOV0%s' % ii] = dxx, dyy
 
-                # store shiftmaps in metadata
-                pipeline.mdh.__dict__.__setitem__('Shiftmap.FOV0%s' % ii, [spx, spy])
-                # store shiftvectors in metadata
-                pipeline.mdh.__dict__.__setitem__('chroma.dx0%s' % ii, dxx)
-                pipeline.mdh.__dict__.__setitem__('chroma.dy0%s' % ii, dyy)
-                # save shiftmaps (spx and spy)
-                defFile = os.path.splitext(os.path.split(self.visFr.GetTitle())[-1])[0] + ('FOV0%s.sf' % ii)
+        # store shiftmaps in metadata
+        pipeline.mdh.__dict__.__setitem__('Shiftmap', shiftWallet)
+        # store shiftvectors in metadata
+        pipeline.mdh.__dict__.__setitem__('chroma.dx', dxWallet)
+        pipeline.mdh.__dict__.__setitem__('chroma.dy', dyWallet)
+        # save shiftmaps (spx and spy)
+        defFile = os.path.splitext(os.path.split(self.visFr.GetTitle())[-1])[0] + 'MultiView.sf'
 
-                fdialog = wx.FileDialog(None, 'Save shift field as ...',
-                    wildcard='Shift Field file (*.sf)|*.sf', style=wx.SAVE, defaultDir=nameUtils.genShiftFieldDirectoryPath(), defaultFile=defFile)
-                succ = fdialog.ShowModal()
-                if (succ == wx.ID_OK):
-                    fpath = fdialog.GetPath()
-                    #save as a pickle containing the data and voxelsize
+        fdialog = wx.FileDialog(None, 'Save shift field as ...',
+            wildcard='Shift Field file (*.sf)|*.sf', style=wx.SAVE, defaultDir=nameUtils.genShiftFieldDirectoryPath(), defaultFile=defFile)
+        succ = fdialog.ShowModal()
+        if (succ == wx.ID_OK):
+            fpath = fdialog.GetPath()
+            #save as a pickle containing the data and voxelsize
 
-                    fid = open(fpath, 'wb')
-                    cPickle.dump((spx, spy), fid, 2)
-                    fid.close()
+            fid = open(fpath, 'wb')
+            cPickle.dump(shiftWallet, fid, 2)
+            fid.close()
 
         # apply shiftmaps
         self.applyShiftmaps(xClump, yClump, numFOV)
 
-        # plot unshifted and shifted (for clumps we based shift calculations on)
-        #plotRegistered(pipeline.mapping.__dict__['xFolded'], pipeline['y'],
-        #                    pipeline.mapping.__dict__['whichFOV'], 'Raw Folding')
         xfold, yfold = [], []
         for ii in range(numFOV):
             xfold.append(pipeline.mapping.__dict__['xFolded'][np.where(pipeline.mapping.__dict__['whichFOV'] == ii)])
