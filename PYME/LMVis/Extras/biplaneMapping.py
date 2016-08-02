@@ -159,7 +159,7 @@ class biplaneMapper:
                 if (succ == wx.ID_OK):
                     fpath = fdialog.GetPath()
                     # load json
-                    fid = open(fpath, 'wb')
+                    fid = open(fpath, 'r')
                     self.shiftWallet = json.load(fid)
                     fid.close()
             except:
