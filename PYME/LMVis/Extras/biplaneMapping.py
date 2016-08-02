@@ -204,8 +204,8 @@ class biplaneMapper:
 
             if ii > 0:
                 # todo: just use lists of arrays here to make things consistent
-                dx[ii - 1, :] = xChan[ii] - xChan[0]
-                dy[ii - 1, :] = yChan[ii] - yChan[0]
+                dx[ii - 1, :] = xClump[ii] - xClump[0]  # fixme: check if this is consistent with shiftfield generation
+                dy[ii - 1, :] = yClump[ii] - yClump[0]
                 dxErr[ii - 1, :] = np.sqrt(xStd[ii]**2 + xStd[0]**2)
                 dyErr[ii - 1, :] = np.sqrt(yStd[ii]**2 + yStd[0]**2)
                 dxx, dyy, spx, spy, good = twoColour.genShiftVectorFieldQ(xClump[0], yClump[0], dx[ii-1, :], dy[ii-1, :], dxErr[ii-1, :], dyErr[ii-1, :])
