@@ -89,8 +89,12 @@ def robustLinLhood(p, x, y, var=1):
 
 class shiftModel(object):
     def __init__(self , *args, **kwargs):
+        """
+        To recreate shiftmap from dictionary of fit results,
+        call the model with a keyword argument 'dict', i.e. linModel(dict=shiftmap.__dict__)
+        """
         if 'dict' in kwargs.keys():
-            self.__dict__.update(dict)
+            self.__dict__.update(kwargs['dict'])
         else:
             self.fit(*args, **kwargs)
             
