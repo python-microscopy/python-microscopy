@@ -20,7 +20,7 @@ def foldX(pipeline):
     pipeline.mapping.setMapping('whichFOV', mvQuad)
     return
 
-def plotRegistered(regX, regY, multiviewChannels, title=''):
+def plotFolded(regX, regY, multiviewChannels, title=''):
     import matplotlib.pyplot as plt
     nChan = multiviewChannels.max()
 
@@ -28,6 +28,15 @@ def plotRegistered(regX, regY, multiviewChannels, title=''):
     for ii in range(nChan):
         mask = (ii == multiviewChannels)
         plt.scatter(regX[mask], regY[mask], c=next(c))
+    plt.title(title)
+    return
+
+def plotRegistered(regX, regY, numFOV, title=''):
+    import matplotlib.pyplot as plt
+
+    c = iter(plt.cm.rainbow(np.linspace(0, 1, numFOV)))
+    for ii in range(numFOV):
+        plt.scatter(regX[ii], regY[ii], c=next(c), label='FOV #%i' % ii)
     plt.title(title)
     return
 
@@ -111,11 +120,18 @@ class biplaneMapper:
         visFr.Bind(wx.EVT_MENU, self.OnFoldAndMap, id=ID_MAP_BIPLANE)
         return
 
-    def applyShiftmaps(self, shiftMapsX, shiftMapsY, xFolded, y, whichFOV, numFOV):
+    def applyShiftmaps(self, x, y, numFOV):
         pipeline = self.visFr.pipeline
+        # __dict__.__setitem__('Shiftmap.FOV0%s' % ii, [spx, spy])
+        #xReg = [x[ii] + pipeline.mdh.__dict__['Shiftmap.FOV0%s' % ii][0].ev(x[ii], y[ii]) for ii in range(1, numFOV)]
+        #yReg = [y[ii] + pipeline.mdh.__dict__['Shiftmap.FOV0%s' % ii][1].ev(x[ii], y[ii]) for ii in range(1, numFOV)]
+        xReg, yReg = [x[0]], [y[0]]
+        for ii in range(1, numFOV):
+            xReg.append(x[ii] + pipeline.mdh.__dict__['Shiftmap.FOV0%s' % ii][0].ev(x[ii], y[ii]))
+            yReg.append(y[ii] + pipeline.mdh.__dict__['Shiftmap.FOV0%s' % ii][1].ev(x[ii], y[ii]))
 
-        xReg = xFolded + [(whichFOV == ii)*shiftMapsX[ii](xFolded) for ii in range(numFOV)]
-        yReg = y + [(whichFOV == ii)*shiftMapsY[ii](y) for ii in range(numFOV)]
+        #xReg = x + [(whichFOV == ii)*shiftMapsX[ii](x) for ii in range(numFOV)]
+        #yReg = y + [(whichFOV == ii)*shiftMapsY[ii](y) for ii in range(numFOV)]
 
         pipeline.mapping.setMapping('xReg', xReg)
         pipeline.mapping.setMapping('yReg', yReg)
@@ -140,7 +156,7 @@ class biplaneMapper:
 
         print('length is %i, max is %d' % (len(pipeline.mapping.__dict__['xFolded']), np.max(pipeline.mapping.__dict__['xFolded'])))
         print('Number of ROIs: %f' % np.max(pipeline.mapping.__dict__['whichFOV']))
-        plotRegistered(pipeline.mapping.__dict__['xFolded'], pipeline['y'],
+        plotFolded(pipeline.mapping.__dict__['xFolded'], pipeline['y'],
                             pipeline.mapping.__dict__['whichFOV'], 'Raw')
 
         self.applyShiftmaps(pipeline.mapping.__dict__['xFolded'], pipeline['y'],
@@ -211,7 +227,7 @@ class biplaneMapper:
                 dxx, dyy, spx, spy, good = twoColour.genShiftVectorFieldQ(xClump[0], yClump[0], dx[ii-1, :], dy[ii-1, :], dxErr[ii-1, :], dyErr[ii-1, :])
 
                 # store shiftmaps in metadata
-                pipeline.mdh.__dict__.__setitem__('Shiftmap.ROI0%s' % ii, [spx, spy])
+                pipeline.mdh.__dict__.__setitem__('Shiftmap.FOV0%s' % ii, [spx, spy])
                 # store shiftvectors in metadata
                 pipeline.mdh.__dict__.__setitem__('chroma.dx0%s' % ii, dxx)
                 pipeline.mdh.__dict__.__setitem__('chroma.dy0%s' % ii, dyy)
@@ -230,14 +246,14 @@ class biplaneMapper:
                     fid.close()
 
         # apply shiftmaps
-        self.applyShiftmaps(spx, spy, x, y, FOV, numFOV)
+        self.applyShiftmaps(xClump, yClump, numFOV)
 
         # plot unshifted and shifted (for clumps we based shift calculations on)
-        plotRegistered(pipeline.mapping.__dict__['xFolded'], pipeline['y'],
-                            pipeline.mapping.__dict__['whichFOV'], 'Raw Folding')
+        #plotRegistered(pipeline.mapping.__dict__['xFolded'], pipeline['y'],
+        #                    pipeline.mapping.__dict__['whichFOV'], 'Raw Folding')
 
-        plotRegistered(pipeline.mapping.__dict__['xReg'], pipeline['yReg'],
-                            pipeline.mapping.__dict__['whichFOV'], 'After Registration')
+        plotRegistered(pipeline.mapping.__dict__['xReg'], pipeline.mapping.__dict__['yReg'],
+                            numFOV, 'After Registration')
 
 
 
