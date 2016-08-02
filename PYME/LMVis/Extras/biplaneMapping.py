@@ -5,7 +5,8 @@ from PYME.Analysis.points import twoColour
 from PYME.Analysis.points.DeClump import pyDeClump
 import os
 from PYME.IO.FileUtils import nameUtils
-import cPickle
+import json
+import importlib
 
 def foldX(pipeline):
     """
@@ -124,11 +125,17 @@ class biplaneMapper:
         pipeline = self.visFr.pipeline
         # __dict__.__setitem__('Shiftmap.FOV0%s' % ii, [spx, spy])
         #xReg = [x[ii] + pipeline.mdh.__dict__['Shiftmap.FOV0%s' % ii][0].ev(x[ii], y[ii]) for ii in range(1, numFOV)]
-        #yReg = [y[ii] + pipeline.mdh.__dict__['Shiftmap.FOV0%s' % ii][1].ev(x[ii], y[ii]) for ii in range(1, numFOV)]
+        #yReg = [y[ii] + pipeline.mdh.__dict__['Shiftmap.FOV0%s' % ii][1].ev(x[ii], y[ii]) for ii in range(1, num
+        model = self.shiftWallet['shiftModel'].split('.')[-1]
+        shiftModule = importlib.import_module(self.shiftWallet['shiftModel'].split('.' + model)[0])
+        shiftModel = getattr(shiftModule, model)
+
         xReg, yReg = [x[0]], [y[0]]
         for ii in range(1, numFOV):
-            xReg.append(x[ii] + pipeline.mdh.__dict__['Shiftmap']['FOV0%s' % ii][0].ev(x[ii], y[ii]))
-            yReg.append(y[ii] + pipeline.mdh.__dict__['Shiftmap']['FOV0%s' % ii][1].ev(x[ii], y[ii]))
+            #xReg.append(x[ii] + pipeline.mdh.__dict__['Shiftmap']['FOV0%s' % ii][0].ev(x[ii], y[ii]))
+            #yReg.append(y[ii] + pipeline.mdh.__dict__['Shiftmap']['FOV0%s' % ii][1].ev(x[ii], y[ii]))
+            xReg.append(x[ii] + shiftModel(dict=self.shiftWallet['FOV0%s.X' % ii]).ev(x[ii], y[ii]))
+            yReg.append(y[ii] + shiftModel(dict=self.shiftWallet['FOV0%s.Y' % ii]).ev(x[ii], y[ii]))
 
         #xReg = x + [(whichFOV == ii)*shiftMapsX[ii](x) for ii in range(numFOV)]
         #yReg = y + [(whichFOV == ii)*shiftMapsY[ii](y) for ii in range(numFOV)]
@@ -142,16 +149,21 @@ class biplaneMapper:
 
         try:  # load shiftmaps from metadata, if present
             # numFOV = pipeline.mdh['Multiview.NumROIs']
-            self.shiftMaps = pipeline.mdh.__dict__['Shiftmap']
+            self.shiftWallet = pipeline.mdh.__dict__['Shiftmap']
         except KeyError:
             try:
-                # FIXME: add dialogue or default selection of shiftmaps if not saved in metadata
-                fid = open(inputFile)
-                spx, spy = cPickle.load(fid)
-                fid.close()
-            except KeyError:
-                raise UserWarning('Shiftmaps not found in metadata and could not be loaded from file')
-                return
+                defFile = os.path.splitext(os.path.split(self.visFr.GetTitle())[-1])[0] + 'MultiView.sf'
+                fdialog = wx.FileDialog(None, 'Save shift field as ...', wildcard='Shift Field file (*.sf)|*.sf',
+                                        style=wx.SAVE, defaultDir=nameUtils.genShiftFieldDirectoryPath(), defaultFile=defFile)
+                succ = fdialog.ShowModal()
+                if (succ == wx.ID_OK):
+                    fpath = fdialog.GetPath()
+                    # load json
+                    fid = open(fpath, 'wb')
+                    self.shiftWallet = json.load(fid)
+                    fid.close()
+            except:
+                raise IOError('Shiftmaps not found in metadata and could not be loaded from file')
 
         numFOV = pipeline.mdh['Multiview.NumROIs']
         foldX(pipeline)
@@ -207,7 +219,7 @@ class biplaneMapper:
         dxErr = np.zeros_like(dx)
         dyErr = np.zeros_like(dx)
         xClump, yClump, xStd, yStd = [], [], [], []
-        shiftWallet = {}
+        self.shiftWallet = {}
         dxWallet, dyWallet = {}, {}
         for ii in range(numFOV):
             chan = (FOV == ii)
@@ -236,11 +248,13 @@ class biplaneMapper:
                 dxErr[ii - 1, :] = np.sqrt(xStd[ii]**2 + xStd[0]**2)
                 dyErr[ii - 1, :] = np.sqrt(yStd[ii]**2 + yStd[0]**2)
                 dxx, dyy, spx, spy, good = twoColour.genShiftVectorFieldQ(xClump[0], yClump[0], dx[ii-1, :], dy[ii-1, :], dxErr[ii-1, :], dyErr[ii-1, :])
-                shiftWallet['FOV0%s' % ii] = [spx, spy]
+                self.shiftWallet['FOV0%s.X' % ii], self.shiftWallet['FOV0%s.Y' % ii] = spx.__dict__, spy.__dict__
                 dxWallet['FOV0%s' % ii], dyWallet['FOV0%s' % ii] = dxx, dyy
 
+
+        self.shiftWallet['shiftModel'] = '.'.join([spx.__class__.__module__, spx.__class__.__name__])
         # store shiftmaps in metadata
-        pipeline.mdh.__dict__.__setitem__('Shiftmap', shiftWallet)
+        pipeline.mdh.__dict__.__setitem__('Shiftmap', self.shiftWallet)
         # store shiftvectors in metadata
         pipeline.mdh.__dict__.__setitem__('chroma.dx', dxWallet)
         pipeline.mdh.__dict__.__setitem__('chroma.dy', dyWallet)
@@ -255,7 +269,8 @@ class biplaneMapper:
             #save as a pickle containing the data and voxelsize
 
             fid = open(fpath, 'wb')
-            cPickle.dump(shiftWallet, fid, 2)
+            #cPickle.dump(shiftWallet, fid, 2)
+            json.dump(self.shiftWallet, fid)
             fid.close()
 
         # apply shiftmaps
