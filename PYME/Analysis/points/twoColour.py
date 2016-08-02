@@ -90,7 +90,7 @@ def robustLinLhood(p, x, y, var=1):
 class shiftModel(object):
     def __init__(self , *args, **kwargs):
         if 'dict' in kwargs.keys():
-            self.__dict__.update(dict)
+            self.__dict__.update(kwargs['dict'])
         else:
             self.fit(*args, **kwargs)
             
