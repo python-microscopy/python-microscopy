@@ -1,7 +1,29 @@
 
+##################
+# multiviewMapping.py
+#
+# Copyright David Baddeley
+# david.baddeley@yale.edu
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+##################
+# AESB 08, 2016
+##################
+
 import wx
 import numpy as np
-from PYME.Analysis.points import twoColour
 from PYME.Analysis.points.DeClump import pyDeClump
 import os
 from PYME.IO.FileUtils import nameUtils
@@ -10,7 +32,16 @@ import importlib
 
 def foldX(pipeline):
     """
+
     At this point the origin of x should be the corner of the concatenated frame
+
+    Args:
+        pipeline:
+
+    Returns: nothing
+        Adds folded x-coordinates to the pipeline
+        Adds FOV assignments to the pipeline
+
     """
     xOG = pipeline['x']
     roiSizeNM = (pipeline.mdh['Multiview.ROISize'][1]*pipeline.mdh['voxelsize.x']*1000)  # voxelsize is in um
@@ -21,18 +52,42 @@ def foldX(pipeline):
     pipeline.mapping.setMapping('whichFOV', mvQuad)
     return
 
-def plotFolded(regX, regY, multiviewChannels, title=''):
+def plotFolded(X, Y, multiviewChannels, title=''):
+    """
+
+    Args:
+        X: array of localization x-positions
+        Y: array of localization y-positions
+        multiviewChannels: array of FOV assignment of localizations
+        title: title of plot
+
+    Returns: nothing
+        Plots unclumped raw localizations folded into the first FOV
+
+    """
     import matplotlib.pyplot as plt
     nChan = multiviewChannels.max()
 
     c = iter(plt.cm.rainbow(np.linspace(0, 1, nChan)))
     for ii in range(nChan):
         mask = (ii == multiviewChannels)
-        plt.scatter(regX[mask], regY[mask], c=next(c))
+        plt.scatter(X[mask], Y[mask], c=next(c))
     plt.title(title)
     return
 
 def plotRegistered(regX, regY, numFOV, title=''):
+    """
+
+    Args:
+        regX: list in which each element is an array of registered x-positions of molecules for a single FOV
+        regY: list in which each element is an array of registered y-positions of molecules for a single FOV
+        numFOV: number of multiview fields of view
+        title: title of plot
+
+    Returns: nothing
+        Plots molecules using the format that localization-clump positions are stored in.
+
+    """
     import matplotlib.pyplot as plt
     plt.figure()
     c = iter(plt.cm.rainbow(np.linspace(0, 1, numFOV)))
@@ -41,46 +96,23 @@ def plotRegistered(regX, regY, numFOV, title=''):
     plt.title(title)
     return
 
-def pairMolecules_old(xFold, y, whichFOV, combineDist, FOV1=0, FOV2=1):
+def pairMolecules(tIndex, x, y, whichFOV, numFOV, deltaX=None):
     """
-    This function will be depreciated, as it is not C-accelerated. Additionally,
-    this function would need to be called nROI-1 times, as opposed to once.
+    pairMolecules uses pyDeClump functions to group localization clumps into molecules for registration.
+
+    Args:
+        tIndex: from fitResults
+        x: x positions of localizations AFTER having been folded into the first FOV
+        y: y positions of localizations
+        whichFOV: a vector containing FOV assignments for each localization
+        numFOV: number of multiview fields of view
+        deltaX: distance within which neighbors will be clumped is set by 2*deltaX[i])**2
+
+    Returns:
+        x and y positions of molecules that were clumped, which field of view those localizations are from,
+        and which clump they were assigned to.
+
     """
-    interestingMolecules = np.logical_or(whichFOV == FOV1, whichFOV == FOV2)
-    xx = xFold[interestingMolecules]
-    yy = y[interestingMolecules]
-    chan = whichFOV[interestingMolecules]
-    numMol = len(xx)
-    dist = np.zeros((numMol, numMol))
-    for ind in range(numMol):
-        for ii in range(numMol):
-            dist[ind, ii] = np.sqrt((xx[ind] - xx[ii])**2 + (yy[ind] - yy[ii])**2)
-    dist = dist + (dist == 0)*999999
-    minDist = dist.min(axis=0)
-    minLoc = dist.argmin(axis=0)
-
-    # keepList = np.where(np.logical_and(FOV[minLoc] != FOV, minLoc[range(numMol)] == minLoc[minLoc[range(numMol)]]))
-
-    # only keep molecule pairs that are mutually nearest neighbors, within a certain distance, and heterozygous in planes
-    keep = np.logical_and(minLoc[range(numMol)] == minLoc[minLoc[range(numMol)]],
-                          np.logical_and(minDist <= combineDist, chan != chan[minLoc]))
-    keepList = np.where(keep)
-
-    minLocKept = minLoc[keep]
-
-    # numKept = len(keepList)
-    chan1Keep = np.logical_and(keep, whichFOV == FOV1)
-    pairs = minLocKept[chan1Keep]
-    # chan2Keep = minLocKept[~chan1Keep] #  np.logical_and(keep, whichFOV == FOV2)
-    x1 = xFold[chan1Keep]
-    y1 = y[chan1Keep]
-    x2 = xFold[pairs]
-    y2 = y[pairs]
-
-
-    return x1, y1, x2, y2
-
-def pairMolecules(tIndex, x, y, deltaX, whichFOV, numFOV):
     # sort everything in frame order
     I = tIndex.argsort()
     tIndex = tIndex[I]
@@ -88,70 +120,99 @@ def pairMolecules(tIndex, x, y, deltaX, whichFOV, numFOV):
     y = y[I]
     whichFOV = whichFOV[I]
 
-    # group within 100nm
-    dX = 100.*np.ones_like(deltaX)
+    # group within a certain distance, potentially based on localization uncertainty
+    if not deltaX:
+        dX = 100.*np.ones_like(deltaX)
     # group localizations
     assigned = pyDeClump.findClumps(tIndex, x, y, dX)
 
-    # only look at clumps with N=numFOVs, where each FOV is represented
-    # clumps, nInClump = np.unique(assigned, return_counts=True)
+    # only look at clumps with localizations from each FOV
     clumps = np.unique(assigned)
     keptClumps = [np.array_equal(np.unique(whichFOV[assigned == clumps[ii]]), np.arange(numFOV)) for ii in range(len(clumps))]
 
-    keptMoles = []# assigned in clumps[np.where(keptClumps)]
-    # np.array_equal(clumps, np.arange(1, np.max(assigned) + 1)) equaluates to True
-    # assigned == np.any(clumps[keptClumps])
+    keptMoles = []
+    # np.array_equal(clumps, np.arange(1, np.max(assigned) + 1)) evaluates to True
     for elem in assigned:
         keptMoles.append(elem in clumps[np.where(keptClumps)])
     keep = np.where(keptMoles)
 
-    #return x[keptMoles], y[keptMoles], whichFOV[keptMoles], clumps[keptClumps]
-    return x[keep], y[keep], whichFOV[keep], assigned[keep] #  , clumps[np.where(keptClumps)]
+    return x[keep], y[keep], whichFOV[keep], assigned[keep]
 
-class biplaneMapper:
+class multiviewMapper:
+    """
+
+    multiviewMapper provides methods for registering multiview fields of view as acquired in multicolor or biplane
+    imaging.
+    Image frames for multiview data should have FOVs concatonated horizontally, such that the x-dimension is the only
+    dimension that needs to be folded into the first FOV.
+    The shiftmaps are functions that interface like bivariate splines, but can be recreated from a dictionary of their
+    fit-model parameters, which are stored in a dictionary in the shiftmap object.
+    In the multiviewMapper class, shiftmaps for multiview data sources are stored in a dictionary of dictionaries.
+    Each shiftmap is stored as a dictionary so that it can be easily written into a human-readable json file. These \
+    shiftmaps are then stored in the shiftWallet dictionary.
+
+    """
     def __init__(self, visFr):
         self.visFr = visFr
 
-        ID_REGISTER_BIPLANE = wx.NewId()
-        visFr.extras_menu.Append(ID_REGISTER_BIPLANE, "Biplane - Register Channels")
-        visFr.Bind(wx.EVT_MENU, self.OnRegisterBiplane, id=ID_REGISTER_BIPLANE)
+        ID_REGISTER_MULTIVIEW = wx.NewId()
+        visFr.extras_menu.Append(ID_REGISTER_MULTIVIEW, "Multiview - Register Channels")
+        visFr.Bind(wx.EVT_MENU, self.OnRegisterMultiview, id=ID_REGISTER_MULTIVIEW)
 
-        ID_MAP_BIPLANE = wx.NewId()
-        visFr.extras_menu.Append(ID_MAP_BIPLANE, "Biplane - Map Z")
-        visFr.Bind(wx.EVT_MENU, self.OnFoldAndMap, id=ID_MAP_BIPLANE)
+        ID_MAP_MULTIVIEW = wx.NewId()
+        visFr.extras_menu.Append(ID_MAP_MULTIVIEW, "Multiview - Map Z")
+        visFr.Bind(wx.EVT_MENU, self.OnFoldAndMap, id=ID_MAP_MULTIVIEW)
         return
 
     def applyShiftmaps(self, x, y, numFOV):
+        """
+        applyShiftmaps loads multiview shiftmap parameters from multiviewMapper.shiftWallet, reconstructs the shiftmap
+        objects, applies them to the multiview data, and maps the positions registered to the first FOV to the pipeline
+
+        Args:
+            x: vector of localization x-positions
+            y: vector of localization y-positions
+            numFOV: number of multiview fields of view
+
+        Returns: nothing
+            Maps shifted x-, and y-positions into the pipeline
+            xReg and yReg are both lists, where each element is an array of positions corresponding to a given FOV
+
+        """
         pipeline = self.visFr.pipeline
-        # __dict__.__setitem__('Shiftmap.FOV0%s' % ii, [spx, spy])
-        #xReg = [x[ii] + pipeline.mdh.__dict__['Shiftmap.FOV0%s' % ii][0].ev(x[ii], y[ii]) for ii in range(1, numFOV)]
-        #yReg = [y[ii] + pipeline.mdh.__dict__['Shiftmap.FOV0%s' % ii][1].ev(x[ii], y[ii]) for ii in range(1, num
+
+        # import shiftModel to be reconstructed
         model = self.shiftWallet['shiftModel'].split('.')[-1]
         shiftModule = importlib.import_module(self.shiftWallet['shiftModel'].split('.' + model)[0])
         shiftModel = getattr(shiftModule, model)
 
         xReg, yReg = [x[0]], [y[0]]
         for ii in range(1, numFOV):
-            #xReg.append(x[ii] + pipeline.mdh.__dict__['Shiftmap']['FOV0%s' % ii][0].ev(x[ii], y[ii]))
-            #yReg.append(y[ii] + pipeline.mdh.__dict__['Shiftmap']['FOV0%s' % ii][1].ev(x[ii], y[ii]))
             xReg.append(x[ii] + shiftModel(dict=self.shiftWallet['FOV0%s.X' % ii]).ev(x[ii], y[ii]))
             yReg.append(y[ii] + shiftModel(dict=self.shiftWallet['FOV0%s.Y' % ii]).ev(x[ii], y[ii]))
-
-        #xReg = x + [(whichFOV == ii)*shiftMapsX[ii](x) for ii in range(numFOV)]
-        #yReg = y + [(whichFOV == ii)*shiftMapsY[ii](y) for ii in range(numFOV)]
 
         pipeline.mapping.setMapping('xReg', xReg)
         pipeline.mapping.setMapping('yReg', yReg)
         return
 
     def OnFoldAndMap(self, event):
+        """
+        OnFoldAndMap uses shiftmaps stored in metadata (by default) or loaded through the GUI to register multiview FOVs
+        to the first FOV.
+        Args:
+            event: GUI event
+
+        Returns: nothing
+            x- and y-positions will be registered to the first FOV and stored in the pipeline dictionary as xReg and
+            yReg. Their structure is described in applyShiftmaps
+
+        """
         pipeline = self.visFr.pipeline
 
         try:  # load shiftmaps from metadata, if present
-            # numFOV = pipeline.mdh['Multiview.NumROIs']
             self.shiftWallet = pipeline.mdh.__dict__['Shiftmap']
         except KeyError:
-            try:
+            try:  # load through GUI dialog
                 defFile = os.path.splitext(os.path.split(self.visFr.GetTitle())[-1])[0] + 'MultiView.sf'
                 fdialog = wx.FileDialog(None, 'Save shift field as ...', wildcard='Shift Field file (*.sf)|*.sf',
                                         style=wx.SAVE, defaultDir=nameUtils.genShiftFieldDirectoryPath(), defaultFile=defFile)
@@ -166,54 +227,55 @@ class biplaneMapper:
                 raise IOError('Shiftmaps not found in metadata and could not be loaded from file')
 
         numFOV = pipeline.mdh['Multiview.NumROIs']
+        # fold x-positions into the first FOV
         foldX(pipeline)
 
-        print('length is %i, max is %d' % (len(pipeline.mapping.__dict__['xFolded']), np.max(pipeline.mapping.__dict__['xFolded'])))
-        print('Number of ROIs: %f' % np.max(pipeline.mapping.__dict__['whichFOV']))
         plotFolded(pipeline.mapping.__dict__['xFolded'], pipeline['y'],
                             pipeline.mapping.__dict__['whichFOV'], 'Raw')
 
-        #self.applyShiftmaps(pipeline.mapping.__dict__['xFolded'], pipeline['y'],
-        #                    pipeline.mapping.__dict__['whichFOV'], numFOV)
+        # organize x- and y-positions into list of arrays corresponding to FOV
         xfold, yfold = [], []
         for ii in range(numFOV):
             xfold.append(pipeline.mapping.__dict__['xFolded'][np.where(pipeline.mapping.__dict__['whichFOV'] == ii)])
             yfold.append(pipeline['y'][np.where(pipeline.mapping.__dict__['whichFOV'] == ii)])
+
+        # apply shiftmaps
         self.applyShiftmaps(xfold, yfold, numFOV)
 
         plotRegistered(pipeline.mapping.__dict__['xReg'], pipeline.mapping.__dict__['yReg'],
                             numFOV, 'After Registration')
 
-    def OnRegisterBiplane(self, event):
+    def OnRegisterMultiview(self, event):
+        """
+
+        OnRegisterMultiview generates multiview shiftmaps on bead-data. Only beads which show up in all FOVs are used
+        to generate the shiftmap.
+
+        Args:
+            event: GUI event
+
+        Returns: nothing
+            Writes shiftmapWallet into metadata as well as saving a json formatted .sf file through a GUI dialog
+        """
         from PYME.Analysis.points import twoColour
         pipeline = self.visFr.pipeline
 
         try:
             numFOV = pipeline.mdh['Multiview.NumROIs']
         except KeyError:
-            raise UserWarning('You are either not looking at Biplane Data, or your metadata is incomplete')
-            return
+            raise KeyError('You are either not looking at multiview Data, or your metadata is incomplete')
 
+        # fold x position of FOVs into the first
         foldX(pipeline)
 
-        print('length is %i, max is %d' % (len(pipeline.mapping.__dict__['xFolded']), np.max(pipeline.mapping.__dict__['xFolded'])))
-        print('Number of ROIs: %f' % np.max(pipeline.mapping.__dict__['whichFOV']))
-
-        # Now we need to match up molecules
-        #combineDist = 20
+        # Match up molecules
         x, y, FOV, clumpID, = pairMolecules(pipeline['tIndex'], pipeline.mapping.__dict__['xFolded'], pipeline['y'],
-                      pipeline['error_x'], pipeline.mapping.__dict__['whichFOV'], numFOV)
-
-        # merge clumps within channels
-        molList = np.unique(clumpID)
-        numMoles = len(molList)
-        #xClumped = [[np.mean(x[np.logical_and(clumpID == ii, FOV == ind)]) for ii in range(numMoles)] for ind in range(numFOV)]
-        #yClumped = [[np.mean(y[np.logical_and(clumpID == ii, FOV == ind)]) for ii in range(numMoles)] for ind in range(numFOV)]
+                      pipeline.mapping.__dict__['whichFOV'], numFOV)  #, pipeline['error_x'])
 
         # Generate raw shift vectors (map of displacements between channels) for each FOV
-        #xRawShiftVec = [twoColour.genShiftVectors(x[FOV == 0], x[FOV == ii]) for ii in range(1, numFOV)]
-        #yRawShiftVec = [twoColour.genShiftVectors(y[FOV == 0], y[FOV == ii]) for ii in range(1, numFOV)]
-        #chan1 = (FOV == 0)
+        molList = np.unique(clumpID)
+        numMoles = len(molList)
+
         dx = np.zeros((numFOV - 1, numMoles))
         dy = np.zeros_like(dx)
         dxErr = np.zeros_like(dx)
@@ -223,7 +285,6 @@ class biplaneMapper:
         dxWallet, dyWallet = {}, {}
         for ii in range(numFOV):
             chan = (FOV == ii)
-            #numInChan = len(np.unique(clumpID[chan]))
             xChan = np.zeros(numMoles)
             yChan = np.zeros(numMoles)
             xChanStd = np.zeros(numMoles)
@@ -231,6 +292,7 @@ class biplaneMapper:
 
 
             for ind in range(numMoles):
+                # merge clumps within channels
                 clumpMask = np.where(np.logical_and(chan, clumpID == molList[ind]))
                 xChan[ind] = x[clumpMask].mean()
                 yChan[ind] = y[clumpMask].mean()
@@ -247,7 +309,9 @@ class biplaneMapper:
                 dy[ii - 1, :] = yClump[0] - yClump[ii]
                 dxErr[ii - 1, :] = np.sqrt(xStd[ii]**2 + xStd[0]**2)
                 dyErr[ii - 1, :] = np.sqrt(yStd[ii]**2 + yStd[0]**2)
+                # generate shiftmap between ii-th FOV and the 0th FOV
                 dxx, dyy, spx, spy, good = twoColour.genShiftVectorFieldQ(xClump[0], yClump[0], dx[ii-1, :], dy[ii-1, :], dxErr[ii-1, :], dyErr[ii-1, :])
+                # store shiftmaps in multiview shiftWallet
                 self.shiftWallet['FOV0%s.X' % ii], self.shiftWallet['FOV0%s.Y' % ii] = spx.__dict__, spy.__dict__
                 dxWallet['FOV0%s' % ii], dyWallet['FOV0%s' % ii] = dxx, dyy
 
@@ -258,7 +322,7 @@ class biplaneMapper:
         # store shiftvectors in metadata
         pipeline.mdh.__dict__.__setitem__('chroma.dx', dxWallet)
         pipeline.mdh.__dict__.__setitem__('chroma.dy', dyWallet)
-        # save shiftmaps (spx and spy)
+        # save shiftmaps
         defFile = os.path.splitext(os.path.split(self.visFr.GetTitle())[-1])[0] + 'MultiView.sf'
 
         fdialog = wx.FileDialog(None, 'Save shift field as ...',
@@ -266,16 +330,15 @@ class biplaneMapper:
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
             fpath = fdialog.GetPath()
-            #save as a pickle containing the data and voxelsize
 
             fid = open(fpath, 'wb')
-            #cPickle.dump(shiftWallet, fid, 2)
             json.dump(self.shiftWallet, fid)
             fid.close()
 
-        # apply shiftmaps
+        # apply shiftmaps to clumped localizations
         self.applyShiftmaps(xClump, yClump, numFOV)
 
+        # organize x- and y-positions into list of arrays corresponding to FOV
         xfold, yfold = [], []
         for ii in range(numFOV):
             xfold.append(pipeline.mapping.__dict__['xFolded'][np.where(pipeline.mapping.__dict__['whichFOV'] == ii)])
@@ -293,4 +356,4 @@ class biplaneMapper:
 
 def Plug(visFr):
     """Plugs this module into the gui"""
-    biplaneMapper(visFr)
+    multiviewMapper(visFr)
