@@ -84,8 +84,11 @@ class RecipePlugin(recipeGui.RecipeManager):
                 self.outp = self.activeRecipe.execute(input=self.image)
                 
             if isinstance(self.outp, ImageStack):
+
                 if self.dsviewer.mode == 'visGUI':
                     mode = 'visGUI'
+                elif 'out_tracks' in self.activeRecipe.namespace.keys():
+                    mode = 'tracking'
                 else:
                     mode = 'default'
     
@@ -105,8 +108,15 @@ class RecipePlugin(recipeGui.RecipeManager):
                 #set scaling to (0,1)
                 for i in range(self.outp.data.shape[3]):
                     dv.do.Gains[i] = 1.0
+
+                if ('out_tracks' in self.activeRecipe.namespace.keys()) and 'tracker' in dir(dv):
+                    dv.tracker.SetTracks(self.activeRecipe.namespace['out_tracks'])
+
                     
             else:
+                if ('out_tracks' in self.activeRecipe.namespace.keys()) and 'tracker' in dir(self.dsviewer):
+                    self.dsviewer.tracker.SetTracks(self.activeRecipe.namespace['out_tracks'])
+
                 #assume we made measurements - put in pipeline
                 #TODO - put an explict check in here
             
@@ -116,7 +126,10 @@ class RecipePlugin(recipeGui.RecipeManager):
                 from PYME.LMVis import inpFilt
                 cache = inpFilt.cachingResultsFilter(self.outp)
                 self.dsviewer.pipeline.OpenFile(ds = cache)
+                self.dsviewer.pipeline.filterKeys = {}
+                self.dsviewer.pipeline.Rebuild()
                 self.dsviewer.view.filter = self.dsviewer.pipeline
+
                 
     def TestCurrentRecipe(self, event=None):
         """run recipe on current frame only as an inexpensive form of testing"""

@@ -4,7 +4,7 @@ Created on Mon May 25 17:10:02 2015
 
 @author: david
 """
-from .base import ModuleBase, register_module, Filter, Float, Enum, CStr, Bool, Int, View, Item#, Group
+from .base import ModuleBase, register_module, Filter, Float, Enum, CStr, Bool, Int, List, View, Item#, Group
 import numpy as np
 import pandas as pd
 from PYME.LMVis import inpFilt
@@ -84,6 +84,124 @@ class FitDumbells(ModuleBase):
         res.mdh = md
         
         namespace[self.outputName] = res
+
+
+@register_module('FitPoints')
+class FitPoints(ModuleBase):
+    """ Apply one of the fit modules from PYME.localization.FitFactories to each of the points in the provided
+    in inputPositions
+    """
+    inputImage = CStr('input')
+    inputPositions = CStr('objPositions')
+    outputName = CStr('fitResults')
+    fitModule = CStr('LatGaussFitFR')
+
+    def execute(self, namespace):
+        #from PYME.localization.FitFactories import DumbellFitR
+        from PYME.IO import MetaDataHandler
+        img = namespace[self.inputImage]
+
+        md = MetaDataHandler.NestedClassMDHandler()
+        #set metadata entries needed for fitting to suitable defaults
+        md['Camera.ADOffset'] = img.data[:, :, 0].min()
+        md['Camera.TrueEMGain'] = 1.0
+        md['Camera.ElectronsPerCount'] = 1.0
+        md['Camera.ReadNoise'] = 1.0
+        md['Camera.NoiseFactor'] = 1.0
+
+        #copy across the entries from the real image, replacing the defaults
+        #if necessary
+        md.copyEntriesFrom(img.mdh)
+
+        inp = namespace[self.inputPositions]
+
+        fitMod = __import__('PYME.localization.FitFactories.' + self.fitModule,
+                            fromlist=['PYME', 'localization', 'FitFactories']) #import our fitting module
+
+        r = np.zeros(len(inp['x']), dtype=fitMod.FitResultsDType)
+
+        ff_t = -1
+
+        ps = img.pixelSize
+        print('pixel size: %s' % ps)
+
+        for x, y, t, i in zip(inp['x'], inp['y'], inp['t'], range(len(inp['x']))):
+            if not t == ff_t:
+                md['tIndex'] = t
+                ff = fitMod.FitFactory(img.data[:, :, t], md)
+                ff_t = t
+
+            #print x/ps, y/ps
+            r[i] = ff.FromPoint(x/ps, y/ps)
+
+        res = inpFilt.fitResultsSource(r, sort=False)
+        res.mdh = md
+
+        namespace[self.outputName] = res
+
+@register_module('IntensityAtPoints')
+class IntensityAtPoints(ModuleBase):
+    """ Apply one of the fit modules from PYME.localization.FitFactories to each of the points in the provided
+    in inputPositions
+    """
+    inputImage = CStr('input')
+    inputPositions = CStr('objPostiions')
+    outputName = CStr('fitResults')
+    radii = List([3, 5, 7, 9, 11])
+    #fitModule = CStr('LatGaussFitFR')
+
+    def _get_mask(self, r):
+        if not '_mask_cache' in dir(self):
+            self._mask_cache = {}
+
+        if not r in self._mask_cache.keys():
+            x_, y_ = np.mgrid[-r:(r+1.), -r:(r+1.)]
+            self._mask_cache[r] = 1.0*((x_*x_ + y_*y_) <= r*r)
+
+        return self._mask_cache[r]
+
+
+    def _get_mean(self, data, x, y, t, radius):
+        roi = data[(x-radius):(x + radius + 1), (y-radius):(y + radius + 1), t]
+        mask = self._get_mask(radius)
+
+        return (roi*mask).mean()
+
+    def execute(self, namespace):
+        #from PYME.localization.FitFactories import DumbellFitR
+        from PYME.IO import MetaDataHandler
+        img = namespace[self.inputImage]
+
+        md = MetaDataHandler.NestedClassMDHandler()
+        #set metadata entries needed for fitting to suitable defaults
+        md['Camera.ADOffset'] = img.data[:, :, 0].min()
+        md['Camera.TrueEMGain'] = 1.0
+        md['Camera.ElectronsPerCount'] = 1.0
+        md['Camera.ReadNoise'] = 1.0
+        md['Camera.NoiseFactor'] = 1.0
+
+        #copy across the entries from the real image, replacing the defaults
+        #if necessary
+        md.copyEntriesFrom(img.mdh)
+
+        inp = namespace[self.inputPositions]
+
+        res = np.zeros(len(inp['x']), dtype=[('r%d' % r, 'f4') for r in self.radii])
+
+        ff_t = -1
+
+        ps = img.pixelSize
+        print('pixel size: %s' % ps)
+        for x, y, t, i in zip(inp['x'], inp['y'], inp['t'], range(len(inp['x']))):
+            for r in self.radii:
+                res[i]['r%d' % r] = self._get_mean(img.data, np.round(x/ps), np.round(y/ps), t, r)
+
+        res = inpFilt.recArrayInput(res)
+        res.mdh = md
+
+        namespace[self.outputName] = res
+
+
 
 @register_module('MeanNeighbourDistances') 
 class MeanNeighbourDistances(ModuleBase):
@@ -543,7 +661,8 @@ class AggregateMeasurements(ModuleBase):
                 
         
         meas1 = namespace[self.inputMeasurements1]
-        res = pd.DataFrame(res)
+        #res = pd.DataFrame(res)
+        res = inpFilt.cloneSource(res)
         if 'mdh' in dir(meas1):
             res.mdh = meas1.mdh
             

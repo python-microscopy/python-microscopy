@@ -10,8 +10,7 @@ Defines a 'wire' format for transmitting or saving image frame data.
 
 import numpy as np
 
-#try:
-from pymecompress import bcl
+
 
 from multiprocessing.pool import ThreadPool
 from multiprocessing import cpu_count
@@ -19,6 +18,12 @@ from multiprocessing import cpu_count
 import threading
 import logging
 logging.basicConfig(level=logging.DEBUG)
+
+try:
+    from pymecompress import bcl
+except ImportError:
+    logging.warning('''Could not import pymecompress library - saving or loading compressed PZF will fail
+    (the library is installable from david_baddely conda channel, but requires an AVX capable processor)''')
 
 NUM_COMP_THREADS = 2#cpu_count()
 
@@ -258,7 +263,7 @@ def loads(datastring):
         #quantized data is always 8 bit
         outsize = w * h * d
     else:
-        outsize = w*h*d*DATA_FMTS[header['DataFormat']]
+        outsize = w*h*d*DATA_FMTS_SIZES[int(header['DataFormat'])]
     
     data_s = datastring[HEADER_LENGTH:]
 
@@ -285,7 +290,7 @@ def loads(datastring):
         #logging.debug('Dequantizing')
 
         data = data*header['QuantScale']
-        data = (data*data + header['QuantOffset']).astype(DATA_FMTS[header['DataFormat']])
+        data = (data*data + header['QuantOffset']).astype(DATA_FMTS[int(header['DataFormat'])])
     
     data = data.view(DATA_FMTS[int(header['DataFormat'])]).reshape([w,h,d])
     
