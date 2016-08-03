@@ -2,7 +2,7 @@
 ##################
 # multiviewMapping.py
 #
-# Copyright David Baddeley
+# Copyright Andrew Barentine, David Baddeley
 # david.baddeley@yale.edu
 #
 # This program is free software: you can redistribute it and/or modify
