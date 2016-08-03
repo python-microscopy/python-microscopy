@@ -122,7 +122,7 @@ def pairMolecules(tIndex, x, y, whichFOV, numFOV, deltaX=None):
 
     # group within a certain distance, potentially based on localization uncertainty
     if not deltaX:
-        dX = 100.*np.ones_like(deltaX)
+        dX = 100.*np.ones_like(x)
     # group localizations
     assigned = pyDeClump.findClumps(tIndex, x, y, dX)
 
@@ -213,9 +213,8 @@ class multiviewMapper:
             self.shiftWallet = pipeline.mdh.__dict__['Shiftmap']
         except KeyError:
             try:  # load through GUI dialog
-                defFile = os.path.splitext(os.path.split(self.visFr.GetTitle())[-1])[0] + 'MultiView.sf'
-                fdialog = wx.FileDialog(None, 'Save shift field as ...', wildcard='Shift Field file (*.sf)|*.sf',
-                                        style=wx.SAVE, defaultDir=nameUtils.genShiftFieldDirectoryPath(), defaultFile=defFile)
+                fdialog = wx.FileDialog(None, 'Load shift field', wildcard='Shift Field file (*.sf)|*.sf',
+                                        style=wx.OPEN, defaultDir=nameUtils.genShiftFieldDirectoryPath())
                 succ = fdialog.ShowModal()
                 if (succ == wx.ID_OK):
                     fpath = fdialog.GetPath()
