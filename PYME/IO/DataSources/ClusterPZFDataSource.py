@@ -97,7 +97,7 @@ class DataSource(BaseDataSource):
             evts['EventDescr'] = ev['EventDescr']
             evts['Time'] = ev['Time']
             return evts
-        except IOError:
+        except (IOError, ValueError):
             #our series might not have any events
             return []
         

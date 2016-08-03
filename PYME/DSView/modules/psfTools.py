@@ -278,7 +278,7 @@ class PSFTools(HasTraits):
 
         dv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
 
-    def OnCalibrateAstigmatism(self, event):
+    def OnCalibrateAstigmatism(self, event, calib=None):
         from PYME.recipes.measurement import FitPoints
         import matplotlib.pyplot as plt
         import mpld3
@@ -308,8 +308,9 @@ class PSFTools(HasTraits):
 
         #generate new tab to show results
         if not '_astig_view' in dir(self):
-            self._astig_view= wx.html2.WebView.New(self.dsviewer)
-            self.dsviewer.AddPage(self._astig_view, True, 'Astigmatic calibration')
+            pass
+            #self._astig_view= wx.html2.WebView.New(self.dsviewer)
+            #self.dsviewer.AddPage(self._astig_view, True, 'Astigmatic calibration')
 
         #do plotting
         plt.ioff()
@@ -334,13 +335,17 @@ class PSFTools(HasTraits):
         plt.tight_layout()
 
         plt.ion()
+        plt.show()
 
         fig =  mpld3.fig_to_html(f)
-        data = json.dumps({'z' : objPositions['z'][valid].tolist(), 'sigmax' : res['fitResults_sigmax'][valid].tolist(),
-                           'sigmay' : res['fitResults_sigmay'][valid].tolist(), 'dsigma' : dsigma[valid].tolist()})
-
+        dat = {'z' : objPositions['z'][valid].tolist(), 'sigmax' : res['fitResults_sigmax'][valid].tolist(),
+                           'sigmay' : res['fitResults_sigmay'][valid].tolist(), 'dsigma' : dsigma[valid].tolist()}
+        data = json.dumps(dat)
+        print data
         template = env.get_template('astigCal.html')
-        self._astig_view.SetPage(template.render(astigplot=fig, data=data), '')
+        #self._astig_view.SetPage(template.render(astigplot=fig, data=data), '')
+        if calib:
+            return data
 
         
         
