@@ -156,11 +156,11 @@ class GaussianFitFactory:
         if _warpDrive.candCount == 0:
             resList = np.empty(0, FitResultsDType)
             return resList
-        _warpDrive.fitItSlow(roiSize)
+        _warpDrive.fitItToWinIt(roiSize)
 
         # LLH: (N); dpars and CRLB (N, 6)
         #convert pixels to nm; voxelsize in units of um
-        dpars = _warpDrive.dpars[:_warpDrive.candCount, :]
+        dpars = np.reshape(_warpDrive.dpars, (_warpDrive.maxCandCount, 6))[:_warpDrive.candCount, :]
         dpars[:, 0] *= (1000*self.metadata.voxelsize.y)
         dpars[:, 1] *= (1000*self.metadata.voxelsize.x)
         dpars[:, 4] *= (1000*self.metadata.voxelsize.y)
@@ -172,7 +172,7 @@ class GaussianFitFactory:
 
         if _warpDrive.calcCRLB:
             LLH = _warpDrive.LLH[:_warpDrive.candCount]
-            CRLB = _warpDrive.CRLB[:_warpDrive.candCount, :]
+            CRLB = np.reshape(_warpDrive.CRLB, (_warpDrive.maxCandCount, 6))[:_warpDrive.candCount, :]
             # fixme: Should never have negative CRLB, yet Yu reports ocassional instances in Matlab verison, check
             CRLB[:, 0] = np.sqrt(np.abs(CRLB[:, 0]))*(1000*self.metadata.voxelsize.y)
             CRLB[:, 1] = np.sqrt(np.abs(CRLB[:, 1]))*(1000*self.metadata.voxelsize.x)
@@ -218,7 +218,7 @@ PARAMETERS = [#mde.ChoiceParam('Analysis.InterpModule','Interp:','LinearInterpol
               #mde.ChoiceParam('Analysis.EstimatorModule', 'Z Start Est:', 'astigEstimator', choices=zEstimators.estimatorList),
               #mde.ChoiceParam('PRI.Axis', 'PRI Axis:', 'y', choices=['x', 'y'])
               ]
-              
+
 DESCRIPTION = 'Astigmatic Gaussian fitting performed at warp-speed on the GPU'
 LONG_DESCRIPTION = 'Astigmatic Gaussian fitting on the GPU: Fits astigmatic gaussian with sCMOS noise model. Uses it\'s own object detection routine'
 USE_FOR = '3D via Astigmatism, with sCMOS noise model'
