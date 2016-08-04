@@ -295,9 +295,50 @@ class psfExtractor:
             ViewIm3D(im, mode='psf', parent=wx.GetTopLevelParent(self.dsviewer))
 
     def OnCalibrateMultiview(self, event):
-        if len(self.PSFLocs) != self.numChan:
-            return
         from PYME.Analysis.PSFEst import extractImages
+        from PYME.DSView.modules import psfTools
+        import matplotlib.pyplot as plt
+        if len(self.PSFLocs) > 0:
+            print('whoops')
+            return
+        # grab PSFs, currently relying on user to pick psf in first channel
+        rsx, rsy, rsz = [int(s) for s in self.tPSFROI.GetValue().split(',')]
+        astigDat = []
+        for ii in range(self.numChan):
+            #
+            xmin, xmax = [(self.do.xp-rsx + ii*self.data.shape[0]), (self.do.xp+rsx + ii*self.data.shape[0] + 1)]
+            dx, dy, dz = extractImages.getIntCenter(self.image.data[xmin:xmax,
+                                                    (self.do.yp-rsy):(self.do.yp+rsy+1), :, 0])
+            self.PSFLocs.append((self.do.xp + dx, self.do.yp + dy, dz))
+            self.view.psfROIs = self.PSFLocs
+            self.view.Refresh()
+
+            psfROISize = [int(s) for s in self.tPSFROI.GetValue().split(',')]
+            psfBlur = [float(s) for s in self.tPSFBlur.GetValue().split(',')]
+
+            psf = extractImages.getPSF3D(self.image.data[:, :, :, 0],
+                                         [self.PSFLocs[ii]], psfROISize, psfBlur)
+
+
+            if self.chType.GetSelection() == 0:
+                #widefield image - do special background subtraction
+                psf = extractImages.backgroundCorrectPSFWF(psf)
+
+            from PYME.DSView.dsviewer import ImageStack, ViewIm3D
+
+            im = ImageStack(data = psf, mdh = self.image.mdh, titleStub = 'Extracted PSF')
+            im.defaultExt = '*.psf' #we want to save as PSF by default
+            ViewIm3D(im, mode='psf', parent=wx.GetTopLevelParent(self.dsviewer))
+
+            calibrater = psfTools.PSFTools(self.dsviewer, im)
+            astigDat.append(calibrater.OnCalibrateAstigmatism(event))
+
+        psfTools.plotAstigCalibration(astigDat)
+
+
+
+
+
             
     def OnExtractSplitPSF(self, event):
         if (len(self.PSFLocs) > 0):
@@ -330,12 +371,6 @@ class psfExtractor:
             im = ImageStack(data = psf, mdh = self.image.mdh, titleStub = 'Extracted PSF')
             im.defaultExt = '*.psf' #we want to save as PSF by default
             ViewIm3D(im, mode='psf', parent=wx.GetTopLevelParent(self.dsviewer))
-
-            if self.ChanOffsetZ:
-                from PYME.DSView.modules.psfTools import PSFTools
-                calibrater = PSFTools(self.dsviewer)
-                astigData = calibrater.OnCalibrateAstigmatism(event, calib=True)
-                return astigData
 
 #            fdialog = wx.FileDialog(None, 'Save PSF as ...',
 #                wildcard='PSF file (*.psf)|*.psf|H5P file (*.h5p)|*.h5p', style=wx.SAVE|wx.HIDE_READONLY)

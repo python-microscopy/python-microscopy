@@ -45,6 +45,50 @@ def remove_newlines(s):
     s = ' '.join(s.split())
     return '\n'.join(s.split('<>'))
 
+def plotAstigCalibration(astigDat):
+    """
+    dat = {'z' : objPositions['z'][valid].tolist(), 'sigmax' : res['fitResults_sigmax'][valid].tolist(),
+                           'sigmay' : res['fitResults_sigmay'][valid].tolist(), 'dsigma' : dsigma[valid].tolist()}
+    Args:
+        astigDat:
+
+    Returns:
+
+    """
+    if astigDat.__class__ == dict:
+        astigDat = [astigDat]
+
+    numChan = len(astigDat)
+
+    import matplotlib.pyplot as plt
+    f = plt.figure(figsize=(10, 4))
+    for ii in range(numChan):
+        plt.ioff()
+
+
+        plt.subplot(121)
+        plt.plot(astigDat[ii]['z'], astigDat[ii]['sigmax'])
+        plt.plot(astigDat[ii]['z'], astigDat[ii]['sigmay'])
+
+        #plt.ylim(-200, 400)
+        plt.grid()
+        plt.xlabel('z position [nm]')
+        plt.ylabel('Sigma [nm]')
+        plt.legend(['x', 'y'])
+
+        plt.subplot(122)
+        plt.plot(astigDat[ii]['z'], astigDat[ii]['dsigma'], lw=2)
+        plt.grid()
+        plt.xlabel('z position [nm]')
+        plt.ylabel('Sigma y - Sigma y [nm]')
+
+        plt.tight_layout()
+
+        plt.ion()
+        plt.show()
+
+    return f
+
 class PSFQualityPanel(wx.Panel):
     def __init__(self, dsviewer):
         wx.Panel.__init__(self, dsviewer) 
@@ -231,11 +275,14 @@ class PSFTools(HasTraits):
                 Item('intermediateUpdates'),
                 buttons=[OKButton])
     
-    def __init__(self, dsviewer):
+    def __init__(self, dsviewer, psfIm=None):
         self.dsviewer = dsviewer
         self.do = dsviewer.do
 
-        self.image = dsviewer.image
+        if not psfIm:
+            self.image = dsviewer.image
+        else:
+            self.image = psfIm
         
         dsviewer.AddMenuItem('Processing', "Extract &Pupil Function", self.OnExtractPupil)
         dsviewer.AddMenuItem('Processing', "Cramer-Rao Bound vs Background ", self.OnCalcCRB3DvsBG)
@@ -278,7 +325,7 @@ class PSFTools(HasTraits):
 
         dv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
 
-    def OnCalibrateAstigmatism(self, event):
+    def OnCalibrateAstigmatism(self, event, plotIt=True):
         from PYME.recipes.measurement import FitPoints
         import matplotlib.pyplot as plt
         import mpld3
@@ -313,6 +360,7 @@ class PSFTools(HasTraits):
             #self.dsviewer.AddPage(self._astig_view, True, 'Astigmatic calibration')
 
         #do plotting
+        """
         plt.ioff()
         f = plt.figure(figsize=(10, 4))
 
@@ -336,6 +384,7 @@ class PSFTools(HasTraits):
 
         plt.ion()
         plt.show()
+        """
 
         #fig =  mpld3.fig_to_html(f)
         dat = {'z' : objPositions['z'][valid].tolist(), 'sigmax' : res['fitResults_sigmax'][valid].tolist(),
@@ -345,6 +394,8 @@ class PSFTools(HasTraits):
         #html = template.render(astigplot=fig, data=data)
         #print html
         #self._astig_view.SetPage(html, '')
+        if plotIt:
+            plotAstigCalibration(dat)
         return dat
 
         
