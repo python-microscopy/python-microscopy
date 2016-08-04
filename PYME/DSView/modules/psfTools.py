@@ -339,8 +339,12 @@ class PSFTools(HasTraits):
         data = json.dumps({'z' : objPositions['z'][valid].tolist(), 'sigmax' : res['fitResults_sigmax'][valid].tolist(),
                            'sigmay' : res['fitResults_sigmay'][valid].tolist(), 'dsigma' : dsigma[valid].tolist()})
 
+        #print data
+
         template = env.get_template('astigCal.html')
-        self._astig_view.SetPage(template.render(astigplot=fig, data=data), '')
+        html = template.render(astigplot=fig, data=data)
+        #print html
+        self._astig_view.SetPage(html, '')
 
         
         

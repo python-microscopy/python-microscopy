@@ -420,7 +420,7 @@ class Measure2D(ModuleBase):
     measureContour = Bool(True)    
         
     def execute(self, namespace):       
-        labels = namespace[self.inputLabels].astype('i')
+        labels = namespace[self.inputLabels]
         
         #define the measurement class, which behaves like an input filter        
         class measurements(inpFilt.inputFilter):
@@ -520,7 +520,7 @@ class Measure2D(ModuleBase):
     def _measureFrame(self, frameNo, labels, intensity):
         import skimage.measure
         
-        li = labels.data[:,:,frameNo].squeeze()
+        li = labels.data[:,:,frameNo].squeeze().astype('i')
 
         if intensity:
             it = intensity.data[:,:,frameNo].squeeze()
