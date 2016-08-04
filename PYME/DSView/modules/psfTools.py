@@ -337,15 +337,15 @@ class PSFTools(HasTraits):
         plt.ion()
         plt.show()
 
-        fig =  mpld3.fig_to_html(f)
+        #fig =  mpld3.fig_to_html(f)
         dat = {'z' : objPositions['z'][valid].tolist(), 'sigmax' : res['fitResults_sigmax'][valid].tolist(),
                            'sigmay' : res['fitResults_sigmay'][valid].tolist(), 'dsigma' : dsigma[valid].tolist()}
         data = json.dumps(dat)
-        print data
-        template = env.get_template('astigCal.html')
-        html = template.render(astigplot=fig, data=data)
+        #template = env.get_template('astigCal.html')
+        #html = template.render(astigplot=fig, data=data)
         #print html
-        self._astig_view.SetPage(html, '')
+        #self._astig_view.SetPage(html, '')
+        return dat
 
         
         
