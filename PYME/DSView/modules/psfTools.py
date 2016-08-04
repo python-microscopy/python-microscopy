@@ -48,7 +48,7 @@ def remove_newlines(s):
 def plotAstigCalibration(astigDat):
     """
     dat = {'z' : objPositions['z'][valid].tolist(), 'sigmax' : res['fitResults_sigmax'][valid].tolist(),
-                           'sigmay' : res['fitResults_sigmay'][valid].tolist(), 'dsigma' : dsigma[valid].tolist()}
+                'sigmay' : res['fitResults_sigmay'][valid].tolist(), 'dsigma' : dsigma[valid].tolist()}
     Args:
         astigDat:
 
@@ -67,25 +67,27 @@ def plotAstigCalibration(astigDat):
 
 
         plt.subplot(121)
-        plt.plot(astigDat[ii]['z'], astigDat[ii]['sigmax'])
-        plt.plot(astigDat[ii]['z'], astigDat[ii]['sigmay'])
+        plt.plot(astigDat[ii]['z'], astigDat[ii]['sigmax'], label='x %i' % ii)
+        plt.plot(astigDat[ii]['z'], astigDat[ii]['sigmay'], label='y %i' % ii)
 
         #plt.ylim(-200, 400)
         plt.grid()
         plt.xlabel('z position [nm]')
         plt.ylabel('Sigma [nm]')
-        plt.legend(['x', 'y'])
 
         plt.subplot(122)
-        plt.plot(astigDat[ii]['z'], astigDat[ii]['dsigma'], lw=2)
+        plt.plot(astigDat[ii]['z'], astigDat[ii]['dsigma'], lw=2, label='Channel %i' % ii)
         plt.grid()
         plt.xlabel('z position [nm]')
         plt.ylabel('Sigma y - Sigma y [nm]')
 
         plt.tight_layout()
-
-        plt.ion()
-        plt.show()
+    plt.subplot(121)
+    plt.legend()
+    plt.subplot(122)
+    plt.legend()
+    plt.ion()
+    plt.show()
 
     return f
 

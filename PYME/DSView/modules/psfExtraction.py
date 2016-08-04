@@ -32,29 +32,13 @@ class psfExtractor:
 
         try:  # stack multiview channels
             self.numChan = self.image.mdh['Multiview.NumROIs']
-            # FIXME: pull these from metadata
-            self.ChanOffsetZ = [0, 0, 0.7, 0.7]  # self.image.mdh['Multiview.ChannelOffsetZ']
-            self.do.names = ['Chan 0', 'Chan 1', 'Chan 2', 'Chan 3']
-            chanSizeX, chanSizeY = self.image.mdh['Multiview.ROISize']
-            # reshape the data
-            import numpy as np
-            shape = self.image.data.shape
-            dat = np.empty((shape[0], shape[1], shape[2]))
-            for ii in range(shape[2]):
-                dat[:, :, ii] = np.squeeze(self.image.data[:, :, ii])
-
-            self.data = np.empty((chanSizeX, chanSizeY, shape[2], self.numChan))
-            for ii in range(self.numChan):
-                self.data[:, :, :, ii] = dat[chanSizeX*ii:chanSizeX*(ii+1), :, :]
-
         except:
-            self.ChanOffsetZ = None
+            self.ChanOffsetZnm = None
             self.numChan = self.image.data.shape[3]
-            self.data = self.image.data
 
 
         self.PSFLocs = []
-        self.psfROISize = [30,30,60]
+        self.psfROISize = [30,30,30]
         
         dsviewer.do.overlays.append(self.DrawOverlays)
 
@@ -176,8 +160,7 @@ class psfExtractor:
         chnum = self.chChannel.GetSelection()
                 
         rsx, rsy, rsz = [int(s) for s in self.tPSFROI.GetValue().split(',')]
-        dx, dy, dz = extractImages.getIntCenter(self.image.data[(self.do.xp-rsx):(self.do.xp+rsx + 1),
-                                                (self.do.yp-rsy):(self.do.yp+rsy+1), :, chnum*(not not self.ChanOffsetZ)])
+        dx, dy, dz = extractImages.getIntCenter(self.image.data[(self.do.xp-rsx):(self.do.xp+rsx + 1),(self.do.yp-rsy):(self.do.yp+rsy+1), :, chnum])
         self.PSFLocs.append((self.do.xp + dx, self.do.yp + dy, dz))
         self.view.psfROIs = self.PSFLocs
         self.view.Refresh()
@@ -190,8 +173,7 @@ class psfExtractor:
             if ((xp > rsx) and (xp < (self.image.data.shape[0] - rsx)) and
                 (yp > rsy) and (yp < (self.image.data.shape[1] - rsy))):
                     
-                    dx, dy, dz = extractImages.getIntCenter(self.image.data[(xp-rsx):(xp+rsx + 1),
-                                                            (yp-rsy):(yp+rsy+1), :, chnum*(not not self.ChanOffsetZ)])
+                    dx, dy, dz = extractImages.getIntCenter(self.image.data[(xp-rsx):(xp+rsx + 1),(yp-rsy):(yp+rsy+1), :, chnum])
                     self.PSFLocs.append((xp + dx, yp + dy, dz))
         
         #self.view.psfROIs = self.PSFLocs
@@ -239,20 +221,20 @@ class psfExtractor:
             
             x,y,z = self.PSFLocs[0]
             
-            z_ = numpy.arange(self.data.shape[2])*self.image.mdh['voxelsize.z']*1.e3
+            z_ = numpy.arange(self.image.data.shape[2])*self.image.mdh['voxelsize.z']*1.e3
             z_ -= z_.mean()
-            
+
             pylab.figure()
-            p_0 = 1.0*self.data[x,y,:,0].squeeze()
+            p_0 = 1.0*self.image.data[x,y,:,0].squeeze()
             p_0  -= p_0.min()
             p_0 /= p_0.max()
 
             #print (p_0*z_).sum()/p_0.sum()
-            
+
             p0b = numpy.maximum(p_0 - 0.5, 0)
             z0 = (p0b*z_).sum()/p0b.sum()
-            
-            p_1 = 1.0*self.data[x,y,:,1].squeeze()
+
+            p_1 = 1.0*self.image.data[x,y,:,1].squeeze()
             p_1 -= p_1.min()
             p_1 /= p_1.max()
             
@@ -277,8 +259,7 @@ class psfExtractor:
             psfROISize = [int(s) for s in self.tPSFROI.GetValue().split(',')]
             psfBlur = [float(s) for s in self.tPSFBlur.GetValue().split(',')]
             #print psfROISize
-            psf = extractImages.getPSF3D(self.data[:,:,:,chnum*(not not self.ChanOffsetZ)],
-                                         self.PSFLocs, psfROISize, psfBlur)
+            psf = extractImages.getPSF3D(self.image.data[:,:,:,chnum], self.PSFLocs, psfROISize, psfBlur)
             
             if self.chType.GetSelection() == 0:
                 #widefield image - do special background subtraction
@@ -295,18 +276,27 @@ class psfExtractor:
             ViewIm3D(im, mode='psf', parent=wx.GetTopLevelParent(self.dsviewer))
 
     def OnCalibrateMultiview(self, event):
+        # first make sure the user is calling the right function
+        try:
+            chanSizeX = self.image.mdh['Multiview.ROISize'][0]
+        except KeyError:
+            raise KeyError('You are not looking at multiview data, or the metadata is incomplete')
+
+        if len(self.PSFLocs) > 0:
+            print('Place cursor on bead in first multiview channel and press Calibrate Multiview Astigmatism')
+            self.OnClearTags(event)
+            return
+
         from PYME.Analysis.PSFEst import extractImages
         from PYME.DSView.modules import psfTools
-        import matplotlib.pyplot as plt
-        if len(self.PSFLocs) > 0:
-            print('whoops')
-            return
-        # grab PSFs, currently relying on user to pick psf in first channel
+
+
         rsx, rsy, rsz = [int(s) for s in self.tPSFROI.GetValue().split(',')]
         astigDat = []
         for ii in range(self.numChan):
-            #
-            xmin, xmax = [(self.do.xp-rsx + ii*self.data.shape[0]), (self.do.xp+rsx + ii*self.data.shape[0] + 1)]
+            # grab PSFs, currently relying on user to pick psf in first channel
+            xmin, xmax = [(self.do.xp-rsx + ii*chanSizeX), (self.do.xp+rsx + ii*chanSizeX + 1)]
+            # dz returns offset in units of frames, dx dy are in pixels
             dx, dy, dz = extractImages.getIntCenter(self.image.data[xmin:xmax,
                                                     (self.do.yp-rsy):(self.do.yp+rsy+1), :, 0])
             self.PSFLocs.append((self.do.xp + dx, self.do.yp + dy, dz))
@@ -326,12 +316,15 @@ class psfExtractor:
 
             from PYME.DSView.dsviewer import ImageStack, ViewIm3D
 
-            im = ImageStack(data = psf, mdh = self.image.mdh, titleStub = 'Extracted PSF')
+            im = ImageStack(data=psf, mdh=self.image.mdh, titleStub='Extracted PSF, Chan %i' % ii)
             im.defaultExt = '*.psf' #we want to save as PSF by default
             ViewIm3D(im, mode='psf', parent=wx.GetTopLevelParent(self.dsviewer))
 
             calibrater = psfTools.PSFTools(self.dsviewer, im)
-            astigDat.append(calibrater.OnCalibrateAstigmatism(event))
+            astigDat.append(calibrater.OnCalibrateAstigmatism(event, plotIt=False))
+            # the next line is only ok if each frame is a different z positions
+            astigDat[ii]['z'] += dz * self.image.mdh['voxelsize.z'] * 1.e3
+
 
         psfTools.plotAstigCalibration(astigDat)
 
@@ -351,8 +344,8 @@ class psfExtractor:
 
             psfs = []
 
-            for i in range(self.image.shape[3]):
-                psf = extractImages.getPSF3D(self.data[:,:,:,i], self.PSFLocs, psfROISize, psfBlur)
+            for i in range(self.image.data.shape[3]):
+                psf = extractImages.getPSF3D(self.image.data[:,:,:,i], self.PSFLocs, psfROISize, psfBlur)
 
                 if self.chType.GetSelection() == 0:
                     #widefield image - do special background subtraction
