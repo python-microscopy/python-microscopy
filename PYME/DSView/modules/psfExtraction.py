@@ -54,7 +54,7 @@ class psfExtractor:
 
 
         self.PSFLocs = []
-        self.psfROISize = [30,30,30]
+        self.psfROISize = [30,30,60]
         
         dsviewer.do.overlays.append(self.DrawOverlays)
 
@@ -176,13 +176,13 @@ class psfExtractor:
         chnum = self.chChannel.GetSelection()
                 
         rsx, rsy, rsz = [int(s) for s in self.tPSFROI.GetValue().split(',')]
-        dx, dy, dz = extractImages.getIntCenter(self.data[(self.do.xp-rsx):(self.do.xp+rsx + 1),
+        dx, dy, dz = extractImages.getIntCenter(self.image.data[(self.do.xp-rsx):(self.do.xp+rsx + 1),
                                                 (self.do.yp-rsy):(self.do.yp+rsy+1), :, chnum*(not not self.ChanOffsetZ)])
         self.PSFLocs.append((self.do.xp + dx, self.do.yp + dy, dz))
         self.view.psfROIs = self.PSFLocs
         self.view.Refresh()
 
-    def OnTagPoints_Old(self, event):
+    def OnTagPoints(self, event):
         from PYME.Analysis.PSFEst import extractImages
         chnum = self.chChannel.GetSelection()
         rsx, rsy, rsz = [int(s) for s in self.tPSFROI.GetValue().split(',')]
@@ -194,21 +194,6 @@ class psfExtractor:
                                                             (yp-rsy):(yp+rsy+1), :, chnum*(not not self.ChanOffsetZ)])
                     self.PSFLocs.append((xp + dx, yp + dy, dz))
         
-        #self.view.psfROIs = self.PSFLocs
-        self.view.Refresh()
-
-    def OnTagPoints(self, event):
-        from PYME.Analysis.PSFEst import extractImages
-        chnum = self.chChannel.GetSelection()
-        rsx, rsy, rsz = [int(s) for s in self.tPSFROI.GetValue().split(',')]
-        for xp, yp, zp in self.view.points:
-            if ((xp > rsx) and (xp < (self.data.shape[0] - rsx)) and
-                (yp > rsy) and (yp < (self.data.shape[1] - rsy))):
-
-                    dx, dy, dz = extractImages.getIntCenter(self.data[(xp-rsx):(xp+rsx + 1),
-                                                            (yp-rsy):(yp+rsy+1), :, chnum*(not not self.ChanOffsetZ)])
-                    self.PSFLocs.append((xp + dx, yp + dy, dz))
-
         #self.view.psfROIs = self.PSFLocs
         self.view.Refresh()
 
@@ -310,9 +295,11 @@ class psfExtractor:
             ViewIm3D(im, mode='psf', parent=wx.GetTopLevelParent(self.dsviewer))
 
     def OnCalibrateMultiview(self, event):
-        2+2
+        if len(self.PSFLocs) != self.numChan:
+            return
+        from PYME.Analysis.PSFEst import extractImages
             
-    def OnExtractSplitPSF(self, event, calib=None):
+    def OnExtractSplitPSF(self, event):
         if (len(self.PSFLocs) > 0):
             from PYME.Analysis.PSFEst import extractImages
             chnum = self.chChannel.GetSelection()
@@ -344,7 +331,7 @@ class psfExtractor:
             im.defaultExt = '*.psf' #we want to save as PSF by default
             ViewIm3D(im, mode='psf', parent=wx.GetTopLevelParent(self.dsviewer))
 
-            if calib:
+            if self.ChanOffsetZ:
                 from PYME.DSView.modules.psfTools import PSFTools
                 calibrater = PSFTools(self.dsviewer)
                 astigData = calibrater.OnCalibrateAstigmatism(event, calib=True)
