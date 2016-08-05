@@ -138,6 +138,8 @@ def pairMolecules(tIndex, x, y, whichChan, numChan, deltaX=None):
 
     return x[keep], y[keep], whichChan[keep], assigned[keep]
 
+def astigMAPism(sigVals, )
+
 class multiviewMapper:
     """
 
@@ -154,13 +156,17 @@ class multiviewMapper:
     def __init__(self, visFr):
         self.visFr = visFr
 
-        ID_REGISTER_MULTIVIEW = wx.NewId()
-        visFr.extras_menu.Append(ID_REGISTER_MULTIVIEW, "Multiview - Register Channels")
-        visFr.Bind(wx.EVT_MENU, self.OnRegisterMultiview, id=ID_REGISTER_MULTIVIEW)
+        ID_CALIBRATE_SHIFTS = wx.NewId()
+        visFr.extras_menu.Append(ID_CALIBRATE_SHIFTS, "Multiview - Calibrate Shifts")
+        visFr.Bind(wx.EVT_MENU, self.OnCalibrateShifts, id=ID_CALIBRATE_SHIFTS)
 
-        ID_MAP_MULTIVIEW = wx.NewId()
-        visFr.extras_menu.Append(ID_MAP_MULTIVIEW, "Multiview - Map Z")
-        visFr.Bind(wx.EVT_MENU, self.OnFoldAndMap, id=ID_MAP_MULTIVIEW)
+        ID_MAP_XY = wx.NewId()
+        visFr.extras_menu.Append(ID_MAP_XY, "Multiview - Map XY")
+        visFr.Bind(wx.EVT_MENU, self.OnFoldAndMapXY, id=ID_MAP_XY)
+
+        ID_MAP_Z = wx.NewId()
+        visFr.extras_menu.Append(ID_MAP_Z, "Astigmatism - Map Z")
+        visFr.Bind(wx.EVT_MENU, self.OnMapZ, id=ID_MAP_Z)
         return
 
     def applyShiftmaps(self, x, y, numChan):
@@ -194,7 +200,7 @@ class multiviewMapper:
         pipeline.mapping.setMapping('yReg', yReg)
         return
 
-    def OnFoldAndMap(self, event):
+    def OnFoldAndMapXY(self, event):
         """
         OnFoldAndMap uses shiftmaps stored in metadata (by default) or loaded through the GUI to register multiview channelss
         to the first channel.
@@ -243,7 +249,7 @@ class multiviewMapper:
         plotRegistered(pipeline.mapping.__dict__['xReg'], pipeline.mapping.__dict__['yReg'],
                             numChan, 'After Registration')
 
-    def OnRegisterMultiview(self, event):
+    def OnCalibrateShifts(self, event):
         """
 
         OnRegisterMultiview generates multiview shiftmaps on bead-data. Only beads which show up in all channels are
@@ -349,6 +355,36 @@ class multiviewMapper:
         plotRegistered(pipeline.mapping.__dict__['xReg'], pipeline.mapping.__dict__['yReg'],
                             numChan, 'After Registration')
 
+    def OnMapZ(self):
+        pipeline = self.visFr.pipeline
+        try:
+            chanColor = pipeline.mdh['Multiview.PlaneInfo']
+        except KeyError:
+            chanColor = [0]
+        try:  # load astigmatism calibrations from metadata, if present
+            stigLib = pipeline.mdh['astigLib']
+        except KeyError:
+            try:  # load through GUI dialog
+                fdialog = wx.FileDialog(None, 'Load Astigmatism Calibration', #wildcard='Shift Field file (*.sf)|*.sf',
+                                        style=wx.OPEN, defaultDir=nameUtils.genShiftFieldDirectoryPath())
+                succ = fdialog.ShowModal()
+                if (succ == wx.ID_OK):
+                    fpath = fdialog.GetPath()
+                    # load json
+                    fid = open(fpath, 'r')
+                    stigLib = json.load(fid)
+                    fid.close()
+            except:
+                raise IOError('Shiftmaps not found in metadata and could not be loaded from file')
+        #sigmaRange = [np.max(np.hstack([sigx, sigy])), np.max(np.hstack([sigx, sigy]))]
+        #sigEval = np.linspace(sigmaRange[0], sigmaRange[1], sigmaRange[1] - sigmaRange[0])
+        zVal = np.arange(stigLib['zRange'][0], stigLib['zRange'])
+
+        sigVals = np.zeros((len(pipeline.mdh['x']), 4))
+
+        for ii in range(len(chanColor)):
+            sigVals = sigmaLibrary['sigxTerp%i' % ii](zVal)
+            # Zsigy = sigmaLibrary['sigyTerp%i' % ii](zVal)
 
 
 

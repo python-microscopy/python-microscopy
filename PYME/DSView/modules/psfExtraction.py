@@ -289,10 +289,17 @@ class psfExtractor:
 
         from PYME.Analysis.PSFEst import extractImages
         from PYME.DSView.modules import psfTools
+        import scipy.interpolate as terp
+        import numpy as np
+        from PYME.IO.FileUtils import nameUtils
+        import os
+        import json
 
+        zrange = np.nan*np.ones(2)
 
         rsx, rsy, rsz = [int(s) for s in self.tPSFROI.GetValue().split(',')]
-        astigDat = []
+        # astigDat = []
+        astigLib = {}
         for ii in range(self.numChan):
             # grab PSFs, currently relying on user to pick psf in first channel
             xmin, xmax = [(self.do.xp-rsx + ii*chanSizeX), (self.do.xp+rsx + ii*chanSizeX + 1)]
@@ -321,15 +328,58 @@ class psfExtractor:
             ViewIm3D(im, mode='psf', parent=wx.GetTopLevelParent(self.dsviewer))
 
             calibrater = psfTools.PSFTools(self.dsviewer, im)
-            astigDat.append(calibrater.OnCalibrateAstigmatism(event, plotIt=False))
-            # the next line is only ok if each frame is a different z positions
-            astigDat[ii]['z'] += dz * self.image.mdh['voxelsize.z'] * 1.e3
+            astigLib['PSF%i' % ii] = (calibrater.OnCalibrateAstigmatism(event, plotIt=False))
+            # the next line is only ok if each frame is at a different z position, which it should be
+            astigLib['PSF%i' % ii]['z'] += dz * self.image.mdh['voxelsize.z'] * 1.e3
+
+            # -- spline interpolate --
+            # find region of dsigma which is monotonic
+            dsig = terp.UnivariateSpline(astigLib['PSF%i' % ii]['z'], astigLib['PSF%i' % ii]['dsigma'])#, s=1.5*len(astigDat[ii]['z']))
+
+            # mask where the sign is the same as the center
+            zvec = np.linspace(astigLib['PSF%i' % ii]['z'].min(), astigLib['PSF%i' % ii]['z'].max(), 1000)
+            sgn = np.sign(np.diff(dsig(zvec)))
+            halfway = len(sgn)/2
+            notmask = sgn != sgn[halfway]
+
+            # find z range for spline generation
+            lowerZ = zvec[np.where(notmask[:halfway])[0].max()]
+            upperZ = zvec[(len(sgn)/2 + np.where(notmask[halfway:])[0].min() - 1)]
+            zrange = [np.nanmin(lowerZ, zrange[0]), np.nanmax(upperZ, zrange[1])]
+
+            #lowsubZ , upsubZ = np.absolute(astigDat[ii]['z'] - zvec[lowerZ]), np.absolute(astigDat[ii]['z'] - zvec[upperZ])
+            #lowZLoc = np.argmin(lowsubZ)
+            #upZLoc = np.argmin(upsubZ)
+
+            astigLib['sigxTerp%i' % ii] = terp.UnivariateSpline(astigLib['PSF%i' % ii]['z'], astigLib['PSF%i' % ii]['sigmax'],
+                                                                bbox=[lowerZ, upperZ])
+            astigLib['sigyTerp%i' % ii] = terp.UnivariateSpline(astigLib['PSF%i' % ii]['z'], astigLib['PSF%i' % ii]['sigmay'],
+                                                                bbox=[lowerZ, upperZ])
+
+            #sigxTerp = terp.UnivariateSpline(astigDat[ii]['sigmax'], astigDat[ii]['z'], ext='zeros',
+            #                                                    bbox=[astigDat[ii]['sigmax'][lowZLoc], astigDat[ii]['sigmax'][upZLoc]],)
+            #sigyTerp = terp.UnivariateSpline(astigDat[ii]['sigmay'], astigDat[ii]['z'], ext='zeros',
+            #                                                    bbox=[astigDat[ii]['sigmay'][lowZLoc], astigDat[ii]['sigmay'][upZLoc]],)
+        astigLib['zRange'] = np.round(zrange)
+        astigLib['numChan'] = self.numChan
 
 
-        psfTools.plotAstigCalibration(astigDat)
+        psfTools.plotAstigCalibration(astigLib)
 
 
 
+        # save to json file
+        #defFile = os.path.splitext(os.path.split(self.visFr.GetTitle())[-1])[0] + '.am'
+
+        fdialog = wx.FileDialog(None, 'Save Astigmatism Calibration as ...',
+            wildcard='AstigMAPism file (*.am)|*.am', style=wx.SAVE, defaultDir=nameUtils.genShiftFieldDirectoryPath())  #, defaultFile=defFile)
+        succ = fdialog.ShowModal()
+        if (succ == wx.ID_OK):
+            fpath = fdialog.GetPath()
+
+            fid = open(fpath, 'wb')
+            json.dump(astigLib, fid)
+            fid.close()
 
 
             

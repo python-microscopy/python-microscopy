@@ -45,7 +45,7 @@ def remove_newlines(s):
     s = ' '.join(s.split())
     return '\n'.join(s.split('<>'))
 
-def plotAstigCalibration(astigDat):
+def plotAstigCalibration(astigLib):
     """
     dat = {'z' : objPositions['z'][valid].tolist(), 'sigmax' : res['fitResults_sigmax'][valid].tolist(),
                 'sigmay' : res['fitResults_sigmay'][valid].tolist(), 'dsigma' : dsigma[valid].tolist()}
@@ -55,10 +55,16 @@ def plotAstigCalibration(astigDat):
     Returns:
 
     """
-    if astigDat.__class__ == dict:
-        astigDat = [astigDat]
-
-    numChan = len(astigDat)
+    #if astigDat.__class__ == dict:
+    #    astigDat = [astigDat]
+    try: #convert multiview dict to list of dicts
+        numChan = astigLib['numChan']
+        astigDat = []
+        for ii in range(numChan):
+            astigDat.append(astigLib['PSF%i' % ii])
+    except:
+        astigDat = [astigLib]
+        numChan = len(astigDat)
 
     import matplotlib.pyplot as plt
     f = plt.figure(figsize=(10, 4))
@@ -353,7 +359,7 @@ class PSFTools(HasTraits):
 
         dsigma = res['fitResults_sigmax'] - res['fitResults_sigmay']
 
-        valid = ((res['fitError_sigmax'] > 0) * (res['fitError_sigmax'] < 100)* (res['fitError_sigmay'] < 100)*(res['fitResults_A'] > 0) > 0)
+        valid = ((res['fitError_sigmax'] > 0) * (res['fitError_sigmax'] < 25)* (res['fitError_sigmay'] < 25)*(res['fitResults_A'] > 0) > 0)
 
 
 
