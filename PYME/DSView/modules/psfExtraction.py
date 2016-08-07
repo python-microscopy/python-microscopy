@@ -351,15 +351,12 @@ class psfExtractor:
             #lowZLoc = np.argmin(lowsubZ)
             #upZLoc = np.argmin(upsubZ)
 
-            astigLib['sigxTerp%i' % ii] = terp.UnivariateSpline(astigLib['PSF%i' % ii]['z'], astigLib['PSF%i' % ii]['sigmax'],
-                                                                bbox=[lowerZ, upperZ])
-            astigLib['sigyTerp%i' % ii] = terp.UnivariateSpline(astigLib['PSF%i' % ii]['z'], astigLib['PSF%i' % ii]['sigmay'],
-                                                                bbox=[lowerZ, upperZ])
+            #
+            #astigLib['sigxTerp%i' % ii] = terp.UnivariateSpline(astigLib['PSF%i' % ii]['z'], astigLib['PSF%i' % ii]['sigmax'],
+            #                                                    bbox=[lowerZ, upperZ])
+            #astigLib['sigyTerp%i' % ii] = terp.UnivariateSpline(astigLib['PSF%i' % ii]['z'], astigLib['PSF%i' % ii]['sigmay'],
+            #                                                    bbox=[lowerZ, upperZ])
 
-            #sigxTerp = terp.UnivariateSpline(astigDat[ii]['sigmax'], astigDat[ii]['z'], ext='zeros',
-            #                                                    bbox=[astigDat[ii]['sigmax'][lowZLoc], astigDat[ii]['sigmax'][upZLoc]],)
-            #sigyTerp = terp.UnivariateSpline(astigDat[ii]['sigmay'], astigDat[ii]['z'], ext='zeros',
-            #                                                    bbox=[astigDat[ii]['sigmay'][lowZLoc], astigDat[ii]['sigmay'][upZLoc]],)
         astigLib['zRange'] = np.round(zrange)
         astigLib['numChan'] = self.numChan
 

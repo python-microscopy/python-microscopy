@@ -96,7 +96,7 @@ def plotRegistered(regX, regY, numChan, title=''):
     plt.title(title)
     return
 
-def pairMolecules(tIndex, x, y, whichChan, numChan, deltaX=None):
+def pairMolecules(tIndex, x, y, whichChan, numChan, deltaX=None, appearIn=np.arange(2)):
     """
     pairMolecules uses pyDeClump functions to group localization clumps into molecules for registration.
 
@@ -107,10 +107,13 @@ def pairMolecules(tIndex, x, y, whichChan, numChan, deltaX=None):
         whichChan: a vector containing channel assignments for each localization
         numChan: number of multiview channels
         deltaX: distance within which neighbors will be clumped is set by 2*deltaX[i])**2
+        appearances: number of channels that must be present in a clump to be clumped
 
     Returns:
         x and y positions of molecules that were clumped, which channel those localizations are from,
-        and which clump they were assigned to.
+        and which clump they were assigned to. Note that outputs are length = #molecules, and the keep
+        vector that is return needs to be applied as: xkept = x[keep] in order to only look at kept molecules.
+        Note that the returned x, y, tIndex and whichChan are resorted.
 
     """
     # sort everything in frame order
@@ -128,7 +131,9 @@ def pairMolecules(tIndex, x, y, whichChan, numChan, deltaX=None):
 
     # only look at clumps with localizations from each channel
     clumps = np.unique(assigned)
-    keptClumps = [np.array_equal(np.unique(whichChan[assigned == clumps[ii]]), np.arange(numChan)) for ii in range(len(clumps))]
+    keptClumps = [np.array_equal(np.unique(whichChan[assigned == clumps[ii]]), appearIn) for ii in range(len(clumps))]
+    #keptClumps = [(len(np.unique(whichChan[assigned == clumps[ii]])) > appearances) for ii in range(len(clumps))]
+
 
     keptMoles = []
     # np.array_equal(clumps, np.arange(1, np.max(assigned) + 1)) evaluates to True
@@ -136,9 +141,38 @@ def pairMolecules(tIndex, x, y, whichChan, numChan, deltaX=None):
         keptMoles.append(elem in clumps[np.where(keptClumps)])
     keep = np.where(keptMoles)
 
-    return x[keep], y[keep], whichChan[keep], assigned[keep]
+    return x, y, whichChan, assigned, keep
 
-def astigMAPism(sigVals, )
+def astigMAPism(stigLib, clump, whichChan, sigmax, sigmay):
+    """
+    Look up table
+    Args:
+        sigVals:
+
+    Returns:
+
+    """
+    import scipy.interpolate as terp
+    # generate lookup table
+    zVal = np.arange(stigLib['zRange'][0], stigLib['zRange'][1])
+
+    sigCalX = {}  # np.zeros((len(zVal), numPlanes))
+    sigCalY = {}  # np.zeros_like(sigCalX)
+
+    # generate look up table of sorts
+    for ii in np.unique(whichChan):
+        #sigVals = stigLib['sigxTerp%i' % ii](zVal)
+        #sigVals = stigLib['sigxTerp%i' % ii](zVal)
+        # Zsigy = sigmaLibrary['sigyTerp%i' % ii](zVal)
+        #astigLib['sigxTerp%i' % ii] = terp.UnivariateSpline(astigLib['PSF%i' % ii]['z'], astigLib['PSF%i' % ii]['sigmax'],
+        #                                                    bbox=[lowerZ, upperZ])
+        #astigLib['sigyTerp%i' % ii] = terp.UnivariateSpline(astigLib['PSF%i' % ii]['z'], astigLib['PSF%i' % ii]['sigmay'],
+        #                                                    bbox=[lowerZ, upperZ])
+        sigCalX['chan%i' % ii] = terp.UnivariateSpline(stigLib['PSF%i' % ii]['z'], stigLib['PSF%i' % ii]['sigmax'],
+                                                            bbox=[stigLib['zRange'][0], stigLib['zRange'][1]])(zVal)
+        sigCalY['chan%i' % ii] = terp.UnivariateSpline(stigLib['PSF%i' % ii]['z'], stigLib['PSF%i' % ii]['sigmay'],
+                                                            bbox=[stigLib['zRange'][0], stigLib['zRange'][1]])(zVal)
+
 
 class multiviewMapper:
     """
@@ -272,10 +306,12 @@ class multiviewMapper:
         # fold x position of channels into the first
         foldX(pipeline)
 
-        # Match up molecules
-        x, y, Chan, clumpID, = pairMolecules(pipeline['tIndex'], pipeline.mapping.__dict__['xFolded'], pipeline['y'],
-                      pipeline.mapping.__dict__['whichChan'], numChan)  #, pipeline['error_x'])
+        # Match up molecules, note that all outputs are sorted in frame order!
+        x, y, Chan, clumpID, keep = pairMolecules(pipeline['tIndex'], pipeline.mapping.__dict__['xFolded'], pipeline['y'],
+                      pipeline.mapping.__dict__['whichChan'], numChan, appearIn=np.arange(numChan))  #, pipeline['error_x'])
 
+        # only look at the ones which showed up in all channels
+        x = x[keep], y = y[keep], Chan = Chan[keep], clumpID = clumpID[keep]
         # Generate raw shift vectors (map of displacements between channels) for each channel
         molList = np.unique(clumpID)
         numMoles = len(molList)
@@ -355,12 +391,16 @@ class multiviewMapper:
         plotRegistered(pipeline.mapping.__dict__['xReg'], pipeline.mapping.__dict__['yReg'],
                             numChan, 'After Registration')
 
-    def OnMapZ(self):
+    def OnMapZ(self, event):
         pipeline = self.visFr.pipeline
         try:
-            chanColor = pipeline.mdh['Multiview.PlaneInfo']
+            numChan = pipeline.mdh['Multiview.NumROIs']
+            chanColor = pipeline.mdh['Multiview.ColorInfo']
+            numPlanes = numChan / len(chanColor)
         except KeyError:
+            numChan = 1
             chanColor = [0]
+            numPlanes = 1
         try:  # load astigmatism calibrations from metadata, if present
             stigLib = pipeline.mdh['astigLib']
         except KeyError:
@@ -375,16 +415,92 @@ class multiviewMapper:
                     stigLib = json.load(fid)
                     fid.close()
             except:
-                raise IOError('Shiftmaps not found in metadata and could not be loaded from file')
+                raise IOError('Astigmatism sigma-Z mapping information not found')
         #sigmaRange = [np.max(np.hstack([sigx, sigy])), np.max(np.hstack([sigx, sigy]))]
         #sigEval = np.linspace(sigmaRange[0], sigmaRange[1], sigmaRange[1] - sigmaRange[0])
-        zVal = np.arange(stigLib['zRange'][0], stigLib['zRange'])
 
-        sigVals = np.zeros((len(pipeline.mdh['x']), 4))
+        # make sure xy-registration has already happened:
+        if 'xReg' not in pipeline.keys():
+            print('registering multiview channels in x-y plane')
+            self.OnFoldAndMapXY(event)
 
-        for ii in range(len(chanColor)):
-            sigVals = sigmaLibrary['sigxTerp%i' % ii](zVal)
-            # Zsigy = sigmaLibrary['sigyTerp%i' % ii](zVal)
+        # clump molecules
+        pairs, clump, xco, yco, xcoErr, ycoErr, xsig, ysig, clist = [], [], [], [], [], [], [], [], []
+        # sort error and sigmas as x, y, and channel will be sorted
+        I = pipeline['tIndex'].argsort()
+        errX = pipeline['error_x'][I]
+        errY = pipeline['error_y'][I]
+        xs = pipeline['sigmax'][I]
+        ys = pipeline['sigmay'][I]
+        pairs = np.zeros_like(errX, dtype=bool)
+        for cind in range(len(chanColor)):
+            # trick pairMolecules function by tweaking the channel vector
+            planeInColorChan = pipeline.mapping['whichChan']
+            planeInColorChan[np.where(chanColor != cind)] = -9
+
+            x, y, Chan, clumpID, paired = pairMolecules(pipeline['tIndex'], pipeline['xFolded'], pipeline['y'],
+                          planeInColorChan, numChan, deltaX=pipeline['error_x'], appearIn=np.where(chanColor == cind))
+
+
+            #pairs.append(paired)
+
+            # coalesce pairs in color channel
+            #clumpID[paired]
+            pairedClumps = np.unique(clumpID[paired])
+            xp = np.zeros(len(pairedClumps))
+            yp = np.zeros_like(xp)
+            xpErr = np.zeros_like(xp)
+            ypErr = np.zeros_like(xp)
+            color = cind*np.ones_like(xp)
+            sigxp = np.zeros(len(x) - len(pairedClumps), len(np.unique(planeInColorChan)))
+            sigyp = np.zeros_like(sigxp)
+            for ind in range(len(pairedClumps)):
+                # merge clumps within channels
+                mask = np.where(clumpID == pairedClumps[ind])
+                xp[ind] = x[mask].mean()
+                yp[ind] = y[mask].mean()
+
+                sigxp[ind, :] = xs[mask]
+                sigyp[ind, :] = ys[mask]
+                # propagate error
+                xpErr[ind] = np.sqrt(np.sum(errX[mask]**2))
+                ypErr[ind] = np.sqrt(np.sum(errY[mask]**2))
+
+
+            for ind in range(len(pairedClumps, sigxp.shape[0])):
+                sigxp[ind, PLANE] = sx
+
+            xco.append(xp)
+            yco.append(yp)
+            xcoErr.append(xpErr)
+            ycoErr.append(ypErr)
+            clist.append(color)  # fixme: do something with this if can't sort sigmas another way
+
+            pairs = np.logical_or(pairs, paired)
+
+        # now merge with lonely, unclumped molecules
+        sigCoX = np.zeros(len(x) - len(pairs), sigxp.shape[1])
+        sigCoY = np.zeros_like(sigCoX)
+
+        # add in the unpaired
+        for jj in range() #fixme: I don't think we actually need to do this
+
+        xco = np.hstack(xco)
+        yco = np.hstack(yco)
+        xcoErr = np.hstack(xcoErr)
+        ycoErr = np.hstack(ycoErr)
+
+
+
+
+        x = np.hstack([xco, x[~pairs]])
+        y = np.hstack([yco, y[~pairs]])
+        xcoErr = np.hstack([xcoErr, errX[~pairs]])
+        ycoErr = np.hstack([ycoErr, errY[~pairs]])
+        # fixme: Come back here and do something about tIndex!!
+        #sigCoX = np.zeros(len(x) - len(pairs), sigxp.shape[1])
+
+        z = astigMAPism(stigLib, pipeline['clump'], pipeline['whichChan'], pipeline['sigmax'], pipeline['sigmay'])
 
 
 
