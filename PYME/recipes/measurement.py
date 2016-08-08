@@ -520,7 +520,7 @@ class Measure2D(ModuleBase):
     def _measureFrame(self, frameNo, labels, intensity):
         import skimage.measure
         
-        li = labels.data[:,:,frameNo].squeeze().astype('int32')
+        li = labels.data[:,:,frameNo].squeeze().astype('i')
 
         if intensity:
             it = intensity.data[:,:,frameNo].squeeze()

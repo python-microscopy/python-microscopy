@@ -34,7 +34,7 @@
     {{ astigplot }}
     </p>
     <p>
-        <a href="data:application/json;{{ data }}" download="astig_cal.json">Save calibration</a>
+        <a href="data:application/json;charset=utf-8,{{ data | e }}" download="astig_cal.json">Save calibration</a>
     </p>
 
         
