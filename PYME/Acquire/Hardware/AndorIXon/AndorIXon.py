@@ -226,6 +226,9 @@ class iXonCamera:
         if not ret == ac.DRV_SUCCESS:
             raise RuntimeError('Error setting EM Gain: %s' % ac.errorCodes[ret])
 
+        #set an initial integration time        
+        self.SetIntegTime(.100)        
+        
         self.CCDTemp = -999
         self.SetFrameTransfer(True)
         #self.frameTransferMode = False

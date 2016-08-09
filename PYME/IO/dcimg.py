@@ -40,7 +40,7 @@ SESSION_HEADER_DTYPE_INT2P24 = [('session_length', 'i4'),
                         ('pad3', '2i4'),
                         ('offset_to_data', 'i4'),
                         ('pad4', '4i4'),
-                        ('frame_size', 'i4')]  # end_of_a_frame = bytes_per_image + 32 bytes - DB: Is this an offset, or the frame size?
+                        ('bytes_per_frame', 'i4')]  # end_of_a_frame = bytes_per_image + 32 bytes - DB: Is this an offset, or the frame size?
 
 SESSION_HEADER_BYTES_INT2P24 = np.zeros(1, dtype=SESSION_HEADER_DTYPE_INT2P24).nbytes
 
@@ -51,8 +51,8 @@ class DCIMGFile(object):
 
         self._info = self._parse_header(header_bytes)
 
-        self.frames_with_footer = np.memmap(filename, dtype='<u2', mode='r', offset=self._info['session0_data'],
-                              shape=(self._info['bytes_per_image']/self._info['bytes_per_pixel'], self._info['num_frames']), order='F')
+        self.frames_with_footer = np.memmap(filename, dtype='<u2', mode='r', offset=int(self._info['session0_data']),
+                                            shape=(int(self._info['bytes_per_frame']/self._info['bytes_per_pixel']), int(self._info['num_frames'])), order='F')
         # In the case of initial offset = 16777216, the 32 bytes footer included 4 pixel values to correct for [0 65535 0 65535] within the frame
 
     def get_frame(self, ind):
@@ -64,7 +64,7 @@ class DCIMGFile(object):
         ind : int
             The index of the frame to retrieve
         """
-        frame_wo_footer = self.frames_with_footer[0:self._info['bytes_per_image'], ind]
+        frame_wo_footer = self.frames_with_footer[0:(self._info['bytes_per_image']/self._info['bytes_per_pixel']), ind]
         frame_data = frame_wo_footer.reshape([self._info['num_columns'], self._info['num_rows']], order='F')
 
         return frame_data

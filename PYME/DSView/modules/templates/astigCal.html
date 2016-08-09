@@ -1,0 +1,42 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html lang="en">
+<head>
+    <title>Astigmatic calibration</title>
+
+    <style>
+    tr.odd {
+        background-color: #E0E7F0;
+    }
+    
+    td.rh{
+        font-weight: bold;
+    }
+    
+    td.c{
+        color: Cyan;
+    }
+    
+    td.m{
+        color: Magenta;
+    }
+    
+    a{
+        color: Blue;
+        text-decoration: underline; 
+    }
+    </style>
+
+</head>
+<body>
+
+    <h3>Astigmatic calibration</h3>
+    <p>
+    {{ astigplot }}
+    </p>
+    <p>
+        <a href="data:application/json;charset=utf-8,{{ data | e }}" download="astig_cal.json">Save calibration</a>
+    </p>
+
+        
+</body>
+</html>

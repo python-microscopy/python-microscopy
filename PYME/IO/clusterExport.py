@@ -5,7 +5,8 @@ Created on Sun May 22 17:13:51 2016
 @author: david
 """
 
-from PYME.Acquire import HTTPSpooler, MetaDataHandler
+from PYME.Acquire import HTTPSpooler
+from PYME.IO import MetaDataHandler
 
 import dispatch
 
@@ -20,7 +21,7 @@ class ImageFrameSource(object):
         """Load an image file and then spool"""
         from PYME.IO import image
         
-        self.spoolImage(image.ImageStack(filename).data)
+        self.spoolData(image.ImageStack(filename).data)
         
     def spoolData(self, data):
         """Extract frames from a data source.
@@ -90,7 +91,7 @@ SERIES_PATTERN = '%(day)d_%(month)d_series_%(counter)'
 
 def _getFilenameSuggestion(dirname='', seriesname = SERIES_PATTERN):
     from PYME.IO.FileUtils import nameUtils
-    from PYME.ParallelTasks import clusterIO
+    from PYME.IO import clusterIO
     import os
     
     if dirname == '':   

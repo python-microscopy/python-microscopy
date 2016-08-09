@@ -13,6 +13,8 @@ from PYME.Analysis.Tracking import tracking
 from PYME.Analysis.Tracking import trackUtils
 from traits.api import on_trait_change
 
+from PYME.LMVis import inpFilt
+
 @register_module('TrackFeatures')
 class TrackFeatures(ModuleBase):
     """Take just certain columns of a variable"""
@@ -131,3 +133,94 @@ class TrackFeatures(ModuleBase):
         pipeline.clumps = clumps
         
         return clumps
+
+@register_module('LoadSpeckles')
+class LoadSpeckles(ModuleBase):
+    """Loads Speckle data as used by the karatekin lab"""
+    inputImage = CStr('', desc='The image to which the speckles file refers. Useful for determining speckle filename, series length, and voxelsize')
+    speckleFilename = CStr('{DIRNAME}{SEP}{IMAGESTUB}speckles.csv',
+                           desc='The filename of the speckle file. Anything in {} will be substituted with info from the input image.')
+    #mappings = DictStrStr()
+    outputName = CStr('speckles')
+    leadFrames = Int(10, desc='The number of frames to add to the trace before the start of the speckle')
+    followFrames = Int(50, desc='The number of frames to add to the trace after the end of the speckle')
+
+    def execute(self, namespace):
+        from PYME.IO.FileUtils import readSpeckle
+        from PYME.IO import MetaDataHandler
+        import os
+
+        fileInfo = {'SEP' : os.sep}
+
+        seriesLength = 100000
+
+        mdh = MetaDataHandler.NestedClassMDHandler()
+
+        if not self.inputImage == '':
+            inp = namespace[self.inputImage]
+            mdh.update(inp.mdh)
+            seriesLength = inp.data.shape[2]
+
+            try:
+                fileInfo['DIRNAME'], fileInfo['IMAGENAME'] = os.path.split(inp.filename)
+                fileInfo['IMAGESTUB'] = fileInfo['IMAGENAME'].split('MM')[0]
+            except:
+                pass
+
+        speckleFN = self.speckleFilename.format(**fileInfo)
+
+        specks = readSpeckle.readSpeckles(speckleFN)
+        traces = readSpeckle.gen_traces_from_speckles(specks, leadFrames=self.leadFrames,
+                                                      followFrames=self.followFrames, seriesLength=seriesLength)
+
+        #turn this into an inputFilter object
+        inp = inpFilt.recArrayInput(traces)
+
+        #create a mapping to covert the co-ordinates in pixels to co-ordinates in nm
+        map = inpFilt.mappingFilter(inp, x = 'x_pixels*%3.2f' % (1000*mdh['voxelsize.x']),
+                                    y='y_pixels*%3.2f' % (1000 * mdh['voxelsize.y']))
+
+        map.mdh = mdh
+
+        namespace[self.outputName] = map
+
+
+@register_module('ExtractTracks')
+class ExtractTracks(ModuleBase):
+    """Extract tracks from a measurement set with pre-assigned clump IDs"""
+    inputMeasurements = CStr('speckles', desc='a set of particle positions already containing a clumpIndex column which identifies groups of particles')
+    #outputTrackInfo = CStr('track_info', desc='a pandas data frame with clumpSize and trackVelocity information')
+    outputTracks = CStr('tracks', desc='A clump / track manager object - aka the actual tracks')
+
+    def execute(self, namespace):
+        #print
+        data = namespace[self.inputMeasurements]
+
+        #print 'data.keys', data.keys()
+        clumpIndex = data['clumpIndex']
+
+        #clumpSizes = np.zeros_like(clumpIndex)
+
+        #for i in set(clumpIndex):
+        #    ind = (clumpIndex == i)
+
+         #   clumpSizes[ind] = ind.sum()
+
+        #trackVelocities = trackUtils.calcTrackVelocity(data['x'], data['y'], clumpIndex, data['t'])
+
+        #clumpInfo = {'clumpSize': clumpSizes, 'trackVelocity': trackVelocities}
+
+        clumps = trackUtils.ClumpManager(data)
+
+        clumps = [c for c in clumps.all]
+
+        #clumpInfo = pd.DataFrame(clumpInfo)
+
+        if 'mdh' in dir(data):
+            pass
+            #propagate metadata
+            #clumps.mdh = data.mdh
+            #clumpInfo.mdh = data.mdh
+
+        #namespace[self.outputTrackInfo] = clumpInfo
+        namespace[self.outputTracks] = clumps
