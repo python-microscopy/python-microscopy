@@ -166,7 +166,7 @@ def coalesceClumps_(fitResults, assigned):
     
 def coalesceClumps(fitResults, assigned):
     """Agregates clumps to a single event"""
-    NClumps = len(assigned) # int(assigned.max())
+    NClumps = len(assigned)  # int(assigned.max())
 
     #work out what the data type for our declumped data should be
     dt = deClumpedDType(fitResults)

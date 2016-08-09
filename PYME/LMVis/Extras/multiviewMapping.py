@@ -469,7 +469,7 @@ class multiviewMapper:
         try:
             numChan = pipeline.mdh['Multiview.NumROIs']
             chanColor = [0, 0, 1, 1]  # FIXME: pipeline.mdh['Multiview.ColorInfo']
-            numPlanes = numChan / len(chanColor)
+            numPlanes = numChan / len(np.unique(chanColor))
         except AttributeError:
             numChan = 1
             chanColor = [0]
@@ -512,7 +512,9 @@ class multiviewMapper:
         #fres['fitResults'].setfield(2.0, [('test', '<i4')])
         #fitResCopy.setfield(pipeline.mapping.whichChan, ['whichChan', '<i4'])
         fitResCopy.whichChan = np.copy(pipeline.mapping.whichChan)
-
+        dt = fres.dtype.descr
+        addDT = [('sigmax_Plane%i' % pi, '<f4') for pi in range(numPlanes)]
+        dt[1][1].__add__(addDT)
         for cind in range(len(chanColor)):
             # trick pairMolecules function by tweaking the channel vector
             # this needs to be unsorted at this point
