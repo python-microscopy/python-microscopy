@@ -162,9 +162,11 @@ class ParticleTracker:
         dclumped = pyDeClump.coalesceClumps(pipeline.selectedDataSource.resultsSource.fitResults, pipeline.selectedDataSource.clumpIndices)
         ds = inpFilt.fitResultsSource(dclumped)
         ds_ = inpFilt.mappingFilter(ds)
-        ds_._name = 'Coalesced'
-        pipeline.selectedDataSource = ds_
-        pipeline.dataSources.append(ds_)
+        #ds_._name = 'Coalesced'
+        #pipeline.selectedDataSource = ds_
+        #pipeline.dataSources.append(ds_)
+        pipeline.dataSources['Coalesced'] = ds_
+        pipeline.selectedDataSource('Coalesced')
         self.visFr.RegenFilter()
         self.visFr.CreateFoldPanel()
 

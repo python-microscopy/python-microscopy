@@ -218,9 +218,10 @@ class Generator(HasTraits):
         res = locify.eventify(self.xp, self.yp, self.meanIntensity, self.meanDuration, self.backgroundIntensity, self.meanEventNumber, self.scaleFactor, self.meanTime)
         pylab.plot(res['fitResults']['x0'],res['fitResults']['y0'], '+')
 
-        pipeline.selectedDataSource = inpFilt.mappingFilter(inpFilt.fitResultsSource(res))
-        pipeline.imageBounds = ImageBounds.estimateFromSource(pipeline.selectedDataSource)
-        pipeline.dataSources.append(pipeline.selectedDataSource)
+        ds = inpFilt.mappingFilter(inpFilt.fitResultsSource(res))
+        pipeline.imageBounds = ImageBounds.estimateFromSource(ds)
+        pipeline.dataSources['Generated Points'] = ds
+        pipeline.selectDataSource('Generated Points')
 
         from PYME.IO.MetaDataHandler import NestedClassMDHandler
         pipeline.mdh = NestedClassMDHandler()

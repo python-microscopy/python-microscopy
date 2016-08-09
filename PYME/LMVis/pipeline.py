@@ -39,8 +39,8 @@ from PYME.Analysis.BleachProfile.kinModels import getPhotonNums
 
 class Pipeline:
     def __init__(self, filename=None, visFr=None):
-        self.dataSources = []
-        self.selectedDataSource = None
+        self.dataSources = {}
+        self.selectedDataSourceKey = None
         self.filterKeys = {'error_x': (0,30), 'error_y':(0,30),'A':(5,20000), 'sig' : (95, 200)}
 
         self.filter = None
@@ -88,9 +88,36 @@ class Pipeline:
     def keys(self):
         return self.colourFilter.keys()
 
+    @property
+    def selectedDataSource(self):
+        """
+
+        The currently selected data source (an instance of inpFilt.inputFilter derived class)
+
+        """
+        if self.selectedDataSourceKey is None:
+            return None
+        else:
+            return self.dataSources[self.selectedDataSourceKey]
+
+    def selectDataSource(self, dskey):
+        """
+        Set the currently selected data source
+
+        Parameters
+        ----------
+        dskey : string
+            The data source name
+
+        """
+        if not dskey in self.dataSources.keys():
+            raise KeyError('Data Source "%s" not found' % dskey)
+
+        self.selectedDataSourceKey = dskey
+        self.Rebuild()
 
     def Rebuild(self):
-        for s in self.dataSources:
+        for s in self.dataSources.items():
             if 'setMapping' in dir(s):
                 #keep raw measurements available
                 s.setMapping('x_raw', 'x')
@@ -267,7 +294,7 @@ class Pipeline:
             self.filesToClose.pop().close()
         
         #clear our state
-        self.dataSources = []
+        self.dataSources = {}
         if 'zm' in dir(self):
             del self.zm
         self.filter = None
@@ -279,42 +306,45 @@ class Pipeline:
         self.filename = filename
         
         if not ds is None:
-            self.selectedDataSource = ds
-            self.dataSources.append(ds)
+            #self.selectedDataSource = ds
+            #self.dataSources.append(ds)
+            pass
         elif os.path.splitext(filename)[1] == '.h5r':
             try:
-                self.selectedDataSource = inpFilt.h5rSource(filename)
-                self.dataSources.append(self.selectedDataSource)
+                ds = inpFilt.h5rSource(filename)
+                self.filesToClose.append(ds.h5f)
 
-                self.filesToClose.append(self.selectedDataSource.h5f)
+                if 'DriftResults' in ds.h5f.root:
+                    driftDS = inpFilt.h5rDSource(ds.h5f)
+                    self.driftInputMapping = inpFilt.mappingFilter(driftDS)
+                    self.dataSources['Fiducials'] = self.driftInputMapping
 
-                if 'DriftResults' in self.selectedDataSource.h5f.root:
-                    self.dataSources.append(inpFilt.h5rDSource(self.selectedDataSource.h5f))
-                    self.driftInputMapping = inpFilt.mappingFilter(self.dataSources[-1])
-                    self.dataSources.append(self.driftInputMapping)
-
-                    if len(self.selectedDataSource['x']) == 0:
-                        self.selectedDataSource = self.dataSources[-1]
+                    if len(ds['x']) == 0:
+                        self.selectDataSource('Fiducials')
 
             except: #fallback to catch series that only have drift data
-                self.selectedDataSource = inpFilt.h5rDSource(filename)
-                self.dataSources.append(self.selectedDataSource)
+                ds = inpFilt.h5rDSource(filename)
+                self.filesToClose.append(ds.h5f)
+
+                self.driftInputMapping = inpFilt.mappingFilter(ds)
+                self.dataSources['Fiducials'] = self.driftInputMapping
+                self.selectDataSource('Fiducials')
                 
-                self.filesToClose.append(self.selectedDataSource.h5f)
+
 
             #catch really old files which don't have any metadata
-            if 'MetaData' in self.selectedDataSource.h5f.root:
-                self.mdh = MetaDataHandler.HDFMDHandler(self.selectedDataSource.h5f)
+            if 'MetaData' in ds.h5f.root:
+                self.mdh = MetaDataHandler.HDFMDHandler(ds.h5f)
 
            
-            if ('Events' in self.selectedDataSource.h5f.root) and ('StartTime' in self.mdh.keys()):
-                self.events = self.selectedDataSource.h5f.root.Events[:]
+            if ('Events' in ds.h5f.root) and ('StartTime' in self.mdh.keys()):
+                self.events = ds.h5f.root.Events[:]
 
                         
         elif os.path.splitext(filename)[1] == '.mat': #matlab file
             ds = inpFilt.matfileSource(filename, kwargs['FieldNames'], kwargs['VarName'])
-            self.selectedDataSource = ds
-            self.dataSources.append(ds)
+            #self.selectedDataSource = ds
+            #self.dataSources.append(ds)
 
         elif os.path.splitext(filename)[1] == '.csv': 
             #special case for csv files - tell np.loadtxt to use a comma rather than whitespace as a delimeter
@@ -322,16 +352,16 @@ class Pipeline:
                 ds = inpFilt.textfileSource(filename, kwargs['FieldNames'], delimiter=',', skiprows=kwargs['SkipRows'])
             else:
                 ds = inpFilt.textfileSource(filename, kwargs['FieldNames'], delimiter=',')
-            self.selectedDataSource = ds
-            self.dataSources.append(ds)
+            #self.selectedDataSource = ds
+            #self.dataSources.append(ds)
             
         else: #assume it's a tab (or other whitespace) delimited text file
             if 'SkipRows' in kwargs.keys():
                 ds = inpFilt.textfileSource(filename, kwargs['FieldNames'], skiprows=kwargs['SkipRows'])
             else:
                 ds = inpFilt.textfileSource(filename, kwargs['FieldNames'])
-            self.selectedDataSource = ds
-            self.dataSources.append(ds)
+            #self.selectedDataSource = ds
+            #self.dataSources.append(ds)
             
         
             
@@ -341,9 +371,10 @@ class Pipeline:
             
         #wrap the data source with a mapping so we can fiddle with things
         #e.g. combining z position and focus 
-        self.inputMapping = inpFilt.mappingFilter(self.selectedDataSource)
-        self.selectedDataSource = self.inputMapping
-        self.dataSources.append(self.inputMapping)
+        self.inputMapping = inpFilt.mappingFilter(ds)
+        self.dataSources['Raw Localizations'] = ds
+        self.selectDataSource('Raw Localizations')
+
         
         if 'PixelSize' in kwargs.keys():
             self.selectedDataSource.pixelSize = kwargs['PixelSize']
