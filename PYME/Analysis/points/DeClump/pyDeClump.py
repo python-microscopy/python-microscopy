@@ -55,7 +55,7 @@ def findConnected(i, t,x,y,delta_x, frameIndices, assigned, clumpNum, nFrames=5)
 def deClumpedDType(arr):
     dt = arr.dtype.descr
 
-    dt = [it for it in dt if not it[0] in ['slicesUsed', 'resultCode']]
+    dt = [it for it in dt if not it[0] in ['slicesUsed', 'resultCode', 'nFrames', 'ATotal']]
     dt = dt + [('nFrames', '<i4'), ('ATotal', '<f4')]
 
     return dt
@@ -166,7 +166,7 @@ def coalesceClumps_(fitResults, assigned):
     
 def coalesceClumps(fitResults, assigned):
     """Agregates clumps to a single event"""
-    NClumps = len(assigned)  # int(assigned.max())
+    NClumps = int(assigned.max())  # len(np.unique(assigned))  #
 
     #work out what the data type for our declumped data should be
     dt = deClumpedDType(fitResults)

@@ -145,7 +145,7 @@ def pairMolecules(tIndex, x, y, whichChan, numChan, deltaX=[None], appearIn=np.a
     # don't clump molecules from the wrong channel (done by parsing modified whichChan to this function)
     ignoreChan = whichChan < 0
     numClump = np.max(assigned)
-    igVec = np.arange(numClump, numClump + len(ignoreChan))
+    igVec = np.arange(numClump, numClump + sum(ignoreChan))
     # give ignored channel localizations unique clump assignments
     assigned[ignoreChan] = igVec
 
@@ -505,39 +505,61 @@ class multiviewMapper:
         #ys = pipeline['fitResults_sigmay'][I]
         #whichChan = pipeline.mapping.whichChan[I]
         #pairs = np.zeros_like(errX, dtype=bool)
-        fitResCopy = np.copy(fres)
+        fresCopy = np.copy(fres)
         # inject xReg and yReg
-        fitResCopy['fitResults']['x0'] = pipeline.mapping.x
-        fitResCopy['fitResults']['y0'] = pipeline.mapping.y
+        #fitResCopy['fitResults']['x0'] = pipeline.mapping.x
+        #fitResCopy['fitResults']['y0'] = pipeline.mapping.y
         #fres['fitResults'].setfield(2.0, [('test', '<i4')])
         #fitResCopy.setfield(pipeline.mapping.whichChan, ['whichChan', '<i4'])
-        fitResCopy.whichChan = np.copy(pipeline.mapping.whichChan)
-        # want to use coalesceClumps to shrink whichChan as well as average sigma values separately for each plane
-        dt = fres.dtype.descr
-        addDT = [('sigmax_Plane%i' % pi, '<f4') for pi in range(numPlanes)]
-        dt[1][1].__add__(addDT)
-        dt.__add__([('whichChannel', '<f4')])
+        # fitResCopy.whichChan = np.copy(pipeline.mapping.whichChan)
+        # want to hack coalesceClumps to shrink whichChan as well as average sigma values separately for each plane
+        dt = list(fres.dtype.descr)
+        addDT = []
+        addDT += [('sigmax_Plane%i' % pi, '<f4') for pi in range(numPlanes)]
+        addDT += [('sigmay_Plane%i' % pi, '<f4') for pi in range(numPlanes)]
+        dt[1] = list(dt[1])
+        dt[2] = list(dt[2])
+        #dt1, dt2 = list(dt[1]), list(dt[2])
+        dt[1][1] += addDT
+        dt[2][1] += addDT
+        #dt[1][1] = dt1
+        #dt[2][1] = dt2
+        dt = dt + [('whichChannel', '<i4')]
+        dt[1], dt[2] = tuple(dt[1]), tuple(dt[2])
+        fresCopy = np.empty_like(fres, dtype=dt)
+        # copy over existing fitresults:
+        for fr in fres.dtype.descr:
+            fresCopy[fr[0]] = fres[fr[0]]
+        fresCopy['whichChannel'] = np.int32(pipeline.mapping.whichChan)
+        #fresCopy['fitResults'] = fres['fitResults']
         for cind in range(len(chanColor)):
             # trick pairMolecules function by tweaking the channel vector
             # this needs to be unsorted at this point
-            planeInColorChan = np.copy(fitResCopy.whichChan) #fixme: needs to shrink with fitResCopy
+            planeInColorChan = np.copy(fresCopy['whichChannel']) #fixme: needs to shrink with fitResCopy
             chanColor = np.array(chanColor)
             ignoreChans = np.where(chanColor != cind)[0]
             igMask = [mm in ignoreChans.tolist() for mm in planeInColorChan]
             planeInColorChan[np.where(igMask)] = -9
             # clumpID is assigned, paired is keep
-            x, y, Chan, clumpID, paired = pairMolecules(fitResCopy['tIndex'], fitResCopy['fitResults']['x0'], fitResCopy['fitResults']['y0'],
-                          planeInColorChan, numChan, deltaX=100*fitResCopy['fitError']['x0'],
+            x, y, Chan, clumpID, paired = pairMolecules(fresCopy['tIndex'], fresCopy['fitResults']['x0'], fresCopy['fitResults']['y0'],
+                          planeInColorChan, numChan, deltaX=100*fresCopy['fitError']['x0'],
                                                         appearIn=np.hstack([-9, np.where(chanColor == cind)[0]]))
             for pind in range(numPlanes):
-                fitResCopy['fitResults']['sigmax_Plane%i' % pind] = (planeInColorChan == pind + cind*numPlanes)*fitResCopy['fitResults']['sigmax']
-                fitResCopy['fitResults']['sigmay_Plane%i' % pind] = (planeInColorChan == pind + cind*numPlanes)*fitResCopy['fitResults']['sigmay']
+                pMask = (planeInColorChan == pind + cind*numPlanes)
+                fresCopy['fitResults']['sigmax_Plane%i' % pind] = pMask*fresCopy['fitResults']['sigmax']
+                fresCopy['fitResults']['sigmay_Plane%i' % pind] = pMask*fresCopy['fitResults']['sigmay']
+                fresCopy['fitError']['sigmax_Plane%i' % pind] = pMask*fresCopy['fitError']['sigmax']
+                fresCopy['fitError']['sigmay_Plane%i' % pind] = pMask*fresCopy['fitError']['sigmay']
 
             #clumpedRes['fitResults'] = clumpedRes['fitResults'][np.where(planeInColorChan >= 0)[0]]
             # FIXME: fix coalesceClumps to average sigmas separately for each plane in channel
-
-            clumpedRes = pyDeClump.coalesceClumps(fitResCopy, clumpID)
-            fitResCopy = clumpedRes
+            # numClumps = len(clumpID)
+            clumpVec = np.unique(clumpID)
+            for ci in range(len(clumpVec)):
+                cMask = clumpID == clumpVec[ci]
+                clumpID[cMask] = ci
+            clumpedRes = pyDeClump.coalesceClumps(fresCopy, clumpID)
+            fresCopy = clumpedRes
 
         # create data source for our clumped dat
         from PYME.LMVis.inpFilt import fitResultsSource
