@@ -470,6 +470,7 @@ class multiviewMapper:
             numChan = pipeline.mdh['Multiview.NumROIs']
             chanColor = [0, 0, 1, 1]  # FIXME: pipeline.mdh['Multiview.ColorInfo']
             numPlanes = numChan / len(np.unique(chanColor))
+            chanPlane = [0, 1, 0, 1]  # FIXME: make this automatic np.unique(chanColor, return_index=True)
         except AttributeError:
             numChan = 1
             chanColor = [0]
@@ -531,7 +532,15 @@ class multiviewMapper:
         for fr in fres.dtype.descr:
             fresCopy[fr[0]] = fres[fr[0]]
         fresCopy['whichChannel'] = np.int32(pipeline.mapping.whichChan)
-        #fresCopy['fitResults'] = fres['fitResults']
+        for pind in range(numPlanes):
+            pMask = [(chanPlane[fresCopy['whichChannel'][p]] == pind) for p in range(len(fresCopy['whichChannel']))]
+            fresCopy['fitResults']['sigmax_Plane%i' % pind] = pMask*fresCopy['fitResults']['sigmax']
+            fresCopy['fitResults']['sigmay_Plane%i' % pind] = pMask*fresCopy['fitResults']['sigmay']
+            fresCopy['fitError']['sigmax_Plane%i' % pind] = pMask*fresCopy['fitError']['sigmax']
+            fresCopy['fitError']['sigmay_Plane%i' % pind] = pMask*fresCopy['fitError']['sigmay']
+            # replace zeros in fiterror with ones
+            fresCopy['fitError']['sigmax_Plane%i' % pind][fresCopy['fitError']['sigmax_Plane%i' % pind] == 0] = np.inf
+            fresCopy['fitError']['sigmay_Plane%i' % pind][fresCopy['fitError']['sigmay_Plane%i' % pind] == 0] = np.inf
         for cind in range(len(chanColor)):
             # trick pairMolecules function by tweaking the channel vector
             # this needs to be unsorted at this point
@@ -544,12 +553,6 @@ class multiviewMapper:
             x, y, Chan, clumpID, paired = pairMolecules(fresCopy['tIndex'], fresCopy['fitResults']['x0'], fresCopy['fitResults']['y0'],
                           planeInColorChan, numChan, deltaX=100*fresCopy['fitError']['x0'],
                                                         appearIn=np.hstack([-9, np.where(chanColor == cind)[0]]))
-            for pind in range(numPlanes):
-                pMask = (planeInColorChan == pind + cind*numPlanes)
-                fresCopy['fitResults']['sigmax_Plane%i' % pind] = pMask*fresCopy['fitResults']['sigmax']
-                fresCopy['fitResults']['sigmay_Plane%i' % pind] = pMask*fresCopy['fitResults']['sigmay']
-                fresCopy['fitError']['sigmax_Plane%i' % pind] = pMask*fresCopy['fitError']['sigmax']
-                fresCopy['fitError']['sigmay_Plane%i' % pind] = pMask*fresCopy['fitError']['sigmay']
 
             #clumpedRes['fitResults'] = clumpedRes['fitResults'][np.where(planeInColorChan >= 0)[0]]
             # FIXME: fix coalesceClumps to average sigmas separately for each plane in channel
@@ -563,65 +566,10 @@ class multiviewMapper:
 
         # create data source for our clumped dat
         from PYME.LMVis.inpFilt import fitResultsSource
-        pipeline.dataSources.append(fitResultsSource(clumpedRes))
-        pipeline.selectedDataSource = pipeline.dataSources[-1]
+        pipeline.addDataSource('Clumped', fitResultsSource(clumpedRes))
+        pipeline.selectDataSource('Clumped')
         self.visFr.RegenFilter()
         self.visFr.CreateFoldPanel()
-        '''
-            #pairs.append(paired)
-
-            # coalesce pairs in color channel
-            #clumpID[paired]
-            pairedClumps = np.unique(clumpID[paired])
-            xp = np.zeros(len(pairedClumps))
-            yp = np.zeros_like(xp)
-            xpErr = np.zeros_like(xp)
-            ypErr = np.zeros_like(xp)
-            color = cind*np.ones_like(xp)
-            sigxp = np.zeros((len(x) - len(pairedClumps), len(np.unique(planeInColorChan) - 1)))
-            sigyp = np.zeros_like(sigxp)
-            for ind in range(len(pairedClumps)):
-                # merge clumps within channels
-                mask = np.where(clumpID == pairedClumps[ind])
-                xp[ind] = x[mask].mean()
-                yp[ind] = y[mask].mean()
-
-                sigxp[ind, :] = xs[mask]
-                sigyp[ind, :] = ys[mask]
-                # propagate error
-                xpErr[ind] = np.sqrt(np.sum(errX[mask]**2))
-                ypErr[ind] = np.sqrt(np.sum(errY[mask]**2))
-
-
-
-
-            xco.append(xp)
-            yco.append(yp)
-            xcoErr.append(xpErr)
-            ycoErr.append(ypErr)
-            clist.append(color)  # fixme: do something with this if can't sort sigmas another way
-
-            pairs = np.logical_or(pairs, paired)
-
-            for ind in range(sigxp.shape[0] - len(pairedClumps)):
-                sigxp[ind + len(pairedClumps), whichChan[~paired][ind]] = xs[~paired][ind]
-                sigyp[ind + len(pairedClumps), whichChan[~paired][ind]] = ys[~paired][ind]
-
-        x = np.hstack(xco)
-        y = np.hstack(yco)
-        xErr = np.hstack(xcoErr)
-        yErr = np.hstack(ycoErr)
-
-
-
-
-        #x = np.hstack([xco, x[~pairs]])
-        #y = np.hstack([yco, y[~pairs]])
-        #xcoErr = np.hstack([xcoErr, errX[~pairs]])
-        #ycoErr = np.hstack([ycoErr, errY[~pairs]])
-        # fixme: Come back here and do something about tIndex!!
-        #sigCoX = np.zeros(len(x) - len(pairs), sigxp.shape[1])
-        '''
 
         z = astigMAPism(stigLib, pipeline['clump'], pipeline['whichChan'], pipeline['sigmax'], pipeline['sigmay'])
 
