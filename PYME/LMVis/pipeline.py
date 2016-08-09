@@ -269,19 +269,15 @@ class Pipeline:
                 self.ym = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), y0, 'ScannerYPos', 0)
                 
                 self.eventCharts.append(('YPos [um]', self.ym, 'ScannerYPos'))
-        
-            if 'ScannerXPos' in evKeyNames or 'ScannerYPos' in evKeyNames:
-                self.imageBounds = ImageBounds.estimateFromSource(ds)
                 
             if 'ShiftMeasure' in evKeyNames:
                 self.driftx = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), 0, 'ShiftMeasure', 0)
                 self.drifty = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), 0, 'ShiftMeasure', 1)
                 self.driftz = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), 0, 'ShiftMeasure', 2)
 
-
-            #self._add_eventvars_to_ds(ds)
-            #if 'ScannerXPos' in evKeyNames or 'ScannerYPos' in evKeyNames:
-            #    self.imageBounds = ImageBounds.estimateFromSource(ds)
+                self.eventCharts.append(('X Drift [px]', self.driftx, 'ShiftMeasure'))
+                self.eventCharts.append(('Y Drift [px]', self.drifty, 'ShiftMeasure'))
+                self.eventCharts.append(('Z Drift [px]', self.driftz, 'ShiftMeasure'))
 
     def _add_eventvars_to_ds(self, ds):
         if 'zm' in dir(self):
@@ -402,7 +398,7 @@ class Pipeline:
 
                 self.driftInputMapping = inpFilt.mappingFilter(ds)
                 self.dataSources['Fiducials'] = self.driftInputMapping
-                self.selectDataSource('Fiducials')
+                #self.selectDataSource('Fiducials')
 
             #catch really old files which don't have any metadata
             if 'MetaData' in ds.h5f.root:
