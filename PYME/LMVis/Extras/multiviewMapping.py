@@ -152,7 +152,7 @@ def pairMolecules(tIndex, x, y, whichChan, numChan, deltaX=[None], appearIn=np.a
 
     return x, y, whichChan, assigned, keep
 
-def astigMAPism(stigLib, clump, whichChan, sigmax, sigmay):
+def astigMAPism(pipeline, stigLib):
     """
     Look up table
     Args:
@@ -162,6 +162,7 @@ def astigMAPism(stigLib, clump, whichChan, sigmax, sigmay):
 
     """
     import scipy.interpolate as terp
+    whichChan = pipeline['whichChannel']
     # generate lookup table
     zVal = np.arange(stigLib['zRange'][0], stigLib['zRange'][1])
 
@@ -538,7 +539,7 @@ class multiviewMapper:
             fresCopy['fitResults']['sigmay_Plane%i' % pind] = pMask*fresCopy['fitResults']['sigmay']
             fresCopy['fitError']['sigmax_Plane%i' % pind] = pMask*fresCopy['fitError']['sigmax']
             fresCopy['fitError']['sigmay_Plane%i' % pind] = pMask*fresCopy['fitError']['sigmay']
-            # replace zeros in fiterror with ones
+            # replace zeros in fiterror with infs so their weights are zero
             fresCopy['fitError']['sigmax_Plane%i' % pind][fresCopy['fitError']['sigmax_Plane%i' % pind] == 0] = np.inf
             fresCopy['fitError']['sigmay_Plane%i' % pind][fresCopy['fitError']['sigmay_Plane%i' % pind] == 0] = np.inf
         for cind in range(len(chanColor)):
@@ -571,7 +572,7 @@ class multiviewMapper:
         self.visFr.RegenFilter()
         self.visFr.CreateFoldPanel()
 
-        z = astigMAPism(stigLib, pipeline['clump'], pipeline['whichChan'], pipeline['sigmax'], pipeline['sigmay'])
+        z = astigMAPism(pipeline, stigLib)
 
 
 
