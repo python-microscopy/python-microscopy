@@ -71,14 +71,14 @@ class Unmixer:
         if shiftfield:
             self.SetShiftField(shiftfield)
 
-    def SetShiftField(self, shiftField):
+    def SetShiftField(self, shiftField, scope):
         #self.shiftField = shiftField
         #self.shiftFieldname = sfname
     
         if self.axis == 'up_down':
             X, Y = numpy.ogrid[:512, :256]
         else:
-            X, Y = numpy.ogrid[:256, :512]
+            X, Y = numpy.ogrid[:scope.cam.GetPicWidth()/2, :scope.cam.GetPicHeight()]
 
         self.X2 = numpy.round(X - shiftField[0](X*70., Y*70.)/70.).astype('i')
         self.Y2 = numpy.round(Y - shiftField[1](X*70., Y*70.)/70.).astype('i')
@@ -96,8 +96,8 @@ class Unmixer:
                 Xn = self.X2[x1:x2, y1:(y1 + red_chan.shape[1])] - x1
                 Yn = self.Y2[x1:x2, y1:(y1 + red_chan.shape[1])] - y1
             else:
-                Xn = self.X2[x1:(x1 + red_chan.shape[0]), y1:y2] - x1
-                Yn = self.Y2[x1:(x1 + red_chan.shape[0]), y1:y2] - y1
+                Xn = self.X2[x1:(x1 + red_chan.shape[0]), y1:y2-1] - x1
+                Yn = self.Y2[x1:(x1 + red_chan.shape[0]), y1:y2-1] - y1
 
             #print Xn.shape
 
@@ -281,7 +281,7 @@ class Splitter:
     def SetShiftField(self, sfname):
         self.shiftField = numpy.load(sfname)
         self.shiftFieldName = sfname
-        self.unmixer.SetShiftField(self.shiftField)
+        self.unmixer.SetShiftField(self.shiftField, self.scope)
 
 
     def Unmix(self):
