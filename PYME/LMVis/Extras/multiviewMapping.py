@@ -152,7 +152,7 @@ def pairMolecules(tIndex, x, y, whichChan, numChan, deltaX=[None], appearIn=np.a
 
     return x, y, whichChan, assigned, keep
 
-def astigMAPism(pipeline, stigLib):
+def astigMAPism(pipeline, stigLib, chanPlane):
     """
     Look up table
     Args:
@@ -162,29 +162,49 @@ def astigMAPism(pipeline, stigLib):
 
     """
     import scipy.interpolate as terp
-    whichChan = pipeline['whichChannel']
-    # generate lookup table
+    numMols = len(pipeline['x'])
+    # FIXME: go back and make whichChannel and int!
+    whichChan = np.array(pipeline['whichChannel'], dtype=np.int32)
+    # stigLib['zRange'] contains the extrema of acceptable z-positions looking over all channels
     zVal = np.arange(stigLib['zRange'][0], stigLib['zRange'][1])
 
     sigCalX = {}  # np.zeros((len(zVal), numPlanes))
     sigCalY = {}  # np.zeros_like(sigCalX)
 
+    z = np.zeros(numMols)
+    failures = 0
+
     # generate look up table of sorts
     for ii in np.unique(whichChan):
-        #sigVals = stigLib['sigxTerp%i' % ii](zVal)
-        #sigVals = stigLib['sigxTerp%i' % ii](zVal)
-        # Zsigy = sigmaLibrary['sigyTerp%i' % ii](zVal)
-        #astigLib['sigxTerp%i' % ii] = terp.UnivariateSpline(astigLib['PSF%i' % ii]['z'], astigLib['PSF%i' % ii]['sigmax'],
-        #                                                    bbox=[lowerZ, upperZ])
-        #astigLib['sigyTerp%i' % ii] = terp.UnivariateSpline(astigLib['PSF%i' % ii]['z'], astigLib['PSF%i' % ii]['sigmay'],
-        #                                                    bbox=[lowerZ, upperZ])
-        zdat = stigLib['PSF%i' % ii]['z']
-        #['PSF%i' % ii]['zrange']
-        sigCalX['chan%i' % ii] = terp.UnivariateSpline(zdat, stigLib['PSF%i' % ii]['sigmax'],
-                                                            bbox=['PSF%i' % ii]['zrange'], ext='zeros')(zVal)
-        sigCalY['chan%i' % ii] = terp.UnivariateSpline(zdat, stigLib['PSF%i' % ii]['sigmay'],
-                                                            bbox=['PSF%i' % ii]['zrange'], ext='zeros')(zVal)
+        zdat = np.array(stigLib['PSF%i' % ii]['z'])
+        # find indices of range we trust
+        zrange = stigLib['PSF%i' % ii]['zrange']
+        lowsubZ , upsubZ = np.absolute(zdat - zrange[0]), np.absolute(zdat - zrange[1])
+        lowZLoc = np.argmin(lowsubZ)
+        upZLoc = np.argmin(upsubZ)
 
+        # FIXME: will want to replace zeros with NANs in sigCalX and Y so they are ignored in nanargmin
+        sigCalX['chan%i' % ii] = terp.UnivariateSpline(zdat[lowZLoc:upZLoc],
+                                                       np.array(stigLib['PSF%i' % ii]['sigmax'])[lowZLoc:upZLoc], ext='zeros')(zVal)
+                                                            # bbox=stigLib['PSF%i' % ii]['zrange'], ext='zeros')(zVal)
+        sigCalY['chan%i' % ii] = terp.UnivariateSpline(zdat[lowZLoc:upZLoc],
+                                                       np.array(stigLib['PSF%i' % ii]['sigmay'])[lowZLoc:upZLoc], ext='zeros')(zVal)
+        for mi in range(numMols):
+            if whichChan[mi] == ii:
+                wx = 1./pipeline['fitError_sigmaxPlane%i' % chanPlane[ii]][mi]**2
+                wy = 1./pipeline['fitError_sigmayPlane%i' % chanPlane[ii]][mi]**2
+                errX = wx*(pipeline['fitResults_sigmaxPlane%i' % chanPlane[ii]][mi] - sigCalX['chan%i' % ii])**2
+                errY = wy*(pipeline['fitResults_sigmayPlane%i' % chanPlane[ii]][mi] - sigCalY['chan%i' % ii])**2
+
+                # find minimum
+                try:
+                    z[mi] = zVal[np.nanargmin(errX + errY)]
+                except:
+                    failures += 1
+                    print(failures)
+                    print('hmmm, no sigmas in correct plane for this molecule')
+    pipeline.mapping.setMapping('zPosition', z)
+    #pipeline.selectedDataSource.addColumn('zPositions', z)
 
 class multiviewMapper:
     """
@@ -518,8 +538,8 @@ class multiviewMapper:
         # want to hack coalesceClumps to shrink whichChan as well as average sigma values separately for each plane
         dt = list(fres.dtype.descr)
         addDT = []
-        addDT += [('sigmax_Plane%i' % pi, '<f4') for pi in range(numPlanes)]
-        addDT += [('sigmay_Plane%i' % pi, '<f4') for pi in range(numPlanes)]
+        addDT += [('sigmaxPlane%i' % pi, '<f4') for pi in range(numPlanes)]
+        addDT += [('sigmayPlane%i' % pi, '<f4') for pi in range(numPlanes)]
         dt[1] = list(dt[1])
         dt[2] = list(dt[2])
         #dt1, dt2 = list(dt[1]), list(dt[2])
@@ -536,13 +556,13 @@ class multiviewMapper:
         fresCopy['whichChannel'] = np.int32(pipeline.mapping.whichChan)
         for pind in range(numPlanes):
             pMask = [(chanPlane[fresCopy['whichChannel'][p]] == pind) for p in range(len(fresCopy['whichChannel']))]
-            fresCopy['fitResults']['sigmax_Plane%i' % pind] = pMask*fresCopy['fitResults']['sigmax']
-            fresCopy['fitResults']['sigmay_Plane%i' % pind] = pMask*fresCopy['fitResults']['sigmay']
-            fresCopy['fitError']['sigmax_Plane%i' % pind] = pMask*fresCopy['fitError']['sigmax']
-            fresCopy['fitError']['sigmay_Plane%i' % pind] = pMask*fresCopy['fitError']['sigmay']
+            fresCopy['fitResults']['sigmaxPlane%i' % pind] = pMask*fresCopy['fitResults']['sigmax']
+            fresCopy['fitResults']['sigmayPlane%i' % pind] = pMask*fresCopy['fitResults']['sigmay']
+            fresCopy['fitError']['sigmaxPlane%i' % pind] = pMask*fresCopy['fitError']['sigmax']
+            fresCopy['fitError']['sigmayPlane%i' % pind] = pMask*fresCopy['fitError']['sigmay']
             # replace zeros in fiterror with infs so their weights are zero
-            fresCopy['fitError']['sigmax_Plane%i' % pind][fresCopy['fitError']['sigmax_Plane%i' % pind] == 0] = np.inf
-            fresCopy['fitError']['sigmay_Plane%i' % pind][fresCopy['fitError']['sigmay_Plane%i' % pind] == 0] = np.inf
+            fresCopy['fitError']['sigmaxPlane%i' % pind][fresCopy['fitError']['sigmaxPlane%i' % pind] == 0] = np.inf
+            fresCopy['fitError']['sigmayPlane%i' % pind][fresCopy['fitError']['sigmayPlane%i' % pind] == 0] = np.inf
         for cind in range(len(chanColor)):
             # trick pairMolecules function by tweaking the channel vector
             # this needs to be unsorted at this point
@@ -573,7 +593,7 @@ class multiviewMapper:
         self.visFr.RegenFilter()
         self.visFr.CreateFoldPanel()
 
-        z = astigMAPism(pipeline, stigLib)
+        z = astigMAPism(pipeline, stigLib, chanPlane)
 
 
 
