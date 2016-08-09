@@ -138,11 +138,14 @@ class VisGUICore(object):
         item = afp.foldingPane(pnl, -1, caption="Data Source", pinned = False)
 
         self.dsRadioIds = []
-        for ds in self.pipeline.dataSources:
+        self._ds_keys_by_id = {}
+        for ds in self.pipeline.dataSources.keys():
             rbid = wx.NewId()
             self.dsRadioIds.append(rbid)
-            rb = wx.RadioButton(item, rbid, ds._name)
-            rb.SetValue(ds == self.pipeline.selectedDataSource)
+            rb = wx.RadioButton(item, rbid, ds)
+            rb.SetValue(ds == self.pipeline.selectedDataSourceKey)
+
+            self._ds_keys_by_id[rbid] = ds
 
             rb.Bind(wx.EVT_RADIOBUTTON, self.OnSourceChange)
             item.AddNewElement(rb)
@@ -151,8 +154,8 @@ class VisGUICore(object):
 
 
     def OnSourceChange(self, event):
-        dsind = self.dsRadioIds.index(event.GetId())
-        self.pipeline.selectedDataSource = self.pipeline.dataSources[dsind]
+        #dsind = self.dsRadioIds.index(event.GetId())
+        self.pipeline.selectDataSource(self._ds_keys_by_id[event.GetId()])
         self.RegenFilter()
         
         

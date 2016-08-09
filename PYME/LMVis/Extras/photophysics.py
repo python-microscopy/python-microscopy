@@ -52,8 +52,8 @@ class DecayAnalyser:
         pipeline = self.visFr.pipeline        
         
         fw = piecewiseMapping.GeneratePMFromProtocolEvents(pipeline.events, pipeline.mdh, pipeline.mdh.getEntry('StartTime'), 10)
-        pipeline.selectedDataSource.fw = fw(pipeline.selectedDataSource['t'])
-        pipeline.selectedDataSource.setMapping('filter', 'fw')
+        pipeline.selectedDataSource.addColumn('filter', fw(pipeline.selectedDataSource['t']))
+        #pipeline.selectedDataSource.setMapping('filter', 'fw')
         pipeline.selectedDataSource.setMapping('ColourNorm', '0.0*t')
 
         vals = list(set(pipeline.selectedDataSource.fw))
