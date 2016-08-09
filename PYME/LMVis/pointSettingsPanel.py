@@ -89,6 +89,8 @@ class PointSettingsPanel(wx.Panel):
         self.chPointColour.Bind(wx.EVT_CHOICE, self.OnChangePointColour)
         self.chPointColour.Bind(wx.EVT_ENTER_WINDOW, self.UpdatePointColourChoices)
 
+        self.pipeline.onKeysChanged.connect(self.UpdatePointColourChoices)
+
         
 
     def UpdatePointColourChoices(self, event=None, **kwargs):

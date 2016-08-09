@@ -74,6 +74,8 @@ class Pipeline:
         #define a signal which a GUI can hook if the pipeline is rebuilt (i.e. the output changes)
         self.onRebuild = dispatch.Signal()
 
+        #a cached list of our keys to be used to decide whether to fire a keys changed signal
+        self._keys = None
         #define a signal which can be hooked if the pipeline keys have changed
         self.onKeysChanged = dispatch.Signal()
         
@@ -268,9 +270,10 @@ class Pipeline:
 
         self.onRebuild.send(sender=self)
 
-        #TODO: fix so that view is refreshed
-        #if self.visFr:
-        #    self.visFr.RefreshView()
+        #check to see if any of the keys have changed - if so, fire a keys changed event so the GUI can update
+        newKeys = self.keys()
+        if not newKeys == self._keys:
+            self.onKeysChanged.send(sender=self)
         
         
     def _processEvents(self, ds):
@@ -644,15 +647,15 @@ class Pipeline:
             
         return self.objects, self.blobSettings.distThreshold
         
-    def getQuads(self):
+    def GenQuads(self):
         from PYME.Analysis.points.QuadTree import pointQT
         
         di = max(self.imageBounds.x1 - self.imageBounds.x0, 
                  self.imageBounds.y1 - self.imageBounds.y0)
 
-        np = di/self.QTGoalPixelSize
+        numPixels = di/self.QTGoalPixelSize
 
-        di = self.QTGoalPixelSize*2**np.ceil(np.log2(np))
+        di = self.QTGoalPixelSize*2**np.ceil(np.log2(numPixels))
 
         
         self.Quads = pointQT.qtRoot(self.imageBounds.x0, self.imageBounds.x0+di, 

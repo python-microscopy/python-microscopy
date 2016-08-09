@@ -57,8 +57,6 @@ class ParticleTracker:
 
             pipeline.Rebuild()
 
-            visFr.CreateFoldPanel() #TODO: can we update the list of colours without doing this?
-
         dlg.Destroy()
 
     def OnCalcMSDs(self,event):
@@ -121,8 +119,6 @@ class ParticleTracker:
         pipeline.addColumn('diffusionExp', alphas_)
 
         pipeline.Rebuild()
-
-        self.visFr.CreateFoldPanel() #TODO: can we update the list of colours without doing this?
         
     def OnCoalesce(self, event):
         from PYME.LMVis import inpFilt

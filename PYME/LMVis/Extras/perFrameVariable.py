@@ -69,7 +69,6 @@ class PerFrameVar:
                 #regenerate the pipeline
                 pipeline.Rebuild()
 
-                self.visFr.CreateFoldPanel() #TODO: can we update the list of colours without doing this?
 
 
 

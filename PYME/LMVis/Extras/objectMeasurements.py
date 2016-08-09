@@ -70,8 +70,6 @@ class ParticleTracker:
 
             pipeline.Rebuild()
 
-            visFr.CreateFoldPanel() #TODO: can we updata the list of point colours without doing this?
-
         dlg.Destroy()
 
     def OnMeasure(self, event):
