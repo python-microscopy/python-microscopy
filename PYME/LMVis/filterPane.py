@@ -184,7 +184,7 @@ class FilterPane(afp.foldingPane):
 
             self.bClipToSelection.SetLabel('Clear Clipping ROI')
 
-        self.visFr.RegenFilter()
+        self.pipeline.Rebuild()
 
     def OnFilterAdd(self, event):
         #key = self.lFiltKeys.GetItem(self.currentFilterItem).GetText()
@@ -214,14 +214,14 @@ class FilterPane(afp.foldingPane):
 
         dlg.Destroy()
 
-        self.visFr.RegenFilter()
+        self.pipeline.Rebuild()
 
     def OnFilterDelete(self, event):
         it = self.lFiltKeys.GetItem(self.currentFilterItem)
         self.lFiltKeys.DeleteItem(self.currentFilterItem)
         self.filterKeys.pop(it.GetText())
 
-        self.visFr.RegenFilter()
+        self.pipeline.Rebuild()
 
     def OnFilterEdit(self, event):
         key = self.lFiltKeys.GetItem(self.currentFilterItem).GetText()
@@ -241,4 +241,4 @@ class FilterPane(afp.foldingPane):
             self.lFiltKeys.SetStringItem(self.currentFilterItem,2, '%3.2f' % maxVal)
 
         dlg.Destroy()
-        self.visFr.RegenFilter()
+        self.pipeline.Rebuild()

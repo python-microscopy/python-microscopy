@@ -234,7 +234,8 @@ class Generator(HasTraits):
             pipeline.filterKeys.pop('sig')
         except:
             pass
-        self.visFr.RegenFilter()
+
+        pipeline.Rebuild()
         self.visFr.SetFit()
 
 

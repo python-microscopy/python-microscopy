@@ -34,6 +34,8 @@ import numpy as np
 import scipy.special
 import os
 
+import dispatch
+
 from PYME.Analysis.BleachProfile.kinModels import getPhotonNums
 
 
@@ -68,6 +70,8 @@ class Pipeline:
         self.QTGoalPixelSize = 5
         
         self.filesToClose = []
+
+        self.onRebuild = dispatch.Signal()
         
         self.ready = False
         self.visFr = visFr
@@ -220,13 +224,7 @@ class Pipeline:
                 
             self.ready = True
 
-        self.edb = None
-        self.objects = None
-        
-        self.Triangles = None
-        self.Quads = None
-
-        self.GeneratedMeasures = {}
+        self.ClearGenerated()
         
     def ClearGenerated(self):
         self.Triangles = None
@@ -234,8 +232,11 @@ class Pipeline:
         self.GeneratedMeasures = {}
         self.Quads = None
 
-        if self.visFr:
-            self.visFr.RefreshView()
+        self.onRebuild.send(sender=self)
+
+        #TODO: fix so that view is refreshed
+        #if self.visFr:
+        #    self.visFr.RefreshView()
         
         
     def _processEvents(self, ds):
