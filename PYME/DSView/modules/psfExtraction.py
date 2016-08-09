@@ -345,7 +345,8 @@ class psfExtractor:
             # find z range for spline generation
             lowerZ = zvec[np.where(notmask[:halfway])[0].max()]
             upperZ = zvec[(len(sgn)/2 + np.where(notmask[halfway:])[0].min() - 1)]
-            zrange = [np.nanmin(lowerZ, zrange[0]), np.nanmax(upperZ, zrange[1])]
+            astigLib['PSF%i' % ii]['zrange'] = [lowerZ, upperZ]
+            zrange = [np.nanmin([lowerZ, zrange[0]]), np.nanmax([upperZ, zrange[1]])]
 
             #lowsubZ , upsubZ = np.absolute(astigDat[ii]['z'] - zvec[lowerZ]), np.absolute(astigDat[ii]['z'] - zvec[upperZ])
             #lowZLoc = np.argmin(lowsubZ)
@@ -356,8 +357,9 @@ class psfExtractor:
             #                                                    bbox=[lowerZ, upperZ])
             #astigLib['sigyTerp%i' % ii] = terp.UnivariateSpline(astigLib['PSF%i' % ii]['z'], astigLib['PSF%i' % ii]['sigmay'],
             #                                                    bbox=[lowerZ, upperZ])
+            astigLib['PSF%i' % ii]['z'] = astigLib['PSF%i' % ii]['z'].tolist()
 
-        astigLib['zRange'] = np.round(zrange)
+        astigLib['zRange'] = np.round(zrange).tolist()
         astigLib['numChan'] = self.numChan
 
 

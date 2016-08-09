@@ -179,10 +179,11 @@ def astigMAPism(pipeline, stigLib):
         #astigLib['sigyTerp%i' % ii] = terp.UnivariateSpline(astigLib['PSF%i' % ii]['z'], astigLib['PSF%i' % ii]['sigmay'],
         #                                                    bbox=[lowerZ, upperZ])
         zdat = stigLib['PSF%i' % ii]['z']
+        #['PSF%i' % ii]['zrange']
         sigCalX['chan%i' % ii] = terp.UnivariateSpline(zdat, stigLib['PSF%i' % ii]['sigmax'],
-                                                            bbox=[zdat.min(), zdat.max()], ext='zeros')(zVal)
+                                                            bbox=['PSF%i' % ii]['zrange'], ext='zeros')(zVal)
         sigCalY['chan%i' % ii] = terp.UnivariateSpline(zdat, stigLib['PSF%i' % ii]['sigmay'],
-                                                            bbox=[zdat.min(), zdat.max()], ext='zeros')(zVal)
+                                                            bbox=['PSF%i' % ii]['zrange'], ext='zeros')(zVal)
 
 
 class multiviewMapper:
@@ -481,7 +482,7 @@ class multiviewMapper:
         except AttributeError:
             try:  # load through GUI dialog
                 fdialog = wx.FileDialog(None, 'Load Astigmatism Calibration', #wildcard='Shift Field file (*.sf)|*.sf',
-                                        style=wx.OPEN, defaultDir=nameUtils.genShiftFieldDirectoryPath())
+                                        wildcard='AstigMAPism file (*.am)|*.am', style=wx.OPEN, defaultDir=nameUtils.genShiftFieldDirectoryPath())
                 succ = fdialog.ShowModal()
                 if (succ == wx.ID_OK):
                     fpath = fdialog.GetPath()
