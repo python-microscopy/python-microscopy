@@ -176,8 +176,7 @@ class Pipeline:
                 self.zm = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), self.mdh.getEntry('Protocol.PiezoStartPos'))
                 self.z_focus = 1.e3*self.zm(ds['t'])
         
-                ds.z_focus = self.z_focus
-                ds.setMapping('focus', 'z_focus')
+                ds.addColumn('focus', self.z_focus)
                 
                 self.eventCharts.append(('Focus [um]', self.zm, 'ProtocolFocus'))
         
