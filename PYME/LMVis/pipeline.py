@@ -117,7 +117,7 @@ class Pipeline:
         self.Rebuild()
 
     def Rebuild(self):
-        for s in self.dataSources.items():
+        for s in self.dataSources.values():
             if 'setMapping' in dir(s):
                 #keep raw measurements available
                 s.setMapping('x_raw', 'x')
@@ -130,13 +130,7 @@ class Pipeline:
             else:
                 self.mapping = inpFilt.mappingFilter(self.selectedDataSource)
                 
-                
-                
             self.filter = inpFilt.resultsFilter(self.mapping, **self.filterKeys)
-            #if self.mapping:
-            #    self.mapping.resultsSource = self.filter
-            #else:
-            #    self.mapping = inpFilt.mappingFilter(self.filter)
 
             if not self.colourFilter:
                 self.colourFilter = inpFilt.colourFilter(self.filter, self)
