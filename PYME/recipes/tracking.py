@@ -120,9 +120,9 @@ class TrackFeatures(ModuleBase):
         into the pipeline (used when called from PYME.DSView.modules.particleTracking)"""
         clumpInfo, clumps = self.Track(pipeline)
 
-        pipeline.selectedDataSource.addColumn('clumpIndex', clumpInfo['clumpIndex'])
-        pipeline.selectedDataSource.addColumn('clumpSize', clumpInfo['clumpSize'])
-        pipeline.selectedDataSource.addColumn('trackVelocity', clumpInfo['trackVelocity'])
+        pipeline.addColumn('clumpIndex', clumpInfo['clumpIndex'])
+        pipeline.addColumn('clumpSize', clumpInfo['clumpSize'])
+        pipeline.addColumn('trackVelocity', clumpInfo['trackVelocity'])
         
         #self.clumps = clumps        
         pipeline.clumps = clumps

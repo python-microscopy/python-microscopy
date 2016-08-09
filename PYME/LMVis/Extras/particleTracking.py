@@ -56,13 +56,14 @@ class ParticleTracker:
             trackUtils.findTracks(pipeline, dlg.GetClumpRadiusVariable(),dlg.GetClumpRadiusMultiplier(), dlg.GetClumpTimeWindow())
 
             pipeline.Rebuild()
-            visFr.CreateFoldPanel()
+
+            visFr.CreateFoldPanel() #TODO: can we update the list of colours without doing this?
 
         dlg.Destroy()
 
     def OnCalcMSDs(self,event):
         import pylab
-        from PYME.Analysis._fithelpers import *
+        from PYME.Analysis import _fithelpers as fh
         from PYME.Analysis.points.DistHist import msdHistogram
 
         def powerMod(p,t):
@@ -100,7 +101,7 @@ class ParticleTracker:
 
             pylab.plot(t_, h)
 
-            res = FitModel(powerMod, [h[-1]/t_[-1], 1.], h, t_)
+            res = fh.FitModel(powerMod, [h[-1]/t_[-1], 1.], h, t_)
 
             Ds[i] = res[0][0]
             Ds_[I] = res[0][0]
@@ -116,17 +117,12 @@ class ParticleTracker:
         pylab.figure()
         pylab.scatter(Ds, alphas)
 
-        ds_diffusionConstants = -1*np.ones(pipeline.selectedDataSource['clumpIndex'].shape)
-        ds_diffusionConstants[pipeline.filter.Index] = Ds_
-
-        ds_diffusionExponents = np.zeros_like(ds_diffusionConstants)
-        ds_diffusionExponents[pipeline.filter.Index] = alphas_
-
-        pipeline.selectedDataSource.addColumn('diffusionConst', ds_diffusionConstants)
-        pipeline.selectedDataSource.addColumn('diffusionExp', ds_diffusionExponents)
+        pipeline.addColumn('diffusionConst', Ds_, -1)
+        pipeline.addColumn('diffusionExp', alphas_)
 
         pipeline.Rebuild()
-        self.visFr.CreateFoldPanel()
+
+        self.visFr.CreateFoldPanel() #TODO: can we update the list of colours without doing this?
         
     def OnCoalesce(self, event):
         from PYME.LMVis import inpFilt
@@ -140,7 +136,7 @@ class ParticleTracker:
         pipeline.addDataSource('Coalesced',  ds)
         pipeline.selectDataSource('Coalesced')
 
-        self.visFr.CreateFoldPanel()
+        self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
 
 
 

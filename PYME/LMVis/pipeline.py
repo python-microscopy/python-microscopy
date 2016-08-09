@@ -71,7 +71,11 @@ class Pipeline:
         
         self.filesToClose = []
 
+        #define a signal which a GUI can hook if the pipeline is rebuilt (i.e. the output changes)
         self.onRebuild = dispatch.Signal()
+
+        #define a signal which can be hooked if the pipeline keys have changed
+        self.onKeysChanged = dispatch.Signal()
         
         self.ready = False
         self.visFr = visFr
@@ -122,6 +126,36 @@ class Pipeline:
                 self.filterKeys.pop(k)
 
         self.Rebuild()
+
+    def addColumn(self, name, values, default = 0):
+        """
+        Adds a column to the currently selected data source. Attempts to guess whether the size matches the input or
+        the output, and adds padding values appropriately if it matches the output.
+
+        Parameters
+        ----------
+        name : str
+            The column name
+        values : array like
+            The values
+        default : float
+            The default value to pad with if we've given an output-sized array
+
+        """
+
+        ds_len = len(self.selectedDataSource[self.selectedDataSource.keys()[0]])
+        val_len = len(values)
+
+        if val_len == ds_len:
+            #length matches the length of our input data source - do a simple add
+            self.selectedDataSource.addColumn(name, values)
+        elif val_len == len(self[self.keys()[0]]):
+            ds_vals = np.zeros(ds_len) + default
+            ds_vals[self.filter.Index] = np.array(values)
+
+            self.selectedDataSource.addColumn(name, ds_vals)
+        else:
+            raise RuntimeError("Length of new column doesn't match either the input or output lengths")
 
     def addDataSource(self, dskey, ds):
         """

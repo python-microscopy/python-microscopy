@@ -65,16 +65,12 @@ class ParticleTracker:
 
             numPerObject, b = np.histogram(ids, np.arange(ids.max() + 1.5) + .5)
 
-            ds_objectIDs = np.zeros(len(pipeline.selectedDataSource['x']))
-            ds_objectIDs[pipeline.filter.Index] = ids
-            pipeline.selectedDataSource.addColumn('objectID', ds_objectIDs)
-
-            ds_numPerObject = np.zeros(len(pipeline.selectedDataSource['x']))
-            ds_numPerObject[pipeline.filter.Index] = numPerObject[ids-1]
-            pipeline.selectedDataSource.addColumn('NEvents', ds_numPerObject)
+            pipeline.addColumn('objectID', ids)
+            pipeline.addColumn('NEvents', numPerObject[ids-1])
 
             pipeline.Rebuild()
-            visFr.CreateFoldPanel()
+
+            visFr.CreateFoldPanel() #TODO: can we updata the list of point colours without doing this?
 
         dlg.Destroy()
 

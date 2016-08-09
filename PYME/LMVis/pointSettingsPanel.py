@@ -91,7 +91,7 @@ class PointSettingsPanel(wx.Panel):
 
         
 
-    def UpdatePointColourChoices(self, event=None):
+    def UpdatePointColourChoices(self, event=None, **kwargs):
         """Update our choice of keys if the pipeline has changed.
         """
         colKeys = _getPossibleKeys(self.pipeline)

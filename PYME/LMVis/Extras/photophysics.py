@@ -56,7 +56,7 @@ class DecayAnalyser:
         #pipeline.selectedDataSource.setMapping('filter', 'fw')
         pipeline.selectedDataSource.setMapping('ColourNorm', '0.0*t')
 
-        vals = list(set(pipeline.selectedDataSource.fw))
+        vals = list(set(pipeline.selectedDataSource['filter']))
 
         for key in vals:
             pipeline.mapping.setMapping('p_%d' % key, 'filter == %d' % key)

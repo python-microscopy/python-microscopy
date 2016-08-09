@@ -64,11 +64,12 @@ class PerFrameVar:
                 values = var[pipeline.selectedDataSource['t'].astype('i')]
                 
                 #add looked up values to input mapping
-                pipeline.selectedDataSource.addColumn(varname,  values)
+                pipeline.addColumn(varname,  values)
 
                 #regenerate the pipeline
                 pipeline.Rebuild()
-                self.visFr.CreateFoldPanel()
+
+                self.visFr.CreateFoldPanel() #TODO: can we update the list of colours without doing this?
 
 
 

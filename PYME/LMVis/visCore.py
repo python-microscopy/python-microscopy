@@ -118,7 +118,6 @@ class VisGUICore(object):
             quadTreeSettings.GenQuadTreePanel(self, sidePanel)
 
         if self.viewMode == 'points' or self.viewMode == 'tracks':
-            pass
             pointSettingsPanel.GenPointsPanel(self, sidePanel)
 
         if self.viewMode == 'blobs':
