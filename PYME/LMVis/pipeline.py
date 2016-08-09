@@ -116,6 +116,27 @@ class Pipeline:
         self.selectedDataSourceKey = dskey
         self.Rebuild()
 
+    def addDataSource(self, dskey, ds):
+        """
+        Add a new data source
+
+        Parameters
+        ----------
+        dskey : str
+            The name of the new data source
+        ds : an inpFilt.inputFilter derived class
+            The new data source
+
+        """
+        #check that we have a suitable object - note that this could potentially be relaxed
+        assert isinstance(ds, inpFilt.inputFilter)
+
+        if not isinstance(ds, inpFilt.mappingFilter):
+            #wrap with a mapping filter
+            ds = inpFilt.mappingFilter(ds)
+
+        self.dataSources[dskey] = ds
+
     def Rebuild(self):
         """
         Rebuild the pipeline. Called when the selected data source is changed/modified and/or the filter is changed.

@@ -220,7 +220,7 @@ class Generator(HasTraits):
 
         ds = inpFilt.mappingFilter(inpFilt.fitResultsSource(res))
         pipeline.imageBounds = ImageBounds.estimateFromSource(ds)
-        pipeline.dataSources['Generated Points'] = ds
+        pipeline.addDataSource('Generated Points', ds)
         pipeline.selectDataSource('Generated Points')
 
         from PYME.IO.MetaDataHandler import NestedClassMDHandler

@@ -119,15 +119,10 @@ class TrackFeatures(ModuleBase):
         """Support legacy interactive mode where we insert our results
         into the pipeline (used when called from PYME.DSView.modules.particleTracking)"""
         clumpInfo, clumps = self.Track(pipeline)
-        
-        pipeline.selectedDataSource.clumps = clumpInfo['clumpIndex']
-        pipeline.selectedDataSource.setMapping('clumpIndex', 'clumps')
-            
-        pipeline.selectedDataSource.clumpSizes = clumpInfo['clumpSize']
-        pipeline.selectedDataSource.setMapping('clumpSize', 'clumpSizes')
-        
-        pipeline.selectedDataSource.trackVelocities = clumpInfo['trackVelocity']
-        pipeline.selectedDataSource.setMapping('trackVelocity', 'trackVelocities')
+
+        pipeline.selectedDataSource.addColumn('clumpIndex', clumpInfo['clumpIndex'])
+        pipeline.selectedDataSource.addColumn('clumpSize', clumpInfo['clumpSize'])
+        pipeline.selectedDataSource.addColumn('trackVelocity', clumpInfo['trackVelocity'])
         
         #self.clumps = clumps        
         pipeline.clumps = clumps
