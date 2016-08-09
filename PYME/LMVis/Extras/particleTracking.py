@@ -167,7 +167,7 @@ class ParticleTracker:
         ds = inpFilt.fitResultsSource(dclumped)
 
         pipeline.addDataSource('Coalesced',  ds)
-        pipeline.selectedDataSource('Coalesced')
+        pipeline.selectDataSource('Coalesced')
         self.visFr.RegenFilter()
         self.visFr.CreateFoldPanel()
 
