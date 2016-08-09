@@ -162,9 +162,10 @@ def astigMAPism(pipeline, stigLib, chanPlane):
 
     """
     import scipy.interpolate as terp
-    numMols = len(pipeline['x'])
+    fres = pipeline.selectedDataSource.resultsSource.fitResults
+    numMols = len(fres['fitResults']['x0'])  # len(pipeline['x'])
     # FIXME: go back and make whichChannel and int!
-    whichChan = np.array(pipeline['whichChannel'], dtype=np.int32)
+    whichChan = np.array(fres['whichChannel'], dtype=np.int32)
     # stigLib['zRange'] contains the extrema of acceptable z-positions looking over all channels
     zVal = np.arange(stigLib['zRange'][0], stigLib['zRange'][1])
 
@@ -191,10 +192,14 @@ def astigMAPism(pipeline, stigLib, chanPlane):
                                                        np.array(stigLib['PSF%i' % ii]['sigmay'])[lowZLoc:upZLoc], ext='zeros')(zVal)
         for mi in range(numMols):
             if whichChan[mi] == ii:
-                wx = 1./pipeline['fitError_sigmaxPlane%i' % chanPlane[ii]][mi]**2
-                wy = 1./pipeline['fitError_sigmayPlane%i' % chanPlane[ii]][mi]**2
-                errX = wx*(pipeline['fitResults_sigmaxPlane%i' % chanPlane[ii]][mi] - sigCalX['chan%i' % ii])**2
-                errY = wy*(pipeline['fitResults_sigmayPlane%i' % chanPlane[ii]][mi] - sigCalY['chan%i' % ii])**2
+                #wx = 1./pipeline['fitError_sigmaxPlane%i' % chanPlane[ii]][mi]**2
+                #wy = 1./pipeline['fitError_sigmayPlane%i' % chanPlane[ii]][mi]**2
+                #errX = wx*(pipeline['fitResults_sigmaxPlane%i' % chanPlane[ii]][mi] - sigCalX['chan%i' % ii])**2
+                #errY = wy*(pipeline['fitResults_sigmayPlane%i' % chanPlane[ii]][mi] - sigCalY['chan%i' % ii])**2
+                wx = 1./fres['fitError']['sigmaxPlane%i' % chanPlane[ii]][mi]**2
+                wy = 1./fres['fitError']['sigmayPlane%i' % chanPlane[ii]][mi]**2
+                errX = wx*(fres['fitResults']['sigmaxPlane%i' % chanPlane[ii]][mi] - sigCalX['chan%i' % ii])**2
+                errY = wy*(fres['fitResults']['sigmayPlane%i' % chanPlane[ii]][mi] - sigCalY['chan%i' % ii])**2
 
                 # find minimum
                 try:
@@ -203,8 +208,10 @@ def astigMAPism(pipeline, stigLib, chanPlane):
                     failures += 1
                     print(failures)
                     print('hmmm, no sigmas in correct plane for this molecule')
-    pipeline.mapping.setMapping('zPosition', z)
-    #pipeline.selectedDataSource.addColumn('zPositions', z)
+    #pipeline.mapping.setMapping('zPosition', z)
+    #pipeline.Rebuild()
+    #pipeline.selectedDataSource.addColumn('z', z)
+    return z
 
 class multiviewMapper:
     """
@@ -590,10 +597,27 @@ class multiviewMapper:
         from PYME.LMVis.inpFilt import fitResultsSource
         pipeline.addDataSource('Clumped', fitResultsSource(clumpedRes))
         pipeline.selectDataSource('Clumped')
-        self.visFr.RegenFilter()
-        self.visFr.CreateFoldPanel()
+        #self.visFr.RegenFilter()
+        #self.visFr.CreateFoldPanel()
 
         z = astigMAPism(pipeline, stigLib, chanPlane)
+
+        dt = list(clumpedRes.dtype.descr)
+        addDT = [('z0', '<f4')]
+        dt[1] = list(dt[1])
+        #dt[2] = list(dt[2])
+        #dt1, dt2 = list(dt[1]), list(dt[2])
+        dt[1][1] += addDT
+        #dt[2][1] += addDT
+        dt[1] = tuple(dt[1])
+        fresCopy = np.empty_like(clumpedRes, dtype=dt)
+        # copy over existing fitresults:
+        for fr in clumpedRes.dtype.descr:
+            fresCopy[fr[0]] = clumpedRes[fr[0]]
+
+        fresCopy['fitResults']['z0'] = z
+        pipeline.addDataSource('Clumped', fitResultsSource(fresCopy))
+        pipeline.selectDataSource('Clumped')
 
 
 
