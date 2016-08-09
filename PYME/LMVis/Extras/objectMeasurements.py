@@ -65,14 +65,13 @@ class ParticleTracker:
 
             numPerObject, b = np.histogram(ids, np.arange(ids.max() + 1.5) + .5)
 
-            pipeline.selectedDataSource.objectIDs = np.zeros(len(pipeline.selectedDataSource['x']))
-            pipeline.selectedDataSource.objectIDs[pipeline.filter.Index] = ids
+            ds_objectIDs = np.zeros(len(pipeline.selectedDataSource['x']))
+            ds_objectIDs[pipeline.filter.Index] = ids
+            pipeline.selectedDataSource.addColumn('objectID', ds_objectIDs)
 
-            pipeline.selectedDataSource.numPerObject = np.zeros(len(pipeline.selectedDataSource['x']))
-            pipeline.selectedDataSource.numPerObject[pipeline.filter.Index] = numPerObject[ids-1]
-
-            pipeline.selectedDataSource.setMapping('objectID', 'objectIDs')
-            pipeline.selectedDataSource.setMapping('NEvents', 'numPerObject')
+            ds_numPerObject = np.zeros(len(pipeline.selectedDataSource['x']))
+            ds_numPerObject[pipeline.filter.Index] = numPerObject[ids-1]
+            pipeline.selectedDataSource.addColumn('NEvents', ds_numPerObject)
 
             visFr.RegenFilter()
             visFr.CreateFoldPanel()
