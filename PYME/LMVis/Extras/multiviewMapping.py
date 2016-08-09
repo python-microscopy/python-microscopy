@@ -512,9 +512,11 @@ class multiviewMapper:
         #fres['fitResults'].setfield(2.0, [('test', '<i4')])
         #fitResCopy.setfield(pipeline.mapping.whichChan, ['whichChan', '<i4'])
         fitResCopy.whichChan = np.copy(pipeline.mapping.whichChan)
+        # want to use coalesceClumps to shrink whichChan as well as average sigma values separately for each plane
         dt = fres.dtype.descr
         addDT = [('sigmax_Plane%i' % pi, '<f4') for pi in range(numPlanes)]
         dt[1][1].__add__(addDT)
+        dt.__add__([('whichChannel', '<f4')])
         for cind in range(len(chanColor)):
             # trick pairMolecules function by tweaking the channel vector
             # this needs to be unsorted at this point

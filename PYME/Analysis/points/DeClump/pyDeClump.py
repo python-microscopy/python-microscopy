@@ -200,6 +200,12 @@ def coalesceClumps(fitResults, assigned):
 
             fres['nFrames'][i] = len(rvs)
             #fres['ATotal'][i] = vals['fitResults']['A'].sum()
+    try:
+        Chans = fitResults['whichChannel']
+        for i in xrange(NClumps):
+            fres['whichChannel'][i] =Chans[clist[i]].min()
+    except ValueError:
+        pass
 
     return fres
 
