@@ -117,6 +117,10 @@ class Pipeline:
         self.Rebuild()
 
     def Rebuild(self):
+        """
+        Rebuild the pipeline. Called when the selected data source is changed/modified and/or the filter is changed.
+
+        """
         for s in self.dataSources.values():
             if 'setMapping' in dir(s):
                 #keep raw measurements available
@@ -157,7 +161,7 @@ class Pipeline:
             self.visFr.RefreshView()
         
         
-    def _processEvents(self):
+    def _processEvents(self, ds):
         """Read data from events table and translate it into variables for,
         e.g. z position"""
         
@@ -170,10 +174,10 @@ class Pipeline:
         
             if 'ProtocolFocus' in evKeyNames:
                 self.zm = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), self.mdh.getEntry('Protocol.PiezoStartPos'))
-                self.z_focus = 1.e3*self.zm(self.selectedDataSource['t'])
+                self.z_focus = 1.e3*self.zm(ds['t'])
         
-                self.selectedDataSource.z_focus = self.z_focus
-                self.selectedDataSource.setMapping('focus', 'z_focus')
+                ds.z_focus = self.z_focus
+                ds.setMapping('focus', 'z_focus')
                 
                 self.eventCharts.append(('Focus [um]', self.zm, 'ProtocolFocus'))
         
@@ -183,9 +187,9 @@ class Pipeline:
                     x0 = self.mdh.getEntry('Positioning.Stage_X')
                 self.xm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), x0, 'ScannerXPos', 0)
         
-                self.selectedDataSource.scan_x = 1.e3*self.xm(self.selectedDataSource['t']-.01)
-                self.selectedDataSource.setMapping('ScannerX', 'scan_x')
-                self.selectedDataSource.setMapping('x', 'x + scan_x')
+                ds.scan_x = 1.e3*self.xm(ds['t']-.01)
+                ds.setMapping('ScannerX', 'scan_x')
+                ds.setMapping('x', 'x + scan_x')
                 
                 self.eventCharts.append(('XPos [um]', self.xm, 'ScannerXPos'))
         
@@ -195,73 +199,78 @@ class Pipeline:
                     y0 = self.mdh.getEntry('Positioning.Stage_Y')
                 self.ym = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), y0, 'ScannerYPos', 0)
         
-                self.selectedDataSource.scan_y = 1.e3*self.ym(self.selectedDataSource['t']-.01)
-                self.selectedDataSource.setMapping('ScannerY', 'scan_y')
-                self.selectedDataSource.setMapping('y', 'y + scan_y')
+                ds.scan_y = 1.e3*self.ym(ds['t']-.01)
+                ds.setMapping('ScannerY', 'scan_y')
+                ds.setMapping('y', 'y + scan_y')
                 
                 self.eventCharts.append(('YPos [um]', self.ym, 'ScannerYPos'))
         
             if 'ScannerXPos' in evKeyNames or 'ScannerYPos' in evKeyNames:
-                self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
+                self.imageBounds = ImageBounds.estimateFromSource(ds)
                 
             if 'ShiftMeasure' in evKeyNames:
-                self.selectedDataSource.driftx = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), 0, 'ShiftMeasure', 0)(self.selectedDataSource['t']-.01)
-                self.selectedDataSource.drifty = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), 0, 'ShiftMeasure', 1)(self.selectedDataSource['t']-.01)
+                ds.driftx = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), 0, 'ShiftMeasure', 0)(ds['t']-.01)
+                ds.drifty = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), 0, 'ShiftMeasure', 1)(ds['t']-.01)
         
-                self.selectedDataSource.setMapping('driftx', 'driftx')
-                self.selectedDataSource.setMapping('drifty', 'drifty')
+                ds.setMapping('driftx', 'driftx')
+                ds.setMapping('drifty', 'drifty')
                 
                 
-    def _processSplitter(self):
+    def _processSplitter(self, ds):
         """set mappings ascociated with the use of a splitter"""
-        self.selectedDataSource.gF_zcorr = 0
-        self.selectedDataSource.setMapping('A', 'fitResults_Ag + fitResults_Ar')
-        self.selectedDataSource.setMapping('gFrac', 'fitResults_Ag/(fitResults_Ag + fitResults_Ar) + gF_zcorr*fitResults_z0')
-        
-        if 'fitError_Ag' in self.selectedDataSource.keys():    
-            self.selectedDataSource.setMapping('error_gFrac', 'sqrt((fitError_Ag/fitResults_Ag)**2 + (fitError_Ag**2 + fitError_Ar**2)/(fitResults_Ag + fitResults_Ar)**2)*fitResults_Ag/(fitResults_Ag + fitResults_Ar)')
+
+        ds.gF_zcorr = 0
+        ds.setMapping('A', 'fitResults_Ag + fitResults_Ar')
+        if 'fitResults_z0' in ds.keys():
+            ds.setMapping('gFrac', 'fitResults_Ag/(fitResults_Ag + fitResults_Ar) + gF_zcorr*fitResults_z0')
         else:
-            self.selectedDataSource.setMapping('error_gFrac','0*x + 0.01')
-            self.selectedDataSource.setMapping('fitError_Ag', '1*sqrt(fitResults_Ag/1)')
-            self.selectedDataSource.setMapping('fitError_Ar', '1*sqrt(fitResults_Ar/1)')
-            
-        sg = self.selectedDataSource['fitError_Ag']
-        sr = self.selectedDataSource['fitError_Ar']
-        g = self.selectedDataSource['fitResults_Ag']
-        r = self.selectedDataSource['fitResults_Ar']
-        I = self.selectedDataSource['A']
+            ds.setMapping('gFrac', 'fitResults_Ag/(fitResults_Ag + fitResults_Ar)')
         
-        self.selectedDataSource.colNorm = np.sqrt(2*np.pi)*sg*sr/(2*np.sqrt(sg**2 + sr**2)*I)*(
+        if 'fitError_Ag' in ds.keys():
+            ds.setMapping('error_gFrac', 'sqrt((fitError_Ag/fitResults_Ag)**2 + (fitError_Ag**2 + fitError_Ar**2)/(fitResults_Ag + fitResults_Ar)**2)*fitResults_Ag/(fitResults_Ag + fitResults_Ar)')
+        else:
+            ds.setMapping('error_gFrac','0*x + 0.01')
+            ds.setMapping('fitError_Ag', '1*sqrt(fitResults_Ag/1)')
+            ds.setMapping('fitError_Ar', '1*sqrt(fitResults_Ar/1)')
+            
+        sg = ds['fitError_Ag']
+        sr = ds['fitError_Ar']
+        g = ds['fitResults_Ag']
+        r = ds['fitResults_Ar']
+        I = ds['A']
+        
+        ds.colNorm = np.sqrt(2*np.pi)*sg*sr/(2*np.sqrt(sg**2 + sr**2)*I)*(
             scipy.special.erf((sg**2*r + sr**2*(I-g))/(np.sqrt(2)*sg*sr*np.sqrt(sg**2+sr**2)))
             - scipy.special.erf((sg**2*(r-I) - sr**2*g)/(np.sqrt(2)*sg*sr*np.sqrt(sg**2+sr**2))))
         
-        self.selectedDataSource.setMapping('ColourNorm', '1.0*colNorm')
+        ds.setMapping('ColourNorm', '1.0*colNorm')
 
-    def _processPriSplit(self):
+    def _processPriSplit(self, ds):
         """set mappings ascociated with the use of a splitter"""
-        self.selectedDataSource.setMapping('gFrac', 'fitResults_ratio')
-        self.selectedDataSource.setMapping('error_gFrac','fitError_ratio')
 
-        self.selectedDataSource.setMapping('fitResults_Ag','gFrac*A')
-        self.selectedDataSource.setMapping('fitResults_Ar','(1.0 - gFrac)*A + error_gFrac*A')
-        self.selectedDataSource.setMapping('fitError_Ag','gFrac*fitError_A + error_gFrac*A')
-        self.selectedDataSource.setMapping('fitError_Ar','(1.0 - gFrac)*fitError_A')
-        #self.selectedDataSource.setMapping('fitError_Ag', '1*sqrt(fitResults_Ag/1e-3)')
-        #self.selectedDataSource.setMapping('fitError_Ar', '1*sqrt(fitResults_Ar/1e-3)')
+        ds.setMapping('gFrac', 'fitResults_ratio')
+        ds.setMapping('error_gFrac','fitError_ratio')
+
+        ds.setMapping('fitResults_Ag','gFrac*A')
+        ds.setMapping('fitResults_Ar','(1.0 - gFrac)*A + error_gFrac*A')
+        ds.setMapping('fitError_Ag','gFrac*fitError_A + error_gFrac*A')
+        ds.setMapping('fitError_Ar','(1.0 - gFrac)*fitError_A')
+        #ds.setMapping('fitError_Ag', '1*sqrt(fitResults_Ag/1e-3)')
+        #ds.setMapping('fitError_Ar', '1*sqrt(fitResults_Ar/1e-3)')
         
-        sg = self.selectedDataSource['fitError_Ag']
-        sr = self.selectedDataSource['fitError_Ar']
-        g = self.selectedDataSource['fitResults_Ag']
-        r = self.selectedDataSource['fitResults_Ar']
-        I = self.selectedDataSource['A']
+        sg = ds['fitError_Ag']
+        sr = ds['fitError_Ar']
+        g  = ds['fitResults_Ag']
+        r  = ds['fitResults_Ar']
+        I  = ds['A']
         
-        self.selectedDataSource.colNorm = np.sqrt(2*np.pi)*sg*sr/(2*np.sqrt(sg**2 + sr**2)*I)*(
+        ds.colNorm = np.sqrt(2*np.pi)*sg*sr/(2*np.sqrt(sg**2 + sr**2)*I)*(
             scipy.special.erf((sg**2*r + sr**2*(I-g))/(np.sqrt(2)*sg*sr*np.sqrt(sg**2+sr**2)))
             - scipy.special.erf((sg**2*(r-I) - sr**2*g)/(np.sqrt(2)*sg*sr*np.sqrt(sg**2+sr**2))))
             
-        self.selectedDataSource.colNorm /= (sg*sr)
+        ds.colNorm /= (sg*sr)
         
-        self.selectedDataSource.setMapping('ColourNorm', '1.0*colNorm')
+        ds.setMapping('ColourNorm', '1.0*colNorm')
 
 
         
@@ -365,8 +374,8 @@ class Pipeline:
             
         #wrap the data source with a mapping so we can fiddle with things
         #e.g. combining z position and focus 
-        self.inputMapping = inpFilt.mappingFilter(ds)
-        self.dataSources['Raw Localizations'] = ds
+        mappedDS = inpFilt.mappingFilter(ds)
+        self.dataSources['Raw Localizations'] = mappedDS
         self.selectDataSource('Raw Localizations')
 
         
@@ -398,18 +407,18 @@ class Pipeline:
             self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)        
             
         #extract information from any events
-        self._processEvents()
+        self._processEvents(self.selectedDataSource)
             
         
         #handle special cases which get detected by looking for the presence or
         #absence of certain variables in the data.        
         if 'fitResults_Ag' in self.selectedDataSource.keys():
             #if we used the splitter set up a number of mappings e.g. total amplitude and ratio
-            self._processSplitter()
+            self._processSplitter(self.selectedDataSource)
 
         if 'fitResults_ratio' in self.selectedDataSource.keys():
             #if we used the splitter set up a number of mappings e.g. total amplitude and ratio
-            self._processPriSplit()
+            self._processPriSplit(self.selectedDataSource)
 
         if 'fitResults_sigxl' in self.selectedDataSource.keys():
             #fast, quickpalm like astigmatic fitting 
