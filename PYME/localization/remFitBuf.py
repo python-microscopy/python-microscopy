@@ -412,7 +412,9 @@ class fitTask(taskDef.Task):
         if 'PRI.Axis' in self.md.getEntryNames() and not self.md['PRI.Axis'] == 'none':
             self.ofd = ofind_pri.ObjectIdentifier(bgd * (bgd > 0), md, axis = self.md['PRI.Axis'])
         else:# not 'PSFFile' in self.md.getEntryNames():
-            self.ofd = ofind.ObjectIdentifier(bgd * (bgd > 0))
+            filtRadiusLowpass = md.getOrDefault('Analysis.DetectionRadiusLowpass', 1.0)
+            filtRadiusHighpass = md.getOrDefault('Analysis.DetectionRadiusHighpass', 3.0)
+            self.ofd = ofind.ObjectIdentifier(bgd * (bgd > 0), filterRadiusLowpass=filtRadiusLowpass, filterRadiusHighpass=filtRadiusHighpass)
         #else: #if we've got a PSF then use cross-correlation object identificatio      
         #    self.ofd = ofind_xcorr.ObjectIdentifier(bgd * (bgd > 0), md, 7, 5e-2)
         
