@@ -23,16 +23,11 @@ from PYME.misc import extraCMaps
 from PYME.IO.FileUtils import nameUtils
 
 import os
-from PYME.LMVis import gl_render3D
 
 #from PYME.LMVis import colourPanel
 from PYME.LMVis import renderers
-#from PYME.LMVis import pipeline
 
-#try:
-#    from PYME.LMVis import recArrayView
-#except:
-#    pass
+import logging
 
 #try importing our drift correction stuff
 HAVE_DRIFT_CORRECTION = False
@@ -74,6 +69,7 @@ class VisGUICore(object):
         self.quadTreeSettings.on_trait_change(self.RefreshView)
         
         self.pipeline.blobSettings.on_trait_change(self.RefreshView)
+        self.pipeline.onRebuild.connect(self.RefreshView)
         
         #initialize the gl canvas
         if isinstance(self, wx.Window):
@@ -122,7 +118,6 @@ class VisGUICore(object):
             quadTreeSettings.GenQuadTreePanel(self, sidePanel)
 
         if self.viewMode == 'points' or self.viewMode == 'tracks':
-            pass
             pointSettingsPanel.GenPointsPanel(self, sidePanel)
 
         if self.viewMode == 'blobs':
@@ -154,9 +149,7 @@ class VisGUICore(object):
 
 
     def OnSourceChange(self, event):
-        #dsind = self.dsRadioIds.index(event.GetId())
         self.pipeline.selectDataSource(self._ds_keys_by_id[event.GetId()])
-        self.RegenFilter()
         
         
     def pointColour(self):
@@ -420,15 +413,14 @@ class VisGUICore(object):
             self.OpenFile(filename)
             
     def RegenFilter(self):
+        logging.warn('RegenFilter is deprecated, please use pipeline.Rebuild() instead.')
         self.pipeline.Rebuild()
-
-        self.filterPane.stFilterNumPoints.SetLabel('%d of %d events' % (len(self.pipeline.filter['x']), len(self.pipeline.selectedDataSource['x'])))
-
-        self.RefreshView()
         
-    def RefreshView(self, event=None):
+    def RefreshView(self, event=None, **kwargs):
         if not self.pipeline.ready:
             return #get out of here
+
+        self.filterPane.stFilterNumPoints.SetLabel('%d of %d events' % (len(self.pipeline.filter['x']), len(self.pipeline.selectedDataSource['x'])))
 
         if len(self.pipeline['x']) == 0:
             wx.MessageBox('No data points - try adjusting the filter', 

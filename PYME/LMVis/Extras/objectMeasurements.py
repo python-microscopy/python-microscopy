@@ -65,31 +65,27 @@ class ParticleTracker:
 
             numPerObject, b = np.histogram(ids, np.arange(ids.max() + 1.5) + .5)
 
-            ds_objectIDs = np.zeros(len(pipeline.selectedDataSource['x']))
-            ds_objectIDs[pipeline.filter.Index] = ids
-            pipeline.selectedDataSource.addColumn('objectID', ds_objectIDs)
+            pipeline.addColumn('objectID', ids)
+            pipeline.addColumn('NEvents', numPerObject[ids-1])
 
-            ds_numPerObject = np.zeros(len(pipeline.selectedDataSource['x']))
-            ds_numPerObject[pipeline.filter.Index] = numPerObject[ids-1]
-            pipeline.selectedDataSource.addColumn('NEvents', ds_numPerObject)
-
-            visFr.RegenFilter()
-            visFr.CreateFoldPanel()
+            pipeline.Rebuild()
 
         dlg.Destroy()
 
     def OnMeasure(self, event):
         from PYME.LMVis import objectMeasure
 
-        chans = self.pipeline.colourFilter.getColourChans()
+        pipeline = self.visFr.pipeline
 
-        ids = set(self.pipeline.mapping['objectID'].astype('i'))
-        self.pipeline.objectMeasures = {}
+        chans = pipeline.colourFilter.getColourChans()
+
+        ids = set(pipeline.mapping['objectID'].astype('i'))
+        pipeline.objectMeasures = {}
 
         if len(chans) == 0:
-            self.pipeline.objectMeasures['Everything'] = objectMeasure.measureObjectsByID(self.pipeline.colourFilter, 10,ids)
+            pipeline.objectMeasures['Everything'] = objectMeasure.measureObjectsByID(pipeline.colourFilter, 10,ids)
         else:
-            curChan = self.pipeline.colourFilter.currentColour
+            curChan = pipeline.colourFilter.currentColour
 
             chanNames = chans[:]
 
@@ -101,10 +97,10 @@ class ParticleTracker:
 #                        chanNames[chanNames.index(lab[i][0])] = lab[i][1]
 
             for ch, i in zip(chans, range(len(chans))):
-                self.pipeline.colourFilter.setColour(ch)
+                pipeline.colourFilter.setColour(ch)
                 #fitDecayChan(colourFilter, metadata, chanNames[i], i)
-                self.pipeline.objectMeasures[chanNames[i]] = objectMeasure.measureObjectsByID(self.visFr.colourFilter, 10,ids)
-            self.pipeline.colourFilter.setColour(curChan)
+                pipeline.objectMeasures[chanNames[i]] = objectMeasure.measureObjectsByID(pipeline.colourFilter, 10,ids)
+            pipeline.colourFilter.setColour(curChan)
 
 
 

@@ -322,17 +322,9 @@ def findTracks(pipeline, rad_var='error_x', multiplier='2.0', nFrames=20):
     trackVelocities[I] = calcTrackVelocity(x[I], y[I], clumpIndices[I], t.astype('f')[I])
     #print b
 
-    ds_clumpIndices = -1*np.ones(len(pipeline.selectedDataSource['x']))
-    ds_clumpIndices[pipeline.filter.Index] = clumpIndices
-    pipeline.selectedDataSource.addColumn('clumpIndex', ds_clumpIndices)
-
-    ds_clumpSizes = np.zeros(ds_clumpIndices.shape)
-    ds_clumpSizes[pipeline.filter.Index] = numPerClump[clumpIndices - 1]
-    pipeline.selectedDataSource.addColumn('clumpSize', ds_clumpSizes)
-
-    ds_trackVelocities = np.zeros_like(ds_clumpIndices)
-    ds_trackVelocities[pipeline.filter.Index] = trackVelocities
-    pipeline.selectedDataSource.addColumn('trackVelocity', ds_trackVelocities)
+    pipeline.addColumn('clumpIndex', clumpIndices, -1)
+    pipeline.addColumn('clumpSize', numPerClump[clumpIndices - 1])
+    pipeline.addColumn('trackVelocity', trackVelocities)
     
     pipeline.clumps = ClumpManager(pipeline)
 
