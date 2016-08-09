@@ -178,11 +178,11 @@ def astigMAPism(pipeline, stigLib):
         #                                                    bbox=[lowerZ, upperZ])
         #astigLib['sigyTerp%i' % ii] = terp.UnivariateSpline(astigLib['PSF%i' % ii]['z'], astigLib['PSF%i' % ii]['sigmay'],
         #                                                    bbox=[lowerZ, upperZ])
-        # FIXME: BBOX NEEDS DIFFERENT BOUNDS FOR EACH CHANNEL
-        sigCalX['chan%i' % ii] = terp.UnivariateSpline(stigLib['PSF%i' % ii]['z'], stigLib['PSF%i' % ii]['sigmax'],
-                                                            bbox=[stigLib['zRange'][0], stigLib['zRange'][1]])(zVal)
-        sigCalY['chan%i' % ii] = terp.UnivariateSpline(stigLib['PSF%i' % ii]['z'], stigLib['PSF%i' % ii]['sigmay'],
-                                                            bbox=[stigLib['zRange'][0], stigLib['zRange'][1]])(zVal)
+        zdat = stigLib['PSF%i' % ii]['z']
+        sigCalX['chan%i' % ii] = terp.UnivariateSpline(zdat, stigLib['PSF%i' % ii]['sigmax'],
+                                                            bbox=[zdat.min(), zdat.max()], ext='zeros')(zVal)
+        sigCalY['chan%i' % ii] = terp.UnivariateSpline(zdat, stigLib['PSF%i' % ii]['sigmay'],
+                                                            bbox=[zdat.min(), zdat.max()], ext='zeros')(zVal)
 
 
 class multiviewMapper:
