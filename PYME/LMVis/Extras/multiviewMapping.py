@@ -98,7 +98,7 @@ def plotRegistered(regX, regY, numChan, title=''):
     plt.title(title)
     return
 
-def pairMolecules(tIndex, x, y, whichChan, numChan, deltaX=[None], appearIn=np.arange(4)):
+def pairMolecules(tIndex, x, y, whichChan, deltaX=[None], appearIn=np.arange(4), nFrameSep=5):
     """
     pairMolecules uses pyDeClump functions to group localization clumps into molecules for registration.
 
@@ -118,23 +118,15 @@ def pairMolecules(tIndex, x, y, whichChan, numChan, deltaX=[None], appearIn=np.a
         Note that the returned x, y, tIndex and whichChan are resorted.
 
     """
-    # sort everything in frame order
-    #FIXME: this almost certainly has to be wrong to not do this to the entire fitResults matrix
-    #I = tIndex.argsort()
-    #tIndex = tIndex[I]
-    #x = x[I]
-    #y = y[I]
-    #whichChan = whichChan[I]
-
     # group within a certain distance, potentially based on localization uncertainty
     if not deltaX[0]:
         deltaX = 100.*np.ones_like(x)
     # group localizations
-    assigned = pyDeClump.findClumps(tIndex, x, y, deltaX)
+    assigned = pyDeClump.findClumps(tIndex, x, y, deltaX, nFrameSep)
     print assigned.min()
     # only look at clumps with localizations from each channel
     clumps = np.unique(assigned)
-    # FIXME: Note that this will never clump if an ignore channel is present...
+    # Note that this will never be a keep clump if an ignore channel is present...
     keptClumps = [np.array_equal(np.unique(whichChan[assigned == clumps[ii]]), appearIn) for ii in range(len(clumps))]
     #keptClumps = [(len(np.unique(whichChan[assigned == clumps[ii]])) >= appearances) for ii in range(len(clumps))]
 
@@ -152,7 +144,7 @@ def pairMolecules(tIndex, x, y, whichChan, numChan, deltaX=[None], appearIn=np.a
     assigned[ignoreChan] = igVec
 
 
-    return x, y, whichChan, assigned, keep
+    return assigned, keep
 
 def astigMAPism(pipeline, stigLib, chanPlane):
     """
@@ -165,14 +157,14 @@ def astigMAPism(pipeline, stigLib, chanPlane):
     """
     import scipy.interpolate as terp
     fres = pipeline.selectedDataSource.resultsSource.fitResults
-    numMols = len(fres['fitResults']['x0'])  # len(pipeline['x'])
+    numMols = len(fres['fitResults']['x0'])
     # FIXME: go back and make whichChannel an int!
     whichChan = np.array(fres['whichChannel'], dtype=np.int32)
     # stigLib['zRange'] contains the extrema of acceptable z-positions looking over all channels
     zVal = np.arange(stigLib['zRange'][0], stigLib['zRange'][1])
 
-    sigCalX = {}  # np.zeros((len(zVal), numPlanes))
-    sigCalY = {}  # np.zeros_like(sigCalX)
+    sigCalX = {}
+    sigCalY = {}
 
     z = np.zeros(numMols)
     failures = 0
@@ -194,10 +186,6 @@ def astigMAPism(pipeline, stigLib, chanPlane):
                                                        np.array(stigLib['PSF%i' % ii]['sigmay'])[lowZLoc:upZLoc], ext='zeros')(zVal)
         for mi in range(numMols):
             if whichChan[mi] == ii:
-                #wx = 1./pipeline['fitError_sigmaxPlane%i' % chanPlane[ii]][mi]**2
-                #wy = 1./pipeline['fitError_sigmayPlane%i' % chanPlane[ii]][mi]**2
-                #errX = wx*(pipeline['fitResults_sigmaxPlane%i' % chanPlane[ii]][mi] - sigCalX['chan%i' % ii])**2
-                #errY = wy*(pipeline['fitResults_sigmayPlane%i' % chanPlane[ii]][mi] - sigCalY['chan%i' % ii])**2
                 wx = 1./fres['fitError']['sigmaxPlane%i' % chanPlane[ii]][mi]**2
                 wy = 1./fres['fitError']['sigmayPlane%i' % chanPlane[ii]][mi]**2
                 errX = wx*(fres['fitResults']['sigmaxPlane%i' % chanPlane[ii]][mi] - sigCalX['chan%i' % ii])**2
@@ -207,12 +195,9 @@ def astigMAPism(pipeline, stigLib, chanPlane):
                 try:
                     z[mi] = zVal[np.nanargmin(errX + errY)]
                 except:
-                    failures += 1
-                    print(failures)
-                    print('hmmm, no sigmas in correct plane for this molecule')
-    #pipeline.mapping.setMapping('zPosition', z)
+                    print('No sigmas in correct plane for this molecule')
+    #pipeline.selectedDataSource.addColumn('zPos', z)
     #pipeline.Rebuild()
-    #pipeline.selectedDataSource.addColumn('z', z)
     return z
 
 class multiviewMapper:
@@ -266,7 +251,7 @@ class multiviewMapper:
         shiftModule = importlib.import_module(self.shiftWallet['shiftModel'].split('.' + model)[0])
         shiftModel = getattr(shiftModule, model)
 
-        # fixme: this needs to be done in such a way as to keep x and y matched up with the remaining fitResults
+        # Note: this does not keep
         xReg, yReg, chan = [x[0]], [y[0]], [np.zeros_like(x[0])]
         for ii in range(1, numChan):
             xReg.append(x[ii] + shiftModel(dict=self.shiftWallet['Chan0%s.X' % ii]).ev(x[ii], y[ii]))
@@ -321,10 +306,6 @@ class multiviewMapper:
             x = x + chanMask*shiftModel(dict=self.shiftWallet['Chan0%s.X' % ii]).ev(x, y)
             y = y + chanMask*shiftModel(dict=self.shiftWallet['Chan0%s.Y' % ii]).ev(x, y)
 
-        # replace x and y with shifted data
-        #pipeline.mapping.resultsSource.resultsSource.fitResults['fitResults']['x0'] = x
-        #pipeline.mapping.resultsSource.resultsSource.fitResults['fitResults']['y0'] = y
-
         # flag that this data has already been registered so it is not registered again
         pipeline.mapping.setMapping('registered', True)
         return x, y
@@ -345,8 +326,8 @@ class multiviewMapper:
         fres = pipeline.selectedDataSource.resultsSource.fitResults
 
         try:  # load shiftmaps from metadata, if present
-            self.shiftWallet = pipeline.mdh.__dict__['Shiftmap']
-        except KeyError:
+            self.shiftWallet = pipeline.mdh['Shiftmap']
+        except AttributeError:
             try:  # load through GUI dialog
                 fdialog = wx.FileDialog(None, 'Load shift field', wildcard='Shift Field file (*.sf)|*.sf',
                                         style=wx.OPEN, defaultDir=nameUtils.genShiftFieldDirectoryPath())
@@ -366,12 +347,6 @@ class multiviewMapper:
 
         plotFolded(pipeline.mapping.xFolded, fres['fitResults']['y0'],
                             pipeline.mapping.whichChan, 'Raw')
-
-        # organize x- and y-positions into list of arrays corresponding to channels
-        #xfold, yfold = [], []
-        #for ii in range(numChan):
-        #    xfold.append(pipeline.mapping.xFolded[np.where(pipeline.mapping.whichChan == ii)])
-        #    yfold.append(pipeline['y'][np.where(pipeline.mapping.whichChan == ii)])
 
         # apply shiftmaps
         x, y = self.applyShiftmaps(numChan)
@@ -398,18 +373,22 @@ class multiviewMapper:
 
         try:
             numChan = pipeline.mdh['Multiview.NumROIs']
-        except KeyError:
-            raise KeyError('You are either not looking at multiview Data, or your metadata is incomplete')
+        except AttributeError:
+            raise AttributeError('You are either not looking at multiview Data, or your metadata is incomplete')
 
         # fold x position of channels into the first
         foldX(pipeline)
 
-        # Match up molecules, note that all outputs are sorted in frame order!
-        x, y, Chan, clumpID, keep = pairMolecules(pipeline['tIndex'], pipeline.mapping.xFolded, pipeline['fitResults_y0'],
-                      pipeline.mapping.whichChan, numChan, appearIn=np.arange(numChan))  #, pipeline['error_x'])
+        # sort in frame order
+        I = pipeline['tIndex'].argSort()
+
+        # Match up molecules, note that all inputs must be sorted in frame order!
+        clumpID, keep = pairMolecules(pipeline['tIndex'][I], pipeline.mapping.xFolded[I], pipeline['fitResults_y0'][I],
+                      pipeline.mapping.whichChan[I], appearIn=np.arange(numChan))  #, pipeline['error_x'])
 
         # only look at the ones which showed up in all channels
-        x = x[keep], y = y[keep], Chan = Chan[keep], clumpID = clumpID[keep]
+        x = pipeline.mapping.xFolded[keep], y = pipeline['fitResults_y0'][keep]
+        Chan = pipeline.mapping.whichChan[keep], clumpID = clumpID[keep]
         # Generate raw shift vectors (map of displacements between channels) for each channel
         molList = np.unique(clumpID)
         numMoles = len(molList)
@@ -420,7 +399,7 @@ class multiviewMapper:
         dyErr = np.zeros_like(dx)
         xClump, yClump, xStd, yStd = [], [], [], []
         self.shiftWallet = {}
-        dxWallet, dyWallet = {}, {}
+        # dxWallet, dyWallet = {}, {}
         for ii in range(numChan):
             chanMask = (Chan == ii)
             xChan = np.zeros(numMoles)
@@ -451,15 +430,11 @@ class multiviewMapper:
                 dxx, dyy, spx, spy, good = twoColour.genShiftVectorFieldQ(xClump[0], yClump[0], dx[ii-1, :], dy[ii-1, :], dxErr[ii-1, :], dyErr[ii-1, :])
                 # store shiftmaps in multiview shiftWallet
                 self.shiftWallet['Chan0%s.X' % ii], self.shiftWallet['Chan0%s.Y' % ii] = spx.__dict__, spy.__dict__
-                dxWallet['Chan0%s' % ii], dyWallet['Chan0%s' % ii] = dxx, dyy
+                # dxWallet['Chan0%s' % ii], dyWallet['Chan0%s' % ii] = dxx, dyy
 
 
         self.shiftWallet['shiftModel'] = '.'.join([spx.__class__.__module__, spx.__class__.__name__])
-        # store shiftmaps in metadata
-        pipeline.mdh.__dict__.__setitem__('Shiftmap', self.shiftWallet)
-        # store shiftvectors in metadata
-        pipeline.mdh.__dict__.__setitem__('chroma.dx', dxWallet)
-        pipeline.mdh.__dict__.__setitem__('chroma.dy', dyWallet)
+
         # save shiftmaps
         defFile = os.path.splitext(os.path.split(self.visFr.GetTitle())[-1])[0] + 'MultiView.sf'
 
@@ -474,16 +449,13 @@ class multiviewMapper:
             fid.close()
 
         # apply shiftmaps to clumped localizations
-        self.applyShiftmaps(xClump, yClump, numChan)
+        self.applyShiftmaps_nonOrderConserving(xClump, yClump, numChan)
 
         # organize x- and y-positions into list of arrays corresponding to channel
-        xfold, yfold, tReg = [], [], []
+        xfold, yfold = [], []
         for ii in range(numChan):
             xfold.append(pipeline.mapping.xFolded[np.where(pipeline.mapping.whichChan == ii)])
             yfold.append(pipeline['fitResults_y0'][np.where(pipeline.mapping.whichChan == ii)])
-            tReg.append(pipeline['tIndex'][np.where(pipeline.mapping.whichChan == ii)])
-
-        pipeline.mapping.setMapping('tIndex_reg', np.hstack(tReg))
 
         plotRegistered(xfold, yfold, numChan, 'Raw')
 
@@ -501,7 +473,7 @@ class multiviewMapper:
             numChan = pipeline.mdh['Multiview.NumROIs']
             chanColor = [0, 1, 1, 0]  # FIXME: pipeline.mdh['Multiview.ColorInfo']
             numPlanes = numChan / len(np.unique(chanColor))
-            chanPlane = [0, 0, 1, 1]  # FIXME: make this automatic np.unique(chanColor, return_index=True)
+            chanPlane = [0, 0, 1, 1]  # FIXME: pipeline.mdh['Multiview.PlaneInfo']
         except AttributeError:
             numChan = 1
             chanColor = [0]
@@ -527,23 +499,8 @@ class multiviewMapper:
             print('registering multiview channels in x-y plane')
             self.OnFoldAndMapXY(event)
 
-        # clump molecules
-        pairs, clump, xco, yco, xcoErr, ycoErr, xsig, ysig, clist = [], [], [], [], [], [], [], [], []
-        # sort error and sigmas as x, y, and channel will be sorted
-        #I = pipeline['tIndex'].argsort()
-        #errX = pipeline['error_x'][I]
-        #errY = pipeline['error_y'][I]
-        #xs = pipeline['fitResults_sigmax'][I]
-        #ys = pipeline['fitResults_sigmay'][I]
-        #whichChan = pipeline.mapping.whichChan[I]
-        #pairs = np.zeros_like(errX, dtype=bool)
-        fresCopy = np.copy(fres)
-        # inject xReg and yReg
-        #fitResCopy['fitResults']['x0'] = pipeline.mapping.x
-        #fitResCopy['fitResults']['y0'] = pipeline.mapping.y
-        #fres['fitResults'].setfield(2.0, [('test', '<i4')])
-        #fitResCopy.setfield(pipeline.mapping.whichChan, ['whichChan', '<i4'])
-        # fitResCopy.whichChan = np.copy(pipeline.mapping.whichChan)
+        # clump molecules within colorchannels
+
         # want to hack coalesceClumps to shrink whichChan as well as average sigma values separately for each plane
         dt = list(fres.dtype.descr)
         addDT = []
@@ -551,11 +508,9 @@ class multiviewMapper:
         addDT += [('sigmayPlane%i' % pi, '<f4') for pi in range(numPlanes)]
         dt[1] = list(dt[1])
         dt[2] = list(dt[2])
-        #dt1, dt2 = list(dt[1]), list(dt[2])
         dt[1][1] += addDT
         dt[2][1] += addDT
-        #dt[1][1] = dt1
-        #dt[2][1] = dt2
+
         dt = dt + [('whichChannel', '<i4')]
         dt[1], dt[2] = tuple(dt[1]), tuple(dt[2])
         fresCopy = np.empty_like(fres, dtype=dt)
@@ -572,31 +527,25 @@ class multiviewMapper:
             # replace zeros in fiterror with infs so their weights are zero
             fresCopy['fitError']['sigmaxPlane%i' % pind][fresCopy['fitError']['sigmaxPlane%i' % pind] == 0] = np.inf
             fresCopy['fitError']['sigmayPlane%i' % pind][fresCopy['fitError']['sigmayPlane%i' % pind] == 0] = np.inf
+
+        # sort fitResults in order of frames
         fresCopy = fresCopy[(fresCopy['tIndex'].argsort())]
+
+        ni = len(fresCopy['whichChannel'])
+
         for cind in np.unique(chanColor):
             #fresCopy = fresCopy[(fresCopy['tIndex'].argsort())]
-            import matplotlib.pyplot as plt
-            #plt.figure(10)
-            #plt.plot(fresCopy['tIndex'], color='blue')
-            #fresCopy = fresCopy[(fresCopy['tIndex'].argsort())]
-            #plt.figure(10)
-            #plt.plot(fresCopy['tIndex'], color='red')
-            #for pp in range(numPlanes):
-            #    fresCopy['fitResults']['sigmaxPlane%i' % pind][np.isnan(fresCopy['fitResults']['sigmaxPlane%i' % pind])] = 0
-            #    fresCopy['fitResults']['sigmayPlane%i' % pind][np.isnan(fresCopy['fitResults']['sigmayPlane%i' % pind])] = 0
+
             # trick pairMolecules function by tweaking the channel vector
-            # this needs to be unsorted at this point
             planeInColorChan = np.copy(fresCopy['whichChannel'])
             chanColor = np.array(chanColor)
             ignoreChans = np.where(chanColor != cind)[0]
             igMask = [mm in ignoreChans.tolist() for mm in planeInColorChan]
             planeInColorChan[np.where(igMask)] = -9
             # clumpID is assigned, paired is keep
-            x, y, Chan, clumpID, paired = pairMolecules(fresCopy['tIndex'], fresCopy['fitResults']['x0'], fresCopy['fitResults']['y0'],
-                          planeInColorChan, numChan, deltaX=10*fresCopy['fitError']['x0'],
-                                                        appearIn=np.where(chanColor == cind)[0])
-
-            #clumpedRes['fitResults'] = clumpedRes['fitResults'][np.where(planeInColorChan >= 0)[0]]
+            clumpID, paired = pairMolecules(fresCopy['tIndex'], fresCopy['fitResults']['x0'], fresCopy['fitResults']['y0'],
+                                            planeInColorChan, deltaX=10*fresCopy['fitError']['x0'],
+                                            appearIn=np.where(chanColor == cind)[0], nFrameSep=1)
 
             # make sure clumpIDs are contiguous from [0, numClumps)
             assigned = -1*np.ones_like(clumpID)
@@ -607,22 +556,18 @@ class multiviewMapper:
             clumpedRes = pyDeClump.coalesceClumps(fresCopy, assigned, np.where(chanColor == cind)[0])
             fresCopy = clumpedRes
 
+        print('Clumped %i localizations' % (ni - len(fresCopy['whichChannel'])))
         # create data source for our clumped dat
         from PYME.LMVis.inpFilt import fitResultsSource
         pipeline.addDataSource('Clumped', fitResultsSource(clumpedRes))
         pipeline.selectDataSource('Clumped')
-        #self.visFr.RegenFilter()
-        #self.visFr.CreateFoldPanel()
 
         z = astigMAPism(pipeline, stigLib, chanPlane)
 
         dt = list(clumpedRes.dtype.descr)
         addDT = [('z0', '<f4')]
         dt[1] = list(dt[1])
-        #dt[2] = list(dt[2])
-        #dt1, dt2 = list(dt[1]), list(dt[2])
         dt[1][1] += addDT
-        #dt[2][1] += addDT
         dt[1] = tuple(dt[1])
         fresCopy = np.empty_like(clumpedRes, dtype=dt)
         # copy over existing fitresults:
