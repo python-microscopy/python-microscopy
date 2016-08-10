@@ -197,7 +197,8 @@ def coalesceClumps(fitResults, assigned, okChans=None):
             #vn = np.zeros(1,dtype=dt)
                         
             fres['tIndex'][i] = tIs[ci].min()
-
+            if i == 189:
+                2+2
             #fres['fitResults'][i], fres['fitError'][i] = weightedAverage(vals['fitResults'], vals['fitError'])
             fres['fitResults'][i], fres['fitError'][i] = weightedAverage_(rvs, evs, dtr)
 

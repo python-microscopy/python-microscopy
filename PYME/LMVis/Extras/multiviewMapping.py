@@ -543,9 +543,11 @@ class multiviewMapper:
 
         for cind in np.unique(chanColor):
             fresCopy = fresCopy[(fresCopy['tIndex'].argsort())]
+            # make sure NaNs (awarded when there is no sigma in a given plane of a clump) do not carry over from when
+            # ignored channel localizations were clumped by themselves
             for pp in range(numPlanes):
-                fresCopy['fitResults']['sigmaxPlane%i' % pind][np.isnan(fresCopy['fitResults']['sigmaxPlane%i' % pind])] = 0
-                fresCopy['fitResults']['sigmayPlane%i' % pind][np.isnan(fresCopy['fitResults']['sigmayPlane%i' % pind])] = 0
+                fresCopy['fitResults']['sigmaxPlane%i' % pp][np.isnan(fresCopy['fitResults']['sigmaxPlane%i' % pp])] = 0
+                fresCopy['fitResults']['sigmayPlane%i' % pp][np.isnan(fresCopy['fitResults']['sigmayPlane%i' % pp])] = 0
             # trick pairMolecules function by tweaking the channel vector
             planeInColorChan = np.copy(fresCopy['whichChannel'])
             chanColor = np.array(chanColor)
