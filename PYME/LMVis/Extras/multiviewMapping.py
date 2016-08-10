@@ -341,6 +341,7 @@ class multiviewMapper:
             except:
                 raise IOError('Shiftmaps not found in metadata and could not be loaded from file')
 
+        from PYME.LMVis.inpFilt import fitResultsSource
         numChan = pipeline.mdh['Multiview.NumROIs']
         # fold x-positions into the first channel
         foldX(pipeline)
@@ -353,8 +354,13 @@ class multiviewMapper:
 
         #plotRegistered(pipeline.mapping.xReg, pipeline.mapping.yReg,
         #                    numChan, 'After Registration')
-        pipeline.mapping.setMapping('x', x)
-        pipeline.mapping.setMapping('y', y)
+        #pipeline.mapping.setMapping('x', x)
+        #pipeline.mapping.setMapping('y', y)
+        fres = pipeline.selectedDataSource.resultsSource.fitResults
+        regFres = np.copy(fres)
+        regFres['fitResults']['x0'], regFres['fitResults']['y0'] = x, y
+        pipeline.addDataSource('RegisteredXY', fitResultsSource(regFres))
+        pipeline.selectDataSource('RegisteredXY')
 
     def OnCalibrateShifts(self, event):
         """
@@ -467,7 +473,6 @@ class multiviewMapper:
 
     def OnMapZ(self, event):
         pipeline = self.visFr.pipeline
-        fres = pipeline.selectedDataSource.resultsSource.fitResults
 
         try:
             numChan = pipeline.mdh['Multiview.NumROIs']
@@ -494,10 +499,13 @@ class multiviewMapper:
             except:
                 raise IOError('Astigmatism sigma-Z mapping information not found')
 
+        from PYME.LMVis.inpFilt import fitResultsSource
         # make sure xy-registration has already happened:
         if 'registered' not in pipeline.keys():
             print('registering multiview channels in x-y plane')
             self.OnFoldAndMapXY(event)
+
+        fres = pipeline.selectedDataSource.resultsSource.fitResults
 
         # clump molecules within colorchannels
 
@@ -529,13 +537,15 @@ class multiviewMapper:
             fresCopy['fitError']['sigmayPlane%i' % pind][fresCopy['fitError']['sigmayPlane%i' % pind] == 0] = np.inf
 
         # sort fitResults in order of frames
-        fresCopy = fresCopy[(fresCopy['tIndex'].argsort())]
+        #fresCopy = fresCopy[(fresCopy['tIndex'].argsort())]
 
         ni = len(fresCopy['whichChannel'])
 
         for cind in np.unique(chanColor):
-            #fresCopy = fresCopy[(fresCopy['tIndex'].argsort())]
-
+            fresCopy = fresCopy[(fresCopy['tIndex'].argsort())]
+            for pp in range(numPlanes):
+                fresCopy['fitResults']['sigmaxPlane%i' % pind][np.isnan(fresCopy['fitResults']['sigmaxPlane%i' % pind])] = 0
+                fresCopy['fitResults']['sigmayPlane%i' % pind][np.isnan(fresCopy['fitResults']['sigmayPlane%i' % pind])] = 0
             # trick pairMolecules function by tweaking the channel vector
             planeInColorChan = np.copy(fresCopy['whichChannel'])
             chanColor = np.array(chanColor)
@@ -544,7 +554,7 @@ class multiviewMapper:
             planeInColorChan[np.where(igMask)] = -9
             # clumpID is assigned, paired is keep
             clumpID, paired = pairMolecules(fresCopy['tIndex'], fresCopy['fitResults']['x0'], fresCopy['fitResults']['y0'],
-                                            planeInColorChan, deltaX=10*fresCopy['fitError']['x0'],
+                                            planeInColorChan, deltaX=fresCopy['fitError']['x0'],
                                             appearIn=np.where(chanColor == cind)[0], nFrameSep=1)
 
             # make sure clumpIDs are contiguous from [0, numClumps)
@@ -557,8 +567,8 @@ class multiviewMapper:
             fresCopy = clumpedRes
 
         print('Clumped %i localizations' % (ni - len(fresCopy['whichChannel'])))
+
         # create data source for our clumped dat
-        from PYME.LMVis.inpFilt import fitResultsSource
         pipeline.addDataSource('Clumped', fitResultsSource(clumpedRes))
         pipeline.selectDataSource('Clumped')
 
