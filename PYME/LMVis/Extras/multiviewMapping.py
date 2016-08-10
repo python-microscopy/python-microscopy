@@ -572,8 +572,15 @@ class multiviewMapper:
             # replace zeros in fiterror with infs so their weights are zero
             fresCopy['fitError']['sigmaxPlane%i' % pind][fresCopy['fitError']['sigmaxPlane%i' % pind] == 0] = np.inf
             fresCopy['fitError']['sigmayPlane%i' % pind][fresCopy['fitError']['sigmayPlane%i' % pind] == 0] = np.inf
+        fresCopy = fresCopy[(fresCopy['tIndex'].argsort())]
         for cind in np.unique(chanColor):
             #fresCopy = fresCopy[(fresCopy['tIndex'].argsort())]
+            import matplotlib.pyplot as plt
+            #plt.figure(10)
+            #plt.plot(fresCopy['tIndex'], color='blue')
+            #fresCopy = fresCopy[(fresCopy['tIndex'].argsort())]
+            #plt.figure(10)
+            #plt.plot(fresCopy['tIndex'], color='red')
             #for pp in range(numPlanes):
             #    fresCopy['fitResults']['sigmaxPlane%i' % pind][np.isnan(fresCopy['fitResults']['sigmaxPlane%i' % pind])] = 0
             #    fresCopy['fitResults']['sigmayPlane%i' % pind][np.isnan(fresCopy['fitResults']['sigmayPlane%i' % pind])] = 0
@@ -586,7 +593,7 @@ class multiviewMapper:
             planeInColorChan[np.where(igMask)] = -9
             # clumpID is assigned, paired is keep
             x, y, Chan, clumpID, paired = pairMolecules(fresCopy['tIndex'], fresCopy['fitResults']['x0'], fresCopy['fitResults']['y0'],
-                          planeInColorChan, numChan, deltaX=100*fresCopy['fitError']['x0'],
+                          planeInColorChan, numChan, deltaX=10*fresCopy['fitError']['x0'],
                                                         appearIn=np.where(chanColor == cind)[0])
 
             #clumpedRes['fitResults'] = clumpedRes['fitResults'][np.where(planeInColorChan >= 0)[0]]
@@ -596,8 +603,8 @@ class multiviewMapper:
             clumpVec = np.unique(clumpID)
             for ci in range(len(clumpVec)):
                 cMask = clumpID == clumpVec[ci]
-                assigned[cMask] = ci + 1  #FIXME: cluster assignments currently start from 1, which is HORRIBLE.
-            clumpedRes = pyDeClump.coalesceClumps(fresCopy, assigned)
+                assigned[cMask] = ci + 1  #FIXME: cluster assignments currently must start from 1, which is horrible.
+            clumpedRes = pyDeClump.coalesceClumps(fresCopy, assigned, np.where(chanColor == cind)[0])
             fresCopy = clumpedRes
 
         # create data source for our clumped dat

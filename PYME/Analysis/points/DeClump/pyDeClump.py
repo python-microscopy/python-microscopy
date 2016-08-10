@@ -98,7 +98,7 @@ def deClumpf(h5fFile):
     
     return deClump(fr)
 
-def findClumps(t, x, y, delta_x):
+def findClumps(t, x, y, delta_x, nFrames=5):
     """Finds clumps (or single particle trajectories) of data points in a series.
     fitRsults MUST be sorted in increasing time order.
     """
@@ -127,7 +127,7 @@ def findClumps(t, x, y, delta_x):
             assigned[i] = clumpNum
         
             #find all the points which are connected to this one
-            findConnected(i, t,x,y,delta_x, frameIndices, assigned, clumpNum)
+            findConnected(i, t,x,y,delta_x, frameIndices, assigned, clumpNum, nFrames)
 
             #next pass will be a new clump
             clumpNum +=1
@@ -167,7 +167,7 @@ def coalesceClumps_(fitResults, assigned):
 
     return fres
     
-def coalesceClumps(fitResults, assigned):
+def coalesceClumps(fitResults, assigned, okChans=None):
     """Agregates clumps to a single event"""
     NClumps = int(assigned.max())  # len(np.unique(assigned))  #
 
@@ -203,12 +203,16 @@ def coalesceClumps(fitResults, assigned):
 
             fres['nFrames'][i] = len(rvs)
             #fres['ATotal'][i] = vals['fitResults']['A'].sum()
+
     try:
         Chans = fitResults['whichChannel']
-        for i in xrange(NClumps):
+        for ii in xrange(NClumps):
             # FIXME: weight which spline to use based on how many localizations from each channel
-            print(Chans[clist[i]])
-            fres['whichChannel'][i] =Chans[clist[i]].min()
+            cl = Chans[clist[ii]]
+            fres['whichChannel'][ii] =Chans[clist[ii]].min()
+            if np.logical_and(len(np.unique(cl)) > 1, not np.array_equal(np.unique(cl), okChans)):
+                print(Chans[clist[ii]])
+
     except ValueError:
         pass
 
