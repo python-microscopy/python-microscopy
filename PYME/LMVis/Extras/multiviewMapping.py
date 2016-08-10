@@ -119,11 +119,12 @@ def pairMolecules(tIndex, x, y, whichChan, numChan, deltaX=[None], appearIn=np.a
 
     """
     # sort everything in frame order
-    I = tIndex.argsort()
-    tIndex = tIndex[I]
-    x = x[I]
-    y = y[I]
-    whichChan = whichChan[I]
+    #FIXME: this almost certainly has to be wrong to not do this to the entire fitResults matrix
+    #I = tIndex.argsort()
+    #tIndex = tIndex[I]
+    #x = x[I]
+    #y = y[I]
+    #whichChan = whichChan[I]
 
     # group within a certain distance, potentially based on localization uncertainty
     if not deltaX[0]:
@@ -497,9 +498,9 @@ class multiviewMapper:
 
         try:
             numChan = pipeline.mdh['Multiview.NumROIs']
-            chanColor = [0, 0, 1, 1]  # FIXME: pipeline.mdh['Multiview.ColorInfo']
+            chanColor = [0, 1, 1, 0]  # FIXME: pipeline.mdh['Multiview.ColorInfo']
             numPlanes = numChan / len(np.unique(chanColor))
-            chanPlane = [0, 1, 0, 1]  # FIXME: make this automatic np.unique(chanColor, return_index=True)
+            chanPlane = [0, 0, 1, 1]  # FIXME: make this automatic np.unique(chanColor, return_index=True)
         except AttributeError:
             numChan = 1
             chanColor = [0]
@@ -570,10 +571,10 @@ class multiviewMapper:
             # replace zeros in fiterror with infs so their weights are zero
             fresCopy['fitError']['sigmaxPlane%i' % pind][fresCopy['fitError']['sigmaxPlane%i' % pind] == 0] = np.inf
             fresCopy['fitError']['sigmayPlane%i' % pind][fresCopy['fitError']['sigmayPlane%i' % pind] == 0] = np.inf
-        for cind in range(len(chanColor)):
+        for cind in np.unique(chanColor):
             # trick pairMolecules function by tweaking the channel vector
             # this needs to be unsorted at this point
-            planeInColorChan = np.copy(fresCopy['whichChannel']) #fixme: needs to shrink with fitResCopy
+            planeInColorChan = np.copy(fresCopy['whichChannel'])
             chanColor = np.array(chanColor)
             ignoreChans = np.where(chanColor != cind)[0]
             igMask = [mm in ignoreChans.tolist() for mm in planeInColorChan]
@@ -581,17 +582,18 @@ class multiviewMapper:
             # clumpID is assigned, paired is keep
             x, y, Chan, clumpID, paired = pairMolecules(fresCopy['tIndex'], fresCopy['fitResults']['x0'], fresCopy['fitResults']['y0'],
                           planeInColorChan, numChan, deltaX=100*fresCopy['fitError']['x0'],
-                                                        appearIn=np.hstack([-9, np.where(chanColor == cind)[0]]))
+                                                        appearIn=np.where(chanColor == cind)[0])
 
             #clumpedRes['fitResults'] = clumpedRes['fitResults'][np.where(planeInColorChan >= 0)[0]]
-            # FIXME: fix coalesceClumps to average sigmas separately for each plane in channel
-            # numClumps = len(clumpID)
+
+            # make sure clumpIDs are contiguous from [0, numClumps)
             clumpVec = np.unique(clumpID)
             for ci in range(len(clumpVec)):
                 cMask = clumpID == clumpVec[ci]
                 clumpID[cMask] = ci
             clumpedRes = pyDeClump.coalesceClumps(fresCopy, clumpID)
             fresCopy = clumpedRes
+            # FIXME: THERE IS A BUG WHERE NAN IS BEING WRITTEN WHEN IT DOESNT NEED TO BE, SEE sigmaxPlane0, first molecule
 
         # create data source for our clumped dat
         from PYME.LMVis.inpFilt import fitResultsSource
