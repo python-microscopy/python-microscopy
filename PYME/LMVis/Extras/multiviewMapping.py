@@ -131,9 +131,10 @@ def pairMolecules(tIndex, x, y, whichChan, numChan, deltaX=[None], appearIn=np.a
         deltaX = 100.*np.ones_like(x)
     # group localizations
     assigned = pyDeClump.findClumps(tIndex, x, y, deltaX)
-
+    print assigned.min()
     # only look at clumps with localizations from each channel
     clumps = np.unique(assigned)
+    # FIXME: Note that this will never clump if an ignore channel is present...
     keptClumps = [np.array_equal(np.unique(whichChan[assigned == clumps[ii]]), appearIn) for ii in range(len(clumps))]
     #keptClumps = [(len(np.unique(whichChan[assigned == clumps[ii]])) >= appearances) for ii in range(len(clumps))]
 
@@ -146,7 +147,7 @@ def pairMolecules(tIndex, x, y, whichChan, numChan, deltaX=[None], appearIn=np.a
     # don't clump molecules from the wrong channel (done by parsing modified whichChan to this function)
     ignoreChan = whichChan < 0
     numClump = np.max(assigned)
-    igVec = np.arange(numClump, numClump + sum(ignoreChan))
+    igVec = np.arange(numClump + 1, numClump + 1 + sum(ignoreChan))
     # give ignored channel localizations unique clump assignments
     assigned[ignoreChan] = igVec
 
@@ -165,7 +166,7 @@ def astigMAPism(pipeline, stigLib, chanPlane):
     import scipy.interpolate as terp
     fres = pipeline.selectedDataSource.resultsSource.fitResults
     numMols = len(fres['fitResults']['x0'])  # len(pipeline['x'])
-    # FIXME: go back and make whichChannel and int!
+    # FIXME: go back and make whichChannel an int!
     whichChan = np.array(fres['whichChannel'], dtype=np.int32)
     # stigLib['zRange'] contains the extrema of acceptable z-positions looking over all channels
     zVal = np.arange(stigLib['zRange'][0], stigLib['zRange'][1])
@@ -572,6 +573,10 @@ class multiviewMapper:
             fresCopy['fitError']['sigmaxPlane%i' % pind][fresCopy['fitError']['sigmaxPlane%i' % pind] == 0] = np.inf
             fresCopy['fitError']['sigmayPlane%i' % pind][fresCopy['fitError']['sigmayPlane%i' % pind] == 0] = np.inf
         for cind in np.unique(chanColor):
+            #fresCopy = fresCopy[(fresCopy['tIndex'].argsort())]
+            #for pp in range(numPlanes):
+            #    fresCopy['fitResults']['sigmaxPlane%i' % pind][np.isnan(fresCopy['fitResults']['sigmaxPlane%i' % pind])] = 0
+            #    fresCopy['fitResults']['sigmayPlane%i' % pind][np.isnan(fresCopy['fitResults']['sigmayPlane%i' % pind])] = 0
             # trick pairMolecules function by tweaking the channel vector
             # this needs to be unsorted at this point
             planeInColorChan = np.copy(fresCopy['whichChannel'])
@@ -587,13 +592,13 @@ class multiviewMapper:
             #clumpedRes['fitResults'] = clumpedRes['fitResults'][np.where(planeInColorChan >= 0)[0]]
 
             # make sure clumpIDs are contiguous from [0, numClumps)
+            assigned = -1*np.ones_like(clumpID)
             clumpVec = np.unique(clumpID)
             for ci in range(len(clumpVec)):
                 cMask = clumpID == clumpVec[ci]
-                clumpID[cMask] = ci
-            clumpedRes = pyDeClump.coalesceClumps(fresCopy, clumpID)
+                assigned[cMask] = ci + 1  #FIXME: cluster assignments currently start from 1, which is HORRIBLE.
+            clumpedRes = pyDeClump.coalesceClumps(fresCopy, assigned)
             fresCopy = clumpedRes
-            # FIXME: THERE IS A BUG WHERE NAN IS BEING WRITTEN WHEN IT DOESNT NEED TO BE, SEE sigmaxPlane0, first molecule
 
         # create data source for our clumped dat
         from PYME.LMVis.inpFilt import fitResultsSource
@@ -616,6 +621,8 @@ class multiviewMapper:
         # copy over existing fitresults:
         for fr in clumpedRes.dtype.descr:
             fresCopy[fr[0]] = clumpedRes[fr[0]]
+
+        #FIXME: Add in position of stage
 
         fresCopy['fitResults']['z0'] = z
         pipeline.addDataSource('Clumped', fitResultsSource(fresCopy))

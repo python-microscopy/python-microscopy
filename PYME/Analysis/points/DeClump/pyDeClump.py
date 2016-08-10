@@ -80,6 +80,9 @@ def weightedAverage_(vals, errs, dt):
     ws = 1.0/w.sum(0)
     r = (v*w).sum(0)*ws
 
+    if np.sum(np.isnan(r)) > 2:
+        print 'oops!'
+
     return r, np.sqrt(ws)
 
 def deClumpf(h5fFile):
@@ -203,6 +206,8 @@ def coalesceClumps(fitResults, assigned):
     try:
         Chans = fitResults['whichChannel']
         for i in xrange(NClumps):
+            # FIXME: weight which spline to use based on how many localizations from each channel
+            print(Chans[clist[i]])
             fres['whichChannel'][i] =Chans[clist[i]].min()
     except ValueError:
         pass
