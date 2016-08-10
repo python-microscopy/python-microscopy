@@ -58,11 +58,17 @@ camPanels.append((scope.camControls['Zyla'], 'sCMOS Properties'))
 
 
 
-InitGUI('''
-from PYME.Acquire import sampleInformation
+# InitGUI('''
+# from PYME.Acquire import sampleInformation
+# sampPan = sampleInformation.slidePanel(MainFrame)
+# camPanels.append((sampPan, 'Current Slide'))
+# ''')
+InitGUI("""
+from PYME.Acquire import sampleInformationDjangoDirect as sampleInformation
 sampPan = sampleInformation.slidePanel(MainFrame)
+MetaDataHandler.provideStartMetadata.append(lambda mdh: sampleInformation.getSampleDataFailesafe(MainFrame,mdh))
 camPanels.append((sampPan, 'Current Slide'))
-''')
+""")
 
 #setup for the channels to aquire - b/w camera, no shutters
 class chaninfo:
