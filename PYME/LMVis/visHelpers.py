@@ -80,6 +80,23 @@ class ImageBounds:
     def height(self):
         return self.y1 - self.y0
 
+    @classmethod
+    def extractFromMetadata(cls, mdh):
+        x0 = 0
+        y0 = 0
+
+        x1 = mdh['Camera.ROIWidth'] * 1e3 * mdh['voxelsize.x']
+        y1 = mdh['Camera.ROIHeight'] * 1e3 * mdh['voxelsize.y']
+
+        if 'Splitter' in mdh.getOrDefault('Analysis.FitModule', ''):
+            if 'Splitter.Channel0ROI' in mdh.getEntryNames():
+                rx0, ry0, rw, rh = mdh['Splitter.Channel0ROI']
+                x1 = rw * 1e3 * mdh['voxelsize.x']
+                x1 = rh * 1e3 * mdh['voxelsize.x']
+            else:
+                y1 = y1 / 2
+
+        return cls(x0, y0, x1, y1)
 
 class dummy:
     pass

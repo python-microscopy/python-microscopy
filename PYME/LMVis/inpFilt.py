@@ -443,6 +443,8 @@ class mappingFilter(inputFilter):
         self.resultsSource = resultsSource
 
         self.mappings = {}
+        self.new_columns = {}
+        self.variables = {}
 
         for k in kwargs.keys():
             v = kwargs[k]
@@ -453,11 +455,57 @@ class mappingFilter(inputFilter):
         key, sl = self._getKeySlice(keys)
         if key in self.mappings.keys():
             return self.getMappedResults(key, sl)
+        elif key in self.new_columns.keys():
+            return self.new_columns[key][sl]
         else:
             return self.resultsSource[keys]
 
     def keys(self):
-        return list(self.resultsSource.keys()) + self.mappings.keys()
+        return list(self.resultsSource.keys()) + self.mappings.keys() + self.new_columns.keys()
+
+    def addVariable(self, name, value):
+        """
+        Adds a scalar variable to the mapping object. This will be accessible from mappings. An example usage might
+        be to define a scaling parameter for one of our column variables.
+
+        Parameters
+        ----------
+        name : string
+            The name we want to be able to access the variable by
+        value : float (or something which can be cast to a float)
+            The value
+
+        """
+
+        #insert into our __dict__ object (for backwards compatibility - TODO change me to something less hacky)
+        #setattr(self, name, float(value))
+
+        self.variables[name] = float(value)
+
+    def addColumn(self, name, values):
+        """
+        Adds a column of values to the mapping.
+
+        Parameters
+        ----------
+        name : str
+            The new column name
+        values : array-like
+            The values. This should be the same length as the existing columns.
+
+        """
+
+        #force to be an array
+        values = np.array(values)
+
+        if not len(values) == len(self.resultsSource[self.resultsSource.keys()[0]]):
+            raise RuntimeError('New column does not match the length of existing columns')
+
+        #insert into our __dict__ object (for backwards compatibility - TODO change me to something less hacky)
+        #setattr(self, name, values)
+
+        self.new_columns[name] = values
+
 
     def setMapping(self, key, mapping):
         if type(mapping) == types.CodeType:
@@ -477,6 +525,10 @@ class mappingFilter(inputFilter):
                 pass
             if vname in self.resultsSource.keys(): #look at original results first
                 locals()[vname] = self.resultsSource[(vname, sl)]
+            elif vname in self.new_columns.keys():
+                locals()[vname] = self.new_columns[vname][sl]
+            elif vname in self.variables.keys():
+                locals()[vname] = self.variables[vname]
             elif vname in dir(self): #look for constants
                 locals()[vname] = self.__dict__[vname]
             elif vname in self.mappings.keys(): #finally try other mappings

@@ -39,8 +39,8 @@ from PYME.Analysis.BleachProfile.kinModels import getPhotonNums
 
 class Pipeline:
     def __init__(self, filename=None, visFr=None):
-        self.dataSources = []
-        self.selectedDataSource = None
+        self.dataSources = {}
+        self.selectedDataSourceKey = None
         self.filterKeys = {'error_x': (0,30), 'error_y':(0,30),'A':(5,20000), 'sig' : (95, 200)}
 
         self.filter = None
@@ -55,9 +55,6 @@ class Pipeline:
         self.t_p_other = 0.1
         self.t_p_background = .01
 
-        #self.objThreshold = 30
-        #self.objMinSize = 10
-        #self.blobJitter = 0
         self.blobSettings = BlobSettings()
         self.objects = None
 
@@ -88,9 +85,117 @@ class Pipeline:
     def keys(self):
         return self.colourFilter.keys()
 
+    @property
+    def selectedDataSource(self):
+        """
+
+        The currently selected data source (an instance of inpFilt.inputFilter derived class)
+
+        """
+        if self.selectedDataSourceKey is None:
+            return None
+        else:
+            return self.dataSources[self.selectedDataSourceKey]
+
+    def selectDataSource(self, dskey):
+        """
+        Set the currently selected data source
+
+        Parameters
+        ----------
+        dskey : string
+            The data source name
+
+        """
+        if not dskey in self.dataSources.keys():
+            raise KeyError('Data Source "%s" not found' % dskey)
+
+        self.selectedDataSourceKey = dskey
+
+        #remove any keys from the filter which are not present in the data
+        for k in self.filterKeys.keys():
+            if not k in self.selectedDataSource.keys():
+                self.filterKeys.pop(k)
+
+        self.Rebuild()
+
+    def addDataSource(self, dskey, ds):
+        """
+        Add a new data source
+
+        Parameters
+        ----------
+        dskey : str
+            The name of the new data source
+        ds : an inpFilt.inputFilter derived class
+            The new data source
+
+        """
+        #check that we have a suitable object - note that this could potentially be relaxed
+        assert isinstance(ds, inpFilt.inputFilter)
+
+        if not isinstance(ds, inpFilt.mappingFilter):
+            #wrap with a mapping filter
+            ds = inpFilt.mappingFilter(ds)
+
+        #add keys which might not already be defined
+        self._add_missing_ds_keys(ds)
+
+        self.dataSources[dskey] = ds
+
+    def _add_missing_ds_keys(self, mapped_ds):
+        """
+        VisGUI, and various rendering and postprocessing commands rely on having certain parameters defined or re-mapped
+        within a data source. Take care of these here.
+
+        Parameters
+        ----------
+        mapped_ds
+
+        """
+        self._add_eventvars_to_ds(mapped_ds)
+
+
+        #handle special cases which get detected by looking for the presence or
+        #absence of certain variables in the data.
+        if 'fitResults_Ag' in mapped_ds.keys():
+            #if we used the splitter set up a number of mappings e.g. total amplitude and ratio
+            self._processSplitter(mapped_ds)
+
+        if 'fitResults_ratio' in mapped_ds.keys():
+            #if we used the splitter set up a number of mappings e.g. total amplitude and ratio
+            self._processPriSplit(mapped_ds)
+
+        if 'fitResults_sigxl' in mapped_ds.keys():
+            #fast, quickpalm like astigmatic fitting
+            mapped_ds.setMapping('sig', 'fitResults_sigxl + fitResults_sigyu')
+            mapped_ds.setMapping('sig_d', 'fitResults_sigxl - fitResults_sigyu')
+
+            mapped_ds.addVariable('dsigd_dz', -30.)
+            mapped_ds.setMapping('fitResults_z0', 'dsigd_dz*sig_d')
+        if not 'y' in mapped_ds.keys():
+            mapped_ds.setMapping('y', '10*t')
+
+        #set up correction for foreshortening and z focus stepping
+        if not 'foreShort' in dir(mapped_ds):
+            mapped_ds.addVariable('foreShort', 1.)
+
+        if not 'focus' in mapped_ds.mappings.keys():
+            #set up a dummy focus variable if not already present
+            mapped_ds.setMapping('focus', '0*x')
+
+        if not 'z' in mapped_ds.keys():
+            if 'fitResults_z0' in mapped_ds.keys():
+                mapped_ds.setMapping('z', 'fitResults_z0 + foreShort*focus')
+            else:
+                mapped_ds.setMapping('z', 'foreShort*focus')
 
     def Rebuild(self):
-        for s in self.dataSources:
+        """
+        Rebuild the pipeline. Called when the selected data source is changed/modified and/or the filter is changed.
+
+        """
+        for s in self.dataSources.values():
             if 'setMapping' in dir(s):
                 #keep raw measurements available
                 s.setMapping('x_raw', 'x')
@@ -98,19 +203,16 @@ class Pipeline:
                 s.setMapping('z_raw', 'z')
                 
         if not self.selectedDataSource is None:
+            #we can recycle the mapping object
             if self.mapping:
                 self.mapping.resultsSource = self.selectedDataSource
             else:
                 self.mapping = inpFilt.mappingFilter(self.selectedDataSource)
-                
-                
-                
-            self.filter = inpFilt.resultsFilter(self.mapping, **self.filterKeys)
-            #if self.mapping:
-            #    self.mapping.resultsSource = self.filter
-            #else:
-            #    self.mapping = inpFilt.mappingFilter(self.filter)
 
+            #the filter, however needs to be re-generated with new keys and or data source
+            self.filter = inpFilt.resultsFilter(self.mapping, **self.filterKeys)
+
+            #we can also recycle the colour filter
             if not self.colourFilter:
                 self.colourFilter = inpFilt.colourFilter(self.filter, self)
             else:
@@ -136,8 +238,8 @@ class Pipeline:
             self.visFr.RefreshView()
         
         
-    def _processEvents(self):
-        """Read data from events table and translate it into variables for,
+    def _processEvents(self, ds):
+        """Read data from events table and translate it into mappings for,
         e.g. z position"""
         
         if not self.events is None:
@@ -149,10 +251,6 @@ class Pipeline:
         
             if 'ProtocolFocus' in evKeyNames:
                 self.zm = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), self.mdh.getEntry('Protocol.PiezoStartPos'))
-                self.z_focus = 1.e3*self.zm(self.selectedDataSource['t'])
-        
-                self.selectedDataSource.z_focus = self.z_focus
-                self.selectedDataSource.setMapping('focus', 'z_focus')
                 
                 self.eventCharts.append(('Focus [um]', self.zm, 'ProtocolFocus'))
         
@@ -160,11 +258,7 @@ class Pipeline:
                 x0 = 0
                 if 'Positioning.Stage_X' in self.mdh.getEntryNames():
                     x0 = self.mdh.getEntry('Positioning.Stage_X')
-                self.xm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), x0, 'ScannerXPos', 0)
-        
-                self.selectedDataSource.scan_x = 1.e3*self.xm(self.selectedDataSource['t']-.01)
-                self.selectedDataSource.setMapping('ScannerX', 'scan_x')
-                self.selectedDataSource.setMapping('x', 'x + scan_x')
+                self.xm = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), x0, 'ScannerXPos', 0)
                 
                 self.eventCharts.append(('XPos [um]', self.xm, 'ScannerXPos'))
         
@@ -172,81 +266,165 @@ class Pipeline:
                 y0 = 0
                 if 'Positioning.Stage_Y' in self.mdh.getEntryNames():
                     y0 = self.mdh.getEntry('Positioning.Stage_Y')
-                self.ym = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), y0, 'ScannerYPos', 0)
-        
-                self.selectedDataSource.scan_y = 1.e3*self.ym(self.selectedDataSource['t']-.01)
-                self.selectedDataSource.setMapping('ScannerY', 'scan_y')
-                self.selectedDataSource.setMapping('y', 'y + scan_y')
+                self.ym = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), y0, 'ScannerYPos', 0)
                 
                 self.eventCharts.append(('YPos [um]', self.ym, 'ScannerYPos'))
-        
-            if 'ScannerXPos' in evKeyNames or 'ScannerYPos' in evKeyNames:
-                self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
                 
             if 'ShiftMeasure' in evKeyNames:
-                self.selectedDataSource.driftx = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), 0, 'ShiftMeasure', 0)(self.selectedDataSource['t']-.01)
-                self.selectedDataSource.drifty = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), 0, 'ShiftMeasure', 1)(self.selectedDataSource['t']-.01)
-        
-                self.selectedDataSource.setMapping('driftx', 'driftx')
-                self.selectedDataSource.setMapping('drifty', 'drifty')
+                self.driftx = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), 0, 'ShiftMeasure', 0)
+                self.drifty = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), 0, 'ShiftMeasure', 1)
+                self.driftz = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), 0, 'ShiftMeasure', 2)
+
+                self.eventCharts.append(('X Drift [px]', self.driftx, 'ShiftMeasure'))
+                self.eventCharts.append(('Y Drift [px]', self.drifty, 'ShiftMeasure'))
+                self.eventCharts.append(('Z Drift [px]', self.driftz, 'ShiftMeasure'))
+
+    def _add_eventvars_to_ds(self, ds):
+        if 'zm' in dir(self):
+            z_focus = 1.e3 * self.zm(ds['t'])
+            ds.addColumn('focus', z_focus)
+
+        if 'xm' in dir(self):
+            scan_x = 1.e3 * self.xm(ds['t'] - .01)
+            ds.addColumn('scanx', scan_x)
+            ds.setMapping('x', 'x + scanx')
+
+        if 'ym' in dir(self):
+            scan_y = 1.e3 * self.ym(ds['t'] - .01)
+            ds.addColumn('scany', scan_y)
+            ds.setMapping('y', 'y + scany')
+
+        if 'driftx' in dir(self):
+            ds.addColumn('driftx', self.driftx(ds['t'] - .01))
+            ds.addColumn('drifty', self.drifty(ds['t'] - .01))
+            ds.addColumn('driftz', self.driftz(ds['t'] - .01))
                 
                 
-    def _processSplitter(self):
+    def _processSplitter(self, ds):
         """set mappings ascociated with the use of a splitter"""
-        self.selectedDataSource.gF_zcorr = 0
-        self.selectedDataSource.setMapping('A', 'fitResults_Ag + fitResults_Ar')
-        self.selectedDataSource.setMapping('gFrac', 'fitResults_Ag/(fitResults_Ag + fitResults_Ar) + gF_zcorr*fitResults_z0')
-        
-        if 'fitError_Ag' in self.selectedDataSource.keys():    
-            self.selectedDataSource.setMapping('error_gFrac', 'sqrt((fitError_Ag/fitResults_Ag)**2 + (fitError_Ag**2 + fitError_Ar**2)/(fitResults_Ag + fitResults_Ar)**2)*fitResults_Ag/(fitResults_Ag + fitResults_Ar)')
+
+        #ds.gF_zcorr = 0
+        ds.setMapping('A', 'fitResults_Ag + fitResults_Ar')
+        if 'fitResults_z0' in ds.keys():
+            ds.addVariable('gF_zcorr', 0)
+            ds.setMapping('gFrac', 'fitResults_Ag/(fitResults_Ag + fitResults_Ar) + gF_zcorr*fitResults_z0')
         else:
-            self.selectedDataSource.setMapping('error_gFrac','0*x + 0.01')
-            self.selectedDataSource.setMapping('fitError_Ag', '1*sqrt(fitResults_Ag/1)')
-            self.selectedDataSource.setMapping('fitError_Ar', '1*sqrt(fitResults_Ar/1)')
-            
-        sg = self.selectedDataSource['fitError_Ag']
-        sr = self.selectedDataSource['fitError_Ar']
-        g = self.selectedDataSource['fitResults_Ag']
-        r = self.selectedDataSource['fitResults_Ar']
-        I = self.selectedDataSource['A']
+            ds.setMapping('gFrac', 'fitResults_Ag/(fitResults_Ag + fitResults_Ar)')
         
-        self.selectedDataSource.colNorm = np.sqrt(2*np.pi)*sg*sr/(2*np.sqrt(sg**2 + sr**2)*I)*(
+        if 'fitError_Ag' in ds.keys():
+            ds.setMapping('error_gFrac', 'sqrt((fitError_Ag/fitResults_Ag)**2 + (fitError_Ag**2 + fitError_Ar**2)/(fitResults_Ag + fitResults_Ar)**2)*fitResults_Ag/(fitResults_Ag + fitResults_Ar)')
+        else:
+            ds.setMapping('error_gFrac','0*x + 0.01')
+            ds.setMapping('fitError_Ag', '1*sqrt(fitResults_Ag/1)')
+            ds.setMapping('fitError_Ar', '1*sqrt(fitResults_Ar/1)')
+            
+        sg = ds['fitError_Ag']
+        sr = ds['fitError_Ar']
+        g = ds['fitResults_Ag']
+        r = ds['fitResults_Ar']
+        I = ds['A']
+        
+        colNorm = np.sqrt(2*np.pi)*sg*sr/(2*np.sqrt(sg**2 + sr**2)*I)*(
             scipy.special.erf((sg**2*r + sr**2*(I-g))/(np.sqrt(2)*sg*sr*np.sqrt(sg**2+sr**2)))
             - scipy.special.erf((sg**2*(r-I) - sr**2*g)/(np.sqrt(2)*sg*sr*np.sqrt(sg**2+sr**2))))
         
-        self.selectedDataSource.setMapping('ColourNorm', '1.0*colNorm')
+        ds.addColumn('ColourNorm', colNorm)
 
-    def _processPriSplit(self):
+    def _processPriSplit(self, ds):
         """set mappings ascociated with the use of a splitter"""
-        self.selectedDataSource.setMapping('gFrac', 'fitResults_ratio')
-        self.selectedDataSource.setMapping('error_gFrac','fitError_ratio')
 
-        self.selectedDataSource.setMapping('fitResults_Ag','gFrac*A')
-        self.selectedDataSource.setMapping('fitResults_Ar','(1.0 - gFrac)*A + error_gFrac*A')
-        self.selectedDataSource.setMapping('fitError_Ag','gFrac*fitError_A + error_gFrac*A')
-        self.selectedDataSource.setMapping('fitError_Ar','(1.0 - gFrac)*fitError_A')
-        #self.selectedDataSource.setMapping('fitError_Ag', '1*sqrt(fitResults_Ag/1e-3)')
-        #self.selectedDataSource.setMapping('fitError_Ar', '1*sqrt(fitResults_Ar/1e-3)')
+        ds.setMapping('gFrac', 'fitResults_ratio')
+        ds.setMapping('error_gFrac','fitError_ratio')
+
+        ds.setMapping('fitResults_Ag','gFrac*A')
+        ds.setMapping('fitResults_Ar','(1.0 - gFrac)*A + error_gFrac*A')
+        ds.setMapping('fitError_Ag','gFrac*fitError_A + error_gFrac*A')
+        ds.setMapping('fitError_Ar','(1.0 - gFrac)*fitError_A')
+        #ds.setMapping('fitError_Ag', '1*sqrt(fitResults_Ag/1e-3)')
+        #ds.setMapping('fitError_Ar', '1*sqrt(fitResults_Ar/1e-3)')
         
-        sg = self.selectedDataSource['fitError_Ag']
-        sr = self.selectedDataSource['fitError_Ar']
-        g = self.selectedDataSource['fitResults_Ag']
-        r = self.selectedDataSource['fitResults_Ar']
-        I = self.selectedDataSource['A']
+        sg = ds['fitError_Ag']
+        sr = ds['fitError_Ar']
+        g  = ds['fitResults_Ag']
+        r  = ds['fitResults_Ar']
+        I  = ds['A']
         
-        self.selectedDataSource.colNorm = np.sqrt(2*np.pi)*sg*sr/(2*np.sqrt(sg**2 + sr**2)*I)*(
+        colNorm = np.sqrt(2*np.pi)*sg*sr/(2*np.sqrt(sg**2 + sr**2)*I)*(
             scipy.special.erf((sg**2*r + sr**2*(I-g))/(np.sqrt(2)*sg*sr*np.sqrt(sg**2+sr**2)))
             - scipy.special.erf((sg**2*(r-I) - sr**2*g)/(np.sqrt(2)*sg*sr*np.sqrt(sg**2+sr**2))))
             
-        self.selectedDataSource.colNorm /= (sg*sr)
+        colNorm /= (sg*sr)
         
-        self.selectedDataSource.setMapping('ColourNorm', '1.0*colNorm')
+        ds.addColumn('ColourNorm', colNorm)
 
 
         
     def CloseFiles(self):
         while len(self.filesToClose) > 0:
             self.filesToClose.pop().close()
+
+    def _ds_from_file(self, filename, **kwargs):
+        """
+        loads a data set from a file
+
+        Parameters
+        ----------
+        filename : str
+        kwargs : any additional arguments (see OpenFile)
+
+        Returns
+        -------
+
+        ds : the dataset
+
+        """
+
+        if os.path.splitext(filename)[1] == '.h5r':
+            try:
+                ds = inpFilt.h5rSource(filename)
+                self.filesToClose.append(ds.h5f)
+
+                if 'DriftResults' in ds.h5f.root:
+                    driftDS = inpFilt.h5rDSource(ds.h5f)
+                    self.driftInputMapping = inpFilt.mappingFilter(driftDS)
+                    self.dataSources['Fiducials'] = self.driftInputMapping
+
+                    if len(ds['x']) == 0:
+                        self.selectDataSource('Fiducials')
+
+            except: #fallback to catch series that only have drift data
+                ds = inpFilt.h5rDSource(filename)
+                self.filesToClose.append(ds.h5f)
+
+                self.driftInputMapping = inpFilt.mappingFilter(ds)
+                self.dataSources['Fiducials'] = self.driftInputMapping
+                #self.selectDataSource('Fiducials')
+
+            #catch really old files which don't have any metadata
+            if 'MetaData' in ds.h5f.root:
+                self.mdh = MetaDataHandler.HDFMDHandler(ds.h5f)
+
+            if ('Events' in ds.h5f.root) and ('StartTime' in self.mdh.keys()):
+                self.events = ds.h5f.root.Events[:]
+
+
+        elif os.path.splitext(filename)[1] == '.mat': #matlab file
+            ds = inpFilt.matfileSource(filename, kwargs['FieldNames'], kwargs['VarName'])
+
+        elif os.path.splitext(filename)[1] == '.csv':
+            #special case for csv files - tell np.loadtxt to use a comma rather than whitespace as a delimeter
+            if 'SkipRows' in kwargs.keys():
+                ds = inpFilt.textfileSource(filename, kwargs['FieldNames'], delimiter=',', skiprows=kwargs['SkipRows'])
+            else:
+                ds = inpFilt.textfileSource(filename, kwargs['FieldNames'], delimiter=',')
+
+        else: #assume it's a tab (or other whitespace) delimited text file
+            if 'SkipRows' in kwargs.keys():
+                ds = inpFilt.textfileSource(filename, kwargs['FieldNames'], skiprows=kwargs['SkipRows'])
+            else:
+                ds = inpFilt.textfileSource(filename, kwargs['FieldNames'])
+
+        return ds
 
     def OpenFile(self, filename= '', ds = None, **kwargs):
         """Open a file - accepts optional keyword arguments for use with files
@@ -267,7 +445,7 @@ class Pipeline:
             self.filesToClose.pop().close()
         
         #clear our state
-        self.dataSources = []
+        self.dataSources = {}
         if 'zm' in dir(self):
             del self.zm
         self.filter = None
@@ -278,141 +456,31 @@ class Pipeline:
         
         self.filename = filename
         
-        if not ds is None:
-            self.selectedDataSource = ds
-            self.dataSources.append(ds)
-        elif os.path.splitext(filename)[1] == '.h5r':
-            try:
-                self.selectedDataSource = inpFilt.h5rSource(filename)
-                self.dataSources.append(self.selectedDataSource)
+        if ds is None:
+            #load from file
+            ds = self._ds_from_file(filename, **kwargs)
 
-                self.filesToClose.append(self.selectedDataSource.h5f)
-
-                if 'DriftResults' in self.selectedDataSource.h5f.root:
-                    self.dataSources.append(inpFilt.h5rDSource(self.selectedDataSource.h5f))
-                    self.driftInputMapping = inpFilt.mappingFilter(self.dataSources[-1])
-                    self.dataSources.append(self.driftInputMapping)
-
-                    if len(self.selectedDataSource['x']) == 0:
-                        self.selectedDataSource = self.dataSources[-1]
-
-            except: #fallback to catch series that only have drift data
-                self.selectedDataSource = inpFilt.h5rDSource(filename)
-                self.dataSources.append(self.selectedDataSource)
-                
-                self.filesToClose.append(self.selectedDataSource.h5f)
-
-            #catch really old files which don't have any metadata
-            if 'MetaData' in self.selectedDataSource.h5f.root:
-                self.mdh = MetaDataHandler.HDFMDHandler(self.selectedDataSource.h5f)
-
-           
-            if ('Events' in self.selectedDataSource.h5f.root) and ('StartTime' in self.mdh.keys()):
-                self.events = self.selectedDataSource.h5f.root.Events[:]
-
-                        
-        elif os.path.splitext(filename)[1] == '.mat': #matlab file
-            ds = inpFilt.matfileSource(filename, kwargs['FieldNames'], kwargs['VarName'])
-            self.selectedDataSource = ds
-            self.dataSources.append(ds)
-
-        elif os.path.splitext(filename)[1] == '.csv': 
-            #special case for csv files - tell np.loadtxt to use a comma rather than whitespace as a delimeter
-            if 'SkipRows' in kwargs.keys():
-                ds = inpFilt.textfileSource(filename, kwargs['FieldNames'], delimiter=',', skiprows=kwargs['SkipRows'])
-            else:
-                ds = inpFilt.textfileSource(filename, kwargs['FieldNames'], delimiter=',')
-            self.selectedDataSource = ds
-            self.dataSources.append(ds)
-            
-        else: #assume it's a tab (or other whitespace) delimited text file
-            if 'SkipRows' in kwargs.keys():
-                ds = inpFilt.textfileSource(filename, kwargs['FieldNames'], skiprows=kwargs['SkipRows'])
-            else:
-                ds = inpFilt.textfileSource(filename, kwargs['FieldNames'])
-            self.selectedDataSource = ds
-            self.dataSources.append(ds)
-            
-        
-            
-
-        
-            
             
         #wrap the data source with a mapping so we can fiddle with things
         #e.g. combining z position and focus 
-        self.inputMapping = inpFilt.mappingFilter(self.selectedDataSource)
-        self.selectedDataSource = self.inputMapping
-        self.dataSources.append(self.inputMapping)
+        mapped_ds = inpFilt.mappingFilter(ds)
+
         
         if 'PixelSize' in kwargs.keys():
-            self.selectedDataSource.pixelSize = kwargs['PixelSize']
-            self.selectedDataSource.setMapping('x', 'x*pixelSize')
-            self.selectedDataSource.setMapping('y', 'y*pixelSize')
-            
+            mapped_ds.addVariable('pixelSize', kwargs['PixelSize'])
+            mapped_ds.setMapping('x', 'x*pixelSize')
+            mapped_ds.setMapping('y', 'y*pixelSize')
+
+        #extract information from any events
+        self._processEvents(mapped_ds)
+
         #Retrieve or estimate image bounds
         if False:#'imgBounds' in kwargs.keys():
             self.imageBounds = kwargs['imgBounds']
-        elif 'Camera.ROIWidth' in self.mdh.getEntryNames():
-            x0 = 0
-            y0 = 0
-
-            x1 = self.mdh.getEntry('Camera.ROIWidth')*1e3*self.mdh.getEntry('voxelsize.x')
-            y1 = self.mdh.getEntry('Camera.ROIHeight')*1e3*self.mdh.getEntry('voxelsize.y')
-
-            if 'Splitter' in self.mdh.getEntry('Analysis.FitModule'):
-                if 'Splitter.Channel0ROI' in self.mdh.getEntryNames():
-                    rx0, ry0, rw, rh = self.mdh['Splitter.Channel0ROI']
-                    x1 = rw*1e3*self.mdh.getEntry('voxelsize.x')
-                    x1 = rh*1e3*self.mdh.getEntry('voxelsize.x')
-                else:
-                    y1 = y1/2
-
-            self.imageBounds = ImageBounds(x0, y0, x1, y1)
+        elif (not ('scanx' in mapped_ds.keys() or 'scany' in mapped_ds.keys())) and 'Camera.ROIWidth' in self.mdh.getEntryNames():
+            self.imageBounds = ImageBounds.extractFromMetadata(self.mdh)
         else:
-            self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)        
-            
-        #extract information from any events
-        self._processEvents()
-            
-        
-        #handle special cases which get detected by looking for the presence or
-        #absence of certain variables in the data.        
-        if 'fitResults_Ag' in self.selectedDataSource.keys():
-            #if we used the splitter set up a number of mappings e.g. total amplitude and ratio
-            self._processSplitter()
-
-        if 'fitResults_ratio' in self.selectedDataSource.keys():
-            #if we used the splitter set up a number of mappings e.g. total amplitude and ratio
-            self._processPriSplit()
-
-        if 'fitResults_sigxl' in self.selectedDataSource.keys():
-            #fast, quickpalm like astigmatic fitting 
-            self.selectedDataSource.setMapping('sig', 'fitResults_sigxl + fitResults_sigyu')
-            self.selectedDataSource.setMapping('sig_d', 'fitResults_sigxl - fitResults_sigyu')
-
-            self.selectedDataSource.dsigd_dz = -30.
-            self.selectedDataSource.setMapping('fitResults_z0', 'dsigd_dz*sig_d')
-            
-        if not 'y' in self.selectedDataSource.keys():
-            self.selectedDataSource.setMapping('y', '10*t')
-            
-            
-            
-        #set up correction for foreshortening and z focus stepping
-        if not 'foreShort' in dir(self.selectedDataSource):
-            self.selectedDataSource.foreShort = 1.
-
-        if not 'focus' in self.selectedDataSource.mappings.keys():
-            #self.selectedDataSource.focus= np.zeros(self.selectedDataSource['x'].shape)
-            self.selectedDataSource.setMapping('focus', '0*x')
-            
-        if 'fitResults_z0' in self.selectedDataSource.keys():
-            self.selectedDataSource.setMapping('z', 'fitResults_z0 + foreShort*focus')
-        elif not 'z' in self.selectedDataSource.keys():
-            self.selectedDataSource.setMapping('z', 'foreShort*focus')
-
-        
+            self.imageBounds = ImageBounds.estimateFromSource(mapped_ds)
 
         #Fit module specific filter settings        
         if 'Analysis.FitModule' in self.mdh.getEntryNames():
@@ -422,43 +490,51 @@ class Pipeline:
             
             if 'Interp' in fitModule:
                 self.filterKeys['A'] = (5, 100000)
-                
             
             if 'LatGaussFitFR' in fitModule:
-                self.selectedDataSource.nPhot = getPhotonNums(self.selectedDataSource, self.mdh)
-                self.selectedDataSource.setMapping('nPhotons', 'nPhot')
-                
+                mapped_ds.addColumn('nPhotons', getPhotonNums(mapped_ds, self.mdh))
                 
             if fitModule == 'SplitterShiftEstFR':
                 self.filterKeys['fitError_dx'] = (0,10)
                 self.filterKeys['fitError_dy'] = (0,10)
-                
-        
-        #remove any keys from the filter which are not present in the data
-        for k in self.filterKeys.keys():
-            if not k in self.selectedDataSource.keys():
-                self.filterKeys.pop(k)
-
-        
-        self.Rebuild()
 
 
+        self.addDataSource('Localizations', mapped_ds)
+        self.selectDataSource('Localizations') #NB - this rebuilds the pipeline
+
+        self._process_colour()
+
+
+
+    def _process_colour(self):
+        """
+        Locate any colour / channel information and munge it into a format that the colourFilter understands.
+
+        We currently accept 3 ways of specifying channels:
+
+         - ratiometric colour, where 'gFrac' is defined to be the ratio between our observation channels
+         - defining a 'probe' column in the input data which gives a channel index for each point
+         - specifying colour ranges in the metadata
+
+         All of these get munged into the p_dye type entries that the colour filter needs.
+
+        """
         if 'Sample.Labelling' in self.mdh.getEntryNames() and 'gFrac' in self.selectedDataSource.keys():
             self.SpecFromMetadata()
-            
+
         if 'probe' in self.mapping.keys():
             #non-ratiometric (i.e. sequential) colour
             #color channel is given in 'probe' column
             self.mapping.setMapping('ColourNorm', '1.0 + 0*probe')
-            
-            for i in range(int(self['probe'].min()), int(self['probe'].max()+ 1)):
-                self.mapping.setMapping('p_chan%d' % i, '1.0*(probe == %d)'%i)
-                
+
+            for i in range(int(self['probe'].min()), int(self['probe'].max() + 1)):
+                self.mapping.setMapping('p_chan%d' % i, '1.0*(probe == %d)' % i)
+
         nSeqCols = self.mdh.getOrDefault('Protocol.NumberSequentialColors', 1)
         if nSeqCols > 1:
             for i in range(nSeqCols):
                 self.mapping.setMapping('ColourNorm', '1.0 + 0*t')
-                cr = self.mdh['Protocol.ColorRange%d'%i]
+                cr = self.mdh['Protocol.ColorRange%d' % i]
                 self.mapping.setMapping('p_chan%d' % i, '(t>= %d)*(t<%d)' % cr)
 
 
@@ -474,6 +550,7 @@ class Pipeline:
                 #self.mapping.setMapping('p_%s' % structure, '(1.0/(ColourNorm*2*numpy.pi*fitError_Ag*fitError_Ar))*exp(-(fitResults_Ag - %f*A)**2/(2*fitError_Ag**2) - (fitResults_Ar - %f*A)**2/(2*fitError_Ar**2))' % (ratio, 1-ratio))
                 self.mapping.setMapping('p_%s' % structure, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))/(error_gFrac*sqrt(2*numpy.pi))' % ratio)
                 
+
     def getNeighbourDists(self, forceRetriang = False):
         from PYME.LMVis import visHelpers
         
