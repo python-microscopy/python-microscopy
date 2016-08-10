@@ -189,10 +189,10 @@ def astigMAPism(pipeline, stigLib, chanPlane):
                 wy = 1./fres['fitError']['sigmayPlane%i' % chanPlane[ii]][mi]**2
                 errX = wx*(fres['fitResults']['sigmaxPlane%i' % chanPlane[ii]][mi] - sigCalX['chan%i' % ii])**2
                 errY = wy*(fres['fitResults']['sigmayPlane%i' % chanPlane[ii]][mi] - sigCalY['chan%i' % ii])**2
-                wx = 1./fres['fitError']['sigmaxPlane%i' % chanPlane[ii]][mi]**2
-                wy = 1./fres['fitError']['sigmayPlane%i' % chanPlane[ii]][mi]**2
-                errX = wx*(fres['fitResults']['sigmaxPlane%i' % chanPlane[ii]][mi] - sigCalX['chan%i' % ii])**2
-                errY = wy*(fres['fitResults']['sigmayPlane%i' % chanPlane[ii]][mi] - sigCalY['chan%i' % ii])**2
+                #wx = 1./fres['fitError']['sigmaxPlane%i' % chanPlane[ii]][mi]**2
+                #wy = 1./fres['fitError']['sigmayPlane%i' % chanPlane[ii]][mi]**2
+                #errX = wx*(fres['fitResults']['sigmaxPlane%i' % chanPlane[ii]][mi] - sigCalX['chan%i' % ii])**2
+                #errY = wy*(fres['fitResults']['sigmayPlane%i' % chanPlane[ii]][mi] - sigCalY['chan%i' % ii])**2
                 # find minimum
                 try:
                     z[mi] = zVal[np.nanargmin(errX + errY)]
