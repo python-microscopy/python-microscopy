@@ -100,6 +100,8 @@ def unNestDtype(descr, parent=''):
         #print n, n.__class__, len(n)
         if n.__class__ == tuple and len(n) == 2 and n[1].__class__ == str:
             unList.append(parent + n[0])
+        elif n.__class__ == tuple and len(n) == 3 and n[1].__class__ == str and n[2].__class__ == tuple:
+            unList.append(parent + n[0])
         else:
             unList += unNestDtype(n[1], parent + n[0] + '_')
     return unList

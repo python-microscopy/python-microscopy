@@ -80,8 +80,8 @@ def weightedAverage_(vals, errs, dt):
     ws = 1.0/w.sum(0)
     r = (v*w).sum(0)*ws
 
-    if np.sum(np.isnan(r)) > 2:
-        print 'oops!'
+    #if np.sum(np.isnan(r)) > 2:
+    #    print 'oops!'
 
     return r, np.sqrt(ws)
 
@@ -197,8 +197,7 @@ def coalesceClumps(fitResults, assigned, okChans=None):
             #vn = np.zeros(1,dtype=dt)
                         
             fres['tIndex'][i] = tIs[ci].min()
-            if i == 189:
-                2+2
+
             #fres['fitResults'][i], fres['fitError'][i] = weightedAverage(vals['fitResults'], vals['fitError'])
             fres['fitResults'][i], fres['fitError'][i] = weightedAverage_(rvs, evs, dtr)
 
@@ -209,10 +208,14 @@ def coalesceClumps(fitResults, assigned, okChans=None):
         Chans = fitResults['whichChannel']
         for ii in xrange(NClumps):
             # FIXME: weight which spline to use based on how many localizations from each channel
-            cl = Chans[clist[ii]]
+            #cl = Chans[clist[ii]]
             fres['whichChannel'][ii] =Chans[clist[ii]].min()
-            if np.logical_and(len(np.unique(cl)) > 1, not np.array_equal(np.unique(cl), okChans)):
-                print(Chans[clist[ii]])
+            #fres['whichChannel'][ii] = np.array(np.bincount(cl).argmax(), dtype=np.int32)  # set channel to mode
+            #if len(cl) > 1:
+            #    counts = np.unique(cl, return_counts=True)[1]
+            #    fres['planeCounts'] = counts
+            #if np.logical_and(len(np.unique(cl)) > 1, not np.array_equal(np.unique(cl), okChans)):
+            #    print(Chans[clist[ii]])
 
     except ValueError:
         pass
