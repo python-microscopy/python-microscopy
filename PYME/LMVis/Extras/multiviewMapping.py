@@ -67,13 +67,15 @@ def plotFolded(X, Y, multiviewChannels, title=''):
 
     """
     import matplotlib.pyplot as plt
-    nChan = multiviewChannels.max()
+    plt.figure()
+    nChan = len(np.unique(multiviewChannels))
 
     c = iter(plt.cm.rainbow(np.linspace(0, 1, nChan)))
     for ii in range(nChan):
         mask = (ii == multiviewChannels)
-        plt.scatter(X[mask], Y[mask], c=next(c))
+        plt.scatter(X[mask], Y[mask], c=next(c), label='Chan #%i' % ii)
     plt.title(title)
+    plt.legend()
     return
 
 def plotRegistered(regX, regY, numChan, title=''):
@@ -95,6 +97,7 @@ def plotRegistered(regX, regY, numChan, title=''):
     for ii in range(numChan):
         plt.scatter(regX[ii], regY[ii], c=next(c), label='Chan #%i' % ii)
     plt.title(title)
+    plt.legend()
     return
 
 def pairMolecules(tIndex, x, y, whichChan, deltaX=[None], appearIn=np.arange(4), nFrameSep=5):
@@ -470,6 +473,7 @@ class multiviewMapper:
             json.dump(shiftWallet, fid)
             fid.close()
 
+
         # apply shiftmaps to clumped localizations
         self.applyShiftmaps_nonOrderConserving(xClump, yClump, shiftWallet, numChan)
 
@@ -483,8 +487,8 @@ class multiviewMapper:
 
         plotRegistered(xClump, yClump, numChan, 'Clumped')
 
-        plotRegistered(pipeline.mapping.xReg, pipeline.mapping.yReg,
-                            numChan, 'After Registration')
+        plotFolded(pipeline.mapping.xReg, pipeline.mapping.yReg,
+                            pipeline.mapping.regChan, 'After Registration')
 
 
     def OnMapZ(self, event):
