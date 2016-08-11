@@ -218,12 +218,12 @@ def getFile(filename, serverfilter='', numRetries=3):
 
     if (len(locs) == 0):
         # we did not find the file
-        print ns.list()
+        print(ns.list())
         raise IOError("Specified file could not be found")
     else:
         url = _chooseLocation(locs).encode()
         s = _getSession(url)
-        r = s.get(url, timeout=.1)
+        r = s.get(url, timeout=.5)
 
         return r.content
 
