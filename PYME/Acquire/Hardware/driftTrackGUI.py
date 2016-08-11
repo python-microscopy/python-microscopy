@@ -44,7 +44,7 @@ class TrackerPlotPanel(PlotPanel):
                     self.subplotxy = self.figure.add_subplot( 411 )
                     self.subplotz = self.figure.add_subplot( 412 )
                     self.subploto = self.figure.add_subplot( 413 )
-                self.subplotc = self.figure.add_subplot(414)
+                    self.subplotc = self.figure.add_subplot(414)
     
             #try:
             t, dx, dy, dz, corr, corrmax, poffset, pos  = np.array(self.dt.get_history(1000)).T

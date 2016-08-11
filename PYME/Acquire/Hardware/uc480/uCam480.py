@@ -187,6 +187,7 @@ class uc480Camera:
         self.background = None
         self.flatfield = None
         self.flat = None
+        self.dark = None
         
         #load flatfield (if present)
         calpath = nameUtils.getCalibrationDir(self.serialNum)
