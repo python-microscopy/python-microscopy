@@ -46,7 +46,7 @@ class venerableFileChucker:
         series_stub =  mdfilename.strip('.json')
 
         # find chunks for this metadata file (this should return the full paths)
-        chunkList = glob.glob(series_stub + '*.dcimg') #TODO - should we sort this?
+        chunkList = sorted(glob.glob(series_stub + '*.dcimg'))
 
         for chunk in chunkList:
             self.spooler.OnDCIMGChunkDetected(chunk)
@@ -113,7 +113,7 @@ class venerableFileChucker:
                     events_file_detected = (os.path.exists(events_filename) or os.path.exists(zsteps_filename))
 
                     # find chunks for this metadata file (this should return the full paths)
-                    chunkList = glob.glob(series_stub + '*.dcimg') #TODO - should we sort this?
+                    chunkList = sorted(glob.glob(series_stub + '*.dcimg'))
 
                     for chunk in chunkList:
                         if not chunk in spooled_chunks:
