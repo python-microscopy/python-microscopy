@@ -51,10 +51,13 @@ class EventLogger:
       self.spooler = spool
       #self.scope = scope
 
-   def logEvent(self, eventName, eventDescr = ''):
+   def logEvent(self, eventName, eventDescr = '', timestamp = None):
       if eventName == 'StartAq':
           eventDescr = '%d' % self.spooler.imNum
-      self.spooler._post('NEWEVENT', (eventName, eventDescr, sp.timeFcn()))
+
+      if timestamp is None:
+          timestamp = sp.timeFcn()
+      self.spooler._post('NEWEVENT', (eventName, eventDescr, timestamp))
       
 class HttpSpoolMDHandler(MetaDataHandler.MDHandlerBase):
     def __init__(self, spooler, mdToCopy=None):

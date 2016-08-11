@@ -48,7 +48,7 @@ class EventLogger:
     def __init__(self, scope, hdf5File):
         self.scope = scope      
 
-    def logEvent(self, eventName, eventDescr = ''):
+    def logEvent(self, eventName, eventDescr = '', timestamp=None):
         """Log an event. Should be overriden in derived classes.
         
         .. note:: In addition to the name and description, timing information is recorded

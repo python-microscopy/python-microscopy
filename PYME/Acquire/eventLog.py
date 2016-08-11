@@ -23,6 +23,6 @@
 
 WantEventNotification = []
 
-def logEvent(eventName, eventDescr = ''):
+def logEvent(eventName, eventDescr = '', timestamp=None):
     for evl in WantEventNotification:
-            evl.logEvent(eventName, eventDescr)
+            evl.logEvent(eventName, eventDescr, timestamp = timestamp)

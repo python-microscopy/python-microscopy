@@ -88,15 +88,35 @@ class DCIMGSpoolShim:
         self.imgSource.spoolData(croppedChunk)
         self.spooler.FlushBuffer()
 
-    def OnSeriesComplete(self, eventsFilename):
+    def OnSeriesComplete(self, eventsFilename=None, zstepsFilename=None):
         '''Called when the series is finished (ie we have seen)
         the events file'''
-        # Update event Log with events.json
-        with open(eventsFilename, 'r') as f:
-             events = json.load(f)
-        log_start_frame_eachz = events.keys()[0]
-        start_frame_eachz = events.values()[0]
-        self.spooler.evtLogger.logEvent(eventName=log_start_frame_eachz, eventDescr=start_frame_eachz)
+
+        if (not eventsFilename == None) and (os.path.exists(eventsFilename)):
+            # Update event Log with events.json
+            with open(eventsFilename, 'r') as f:
+                 events = json.load(f)
+
+            for evt in events:
+                name, descr, timestamp = evt
+                self.spooler.evtLogger.logEvent(eventName=name, eventDescr=descr, timestamp=float(timestamp))
+
+        if (not zstepsFilename == None) and (os.path.exists(zstepsFilename)):
+            #create pseudo events based on our zstep information
+            with open(zstepsFilename, 'r') as f:
+                zsteps = json.load(f)
+
+            positions = zsteps['PIFOC_positions']
+            startFrames = zsteps['Start_Frame_eachZ']
+
+            startTime = self.mdh.getOrDefault('StartTime', 0)
+            cycleTime = self.mdh.getOrDefault('Camera.CycleTime', 0.01) #use a default frame length of 10 ms. Not super critical
+
+            for pos, fr in zip(positions, startFrames):
+                fakeTime = startTime + cycleTime*fr
+                self.spooler.evtLogger.logEvent(eventName='StartAq', eventDescr='%d' % fr, evtTime=fakeTime)
+                self.spooler.evtLogger.logEvent(eventName='ProtocolFocus', eventDescr='%d, %3.3f' % (fr, pos),
+                                                evtTime=fakeTime)
         
         self.spooler.StopSpool()
         self.spooler.FlushBuffer()
