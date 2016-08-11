@@ -28,11 +28,15 @@ from PYME.LMVis import statusLog
 
 from PYME.IO import MetaDataHandler
 
-from PYME.DSView import ViewIm3D
+try:
+    import wx
+    from PYME.DSView import ViewIm3D
+except SystemExit:
+    print('GUI load failed (probably OSX)')
 
 from PYME.Analysis.points.QuadTree import QTrend
 
-import wx
+
 import pylab
 import numpy as np
 
@@ -452,6 +456,8 @@ class QuadTreeRenderer(ColourRenderer):
 RENDERER_GROUPS = ((CurrentRenderer,),
                    (HistogramRenderer, GaussianRenderer, TriangleRenderer, TriangleRendererW,LHoodRenderer, QuadTreeRenderer),
                    (Histogram3DRenderer, Gaussian3DRenderer, Triangle3DRenderer))
+
+RENDERERS = {i.name : i for s in RENDERER_GROUPS for i in s}
 
 def init_renderers(visFr, mainWind = None):
     for g in RENDERER_GROUPS:
