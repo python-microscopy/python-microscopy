@@ -146,6 +146,46 @@ def pairMolecules(tIndex, x, y, whichChan, deltaX=[None], appearIn=np.arange(4),
 
     return assigned, keep
 
+def applyShiftmaps(pipeline, shiftWallet, numChan):
+    """
+    applyShiftmaps loads multiview shiftmap parameters from multiviewMapper.shiftWallet, reconstructs the shiftmap
+    objects, applies them to the multiview data, and maps the positions registered to the first channel to the pipeline
+
+    Args:
+        x: vector of localization x-positions
+        y: vector of localization y-positions
+        numChan: number of multiview channels
+
+    Returns: nothing
+        Maps shifted x-, and y-positions into the pipeline
+        xReg and yReg are both lists, where each element is an array of positions corresponding to a given channel
+
+    """
+    fres = pipeline.selectedDataSource.resultsSource.fitResults
+    try:
+        alreadyDone = pipeline.mapping.registered
+        return
+    except:
+        pass
+
+    # import shiftModel to be reconstructed
+    model = shiftWallet['shiftModel'].split('.')[-1]
+    shiftModule = importlib.import_module(shiftWallet['shiftModel'].split('.' + model)[0])
+    shiftModel = getattr(shiftModule, model)
+
+
+    x, y = pipeline.mapping.xFolded, fres['fitResults']['y0']
+    chan = pipeline.mapping.whichChan
+    # note that this will not throw out localizations outside of the frame, this will need to be done elsewhere
+    for ii in range(1, numChan):
+        chanMask = chan == ii
+        x = x + chanMask*shiftModel(dict=shiftWallet['Chan0%s.X' % ii]).ev(x, y)
+        y = y + chanMask*shiftModel(dict=shiftWallet['Chan0%s.Y' % ii]).ev(x, y)
+
+    # flag that this data has already been registered so it is not registered again
+    pipeline.mapping.setMapping('registered', True)
+    return x, y
+
 def astigMAPism(pipeline, stigLib, chanPlane):
     """
     Look up table
@@ -286,47 +326,6 @@ class multiviewMapper:
         #pipeline['yReg'] = yReg
         return
 
-    def applyShiftmaps(self, numChan):
-        """
-        applyShiftmaps loads multiview shiftmap parameters from multiviewMapper.shiftWallet, reconstructs the shiftmap
-        objects, applies them to the multiview data, and maps the positions registered to the first channel to the pipeline
-
-        Args:
-            x: vector of localization x-positions
-            y: vector of localization y-positions
-            numChan: number of multiview channels
-
-        Returns: nothing
-            Maps shifted x-, and y-positions into the pipeline
-            xReg and yReg are both lists, where each element is an array of positions corresponding to a given channel
-
-        """
-        pipeline = self.visFr.pipeline
-        fres = pipeline.selectedDataSource.resultsSource.fitResults
-        try:
-            alreadyDone = pipeline.mapping.registered
-            return
-        except:
-            pass
-
-        # import shiftModel to be reconstructed
-        model = self.shiftWallet['shiftModel'].split('.')[-1]
-        shiftModule = importlib.import_module(self.shiftWallet['shiftModel'].split('.' + model)[0])
-        shiftModel = getattr(shiftModule, model)
-
-
-        x, y = pipeline.mapping.xFolded, fres['fitResults']['y0']
-        chan = pipeline.mapping.whichChan
-        # note that this will not throw out localizations outside of the frame, this will need to be done elsewhere
-        for ii in range(1, numChan):
-            chanMask = chan == ii
-            x = x + chanMask*shiftModel(dict=self.shiftWallet['Chan0%s.X' % ii]).ev(x, y)
-            y = y + chanMask*shiftModel(dict=self.shiftWallet['Chan0%s.Y' % ii]).ev(x, y)
-
-        # flag that this data has already been registered so it is not registered again
-        pipeline.mapping.setMapping('registered', True)
-        return x, y
-
     def OnFoldAndMapXY(self, event):
         """
         OnFoldAndMap uses shiftmaps stored in metadata (by default) or loaded through the GUI to register multiview channelss
@@ -343,7 +342,7 @@ class multiviewMapper:
         fres = pipeline.selectedDataSource.resultsSource.fitResults
 
         try:  # load shiftmaps from metadata, if present
-            self.shiftWallet = pipeline.mdh['Shiftmap']
+            shiftWallet = pipeline.mdh['Shiftmap']
         except AttributeError:
             try:  # load through GUI dialog
                 fdialog = wx.FileDialog(None, 'Load shift field', wildcard='Shift Field file (*.sf)|*.sf',
@@ -353,7 +352,7 @@ class multiviewMapper:
                     fpath = fdialog.GetPath()
                     # load json
                     fid = open(fpath, 'r')
-                    self.shiftWallet = json.load(fid)
+                    shiftWallet = json.load(fid)
                     fid.close()
             except:
                 raise IOError('Shiftmaps not found in metadata and could not be loaded from file')
@@ -367,7 +366,7 @@ class multiviewMapper:
                             pipeline.mapping.whichChan, 'Raw')
 
         # apply shiftmaps
-        x, y = self.applyShiftmaps(numChan)
+        x, y = applyShiftmaps(pipeline, shiftWallet, numChan)
 
         #plotRegistered(pipeline.mapping.xReg, pipeline.mapping.yReg,
         #                    numChan, 'After Registration')
@@ -593,7 +592,7 @@ class multiviewMapper:
             clumpVec = np.unique(clumpID)
             for ci in range(len(clumpVec)):
                 cMask = clumpID == clumpVec[ci]
-                assigned[cMask] = ci + 1  #FIXME: cluster assignments currently must start from 1, which is horrible.
+                assigned[cMask] = ci + 1  #FIXME: cluster assignments currently must start from 1, which is mean.
 
             # coalesce clumped localizations into single data point
             clumpedRes = pyDeClump.coalesceClumps(fresCopy, assigned) #, np.where(chanColor == cind)[0])
