@@ -208,12 +208,16 @@ def coalesceClumps(fitResults, assigned, okChans=None):
         Chans = fitResults['whichChannel']
         for ii in xrange(NClumps):
             # FIXME: weight which spline to use based on how many localizations from each channel
-            #cl = Chans[clist[ii]]
-            fres['whichChannel'][ii] =Chans[clist[ii]].min()
-            #fres['whichChannel'][ii] = np.array(np.bincount(cl).argmax(), dtype=np.int32)  # set channel to mode
-            #if len(cl) > 1:
-            #    counts = np.unique(cl, return_counts=True)[1]
-            #    fres['planeCounts'] = counts
+            cl = Chans[clist[ii]]
+            #fres['whichChannel'][ii] =Chans[clist[ii]].min()
+            fres['whichChannel'][ii] = np.array(np.bincount(cl).argmax(), dtype=np.int32)  # set channel to mode
+            #if cl.shape[0] > 1:
+            cind, counts = np.unique(cl, return_counts=True)
+            fres['planeCounts'][ii][:] = 0  # zero everything since the array will be empty, and we don't know numChan
+            fres['planeCounts'][ii][cind] = counts.astype(np.int32)
+
+            #else:
+            #    fres['planeCounts'][ii] = np.array([1])
             #if np.logical_and(len(np.unique(cl)) > 1, not np.array_equal(np.unique(cl), okChans)):
             #    print(Chans[clist[ii]])
 

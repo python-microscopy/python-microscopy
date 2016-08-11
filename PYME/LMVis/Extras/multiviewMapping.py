@@ -523,7 +523,7 @@ class multiviewMapper:
 
         dt = dt + [('whichChannel', '<i4')]
         if numPlanes > 1:
-            dt = dt + [('planeCounts', '(2,)<i4')]
+            dt = dt + [('planeCounts', '(%i,)<i4' % numChan)]
 
         dt[1], dt[2] = tuple(dt[1]), tuple(dt[2])
         fresCopy = np.empty_like(fres, dtype=dt)
