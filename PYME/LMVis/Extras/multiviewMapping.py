@@ -43,7 +43,7 @@ def foldX(pipeline, x=None):
         Adds channel assignments to the pipeline
 
     """
-    if not x:
+    if not x.__class__ == np.ndarray:
         x = pipeline.selectedDataSource.resultsSource.fitResults['fitResults']['x0']
     roiSizeNM = (pipeline.mdh['Multiview.ROISize'][1]*pipeline.mdh['voxelsize.x']*1000)  # voxelsize is in um
     xfold = x % roiSizeNM
@@ -285,7 +285,7 @@ class multiviewMapper:
         visFr.Bind(wx.EVT_MENU, self.OnMapZ, id=ID_MAP_Z)
         return
 
-    def applyShiftmaps_nonOrderConserving(self, x, y, numChan):
+    def applyShiftmaps_nonOrderConserving(self, x, y, shiftWallet, numChan):
         """
         applyShiftmaps loads multiview shiftmap parameters from multiviewMapper.shiftWallet, reconstructs the shiftmap
         objects, applies them to the multiview data, and maps the positions registered to the first channel to the pipeline
@@ -303,15 +303,15 @@ class multiviewMapper:
         pipeline = self.visFr.pipeline
 
         # import shiftModel to be reconstructed
-        model = self.shiftWallet['shiftModel'].split('.')[-1]
-        shiftModule = importlib.import_module(self.shiftWallet['shiftModel'].split('.' + model)[0])
+        model = shiftWallet['shiftModel'].split('.')[-1]
+        shiftModule = importlib.import_module(shiftWallet['shiftModel'].split('.' + model)[0])
         shiftModel = getattr(shiftModule, model)
 
         # Note: this does not keep
         xReg, yReg, chan = [x[0]], [y[0]], [np.zeros_like(x[0])]
         for ii in range(1, numChan):
-            xReg.append(x[ii] + shiftModel(dict=self.shiftWallet['Chan0%s.X' % ii]).ev(x[ii], y[ii]))
-            yReg.append(y[ii] + shiftModel(dict=self.shiftWallet['Chan0%s.Y' % ii]).ev(x[ii], y[ii]))
+            xReg.append(x[ii] + shiftModel(dict=shiftWallet['Chan0%s.X' % ii]).ev(x[ii], y[ii]))
+            yReg.append(y[ii] + shiftModel(dict=shiftWallet['Chan0%s.Y' % ii]).ev(x[ii], y[ii]))
             chan.append(ii*np.ones_like(xReg[ii]))
 
         xReg = np.hstack(xReg)
@@ -398,7 +398,7 @@ class multiviewMapper:
         foldX(pipeline, pipeline['x'])
 
         # sort in frame order
-        I = pipeline['tIndex'].argSort()
+        I = pipeline['tIndex'].argsort()
         xsort, ysort = pipeline.mapping.xFolded[I], pipeline['y'][I]
         chanSort = pipeline.mapping.whichChan[I]
 
@@ -407,7 +407,10 @@ class multiviewMapper:
                                       appearIn=np.arange(numChan))  #, pipeline['error_x'])
 
         # only look at the ones which showed up in all channels
-        x = xsort[keep], y = ysort[keep], Chan = chanSort[keep], clumpID = clumpID[keep]
+        x = xsort[keep]
+        y = ysort[keep]
+        Chan = chanSort[keep]
+        clumpID = clumpID[keep]
         # Generate raw shift vectors (map of displacements between channels) for each channel
         molList = np.unique(clumpID)
         numMoles = len(molList)
@@ -468,13 +471,13 @@ class multiviewMapper:
             fid.close()
 
         # apply shiftmaps to clumped localizations
-        self.applyShiftmaps_nonOrderConserving(xClump, yClump, numChan)
+        self.applyShiftmaps_nonOrderConserving(xClump, yClump, shiftWallet, numChan)
 
         # organize x- and y-positions into list of arrays corresponding to channel
         xfold, yfold = [], []
         for ii in range(numChan):
             xfold.append(pipeline.mapping.xFolded[np.where(pipeline.mapping.whichChan == ii)])
-            yfold.append(pipeline['fitResults_y0'][np.where(pipeline.mapping.whichChan == ii)])
+            yfold.append(pipeline['y'][np.where(pipeline.mapping.whichChan == ii)])
 
         plotRegistered(xfold, yfold, numChan, 'Raw')
 
