@@ -25,7 +25,6 @@ class venerableFileChucker:
             time after which a series is deemed to be dead, in s. Default is 1 hr.
         """
         self.folder = searchFolder
-        self.ignoreList = []
 
         self.spooler = DCIMGSpool.DCIMGSpoolShim()
         self.timeout = timeout
@@ -126,7 +125,7 @@ class venerableFileChucker:
 
                 #we have seen our events file, the current series is complete
                 self.spooler.OnSeriesComplete(events_filename, zsteps_filename)
-                self.ignoreList.append(mdfilename)
+                ignoreList.append(mdfilename)
                 if deleteAfterSpool:
                     os.remove(mdfilename)
                     os.remove(events_file_detected)
