@@ -167,7 +167,7 @@ def coalesceClumps_(fitResults, assigned):
 
     return fres
     
-def coalesceClumps(fitResults, assigned, okChans=None):
+def coalesceClumps(fitResults, assigned):
     """Agregates clumps to a single event"""
     NClumps = int(assigned.max())  # len(np.unique(assigned))  #
 

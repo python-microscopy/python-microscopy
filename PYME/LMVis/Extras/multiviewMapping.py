@@ -491,15 +491,23 @@ class multiviewMapper:
     def OnMapZ(self, event):
         pipeline = self.visFr.pipeline
 
+        # get channel and color info
         try:
             numChan = pipeline.mdh['Multiview.NumROIs']
-            chanColor = [0, 1, 1, 0]  # FIXME: pipeline.mdh['Multiview.ColorInfo']
-            numPlanes = numChan / len(np.unique(chanColor))
-            chanPlane = [0, 0, 1, 1]  # FIXME: pipeline.mdh['Multiview.PlaneInfo']
-        except AttributeError:
+            try:
+                chanColor = pipeline.mdh['Multiview.ChannelColor']  # Bewersdorf Biplane example: [0, 1, 1, 0]
+            except AttributeError:
+                chanColor = [0 for c in range(numChan)]
+            try:
+                chanPlane = pipeline.mdh['Multiview.ChannelPlane']  # Bewersdorf Biplane example: [0, 0, 1, 1]
+            except AttributeError:
+                chanPlane = [0 for c in range(numChan)]
+            numPlanes = len(np.unique(chanPlane))
+        except AttributeError:  # default to non-multiview options
             numChan = 1
             chanColor = [0]
             numPlanes = 1
+
         try:  # load astigmatism calibrations from metadata, if present
             stigLib = pipeline.mdh['astigLib']
         except AttributeError:
@@ -556,25 +564,26 @@ class multiviewMapper:
             fresCopy['fitError']['sigmaxPlane%i' % pind][fresCopy['fitError']['sigmaxPlane%i' % pind] == 0] = np.inf
             fresCopy['fitError']['sigmayPlane%i' % pind][fresCopy['fitError']['sigmayPlane%i' % pind] == 0] = np.inf
 
-        # sort fitResults in order of frames
-        #fresCopy = fresCopy[(fresCopy['tIndex'].argsort())]
-
         ni = len(fresCopy['whichChannel'])
 
         for cind in np.unique(chanColor):
+            # sort fitResults in order of frames
             fresCopy = fresCopy[(fresCopy['tIndex'].argsort())]
+
             # make sure NaNs (awarded when there is no sigma in a given plane of a clump) do not carry over from when
             # ignored channel localizations were clumped by themselves
             for pp in range(numPlanes):
                 fresCopy['fitResults']['sigmaxPlane%i' % pp][np.isnan(fresCopy['fitResults']['sigmaxPlane%i' % pp])] = 0
                 fresCopy['fitResults']['sigmayPlane%i' % pp][np.isnan(fresCopy['fitResults']['sigmayPlane%i' % pp])] = 0
+
             # trick pairMolecules function by tweaking the channel vector
             planeInColorChan = np.copy(fresCopy['whichChannel'])
             chanColor = np.array(chanColor)
             ignoreChans = np.where(chanColor != cind)[0]
             igMask = [mm in ignoreChans.tolist() for mm in planeInColorChan]
-            planeInColorChan[np.where(igMask)] = -9
-            # clumpID is assigned, paired is keep
+            planeInColorChan[np.where(igMask)] = -9  # must be negative to be ignored
+
+            # assign molecules to clumps
             clumpID, paired = pairMolecules(fresCopy['tIndex'], fresCopy['fitResults']['x0'], fresCopy['fitResults']['y0'],
                                             planeInColorChan, deltaX=fresCopy['fitError']['x0'],
                                             appearIn=np.where(chanColor == cind)[0], nFrameSep=1)
@@ -585,7 +594,9 @@ class multiviewMapper:
             for ci in range(len(clumpVec)):
                 cMask = clumpID == clumpVec[ci]
                 assigned[cMask] = ci + 1  #FIXME: cluster assignments currently must start from 1, which is horrible.
-            clumpedRes = pyDeClump.coalesceClumps(fresCopy, assigned, np.where(chanColor == cind)[0])
+
+            # coalesce clumped localizations into single data point
+            clumpedRes = pyDeClump.coalesceClumps(fresCopy, assigned) #, np.where(chanColor == cind)[0])
             fresCopy = clumpedRes
 
         print('Clumped %i localizations' % (ni - len(fresCopy['whichChannel'])))
