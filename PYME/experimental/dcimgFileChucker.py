@@ -111,7 +111,7 @@ class venerableFileChucker:
                 spool_timeout = time.time() + self.timeout
                 while (not events_file_detected) and (time.time() < spool_timeout):
                     # check to see if we have an events file (our end signal)
-                    events_file_detected = os.path.exists(events_filename)
+                    events_file_detected = (os.path.exists(events_filename) or os.path.exists(zsteps_filename))
 
                     # find chunks for this metadata file (this should return the full paths)
                     chunkList = glob.glob(series_stub + '*.dcimg') #TODO - should we sort this?
