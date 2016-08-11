@@ -30,7 +30,7 @@ from PYME.IO.FileUtils import nameUtils
 import json
 import importlib
 
-def foldX(pipeline):
+def foldX(pipeline, x=None):
     """
 
     At this point the origin of x should be the corner of the concatenated frame
@@ -43,15 +43,14 @@ def foldX(pipeline):
         Adds channel assignments to the pipeline
 
     """
-    xOG = pipeline.selectedDataSource.resultsSource.fitResults['fitResults']['x0']
+    if not x:
+        x = pipeline.selectedDataSource.resultsSource.fitResults['fitResults']['x0']
     roiSizeNM = (pipeline.mdh['Multiview.ROISize'][1]*pipeline.mdh['voxelsize.x']*1000)  # voxelsize is in um
-    xfold = xOG % roiSizeNM
-    mvQuad = np.floor(xOG / roiSizeNM)
+    xfold = x % roiSizeNM
+    mvQuad = np.floor(x / roiSizeNM)
 
     pipeline.mapping.setMapping('xFolded', xfold)
     pipeline.mapping.setMapping('whichChan', mvQuad)
-    #pipeline.mapping['xFolded'] = xfold
-    #pipeline.mapping['whichChan'] = mvQuad
     return
 
 def plotFolded(X, Y, multiviewChannels, title=''):
@@ -368,10 +367,7 @@ class multiviewMapper:
         # apply shiftmaps
         x, y = applyShiftmaps(pipeline, shiftWallet, numChan)
 
-        #plotRegistered(pipeline.mapping.xReg, pipeline.mapping.yReg,
-        #                    numChan, 'After Registration')
-        #pipeline.mapping.setMapping('x', x)
-        #pipeline.mapping.setMapping('y', y)
+        # create new data source
         fres = pipeline.selectedDataSource.resultsSource.fitResults
         regFres = np.copy(fres)
         regFres['fitResults']['x0'], regFres['fitResults']['y0'] = x, y
@@ -398,19 +394,20 @@ class multiviewMapper:
         except AttributeError:
             raise AttributeError('You are either not looking at multiview Data, or your metadata is incomplete')
 
-        # fold x position of channels into the first
-        foldX(pipeline)
+        # fold x position of channels into the first, note that we are using the filtered results
+        foldX(pipeline, pipeline['x'])
 
         # sort in frame order
         I = pipeline['tIndex'].argSort()
+        xsort, ysort = pipeline.mapping.xFolded[I], pipeline['y'][I]
+        chanSort = pipeline.mapping.whichChan[I]
 
         # Match up molecules, note that all inputs must be sorted in frame order!
-        clumpID, keep = pairMolecules(pipeline['tIndex'][I], pipeline.mapping.xFolded[I], pipeline['fitResults_y0'][I],
-                      pipeline.mapping.whichChan[I], appearIn=np.arange(numChan))  #, pipeline['error_x'])
+        clumpID, keep = pairMolecules(pipeline['tIndex'][I], xsort, ysort, chanSort,
+                                      appearIn=np.arange(numChan))  #, pipeline['error_x'])
 
         # only look at the ones which showed up in all channels
-        x = pipeline.mapping.xFolded[keep], y = pipeline['fitResults_y0'][keep]
-        Chan = pipeline.mapping.whichChan[keep], clumpID = clumpID[keep]
+        x = xsort[keep], y = ysort[keep], Chan = chanSort[keep], clumpID = clumpID[keep]
         # Generate raw shift vectors (map of displacements between channels) for each channel
         molList = np.unique(clumpID)
         numMoles = len(molList)
@@ -420,7 +417,7 @@ class multiviewMapper:
         dxErr = np.zeros_like(dx)
         dyErr = np.zeros_like(dx)
         xClump, yClump, xStd, yStd = [], [], [], []
-        self.shiftWallet = {}
+        shiftWallet = {}
         # dxWallet, dyWallet = {}, {}
         for ii in range(numChan):
             chanMask = (Chan == ii)
@@ -451,11 +448,11 @@ class multiviewMapper:
                 # generate shiftmap between ii-th channel and the 0th channel
                 dxx, dyy, spx, spy, good = twoColour.genShiftVectorFieldQ(xClump[0], yClump[0], dx[ii-1, :], dy[ii-1, :], dxErr[ii-1, :], dyErr[ii-1, :])
                 # store shiftmaps in multiview shiftWallet
-                self.shiftWallet['Chan0%s.X' % ii], self.shiftWallet['Chan0%s.Y' % ii] = spx.__dict__, spy.__dict__
+                shiftWallet['Chan0%s.X' % ii], shiftWallet['Chan0%s.Y' % ii] = spx.__dict__, spy.__dict__
                 # dxWallet['Chan0%s' % ii], dyWallet['Chan0%s' % ii] = dxx, dyy
 
 
-        self.shiftWallet['shiftModel'] = '.'.join([spx.__class__.__module__, spx.__class__.__name__])
+        shiftWallet['shiftModel'] = '.'.join([spx.__class__.__module__, spx.__class__.__name__])
 
         # save shiftmaps
         defFile = os.path.splitext(os.path.split(self.visFr.GetTitle())[-1])[0] + 'MultiView.sf'
@@ -467,7 +464,7 @@ class multiviewMapper:
             fpath = fdialog.GetPath()
 
             fid = open(fpath, 'wb')
-            json.dump(self.shiftWallet, fid)
+            json.dump(shiftWallet, fid)
             fid.close()
 
         # apply shiftmaps to clumped localizations
