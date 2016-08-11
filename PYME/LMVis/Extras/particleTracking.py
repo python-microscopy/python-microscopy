@@ -145,14 +145,14 @@ class ParticleTracker:
         pylab.figure()
         pylab.scatter(Ds, alphas)
 
-        pipeline.selectedDataSource.diffusionConstants = -1*np.ones(pipeline.selectedDataSource.clumpIndices.shape)
-        pipeline.selectedDataSource.diffusionConstants[pipeline.filter.Index] = Ds_
+        ds_diffusionConstants = -1*np.ones(pipeline.selectedDataSource['clumpIndex'].shape)
+        ds_diffusionConstants[pipeline.filter.Index] = Ds_
 
-        pipeline.selectedDataSource.diffusionExponents = np.zeros(pipeline.selectedDataSource.clumpIndices.shape)
-        pipeline.selectedDataSource.diffusionExponents[pipeline.filter.Index] = alphas_
+        ds_diffusionExponents = np.zeros_like(ds_diffusionConstants)
+        ds_diffusionExponents[pipeline.filter.Index] = alphas_
 
-        pipeline.selectedDataSource.setMapping('diffusionConst', 'diffusionConstants')
-        pipeline.selectedDataSource.setMapping('diffusionExp', 'diffusionExponents')
+        pipeline.selectedDataSource.addColumn('diffusionConst', ds_diffusionConstants)
+        pipeline.selectedDataSource.addColumn('diffusionExp', ds_diffusionExponents)
 
         self.visFr.RegenFilter()
         self.visFr.CreateFoldPanel()
@@ -163,12 +163,11 @@ class ParticleTracker:
         
         pipeline = self.visFr.pipeline
         
-        dclumped = pyDeClump.coalesceClumps(pipeline.selectedDataSource.resultsSource.fitResults, pipeline.selectedDataSource)
+        dclumped = pyDeClump.coalesceClumps(pipeline.selectedDataSource.resultsSource.fitResults, pipeline.selectedDataSource['clumpIndex'])
         ds = inpFilt.fitResultsSource(dclumped)
-        ds_ = inpFilt.mappingFilter(ds)
-        ds_._name = 'Coalesced'
-        pipeline.selectedDataSource = ds_
-        pipeline.dataSources.append(ds_)
+
+        pipeline.addDataSource('Coalesced',  ds)
+        pipeline.selectDataSource('Coalesced')
         self.visFr.RegenFilter()
         self.visFr.CreateFoldPanel()
 

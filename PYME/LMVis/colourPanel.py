@@ -53,7 +53,7 @@ class colourPlotPanel(wxPlotPanel.PlotPanel):
 
             self.subplot1.cla()
 
-            x, y = self.visFrame.pipeline['fitResults_Ag'], self.pipeline.filter['fitResults_Ar']
+            x, y = self.pipeline.filter['fitResults_Ag'], self.pipeline.filter['fitResults_Ar']
             n, xedge, yedge = numpy.histogram2d(x, y, bins = [100,100], range=[(x.min(), x.max()), (y.min(), y.max())])
 
             l_x = len(x)
@@ -66,16 +66,16 @@ class colourPlotPanel(wxPlotPanel.PlotPanel):
 #            print (c < -1).sum(), c.min()
 
             for k, v in self.pipeline.fluorSpecies.items():
-                p_dye = self.pipeline.mapping['p_%s' % k][::max(l_x/1e4, 1)]
+                p_dye = self.pipeline.filter['p_%s' % k][::max(l_x/1e4, 1)]
 
                 p_other = numpy.zeros(x.shape)
                 #p_tot = numpy.zeros(p_dye.shape)
-                p_tot = self.pipeline.t_p_background*self.pipeline.mapping['ColourNorm'][::max(l_x/1e4, 1)]
+                p_tot = self.pipeline.t_p_background*self.pipeline.filter['ColourNorm'][::max(l_x/1e4, 1)]
 
                 for k2 in self.pipeline.fluorSpecies.keys():
-                    p_tot  += self.pipeline.mapping['p_%s' % k2][::max(l_x/1e4, 1)]
+                    p_tot  += self.pipeline.filter['p_%s' % k2][::max(l_x/1e4, 1)]
                     if not k2 ==k:
-                        p_other = numpy.maximum(p_other, self.pipeline.mapping['p_%s' % k2][::max(l_x/1e4, 1)])
+                        p_other = numpy.maximum(p_other, self.pipeline.filter['p_%s' % k2][::max(l_x/1e4, 1)])
 
                 p_dye = p_dye/p_tot
                 p_other = p_other/p_tot
