@@ -7,7 +7,7 @@ import time
 
 import PYME.experimental.dcimgSpoolShim as DCIMGSpool
 
-class venerableFileChucker:
+class venerableFileChucker(object):
     """
     fileChucker searches a given folder and hucks the DCIMG files it finds there onto the cluster.
     Once started, it does not stop unless slain by the user.
