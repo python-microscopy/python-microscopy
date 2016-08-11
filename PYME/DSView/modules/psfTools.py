@@ -307,9 +307,14 @@ class PSFTools(HasTraits):
         valid = ((res['fitError_sigmax'] > 0) * (res['fitError_sigmax'] < 100)* (res['fitError_sigmay'] < 100)*(res['fitResults_A'] > 0) > 0)
 
         #generate new tab to show results
+        use_web_view = True
         if not '_astig_view' in dir(self):
-            self._astig_view= wx.html2.WebView.New(self.dsviewer)
-            self.dsviewer.AddPage(self._astig_view, True, 'Astigmatic calibration')
+            try:
+                self._astig_view= wx.html2.WebView.New(self.dsviewer)
+                self.dsviewer.AddPage(self._astig_view, True, 'Astigmatic calibration')
+
+            except NotImplementedError:
+                use_web_view = False
 
         #do plotting
         plt.ioff()
@@ -335,16 +340,17 @@ class PSFTools(HasTraits):
 
         plt.ion()
 
-        fig =  mpld3.fig_to_html(f)
-        data = json.dumps({'z' : objPositions['z'][valid].tolist(), 'sigmax' : res['fitResults_sigmax'][valid].tolist(),
-                           'sigmay' : res['fitResults_sigmay'][valid].tolist(), 'dsigma' : dsigma[valid].tolist()})
+        if use_web_view:
+            fig =  mpld3.fig_to_html(f)
+            data = json.dumps({'z' : objPositions['z'][valid].tolist(), 'sigmax' : res['fitResults_sigmax'][valid].tolist(),
+                               'sigmay' : res['fitResults_sigmay'][valid].tolist(), 'dsigma' : dsigma[valid].tolist()})
 
-        #print data
-
-        template = env.get_template('astigCal.html')
-        html = template.render(astigplot=fig, data=data)
-        #print html
-        self._astig_view.SetPage(html, '')
+            template = env.get_template('astigCal.html')
+            html = template.render(astigplot=fig, data=data)
+            #print html
+            self._astig_view.SetPage(html, '')
+        else:
+            plt.show()
 
         
         
