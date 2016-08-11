@@ -183,7 +183,9 @@ def astigMAPism(pipeline, stigLib, chanPlane):
                                                             # bbox=stigLib['PSF%i' % ii]['zrange'], ext='zeros')(zVal)
         sigCalY['chan%i' % ii] = terp.UnivariateSpline(zdat[lowZLoc:upZLoc],
                                                        np.array(stigLib['PSF%i' % ii]['sigmay'])[lowZLoc:upZLoc], ext='zeros')(zVal)
-        for mi in range(numMols):
+        sigCalX['chan%i' % ii][sigCalX['chan%i' % ii] == 0] = 1e5 # np.nan_to_num(np.inf)
+        sigCalY['chan%i' % ii][sigCalY['chan%i' % ii] == 0] = 1e5 # np.nan_to_num(np.inf)
+        '''for mi in range(numMols):
             if whichChan[mi] == ii:
                 wx = 1./fres['fitError']['sigmaxPlane%i' % chanPlane[ii]][mi]**2
                 wy = 1./fres['fitError']['sigmayPlane%i' % chanPlane[ii]][mi]**2
@@ -197,7 +199,20 @@ def astigMAPism(pipeline, stigLib, chanPlane):
                 try:
                     z[mi] = zVal[np.nanargmin(errX + errY)]
                 except:
-                    print('No sigmas in correct plane for this molecule')
+                    print('No sigmas in correct plane for this molecule')'''
+    for mi in range(numMols):
+        chans = np.where(fres['planeCounts'][mi] > 0)[0]
+        cnum = len(chans)
+        errX, errY = 0, 0
+        for ci in chans:
+            wx = 1./(fres['fitError']['sigmaxPlane%i' % chanPlane[ci]][mi])**2
+            wy = 1./(fres['fitError']['sigmayPlane%i' % chanPlane[ci]][mi])**2
+            errX += wx*(fres['fitResults']['sigmaxPlane%i' % chanPlane[ci]][mi] - sigCalX['chan%i' % ci])**2
+            errY += wy*(fres['fitResults']['sigmayPlane%i' % chanPlane[ci]][mi] - sigCalY['chan%i' % ci])**2
+        try:
+            z[mi] = zVal[np.nanargmin(errX + errY)]
+        except:
+            print('No sigmas in correct plane for this molecule')
     #pipeline.selectedDataSource.addColumn('zPos', z)
     #pipeline.Rebuild()
     return z
