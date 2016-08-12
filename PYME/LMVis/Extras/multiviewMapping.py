@@ -53,6 +53,32 @@ def foldX(pipeline, x=None):
     pipeline.mapping.setMapping('whichChan', mvQuad)
     return
 
+def _foldX(pipeline, x=None):
+    """
+
+    At this point the origin of x should be the corner of the concatenated frame
+
+    Args:
+        pipeline:
+
+    Returns: nothing
+        Adds folded x-coordinates to the pipeline
+        Adds channel assignments to the pipeline
+
+    """
+    roiSizeNM = (pipeline.mdh['Multiview.ROISize'][1]*pipeline.mdh['voxelsize.x']*1000)  # voxelsize is in um
+
+    pipeline.mapping.addVariable('roiSizeNM', roiSizeNM)
+
+    pipeline.addColumn('chromadx', 0*pipeline['x'])
+    pipeline.addColumn('chromady', 0*pipeline['y'])
+
+    pipeline.mapping.setMapping('whichChan', 'floor(x/roiSizeNM)')
+    pipeline.mapping.setMapping('x', 'x%roiSizeNM + chromadx')
+    pipeline.mapping.setMapping('y', 'y + chromady')
+
+    return
+
 def plotFolded(X, Y, multiviewChannels, title=''):
     """
 
@@ -187,6 +213,50 @@ def applyShiftmaps(pipeline, shiftWallet, numChan):
     # flag that this data has already been registered so it is not registered again
     pipeline.mapping.setMapping('registered', True)
     return x, y
+
+def _applyShiftmaps(pipeline, shiftWallet, numChan):
+    """
+    applyShiftmaps loads multiview shiftmap parameters from multiviewMapper.shiftWallet, reconstructs the shiftmap
+    objects, applies them to the multiview data, and maps the positions registered to the first channel to the pipeline
+
+    Args:
+        x: vector of localization x-positions
+        y: vector of localization y-positions
+        numChan: number of multiview channels
+
+    Returns: nothing
+        Maps shifted x-, and y-positions into the pipeline
+        xReg and yReg are both lists, where each element is an array of positions corresponding to a given channel
+
+    """
+    #fres = pipeline.selectedDataSource.resultsSource.fitResults
+    #try:
+    #    alreadyDone = pipeline.mapping.registered
+    #    return
+    #except:
+    #    pass
+
+    # import shiftModel to be reconstructed
+    model = shiftWallet['shiftModel'].split('.')[-1]
+    shiftModule = importlib.import_module(shiftWallet['shiftModel'].split('.' + model)[0])
+    shiftModel = getattr(shiftModule, model)
+
+
+    x, y = pipeline.mapping['x'], pipeline.mapping['y']
+
+    x = x + pipeline.mdh['Camera.ROIX0']*pipeline.mdh['voxelsize.x']*1.0e3
+    y = y + pipeline.mdh['Camera.ROIY0']*pipeline.mdh['voxelsize.y']*1.0e3
+    chan = pipeline['whichChan']
+
+    dx = 0
+    dy = 0
+    for ii in range(1, numChan):
+        chanMask = chan == ii
+        dx = dx + chanMask*shiftModel(dict=shiftWallet['Chan0%s.X' % ii]).ev(x, y)
+        dy = dy + chanMask*shiftModel(dict=shiftWallet['Chan0%s.Y' % ii]).ev(x, y)
+
+    pipeline.addColumn('chromadx', dx)
+    pipeline.addColumn('chromady', dy)
 
 def astigMAPism(pipeline, stigLib, chanPlane):
     """
@@ -364,8 +434,8 @@ class multiviewMapper:
         # fold x-positions into the first channel
         foldX(pipeline)
 
-        plotFolded(pipeline.mapping.xFolded, fres['fitResults']['y0'],
-                            pipeline.mapping.whichChan, 'Raw')
+        plotFolded(pipeline['x'], pipeline['y'],
+                            pipeline['whichChan'], 'Raw')
 
         # apply shiftmaps
         x, y = applyShiftmaps(pipeline, shiftWallet, numChan)
@@ -402,8 +472,8 @@ class multiviewMapper:
 
         # sort in frame order
         I = pipeline['tIndex'].argsort()
-        xsort, ysort = pipeline.mapping.xFolded[I], pipeline['y'][I]
-        chanSort = pipeline.mapping.whichChan[I]
+        xsort, ysort = pipeline['xFolded'][I], pipeline['y'][I]
+        chanSort = pipeline['whichChan'][I]
 
         # Match up molecules, note that all inputs must be sorted in frame order!
         clumpID, keep = pairMolecules(pipeline['tIndex'][I], xsort, ysort, chanSort,

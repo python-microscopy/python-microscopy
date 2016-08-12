@@ -45,7 +45,7 @@ def remove_newlines(s):
     s = ' '.join(s.split())
     return '\n'.join(s.split('<>'))
 
-def plotAstigCalibration(astigLib):
+'''def plotAstigCalibration(astigLib):
     """
     dat = {'z' : objPositions['z'][valid].tolist(), 'sigmax' : res['fitResults_sigmax'][valid].tolist(),
                 'sigmay' : res['fitResults_sigmay'][valid].tolist(), 'dsigma' : dsigma[valid].tolist()}
@@ -95,7 +95,7 @@ def plotAstigCalibration(astigLib):
     plt.ion()
     plt.show()
 
-    return f
+    return f'''
 
 class PSFQualityPanel(wx.Panel):
     def __init__(self, dsviewer):
