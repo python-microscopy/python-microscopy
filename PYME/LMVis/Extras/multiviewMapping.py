@@ -53,7 +53,7 @@ def foldX_old(pipeline, x=None):
     pipeline.mapping.setMapping('whichChan', mvQuad)
     return
 
-def foldX(pipeline, x=None):
+def foldX(pipeline):
     """
 
     At this point the origin of x should be the corner of the concatenated frame
@@ -470,16 +470,20 @@ class multiviewMapper:
             raise AttributeError('You are either not looking at multiview Data, or your metadata is incomplete')
 
         # fold x position of channels into the first, note that we are using the filtered results
-        foldX(pipeline, pipeline['x'])
+        foldX(pipeline)
 
+        plotFolded(pipeline['x'], pipeline['y'], pipeline['whichChan'], 'Raw')
         # sort in frame order
         I = pipeline['tIndex'].argsort()
-        xsort, ysort = pipeline['xFolded'][I], pipeline['y'][I]
+        xsort, ysort = pipeline['x'][I], pipeline['y'][I]
         chanSort = pipeline['whichChan'][I]
 
         # Match up molecules, note that all inputs must be sorted in frame order!
         clumpID, keep = pairMolecules(pipeline['tIndex'][I], xsort, ysort, chanSort,
                                       appearIn=np.arange(numChan))  #, pipeline['error_x'])
+
+        #FIXME: COALESCE HERE
+        #FIXME: plot clumped
 
         # only look at the ones which showed up in all channels
         x = xsort[keep]
@@ -547,20 +551,20 @@ class multiviewMapper:
 
 
         # apply shiftmaps to clumped localizations
-        self.applyShiftmaps_nonOrderConserving(xClump, yClump, shiftWallet, numChan)
+        #self.applyShiftmaps_nonOrderConserving(xClump, yClump, shiftWallet, numChan)
 
         # organize x- and y-positions into list of arrays corresponding to channel
-        xfold, yfold = [], []
-        for ii in range(numChan):
-            xfold.append(pipeline.mapping.xFolded[np.where(pipeline.mapping.whichChan == ii)])
-            yfold.append(pipeline['y'][np.where(pipeline.mapping.whichChan == ii)])
-
-        plotRegistered(xfold, yfold, numChan, 'Raw')
+        #xfold, yfold = [], []
+        #for ii in range(numChan):
+        #    xfold.append(pipeline.mapping.xFolded[np.where(pipeline.mapping.whichChan == ii)])
+        #    yfold.append(pipeline['y'][np.where(pipeline.mapping.whichChan == ii)])
 
         plotRegistered(xClump, yClump, numChan, 'Clumped')
 
-        plotFolded(pipeline.mapping.xReg, pipeline.mapping.yReg,
-                            pipeline.mapping.regChan, 'After Registration')
+        applyShiftmaps(pipeline, shiftWallet, numChan)
+
+        plotFolded(pipeline['x'], pipeline['y'],
+                            pipeline['whichChan'], 'All beads after Registration')
 
 
     def OnMapZ(self, event):
