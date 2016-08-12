@@ -79,12 +79,12 @@ fresultdtype=[('tIndex', '<i4'),
                               ('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
 
 def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None):
-	if fitErr is None:
-		fitErr = -5e3*np.ones(fitResults.shape, 'f')
+    if fitErr is None:
+        fitErr = -5e3*np.ones(fitResults.shape, 'f')
 
-	tIndex = metadata.tIndex
+    tIndex = metadata.tIndex
 
-	return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, fmtSlicesUsed(slicesUsed))], dtype=fresultdtype) 
+    return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, fmtSlicesUsed(slicesUsed))], dtype=fresultdtype)
 
 class PSFFitFactory(FFBase.FitFactory):
     def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):

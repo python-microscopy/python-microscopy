@@ -100,7 +100,7 @@ def f_j_gauss2d(p,func, d, w, X,Y):
     r = genGaussJacW(X,Y,w,A,x0,y0,s,b,b_x,b_y)
     r = -r.ravel().reshape((-1,7))
     #for  i in range(7):
-	#r[:, i] = r[:, i]*w
+    #r[:, i] = r[:, i]*w
     return r.T
 
 def f_J_gauss2d(p,X,Y):
@@ -121,13 +121,13 @@ fresultdtype=[('tIndex', '<i4'),
               ('resultCode', '<i4')]
 
 def GaussianFitResultR(fitResults, metadata, resultCode=-1, fitErr=None):	
-	if fitErr is None:
-		fitErr = -5e3*np.ones(fitResults.shape, 'f')
+    if fitErr is None:
+        fitErr = -5e3*np.ones(fitResults.shape, 'f')
 
-	tIndex = metadata.tIndex
+    tIndex = metadata.tIndex
 
-	return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode)], dtype=fresultdtype) 
-		
+    return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode)], dtype=fresultdtype)
+
 
 class GaussianFitFactory:
     X = None
@@ -156,7 +156,7 @@ class GaussianFitFactory:
         #average in z
         dataMean = self.data.mean(2)
 
-	
+
         #estimate errors in data
         nSlices = self.data.shape[2]
         

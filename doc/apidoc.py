@@ -382,4 +382,4 @@ Note: By default this script will not overwrite already created files.""")
         create_modules_toc_file(modules, opts)
 
 if __name__ == '__main__':
-	main()
+    main()

@@ -79,7 +79,7 @@ class TaskQueue(Pyro.core.ObjBase):
 		curTime = time.clock()
 		for it in self.tasksInProgress:
 			if 'workerTimeout' in dir(it):
-				if curTime > workerTimeout:
+				if curTime > it.workerTimeout:
 					self.openTasks.insert(0, it)
 					self.tasksInProgress.remove(it)
 
@@ -111,6 +111,6 @@ uri=daemon.connect(tq,"taskQueue")
 tw = TaskWatcher(tq)
 tw.start()
 try:
-        daemon.requestLoop()
+	daemon.requestLoop()
 finally:
-        daemon.shutdown(True)
+	daemon.shutdown(True)

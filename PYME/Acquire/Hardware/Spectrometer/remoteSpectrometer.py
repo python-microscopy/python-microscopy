@@ -44,10 +44,10 @@ if __name__ == '__main__':
     daemon.useNameServer(ns)
 
     #get rid of any previous queue
-	try:
-		ns.unregister("USB2000p")
-	except Pyro.errors.NamingError:
-		pass
+    try:
+        ns.unregister("USB2000p")
+    except Pyro.errors.NamingError:
+        pass
 
     dd = RemoteSpectrometer()
     uri=daemon.connect(dd,"USB2000p")

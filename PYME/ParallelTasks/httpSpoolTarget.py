@@ -67,9 +67,9 @@ class H5File(object):
             return self.h5f.root.PZFImageData[frameNo]
 
     def getEvent(self, eventNo):
-    	if eventNo >= self.nEvents:
-    		raise IndexError('Index out of bounds')
-    	return self.h5f.root.Events[eventNo].dumps()
+        if eventNo >= self.nEvents:
+            raise IndexError('Index out of bounds')
+        return self.h5f.root.Events[eventNo].dumps()
 
     def getEvents(self):
         if self.nEvents > 0:
@@ -78,7 +78,7 @@ class H5File(object):
             return pickle.dumps([], 2)
 
     def getMetadata(self):
-    	return pickle.dumps(MetaDataHandler.NestedClassMDHandler(self.mdh), 2)
+        return pickle.dumps(MetaDataHandler.NestedClassMDHandler(self.mdh), 2)
 
     def _checkCreateDataTable(self, f):
         if (not 'ImageData' in dir(self.h5f.root)) and (not 'PZFImageData' in dir(self.h5f.root)):
@@ -99,7 +99,7 @@ class H5File(object):
 
 
     def _checkCreateEventsTable(self):
-    	if not 'Events' in dir(self.h5f.root):
+        if not 'Events' in dir(self.h5f.root):
          filt = tables.Filters(self.complevel, self.complib, shuffle=True)
          self.events = self.h5f.createTable(self.h5f.root, 'Events', HDFTaskQueue.SpoolEvent,filters=filt)
             
@@ -186,8 +186,8 @@ class H5File(object):
 
 
     def putMetadata(self, metadata):
-    	md = pickle.loads(metadata)
-    	self.mdh.copyEntriesFrom(md)
+        md = pickle.loads(metadata)
+        self.mdh.copyEntriesFrom(md)
 
     def putMetadataEntry(self, msg):
         key, value = pickle.loads(msg)

@@ -131,8 +131,8 @@ class PositionSliders(wx.Panel):
             self.sliders[ind].SetValue(100*pos)
             self.sliderLabels[ind].SetLabel(u'%s - %2.3f %s' % (pName,pos, unit))
             
-    	    self.sliders[ind].SetMin(100*self.ranges[pName][0])
-    	    self.sliders[ind].SetMax(100*self.ranges[pName][1])
+            self.sliders[ind].SetMin(100*self.ranges[pName][0])
+            self.sliders[ind].SetMax(100*self.ranges[pName][1])
 
         if not self.joystick is None:
             self.cbJoystick.SetValue(self.joystick.IsEnabled())

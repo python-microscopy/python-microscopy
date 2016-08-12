@@ -50,25 +50,25 @@ def f_gauss1d(p, X):
 
         
 def replNoneWith1(n):
-	if n is None:
-		return 1
-	else:
-		return n
+    if n is None:
+        return 1
+    else:
+        return n
 
 
 fresultdtype=[('tIndex', '<i4'),('fitResults', [('A', '<f4'),('x0', '<f4'),('sigma', '<f4')]),('fitError', [('A', '<f4'),('x0', '<f4'),('sigma', '<f4')]), ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
 
 def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None):
-	if fitErr is None:
-		fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
+    if fitErr is None:
+        fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
 
-	#print slicesUsed
+    #print slicesUsed
 
-	tIndex = metadata.tIndex
+    tIndex = metadata.tIndex
 
 
-	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, fmtSlicesUsed(slicesUsed))], dtype=fresultdtype) 
-		
+    return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, fmtSlicesUsed(slicesUsed))], dtype=fresultdtype)
+
 
 class GaussianFitFactory:
     def __init__(self, data, metadata, fitfcn=f_gauss1d, background=None):
@@ -99,7 +99,7 @@ class GaussianFitFactory:
         xslice = slice(max((x - roiHalfSize), 0),min((x + roiHalfSize + 1),self.data.shape[0]))
         #yslice = slice(max((y - roiHalfSize), 0),min((y + roiHalfSize + 1), self.data.shape[1]))
         zslice = slice(max((z - axialHalfSize), 0),min((z + axialHalfSize + 1), self.data.shape[2]))
-		
+
         
     #def __getitem__(self, key):
         #print key
@@ -124,7 +124,7 @@ class GaussianFitFactory:
         #x0 =  X.mean()
         #y0 =  Y.mean()
 
-	
+
         #estimate errors in data
         nSlices = dataROI.shape[1]
         
@@ -139,7 +139,7 @@ class GaussianFitFactory:
             dataMean = dataMean - bgMean
 
         startParameters = [A, x0, 1e3/2.35]
-	
+
 
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)

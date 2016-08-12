@@ -92,8 +92,8 @@ if __name__ == '__main__':
     if (len(sys.argv) == 5):
         inFile = sys.argv[1]
         outFile = sys.argv[2]
-	start = int(sys.argv[3])
-	end = int(sys.argv[4])
+        start = int(sys.argv[3])
+        end = int(sys.argv[4])
     else: 
         raise RuntimeError('Usage: Hdf5exframes.py inFile outFile startframe endframe')
 

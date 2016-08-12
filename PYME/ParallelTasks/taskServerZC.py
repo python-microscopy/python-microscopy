@@ -65,23 +65,23 @@ from PYME.util import mProfile
 #    taskQueueName = 'taskQueue'
 
 taskQueueName = 'TaskQueues.%s' % compName
-	
-class TaskWatcher(threading.Thread):
-	def __init__(self, tQueue):
-		threading.Thread.__init__(self)
-		self.tQueue = tQueue
-		self.alive = True
 
-	def run(self):
-		while self.alive:
-			self.tQueue.checkTimeouts()
-			#print '%d tasks in queue' % self.tQueue.getNumberOpenTasks()
-			#try:
+class TaskWatcher(threading.Thread):
+    def __init__(self, tQueue):
+        threading.Thread.__init__(self)
+        self.tQueue = tQueue
+        self.alive = True
+
+    def run(self):
+        while self.alive:
+            self.tQueue.checkTimeouts()
+            #print '%d tasks in queue' % self.tQueue.getNumberOpenTasks()
+            #try:
                         #        mProfile.report()
                         #finally:
                         #        pass
                         #print mProfile.files
-			time.sleep(10)
+            time.sleep(10)
 
 
 
@@ -336,8 +336,8 @@ class TaskQueueSet(Pyro.core.ObjBase):
 #        if nq > 1:
 #            mProfile.report()
 #        nq += 1
-		
-			
+
+
 
 def main():
     print('Starting PYME taskServer ...')

@@ -78,7 +78,7 @@ class GaussianFitResult:
         return scipy.sqrt(self.FWHMnm()**2 - self.FWHM_PSF**2)
 
     def renderFit(self):
-	X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[self.slicesUsed[0]]
+        X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[self.slicesUsed[0]]
         Y = 1e3*self.metadata.voxelsize.y*scipy.mgrid[self.slicesUsed[1]]
         return f_gauss2d(self.fitResults, X, Y)
         
@@ -90,7 +90,7 @@ class GaussianFitFactory:
         metadata. """
         self.data = data
         self.metadata = metadata
-	self.fitfcn = fitfcn #allow model function to be specified (to facilitate changing between accurate and fast exponential approwimations)
+        self.fitfcn = fitfcn #allow model function to be specified (to facilitate changing between accurate and fast exponential approwimations)
         #self.ccdReadNoise = ccdReadNoise #readout noise in electrons
         #self.noiseFactor = noiseFactor #EM noise factor
         #self.electronsPerCount = electronsPerCount
@@ -109,20 +109,20 @@ class GaussianFitFactory:
         #X,Y = scipy.mgrid[xslice, yslice]
         #X = scipy.mgrid[xslice]
         #Y = scipy.mgrid[yslice]
-	X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[xslice]
+        X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[xslice]
         Y = 1e3*self.metadata.voxelsize.y*scipy.mgrid[yslice]
 
         #estimate some start parameters...
         A = dataMean.max() - dataMean.min() #amplitude
         #x0 =  (xslice.start + xslice.stop - 1)/2
         #y0 =  (yslice.start + yslice.stop - 1)/2
-	x0 =  X.mean()
+        x0 =  X.mean()
         y0 =  Y.mean()
 
         startParameters = [A, x0, y0, 250/2.35, 250/2.35, dataMean.min(), .001, .001]
 
-	#print dataMean.shape
-	#print X.shape
+        #print dataMean.shape
+        #print X.shape
 
         #estimate errors in data
         nSlices = dataROI.shape[2]
@@ -138,9 +138,9 @@ class GaussianFitFactory:
         #print resCode
         #return GaussianFitResult(res, self.metadata, (xslice, yslice, zslice), resCode)
         fitErrors=None
-        try:       
+        try:
             fitErrors = scipy.sqrt(scipy.diag(cov_x)*(infodict['fvec']*infodict['fvec']).sum()/(len(dataMean.ravel())- len(res)))
-        except Exception, e:
+        except Exception as e:
             pass
         return GaussianFitResult(res, self.metadata, (xslice, yslice, zslice), resCode, fitErrors)
 
@@ -148,8 +148,8 @@ class GaussianFitFactory:
         if (z is None): # use position of maximum intensity
             z = self.data[x,y,:].argmax()
 	
-	x = round(x)
-	y = round(y)
+        x = round(x)
+        y = round(y)
 	
         return self[max((x - roiHalfSize), 0):min((x + roiHalfSize + 1),self.data.shape[0]), 
                     max((y - roiHalfSize), 0):min((y + roiHalfSize + 1), self.data.shape[1]), 

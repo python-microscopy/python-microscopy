@@ -94,7 +94,7 @@ def main():
 #        time.sleep(3)
     
     if len(sys.argv) > 1:
-	if sys.argv[1] == '-l':
+        if sys.argv[1] == '-l':
             SERVER_PROC = 'taskServerML.py'
             WORKER_PROC = 'taskWorkerML.py'
         else:

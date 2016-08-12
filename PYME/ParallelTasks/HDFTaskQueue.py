@@ -344,12 +344,12 @@ class HDFResultsTaskQueue(TaskQueue):
         #return res
 
     def getNumberTasksCompleted(self):
-		return self.numClosedTasks
+        return self.numClosedTasks
 
     def purge(self):
-		self.openTasks = []
-		self.numClosedTasks = 0
-		self.tasksInProgress = []
+        self.openTasks = []
+        self.numClosedTasks = 0
+        self.tasksInProgress = []
 
     def cleanup(self):
         #self.h5DataFile.close()
@@ -560,7 +560,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
             resultsFilename = genResultFileName(self.dataFilename)
         else:
             resultsFilename = resultsFilename
-		
+
         ffn = getFullFilename(self.dataFilename)
 
         self.acceptNewTasks = False

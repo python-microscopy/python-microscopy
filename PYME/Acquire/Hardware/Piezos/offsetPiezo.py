@@ -63,7 +63,7 @@ class piezoOffsetProxy(Pyro.core.ObjBase):
         self.MoveTo(0, p)
         
     def LogShifts(self, dx, dy, dz):
-    	import wx
+        import wx
         #eventLog.logEvent('ShiftMeasure', '%3.4f, %3.4f, %3.4f' % (dx, dy, dz))
         wx.CallAfter(eventLog.logEvent, 'ShiftMeasure', '%3.4f, %3.4f, %3.4f' % (dx, dy, dz))
         

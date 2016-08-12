@@ -116,7 +116,7 @@ def f_j_gauss2d(p,func, d, w, X,Y):
     r = genGaussJacW(X,Y,w,A,x0,y0,s,b,b_x,b_y)
     r = -r.ravel().reshape((-1,7))
     #for  i in range(7):
-	#r[:, i] = r[:, i]*w
+    #r[:, i] = r[:, i]*w
     return r.T
 
 def f_J_gauss2d(p,X,Y):
@@ -131,26 +131,26 @@ f_gauss2d.D = f_J_gauss2d
 
         
 def replNoneWith1(n):
-	if n is None:
-		return 1
-	else:
-		return n
+    if n is None:
+        return 1
+    else:
+        return n
 
 
 fresultdtype=[('tIndex', '<i4'),('fitResults', [('A', '<f4'),('x0', '<f4'),('y0', '<f4')]),('fitError', [('A', '<f4'),('x0', '<f4'),('y0', '<f4')]), ('resultCode', '<i4'), ('nChi2', '<f4'), ('nFit', '<i4')]
 
 def GaussianFitResultR(fitResults, metadata, resultCode=-1, fitErr=None, nChi2=0, nEvents=1):
-	
-	if fitErr is None:
-		fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
 
-	#print slicesUsed
+    if fitErr is None:
+        fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
 
-	tIndex = metadata.tIndex
+    #print slicesUsed
+
+    tIndex = metadata.tIndex
 
 
-	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, nChi2, nEvents)], dtype=fresultdtype) 
-		
+    return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, nChi2, nEvents)], dtype=fresultdtype)
+
 
 class GaussianFitFactory:
     X = None
@@ -180,7 +180,7 @@ class GaussianFitFactory:
         #average in z
         data = self.data
 
-	
+
         #estimate errors in data
         nSlices = self.data.shape[2]
         

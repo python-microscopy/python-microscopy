@@ -94,15 +94,15 @@ fresultdtype=[('tIndex', '<i4'),
     
 
 def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None, startParams=None, nchi2=-1):
-	if fitErr is None:
-		fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
+    if fitErr is None:
+        fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
 
-	if startParams is None:
-		startParams = -5e3*numpy.ones(fitResults.shape, 'f')
+    if startParams is None:
+        startParams = -5e3*numpy.ones(fitResults.shape, 'f')
 
-	tIndex = metadata.tIndex
+    tIndex = metadata.tIndex
 
-	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, fmtSlicesUsed(slicesUsed), startParams.astype('f'), nchi2)], dtype=fresultdtype)
+    return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, fmtSlicesUsed(slicesUsed), startParams.astype('f'), nchi2)], dtype=fresultdtype)
 
 
 #def genFitImage(fitResults, metadata, fitfcn=f_Interp3d):
@@ -161,7 +161,7 @@ def getDataErrors(im, metadata):
 
     return scipy.sqrt(metadata.getEntry('Camera.ReadNoise')**2 + (metadata.getEntry('Camera.NoiseFactor')**2)*metadata.getEntry('Camera.ElectronsPerCount')*metadata.getEntry('Camera.TrueEMGain')*dataROI)/metadata.getEntry('Camera.ElectronsPerCount')
 
-		
+
 
 class PSFFitFactory(InterpFitR.PSFFitFactory):
     def __init__(self, data, metadata, fitfcn=f_Interp3d, background=None, noiseSigma=None):

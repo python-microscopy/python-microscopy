@@ -156,7 +156,7 @@ def BlankResult(metadata):
     r['tIndex'] = metadata.tIndex
     r['fitError'].view('f4')[:] = -5e3
     return r
-		
+
 
 def getDataErrors(im, metadata):
     # TODO - Fix me for camera maps (ie use correctImage function not ADOffset) or remove
@@ -233,7 +233,7 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
         #print ratio
 
         return f_Interp3d2cr(params, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, md.Analysis.AxialShift, ratio), Xg.ravel()[0], Yg.ravel()[0], Zg.ravel()[0]
-		
+
         
     def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
         Xg, Yg, Xr, Yr, dataROI, bgROI, sigma, xslice, yslice, xslice2, yslice2 = self.getSplitROIAtPoint(x, y, z, roiHalfSize, axialHalfSize)
@@ -294,7 +294,7 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
         #print startParameters
 
         #print dataROI.shape
-	
+
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
         #(res, cov_x, infodict, mesg, resCode) = FitModelWeighted(self.fitfcn, startParameters, dataMean, sigma, X, Y)
@@ -327,7 +327,7 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
             
             
 
-	#print res, fitErrors, resCode
+        #print res, fitErrors, resCode
         return PSFFitResultR(res_m, self.metadata, np.array(startParameters), (xslice, yslice, xslice2, yslice2), resCode_m, fitErrors_m, nchi2_m, bgROI.mean(0).mean(0), ratio)
         #return PSFFitResultR(res, self.metadata, , resCode, fitErrors, numpy.array(startParameters), nchi2)
     

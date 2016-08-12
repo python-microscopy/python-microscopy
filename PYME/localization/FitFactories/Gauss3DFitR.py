@@ -74,10 +74,10 @@ class GaussFitResult:
         #pass
         
 def replNoneWith1(n):
-	if n is None:
-		return 1
-	else:
-		return n
+    if n is None:
+        return 1
+    else:
+        return n
 
 
 fresultdtype=[('tIndex', '<i4'),
@@ -89,12 +89,12 @@ fresultdtype=[('tIndex', '<i4'),
                               ('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
 
 def Gauss3dFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None):
-    	if fitErr is None:
-		fitErr = -5e3*np.ones(fitResults.shape, 'f')
+    if fitErr is None:
+        fitErr = -5e3*np.ones(fitResults.shape, 'f')
 
-	tIndex = metadata.tIndex
+    tIndex = metadata.tIndex
 
-	return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, fmtSlicesUsed(slicesUsed))], dtype=fresultdtype) 
+    return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, fmtSlicesUsed(slicesUsed))], dtype=fresultdtype)
 
 class Gauss3dFitFactory:
     def __init__(self, data, metadata, background=None):

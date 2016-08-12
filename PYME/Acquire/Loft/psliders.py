@@ -117,8 +117,8 @@ class PiezoSliders(wx.Panel):
                 self.sliders[ind].SetValue(100*pos)
                 self.sliderLabels[ind].SetLabel(u'%s - %2.4f %s' % (self.piezos[ind][2],pos, unit))
                 
-    	    self.sliders[ind].SetMin(100*self.piezos[ind][0].GetMin(self.piezos[ind][1]))
-    	    self.sliders[ind].SetMax(100*self.piezos[ind][0].GetMax(self.piezos[ind][1]))
+            self.sliders[ind].SetMin(100*self.piezos[ind][0].GetMin(self.piezos[ind][1]))
+            self.sliders[ind].SetMax(100*self.piezos[ind][0].GetMax(self.piezos[ind][1]))
 
         if not self.joystick is None:
             self.cbJoystick.SetValue(self.joystick.IsEnabled())

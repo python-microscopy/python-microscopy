@@ -583,10 +583,10 @@ class microscope(object):
                 stext = stext + '    FPS = %2.2f' % self.frameWrangler.getFPS()
 
             if 'GetNumImsBuffered' in dir(self.cam):
-				stext = stext + '    Buffer Level: %d of %d' % (self.cam.GetNumImsBuffered(), self.cam.GetBufferSize())
+                stext = stext + '    Buffer Level: %d of %d' % (self.cam.GetNumImsBuffered(), self.cam.GetBufferSize())
         
         for sic in self.StatusCallbacks:
-                stext = stext + '    ' + sic()       
+            stext = stext + '    ' + sic()
         return stext
 
     @property
