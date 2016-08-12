@@ -30,7 +30,7 @@ from PYME.IO.FileUtils import nameUtils
 import json
 import importlib
 
-def foldX(pipeline, x=None):
+def foldX_old(pipeline, x=None):
     """
 
     At this point the origin of x should be the corner of the concatenated frame
@@ -53,7 +53,7 @@ def foldX(pipeline, x=None):
     pipeline.mapping.setMapping('whichChan', mvQuad)
     return
 
-def _foldX(pipeline, x=None):
+def foldX(pipeline, x=None):
     """
 
     At this point the origin of x should be the corner of the concatenated frame
@@ -174,7 +174,7 @@ def pairMolecules(tIndex, x, y, whichChan, deltaX=[None], appearIn=np.arange(4),
 
     return assigned, keep
 
-def applyShiftmaps(pipeline, shiftWallet, numChan):
+def applyShiftmaps_old(pipeline, shiftWallet, numChan):
     """
     applyShiftmaps loads multiview shiftmap parameters from multiviewMapper.shiftWallet, reconstructs the shiftmap
     objects, applies them to the multiview data, and maps the positions registered to the first channel to the pipeline
@@ -214,7 +214,7 @@ def applyShiftmaps(pipeline, shiftWallet, numChan):
     pipeline.mapping.setMapping('registered', True)
     return x, y
 
-def _applyShiftmaps(pipeline, shiftWallet, numChan):
+def applyShiftmaps(pipeline, shiftWallet, numChan):
     """
     applyShiftmaps loads multiview shiftmap parameters from multiviewMapper.shiftWallet, reconstructs the shiftmap
     objects, applies them to the multiview data, and maps the positions registered to the first channel to the pipeline
@@ -244,9 +244,10 @@ def _applyShiftmaps(pipeline, shiftWallet, numChan):
 
     x, y = pipeline.mapping['x'], pipeline.mapping['y']
 
-    x = x + pipeline.mdh['Camera.ROIX0']*pipeline.mdh['voxelsize.x']*1.0e3
-    y = y + pipeline.mdh['Camera.ROIY0']*pipeline.mdh['voxelsize.y']*1.0e3
-    chan = pipeline['whichChan']
+    # FIXME: the camera roi positions below would not account for the multiview data source
+    #x = x + pipeline.mdh['Camera.ROIX0']*pipeline.mdh['voxelsize.x']*1.0e3
+    #y = y + pipeline.mdh['Camera.ROIY0']*pipeline.mdh['voxelsize.y']*1.0e3
+    chan = pipeline.mapping['whichChan']
 
     dx = 0
     dy = 0
@@ -438,14 +439,15 @@ class multiviewMapper:
                             pipeline['whichChan'], 'Raw')
 
         # apply shiftmaps
-        x, y = applyShiftmaps(pipeline, shiftWallet, numChan)
+        #x, y = applyShiftmaps(pipeline, shiftWallet, numChan)
+        applyShiftmaps(pipeline, shiftWallet, numChan)
 
         # create new data source
-        fres = pipeline.selectedDataSource.resultsSource.fitResults
-        regFres = np.copy(fres)
-        regFres['fitResults']['x0'], regFres['fitResults']['y0'] = x, y
-        pipeline.addDataSource('RegisteredXY', fitResultsSource(regFres))
-        pipeline.selectDataSource('RegisteredXY')
+        #fres = pipeline.selectedDataSource.resultsSource.fitResults
+        #regFres = np.copy(fres)
+        #regFres['fitResults']['x0'], regFres['fitResults']['y0'] = x, y
+        #pipeline.addDataSource('RegisteredXY', fitResultsSource(regFres))
+        #pipeline.selectDataSource('RegisteredXY')
 
     def OnCalibrateShifts(self, event):
         """
