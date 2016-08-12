@@ -24,7 +24,7 @@ from pylab import *
 from scipy import ndimage
 
 def facsPlotScatter(x, y, nbins=None, ms=1):
-    if nbins == None:
+    if nbins is None:
         nbins = 0.25*sqrt(len(x))
     n, xedge, yedge = histogram2d(x, y, bins = [nbins,nbins], range=[(min(x), max(x)), (min(y), max(y))])
 
@@ -53,7 +53,7 @@ def facsPlotScatter2(x, y, nxbins=None, nybins=None, ms=1):
     scatter(x, y, c=c, s=ms, edgecolors='none')
 
 def facsPlotScatterLog(x, y, nbins=None, ms=1):
-    if nbins == None:
+    if nbins is None:
         nbins = 0.25*sqrt(len(x))
     n, xedge, yedge = histogram2d(x, y, bins = [nbins,nbins], range=[(min(x), max(x)), (min(y), max(y))])
 
@@ -72,7 +72,7 @@ def facsPlotScatterLog(x, y, nbins=None, ms=1):
     
 
 def facsPlotContour(x, y, nbins=None):
-    if nbins == None:
+    if nbins is None:
         nbins = 0.25*sqrt(len(x))
     n, xedge, yedge = histogram2d(x, y, bins = [nbins,nbins], range=[(min(x), max(x)), (min(y), max(y))])
 

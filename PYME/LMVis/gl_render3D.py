@@ -844,7 +844,7 @@ class LMGLCanvas(GLCanvas):
 
     def setCLim(self, clim, alim=None):
         self.clim = clim
-        if alim == None:
+        if alim is None:
             self.alim = clim
         else:
             self.alim = alim
@@ -905,7 +905,7 @@ class LMGLCanvas(GLCanvas):
             callback.Refresh()
 
     def drawScaleBar(self):
-        if not self.scaleBarLength == None:
+        if not self.scaleBarLength is None:
             view_size_x = self.xmax - self.xmin
             view_size_y = self.ymax - self.ymin
 
@@ -924,7 +924,7 @@ class LMGLCanvas(GLCanvas):
             glEnd()
 
     def drawLUT(self):
-        if self.LUTDraw == True:
+        if self.LUTDraw:
             mx = self.c.max()
 
             view_size_x = self.xmax - self.xmin

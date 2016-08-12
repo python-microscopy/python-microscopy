@@ -74,7 +74,7 @@ class GaussFitResult:
         #pass
         
 def replNoneWith1(n):
-	if n == None:
+	if n is None:
 		return 1
 	else:
 		return n
@@ -89,7 +89,7 @@ fresultdtype=[('tIndex', '<i4'),
                               ('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
 
 def Gauss3dFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None):
-    	if fitErr == None:
+    	if fitErr is None:
 		fitErr = -5e3*np.ones(fitResults.shape, 'f')
 
 	tIndex = metadata.tIndex
@@ -177,7 +177,7 @@ class Gauss3dFitFactory:
         
 
     def FromPoint(self, x, y, z=None, roiHalfSize=8, axialHalfSize=5):
-        if (z == None): # use position of maximum intensity
+        if (z is None): # use position of maximum intensity
             z = self.data[x,y,:].argmax()
 
         x = round(x)

@@ -98,7 +98,7 @@ def f_J_Interp3d2c(p,interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, axialShif
 #f_Interp3d2c.D = f_J_Interp3d2c
 
 def replNoneWith1(n):
-	if n == None:
+	if n is None:
 		return 1
 	else:
 		return n
@@ -114,15 +114,15 @@ fresultdtype=[('tIndex', '<i4'),
     ('nchi2', '<f4')]
 
 def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None, startParams=None, nchi2=-1):
-	if slicesUsed == None:
+	if slicesUsed is None:
 		slicesUsed = ((-1,-1,-1),(-1,-1,-1),(-1,-1,-1))
 	else: 		
 		slicesUsed = ((slicesUsed[0].start,slicesUsed[0].stop,replNoneWith1(slicesUsed[0].step)),(slicesUsed[1].start,slicesUsed[1].stop,replNoneWith1(slicesUsed[1].step)),(slicesUsed[2].start,slicesUsed[2].stop,replNoneWith1(slicesUsed[2].step)))
 
-	if fitErr == None:
+	if fitErr is None:
 		fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
 
-	if startParams == None:
+	if startParams is None:
 		startParams = -5e3*numpy.ones(fitResults.shape, 'f')
 
 	tIndex = metadata.tIndex
@@ -284,7 +284,7 @@ class PSFFitFactory:
         sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*scipy.maximum(dataROI, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount + 1
 
 
-        if not self.background == None and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
+        if not self.background is None and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
             #print 'bgs'
             if len(numpy.shape(self.background)) > 1:
                 bgROI = self.background[xslice, yslice, zslice] - self.metadata.Camera.ADOffset

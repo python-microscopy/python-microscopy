@@ -40,8 +40,8 @@ fresultdtype=[('tIndex', '<i4'),
 
 #package results
 def COIFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None):
-	return np.array([(metadata.tIndex, fitResults.astype('f'), fmtSlicesUsed(slicesUsed))], dtype=fresultdtype)
-		
+    return np.array([(metadata.tIndex, fitResults.astype('f'), fmtSlicesUsed(slicesUsed))], dtype=fresultdtype)
+
 
 class COIFitFactory(FFBase.FitFactory):
     def FromPoint(self, x, y, z=None, roiHalfSize=4, axialHalfSize=15):

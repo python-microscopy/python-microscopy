@@ -39,7 +39,7 @@ class TrackFeatures(ModuleBase):
         
     @on_trait_change('pNew, r0, pLinkCutoff')    
     def OnParamChange(self):
-        if not self._tracker == None:
+        if not self._tracker is None:
             self._tracker.pNew=self.pNew
             self._tracker.r0 = self.r0
             self._tracker.linkageCuttoffProb = self.pLinkCutoff
@@ -50,7 +50,7 @@ class TrackFeatures(ModuleBase):
         
     def Track(self, objects, newTracker=False):
         """Track objects based on a given set of feature vectors"""
-        if (self._tracker == None) or not (len(self._tracker.t) == len(objects['t'])) or newTracker:
+        if (self._tracker is None) or not (len(self._tracker.t) == len(objects['t'])) or newTracker:
             featNames = [s.strip() for s in self.features.split(',')]
             
             def _calcWeights(s):

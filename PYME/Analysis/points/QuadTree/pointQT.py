@@ -217,7 +217,7 @@ def createQT(x,y, t=None):
     di = max(x.max() - x.min(), y.max() - y.min())
     qt = qtRoot(100*floor(x.min()/100), 100*ceil((x.min()+di)/100),100*floor(y.min()/100), 100*ceil((y.min()+di)/100))
 
-    if t == None:
+    if t is None:
         for xi, yi in zip(x,y):
             qt.insert(qtRec(xi,yi, None))
     else:

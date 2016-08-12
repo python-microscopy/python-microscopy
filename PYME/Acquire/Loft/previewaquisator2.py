@@ -75,7 +75,7 @@ class PreviewAquisator(wx.Timer):
         self.numHWChans = len(self.chans.hw)
         self.cols =  self.chans.cols
    
-        if (self.ds == None or keepds == False):
+        if (self.ds is None or keepds == False):
             self.ds = None
             self.ds = CDataStack(self.cam.GetPicWidth(), self.cam.GetPicHeight(), 
                 self.GetSeqLength(),self.getReqMemChans(self.cols))

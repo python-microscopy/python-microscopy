@@ -61,7 +61,7 @@ def f_gauss2d2c(p, X, Y):
 
         
 def replNoneWith1(n):
-	if n == None:
+	if n is None:
 		return 1
 	else:
 		return n
@@ -70,12 +70,12 @@ def replNoneWith1(n):
 fresultdtype=[('tIndex', '<i4'),('fitResults', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('background_g', '<f4'),('background_r', '<f4'),('dx', '<f4'),('dy', '<f4')]),('fitError', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('background_g', '<f4'),('background_r', '<f4'),('dx', '<f4'),('dy', '<f4')]), ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
 
 def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None):
-	if slicesUsed == None:
+	if slicesUsed is None:
 		slicesUsed = ((-1,-1,-1),(-1,-1,-1),(-1,-1,-1))
 	else: 		
 		slicesUsed = ((slicesUsed[0].start,slicesUsed[0].stop,replNoneWith1(slicesUsed[0].step)),(slicesUsed[1].start,slicesUsed[1].stop,replNoneWith1(slicesUsed[1].step)),(slicesUsed[2].start,slicesUsed[2].stop,replNoneWith1(slicesUsed[2].step)))
 
-	if fitErr == None:
+	if fitErr is None:
 		fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
 
 	#print slicesUsed

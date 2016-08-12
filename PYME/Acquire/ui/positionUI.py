@@ -76,7 +76,7 @@ class PositionSliders(wx.Panel):
             self.sliderLabels.append(sLab)
 
 
-        if not joystick == None:
+        if not joystick is None:
             self.cbJoystick = wx.CheckBox(self, -1, 'Enable Joystick')
             sizer_2.Add(self.cbJoystick,0,wx.TOP|wx.BOTTOM,2)
             self.cbJoystick.Bind(wx.EVT_CHECKBOX, self.OnJoystickEnable)
@@ -134,7 +134,7 @@ class PositionSliders(wx.Panel):
     	    self.sliders[ind].SetMin(100*self.ranges[pName][0])
     	    self.sliders[ind].SetMax(100*self.ranges[pName][1])
 
-        if not self.joystick == None:
+        if not self.joystick is None:
             self.cbJoystick.SetValue(self.joystick.IsEnabled())
 
             

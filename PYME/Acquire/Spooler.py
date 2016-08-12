@@ -106,7 +106,7 @@ class Spooler:
         #if scope.cam.__class__.__name__ == 'FakeCamera':
         #    timeFcn = self.fakeTime
             
-        if not fakeCamCycleTime == None:
+        if not fakeCamCycleTime is None:
             self.fakeCamCycleTime = fakeCamCycleTime
             timeFcn = self.fakeTime
 

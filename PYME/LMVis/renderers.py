@@ -54,7 +54,7 @@ class CurrentRenderer:
     def __init__(self, visFr, pipeline, mainWind = None):
         self.visFr = visFr
 
-        if mainWind == None:
+        if mainWind is None:
             #menu handlers must be bound to the top level window
             mainWind = self.visFr
         self.mainWind = mainWind

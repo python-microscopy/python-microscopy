@@ -35,8 +35,8 @@ class DSViewFrame(wx.Frame):
         self.log = log
         self.saved = False
         self.filedir = filedir
-        if (dstack == None):
-            if (filename == None):
+        if (dstack is None):
+            if (filename is None):
                 fdialog = wx.FileDialog(None, 'Please select Data Stack to open ...',
                     wildcard='*.kdf', style=wx.OPEN|wx.HIDE_READONLY)
                 succ = fdialog.ShowModal()
@@ -109,7 +109,7 @@ class DSViewFrame(wx.Frame):
                         saveTiffStack.writeTiff(im, fst + '_%d'%i + ext)
 
 
-            if not (self.log == None):
+            if not (self.log is None):
                 lw = logparser.logwriter()
                 s = lw.write(self.log)
                 log_f = file('%s.log' % fdialog.GetPath().split('.')[0], 'w')

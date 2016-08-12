@@ -273,15 +273,15 @@ def dispersion_data(cd, dispform, ld, wavemin=None, wavemax=None, nwaves=None, s
     ## Zemax's dispersion formulas all use wavelengths in um. So, to compare "ld"
     ## and wavemin,wavemax we first convert the former to nm and then, when done
     ## we convert to um.
-    if (wavemin == None):
+    if (wavemin is None):
         lambda_min = ld[0]
     else:
         lambda_min = wavemin / 1000.0
-    if (wavemax == None):
+    if (wavemax is None):
         lambda_max = ld[1]
     else:
         lambda_max = wavemax / 1000.0
-    if (nwaves == None):
+    if (nwaves is None):
         nwaves = max([10, round(1000.0 * (lambda_max - lambda_min))])
 
     ## Choose which domain is the one in which we sample uniformly. Regardless
@@ -481,7 +481,7 @@ def index_coeffs(wavemin, wavemax, nwaves, cd, dispform, ld, basis='Taylor', \
 
 ## =============================================================================
 def insert_dispersion_coeffs(glasscat, wavemin, wavemax, nwaves=None, basis='Taylor', sampling_domain='wavelength'):
-    if (nwaves == None):
+    if (nwaves is None):
         nwaves = round(wavemin - wavemax)
 
     for catalog in glasscat:
@@ -535,7 +535,7 @@ def reduce_catalog(glasscat, key1, tol1, key2=None, tol2=None):
     catalogs_all = get_all_glasses(glasscat, 'catalog')
 
     keyval1 = get_all_glasses(glasscat, key1)
-    if (key2 != None): keyval2 = get_all_glasses(glasscat, key2)
+    if (key2 is not None): keyval2 = get_all_glasses(glasscat, key2)
     items_to_remove = []
 
     for i in arange(nglass-1):
@@ -543,7 +543,7 @@ def reduce_catalog(glasscat, key1, tol1, key2=None, tol2=None):
         if (alen(skip) > 0): continue
 
         for j in arange(i+1, nglass):
-            if (key2 == None):
+            if (key2 is None):
                 if (abs(keyval1[j] - keyval1[i]) < tol1):
                     items_to_remove.append(j)
             else:

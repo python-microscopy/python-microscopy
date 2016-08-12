@@ -50,7 +50,7 @@ def f_gauss1d(p, X):
 
         
 def replNoneWith1(n):
-	if n == None:
+	if n is None:
 		return 1
 	else:
 		return n
@@ -59,7 +59,7 @@ def replNoneWith1(n):
 fresultdtype=[('tIndex', '<i4'),('fitResults', [('A', '<f4'),('x0', '<f4'),('sigma', '<f4')]),('fitError', [('A', '<f4'),('x0', '<f4'),('sigma', '<f4')]), ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
 
 def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None):
-	if fitErr == None:
+	if fitErr is None:
 		fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
 
 	#print slicesUsed
@@ -84,7 +84,7 @@ class GaussianFitFactory:
             self.solver = FitModelWeighted
 
     def FromPoint(self, x, y, z=None, roiHalfSize=30, axialHalfSize=15):
-        if (z == None): # use position of maximum intensity
+        if (z is None): # use position of maximum intensity
             z = self.data[x,y,:].argmax()
 
         x0 = x
@@ -130,7 +130,7 @@ class GaussianFitFactory:
         
         sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*scipy.maximum(dataMean, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
 
-        if not self.background == None and len(numpy.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
+        if not self.background is None and len(numpy.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
             bgROI = self.background[xslice, yslice, zslice]
 
             #average in z

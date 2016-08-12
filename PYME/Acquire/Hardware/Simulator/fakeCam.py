@@ -133,13 +133,13 @@ class compThread(threading.Thread):
 
             xp = 0
             yp = 0
-            if not self.xPiezo == None:
+            if not self.xPiezo is None:
                 xp = (self.xPiezo.GetPos() - self.xPiezo.max_travel/2)*1e3
 
-            if not self.xPiezo == None:
+            if not self.xPiezo is None:
                 yp = (self.yPiezo.GetPos() - self.yPiezo.max_travel/2)*1e3
                 
-            if not self.fluors == None and not 'spec' in self.fluors.fl.dtype.fields.keys():
+            if not self.fluors is None and not 'spec' in self.fluors.fl.dtype.fields.keys():
                 if self.biplane:
                     self.im = self.noiseMaker.noisify(rend_im.simPalmImFBP(self.XVals, self.YVals, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime, deltaZ = self.deltaZ))[:,:].astype('uint16')
                 else:
@@ -476,7 +476,7 @@ class FakeCamera:
         #mdh.setEntry('Simulation.LaserPowers', self.laserPowers)
 
         realEMGain = ccdCalibrator.getCalibratedCCDGain(self.GetEMGain(), self.GetCCDTempSetPoint())
-        if not realEMGain == None:
+        if not realEMGain is None:
             mdh.setEntry('Camera.TrueEMGain', realEMGain)
             
         if self.fluors and 'spec' in self.fluors.fl.dtype.fields.keys(): #set the splitter parameters

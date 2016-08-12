@@ -156,12 +156,12 @@ class ZMX(object):
         l = sum([s.disz for s in surfs[:-1]])
         #print(l)
         
-        if fb == None and f == None:
+        if fb is None and f is None:
             #calculate length of lens
             
             #midpoint at l/2
             z0 = -l/2
-        elif fb == None:
+        elif fb is None:
             z0 = float(f) - sum([s.disz for s in surfs])
         else:
             z0 = -float(fb) - l + float(f)

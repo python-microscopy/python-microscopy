@@ -156,7 +156,7 @@ class GaussianFitFactory:
         return GaussianFitResult(res, self.metadata, (xslice, yslice, zslice), resCode, fitErrors)
 
     def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
-        if (z == None): # use position of maximum intensity
+        if (z is None): # use position of maximum intensity
             z = self.data[x,y,:].argmax()
 	
 	x = round(x)

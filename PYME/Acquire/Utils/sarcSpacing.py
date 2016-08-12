@@ -52,7 +52,7 @@ class SarcomereChecker:
         F = (abs(pylab.fftshift(pylab.fftn(im - im.mean()))) + 1e-2).squeeze()
 
         currVoxelSizeID = self.scope.settingsDB.execute("SELECT sizeID FROM VoxelSizeHistory ORDER BY time DESC").fetchone()
-        if not currVoxelSizeID == None:
+        if not currVoxelSizeID is None:
             voxx, voxy = self.scope.settingsDB.execute("SELECT x,y FROM VoxelSizes WHERE ID=?", currVoxelSizeID).fetchone()
 
         pylab.figure(2)

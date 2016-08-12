@@ -43,7 +43,7 @@ def load(filename, tIntegration=0., tDead=0., nAccumulation=1., darkFile=None, c
     if tDead > 0: #dead time correction
         data = data/(1.-(data/nAccumulation)*(tDead/(tIntegration*10.0)))
 
-    if not darkFile == None: #we have a dark image - calibrate & subtract it
+    if not darkFile is None: #we have a dark image - calibrate & subtract it
         dark = loadDark(darkFile)*(tIntegration/1.e8)*nAccumulation
 
         data = data - dark[:,:,None]

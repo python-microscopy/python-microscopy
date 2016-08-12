@@ -121,7 +121,7 @@ fresultdtype=[('tIndex', '<i4'),
               ('resultCode', '<i4')]
 
 def GaussianFitResultR(fitResults, metadata, resultCode=-1, fitErr=None):	
-	if fitErr == None:
+	if fitErr is None:
 		fitErr = -5e3*np.ones(fitResults.shape, 'f')
 
 	tIndex = metadata.tIndex
@@ -162,7 +162,7 @@ class GaussianFitFactory:
         
         sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataMean, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
 
-        if not self.background == None and len(np.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
+        if not self.background is None and len(np.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
             #average in z
             bgMean = self.background.mean(2)
             
@@ -295,7 +295,7 @@ class GaussianFitFactory:
             i3 = 3*i
             i31 = i3 + 3
             
-            if not fitErrors == None:            
+            if not fitErrors is None:
                 resList[i] = GaussianFitResultR(res[i3:i31], self.metadata, resCode, fitErrors[i3:i31])
             else:
                 resList[i] = GaussianFitResultR(res[i3:i31], self.metadata, resCode, None)

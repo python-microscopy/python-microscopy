@@ -80,7 +80,7 @@ class FilterPane(afp.foldingPane):
 
         self.stFilterNumPoints = wx.StaticText(self, -1, '')
 
-        if not self.pipeline.filter == None:
+        if not self.pipeline.filter is None:
             self.stFilterNumPoints.SetLabel('%d of %d events' % (len(self.pipeline.filter['x']), len(self.pipeline.selectedDataSource['x'])))
 
         self.AddNewElement(self.stFilterNumPoints)
@@ -190,7 +190,7 @@ class FilterPane(afp.foldingPane):
         #key = self.lFiltKeys.GetItem(self.currentFilterItem).GetText()
 
         possibleKeys = []
-        if not self.pipeline.selectedDataSource == None:
+        if not self.pipeline.selectedDataSource is None:
             possibleKeys = list(self.pipeline.selectedDataSource.keys())
 
         dlg = editFilterDialog.FilterEditDialog(self, mode='new', possibleKeys=possibleKeys)

@@ -191,7 +191,7 @@ PCODefault.setEntry('Camera.TrueEMGain',1) #mostly use gain register setting of 
 def genMetaDataFromSourceAndMDH(dataSource, mdh=None):
     md = TIRFDefault
 
-    if not mdh == None: #should be true the whole time
+    if not mdh is None: #should be true the whole time
         md.copyEntriesFrom(mdh)
 
     #guestimate whatever wasn't in the metadata from remaining metadata
@@ -245,7 +245,7 @@ def fillInBlanks(md, dataSource):
             else: #if laser was on to start with our best estimate is at maximal bleaching where the few molecules that are still on will hopefully have little influence on the median
                 md.setEntry('Camera.ADOffset', numpy.median(numpy.array([dataSource.getSlice(i) for i in range(0, 10)]).ravel()))
                 import wx
-                if not wx.GetApp() == None:
+                if not wx.GetApp() is None:
                     wx.MessageBox("ADOffset fudged as %d and probably wrong\nTo change ADOffset, execute the following in the console:\nmd.setEntry('Camera.ADOffset', newValue)\nmdh.setEntry('Camera.ADOffset', newValue)" % md.getEntry('Camera.ADOffset'),'Did not find laser turn on signature', style=wx.OK|wx.ICON_EXCLAMATION)
 
 

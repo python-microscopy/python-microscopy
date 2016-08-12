@@ -414,7 +414,7 @@ class microscope(object):
             the pixel size in the x and y axes, in um
         """
         currVoxelSizeID = self.settingsDB.execute("SELECT sizeID FROM VoxelSizeHistory2 WHERE camSerial=? ORDER BY time DESC", (self.cam.GetSerialNumber(),)).fetchone()
-        if not currVoxelSizeID == None:
+        if not currVoxelSizeID is None:
             return self.settingsDB.execute("SELECT x,y FROM VoxelSizes WHERE ID=?", currVoxelSizeID).fetchone()
 
     def GenStartMetadata(self, mdh):
@@ -484,7 +484,7 @@ class microscope(object):
             The name of the camera to ascociate the setting with. If None, then
             the currently selected camera is used.
         """
-        if camName == None:
+        if camName is None:
             cam = self.cam
         else:
             cam = self.cameras[camName]

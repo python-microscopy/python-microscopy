@@ -92,7 +92,7 @@ class DCIMGSpoolShim:
         '''Called when the series is finished (ie we have seen)
         the events file'''
 
-        if (not eventsFilename == None) and (os.path.exists(eventsFilename)):
+        if (not eventsFilename is None) and (os.path.exists(eventsFilename)):
             # Update event Log with events.json
             with open(eventsFilename, 'r') as f:
                  events = json.load(f)
@@ -101,7 +101,7 @@ class DCIMGSpoolShim:
                 name, descr, timestamp = evt
                 self.spooler.evtLogger.logEvent(eventName=name, eventDescr=descr, timestamp=float(timestamp))
 
-        if (not zstepsFilename == None) and (os.path.exists(zstepsFilename)):
+        if (not zstepsFilename is None) and (os.path.exists(zstepsFilename)):
             #create pseudo events based on our zstep information
             with open(zstepsFilename, 'r') as f:
                 zsteps = json.load(f)

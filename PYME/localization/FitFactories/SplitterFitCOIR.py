@@ -43,7 +43,7 @@ fresultdtype=[('tIndex', '<i4'),
                               ('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
 
 def COIFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None):
-	if fitErr == None:
+	if fitErr is None:
 		fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
 
 	#print slicesUsed
@@ -85,7 +85,7 @@ class COIFitFactory(FFBase.FitFactory):
         Yr = Yg + DeltaY
 
 
-        if not self.background == None and len(numpy.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
+        if not self.background is None and len(numpy.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
             bgROI = self.background[xslice, yslice, zslice]
 
             dataROI = dataROI - bgROI

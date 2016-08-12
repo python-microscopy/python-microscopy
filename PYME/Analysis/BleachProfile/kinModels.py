@@ -339,7 +339,7 @@ def fitFluorBrightness(colourFilter, metadata, channame='', i=0, rng = None):
     #nPh = nPh*metadata.getEntry('Camera.ElectronsPerCount')/metadata.getEntry('Camera.TrueEMGain')
     nPh = getPhotonNums(colourFilter, metadata)
     
-    if rng == None:
+    if rng is None:
         rng = nPh.mean()*6
         
     n, bins = np.histogram(nPh, np.linspace(0, rng, 100))
@@ -373,7 +373,7 @@ def fitFluorBrightnessT(colourFilter, metadata, channame='', i=0, rng = None):
     nPh = getPhotonNums(colourFilter, metadata)
     t = (colourFilter['t'] - metadata['Protocol.DataStartsAt'])*metadata.getEntry('Camera.CycleTime')
     
-    if rng == None:
+    if rng is None:
         rng = nPh.mean()*3
         
     Nco = nPh.min()

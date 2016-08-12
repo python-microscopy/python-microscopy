@@ -55,7 +55,7 @@ class Spooler:
        fn = self.dirname + os.sep + self.filestub +'%05d.kdf' % self.imNum
        caller.ds.SaveToFile(fn.encode())
        self.imNum += 1
-       if not self.parent == None:
+       if not self.parent is None:
            self.parent.Tick()
    
    def doStartLog(self):

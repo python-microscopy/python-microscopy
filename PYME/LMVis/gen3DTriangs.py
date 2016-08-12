@@ -646,7 +646,7 @@ def segment(T, lenThresh, minSize=None):
         #print tuple(T.set[i])
         objInd[tuple(va[i, :])] = i
 
-    if minSize == None:
+    if minSize is None:
         minSize = va.shape[1] + 1 #only return objects which have enough points to be a volume
 
     j = 0
@@ -678,7 +678,7 @@ def segmentNR(T, lenThresh, minSize=None):
     verts = list(range(len(T.set)))
     va = array(T.set)
 
-    if minSize == None:
+    if minSize is None:
         minSize = va.shape[1] + 1 #only return objects which have enough points to be a volume
 
     while len(verts) > 0:

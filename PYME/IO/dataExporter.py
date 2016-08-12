@@ -112,13 +112,13 @@ class H5Exporter(Exporter):
 
         outMDH = MetaDataHandler.HDFMDHandler(h5out)
 
-        if not metadata == None:
+        if not metadata is None:
             outMDH.copyEntriesFrom(metadata)
 
             if 'Camera.ADOffset' in metadata.getEntryNames():
                 outMDH.setEntry('Camera.ADOffset', zslice.step*metadata.getEntry('Camera.ADOffset'))
 
-        if not origName == None:
+        if not origName is None:
             outMDH.setEntry('cropping.originalFile', origName)
             
         outMDH.setEntry('cropping.xslice', xslice.indices(data.shape[0]))
@@ -128,7 +128,7 @@ class H5Exporter(Exporter):
 
         outEvents = h5out.createTable(h5out.root, 'Events', SpoolEvent,filters=tables.Filters(complevel=5, shuffle=True))
 
-        if not events == None:
+        if not events is None:
             #copy events to results file
             if len(events) > 0:
                 outEvents.append(events)
@@ -146,7 +146,7 @@ class TiffStackExporter(Exporter):
 
     def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
         #xmd = None
-        if not metadata == None:
+        if not metadata is None:
             xmd = MetaDataHandler.XMLMDHandler(mdToCopy=metadata)
             
         if data.shape[3] > 1: #have multiple colour channels
@@ -158,14 +158,14 @@ class TiffStackExporter(Exporter):
                     mpt.AddSlice(data[xslice, yslice, 0, i].squeeze())
                 mpt.close()
             else: #save each channel as it's own stack
-                if not metadata == None and 'ChannelNames' in metadata.getEntryNames():
+                if not metadata is None and 'ChannelNames' in metadata.getEntryNames():
                     chanNames = metadata['ChannelNames']    
 
                 else:
                     chanNames = range(data.shape[3])
 
                 chanFiles = [os.path.splitext(os.path.split(outFile)[1])[0] + '__%s.tif' % chanNames[i]  for i in range(data.shape[3])]
-                if not metadata == None:
+                if not metadata is None:
                     xmd['ChannelFiles'] = chanFiles
 
                 for i in range(data.shape[3]):
@@ -173,9 +173,9 @@ class TiffStackExporter(Exporter):
         else:
             saveTiffStack.saveTiffMultipage(data[xslice, yslice, zslice], outFile)
 
-        if not metadata == None:
+        if not metadata is None:
             #xmd = MetaDataHandler.XMLMDHandler(mdToCopy=metadata)
-            if not origName == None:
+            if not origName is None:
                 xmd.setEntry('cropping.originalFile', origName)
 
             xmd.setEntry('cropping.xslice', xslice.indices(data.shape[0]))
@@ -200,9 +200,9 @@ class OMETiffExporter(Exporter):
         
         dw = dataWrap.ListWrap([data[xslice, yslice, zslice, i] for i in range(data.shape[3])])
         #xmd = None
-        if not metadata == None:
+        if not metadata is None:
             xmd = MetaDataHandler.OMEXMLMDHandler(mdToCopy=metadata)
-            if not origName == None:
+            if not origName is None:
                 xmd.setEntry('cropping.originalFile', origName)
 
             xmd.setEntry('cropping.xslice', xslice.indices(data.shape[0]))
@@ -240,9 +240,9 @@ class TiffSeriesExporter(Exporter):
             Image.fromarray(im.squeeze().astype('uint16'), 'I;16').save(os.path.join(outDir, 'frame_%03d.tif'%i))
             i += 1
 
-        if not metadata == None:
+        if not metadata is None:
             xmd = MetaDataHandler.XMLMDHandler(mdToCopy=metadata)
-            if not origName == None:
+            if not origName is None:
                 xmd.setEntry('cropping.originalFile', origName)
 
             xmd.setEntry('cropping.xslice', xslice.indices(data.shape[0]))
@@ -264,9 +264,9 @@ class NumpyExporter(Exporter):
     def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
         numpy.save(outFile, data[xslice, yslice, zslice])
 
-        if not metadata == None:
+        if not metadata is None:
             xmd = MetaDataHandler.XMLMDHandler(mdToCopy=metadata)
-            if not origName == None:
+            if not origName is None:
                 xmd.setEntry('cropping.originalFile', origName)
 
             xmd.setEntry('cropping.xslice', xslice.indices(data.shape[0]))
@@ -354,7 +354,7 @@ class ExportDialog(wx.Dialog):
 #
 #        vsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 5)
 
-        if not roi == None:
+        if not roi is None:
             bsizer=wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Cropping'), wx.VERTICAL)
             gsizer = wx.FlexGridSizer(4,4,5,5)
 
@@ -456,7 +456,7 @@ def CropExportData(vp, mdh=None, events=None, origName = None):
     if (succ == wx.ID_OK):
         filename = _getFilename()
 
-        if filename == None:
+        if filename is None:
             dlg.Destroy()
             return
 
@@ -474,11 +474,11 @@ def CropExportData(vp, mdh=None, events=None, origName = None):
 
 
 def ExportData(ds, mdh=None, events=None, origName = None, defaultExt = '*.tif', filename=None):
-    if filename == None:
+    if filename is None:
         #show file selection dialog box
         filename = _getFilename(defaultExt)
         
-    if filename == None:
+    if filename is None:
         #we cancelled the dialog - exit
         return
 

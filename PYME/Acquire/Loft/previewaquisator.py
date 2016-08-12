@@ -120,7 +120,7 @@ class PreviewAquisator(wx.EvtHandler):
         if 'order' in dir(self.cam):
             order = self.cam.order  
         
-        if (self.dsa == None or keepds == False):
+        if (self.dsa is None or keepds == False):
             self.dsa = None
             #self.ds = CDataStack(self.cam.GetPicWidth(), self.cam.GetPicHeight(), 
             #    self.GetSeqLength(),self.getReqMemChans(self.cols))

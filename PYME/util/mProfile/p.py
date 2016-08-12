@@ -77,7 +77,7 @@ def te(frame, event, arg):
     fn = frame.f_code.co_filename.split(os.sep)[-1]
     funcName = fn + ' ' + frame.f_code.co_name 
     #print funcName
-    if fn in filenames and not lPrev[funcName] == None:
+    if fn in filenames and not lPrev[funcName] is None:
         t = time.time()
         files[lPrev[funcName][0]][lPrev[funcName][1]] += (t - tPrev[funcName])
         lPrev[funcName] = None

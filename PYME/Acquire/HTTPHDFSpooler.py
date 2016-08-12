@@ -64,7 +64,7 @@ class HttpSpoolMDHandler(MetaDataHandler.MDHandlerBase):
         self.spooler = spooler
         self.cache = {}
         
-        if not mdToCopy == None:
+        if not mdToCopy is None:
             self.copyEntriesFrom(mdToCopy)
 
     def setEntry(self,entryName, value):

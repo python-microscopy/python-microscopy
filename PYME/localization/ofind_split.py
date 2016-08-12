@@ -254,7 +254,7 @@ class ObjectIdentifier(list):
         filteredData = self.__FilterData()
         
         #apply mask
-        if not (self.mask ==None):
+        if not (self.mask is None):
             maskedFilteredData = filteredData*self.mask
         else:
             maskedFilteredData = filteredData

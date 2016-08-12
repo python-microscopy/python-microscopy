@@ -249,7 +249,7 @@ class FilenameParam(MDParam):
         self.guiName = guiName
         self.default = default
         self.filename = default
-        if not filename == None:
+        if not filename is None:
             self.filename = filename
         self.prompt = prompt
         self.wildcard = wildcard

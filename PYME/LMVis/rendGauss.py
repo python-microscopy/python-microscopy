@@ -51,15 +51,15 @@ def rendGauss(res, X, Y, roiSize = 5, errScale = 1, cutoffErr=10, cutoffSigma = 
         ix = abs(X - r.x0()).argmin()
         iy = abs(Y - r.y0()).argmin()
 
-        if (ix > roiSize) and (ix < (len(X) - roiSize)) and  (iy > roiSize) and (iy < (len(Y) - roiSize)) and  not r.fitErr == None and r.fitErr[1] < cutoffErr and r.sigma() < cutoffSigma:
+        if (ix > roiSize) and (ix < (len(X) - roiSize)) and  (iy > roiSize) and (iy < (len(Y) - roiSize)) and  not r.fitErr is None and r.fitErr[1] < cutoffErr and r.sigma() < cutoffSigma:
             imp = Gauss2D(X[(ix - roiSize):(ix + roiSize + 1)], Y[(iy - roiSize):(iy + roiSize + 1)],1, r.x0(),r.y0(),max(r.fitErr[1]*errScale, delX))
             im[(ix - roiSize):(ix + roiSize + 1), (iy - roiSize):(iy + roiSize + 1)] += imp
 
     return im
 
 def rendHistF(res, X, Y, roiSize = 5, errScale = 1, cutoffErr=10, cutoffSigma = 3):
-    xs = [r.x0() for r in res if not r.fitErr == None and r.fitErr[1] < cutoffErr and r.sigma() < cutoffSigma] 
-    ys = [r.y0() for r in res if not r.fitErr == None and r.fitErr[1] < cutoffErr and r.sigma() < cutoffSigma]
+    xs = [r.x0() for r in res if not r.fitErr is None and r.fitErr[1] < cutoffErr and r.sigma() < cutoffSigma]
+    ys = [r.y0() for r in res if not r.fitErr is None and r.fitErr[1] < cutoffErr and r.sigma() < cutoffSigma]
 
     return histogram2d(xs,ys,[X, Y])[0]
 
@@ -92,7 +92,7 @@ def rendGaussNested(res, X, Y, roiSize = 5, errScale = 1, cutoffErr=[0,100], cut
             ix = abs(X - r.x0()).argmin()
             iy = abs(Y - r.y0()).argmin()
 
-            if (ix > roiSize) and (ix < (len(X) - roiSize)) and  (iy > roiSize) and (iy < (len(Y) - roiSize)) and  not r.fitErr == None and r.fitErr[1] > cutoffErr[0] and r.fitErr[1] < cutoffErr[1] and r.sigma() > cutoffSigma[0]  and r.sigma() < cutoffSigma[1] and r.A() > cutoffA[0] and r.A() < cutoffA[1]:
+            if (ix > roiSize) and (ix < (len(X) - roiSize)) and  (iy > roiSize) and (iy < (len(Y) - roiSize)) and  not r.fitErr is None and r.fitErr[1] > cutoffErr[0] and r.fitErr[1] < cutoffErr[1] and r.sigma() > cutoffSigma[0]  and r.sigma() < cutoffSigma[1] and r.A() > cutoffA[0] and r.A() < cutoffA[1]:
                 imp = Gauss2D(X[(ix - roiSize):(ix + roiSize + 1)], Y[(iy - roiSize):(iy + roiSize + 1)],1, r.x0(),r.y0(),max(r.fitErr[1]*errScale, delX))
                 im[(ix - roiSize):(ix + roiSize + 1), (iy - roiSize):(iy + roiSize + 1)] += imp
 
@@ -111,7 +111,7 @@ def rendGaussNestedPS(res, X, Y, roiSize = 5, errScale = 1, cutoffErr=10, cutoff
             ix = abs(X - r.x0()).argmin()
             iy = abs(Y - r.y0()).argmin()
 
-            if (ix > roiSize) and (ix < (len(X) - roiSize)) and  (iy > roiSize) and (iy < (len(Y) - roiSize)) and  not r.fitErr == None and r.fitErr[1] < cutoffErr and abs(r.z0()) < cutoffZ0 and r.A() > cutoffA and r.resultCode==1:
+            if (ix > roiSize) and (ix < (len(X) - roiSize)) and  (iy > roiSize) and (iy < (len(Y) - roiSize)) and  not r.fitErr is None and r.fitErr[1] < cutoffErr and abs(r.z0()) < cutoffZ0 and r.A() > cutoffA and r.resultCode==1:
                 imp = Gauss2D(X[(ix - roiSize):(ix + roiSize + 1)], Y[(iy - roiSize):(iy + roiSize + 1)],1, r.x0(),r.y0(),max(r.fitErr[1]*errScale, delX))
                 im[(ix - roiSize):(ix + roiSize + 1), (iy - roiSize):(iy + roiSize + 1)] += imp
 
@@ -138,7 +138,7 @@ def rendGaussNestedXYCorr(res, X, Y, roiSize = 5, errScale = 1, cutoffErr=100, c
             ix = abs(X - xn).argmin()
             iy = abs(Y - yn).argmin()
 
-            if (ix > roiSize) and (ix < (len(X) - roiSize)) and  (iy > roiSize) and (iy < (len(Y) - roiSize)) and  not r.fitErr == None and r.fitErr[1] < cutoffErr and r.sigma() < cutoffSigma and r.resultCode==1:
+            if (ix > roiSize) and (ix < (len(X) - roiSize)) and  (iy > roiSize) and (iy < (len(Y) - roiSize)) and  not r.fitErr is None and r.fitErr[1] < cutoffErr and r.sigma() < cutoffSigma and r.resultCode==1:
                 imp = Gauss2D(X[(ix - roiSize):(ix + roiSize + 1)], Y[(iy - roiSize):(iy + roiSize + 1)],1, xn,yn,max(r.fitErr[1]*errScale, delX))
                 im[(ix - roiSize):(ix + roiSize + 1), (iy - roiSize):(iy + roiSize + 1)] += imp
 

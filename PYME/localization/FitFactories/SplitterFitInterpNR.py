@@ -129,7 +129,7 @@ def PSFFitResultR(fitResults, metadata, startParams, slicesUsed=None, resultCode
     fr['fitResults'].view('9f4')[0,:n] = fitResults   
     fr['startParams'].view('9f4')[0,:n] = startParams
     
-    if fitErr == None:
+    if fitErr is None:
         fr['fitError'].view('9f4')[0,:] = -5e3
     else:
         fr['fitError'].view('9f4')[0,:n] = fitErr

@@ -138,7 +138,7 @@ def PSFFitResultR(fitResults, metadata, startParams, slicesUsed=None, resultCode
     fr['fitResults'].view('8f4')[0,:n] = fitResults   
     fr['startParams'].view('8f4')[0,:n] = startParams
     
-    if fitErr == None:
+    if fitErr is None:
         fr['fitError'].view('8f4')[0,:] = -5e3
     else:
         fr['fitError'].view('8f4')[0,:n] = fitErr
@@ -317,7 +317,7 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
             #normalised Chi-squared
             nchi2 = (infodict['fvec']**2).sum()/(dataROI.size - res.size)
             
-            if (fitErrors_m == None) or (nchi2 < nchi2_m):
+            if (fitErrors_m is None) or (nchi2 < nchi2_m):
                 res_m = res
                 fitErrors_m = fitErrors
                 resCode_m = resCode

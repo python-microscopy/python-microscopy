@@ -107,7 +107,7 @@ class ParticleTracker:
             alphas_[I] = res[0][1]
 
             print((res[0]))#, res[1]
-            if not res[1] == None:
+            if not res[1] is None:
                 error_Ds[i] = np.sqrt(res[1][0,0])
             else:
                 error_Ds[i] = -1e3

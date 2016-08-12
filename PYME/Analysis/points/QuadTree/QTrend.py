@@ -147,7 +147,7 @@ class QTRendererNode:
     def drawNode(self, ax, offset=(0,0), iMax=None):
         x0,y0 = offset
 
-        if iMax == None:
+        if iMax is None:
             iMax = self.i
 
         if self.type == 'leaf':
@@ -185,7 +185,7 @@ class QTRendererNode:
     def drawNodeDL(self, ax1, ax2, offset=(0,0), iMax=None):
         x0,y0 = offset
 
-        if iMax == None:
+        if iMax is None:
             iMax = self.i
 
         if self.type == 'leaf':

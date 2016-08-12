@@ -159,7 +159,7 @@ class VisGUICore(object):
         
         if colData == '<None>':
             pointColour = None
-        elif not self.pipeline.colourFilter == None:
+        elif not self.pipeline.colourFilter is None:
             if colData in self.pipeline.keys():
                 pointColour = self.pipeline[colData]
             elif colData in self.pipeline.GeneratedMeasures.keys():
@@ -436,12 +436,12 @@ class VisGUICore(object):
         self.glCanvas.layers = []
         self.glCanvas.pointSize = self.pointDisplaySettings.pointSize
 
-        if self.pipeline.objects == None:
+        if self.pipeline.objects is None:
 #            if 'bObjMeasure' in dir(self):
 #                self.bObjMeasure.Enable(False)
             self.objectMeasures = None
 
-            if 'rav' in dir(self) and not self.rav == None: #remove previous event viewer
+            if 'rav' in dir(self) and not self.rav is None: #remove previous event viewer
                 i = 0
                 found = False
                 while not found and i < self.notebook.GetPageCount():
@@ -492,7 +492,7 @@ class VisGUICore(object):
             
 
         elif self.viewMode == 'quads':
-            if self.pipeline.Quads == None:
+            if self.pipeline.Quads is None:
                 status = statusLog.StatusLogger("Generating QuadTree ...")
                 self.pipeline.GenQuads()
                 
@@ -503,7 +503,7 @@ class VisGUICore(object):
             self.glCanvas.setIntTriang(self.pipeline.getTriangles(), self.pointColour())
 
         elif self.viewMode == 'blobs':
-            if self.pipeline.objects == None:
+            if self.pipeline.objects is None:
                 #check to see that we don't have too many points
                 if len(self.pipeline['x']) > 1e5:
                     goAhead = wx.MessageBox('You have %d events in the selected ROI;\nThis could take a LONG time ...' % len(self.pipeline['x']), 'Continue with blob detection', wx.YES_NO|wx.ICON_EXCLAMATION)
@@ -517,7 +517,7 @@ class VisGUICore(object):
         self.displayPane.hlCLim.SetData(self.glCanvas.c, self.glCanvas.clim[0], 
                                         self.glCanvas.clim[1])
 
-        if 'colp' in dir(self) and not self.colp == None and self.colp.IsShown():
+        if 'colp' in dir(self) and not self.colp is None and self.colp.IsShown():
             self.colp.refresh()
 
         #self.sh.shell.user_ns.update(self.__dict__)

@@ -25,7 +25,7 @@ class PointDisplaySettings(HasTraits):
 def _getPossibleKeys(pipeline):
     colKeys = ['<None>']
 
-    if not pipeline.colourFilter == None: #is the test needed?
+    if not pipeline.colourFilter is None: #is the test needed?
         colKeys += list(pipeline.keys())
 
     colKeys += list(pipeline.GeneratedMeasures.keys())

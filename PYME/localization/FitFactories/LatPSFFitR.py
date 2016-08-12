@@ -79,7 +79,7 @@ fresultdtype=[('tIndex', '<i4'),
                               ('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
 
 def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None):
-	if fitErr == None:
+	if fitErr is None:
 		fitErr = -5e3*np.ones(fitResults.shape, 'f')
 
 	tIndex = metadata.tIndex

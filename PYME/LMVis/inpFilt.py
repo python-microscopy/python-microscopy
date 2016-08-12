@@ -37,7 +37,7 @@ import tables
 class inputFilter(object):
     def toDataFrame(self, keys=None):
         import pandas as pd
-        if keys == None:
+        if keys is None:
             keys = self.keys()
         
         d = {k: self.__getitem__(k) for k in keys}

@@ -161,7 +161,7 @@ class TaskQueueSet(Pyro.core.ObjBase):
 
     def getNumberOpenTasks(self, queueName = None):
         #print queueName
-        if queueName == None:
+        if queueName is None:
             nO = 0
             for q in self.taskQueues.values():
                 nO += q.getNumberOpenTasks()
@@ -170,7 +170,7 @@ class TaskQueueSet(Pyro.core.ObjBase):
             return self.taskQueues[queueName].getNumberOpenTasks()
 
     def getNumberTasksInProgress(self, queueName = None):
-        if queueName == None:
+        if queueName is None:
             nP = 0
             for q in self.taskQueues.values():
                 nP += q.getNumberTasksInProgress()
@@ -179,7 +179,7 @@ class TaskQueueSet(Pyro.core.ObjBase):
             return self.taskQueues[queueName].getNumberTasksInProgress()
 
     def getNumberTasksCompleted(self, queueName = None):
-        if queueName == None:
+        if queueName is None:
             nC = 0
             for q in self.taskQueues.values():
                 nC += q.getNumberTasksCompleted()
@@ -196,7 +196,7 @@ class TaskQueueSet(Pyro.core.ObjBase):
         self.taskQueues.pop(queueName)
 
     def getNumTasksProcessed(self, workerName = None):
-        if workerName == None:
+        if workerName is None:
             return self.numTasksProcessed
         else:
             return self.numTasksProcByWorker[workerName]

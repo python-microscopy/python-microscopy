@@ -160,7 +160,7 @@ class FourierPropagatorClipHNA:
 
 
 def GenWidefieldAP(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47, apodization='np.sine'):
-    if X == None or Y == None:
+    if X is None or Y is None:
         X, Y = np.meshgrid(np.arange(-2000, 2000., dx),np.arange(-2000, 2000., dx))
     else:
         X, Y = np.meshgrid(X,Y)
@@ -196,7 +196,7 @@ def GenWidefieldAP(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47, apodizat
     #colorbar()
 
     #apperture mask
-    if apodization == None:
+    if apodization is None:
         M = 1.0*(R < (NA/n)) # NA/lambda
     elif apodization == 'np.sine':
         M = 1.0*(R < (NA/n))*np.sqrt(np.cos(.5*np.pi*np.minimum(R, 1)))
@@ -210,7 +210,7 @@ def GenWidefieldAP(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47, apodizat
     return X, Y, R, FP, M, u, v
     
 def GenWidefieldAPA(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47, field_x=0, field_y=0, apertureNA=1.5, apertureZGradient = 0, apodizisation='np.sine'):
-    if X == None or Y == None:
+    if X is None or Y is None:
         X, Y = np.meshgrid(arange(-2000, 2000., dx),arange(-2000, 2000., dx))
     else:
         X, Y = np.meshgrid(X,Y)
@@ -248,7 +248,7 @@ def GenWidefieldAPA(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47, field_x
     #apperture mask
     M = 1.0*(R < (NA/n)) # NA/lambda
     
-    if apodizisation == None:
+    if apodizisation is None:
         M = 1.0*(R < (NA/n)) # NA/lambda
     elif apodizisation == 'np.sine':
         M = 1.0*(R < (NA/n))*np.sqrt(np.cos(.5*np.pi*np.minimum(R, 1)))
@@ -318,7 +318,7 @@ def PsfFromPupilVect(pupil, zs, dx, lamb, shape = [61,61], apodization=None, n=1
     X = X - X.mean()
     Y = Y - Y.mean()
     
-    if shape == None:
+    if shape is None:
         shape = X.shape
         
     sx = shape[0]
@@ -861,7 +861,7 @@ def GenSABesselPSF(zs, dx=5, rad=.95, strength=1.0, X=None, Y=None, lamb=700, n=
 fps = {}
 def GenSAAstigPSF(zs, dx=5, strength=1.0, SA=0, X=None, Y=None, lamb=700, n=1.51, NA = 1.47):
     from PYME.misc import zernike
-    if X == None:
+    if X is None:
         Xk = 'none'
     else:
         Xk = X.ctypes.data
