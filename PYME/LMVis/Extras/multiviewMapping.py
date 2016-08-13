@@ -260,7 +260,7 @@ def applyShiftmaps(pipeline, shiftWallet, numChan):
     pipeline.addColumn('chromadx', dx)
     pipeline.addColumn('chromady', dy)
 
-def astigMAPism(pipeline, stigLib, chanPlane):
+def astigMAPism(fres, stigLib, chanPlane):
     """
     Look up table
     Args:
@@ -269,10 +269,10 @@ def astigMAPism(pipeline, stigLib, chanPlane):
     Returns:
 
     """
-    fres = pipeline.selectedDataSource.resultsSource.fitResults
-    numMols = len(fres['fitResults']['x0'])
+    # fres = pipeline.selectedDataSource.resultsSource.fitResults
+    numMols = len(fres['fitResults_x0'])
     # FIXME: go back and make whichChannel an int!
-    whichChan = np.array(fres['whichChannel'], dtype=np.int32)
+    whichChan = np.array(fres['whichChan'], dtype=np.int32)
     # stigLib['zRange'] contains the extrema of acceptable z-positions looking over all channels
     zVal = np.arange(stigLib['zRange'][0], stigLib['zRange'][1])
 
@@ -315,13 +315,13 @@ def astigMAPism(pipeline, stigLib, chanPlane):
                     print('No sigmas in correct plane for this molecule')'''
     for mi in range(numMols):
         chans = np.where(fres['planeCounts'][mi] > 0)[0]
-        cnum = len(chans)
+        # cnum = len(chans)
         errX, errY = 0, 0
         for ci in chans:
-            wx = 1./(fres['fitError']['sigmaxPlane%i' % chanPlane[ci]][mi])**2
-            wy = 1./(fres['fitError']['sigmayPlane%i' % chanPlane[ci]][mi])**2
-            errX += wx*(fres['fitResults']['sigmaxPlane%i' % chanPlane[ci]][mi] - sigCalX['chan%i' % ci])**2
-            errY += wy*(fres['fitResults']['sigmayPlane%i' % chanPlane[ci]][mi] - sigCalY['chan%i' % ci])**2
+            wx = 1./(fres['fitError_sigmaxPlane%i' % chanPlane[ci]][mi])**2
+            wy = 1./(fres['fitError_sigmayPlane%i' % chanPlane[ci]][mi])**2
+            errX += wx*(fres['fitResults_sigmaxPlane%i' % chanPlane[ci]][mi] - sigCalX['chan%i' % ci])**2
+            errY += wy*(fres['fitResults_sigmayPlane%i' % chanPlane[ci]][mi] - sigCalY['chan%i' % ci])**2
         try:
             z[mi] = zVal[np.nanargmin(errX + errY)]
         except:
@@ -330,7 +330,7 @@ def astigMAPism(pipeline, stigLib, chanPlane):
     #pipeline.Rebuild()
     return z
 
-def coalesceDict(inD, assigned):
+def coalesceDict(inD, assigned, notKosher=None):
     """
     Agregates clumps to a single event
     Note that this will evaluate the lazy pipeline events and add them into the dict as an array, not a code
@@ -360,7 +360,7 @@ def coalesceDict(inD, assigned):
             fres[errKey] = np.empty(NClumps)
             for i in xrange(NClumps):
                 ci = clist[i]
-                fres[rkey][i], fres[errKey][i] = pyDeClump.weightedAverage_(inD[rkey][ci], inD[errKey], None)
+                fres[rkey][i], fres[errKey][i] = pyDeClump.weightedAverage_(inD[rkey][ci], inD[errKey][ci], None)
         elif rkey == 'tIndex':
             fres[rkey] = np.empty(NClumps)
             for i in xrange(NClumps):
@@ -368,16 +368,32 @@ def coalesceDict(inD, assigned):
                 fres['tIndex'][i] = inD['tIndex'][ci].min()
 
         elif rkey == 'whichChan':
-            fres[rkey] = np.empty(NClumps)
-            for i in xrange(NClumps):
-                ci = clist[i]
-                cl = inD[rkey][ci]
+            fres[rkey] = np.empty(NClumps, dtype=np.int32)
+            if 'planeCounts' in inD.keys():
+                fres['planeCounts'] = np.empty((NClumps, inD['planeCounts'].shape[1]))
+                for i in xrange(NClumps):
+                    ci = clist[i]
+                    cl = inD[rkey][ci]
+                    if len(np.unique(cl)) > 1:
+                        print cl
 
-                fres[rkey][i] = np.array(np.bincount(cl).argmax(), dtype=np.int32)  # set channel to mode
+                    fres[rkey][i] = np.array(np.bincount(cl).argmax(), dtype=np.int32)  # set channel to mode
 
-                cind, counts = np.unique(cl, return_counts=True)
-                fres['planeCounts'][i][:] = 0  # zero everything since the array will be empty, and we don't know numChan
-                fres['planeCounts'][i][cind] = counts.astype(np.int32)
+                    if np.logical_and(len(np.unique(cl)) > 1, np.any([entry in cl for entry in notKosher])):
+                        3+3
+
+                    #fres['planeCounts'][i] = inD['planeCounts'][ci][:].sum(axis=0)
+                    fres['planeCounts'][i][:] = 0  # inD['planeCounts'][ci][:].sum(axis=0)
+                    cind, counts = np.unique(cl, return_counts=True)
+                    #fres['planeCounts'][i][:] = 0  # zero everything since the array will be empty, and we don't know numChan
+                    fres['planeCounts'][i][cind] += counts.astype(np.int32)
+
+            else:
+                for i in xrange(NClumps):
+                    ci = clist[i]
+                    cl = inD[rkey][ci]
+
+                    fres[rkey][i] = np.array(np.bincount(cl).argmax(), dtype=np.int32)  # set channel to mode
 
         elif rkey == 'planeCounts' or skey[0] == 'fitError':
             pass
@@ -719,10 +735,12 @@ class multiviewMapper:
         for pkey in pipeline.keys():
             fres[pkey] = pipeline[pkey]
 
+        fres['planeCounts'] = np.zeros((len(fres['fitResults_x0']), numChan))
+
         for cind in np.unique(chanColor):
             I = np.argsort(fres['tIndex'])
             for pkey in pipeline.keys():
-                fres[pkey] = pipeline[pkey][I]
+                fres[pkey] = fres[pkey][I]
             # sort fitResults in order of frames
             #fresCopy = fresCopy[(fresCopy['tIndex'].argsort())]
 
@@ -733,7 +751,7 @@ class multiviewMapper:
                 fres['fitResults_sigmayPlane%i' % pp][np.isnan(fres['fitResults_sigmayPlane%i' % pp])] = 0
 
             # trick pairMolecules function by tweaking the channel vector
-            planeInColorChan = np.copy(fres['whichChannel'])
+            planeInColorChan = np.copy(fres['whichChan'])
             chanColor = np.array(chanColor)
             ignoreChans = np.where(chanColor != cind)[0]
             igMask = [mm in ignoreChans.tolist() for mm in planeInColorChan]
@@ -752,18 +770,16 @@ class multiviewMapper:
                 assigned[cMask] = ci + 1  #FIXME: cluster assignments currently must start from 1, which is mean.
 
             # coalesce clumped localizations into single data point
-            fres = coalesceDict(fres, assigned)
+            fres = coalesceDict(fres, assigned, ignoreChans)
             #clumpedRes = pyDeClump.coalesceClumps(fresCopy, assigned) #, np.where(chanColor == cind)[0])
             #fresCopy = clumpedRes
 
         print('Clumped %i localizations' % (ni - len(fres['whichChan'])))
 
         # create data source for our clumped dat
-        pipeline.addDataSource('Clumped', mappingFilter(fres))
-        pipeline.selectDataSource('Clumped')
 
-        z = astigMAPism(pipeline, stigLib, chanPlane)
-
+        z = astigMAPism(fres, stigLib, chanPlane)
+        fres['astigZ'] = z
         #dt = list(clumpedRes.dtype.descr)
         #addDT = [('z0', '<f4')]
         #dt[1] = list(dt[1])
@@ -779,7 +795,12 @@ class multiviewMapper:
         #fresCopy['fitResults']['z0'] = z
         #pipeline.addDataSource('Clumped', fitResultsSource(fresCopy))
         #pipeline.selectDataSource('Clumped')
+        pipeline.addDataSource('Zmapped', mappingFilter(fres))
+        pipeline.selectDataSource('Zmapped')
         pipeline.addColumn('astigZ', z)
+        pipeline.Rebuild()
+
+
 
 
 
