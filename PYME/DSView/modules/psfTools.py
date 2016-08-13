@@ -352,7 +352,7 @@ class PSFTools(HasTraits):
             self._astig_view.SetPage(html, '')
         else:
             plt.show()
-		return dat
+        return dat
 
         
         
