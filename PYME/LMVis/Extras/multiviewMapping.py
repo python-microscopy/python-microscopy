@@ -29,6 +29,7 @@ import os
 from PYME.IO.FileUtils import nameUtils
 import json
 import importlib
+import scipy.interpolate as terp
 
 def foldX_old(pipeline, x=None):
     """
@@ -73,7 +74,7 @@ def foldX(pipeline):
     pipeline.addColumn('chromadx', 0*pipeline['x'])
     pipeline.addColumn('chromady', 0*pipeline['y'])
 
-    pipeline.mapping.setMapping('whichChan', 'floor(x/roiSizeNM)')
+    pipeline.mapping.setMapping('whichChan', 'floor(x/roiSizeNM).astype(int)')
     pipeline.mapping.setMapping('x', 'x%roiSizeNM + chromadx')
     pipeline.mapping.setMapping('y', 'y + chromady')
 
@@ -268,7 +269,6 @@ def astigMAPism(pipeline, stigLib, chanPlane):
     Returns:
 
     """
-    import scipy.interpolate as terp
     fres = pipeline.selectedDataSource.resultsSource.fitResults
     numMols = len(fres['fitResults']['x0'])
     # FIXME: go back and make whichChannel an int!
@@ -329,6 +329,66 @@ def astigMAPism(pipeline, stigLib, chanPlane):
     #pipeline.selectedDataSource.addColumn('zPos', z)
     #pipeline.Rebuild()
     return z
+
+def coalesceDict(inD, assigned):
+    """
+    Agregates clumps to a single event
+    Note that this will evaluate the lazy pipeline events and add them into the dict as an array, not a code
+    object
+    """
+    NClumps = int(np.max(assigned))  # len(np.unique(assigned))  #
+
+    #work out what the data type for our declumped data should be
+    #dt = deClumpedDType(fitResults)
+
+     #np.empty(NClumps, dt)
+    fres = {}
+
+    #dtr = '%df4' % len(f['fitResults'].dtype)
+
+    clist = [[] for i in xrange(NClumps)]
+    for i, c in enumerate(assigned):
+        clist[int(c-1)].append(i)
+
+
+    for rkey in inD.keys():
+        skey = rkey.split('_')
+
+        if skey[0] == 'fitResults':
+            fres[rkey] = np.empty(NClumps)
+            errKey = 'fitError_' + skey[1]
+            fres[errKey] = np.empty(NClumps)
+            for i in xrange(NClumps):
+                ci = clist[i]
+                fres[rkey][i], fres[errKey][i] = pyDeClump.weightedAverage_(inD[rkey][ci], inD[errKey], None)
+        elif rkey == 'tIndex':
+            fres[rkey] = np.empty(NClumps)
+            for i in xrange(NClumps):
+                ci = clist[i]
+                fres['tIndex'][i] = inD['tIndex'][ci].min()
+
+        elif rkey == 'whichChan':
+            fres[rkey] = np.empty(NClumps)
+            for i in xrange(NClumps):
+                ci = clist[i]
+                cl = inD[rkey][ci]
+
+                fres[rkey][i] = np.array(np.bincount(cl).argmax(), dtype=np.int32)  # set channel to mode
+
+                cind, counts = np.unique(cl, return_counts=True)
+                fres['planeCounts'][i][:] = 0  # zero everything since the array will be empty, and we don't know numChan
+                fres['planeCounts'][i][cind] = counts.astype(np.int32)
+
+        elif rkey == 'planeCounts' or skey[0] == 'fitError':
+            pass
+
+        else:  # settle for the unweighted mean
+            fres[rkey] = np.empty(NClumps)
+            for i in xrange(NClumps):
+                ci = clist[i]
+                fres[rkey][i] = inD[rkey][ci].mean()
+
+    return fres
 
 class multiviewMapper:
     """
@@ -574,11 +634,11 @@ class multiviewMapper:
         try:
             numChan = pipeline.mdh['Multiview.NumROIs']
             try:
-                chanColor = pipeline.mdh['Multiview.ChannelColor']  # Bewersdorf Biplane example: [0, 1, 1, 0]
+                chanColor = [0, 1, 1, 0]#pipeline.mdh['Multiview.ChannelColor']  # Bewersdorf Biplane example: [0, 1, 1, 0]
             except AttributeError:
                 chanColor = [0 for c in range(numChan)]
             try:
-                chanPlane = pipeline.mdh['Multiview.ChannelPlane']  # Bewersdorf Biplane example: [0, 0, 1, 1]
+                chanPlane = [0, 0, 1, 1]#pipeline.mdh['Multiview.ChannelPlane']  # Bewersdorf Biplane example: [0, 0, 1, 1]
             except AttributeError:
                 chanPlane = [0 for c in range(numChan)]
             numPlanes = len(np.unique(chanPlane))
@@ -603,68 +663,85 @@ class multiviewMapper:
             except:
                 raise IOError('Astigmatism sigma-Z mapping information not found')
 
-        from PYME.LMVis.inpFilt import fitResultsSource
+        from PYME.LMVis.inpFilt import mappingFilter  # fitResultsSource
         # make sure xy-registration has already happened:
         if 'registered' not in pipeline.keys():
             print('registering multiview channels in x-y plane')
             self.OnFoldAndMapXY(event)
 
-        fres = pipeline.selectedDataSource.resultsSource.fitResults
+        #fres = pipeline.selectedDataSource.resultsSource.fitResults
 
         # clump molecules within colorchannels
 
         # want to hack coalesceClumps to shrink whichChan as well as average sigma values separately for each plane
-        dt = list(fres.dtype.descr)
-        addDT = []
-        addDT += [('sigmaxPlane%i' % pi, '<f4') for pi in range(numPlanes)]
-        addDT += [('sigmayPlane%i' % pi, '<f4') for pi in range(numPlanes)]
-        dt[1] = list(dt[1])
-        dt[2] = list(dt[2])
-        dt[1][1] += addDT
-        dt[2][1] += addDT
+        #dt = list(fres.dtype.descr)
+        #addDT = []
+        #addDT += [('sigmaxPlane%i' % pi, '<f4') for pi in range(numPlanes)]
+        #addDT += [('sigmayPlane%i' % pi, '<f4') for pi in range(numPlanes)]
+        #dt[1] = list(dt[1])
+        #dt[2] = list(dt[2])
+        #dt[1][1] += addDT
+        #dt[2][1] += addDT
 
-        dt = dt + [('whichChannel', '<i4')]
-        if numPlanes > 1:
-            dt = dt + [('planeCounts', '(%i,)<i4' % numChan)]
+        #dt = dt + [('whichChannel', '<i4')]
+        #if numPlanes > 1:
+        #    dt = dt + [('planeCounts', '(%i,)<i4' % numChan)]
 
-        dt[1], dt[2] = tuple(dt[1]), tuple(dt[2])
-        fresCopy = np.empty_like(fres, dtype=dt)
+        #dt[1], dt[2] = tuple(dt[1]), tuple(dt[2])
+        #fresCopy = np.empty_like(fres, dtype=dt)
         # copy over existing fitresults:
-        for fr in fres.dtype.descr:
-            fresCopy[fr[0]] = fres[fr[0]]
-        fresCopy['whichChannel'] = np.int32(pipeline.mapping.whichChan)
-        for pind in range(numPlanes):
-            pMask = [(chanPlane[fresCopy['whichChannel'][p]] == pind) for p in range(len(fresCopy['whichChannel']))]
-            fresCopy['fitResults']['sigmaxPlane%i' % pind] = pMask*fresCopy['fitResults']['sigmax']
-            fresCopy['fitResults']['sigmayPlane%i' % pind] = pMask*fresCopy['fitResults']['sigmay']
-            fresCopy['fitError']['sigmaxPlane%i' % pind] = pMask*fresCopy['fitError']['sigmax']
-            fresCopy['fitError']['sigmayPlane%i' % pind] = pMask*fresCopy['fitError']['sigmay']
-            # replace zeros in fiterror with infs so their weights are zero
-            fresCopy['fitError']['sigmaxPlane%i' % pind][fresCopy['fitError']['sigmaxPlane%i' % pind] == 0] = np.inf
-            fresCopy['fitError']['sigmayPlane%i' % pind][fresCopy['fitError']['sigmayPlane%i' % pind] == 0] = np.inf
+        #for fr in fres.dtype.descr:
+        #    fresCopy[fr[0]] = fres[fr[0]]
+        #fresCopy['whichChannel'] = np.int32(pipeline.mapping.whichChan)
 
-        ni = len(fresCopy['whichChannel'])
+
+        for pind in range(numPlanes):
+            #pMask = [(chanPlane[pipeline.mapping['whichChannel'][p]] == pind) for p in range(len(fresCopy['whichChannel']))]
+            pMask = [chanPlane[p] == pind for p in pipeline.mapping['whichChan']]
+            #fresCopy['fitResults']['sigmaxPlane%i' % pind] = pMask*fresCopy['fitResults']['sigmax']
+            #fresCopy['fitResults']['sigmayPlane%i' % pind] = pMask*fresCopy['fitResults']['sigmay']
+            #fresCopy['fitError']['sigmaxPlane%i' % pind] = pMask*fresCopy['fitError']['sigmax']
+            #fresCopy['fitError']['sigmayPlane%i' % pind] = pMask*fresCopy['fitError']['sigmay']
+            # replace zeros in fiterror with infs so their weights are zero
+            #fresCopy['fitError']['sigmaxPlane%i' % pind][fresCopy['fitError']['sigmaxPlane%i' % pind] == 0] = np.inf
+            #fresCopy['fitError']['sigmayPlane%i' % pind][fresCopy['fitError']['sigmayPlane%i' % pind] == 0] = np.inf
+
+            pipeline.addColumn('fitResults_sigmaxPlane%i' % pind, pMask*pipeline.mapping['fitResults_sigmax'])
+            pipeline.addColumn('fitResults_sigmayPlane%i' % pind, pMask*pipeline.mapping['fitResults_sigmay'])
+            pipeline.addColumn('fitError_sigmaxPlane%i' % pind, pMask*pipeline.mapping['fitError_sigmax'])
+            pipeline.addColumn('fitError_sigmayPlane%i' % pind, pMask*pipeline.mapping['fitError_sigmay'])
+            # replace zeros in fiterror with infs so their weights are zero
+            pipeline.mapping['fitError_sigmaxPlane%i' % pind][pipeline.mapping['fitError_sigmaxPlane%i' % pind] == 0] = np.inf
+            pipeline.mapping['fitError_sigmayPlane%i' % pind][pipeline.mapping['fitError_sigmayPlane%i' % pind] == 0] = np.inf
+
+        ni = len(pipeline.mapping['whichChan'])
+        fres = {}
+        for pkey in pipeline.keys():
+            fres[pkey] = pipeline[pkey]
 
         for cind in np.unique(chanColor):
+            I = np.argsort(fres['tIndex'])
+            for pkey in pipeline.keys():
+                fres[pkey] = pipeline[pkey][I]
             # sort fitResults in order of frames
-            fresCopy = fresCopy[(fresCopy['tIndex'].argsort())]
+            #fresCopy = fresCopy[(fresCopy['tIndex'].argsort())]
 
             # make sure NaNs (awarded when there is no sigma in a given plane of a clump) do not carry over from when
             # ignored channel localizations were clumped by themselves
             for pp in range(numPlanes):
-                fresCopy['fitResults']['sigmaxPlane%i' % pp][np.isnan(fresCopy['fitResults']['sigmaxPlane%i' % pp])] = 0
-                fresCopy['fitResults']['sigmayPlane%i' % pp][np.isnan(fresCopy['fitResults']['sigmayPlane%i' % pp])] = 0
+                fres['fitResults_sigmaxPlane%i' % pp][np.isnan(fres['fitResults_sigmaxPlane%i' % pp])] = 0
+                fres['fitResults_sigmayPlane%i' % pp][np.isnan(fres['fitResults_sigmayPlane%i' % pp])] = 0
 
             # trick pairMolecules function by tweaking the channel vector
-            planeInColorChan = np.copy(fresCopy['whichChannel'])
+            planeInColorChan = np.copy(fres['whichChannel'])
             chanColor = np.array(chanColor)
             ignoreChans = np.where(chanColor != cind)[0]
             igMask = [mm in ignoreChans.tolist() for mm in planeInColorChan]
             planeInColorChan[np.where(igMask)] = -9  # must be negative to be ignored
 
             # assign molecules to clumps
-            clumpID, paired = pairMolecules(fresCopy['tIndex'], fresCopy['fitResults']['x0'], fresCopy['fitResults']['y0'],
-                                            planeInColorChan, deltaX=fresCopy['fitError']['x0'],
+            clumpID, paired = pairMolecules(fres['tIndex'], fres['fitResults_x0'], fres['fitResults_y0'],
+                                            planeInColorChan, deltaX=fres['fitError_x0'],
                                             appearIn=np.where(chanColor == cind)[0], nFrameSep=1)
 
             # make sure clumpIDs are contiguous from [0, numClumps)
@@ -675,32 +752,34 @@ class multiviewMapper:
                 assigned[cMask] = ci + 1  #FIXME: cluster assignments currently must start from 1, which is mean.
 
             # coalesce clumped localizations into single data point
-            clumpedRes = pyDeClump.coalesceClumps(fresCopy, assigned) #, np.where(chanColor == cind)[0])
-            fresCopy = clumpedRes
+            fres = coalesceDict(fres, assigned)
+            #clumpedRes = pyDeClump.coalesceClumps(fresCopy, assigned) #, np.where(chanColor == cind)[0])
+            #fresCopy = clumpedRes
 
-        print('Clumped %i localizations' % (ni - len(fresCopy['whichChannel'])))
+        print('Clumped %i localizations' % (ni - len(fres['whichChan'])))
 
         # create data source for our clumped dat
-        pipeline.addDataSource('Clumped', fitResultsSource(clumpedRes))
+        pipeline.addDataSource('Clumped', mappingFilter(fres))
         pipeline.selectDataSource('Clumped')
 
         z = astigMAPism(pipeline, stigLib, chanPlane)
 
-        dt = list(clumpedRes.dtype.descr)
-        addDT = [('z0', '<f4')]
-        dt[1] = list(dt[1])
-        dt[1][1] += addDT
-        dt[1] = tuple(dt[1])
-        fresCopy = np.empty_like(clumpedRes, dtype=dt)
-        # copy over existing fitresults:
-        for fr in clumpedRes.dtype.descr:
-            fresCopy[fr[0]] = clumpedRes[fr[0]]
+        #dt = list(clumpedRes.dtype.descr)
+        #addDT = [('z0', '<f4')]
+        #dt[1] = list(dt[1])
+        #dt[1][1] += addDT
+        #dt[1] = tuple(dt[1])
+        #fresCopy = np.empty_like(clumpedRes, dtype=dt)
+        ## copy over existing fitresults:
+        #for fr in clumpedRes.dtype.descr:
+        #    fresCopy[fr[0]] = clumpedRes[fr[0]]
 
         #FIXME: Add in position of stage
 
-        fresCopy['fitResults']['z0'] = z
-        pipeline.addDataSource('Clumped', fitResultsSource(fresCopy))
-        pipeline.selectDataSource('Clumped')
+        #fresCopy['fitResults']['z0'] = z
+        #pipeline.addDataSource('Clumped', fitResultsSource(fresCopy))
+        #pipeline.selectDataSource('Clumped')
+        pipeline.addColumn('astigZ', z)
 
 
 
