@@ -529,7 +529,10 @@ class mappingFilter(inputFilter):
             if vname in globals():
                 pass
             if vname in self.resultsSource.keys(): #look at original results first
-                locals()[vname] = self.resultsSource[(vname, sl)]
+                try:
+                    locals()[vname] = self.resultsSource[(vname, sl)]
+                except TypeError:
+                    locals()[vname] = self.resultsSource[vname][sl]
             elif vname in self.new_columns.keys():
                 locals()[vname] = self.new_columns[vname][sl]
             elif vname in self.variables.keys():

@@ -780,6 +780,7 @@ class multiviewMapper:
 
         z = astigMAPism(fres, stigLib, chanPlane)
         fres['astigZ'] = z
+
         #dt = list(clumpedRes.dtype.descr)
         #addDT = [('z0', '<f4')]
         #dt[1] = list(dt[1])
@@ -795,10 +796,12 @@ class multiviewMapper:
         #fresCopy['fitResults']['z0'] = z
         #pipeline.addDataSource('Clumped', fitResultsSource(fresCopy))
         #pipeline.selectDataSource('Clumped')
+        # make sure there is no z
+        del fres['z']
         pipeline.addDataSource('Zmapped', mappingFilter(fres))
         pipeline.selectDataSource('Zmapped')
-        pipeline.addColumn('astigZ', z)
-        pipeline.Rebuild()
+        #pipeline.addColumn('astigZ', z)
+        #pipeline.Rebuild()
 
 
 
