@@ -51,10 +51,13 @@ class EventLogger:
           
         self._events = []
     
-    def logEvent(self, eventName, eventDescr = ''):
+    def logEvent(self, eventName, eventDescr = '', timestamp=None):
         if eventName == 'StartAq':
             eventDescr = '%d' % self.spooler.imNum
-        self._events.append((eventName, eventDescr, sp.timeFcn()))
+
+        if timestamp is None:
+            timestamp = sp.timeFcn()
+        self._events.append((eventName, eventDescr, timestamp))
         
     def to_JSON(self):
         return json.dumps(self._events)

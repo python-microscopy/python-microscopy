@@ -90,6 +90,9 @@ class DataSource(BaseDataSource):
         try:
             #return json.loads(clusterIO.getFile(eventFileName, self.clusterfilter))
             ev = pd.read_json(clusterIO.getFile(eventFileName, self.clusterfilter))
+            if len(ev) == 0:
+                return []
+            
             ev.columns = ['EventName', 'EventDescr', 'Time']
 
             evts = np.empty(len(ev), dtype=[('EventName', 'S32'), ('EventDescr', 'S256'), ('Time', 'f8')])

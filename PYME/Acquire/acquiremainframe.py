@@ -478,8 +478,8 @@ class PYMEMainFrame(AUIFrame):
             #self.mCam.SetLabel(wxID_SMIMAINFRAMEMCAMBIN, 'Turn Binning Off')
             self.bin_on = True
             
-        self.scope.cam.SetCOC()
-        self.scope.cam.GetStatus()
+        #self.scope.cam.SetCOC()
+        #self.scope.cam.GetStatus()
         self.scope.frameWrangler.Prepare()
         self.vp.SetDataStack(self.scope.frameWrangler.currentFrame)
         self.pa.start()
@@ -555,8 +555,8 @@ class PYMEMainFrame(AUIFrame):
 
             
         logging.debug('about to set COC')
-        self.scope.cam.SetCOC()
-        self.scope.cam.GetStatus()
+        #self.scope.cam.SetCOC()
+        #self.scope.cam.GetStatus()
         self.scope.frameWrangler.Prepare()
         self.vp.SetDataStack(self.scope.frameWrangler.currentFrame)
         
@@ -591,8 +591,8 @@ class PYMEMainFrame(AUIFrame):
         y2 = self.scope.cam.GetPicHeight()
 
 
-        self.scope.cam.SetCOC()
-        self.scope.cam.GetStatus()
+        #self.scope.cam.SetCOC()
+        #self.scope.cam.GetStatus()
         self.scope.frameWrangler.Prepare()
         self.vp.SetDataStack(self.scope.frameWrangler.currentFrame)
         

@@ -45,58 +45,6 @@ def remove_newlines(s):
     s = ' '.join(s.split())
     return '\n'.join(s.split('<>'))
 
-'''def plotAstigCalibration(astigLib):
-    """
-    dat = {'z' : objPositions['z'][valid].tolist(), 'sigmax' : res['fitResults_sigmax'][valid].tolist(),
-                'sigmay' : res['fitResults_sigmay'][valid].tolist(), 'dsigma' : dsigma[valid].tolist()}
-    Args:
-        astigDat:
-
-    Returns:
-
-    """
-    #if astigDat.__class__ == dict:
-    #    astigDat = [astigDat]
-    try: #convert multiview dict to list of dicts
-        numChan = astigLib['numChan']
-        astigDat = []
-        for ii in range(numChan):
-            astigDat.append(astigLib['PSF%i' % ii])
-    except:
-        astigDat = [astigLib]
-        numChan = len(astigDat)
-
-    import matplotlib.pyplot as plt
-    f = plt.figure(figsize=(10, 4))
-    for ii in range(numChan):
-        plt.ioff()
-
-
-        plt.subplot(121)
-        plt.plot(astigDat[ii]['z'], astigDat[ii]['sigmax'], label='x %i' % ii)
-        plt.plot(astigDat[ii]['z'], astigDat[ii]['sigmay'], label='y %i' % ii)
-
-        #plt.ylim(-200, 400)
-        plt.grid()
-        plt.xlabel('z position [nm]')
-        plt.ylabel('Sigma [nm]')
-
-        plt.subplot(122)
-        plt.plot(astigDat[ii]['z'], astigDat[ii]['dsigma'], lw=2, label='Channel %i' % ii)
-        plt.grid()
-        plt.xlabel('z position [nm]')
-        plt.ylabel('Sigma y - Sigma y [nm]')
-
-        plt.tight_layout()
-    plt.subplot(121)
-    plt.legend()
-    plt.subplot(122)
-    plt.legend()
-    plt.ion()
-    plt.show()
-
-    return f'''
-
 class PSFQualityPanel(wx.Panel):
     def __init__(self, dsviewer):
         wx.Panel.__init__(self, dsviewer) 
@@ -283,14 +231,11 @@ class PSFTools(HasTraits):
                 Item('intermediateUpdates'),
                 buttons=[OKButton])
     
-    def __init__(self, dsviewer, psfIm=None):
+    def __init__(self, dsviewer):
         self.dsviewer = dsviewer
         self.do = dsviewer.do
 
-        if not psfIm:
-            self.image = dsviewer.image
-        else:
-            self.image = psfIm
+        self.image = dsviewer.image
         
         dsviewer.AddMenuItem('Processing', "Extract &Pupil Function", self.OnExtractPupil)
         dsviewer.AddMenuItem('Processing', "Cramer-Rao Bound vs Background ", self.OnCalcCRB3DvsBG)
@@ -333,7 +278,7 @@ class PSFTools(HasTraits):
 
         dv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
 
-    def OnCalibrateAstigmatism(self, event, plotIt=True):
+    def OnCalibrateAstigmatism(self, event):
         from PYME.recipes.measurement import FitPoints
         import matplotlib.pyplot as plt
         import mpld3
@@ -361,25 +306,53 @@ class PSFTools(HasTraits):
 
         valid = ((res['fitError_sigmax'] > 0) * (res['fitError_sigmax'] < 25)* (res['fitError_sigmay'] < 25)*(res['fitResults_A'] > 0) > 0)
 
-
-
-        dat = {'z' : objPositions['z'][valid].tolist(), 'sigmax' : res['fitResults_sigmax'][valid].tolist(),
-                           'sigmay' : res['fitResults_sigmay'][valid].tolist(), 'dsigma' : dsigma[valid].tolist()}
-        data = json.dumps(dat)
-
-        if plotIt:
-            #generate new tab to show results
-            if not '_astig_view' in dir(self):
+        #generate new tab to show results
+        use_web_view = True
+        if not '_astig_view' in dir(self):
+            try:
                 self._astig_view= wx.html2.WebView.New(self.dsviewer)
                 self.dsviewer.AddPage(self._astig_view, True, 'Astigmatic calibration')
-            f = plotAstigCalibration(dat)
-            fig = mpld3.fig_to_html(f)
+
+            except NotImplementedError:
+                use_web_view = False
+
+        #do plotting
+        plt.ioff()
+        f = plt.figure(figsize=(10, 4))
+
+        plt.subplot(121)
+        plt.plot(objPositions['z'][valid], res['fitResults_sigmax'][valid])
+        plt.plot(objPositions['z'][valid], res['fitResults_sigmay'][valid])
+
+        #plt.ylim(-200, 400)
+        plt.grid()
+        plt.xlabel('z position [nm]')
+        plt.ylabel('Sigma [nm]')
+        plt.legend(['x', 'y'])
+
+        plt.subplot(122)
+        plt.plot(objPositions['z'][valid], dsigma[valid], lw=2)
+        plt.grid()
+        plt.xlabel('z position [nm]')
+        plt.ylabel('Sigma y - Sigma y [nm]')
+
+        plt.tight_layout()
+
+        plt.ion()
+        dat = {'z' : objPositions['z'][valid].tolist(), 'sigmax' : res['fitResults_sigmax'][valid].tolist(),
+                           'sigmay' : res['fitResults_sigmay'][valid].tolist(), 'dsigma' : dsigma[valid].tolist()}
+        
+        if use_web_view:
+            fig =  mpld3.fig_to_html(f)
+            data = json.dumps(dat)
+
             template = env.get_template('astigCal.html')
             html = template.render(astigplot=fig, data=data)
-            print html
+            #print html
             self._astig_view.SetPage(html, '')
-
-        return dat
+        else:
+            plt.show()
+		return dat
 
         
         
