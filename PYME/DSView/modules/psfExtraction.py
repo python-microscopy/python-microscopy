@@ -36,7 +36,6 @@ class psfExtractor:
             self.ChanOffsetZnm = None
             self.numChan = self.image.data.shape[3]
 
-
         self.PSFLocs = []
         self.psfROISize = [30,30,30]
         
