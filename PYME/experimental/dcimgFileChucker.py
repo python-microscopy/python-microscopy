@@ -67,7 +67,7 @@ class venerableFileChucker(object):
             #os.remove(events_filename)
 
     def searchAndHuck(self, onlySpoolNew=False, deleteAfterSpool=False):
-        md_candidates = glob.glob(self.folder + '*.json')
+        md_candidates = glob.glob(self.folder + '\*.json')
         #changed it to just use a list comprehension as this will be much easier to read (and there is no performance advantage to using arrays) - DB
         metadataFiles = [f for f in md_candidates if not (f.endswith('_events.json') or f.endswith('_zsteps.json'))]
 
@@ -82,12 +82,12 @@ class venerableFileChucker(object):
 
         while True: #NB!!!!: this will run for ever
             # search for new files
-            md_candidates = glob.glob(self.folder + '*.json')
+            md_candidates = glob.glob(self.folder + '\*.json')
 
             try:
                 metadataFiles = [f for f in md_candidates if
                                  not (f in ignoreList or f.endswith('_events.json') or f.endswith('_zsteps.json'))]
-                metadataFiles.sort(reverse=True)
+                metadataFiles.sort()
 
                 #get the oldest metadata file not on our list of files to be ignored
                 mdFile = metadataFiles[0]
@@ -128,7 +128,10 @@ class venerableFileChucker(object):
                 ignoreList.append(mdfilename)
                 if deleteAfterSpool:
                     os.remove(mdfilename)
-                    os.remove(events_file_detected)
+                    if os.path.exists(events_filename):
+                        os.remove(events_filename)
+                    if os.path.exists(zsteps_filename):
+                        os.remove(zsteps_filename)
 
             except IndexError:
                 #this happens if there are no new metadata files - wait until there are some.
