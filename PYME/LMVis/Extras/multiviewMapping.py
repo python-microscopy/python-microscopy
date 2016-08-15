@@ -679,7 +679,7 @@ class multiviewMapper:
             except:
                 raise IOError('Astigmatism sigma-Z mapping information not found')
 
-        from PYME.LMVis.inpFilt import mappingFilter  # fitResultsSource
+        from PYME.LMVis.inpFilt import cachingResultsFilter  # mappingFilter  # fitResultsSource
         # make sure xy-registration has already happened:
         if 'registered' not in pipeline.keys():
             print('registering multiview channels in x-y plane')
@@ -798,7 +798,8 @@ class multiviewMapper:
         #pipeline.selectDataSource('Clumped')
         # make sure there is no z
         del fres['z']
-        pipeline.addDataSource('Zmapped', mappingFilter(fres))
+        #pipeline.addDataSource('Zmapped', mappingFilter(fres))
+        pipeline.addDataSource('Zmapped', cachingResultsFilter(fres))
         pipeline.selectDataSource('Zmapped')
         #pipeline.addColumn('astigZ', z)
         #pipeline.Rebuild()
