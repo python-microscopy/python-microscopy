@@ -349,13 +349,13 @@ class GaussianFitFactory:
                 fitErrors=None
                 try:       
                     fitErrors = scipy.sqrt(scipy.diag(cov_x)*(infodict['fvec']*infodict['fvec']).sum()/(len(d_m)- len(res)))
-                except Exception, e:
+                except Exception as e:
                     pass
                 #print res, fitErrors, resCode
                 #recreate a list of events in the desired format
                 resList = np.empty(nEvents, FitResultsDType)
-                for i in range(nEvents):
-                    i3 = 3*i
+                for j in range(nEvents):
+                    i3 = 3*j
                     i31 = i3 + 3
                     
                     if not fitErrors is None:

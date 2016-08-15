@@ -20,7 +20,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
-import serial;
+import serial
 
 class piezo_e255:
     #Script fuer den alten PI-Controller E255.60,

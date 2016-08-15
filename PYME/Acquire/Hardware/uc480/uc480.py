@@ -252,7 +252,7 @@ class camera(HCAM):
         self.width = 1024
         self.height = 768
         self.data = np.zeros((self.height,self.width),dtype=np.int8)
-        return None
+        #return None
 
     def ExitCamera(self):
         return CALL('ExitCamera', ctypes.byref(self)) == 0

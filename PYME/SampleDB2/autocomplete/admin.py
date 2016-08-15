@@ -73,7 +73,7 @@ class AutocompleteAdmin(object):
         return media
     media = property(_media)
 
-    def _autocomplete_view(request, field):
+    def _autocomplete_view(self, request, field):
         info = self.model._meta.app_label, self.model._meta.module_name, field
 
         if field in self.autocomplete_fields:
@@ -102,5 +102,5 @@ class AutocompleteAdmin(object):
     urls = property(urls)
 
     @classmethod
-    def _validate(self):
+    def _validate(cls):
         pass

@@ -56,7 +56,7 @@ def f_j_gauss2dF(p,func, d, w, X,Y):
     #r.strides = r.strides #Really dodgy hack to get around something which numpy is not doing right ....
     r = r.reshape((-1, 7))
     for  i in range(7):
-    r[:, i] *= w
+        r[:, i] *= w
     return r
 
 class GaussianFitResult:

@@ -333,7 +333,7 @@ class LMGLCanvas(GLCanvas):
         # setting screen-corresponding geometry
         glViewport(0,0,WindowWidth,WindowHeight)
         glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity
+        glLoadIdentity()
         glMatrixMode (GL_PROJECTION)
         glLoadIdentity()
         gluOrtho2D(0.0,WindowWidth-1,0.0,WindowHeight-1)

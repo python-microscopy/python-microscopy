@@ -337,7 +337,7 @@ class matfileSource(inputFilter):
         return self._keys
 
     def __getitem__(self, key):
-        key, sl = self._getKeySlice(keys)
+        key, sl = self._getKeySlice(key)
         if not key in self._keys:
             raise RuntimeError('Key not found')
 
@@ -598,7 +598,7 @@ class cloneSource(inputFilter):
     def __init__(self, resultsSource):
         """Creates an in memory copy of a (filtered) data source"""
 
-        resultsSource
+        #resultsSource
         self.cache = {}
 
         for k in resultsSource.keys():
