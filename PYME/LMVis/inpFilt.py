@@ -460,10 +460,8 @@ class mappingFilter(inputFilter):
         elif key in self.new_columns.keys():
             return self.new_columns[key][sl]
         else:
-            try:  # self.resultSource.__class__ == dict
-                return self.resultsSource[key][sl]
-            except AttributeError:
-                return self.resultsSource[keys]
+            return self.resultsSource[key][sl]
+
 
     def keys(self):
         return list(self.resultsSource.keys()) + self.mappings.keys() + self.new_columns.keys()
@@ -529,10 +527,7 @@ class mappingFilter(inputFilter):
             if vname in globals():
                 pass
             if vname in self.resultsSource.keys(): #look at original results first
-                try:
-                    locals()[vname] = self.resultsSource[(vname, sl)]
-                except TypeError:
-                    locals()[vname] = self.resultsSource[vname][sl]
+                locals()[vname] = self.resultsSource[(vname, sl)]
             elif vname in self.new_columns.keys():
                 locals()[vname] = self.new_columns[vname][sl]
             elif vname in self.variables.keys():
