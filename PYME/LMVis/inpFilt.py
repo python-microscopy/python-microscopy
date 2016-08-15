@@ -460,7 +460,6 @@ class mappingFilter(inputFilter):
         else:
             return self.resultsSource[keys]
 
-
     def keys(self):
         return list(self.resultsSource.keys()) + self.mappings.keys() + self.new_columns.keys()
 
