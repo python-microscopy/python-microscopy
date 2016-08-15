@@ -32,10 +32,10 @@ class GraphViewPanel(fastGraph.FastGraphPanel):
     def __init__(self, parent, dstack = None, do = None, xvals=None, xlabel=''):
         
 
-        if (dstack == None and do == None):
+        if (dstack is None and do is None):
             dstack = np.zeros((10,10))
 
-        if do == None:
+        if do is None:
             self.do = DisplayOpts(dstack)
             self.do.Optimise()
         else:
@@ -45,7 +45,7 @@ class GraphViewPanel(fastGraph.FastGraphPanel):
 
         self.do.WantChangeNotification.append(self.draw)
         
-        if xvals == None:
+        if xvals is None:
             xvals = np.arange(self.do.ds.shape[0])
 
         self.xvals = xvals

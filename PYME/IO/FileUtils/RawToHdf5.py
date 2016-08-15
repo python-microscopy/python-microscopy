@@ -74,7 +74,7 @@ def convertFile(pathToData, outFile, frameSize = [256,256], pixelsize=None, comp
 
         hdh = MetaData.HDFMDHandler(outF, MetaData.TIRFDefault)
 
-        if not pixelsize == None:
+        if not pixelsize is None:
             hdh.setEntry('voxelsize.x', pixelsize)
             hdh.setEntry('voxelsize.y', pixelsize)
 

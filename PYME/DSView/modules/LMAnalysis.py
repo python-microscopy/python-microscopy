@@ -332,7 +332,7 @@ class AnalysisController(object):
         except:
             self.tq = None
         
-        if self.tq == None:
+        if self.tq is None:
             from PYME.misc.computerName import GetComputerName
             compName = GetComputerName()
             
@@ -486,7 +486,7 @@ class LMAnalyser2(object):
 
     def OnToggleBackground(self, event):
         self.SetMDItems()
-        if self.do.ds.bgRange == None:
+        if self.do.ds.bgRange is None:
             self.do.ds.bgRange = [int(v) for v in self.tBackgroundFrames.GetValue().split(':')]
             self.do.ds.dataStart = int(self.tStartAt.GetValue())
             

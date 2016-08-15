@@ -289,7 +289,7 @@ class ParticleTrackingView(HasTraits):
     
     def __init__(self, dsviewer, tracker = None, clumps=[]):
         HasTraits.__init__(self)
-        if tracker == None:
+        if tracker is None:
             self.tracker = TrackFeatures()
         else:
             self.tracker = tracker
@@ -429,7 +429,7 @@ class ParticleTrackingView(HasTraits):
             
             dc.DrawLines(pFoc)
                 
-        if self.showCandidates and not (self.tracker == None):
+        if self.showCandidates and not (self.tracker is None):
             if view.do.zp >=1:
                 iCurr = view.do.zp
                 iPrev = view.do.zp-1

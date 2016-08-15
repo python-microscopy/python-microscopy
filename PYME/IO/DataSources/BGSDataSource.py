@@ -142,7 +142,7 @@ class bgFrameBuffer:
         self.validData = np.zeros(size, np.bool)
         
     def _growBuffer(self, data=None):
-        if self.frameBuffer == None:
+        if self.frameBuffer is None:
             #starting from scratch
             self._createBuffers(self.initSize, data.shape, data.dtype)
             

@@ -191,7 +191,7 @@ PCODefault.setEntry('Camera.TrueEMGain',1) #mostly use gain register setting of 
 def genMetaDataFromSourceAndMDH(dataSource, mdh=None):
     md = TIRFDefault
 
-    if not mdh == None: #should be true the whole time
+    if not mdh is None: #should be true the whole time
         md.copyEntriesFrom(mdh)
 
     #guestimate whatever wasn't in the metadata from remaining metadata
@@ -245,7 +245,7 @@ def fillInBlanks(md, dataSource):
             else: #if laser was on to start with our best estimate is at maximal bleaching where the few molecules that are still on will hopefully have little influence on the median
                 md.setEntry('Camera.ADOffset', numpy.median(numpy.array([dataSource.getSlice(i) for i in range(0, 10)]).ravel()))
                 import wx
-                if not wx.GetApp() == None:
+                if not wx.GetApp() is None:
                     wx.MessageBox("ADOffset fudged as %d and probably wrong\nTo change ADOffset, execute the following in the console:\nmd.setEntry('Camera.ADOffset', newValue)\nmdh.setEntry('Camera.ADOffset', newValue)" % md.getEntry('Camera.ADOffset'),'Did not find laser turn on signature', style=wx.OK|wx.ICON_EXCLAMATION)
 
 
@@ -258,13 +258,13 @@ def fillInBlanks(md, dataSource):
     #Quick hack for approximate EMGain for gain register settings of 150 & 200
 
     #FIXME to use a proper calibration
-	if 'Camera.EMGain' in md.getEntryNames() and not 'Camera.TrueEMGain' in md.getEntryNames():
-		if md.getEntry('Camera.EMGain') == 200: #gain register setting
-			md.setEntry('Camera.TrueEMGain', 100) #real gain @ -50C - from curve in performance book - need proper calibration
-		elif md.getEntry('Camera.EMGain') == 150: #gain register setting
-			md.setEntry('Camera.TrueEMGain', 20) #real gain @ -50C - need proper calibration
+    if 'Camera.EMGain' in md.getEntryNames() and not 'Camera.TrueEMGain' in md.getEntryNames():
+        if md.getEntry('Camera.EMGain') == 200: #gain register setting
+            md.setEntry('Camera.TrueEMGain', 100) #real gain @ -50C - from curve in performance book - need proper calibration
+        elif md.getEntry('Camera.EMGain') == 150: #gain register setting
+            md.setEntry('Camera.TrueEMGain', 20) #real gain @ -50C - need proper calibration
 
 
-	if 'Camera.name' in md.getEntryNames(): #new improved metadata
-		if md.getEntry('Camera.name') == 'Simulated Standard CCD Camera': #em gain for simulated camera is _real_ em gain rather than gain register setting
-			md.setEntry('Camera.TrueEMGain', md.getEntry('Camera.EMGain'))
+    if 'Camera.name' in md.getEntryNames(): #new improved metadata
+        if md.getEntry('Camera.name') == 'Simulated Standard CCD Camera': #em gain for simulated camera is _real_ em gain rather than gain register setting
+            md.setEntry('Camera.TrueEMGain', md.getEntry('Camera.EMGain'))

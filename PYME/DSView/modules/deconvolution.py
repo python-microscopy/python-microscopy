@@ -53,7 +53,7 @@ class deconvolver:
         
     def checkTQ(self):
         import Pyro.core
-        if self.tq == None:
+        if self.tq is None:
             #if 'PYME_TASKQUEUENAME' in os.environ.keys():
             #    taskQueueName = os.environ['PYME_TASKQUEUENAME']
             #else:

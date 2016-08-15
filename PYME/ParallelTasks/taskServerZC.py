@@ -65,23 +65,23 @@ from PYME.util import mProfile
 #    taskQueueName = 'taskQueue'
 
 taskQueueName = 'TaskQueues.%s' % compName
-	
-class TaskWatcher(threading.Thread):
-	def __init__(self, tQueue):
-		threading.Thread.__init__(self)
-		self.tQueue = tQueue
-		self.alive = True
 
-	def run(self):
-		while self.alive:
-			self.tQueue.checkTimeouts()
-			#print '%d tasks in queue' % self.tQueue.getNumberOpenTasks()
-			#try:
+class TaskWatcher(threading.Thread):
+    def __init__(self, tQueue):
+        threading.Thread.__init__(self)
+        self.tQueue = tQueue
+        self.alive = True
+
+    def run(self):
+        while self.alive:
+            self.tQueue.checkTimeouts()
+            #print '%d tasks in queue' % self.tQueue.getNumberOpenTasks()
+            #try:
                         #        mProfile.report()
                         #finally:
                         #        pass
                         #print mProfile.files
-			time.sleep(10)
+            time.sleep(10)
 
 
 
@@ -212,7 +212,7 @@ class TaskQueueSet(Pyro.core.ObjBase):
         self.numTasksProcByWorker[workerName] += len(taskResult)
         self.lastTaskByWorker[workerName] = time.time()
 
-        if timeTaken == None:
+        if timeTaken is None:
             self.lastTimeByWorker[workerName] = None
         else:
             self.lastTimeByWorker[workerName] = timeTaken/len(taskResult)
@@ -235,7 +235,7 @@ class TaskQueueSet(Pyro.core.ObjBase):
 
     def getNumberOpenTasks(self, queueName = None, exact=True):
         #print queueName
-        if queueName == None:
+        if queueName is None:
             nO = 0
             for q in self.taskQueues.values():
                 nO += q.getNumberOpenTasks(exact)
@@ -244,7 +244,7 @@ class TaskQueueSet(Pyro.core.ObjBase):
             return self.taskQueues[queueName].getNumberOpenTasks(exact)
 
     def getNumberTasksInProgress(self, queueName = None):
-        if queueName == None:
+        if queueName is None:
             nP = 0
             for q in self.taskQueues.values():
                 nP += q.getNumberTasksInProgress()
@@ -253,7 +253,7 @@ class TaskQueueSet(Pyro.core.ObjBase):
             return self.taskQueues[queueName].getNumberTasksInProgress()
 
     def getNumberTasksCompleted(self, queueName = None):
-        if queueName == None:
+        if queueName is None:
             nC = 0
             for q in self.taskQueues.values():
                 nC += q.getNumberTasksCompleted()
@@ -270,7 +270,7 @@ class TaskQueueSet(Pyro.core.ObjBase):
         self.taskQueues.pop(queueName)
 
     def getNumTasksProcessed(self, workerName = None):
-        if workerName == None:
+        if workerName is None:
             return self.numTasksProcessed
         else:
             return self.numTasksProcByWorker[workerName]
@@ -279,7 +279,7 @@ class TaskQueueSet(Pyro.core.ObjBase):
         return self.numTasksProcByWorker.keys()
 
     def getWorkerFPS(self, workerName):
-        if workerName in self.activeWorkers and not self.lastTimeByWorker[workerName] == None:
+        if workerName in self.activeWorkers and not self.lastTimeByWorker[workerName] is None:
             return 1./self.lastTimeByWorker[workerName]
         else:
             return 0
@@ -336,8 +336,8 @@ class TaskQueueSet(Pyro.core.ObjBase):
 #        if nq > 1:
 #            mProfile.report()
 #        nq += 1
-		
-			
+
+
 
 def main():
     print('Starting PYME taskServer ...')

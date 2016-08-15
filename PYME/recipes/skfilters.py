@@ -73,7 +73,7 @@ for filtName in skFilterNames:
                 a = args[-j]
                 ad = argspec.defaults[-j]
                 argDefaults[a] = ad
-                if ad == None:
+                if ad is None:
                     argTypes[a] = 'image'
                 elif isinstance(ad, str) or isinstance(ad, unicode):
                     argTypes[a] = 'string'

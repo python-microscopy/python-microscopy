@@ -30,7 +30,7 @@ class DataSource(BaseDataSource):
         self.sliceShape = list(self.dataSource.shape[:-1])
         self.sliceShape[1]/=2
         
-        if not chanROIs == None:
+        if not chanROIs is None:
             x, y, w, h = chanROIs[0]
             self.sliceShape = [w, h]
         

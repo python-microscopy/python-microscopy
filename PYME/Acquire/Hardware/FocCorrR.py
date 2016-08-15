@@ -78,7 +78,7 @@ class FocusCorrector(wx.Timer):
         self.Tracking = False
 
     def _IsGuided(self): #is the laser being used for the position sensing on? 
-        if  not self.guideLaser == None:
+        if  not self.guideLaser is None:
             return self.guideLaser.IsOn()
         else:
             return True #assume that laser is on if we don't have any info one way of the other

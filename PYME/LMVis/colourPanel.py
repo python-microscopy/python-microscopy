@@ -383,7 +383,7 @@ class colourPanel(wx.Panel):
             structures.append(structure)
             ratio = dyeRatios.getRatio(dye, mdh)
 
-            if not ratio == None:
+            if not ratio is None:
                 self.pipeline.fluorSpecies[structure] = ratio
                 ind = self.lFluorSpecies.InsertStringItem(sys.maxint, structure)
                 self.lFluorSpecies.SetStringItem(ind,1, '%3.3f' % ratio)

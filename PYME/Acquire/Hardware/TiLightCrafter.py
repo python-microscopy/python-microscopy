@@ -297,8 +297,8 @@ class LightCrafter(object):
         pats1, pats2 = pats[:(len(pats)//2)], pats[(len(pats)//2):]
         pats3 = [val for pair in zip(pats1, pats2) for val in pair]
         if len(pats3) < len(pats):
-			pats3 += [max(pats1, pats2, key = len)[-1]]
-		
+            pats3 += [max(pats1, pats2, key = len)[-1]]
+
         from PYME.DSView import View3D
         View3D(np.array(pats3).transpose(2,1,0), 'stack')
         View3D(np.array(pats3).transpose(2,1,0).mean(2), 'mean')

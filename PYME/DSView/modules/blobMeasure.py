@@ -465,7 +465,7 @@ class BlobObject(object):
                 d = d.max(2)
             d = np.atleast_3d(d.squeeze().T)
             d -= d.min()
-            if gains == None:
+            if gains is None:
                 d = np.minimum(ovsc*255*d/d.max(), 255).astype('uint8')
             else:
                 d = np.minimum(gains[i]*255*d, 255).astype('uint8')

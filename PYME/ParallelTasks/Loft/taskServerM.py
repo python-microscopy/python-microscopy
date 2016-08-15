@@ -44,23 +44,23 @@ if 'PYME_TASKQUEUENAME' in os.environ.keys():
     taskQueueName = os.environ['PYME_TASKQUEUENAME']
 else:
     taskQueueName = 'taskQueue'
-	
-class TaskWatcher(threading.Thread):
-	def __init__(self, tQueue):
-		threading.Thread.__init__(self)
-		self.tQueue = tQueue
-		self.alive = True
 
-	def run(self):
-		while self.alive:
-			self.tQueue.checkTimeouts()
-			#print '%d tasks in queue' % self.tQueue.getNumberOpenTasks()
-			#try:
+class TaskWatcher(threading.Thread):
+    def __init__(self, tQueue):
+        threading.Thread.__init__(self)
+        self.tQueue = tQueue
+        self.alive = True
+
+    def run(self):
+        while self.alive:
+            self.tQueue.checkTimeouts()
+            #print '%d tasks in queue' % self.tQueue.getNumberOpenTasks()
+            #try:
                         #        mProfile.report()
                         #finally:
                         #        pass
                         #print mProfile.files
-			time.sleep(10)
+            time.sleep(10)
 
 
 
@@ -161,7 +161,7 @@ class TaskQueueSet(Pyro.core.ObjBase):
 
     def getNumberOpenTasks(self, queueName = None):
         #print queueName
-        if queueName == None:
+        if queueName is None:
             nO = 0
             for q in self.taskQueues.values():
                 nO += q.getNumberOpenTasks()
@@ -170,7 +170,7 @@ class TaskQueueSet(Pyro.core.ObjBase):
             return self.taskQueues[queueName].getNumberOpenTasks()
 
     def getNumberTasksInProgress(self, queueName = None):
-        if queueName == None:
+        if queueName is None:
             nP = 0
             for q in self.taskQueues.values():
                 nP += q.getNumberTasksInProgress()
@@ -179,7 +179,7 @@ class TaskQueueSet(Pyro.core.ObjBase):
             return self.taskQueues[queueName].getNumberTasksInProgress()
 
     def getNumberTasksCompleted(self, queueName = None):
-        if queueName == None:
+        if queueName is None:
             nC = 0
             for q in self.taskQueues.values():
                 nC += q.getNumberTasksCompleted()
@@ -196,7 +196,7 @@ class TaskQueueSet(Pyro.core.ObjBase):
         self.taskQueues.pop(queueName)
 
     def getNumTasksProcessed(self, workerName = None):
-        if workerName == None:
+        if workerName is None:
             return self.numTasksProcessed
         else:
             return self.numTasksProcByWorker[workerName]
@@ -251,8 +251,8 @@ class TaskQueueSet(Pyro.core.ObjBase):
             raise RuntimeError('queue with same name already present')
 
         self.taskQueues[queueName] = eval(queueType)(queueName, *args, **kwargs)
-		
-			
+
+
 
 if __name__ == '__main__':
     #if True:

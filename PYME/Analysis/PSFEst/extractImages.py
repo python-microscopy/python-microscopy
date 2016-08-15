@@ -55,7 +55,7 @@ def extractIms(dataSource, results, metadata, zm =None, roiSize=10, nmax = 1000)
     ts = ts[ind]
     bs = bs[ind]
 
-    if not zm == None:
+    if not zm is None:
         zvals = array(list(set(zm.yvals)))
         zvals.sort()
 

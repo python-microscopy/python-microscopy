@@ -42,7 +42,7 @@ class ListWrap:
         self.dataList = dataList
         self.wrapList = [Wrap(d) for d in dataList]
 
-        if not listDim == None:
+        if not listDim is None:
             self.listDim = listDim
         else:
             self.listDim = self.wrapList[0].nTrueDims
@@ -174,17 +174,17 @@ class CropDataWrap: #permit indexing with more dimensions larger than len(shape)
              
         self._datashape = data.shape
         
-        if xslice == None:
+        if xslice is None:
             self.xslice = slice(0, self._datashape[0])
         else:
             self.xslice = xslice
         
-        if zslice == None:
+        if zslice is None:
             self.zslice = slice(0, self._datashape[2])
         else:
             self.zslice = zslice
             
-        if yslice == None:
+        if yslice is None:
             self.yslice = slice(0, self._datashape[1])
         else:
             self.yslice = yslice

@@ -32,7 +32,7 @@ class piezo_e816:
         
 
         self.ser_port = serial.Serial(portname, 115200, rtscts=1, timeout=2, writeTimeout=2)
-        if not Osen == None:
+        if not Osen is None:
             #self.ser_port.write('SPA A8 %3.4f\n' % Osen)
             self.osen = Osen
         else:
@@ -131,7 +131,7 @@ class piezo_e816:
         if self.numWavePoints < 1:
             raise RuntimeError('piezo_e816 - no wave table defined')
 
-        if dwellTime == None:
+        if dwellTime is None:
             #triggered
             self.ser_port.write('WTO A%d\n' % self.numWavePoints)
         else:

@@ -134,7 +134,7 @@ class DupManager(Pyro.core.ObjBase):
         return True
         
     def attempt_dup(self):
-        if (self._leader == None) or not self.ping(self._leader):
+        if (self._leader is None) or not self.ping(self._leader):
             #no leader or leader unreachable, trigger a new election
             self.elect()
             

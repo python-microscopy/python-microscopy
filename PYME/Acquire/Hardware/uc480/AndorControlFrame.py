@@ -220,7 +220,7 @@ class AndorPanel(wx.Panel):
         #event.Skip()
         fname = wx.FileSelector('Save Images as ... (image # and .dat will be appended to filename)')
     
-        if not fname == None:
+        if not fname is None:
             self.scope.frameWrangler.stop()
             self.cam.SpoolOn(fname)
 
@@ -296,7 +296,7 @@ class AndorPanel(wx.Panel):
 
     def OnEMGainTextChange(self, event):
         calEMGain = ccdCalibrator.getCalibratedCCDGain(float(self.tEMGain.GetValue()), self.cam.GetCCDTempSetPoint())
-        if calEMGain == None:
+        if calEMGain is None:
             self.stTrueEMGain.SetLabel('True Gain = ????')
             self.stTrueEMGain.SetForegroundColour(wx.RED)
         else:

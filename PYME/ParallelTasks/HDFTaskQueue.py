@@ -344,12 +344,12 @@ class HDFResultsTaskQueue(TaskQueue):
         #return res
 
     def getNumberTasksCompleted(self):
-		return self.numClosedTasks
+        return self.numClosedTasks
 
     def purge(self):
-		self.openTasks = []
-		self.numClosedTasks = 0
-		self.tasksInProgress = []
+        self.openTasks = []
+        self.numClosedTasks = 0
+        self.tasksInProgress = []
 
     def cleanup(self):
         #self.h5DataFile.close()
@@ -551,16 +551,16 @@ class HDFResultsTaskQueue(TaskQueue):
 class HDFTaskQueue(HDFResultsTaskQueue):
     """ task queue which, when initialised with an hdf image filename, automatically generates tasks - should also (eventually) include support for dynamically adding to data file for on the fly analysis"""
     def __init__(self, name, dataFilename = None, resultsFilename=None, onEmpty = doNix, fTaskToPop = popZero, startAt = 'guestimate', frameSize=(-1,-1), complevel=6, complib='zlib'):
-        if dataFilename == None:
+        if dataFilename is None:
            self.dataFilename = genDataFilename(name)
         else:
             self.dataFilename = dataFilename
 
-        if resultsFilename == None:
+        if resultsFilename is None:
             resultsFilename = genResultFileName(self.dataFilename)
         else:
             resultsFilename = resultsFilename
-		
+
         ffn = getFullFilename(self.dataFilename)
 
         self.acceptNewTasks = False

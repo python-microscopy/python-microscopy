@@ -44,7 +44,7 @@ class StatusLogger:
     def setStatus(self, statusText):
         global statusTexts
         statusTexts[self.key] = statusText
-        if not statusDispFcn == None:
+        if not statusDispFcn is None:
             statusDispFcn(GenStatusText())
 
 def GenStatusText():    

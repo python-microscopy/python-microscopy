@@ -43,7 +43,7 @@ def imageDensityAtDistance(A, mask, voxelsize = None, bins=100):
     bins - the bin edges
     """
     
-    if voxelsize == None:
+    if voxelsize is None:
         voxelsize = numpy.ones(len(A.shape))
 
     dt = -ndimage.distance_transform_edt(mask, sampling=voxelsize)

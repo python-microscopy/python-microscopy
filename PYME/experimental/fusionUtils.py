@@ -146,7 +146,7 @@ def plotEvent3(clump, rawData = None, fitRes = None):
     pl.subplot(211)
     
     c = clump
-    if not fitRes == None:
+    if not fitRes is None:
         t0 = fitRes['t0']
     else:
         t0 = 0
@@ -450,7 +450,7 @@ def selectAndPlotEvents(pipeline, outputdir='/Users/david/FusionAnalysis', speck
     
     
     
-    if not speckleFile == None: #use speckle file to determine which tracks correspond to fusion events
+    if not speckleFile is None: #use speckle file to determine which tracks correspond to fusion events
         vs = (1e3*pipeline.mdh['voxelsize.x'])
         speckles = readSpeckles(speckleFile)
         

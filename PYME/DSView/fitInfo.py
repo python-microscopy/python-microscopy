@@ -118,7 +118,7 @@ class FitInfoPanel(wx.Panel):
     def genGaussPhotonStats(self, index):
         s =  u''
 
-        if not index == None:
+        if not index is None:
             r = self.fitResults[index]['fitResults']
 
             nPh = (r['A']*2*math.pi*(r['sigma']/(1e3*self.mdh.getEntry('voxelsize.x')))**2)
@@ -144,7 +144,7 @@ class FitInfoPanel(wx.Panel):
     def UpdateDisp(self, index):
         slN = 'No event selected'
 
-        if not index == None:
+        if not index is None:
             slN = 'Point #: %d    Slice: %d' % (index, self.fitResults['tIndex'][index])
 
         self.stSliceNum.SetLabel(slN)

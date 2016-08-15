@@ -117,7 +117,7 @@ class Clump(object):
         
     def save(self, filename, keys = None):
         d = {}        
-        if keys == None:                    
+        if keys is None:
             d.update(self)
         else:
             for k in keys:
@@ -234,7 +234,7 @@ class Track(Clump):
         xp = int(np.round(xp))
         yp = int(np.round(yp))
         
-        if not self.image == None:
+        if not self.image is None:
             for i in range(self.nEvents):
                 plt.subplot(1, self.nEvents, i+1)
                 img = self.image[(xp - 10):(xp + 10), (yp - 10):(yp + 10), self['t'][i]]

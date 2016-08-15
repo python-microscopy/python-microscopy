@@ -100,7 +100,7 @@ def f_j_gauss2d(p,func, d, w, X,Y):
     r = genGaussJacW(X,Y,w,A,x0,y0,s,b,b_x,b_y)
     r = -r.ravel().reshape((-1,7))
     #for  i in range(7):
-	#r[:, i] = r[:, i]*w
+    #r[:, i] = r[:, i]*w
     return r.T
 
 def f_J_gauss2d(p,X,Y):
@@ -121,13 +121,13 @@ fresultdtype=[('tIndex', '<i4'),
               ('resultCode', '<i4')]
 
 def GaussianFitResultR(fitResults, metadata, resultCode=-1, fitErr=None):	
-	if fitErr == None:
-		fitErr = -5e3*np.ones(fitResults.shape, 'f')
+    if fitErr is None:
+        fitErr = -5e3*np.ones(fitResults.shape, 'f')
 
-	tIndex = metadata.tIndex
+    tIndex = metadata.tIndex
 
-	return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode)], dtype=fresultdtype) 
-		
+    return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode)], dtype=fresultdtype)
+
 
 class GaussianFitFactory:
     X = None
@@ -156,13 +156,13 @@ class GaussianFitFactory:
         #average in z
         dataMean = self.data.mean(2)
 
-	
+
         #estimate errors in data
         nSlices = self.data.shape[2]
         
         sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataMean, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
 
-        if not self.background == None and len(np.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
+        if not self.background is None and len(np.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
             #average in z
             bgMean = self.background.mean(2)
             
@@ -295,7 +295,7 @@ class GaussianFitFactory:
             i3 = 3*i
             i31 = i3 + 3
             
-            if not fitErrors == None:            
+            if not fitErrors is None:
                 resList[i] = GaussianFitResultR(res[i3:i31], self.metadata, resCode, fitErrors[i3:i31])
             else:
                 resList[i] = GaussianFitResultR(res[i3:i31], self.metadata, resCode, None)

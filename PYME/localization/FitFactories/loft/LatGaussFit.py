@@ -109,8 +109,8 @@ class GaussianFitFactory:
 
         startParameters = [A, x0, y0, 1.7, dataMean.min(), .001, .001]
 
-	#print dataMean.shape
-	#print X.shape
+        #print dataMean.shape
+        #print X.shape
 
         #estimate errors in data
         nSlices = dataROI.shape[2]
@@ -128,17 +128,17 @@ class GaussianFitFactory:
         fitErrors=None
         try:       
             fitErrors = scipy.sqrt(scipy.diag(cov_x)*(infodict['fvec']*infodict['fvec']).sum()/(len(dataMean.ravel())- len(res)))
-        except Exception, e:
+        except Exception as e:
             pass
         return GaussianFitResult(res, self.metadata, (xslice, yslice, zslice), resCode, fitErrors)
 
     def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
-        if (z == None): # use position of maximum intensity
+        if (z is None): # use position of maximum intensity
             z = self.data[x,y,:].argmax()
-	
-	x = round(x)
-	y = round(y)
-	
+
+        x = round(x)
+        y = round(y)
+
         return self[max((x - roiHalfSize), 0):min((x + roiHalfSize + 1),self.data.shape[0]), 
                     max((y - roiHalfSize), 0):min((y + roiHalfSize + 1), self.data.shape[1]), 
                     max((z - axialHalfSize), 0):min((z + axialHalfSize + 1), self.data.shape[2])]

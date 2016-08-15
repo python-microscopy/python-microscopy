@@ -141,7 +141,7 @@ def angle_filter(data, FILT_SIZE=5):
     return ndimage.generic_filter(data.astype('f'), th2, FILT_SIZE, extra_arguments=genCoords(FILT_SIZE))
     
 def width_filter(data, angles=None, FILT_SIZE=5):
-    if angles == None:
+    if angles is None:
         #estimate angle from intensity data
         return ndimage.generic_filter(data.astype('f'), width, FILT_SIZE, extra_arguments=genCoords(FILT_SIZE))
     else:
@@ -164,7 +164,7 @@ def width_filter_m(data, mask, angles=None, FILT_SIZE=5):
     for xi, yi in zip(xm, ym):
         dr = roi_at(d, xi, yi, *coords)
                 
-        if angles == None:
+        if angles is None:
             res[xi, yi] = width(dr, *coords)
         else:
             #print dr.shape, 

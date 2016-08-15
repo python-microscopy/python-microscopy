@@ -130,7 +130,7 @@ class PSFFitFactory:
             return PSFFitResult(res2, self.metadata, (xslice, yslice, zslice), resCode2, scipy.sqrt(diag(cov_x2)))
 
     def FromPoint(self, x, y, z=None, roiHalfSize=8, axialHalfSize=5):
-        if (z == None): # use position of maximum intensity
+        if (z is None): # use position of maximum intensity
             z = self.data[x,y,:].argmax()
 
         return self[max((x - roiHalfSize), 0):min((x + roiHalfSize + 1),self.data.shape[0]), 

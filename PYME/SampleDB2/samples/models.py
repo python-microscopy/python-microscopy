@@ -228,7 +228,7 @@ class Image(models.Model):
         try:
             im = cls.objects.get(imageID=imageID)
         except:
-            if slideID == None:
+            if slideID is None:
                 slideID = Slide.GetOrCreate('N/A', 'N/A')
                 #print slideID
             im = cls(imageID=imageID, userID=userGuess, slideID=slideID, timestamp=datetime.datetime.fromtimestamp(timestamp))
@@ -263,11 +263,11 @@ class File(models.Model):
 
             mdh = file_ID.getFileMetadata(filename)
             
-            if fileID ==None:
+            if fileID is None:
                 fileID = file_ID.genFileID(filename)
 
             #print repr(imageID)
-            if imageID == None:
+            if imageID is None:
                 if 'imageID' in mdh.getEntryNames():
                     imageID = mdh.imageID
                 else:
@@ -278,7 +278,7 @@ class File(models.Model):
 
             #print repr(imageID)
 
-            if not imageID == None:
+            if not imageID is None:
                 #force an image to be created if one doesn't exist already
                 if 'AcquiringUser' in mdh.getEntryNames():
                     userGuess = mdh.AcquiringUser

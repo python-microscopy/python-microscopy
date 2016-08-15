@@ -276,7 +276,7 @@ class HDFMDHandler(MDHandlerBase):
         else:
             self.md = self.h5file.createGroup(self.h5file.root, 'MetaData')
 
-        if not mdToCopy == None:
+        if not mdToCopy is None:
             self.copyEntriesFrom(mdToCopy)
 
 
@@ -320,7 +320,7 @@ class QueueMDHandler(MDHandlerBase):
         self.queueName = queueName
         self.md = None
 
-        if not mdToCopy == None:
+        if not mdToCopy is None:
             self.copyEntriesFrom(mdToCopy)
             
     def copyEntriesFrom(self, mdToCopy):
@@ -342,7 +342,7 @@ class QueueMDHandler(MDHandlerBase):
 
 class NestedClassMDHandler(MDHandlerBase):
     def __init__(self, mdToCopy=None):
-        if not mdToCopy == None:
+        if not mdToCopy is None:
             self.copyEntriesFrom(mdToCopy)
 
 
@@ -379,7 +379,7 @@ class CachingMDHandler(MDHandlerBase):
     def __init__(self, mdToCache):
         self.mdToCache = mdToCache
         
-        if not mdToCache == None:
+        if not mdToCache is None:
             self.cache = dict(mdToCache.items())
             
     @classmethod
@@ -395,7 +395,7 @@ class CachingMDHandler(MDHandlerBase):
         
     def setEntry(self, entryName, value):
         self.cache[entryName] = value
-        if not self.mdToCache == None:
+        if not self.mdToCache is None:
             self.mdToCache.setEntry(entryName, value)
         
     def getEntryNames(self):
@@ -411,7 +411,7 @@ class SimpleMDHandler(NestedClassMDHandler):
     which adds entrys using the dictionary syntax to a metadata handler called md"""
 
     def __init__(self, filename = None, mdToCopy=None):
-        if not filename == None:
+        if not filename is None:
             from PYME.Acquire.ExecTools import _execfile
             import cPickle as pickle
             #loading an existing file
@@ -421,7 +421,7 @@ class SimpleMDHandler(NestedClassMDHandler):
             _execfile(filename, locals(), globals())
             globals()['__file__'] = fn
 
-        if not mdToCopy == None:
+        if not mdToCopy is None:
             self.copyEntriesFrom(mdToCopy)
 
     def write(self, filename):
@@ -437,7 +437,7 @@ class SimpleMDHandler(NestedClassMDHandler):
 
 class XMLMDHandler(MDHandlerBase):
     def __init__(self, filename = None, mdToCopy=None):
-        if not filename == None:
+        if not filename is None:
             #loading an existing file
             self.doc = parse(filename)
             self.md = self.doc.documentElement.getElementsByTagName('MetaData')[0]
@@ -447,7 +447,7 @@ class XMLMDHandler(MDHandlerBase):
             self.md = self.doc.createElement('MetaData')
             self.doc.documentElement.appendChild(self.md)
 
-        if not mdToCopy == None:
+        if not mdToCopy is None:
             self.copyEntriesFrom(mdToCopy)
 
     def writeXML(self, filename):
@@ -557,7 +557,7 @@ class XMLMDHandler(MDHandlerBase):
 
 class OMEXMLMDHandler(XMLMDHandler):
     def __init__(self, XMLData = None, mdToCopy=None):
-        if not XMLData == None:
+        if not XMLData is None:
             #loading an existing file
             self.doc = parseString(XMLData)
             #try:
@@ -632,12 +632,12 @@ class OMEXMLMDHandler(XMLMDHandler):
             self.md = self.doc.createElement('MetaData')
             v.appendChild(self.md)
 
-        if not mdToCopy == None:
+        if not mdToCopy is None:
             self.copyEntriesFrom(mdToCopy)
             
     def getXML(self, data = None):
         #sync the OME data from the ordinary metadata
-        if not data == None:
+        if not data is None:
             ims = data.shape
             if len(ims) > 3:
                 SizeY, SizeX, SizeT, SizeC = ims

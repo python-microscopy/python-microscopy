@@ -82,10 +82,10 @@ def f_gauss2d2ccb(p, Xg, Yg, Xr, Yr):
 
         
 def replNoneWith1(n):
-	if n == None:
-		return 1
-	else:
-		return n
+    if n is None:
+        return 1
+    else:
+        return n
 
 
 fresultdtype=[('tIndex', '<i4'),
@@ -95,29 +95,29 @@ fresultdtype=[('tIndex', '<i4'),
               ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
 
 def GaussianFitResultR(fitResults, metadata, startParams, slicesUsed=None, resultCode=-1, fitErr=None):
-	if slicesUsed == None:
-		slicesUsed = ((-1,-1,-1),(-1,-1,-1),(-1,-1,-1))
-	else: 		
-		slicesUsed = ((slicesUsed[0].start,slicesUsed[0].stop,replNoneWith1(slicesUsed[0].step)),(slicesUsed[1].start,slicesUsed[1].stop,replNoneWith1(slicesUsed[1].step)),(slicesUsed[2].start,slicesUsed[2].stop,replNoneWith1(slicesUsed[2].step)))
+    if slicesUsed is None:
+        slicesUsed = ((-1,-1,-1),(-1,-1,-1),(-1,-1,-1))
+    else:
+        slicesUsed = ((slicesUsed[0].start,slicesUsed[0].stop,replNoneWith1(slicesUsed[0].step)),(slicesUsed[1].start,slicesUsed[1].stop,replNoneWith1(slicesUsed[1].step)),(slicesUsed[2].start,slicesUsed[2].stop,replNoneWith1(slicesUsed[2].step)))
 
-	if fitErr == None:
-		fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
+    if fitErr is None:
+        fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
 
-	#print slicesUsed
+    #print slicesUsed
 
-	tIndex = metadata.tIndex
+    tIndex = metadata.tIndex
 
-	#print fitResults.dtype
-	#print fitErr.dtype
-	#print fitResults
-	#print fitErr
-	#print tIndex
-	#print slicesUsed
-	#print resultCode
+    #print fitResults.dtype
+    #print fitErr.dtype
+    #print fitResults
+    #print fitErr
+    #print tIndex
+    #print slicesUsed
+    #print resultCode
 
 
-	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), startParams.astype('f'), resultCode, slicesUsed)], dtype=fresultdtype) 
-		
+    return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), startParams.astype('f'), resultCode, slicesUsed)], dtype=fresultdtype)
+
 def splWrap(*args):
     #print ''
     #args = args[:]
@@ -154,7 +154,7 @@ class GaussianFitFactory:
 
 
         return f_gauss2d2ccb(params, Xg, Yg, Xr, Yr), Xg.ravel()[0], Yg.ravel()[0], 0
-		
+
         
     def __getitem__(self, key):
         #print key
@@ -192,7 +192,7 @@ class GaussianFitFactory:
 
         #startParameters = [Ag, Ar, x0, y0, 250/2.35, dataROI[:,:,0].min(),dataROI[:,:,1].min(), .001, .001]
 
-	
+
         #estimate errors in data
         nSlices = 1#dataROI.shape[2]
         
@@ -200,7 +200,7 @@ class GaussianFitFactory:
         sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*scipy.maximum(dataROI, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
 
 
-        if not self.background == None and len(numpy.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
+        if not self.background is None and len(numpy.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
             bgROI = self.background[xslice, yslice, zslice] - self.metadata.Camera.ADOffset
 
             dataROI = dataROI - bgROI
@@ -219,7 +219,7 @@ class GaussianFitFactory:
         y0 =  Yg.mean()
 
         startParameters = numpy.array([Ag, Ar, x0, y0, 250/2.35])
-	
+
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
         #(res, cov_x, infodict, mesg, resCode) = FitModelWeighted(self.fitfcn, startParameters, dataMean, sigma, X, Y)
@@ -242,16 +242,16 @@ class GaussianFitFactory:
         except Exception, e:
             pass
 
-	#print res, fitErrors, resCode
+    #print res, fitErrors, resCode
         return GaussianFitResultR(res, self.metadata, startParameters, (xslice, yslice, zslice), resCode, fitErrors)
 
     def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
         #if (z == None): # use position of maximum intensity
         #    z = self.data[x,y,:].argmax()
-	
+
         x = round(x)
         y = round(y)
-	
+
         return self[max((x - roiHalfSize), 0):min((x + roiHalfSize + 1),self.data.shape[0]), 
                     max((y - roiHalfSize), 0):min((y + roiHalfSize + 1), self.data.shape[1]), 0:2]
         

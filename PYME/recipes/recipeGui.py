@@ -574,7 +574,7 @@ class BatchFrame(wx.Frame, wx.FileDropTarget):
         out_dir = self.dcOutput.GetPath()
         
         #validate our choices:
-        if (self.rm.activeRecipe == None) or (len(self.rm.activeRecipe.modules) == 0):
+        if (self.rm.activeRecipe is None) or (len(self.rm.activeRecipe.modules) == 0):
             wx.MessageBox('No Recipe: Please open (or build) a recipe', 'Error', wx.OK|wx.ICON_ERROR)
             return
             

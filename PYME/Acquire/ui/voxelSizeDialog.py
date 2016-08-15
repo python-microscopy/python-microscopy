@@ -133,7 +133,7 @@ class VoxelSizeDialog(wx.Dialog):
                 currVoxelSizeID = self.scope.settingsDB.execute("SELECT sizeID FROM VoxelSizeHistory2 WHERE camSerial=? ORDER BY time DESC", (self.scope.cameras[camName].GetSerialNumber(),)).fetchone()[0]
     
                 #print currVoxelSizeID
-                if not currVoxelSizeID == None:
+                if not currVoxelSizeID is None:
                     ch.SetSelection(voxIDs.index(currVoxelSizeID))
             except:
                 pass

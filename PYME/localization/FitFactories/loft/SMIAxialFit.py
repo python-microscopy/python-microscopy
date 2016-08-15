@@ -173,14 +173,14 @@ class SMIAxialFitFactory:
         #plot(profile)
         #print profile
 
-        if not (self.backRoi == None): #perform background subtraction
+        if not (self.backRoi is None): #perform background subtraction
             backg = self.data[max((xpos - self.backRoi), 0):min((xpos + self.backRoi + 1),self.data.shape[0]), 
                     max((ypos - self.backRoi), 0):min((ypos + self.backRoi + 1), self.data.shape[1]), :].astype('f').mean(0).mean(0)
             #print backg.shape
             profile -= backg
             back = 0
         else:
-            if gaussFitBackground == None:
+            if gaussFitBackground is None:
                 raise Exception('No background defined', 'either a background ROI or a background value derived from e.g. the Gaussian fit must be given')
             else:
                 back = gaussFitBackground

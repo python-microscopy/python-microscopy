@@ -11,7 +11,7 @@ import wx.html2
 
 class ResultsView(object):
     def __init__(self, dsviewer):
-        self.dsviewer
+        self.dsviewer = dsviewer
         self.webview = wx.html2.WebView.New(dsviewer)
 
 def Plug(dsviewer):

@@ -210,7 +210,7 @@ class ModuleCollection(HasTraits):
         
         mc = []
         
-        if l == None:
+        if l is None:
             l = []
         
         for mdd in l:
@@ -248,7 +248,7 @@ class ModuleBase(HasTraits):
         
     @on_trait_change('anytrait')
     def remove_outputs(self):
-        if not self._parent == None:
+        if not self._parent is None:
             self._parent.pruneDependanciesFromNamespace(self.outputs)
             
     def outputs_in_namespace(self, namespace):

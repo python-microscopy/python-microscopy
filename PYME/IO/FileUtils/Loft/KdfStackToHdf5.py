@@ -59,7 +59,7 @@ def convertFile(pathToData, outFile, pixelsize=None, complib='zlib', complevel=9
 
         hdh = MetaData.HDFMDHandler(outF, MetaData.PCODefault)
 
-        if not pixelsize == None:
+        if not pixelsize is None:
             hdh.setEntry('voxelsize.x', pixelsize)
             hdh.setEntry('voxelsize.y', pixelsize)
 

@@ -147,7 +147,7 @@ class PYMEMainFrame(AUIFrame):
         #self.sh.shell.runfile('init.py')
         #fstub = os.path.join(os.path.split(__file__)[0], 'Scripts')
         initFile = 'init.py'
-        if not self.options == None and not self.options.initFile == None:
+        if not self.options is None and not self.options.initFile is None:
             initFile = self.options.initFile
             
         #initFile = os.path.join(fstub, initFile)

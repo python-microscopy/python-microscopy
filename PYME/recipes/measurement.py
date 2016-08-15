@@ -443,7 +443,7 @@ class Measure2D(ModuleBase):
                     
                     self._keys.remove('euler_number') #buggy!
                     
-                    if not contours == None:
+                    if not contours is None:
                         self._keys += ['contour']
                         
                 self.measures.extend(measurements)

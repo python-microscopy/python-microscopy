@@ -98,10 +98,10 @@ def f_J_Interp3d2c(p,interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, axialShif
 #f_Interp3d2c.D = f_J_Interp3d2c
 
 def replNoneWith1(n):
-	if n == None:
-		return 1
-	else:
-		return n
+    if n is None:
+        return 1
+    else:
+        return n
 
 
 
@@ -114,22 +114,22 @@ fresultdtype=[('tIndex', '<i4'),
     ('nchi2', '<f4')]
 
 def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None, startParams=None, nchi2=-1):
-	if slicesUsed == None:
-		slicesUsed = ((-1,-1,-1),(-1,-1,-1),(-1,-1,-1))
-	else: 		
-		slicesUsed = ((slicesUsed[0].start,slicesUsed[0].stop,replNoneWith1(slicesUsed[0].step)),(slicesUsed[1].start,slicesUsed[1].stop,replNoneWith1(slicesUsed[1].step)),(slicesUsed[2].start,slicesUsed[2].stop,replNoneWith1(slicesUsed[2].step)))
+    if slicesUsed is None:
+        slicesUsed = ((-1,-1,-1),(-1,-1,-1),(-1,-1,-1))
+    else:
+        slicesUsed = ((slicesUsed[0].start,slicesUsed[0].stop,replNoneWith1(slicesUsed[0].step)),(slicesUsed[1].start,slicesUsed[1].stop,replNoneWith1(slicesUsed[1].step)),(slicesUsed[2].start,slicesUsed[2].stop,replNoneWith1(slicesUsed[2].step)))
 
-	if fitErr == None:
-		fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
+    if fitErr is None:
+        fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
 
-	if startParams == None:
-		startParams = -5e3*numpy.ones(fitResults.shape, 'f')
+    if startParams is None:
+        startParams = -5e3*numpy.ones(fitResults.shape, 'f')
 
-	tIndex = metadata.tIndex
+    tIndex = metadata.tIndex
 
-	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, slicesUsed, startParams.astype('f'), nchi2)], dtype=fresultdtype)
+    return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, slicesUsed, startParams.astype('f'), nchi2)], dtype=fresultdtype)
 
-		
+
 
 def getDataErrors(im, metadata):
     dataROI = im - metadata.getEntry('Camera.ADOffset')
@@ -276,7 +276,7 @@ class PSFFitFactory:
 
         #startParameters = [Ag, Ar, x0, y0, 250/2.35, dataROI[:,:,0].min(),dataROI[:,:,1].min(), .001, .001]
 
-	
+
         #estimate errors in data
         nSlices = 1#dataROI.shape[2]
         
@@ -284,7 +284,7 @@ class PSFFitFactory:
         sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*scipy.maximum(dataROI, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount + 1
 
 
-        if not self.background == None and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
+        if not self.background is None and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
             #print 'bgs'
             if len(numpy.shape(self.background)) > 1:
                 bgROI = self.background[xslice, yslice, zslice] - self.metadata.Camera.ADOffset
@@ -307,7 +307,7 @@ class PSFFitFactory:
         startParameters = [Ag*startParams[0]/(Ag + Ar), Ar*startParams[0]/(Ag + Ar), startParams[1], startParams[2], z0 + startParams[3], dataROI[:,:,0].min(),dataROI[:,:,1].min()]
 
         #print dataROI.shape
-	
+
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
         #(res, cov_x, infodict, mesg, resCode) = FitModelWeighted(self.fitfcn, startParameters, dataMean, sigma, X, Y)
@@ -322,7 +322,7 @@ class PSFFitFactory:
         #normalised Chi-squared
         nchi2 = (infodict['fvec']**2).sum()/(dataROI.size - res.size)
 
-	#print res, fitErrors, resCode
+    #print res, fitErrors, resCode
         return PSFFitResultR(res, self.metadata, (xslice, yslice, zslice), resCode, fitErrors, numpy.array(startParameters), nchi2)
 
    

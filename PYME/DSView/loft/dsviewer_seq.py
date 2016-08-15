@@ -108,7 +108,7 @@ class DSViewFrame(wx.Frame):
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
             self.ds.SaveToFile(fdialog.GetPath())
-            if not (self.log == None):
+            if not (self.log is None):
                 lw = logparser.logwriter()
                 s = lw.write(self.log)
                 log_f = file('%s.log' % fdialog.GetPath().split('.')[0], 'w')
@@ -159,7 +159,7 @@ class DSViewFrame(wx.Frame):
                     dsa += example.CDataStack_AsArray(example.CDataStack(self.filenames[self.pos + i + 1]),0)
                     dsa -= dsa.min()
             
-            if (not self.bg == None) and self.bgSub:
+            if (not self.bg is None) and self.bgSub:
                 print((dsa.shape))
                 print((self.bg.shape))
                 if self.numAvg == 0:

@@ -93,7 +93,7 @@ class DSViewFrame(AUIFrame):
 
         self.image = image
         #self.image = ImageStack(data = dstack, mdh = mdh, filename = filename, queueURI = queueURI, events = None)
-        if not self.image.filename == None and title == '':
+        if not self.image.filename is None and title == '':
             self.SetTitle(self.image.filename)
 
         
@@ -400,7 +400,7 @@ class MyApp(wx.App):
             else:
                 im = ImageStack(queueURI=options.queueURI)
     
-            if options.mode == None:
+            if options.mode is None:
                 mode = im.mode
             else:
                 mode = options.mode

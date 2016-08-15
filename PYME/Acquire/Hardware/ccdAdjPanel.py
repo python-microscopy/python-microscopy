@@ -64,7 +64,7 @@ class ccdPlotPanel(wxPlotPanel.PlotPanel):
 
             emGains = ccdCalibrator.getCalibratedCCDGain(emGainSettings, self.scope.cam.GetCCDTempSetPoint())
 
-            if emGains == None: # can't do anything
+            if emGains is None: # can't do anything
                 #self.figure.show()
                 #matplotlib.interactive(True)
                 return

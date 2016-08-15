@@ -82,7 +82,7 @@ class Pipeline:
         self.ready = False
         self.visFr = visFr
 
-        if not filename==None:
+        if not filename is None:
             self.OpenFile(filename)
             
         #renderers.renderMetadataProviders.append(self.SaveMetadata)

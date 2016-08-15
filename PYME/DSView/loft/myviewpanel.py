@@ -22,7 +22,7 @@ class MyViewPanel(viewpanel.ViewPanel):
     def __init__(self, parent, dstack = None):
         viewpanel.ViewPanel.__init__(self, parent, -1)        
 
-        if (dstack == None):
+        if (dstack is None):
             self.ds = example.CDataStack("test.kdf")
         else:
             self.ds = dstack

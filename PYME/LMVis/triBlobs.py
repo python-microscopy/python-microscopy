@@ -131,7 +131,7 @@ class BlobSettingsPanel(wx.Panel):
     def OnObjMeasure(self, event):
         om = self.pipeline.measureObjects()
         
-        if self.visgui.rav == None:
+        if self.visgui.rav is None:
             self.visgui.rav = recArrayView.recArrayPanel(self.visgui, om)
             self.visgui.AddPage(self.visgui.rav, 'Measurements')
         else:
