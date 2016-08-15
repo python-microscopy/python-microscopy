@@ -415,11 +415,13 @@ class ExportDialog(wx.Dialog):
 
 def _getFilename(defaultExt = '*.tif'):
         wcs  = []
+        exts = []
 
         defIndex = 0
 
         for i, e in enumerate(exporters.values()):
             wcs.append(e.descr + '|' + e.extension)
+            exts.append(e.extension[1:])
             if e.extension == defaultExt:
                 defIndex = i
 
@@ -431,6 +433,13 @@ def _getFilename(defaultExt = '*.tif'):
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
             fname = fdialog.GetPath().encode()
+
+            #we decide which exporter to use based on extension. Ensure that we have one (some platforms do not
+            #automatically add to path.
+            if os.path.splitext(fname)[1] == '':
+                #we didn't get an extension, deduce by looking at which filter was selected
+                filtIndex = fdialog.GetFilterIndex()
+                fname += exts[filtIndex]
         else:
             fname = None
 
