@@ -281,7 +281,7 @@ def coalesceDict(inD, assigned):  #, notKosher=None):
 
                     #if np.logical_and(len(np.unique(cl)) > 1, np.any([entry in cl for entry in notKosher])):
 
-                    fres['planeCounts'][i][:] = 0  # inD['planeCounts'][ci][:].sum(axis=0)
+                    fres['planeCounts'][i][:] = inD['planeCounts'][ci][:].sum(axis=0).astype(np.int32)
                     cind, counts = np.unique(cl, return_counts=True)
                     #fres['planeCounts'][i][:] = 0  # zero everything since the array will be empty, and we don't know numChan
                     fres['planeCounts'][i][cind] += counts.astype(np.int32)
