@@ -30,6 +30,7 @@ from PYME.IO.FileUtils import nameUtils
 import json
 import importlib
 import scipy.interpolate as terp
+from PYME.LMVis.inpFilt import cachingResultsFilter  # mappingFilter  # fitResultsSource
 
 def foldX_old(pipeline, x=None):
     """
@@ -105,7 +106,7 @@ def plotFolded(X, Y, multiviewChannels, title=''):
     plt.legend()
     return
 
-def plotRegistered(regX, regY, numChan, title=''):
+'''def plotRegistered(regX, regY, numChan, title=''):
     """
 
     Args:
@@ -125,7 +126,7 @@ def plotRegistered(regX, regY, numChan, title=''):
         plt.scatter(regX[ii], regY[ii], c=next(c), label='Chan #%i' % ii)
     plt.title(title)
     plt.legend()
-    return
+    return'''
 
 def pairMolecules(tIndex, x, y, whichChan, deltaX=[None], appearIn=np.arange(4), nFrameSep=5):
     """
@@ -271,7 +272,6 @@ def astigMAPism(fres, stigLib, chanPlane):
     """
     # fres = pipeline.selectedDataSource.resultsSource.fitResults
     numMols = len(fres['fitResults_x0'])
-    # FIXME: go back and make whichChannel an int!
     whichChan = np.array(fres['whichChan'], dtype=np.int32)
     # stigLib['zRange'] contains the extrema of acceptable z-positions looking over all channels
     zVal = np.arange(stigLib['zRange'][0], stigLib['zRange'][1])
@@ -290,14 +290,13 @@ def astigMAPism(fres, stigLib, chanPlane):
         lowZLoc = np.argmin(lowsubZ)
         upZLoc = np.argmin(upsubZ)
 
-        # FIXME: will want to replace zeros with NANs in sigCalX and Y so they are ignored in nanargmin
         sigCalX['chan%i' % ii] = terp.UnivariateSpline(zdat[lowZLoc:upZLoc],
                                                        np.array(stigLib['PSF%i' % ii]['sigmax'])[lowZLoc:upZLoc], ext='zeros')(zVal)
                                                             # bbox=stigLib['PSF%i' % ii]['zrange'], ext='zeros')(zVal)
         sigCalY['chan%i' % ii] = terp.UnivariateSpline(zdat[lowZLoc:upZLoc],
                                                        np.array(stigLib['PSF%i' % ii]['sigmay'])[lowZLoc:upZLoc], ext='zeros')(zVal)
-        sigCalX['chan%i' % ii][sigCalX['chan%i' % ii] == 0] = 1e5 # np.nan_to_num(np.inf)
-        sigCalY['chan%i' % ii][sigCalY['chan%i' % ii] == 0] = 1e5 # np.nan_to_num(np.inf)
+        sigCalX['chan%i' % ii][sigCalX['chan%i' % ii] == 0] = 1e5  # np.nan_to_num(np.inf)
+        sigCalY['chan%i' % ii][sigCalY['chan%i' % ii] == 0] = 1e5  # np.nan_to_num(np.inf)
         '''for mi in range(numMols):
             if whichChan[mi] == ii:
                 wx = 1./fres['fitError']['sigmaxPlane%i' % chanPlane[ii]][mi]**2
@@ -556,7 +555,21 @@ class multiviewMapper:
                                       appearIn=np.arange(numChan))  #, pipeline['error_x'])
 
         #FIXME: COALESCE HERE
+        fres = {}
+        for pkey in pipeline.keys():
+            fres[pkey] = pipeline[pkey][I][keep]
+
+        # make sure clumpIDs are contiguous from [1, numClumps)
+        assigned = -1*np.ones_like(clumpID[keep])
+        clumpVec = np.unique(clumpID[keep])
+        for ci in range(len(assigned)):  # range(len(clumpVec)):
+            #cMask = clumpID[keep] == clumpVec[ci]
+            assigned[ci] = ci + 1  #FIXME: cluster assignments currently must start from 1, which is mean.
+
+        cFres = coalesceDict(fres, assigned)
         #FIXME: plot clumped
+        plotFolded(cFres['x'], cFres['y'],
+                            cFres['whichChan'], 'Clumped')
 
         # only look at the ones which showed up in all channels
         x = xsort[keep]
@@ -609,6 +622,20 @@ class multiviewMapper:
 
         shiftWallet['shiftModel'] = '.'.join([spx.__class__.__module__, spx.__class__.__name__])
 
+        applyShiftmaps(pipeline, shiftWallet, numChan)
+
+        plotFolded(pipeline['x'], pipeline['y'],
+                            pipeline['whichChan'], 'All beads after Registration')
+
+        # cFres['whichChan'] = cFres['whichChan'].astype(np.float64)
+        pipeline.addDataSource('XY-Registered', cachingResultsFilter(cFres))
+        pipeline.selectDataSource('XY-Registered')
+        applyShiftmaps(pipeline, shiftWallet, numChan)
+
+        plotFolded(pipeline['x'], pipeline['y'],
+                            pipeline['whichChan'], 'Clumps after Registration')
+
+
         # save shiftmaps
         defFile = os.path.splitext(os.path.split(self.visFr.GetTitle())[-1])[0] + 'MultiView.sf'
 
@@ -621,24 +648,6 @@ class multiviewMapper:
             fid = open(fpath, 'wb')
             json.dump(shiftWallet, fid)
             fid.close()
-
-
-        # apply shiftmaps to clumped localizations
-        #self.applyShiftmaps_nonOrderConserving(xClump, yClump, shiftWallet, numChan)
-
-        # organize x- and y-positions into list of arrays corresponding to channel
-        #xfold, yfold = [], []
-        #for ii in range(numChan):
-        #    xfold.append(pipeline.mapping.xFolded[np.where(pipeline.mapping.whichChan == ii)])
-        #    yfold.append(pipeline['y'][np.where(pipeline.mapping.whichChan == ii)])
-
-        plotRegistered(xClump, yClump, numChan, 'Clumped')
-
-        applyShiftmaps(pipeline, shiftWallet, numChan)
-
-        plotFolded(pipeline['x'], pipeline['y'],
-                            pipeline['whichChan'], 'All beads after Registration')
-
 
     def OnMapZ(self, event):
         pipeline = self.visFr.pipeline
@@ -676,7 +685,6 @@ class multiviewMapper:
             except:
                 raise IOError('Astigmatism sigma-Z mapping information not found')
 
-        from PYME.LMVis.inpFilt import cachingResultsFilter  # mappingFilter  # fitResultsSource
         # make sure xy-registration has already happened:
         if 'registered' not in pipeline.keys():
             print('registering multiview channels in x-y plane')
