@@ -304,7 +304,7 @@ class PSFTools(HasTraits):
 
         dsigma = res['fitResults_sigmax'] - res['fitResults_sigmay']
 
-        valid = ((res['fitError_sigmax'] > 0) * (res['fitError_sigmax'] < 25)* (res['fitError_sigmay'] < 25)*(res['fitResults_A'] > 0) > 0)
+        valid = ((res['fitError_sigmax'] > 0) * (res['fitError_sigmax'] < 50)* (res['fitError_sigmay'] < 50)*(res['fitResults_A'] > 0) > 0)
 
         #generate new tab to show results
         use_web_view = True

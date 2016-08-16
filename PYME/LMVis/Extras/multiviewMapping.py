@@ -401,7 +401,7 @@ class multiviewMapper:
         except AttributeError:
             raise AttributeError('You are either not looking at multiview Data, or your metadata is incomplete')
 
-        # fold x position of channels into the first, note that we are using the filtered results
+        # fold x position of channels into the first
         foldX(pipeline)
 
         plotFolded(pipeline['x'], pipeline['y'], pipeline['whichChan'], 'Raw')
