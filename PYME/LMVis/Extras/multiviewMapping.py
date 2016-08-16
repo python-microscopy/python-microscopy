@@ -431,7 +431,7 @@ class multiviewMapper:
         visFr.Bind(wx.EVT_MENU, self.OnMapZ, id=ID_MAP_Z)
         return
 
-    def applyShiftmaps_nonOrderConserving(self, x, y, shiftWallet, numChan):
+    '''def applyShiftmaps_nonOrderConserving(self, x, y, shiftWallet, numChan):
         """
         applyShiftmaps loads multiview shiftmap parameters from multiviewMapper.shiftWallet, reconstructs the shiftmap
         objects, applies them to the multiview data, and maps the positions registered to the first channel to the pipeline
@@ -469,7 +469,7 @@ class multiviewMapper:
         pipeline.mapping.setMapping('regChan', chan)
         #pipeline['xReg'] = xReg
         #pipeline['yReg'] = yReg
-        return
+        return'''
 
     def OnFoldAndMapXY(self, event):
         """
@@ -550,32 +550,16 @@ class multiviewMapper:
         xsort, ysort = pipeline['x'][I], pipeline['y'][I]
         chanSort = pipeline['whichChan'][I]
 
-        # Match up molecules, note that all inputs must be sorted in frame order!
         clumpID, keep = pairMolecules(pipeline['tIndex'][I], xsort, ysort, chanSort,
-                                      appearIn=np.arange(numChan))  #, pipeline['error_x'])
+                                          appearIn=np.arange(numChan))
 
-        #FIXME: COALESCE HERE
-        fres = {}
-        for pkey in pipeline.keys():
-            fres[pkey] = pipeline[pkey][I][keep]
-
-        # make sure clumpIDs are contiguous from [1, numClumps)
-        assigned = -1*np.ones_like(clumpID[keep])
-        clumpVec = np.unique(clumpID[keep])
-        for ci in range(len(assigned)):  # range(len(clumpVec)):
-            #cMask = clumpID[keep] == clumpVec[ci]
-            assigned[ci] = ci + 1  #FIXME: cluster assignments currently must start from 1, which is mean.
-
-        cFres = coalesceDict(fres, assigned)
-        #FIXME: plot clumped
-        plotFolded(cFres['x'], cFres['y'],
-                            cFres['whichChan'], 'Clumped')
 
         # only look at the ones which showed up in all channels
         x = xsort[keep]
         y = ysort[keep]
         Chan = chanSort[keep]
         clumpID = clumpID[keep]
+
         # Generate raw shift vectors (map of displacements between channels) for each channel
         molList = np.unique(clumpID)
         numMoles = len(molList)
@@ -584,7 +568,7 @@ class multiviewMapper:
         dy = np.zeros_like(dx)
         dxErr = np.zeros_like(dx)
         dyErr = np.zeros_like(dx)
-        xClump, yClump, xStd, yStd = [], [], [], []
+        xClump, yClump, xStd, yStd, xShifted, yShifted = [], [], [], [], [], []
         shiftWallet = {}
         # dxWallet, dyWallet = {}, {}
         for ii in range(numChan):
@@ -619,6 +603,13 @@ class multiviewMapper:
                 shiftWallet['Chan0%s.X' % ii], shiftWallet['Chan0%s.Y' % ii] = spx.__dict__, spy.__dict__
                 # dxWallet['Chan0%s' % ii], dyWallet['Chan0%s' % ii] = dxx, dyy
 
+                # shift the clumps for plotting
+                xShifted.append(xClump[ii] + spx(xClump[ii], yClump[ii]))
+                yShifted.append(yClump[ii] + spy(xClump[ii], yClump[ii]))
+            else:
+                xShifted.append(xClump[ii])
+                yShifted.append(yClump[ii])
+
 
         shiftWallet['shiftModel'] = '.'.join([spx.__class__.__module__, spx.__class__.__name__])
 
@@ -626,14 +617,60 @@ class multiviewMapper:
 
         plotFolded(pipeline['x'], pipeline['y'],
                             pipeline['whichChan'], 'All beads after Registration')
+        #for ii in range(1, numChan):
+        #    chanMask = Chan == ii
+        #    x = x + chanMask*shiftModel(dict=shiftWallet['Chan0%s.X' % ii]).ev(x, y)
+        #    y = y + chanMask*shiftModel(dict=shiftWallet['Chan0%s.Y' % ii]).ev(x, y)
+        cStack = []
+        for ci in range(len(xShifted)):
+            cStack.append(ci*np.ones(len(xShifted[ii])))
+        cStack = np.hstack(cStack)
 
-        # cFres['whichChan'] = cFres['whichChan'].astype(np.float64)
+        plotFolded(np.hstack(xClump), np.hstack(yClump), cStack, 'Unregistered Clumps')
+
+        plotFolded(np.hstack(xShifted), np.hstack(yShifted), cStack, 'Registered Clumps')
+        '''
+        # deal with coalescence for plotting
+        fres = {}
+        I = pipeline['tIndex'].argsort()
+        for pkey in pipeline.keys():
+            fres[pkey] = pipeline[pkey][I]  # [I][keep]
+
+        for cind in range(numChan):
+            I = fres['tIndex'].argsort()
+
+            for pkey in fres.keys():
+                fres[pkey] = fres[pkey][I]
+
+            # trick
+            chanWithIgnore = np.copy(fres['whichChan'])
+            chanWithIgnore[np.where(chanWithIgnore != cind)] = -9
+
+            # Match up molecules, note that all inputs must be sorted in frame order!
+            clumpID, keep = pairMolecules(fres['tIndex'], fres['x'], fres['y'], chanWithIgnore,
+                                          appearIn=np.arange(numChan))  #, pipeline['error_x'])
+
+            #FIXME: COALESCE HERE
+
+
+            # make sure clumpIDs are contiguous from [1, numClumps)
+            assigned = -1*np.ones_like(clumpID[keep])
+            clumpVec = np.unique(clumpID[keep])
+            for ci in range(len(clumpVec)):  # range(len(assigned)):  # range(len(clumpVec)):
+                cMask = clumpID[keep] == clumpVec[ci]
+                assigned[ci] = ci + 1  #FIXME: cluster assignments currently must start from 1, which is mean.
+
+            cFres = coalesceDict(fres, assigned)
+        #FIXME: plot clumped
+        plotFolded(cFres['x'], cFres['y'],
+                            cFres['whichChan'], 'Clumped')
+
         pipeline.addDataSource('XY-Registered', cachingResultsFilter(cFres))
         pipeline.selectDataSource('XY-Registered')
         applyShiftmaps(pipeline, shiftWallet, numChan)
-
-        plotFolded(pipeline['x'], pipeline['y'],
-                            pipeline['whichChan'], 'Clumps after Registration')
+        '''
+        #plotFolded(pipeline['x'], pipeline['y'],
+        #                    pipeline['whichChan'], 'Clumps after Registration')
 
 
         # save shiftmaps
@@ -665,6 +702,7 @@ class multiviewMapper:
                 chanPlane = [0 for c in range(numChan)]
             numPlanes = len(np.unique(chanPlane))
         except AttributeError:  # default to non-multiview options
+            print('Defaulting to single plane, single color channel settings')
             numChan = 1
             chanColor = [0]
             numPlanes = 1
