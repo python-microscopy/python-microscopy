@@ -61,7 +61,7 @@ def foldX(pipeline):
 
 def plotFolded(X, Y, multiviewChannels, title=''):
     """
-
+    Plots localizations with color based on multiview channel
     Args:
         X: array of localization x-positions
         Y: array of localization y-positions
@@ -69,7 +69,6 @@ def plotFolded(X, Y, multiviewChannels, title=''):
         title: title of plot
 
     Returns: nothing
-        Plots unclumped raw localizations folded into the first channel
 
     """
     import matplotlib.pyplot as plt
@@ -93,15 +92,16 @@ def pairMolecules(tIndex, x, y, whichChan, deltaX=[None], appearIn=np.arange(4),
         x: x positions of localizations AFTER having been folded into the first channel
         y: y positions of localizations
         whichChan: a vector containing channel assignments for each localization
-        numChan: number of multiview channels
         deltaX: distance within which neighbors will be clumped is set by 2*deltaX[i])**2
-        appearances: number of channels that must be present in a clump to be clumped
+        appearIn: a clump must have localizations in each of these channels in order to be a keep-clump
+        nFrameSep: number of frames a molecule is allowed to blink off and still be clumped as the same molecule
 
     Returns:
-        x and y positions of molecules that were clumped, which channel those localizations are from,
-        and which clump they were assigned to. Note that outputs are length = #molecules, and the keep
-        vector that is return needs to be applied as: xkept = x[keep] in order to only look at kept molecules.
-        Note that the returned x, y, tIndex and whichChan are resorted.
+        assigned: clump assignments for each localization. Note that molecules whose whichChan entry is set to a
+            negative value will not be clumped, i.e. they will have a unique value in assigned.
+        keep: a boolean vector encoding which molecules are in kept clumps
+        Note that outputs are of length #molecules, and the keep vector that is returned needs to be applied
+        as: xkept = x[keep] in order to only look at kept molecules.
 
     """
     # group within a certain distance, potentially based on localization uncertainty
@@ -143,18 +143,10 @@ def applyShiftmaps(pipeline, shiftWallet, numChan):
         numChan: number of multiview channels
 
     Returns: nothing
-        Maps shifted x-, and y-positions into the pipeline
-        xReg and yReg are both lists, where each element is an array of positions corresponding to a given channel
+        Adds shifts into the pipeline which will then be applied automatically by the mappingFilter (see foldX)
 
     """
-    #fres = pipeline.selectedDataSource.resultsSource.fitResults
-    #try:
-    #    alreadyDone = pipeline.mapping.registered
-    #    return
-    #except:
-    #    pass
 
-    # import shiftModel to be reconstructed
     model = shiftWallet['shiftModel'].split('.')[-1]
     shiftModule = importlib.import_module(shiftWallet['shiftModel'].split('.' + model)[0])
     shiftModel = getattr(shiftModule, model)
@@ -179,11 +171,16 @@ def applyShiftmaps(pipeline, shiftWallet, numChan):
 
 def astigMAPism(fres, stigLib, chanPlane):
     """
-    Look up table
+    Generates a look-up table of sorts for z based on sigma x/y fit results and calibration information. If a molecule
+    appears on multiple planes, sigma values from both planes will be used in the look up.
     Args:
-        sigVals:
+        fres: dictionary-like object containing relevant fit results
+        stigLib: library of astigmatism calibration dictionaries corresponding to each multiview channel, which are
+            used to recreate shiftmap objects
+        chanPlane: list of which plane each channel corresponds to, e.g. [0, 0, 1, 1]
 
     Returns:
+        z: an array of z-positions for each molecule in nm (assuming proper units were used in astigmatism calibration)
 
     """
     # fres = pipeline.selectedDataSource.resultsSource.fitResults
@@ -207,30 +204,18 @@ def astigMAPism(fres, stigLib, chanPlane):
         upZLoc = np.argmin(upsubZ)
 
         sigCalX['chan%i' % ii] = terp.UnivariateSpline(zdat[lowZLoc:upZLoc],
-                                                       np.array(stigLib['PSF%i' % ii]['sigmax'])[lowZLoc:upZLoc], ext='zeros')(zVal)
+                                                       np.array(stigLib['PSF%i' % ii]['sigmax'])[lowZLoc:upZLoc],
+                                                       ext='zeros')(zVal)
                                                             # bbox=stigLib['PSF%i' % ii]['zrange'], ext='zeros')(zVal)
         sigCalY['chan%i' % ii] = terp.UnivariateSpline(zdat[lowZLoc:upZLoc],
-                                                       np.array(stigLib['PSF%i' % ii]['sigmay'])[lowZLoc:upZLoc], ext='zeros')(zVal)
+                                                       np.array(stigLib['PSF%i' % ii]['sigmay'])[lowZLoc:upZLoc],
+                                                       ext='zeros')(zVal)
+        # set regions outside of usable interpolation area to very unreasonable sigma values
         sigCalX['chan%i' % ii][sigCalX['chan%i' % ii] == 0] = 1e5  # np.nan_to_num(np.inf)
         sigCalY['chan%i' % ii][sigCalY['chan%i' % ii] == 0] = 1e5  # np.nan_to_num(np.inf)
-        '''for mi in range(numMols):
-            if whichChan[mi] == ii:
-                wx = 1./fres['fitError']['sigmaxPlane%i' % chanPlane[ii]][mi]**2
-                wy = 1./fres['fitError']['sigmayPlane%i' % chanPlane[ii]][mi]**2
-                errX = wx*(fres['fitResults']['sigmaxPlane%i' % chanPlane[ii]][mi] - sigCalX['chan%i' % ii])**2
-                errY = wy*(fres['fitResults']['sigmayPlane%i' % chanPlane[ii]][mi] - sigCalY['chan%i' % ii])**2
-                #wx = 1./fres['fitError']['sigmaxPlane%i' % chanPlane[ii]][mi]**2
-                #wy = 1./fres['fitError']['sigmayPlane%i' % chanPlane[ii]][mi]**2
-                #errX = wx*(fres['fitResults']['sigmaxPlane%i' % chanPlane[ii]][mi] - sigCalX['chan%i' % ii])**2
-                #errY = wy*(fres['fitResults']['sigmayPlane%i' % chanPlane[ii]][mi] - sigCalY['chan%i' % ii])**2
-                # find minimum
-                try:
-                    z[mi] = zVal[np.nanargmin(errX + errY)]
-                except:
-                    print('No sigmas in correct plane for this molecule')'''
+
     for mi in range(numMols):
         chans = np.where(fres['planeCounts'][mi] > 0)[0]
-        # cnum = len(chans)
         errX, errY = 0, 0
         for ci in chans:
             wx = 1./(fres['fitError_sigmaxPlane%i' % chanPlane[ci]][mi])**2
@@ -241,25 +226,27 @@ def astigMAPism(fres, stigLib, chanPlane):
             z[mi] = zVal[np.nanargmin(errX + errY)]
         except:
             print('No sigmas in correct plane for this molecule')
-    #pipeline.selectedDataSource.addColumn('zPos', z)
-    #pipeline.Rebuild()
+
     return z
 
 def coalesceDict(inD, assigned):  #, notKosher=None):
     """
     Agregates clumps to a single event
     Note that this will evaluate the lazy pipeline events and add them into the dict as an array, not a code
-    object
+    object.
+    Also note that copying a large dictionary can be rather slow, and a structured ndarray approach may be preferable.
+
+    Args:
+        inD: input dictionary containing fit results
+        assigned: clump assignments to be coalesced
+
+    Returns:
+        fres: output dictionary containing the coalesced results
+
     """
     NClumps = int(np.max(assigned))  # len(np.unique(assigned))  #
 
-    #work out what the data type for our declumped data should be
-    #dt = deClumpedDType(fitResults)
-
-     #np.empty(NClumps, dt)
     fres = {}
-
-    #dtr = '%df4' % len(f['fitResults'].dtype)
 
     clist = [[] for i in xrange(NClumps)]
     for i, c in enumerate(assigned):
@@ -294,7 +281,6 @@ def coalesceDict(inD, assigned):  #, notKosher=None):
 
                     #if np.logical_and(len(np.unique(cl)) > 1, np.any([entry in cl for entry in notKosher])):
 
-                    #fres['planeCounts'][i] = inD['planeCounts'][ci][:].sum(axis=0)
                     fres['planeCounts'][i][:] = 0  # inD['planeCounts'][ci][:].sum(axis=0)
                     cind, counts = np.unique(cl, return_counts=True)
                     #fres['planeCounts'][i][:] = 0  # zero everything since the array will be empty, and we don't know numChan
@@ -322,7 +308,7 @@ class multiviewMapper:
     """
 
     multiviewMapper provides methods for registering multiview channels as acquired in multicolor or biplane imaging.
-    Image frames for multiview data should have channels concatonated horizontally, such that the x-dimension is the
+    Image frames for multiview data should have channels concatenated horizontally, such that the x-dimension is the
     only dimension that needs to be folded into the first channel.
     The shiftmaps are functions that interface like bivariate splines, but can be recreated from a dictionary of their
     fit-model parameters, which are stored in a dictionary in the shiftmap object.
@@ -349,14 +335,14 @@ class multiviewMapper:
 
     def OnFoldAndMapXY(self, event):
         """
-        OnFoldAndMap uses shiftmaps stored in metadata (by default) or loaded through the GUI to register multiview channelss
-        to the first channel.
+        OnFoldAndMap uses shiftmaps stored in metadata (by default) or loaded through the GUI to register multiview
+        channels to the first channel.
         Args:
             event: GUI event
 
         Returns: nothing
-            x- and y-positions will be registered to the first channel and stored in the pipeline dictionary as xReg and
-            yReg. Their structure is described in applyShiftmaps
+            x- and y-positions will be registered to the first channel in the mappingFilter with shiftmap corrections
+            applied (see foldX)
 
         """
         pipeline = self.visFr.pipeline
@@ -405,7 +391,7 @@ class multiviewMapper:
             event: GUI event
 
         Returns: nothing
-            Writes shiftmapWallet into metadata as well as saving a json formatted .sf file through a GUI dialog
+            Writes shiftmapWallet into a json formatted .sf file through a GUI dialog
         """
         from PYME.Analysis.points import twoColour
         pipeline = self.visFr.pipeline
@@ -521,11 +507,11 @@ class multiviewMapper:
         try:
             numChan = pipeline.mdh['Multiview.NumROIs']
             try:
-                chanColor = [0, 1, 1, 0]#pipeline.mdh['Multiview.ChannelColor']  # Bewersdorf Biplane example: [0, 1, 1, 0]
+                chanColor = pipeline.mdh['Multiview.ChannelColor']  # Bewersdorf Biplane example: [0, 1, 1, 0]
             except AttributeError:
                 chanColor = [0 for c in range(numChan)]
             try:
-                chanPlane = [0, 0, 1, 1]#pipeline.mdh['Multiview.ChannelPlane']  # Bewersdorf Biplane example: [0, 0, 1, 1]
+                chanPlane = pipeline.mdh['Multiview.ChannelPlane']  # Bewersdorf Biplane example: [0, 0, 1, 1]
             except AttributeError:
                 chanPlane = [0 for c in range(numChan)]
             numPlanes = len(np.unique(chanPlane))
