@@ -275,6 +275,16 @@ class psfExtractor:
             ViewIm3D(im, mode='psf', parent=wx.GetTopLevelParent(self.dsviewer))
 
     def OnCalibrateMultiview(self, event):
+        """
+        CalibrateMultiview loops over all channels described in the metadata and runs CalibrateAstigmatism on each one.
+        Results are stored in a library of dictionaries and are saved into a jason astigmatism map file (.am)
+        Args:
+            event: GUI event
+
+        Returns:
+            nothing
+
+        """
         # first make sure the user is calling the right function
         try:
             chanSizeX = self.image.mdh['Multiview.ROISize'][0]
